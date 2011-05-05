@@ -37,6 +37,7 @@ extern "C" {
 
 int check_debug_flag(char const* strdata);
 int RTOptsImpl__acceptMetaModelicaGrammar(void);
+static int set_indexReductionMethod(const char *flagstr);
 extern int running_testsuite;
 extern int showErrorMessages;
 

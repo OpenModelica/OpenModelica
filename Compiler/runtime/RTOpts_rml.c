@@ -96,21 +96,6 @@ RML_BEGIN_LABEL(RTOpts__silent)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(RTOpts__eliminationLevel)
-{
-  rmlA0 = mk_icon(elimination_level);
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(RTOpts__setEliminationLevel)
-{
-  long level = (long)RML_UNTAGFIXNUM(rmlA0);
-  elimination_level = level;
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
 RML_BEGIN_LABEL(RTOpts__setDebugFlag)
 {
   void *str = rmlA0;
@@ -402,6 +387,29 @@ RML_BEGIN_LABEL(RTOpts__setPastOptModules)
   set_pastOptModules(modulestr);
   if (modulestr) free(modulestr);
   RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__getIndexReductionMethod)
+{
+  void *defaultMethod = rmlA0;
+  void *res = (void*)mk_nil();
+
+  if (indexReductionMethod_set == 1)
+  {
+    res = (void*)mk_cons(mk_scon(indexReductionMethodstr),res);
+    rmlA0 = (void*)res;
+  }
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__setIndexReductionMethod)
+{
+    void *str = rmlA0;
+    char *strdata = RML_STRINGDATA(str);
+    set_indexReductionMethod(strdata);
+    RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 

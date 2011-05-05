@@ -55,6 +55,7 @@ public import Values;
 // protected imports
 protected import BackendDAECreate;
 protected import BackendDAEUtil;
+protected import BackendEquation;
 protected import BackendVariable;
 protected import ClassInf;
 protected import ComponentReference;
@@ -86,7 +87,6 @@ algorithm
     local
       DAE.Exp e1_1,e2_1,e1_2,e2_2,e1,e2;
       BackendDAE.Variables timevars;
-      BackendDAE.Equation dae_equation;
       DAE.ElementSource source,source1,sourceStmt;
       Integer index,i_1,index1;
       list<DAE.Exp> in_,in_1,out,out1,expExpLst,expExpLst1;
@@ -178,25 +178,12 @@ algorithm
         Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
-    
-    case (BackendDAE.ARRAY_EQUATION(index = _, source = source),_,_,_,_,_,_)
-      equation
-        msg = "- Derive.differentiateEquationTime on array equations not impl yet.";
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(source));
-      then
-        fail();
-    
-    case (BackendDAE.ALGORITHM(index = _, source = source),_,_,_,_,_,_)
-      equation
-        msg = "- Derive.differentiateEquationTime on algorithm not impl yet.";
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(source));
-      then
-        fail();
-    
-    case (dae_equation,_,_,_,_,_,_)
+
+    case (inEquation,_,_,_,_,_,_)
       equation
         msg = "- Derive.differentiateEquationTime failed.";
-        Error.addMessage(Error.INTERNAL_ERROR, {msg});
+        source = BackendEquation.equationSource(inEquation);
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
   end matchcontinue;

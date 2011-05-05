@@ -5749,11 +5749,20 @@ end pastoptimiseDAEModule;
 
 partial function daeHandlerFunc
 "function daeHandlerFunc 
-  This is the interface for the index reduction handler.
-  Note: Not yet finished"
-  input BackendDAE.BackendDAE inDAE;
-  input DAE.FunctionTree outFunctionTree;
-  output BackendDAE.BackendDAE outDAE;
+  This is the interface for the index reduction handler."
+  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.IncidenceMatrix inIncidenceMatrix;
+  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
+  input Integer inNumberofVars;
+  input Integer inNumberofEqns;
+  input DAE.FunctionTree inFunctions;
+  input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
+  input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;
+  output BackendDAE.BackendDAE outBackendDAE;
+  output BackendDAE.IncidenceMatrix outIncidenceMatrix;
+  output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
+  output list<tuple<Integer,Integer,Integer>> outDerivedAlgs;
+  output list<tuple<Integer,Integer,Integer>> outDerivedMultiEqn;
 end daeHandlerFunc;
 
 public function getSolvedSystem
@@ -5764,7 +5773,7 @@ public function getSolvedSystem
   input BackendDAE.BackendDAE inDAE;
   input DAE.FunctionTree functionTree;
   input Option<list<String>> strPreOptModules;
-  input daeHandlerFunc daeHandler;
+  input Option<String> strdaeHandler;
   input Option<list<String>> strPastOptModules;
   output BackendDAE.BackendDAE outSODE;
   output BackendDAE.IncidenceMatrix outM;
@@ -5782,9 +5791,19 @@ public function getSolvedSystem
     output Option<BackendDAE.IncidenceMatrix> outMT;
   end preoptimiseDAEModule;
   partial function daeHandlerFunc
-    input BackendDAE.BackendDAE inDAE;
-    input DAE.FunctionTree inFunctionTree;
-    output BackendDAE.BackendDAE outDAE;
+    input BackendDAE.BackendDAE inBackendDAE;
+    input BackendDAE.IncidenceMatrix inIncidenceMatrix;
+    input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
+    input Integer inNumberofVars;
+    input Integer inNumberofEqns;
+    input DAE.FunctionTree inFunctions;
+    input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
+    input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;
+    output BackendDAE.BackendDAE outBackendDAE;
+    output BackendDAE.IncidenceMatrix outIncidenceMatrix;
+    output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
+    output list<tuple<Integer,Integer,Integer>> outDerivedAlgs;
+    output list<tuple<Integer,Integer,Integer>> outDerivedMultiEqn;
   end daeHandlerFunc;
   partial function pastoptimiseDAEModule
     input BackendDAE.BackendDAE inDAE;
@@ -5810,10 +5829,12 @@ protected
   list<list<Integer>> comps,comps_1;
   list<tuple<preoptimiseDAEModule,String>> preOptModules;
   list<tuple<pastoptimiseDAEModule,String>> pastOptModules;
+  tuple<daeHandlerFunc,String> daeHandler;
 algorithm
   
   preOptModules := getPreOptModules(strPreOptModules);
   pastOptModules := getPastOptModules(strPastOptModules);
+  daeHandler := getIndexReductionMethod(strdaeHandler);
   
   Debug.fcall("dumpdaelow", print, "dumpdaelow:\n");
   Debug.fcall("dumpdaelow", BackendDump.dump, inDAE);
@@ -5821,8 +5842,8 @@ algorithm
   (optdae,om,omT) := preoptimiseDAE(inDAE,functionTree,preOptModules,NONE(),NONE());
 
   // transformation phase (matching and sorting using a index reduction method
-  (sode,m,mT,v1,v2,comps) := transformDAE(optdae,functionTree,daeHandler,om,omT);
-  Debug.fcall("bltdump", BackendDump.bltdump, (sode,m,mT,v1,v2,comps));
+  (sode,m,mT,v1,v2,comps) := transformDAE(optdae,functionTree,NONE(),daeHandler,om,omT);
+  Debug.fcall("bltdump", BackendDump.bltdump, ("bltdump",sode,m,mT,v1,v2,comps));
 
   // past optimisation phase
   (sode,outM,outMT,outAss1,outAss2,outComps) := pastoptimiseDAE(sode,functionTree,pastOptModules,m,mT,v1,v2,comps,daeHandler);
@@ -5895,14 +5916,37 @@ algorithm
   end matchcontinue;
 end preoptimiseDAE;
 
-public function transformDAE
+public function transformBackendDAE
+"function transformBackendDAE 
+  Run the matching and index reduction algorithm"
+  input BackendDAE.BackendDAE inDAE;
+  input DAE.FunctionTree functionTree;
+  input Option<BackendDAE.MatchingOptions> inMatchingOptions;
+  input Option<String> strindexReductionMethod;
+  input Option<BackendDAE.IncidenceMatrix> inM;
+  input Option<BackendDAE.IncidenceMatrix> inMT;
+  output BackendDAE.BackendDAE outDAE;
+  output BackendDAE.IncidenceMatrix outM;
+  output BackendDAE.IncidenceMatrix outMT;
+  output array<Integer> outAss1;
+  output array<Integer> outAss2;
+  output list<list<Integer>> outComps;  
+protected
+  tuple<daeHandlerFunc,String> indexReductionMethod;
+algorithm
+  indexReductionMethod := getIndexReductionMethod(strindexReductionMethod);
+  (outDAE,outM,outMT,outAss1,outAss2,outComps) := transformDAE(inDAE,functionTree,inMatchingOptions,indexReductionMethod,inM,inMT);
+end transformBackendDAE;
+
+protected function transformDAE
 "function transformDAE 
   Run the matching Algorithm and the sorting algorithm.
   In case of an DAE an DAE-Handler is used to reduce
   the index of the dae."
   input BackendDAE.BackendDAE inDAE;
   input DAE.FunctionTree functionTree;
-  input daeHandlerFunc daeHandler;
+  input Option<BackendDAE.MatchingOptions> inMatchingOptions;
+  input tuple<daeHandlerFunc,String> daeHandler;
   input Option<BackendDAE.IncidenceMatrix> inM;
   input Option<BackendDAE.IncidenceMatrix> inMT;
   output BackendDAE.BackendDAE outDAE;
@@ -5913,27 +5957,30 @@ public function transformDAE
   output list<list<Integer>> outComps;
 algorithm
   (outDAE,outM,outMT,outAss1,outAss2,outComps):=
-  matchcontinue (inDAE,functionTree,daeHandler,inM,inMT)
+  matchcontinue (inDAE,functionTree,inMatchingOptions,daeHandler,inM,inMT)
     local 
       BackendDAE.BackendDAE dae,ode;
       DAE.FunctionTree funcs;
-      String str;
+      String str,methodstr;
       Option<BackendDAE.IncidenceMatrix> om,omT;
       BackendDAE.IncidenceMatrix m,mT,m1,mT1;
       array<Integer> v1,v2,v1_1,v2_1;
       list<list<Integer>> comps,comps1;
-    case (dae,funcs,daeHandler,om,omT)
+      BackendDAE.MatchingOptions match_opts;
+      daeHandlerFunc daeHandlerfunc;
+    case (dae,funcs,inMatchingOptions,(daeHandlerfunc,methodstr),om,omT)
       equation
         (m,mT) = getIncidenceMatrixfromOption(dae,om,omT);
+        match_opts = Util.getOptionOrDefault(inMatchingOptions,(BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT()));
         // matching algorithm
-        Debug.fcall("execstat",print, "*** BackendMain -> transformDAE get matching at time: " +& realString(clock()) +& "\n" );
-        (v1,v2,ode,m1,mT1) = BackendDAETransform.matchingAlgorithm(dae, m, mT, (BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT()),funcs);
+        Debug.fcall("execstat",print, "*** BackendMain -> transformDAE get matching at time: " +& realString(clock()) +& " using index Reduction Method " +& methodstr  +& "\n" );
+        (v1,v2,ode,m1,mT1) = BackendDAETransform.matchingAlgorithm(dae, m, mT, match_opts, daeHandlerfunc, funcs);
         // sorting algorithm
         Debug.fcall("execstat",print, "*** BackendMain -> transformDAE sort components at time: " +& realString(clock()) +& "\n" );
         (comps) = BackendDAETransform.strongComponents(m1, mT1, v1, v2);
       then
         (ode,m1,mT1,v1,v2,comps);
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
 //        str = "Transformation Module failed!";
 //        Error.addMessage(Error.INTERNAL_ERROR, {str});
@@ -5953,7 +6000,7 @@ protected function pastoptimiseDAE
   input array<Integer> inAss1;
   input array<Integer> inAss2;
   input list<list<Integer>> inComps;
-  input daeHandlerFunc daeHandler;
+  input tuple<daeHandlerFunc,String> daeHandler;
   output BackendDAE.BackendDAE outDAE;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrix outMT;
@@ -6005,7 +6052,7 @@ protected function checktransformDAE
   input array<Integer> inAss1;
   input array<Integer> inAss2;
   input list<list<Integer>> inComps;
-  input daeHandlerFunc daeHandler;
+  input tuple<daeHandlerFunc,String> daeHandler;
   output BackendDAE.BackendDAE outDAE;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrix outMT;
@@ -6024,8 +6071,8 @@ algorithm
       Boolean runMatching;
     case (true,dae,funcs,m,mT,_,_,_,daeHandler)
       equation
-        (sode,m,mT,v1,v2,comps) = transformDAE(dae,funcs,daeHandler,SOME(m),SOME(mT));
-        Debug.fcall("bltdump", BackendDump.bltdump, (sode,m,mT,v1,v2,comps));
+        (sode,m,mT,v1,v2,comps) = transformDAE(dae,funcs,NONE(),daeHandler,SOME(m),SOME(mT));
+        Debug.fcall("bltdump", BackendDump.bltdump, ("bltdump",sode,m,mT,v1,v2,comps));
       then
         (sode,m,mT,v1,v2,comps);
     case (false,dae,funcs,m,mT,v1,v2,comps,_)
@@ -6033,6 +6080,78 @@ algorithm
         (dae,m,mT,v1,v2,comps);
   end match;
 end checktransformDAE;
+
+/*************************************************
+ * index reduction method Selection 
+ ************************************************/
+
+public function getIndexReductionMethodString
+" function: getIndexReductionMethodString"
+  output String strIndexReductionMethod;
+algorithm
+ strIndexReductionMethod := RTOpts.getIndexReductionMethod("dummyDerivative");
+end getIndexReductionMethodString;
+
+protected function getIndexReductionMethod
+" function: getIndexReductionMethod"
+  input Option<String> ostrIndexReductionMethod;
+  output tuple<daeHandlerFunc,String> IndexReductionMethod;
+  partial function daeHandlerFunc
+    input BackendDAE.BackendDAE inBackendDAE;
+    input BackendDAE.IncidenceMatrix inIncidenceMatrix;
+    input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
+    input Integer inNumberofVars;
+    input Integer inNumberofEqns;
+    input DAE.FunctionTree inFunctions;
+    input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
+    input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;
+    output BackendDAE.BackendDAE outBackendDAE;
+    output BackendDAE.IncidenceMatrix outIncidenceMatrix;
+    output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
+    output list<tuple<Integer,Integer,Integer>> outDerivedAlgs;
+    output list<tuple<Integer,Integer,Integer>> outDerivedMultiEqn;
+  end daeHandlerFunc;
+protected 
+  list<tuple<daeHandlerFunc,String>> allIndexReductionMethods;
+  String strIndexReductionMethod;
+algorithm
+ allIndexReductionMethods := {(BackendDAETransform.reduceIndexDummyDer,"dummyDerivative")};
+ strIndexReductionMethod := getIndexReductionMethodString();
+ strIndexReductionMethod := Util.getOptionOrDefault(ostrIndexReductionMethod,strIndexReductionMethod);
+ IndexReductionMethod := selectIndexReductionMethod(strIndexReductionMethod,allIndexReductionMethods);
+end getIndexReductionMethod;
+
+protected function selectIndexReductionMethod
+" function: selectIndexReductionMethod"
+  input String strIndexReductionMethod;
+  input list<tuple<Type_a,String>> inIndexReductionMethods;
+  output tuple<Type_a,String> outIndexReductionMethod;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outIndexReductionMethod:=
+  matchcontinue (strIndexReductionMethod,inIndexReductionMethods)
+    local 
+      String name,name1,str;
+      tuple<Type_a,String> method;
+      list<tuple<Type_a,String>> methods;
+    case (name,(method as (_,name1))::methods)
+      equation
+        true = stringEqual(name,name1);
+      then   
+        method;
+    case (name,_::methods)
+      equation
+        method = selectIndexReductionMethod(name,methods);
+      then   
+        method;
+    case (name,_)
+      equation
+        str = stringAppendList({"Selection of Index Reduction Method ",name," failed."});
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then   
+        fail();
+  end matchcontinue;
+end selectIndexReductionMethod;
 
 /*************************************************
  * Optimisation Selection 

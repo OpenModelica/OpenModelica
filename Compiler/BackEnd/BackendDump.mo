@@ -1593,16 +1593,17 @@ end dumpStateVariable;
 
 public function bltdump
 "autor: Frenkel TUD 2011-03"
-  input tuple<BackendDAE.BackendDAE,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrix,array<Integer>,array<Integer>,list<list<Integer>>> inTpl;
+  input tuple<String,BackendDAE.BackendDAE,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrix,array<Integer>,array<Integer>,list<list<Integer>>> inTpl;
 protected
+  String str;
   BackendDAE.BackendDAE ode;
   BackendDAE.IncidenceMatrix m;
   BackendDAE.IncidenceMatrix mT;
   array<Integer> v1,v2;
   list<list<Integer>> comps;
 algorithm
-  (ode,m,mT,v1,v2,comps) := inTpl;
-  print("bltdump:\n");
+  (str,ode,m,mT,v1,v2,comps) := inTpl;
+  print(str); print(":\n");
   dump(ode);
   dumpIncidenceMatrix(m);
   dumpIncidenceMatrixT(mT);

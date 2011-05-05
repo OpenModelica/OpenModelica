@@ -45,7 +45,6 @@ protected import Absyn;
 protected import AbsynDep;
 protected import BackendDAE;
 protected import BackendDAECreate;
-protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import Dump;
 protected import DumpGraphviz;
@@ -764,7 +763,7 @@ algorithm
         Debug.fcall("execstat",print, "*** Main -> To lower dae at time: " +& realString(clock()) +& "\n" );
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
-        (dlow_1,m,mT,v1,v2,comps) = BackendDAEUtil.getSolvedSystem(cache,env,dlow,funcs,NONE(),BackendDAETransform.dummyDerivative,NONE());
+        (dlow_1,m,mT,v1,v2,comps) = BackendDAEUtil.getSolvedSystem(cache,env,dlow,funcs,NONE(),NONE(),NONE());
         modpar(dlow_1,v1,v2,comps);
         simcodegen(dlow_1,funcs,classname,p,ap,daeimpl,m,mT,v1,v2,comps);
       then
@@ -1102,6 +1101,7 @@ algorithm
   print("\t+noSimplify                do not simplify expressions (default is to simplify)\n");
   print("\t+preOptModules=module1,..  pre optimisation modules (default is removeFinalParameters,removeEqualFunctionCalls,removeSimpleEquations,expandDerOperator)\n");
   print("\t+pastOptModules=module1,.. past optimisation modules (default is lateInline,inlineArrayEqn,removeSimpleEquations)\n");
+  print("\t+indexReductionMethod=method index reduction method (default is dummyDerivative)\n");
   print("\t+q                         run in quiet mode, output nothing\n");
   print("\t+g=MetaModelica            accept MetaModelica grammar and semantics\n");
   print("\t+showErrorMessages         show error messages while they happen; default to no. \n");

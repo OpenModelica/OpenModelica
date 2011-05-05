@@ -95,15 +95,31 @@ public function matchingAlgorithm
   input BackendDAE.IncidenceMatrix inIncidenceMatrix;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
   input BackendDAE.MatchingOptions inMatchingOptions;
+  input daeHandlerFunc daeHandler;
   input DAE.FunctionTree inFunctions;
   output array<Integer> outIntegerArray1;
   output array<Integer> outIntegerArray2;
   output BackendDAE.BackendDAE outBackendDAE3;
   output BackendDAE.IncidenceMatrix outIncidenceMatrix4;
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT5;
+  partial function daeHandlerFunc
+    input BackendDAE.BackendDAE inBackendDAE;
+    input BackendDAE.IncidenceMatrix inIncidenceMatrix;
+    input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
+    input Integer inNumberofVars;
+    input Integer inNumberofEqns;
+    input DAE.FunctionTree inFunctions;
+    input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
+    input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;
+    output BackendDAE.BackendDAE outBackendDAE;
+    output BackendDAE.IncidenceMatrix outIncidenceMatrix;
+    output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
+    output list<tuple<Integer,Integer,Integer>> outDerivedAlgs;
+    output list<tuple<Integer,Integer,Integer>> outDerivedMultiEqn;
+  end daeHandlerFunc;  
 algorithm
   (outIntegerArray1,outIntegerArray2,outBackendDAE3,outIncidenceMatrix4,outIncidenceMatrixT5) :=
-  matchcontinue (inBackendDAE,inIncidenceMatrix,inIncidenceMatrixT,inMatchingOptions,inFunctions)
+  matchcontinue (inBackendDAE,inIncidenceMatrix,inIncidenceMatrixT,inMatchingOptions,daeHandler,inFunctions)
     local
       BackendDAE.Value nvars,neqns,memsize;
       String ns,ne;
@@ -113,7 +129,7 @@ algorithm
       array<BackendDAE.Value> vec1,vec2;
       BackendDAE.MatchingOptions match_opts;
     /* fail case if daelow is empty */
-    case (dae,m,mt,_,_)
+    case (dae,m,mt,_,_,_)
       equation
         nvars = arrayLength(m);
         neqns = arrayLength(mt);
@@ -123,7 +139,7 @@ algorithm
         vec2 = listArray({});
       then
         (vec1,vec2,dae,m,mt);
-    case (dae,m,mt,match_opts,inFunctions)
+    case (dae,m,mt,match_opts,daeHandler,inFunctions)
       equation
         BackendDAEEXT.clearDifferentiated();
         checkMatching(dae, match_opts);
@@ -136,13 +152,13 @@ algorithm
         memsize = nvars + nvars "Worst case, all eqns are differentiated once. Create nvars2 assignment elements" ;
         assign1 = assignmentsCreate(nvars, memsize, 0);
         assign2 = assignmentsCreate(nvars, memsize, 0);
-        (ass1,ass2,dae,m_1,mt_1,_,_) = matchingAlgorithm2(dae, m, mt, nvars, neqns, 1, assign1, assign2, match_opts,inFunctions,{},{});
+        (ass1,ass2,dae,m_1,mt_1,_,_) = matchingAlgorithm2(dae, m, mt, nvars, neqns, 1, assign1, assign2, match_opts, daeHandler, inFunctions, {}, {});
         vec1 = assignmentsVector(ass1);
         vec2 = assignmentsVector(ass2);
       then
         (vec1,vec2,dae,m_1,mt_1);
 
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         Debug.fprint("failtrace", "- BackendDAE.MatchingAlgorithm failed\n");
       then
@@ -225,7 +241,7 @@ algorithm
         vec;
     case (_)
       equation
-        print("- BackendDAE.assignmentsVector failed\n");
+        Error.addMessage(Error.INTERNAL_ERROR, {"- BackendDAETransform.assignmentsVector failed!"});
       then
         fail();
   end matchcontinue;
@@ -270,7 +286,7 @@ algorithm
         BackendDAE.ASSIGNMENTS(s,ms,arr);
     case (_,_,_)
       equation
-        print("-assignments_setnth failed\n");
+        Error.addMessage(Error.INTERNAL_ERROR, {"- BackendDAETransform.assignments_setnth failed!"});
       then
         fail();
   end matchcontinue;
@@ -301,7 +317,7 @@ algorithm
         ass_2;
     case (ass,_)
       equation
-        print("BackendDAE.assignmentsExpand: n should not be negative!");
+        Error.addMessage(Error.INTERNAL_ERROR, {"- BackendDAETransform.assignmentsExpand: n should not be negative!"});
       then
         fail();
   end matchcontinue;
@@ -348,7 +364,7 @@ algorithm
 
     case (BackendDAE.ASSIGNMENTS(actualSize = s,allocatedSize = ms,arrOfIndices = arr),v)
       equation
-        print("-assignments_add failed\n");
+        Error.addMessage(Error.INTERNAL_ERROR, {"-BackendDAETranfrom.assignmentsAdd failed!"});
       then
         fail();
   end matchcontinue;
@@ -378,6 +394,7 @@ public function matchingAlgorithm2
   input BackendDAE.Assignments inAssignments7;
   input BackendDAE.Assignments inAssignments8;
   input BackendDAE.MatchingOptions inMatchingOptions9;
+  input daeHandlerFunc daeHandler;
   input DAE.FunctionTree inFunctions;
   input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
   input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;
@@ -388,9 +405,24 @@ public function matchingAlgorithm2
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT5;
   output list<tuple<Integer,Integer,Integer>> outDerivedAlgs;
   output list<tuple<Integer,Integer,Integer>> outDerivedMultiEqn;
+  partial function daeHandlerFunc
+    input BackendDAE.BackendDAE inBackendDAE;
+    input BackendDAE.IncidenceMatrix inIncidenceMatrix;
+    input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
+    input Integer inNumberofVars;
+    input Integer inNumberofEqns;
+    input DAE.FunctionTree inFunctions;
+    input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
+    input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;
+    output BackendDAE.BackendDAE outBackendDAE;
+    output BackendDAE.IncidenceMatrix outIncidenceMatrix;
+    output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
+    output list<tuple<Integer,Integer,Integer>> outDerivedAlgs;
+    output list<tuple<Integer,Integer,Integer>> outDerivedMultiEqn;
+  end daeHandlerFunc;  
 algorithm
   (outAssignments1,outAssignments2,outBackendDAE3,outIncidenceMatrix4,outIncidenceMatrixT5,outDerivedAlgs,outDerivedMultiEqn):=
-  matchcontinue (inBackendDAE1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inInteger6,inAssignments7,inAssignments8,inMatchingOptions9,inFunctions,inDerivedAlgs,inDerivedMultiEqn)
+  matchcontinue (inBackendDAE1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inInteger6,inAssignments7,inAssignments8,inMatchingOptions9,daeHandler,inFunctions,inDerivedAlgs,inDerivedMultiEqn)
     local
       BackendDAE.Assignments ass1_1,ass2_1,ass1,ass2,ass1_2,ass2_2;
       BackendDAE.BackendDAE dae;
@@ -404,7 +436,7 @@ algorithm
       list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedAlgs1,derivedAlgs2;
       list<tuple<Integer,Integer,Integer>> derivedMultiEqn,derivedMultiEqn1,derivedMultiEqn2;
 
-    case (dae,m,mt,nv,nf,i,ass1,ass2,_,_,derivedAlgs,derivedMultiEqn)
+    case (dae,m,mt,nv,nf,i,ass1,ass2,_,_,_,derivedAlgs,derivedMultiEqn)
       equation
         (nv == i) = true;
         BackendDAEEXT.initMarks(nv, nf);
@@ -412,18 +444,18 @@ algorithm
       then
         (ass1_1,ass2_1,dae,m,mt,derivedAlgs,derivedMultiEqn);
 
-    case (dae,m,mt,nv,nf,i,ass1,ass2,match_opts,inFunctions,derivedAlgs,derivedMultiEqn)
+    case (dae,m,mt,nv,nf,i,ass1,ass2,match_opts,daeHandler,inFunctions,derivedAlgs,derivedMultiEqn)
       equation
         i_1 = i + 1;
         BackendDAEEXT.initMarks(nv, nf);
         (ass1_1,ass2_1) = pathFound(m, mt, i, ass1, ass2) "eMark(i)=vMark(i)=false" ;
-        (ass1_2,ass2_2,dae,m,mt,derivedAlgs1,derivedMultiEqn1) = matchingAlgorithm2(dae, m, mt, nv, nf, i_1, ass1_1, ass2_1, match_opts, inFunctions,derivedAlgs,derivedMultiEqn);
+        (ass1_2,ass2_2,dae,m,mt,derivedAlgs1,derivedMultiEqn1) = matchingAlgorithm2(dae, m, mt, nv, nf, i_1, ass1_1, ass2_1, match_opts, daeHandler, inFunctions,derivedAlgs,derivedMultiEqn);
       then
         (ass1_2,ass2_2,dae,m,mt,derivedAlgs1,derivedMultiEqn1);
 
-    case (dae,m,mt,nv,nf,i,ass1,ass2,(BackendDAE.INDEX_REDUCTION(),eq_cons),inFunctions,derivedAlgs,derivedMultiEqn)
+    case (dae,m,mt,nv,nf,i,ass1,ass2,match_opts as (BackendDAE.INDEX_REDUCTION(),eq_cons),daeHandler,inFunctions,derivedAlgs,derivedMultiEqn)
       equation
-        (dae,m,mt,derivedAlgs1,derivedMultiEqn1) = reduceIndexDummyDer(dae, m, mt, nv, nf, inFunctions,derivedAlgs,derivedMultiEqn) 
+        (dae,m,mt,derivedAlgs1,derivedMultiEqn1) = daeHandler(dae, m, mt, nv, nf, inFunctions,derivedAlgs,derivedMultiEqn) 
         "path_found failed, Try index reduction using dummy derivatives.
          When a constraint exist between states and index reduction is needed
          the dummy derivative will select one of the states as a dummy state
@@ -448,11 +480,11 @@ algorithm
         nvd = nv_1 - nv;
         ass1_1 = assignmentsExpand(ass1, nvd);
         ass2_1 = assignmentsExpand(ass2, nvd);
-        (ass1_2,ass2_2,dae,m,mt,derivedAlgs2,derivedMultiEqn2) = matchingAlgorithm2(dae, m, mt, nv_1, nf_1, i, ass1_1, ass2_1, (BackendDAE.INDEX_REDUCTION(),eq_cons),inFunctions,derivedAlgs1,derivedMultiEqn1);
+        (ass1_2,ass2_2,dae,m,mt,derivedAlgs2,derivedMultiEqn2) = matchingAlgorithm2(dae,m,mt,nv_1,nf_1,i,ass1_1,ass2_1,match_opts,daeHandler,inFunctions,derivedAlgs1,derivedMultiEqn1);
       then
         (ass1_2,ass2_2,dae,m,mt,derivedAlgs2,derivedMultiEqn2);
 
-    case (dae,m,mt,nv,nf,i,ass1,ass2,_,_,_,_)
+    case (dae,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         eqn_lst = BackendDAEEXT.getMarkedEqns() "When index reduction also fails, the model is structurally singular." ;
         var_lst = BackendDAEEXT.getMarkedVariables();
@@ -1086,14 +1118,11 @@ algorithm
 end checkStack;
 
 
-
-
-
 /******************************************
  reduceIndexDummyDer and stuff
  *****************************************/
 
-protected function reduceIndexDummyDer
+public function reduceIndexDummyDer
 "function: reduceIndexDummyDer
   author: PA
   When matching fails, this function is called to try to
@@ -1195,7 +1224,7 @@ algorithm
 
     case (_,_,_,_,_,_,_,_)
       equation
-        print("-reduce_index_dummy_der failed\n");
+        Error.addMessage(Error.INTERNAL_ERROR, {"- BackendDAETransform.reduceIndexDummyDer failed!"});
       then
         fail();
 
@@ -1247,7 +1276,7 @@ algorithm
 
     case (_,_)
       equation
-        print("BackendDAE.makeAlgebraic failed\n");
+        Error.addMessage(Error.INTERNAL_ERROR, {"- BackendDAETransform.makeAlgebraic failed!"});
       then
         fail();
 
@@ -1324,7 +1353,7 @@ algorithm
 
     case (dae,_,_,_)
       equation
-        Debug.fprint("failtrace", "propagate_dummy_initial_equations failed\n");
+        Debug.fprint("failtrace", "propagate_dummy_initial_equations failed!");
       then
         dae;
 
@@ -1429,7 +1458,7 @@ algorithm
 
     case (_,_,_,_,_,_)
       equation
-        print("-replace_dummy_der failed\n");
+        Error.addMessage(Error.INTERNAL_ERROR, {"- BackendDAETransform.replaceDummyDer failed!"});
       then
         fail();
 
@@ -1614,7 +1643,7 @@ algorithm
         (BackendDAE.COMPLEX_EQUATION(i,e1_1,e2_1,source),inAlgs,ae,wclst,ext_arg_2);
     else
       equation
-        print("-BackendDAETransform.traverseBackendDAEExpsEqnWithSymbolicOperation failed\n");
+        Error.addMessage(Error.INTERNAL_ERROR, {"- BackendDAETransform.traverseBackendDAEExpsEqnWithSymbolicOperation failed!"});
       then
         fail();
   end matchcontinue;
@@ -1659,7 +1688,7 @@ algorithm
         (wclst2,ext_arg_3);
      case (_,_,_,_)
       equation
-        print("-BackendDAETransform.traverseBackendDAEExpsWhenClause failed\n");
+        Error.addMessage(Error.INTERNAL_ERROR, {"- BackendDAETransform.traverseBackendDAEExpsWhenClause failed!"});
       then
         fail();
   end matchcontinue;
@@ -1713,7 +1742,7 @@ algorithm
         (wop::res1,ext_arg_1);
      case (_,_,_)
       equation
-        print("-BackendDAETransform.traverseBackendDAEExpsWhenOperator failed\n");
+        Error.addMessage(Error.INTERNAL_ERROR, {"- BackendDAETransform.traverseBackendDAEExpsWhenOperator failed!"});
       then
         fail();
   end matchcontinue;
@@ -1753,7 +1782,7 @@ algorithm
         (BackendDAE.WHEN_CLAUSE(cond1,reinitStmtLst1,elsindx)::wclst1,ext_arg_3);
      case (_,_,_)
       equation
-        print("-BackendDAETransform.traverseBackendDAEExpsWhenClauseLst failed\n");
+        Error.addMessage(Error.INTERNAL_ERROR, {"- BackendDAETransform.traverseBackendDAEExpsWhenClauseLst failed!"});
       then
         fail();
   end matchcontinue;
@@ -2502,6 +2531,8 @@ algorithm
       array<list<BackendDAE.Value>> m,mt;
       BackendDAE.BackendDAE daelow;
       String se;
+      Integer e_1;
+      DAE.ElementSource source;
       
     case ({},_,_,_) then ({},{});
     case ((e :: rest),daelow as BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),m,mt)
@@ -2514,12 +2545,13 @@ algorithm
         res2_1 = listAppend(res22, res2);
       then
         (res1_1,res2_1);
-    case ((e :: rest),_,_,_)
+    case ((e :: rest),BackendDAE.DAE(orderedEqs = eqns),_,_)
       equation
         se = intString(e);
-        print("-BackendDAETransform.statesInEqns failed for eqn: ");
-        print(se);
-        print("\n");
+        se = stringAppendList({"-BackendDAETransform.statesInEqns failed for eqn: ",se,"\n"});
+        e_1 = e - 1;
+        source = BackendEquation.equationSource(BackendDAEUtil.equationNth(eqns,e_1));
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {se}, DAEUtil.getElementSourceFileInfo(source));        
       then
         fail();
   end matchcontinue;
@@ -2544,13 +2576,12 @@ algorithm
     local
       BackendDAE.Value v;
       DAE.ComponentRef cr;
-      DAE.Flow flowPrefix;
       list<BackendDAE.Key> res1;
       list<BackendDAE.Value> res2,rest;
     case (vars,{}) then ({},{});
     case (vars,(v :: rest))
       equation
-        BackendDAE.VAR(varName = cr, flowPrefix = flowPrefix) = BackendVariable.getVarAt(vars,v);
+        BackendDAE.VAR(varName = cr) = BackendVariable.getVarAt(vars,v);
         (res1,res2) = statesInVars(vars, rest);
       then
         ((cr :: res1),(v :: res2));
@@ -2669,18 +2700,10 @@ algorithm
         (dae,m,mt,nv,nf,(e :: reqns),derivedAlgs1,derivedMultiEqn1);
     case (_,_,_,_,_,_,_,_,_)
       equation
-        print("-differentiate_eqns failed\n");
+        Error.addMessage(Error.INTERNAL_ERROR, {"-BackendDAETranfrom.differentiateEqns failed!"}); 
       then
         fail();
   end matchcontinue;
 end differentiateEqns;
-
-public function dummyDerivative
-  input BackendDAE.BackendDAE inDAE;
-  input DAE.FunctionTree inFunctionTree;
-  output BackendDAE.BackendDAE outDAE;
-algorithm
-  outDAE := inDAE;
-end dummyDerivative;
 
 end BackendDAETransform;

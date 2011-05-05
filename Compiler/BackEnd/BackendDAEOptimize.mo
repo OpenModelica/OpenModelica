@@ -3138,24 +3138,7 @@ algorithm
         dlow_1 = BackendDAE.DAE(vars_1,knvars,exobj,av,eqns_2,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
         dlow1_1 = BackendDAE.DAE(ordvars1,knvars,exobj,av,eqns1_1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
         // try causalisation
-        (m_1,mT_1) = BackendDAEUtil.incidenceMatrix(dlow_1, BackendDAE.NORMAL());
-        //mT_1 = BackendDAEUtil.transposeMatrix(m_1);
-        nvars = arrayLength(m_1);
-        neqns = arrayLength(mT_1);
-        memsize = nvars + nvars "Worst case, all eqns are differentiated once. Create nvars2 assignment elements" ;
-        assign1 = BackendDAETransform.assignmentsCreate(nvars, memsize, 0);
-        assign2 = BackendDAETransform.assignmentsCreate(nvars, memsize, 0);
-        // try matching
-        BackendDAETransform.checkMatching(dlow_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT()));
-        Debug.fcall("tearingdump", BackendDump.dumpIncidenceMatrix, m_1);
-        Debug.fcall("tearingdump", BackendDump.dumpIncidenceMatrixT, mT_1);
-        Debug.fcall("tearingdump", BackendDump.dump, dlow_1);
-        (ass1,ass2,dlow_2,m_2,mT_2,_,_) = BackendDAETransform.matchingAlgorithm2(dlow_1, m_1, mT_1, nvars, neqns, 1, assign1, assign2, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT()),DAEUtil.avlTreeNew(),{},{});
-        v1_1 = BackendDAETransform.assignmentsVector(ass1);
-        v2_1 = BackendDAETransform.assignmentsVector(ass2);
-        (comps) = BackendDAETransform.strongComponents(m_2, mT_2, v1_1, v2_1);
-        Debug.fcall("tearingdump", BackendDump.dumpMatching, v1_1);
-        Debug.fcall("tearingdump", BackendDump.dumpComponents, comps);
+        (dlow_2,m_2,mT_2,v1_1,v2_1,comps) = BackendDAEUtil.transformBackendDAE(dlow_1,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE(),NONE());
         // check strongComponents and split it into two lists: len(comp)==1 and len(comp)>1
         (morecomps,onecomp) = splitComps(comps);
         // try to solve the equations
@@ -3584,14 +3567,8 @@ algorithm
 
         Debug.fcall("execJacstat",print, "*** analytical Jacobians -> removed simply equations: " +& realString(clock()) +& "\n" );
         // figure out new matching and the strong components  
-        (m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(dlow,om,omT);
-        (v1,v2,dlow,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT()),functionTree);
-        Debug.fcall("jacdump2", BackendDump.dumpIncidenceMatrix, m);
-        Debug.fcall("jacdump2", BackendDump.dumpIncidenceMatrixT, mT);
-        Debug.fcall("jacdump2", BackendDump.dump, dlow);
-        Debug.fcall("jacdump2", BackendDump.dumpMatching, v1);
-        (comps1) = BackendDAETransform.strongComponents(m, mT, v1, v2);
-        Debug.fcall("jacdump2", BackendDump.dumpComponents, comps1);
+        (dlow,m,mT,v1,v2,comps1) = BackendDAEUtil.transformBackendDAE(dlow,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE(),NONE());
+        Debug.fcall("jacdump2", BackendDump.bltdump, ("jacdump2",dlow,m,mT,v1,v2,comps1));
         Debug.fcall("execJacstat",print, "*** analytical Jacobians -> performed matching and sorting: " +& realString(clock()) +& "\n" );
        
          
@@ -3629,14 +3606,9 @@ algorithm
 
         Debug.fcall("execJacstat",print, "*** analytical Jacobians -> removed simply equations: " +& realString(clock()) +& "\n" );
         // figure out new matching and the strong components  
-        (m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(dlow,om,omT);
-        (v1,v2,dlow,m,mT) = BackendDAETransform.matchingAlgorithm(dlow, m, mT, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT()),functionTree);
-        Debug.fcall("jacdump2", BackendDump.dumpIncidenceMatrix, m);
-        Debug.fcall("jacdump2", BackendDump.dumpIncidenceMatrixT, mT);
-        Debug.fcall("jacdump2", BackendDump.dump, dlow);
-        Debug.fcall("jacdump2", BackendDump.dumpMatching, v1);
-        (comps1) = BackendDAETransform.strongComponents(m, mT, v1, v2);
-        Debug.fcall("jacdump2", BackendDump.dumpComponents, comps1);
+        (dlow,m,mT,v1,v2,comps1) = BackendDAEUtil.transformBackendDAE(dlow,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE(),NONE());
+        Debug.fcall("jacdump2", BackendDump.bltdump, ("jacdump2",dlow,m,mT,v1,v2,comps1));
+        
         Debug.fcall("execJacstat",print, "*** analytical Jacobians -> performed matching and sorting: " +& realString(clock()) +& "\n" );
        
         Debug.fcall("jacdump2", BackendDump.dumpComponents, comps1);

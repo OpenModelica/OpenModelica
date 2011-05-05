@@ -99,14 +99,6 @@ extern int RTOpts_getRunningTestsuite() {
   return running_testsuite;
 }
 
-extern int RTOpts_level() {
-  return elimination_level;
-}
-
-extern void RTOpts_setEliminationLevel(int level) {
-  elimination_level = level;
-}
-
 extern const char* RTOpts_classToInstantiate() {
   return class_to_instantiate;
 }
@@ -249,6 +241,18 @@ extern modelica_metatype RTOpts_setPastOptModules(modelica_metatype modules) {
   set_pastOptModules(modulestr);
   if (modulestr) free(modulestr);
   return modules;
+}
+
+extern const char* RTOpts_getIndexReductionMethod(const char* defaultMethod) {
+  if (indexReductionMethod_set == 1)
+  {
+     return indexReductionMethodstr;
+  }
+  return defaultMethod;
+}
+
+extern const char* RTOpts_setIndexReductionMethod(const char* method) {
+  set_indexReductionMethod(method);
 }
 
 extern char* RTOpts_simCodeTarget() {

@@ -94,18 +94,6 @@ public function noProc
   external "C" outInteger = RTOpts_noProc() annotation(Library = "omcruntime");
 end noProc;
 
-public function setEliminationLevel
-  input Integer level;
-
-  external "C" RTOpts_setEliminationLevel(level) annotation(Library = "omcruntime");
-end setEliminationLevel;
-
-public function eliminationLevel
-  output Integer level;
-
-  external "C" level = RTOpts_level() annotation(Library = "omcruntime");
-end eliminationLevel;
-
 public function latency
   output Real outReal;
 
@@ -271,6 +259,19 @@ public function setPastOptModules
 
   external "C" RTOpts_setPastOptModules(inStringLst) annotation(Library = "omcruntime");
 end setPastOptModules;
+
+public function getIndexReductionMethod
+  input String inString;
+  output String outString;
+
+  external "C" outString=RTOpts_getIndexReductionMethod(inString) annotation(Library = "omcruntime");
+end getIndexReductionMethod;
+
+public function setIndexReductionMethod
+  input String inString;
+
+  external "C" RTOpts_setIndexReductionMethod(inString) annotation(Library = "omcruntime");
+end setIndexReductionMethod;
 
 public function simCodeTarget "Default is set by +simCodeTarget=C"
   output String target;

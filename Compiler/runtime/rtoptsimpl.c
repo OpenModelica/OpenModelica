@@ -44,14 +44,6 @@ static int debug_flag_info = 0;
 static int params_struct = 0;
 static int version_request = 0;
 
-/* Level of eliminations of equations.
- * 0 - None
- * 1 - Only aliases (a=b) (default)
- * 2 - Full (a=-b, a=b, a=constant)
- * 3 - Only constants (a = constant)
- * */
-static long elimination_level=2;
-
 static char **debug_flags = 0;
 static char *debug_flagstr = 0;
 static int debug_flagc = 0;
@@ -74,6 +66,8 @@ static char **pastOptModules = 0;
 static char *pastOptModulestr = 0;
 static int pastOptModulec = 0;
 static int pastOptModule_set = 0;
+static char *indexReductionMethodstr = 0;
+static int indexReductionMethod_set = 0;
 
 /*
  * adrpo 2007-06-11
@@ -341,6 +335,35 @@ static int set_pastOptModules(const char *flagstr)
   return 0;
 }
 
+static int set_indexReductionMethod(const char *flagstr)
+{
+  int i;
+  int len=strlen(flagstr);
+  int flagc=1;
+  int flag;
+
+  if (len==0) {
+    indexReductionMethodstr = (char*)malloc(sizeof(char));
+    indexReductionMethodstr = '\0';
+    indexReductionMethod_set = 1;
+    return 0;
+  }
+
+  if (indexReductionMethodstr) free(indexReductionMethodstr);
+  indexReductionMethodstr=(char*)malloc((len+1)*sizeof(char));
+  strcpy(indexReductionMethodstr, flagstr);
+
+  indexReductionMethod_set = 1;
+
+  /*
+  for (i=0; i<pastOptModulec; i++) {
+    printf("\nindexReductionMethod=%s\n",indexReductionMethodstr);
+  }
+  */
+  return 0;
+}
+
+
 static void set_vectorization_limit(long limit)
 {
   if(limit < 0) {
@@ -396,6 +419,7 @@ int setSimCodeTarget(const char* arg) {
 #define ORDER_CONNECTIONS   "+orderConnections"
 #define PRE_OPTMODULES      "+preOptModules"
 #define PAST_OPTMODULES     "+pastOptModules"
+#define INDEXREDUCTIONMET   "+indexReductionMethod"
 #define SIMCODE_TARGET      "+simCodeTarget"
 
 /* Note: RML runtime eats arguments starting with -:
@@ -419,6 +443,7 @@ static enum RTOpts__arg__result RTOptsImpl__arg(const char* arg)
   int strLen_ORDER_CONNECTIONS = strlen(ORDER_CONNECTIONS);
   int strLen_PRE_OPTMODULES = strlen(PRE_OPTMODULES);
   int strLen_PAST_OPTMODULES = strlen(PAST_OPTMODULES);
+  int strLen_INDEXREDUCTIONMET = strlen(INDEXREDUCTIONMET);
   int strLen_SIMCODE_TARGET = strlen(SIMCODE_TARGET);
 
   char *tmp;
@@ -490,6 +515,12 @@ static enum RTOpts__arg__result RTOptsImpl__arg(const char* arg)
     if (arg[strLen_PAST_OPTMODULES]!='=' ||
           set_pastOptModules(&(arg[strLen_PAST_OPTMODULES+1])) != 0) {
         fprintf(stderr, "# Flag Usage:  +pastOptModules=module1,module2,...\n");
+        return ARG_FAILURE;
+    }
+  } else if(strncmp(arg,INDEXREDUCTIONMET,strLen_INDEXREDUCTIONMET) == 0) {
+    if (arg[strLen_INDEXREDUCTIONMET]!='=' ||
+          set_indexReductionMethod(&(arg[strLen_INDEXREDUCTIONMET+1])) != 0) {
+        fprintf(stderr, "# Flag Usage:  +indexReductionMethod=method\n");
         return ARG_FAILURE;
     }
   } else if (strncmp(arg,SIMCODE_TARGET,strLen_SIMCODE_TARGET) == 0) {
@@ -586,18 +617,6 @@ static enum RTOpts__arg__result RTOptsImpl__arg(const char* arg)
       if (bandwidth == 0.0) {
         fprintf(stderr, "Error, integer expected for bandwidth.\n");
         return ARG_FAILURE;
-      }
-      break;
-    // Which level of algebraic elimination to use.
-    case 'e':
-      if (arg[2] != '=') {
-        fprintf(stderr, "# Flag Usage:  +e=<algebraic_elimination_level 0, 1, 2(default) or 3>");
-        return ARG_FAILURE;
-      }
-      elimination_level = (int)atoi(&arg[3]);
-      if (elimination_level < 0 || elimination_level > 3) {
-        elimination_level = 2;
-        fprintf(stderr, "Warning, wrong value of elimination level, will use default = %ld\n",elimination_level);
       }
       break;
     case 'i':

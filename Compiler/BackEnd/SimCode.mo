@@ -1009,7 +1009,7 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
         (dlow_1,m,mT,ass1,ass2,comps) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
-          NONE(), BackendDAETransform.dummyDerivative, NONE());
+          NONE(), NONE(), NONE());
         Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
           generateModelCodeFMU(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt,m,mT,ass1,ass2,comps);
@@ -1087,7 +1087,7 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
         (dlow_1,m,mT,ass1,ass2,comps) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
-          NONE(), BackendDAETransform.dummyDerivative, NONE());
+          NONE(), NONE(), NONE());
         Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
           generateModelCodeCPP(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt,m,mT,ass1,ass2,comps);
@@ -1265,7 +1265,7 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
         (dlow_1,m,mT,ass1,ass2,comps) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
-          NONE(), BackendDAETransform.dummyDerivative, NONE());
+          NONE(), NONE(), NONE());
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
           generateModelCode(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt,m,mT,ass1,ass2,comps);
         resultValues = 
@@ -4515,9 +4515,7 @@ algorithm
         knvars_1 = BackendEquation.equationsVars(eqns_1,knvars);
         subsystem_dae = BackendDAE.DAE(vars_1,knvars_1,exvars,ave,eqns_1,eeqns,eeqns,ae1,al,ev,eoc);
         (m,mt) = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
-        //mt = BackendDAEUtil.transposeMatrix(m);
-        (v1,v2,subsystem_dae_1,m_2,mT_2) = BackendDAETransform.matchingAlgorithm(subsystem_dae, m, mt, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT()),DAEUtil.avlTreeNew());
-        (comps) = BackendDAETransform.strongComponents(m_2, mT_2, v1,v2);
+        (subsystem_dae_1,m_2,mT_2,v1,v2,comps) = BackendDAEUtil.transformBackendDAE(subsystem_dae,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),SOME(m),SOME(mt));
         (subsystem_dae_2,m_3,mT_3,v1_1,v2_1,comps_1,r,t) = BackendDAEOptimize.tearingSystem(subsystem_dae_1,m_2,mT_2,v1,v2,comps);
         true = listLength(r) > 0;
         true = listLength(t) > 0;
@@ -4821,8 +4819,7 @@ algorithm
         eeqns = BackendDAEUtil.listEquation({});
         eieqns = BackendDAEUtil.listEquation({});
         subsystem_dae = BackendDAE.DAE(v,evars,exvars,ave,eqn,eeqns,eieqns,ae,algorithms,ev,eoc);
-        (v1,v2,subsystem_dae_1,m_2,mT_2) = BackendDAETransform.matchingAlgorithm(subsystem_dae, m, mt_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT()),DAEUtil.avlTreeNew());
-        (comps) = BackendDAETransform.strongComponents(m_2, mT_2, v1,v2);
+        (subsystem_dae_1,m_2,mT_2,v1,v2,comps) = BackendDAEUtil.transformBackendDAE(subsystem_dae,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE(),NONE());
         (subsystem_dae_2,m_3,mT_3,v1_1,v2_1,comps_1,r,t) = BackendDAEOptimize.tearingSystem(subsystem_dae_1,m_2,mT_2,v1,v2,comps);
         true = listLength(r) > 0;
         true = listLength(t) > 0;
@@ -5457,9 +5454,7 @@ algorithm
         se1 = BackendDAEUtil.listEquation({});
         subsystem_dae = BackendDAE.DAE(vars,knvars,exvars,av,eqns_1,se1,ie,ae,al,ev,eoc);
         (m,mt_1) = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
-        //mt_1 = BackendDAEUtil.transposeMatrix(m);
-        (v1,v2,subsystem_dae,m_2,mt_2) = BackendDAETransform.matchingAlgorithm(subsystem_dae, m, mt_1, (BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED()),DAE.AVLTREENODE(NONE(),0,NONE(),NONE()));
-        (comps) = BackendDAETransform.strongComponents(m_2, mt_2, v1,v2);
+        (subsystem_dae,m_2,mt_2,v1,v2,comps) = BackendDAEUtil.transformBackendDAE(subsystem_dae,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())),NONE(),SOME(m),SOME(mt_1));
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         jac1 = BackendDAEUtil.calculateJacobian(vars, eqns_1, ae, m_2, mt_2,false);
         jac_tp = BackendDAEUtil.analyzeJacobian(subsystem_dae, jac1);

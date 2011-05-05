@@ -64,7 +64,6 @@ protected import AbsynDep;
 protected import BackendDump;
 protected import BackendDAECreate;
 protected import BackendDAEOptimize;
-protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendVariable;
@@ -1929,7 +1928,6 @@ algorithm
       Ceval.Msg msg;
       DAE.Exp fileprefix;
       Env.Cache cache;
-      Integer elimLevel;
       String flatModelicaStr;
 
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,filenameprefix) /* mo file directory */
@@ -1941,11 +1939,8 @@ algorithm
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         a_cref = Absyn.pathToCref(className);
         file_dir = getFileDir(a_cref, p);
-        elimLevel = RTOpts.eliminationLevel();
-        RTOpts.setEliminationLevel(0); // No variable eliminiation
         dlow = BackendDAECreate.lower(dae, Env.getFunctionTree(cache), false);
         dlow = BackendDAECreate.findZeroCrossings(dlow);
-        RTOpts.setEliminationLevel(elimLevel); // Reset elimination level
         flatModelicaStr = DAEDump.dumpStr(dae,Env.getFunctionTree(cache));
         flatModelicaStr = stringAppend("OldEqStr={'", flatModelicaStr);
         flatModelicaStr = System.stringReplace(flatModelicaStr, "\n", "%##%");
@@ -2946,7 +2941,7 @@ algorithm
       list<Interactive.CompiledCFunction> cf;
       Ceval.Msg msg;
       Env.Cache cache;
-      Integer eqnSize,varSize,simpleEqnSize,elimLevel,eqnSize1;
+      Integer eqnSize,varSize,simpleEqnSize,eqnSize1;
       String errorMsg,warnings,eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr;
       BackendDAE.EquationArray eqns,eqns1;
       Boolean partialPrefix,finalPrefix,encapsulatedPrefix,strEmpty;
@@ -3003,7 +2998,6 @@ algorithm
         dae  = DAEUtil.transformationsBeforeBackend(dae);
         // adrpo: do not store instantiated class as we don't use it later!
         // ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
-        elimLevel = RTOpts.eliminationLevel();
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
         Debug.fcall("dumpdaelow", BackendDump.dump, dlow);
@@ -3045,7 +3039,6 @@ algorithm
         dae  = DAEUtil.transformationsBeforeBackend(dae);
         // adrpo: do not store instantiated class as we don't use it later!
         // ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
-        elimLevel = RTOpts.eliminationLevel();
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
         Debug.fcall("dumpdaelow", BackendDump.dump, dlow);
@@ -3291,7 +3284,7 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, true); //Verificare cosa fa
         (dlow_1,om,omT) = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,NONE(),NONE(),NONE());
-        (dlow_1,_,_,_,_,_) = BackendDAEUtil.transformDAE(dlow_1,funcs,BackendDAETransform.dummyDerivative,om,omT);
+        (dlow_1,_,_,_,_,_) = BackendDAEUtil.transformBackendDAE(dlow_1,funcs,NONE(),NONE(),om,omT);
         dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
         funcelems = DAEUtil.getFunctionList(Env.getFunctionTree(cache));
@@ -3317,7 +3310,7 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, true);
         (indexed_dlow,_,_,_,_,_) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
-          NONE(), BackendDAETransform.dummyDerivative, NONE());
+          NONE(), NONE(), NONE());
         xml_filename = stringAppendList({filenameprefix,".xml"});
         funcelems = DAEUtil.getFunctionList(funcs);
         Print.clearBuf();
