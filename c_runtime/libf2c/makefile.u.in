@@ -13,24 +13,11 @@
 # to the CFLAGS = line below.
 
 .SUFFIXES: .c .o
-CC = cc
+CC = @CC@
 SHELL = /bin/sh
-CFLAGS = -fexceptions -O
+CFLAGS = @CFLAGS@
+CPPFLAGS = @CPPFLAGS@ -DSkip_f2c_Undefs
 OS = $(shell uname -s)
-
-# compile, then strip unnecessary symbols
-.c.o:
-	$(CC) -c -DSkip_f2c_Undefs $(CFLAGS) $*.c
-ifeq ($(OS),Darwin)
-	ld -r -o $*.xxx $*.o
-else
-	ld -r -x -o $*.xxx $*.o
-endif
-	mv $*.xxx $*.o
-## Under Solaris (and other systems that do not understand ld -x),
-## omit -x in the ld line above.
-## If your system does not have the ld command, comment out
-## or remove both the ld and mv lines above.
 
 MISC =	f77vers.o i77vers.o s_rnge.o abort_.o exit_.o getarg_.o iargc_.o\
 	getenv_.o signal_.o s_stop.o s_paus.o system_.o cabs.o\
@@ -187,7 +174,7 @@ xwsne.o:	fmt.h
 # Always call the generated file "a.exe", since it's not certain that
 # the file will be called that on other OS'es than Windows.
 arith.h: arithchk.c
-	$(CC) $(CFLAGS) -DNO_FPINIT arithchk.c -lm -o a.exe ||\
+	$(CC) $(CFLAGS) -DNO_FPINIT arithchk.c -lm -o a.exe || \
 	 $(CC) -DNO_LONG_LONG $(CFLAGS) -DNO_FPINIT arithchk.c -lm -o a.exe
 	./a.exe >arith.h
 	rm -f a.exe arithchk.o
@@ -220,3 +207,6 @@ check:
 	uio.c uninit.c util.c wref.c wrtfmt.c wsfe.c wsle.c wsne.c xwsne.c \
 	z_abs.c z_cos.c z_div.c z_exp.c z_log.c z_sin.c z_sqrt.c >xsum1.out
 	cmp xsum0.out xsum1.out && mv xsum1.out xsum.out || diff xsum[01].out
+
+makefile.u: makefile.u.in
+	(cd ../../; ./config.status)
