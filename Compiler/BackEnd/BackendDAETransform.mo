@@ -2185,15 +2185,11 @@ algorithm
   vEqns := BackendDAEUtil.eqnsForVarWithStates(mt,vindx);
   vCr := BackendVariable.varCref(v);
   prio1 := varStateSelectHeuristicPrio1(vCr,vEqns,vars,knvars,eqns);
-  Debug.fcall("dummyselect",print," Prio 1 : " +& realString(prio1) +& "\n");
   prio2 := varStateSelectHeuristicPrio2(vCr,vars);
-  Debug.fcall("dummyselect",print," Prio 2 : " +& realString(prio2) +& "\n");
   prio3 := varStateSelectHeuristicPrio3(vCr,vars);
-  Debug.fcall("dummyselect",print," Prio 3 : " +& realString(prio3) +& "\n");
  // prio4 := varStateSelectHeuristicPrio4(v);
-  //Debug.fcall("dummyselect",print," Prio 4 : " +& realString(prio4) +& "\n");
   prio5 := varStateSelectHeuristicPrio5(v);
-  Debug.fcall("dummyselect",print," Prio 5 : " +& realString(prio5) +& "\n");
+  Debug.fcall("dummyselect",BackendDump.debugStrRealStrRealStrRealStrRealStr,(" Prio 1 : ",prio1,"\n Prio 2 : ",prio2,"\n Prio 3 : ",prio3,"\n Prio 5 : ",prio5,"\n"));
   prio:= prio1 +. prio2 +. prio3 +. prio5;// +. prio4;
 end varStateSelectHeuristicPrio;
 
@@ -2657,18 +2653,14 @@ algorithm
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
 
         (eqn_1,al1,derivedAlgs,ae1,derivedMultiEqn,true) = Derive.differentiateEquationTime(eqn, v, inFunctions, al,inDerivedAlgs,ae,inDerivedMultiEqn);
-        Debug.fprint("bltdump", "High index problem, differentiated equation: ") "update equation row in IncidenceMatrix" ;
         // str = BackendDump.equationStr(eqn);
         // print( "differentiated equation ") ;
-        Debug.fprint("bltdump", BackendDump.equationStr(eqn));
         // print(str); print("\n");
-        Debug.fprint("bltdump", " to ");
         // print(" to ");
         // str = BackendDump.equationStr(eqn_1);
         // print(str);
         // print("\n");
-        Debug.fprint("bltdump", BackendDump.equationStr(eqn_1)) "  print \" to \" & print str &  print \"\\n\" &" ;
-        Debug.fprint("bltdump", "\n");
+        Debug.fcall("bltdump", debugdifferentiateEqns,(eqn,eqn_1));
         eqns_1 = BackendEquation.equationAdd(eqn_1,eqns);
         leneqns = BackendDAEUtil.equationSize(eqns_1);
         BackendDAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
@@ -2681,19 +2673,14 @@ algorithm
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
 
         (eqn_1,al1,derivedAlgs,ae1,derivedMultiEqn,false) = Derive.differentiateEquationTime(eqn, v, inFunctions, al,inDerivedAlgs,ae,inDerivedMultiEqn);
-        Debug.fprint("bltdump", "High index problem, differentiated equation: ") "update equation row in IncidenceMatrix" ;
         // str = BackendDump.equationStr(eqn);
         // print( "differentiated equation ") ;
-        Debug.fprint("bltdump", BackendDump.equationStr(eqn));
         // print(str); print("\n");
-        Debug.fprint("bltdump", " to ");
         // print(" to ");
         // str = BackendDump.equationStr(eqn_1);
         // print(str);
         // print("\n");
-        Debug.fprint("bltdump", BackendDump.equationStr(eqn_1)) "  print \" to \" & print str &  print \"\\n\" &" ;
-        Debug.fprint("bltdump", "\n");
-        leneqns = BackendDAEUtil.equationSize(eqns);
+        Debug.fcall("bltdump", debugdifferentiateEqns,(eqn,eqn_1));
         BackendDAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
         (dae,m,mt,nv,nf,reqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(BackendDAE.DAE(v,kv,ev,av,eqns,seqns,ie,ae1,al1,wc,eoc), m, mt, nv, nf, es, inFunctions,derivedAlgs,derivedMultiEqn);
       then
@@ -2705,5 +2692,14 @@ algorithm
         fail();
   end matchcontinue;
 end differentiateEqns;
+
+protected function debugdifferentiateEqns
+  input tuple<BackendDAE.Equation,BackendDAE.Equation> inTpl;
+protected
+  BackendDAE.Equation a,b;
+algorithm
+  (a,b) := inTpl;
+  Debug.fprint("bltdump","High index problem, differentiated equation: " +& BackendDump.equationStr(a) +& " to " +& BackendDump.equationStr(b) +& "\n");
+end debugdifferentiateEqns;
 
 end BackendDAETransform;

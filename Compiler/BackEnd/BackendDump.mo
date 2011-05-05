@@ -1782,6 +1782,16 @@ algorithm
   print(a +& ComponentReference.printComponentRefStr(b) +& c +& realString(d) +& e +& realString(f) +& g +& realString(h) +& i);
 end debugStrCrefStrRealStrRealStrRealStr;
 
+public function debugStrRealStrRealStrRealStrRealStr
+  input tuple<String,Real,String,Real,String,Real,String,Real,String> inTpl;
+protected
+  String a,c,e,g,i;
+  Real b,d,f,h;
+algorithm
+  (a,b,c,d,e,f,g,h,i) := inTpl;
+  print(a +& realString(b) +& c +& realString(d) +& e +& realString(f) +& g +& realString(h) +& i);
+end debugStrRealStrRealStrRealStrRealStr;
+
 public function debugStrCrefStrExpStr
   input tuple<String,DAE.ComponentRef,String,DAE.Exp,String> inTpl;
 protected
@@ -1863,6 +1873,17 @@ algorithm
   (a,b,c,d,e,f,g) := inTpl;
   print(a +& ExpressionDump.printExpStr(b) +& c +& ExpressionDump.printExpStr(d) +& e +& ExpressionDump.printExpStr(f) +& g);
 end debugStrExpStrExpStrExpStr;
+
+
+public function debugStrEqnStrEqnStr
+  input tuple<String,BackendDAE.Equation,String,BackendDAE.Equation,String> inTpl;
+protected
+  String a,c,e;
+  BackendDAE.Equation b,d;
+algorithm
+  (a,b,c,d,e) := inTpl;
+  print(a +& equationStr(b) +& c +& equationStr(d) +& e);
+end debugStrEqnStrEqnStr;
 
 public function debuglst
   input tuple<list<Type_a>,FuncTypeType_aToStr> inTpl;
