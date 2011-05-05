@@ -14,7 +14,7 @@ $(NAME): Makefile OMEdit.config
 	$(MAKE) -f Makefile
 
 clean:
-	test -f Makefile && $(MAKE) -f Makefile clean
+	test ! -f Makefile || $(MAKE) -f Makefile clean
 
 build: $(NAME)
 	$(MAKE) -f Makefile
