@@ -1,2 +1,5 @@
+QMAKE_CC  = @CC@
+QMAKE_CXX = @CXX@
+
 LIBS += -lqwt@with_qwt_suffix@
 INCLUDEPATH += @with_qwt@
