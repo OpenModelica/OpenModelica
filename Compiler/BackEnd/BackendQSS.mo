@@ -87,7 +87,7 @@ algorithm
   matchcontinue (inBackendDAE, equationIndices, variableIndices, inIncidenceMatrix, inIncidenceMatrixT, strongComponents)
     local
        BackendDAE.BackendDAE dlow;
-       array<Integer> ass1, ass2;
+       array<Integer> ass1, ass2, globalAss2;
        
        list<BackendDAE.Var> allVarsList, stateVarsList;
        BackendDAE.Variables orderedVars;
@@ -97,12 +97,15 @@ algorithm
        list<BackendDAE.WhenClause> whenClausesList;
        list<list<SimCode.SimEqSystem>> eqs;
        
-       list<Integer> whenEqClausesInd, whenReinitClausesInd, whenEqInd, varsSolvedInEqsList, whenReinitOutVars;       
-       Integer nStatic, nIntegr, nBlocks, nZeroCross, nCrossDetect, nEquations, nWhens, ind_whenBlocks_start;
-       list<Integer> variableIndicesList,ass1List, ass2List, stateIndices, zcSamplesInd;
-       list<list<Integer>> blt_states,blt_no_states, stateEq_flat, globalIncidenceList, comps, mappedEquations, whenEqIncidenceMatList, whenReinitIncidenceMatList, mappedEqReinitMatList;
-       list<list<Integer>> DEVS_blocks_outVars, DEVS_blocks_inVars, zc_inVars, conns, whenEq_flat;
-       list<list<list<Integer>>> stateEq_blt;
+       Integer nStatic, nIntegr, nBlocks, nZeroCross, nCrossDetect, nEquations, nWhens, ind_whenBlocks_start, nReinits, nSamples;
+       list<Integer> whenEqClausesInd, whenReinitClausesInd, whenEqInd, reinitVarsOut, varsSolvedInEqsList, whenClausesInBlocks, tempIndList;       
+       list<Integer> variableIndicesList,ass1List, ass2List, stateVarIndices, discreteVarIndices, zcSamplesInd, reinitsInBlocks;
+       list<Integer> nBlocksList;
+       list<list<Integer>> blt_states,blt_no_states, stateEq_flat, globalIncidenceList, comps, mappedEquations, whenEqIncidenceMatList; 
+       list<list<Integer>> whenReinitIncidenceMatList, mappedEqReinitMatList, reinitVarsIn;
+       list<list<Integer>> DEVS_blocks_outVars, DEVS_blocks_inVars, zc_inVars, conns, whenEq_flat, tempListList, whenClausesBlocks;
+       list<list<Integer>> when_blocks_outVars, when_blocks_inVars, reinit_blocks_outVars, reinit_blocks_inVars;
+       list<list<list<Integer>>> stateEq_blt, whenEq_blt, whenEqInBlocks;
        array<list<Integer>> mappedEquationsMat, mappedEquationsMatT;
        list<String> ss;
        String s;
@@ -130,9 +133,10 @@ algorithm
         
         // STEP 2      
         // Generate various Info and Structures needed in the following steps     
-         
+        
         (allVarsList, stateVarsList) = getAllVars(dlow);
-        stateIndices = getStateIndices(allVarsList, {}, 1); 
+        stateVarIndices = getStateIndices(allVarsList, {}, 1); 
+        discreteVarIndices = getDiscreteIndices(allVarsList, {}, 1);
         variableIndicesList = arrayList(ass2);
         
         varsSolvedInEqsList = arrayList(ass2);
@@ -146,6 +150,127 @@ algorithm
         // WHEN-CLAUSES, EQUATIONS AND REINITS
         (whenClausesList, whenEqClausesInd, whenEqInd, whenEqIncidenceMatList) = getWhenEqClausesInfo(dlow);
 
+        
+        // Find the equations that correspond to when-clauses and remove them from the STATE static blocks.
+        stateEq_flat = removeListFromListsOfLists(whenEqInd, stateEq_flat, {});
+        
+        // Provide the equations in the When-Blocks.
+        // Note: Currently we are having one when-block for each when-clause. But in the future we "ll group them.
+        whenEq_flat = Util.listMap(whenEqInd, createListFromElement);
+        
+        // STEP 3      
+        // Map state equations back to BLT blocks     
+        stateEq_blt = mapStateEqInBlocks( stateEq_flat, blt_states, {}) "Map state equations back in BLT blocks";
+        whenEq_blt = mapStateEqInBlocks( whenEq_flat, blt_states, {}) "Map when equations back in BLT blocks";
+        
+        // More info and variables
+        
+        ind_whenBlocks_start = listLength(stateVarIndices) + listLength(stateEq_blt) + 2*listLength(zeroCrossList);
+        (whenReinitClausesInd, reinitVarsIn, mappedEqReinitMatList, reinitVarsOut) = 
+                  getWhenReinitClausesInfo(0, ind_whenBlocks_start, whenClausesList , orderedVars, {}, {}, {}, {});
+       
+        eqs = Util.listMap3(stateEq_blt, generateEqFromBlt,dlow,ass1,ass2);
+        
+        // Some more parameters
+        nEquations = arrayLength(m);
+        nStatic = listLength(stateEq_blt);
+        nIntegr = listLength(stateVarIndices);
+        nZeroCross = listLength(zeroCrossList);
+        nCrossDetect = nZeroCross;
+       
+        // Right now we generate a when DEVS block for each when-clause. The following list contains the indices of the
+        // blocks where each clause is contained. - TO BE CHANGED IN THE FUTURE
+        whenEqInBlocks = Util.listMap(Util.listMap(whenEqInd, createListFromElement), createListFromElement);
+        whenClausesInBlocks = whenEqClausesInd; 
+        reinitsInBlocks = whenReinitClausesInd;
+        // Find in which DEVS blocks the respective when-clauses are contained
+        whenClausesInBlocks = Util.listMap1(whenClausesInBlocks, intAdd, nStatic+nIntegr+2*nZeroCross+1);
+        reinitsInBlocks = Util.listMap1(reinitsInBlocks, intAdd, nStatic+nIntegr+2*nZeroCross+1);
+        
+        nWhens = listLength(whenClausesInBlocks);
+        nReinits = listLength(reinitsInBlocks);
+        nSamples = listLength(samplesList);
+        nBlocks = nStatic + nIntegr + nZeroCross + nCrossDetect + nWhens + nReinits + nSamples;     
+        nBlocksList = {nBlocks, nStatic, nIntegr, nZeroCross, nCrossDetect, nWhens, nReinits, nSamples};
+        
+        // Map equations to DEVS blocks
+        mappedEquations = constructEmptyList({}, nEquations);
+        mappedEquations = mapStateEquationsInDEVSblocks(stateEq_blt, mappedEquations, nIntegr+1);
+        mappedEquationsMat = listArray(mappedEquations);
+        
+        // STEP 3      
+        // GENERALISED INCIDENCE MATRICES
+        
+        //whenReinitIncidenceMat = listArray(whenReinitIncidenceMatList);
+        whenEqIncidenceMat = listArray(whenEqIncidenceMatList);
+        
+        // Global Incidence Mat contains the original equations and in the end concatenated the reinits
+        //globalIncidenceMat = Util.arrayAppend(m, whenReinitIncidenceMat);
+        globalIncidenceMat = m;
+        
+        // Build from the beginning the incidence rows for the when equations to exlude the conditions
+        globalIncidenceMat = replaceRowsArray(globalIncidenceMat, whenEqInd, whenEqIncidenceMatList);        
+        
+        // This is the extended ass2 variable
+        varsSolvedInEqsList = listAppend(varsSolvedInEqsList, reinitVarsOut);
+        globalAss2 = listArray(varsSolvedInEqsList);
+        
+        // STEP 3      
+        // GENERATE THE DEVS STRUCTURES    
+        
+        // Add IN/OUT VARS of qss integrators
+        ((DEVS_blocks_outVars, DEVS_blocks_inVars)) = qssIntegratorsInOutVars(stateVarIndices,({},{}));
+        // Add IN/OUT VARS of static blocks
+        (DEVS_blocks_outVars, DEVS_blocks_inVars) = getBlocksInOutVars(stateEq_blt, globalIncidenceMat, globalAss2, DEVS_blocks_outVars, DEVS_blocks_inVars) "add states blocks";
+        // Add IN/OUT VARS of zero crossings
+        DEVS_blocks_inVars = listAppend(DEVS_blocks_inVars, zc_inVars);
+        tempListList = constructEmptyList({}, nZeroCross);
+        DEVS_blocks_outVars = listAppend(DEVS_blocks_outVars, tempListList);
+        // Add IN/OUT VARS of cross detectors
+        tempListList = constructEmptyList({}, nCrossDetect);
+        DEVS_blocks_outVars = listAppend(DEVS_blocks_outVars, tempListList);
+        DEVS_blocks_inVars = listAppend(DEVS_blocks_inVars, tempListList);
+        // Add IN/OUT VARS of when blocks and reinit blocks
+        (when_blocks_outVars, when_blocks_inVars) = getBlocksInOutVars(whenEqInBlocks, globalIncidenceMat, globalAss2, {}, {});
+        reinit_blocks_inVars = reinitVarsIn;
+        reinit_blocks_outVars = constructEmptyList({}, nReinits); 
+        tempIndList = createListIncreasingIndices(1,nWhens + nReinits,{});
+        tempIndList = Util.listMap1(tempIndList, intAdd, nStatic + nIntegr + nZeroCross + nCrossDetect);
+       
+        (when_blocks_outVars) = mergeListsLists(tempIndList, whenClausesInBlocks, when_blocks_outVars, reinitsInBlocks, reinit_blocks_outVars,{});
+        (when_blocks_inVars) = mergeListsLists(tempIndList, whenClausesInBlocks, when_blocks_inVars, reinitsInBlocks, reinit_blocks_inVars,{});
+        
+        DEVS_blocks_outVars = listAppend(DEVS_blocks_outVars, when_blocks_outVars);
+        DEVS_blocks_inVars = listAppend(DEVS_blocks_inVars, when_blocks_inVars);
+
+        
+        print("DEVS_blocks_outVars :\n");
+        printListOfLists(DEVS_blocks_outVars);
+        print("DEVS_blocks_inVars :\n");
+        printListOfLists(DEVS_blocks_inVars);
+        
+        
+        DEVS_structure = generateDEVSstruct(nBlocksList, stateVarIndices, discreteVarIndices, zeroCrossList, samplesList, 
+                           whenClausesInBlocks, reinitsInBlocks, reinitVarsOut, DEVS_blocks_outVars, DEVS_blocks_inVars, mappedEquationsMat); 
+        
+        
+        // PRINT VARIOUS INFO
+        
+        print("---------- When Equations in DEVS Blocks ----------\n");
+        Util.listMap0(whenEqInBlocks, printListOfLists);
+        print("---------- When Equations in DEVS Blocks ----------\n");
+        print("---------- When Clauses in DEVS Blocks ----------\n");
+        printList(whenClausesInBlocks, "start"); print("\n");
+        print("---------- When Clauses in DEVS Blocks ----------\n");
+        print("---------- Reinit in DEVS Blocks ----------\n");
+        printList(reinitsInBlocks, "start"); print("\n");
+        print("---------- When Clauses in DEVS Blocks ----------\n");
+        
+        
+        
+        
+        
+         
         print("# when clauses \n");
         print(intString(listLength(whenClausesList)));
         print("\n");
@@ -155,102 +280,31 @@ algorithm
         printList(whenEqInd, "start");
         print("\nwhen eq incidenceMatList\n");
         printListOfLists(whenEqIncidenceMatList);
-
-        
-        // Find the equations that correspond to when-clauses and remove them from the STATE static blocks.
-        stateEq_flat = removeListFromListsOfLists(whenEqInd, stateEq_flat, {});
-        
-        // Provide the equations in the When-Blocks.
-        // Note: Currently we are having one when-block for each when-clause. But in the future we "ll group them.
-        
-        whenEq_flat = Util.listMap(whenEqInd, createListFromElement);
-        
-        // STEP 3      
-        // Map state equations back to BLT blocks     
-        
-        stateEq_blt = mapStateEqInBlocks( stateEq_flat, blt_states, {}) "Map equations back in BLT blocks";
-        
-        // More info and variablesk
-        
-        ind_whenBlocks_start = listLength(stateIndices) + listLength(stateEq_blt) + 2*listLength(zeroCrossList);
-        (whenReinitClausesInd, whenReinitIncidenceMatList, mappedEqReinitMatList, whenReinitOutVars) = 
-                  getWhenReinitClausesInfo(0, ind_whenBlocks_start, whenClausesList , orderedVars, {}, {}, {}, {});
-                
-        print("\n when Reinit clauses ind:\n");
-        printList(whenReinitClausesInd, "start");
-        print("\nwhenReinitIncidenceMatList\n");
-        printListOfLists(whenReinitIncidenceMatList);
-        print("\nmappedEqReinitMatList\n");
-        printListOfLists(mappedEqReinitMatList);
-        
-        
-        
-        
-        
-        
-        
-        eqs = Util.listMap3(stateEq_blt, generateEqFromBlt,dlow,ass1,ass2);
-        nEquations = arrayLength(m);
-        nStatic = listLength(stateEq_blt);
-        nIntegr = listLength(stateIndices);
-        nZeroCross = listLength(zeroCrossList);
-        nCrossDetect = nZeroCross;
-        nBlocks = nStatic+nIntegr+nZeroCross+nCrossDetect;     
-        
-        // Map equations to DEVS blocks
-        mappedEquations = constructEmptyList({}, nEquations);
-        mappedEquations = mapStateEquationsInDEVSblocks(stateEq_blt, mappedEquations, nIntegr+1);
-        mappedEquationsMat = listArray(mappedEquations);
-        
-        
-        
-        
-        
-        // STEP 3      
-        // GENERALISED INCIDENCE MATRICES
-        
-        //globalIncidenceList = arrayList(m);
-        //globalIncidenceMat = makeIncidenceRightHandNeg(m, variableIndicesList, 1); 
-        //zeroCrossIncidenceMat = listArray(fillZeroCrossIncidenceMat(zeroCrossList, dlow, {}));
-        //print("\Zero Crossings Incidence Mat\n");
-        //BackendDump.dumpIncidenceMatrix(zeroCrossIncidenceMat);
-        //globalIncidenceMat = Util.arrayAppend(m, zeroCrossIncidenceMat);
-        
-        whenReinitIncidenceMat = listArray(whenReinitIncidenceMatList);
-        whenEqIncidenceMat = listArray(whenEqIncidenceMatList);
-        
-        print("\nwhen Eq Incidence Mat\n");
-        BackendDump.dumpIncidenceMatrix(whenEqIncidenceMat);
-        print("\nwhen ReInit Incidence Mat\n");
-        BackendDump.dumpIncidenceMatrix(whenReinitIncidenceMat);
-        
-        globalIncidenceMat = Util.arrayAppend(m, whenReinitIncidenceMat);
-        BackendDump.dumpIncidenceMatrix(globalIncidenceMat);
-        
-        // This is the extended ass2 variable
-        varsSolvedInEqsList = listAppend(varsSolvedInEqsList, whenReinitOutVars);
-        
+               
         print("Vars Solved in which eqs: ");
         printList(varsSolvedInEqsList, "start");
+        print("\n");
+                
+       
         
-        // STEP 3      
-        // GENERATE THE DEVS STRUCTURES    
+        print("# when clauses \n");
+        print(intString(listLength(whenClausesList)));
+        print("\n");
+        print("\nwhen eq clauses ind:\n");
+        printList(whenEqClausesInd, "start");
+        print("\nwhen eq ind:\n");
+        printList(whenEqInd, "start");
+        print("\nwhen eq incidenceMatList\n");
+        printListOfLists(whenEqIncidenceMatList);
+               
+        print("Vars Solved in which eqs: ");
+        printList(varsSolvedInEqsList, "start");
+        print("\n");
+         
+        BackendDump.dumpIncidenceMatrix(globalIncidenceMat);
         
-        DEVS_structure = generateEmptyDEVSstruct(nBlocks, ({},{},{},{}));    
-        (DEVS_blocks_outVars, DEVS_blocks_inVars) = getBlocksInOutVars(stateEq_blt, stateIndices, m, ass2);
-        DEVS_blocks_inVars = listAppend(DEVS_blocks_inVars, zc_inVars);
+                
         
-        print("DEVS_blocks_outVars :\n");
-        printListOfLists(DEVS_blocks_outVars);
-        print("DEVS_blocks_inVars :\n");
-        printListOfLists(DEVS_blocks_inVars);
-        
-        
-        DEVS_structure = generateDEVSstruct(stateIndices, zeroCrossList, nStatic, 
-                           DEVS_blocks_outVars, DEVS_blocks_inVars, mappedEquationsMat, DEVS_structure); 
-        
-        
-        // PRINT VARIOUS INFO
         
         print("---------- State equations BLT blocks ----------\n");
         Util.listMap0(stateEq_blt, printListOfLists);
@@ -264,14 +318,12 @@ algorithm
         print("\n");
                       
         dumpDEVSstructs(DEVS_structure);       
+       
         
-        //conns = generateConnections(QSSINFO(stateEq_blt, DEVS_structure,eqs,varlst));
-        //print("CONNECTIONS\n");
-        //printListOfLists(conns);        
         conns = generateConnections(QSSINFO(stateEq_blt, DEVS_structure,eqs,varlst));
         print("CONNECTIONS");
         printListOfLists(conns);        
-        //print("\n");
+        print("\n");
         
       then
         QSSINFO(stateEq_blt, DEVS_structure,eqs,varlst);
@@ -442,7 +494,8 @@ algorithm
         lst2 = BackendDAEUtil.incidenceRowExp(rightHand, vars, {});
         //lst2 = filterDiscreteVars(lst2,vars);
         //lst2 = makeListNegative(lst2, {});
-        row = listAppend(lst1, lst2);
+        //row = listAppend(lst1, lst2);
+        row = lst2;
         tempOutVars = listAppend(tempOutVars, lst1);
         tempOutIncidenceMat = listAppend(tempOutIncidenceMat, {row});
         tempOutMapped = listAppend(tempOutMapped, {{whenIndex}});
@@ -581,7 +634,7 @@ algorithm
         
         lst1 = BackendDAEUtil.incidenceRowExp(DAE.CREF(outRef,DAE.ET_REAL()), vars, {});
         lst2 = BackendDAEUtil.incidenceRowExp(inExpr, vars, {});
-        lst2 = makeListNegative(lst2, {});
+        //lst2 = makeListNegative(lst2, {});
         row = listAppend(lst1, lst2);
     then (row);
   end matchcontinue;
@@ -821,30 +874,27 @@ protected function getBlocksInOutVars
   For the DEVS blocks extract input/output variables
   author: florosx
 "
-  input list<list<list<Integer>>> stateEq_blt;
-  input list<Integer> stateIndices;
+  input list<list<list<Integer>>> equations_blt;
   input BackendDAE.IncidenceMatrix incidenceMat;
   input array<Integer> ass2;
+  input list<list<Integer>> DEVS_blocks_outVarsIn;
+  input list<list<Integer>> DEVS_blocks_inVarsIn;
   output list<list<Integer>> DEVS_blocks_outVarsOut;
   output list<list<Integer>> DEVS_blocks_inVarsOut;
  
 algorithm
   (DEVS_blocks_outVarsOut, DEVS_blocks_inVarsOut):=
-  matchcontinue (stateEq_blt, stateIndices, incidenceMat, ass2)
+  matchcontinue (equations_blt, incidenceMat, ass2, DEVS_blocks_outVarsIn, DEVS_blocks_inVarsIn)
     local
      
       list<list<Integer>> DEVS_blocks_outVars, DEVS_blocks_inVars;
-      tuple< list<list<Integer>>, list<list<Integer>> > DEVS_blocks_inOutVars_temp;
      
-    case (stateEq_blt, stateIndices, incidenceMat, ass2)
+    case (equations_blt, incidenceMat, ass2, DEVS_blocks_outVarsIn, DEVS_blocks_inVarsIn)
       equation        
-        
-        (DEVS_blocks_inOutVars_temp) = qssIntegratorsInOutVars(stateIndices,({},{}));
-        ((DEVS_blocks_outVars, DEVS_blocks_inVars)) = incidenceMatInOutVars(stateEq_blt, incidenceMat, ass2, DEVS_blocks_inOutVars_temp);
-        
+        ((DEVS_blocks_outVars, DEVS_blocks_inVars)) = incidenceMatInOutVars(equations_blt, incidenceMat, ass2, (DEVS_blocks_outVarsIn, DEVS_blocks_inVarsIn));
       then
         (DEVS_blocks_outVars, DEVS_blocks_inVars);
-    case (_,_,_,_)
+    case (_,_,_,_,_)
       equation
         print("- BackendQSS.getBlocksInOutVars failed\n");
       then
@@ -852,54 +902,468 @@ algorithm
   end matchcontinue;
 end getBlocksInOutVars;
 
+
 protected function generateDEVSstruct
 "function: generateDEVSstruct
   author: florosx
   Right now it is not needed. But kept like that for future additions.
 "
+  input list<Integer> nBlocksList;
   input list<Integer> stateIndices;
+  input list<Integer> discreteVarIndices;
   input list<BackendDAE.ZeroCrossing> zeroCrossList;
-  input Integer nStatic;
+  input list<BackendDAE.ZeroCrossing> samplesList;
+  input list<Integer> whenClausesInBlocks;
+  input list<Integer> reinitsInBlocks;
+  input list<Integer> reinitVarsOut;
   input list<list<Integer>> DEVS_blocks_outVars;
   input list<list<Integer>> DEVS_blocks_inVars;
   input array<list<Integer>> mappedEquationsMat;
-  input DevsStruct DEVS_structureIn;
+
   output DevsStruct DEVS_structureOut;
  
 algorithm
   (DEVS_structureOut):=
-  matchcontinue (stateIndices, zeroCrossList, nStatic, DEVS_blocks_outVars, DEVS_blocks_inVars, mappedEquationsMat, DEVS_structureIn)
+  matchcontinue (nBlocksList, stateIndices, discreteVarIndices, zeroCrossList, samplesList, whenClausesInBlocks, reinitsInBlocks, reinitVarsOut, DEVS_blocks_outVars, DEVS_blocks_inVars, mappedEquationsMat)
     local
-      Integer nStatic, nIntegr, nBlocks, nZeroCross, nCrossDetect, startCrossDetectInd, startZeroCrossInd; 
+      Integer nStatic, nIntegr, nBlocks, nZeroCross, nCrossDetect, startCrossDetectInd, startZeroCrossInd, startWhenInd, startSampleInd, nWhens, nReinits; 
       DevsStruct DEVS_structure_temp;
+      input list<Integer> whensReinitsInBlocks;
       
-    case (stateIndices, zeroCrossList, nStatic, DEVS_blocks_outVars, DEVS_blocks_inVars, mappedEquationsMat, DEVS_structure_temp)
+    case (nBlocksList, stateIndices, discreteVarIndices, zeroCrossList, samplesList, whenClausesInBlocks, reinitsInBlocks, reinitVarsOut, DEVS_blocks_outVars, DEVS_blocks_inVars, mappedEquationsMat)
       equation
-        nIntegr = listLength(stateIndices);
-        nZeroCross = listLength(zeroCrossList);
-        nBlocks = nIntegr + nStatic + 2*nZeroCross;
+        nBlocks = listNth(nBlocksList, 0);
+        nStatic = listNth(nBlocksList, 1);
+        nIntegr = listNth(nBlocksList, 2);
+        nZeroCross = listNth(nBlocksList, 3);
+        nCrossDetect = listNth(nBlocksList, 4);
+        nWhens = listNth(nBlocksList, 5);
+        nReinits = listNth(nBlocksList, 6);
+        
         startZeroCrossInd = nStatic + nIntegr + 1;
         startCrossDetectInd = nStatic + nIntegr + nZeroCross + 1;
+        startWhenInd = startCrossDetectInd + nCrossDetect;
+        startSampleInd = startWhenInd + nWhens + nReinits;
         
+        DEVS_structure_temp = generateEmptyDEVSstruct(nBlocks, ({},{},{},{}));  
         //Resolve dependencies between inputs/outputs excluding events      
-        (DEVS_structure_temp) = generateStructFromInOutVars(1,stateIndices,DEVS_blocks_outVars, DEVS_blocks_inVars, DEVS_structure_temp);
+        (DEVS_structure_temp) = generateStructFromInOutVars(1,stateIndices,discreteVarIndices, DEVS_blocks_outVars, DEVS_blocks_inVars, DEVS_structure_temp);
+        
         //Add the connections between zero-crossings and cross-detectors
         (DEVS_structure_temp) = addZeroCrossOut_CrossDetectIn(startZeroCrossInd, startCrossDetectInd, zeroCrossList, DEVS_structure_temp);
         //Add the cross-detector blocks outputs
-        (DEVS_structure_temp) = addCrossDetectBlocksOut(startCrossDetectInd, zeroCrossList, mappedEquationsMat, DEVS_structure_temp);
+        whensReinitsInBlocks = listAppend(whenClausesInBlocks, reinitsInBlocks);
+        (DEVS_structure_temp) = addCrossDetectBlocksOut(startCrossDetectInd, zeroCrossList, whensReinitsInBlocks, mappedEquationsMat, DEVS_structure_temp);
+        
+        //Add the outputs of the reinits to the respective integrators
+        (DEVS_structure_temp) = addReinitBlocksOut(startWhenInd, reinitsInBlocks, reinitVarsOut, stateIndices, DEVS_structure_temp);
+        
+        //Add the outputs of the sample blocks to the respective when clauses
+        (DEVS_structure_temp) = addSampleBlocksOut(startSampleInd, startWhenInd, samplesList, DEVS_structure_temp);
+        
+        // Check where the event input port is not in the end and push it to the end
+        (DEVS_structure_temp) = fixEventInputPort(DEVS_structure_temp);
         
         // Resolve dependencies for EVENTS
         // Already we should have resolved the dependencies between DEVS blocks concerning the variables.
         DEVS_structure_temp = updateEventsAsInputs(startCrossDetectInd, nBlocks, DEVS_structure_temp);  
       then
         (DEVS_structure_temp);
-    case (_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_)
       equation
         print("- BackendQSS.generateDEVSstruct failed\n");
       then
         fail();
   end matchcontinue;
 end generateDEVSstruct;
+
+protected function addSampleBlocksOut
+"function: addReinitBlocksOut
+  Adds the outputs of the reinits to the integrators.
+  author: florosx
+" 
+  input Integer startBlockInd;
+  input Integer startWhenInd;
+  input list<BackendDAE.ZeroCrossing> samplesList;
+  input DevsStruct DEVS_structureIn;
+  output DevsStruct DEVS_structureOut;
+ 
+algorithm
+  (DEVS_structureOut):=
+  matchcontinue (startBlockInd, startWhenInd, samplesList, DEVS_structureIn)
+    local
+      list<list<Integer>> curBlock_outLinks, curBlock_outVars, integrVarsIn, integrLinksIn;
+      array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
+      DevsStruct DEVS_structure_temp;
+      list<BackendDAE.ZeroCrossing> restSamples;
+      BackendDAE.ZeroCrossing curSample;
+      DAE.Exp e;
+      list<Integer> eq,wc;
+      
+    case (startBlockInd, startWhenInd, {}, DEVS_structure_temp)
+      equation
+      then
+        (DEVS_structure_temp);
+      
+    case (startBlockInd, startWhenInd, BackendDAE.ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc)::restSamples, 
+                     DEVS_STRUCT(outLinks=DEVS_struct_outLinks, outVars=DEVS_struct_outVars, inLinks=DEVS_struct_inLinks, inVars=DEVS_struct_inVars))
+      equation
+       print("sample block ind: ");print(intString(startBlockInd));print("\n");
+       printList(wc, "start"); print("\n");
+       curBlock_outVars = {{0}};  
+       // TEMPORARY SOLUTION: IN THE FUTURE MAYBE WE DONT HAVE THE WHEN CLAUSES IN THE ORDER THEY ARE NOW AND ONE IN EACH BLOCK
+       wc = Util.listMap1(wc, intAdd, startWhenInd-1);
+       curBlock_outLinks = {wc};  
+       DEVS_struct_outLinks = arrayUpdate(DEVS_struct_outLinks, startBlockInd, curBlock_outLinks);
+       DEVS_struct_outVars = arrayUpdate(DEVS_struct_outVars, startBlockInd, curBlock_outVars);
+       
+       DEVS_structure_temp = DEVS_STRUCT(DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars);
+       DEVS_structure_temp = addSampleBlocksOut(startBlockInd+1, startWhenInd, restSamples, DEVS_structure_temp);
+      then
+        (DEVS_structure_temp);
+ 
+    case (_,_,_,_)
+      equation
+        print("- BackendQSS.addSampleBlocksOut failed\n");
+      then
+        fail();
+  end matchcontinue;
+end addSampleBlocksOut;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+protected function addReinitBlocksOut
+"function: addReinitBlocksOut
+  Adds the outputs of the reinits to the integrators.
+  author: florosx
+" 
+  input Integer startBlockInd;
+  input list<Integer> reinitsInBlocks;
+  input list<Integer> reinitVarsOut;
+  input list<Integer> stateIndices;
+  input DevsStruct DEVS_structureIn;
+  output DevsStruct DEVS_structureOut;
+ 
+algorithm
+  (DEVS_structureOut):=
+  matchcontinue (startBlockInd, reinitsInBlocks, reinitVarsOut, stateIndices, DEVS_structureIn)
+    local
+      list<list<Integer>> curBlock_outLinks, curBlock_outVars, integrVarsIn, integrLinksIn;
+      array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
+      DevsStruct DEVS_structure_temp;
+      Integer curReinit, curVarOut, integrInd;
+      list<Integer> restReinits, restVarsOut;
+      
+    case (startBlockInd, {}, {}, stateIndices, DEVS_structure_temp)
+      equation
+      then
+        (DEVS_structure_temp);
+      
+    case (startBlockInd, curReinit::restReinits, curVarOut::restVarsOut, stateIndices, 
+                   DEVS_STRUCT(outLinks=DEVS_struct_outLinks, outVars=DEVS_struct_outVars, inLinks=DEVS_struct_inLinks, inVars=DEVS_struct_inVars))
+      equation   
+       curBlock_outVars = {{0}};            
+       integrInd = findElementInList(1, listLength(stateIndices), stateIndices, intAbs(curVarOut));
+       curBlock_outLinks = {{integrInd}};
+       integrVarsIn = DEVS_struct_inVars[integrInd];
+       integrLinksIn = DEVS_struct_inLinks[integrInd];
+       integrVarsIn = listAppend(integrVarsIn, {{curVarOut}});
+       integrLinksIn = listAppend(integrLinksIn, {{startBlockInd}});
+       DEVS_struct_outLinks = arrayUpdate(DEVS_struct_outLinks, curReinit, curBlock_outLinks);
+       DEVS_struct_outVars = arrayUpdate(DEVS_struct_outVars, curReinit, curBlock_outVars);
+       DEVS_struct_inLinks = arrayUpdate(DEVS_struct_inLinks, integrInd, integrLinksIn);
+       DEVS_struct_inVars = arrayUpdate(DEVS_struct_inVars, integrInd, integrVarsIn);
+       
+       DEVS_structure_temp = DEVS_STRUCT(DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars);
+       DEVS_structure_temp = addReinitBlocksOut(startBlockInd, restReinits, restVarsOut, stateIndices, DEVS_structure_temp);
+      then
+        (DEVS_structure_temp);
+ 
+    case (_,_,_,_,_)
+      equation
+        print("- BackendQSS.addReinitBlocksOut failed\n");
+      then
+        fail();
+  end matchcontinue;
+end addReinitBlocksOut;
+
+
+
+
+
+
+
+protected function addCrossDetectBlocksOut
+"function: addCrossDetectBlocks
+  Adds the cross-detector blocks in the DEVS structure.
+  author: florosx
+" 
+  input Integer startBlockInd;
+  input list<BackendDAE.ZeroCrossing> zeroCrossList;
+  input list<Integer> whenClausesInBlocks;
+  input array<list<Integer>> mappedEquationsMat;
+  input DevsStruct DEVS_structureIn;
+  output DevsStruct DEVS_structureOut;
+ 
+algorithm
+  (DEVS_structureOut):=
+  matchcontinue (startBlockInd, zeroCrossList, whenClausesInBlocks, mappedEquationsMat, DEVS_structureIn)
+    local
+      list<list<Integer>> curBlock_outLinks, curBlock_outVars, curBlock_inLinks, curBlock_inVars;
+      array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
+      DevsStruct DEVS_structure_temp;
+      list<BackendDAE.ZeroCrossing> restZC;
+      BackendDAE.ZeroCrossing curZC;
+      list<Integer> eq,wc, curIfDevsBlocksOut, curWhenDevsBlocksOut;
+      DAE.Exp e;
+      
+    case (startBlockInd, {}, whenClausesInBlocks, mappedEquationsMat, DEVS_structure_temp)
+      equation
+      then
+        (DEVS_structure_temp);
+      
+    case (startBlockInd, BackendDAE.ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc)::restZC, whenClausesInBlocks, mappedEquationsMat, 
+                   DEVS_STRUCT(outLinks=DEVS_struct_outLinks, outVars=DEVS_struct_outVars, inLinks=DEVS_struct_inLinks, inVars=DEVS_struct_inVars))
+      equation
+       // When there are both connections to IFS and WHEN 
+       // Connections for the if-part  
+       curIfDevsBlocksOut = findEqInBlocks(eq, mappedEquationsMat,{});
+       curBlock_outVars = {{0}};
+       // Connections for the when-part
+       wc = Util.listMap1(wc, intAdd, -1);
+       curWhenDevsBlocksOut = Util.listMap1r(wc, listNth, whenClausesInBlocks);  
+       true = Util.isListNotEmpty(curIfDevsBlocksOut);
+       true = Util.isListNotEmpty(curWhenDevsBlocksOut);
+       curIfDevsBlocksOut = listAppend(curIfDevsBlocksOut, curWhenDevsBlocksOut);
+       curBlock_outLinks = {curIfDevsBlocksOut};
+       printListOfLists(curBlock_outLinks);
+       DEVS_struct_outLinks = arrayUpdate(DEVS_struct_outLinks, startBlockInd, curBlock_outLinks);
+       DEVS_struct_outVars = arrayUpdate(DEVS_struct_outVars, startBlockInd, curBlock_outVars);
+       DEVS_structure_temp = DEVS_STRUCT(DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars);
+       DEVS_structure_temp = addCrossDetectBlocksOut(startBlockInd+1, restZC, whenClausesInBlocks, mappedEquationsMat, DEVS_structure_temp);
+      then
+        (DEVS_structure_temp);
+   
+    case (startBlockInd, BackendDAE.ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc)::restZC, whenClausesInBlocks, mappedEquationsMat, 
+                   DEVS_STRUCT(outLinks=DEVS_struct_outLinks, outVars=DEVS_struct_outVars, inLinks=DEVS_struct_inLinks, inVars=DEVS_struct_inVars))
+      equation
+       // When there are connections to IFS but not to WHEN
+       // Connections for the if-part  
+       curIfDevsBlocksOut = findEqInBlocks(eq, mappedEquationsMat,{});
+       curBlock_outVars = {{0}};
+       // Connections for the when-part
+       wc = Util.listMap1(wc, intAdd, -1);
+       curWhenDevsBlocksOut = Util.listMap1r(wc, listNth, whenClausesInBlocks);  
+       true = Util.isListNotEmpty(curIfDevsBlocksOut);
+       false = Util.isListNotEmpty(curWhenDevsBlocksOut);
+       curBlock_outLinks = {curIfDevsBlocksOut};
+       DEVS_struct_outLinks = arrayUpdate(DEVS_struct_outLinks, startBlockInd, curBlock_outLinks);
+       DEVS_struct_outVars = arrayUpdate(DEVS_struct_outVars, startBlockInd, curBlock_outVars);
+       DEVS_structure_temp = DEVS_STRUCT(DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars);
+       DEVS_structure_temp = addCrossDetectBlocksOut(startBlockInd+1, restZC, whenClausesInBlocks, mappedEquationsMat, DEVS_structure_temp);
+      then
+        (DEVS_structure_temp); 
+   
+   case (startBlockInd, BackendDAE.ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc)::restZC, whenClausesInBlocks, mappedEquationsMat, 
+                   DEVS_STRUCT(outLinks=DEVS_struct_outLinks, outVars=DEVS_struct_outVars, inLinks=DEVS_struct_inLinks, inVars=DEVS_struct_inVars))
+      equation
+       // When there are connections to WHENS but not to IFS
+       // Connections for the if-part  
+       curIfDevsBlocksOut = findEqInBlocks(eq, mappedEquationsMat,{});
+       curBlock_outVars = {{0}};
+       // Connections for the when-part
+       wc = Util.listMap1(wc, intAdd, -1);
+       curWhenDevsBlocksOut = Util.listMap1r(wc, listNth, whenClausesInBlocks);  
+       false = Util.isListNotEmpty(curIfDevsBlocksOut);
+       true = Util.isListNotEmpty(curWhenDevsBlocksOut);
+       curBlock_outLinks = {curWhenDevsBlocksOut};
+       DEVS_struct_outLinks = arrayUpdate(DEVS_struct_outLinks, startBlockInd, curBlock_outLinks);
+       DEVS_struct_outVars = arrayUpdate(DEVS_struct_outVars, startBlockInd, curBlock_outVars);
+       DEVS_structure_temp = DEVS_STRUCT(DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars);
+       DEVS_structure_temp = addCrossDetectBlocksOut(startBlockInd+1, restZC, whenClausesInBlocks, mappedEquationsMat, DEVS_structure_temp);
+      then
+        (DEVS_structure_temp);    
+    case (_,_,_,_,_)
+      equation
+        print("- BackendQSS.addCrossDetectBlocksOut failed\n");
+      then
+        fail();
+  end matchcontinue;
+end addCrossDetectBlocksOut;
+
+protected function findEqInBlocks
+"function: findEqInBlocks
+  Adds the cross-detector blocks in the DEVS structure.
+  author: florosx
+" 
+  input list<Integer> eqInd;
+  input array<list<Integer>> mappedEquationsMat;
+  input list<Integer> blocksInd_temp;
+  output list<Integer> blocksInd_out;
+ 
+algorithm
+  (blocksInd_out):=
+  matchcontinue (eqInd, mappedEquationsMat, blocksInd_temp)
+    local
+      Integer curEq;
+      list<Integer> restEq, curBlocks;
+      
+    case ({}, mappedEquationsMat, blocksInd_temp)
+      equation
+      then
+        (blocksInd_temp);
+      
+    case (curEq::restEq, mappedEquationsMat, blocksInd_temp)
+      equation
+       curBlocks = mappedEquationsMat[curEq];
+       blocksInd_temp = listAppend(blocksInd_temp, curBlocks);
+       blocksInd_temp = findEqInBlocks(restEq, mappedEquationsMat, blocksInd_temp);
+      then
+        (blocksInd_temp);
+    case (_,_,_)
+      equation
+        print("- BackendQSS.findEqInBlocks failed\n");
+      then
+        fail();
+  end matchcontinue;
+end findEqInBlocks;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+protected function fixEventInputPort
+"function: fixEventInputPort
+  author: florosx
+" 
+  
+  input DevsStruct DEVS_structureIn;
+  output DevsStruct DEVS_structureOut;
+ 
+algorithm
+  (DEVS_structureOut):=
+  matchcontinue (DEVS_structureIn)
+    local
+      array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
+      DevsStruct DEVS_structure_temp;
+      Integer nBlocks;
+
+    case (DEVS_STRUCT(outLinks=DEVS_struct_outLinks, outVars=DEVS_struct_outVars, inLinks=DEVS_struct_inLinks, inVars=DEVS_struct_inVars))
+      equation
+        nBlocks = arrayLength(DEVS_struct_inLinks);
+       (DEVS_struct_inLinks, DEVS_struct_inVars) = fixEventInputPort_helper(1, nBlocks, DEVS_struct_inLinks, DEVS_struct_inVars);
+       (DEVS_struct_outLinks, DEVS_struct_outVars) = fixEventInputPort_helper(1, nBlocks, DEVS_struct_outLinks, DEVS_struct_outVars);
+       DEVS_structure_temp = DEVS_STRUCT(DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars);  
+      then
+        (DEVS_structure_temp);
+    case (_)
+      equation
+        print("- BackendQSS.fixEventInputPort failed\n");
+      then
+        fail();
+  end matchcontinue;
+end fixEventInputPort;
+
+protected function fixEventInputPort_helper
+"function: fixEventInputPort_helper takes as input a 
+  author: florosx
+" 
+  input Integer blockInd; 
+  input Integer nBlocks;
+  input array<list<list<Integer>>> DEVS_struct_inLinks;
+  input array<list<list<Integer>>> DEVS_struct_inVars;
+  output array<list<list<Integer>>> DEVS_struct_inLinksOut;
+  output array<list<list<Integer>>> DEVS_struct_inVarsOut;
+  
+  
+algorithm
+  (DEVS_struct_inLinksOut, DEVS_struct_inVarsOut):=
+  matchcontinue (blockInd, nBlocks, DEVS_struct_inLinks, DEVS_struct_inVars)
+    local
+      array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
+      DevsStruct DEVS_structure_temp;
+      list<list<Integer>> curBlock_inLinks, curBlock_inVars;
+      Integer endPort, eventPort;
+      list<Integer> eventPortInLinks, eventPortInVars, endPortInLinks, endPortInVars;
+      
+    case (blockInd, nBlocks, DEVS_struct_inLinks, DEVS_struct_inVars)   
+      equation
+       true = blockInd > nBlocks;
+      then
+        (DEVS_struct_inLinks, DEVS_struct_inVars);
+    
+    case (blockInd, nBlocks, DEVS_struct_inLinks, DEVS_struct_inVars)
+      equation
+       curBlock_inLinks = DEVS_struct_inLinks[blockInd];
+       curBlock_inVars = DEVS_struct_inVars[blockInd];
+       eventPort = findInputPort(0, curBlock_inVars, 0);
+       true = eventPort == -1 ; // If there exists no event port go to the next block
+       (DEVS_struct_inLinks, DEVS_struct_inVars) = fixEventInputPort_helper(blockInd+1, nBlocks, DEVS_struct_inLinks, DEVS_struct_inVars);
+      then
+        (DEVS_struct_inLinks, DEVS_struct_inVars);
+    
+    case (blockInd, nBlocks, DEVS_struct_inLinks, DEVS_struct_inVars)
+      equation
+       curBlock_inLinks = DEVS_struct_inLinks[blockInd];
+       curBlock_inVars = DEVS_struct_inVars[blockInd];
+       eventPort = findInputPort(0, curBlock_inVars, 0);
+       false = eventPort == -1 ; // If there exists an event port put it to the end
+       endPort = listLength(curBlock_inLinks)-1;
+       eventPortInLinks = listNth(curBlock_inLinks, eventPort);
+       eventPortInVars = listNth(curBlock_inVars, eventPort);
+       endPortInLinks = listNth(curBlock_inLinks, endPort);
+       endPortInVars = listNth(curBlock_inVars, endPort);
+       curBlock_inLinks = Util.listReplaceAt(endPortInLinks, eventPort, curBlock_inLinks);
+       curBlock_inVars = Util.listReplaceAt(endPortInVars, eventPort, curBlock_inVars);
+       curBlock_inLinks = Util.listReplaceAt(eventPortInLinks, endPort, curBlock_inLinks);
+       curBlock_inVars = Util.listReplaceAt(eventPortInVars, endPort, curBlock_inVars);
+       DEVS_struct_inLinks = arrayUpdate(DEVS_struct_inLinks, blockInd, curBlock_inLinks);
+       DEVS_struct_inVars = arrayUpdate(DEVS_struct_inVars, blockInd, curBlock_inVars);
+       (DEVS_struct_inLinks, DEVS_struct_inVars) = fixEventInputPort_helper(blockInd+1, nBlocks, DEVS_struct_inLinks, DEVS_struct_inVars);
+      then
+        (DEVS_struct_inLinks, DEVS_struct_inVars);
+    
+    case (_,_,_,_)
+      equation
+        print("- BackendQSS.fixEventInputPort_helper failed\n");
+      then
+        fail();
+  end matchcontinue;
+end fixEventInputPort_helper;
+
 
 protected function updateEventsAsInputs
 "function: updateEventsAsInputs
@@ -1059,114 +1523,6 @@ algorithm
   end matchcontinue;
 end addZeroCrossOut_CrossDetectIn;
 
-protected function addCrossDetectBlocksOut
-"function: addCrossDetectBlocks
-  Adds the cross-detector blocks in the DEVS structure.
-  author: florosx
-" 
-  input Integer startBlockInd;
-  input list<BackendDAE.ZeroCrossing> zeroCrossList;
-  input array<list<Integer>> mappedEquationsMat;
-  input DevsStruct DEVS_structureIn;
-  output DevsStruct DEVS_structureOut;
- 
-algorithm
-  (DEVS_structureOut):=
-  matchcontinue (startBlockInd, zeroCrossList, mappedEquationsMat, DEVS_structureIn)
-    local
-      list<list<Integer>> curBlock_outLinks, curBlock_outVars, curBlock_inLinks, curBlock_inVars;
-      array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
-      DevsStruct DEVS_structure_temp;
-      list<BackendDAE.ZeroCrossing> restZC;
-      BackendDAE.ZeroCrossing curZC;
-      list<Integer> eq,wc, curDevsBlocks;
-      DAE.Exp e;
-      
-    case (startBlockInd, {}, mappedEquationsMat, DEVS_structure_temp)
-      equation
-      then
-        (DEVS_structure_temp);
-      
-    case (startBlockInd, BackendDAE.ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc)::restZC, mappedEquationsMat, 
-                   DEVS_STRUCT(outLinks=DEVS_struct_outLinks, outVars=DEVS_struct_outVars, inLinks=DEVS_struct_inLinks, inVars=DEVS_struct_inVars))
-      equation
-       
-       curDevsBlocks = findEqInBlocks(eq, mappedEquationsMat,{});
-       curBlock_outVars = {{0}};
-       curBlock_outLinks = {curDevsBlocks};
-       
-       /*
-       eq = SimCodegenQSS_Utils.makeListNegative(eq, {});
-       cur_state_DEVS_blocks = get_curState_DEVS_blocks(eq, mappedEquationsMat, {});
-       cur_state_DEVS_blocks = SimCodegenQSS_Utils.removeRedundantElements(cur_state_DEVS_blocks, {});
-       
-        wc = Util.listMap1(wc,intAdd,ind_whenBlocks_start);
-        cur_state_DEVS_blocks = listAppend(cur_state_DEVS_blocks, wc);
-        */
-        
-       DEVS_struct_outLinks = arrayUpdate(DEVS_struct_outLinks, startBlockInd, curBlock_outLinks);
-       DEVS_struct_outVars = arrayUpdate(DEVS_struct_outVars, startBlockInd, curBlock_outVars);
-      
-       DEVS_structure_temp = DEVS_STRUCT(DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars);
-       
-       DEVS_structure_temp = addCrossDetectBlocksOut(startBlockInd+1, restZC, mappedEquationsMat, DEVS_structure_temp);
-      then
-        (DEVS_structure_temp);
-    case (_,_,_,_)
-      equation
-        print("- BackendQSS.addCrossDetectBlocksOut failed\n");
-      then
-        fail();
-  end matchcontinue;
-end addCrossDetectBlocksOut;
-
-
-
-
-protected function findEqInBlocks
-"function: findEqInBlocks
-  Adds the cross-detector blocks in the DEVS structure.
-  author: florosx
-" 
-  input list<Integer> eqInd;
-  input array<list<Integer>> mappedEquationsMat;
-  input list<Integer> blocksInd_temp;
-  output list<Integer> blocksInd_out;
- 
-algorithm
-  (blocksInd_out):=
-  matchcontinue (eqInd, mappedEquationsMat, blocksInd_temp)
-    local
-      Integer curEq;
-      list<Integer> restEq, curBlocks;
-      
-    case ({}, mappedEquationsMat, blocksInd_temp)
-      equation
-      then
-        (blocksInd_temp);
-      
-    case (curEq::restEq, mappedEquationsMat, blocksInd_temp)
-      equation
-       curBlocks = mappedEquationsMat[curEq];
-       blocksInd_temp = listAppend(blocksInd_temp, curBlocks);
-       blocksInd_temp = findEqInBlocks(restEq, mappedEquationsMat, blocksInd_temp);
-      then
-        (blocksInd_temp);
-    case (_,_,_)
-      equation
-        print("- BackendQSS.findEqInBlocks failed\n");
-      then
-        fail();
-  end matchcontinue;
-end findEqInBlocks;
-
-
-
-
-
-
-
-
 
 
 
@@ -1177,6 +1533,7 @@ protected function generateStructFromInOutVars
 "
   input Integer curBlockIndex;
   input list<Integer> stateIndices;
+  input list<Integer> discreteVarIndices;
   input list<list<Integer>> DEVS_blocks_outVars;
   input list<list<Integer>> DEVS_blocks_inVars;
   input DevsStruct DEVS_structureIn;
@@ -1184,7 +1541,7 @@ protected function generateStructFromInOutVars
  
 algorithm
   (DEVS_structureOut):=
-  matchcontinue (curBlockIndex,stateIndices, DEVS_blocks_outVars, DEVS_blocks_inVars, DEVS_structureIn)
+  matchcontinue (curBlockIndex, stateIndices, discreteVarIndices, DEVS_blocks_outVars, DEVS_blocks_inVars, DEVS_structureIn)
     local
       tuple< list<list<list<Integer>>>, list<list<list<Integer>>>, list<list<list<Integer>>>, list<list<list<Integer>>> > DEVS_struct_lists_temp;
    
@@ -1198,19 +1555,19 @@ algorithm
       
       DevsStruct DEVS_structure_temp;
    
-    case (curBlockIndex, stateIndices, {}, _ , DEVS_structure_temp)
+    case (curBlockIndex, stateIndices, discreteVarIndices, {}, _ , DEVS_structure_temp)
       equation
       then
         (DEVS_structure_temp);
       
-    case (curBlockIndex, stateIndices, curBlock_outVars::rest_blocks_outVars, DEVS_blocks_inVars, DEVS_structure_temp )
+    case (curBlockIndex, stateIndices, discreteVarIndices, curBlock_outVars::rest_blocks_outVars, DEVS_blocks_inVars, DEVS_structure_temp )
       equation
         
-       DEVS_structure_temp = findOutVarsInAllInputs(curBlockIndex, stateIndices, curBlock_outVars, DEVS_blocks_inVars, DEVS_structure_temp);
+       DEVS_structure_temp = findOutVarsInAllInputs(curBlockIndex, stateIndices, discreteVarIndices, curBlock_outVars, DEVS_blocks_inVars, DEVS_structure_temp);
        
       then
-        (generateStructFromInOutVars(curBlockIndex+1, stateIndices, rest_blocks_outVars, DEVS_blocks_inVars, DEVS_structure_temp));
-    case (_,_,_,_,_)
+        (generateStructFromInOutVars(curBlockIndex+1, stateIndices, discreteVarIndices, rest_blocks_outVars, DEVS_blocks_inVars, DEVS_structure_temp));
+    case (_,_,_,_,_,_)
       equation
         print("- BackendQSS.generateStructFromInOutVars failed\n");
       then
@@ -1226,6 +1583,7 @@ protected function findOutVarsInAllInputs
 "
   input Integer outBlockIndex;
   input list<Integer> stateIndices;
+  input list<Integer> discreteVarIndices;
   input list<Integer> curBlock_outVars;
   input list<list<Integer>> DEVS_blocks_inVars;
   input DevsStruct DEVS_structureIn;
@@ -1233,7 +1591,7 @@ protected function findOutVarsInAllInputs
  
 algorithm
   (DEVS_structureOut):=
-  matchcontinue (outBlockIndex, stateIndices, curBlock_outVars, DEVS_blocks_inVars, DEVS_structureIn)
+  matchcontinue (outBlockIndex, stateIndices, discreteVarIndices, curBlock_outVars, DEVS_blocks_inVars, DEVS_structureIn)
     local
       tuple< list<list<list<Integer>>>, list<list<list<Integer>>>, list<list<list<Integer>>>, list<list<list<Integer>>> > DEVS_struct_lists_temp;
    
@@ -1249,20 +1607,21 @@ algorithm
       list<Integer> restOutVars, curOutVarLinks, blocksToBeChecked, tempOutVars;
       DevsStruct DEVS_structure_temp;
     //END OF RECURSION
-    case (outBlockIndex, stateIndices, {}, _ , DEVS_structure_temp)
+    case (outBlockIndex, stateIndices, discreteVarIndices, {}, _ , DEVS_structure_temp)
       equation
       then
         (DEVS_structure_temp);
 
-    case (outBlockIndex, stateIndices, curOutVar::restOutVars, DEVS_blocks_inVars, 
+    case (outBlockIndex, stateIndices, discreteVarIndices, curOutVar::restOutVars, DEVS_blocks_inVars, 
              DEVS_STRUCT(outLinks=DEVS_struct_outLinks, outVars=DEVS_struct_outVars, inLinks=DEVS_struct_inLinks, inVars=DEVS_struct_inVars) )
       equation
         blocksToBeChecked = findOutVarsInAllInputsHelper(curOutVar, stateIndices,DEVS_blocks_inVars,outBlockIndex);          
        
         (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars) = 
-                   findWhereOutVarIsNeeded(curOutVar, outBlockIndex, blocksToBeChecked, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars,{});
+                   findWhereOutVarIsNeeded(curOutVar, discreteVarIndices, outBlockIndex, blocksToBeChecked, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars,{});
         true = Util.isListNotEmpty(curOutVarLinks) "If the current output var is needed somewhere";
-        
+        false = Util.listContains(curOutVar, discreteVarIndices) "Check if the out variable is discrete";
+        // If it is not discrete proceed as normal
         curOutBlock_outVars = DEVS_struct_outVars[outBlockIndex];
         curOutBlock_outLinks = DEVS_struct_outLinks[outBlockIndex];
         curOutBlock_outLinks = listAppend(curOutBlock_outLinks, {curOutVarLinks});
@@ -1271,17 +1630,38 @@ algorithm
         DEVS_struct_outLinks = arrayUpdate(DEVS_struct_outLinks, outBlockIndex, curOutBlock_outLinks);
         DEVS_struct_outVars = arrayUpdate(DEVS_struct_outVars, outBlockIndex, curOutBlock_outVars);
         DEVS_structure_temp = DEVS_STRUCT(DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars);
-        DEVS_structure_temp = findOutVarsInAllInputs(outBlockIndex, stateIndices, restOutVars, DEVS_blocks_inVars, DEVS_structure_temp); 
+        DEVS_structure_temp = findOutVarsInAllInputs(outBlockIndex, stateIndices, discreteVarIndices, restOutVars, DEVS_blocks_inVars, DEVS_structure_temp); 
+      then
+        (DEVS_structure_temp);
+     
+     case (outBlockIndex, stateIndices, discreteVarIndices, curOutVar::restOutVars, DEVS_blocks_inVars, 
+             DEVS_STRUCT(outLinks=DEVS_struct_outLinks, outVars=DEVS_struct_outVars, inLinks=DEVS_struct_inLinks, inVars=DEVS_struct_inVars) )
+      equation
+        blocksToBeChecked = findOutVarsInAllInputsHelper(curOutVar, stateIndices,DEVS_blocks_inVars,outBlockIndex);          
+        (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars) = 
+                   findWhereOutVarIsNeeded(curOutVar, discreteVarIndices, outBlockIndex, blocksToBeChecked, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars,{});
+        true = Util.isListNotEmpty(curOutVarLinks) "If the current output var is needed somewhere";
+        true = Util.listContains(curOutVar, discreteVarIndices) "Check if the out variable is discrete";
+        // If it is discrete add an event as output of the when-block and not the variable itself
+        curOutBlock_outVars = DEVS_struct_outVars[outBlockIndex];
+        curOutBlock_outLinks = DEVS_struct_outLinks[outBlockIndex];
+        curOutBlock_outLinks = listAppend(curOutBlock_outLinks, {curOutVarLinks});
+        curOutBlock_outVars = listAppend(curOutBlock_outVars, {{0}}); 
+
+        DEVS_struct_outLinks = arrayUpdate(DEVS_struct_outLinks, outBlockIndex, curOutBlock_outLinks);
+        DEVS_struct_outVars = arrayUpdate(DEVS_struct_outVars, outBlockIndex, curOutBlock_outVars);
+        DEVS_structure_temp = DEVS_STRUCT(DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars);
+        DEVS_structure_temp = findOutVarsInAllInputs(outBlockIndex, stateIndices, discreteVarIndices, restOutVars, DEVS_blocks_inVars, DEVS_structure_temp); 
       then
         (DEVS_structure_temp);
         
      // If the current output var is NOT needed somewhere
-     case (outBlockIndex, stateIndices, curOutVar::restOutVars, DEVS_blocks_inVars,  DEVS_structure_temp )
+     case (outBlockIndex, stateIndices, discreteVarIndices, curOutVar::restOutVars, DEVS_blocks_inVars,  DEVS_structure_temp )
       equation
       then
-        (findOutVarsInAllInputs(outBlockIndex, stateIndices, restOutVars, DEVS_blocks_inVars, DEVS_structure_temp));
+        (findOutVarsInAllInputs(outBlockIndex, stateIndices, discreteVarIndices, restOutVars, DEVS_blocks_inVars, DEVS_structure_temp));
     
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         
         print("- BackendQSS.findOutVarsInAllInputs failed\n");
@@ -1348,6 +1728,7 @@ protected function findWhereOutVarIsNeeded
   author: florosx  
 "
   input Integer curOutVar;
+  input list<Integer> discreteVarIndices;
   input Integer outBlockIndex;
   input list<Integer> blocksToBeChecked;
   input list<list<Integer>> DEVS_blocks_inVars;
@@ -1361,7 +1742,7 @@ protected function findWhereOutVarIsNeeded
  
 algorithm
   (outLinks, DEVS_struct_inLinksOut, DEVS_struct_inVarsOut):=
-  matchcontinue (curOutVar, outBlockIndex, blocksToBeChecked, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars,curOutVarLinks)
+  matchcontinue (curOutVar, discreteVarIndices, outBlockIndex, blocksToBeChecked, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars,curOutVarLinks)
     local
       array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
       Integer curOutVar, inBlockIndex;
@@ -1369,45 +1750,29 @@ algorithm
       list<list<Integer>> restBlocks_inVars, curOutBlock_outLinks, curOutBlock_outVars, curInBlock_inLinks, curInBlock_inVars;
       DevsStruct DEVS_structure_temp;   
 
-    case (curOutVar, outBlockIndex, {}, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars, curOutVarLinks)
+    case (curOutVar, discreteVarIndices, outBlockIndex, {}, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars, curOutVarLinks)
       equation
       then
         (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars);
      
-    case (curOutVar, outBlockIndex, inBlockIndex::restBlocksToBeChecked, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars, curOutVarLinks)
+    case (curOutVar, discreteVarIndices, outBlockIndex, inBlockIndex::restBlocksToBeChecked, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars, curOutVarLinks)
       equation
         // If the current outVariable is NOT needed in the current In block
         curBlock_inVars = listNth(DEVS_blocks_inVars, inBlockIndex-1);
         false = Util.listContains(curOutVar, curBlock_inVars);
-        /*print("\nCurBlock InVars : ");
-        printList(curBlock_inVars, "start"); 
-        print("\nNOT Found as input in block: ");
-        print(intString(inBlockIndex));
-        print("\n");
-        print("restBlocksToBeChecked : ");
-        printList(restBlocksToBeChecked, "start");
-        print("\n");       
-        */
+        
         (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars) = 
-           findWhereOutVarIsNeeded(curOutVar, outBlockIndex, restBlocksToBeChecked, DEVS_blocks_inVars,DEVS_struct_inLinks, DEVS_struct_inVars, curOutVarLinks);
+           findWhereOutVarIsNeeded(curOutVar, discreteVarIndices, outBlockIndex, restBlocksToBeChecked, DEVS_blocks_inVars,DEVS_struct_inLinks, DEVS_struct_inVars, curOutVarLinks);
       then
         (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars);
 
-    case (curOutVar, outBlockIndex, inBlockIndex::restBlocksToBeChecked, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars, curOutVarLinks)
+    case (curOutVar, discreteVarIndices, outBlockIndex, inBlockIndex::restBlocksToBeChecked, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars, curOutVarLinks)
       equation
         // If the current outVariable is needed in the current In block
         curBlock_inVars = listNth(DEVS_blocks_inVars, inBlockIndex-1);
         true = Util.listContains(curOutVar, curBlock_inVars);
-        
-        /*print("\nCurBlock InVars : ");
-        printList(curBlock_inVars, "start");
-        print("\nFound as input in block: ");
-        print(intString(inBlockIndex));
-        print("\n");
-        print("restBlocksToBeChecked : ");
-        printList(restBlocksToBeChecked, "start");
-        print("\n");
-        */
+        false = Util.listContains(curOutVar, discreteVarIndices) "Check if the out variable is discrete";
+        // If it is not discrete proceed as normal
         curOutVarLinks = listAppend(curOutVarLinks, {inBlockIndex});
         
         curInBlock_inLinks = DEVS_struct_inLinks[inBlockIndex];
@@ -1418,10 +1783,26 @@ algorithm
         DEVS_struct_inVars = arrayUpdate(DEVS_struct_inVars, inBlockIndex, curInBlock_inVars);
         
         (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars) = 
-           findWhereOutVarIsNeeded(curOutVar, outBlockIndex, restBlocksToBeChecked, DEVS_blocks_inVars,DEVS_struct_inLinks, DEVS_struct_inVars, curOutVarLinks);
+           findWhereOutVarIsNeeded(curOutVar, discreteVarIndices, outBlockIndex, restBlocksToBeChecked, DEVS_blocks_inVars,DEVS_struct_inLinks, DEVS_struct_inVars, curOutVarLinks);
       then
         (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars);
-    case (_,_,_,_,_,_,_)
+    
+    case (curOutVar, discreteVarIndices, outBlockIndex, inBlockIndex::restBlocksToBeChecked, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars, curOutVarLinks)
+      equation
+        // If the current outVariable is needed in the current In block
+        curBlock_inVars = listNth(DEVS_blocks_inVars, inBlockIndex-1);
+        true = Util.listContains(curOutVar, curBlock_inVars);
+        true = Util.listContains(curOutVar, discreteVarIndices) "Check if the out variable is discrete";
+        // If it is discrete add an event as output of the when-block and not the variable itself
+        curOutVarLinks = listAppend(curOutVarLinks, {inBlockIndex});
+        (DEVS_struct_inLinks, DEVS_struct_inVars) = updateEventsAsInputs2
+                    (outBlockIndex, {inBlockIndex},DEVS_struct_inLinks, DEVS_struct_inVars); 
+        
+        (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars) = 
+           findWhereOutVarIsNeeded(curOutVar, discreteVarIndices, outBlockIndex, restBlocksToBeChecked, DEVS_blocks_inVars,DEVS_struct_inLinks, DEVS_struct_inVars, curOutVarLinks);
+      then
+        (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars);
+    case (_,_,_,_,_,_,_,_)
       equation
       then
         fail();
@@ -2517,41 +2898,6 @@ algorithm
    end matchcontinue;
 end makeListNegative;
 
-public function findElementInList
-"function: 
-  author: XF
-"
-  input Integer loopIndex1;
-  input Integer nElements;
-  input list<Integer> inList1;
-  input Integer element1;
-  
-  output Integer indexFound;
-  
-algorithm
-  (indexFound):=
-  matchcontinue (loopIndex1, nElements, inList1, element1)
-    local
-      list<Integer> inList_temp, rest_list;
-      Integer cur_elem, temp, element, loopIndex;
-      
-    case(loopIndex, nElements, cur_elem::rest_list , element)
-      equation
-        true = cur_elem == element;
-        // END OF RECURSION
-      then (loopIndex);
-    case(loopIndex, 0, {} , element)
-      equation
-        // IF ELEMENT NOT FOUND RETURN -1
-      then (-1);
-        
-     case(loopIndex, nElements, cur_elem::rest_list , element)
-      equation
-        temp = findElementInList(loopIndex+1, nElements-1, rest_list, element);
-      then
-         (temp);
-  end matchcontinue;
-end findElementInList;
 
 public function findAndRemoveElementInList
 "function: 
@@ -2664,6 +3010,51 @@ algorithm
         stateIndices2;
   end matchcontinue;
 end getStateIndices;
+
+public function getDiscreteIndices 
+"function: getDiscreteIndices 
+ finds the indices of the state indices inside a list with variables.
+ author: XF
+"
+
+  input list<BackendDAE.Var> allVars;
+  input list<Integer> stateIndices1;
+  input Integer loopIndex1;
+  
+  output list<Integer> stateIndices;
+
+algorithm
+  stateIndices:=
+  matchcontinue (allVars, stateIndices1, loopIndex1)
+    local
+      
+      list<Integer> stateIndices2;
+      Integer loopIndex;
+      list<BackendDAE.Var> rest;
+      BackendDAE.Var var1; 
+    
+    case ({}, stateIndices2, loopIndex)
+      equation             
+      then
+        stateIndices2;
+        
+    case (var1::rest, stateIndices2, loopIndex)
+      equation     
+        false = BackendVariable.isVarDiscrete(var1);
+        stateIndices = getDiscreteIndices(rest, stateIndices2, loopIndex+1);  
+      then
+        stateIndices;
+    case (var1::rest, stateIndices2, loopIndex)
+      equation     
+        true = BackendVariable.isVarDiscrete(var1);
+        stateIndices2 = listAppend(stateIndices2, {loopIndex});
+        stateIndices2 = getDiscreteIndices(rest, stateIndices2, loopIndex+1);  
+      then
+        stateIndices2;
+  end matchcontinue;
+end getDiscreteIndices;
+
+
 
 public function removeRedundantElements
 "function: removeRedundantElements removes redundant elements from a list
@@ -3264,6 +3655,30 @@ algorithm
   end matchcontinue;
 end removeListFromListsOfLists;
 
+public function createIncreasingList
+  input Integer startElement;
+  input Integer nElements;
+  input list<Integer> tempList;
+  output list<Integer> outList;
+  
+algorithm
+  outList := 
+  matchcontinue(startElement, nElements, tempList)
+    local
+    case (startElement, 0, tempList)
+      equation
+      then (tempList);
+      
+    case (startElement, nElements, tempList)
+      equation
+        tempList = listAppend(tempList, {startElement});
+        tempList = createIncreasingList(startElement+1, nElements-1, tempList);
+      then (tempList);
+  end matchcontinue;
+end createIncreasingList;
+
+
+
 public function createListFromElement
   input Type_a elem;
   output list<Type_a> outList;
@@ -3279,6 +3694,132 @@ algorithm
   end matchcontinue;
 end createListFromElement;
 
+protected function replaceRowsArray
+"function: getListofZeroCrossings
+  Takes as input the DAE and extracts the zero-crossings as well as the zero crosses that are 
+  connected to sample statements.
+  author: florosx
+"
+  input BackendDAE.IncidenceMatrix incidenceMat;
+  input list<Integer> rowsInd;
+  input list<list<Integer>> newRows;
+  output BackendDAE.IncidenceMatrix incidenceMatOut;
+
+algorithm
+  (outList):=
+  matchcontinue (incidenceMat, rowsInd, newRows)
+    local
+      
+      Integer cur_ind;
+      list<Integer> rest_ind, cur_row;
+      list<list<Integer>> rest_rows;
+             
+    case(incidenceMat,{},{})
+      equation
+         // END OF ZERO CROSSINGS
+      then (incidenceMat);
+      
+    case (incidenceMat, cur_ind::rest_ind, cur_row::rest_rows )
+      equation
+        incidenceMat = arrayUpdate(incidenceMat, cur_ind, cur_row); 
+        incidenceMat = replaceRowsArray(incidenceMat, rest_ind, rest_rows);
+      then
+        (incidenceMat);
+    case (_,_,_)
+      equation
+        print("- BackendQSS.replaceRowsArray failed\n");
+      then
+        fail();   
+  end matchcontinue;
+end replaceRowsArray;
+
+protected function mergeListsLists
+"function: mergeListsLists
+  Merges two lists of lists according to the indices supplied
+  author: florosx
+" 
+  input list<Integer> allInds; 
+  input list<Integer> indList1;
+  input list<list<Integer>> inList1;
+  input list<Integer> indList2;
+  input list<list<Integer>> inList2;
+  input list<list<Integer>> outListIn;
+  output list<list<Integer>> outList;
+ 
+algorithm
+  (outList):=
+  matchcontinue (allInds, indList1, inList1, indList2, inList2, outListIn)
+    local
+      Integer curInd, foundInd;
+      list<Integer> restInds, curList;
+      
+    
+    case ({},_, _, _, _, outListIn)
+      equation        
+      then
+        (outListIn);
+    case (curInd::restInds, indList1, inList1, indList2, inList2, outListIn)
+      equation        
+        foundInd = findElementInList(0, listLength(indList1), indList1, curInd);
+        false = intEq(foundInd,-1)"If the current element is from the first list";
+        curList = listNth(inList1, foundInd);
+        outListIn = listAppend(outListIn, {curList});
+        outListIn = mergeListsLists(restInds, indList1, inList1, indList2, inList2, outListIn);
+    then
+       (outListIn);
+    case (curInd::restInds, indList1, inList1, indList2, inList2, outListIn)
+      equation        
+        foundInd = findElementInList(0, listLength(indList2), indList2, curInd);
+        false = intEq(foundInd,-1)"If the current element is from the first list";
+        curList = listNth(inList2, foundInd);
+        outListIn = listAppend(outListIn, {curList});
+        outListIn = mergeListsLists(restInds, indList1, inList1, indList2, inList2, outListIn);
+    then
+       (outListIn);   
+    case (_,_,_,_,_,_)
+      equation
+        print("- BackendQSS.mergeListsLists failed\n");
+      then
+        fail();
+  end matchcontinue;
+end mergeListsLists;
+
+
+public function findElementInList
+"function: 
+  author: XF
+"
+  input Integer loopIndex1;
+  input Integer nElements;
+  input list<Integer> inList1;
+  input Integer element1;
+  
+  output Integer indexFound;
+  
+algorithm
+  (indexFound):=
+  matchcontinue (loopIndex1, nElements, inList1, element1)
+    local
+      list<Integer> inList_temp, rest_list;
+      Integer cur_elem, temp, element, loopIndex;
+      
+    case(loopIndex, nElements, cur_elem::rest_list , element)
+      equation
+        true = cur_elem == element;
+        // END OF RECURSION
+      then (loopIndex);
+    case(loopIndex, 0, {} , element)
+      equation
+        // IF ELEMENT NOT FOUND RETURN -1
+      then (-1);
+        
+     case(loopIndex, nElements, cur_elem::rest_list , element)
+      equation
+        temp = findElementInList(loopIndex+1, nElements-1, rest_list, element);
+      then
+         (temp);
+  end matchcontinue;
+end findElementInList;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /////  END OF PACKAGE
