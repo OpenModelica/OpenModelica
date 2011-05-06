@@ -12,7 +12,7 @@ USE_CORBA = @USE_CORBA@
 SHELL	= /bin/sh
 CC	= @CC@
 CXX	= @CXX@
-CFLAGS	= $(USE_CORBA) @CFLAGS@
+CFLAGS	= @CFLAGS@
 RMLHOME	= @rmlhome@
 RMLINC  = -I$(RMLHOME)/include/plain
 

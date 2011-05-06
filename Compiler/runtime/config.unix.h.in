@@ -8,7 +8,7 @@
 #define CONFIG_MODELICA_SPEC_PLATFORM "@MODELICA_SPEC_PLATFORM@"
 #define CONFIG_OPENMODELICA_SPEC_PLATFORM "@OPENMODELICA_SPEC_PLATFORM@"
 
-#define DEFAULT_CC "@CXX@"
+#define DEFAULT_CC "@CC@"
 #define DEFAULT_CXX "@CXX@"
 
 #if defined(__sparc__)
@@ -17,7 +17,7 @@
   #define DEFAULT_LINKER "@CC@ -single_module -dynamiclib -flat_namespace"
 #elif defined(__x86_64__)
   /* -fPIC needed on x86_64! */
-  #define DEFAULT_LINKER "@CC@ -shared -export-dynamic -fPIC"
+  #define DEFAULT_LINKER "@CC@ -shared -export-dynamic"
 #else
   #define DEFAULT_LINKER "@CC@ -shared -export-dynamic"
 #endif
@@ -26,7 +26,11 @@
   #define DEFAULT_CFLAGS "${SIM_OR_DYNLOAD_OPT_LEVEL} -falign-functions -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}"
   #define CONFIG_OS "OSX"
 #else
+  #if defined(__x86_64__)
+  #define DEFAULT_CFLAGS "${SIM_OR_DYNLOAD_OPT_LEVEL} -falign-functions -march=native -mfpmath=sse -fPIC ${MODELICAUSERCFLAGS}"
+  #else
   #define DEFAULT_CFLAGS "${SIM_OR_DYNLOAD_OPT_LEVEL} -falign-functions -march=native -mfpmath=sse ${MODELICAUSERCFLAGS}"
+  #endif
   #define CONFIG_OS "linux"
 #endif
 

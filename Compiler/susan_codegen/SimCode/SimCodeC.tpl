@@ -2308,7 +2308,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   EXEEXT=<%makefileParams.exeext%>
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
-  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
+  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
   LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   PERL=perl
@@ -2457,7 +2457,7 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   LINK=<%makefileParams.linker%>
   EXEEXT=<%makefileParams.exeext%>
   DLLEXT=<%makefileParams.dllext%>
-  CFLAGS= -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.cflags%>
+  CFLAGS= -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%>
   LDFLAGS= -L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   PERL=perl
@@ -2465,7 +2465,9 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   
   .PHONY: <%name%>
   <%name%>: $(MAINFILE) <%name%>.h <%name%>_records.c
-  <%\t%> $(LINK) -o <%name%>$(DLLEXT) $(MAINFILE) <%libsStr%> $(CFLAGS) $(LDFLAGS) $(SENDDATALIBS) -lm <%name%>_records.c 
+  <%\t%> $(CC) $(CFLAGS) -c -o <%name%>.o $(MAINFILE)
+  <%\t%> $(CC) $(CFLAGS) -c -o <%name%>_records.o <%name%>_records.c
+  <%\t%> $(LINK) -o <%name%>$(DLLEXT) <%name%>.o <%name%>_records.o <%libsStr%> $(CFLAGS) $(LDFLAGS) $(SENDDATALIBS) -lm
   <%name%>.conv.c: <%name%>.c
   <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
   <%\t%> @mv $@.tmp $@
@@ -4340,6 +4342,7 @@ template algStatementWhenPre(DAE.Statement stmt, Text &varDecls /*BUFP*/)
         else
           ""
       let &preExp = buffer "" /*BUFD*/
+
       let res = daeExp(when.exp, contextSimulationDiscrete,
                      &preExp /*BUFC*/, &varDecls /*BUFD*/)
       <<
@@ -6061,6 +6064,7 @@ template mmcExpTypeShort(DAE.ExpType type)
   case ET_FUNCTION_REFERENCE_VAR(__)  then "fnptr"
   else "mmcExpTypeShort:ERROR"
 end mmcExpTypeShort;
+
 
 template expType(DAE.ExpType ty, Boolean array)
  "Generate type helper."

@@ -105,6 +105,7 @@ package SimCode
       String cflags;
       String ldflags;
       String senddatalibs;
+      list<String> includes;
       list<String> libs;
       String platform;
     end MAKEFILE_PARAMS;
