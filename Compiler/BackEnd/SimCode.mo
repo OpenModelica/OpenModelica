@@ -2186,7 +2186,7 @@ algorithm
         
         // Replace variables in nonlinear equation systems with xloc[index]
         // variables.
-        allEquations = applyResidualReplacements(allEquations);
+        allEquations = Util.listMap(allEquations,applyResidualReplacements);
         Debug.fcall("execJacstat",print, "*** SimCode -> generate analytical Jacobians: " +& realString(clock()) +& "\n" );
         LinearMats = createJacobianMatrix(functionTree,dlow,ass1,ass2,comps,m,mt);
         LinearMats = createLinearModelMatrixes(functionTree,dlow,ass1,ass2,LinearMats);
@@ -2349,7 +2349,7 @@ algorithm
         
         // Replace variables in nonlinear equation systems with xloc[index]
         // variables.
-        allEquations = applyResidualReplacements(allEquations);
+        allEquations = Util.listMap(allEquations,applyResidualReplacements);
         Debug.fcall("execJacstat",print, "*** SimCode -> generate analytical Jacobians: " +& realString(clock()) +& "\n" );
         LinearMats = createJacobianMatrix(functionTree,dlow,ass1,ass2,comps,m,mt);
         LinearMats = createLinearModelMatrixes(functionTree,dlow,ass1,ass2,LinearMats);
@@ -4303,7 +4303,6 @@ algorithm
       Integer index;
       list<DAE.ComponentRef> crefs;
       VarTransform.VariableReplacements repl;
-      SimEqSystem ;
       list<SimVar> discVars;
       list<Integer> values,value_dims;
       
