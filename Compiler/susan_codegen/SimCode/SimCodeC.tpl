@@ -855,15 +855,20 @@ match extObjInfo
 case EXTOBJINFO(__) then
   let &funDecls = buffer "" /*BUFD*/
   let &varDecls = buffer "" /*BUFD*/
-  let &preExp = buffer "" /*BUFD*/
   let ctorCalls = (constructors |> (var, fnName, args) =>
+      let &preExp = buffer "" /*BUFD*/
       let argsStr = (args |> arg =>
           daeExternalCExp(arg, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
         ;separator=", ")
       let typesStr = (args |> arg => extType(typeof(arg),true,false) ; separator=", ")
       let &funDecls += 'extern void* <%fnName%>(<%typesStr%>);<%\n%>'
+      /* Restore the memory state after each object has been initialized. Then we can
+       * initalize a really large number of external objects that play with strings :)
+       */
       <<
+      <%preExp%>
       <%cref(var)%> = <%fnName%>(<%argsStr%>);
+      restore_memory_state(mem_state);
       >>
     ;separator="\n")
   <<
@@ -873,7 +878,8 @@ case EXTOBJINFO(__) then
   }
   void callExternalObjectConstructors(DATA* localData) {
     <%varDecls%>
-    <%preExp%>
+    state mem_state;
+    mem_state = get_memory_state();
     <%ctorCalls%>
     <%aliases |> (var1, var2) => '<%cref(var1)%> = <%cref(var2)%>;' ;separator="\n"%>
   }
