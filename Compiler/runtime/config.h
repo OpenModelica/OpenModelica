@@ -33,7 +33,7 @@
 
 #if defined(__MINGW32__) || defined(_MSC_VER) /* Windows */
 
-#define DEFAULT_CC "g++"
+#define DEFAULT_CC "gcc"
 #define DEFAULT_CXX "g++"
 
 #define DEFAULT_LDFLAGS "-lc_runtime -lregex"
