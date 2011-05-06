@@ -320,6 +320,7 @@ algorithm
     local
       SCodeEnv.Frame cls_env;
       Util.StatefulBoolean is_used;
+      String name;
       
     case (SCodeEnv.VAR(isUsed = is_used), _)
       equation
@@ -328,7 +329,7 @@ algorithm
       then
         ();
 
-    case (SCodeEnv.CLASS(env = {cls_env}), _)
+    case (SCodeEnv.CLASS(env = {cls_env}, cls = SCode.CLASS(name = name)), _)
       equation
         markFrameAsUsed(cls_env);
         markEnvAsUsed(inEnv);
@@ -633,7 +634,7 @@ protected function analyseRedeclaredClass
   input SCode.Element inClass;
   input Env inEnv;
 algorithm
-  _ := match(inClass, inEnv)
+  _ := matchcontinue(inClass, inEnv)
     local
       Item item;
       String name;
@@ -650,7 +651,7 @@ algorithm
       then
         ();
 
-  end match;
+  end matchcontinue;
 end analyseRedeclaredClass;
         
 protected function analyseRedeclaredClass2
@@ -664,18 +665,11 @@ algorithm
       Env env;
       SCode.Element cls;
 
-    case (SCodeEnv.CLASS(cls = cls as SCode.CLASS(name = _)), _)
-      equation
-        false = SCode.isElementRedeclare(cls); 
-        markItemAsUsed(inItem, inEnv);
-      then
-        ();
-
     case (SCodeEnv.CLASS(cls = cls as SCode.CLASS(name = name)), _)
       equation
-        true = SCode.isElementRedeclare(cls);
-        //(item, _, _, env) = SCodeLookup.lookupInBaseClasses(name, inEnv, false);
-        (SOME(item), _, SOME(env)) = SCodeLookup.lookupInLocalScope(name, inEnv);
+        (SOME(item), _, _, SOME(env)) = SCodeLookup.lookupInBaseClasses(name,
+          inEnv, SCodeLookup.IGNORE_REDECLARES);
+        //(SOME(item), _, SOME(env)) = SCodeLookup.lookupInLocalScope(name, inEnv);
         //analyseRedeclaredClass2(item, env);
         markItemAsUsed(item, env);
       then
@@ -1629,7 +1623,7 @@ algorithm
       then
         ();
 
-    else then ();
+    else ();
 
   end matchcontinue;
 end analyseClassExtendsDef;

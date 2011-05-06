@@ -117,7 +117,7 @@ algorithm
         env = SCodeEnv.buildInitialEnv();
         env = SCodeEnv.extendEnvWithClasses(prog, env);
         env = SCodeEnv.updateExtendsInEnv(env);
-
+        
         (prog, env) = SCodeDependency.analyse(inClassName, env, prog);
         (prog, env) = SCodeFlattenImports.flattenProgram(prog, env);
         prog = SCodeFlattenExtends.flattenProgram(prog, env);

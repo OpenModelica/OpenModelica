@@ -399,6 +399,34 @@ algorithm
   end match;
 end isItemUsed;
 
+public function linkItemUsage
+  "'Links' two items to each other, by making them share the same isUsed
+  variable."
+  input Item inSrcItem;
+  input Item inDestItem;
+  output Item outDestItem;
+algorithm
+  outDestItem := match(inSrcItem, inDestItem)
+    local
+      Util.StatefulBoolean is_used;
+      SCode.Element elem;
+      ClassType cls_ty;
+      Option<String> name;
+      FrameType ft;
+      AvlTree cv;
+      ExtendsTable exts;
+      ImportTable imps;
+
+    case (VAR(isUsed = is_used), VAR(var = elem))
+      then VAR(elem, is_used);
+
+    case (CLASS(env = {FRAME(isUsed = is_used)}),
+        CLASS(cls = elem, classType = cls_ty, env = 
+          {FRAME(name, ft, cv, exts, imps, _)}))
+      then CLASS(elem, {FRAME(name, ft, cv, exts, imps, is_used)}, cls_ty);
+  end match;
+end linkItemUsage;
+
 protected function extendEnvWithClassDef
   "Extends the environment with a class definition."
   input SCode.Element inClassDefElement;

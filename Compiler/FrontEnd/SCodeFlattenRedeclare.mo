@@ -394,20 +394,16 @@ public function qualifyRedeclare
 algorithm
   outElement := match(inElement, inEnv)
     local
-      SCode.Ident name, name2;
-      Absyn.Ident id;
+      SCode.Ident name;
       SCode.Partial pp;
       SCode.Encapsulated ep;
       SCode.Prefixes prefixes;
-      Option<Absyn.ConstrainClass> cc;
       Option<Absyn.ArrayDim> ad;
       Absyn.Path path;
       SCode.Mod mods;
       Option<SCode.Comment> cmt;
-      Env env;
       SCode.Restriction res;
       Absyn.Info info;
-      Absyn.InnerOuter io;
       SCode.Attributes attr;
       Option<Absyn.Exp> cond;
       Option<Absyn.ArrayDim> array_dim;
@@ -829,13 +825,17 @@ algorithm
       SCodeEnv.ImportTable imps;
       Env env, class_env;
       Util.StatefulBoolean is_used;
+      Item old_item, new_item;
 
     case (_, SCode.CLASS(name = _), 
         SCodeEnv.FRAME(name, ty, tree, exts, imps, is_used) :: env)
       equation
+        old_item = SCodeEnv.avlTreeGet(tree, inElementName);
         class_env = SCodeEnv.makeClassEnvironment(inElement, true);
-        tree = SCodeEnv.avlTreeReplace(tree, inElementName, 
-          SCodeEnv.newClassItem(inElement, class_env, SCodeEnv.USERDEFINED()));
+        new_item = SCodeEnv.newClassItem(inElement, class_env,
+          SCodeEnv.USERDEFINED());
+        new_item = SCodeEnv.linkItemUsage(old_item, new_item);
+        tree = SCodeEnv.avlTreeReplace(tree, inElementName, new_item);
       then
         SCodeEnv.FRAME(name, ty, tree, exts, imps, is_used) :: env;
 
