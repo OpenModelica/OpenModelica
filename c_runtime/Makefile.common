@@ -60,6 +60,7 @@ meta_modelica.h \
 modelica.h \
 modelica_string.h \
 ModelicaUtilities.h \
+omc_msvc.h \
 read_matlab4.h \
 read_csv.h \
 read_write.h \
