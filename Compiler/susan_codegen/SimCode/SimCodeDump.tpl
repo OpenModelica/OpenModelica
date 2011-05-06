@@ -76,10 +76,19 @@ template dumpEqs(list<SimEqSystem> eqs)
     case e as SES_LINEAR(__) then "SES_LINEAR"
     case e as SES_NONLINEAR(__) then
       <<
-      nonlinear: <%e.crefs |> cr => crefStr(cr)%>
+      nonlinear: <%e.crefs |> cr => crefStr(cr) ; separator = "," %>
         <%dumpEqs(e.eqs)%><%\n%>
       >>
-    case e as SES_MIXED(__) then "SES_MIXED"
+    case e as SES_MIXED(__) then
+      <<
+      mixed system:
+        continuous part:
+          <%dumpEqs(listFill(e.cont,1))%>
+        discrete vars:
+          <%e.discVars |> var => "var" ; separator = ","%>
+        discrete parts:
+          <%dumpEqs(e.discEqs)%><%\n%>
+      >>
     case e as SES_WHEN(__) then
       <<
       when: conditions

@@ -2349,7 +2349,7 @@ algorithm
         
         // Replace variables in nonlinear equation systems with xloc[index]
         // variables.
-            allEquations = applyResidualReplacements(allEquations);
+        allEquations = applyResidualReplacements(allEquations);
         Debug.fcall("execJacstat",print, "*** SimCode -> generate analytical Jacobians: " +& realString(clock()) +& "\n" );
         LinearMats = createJacobianMatrix(functionTree,dlow,ass1,ass2,comps,m,mt);
         LinearMats = createLinearModelMatrixes(functionTree,dlow,ass1,ass2,LinearMats);
@@ -4293,34 +4293,34 @@ end makeSES_RESIDUAL;
 
 protected function applyResidualReplacements
   "Replaces variables in nonlinear equation systems with xloc[index] variables."
-  input list<SimEqSystem> inEqs;
-  output list<SimEqSystem> outEqs;
+  input SimEqSystem inEqs;
+  output SimEqSystem outEqs;
 algorithm
-  outEqs := matchcontinue(inEqs)
+  outEqs := match inEqs
     local
-      SimEqSystem eq;
-      list<SimEqSystem> rest_eqs,eqs;
+      SimEqSystem eq,cont;
+      list<SimEqSystem> rest_eqs,eqs,discEqs;
       Integer index;
       list<DAE.ComponentRef> crefs;
       VarTransform.VariableReplacements repl;
+      SimEqSystem ;
+      list<SimVar> discVars;
+      list<Integer> values,value_dims;
       
-      // handle empty
-    case ({}) then {};
-      
-    case (SES_NONLINEAR(index = index, eqs = eqs, crefs = crefs) :: rest_eqs)
+    case SES_NONLINEAR(index = index, eqs = eqs, crefs = crefs)
       equation
         repl = makeResidualReplacements(crefs);
         eqs = Util.listMap1(eqs, applyResidualReplacementsEqn, repl);
-        rest_eqs = applyResidualReplacements(rest_eqs);
       then
-        SES_NONLINEAR(index, eqs, crefs) :: rest_eqs;
+        SES_NONLINEAR(index, eqs, crefs);
         
-    case (eq :: rest_eqs)
+    case SES_MIXED(index,cont,discVars,discEqs,values,value_dims)
       equation
-        rest_eqs = applyResidualReplacements(rest_eqs);
-      then
-        eq :: rest_eqs;
-  end matchcontinue;
+        cont = applyResidualReplacements(cont);
+      then SES_MIXED(index,cont,discVars,discEqs,values,value_dims);
+
+    else inEqs;
+  end match;
 end applyResidualReplacements;
 
 protected function applyResidualReplacementsEqn

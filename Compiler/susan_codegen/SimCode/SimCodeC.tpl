@@ -1172,7 +1172,9 @@ end functionInitialResidual;
 template functionExtraResiduals(list<SimEqSystem> allEquations)
  "Generates functions in simulation file."
 ::=
-  (allEquations |> eq as SES_NONLINEAR(__) =>
+  (allEquations |> eqn => (match eqn
+     case eq as SES_MIXED(__) then functionExtraResiduals(listFill(eq.cont,1))
+     case eq as SES_NONLINEAR(__) then
      let &varDecls = buffer "" /*BUFD*/
      let algs = (eq.eqs |> eq2 as SES_ALGORITHM(__) =>
          equation_(eq2, contextSimulationDiscrete, &varDecls /*BUFD*/)
@@ -1201,6 +1203,7 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
        restore_memory_state(mem_state);
      }
      >>
+   )
    ;separator="\n\n")
 end functionExtraResiduals;
 
