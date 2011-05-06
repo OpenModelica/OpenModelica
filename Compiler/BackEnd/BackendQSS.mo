@@ -122,16 +122,8 @@ algorithm
         print("BackEndQSS analysis initialized");
         print("\n ----------------------------\n");
         
-         // STEP 1      
-        // EXTRACT THE INDICES OF NEEDED EQUATIONS FOR EACH STATE VARIABLE         
-        
-        (blt_states, blt_no_states) = BackendDAEUtil.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
-                 
-        stateEq_flat = splitStateEqSet(comps, dlow, ass1, ass2, m, mt) "Extract equations for each state derivative";
-        
-        stateEq_flat = removeEmptyElements(stateEq_flat, {}) "extract possible empty elements in the list";
-        
-        // STEP 2      
+        // -------------------------------------------------------------------------
+        // STEP 0            
         // Generate various Info and Structures needed in the following steps     
         
         (allVarsList, stateVarsList) = getAllVars(dlow);
@@ -149,41 +141,48 @@ algorithm
         
         // WHEN-CLAUSES, EQUATIONS AND REINITS
         (whenClausesList, whenEqClausesInd, whenEqInd, whenEqIncidenceMatList) = getWhenEqClausesInfo(dlow);
-
+        (whenReinitClausesInd, reinitVarsIn, reinitVarsOut) = 
+                  getWhenReinitClausesInfo(0, whenClausesList , orderedVars, {}, {}, {});
         
-        // Find the equations that correspond to when-clauses and remove them from the STATE static blocks.
+        // -------------------------------------------------------------------------
+        // STEP 1      
+        // EXTRACT THE INDICES OF NEEDED EQUATIONS FOR EACH STATE VARIABLE         
+        
+        (blt_states, blt_no_states) = BackendDAEUtil.generateStatePartition(comps, dlow, ass1, ass2, m, mt);                 
+        stateEq_flat = splitStateEqSet(comps, dlow, ass1, ass2, m, mt) "Extract equations for each state derivative";
+        stateEq_flat = removeEmptyElements(stateEq_flat, {}) "extract possible empty elements in the list";
+        
+        // Remove the equations that correspond to when-clauses from the STATE static blocks.
         stateEq_flat = removeListFromListsOfLists(whenEqInd, stateEq_flat, {});
         
         // Provide the equations in the When-Blocks.
         // Note: Currently we are having one when-block for each when-clause. But in the future we "ll group them.
         whenEq_flat = Util.listMap(whenEqInd, createListFromElement);
         
-        // STEP 3      
-        // Map state equations back to BLT blocks     
-        stateEq_blt = mapStateEqInBlocks( stateEq_flat, blt_states, {}) "Map state equations back in BLT blocks";
+        // -------------------------------------------------------------------------
+        // STEP 2      
+        // MAP STATE EQUATIONS BACK TO BLT BLOCKS        
+        
+        stateEq_blt = mapEquationsInBLTBlocks( stateEq_flat, blt_states, {}) "Map state equations back in BLT blocks";
         whenEq_blt = mapStateEqInBlocks( whenEq_flat, blt_states, {}) "Map when equations back in BLT blocks";
         
-        // More info and variables
-        
-        ind_whenBlocks_start = listLength(stateVarIndices) + listLength(stateEq_blt) + 2*listLength(zeroCrossList);
-        (whenReinitClausesInd, reinitVarsIn, mappedEqReinitMatList, reinitVarsOut) = 
-                  getWhenReinitClausesInfo(0, ind_whenBlocks_start, whenClausesList , orderedVars, {}, {}, {}, {});
-       
+        // More info, variables and parameters
         eqs = Util.listMap3(stateEq_blt, generateEqFromBlt,dlow,ass1,ass2);
-        
-        // Some more parameters
         nEquations = arrayLength(m);
         nStatic = listLength(stateEq_blt);
         nIntegr = listLength(stateVarIndices);
         nZeroCross = listLength(zeroCrossList);
         nCrossDetect = nZeroCross;
        
+        // -------------------------------------------------------------------------
+        // STEP 3      
+        // MAP WHEN-CLAUSES TO WHEN-BLOCKS        
+ 
         // Right now we generate a when DEVS block for each when-clause. The following list contains the indices of the
         // blocks where each clause is contained. - TO BE CHANGED IN THE FUTURE
         whenEqInBlocks = Util.listMap(Util.listMap(whenEqInd, createListFromElement), createListFromElement);
         whenClausesInBlocks = whenEqClausesInd; 
         reinitsInBlocks = whenReinitClausesInd;
-        // Find in which DEVS blocks the respective when-clauses are contained
         whenClausesInBlocks = Util.listMap1(whenClausesInBlocks, intAdd, nStatic+nIntegr+2*nZeroCross+1);
         reinitsInBlocks = Util.listMap1(reinitsInBlocks, intAdd, nStatic+nIntegr+2*nZeroCross+1);
         
@@ -193,12 +192,18 @@ algorithm
         nBlocks = nStatic + nIntegr + nZeroCross + nCrossDetect + nWhens + nReinits + nSamples;     
         nBlocksList = {nBlocks, nStatic, nIntegr, nZeroCross, nCrossDetect, nWhens, nReinits, nSamples};
         
+        // -------------------------------------------------------------------------
+        // STEP 4      
+        // MAP EQUATIONS TO DEVS BLOCKS        
+ 
+        
         // Map equations to DEVS blocks
         mappedEquations = constructEmptyList({}, nEquations);
         mappedEquations = mapStateEquationsInDEVSblocks(stateEq_blt, mappedEquations, nIntegr+1);
         mappedEquationsMat = listArray(mappedEquations);
-        
-        // STEP 3      
+ 
+        // -------------------------------------------------------------------------
+        // STEP 5      
         // GENERALISED INCIDENCE MATRICES
         
         //whenReinitIncidenceMat = listArray(whenReinitIncidenceMatList);
@@ -215,8 +220,10 @@ algorithm
         varsSolvedInEqsList = listAppend(varsSolvedInEqsList, reinitVarsOut);
         globalAss2 = listArray(varsSolvedInEqsList);
         
-        // STEP 3      
-        // GENERATE THE DEVS STRUCTURES    
+ 
+        // -------------------------------------------------------------------------
+        // STEP 6      
+        // GENERATE THE INPUTS/OUTPUTS OF DEVS BLOCKS
         
         // Add IN/OUT VARS of qss integrators
         ((DEVS_blocks_outVars, DEVS_blocks_inVars)) = qssIntegratorsInOutVars(stateVarIndices,({},{}));
@@ -242,18 +249,21 @@ algorithm
         
         DEVS_blocks_outVars = listAppend(DEVS_blocks_outVars, when_blocks_outVars);
         DEVS_blocks_inVars = listAppend(DEVS_blocks_inVars, when_blocks_inVars);
-
-        
+     
         print("DEVS_blocks_outVars :\n");
         printListOfLists(DEVS_blocks_outVars);
         print("DEVS_blocks_inVars :\n");
         printListOfLists(DEVS_blocks_inVars);
-        
+
+        // -------------------------------------------------------------------------
+        // STEP 7      
+        // GENERATE THE DEVS STRUCTURE
         
         DEVS_structure = generateDEVSstruct(nBlocksList, stateVarIndices, discreteVarIndices, zeroCrossList, samplesList, 
                            whenClausesInBlocks, reinitsInBlocks, reinitVarsOut, DEVS_blocks_outVars, DEVS_blocks_inVars, mappedEquationsMat); 
         
         
+        // -------------------------------------------------------------------------
         // PRINT VARIOUS INFO
         
         print("---------- When Equations in DEVS Blocks ----------\n");
@@ -399,22 +409,19 @@ public function getWhenReinitClausesInfo
  author: XF
 "
   input Integer loopIndex;
-  input Integer ind_whenBlocks_start;
   input list<BackendDAE.WhenClause> wcIn;
   input BackendDAE.Variables vars;
   input list<Integer> tempOutListWhens;
   input list<list<Integer>> tempOutIncidenceMat;
-  input list<list<Integer>> tempOutMapped;
   input list<Integer> tempOutVars;
   
   output list<Integer> whenReinitClausesInd;
   output list<list<Integer>> whenReinitIncidenceMatList;
-  output list<list<Integer>> mappedEqReinitMatList;
   output list<Integer> whenReinitOutVars;
   
 algorithm
-  (whenReinitClausesInd, whenReinitIncidenceMatList, mappedEqReinitMatList, whenReinitOutVars) :=
-  matchcontinue (loopIndex, ind_whenBlocks_start, wcIn, vars, tempOutListWhens, tempOutIncidenceMat, tempOutMapped,tempOutVars)
+  (whenReinitClausesInd, whenReinitIncidenceMatList, whenReinitOutVars) :=
+  matchcontinue (loopIndex, wcIn, vars, tempOutListWhens, tempOutIncidenceMat, tempOutVars)
     local
       
       list<BackendDAE.WhenOperator> cur_list;
@@ -423,33 +430,33 @@ algorithm
       list<Integer> row;
       list<list<Integer>> tempList, tempList2;
     
-    case (loopIndex, ind_whenBlocks_start, {}, vars, tempOutListWhens, tempOutIncidenceMat, tempOutMapped, tempOutVars) 
+    case (loopIndex, {}, vars, tempOutListWhens, tempOutIncidenceMat, tempOutVars) 
       equation
       then
-        (tempOutListWhens, tempOutIncidenceMat, tempOutMapped, tempOutVars);   
+        (tempOutListWhens, tempOutIncidenceMat, tempOutVars);   
     
     // WHEN YOU FIND A REINIT  
-    case (loopIndex, ind_whenBlocks_start, BackendDAE.WHEN_CLAUSE(reinitStmtLst=cur_list)::rest_clauses, vars, tempOutListWhens, tempOutIncidenceMat, tempOutMapped,tempOutVars) 
+    case (loopIndex, BackendDAE.WHEN_CLAUSE(reinitStmtLst=cur_list)::rest_clauses, vars, tempOutListWhens, tempOutIncidenceMat, tempOutVars) 
       equation
         true = Util.isListNotEmpty(cur_list);
         tempOutListWhens = listAppend(tempOutListWhens, {loopIndex});
         
-        (tempOutIncidenceMat, tempOutMapped, tempOutVars) = getWhenReinitClausesInfo2(loopIndex+ind_whenBlocks_start, cur_list, vars, tempOutIncidenceMat, tempOutMapped, tempOutVars);
+        (tempOutIncidenceMat, tempOutVars) = getWhenReinitClausesInfo2(cur_list, vars, tempOutIncidenceMat, tempOutVars);
         
-        (tempOutListWhens, tempOutIncidenceMat, tempOutMapped, tempOutVars) = 
-                getWhenReinitClausesInfo(loopIndex+1, ind_whenBlocks_start, rest_clauses, vars, tempOutListWhens, tempOutIncidenceMat, tempOutMapped, tempOutVars);
+        (tempOutListWhens, tempOutIncidenceMat, tempOutVars) = 
+                getWhenReinitClausesInfo(loopIndex+1, rest_clauses, vars, tempOutListWhens, tempOutIncidenceMat, tempOutVars);
       then
-        (tempOutListWhens, tempOutIncidenceMat, tempOutMapped,tempOutVars);
+        (tempOutListWhens, tempOutIncidenceMat, tempOutVars);
    
    // WHEN YOU DONT FIND A REINIT
-    case (loopIndex, ind_whenBlocks_start, BackendDAE.WHEN_CLAUSE(reinitStmtLst=cur_list)::rest_clauses, vars, tempOutListWhens, tempOutIncidenceMat, tempOutMapped,tempOutVars) 
+    case (loopIndex, BackendDAE.WHEN_CLAUSE(reinitStmtLst=cur_list)::rest_clauses, vars, tempOutListWhens, tempOutIncidenceMat, tempOutVars) 
       equation
         false = Util.isListNotEmpty(cur_list);
-        (tempOutListWhens, tempOutIncidenceMat, tempOutMapped, tempOutVars) = 
-                getWhenReinitClausesInfo(loopIndex+1, ind_whenBlocks_start, rest_clauses, vars, tempOutListWhens, tempOutIncidenceMat, tempOutMapped,tempOutVars);
+        (tempOutListWhens, tempOutIncidenceMat, tempOutVars) = 
+                getWhenReinitClausesInfo(loopIndex+1, rest_clauses, vars, tempOutListWhens, tempOutIncidenceMat, tempOutVars);
       then
-        (tempOutListWhens, tempOutIncidenceMat, tempOutMapped, tempOutVars);
-    case (_,_,_,_,_,_,_,_)
+        (tempOutListWhens, tempOutIncidenceMat, tempOutVars);
+    case (_,_,_,_,_,_)
       equation
         print("- BackendQSS.getWhenReinitClausesInfo failed\n");
       then
@@ -463,54 +470,43 @@ public function getWhenReinitClausesInfo2
  DEVS structure.
  author: XF
 "
-  input Integer whenIndex;
   input list<BackendDAE.WhenOperator> cur_ReinitList;
   input BackendDAE.Variables vars;
   input list<list<Integer>> tempOutIncidenceMat;
-  input list<list<Integer>> tempOutMapped;
   input list<Integer> tempOutVars;
   
   output list<list<Integer>> whenReinitIncidenceMatList;
-  output list<list<Integer>> mappedEqReinitMatList;
   output list<Integer> whenReinitOutVars;
   
 algorithm
-  (whenReinitIncidenceMatList, mappedEqReinitMatList,whenReinitOutVars) :=
-  matchcontinue (whenIndex, cur_ReinitList, vars, tempOutIncidenceMat, tempOutMapped, tempOutVars)
+  (whenReinitIncidenceMatList,whenReinitOutVars) :=
+  matchcontinue (cur_ReinitList, vars, tempOutIncidenceMat, tempOutVars)
     local   
       list<BackendDAE.WhenOperator> rest_reinits;
       DAE.ComponentRef leftHand;  
       DAE.Exp rightHand;
       list<Integer> row, lst1, lst2;
-    case (whenIndex, {}, vars, tempOutIncidenceMat, tempOutMapped, tempOutVars) 
+    case ({}, vars, tempOutIncidenceMat, tempOutVars) 
       equation
       then
-        (tempOutIncidenceMat, tempOutMapped, tempOutVars);   
+        (tempOutIncidenceMat, tempOutVars);   
     
-    case (whenIndex, BackendDAE.REINIT(stateVar = leftHand, value = rightHand)::rest_reinits, vars, tempOutIncidenceMat, tempOutMapped, tempOutVars) 
-      equation
-        
+    case (BackendDAE.REINIT(stateVar = leftHand, value = rightHand)::rest_reinits, vars, tempOutIncidenceMat, tempOutVars) 
+      equation  
         lst1 = BackendDAEUtil.incidenceRowExp(DAE.CREF(leftHand,DAE.ET_REAL()), vars, {});
         lst2 = BackendDAEUtil.incidenceRowExp(rightHand, vars, {});
-        //lst2 = filterDiscreteVars(lst2,vars);
-        //lst2 = makeListNegative(lst2, {});
-        //row = listAppend(lst1, lst2);
         row = lst2;
         tempOutVars = listAppend(tempOutVars, lst1);
-        tempOutIncidenceMat = listAppend(tempOutIncidenceMat, {row});
-        tempOutMapped = listAppend(tempOutMapped, {{whenIndex}});
-        
-        (tempOutIncidenceMat, tempOutMapped, tempOutVars) = getWhenReinitClausesInfo2(whenIndex, rest_reinits, vars, tempOutIncidenceMat, tempOutMapped, tempOutVars);
-    
+        tempOutIncidenceMat = listAppend(tempOutIncidenceMat, {row});            
+        (tempOutIncidenceMat, tempOutVars) = getWhenReinitClausesInfo2(rest_reinits, vars, tempOutIncidenceMat, tempOutVars);  
       then
-        (tempOutIncidenceMat, tempOutMapped, tempOutVars);
+        (tempOutIncidenceMat, tempOutVars);
      
-    case (_,_,_,_,_,_)
+    case (_,_,_,_)
       equation
         print("- BackendQSS.getWhenReinitClausesInfo2 failed\n");
       then
-        fail();    
-       
+        fail();        
   end matchcontinue;
 end getWhenReinitClausesInfo2;
 
@@ -1029,22 +1025,6 @@ algorithm
         fail();
   end matchcontinue;
 end addSampleBlocksOut;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -2527,8 +2507,8 @@ algorithm
   end matchcontinue;
 end sortEquationsBLT;
 
-public function mapStateEqInBlocks
-"function: mapStateEqInBlocks
+public function mapEquationsInBLTBlocks
+"function:mapEquationsInBLTBlocks
   author: florosx
   Maps Equations into BLT blocks
 "   
@@ -2554,21 +2534,21 @@ algorithm
       equation                     
         cur_state_blocks = mapStateEqInBlocks2(cur_state, blt_states, {});
         current_state_blocks = listAppend(state_blocks, {cur_state_blocks});
-        state_blocks = mapStateEqInBlocks(rest_states, blt_states, current_state_blocks);
+        state_blocks = mapEquationsInBLTBlocks(rest_states, blt_states, current_state_blocks);
      then
        (state_blocks);
     case (_,_,_)
       equation
-        print("- BackendQSS.mapStateEqInBlocks failed\n");
+        print("- BackendQSS.mapEquationsInBLTBlocks failed\n");
       then
         fail();
   end matchcontinue;
-end mapStateEqInBlocks;
+end mapEquationsInBLTBlocks;
 
-public function mapStateEqInBlocks2
-"function: mapStateEqInBlocks2
+public function mapEquationsInBLTBlocks2
+"function: mapEquationsInBLTBlocks2
   author: florosx
-  Helper function for mapStateEqInBlocks2
+  Helper function for mapEquationsInBLTBlocks2
 "    
    input list<Integer> inIntegerLst1;
    input list<list<Integer>> inIntegerLstLst1, inIntegerLstLst2;
@@ -2598,23 +2578,23 @@ algorithm
         true = listMember(cur_eq, cur_block);
         current_state_blocks = listAppend(state_blocks, {cur_block});
         remain_state_equations = removeRedundantEquations(rest_eq, cur_block, {});
-        state_blocks = mapStateEqInBlocks2(remain_state_equations, rest_blocks, current_state_blocks);
+        state_blocks = mapEquationsInBLTBlocks2(remain_state_equations, rest_blocks, current_state_blocks);
       then
         (state_blocks);
     case (cur_eq :: rest_eq , cur_block :: rest_blocks , state_blocks)
       equation
         false = listMember(cur_eq, cur_block);
         state_equations = cons(cur_eq, rest_eq);
-        state_blocks = mapStateEqInBlocks2(state_equations, rest_blocks, state_blocks);
+        state_blocks = mapEquationsInBLTBlocks2(state_equations, rest_blocks, state_blocks);
       then
         (state_blocks);
     case (_,_,_)
       equation
-        print("- BackendQSS.mapStateEqInBlocks2 failed\n");
+        print("- BackendQSS.mapEquationsInBLTBlocks2 failed\n");
       then
         fail();
    end matchcontinue;
-end mapStateEqInBlocks2;
+end mapEquationsInBLTBlocks2;
 
 public function removeRedundantEquations
 "function: removeRedundantEquations
