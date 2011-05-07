@@ -164,7 +164,7 @@ algorithm
         // MAP STATE EQUATIONS BACK TO BLT BLOCKS        
         
         stateEq_blt = mapEquationsInBLTBlocks( stateEq_flat, blt_states, {}) "Map state equations back in BLT blocks";
-        whenEq_blt = mapStateEqInBlocks( whenEq_flat, blt_states, {}) "Map when equations back in BLT blocks";
+        whenEq_blt = mapEquationsInBLTBlocks( whenEq_flat, blt_states, {}) "Map when equations back in BLT blocks";
         
         // More info, variables and parameters
         eqs = Util.listMap3(stateEq_blt, generateEqFromBlt,dlow,ass1,ass2);
@@ -2532,7 +2532,7 @@ algorithm
       then(state_blocks);
     case (cur_state :: rest_states, blt_states, state_blocks)
       equation                     
-        cur_state_blocks = mapStateEqInBlocks2(cur_state, blt_states, {});
+        cur_state_blocks = mapEquationsInBLTBlocks2(cur_state, blt_states, {});
         current_state_blocks = listAppend(state_blocks, {cur_state_blocks});
         state_blocks = mapEquationsInBLTBlocks(rest_states, blt_states, current_state_blocks);
      then
