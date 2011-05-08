@@ -92,7 +92,6 @@ int main(int argc, char* argv[])
 #else
   wordexp_t p;
   char **w;
-  int i;
   wordexp("~/.mosh_history",&p,0);
   if (p.we_wordc == 1) {
     w = p.we_wordv;
@@ -242,7 +241,7 @@ void doSocketCommunication(const string * scriptname)
   int port=29500;
   char buf[40000];
 
-  char* hostname ="localhost";
+  const char* hostname ="localhost";
   // TODO: add port nr. and host as command line option
 
  /* Create the socket. */
@@ -287,7 +286,15 @@ void doSocketCommunication(const string * scriptname)
   if (scriptname) {
     const char *str= ("runScript("+*scriptname+")").c_str();
     int nbytes = write(sock,str,strlen(str)+1);
+    if (nbytes == 0) {
+      cout << "Error writing to server" << endl;
+      return;
+    }
     int recvbytes = read(sock,buf,40000);
+    if (recvbytes == 0) {
+      cout << "Recieved 0 bytes, exiting" << endl;
+      return;
+    }
     cout << buf << endl;
     return;
   }
