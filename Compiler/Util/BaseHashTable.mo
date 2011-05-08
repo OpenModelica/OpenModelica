@@ -544,18 +544,38 @@ algorithm
   end matchcontinue;
 end valueArrayList2;
 
+public function hashTableCurrentSize
+  "Returns the number of elements inserted into the table"
+  input HashTable hashTable;
+  output Integer sz;
+
+  replaceable type Key subtypeof Any;
+  replaceable type Value subtypeof Any;
+  type HashTable = tuple<HashVector, ValueArray, Integer, Integer, FuncsTuple>;
+  type HashVector = array<list<tuple<Key,Integer>>>;
+  type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
+  type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString,FuncValString>;
+  partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
+  partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
+  partial function FuncKeyString input Key key; output String str; end FuncKeyString;
+  partial function FuncValString input Value val; output String str; end FuncValString;
+protected
+  ValueArray va;
+algorithm
+  (_,va,_,_,_) := hashTable;
+  sz := valueArrayLength(va);
+end hashTableCurrentSize;
+
 public function valueArrayLength
 "Returns the number of elements in the ValueArray"
   input ValueArray valueArray;
-  output Integer size;
+  output Integer sz;
 
   replaceable type Key subtypeof Any;
   replaceable type Value subtypeof Any;
   type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
 algorithm
-  size := match valueArray
-    case ((size,_,_)) then size;
-  end match;
+  (sz,_,_) := valueArray;
 end valueArrayLength;
 
 public function valueArrayAdd

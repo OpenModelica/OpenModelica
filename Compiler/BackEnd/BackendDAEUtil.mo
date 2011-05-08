@@ -1178,7 +1178,7 @@ algorithm
           values = va, comment = c, flowPrefix = fp, streamPrefix = sp), cache, env, _)
       equation
         ((e2, _)) = Expression.traverseExp(e, replaceCrefsWithValues, vars);
-        (_, v, _) = Ceval.ceval(cache, env, e2, false,NONE(), NONE(), Ceval.MSG());
+        (_, v, _) = Ceval.ceval(cache, env, e2, false,NONE(), NONE(), Ceval.NO_MSG());
       then
         BackendDAE.VAR(cr, vk, vd, ty, SOME(e), SOME(v), dims, idx, src, va, c, fp, sp);
     else inVar;

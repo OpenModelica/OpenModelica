@@ -11427,7 +11427,7 @@ algorithm
         cr = ComponentReference.crefPrependIdent(prefixCr,n,{},ty2);
         (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr);
         sl = Types.getDimensionSizes(t);
-        (cache,ss_1) = Ceval.cevalSubscripts(cache,env, ss, sl, impl, Ceval.MSG());
+        (cache,ss_1) = Ceval.cevalSubscripts(cache,env, ss, sl, impl, Ceval.NO_MSG());
       then
         (cache,ComponentReference.makeCrefIdent(n,ty2,ss_1));
   end matchcontinue;
@@ -11468,7 +11468,7 @@ algorithm
       equation 
         (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache, env, ComponentReference.makeCrefIdent(n,DAE.ET_OTHER(),{}));
         sl = Types.getDimensionSizes(t);
-        (cache,ss_1) = Ceval.cevalSubscripts(cache, env, ss, sl, impl, Ceval.MSG());
+        (cache,ss_1) = Ceval.cevalSubscripts(cache, env, ss, sl, impl, Ceval.NO_MSG());
         ty2 = Types.elabType(t);
       then
         (cache,ComponentReference.makeCrefIdent(n,ty2,ss_1));
@@ -11479,7 +11479,7 @@ algorithm
         (cache,_,t,_,_,_,_,componentEnv,_) = Lookup.lookupVar(cache, env, ComponentReference.makeCrefIdent(n,DAE.ET_OTHER(),{}));
         ty2 = Types.elabType(t);
         sl = Types.getDimensionSizes(t);
-        (cache,ss_1) = Ceval.cevalSubscripts(cache, env, ss, sl, impl, Ceval.MSG());
+        (cache,ss_1) = Ceval.cevalSubscripts(cache, env, ss, sl, impl, Ceval.NO_MSG());
        //(cache,c_1) = canonCref2(cache, env, c, ComponentReference.makeCrefIdent(n,ty2,ss), impl);
        (cache, c_1) = canonCref(cache, componentEnv, c, impl);
       then

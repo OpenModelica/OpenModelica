@@ -591,6 +591,7 @@ algorithm
     case ((e as DAE.CREF(componentRef = cr,ty = t)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
+        (cr,_) = replaceCrefSubs(cr,repl,cond);
         e1 = getExtendReplacement(repl, cr);
         ((e2,(_,true))) = BackendDAEUtil.extendArrExp((e,(NONE(),false)));
         (e3,_) = replaceExp(e2,repl,cond);
@@ -599,10 +600,16 @@ algorithm
     case ((e as DAE.CREF(componentRef = cr,ty = t)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
+        (cr,_) = replaceCrefSubs(cr,repl,cond);
         e1 = getReplacement(repl, cr);
         e2 = avoidDoubleHashLookup(e1,t);
       then
         (e2,true);
+    case ((e as DAE.CREF(componentRef = cr,ty = t)),repl,cond)
+      equation
+        true = replaceExpCond(cond, e);
+        (cr,true) = replaceCrefSubs(cr,repl,cond);
+      then (DAE.CREF(cr,t),true);
     case ((e as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
@@ -704,7 +711,8 @@ algorithm
     case ((e as DAE.ASUB(exp = e1,sub = expl)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
-        (e1_1,true) = replaceExp(e1, repl, cond);
+        (e1_1,c1) = replaceExp(e1, repl, cond);
+        (expl,true) = replaceExpList(expl, repl, cond, {}, c1);
       then
         (Expression.makeASUB(e1_1,expl),true);
     case ((e as DAE.SIZE(exp = e1,sz = NONE())),repl,cond)
@@ -736,6 +744,91 @@ algorithm
       then (e,false);
   end matchcontinue;
 end replaceExp;
+
+protected function replaceCrefSubs
+  input DAE.ComponentRef inCref;
+  input VariableReplacements repl;
+  input Option<FuncTypeExp_ExpToBoolean> cond;
+  output DAE.ComponentRef outCr;
+  output Boolean replacementPerformed;
+  partial function FuncTypeExp_ExpToBoolean
+    input DAE.Exp inExp;
+    output Boolean outBoolean;
+  end FuncTypeExp_ExpToBoolean;
+algorithm
+  (outCr,replacementPerformed) := match (inCref,repl,cond)
+    local
+      String name;
+      DAE.ComponentRef cr,cr_1;
+      DAE.ExpType ty;
+      list<DAE.Subscript> subs,subs_1;
+      Boolean c1,c2;
+
+    case (inCref as DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), repl, cond)
+      equation
+        (subs_1, c1) = replaceCrefSubs2(subs, repl, cond);
+        (cr_1, c2) = replaceCrefSubs(cr, repl, cond);
+        subs = Util.if_(c1,subs_1,subs);
+        cr = Util.if_(c2,cr_1,cr);
+        cr = Util.if_(c1 or c2,DAE.CREF_QUAL(name, ty, subs, cr),inCref);
+      then
+        (cr, c1 or c2);
+
+    case (inCref as DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), repl, cond)
+      equation
+        (subs, c1) = replaceCrefSubs2(subs, repl, cond);
+        cr = Util.if_(c1,DAE.CREF_IDENT(name, ty, subs),inCref);
+      then
+        (cr, c1);
+
+    else (inCref,false);
+  end match;
+end replaceCrefSubs;
+
+protected function replaceCrefSubs2
+  input list<DAE.Subscript> subs;
+  input VariableReplacements repl;
+  input Option<FuncTypeExp_ExpToBoolean> cond;
+  output list<DAE.Subscript> outSubs;
+  output Boolean replacementPerformed;
+  partial function FuncTypeExp_ExpToBoolean
+    input DAE.Exp inExp;
+    output Boolean outBoolean;
+  end FuncTypeExp_ExpToBoolean;
+algorithm
+  (outSubs,replacementPerformed) := match (subs,repl,cond)
+    local
+      DAE.Exp exp;
+      Boolean c1,c2;
+    case ({}, repl, cond) then ({},false);
+    case (DAE.WHOLEDIM()::subs, repl, cond)
+      equation
+        (subs,c1) = replaceCrefSubs2(subs,repl,cond);
+      then (DAE.WHOLEDIM()::subs, c1);
+
+    case (DAE.SLICE(exp = exp)::subs, repl, cond)
+      equation
+        (exp,c2) = replaceExp(exp, repl, cond);
+        (subs,c1) = replaceCrefSubs2(subs,repl,cond);
+      then
+        (DAE.SLICE(exp)::subs, c1 or c2);
+
+    case (DAE.INDEX(exp = exp)::subs, repl, cond)
+      equation
+        (exp,c2) = replaceExp(exp, repl, cond);
+        (subs,c1) = replaceCrefSubs2(subs,repl,cond);
+      then
+        (DAE.INDEX(exp)::subs, c1 or c2);
+
+    case (DAE.WHOLE_NONEXP(exp = exp)::subs, repl, cond)
+      equation
+        (exp,c2) = replaceExp(exp, repl, cond);
+        (subs,c1) = replaceCrefSubs2(subs,repl,cond);
+      then
+        (DAE.WHOLE_NONEXP(exp)::subs, c1 or c2);
+    
+  end match;
+end replaceCrefSubs2;
 
 public function replaceExpList
   input list<DAE.Exp> expl;
@@ -901,12 +994,23 @@ algorithm
   end match;
 end replaceExpMatrix2;
 
-
 public function replaceEquations
 "function: replaceEquations
   This function takes a list of equations ana a set of variable
   replacements and applies the replacements on all equations.
   The function returns the updated list of equations"
+  input list<BackendDAE.Equation> inDAE;
+  input VariableReplacements repl;
+  output list<BackendDAE.Equation> outDAE;
+protected
+  HashTable2.HashTable ht;
+algorithm
+  REPLACEMENTS(hashTable = ht) := repl;
+  // Do not do empty replacements; it just takes time ;)
+  outDAE := Debug.bcallret2(BaseHashTable.hashTableCurrentSize(ht)>0,replaceEquations2,inDAE,repl,inDAE);
+end replaceEquations;
+
+protected function replaceEquations2
   input list<BackendDAE.Equation> inBackendDAEEquationLst;
   input VariableReplacements inVariableReplacements;
   output list<BackendDAE.Equation> outBackendDAEEquationLst;
@@ -994,7 +1098,7 @@ algorithm
       then
         (a :: es_1);
   end matchcontinue;
-end replaceEquations;
+end replaceEquations2;
 
 protected function replaceWhenEquation "Replaces variables in a when equation"
   input BackendDAE.WhenEquation whenEqn;
