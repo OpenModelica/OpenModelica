@@ -73,7 +73,12 @@ template dumpEqs(list<SimEqSystem> eqs)
         <%dumpElementSource(getStatementSource(stmt))%><%\n%>
       >>
       )
-    case e as SES_LINEAR(__) then "SES_LINEAR"
+    case e as SES_LINEAR(__) then
+      <<
+      linear: <%e.vars |> var => "var" ; separator = "," %>
+        <%beqs |> exp => printExpStr(exp) ; separator = "," %><%\n%>
+        <%simJac |> (i1,i2,eq) => '<%i1%>,<%i2%>: <%dumpEqs(listFill(eq,1))%>' ; separator = "\n" %><%\n%>
+      >>
     case e as SES_NONLINEAR(__) then
       <<
       nonlinear: <%e.crefs |> cr => crefStr(cr) ; separator = "," %>
