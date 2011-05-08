@@ -3260,6 +3260,7 @@ algorithm
       Option<Values.Value> v;
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators riters,riters_1;
+      DAE.ComponentRef cr,cr_1;
     
     case ((e as DAE.ICONST(_)),rel,ext_arg)
       equation
@@ -3286,12 +3287,14 @@ algorithm
         res = rel((e,ext_arg));
       then res;
     
-    case ((e as DAE.CREF(componentRef=_)),rel,ext_arg)
+    case ((e as DAE.CREF(cr,tp)),rel,ext_arg)
       equation
-        res = rel((e,ext_arg));
+        (cr_1,ext_arg_1) = traverseExpCref(cr, rel, ext_arg);
+        e = Util.if_(referenceEq(cr,cr_1),e,DAE.CREF(cr_1,tp));
+        res = rel((e,ext_arg_1));
       then res;
 
-     // unary
+    // unary
     case ((e as DAE.UNARY(operator = op,exp = e1)),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
@@ -4606,6 +4609,101 @@ algorithm
     case (DAE.WILD(), _) then (inCref, inTuple);
   end match;
 end traverseExpBidirCref;
+
+public function traverseExpCref
+  "Helper function to traverseExp. Traverses any expressions in a
+  component reference (i.e. in it's subscripts)."
+  input ComponentRef inCref;
+  input FuncType rel;
+  input Type_a arg;
+  output ComponentRef outCref;
+  output Type_a outArg;
+
+  partial function FuncType
+    input tuple<DAE.Exp, Type_a> inTuple;
+    output tuple<DAE.Exp, Type_a> outTuple;
+  end FuncType;
+
+  replaceable type Type_a subtypeof Any;
+algorithm
+  (outCref, outArg) := match(inCref, rel, arg)
+    local
+      Ident name;
+      ComponentRef cr,cr_1;
+      Type ty;
+      list<DAE.Subscript> subs,subs_1;
+
+    case (inCref as DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), rel, arg)
+      equation
+        (subs_1, arg) = traverseExpSubs(subs, rel, arg);
+        (cr_1, arg) = traverseExpCref(cr, rel, arg);
+        cr = Util.if_(referenceEq(cr,cr_1) and referenceEq(subs,subs_1),inCref,DAE.CREF_QUAL(name, ty, subs_1, cr_1));
+      then
+        (cr, arg);
+
+    case (inCref as DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), rel, arg)
+      equation
+        (subs_1, arg) = traverseExpSubs(subs, rel, arg);
+        cr = Util.if_(referenceEq(subs,subs_1),inCref,DAE.CREF_IDENT(name, ty, subs_1));
+      then
+        (cr, arg);
+
+    case (DAE.WILD(), _, arg) then (inCref, arg);
+  end match;
+end traverseExpCref;
+
+protected function traverseExpSubs
+  input list<Subscript> inSubscript;
+  input FuncType rel;
+  input Type_a arg;
+  output list<Subscript> outSubscript;
+  output Type_a outArg;
+
+  partial function FuncType
+    input tuple<DAE.Exp, Type_a> inTuple;
+    output tuple<DAE.Exp, Type_a> outTuple;
+  end FuncType;
+
+  replaceable type Type_a subtypeof Any;
+algorithm
+  (outSubscript, outArg) := match(inSubscript, rel, arg)
+    local
+      DAE.Exp sub_exp,sub_exp_1;
+      list<Subscript> rest,res;
+
+    case ({}, _, arg) then (inSubscript,arg);
+    case (DAE.WHOLEDIM()::rest, _, _)
+      equation
+        (res,arg) = traverseExpSubs(rest,rel,arg);
+        res = Util.if_(referenceEq(rest,res),inSubscript,DAE.WHOLEDIM()::rest);
+      then (res, arg);
+
+    case (DAE.SLICE(exp = sub_exp)::rest, rel, arg)
+      equation
+        ((sub_exp_1,arg)) = traverseExp(sub_exp, rel, arg);
+        (res,arg) = traverseExpSubs(rest,rel,arg);
+        res = Util.if_(referenceEq(sub_exp,sub_exp_1) and referenceEq(rest,res),inSubscript,DAE.SLICE(sub_exp_1)::rest);
+      then
+        (res, arg);
+
+    case (DAE.INDEX(exp = sub_exp)::rest, rel, arg)
+      equation
+        ((sub_exp_1,arg)) = traverseExp(sub_exp, rel, arg);
+        (res,arg) = traverseExpSubs(rest,rel,arg);
+        res = Util.if_(referenceEq(sub_exp,sub_exp_1) and referenceEq(rest,res),inSubscript,DAE.INDEX(sub_exp_1)::rest);
+      then
+        (res, arg);
+
+    case (DAE.WHOLE_NONEXP(exp = sub_exp)::rest, rel, arg)
+      equation
+        ((sub_exp_1,arg)) = traverseExp(sub_exp, rel, arg);
+        (res,arg) = traverseExpSubs(rest,rel,arg);
+        res = Util.if_(referenceEq(sub_exp,sub_exp_1) and referenceEq(rest,res),inSubscript,DAE.WHOLE_NONEXP(sub_exp_1)::rest);
+      then
+        (res, arg);
+
+  end match;
+end traverseExpSubs;
 
 public function traverseExpTopDownCrefHelper
   input ComponentRef inCref;
