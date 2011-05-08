@@ -362,7 +362,7 @@ algorithm
 
         numPosArgs = listLength(funcArgs);
         (_,fieldNamesNamed) = Util.listSplit(fieldNameList, numPosArgs);
-        
+        checkMissingArgs(fqPath,numPosArgs,fieldNamesNamed,listLength(namedArgList),info);
         (funcArgsNamedFixed,invalidArgs) = generatePositionalArgs(fieldNamesNamed,namedArgList,{});
         funcArgs = listAppend(funcArgs,funcArgsNamedFixed);
         Util.SUCCESS() = checkInvalidPatternNamedArgs(invalidArgs,Util.SUCCESS(),info);
@@ -380,6 +380,7 @@ algorithm
         
         numPosArgs = listLength(funcArgs);
         (_,fieldNamesNamed) = Util.listSplit(fieldNameList, numPosArgs);
+        checkMissingArgs(fqPath,numPosArgs,fieldNamesNamed,listLength(namedArgList),info);
 
         (funcArgsNamedFixed,invalidArgs) = generatePositionalArgs(fieldNamesNamed,namedArgList,{});
         funcArgs = listAppend(funcArgs,funcArgsNamedFixed);
@@ -396,6 +397,33 @@ algorithm
       then fail();
   end matchcontinue;
 end elabPatternCall;
+
+protected function checkMissingArgs
+  input Absyn.Path path;
+  input Integer numPosArgs;
+  input list<String> missingFieldNames;
+  input Integer numNamedArgs;
+  input Absyn.Info info;
+algorithm
+  _ := match (path,numPosArgs,missingFieldNames,numNamedArgs,info)
+    local
+      String str;
+      list<String> strs;
+    case (_,_,{},0,_) then ();
+    case (path,_,strs,0,info)
+      equation
+        str = Util.stringDelimitList(strs,",");
+        str = Absyn.pathString(path) +& " missing pattern for fields: " +& str;
+        Error.addSourceMessage(Error.META_INVALID_PATTERN,{str},info);
+      then fail();
+    case (_,0,_,_,_) then ();
+    case (path,_,_,_,info)
+      equation
+        str = Absyn.pathString(path) +& " mixing positional and named patterns";
+        Error.addSourceMessage(Error.META_INVALID_PATTERN,{str},info);
+      then fail();
+  end match;
+end checkMissingArgs;
 
 protected function checkForAllWildCall "Converts a call REC(__) to REC(_,_,_,_)"
   input list<Absyn.Exp> args;

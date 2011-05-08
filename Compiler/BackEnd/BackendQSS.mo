@@ -3686,8 +3686,7 @@ protected function replaceRowsArray
   output BackendDAE.IncidenceMatrix incidenceMatOut;
 
 algorithm
-  (outList):=
-  matchcontinue (incidenceMat, rowsInd, newRows)
+  incidenceMatOut := matchcontinue (incidenceMat, rowsInd, newRows)
     local
       
       Integer cur_ind;
