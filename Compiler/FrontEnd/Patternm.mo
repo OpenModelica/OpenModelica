@@ -416,12 +416,14 @@ algorithm
         str = Absyn.pathString(path) +& " missing pattern for fields: " +& str;
         Error.addSourceMessage(Error.META_INVALID_PATTERN,{str},info);
       then fail();
-    case (_,0,_,_,_) then ();
+    else then ();
+    /*
     case (path,_,_,_,info)
       equation
         str = Absyn.pathString(path) +& " mixing positional and named patterns";
         Error.addSourceMessage(Error.META_INVALID_PATTERN,{str},info);
       then fail();
+    */
   end match;
 end checkMissingArgs;
 
