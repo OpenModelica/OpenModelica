@@ -77,17 +77,16 @@ Adrian Pop, adrpo@ida.liu.se, date above.
       independent (static) omc.exe.
     - to build omc for a release you need to make it static.
 
-11. To run the OpenModelica testsuite you have to:
-    If you don't have an OpenModelicaX.Y.Z release installed
-     then create a directory called OpenModelica/build/ModelicaLibrary
-    in which you unpack the Modelica Standard Library you
-    can take from another directory in Subversion: 
-    https://www.openmodelica.org/svn/OpenModelica/installers/windows/VC7/Setup/zips/ModelicaLib.tar.gz
-    To run the testsuite from Eclipse:
+11.
+    To install the Modelica Standard Library into the build directory:
+    - Ctrl+B and type: omlibrary
+
+12. To run the OpenModelica testsuite:
     - Ctrl+B and type: test
     To run the testsuite from MSYS terminal:
     - run OMDev/tools/msys/msys.bat and in the terminal you write
       >export OPENMODELICAHOME="c:\\path\\to\\your\\OpenModelica\\build"
+      # If you use a different path than OPENMODELICAHOME/lib/omlibrary/msl31...
       >export OPENMODELICALIBRARY="c:\\path\\to\\your\\OpenModelica\\build\ModelicaLibrary"
       >cd testsuite
       testsuite> make
