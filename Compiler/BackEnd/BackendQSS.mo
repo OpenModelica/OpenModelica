@@ -924,7 +924,7 @@ algorithm
     local
       Integer nStatic, nIntegr, nBlocks, nZeroCross, nCrossDetect, startCrossDetectInd, startZeroCrossInd, startWhenInd, startSampleInd, nWhens, nReinits; 
       DevsStruct DEVS_structure_temp;
-      input list<Integer> whensReinitsInBlocks;
+      list<Integer> whensReinitsInBlocks;
       
     case (nBlocksList, stateIndices, discreteVarIndices, zeroCrossList, samplesList, whenClausesInBlocks, reinitsInBlocks, reinitVarsOut, DEVS_blocks_outVars, DEVS_blocks_inVars, mappedEquationsMat)
       equation
