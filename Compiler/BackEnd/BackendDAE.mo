@@ -43,6 +43,7 @@ public import SCode;
 public import Values;
 public import HashTable2;
 public import HashTable4;
+public import HashTableCG;
 
 public constant String partialDerivativeNamePrefix="$pDER";
 
@@ -430,6 +431,24 @@ end EquationConstraints;
 
 public
 type MatchingOptions = tuple<IndexReduction, EquationConstraints> "- Matching Options" ;
+
+public
+uniontype DAEHandlerJop
+  record STARTSTEP end STARTSTEP;
+  record REDUCE_INDEX end REDUCE_INDEX;
+  record ENDSTEP end ENDSTEP;
+end DAEHandlerJop;
+
+public
+type DAEHandlerArg = tuple<StateOrder,list<list<tuple<Integer,Equation>>>>;
+
+public
+uniontype StateOrder 
+  record STATEORDER
+    HashTableCG.HashTable hashTable "x -> dx.";
+    HashTableCG.HashTable invHashTable "dx -> x.";
+  end STATEORDER;
+end StateOrder;
 
 public
 uniontype DivZeroExpReplace "- Should the division operator replaced by a operator with check of the denominator"

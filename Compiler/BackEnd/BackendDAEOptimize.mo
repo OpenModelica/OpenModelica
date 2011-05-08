@@ -923,7 +923,7 @@ algorithm
         pos_1 = pos-1;
         eqns = BackendEquation.daeEqns(dae);
         eqn = BackendDAEUtil.equationNth(eqns,pos_1);
-        (cr,_,es,_,negate) = derivativeEquation(eqn);
+        (cr,_,es,_,negate) = BackendEquation.derivativeEquation(eqn);
         // select candidate
         vars = BackendVariable.daeVars(dae);
         ((_::_),(k::_)) = BackendVariable.getVar(cr,vars);
@@ -1103,66 +1103,6 @@ algorithm
         (cr2,e1,ipos,dae2,newvars);        
   end matchcontinue;
 end selectAlias;
-
-protected function derivativeEquation
-"function derivativeEquation
-  autor Frenkel TUD 2011-04
-  Returns the two sides of an derivative equation as expressions and cref.
-  If the equation is not a derivative equaiton, this function will fail."
-  input BackendDAE.Equation eqn;
-  output DAE.ComponentRef cr;
-  output DAE.ComponentRef dcr "the derivative of cr";
-  output DAE.Exp e;
-  output DAE.Exp de "der(cr)";
-  output Boolean negate;
-algorithm
-  (cr,dcr,e,de,negate) := match (eqn)
-      local
-        DAE.Exp e,ne,ne1;
-      // a = der(b);
-      case (BackendDAE.EQUATION(exp=e as DAE.CREF(componentRef = dcr),scalar=de as  DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})))
-        then (cr,dcr,e,de,false);
-      // der(a) = b;
-      case (BackendDAE.EQUATION(exp=de as  DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),scalar=e as DAE.CREF(componentRef = dcr)))
-        then (cr,dcr,e,de,false);
-      // a = -der(b);
-      case (BackendDAE.EQUATION(exp=e as DAE.CREF(componentRef = cr),scalar=de as  DAE.UNARY(DAE.UMINUS(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = dcr)}))))
-        equation
-          ne = Expression.negate(e);
-        then (cr,dcr,ne,de,true);
-      case (BackendDAE.EQUATION(exp=e as DAE.CREF(componentRef = cr),scalar=de as  DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = dcr)}))))
-        equation
-          ne = Expression.negate(e);
-        then (cr,dcr,ne,de,true);
-      // -der(a) = b;
-      case (BackendDAE.EQUATION(exp=de as  DAE.UNARY(DAE.UMINUS(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})),scalar=e as DAE.CREF(componentRef = dcr)))
-        equation
-          ne = Expression.negate(e);
-        then (cr,dcr,ne,de,true);
-      case (BackendDAE.EQUATION(exp=de as  DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})),scalar=e as DAE.CREF(componentRef = dcr)))
-        equation
-          ne = Expression.negate(e);
-        then (cr,dcr,ne,de,true);
-      // -a = der(b);
-      case (BackendDAE.EQUATION(exp=e as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = dcr)),scalar=de as  DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})))
-        equation
-          ne = Expression.negate(de);
-        then (cr,dcr,e,ne,true);
-      case (BackendDAE.EQUATION(exp=e as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = dcr)),scalar=de as  DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})))
-        equation
-          ne = Expression.negate(de);
-        then (cr,dcr,e,ne,true);
-      // der(a) = -b;
-      case (BackendDAE.EQUATION(exp=de as  DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),scalar=e as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = dcr))))
-        equation
-          ne = Expression.negate(de);
-        then (cr,dcr,e,ne,true);
-      case (BackendDAE.EQUATION(exp=de as  DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),scalar=e as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = dcr))))
-        equation
-          ne = Expression.negate(de);
-        then (cr,dcr,e,ne,true);
-  end match;
-end derivativeEquation;
 
 protected function aliasEquation
 "function aliasEquation
@@ -1974,7 +1914,7 @@ algorithm
         pos_1 = pos-1;
         eqns = BackendEquation.daeEqns(dae);
         eqn = BackendDAEUtil.equationNth(eqns,pos_1);
-        (cr,_,_,_,_) = derivativeEquation(eqn);
+        (cr,_,_,_,_) = BackendEquation.derivativeEquation(eqn);
         // select candidate
         vars = BackendVariable.daeVars(dae);
         ((_::_),(_::_)) = BackendVariable.getVar(cr,vars);

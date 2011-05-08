@@ -1143,4 +1143,74 @@ algorithm
   end match;
 end daeArrayEqns;
 
+public function derivativeEquation
+"function derivativeEquation
+  autor Frenkel TUD 2011-04
+  Returns the two sides of an derivative equation as expressions and cref.
+  If the equation is not a derivative equaiton, this function will fail."
+  input BackendDAE.Equation eqn;
+  output DAE.ComponentRef cr;
+  output DAE.ComponentRef dcr "the derivative of cr";
+  output DAE.Exp e;
+  output DAE.Exp de "der(cr)";
+  output Boolean negate;
+algorithm
+  (cr,dcr,e,de,negate) := match (eqn)
+      local
+        DAE.Exp e,ne,ne1;
+      // a = der(b);
+      case (BackendDAE.EQUATION(exp=e as DAE.CREF(componentRef = dcr),scalar=de as  DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})))
+        then (cr,dcr,e,de,false);
+      // der(a) = b;
+      case (BackendDAE.EQUATION(exp=de as  DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),scalar=e as DAE.CREF(componentRef = dcr)))
+        then (cr,dcr,e,de,false);
+      // a = -der(b);
+      case (BackendDAE.EQUATION(exp=e as DAE.CREF(componentRef = cr),scalar=de as  DAE.UNARY(DAE.UMINUS(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = dcr)}))))
+        equation
+          ne = Expression.negate(e);
+        then (cr,dcr,ne,de,true);
+      case (BackendDAE.EQUATION(exp=e as DAE.CREF(componentRef = cr),scalar=de as  DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = dcr)}))))
+        equation
+          ne = Expression.negate(e);
+        then (cr,dcr,ne,de,true);
+      // -der(a) = b;
+      case (BackendDAE.EQUATION(exp=de as  DAE.UNARY(DAE.UMINUS(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})),scalar=e as DAE.CREF(componentRef = dcr)))
+        equation
+          ne = Expression.negate(e);
+        then (cr,dcr,ne,de,true);
+      case (BackendDAE.EQUATION(exp=de as  DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})),scalar=e as DAE.CREF(componentRef = dcr)))
+        equation
+          ne = Expression.negate(e);
+        then (cr,dcr,ne,de,true);
+      // -a = der(b);
+      case (BackendDAE.EQUATION(exp=e as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = dcr)),scalar=de as  DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})))
+        equation
+          ne = Expression.negate(de);
+        then (cr,dcr,e,ne,true);
+      case (BackendDAE.EQUATION(exp=e as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = dcr)),scalar=de as  DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})))
+        equation
+          ne = Expression.negate(de);
+        then (cr,dcr,e,ne,true);
+      // der(a) = -b;
+      case (BackendDAE.EQUATION(exp=de as  DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),scalar=e as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = dcr))))
+        equation
+          ne = Expression.negate(de);
+        then (cr,dcr,e,ne,true);
+      case (BackendDAE.EQUATION(exp=de as  DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),scalar=e as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = dcr))))
+        equation
+          ne = Expression.negate(de);
+        then (cr,dcr,e,ne,true);
+      // -a = -der(b);
+      case (BackendDAE.EQUATION(exp=e as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = dcr)),scalar=de as  DAE.UNARY(DAE.UMINUS(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))))
+        then (cr,dcr,e,de,false);
+      case (BackendDAE.EQUATION(exp=e as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = dcr)),scalar=de as  DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))))
+        then (cr,dcr,e,de,false);     
+      // -der(a) = -b;
+      case (BackendDAE.EQUATION(exp=de as  DAE.UNARY(DAE.UMINUS(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})),scalar=e as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = dcr))))
+        then (cr,dcr,e,de,false);
+      case (BackendDAE.EQUATION(exp=de as  DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})),scalar=e as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = dcr))))
+        then (cr,dcr,e,de,false);               
+  end match;
+end derivativeEquation;
+
 end BackendEquation;
