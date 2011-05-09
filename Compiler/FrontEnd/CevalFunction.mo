@@ -776,48 +776,64 @@ protected function extendEnvWithFunctionVars
   output Env.Env outEnv;
   output SymbolTable outST;
 algorithm
-  (outCache, outEnv, outST) := 
-  matchcontinue(inCache, inEnv, inFuncParams, inST)
+  (outCache, outEnv, outST) := match(inCache, inEnv, inFuncParams, inST)
     local
-      DAE.Element e;
+      FunctionVar param;
       list<FunctionVar> rest_params;
-      Values.Value val;
+      Option<Values.Value> val;
       Env.Cache cache;
       Env.Env env;
-      DAE.Exp binding_exp;
+      Option<DAE.Exp> binding_exp;
       SymbolTable st;
     
     case (_, _, {}, _) then (inCache, inEnv, inST);
     
+    case (cache, env, param :: rest_params, st)
+      equation
+        (cache, env, st) = extendEnvWithFunctionVar(cache, env, param, st);
+        (cache, env, st) = extendEnvWithFunctionVars(cache, env, rest_params, st);
+      then
+        (cache, env, st);
+
+  end match;
+end extendEnvWithFunctionVars;
+
+protected function extendEnvWithFunctionVar
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input FunctionVar inFuncParam;
+  input SymbolTable inST;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
+  output SymbolTable outST;
+algorithm
+  (outCache, outEnv, outST) := matchcontinue(inCache, inEnv, inFuncParam, inST)
+    local
+      DAE.Element e;
+      Option<Values.Value> val;
+      Env.Cache cache;
+      Env.Env env;
+      Option<DAE.Exp> binding_exp;
+      SymbolTable st;
+
     // Input parameters are assigned their corresponding input argument given to
     // the function.
-    case (_, env, (e, SOME(val)) :: rest_params, st)
+    case (_, env, (e, val as SOME(_)), st)
       equation
-        (cache, env, st) = extendEnvWithElement(e, SOME(val), inCache, env, st);
-        (cache, env, st) = extendEnvWithFunctionVars(inCache, env, rest_params, st);
+        (cache, env, st) = extendEnvWithElement(e, val, inCache, env, st);
       then
         (cache, env, st);
     
     // Non-input parameters might have a default binding, so we use that if it's
     // available.
-    case (_, env, ((e as DAE.VAR(binding = SOME(binding_exp))), NONE())
-        :: rest_params, st)
+    case (_, env, ((e as DAE.VAR(binding = binding_exp)), NONE()), st)
       equation
-        (cache, val, st) = cevalExp(binding_exp, inCache, inEnv, st);
-        (cache, env, st) = extendEnvWithElement(e, SOME(val), cache, env, st);
-        (cache, env, st) = extendEnvWithFunctionVars(cache, env, rest_params, st);
+        (val, cache, st) = evaluateBinding(binding_exp, inCache, inEnv, st);
+        (cache, env, st) = extendEnvWithElement(e, val, cache, env, st);
       then
         (cache, env, st);
     
-    // Otherwise, just add the variable to the environment.
-    case (_, env, (e, NONE()) :: rest_params, st)
-      equation
-        (cache, env, st) = extendEnvWithElement(e, NONE(), inCache, env, st);
-        (cache, env, st) = extendEnvWithFunctionVars(inCache, env, rest_params, st);
-      then
-        (cache, env, st);
-    
-    case (_, env, (e, _) :: _, _)
+    case (_, env, (e, _), _)
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.traceln("- CevalFunction.extendEnvWithFunctionVars failed for:");
@@ -825,7 +841,35 @@ algorithm
       then
         fail();
   end matchcontinue;
-end extendEnvWithFunctionVars;
+end extendEnvWithFunctionVar;
+    
+protected function evaluateBinding
+  "Evaluates an optional binding expression. If SOME expression is given,
+  returns SOME value or fails. If NONE expression given, returns NONE value."
+  input Option<DAE.Exp> inBinding;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input SymbolTable inST;
+  output Option<Values.Value> outValue;
+  output Env.Cache outCache;
+  output SymbolTable outST;
+algorithm
+  (outValue, outCache, outST) := match(inBinding, inCache, inEnv, inST)
+    local
+      DAE.Exp binding_exp;
+      Env.Cache cache;
+      Values.Value val;
+      SymbolTable st;
+
+    case (SOME(binding_exp), _, _, _)
+      equation
+        (cache, val, st) = cevalExp(binding_exp, inCache, inEnv, inST);
+      then
+        (SOME(val), cache, st);
+
+    case (NONE(), _, _, _) then (NONE(), inCache, inST);
+  end match;
+end evaluateBinding;
 
 protected function extendEnvWithElement
   "This function extracts the necessary data from a variable element, and calls
