@@ -9084,8 +9084,9 @@ protected function propagateVariability " help function to propagateAttributes, 
   end matchcontinue;
 end propagateVariability;
 
-protected function propagateFinal " help function to propagateAttributes, propagtes
- the variability attribute (parameter or constant) to variables of a component."
+protected function propagateFinal 
+  "Helper function to propagateAttributes, propagates the final prefix to
+  variables of a component."
   input list<DAE.Element> inDae;
   input SCode.Final finalPrefix;
   output list<DAE.Element> outDae;
@@ -9112,7 +9113,7 @@ protected function propagateFinal " help function to propagateAttributes, propag
     case ({},_) then {};
 
     // propagate final
-    case (DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,source,dae_var_attr,comment,io):: r, finalPrefix)
+    case (DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,source,dae_var_attr,comment,io):: r, SCode.FINAL())
       equation
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
         r_1 = propagateFinal(r, finalPrefix);
