@@ -802,7 +802,6 @@ protected
   Boolean ro;
 algorithm
   Absyn.INFO(filename, ro, ls, cs, le, ce, _) := info;
-  filename := fixFilenameForTestsuite(filename);
   ErrorExt.updateCurrentComponent(component, ro, filename, ls, le, cs, ce);
 end updateCurrentComponent;
 
@@ -859,7 +858,6 @@ algorithm
       Boolean isReadOnly;
     case (error_id,tokens,Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol))
       equation
-        file = fixFilenameForTestsuite(file);
         (msg_type,severity,msg) = lookupMessage(error_id);
         msg_type_str = messageTypeStr(msg_type);
         severity_string = severityStr(severity);
@@ -1125,23 +1123,6 @@ algorithm
       then info_str;
   end match;
 end infoStr;
-
-protected function fixFilenameForTestsuite
-"Updates the filename if it is used within the testsuite.
-This ensures that error messages use the same filename for
-everyone running the testsuite."
-  input String filename;
-  output String outFilename;
-algorithm
-  outFilename := matchcontinue filename
-    case "" then ""; // Absyn.dummyInfo
-    case filename
-      equation
-        true = RTOpts.getRunningTestsuite();
-      then System.basename(filename);
-    case filename then filename;
-  end matchcontinue;
-end fixFilenameForTestsuite;
 
 public function assertion
 "Used to make compiler-internal assertions. These messages are not meant

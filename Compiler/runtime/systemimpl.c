@@ -430,7 +430,7 @@ static char* SystemImpl__trim(const char* str, const char* chars_to_be_removed)
   return res;
 }
 
-static const char* SystemImpl__basename(const char *str)
+const char* SystemImpl__basename(const char *str)
 {
   const char* res = NULL;
 #if defined(__MINGW32__) || defined(_MSC_VER)

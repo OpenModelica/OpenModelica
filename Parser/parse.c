@@ -271,6 +271,12 @@ static void* parseStream(pANTLR3_INPUT_STREAM input)
   void* lxr = 0;
   void* res = NULL;
 
+  // Only use the basename of the file when running the testsuite
+  ModelicaParser_filename_C = running_testsuite ?
+    SystemImpl__basename(ModelicaParser_filename_C) :
+    ModelicaParser_filename_C;
+  ModelicaParser_filename_RML = mk_scon(ModelicaParser_filename_C);
+
   // TODO: Add flags to the actual Parser.parse() call instead of here?
   if (RTOptsImpl__acceptMetaModelicaGrammar()) ModelicaParser_flags |= PARSE_META_MODELICA;
 
@@ -341,7 +347,6 @@ static void* parseString(const char* data, const char* interactiveFilename, int 
   pANTLR3_INPUT_STREAM        input;
 
   ModelicaParser_filename_C = interactiveFilename;
-  ModelicaParser_filename_RML = mk_scon((char*)ModelicaParser_filename_C);
   ModelicaParser_flags = flags;
   isReadOnly = 0;
 
@@ -367,8 +372,6 @@ static void* parseFile(const char* fileName, int flags)
   int len = 0;
 
   ModelicaParser_filename_C = fileName;
-  /* For some reason we get undefined values if we use the old pointer; but only in rare cases */
-  ModelicaParser_filename_RML = mk_scon(ModelicaParser_filename_C);
   ModelicaParser_flags = flags;
   isReadOnly = !SystemImpl__regularFileWritable(ModelicaParser_filename_C);
 
