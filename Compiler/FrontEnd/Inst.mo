@@ -97,6 +97,8 @@ public
 constant Boolean alwaysUnroll = true;
 constant Boolean neverUnroll = false;
 
+constant Integer RT_CLOCK_EXECSTAT_MAIN = 11;
+
 // the index of the inst hash table in the global table
 constant Integer instHashIndex = 0;
 
@@ -1048,7 +1050,6 @@ algorithm
 
     case (cache,env,ih,{(c as SCode.CLASS(name = n, classDef = cdef))})
       equation
-        Debug.fcall("execstat",print, "*** Inst -> enter at time: " +& realString(clock()) +& "\n" );
         // Debug.fprint("insttr", "inst_program1: ");
         // Debug.fprint("insttr", n);
         // Debug.fprintln("insttr", "");
@@ -1056,7 +1057,7 @@ algorithm
         (cache,env_1,ih,store,dae,csets,_,_,_,graph) =
           instClass(cache,env,ih,UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(),
             Prefix.NOPRE(), Connect.emptySet, c, {}, false, TOP_CALL(), ConnectionGraph.EMPTY) ;
-        Debug.fcall("execstat",print, "*** Inst -> instClass finished at time: " +& realString(clock()) +& "\n" );
+        Debug.execStat("instClass done",RT_CLOCK_EXECSTAT_MAIN);
         // deal with Overconstrained connections
         dae = ConnectionGraph.handleOverconstrainedConnections(graph, dae, n);
         //print(" ********************** backpatch 3 **********************\n");
@@ -1069,7 +1070,7 @@ algorithm
         source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
 
         // finish with the execution statistics
-        Debug.fcall("execstat",print, "*** Inst -> exit at time: " +& realString(clock()) +& "\n" );
+        Debug.execStat("Instantiation done",RT_CLOCK_EXECSTAT_MAIN);
 
         daeElts = DAEUtil.daeElements(dae);
         comment = extractClassDefComment(cache, env, cdef);

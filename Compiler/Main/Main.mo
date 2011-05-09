@@ -46,6 +46,7 @@ protected import AbsynDep;
 protected import BackendDAE;
 protected import BackendDAECreate;
 protected import BackendDAEUtil;
+protected import CevalScript;
 protected import Dump;
 protected import DumpGraphviz;
 protected import SCode;
@@ -527,7 +528,8 @@ algorithm
     case (f :: libs)
       equation
         //print("Class to instantiate: " +& RTOpts.classToInstantiate() +& "\n");
-        Debug.fcall("execstat", print, "*** Main -> entering at time: " +& realString(clock()) +& "\n");
+        System.realtimeTick(CevalScript.RT_CLOCK_EXECSTAT_MAIN);
+        Debug.execStat("Enter Main",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
         // Check that it's a .mo-file.
         isModelicaFile(f);
         // Parse the first file.
@@ -552,12 +554,11 @@ algorithm
         Debug.fprint("info", "---elaborating\n");
         Debug.fprint("info", "\n------------------------------------------------------------ \n");
         Debug.fprint("info", "---instantiating\n");
-        Debug.fcall("execstat",print, "*** Main -> To instantiate at time: " +& realString(clock()) +& "\n" );
+        Debug.execStat("Parsed file",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
 
         // Instantiate the program.
         (cache, env, d_1, scode, cname) = instantiate(p);
 
-        Debug.fcall("execstat",print, "*** Main -> done instantiation at time: " +& realString(clock()) +& "\n" );
         Debug.fprint("beforefixmodout", "Explicit part:\n");
         Debug.fcall("beforefixmodout", DAEDump.dumpDebug, d_1);
 
@@ -569,18 +570,18 @@ algorithm
 
         Print.clearBuf();
         Debug.fprint("info", "---dumping\n");
-        Debug.fcall("execstat",print, "*** Main -> dumping dae: " +& realString(clock()) +& "\n" );
+        Debug.execStat("Transformations before Dump",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
         s = Debug.fcallret2("flatmodelica", DAEDump.dumpStr, d, funcs, "");
-        Debug.fcall("execstat",print, "*** Main -> done dumping dae: " +& realString(clock()) +& "\n" );
         Debug.fcall("flatmodelica", Print.printBuf, s);
-        Debug.fcall("execstat",print, "*** Main -> dumping dae2 : " +& realString(clock()) +& "\n" );
+        Debug.execStat("Dump done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
         s = Debug.fcallret2("none", DAEDump.dumpStr, d, funcs, "");
-        Debug.fcall("execstat",print, "*** Main -> done dumping dae2 : " +& realString(clock()) +& "\n" );
+        Debug.execStat("DAEDump done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
         Debug.fcall("none", Print.printBuf, s);
         Debug.fcall2("daedump", DAEDump.dump, d, funcs);
         Debug.fcall("daedump2", DAEDump.dump2, d);
         Debug.fcall("daedumpdebug", DAEDump.dumpDebug, d);
         Debug.fcall("daedumpgraphv", DAEDump.dumpGraphviz, d);
+        Debug.execStat("Misc Dump",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
 
         // Do any transformations required before going into code generation, e.g. if-equations to expressions.
         d = Debug.bcallret1(boolNot(RTOpts.debugFlag("transformsbeforedump")),DAEUtil.transformationsBeforeBackend,d,d);
@@ -589,7 +590,7 @@ algorithm
         silent = RTOpts.silent();
         notsilent = boolNot(silent);
         Debug.bcall(notsilent, print, str);
-        Debug.fcall("execstat",print, "*** Main -> To optimizedae at time: " +& realString(clock()) +& "\n" );
+        Debug.execStat("Transformations before backend",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
 
         // Run the backend.
         optimizeDae(cache, env, scode, p, d, d, cname);
@@ -760,11 +761,11 @@ algorithm
     case (cache,env,p,ap,dae,daeimpl,classname)
       equation
         true = runBackendQ();
-        Debug.fcall("execstat",print, "*** Main -> To lower dae at time: " +& realString(clock()) +& "\n" );
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
         (dlow_1,m,mT,v1,v2,comps) = BackendDAEUtil.getSolvedSystem(cache,env,dlow,funcs,NONE(),NONE(),NONE());
         modpar(dlow_1,v1,v2,comps);
+        Debug.execStat("Lowering Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
         simcodegen(dlow_1,funcs,classname,p,ap,daeimpl,m,mT,v1,v2,comps);
       then
         ();
@@ -872,13 +873,13 @@ algorithm
 
     case (dlow,functionTree,classname,p,ap,dae,m,mt,ass1,ass2,comps) /* classname ass1 ass2 blocks */
       equation
-        Debug.fcall("execstat",print, "*** Main -> entering simcodgen: " +& realString(clock()) +& "\n" );
         true = RTOpts.simulationCg();
         Print.clearErrorBuf();
         Print.clearBuf();
         cname_str = Absyn.pathString(classname);
         simSettings = SimCode.createSimulationSettings(0.0, 1.0, 500, 1e-6,"dassl","","mat",".*",false,"");
         (_,_,_,_,_,_) = SimCode.generateModelCode(dlow,functionTree,ap,dae,classname,cname_str,SOME(simSettings),m,mt,ass1,ass2,comps);
+        Debug.execStat("Codegen Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
       then
         ();
     /* If not generating simulation code: Succeed so no error messages are printed */

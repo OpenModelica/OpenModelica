@@ -894,14 +894,13 @@ algorithm
    a_cref := Absyn.pathToCref(className);
    fileDir := CevalScript.getFileDir(a_cref, p);
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
-  Debug.fcall("execstat",print, "*** SimCode -> generateFunctions: " +& realString(clock()) +& "\n" );
   (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _) :=
   createFunctions(dae, inBackendDAE, functionTree, className);
-  Debug.fcall("execstat",print, "*** SimCode -> generateSimCode: " +& realString(clock()) +& "\n" );
   simCode := createSimCode(functionTree, outIndexedBackendDAE, equationIndices,
     variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents,
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls);
   timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
+  Debug.execStat("SimCode",CevalScript.RT_CLOCK_BUILD_MODEL);
   
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
   Tpl.tplNoret(SimCodeC.translateModel, simCode);
@@ -944,13 +943,13 @@ algorithm
    a_cref := Absyn.pathToCref(className);
    fileDir := CevalScript.getFileDir(a_cref, p);
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
-  Debug.fcall("execstat",print, "*** SimCode -> generateFunctions: " +& realString(clock()) +& "\n" );
   (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _) :=
   createFunctions(dae, inBackendDAE, functionTree, className);
   simCode := createSimCodeCPP(functionTree, outIndexedBackendDAE, equationIndices,
     variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents,
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls);
   timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
+  Debug.execStat("SimCode",CevalScript.RT_CLOCK_BUILD_MODEL);
   
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
   Tpl.tplNoret(SimCodeCpp.translateModel, simCode);
@@ -1151,15 +1150,14 @@ algorithm
    a_cref := Absyn.pathToCref(className);
    fileDir := CevalScript.getFileDir(a_cref, p);
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
-  Debug.fcall("execstat",print, "*** SimCode -> generateFunctions: " +& realString(clock()) +& "\n" );
   (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _) :=
   createFunctions(dae, inBackendDAE, functionTree, className);
-  Debug.fcall("execstat",print, "*** SimCode -> generateSimCode: " +& realString(clock()) +& "\n" );
   simCode := createSimCode(functionTree, outIndexedBackendDAE, equationIndices, 
     variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents, 
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls);
 
   timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
+  Debug.execStat("SimCode",CevalScript.RT_CLOCK_BUILD_MODEL);
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
   
   inQSSrequiredData := (outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents);
@@ -1190,7 +1188,7 @@ algorithm
       then ();
     case (simCode,(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents),"QSS")
       equation
-        Debug.print("Generating QSS solver code\n");
+        Debug.trace("Generating QSS solver code\n");
         qssInfo = BackendQSS.generateStructureCodeQSS(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents);
         Tpl.tplNoret2(SimCodeQSS.translateModel, simCode, qssInfo);
       then ();

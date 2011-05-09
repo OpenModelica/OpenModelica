@@ -5838,6 +5838,7 @@ algorithm
   
   Debug.fcall("dumpdaelow", print, "dumpdaelow:\n");
   Debug.fcall("dumpdaelow", BackendDump.dump, inDAE);
+  System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   // pre optimisation phase
   (optdae,om,omT) := preoptimiseDAE(inDAE,functionTree,preOptModules,NONE(),NONE());
 
@@ -5849,10 +5850,11 @@ algorithm
   (sode,outM,outMT,outAss1,outAss2,outComps) := pastoptimiseDAE(sode,functionTree,pastOptModules,m,mT,v1,v2,comps,daeHandler);
   
   sode1 := BackendDAECreate.findZeroCrossings(sode);
-  Debug.fcall("execstat",print, "*** BackendMain -> translateDae: " +& realString(clock()) +& "\n" );
+  Debug.execStat("findZeroCrossings",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   indexed_dlow := translateDae(sode1,NONE());
-  Debug.fcall("execstat",print, "*** BackendMain -> calculate Values: " +& realString(clock()) +& "\n" );
+  Debug.execStat("translateDAE",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   outSODE := calculateValues(inCache, inEnv, indexed_dlow);
+  Debug.execStat("calculateValue",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   Debug.fcall("dumpindxdae", print, "dumpindxdae:\n");
   Debug.fcall("dumpindxdae", BackendDump.dump, outSODE);
 end getSolvedSystem;
@@ -5899,8 +5901,8 @@ algorithm
     case (dae,funcs,{},m,mT) then (dae,m,mT);
     case (dae,funcs,(optModule,moduleStr)::rest,m,mT)
       equation
-        Debug.fcall("execstat",print, "*** BackendMain -> preoptimiseDAE Module " +& moduleStr +& " at time: " +& realString(clock()) +& "\n" );
         (dae1,m1,mT1) = optModule(dae,funcs,m,mT);
+        Debug.execStat("preOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         Debug.fcall("optdaedump", print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
         Debug.fcall("optdaedump", BackendDump.dump, dae1);
         (dae2,m2,mT2) = preoptimiseDAE(dae1,funcs,rest,m1,mT1);
@@ -5973,11 +5975,11 @@ algorithm
         (m,mT) = getIncidenceMatrixfromOption(dae,om,omT);
         match_opts = Util.getOptionOrDefault(inMatchingOptions,(BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT()));
         // matching algorithm
-        Debug.fcall("execstat",print, "*** BackendMain -> transformDAE get matching at time: " +& realString(clock()) +& " using index Reduction Method " +& methodstr  +& "\n" );
         (v1,v2,ode,m1,mT1) = BackendDAETransform.matchingAlgorithm(dae, m, mT, match_opts, daeHandlerfunc, funcs);
+        Debug.execStat("transformDAE -> index Reduction Method " +& methodstr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         // sorting algorithm
-        Debug.fcall("execstat",print, "*** BackendMain -> transformDAE sort components at time: " +& realString(clock()) +& "\n" );
         (comps) = BackendDAETransform.strongComponents(m1, mT1, v1, v2);
+        Debug.execStat("transformDAE -> sort components",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then
         (ode,m1,mT1,v1,v2,comps);
     case (_,_,_,_,_,_)
@@ -6023,8 +6025,8 @@ algorithm
     case (dae,funcs,{},m,mT,v1,v2,comps,_) then (dae,m,mT,v1,v2,comps);
     case (dae,funcs,(optModule,moduleStr)::rest,m,mT,v1,v2,comps,daeHandler)
       equation
-        Debug.fcall("execstat",print, "*** BackendMain -> pastoptimiseDAE " +& moduleStr +& " at time: " +& realString(clock()) +& "\n" );
         (dae1,m1,mT1,v1_1,v2_1,comps1,runMatching) = optModule(dae,funcs,m,mT,v1,v2,comps);
+        Debug.execStat("pastOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         Debug.fcall("optdaedump", print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
         Debug.fcall("optdaedump", BackendDump.dump, dae1);
         (dae1,m1,mT1,v1_1,v2_1,comps1) = checktransformDAE(runMatching,dae1,funcs,m1,mT1,v1_1,v2_1,comps1,daeHandler);

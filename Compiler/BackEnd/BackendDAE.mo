@@ -46,6 +46,7 @@ public import HashTable4;
 public import HashTableCG;
 
 public constant String partialDerivativeNamePrefix="$pDER";
+public constant Integer RT_CLOCK_EXECSTAT_BACKEND_MODULES=12;
 
 public uniontype Type "
 Once we are in BackendDAE, the Type can be only basic types or enumeration.
