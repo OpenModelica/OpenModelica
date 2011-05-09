@@ -3578,14 +3578,16 @@ algorithm
   (outVar,outTypeA):=
   matchcontinue (inVar,func,inTypeA)
     local
+      Option<BackendDAE.Var> ovar;
       BackendDAE.Var v,v1;
       Type_a ext_arg;
-    case (NONE(),func,inTypeA) then (NONE(),inTypeA);
-    case (SOME(v),func,inTypeA)
+    case (ovar as NONE(),func,inTypeA) then (ovar,inTypeA);
+    case (ovar as SOME(v),func,inTypeA)
       equation
         ((v1,ext_arg)) = func((v,inTypeA));
+        ovar = Util.if_(referenceEq(v,v1),ovar,SOME(v1));
       then
-        (SOME(v1),ext_arg);
+        (ovar,ext_arg);
     case (_,_,_)
       equation
         Debug.fprintln("failtrace", "- BackendVariable.traverseBackendDAEVar failed");

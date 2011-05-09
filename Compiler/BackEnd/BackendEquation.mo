@@ -778,14 +778,16 @@ protected function traverseBackendDAEOptEqnWithUpdate "function: traverseBackend
 algorithm
   (outEquation,outTypeA):=  matchcontinue (inEquation,func,inTypeA)
     local
+      Option<BackendDAE.Equation> oeqn;
       BackendDAE.Equation eqn,eqn1;
      Type_a ext_arg;
-    case (NONE(),func,inTypeA) then (NONE(),inTypeA);
-    case (SOME(eqn),func,inTypeA)
+    case (oeqn as NONE(),func,inTypeA) then (oeqn,inTypeA);
+    case (oeqn as SOME(eqn),func,inTypeA)
       equation
         ((eqn1,ext_arg)) = func((eqn,inTypeA));
+        oeqn = Util.if_(referenceEq(eqn,eqn1),oeqn,SOME(eqn1));
       then
-        (SOME(eqn1),ext_arg);
+        (oeqn,ext_arg);
     case (_,_,_)
       equation
         Debug.fprintln("failtrace", "- BackendEquation.traverseBackendDAEOptEqnWithUpdate failed");
@@ -813,16 +815,18 @@ algorithm
   (outMultiDimEquation,outTypeA):=
   match (inMultiDimEquation,func,inTypeA)
     local 
+      BackendDAE.MultiDimEquation meqn;
       DAE.Exp e1,e2,e1_1,e2_1;
       list<Integer> dims;
       DAE.ElementSource source;
       Type_a ext_arg_1,ext_arg_2;
-    case (BackendDAE.MULTIDIM_EQUATION(dims,e1,e2,source),func,inTypeA)
+    case (meqn as BackendDAE.MULTIDIM_EQUATION(dims,e1,e2,source),func,inTypeA)
       equation
         ((e1_1,ext_arg_1)) = func((e1,inTypeA));
         ((e2_1,ext_arg_2)) = func((e2,ext_arg_1));
+        meqn = Util.if_(referenceEq(e1,e1_1) and referenceEq(e2,e2_1),meqn,BackendDAE.MULTIDIM_EQUATION(dims,e1_1,e2_1,source));
       then
-        (BackendDAE.MULTIDIM_EQUATION(dims,e1_1,e2_1,source),ext_arg_2);
+        (meqn,ext_arg_2);
   end match;
 end traverseBackendDAEExpsArrayEqnWithUpdate;
 
@@ -845,13 +849,15 @@ algorithm
   (outAlg,outTypeA):=
   match (inAlg,func,inTypeA)
     local 
-      list<DAE.Statement> stmts;
+      DAE.Algorithm alg;
+      list<DAE.Statement> stmts,stmts1;
       Type_a ext_arg_1;
-    case (DAE.ALGORITHM_STMTS(stmts),func,inTypeA)
+    case (alg as DAE.ALGORITHM_STMTS(stmts),func,inTypeA)
       equation
-        (stmts,ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts,func,inTypeA);
+        (stmts1,ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts,func,inTypeA);
+        alg = Util.if_(referenceEq(stmts,stmts1),alg,DAE.ALGORITHM_STMTS(stmts));
       then
-        (DAE.ALGORITHM_STMTS(stmts),ext_arg_1);
+        (alg,ext_arg_1);
   end match;
 end traverseBackendDAEExpsAlgortihmWithUpdate;
 

@@ -5481,19 +5481,36 @@ algorithm
   (outArray,outTypeB) := matchcontinue(inArray,func,arrayfunc,pos,len,inTypeB)
     local 
       array<Type_a> array;
-      Type_a new_a;
+      Type_a a,new_a;
       Type_b ext_arg_1,ext_arg_2;
     case(array,_,_,pos,len,inTypeB) equation 
       true = pos > len;
     then (array,inTypeB);
     
     case(array,func,arrayfunc,pos,len,inTypeB) equation
-      (new_a,ext_arg_1) = arrayfunc(array[pos],func,inTypeB);
-      array = arrayUpdate(array,pos,new_a);
+      a = array[pos];
+      (new_a,ext_arg_1) = arrayfunc(a,func,inTypeB);
+      array = arrayUpdateCond(referenceEq(a,new_a),array,pos,new_a);
       (array,ext_arg_2) = traverseBackendDAEArrayNoCopyWithUpdate(array,func,arrayfunc,pos+1,len,ext_arg_1);
     then (array,ext_arg_2);
   end matchcontinue;
 end traverseBackendDAEArrayNoCopyWithUpdate;
+
+protected function arrayUpdateCond
+  input Boolean b;
+  input array<Type_a> inArray;
+  input Integer pos;
+  input Type_a a;
+  output array<Type_a> outArray;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outArray := match(b,inArray,pos,a)
+    case(true,inArray,_,_) // equation print("equal\n"); 
+      then inArray; 
+    case(false,inArray,pos,a) // equation print("not equal\n"); 
+      then arrayUpdate(inArray,pos,a);
+  end match;
+end arrayUpdateCond;  
 
 protected function traverseBackendDAEExpsVar "function: traverseBackendDAEExpsVar
   author: Frenkel TUD
