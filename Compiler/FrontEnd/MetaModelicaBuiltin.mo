@@ -394,6 +394,14 @@ function stringInt
 external "builtin";
 end stringInt;
 
+function stringReal
+"This function fails unless the whole string can be consumed by strtod without
+setting errno. For more details, see man 3 strtod"
+  input String str;
+  output Real r;
+external "builtin";
+end stringReal;
+
 function stringListStringChar "O(str)"
   input String str;
   output List<String> chars;

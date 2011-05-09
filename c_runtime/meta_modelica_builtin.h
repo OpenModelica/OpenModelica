@@ -61,6 +61,7 @@ intStringChar_rettype intStringChar(modelica_integer);
 
 /* String Operations */
 typedef modelica_integer stringInt_rettype;
+typedef modelica_real stringReal_rettype;
 typedef modelica_integer stringHash_rettype;
 typedef modelica_integer stringHashDjb2_rettype;
 typedef modelica_integer stringHashDjb2Mod_rettype;
@@ -73,6 +74,7 @@ typedef metamodelica_string stringGetStringChar_rettype;
 typedef metamodelica_string stringUpdateStringChar_rettype;
 
 stringInt_rettype stringInt(metamodelica_string);
+stringReal_rettype stringReal(metamodelica_string);
 stringListStringChar_rettype stringListStringChar(metamodelica_string);
 stringAppendList_rettype stringAppendList(modelica_metatype);
 metamodelica_string_const stringAppend(metamodelica_string_const,metamodelica_string_const);

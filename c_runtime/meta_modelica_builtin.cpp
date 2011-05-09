@@ -107,6 +107,21 @@ stringInt_rettype stringInt(metamodelica_string s)
   return res;
 }
 
+stringReal_rettype stringReal(metamodelica_string s)
+{
+  double res;
+  char *endptr,*str=MMC_STRINGDATA(s);
+  MMC_CHECK_STRING(s);
+  errno = 0;
+  res = strtod(str,&endptr);
+  if (errno != 0 || str == endptr)
+    MMC_THROW();
+  if (*endptr != '\0')
+    MMC_THROW();
+
+  return res;
+}
+
 modelica_metatype boxptr_stringEq(modelica_metatype a, modelica_metatype b)
 {
   return mmc_mk_bcon(stringEqual(a,b));
