@@ -1062,6 +1062,16 @@ algorithm
   end matchcontinue;
 end traverseAlgorithmFinder;
 
+public function markedEquationSource
+  input BackendDAE.BackendDAE dae;
+  input Integer i;
+  output DAE.ElementSource source;
+protected
+  BackendDAE.EquationArray eqns;
+algorithm
+  BackendDAE.DAE(orderedEqs = eqns) := dae;
+  source := equationSource(BackendDAEUtil.equationNth(eqns,i-1));
+end markedEquationSource;
 
 public function equationSource "Retrieve the source from a BackendDAE.BackendDAE equation"
   input BackendDAE.Equation eq;

@@ -447,6 +447,8 @@ algorithm
       list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedAlgs1,derivedAlgs2;
       list<tuple<Integer,Integer,Integer>> derivedMultiEqn,derivedMultiEqn1,derivedMultiEqn2;
       BackendDAE.DAEHandlerArg arg,arg1;
+      DAE.ElementSource source;
+      Absyn.Info info;
 
     case (dae,m,mt,nv,nf,i,ass1,ass2,_,_,inArg,_,derivedAlgs,derivedMultiEqn)
       equation
@@ -502,7 +504,10 @@ algorithm
         var_lst = BackendDAEEXT.getMarkedVariables();
         eqn_str = BackendDump.dumpMarkedEqns(dae, eqn_lst);
         var_str = BackendDump.dumpMarkedVars(dae, var_lst);
-        Error.addMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str});
+        i::_ = eqn_lst;
+        source = BackendEquation.markedEquationSource(dae, i);
+        info = DAEUtil.getElementSourceFileInfo(source);
+        Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
         //print("structurally singular. IM:");
         //dumpIncidenceMatrix(m);
         //print("daelow:");
@@ -1212,7 +1217,7 @@ protected function replaceStateOrder
   input BackendDAE.StateOrder inStateOrd;
   output BackendDAE.BackendDAE outBackendDAE;
 algorithm
-  (outBackendDAEs):=
+  outBackendDAE :=
   matchcontinue (inIntegerLst,inBackendDAE,inStateOrd)
     local
       BackendDAE.BackendDAE dae;
@@ -1308,7 +1313,7 @@ public function reduceIndexDummyDerX
   output BackendDAE.DAEHandlerArg outArg;
   output Boolean outRunMatching;
 algorithm
-  (outBackendDAE,outIncidenceMatrix,outIncidenceMatrixT,outDerivedAlgs,outDerivedMultiEqn,outArg):=
+  (outBackendDAE,outIncidenceMatrix,outIncidenceMatrixT,outDerivedAlgs,outDerivedMultiEqn,outArg,outRunMatching):=
   matchcontinue (inJop,inBackendDAE1,inIncidenceMatrix2,inIncidenceMatrixT3,inFunctions,inDerivedAlgs,inDerivedMultiEqn,inArg)
     local
       list<BackendDAE.Value> eqns,diff_eqns,eqns_1,stateindx,deqns,reqns,changedeqns;
@@ -1531,7 +1536,7 @@ public function reduceIndexDummyDer
   output BackendDAE.DAEHandlerArg outArg;
   output Boolean outRunMatching;
 algorithm
-  (outBackendDAE,outIncidenceMatrix,outIncidenceMatrixT,outDerivedAlgs,outDerivedMultiEqn,outArg):=
+  (outBackendDAE,outIncidenceMatrix,outIncidenceMatrixT,outDerivedAlgs,outDerivedMultiEqn,outArg,outRunMatching):=
   matchcontinue (inJop,inBackendDAE1,inIncidenceMatrix2,inIncidenceMatrixT3,inFunctions,inDerivedAlgs,inDerivedMultiEqn,inArg)
     local
       list<BackendDAE.Value> eqns,diff_eqns,eqns_1,stateindx,deqns,reqns,changedeqns;
