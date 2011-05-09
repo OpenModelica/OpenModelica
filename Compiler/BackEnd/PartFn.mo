@@ -205,17 +205,18 @@ algorithm
     local
       list<DAE.Function> dae;
       array<list<BackendDAE.CrefIndex>> crind;
-      array<list<BackendDAE.StringIndex>> strind;
       Integer bsi,nov,noe,asi;
       array<Option<BackendDAE.Var>> varr,varr_1;
       list<Option<BackendDAE.Var>> vlst,vlst_1;
-    case(BackendDAE.VARIABLES(crind,strind,BackendDAE.VARIABLE_ARRAY(noe,asi,varr),bsi,nov),dae)
+    
+    case(BackendDAE.VARIABLES(crind,BackendDAE.VARIABLE_ARRAY(noe,asi,varr),bsi,nov),dae)
       equation
         vlst = arrayList(varr);
         (vlst_1,dae) = partEvalVarLst(vlst,dae);
         varr_1 = listArray(vlst_1);
       then
-        (BackendDAE.VARIABLES(crind,strind,BackendDAE.VARIABLE_ARRAY(noe,asi,varr_1),bsi,nov),dae);
+        (BackendDAE.VARIABLES(crind,BackendDAE.VARIABLE_ARRAY(noe,asi,varr_1),bsi,nov),dae);
+    
     case(_,_)
       equation
         Debug.fprintln("failtrace","- PartFn.partEvalVars failed");

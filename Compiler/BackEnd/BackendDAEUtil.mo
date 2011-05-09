@@ -1272,14 +1272,15 @@ public function emptyVars
   output BackendDAE.Variables outVariables;
 protected
   array<list<BackendDAE.CrefIndex>> arr;
-  array<list<BackendDAE.StringIndex>> arr2;
   list<Option<BackendDAE.Var>> lst;
   array<Option<BackendDAE.Var>> emptyarr;
+  Integer bucketSize, arrSize;
 algorithm
-  arr := arrayCreate(10, {});
-  arr2 := arrayCreate(10, {});
-  emptyarr := arrayCreate(10, NONE());
-  outVariables := BackendDAE.VARIABLES(arr,arr2,BackendDAE.VARIABLE_ARRAY(0,10,emptyarr),10,0);
+  bucketSize := BaseHashTable.bigBucketSize;
+  arrSize := bucketSize; // BaseHashTable.bucketToValuesSize(bucketSize);
+  arr := arrayCreate(bucketSize, {});
+  emptyarr := arrayCreate(arrSize, NONE());
+  outVariables := BackendDAE.VARIABLES(arr,BackendDAE.VARIABLE_ARRAY(0,arrSize,emptyarr),bucketSize,0);
 end emptyVars;
 
 public function emptyAliasVariables

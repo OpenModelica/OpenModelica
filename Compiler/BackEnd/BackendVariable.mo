@@ -2904,14 +2904,12 @@ algorithm
       Integer pos,pos_1;
       BackendDAE.Value hval,hashindx,indx,bsize,n,hvalold,indxold;
       list<BackendDAE.CrefIndex> indexes,indexes1;
-      list<BackendDAE.StringIndex> indexexold,indexexold1;
       BackendDAE.Var v;
       DAE.ComponentRef cr;
       array<list<BackendDAE.CrefIndex>> hashvec,hashvec_1;
-      array<list<BackendDAE.StringIndex>> oldhashvec,oldhashvec_1;
       BackendDAE.VariableArray varr,varr1;
       String name_str;
-    case (pos,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
+    case (pos,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
       equation
         (v as BackendDAE.VAR(varName = cr),varr1) = removeVar1(varr, pos);
         pos_1 = pos-1;
@@ -2919,14 +2917,8 @@ algorithm
         indexes = hashvec[hashindx + 1];
         (indexes1,_) = Util.listDeleteMemberOnTrue(BackendDAE.CREFINDEX(cr,pos_1),indexes,removeVar2);
         hashvec_1 = arrayUpdate(hashvec, hashindx + 1, indexes1);
-        name_str = ComponentReference.printComponentRefStr(cr);
-        hvalold = stringHashDjb2(name_str);
-        indxold = intMod(hvalold, bsize);
-        indexexold = oldhashvec[indxold + 1];
-        (indexexold1,_) = Util.listDeleteMemberOnTrue(BackendDAE.STRINGINDEX(name_str,pos_1),indexexold,removeVar3);
-        oldhashvec_1 = arrayUpdate(oldhashvec, indxold + 1,indexexold1);        
       then
-        (BackendDAE.VARIABLES(hashvec_1,oldhashvec_1,varr1,bsize,n),v);
+        (BackendDAE.VARIABLES(hashvec_1,varr1,bsize,n),v);
     case (pos,_)
       equation
         print("- BackendVariable.removeVar failed for var ");
@@ -2981,20 +2973,6 @@ algorithm
   end match;
 end removeVar2;
 
-protected function removeVar3
-"Helper function to getVar"
-  input BackendDAE.StringIndex cri1;
-  input BackendDAE.StringIndex cri2;
-  output Boolean matches;
-algorithm
-  matches := match (cri1,cri2)
-    local
-      Integer i1,i2;
-    case (BackendDAE.STRINGINDEX(index = i1),BackendDAE.STRINGINDEX(index = i2))
-      then intEq(i1,i2);
-  end match;
-end removeVar3;
-
 public function existsVar
 "function: existsVar
   author: PA
@@ -3011,10 +2989,9 @@ algorithm
       BackendDAE.Var v;
       DAE.ComponentRef cr2,cr;
       array<list<BackendDAE.CrefIndex>> hashvec;
-      array<list<BackendDAE.StringIndex>> oldhashvec;
       BackendDAE.VariableArray varr;
       String str;
-    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
+    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
       equation
         hashindx = HashTable2.hashFunc(cr, bsize);
         indexes = hashvec[hashindx + 1];
@@ -3023,7 +3000,7 @@ algorithm
         true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
       then
         true;
-    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
+    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
       equation
         hashindx = HashTable2.hashFunc(cr, bsize);
         indexes = hashvec[hashindx + 1];
@@ -3119,19 +3096,17 @@ algorithm
       list<BackendDAE.CrefIndex> indexes;
       array<list<BackendDAE.CrefIndex>> hashvec_1,hashvec;
       String name_str;
-      list<BackendDAE.StringIndex> indexexold;
-      array<list<BackendDAE.StringIndex>> oldhashvec_1,oldhashvec;
       BackendDAE.Var v,newv;
       DAE.ComponentRef cr;
       DAE.Flow flowPrefix;
       BackendDAE.Variables vars;
     /* adrpo: ignore records!
     case ((v as BackendDAE.VAR(varName = cr,origVarName = name,flowPrefix = flowPrefix, varType = DAE.COMPLEX(_,_))),
-          (vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
+          (vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
     then
       vars;
     */
-    case ((v as BackendDAE.VAR(varName = cr,flowPrefix = flowPrefix)),(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
+    case ((v as BackendDAE.VAR(varName = cr,flowPrefix = flowPrefix)),(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
       equation
         failure((_,_) = getVar(cr, vars));
         // print("adding when not existing previously\n");
@@ -3141,23 +3116,17 @@ algorithm
         indexes = hashvec[indx + 1];
         hashvec_1 = arrayUpdate(hashvec, indx + 1, (BackendDAE.CREFINDEX(cr,newpos) :: indexes));
         n_1 = vararrayLength(varr_1);
-        name_str = ComponentReference.printComponentRefStr(cr);
-        hvalold = stringHashDjb2(name_str);
-        indxold = intMod(hvalold, bsize);
-        indexexold = oldhashvec[indxold + 1];
-        oldhashvec_1 = arrayUpdate(oldhashvec, indxold + 1,
-          (BackendDAE.STRINGINDEX(name_str,newpos) :: indexexold));
       then
-        BackendDAE.VARIABLES(hashvec_1,oldhashvec_1,varr_1,bsize,n_1);
+        BackendDAE.VARIABLES(hashvec_1,varr_1,bsize,n_1);
 
-    case ((newv as BackendDAE.VAR(varName = cr,flowPrefix = flowPrefix)),(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
+    case ((newv as BackendDAE.VAR(varName = cr,flowPrefix = flowPrefix)),(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
       equation
         (_,{indx}) = getVar(cr, vars);
         // print("adding when already present => Updating value\n");
         indx_1 = indx - 1;
         varr_1 = vararraySetnth(varr, indx_1, newv);
       then
-        BackendDAE.VARIABLES(hashvec,oldhashvec,varr_1,bsize,n);
+        BackendDAE.VARIABLES(hashvec,varr_1,bsize,n);
 
     case (_,_)
       equation
@@ -3260,9 +3229,9 @@ algorithm
       BackendDAE.Var v;
       DAE.ComponentRef cr2,cr;
       array<list<BackendDAE.CrefIndex>> hashvec;
-      array<list<BackendDAE.StringIndex>> oldhashvec;
       BackendDAE.VariableArray varr;
-    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
+    
+    case (cr,BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
       equation
         hashindx = HashTable2.hashFunc(cr, bsize);
         indexes = hashvec[hashindx + 1];
@@ -3272,6 +3241,7 @@ algorithm
         indx_1 = indx + 1;
       then
         (v,indx_1);
+    
   end match;
 end getVar2;
 
@@ -3327,11 +3297,12 @@ algorithm
       list<BackendDAE.Value> indxs;
       BackendDAE.Variables vars;
       array<list<BackendDAE.CrefIndex>> hashvec;
-      array<list<BackendDAE.StringIndex>> oldhashvec;
       BackendDAE.VariableArray varr;
-    case (cr,(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
+    
+    // one dimensional arrays
+    case (cr,(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
       equation
-        cr_1 = ComponentReference.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(1))}) "one dimensional arrays" ;
+        cr_1 = ComponentReference.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(1))});
         hashindx = HashTable2.hashFunc(cr_1, bsize);
         indexes = hashvec[hashindx + 1];
         indx = getVar3(cr_1, indexes, getVar4(cr_1, indexes));
@@ -3340,7 +3311,9 @@ algorithm
         (vs,indxs) = getArrayVar2(instdims, cr, vars);
       then
         (vs,indxs);
-    case (cr,(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))) /* two dimensional arrays */
+    
+    // two dimensional arrays
+    case (cr,(vars as BackendDAE.VARIABLES(crefIdxLstArr = hashvec,varArr = varr,bucketSize = bsize,numberOfVars = n)))
       equation
         cr_1 = ComponentReference.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(1)),DAE.INDEX(DAE.ICONST(1))});
         hashindx = HashTable2.hashFunc(cr_1, bsize);
@@ -3571,16 +3544,15 @@ algorithm
   matchcontinue (inVariables,func,inTypeA)
     local
       array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
-      array<list<BackendDAE.StringIndex>> strIdxLstArr;
       BackendDAE.VariableArray varArr;
       Integer bucketSize,numberOfVars,numberOfElements,arrSize;
       array<Option<BackendDAE.Var>> varOptArr,varOptArr1;
       Type_a ext_arg_1;
-    case (BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr,strIdxLstArr=strIdxLstArr,varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements=numberOfElements,arrSize=arrSize,varOptArr=varOptArr),bucketSize=bucketSize,numberOfVars=numberOfVars),func,inTypeA)
+    case (BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr,varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements=numberOfElements,arrSize=arrSize,varOptArr=varOptArr),bucketSize=bucketSize,numberOfVars=numberOfVars),func,inTypeA)
       equation
         (varOptArr1,ext_arg_1) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(varOptArr,func,traverseBackendDAEVarWithUpdate,1,arrayLength(varOptArr),inTypeA);
       then
-        (BackendDAE.VARIABLES(crefIdxLstArr,strIdxLstArr,BackendDAE.VARIABLE_ARRAY(numberOfElements,arrSize,varOptArr1),bucketSize,numberOfVars),ext_arg_1);
+        (BackendDAE.VARIABLES(crefIdxLstArr,BackendDAE.VARIABLE_ARRAY(numberOfElements,arrSize,varOptArr1),bucketSize,numberOfVars),ext_arg_1);
     case (_,_,_)
       equation
         Debug.fprintln("failtrace", "- BackendVariable.traverseBackendDAEVarsWithUpdate failed");

@@ -129,8 +129,6 @@ protected import ValuesUtil;
         <ELEMENT>FirstStringOfList</ELEMENT>
         ...
         <ELEMENT>LastStringOfList</ELEMENT>
-    4 - dumpStringIdxLst2 to dump a list of StringIndex:
-        <ELEMENT ID=...>StringIndex</ELEMENT>
   */
   protected constant String ELEMENT  = "element";
   protected constant String ELEMENT_ = "Element";
@@ -1033,7 +1031,6 @@ algorithm
       BackendDAE.Variables vars_orderedVars;
       //VARIABLES record for vars.
       array<list<BackendDAE.CrefIndex>> crefIdxLstArr_orderedVars;
-      array<list<BackendDAE.StringIndex>> strIdxLstArr_orderedVars;
       BackendDAE.VariableArray varArr_orderedVars;
       Integer bucketSize_orderedVars;
       Integer numberOfVars_orderedVars;
@@ -1042,7 +1039,6 @@ algorithm
       BackendDAE.Variables vars_knownVars;
       //VARIABLES record for vars.
       array<list<BackendDAE.CrefIndex>> crefIdxLstArr_knownVars;
-      array<list<BackendDAE.StringIndex>> strIdxLstArr_knownVars;
       BackendDAE.VariableArray varArr_knownVars;
       Integer bucketSize_knownVars;
       Integer numberOfVars_knownVars;
@@ -1051,7 +1047,6 @@ algorithm
       BackendDAE.Variables vars_externalObject;
       //VARIABLES record for vars.
       array<list<BackendDAE.CrefIndex>> crefIdxLstArr_externalObject;
-      array<list<BackendDAE.StringIndex>> strIdxLstArr_externalObject;
       BackendDAE.VariableArray varArr_externalObject;
       Integer bucketSize_externalObject;
       Integer numberOfVars_externalObject;
@@ -1071,9 +1066,9 @@ algorithm
       Boolean addOrInMatrix,addSolInfo,addMML,dumpRes;
 
 
-    case (BackendDAE.DAE(vars_orderedVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_orderedVars,strIdxLstArr=strIdxLstArr_orderedVars,varArr=varArr_orderedVars,bucketSize=bucketSize_orderedVars,numberOfVars=numberOfVars_orderedVars),
-                 vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,strIdxLstArr=strIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
-                 vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,strIdxLstArr=strIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
+    case (BackendDAE.DAE(vars_orderedVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_orderedVars,varArr=varArr_orderedVars,bucketSize=bucketSize_orderedVars,numberOfVars=numberOfVars_orderedVars),
+                 vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
+                 vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
                  _,eqns,reqns,ieqns,ae,algs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls),inFunctions,addOrInMatrix,addSolInfo,addMML,dumpRes)
       equation
 
@@ -1085,9 +1080,9 @@ algorithm
         dumpStrOpenTag(DAE_OPEN);
         dumpStrOpenTagAttr(VARIABLES, DIMENSION, intString(listLength(vars)+listLength(knvars)+listLength(extvars)));
         //Bucket size info is no longer present.
-        dumpVars(vars,crefIdxLstArr_orderedVars,strIdxLstArr_orderedVars,stringAppend(ORDERED,VARIABLES_),addMML);
-        dumpVars(knvars,crefIdxLstArr_knownVars,strIdxLstArr_knownVars,stringAppend(KNOWN,VARIABLES_),addMML);
-        dumpVars(extvars,crefIdxLstArr_externalObject,strIdxLstArr_externalObject,stringAppend(EXTERNAL,VARIABLES_),addMML);
+        dumpVars(vars,crefIdxLstArr_orderedVars,stringAppend(ORDERED,VARIABLES_),addMML);
+        dumpVars(knvars,crefIdxLstArr_knownVars,stringAppend(KNOWN,VARIABLES_),addMML);
+        dumpVars(extvars,crefIdxLstArr_externalObject,stringAppend(EXTERNAL,VARIABLES_),addMML);
         dumpExtObjCls(extObjCls,stringAppend(EXTERNAL,CLASSES_));
         dumpStrCloseTag(VARIABLES);
         eqnsl  = BackendDAEUtil.equationList(eqns);
@@ -2812,90 +2807,6 @@ algorithm
   end match;
 end dumpStreamStr;
 
-
-public function dumpStringIdxLstArr "
-This function prints a list from a list
-of array of StringIndex elements in
-a XML format. See dumpStringIdxLst for details.
-"
-  input array<list<BackendDAE.StringIndex>> stringIdxLstArr;
-  input String Content;
-  input Integer inInteger;
-algorithm
-  _:=
-  matchcontinue (stringIdxLstArr,Content,inInteger)
-    case (stringIdxLstArr,Content,inInteger)
-      equation
-        listLength(stringIdxLstArr[inInteger]) >= 1  = true;
-        dumpStringIdxLst(stringIdxLstArr[inInteger],Content);
-      then ();
-    case (stringIdxLstArr,Content,inInteger)
-      equation
-        listLength(stringIdxLstArr[inInteger]) >= 1  = false;
-      then ();
-  end matchcontinue;
-end dumpStringIdxLstArr;
-
-
-public function dumpStringIdxLst "
-This function prints a list of StringIndex elements
-in a XML format. It also takes as input a String
-for having information about the Content of the elements.
-The output is like:
-<StringList>
-  ...
-<StringList>
-See dumpStringIdxLst2 for details.
-"
-  input list<BackendDAE.StringIndex> stringIdxLst;
-  input String Content;
-algorithm
-  _ := matchcontinue (stringIdxLst,Content)
-   local Integer len;
-    case (stringIdxLst,Content)
-      equation
-        len = listLength(stringIdxLst);
-        len >= 1 = false;
-      then ();
-    case (stringIdxLst,Content)
-      equation
-        len = listLength(stringIdxLst);
-        len >= 1 = true;
-        dumpStrOpenTag(Content);
-        dumpStringIdxLst2(stringIdxLst);
-        dumpStrCloseTag(Content);
-      then();
-  end matchcontinue;
-end dumpStringIdxLst;
-
-
-protected function dumpStringIdxLst2 "
-This function prints a list of StringIndex adding
-information of the index of the element in the list
-and using an XML format like:
-<ELEMENT ID=...>StringIndex</ELEMENT>
-"
-  input list<BackendDAE.StringIndex> strIdxLst;
-algorithm
-  _:=
-  match (strIdxLst)
-      local
-        list<BackendDAE.StringIndex> stringIndexList;
-        BackendDAE.StringIndex stringIndex;
-        String str_s;
-        Integer index_s;
-      case {} then ();
-      case ((stringIndex as BackendDAE.STRINGINDEX(str=str_s,index=index_s)) :: stringIndexList)
-      equation
-        dumpStrOpenTagAttr(ELEMENT,ID,intString(index_s));
-        Print.printBuf(str_s);
-        dumpStrCloseTag(ELEMENT);
-        dumpStringIdxLst2(stringIndexList);
-      then ();
-  end match;
-end dumpStringIdxLst2;
-
-
 public function dumpStrMathMLNumber "
 This function prints a new MathML element
 containing a number, like:
@@ -3206,24 +3117,22 @@ The output is very simple and is like:
 "
 
   input array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
-  input array<list<BackendDAE.StringIndex>> strIdxLstArr;
   input Integer i;
 algorithm
-    _ := matchcontinue (crefIdxLstArr,strIdxLstArr,i)
+    _ := matchcontinue (crefIdxLstArr,i)
     local String error_msg;
-    case (crefIdxLstArr,strIdxLstArr,i)
+    case (crefIdxLstArr,i)
       equation
         listLength(crefIdxLstArr[1]) >= 1  = false;
       then ();
-    case (crefIdxLstArr,strIdxLstArr,i)
+    case (crefIdxLstArr,i)
       equation
         listLength(crefIdxLstArr[1]) >= 1  = true;
         dumpStrOpenTag(ADDITIONAL_INFO);
         dumpCrefIdxLstArr(crefIdxLstArr,HASH_TB_CREFS_LIST,i);
-        dumpStringIdxLstArr(strIdxLstArr,HASH_TB_STRING_LIST_OLDVARS,i);
         dumpStrCloseTag(ADDITIONAL_INFO);
       then ();
-    case (_,_,_)
+    case (_,_)
       equation
         error_msg = "in XMLDump.dumpVarsAdditionalInfo - Unknown info";
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
@@ -3245,22 +3154,21 @@ is:
 "
   input list<BackendDAE.Var> vars;
   input array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
-  input array<list<BackendDAE.StringIndex>> strIdxLstArr;
   input String Content;
   input Boolean addMathMLCode;
 algorithm
-  _ := matchcontinue (vars,crefIdxLstArr,strIdxLstArr,Content,addMathMLCode)
+  _ := matchcontinue (vars,crefIdxLstArr,Content,addMathMLCode)
     local
       Integer len;
       Boolean addMMLCode;
-    case ({},_,_,_,_)
+    case ({},_,_,_)
       then();
-    case (vars,crefIdxLstArr,strIdxLstArr,Content,_)
+    case (vars,crefIdxLstArr,Content,_)
       equation
         len = listLength(vars);
         len >= 1 = false;
       then ();
-    case (vars,crefIdxLstArr,strIdxLstArr,Content,addMMLCode)
+    case (vars,crefIdxLstArr,Content,addMMLCode)
       equation
         len = listLength(vars);
         len >= 1 = true;
@@ -3274,7 +3182,7 @@ algorithm
         dumpStrCloseTag(stringAppend(VARIABLES,LIST_));
         dumpStrCloseTag(Content);
       then();
-    case (vars,_,_,Content,addMMLCode)
+    case (vars,_,Content,addMMLCode)
       equation
         len = listLength(vars);
         len >= 1 = true;
@@ -3285,14 +3193,13 @@ algorithm
         dumpStrCloseTag(stringAppend(VARIABLES,LIST_));
         dumpStrCloseTag(Content);
       then ();
-    case (vars,_,_,_,_)
+    case (vars,_,_,_)
       equation
         len = listLength(vars);
         len >= 1 = false;
     then ();
   end matchcontinue;
 end dumpVars;
-
 
 protected function dumpVars2 "
 This function is one of the two help function to the
@@ -3368,11 +3275,10 @@ See dumpVariable for more details on the XML output.
 "
   input list<BackendDAE.Var> inVarLst;
   input array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
-  input array<list<BackendDAE.StringIndex>> strIdxLstArr;
   input Integer inInteger;
   input Boolean addMathMLCode;
 algorithm
-  _ := match (inVarLst,crefIdxLstArr,strIdxLstArr,inInteger,addMathMLCode)
+  _ := match (inVarLst,crefIdxLstArr,inInteger,addMathMLCode)
     local
       BackendDAE.Value indx,varno;
       BackendDAE.Var v;
@@ -3394,7 +3300,7 @@ algorithm
       DAE.ElementSource source;
       String error_msg;
 
-    case ({},_,_,_,_) then ();
+    case ({},_,_,_) then ();
     case (((v as BackendDAE.VAR(varName = cr,
                             varKind = kind,
                             varDirection = dir,
@@ -3407,7 +3313,7 @@ algorithm
                             values = dae_var_attr,
                             comment = comment,
                             flowPrefix = flowPrefix,
-                            streamPrefix = streamPrefix)) :: xs),crefIdxLstArr,strIdxLstArr,varno,addMMLCode)
+                            streamPrefix = streamPrefix)) :: xs),crefIdxLstArr,varno,addMMLCode)
       equation
         dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),intString(indx),
                         boolString(BackendVariable.varFixed(v)),dumpFlowStr(flowPrefix),dumpStreamStr(streamPrefix),
@@ -3419,18 +3325,18 @@ algorithm
         paths = DAEUtil.getElementSourceTypes(source);
         dumpAbsynPathLst(paths,stringAppend(CLASSES,NAMES_));
         dumpDAEVariableAttributes(dae_var_attr,VAR_ATTRIBUTES_VALUES,addMMLCode);
-        dumpVarsAdditionalInfo(crefIdxLstArr,strIdxLstArr,varno);
+        dumpVarsAdditionalInfo(crefIdxLstArr,varno);
         dumpStrCloseTag(VARIABLE);
         var_1 = varno+1;
-        dumpVarsAdds2(xs,crefIdxLstArr,strIdxLstArr,var_1,addMMLCode);
+        dumpVarsAdds2(xs,crefIdxLstArr,var_1,addMMLCode);
       then ();
-    case (v::xs,crefIdxLstArr,strIdxLstArr,varno,addMMLCode)
+    case (v::xs,crefIdxLstArr,varno,addMMLCode)
       equation
         error_msg = "in XMLDump.dumpVarsAdds2 - Unknown var: ";
         error_msg = error_msg +& intString(varno);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
         var_1 = varno+1;
-        dumpVarsAdds2(xs,crefIdxLstArr,strIdxLstArr,var_1,addMMLCode);
+        dumpVarsAdds2(xs,crefIdxLstArr,var_1,addMMLCode);
       then
         ();
   end match;

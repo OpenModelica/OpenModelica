@@ -73,12 +73,12 @@ public constant Integer avgBucketSize = 2053;
 public constant Integer bigBucketSize = 4013;
 public constant Integer defaultBucketSize = avgBucketSize;
 
-protected function bucketToValuesSize
+public function bucketToValuesSize
 "calculate the values array size based on the bucket size"
   input Integer szBucket;
   output Integer szArr;
 algorithm
-  szArr := realInt(realMul(intReal(szBucket), 0.7)); // intDiv(szBucket, 10); 
+  szArr := realInt(realMul(intReal(szBucket), 0.6)); // intDiv(szBucket, 10); 
 end bucketToValuesSize;
 
 

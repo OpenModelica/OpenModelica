@@ -255,17 +255,16 @@ algorithm
     local
       Functiontuple fns;
       array<list<BackendDAE.CrefIndex>> crefind;
-      array<list<BackendDAE.StringIndex>> strind;
       Integer i1,i2,i3,i4;
       array<Option<BackendDAE.Var>> vararr,vararr_1;
       list<Option<BackendDAE.Var>> varlst,varlst_1;
-    case(BackendDAE.VARIABLES(crefind,strind,BackendDAE.VARIABLE_ARRAY(i3,i4,vararr),i1,i2),fns)
+    case(BackendDAE.VARIABLES(crefind,BackendDAE.VARIABLE_ARRAY(i3,i4,vararr),i1,i2),fns)
       equation
         varlst = arrayList(vararr);
         varlst_1 = Util.listMap1(varlst,inlineVarOpt,fns);
         vararr_1 = listArray(varlst_1);
       then
-        BackendDAE.VARIABLES(crefind,strind,BackendDAE.VARIABLE_ARRAY(i3,i4,vararr_1),i1,i2);
+        BackendDAE.VARIABLES(crefind,BackendDAE.VARIABLE_ARRAY(i3,i4,vararr_1),i1,i2);
     case(_,_)
       equation
         Debug.fprintln("failtrace","Inline.inlineVariables failed");

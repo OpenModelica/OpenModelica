@@ -254,13 +254,11 @@ end ExternalObjectClass;
 public
 uniontype Variables "- Variables"
   record VARIABLES
-    array<list<CrefIndex>> crefIdxLstArr "crefIdxLstArr ; HashTB, cref->indx" ;
-    array<list<StringIndex>> strIdxLstArr "strIdxLstArr ; HashTB, cref->indx for old names" ;
-    VariableArray varArr "varArr ; Array of variables" ;
-    Integer bucketSize "bucketSize ; bucket size" ;
-    Integer numberOfVars "numberOfVars ; no. of vars" ;
+    array<list<CrefIndex>> crefIdxLstArr "crefIdxLstArr ; HashTB, cref->indx";
+    VariableArray varArr "varArr ; Array of variables";
+    Integer bucketSize "bucketSize ; bucket size";
+    Integer numberOfVars "numberOfVars ; no. of vars";
   end VARIABLES;
-
 end Variables;
 
 public
@@ -304,15 +302,6 @@ uniontype CrefIndex "- Component Reference Index"
   end CREFINDEX;
 
 end CrefIndex;
-
-public
-uniontype StringIndex "- String Index"
-  record STRINGINDEX
-    String str "str" ;
-    Integer index "index" ;
-  end STRINGINDEX;
-
-end StringIndex;
 
 public
 uniontype VariableArray "array of Equations are expandable, to amortize the cost of adding

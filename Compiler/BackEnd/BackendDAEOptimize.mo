@@ -2886,22 +2886,19 @@ algorithm
       BackendDAE.Value n,size,n1,size1;
       array<Option<BackendDAE.Equation>> arr_1,arr;
       array<list<BackendDAE.CrefIndex>> crefIdxLstArr,crefIdxLstArr1;
-      array<list<BackendDAE.StringIndex>> strIdxLstArr,strIdxLstArr1;
       BackendDAE.VariableArray varArr;
       Integer bucketSize;
       Integer numberOfVars;
       array<Option<BackendDAE.Var>> varOptArr,varOptArr1;
     case (BackendDAE.DAE(ordvars,knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc))
       equation
-        BackendDAE.VARIABLES(crefIdxLstArr,strIdxLstArr,varArr,bucketSize,numberOfVars) = ordvars;
+        BackendDAE.VARIABLES(crefIdxLstArr,varArr,bucketSize,numberOfVars) = ordvars;
         BackendDAE.VARIABLE_ARRAY(n1,size1,varOptArr) = varArr;
         crefIdxLstArr1 = arrayCreate(size1, {});
         crefIdxLstArr1 = Util.arrayCopy(crefIdxLstArr, crefIdxLstArr1);
-        strIdxLstArr1 = arrayCreate(size1, {});
-        strIdxLstArr1 = Util.arrayCopy(strIdxLstArr, strIdxLstArr1);
         varOptArr1 = arrayCreate(size1, NONE());
         varOptArr1 = Util.arrayCopy(varOptArr, varOptArr1);
-        ordvars1 = BackendDAE.VARIABLES(crefIdxLstArr1,strIdxLstArr1,BackendDAE.VARIABLE_ARRAY(n1,size1,varOptArr1),bucketSize,numberOfVars);
+        ordvars1 = BackendDAE.VARIABLES(crefIdxLstArr1,BackendDAE.VARIABLE_ARRAY(n1,size1,varOptArr1),bucketSize,numberOfVars);
         BackendDAE.EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr) = eqns;
         arr_1 = arrayCreate(size, NONE());
         arr_1 = Util.arrayCopy(arr, arr_1);
