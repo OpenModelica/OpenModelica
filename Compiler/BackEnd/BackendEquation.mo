@@ -230,6 +230,60 @@ algorithm
   end matchcontinue;
 end checkEquationsVarsExp;
 
+public function equationsStates
+"function: equationsStates
+  author: Frenkel TUD
+  From a list of equations return all
+  occuring state variables references."
+  input list<BackendDAE.Equation> inEquationLst;
+  input BackendDAE.Variables inVars; 
+  output list<DAE.ComponentRef> outExpComponentRefLst;
+algorithm
+  (_,(outExpComponentRefLst,_)) := traverseBackendDAEExpsEqnList(inEquationLst,extractStatesFromExp,({},inVars));
+end equationsStates;
+
+protected function extractStatesFromExp "function: extractStatesFromExp
+  author: Frenkel TUD 2011-05
+  helper for equationsCrefs"
+ input tuple<DAE.Exp, tuple<list<DAE.ComponentRef>,BackendDAE.Variables>> inTpl;
+ output tuple<DAE.Exp, tuple<list<DAE.ComponentRef>,BackendDAE.Variables>> outTpl;
+algorithm 
+  outTpl := match(inTpl)
+    local 
+      tuple<list<DAE.ComponentRef>,BackendDAE.Variables> arg,arg1;
+      DAE.Exp e,e1;
+    case((e,arg))
+      equation
+        ((e1,arg1)) = Expression.traverseExp(e, traversingStateRefFinder, arg);
+      then
+        ((e1,arg1));
+  end match;
+end extractStatesFromExp;
+
+public function traversingStateRefFinder "
+Author: Frenkel TUD 2011-05"
+  input tuple<DAE.Exp, tuple<list<DAE.ComponentRef>,BackendDAE.Variables>> inExp;
+  output tuple<DAE.Exp, tuple<list<DAE.ComponentRef>,BackendDAE.Variables>> outExp;
+algorithm 
+  outExp := matchcontinue(inExp)
+    local
+      BackendDAE.Variables vars;
+      list<DAE.ComponentRef> crefs;
+      DAE.ComponentRef cr;
+      DAE.Exp e;
+    
+    case((e as DAE.CREF(componentRef=cr), (crefs,vars)))
+      equation
+        true = BackendVariable.isState(cr,vars);
+        crefs = Util.listUnionEltOnTrue(cr,crefs,ComponentReference.crefEqual);
+      then
+        ((e, (crefs,vars) ));
+    
+    case(inExp) then inExp;
+    
+  end matchcontinue;
+end traversingStateRefFinder;
+
 public function equationsCrefs
 "function: equationsCrefs
   author: PA

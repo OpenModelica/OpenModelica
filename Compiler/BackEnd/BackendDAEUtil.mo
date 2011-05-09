@@ -1234,12 +1234,8 @@ algorithm
     local
       list<DAE.ComponentRef> cr_lst;
       BackendDAE.BinTree bt;
-      BackendDAE.Variables v,kn;
-      BackendDAE.EquationArray e,re,ia;
-      array<BackendDAE.MultiDimEquation> ae;
-      array<DAE.Algorithm> al;
-      BackendDAE.EventInfo ev;
-    case (BackendDAE.DAE(orderedVars = v,knownVars = kn,orderedEqs = e,removedEqs = re,initialEqs = ia,arrayEqs = ae,algorithms = al,eventInfo = ev))
+      BackendDAE.Variables v;
+    case (BackendDAE.DAE(orderedVars = v))
       equation
         cr_lst = BackendVariable.traverseBackendDAEVars(v,traversingisStateVarCrefFinder,{});
         bt = treeAddList(BackendDAE.emptyBintree,cr_lst);
