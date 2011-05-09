@@ -507,21 +507,22 @@ algorithm
       DAE.InlineType inlineType;
       list<DAE.FunctionDefinition> funcDefs;
       DAE.ElementSource source "the origin of the element";
+      Option<SCode.Comment> cmt;
 
     case({},_) then {};
     
-    case(DAE.FUNCTION(p,DAE.FUNCTION_DEF(body = elist)::funcDefs,t,partialPrefix,inlineType,source) :: cdr,fns)
+    case(DAE.FUNCTION(p,DAE.FUNCTION_DEF(body = elist)::funcDefs,t,partialPrefix,inlineType,source,cmt) :: cdr,fns)
       equation
         elist_1 = inlineDAEElements(elist,fns);
-        res = DAE.FUNCTION(p,DAE.FUNCTION_DEF(elist_1)::funcDefs,t,partialPrefix,inlineType,source);
+        res = DAE.FUNCTION(p,DAE.FUNCTION_DEF(elist_1)::funcDefs,t,partialPrefix,inlineType,source,cmt);
         cdr_1 = inlineCallsInFunctions(cdr,fns);
       then
          res :: cdr_1;
     // external functions
-    case(DAE.FUNCTION(p,DAE.FUNCTION_EXT(elist,ext)::funcDefs,t,partialPrefix,inlineType,source) :: cdr,fns)
+    case(DAE.FUNCTION(p,DAE.FUNCTION_EXT(elist,ext)::funcDefs,t,partialPrefix,inlineType,source,cmt) :: cdr,fns)
       equation
         elist_1 = inlineDAEElements(elist,fns);
-        res = DAE.FUNCTION(p,DAE.FUNCTION_EXT(elist_1,ext)::funcDefs,t,partialPrefix,inlineType,source);
+        res = DAE.FUNCTION(p,DAE.FUNCTION_EXT(elist_1,ext)::funcDefs,t,partialPrefix,inlineType,source,cmt);
         cdr_1 = inlineCallsInFunctions(cdr,fns);
       then
         res :: cdr_1;

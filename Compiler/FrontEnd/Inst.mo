@@ -10326,7 +10326,7 @@ algorithm
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = SCode.R_RECORD())),inst_dims)
       equation
         (cache,c,cenv) = Lookup.lookupRecordConstructorClass(cache,env,Absyn.IDENT(n));
-        (cache,env,ih,{DAE.FUNCTION(fpath,_,ty1,false,_,source)}) = implicitFunctionInstantiation2(cache,cenv,ih,mod,pre,csets,c,inst_dims);
+        (cache,env,ih,{DAE.FUNCTION(fpath,_,ty1,false,_,source,_)}) = implicitFunctionInstantiation2(cache,cenv,ih,mod,pre,csets,c,inst_dims);
         fun = DAE.RECORD_CONSTRUCTOR(fpath,ty1,source);
         cache = Env.addDaeFunction(cache, {fun});
       then (cache,env,ih);
@@ -10396,6 +10396,7 @@ algorithm
       DAE.InlineType inlineType;
       SCode.ClassDef cd;
       Boolean partialPrefixBool;
+      Option<SCode.Comment> cmt;
     
     /* normal functions */
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(classDef=cd,partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(),info = info)),inst_dims)
@@ -10416,12 +10417,13 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         partialPrefixBool = SCode.partialBool(partialPrefix);
+        cmt = extractClassDefComment(cache, env, cd);
       then
-        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(daeElts)::derFuncs,ty1,partialPrefixBool,inlineType,source)});
+        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(daeElts)::derFuncs,ty1,partialPrefixBool,inlineType,source,cmt)});
 
     /* External functions should also have their type in env, but no dae. */
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(partialPrefix=partialPrefix,name = n,restriction = (restr as SCode.R_EXT_FUNCTION()),
-          classDef = (parts as SCode.PARTS(elementLst = els)), info=info)),inst_dims)
+        classDef = cd as (parts as SCode.PARTS(elementLst = els)), info=info)),inst_dims)
       equation
         (cache,cenv,ih,_,DAE.DAE(daeElts),csets_1,ty,st,_,_) =
           instClass(cache,env,ih, UnitAbsynBuilder.emptyInstStore(),mod, pre,
@@ -10445,8 +10447,9 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         partialPrefixBool = SCode.partialBool(partialPrefix);
+        cmt = extractClassDefComment(cache, env, cd);
       then
-        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_EXT(daeElts,extdecl)::derFuncs,ty1,partialPrefixBool,DAE.NO_INLINE(),source)});
+        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_EXT(daeElts,extdecl)::derFuncs,ty1,partialPrefixBool,DAE.NO_INLINE(),source,cmt)});
 
     /* Instantiate overloaded functions */
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = (restr as SCode.R_FUNCTION()),
@@ -10544,14 +10547,15 @@ algorithm
     Boolean part;
     DAE.InlineType inlineType;
     DAE.ElementSource source;
+    Option<SCode.Comment> cmt;
 
     case({},path) then {};
 
-    case(DAE.FUNCTION(p,funcs,tp,part,inlineType,source)::elts,path)
+    case(DAE.FUNCTION(p,funcs,tp,part,inlineType,source,cmt)::elts,path)
       equation
         elts = addNameToDerivativeMapping(elts,path);
         funcs = addNameToDerivativeMappingFunctionDefs(funcs,path);
-      then DAE.FUNCTION(p,funcs,tp,part,inlineType,source)::elts;
+      then DAE.FUNCTION(p,funcs,tp,part,inlineType,source,cmt)::elts;
 
     case(elt::elts,path)
       equation
@@ -11172,7 +11176,7 @@ algorithm
         // set the  of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), NONE(), NONE(), NONE());
         partialPrefixBool = SCode.partialBool(partialPrefix);
-        resfn = DAE.FUNCTION(fpath,{DAE.FUNCTION_DEF(daeElts)},ty,partialPrefixBool,DAE.NO_INLINE(),source);
+        resfn = DAE.FUNCTION(fpath,{DAE.FUNCTION_DEF(daeElts)},ty,partialPrefixBool,DAE.NO_INLINE(),source,NONE());
       then
         (cache,env_2,ih,resfn::resfns);
     

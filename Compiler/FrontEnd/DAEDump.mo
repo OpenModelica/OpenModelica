@@ -534,8 +534,8 @@ algorithm
     case DAE.COMP(ident = n,dAElist = l, comment = c)
       equation
         Print.printBuf("class ");
-        dumpCommentOption(c);
         Print.printBuf(n);
+        dumpCommentOption(c);
         Print.printBuf("\n");
         dumpElements(l);
         Print.printBuf("end ");
@@ -1328,14 +1328,16 @@ algorithm
       DAE.Type t;
       DAE.InlineType inlineType;
       String lang;
+      Option<SCode.Comment> c;
     
-    case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_DEF(body = daeElts)::_),type_ = t)
+    case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_DEF(body = daeElts)::_),type_ = t, comment = c)
       equation
         Print.printBuf("function ");
         fstr = Absyn.pathStringNoQual(fpath);
         Print.printBuf(fstr);
         inlineTypeStr = dumpInlineTypeStr(inlineType);
         Print.printBuf(inlineTypeStr);
+        Print.printBuf(dumpCommentOptionStr(c));
         Print.printBuf("\n");
         dumpFunctionElements(daeElts);
         Print.printBuf("end ");
@@ -1348,13 +1350,14 @@ algorithm
       then
         ();
 
-    case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = DAE.EXTERNALDECL(language=lang))::_),type_ = t)
+    case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = DAE.EXTERNALDECL(language=lang))::_),type_ = t, comment = c)
       equation
         Print.printBuf("function ");
         fstr = Absyn.pathStringNoQual(fpath);
         Print.printBuf(fstr);
         inlineTypeStr = dumpInlineTypeStr(inlineType);
         Print.printBuf(inlineTypeStr);
+        Print.printBuf(dumpCommentOptionStr(c));
         Print.printBuf("\n");
         dumpFunctionElements(daeElts);
         Print.printBuf("\n  external \"C\";\n");
@@ -3331,13 +3334,15 @@ algorithm
       DAE.Type tp;
       DAE.InlineType inlineType;
       IOStream.IOStream str;
+      Option<SCode.Comment> c;
       
-    case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_DEF(body = daeElts)::_),type_ = t), str)
+    case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_DEF(body = daeElts)::_),type_ = t, comment = c), str)
       equation
         fstr = Absyn.pathStringNoQual(fpath);
         str = IOStream.append(str, "function ");
         str = IOStream.append(str, fstr);
         str = IOStream.append(str, dumpInlineTypeStr(inlineType));
+        str = IOStream.append(str, dumpCommentOptionStr(c));
         str = IOStream.append(str, "\n");
         str = dumpFunctionElementsStream(daeElts, str);
         str = IOStream.append(str, "end ");
@@ -3350,12 +3355,13 @@ algorithm
       then
         str;
 
-      case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = DAE.EXTERNALDECL(language=lang))::_),type_ = t), str)
+      case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = DAE.EXTERNALDECL(language=lang))::_),type_ = t, comment = c), str)
       equation
         fstr = Absyn.pathStringNoQual(fpath);
         str = IOStream.append(str, "function ");
         str = IOStream.append(str, fstr);
         str = IOStream.append(str, dumpInlineTypeStr(inlineType));
+        str = IOStream.append(str, dumpCommentOptionStr(c));
         str = IOStream.append(str, "\n");
         str = dumpFunctionElementsStream(daeElts, str);
         str = IOStream.appendList(str, {"\n  external \"",lang,"\";\nend ",fstr,";\n\n"});

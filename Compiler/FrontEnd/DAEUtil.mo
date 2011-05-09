@@ -3616,16 +3616,17 @@ algorithm
       list<DAE.FunctionDefinition> derFuncs;
       DAE.InlineType inlineType;
       DAE.ElementSource source "the origin of the element";
+      Option<SCode.Comment> cmt;
     
-    case(DAE.FUNCTION(path,(DAE.FUNCTION_DEF(body = elist)::derFuncs),ftp,partialPrefix,inlineType,source),func,extraArg)
+    case(DAE.FUNCTION(path,(DAE.FUNCTION_DEF(body = elist)::derFuncs),ftp,partialPrefix,inlineType,source,cmt),func,extraArg)
       equation
         (elist2,extraArg) = traverseDAE2(elist,func,extraArg);
-      then (DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist2)::derFuncs,ftp,partialPrefix,inlineType,source),extraArg);
+      then (DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist2)::derFuncs,ftp,partialPrefix,inlineType,source,cmt),extraArg);
     
-    case(DAE.FUNCTION(path,(DAE.FUNCTION_EXT(body = elist,externalDecl=extDecl)::derFuncs),ftp,partialPrefix,inlineType,source),func,extraArg)
+    case(DAE.FUNCTION(path,(DAE.FUNCTION_EXT(body = elist,externalDecl=extDecl)::derFuncs),ftp,partialPrefix,inlineType,source,cmt),func,extraArg)
       equation
         (elist2,extraArg) = traverseDAE2(elist,func,extraArg);
-      then (DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist2,extDecl)::derFuncs,ftp,partialPrefix,DAE.NO_INLINE(),source),extraArg);
+      then (DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist2,extDecl)::derFuncs,ftp,partialPrefix,DAE.NO_INLINE(),source,cmt),extraArg);
     
     case(DAE.RECORD_CONSTRUCTOR(path,tp,source),func,extraArg)
       then (DAE.RECORD_CONSTRUCTOR(path,tp,source),extraArg);

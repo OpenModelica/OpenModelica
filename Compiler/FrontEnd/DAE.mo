@@ -290,6 +290,7 @@ public uniontype Function
     Boolean partialPrefix "MetaModelica extension";
     InlineType inlineType;
     ElementSource source "the origin of the component/equation/algorithm";
+    Option<SCode.Comment> comment;
   end FUNCTION;
 
   record RECORD_CONSTRUCTOR "A Modelica record constructor. The function can be generated from the Path and Type alone."
