@@ -966,6 +966,30 @@ algorithm
   end matchcontinue;
 end equationAdd;
 
+public function equationAddDAE
+"function: equationAddDAE
+  author: Frenkel TUD 2011-05"
+  input BackendDAE.Equation inEquation;
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE:=
+  match (inEquation,inDAE)
+    local
+      BackendDAE.Variables ordvars,knvars,exobj;
+      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1;
+      array<BackendDAE.MultiDimEquation> arreqns;
+      array<DAE.Algorithm> algorithms;
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc;
+    case (inEquation,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc))
+      equation
+        eqns1 = equationAdd(inEquation,eqns);
+      then BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
+  end match;
+end equationAddDAE;
+
 public function equationSetnthDAE
 "function: equationSetnthDAE
   author: Frenkel TUD 2011-04"
