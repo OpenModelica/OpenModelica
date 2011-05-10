@@ -155,7 +155,7 @@ uniontype ClassDef
     end A;
  Here PARTS contains two elements ('extends B' and 'C c')
  SCode.DERIVED is used for short class definitions, i.e:
-  class A = B(modifiers);
+  class A = B[ArrayDims](modifiers);
  SCode.CLASS_EXTENDS is used for extended class definition, i.e:
   class extends A (modifier)
     new elements;
