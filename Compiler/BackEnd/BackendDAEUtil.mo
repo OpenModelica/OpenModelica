@@ -5769,16 +5769,19 @@ partial function daeHandlerFunc
   input BackendDAE.IncidenceMatrix inIncidenceMatrix;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
   input DAE.FunctionTree inFunctions;
+  input BackendDAE.Assignments inAssignments1;
+  input BackendDAE.Assignments inAssignments2;
   input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
   input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;
   input BackendDAE.DAEHandlerArg inArg;
   output BackendDAE.BackendDAE outBackendDAE;
   output BackendDAE.IncidenceMatrix outIncidenceMatrix;
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
+  output BackendDAE.Assignments outAssignments1;
+  output BackendDAE.Assignments outAssignments2;  
   output list<tuple<Integer,Integer,Integer>> outDerivedAlgs;
   output list<tuple<Integer,Integer,Integer>> outDerivedMultiEqn;
   output BackendDAE.DAEHandlerArg outArg;
-  output Boolean outRunMatching; 
 end daeHandlerFunc;
 
 public function getSolvedSystem
@@ -5812,16 +5815,19 @@ public function getSolvedSystem
     input BackendDAE.IncidenceMatrix inIncidenceMatrix;
     input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
     input DAE.FunctionTree inFunctions;
+    input BackendDAE.Assignments inAssignments1;
+    input BackendDAE.Assignments inAssignments2;    
     input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
     input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;
     input BackendDAE.DAEHandlerArg inArg;
     output BackendDAE.BackendDAE outBackendDAE;
     output BackendDAE.IncidenceMatrix outIncidenceMatrix;
-    output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;   
+    output BackendDAE.IncidenceMatrixT outIncidenceMatrixT; 
+    output BackendDAE.Assignments outAssignments1;
+    output BackendDAE.Assignments outAssignments2;    
     output list<tuple<Integer,Integer,Integer>> outDerivedAlgs;
     output list<tuple<Integer,Integer,Integer>> outDerivedMultiEqn;
     output BackendDAE.DAEHandlerArg outArg;
-    output Boolean outRunMatching;
   end daeHandlerFunc;
   partial function pastoptimiseDAEModule
     input BackendDAE.BackendDAE inDAE;
