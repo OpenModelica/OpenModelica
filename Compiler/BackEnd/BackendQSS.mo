@@ -34,7 +34,7 @@ encapsulated package BackendQSS
 " file:        BackendQSS.mo
   package:     BackendQSS
   description: BackendQSS contains the datatypes used by the backend for QSS solver.
-  authors: xfloros, fbergero
+  authors: florosx, fbergero
 
   $Id$
 "
@@ -141,8 +141,9 @@ algorithm
         
         // WHEN-CLAUSES, EQUATIONS AND REINITS
         (whenClausesList, whenEqClausesInd, whenEqInd, whenEqIncidenceMatList) = getWhenEqClausesInfo(dlow);
-        (whenReinitClausesInd, reinitVarsIn, reinitVarsOut) = 
-                  getWhenReinitClausesInfo(0, whenClausesList , orderedVars, {}, {}, {});
+        (whenReinitClausesInd, reinitVarsIn, reinitVarsOut) = getReinitInfo(0, whenClausesList , orderedVars, {}, {}, {});
+        
+        // CHECK getWhenEqClausesInfo 3 and 4
         
         // -------------------------------------------------------------------------
         // STEP 1      
@@ -163,8 +164,8 @@ algorithm
         // STEP 2      
         // MAP STATE EQUATIONS BACK TO BLT BLOCKS        
         
-        stateEq_blt = mapEquationsInBLTBlocks( stateEq_flat, blt_states, {}) "Map state equations back in BLT blocks";
-        whenEq_blt = mapEquationsInBLTBlocks( whenEq_flat, blt_states, {}) "Map when equations back in BLT blocks";
+        stateEq_blt = Util.listMap2(stateEq_flat, mapEquationsInBLTBlocks_tail, blt_states, {}) "Map state equations back in BLT blocks";
+        whenEq_blt = Util.listMap2(whenEq_flat, mapEquationsInBLTBlocks_tail, blt_states, {}) "Map when equations back in BLT blocks";
         
         // More info, variables and parameters
         eqs = Util.listMap3(stateEq_blt, generateEqFromBlt,dlow,ass1,ass2);
@@ -198,7 +199,7 @@ algorithm
  
         
         // Map equations to DEVS blocks
-        mappedEquations = constructEmptyList({}, nEquations);
+        mappedEquations = constructEmptyList(nEquations, {});
         mappedEquations = mapStateEquationsInDEVSblocks(stateEq_blt, mappedEquations, nIntegr+1);
         mappedEquationsMat = listArray(mappedEquations);
  
@@ -231,16 +232,16 @@ algorithm
         (DEVS_blocks_outVars, DEVS_blocks_inVars) = getBlocksInOutVars(stateEq_blt, globalIncidenceMat, globalAss2, DEVS_blocks_outVars, DEVS_blocks_inVars) "add states blocks";
         // Add IN/OUT VARS of zero crossings
         DEVS_blocks_inVars = listAppend(DEVS_blocks_inVars, zc_inVars);
-        tempListList = constructEmptyList({}, nZeroCross);
+        tempListList = constructEmptyList(nZeroCross, {});
         DEVS_blocks_outVars = listAppend(DEVS_blocks_outVars, tempListList);
         // Add IN/OUT VARS of cross detectors
-        tempListList = constructEmptyList({}, nCrossDetect);
+        tempListList = constructEmptyList(nCrossDetect, {});
         DEVS_blocks_outVars = listAppend(DEVS_blocks_outVars, tempListList);
         DEVS_blocks_inVars = listAppend(DEVS_blocks_inVars, tempListList);
         // Add IN/OUT VARS of when blocks and reinit blocks
         (when_blocks_outVars, when_blocks_inVars) = getBlocksInOutVars(whenEqInBlocks, globalIncidenceMat, globalAss2, {}, {});
         reinit_blocks_inVars = reinitVarsIn;
-        reinit_blocks_outVars = constructEmptyList({}, nReinits); 
+        reinit_blocks_outVars = constructEmptyList(nReinits, {}); 
         tempIndList = createListIncreasingIndices(1,nWhens + nReinits,{});
         tempIndList = Util.listMap1(tempIndList, intAdd, nStatic + nIntegr + nZeroCross + nCrossDetect);
        
@@ -277,24 +278,6 @@ algorithm
         print("---------- When Clauses in DEVS Blocks ----------\n");
         
         
-        
-        
-        
-         
-        print("# when clauses \n");
-        print(intString(listLength(whenClausesList)));
-        print("\n");
-        print("\nwhen eq clauses ind:\n");
-        printList(whenEqClausesInd, "start");
-        print("\nwhen eq ind:\n");
-        printList(whenEqInd, "start");
-        print("\nwhen eq incidenceMatList\n");
-        printListOfLists(whenEqIncidenceMatList);
-               
-        print("Vars Solved in which eqs: ");
-        printList(varsSolvedInEqsList, "start");
-        print("\n");
-                
        
         
         print("# when clauses \n");
@@ -349,11 +332,6 @@ end generateStructureCodeQSS;
 
 
 
-
-
-
-
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /////  PART - WHEN CLAUSES AND ZERO CROSSINGS INFO
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -402,11 +380,10 @@ end fillZeroCrossIncidenceMat;
 
 
 
-public function getWhenReinitClausesInfo
-"function: getListOfWhenClauses 
- extracts the list of when-clauses in the model (equivalently the number of when blocks in the 
- DEVS structure.
- author: XF
+public function getReinitInfo
+"function: getReinitInfo
+ extracts info about the reinit clauses in the model
+ author: florosx - May 2011
 "
   input Integer loopIndex;
   input list<BackendDAE.WhenClause> wcIn;
@@ -430,45 +407,39 @@ algorithm
       list<Integer> row;
       list<list<Integer>> tempList, tempList2;
     
-    case (loopIndex, {}, vars, tempOutListWhens, tempOutIncidenceMat, tempOutVars) 
-      equation
-      then
-        (tempOutListWhens, tempOutIncidenceMat, tempOutVars);   
+    case (loopIndex, {}, vars, tempOutListWhens, tempOutIncidenceMat, tempOutVars) then (listReverse(tempOutListWhens), tempOutIncidenceMat, tempOutVars);   
     
     // WHEN YOU FIND A REINIT  
     case (loopIndex, BackendDAE.WHEN_CLAUSE(reinitStmtLst=cur_list)::rest_clauses, vars, tempOutListWhens, tempOutIncidenceMat, tempOutVars) 
       equation
         true = Util.isListNotEmpty(cur_list);
-        tempOutListWhens = listAppend(tempOutListWhens, {loopIndex});
-        
-        (tempOutIncidenceMat, tempOutVars) = getWhenReinitClausesInfo2(cur_list, vars, tempOutIncidenceMat, tempOutVars);
-        
+        tempOutListWhens = loopIndex::tempOutListWhens;
+        (tempOutIncidenceMat, tempOutVars) = getReinitInfo2(cur_list, vars, tempOutIncidenceMat, tempOutVars);
         (tempOutListWhens, tempOutIncidenceMat, tempOutVars) = 
-                getWhenReinitClausesInfo(loopIndex+1, rest_clauses, vars, tempOutListWhens, tempOutIncidenceMat, tempOutVars);
+                getReinitInfo(loopIndex+1, rest_clauses, vars, tempOutListWhens, tempOutIncidenceMat, tempOutVars);
       then
         (tempOutListWhens, tempOutIncidenceMat, tempOutVars);
    
    // WHEN YOU DONT FIND A REINIT
-    case (loopIndex, BackendDAE.WHEN_CLAUSE(reinitStmtLst=cur_list)::rest_clauses, vars, tempOutListWhens, tempOutIncidenceMat, tempOutVars) 
+   case (loopIndex, BackendDAE.WHEN_CLAUSE(reinitStmtLst=cur_list)::rest_clauses, vars, tempOutListWhens, tempOutIncidenceMat, tempOutVars) 
       equation
         false = Util.isListNotEmpty(cur_list);
         (tempOutListWhens, tempOutIncidenceMat, tempOutVars) = 
-                getWhenReinitClausesInfo(loopIndex+1, rest_clauses, vars, tempOutListWhens, tempOutIncidenceMat, tempOutVars);
+                getReinitInfo(loopIndex+1, rest_clauses, vars, tempOutListWhens, tempOutIncidenceMat, tempOutVars);
       then
         (tempOutListWhens, tempOutIncidenceMat, tempOutVars);
-    case (_,_,_,_,_,_)
+   case (_,_,_,_,_,_)
       equation
-        print("- BackendQSS.getWhenReinitClausesInfo failed\n");
+        print("- BackendQSS.getReinitInfo failed\n");
       then
         fail();            
   end matchcontinue;
-end getWhenReinitClausesInfo;
+end getReinitInfo;
 
-public function getWhenReinitClausesInfo2
-"function: getListOfWhenClauses 
- extracts the list of when-clauses in the model (equivalently the number of when blocks in the 
- DEVS structure.
- author: XF
+public function getReinitInfo2
+"function: getReinitInfo2 
+ Helper function for getReinitInfo
+ author: florox - May 2011
 "
   input list<BackendDAE.WhenOperator> cur_ReinitList;
   input BackendDAE.Variables vars;
@@ -486,42 +457,36 @@ algorithm
       DAE.ComponentRef leftHand;  
       DAE.Exp rightHand;
       list<Integer> row, lst1, lst2;
-    case ({}, vars, tempOutIncidenceMat, tempOutVars) 
-      equation
-      then
-        (tempOutIncidenceMat, tempOutVars);   
+      Integer elem;
+    case ({}, vars, tempOutIncidenceMat, tempOutVars) then (listReverse(tempOutIncidenceMat), listReverse(tempOutVars));   
     
     case (BackendDAE.REINIT(stateVar = leftHand, value = rightHand)::rest_reinits, vars, tempOutIncidenceMat, tempOutVars) 
       equation  
         lst1 = BackendDAEUtil.incidenceRowExp(DAE.CREF(leftHand,DAE.ET_REAL()), vars, {});
         lst2 = BackendDAEUtil.incidenceRowExp(rightHand, vars, {});
         row = lst2;
-        tempOutVars = listAppend(tempOutVars, lst1);
-        tempOutIncidenceMat = listAppend(tempOutIncidenceMat, {row});            
-        (tempOutIncidenceMat, tempOutVars) = getWhenReinitClausesInfo2(rest_reinits, vars, tempOutIncidenceMat, tempOutVars);  
+        elem = listNth(lst1, 0);
+        tempOutVars = elem::tempOutVars;
+        tempOutIncidenceMat = row::tempOutIncidenceMat;            
+        (tempOutIncidenceMat, tempOutVars) = getReinitInfo2(rest_reinits, vars, tempOutIncidenceMat, tempOutVars);  
       then
-        (tempOutIncidenceMat, tempOutVars);
-     
+        (tempOutIncidenceMat, tempOutVars);     
     case (_,_,_,_)
       equation
-        print("- BackendQSS.getWhenReinitClausesInfo2 failed\n");
+        print("- BackendQSS.getReinitInfo2 failed\n");
       then
         fail();        
   end matchcontinue;
-end getWhenReinitClausesInfo2;
-
-
-
-
-
+end getReinitInfo2;
 
 public function getWhenEqClausesInfo 
 "function: getWhenClausesInfo
  returns the indices of equations inside whens (when-clauses), the corresponding indices 
  of the when-clauses and the modified incidenceMat for the when-clauses.
- author: XF
+ author: florox - May 2011
 "
   input BackendDAE.BackendDAE dlow;
+  
   output list<BackendDAE.WhenClause> whenClauses_list;
   output list<Integer> whenEqClausesInd;
   output list<Integer> whenEqInd;
@@ -537,76 +502,103 @@ algorithm
       
     case (BackendDAE.DAE(orderedVars = vars, orderedEqs=eqnArr, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc)))
       equation
-        (whenEqInd, whenEqClausesInd,whenEqIncidenceMatList) = whenEquationsIndices(eqnArr, vars);
+        (whenEqInd, whenEqClausesInd,whenEqIncidenceMatList) = getWhenEqClausesInfo2(eqnArr, vars);
       then (wc, whenEqClausesInd, whenEqInd, whenEqIncidenceMatList);
+    
+    case (_)
+      equation
+        print("- BackendQSS.getWhenEqClausesInfo failed\n");
+      then
+        fail();      
   end matchcontinue;
 end getWhenEqClausesInfo;
 
-public function whenEquationsIndices 
-"function: whenEquationsIndices
- author: XF
+public function getWhenEqClausesInfo2
+"function: getWhenEqClausesInfo2
+ Helper function for getWhenEqClausesInfo
+ author: florox - May 2011
 "
   input BackendDAE.EquationArray eqns;
   input BackendDAE.Variables vars; 
+  
   output list<Integer> eqInd, whenClauseInd;
   output list<list<Integer>> whenIncidenceMatList; 
+  
 algorithm
    (eqInd, whenClauseInd,whenIncidenceMatList) :=
     matchcontinue(eqns, vars)
      case(eqns,vars)
-       equation
-         (eqInd, whenClauseInd, whenIncidenceMatList) = whenEquationsIndices2(1,BackendDAEUtil.equationSize(eqns),eqns, vars,{});
+       equation         
+        (eqInd, whenClauseInd, whenIncidenceMatList) = getWhenEqClausesInfo3(1,BackendDAEUtil.equationSize(eqns),eqns, vars,{},{},{});
        then (eqInd, whenClauseInd, whenIncidenceMatList);
+     
+     case (_,_)
+      equation
+        print("- BackendQSS.getWhenEqClausesInfo2 failed\n");
+      then
+        fail();          
    end matchcontinue;
-end whenEquationsIndices;
+end getWhenEqClausesInfo2;
 
-protected function whenEquationsIndices2 
-"function: whenEquationsIndices2 - HELP function
- author: XF
+protected function getWhenEqClausesInfo3
+"function: getWhenEqClausesInfo3
+ Helper function for getWhenEqClausesInfo2
+ author: florox - May 2011
 "
   input Integer i;
   input Integer size;
   input BackendDAE.EquationArray eqns;
   input BackendDAE.Variables vars; 
-  input list<list<Integer>> whenIncidenceMatList_temp1;
-  output list<Integer> eqnLst, whenClausesList;
-  output list<list<Integer>> whenIncidenceMatList; 
+  input list<Integer> eqnList_temp;
+  input list<Integer> whenClausesList_temp;
+  input list<list<Integer>> whenIncidenceMatList_temp;
+  
+  output list<Integer> eqnLst;
+  output list<Integer> whenClausesList;
+  output list<list<Integer>> whenIncidenceMatList;
+   
 algorithm
   (eqnLst, whenClausesList, whenIncidenceMatList) := 
-  matchcontinue(i,size,eqns,vars,whenIncidenceMatList_temp1)
+  matchcontinue(i,size,eqns,vars, eqnList_temp, whenClausesList_temp, whenIncidenceMatList_temp)
     local
       BackendDAE.WhenEquation whenEq;
       Integer tempInd;
       list<Integer> row;
-      list<list<Integer>> whenIncidenceMatList_temp;
+      
+    case(i,size,eqns, vars, eqnList_temp, whenClausesList_temp, whenIncidenceMatList_temp) 
+      equation
+        true = (i > size );
+      then (listReverse(eqnList_temp),listReverse(whenClausesList_temp), listReverse(whenIncidenceMatList_temp));
   
-    case(i,size,eqns, vars, whenIncidenceMatList_temp) equation
-      true = (i > size );
-    then ({},{},whenIncidenceMatList_temp);
-  
-    case(i,size,eqns, vars, whenIncidenceMatList_temp)
+    case(i,size,eqns, vars, eqnList_temp, whenClausesList_temp, whenIncidenceMatList_temp)
       equation
         BackendDAE.WHEN_EQUATION(whenEquation = whenEq) = BackendDAEUtil.equationNth(eqns,i-1);
-        BackendDAE.WHEN_EQ(index = tempInd) = whenEq;
-       
+        BackendDAE.WHEN_EQ(index = tempInd) = whenEq;       
         row = getRowWhenIncidenceMat(whenEq, vars);
-            
-        whenIncidenceMatList_temp = listAppend(whenIncidenceMatList_temp, {row});
-        (eqnLst, whenClausesList, whenIncidenceMatList_temp) = whenEquationsIndices2(i+1,size,eqns,vars, whenIncidenceMatList_temp);
-    then (i::eqnLst, tempInd::whenClausesList, whenIncidenceMatList_temp);
+        whenIncidenceMatList_temp = row::whenIncidenceMatList_temp;
+        eqnList_temp = i::eqnList_temp;
+        whenClausesList_temp =  tempInd::whenClausesList_temp;
+        (eqnList_temp, whenClausesList_temp, whenIncidenceMatList_temp) = getWhenEqClausesInfo3(i+1,size,eqns,vars, eqnList_temp, whenClausesList_temp, whenIncidenceMatList_temp);
+    then (eqnList_temp, whenClausesList_temp, whenIncidenceMatList_temp);
     
-    case(i,size,eqns,vars,whenIncidenceMatList_temp)
+    case(i,size,eqns,vars, eqnList_temp, whenClausesList_temp, whenIncidenceMatList_temp)
       equation
-        (eqnLst, whenClausesList,whenIncidenceMatList_temp) = whenEquationsIndices2(i+1,size,eqns,vars,whenIncidenceMatList_temp);
-      then (eqnLst, whenClausesList,whenIncidenceMatList_temp);
+        (eqnList_temp, whenClausesList_temp,whenIncidenceMatList_temp) = getWhenEqClausesInfo3(i+1,size,eqns,vars,eqnList_temp, whenClausesList_temp, whenIncidenceMatList_temp);
+      then (eqnList_temp, whenClausesList_temp,whenIncidenceMatList_temp);
+    
+    case (_,_,_,_,_,_,_)
+      equation
+        print("- BackendQSS.getWhenEqClausesInfo3 failed\n");
+      then
+        fail();          
   
   end matchcontinue;
-end whenEquationsIndices2;
-
+end getWhenEqClausesInfo3;
 
 protected function getRowWhenIncidenceMat
-"function: whenEquationsIndices2 - HELP function
- author: XF
+"function: getRowWhenIncidenceMat
+ Helper function for getWhenEqClausesInfo3
+ author: florox - May 2011
 "
   input BackendDAE.WhenEquation whenEq1;
   input BackendDAE.Variables vars; 
@@ -633,27 +625,22 @@ algorithm
         //lst2 = makeListNegative(lst2, {});
         row = listAppend(lst1, lst2);
     then (row);
+    
+    case (_,_)
+      equation
+        print("- BackendQSS.getRowWhenIncidenceMat failed\n");
+      then
+        fail();         
   end matchcontinue;
 end getRowWhenIncidenceMat;
 
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-
-
-
-
 
 public function getListofZeroCrossings 
 "function: getListofZeroCrossings
   Takes as input the DAE and extracts the zero-crossings as well as the zero crosses that are 
   connected to sample statements.
-  author: florosx
+  author: florosx - May 2011
 "
   input BackendDAE.BackendDAE dae;
   output list<BackendDAE.ZeroCrossing> zcOnly;
@@ -683,7 +670,7 @@ end getListofZeroCrossings;
 public function getListofZeroCrossings2 
 "function: getListofZeroCrossings
   Helper function for getListofZeroCrossings
-  author: florosx
+  author: florosx - May 2011
 "
   input Integer loopIndex;
   input list<BackendDAE.ZeroCrossing> zc;
@@ -740,7 +727,7 @@ end getListofZeroCrossings2;
 public function checkIfExpressionIsSample
 "function: getListofZeroCrossings
   Checks if a given expression is a sample
-  author: florosx
+  author: florosx - May 2011
 "
   input DAE.Exp e;
   output Boolean isSample;
@@ -1792,8 +1779,8 @@ end findWhereOutVarIsNeeded;
 
 protected function qssIntegratorsInOutVars
 "function: qssIntegratorsInOutVars
-  author: florosx
-  generates the input/output variable names for the qss integrator blocks. 
+  generates the input/output variable names for the qss integrator blocks.
+  author: florosx 
 "
   input list<Integer> stateIndices;
   input tuple<list<list<Integer>>,list<list<Integer>>> structsIn;
@@ -1809,20 +1796,17 @@ algorithm
       list<Integer> rest_states;
       list<list<Integer>> DEVS_blocks_outVars, DEVS_blocks_inVars;
       
-    case ({},(DEVS_blocks_outVars, DEVS_blocks_inVars))
-      equation       
-      then
-        ((DEVS_blocks_outVars, DEVS_blocks_inVars));
+    case ({},(DEVS_blocks_outVars, DEVS_blocks_inVars)) then ((listReverse(DEVS_blocks_outVars), listReverse(DEVS_blocks_inVars)));
         
     case (cur_state::rest_states, (DEVS_blocks_outVars, DEVS_blocks_inVars))
       equation
         cur_state_neg = -cur_state;
-        DEVS_blocks_outVars = listAppend(DEVS_blocks_outVars, {{cur_state_neg}});
-        DEVS_blocks_inVars = listAppend(DEVS_blocks_inVars, {{cur_state}});
-       
+        DEVS_blocks_outVars = {cur_state_neg}::DEVS_blocks_outVars;
+        DEVS_blocks_inVars = {cur_state}::DEVS_blocks_inVars;
        ((DEVS_blocks_outVars, DEVS_blocks_inVars)) = qssIntegratorsInOutVars(rest_states, (DEVS_blocks_outVars, DEVS_blocks_inVars));
       then
         ((DEVS_blocks_outVars, DEVS_blocks_inVars));
+    
     case (_,_)
       equation
         print("- BackendQSS.qssIntegratorsInOutVars failed\n");
@@ -1853,19 +1837,15 @@ algorithm
       list<list<Integer>> DEVS_blocks_outVars, DEVS_blocks_inVars;
       list<Integer> varIndicesIn_temp, varIndicesOut_temp; 
       
-    case ( {}, incidenceMat, ass2, structsIn)
-      equation
-        // end of recursion
-      then
-        (structsIn);
+    case ( {}, incidenceMat, ass2, (DEVS_blocks_outVars, DEVS_blocks_inVars)) then ((listReverse(DEVS_blocks_outVars), listReverse(DEVS_blocks_inVars)));
                   
     case (curBlock_eq::restBlocks_eq, incidenceMat, ass2, (DEVS_blocks_outVars, DEVS_blocks_inVars) )
       equation
         curBlock_flatEq = Util.listFlatten(curBlock_eq);            
         (varIndicesIn_temp, varIndicesOut_temp) = selectVarsInOut(curBlock_flatEq, incidenceMat, ass2, {},{});
         varIndicesIn_temp = findUniqueVars(varIndicesIn_temp,{});        
-        DEVS_blocks_outVars = listAppend(DEVS_blocks_outVars, {varIndicesOut_temp}) "select OUT variables";
-        DEVS_blocks_inVars = listAppend(DEVS_blocks_inVars, {varIndicesIn_temp}) "select IN variables";      
+        DEVS_blocks_outVars = varIndicesOut_temp::DEVS_blocks_outVars "select OUT variables";
+        DEVS_blocks_inVars = varIndicesIn_temp::DEVS_blocks_inVars "select IN variables";      
         ((DEVS_blocks_outVars, DEVS_blocks_inVars)) = incidenceMatInOutVars(restBlocks_eq, incidenceMat, ass2, (DEVS_blocks_outVars,DEVS_blocks_inVars));
       then
         ((DEVS_blocks_outVars, DEVS_blocks_inVars));
@@ -1885,6 +1865,7 @@ public function findUniqueVars
   
   input list<Integer> inList1;
   input list<Integer> inList2;  
+ 
   output list<Integer> outList; 
   
 algorithm
@@ -1893,9 +1874,8 @@ algorithm
     local
       list<Integer> rest_list, inList_temp;
       Integer head;            
-    case({} , inList_temp)
-      equation
-      then (inList_temp);
+      
+    case({} , inList_temp) then listReverse(inList_temp);
     
     case(head::rest_list, inList_temp)
       equation
@@ -1907,10 +1887,11 @@ algorithm
      case(head::rest_list, inList_temp)
       equation
         false = Util.listContains(head, rest_list);
-        inList_temp = listAppend(inList_temp, {head});
+        inList_temp = head::inList_temp;
         inList_temp = findUniqueVars(rest_list, inList_temp);
       then
-         (inList_temp);        
+         (inList_temp);
+                 
     case (_,_)
       equation
         print("- BackendQSS.findUniqueVars\n");
@@ -1929,6 +1910,7 @@ protected function selectVarsInOut
   input array<Integer> ass2;
   input list<Integer> varIndicesIn_temp;
   input list<Integer> varIndicesOut_temp;
+  
   output list<Integer> varIndicesIn;
   output list<Integer> varIndicesOut;
   
@@ -1938,17 +1920,15 @@ algorithm
     local     
       Integer curEq, curOutVar, ind;
       list<Integer> restEq, curInVars, curRow;      
-    case ( {}, incidenceMat, ass2, varIndicesIn_temp, varIndicesOut_temp)
-      equation
-      then
-        (varIndicesIn_temp, varIndicesOut_temp);         
+    case ( {}, incidenceMat, ass2, varIndicesIn_temp, varIndicesOut_temp) then (listReverse(varIndicesIn_temp), listReverse(varIndicesOut_temp));
+               
     case (curEq::restEq, incidenceMat, ass2, varIndicesIn_temp, varIndicesOut_temp)
       equation      
         curRow = incidenceMat[curEq];     
         curOutVar = ass2[curEq];
         (ind, curInVars) = findAndRemoveElementInList(0,curRow,curOutVar);        
-        varIndicesOut_temp = listAppend(varIndicesOut_temp, {curOutVar});        
-        varIndicesIn_temp = listAppend(varIndicesIn_temp, curInVars);       
+        varIndicesOut_temp = curOutVar::varIndicesOut_temp;        
+        varIndicesIn_temp = listAppend(curInVars, varIndicesIn_temp);       
         (varIndicesOut_temp, varIndicesIn_temp) = selectVarsInOut(restEq, incidenceMat, ass2, varIndicesIn_temp, varIndicesOut_temp);        
       then
         (varIndicesOut_temp, varIndicesIn_temp);
@@ -2238,9 +2218,9 @@ end replaceCrossingLstOnExp;
 
 public function splitStateEqSet
 "function: splitStateEqSet
-  author: florosx
   Finds for each state derivative the equations that are needed in order to compute it.
   It is based on the traversal done in BackendDAEUtil.generateStatePartition().
+  author: florosx - May 2011
 "
   input list<list<Integer>> inIntegerLstLst1;
   input BackendDAE.BackendDAE inBackendDAE;
@@ -2507,94 +2487,49 @@ algorithm
   end matchcontinue;
 end sortEquationsBLT;
 
-public function mapEquationsInBLTBlocks
-"function:mapEquationsInBLTBlocks
+public function mapEquationsInBLTBlocks_tail
+"function: mapEquationsInBLTBlocks_tail
   author: florosx
-  Maps Equations into BLT blocks
-"   
-   input list<list<Integer>> inIntegerLstLst1, inIntegerLstLst2;
-   input list<list<list<Integer>>> inIntegerLstLstLst1;
-   
-   output list<list<list<Integer>>> state_blocks_ind;
-   
-algorithm 
-  state_blocks_ind :=
-  matchcontinue (inIntegerLstLst1, inIntegerLstLst2, inIntegerLstLstLst1)    
-    local
-      list<list<Integer>> sorted_indices, blt_states;
-      list<list<list<Integer>>> state_blocks, current_state_blocks;
-      
-      list<Integer> cur_state;
-      list<list<Integer>> rest_states, cur_state_blocks;
-      
-    case ({}, blt_states, state_blocks)
-      equation
-      then(state_blocks);
-    case (cur_state :: rest_states, blt_states, state_blocks)
-      equation                     
-        cur_state_blocks = mapEquationsInBLTBlocks2(cur_state, blt_states, {});
-        current_state_blocks = listAppend(state_blocks, {cur_state_blocks});
-        state_blocks = mapEquationsInBLTBlocks(rest_states, blt_states, current_state_blocks);
-     then
-       (state_blocks);
-    case (_,_,_)
-      equation
-        print("- BackendQSS.mapEquationsInBLTBlocks failed\n");
-      then
-        fail();
-  end matchcontinue;
-end mapEquationsInBLTBlocks;
-
-public function mapEquationsInBLTBlocks2
-"function: mapEquationsInBLTBlocks2
-  author: florosx
-  Helper function for mapEquationsInBLTBlocks2
 "    
    input list<Integer> inIntegerLst1;
-   input list<list<Integer>> inIntegerLstLst1, inIntegerLstLst2;
-   
+   input list<list<Integer>> inIntegerLstLst1;
+   input list<list<Integer>> inIntegerLstLst2;
    output list<list<Integer>> cur_state_blocks;
    
 algorithm 
   cur_state_blocks :=
   matchcontinue (inIntegerLst1, inIntegerLstLst1, inIntegerLstLst2)    
     local
-      list<list<Integer>> sorted_indices, blt_states;
-      
-      list<Integer> state_equations, cur_block, remain_state_equations, cur_state_blocks, rest_eq;
-      list<list<Integer>> rest_blocks, state_blocks, current_state_blocks;
-      
+      list<list<Integer>> sorted_indices, blt_states;   
+      list<Integer> state_equations, cur_block, remain_state_equations, rest_eq;
+      list<list<Integer>> rest_blocks, state_blocks; 
       Integer cur_eq;
       
-   case (_ , {} , state_blocks)
-      equation
-      then(state_blocks);
-   case ({} , _ , state_blocks)
-      equation
-      then(state_blocks);
-                     
+    case (_, {}, state_blocks) then listReverse(state_blocks);
+    case ({}, _, state_blocks) then listReverse(state_blocks);
+                       
     case (cur_eq :: rest_eq , cur_block :: rest_blocks , state_blocks)
       equation
         true = listMember(cur_eq, cur_block);
-        current_state_blocks = listAppend(state_blocks, {cur_block});
+        state_blocks = cur_block::state_blocks;
         remain_state_equations = removeRedundantEquations(rest_eq, cur_block, {});
-        state_blocks = mapEquationsInBLTBlocks2(remain_state_equations, rest_blocks, current_state_blocks);
+        state_blocks = mapEquationsInBLTBlocks_tail(remain_state_equations, rest_blocks, state_blocks);
       then
         (state_blocks);
     case (cur_eq :: rest_eq , cur_block :: rest_blocks , state_blocks)
       equation
         false = listMember(cur_eq, cur_block);
-        state_equations = cons(cur_eq, rest_eq);
-        state_blocks = mapEquationsInBLTBlocks2(state_equations, rest_blocks, state_blocks);
+        state_equations = cur_eq::rest_eq;
+        state_blocks = mapEquationsInBLTBlocks_tail(state_equations, rest_blocks, state_blocks);
       then
         (state_blocks);
     case (_,_,_)
       equation
-        print("- BackendQSS.mapEquationsInBLTBlocks2 failed\n");
+        print("- BackendQSS.mapEquationsInBLTBlocks_tail failed\n");
       then
         fail();
    end matchcontinue;
-end mapEquationsInBLTBlocks2;
+end mapEquationsInBLTBlocks_tail;
 
 public function removeRedundantEquations
 "function: removeRedundantEquations
@@ -2643,8 +2578,8 @@ end removeRedundantEquations;
 
 public function removeEmptyElements
 "function: removeEmptyElements
-  author: florosx
   Removes empty elements from a list
+  author: florosx - May 2011
 "
    
    input list<list<Integer>> arrList;
@@ -2659,18 +2594,16 @@ algorithm
       list<list<Integer>> rest_list, cur_list;
       list<Integer> head;
     
-    case ({}, cur_list)
-      equation
-        //END OF RECURSION
-     then
-       (cur_list);
+    case ({}, cur_list) then listReverse(cur_list);
+      
     case (head::rest_list, cur_list)
       equation
         true = Util.isListNotEmpty(head);
-        cur_list = listAppend(cur_list, {head});
+        cur_list = head::cur_list;
         reducedList = removeEmptyElements(rest_list, cur_list);
      then
        (reducedList);
+    
     case (head::rest_list, cur_list)      
       equation
         false = Util.isListNotEmpty(head);
@@ -2682,8 +2615,8 @@ end removeEmptyElements;
 
 public function printList
 "function: printList
-  author: florosx
   Prints the elements of a list of integers
+  author: florosx
 "   
    input list<Integer> arrList;
    input String start;  
@@ -2721,8 +2654,8 @@ end printList;
 
 public function printListOfLists
 "function: printListOfLists
-  author: florosx
   Prints the elements of a list of lists of integers
+  author: florosx
 "     
    input list<list<Integer>> arrList;
    
@@ -2755,8 +2688,8 @@ end printListOfLists;
 
 public function dumpDEVSstructs 
 "function: dumpDEVSstructs
-  author: florosx
   Dumps all 4 DEVS structures: outLinks, outNames, inLinks, inNames
+  author: florosx
 "
   input DevsStruct Devs_structure;
 
@@ -2779,8 +2712,8 @@ end dumpDEVSstructs;
 
 public function dumpDEVSstruct 
 "function: Based on DAELow.dumpIncidenceMatrix
-  author: florosx
   Dumps the incidence matrix for a DEVS structure
+  author: florosx
 "
   input array<list<list<Integer>>> m;
   input String text;
@@ -2794,8 +2727,8 @@ end dumpDEVSstruct;
 
 protected function dumpDEVSstruct2 
 "function: dumpMyDEVSstruct2
-  author: florosx
   Helper function for dympMyDEVSstruct
+  author: florosx
 "
   input list<list<list<Integer>>> inList;
   input Integer rowIndex;
@@ -3552,33 +3485,26 @@ algorithm
 end mapEquationInDEVSblocks1;
 
 public function constructEmptyList 
-"function: generateSwitchBlocks for the quantum_values function
-  author: XF
+"function: constructs an empty list of lists
+  author: florosx
 "
-  input list<list<Integer>> tempList1;
-  input Integer nEquations1; 
+  input Integer nEquations; 
+  input list<list<Integer>> tempList;
   
   output list<list<Integer>> emptyListofLists; 
   
 algorithm
   (emptyListofLists):=
-  matchcontinue(tempList1, nEquations1)
-     local
-       Integer nEquations;
-       list<list<Integer>> tempList;
-              
-       case(tempList, 0)
-         equation
-           //END OF RECURSION
-       then (tempList);
-        
-       case (tempList, nEquations)
-         equation
-
-            tempList = listAppend(tempList, {{}});           
-            emptyListofLists = constructEmptyList(tempList, nEquations-1);
-         then
-            (emptyListofLists);  
+  matchcontinue(nEquations, tempList)
+       
+     case(0, tempList) then listReverse(tempList);
+         
+     case (nEquations, tempList)
+       equation
+          tempList = {}::tempList;           
+          emptyListofLists = constructEmptyList(nEquations-1, tempList);
+       then
+          (emptyListofLists);  
   end matchcontinue;
 end constructEmptyList;
 
@@ -3622,14 +3548,12 @@ algorithm
       list<list<Integer>> rest, outListTemp;
       list<Integer> wcEqns;
     
-    case (_, {}, outListTemp)
-      equation
-      then outListTemp;
+    case (_, {}, outListTemp) then listReverse(outListTemp);
 
     case (toRemove, head::rest, outListTemp)
       equation
         temp = Util.listSetDifferenceOnTrue(head,toRemove,intEq);
-        outListTemp = listAppend(outListTemp, {temp});
+        outListTemp = temp::outListTemp;
         outListTemp = removeListFromListsOfLists(toRemove, rest, outListTemp);
       then outListTemp;
   end matchcontinue;
