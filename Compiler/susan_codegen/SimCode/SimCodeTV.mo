@@ -27,6 +27,13 @@ package builtin
     output Integer c;
   end intAdd;
 
+
+  function intDiv
+    input Integer a;
+    input Integer b;
+    output Integer c;
+  end intDiv;
+
   function arrayList 
     replaceable type TypeVar subtypeof Any;    
     input TypeVar[:] arr;
@@ -1997,6 +2004,15 @@ package BackendQSS
     output list<BackendDAE.Var> states;
   end getStates;
 
+  function getAllInputs
+    input QSSinfo qssInfo;
+    output list<Integer> vars_tuple;
+  end getAllInputs;
+
+  function getAllOutputs
+    input QSSinfo qssInfo;
+    output list<Integer> vars_tuple;
+  end getAllOutputs;
 
 end BackendQSS;
 

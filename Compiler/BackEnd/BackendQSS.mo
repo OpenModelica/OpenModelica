@@ -3581,8 +3581,6 @@ algorithm
   end matchcontinue;
 end createIncreasingList;
 
-
-
 public function createListFromElement
   input Type_a elem;
   output list<Type_a> outList;
@@ -3598,6 +3596,80 @@ algorithm
   end matchcontinue;
 end createListFromElement;
 
+public function getAllInputs
+  input QSSinfo qssInfo;
+  output list<Integer> vars_tuple;
+algorithm
+  vars_tuple :=
+    match (qssInfo)
+      local
+        array<list<list<Integer>>> inVars "input connections for each DEVS block";
+      case QSSINFO(_,DEVS_STRUCT(_,_,_,inVars),_,_)
+      then convertArrayToFlatList(inVars,1,{});
+    end match;
+end getAllInputs;
+
+protected function listPair
+  input list<Integer> l;
+  input Integer i;
+  output list<Integer> o;
+algorithm
+  o :=
+    match (l,i)
+      local list<Integer> rest;
+            Integer h;
+      case ((h::rest),i)
+        equation
+          rest = listPair(rest,i);
+          rest = listAppend({i,h},rest);
+        then rest; 
+      case ({},_)
+        then {};
+    end match;
+end listPair;
+         
+          
+protected function convertArrayToFlatList
+  input array<list<list<Integer>>> vars;
+  input Integer index;
+  input list<Integer> res;
+  output list<Integer> vars_tuple;
+algorithm
+  vars_tuple := 
+    matchcontinue (vars,index,res)
+      local list<list<Integer>> v;
+            list<Integer> vf;
+    case (_,_,_)
+      equation
+        true = (index <= arrayLength(vars));
+        v = vars[index];
+        vf = Util.listMap(Util.listFlatten(v),intAbs);
+        vf = Util.listFilter(vf,isPositive);
+        vf = Util.listMap1(vf,intSub,1);
+        vf = listPair(vf,index-1);
+        vf = listAppend(res,convertArrayToFlatList(vars,index+1,vf));
+        then vf;
+    case (_,_,_)
+      equation
+        false = (index <= arrayLength(vars));
+        then res;
+    end matchcontinue;
+end convertArrayToFlatList;
+
+
+public function getAllOutputs
+  input QSSinfo qssInfo;
+  output list<Integer> vars_tuple;
+algorithm
+  vars_tuple :=
+    match (qssInfo)
+      local
+        array<list<list<Integer>>> outVars "output connections for each DEVS block";
+      case QSSINFO(_,DEVS_STRUCT(_,outVars,_,_),_,_)
+      then convertArrayToFlatList(outVars,1,{});
+    end match;
+end getAllOutputs;
+
 protected function replaceRowsArray
 "function: getListofZeroCrossings
   Takes as input the DAE and extracts the zero-crossings as well as the zero crosses that are 
@@ -3612,7 +3684,6 @@ protected function replaceRowsArray
 algorithm
   incidenceMatOut := matchcontinue (incidenceMat, rowsInd, newRows)
     local
-      
       Integer cur_ind;
       list<Integer> rest_ind, cur_row;
       list<list<Integer>> rest_rows;
@@ -3723,7 +3794,6 @@ algorithm
          (temp);
   end matchcontinue;
 end findElementInList;
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /////  END OF PACKAGE
 ////////////////////////////////////////////////////////////////////////////////////////////////////
