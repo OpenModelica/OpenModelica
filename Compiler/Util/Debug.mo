@@ -590,7 +590,7 @@ algorithm
         print(name);
         print(" -> time: ");
         print(realString(t));
-        print(" , memory: ");
+        print(", memory: ");
         print(bytesToRealMBString(used));
         print("/");
         print(bytesToRealMBString(allocated));
