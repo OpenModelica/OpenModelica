@@ -2896,29 +2896,9 @@ algorithm
       then
         DAE.RCONST(re3);
     
-    case (DAE.POW(ty = _),DAE.ICONST(integer = ie1),DAE.ICONST(integer = ie2))
-      equation
-        val = safeIntOp(ie1,ie2,POWOP());
-      then
-        val;
-    
     case (DAE.POW(ty = _),DAE.RCONST(real = re1),DAE.RCONST(real = re2))
       equation
         re3 = re1 ^. re2;
-      then
-        DAE.RCONST(re3);
-    
-    case (DAE.POW(ty = _),DAE.RCONST(real = re1),DAE.ICONST(integer = ie2))
-      equation
-        e2_1 = intReal(ie2);
-        re3 = re1 ^. e2_1;
-      then
-        DAE.RCONST(re3);
-    
-    case (DAE.POW(ty = _),DAE.ICONST(integer = ie1),DAE.RCONST(real = re2))
-      equation
-        e1_1 = intReal(ie1);
-        re3 = e1_1 ^. re2;
       then
         DAE.RCONST(re3);
     
@@ -3419,6 +3399,12 @@ algorithm
         ((exp_lst as (_ :: _ :: _ :: _))) = Expression.factors(e1);
         exp_lst_1 = simplifyBinaryDistributePow(exp_lst, e2);
         res = Expression.makeProductLst(exp_lst_1);
+      then
+        res;
+    // (e1^e2)^e3 => e1^(e2*e3)
+    case (DAE.POW(ty = _),DAE.BINARY(e1,DAE.POW(ty = _),e2),e3)
+      equation
+        res = DAE.BINARY(e1,DAE.POW(DAE.ET_REAL()),DAE.BINARY(e2,DAE.MUL(DAE.ET_REAL()),e3));
       then
         res;
     

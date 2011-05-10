@@ -12295,15 +12295,13 @@ algorithm
 
     case (cache,Absyn.POW(),env,t1,t2)
       equation
-        real_scalar = DAE.T_REAL_DEFAULT "The POW operator. a^b is only defined for integer exponents, i.e. b must
-    be of type Integer" ;
+        // Note: POW_ARR uses Integer exponents, while POW only uses Real exponents
+        real_scalar = DAE.T_REAL_DEFAULT;
         int_scalar = DAE.T_INTEGER_DEFAULT;
         real_vector = (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),real_scalar),NONE());
         real_matrix = (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),real_vector),NONE());
         real_pow = DAE.POW(DAE.ET_REAL());
-        int_pow = DAE.POW(DAE.ET_INT());
-        scalars = {(int_pow,{int_scalar,int_scalar},int_scalar),
-          (real_pow,{real_scalar,real_scalar},real_scalar)};
+        scalars = {(real_pow,{real_scalar,real_scalar},real_scalar)};
         arrscalar = {
           (DAE.POW_ARR(DAE.ET_REAL()),{real_matrix,int_scalar},
           real_matrix)};
