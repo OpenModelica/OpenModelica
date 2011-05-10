@@ -78,7 +78,7 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
   // Init static functions - One per state but could differ
   for (int i=0;i<staticBlocks;i++)
   {
-    childs[i+globalData->nStates] = new StaticFunction(3,dQmin,dQrel);
+    childs[i+globalData->nStates] = new StaticFunction(1,dQmin,dQrel,i+globalData->nStates);
     childs[i+globalData->nStates]->init(globalData->timeValue,i);
     tn[i+globalData->nStates] = globalData->timeValue+childs[i+globalData->nStates]->ta();
   }
@@ -127,12 +127,12 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
       steps++;
 
     // Update corresponding childs
-    for (int i=0;i<size;i++)
+    for (int i=0;i<incidenceRows;i++)
     {
-      if (incidenceMatrix[index*size+i])
+      if (incidenceMatrix[i*2]==index)
       {
-        childs[i]->update(globalData->timeValue);
-        tn[i]=globalData->timeValue+childs[i]->ta();
+        childs[incidenceMatrix[i*2+1]]->update(globalData->timeValue);
+        tn[incidenceMatrix[i*2+1]]=globalData->timeValue+childs[incidenceMatrix[i*2+1]]->ta();
       }
     }
   }

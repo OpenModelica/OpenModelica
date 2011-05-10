@@ -11,6 +11,7 @@ public:
   virtual void makeStep(Time t);
   virtual void update(Time t);
 private:
+  unsigned int state;
   unsigned int index;
   double dQmin;
   double dQrel;
