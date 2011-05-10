@@ -697,13 +697,14 @@ algorithm
     case (loopIndex, {}, vars, zc_inVarsTemp, zcOnlyTemp, zcSamplesTemp,zcSamplesIndTemp)
       equation
       then
-        (zcOnlyTemp, zc_inVarsTemp, zcSamplesTemp,zcSamplesIndTemp);  
+        (listReverse(zcOnlyTemp), listReverse(zc_inVarsTemp), listReverse(zcSamplesTemp),listReverse(zcSamplesIndTemp));  
       
     case (loopIndex, (cur_zc as BackendDAE.ZERO_CROSSING(relation_ = e))::rest_zeroCrossings, vars, zc_inVarsTemp, zcOnlyTemp, zcSamplesTemp, zcSamplesIndTemp)
       equation
+        // IF IT IS A SAMPLE
         true = checkIfExpressionIsSample(e);
-        zcSamplesTemp = listAppend(zcSamplesTemp, {cur_zc});
-        zcSamplesIndTemp = listAppend(zcSamplesIndTemp, {loopIndex});
+        zcSamplesTemp = cur_zc::zcSamplesTemp;
+        zcSamplesIndTemp = loopIndex::zcSamplesIndTemp;
         (zcOnlyTemp, zc_inVarsTemp, zcSamplesTemp, zcSamplesIndTemp) = getListofZeroCrossings2(loopIndex+1, rest_zeroCrossings, vars, zc_inVarsTemp, zcOnlyTemp, zcSamplesTemp,zcSamplesIndTemp);
       then
         (zcOnlyTemp, zc_inVarsTemp, zcSamplesTemp,zcSamplesIndTemp);
@@ -711,8 +712,8 @@ algorithm
       equation
         false = checkIfExpressionIsSample(e);
         tempInVars = BackendDAEUtil.incidenceRowExp(e, vars, {});
-        zc_inVarsTemp = listAppend(zc_inVarsTemp, {tempInVars});
-        zcOnlyTemp = listAppend(zcOnlyTemp, {cur_zc});
+        zc_inVarsTemp = tempInVars::zc_inVarsTemp;
+        zcOnlyTemp = cur_zc::zcOnlyTemp;
         (zcOnlyTemp, zc_inVarsTemp, zcSamplesTemp, zcSamplesIndTemp) = getListofZeroCrossings2(loopIndex+1, rest_zeroCrossings, vars, zc_inVarsTemp, zcOnlyTemp, zcSamplesTemp,zcSamplesIndTemp);
       then
         (zcOnlyTemp, zc_inVarsTemp, zcSamplesTemp,zcSamplesIndTemp);
@@ -817,34 +818,22 @@ protected function generateEmptyDEVSstruct
   author: florosx
 "
   input Integer nBlocks;
-  input tuple< list<list<list<Integer>>>, list<list<list<Integer>>>, list<list<list<Integer>>>, list<list<list<Integer>>> > DEVS_struct_lists_temp;
   output DevsStruct DEVS_structureOut;
-  
-algorithm
+
+algorithm 
   (DEVS_structureOut):=
-  matchcontinue (nBlocks, DEVS_struct_lists_temp)
+  matchcontinue (nBlocks)
     local
-      list<list<list<Integer>>> DEVS_struct_outLinksList, DEVS_struct_outVarsList, DEVS_struct_inLinksList, DEVS_struct_inVarsList;
-      array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
-      
-    case (0, (DEVS_struct_outLinksList, DEVS_struct_outVarsList, DEVS_struct_inLinksList, DEVS_struct_inVarsList) )
-      equation      
-        DEVS_struct_outLinks = listArray(DEVS_struct_outLinksList);
-        DEVS_struct_inLinks = listArray(DEVS_struct_inLinksList);
-        DEVS_struct_outVars = listArray(DEVS_struct_outVarsList);
-        DEVS_struct_inVars = listArray(DEVS_struct_inVarsList);       
-      then
-        (DEVS_STRUCT(DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars));
-      
-    case (nBlocks, (DEVS_struct_outLinksList, DEVS_struct_outVarsList, DEVS_struct_inLinksList, DEVS_struct_inVarsList))
+      list<list<list<Integer>>> DEVS_struct_outLinksList;
+      array<list<list<Integer>>> DEVS_struct_outLinks;
+  
+   case (nBlocks)
       equation
-        DEVS_struct_outLinksList = listAppend(DEVS_struct_outLinksList, {{}});
-        DEVS_struct_outVarsList = listAppend(DEVS_struct_outVarsList, {{}});
-        DEVS_struct_inLinksList = listAppend(DEVS_struct_inLinksList, {{}});
-        DEVS_struct_inVarsList = listAppend(DEVS_struct_inVarsList, {{}});
+        DEVS_struct_outLinksList = constructEmptyListList(nBlocks, {});
+        DEVS_struct_outLinks = listArray(DEVS_struct_outLinksList);       
       then
-        (generateEmptyDEVSstruct(nBlocks-1, (DEVS_struct_outLinksList, DEVS_struct_outVarsList, DEVS_struct_inLinksList, DEVS_struct_inVarsList)) );
-    case (_,_)
+        (DEVS_STRUCT(DEVS_struct_outLinks, DEVS_struct_outLinks, DEVS_struct_outLinks, DEVS_struct_outLinks));
+    case (_)
       equation
         print("- BackendQSS.EmptyDEVSstruct failed\n");
       then
@@ -928,7 +917,8 @@ algorithm
         startWhenInd = startCrossDetectInd + nCrossDetect;
         startSampleInd = startWhenInd + nWhens + nReinits;
         
-        DEVS_structure_temp = generateEmptyDEVSstruct(nBlocks, ({},{},{},{}));  
+        DEVS_structure_temp = generateEmptyDEVSstruct(nBlocks);  
+        
         //Resolve dependencies between inputs/outputs excluding events      
         (DEVS_structure_temp) = generateStructFromInOutVars(1,stateIndices,discreteVarIndices, DEVS_blocks_outVars, DEVS_blocks_inVars, DEVS_structure_temp);
         
@@ -3507,6 +3497,32 @@ algorithm
           (emptyListofLists);  
   end matchcontinue;
 end constructEmptyList;
+
+public function constructEmptyListList 
+"function: constructs an empty list of lists
+  author: florosx
+"
+  input Integer nEquations; 
+  input list<list<list<Integer>>> tempList;
+  
+  output list<list<list<Integer>>> emptyListofLists; 
+  
+algorithm
+  (emptyListofLists):=
+  matchcontinue(nEquations, tempList)
+       
+     case(0, tempList) then listReverse(tempList);
+         
+     case (nEquations, tempList)
+       equation
+          tempList = {{}}::tempList;           
+          emptyListofLists = constructEmptyListList(nEquations-1, tempList);
+       then
+          (emptyListofLists);  
+  end matchcontinue;
+end constructEmptyListList;
+
+
 
 public function filterDiscreteVars "Removes the discrete vars from the list
   author: FB"
