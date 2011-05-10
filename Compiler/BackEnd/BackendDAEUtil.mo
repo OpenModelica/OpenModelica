@@ -1310,23 +1310,23 @@ algorithm
       HashTable2.HashTable aliasMappingsCref,aliasMappingsCref1;
       HashTable4.HashTable aliasMappingsExp,aliasMappingsExp1;
       BackendDAE.Variables aliasVariables;
-      BackendDAE.AliasVariables Aliases;
+      BackendDAE.AliasVariables aliases;
       DAE.ComponentRef cr;
       DAE.Exp exp;
       BackendDAE.Var v;
       list<BackendDAE.Var> rest;
-    case ({},Aliases) then Aliases;
+    case ({},aliases) then aliases;
     case (v::rest,BackendDAE.ALIASVARS(aliasMappingsCref,aliasMappingsExp,aliasVariables))
       equation
         aliasVariables = BackendVariable.addVar(v,aliasVariables);
         exp = BackendVariable.varBindExp(v);
         cr = BackendVariable.varCref(v);
-        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("++++ added Alias eqn : ",cr," = ",exp,"\n"));
+        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("++++ added Alias eqn: ",cr," = ",exp,"\n"));
         aliasMappingsCref1 = BaseHashTable.addNoUpdCheck((cr,exp),aliasMappingsCref);
         aliasMappingsExp1 = BaseHashTable.addNoUpdCheck((exp,cr),aliasMappingsExp);
-        Aliases =  addAliasVariables(rest,BackendDAE.ALIASVARS(aliasMappingsCref1,aliasMappingsExp1,aliasVariables));
+        aliases =  addAliasVariables(rest,BackendDAE.ALIASVARS(aliasMappingsCref1,aliasMappingsExp1,aliasVariables));
       then
-       Aliases;
+       aliases;
     case (_,_)
       equation
         print("- BackendDAEUtil.addAliasVariables failed\n");
@@ -1376,7 +1376,7 @@ algorithm
     local
       HashTable4.HashTable aliasMappingsExp;
       BackendDAE.Variables aliasVariables;
-      BackendDAE.AliasVariables Aliases;
+      BackendDAE.AliasVariables aliases;
       BackendDAE.Var v;
       list<BackendDAE.Var> vars;
       DAE.Exp exp,exp1;
@@ -1384,47 +1384,47 @@ algorithm
       list<tuple<HashTable4.Key,HashTable4.Value>> tableList;
       list<String> str;
     
-    case (Aliases as BackendDAE.ALIASVARS( varMappingsExp = aliasMappingsExp, aliasVars = aliasVariables),inCref,inExp,v)
+    case (aliases as BackendDAE.ALIASVARS( varMappingsExp = aliasMappingsExp, aliasVars = aliasVariables),inCref,inExp,v)
       equation
         exp1 = Expression.crefExp(inCref);
         cr1 = BaseHashTable.get(exp1,aliasMappingsExp);
-        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("update ComponentRef : ",inCref," with Exp : ",inExp,"\n"));
+        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("update ComponentRef: ",inCref," with Exp : ",inExp,"\n"));
         
         tableList = BaseHashTable.hashTableList(aliasMappingsExp);
-        Aliases = updateAliasVars(tableList,exp1,inExp,Aliases);
+        aliases = updateAliasVars(tableList,exp1,inExp,aliases);
 
         v = BackendVariable.setBindExp(v,inExp);
 
-        Aliases = addAliasVariables({v},Aliases);
+        aliases = addAliasVariables({v},aliases);
       then
-        Aliases;
+        aliases;
     
-    case (Aliases as BackendDAE.ALIASVARS( varMappingsExp = aliasMappingsExp, aliasVars = aliasVariables),inCref,inExp,v)
+    case (aliases as BackendDAE.ALIASVARS( varMappingsExp = aliasMappingsExp, aliasVars = aliasVariables),inCref,inExp,v)
       equation
         exp1 = Expression.crefExp(inCref);
         exp = Expression.negate(exp1);
         (exp,_) = ExpressionSimplify.simplify1(exp);
         cr1 = BaseHashTable.get(exp,aliasMappingsExp);
-        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("update ComponentRef : ",inCref," with  ",inExp,"\n"));
+        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("update ComponentRef: ",inCref," with  ",inExp,"\n"));
         
         tableList = BaseHashTable.hashTableList(aliasMappingsExp);
-        Aliases = updateAliasVars(tableList,exp1,inExp,Aliases);
+        aliases = updateAliasVars(tableList,exp1,inExp,aliases);
 
         v = BackendVariable.setBindExp(v,inExp);
 
-        Aliases = addAliasVariables({v},Aliases);
+        aliases = addAliasVariables({v},aliases);
       then
-        Aliases;
+        aliases;
            
-    case (Aliases as BackendDAE.ALIASVARS( varMappingsExp = aliasMappingsExp, aliasVars = aliasVariables),inCref,inExp,v)
+    case (aliases as BackendDAE.ALIASVARS( varMappingsExp = aliasMappingsExp, aliasVars = aliasVariables),inCref,inExp,v)
       equation
         exp1 = Expression.crefExp(inCref);
         failure(_ = BaseHashTable.get(exp1,aliasMappingsExp));
-        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,(" Search for ",inCref," with binding : ",inExp," failed.\n"));
+        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,(" Search for ",inCref," with binding: ",inExp," failed.\n"));
         v = BackendVariable.setBindExp(v,inExp);
-        Aliases = addAliasVariables({v},Aliases);
+        aliases = addAliasVariables({v},aliases);
       then
-        Aliases;
+        aliases;
     //case (inAliasVariables,_,_) then inAliasVariables;
     case (_,_,_,_)
       equation

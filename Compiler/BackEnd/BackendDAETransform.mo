@@ -2163,7 +2163,7 @@ algorithm
 
     case (stateexpcall,dummyderexp,BackendDAE.DAE(v,kv,ev,av as BackendDAE.ALIASVARS(aliasVars = aliasVars),eqns,seqns,ie,ae,al,BackendDAE.EVENT_INFO(wclst,zeroCrossingLst),eoc),m,mt,{})
       equation
-        ((_, _, av)) = BackendVariable.traverseBackendDAEVars(aliasVars,traverereplaceAliasVarsBindExp,(stateexpcall, dummyderexp, av));
+        ((_, _, av)) = BackendVariable.traverseBackendDAEVars(aliasVars,traverseReplaceAliasVarsBindExp,(stateexpcall, dummyderexp, av));
         (ie1,(al1,ae1,wclst1,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(ie,traversereplaceDummyDer,(al, ae, wclst, replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
         (ie1,(al1,ae1,wclst1,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(ie,traversereplaceDummyDer,(al, ae, wclst, replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
         (seqns1,(al2,ae2,wclst2,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(seqns,traversereplaceDummyDer,(al1, ae1, wclst1, replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
@@ -2622,9 +2622,9 @@ algorithm
   outTpl := Expression.traverseExp(e,replaceDummyDerOthersExpFinder,vars);
 end replaceDummyDerOthersExp;
 
-protected function traverereplaceAliasVarsBindExp
-"function traverereplaceAliasVarsBindExp
-  Helper funciton to replaceDummyDer.
+protected function traverseReplaceAliasVarsBindExp
+"function traverseReplaceAliasVarsBindExp
+  Helper function to replaceDummyDer.
   Replaces all variable bindings of the alias variables."
  input tuple<BackendDAE.Var, tuple<DAE.Exp,DAE.Exp,BackendDAE.AliasVariables>> inTpl;
  output tuple<BackendDAE.Var, tuple<DAE.Exp,DAE.Exp,BackendDAE.AliasVariables>> outTpl;
@@ -2645,7 +2645,7 @@ algorithm
       then ((v,(e1,e2,av)));
     case inTpl then inTpl;
   end matchcontinue;
-end traverereplaceAliasVarsBindExp;
+end traverseReplaceAliasVarsBindExp;
 
 protected function replaceDummyDerOthersExpFinder
 "function: replaceDummyDerOthersExpFinder

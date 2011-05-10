@@ -1133,6 +1133,7 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
+      BackendDAE.Var oVar;
 
     case (BackendDAE.VAR(varName = cr,
               varKind = kind,
@@ -1147,7 +1148,10 @@ algorithm
               comment = comment,
               flowPrefix = flowPrefix,
               streamPrefix = streamPrefix),new_kind)
-    then BackendDAE.VAR(cr,new_kind,dir,tp,bind,v,dim,i,source,attr,comment,flowPrefix,streamPrefix);
+    equation
+      oVar = BackendDAE.VAR(cr,new_kind,dir,tp,bind,v,dim,i,source,attr,comment,flowPrefix,streamPrefix); // referenceUpdate(inVar, 2, new_kind);
+    then 
+      oVar; 
   end match;
 end setVarKind;
 
@@ -1174,6 +1178,7 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
+      BackendDAE.Var oVar;
 
     case (BackendDAE.VAR(varName = cr,
               varKind = kind,
@@ -1188,7 +1193,10 @@ algorithm
               comment = comment,
               flowPrefix = flowPrefix,
               streamPrefix = streamPrefix),new_i)
-    then BackendDAE.VAR(cr,kind,dir,tp,bind,v,dim,new_i,source,attr,comment,flowPrefix,streamPrefix);
+    equation
+      oVar = BackendDAE.VAR(cr,kind,dir,tp,bind,v,dim,new_i,source,attr,comment,flowPrefix,streamPrefix); // referenceUpdate(inVar, 8, new_i);
+    then
+      oVar; 
   end match;
 end setVarIndex;
 
@@ -1214,6 +1222,7 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
+      BackendDAE.Var oVar;
 
     case (BackendDAE.VAR(varName = cr,
               varKind = kind,
@@ -1226,8 +1235,12 @@ algorithm
               values = attr,
               comment = comment,
               flowPrefix = flowPrefix,
-              streamPrefix = streamPrefix),inBindExp)
-    then BackendDAE.VAR(cr,kind,dir,tp,SOME(inBindExp),v,dim,i,source,attr,comment,flowPrefix,streamPrefix);
+              streamPrefix = streamPrefix),
+          inBindExp)
+    equation
+      oVar = BackendDAE.VAR(cr,kind,dir,tp,SOME(inBindExp),v,dim,i,source,attr,comment,flowPrefix,streamPrefix); // referenceUpdate(inVar, 5, SOME(inBindExp));
+    then 
+      oVar;
   end match;
 end setBindExp;
 
@@ -1253,6 +1266,7 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
+      BackendDAE.Var oVar;
 
     case (BackendDAE.VAR(varName = cr,
               varKind = kind,
@@ -1267,7 +1281,10 @@ algorithm
               comment = comment,
               flowPrefix = flowPrefix,
               streamPrefix = streamPrefix),inBindValue)
-    then BackendDAE.VAR(cr,kind,dir,tp,bind,SOME(inBindValue),dim,i,source,attr,comment,flowPrefix,streamPrefix);
+    equation
+      oVar = BackendDAE.VAR(cr,kind,dir,tp,bind,SOME(inBindValue),dim,i,source,attr,comment,flowPrefix,streamPrefix); // referenceUpdate(inVar, 6, SOME(inBindValue));
+    then 
+      oVar;
   end match;
 end setBindValue;
 
@@ -1293,6 +1310,7 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
+      BackendDAE.Var oVar;
 
     case (BackendDAE.VAR(varName = cr,
               varKind = kind,
@@ -1306,7 +1324,10 @@ algorithm
               comment = comment,
               flowPrefix = flowPrefix,
               streamPrefix = streamPrefix),varDirection)
-    then BackendDAE.VAR(cr,kind,varDirection,tp,bind,v,dim,i,source,attr,comment,flowPrefix,streamPrefix);
+    equation
+      oVar = BackendDAE.VAR(cr,kind,varDirection,tp,bind,v,dim,i,source,attr,comment,flowPrefix,streamPrefix); // referenceUpdate(inVar, 3, varDirection);
+    then 
+      oVar; 
   end match;
 end setVarDirection;
 
