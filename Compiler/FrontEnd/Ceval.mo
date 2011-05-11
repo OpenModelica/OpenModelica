@@ -6339,5 +6339,13 @@ algorithm
   end match;
 end backpatchArrayReduction3;
 
+public function cevalSimple
+  "A simple expression does not need cache, etc"
+  input DAE.Exp exp;
+  output Values.Value val;
+algorithm
+  (_,val,_) := ceval(Env.emptyCache(),{},exp,false,NONE(),NONE(),MSG());
+end cevalSimple;
+
 end Ceval;
 

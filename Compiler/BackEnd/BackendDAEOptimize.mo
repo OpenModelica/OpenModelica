@@ -56,6 +56,7 @@ protected import BackendEquation;
 protected import BackendVarTransform;
 protected import BackendVariable;
 protected import Builtin;
+protected import Ceval;
 protected import ClassInf;
 protected import ComponentReference;
 protected import DAEUtil;
@@ -3511,6 +3512,43 @@ algorithm
         (comp::comps,comps1);
   end matchcontinue;
 end splitComps;
+
+public function evaluateConstantJacobian
+  "Evaluate a constant jacobian so we can solve a linear system during runtime"
+  input Integer size;
+  input list<tuple<Integer,Integer,BackendDAE.Equation>> jac;
+  output list<list<Real>> vals;
+protected
+  array<array<Real>> valarr;
+  array<Real> tmp;
+  list<array<Real>> tmp2;
+  list<Real> rs;
+algorithm
+  rs := Util.listFill(0.0,size);
+  tmp := listArray(rs);
+  tmp2 := Util.listMap(Util.listFill(tmp,size),arrayCopy);
+  valarr := listArray(tmp2);
+  Util.listMap01(jac,valarr,evaluateConstantJacobian2);
+  tmp2 := arrayList(valarr);
+  vals := Util.listMap(tmp2,arrayList);
+end evaluateConstantJacobian;
+
+protected function evaluateConstantJacobian2
+  input tuple<Integer,Integer,BackendDAE.Equation> jac;
+  input array<array<Real>> vals;
+algorithm
+  _ := match (jac,vals)
+    local
+      DAE.Exp exp;
+      Integer i1,i2;
+      Real r;
+    case ((i1,i2,BackendDAE.RESIDUAL_EQUATION(exp=exp)),vals)
+      equation
+        Values.REAL(r) = Ceval.cevalSimple(exp);
+        _ = arrayUpdate(arrayGet(vals,i1),i2,r);
+      then ();
+  end match;
+end evaluateConstantJacobian2;
 
 protected function solveEquations
 " function: solveEquations

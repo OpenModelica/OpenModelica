@@ -290,6 +290,8 @@ public constant ErrorID EXTERNAL_FUNCTION_RESULT_NOT_VAR=176;
 public constant ErrorID EXTERNAL_FUNCTION_RESULT_ARRAY_TYPE=177;
 public constant ErrorID INVALID_REDECLARE=178;
 public constant ErrorID INVALID_TYPE_PREFIX=179;
+public constant ErrorID LINEAR_SYSTEM_INVALID=180;
+public constant ErrorID LINEAR_SYSTEM_SINGULAR=181;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -775,6 +777,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (EXTERNAL_FUNCTION_RESULT_NOT_CREF,TRANSLATION(),ERROR(),"The lhs (result) of the external function declaration is not a component reference: %s"),
           (EXTERNAL_FUNCTION_RESULT_NOT_VAR,TRANSLATION(),ERROR(),"The lhs (result) of the external function declaration is not a variable"),
           (EXTERNAL_FUNCTION_RESULT_ARRAY_TYPE,TRANSLATION(),ERROR(),"The lhs (result) of the external function declaration has array type (%s), but this is not allowed in the specification. You need to pass it as an input to the function (preferably also with a size()-expression to avoid out-of-bounds errors in the external call)."),
+          (LINEAR_SYSTEM_INVALID,SYMBOLIC(),ERROR(),"Linear solver (%s) returned invalid input for linear system %s."),
+          (LINEAR_SYSTEM_SINGULAR,SYMBOLIC(),ERROR(),"When solving linear system %1\n  U(%2,%2) = 0.0, which means system is singular for variable %3."),
 
           (COMPILER_NOTIFICATION,TRANSLATION(),NOTIFICATION(),"%s"),
           (COMPILER_WARNING,TRANSLATION(),WARNING(),"%s"),

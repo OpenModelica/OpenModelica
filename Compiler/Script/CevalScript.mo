@@ -808,7 +808,10 @@ algorithm
       then
         (cache,ret_val,st_1);
    
-     case (cache,env,"translateModelCPP",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,msg)
+    case (cache,env,"translateModel",_,st,msg)
+      then (cache,Values.STRING("There were errors during translation. Use getErrorString() to see them."),st);
+
+    case (cache,env,"translateModelCPP",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,msg)
       equation
         (cache,ret_val,st_1,_,_,_,_) = translateModelCPP(cache,env, className, st, filenameprefix,true,NONE());
       then
@@ -1997,6 +2000,7 @@ algorithm
           SimCode.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt);
       then
         (cache,outValMsg,st,indexed_dlow,libs,file_dir,resultValues);
+
   end match;
 end translateModel;
 

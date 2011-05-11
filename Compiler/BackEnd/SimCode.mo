@@ -4554,7 +4554,6 @@ algorithm
         equations_;
     case (_,_,_,_,_,_,_,_)
       equation
-        print("Failure: ...\n");
         Error.addMessage(Error.INTERNAL_ERROR, {"createOdeSystem failed"});
       then
         fail();
@@ -4769,8 +4768,10 @@ algorithm
       list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
       list<tuple<Integer, Integer, SimEqSystem>> simJac;
       array<BackendDAE.MultiDimEquation> arrayEqs;
-      Integer index;
+      Integer index,linInfo;
       array< .DAE.Algorithm> algorithms;
+      list<list<Real>> jacVals;
+      list<Real> rhsVals,solvedVals;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.AliasVariables ave;
       
@@ -4793,12 +4794,19 @@ algorithm
         // constant jacobians. Linear system of equations (A x = b) where
         // A and b are constants. TODO: implement symbolic gaussian elimination
         // here. Currently uses dgesv as for next case
-    case (mixedEvent,genDiscrete,skipDiscInAlgorithm,(d as BackendDAE.DAE(orderedEqs = eqn)),SOME(jac),BackendDAE.JAC_CONSTANT(),block_,helpVarInfo)
+    case (mixedEvent,genDiscrete,skipDiscInAlgorithm,(d as BackendDAE.DAE(orderedVars = v,knownVars = kv,orderedEqs = eqn, arrayEqs = arrayEqs)),SOME(jac),BackendDAE.JAC_CONSTANT(),block_,helpVarInfo)
       equation
         eqn_size = BackendDAEUtil.equationSize(eqn);
-        // NOTE: Not impl. yet, use time_varying...
-        equations_ = createOdeSystem2(mixedEvent, genDiscrete, skipDiscInAlgorithm, d, SOME(jac),
-          BackendDAE.JAC_TIME_VARYING(), block_,helpVarInfo);
+        ((simVars,_)) = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
+        simVars = listReverse(simVars);
+        ((_,_,_,beqs)) = BackendEquation.traverseBackendDAEEqns(eqn,dlowEqToExp,(v,arrayEqs,{},{}));
+        beqs = listReverse(beqs);
+        rhsVals = ValuesUtil.valueReals(Util.listMap(beqs,Ceval.cevalSimple));
+        jacVals = BackendDAEOptimize.evaluateConstantJacobian(listLength(simVars),jac);
+        (solvedVals,linInfo) = System.solveLinearSystem(jacVals,rhsVals);
+        checkLinearSystem(linInfo,simVars,jacVals,rhsVals);
+        // TODO: Move these to known vars :/ This is done in the wrong phase of the compiler... Also, if done as an optimization module, we can optimize more!
+        equations_ = Util.listThreadMap(simVars,solvedVals,generateSolvedEquation);
       then
         equations_;
         
@@ -4867,6 +4875,50 @@ algorithm
         fail();
   end matchcontinue;
 end createOdeSystem2;
+
+protected function checkLinearSystem
+  input Integer info;
+  input list<SimVar> vars;
+  input list<list<Real>> jac;
+  input list<Real> rhs;
+algorithm
+  _ := matchcontinue (info,vars,jac,rhs)
+    local
+      String infoStr,syst,varnames,varname,rhsStr,jacStr;
+    case (0,_,_,_) then ();
+    case (info,vars,jac,rhs)
+      equation
+        true = info > 0;
+        varname = varName(listGet(vars,info));
+        infoStr = intString(info);
+        varnames = Util.stringDelimitList(Util.listMap(vars,varName)," ;\n  ");
+        rhsStr = Util.stringDelimitList(Util.listMap(rhs, realString)," ;\n  ");
+        jacStr = Util.stringDelimitList(Util.listMap1(Util.listListMap(jac,realString),Util.stringDelimitList," , ")," ;\n  ");
+        syst = stringAppendList({"\n[\n  ", jacStr, "\n]\n  *\n[\n  ",varnames,"\n]\n  =\n[\n  ",rhsStr,"\n]"});
+        Error.addMessage(Error.LINEAR_SYSTEM_SINGULAR, {syst,infoStr,varname});
+      then fail();
+    case (info,vars,jac,rhs)
+      equation
+        true = info < 0;
+        varnames = Util.stringDelimitList(Util.listMap(vars,varName)," ; ");
+        rhsStr = Util.stringDelimitList(Util.listMap(rhs, realString)," ; ");
+        jacStr = Util.stringDelimitList(Util.listMap1(Util.listListMap(jac,realString),Util.stringDelimitList," , ")," ; ");
+        syst = stringAppendList({"[", jacStr, "] * [",varnames,"] = [",rhsStr,"]"});
+        Error.addMessage(Error.LINEAR_SYSTEM_INVALID, {"LAPACK/dgesv",syst});
+      then fail();
+  end matchcontinue;
+end checkLinearSystem;
+
+protected function generateSolvedEquation
+  input SimVar var;
+  input Real val;
+  output SimEqSystem eq;
+protected
+  DAE.ComponentRef name;
+algorithm
+  SIMVAR(name=name) := var;
+  eq := SES_SIMPLE_ASSIGN(name,DAE.RCONST(val),DAE.emptyElementSource); 
+end generateSolvedEquation;
 
 protected function replaceDerOpInEquationList
   "Replaces all der(cref) with $DER.cref in a list of equations."
@@ -11360,7 +11412,15 @@ algorithm str := matchcontinue(vf)
 end matchcontinue;
 end dumpVarInfo;
 
-
+protected function varName
+  input SimVar var;
+  output String name;
+protected
+  DAE.ComponentRef cr;
+algorithm
+  SIMVAR(name=cr) := var;
+  name := ComponentReference.printComponentRefStr(cr);
+end varName;
 
 
 
