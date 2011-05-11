@@ -1888,6 +1888,11 @@ package Expression
     output Boolean outBoolean;
   end isHalf;
 
+  function realExpIntLit
+    input DAE.Exp exp;
+    output Option<Integer> oi;
+  end realExpIntLit;
+
 end Expression;
 
 package ExpressionDump

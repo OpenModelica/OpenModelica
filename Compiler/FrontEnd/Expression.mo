@@ -1112,6 +1112,23 @@ algorithm
   end matchcontinue;
 end expReal;
 
+public function realExpIntLit "returns the int value if expression is constant Real that can be represented by an Integer"
+  input DAE.Exp exp;
+  output Option<Integer> oi;
+algorithm
+  oi := matchcontinue exp
+    local
+      Real r;
+      Integer i;
+    case (DAE.RCONST(real = r))
+      equation
+        i = realInt(r);
+        true = realEq(r,intReal(i));
+      then SOME(i);
+    else NONE();
+  end matchcontinue;
+end realExpIntLit;
+
 public function expInt "returns the int value if expression is constant Integer"
   input DAE.Exp exp;
   output Integer i;

@@ -4705,8 +4705,10 @@ case BINARY(__) then
   case MUL(__) then '(<%e1%> * <%e2%>)'
   case DIV(__) then '(<%e1%> / <%e2%>)'
   case POW(__) then
-    if isHalf(exp2) then 'sqrt((modelica_real)<%e1%>)'
-    else 'pow((modelica_real)<%e1%>, (modelica_real)<%e2%>)'
+    if isHalf(exp2) then 'sqrt(<%e1%>)'
+    else match realExpIntLit(exp2)
+      case SOME(i) then 'real_int_pow(<%e1%>, <%i%>)'
+      else 'pow(<%e1%>, <%e2%>)'
   case UMINUS(__) then daeExpUnary(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/) 
   case ADD_ARR(__) then
     let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" 
