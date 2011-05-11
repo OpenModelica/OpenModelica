@@ -1454,13 +1454,13 @@ public function dumpComponentsGraphStr
   input BackendDAE.IncidenceMatrix inMT;
   input array<Integer> inAss1;
   input array<Integer> inAss2;
-  input list<list<Integer>> inComps;
+  input BackendDAE.StrongComponents inComps;
   output BackendDAE.BackendDAE outDAE;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrix outMT;
   output array<Integer> outAss1;
   output array<Integer> outAss2;
-  output list<list<Integer>> outComps;
+  output BackendDAE.StrongComponents outComps;
   output Boolean outRunMatching;
 protected
   Integer n;
@@ -1534,7 +1534,7 @@ public function dumpComponents "function: dumpComponents
 
   Prints the blocks of the BLT sorting on stdout.
 "
-  input list<list<Integer>> l;
+  input BackendDAE.StrongComponents l;
 algorithm
   print("Blocks\n");
   print("=======\n");
@@ -1546,7 +1546,7 @@ protected function dumpComponents2 "function: dumpComponents2
 
   Helper function to dump_components.
 "
-  input list<list<Integer>> inIntegerLstLst;
+  input BackendDAE.StrongComponents inIntegerLstLst;
   input Integer inInteger;
 algorithm
   _:=
@@ -1668,14 +1668,14 @@ end dumpStateVariable;
 
 public function bltdump
 "autor: Frenkel TUD 2011-03"
-  input tuple<String,BackendDAE.BackendDAE,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrix,array<Integer>,array<Integer>,list<list<Integer>>> inTpl;
+  input tuple<String,BackendDAE.BackendDAE,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrix,array<Integer>,array<Integer>,BackendDAE.StrongComponents> inTpl;
 protected
   String str;
   BackendDAE.BackendDAE ode;
   BackendDAE.IncidenceMatrix m;
   BackendDAE.IncidenceMatrix mT;
   array<Integer> v1,v2;
-  list<list<Integer>> comps;
+  BackendDAE.StrongComponents comps;
 algorithm
   (str,ode,m,mT,v1,v2,comps) := inTpl;
   print(str); print(":\n");
@@ -1691,7 +1691,7 @@ public function dumpComponentsAdvanced "function: dumpComponents
 
   Prints the blocks of the BLT sorting on stdout.
 "
-  input list<list<Integer>> l;
+  input BackendDAE.StrongComponents l;
   input array<Integer> v2;
   input BackendDAE.BackendDAE ode;
 protected
@@ -1708,7 +1708,7 @@ protected function dumpComponentsAdvanced2 "function: dumpComponents2
 
   Helper function to dump_components.
 "
-  input list<list<Integer>> inIntegerLstLst;
+  input BackendDAE.StrongComponents inIntegerLstLst;
   input Integer inInteger;
   input array<Integer> v2;
   input BackendDAE.Variables vars;

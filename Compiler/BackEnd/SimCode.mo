@@ -873,7 +873,7 @@ public function generateModelCodeFMU
   input BackendDAE.IncidenceMatrix incidenceMatrixT;
   input array<Integer> equationIndices;
   input array<Integer> variableIndices;
-  input list<list<Integer>> strongComponents;
+  input BackendDAE.StrongComponents strongComponents;
   output BackendDAE.BackendDAE outIndexedBackendDAE;
   output list<String> libs;
   output String fileDir;
@@ -922,7 +922,7 @@ public function generateModelCodeCPP
   input BackendDAE.IncidenceMatrix incidenceMatrixT;
   input array<Integer> equationIndices;
   input array<Integer> variableIndices;
-  input list<list<Integer>> strongComponents;
+  input BackendDAE.StrongComponents strongComponents;
   output BackendDAE.BackendDAE outIndexedBackendDAE;
   output list<String> libs;
   output String fileDir;
@@ -985,7 +985,7 @@ algorithm
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
       array<list<Integer>> m,mT;
       array<Integer> ass1,ass2;
-      list<list<Integer>> comps;
+      BackendDAE.StrongComponents comps;
       Absyn.ComponentRef a_cref;
       list<String> libs;
       Interactive.InteractiveSymbolTable st;
@@ -1062,7 +1062,7 @@ algorithm
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
       array<list<Integer>> m,mT;
       array<Integer> ass1,ass2;
-      list<list<Integer>> comps;
+      BackendDAE.StrongComponents comps;
       Absyn.ComponentRef a_cref;
       list<String> libs;
       Interactive.InteractiveSymbolTable st;
@@ -1126,7 +1126,7 @@ public function generateModelCode
   input BackendDAE.IncidenceMatrixT incidenceMatrixT;
   input array<Integer> equationIndices;
   input array<Integer> variableIndices;
-  input list<list<Integer>> strongComponents;
+  input BackendDAE.StrongComponents strongComponents;
   output BackendDAE.BackendDAE outIndexedBackendDAE;
   output list<String> libs;
   output String fileDir;
@@ -1144,7 +1144,7 @@ protected
   BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1;
   Absyn.ComponentRef a_cref;
   BackendQSS.QSSinfo qssInfo;
-  tuple<BackendDAE.BackendDAE, array<Integer>, array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, list<list<Integer>> > inQSSrequiredData;
+  tuple<BackendDAE.BackendDAE, array<Integer>, array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, BackendDAE.StrongComponents > inQSSrequiredData;
 algorithm
    timeBackend := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
    a_cref := Absyn.pathToCref(className);
@@ -1170,7 +1170,7 @@ end generateModelCode;
 protected function callTargetTemplates
 "Generate target code by passing the SimCode data structure to templates."
   input SimCode simCode;
-  input tuple<BackendDAE.BackendDAE, array<Integer>, array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, list<list<Integer>> > inQSSrequiredData;
+  input tuple<BackendDAE.BackendDAE, array<Integer>, array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, BackendDAE.StrongComponents > inQSSrequiredData;
   input String target;
 algorithm
   _ := match (simCode,inQSSrequiredData,target)
@@ -1179,7 +1179,7 @@ algorithm
       array<Integer> equationIndices, variableIndices;
       BackendDAE.IncidenceMatrix incidenceMatrix;
       BackendDAE.IncidenceMatrixT incidenceMatrixT;
-      list<list<Integer>> strongComponents;
+      BackendDAE.StrongComponents strongComponents;
       BackendQSS.QSSinfo qssInfo;
       
     case (simCode,_,"CSharp")
@@ -1240,7 +1240,7 @@ algorithm
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
       array<list<Integer>> m,mT;
       array<Integer> ass1,ass2;
-      list<list<Integer>> comps;
+      BackendDAE.StrongComponents comps;
       Absyn.ComponentRef a_cref;
       list<String> libs;
       Interactive.InteractiveSymbolTable st;
@@ -2071,7 +2071,7 @@ protected function createSimCode
   input array<Integer> inIntegerArray4;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix5;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT6;
-  input list<list<Integer>> inIntegerLstLst7;
+  input BackendDAE.StrongComponents inIntegerLstLst7;
   input Absyn.Path inClassName;
   input String filenamePrefix;
   input String inString11;
@@ -2087,7 +2087,8 @@ algorithm
   matchcontinue (functionTree,inBackendDAE2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,inIntegerLstLst7,inClassName,filenamePrefix,inString11,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls)
     local
       String cname,   fileDir;
-      list<list<Integer>> blt_states,blt_no_states,comps;
+      list<list<Integer>> blt_states,blt_no_states;
+      BackendDAE.StrongComponents comps;
       list<list<Integer>> contBlocks,discBlocks;
       Integer n_h,nres,maxDelayedExpIndex;
       list<HelpVarInfo> helpVarInfo;
@@ -2236,7 +2237,7 @@ protected function createSimCodeCPP
   input array<Integer> inIntegerArray4;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix5;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT6;
-  input list<list<Integer>> inIntegerLstLst7;
+  input BackendDAE.StrongComponents inIntegerLstLst7;
   input Absyn.Path inClassName;
   input String filenamePrefix;
   input String inString11;
@@ -2252,7 +2253,8 @@ algorithm
   matchcontinue (functionTree,inBackendDAE2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,inIntegerLstLst7,inClassName,filenamePrefix,inString11,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls)
     local
       String cname,   fileDir;
-      list<list<Integer>> blt_states,blt_no_states,comps;
+      list<list<Integer>> blt_states,blt_no_states;
+      BackendDAE.StrongComponents comps;
       list<list<Integer>> contBlocks,discBlocks;
       Integer n_h,nres,maxDelayedExpIndex;
       list<HelpVarInfo> helpVarInfo;
@@ -2793,23 +2795,16 @@ end createMakefileParams;
 
 protected function generateHelpVarInfo
   input BackendDAE.BackendDAE dlow;
-  input list<list<Integer>> comps;
+  input BackendDAE.StrongComponents comps;
   output list<HelpVarInfo> outHelpVarInfo;
   output BackendDAE.BackendDAE outBackendDAE;
   output list<BackendDAE.Equation> outSampleEqns;
 algorithm
-  (outHelpVarInfo, outBackendDAE,outSampleEqns) := match (dlow, comps)
-    local
-      list<BackendDAE.Equation> sampleEqns;
-    case (dlow, comps)
-      equation
-        outHelpVarInfo = helpVarInfoFromWhenConditionChecks(dlow, comps);
-        (outHelpVarInfo, dlow) = generateHelpVarsForWhenStatements(outHelpVarInfo, dlow);
-        // Generate HelpVars for sample call outside whenclause
-        // additional collect all these equations
-        (outHelpVarInfo, dlow,sampleEqns) = searchForSampleOutsideWhen(outHelpVarInfo, dlow);
-      then (outHelpVarInfo, dlow,sampleEqns);
-  end match;
+  outHelpVarInfo := helpVarInfoFromWhenConditionChecks(dlow, comps);
+  (outHelpVarInfo, dlow) := generateHelpVarsForWhenStatements(outHelpVarInfo, dlow);
+  // Generate HelpVars for sample call outside whenclause
+  // additional collect all these equations
+  (outHelpVarInfo, outBackendDAE,outSampleEqns) := searchForSampleOutsideWhen(outHelpVarInfo, dlow);
 end generateHelpVarInfo;
 
 protected function searchForSampleOutsideWhen
@@ -2907,7 +2902,7 @@ end findSampleInExps;
 protected function helpVarInfoFromWhenConditionChecks
 "Return a list of help variables that were introduced by when conditions?"
   input BackendDAE.BackendDAE inBackendDAE;
-  input list<list<Integer>> comps;
+  input BackendDAE.StrongComponents comps;
   output list<HelpVarInfo> helpVarList;
 algorithm
   helpVarList :=
@@ -3667,14 +3662,14 @@ public function createEquations
   input BackendDAE.BackendDAE dlow;
   input array<Integer> ass1;
   input array<Integer> ass2;
-  input list<list<Integer>> comps;
+  input BackendDAE.StrongComponents comps;
   input list<HelpVarInfo> helpVarInfo;
   output list<SimEqSystem> equations;
 algorithm
   equations := matchcontinue (includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, dlow, ass1, ass2, comps, helpVarInfo)
     local
       list<Integer> comp;
-      list<list<Integer>> restComps;
+      BackendDAE.StrongComponents restComps;
       Integer index;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
@@ -5804,7 +5799,7 @@ algorithm
       BackendDAE.IncidenceMatrixT mT;
       array<Integer> v1,v2;
       list<Integer> lv1,lv2;
-      list<list<Integer>> comps;
+      BackendDAE.StrongComponents comps;
       list<BackendDAE.Var> lv,lkn;
       list<HelpVarInfo> helpVarInfo;
       
@@ -8803,7 +8798,7 @@ algorithm
 end removePathFromList;
 
 protected function generateEquationOrder
-  input list<list<Integer>> inIntegerLstLst;
+  input BackendDAE.StrongComponents inIntegerLstLst;
   output list<Integer> outIntegerLst;
 algorithm
   outIntegerLst:=

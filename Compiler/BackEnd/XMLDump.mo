@@ -774,7 +774,7 @@ The output is something like:
   ....
 </bltBlock>
 "
-  input list<list<Integer>> l;
+  input BackendDAE.StrongComponents l;
 algorithm
   _:=
   matchcontinue(l)
@@ -797,7 +797,7 @@ protected function dumpComponents2 "
 function: dumpComponents2
   Helper function to dump_components.
 "
-  input list<list<Integer>> inIntegerLstLst;
+  input BackendDAE.StrongComponents inIntegerLstLst;
   input Integer inInteger;
 algorithm
   _:=
@@ -2699,7 +2699,7 @@ algorithm
       BackendDAE.BackendDAE dlow;
       array<list<Integer>> m,mT;
       array<Integer> v1,v2;
-      list<list<Integer>> comps;
+      BackendDAE.StrongComponents comps;
   case (false,false,_) then ();
   case (true,true,dlow)
     equation

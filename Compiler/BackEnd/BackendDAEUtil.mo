@@ -3783,7 +3783,7 @@ public function getEquationBlock "function: getEquationBlock
   Returns the block the equation belongs to.
 "
   input Integer inInteger;
-  input list<list<Integer>> inIntegerLstLst;
+  input BackendDAE.StrongComponents inIntegerLstLst;
   output list<Integer> outIntegerLst;
 algorithm
   outIntegerLst:=
@@ -5777,13 +5777,13 @@ partial function pastoptimiseDAEModule
   input BackendDAE.IncidenceMatrix inMT;
   input array<Integer> inAss1;
   input array<Integer> inAss2;
-  input list<list<Integer>> inComps;
+  input BackendDAE.StrongComponents inComps;
   output BackendDAE.BackendDAE outDAE;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrix outMT;
   output array<Integer> outAss1;
   output array<Integer> outAss2;
-  output list<list<Integer>> outComps;
+  output BackendDAE.StrongComponents outComps;
   output Boolean outRunMatching;
 end pastoptimiseDAEModule;
 
@@ -5825,7 +5825,7 @@ public function getSolvedSystem
   output BackendDAE.IncidenceMatrix outMT;
   output array<Integer> outAss1;
   output array<Integer> outAss2;
-  output list<list<Integer>> outComps;
+  output BackendDAE.StrongComponents outComps;
   partial function preoptimiseDAEModule
     input BackendDAE.BackendDAE inDAE;
     input DAE.FunctionTree inFunctionTree;
@@ -5862,13 +5862,13 @@ public function getSolvedSystem
     input BackendDAE.IncidenceMatrix inMT;
     input array<Integer> inAss1;
     input array<Integer> inAss2;
-    input list<list<Integer>> inComps;
+    input BackendDAE.StrongComponents inComps;
     output BackendDAE.BackendDAE outDAE;
     output BackendDAE.IncidenceMatrix outM;
     output BackendDAE.IncidenceMatrix outMT;
     output array<Integer> outAss1;
     output array<Integer> outAss2;
-    output list<list<Integer>> outComps;
+    output BackendDAE.StrongComponents outComps;
     output Boolean outRunMatching;
   end pastoptimiseDAEModule;
 protected
@@ -5876,7 +5876,7 @@ protected
   Option<BackendDAE.IncidenceMatrix> om,omT;
   BackendDAE.IncidenceMatrix m,mT,m_1,mT_1;
   array<Integer> v1,v2,v1_1,v2_1;
-  list<list<Integer>> comps,comps_1;
+  BackendDAE.StrongComponents comps,comps_1;
   list<tuple<preoptimiseDAEModule,String>> preOptModules;
   list<tuple<pastoptimiseDAEModule,String>> pastOptModules;
   tuple<daeHandlerFunc,String> daeHandler;
@@ -5982,7 +5982,7 @@ public function transformBackendDAE
   output BackendDAE.IncidenceMatrix outMT;
   output array<Integer> outAss1;
   output array<Integer> outAss2;
-  output list<list<Integer>> outComps; 
+  output BackendDAE.StrongComponents outComps; 
 protected
   tuple<daeHandlerFunc,String> indexReductionMethod;
 algorithm
@@ -6006,7 +6006,7 @@ protected function transformDAE
   output BackendDAE.IncidenceMatrix outMT;
   output array<Integer> outAss1;
   output array<Integer> outAss2;
-  output list<list<Integer>> outComps;
+  output BackendDAE.StrongComponents outComps;
 algorithm
   (outDAE,outM,outMT,outAss1,outAss2,outComps):=
   matchcontinue (inDAE,functionTree,inMatchingOptions,daeHandler,inM,inMT)
@@ -6017,7 +6017,7 @@ algorithm
       Option<BackendDAE.IncidenceMatrix> om,omT;
       BackendDAE.IncidenceMatrix m,mT,m1,mT1;
       array<Integer> v1,v2;
-      list<list<Integer>> comps;
+      BackendDAE.StrongComponents comps;
       BackendDAE.MatchingOptions match_opts;
       daeHandlerFunc daeHandlerfunc;
     case (dae,funcs,inMatchingOptions,(daeHandlerfunc,methodstr),om,omT)
@@ -6051,14 +6051,14 @@ protected function pastoptimiseDAE
   input BackendDAE.IncidenceMatrix inMT;
   input array<Integer> inAss1;
   input array<Integer> inAss2;
-  input list<list<Integer>> inComps;
+  input BackendDAE.StrongComponents inComps;
   input tuple<daeHandlerFunc,String> daeHandler;
   output BackendDAE.BackendDAE outDAE;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrix outMT;
   output array<Integer> outAss1;
   output array<Integer> outAss2;
-  output list<list<Integer>> outComps;
+  output BackendDAE.StrongComponents outComps;
 algorithm
   (outDAE,outM,outMT,outAss1,outAss2,outComps):=
   matchcontinue (inDAE,functionTree,optModules,inM,inMT,inAss1,inAss2,inComps,daeHandler)
@@ -6070,7 +6070,7 @@ algorithm
       String str,moduleStr;
       BackendDAE.IncidenceMatrix m,mT,m1,mT1,m2,mT2;
       array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2;
-      list<list<Integer>> comps,comps1,comps2;
+      BackendDAE.StrongComponents comps,comps1,comps2;
       Boolean runMatching;
     case (dae,funcs,{},m,mT,v1,v2,comps,_) then (dae,m,mT,v1,v2,comps);
     case (dae,funcs,(optModule,moduleStr)::rest,m,mT,v1,v2,comps,daeHandler)
@@ -6103,14 +6103,14 @@ protected function checktransformDAE
   input BackendDAE.IncidenceMatrix inMT;
   input array<Integer> inAss1;
   input array<Integer> inAss2;
-  input list<list<Integer>> inComps;
+  input BackendDAE.StrongComponents inComps;
   input tuple<daeHandlerFunc,String> daeHandler;
   output BackendDAE.BackendDAE outDAE;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrix outMT;
   output array<Integer> outAss1;
   output array<Integer> outAss2;
-  output list<list<Integer>> outComps;
+  output BackendDAE.StrongComponents outComps;
 algorithm
   (outDAE,outM,outMT,outAss1,outAss2,outComps):=
   match (inRunMatching,inDAE,functionTree,inM,inMT,inAss1,inAss2,inComps,daeHandler)
@@ -6119,7 +6119,7 @@ algorithm
       DAE.FunctionTree funcs;
       BackendDAE.IncidenceMatrix m,mT;
       array<Integer> v1,v2;
-      list<list<Integer>> comps;
+      BackendDAE.StrongComponents comps;
       Boolean runMatching;
     case (true,dae,funcs,m,mT,_,_,_,daeHandler)
       equation
@@ -6206,15 +6206,6 @@ protected function getPreOptModules
 " function: getPreOptModules"
   input Option<list<String>> ostrPreOptModules;
   output list<tuple<preoptimiseDAEModule,String>> preOptModules;
-  partial function preoptimiseDAEModule
-    input BackendDAE.BackendDAE inDAE;
-    input DAE.FunctionTree inFunctionTree;
-    input Option<BackendDAE.IncidenceMatrix> inM;
-    input Option<BackendDAE.IncidenceMatrix> inMT;
-    output BackendDAE.BackendDAE outDAE;
-    output Option<BackendDAE.IncidenceMatrix> outM;
-    output Option<BackendDAE.IncidenceMatrix> outMT;
-  end preoptimiseDAEModule;
 protected 
   list<tuple<preoptimiseDAEModule,String>> allPreOptModules;
   list<String> strPreOptModules;
@@ -6244,22 +6235,6 @@ protected function getPastOptModules
 " function: getPastOptModules"
   input Option<list<String>> ostrPastOptModules;
   output list<tuple<pastoptimiseDAEModule,String>> pastOptModules;
-  partial function pastoptimiseDAEModule
-    input BackendDAE.BackendDAE inDAE;
-    input DAE.FunctionTree inFunctionTree;
-    input BackendDAE.IncidenceMatrix inM;
-    input BackendDAE.IncidenceMatrix inMT;
-    input array<Integer> inAss1;
-    input array<Integer> inAss2;
-    input list<list<Integer>> inComps;
-    output BackendDAE.BackendDAE outDAE;
-    output BackendDAE.IncidenceMatrix outM;
-    output BackendDAE.IncidenceMatrix outMT;
-    output array<Integer> outAss1;
-    output array<Integer> outAss2;
-    output list<list<Integer>> outComps;
-    output Boolean outRunMatching;
-  end pastoptimiseDAEModule;
 protected 
   list<tuple<pastoptimiseDAEModule,String>> allPastOptModules;
   list<String> strPastOptModules;

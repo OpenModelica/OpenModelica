@@ -86,13 +86,13 @@ autor: Frenkel TUD 2011-3"
     input BackendDAE.IncidenceMatrix inMT;
     input array<Integer> inAss1;
     input array<Integer> inAss2;
-    input list<list<Integer>> inComps;
+    input BackendDAE.StrongComponents inComps;
     output BackendDAE.BackendDAE outDAE;
     output BackendDAE.IncidenceMatrix outM;
     output BackendDAE.IncidenceMatrix outMT;
     output array<Integer> outAss1;
     output array<Integer> outAss2;
-    output list<list<Integer>> outComps;
+    output BackendDAE.StrongComponents outComps;
     output Boolean outRunMatching;
 protected
   Option<BackendDAE.IncidenceMatrix> om,omT;
@@ -310,13 +310,13 @@ public function lateInline
     input BackendDAE.IncidenceMatrix inMT;
     input array<Integer> inAss1;
     input array<Integer> inAss2;
-    input list<list<Integer>> inComps;
+    input BackendDAE.StrongComponents inComps;
     output BackendDAE.BackendDAE outDAE;
     output BackendDAE.IncidenceMatrix outM;
     output BackendDAE.IncidenceMatrix outMT;
     output array<Integer> outAss1;
     output array<Integer> outAss2;
-    output list<list<Integer>> outComps;
+    output BackendDAE.StrongComponents outComps;
     output Boolean outRunMatching;
 algorithm
   outDAE := Inline.inlineCalls(SOME(inFunctionTree),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},inDAE);
@@ -340,13 +340,13 @@ public function removeSimpleEquationsPast
     input BackendDAE.IncidenceMatrix inMT;
     input array<Integer> inAss1;  
     input array<Integer> inAss2;  
-    input list<list<Integer>> inComps;  
+    input BackendDAE.StrongComponents inComps;  
     output BackendDAE.BackendDAE outDAE;
     output BackendDAE.IncidenceMatrix outM;
     output BackendDAE.IncidenceMatrix outMT;
     output array<Integer> outAss1;  
     output array<Integer> outAss2;  
-    output list<list<Integer>> outComps; 
+    output BackendDAE.StrongComponents outComps; 
     output Boolean outRunMatching;
 protected
   Option<BackendDAE.IncidenceMatrix> om,omT;
@@ -2163,13 +2163,13 @@ public function removeEqualFunctionCallsPast
     input BackendDAE.IncidenceMatrix inMT;
     input array<Integer> inAss1;  
     input array<Integer> inAss2;  
-    input list<list<Integer>> inComps;  
+    input BackendDAE.StrongComponents inComps;  
     output BackendDAE.BackendDAE outDAE;
     output BackendDAE.IncidenceMatrix outM;
     output BackendDAE.IncidenceMatrix outMT;
     output array<Integer> outAss1;  
     output array<Integer> outAss2;  
-    output list<list<Integer>> outComps; 
+    output BackendDAE.StrongComponents outComps; 
     output Boolean outRunMatching;
 protected
   Option<BackendDAE.IncidenceMatrix> om,omT;
@@ -2489,13 +2489,13 @@ public function removeUnusedParameterPast
     input BackendDAE.IncidenceMatrix inMT;
     input array<Integer> inAss1;  
     input array<Integer> inAss2;  
-    input list<list<Integer>> inComps;  
+    input BackendDAE.StrongComponents inComps;  
     output BackendDAE.BackendDAE outDAE;
     output BackendDAE.IncidenceMatrix outM;
     output BackendDAE.IncidenceMatrix outMT;
     output array<Integer> outAss1;  
     output array<Integer> outAss2;  
-    output list<list<Integer>> outComps; 
+    output BackendDAE.StrongComponents outComps; 
     output Boolean outRunMatching;
 protected
   Option<BackendDAE.IncidenceMatrix> om,omT;
@@ -2665,13 +2665,13 @@ public function removeUnusedVariablesPast
     input BackendDAE.IncidenceMatrix inMT;
     input array<Integer> inAss1;  
     input array<Integer> inAss2;  
-    input list<list<Integer>> inComps;  
+    input BackendDAE.StrongComponents inComps;  
     output BackendDAE.BackendDAE outDAE;
     output BackendDAE.IncidenceMatrix outM;
     output BackendDAE.IncidenceMatrix outMT;
     output array<Integer> outAss1;  
     output array<Integer> outAss2;  
-    output list<list<Integer>> outComps; 
+    output BackendDAE.StrongComponents outComps; 
     output Boolean outRunMatching;
 protected
   Option<BackendDAE.IncidenceMatrix> om,omT;
@@ -2821,13 +2821,13 @@ public function tearingSystem
   input BackendDAE.IncidenceMatrixT inMT;
   input array<Integer> inV1;
   input array<Integer> inV2;
-  input list<list<Integer>> inComps;
+  input BackendDAE.StrongComponents inComps;
   output BackendDAE.BackendDAE outDlow;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrixT outMT;
   output array<Integer> outV1;
   output array<Integer> outV2;
-  output list<list<Integer>> outComps;
+  output BackendDAE.StrongComponents outComps;
   output list<list<Integer>> outResEqn;
   output list<list<Integer>> outTearVar;
 algorithm
@@ -2838,7 +2838,7 @@ algorithm
       BackendDAE.IncidenceMatrix m,m_1;
       BackendDAE.IncidenceMatrixT mT,mT_1;
       array<Integer> v1,v2,v1_1,v2_1;
-      list<list<Integer>> comps,comps_1;
+      BackendDAE.StrongComponents comps,comps_1;
       list<list<Integer>> r,t;
     case (dlow,m,mT,v1,v2,comps)
       equation
@@ -2919,7 +2919,7 @@ protected function tearingSystem1
   input BackendDAE.IncidenceMatrixT inMT;
   input array<Integer> inV1;
   input array<Integer> inV2;
-  input list<list<Integer>> inComps;
+  input BackendDAE.StrongComponents inComps;
   output list<list<Integer>> outResEqn;
   output list<list<Integer>> outTearVar;
   output BackendDAE.BackendDAE outDlow;
@@ -2928,7 +2928,7 @@ protected function tearingSystem1
   output BackendDAE.IncidenceMatrixT outMT;
   output array<Integer> outV1;
   output array<Integer> outV2;
-  output list<list<Integer>> outComps;
+  output BackendDAE.StrongComponents outComps;
 algorithm
   (outResEqn,outTearVar,outDlow,outDlow1,outM,outMT,outV1,outV2,outComps):=
   matchcontinue (inDlow,inDlow1,inM,inMT,inV1,inV2,inComps)
@@ -2937,7 +2937,7 @@ algorithm
       BackendDAE.IncidenceMatrix m,m_1,m_3,m_4;
       BackendDAE.IncidenceMatrixT mT,mT_1,mT_3,mT_4;
       array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2,v1_3,v2_3;
-      list<list<Integer>> comps,comps_1;
+      BackendDAE.StrongComponents comps,comps_1;
       list<Integer> tvars,comp,comp_1,tearingvars,residualeqns,tearingeqns;
       list<list<Integer>> r,t;
       Integer ll;
@@ -3155,7 +3155,7 @@ algorithm
       BackendDAE.IncidenceMatrix m,m_1,m_2,m_3;
       BackendDAE.IncidenceMatrixT mT,mT_1,mT_2,mT_3;
       array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2;
-      list<list<Integer>> comps,comps_1,onecomp,morecomps;
+      BackendDAE.StrongComponents comps,comps_1,onecomp,morecomps;
       list<Integer> vars,comp,comp_1,comp_2,exclude,cmops_flat,onecomp_flat,othereqns,resteareqns;
       String str,str1,str2;
       Integer tearingvar,residualeqn,compcount,tearingeqnid;
@@ -3277,7 +3277,7 @@ protected function tearingSystem4
   input BackendDAE.IncidenceMatrixT inMT;
   input array<Integer> inV1;
   input array<Integer> inV2;
-  input list<list<Integer>> inComps;
+  input BackendDAE.StrongComponents inComps;
   input list<Integer> inResEqns;
   input list<Integer> inTearVars;
   input list<Integer> inTearEqns;
@@ -3293,7 +3293,7 @@ protected function tearingSystem4
   output BackendDAE.IncidenceMatrixT outMT;
   output array<Integer> outV1;
   output array<Integer> outV2;
-  output list<list<Integer>> outComp;
+  output BackendDAE.StrongComponents outComp;
   output Integer outCompCount;
 algorithm
   (outResEqns,outTearVars,outTearEqns,outDlow,outDlow1,outM,outMT,outV1,outV2,outComp,outCompCount):=
@@ -3303,7 +3303,7 @@ algorithm
       BackendDAE.IncidenceMatrix m,m_1,m_2;
       BackendDAE.IncidenceMatrixT mT,mT_1,mT_2;
       array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2;
-      list<list<Integer>> comps,comps_1;
+      BackendDAE.StrongComponents comps,comps_1;
       list<Integer> tvars,comp,comp_1,tearingvars,residualeqns,ccomp,r,t,r_1,t_1,te,te_1,tearingeqns;
       Integer ll,compcount,compcount_1,compcount_2;
       list<Boolean> checklst;
@@ -3488,14 +3488,14 @@ protected function splitComps
   splits the comp in two list
   1: len(comp) == 1
   2: len(comp) > 1"
-  input list<list<Integer>> inComps;
-  output list<list<Integer>> outComps;
-  output list<list<Integer>> outComps1;
+  input BackendDAE.StrongComponents inComps;
+  output BackendDAE.StrongComponents outComps;
+  output BackendDAE.StrongComponents outComps1;
 algorithm
   (outComps,outComps1):=
   matchcontinue (inComps)
     local
-      list<list<Integer>> rest,comps,comps1;
+      BackendDAE.StrongComponents rest,comps,comps1;
       list<Integer> comp;
       Integer v;
     case ({}) then ({},{});
@@ -3594,7 +3594,7 @@ public function generateLinearMatrix
   output BackendDAE.BackendDAE outJacobian;
   output array<Integer> outV1;
   output array<Integer> outV2;
-  output list<list<Integer>> outComps1;
+  output BackendDAE.StrongComponents outComps1;
 algorithm 
   (outJacobian,outV1,outV2,outComps1) :=
     matchcontinue (inBackendDAE,functionTree,inComRef1,inComRef2,inAllVar)
@@ -3605,7 +3605,7 @@ algorithm
       list<BackendDAE.Var> varlst;
       array<Integer> v1,v2,v4,v31;
       list<Integer> v3;
-      list<list<Integer>> comps1;
+      BackendDAE.StrongComponents comps1;
       list<BackendDAE.Var> derivedVariables;
       list<BackendDAE.Var> derivedVars;
       BackendDAE.BinTree jacElements;
@@ -3707,11 +3707,11 @@ end generateLinearMatrix;
 protected function splitBlocks2 
 //function: splitBlocks2
 //author: wbraun 
-  input list<list<Integer>> inIntegerLstLst;
+  input BackendDAE.StrongComponents inIntegerLstLst;
   input array<Integer> inIntegerArray;
   input Integer inPos;
-  output list<list<Integer>> outIntegerLstLst1;
-  output list<list<Integer>> outIntegerLstLst2;
+  output BackendDAE.StrongComponents outIntegerLstLst1;
+  output BackendDAE.StrongComponents outIntegerLstLst2;
 algorithm
   (outIntegerLstLst1,outIntegerLstLst2):=
   matchcontinue (inIntegerLstLst,inIntegerArray,inPos)

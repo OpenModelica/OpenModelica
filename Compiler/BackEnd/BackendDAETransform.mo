@@ -796,15 +796,16 @@ public function strongComponents "function: strongComponents
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT2;
   input array<Integer> inIntegerArray3;
   input array<Integer> inIntegerArray4;
-  output list<list<Integer>> outIntegerLstLst;
+  output BackendDAE.StrongComponents outComps;
 algorithm
-  outIntegerLstLst:=
+  outComps:=
   matchcontinue (inIncidenceMatrix1,inIncidenceMatrixT2,inIntegerArray3,inIntegerArray4)
     local
       BackendDAE.Value n,i;
       list<BackendDAE.Value> stack;
       list<list<BackendDAE.Value>> comps;
-      array<list<BackendDAE.Value>> m,mt;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.IncidenceMatrixT mt;
       array<BackendDAE.Value> ass1,ass2;
     case (m,mt,ass1,ass2)
       equation
@@ -856,7 +857,8 @@ algorithm
   (outInteger,outIntegerLst,outIntegerLstLst):=
   matchcontinue (inIncidenceMatrix1,inIncidenceMatrixT2,inIntegerArray3,inIntegerArray4,inInteger5,inInteger6,inInteger7,inIntegerLst8,inIntegerLstLst9)
     local
-      array<list<BackendDAE.Value>> m,mt;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.IncidenceMatrixT mt;
       array<BackendDAE.Value> a1,a2;
       BackendDAE.Value n,i,w,w_1,num;
       list<BackendDAE.Value> stack,stack_1,stack_2;

@@ -79,7 +79,7 @@ public function generateStructureCodeQSS
   input array<Integer> variableIndices;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
-  input list<list<Integer>> strongComponents;
+  input BackendDAE.StrongComponents strongComponents;
   
   output QSSinfo QSSinfo_out;
 algorithm
@@ -101,7 +101,8 @@ algorithm
        list<Integer> whenEqClausesInd, whenReinitClausesInd, whenEqInd, reinitVarsOut, varsSolvedInEqsList, whenClausesInBlocks, tempIndList;       
        list<Integer> variableIndicesList,ass1List, ass2List, stateVarIndices, discreteVarIndices, zcSamplesInd, reinitsInBlocks;
        list<Integer> nBlocksList;
-       list<list<Integer>> blt_states,blt_no_states, stateEq_flat, globalIncidenceList, comps, mappedEquations, whenEqIncidenceMatList; 
+       BackendDAE.StrongComponents comps;
+       list<list<Integer>> blt_states,blt_no_states, stateEq_flat, globalIncidenceList, mappedEquations, whenEqIncidenceMatList; 
        list<list<Integer>> whenReinitIncidenceMatList, mappedEqReinitMatList, reinitVarsIn;
        list<list<Integer>> DEVS_blocks_outVars, DEVS_blocks_inVars, zc_inVars, conns, whenEq_flat, tempListList, whenClausesBlocks;
        list<list<Integer>> when_blocks_outVars, when_blocks_inVars, reinit_blocks_outVars, reinit_blocks_inVars;
