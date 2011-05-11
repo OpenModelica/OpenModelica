@@ -85,3 +85,18 @@ modelica_integer modelica_integer_max(modelica_integer x,modelica_integer y)
   return x>y ? x : y;
 }
 
+modelica_real real_int_pow(modelica_real base, modelica_integer n)
+{
+  modelica_real result = 1.0;
+  modelica_integer m = n<0;
+  if (m) n = -n;
+  while (n) {
+    if (n%2) {
+      result *= base;
+      n--;
+    }
+    base *= base;
+    n /= 2;
+  }
+  return m ? 1/result : result;
+}

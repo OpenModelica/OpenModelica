@@ -4707,6 +4707,19 @@ case BINARY(__) then
   case POW(__) then
     if isHalf(exp2) then 'sqrt(<%e1%>)'
     else match realExpIntLit(exp2)
+      case SOME(2) then
+        let tmp = tempDecl("modelica_real", &varDecls)
+        let &preExp += '<%tmp%> = <%e1%>;'
+        '(<%tmp%> * <%tmp%>)'
+      case SOME(3) then
+        let tmp = tempDecl("modelica_real", &varDecls)
+        let &preExp += '<%tmp%> = <%e1%>;'
+        '(<%tmp%> * <%tmp%> * <%tmp%>)'
+      case SOME(4) then
+        let tmp = tempDecl("modelica_real", &varDecls)
+        let &preExp += '<%tmp%> = <%e1%>;'
+        let &preExp += '<%tmp%> *= <%tmp%>;'
+        '(<%tmp%> * <%tmp%>)'
       case SOME(i) then 'real_int_pow(<%e1%>, <%i%>)'
       else 'pow(<%e1%>, <%e2%>)'
   case UMINUS(__) then daeExpUnary(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/) 
