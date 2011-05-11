@@ -11,6 +11,11 @@ public:
   virtual void init(Time t, unsigned int i);
   virtual void makeStep(Time t);
   virtual void update(Time t);
+  void setCrossing(int i)
+  {
+    crossFunction=true;
+    indexCrossing=i;
+  }
 
 private:
   void advanceInputs(Time t);
@@ -25,4 +30,6 @@ private:
   list<int> computes;
   double dt;
   int devsIndex;
+  bool crossFunction;
+  int indexCrossing;
 };

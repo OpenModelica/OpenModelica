@@ -7,6 +7,7 @@ StaticFunction::StaticFunction(int ord, double dqm, double dqr,int in)
   dQmin=dqm;
   dQrel=dqr;
   devsIndex=in;
+  crossFunction=false;
   for (int i=0;i<inputRows;i++)
   {
     if (inputMatrix[i*2]==devsIndex) {
@@ -55,8 +56,6 @@ void StaticFunction::makeStep(Time t)
 {
   advanceInputs(t);
   function_staticBlocks(index,t,inp,out);
-  derX[0].setCoeff(0,out[0]);
-  derX[0].sampledAt(t);
 
   if (order>1) 
   {
@@ -83,24 +82,41 @@ void StaticFunction::writeOutputs(Time t)
 {
   std::list<int>::iterator it=computes.begin();
   int i=0;
+  if (crossFunction)
+  {
+    zc[indexCrossing].sampledAt(t);
+    zc[indexCrossing].setCoeff(0,out[0]);
+    return;
+  }
   for (;it!=computes.end();it++,i++)
   {
-    if (*it<globalData->nStates) {
-      derX[*it].sampledAt(t);  
-      derX[*it].setCoeff(0,out[i]);
+    if (isState(*it))
+    {
+      cout << "Block " << devsIndex << " writes der " << stateNumber(*it) << endl;
+      derX[stateNumber(*it)].sampledAt(t);
+      derX[stateNumber(*it)].setCoeff(0,out[i]);
       // If order>1...
+    } else {
+      cout << "Block " << devsIndex << " writes algebraic " << algNumber(*it) << endl;
+      alg[algNumber(*it)].sampledAt(t);
+      alg[algNumber(*it)].setCoeff(0,out[i]);
     }
   } 
 }
 
 void StaticFunction::advanceInputs(Time t)
 {
+  int i=0;
   std::list<int>::iterator it=inputs.begin();
-  for (; it!=inputs.end();it++)
+  for (;it!=inputs.end();it++,i++)
   {
-    if (*it<globalData->nStates) 
+    if (isState(*it))
     {
-      inp[*it] = q[*it].valueAt(t);
+      cout << "Block " << devsIndex << " uses state " << stateNumber(*it) << endl;
+      inp[i] = q[stateNumber(*it)].valueAt(t);
+    } else {
+      cout << "Block " << devsIndex << " uses state " << algNumber(*it) << endl;
+      inp[i] = alg[algNumber(*it)].valueAt(t);
     }
   }
 }

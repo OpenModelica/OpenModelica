@@ -15,8 +15,8 @@ void IntegratorQSS::init(Time t, unsigned int i)
   for (int j=0;j<inputRows;j++)
   {
     if (inputMatrix[j*2]==index) {
-      cout << "Integrator " << index << " computes state " << inputMatrix[j*2+1] <<endl;
-      state = inputMatrix[j*2+1];
+      cout << "Integrator " << index << " computes state " << stateNumber(inputMatrix[j*2+1]) <<endl;
+      state = stateNumber(inputMatrix[j*2+1]);
       break;
     }
   }

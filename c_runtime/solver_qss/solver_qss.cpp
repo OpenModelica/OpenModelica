@@ -34,20 +34,26 @@
 #include "solver_qss/sampler.h"
 #include "solver_qss/integrator.h"
 #include "solver_qss/static_function.h"
-//#include "solver_qss/cross_detector.h"
+#include "solver_qss/cross_detector.h"
 
 #include "options.h"
 #include <string>
 #include <iostream>
 #include <math.h>
 
+
+#define MAXORD 5
+#define DASSLSTATS 5
 double dlamch_(char*,int);
+void update_DAEsystem();
 using namespace std;
 
 double *tn;
 QssSignal *derX;  // Derivates of states
 QssSignal *X;     // States
 QssSignal *q;     // Quantized versions of states
+QssSignal *alg;   // Quantized versions of the algebraics
+QssSignal *zc;    // Quantized versions of the zero crossings 
 Simulator **childs;
 
 string *result_file_cstr;
@@ -55,6 +61,146 @@ string *result_file_cstr;
 /* The main function for the QSS solver */
 int qss_main( int argc, char** argv,double &start,  double &stop, double &step, long &outputSteps, double &tolerance,int flag)
 {
+  // Copy from solver_main
+  //Stats
+  int stateEvents = 0;
+  int sampleEvents = 0;
+
+  int dasslStats[DASSLSTATS];
+  int dasslStatsTmp[DASSLSTATS];
+  for(int i=0;i<DASSLSTATS;i++){
+      dasslStats[i] = 0;
+      dasslStatsTmp[i] = 0;
+  }
+
+  //Workaround for Relation in simulation_events
+  euler_in_use = 1;
+
+  //Flags for event handling
+  int dideventstep = 0;
+  bool reset = false;
+
+  double laststep = 0;
+  double offset = 0;
+  globalData->oldTime = start;
+  globalData->timeValue = start;
+
+  int needToIterate = 0;
+  int IterationNum = 0;
+
+  if (outputSteps > 0)
+    { // Use outputSteps if set, otherwise use step size.
+      step = (stop - start) / outputSteps;
+    }
+  else
+    {
+      if (step == 0)
+        { // outputsteps not defined and zero step, use default 1e-3
+          step = 1e-3;
+        }
+    }
+
+  int sampleEvent_actived = 0;
+
+  const string *init_method = getFlagValue("im", argc, argv);
+
+  int retValIntegrator = 0;
+
+  if (initializeEventData())
+    {
+      cout << "Internal error, allocating event data structures" << endl;
+      return -1;
+    }
+
+  if (bound_parameters())
+    {
+      printf("Error calculating bound parameters\n");
+      return -1;
+    }
+  if (sim_verbose >= LOG_SOLVER)
+    {
+      cout << "Calculated bound parameters" << endl;
+    }
+  // Evaluate all constant equations
+  functionAliasEquations();
+
+  // Calculate initial values from initial_function()
+  // saveall() value as pre values
+  if (measure_time_flag) {
+      rt_accumulate(SIM_TIMER_PREINIT);
+      rt_tick(SIM_TIMER_INIT);
+  }
+  try{
+      if (main_initialize(init_method))
+        {
+          throw TerminateSimulationException(globalData->timeValue, string(
+              "Error in initialization. Storing results and exiting.\n"));
+        }
+
+      SaveZeroCrossings();
+      saveall();
+      if (sim_verbose >= LOG_SOLVER)
+        {
+          sim_result->emit();
+        }
+
+      //Activate sample and evaluate again
+      if (globalData->curSampleTimeIx < globalData->nSampleTimes)
+        {
+          sampleEvent_actived = checkForSampleEvent();
+          activateSampleEvents();
+        }
+      update_DAEsystem();
+      SaveZeroCrossings();
+      if (sampleEvent_actived)
+        {
+          deactivateSampleEventsandEquations();
+          sampleEvent_actived = 0;
+        }
+      saveall();
+      sim_result->emit();
+      storeExtrapolationData();
+      storeExtrapolationData();
+  }
+  catch (TerminateSimulationException &e)
+  {
+      cout << e.getMessage() << endl;
+      printf("Simulation terminated while the initialization. Could not find suitable initial values.");
+      return -1;
+  }
+
+  // Initialization complete
+  if (measure_time_flag)
+    rt_accumulate( SIM_TIMER_INIT);
+
+  if (globalData->timeValue >= stop)
+    {
+      if (sim_verbose >= LOG_SOLVER)
+        {
+          cout << "Simulation done!" << endl;
+        }
+      return 0;
+    }
+
+  if (sim_verbose >= LOG_SOLVER)
+    {
+      cout << "Performed initial value calculation." << endl;
+      cout << "Start numerical solver from " << globalData->timeValue << " to "
+          << stop << endl;
+    }
+  FILE *fmt = NULL;
+  int stepNo = 0;
+  if (measure_time_flag) {
+      const string filename = string(globalData->modelFilePrefix) + "_prof.data";
+      fmt = fopen(filename.c_str(), "wb");
+      if (!fmt) {
+          fclose(fmt);
+          fmt = NULL;
+      }
+  }
+
+  /////////////////////////////
+
   cout << "Running QSS methods" << endl;
 
   globalData->oldTime = start;
@@ -62,8 +208,10 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
   q = new QssSignal[globalData->nStates];
   X = new QssSignal[globalData->nStates];
   derX = new QssSignal[globalData->nStates];
+  alg = new QssSignal[globalData->nAlgebraic];
+  zc = new QssSignal[zeroCrossings];
 
-  const unsigned int size=globalData->nStates + staticBlocks + 1 /*Sampler */;
+  const unsigned int size=globalData->nStates + staticBlocks + zeroCrossings + 1 /*Sampler */;
 
   childs = new Simulator *[size];
   tn = new double [size];
@@ -75,12 +223,23 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
     childs[i]->init(globalData->timeValue,i);
     tn[i] = globalData->timeValue+childs[i]->ta();
   }
-  // Init static functions - One per state but could differ
+  // Init static functions and zero crossings functions
   for (int i=0;i<staticBlocks;i++)
   {
     childs[i+globalData->nStates] = new StaticFunction(1,dQmin,dQrel,i+globalData->nStates);
     childs[i+globalData->nStates]->init(globalData->timeValue,i);
+    if (i >= staticPureBlocks) // if it is a crossing function
+      dynamic_cast<StaticFunction*>(childs[i+globalData->nStates])->setCrossing(i-staticPureBlocks);
     tn[i+globalData->nStates] = globalData->timeValue+childs[i+globalData->nStates]->ta();
+  }
+ 
+  // Zero crossings detectors - One per zero crossings
+  for (int i=0;i<zeroCrossings;i++)
+  {
+    const int index=i+globalData->nStates+staticBlocks;
+    childs[index] = new CrossDetector(1,dQmin,dQrel);
+    childs[index]->init(globalData->timeValue,i);
+    tn[index] = globalData->timeValue+childs[index]->ta();
   }
  
   // Periodic sampler for outputs
@@ -131,6 +290,7 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
     {
       if (incidenceMatrix[i*2]==index)
       {
+        cout << "Updating child " << incidenceMatrix[i*2+1] << " because of a step from " << index << endl;
         childs[incidenceMatrix[i*2+1]]->update(globalData->timeValue);
         tn[incidenceMatrix[i*2+1]]=globalData->timeValue+childs[incidenceMatrix[i*2+1]]->ta();
       }

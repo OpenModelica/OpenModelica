@@ -20,11 +20,17 @@ extern QssSignal *X,*q,*derX,*alg,*zc;
 extern int incidenceMatrix[];
 extern int incidenceRows;
 extern int staticBlocks;
+extern int staticPureBlocks;
+extern int zeroCrossings;
 extern int inputMatrix[];
 extern int outputMatrix[];
 extern int outputRows;
 extern int inputRows;
 
+void set_condition_to(unsigned int index,bool b);
+bool isState(int i);
+int algNumber(int i);
+int stateNumber(int i);
 extern bool interactiveSimuation;
 int
 startInteractiveSimulation(int, char**);
