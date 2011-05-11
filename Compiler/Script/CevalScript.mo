@@ -671,7 +671,7 @@ algorithm
       AbsynDep.Depends aDep;
       Absyn.ComponentRef crefCName;
       list<tuple<String,Values.Value>> resultValues;
-      list<Real> timeStamps;
+      list<Real> timeStamps,realVals;
       list<DAE.Exp> expLst;
       list<tuple<String,list<String>>> deps;
       Absyn.CodeNode codeNode;
@@ -1848,6 +1848,12 @@ algorithm
 
     case (cache,env,"uriToFilename",_,st,msg)
       then (cache,Values.STRING(""),st);
+        
+    case (cache,env,"solveLinearSystem",{Values.ARRAY(valueLst=vals),v},st,msg)
+      equation
+        (realVals,i) = System.solveLinearSystem(Util.listMap(vals,ValuesUtil.arrayValueReals),ValuesUtil.arrayValueReals(v));
+        v = ValuesUtil.makeArray(Util.listMap(realVals,ValuesUtil.makeReal));
+      then (cache,Values.TUPLE({v,Values.INTEGER(i)}),st);
 
  end matchcontinue;
 end cevalInteractiveFunctions2;

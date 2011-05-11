@@ -1318,6 +1318,48 @@ static int SystemImpl__uriToClassAndPath(const char *uri, const char **scheme, c
   return 1;
 }
 
+int SystemImpl__solveLinearSystem(void *lA, void *lB, void **res)
+{
+  int sz = 0,i,j;
+  void *tmp = lB;
+  double *A,*B;
+  integer *ipiv;
+  integer info = 0,nrhs=1,lda,ldb;
+  while (RML_NILHDR != RML_GETHDR(tmp)) {
+    sz++;
+    tmp = RML_CDR(tmp);
+  }
+  A = (double*) malloc(sz*sz*sizeof(double));
+  assert(A != NULL);
+  B = (double*) malloc(sz*sizeof(double));
+  assert(B != NULL);
+  for (i=0; i<sz; i++) {
+    tmp = RML_CAR(lA);
+    for (j=0; j<sz; j++) {
+      A[j*sz+i] = rml_prim_get_real(RML_CAR(tmp));
+      tmp = RML_CDR(tmp);
+    }
+    B[i] = rml_prim_get_real(RML_CAR(lB));
+    lA = RML_CDR(lA);
+    lB = RML_CDR(lB);
+  }
+  ipiv = (integer*) calloc(sz,sizeof(integer));
+  assert(ipiv != 0);
+  lda = sz;
+  ldb = sz;
+  dgesv_(&sz,&nrhs,A,&lda,ipiv,B,&ldb,&info);
+
+  tmp = mk_nil();
+  while (sz--) {
+    tmp = mk_cons(mk_rcon(B[sz]),tmp);
+  }
+  free(A);
+  free(B);
+  free(ipiv);
+  *res = tmp;
+  return info;
+}
+
 #ifdef __cplusplus
 }
 #endif

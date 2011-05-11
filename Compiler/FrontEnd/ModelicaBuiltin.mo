@@ -1311,5 +1311,15 @@ function uriToFilename "Handles modelica:// and file:// URI's. The result is an 
 external "builtin";
 end uriToFilename;
 
+function solveLinearSystem
+  "Solve A*X = B
+  Returns info>0: Singular for element i. info<0: Bad input."
+  input Real[size(B,1),size(B,1)] A;
+  input Real[:] B;
+  output Real[size(B,1)] X;
+  output Integer info;
+external "builtin";
+end solveLinearSystem;
+
 end Scripting;
 end OpenModelica;

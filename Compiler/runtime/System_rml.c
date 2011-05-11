@@ -2012,3 +2012,14 @@ RML_BEGIN_LABEL(System__getGCStatus)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+
+RML_BEGIN_LABEL(System__solveLinearSystem)
+{
+  void *res;
+  rmlA1 = mk_icon(SystemImpl__solveLinearSystem(rmlA0,rmlA1,&res));
+  rmlA0 = res;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+

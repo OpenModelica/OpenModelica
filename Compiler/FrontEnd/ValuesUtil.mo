@@ -1117,6 +1117,20 @@ algorithm
   end matchcontinue;
 end valueReals;
 
+public function arrayValueReals "function: valueReals
+
+  Return the real value of a Value. If the value is an integer,
+  it is cast to a real.
+"
+  input Value inValue;
+  output list<Real> outReal;
+protected
+  list<Values.Value> vals;
+algorithm
+  Values.ARRAY(valueLst=vals) := inValue;
+  outReal := valueReals(vals);
+end arrayValueReals;
+
 public function valueNeg "function: valueNeg
   author: PA
 
