@@ -203,7 +203,10 @@ static inline void* mmc_mk_scon(const char *s)
     struct mmc_string *p;
     void *res;
     if (nbytes == 0) return mmc_emptystring;
-    if (nbytes == 1) return mmc_strings_len1[(int)*s];
+    if (nbytes == 1) {
+      unsigned char c = *s;
+      return mmc_strings_len1[(unsigned int)c];
+    }
     p = (struct mmc_string *) mmc_alloc_words(nwords);
     p->header = header;
     memcpy(p->data, s, nbytes+1);  /* including terminating '\0' */
