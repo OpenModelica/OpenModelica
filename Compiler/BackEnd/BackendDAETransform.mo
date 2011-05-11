@@ -1433,12 +1433,15 @@ algorithm
     case (BackendDAE.REDUCE_INDEX(),dae,m,mt,inFunctions,ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst))
       equation
         eqns = BackendDAEEXT.getMarkedEqns();
-         print("marked equations:");print(Util.stringDelimitList(Util.listMap(eqns,intString),","));
+        diff_eqns = BackendDAEEXT.getDifferentiatedEqns();
+        eqns_1 = Util.listSetDifferenceOnTrue(eqns, diff_eqns, intEq);
+         print("marked equations:");print(Util.stringDelimitList(Util.listMap(eqns_1,intString),","));
          print("\n");
          print(BackendDump.dumpMarkedEqns(dae, eqns));
 
-        (dae,deqns,derivedAlgs1,derivedMultiEqn1,orgEqns,so1) = differentiateEqnsX(dae,eqns,inFunctions,derivedAlgs,derivedMultiEqn,so);
-        dae = replaceStateOrder(deqns,dae,so1);
+        (dae,deqns,derivedAlgs1,derivedMultiEqn1,orgEqns,so1) = differentiateEqnsX(dae,eqns_1,inFunctions,derivedAlgs,derivedMultiEqn,so);
+        //dae = replaceStateOrder(deqns,dae,so1);
+        print("Update Incidence Matrix: "); BackendDump.debuglst((deqns,intString)); print("\n");
         (m,mt) = BackendDAEUtil.updateIncidenceMatrix(dae, m, mt, deqns);
          print("new DAE:");
          BackendDump.dump(dae);
@@ -1520,19 +1523,21 @@ algorithm
   matchcontinue (inBackendDAE1,inIntegerLst6,inFunctions,inDerivedAlgs,inDerivedMultiEqn,inStateOrd)
     local
       BackendDAE.BackendDAE dae;
-      BackendDAE.Value nv,nf,e_1,leneqns,e;
+      BackendDAE.Value e_1,e,e1,i;
       BackendDAE.Equation eqn,eqn_1;
       BackendDAE.EquationArray eqns_1,eqns,seqns,ie;
       list<BackendDAE.Value> reqns,es;
-      BackendDAE.Variables v,kv,ev;
+      BackendDAE.Variables v,kv,ev,v1;
       BackendDAE.AliasVariables av;
       array<BackendDAE.MultiDimEquation> ae,ae1;
       array<DAE.Algorithm> al,al1;
       BackendDAE.EventInfo einfo;
+      list<BackendDAE.WhenClause> wclst,wclst1;
+      list<BackendDAE.ZeroCrossing> zc;      
       BackendDAE.ExternalObjectClasses eoc;
       list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedAlgs1;
       list<tuple<Integer,Integer,Integer>> derivedMultiEqn,derivedMultiEqn1;
-      list<tuple<Integer,BackendDAE.Equation>> orgeqns;
+      list<tuple<Integer,BackendDAE.Equation>> orgeqns,orgeqns1;
       BackendDAE.StateOrder so,so1;
       DAE.ComponentRef cr,dcr;
     case (dae,{},_,inDerivedAlgs,inDerivedMultiEqn,inStateOrd) then (dae,{},inDerivedAlgs,inDerivedMultiEqn,{},inStateOrd);
@@ -1548,16 +1553,19 @@ algorithm
         (dae,reqns,derivedAlgs1,derivedMultiEqn1,orgeqns,so1) = differentiateEqnsX(dae,  es, inFunctions,inDerivedAlgs,inDerivedMultiEqn,so);
       then
         (dae,reqns,derivedAlgs1,derivedMultiEqn1,orgeqns,so1);
-    case ((dae as BackendDAE.DAE(v,kv,ev,av,eqns,seqns,ie,ae,al,einfo,eoc)),(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn,inStateOrd)
+    case ((dae as BackendDAE.DAE(v,kv,ev,av,eqns,seqns,ie,ae,al,BackendDAE.EVENT_INFO(wclst,zc),eoc)),(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn,inStateOrd)
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
         (eqn_1,al1,derivedAlgs,ae1,derivedMultiEqn,_) = Derive.differentiateEquationTime(eqn, v, inFunctions, al,inDerivedAlgs,ae,inDerivedMultiEqn);
         Debug.fcall("bltdump", debugdifferentiateEqns,(eqn,eqn_1));
-        eqns_1 = BackendEquation.equationSetnth(eqns,e_1,eqn_1);
-        (dae,reqns,derivedAlgs1,derivedMultiEqn1,orgeqns,so) = differentiateEqnsX(BackendDAE.DAE(v,kv,ev,av,eqns_1,seqns,ie,ae1,al1,einfo,eoc), es, inFunctions,derivedAlgs,derivedMultiEqn,inStateOrd);
+        (eqn_1,al1,ae1,wclst,_) = traverseBackendDAEExpsEqn(eqn_1, al1, ae1, wclst, replaceStateOrderExp,inStateOrd);
+        (eqn_1,al1,ae1,wclst1,(v1,i)) = traverseBackendDAEExpsEqn(eqn_1,al1,ae1,wclst,replaceDummyDerOthersExp,(v,0));
+        (e1,eqns_1) = differentiateEqnsX1(intGt(i,0),eqns,e,eqn_1);
+        (dae,reqns,derivedAlgs1,derivedMultiEqn1,orgeqns,so) = differentiateEqnsX(BackendDAE.DAE(v1,kv,ev,av,eqns_1,seqns,ie,ae1,al1,BackendDAE.EVENT_INFO(wclst1,zc),eoc), es, inFunctions,derivedAlgs,derivedMultiEqn,inStateOrd);
+        orgeqns1 = Util.if_(intGt(i,0),orgeqns,(e,eqn)::orgeqns);
       then
-        (dae,e :: reqns,derivedAlgs1,derivedMultiEqn1,(e,eqn)::orgeqns,so);
+        (dae,e1 :: reqns,derivedAlgs1,derivedMultiEqn1,orgeqns1,so);
     case (_,_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"-BackendDAETranfrom.differentiateEqns failed!"}); 
@@ -1565,6 +1573,36 @@ algorithm
         fail();
   end matchcontinue;
 end differentiateEqnsX;
+
+public function differentiateEqnsX1 "function: differentiateEqnsX1
+  author: Frenkel TUD 2011-05"
+  input Boolean b;
+  input BackendDAE.EquationArray inEquationArray;
+  input Integer inInteger;
+  input BackendDAE.Equation inEquation;
+  output Integer outInteger;
+  output BackendDAE.EquationArray outEquationArray;
+algorithm
+  (outInteger,outEquationArray) := match (b,inEquationArray,inInteger,inEquation)
+    local
+      BackendDAE.EquationArray eqns;
+      Integer leneqns;
+    case (false,inEquationArray,inInteger,inEquation)
+      equation
+        print("Replace Eqn with diffeqn "); print(intString(inInteger)); print("\n");
+        eqns = BackendEquation.equationSetnth(inEquationArray,inInteger-1,inEquation);
+      then
+        (inInteger,eqns);      
+    case (true,inEquationArray,inInteger,inEquation)
+      equation
+        eqns = BackendEquation.equationAdd(inEquation,inEquationArray);
+        leneqns = BackendDAEUtil.equationSize(eqns);
+        print("Add diffEqn "); print(intString(leneqns)); print(" old eqn"); print(intString(inInteger)); print("\n");
+        BackendDAEEXT.markDifferentiated(inInteger) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
+      then
+        (leneqns,eqns);
+  end match;
+end differentiateEqnsX1;
 
 protected function statesCandidates
 "function: statesCandidates
@@ -1695,7 +1733,7 @@ algorithm
         str = Util.stringDelimitList(Util.listMap(inStates,dumpStates)," : "); 
         print("Candidates: "); print(str); print("\n");
         // get Jacobian
-        jac = calculateJacobian(orgeqn,inStates);
+        jac = calculateJacobian(orgeqn,ae,al,inStates);
         str = Util.stringDelimitList(Util.listMap(jac,ExpressionDump.printExpStr)," : "); 
         print("Jac: "); print(str); print("\n");
         // analyse jac -> get dummy derivative candidate
@@ -1759,10 +1797,14 @@ algorithm
         dummystates = Util.listMap(dummyder,Util.tuple31);
         stateindx = Util.listMap(dummyder,Util.tuple32);
         (dae,m,mt,states,dummystate,_,stateno) = selectDummyDerivative(dummystates,stateindx,dae,m,mt,states,inStateOrd);
-        ep = arrayLength(m)+1;
+        ep = arrayLength(m);
         ass1 = assignmentsExpand(ass1, 1);
         ass2 = assignmentsExpand(ass2, 1);  
-        (ass1,ass2) = assign(stateno, ep, ass1, ass2);      
+        ast =  getAssigned(stateno,ass1,ass2);
+        print("Assign: "); print(intString(stateno)); print(" "); print(intString(ep)); print("\n");
+        (ass1,ass2) = assign(stateno, ep, ass1, ass2);         
+        print("Assign: "); print(intString(ep)); print(" "); print(intString(ast)); print("\n");
+        (ass1,ass2) = assign(ep, ast, ass1, ass2);      
       then
         (dae,m,mt,states,ass1,ass2);
     case ({},dyndummyder as (_::_),dae,m,mt,states,inStateOrd,ass1,ass2)
@@ -1947,6 +1989,11 @@ algorithm
         (_::_,j::_) = BackendVariable.getVar(cr_new,vars);
       then
         ((cr_new,j)::crlst);
+    case (cr,(cr1,i)::crlst,inStateOrd,vars)
+      equation
+        true = ComponentReference.crefEqualNoStringCompare(cr,cr1);
+      then
+        (crlst);        
     case (cr,tpl::crlst,inStateOrd,vars)
       equation
         states = updateStateCandidates(cr,crlst,inStateOrd,vars);
@@ -1997,26 +2044,48 @@ end analyseJac;
 protected function calculateJacobian "function: calculateJacobian
   author: Frenkel TUD 20-11"
   input BackendDAE.Equation inEqn;
+  input array<BackendDAE.MultiDimEquation> ae;
+  input array<DAE.Algorithm> al;
   input list<tuple<DAE.ComponentRef,Integer>> inStates;
   output list<DAE.Exp> outJac;
 algorithm
-  outJac := match (inEqn,inStates)
+  outJac := match (inEqn,ae,al,inStates)
     local
       BackendDAE.Equation eqn;
       DAE.Exp e,e1,e2,e_1,e_2;
       DAE.ComponentRef cr;
       list<tuple<DAE.ComponentRef,Integer>> crlst;
-      list<DAE.Exp> jac;
+      list<DAE.Exp> jac,elst;
+      Integer i;
+      Boolean b;
+      list<Boolean> blst;
 
-    case (eqn,{}) then {};
-    case (eqn as BackendDAE.EQUATION(exp = e1,scalar = e2),(cr,_)::crlst)
+    case (eqn,_,_,{}) then {};
+    case (eqn as BackendDAE.EQUATION(exp = e1,scalar = e2),ae,al,(cr,_)::crlst)
       equation
         e = Expression.expSub(e1,e2);
         e_1 = Derive.differentiateExp(e, cr, true);
         (e_2,_) = ExpressionSimplify.simplify(e_1);
-        jac = calculateJacobian(eqn,crlst);
+        jac = calculateJacobian(eqn,ae,al,crlst);
       then
         (e_2::jac);
+    case (eqn as BackendDAE.ARRAY_EQUATION(index=i,crefOrDerCref=elst),ae,al,(cr,_)::crlst)
+      equation
+        BackendDAE.MULTIDIM_EQUATION(left=e1,right=e2) = ae[i+1]; 
+        e = Expression.expSub(e1,e2);
+        b = Expression.expHasCref(e,cr);
+        e_1 = Util.if_(b,DAE.RCONST(1.0),DAE.RCONST(0.0));
+        jac = calculateJacobian(eqn,ae,al,crlst);
+      then
+        (e_1::jac); 
+    case (eqn as BackendDAE.ALGORITHM(index=i,out=elst),ae,al,(cr,_)::crlst)
+      equation
+        blst = Util.listMap1(elst,Expression.expHasCref,cr);
+        b = Util.boolOrList(blst);
+        e_1 = Util.if_(b,DAE.RCONST(1.0),DAE.RCONST(0.0));
+        jac = calculateJacobian(eqn,ae,al,crlst);
+      then
+        (e_1::jac);          
   end match;
 end calculateJacobian;
 
@@ -2422,7 +2491,7 @@ algorithm
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
         (eqn_1,al1,ae1,wclst1,_) = traverseBackendDAEExpsEqn(eqn, al, ae, wclst, replaceDummyDer2Exp,(stateexpcall,dummyderexp));
-        (eqn_1,al2,ae2,wclst2,v_1) = traverseBackendDAEExpsEqn(eqn_1,al1,ae1,wclst1,replaceDummyDerOthersExp,v);
+        (eqn_1,al2,ae2,wclst2,(v_1,_)) = traverseBackendDAEExpsEqn(eqn_1,al1,ae1,wclst1,replaceDummyDerOthersExp,(v,0));
         eqns_1 = BackendEquation.equationSetnth(eqns, e_1, eqn_1)
          "incidence_row(v\'\',eqn\') => row\' &
           Util.list_replaceat(row\',e\',m) => m\' &
@@ -2860,11 +2929,11 @@ public function replaceDummyDerOthersExp
   in the BackendDAE.Equation given as arguments. To do this it needs the Variables
   also passed as argument to the function to e.g. determine if a variable
   is a dummy variable, etc.  "
-  input tuple<DAE.Exp,BackendDAE.Variables> inTpl;
-  output tuple<DAE.Exp,BackendDAE.Variables> outTpl;
+  input tuple<DAE.Exp,tuple<BackendDAE.Variables,Integer>> inTpl;
+  output tuple<DAE.Exp,tuple<BackendDAE.Variables,Integer>> outTpl;
 protected
   DAE.Exp e;
-  BackendDAE.Variables vars;
+  tuple<BackendDAE.Variables,Integer> vars;
 algorithm
   (e,vars) := inTpl;
   outTpl := Expression.traverseExp(e,replaceDummyDerOthersExpFinder,vars);
@@ -2899,8 +2968,8 @@ protected function replaceDummyDerOthersExpFinder
 "function: replaceDummyDerOthersExpFinder
   author: PA
   Helper function for replaceDummyDerOthersExp"
-  input tuple<DAE.Exp,BackendDAE.Variables> inExp;
-  output tuple<DAE.Exp,BackendDAE.Variables> outExp;
+  input tuple<DAE.Exp,tuple<BackendDAE.Variables,Integer>> inExp;
+  output tuple<DAE.Exp,tuple<BackendDAE.Variables,Integer>> outExp;
 algorithm
   (outExp) := matchcontinue (inExp)
     local
@@ -2918,8 +2987,9 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<DAE.Subscript> lstSubs;
+      Integer i;
 
-    case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})}),vars))
+    case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})}),(vars,i)))
       equation
         ((BackendDAE.VAR(_,BackendDAE.STATE(),a,b,c,d,lstSubs,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
         dummyder = ComponentReference.crefPrefixDer(cr);
@@ -2927,27 +2997,27 @@ algorithm
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, b, NONE(), NONE(), lstSubs, 0, source, NONE(), comment, flowPrefix, streamPrefix), vars);
         e = Expression.makeCrefExp(dummyder,DAE.ET_REAL());
       then
-        ((e, vars_1));
+        ((e, (vars_1,i+1)));
 
-    case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars))
+    case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,i)))
       equation
         ((BackendDAE.VAR(_,BackendDAE.DUMMY_DER(),a,b,c,d,lstSubs,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(cr, vars) "der(der_s)) der_s is dummy var => der_der_s" ;
         dummyder = ComponentReference.crefPrefixDer(cr);
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, b, NONE(), NONE(), lstSubs, 0, source, NONE(), comment, flowPrefix, streamPrefix), vars);
         e = Expression.makeCrefExp(dummyder,DAE.ET_REAL());
       then
-        ((e, vars_1));
+        ((e, (vars_1,i+1)));
 
-    case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars))
+    case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,i)))
       equation
         ((BackendDAE.VAR(_,BackendDAE.VARIABLE(),a,b,c,d,lstSubs,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
         dummyder = ComponentReference.crefPrefixDer(cr);
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, b, NONE(), NONE(), lstSubs, 0, source, NONE(), comment, flowPrefix, streamPrefix), vars);
         e = Expression.makeCrefExp(dummyder,DAE.ET_REAL());
       then
-        ((e, vars_1));
+        ((e, (vars_1,i+1)));
 
-    case ((e,vars)) then ((e,vars));
+    case inExp then inExp;
 
   end matchcontinue;
 end replaceDummyDerOthersExpFinder;

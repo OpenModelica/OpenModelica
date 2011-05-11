@@ -4172,6 +4172,48 @@ algorithm
   end matchcontinue;
 end traversingComponentRefFinder;
 
+public function expHasCref "
+@author: Frenkel TUD 2011-04
+ returns true if the expression contains the cref"
+  input DAE.Exp inExp;
+  input ComponentRef inCr;
+  output Boolean hasCref;
+algorithm 
+  hasCref := match(inExp,inCr) 
+    local
+      Boolean b;
+      
+    case(inExp,inCr)
+      equation
+        ((_,(_,b))) = traverseExpTopDown(inExp, traversingexpHasCref, (inCr,false));
+      then
+        b;
+  end match;
+end expHasCref;
+
+public function traversingexpHasCref "
+@author: Frenkel TUD 2011-04
+Returns a true if the exp the componentRef"
+  input tuple<DAE.Exp, tuple<ComponentRef,Boolean>> inExp;
+  output tuple<DAE.Exp, Boolean, tuple<ComponentRef,Boolean>> outExp;
+algorithm 
+  outExp := matchcontinue(inExp)
+    local
+      Boolean b;
+      ComponentRef cr,cr1;
+      DAE.Exp e;
+    
+    case((e as DAE.CREF(componentRef = cr1), (cr,false)))
+      equation
+        b = ComponentReference.crefEqualNoStringCompare(cr,cr1);
+      then
+        ((e,not b,(cr,b)));
+    
+    case(((e,(cr,b)))) then ((e,not b,(cr,b)));
+    
+  end matchcontinue;
+end traversingexpHasCref;
+
 public function traverseCrefsFromExp "
 Author: Frenkel TUD 2011-05, traverses all ComponentRef from an Expression."
   input DAE.Exp inExp;
