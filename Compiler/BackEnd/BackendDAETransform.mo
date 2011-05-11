@@ -1743,15 +1743,16 @@ algorithm
       list<DAE.ComponentRef> dummystates;
       list<tuple<DAE.ComponentRef,Integer>> states;
       list<Integer> stateindx,changedeqns;
-      DAE.ComponentRef dummystate,dummystate1,dsxy,derdummystate,derdummystate1;
-      DAE.Exp dse1,dse2,ds1,ds2,dxdye,dds1,dds2;
-      Integer stateno,stateno1,ep,ep1,ep2,ast,ast1;
-      BackendDAE.Equation eq,deq;
-      BackendDAE.Var dsxyvar;
+      DAE.ComponentRef dummystate,dummystate1,dsxy,derdummystate,derdummystate1,dsxycont;
+      DAE.Exp dse1,dse2,ds1,ds2,dxdye,dds1,dds2,cont,cont1,dxdyecont;
+      Integer stateno,stateno1,ep,ep1,ep2,ep3,ast,ast1;
+      BackendDAE.Equation eq,deq,eqcont;
+      BackendDAE.Var dsxyvar,dsxyvarcont;
       BackendDAE.BackendDAE dae,dae1,dae2;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;  
       BackendDAE.Assignments ass1,ass2; 
+      BackendDAE.WhenClause wc,wc1;
 
     case (dummyder as (_::_),_,dae,m,mt,states,inStateOrd,ass1,ass2)
       equation
@@ -1777,23 +1778,36 @@ algorithm
         ((_,_,dse2)) = Util.listGetMemberOnTrue(stateno1,dyndummyder,getDummyExp);
         dsxy = ComponentReference.joinCrefs(dummystate,dummystate1);
         dsxyvar = BackendDAE.VAR(dsxy,BackendDAE.STATE(),DAE.BIDIR(),BackendDAE.REAL(),NONE(),NONE(),{},0,DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM_CONNECTOR());
+        dsxycont = ComponentReference.joinCrefs(dsxy,ComponentReference.makeCrefIdent("cont",DAE.ET_BOOL(),{}));
+        dsxyvarcont = BackendDAE.VAR(dsxycont,BackendDAE.DISCRETE(),DAE.BIDIR(),BackendDAE.BOOL(),NONE(),NONE(),{},0,DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM_CONNECTOR());
         dae = BackendVariable.addVarDAE(dsxyvar,dae);
+        dae = BackendVariable.addVarDAE(dsxyvarcont,dae);
         dxdye = Expression.crefExp(dsxy);
+        dxdyecont = Expression.crefExp(dsxycont);
         ds1 = Expression.crefExp(dummystate);
         ds2 = Expression.crefExp(dummystate1);
         dds1 = Expression.crefExp(derdummystate);
         dds2 = Expression.crefExp(derdummystate1);
-        eq = BackendDAE.EQUATION(dxdye,DAE.IFEXP(DAE.RELATION(DAE.CALL(Absyn.IDENT("abs"),{dse1},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),DAE.GREATER(DAE.ET_REAL()),DAE.CALL(Absyn.IDENT("abs"),{dse2},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),0,NONE()),ds1,ds2),DAE.emptyElementSource);
+        cont1 = DAE.RELATION(DAE.CALL(Absyn.IDENT("abs"),{dse1},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),DAE.LESS(DAE.ET_REAL()),DAE.CALL(Absyn.IDENT("abs"),{dse2},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),0,NONE());
+        ((cont,_)) = Expression.traverseExp(dxdyecont, traversingComponentRefToPre, 0);
+        eq = BackendDAE.EQUATION(dxdye,DAE.IFEXP(cont,ds1,ds2),DAE.emptyElementSource);
         dae = BackendEquation.equationAddDAE(eq,dae); 
-        deq = BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{dxdye},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),DAE.IFEXP(DAE.RELATION(DAE.CALL(Absyn.IDENT("abs"),{dse1},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),DAE.GREATER(DAE.ET_REAL()),DAE.CALL(Absyn.IDENT("abs"),{dse2},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),0,NONE()),dds1,dds2),DAE.emptyElementSource);
+        deq = BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{dxdye},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),DAE.IFEXP(cont,dds1,dds2),DAE.emptyElementSource);
         dae = BackendEquation.equationAddDAE(deq,dae); 
+        
+        wc = BackendDAE.WHEN_CLAUSE(dxdyecont,{BackendDAE.REINIT(dsxy,ds1,DAE.emptyElementSource)},NONE());
+        wc1 = BackendDAE.WHEN_CLAUSE(DAE.LUNARY(DAE.NOT(),dxdyecont),{BackendDAE.REINIT(dsxy,ds2,DAE.emptyElementSource)},NONE());
+        dae = BackendDAEUtil.whenClauseAddDAE({wc,wc1},dae);
+        eqcont = BackendDAE.EQUATION(dxdyecont,cont1,DAE.emptyElementSource);
+        dae = BackendEquation.equationAddDAE(eqcont,dae); 
         ep = arrayLength(m);
         ep1 = ep+1;
         ep2 = ep+2;
-        print("Update Incidence Matrix: "); BackendDump.debuglst(({ep1,ep2},intString)); print("\n");
-        (m,mt) = BackendDAEUtil.updateIncidenceMatrix(dae, m, mt, {ep1,ep2});
-        ass1 = assignmentsExpand(ass1, 3);
-        ass2 = assignmentsExpand(ass2, 3);  
+        ep3 = ep+3;
+        print("Update Incidence Matrix: "); BackendDump.debuglst(({ep1,ep2,ep3},intString)); print("\n");
+        (m,mt) = BackendDAEUtil.updateIncidenceMatrix(dae, m, mt, {ep1,ep2,ep3});
+        ass1 = assignmentsExpand(ass1, 4);
+        ass2 = assignmentsExpand(ass2, 4);  
         ast =  getAssigned(stateno,ass1,ass2);
         ast1 =  getAssigned(stateno1,ass1,ass2);
         print("Assign: "); print(intString(stateno)); print(" "); print(intString(ep)); print("\n");
@@ -1806,6 +1820,8 @@ algorithm
         (ass1,ass2) = assign(ep1, ast1, ass1, ass2);        
         print("Assign: "); print(intString(ep2)); print(" "); print(intString(ep2)); print("\n");
         (ass1,ass2) = assign(ep2, ep2, ass1, ass2);        
+        print("Assign: "); print(intString(ep3)); print(" "); print(intString(ep3)); print("\n");
+        (ass1,ass2) = assign(ep3, ep3, ass1, ass2);        
       then
         (dae,m,mt,states,ass1,ass2);
     case ({},{},dae,m,mt,states,_,ass1,ass2)
@@ -1814,6 +1830,25 @@ algorithm
       then (dae,m,mt,states,ass1,ass2);
   end matchcontinue;
 end selectDummyDerivatives;
+
+public function traversingComponentRefToPre "
+Author: Frenkel TUD 2011-05."
+  input tuple<DAE.Exp, Integer> inExp;
+  output tuple<DAE.Exp, Integer> outExp;
+algorithm 
+  outExp := matchcontinue(inExp)
+    local
+      Integer i;
+      DAE.Exp e;
+    
+    case((e as DAE.CREF(_,_), i))
+      then
+        ((DAE.CALL(Absyn.IDENT("pre"),{e},false,true,DAE.ET_REAL(),DAE.NO_INLINE()), i ));
+    
+    case(inExp) then inExp;
+    
+  end matchcontinue;
+end traversingComponentRefToPre;
 
 protected function getDummyExp "
  author: Frenkel TUD 20-11"

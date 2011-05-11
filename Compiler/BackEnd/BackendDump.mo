@@ -520,6 +520,74 @@ algorithm
   end match;
 end dumpZcStr;
 
+
+public function dumpWcStr
+"function: dumpWcStr
+  Dumps a whenclause into a string, for debugging purposes."
+  input BackendDAE.WhenClause inWhenClause;
+  output String outString;
+algorithm
+  outString:=
+  match (inWhenClause)
+    local
+      String sc,s1,si,str;
+      DAE.Exp c;
+      list<BackendDAE.WhenOperator> reinitStmtLst;
+      Integer i;
+    case BackendDAE.WHEN_CLAUSE(condition = c,reinitStmtLst = reinitStmtLst,elseClause = SOME(i))
+     equation
+      sc = ExpressionDump.printExpStr(c);
+      s1 = Util.stringDelimitList(Util.listMap(reinitStmtLst,dumpWhenOperatorStr),"  ");              
+      si = intString(i);
+      str = stringAppendList({" whenclause = ",sc," then ",s1," else whenclause",si});
+     then
+      str;
+    case BackendDAE.WHEN_CLAUSE(condition = c,reinitStmtLst = reinitStmtLst,elseClause = NONE())
+     equation
+      sc = ExpressionDump.printExpStr(c);
+      s1 = Util.stringDelimitList(Util.listMap(reinitStmtLst,dumpWhenOperatorStr),"  ");              
+      str = stringAppendList({" whenclause = ",sc," then ",s1});
+     then
+      str;
+  end match;
+end dumpWcStr;
+
+public function dumpWhenOperatorStr
+"function: dumpWhenOperatorStr
+  Dumps a WhenOperator into a string, for debugging purposes."
+  input BackendDAE.WhenOperator inWhenOperator;
+  output String outString;
+algorithm
+  outString:=
+  match (inWhenOperator)
+    local
+      String scr,se,se1,str;
+      DAE.ComponentRef cr;
+      DAE.Exp e,e1;
+    case BackendDAE.REINIT(stateVar=cr,value=e)
+     equation
+      scr = ComponentReference.printComponentRefStr(cr);       
+      se = ExpressionDump.printExpStr(e);
+      str = stringAppendList({"reinit(",scr,",",se,")"});
+     then
+      str;
+    case BackendDAE.ASSERT(condition=e,message=e1)
+     equation
+      se = ExpressionDump.printExpStr(e);
+      se1 = ExpressionDump.printExpStr(e1);
+      str = stringAppendList({"assert(",se,",",se1,")"});
+     then
+      str;      
+    case BackendDAE.TERMINATE(message=e)
+     equation
+      se = ExpressionDump.printExpStr(e);
+      str = stringAppendList({"terminate(",se,")"});
+     then
+      str;      
+  end match;
+end dumpWhenOperatorStr;
+
+
 public function dump
 "function: dump
   This function dumps the BackendDAE.BackendDAE representaton to stdout."
@@ -540,8 +608,9 @@ algorithm
       array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> algs;
       list<BackendDAE.ZeroCrossing> zc;
+      list<BackendDAE.WhenClause> wc;
       BackendDAE.ExternalObjectClasses extObjCls;
-    case (BackendDAE.DAE(vars1,vars2,vars3,av,eqns,reqns,ieqns,ae,algs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls))
+    case (BackendDAE.DAE(vars1,vars2,vars3,av,eqns,reqns,ieqns,ae,algs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc,whenClauseLst=wc),extObjCls))
       equation
         print("Variables (");
         vars = BackendDAEUtil.varList(vars1);
@@ -606,6 +675,12 @@ algorithm
         print("Zero Crossings :\n");
         print("===============\n");
         ss = Util.listMap(zc, dumpZcStr);
+        s = Util.stringDelimitList(ss, ",\n");
+        print(s);
+        print("\n");
+        print("When Clauses :\n");
+        print("===============\n");
+        ss = Util.listMap(wc, dumpWcStr);
         s = Util.stringDelimitList(ss, ",\n");
         print(s);
         print("\n");

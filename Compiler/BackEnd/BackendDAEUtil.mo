@@ -2957,6 +2957,32 @@ algorithm
   end match;
 end subscript2dCombinations2;
 
+public function whenClauseAddDAE
+"function: whenClauseAddDAE
+  author: Frenkel TUD 2011-05"
+  input list<BackendDAE.WhenClause> inWcLst;
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE:=
+  match (inWcLst,inDAE)
+    local
+      BackendDAE.Variables ordvars,knvars,exobj;
+      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.EquationArray eqns,remeqns,inieqns;
+      array<BackendDAE.MultiDimEquation> arreqns;
+      array<DAE.Algorithm> algorithms;
+      list<BackendDAE.WhenClause> wclst,wclst1;
+      list<BackendDAE.ZeroCrossing> zc;
+      BackendDAE.ExternalObjectClasses eoc;
+      
+    case (inWcLst,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,BackendDAE.EVENT_INFO(wclst,zc),eoc))
+      equation
+        wclst1 = listAppend(wclst,inWcLst);  
+      then BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,BackendDAE.EVENT_INFO(wclst1,zc),eoc);
+  end match;
+end whenClauseAddDAE;
+
 /**************************
   BackendDAE.BinTree stuff
  **************************/
