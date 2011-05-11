@@ -1883,6 +1883,11 @@ package Expression
     output DAE.ExpType outType;
   end typeof;
 
+  function isHalf
+    input DAE.Exp inExp;
+    output Boolean outBoolean;
+  end isHalf;
+
 end Expression;
 
 package ExpressionDump

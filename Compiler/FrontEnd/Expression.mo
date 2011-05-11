@@ -4954,6 +4954,21 @@ algorithm
   end match;
 end isZero;
 
+public function isHalf
+"Returns true if an expression is 0.5"
+  input DAE.Exp inExp;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inExp)
+    local
+      Real rval;
+    
+    case (DAE.RCONST(real = rval)) then realEq(rval,0.5);
+    else false;
+
+  end match;
+end isHalf;
+
 protected function isZeroMatrixExpList
 "Helper to isZero. The input is the same as a DAE.MATRIX stores."
   input list<tuple<DAE.Exp,Boolean>> inLst;
