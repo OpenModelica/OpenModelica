@@ -5591,4 +5591,22 @@ algorithm
   DAE.SOURCE(operations=ops) := source;
 end getSymbolicTransformations;
 
+public function translateSCodeAttrToDAEAttr
+  input SCode.Attributes inAttributes;
+  input SCode.Prefixes inPrefixes;
+  output DAE.Attributes outAttributes;
+protected
+  SCode.Flow fp;
+  SCode.Stream sp;
+  SCode.Accessibility acc;
+  SCode.Variability var;
+  Absyn.Direction dir;
+  Absyn.InnerOuter io;
+algorithm
+  SCode.ATTR(flowPrefix = fp, streamPrefix = sp, accessibility = acc, 
+    variability = var, direction = dir) := inAttributes;
+  SCode.PREFIXES(innerOuter = io) := inPrefixes;
+  outAttributes := DAE.ATTR(fp, sp, acc, var, dir, io);
+end translateSCodeAttrToDAEAttr;
+
 end DAEUtil;

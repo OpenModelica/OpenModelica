@@ -4812,31 +4812,73 @@ end getFileNameFromInfo;
 
 public function isOuter
 "@author: adrpo
- this function returns true if the given Absyn.InnerOuter
- is one of Absyn.INNER_OUTER() or Absyn.OUTER()"
- input InnerOuter io;
- output Boolean isItAnOuter;
+  this function returns true if the given Absyn.InnerOuter
+  is one of Absyn.INNER_OUTER() or Absyn.OUTER()"
+  input InnerOuter io;
+  output Boolean isItAnOuter;
 algorithm
-  isItAnOuter := matchcontinue(io)
+  isItAnOuter := match(io)
     case (INNER_OUTER()) then true;
     case (OUTER()) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isOuter;
 
 public function isInner
 "@author: adrpo
- this function returns true if the given Absyn.InnerOuter
- is one of Absyn.INNER_OUTER() or Absyn.INNER()"
- input InnerOuter io;
- output Boolean isItAnInner;
+  this function returns true if the given Absyn.InnerOuter
+  is one of Absyn.INNER_OUTER() or Absyn.INNER()"
+  input InnerOuter io;
+  output Boolean isItAnInner;
 algorithm
-  isItAnInner := matchcontinue(io)
+  isItAnInner := match(io)
     case (INNER_OUTER()) then true;
     case (INNER()) then true;
-    case (_) then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isInner;
+
+public function isOnlyInner
+  "Returns true if the InnerOuter is INNER, false otherwise."
+  input InnerOuter inIO;
+  output Boolean outOnlyInner;
+algorithm
+  outOnlyInner := match(inIO)
+    case (INNER()) then true;
+    else false;
+  end match;
+end isOnlyInner;
+
+public function isOnlyOuter
+  "Returns true if the InnerOuter is OUTER, false otherwise."
+  input InnerOuter inIO;
+  output Boolean outOnlyOuter;
+algorithm
+  outOnlyOuter := match(inIO)
+    case (OUTER()) then true;
+    else false;
+  end match;
+end isOnlyOuter;
+
+public function isInnerOuter
+  input InnerOuter inIO;
+  output Boolean outIsInnerOuter;
+algorithm
+  outIsInnerOuter := match(inIO)
+    case (INNER_OUTER()) then true;
+    else false;
+  end match;
+end isInnerOuter;
+
+public function isNotInnerOuter
+  input InnerOuter inIO;
+  output Boolean outIsNotInnerOuter;
+algorithm
+  outIsNotInnerOuter := match(inIO)
+    case (NOT_INNER_OUTER()) then true;
+    else false;
+  end match;
+end isNotInnerOuter;
 
 public function makeFullyQualified
 "Makes a path fully qualified unless it already is."

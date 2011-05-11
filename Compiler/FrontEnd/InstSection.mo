@@ -4067,7 +4067,7 @@ algorithm
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
-        (cache,_,ih,sets_1,dae,graph) = connectVars(cache,env,ih, sets, c1_1, f1, l1, vt1, c2_1, f2, l2, vt2, io1, io2, graph, info);
+        (cache,_,ih,sets_1,dae,graph) = connectVars(cache,env,ih, sets, c1_1, f1, l1, vt1, c2_1, f2, l2, vt2, inFlowPrefix, inStreamPrefix, io1, io2, graph, info);
       then
         (cache,env,ih,sets_1,dae,graph);
 
@@ -4190,6 +4190,8 @@ protected function connectVars
   input Connect.Face inFace7;
   input list<DAE.Var> inTypesVarLst8;
   input SCode.Variability vt2;
+  input SCode.Flow inFlowPrefix;
+  input SCode.Stream inStreamPrefix;
   input Absyn.InnerOuter io1;
   input Absyn.InnerOuter io2;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -4202,7 +4204,7 @@ protected function connectVars
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outSets,outDae,outGraph):=
-  match (inCache,inEnv,inIH,inSets,inComponentRef3,inFace4,inTypesVarLst5,vt1,inComponentRef6,inFace7,inTypesVarLst8,vt2,io1,io2,inGraph,info)
+  match (inCache,inEnv,inIH,inSets,inComponentRef3,inFace4,inTypesVarLst5,vt1,inComponentRef6,inFace7,inTypesVarLst8,vt2,inFlowPrefix,inStreamPrefix,io1,io2,inGraph,info)
     local
       Connect.Sets sets,sets_1,sets_2;
       list<Env.Frame> env;
@@ -4221,23 +4223,47 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
 
-    case (cache,env,ih,sets,_,_,{},vt1,_,_,{},vt2,io1,io2,graph,info)
+    case (cache,env,ih,sets,_,_,{},vt1,_,_,{},vt2,_,_,io1,io2,graph,info)
       then (cache,env,ih,sets,DAEUtil.emptyDae,graph);
     case (cache,env,ih,sets,c1,f1,
         (DAE.TYPES_VAR(name = n,attributes =(attr1 as DAE.ATTR(flowPrefix = flow1, streamPrefix = stream1,variability = vta)),ty = ty1) :: xs1),vt1,c2,f2,
-        (DAE.TYPES_VAR(attributes = (attr2 as DAE.ATTR(variability = vtb)),ty = ty2) :: xs2),vt2,io1,io2,graph,info)
+        (DAE.TYPES_VAR(attributes = (attr2 as DAE.ATTR(variability = vtb)),ty = ty2) :: xs2),vt2,_,_,io1,io2,graph,info)
       equation
         ty_2 = Types.elabType(ty1);
+        flow1 = propagateFlow(inFlowPrefix, flow1);
+        stream1 = propagateStream(inStreamPrefix, stream1);
         c1_1 = ComponentReference.crefPrependIdent(c1, n, {}, ty_2);
         c2_1 = ComponentReference.crefPrependIdent(c2, n, {}, ty_2);
         checkConnectTypes(env,ih, c1_1, ty1, attr1, c2_1, ty2, attr2, io1, io2, info);
         (cache,_,ih,sets_1,dae,graph) = connectComponents(cache,env,ih,sets, Prefix.NOPRE(), c1_1, f1, ty1, vta, c2_1, f2, ty2, vtb, flow1, stream1, io1, io2, graph, info);
-        (cache,_,ih,sets_2,dae2,graph) = connectVars(cache,env,ih,sets_1, c1, f1, xs1,vt1, c2, f2, xs2, vt2, io1, io2, graph, info);
+        (cache,_,ih,sets_2,dae2,graph) = connectVars(cache,env,ih,sets_1, c1, f1, xs1,vt1, c2, f2, xs2, vt2, inFlowPrefix, inStreamPrefix, io1, io2, graph, info);
         dae_1 = DAEUtil.joinDaes(dae, dae2);
       then
         (cache,env,ih,sets_2,dae_1,graph);
   end match;
 end connectVars;
+
+protected function propagateFlow
+  input SCode.Flow inCompFlow;
+  input SCode.Flow inSubCompFlow;
+  output SCode.Flow outSubCompFlow;
+algorithm
+  outSubCompFlow := match(inCompFlow, inSubCompFlow)
+    case (SCode.FLOW(), _) then inCompFlow;
+    else inSubCompFlow;
+  end match;
+end propagateFlow;
+
+protected function propagateStream
+  input SCode.Stream inCompStream;
+  input SCode.Stream inSubCompStream;
+  output SCode.Stream outSubCompStream;
+algorithm
+  outSubCompStream := match(inCompStream, inSubCompStream)
+    case (SCode.STREAM(), _) then inCompStream;
+    else inSubCompStream;
+  end match;
+end propagateStream;
 
 protected function expandArrayDimension
   "Expands an array into elements given a dimension, i.e.

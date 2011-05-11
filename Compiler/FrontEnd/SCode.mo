@@ -527,7 +527,7 @@ uniontype Attributes "- Attributes"
     Absyn.ArrayDim arrayDims "the array dimensions of the component";
     Flow   flowPrefix   "the flow prefix";
     Stream streamPrefix "the stream prefix";
-    Accessibility accesibility "the accesibility of the component: RW (read/write), RO (read only), WO (write only)" ;
+    Accessibility accessibility "the accessibility of the component: RW (read/write), RO (read only), WO (write only)" ;
     Variability variability " the variability: parameter, discrete, variable, constant" ;
     Absyn.Direction direction "the direction: input, output or bidirectional" ;
   end ATTR;
@@ -3810,7 +3810,7 @@ public function flowStr
   output String str;
 algorithm
   str := match(inFlow)
-    case (FLOW()) then "flow ";
+    case (FLOW()) then "flow";
     case (NOT_FLOW()) then "";
   end match;
 end flowStr;
@@ -3820,7 +3820,7 @@ public function streamStr
   output String str;
 algorithm
   str := match(inStream)
-    case (STREAM()) then "stream ";
+    case (STREAM()) then "stream";
     case (NOT_STREAM()) then "";
   end match;
 end streamStr;
@@ -3922,6 +3922,7 @@ end boolEach;
 public function prefixesRedeclare
   input Prefixes inPrefixes;
   output Redeclare outRedeclare;
+  annotation(__OpenModelica_EarlyInline=true);
 algorithm
   PREFIXES(redeclarePrefix = outRedeclare) := inPrefixes;
 end prefixesRedeclare;
@@ -3983,15 +3984,9 @@ end replaceablePrefixStr;
 public function replaceableConstrainClassStr
   input Replaceable inReplaceable;
   output String strReplaceable;
+  annotation(__OpenModelica_EarlyInline=true);
 algorithm
-  (strReplaceable) := match(inReplaceable)
-    local String str;
-    case (inReplaceable)
-      equation
-         (_, str) = replaceableStr(inReplaceable);
-      then 
-        str;
-  end match;
+  (_, strReplaceable) := replaceableStr(inReplaceable);
 end replaceableConstrainClassStr;
 
 public function replaceableBool
@@ -4073,6 +4068,7 @@ end boolPartial;
 public function prefixesFinal
   input Prefixes inPrefixes;
   output Final outFinal;
+  annotation(__OpenModelica_EarlyInline=true);
 algorithm
   PREFIXES(finalPrefix = outFinal) := inPrefixes;
 end prefixesFinal;
@@ -4216,6 +4212,7 @@ end propagateDirection;
 public function prefixesVisibility
   input Prefixes inPrefixes;
   output Visibility outVisibility;
+  annotation(__OpenModelica_EarlyInline=true);
 algorithm
   PREFIXES(visibility = outVisibility) := inPrefixes;
 end prefixesVisibility;
@@ -4287,14 +4284,9 @@ end prefixesEqual;
 public function prefixesReplaceable "Returns the replaceable part"
   input Prefixes prefixes;
   output Replaceable repl;
+  annotation(__OpenModelica_EarlyInline=true);
 algorithm
-  repl := matchcontinue(prefixes)
-    local
-      Replaceable rpl;
-        
-    case(PREFIXES(replaceablePrefix = rpl)) then rpl;
-    
-  end matchcontinue;
+  PREFIXES(replaceablePrefix = repl) := prefixes;
 end prefixesReplaceable;
 
 public function prefixesStr "Returns prefixes as string"
@@ -4355,6 +4347,57 @@ algorithm
   pf := elementPrefixes(inElement);
   isRedeclare := redeclareBool(prefixesRedeclare(pf));
 end isElementRedeclare;
+
+public function prefixesInnerOuter
+  input Prefixes inPrefixes;
+  output Absyn.InnerOuter outInnerOuter;
+  annotation(__OpenModelica_EarlyInline=true);
+algorithm
+  PREFIXES(innerOuter = outInnerOuter) := inPrefixes;
+end prefixesInnerOuter;
+
+public function prefixesSetInnerOuter
+  input Prefixes inPrefixes;
+  input Absyn.InnerOuter inInnerOuter;
+  output Prefixes outPrefixes;
+protected
+  Visibility v;
+  Redeclare rd;
+  Final f;
+  Replaceable rp;
+algorithm
+  PREFIXES(v, rd, f, _, rp) := inPrefixes;
+  outPrefixes := PREFIXES(v, rd, f, inInnerOuter, rp);
+end prefixesSetInnerOuter;
+
+public function removeAttributeDimensions
+  input Attributes inAttributes;
+  output Attributes outAttributes;
+protected
+  Flow f;
+  Stream s;
+  Accessibility a;
+  Variability v;
+  Absyn.Direction d;
+algorithm
+  ATTR(_, f, s, a, v, d) := inAttributes;
+  outAttributes := ATTR({}, f, s, a, v, d);
+end removeAttributeDimensions;
+
+public function setAttributesDirection
+  input Attributes inAttributes;
+  input Absyn.Direction inDirection;
+  output Attributes outAttributes;
+protected
+  Absyn.ArrayDim ad;
+  Flow f;
+  Stream s;
+  Accessibility a;
+  Variability v;
+algorithm
+  ATTR(ad, f, s, a, v, _) := inAttributes;
+  outAttributes := ATTR(ad, f, s, a, v, inDirection);
+end setAttributesDirection;
 
 end SCode;
 

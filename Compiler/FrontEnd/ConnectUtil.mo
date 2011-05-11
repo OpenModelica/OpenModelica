@@ -1115,7 +1115,6 @@ algorithm
     case {(c,f,_)}
       equation
         exp = signFlow(c, f);
-         //print("Generating flow expression: " +& ExpressionDump.printExpStr(exp) +& "\n");
       then
         exp;
     

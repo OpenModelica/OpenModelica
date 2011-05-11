@@ -213,7 +213,6 @@ public constant ErrorID ASSERT_CONSTANT_FALSE_ERROR=98;
 public constant ErrorID ARRAY_INDEX_OUT_OF_BOUNDS = 99;
 public constant ErrorID COMPONENT_CONDITION_VARIABILITY = 100;
 public constant ErrorID SELF_REFERENCE_EQUATION = 101;
-public constant ErrorID CLASS_NAME_VARIABLE = 102;
 public constant ErrorID DUPLICATE_MODIFICATIONS=103;
 public constant ErrorID ILLEGAL_SUBSCRIPT=104;
 public constant ErrorID ILLEGAL_EQUATION_TYPE=105;
@@ -290,6 +289,7 @@ public constant ErrorID EXTERNAL_FUNCTION_RESULT_NOT_CREF=175;
 public constant ErrorID EXTERNAL_FUNCTION_RESULT_NOT_VAR=176;
 public constant ErrorID EXTERNAL_FUNCTION_RESULT_ARRAY_TYPE=177;
 public constant ErrorID INVALID_REDECLARE=178;
+public constant ErrorID INVALID_TYPE_PREFIX=179;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -454,7 +454,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (REDECLARE_NON_REPLACEABLE,TRANSLATION(),ERROR(),
           "Trying to redeclare %1 %2 but %1 not declared as replaceable"),
           (COMPONENT_INPUT_OUTPUT_MISMATCH,TRANSLATION(),ERROR(),
-          "Component declared as %s when having the variable %s declared as input"),
+          "Component declared as %s when having the variable %s declared as %s"),
           (ARRAY_DIMENSION_MISMATCH,TRANSLATION(),ERROR(),
           "Array dimension mismatch, expression %s has type %s, expected array dimensions [%s]"),
           (ARRAY_DIMENSION_INTEGER,TRANSLATION(),ERROR(),
@@ -631,10 +631,6 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Index out of bounds. Adressing position: %s, while array length is: %s"),
           (SELF_REFERENCE_EQUATION,TRANSLATION(), WARNING(),
           "Circular reference with variable \"%s\""),
-/*   ******* INACTIVE FOR NOW
-          (CLASS_NAME_VARIABLE, TRANSLATION(),ERROR(),
-          "Declared a variable with name %s while having a class named %s"),
-*/
           (DUPLICATE_MODIFICATIONS,TRANSLATION(),ERROR(),"Duplicate modifications in %s"),
           (DUPLICATE_MODIFICATIONS_WARNING,TRANSLATION(),WARNING(),
           "Duplicate modifications for attribute: %s in modifier: %s. \n\tConsidering only the first modification: %s and ignoring the rest %s."),
@@ -764,6 +760,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "From here:"),
           (INVALID_REDECLARE,TRANSLATION(),ERROR(),
           "Redeclaration of %s is not allowed."),
+          (INVALID_TYPE_PREFIX,TRANSLATION(),ERROR(),
+          "Invalid type prefix '%s' on variable %s, due to existing type prefix '%s'."),
           (MATCHCONTINUE_TO_MATCH_OPTIMIZATION,TRANSLATION(),NOTIFICATION(),"This matchcontinue expression has no overlapping patterns and should be using match instead of matchcontinue."),
           (META_DEAD_CODE,TRANSLATION(),NOTIFICATION(),"Dead code elimination: %s."),
           (META_UNUSED_DECL,TRANSLATION(),NOTIFICATION(),"Unused local variable: %s."),
