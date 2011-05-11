@@ -222,9 +222,8 @@ for (int i = 0; i < nelts; i++) v[i]=0.0;
 #define solve_linear_equation_system(A,b,size,id) do { integer n = size; \
 integer nrhs = 1; /* number of righthand sides*/\
 integer lda = n /* Leading dimension of A */; integer ldb=n; /* Leading dimension of b*/\
-integer * ipiv = new integer[n]; /* Pivott indices */ \
+integer * ipiv = (integer*) calloc(n,sizeof(integer)); /* Pivott indices */ \
 assert(ipiv != 0); \
-for(int i = 0; i < n; i++) ipiv[i] = 0; \
 integer info = 0; /* output */ \
 dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
  if (info < 0) { \
@@ -235,15 +234,14 @@ dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
    if (sim_verbose >= LOG_NONLIN_SYS) \
      printf("Error solving linear system of equations (no. %d) at time %f, system is singular.\n",id,localData->timeValue); \
  } \
-delete [] ipiv; \
+free(ipiv); \
 } while (0) /* (no trailing ; ) */
 
 #define solve_linear_equation_system_mixed(A,b,size,id) do { integer n=size; \
 integer nrhs = 1; /* number of righthand sides*/\
 integer lda = n /* Leading dimension of A */; integer ldb=n; /* Leading dimension of b*/\
-integer * ipiv = new integer[n]; /* Pivott indices */ \
+integer * ipiv = (integer*) calloc(n,sizeof(integer)); /* Pivott indices */ \
 assert(ipiv != 0); \
-for(int i = 0; i < n; i++) ipiv[i] = 0; \
 integer info = 0; /* output */ \
 dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
  if (info < 0) { \
@@ -253,7 +251,7 @@ dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
  else if (info > 0) { \
      found_solution = -1; \
  } \
- delete [] ipiv;\
+ free(ipiv);\
 } while (0) /* (no trailing ; ) */
 
 #define start_nonlinear_system(size) { double nls_x[size]; \
