@@ -3437,6 +3437,47 @@ algorithm
   end match;
 end listThreadMap;
 
+public function listThread3Map "function: listThread3Map
+  Takes two lists and a function and threads (interleaves) and maps the elements of the three lists
+  creating a new list.
+  Example: listThreadMap({1,2},{3,4},{5,6},intAdd3) => {1+3+5, 2+4+6}"
+  input list<Type_a> inTypeALst;
+  input list<Type_b> inTypeBLst;
+  input list<Type_c> inTypeCLst;
+  input FuncType fn;
+  output list<Type_d> outTypeCLst;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  partial function FuncType
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    input Type_c inTypeC;
+    output Type_d outTypeC;
+  end FuncType;
+algorithm
+  outTypeCLst:=
+  match (inTypeALst,inTypeBLst,inTypeCLst,fn)
+    local
+      Type_d fr;
+      list<Type_d> res;
+      Type_a fa;
+      list<Type_a> ra;
+      Type_b fb;
+      list<Type_b> rb;
+      Type_b fc;
+      list<Type_b> rc;
+    case ({},{},{},_) then {};
+    case ((fa :: ra),(fb :: rb),(fc :: rc),fn)
+      equation
+        fr = fn(fa, fb, fc);
+        res = listThread3Map(ra, rb, rc, fn);
+      then
+        (fr :: res);
+  end match;
+end listThread3Map;
+
 public function listThreadMap1 "function: listThreadMap
   Takes two lists and a function and threads (interleaves) and maps the elements of the two lists
   creating a new list.

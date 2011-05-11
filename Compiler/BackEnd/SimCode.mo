@@ -4774,6 +4774,8 @@ algorithm
       list<Real> rhsVals,solvedVals;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.AliasVariables ave;
+      list<DAE.ElementSource> sources;
+      list<DAE.ComponentRef> names;
       
       // A single array equation
     case (mixedEvent,genDiscrete,skipDiscInAlgorithm,dae,optJac,jac_tp,block_,helpVarInfo)
@@ -4799,14 +4801,16 @@ algorithm
         eqn_size = BackendDAEUtil.equationSize(eqn);
         ((simVars,_)) = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
         simVars = listReverse(simVars);
-        ((_,_,_,beqs)) = BackendEquation.traverseBackendDAEEqns(eqn,dlowEqToExp,(v,arrayEqs,{},{}));
+        ((_,_,_,beqs,sources)) = BackendEquation.traverseBackendDAEEqns(eqn,dlowEqToExp,(v,arrayEqs,{},{},{}));
         beqs = listReverse(beqs);
         rhsVals = ValuesUtil.valueReals(Util.listMap(beqs,Ceval.cevalSimple));
         jacVals = BackendDAEOptimize.evaluateConstantJacobian(listLength(simVars),jac);
         (solvedVals,linInfo) = System.solveLinearSystem(jacVals,rhsVals);
-        checkLinearSystem(linInfo,simVars,jacVals,rhsVals);
+        names = Util.listMap(simVars,varName);
+        checkLinearSystem(linInfo,names,jacVals,rhsVals);
         // TODO: Move these to known vars :/ This is done in the wrong phase of the compiler... Also, if done as an optimization module, we can optimize more!
-        equations_ = Util.listThreadMap(simVars,solvedVals,generateSolvedEquation);
+        sources = Util.listMap1(sources, DAEUtil.addSymbolicTransformation, DAE.LINEAR_SOLVED(names,jacVals,solvedVals,rhsVals));
+        equations_ = Util.listThread3Map(simVars,solvedVals,sources,generateSolvedEquation);
       then
         equations_;
         
@@ -4840,7 +4844,7 @@ algorithm
       equation
         ((simVars,_)) = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
         simVars = listReverse(simVars);
-        ((_,_,_,beqs)) = BackendEquation.traverseBackendDAEEqns(eqn,dlowEqToExp,(v,arrayEqs,{},{}));
+        ((_,_,_,beqs,_)) = BackendEquation.traverseBackendDAEEqns(eqn,dlowEqToExp,(v,arrayEqs,{},{},{}));
         beqs = listReverse(beqs);
         simJac = Util.listMap1(jac, jacToSimjac, v);
         index = Util.listFirst(block_); // use first equation nr as index
@@ -4878,7 +4882,7 @@ end createOdeSystem2;
 
 protected function checkLinearSystem
   input Integer info;
-  input list<SimVar> vars;
+  input list<DAE.ComponentRef> vars;
   input list<list<Real>> jac;
   input list<Real> rhs;
 algorithm
@@ -4889,9 +4893,9 @@ algorithm
     case (info,vars,jac,rhs)
       equation
         true = info > 0;
-        varname = varName(listGet(vars,info));
+        varname = ComponentReference.printComponentRefStr(listGet(vars,info));
         infoStr = intString(info);
-        varnames = Util.stringDelimitList(Util.listMap(vars,varName)," ;\n  ");
+        varnames = Util.stringDelimitList(Util.listMap(vars,ComponentReference.printComponentRefStr)," ;\n  ");
         rhsStr = Util.stringDelimitList(Util.listMap(rhs, realString)," ;\n  ");
         jacStr = Util.stringDelimitList(Util.listMap1(Util.listListMap(jac,realString),Util.stringDelimitList," , ")," ;\n  ");
         syst = stringAppendList({"\n[\n  ", jacStr, "\n]\n  *\n[\n  ",varnames,"\n]\n  =\n[\n  ",rhsStr,"\n]"});
@@ -4900,7 +4904,7 @@ algorithm
     case (info,vars,jac,rhs)
       equation
         true = info < 0;
-        varnames = Util.stringDelimitList(Util.listMap(vars,varName)," ; ");
+        varnames = Util.stringDelimitList(Util.listMap(vars,ComponentReference.printComponentRefStr)," ;\n  ");
         rhsStr = Util.stringDelimitList(Util.listMap(rhs, realString)," ; ");
         jacStr = Util.stringDelimitList(Util.listMap1(Util.listListMap(jac,realString),Util.stringDelimitList," , ")," ; ");
         syst = stringAppendList({"[", jacStr, "] * [",varnames,"] = [",rhsStr,"]"});
@@ -4912,12 +4916,13 @@ end checkLinearSystem;
 protected function generateSolvedEquation
   input SimVar var;
   input Real val;
+  input DAE.ElementSource source;
   output SimEqSystem eq;
 protected
   DAE.ComponentRef name;
 algorithm
   SIMVAR(name=name) := var;
-  eq := SES_SIMPLE_ASSIGN(name,DAE.RCONST(val),DAE.emptyElementSource); 
+  eq := SES_SIMPLE_ASSIGN(name,DAE.RCONST(val),source); 
 end generateSolvedEquation;
 
 protected function replaceDerOpInEquationList
@@ -5285,7 +5290,7 @@ algorithm
         SOME(jac) = BackendDAEUtil.calculateJacobian(v, eqn, ae, m, mT,false);
         ((simVars,_)) = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
         simVars = listReverse(simVars);
-        ((_,_,_,beqs)) = BackendEquation.traverseBackendDAEEqns(eqn,dlowEqToExp,(v,ae,{},{}));
+        ((_,_,_,beqs,_)) = BackendEquation.traverseBackendDAEEqns(eqn,dlowEqToExp,(v,ae,{},{},{}));
         beqs = listReverse(beqs);
         simJac = Util.listMap1(jac, jacToSimjac, v);
         index = Util.listFirst(block_); // use first equation nr as index
@@ -5317,8 +5322,8 @@ algorithm
 end jacToSimjac;
 
 protected function dlowEqToExp
-  input tuple<BackendDAE.Equation, tuple<BackendDAE.Variables,array<BackendDAE.MultiDimEquation>,list<tuple<Integer,list<list<DAE.Subscript>>>>,list<DAE.Exp>>> inTpl;
-  output tuple<BackendDAE.Equation, tuple<BackendDAE.Variables,array<BackendDAE.MultiDimEquation>,list<tuple<Integer,list<list<DAE.Subscript>>>>,list<DAE.Exp>>> outTpl;  
+  input tuple<BackendDAE.Equation, tuple<BackendDAE.Variables,array<BackendDAE.MultiDimEquation>,list<tuple<Integer,list<list<DAE.Subscript>>>>,list<DAE.Exp>,list<DAE.ElementSource>>> inTpl;
+  output tuple<BackendDAE.Equation, tuple<BackendDAE.Variables,array<BackendDAE.MultiDimEquation>,list<tuple<Integer,list<list<DAE.Subscript>>>>,list<DAE.Exp>,list<DAE.ElementSource>>> outTpl;  
 algorithm
   outTpl := matchcontinue inTpl
     local
@@ -5333,22 +5338,24 @@ algorithm
       array<BackendDAE.MultiDimEquation> arrayEqs;
       list<tuple<Integer,list<list<DAE.Subscript>>>> entrylst,entrylst1;
       list<DAE.Exp> explst;
+      list<DAE.ElementSource> sources;
+      DAE.ElementSource source;
       
-    case ((eqn as BackendDAE.RESIDUAL_EQUATION(exp=e),(v, arrayEqs,entrylst,explst)))
+    case ((eqn as BackendDAE.RESIDUAL_EQUATION(exp=e,source=source),(v, arrayEqs,entrylst,explst,sources)))
       equation
         rhs_exp = BackendDAEUtil.getEqnsysRhsExp(e, v);
         (rhs_exp_1,_) = ExpressionSimplify.simplify(rhs_exp);
-      then ((eqn,(v, arrayEqs,entrylst,rhs_exp_1::explst)));
+      then ((eqn,(v, arrayEqs,entrylst,rhs_exp_1::explst,source::sources)));
         
-    case ((eqn as BackendDAE.EQUATION(exp=e1, scalar=e2),(v, arrayEqs,entrylst,explst)))
+    case ((eqn as BackendDAE.EQUATION(exp=e1, scalar=e2,source=source),(v, arrayEqs,entrylst,explst,sources)))
       equation
         new_exp = Expression.expSub(e1,e2);
         rhs_exp = BackendDAEUtil.getEqnsysRhsExp(new_exp, v);
         rhs_exp_1 = Expression.negate(rhs_exp);
         (rhs_exp_2,_) = ExpressionSimplify.simplify(rhs_exp_1);
-      then ((eqn,(v, arrayEqs,entrylst,rhs_exp_2::explst)));
+      then ((eqn,(v, arrayEqs,entrylst,rhs_exp_2::explst,source::sources)));
         
-    case ((eqn as BackendDAE.ARRAY_EQUATION(index=index),(v, arrayEqs,entrylst,explst)))
+    case ((eqn as BackendDAE.ARRAY_EQUATION(index=index,source=source),(v, arrayEqs,entrylst,explst,sources)))
       equation
         BackendDAE.MULTIDIM_EQUATION(dimSize=ds,left=e1, right=e2) = arrayEqs[index+1];
         new_exp = Expression.expSub(e1,e2);
@@ -5358,7 +5365,7 @@ algorithm
         rhs_exp = BackendDAEUtil.getEqnsysRhsExp(new_exp1, v);
         rhs_exp_1 = Expression.negate(rhs_exp);
         (rhs_exp_2,_) = ExpressionSimplify.simplify(rhs_exp_1);
-      then ((eqn,(v, arrayEqs,entrylst1,rhs_exp_2::explst)));
+      then ((eqn,(v, arrayEqs,entrylst1,rhs_exp_2::explst,source::sources)));
         
     case ((eqn,_))
       equation
@@ -11414,12 +11421,9 @@ end dumpVarInfo;
 
 protected function varName
   input SimVar var;
-  output String name;
-protected
-  DAE.ComponentRef cr;
+  output DAE.ComponentRef name;
 algorithm
-  SIMVAR(name=cr) := var;
-  name := ComponentReference.printComponentRefStr(cr);
+  SIMVAR(name=name) := var;
 end varName;
 
 

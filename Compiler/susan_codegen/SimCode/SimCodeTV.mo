@@ -1263,6 +1263,12 @@ package DAE
       ComponentRef cr;
       Exp exp;
     end SOLVED;
+    record LINEAR_SOLVED
+      list<ComponentRef> vars;
+      list<list<Real>> jac;
+      list<Real> rhs;
+      list<Real> result;
+    end LINEAR_SOLVED;
     record OP_INLINE
       Exp before;
       Exp after;

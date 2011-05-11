@@ -121,6 +121,12 @@ public uniontype SymbolicOperation
     ComponentRef cr;
     Exp exp;
   end SOLVED;
+  record LINEAR_SOLVED "Solved linear system of equations"
+    list<ComponentRef> vars;
+    list<list<Real>> jac;
+    list<Real> rhs;
+    list<Real> result;
+  end LINEAR_SOLVED;
   record OP_INLINE
     Exp before;
     Exp after;

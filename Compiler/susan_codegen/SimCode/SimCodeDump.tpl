@@ -152,6 +152,7 @@ template dumpOperation(SymbolicOperation op, Info info)
           <%printExpStr(op.after)%>
       >>
     case op as SOLVED(__) then '<%\n%>  simple equation: <%crefStr(op.cr)%> = <%printExpStr(op.exp)%>'
+    case op as LINEAR_SOLVED(__) then '<%\n%>  simple equation from linear system: ###'
     case op as SOLVE(__) then
       <<<%\n%>
         solve:
