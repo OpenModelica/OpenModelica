@@ -1320,7 +1320,7 @@ static int SystemImpl__uriToClassAndPath(const char *uri, const char **scheme, c
 
 int SystemImpl__solveLinearSystem(void *lA, void *lB, void **res)
 {
-  int sz = 0,i,j;
+  integer sz = 0, i = 0, j = 0;
   void *tmp = lB;
   double *A,*B;
   integer *ipiv;
