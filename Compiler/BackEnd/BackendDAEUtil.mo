@@ -4926,7 +4926,7 @@ algorithm
         true;
     case ((dae as BackendDAE.DAE(orderedEqs = eqns)))
       equation
-        ((_,res)) = BackendEquation.traverseBackendDAEEqnsWithStop(eqns,rhsConstant2,(dae,false));
+        ((_,res)) = BackendEquation.traverseBackendDAEEqnsWithStop(eqns,rhsConstant2,(dae,true));
       then
         res;
   end matchcontinue;
