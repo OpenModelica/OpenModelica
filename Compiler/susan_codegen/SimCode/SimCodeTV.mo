@@ -2037,6 +2037,12 @@ package BackendVariable
     output Boolean outBoolean;
   end isStateVar;
 
+  function varIndex 
+    input BackendDAE.Var inVar;
+    output Integer outInteger;
+  end varIndex;
+
+
 end BackendVariable;
 
 package DAEDump

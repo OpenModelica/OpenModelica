@@ -3631,6 +3631,10 @@ algorithm
 end createListFromElement;
 
 public function getAllInputs
+"function: getAllInputs
+  Returns the list of invars of a DEVS structure per block as a expanded list
+  where {0,1,0,2,1,5} means block 0 inputs var 1 and 2 and block 1 inputs var 5
+  author: FB"
   input QSSinfo qssInfo;
   output list<Integer> vars_tuple;
 algorithm
@@ -3644,6 +3648,10 @@ algorithm
 end getAllInputs;
 
 protected function listPair
+"function: listPair
+  This function takes a list of Int and an Int an returs the list with the integer before every element
+  Example: ({1,2,3},4) -> {4,1,4,2,4,3}
+  author: FB"
   input list<Integer> l;
   input Integer i;
   output list<Integer> o;
@@ -3664,6 +3672,9 @@ end listPair;
          
           
 protected function convertArrayToFlatList
+"function: convertArrayToFlatList
+  This function converts the array<list<list<Integer>>> to a flat Int list
+  author: FB"
   input array<list<list<Integer>>> vars;
   input Integer index;
   input list<Integer> res;
@@ -3692,6 +3703,10 @@ end convertArrayToFlatList;
 
 
 public function getAllOutputs
+"function: getAllOutputs
+  Returns the list of outvars of a DEVS structure per block as a expanded list
+  where {0,1,0,2,1,5} means block 0 outputs var 1 and 2 and block 1 outputs var 5
+  author: FB"
   input QSSinfo qssInfo;
   output list<Integer> vars_tuple;
 algorithm
@@ -3828,6 +3843,7 @@ algorithm
          (temp);
   end matchcontinue;
 end findElementInList;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /////  END OF PACKAGE
 ////////////////////////////////////////////////////////////////////////////////////////////////////
