@@ -1526,7 +1526,7 @@ algorithm
       BackendDAE.AliasVariables av;
       array<BackendDAE.MultiDimEquation> ae,ae1;
       array<DAE.Algorithm> al,al1;
-      BackendDAE.EventInfo wc;
+      BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedAlgs1;
       list<tuple<Integer,Integer,Integer>> derivedMultiEqn,derivedMultiEqn1;
@@ -1534,7 +1534,7 @@ algorithm
       BackendDAE.StateOrder so,so1;
       DAE.ComponentRef cr,dcr;
     case (dae,{},_,inDerivedAlgs,inDerivedMultiEqn,inStateOrd) then (dae,{},inDerivedAlgs,inDerivedMultiEqn,{},inStateOrd);
-    case ((dae as BackendDAE.DAE(v,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc)),(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn,inStateOrd)
+    case ((dae as BackendDAE.DAE(v,kv,ev,av,eqns,seqns,ie,ae,al,einfo,eoc)),(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn,inStateOrd)
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
@@ -1546,16 +1546,14 @@ algorithm
         (dae,reqns,derivedAlgs1,derivedMultiEqn1,orgeqns,so1) = differentiateEqnsX(dae,  es, inFunctions,inDerivedAlgs,inDerivedMultiEqn,so);
       then
         (dae,reqns,derivedAlgs1,derivedMultiEqn1,orgeqns,so1);
-    case ((dae as BackendDAE.DAE(v,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc)),(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn,inStateOrd)
+    case ((dae as BackendDAE.DAE(v,kv,ev,av,eqns,seqns,ie,ae,al,einfo,eoc)),(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn,inStateOrd)
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
-
         (eqn_1,al1,derivedAlgs,ae1,derivedMultiEqn,_) = Derive.differentiateEquationTime(eqn, v, inFunctions, al,inDerivedAlgs,ae,inDerivedMultiEqn);
         Debug.fcall("bltdump", debugdifferentiateEqns,(eqn,eqn_1));
-        
         eqns_1 = BackendEquation.equationSetnth(eqns,e_1,eqn_1);
-        (dae,reqns,derivedAlgs1,derivedMultiEqn1,orgeqns,so) = differentiateEqnsX(BackendDAE.DAE(v,kv,ev,av,eqns_1,seqns,ie,ae1,al1,wc,eoc), es, inFunctions,derivedAlgs,derivedMultiEqn,inStateOrd);
+        (dae,reqns,derivedAlgs1,derivedMultiEqn1,orgeqns,so) = differentiateEqnsX(BackendDAE.DAE(v,kv,ev,av,eqns_1,seqns,ie,ae1,al1,einfo,eoc), es, inFunctions,derivedAlgs,derivedMultiEqn,inStateOrd);
       then
         (dae,e :: reqns,derivedAlgs1,derivedMultiEqn1,(e,eqn)::orgeqns,so);
     case (_,_,_,_,_,_)
@@ -2140,7 +2138,7 @@ algorithm
         // print("\n");
         diff_eqns = BackendDAEEXT.getDifferentiatedEqns();
         eqns_1 = Util.listSetDifferenceOnTrue(eqns, diff_eqns, intEq);
-        // print("differentiating equations:");print(Util.stringDelimitList(Util.listMap(eqns_1,intString),","));
+        // print("differentiating equations: ");print(Util.stringDelimitList(Util.listMap(eqns_1,intString),","));
         // print("\n");
         // print(BackendDump.dumpMarkedEqns(dae, eqns_1));
 
@@ -2150,7 +2148,7 @@ algorithm
         (dae,m,mt,deqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(dae, m, mt, eqns_1,inFunctions,derivedAlgs,derivedMultiEqn);
         (state,stateno) = selectDummyState(states, stateindx, dae, m, mt);
         // print("Selected ");print(ComponentReference.printComponentRefStr(state));print(" as dummy state\n");
-        // print(" From candidates:");print(Util.stringDelimitList(Util.listMap(states,ComponentReference.printComponentRefStr),", "));print("\n");
+        // print(" From candidates: ");print(Util.stringDelimitList(Util.listMap(states,ComponentReference.printComponentRefStr),", "));print("\n");
         // dae = propagateDummyFixedAttribute(dae, eqns_1, state, stateno);
         (dummy_der,dae) = newDummyVar(state, dae, DAE.NEW_DUMMY_DER(state,states));
         // print("Chosen dummy: ");print(ComponentReference.printComponentRefStr(dummy_der));print("\n");
