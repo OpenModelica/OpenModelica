@@ -6110,6 +6110,11 @@ algorithm
         ty = replaceSolvedBinding(ty, solvedBindings);
         ty = (DAE.T_LIST(ty),NONE());
       then ty;
+    case ((DAE.T_META_ARRAY(ty),_),_)
+      equation
+        ty = replaceSolvedBinding(ty, solvedBindings);
+        ty = (DAE.T_META_ARRAY(ty),NONE());
+      then ty;
     case ((DAE.T_METAOPTION(ty),_),_)
       equation
         ty = replaceSolvedBinding(ty, solvedBindings);
