@@ -825,14 +825,17 @@ algorithm
   matchcontinue (nBlocks)
     local
       list<list<list<Integer>>> DEVS_struct_outLinksList;
-      array<list<list<Integer>>> DEVS_struct_outLinks;
+      array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
   
    case (nBlocks)
       equation
         DEVS_struct_outLinksList = constructEmptyListList(nBlocks, {});
-        DEVS_struct_outLinks = listArray(DEVS_struct_outLinksList);       
+        DEVS_struct_outLinks = listArray(DEVS_struct_outLinksList); 
+        DEVS_struct_outVars = listArray(DEVS_struct_outLinksList);
+        DEVS_struct_inVars = listArray(DEVS_struct_outLinksList);
+        DEVS_struct_inLinks = listArray(DEVS_struct_outLinksList);
       then
-        (DEVS_STRUCT(DEVS_struct_outLinks, DEVS_struct_outLinks, DEVS_struct_outLinks, DEVS_struct_outLinks));
+        (DEVS_STRUCT(DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars));
     case (_)
       equation
         print("- BackendQSS.EmptyDEVSstruct failed\n");
@@ -918,10 +921,10 @@ algorithm
         startSampleInd = startWhenInd + nWhens + nReinits;
         
         DEVS_structure_temp = generateEmptyDEVSstruct(nBlocks);  
-        
+                
         //Resolve dependencies between inputs/outputs excluding events      
         (DEVS_structure_temp) = generateStructFromInOutVars(1,stateIndices,discreteVarIndices, DEVS_blocks_outVars, DEVS_blocks_inVars, DEVS_structure_temp);
-        
+           
         //Add the connections between zero-crossings and cross-detectors
         (DEVS_structure_temp) = addZeroCrossOut_CrossDetectIn(startZeroCrossInd, startCrossDetectInd, zeroCrossList, DEVS_structure_temp);
         //Add the cross-detector blocks outputs
@@ -930,12 +933,18 @@ algorithm
         
         //Add the outputs of the reinits to the respective integrators
         (DEVS_structure_temp) = addReinitBlocksOut(startWhenInd, reinitsInBlocks, reinitVarsOut, stateIndices, DEVS_structure_temp);
-        
+             
         //Add the outputs of the sample blocks to the respective when clauses
         (DEVS_structure_temp) = addSampleBlocksOut(startSampleInd, startWhenInd, samplesList, DEVS_structure_temp);
         
+        print("DEVS_structure FLAG 4\n");
+        dumpDEVSstructs(DEVS_structure_temp);
+      
         // Check where the event input port is not in the end and push it to the end
         (DEVS_structure_temp) = fixEventInputPort(DEVS_structure_temp);
+        
+        print("DEVS_structure FLAG 5\n");
+        dumpDEVSstructs(DEVS_structure_temp);
         
         // Resolve dependencies for EVENTS
         // Already we should have resolved the dependencies between DEVS blocks concerning the variables.
@@ -981,8 +990,6 @@ algorithm
     case (startBlockInd, startWhenInd, BackendDAE.ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc)::restSamples, 
                      DEVS_STRUCT(outLinks=DEVS_struct_outLinks, outVars=DEVS_struct_outVars, inLinks=DEVS_struct_inLinks, inVars=DEVS_struct_inVars))
       equation
-       print("sample block ind: ");print(intString(startBlockInd));print("\n");
-       printList(wc, "start"); print("\n");
        curBlock_outVars = {{0}};  
        // TEMPORARY SOLUTION: IN THE FUTURE MAYBE WE DONT HAVE THE WHEN CLAUSES IN THE ORDER THEY ARE NOW AND ONE IN EACH BLOCK
        wc = Util.listMap1(wc, intAdd, startWhenInd-1);
@@ -1396,28 +1403,37 @@ algorithm
       equation
        curBlock_inLinks = DEVS_struct_inLinks[curBlockIn];
        curBlock_inVars = DEVS_struct_inVars[curBlockIn];
+       print("TRUE1\n");
        portIn = findInputPort(0, curBlock_inVars, 0);
        //Check if the curBlockIn has already an event port. If yes, add the startBlockInd, otherwise create an event port.
        true = portIn == -1 ; // If there exists no event port 
+       print("TRUE2\n");
        curBlock_inVars = listAppend(curBlock_inVars, {{0}});
        curBlock_inLinks = listAppend(curBlock_inLinks, {{eventBlockInd}});
+       print("TRUE3\n");
        DEVS_struct_inLinks = arrayUpdate(DEVS_struct_inLinks, curBlockIn, curBlock_inLinks);
+       print("TRUE4\n");
        DEVS_struct_inVars = arrayUpdate(DEVS_struct_inVars, curBlockIn, curBlock_inVars);
+       print("TRUE5\n");
        (DEVS_struct_inLinks, DEVS_struct_inVars) = updateEventsAsInputs2(eventBlockInd, restBlocks, DEVS_struct_inLinks, DEVS_struct_inVars);
        then
         (DEVS_struct_inLinks, DEVS_struct_inVars);
         
     case (eventBlockInd, curBlockIn::restBlocks, DEVS_struct_inLinks, DEVS_struct_inVars)
       equation
+        print("FALSE1\n");
        curBlock_inLinks = DEVS_struct_inLinks[curBlockIn];
        curBlock_inVars = DEVS_struct_inVars[curBlockIn];
        portIn = findInputPort(0, curBlock_inVars, 0);
        //Check if the curBlockIn has already an event port. If yes, add the startBlockInd, otherwise create an event port.
        false = portIn == -1 ;// If there already exists an event port 
+       print("FALSE2\n");
        tempList = listNth(curBlock_inLinks, portIn);
        tempList = listAppend(tempList, {eventBlockInd});
+       print("FALSE3\n");
        curBlock_inLinks = Util.listReplaceAt(tempList, portIn, curBlock_inLinks);
        DEVS_struct_inLinks = arrayUpdate(DEVS_struct_inLinks, curBlockIn, curBlock_inLinks);
+       print("FALSE4\n");
        (DEVS_struct_inLinks, DEVS_struct_inVars) = updateEventsAsInputs2(eventBlockInd, restBlocks, DEVS_struct_inLinks, DEVS_struct_inVars);
        then
         (DEVS_struct_inLinks, DEVS_struct_inVars);
@@ -1761,6 +1777,7 @@ algorithm
         (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars);
     case (_,_,_,_,_,_,_,_)
       equation
+        print("- BackendQSS.findWhereOutVarsIsNeeded failed\n");
       then
         fail();
   end matchcontinue;
@@ -3515,7 +3532,7 @@ algorithm
          
      case (nEquations, tempList)
        equation
-          tempList = {{}}::tempList;           
+          tempList = {}::tempList;           
           emptyListofLists = constructEmptyListList(nEquations-1, tempList);
        then
           (emptyListofLists);  
