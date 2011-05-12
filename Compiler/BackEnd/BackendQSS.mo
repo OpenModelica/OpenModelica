@@ -70,6 +70,7 @@ uniontype QSSinfo "- equation indices in static blocks and DEVS structure"
     DevsStruct DEVSstructure "DEVS structure of the model";
     list<list<SimCode.SimEqSystem>> eqs;
     list<BackendDAE.Var> outVarLst;
+    list<Integer> zcSamplesInd;
   end QSSINFO;
 end QSSinfo;
 
@@ -86,6 +87,7 @@ algorithm
   QSSinfo_out :=
   matchcontinue (inBackendDAE, equationIndices, variableIndices, inIncidenceMatrix, inIncidenceMatrixT, strongComponents)
     local
+       QSSinfo qssInfo;
        BackendDAE.BackendDAE dlow;
        array<Integer> ass1, ass2, globalAss2;
        
@@ -314,14 +316,14 @@ algorithm
         dumpDEVSstructs(DEVS_structure);       
        
         
-        conns = generateConnections(QSSINFO(stateEq_blt, DEVS_structure,eqs,varlst));
+        qssInfo = QSSINFO(stateEq_blt, DEVS_structure,eqs,varlst,zcSamplesInd);
+        conns = generateConnections(qssInfo);
         print("CONNECTIONS");
         printListOfLists(conns);        
         print("\n");
         
       then
-        QSSINFO(stateEq_blt, DEVS_structure,eqs,varlst);
-        
+        qssInfo; 
    case (_,_,_,_,_,_)
       equation
         print("- Main function BackendQSS.generateStructureCodeQSS failed\n");
@@ -3642,7 +3644,7 @@ algorithm
     match (qssInfo)
       local
         array<list<list<Integer>>> inVars "input connections for each DEVS block";
-      case QSSINFO(_,DEVS_STRUCT(_,_,_,inVars),_,_)
+      case QSSINFO(DEVSstructure=DEVS_STRUCT(inVars=inVars))
       then convertArrayToFlatList(inVars,1,{});
     end match;
 end getAllInputs;
@@ -3714,7 +3716,7 @@ algorithm
     match (qssInfo)
       local
         array<list<list<Integer>>> outVars "output connections for each DEVS block";
-      case QSSINFO(_,DEVS_STRUCT(_,outVars,_,_),_,_)
+      case QSSINFO(DEVSstructure=DEVS_STRUCT(outVars=outVars))
       then convertArrayToFlatList(outVars,1,{});
     end match;
 end getAllOutputs;
