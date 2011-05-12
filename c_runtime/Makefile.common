@@ -30,7 +30,7 @@ simulation_events.o linearize.o solver_main.o \
 simulation_result_plt.o simulation_result_csv.o \
 simulation_result_mat.o simulation_delay.o tables.o options.o dgesv_aux.o \
 simulation_modelinfo.o $(EXTRA_SIMOBJS) \
-solver_qss/solver_qss.o solver_qss/sampler.o solver_qss/integrator.o solver_qss/qss_signal.o solver_qss/static_function.o
+solver_qss/solver_qss.o solver_qss/sampler.o solver_qss/integrator.o solver_qss/qss_signal.o solver_qss/static_function.o solver_qss/cross_detector.o
 
 
 HFILES = \
