@@ -4809,7 +4809,7 @@ algorithm
         names = Util.listMap(simVars,varName);
         checkLinearSystem(linInfo,names,jacVals,rhsVals);
         // TODO: Move these to known vars :/ This is done in the wrong phase of the compiler... Also, if done as an optimization module, we can optimize more!
-        sources = Util.listMap1(sources, DAEUtil.addSymbolicTransformation, DAE.LINEAR_SOLVED(names,jacVals,solvedVals,rhsVals));
+        sources = Util.listMap1(sources, DAEUtil.addSymbolicTransformation, DAE.LINEAR_SOLVED(names,jacVals,rhsVals,solvedVals));
         equations_ = Util.listThread3Map(simVars,solvedVals,sources,generateSolvedEquation);
       then
         equations_;
