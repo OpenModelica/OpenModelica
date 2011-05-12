@@ -18,7 +18,7 @@ find_package(Boost 1.45.0 COMPONENTS serialization REQUIRED )
 find_package( Lapack REQUIRED)
 
 
-SET(MODELICA_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../include")
+SET(MODELICA_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../include/omc/cpp")
 SET(MODELICA_BIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../bin")
 link_directories ( ${Boost_LIBRARY_DIRS} )
 link_directories ( ${MODELICA_BIN_DIR} )

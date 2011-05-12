@@ -10,7 +10,7 @@ install (TARGETS SettingsFactory DESTINATION bin)
 install (FILES "../Interfaces/GlobalSettings.xml" 
   DESTINATION bin/config)
 install (FILES "../Interfaces/IGlobalSettings.h" 
-  DESTINATION include/SettingsFactory/Interfaces)
+  DESTINATION include/omc/cpp/SettingsFactory/Interfaces)
 
   
   

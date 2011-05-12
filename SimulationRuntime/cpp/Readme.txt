@@ -42,15 +42,7 @@ e.g.
 mingw32-make install
 This copies all shared libs and needed header files to build the Modelica System to installation directory
 
-Modelica System installation:
-Change to the build/bin director where the generated Modelica system files are located.
-e.g. C:/OpenModelica/build/bin
-To generate the build files for the Modelica System use
-cmake -G "your generator" -D   MAKE_CXX_COMPILER=g++ folder to project source dir where generate Modelica system files are located
-e.g.
-cmake -G "MinGW Makefiles" -D   MAKE_CXX_COMPILER=g++ C:/OpenModelica/build/bin
-after that you can call 
-make
+
 
 
 In the Binaries folder is after the build the Simulation.exe

@@ -55,10 +55,14 @@ set (SETTINGSFACTORY_LIB ${libSetFactoryName})
 set (MODELICASYSTEM_LIB ${libModelicaName})
 # configure a header file to pass some library names
 # to the source code which are used to dynamic load and instantiate 
+
 configure_file (
   "${PROJECT_SOURCE_DIR}/LibrariesConfig.h.in"
   "${PROJECT_BINARY_DIR}/LibrariesConfig.h"
   )
 
+  
+
+
 install (FILES "DataExchange/Interfaces/IHistory.h" 
-  DESTINATION include/DataExchange/Interfaces)
+  DESTINATION include/omc/cpp/DataExchange/Interfaces)
