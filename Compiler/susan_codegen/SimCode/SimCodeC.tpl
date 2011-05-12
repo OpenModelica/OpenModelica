@@ -4127,7 +4127,8 @@ case RANGE(__) then
   <%preExp%>
   <%startVar%> = <%startValue%>; <%stepVar%> = <%stepValue%>; <%stopVar%> = <%stopValue%>; 
   if (!<%stepVar%>) {
-    MODELICA_ASSERT(omc_dummyFileInfo, "assertion range step != 0 failed");
+    omc_fileInfo info = omc_dummyFileInfo;
+    MODELICA_ASSERT(info, "assertion range step != 0 failed");
   } else if (!(((<%stepVar%> > 0) && (<%startVar%> > <%stopVar%>)) || ((<%stepVar%> < 0) && (<%startVar%> < <%stopVar%>)))) {
     <%type%> <%iterName%>;
     for (<%iterName%> = <%startValue%>; in_range_<%shortType%>(<%iterName%>, <%startVar%>, <%stopVar%>); <%iterName%> += <%stepVar%>) { 

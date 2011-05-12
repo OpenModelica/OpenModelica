@@ -41,6 +41,8 @@
 #include "integer_array.h"
 #include "boolean_array.h"
 #include "fortran_types.h"
+
+#ifdef __cplusplus
 #include <list>
 using namespace std;
 
@@ -87,6 +89,14 @@ bool
 change(const char*& var);
 
 double
+BiSection(double*, double*, double*, double*, list<int> *);
+
+int
+CheckZeroCrossings(list<int>*);
+
+#endif
+
+double
 Sample(double t, double start, double interval);
 double
 sample(double start, double interval, int hindex);
@@ -113,11 +123,11 @@ const int IterationMax = 200;
 extern modelica_boolean* gout_res;
 
 #define ZEROCROSSING(ind,exp) { \
-    if (euler_in_use){ \
+    if (euler_in_use) { \
         gout[ind] = exp; \
     } \
     else {\
-        gout[ind] = (zeroCrossingEnabled[ind])?double(zeroCrossingEnabled[ind])*exp:1.0; \
+        gout[ind] = (zeroCrossingEnabled[ind])?((double)zeroCrossingEnabled[ind])*exp:1.0; \
     } \
 }
 
@@ -163,12 +173,6 @@ initializeZeroCrossings();
 
 void
 activateSampleEvents();
-
-double
-BiSection(double*, double*, double*, double*, list<int> *);
-
-int
-CheckZeroCrossings(list<int>*);
 
 int
 function_updateSample();

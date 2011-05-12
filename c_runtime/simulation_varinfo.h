@@ -47,7 +47,7 @@ typedef struct {
   int readonly;
 } omc_fileInfo;
 
-extern const omc_fileInfo omc_dummyFileInfo;
+#define omc_dummyFileInfo {"",-1,-1,-1,-1,1}
 
 struct omc_varInfo {
   int id;

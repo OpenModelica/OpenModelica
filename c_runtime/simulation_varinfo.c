@@ -31,8 +31,6 @@
 
 #include "simulation_varinfo.h"
 
-const omc_fileInfo omc_dummyFileInfo = {"",-1,-1,-1,-1,1};
-
 void printErrorEqSyst(equationSystemError err, struct omc_equationInfo eq, double var)
 {
   switch (err) {

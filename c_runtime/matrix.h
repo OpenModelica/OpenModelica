@@ -205,11 +205,11 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
 
 #define declare_matrix(A,nrows,ncols) double *A = real_alloc(nrows * ncols); \
 assert(A != 0); \
-for (int i = 0; i < nrows*ncols; i++) A[i]=0.0;
+{int i;for (i = 0; i < nrows*ncols; i++) A[i]=0.0;}
 
 #define declare_vector(v,nelts) double *v=real_alloc(nelts);\
 assert(v != 0); \
-for (int i = 0; i < nelts; i++) v[i]=0.0;
+{int i;for (i = 0; i < nelts; i++) v[i]=0.0;}
 
 /* Matrixes using column major order (as in Fortran) */
 #define set_matrix_elt(A,r,c,n_rows,value) A[r + n_rows * c] = value

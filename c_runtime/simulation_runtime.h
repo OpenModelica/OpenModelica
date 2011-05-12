@@ -48,11 +48,11 @@
 #include "boolean_array.h"
 #include "rtclock.h"
 #include <stdlib.h>
+#include "simulation_events.h"
 
 #ifdef __cplusplus
 
 #include "linearize.h"
-#include "simulation_events.h"
 #include "simulation_delay.h"
 #include "simulation_result.h"
 #include "simulation_inline_solver.h"
