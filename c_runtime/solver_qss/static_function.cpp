@@ -54,21 +54,23 @@ void StaticFunction::init(Time t, unsigned int i)
  
 void StaticFunction::makeStep(Time t)
 {
+  // Evaluate at t
   advanceInputs(t);
   function_staticBlocks(index,t,inp,out);
 
   if (order>1) 
   {
+    // Evaluate at t-dt
     advanceInputs(t-dt);
-    function_staticBlocks(index,t,inp,out_dt);
+    function_staticBlocks(index,t-dt,inp,out_dt);
 
+    // Evaluate at t+dt
     advanceInputs(t+dt);
     function_staticBlocks(index,t+dt,inp,outdt);
-    
   }
 
-  writeOutputs(t);
   sigma=INF;
+  writeOutputs(t);
   // Take back the time
   globalData->timeValue=t;
 }
@@ -86,6 +88,7 @@ void StaticFunction::writeOutputs(Time t)
   {
     zc[indexCrossing].sampledAt(t);
     zc[indexCrossing].setCoeff(0,out[0]);
+    zc[indexCrossing].setCoeff(1,(outdt[i]-out_dt[i])/(dt*2));
     return;
   }
   for (;it!=computes.end();it++,i++)
@@ -95,11 +98,27 @@ void StaticFunction::writeOutputs(Time t)
       cout << "Block " << devsIndex << " writes der " << stateNumber(*it) << endl;
       derX[stateNumber(*it)].sampledAt(t);
       derX[stateNumber(*it)].setCoeff(0,out[i]);
-      // If order>1...
+      if (order>1) 
+        derX[stateNumber(*it)].setCoeff(1,(outdt[i]-out_dt[i])/(dt*2));
     } else {
       cout << "Block " << devsIndex << " writes algebraic " << algNumber(*it) << endl;
       alg[algNumber(*it)].sampledAt(t);
       alg[algNumber(*it)].setCoeff(0,out[i]);
+      if (order>1)
+        alg[algNumber(*it)].setCoeff(1,(outdt[i]-out_dt[i])/(dt*2));
+    }
+    if (order==2) 
+    {
+      const double ddf=(outdt[i]-2*out[i]+out_dt[i])/(dt*dt*2);
+      const double tolerr=dQmin+dQrel*fabs(out[i]);
+      if (ddf!=0) 
+      {
+        const double s=.9*sqrt(fabs(ddf/tolerr));
+        if (s<sigma) {
+          cout << "Adjusting sigma to " << s << endl;
+          sigma=s;
+        }
+      }
     }
   } 
 }
