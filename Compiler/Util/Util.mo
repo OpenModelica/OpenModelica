@@ -3466,8 +3466,8 @@ algorithm
       list<Type_a> ra;
       Type_b fb;
       list<Type_b> rb;
-      Type_b fc;
-      list<Type_b> rc;
+      Type_c fc;
+      list<Type_c> rc;
     case ({},{},{},_) then {};
     case ((fa :: ra),(fb :: rb),(fc :: rc),fn)
       equation
