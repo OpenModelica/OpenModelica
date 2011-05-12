@@ -806,12 +806,12 @@ end getGCStatus;
 
 public function solveLinearSystem
   "Solves A*X = B. Fails and sets error buffer on failure.
-  Returns info>0: Singular for element i. info<0: Bad input."
+  Uses dgesv from LAPACK: info>0: Singular for element i. info<0: Bad input."
   input list<list<Real>> A;
   input list<Real> B;
   output list<Real> X;
   output Integer info;
-  external "C" info=SystemImpl__solveLinearSystem(A,B,X) annotation(Library = "omcruntime");
+  external "C" info=SystemImpl__solveLinearSystem(A,B,X) annotation(Library = {"omcruntime","Lapack"});
 end solveLinearSystem;
 
 end System;
