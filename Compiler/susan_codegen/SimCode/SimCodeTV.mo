@@ -1977,6 +1977,7 @@ package BackendQSS
 	    DevsStruct DEVSstructure "DEVS structure of the model";
 			list<list<SimCode.SimEqSystem>> eqs;
   		list<BackendDAE.Var> outVarLst;
+  		list<Integer> zcSamplesInd;
   	end QSSINFO;
 	end QSSinfo;
 

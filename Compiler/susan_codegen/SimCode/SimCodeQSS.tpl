@@ -335,6 +335,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
     <%generateZeroCrossingFunctions(zeroCrossings,qssInfo,varInfo.numStateVars)%>
     <%generateCrossingDetector(zeroCrossings,qssInfo)%>
     <%generateWhenBlocks(whenClauses,helpVarInfo)%>
+    <%generateSampleBlocks(zeroCrossings,qssInfo)%>
     Simulator
       {
         Path = modelica/outvars.h
@@ -461,7 +462,7 @@ template generateWhenEquations(list<BackendDAE.WhenOperator> reinits,Option<Back
 	<% generateReinits(reinits,varDecls) %>
 	>>
 	case NONE() then
-	generateReinits(reinits,varDecls)
+  generateReinits(reinits,varDecls)
 end generateWhenEquations;
 
 template generateReinits(list<BackendDAE.WhenOperator> reinits, Text &varDecls)
@@ -486,7 +487,7 @@ template functionPreWhenCondition (list<tuple<DAE.Exp, Integer>> conditions, Tex
 	'condition(<% i %>)'
 	case _ then
   let helpInit = SimCodeC.daeExp(e, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-	let &preExp += <<localData->helpVars[<%hvar%>] = <% helpInit %>;
+	let &preExp += << localData->helpVars[<%hvar%>] = <% helpInit %>;
 
 	>>
 	'edge(localData->helpVars[<%hvar%>])'
@@ -502,7 +503,7 @@ template functionQssStaticBlocks(list<SimEqSystem> derivativEquations,list<ZeroC
 		let numStatic = intAdd(listLength(eqs),listLength(zeroCrossings))
 		let numPureStatic = listLength(eqs)
 		let numZeroCross = listLength(zeroCrossings)
-		let staticFun = generateStaticFunc(derivativEquations,zeroCrossings,varDecls,DEVSstructure,eqs,outVarLst,nStates)
+		let staticFun = generateStaticFunc(zeroCrossings,varDecls,DEVSstructure,eqs,outVarLst,nStates)
 		let zeroCross = generateZeroCrossingsEq(listLength(eqs),zeroCrossings,varDecls,DEVSstructure,outVarLst,nStates)
 
   <<
@@ -551,7 +552,7 @@ template generateInputs(BackendQSS.DevsStruct devsst, Integer index, list<Backen
 	; separator="\n")
 end generateInputs;
 
-template generateStaticFunc(list<SimEqSystem> odeEq,list<ZeroCrossing> zeroCrossings, 
+template generateStaticFunc(list<ZeroCrossing> zeroCrossings, 
 	Text &varDecls /*BUFP*/, BackendQSS.DevsStruct devsst,list<list<SimCode.SimEqSystem>> BLTblocks, list<BackendDAE.Var> varLst, Integer nStates)
 "Generate the cases for the static function "
 ::= 
@@ -611,7 +612,7 @@ template generateZeroCrossingsEq(Integer offset,list<ZeroCrossing> zeroCrossings
                                  BackendQSS.DevsStruct devsst,list<BackendDAE.Var> varLst,Integer nStates)
 "Generate the cases for the zero crossings"
 ::= 
-  (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
+  (zeroCrossings |> ZERO_CROSSING(relation_=RELATION(__)) hasindex i0 =>
    let &preExp = buffer "" /*BUFD*/
    let zcExp = generateZCExp(relation_, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
 	 match relation_
@@ -746,12 +747,21 @@ template generateCrossingDetector(list<ZeroCrossing> zeroCrossings,QSSinfo qssIn
   let &varDecls = buffer "" /*BUFD*/
   let numStatic = listLength(eqs)
   let &preExp = buffer "" /*BUFD*/
-  (zeroCrossings |> ZERO_CROSSING(relation_ = DAE.RELATION()) hasindex i0 =>
-  <<Simulator
+  (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
+  << 
+  <% match relation_ 
+    case CALL(path=IDENT(name="sample")) then <<
+    // Sample block skipped
+    >>
+    case _ then
+    <<
+    Simulator
     {
       Path = modelica/modelica_qss_cross_detect.h // Crossing detector <%i0%> for <% SimCodeC.daeExp(relation_, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/) %>
       Parameters = <% i0 %>.0
     }
+    >>
+  %>
   >>
   ;separator="\n")
 end generateCrossingDetector;
@@ -763,24 +773,26 @@ template generateWhenBlocks(list<SimWhenClause> whenClauses, list<HelpVarInfo> h
   <<Simulator
     {
       Path = modelica/modelica_when_discrete.h // When clause <% i0 %>
-      Parameters = (double)(<% i0 %>),2.0,3.0
+      Parameters = <% i0 %>.0,2.0,3.0
     }
   >>
   ;separator="\n")
 end generateWhenBlocks;
 
-template generateSampleBlocks(list<ZeroCrossing> zeroCrossings)
+template generateSampleBlocks(list<ZeroCrossing> zeroCrossings,QSSinfo qssInfo)
 "Function to generate the when blocks atomics for the DEVS structure"
 ::= 
   let &varDecls = buffer "" /*BUFD*/
   let &preExp = buffer "" /*BUFD*/
   (zeroCrossings |> ZERO_CROSSING(relation_ = CALL(path=IDENT(name="sample"), expLst={start, interval})) hasindex i0 =>
+    match qssInfo
+    case QSSINFO(__) then
     let e1 = SimCodeC.daeExp(start, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let e2 = SimCodeC.daeExp(interval, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   <<Simulator
     {
       Path = modelica/modelica_sample.h // Sample block <% i0 %> for sample(<% e1 %>, <% e2 %>)
-      Parameters = (double)(<% i0 %>)
+      Parameters = <% i0 %>.0, <% intAdd(-1,listNth(zcSamplesInd,i0)) %>.0
     }
   >>
   ;separator="\n")
