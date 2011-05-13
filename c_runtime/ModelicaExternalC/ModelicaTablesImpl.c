@@ -54,7 +54,7 @@ int ModelicaTables_CombiTable1D_init(const char* tableName, const char* fileName
                                        double const *table, int nRow, int nColumn,
                                        int smoothness)
 {
-  return omcTableTimeIni(0.0, 0.0, smoothness, 2 /* extrapolate based on two first/last values */, tableName, fileName, table, nRow, nColumn, 0);
+  return omcTableTimeIni(*table, *table, smoothness, 2 /* extrapolate based on two first/last values */, tableName, fileName, table, nRow, nColumn, 0);
 }
 
 void ModelicaTables_CombiTable1D_close(int tableID) 

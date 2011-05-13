@@ -645,15 +645,17 @@ double InterpolationTable::interpolate(double time, size_t col) const
   if (!data) return 0.0;
 
   // substract time offset
-  time -= startTime;
+  //fprintf(stderr, "time %g startTime %g\n", time, startTime);
   
-  if (time < 0.0)
+  if (time < minTime())
     return extrapolate(time,col,time <= minTime());
 
-  for(size_t i = 1; i < lastIdx; ++i)
+  for(size_t i = 0; i < lastIdx; ++i) {
+    //fprintf(stderr, "getElt: %d %g->%g\n", i, getElt(i,0), getElt(i,1));
     if (getElt(i,0) > time) {
       return interpolateLin(time, i-1,col);
     }
+  }
   return extrapolate(time,col,time <= minTime());
 }
 bool InterpolationTable::compare(const char* fname, const char* tname,
