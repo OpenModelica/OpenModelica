@@ -30,6 +30,8 @@
 #ifndef __OPENMODELICA_MSVC_H
 #define __OPENMODELICA_MSVC_H
 
+#include <math.h> /* Make sure we try to get INFINITY and NAN from the system. They are way cooler */
+
 union MSVC_FLOAT_HACK
 {
    unsigned char Bytes[4];
