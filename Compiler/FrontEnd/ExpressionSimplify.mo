@@ -155,7 +155,7 @@ algorithm
       equation
         true = Util.listFold(Util.listMap(expl,Expression.isConst),boolAnd,true);
         e2 = simplifyBuiltinConstantCalls(DAE.CALL(fn,expl,tpl,builtin,tp,inlineType));
-      then 
+      then
         ((e2,true));
     
     // simplify some builtin calls, like cross, etc
@@ -714,15 +714,20 @@ algorithm
     // der(constant) ==> 0
     case (DAE.CALL(path=Absyn.IDENT("der"),expLst ={e}))
       equation
-        true = Expression.isConst(e);
         e1 = simplifyBuiltinConstantDer(e);
       then e1;
     
     // pre(constant) ==> constant
     case (DAE.CALL(path=Absyn.IDENT("pre"),expLst ={e}))
-      equation
-        true = Expression.isConst(e);
       then e;
+
+    // edge(constant) ==> false
+    case (DAE.CALL(path=Absyn.IDENT("edge"),expLst ={e}))
+      then DAE.BCONST(false);
+
+    // edge(constant) ==> false
+    case (DAE.CALL(path=Absyn.IDENT("change"),expLst ={e}))
+      then DAE.BCONST(false);
 
     // sqrt function
     case(DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e})) 
