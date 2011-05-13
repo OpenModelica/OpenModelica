@@ -584,7 +584,6 @@ algorithm
       DAE.Pattern pat;
       Absyn.CodeNode code;
       DAE.ReductionIterators riters;
-      Integer i;
       String index_str;
       
     case (DAE.END(), _, _, _) then "end";
