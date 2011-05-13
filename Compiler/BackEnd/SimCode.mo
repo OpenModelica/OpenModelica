@@ -4805,7 +4805,7 @@ algorithm
         beqs = listReverse(beqs);
         rhsVals = ValuesUtil.valueReals(Util.listMap(beqs,Ceval.cevalSimple));
         jacVals = BackendDAEOptimize.evaluateConstantJacobian(listLength(simVars),jac);
-        (solvedVals,linInfo) = System.solveLinearSystem(jacVals,rhsVals);
+        (solvedVals,linInfo) = System.dgesv(jacVals,rhsVals);
         names = Util.listMap(simVars,varName);
         checkLinearSystem(linInfo,names,jacVals,rhsVals);
         // TODO: Move these to known vars :/ This is done in the wrong phase of the compiler... Also, if done as an optimization module, we can optimize more!
@@ -9409,7 +9409,7 @@ algorithm
         true = "Windows_NT" ==& System.os();
         str = "-l" +& str;
         strs = getLibraryStringInGccFormat(Absyn.STRING("Lapack"));
-        strs = str :: "-lmico2313" :: "-lws2_32" :: "-lregex" :: strs;
+        strs = str :: "-lpsolve55" :: "-lmico2313" :: "-lws2_32" :: "-lregex" :: strs;
       then strs;
         
         // The library is not actually named libLapack.so.
@@ -9428,9 +9428,7 @@ algorithm
     case Absyn.STRING(str as "omcruntime")
       equation
         false = "Windows_NT" ==& System.os();
-        str = "-l" +& str;
-        str2 = System.getCorbaLibs();
-      then {str, str2};
+      then System.getRuntimeLibs();
         
         // If the string contains a dot, it's a good path that should not be prefix -l
     case Absyn.STRING(str)

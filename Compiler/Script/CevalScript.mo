@@ -675,7 +675,7 @@ algorithm
       list<DAE.Exp> expLst;
       list<tuple<String,list<String>>> deps;
       Absyn.CodeNode codeNode;
-      list<Values.Value> cvars;
+      list<Values.Value> cvars,vals2;
       DAE.FunctionTree funcs;
       list<Absyn.Path> paths;
       list<Absyn.Class> classes;
@@ -1852,11 +1852,22 @@ algorithm
     case (cache,env,"uriToFilename",_,st,msg)
       then (cache,Values.STRING(""),st);
         
-    case (cache,env,"solveLinearSystem",{Values.ARRAY(valueLst=vals),v},st,msg)
+    case (cache,env,"solveLinearSystem",{Values.ARRAY(valueLst=vals),v,Values.ENUM_LITERAL(index=1 /*dgesv*/),Values.ARRAY(valueLst={Values.INTEGER(-1)})},st,msg)
       equation
-        (realVals,i) = System.solveLinearSystem(Util.listMap(vals,ValuesUtil.arrayValueReals),ValuesUtil.arrayValueReals(v));
+        (realVals,i) = System.dgesv(Util.listMap(vals,ValuesUtil.arrayValueReals),ValuesUtil.arrayValueReals(v));
         v = ValuesUtil.makeArray(Util.listMap(realVals,ValuesUtil.makeReal));
       then (cache,Values.TUPLE({v,Values.INTEGER(i)}),st);
+
+    case (cache,env,"solveLinearSystem",{Values.ARRAY(valueLst=vals),v,Values.ENUM_LITERAL(index=2 /*lpsolve55*/),Values.ARRAY(valueLst=vals2)},st,msg)
+      equation
+        (realVals,i) = System.lpsolve55(Util.listMap(vals,ValuesUtil.arrayValueReals),ValuesUtil.arrayValueReals(v),Util.listMap(vals2,ValuesUtil.valueInteger));
+        v = ValuesUtil.makeArray(Util.listMap(realVals,ValuesUtil.makeReal));
+      then (cache,Values.TUPLE({v,Values.INTEGER(i)}),st);
+
+    case (cache,env,"solveLinearSystem",{_,v,_,_},st,msg)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"Unknown input to solveLinearSystem scripting function"});
+      then (cache,Values.TUPLE({v,Values.INTEGER(-1)}),st);
 
  end matchcontinue;
 end cevalInteractiveFunctions2;

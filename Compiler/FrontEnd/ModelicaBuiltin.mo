@@ -1311,11 +1311,15 @@ function uriToFilename "Handles modelica:// and file:// URI's. The result is an 
 external "builtin";
 end uriToFilename;
 
+type LinearSystemSolver = enumeration(dgesv,lpsolve55);
 function solveLinearSystem
-  "Solve A*X = B
-  Returns info>0: Singular for element i. info<0: Bad input."
+  "Solve A*X = B, using dgesv or lp_solve (if any variable in X is integer)
+  Returns for solver dgesv: info>0: Singular for element i. info<0: Bad input.
+  For solver lp_solve: ???"
   input Real[size(B,1),size(B,1)] A;
   input Real[:] B;
+  input LinearSystemSolver solver := LinearSystemSolver.dgesv;
+  input Integer[:] isInt := {-1} "list of indices that are integers";
   output Real[size(B,1)] X;
   output Integer info;
 external "builtin";

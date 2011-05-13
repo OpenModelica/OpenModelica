@@ -1764,6 +1764,13 @@ RML_BEGIN_LABEL(System__getCorbaLibs)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__getRuntimeLibs)
+{
+  rmlA0 = CONFIG_SYSTEMLIBS;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__getExeExt)
 {
   rmlA0 = (void*) mk_scon(CONFIG_EXE_EXT);
@@ -2014,12 +2021,20 @@ RML_BEGIN_LABEL(System__getGCStatus)
 RML_END_LABEL
 
 
-RML_BEGIN_LABEL(System__solveLinearSystem)
+RML_BEGIN_LABEL(System__dgesv)
 {
   void *res;
-  rmlA1 = mk_icon(SystemImpl__solveLinearSystem(rmlA0,rmlA1,&res));
+  rmlA1 = mk_icon(SystemImpl__dgesv(rmlA0,rmlA1,&res));
   rmlA0 = res;
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__lpsolve55)
+{
+  void *res;
+  rmlA1 = mk_icon(SystemImpl__lpsolve55(rmlA0,rmlA1,rmlA2,&res));
+  rmlA0 = res;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

@@ -1318,7 +1318,7 @@ static int SystemImpl__uriToClassAndPath(const char *uri, const char **scheme, c
   return 1;
 }
 
-int SystemImpl__solveLinearSystem(void *lA, void *lB, void **res)
+int SystemImpl__dgesv(void *lA, void *lB, void **res)
 {
   integer sz = 0, i = 0, j = 0;
   void *tmp = lB;
@@ -1357,6 +1357,51 @@ int SystemImpl__solveLinearSystem(void *lA, void *lB, void **res)
   free(B);
   free(ipiv);
   *res = tmp;
+  return info;
+}
+
+#include "lp_lib.h"
+
+int SystemImpl__lpsolve55(void *lA, void *lB, void *ix, void **res)
+{
+  int i = 0, j = 0, info, sz = 0;
+  void *tmp = lB;
+  lprec *lp;
+  double inf,*vres;
+  
+  while (RML_NILHDR != RML_GETHDR(tmp)) {
+    sz++;
+    tmp = RML_CDR(tmp);
+  }
+  vres = (double*)calloc(sz,sizeof(double));
+  lp = make_lp(sz, sz);
+  set_verbose(lp, 1);
+  inf = get_infinite(lp);
+
+  for (i=0; i<sz; i++) {
+    set_lowbo(lp, i+1, -inf);
+    set_constr_type(lp, i+1, EQ);
+    tmp = RML_CAR(lA);
+    for (j=0; j<sz; j++) {
+      set_mat(lp, i+1, j+1, rml_prim_get_real(RML_CAR(tmp)));
+      tmp = RML_CDR(tmp);
+    }
+    set_rh(lp, i+1, rml_prim_get_real(RML_CAR(lB)));
+    lA = RML_CDR(lA);
+    lB = RML_CDR(lB);
+  }
+  while (RML_NILHDR != RML_GETHDR(ix)) {
+    if (RML_UNTAGFIXNUM(RML_CAR(ix)) != -1) set_int(lp, RML_UNTAGFIXNUM(RML_CAR(ix)), 1);
+    ix = RML_CDR(ix);
+  }
+  info=solve(lp);
+  //print_lp(lp);
+  get_ptr_variables(lp,&vres);
+  *res = mk_nil();
+  while (sz--) {
+    *res = mk_cons(mk_rcon(vres[sz]),*res);
+  }
+  delete_lp(lp);
   return info;
 }
 

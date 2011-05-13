@@ -591,6 +591,13 @@ semantics."
   external "C" corbaLibs=System_getCorbaLibs() annotation(Library = "omcruntime");
 end getCorbaLibs;
 
+public function getRuntimeLibs
+"Returns a string containing the compiler flags used for omcruntime libraries.
+Needed for annotation(Library=\"omcruntime\"), a library with special semantics."
+  output list<String> libs;
+  external "C" libs=System_getRuntimeLibs() annotation(Library = "omcruntime");
+end getRuntimeLibs;
+
 public function userIsRoot
 "Returns true if the current user is root.
 Used by main to disable running omc as root as it is very dangerous.
@@ -804,14 +811,23 @@ public function getGCStatus
   external "C" System_getGCStatus(used,allocated) annotation(Library = "omcruntime");
 end getGCStatus;
 
-public function solveLinearSystem
-  "Solves A*X = B. Fails and sets error buffer on failure.
-  Uses dgesv from LAPACK: info>0: Singular for element i. info<0: Bad input."
+public function dgesv
+  "dgesv from LAPACK"
   input list<list<Real>> A;
   input list<Real> B;
   output list<Real> X;
   output Integer info;
-  external "C" info=SystemImpl__solveLinearSystem(A,B,X) annotation(Library = {"omcruntime","Lapack"});
-end solveLinearSystem;
+  external "C" info=SystemImpl__dgesv(A,B,X) annotation(Library = {"omcruntime","Lapack"});
+end dgesv;
+
+public function lpsolve55
+  "lpsolve55"
+  input list<list<Real>> A;
+  input list<Real> B;
+  input list<Integer> intIndices;
+  output list<Real> X;
+  output Integer info;
+  external "C" info=SystemImpl__lpsolve55(A,B,intIndices,X) annotation(Library = {"omcruntime"});
+end lpsolve55;
 
 end System;

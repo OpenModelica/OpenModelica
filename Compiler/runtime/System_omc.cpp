@@ -489,6 +489,11 @@ extern const char* System_getCorbaLibs()
   return CONFIG_CORBALIBS;
 }
 
+extern void* System_getRuntimeLibs()
+{
+  return CONFIG_SYSTEMLIBS;
+}
+
 extern void* System_regex(const char* str, const char* re, int maxn, int extended, int sensitive, int *nmatch)
 {
   *nmatch = 0;
