@@ -251,6 +251,16 @@ void update_DAEsystem(){
     }
   while (checkForDiscreteChanges() || needToIterate)
     {
+      if (needToIterate)
+        {
+          if (sim_verbose >= LOG_EVENTS)
+            cout << "reinit call. Iteration needed!" << endl;
+        }
+      else
+        {
+          if (sim_verbose >= LOG_EVENTS)
+            cout << "discrete Var changed. Iteration needed!" << endl;
+        }
       saveall();
       functionDAE(&needToIterate);
       IterationNum++;
@@ -293,11 +303,9 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
 
   double laststep = 0;
   double offset = 0;
+  globalData->terminal = 0;
   globalData->oldTime = start;
   globalData->timeValue = start;
-
-  int needToIterate = 0;
-  int IterationNum = 0;
 
   if (outputSteps > 0)
     { // Use outputSteps if set, otherwise use step size.
@@ -408,6 +416,10 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
         {
           cout << "Simulation done!" << endl;
         }
+      globalData->terminal = 1;
+      update_DAEsystem();
+      sim_result->emit();
+      globalData->terminal = 0;
       return 0;
     }
 
@@ -574,9 +586,20 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
             }
 
         }
+        // Last step with terminal()=true
+        if (globalData->timeValue >= stop){
+            globalData->terminal = 1;
+            update_DAEsystem();
+            sim_result->emit();
+            globalData->terminal = 0;
+        }
+
   }
   catch (TerminateSimulationException &e)
   {
+      globalData->terminal = 1;
+      update_DAEsystem();
+      globalData->terminal = 0;
       cout << e.getMessage() << endl;
       if (modelTermination)
         { // terminated from assert, etc.

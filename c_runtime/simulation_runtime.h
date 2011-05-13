@@ -229,6 +229,7 @@ typedef struct sim_DATA {
   char* initFixed; /* Fixed attribute for all variables and parameters */
   char* var_attr; /* Type attribute for all variables and parameters */
   int init; /* =1 during initialization, 0 otherwise. */
+  int terminal; /* =1 at the end of the simulation, 0 otherwise. */
   void** extObjs; /* External objects */
   /* nStatesDerivatives == states */
   fortran_integer nStates,nAlgebraic,nParameters;
@@ -397,6 +398,7 @@ void setTermMsg(const char*);
 #define MODELICA_TERMINATE(msg)  { modelTermination=1; terminationTerminate = 1; setTermMsg(msg); TermInfo = omc_dummyFileInfo; }
 
 #define initial() localData->init
+#define terminal() localData->terminal
 
 #ifdef __cplusplus
 }
