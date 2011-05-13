@@ -3039,7 +3039,8 @@ algorithm
         (cache,dimp,_,_) = elabExp(cache, env, dim, impl,NONE(), true,pre,info);
         (cache,arraycrefe,_,_) = elabExp(cache, env, arraycr, impl,NONE(), true,pre,info);
         exp = DAE.SIZE(arraycrefe,SOME(dimp));
-        prop = DAE.PROP(DAE.T_INTEGER_DEFAULT, DAE.C_PARAM());
+        c_1 = Util.if_(Env.inFunctionScope(env), DAE.C_VAR(), DAE.C_PARAM());
+        prop = DAE.PROP(DAE.T_INTEGER_DEFAULT, c_1);
       then
         (cache,exp,prop);
 
