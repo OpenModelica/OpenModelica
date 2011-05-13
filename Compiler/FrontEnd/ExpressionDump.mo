@@ -584,8 +584,7 @@ algorithm
       DAE.Pattern pat;
       Absyn.CodeNode code;
       DAE.ReductionIterators riters;
-      String index_str;
-      
+    
     case (DAE.END(), _, _, _) then "end";
     
     case (DAE.ICONST(integer = i), _, _, _)
@@ -677,7 +676,7 @@ algorithm
       then
         s_2;
     
-    case ((e as DAE.RELATION(exp1=e1,operator=op,exp2=e2)), _,_, _)
+    case ((e as DAE.RELATION(exp1=e1,operator=op,exp2=e2)), _, _, _)
       equation
         sym = relopSymbol(op);
         s1 = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);

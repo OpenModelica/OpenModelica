@@ -908,6 +908,53 @@ algorithm
   timeTemplates := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
 end generateModelCodeFMU;
 
+public function generateModelCodeCPP
+  "Generates code for a model by creating a SimCode structure and calling the
+   template-based code generator on it."
+  input BackendDAE.BackendDAE inBackendDAE;
+  input DAE.FunctionTree functionTree;
+  input Absyn.Program p;
+  input DAE.DAElist dae;
+  input Absyn.Path className;
+  input String filenamePrefix;
+  input Option<SimulationSettings> simSettingsOpt;
+  input BackendDAE.IncidenceMatrix incidenceMatrix;
+  input BackendDAE.IncidenceMatrix incidenceMatrixT;
+  input array<Integer> equationIndices;
+  input array<Integer> variableIndices;
+  input BackendDAE.StrongComponents strongComponents;
+  output BackendDAE.BackendDAE outIndexedBackendDAE;
+  output list<String> libs;
+  output String fileDir;
+  output Real timeBackend;
+  output Real timeSimCode;
+  output Real timeTemplates;
+protected 
+  list<String> includes,includeDirs;
+  list<Function> functions;
+  // DAE.DAElist dae2;
+  String filename, funcfilename;
+  SimCode simCode;
+  list<RecordDeclaration> recordDecls;
+  BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1;
+  Absyn.ComponentRef a_cref;
+algorithm
+   timeBackend := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
+   a_cref := Absyn.pathToCref(className);
+   fileDir := CevalScript.getFileDir(a_cref, p);
+  System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
+  (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _) :=
+  createFunctions(dae, inBackendDAE, functionTree, className);
+  simCode := createSimCodeCPP(functionTree, outIndexedBackendDAE, equationIndices,
+    variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents,
+    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls);
+  timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
+  Debug.execStat("SimCode",CevalScript.RT_CLOCK_BUILD_MODEL);
+  
+  System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
+  Tpl.tplNoret(SimCodeCpp.translateModel, simCode);
+  timeTemplates := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
+end generateModelCodeCPP;
 
 public function translateModelFMU
 "Entry point to translate a Modelica model for FMU export.
@@ -986,7 +1033,7 @@ algorithm
   end matchcontinue;
 end translateModelFMU;
 
-public function translateModel
+public function translateModelCPP
 "Entry point to translate a Modelica model for FMU export.
     
  Called from other places in the compiler."
@@ -1043,7 +1090,7 @@ algorithm
           NONE(), NONE(), NONE());
         Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
-          generateModelCode(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt,m,mT,ass1,ass2,comps);
+          generateModelCodeCPP(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt,m,mT,ass1,ass2,comps);
         resultValues = 
         {("timeTemplates",Values.REAL(timeTemplates)),
           ("timeSimCode",  Values.REAL(timeSimCode)),
@@ -1051,18 +1098,18 @@ algorithm
           ("timeFrontend", Values.REAL(timeFrontend))
           };
         resstr = Absyn.pathStringNoQual(className);
-        resstr = stringAppendList({"SimCode: The model ",resstr," has been translated "});
+        resstr = stringAppendList({"SimCode: The model ",resstr," has been translated to cpp"});
       then
         (cache,Values.STRING(resstr),st,indexed_dlow_1,libs,file_dir, resultValues);
     case (_,_,className,_,_,_, _)
       equation        
         resstr = Absyn.pathStringNoQual(className);
-        resstr = stringAppendList({"SimCode: The model ",resstr," could not been translated"});
+        resstr = stringAppendList({"SimCode: The model ",resstr," could not been translated to cpp"});
         Error.addMessage(Error.INTERNAL_ERROR, {resstr});
       then
         fail();
   end matchcontinue;
-end translateModel;
+end translateModelCPP;
 
 public function generateModelCode
   "Generates code for a model by creating a SimCode structure and calling the
@@ -1139,12 +1186,6 @@ algorithm
       equation
         Tpl.tplNoret(SimCodeCSharp.translateModel, simCode);
       then ();
-        
-   case (simCode,_,"Cpp")
-      equation
-        Tpl.tplNoret(SimCodeCpp.translateModel, simCode);
-      then ();
-        
     case (simCode,(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents),"QSS")
       equation
         Debug.trace("Generating QSS solver code\n");
@@ -1167,6 +1208,86 @@ algorithm
       then fail();
   end match;
 end callTargetTemplates;
+
+
+
+public function translateModel
+"Entry point to translate a Modelica model for simulation.
+    
+ Called from other places in the compiler."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Path className "path for the model";
+  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input String inFileNamePrefix;
+  input Boolean addDummy "if true, add a dummy state";
+  input Option<SimulationSettings> inSimSettingsOpt;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+  output BackendDAE.BackendDAE outBackendDAE;
+  output list<String> outStringLst;
+  output String outFileDir;
+  output list<tuple<String,Values.Value>> resultValues;
+algorithm
+  (outCache,outValue,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
+  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy, inSimSettingsOpt)
+    local
+      String filenameprefix,file_dir,resstr;
+      list<SCode.Element> p_1;
+      DAE.DAElist dae;
+      list<Env.Frame> env;
+      BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
+      array<list<Integer>> m,mT;
+      array<Integer> ass1,ass2;
+      BackendDAE.StrongComponents comps;
+      Absyn.ComponentRef a_cref;
+      list<String> libs;
+      Interactive.InteractiveSymbolTable st;
+      Absyn.Program p,ptot;
+      //DAE.Exp fileprefix;
+      Env.Cache cache;
+      DAE.FunctionTree funcs;
+      Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
+
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),filenameprefix,addDummy, inSimSettingsOpt)
+      equation
+        // calculate stuff that we need to create SimCode data structure 
+        System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
+        //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st),NONE(), msg);
+        ptot = Dependency.getTotalProgram(className,p);
+        p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
+        (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
+        timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
+        System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
+        dae = DAEUtil.transformationsBeforeBackend(dae);
+        funcs = Env.getFunctionTree(cache);
+        dlow = BackendDAECreate.lower(dae,funcs,true);
+        (dlow_1,m,mT,ass1,ass2,comps) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
+          NONE(), NONE(), NONE());
+        (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
+          generateModelCode(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt,m,mT,ass1,ass2,comps);
+        resultValues = 
+        {("timeTemplates",Values.REAL(timeTemplates)),
+          ("timeSimCode",  Values.REAL(timeSimCode)),
+          ("timeBackend",  Values.REAL(timeBackend)),
+          ("timeFrontend", Values.REAL(timeFrontend))
+          };
+        resstr = Util.if_(RTOpts.debugFlag("failtrace"),Absyn.pathStringNoQual(className),"");
+        resstr = stringAppendList({"SimCode: The model ",resstr," has been translated"});
+        //        resstr = "SimCode: The model has been translated";
+      then
+        (cache,Values.STRING(resstr),st,indexed_dlow_1,libs,file_dir, resultValues);
+    case (_,_,className,_,_,_, _)
+      equation        
+        true = RTOpts.debugFlag("failtrace");
+        resstr = Absyn.pathStringNoQual(className);
+        resstr = stringAppendList({"SimCode: The model ",resstr," could not been translated"});
+        Error.addMessage(Error.INTERNAL_ERROR, {resstr});
+      then
+        fail();
+  end matchcontinue;
+end translateModel;
 
 public function translateFunctions
 "Entry point to translate Modelica/MetaModelica functions to C functions.
@@ -1942,9 +2063,174 @@ algorithm
   end matchcontinue;
 end elaborateStatement;
 
-
 // Copied from SimCodegen.generateSimulationCode.
 protected function createSimCode
+  input DAE.FunctionTree functionTree;
+  input BackendDAE.BackendDAE inBackendDAE2;
+  input array<Integer> inIntegerArray3;
+  input array<Integer> inIntegerArray4;
+  input BackendDAE.IncidenceMatrix inIncidenceMatrix5;
+  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT6;
+  input BackendDAE.StrongComponents inIntegerLstLst7;
+  input Absyn.Path inClassName;
+  input String filenamePrefix;
+  input String inString11;
+  input list<Function> functions;
+  input list<String> externalFunctionIncludes;
+  input list<String> includeDirs;
+  input list<String> libs;
+  input Option<SimulationSettings> simSettingsOpt;
+  input list<RecordDeclaration> recordDecls;
+  output SimCode simCode;
+algorithm
+  simCode :=
+  matchcontinue (functionTree,inBackendDAE2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,inIntegerLstLst7,inClassName,filenamePrefix,inString11,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls)
+    local
+      String cname,   fileDir;
+      list<list<Integer>> blt_states,blt_no_states;
+      BackendDAE.StrongComponents comps;
+      list<list<Integer>> contBlocks,discBlocks;
+      Integer n_h,nres,maxDelayedExpIndex;
+      list<HelpVarInfo> helpVarInfo;
+      BackendDAE.BackendDAE dlow,dlow2;
+      BackendDAE.AliasVariables av;
+      array<Integer> ass1,ass2;
+      array<list<Integer>> m,mt;
+      Absyn.Path class_;
+      // new variables
+      ModelInfo modelInfo;
+      list<SimEqSystem> allEquations;
+      list<SimEqSystem> odeEquations;
+      list<SimEqSystem> algebraicEquations;
+      list<SimEqSystem> residualEquations;
+      list<SimEqSystem> initialEquations;
+      list<SimEqSystem> parameterEquations;
+      list<SimEqSystem> removedEquations;
+      list<SimEqSystem> sampleEquations;
+      list<Algorithm.Statement> algorithmAndEquationAsserts;
+      list<BackendDAE.ZeroCrossing> zeroCrossings;
+      list<SimWhenClause> whenClauses;
+      list<SampleCondition> sampleConditions;
+      list<BackendDAE.Equation> sampleEqns;
+      list<DAE.ComponentRef> discreteModelVars;
+      ExtObjInfo extObjInfo;
+      MakefileParams makefileParams;
+      list<tuple<Integer, DAE.Exp>> delayedExps;
+      list<DAE.Exp> divLst;
+      list<DAE.Statement> allDivStmts;
+      BackendDAE.Variables orderedVars,knownVars,vars;
+      list<BackendDAE.Var> varlst,varlst1,varlst2;
+      list<RecordDeclaration> recordDecls;
+      
+      list<JacobianMatrix> LinearMats;
+      HashTableCrefToSimVar crefToSimVarHT;
+      
+    case (functionTree,dlow,ass1,ass2,m,mt,comps,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls)
+      equation
+        cname = Absyn.pathStringNoQual(class_);
+        
+        (blt_states, blt_no_states) = BackendDAEUtil.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
+        
+        (helpVarInfo, dlow2,sampleEqns) = generateHelpVarInfo(dlow, comps);
+        
+        (dlow2)= BackendDAEUtil.checkInitialSystem(dlow2,functionTree);
+        
+        residualEquations = createResidualEquations(dlow2, ass1, ass2);
+        nres = listLength(residualEquations);
+        
+        extObjInfo = createExtObjInfo(dlow2);
+        
+        whenClauses = createSimWhenClauses(dlow2, helpVarInfo);
+        zeroCrossings = createZeroCrossings(dlow2);
+        (sampleConditions,helpVarInfo) = createSampleConditions(zeroCrossings,helpVarInfo);
+        sampleEquations = createSampleEquations(sampleEqns);
+
+        n_h = listLength(helpVarInfo);
+        
+        
+        // Add model info
+        modelInfo = createModelInfo(class_, dlow2, functions, n_h, nres, fileDir);
+        
+        // equation generation for euler, dassl2, rungekutta 
+        (contBlocks, _) = splitOutputBlocks(dlow2, ass1, ass2, m, mt, blt_no_states);
+        odeEquations = createEquations(false, false, false, false, false, dlow2, ass1, ass2, blt_states, helpVarInfo);
+        algebraicEquations = createEquations(false, false, false, false, false, dlow2, ass1, ass2, contBlocks, helpVarInfo);
+        allEquations = createEquations(true, false, true, false, false, dlow2, ass1, ass2, comps, helpVarInfo);
+        
+        initialEquations = createInitialEquations(dlow2);
+        parameterEquations = createParameterEquations(dlow2);
+        removedEquations = createRemovedEquations(dlow2);
+        algorithmAndEquationAsserts = createAlgorithmAndEquationAsserts(dlow2);
+        discreteModelVars = extractDiscreteModelVars(dlow2, mt);
+        makefileParams = createMakefileParams(externalFunctionIncludes,libs);
+        (delayedExps,maxDelayedExpIndex) = extractDelayedExpressions(dlow2);
+        
+        // replace div operator with div operator with check of Division by zero
+        orderedVars = BackendVariable.daeVars(dlow);
+        knownVars = BackendVariable.daeKnVars(dlow);
+        varlst = BackendDAEUtil.varList(orderedVars);
+        varlst1 = BackendDAEUtil.varList(knownVars);
+        varlst2 = listAppend(varlst,varlst1);
+        vars = BackendDAEUtil.listVar(varlst2);
+        (allEquations,divLst) = listMap1_2(allEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
+        (odeEquations,_) = listMap1_2(odeEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
+        (algebraicEquations,_) = listMap1_2(algebraicEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
+        (residualEquations,_) = listMap1_2(residualEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));
+        (initialEquations,_) = listMap1_2(initialEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));
+        (parameterEquations,_) = listMap1_2(parameterEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));
+        (removedEquations,_) = listMap1_2(removedEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
+        // add equations with only parameters as division expression
+        allDivStmts = Util.listMap(divLst,generateParameterDivisionbyZeroTestEqn);
+        parameterEquations = listAppend(parameterEquations,{SES_ALGORITHM(allDivStmts)});
+        
+        // Replace variables in nonlinear equation systems with xloc[index]
+        // variables.
+        allEquations = Util.listMap(allEquations,applyResidualReplacements);
+        Debug.fcall("execJacstat",print, "*** SimCode -> generate analytical Jacobians: " +& realString(clock()) +& "\n" );
+        LinearMats = createJacobianMatrix(functionTree,dlow,ass1,ass2,comps,m,mt);
+        LinearMats = createLinearModelMatrixes(functionTree,dlow,ass1,ass2,LinearMats);
+        
+        modelInfo = expandModelInfoVars(LinearMats,modelInfo);
+        Debug.fcall("execJacstat",print, "*** SimCode -> generate analytical Jacobians done!: " +& realString(clock()) +& "\n" );
+        crefToSimVarHT = createCrefToSimVarHT(modelInfo);
+        
+        simCode = SIMCODE(modelInfo,
+          {},
+          recordDecls,
+          externalFunctionIncludes,
+          allEquations,
+          odeEquations,
+          algebraicEquations,
+          residualEquations,
+          initialEquations,
+          parameterEquations,
+          removedEquations,
+          algorithmAndEquationAsserts,
+          zeroCrossings,
+          sampleConditions,
+          sampleEquations,
+          helpVarInfo,
+          whenClauses,
+          discreteModelVars,
+          extObjInfo,
+          makefileParams,
+          DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex),
+          LinearMats,
+          simSettingsOpt,
+          filenamePrefix,
+          crefToSimVarHT);
+      then
+        simCode;
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Generation of simulation using code using templates failed"});
+      then
+        fail();
+  end matchcontinue;
+end createSimCode;
+
+// Copied from SimCodegen.generateSimulationCode.
+protected function createSimCodeCPP
   input DAE.FunctionTree functionTree;
   input BackendDAE.BackendDAE inBackendDAE2;
   input array<Integer> inIntegerArray3;
@@ -2003,17 +2289,15 @@ algorithm
       
       list<JacobianMatrix> LinearMats;
       HashTableCrefToSimVar crefToSimVarHT;
-      Boolean ifcpp;
       
     case (functionTree,dlow,ass1,ass2,m,mt,comps,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls)
       equation
-        ifcpp=Util.equal(RTOpts.simCodeTarget(),"Cpp");
-        
         cname = Absyn.pathStringNoQual(class_);
         
         (blt_states, blt_no_states) = BackendDAEUtil.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
         
         (helpVarInfo, dlow2,sampleEqns) = generateHelpVarInfo(dlow, comps);
+        
         dlow2 = BackendDAEUtil.checkInitialSystem(dlow2,functionTree);
         
         residualEquations = createResidualEquations(dlow2, ass1, ass2);
@@ -2025,17 +2309,16 @@ algorithm
         zeroCrossings = createZeroCrossings(dlow2);
         (sampleConditions,helpVarInfo) = createSampleConditions(zeroCrossings,helpVarInfo);
         sampleEquations = createSampleEquations(sampleEqns);
+
         n_h = listLength(helpVarInfo);
         
         // Add model info
-        modelInfo = createModelInfo(class_, dlow2, functions, n_h, nres, fileDir,ifcpp);
+        modelInfo = createModelInfoCPP(class_, dlow2, functions, n_h, nres, fileDir);
         
         // equation generation for euler, dassl2, rungekutta 
-        (contBlocks, discBlocks) = splitOutputBlocks(dlow2, ass1, ass2, m, mt, comps);
-        // for ode and algebraicEquations
-        odeEquations = createEquations(false, false, ifcpp, false, false, dlow2, ass1, ass2, comps, helpVarInfo);
-        // for when equations
-        algebraicEquations = createEquations(ifcpp, false, false, false, false, dlow2, ass1, ass2, discBlocks, helpVarInfo);
+        (contBlocks, _) = splitOutputBlocks(dlow2, ass1, ass2, m, mt, blt_no_states);
+        odeEquations = createEquations(false, false, false, false, false, dlow2, ass1, ass2, blt_states, helpVarInfo);
+        algebraicEquations = createEquations(false, false, false, false, false, dlow2, ass1, ass2, contBlocks, helpVarInfo);
         allEquations = createEquations(true, false, true, false, false, dlow2, ass1, ass2, comps, helpVarInfo);
         
         initialEquations = createInitialEquations(dlow2);
@@ -2109,7 +2392,7 @@ algorithm
       then
         fail();
   end matchcontinue;
-end createSimCode;
+end createSimCodeCPP;
 
 protected function expandModelInfoVars
 "Expand Modelinfo with jacobain Vars"
@@ -2553,7 +2836,6 @@ algorithm
       equation
         eqnsList = BackendDAEUtil.equationList(orderedEqs);
         (eqnsList,sampleEquations,(_,helpvars)) = BackendEquation.traverseBackendDAEExpsEqnListOutEqn(eqnsList, {}, sampleFinder,  (listLength(helpvars)-1,helpvars));
-        Debug.fcall("cppvar",print,"length of helpvars : " +&intString(listLength(helpvars)) +& "\n");
         orderedEqs = BackendDAEUtil.listEquation(eqnsList);
       then (helpvars,BackendDAE.DAE(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,
         removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses),sampleEquations);
@@ -2608,11 +2890,8 @@ algorithm
     case (((e as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,tuple_=tup,builtin=builtin_, ty=exty, inlineType=inty)),(nhelpvars,helpvars)))
       equation
         nhelpvars = nhelpvars+1;
-         Debug.fcall("cppvar",print, "findSampleInExps nhelpvars : "  +& intString(nhelpvars)+& "\n");
         args_ = listAppend(args_,{DAE.ICONST(nhelpvars)});
-        Debug.fcall("cppvar",print, "findSampleInExps args_ : "  +& ExpressionDump.printExpListStr(args_)+& "\n");
         e = DAE.CALL(name, args_, tup, builtin_, exty, inty);
-        Debug.fcall("cppvar",print, "findSampleInExps e : "  +& ExpressionDump.printExpStr(e)+& "\n");
         helpvars = listAppend(helpvars,{(nhelpvars,e,-1)});
       then ((e,(nhelpvars,helpvars)));
     case ((e,(nhelpvars,helpvars)))
@@ -3547,7 +3826,6 @@ algorithm
         BackendDAE.WHEN_EQ(wcIndex, left, right, NONE()) = whenEquation;
         conditions = getConditionList(wcl, wcIndex);
         conditionsWithHindex =  Util.listMap2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
-         Debug.fcall("cppvar",print,"conditionwithHindex \n " +&helpvarindex(conditionsWithHindex));
       then
         {SES_WHEN(left,right,conditionsWithHindex,NONE(),source)};
         
@@ -3561,7 +3839,6 @@ algorithm
         elseWhenEquation = createElseWhenEquation(elseWhen,wcl,helpVarInfo,source);
         conditions = getConditionList(wcl, wcIndex);
         conditionsWithHindex =  Util.listMap2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
-         Debug.fcall("cppvar",print,"conditionwithHindex \n " +&helpvarindex(conditionsWithHindex));
       then
         {SES_WHEN(left,right,conditionsWithHindex,SOME(elseWhenEquation),source)};
         
@@ -3713,17 +3990,15 @@ algorithm
       equation
         conditions = getConditionList(wcl, wcIndex);
         conditionsWithHindex = Util.listMap2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
-       Debug.fcall("cppvar",print,"conditionwithHindex \n " +&helpvarindex(conditionsWithHindex));
       then
         SES_WHEN(left, right, conditionsWithHindex, NONE(), source);
-
+        
         // when eq with else
     case (elseWhen as BackendDAE.WHEN_EQ(index=wcIndex, left=left,right=right, elsewhenPart = SOME(elseWhenEquation)), wcl, helpVarInfo, source)
       equation
         simElseWhenEq = createElseWhenEquation(elseWhenEquation,wcl,helpVarInfo,source);
         conditions = getConditionList(wcl, wcIndex);
         conditionsWithHindex = Util.listMap2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
-        Debug.fcall("cppvar",print,"conditionwithHindex \n " +&helpvarindex(conditionsWithHindex));
       then
         SES_WHEN(left,right,conditionsWithHindex,SOME(simElseWhenEq),source);
   end match;
@@ -3807,7 +4082,6 @@ algorithm
       DAE.ExpType exty;
       DAE.InlineType inty;
       DAE.Exp condition1;
-      String s1,s2;
     case (_, {},_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Could not find help var index for condition"});
@@ -3817,24 +4091,24 @@ algorithm
         args_ = listAppend(args_,{DAE.ICONST(hindex)});
         condition1 = DAE.CALL(name, args_, tup, builtin_, exty, inty);
         true = Expression.expEqual(condition1, e);
-        s1 = ExpressionDump.printExpStr(condition1);
-        s2 = ExpressionDump.printExpStr(e);
+        //s1 = ExpressionDump.printExpStr(condition1);
+        //s2 = ExpressionDump.printExpStr(e);
         //print("Added Hindex for \n ** Condition: " +& s1 +& "  HelpVar exp: " +& s2 +& " with index : " +& intString(hindex) +&  "\n");
       then ((condition1, hindex));
     case (condition, (hindex, e, _) :: restHelpVarInfo, helpVarInfo1)
       equation
         ((condition,_)) = Expression.traverseExp(condition, addHForSample, helpVarInfo1);
         true = Expression.expEqual(condition, e);
-        s1 = ExpressionDump.printExpStr(condition);
-        s2 = ExpressionDump.printExpStr(e);
+        //s1 = ExpressionDump.printExpStr(condition);
+        //s2 = ExpressionDump.printExpStr(e);
         //print("Added Hindex for \n ** Condition: " +& s1 +& "  HelpVar exp: " +& s2 +& " with index : " +& intString(hindex) +& "\n");
       then ((condition, hindex));
     case (condition, (hindex, e, _) :: restHelpVarInfo, helpVarInfo1)
       equation
         ((condition,_)) = Expression.traverseExp(condition, addHForSample, helpVarInfo1);
         false = Expression.expEqual(condition, e);
-        s1 = ExpressionDump.printExpStr(condition);
-        s2 = ExpressionDump.printExpStr(e);
+        //s1 = ExpressionDump.printExpStr(condition);
+        //s2 = ExpressionDump.printExpStr(e);
         //print("NOT Added Hindex for \n ** Condition: " +& s1 +& "  HelpVar exp: " +& s2 +& " with index : " +& intString(hindex) +& "\n");
         conditionAndHindex = addHelpForCondition(condition, restHelpVarInfo, helpVarInfo1);
       then conditionAndHindex;
@@ -3853,7 +4127,7 @@ algorithm
   case ((condition, helpvars))
     equation
       s1 = ExpressionDump.printExpStr(condition);
-    // print("### start match for condition: " +& s1 +& "\n");
+      //print("### start match for condition: " +& s1 +& "\n");
       condition = matchwithHelpVars(condition,helpvars);
     then ((condition,helpvars));
   case ((condition, helpvars)) then ((condition,helpvars));
@@ -3876,23 +4150,22 @@ algorithm
    Boolean tup,builtin_;
    DAE.ExpType exty;
    DAE.InlineType inty;
-   String s1,s2;
   case(condition, {}) then condition;
   case (condition as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,tuple_=tup,builtin=builtin_, ty=exty, inlineType=inty), (hindex, e, _) :: restHelpVarInfo)
       equation
         args_ = listAppend(args_,{DAE.ICONST(hindex)});
         condition1 = DAE.CALL(name, args_, tup, builtin_, exty, inty);
         true = Expression.expEqual(condition1, e);
-        s1 = ExpressionDump.printExpStr(condition1);
-        s2 = ExpressionDump.printExpStr(e);
-       //print("** matchwithHelpVar TRUE CASE** :\n Condition: " +& s1 +& " --  HelpVar Exp: " +& s2 +& "\n");
+        //s1 = ExpressionDump.printExpStr(condition1);
+        //s2 = ExpressionDump.printExpStr(e);
+        //print("** matchwithHelpVar TRUE CASE** :\n Condition: " +& s1 +& " --  HelpVar Exp: " +& s2 +& "\n");
       then condition1;
     case (condition, (hindex, e, _) :: restHelpVarInfo)
       equation
         false = Expression.expEqual(condition, e);
-        s1 = ExpressionDump.printExpStr(condition);
-       s2 = ExpressionDump.printExpStr(e);
-       //print("** matchwithHelpVar FALSE CASE** :\n Condition: " +& s1 +& " --  HelpVar Exp: " +& s2 +& "\n");
+        //s1 = ExpressionDump.printExpStr(condition);
+        //s2 = ExpressionDump.printExpStr(e);
+        //print("** matchwithHelpVar FALSE CASE** :\n Condition: " +& s1 +& " --  HelpVar Exp: " +& s2 +& "\n");
         condition = matchwithHelpVars(condition, restHelpVarInfo);
       then condition;
  end matchcontinue;
@@ -5969,7 +6242,6 @@ algorithm
   end matchcontinue;
 end createZeroCrossingNeedSave;
 
-
 protected function createModelInfo
   input Absyn.Path class_;
   input BackendDAE.BackendDAE dlow;
@@ -5977,11 +6249,10 @@ protected function createModelInfo
   input Integer numHelpVars;
   input Integer numResiduals;
   input String fileDir;
-  input Boolean ifcpp;
   output ModelInfo modelInfo;
 algorithm
   modelInfo :=
-  matchcontinue (class_, dlow, functions, numHelpVars, numResiduals, fileDir,ifcpp)
+  matchcontinue (class_, dlow, functions, numHelpVars, numResiduals, fileDir)
     local
       String directory;
       VarInfo varInfo;
@@ -6002,51 +6273,10 @@ algorithm
       list<SimVar> stringParamVars;
       list<SimVar> stringAliasVars;
       list<SimVar> extObjVars;
-      list<SimVar> jacobianVars;
       list<SimVar> constVars;
       Integer nx,ny,np,na,next,numOutVars,numInVars,ny_int,np_int,na_int,ny_bool,np_bool;
       Integer na_bool,ny_string,np_string,na_string;
-      list<SimVar> states1,states_lst,states_lst2,der_states_lst;
-      list<SimVar> states_2,derivatives_2,derivative;
-    case (class_, dlow, functions, numHelpVars, numResiduals, fileDir,true)
-      equation
-        //name = Absyn.pathStringNoQual(class_);
-        directory = System.trim(fileDir, "\"");
-        (vars as SIMVARS(stateVars=stateVars,derivativeVars=derivative,algVars=algVars,intAlgVars=intAlgVars,boolAlgVars=boolAlgVars,
-                       inputVars=inputVars,outputVars=outputVars,aliasVars=aliasVars,intAliasVars=intAliasVars,boolAliasVars=boolAliasVars,
-                       paramVars=paramVars,intParamVars=intParamVars,boolParamVars=boolParamVars,stringAlgVars=stringAlgVars,stringParamVars=stringParamVars,
-                       stringAliasVars=stringAliasVars,extObjVars=extObjVars,jacobianVars=jacobianVars,constVars=constVars))=createVars(dlow);
-        nx = listLength(stateVars);
-        ny = listLength(algVars);
-        ny_int = listLength(intAlgVars);
-        ny_bool = listLength(boolAlgVars);
-        numOutVars = listLength(outputVars);
-        numInVars = listLength(inputVars);
-        na = listLength(aliasVars);
-        na_int = listLength(intAliasVars);
-        na_bool = listLength(boolAliasVars);
-        np = listLength(paramVars);
-        np_int = listLength(intParamVars);
-        np_bool = listLength(boolParamVars);
-        ny_string = listLength(stringAlgVars);
-        np_string = listLength(stringParamVars);
-        na_string = listLength(stringAliasVars);
-        next = listLength(extObjVars);
-        varInfo = createVarInfo(dlow,nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numResiduals,
-                 ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string);
-         states1 = stateindex1(stateVars,dlow);
-         states_lst= setStatesVectorIndex(states1);
-         der_states_lst = generateDerStates(states_lst);
-         states_lst2 =listAppend(states_lst,der_states_lst);
-         states_2 = replaceindex1(stateVars,states_lst);
-          Debug.fcall("cppvar",print," replace der varibales: \n " +&dumpVarinfoList(states_lst2));
-         derivatives_2=replaceindex1(derivative,der_states_lst);
-         Debug.fcall("cppvar",print,"state varibales: \n " +&dumpVarinfoList(states_lst2));
-      then
-        MODELINFO(class_, directory, varInfo,SIMVARS(states_2,derivatives_2,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,
-                  intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,stringAlgVars,stringParamVars,stringAliasVars,extObjVars,jacobianVars,constVars), functions);
-    
-     case (class_, dlow, functions, numHelpVars, numResiduals, fileDir,false)
+    case (class_, dlow, functions, numHelpVars, numResiduals, fileDir)
       equation
         //name = Absyn.pathStringNoQual(class_);
         directory = System.trim(fileDir, "\"");
@@ -6083,8 +6313,134 @@ algorithm
   end matchcontinue;
 end createModelInfo;
 
+protected function createModelInfoCPP
+  input Absyn.Path class_;
+  input BackendDAE.BackendDAE dlow;
+  input list<Function> functions;
+  input Integer numHelpVars;
+  input Integer numResiduals;
+  input String fileDir;
+  output ModelInfo modelInfo;
+algorithm
+  modelInfo :=
+  matchcontinue (class_, dlow, functions, numHelpVars, numResiduals, fileDir)
+    local
+      String directory;
+      VarInfo varInfo;
+      SimVars vars;
+      list<SimVar> stateVars;
+      list<SimVar> algVars;
+      list<SimVar> intAlgVars;
+      list<SimVar> boolAlgVars;
+      list<SimVar> inputVars;
+      list<SimVar> outputVars;
+      list<SimVar> aliasVars;
+      list<SimVar> intAliasVars;
+      list<SimVar> boolAliasVars;
+      list<SimVar> paramVars;
+      list<SimVar> intParamVars;
+      list<SimVar> boolParamVars;
+      list<SimVar> stringAlgVars;
+      list<SimVar> stringParamVars;
+      list<SimVar> stringAliasVars;
+      list<SimVar> extObjVars;
+      list<SimVar> jacobianVars;
+      list<SimVar> constVars;
+      Integer nx,ny,np,na,next,numOutVars,numInVars,ny_int,np_int,na_int,ny_bool,np_bool;
+      Integer na_bool,ny_string,np_string,na_string;
+      list<SimVar> states1,states_lst,states_lst2,der_states_lst;
+      list<SimVar> states_2,derivatives_2,derivative;
+    case (class_, dlow, functions, numHelpVars, numResiduals, fileDir)
+      equation
+        //name = Absyn.pathStringNoQual(class_);
+        directory = System.trim(fileDir, "\"");
+        (vars as SIMVARS(stateVars=stateVars,derivativeVars=derivative,algVars=algVars,intAlgVars=intAlgVars,boolAlgVars=boolAlgVars,
+                       inputVars=inputVars,outputVars=outputVars,aliasVars=aliasVars,intAliasVars=intAliasVars,boolAliasVars=boolAliasVars,
+                       paramVars=paramVars,intParamVars=intParamVars,boolParamVars=boolParamVars,stringAlgVars=stringAlgVars,stringParamVars=stringParamVars,
+                       stringAliasVars=stringAliasVars,extObjVars=extObjVars,jacobianVars=jacobianVars,constVars=constVars))=createVars(dlow);
+        nx = listLength(stateVars);
+        ny = listLength(algVars);
+        ny_int = listLength(intAlgVars);
+        ny_bool = listLength(boolAlgVars);
+        numOutVars = listLength(outputVars);
+        numInVars = listLength(inputVars);
+        na = listLength(aliasVars);
+        na_int = listLength(intAliasVars);
+        na_bool = listLength(boolAliasVars);
+        np = listLength(paramVars);
+        np_int = listLength(intParamVars);
+        np_bool = listLength(boolParamVars);
+        ny_string = listLength(stringAlgVars);
+        np_string = listLength(stringParamVars);
+        na_string = listLength(stringAliasVars);
+        next = listLength(extObjVars);
+        varInfo = createVarInfoCPP(dlow,nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numResiduals,
+                 ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string);
+         states1 = stateindex1(stateVars,dlow);
+         states_lst= setStatesVectorIndex(states1);
+         der_states_lst = generateDerStates(states_lst);
+         states_lst2 =listAppend(states_lst,der_states_lst);
+         states_2 = replaceindex1(stateVars,states_lst);
+          Debug.fcall("cppvar",print," replace der varibales: \n " +&dumpVarinfoList(states_lst2));
+         derivatives_2=replaceindex1(derivative,der_states_lst);
+         Debug.fcall("cppvar",print,"state varibales: \n " +&dumpVarinfoList(states_lst2));
+      then
+        MODELINFO(class_, directory, varInfo,SIMVARS(states_2,derivatives_2,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,
+                  intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,stringAlgVars,stringParamVars,stringAliasVars,extObjVars,jacobianVars,constVars), functions);
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.createModelInfoCPP failed"});
+      then
+        fail();
+  end matchcontinue;
+end createModelInfoCPP;
 
 protected function createVarInfo
+  input BackendDAE.BackendDAE dlow;
+  input Integer nx;
+  input Integer ny;
+  input Integer np;
+  input Integer na;
+  input Integer next;
+  input Integer numOutVars;
+  input Integer numInVars;
+  input Integer numHelpVars;
+  input Integer numResiduals;
+  input Integer ny_int;
+  input Integer np_int;
+  input Integer na_int;
+  input Integer ny_bool;
+  input Integer np_bool;
+  input Integer na_bool;
+  input Integer ny_string;
+  input Integer np_string;
+  input Integer na_string;
+  output VarInfo varInfo;
+algorithm
+  varInfo :=
+  matchcontinue (dlow, nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numResiduals,
+                 ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string)
+    local
+      Integer ng, ng_sam, ng_sam_1, ng_1;
+    case (dlow, nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numResiduals,
+                 ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string)
+      equation
+        (ng, ng_sam) = BackendDAEUtil.numberOfZeroCrossings(dlow);
+        ng_1 = filterNg(ng);
+        ng_sam_1 = filterNg(ng_sam);
+  
+      then
+        VARINFO(numHelpVars, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
+          numResiduals, next, ny_string, np_string, na_string, 0,NONE(),NONE());
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"createVarInfo failed"});
+      then
+        fail();
+  end matchcontinue;
+end createVarInfo;
+
+protected function createVarInfoCPP
   input BackendDAE.BackendDAE dlow;
   input Integer nx;
   input Integer ny;
@@ -6132,7 +6488,7 @@ algorithm
       then
         fail();
   end matchcontinue;
-end createVarInfo;
+end createVarInfoCPP;
 
 protected function createVars
   input BackendDAE.BackendDAE dlow;
@@ -10395,10 +10751,10 @@ algorithm oeqns := matchcontinue(eqns, dlow)
         rec;
      case( (eq as BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(_,_,_,_))) ::rest , dlow)
      equation
-       str = BackendDump.equationStr(eq);
-       Debug.fcall("cppvar",print,"Found When eq " +& str +& "\n");
+       //str = DAELow.equationStr(when_eq);
+       //Debug.fcall("cppvar",print,"Found When eq " +& str +& "\n");
        rec = flattenEqns(rest,dlow);
-       //rec = Util.listUnionElt(eq,rec);
+       rec = Util.listUnionElt(eq,rec);
       then
         rec;
      case( (eq as BackendDAE.ALGORITHM(index=_)) ::rest , dlow)
@@ -10416,7 +10772,7 @@ algorithm oeqns := matchcontinue(eqns, dlow)
       then
         rec;
             
-  case(_::rest,dlow)
+  case(eq::rest,dlow)
     equation 
      // str = BackendDAE.equationStr(eq);
       Debug.fcall("cppvar",print," FAILURE IN flattenEqns possible unsupported equation...\n" /*+& str*/);
@@ -10530,6 +10886,7 @@ algorithm (out,sysOrdOneVars) := matchcontinue(derExp,inEqns,inEqnsOrg)
       (highestIndex,crefs) = locateDerAndSerachOtherSide(derExp,eqs,inEqnsOrg);
     then
       (highestIndex,crefs);
+ 
 end matchcontinue;
 end locateDerAndSerachOtherSide;
 
@@ -11017,6 +11374,8 @@ end matchcontinue;
 
 end replaceindex1;
 
+
+
 protected function dumpVarinfoList ""
   input list<SimVar> in_list;
   output String outString;
@@ -11062,25 +11421,6 @@ algorithm str := matchcontinue(vf)
 end matchcontinue;
 end dumpVarInfo;
 
-protected function helpvarindex ""
-  input list<tuple<DAE.Exp, Integer>> in_list;
-  output String outString;
-algorithm outString := matchcontinue(in_list)
-  local
-    tuple<DAE.Exp, Integer> vf;
-    String s1,s2,s3;
-    list<tuple<DAE.Exp, Integer>> rest;
-  case({}) then "";
-  case( vf::rest )
-    equation
-      s1=  helpvarindex1(vf);
-      s2= helpvarindex(rest);
-      s3 = stringAppendList({s1,"\n", s2 });
-    then
-      s3;
-end matchcontinue;
-end helpvarindex;
-
 protected function varName
   input SimVar var;
   output DAE.ComponentRef name;
@@ -11089,16 +11429,5 @@ algorithm
 end varName;
 
 
-protected function helpvarindex1 ""
-  input tuple<DAE.Exp, Integer> vf;
-  output String str;
-algorithm str := matchcontinue(vf)
-    local
-      DAE.Exp name;
-      Integer y;
-  case((name,y))
-    then " Var: "  +& " helpvar index: " +& intString(y) ;
-end matchcontinue;
-end helpvarindex1;
 
 end SimCode;
