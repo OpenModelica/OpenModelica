@@ -3922,7 +3922,6 @@ end boolEach;
 public function prefixesRedeclare
   input Prefixes inPrefixes;
   output Redeclare outRedeclare;
-  annotation(__OpenModelica_EarlyInline=true);
 algorithm
   PREFIXES(redeclarePrefix = outRedeclare) := inPrefixes;
 end prefixesRedeclare;
@@ -3984,7 +3983,6 @@ end replaceablePrefixStr;
 public function replaceableConstrainClassStr
   input Replaceable inReplaceable;
   output String strReplaceable;
-  annotation(__OpenModelica_EarlyInline=true);
 algorithm
   (_, strReplaceable) := replaceableStr(inReplaceable);
 end replaceableConstrainClassStr;
@@ -4068,7 +4066,6 @@ end boolPartial;
 public function prefixesFinal
   input Prefixes inPrefixes;
   output Final outFinal;
-  annotation(__OpenModelica_EarlyInline=true);
 algorithm
   PREFIXES(finalPrefix = outFinal) := inPrefixes;
 end prefixesFinal;
@@ -4212,7 +4209,6 @@ end propagateDirection;
 public function prefixesVisibility
   input Prefixes inPrefixes;
   output Visibility outVisibility;
-  annotation(__OpenModelica_EarlyInline=true);
 algorithm
   PREFIXES(visibility = outVisibility) := inPrefixes;
 end prefixesVisibility;
@@ -4284,7 +4280,6 @@ end prefixesEqual;
 public function prefixesReplaceable "Returns the replaceable part"
   input Prefixes prefixes;
   output Replaceable repl;
-  annotation(__OpenModelica_EarlyInline=true);
 algorithm
   PREFIXES(replaceablePrefix = repl) := prefixes;
 end prefixesReplaceable;
@@ -4351,7 +4346,6 @@ end isElementRedeclare;
 public function prefixesInnerOuter
   input Prefixes inPrefixes;
   output Absyn.InnerOuter outInnerOuter;
-  annotation(__OpenModelica_EarlyInline=true);
 algorithm
   PREFIXES(innerOuter = outInnerOuter) := inPrefixes;
 end prefixesInnerOuter;
