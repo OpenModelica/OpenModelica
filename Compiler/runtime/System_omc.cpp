@@ -582,7 +582,7 @@ extern const char* System_openModelicaPlatform()
   return CONFIG_OPENMODELICA_SPEC_PLATFORM;
 }
 
-extern void getGCStatus(int *used, int *allocated)
+extern void System_getGCStatus(int *used, int *allocated)
 {
   *used = -1;
   *allocated = -1;

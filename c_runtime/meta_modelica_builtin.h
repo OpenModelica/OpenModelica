@@ -150,6 +150,8 @@ arrayUpdate_rettype arrayUpdate(modelica_metatype, modelica_integer, modelica_me
 arrayCopy_rettype arrayCopy(modelica_metatype);
 arrayAdd_rettype arrayAdd(modelica_metatype, modelica_metatype);
 
+#define boxptr_arrayList arrayList
+#define boxptr_arrayCopy arrayCopy
 modelica_metatype boxptr_arrayNth(modelica_metatype,modelica_metatype);
 
 /* Misc Operations */
