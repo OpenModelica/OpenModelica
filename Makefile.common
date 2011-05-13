@@ -127,6 +127,7 @@ clean: qtclean
 	build/bin/omc build/bin/omc.exe build/bin/omcd build/bin/omcd.exe build/bin/omcp build/bin/omcp.exe  build/bin/omc-diff build/bin/omc-diff.exe
 
 install-dirs:
+	@test ! "${DESTDIR}/${prefix}" -ef "${top_builddir}/build" || (echo Error: Install and build dirs are the same && false)
 	if [ "$(EXE)" = ".app" ]; then mkdir -p ${INSTALL_APPDIR}; fi
 	mkdir -p ${INSTALL_BINDIR}
 	mkdir -p ${INSTALL_LIBDIR}
