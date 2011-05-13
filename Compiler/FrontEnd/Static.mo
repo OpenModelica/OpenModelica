@@ -3034,7 +3034,7 @@ algorithm
         (cache, exp, prop);
 
     // The previous case failed, return a call to the size function instead.
-    case (cache,env,{arraycr,dim},_,impl,pre,info)
+    case (cache, env, {arraycr, dim}, _, impl, pre, info)
       equation
         (cache,dimp,_,_) = elabExp(cache, env, dim, impl,NONE(), true,pre,info);
         (cache,arraycrefe,_,_) = elabExp(cache, env, arraycr, impl,NONE(), true,pre,info);
@@ -12910,7 +12910,7 @@ algorithm
     case (_, _, _, Absyn.NOSUB(), _, _, _, _, _) 
       then (inCache, DAE.DIM_UNKNOWN());
 
-    // Size expression that referes to the array itself, such as 
+    // Size expression that refers to the array itself, such as 
     // Real x(:, size(x, 1)).
     case (_, _, _, Absyn.SUBSCRIPT(subScript = Absyn.CALL(function_ =
         Absyn.CREF_IDENT(name = "size"), functionArgs = Absyn.FUNCTIONARGS(args =

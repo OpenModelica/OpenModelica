@@ -1200,7 +1200,7 @@ algorithm
         s1 = unparseElementitemStrLst(i, el);
         i_1 = i - 1;
         is = indentStr(i_1);
-        str = stringAppendList({is,"public \n",s1});
+        str = stringAppendList({is,"public\n",s1});
       then
         str;
     
@@ -1209,7 +1209,7 @@ algorithm
         s1 = unparseElementitemStrLst(i, el);
         i_1 = i - 1;
         is = indentStr(i_1);
-        str = stringAppendList({is,"protected \n",s1});
+        str = stringAppendList({is,"protected\n",s1});
       then
         str;
 
@@ -1218,7 +1218,7 @@ algorithm
         s1 = unparseEquationitemStrLst(i, eqs, ";\n");
         i_1 = i - 1;
         is = indentStr(i_1);
-        str = stringAppendList({"\n",is,"constraint \n",s1});
+        str = stringAppendList({is,"constraint\n",s1});
       then
         str;
 
@@ -1227,7 +1227,7 @@ algorithm
         s1 = unparseEquationitemStrLst(i, eqs, ";\n");
         i_1 = i - 1;
         is = indentStr(i_1);
-        str = stringAppendList({"\n",is,"equation \n",s1});
+        str = stringAppendList({is,"equation\n",s1});
       then
         str;
     
@@ -1236,7 +1236,7 @@ algorithm
         s1 = unparseEquationitemStrLst(i, eqs, ";\n");
         i_1 = i - 1;
         is = indentStr(i_1);
-        str = stringAppendList({"\n",is,"initial equation \n",s1});
+        str = stringAppendList({is,"initial equation\n",s1});
       then
         str;
     
@@ -1245,7 +1245,7 @@ algorithm
         s1 = unparseAlgorithmStrLst(i, als, "\n");
         i_1 = i - 1;
         is = indentStr(i_1);
-        str = stringAppendList({is,"algorithm \n",s1});
+        str = stringAppendList({is,"algorithm\n",s1});
       then
         str;
     
@@ -1254,7 +1254,7 @@ algorithm
         s1 = unparseAlgorithmStrLst(i, als, "\n");
         i_1 = i - 1;
         is = indentStr(i_1);
-        str = stringAppendList({is,"initial algorithm \n",s1});
+        str = stringAppendList({is,"initial algorithm\n",s1});
       then
         str;
     
@@ -2711,7 +2711,7 @@ algorithm
         i_1 = i + 1;
         s2 = unparseEquationitemStrLst(i_1, tb, ";\n");
         is = indentStr(i);
-        str = stringAppendList({"if ",s1," then\n",is,s2,is,"end if"});
+        str = stringAppendList({is,"if ",s1," then\n",s2,is,"end if"});
       then
         str;
     
@@ -2724,8 +2724,7 @@ algorithm
         s4 = unparseEquationitemStrLst(i_1, fb, ";\n");
         is = indentStr(i);
         str = stringAppendList(
-          {is,"if ",s1," then\n",s2,s3,"\n",is,"else\n",s4,"\n",is,
-          "end if"});
+          {is,"if ",s1," then\n",s2,s3,is,"else\n",s4,is, "end if"});
       then
         str;
     
@@ -2886,8 +2885,7 @@ algorithm
     
     case (i,{x1},sep)
       equation
-        s1 = unparseEqElseifStr(i, x1);
-        res = stringAppendList({s1,sep});
+        res = unparseEqElseifStr(i, x1);
       then
         res;
     
@@ -2895,7 +2893,7 @@ algorithm
       equation
         s2 = unparseEqElseifStrLst(i, xs, sep);
         s1 = unparseEqElseifStr(i, x);
-        res = stringAppendList({s1,sep,s2});
+        res = stringAppendList({s1,s2});
       then
         res;
     
@@ -2903,7 +2901,7 @@ algorithm
       equation
         s1 = unparseEqElseifStr(i, x1);
         s2 = unparseEqElseifStr(i, x2);
-        res = stringAppendList({s1,sep,s2});
+        res = stringAppendList({s1,s2});
       then
         res;
   end matchcontinue;
@@ -2928,7 +2926,7 @@ algorithm
         s2 = unparseEquationitemStrLst(i, el, ";\n");
         i_1 = i - 1;
         is = indentStr(i_1);
-        res = stringAppendList({"\n",is,"elseif ",s1," then\n",s2});
+        res = stringAppendList({is,"elseif ",s1," then\n",s2});
       then
         res;
   end match;
