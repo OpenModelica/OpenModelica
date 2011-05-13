@@ -92,6 +92,9 @@ case simCode as SIMCODE(__) then
   <%simulationFileHeader(simCode)%>
   <%externalFunctionIncludes(externalFunctionIncludes)%>
   #include "<%fileNamePrefix%>_functions.c"
+  #ifdef __cplusplus
+  extern "C" {
+  #endif
   #ifdef _OMC_MEASURE_TIME
   int measure_time_flag = 1;
   #else
@@ -149,6 +152,9 @@ case simCode as SIMCODE(__) then
   
   <%functionlinearmodel(modelInfo)%>
   
+  #ifdef __cplusplus
+  }
+  #endif
   <%\n%> 
   >>
   /* adrpo: leave a newline at the end of file to get rid of the warning */
@@ -1256,7 +1262,7 @@ template functionStoreDelayed(DelayedExpression delayed)
       >>
     ))
   <<
-  int const numDelayExpressionIndex = <%match delayed case DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
+  int numDelayExpressionIndex = <%match delayed case DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
   int function_storeDelayed()
   {
     state mem_state;

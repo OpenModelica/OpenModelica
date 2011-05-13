@@ -57,7 +57,7 @@ match simCode
 case SIMCODE(__) then
   let guid = getUUIDStr()
   let()= textFile(fmuModelDescriptionFile(simCode,guid), 'modelDescription.xml')
-  let()= textFile(fmumodel_identifierFile(simCode,guid), '<%fileNamePrefix%>_FMU.cpp')
+  let()= textFile(fmumodel_identifierFile(simCode,guid), '<%fileNamePrefix%>_FMU.c')
   let()= textFile(fmuMakefile(simCode), '<%fileNamePrefix%>_FMU.makefile')
   "" // Return empty result since result written to files directly
 end translateModel;
@@ -838,10 +838,10 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   PERL=perl
-  MAINFILE=<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
+  MAINFILE=<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.c
   
   .PHONY: <%fileNamePrefix%>
-  <%fileNamePrefix%>: $(MAINFILE) <%fileNamePrefix%>_functions.cpp <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_records.c
+  <%fileNamePrefix%>: $(MAINFILE) <%fileNamePrefix%>_functions.c <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_records.c
   <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(DLLEXT) $(MAINFILE) <%dirExtra%> <%libsPos1%> <%libsPos2%> -lsim -linteractive $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> <%fileNamePrefix%>_records.c  
   
   <%\t%> mkdir -p <%fileNamePrefix%>
@@ -850,15 +850,15 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   <%\t%> mkdir -p <%fileNamePrefix%>/sources
   
   <%\t%> mv <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>/binaries/<%platfrom%>/
-  <%\t%> mv <%fileNamePrefix%>.cpp <%fileNamePrefix%>/sources/<%fileNamePrefix%>.cpp
-  <%\t%> mv <%fileNamePrefix%>_FMU.cpp <%fileNamePrefix%>/sources/<%fileNamePrefix%>_FMU.cpp
-  <%\t%> mv <%fileNamePrefix%>_functions.cpp <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.cpp
+  <%\t%> mv <%fileNamePrefix%>.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>.c
+  <%\t%> mv <%fileNamePrefix%>_FMU.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_FMU.c
+  <%\t%> mv <%fileNamePrefix%>_functions.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.c
   <%\t%> mv <%fileNamePrefix%>_functions.h <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.h
   <%\t%> mv <%fileNamePrefix%>_records.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_records.c
   <%\t%> mv modelDescription.xml <%fileNamePrefix%>/modelDescription.xml
   <%\t%> cd <%fileNamePrefix%>
   
-  <%fileNamePrefix%>.conv.cpp: <%fileNamePrefix%>.cpp
+  <%fileNamePrefix%>.conv.c: <%fileNamePrefix%>.c
   <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
   <%\t%> @mv $@.tmp $@
   >>
