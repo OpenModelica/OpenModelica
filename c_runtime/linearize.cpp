@@ -94,29 +94,20 @@ int linearize()
   }
   strD = array2string(matrixD,size_Outputs,size_Inputs);
 
-    strX = array2string(globalData->states,1,size_A);
-    strU = array2string(globalData->inputVars,1,size_Inputs);
+  strX = array2string(globalData->states,1,size_A);
+  strU = array2string(globalData->inputVars,1,size_Inputs);
 
-    delete [] matrixA;
-    delete [] matrixB;
-    delete [] matrixC;
-    delete [] matrixD;
+  delete [] matrixA;
+  delete [] matrixB;
+  delete [] matrixC;
+  delete [] matrixD;
 
-    if (linear_model_frame(linearModel, strA, strB, strC, strD, strX, strU)){
-      cerr << "Error, can not get Frame for linear model" << endl;
-    }
-    filename = "linear_";
-    filename += globalData->modelName;
-    filename += ".mo";
+  filename = "linear_" + string(globalData->modelName) + ".mo";
 
-    ofstream FileLinModel(filename.c_str());
-    FileLinModel << linearModel.c_str() << endl;
-    FileLinModel.close();
+  FILE *fout = fopen(filename.c_str(),"wb");
+  fprintf(fout, linear_model_frame, strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str());
+  fclose(fout);
 
-    if (sim_verbose){
-      cout << linearModel << endl;
-    }
-
-    return 0;
+  return 0;
 }
 

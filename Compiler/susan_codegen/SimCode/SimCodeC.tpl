@@ -53,9 +53,9 @@ template translateModel(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
-  let()= textFile(simulationFile(simCode), '<%fileNamePrefix%>.cpp')
+  let()= textFile(simulationFile(simCode), '<%fileNamePrefix%>.c')
   let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls), '<%fileNamePrefix%>_functions.h')
-  let()= textFile(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, literals), '<%fileNamePrefix%>_functions.cpp')
+  let()= textFile(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, literals), '<%fileNamePrefix%>_functions.c')
   let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
   let()= textFile(simulationMakefile(simCode), '<%fileNamePrefix%>.makefile')
   if simulationSettingsOpt then //tests the Option<> for SOME()
@@ -87,11 +87,11 @@ template simulationFile(SimCode simCode)
  "Generates code for main C file for simulation target."
 ::=
 match simCode
-case SIMCODE(__) then
+case simCode as SIMCODE(__) then
   <<
   <%simulationFileHeader(simCode)%>
   <%externalFunctionIncludes(externalFunctionIncludes)%>
-  #include "<%fileNamePrefix%>_functions.cpp"
+  #include "<%fileNamePrefix%>_functions.c"
   #ifdef _OMC_MEASURE_TIME
   int measure_time_flag = 1;
   #else
@@ -129,7 +129,7 @@ case SIMCODE(__) then
   
   <%functionBoundParameters(parameterEquations)%>
   
-  <%functionODE(odeEquations)%>
+  <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""))%>
   
   <%functionODE_residual()%>
   
@@ -210,17 +210,16 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   #define $P$current_step_size globalData->current_stepsize
 
   #ifndef _OMC_QSS
+  #ifdef __cplusplus
   extern "C" { // adrpo: this is needed for Visual C++ compilation to work!
+  #endif
     const char *model_name="<%dotPath(name)%>";
     const char *model_fileprefix="<%fileNamePrefix%>";
     const char *model_dir="<%directory%>";
+  #ifdef __cplusplus
   }
   #endif
-  
-  // we need to access the inline define that we compiled the simulation with
-  // from the simulation runtime.
-  const char *_omc_force_solver=_OMC_FORCE_SOLVER;
-  const int inline_work_states_ndims=_OMC_SOLVER_WORK_STATES_NDIMS;
+  #endif
   
   <%globalDataVarInfoArray("state_names", vars.stateVars)%>
   <%globalDataVarInfoArray("derivative_names", vars.derivativeVars)%>
@@ -279,10 +278,10 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   
   void init_Alias(DATA* data)
   {
-  <%globalDataAliasVarArray("sim_DATA_REAL_ALIAS","omc__realAlias", vars.aliasVars)%>
-  <%globalDataAliasVarArray("sim_DATA_INT_ALIAS","omc__intAlias", vars.intAliasVars)%>
-  <%globalDataAliasVarArray("sim_DATA_BOOL_ALIAS","omc__boolAlias", vars.boolAliasVars)%>
-  <%globalDataAliasVarArray("sim_DATA_STRING_ALIAS","omc__stringAlias", vars.stringAliasVars)%>
+  <%globalDataAliasVarArray("DATA_REAL_ALIAS","omc__realAlias", vars.aliasVars)%>
+  <%globalDataAliasVarArray("DATA_INT_ALIAS","omc__intAlias", vars.intAliasVars)%>
+  <%globalDataAliasVarArray("DATA_BOOL_ALIAS","omc__boolAlias", vars.boolAliasVars)%>
+  <%globalDataAliasVarArray("DATA_STRING_ALIAS","omc__stringAlias", vars.stringAliasVars)%>
   if (data->nAlias)
     memcpy(data->realAlias,omc__realAlias,sizeof(DATA_REAL_ALIAS)*data->nAlias);
   if (data->intVariables.nAlias)
@@ -378,11 +377,11 @@ template globalDataFunctionInfoArray(String name, list<Function> items)
   match items
   case {} then
     <<
-    struct omc_functionInfo <%name%>[1] = {{-1,"",omc_dummyFileInfo}};
+    const struct omc_functionInfo <%name%>[1] = {{-1,"",omc_dummyFileInfo}};
     >>
   case items then
     <<
-    struct omc_functionInfo <%name%>[<%listLength(items)%>] = {
+    const struct omc_functionInfo <%name%>[<%listLength(items)%>] = {
       <%items |> fn => '{<%System.tmpTick()%>,"<%functionName(fn,true)%>",{<%infoArgs(functionInfo(fn))%>}}'; separator=",\n"%>
     };
     >>
@@ -407,12 +406,14 @@ case _ then
     #define <%cref(name)%> localData-><%arrayName%>[<%index%>]
     #define $P$old<%cref(name)%> localData-><%arrayName%>_old[<%index%>]
     #define $P$old2<%cref(name)%> localData-><%arrayName%>_old2[<%index%>]
+    #define $P$PRE<%cref(name)%> localData-><%arrayName%>_saved[<%index%>]
     >>
   case SIMVAR(aliasvar=NOALIAS()) then
     <<
     #define <%cref(name)%> localData-><%arrayName%>[<%index%>]
     #define $P$old<%cref(name)%> localData-><%arrayName%>_old[<%index%>]
     #define $P$old2<%cref(name)%> localData-><%arrayName%>_old2[<%index%>]
+    #define $P$PRE<%cref(name)%> localData-><%arrayName%>_saved[<%index%>]
     >>  
 end globalDataVarDefine;
 
@@ -422,7 +423,7 @@ template globalDataAliasVarArray(String _type, String _name, list<SimVar> items)
   match items
   case {} then
     <<
-      <%_type%> <%_name%>[1] = {{0,false,-1}};
+      <%_type%> <%_name%>[1] = {{0,0,-1}};
     >>
   case items then
     <<
@@ -442,11 +443,11 @@ template aliasVarNameType(AliasVariable var)
     >>
   case ALIAS(__) then
     <<
-    &<%cref(varName)%>,false
+    &<%cref(varName)%>,0
     >>
   case NEGATEDALIAS(__) then
     <<
-    &<%cref(varName)%>,true
+    &<%cref(varName)%>,1
     >>    
 end aliasVarNameType;
 
@@ -753,11 +754,11 @@ template functionInitializeDataStruc()
     }
 
     if (returnData->intVariables.nAlias) {
-      returnData->intVariables.alias = (sim_DATA_INT_ALIAS*) malloc(sizeof(sim_DATA_INT_ALIAS)*returnData->intVariables.nAlias);
+      returnData->intVariables.alias = (DATA_INT_ALIAS*) malloc(sizeof(DATA_INT_ALIAS)*returnData->intVariables.nAlias);
       assert(returnData->intVariables.alias);
       returnData->intVariables.aliasFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->intVariables.nAlias);
       assert(returnData->intVariables.aliasFilterOutput);
-      memset(returnData->intVariables.alias,0,sizeof(sim_DATA_INT_ALIAS)*returnData->intVariables.nAlias);
+      memset(returnData->intVariables.alias,0,sizeof(DATA_INT_ALIAS)*returnData->intVariables.nAlias);
       memset(returnData->intVariables.aliasFilterOutput,0,sizeof(modelica_boolean)*returnData->intVariables.nAlias);
     } else {
       returnData->intVariables.alias = 0;
@@ -873,9 +874,13 @@ case EXTOBJINFO(__) then
     ;separator="\n")
   <<
   /* Has to be performed after _init.txt file has been read */
+  #ifdef __cplusplus
   extern "C" {
+  #endif
     <%funDecls%>
+  #ifdef __cplusplus
   }
+  #endif
   void callExternalObjectConstructors(DATA* localData) {
     <%varDecls%>
     state mem_state;
@@ -894,9 +899,13 @@ template functionDeInitializeDataStruc(ExtObjInfo extObjInfo)
 match extObjInfo
 case EXTOBJINFO(__) then
   <<
+  #ifdef __cplusplus
   extern "C" {
+  #endif
     <%destructors |> (fnName, _) => 'extern void <%fnName%>(void*);' ;separator="\n"%>
+  #ifdef __cplusplus
   }
+  #endif
   void deInitializeDataStruc(DATA* data)
   {
     if(!data)
@@ -1133,7 +1142,6 @@ template functionInitial(list<SimEqSystem> initialEquations)
     return 0;
   }
   >>
-  //(<%crefType(var)%>) pre(<%cref(var)%>)
 end functionInitial;
 
 
@@ -1248,7 +1256,7 @@ template functionStoreDelayed(DelayedExpression delayed)
       >>
     ))
   <<
-  extern int const numDelayExpressionIndex = <%match delayed case DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
+  int const numDelayExpressionIndex = <%match delayed case DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
   int function_storeDelayed()
   {
     state mem_state;
@@ -1296,8 +1304,8 @@ case SIM_WHEN_CLAUSE(__) then
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'edge(localData->helpVars[<%hidx%>])'
-    ;separator=" || ")  
+      'localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>] /* edge */'
+    ;separator=" || ")
   let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/)                     
 
 if reinits then  
@@ -1352,14 +1360,14 @@ template functionWhenReinitStatementElse(list<WhenOperator> reinits, Text &preEx
     case REINIT(__) then 
       let val = daeExp(value, contextSimulationDiscrete,
                    &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      '<%cref(stateVar)%> = pre(<%cref(stateVar)%>);';separator="\n"
+      '<%cref(stateVar)%> = $P$PRE<%cref(stateVar)%>;';separator="\n"
     )
   <<
    <%body%>  
   >>
 end functionWhenReinitStatementElse;
 
-template functionODE(list<SimEqSystem> derivativEquations)
+template functionODE(list<SimEqSystem> derivativEquations, Text method)
  "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
@@ -1382,7 +1390,15 @@ template functionODE(list<SimEqSystem> derivativEquations)
   
     return 0;
   }
-  #if defined(_OMC_ENABLE_INLINE)
+  #include <simulation_inline_solver.h>
+  const char *_omc_force_solver=_OMC_FORCE_SOLVER;
+  const int inline_work_states_ndims=_OMC_SOLVER_WORK_STATES_NDIMS;
+  <%match method
+  case "inline-euler"
+  case "inline-rungekutta" then
+  <<
+  // we need to access the inline define that we compiled the simulation with
+  // from the simulation runtime.
   int functionODE_inline()
   {
     state mem_state;
@@ -1396,12 +1412,15 @@ template functionODE(list<SimEqSystem> derivativEquations)
   
     return 0;
   }
-  #else
+  >>
+  else
+  <<
   int functionODE_inline()
   {
     return 0;
   }
-  #endif
+  >>
+  %>
   >>
 end functionODE;
 
@@ -1461,6 +1480,7 @@ template functionODE_residual()
   {
     double timeBackup;
     double* statesBackup;
+    int i;
 
     timeBackup = localData->timeValue;
     statesBackup = localData->states;
@@ -1471,7 +1491,7 @@ template functionODE_residual()
   
     /* get the difference between the temp_xd(=localData->statesDerivatives)
        and xd(=statesDerivativesBackup) */
-    for (int i=0; i < localData->nStates; i++) {
+    for (i=0; i < localData->nStates; i++) {
       delta[i] = localData->statesDerivatives[i] - xd[i];
     }
     
@@ -1545,7 +1565,7 @@ template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars)
 ::=
 
   let changediscreteVars = (discreteModelVars |> var => match var case CREF_QUAL(__) case CREF_IDENT(__) then
-       'if (change(<%cref(var)%>)) { if (sim_verbose >= LOG_EVENTS) { cout << "Discrete Var <%crefStr(var)%> : " << (<%crefType(var)%>) pre(<%cref(var)%>) << " to " << (<%crefType(var)%>) <%cref(var)%> << endl;}  needToIterate=1; }'
+       'if (<%cref(var)%> != $P$PRE<%cref(var)%>) { if (sim_verbose >= LOG_EVENTS) { printf("Discrete Var <%crefStr(var)%> : <%crefToPrintfArg(var)%> to <%crefToPrintfArg(var)%>\n", $P$PRE<%cref(var)%>, <%cref(var)%>); }  needToIterate=1; }'
     ;separator="\n")
   <<
   int checkForDiscreteChanges()
@@ -1557,8 +1577,17 @@ template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars)
     return needToIterate;
   }
   >>
-//  if (sim_verbose) { cout << "Discrete Var <%crefStr(var)%> : " << (double) pre(<%cref(var)%>) << " to " << (double) <%cref(var)%> << endl;} 
 end functionCheckForDiscreteChanges;
+
+template crefToPrintfArg(ComponentRef cr)
+::=
+  match crefType(cr)
+  case "modelica_real" then "%g"
+  case "modelica_integer" then "%ld"
+  case "modelica_boolean" then "%d"
+  case "modelica_string" then "%s"
+  else error(sourceInfo(), 'Do not know what printf argument to give <%crefStr(cr)%>')
+end crefToPrintfArg;
 
 template crefType(ComponentRef cr)
  "Like cref but with cast if type is integer."
@@ -1661,56 +1690,20 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   let vectorY = genVector("y", varInfo.numOutVars, 2)
   //string def_proctedpart("\n  Real x[<%varInfo.numStateVars%>](start=x0);\n  Real u[<%varInfo.numInVars%>](start=u0); \n  output Real y[<%varInfo.numOutVars%>]; \n");
   <<
-  int linear_model_frame(string &out, string A, string B, string C, string D, string x_startvalues, string u_startvalues)
-  {
-    string def_head("model linear_<%dotPath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%>; // states \n  parameter Integer k = <%varInfo.numInVars%>; // top-level inputs \n  parameter Integer l = <%varInfo.numOutVars%>; // top-level outputs \n");
-        
-    string def_init_states("  parameter Real x0[<%varInfo.numStateVars%>] = {");
-    string def_init_states_end("};\n");
-
-    string def_init_inputs("  parameter Real u0[<%varInfo.numInVars%>] = {");
-    string def_init_inputs_end("};\n");
-  
-    <%vectorX%>
-    <%vectorU%>
-    <%vectorY%>
-  
+  const char *linear_model_frame =
+    "model linear_<%dotPath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%>; // states \n  parameter Integer k = <%varInfo.numInVars%>; // top-level inputs \n  parameter Integer l = <%varInfo.numOutVars%>; // top-level outputs \n"
+    "  parameter Real x0[<%varInfo.numStateVars%>] = {%s};\n"
+    "  parameter Real u0[<%varInfo.numInVars%>] = {%s};\n"
     <%matrixA%>
     <%matrixB%>
     <%matrixC%>
     <%matrixD%>
-  
-    string def_Variable("\n  <%getVarName(vars.stateVars, "x", varInfo.numStateVars )%>  <% getVarName(vars.inputVars, "u", varInfo.numInVars) %>  <%getVarName(vars.outputVars, "y", varInfo.numOutVars) %>\n");
-  
-    string def_tail("equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\nend linear_<%dotPath(name)%>;\n");
-    
-    out += def_head.data();
-    out += def_init_states.data();
-    out += x_startvalues.data();
-    out += def_init_states_end.data();
-    out += def_init_inputs.data();
-    out += u_startvalues.data();
-    out += def_init_inputs_end.data();
-    out += def_matrixA_start.data();
-    out += A.data();
-    out += def_matrixA_end.data();
-    out += def_matrixB_start.data();
-    out += B.data();
-    out += def_matrixB_end.data();
-    out += def_matrixC_start.data();
-    out += C.data();
-    out += def_matrixC_end.data();
-    out += def_matrixD_start.data();
-    out += D.data();
-    out += def_matrixD_end.data();
-    out += def_vectorx.data();
-    out += def_vectoru.data();
-    out += def_vectory.data();
-    out += def_Variable.data();
-    out += def_tail.data();
-    return 0;
-  }
-
+    <%vectorX%>
+    <%vectorU%>
+    <%vectorY%>
+    "\n  <%getVarName(vars.stateVars, "x", varInfo.numStateVars )%>  <% getVarName(vars.inputVars, "u", varInfo.numInVars) %>  <%getVarName(vars.outputVars, "y", varInfo.numOutVars) %>\n"
+    "equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\nend linear_<%dotPath(name)%>;\n"
+  ;
   >>
 end functionlinearmodel;
 
@@ -1737,20 +1730,17 @@ template genMatrix(String name, Integer row, Integer col)
 match row
 case 0 then
     <<
-    string def_matrix<%name%>_start("  parameter Real <%name%>[<%row%>,<%col%>] = zeros(<%row%>,<%col%>);\n");
-    string def_matrix<%name%>_end("");
+    "  parameter Real <%name%>[<%row%>,<%col%>] = zeros(<%row%>,<%col%>);%s\n"
     >>
 case _ then
   match col
   case 0 then
     <<
-    string def_matrix<%name%>_start("  parameter Real <%name%>[<%row%>,<%col%>] = zeros(<%row%>,<%col%>);\n");
-    string def_matrix<%name%>_end("");
+    "  parameter Real <%name%>[<%row%>,<%col%>] = zeros(<%row%>,<%col%>);%s\n"
     >>
     case _ then
     <<
-    string def_matrix<%name%>_start("  parameter Real <%name%>[<%row%>,<%col%>] = [");
-    string def_matrix<%name%>_end("];\n");
+    "  parameter Real <%name%>[<%row%>,<%col%>] = [%s];\n"
     >>
     end match
 end match                   
@@ -1764,35 +1754,33 @@ case 0 then
   match numIn
   case 0 then
       <<
-      string def_vector<%name%>("  Real <%name%>[<%numIn%>];\n");
-
-
+      "  Real <%name%>[<%numIn%>];\n"
       >>
   case _ then
       <<
-      string def_vector<%name%>("  Real <%name%>[<%numIn%>](start=<%name%>0);\n");
+      "  Real <%name%>[<%numIn%>](start=<%name%>0);\n"
       >>
   end match
 case 1 then 
   match numIn
   case 0 then
       <<
-      string def_vector<%name%>("  input Real <%name%>[<%numIn%>];\n");
+      "  input Real <%name%>[<%numIn%>];\n"
       >>
   case _ then
       <<
-      string def_vector<%name%>("  input Real <%name%>[<%numIn%>](start= <%name%>0);\n");
+      "  input Real <%name%>[<%numIn%>](start= <%name%>0);\n"
       >>
   end match
 case 2 then 
   match numIn
   case 0 then
       <<
-      string def_vector<%name%>("  output Real <%name%>[<%numIn%>];\n");
+      "  output Real <%name%>[<%numIn%>];\n"
       >>
   case _ then
       <<
-      string def_vector<%name%>("  output Real <%name%>[<%numIn%>];\n");
+      "  output Real <%name%>[<%numIn%>];\n"
       >>
   end match                         
 end genVector;
@@ -2010,7 +1998,7 @@ case eqn as SES_ARRAY_CALL_ASSIGN(__) then
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'edge(localData->helpVars[<%hidx%>])'
+      'localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>] /* edge */'
     ;separator=" || ")C*/, &varDecls /*BUFD*/)
   match expTypeFromExpShort(eqn.exp)
   case "boolean" then
@@ -2171,7 +2159,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'edge(localData->helpVars[<%hidx%>])'
+      'localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>] /* edge */'
     ;separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
@@ -2182,7 +2170,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
     <%preExp2%>
     <%cref(left)%> = <%exp%>;
   } else {
-    <%cref(left)%> = pre(<%cref(left)%>);
+    <%cref(left)%> = $P$PRE<%cref(left)%>;
   }
   >>
   case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
@@ -2191,7 +2179,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'edge(localData->helpVars[<%hidx%>])'
+      'localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>] /* edge */'
     ;separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
@@ -2205,7 +2193,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   }
   <%elseWhen%>
   else {
-    <%cref(left)%> = pre(<%cref(left)%>);
+    <%cref(left)%> = $P$PRE<%cref(left)%>;
   }
   >> 
 end equationWhen;
@@ -2218,7 +2206,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'edge(localData->helpVars[<%hidx%>])'
+      'localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>] /* edge */'
     ;separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
@@ -2232,7 +2220,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseW
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'edge(localData->helpVars[<%hidx%>])'
+      'localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>] /* edge */'
     ;separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
@@ -2251,11 +2239,15 @@ template simulationFunctionsFile(String filePrefix, list<Function> functions, li
 ::=
   <<
   #include "<%filePrefix%>_functions.h"
+  #ifdef __cplusplus
   extern "C" {
+  #endif
   
   <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n"%>
   <%functionBodies(functions)%>
+  #ifdef __cplusplus
   }
+  #endif
   
   >>
   /* adpro: leave a newline at the end of file to get rid of warnings! */
@@ -2281,10 +2273,14 @@ template simulationFunctionsHeaderFile(String filePrefix, list<Function> functio
   #define <%stringReplace(filePrefix,".","_")%>__H
   <%commonHeader()%>
   #include "simulation_runtime.h"
+  #ifdef __cplusplus
   extern "C" {
+  #endif
   <%recordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>
   <%functionHeaders(functions)%>
+  #ifdef __cplusplus
   }
+  #endif
   #endif
   
   <%\n%> 
@@ -2317,18 +2313,21 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   EXEEXT=<%makefileParams.exeext%>
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
-  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
+  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
+  CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc" -I. <%dirExtra%> <%makefileParams.includes ; separator=" "%>
   LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   PERL=perl
-  MAINFILE=<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
+  MAINFILE=<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.c
+  MAINOBJ=<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.o
   
   .PHONY: <%fileNamePrefix%>
-  <%fileNamePrefix%>: $(MAINFILE) <%fileNamePrefix%>_functions.cpp <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_records.c
-  <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(EXEEXT) $(MAINFILE) <%dirExtra%> <%libsPos1%> <%libsPos2%> -lsim -linteractive $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> <%fileNamePrefix%>_records.c 
-  <%fileNamePrefix%>.conv.cpp: <%fileNamePrefix%>.cpp
+  <%fileNamePrefix%>: $(MAINOBJ) <%fileNamePrefix%>_records.o
+  <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(EXEEXT) $(MAINOBJ) <%fileNamePrefix%>_records.o $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> -lsim -linteractive $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> 
+  <%fileNamePrefix%>.conv.c: <%fileNamePrefix%>.c
   <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
   <%\t%> @mv $@.tmp $@
+  $(MAINOBJ): $(MAINFILE) <%fileNamePrefix%>_functions.c <%fileNamePrefix%>_functions.h
   >>
 end simulationMakefile;
 
@@ -3476,6 +3475,7 @@ case var as VARIABLE(__) then
     case SOME(exp) then
       let defaultValue = '<%contextCref(var.name,contextFunction)%> = <%daeExp(exp, contextFunction, &varInits  /*BUFC*/, &varDecls /*BUFD*/)%>;<%\n%>'
       let &varInits += defaultValue
+
       " "
     else
       "")
@@ -4315,7 +4315,7 @@ case SIMULATION(genDiscrete=true) then
     let else = algStatementWhenElse(elseWhen, &varDecls /*BUFD*/)
     <<
     <%preIf%>
-    if (<%helpVarIndices |> idx => 'edge(localData->helpVars[<%idx%>])' ;separator=" || "%>) {
+    if (<%helpVarIndices |> idx => 'localData->helpVars[<%idx%>] && !localData->helpVars_saved[<%idx%>] /* edge */' ;separator=" || "%>) {
       <%statements%>
     }
     <%else%>
@@ -4372,8 +4372,8 @@ case SOME(when as STMT_WHEN(__)) then
       algStatement(stmt, contextSimulationDiscrete, &varDecls /*BUFD*/)
     ;separator="\n")
   let else = algStatementWhenElse(when.elseWhen, &varDecls /*BUFD*/)
-  let elseCondStr = (when.helpVarIndices |> idx =>
-      'edge(localData->helpVars[<%idx%>])'
+  let elseCondStr = (when.helpVarIndices |> hidx =>
+      'localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>] /* edge */'
     ;separator=" || ")
   <<
   else if (<%elseCondStr%>) {
@@ -4415,7 +4415,10 @@ template algStmtReinit(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     let expPart1 = daeExp(var, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let expPart2 = daeExp(value, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     <<
-    save(<%expPart1%>);
+    if (sim_verbose >= LOG_EVENTS) {
+      printf("reinit <%expPart1%> = %f\n", <%expPart1%>);
+    }
+    $P$PRE<%expPart1%> = <%expPart1%>;
     <%preExp%>
     <%expPart1%> = <%expPart2%>;
     >>
@@ -5046,13 +5049,26 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
             path=IDENT(name="der"), expLst={arg as CREF(__)}) then
     '$P$DER<%cref(arg.componentRef)%>'
   case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="der"), expLst={exp}) then
+    error(sourceInfo(), 'Code generation does not support der(<%printExpStr(exp)%>)') 
+  case CALL(tuple_=false, builtin=true,
             path=IDENT(name="pre"), expLst={arg as CREF(__)}) then
-    let retType = '<%expTypeArrayIf(arg.ty)%>'
-    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-    let cast = match arg.ty case ET_INT(__) then "(modelica_integer)" 
-                            case ET_ENUMERATION(__) then "(modelica_integer)" //else ""
-    let &preExp += '<%retVar%> = <%cast%>pre(<%cref(arg.componentRef)%>);<%\n%>'
-    '<%retVar%>'
+    '$P$PRE<%cref(arg.componentRef)%>'
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="pre"), expLst={exp}) then
+    error(sourceInfo(), 'Code generation does not support pre(<%printExpStr(exp)%>)')
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="edge"), expLst={arg as CREF(__)}) then
+    '(<%cref(arg.componentRef)%> && !$P$PRE<%cref(arg.componentRef)%>)'
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="edge"), expLst={exp}) then
+    error(sourceInfo(), 'Code generation does not support edge(<%printExpStr(exp)%>)')
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="change"), expLst={arg as CREF(__)}) then
+    '(<%cref(arg.componentRef)%> != $P$PRE<%cref(arg.componentRef)%>)'
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="change"), expLst={exp}) then
+    error(sourceInfo(), 'Code generation does not support change(<%printExpStr(exp)%>)')
   
   case CALL(path=IDENT(name="print"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
@@ -6497,15 +6513,17 @@ template equationInfo(list<SimEqSystem> eqs)
           case SES_RESIDUAL(__) then '"SES_RESIDUAL <%i0%>",0,NULL'
           case SES_SIMPLE_ASSIGN(__) then
             let var = '<%cref(cref)%>__varInfo'
-            '"SES_SIMPLE_ASSIGN <%i0%>",1,&<%var%>'
+            let &preBuf += 'const struct omc_varInfo *equationInfo_cref<%i0%> = &<%var%>;<%\n%>'
+            '"SES_SIMPLE_ASSIGN <%i0%>",1,&equationInfo_cref<%i0%>'
           case SES_ARRAY_CALL_ASSIGN(__) then
-            let var = '<%cref(componentRef)%>__varInfo'
+            //let var = '<%cref(componentRef)%>__varInfo'
+            //let &preBuf += 'const struct omc_varInfo *equationInfo_cref<%i0%> = &<%var%>;'
             '"SES_ARRAY_CALL_ASSIGN <%i0%>",0,NULL'
           case SES_ALGORITHM(__) then '"SES_ALGORITHM <%i0%>",0,NULL'
           case SES_WHEN(__) then '"SES_WHEN <%i0%>",0,NULL'
           case SES_LINEAR(__) then '"LINEAR<%index%>",0,NULL'
           case SES_NONLINEAR(__) then
-            let &preBuf += 'const omc_varInfo residualFunc<%index%>_crefs[<%listLength(crefs)%>] = {<%crefs|>cr=>'<%cref(cr)%>__varInfo'; separator=","%>};'
+            let &preBuf += 'const struct omc_varInfo *residualFunc<%index%>_crefs[<%listLength(crefs)%>] = {<%crefs|>cr=>'&<%cref(cr)%>__varInfo'; separator=","%>};'
             '"residualFunc<%index%>",<%listLength(crefs)%>,residualFunc<%index%>_crefs'
           case SES_MIXED(__) then '"MIXED<%index%>",0,NULL'
           else '"unknown equation <%i0%>",0,NULL'%>}

@@ -173,7 +173,7 @@ static void printEquations(FILE *fout, int n, const struct omc_equationInfo *eqn
     indent(fout,2);fprintf(fout, "<equation id=\"%d\" name=\"", eqns[i].id);printStrXML(fout,eqns[i].name);fprintf(fout,"\">\n");
     indent(fout,4);fprintf(fout, "<refs>\n");
     for (j=0; j<eqns[i].numVar; j++) {
-      indent(fout,6);fprintf(fout, "<ref refid=\"%d\" />\n", eqns[i].vars[j].id);
+      indent(fout,6);fprintf(fout, "<ref refid=\"%d\" />\n", eqns[i].vars[j]->id);
     }
     indent(fout,4);fprintf(fout, "</refs>\n");
     indent(fout,2);fprintf(fout, "</equation>\n");

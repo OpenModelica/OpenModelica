@@ -31,9 +31,8 @@
 #include "simulation_events.h"
 #include "simulation_runtime.h"
 #include "simulation_result.h"
-//#include "utility.h" // ppriv 2010-06-23 - removed "utility.h" due to clash of abs() macro from "f2c.h" with <math.h> in MSVC (abs is intrinsic function instead macro) and no usage here
 #include <math.h>
-#include <string.h> // adrpo - 2006-12-05 -> for memset
+#include <string.h> // for memset
 #include <stdio.h>
 #include <list>
 #include <cfloat>
@@ -41,13 +40,13 @@
 using namespace std;
 
 // vectors with saved values used by pre(v)
-double* h_saved = 0;
-double* x_saved = 0;
-double* xd_saved = 0;
-double* y_saved = 0;
-modelica_integer* int_saved = 0;
-modelica_boolean* bool_saved = 0;
-const char** str_saved = 0;
+#define x_saved globalData->states_saved
+#define xd_saved globalData->statesDerivatives_saved
+#define y_saved globalData->algebraics_saved
+#define int_saved globalData->intVariables.algebraics_saved
+#define bool_saved globalData->boolVariables.algebraics_saved
+#define str_saved globalData->stringVariables.algebraics_saved
+#define h_saved globalData->helpVars_saved
 
 double* gout = 0;
 double* gout_old = 0;
@@ -429,218 +428,6 @@ saveall()
     }
 }
 
-/* save(v) saves the previous value of a discrete variable v, which can be accessed
- * using pre(v) in Modelica.
- */
-
-void
-save(double & var)
-{
-  double* pvar = &var;
-  long ind;
-  if (sim_verbose >= LOG_EVENTS)
-    {
-      printf("save %s = %f\n", getNameReal(&var), var);
-    }
-  ind = long(pvar - globalData->helpVars);
-  if (ind >= 0 && ind < globalData->nHelpVars)
-    {
-      h_saved[ind] = var;
-      return;
-    }
-  ind = long(pvar - globalData->states);
-  if (ind >= 0 && ind < globalData->nStates)
-    {
-      x_saved[ind] = var;
-      return;
-    }
-  ind = long(pvar - globalData->statesDerivatives);
-  if (ind >= 0 && ind < globalData->nStates)
-    {
-      xd_saved[ind] = var;
-      return;
-    }
-  ind = long(pvar - globalData->algebraics);
-  if (ind >= 0 && ind < globalData->nAlgebraic)
-    {
-      y_saved[ind] = var;
-      return;
-    }
-  return;
-}
-
-void
-save(modelica_integer & var)
-{
-  modelica_integer* pvar = &var;
-  long ind;
-  if (sim_verbose  >= LOG_EVENTS)
-    {
-      printf("save %s = %d\n", getNameInt(&var), (int)var);
-    }
-  ind = long(pvar - globalData->intVariables.algebraics);
-  if (ind >= 0 && ind < globalData->intVariables.nAlgebraic)
-    {
-      int_saved[ind] = var;
-      return;
-    }
-  return;
-}
-
-void
-save(modelica_boolean & var)
-{
-  modelica_boolean* pvar = &var;
-  long ind;
-  if (sim_verbose  >= LOG_EVENTS)
-    {
-      printf("save %s = %o\n", getNameBool(&var), var);
-    }
-  ind = long(pvar - globalData->boolVariables.algebraics);
-  if (ind >= 0 && ind < globalData->boolVariables.nAlgebraic)
-    {
-      bool_saved[ind] = var;
-      return;
-    }
-  return;
-}
-
-void
-save(const char* & var)
-{
-  const char** pvar = &var;
-  long ind;
-  if (sim_verbose >= LOG_EVENTS)
-    {
-      printf("save %s = %s\n", getNameString(pvar), var);
-    }
-  ind = long(pvar - globalData->stringVariables.nAlgebraic);
-  if (ind >= 0 && ind < globalData->stringVariables.nAlgebraic)
-    {
-      str_saved[ind] = var;
-      return;
-    }
-  return;
-}
-
-double
-pre(double & var)
-{
-  double* pvar = &var;
-  long ind;
-
-  ind = long(pvar - globalData->states);
-  if (ind >= 0 && ind < globalData->nStates)
-    {
-      return x_saved[ind];
-    }
-  ind = long(pvar - globalData->statesDerivatives);
-  if (ind >= 0 && ind < globalData->nStates)
-    {
-      return xd_saved[ind];
-    }
-  ind = long(pvar - globalData->algebraics);
-  if (ind >= 0 && ind < globalData->nAlgebraic)
-    {
-      return y_saved[ind];
-    }
-  ind = long(pvar - globalData->helpVars);
-  if (ind >= 0 && ind < globalData->nHelpVars)
-    {
-      return h_saved[ind];
-    }
-  return var;
-}
-
-modelica_integer
-pre(modelica_integer & var)
-{
-  modelica_integer* pvar = &var;
-  long ind;
-
-  ind = long(pvar - globalData->intVariables.algebraics);
-  if (ind >= 0 && ind < globalData->intVariables.nAlgebraic)
-    {
-      return int_saved[ind];
-    }
-  return var;
-}
-
-modelica_boolean
-pre(signed char & var)
-{
-  modelica_boolean* pvar = &var;
-  long ind;
-
-  ind = long(pvar - globalData->boolVariables.algebraics);
-  if (ind >= 0 && ind < globalData->boolVariables.nAlgebraic)
-    {
-      return bool_saved[ind];
-    }
-  return var;
-}
-
-const char*
-pre(const char* & var)
-{
-  const char** pvar = &var;
-  long ind;
-
-  ind = long(pvar - globalData->stringVariables.nAlgebraic);
-  if (ind >= 0 && ind < globalData->stringVariables.nAlgebraic)
-    {
-      return str_saved[ind];
-    }
-  return var;
-}
-
-bool
-edge(double& var)
-{
-  return var && !pre(var);
-}
-
-bool
-edge(modelica_integer& var)
-{
-  return var && !pre(var);
-}
-
-bool
-edge(modelica_boolean& var)
-{
-  return var && !pre(var);
-}
-
-bool
-change(double& var)
-{
-  return (var != pre(var));
-}
-
-bool
-change(modelica_integer& var)
-{
-  return (var != pre(var));
-}
-
-bool
-change(const char*& var)
-{
-  return (var != pre(var));
-}
-
-bool
-change(modelica_boolean& var)
-{
-  /*
-   signed char * pvar = &var;
-   cout << "varname : " <<  getName(pvar) << endl;
-   cout << "value : " << (bool)var << " pre(value) : " << (bool)pre(var) << endl;
-   */
-  return (var != pre(var));
-}
-
 void
 checkTermination()
 {
@@ -683,7 +470,7 @@ debugPrintHelpVars()
   for (int i = 0; i < globalData->nHelpVars; i++)
     {
       if (sim_verbose >= LOG_EVENTS)
-        cout << "HelpVar[" << i << "] pre: " << pre(globalData->helpVars[i])
+        cout << "HelpVar[" << i << "] pre: " << globalData->helpVars_saved[i]
         << ",  HelpVar[" << i << "] : " << globalData->helpVars[i] << endl;
     }
 }

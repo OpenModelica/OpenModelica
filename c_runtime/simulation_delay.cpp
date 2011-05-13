@@ -100,18 +100,19 @@ void storeDelayedExpression(int exprNumber, double exprValue)
 {
   double time = globalData->timeValue;
 
-  //fprintf(stderr, "storeDelayed %g:%g\n", time, exprValue);
   if (exprNumber < 0) {
-    fprintf(stderr, "storeDelayedExpression: Invalid expression number %d.\n", exprNumber);
+    // fprintf(stderr, "storeDelayedExpression: Invalid expression number %d.\n", exprNumber);
     return;
   }
 
 
   if (time < tStart) {
-    fprintf(stderr, "storeDelayedExpression: Time is smaller than starting time. Value ignored.\n");
+    // fprintf(stderr, "storeDelayedExpression: Time is smaller than starting time. Value ignored.\n");
     return;
   }
 
+  // fprintf(stderr, "storeDelayed[%d] %g:%g\n", exprNumber, time, exprValue);
+  
   // Allocate more space for expressions
   assert(exprNumber < numDelayExpressionIndex);
 
@@ -124,14 +125,14 @@ void storeDelayedExpression(int exprNumber, double exprValue)
 
 double delayImpl(int exprNumber, double exprValue, double time, double delayTime, double delayMax /* Unused */)
 {
-  //fprintf(stderr, "delayImpl: exprNumber = %d, exprValue = %lf, time = %lf, delayTime = %lf\n", exprNumber, exprValue, time, delayTime);
+  // fprintf(stderr, "delayImpl: exprNumber = %d, exprValue = %lf, time = %lf, delayTime = %lf\n", exprNumber, exprValue, time, delayTime);
 
   // Check for errors
   assert(exprNumber >= 0);
   assert(exprNumber < numDelayExpressionIndex);
 
-  if (time < tStart) {
-    fprintf(stderr, "delayImpl: Entered at time < starting time.\n");
+  if (time <= tStart) {
+    // fprintf(stderr, "delayImpl: Entered at time < starting time: %g.\n", exprValue);
     return exprValue;
   }
 
@@ -145,7 +146,7 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
 
   if (length == 0) {
     // This occurs in the initialization phase
-    // fprintf(stderr, "delayImpl: Missing initial value, using argument value instead.\n");
+    // fprintf(stderr, "delayImpl: Missing initial value, using argument value %g instead.\n", exprValue);
     return exprValue;
   }
 
@@ -159,8 +160,9 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
   // For non-scalar arguments the function is vectorized according to Section 10.6.12.
 
   if (time <= tStart + delayTime) {
-    //fprintf(stderr, "findTime: time <= tStart + delayTime\n");
-    return (*delayStruct)[0].value;
+    double res = (*delayStruct)[0].value;
+    // fprintf(stderr, "findTime: time <= tStart + delayTime: [%d] = %g\n",exprNumber,res);
+    return res;
   }
   else {
     // return expr(time-delayTime)

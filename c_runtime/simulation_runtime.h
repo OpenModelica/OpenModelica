@@ -49,19 +49,21 @@
 #include "rtclock.h"
 #include <stdlib.h>
 #include "simulation_events.h"
+#include "simulation_inline_solver.h"
+#include "simulation_delay.h"
 
 #ifdef __cplusplus
 
 #include "linearize.h"
-#include "simulation_delay.h"
 #include "simulation_result.h"
-#include "simulation_inline_solver.h"
 
 #include <fstream>
 #include <iostream>
 #include <string>
 
 using namespace std;
+
+extern "C" {
 
 
 /* \brief This class is used for throwing an exception when simulation code should be terminated.
@@ -85,7 +87,6 @@ protected:
 extern string TermMsg; /* message for termination. */
 extern simulation_result *sim_result;
 /* function with template for linear model */
-int linear_model_frame(string& out, string A, string B, string C, string D, string x_startvalues, string u_startvalues);
 int callSolver(int, char**, string, string, string, double, double, double, long, double);
 
 #endif /* cplusplus */
@@ -99,6 +100,7 @@ extern int terminationTerminate; /* Becomes non-zero when user terminates simula
 extern int terminationAssert; /* Becomes non-zero when model call assert simulation. */
 extern int warningLevelAssert; /* Becomes non-zero when model call assert with warning level. */
 extern omc_fileInfo TermInfo; /* message for termination. */
+extern const char *linear_model_frame; /* printf format-string with holes for 6 strings */
 
 /* Flags for controlling logging to stdout */
 extern const int LOG_STATS;
@@ -142,6 +144,7 @@ typedef struct sim_DATA_STRING {
   const char** parameters;
   const char** inputVars;
   const char** outputVars;
+  const char** algebraics_saved;
   DATA_STRING_ALIAS* alias;
 
   long nAlgebraic,nParameters;
@@ -154,7 +157,7 @@ typedef struct sim_DATA_INT {
   modelica_integer* parameters;
   modelica_integer* inputVars;
   modelica_integer* outputVars;
-  modelica_integer*  algebraics_old, *algebraics_old2;
+  modelica_integer*  algebraics_old, *algebraics_old2, *algebraics_saved;
   DATA_INT_ALIAS* alias;
   modelica_boolean* algebraicsFilterOutput; /* True if this variable should be filtered */
   modelica_boolean* aliasFilterOutput; /* True if this variable should be filtered */
@@ -169,7 +172,7 @@ typedef struct sim_DATA_BOOL {
   modelica_boolean* parameters;
   modelica_boolean* inputVars;
   modelica_boolean* outputVars;
-  modelica_boolean* algebraics_old, *algebraics_old2;
+  modelica_boolean* algebraics_old, *algebraics_old2, *algebraics_saved;
   DATA_BOOL_ALIAS* alias;
   modelica_boolean* algebraicsFilterOutput; /* True if this variable should be filtered */
   modelica_boolean* aliasFilterOutput; /* True if this variable should be filtered */
@@ -202,7 +205,7 @@ typedef struct sim_DATA {
   double* parameters;
   double* inputVars;
   double* outputVars;
-  double* helpVars;
+  double* helpVars, *helpVars_saved;
   double* initialResiduals;
   double* jacobianVars;
 
@@ -213,9 +216,9 @@ typedef struct sim_DATA {
   modelica_boolean* aliasFilterOutput;
 
   /* Old values used for extrapolation */
-  double* states_old,*states_old2;
-  double* statesDerivatives_old,*statesDerivatives_old2;
-  double* algebraics_old,*algebraics_old2;
+  double* states_old,*states_old2,*states_saved;
+  double* statesDerivatives_old,*statesDerivatives_old2,*statesDerivatives_saved;
+  double* algebraics_old,*algebraics_old2,*algebraics_saved;
   double oldTime,oldTime2;
   double current_stepsize;
 
@@ -387,12 +390,17 @@ int isInteractiveSimulation();
 
 double newTime(double t, double step,double stop);
 
-#define MODELICA_ASSERT(info,msg) { terminationAssert = 1; TermMsg = msg; TermInfo = info;}
+void setTermMsg(const char*);
 
-#define MODELICA_TERMINATE(msg)  { modelTermination=1; \
-terminationTerminate = 1; TermMsg = msg; TermInfo = omc_dummyFileInfo; }
+#define MODELICA_ASSERT(info,msg) { terminationAssert = 1; setTermMsg(msg); TermInfo = info; }
+
+#define MODELICA_TERMINATE(msg)  { modelTermination=1; terminationTerminate = 1; setTermMsg(msg); TermInfo = omc_dummyFileInfo; }
 
 #define initial() localData->init
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

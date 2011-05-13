@@ -32,9 +32,17 @@
 #ifndef _SIMULATION_DELAY_H
 #define _SIMULATION_DELAY_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void initDelay(double startTime);
 void deinitDelay();
 double delayImpl(int exprNumber, double exprValue, double time, double delayTime, double maxDelay);
 void storeDelayedExpression(int exprNumber, double exprValue);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

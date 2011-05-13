@@ -46,6 +46,16 @@
 #include <list>
 using namespace std;
 
+double
+BiSection(double*, double*, double*, double*, list<int> *);
+
+int
+CheckZeroCrossings(list<int>*);
+
+extern "C" {
+
+#endif
+
 int
 initializeEventData();
 void
@@ -53,48 +63,6 @@ deinitializeEventData();
 
 void
 saveall();
-
-void
-save(double & var);
-void
-save(modelica_integer & var);
-void
-save(modelica_boolean & var);
-void
-save(const char* & var);
-
-double
-pre(double & var);
-modelica_integer
-pre(modelica_integer & var);
-signed char
-pre(signed char & var);
-const char*
-pre(const char* & var);
-
-bool
-edge(double& var);
-bool
-edge(modelica_integer& var);
-bool
-edge(modelica_boolean& var);
-
-bool
-change(double& var);
-bool
-change(modelica_integer& var);
-bool
-change(modelica_boolean& var);
-bool
-change(const char*& var);
-
-double
-BiSection(double*, double*, double*, double*, list<int> *);
-
-int
-CheckZeroCrossings(list<int>*);
-
-#endif
 
 double
 Sample(double t, double start, double interval);
@@ -119,8 +87,7 @@ checkForSampleEvent();
 
 extern long inUpdate;
 extern int euler_in_use;
-const int IterationMax = 200;
-extern modelica_boolean* gout_res;
+static const int IterationMax = 200;
 
 #define ZEROCROSSING(ind,exp) { \
     if (euler_in_use) { \
@@ -190,5 +157,9 @@ void
 deactivateSampleEventsandEquations();
 void
 debugSampleEvents();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

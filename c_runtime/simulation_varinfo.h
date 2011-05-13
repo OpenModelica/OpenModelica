@@ -60,7 +60,7 @@ struct omc_equationInfo {
   int id;
   const char *name;
   int numVar;
-  const struct omc_varInfo* vars; /* The variables involved in the equation */
+  const struct omc_varInfo** vars; /* The variables involved in the equation */
 };
 
 struct omc_functionInfo {

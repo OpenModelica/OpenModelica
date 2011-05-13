@@ -167,6 +167,11 @@ newTime(double t, double step, double stop)
   return newTime;
 }
 
+void setTermMsg(const char *msg)
+{
+  TermMsg = msg;
+}
+
 /** function storeExtrapolationData
  * author: PA
  *
