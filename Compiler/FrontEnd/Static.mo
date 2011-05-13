@@ -12816,4 +12816,239 @@ algorithm
   end matchcontinue;
 end elabCodeExp;
 
+public function elabArrayDims
+  "Elaborates a list of array dimensions."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.ComponentRef inComponentRef;
+  input list<Absyn.Subscript> inDimensions;
+  input Boolean inImplicit;
+  input Option<Interactive.InteractiveSymbolTable> inST;
+  input Boolean inDoVect;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info inInfo;
+  output Env.Cache outCache;
+  output list<DAE.Dimension> outDimensions;
+algorithm
+  (outCache, outDimensions) := elabArrayDims2(inCache, inEnv, inComponentRef,
+    inDimensions, inImplicit, inST, inDoVect, inPrefix, inInfo, {});
+end elabArrayDims;
+
+protected function elabArrayDims2
+  "Helper function to elabArrayDims. Needed because of tail recursion."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.ComponentRef inCref;
+  input list<Absyn.Subscript> inDimensions;
+  input Boolean inImplicit;
+  input Option<Interactive.InteractiveSymbolTable> inST;
+  input Boolean inDoVect;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info inInfo;
+  input list<DAE.Dimension> inElaboratedDims;
+  output Env.Cache outCache;
+  output list<DAE.Dimension> outDimensions;
+algorithm
+  (outCache, outDimensions) := match(inCache, inEnv, inCref, inDimensions, 
+      inImplicit, inST, inDoVect, inPrefix, inInfo, inElaboratedDims)
+    local
+      Env.Cache cache;
+      Absyn.Subscript dim;
+      list<Absyn.Subscript> rest_dims;
+      DAE.Dimension elab_dim;
+      list<DAE.Dimension> elab_dims;
+
+    case (_, _, _, {}, _, _, _, _, _, _) 
+      then (inCache, listReverse(inElaboratedDims));
+
+    case (_, _, _, dim :: rest_dims, _, _, _, _, _, _)
+      equation
+        (cache, elab_dim) = elabArrayDim(inCache, inEnv, inCref, dim,
+          inImplicit, inST, inDoVect, inPrefix, inInfo);
+        elab_dims = elab_dim :: inElaboratedDims;
+        (cache, elab_dims) = elabArrayDims2(inCache, inEnv, inCref, rest_dims,
+          inImplicit, inST, inDoVect, inPrefix, inInfo, elab_dims);
+      then
+        (inCache, elab_dims);
+  end match;
+end elabArrayDims2;
+
+protected function elabArrayDim
+  "Elaborates a single array dimension."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.ComponentRef inCref;
+  input Absyn.Subscript inDimension;
+  input Boolean inImpl;
+  input Option<Interactive.InteractiveSymbolTable> inST;
+  input Boolean inDoVect;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info inInfo;
+  output Env.Cache outCache;
+  output DAE.Dimension outDimension;
+algorithm
+  (outCache, outDimension) := matchcontinue(inCache, inEnv, inCref, inDimension,
+      inImpl, inST, inDoVect, inPrefix, inInfo)
+    local
+      Absyn.ComponentRef cr;
+      DAE.Dimension dim;
+      Env.Cache cache;
+      Env.Env cenv;
+      SCode.Element cls;
+      Absyn.Path type_path, enum_type_name;
+      String name;
+      list<String> enum_literals;
+      Integer enum_size;
+      list<SCode.Element> el;
+      Absyn.Exp sub;
+      DAE.Exp e, size_cr;
+      DAE.Properties prop;
+      list<SCode.Enum> enum_lst;
+      Absyn.Exp size_arg;
+
+    // The : operator results in an unknown dimension.
+    case (_, _, _, Absyn.NOSUB(), _, _, _, _, _) 
+      then (inCache, DAE.DIM_UNKNOWN());
+
+    // Size expression that referes to the array itself, such as 
+    // Real x(:, size(x, 1)).
+    case (_, _, _, Absyn.SUBSCRIPT(subScript = Absyn.CALL(function_ =
+        Absyn.CREF_IDENT(name = "size"), functionArgs = Absyn.FUNCTIONARGS(args =
+        {Absyn.CREF(componentRef = cr), size_arg}))), _, _, _, _, _)
+      equation
+        true = Absyn.crefEqual(inCref, cr);
+        dim = DAE.DIM_UNKNOWN();
+      then
+        (inCache, dim);
+
+    // Array dimension from an enumeration.
+    case (_, _, _, Absyn.SUBSCRIPT(subScript = Absyn.CREF(cr)), _, _, _, _, _)
+      equation
+        type_path = Absyn.crefToPath(cr);
+        (_, cls as SCode.CLASS(name = name, restriction = SCode.R_ENUMERATION(),
+            classDef = SCode.PARTS(elementLst = el)), cenv) =
+          Lookup.lookupClass(inCache, inEnv, type_path, false);
+        enum_type_name = Env.joinEnvPath(cenv, Absyn.IDENT(name));
+        enum_literals = SCode.componentNames(cls);
+        enum_size = listLength(enum_literals);
+      then
+        (inCache, DAE.DIM_ENUM(enum_type_name, enum_literals, enum_size));
+
+    // Frenkel TUD try next enum. 
+    case (_, _, _, Absyn.SUBSCRIPT(subScript = Absyn.CREF(cr)), _, _, _, _, _)
+      equation
+        type_path = Absyn.crefToPath(cr);
+        (_, SCode.CLASS(restriction = SCode.R_TYPE(), classDef =
+            SCode.ENUMERATION(enumLst = enum_lst)), _) =
+          Lookup.lookupClass(inCache, inEnv, type_path, false);
+        enum_size = listLength(enum_lst);
+      then
+        (inCache, DAE.DIM_INTEGER(enum_size));
+
+    // For all other cases we need to elaborate the subscript expression, so the
+    // expression is elaborated and passed on to elabArrayDim2 to avoid doing
+    // the elaboration several times.
+    case (_, _, _, Absyn.SUBSCRIPT(subScript = sub), _, _, _, _, _)
+      equation
+        (cache, e, prop, _) = elabExp(inCache, inEnv, sub, inImpl, inST,
+          inDoVect, inPrefix, inInfo);
+        (cache, SOME(dim)) = elabArrayDim2(cache, inEnv, e, prop, inImpl, inST,
+          inDoVect, inPrefix, inInfo);
+      then
+        (cache, dim);
+
+    else
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("- Static.elabArrayDim failed on: " +&
+          Absyn.printComponentRefStr(inCref) +&
+          Dump.printArraydimStr({inDimension}));
+      then
+        fail();
+
+  end matchcontinue;
+end elabArrayDim;
+
+protected function elabArrayDim2
+  "Helper function to elabArrayDim. Continues the work from the last case in
+  elabArrayDim to avoid unnecessary elaboration."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input DAE.Exp inExp;
+  input DAE.Properties inProperties;
+  input Boolean inImpl;
+  input Option<Interactive.InteractiveSymbolTable> inST;
+  input Boolean inDoVect;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info inInfo;
+  output Env.Cache outCache;
+  output Option<DAE.Dimension> outDimension;
+algorithm
+  (outCache, outDimension) := matchcontinue(inCache, inEnv, inExp, inProperties,
+      inImpl, inST, inDoVect, inPrefix, inInfo)
+    local
+      DAE.Const cnst;
+      Env.Cache cache;
+      DAE.Exp e;
+      DAE.Type ty;
+      String e_str, t_str;
+      Integer i;
+
+    // Constant dimension creates DIM_INTEGER.
+    case (_, _, _, DAE.PROP((DAE.T_INTEGER(_), _), cnst), _, _, _, _, _)
+      equation
+        true = Types.isParameterOrConstant(cnst);
+        (cache, Values.INTEGER(i), _) = 
+          Ceval.ceval(inCache, inEnv, inExp, inImpl, inST, NONE(), Ceval.NO_MSG());
+      then
+        (cache, SOME(DAE.DIM_INTEGER(i)));
+
+    // When arrays are non-expanded, non-constant parametric dimensions are allowed.
+    case (_, _, _, DAE.PROP((DAE.T_INTEGER(_), _), DAE.C_PARAM()), _, _, _, _, _)
+      equation
+        false = RTOpts.splitArrays();
+      then
+        (inCache, SOME(DAE.DIM_EXP(inExp)));
+
+    // When not implicit instantiation, array dimension must be constant.
+    case (_, _, _, DAE.PROP((DAE.T_INTEGER(_), _), DAE.C_VAR()), false, _, _, _, _)
+      equation
+        e_str = ExpressionDump.printExpStr(inExp);
+        Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN, {e_str}, inInfo);
+      then
+        (inCache, NONE());
+
+    // Non-constant dimension creates DIM_EXP.
+    case (_, _, _, DAE.PROP((DAE.T_INTEGER(_), _), _), true, _, _, _, _)
+      equation
+        (cache, e, _) = 
+          Ceval.cevalIfConstant(inCache, inEnv, inExp, inProperties, inImpl);
+      then
+        (cache, SOME(DAE.DIM_EXP(e)));
+
+    case (_, _, _, _, _, _, _, _, _)
+      equation
+        (cache, e as DAE.SIZE(_, _), _) = 
+          Ceval.cevalIfConstant(inCache, inEnv, inExp, inProperties, inImpl);
+      then
+        (cache, SOME(DAE.DIM_EXP(e)));
+
+    case (_, _, _, _, _, _, _, _, _)
+      equation
+        true = OptManager.getOption("checkModel");
+      then
+        (inCache, SOME(DAE.DIM_UNKNOWN()));
+
+    case (_, _, _, DAE.PROP(ty, _), _, _, _, _, _)
+      equation
+        e_str = ExpressionDump.printExpStr(inExp);
+        t_str = Types.unparseType(ty);
+        Error.addSourceMessage(Error.ARRAY_DIMENSION_INTEGER, 
+          {e_str, t_str}, inInfo);
+      then
+        (inCache, NONE());
+
+  end matchcontinue;
+end elabArrayDim2;
+
 end Static;

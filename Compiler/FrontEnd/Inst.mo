@@ -9482,19 +9482,19 @@ algorithm
     // variables here.
     case (cache, env, cref, path, ad, _, impl, st, doVect, true,pre,info,_)
       equation
-        (cache, dim) = elabArraydimDecl(cache, env, cref, ad, true, st, doVect,pre,info);
+        (cache, dim) = Static.elabArrayDims(cache, env, cref, ad, true, st, doVect,pre,info);
       then
         (cache, dim);
         
     case (cache,env,cref,path,ad,NONE(),impl,st,doVect, _,pre,info,_) /* impl */
       equation
-        (cache,dim) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect,pre,info);
+        (cache,dim) = Static.elabArrayDims(cache,env, cref, ad, impl, st,doVect,pre,info);
       then
         (cache,dim);
     case (cache,env,cref,path,ad,SOME(DAE.TYPED(e,_,prop,_)),impl,st,doVect, _ ,pre,info,inst_dims) /* Untyped expressions must be elaborated. */
       equation
         t = Types.getPropType(prop);
-        (cache,dim1) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect,pre,info);
+        (cache,dim1) = Static.elabArrayDims(cache,env, cref, ad, impl, st,doVect,pre,info);
         dim2 = elabArraydimType(t, ad, e, path, pre, cref, info,inst_dims);
         //Debug.traceln("TYPED: " +& ExpressionDump.printExpStr(e) +& " s: " +& Env.printEnvPathStr(env));
         dim3 = Util.listThreadMap(dim1, dim2, compatibleArraydim);
@@ -9505,7 +9505,7 @@ algorithm
         (cache,e_1,prop,_) = Static.elabExp(cache,env, aexp, impl, st,doVect,pre,info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
         t = Types.getPropType(prop);
-        (cache,dim1) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect,pre,info);
+        (cache,dim1) = Static.elabArrayDims(cache,env, cref, ad, impl, st,doVect,pre,info);
         dim2 = elabArraydimType(t, ad, e_1, path, pre, cref, info,inst_dims);
         //Debug.traceln("UNTYPED");
         dim3 = Util.listThreadMap(dim1, dim2, compatibleArraydim);
@@ -9516,7 +9516,7 @@ algorithm
         // adrpo: do not display error when running checkModel 
         //        TODO! FIXME! check if this doesn't actually get rid of useful error messages
         false = OptManager.getOption("checkModel");
-        (cache,dim1) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect,pre,info);
+        (cache,dim1) = Static.elabArrayDims(cache,env, cref, ad, impl, st,doVect,pre,info);
         dim2 = elabArraydimType(t, ad, e, path, pre, cref, info,inst_dims);
         failure(dim3 = Util.listThreadMap(dim1, dim2, compatibleArraydim));
         e_str = ExpressionDump.printExpStr(e);
@@ -9550,175 +9550,6 @@ algorithm
   dim_strings := Util.listMap(inDimensionLst, ExpressionDump.dimensionString);
   outString := Util.stringDelimitList(dim_strings, ",");
 end printDimStr;
-
-protected function elabArraydimDecl
-"function: elabArraydimDecl
-  Given an Absyn.ArrayDim, this function evaluates all dimension
-  size specifications, creating a list of dimensions.
-  When the array dimension size is specified as :, the result
-  will contain DAE.DIM_UNKNOWN()."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Absyn.ComponentRef inComponentRef;
-  input Absyn.ArrayDim inArrayDim;
-  input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Boolean performVectorization;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output list<DAE.Dimension> outDimensionLst;
-algorithm
-  (outCache,outDimensionLst) :=
-  matchcontinue (inCache,inEnv,inComponentRef,inArrayDim,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
-    local
-      list<DAE.Dimension> l;
-      DAE.Dimension dim;
-      list<Env.Frame> env;
-      Absyn.ComponentRef cref,cr;
-      list<Absyn.Subscript> ds;
-      Boolean impl;
-      Option<Interactive.InteractiveSymbolTable> st;
-      DAE.Exp e;
-      DAE.Const cnst;
-      Integer i;
-      Absyn.Exp d;
-      String str,e_str,t_str;
-      tuple<DAE.TType, Option<Absyn.Path>> t;
-      Env.Cache cache;
-      Boolean doVect;
-      Prefix.Prefix pre;
-      DAE.Properties prop;
-      Absyn.Path typePath, enumTypeName;
-      list<SCode.Element> elementLst;
-      SCode.Element cls;
-      list<String> enum_literals;
-      Env.Env cenv;
-      String n;
-      list<SCode.Enum> enumLst;
-      SCode.ClassDef def;
-
-    // empty case
-    case (cache,_,_,{},_,_,_,_,_) then (cache,{});
-    // no subs
-    case (cache,env,cref,(Absyn.NOSUB() :: ds),impl,st,doVect,pre,info)
-      equation
-        (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect,pre,info);
-      then
-        (cache,DAE.DIM_UNKNOWN() :: l);
-    // For functions, this can occur: Real x{:,size(x,1)} ,i.e. refering to  the variable itself but a different dimension.
-    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "size"),
-          functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),_}))) :: ds),impl,st,doVect,pre,info)
-      equation
-        true = Absyn.crefEqual(cref, cr);
-        //dim = Util.if_(OptManager.getOption("checkModel"), DAE.DIM_INTEGER(3), DAE.DIM_UNKNOWN());
-        dim = DAE.DIM_UNKNOWN();
-        (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect,pre,info);
-      then
-        (cache, dim :: l);
-    // adrpo: See if our array dimension comes from an enumeration!
-    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = Absyn.CREF(cr)) :: ds),impl,st,doVect,pre,info)
-      equation
-        typePath = Absyn.crefToPath(cr);
-        // make sure is an enumeration!
-        (_, cls as SCode.CLASS(name = n, 
-                               restriction=SCode.R_ENUMERATION(),
-                               classDef = SCode.PARTS(elementLst=elementLst)), 
-            cenv) = Lookup.lookupClass(cache, env, typePath, false);
-        enumTypeName = Env.joinEnvPath(cenv, Absyn.IDENT(n));
-        enum_literals = SCode.componentNames(cls);
-        i = listLength(enum_literals);
-        (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect,pre,info);
-      then
-        (cache,DAE.DIM_ENUM(enumTypeName, enum_literals, i) :: l);
-    // Frenkel TUD try next enum
-    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = Absyn.CREF(cr)) :: ds),impl,st,doVect,pre,info)
-      equation
-        typePath = Absyn.crefToPath(cr);
-        // make sure is an enumeration!
-        (_, SCode.CLASS(restriction=SCode.R_TYPE(),classDef= def as SCode.ENUMERATION(enumLst=enumLst)), _) =
-             Lookup.lookupClass(cache, env, typePath, false);
-        i = listLength(enumLst);
-        (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect,pre,info);
-      then
-        (cache,DAE.DIM_INTEGER(i) :: l);
-    // Constant dimension creates DIMINT
-    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),impl,st,doVect,pre,info)
-      equation
-        //Debug.fprintln("insttr", "elab_arraydim_decl5");
-        //Debug.traceln("try elab const array dim " +& Dump.dumpExpStr(d) +& " s:" +& Env.printEnvPathStr(env));
-        (cache,e,DAE.PROP((DAE.T_INTEGER(_),_),cnst),_) = Static.elabExp(cache,env, d, impl, st,doVect,pre,info);
-        failure(equality(cnst = DAE.C_VAR()));
-        (cache,Values.INTEGER(i),_) = Ceval.ceval(cache,env, e, impl, st,NONE(), Ceval.NO_MSG());
-        (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect,pre,info);
-        //Debug.traceln("DIMINT:" +& Env.printEnvPathStr(env) +& "," +& ExpressionDump.printExpStr(e) +& ":" +& intString(i));
-      then
-        (cache,DAE.DIM_INTEGER(i) :: l);
-    // When arrays are non-expanded, non-constant parametric dimensions are allowed
-    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),impl,st,doVect,pre,info)
-      equation
-        //Debug.fprintln("insttr", "elab_arraydim_decl5");
-        //Debug.traceln("try elab const array dim " +& Dump.dumpExpStr(d) +& " s:" +& Env.printEnvPathStr(env));
-        false = RTOpts.splitArrays();
-        (cache,e,DAE.PROP((DAE.T_INTEGER(_),_),DAE.C_PARAM()),_) = Static.elabExp(cache,env, d, impl, st,doVect,pre,info);
-        (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect,pre,info);
-        //Debug.traceln("DIMINT:" +& Env.printEnvPathStr(env) +& "," +& ExpressionDump.printExpStr(e) +& ":" +& intString(i));
-      then
-        (cache,DAE.DIM_EXP(e) :: l);
-
-    // when not implicit instantiation, array dim. must be constant.
-    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),(impl as false),st,doVect,pre,info)
-      equation
-        //Debug.fprintln("insttr", "elab_arraydim_decl5");
-        (cache,e,DAE.PROP((DAE.T_INTEGER(_),_),DAE.C_VAR()),_) = Static.elabExp(cache,env, d, impl, st,doVect,pre,info);
-        str = Dump.printExpStr(d);
-        Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN, {str}, info);
-      then
-        fail();
-    // Non-constant dimension creates DIMEXP
-    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),(impl as true),st,doVect,pre,info)
-      equation
-        // Debug.fprintln("insttr", "elab_arraydim_decl6");
-        (cache,e,prop as DAE.PROP((DAE.T_INTEGER(_),_),cnst),_) = Static.elabExp(cache,env, d, impl, st,doVect,pre,info);
-        (cache, e, prop) = Ceval.cevalIfConstant(cache, env, e, prop, impl);
-        (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect,pre,info);
-      then
-        (cache, DAE.DIM_EXP(e) :: l);
-
-    /* Size(x,1) in e.g. functions => Unknown dimension */
-    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),impl,st,doVect,pre,info)
-      equation
-        (cache, e, prop,_) = Static.elabExp(cache,env, d, impl, st,doVect,pre,info);
-        (cache, e as DAE.SIZE(_, _), prop) = Ceval.cevalIfConstant(cache, env, e, prop, impl);
-        (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect,pre,info);
-      then
-        (cache, DAE.DIM_EXP(e) :: l);
-
-    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),impl,st,doVect,pre,info)
-      equation
-        true = OptManager.getOption("checkModel");
-        (cache, e, prop, _) = Static.elabExp(cache, env, d, impl, st, doVect, pre,info);
-        //(cache, e, prop) = Ceval.cevalIfConstant(cache, env, e, prop, impl);
-        (cache, l) = elabArraydimDecl(cache, env, cref, ds, impl, st, doVect, pre,info);
-      then
-        (cache, DAE.DIM_UNKNOWN() :: l);
-    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),impl,st,doVect,pre,info)
-      equation
-        (cache,e,DAE.PROP(t,_),_) = Static.elabExp(cache,env, d, impl, st,doVect,pre,info);
-        e_str = ExpressionDump.printExpStr(e);
-        t_str = Types.unparseType(t);
-        Error.addSourceMessage(Error.ARRAY_DIMENSION_INTEGER, {e_str,t_str}, info);
-      then
-        fail();
-    case (_,_,cref,ds,_,_,_,_,_)
-      equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.traceln("- Inst.elabArraydimDecl failed on: " +&
-          Absyn.printComponentRefStr(cref) +& Dump.printArraydimStr(ds));
-      then
-        fail();
-  end matchcontinue;
-end elabArraydimDecl;
 
 protected function compatibleArraydim
   "Given two, possibly incomplete, array dimension size specifications, this

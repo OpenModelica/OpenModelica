@@ -1590,8 +1590,8 @@ algorithm
     case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(exprType=ty)))
       then Types.elabType(ty);
     case (DAE.END()) then DAE.ET_OTHER();  /* Can be any type. */
-    case (DAE.SIZE(_,NONE())) then DAE.ET_INT();
-    case (DAE.SIZE(_,SOME(_))) then DAE.ET_ARRAY(DAE.ET_INT(),{DAE.DIM_UNKNOWN()});
+    case (DAE.SIZE(_,NONE())) then DAE.ET_ARRAY(DAE.ET_INT(),{DAE.DIM_UNKNOWN()});
+    case (DAE.SIZE(_,SOME(_))) then DAE.ET_INT();
     
     // MetaModelica extension
     case (DAE.LIST(valList = _)) then DAE.ET_METATYPE();
