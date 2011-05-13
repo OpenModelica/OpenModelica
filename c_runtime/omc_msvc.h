@@ -30,6 +30,21 @@
 #ifndef __OPENMODELICA_MSVC_H
 #define __OPENMODELICA_MSVC_H
 
+union MSVC_FLOAT_HACK
+{
+   unsigned char Bytes[4];
+   float Value;
+};
+#ifndef INFINITY
+static union MSVC_FLOAT_HACK __INFINITY = {{0x00, 0x00, 0x80, 0x7F}};
+#define INFINITY (__INFINITY.Value)
+#endif
+
+#ifndef NAN
+static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
+#define NAN (__NAN.Value)
+#endif
+
 /* Compatibility header for MSVC compiler */
 #if defined(_MSC_VER)
 #define WIN32
@@ -38,17 +53,6 @@
 #define fmin(x, y) ((x<y)?x:y)
 #define snprintf sprintf_s
 #endif
-
-
-union MSVC_FLOAT_HACK
-{
-   unsigned char Bytes[4];
-   float Value;
-};
-static union MSVC_FLOAT_HACK __INFINITY = {{0x00, 0x00, 0x80, 0x7F}};
-static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
-#define INFINITY (__INFINITY.Value)
-#define NAN (__NAN.Value)
 
 #define round(dbl) (dbl >= 0.0 ? (int)(dbl + 0.5) : ((dbl - (double)(int)dbl) <= -0.5 ? (int)dbl : (int)(dbl - 0.5)))
 
