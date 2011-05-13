@@ -1990,7 +1990,7 @@ algorithm
   end match;
 end ppElseStr;
 
-protected function indent "function: indent
+public function indent "function: indent
 
   Print an indentation, given an indent level.
 "
@@ -2010,7 +2010,7 @@ algorithm
   end matchcontinue;
 end indent;
 
-protected function indentStr "function: indentStr
+public function indentStr "function: indentStr
 
   Print an indentation to a string, given an indent level.
 "
@@ -2466,7 +2466,7 @@ algorithm
   end match;
 end buildGrVarStr;
 
-protected function printExpStrSpecial "function: printExpStrSpecial
+public function printExpStrSpecial "function: printExpStrSpecial
 
   Prints an expression to a string suitable for graphviz.
 "

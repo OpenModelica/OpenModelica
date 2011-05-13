@@ -640,7 +640,7 @@ algorithm
       Option<list<SCode.Element>> fp;
       list<Env.Frame> env;
       SCode.Element c;
-      String s1,str,str1,str2,str3,re,token,varid,cmd,executable,method_str,outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,errMsg,errorStr,uniqueStr,interpolation,title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix;
+      String s1,str,str1,str2,str3,re,token,varid,cmd,executable,executable1,method_str,outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,errMsg,errorStr,uniqueStr,interpolation,title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix;
       DAE.ComponentRef cr,cref,classname;
       Interactive.InteractiveSymbolTable newst,st_1;
       Absyn.Program p,pnew,newp,ptot;
@@ -665,7 +665,7 @@ algorithm
       list<String> vars_1,vars_2,args,strings,strVars,strs,visvars;
       Real t1,t2,time,timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2;
       Interactive.InteractiveStmts istmts;
-      Boolean bval, b, externalWindow, legend, grid, logX, logY, points, gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive;
+      Boolean bval, b, externalWindow, legend, grid, logX, logY, points, gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive,ifcpp;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
       AbsynDep.Depends aDep;
@@ -808,14 +808,15 @@ algorithm
       then
         (cache,ret_val,st_1);
    
+
+     //case (cache,env,"translateModelCPP",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,msg)
+      //equation
+        //(cache,ret_val,st_1,_,_,_,_) = translateModelCPP(cache,env, className, st, filenameprefix,true,NONE());
+      //then
+        //(cache,ret_val,st_1);
+
     case (cache,env,"translateModel",_,st,msg)
       then (cache,Values.STRING("There were errors during translation. Use getErrorString() to see them."),st);
-
-    case (cache,env,"translateModelCPP",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,msg)
-      equation
-        (cache,ret_val,st_1,_,_,_,_) = translateModelCPP(cache,env, className, st, filenameprefix,true,NONE());
-      then
-        (cache,ret_val,st_1);
         
     case (cache,env,"translateModelFMU",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,msg)
       equation
@@ -1004,7 +1005,10 @@ algorithm
         cit = winCitation();
         pwd = System.pwd();
         pd = System.pathDelimiter();
-        executableSuffixedExe = stringAppend(executable, System.getExeExt());
+        ifcpp=Util.equal(RTOpts.simCodeTarget(),"Cpp");
+        executable1=Util.if_(ifcpp,"Simulation",executable);
+        executableSuffixedExe = stringAppend(executable1, System.getExeExt());
+        
         // sim_call = stringAppendList({"sh -c ",cit,"ulimit -t 60; ",cit,pwd,pd,executableSuffixedExe,cit," > output.log 2>&1",cit});
         sim_call = stringAppendList({cit,pwd,pd,executableSuffixedExe,cit," > output.log 2>&1"});
         System.realtimeTick(RT_CLOCK_SIMULATE_SIMULATION);
@@ -2004,7 +2008,7 @@ algorithm
   end match;
 end translateModel;
 
-protected function translateModelCPP "function translateModel
+/*protected function translateModelCPP "function translateModel
  author: x02lucpo
  translates a model into cpp code and writes also a makefile"
   input Env.Cache inCache;
@@ -2040,7 +2044,7 @@ algorithm
       then
         (cache,outValMsg,st,indexed_dlow,libs,file_dir,resultValues);
   end match;
-end translateModelCPP;
+end translateModelCPP;*/
 
 protected function translateModelFMU "function translateModelFMU
  author: Frenkel TUD
