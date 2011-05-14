@@ -1256,15 +1256,12 @@ algorithm
     local
       String fstr;
       Absyn.Path fpath;
-      DAE.Function constr,destr;
-    case DAE.EXTOBJECTCLASS(path = fpath,constructor=constr,destructor=destr)
+    case DAE.EXTOBJECTCLASS(path = fpath)
       equation
         Print.printBuf("class ");
         fstr = Absyn.pathString(fpath);
         Print.printBuf(fstr);
         Print.printBuf("\n extends ExternalObject;\n");
-        dumpFunction(constr);
-        dumpFunction(destr);
         Print.printBuf("end ");
         Print.printBuf(fstr);
         Print.printBuf(";\n");
@@ -3304,14 +3301,10 @@ algorithm
     local
       String fstr,str,c_str,d_str;
       Absyn.Path fpath;
-      DAE.Function constr,destr;
-    case DAE.EXTOBJECTCLASS(path = fpath,constructor = constr, destructor = destr)
+    case DAE.EXTOBJECTCLASS(path = fpath)
       equation
         fstr = Absyn.pathString(fpath);
-        c_str = dumpFunctionStr(constr);
-        d_str = dumpFunctionStr(destr);
-        str = stringAppendList({"class  ",fstr,"\n  extends ExternalObject;\n",c_str,
-          d_str,"end ",fstr,";\n"});
+        str = stringAppendList({"class  ",fstr,"\n  extends ExternalObject;\nend ",fstr,";\n"});
       then
         str;
     case _ then "";

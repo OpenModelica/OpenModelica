@@ -330,11 +330,10 @@ algorithm
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.COMP(id,elist,source,cmt)::dae2;
 
-    case (DAE.EXTOBJECTCLASS(path,f1,f2,source)::dae,repl,condExpFunc)
+    case ((elt as DAE.EXTOBJECTCLASS(path,source))::dae,repl,condExpFunc)
       equation
-        {f1,f2} = applyReplacementsFunctions({f1,f2},repl,condExpFunc);
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
-      then DAE.EXTOBJECTCLASS(path,f1,f2,source)::dae2;
+      then elt::dae2;
 
     case (DAE.ASSERT(e1,e2,source)::dae,repl,condExpFunc)
       equation

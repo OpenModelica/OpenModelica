@@ -100,7 +100,6 @@ algorithm
         alglst = Util.listMap1(arrayList(algorithms),inlineAlgorithm,(ftree,itlst));
         algorithms = listArray(alglst);
         eventInfo = inlineEventInfo(eventInfo,(ftree,itlst));
-        extObjClasses = inlineExtObjClasses(extObjClasses,(ftree,itlst));
       then
         BackendDAE.DAE(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses);
     case(_,_,_)
@@ -454,38 +453,6 @@ algorithm
   end matchcontinue;
 end inlineReinitStmt;
 
-public function inlineExtObjClasses
-"function: inlineExtObjClasses
-  inlines function calls in external object classes"
-  input BackendDAE.ExternalObjectClasses inExtObjClasses;
-  input Functiontuple inElementList;
-  output BackendDAE.ExternalObjectClasses outExtObjClasses;
-algorithm
-  outExtObjClasses := matchcontinue(inExtObjClasses,inElementList)
-    local
-      Functiontuple fns;
-      BackendDAE.ExternalObjectClasses cdr,cdr_1;
-      BackendDAE.ExternalObjectClass res;
-      Absyn.Path p;
-      DAE.Function f1,f2;
-      DAE.ElementSource source "the origin of the element";
-
-    case({},_) then {};
-    case(BackendDAE.EXTOBJCLASS(p,f1,f2,source) :: cdr,fns)
-      equation
-        {f1,f2} = inlineCallsInFunctions({f1,f2},fns);
-        res = BackendDAE.EXTOBJCLASS(p,f1,f2,source);
-        cdr_1 = inlineExtObjClasses(cdr,fns);
-      then
-        res :: cdr_1;
-    case(_,_)
-      equation
-        Debug.fprintln("failtrace","Inline.inlineExtObjClasses failed");
-      then
-        fail();
-  end matchcontinue;
-end inlineExtObjClasses;
-
 public function inlineCallsInFunctions
 "function: inlineDAEElements
   inlines calls in DAEElements"
@@ -707,14 +674,6 @@ algorithm
       equation
         elist_1 = inlineDAEElements(elist,fns);
         res = DAE.COMP(i,elist_1,source,absynCommentOption);
-        cdr_1 = inlineDAEElements(cdr,fns);
-      then
-        res :: cdr_1;
-
-    case(DAE.EXTOBJECTCLASS(p,f1,f2,source) :: cdr,fns)
-      equation
-        {f1,f2} = inlineCallsInFunctions({f1,f2},fns);
-        res = DAE.EXTOBJECTCLASS(p,f1,f2,source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;

@@ -862,31 +862,20 @@ match extObjInfo
 case EXTOBJINFO(__) then
   let &funDecls = buffer "" /*BUFD*/
   let &varDecls = buffer "" /*BUFD*/
-  let ctorCalls = (constructors |> (var, fnName, args) =>
+  let ctorCalls = (vars |> var as SIMVAR(initialValue=SOME(exp)) =>
       let &preExp = buffer "" /*BUFD*/
-      let argsStr = (args |> arg =>
-          daeExternalCExp(arg, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-        ;separator=", ")
-      let typesStr = (args |> arg => extType(typeof(arg),true,false) ; separator=", ")
-      let &funDecls += 'extern void* <%fnName%>(<%typesStr%>);<%\n%>'
+      let arg = daeExp(exp, contextOther, &preExp, &varDecls)
       /* Restore the memory state after each object has been initialized. Then we can
        * initalize a really large number of external objects that play with strings :)
        */
       <<
       <%preExp%>
-      <%cref(var)%> = <%fnName%>(<%argsStr%>);
+      <%cref(var.name)%> = <%arg%>;
       restore_memory_state(mem_state);
       >>
     ;separator="\n")
   <<
   /* Has to be performed after _init.txt file has been read */
-  #ifdef __cplusplus
-  extern "C" {
-  #endif
-    <%funDecls%>
-  #ifdef __cplusplus
-  }
-  #endif
   void callExternalObjectConstructors(DATA* localData) {
     <%varDecls%>
     state mem_state;
@@ -903,15 +892,8 @@ template functionDeInitializeDataStruc(ExtObjInfo extObjInfo)
  "Generates function in simulation file."
 ::=
 match extObjInfo
-case EXTOBJINFO(__) then
+case extObjInfo as EXTOBJINFO(__) then
   <<
-  #ifdef __cplusplus
-  extern "C" {
-  #endif
-    <%destructors |> (fnName, _) => 'extern void <%fnName%>(void*);' ;separator="\n"%>
-  #ifdef __cplusplus
-  }
-  #endif
   void deInitializeDataStruc(DATA* data)
   {
     if(!data)
@@ -1037,7 +1019,7 @@ case EXTOBJINFO(__) then
       data->initialResiduals = 0;
     }
     if (data->extObjs) {
-      <%destructors |> (fnName, var) => '<%fnName%>(<%cref(var)%>);' ;separator="\n"%>
+      <%extObjInfo.vars |> var as SIMVAR(varKind=ext as EXTOBJ(__)) => '_<%underscorePath(ext.fullClassName)%>_destructor(<%cref(var.name)%>);' ;separator="\n"%>
       free(data->extObjs);
       data->extObjs = 0;
     }
@@ -6057,6 +6039,7 @@ match var
 case VARIABLE(__) then 'modelica_metatype'
 case FUNCTION_PTR(__) then 'modelica_fnptr'
 end varTypeBoxed;
+
 
 
 template expTypeRW(DAE.ExpType type)

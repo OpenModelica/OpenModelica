@@ -245,8 +245,6 @@ type ExternalObjectClasses = list<ExternalObjectClass> "classes of external obje
 uniontype ExternalObjectClass "class of external objects"
   record EXTOBJCLASS
     Absyn.Path path "className of external object";
-    .DAE.Function constructor "constructor is an EXTFUNCTION";
-    .DAE.Function destructor "destructor is an EXTFUNCTION";
     .DAE.ElementSource source "origin of equation";
   end EXTOBJCLASS;
 end ExternalObjectClass;

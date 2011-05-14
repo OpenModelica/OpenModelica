@@ -4239,19 +4239,19 @@ algorithm
       equation
         destr = getExternalObjectDestructor(els);
         constr = getExternalObjectConstructor(els);
-        (cache,ih,destr_dae) = instantiateExternalObjectDestructor(cache,env,ih,destr);
-        (cache,ih,constr_dae,functp) = instantiateExternalObjectConstructor(cache,env,ih,constr);
+        (cache,ih) = instantiateExternalObjectDestructor(cache,env,ih,destr);
+        (cache,ih,functp) = instantiateExternalObjectConstructor(cache,env,ih,constr);
         className=Env.getClassName(env); // The external object classname is in top frame of environment.
         SOME(classNameFQ)= Env.getEnvPath(env); // Fully qualified classname
         // Extend the frame with the type, one frame up at the same place as the class.
         f::fs = env;
         fs1 = Env.extendFrameT(fs,className,functp);
         env1 = f::fs1;
-
+        
         // set the  of this element
        source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
       then
-        (cache,env1,ih,DAE.DAE({DAE.EXTOBJECTCLASS(classNameFQ,constr_dae,destr_dae,source)}),ClassInf.EXTERNAL_OBJ(classNameFQ));
+        (cache,env1,ih,DAE.DAE({DAE.EXTOBJECTCLASS(classNameFQ,source)}),ClassInf.EXTERNAL_OBJ(classNameFQ));
 
     // Implicit, do not instantiate constructor and destructor.
     case (cache,env,ih,els,true)
@@ -4276,9 +4276,8 @@ protected function instantiateExternalObjectDestructor
   input SCode.Element cl;
   output Env.Cache outCache;
   output InstanceHierarchy outIH;
-  output DAE.Function fn;
 algorithm  
-  (outCache,outIH,fn) := matchcontinue (inCache,env,inIH,cl)
+  (outCache,outIH) := matchcontinue (inCache,env,inIH,cl)
     local
       Env.Cache cache;
       Env.Env env1;
@@ -4286,9 +4285,9 @@ algorithm
 
     case (cache,env,ih,cl)
       equation
-        (cache,env1,ih,{fn}) = implicitFunctionInstantiation2(cache,env,ih,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,cl,{});
+        (cache,env1,ih) = implicitFunctionInstantiation(cache,env,ih,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,cl,{});
       then
-        (cache,ih,fn);
+        (cache,ih);
     // failure
     case (cache,env,ih,cl)
       equation
@@ -4305,22 +4304,21 @@ protected function instantiateExternalObjectConstructor
   input SCode.Element cl;
   output Env.Cache outCache;
   output InstanceHierarchy outIH;
-  output DAE.Function fn;
-  output DAE.Type tp;
+  output DAE.Type ty;
 algorithm
-  (outCache,outIH,fn,tp) := matchcontinue (inCache,env,inIH,cl)
+  (outCache,outIH,ty) := matchcontinue (inCache,env,inIH,cl)
     local
       Env.Cache cache;
       Env.Env env1;
-      DAE.Type funcTp;
+      DAE.Type ty;
       InstanceHierarchy ih;
 
     case (cache,env,ih,cl)
       equation
-        (cache,env1,ih,{fn as DAE.FUNCTION(type_ = funcTp, functions=(DAE.FUNCTION_EXT(body=_)::_))})
-          = implicitFunctionInstantiation2(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, {}) ;
+        (cache,env1,ih) = implicitFunctionInstantiation(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, {});
+        (cache,ty,_) = Lookup.lookupType(cache,env1,Absyn.IDENT("constructor"),NONE());
       then
-        (cache,ih,fn,funcTp);
+        (cache,ih,ty);
     case (cache,env,ih,cl)
       equation
         print("Inst.instantiateExternalObjectConstructor failed\n");

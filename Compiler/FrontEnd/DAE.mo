@@ -257,8 +257,6 @@ public uniontype Element
 
   record EXTOBJECTCLASS "The 'class' of an external object"
     Absyn.Path path "className of external object";
-    Function constructor "constructor is an EXTFUNCTION";
-    Function destructor "destructor is an EXTFUNCTION";
     ElementSource source "the origin of the component/equation/algorithm";
   end EXTOBJECTCLASS;
 

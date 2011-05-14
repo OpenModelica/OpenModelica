@@ -1947,18 +1947,15 @@ algorithm
   _ := match(cls,Content)
    local
      BackendDAE.ExternalObjectClasses xs;
-     DAE.Function constr,destr;
      Absyn.Path path;
      String c;
      DAE.ElementSource source "the origin of the element";
 
     case ({},_) then ();
-    case (BackendDAE.EXTOBJCLASS(path,constr,destr,source)::xs,c)
+    case (BackendDAE.EXTOBJCLASS(path,source)::xs,c)
       equation
         dumpStrOpenTag(c);
         Print.printBuf("class ");Print.printBuf(Absyn.pathStringNoQual(path));Print.printBuf("\n  extends ExternalObject");
-        Print.printBuf(DAEDump.dumpFunctionStr(constr));Print.printBuf("\n");
-        Print.printBuf(DAEDump.dumpFunctionStr(destr));
         Print.printBuf("end");Print.printBuf(Absyn.pathStringNoQual(path));
         dumpStrCloseTag(c);
         dumpExtObjCls2(xs,c);

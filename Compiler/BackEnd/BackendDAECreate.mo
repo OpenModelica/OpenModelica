@@ -292,9 +292,9 @@ algorithm
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states);
 
     // class for external object
-    case (DAE.EXTOBJECTCLASS(path,constr,destr,source),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states)
+    case (DAE.EXTOBJECTCLASS(path,source),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states)
       equation
-        {extObjCl} = Inline.inlineExtObjClasses({BackendDAE.EXTOBJCLASS(path,constr,destr,source)},(SOME(functionTree),{DAE.NORM_INLINE()}));
+        extObjCl = BackendDAE.EXTOBJCLASS(path,source);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCl::extObjCls,states);
     

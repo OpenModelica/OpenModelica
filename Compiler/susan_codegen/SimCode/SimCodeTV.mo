@@ -169,9 +169,7 @@ package SimCode
 
   uniontype ExtObjInfo
     record EXTOBJINFO
-      list<String> includes;
-      list<ExtConstructor> constructors;
-      list<ExtDestructor> destructors;
+      list<SimVar> vars;
       list<ExtAlias> aliases;
     end EXTOBJINFO;
   end ExtObjInfo;
@@ -568,6 +566,10 @@ package BackendDAE
       Option<WhenEquation> elsewhenPart;
     end WHEN_EQ;
   end WhenEquation;
+
+  uniontype VarKind
+    record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
+  end VarKind;
   
 end BackendDAE;
 

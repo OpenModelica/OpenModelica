@@ -3829,13 +3829,8 @@ algorithm
       then 
         (elt,extraArg);
         
-    case(DAE.EXTOBJECTCLASS(path,f1,f2,source),func,extraArg)
-      equation
-        (f1,extraArg) =  traverseDAEFunc(f1,func,extraArg);
-        (f2,extraArg) =  traverseDAEFunc(f2,func,extraArg);
-        elt = DAE.EXTOBJECTCLASS(path,f1,f2,source);
-      then 
-        (elt,extraArg);
+    case(elt as DAE.EXTOBJECTCLASS(path,source),func,extraArg)
+      then (elt,extraArg);
         
     case(DAE.ASSERT(e1,e2,source),func,extraArg)
       equation

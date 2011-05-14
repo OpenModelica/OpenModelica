@@ -947,7 +947,6 @@ algorithm
   _ := match(cls)
     local
       BackendDAE.ExternalObjectClasses xs;
-      DAE.Function constr,destr;
       Absyn.Path path;
       list<Absyn.Path> paths;
       list<String> paths_lst;
@@ -956,14 +955,11 @@ algorithm
 
     case {} then ();
 
-    case BackendDAE.EXTOBJCLASS(path,constr,destr,source)::xs
+    case BackendDAE.EXTOBJCLASS(path,source)::xs
       equation
         print("class ");
         print(Absyn.pathString(path));
-        print("\n  extends ExternalObject");
-        print(DAEDump.dumpFunctionStr(constr));
-        print("\n");
-        print(DAEDump.dumpFunctionStr(destr));
+        print("\n  extends ExternalObject;");
         print("\n origin: ");
         paths = DAEUtil.getElementSourceTypes(source);
         paths_lst = Util.listMap(paths, Absyn.pathString);

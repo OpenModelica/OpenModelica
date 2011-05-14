@@ -666,13 +666,6 @@ algorithm
       then
         (DAE.COMP(i,elts_1,source,absynCommentOption) :: cdr_1,dae);
 
-    case(DAE.EXTOBJECTCLASS(p,f1,f2,source) :: cdr,dae)
-      equation
-        ({f1,f2},dae) = elabFunctions({f1,f2},dae);
-        (cdr_1,dae) = elabElements(cdr,dae);
-      then
-        (DAE.EXTOBJECTCLASS(p,f1,f2,source) :: cdr_1,dae);
-
     case(DAE.ASSERT(e1,e2,source) :: cdr,dae)
       equation
         ((e1_1,dae)) = Expression.traverseExp(e1,elabExp,dae);

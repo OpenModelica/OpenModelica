@@ -429,9 +429,7 @@ end SimWhenClause;
 
 uniontype ExtObjInfo
   record EXTOBJINFO
-    list<String> includes;
-    list<ExtConstructor> constructors;
-    list<ExtDestructor> destructors;
+    list<SimVar> vars;
     list<ExtAlias> aliases;
   end EXTOBJINFO;
 end ExtObjInfo;
@@ -1599,10 +1597,9 @@ algorithm
         //funcelems = Util.listUnion(funcelems, part_func_elems);
         funcelems = Inline.inlineCallsInFunctions(funcelems,(NONE(),{DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}));
         //Debug.fprintln("info", "Generating functions, call Codegen.\n") "debug" ;
-        (includes1, includeDirs1, libs1) = generateExternalObjectIncludes(dlow);
         (fns, recordDecls, includes2, includeDirs2, libs2) = elaborateFunctions(funcelems, {}, {}, {}); // Do we need metarecords here as well?
       then
-        (Util.listUnion(libs1,libs2), Util.listUnion(includes1,includes2), Util.listUnion(includeDirs1,includeDirs2), recordDecls, fns, dlow, dae);
+        (libs2, includes2, includeDirs2, recordDecls, fns, dlow, dae);
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Creation of Modelica functions failed. "});
@@ -1634,43 +1631,6 @@ algorithm
       then res;
   end matchcontinue;
 end getCalledFunctionReferences;
-
-protected function generateExternalObjectIncludes
-"Generates the library paths for external objects"
-  input BackendDAE.BackendDAE daelow;
-  output list<String> includes;
-  output list<String> includeDirs;
-  output list<String> libs;
-protected
-  list<BackendDAE.ExternalObjectClass> extObjs;
-algorithm
-  BackendDAE.DAE(extObjClasses=extObjs) := daelow;
-  ((includes, includeDirs, libs)) := Util.listFold(extObjs, generateExternalObjectInclude, ({},{},{}));
-end generateExternalObjectIncludes;
-
-protected function generateExternalObjectInclude
-"Helper function to generateExteralObjectInclude"
-  input BackendDAE.ExternalObjectClass extObjCls;
-  input tuple<list<String>,list<String>,list<String>> inTpl;
-  output tuple<list<String>,list<String>,list<String>> outTpl;
-algorithm
-  outTpl :=
-  match (extObjCls,inTpl)
-    local
-      Option<Absyn.Annotation> ann1,ann2;
-      list<String> includes1,libs1,includes2,libs2,includes,libs,includeDirs,includeDirs1,includeDirs2;
-      Absyn.Path fpath;
-    case (BackendDAE.EXTOBJCLASS(path = fpath,constructor=DAE.FUNCTION(functions={DAE.FUNCTION_EXT(externalDecl=DAE.EXTERNALDECL(ann=ann1))}),
-      destructor=DAE.FUNCTION(functions={DAE.FUNCTION_EXT(externalDecl=DAE.EXTERNALDECL(ann=ann2))})),(includes,includeDirs,libs))
-      equation
-        (includes1,includeDirs1,libs1) = generateExtFunctionIncludes(fpath,ann1);
-        (includes2,includeDirs2,libs2) = generateExtFunctionIncludes(fpath,ann2);
-        includes = Util.listListUnion({includes1,includes2,includes});
-        libs = Util.listListUnion({libs1,libs2,libs});
-        includeDirs = Util.listListUnion({includeDirs1,includeDirs2,includeDirs});
-      then ((includes,includeDirs,libs));
-  end match;
-end generateExternalObjectInclude;
 
 protected function elaborateFunctions
   input list<DAE.Function> daeElements;
@@ -3234,90 +3194,39 @@ algorithm
       list<ExtConstructor> constructors;
       list<ExtDestructor> destructors;
       list<ExtAlias> aliases;
-    case (dlow as BackendDAE.DAE(externalObjects=evars, extObjClasses=eclasses))
+      list<SimVar> simvars;
+    case (BackendDAE.DAE(externalObjects=evars))
       equation
         evarLst = BackendDAEUtil.varList(evars);
-        (includes, _, _) = generateExternalObjectIncludes(dlow);
-        (constructors, destructors, aliases) = extractExtObjInfo2(evarLst, eclasses);
-      then EXTOBJINFO(includes, constructors, destructors, aliases);
+        (simvars,aliases) = extractExtObjInfo2(evarLst,evars);
+      then EXTOBJINFO(simvars,aliases);
   end match;
 end createExtObjInfo;
 
 protected function extractExtObjInfo2
   input list<BackendDAE.Var> varLst;
-  input BackendDAE.ExternalObjectClasses eclasses;
-  output list<ExtConstructor> constructors;
-  output list<ExtDestructor> destructors;
+  input BackendDAE.Variables evars;
+  output list<SimVar> vars;
   output list<ExtAlias> aliases;
 algorithm
-  (constructors, destructors, aliases) :=
-  match (varLst, eclasses)
+  (vars,aliases) := match (varLst,evars)
     local
-      BackendDAE.Var v;
+      BackendDAE.Var bv;
+      SimVar sv;
       list<BackendDAE.Var> vs;
-      list<ExtConstructor> constructors1;
-      list<ExtDestructor> destructors1;
-      list<ExtAlias> aliases1;
-    case ({}, eclasses)
-    then ({}, {}, {});
-    case (v :: vs, eclasses)
+      DAE.ComponentRef cr,name;
+    case ({},_) then ({},{});
+    case (BackendDAE.VAR(varName=name, bindExp=SOME(DAE.CREF(cr,_)),varKind=BackendDAE.EXTOBJ(_))::vs,evars)
       equation
-        (constructors1, destructors1, aliases1) = createExtObjInfoSingle(v, eclasses);
-        (constructors, destructors, aliases) = extractExtObjInfo2(vs, eclasses);
-        constructors = listAppend(constructors1, constructors);
-        destructors = listAppend(destructors1, destructors);
-        aliases = listAppend(aliases1, aliases);
-      then (constructors, destructors, aliases);
+        (vars,aliases) = extractExtObjInfo2(vs,evars);
+      then (vars,(name, cr)::aliases);
+    case (bv::vs,evars)
+      equation
+        sv = dlowvarToSimvar(bv,NONE(),evars);
+        (vars,aliases) = extractExtObjInfo2(vs,evars);
+      then (sv::vars,aliases);
   end match;
 end extractExtObjInfo2;
-
-protected function createExtObjInfoSingle
-  input BackendDAE.Var var;
-  input BackendDAE.ExternalObjectClasses eclasses;
-  output list<ExtConstructor> constructors;
-  output list<ExtDestructor> destructors;
-  output list<ExtAlias> aliases;
-algorithm
-  (constructors, destructors, aliases) :=
-  matchcontinue (var, eclasses)
-    local
-      DAE.ComponentRef name;
-      DAE.ComponentRef cr;
-      list<DAE.Exp> args;
-      Absyn.Path path1, path2;
-      String cFuncStr, dFuncStr;
-    case (_, {})
-    then fail();
-      // alias
-    case (BackendDAE.VAR(varName=name, bindExp=SOME(DAE.CREF(cr,_)),
-      varKind=BackendDAE.EXTOBJ(_)), _)
-    then ({}, {}, {(name, cr)});
-    case (BackendDAE.VAR(varName=name), {})
-      equation
-        print("generateExternalObjectConstructorCall for var:");
-        print(ComponentReference.printComponentRefStr(name));print(" failed\n");
-      then fail();
-        // found class
-    case (BackendDAE.VAR(varName=name, bindExp=SOME(DAE.CALL(expLst=args)),
-      varKind=BackendDAE.EXTOBJ(path1)),
-      BackendDAE.EXTOBJCLASS(
-        path=path2,
-        constructor=DAE.FUNCTION(
-          functions={DAE.FUNCTION_EXT(
-            externalDecl=DAE.EXTERNALDECL(name=cFuncStr))}),
-            destructor=DAE.FUNCTION(
-              functions={DAE.FUNCTION_EXT(
-                externalDecl=DAE.EXTERNALDECL(name=dFuncStr))})) :: _)
-      equation
-        true = ModUtil.pathEqual(path1, path2);
-      then ({(name, cFuncStr, args)}, {(dFuncStr, name)}, {});
-        // try next class
-    case (var, (_ :: eclasses))
-      equation
-        (constructors, destructors, aliases) = createExtObjInfoSingle(var, eclasses);
-      then (constructors, destructors, aliases);
-  end matchcontinue;
-end createExtObjInfoSingle;
 
 protected function createAlgorithmAndEquationAsserts
   input BackendDAE.BackendDAE dlow;
@@ -10048,6 +9957,9 @@ algorithm
       equation
         e = DAEUtil.getStartAttr(dae_var_attr);
         true = Expression.isConst(e);
+      then
+        SOME(e);
+    case (BackendDAE.VAR(varKind = BackendDAE.EXTOBJ(_), bindExp = SOME(e)))
       then
         SOME(e);
     case (_) then NONE();
