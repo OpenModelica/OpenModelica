@@ -1338,7 +1338,7 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
   >>
 end functionWhenReinitStatementThen;
 
-
+//Pavol: this one is never used, is it obsolete ??
 template functionWhenReinitStatementElse(list<WhenOperator> reinits, Text &preExp /*BUFP*/,
                             Text &varDecls /*BUFP*/)
  "Generates re-init statement for when equation."

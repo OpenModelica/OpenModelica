@@ -1,6 +1,115 @@
 getErrorString();
 
 /*
+loadModel(Modelica);
+cd("d:/Modelica/_modely/HumModOMC/OMC");
+setModelicaPath("d:/Modelica/_modely/HumModOMC/OMC");
+loadModel(HumMod);
+
+//translateModel(HumMod.Library.Curves.TestCurve);
+//buildModel(HumMod.Library.Curves.TestCurve);
+//simulate(HumMod.Library.Curves.TestCurve, stopTime=10.0, outputFormat="plt");
+
+//buildModel(HumMod.Proteins.test.T);
+//simulate(HumMod.Proteins.test.T, stopTime=0.1, outputFormat="plt");
+//plot({state, cur.val});
+
+//buildModel(HumMod.Blood.test.T);
+simulate(HumMod.Blood.test.T, stopTime = 0.1);
+
+//checkModel(HumMod.HumMod_GolemEdition);
+//buildModel(HumMod.HumMod_GolemEdition);
+*/
+
+/*
+loadModel(Modelica);
+cd("d:/Modelica/_modely/Guyton1972");
+setModelicaPath("d:/Modelica/_modely/Guyton1972");
+loadModel(Guyton_1972_MathModelica);
+simulate(Guyton_1972.bugFun, outputFormat="plt");
+*/
+/*
+loadModel(Modelica);
+cd("d:/Modelica/_modely/Guyton1972");
+setModelicaPath("d:/Modelica/_modely/Guyton1972");
+loadModel(Guyton_1972_MathModelica);
+//loadFile("Guyton_1972_MathModelica.mo");
+//translateModel(Guyton_1972.Gyuton1972_signalWay);
+//buildModel(Guyton_1972.Gyuton1972_signalWay);
+simulate(Guyton_1972.Gyuton1972_signalWay, stopTime=10.0, outputFormat="plt");
+*/
+
+/*
+//loadModel(Modelica);
+cd("d:/Modelica/_modely/HumModOMC/OMC/bugHumMod");
+setModelicaPath("d:/Modelica/_modely/HumModOMC/OMC/bugHumMod");
+loadModel(nonlinearMixedTest);
+//buildModel(nonlinearMixedTest);
+simulate(nonlinearMixedTest, stopTime=10.0, outputFormat="plt");
+*/
+
+
+/*
+loadModel(Modelica);
+
+cd("d:/Modelica/_modely/HumModOMC/OMC/TestCubic/");
+setModelicaPath("d:/Modelica/_modely/HumModOMC/OMC/TestCubic/");
+loadModel(TestCubicCurve);
+//loadFile("TestCubicCurve.mo");
+buildModel(TestCubicCurve.TestCurve);
+*/
+
+/* sent to Adrian
+loadModel(Modelica);
+cd("d:/Modelica/_modely/HumModOMC/OMC/bugHumMod");
+setModelicaPath("d:/Modelica/_modely/HumModOMC/OMC/bugHumMod");
+loadModel(HumMod);
+//buildModel(HumMod.Library.Curves.TestCurve);
+//simulate(HumMod.Library.Curves.TestCurve, stopTime=10.0, outputFormat="plt");
+
+//buildModel(HumMod.Proteins.test.T);
+//simulate(HumMod.Proteins.test.T, stopTime=0.1, outputFormat="plt");
+//plot({state, cur.val});
+
+buildModel(HumMod.Blood.test.T);
+*/
+
+/*
+loadModel(Modelica);
+cd("d:/Modelica/_modely/HumModOMC/OMC");
+loadFile("HumMod.mo");
+//loadFile("bugHumMod/bugMSL31_Strings_scanReal.mo");
+
+//checkModel(HumMod.HumMod_GolemEdition);
+//buildModel(HumMod.HumMod_GolemEdition);
+
+//checkModel(HumMod.Proteins.test.T);
+buildModel(HumMod.Proteins.test.T);
+//simulate(HumMod.Proteins.test.T, stopTime=10.0);
+
+//simulate(StringsScanRealTest.TestReadParameter, stopTime=10.0);
+//simulate(HumMod.HumMod_GolemEdition, stopTime=1.0);
+*/
+
+getErrorString();
+
+
+
+/*
+loadModel(Modelica);
+loadFile("D:/Modelica/_modely/FilipJezek/VAD/circulatoryVADautoMode.mo");
+//getErrorString();
+simulate(Conlon.vadCirculation1, stopTime=1.0, tolerance=1e-4);
+//getErrorString();
+*/
+
+/*
+loadFile("d:/Modelica/_modely/Identifikace/example/CESNET_Indentification_Hoffman.mo");
+getErrorString();
+simulate(CESNET_Indentification_Hoffman, stopTime=1);
+getErrorString();
+*/
+/*
 //loadModel(Modelica);
 getErrorString();
 loadFile("d:/Modelica/_modely/HumMod - Habilitacna Prednaska/HumMod_OMCTotal.mo");

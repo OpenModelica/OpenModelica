@@ -2025,7 +2025,7 @@ algorithm
     //trying to convert a value when there is no conversion for its type
     case (mmexp, ts, inSourceInfo)
       equation
-				str = "Expression '" +& mmExpString(mmexp) +& "' of type '" 
+				str = "Elaborated expression '" +& mmExpString(mmexp) +& "' of type '" 
            +& typeSignatureString(ts) +& "' has no automatic to-string conversion.";
         addSusanError(str, inSourceInfo); 
         reason = "Error# " +& str +& " #";
@@ -5930,7 +5930,7 @@ algorithm
         
     case (fname, inSourceInfo, _)
       equation
-        msg = "Unresolved function reference '" +& pathIdentString(fname) +& "'.";
+        msg = "Unresolved template/function name '" +& pathIdentString(fname) +& "'.";
         addSusanError(msg, inSourceInfo);
       then 
         fail();

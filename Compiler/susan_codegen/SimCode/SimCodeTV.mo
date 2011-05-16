@@ -355,7 +355,7 @@ package SimCode
       list<Variable> inVars;
       list<Variable> outVars;
       list<Variable> biVars;
-      Libs libs;
+      list<String> libs;
       String language;
       Absyn.Info info;
     end EXTERNAL_FUNCTION;
@@ -468,6 +468,11 @@ package SimCode
     input Context context; 
     output DAE.Exp outExp;
   end hackArrayReverseToCref;
+  
+  function hackGetFirstExternalFunctionLib
+    input list<String> libs;
+    output String outFirstLib;
+  end hackGetFirstExternalFunctionLib;
 
 	function hackMatrixReverseToCref
 	  input DAE.Exp inExp;

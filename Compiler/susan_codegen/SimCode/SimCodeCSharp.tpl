@@ -42,31 +42,39 @@ namespace Bodylight.Models<%modelNameSpace(modelInfo.name)%>
       else "//** No functions **"
     %>
     
-    <%functionDaeOutput(algebraicEquations, simCode)%>
-
-    <%functionDaeOutput2(removedEquations, simCode)%>
-
+    <%functionCallExternalObjectConstructors(extObjInfo, simCode)%>
+    
+    <%functionExtraResiduals(allEquations, simCode)%>
+      
     <%functionInput(modelInfo, simCode)%>
 
     <%functionOutput(modelInfo, simCode)%>
-
-    <%functionUpdateDepend(allEquations, simCode)%>
-
-    <%functionOnlyZeroCrossing(zeroCrossings, simCode)%>
-
+    
+    <%functionInitSample(sampleConditions, simCode)%>    
+    
+    <%functionSampleEquations(sampleEquations, simCode)%>
+    
     <%functionStoreDelayed(simCode)%>
-
-    <%functionOde(odeEquations, simCode)%>
 
     <%functionInitial(initialEquations, simCode)%>
 
     <%functionInitialResidual(residualEquations, simCode)%>
-    
-    <%functionExtraResiduals(allEquations, simCode)%>
-    
+
     <%functionBoundParameters(parameterEquations, simCode)%>
 
-    <%functionCheckForDiscreteVarChanges(simCode)%>
+    <%functionODE(odeEquations, simCode)%>
+
+    <%functionAlgebraic(algebraicEquations, simCode)%>
+
+    <%functionAliasEquation(removedEquations, simCode)%>
+
+    <%functionDAE(allEquations, whenClauses, helpVarInfo, simCode)%>
+
+    <%functionOnlyZeroCrossing(zeroCrossings, simCode)%>
+    
+    <%functionCheckForDiscreteChanges(simCode)%>
+
+    <%/*functionAssertsforCheck(algorithmAndEquationAsserts)*/%>
     
   }
 }
@@ -90,11 +98,8 @@ template simulationFunctionsBody(SimCode simCode) ::=
 match simCode
 case SIMCODE(modelInfo = modelInfo as MODELINFO(__)) then
     (modelInfo.functions |> fn => match fn  
-          case FUNCTION(__)           then 
-            <<
-            <%functionBodyRegularFunction(fn, simCode)%>
-            >>
-          case EXTERNAL_FUNCTION(__)  then 'EXTERNAL_FUN_NOT_IMPLEMETED(name=<%dotPath(name)%>)'
+          case FUNCTION(__)           then functionBodyRegularFunction(fn, simCode)
+          case EXTERNAL_FUNCTION(__)  then functionBodyExternalFunction(fn, simCode) //'EXTERNAL_FUN_NOT_IMPLEMETED(name=<%dotPath(name)%>)'
           case RECORD_CONSTRUCTOR(__) then 'RECORD_CONSTRUCTOR_NOT_IMPLEMENTED(name=<%dotPath(name)%>)'
           else "UNKNOWN_FUNCTION"
     ;separator="\n")
@@ -146,7 +151,7 @@ match fn
 case FUNCTION(__) then
   let()= System.tmpTickReset(1)
   let fname = underscorePath(name)
-  let retType = match outVars 
+  let retType = match outVars //a hack, only one output var for now
                 case fv :: _ then varType(fv) 
                 else "void"
   let retVar = match outVars 
@@ -167,6 +172,60 @@ case FUNCTION(__) then
   
   >>
 end functionBodyRegularFunction;
+
+
+template functionBodyExternalFunction(Function fn, SimCode simCode)
+ "Generates the body for an external function (just a wrapper)."
+::=
+match fn
+case efn as EXTERNAL_FUNCTION(__) then
+  let()= System.tmpTickReset(1)
+  let fname = underscorePath(name)
+  let retType = match outVars 
+                case fv :: _ then varType(fv)
+                else "void"
+  let &preExp = buffer "" /*BUFD*/
+  let callPart = //extFunCall(fn, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      let args = (extArgs |> arg => extArg(arg, &preExp, simCode) ;separator=", ")
+      let lib = hackGetFirstExternalFunctionLib(libs) // match libs case fnLib::_ then fnLib else "NO_EXT_LIB" 
+      'Bodylight.Solvers.ExternalLibraries.<%lib%>.<%extName%>(<%args%>);'
+  <<
+  static <%retType%> _<%fname%>(<%funArgs |> var => funArgDefinition(var,simCode) ;separator=", "%>)
+  {
+    <%preExp%>
+    <%if outVars then "return "
+    %><%callPart%>    
+  }
+  
+  >>  
+end functionBodyExternalFunction;
+
+
+template extArg(SimExtArg extArg, Text &preExp, SimCode simCode)
+ "Helper to extFunCall."
+::=
+  match extArg
+  case SIMEXTARG(cref=c, outputIndex=oi, isArray=true, type_=t) then
+    let name = if oi then 'NOT_SUPPORTED_out.targ<%oi%>' else crefStr(c,simCode)
+    name
+    //let shortTypeStr = expTypeShort(t)
+    //'(<%extType(t,isInput,true)%>) data_of_<%shortTypeStr%>_array(&(<%name%>))'
+  case SIMEXTARG(cref=c, isInput=ii, outputIndex=0, type_=t) then
+    let cr = crefStr(c,simCode)
+    cr    
+  case SIMEXTARG(cref=c, isInput=ii, outputIndex=oi, type_=t) then
+    'NOT_SUPPORTED_ext<%oi%>'
+  case SIMEXTARGEXP(__) then
+    daeExp(exp, contextFunction, &preExp, simCode)
+  case SIMEXTARGSIZE(cref=c) then
+    let name = if outputIndex then 'NOT_SUPPORTED_SIZE_out.targ<%outputIndex%>' else crefStr(c,simCode)
+    match exp
+    case ICONST(__) then 
+      '<%name%>.size<%integer%>'
+    else
+      '<%name%>.size(<%daeExp(exp, contextFunction, &preExp, simCode)%>)'
+end extArg;
+
 
 template varInit(Variable var, SimCode simCode)
  "Generates code to initialize variables."
@@ -191,7 +250,7 @@ case var as VARIABLE(__) then
     <<
     <%varType(var)%> <%crefStr(var.name,simCode)%>;
     >>
-else "UNSUPPORTED_VARIABLE_vatInit"
+else "UNSUPPORTED_VARIABLE_varInit"
 
 end varInit;
 
@@ -216,7 +275,7 @@ template funStatement(Statement stmt, SimCode simCode)
 end funStatement;
 
 constant String localRepresentationArrayDefines =
-"var X = states; var Xd = statesDerivatives; var Y = algebraics; var P = parameters; var H = helpVars;
+"var X = states; var Xd = statesDerivatives; var Y = algebraics; var P = parameters; var H = helpVars; var EO = externalObjects;
 var preX = savedStates; var preXd = savedStatesDerivatives; var preY = savedAlgebraics; var preH = savedHelpVars;
 var preYI = savedAlgebraicsInt; var preYB = savedAlgebraicsBool; var YI = algebraicsInt; var YB = algebraicsBool; var PI = parametersInt; var PB = parametersBool; ";
        
@@ -227,6 +286,7 @@ case MODELINFO(varInfo = VARINFO(__), vars = SIMVARS(__)) then
 <<
 const int 
   NHELP = <%varInfo.numHelpVars%>, NG = <%varInfo.numZeroCrossings%>,
+  NG_SAM = <%varInfo.numTimeEvents%>,
   NX = <%varInfo.numStateVars%>, NY = <%varInfo.numAlgVars%>, NP = <%varInfo.numParams%>,
   NYI = <%varInfo.numIntAlgVars%>, NYB = <%varInfo.numBoolAlgVars%>,
   NPI = <%varInfo.numIntParams%>, NPB = <%varInfo.numBoolParams%>,
@@ -236,6 +296,7 @@ const int
 public override string ModelName        { get { return "<%dotPath(name)%>"; }}
 public override int HelpVarsCount       { get { return NHELP; } }
 public override int ZeroCrossingsCount  { get { return NG; } }
+public override int SampleTypesCount    { get { return NG_SAM; } }
 public override int StatesCount         { get { return NX; } }
 public override int AlgebraicsCount     { get { return NY; } }
 public override int AlgebraicsIntCount  { get { return NYI; } }
@@ -247,7 +308,7 @@ public override int ParametersBoolCount { get { return NPB; } }
 public override int OutputsCount   { get { return NO; } }
 public override int InputsCount    { get { return NI; } }
 public override int ResidualsCount { get { return NR; } }
-//public int ExternalObjectsCount { get { return NEXT; } }        
+public override int ExternalObjectsCount { get { return NEXT; } }        
 public override int MaximumOrder { get { return 5; } }
 public override int StringVarsCount { get { return NYSTR; } }
 public override int StringParametersCount { get { return NPSTR; } }
@@ -339,8 +400,11 @@ template initVals(String arrName, list<SimVar> varsLst, SimCode simCode) ::=
       match daeExp(v, contextOther, &preExp, simCode) 
       case vStr as "0"
       case vStr as "0.0"
+      case vStr as "false"
       case vStr as "(0)" then
         '//<%arrName%>[<%sv.index%>] = <%vStr%>; //<%crefStr(sv.name, simCode)%> --> zero val' 
+      case "true" then //a hack for now
+       '<%arrName%>[<%sv.index%>] = 1.0; //true //<%crefStr(sv.name, simCode)%>'
       case vStr then
        '<%arrName%>[<%sv.index%>] = <%vStr%>; //<%crefStr(sv.name, simCode)%>'
   	  end match
@@ -352,29 +416,53 @@ template initFixed(list<SimVar> simVarLst, SimCode simCode) ::=
   (simVarLst |> SIMVAR(__) => '<%isFixed%> /* <%crefStr(name, simCode)%> */' ;separator=",\n")
 end initFixed;
 
-template functionDaeOutput(list<SimEqSystem> nonStateContEquations, SimCode simCode) ::=
-let()= System.tmpTickReset(1)
-<<
-/* for continuous time variables */
-public override void FunDAEOutput()
-{
-  <% localRepresentationArrayDefines %>
-  <% nonStateContEquations |> it => equation_(it,contextSimulationNonDiscrete, simCode) ;separator="\n"%>
-}
->>
-end functionDaeOutput;
 
-template functionDaeOutput2(list<SimEqSystem> removedEquations, SimCode simCode) ::=
+template functionCallExternalObjectConstructors(ExtObjInfo extObjInfo, SimCode simCode)
+ "Generates external objects construction calls."
+::=
+match extObjInfo
+case EXTOBJINFO(__) then
+  <<
+  public override void FunCallExternalObjectConstructors() {
+    <% localRepresentationArrayDefines %>
+    <% vars |> var as SIMVAR(initialValue=SOME(exp)) => 
+      let &preExp = buffer "" /*BUFD*/
+      let arg = daeExp(exp, contextOther, &preExp, simCode)
+      <<
+      <%preExp%>
+      <%cref(var.name, simCode)%> = <%arg%>;
+      >>
+    %>
+    <%aliases |> (var1, var2) => '<%cref(var1,simCode)%> = <%cref(var2,simCode)%>;' ;separator="\n"%>
+  }
+
+  >>
+end functionCallExternalObjectConstructors;
+
+
+
+template functionAlgebraic(list<SimEqSystem> algebraicEquations, SimCode simCode) ::=
 let()= System.tmpTickReset(1)
 <<
-/* for discrete time variables */
-public override void FunDAEOutput2()
+public override void FunAlgebraics()
 {
   <% localRepresentationArrayDefines %>
-  <% removedEquations      |> it => equation_(it,contextSimulationDiscrete, simCode) ;separator="\n"%>
+  <% algebraicEquations |> it => equation_(it,contextSimulationNonDiscrete, simCode) ;separator="\n"%>
 }
 >>
-end functionDaeOutput2;
+end functionAlgebraic;
+
+
+template functionAliasEquation(list<SimEqSystem> removedEquations, SimCode simCode) ::=
+let()= System.tmpTickReset(1)
+<<
+public override void FunAliasEquations()
+{
+  <% localRepresentationArrayDefines %>
+  <% removedEquations  |> eq => equation_(eq, contextSimulationNonDiscrete, simCode) ;separator="\n"%>
+}
+>>
+end functionAliasEquation;
 
 template functionInput(ModelInfo modelInfo, SimCode simCode) ::=
 match modelInfo
@@ -407,22 +495,157 @@ public override void OutputFun()
 >>
 end functionOutput;
 
-// All when equations should go in here too according to Willi
-// And something about if-eqs being sorted ans not just added to end
-template functionUpdateDepend(list<SimEqSystem> allEquationsPlusWhen, SimCode simCode) ::=
+
+template functionInitSample(list<SampleCondition> sampleConditions, SimCode simCode)
+  "Generates function initSample() in simulation file."
+::=
+  /* Initializes the raw time events of the simulation using the now
+     calcualted parameters. */  
+  <<
+  public override void FunSampleInit()
+  {
+    <% localRepresentationArrayDefines %>
+    var SA = Samples.SamplesArr;
+    <%if sampleConditions then "int i = 0; // Current index"%>
+    <%sampleConditions |> (relation, zcIndex)  =>
+        match relation
+        case RELATION(__) then
+          <<
+          /* <%zcIndex%> Not a time event */
+          >>
+        case CALL(path=IDENT(name="sample"), expLst={start, interval,_}) then
+          let &preExp = buffer "" /*BUFD*/
+          let startE = daeExp(start, contextOther, &preExp, simCode)
+          let intervalE = daeExp(interval, contextOther, &preExp, simCode)
+          <<
+          <%preExp%>
+          SA[i++] = new OneSample(<%intervalE%>, <%startE%>, <%zcIndex%>, false);
+          >>
+        else
+         <<
+         /* UNKNOWN ZERO CROSSING for <%zcIndex%> */
+         >> 
+    %>
+  }
+  >>
+end functionInitSample;
+
+template functionSampleEquations(list<SimEqSystem> sampleEqns, SimCode simCode)
+ "Generates function for sample equations."
+::=
+  <<
+  public override void FunUpdateSample()
+  {
+    <% localRepresentationArrayDefines %>
+    
+    <%sampleEqns |> eq =>
+      equation_(eq, contextSimulationDiscrete, simCode)
+     ;separator="\n"
+    %>
+  }
+>>
+end functionSampleEquations;
+
+
+template functionDAE(list<SimEqSystem> allEquationsPlusWhen,
+                     list<SimWhenClause> whenClauses,  list<HelpVarInfo> helpVarInfo,
+                     SimCode simCode) ::=
 let()= System.tmpTickReset(1)
 <<
-public override void FunUpdateDepend()
+public override bool FunDAE()
 {
   <% localRepresentationArrayDefines %>
+  var needToIterate = false;
   isInUpdate = ! isInit;
   
-  <%allEquationsPlusWhen |> it => equation_(it, contextSimulationDiscrete, simCode) ;separator="\n"%>  
+  <%allEquationsPlusWhen |> eq => equation_(eq, contextSimulationDiscrete, simCode) ;separator="\n"%>  
 
+  <%whenClauses |> when hasindex i0 =>  genreinits(when, i0, simCode)
+     ;separator="\n"
+  %>
+  
   isInUpdate = false;
+  return needToIterate;
 }
 >>
-end functionUpdateDepend;
+end functionDAE;
+
+
+template genreinits(SimWhenClause whenClauses, Integer widx, SimCode simCode)
+" Generates reinit statemeant"
+::=
+
+match whenClauses
+case SIM_WHEN_CLAUSE(__) then
+if reinits then  
+  let &preExp = buffer "" /*BUFD*/
+  //let &helpInits = buffer "" /*BUFD*/
+  let helpIf = (conditions |> (e, hidx) =>
+      let helpInit = daeExp(e, contextSimulationDiscrete, &preExp, simCode)
+      let &preExp += 'H[<%hidx%>] = <%helpInit%> ?1.0:0.0;'
+      edgeHelpVar(hidx)
+    ;separator=" || ")  
+  <<
+
+  //For whenclause index: <%widx%>
+  <%preExp%>
+  if (<%helpIf%>) { 
+    <%functionWhenReinitStatementThen(reinits, simCode)%>
+  }
+  >>
+end genreinits;
+
+
+template functionWhenReinitStatementThen(list<WhenOperator> reinits, SimCode simCode)
+ "Generates re-init statement for when equation."
+::=
+  reinits |> reinit =>
+    match reinit
+    case REINIT(__) then 
+      let &preExp = buffer ""
+      let val = daeExp(value, contextSimulationDiscrete, &preExp, simCode)
+      <<
+      <%preExp%>
+      <%cref(stateVar, simCode)%> = <%val%>;
+      needToIterate = true;
+      >>
+    case TERMINATE(__) then 
+      let &preExp = buffer ""
+      let msgVar = daeExp(message, contextSimulationDiscrete, &preExp, simCode)
+      <<  
+      <%preExp%> 
+      MODELICA_TERMINATE(<%msgVar%>);
+      >>
+    case ASSERT(source=SOURCE(info=info)) then 
+      assertCommon(condition, message, contextSimulationDiscrete, info, simCode)
+   ;separator="\n"
+
+end functionWhenReinitStatementThen;
+
+template infoArgs(Info info)
+::=
+  match info
+  case INFO(__) then '"<%fileName%>",<%lineNumberStart%>,<%columnNumberStart%>,<%lineNumberEnd%>,<%columnNumberEnd%>,<%if isReadOnly then 1 else 0%>'
+end infoArgs;
+
+
+template assertCommon(Exp condition, Exp message, Context context, Info info, SimCode simCode)
+::=
+  let &preExpCond = buffer ""
+  let condVar = daeExp(condition, context, &preExpCond, simCode)
+  let &preExpMsg = buffer ""
+  let msgVar = daeExp(message, context, &preExpMsg, simCode)
+  <<
+  <%preExpCond%>
+  if (!<%condVar%>) {
+    <%preExpMsg%>
+    omc_fileInfo info = {<%infoArgs(info)%>};
+    MODELICA_ASSERT(info, <%msgVar%>);
+  }
+  >>
+end assertCommon;
+
+
 
 template functionOnlyZeroCrossing(list<ZeroCrossing> zeroCrossingLst, SimCode simCode) ::=
 let()= System.tmpTickReset(1)
@@ -445,9 +668,9 @@ template zeroCrossing(Exp it, Integer index, SimCode simCode) ::=
     {<%preExp%>var _zen = zeroCrossingEnabled[<%index%>]; //ZEROCROSSING(<%index%>, <%zeroCrossingOpFunc(operator)%>(<%e1%>, <%e2%>));
     gout[<%index%>] = (_zen != 0) ? _zen * (<%match operator
                                            case LESS(__)
-                                           case LESSEQ(__)    then '<%e1%>-<%e2%>'
+                                           case LESSEQ(__)    then '<%e1%> - <%e2%>' //space is mandatory here ... (X--1) must be (X - -1)
                                            case GREATER(__)
-                                           case GREATEREQ(__) then '<%e2%>-<%e1%>'
+                                           case GREATEREQ(__) then '<%e2%> - <%e1%>'
                                            case EQUAL(__) then '<%e2%> == <%e1%>'
                                            case NEQUAL(__) then '<%e2%> != <%e1%>'    			
                                            else "!!!unsupported ZC operator!!!"
@@ -490,7 +713,7 @@ public override void FunStoreDelayed()
 >>
 end functionStoreDelayed;
     
-template functionOde(list<SimEqSystem> stateContEquations, SimCode simCode) ::=
+template functionODE(list<SimEqSystem> stateContEquations, SimCode simCode) ::=
 let()= System.tmpTickReset(1)
 <<
 public override void FunODE()
@@ -499,7 +722,7 @@ public override void FunODE()
   <%stateContEquations |> it => equation_(it, contextOther, simCode) ;separator="\n"%>
 }
 >>
-end functionOde;
+end functionODE;
 
 //TODO:??there is st more in the trunk
 template functionInitial(list<SimEqSystem> initialEquations, SimCode simCode) ::=
@@ -545,27 +768,35 @@ end functionInitialResidual;
 
 template functionExtraResiduals(list<SimEqSystem> allEquations, SimCode simCode) ::=
   let()= System.tmpTickReset(1)
-  (allEquations |> SES_NONLINEAR(__) =>
-	<<
-	int ResidualFun<%index%>(int n, double[] xloc, double[] res, int iflag)
-	{
-	   <% localRepresentationArrayDefines %>
-	   <%eqs |> saeq as SES_SIMPLE_ASSIGN(__) =>
+  (allEquations |> eq => match eq
+    case SES_MIXED(__)     then functionExtraResidual(cont, simCode)
+    case SES_NONLINEAR(__) then functionExtraResidual(eq, simCode)
+  ;separator="\n")
+end functionExtraResiduals;
+
+template functionExtraResidual(SimEqSystem equ, SimCode simCode) ::=
+  match equ 
+  case SES_NONLINEAR(__) then
+    <<
+    int ResidualFun<%index%>(int n, double[] xloc, double[] res, int iflag)
+    {
+       <% localRepresentationArrayDefines %>
+       <%eqs |> saeq as SES_SIMPLE_ASSIGN(__) =>
          equation_(saeq, contextOther, simCode)
          ;separator="\n"
        %>
-	   <%eqs |> SES_RESIDUAL(__) hasindex i0 =>
-	     let &preExp = buffer ""
-	     let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, simCode)
-	     <<
-	     <%preExp%>
-	     res[<%i0%>] = <%expPart%>;
-	     >> ;separator="\n"
-	   %>
-	   return 0;
-	}
-	>> ;separator="\n")
-end functionExtraResiduals;
+       <%eqs |> SES_RESIDUAL(__) hasindex i0 =>
+         let &preExp = buffer ""
+         let expPart = daeExp(exp, contextSimulationDiscrete, &preExp, simCode)
+         <<
+         <%preExp%>
+         res[<%i0%>] = <%expPart%>;
+         >> ;separator="\n"
+       %>
+       return 0;
+    }
+    >> 
+end functionExtraResidual;
 
 template functionBoundParameters(list<SimEqSystem> parameterEquations, SimCode simCode) ::=
 let()= System.tmpTickReset(1)
@@ -580,37 +811,44 @@ public override void BoundParameters()
 end functionBoundParameters;
 
 // TODO: Is the -1 thing really correct? It seems to work.
-template functionCheckForDiscreteVarChanges(SimCode simCode) ::=
+template functionCheckForDiscreteChanges(SimCode simCode) ::=
 match simCode case SIMCODE(__) then
 <<
-public override bool CheckForDiscreteVarChanges()
+public override bool CheckForDiscreteChanges()
 {
   <% localRepresentationArrayDefines %>
   //var needToIterate = false;
-
+<%/* old stuff
   //edge(H[i])
   <% helpVarInfo |> (id1, exp, id2) => match id2 case -1 then ""
      else
-       'if (H[<%id1%>]!=0.0 && preH[<%id1%>]==0.0) EventQueue.Add(<%id2%> + NG);'
+       'if (<%edgeHelpVar(id1)%>) EventQueue.Add(<%id2%> + NG);'
     ;separator="\n" %>
-
-  //TODO: changeDiscreteVar(i) and to get the i from ComponentRef
+*/%>
   //if change()
-  <%discreteModelVars |> it =>
-  <<
-  if (<%preCref(it, simCode)%> != <%cref(it, simCode)%>) return true; /*needToIterate = true; */
-  >> ;separator="\n"%>
-  
+  <%discreteModelVars |> var => 
+     match var 
+     case CREF_QUAL(__) 
+     case CREF_IDENT(__) then
+     <<
+     if (<%preCref(var, simCode)%> != <%cref(var, simCode)%>) return true;
+     >> ;separator="\n"
+  %>
+<%/* old stuff
   for (int i = 0; i < H.Length; i++) {
     //change(H[i]) ?? TODO: not sure if it can be only 1.0 or 0.0
     if (H[i] != preH[i])
       return true; //needToIterate=true;
   }
-
+*/%>
   return false; //needToIterate;
 }
 >>
-end functionCheckForDiscreteVarChanges;
+end functionCheckForDiscreteChanges;
+
+template edgeHelpVar(String idx) ::=
+   '(/*edge(h[<idx%>])*/H[<%idx%>]!=0.0 && preH[<%idx%>]==0.0)'
+end edgeHelpVar;
 
 template daeExpToReal(Exp exp, Context context, Text &preExp, SimCode simCode) ::=
 	daeExp(exp, context, &preExp, simCode)
@@ -789,7 +1027,8 @@ case SES_WHEN(__) then
   let helpIf = (conditions |> (e, hidx) =>
       let hInit = daeExp(e, context, &preExp, simCode)
       let &preExp += 'H[<%hidx%>] = <%hInit%> ? 1.0 : 0.0;' //TODO: ??? type
-      '/*edge(H[<%hidx%>])*/(H[<%hidx%>]!=0.0 && preH[<%hidx%>]==0.0)'
+      edgeHelpVar(hidx)
+      //'/*edge(H[<%hidx%>])*/(H[<%hidx%>]!=0.0 && preH[<%hidx%>]==0.0)'
     ;separator=" || ")
   let &preExp2 = buffer ""
   let rightExp = daeExp(right, context, &preExp2, simCode)
@@ -841,7 +1080,8 @@ template representationArrayName(VarKind varKind, ExpType type_) ::=
   case DUMMY_STATE(__) then "Y" // => algebraics
   case DISCRETE(__)    then 'Y<%representationArrayNameTypePostfix(type_)%>/*d*/'
   case PARAM(__)       then "P" + representationArrayNameTypePostfix(type_)
-  case CONST then "CONST_VAR_KIND"
+  case EXTOBJ(__)      then "EO"
+  case CONST(__)       then "CONST_VAR_KIND"
   else "BAD_VARKIND"
 end representationArrayName;
 
@@ -947,8 +1187,8 @@ end underscorePath;
 
 
 // Codegen.generateStatement
-template algStatement(DAE.Statement it, Context context, SimCode simCode) ::=
-  match it
+template algStatement(DAE.Statement stmt, Context context, SimCode simCode) ::=
+  match stmt
   case STMT_ASSIGN(exp1 = CREF(componentRef = WILD(__)), exp = e) then
     let &preExp = buffer "" 
     let expPart = daeExp(e, context, &preExp, simCode)
@@ -1017,6 +1257,19 @@ template algStatement(DAE.Statement it, Context context, SimCode simCode) ::=
       <%statementLst |> stmt => algStatement(stmt, context, simCode) ;separator="\n"%>
     }
     >>
+  
+  case STMT_TUPLE_ASSIGN(__)   then "STMT_TUPLE_ASSIGN_NI"
+  case STMT_ASSERT(__)         then "STMT_ASSERT_NI"
+  case STMT_TERMINATE(__)      then "STMT_TERMINATE_NI"
+  case STMT_WHEN(__)           then algStmtWhen(stmt, context, simCode)
+  case STMT_BREAK(__)          then 'break; //break stmt<%\n%>'
+  case STMT_FAILURE(__)        then "STMT_FAILURE_NI"
+  case STMT_TRY(__)            then "STMT_TRY_NI"
+  case STMT_CATCH(__)          then "STMT_CATCH_NI"
+  case STMT_THROW(__)          then "STMT_THROW_NI"
+  case STMT_RETURN(__)         then "STMT_RETURN_NI"
+  case STMT_NORETCALL(__)      then "STMT_NORETCALL_NI"
+  case STMT_REINIT(__)         then "STMT_REINIT_NI"
   
   case _ then "NOT_IMPLEMENTED_ALG_STATEMENT"
  /*
@@ -1092,6 +1345,83 @@ template elseExpr(DAE.Else it, Context context, SimCode simCode) ::=
     }
     >>
 end elseExpr;
+
+
+template algStmtWhen(DAE.Statement when, Context context, SimCode simCode)
+ "Generates a when algorithm statement."
+::=
+match context
+case SIMULATION(genDiscrete=true) then
+  match when
+  case STMT_WHEN(__) then
+    <<
+    <%algStatementWhenPre(when, simCode)%>
+    if (<%helpVarIndices |> idx => edgeHelpVar(idx) ;separator=" || "%>) {
+      <% statementLst |> stmt =>  algStatement(stmt, context, simCode)
+         ;separator="\n" %>
+    }
+    <%algStatementWhenElse(elseWhen, simCode)%>
+    >>
+  end match
+end algStmtWhen;
+
+
+template algStatementWhenPre(DAE.Statement stmt, SimCode simCode)
+ "Helper to algStmtWhen."
+::=
+  match stmt
+  case STMT_WHEN(exp=ARRAY(array=el)) then
+    let &preExp = buffer "" /*BUFD*/
+    let assignments = algStatementWhenPreAssigns(el, helpVarIndices, &preExp, simCode)
+    <<
+    <%preExp%>
+    <%assignments%>
+    <%match elseWhen case SOME(ew) then  algStatementWhenPre(ew, simCode)%>
+    >>
+  case when as STMT_WHEN(__) then
+    match helpVarIndices
+    case {i} then
+      let &preExp = buffer "" /*BUFD*/
+      let res = daeExp(when.exp, contextSimulationDiscrete, &preExp, simCode) //TODO: ??? type conversion
+      <<
+      <%preExp%>
+      H[<%i%>] = <%res%> ? 1.0 : 0.0;
+      <%match when.elseWhen case SOME(ew) then  algStatementWhenPre(ew, simCode)%>
+      >>
+end algStatementWhenPre;
+
+
+template algStatementWhenElse(Option<DAE.Statement> stmt, SimCode simCode)
+ "Helper to algStmtWhen."
+::=
+match stmt
+case SOME(when as STMT_WHEN(__)) then
+  let elseCondStr = (when.helpVarIndices |> idx => edgeHelpVar(idx)
+                      ;separator=" || ")
+  <<
+  else if (<%elseCondStr%>) {
+    <% when.statementLst |> stmt =>  algStatement(stmt, contextSimulationDiscrete, simCode)
+       ;separator="\n"%>
+  }
+  <%algStatementWhenElse(when.elseWhen, simCode)%>
+  >>
+end algStatementWhenElse;
+
+
+template algStatementWhenPreAssigns(list<Exp> exps, list<Integer> ints, Text &preExp, SimCode simCode)
+ "Helper to algStatementWhenPre.
+  The lists exps and ints should be of the same length. Iterating over two
+  lists like this is not so well supported in Susan, so it looks a bit ugly."
+::=
+  match exps
+  case (firstExp :: restExps) then
+    match ints
+    case (firstInt :: restInts) then
+      <<
+      H[<%firstInt%>] = <%daeExp(firstExp, contextSimulationDiscrete, &preExp, simCode)%>;
+      <%algStatementWhenPreAssigns(restExps, restInts, &preExp, simCode)%>
+      >>
+end algStatementWhenPreAssigns;
     
 
 template scalarLhsCref(Exp ecr, Context context, Text &preExp, SimCode simCode) ::=
@@ -1669,7 +1999,7 @@ template expTypeShort(DAE.ExpType it) ::=
   case ET_BOOL(__)   then "bool"
   case ET_OTHER(__)  then "OTHER_TYPE_NOT_SUPPORTED"
   case ET_ARRAY(__)  then expTypeShort(ty)   
-  case ET_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then "COMPLEX_EXTERNAL_TYPE_NOT_SUPPORTED"
+  case ET_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then "object"
   case ET_COMPLEX(__) then '/*struct*/<%underscorePath(name)%>'
   case ET_METATYPE(__) case ET_BOXED(__) then "META_TYPE_NOT_SUPPORTED"
   case ET_FUNCTION_REFERENCE_VAR(__) then "FN_PTR_NOT_SUPPORTED"

@@ -301,6 +301,7 @@ uniontype Function
     list<Variable> inVars;
     list<Variable> outVars;
     list<Variable> biVars;
+    list<String> libs; //need this one for C#
     String language "C or Fortran";
     Absyn.Info info;
   end EXTERNAL_FUNCTION;
@@ -740,6 +741,30 @@ algorithm
         
   end matchcontinue;
 end hackMatrixReverseToCref;
+
+
+public function hackGetFirstExternalFunctionLib
+"This is a hack to get the original library name given to an external function.
+TODO: redesign OMC and Modelica specification so they are not so C/C++ centric."
+  input list<String> libs;
+  output String outFirstLib;
+algorithm
+  outFirstLib := matchcontinue (libs)
+    local
+      String lib;
+    
+    case(libs)
+      equation
+        lib = Util.listLast(libs);
+        lib = System.stringReplace(lib,"-l","");
+      then 
+        lib;
+    
+    case(_) then "NO_LIB";
+      
+  end matchcontinue;
+end hackGetFirstExternalFunctionLib;
+
 
 protected function isMatrixExpansion
 "Helper funtion to hackMatrixReverseToCref."
@@ -1725,7 +1750,7 @@ algorithm
     local
       DAE.Function fn;
       String extfnname,lang,str;
-      list<DAE.Element> bivars, algs, vars, invars, outvars;
+      list<DAE.Element> algs, vars; //, bivars, invars, outvars;
       list<String> includes,libs,fn_libs,fn_includes,fn_includeDirs,rt,rt_1;
       Absyn.Path fpath;
       list<tuple<String, Types.Type>> args;
@@ -1768,9 +1793,9 @@ algorithm
       equation
         DAE.EXTERNALDECL(name=extfnname, args=extargs,
           returnArg=extretarg, language=lang, ann=ann) = extdecl;
-        outvars = DAEUtil.getOutputVars(daeElts);
-        invars = DAEUtil.getInputVars(daeElts);
-        bivars = DAEUtil.getBidirVars(daeElts);
+        //outvars = DAEUtil.getOutputVars(daeElts);
+        //invars = DAEUtil.getInputVars(daeElts);
+        //bivars = DAEUtil.getBidirVars(daeElts);
         funArgs = Util.listMap(args, typesSimFunctionArg);
         outVars = Util.listMap(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
         inVars = Util.listMap(DAEUtil.getInputVars(daeElts), daeInOutSimVar);
@@ -1786,7 +1811,7 @@ algorithm
         info = DAEUtil.getElementSourceFileInfo(source);
       then
         (EXTERNAL_FUNCTION(fpath, extfnname, funArgs, simextargs, extReturn,
-          inVars, outVars, biVars, lang, info),
+          inVars, outVars, biVars, fn_libs, lang, info),
           rt_1,recordDecls,includes,includeDirs,libs);
         
         // Record constructor.
