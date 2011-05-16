@@ -94,8 +94,20 @@ int linearize()
   }
   strD = array2string(matrixD,size_Outputs,size_Inputs);
 
-  strX = array2string(globalData->states,1,size_A);
-  strU = array2string(globalData->inputVars,1,size_Inputs);
+  // The empty array {} is not valid modelica, so we need to put something
+  // inside the curly braces for x0 and u0. {for i in in 1:0} will create an
+  // empty array if needed.
+  if(size_A) {
+    strX = array2string(globalData->states,1,size_A);
+  } else {
+    strX = "i for i in 1:0";
+  }
+
+  if(size_Inputs) {
+    strU = array2string(globalData->inputVars,1,size_Inputs);
+  } else {
+    strU = "i for i in 1:0";
+  } 
 
   delete [] matrixA;
   delete [] matrixB;

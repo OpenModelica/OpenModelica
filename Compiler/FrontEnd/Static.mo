@@ -515,14 +515,14 @@ algorithm
       then
         (cache, e_1, prop, st_1);
 
-     // Part of the MetaModelica extension. This eliminates elab_array failed failtraces when using the empty list. sjoelund
-   case (cache,env,Absyn.ARRAY({}),impl,st,doVect,pre,info,_)
-     equation
-       true = RTOpts.acceptMetaModelicaGrammar();
-       (cache,exp,prop,st) = elabExp(cache,env,Absyn.LIST({}),impl,st,doVect,pre,info);
-     then (cache,exp,prop,st);
+    // Part of the MetaModelica extension. This eliminates elab_array failed failtraces when using the empty list. sjoelund
+    case (cache,env,Absyn.ARRAY({}),impl,st,doVect,pre,info,_)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        (cache,exp,prop,st) = elabExp(cache,env,Absyn.LIST({}),impl,st,doVect,pre,info);
+      then (cache,exp,prop,st);
 
-      // array expressions, e.g. {1,2,3}
+    // array expressions, e.g. {1,2,3}
     case (cache,env,Absyn.ARRAY(arrayExp = es),impl,st,doVect,pre,info,_)
       equation
         (cache,es_1,props,_) = elabExpList(cache, env, es, impl, st, doVect, pre, info);
@@ -2115,35 +2115,44 @@ protected function elabArray
   All types of an array should be equivalent. However, mixed Integer and Real
   elements are allowed in an array and in that case the Integer elements
   are converted to Real elements."
-  input list<DAE.Exp> expl;
-  input list<DAE.Properties> props;
-  input Prefix.Prefix pre;
-  input Absyn.Info info;
-  output list<DAE.Exp> outExpExpLst;
+  input list<DAE.Exp> inExpl;
+  input list<DAE.Properties> inProps;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info inInfo;
+  output list<DAE.Exp> outExpLst;
   output DAE.Properties outProperties;
 algorithm
-  (outExpExpLst,outProperties):=
-  matchcontinue (expl,props,pre,info)
+  (outExpLst,outProperties):=
+  matchcontinue (inExpl, inProps, inPrefix, inInfo)
     local
-      list<DAE.Exp> expl_1,expl_2;
+      list<DAE.Exp> expl;
       DAE.Properties prop;
       DAE.Type t;
       DAE.Const c;
       list<DAE.Type> types;
 
-    case (expl,props,pre,info) /* impl array contains mixed Integer and Real types */
+    // Empty array constructors are not allowed in Modelica.
+    case ({}, _, _, _)
       equation
-        t = elabArrayHasMixedIntReals(props);
-        c = elabArrayConst(props);
-        types = Util.listMap(props, Types.getPropType);
-        expl_1 = elabArrayReal2(expl, types, t);
+        Error.addSourceMessage(Error.EMPTY_ARRAY, {}, inInfo);
       then
-        (expl_1,DAE.PROP(t,c));
-    case (expl,props,pre,info)
+        fail();
+
+    // impl array contains mixed Integer and Real types 
+    case (inExpl as _ :: _, _, _, _)       
       equation
-        (expl_1,prop) = elabArray2(expl,props,pre,info);
+        t = elabArrayHasMixedIntReals(inProps);
+        c = elabArrayConst(inProps);
+        types = Util.listMap(inProps, Types.getPropType);
+        expl = elabArrayReal2(inExpl, types, t);
       then
-        (expl_1,prop);
+        (expl, DAE.PROP(t, c));
+
+    case (inExpl as _ :: _, _, _, _)
+      equation
+        (expl, prop) = elabArray2(inExpl, inProps, inPrefix, inInfo);
+      then
+        (expl, prop);
   end matchcontinue;
 end elabArray;
 

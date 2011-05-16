@@ -292,6 +292,7 @@ public constant ErrorID INVALID_REDECLARE=178;
 public constant ErrorID INVALID_TYPE_PREFIX=179;
 public constant ErrorID LINEAR_SYSTEM_INVALID=180;
 public constant ErrorID LINEAR_SYSTEM_SINGULAR=181;
+public constant ErrorID EMPTY_ARRAY=182;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -764,6 +765,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Redeclaration of %s is not allowed."),
           (INVALID_TYPE_PREFIX,TRANSLATION(),ERROR(),
           "Invalid type prefix '%s' on variable %s, due to existing type prefix '%s'."),
+          (EMPTY_ARRAY,TRANSLATION(),ERROR(),
+          "Array constructor may not be empty."),
           (MATCHCONTINUE_TO_MATCH_OPTIMIZATION,TRANSLATION(),NOTIFICATION(),"This matchcontinue expression has no overlapping patterns and should be using match instead of matchcontinue."),
           (META_DEAD_CODE,TRANSLATION(),NOTIFICATION(),"Dead code elimination: %s."),
           (META_UNUSED_DECL,TRANSLATION(),NOTIFICATION(),"Unused local variable: %s."),
