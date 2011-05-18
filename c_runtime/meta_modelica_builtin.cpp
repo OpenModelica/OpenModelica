@@ -72,10 +72,12 @@ modelica_metatype boxptr_intMax(modelica_metatype a,modelica_metatype b)
 
 stringCharInt_rettype stringCharInt(metamodelica_string chr)
 {
+  unsigned char c;
   if (MMC_STRLEN(chr) != 1)
     MMC_THROW();
   MMC_CHECK_STRING(chr);
-  return (int) MMC_STRINGDATA(chr)[0];
+  c = (unsigned char) MMC_STRINGDATA(chr)[0];
+  return c;
 }
 
 intStringChar_rettype intStringChar(modelica_integer ix)
