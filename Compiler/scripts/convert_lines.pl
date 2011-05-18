@@ -7,7 +7,14 @@
 # -- martin.sjolund@liu.se
 
 use Cwd;
-use Cwd 'abs_path';
+#use Cwd 'abs_path';
+use File::Spec;
+
+sub trim{
+   my $string = shift;
+   $string =~ s/^\s+|\s+$//g;
+   return $string;
+}
 
 $inf = $ARGV[0];
 $outf = $ARGV[1];
@@ -19,10 +26,12 @@ $inStmt = 0;
 $inStmtFile = "";
 $inStmtLine = 0;
 while( $line = <INP> ){
+  $trimmedLine = trim($line);
   # regex is fun
-  if ($line =~ /^ *..#modelicaLine .([A-Za-z.\/]*):([0-9]*):[0-9]*-[0-9]*:[0-9]*...$/) {
+  if ($trimmedLine =~ /^ *..#modelicaLine .([A-Za-z.\/]*):([0-9]*):[0-9]*-[0-9]*:[0-9]*...$/) {
     eval { 
-	   $inStmtFile = abs_path($1); # Absolute paths makes GDB a _lot_ happier;
+	   $inStmtFile = File::Spec->rel2abs($1); # Absolute paths makes GDB a _lot_ happier;
+	   #$inStmtFile = abs_path($1); # Absolute paths makes GDB a _lot_ happier;
 	};
 	if ($@) {
 	  $dir = getcwd(); 
