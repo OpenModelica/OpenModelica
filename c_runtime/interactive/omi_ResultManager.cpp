@@ -30,7 +30,7 @@ using namespace std;
 
 #define MAX_SSD 200 //Maximum number of Simulation Step Data elements
 #define MAX_SRDF 20 //Maximum number of Simulation Result Data for Forwarding
-bool debugResultManager = false; //Set true to print out comments which describes the program flow to the console
+bool debugResultManager = true; //Set true to print out comments which describes the program flow to the console
 /*
 * This element signalizes that the simulation runs for the first time.
 * It is important to store data into the "simulationStartSSD"
@@ -197,70 +197,70 @@ P_SimDataNumbers getSimDataNumbers(void) {
  * parameter: pointer from type SimStepData, it points on a data struct in a Calculation thread
  */
 bool setResultData(SimStepData* p_SimStepData_from_Calculation) {
-       bool retValue = true;
+   bool retValue = true;
 
-       //cout << "p_ssdArray_NextFreeSlot: " << p_ssdArray_NextFreeSlot << endl; fflush(stdout);
+   //cout << "p_ssdArray_NextFreeSlot: " << p_ssdArray_NextFreeSlot << endl; fflush(stdout);
 
-       if (debugResultManager)
-       {
-              cout << "RS1" << endl; fflush(stdout);
-       }
+   if (debugResultManager)
+   {
+		  cout << "ResultManager:\tFunct.: setResultData\tMessage:\tRS1" << endl; fflush(stdout);
+   }
 
-       /*
-        * This part is necessary for the producer &consumer problem with districted buffer
-        * The any entity which want to use the array must pas this part
-        */
-       // Try to enter the ghSemaphore_NumberFreeSlots gate.
-       ghSemaphore_NumberFreeSlots.Wait();
-       ssdMutex.Lock();
-       /********************************************************************
-        * Entity has pas the synchronization station and can work on the SSD buffer
-        */
-       if (debugResultManager)
-       {
-              cout << "RS2" << endl; fflush(stdout);
-       }
+   /*
+	* This part is necessary for the producer &consumer problem with districted buffer
+	* The any entity which want to use the array must pas this part
+	*/
+   // Try to enter the ghSemaphore_NumberFreeSlots gate.
+   ghSemaphore_NumberFreeSlots.Wait();
+   ssdMutex.Lock();
+   /********************************************************************
+	* Entity has pas the synchronization station and can work on the SSD buffer
+	*/
+   if (debugResultManager)
+   {
+		  cout << "ResultManager:\tFunct.: setResultData\tMessage:\tRS2" << endl; fflush(stdout);
+   }
 
-       addDataToSSD(p_SimStepData_from_Calculation);
+   addDataToSSD(p_SimStepData_from_Calculation);
 
-       if (debugResultManager)
-       {
-              cout << "RS3" << endl; fflush(stdout);
-              printSSD();
-              printSRDF();
-       }
-       //Work on SSD and SRDF buffer ended **********************************
+   if (debugResultManager)
+   {
+		  cout << "ResultManager:\tFunct.: setResultData\tMessage:\tRS3" << endl; fflush(stdout);
+		  printSSD();
+		  printSRDF();
+   }
+   //Work on SSD and SRDF buffer ended **********************************
 
-       // Release the mutex
-       if (!ssdMutex.Unlock()) {
-              //printf("ReleaseMutex ssdMutex error: %d\n", GetLastError());
-              return false;
-       }
-       //if(debugResultManager) { cout << "set released mutex" << endl; fflush(stdout); }
-       if (debugResultManager)
-       {
-              cout << "RS4" << endl; fflush(stdout);
-       }
-       // Release the semaphore ghSemaphore_NumberUsedSlots
-       /*if (!ReleaseSemaphore(ghSemaphore_NumberFreeSlots, // handle to semaphore
-        0, // increase count by zero because this will done for the external variable
-        NULL)) // not interested in previous count
-        {
-        //printf("ReleaseSemaphore ghSemaphore_NumberUsedSlots error: %d\n", GetLastError());
-        return false;
-        }*/
-       if (debugResultManager)
-       {
-              cout << "RS5" << endl; fflush(stdout);
-       }
-       ghSemaphore_NumberUsedSlots.Post();
-       //if(debugResultManager) { cout << "RS6" << endl; fflush(stdout); }
+   // Release the mutex
+   if (!ssdMutex.Unlock()) {
+		  //printf("ReleaseMutex ssdMutex error: %d\n", GetLastError());
+		  return false;
+   }
+   //if(debugResultManager) { cout << "set released mutex" << endl; fflush(stdout); }
+   if (debugResultManager)
+   {
+	   cout << "ResultManager:\tFunct.: setResultData\tMessage:\tRS4" << endl; fflush(stdout);
+   }
+   // Release the semaphore ghSemaphore_NumberUsedSlots
+   /*if (!ReleaseSemaphore(ghSemaphore_NumberFreeSlots, // handle to semaphore
+	0, // increase count by zero because this will done for the external variable
+	NULL)) // not interested in previous count
+	{
+	//printf("ReleaseSemaphore ghSemaphore_NumberUsedSlots error: %d\n", GetLastError());
+	return false;
+	}*/
+   if (debugResultManager)
+   {
+	   cout << "ResultManager:\tFunct.: setResultData\tMessage:\tRS5" << endl; fflush(stdout);
+   }
+   ghSemaphore_NumberUsedSlots.Post();
+   //if(debugResultManager) { cout << "RS6" << endl; fflush(stdout); }
 
-       if (debugResultManager)
-       {
-              cout << "RS Proof: " << p_SimStepData_from_Calculation->forTimeStep << endl; fflush(stdout);
-       }
-       return retValue;
+   if (debugResultManager)
+   {
+	   cout << "ResultManager:\tFunct.: setResultData\tData: p_SimStepData_from_Calculation->forTimeStep: " << p_SimStepData_from_Calculation->forTimeStep << endl; fflush(stdout);
+   }
+   return retValue;
 }
 
 /**
@@ -277,7 +277,7 @@ bool getResultData(SimStepData* p_SimResDataForw_from_Transfer){
         * This part is necessary for the producer &consumer problem with districted buffer
         * The any entity which want to use the array must pas this part
         */
-       if(debugResultManager) { cout << "RG1" << endl; fflush(stdout); }
+       if(debugResultManager) { cout << "ResultManager:\tFunct.: getResultData\tMessage: RG1" << endl; fflush(stdout); }
 
        ghSemaphore_NumberUsedSlots.Wait();
        ssdMutex.Lock();
@@ -287,14 +287,14 @@ bool getResultData(SimStepData* p_SimResDataForw_from_Transfer){
         */
        if(debugResultManager)
        {
-              cout << "RG2" << endl; fflush(stdout);
+    	   cout << "ResultManager:\tFunct.: getResultData\tMessage: RG2" << endl; fflush(stdout);
            // cout << "SimResDataForw_from_Transfer address: " << p_SimResDataForw_from_Transfer << endl; fflush(stdout);
            // cout << "popSRDF" << endl; fflush(stdout);
        }
        popSRDF(p_SimResDataForw_from_Transfer);
        if(debugResultManager)
        {
-              cout << "RG3" << endl; fflush(stdout);
+    	   cout << "ResultManager:\tFunct.: getResultData\tMessage: RG3" << endl; fflush(stdout);
        }
 
        //********************************************************************
@@ -305,7 +305,7 @@ bool getResultData(SimStepData* p_SimResDataForw_from_Transfer){
 
        if(debugResultManager)
        {
-              cout << "RG Proof: " << p_SimResDataForw_from_Transfer->forTimeStep << endl; fflush(stdout);
+    	   cout << "ResultManager:\tFunct.: getResultData\tData: p_SimResDataForw_from_Transfer->forTimeStep: " << p_SimResDataForw_from_Transfer->forTimeStep << endl; fflush(stdout);
        }
        return retValue;
 }
@@ -327,21 +327,20 @@ SimStepData* getResultDataForTime(double stepSize, double timeStep) {
 
        if(debugResultManager)
        {
-              cout << "All SSD Array elements" << endl; fflush(stdout);
+              cout << "ResultManager:\tFunct.: getResultDataForTime\tMessage: All SSD Array elements START" << endl; fflush(stdout);
               for(int i=0;i < MAX_SSD;i++){
                      cout << ssdArray[i].forTimeStep << endl; fflush(stdout);
               }
-              cout << "END All SSD Array elements" << endl; fflush(stdout);
+              cout << "ResultManager:\tFunct.: getResultDataForTime\tMessage: All SSD Array elements END" << endl; fflush(stdout);
        }
 
        SimStepData* temp;
-
        if (debugResultManager)
        {
-              cout << "ADD of p_ssdArray_NextFreeSlot: " << p_ssdArray_NextFreeSlot << endl; fflush(stdout);
-              cout << "p_ssdArray_NextFreeSlot: " << p_ssdArray_NextFreeSlot->forTimeStep << endl; fflush(stdout);
-              cout << "p_ssdArray_NextFreeSlot-1: " << (p_ssdArray_NextFreeSlot - 1)->forTimeStep << endl; fflush(stdout);
-              cout << "timeStep: " << timeStep << endl; fflush(stdout);
+    	   cout << "ResultManager:\tFunct.: getResultDataForTime\tMessage: ADD of p_ssdArray_NextFreeSlot: " << p_ssdArray_NextFreeSlot << endl; fflush(stdout);
+    	   cout << "ResultManager:\tFunct.: getResultDataForTime\tMessage: p_ssdArray_NextFreeSlot: " << p_ssdArray_NextFreeSlot->forTimeStep << endl; fflush(stdout);
+    	   cout << "ResultManager:\tFunct.: getResultDataForTime\tMessage: p_ssdArray_NextFreeSlot-1: " << (p_ssdArray_NextFreeSlot - 1)->forTimeStep << endl; fflush(stdout);
+    	   cout << "ResultManager:\tFunct.: getResultDataForTime\tMessage: timeStep: " << timeStep << endl; fflush(stdout);
        }
 
        //check if the searched time step is available in simulationstepdata (ssd)
@@ -357,7 +356,7 @@ SimStepData* getResultDataForTime(double stepSize, double timeStep) {
                                    + 0.0001) + p_ssdArray_NextFreeSlot; //+0.0001 is needed because of type cast and vision from int and double
                      if (debugResultManager)
                      {
-                            cout << "getResultDataForTime search in Part B temp->forTimeStep: " << temp->forTimeStep << endl; fflush(stdout);
+                    	 cout << "ResultManager:\tFunct.: getResultDataForTime\tMessage: getResultDataForTime search in Part B temp->forTimeStep: " << temp->forTimeStep << endl; fflush(stdout);
                      }
                      return temp;
               } else {
@@ -366,7 +365,7 @@ SimStepData* getResultDataForTime(double stepSize, double timeStep) {
                                    + firstSSD_Element;
                      if (debugResultManager)
                      {
-                            cout << "getResultDataForTime search in Part A temp->forTimeStep: " << temp->forTimeStep << endl; fflush(stdout);
+                    	 cout << "ResultManager:\tFunct.: getResultDataForTime\tMessage: getResultDataForTime search in Part A temp->forTimeStep: " << temp->forTimeStep << endl; fflush(stdout);
                      }
                      return temp;
               }
@@ -374,7 +373,7 @@ SimStepData* getResultDataForTime(double stepSize, double timeStep) {
               temp = &nullSSD;
               if (debugResultManager)
               {
-                     cout << "error time not in ssd" << endl; fflush(stdout);
+            	  cout << "ResultManager:\tFunct.: getResultDataForTime\tMessage: Error time not in SSD" << endl; fflush(stdout);
               }
        }
        return temp;
@@ -393,10 +392,10 @@ SimStepData* getResultDataFirstStart(){
 /**
  * After changing simulation parameters or starting the simulation from beginning, the SRDF Organisation must start again from the beginning. Because old simulation data mustn't send to the GUI.
  */
-void resetSRDFAfterChangetime() {
+void resetSRDFAfterChangetime() {s
        if (debugResultManager)
        {
-              cout << "***resetSRDFAfterChangetime" << endl; fflush(stdout);
+    	   cout << "ResultManager:\tFunct.: resetSRDFAfterChangetime\tMessage: START" << endl; fflush(stdout);
        }
 
        pp_srdfArray_FirstQueueElement = srdfArrayOfPointer;
@@ -409,7 +408,7 @@ void resetSRDFAfterChangetime() {
 
        if (debugResultManager)
        {
-              cout << "***resetSRDFAfterChangetime END" << endl; fflush(stdout);
+    	   cout << "ResultManager:\tFunct.: resetSRDFAfterChangetime\tMessage: END" << endl; fflush(stdout);
        }
 }
 
@@ -571,30 +570,30 @@ void popSRDF(SimStepData* p_SimResDataForw_from_Transfer) {
 
 void printSSD() {
 
-       cout << "****************printSSD****************" << endl; fflush(stdout);
+       cout << "ResultManager:\tFunct.: printSSD****************" << endl; fflush(stdout);
        for (int i = 0; i < MAX_SSD; i++) {
 
               if (ssdArray[i].forTimeStep != -1)
               {
-                     cout << i << ": " << ssdArray[i].forTimeStep << endl; fflush(stdout);
+            	  cout << "ResultManager:\tFunct.: printSSD\tData: SSD[" << i << "]: " << ssdArray[i].forTimeStep << endl; fflush(stdout);
               }
        }
 }
 
 void printSRDF() {
-       cout << "****************printSRDF****************" << endl; fflush(stdout);
+	cout << "ResultManager:\tFunct.: printSRDF****************" << endl; fflush(stdout);
        for (int i = 0; i < MAX_SRDF; i++)
        {
               if (srdfArrayOfPointer[i] != 0)
               {
                      if ((*srdfArrayOfPointer[i]).forTimeStep != -1)
                      {
-                            cout << i << ": " << (*srdfArrayOfPointer[i]).forTimeStep << endl; fflush(stdout);
+                    	 cout << "ResultManager:\tFunct.: printSRDF\tData: SRDF[" << i << "]: " << (*srdfArrayOfPointer[i]).forTimeStep << endl; fflush(stdout);
                      }
               }
               else
               {
-                     cout << i << ": " << srdfArrayOfPointer[i] << endl; fflush(stdout);
+            	  cout << "ResultManager:\tFunct.: printSRDF\tData: SRDF[" << i << "]: " << srdfArrayOfPointer[i] << endl; fflush(stdout);
               }
 
        }

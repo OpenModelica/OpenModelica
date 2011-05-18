@@ -26,7 +26,7 @@
 
 using namespace std;
 
-bool debugCalculation = true; //Set true to print out comments which describes the program flow to the console
+bool debugCalculation = false; //Set true to print out comments which describes the program flow to the console
 bool forZero = true; //The first calculation must start from 0 to 0 (in OpenModelica the solver calculates from 0 - 2.220446049250313e-13)
 bool* p_forZero = 0; //The first calculation must start from 0 to 0 (in OpenModelica the solver calculates from 0 - 2.220446049250313e-13)
 
@@ -57,7 +57,7 @@ int calculate() {
   //TODO  20100217 pv catch correct stepSize value for calculation loop
   if(debugCalculation)
   {
-         cout << "start: " << start << " stop: " << stop << " stepSize: " << stepSizeORG << " outputSteps: " << outputSteps << " method: " << method << " outputFormat: " << outputFormat; fflush(stdout);
+         cout << "Calculation:\tFunct.: calculate\tData 1: start: " << start << " stop: " << stop << " stepSize: " << stepSizeORG << " outputSteps: " << outputSteps << " method: " << method << " outputFormat: " << outputFormat; fflush(stdout);
   }
 
        if (method == std::string("euler") || method == std::string("rungekutta")
@@ -100,8 +100,8 @@ int calculate() {
                        stop = get_timeValue() + stepSize;
                        start = get_timeValue();
                        if (debugCalculation){
-                              cout << "calculate ---- p_SimStepData_from_Calculation->forTimeStep: " << p_SimStepData_from_Calculation->forTimeStep << " --------------------" << endl; fflush(stdout);
-                              cout << "calculate: start " << start << " stop: " << stop << endl; fflush(stdout);
+                              cout << "Calculation:\tFunct.: calculate\tData 2: p_SimStepData_from_Calculation->forTimeStep: " << p_SimStepData_from_Calculation->forTimeStep << " --------------------" << endl; fflush(stdout);
+                              cout << "Calculation:\tFunct.: calculate\tData 3: start " << start << " stop: " << stop << endl; fflush(stdout);
                        }
 
 
@@ -146,7 +146,7 @@ void createSSDEntry(string method) {
        if (debugCalculation)
               //printSSDCalculation(nStates, nAlgebraic, nParameters);
        if (debugCalculation)
-              cout << "createSSDEntry ---- p_SimStepData_from_Calculation->forTimeStep: " << p_SimStepData_from_Calculation->forTimeStep << " --------------------" << endl; fflush(stdout);
+              cout << "Calculation:\tFunct.: createSSDEntry\tData: p_SimStepData_from_Calculation->forTimeStep: " << p_SimStepData_from_Calculation->forTimeStep << " --------------------" << endl; fflush(stdout);
 
 }
 
@@ -190,7 +190,7 @@ THREAD_RET_TYPE threadSimulationCalculation(THREAD_PARAM_TYPE lpParam){
 
   if(debugCalculation)
   {
-         cout << "*** threadSimulationCalculation" << endl; fflush(stdout);
+         cout << "*****Calculation Thread Start*****" << endl; fflush(stdout);
   }
 
   p_sdnMutex->Lock();
