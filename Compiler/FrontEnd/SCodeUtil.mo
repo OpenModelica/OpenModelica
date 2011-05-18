@@ -1623,7 +1623,7 @@ algorithm
       equation
         subs = translateArgs(xs);
         n = Absyn.elementSpecName(spec);
-        elist = translateElementspec(constropt, finalPrefix, Absyn.NOT_INNER_OUTER(), NONE(), SCode.PUBLIC(), spec, info)
+        elist = translateElementspec(constropt, finalPrefix, Absyn.NOT_INNER_OUTER(), SOME(keywords), SCode.PUBLIC(), spec, info)
         "LS:: do not know what to use for *protected*, so using false
          LS:: do not know what to use for *replaceable*, so using false";
         scodeFinalPrefix = SCode.boolFinal(finalPrefix);
