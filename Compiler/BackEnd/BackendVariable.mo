@@ -1538,7 +1538,7 @@ algorithm
       DAE.Exp min,max;
     case (SOME(min)::(SOME(max)::{}),e,tp)
       then DAE.LBINARY(DAE.RELATION(e,DAE.GREATEREQ(tp),min,-1,NONE()),
-                            DAE.AND(),
+                            DAE.AND(DAE.ET_BOOL()),
                             DAE.RELATION(e,DAE.LESSEQ(tp),max,-1,NONE()));
     case (SOME(min)::(NONE()::{}),e,tp)
       then DAE.RELATION(e,DAE.GREATEREQ(tp),min,-1,NONE());

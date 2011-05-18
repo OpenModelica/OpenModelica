@@ -320,8 +320,8 @@ public function lbinopSymbol
 algorithm
   outString:=
   match (inOperator)
-    case (DAE.AND()) then " and ";
-    case (DAE.OR()) then " or ";
+    case (DAE.AND(_)) then " and ";
+    case (DAE.OR(_)) then " or ";
   end match;
 end lbinopSymbol;
 
@@ -332,7 +332,7 @@ public function lunaryopSymbol
   output String outString;
 algorithm
   outString := match (inOperator)
-    case (DAE.NOT()) then " not ";
+    case (DAE.NOT(_)) then "not ";
   end match;
 end lunaryopSymbol;
 
@@ -1040,9 +1040,9 @@ algorithm
     case (DAE.RELATION(operator = DAE.GREATEREQ(_))) then 6;
     case (DAE.RELATION(operator = DAE.EQUAL(_))) then 6;
     case (DAE.RELATION(operator = DAE.NEQUAL(_))) then 6;
-    case (DAE.LUNARY(operator = DAE.NOT())) then 7;
-    case (DAE.LBINARY(operator = DAE.AND())) then 8;
-    case (DAE.LBINARY(operator = DAE.OR())) then 9;
+    case (DAE.LUNARY(operator = DAE.NOT(_))) then 7;
+    case (DAE.LBINARY(operator = DAE.AND(_))) then 8;
+    case (DAE.LBINARY(operator = DAE.OR(_))) then 9;
     case (DAE.RANGE(ty = _)) then 10;
     case (DAE.IFEXP(expCond = _)) then 11;
     case (DAE.TUPLE(_)) then 12;  /* Not valid in inner expressions, only included here for completeness */
@@ -2276,8 +2276,8 @@ public function lbinopPriority
   output Integer outInteger;
 algorithm
   outInteger := match (inOperator)
-    case (DAE.AND()) then 10;
-    case (DAE.OR()) then 10;
+    case (DAE.AND(_)) then 10;
+    case (DAE.OR(_)) then 10;
   end match;
 end lbinopPriority;
 
@@ -2289,7 +2289,7 @@ public function lunaryopPriority
   output Integer outInteger;
 algorithm
   outInteger := match (inOperator)
-    case (DAE.NOT()) then 11;
+    case (DAE.NOT(_)) then 11;
   end match;
 end lunaryopPriority;
 

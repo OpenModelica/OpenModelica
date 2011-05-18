@@ -1425,11 +1425,17 @@ uniontype Operator "Operators which are overloaded in the abstract syntax are he
     ExpType ty "type of the array";
   end POW_ARR2;
 
-  record AND end AND;
+  record AND
+    ExpType ty;
+  end AND;
 
-  record OR end OR;
+  record OR 
+    ExpType ty;
+  end OR;
 
-  record NOT end NOT;
+  record NOT 
+    ExpType ty;
+  end NOT;
 
   record LESS
     ExpType ty;

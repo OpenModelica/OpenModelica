@@ -11671,7 +11671,7 @@ algorithm
         //Debug.fprint("dovl", Util.stringDelimitList(Util.listMap(params, Types.printTypeStr),"\n"));
         //Debug.fprint("dovl", "\n===\n");
         (args_1,types_1) = elabArglist(params, args);
-        rtype_1 = computeReturnType(op, types_1, rtype,pre);
+        rtype_1 = computeReturnType(op, types_1, rtype,pre,info);
         ty = Types.elabType(rtype_1);
         op = Expression.setOpType(op, ty);
       then
@@ -11707,105 +11707,106 @@ protected function computeReturnType "function: computeReturnType
   input list<DAE.Type> inTypesTypeLst;
   input DAE.Type inType;
   input Prefix.Prefix inPrefix;
+  input Absyn.Info inInfo;
   output DAE.Type outType;
 algorithm
-  outType := matchcontinue (inOperator,inTypesTypeLst,inType,inPrefix)
+  outType := matchcontinue (inOperator,inTypesTypeLst,inType,inPrefix, inInfo)
     local
       DAE.Type typ1,typ2,rtype,etype,typ;
       Ident t1_str,t2_str,pre_str;
       DAE.Dimension n1,n2,m,n,m1,m2,p;
       Prefix.Prefix pre;
     
-    case (DAE.ADD_ARR(ty = _),{typ1,typ2},rtype,_)
+    case (DAE.ADD_ARR(ty = _),{typ1,typ2},rtype,_, _)
       equation
         true = Types.subtype(typ1, typ2);
       then
         typ1;
     
-    case (DAE.ADD_ARR(ty = _),{typ1,typ2},rtype,_)
+    case (DAE.ADD_ARR(ty = _),{typ1,typ2},rtype,_, _)
       equation
         true = Types.subtype(typ2, typ1);
       then
         typ1;
     
-    case (DAE.ADD_ARR(ty = _),{typ1,typ2},_,pre)
+    case (DAE.ADD_ARR(ty = _),{typ1,typ2},_,pre, _)
       equation
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
         pre_str = PrefixUtil.printPrefixStr3(pre);
-        //t2_str = t2_str +& ", in component: " +& pre_str;
-        Error.addMessage(Error.INCOMPATIBLE_TYPES, {"vector addition",pre_str,t1_str,t2_str});
+        Error.addSourceMessage(Error.INCOMPATIBLE_TYPES, 
+          {"vector addition", pre_str, t1_str, t2_str}, inInfo);
       then
         fail();
     
-    case (DAE.SUB_ARR(ty = _),{typ1,typ2},rtype,_)
+    case (DAE.SUB_ARR(ty = _),{typ1,typ2},rtype,_, _)
       equation
         true = Types.subtype(typ1, typ2);
       then
         typ1;
     
-    case (DAE.SUB_ARR(ty = _),{typ1,typ2},rtype,_)
+    case (DAE.SUB_ARR(ty = _),{typ1,typ2},rtype,_, _)
       equation
         true = Types.subtype(typ2, typ1);
       then
         typ1;
     
-    case (DAE.SUB_ARR(ty = _),{typ1,typ2},_,pre)
+    case (DAE.SUB_ARR(ty = _),{typ1,typ2},_,pre, _)
       equation
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
         pre_str = PrefixUtil.printPrefixStr3(pre);
-        //t2_str = t2_str +& ", in component: " +& pre_str;
-        Error.addMessage(Error.INCOMPATIBLE_TYPES,{"vector subtraction",pre_str,t1_str,t2_str});
+        Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
+          {"vector subtraction", pre_str, t1_str, t2_str}, inInfo);
       then
         fail();
     
-    case (DAE.MUL_ARR(ty = _),{typ1,typ2},rtype,_)
+    case (DAE.MUL_ARR(ty = _),{typ1,typ2},rtype,_, _)
       equation
         true = Types.subtype(typ1, typ2);
       then
         typ1;
     
-    case (DAE.MUL_ARR(ty = _),{typ1,typ2},rtype,_)
+    case (DAE.MUL_ARR(ty = _),{typ1,typ2},rtype,_, _)
       equation
         true = Types.subtype(typ2, typ1);
       then
         typ1;
     
-    case (DAE.MUL_ARR(ty = _),{typ1,typ2},_,pre)
+    case (DAE.MUL_ARR(ty = _),{typ1,typ2},_,pre, _)
       equation
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
         pre_str = PrefixUtil.printPrefixStr3(pre);
-        //t2_str = t2_str +& ", in component: " +& pre_str;
-        Error.addMessage(Error.INCOMPATIBLE_TYPES,{"vector elementwise multiplication",pre_str,t1_str,t2_str});
+        Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
+          {"vector elementwise multiplication", pre_str, t1_str, t2_str}, inInfo);
       then
         fail();
     
-    case (DAE.DIV_ARR(ty = _),{typ1,typ2},rtype,_)
+    case (DAE.DIV_ARR(ty = _),{typ1,typ2},rtype,_, _)
       equation
         true = Types.subtype(typ1, typ2);
       then
         typ1;
     
-    case (DAE.DIV_ARR(ty = _),{typ1,typ2},rtype,_)
+    case (DAE.DIV_ARR(ty = _),{typ1,typ2},rtype,_, _)
       equation
         true = Types.subtype(typ2, typ1);
       then
         typ1;
     
-    case (DAE.DIV_ARR(ty = _),{typ1,typ2},_,pre)
+    case (DAE.DIV_ARR(ty = _),{typ1,typ2},_,pre, _)
       equation
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
         pre_str = PrefixUtil.printPrefixStr3(pre);
-        //t2_str = t2_str +& ", in component: " +& pre_str;
-        Error.addMessage(Error.INCOMPATIBLE_TYPES,{"vector elementwise division",pre_str,t1_str,t2_str});
+        Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
+          {"vector elementwise division", pre_str, t1_str, t2_str}, inInfo);
       then
         fail();
     
     // Matrix[n,m]^i
-    case (DAE.POW_ARR(ty = _),{typ1,typ2},_,_)
+    case (DAE.POW_ARR(ty = _),{typ1,typ2},_,_, _)
       equation
         2 = nDims(typ1);
         n = Types.getDimensionNth(typ1, 1);
@@ -11814,52 +11815,52 @@ algorithm
       then
         typ1;
     
-    case (DAE.POW_ARR2(ty = _),{typ1,typ2},rtype,_)
+    case (DAE.POW_ARR2(ty = _),{typ1,typ2},rtype,_, _)
       equation
         true = Types.subtype(typ1, typ2);
       then
         typ1;
     
-    case (DAE.POW_ARR2(ty = _),{typ1,typ2},rtype,_)
+    case (DAE.POW_ARR2(ty = _),{typ1,typ2},rtype,_, _)
       equation
         true = Types.subtype(typ2, typ1);
       then
         typ1;
     
-    case (DAE.POW_ARR2(ty = _),{typ1,typ2},_,pre)
+    case (DAE.POW_ARR2(ty = _),{typ1,typ2},_,pre, _)
       equation
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
         pre_str = PrefixUtil.printPrefixStr3(pre);
-        //t2_str = t2_str +& ", in component: " +& pre_str;
-        Error.addMessage(Error.INCOMPATIBLE_TYPES, {"elementwise vector^vector",pre_str,t1_str,t2_str});
+        Error.addSourceMessage(Error.INCOMPATIBLE_TYPES, 
+          {"elementwise vector^vector", pre_str, t1_str, t2_str}, inInfo);
       then
         fail();
     
-    case (DAE.MUL_SCALAR_PRODUCT(ty = _),{typ1,typ2},rtype,_)
+    case (DAE.MUL_SCALAR_PRODUCT(ty = _),{typ1,typ2},rtype,_, _)
       equation
         true = Types.subtype(typ1, typ2);
       then
         rtype;
     
-    case (DAE.MUL_SCALAR_PRODUCT(ty = _),{typ1,typ2},rtype,_)
+    case (DAE.MUL_SCALAR_PRODUCT(ty = _),{typ1,typ2},rtype,_, _)
       equation
         true = Types.subtype(typ2, typ1);
       then
         rtype;
     
-    case (DAE.MUL_SCALAR_PRODUCT(ty = _),{typ1,typ2},rtype,pre)
+    case (DAE.MUL_SCALAR_PRODUCT(ty = _),{typ1,typ2},rtype,pre, _)
       equation
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
         pre_str = PrefixUtil.printPrefixStr3(pre);
-        //t2_str = t2_str +& ", in component: " +& pre_str;
-        Error.addMessage(Error.INCOMPATIBLE_TYPES, {"scalar product",pre_str,t1_str,t2_str});
+        Error.addSourceMessage(Error.INCOMPATIBLE_TYPES, 
+          {"scalar product", pre_str, t1_str, t2_str}, inInfo);
       then
         fail();
     
     // Vector[n]*Matrix[n,m] = Vector[m]
-    case (DAE.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_,_)
+    case (DAE.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_,_, _)
       equation
         1 = nDims(typ1);
         2 = nDims(typ2);
@@ -11875,7 +11876,7 @@ algorithm
         rtype;
     
     // Matrix[n,m]*Vector[m] = Vector[n]
-    case (DAE.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_,_)
+    case (DAE.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_,_, _)
       equation
         2 = nDims(typ1);
         1 = nDims(typ2);
@@ -11891,7 +11892,7 @@ algorithm
         rtype;
     
     // Matrix[n,m] * Matrix[m,p] = Matrix[n, p]
-    case (DAE.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_,_)
+    case (DAE.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_,_, _)
       equation
         2 = nDims(typ1);
         2 = nDims(typ2);
@@ -11907,73 +11908,101 @@ algorithm
       then
         rtype;
     
-    case (DAE.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},rtype,pre)
+    case (DAE.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},rtype,pre, _)
       equation
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
         pre_str = PrefixUtil.printPrefixStr3(pre);
-        //t2_str = t2_str +& ", in component: " +& pre_str;
-        Error.addMessage(Error.INCOMPATIBLE_TYPES,{"matrix multiplication",pre_str,t1_str,t2_str});
+        Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
+          {"matrix multiplication", pre_str, t1_str, t2_str}, inInfo);
       then
         fail();
     
-    case (DAE.MUL_SCALAR_ARRAY(ty = _),{typ1,typ2},rtype,_) then typ2;  /* rtype */
+    case (DAE.MUL_SCALAR_ARRAY(ty = _),{typ1,typ2},rtype,_, _) then typ2;  /* rtype */
 
-    case (DAE.MUL_ARRAY_SCALAR(ty = _),{typ1,typ2},rtype,_) then typ1;  /* rtype */
+    case (DAE.MUL_ARRAY_SCALAR(ty = _),{typ1,typ2},rtype,_, _) then typ1;  /* rtype */
 
-    case (DAE.ADD_SCALAR_ARRAY(ty = _),{typ1,typ2},rtype,_) then typ2;  /* rtype */
+    case (DAE.ADD_SCALAR_ARRAY(ty = _),{typ1,typ2},rtype,_, _) then typ2;  /* rtype */
 
-    case (DAE.ADD_ARRAY_SCALAR(ty = _),{typ1,typ2},rtype,_) then typ1;  /* rtype */
+    case (DAE.ADD_ARRAY_SCALAR(ty = _),{typ1,typ2},rtype,_, _) then typ1;  /* rtype */
 
-    case (DAE.SUB_SCALAR_ARRAY(ty = _),{typ1,typ2},rtype,_) then typ2;  /* rtype */
+    case (DAE.SUB_SCALAR_ARRAY(ty = _),{typ1,typ2},rtype,_, _) then typ2;  /* rtype */
 
-    case (DAE.SUB_ARRAY_SCALAR(ty = _),{typ1,typ2},rtype,_) then typ1;  /* rtype */
+    case (DAE.SUB_ARRAY_SCALAR(ty = _),{typ1,typ2},rtype,_, _) then typ1;  /* rtype */
 
-    case (DAE.DIV_SCALAR_ARRAY(ty = _),{typ1,typ2},rtype,_) then typ2;  /* rtype */
+    case (DAE.DIV_SCALAR_ARRAY(ty = _),{typ1,typ2},rtype,_, _) then typ2;  /* rtype */
 
-    case (DAE.DIV_ARRAY_SCALAR(ty = _),{typ1,typ2},rtype,_) then typ1;  /* rtype */
+    case (DAE.DIV_ARRAY_SCALAR(ty = _),{typ1,typ2},rtype,_, _) then typ1;  /* rtype */
 
-    case (DAE.POW_ARRAY_SCALAR(ty = _),{typ1,typ2},rtype,_) then typ1;  /* rtype */
+    case (DAE.POW_ARRAY_SCALAR(ty = _),{typ1,typ2},rtype,_, _) then typ1;  /* rtype */
 
-    case (DAE.POW_SCALAR_ARRAY(ty = _),{typ1,typ2},rtype,_) then typ2;  /* rtype */
+    case (DAE.POW_SCALAR_ARRAY(ty = _),{typ1,typ2},rtype,_, _) then typ2;  /* rtype */
 
-    case (DAE.ADD(ty = _),_,typ,_) then typ;
+    case (DAE.ADD(ty = _),_,typ,_, _) then typ;
 
-    case (DAE.SUB(ty = _),_,typ,_) then typ;
+    case (DAE.SUB(ty = _),_,typ,_, _) then typ;
 
-    case (DAE.MUL(ty = _),_,typ,_) then typ;
+    case (DAE.MUL(ty = _),_,typ,_, _) then typ;
 
-    case (DAE.DIV(ty = _),_,typ,_) then typ;
+    case (DAE.DIV(ty = _),_,typ,_, _) then typ;
 
-    case (DAE.POW(ty = _),_,typ,_) then typ;
+    case (DAE.POW(ty = _),_,typ,_, _) then typ;
 
-    case (DAE.UMINUS(ty = _),_,typ,_) then typ;
+    case (DAE.UMINUS(ty = _),_,typ,_, _) then typ;
 
-    case (DAE.UMINUS_ARR(ty = _),(typ1 :: _),_,_) then typ1;
+    case (DAE.UMINUS_ARR(ty = _),(typ1 :: _),_,_, _) then typ1;
 
-    case (DAE.UPLUS(ty = _),_,typ,_) then typ;
+    case (DAE.UPLUS(ty = _),_,typ,_, _) then typ;
 
-    case (DAE.UPLUS_ARR(ty = _),(typ1 :: _),_,_) then typ1;
+    case (DAE.UPLUS_ARR(ty = _),(typ1 :: _),_,_, _) then typ1;
 
-    case (DAE.AND(),_,typ,_) then typ;
+    case (DAE.AND(ty = _), {typ1, typ2}, _, _, _)
+      equation
+        true = Types.equivtypes(typ1, typ2);
+      then
+        typ1;
 
-    case (DAE.OR(),_,typ,_) then typ;
+    case (DAE.AND(ty = _), {typ1, typ2}, _, pre, _)
+      equation
+        t1_str = Types.unparseType(typ1);
+        t2_str = Types.unparseType(typ2);
+        pre_str = PrefixUtil.printPrefixStr3(pre);
+        Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
+          {"and", pre_str, t1_str, t2_str}, inInfo);
+      then
+        fail();
 
-    case (DAE.NOT(),_,typ,_) then typ;
+    case (DAE.OR(ty = _), {typ1, typ2}, _, _, _)
+      equation
+        true = Types.equivtypes(typ1, typ2);
+      then
+        typ1;
 
-    case (DAE.LESS(ty = _),_,typ,_) then typ;
+    case (DAE.OR(ty = _), {typ1, typ2}, _, pre, _)
+      equation
+        t1_str = Types.unparseType(typ1);
+        t2_str = Types.unparseType(typ2);
+        pre_str = PrefixUtil.printPrefixStr3(pre);
+        Error.addSourceMessage(Error.INCOMPATIBLE_TYPES,
+          {"or", pre_str, t1_str, t2_str}, inInfo);
+      then
+        fail();
 
-    case (DAE.LESSEQ(ty = _),_,typ,_) then typ;
+    case (DAE.NOT(ty = _),{typ1},typ,_, _) then typ1;
 
-    case (DAE.GREATER(ty = _),_,typ,_) then typ;
+    case (DAE.LESS(ty = _),_,typ,_, _) then typ;
 
-    case (DAE.GREATEREQ(ty = _),_,typ,_) then typ;
+    case (DAE.LESSEQ(ty = _),_,typ,_, _) then typ;
 
-    case (DAE.EQUAL(ty = _),_,typ,_) then typ;
+    case (DAE.GREATER(ty = _),_,typ,_, _) then typ;
 
-    case (DAE.NEQUAL(ty = _),_,typ,_) then typ;
+    case (DAE.GREATEREQ(ty = _),_,typ,_, _) then typ;
 
-    case (DAE.USERDEFINED(fqName = _),_,typ,_) then typ;
+    case (DAE.EQUAL(ty = _),_,typ,_, _) then typ;
+
+    case (DAE.NEQUAL(ty = _),_,typ,_, _) then typ;
+
+    case (DAE.USERDEFINED(fqName = _),_,typ,_, _) then typ;
   end matchcontinue;
 end computeReturnType;
 
@@ -12078,6 +12107,17 @@ protected constant list<DAE.Type> realarrtypes = {
   (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_REAL_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 8-dim
   (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_REAL_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()) // 9-dim
 };
+protected constant list<DAE.Type> boolarrtypes = {
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_BOOL_DEFAULT),NONE()), // 1-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_BOOL_DEFAULT),NONE())),NONE()), // 2-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_BOOL_DEFAULT),NONE())),NONE())),NONE()), // 3-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_BOOL_DEFAULT),NONE())),NONE())),NONE())),NONE()), // 4-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_BOOL_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE()), // 5-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_BOOL_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 6-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_BOOL_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 7-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_BOOL_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()), // 8-dim
+  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_BOOL_DEFAULT),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE())),NONE()) // 9-dim
+};
 protected constant list<DAE.Type> stringarrtypes = {
   (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_STRING_DEFAULT),NONE()), // 1-dim
   (DAE.T_ARRAY(DAE.DIM_UNKNOWN(),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),DAE.T_STRING_DEFAULT),NONE())),NONE()), // 2-dim
@@ -12121,7 +12161,7 @@ algorithm
   (outCache,outTplExpOperatorTypesTypeLstTypesTypeLst) :=
   matchcontinue (inCache,inOperator1,inEnv2,inType3,inType4)
     local
-      list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> intarrs,realarrs,stringarrs,scalars,arrays,types,scalarprod,matrixprod,intscalararrs,realscalararrs,intarrsscalar,realarrsscalar,realarrscalar,arrscalar,stringscalararrs,stringarrsscalar;
+      list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> intarrs,realarrs,boolarrs,stringarrs,scalars,arrays,types,scalarprod,matrixprod,intscalararrs,realscalararrs,intarrsscalar,realarrsscalar,realarrscalar,arrscalar,stringscalararrs,stringarrsscalar;
       tuple<DAE.Operator, list<DAE.Type>, DAE.Type> enum_op;
       list<Env.Frame> env;
       DAE.Type t1,t2,int_scalar,int_vector,int_matrix,real_scalar,real_vector,real_matrix;
@@ -12390,14 +12430,31 @@ algorithm
         types = Util.listFlatten({scalars,intarrs,realarrs});
       then
         (cache,types);
-    case (cache,Absyn.AND(),env,t1,t2) then (cache,{
-          (DAE.AND(),
-          {DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT)});  /* Logical operators Not considered for overloading yet. */
-    case (cache,Absyn.OR(),env,t1,t2) then (cache,{
-          (DAE.OR(),{DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},
-          DAE.T_BOOL_DEFAULT)});
-    case (cache,Absyn.NOT(),env,t1,t2) then (cache,{
-          (DAE.NOT(),{DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT)});
+
+    case (cache, Absyn.AND(), env, t1, t2)
+      equation
+        scalars = {(DAE.AND(DAE.ET_BOOL()), {DAE.T_BOOL_DEFAULT, DAE.T_BOOL_DEFAULT}, DAE.T_BOOL_DEFAULT)};
+        boolarrs = operatorReturn(DAE.AND(DAE.ET_BOOL()), boolarrtypes, boolarrtypes, boolarrtypes);
+        types = Util.listFlatten({scalars, boolarrs});
+      then
+        (cache, types);
+
+    case (cache, Absyn.OR(), env, t1, t2)
+      equation
+        scalars = {(DAE.OR(DAE.ET_BOOL()), {DAE.T_BOOL_DEFAULT, DAE.T_BOOL_DEFAULT}, DAE.T_BOOL_DEFAULT)};
+        boolarrs = operatorReturn(DAE.OR(DAE.ET_BOOL()), boolarrtypes, boolarrtypes, boolarrtypes);
+        types = Util.listFlatten({scalars, boolarrs});
+      then
+        (cache, types);
+        
+    case (cache, Absyn.NOT(), env, t1, t2)
+      equation
+        scalars = {(DAE.NOT(DAE.ET_BOOL()), {DAE.T_BOOL_DEFAULT}, DAE.T_BOOL_DEFAULT)};
+        boolarrs = operatorReturnUnary(DAE.NOT(DAE.ET_BOOL()), boolarrtypes, boolarrtypes);
+        types = Util.listFlatten({scalars, boolarrs});
+      then
+        (cache, types);
+
     case (cache,Absyn.LESS(),env,t1,t2) /* Relational operators */
       equation
         enum_op = makeEnumOperator(DAE.LESS(DAE.ET_ENUMERATION(Absyn.IDENT(""), {},{})), t1, t2);

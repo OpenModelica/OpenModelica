@@ -350,7 +350,7 @@ algorithm
     case (exp,DAE.BCONST(true),DAE.BCONST(false)) then exp;
     case (exp,DAE.BCONST(false),DAE.BCONST(true))
       equation
-        exp = DAE.LUNARY(DAE.NOT(), exp);
+        exp = DAE.LUNARY(DAE.NOT(DAE.ET_BOOL()), exp);
       then exp;
       // Are the branches equal?
     case (cond,tb,fb)
@@ -553,19 +553,19 @@ algorithm
       then e;
     case (DAE.CALL(path=Absyn.IDENT("min"),ty=DAE.ET_BOOL(),expLst={e1,e2}))
       equation
-        e = DAE.LBINARY(e1,DAE.AND(),e2);
+        e = DAE.LBINARY(e1,DAE.AND(DAE.ET_BOOL()),e2);
       then e;
     case (DAE.CALL(path=Absyn.IDENT("max"),ty=DAE.ET_BOOL(),expLst={e1,e2}))
       equation
-        e = DAE.LBINARY(e1,DAE.OR(),e2);
+        e = DAE.LBINARY(e1,DAE.OR(DAE.ET_BOOL()),e2);
       then e;
     case (DAE.CALL(path=Absyn.IDENT("min"),ty=DAE.ET_ARRAY(DAE.ET_BOOL(),_),expLst={DAE.ARRAY(array=expl)}))
       equation
-        e = Expression.makeLBinary(expl,DAE.AND());
+        e = Expression.makeLBinary(expl,DAE.AND(DAE.ET_BOOL()));
       then e;
     case (DAE.CALL(path=Absyn.IDENT("max"),ty=DAE.ET_ARRAY(DAE.ET_BOOL(),_),expLst={DAE.ARRAY(array=expl)}))
       equation
-        e = Expression.makeLBinary(expl,DAE.OR());
+        e = Expression.makeLBinary(expl,DAE.OR(DAE.ET_BOOL()));
       then e;
 
     // cross
@@ -2551,6 +2551,14 @@ algorithm
       then
         exp;
     
+    case (DAE.LUNARY(operator = DAE.NOT(ty = t), exp = e), sub)
+      equation
+        e_1 = simplifyAsub(e, sub);
+        t2 = Expression.typeof(e_1);
+        exp = DAE.LUNARY(DAE.NOT(t2), e_1);
+      then
+        exp;
+
     case (DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARR(ty = t),exp2 = e2),sub)
       equation
         e1_1 = simplifyAsub(e1, sub);
@@ -2719,6 +2727,16 @@ algorithm
         b = DAEUtil.expTypeArray(t2);
         op2 = Util.if_(b,DAE.POW_ARR2(t2),DAE.POW(t2));
         exp = DAE.BINARY(e1_1,op2,e2_1);
+      then
+        exp;
+
+    case (DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2), sub)
+      equation
+        e1_1 = simplifyAsub(e1, sub);
+        e2_1 = simplifyAsub(e2, sub);
+        t2 = Expression.typeof(e1_1);
+        op = Expression.setOpType(op, t2);
+        exp = DAE.LBINARY(e1_1, op, e2_1);
       then
         exp;
 
@@ -2956,7 +2974,7 @@ algorithm
       then 
         DAE.BCONST(b);
     
-    case(DAE.AND(),exp1,exp2) 
+    case(DAE.AND(DAE.ET_BOOL()),exp1,exp2) 
       equation
         b1 = Expression.getBoolConst(exp1);
         b2 = Expression.getBoolConst(exp2);
@@ -2964,7 +2982,7 @@ algorithm
       then 
         DAE.BCONST(b);
     
-    case(DAE.OR(),exp1,exp2) 
+    case(DAE.OR(DAE.ET_BOOL()),exp1,exp2) 
       equation
         b1 = Expression.getBoolConst(exp1);
         b2 = Expression.getBoolConst(exp2);
@@ -3428,11 +3446,11 @@ algorithm
         DAE.BCONST(false);
     
     // true AND e => e
-    case (DAE.AND(),e1 as DAE.BCONST(b),e2) then Util.if_(b,e2,e1);
-    case (DAE.AND(),e1,e2 as DAE.BCONST(b)) then Util.if_(b,e1,e2);
+    case (DAE.AND(_),e1 as DAE.BCONST(b),e2) then Util.if_(b,e2,e1);
+    case (DAE.AND(_),e1,e2 as DAE.BCONST(b)) then Util.if_(b,e1,e2);
     // false OR e => e
-    case (DAE.OR(),e1 as DAE.BCONST(b),e2) then Util.if_(b,e1,e2);
-    case (DAE.OR(),e1,e2 as DAE.BCONST(b)) then Util.if_(b,e2,e1);
+    case (DAE.OR(_),e1 as DAE.BCONST(b),e2) then Util.if_(b,e1,e2);
+    case (DAE.OR(_),e1,e2 as DAE.BCONST(b)) then Util.if_(b,e2,e1);
   end matchcontinue;
 end simplifyBinary;
 
@@ -3487,7 +3505,7 @@ algorithm
       Boolean b1;
     
     // not true => false, not false => true
-    case(DAE.NOT(),e1) 
+    case(DAE.NOT(DAE.ET_BOOL()),e1) 
       equation
         b1 = Expression.getBoolConst(e1);
         b1 = not b1;

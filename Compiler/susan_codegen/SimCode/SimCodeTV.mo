@@ -1043,9 +1043,15 @@ package DAE
     record POW_ARR2
       ExpType ty;
     end POW_ARR2;
-    record AND end AND;
-    record OR end OR;
-    record NOT end NOT;
+    record AND 
+      ExpType ty;
+    end AND;
+    record OR 
+      ExpType ty;
+    end OR;
+    record NOT 
+      ExpType ty;
+    end NOT;
     record LESS
       ExpType ty;
     end LESS;

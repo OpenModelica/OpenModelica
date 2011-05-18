@@ -8781,16 +8781,15 @@ protected function instWholeDimFromMod
 algorithm
   subscript := matchcontinue(dimensionExp, modifier, inVarName, inInfo)
     local  
-      DAE.ExpType tp;
       DAE.Dimension d;
       DAE.Subscript sub;
       DAE.Exp exp;
       String exp_str;
 
     case (DAE.DIM_UNKNOWN(), DAE.MOD(eqModOption = 
-            SOME(DAE.TYPED(modifierAsExp = DAE.ARRAY(ty = tp)))), _, _)
+            SOME(DAE.TYPED(modifierAsExp = exp))), _, _)
       equation
-        (d :: _) = Expression.arrayDimension(tp);
+        (d :: _) = Expression.expDimensions(exp);
         sub = Expression.dimensionSubscript(d);
       then sub;
 

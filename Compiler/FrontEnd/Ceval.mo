@@ -616,14 +616,14 @@ algorithm
     // special case when leftside is false...
     // We allow errors on right hand side. and even if there is no errors, the performance
     // will be better.
-    case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.AND(),exp2 = rh),impl,stOpt,dimOpt,msg)
+    case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.AND(_),exp2 = rh),impl,stOpt,dimOpt,msg)
       equation
         (cache,Values.BOOL(false),stOpt) = ceval(cache,env, lh, impl, stOpt, dimOpt, msg);
       then
         (cache,Values.BOOL(false),stOpt);
 
     // Logical lhs AND rhs
-    case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.AND(),exp2 = rh),impl,stOpt,dimOpt,msg)
+    case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.AND(_),exp2 = rh),impl,stOpt,dimOpt,msg)
       equation
         (cache,Values.BOOL(lhvBool),stOpt) = ceval(cache,env, lh, impl, stOpt, dimOpt, msg);
         (cache,Values.BOOL(rhvBool),stOpt) = ceval(cache,env, rh, impl, stOpt, dimOpt, msg);
@@ -632,14 +632,14 @@ algorithm
         (cache,Values.BOOL(resBool),stOpt);
 
     // true OR rhs 
-    case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.OR(),exp2 = rh),impl,stOpt,dimOpt,msg)
+    case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.OR(_),exp2 = rh),impl,stOpt,dimOpt,msg)
       equation
         (cache,Values.BOOL(true),stOpt) = ceval(cache,env, lh, impl, stOpt, dimOpt, msg);
       then
         (cache,Values.BOOL(true),stOpt);
 
     // lhs OR rhs 
-    case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.OR(),exp2 = rh),impl,stOpt,dimOpt,msg)
+    case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.OR(_),exp2 = rh),impl,stOpt,dimOpt,msg)
       equation
         (cache,Values.BOOL(lhvBool),stOpt) = ceval(cache,env, lh, impl, stOpt, dimOpt, msg);
         (cache,Values.BOOL(rhvBool),stOpt) = ceval(cache,env, rh, impl, stOpt, dimOpt, msg);
@@ -650,7 +650,7 @@ algorithm
     // Special case for a boolean expression like if( expression or ARRAY_IDEX_OUT_OF_BOUNDS_ERROR)
     // "expression" in this case we return the lh expression to be equall to
     // the previous c-code generation.
-    case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.OR(),exp2 = rh),impl,stOpt,dimOpt,msg)
+    case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.OR(_),exp2 = rh),impl,stOpt,dimOpt,msg)
       equation
         (cache,v as Values.BOOL(rhvBool),stOpt) = ceval(cache,env, lh, impl, stOpt, dimOpt, msg);
         failure((_,_,_) = ceval(cache,env, rh, impl, stOpt, dimOpt, msg));
@@ -658,7 +658,7 @@ algorithm
         (cache,v,stOpt);
     
     // NOT
-    case (cache,env,DAE.LUNARY(operator = DAE.NOT(),exp = e),impl,stOpt,dimOpt,msg)
+    case (cache,env,DAE.LUNARY(operator = DAE.NOT(_),exp = e),impl,stOpt,dimOpt,msg)
       equation
         (cache,Values.BOOL(b),stOpt) = ceval(cache,env, e, impl, stOpt, dimOpt, msg);
         b_1 = boolNot(b);

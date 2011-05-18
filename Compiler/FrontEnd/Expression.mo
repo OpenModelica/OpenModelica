@@ -338,9 +338,9 @@ algorithm
     case(DAE.POW_ARRAY_SCALAR(_)) then Absyn.POW();
     case(DAE.POW_ARR(_)) then Absyn.POW();
     case(DAE.POW_ARR2(_)) then Absyn.POW();
-    case(DAE.AND()) then Absyn.AND();
-    case(DAE.OR()) then Absyn.OR();
-    case(DAE.NOT()) then Absyn.NOT();
+    case(DAE.AND(_)) then Absyn.AND();
+    case(DAE.OR(_)) then Absyn.OR();
+    case(DAE.NOT(_)) then Absyn.NOT();
     case(DAE.LESS(_)) then Absyn.LESS();
     case(DAE.LESSEQ(_)) then Absyn.LESSEQ();
     case(DAE.GREATER(_)) then Absyn.GREATER();
@@ -955,9 +955,9 @@ algorithm
     case (DAE.POW_SCALAR_ARRAY(ty = _), _) then DAE.POW_SCALAR_ARRAY(inType);
     case (DAE.POW_ARR(ty = _), _) then DAE.POW_ARR(inType);
     case (DAE.POW_ARR2(ty = _), _) then DAE.POW_ARR2(inType);
-    case (DAE.AND(), _) then DAE.AND();
-    case (DAE.OR(), _) then DAE.OR();
-    case (DAE.NOT(),_ ) then DAE.NOT();
+    case (DAE.AND(ty = _), _) then DAE.AND(inType);
+    case (DAE.OR(ty = _), _) then DAE.OR(inType);
+    case (DAE.NOT(ty = _),_ ) then DAE.NOT(inType);
     case (DAE.LESS(ty = _), _) then inOp;
     case (DAE.LESSEQ(ty = _), _) then inOp;
     case (DAE.GREATER(ty = _), _) then inOp;
@@ -1345,6 +1345,22 @@ algorithm
   end match;
 end expLastSubs;
 
+public function expDimensions
+  "Tries to return the dimensions from an expression, typically an array."
+  input Exp inExp;
+  output list<DAE.Dimension> outDims;
+algorithm
+  outDims := match(inExp)
+    local
+      DAE.ExpType tp;
+      Exp e;
+
+    case DAE.ARRAY(ty = tp) then arrayDimension(tp);
+    case DAE.LUNARY(exp = e) then expDimensions(e);
+    case DAE.LBINARY(exp1 = e) then expDimensions(e);
+  end match;
+end expDimensions;
+
 public function arrayDimension "
 Author BZ
 Get dimension of array.
@@ -1647,9 +1663,9 @@ algorithm
     case (DAE.POW_SCALAR_ARRAY(ty = t)) then t;
     case (DAE.POW_ARR(ty = t)) then t;
     case (DAE.POW_ARR2(ty = t)) then t;
-    case (DAE.AND()) then DAE.ET_BOOL();
-    case (DAE.OR()) then DAE.ET_BOOL();
-    case (DAE.NOT()) then DAE.ET_BOOL();
+    case (DAE.AND(ty = t)) then t;
+    case (DAE.OR(ty = t)) then t;
+    case (DAE.NOT(ty = t)) then t;
     case (DAE.LESS(ty = t)) then t;
     case (DAE.LESSEQ(ty = t)) then t;
     case (DAE.GREATER(ty = t)) then t;
@@ -2627,8 +2643,8 @@ algorithm
       list<DAE.Exp> rest,lst;
       Operator op;
       String str;
-    case ({},DAE.AND()) then DAE.BCONST(true);
-    case ({},DAE.OR()) then DAE.BCONST(false);
+    case ({},DAE.AND(_)) then DAE.BCONST(true);
+    case ({},DAE.OR(_)) then DAE.BCONST(false);
     case ({e1},_) then e1;
     case ({e1, e2},op) then DAE.LBINARY(e1,op,e2);
     case ((e1 :: rest),op)
@@ -6517,9 +6533,9 @@ algorithm
     case (DAE.POW_ARRAY_SCALAR(ty = _),DAE.POW_ARRAY_SCALAR(ty = _)) then true;
     case (DAE.POW_ARR(ty = _),DAE.POW_ARR(ty = _)) then true;
     case (DAE.POW_ARR2(ty = _),DAE.POW_ARR2(ty = _)) then true;
-    case (DAE.AND(),DAE.AND()) then true;
-    case (DAE.OR(),DAE.OR()) then true;
-    case (DAE.NOT(),DAE.NOT()) then true;
+    case (DAE.AND(ty = _),DAE.AND(ty = _)) then true;
+    case (DAE.OR(ty = _),DAE.OR(ty = _)) then true;
+    case (DAE.NOT(ty = _),DAE.NOT(ty = _)) then true;
     case (DAE.LESS(ty = _),DAE.LESS(ty = _)) then true;
     case (DAE.LESSEQ(ty = _),DAE.LESSEQ(ty = _)) then true;
     case (DAE.GREATER(ty = _),DAE.GREATER(ty = _)) then true;

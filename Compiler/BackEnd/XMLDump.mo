@@ -3431,8 +3431,8 @@ algorithm
   outString:=
   match (inOperator)
     local String error_msg;
-    case (DAE.AND()) then MathMLAnd;
-    case (DAE.OR()) then MathMLOr;
+    case (DAE.AND(ty = _)) then MathMLAnd;
+    case (DAE.OR(ty = _)) then MathMLOr;
     else
       equation
         error_msg = "in XMLDump.lbinopSymbol - Unknown operator";
@@ -3454,7 +3454,7 @@ algorithm
   outString:=
   match (inOperator)
     local String error_msg;
-    case (DAE.NOT()) then MathMLNot;
+    case (DAE.NOT(ty = _)) then MathMLNot;
     else
       equation
         error_msg = "in XMLDump.lunaryopSymbol - Unknown operator";

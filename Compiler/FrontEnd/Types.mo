@@ -995,7 +995,6 @@ algorithm
   end matchcontinue;
 end getDimensionSizes;
 
-public 
 public function getDimensions
 "Returns the dimensions of a Type."
   input Type inType;

@@ -1838,7 +1838,7 @@ algorithm
         dae = BackendEquation.equationAddDAE(deq,dae); 
         
         wc = BackendDAE.WHEN_CLAUSE(dxdyecont,{BackendDAE.REINIT(dsxy,ds1,DAE.emptyElementSource)},NONE());
-        wc1 = BackendDAE.WHEN_CLAUSE(DAE.LUNARY(DAE.NOT(),dxdyecont),{BackendDAE.REINIT(dsxy,ds2,DAE.emptyElementSource)},NONE());
+        wc1 = BackendDAE.WHEN_CLAUSE(DAE.LUNARY(DAE.NOT(DAE.ET_BOOL()),dxdyecont),{BackendDAE.REINIT(dsxy,ds2,DAE.emptyElementSource)},NONE());
         dae = BackendDAEUtil.whenClauseAddDAE({wc,wc1},dae);
         eqcont = BackendDAE.EQUATION(dxdyecont,cont1,DAE.emptyElementSource);
         dae = BackendEquation.equationAddDAE(eqcont,dae); 

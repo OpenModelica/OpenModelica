@@ -1176,7 +1176,7 @@ algorithm
            ExpressionDump.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
       then ((DAE.BCONST(result), roots));
     // deal with NOT Connections.isRoot
-    case ((inExp as DAE.LUNARY(DAE.NOT(), DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),
+    case ((inExp as DAE.LUNARY(DAE.NOT(_), DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),
           expLst={DAE.CREF(componentRef = cref)})), roots))
       equation
         result = Util.listContainsWithCompareFunc(cref, roots, ComponentReference.crefEqual);
