@@ -392,7 +392,7 @@ SimStepData* getResultDataFirstStart(){
 /**
  * After changing simulation parameters or starting the simulation from beginning, the SRDF Organisation must start again from the beginning. Because old simulation data mustn't send to the GUI.
  */
-void resetSRDFAfterChangetime() {s
+void resetSRDFAfterChangetime() {
        if (debugResultManager)
        {
     	   cout << "ResultManager:\tFunct.: resetSRDFAfterChangetime\tMessage: START" << endl; fflush(stdout);
