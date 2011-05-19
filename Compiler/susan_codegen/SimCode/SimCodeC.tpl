@@ -5455,6 +5455,32 @@ template daeExpAsub(Exp exp, Context context, Text &preExp /*BUFP*/,
   else
   match exp
   
+  // Faster asub: Do not construct a whole new array just to access one subscript
+  case ASUB(exp=exp as ARRAY(scalar=true), sub={idx}) then
+    let res = tempDecl(expTypeFromExpShort(exp),&varDecls)
+    let idx1 = daeExp(idx, context, &preExp, &varDecls)
+    let expl = (exp.array |> e hasindex i1 fromindex 1 =>
+      let &caseVarDecls = buffer ""
+      let &casePreExp = buffer ""
+      let v = daeExp(e, context, &casePreExp, &caseVarDecls)
+      <<
+      case <%i1%>: {
+        <%&caseVarDecls%>
+        <%&casePreExp%>
+        <%res%> = <%v%>;
+        break;
+      }
+      >> ; separator = "\n")
+    let &preExp +=
+    <<
+    switch (<%idx1%>) { /* ASUB */
+    <%expl%>
+    default:
+      assert(NULL == "index out of bounds");
+    }
+    >>
+    res
+  
   case ASUB(exp=RANGE(ty=t), sub={idx}) then
     'ASUB_EASY_CASE'
   
