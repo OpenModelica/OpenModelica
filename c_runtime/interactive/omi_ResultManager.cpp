@@ -30,7 +30,7 @@ using namespace std;
 
 #define MAX_SSD 200 //Maximum number of Simulation Step Data elements
 #define MAX_SRDF 20 //Maximum number of Simulation Result Data for Forwarding
-bool debugResultManager = true; //Set true to print out comments which describes the program flow to the console
+bool debugResultManager = false; //Set true to print out comments which describes the program flow to the console
 /*
 * This element signalizes that the simulation runs for the first time.
 * It is important to store data into the "simulationStartSSD"
@@ -226,8 +226,8 @@ bool setResultData(SimStepData* p_SimStepData_from_Calculation) {
    if (debugResultManager)
    {
 		  cout << "ResultManager:\tFunct.: setResultData\tMessage:\tRS3" << endl; fflush(stdout);
-		  printSSD();
-		  printSRDF();
+		  //TODO[20110519] printSSD();
+		  //TODO[20110519] printSRDF();
    }
    //Work on SSD and SRDF buffer ended **********************************
 
@@ -390,26 +390,38 @@ SimStepData* getResultDataFirstStart(){
 *****************************************************************/
 
 /**
- * After changing simulation parameters or starting the simulation from beginning, the SRDF Organisation must start again from the beginning. Because old simulation data mustn't send to the GUI.
+ * After changing simulation parameters or starting the simulation from beginning,
+ * the SRDF Organisation must start again from the beginning.
+ * Because old simulation data mustn't send to the GUI.
  */
+<<<<<<< .mine
+void resetSRDFAfterChangetime() {
+   if (debugResultManager)
+   {
+	   cout << "ResultManager:\tFunct.: resetSRDFAfterChangetime\tMessage: START" << endl; fflush(stdout);
+   }
+=======
 void resetSRDFAfterChangetime() {
        if (debugResultManager)
        {
     	   cout << "ResultManager:\tFunct.: resetSRDFAfterChangetime\tMessage: START" << endl; fflush(stdout);
        }
+>>>>>>> .r9045
 
-       pp_srdfArray_FirstQueueElement = srdfArrayOfPointer;
-       pp_srdfArray_NextFreeSlot = srdfArrayOfPointer;
+   pp_srdfArray_FirstQueueElement = srdfArrayOfPointer;
+   pp_srdfArray_NextFreeSlot = srdfArrayOfPointer;
 
-       while(ghSemaphore_NumberUsedSlots.TryWait())
-       {
-              ghSemaphore_NumberFreeSlots.Post();
-       }
+   while(ghSemaphore_NumberUsedSlots.TryWait())
+   {
+		  ghSemaphore_NumberFreeSlots.Post();
+   }
 
-       if (debugResultManager)
-       {
-    	   cout << "ResultManager:\tFunct.: resetSRDFAfterChangetime\tMessage: END" << endl; fflush(stdout);
-       }
+   if (debugResultManager)
+   {
+	   printSSD();
+	   printSRDF();
+	   cout << "ResultManager:\tFunct.: resetSRDFAfterChangetime\tMessage: END" << endl; fflush(stdout);
+   }
 }
 
 /**
