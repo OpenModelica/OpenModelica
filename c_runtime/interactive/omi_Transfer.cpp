@@ -294,10 +294,16 @@ void doTransfer(long nStates, long nAlgebraic, long nParameters) {
          mutexSimulationStatus->Lock(); // Lock to see the simulation status.
          if(simulationStatus == SimulationStatus::STOPPED)
          {
-                // If the simulation should stop, unlock and break out of the loop.
-                 mutexSimulationStatus->Unlock();
-                break;       
+             // If the simulation should stop, unlock and break out of the loop.
+             mutexSimulationStatus->Unlock();
          }
+
+         if(simulationStatus == SimulationStatus::SHUTDOWN)
+		 {
+				 // If the simulation should stop, unlock and break out of the loop.
+				  mutexSimulationStatus->Unlock();
+				 break;
+		 }
 
          if(simulationStatus == SimulationStatus::RUNNING)
          {

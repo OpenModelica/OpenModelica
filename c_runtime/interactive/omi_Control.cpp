@@ -284,21 +284,21 @@ void connectToControlServer(Socket* p_sock)
  * Re-initializes the whole simulation runtime so the simulation can start from beginning
  */
 void reInitAll() {
-       SimStepData* p_ssdAtSimulationTime = getResultDataFirstStart();
-       if (debugLevelControl > 0)
-       {
-              cout << "Control:\tFunct.: reInitAll\tData: p_ssdAtChangedSimulationTime->forTimeStep: " << p_ssdAtSimulationTime->forTimeStep << endl; fflush(stdout);
-       }
-       setGlobalSimulationValuesFromSimulationStepData(p_ssdAtSimulationTime);
-       resetSRDFAfterChangetime(); //Resets the SRDF Array and the producer and consumer semaphores
-       resetSSDArrayWithNullSSD(); //overrides all SSD Slots with nullSSD elements
-       if (debugLevelControl > 0)
-       {
-              cout << "Control:\tFunct.: reInitAll\tData: globalData->lastEmittedTime: " << get_lastEmittedTime() << endl; fflush(stdout);
-              cout << "Control:\tFunct.: reInitAll\tData: globalData->timeValue: " << get_timeValue() << endl; fflush(stdout);
-       }
+   SimStepData* p_ssdAtSimulationTime = getResultDataFirstStart();
+   if (debugLevelControl > 0)
+   {
+		  cout << "Control:\tFunct.: reInitAll\tData: p_ssdAtChangedSimulationTime->forTimeStep: " << p_ssdAtSimulationTime->forTimeStep << endl; fflush(stdout);
+   }
+   setGlobalSimulationValuesFromSimulationStepData(p_ssdAtSimulationTime);
+   resetSRDFAfterChangetime(); //Resets the SRDF Array and the producer and consumer semaphores
+   resetSSDArrayWithNullSSD(); //overrides all SSD Slots with nullSSD elements
+   if (debugLevelControl > 0)
+   {
+		  cout << "Control:\tFunct.: reInitAll\tData: globalData->lastEmittedTime: " << get_lastEmittedTime() << endl; fflush(stdout);
+		  cout << "Control:\tFunct.: reInitAll\tData: globalData->timeValue: " << get_timeValue() << endl; fflush(stdout);
+   }
 
-       *p_forZero = true;
+   *p_forZero = true;
 }
 
 /**
@@ -479,24 +479,27 @@ void pauseSimulation()
 void stopSimulation(void) {
    if (status.compare("stop") != 0)
    {
-	  pauseSimulation();
+	pauseSimulation();
 
-	  reInitAll();
+	reInitAll();
 
-	  status = "stop";
+	mutexSimulationStatus->Lock();
+	simulationStatus = SimulationStatus::STOPPED;
+	mutexSimulationStatus->Unlock();
+	status = "stop";
 
-	  cout << "Control:\tFunct.: stopSimulation\tMessage: stop done" << endl; fflush(stdout);
-   }
-   else
-   {
-	   cout << "Control:\tFunct.: stopSimulation\tMessage: already stopped" << endl; fflush(stdout);
-   }
+	cout << "Control:\tFunct.: stopSimulation\tMessage: stop done" << endl; fflush(stdout);
+	}
+	else
+	{
+		cout << "Control:\tFunct.: stopSimulation\tMessage: already stopped" << endl; fflush(stdout);
+	}
 }
 
 void endSimulation()
 {
 	mutexSimulationStatus->Lock();
-	simulationStatus = SimulationStatus::STOPPED;
+	simulationStatus = SimulationStatus::SHUTDOWN;
 	mutexSimulationStatus->Unlock();
 	shutDown();
 }

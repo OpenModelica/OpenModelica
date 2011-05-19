@@ -25,7 +25,8 @@ struct SimulationStatus
   {
          RUNNING,
          PAUSED,
-         STOPPED
+         STOPPED,
+         SHUTDOWN
   };
 };
 
