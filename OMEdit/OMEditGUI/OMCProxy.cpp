@@ -298,7 +298,7 @@ void OMCProxy::sendCommand(const QString expression)
         if (mDisplayErrors)
         {
             QMessageBox::critical(mpParentMainWindow, Helper::applicationName + " - Error",
-                                  QString("Communication with ").append(Helper::applicationName).append(" server has lost.")
+                                  QString("Communication with the ").append(Helper::applicationName).append(" server has been lost.")
                                   .append("\n\n").append(Helper::applicationName).append(" will close."), "OK");
             restartApplication();
         }
@@ -374,7 +374,7 @@ void OMCProxy::catchException()
     if (mDisplayErrors)
     {
         QMessageBox::critical(mpParentMainWindow, Helper::applicationName + " - Error",
-                              QString("Communication with ").append(Helper::applicationName).append(" server has lost.")
+                              QString("Communication with the ").append(Helper::applicationName).append(" server has been lost.")
                               .append("\n\n").append(Helper::applicationName).append(" will restart."), "OK");
 
         restartApplication();
