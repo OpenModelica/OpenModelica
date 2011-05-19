@@ -8,7 +8,6 @@
 
 use Cwd;
 use Cwd 'abs_path';
-#use File::Spec;
 
 sub trim{
    my $string = shift;
@@ -30,8 +29,18 @@ while( $line = <INP> ){
   # regex is fun
   if ($trimmedLine =~ /^ *..#modelicaLine .([A-Za-z.\/]*):([0-9]*):[0-9]*-[0-9]*:[0-9]*...$/) {
     eval { 
-	   #$inStmtFile = File::Spec->rel2abs($1); # Absolute paths makes GDB a _lot_ happier;
-	   $inStmtFile = abs_path($1); # Absolute paths makes GDB a _lot_ happier;
+		if ($^O eq "msys") {
+			# split the file location
+			my @values = split('/', $1);
+			# read the filename
+			$fileName = pop(@values);
+			# join the file location back
+			$fileLocation = join('/', @values);
+			$inStmtFile = abs_path($fileLocation); # Absolute paths makes GDB a _lot_ happier;
+			$inStmtFile = $inStmtFile.'/'.$fileName;
+		} else {
+			$inStmtFile = abs_path($1); # Absolute paths makes GDB a _lot_ happier;
+		}
 	};
 	if ($@) {
 	  $dir = getcwd(); 
