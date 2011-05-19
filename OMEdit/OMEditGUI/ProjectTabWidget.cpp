@@ -2367,7 +2367,7 @@ bool ProjectTabWidget::saveModel(bool saveAs)
         QDir fileDialogSaveDir;
 
         modelFileName = StringHandler::getSaveFileName(this, tr(saveAs ? "Save File As" : "Save File"),
-                                                       fileDialogSaveDir.currentPath(),
+                                                       NULL,
                                                        Helper::omFileTypes, NULL, "mo");
 
         if (modelFileName.isEmpty())
@@ -2513,9 +2513,9 @@ void ProjectTabWidget::openFile(QString fileName)
 {
     if (fileName.isEmpty())
     {
-        QString name = QFileDialog::getOpenFileName(this, tr("Choose File"),
-                                                        QDir::currentPath() + QString("/../.."),
-                                                        Helper::omFileTypes);
+        QString name = StringHandler::getOpenFileName(this, tr("Choose File"),
+            NULL, Helper::omFileTypes, NULL);
+
         if (name.isEmpty())
             return;
         else

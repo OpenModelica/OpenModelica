@@ -67,7 +67,11 @@ public:
     static QStringList unparseStrings(QString value);
     // Returns false on failure
     static bool unparseBool(QString value);
-    static QString getSaveFileName(QWidget* parent = 0, const QString &caption = QString(), const QString & dir = QString(), const QString & filter = QString(), QString * selectedFilter = 0, const QString &defaultSuffix = QString());
+    static QString getSaveFileName(QWidget* parent = 0, const QString &caption = QString(), QString * dir = 0, const QString & filter = QString(), QString * selectedFilter = 0, const QString &defaultSuffix = QString());
+    static QString getOpenFileName(QWidget* parent = 0, const QString &caption = QString(), QString * dir = 0, const QString & filter = QString(), QString * selectedFilter = 0);
+
+protected:
+    static QString mLastOpenDir;
 };
 
 #endif // STRINGHANDLER_H

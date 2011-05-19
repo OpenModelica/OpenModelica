@@ -39,6 +39,8 @@
 
 #include "StringHandler.h"
 
+QString StringHandler::mLastOpenDir;
+
 //! @class StringHandler
 //! @brief The StringHandler class is used to manipulating and parsing the results get from OMC.
 
@@ -423,14 +425,68 @@ bool StringHandler::unparseBool(QString value)
   return value == "true";
 }
 
-QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, const QString &dir, const QString &filter, QString * selectedFilter, const QString &defaultSuffix)
+QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, QString * dir, const QString &filter, QString * selectedFilter, const QString &defaultSuffix)
 {
-  QFileDialog fileDialog(parent, caption, dir, filter);
+  QString dir_str;
+
+  if (dir)
+  {
+    dir_str = *dir;
+  }
+  else
+  {
+    dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
+  }
+
+  QFileDialog fileDialog(parent, caption, dir_str, filter);
   
   if (selectedFilter) fileDialog.selectNameFilter(*selectedFilter);
   if (defaultSuffix.length()) fileDialog.setDefaultSuffix(defaultSuffix);
   fileDialog.setFileMode(QFileDialog::AnyFile);
   fileDialog.setAcceptMode(QFileDialog::AcceptSave);
-  if (fileDialog.exec()) { QStringList fileNames = fileDialog.selectedFiles(); if ( fileNames.count() ) return fileNames.at(0); }
+
+  if (fileDialog.exec()) 
+  { 
+    QStringList fileNames = fileDialog.selectedFiles(); 
+    
+    if (fileNames.count()) 
+    {
+      mLastOpenDir = fileDialog.directory().absolutePath();
+      return fileNames.at(0); 
+    }
+  }
+
+  return QString();
+}
+
+QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, QString * dir, const QString &filter, QString * selectedFilter)
+{
+  QString dir_str;
+
+  if (dir)
+  {
+    dir_str = *dir;
+  }
+  else
+  {
+    dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
+  }
+
+  QFileDialog fileDialog(parent, caption, dir_str, filter);
+
+  if (selectedFilter) fileDialog.selectNameFilter(*selectedFilter);
+  fileDialog.setFileMode(QFileDialog::AnyFile);
+  fileDialog.setAcceptMode(QFileDialog::AcceptOpen);
+
+  if (fileDialog.exec()) 
+  { 
+    QStringList fileNames = fileDialog.selectedFiles(); 
+    
+    if (fileNames.count()) 
+    {
+      mLastOpenDir = fileDialog.directory().absolutePath(); 
+      return fileNames.at(0); 
+    }
+  }
   return QString();
 }
