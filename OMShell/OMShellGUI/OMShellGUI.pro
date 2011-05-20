@@ -4,7 +4,7 @@ TARGET = OMShell
 TEMPLATE = app
 
 SOURCES += commandcompletion.cpp \
-    ../../OMEdit/OMEditGUI/omc_communication.cpp \
+    ../../OMEdit/OMEditGUI/omc_communication.cc \
     omc_communicator.cpp \
     omcinteractiveenvironment.cpp \
     oms.cpp \
