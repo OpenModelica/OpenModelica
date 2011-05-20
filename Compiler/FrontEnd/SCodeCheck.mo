@@ -221,14 +221,18 @@ algorithm
 end checkClassExtendsReplaceability;
 
 public function checkRedeclareModifier
-  input SCode.Element inModifier;
+  input SCodeEnv.Redeclaration inModifier;
   input Absyn.Path inBaseClass;
   input SCodeEnv.Env inEnv;
 algorithm
   _ := match(inModifier, inBaseClass, inEnv)
-    case (SCode.CLASS(classDef = SCode.DERIVED(typeSpec = _)), _, _)
+    local
+      SCode.Element e;
+
+    case (SCodeEnv.RAW_MODIFIER(e as SCode.CLASS(classDef = 
+        SCode.DERIVED(typeSpec = _))), _, _)
       equation
-        checkRedeclareModifier2(inModifier, inBaseClass, inEnv);
+        checkRedeclareModifier2(e, inBaseClass, inEnv);
       then
         ();
 

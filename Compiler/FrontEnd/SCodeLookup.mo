@@ -292,7 +292,7 @@ algorithm
       list<Extends> rest_bc;
       Item item;
       Env env;
-      list<SCode.Element> redecls;
+      list<SCodeEnv.Redeclaration> redecls;
       Absyn.Info info;
       Option<Absyn.Path> opt_path;
       Option<Item> opt_item;
@@ -567,7 +567,7 @@ algorithm
       Env env, type_env;
       Absyn.TypeSpec type_spec;
       SCode.Mod mods;
-      list<SCode.Element> redeclares;
+      list<SCodeEnv.Redeclaration> redeclares;
       Absyn.Info info;
 
     // A variable.
@@ -614,7 +614,7 @@ algorithm
       Env env, type_env;
       Absyn.TypeSpec type_spec;
       SCode.Mod mods;
-      list<SCode.Element> redeclares;
+      list<SCodeEnv.Redeclaration> redeclares;
       Absyn.Info info;
 
     // A variable.

@@ -203,7 +203,7 @@ algorithm
       Absyn.Info info;
       Env env, type_env;
       SCodeEnv.Frame class_env;
-      list<SCode.Element> redeclares;
+      list<SCodeEnv.Redeclaration> redeclares;
       Item item;
 
     case (_, _, {}, _) then (inItem, inEnv);
@@ -295,7 +295,7 @@ algorithm
         analyseClassDef(cdef, res, env, info);
         analyseMetaType(res, env, info);
         _ :: env = env;
-        //analyseRedeclaredClass(cls, env);
+        analyseRedeclaredClass(cls, env);
       then
         ();
 
@@ -664,13 +664,11 @@ algorithm
       Item item;
       Env env;
       SCode.Element cls;
+      Absyn.Info info;
 
-    case (SCodeEnv.CLASS(cls = cls as SCode.CLASS(name = name)), _)
+    case (SCodeEnv.CLASS(cls = cls as SCode.CLASS(name = name, info = info)), _)
       equation
-        (SOME(item), _, _, SOME(env)) = SCodeLookup.lookupInBaseClasses(name,
-          inEnv, SCodeLookup.IGNORE_REDECLARES);
-        //(SOME(item), _, SOME(env)) = SCodeLookup.lookupInLocalScope(name, inEnv);
-        //analyseRedeclaredClass2(item, env);
+        (item, env) = SCodeLookup.lookupRedeclaredClassByItem(inItem, inEnv, info);
         markItemAsUsed(item, env);
       then
         ();
@@ -1597,6 +1595,7 @@ algorithm
       Absyn.Path bc;
       String cls_name;
       Env env;
+      SCode.Prefixes prefixes;
 
     case (SCode.CLASS(name = cls_name, classDef = 
           SCode.PARTS(elementLst = SCode.EXTENDS(baseClassPath = bc) :: _), 
@@ -1954,7 +1953,7 @@ protected function removeUnusedRedeclares2
   output SCodeEnv.Extends outExtends;
 protected
   Absyn.Path bc;
-  list<SCode.Element> redeclares;
+  list<SCodeEnv.Redeclaration> redeclares;
   Absyn.Info info;
 algorithm
   SCodeEnv.EXTENDS(bc, redeclares, info) := inExtends;
@@ -1963,10 +1962,11 @@ algorithm
 end removeUnusedRedeclares2;
 
 protected function removeUnusedRedeclares3
-  input SCode.Element inElement;
+  input SCodeEnv.Redeclaration inRedeclare;
   input SCodeEnv.AvlTree inClsAndVars;
 algorithm
-  _ := SCodeEnv.avlTreeGet(inClsAndVars, SCode.elementName(inElement));
+  _ := SCodeEnv.avlTreeGet(inClsAndVars, 
+    SCode.elementName(SCodeEnv.getRedeclarationElement(inRedeclare)));
 end removeUnusedRedeclares3;
 
 end SCodeDependency;

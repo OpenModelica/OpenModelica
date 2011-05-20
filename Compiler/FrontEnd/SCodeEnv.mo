@@ -67,10 +67,30 @@ public uniontype ImportTable
   end IMPORT_TABLE;
 end ImportTable;
 
+public uniontype Redeclaration
+  "This uniontype stores a redeclare modifier (which might be derived from an
+  element redeclare). The RAW_MODIFIER stores a 'raw' modifier, i.e. the raw
+  element stored in the SCode representation. These are processed when they are
+  used, i.e. when replacements are done, and converted into PROCESSED_MODIFIERs
+  which are environment items ready to be replaced in the environment.
+  
+  This processing happens in two places. Element redeclares are processed
+  immediately when they are converted to redeclare modifiers and inserted into
+  the environment in addElementRedeclarationsToEnv. Element modifiers are
+  processed just before they are replaced, in replaceRedeclaredElementInEnv."
+  record RAW_MODIFIER
+    SCode.Element modifier;
+  end RAW_MODIFIER;
+
+  record PROCESSED_MODIFIER
+    Item modifier;
+  end PROCESSED_MODIFIER;
+end Redeclaration;
+
 public uniontype Extends
   record EXTENDS
     Absyn.Path baseClass;
-    list<SCode.Element> redeclareModifiers;
+    list<Redeclaration> redeclareModifiers;
     Absyn.Info info;
   end EXTENDS;
 end Extends;
@@ -617,7 +637,7 @@ public function extendEnvWithExtends
 protected
   Absyn.Path bc;
   SCode.Mod mods;
-  list<SCode.Element> redecls;
+  list<Redeclaration> redecls;
   Absyn.Info info;
   Env env;
 algorithm
@@ -687,7 +707,6 @@ algorithm
   outExtends := matchcontinue(inExtends, inEnv, inClassType)
     local
       Absyn.Path bc;
-      list<SCode.Element> redecl;
       Absyn.Ident id;
       Absyn.Info info;
       Option<Absyn.Path> qbc;
@@ -695,15 +714,13 @@ algorithm
 
     // Check if we're extending a builtin type such as Real, in which case we
     // don't need to do anything.
-    case (EXTENDS(baseClass = Absyn.IDENT(name = id), 
-        redeclareModifiers = redecl), _, _)
+    case (EXTENDS(baseClass = Absyn.IDENT(name = id)), _, _)
       equation
         _ = SCodeLookup.lookupBuiltinType(id);
       then
         inExtends;
 
-    case (EXTENDS(baseClass = bc, 
-        redeclareModifiers = redecl, info = info), _, _)
+    case (EXTENDS(baseClass = bc, info = info), _, _)
       equation
         (qbc, opt_item) = qualifyExtends2(bc, info, inEnv);
       then
@@ -762,7 +779,7 @@ algorithm
     local
       Absyn.Path bc, obc;
       Item item;
-      list<SCode.Element> rl;
+      list<Redeclaration> rl;
       Absyn.Info info;
 
     case (SOME(bc), SOME(item), EXTENDS(obc, rl, info), _, _)
@@ -1088,8 +1105,7 @@ algorithm
   env := FRAME(name, ty, tree, EXTENDS_TABLE(bcl, {}, NONE()), imps, is_used) :: rest_env;
   SOME(tree) := updateExtendsInEnv3(SOME(tree), env);
   env := FRAME(name, ty, tree, EXTENDS_TABLE(bcl, {}, NONE()), imps, is_used) :: rest_env;
-  outEnv := env;
-  //outEnv := SCodeFlattenRedeclare.addElementRedeclarationsToEnv(re, env);
+  outEnv := SCodeFlattenRedeclare.addElementRedeclarationsToEnv(re, env);
 end updateExtendsInEnv2;
 
 protected function updateExtendsInEnv3
@@ -1331,6 +1347,20 @@ algorithm
   end match;
 end joinPaths;
 
+public function getRedeclarationElement
+  input Redeclaration inRedeclare;
+  output SCode.Element outElement;
+algorithm
+  outElement := match(inRedeclare)
+    local
+      SCode.Element e;
+
+    case RAW_MODIFIER(modifier = e) then e;
+    case PROCESSED_MODIFIER(modifier = CLASS(cls = e)) then e;
+    case PROCESSED_MODIFIER(modifier = VAR(var = e)) then e;
+  end match;
+end getRedeclarationElement;
+
 public function buildInitialEnv
   "Build a new environment that contains some things that can't be represented
   in ModelicaBuiltin or MetaModelicaBuiltin."
@@ -1510,14 +1540,21 @@ protected function printExtendsStr
   output String outString;
 protected
   Absyn.Path bc;
-  list<SCode.Element> mods;
+  list<Redeclaration> mods;
   String mods_str;
 algorithm
   EXTENDS(baseClass = bc, redeclareModifiers = mods) := inExtends;
   mods_str := Util.stringDelimitList(
-    Util.listMap(mods, SCode.printElementStr), "\n");
+    Util.listMap(mods, printRedeclarationStr), "\n");
   outString := "\t\t" +& Absyn.pathString(bc) +& "(" +& mods_str +& ")";
 end printExtendsStr;
+
+protected function printRedeclarationStr
+  input Redeclaration inRedeclare;
+  output String outString;
+algorithm
+  outString := SCode.printElementStr(getRedeclarationElement(inRedeclare));
+end printRedeclarationStr;
 
 protected function printImportTableStr
   input ImportTable inImports;
