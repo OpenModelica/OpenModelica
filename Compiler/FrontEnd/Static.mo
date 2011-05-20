@@ -484,7 +484,7 @@ algorithm
         Debug.fprintln("sei", "elab_exp CALL...") "Function calls PA. Only positional arguments are elaborated for now. TODO: Implement elaboration of named arguments." ;
         (cache,e_1,prop,st_1) = elabCall(cache,env, fn, args, nargs, impl, st,pre,info,Error.getNumErrorMessages());
         c = Types.propAllConst(prop);
-        (e_1,_) = ExpressionSimplify.simplify(e_1);
+        (e_1,_) = ExpressionSimplify.simplify1(e_1);
         Debug.fprintln("sei", "elab_exp CALL done");
       then
         (cache,e_1,prop,st_1);
@@ -4365,7 +4365,7 @@ algorithm
 
         // Use the first of the returned values from the function.
         DAE.PROP(ty, c) :: _ = Types.propTuplePropList(p);
-        (arrexp_1,_) = ExpressionSimplify.simplify(Expression.makeAsubAddIndex(arrexp_1, 1));
+        (arrexp_1,_) = ExpressionSimplify.simplify1(Expression.makeAsubAddIndex(arrexp_1, 1));
         elt_ty = Types.arrayElementType(ty);
         tp = Types.elabType(ty);
         call = Expression.makeBuiltinCall(inFnName, {arrexp_1}, tp);
