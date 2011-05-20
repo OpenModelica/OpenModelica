@@ -469,22 +469,36 @@ QString OMCProxy::getEnvironmentVar(QString name)
 //! Loads the OpenModelica Standard Library.
 QStringList OMCProxy::loadStandardLibrary()
 {
+    QStringList empty;
     QStringList res;
     sendCommand("loadModel(Modelica)");
-    if (StringHandler::unparseBool(getResult())) {
-        res.append("Modelica");
-        mIsStandardLibraryLoaded = true;
-        //! @todo Remove it once we have support for Media and Fluid.
-        // just added to remove Fluid and Media Library...
-        deleteClass("Modelica.Media");
-        deleteClass("Modelica.Fluid");
-        sendCommand("loadModel(ModelicaServices) /* Required for MultiBody */");
-        if (StringHandler::unparseBool(getResult())) {
-            res.append("ModelicaServices");
-            sendCommand("loadModel(Complex) /* Used in MSL 3.2; ignore the false return-value if you use MSL 3.1 */");
-            if (StringHandler::unparseBool(getResult())) res.append("Complex");
-        }
+    if (!StringHandler::unparseBool(getResult())) return empty;
+    sendCommand("getNamedAnnotation(Modelica,version)");
+    QString versionStr = StringHandler::unparseStrings(getResult()).at(0);
+    double version = versionStr.toDouble();
+    res.append("Modelica");
+
+    if (version >= 3.0 && version < 4.0) {
+      deleteClass("Modelica.Media");
+      deleteClass("Modelica.Fluid");
+      sendCommand("loadModel(ModelicaServices)");
+      if (!StringHandler::unparseBool(getResult())) {
+        return empty;
+      }
+      res.append("ModelicaServices");
+      if (version >= 3.2) {
+        sendCommand("loadModel(Complex)");
+        if (!StringHandler::unparseBool(getResult())) return empty;
+        res.append("Complex");
+      }
+    } else {
+      if (version < 2) sendCommand("setAnnotationVersion(\"1.x\")");
+      else if (version < 3) sendCommand("setAnnotationVersion(\"2.x\")");
+      QMessageBox::warning(mpParentMainWindow, Helper::applicationName + " requires Modelica 3 annotations",
+                      "Modelica Standard Library version " + versionStr + " is unsupported", "OK");
     }
+ 
+    mIsStandardLibraryLoaded = true;    
     return res;
 }
 
