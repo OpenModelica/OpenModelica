@@ -67,7 +67,7 @@ int interactiveSimulation = 0; //This variable signals if an simulation session 
 
 /* Global Data */
 /***************/
-const char* version = "20110215";
+const char* version = "20110520_1120";
 // Becomes non-zero when model terminates simulation.
 int modelTermination = 0;
 int terminationTerminate = 0;
@@ -625,10 +625,10 @@ main(int argc, char**argv)
     return 1;
 
   if (interactiveSimulation) {
-    //cout << "startInteractiveSimulation: " << version << endl;
+    cout << "startInteractiveSimulation: " << version << endl;
     retVal = startInteractiveSimulation(argc, argv);
   } else {
-    //cout << "startNonInteractiveSimulation: " << version << endl;
+    cout << "startNonInteractiveSimulation: " << version << endl;
     retVal = startNonInteractiveSimulation(argc, argv);
   }
 

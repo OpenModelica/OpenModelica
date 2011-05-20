@@ -30,7 +30,7 @@ using namespace std;
 
 #define MAX_SSD 200 //Maximum number of Simulation Step Data elements
 #define MAX_SRDF 20 //Maximum number of Simulation Result Data for Forwarding
-bool debugResultManager = false; //Set true to print out comments which describes the program flow to the console
+bool debugResultManager = true; //Set true to print out comments which describes the program flow to the console
 /*
 * This element signalizes that the simulation runs for the first time.
 * It is important to store data into the "simulationStartSSD"

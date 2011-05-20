@@ -291,46 +291,44 @@ void doTransfer(long nStates, long nAlgebraic, long nParameters) {
 
   /* TODO: Fix pause and resume of thread! */
   while (!transferInterrupted) {
-         mutexSimulationStatus->Lock(); // Lock to see the simulation status.
-         if(simulationStatus == SimulationStatus::STOPPED)
-         {
-             // If the simulation should stop, unlock and break out of the loop.
-             mutexSimulationStatus->Unlock();
-         }
+	 mutexSimulationStatus->Lock(); // Lock to see the simulation status.
+	 if(simulationStatus == SimulationStatus::STOPPED)
+	 {
+		 // If the simulation should stop, do nothing for transfer...
+		 mutexSimulationStatus->Unlock();
+	 }
 
-         if(simulationStatus == SimulationStatus::SHUTDOWN)
-		 {
-				 // If the simulation should stop, unlock and break out of the loop.
-				  mutexSimulationStatus->Unlock();
-				 break;
-		 }
+	 if(simulationStatus == SimulationStatus::SHUTDOWN)
+	 {
+		 // If the simulation should shutdown, unlock and break out of the loop.
+		 mutexSimulationStatus->Unlock();
+		 break;
+	 }
 
-         if(simulationStatus == SimulationStatus::RUNNING)
-         {
-                // If the simulation should continue, increase the semaphore.
-                waitForResume->Post();
-         }
-         // Unlock and see if we need to wait for resume or not.
-         mutexSimulationStatus->Unlock();
-         waitForResume->Wait();
+	 if(simulationStatus == SimulationStatus::RUNNING)
+	 {
+		// If the simulation should continue, increase the semaphore.
+		waitForResume->Post();
+	 }
+	 // Unlock and see if we need to wait for resume or not.
+	 mutexSimulationStatus->Unlock();
+	 waitForResume->Wait();
 
-         if(debugTransfer)
-         {
-                // cout << "SimResDataForw_from_Transfer address: " << p_SimResDataForw_from_Transfer << endl; fflush(stdout);
-                cout << "try getResultData" << endl; fflush(stdout);
-         }
+	 if(debugTransfer)
+	 {
+		 cout << "Transfer:\tFunct.: doTransfer\tMessage: try getResultData" << endl; fflush(stdout);
+	 }
 
-         getResultData(p_SimResDataForw_from_Transfer);
+	 getResultData(p_SimResDataForw_from_Transfer);
 
-         if (debugTransfer)
-         {
-                cout << "done getResultData" << endl; fflush(stdout);
-             // cout << "SimResDataForw_from_Transfer address: " << p_SimResDataForw_from_Transfer << endl; fflush(stdout);
-         }
+	 if (debugTransfer)
+	 {
+		cout << "Transfer:\tFunct.: doTransfer\tMessage: done getResultData" << endl; fflush(stdout);
+	 }
 
-         //printSSDTransfer(nStates, nAlgebraic, nParameters);
-         sendMessageToClientGUI(nStates, nAlgebraic, nParameters);
-         delay((unsigned int)(get_stepSize() * 1000)); //TODO 20100427 pv The sending frequency should depend on the real time, **soft real time
+	 //printSSDTransfer(nStates, nAlgebraic, nParameters);
+	 sendMessageToClientGUI(nStates, nAlgebraic, nParameters);
+	 delay((unsigned int)(get_stepSize() * 1000)); //TODO 20100427 pv The sending frequency should depend on the real time, **soft real time
   }
 }
 

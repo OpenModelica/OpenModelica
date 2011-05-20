@@ -47,7 +47,7 @@ string control_client_ip = "";
 int control_client_port = 0;
 int control_server_port = 0;
 
-int debugLevelControl = 1; //Set the debug level higher zero to print out messages which describes the program flow to the console [0= debug off, 1= min-debug, 2= max-debug]
+int debugLevelControl = 0; //Set the debug level higher zero to print out messages which describes the program flow to the console [0= debug off, 1= min-debug, 2= max-debug]
 bool shutDownSignal = false;
 bool error = false;
 string messageForClient;
@@ -442,8 +442,7 @@ void startSimulation()
  */
 void pauseSimulation()
 {
-   if (status.compare("start") == 0)
-   	   {
+	if (status.compare("start") == 0) {
 		/*Try lock the mutex is necessary, because the producer and consumer threads are working on the
 		 * global data which is protected by a mutex
 		 * A lock in pause ensures that the threads finished their job before they will be interrupted
@@ -464,13 +463,11 @@ void pauseSimulation()
 
 		status = "pause";
 		cout << "Control:\tFunct.: pauseSimulation\tMessage: pause done" << endl; fflush( stdout);
+	} else {
+		cout << "Control:\tFunct.: pauseSimulation\tMessage: already paused or stopped" << endl; fflush( stdout);
 	}
-   else
-   {
-	   cout << "Control:\tFunct.: pauseSimulation\tMessage: already paused or stopped" << endl; fflush(stdout);
-   }
 
-       cout << "Control:\tFunct.: pauseSimulation\t[" << getMinTime_inSSD() << " - " << getMaxTime_inSSD() << "]" << endl; fflush(stdout);
+	cout << "Control:\tFunct.: pauseSimulation\t[" << getMinTime_inSSD() << " - " << getMaxTime_inSSD() << "]" << endl; fflush( stdout);
 }
 
 /**
