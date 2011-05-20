@@ -628,7 +628,7 @@ main(int argc, char**argv)
     cout << "startInteractiveSimulation: " << version << endl;
     retVal = startInteractiveSimulation(argc, argv);
   } else {
-    cout << "startNonInteractiveSimulation: " << version << endl;
+    // cout << "startNonInteractiveSimulation: " << version << endl;
     retVal = startNonInteractiveSimulation(argc, argv);
   }
 
