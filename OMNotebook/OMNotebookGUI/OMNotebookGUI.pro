@@ -13,7 +13,7 @@ SOURCES += \
     cellapplication.cpp \
     cellparserfactory.cpp \
     omc_communicator.cpp \
-    ../../OMEdit/OMEditGUI/omc_communication.cpp \
+    ../../OMEdit/OMEditGUI/omc_communication.cc \
     stylesheet.cpp \
     cellcommandcenter.cpp \
     chaptercountervisitor.cpp \
