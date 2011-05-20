@@ -149,7 +149,7 @@ bool OMCProxy::startServer()
         QString omcPath;
         #ifdef WIN32
           if (!omhome)
-            throw std::runtime_error(GUIMessages::getMessage(GUIMessages::OPEN_MODELICA_HOME_NOT_FOUND).toStdString());
+            throw std::runtime_error(GUIMessages::getMessage(GUIMessages::OPEN_MODELICA_HOME_NOT_FOUND).toLocal8Bit());
           omcPath = QString( omhome ) + "/bin/omc.exe";
         #else /* unix */
           omcPath = (omhome ? QString(omhome)+"/bin/omc" : QString(CONFIG_DEFAULT_OPENMODELICAHOME) + "/bin/omc");
@@ -191,7 +191,7 @@ bool OMCProxy::startServer()
             if (ticks > 20)
             {
                 msg = "Unable to find " + Helper::applicationName + " server, Object reference file " + mObjectRefFile + " not created.";
-                throw std::runtime_error(msg.toStdString().c_str());
+                throw std::runtime_error(msg.toStdString());
             }
         }
         // ORB initialization.
@@ -205,7 +205,7 @@ bool OMCProxy::startServer()
         objectRefFile.readLine( buf, sizeof(buf) );
         QString uri( (const char*)buf );
 
-        CORBA::Object_var obj = orb->string_to_object(uri.trimmed().toLatin1());
+        CORBA::Object_var obj = orb->string_to_object(uri.trimmed().toLocal8Bit());
 
         mOMC = OmcCommunication::_narrow(obj);
         mHasInitialized = true;
@@ -284,7 +284,7 @@ void OMCProxy::sendCommand(const QString expression)
         }
         else
         {
-            mResult = mOMC->sendExpression(expression.toLatin1());
+            mResult = QString::fromLocal8Bit(mOMC->sendExpression(getExpression().toLocal8Bit()));
             logOMCMessages(expression);
         }
     }
@@ -307,7 +307,7 @@ void OMCProxy::sendCommand(const QString expression)
 
 void OMCProxy::sendCommand()
 {
-    mResult = mOMC->sendExpression(getExpression().toLatin1());
+    mResult = QString::fromLocal8Bit(mOMC->sendExpression(getExpression().toLocal8Bit()));
 }
 
 void OMCProxy::setResult(QString value)
