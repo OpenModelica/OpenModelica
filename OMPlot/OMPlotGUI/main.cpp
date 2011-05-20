@@ -45,7 +45,7 @@ using namespace OMPlot;
 
 void printUsage()
 {
-    printf("Usage: OMPlot [OPTION] [filename] [variable names]\n");
+    printf("Usage: OMPlot [OPTION] [--filename=NAME] [variable names]\n");
     printf("OPTIONS\n");
     printf("    --title=TITLE              Sets the TITLE of the plot window\n");
     printf("    --filename=NAME            Sets the NAME of the file to plot\n");
