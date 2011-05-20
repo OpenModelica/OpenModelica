@@ -1,5 +1,10 @@
 .PHONY: install build $(NAME) always
 
+top_builddir=../../
+builddir_bin=$(top_builddir)/build/bin/
+builddir_share=$(top_builddir)/build/share/
+runtimedir=$(top_builddir)/Compiler/runtime/
+
 NAME=OMEdit
 EXE=@EXE@
 QMAKE=@QMAKE@
@@ -10,7 +15,10 @@ install: build
 	cp -p ../../doc/OMEdit/*.pdf ../../build/share/doc/omedit/
 always:
 
-$(NAME): Makefile OMEdit.config
+omc_communication.cc omc_communication.h: $(runtimedir)/omc_communication.idl
+	@IDLCMD@ $<
+
+$(NAME): Makefile OMEdit.config omc_communication.cc
 	$(MAKE) -f Makefile
 
 clean:

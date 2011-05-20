@@ -14,7 +14,7 @@ SOURCES += main.cpp\
     ProjectTabWidget.cpp \
     LibraryWidget.cpp \
     MessageWidget.cpp \
-    omc_communication.cpp \
+    omc_communication.cc \
     OMCProxy.cpp \
     OMCThread.cpp \
     StringHandler.cpp \
