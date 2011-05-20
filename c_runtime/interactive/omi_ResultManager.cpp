@@ -394,6 +394,7 @@ SimStepData* getResultDataFirstStart(){
  * the SRDF Organisation must start again from the beginning.
  * Because old simulation data mustn't send to the GUI.
  */
+
 void resetSRDFAfterChangetime() {
    if (debugResultManager)
    {
