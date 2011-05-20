@@ -394,19 +394,11 @@ SimStepData* getResultDataFirstStart(){
  * the SRDF Organisation must start again from the beginning.
  * Because old simulation data mustn't send to the GUI.
  */
-<<<<<<< .mine
 void resetSRDFAfterChangetime() {
    if (debugResultManager)
    {
 	   cout << "ResultManager:\tFunct.: resetSRDFAfterChangetime\tMessage: START" << endl; fflush(stdout);
    }
-=======
-void resetSRDFAfterChangetime() {
-       if (debugResultManager)
-       {
-    	   cout << "ResultManager:\tFunct.: resetSRDFAfterChangetime\tMessage: START" << endl; fflush(stdout);
-       }
->>>>>>> .r9045
 
    pp_srdfArray_FirstQueueElement = srdfArrayOfPointer;
    pp_srdfArray_NextFreeSlot = srdfArrayOfPointer;
