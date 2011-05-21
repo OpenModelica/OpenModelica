@@ -445,6 +445,25 @@ public
 type StrongComponents = list<StrongComponent> "- Order of the equations the have to be solved" ;
 
 public
+uniontype StrongComponentX
+  record SINGLEEQUATION
+    Value eqn;  
+    Value var;
+  end SINGLEEQUATION;
+   
+  record EQUATIONSYSTEM
+    list<Value> eqns;
+    list<Value> vars "be carefule with states, this are solved for der(x)";
+    Option<list<tuple<Integer, Integer, Equation>>> jac;
+    JacobianType jacType;
+  end EQUATIONSYSTEM; 
+
+end StrongComponentX;
+
+public
+type StrongComponentsX = list<StrongComponentX> "- Order of the equations the have to be solved" ;
+
+public
 uniontype DivZeroExpReplace "- Should the division operator replaced by a operator with check of the denominator"
   record ALL  " check all expressions" end ALL;
   record ONLY_VARIABLES  " for expressions with variable variables(no parameters)" end ONLY_VARIABLES;

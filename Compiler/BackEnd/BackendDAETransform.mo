@@ -792,6 +792,7 @@ public function strongComponents "function: strongComponents
   inputs:  (IncidenceMatrix, BackendDAE.IncidenceMatrixT, int vector, int vector)
   outputs: (int list list /* list of components */ )
 "
+  input BackendDAE.BackendDAE inDAE;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix1;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT2;
   input array<Integer> inIntegerArray3;
@@ -799,7 +800,7 @@ public function strongComponents "function: strongComponents
   output BackendDAE.StrongComponents outComps;
 algorithm
   outComps:=
-  matchcontinue (inIncidenceMatrix1,inIncidenceMatrixT2,inIntegerArray3,inIntegerArray4)
+  matchcontinue (inDAE,inIncidenceMatrix1,inIncidenceMatrixT2,inIntegerArray3,inIntegerArray4)
     local
       BackendDAE.Value n,i;
       list<BackendDAE.Value> stack;
@@ -807,15 +808,19 @@ algorithm
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
       array<BackendDAE.Value> ass1,ass2;
-    case (m,mt,ass1,ass2)
+      BackendDAE.StrongComponentsX compsX;
+    case (inDAE,m,mt,ass1,ass2)
       equation
         n = arrayLength(m);
         BackendDAEEXT.initLowLink(n);
         BackendDAEEXT.initNumber(n);
         (i,stack,comps) = strongConnectMain(m, mt, ass1, ass2, n, 0, 1, {}, {});
+        
+        //compsX = analyseStrongComponents(comps,inDAE,m,mt,ass1,ass2);
+        //BackendDump.dumpComponentsX(compsX);
       then
         comps;
-    case (_,_,_,_)
+    case (_,_,_,_,_)
       equation
         Debug.fprint("failtrace", "strong_components failed\n");
         Error.addMessage(Error.INTERNAL_ERROR,
@@ -824,6 +829,265 @@ algorithm
         fail();
   end matchcontinue;
 end strongComponents;
+
+protected function analyseStrongComponents"function: analyseStrongComponents
+  author: Frenkel TUD 2011-05
+  analyse the type of the strong connect components and
+  calculate the jacobian."
+  input list<list<BackendDAE.Value>> inComps;
+  input BackendDAE.BackendDAE inDAE;
+  input BackendDAE.IncidenceMatrix inIncidenceMatrix;
+  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;  
+  input array<Integer> inAss1;
+  input array<Integer> inAss2;  
+  output BackendDAE.StrongComponentsX outComps;
+algorithm
+  outComps:=
+  match (inComps,inDAE,inIncidenceMatrix,inIncidenceMatrixT,inAss1,inAss2)
+    local
+      list<BackendDAE.Value> comp;
+      list<list<BackendDAE.Value>> comps;
+      BackendDAE.StrongComponentsX acomps;
+      BackendDAE.StrongComponentX acomp;
+      array<Integer> ass1,ass2;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.IncidenceMatrixT mt;
+    case ({},_,_,_,_,_) then ({});
+    case (comp::comps,inDAE,m,mt,ass1,ass2)
+      equation
+        acomps = analyseStrongComponents(comps,inDAE,m,mt,ass1,ass2);
+        acomp = analyseStrongComponent(comp,inDAE,m,mt,ass1,ass2);
+      then
+        (acomp::acomps);
+    case (_,_,_,_,_,_)
+      equation
+        print("- BackendDAETransform.analyseStrongComponents failed\n");
+      then
+        fail();        
+  end match;  
+end analyseStrongComponents;
+
+protected function analyseStrongComponent"function: analyseStrongComponent
+  author: Frenkel TUD 2011-05 
+  helper for analyseStrongComponents."
+  input list<BackendDAE.Value> inComp;
+  input BackendDAE.BackendDAE inDAE;
+  input BackendDAE.IncidenceMatrix inIncidenceMatrix;
+  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;   
+  input array<Integer> inAss1;
+  input array<Integer> inAss2;  
+  output BackendDAE.StrongComponentX outComp;
+algorithm
+  outComp:=
+  match (inComp,inDAE,inIncidenceMatrix,inIncidenceMatrixT,inAss1,inAss2)
+    local
+      BackendDAE.Value compelem,v;
+      list<BackendDAE.Value> comp,varindxs;
+      list<tuple<BackendDAE.Var,BackendDAE.Value>> var_varindx_lst;
+      array<Integer> ass1,ass2;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.IncidenceMatrix mt;
+      BackendDAE.Variables vars,evars,vars_1;
+      list<BackendDAE.Equation> eqn_lst;
+      list<BackendDAE.Var> var_lst,var_lst_1;
+      BackendDAE.AliasVariables av;
+      BackendDAE.EquationArray eqns_1,eqns,eeqns;
+      BackendDAE.BackendDAE subsystem_dae;
+      array<BackendDAE.MultiDimEquation> ae,ae1;
+      array<DAE.Algorithm> al;
+      list<Integer> values;
+      list<Integer> value_dims;
+      BackendDAE.BackendDAE subsystem_dae_1,subsystem_dae_2;
+      array<Integer> v1,v2,v1_1,v2_1;
+      list<list<Integer>> comps,comps_1;
+      list<Integer> comps_flat;
+      list<list<Integer>> r,t;
+      list<Integer> rf,tf;
+      Integer index;      
+      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
+      BackendDAE.JacobianType jac_tp;
+    case (compelem::{},_,_,_,_,ass2)
+      equation
+        v = ass2[compelem];  
+      then BackendDAE.SINGLEEQUATION(compelem,v);
+    case (comp,inDAE as BackendDAE.DAE(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae,algorithms=al),m,mt,ass1,ass2)
+      equation
+        (eqn_lst,var_varindx_lst) = Util.listMap32(comp, getEquationAndSolvedVar, eqns, vars, ass2);
+        var_lst = Util.listMap(var_varindx_lst,Util.tuple21);
+        varindxs = Util.listMap(var_varindx_lst,Util.tuple22);
+        eqn_lst = replaceDerOpInEquationList(eqn_lst);
+        (ae1,_) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(ae,replaceDerOpInExp,BackendEquation.traverseBackendDAEExpsArrayEqnWithUpdate,1,arrayLength(ae),0);
+        // States are solved for der(x) not x.
+        var_lst_1 = Util.listMap(var_lst, transformXToXd);
+        vars_1 = BackendDAEUtil.listVar(var_lst_1);
+        // because listVar orders the elements not like listEquation the pairs of (var is solved in equation)
+        // is  twisted, simple reverse one list
+        eqn_lst = listReverse(eqn_lst);
+        eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
+        av = BackendDAEUtil.emptyAliasVariables();
+        eeqns = BackendDAEUtil.listEquation({});
+        evars = BackendDAEUtil.listVar({});
+        subsystem_dae = BackendDAE.DAE(vars_1,evars,evars,av,eqns_1,eeqns,eeqns,ae1,al,BackendDAE.EVENT_INFO({},{}),{});
+        (m,mt) = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
+        //mt = BackendDAEUtil.transposeMatrix(m);
+        // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
+        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m, mt,true);
+        // Jacobian of a Linear System is always linear 
+        jac_tp = BackendDAEUtil.analyzeJacobian(subsystem_dae, jac);
+      then
+        BackendDAE.EQUATIONSYSTEM(comp,varindxs,jac,jac_tp);
+    case (_,_,_,_,_,_)
+      equation
+        print("- BackendDAETransform.analyseStrongComponent failed\n");
+      then
+        fail();          
+  end match;  
+end analyseStrongComponent;
+
+protected function transformXToXd "function transformXToXd
+  author: PA
+  this function transforms x variables (in the state vector)
+  to corresponding xd variable (in the derivatives vector)"
+  input BackendDAE.Var inVar;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar := matchcontinue (inVar)
+    local
+      Expression.ComponentRef cr;
+      DAE.VarDirection dir;
+      BackendDAE.Type tp;
+      Option<DAE.Exp> exp;
+      Option<Values.Value> v;
+      list<Expression.Subscript> dim;
+      Integer index;
+      Option<DAE.VariableAttributes> attr;
+      Option<SCode.Comment> comment;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
+      DAE.ElementSource source "the origin of the element";
+      BackendDAE.Var backendVar;
+      
+    case (BackendDAE.VAR(varName = cr,
+      varKind = BackendDAE.STATE(),
+      varDirection = dir,
+      varType = tp,
+      bindExp = exp,
+      bindValue = v,
+      arryDim = dim,
+      index = index,
+      source = source,
+      values = attr,
+      comment = comment,
+      flowPrefix = flowPrefix,
+      streamPrefix = streamPrefix))
+      equation
+        cr = ComponentReference.crefPrefixDer(cr);
+      then
+        BackendDAE.VAR(cr,BackendDAE.STATE_DER(),dir,tp,exp,v,dim,index,source,attr,comment,flowPrefix,streamPrefix);
+        
+    case (backendVar)
+    then
+      backendVar;
+  end matchcontinue;
+end transformXToXd;
+
+protected function replaceDerOpInEquationList
+  "Replaces all der(cref) with $DER.cref in a list of equations."
+  input list<BackendDAE.Equation> inEqns;
+  output list<BackendDAE.Equation> outEqns;
+algorithm
+  (outEqns,_) := BackendEquation.traverseBackendDAEExpsEqnList(inEqns, replaceDerOpInExp,0);
+end replaceDerOpInEquationList;
+
+protected function replaceDerOpInExp
+  "Replaces all der(cref) with $DER.cref in an expression."
+    input tuple<DAE.Exp, Integer> inTpl;
+    output tuple<DAE.Exp, Integer> outTpl;
+protected
+  DAE.Exp exp,exp1;
+  Integer i;
+algorithm
+  (exp,i) := inTpl;
+  ((exp1, _)) := Expression.traverseExp(exp, replaceDerOpInExpTraverser, NONE());
+  outTpl := ((exp1,i));
+end replaceDerOpInExp;
+
+protected function replaceDerOpInExpTraverser
+  "Used with Expression.traverseExp to traverse an expression an replace calls to
+  der(cref) with a component reference $DER.cref. If an optional component
+  reference is supplied, then only that component reference is replaced.
+  Otherwise all calls to der are replaced.
+  
+  This is done since some parts of the compiler can't handle der-calls, such as
+  Derive.differentiateExpression. Ideally these parts should be fixed so that they can
+  handle der-calls, but until that happens we just replace the der-calls with
+  crefs."
+  input tuple<DAE.Exp, Option<DAE.ComponentRef>> inExp;
+  output tuple<DAE.Exp, Option<DAE.ComponentRef>> outExp;
+algorithm
+  outExp := matchcontinue(inExp)
+    local
+      DAE.ComponentRef cr, der_cr;
+      DAE.Exp cref_exp;
+      DAE.ComponentRef cref;
+      
+    case ((DAE.CALL(path = Absyn.IDENT("der"),expLst = {DAE.CREF(componentRef = cr)}),
+        SOME(cref)))
+      equation
+        der_cr = ComponentReference.crefPrefixDer(cr);
+        true = ComponentReference.crefEqualNoStringCompare(der_cr, cref);
+        cref_exp = Expression.crefExp(der_cr);
+      then
+        ((cref_exp, SOME(cref)));
+        
+    case ((DAE.CALL(path = Absyn.IDENT("der"),expLst = {DAE.CREF(componentRef = cr)}),
+        NONE()))
+      equation
+        cr = ComponentReference.crefPrefixDer(cr);
+        cref_exp = Expression.crefExp(cr);
+      then
+        ((cref_exp, NONE()));
+    case (_) then inExp;
+  end matchcontinue;
+end replaceDerOpInExpTraverser;
+
+protected function getEquationAndSolvedVar
+"function: getEquationAndSolvedVar
+  author: PA
+  Retrieves the equation and the variable solved in that equation
+  given an equation number and the variable assignments2"
+  input Integer inInteger;
+  input BackendDAE.EquationArray inEquationArray;
+  input BackendDAE.Variables inVariables;
+  input array<Integer> inIntegerArray;
+  output BackendDAE.Equation outEquation;
+  output tuple<BackendDAE.Var,Integer> outVar;
+algorithm
+  (outEquation,outVar):=
+  matchcontinue (inInteger,inEquationArray,inVariables,inIntegerArray)
+    local
+      Integer e_1,v,e;
+      BackendDAE.Equation eqn;
+      BackendDAE.Var var;
+      BackendDAE.EquationArray eqns;
+      BackendDAE.Variables vars;
+      array<Integer> ass2;
+    case (e,eqns,vars,ass2) /* equation no. assignments2 */
+      equation
+        e_1 = e - 1;
+        eqn = BackendDAEUtil.equationNth(eqns, e_1);
+        v = ass2[e];
+        var = BackendVariable.getVarAt(vars, v);
+      then
+        (eqn,(var,v));
+    case (e,eqns,vars,ass2) /* equation no. assignments2 */
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.fprintln("failtrace", "BackendDAETransform.getEquationAndSolvedVar failed at index: " +& intString(e));
+      then
+        fail();
+  end matchcontinue;
+end getEquationAndSolvedVar;
 
 protected function strongConnectMain "function: strongConnectMain
   author: PA

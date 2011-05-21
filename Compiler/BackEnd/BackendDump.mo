@@ -1786,6 +1786,49 @@ algorithm
   end match;
 end dumpComponentsAdvanced3;
 
+public function dumpComponentsX
+  input BackendDAE.StrongComponentsX inComps;
+algorithm
+  Util.listMap0(inComps,dumpComponentX);
+end dumpComponentsX;
+
+public function dumpComponentX
+  input BackendDAE.StrongComponentX inComp;
+algorithm
+  _:=
+  match (inComp)
+    local
+      BackendDAE.Value i,v;
+      list<BackendDAE.Value> ilst,vlst;
+      list<String> ls;
+      String s;
+      BackendDAE.JacobianType jacType;
+    case BackendDAE.SINGLEEQUATION(eqn=i,var=v)
+      equation
+        print("{");
+        print(intString(i)); 
+        print(":");
+        print(intString(v)); 
+        print("}\n");
+      then ();
+    case BackendDAE.EQUATIONSYSTEM(eqns=ilst,vars=vlst,jacType=jacType)
+      equation
+        print("{");
+        ls = Util.listMap(ilst, intString);
+        s = Util.stringDelimitList(ls, ", ");
+        print(s);
+        print(":");
+        ls = Util.listMap(vlst, intString);
+        s = Util.stringDelimitList(ls, ", ");
+        print(s);
+        print("} ");
+        print(BackendDAEUtil.jacobianTypeStr(jacType)); 
+        print("\n");
+      then
+        ();
+  end match;  
+end dumpComponentX;
+
 /*******************************************/
 /* Debug dump functions */
 /*******************************************/

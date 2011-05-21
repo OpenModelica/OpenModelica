@@ -2543,7 +2543,7 @@ protected function blockIsDynamic "function blockIsDynamic
 algorithm
   outBoolean := matchcontinue (inIntegerLst,inIntegerArray)
     local
-      BackendDAE.Value x_1,x,mark_value;
+      BackendDAE.Value x,mark_value;
       Boolean res;
       list<BackendDAE.Value> xs;
       array<BackendDAE.Value> arr;
@@ -2552,16 +2552,14 @@ algorithm
     
     case ((x :: xs),arr)
       equation
-        x_1 = x - 1;
-        0 = arr[x_1 + 1];
+        0 = arr[x];
         res = blockIsDynamic(xs, arr);
       then
         res;
     
     case ((x :: xs),arr)
       equation
-        x_1 = x - 1;
-        mark_value = arr[x_1 + 1];
+        mark_value = arr[x];
         (mark_value <> 0) = true;
       then
         true;
@@ -4887,6 +4885,8 @@ algorithm
   matchcontinue (inBackendDAE,inTplIntegerIntegerEquationLstOption)
     local
       BackendDAE.BackendDAE daelow;
+      BackendDAE.Variables vars;
+      array<BackendDAE.MultiDimEquation> arreqn;
       list<tuple<BackendDAE.Value, BackendDAE.Value, BackendDAE.Equation>> jac;
     case (daelow,SOME(jac))
       equation
@@ -4894,9 +4894,9 @@ algorithm
         true = rhsConstant(daelow);
       then
         BackendDAE.JAC_CONSTANT();
-    case (daelow,SOME(jac))
+    case (BackendDAE.DAE(orderedVars=vars),SOME(jac))
       equation
-        true = jacobianNonlinear(daelow, jac);
+        true = jacobianNonlinear(vars, jac);
       then
         BackendDAE.JAC_NONLINEAR();
     case (daelow,SOME(jac)) then BackendDAE.JAC_TIME_VARYING();
@@ -5068,27 +5068,26 @@ protected function jacobianNonlinear "function: jacobianNonlinear
   author: PA
   Check if jacobian indicates a nonlinear system.
   TODO: Algorithms and Array equations"
-  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.Variables vars;
   input list<tuple<Integer, Integer, BackendDAE.Equation>> inTplIntegerIntegerEquationLst;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inBackendDAE,inTplIntegerIntegerEquationLst)
+  outBoolean := matchcontinue (vars,inTplIntegerIntegerEquationLst)
     local
-      BackendDAE.BackendDAE daelow;
       DAE.Exp e1,e2,e;
       list<tuple<BackendDAE.Value, BackendDAE.Value, BackendDAE.Equation>> xs;
 
-    case (daelow,((_,_,BackendDAE.EQUATION(exp = e1,scalar = e2)) :: xs))
+    case (vars,((_,_,BackendDAE.EQUATION(exp = e1,scalar = e2)) :: xs))
       equation
-        false = jacobianNonlinearExp(daelow, e1);
-        false = jacobianNonlinearExp(daelow, e2);
-        false = jacobianNonlinear(daelow, xs);
+        false = jacobianNonlinearExp(vars, e1);
+        false = jacobianNonlinearExp(vars, e2);
+        false = jacobianNonlinear(vars, xs);
       then
         false;
-    case (daelow,((_,_,BackendDAE.RESIDUAL_EQUATION(exp = e)) :: xs))
+    case (vars,((_,_,BackendDAE.RESIDUAL_EQUATION(exp = e)) :: xs))
       equation
-        false = jacobianNonlinearExp(daelow, e);
-        false = jacobianNonlinear(daelow, xs);
+        false = jacobianNonlinearExp(vars, e);
+        false = jacobianNonlinear(vars, xs);
       then
         false;
     case (_,{}) then false;
@@ -5101,17 +5100,16 @@ protected function jacobianNonlinearExp "function: jacobianNonlinearExp
   Checks wheter the jacobian indicates a nonlinear system.
   This is true if the jacobian contains any of the variables
   that is solved for."
-  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.Variables vars;
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := match (inBackendDAE,inExp)
+  outBoolean := match (vars,inExp)
     local
       list<BackendDAE.Key> crefs;
       Boolean res;
-      BackendDAE.Variables vars;
       DAE.Exp e;
-    case (BackendDAE.DAE(orderedVars = vars),e)
+    case (vars,e)
       equation
         crefs = Expression.extractCrefsFromExp(e);
         res = containAnyVar(crefs, vars);
@@ -6028,7 +6026,7 @@ algorithm
         (v1,v2,ode,m1,mT1) = BackendDAETransform.matchingAlgorithm(dae, m, mT, match_opts, daeHandlerfunc, funcs);
         Debug.execStat("transformDAE -> index Reduction Method " +& methodstr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         // sorting algorithm
-        (comps) = BackendDAETransform.strongComponents(m1, mT1, v1, v2);
+        (comps) = BackendDAETransform.strongComponents(ode, m1, mT1, v1, v2);
         Debug.execStat("transformDAE -> sort components",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then
         (ode,m1,mT1,v1,v2,comps);
@@ -6175,12 +6173,12 @@ algorithm
     case (name,(method as (_,name1))::methods)
       equation
         true = stringEqual(name,name1);
-      then   
+      then
         method;
     case (name,_::methods)
       equation
         method = selectIndexReductionMethod(name,methods);
-      then   
+      then
         method;
     case (name,_)
       equation
@@ -6339,7 +6337,7 @@ algorithm
    t2 := getGlobalRoot(6);
    print("Time all: "); print(realString(tg)); print("\n");
    print("Time t1: "); print(realString(t1)); print("\n");
-   print("Time t2: "); print(realString(t2)); print("\n");   
+   print("Time t2: "); print(realString(t2)); print("\n");
 end profilerresults;
 
 public function profilerstart1
