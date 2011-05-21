@@ -13,7 +13,7 @@ SOURCES += \
     cellapplication.cpp \
     cellparserfactory.cpp \
     omc_communicator.cpp \
-    ../../OMEdit/OMEditGUI/omc_communication.cc \
+    omc_communication.cc \
     stylesheet.cpp \
     cellcommandcenter.cpp \
     chaptercountervisitor.cpp \
@@ -61,7 +61,7 @@ SOURCES += \
     ../3Dpkg/VisualizationWidget.cpp
 
 HEADERS += \
-    ../../OMEdit/OMEditGUI/omc_communication.h \
+    omc_communication.h \
     application.h \
     command.h \
     serializingvisitor.h \

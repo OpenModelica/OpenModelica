@@ -54,7 +54,7 @@ class Modification;
 //class QStringList; //AF, removed
 
 // Omc communication interface
-#include "../../OMEdit/OMEditGUI/omc_communication.h"
+#include "omc_communication.h"
 
 /**
  *
