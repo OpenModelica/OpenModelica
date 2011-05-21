@@ -1789,6 +1789,8 @@ end dumpComponentsAdvanced3;
 public function dumpComponentsX
   input BackendDAE.StrongComponentsX inComps;
 algorithm
+  print("StrongComponents\n");
+  print("=======\n");  
   Util.listMap0(inComps,dumpComponentX);
 end dumpComponentsX;
 
@@ -1821,11 +1823,35 @@ algorithm
         ls = Util.listMap(vlst, intString);
         s = Util.stringDelimitList(ls, ", ");
         print(s);
-        print("} ");
+        print("} Size: ");
+        print(intString(listLength(ilst)));
+        print(" ");
         print(BackendDAEUtil.jacobianTypeStr(jacType)); 
         print("\n");
       then
         ();
+    case BackendDAE.SINGLEARRAY(arrayIndx=i,vars=vlst)
+      equation
+        print("Array ");
+        print(intString(i));
+        print(" {");
+        ls = Util.listMap(vlst, intString);
+        s = Util.stringDelimitList(ls, ", ");
+        print(s);
+        print("}\n");
+      then
+        ();        
+    case BackendDAE.SINGLEALGORITHM(algorithmIndx=i,vars=vlst)
+      equation
+        print("Algorithm ");
+        print(intString(i));
+        print(" {");
+        ls = Util.listMap(vlst, intString);
+        s = Util.stringDelimitList(ls, ", ");
+        print(s);
+        print("}\n");
+      then
+        ();        
   end match;  
 end dumpComponentX;
 

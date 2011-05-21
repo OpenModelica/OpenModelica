@@ -8309,9 +8309,8 @@ algorithm
   _:=
   match (inBackendDAE)
     local
-      BackendDAE.Variables vars;
       BackendDAE.EquationArray eqnarr;
-    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqnarr))
+    case (BackendDAE.DAE(orderedEqs = eqnarr))
       equation
         SOME(_) = BackendEquation.traverseBackendDAEEqnsWithStop(eqnarr,singleArrayEquation2,NONE());
       then

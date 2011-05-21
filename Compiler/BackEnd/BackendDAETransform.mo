@@ -816,8 +816,8 @@ algorithm
         BackendDAEEXT.initNumber(n);
         (i,stack,comps) = strongConnectMain(m, mt, ass1, ass2, n, 0, 1, {}, {});
         
-        //compsX = analyseStrongComponents(comps,inDAE,m,mt,ass1,ass2);
-        //BackendDump.dumpComponentsX(compsX);
+        // compsX = analyseStrongComponents(comps,inDAE,m,mt,ass1,ass2);
+        // BackendDump.dumpComponentsX(compsX);
       then
         comps;
     case (_,_,_,_,_)
@@ -882,6 +882,50 @@ algorithm
   match (inComp,inDAE,inIncidenceMatrix,inIncidenceMatrixT,inAss1,inAss2)
     local
       BackendDAE.Value compelem,v;
+      list<BackendDAE.Value> comp;
+      list<tuple<BackendDAE.Var,BackendDAE.Value>> var_varindx_lst;
+      array<Integer> ass1,ass2;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.IncidenceMatrix mt;
+      BackendDAE.Variables vars;
+      list<BackendDAE.Equation> eqn_lst;
+      BackendDAE.EquationArray eqns;
+      BackendDAE.StrongComponentX compX;
+    case (compelem::{},_,_,_,_,ass2)
+      equation
+        v = ass2[compelem];  
+      then BackendDAE.SINGLEEQUATION(compelem,v);
+    case (comp,inDAE as BackendDAE.DAE(orderedVars=vars,orderedEqs=eqns),m,mt,ass1,ass2)
+      equation
+        (eqn_lst,var_varindx_lst) = Util.listMap32(comp, getEquationAndSolvedVar, eqns, vars, ass2);
+        compX = analyseStrongComponentBlock(comp,eqn_lst,var_varindx_lst,inDAE,m,mt,ass1,ass2);   
+      then
+        compX;
+    case (_,_,_,_,_,_)
+      equation
+        print("- BackendDAETransform.analyseStrongComponent failed\n");
+      then
+        fail();          
+  end match;  
+end analyseStrongComponent;
+
+protected function analyseStrongComponentBlock"function: analyseStrongComponentBlock
+  author: Frenkel TUD 2011-05 
+  helper for analyseStrongComponent."
+  input list<BackendDAE.Value> inComp;  
+  input list<BackendDAE.Equation> inEqnLst;
+  input list<tuple<BackendDAE.Var,BackendDAE.Value>> inVarVarindxLst; 
+  input BackendDAE.BackendDAE inDAE;
+  input BackendDAE.IncidenceMatrix inIncidenceMatrix;
+  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;   
+  input array<Integer> inAss1;
+  input array<Integer> inAss2;  
+  output BackendDAE.StrongComponentX outComp;
+algorithm
+  outComp:=
+  matchcontinue (inComp,inEqnLst,inVarVarindxLst,inDAE,inIncidenceMatrix,inIncidenceMatrixT,inAss1,inAss2)
+    local
+      Integer i;
       list<BackendDAE.Value> comp,varindxs;
       list<tuple<BackendDAE.Var,BackendDAE.Value>> var_varindx_lst;
       array<Integer> ass1,ass2;
@@ -895,28 +939,27 @@ algorithm
       BackendDAE.BackendDAE subsystem_dae;
       array<BackendDAE.MultiDimEquation> ae,ae1;
       array<DAE.Algorithm> al;
-      list<Integer> values;
-      list<Integer> value_dims;
-      BackendDAE.BackendDAE subsystem_dae_1,subsystem_dae_2;
-      array<Integer> v1,v2,v1_1,v2_1;
-      list<list<Integer>> comps,comps_1;
-      list<Integer> comps_flat;
-      list<list<Integer>> r,t;
-      list<Integer> rf,tf;
-      Integer index;      
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       BackendDAE.JacobianType jac_tp;
-    case (compelem::{},_,_,_,_,ass2)
+
+    case (comp,eqn_lst,var_varindx_lst,inDAE,m,mt,ass1,ass2)
       equation
-        v = ass2[compelem];  
-      then BackendDAE.SINGLEEQUATION(compelem,v);
-    case (comp,inDAE as BackendDAE.DAE(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae,algorithms=al),m,mt,ass1,ass2)
+        SOME(i) = singleAlgorithmEquation(eqn_lst,NONE());
+        varindxs = Util.listMap(var_varindx_lst,Util.tuple22);        
+      then
+        BackendDAE.SINGLEALGORITHM(i,varindxs);
+    case (comp,eqn_lst,var_varindx_lst,inDAE,m,mt,ass1,ass2)
       equation
-        (eqn_lst,var_varindx_lst) = Util.listMap32(comp, getEquationAndSolvedVar, eqns, vars, ass2);
+        SOME(i) = singleArrayEquation(eqn_lst,NONE());
+        varindxs = Util.listMap(var_varindx_lst,Util.tuple22);        
+      then
+        BackendDAE.SINGLEARRAY(i,varindxs);
+    case (comp,eqn_lst,var_varindx_lst,inDAE as BackendDAE.DAE(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae,algorithms=al),m,mt,ass1,ass2)
+      equation
         var_lst = Util.listMap(var_varindx_lst,Util.tuple21);
         varindxs = Util.listMap(var_varindx_lst,Util.tuple22);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
-        (ae1,_) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(ae,replaceDerOpInExp,BackendEquation.traverseBackendDAEExpsArrayEqnWithUpdate,1,arrayLength(ae),0);
+        ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);
         // States are solved for der(x) not x.
         var_lst_1 = Util.listMap(var_lst, transformXToXd);
         vars_1 = BackendDAEUtil.listVar(var_lst_1);
@@ -936,13 +979,63 @@ algorithm
         jac_tp = BackendDAEUtil.analyzeJacobian(subsystem_dae, jac);
       then
         BackendDAE.EQUATIONSYSTEM(comp,varindxs,jac,jac_tp);
-    case (_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_)
       equation
-        print("- BackendDAETransform.analyseStrongComponent failed\n");
+        print("- BackendDAETransform.analyseStrongComponentBlock failed\n");
       then
         fail();          
-  end match;  
-end analyseStrongComponent;
+  end matchcontinue;  
+end analyseStrongComponentBlock;
+
+protected function singleAlgorithmEquation
+  input list<BackendDAE.Equation> inEqnLst;
+  input Option<Integer> inIndx;
+  output Option<Integer> outIndx;
+algorithm
+  outIndx:=
+  matchcontinue (inEqnLst,inIndx)
+    local 
+      list<BackendDAE.Equation> eqnlst;
+      Integer i,i1;
+      Option<Integer> oi;
+    case ({},SOME(i)) then SOME(i);
+    case (BackendDAE.ALGORITHM(index = i)::eqnlst,NONE())
+      equation
+        oi = singleAlgorithmEquation(eqnlst,SOME(i));
+    then oi;
+    case (BackendDAE.ALGORITHM(index = i)::eqnlst,SOME(i1))
+      equation
+        true = intEq(i,i1);
+        oi = singleAlgorithmEquation(eqnlst,SOME(i));
+    then oi;
+      else NONE();
+  end matchcontinue;
+end singleAlgorithmEquation;
+
+protected function singleArrayEquation
+  input list<BackendDAE.Equation> inEqnLst;
+  input Option<Integer> inIndx;
+  output Option<Integer> outIndx;
+algorithm
+  outIndx:=
+  matchcontinue (inEqnLst,inIndx)
+    local 
+      list<BackendDAE.Equation> eqnlst;
+      Integer i,i1;
+      Option<Integer> oi;
+    case ({},SOME(i)) then SOME(i);
+    case (BackendDAE.ARRAY_EQUATION(index = i)::eqnlst,NONE())
+      equation
+        oi = singleArrayEquation(eqnlst,SOME(i));
+    then oi;
+    case (BackendDAE.ARRAY_EQUATION(index = i)::eqnlst,SOME(i1))
+      equation
+        true = intEq(i,i1);
+        oi = singleArrayEquation(eqnlst,SOME(i));
+    then oi;
+      else NONE();
+  end matchcontinue;
+end singleArrayEquation;
 
 protected function transformXToXd "function transformXToXd
   author: PA
@@ -990,6 +1083,27 @@ algorithm
       backendVar;
   end matchcontinue;
 end transformXToXd;
+
+protected function replaceDerOpMultiDimEquations
+"Replaces all der(cref) with $DER.cref in an multidimequation."
+  input BackendDAE.MultiDimEquation inMultiDimEquation;
+  output BackendDAE.MultiDimEquation outMultiDimEquation;
+algorithm
+  outMultiDimEquation := matchcontinue(inMultiDimEquation)
+    local
+      list<Integer> ilst;
+      DAE.Exp e1,e1_1,e2,e2_1;
+      DAE.ElementSource source;
+      
+    case(BackendDAE.MULTIDIM_EQUATION(ilst,e1,e2,source))
+      equation
+        ((e1_1,_)) = replaceDerOpInExp((e1,0));
+        ((e2_1,_)) = replaceDerOpInExp((e2,0));
+      then
+        BackendDAE.MULTIDIM_EQUATION(ilst,e1_1,e2_1,source);
+    case(inMultiDimEquation) then inMultiDimEquation;
+  end matchcontinue;
+end replaceDerOpMultiDimEquations;
 
 protected function replaceDerOpInEquationList
   "Replaces all der(cref) with $DER.cref in a list of equations."

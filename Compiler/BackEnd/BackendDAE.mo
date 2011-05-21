@@ -457,6 +457,17 @@ uniontype StrongComponentX
     Option<list<tuple<Integer, Integer, Equation>>> jac;
     JacobianType jacType;
   end EQUATIONSYSTEM; 
+  
+  record SINGLEARRAY
+    Value arrayIndx;
+    list<Value> vars "be carefule with states, this are solved for der(x)";
+  end SINGLEARRAY;
+
+  record SINGLEALGORITHM
+    Value algorithmIndx;
+    list<Value> vars "be carefule with states, this are solved for der(x)";
+  end SINGLEALGORITHM;
+
 
 end StrongComponentX;
 
