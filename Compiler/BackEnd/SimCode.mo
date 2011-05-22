@@ -9335,7 +9335,7 @@ Note: Normally only outputs a single string, but Lapack on MinGW is special."
 algorithm
   strs := matchcontinue exp
     local
-      String str,str2;
+      String str,str2,omhome,omhomelib,lpsolvelib;
       
       // Lapack on MinGW/Windows is linked against f2c
     case Absyn.STRING("Lapack")
