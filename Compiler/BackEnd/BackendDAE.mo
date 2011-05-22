@@ -460,11 +460,13 @@ uniontype StrongComponentX
   
   record SINGLEARRAY
     Value arrayIndx;
+    list<Value> eqns;
     list<Value> vars "be carefule with states, this are solved for der(x)";
   end SINGLEARRAY;
 
   record SINGLEALGORITHM
     Value algorithmIndx;
+    list<Value> eqns;
     list<Value> vars "be carefule with states, this are solved for der(x)";
   end SINGLEALGORITHM;
 

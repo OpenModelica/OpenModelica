@@ -749,6 +749,7 @@ algorithm
       array<list<Integer>> m,mT;
       array<Integer> v1,v2;
       list<list<Integer>> comps;
+      BackendDAE.StrongComponentsX compsX;
       list<SCode.Element> p;
       Absyn.Program ap;
       DAE.DAElist dae,daeimpl;
@@ -763,8 +764,8 @@ algorithm
         true = runBackendQ();
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
-        (dlow_1,m,mT,v1,v2,comps) = BackendDAEUtil.getSolvedSystem(cache,env,dlow,funcs,NONE(),NONE(),NONE());
-        modpar(dlow_1,v1,v2,comps);
+        (dlow_1,m,mT,v1,v2,comps,compsX) = BackendDAEUtil.getSolvedSystem(cache,env,dlow,funcs,NONE(),NONE(),NONE());
+        modpar(dlow_1,compsX);
         Debug.execStat("Lowering Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
         simcodegen(dlow_1,funcs,classname,p,ap,daeimpl,m,mT,v1,v2,comps);
       then
@@ -785,28 +786,25 @@ end optimizeDae;
 protected function modpar
 "function: modpar
   The automatic paralellzation module."
-  input BackendDAE.BackendDAE inBackendDAE1;
-  input array<Integer> inIntegerArray2;
-  input array<Integer> inIntegerArray3;
-  input list<list<Integer>> inIntegerLstLst4;
+  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.StrongComponentsX inComps;
 algorithm
-  _ := matchcontinue (inBackendDAE1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4)
+  _ := matchcontinue (inBackendDAE,inComps)
     local
       Integer n,nx,ny,np;
       BackendDAE.BackendDAE dae;
       Real l,b,t1,t2,time;
       String timestr,nps;
-      array<Integer> ass1,ass2;
-      list<list<Integer>> comps;
-    case (_,_,_,_)
+      BackendDAE.StrongComponentsX compsX;
+    case (_,_)
       equation
         n = RTOpts.noProc() "If modpar not enabled, nproc = 0, return" ;
         (n == 0) = true;
       then
         ();
-    case (dae,ass1,ass2,comps)
+    case (dae,compsX)
       equation
-        TaskGraph.buildTaskgraph(dae, ass1, ass2, comps);
+        TaskGraph.buildTaskgraph(dae, compsX);
         TaskGraphExt.dumpGraph("model.viz");
         l = RTOpts.latency();
         b = RTOpts.bandwidth();

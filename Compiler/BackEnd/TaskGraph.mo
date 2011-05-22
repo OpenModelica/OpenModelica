@@ -64,22 +64,19 @@ protected import ValuesUtil;
 protected import VarTransform;
 
 public function buildTaskgraph ""
-  input BackendDAE.BackendDAE inBackendDAE1;
-  input array<Integer> inIntegerArray2;
-  input array<Integer> inIntegerArray3;
-  input list<list<Integer>> inIntegerLstLst4;
+  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.StrongComponentsX inComps;
 algorithm
-  _ := matchcontinue (inBackendDAE1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4)
+  _ := matchcontinue (inBackendDAE,inComps)
     local
       Integer starttask,endtask;
       list<BackendDAE.Var> vars,knvars;
       BackendDAE.BackendDAE dae;
       BackendDAE.VariableArray vararr,knvararr;
-      array<Integer> ass1,ass2;
-      list<list<Integer>> blocks;
+      BackendDAE.StrongComponentsX comps;
       DAE.ComponentRef cref_;
 
-    case ((dae as BackendDAE.DAE(orderedVars = BackendDAE.VARIABLES(varArr = vararr),knownVars = BackendDAE.VARIABLES(varArr = knvararr))),ass1,ass2,blocks)
+    case ((dae as BackendDAE.DAE(orderedVars = BackendDAE.VARIABLES(varArr = vararr),knownVars = BackendDAE.VARIABLES(varArr = knvararr))),comps)
       equation
         print("starting buildtaskgraph\n");
         starttask = TaskGraphExt.newTask("start");
@@ -95,14 +92,14 @@ algorithm
         addVariables({BackendDAE.VAR(cref_,BackendDAE.VARIABLE(),
                       DAE.INPUT(),BackendDAE.REAL(),NONE(),NONE(),{},0,DAE.emptyElementSource,NONE(),
                       NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM())}, starttask);
-        buildBlocks(dae, ass1, ass2, blocks);
+        buildBlocks(dae, comps);
         print("done building taskgraph, about to build inits.\n");
         buildInits(dae);
         print("leaving TaskGraph.buildTaskgraph\n");
       then
         ();
 
-    case (_,_,_,_)
+    case (_,_)
       equation
         print("-TaskGraph.buildTaskgraph failed\n");
       then
@@ -264,33 +261,30 @@ algorithm
 end addVariables;
 
 protected function buildBlocks
-  input BackendDAE.BackendDAE inBackendDAE1;
-  input array<Integer> inIntegerArray2;
-  input array<Integer> inIntegerArray3;
-  input list<list<Integer>> inIntegerLstLst4;
+  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.StrongComponentsX inComps;
 algorithm
   _:=
-  matchcontinue (inBackendDAE1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4)
+  matchcontinue (inBackendDAE,inComps)
     local
       BackendDAE.BackendDAE dae;
-      array<Integer> ass1,ass2;
-      list<Integer> block_;
-      list<list<Integer>> blocks;
+      BackendDAE.StrongComponentsX comps;
+      BackendDAE.StrongComponentX comp;
       Integer eqn;
-    case (_,_,_,{}) then ();
-    case (dae,ass1,ass2,((block_ as (_ :: (_ :: _))) :: blocks))
+    case (_,{}) then ();
+    case (dae,(comp as BackendDAE.SINGLEEQUATION(eqn=_))::comps)
       equation
-        buildSystem(dae, ass1, ass2, block_) "For system of equations" ;
-        buildBlocks(dae, ass1, ass2, blocks);
+        buildEquation(dae, comp) "for single equations" ;
+        buildBlocks(dae, comps);
       then
         ();
-    case (dae,ass1,ass2,((block_ as {eqn}) :: blocks))
+    case (dae,comp::comps)
       equation
-        buildEquation(dae, ass1, ass2, eqn) "for single equations" ;
-        buildBlocks(dae, ass1, ass2, blocks);
+        buildSystem(dae, comp) "For system of equations" ;
+        buildBlocks(dae, comps);
       then
         ();
-    case (_,_,_,_)
+    case (_,_)
       equation
         print("-build_blocks failed\n");
       then
@@ -299,35 +293,26 @@ algorithm
 end buildBlocks;
 
 protected function buildEquation "Build task graph for a single equation."
-  input BackendDAE.BackendDAE inBackendDAE1;
-  input array<Integer> inIntegerArray2;
-  input array<Integer> inIntegerArray3;
-  input Integer inInteger4;
+  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.StrongComponentX inComp;
 algorithm
   _:=
-  matchcontinue (inBackendDAE1,inIntegerArray2,inIntegerArray3,inInteger4)
+  matchcontinue (inBackendDAE,inComp)
     local
-      Integer e_1,i,v_1,e,indx;
+      Integer e_1,v_1,e,indx;
       DAE.Exp e1,e2,varexp,expr;
       BackendDAE.Var v;
       list<BackendDAE.Var> varlst;
       DAE.ComponentRef cr,cr_1;
       BackendDAE.VarKind kind;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
       String origname_str,indxs,name,c_name,id;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
-      array<Integer> ass1,ass2;
-    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e)
+    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),BackendDAE.SINGLEEQUATION(eqn=e,var=v_1))
       equation
         e_1 = e - 1 "Solving for non-states" ;
         BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
-        v_1 = ass2[e_1 + 1] - 1 "v == variable no solved in this equation" ;
-        varlst = BackendDAEUtil.varList(vars);
-        ((v as BackendDAE.VAR(cr,kind,_,_,_,_,_,_,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = listNth(varlst, v_1);
+        (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(vars,v_1);
         origname_str = ComponentReference.printComponentRefStr(cr);
         true = BackendVariable.isNonStateVar(v);
         varexp = Expression.crefExp(cr) "print \"Solving for non-states\\n\" &" ;
@@ -340,15 +325,11 @@ algorithm
   Expression.print_exp_str expr => s2 & print s2 & print \"\\n\" &" ;
       then
         ();
-    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e)
+    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),BackendDAE.SINGLEEQUATION(eqn=e,var=v_1))
       equation
         e_1 = e - 1 "Solving the state s means solving for der(s)" ;
         BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
-        i = ass2[e_1 + 1];
-        v_1 = i - 1 "i == variable no solved in this equation" ;
-        varlst = BackendDAEUtil.varList(vars);
-        BackendDAE.VAR(cr,BackendDAE.STATE(),_,_,_,_,_,indx,_,dae_var_attr,comment,flowPrefix,streamPrefix) = listNth(varlst, v_1);
-        indxs = intString(indx) "  print \"solving for state\\n\" &" ;
+        (v as BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE(),index=indx)) = BackendVariable.getVarAt(vars,v_1);
         origname_str = ComponentReference.printComponentRefStr(cr);
         name = ComponentReference.printComponentRefStr(cr) "  Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
         //c_name = Util.modelicaStringToCStr(name,true);
@@ -366,7 +347,7 @@ algorithm
   Expression.print_exp_str expr => s2 & print s2 & print \"\\n\" &" ;
       then
         ();
-    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e) /* rule  intSub(e,1) => e\' &
+    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),BackendDAE.SINGLEEQUATION(eqn=e,var=v_1)) /* rule  intSub(e,1) => e\' &
   BackendDAE.equation_nth(eqns,e\') => BackendDAE.EQUATION(e1,e2,_) &
   vector_nth(ass2,e\') => v & ( v==variable no solved in this equation ))
   intSub(v,1) => v\' &
@@ -380,11 +361,7 @@ algorithm
       equation
         e_1 = e - 1 "state nonlinear" ;
         BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
-        i = ass2[e_1 + 1];
-        v_1 = i - 1 "i == variable no solved in this equation" ;
-        varlst = BackendDAEUtil.varList(vars);
-        BackendDAE.VAR(cr,BackendDAE.STATE(),_,_,_,_,_,indx,_,dae_var_attr,_,flowPrefix,streamPrefix) = listNth(varlst, v_1);
-        indxs = intString(indx);
+        (v as BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE(),index=indx)) = BackendVariable.getVarAt(vars,v_1);
         name = ComponentReference.printComponentRefStr(cr) "  Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
         //c_name = Util.modelicaStringToCStr(name,true);
         c_name = name;
@@ -396,21 +373,18 @@ algorithm
         buildNonlinearEquations({varexp}, {DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2)});
       then
         ();
-    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e)
+    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),BackendDAE.SINGLEEQUATION(eqn=e,var=v_1))
       equation
         e_1 = e - 1 "Solving nonlinear for non-states" ;
         BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
-        i = ass2[e_1 + 1];
-        v_1 = i - 1 "v == variable no solved in this equation" ;
-        varlst = BackendDAEUtil.varList(vars);
-        ((v as BackendDAE.VAR(cr,kind,_,_,_,_,_,_,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = listNth(varlst, v_1);
+        (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(vars,v_1);
         true = BackendVariable.isNonStateVar(v);
         varexp = Expression.crefExp(cr) "print \"Solving for non-states\\n\" &" ;
         failure((_,_) = ExpressionSolve.solve(e1, e2, varexp));
         buildNonlinearEquations({varexp}, {DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2)});
       then
         ();
-    case (_,_,_,_)
+    case (_,_)
       equation
         print("-TaskGraph.buildEquation failed\n");
       then
@@ -663,71 +637,80 @@ algorithm
 end addEdgesFromVars;
 
 protected function buildSystem "Build task graph for a system of equations"
-  input BackendDAE.BackendDAE inBackendDAE1;
-  input array<Integer> inIntegerArray2;
-  input array<Integer> inIntegerArray3;
-  input list<Integer> inIntegerLst4;
+  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.StrongComponentX inComp;  
 algorithm
   _:=
-  matchcontinue (inBackendDAE1,inIntegerArray2,inIntegerArray3,inIntegerLst4)
+  match (inBackendDAE,inComp)
     local
       Integer tid;
       list<String> predtasks;
-      list<Integer> predtaskids,system;
+      list<Integer> predtaskids;
       BackendDAE.BackendDAE dae;
-      array<Integer> ass1,ass2;
-    case (dae,ass1,ass2,system)
+      BackendDAE.StrongComponentX comp;
+      list<BackendDAE.Value> eqns,vars;
+    case (dae,comp as BackendDAE.EQUATIONSYSTEM(eqns=eqns,vars=vars))
       equation
         print("build system\n");
         tid = TaskGraphExt.newTask("equation system");
-        predtasks = buildSystem2(dae, ass1, ass2, system, tid);
+        predtasks = buildSystem2(dae, eqns, vars, tid);
         predtaskids = Util.listMap(predtasks, TaskGraphExt.getTask);
         addPredecessors(tid, predtaskids, predtasks, 0);
       then
         ();
-    case (_,_,_,_)
+    case (dae,comp as BackendDAE.SINGLEARRAY(eqns=eqns,vars=vars))
+      equation
+        print("build system\n");
+        tid = TaskGraphExt.newTask("equation system");
+        predtasks = buildSystem2(dae, eqns, vars, tid);
+        predtaskids = Util.listMap(predtasks, TaskGraphExt.getTask);
+        addPredecessors(tid, predtaskids, predtasks, 0);
+      then
+        ();
+    case (dae,comp as BackendDAE.SINGLEALGORITHM(eqns=eqns,vars=vars))
+      equation
+        print("build system\n");
+        tid = TaskGraphExt.newTask("equation system");
+        predtasks = buildSystem2(dae, eqns, vars, tid);
+        predtaskids = Util.listMap(predtasks, TaskGraphExt.getTask);
+        addPredecessors(tid, predtaskids, predtasks, 0);
+      then
+        ();
+    else
       equation
         print("build_system failed\n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end buildSystem;
 
 protected function buildSystem2
-  input BackendDAE.BackendDAE inBackendDAE1;
-  input array<Integer> inIntegerArray2;
-  input array<Integer> inIntegerArray3;
-  input list<Integer> inIntegerLst4;
+  input BackendDAE.BackendDAE inBackendDAE;
+  input list<Integer> inEqns;
+  input list<Integer> inVars;  
   input Integer inInteger5;
   output list<String> outStringLst;
 algorithm
   outStringLst:=
-  matchcontinue (inBackendDAE1,inIntegerArray2,inIntegerArray3,inIntegerLst4,inInteger5)
+  matchcontinue (inBackendDAE,inEqns,inVars,inInteger5)
     local
       BackendDAE.BackendDAE dae;
-      array<Integer> ass1,ass2;
-      Integer tid,e_1,v_1,e,i;
+      Integer tid,e_1,e,v_1;
       DAE.Exp e1,e2;
       BackendDAE.Var v;
       DAE.ComponentRef cr;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
       list<DAE.ComponentRef> cr1,cr2,crs,crs_1;
       list<String> crs_2,crs2,res;
       String crstr,origname_str;
-      BackendDAE.VariableArray vararr;
+      BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
-      list<Integer> rest;
-    case (dae,ass1,ass2,{},tid) then {};
-    case ((dae as BackendDAE.DAE(orderedVars = BackendDAE.VARIABLES(varArr = vararr),orderedEqs = eqns)),ass1,ass2,(e :: rest),tid)
+      list<Integer> reste,restv;
+    case (dae,{},{},tid) then {};
+    case ((dae as BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns)),(e :: reste),(v_1 :: restv),tid)
       equation
         e_1 = e - 1;
         BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
-        i = ass2[e_1 + 1];
-        v_1 = i - 1 "v == variable no solved in this equation" ;
-        ((v as BackendDAE.VAR(cr,BackendDAE.VARIABLE(),_,_,_,_,_,_,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = BackendVariable.vararrayNth(vararr, v_1);
+        (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(vars,v_1);
         cr1 = Expression.extractCrefsFromExp(e1);
         cr2 = Expression.extractCrefsFromExp(e2);
         crs = listAppend(cr1, cr2);
@@ -736,11 +719,11 @@ algorithm
         crstr = ComponentReference.crefStr(cr);
         origname_str = ComponentReference.printComponentRefStr(cr);
         TaskGraphExt.storeResult(crstr, tid, true, origname_str);
-        crs2 = buildSystem2(dae, ass1, ass2, rest, tid);
+        crs2 = buildSystem2(dae, reste, restv, tid);
         res = Util.listUnion(crs_2, crs2);
       then
         res;
-    case (_,_,_,_,_)
+    case (_,_,_,_)
       equation
         print("TaskGraph.buildSystem2 failed\n");
       then

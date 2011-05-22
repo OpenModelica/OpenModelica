@@ -1009,6 +1009,7 @@ algorithm
       array<list<Integer>> m,mT;
       array<Integer> ass1,ass2;
       BackendDAE.StrongComponents comps;
+      BackendDAE.StrongComponentsX compsX;
       Absyn.ComponentRef a_cref;
       list<String> libs;
       Interactive.InteractiveSymbolTable st;
@@ -1031,7 +1032,7 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(dae);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
-        (dlow_1,m,mT,ass1,ass2,comps) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
+        (dlow_1,m,mT,ass1,ass2,comps,compsX) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
           NONE(), NONE(), NONE());
         Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
@@ -1086,6 +1087,7 @@ algorithm
       array<list<Integer>> m,mT;
       array<Integer> ass1,ass2;
       BackendDAE.StrongComponents comps;
+      BackendDAE.StrongComponentsX compsX;
       Absyn.ComponentRef a_cref;
       list<String> libs;
       Interactive.InteractiveSymbolTable st;
@@ -1109,7 +1111,7 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(dae);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
-        (dlow_1,m,mT,ass1,ass2,comps) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
+        (dlow_1,m,mT,ass1,ass2,comps,compsX) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
           NONE(), NONE(), NONE());
         Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
@@ -1264,6 +1266,7 @@ algorithm
       array<list<Integer>> m,mT;
       array<Integer> ass1,ass2;
       BackendDAE.StrongComponents comps;
+      BackendDAE.StrongComponentsX compsX;
       Absyn.ComponentRef a_cref;
       list<String> libs;
       Interactive.InteractiveSymbolTable st;
@@ -1286,7 +1289,7 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(dae);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
-        (dlow_1,m,mT,ass1,ass2,comps) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
+        (dlow_1,m,mT,ass1,ass2,comps,compsX) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
           NONE(), NONE(), NONE());
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
           generateModelCode(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt,m,mT,ass1,ass2,comps);
@@ -4321,6 +4324,7 @@ algorithm
       BackendDAE.IncidenceMatrix m_2,m_3,m;
       BackendDAE.IncidenceMatrixT mT_2,mT_3,mt;
       list<list<Integer>> comps,comps_1;
+      BackendDAE.StrongComponentsX compsX;
       list<Integer> comps_flat;
       list<list<Integer>> r,t;
       list<Integer> rf,tf;
@@ -4446,7 +4450,7 @@ algorithm
         knvars_1 = BackendEquation.equationsVars(eqns_1,knvars);
         subsystem_dae = BackendDAE.DAE(vars_1,knvars_1,exvars,ave,eqns_1,eeqns,eeqns,ae1,al,ev,eoc);
         (m,mt) = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
-        (subsystem_dae_1,m_2,mT_2,v1,v2,comps) = BackendDAEUtil.transformBackendDAE(subsystem_dae,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),SOME(m),SOME(mt));
+        (subsystem_dae_1,m_2,mT_2,v1,v2,comps,compsX) = BackendDAEUtil.transformBackendDAE(subsystem_dae,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),SOME(m),SOME(mt));
         (subsystem_dae_2,m_3,mT_3,v1_1,v2_1,comps_1,r,t) = BackendDAEOptimize.tearingSystem(subsystem_dae_1,m_2,mT_2,v1,v2,comps);
         true = listLength(r) > 0;
         true = listLength(t) > 0;
@@ -4693,6 +4697,7 @@ algorithm
       BackendDAE.IncidenceMatrix m,m_2,m_3;
       BackendDAE.IncidenceMatrixT mt_1,mT_2,mT_3;
       list<list<Integer>> comps,comps_1;
+      BackendDAE.StrongComponentsX compsX;
       list<Integer> comps_flat;
       list<list<Integer>> r,t;
       list<Integer> rf,tf;
@@ -4762,7 +4767,7 @@ algorithm
         eeqns = BackendDAEUtil.listEquation({});
         eieqns = BackendDAEUtil.listEquation({});
         subsystem_dae = BackendDAE.DAE(v,evars,exvars,ave,eqn,eeqns,eieqns,ae,algorithms,ev,eoc);
-        (subsystem_dae_1,m_2,mT_2,v1,v2,comps) = BackendDAEUtil.transformBackendDAE(subsystem_dae,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE(),NONE());
+        (subsystem_dae_1,m_2,mT_2,v1,v2,comps,compsX) = BackendDAEUtil.transformBackendDAE(subsystem_dae,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE(),NONE());
         (subsystem_dae_2,m_3,mT_3,v1_1,v2_1,comps_1,r,t) = BackendDAEOptimize.tearingSystem(subsystem_dae_1,m_2,mT_2,v1,v2,comps);
         true = listLength(r) > 0;
         true = listLength(t) > 0;
@@ -5384,13 +5389,14 @@ algorithm
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac,jac1;
       BackendDAE.JacobianType jac_tp;
       array<list<Integer>> m,mt_1,m_2,mt_2;
-      DAE.ElementSource source "the origin of the element";
+      DAE.ElementSource source;
       BackendDAE.AliasVariables av;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.BackendDAE subsystem_dae;
       SimEqSystem equation_;
       array<Integer> v1,v2;
       list<list<Integer>> comps;
+      BackendDAE.StrongComponentsX compsX;
       
     case (mixedEvent,genDiscrete,
         BackendDAE.DAE(orderedVars = vars,
@@ -5444,7 +5450,7 @@ algorithm
         se1 = BackendDAEUtil.listEquation({});
         subsystem_dae = BackendDAE.DAE(vars,knvars,exvars,av,eqns_1,se1,ie,ae,al,ev,eoc);
         (m,mt_1) = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
-        (subsystem_dae,m_2,mt_2,v1,v2,comps) = BackendDAEUtil.transformBackendDAE(subsystem_dae,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())),NONE(),SOME(m),SOME(mt_1));
+        (subsystem_dae,m_2,mt_2,v1,v2,comps,compsX) = BackendDAEUtil.transformBackendDAE(subsystem_dae,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())),NONE(),SOME(m),SOME(mt_1));
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         jac1 = BackendDAEUtil.calculateJacobian(vars, eqns_1, ae, m_2, mt_2,false);
         jac_tp = BackendDAEUtil.analyzeJacobian(subsystem_dae, jac1);
@@ -5793,6 +5799,7 @@ algorithm
       array<Integer> v1,v2;
       list<Integer> lv1,lv2;
       BackendDAE.StrongComponents comps;
+      BackendDAE.StrongComponentsX compsX;
       list<BackendDAE.Var> lv,lkn;
       list<HelpVarInfo> helpVarInfo;
       
@@ -5817,7 +5824,7 @@ algorithm
         Debug.fcall("paramdlowdump", BackendDump.dumpIncidenceMatrix,m);
         Debug.fcall("paramdlowdump", BackendDump.dumpIncidenceMatrixT,mT);
         Debug.fcall("paramdlowdump", BackendDump.dumpMatching,v1);
-        (comps) = BackendDAETransform.strongComponents(paramdlow, m, mT, v1, v2);
+        (comps,compsX) = BackendDAETransform.strongComponents(paramdlow, m, mT, v1, v2);
         Debug.fcall("paramdlowdump", BackendDump.dumpComponents,comps);
         
         (helpVarInfo, paramdlow1,_) = generateHelpVarInfo(paramdlow, comps);

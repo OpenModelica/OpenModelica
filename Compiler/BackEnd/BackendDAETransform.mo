@@ -798,8 +798,9 @@ public function strongComponents "function: strongComponents
   input array<Integer> inIntegerArray3;
   input array<Integer> inIntegerArray4;
   output BackendDAE.StrongComponents outComps;
+  output BackendDAE.StrongComponentsX outCompsX;
 algorithm
-  outComps:=
+  (outComps,outCompsX) :=
   matchcontinue (inDAE,inIncidenceMatrix1,inIncidenceMatrixT2,inIntegerArray3,inIntegerArray4)
     local
       BackendDAE.Value n,i;
@@ -816,10 +817,10 @@ algorithm
         BackendDAEEXT.initNumber(n);
         (i,stack,comps) = strongConnectMain(m, mt, ass1, ass2, n, 0, 1, {}, {});
         
-        // compsX = analyseStrongComponents(comps,inDAE,m,mt,ass1,ass2);
+        compsX = analyseStrongComponents(comps,inDAE,m,mt,ass1,ass2);
         // BackendDump.dumpComponentsX(compsX);
       then
-        comps;
+        (comps,compsX);
     case (_,_,_,_,_)
       equation
         Debug.fprint("failtrace", "strong_components failed\n");
@@ -947,13 +948,13 @@ algorithm
         SOME(i) = singleAlgorithmEquation(eqn_lst,NONE());
         varindxs = Util.listMap(var_varindx_lst,Util.tuple22);        
       then
-        BackendDAE.SINGLEALGORITHM(i,varindxs);
+        BackendDAE.SINGLEALGORITHM(i,comp,varindxs);
     case (comp,eqn_lst,var_varindx_lst,inDAE,m,mt,ass1,ass2)
       equation
         SOME(i) = singleArrayEquation(eqn_lst,NONE());
         varindxs = Util.listMap(var_varindx_lst,Util.tuple22);        
       then
-        BackendDAE.SINGLEARRAY(i,varindxs);
+        BackendDAE.SINGLEARRAY(i,comp,varindxs);
     case (comp,eqn_lst,var_varindx_lst,inDAE as BackendDAE.DAE(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae,algorithms=al),m,mt,ass1,ass2)
       equation
         var_lst = Util.listMap(var_varindx_lst,Util.tuple21);

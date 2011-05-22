@@ -5824,6 +5824,7 @@ public function getSolvedSystem
   output array<Integer> outAss1;
   output array<Integer> outAss2;
   output BackendDAE.StrongComponents outComps;
+  output BackendDAE.StrongComponentsX outCompsX;
   partial function preoptimiseDAEModule
     input BackendDAE.BackendDAE inDAE;
     input DAE.FunctionTree inFunctionTree;
@@ -5874,7 +5875,8 @@ protected
   Option<BackendDAE.IncidenceMatrix> om,omT;
   BackendDAE.IncidenceMatrix m,mT,m_1,mT_1;
   array<Integer> v1,v2,v1_1,v2_1;
-  BackendDAE.StrongComponents comps,comps_1;
+  BackendDAE.StrongComponents comps;
+  BackendDAE.StrongComponentsX compsX;
   list<tuple<preoptimiseDAEModule,String>> preOptModules;
   list<tuple<pastoptimiseDAEModule,String>> pastOptModules;
   tuple<daeHandlerFunc,String> daeHandler;
@@ -5891,11 +5893,11 @@ algorithm
   (optdae,om,omT) := preoptimiseDAE(inDAE,functionTree,preOptModules,NONE(),NONE());
 
   // transformation phase (matching and sorting using a index reduction method
-  (sode,m,mT,v1,v2,comps) := transformDAE(optdae,functionTree,NONE(),daeHandler,om,omT);
+  (sode,m,mT,v1,v2,comps,compsX) := transformDAE(optdae,functionTree,NONE(),daeHandler,om,omT);
   Debug.fcall("bltdump", BackendDump.bltdump, ("bltdump",sode,m,mT,v1,v2,comps));
 
   // past optimisation phase
-  (sode,outM,outMT,outAss1,outAss2,outComps) := pastoptimiseDAE(sode,functionTree,pastOptModules,m,mT,v1,v2,comps,daeHandler);
+  (sode,outM,outMT,outAss1,outAss2,outComps,outCompsX) := pastoptimiseDAE(sode,functionTree,pastOptModules,m,mT,v1,v2,comps,compsX,daeHandler);
   
   sode1 := BackendDAECreate.findZeroCrossings(sode);
   Debug.execStat("findZeroCrossings",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
@@ -5981,11 +5983,12 @@ public function transformBackendDAE
   output array<Integer> outAss1;
   output array<Integer> outAss2;
   output BackendDAE.StrongComponents outComps; 
+  output BackendDAE.StrongComponentsX outCompsX; 
 protected
   tuple<daeHandlerFunc,String> indexReductionMethod;
 algorithm
   indexReductionMethod := getIndexReductionMethod(strindexReductionMethod);
-  (outDAE,outM,outMT,outAss1,outAss2,outComps) := transformDAE(inDAE,functionTree,inMatchingOptions,indexReductionMethod,inM,inMT);
+  (outDAE,outM,outMT,outAss1,outAss2,outComps,outCompsX) := transformDAE(inDAE,functionTree,inMatchingOptions,indexReductionMethod,inM,inMT);
 end transformBackendDAE;
 
 protected function transformDAE
@@ -6005,8 +6008,9 @@ protected function transformDAE
   output array<Integer> outAss1;
   output array<Integer> outAss2;
   output BackendDAE.StrongComponents outComps;
+  output BackendDAE.StrongComponentsX outCompsX;
 algorithm
-  (outDAE,outM,outMT,outAss1,outAss2,outComps):=
+  (outDAE,outM,outMT,outAss1,outAss2,outComps,outCompsX):=
   matchcontinue (inDAE,functionTree,inMatchingOptions,daeHandler,inM,inMT)
     local 
       BackendDAE.BackendDAE dae,ode;
@@ -6016,6 +6020,7 @@ algorithm
       BackendDAE.IncidenceMatrix m,mT,m1,mT1;
       array<Integer> v1,v2;
       BackendDAE.StrongComponents comps;
+      BackendDAE.StrongComponentsX compsX;
       BackendDAE.MatchingOptions match_opts;
       daeHandlerFunc daeHandlerfunc;
     case (dae,funcs,inMatchingOptions,(daeHandlerfunc,methodstr),om,omT)
@@ -6026,10 +6031,10 @@ algorithm
         (v1,v2,ode,m1,mT1) = BackendDAETransform.matchingAlgorithm(dae, m, mT, match_opts, daeHandlerfunc, funcs);
         Debug.execStat("transformDAE -> index Reduction Method " +& methodstr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         // sorting algorithm
-        (comps) = BackendDAETransform.strongComponents(ode, m1, mT1, v1, v2);
+        (comps,compsX) = BackendDAETransform.strongComponents(ode, m1, mT1, v1, v2);
         Debug.execStat("transformDAE -> sort components",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then
-        (ode,m1,mT1,v1,v2,comps);
+        (ode,m1,mT1,v1,v2,comps,compsX);
     case (_,_,_,_,_,_)
       equation
 //        str = "Transformation Module failed!";
@@ -6050,6 +6055,7 @@ protected function pastoptimiseDAE
   input array<Integer> inAss1;
   input array<Integer> inAss2;
   input BackendDAE.StrongComponents inComps;
+  input BackendDAE.StrongComponentsX inCompsX;
   input tuple<daeHandlerFunc,String> daeHandler;
   output BackendDAE.BackendDAE outDAE;
   output BackendDAE.IncidenceMatrix outM;
@@ -6057,9 +6063,10 @@ protected function pastoptimiseDAE
   output array<Integer> outAss1;
   output array<Integer> outAss2;
   output BackendDAE.StrongComponents outComps;
+  output BackendDAE.StrongComponentsX outCompsX;
 algorithm
-  (outDAE,outM,outMT,outAss1,outAss2,outComps):=
-  matchcontinue (inDAE,functionTree,optModules,inM,inMT,inAss1,inAss2,inComps,daeHandler)
+  (outDAE,outM,outMT,outAss1,outAss2,outComps,outCompsX):=
+  matchcontinue (inDAE,functionTree,optModules,inM,inMT,inAss1,inAss2,inComps,inCompsX,daeHandler)
     local 
       BackendDAE.BackendDAE dae,dae1,dae2;
       DAE.FunctionTree funcs;
@@ -6069,25 +6076,26 @@ algorithm
       BackendDAE.IncidenceMatrix m,mT,m1,mT1,m2,mT2;
       array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2;
       BackendDAE.StrongComponents comps,comps1,comps2;
+      BackendDAE.StrongComponentsX compsX,compsX1,compsX2;
       Boolean runMatching;
-    case (dae,funcs,{},m,mT,v1,v2,comps,_) then (dae,m,mT,v1,v2,comps);
-    case (dae,funcs,(optModule,moduleStr)::rest,m,mT,v1,v2,comps,daeHandler)
+    case (dae,funcs,{},m,mT,v1,v2,comps,compsX,_) then (dae,m,mT,v1,v2,comps,compsX);
+    case (dae,funcs,(optModule,moduleStr)::rest,m,mT,v1,v2,comps,compsX,daeHandler)
       equation
         (dae1,m1,mT1,v1_1,v2_1,comps1,runMatching) = optModule(dae,funcs,m,mT,v1,v2,comps);
         Debug.execStat("pastOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         Debug.fcall("optdaedump", print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
         Debug.fcall("optdaedump", BackendDump.dump, dae1);
-        (dae1,m1,mT1,v1_1,v2_1,comps1) = checktransformDAE(runMatching,dae1,funcs,m1,mT1,v1_1,v2_1,comps1,daeHandler);
-        (dae2,m2,mT2,v1_2,v2_2,comps2) = pastoptimiseDAE(dae1,funcs,rest,m1,mT1,v1_1,v2_1,comps1,daeHandler);
+        (dae1,m1,mT1,v1_1,v2_1,comps1,compsX1) = checktransformDAE(runMatching,dae1,funcs,m1,mT1,v1_1,v2_1,comps1,compsX,daeHandler);
+        (dae2,m2,mT2,v1_2,v2_2,comps2,compsX2) = pastoptimiseDAE(dae1,funcs,rest,m1,mT1,v1_1,v2_1,comps1,compsX1,daeHandler);
       then
-        (dae2,m2,mT2,v1_2,v2_2,comps2);
-    case (dae,funcs,(optModule,moduleStr)::rest,m,mT,v1,v2,comps,daeHandler)
+        (dae2,m2,mT2,v1_2,v2_2,comps2,compsX2);
+    case (dae,funcs,(optModule,moduleStr)::rest,m,mT,v1,v2,comps,compsX,daeHandler)
       equation
         str = stringAppendList({"Optimisation Module ",moduleStr," failed."});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
-        (dae1,m1,mT1,v1_1,v2_1,comps1) = pastoptimiseDAE(dae,funcs,rest,m,mT,v1,v2,comps,daeHandler);
+        (dae1,m1,mT1,v1_1,v2_1,comps1,compsX1) = pastoptimiseDAE(dae,funcs,rest,m,mT,v1,v2,comps,compsX,daeHandler);
       then   
-        (dae1,m1,mT1,v1_1,v2_1,comps1);
+        (dae1,m1,mT1,v1_1,v2_1,comps1,compsX1);
   end matchcontinue;
 end pastoptimiseDAE;
 
@@ -6102,6 +6110,7 @@ protected function checktransformDAE
   input array<Integer> inAss1;
   input array<Integer> inAss2;
   input BackendDAE.StrongComponents inComps;
+  input BackendDAE.StrongComponentsX inCompsX;
   input tuple<daeHandlerFunc,String> daeHandler;
   output BackendDAE.BackendDAE outDAE;
   output BackendDAE.IncidenceMatrix outM;
@@ -6109,25 +6118,27 @@ protected function checktransformDAE
   output array<Integer> outAss1;
   output array<Integer> outAss2;
   output BackendDAE.StrongComponents outComps;
+  output BackendDAE.StrongComponentsX outCompsX;
 algorithm
-  (outDAE,outM,outMT,outAss1,outAss2,outComps):=
-  match (inRunMatching,inDAE,functionTree,inM,inMT,inAss1,inAss2,inComps,daeHandler)
+  (outDAE,outM,outMT,outAss1,outAss2,outComps,outCompsX):=
+  match (inRunMatching,inDAE,functionTree,inM,inMT,inAss1,inAss2,inComps,inCompsX,daeHandler)
     local 
       BackendDAE.BackendDAE dae,sode;
       DAE.FunctionTree funcs;
       BackendDAE.IncidenceMatrix m,mT;
       array<Integer> v1,v2;
       BackendDAE.StrongComponents comps;
+      BackendDAE.StrongComponentsX compsX;
       Boolean runMatching;
-    case (true,dae,funcs,m,mT,_,_,_,daeHandler)
+    case (true,dae,funcs,m,mT,_,_,_,_,daeHandler)
       equation
-        (sode,m,mT,v1,v2,comps) = transformDAE(dae,funcs,NONE(),daeHandler,SOME(m),SOME(mT));
+        (sode,m,mT,v1,v2,comps,compsX) = transformDAE(dae,funcs,NONE(),daeHandler,SOME(m),SOME(mT));
         Debug.fcall("bltdump", BackendDump.bltdump, ("bltdump",sode,m,mT,v1,v2,comps));
       then
-        (sode,m,mT,v1,v2,comps);
-    case (false,dae,funcs,m,mT,v1,v2,comps,_)
+        (sode,m,mT,v1,v2,comps,compsX);
+    case (false,dae,funcs,m,mT,v1,v2,comps,compsX,_)
       then   
-        (dae,m,mT,v1,v2,comps);
+        (dae,m,mT,v1,v2,comps,compsX);
   end match;
 end checktransformDAE;
 

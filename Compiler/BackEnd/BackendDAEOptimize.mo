@@ -3157,6 +3157,7 @@ algorithm
       BackendDAE.IncidenceMatrixT mT,mT_1,mT_2,mT_3;
       array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2;
       BackendDAE.StrongComponents comps,comps_1,onecomp,morecomps;
+      BackendDAE.StrongComponentsX compsX;
       list<Integer> vars,comp,comp_1,comp_2,exclude,cmops_flat,onecomp_flat,othereqns,resteareqns;
       String str,str1,str2;
       Integer tearingvar,residualeqn,compcount,tearingeqnid;
@@ -3224,7 +3225,7 @@ algorithm
         dlow_1 = BackendDAE.DAE(vars_1,knvars,exobj,av,eqns_2,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
         dlow1_1 = BackendDAE.DAE(ordvars1,knvars,exobj,av,eqns1_1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
         // try causalisation
-        (dlow_2,m_2,mT_2,v1_1,v2_1,comps) = BackendDAEUtil.transformBackendDAE(dlow_1,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE(),NONE());
+        (dlow_2,m_2,mT_2,v1_1,v2_1,comps,compsX) = BackendDAEUtil.transformBackendDAE(dlow_1,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE(),NONE());
         // check strongComponents and split it into two lists: len(comp)==1 and len(comp)>1
         (morecomps,onecomp) = splitComps(comps);
         // try to solve the equations
@@ -3565,7 +3566,7 @@ algorithm
     local
       BackendDAE.EquationArray eqns,eqns_1,eqns_2;
       list<Integer> rest;
-      Integer e,e_1,v,v_1;
+      Integer e,e_1,v;
       array<Integer> ass;
       BackendDAE.Variables vars;
       DAE.Exp e1,e2,varexp,expr;
@@ -3574,17 +3575,15 @@ algorithm
       list<DAE.ComponentRef> crlst;
       list<list<DAE.ComponentRef>> crlstlst;
       DAE.ElementSource source;
-      BackendDAE.VariableArray varr;
       list<Boolean> blst,blst_1;
       list<list<Boolean>> blstlst;
     case (eqns,{},ass,vars,crlst) then eqns;
-    case (eqns,e::rest,ass,vars as BackendDAE.VARIABLES(varArr=varr),crlst)
+    case (eqns,e::rest,ass,vars,crlst)
       equation
         e_1 = e - 1;
         BackendDAE.EQUATION(e1,e2,source) = BackendDAEUtil.equationNth(eqns, e_1);
         v = ass[e_1 + 1];
-        v_1 = v - 1;
-        BackendDAE.VAR(varName=cr) = BackendVariable.vararrayNth(varr, v_1);
+        BackendDAE.VAR(varName=cr) = BackendVariable.getVarAt(vars, v);
         varexp = Expression.crefExp(cr);
 
         (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
@@ -3644,6 +3643,7 @@ algorithm
       array<Integer> v1,v2,v4,v31;
       list<Integer> v3;
       BackendDAE.StrongComponents comps1;
+      BackendDAE.StrongComponentsX compsX1;
       list<BackendDAE.Var> derivedVariables;
       list<BackendDAE.Var> derivedVars;
       BackendDAE.BinTree jacElements;
@@ -3690,7 +3690,7 @@ algorithm
 
         Debug.fcall("execJacstat",print, "*** analytical Jacobians -> removed simply equations: " +& realString(clock()) +& "\n" );
         // figure out new matching and the strong components  
-        (dlow,m,mT,v1,v2,comps1) = BackendDAEUtil.transformBackendDAE(dlow,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE(),NONE());
+        (dlow,m,mT,v1,v2,comps1,compsX1) = BackendDAEUtil.transformBackendDAE(dlow,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE(),NONE());
         Debug.fcall("jacdump2", BackendDump.bltdump, ("jacdump2",dlow,m,mT,v1,v2,comps1));
         Debug.fcall("execJacstat",print, "*** analytical Jacobians -> performed matching and sorting: " +& realString(clock()) +& "\n" );
        
@@ -3729,7 +3729,7 @@ algorithm
 
         Debug.fcall("execJacstat",print, "*** analytical Jacobians -> removed simply equations: " +& realString(clock()) +& "\n" );
         // figure out new matching and the strong components  
-        (dlow,m,mT,v1,v2,comps1) = BackendDAEUtil.transformBackendDAE(dlow,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE(),NONE());
+        (dlow,m,mT,v1,v2,comps1,compsX1) = BackendDAEUtil.transformBackendDAE(dlow,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE(),NONE());
         Debug.fcall("jacdump2", BackendDump.bltdump, ("jacdump2",dlow,m,mT,v1,v2,comps1));
         
         Debug.fcall("execJacstat",print, "*** analytical Jacobians -> performed matching and sorting: " +& realString(clock()) +& "\n" );

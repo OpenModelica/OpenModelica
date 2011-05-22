@@ -2697,10 +2697,11 @@ algorithm
       array<list<Integer>> m,mT;
       array<Integer> v1,v2;
       BackendDAE.StrongComponents comps;
+      BackendDAE.StrongComponentsX compsX;
   case (false,false,_) then ();
   case (true,true,dlow)
     equation
-      (_,m,mT,v1,v2,comps) = BackendDAEUtil.transformBackendDAE(dlow,DAEUtil.avlTreeNew(),NONE(),NONE(),NONE(),NONE());
+      (_,m,mT,v1,v2,comps,compsX) = BackendDAEUtil.transformBackendDAE(dlow,DAEUtil.avlTreeNew(),NONE(),NONE(),NONE(),NONE());
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(ORIGINAL_INCIDENCE_MATRIX);
       dumpIncidenceMatrix(m);
@@ -2723,7 +2724,7 @@ algorithm
     then ();
   case (false,true,dlow)
     equation
-      (_,m,mT,v1,v2,comps) = BackendDAEUtil.transformBackendDAE(dlow,DAEUtil.avlTreeNew(),NONE(),NONE(),NONE(),NONE());
+      (_,m,mT,v1,v2,comps,compsX) = BackendDAEUtil.transformBackendDAE(dlow,DAEUtil.avlTreeNew(),NONE(),NONE(),NONE(),NONE());
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(SOLVING_INFO);
       dumpMatching(v1);
