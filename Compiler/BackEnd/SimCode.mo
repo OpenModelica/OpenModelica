@@ -9342,7 +9342,7 @@ algorithm
         true = "Windows_NT" ==& System.os();
         str = "-l" +& str;
         strs = getLibraryStringInGccFormat(Absyn.STRING("Lapack"));
-        strs = str :: "-lpsolve55" :: "-lmico2313" :: "-lws2_32" :: "-lregex" :: strs;
+        strs = str :: "-llpsolve55" :: "-lmico2313" :: "-lws2_32" :: "-lregex" :: strs;
       then strs;
         
         // The library is not actually named libLapack.so.
