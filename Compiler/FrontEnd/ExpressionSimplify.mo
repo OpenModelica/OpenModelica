@@ -92,10 +92,11 @@ algorithm
     case (e)
       equation
         //print("SIMPLIFY BEFORE->" +& ExpressionDump.printExpStr(e) +& "\n");
-        (eNew,b) = simplify1(e); // Basic local simplifications
+        (eNew,_) = simplify1(e); // Basic local simplifications
         //print("SIMPLIFY INTERMEDIATE->" +& ExpressionDump.printExpStr(eNew) +& "\n");
         eNew = simplify2(eNew); // Advanced (global) simplifications
-        b = not Debug.bcallret2(b,Expression.expEqual,e,eNew,not b);
+        (eNew,_) = simplify1(eNew); // Basic local simplifications
+        b = not Expression.expEqual(e,eNew);
         //print("SIMPLIFY FINAL->" +& ExpressionDump.printExpStr(eNew) +& "\n");
       then (eNew,b);
   end matchcontinue;
@@ -1912,6 +1913,17 @@ algorithm
       then
         res;
     
+    case ((e as DAE.BINARY(exp1 = e1,operator = DAE.SUB(ty = tp),exp2 = e2)))
+      equation
+        e1_lst = Expression.terms(e1);
+        e2_lst = Expression.terms(e2);
+        e2_lst = Util.listMap(e2_lst, Expression.negate);
+        e_lst = listAppend(e1_lst, e2_lst);
+        e_lst_1 = simplifyAdd(e_lst);
+        res = Expression.makeSum(e_lst_1);
+      then
+        res;
+
     case (e) then e;
 
   end matchcontinue;
@@ -2292,6 +2304,12 @@ algorithm
       Type tp;
     
     case ((exp as DAE.CREF(componentRef = _))) then (exp,1.0);
+    
+    case (DAE.UNARY(operator = DAE.UMINUS(ty = DAE.ET_REAL()), exp = exp))
+      equation
+        (exp,coeff) = simplifyBinaryAddCoeff2(exp);
+        coeff = realMul(-1.0,coeff);
+      then (exp,coeff);
     
     case (DAE.BINARY(exp1 = DAE.RCONST(real = coeff),operator = DAE.MUL(ty = _),exp2 = e1))
       then (e1,coeff);
