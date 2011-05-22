@@ -89,12 +89,6 @@ int calculate() {
 		if (simulationStatus == SimulationStatus::SHUTDOWN) {
 			// If the simulation should stop, unlock and break out of the loop.
 			mutexSimulationStatus->Unlock();
-			if (debugCalculation) {
-				cout
-						<< "Calculation:\tFunct.: calculate\tMessage: Simulation Stopped set forZero = true"
-						<< endl;
-				fflush( stdout);
-			}
 			break;
 		}
 
@@ -116,19 +110,12 @@ int calculate() {
 			forZero = false;
 		} else {
 			//TODO 20100210 pv testing rungekutter...
-			if (method == std::string("euler") || method == std::string(
-					"rungekutta") || method == std::string("dassl")) {
+			if (method == std::string("euler") || method == std::string("rungekutta") || method == std::string("dassl")) {
 				stop = get_timeValue() + stepSize;
 				start = get_timeValue();
 				if (debugCalculation) {
-					cout
-							<< "Calculation:\tFunct.: calculate\tData 2: p_SimStepData_from_Calculation->forTimeStep: "
-							<< p_SimStepData_from_Calculation->forTimeStep
-							<< " --------------------" << endl;
-					fflush( stdout);
-					cout << "Calculation:\tFunct.: calculate\tData 3: start "
-							<< start << " stop: " << stop << endl;
-					fflush(stdout);
+					cout << "Calculation:\tFunct.: calculate\tData 2: p_SimStepData_from_Calculation->forTimeStep: " << p_SimStepData_from_Calculation->forTimeStep	<< " ------" << endl;	fflush( stdout);
+					cout << "Calculation:\tFunct.: calculate\tData 3: start " << start << " stop: " << stop << endl; fflush(stdout);
 				}
 			} else {
 				stop = get_lastEmittedTime() + stepSize;
@@ -136,8 +123,7 @@ int calculate() {
 			}
 		}
 
-		retVal = callSolverFromOM(method, outputFormat, start, stop, stepSize,
-				outputSteps, tolerance);
+		retVal = callSolverFromOM(method, outputFormat, start, stop, stepSize, outputSteps, tolerance);
 
 		if (retVal != 0) {
 			cout << "Calculation:\tFunct.: calculate\tMessage: omi_Calculation: error occurred while calculating" << endl; fflush( stdout);
@@ -163,8 +149,7 @@ int calculate() {
  * Asks the ServiceInterface for the last simulation results to put into the simulation step data structure
  */
 void createSSDEntry(string method) {
-	fillSimulationStepDataWithValuesFromGlobalData(method,
-			p_SimStepData_from_Calculation);
+	fillSimulationStepDataWithValuesFromGlobalData(method, p_SimStepData_from_Calculation);
 
 	p_sdnMutex->Lock();
 	long nStates = p_simdatanumbers->nStates;

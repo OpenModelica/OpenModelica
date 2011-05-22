@@ -312,18 +312,13 @@ void doTransfer(long nStates, long nAlgebraic, long nParameters) {
 	 }
 	 // Unlock and see if we need to wait for resume or not.
 	 mutexSimulationStatus->Unlock();
-	 waitForResume->Wait();
-
-	 if(debugTransfer)
-	 {
-		 cout << "Transfer:\tFunct.: doTransfer\tMessage: try getResultData" << endl; fflush(stdout);
-	 }
+	 waitForResume->Wait(); //wait and reduce semaphore
 
 	 getResultData(p_SimResDataForw_from_Transfer);
 
-	 if (debugTransfer)
+	 if (debugTransfer)//TODO doTransfer
 	 {
-		cout << "Transfer:\tFunct.: doTransfer\tMessage: done getResultData" << endl; fflush(stdout);
+		 cout << "Transfer:\tFunct.: doTransfer\tData: time = " << p_SimResDataForw_from_Transfer->forTimeStep << " tank1.h = " << p_SimResDataForw_from_Transfer->states[0]  << endl; fflush(stdout);
 	 }
 
 	 //printSSDTransfer(nStates, nAlgebraic, nParameters);

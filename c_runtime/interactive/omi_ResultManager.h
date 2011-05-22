@@ -21,7 +21,7 @@ using namespace std;
 #define _MY_SIMULATIONRESULT_H
 
 typedef struct ssd{ //SimulationStepData struct
-       double forTimeStep; //is the lastEmittedTime of this step
+       double forTimeStep; //is the lastEmittedTime or timeValue of this step
        double *states;
        double *statesDerivatives; //xd DERIVATIVES
        double *algebraics;
@@ -64,7 +64,7 @@ SimStepData* getResultDataFirstStart();
 
 //Resets the SRDF Array and the producer and consumer semaphores, so the Transfer wont send old results after changing the time
 void resetSRDFAfterChangetime(void);
-void resetSSDArrayWithNullSSD(void);
+void resetSSDArrayWithNullSSD(long, long, long);
 void lockMutexSSD(void);
 void releaseMutexSSD(void);
 double getMinTime_inSSD(void);

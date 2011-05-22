@@ -58,7 +58,7 @@ bool initDone = false; //True if initialization is done
 bool clientDone = false; //True if client ip and port was configured
 bool transferDone = false; //True if transfer ip and port was configured
 
-SimulationStatus::type simulationStatus = SimulationStatus::PAUSED;
+SimulationStatus::type simulationStatus = SimulationStatus::STOPPED;
 Mutex mutexSimulationStatus_;
 Mutex* mutexSimulationStatus = &mutexSimulationStatus_;
 Semaphore waitForResume_(0, NUMBER_PRODUCER + NUMBER_CONSUMER);
@@ -291,7 +291,7 @@ void reInitAll() {
    }
    setGlobalSimulationValuesFromSimulationStepData(p_ssdAtSimulationTime);
    resetSRDFAfterChangetime(); //Resets the SRDF Array and the producer and consumer semaphores
-   resetSSDArrayWithNullSSD(); //overrides all SSD Slots with nullSSD elements
+   resetSSDArrayWithNullSSD(nStates, nAlgebraic, nParameters); //overrides all SSD Slots with nullSSD elements
    if (debugLevelControl > 0)
    {
 		  cout << "Control:\tFunct.: reInitAll\tData: globalData->lastEmittedTime: " << get_lastEmittedTime() << endl; fflush(stdout);
@@ -478,11 +478,19 @@ void stopSimulation(void) {
    {
 	pauseSimulation();
 
+	// Is this necessary anymore?
+	lockMutexSSD();
+	denied_work_on_GD();
+
 	reInitAll();
 
 	mutexSimulationStatus->Lock();
 	simulationStatus = SimulationStatus::STOPPED;
 	mutexSimulationStatus->Unlock();
+
+	allow_work_on_GD();
+	releaseMutexSSD();
+
 	status = "stop";
 
 	cout << "Control:\tFunct.: stopSimulation\tMessage: stop done" << endl; fflush(stdout);
