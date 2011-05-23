@@ -677,13 +677,17 @@ template zeroCrossing(Exp it, Integer index, SimCode simCode) ::=
                                           %>) : 1.0; }
     >>    
   case CALL(path=IDENT(name="sample"), expLst={start, interval}) then
-    let &preExp = buffer ""
+    let &preExp = buffer "" //is ignored
     let eStart = daeExp(start, contextOther, &preExp, simCode)
     let eInterval = daeExp(interval, contextOther, &preExp, simCode)
     <<
-    {<%preExp%>var _zen = zeroCrossingEnabled[<%index%>]; //ZEROCROSSING(<%index%>, Sample(*t, <%eStart%>, <%eInterval%>));
-    gout[<%index%>] = (_zen != 0) ? _zen * Sample(time, <%eStart%>, <%eInterval%>) : 1.0; }
-    >> 
+    //ZEROCROSSING(<%index%>, Sample(*t, <%eStart%>, <%eInterval%>));
+    >>
+    //the old sample, to be deleted in the next iteration
+    //<<
+    //{<%preExp%>var _zen = zeroCrossingEnabled[<%index%>]; //ZEROCROSSING(<%index%>, Sample(*t, <%eStart%>, <%eInterval%>));
+    //gout[<%index%>] = (_zen != 0) ? _zen * Sample(time, <%eStart%>, <%eInterval%>) : 1.0; }
+    //>> 
   case _ then
     <<
     ZERO_CROSSING_ERROR
