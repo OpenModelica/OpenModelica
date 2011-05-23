@@ -151,18 +151,24 @@ algorithm
       then 
         ((e3,b));
     
-    // normal call 
-    case ((DAE.CALL(fn,expl,tpl,builtin,tp,inlineType),_))
+    case ((DAE.CALL(Absyn.IDENT("pre"), {e as DAE.ASUB(exp = exp)}, tpl, builtin, tp, inlineType), b))
       equation
-        true = Util.listFold(Util.listMap(expl,Expression.isConst),boolAnd,true);
-        e2 = simplifyBuiltinConstantCalls(DAE.CALL(fn,expl,tpl,builtin,tp,inlineType));
+        true = Expression.isConst(exp);
+      then
+        ((e, true));
+        
+    // normal call 
+    case ((e as DAE.CALL(fn,expl,tpl,builtin,tp,inlineType),_))
+      equation
+        true = Expression.isConstWorkList(expl, true);
+        e2 = simplifyBuiltinConstantCalls(e);
       then
         ((e2,true));
     
     // simplify some builtin calls, like cross, etc
-    case ((DAE.CALL(fn,expl,tpl,builtin as true,tp,inlineType),_))
+    case ((e as DAE.CALL(fn,expl,tpl,builtin as true,tp,inlineType),_))
       equation
-        e2 = simplifyBuiltinCalls(DAE.CALL(fn,expl,tpl,builtin,tp,inlineType));
+        e2 = simplifyBuiltinCalls(e);
       then 
         ((e2,true));
     

@@ -409,6 +409,7 @@ case _ then
   case SIMVAR(arrayCref=SOME(c),aliasvar=NOALIAS()) then
     <<
     #define <%cref(c)%> localData-><%arrayName%>[<%index%>]
+    #define $P$PRE<%cref(c)%> localData-><%arrayName%>_saved[<%index%>]
     #define <%cref(name)%> localData-><%arrayName%>[<%index%>]
     #define $P$old<%cref(name)%> localData-><%arrayName%>_old[<%index%>]
     #define $P$old2<%cref(name)%> localData-><%arrayName%>_old2[<%index%>]
@@ -5040,11 +5041,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
             path=IDENT(name="der"), expLst={exp}) then
     error(sourceInfo(), 'Code generation does not support der(<%printExpStr(exp)%>)') 
   case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="pre"), expLst={arg as CREF(__)}) then
-    '$P$PRE<%cref(arg.componentRef)%>'
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="pre"), expLst={exp}) then
-    error(sourceInfo(), 'Code generation does not support pre(<%printExpStr(exp)%>)')
+            path=IDENT(name="pre"), expLst={arg}) then
+    daeExpCallPre(arg, context, preExp, varDecls)
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="edge"), expLst={arg as CREF(__)}) then
     '(<%cref(arg.componentRef)%> && !$P$PRE<%cref(arg.componentRef)%>)'
@@ -5565,6 +5563,20 @@ template daeExpAsub(Exp exp, Context context, Text &preExp /*BUFP*/,
     'OTHER_ASUB'
 end daeExpAsub;
 
+template daeExpCallPre(Exp exp, Context context, Text &preExp /*BUFP*/,
+                       Text &varDecls /*BUFP*/)
+  "Generates code for an asub of a cref, which becomes cref + offset."
+::=
+  match exp
+  case cr as CREF(__) then
+    '$P$PRE<%cref(cr.componentRef)%>'
+  case ASUB(exp = cr as CREF(__), sub = {sub_exp}) then
+    let offset = daeExp(sub_exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let cref = cref(cr.componentRef)
+    '*(&$P$PRE<%cref%> + <%offset%>)'
+  else
+    error(sourceInfo(), 'Code generation does not support pre(<%printExpStr(exp)%>)')
+end daeExpCallPre; 
 
 template daeExpSize(Exp exp, Context context, Text &preExp /*BUFP*/,
                     Text &varDecls /*BUFP*/)

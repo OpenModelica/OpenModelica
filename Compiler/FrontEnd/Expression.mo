@@ -5139,7 +5139,7 @@ algorithm
   end match;
 end isConstWork;
 
-protected function isConstWorkList
+public function isConstWorkList
 "Returns true if a list of expressions is constant"
   input list<DAE.Exp> exps;
   input Boolean inBoolean;
