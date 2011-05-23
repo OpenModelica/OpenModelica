@@ -9179,7 +9179,7 @@ algorithm
         ErrorExt.setCheckpoint("instArray Real[0]");
         s = DAE.INDEX(DAE.ICONST(0));
         (cache,compenv,ih,store,daeLst,csets,ty,graph) =
-           instVar2(cache,env,ih,store, ci_state, mod, pre, csets, n, cl, attr,pf, dims, (s :: idxs), inst_dims, impl, comment,info,graph);
+           instVar2(cache,env,ih,store, ci_state, DAE.NOMOD(), pre, csets, n, cl, attr,pf, dims, (s :: idxs), inst_dims, impl, comment,info,graph);
         ErrorExt.rollBack("instArray Real[0]");
       then
         (cache,compenv,ih,store,DAEUtil.emptyDae,csets,ty,graph);
