@@ -10937,7 +10937,7 @@ algorithm
     // elab a subscript then recurse
     case (cache,env,(sub :: subs),impl,pre,info)
       equation
-        (cache,sub_1,const1) = elabSubscript(cache,env, sub, impl,pre,info);
+        (cache,sub_1,const1, _) = elabSubscript(cache,env, sub, impl,pre,info);
         (cache,subs_1,const2) = elabSubscripts(cache,env, subs, impl,pre,info);
         const = Types.constAnd(const1, const2);
       then
@@ -11012,16 +11012,17 @@ algorithm
       list<DAE.Subscript> elabed_subs;
       DAE.Const const;
       Env.Cache cache;
+      Option<DAE.Properties> prop;
 
     case (_, _, {}, _, _, _, _, _, _) 
       then (inCache, listReverse(inElabSubscripts), inConst);
 
     case (_, _, asub :: rest_asub, dim :: rest_dims, _, _, _, _, _)
       equation
-        (cache, dsub, const) = elabSubscript(inCache, inEnv, asub, inImpl,
+        (cache, dsub, const, prop) = elabSubscript(inCache, inEnv, asub, inImpl,
           inPrefix, inInfo);
         (cache, dsub) = elabSubscriptsDims3(cache, inEnv, dsub, dim,
-          const, inImpl);
+          const, prop, inImpl);
         const = Types.constAnd(const, inConst);
         elabed_subs = dsub :: inElabSubscripts;
         (cache, elabed_subs, const) = elabSubscriptsDims2(cache, inEnv,
@@ -11039,33 +11040,45 @@ protected function elabSubscriptsDims3
   input DAE.Subscript inSubscript;
   input DAE.Dimension inDimension;
   input DAE.Const inConst;
+  input Option<DAE.Properties> inProperties;
   input Boolean inImpl;
   output Env.Cache outCache;
   output DAE.Subscript outSubscript;
 algorithm
   (outCache, outSubscript) := matchcontinue(inCache, inEnv,
-      inSubscript, inDimension, inConst, inImpl)
+      inSubscript, inDimension, inConst, inProperties, inImpl)
     local
       Env.Cache cache;
       DAE.Subscript sub;
       DAE.Const const;
       Integer int_dim;
+      DAE.Properties prop;
+      DAE.Type ty;
 
     // If in for iterator loop scope the subscript should never be evaluated to
     // a value (since the parameter/const value of iterator variables are not
     // available until expansion, which happens later on)
     // Note that for loops are expanded 'on the fly' and should therefore not be
     // treated in this way.
-    case (_, _, _, _, _, _)
+    case (_, _, _, _, _, _, _)
       equation
         true = Env.inForIterLoopScope(inEnv);
         true = Expression.dimensionKnown(inDimension);
       then
         (inCache, inSubscript);
 
+    // Keep non-fixed parameters.
+    case (_, _, _, _, _, SOME(prop), _)
+      equation
+        true = Types.isParameter(inConst);
+        ty = Types.getPropType(prop);
+        false = Types.getFixedVarAttribute(ty);
+      then
+        (inCache, inSubscript);
+
     // If the subscript contains a param or const then it should be evaluated to
     // the value.
-    case (_, _, _, _, _, _)
+    case (_, _, _, _, _, _, _)
       equation
         int_dim = Expression.dimensionSize(inDimension);
         true = Types.isParameterOrConstant(inConst);
@@ -11076,7 +11089,7 @@ algorithm
 
     // If the previous case failed and we're just checking the model, try again
     // but skip the constant evaluation.
-    case (_, _, _, _, _, _)
+    case (_, _, _, _, _, _, _)
       equation
         true = OptManager.getOption("checkModel");
         true = Types.isParameterOrConstant(inConst);
@@ -11084,7 +11097,7 @@ algorithm
         (inCache, inSubscript);
        
     // If not constant, keep as is.
-    case (_, _, _, _, _, _)
+    case (_, _, _, _, _, _, _)
       equation
         true = Expression.dimensionKnown(inDimension);
         false = Types.isParameterOrConstant(inConst);
@@ -11092,7 +11105,7 @@ algorithm
         (inCache, inSubscript);
 
     // For unknown dimension, ':', keep as is.
-    case (_, _, _, DAE.DIM_UNKNOWN(), _, _)
+    case (_, _, _, DAE.DIM_UNKNOWN(), _, _, _)
       then (inCache, inSubscript);
 
   end matchcontinue;
@@ -11110,12 +11123,14 @@ protected function elabSubscript "function: elabSubscript
   output Env.Cache outCache;
   output DAE.Subscript outSubscript;
   output DAE.Const outConst;
+  output Option<DAE.Properties> outProperties;
 algorithm
-  (outCache,outSubscript,outConst) := matchcontinue (inCache,inEnv,inSubscript,inBoolean,inPrefix,info)
+  (outCache, outSubscript, outConst, outProperties) := 
+  matchcontinue(inCache, inEnv, inSubscript, inBoolean, inPrefix, info)
     local
       Boolean impl;
       DAE.Exp sub_1;
-      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      DAE.Type ty;
       DAE.Const const;
       DAE.Subscript sub_2;
       list<Env.Frame> env;
@@ -11125,24 +11140,27 @@ algorithm
       Prefix.Prefix pre;
 
     // no subscript      
-    case (cache,_,Absyn.NOSUB(),impl,_,_) then (cache,DAE.WHOLEDIM(),DAE.C_CONST());
+    case (cache, _, Absyn.NOSUB(), impl, _, _) 
+      then (cache, DAE.WHOLEDIM(), DAE.C_CONST(), NONE());
 
     // some subscript, try to elaborate it
-    case (cache,env,Absyn.SUBSCRIPT(subScript = sub),impl,pre,info)
-      equation
-        (cache,sub_1,prop as DAE.PROP(ty,const),_) = elabExp(cache,env, sub, impl,NONE(),true,pre,info);
-        (cache, sub_1, prop as DAE.PROP(ty, _)) = Ceval.cevalIfConstant(cache, env, sub_1, prop, impl);
+    case (cache, env, Absyn.SUBSCRIPT(subScript = sub), impl, pre, info)
+      equation 
+        (cache, sub_1, prop as DAE.PROP(constFlag = const), _) = 
+          elabExp(cache, env, sub, impl, NONE(), true, pre, info);
+        (cache, sub_1, prop as DAE.PROP(type_ = ty)) = 
+          Ceval.cevalIfConstant(cache, env, sub_1, prop, impl);
         sub_2 = elabSubscriptType(ty, sub, sub_1, pre, env);
-        // print("Prefix: " +& PrefixUtil.printPrefixStr(pre) +& " subs: " +& ExpressionDump.printSubscriptStr(sub_2) +& "\n");
       then
-        (cache,sub_2,const);
+        (cache, sub_2, const, SOME(prop));
+
     // failtrace
-    case (cache,env,inSubscript,impl,_,_)
+    else
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "- Static.elabSubscript failed on " +&
           Dump.printSubscriptStr(inSubscript) +& " in env: " +&
-          Env.printEnvPathStr(env));
+          Env.printEnvPathStr(inEnv));
       then
         fail();
   end matchcontinue;

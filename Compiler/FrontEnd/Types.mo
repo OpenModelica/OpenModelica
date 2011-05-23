@@ -3148,24 +3148,35 @@ algorithm
   end match;
 end makeReturnTypeTuple;
 
-public function isParameter "function: isParameter
+public function isParameterVar "function: isParameter
   author: LS
   Succeds if a variable is a parameter."
   input Var inVar;
 algorithm
   DAE.TYPES_VAR(attributes = DAE.ATTR(variability = SCode.PARAM()),visibility = SCode.PUBLIC()) := inVar;
-end isParameter;
+end isParameterVar;
 
 public function isConstant 
-  "Returns true of Const is CONST."
+  "Returns true of c is C_CONST."
   input Const c;
   output Boolean b;
 algorithm
   b := match(c)
     case (DAE.C_CONST()) then true;
-    else then false;
+    else false;
   end match;
 end isConstant;
+
+public function isParameter
+  "Returns true if c is C_PARAM."
+  input Const c;
+  output Boolean b;
+algorithm
+  b := match(c)
+    case DAE.C_PARAM() then true;
+    else false;
+  end match;
+end isParameter;
 
 public function isParameterOrConstant "returns true if Const is PARAM or CONST"
   input Const c;
@@ -3174,7 +3185,7 @@ algorithm
   b := match(c)
     case(DAE.C_CONST()) then true;
     case(DAE.C_PARAM()) then true;
-    else then false;
+    else false;
   end match;
 end isParameterOrConstant;
 
