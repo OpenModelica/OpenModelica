@@ -1,11 +1,11 @@
 /*
  * OpenModelica Interactive (Ver 0.75)
- * Last Modification: 26. December 2010
+ * Last Modification: 23. May 2011
  *
  * Developed by:
  * EADS IW Germany
  * Developer: Parham Vasaiely
- * Contact: Parham.Vasaiely@gmx.de
+ * Contact: Parham.Vasaiely@eads.com
  *
  * File description: omi_ResultManager.h
  *
@@ -67,5 +67,16 @@ void resetSRDFAfterChangetime(void);
 void resetSSDArrayWithNullSSD(long, long, long);
 void lockMutexSSD(void);
 void releaseMutexSSD(void);
+/*
+ * Returns the minimum time stored in the SSDArray
+ */
 double getMinTime_inSSD(void);
+/*
+ * Returns the maximum time stored in the SSDArray
+ */
 double getMaxTime_inSSD(void);
+/*
+ * use this method after a change time or value operation from control
+ * to signal a changed time to the simulation
+ */
+void setSimulationTimeReversed(double);

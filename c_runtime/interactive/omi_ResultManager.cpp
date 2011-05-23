@@ -1,11 +1,11 @@
 /*
  * OpenModelica Interactive (Ver 0.75)
- * Last Modification: 26. December 2010
+ * Last Modification: 23. May 2011
  *
  * Developed by:
  * EADS IW Germany
  * Developer: Parham Vasaiely
- * Contact: Parham.Vasaiely@gmx.de
+ * Contact: Parham.Vasaiely@eads.com
  *
  * File description: omi_ResultManager.cpp
  * While a simulation is running the “Calculation” thread produces simulation results for every time step,
@@ -24,6 +24,7 @@
 #include <iomanip>
 #include <stdio.h>
 #include <iostream>
+#include <math.h>
 #include "omi_ResultManager.h"
 
 using namespace std;
@@ -31,7 +32,8 @@ using namespace std;
 #define MAX_SSD 200 //Maximum number of Simulation Step Data elements
 #define MAX_SRDF 20 //Maximum number of Simulation Result Data elements for Forwarding
 
-int debugResultManager = 1; //Set the debug level higher zero to print out messages which describes the program flow to the console [0= debug off, 1= min-debug, 2= max-debug]
+double EPSILON = 0.0001;
+int debugResultManager = 0; //Set the debug level higher zero to print out messages which describes the program flow to the console [0= debug off, 1= min-debug, 2= max-debug]
 /*
  * This element signalizes that the simulation runs for the first time.
  * It is important to store data into the "simulationStartSSD"
@@ -46,6 +48,8 @@ bool firstRun = true; //TODO [20110522] firstRun zurück setzten für stop
 double VALID_TIME_AFTER_RESET = 2.220446049250313e-13;
 bool simulationReset = false; //Set true after an reset to signal that the simulation has been stopped.
 
+double VALID_TIME_AFTER_CHANGETIME = 0;
+bool simulationChangetime = false; //Set true after an reset to signal that the simulation has been stopped.
 /*
  * This SimStepData element represents the state at the initial state,
  * it is necessary to be saved because of the method reInitAll in control
@@ -107,6 +111,8 @@ void pointNextUsedSRDFSlot();
 void pushSRDF();
 void popSRDF(SimStepData*);
 
+//Math help methods
+bool compareDouble(double, double);
 //print methods for testing
 void printSSD();
 void printSRDF();
@@ -120,18 +126,37 @@ bool initializeSSD_AND_SRDF(long nStates, long nAlgebraic, long nParameters) {
 	bool retValue = true;
 	//simDataNames_SimulationResult will be initialize from the SimulationControl
 
-	resetSSDArrayWithNullSSD(nStates, nAlgebraic, nParameters);
+	p_ssdArray_NextFreeSlot = ssdArray;
 
-	p_simulationStartSSD = &simulationStartSSD;
-	double *statesTMP2 = new double[nStates];
-	double *statesDerivativesTMP2 = new double[nStates];
-	double *algebraicsTMP2 = new double[nAlgebraic];
-	double *parametersTMP2 = new double[nParameters];
-	p_simulationStartSSD->states = statesTMP2;
-	p_simulationStartSSD->statesDerivatives = statesDerivativesTMP2;
-	p_simulationStartSSD->algebraics = algebraicsTMP2;
-	p_simulationStartSSD->parameters = parametersTMP2;
+	{ //initialize the SSDArray with NullSSDs
+		for (int i = 0; i < MAX_SSD; i++) {
+			SimStepData nullSSD; //this SimStepData element represents a null element in the SSD Array
+			nullSSD.forTimeStep = -1; //if the forTimeStep is -1 the element is null
+			double *statesTMP1 = new double[nStates];
+			double *statesDerivativesTMP1 = new double[nStates];
+			double *algebraicsTMP1 = new double[nAlgebraic];
+			double *parametersTMP1 = new double[nParameters];
+			//TODO [201105222] pv: optimization try putting new array directly into the ssdArraySlot instead of creating an nullSDD first
+			nullSSD.states = statesTMP1;
+			nullSSD.statesDerivatives = statesDerivativesTMP1;
+			nullSSD.algebraics = algebraicsTMP1;
+			nullSSD.parameters = parametersTMP1;
 
+			ssdArray[i] = nullSSD;
+		}
+	}
+
+	{ //initialize the SSD for the first simulation run (e.g. at time 0)
+		p_simulationStartSSD = &simulationStartSSD;
+		double *statesTMP2 = new double[nStates];
+		double *statesDerivativesTMP2 = new double[nStates];
+		double *algebraicsTMP2 = new double[nAlgebraic];
+		double *parametersTMP2 = new double[nParameters];
+		p_simulationStartSSD->states = statesTMP2;
+		p_simulationStartSSD->statesDerivatives = statesDerivativesTMP2;
+		p_simulationStartSSD->algebraics = algebraicsTMP2;
+		p_simulationStartSSD->parameters = parametersTMP2;
+	}
 	//p_ssdArray_NextFreeSlot = ssdArray; //Done from resetSSDArrayWithNull...
 	p_ssdArray_LastSlot = &ssdArray[MAX_SSD - 1];
 
@@ -144,14 +169,6 @@ bool initializeSSD_AND_SRDF(long nStates, long nAlgebraic, long nParameters) {
 	p_simdatanumbers->nAlgebraic = nAlgebraic;
 	p_simdatanumbers->nParameters = nParameters;
 
-	/*
-	 int *dyn;
-	 dyn = new int [2];
-	 dyn[0]=4;
-	 dyn[1]=2;
-	 cout << dyn[0] + dyn[1]<< endl; fflush(stdout);
-	 */
-
 	p_simDataNames_SimulationResult = &simDataNames_SimulationResult;
 	p_simDataNamesFilterForTransfer = &simDataNamesFilterForTransfer;
 
@@ -163,8 +180,7 @@ bool initializeSSD_AND_SRDF(long nStates, long nAlgebraic, long nParameters) {
 	string *algebraicsNamesTMP = new string[nAlgebraic];
 	string *parametersNames1TMP = new string[nParameters];
 	p_simDataNames_SimulationResult->statesNames = statesNamesTMP;
-	p_simDataNames_SimulationResult->stateDerivativesNames
-			= stateDerivativesNamesTMP;
+	p_simDataNames_SimulationResult->stateDerivativesNames = stateDerivativesNamesTMP;
 	p_simDataNames_SimulationResult->algebraicsNames = algebraicsNamesTMP;
 	p_simDataNames_SimulationResult->parametersNames = parametersNames1TMP;
 	//****
@@ -175,12 +191,20 @@ bool initializeSSD_AND_SRDF(long nStates, long nAlgebraic, long nParameters) {
 	//****
 	p_sdnMutex = &sdnMutex;
 
-	//if(debugResultManager) { cout << "END initializeSSD_AND_SRDF" << endl; fflush(stdout); }
 	return retValue;
 }
 
+/*
+ * Call this function after shutdown to free all allocated memory
+ * TODO [20110523] pv: TBD
+ */
 bool deInitializeSSD_AND_SRDF() {
-
+	for (int i = 0; i < MAX_SSD; i++) {
+		delete [] ssdArray[i].states;
+		delete [] ssdArray[i].statesDerivatives;
+		delete [] ssdArray[i].algebraics;
+		delete [] ssdArray[i].parameters;
+	}
 	return true;
 }
 
@@ -213,19 +237,31 @@ bool setResultData(SimStepData* p_SimStepData_from_Calculation) {
 	 * otherwise the result won't be added to the system
 	 */
 
-	if(!simulationReset){
+	//block used by normal running simulation
+	if(!simulationReset && !simulationChangetime){
 		addDataToSSD(p_SimStepData_from_Calculation);
-		cout << "add time: " << p_SimStepData_from_Calculation->forTimeStep	 << endl; fflush(stdout);
-	}
+		//cout << "add time: " << p_SimStepData_from_Calculation->forTimeStep	 << endl; fflush(stdout);
+	}else{//block used once after simulation has been reseted or more if the next time to add into the ssd is not VALID_TIME_AFTER_RESET
+		if(simulationReset){
+			if(p_SimStepData_from_Calculation->forTimeStep == VALID_TIME_AFTER_RESET || p_SimStepData_from_Calculation->forTimeStep == 0){
+					addDataToSSD(p_SimStepData_from_Calculation);
+					//cout << "add after reset time: " << p_SimStepData_from_Calculation->forTimeStep	 << endl; fflush(stdout);
+					simulationReset = false;
+			}
+			else{
+				//cout << "no chance for reset ;) time: " << p_SimStepData_from_Calculation->forTimeStep << endl; fflush(stdout);
+			}
+		} else{
+			if(simulationChangetime){
 
-	else{
-		if(p_SimStepData_from_Calculation->forTimeStep == VALID_TIME_AFTER_RESET){
-				addDataToSSD(p_SimStepData_from_Calculation);
-				cout << "add after reset time: " << p_SimStepData_from_Calculation->forTimeStep	 << endl; fflush(stdout);
-				simulationReset = false;
-		}
-		else{
-			cout << "no chance ;) time: " << p_SimStepData_from_Calculation->forTimeStep << endl; fflush(stdout);
+				if(compareDouble(p_SimStepData_from_Calculation->forTimeStep, VALID_TIME_AFTER_CHANGETIME)){
+					//cout << "add after change time: " << p_SimStepData_from_Calculation->forTimeStep	 << endl; fflush(stdout);
+						addDataToSSD(p_SimStepData_from_Calculation);
+						simulationChangetime = false;
+				} else{
+					//cout << "no chance for change ;) time: " << p_SimStepData_from_Calculation->forTimeStep << endl; fflush(stdout);
+				}
+			}
 		}
 	}
 
@@ -263,9 +299,8 @@ bool getResultData(SimStepData* p_SimResDataForw_from_Transfer) {
 	 */
 	if ((*pp_srdfArray_FirstQueueElement)->forTimeStep != -1) {
 		popSRDF(p_SimResDataForw_from_Transfer);
-		cout << "getResultData get after reset time: " << (*pp_srdfArray_FirstQueueElement)->forTimeStep << endl; fflush( stdout);
 	} else{
-		cout << "no chance ;) for time: " << (*pp_srdfArray_FirstQueueElement)->forTimeStep << endl; fflush(stdout);
+		//cout << "no chance ;) for time: " << (*pp_srdfArray_FirstQueueElement)->forTimeStep << endl; fflush(stdout);
 	}
 
 
@@ -291,7 +326,7 @@ bool getResultData(SimStepData* p_SimResDataForw_from_Transfer) {
  */
 SimStepData* getResultDataForTime(double stepSize, double timeStep) {
 
-	if (debugResultManager > 0) {
+	if (debugResultManager > 1) {
 		cout
 				<< "ResultManager:\tFunct.: getResultDataForTime\tMessage: All SSD Array elements START" << endl; fflush( stdout);
 		for (int i = 0; i < MAX_SSD; i++) {
@@ -301,7 +336,7 @@ SimStepData* getResultDataForTime(double stepSize, double timeStep) {
 				<< "ResultManager:\tFunct.: getResultDataForTime\tMessage: All SSD Array elements END"	<< endl; fflush(stdout);
 	}
 
-	if (debugResultManager > 0) {
+	if (debugResultManager > 1) {
 		cout
 				<< "ResultManager:\tFunct.: getResultDataForTime\tMessage: ADD of p_ssdArray_NextFreeSlot: "
 				<< p_ssdArray_NextFreeSlot << endl;	fflush( stdout);
@@ -364,7 +399,7 @@ SimStepData* getResultDataForTime(double stepSize, double timeStep) {
 		nullSSD.algebraics = algebraicsTMP1;
 		nullSSD.parameters = parametersTMP1;*/
 		temp = &nullSSD;
-		if (debugResultManager > 0) {
+		if (debugResultManager > 1) {
 			cout
 					<< "ResultManager:\tFunct.: getResultDataForTime\tMessage: Error time not in SSD"
 					<< endl;
@@ -380,6 +415,19 @@ SimStepData* getResultDataForTime(double stepSize, double timeStep) {
 SimStepData* getResultDataFirstStart() {
 	return p_simulationStartSSD;
 }
+
+/*
+ * use this method after a change time or value operation from control
+ * to signal a changed time to the simulation
+ */
+void setSimulationTimeReversed(double validTime){
+	VALID_TIME_AFTER_CHANGETIME = validTime;
+	if (debugResultManager > 0) {
+		cout << "ResultManager:\tFunct.: setSimulationTimeReversed\tData: VALID_TIME_AFTER_CHANGETIME: "	<< VALID_TIME_AFTER_CHANGETIME << endl; fflush( stdout);
+	}
+	simulationChangetime = true;
+}
+
 /*****************************************************************
  * Help Methods
  *****************************************************************/
@@ -389,12 +437,10 @@ SimStepData* getResultDataFirstStart() {
  * the organization of the SRDF array must start again from the beginning.
  * because old simulation data mustn't send to the GUI.
  */
-
 void resetSRDFAfterChangetime() {
 	if (debugResultManager > 1) {
 		cout << "ResultManager:\tFunct.: resetSRDFAfterChangetime\tMessage: START"	<< endl; fflush( stdout);
 	}
-
 	pp_srdfArray_FirstQueueElement = srdfArrayOfPointer;
 	pp_srdfArray_NextFreeSlot = srdfArrayOfPointer;
 
@@ -402,7 +448,7 @@ void resetSRDFAfterChangetime() {
 		ghSemaphore_NumberFreeSlots.Post();
 	}
 
-	if (debugResultManager > 0) {
+	if (debugResultManager > 1) {
 		printSRDF();
 		cout << "ResultManager:\tFunct.: resetSRDFAfterChangetime\tMessage: END"	<< endl; fflush( stdout);
 	}
@@ -451,15 +497,21 @@ void releaseMutexSSD() {
 	ssdMutex.Unlock();
 }
 
+/*
+ * Returns the minimum time stored in the SSDArray
+ */
 double getMinTime_inSSD() {
 	return p_ssdArray_NextFreeSlot->forTimeStep;
 }
 
+/*
+ * Returns the maximum time stored in the SSDArray
+ */
 double getMaxTime_inSSD() {
 	return (p_ssdArray_NextFreeSlot - 1)->forTimeStep;
 }
 /*****************************************************************
- * Organisation of SSD
+ * Organization of SSD and SRDF
  *****************************************************************/
 
 /**
@@ -552,7 +604,7 @@ void pointNextUsedSRDFSlot() {
 void pushSRDF() {
 	*pp_srdfArray_NextFreeSlot = &(*p_ssdArray_NextFreeSlot);
 
-	if (debugResultManager > 0) {
+	if (debugResultManager > 1) {
 		cout << "ResultManager:\tFunct.: pushSRDF\tData 1: time = " << (*pp_srdfArray_NextFreeSlot)->forTimeStep << " tank1.h = " << (*pp_srdfArray_NextFreeSlot)->states[0] << endl; fflush( stdout);
 		cout << "ResultManager:\tFunct.: pushSRDF\tData 2: time = " << (*pp_srdfArray_FirstQueueElement)->forTimeStep << " tank1.h = " << (*pp_srdfArray_FirstQueueElement)->states[0] << endl; fflush( stdout);
 		printSRDF();
@@ -594,6 +646,16 @@ void popSRDF(SimStepData* p_SimResDataForw_from_Transfer) {
 	}
 
 	pointNextUsedSRDFSlot();
+}
+
+/*****************************************************************
+ * Math help methods
+ *****************************************************************/
+
+bool compareDouble(double a, double b)
+{
+	cout << "fabs(a - b): " << fabs(a - b) << endl;
+    return fabs(a - b) < EPSILON;
 }
 
 /*****************************************************************

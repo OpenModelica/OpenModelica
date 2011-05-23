@@ -1,11 +1,11 @@
 /*
  * OpenModelica Interactive (Ver 0.75)
- * Last Modification: 26. December 2010
+ * Last Modification: 23. May 2011
  *
  * Developed by:
  * EADS IW Germany
  * Developer: Parham Vasaiely
- * Contact: Parham.Vasaiely@gmx.de
+ * Contact: Parham.Vasaiely@eads.com
  *
  * File description: omi_Control.cpp
  * The “Control” module is the interface between OMI and a GUI.
@@ -307,42 +307,42 @@ void reInitAll() {
  */
 void changeParameterValues(double changedSimulationTime, string parameter) {
 
-       if (debugLevelControl > 0)
-       {
-              cout << "Control:\tFunct.: changeParameterValues\tData: time: " << changedSimulationTime << " parameter: " << parameter << endl; fflush(stdout);
-       }
+   if (debugLevelControl > 0)
+   {
+		  cout << "Control:\tFunct.: changeParameterValues\tData: time: " << changedSimulationTime << " parameter: " << parameter << endl; fflush(stdout);
+   }
 
-       //If the parameter changed while simulation is running, the simulation must go on after changing parameter in global data
-       string preStatus = status;
-       if (status.compare("start") == 0)
-              pauseSimulation();
+   //If the parameter changed while simulation is running, the simulation must go on after changing parameter in global data
+   string preStatus = status;
+   if (status.compare("start") == 0)
+		  pauseSimulation();
 
-       SimStepData* p_ssdAtChangedSimulationTime = getResultDataForTime(get_stepSize(),
-                     changedSimulationTime);
-       if (debugLevelControl > 0)
-       {
-              cout << "Control:\tFunct.: changeParameterValues\tData: p_ssdAtChangedSimulationTime->forTimeStep: " << p_ssdAtChangedSimulationTime->forTimeStep << endl; fflush(stdout);
-       }
+   SimStepData* p_ssdAtChangedSimulationTime = getResultDataForTime(get_stepSize(),
+				 changedSimulationTime);
+   if (debugLevelControl > 0)
+   {
+		  cout << "Control:\tFunct.: changeParameterValues\tData: p_ssdAtChangedSimulationTime->forTimeStep: " << p_ssdAtChangedSimulationTime->forTimeStep << endl; fflush(stdout);
+   }
 
-       if (p_ssdAtChangedSimulationTime->forTimeStep != -1)
-       {
-              parseParameter(p_ssdAtChangedSimulationTime, parameter);
-              setGlobalSimulationValuesFromSimulationStepData(
-                            p_ssdAtChangedSimulationTime);
-              resetSRDFAfterChangetime(); //Resets the SRDF Array and the producer and consumer semaphores
-              if (debugLevelControl > 0)
-              {
-                     cout << "Control:\tFunct.: changeParameterValues\tData:globalData->lastEmittedTime: " << get_lastEmittedTime() << endl; fflush(stdout);
-                     cout << "Control:\tFunct.: changeParameterValues\tData:globalData->timeValue: " << get_timeValue() << endl; fflush(stdout);
-              }
-       }
-       else
-       {
-              createMessage("Error: Time is not stored anymore");
-       }
-       //If the parameter changed while simulation is running, the simulation must go on after changing parameter in global data
-       if (preStatus.compare("start") == 0)
-              startSimulation();
+   if (p_ssdAtChangedSimulationTime->forTimeStep != -1)
+   {
+	  parseParameter(p_ssdAtChangedSimulationTime, parameter);
+	  setGlobalSimulationValuesFromSimulationStepData(p_ssdAtChangedSimulationTime);
+	  resetSRDFAfterChangetime(); //Resets the SRDF Array and the producer and consumer semaphores
+	  setSimulationTimeReversed(get_stepSize() + changedSimulationTime);
+	  if (debugLevelControl > 0)
+	  {
+			 cout << "Control:\tFunct.: changeParameterValues\tData:globalData->lastEmittedTime: " << get_lastEmittedTime() << endl; fflush(stdout);
+			 cout << "Control:\tFunct.: changeParameterValues\tData:globalData->timeValue: " << get_timeValue() << endl; fflush(stdout);
+	  }
+   }
+   else
+   {
+	   createMessage("Error: Time is not stored anymore");
+   }
+   //If the parameter changed while simulation is running, the simulation must go on after changing parameter in global data
+   if (preStatus.compare("start") == 0)
+		  startSimulation();
 }
 
 /**
@@ -350,6 +350,36 @@ void changeParameterValues(double changedSimulationTime, string parameter) {
  * All values which are stored for this time step will be reused
  */
 void changeSimulationTime(double changedSimulationTime) {
+
+   double stepSize = get_stepSize();
+
+   //If the parameter changed while simulation is running, the simulation must go on after changing parameter in global data
+   string preStatus = status;
+
+   if (status.compare("start") == 0)
+		  pauseSimulation();
+
+   SimStepData* p_ssdAtChangedSimulationTime = getResultDataForTime(stepSize, changedSimulationTime);
+
+   if (p_ssdAtChangedSimulationTime->forTimeStep >= stepSize)
+   {
+	  setGlobalSimulationValuesFromSimulationStepData(p_ssdAtChangedSimulationTime);
+	  resetSRDFAfterChangetime(); //Resets the SRDF Array and the producer and consumer semaphores
+	  //cout << "Control:\tFunct.: changeSimulationTime\tData: get_stepSize() " << stepSize << endl; fflush(stdout);
+	  setSimulationTimeReversed(stepSize + changedSimulationTime);
+   }
+   else
+   {
+	  createMessage("Error: Time is not stored anymore");
+   }
+
+   //If the parameter changed while simulation is running, the simulation must go on after changing parameter in global data
+   if (preStatus.compare("start") == 0)
+		  startSimulation();
+}
+
+/*
+ * void changeSimulationTime(double changedSimulationTime) {
    if (debugLevelControl > 0)
    {
 		  cout << "Control:\tFunct.: changeSimulationTime\tData: time: " << changedSimulationTime << endl; fflush(stdout);
@@ -384,6 +414,8 @@ void changeSimulationTime(double changedSimulationTime) {
    {
 		  setGlobalSimulationValuesFromSimulationStepData(p_ssdAtChangedSimulationTime);
 		  resetSRDFAfterChangetime(); //Resets the SRDF Array and the producer and consumer semaphores
+		  cout << "Control:\tFunct.: changeSimulationTime\tData: get_stepSize() " << stepSize << endl; fflush(stdout);
+		  setSimulationTimeReversed(stepSize + changedSimulationTime);
 		  if (debugLevelControl > 0)
 		  {
 				 cout << "Control:\tFunct.: changeSimulationTime\tData: globalData->lastEmittedTime: " << get_lastEmittedTime() << endl; fflush(stdout);
@@ -399,6 +431,7 @@ void changeSimulationTime(double changedSimulationTime) {
    if (preStatus.compare("start") == 0)
 		  startSimulation();
 }
+ */
 
 /**
  * This method defines the mask for filter transfer
@@ -478,7 +511,7 @@ void stopSimulation(void) {
    {
 	pauseSimulation();
 
-	// Is this necessary anymore?
+	// Is this necessary anymore: pv yes, because the ssdArray must be synchronized
 	lockMutexSSD();
 	denied_work_on_GD();
 

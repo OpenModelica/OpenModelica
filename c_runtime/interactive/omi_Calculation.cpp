@@ -1,11 +1,11 @@
 /*
- * OpenModelica Interactive (Ver 0.7)
- * Last Modification: 17. January 2010
+ * OpenModelica Interactive (Ver 0.75)
+ * Last Modification: 23. May 2011
  *
  * Developed by:
  * EADS IW Germany
  * Developer: Parham Vasaiely
- * Contact: vasaie_p@informatik.haw-hamburg.de
+ * Contact: Parham.Vasaiely@eads.com
  *
  * File description: omi_Calculation.cpp
  * The “Calculation” thread is synonymous to a producer which uses the “OM Solving Service”

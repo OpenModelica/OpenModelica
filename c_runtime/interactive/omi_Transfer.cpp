@@ -1,11 +1,11 @@
 /*
- * OpenModelica Interactive (Ver 0.7)
- * Last Modification: 27. April 2010
+ * OpenModelica Interactive (Ver 0.75)
+ * Last Modification: 23. May 2011
  *
  * Developed by:
  * EADS IW Germany
  * Developer: Parham Vasaiely
- * Contact: vasaie_p@informatik.haw-hamburg.de
+ * Contact: Parham.Vasaiely@eads.com
  *
  * File description: omi_Transfer.cpp
  * Similar to a consumer, the “Transfer” thread tries to get simulation results from
