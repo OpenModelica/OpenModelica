@@ -492,6 +492,25 @@ algorithm
   end matchcontinue;
 end dumpBackendDAEEqnList2;
 
+public function dumpZcStr1 ""
+  input list<BackendDAE.ZeroCrossing> zero_crossings;
+  output String outString;
+algorithm outString := matchcontinue(zero_crossings)
+  local
+    BackendDAE.ZeroCrossing vf;
+    String s1,s2,s3;
+    list<BackendDAE.ZeroCrossing> rest;
+  case({}) then "";
+  case( vf::rest )
+    equation
+      s1=  dumpZcStr(vf);
+      s2= dumpZcStr1(rest);
+      s3 = stringAppendList({s1,"\n", s2 });
+    then
+      s3;
+end matchcontinue;
+end dumpZcStr1;
+
 public function dumpZcStr
 "function: dumpZcStr
   Dumps a zerocrossing into a string, for debugging purposes."
