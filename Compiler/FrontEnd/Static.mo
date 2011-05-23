@@ -10967,7 +10967,8 @@ algorithm
     case (cache,env,subs,dims,impl,pre,info)
       equation
         ErrorExt.setCheckpoint("elabSubscriptsDims");
-        (outCache,outSubs,outConst) = elabSubscriptsDims2(cache,env,subs,dims,impl,pre,info);
+        (outCache, outSubs, outConst) = elabSubscriptsDims2(cache, env, subs,
+          dims, impl, pre, info, DAE.C_CONST(), {});
         ErrorExt.rollBack("elabSubscriptsDims");
       then (outCache,outSubs,outConst);
 
@@ -10985,95 +10986,117 @@ algorithm
 end elabSubscriptsDims;
 
 protected function elabSubscriptsDims2
-"Helper function to elabSubscriptsDims"
+  "Helper function to elabSubscriptsDims."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Absyn.Subscript> inAbsynSubscriptLst;
-  input list<DAE.Dimension> inIntegerLst;
-  input Boolean inBoolean;
+  input list<Absyn.Subscript> inSubscripts;
+  input list<DAE.Dimension> inDimensions;
+  input Boolean inImpl;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input Absyn.Info inInfo;
+  input DAE.Const inConst;
+  input list<DAE.Subscript> inElabSubscripts;
   output Env.Cache outCache;
-  output list<DAE.Subscript> outExpSubscriptLst;
+  output list<DAE.Subscript> outSubscripts;
   output DAE.Const outConst;
 algorithm
-  (outCache,outExpSubscriptLst,outConst) := matchcontinue (inCache,inEnv,inAbsynSubscriptLst,inIntegerLst,inBoolean,inPrefix,info)
+  (outCache, outSubscripts, outConst) := 
+  match(inCache, inEnv, inSubscripts, inDimensions, inImpl, inPrefix,
+      inInfo, inConst, inElabSubscripts)
     local
-      DAE.Subscript sub_1;
-      DAE.Const const1,const2,const;
-      list<DAE.Subscript> subs_1;
-      list<Env.Frame> env;
-      Absyn.Subscript sub;
-      list<Absyn.Subscript> subs;
+      Absyn.Subscript asub;
+      list<Absyn.Subscript> rest_asub;
       DAE.Dimension dim;
-      Integer int_dim;
-      list<DAE.Dimension> restdims;
-      Boolean impl;
+      list<DAE.Dimension> rest_dims;
+      DAE.Subscript dsub;
+      list<DAE.Subscript> elabed_subs;
+      DAE.Const const;
       Env.Cache cache;
-      Prefix.Prefix pre;
 
-    // empty list
-    case (cache,_,{},_,_,_,_) then (cache,{},DAE.C_CONST());
+    case (_, _, {}, _, _, _, _, _, _) 
+      then (inCache, listReverse(inElabSubscripts), inConst);
 
-    // if in for iterator loop scope the subscript should never be evaluated to a value 
-    //(since the parameter/const value of iterator variables are not available until expansion, which happens later on)
-    // Note that for loops are expanded 'on the fly' and should therefore not be treated in this way.
-    case (cache,env,(sub :: subs),(dim :: restdims),impl,pre,info) /* If param, call ceval. */
+    case (_, _, asub :: rest_asub, dim :: rest_dims, _, _, _, _, _)
       equation
-        true = Env.inForIterLoopScope(env);
-        true = Expression.dimensionKnown(dim);
-        (cache,sub_1,const1) = elabSubscript(cache,env,sub,impl,pre,info);
-        (cache,subs_1,const2) = elabSubscriptsDims2(cache,env,subs,restdims,impl,pre,info);
-        const = Types.constAnd(const1, const2);
+        (cache, dsub, const) = elabSubscript(inCache, inEnv, asub, inImpl,
+          inPrefix, inInfo);
+        (cache, dsub) = elabSubscriptsDims3(cache, inEnv, dsub, dim,
+          const, inImpl);
+        const = Types.constAnd(const, inConst);
+        elabed_subs = dsub :: inElabSubscripts;
+        (cache, elabed_subs, const) = elabSubscriptsDims2(cache, inEnv,
+          rest_asub, rest_dims, inImpl, inPrefix, inInfo, const, elabed_subs);
       then
-        (cache,sub_1::subs_1,const);
+        (cache, elabed_subs, const);
 
-    // If the subscript contains a param or const then it should be evaluated to the value
-    case (cache,env,(sub :: subs),(dim :: restdims),impl,pre,info) /* If param or const, call ceval. */
+  end match;
+end elabSubscriptsDims2;
+
+protected function elabSubscriptsDims3
+  "Helper function to elabSubscriptsDims2."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input DAE.Subscript inSubscript;
+  input DAE.Dimension inDimension;
+  input DAE.Const inConst;
+  input Boolean inImpl;
+  output Env.Cache outCache;
+  output DAE.Subscript outSubscript;
+algorithm
+  (outCache, outSubscript) := matchcontinue(inCache, inEnv,
+      inSubscript, inDimension, inConst, inImpl)
+    local
+      Env.Cache cache;
+      DAE.Subscript sub;
+      DAE.Const const;
+      Integer int_dim;
+
+    // If in for iterator loop scope the subscript should never be evaluated to
+    // a value (since the parameter/const value of iterator variables are not
+    // available until expansion, which happens later on)
+    // Note that for loops are expanded 'on the fly' and should therefore not be
+    // treated in this way.
+    case (_, _, _, _, _, _)
       equation
-        int_dim = Expression.dimensionSize(dim);
-        (cache,sub_1,const1) = elabSubscript(cache,env,sub,impl,pre,info);
-        (cache,subs_1,const2) = elabSubscriptsDims2(cache,env,subs,restdims,impl,pre,info);
-        const = Types.constAnd(const1, const2);
-        true = Types.isParameterOrConstant(const);
-        (cache,sub_1) = Ceval.cevalSubscript(cache,env,sub_1,int_dim,impl,Ceval.MSG());
+        true = Env.inForIterLoopScope(inEnv);
+        true = Expression.dimensionKnown(inDimension);
       then
-        (cache,sub_1::subs_1,const);
+        (inCache, inSubscript);
+
+    // If the subscript contains a param or const then it should be evaluated to
+    // the value.
+    case (_, _, _, _, _, _)
+      equation
+        int_dim = Expression.dimensionSize(inDimension);
+        true = Types.isParameterOrConstant(inConst);
+        (cache, sub) = Ceval.cevalSubscript(inCache, inEnv, inSubscript,
+          int_dim, inImpl, Ceval.MSG());
+      then
+        (cache, sub);
 
     // If the previous case failed and we're just checking the model, try again
     // but skip the constant evaluation.
-    case (cache,env,(sub :: subs),(dim :: restdims),impl,pre,info)
+    case (_, _, _, _, _, _)
       equation
         true = OptManager.getOption("checkModel");
-        //true = Expression.dimensionKnown(dim);
-        (cache,sub_1,const1) = elabSubscript(cache,env,sub,impl,pre,info);
-        (cache,subs_1,const2) = elabSubscriptsDims2(cache,env,subs,restdims,impl,pre,info);
-        const = Types.constAnd(const1, const2);
-        true = Types.isParameterOrConstant(const);
+        true = Types.isParameterOrConstant(inConst);
       then
-        (cache,sub_1::subs_1,const);
-        
-    // if not constant, keep as is.
-    case (cache,env,(sub :: subs),(dim :: restdims),impl,pre,info)
+        (inCache, inSubscript);
+       
+    // If not constant, keep as is.
+    case (_, _, _, _, _, _)
       equation
-        true = Expression.dimensionKnown(dim);
-        (cache,sub_1,const1) = elabSubscript(cache,env,sub,impl,pre,info);
-        (cache,subs_1,const2) = elabSubscriptsDims2(cache,env,subs,restdims,impl,pre,info);
-        const = Types.constAnd(const1, const2);
-        false = Types.isParameterOrConstant(const);
+        true = Expression.dimensionKnown(inDimension);
+        false = Types.isParameterOrConstant(inConst);
       then
-        (cache,(sub_1 :: subs_1),const);
+        (inCache, inSubscript);
 
-    // for unknown dimension, ':', keep as is.
-    case (cache,env,(sub :: subs),(DAE.DIM_UNKNOWN() :: restdims),impl,pre,info)
-      equation
-        (cache,sub_1,const1) = elabSubscript(cache,env,sub,impl,pre,info);
-        (cache,subs_1,const2) = elabSubscriptsDims2(cache,env,subs,restdims,impl,pre,info);
-        const = Types.constAnd(const1, const2);
-      then
-        (cache,(sub_1 :: subs_1),const);
+    // For unknown dimension, ':', keep as is.
+    case (_, _, _, DAE.DIM_UNKNOWN(), _, _)
+      then (inCache, inSubscript);
+
   end matchcontinue;
-end elabSubscriptsDims2;
+end elabSubscriptsDims3;
 
 protected function elabSubscript "function: elabSubscript
   This function converts an Absyn.Subscript to an
