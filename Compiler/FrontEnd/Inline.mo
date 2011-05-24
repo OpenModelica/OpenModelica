@@ -45,7 +45,6 @@ encapsulated package Inline
 public import Absyn;
 public import BackendDAE;
 public import DAE;
-public import Error;
 public import SCode;
 public import Util;
 public import Values;

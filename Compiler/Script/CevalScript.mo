@@ -2975,6 +2975,7 @@ algorithm
       DAE.FunctionTree funcs;
       BackendDAE.Variables vars;
       BackendDAE.IncidenceMatrix m;
+      Absyn.Class c;
     
     // handle partial models
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
@@ -3017,9 +3018,10 @@ algorithm
         //UnitParserExt.clear();
         //UnitAbsynBuilder.registerUnits(ptot);
         //UnitParserExt.commit();
-
+        
         // instantiate the partial class nomally as it works during checkModel.
         (cache, env, _, dae) = Inst.instantiateClass(inCache, InnerOuter.emptyInstHierarchy, p_1, className);
+        
         dae  = DAEUtil.transformationsBeforeBackend(dae);
         // adrpo: do not store instantiated class as we don't use it later!
         // ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
@@ -3089,7 +3091,8 @@ algorithm
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         ptot = Dependency.getTotalProgram(className,p);
-        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,_) = Interactive.getPathedClassInProgram(className, p);
+        
+        (c as Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,_)) = Interactive.getPathedClassInProgram(className, p);
         _ = Error.getMessagesStr() "Clear messages";
         Print.clearErrorBuf() "Clear error buffer";
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
@@ -3097,7 +3100,7 @@ algorithm
         //UnitParserExt.clear();
         //UnitAbsynBuilder.registerUnits(ptot);
         //UnitParserExt.commit();
-
+        
         (cache, env, _) =
         Inst.instantiateFunctionImplicit(inCache, InnerOuter.emptyInstHierarchy, p_1, className);
 

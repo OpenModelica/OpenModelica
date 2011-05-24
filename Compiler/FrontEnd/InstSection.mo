@@ -68,15 +68,14 @@ protected import ModUtil;
 protected import OptManager;
 protected import Patternm;
 protected import PrefixUtil;
-protected import SCodeUtil;
 protected import Static;
 protected import Types;
 protected import Util;
-protected import UnitAbsyn;
 protected import Values;
 protected import ValuesUtil;
 protected import System;
 protected import ErrorExt;
+protected import SCodeDump;
 
 public
 type Ident = DAE.Ident "an identifier";
@@ -135,7 +134,7 @@ algorithm
     case (_,_,_,_,_,_,_,SCode.EQUATION(eEquation = eqn),impl,unrollForLoops,graph)
       equation 
         true = RTOpts.debugFlag("failtrace");
-        str= SCode.equationStr(eqn);
+        str= SCodeDump.equationStr(eqn);
         Debug.fprint("failtrace", "- instEquation failed eqn:");
         Debug.fprint("failtrace", str);
         Debug.fprint("failtrace", "\n");
@@ -189,7 +188,7 @@ algorithm
     // failure
     case(cache,env,ih,mods,pre,csets,ci_state,eq,impl,unrollForLoops,graph) 
       equation
-        Debug.fprint("failtrace","Inst.instEEquation failed for "+&SCode.equationStr(eq)+&"\n");
+        Debug.fprint("failtrace","Inst.instEEquation failed for "+&SCodeDump.equationStr(eq)+&"\n");
     then fail();
   end matchcontinue;
 end instEEquation;
@@ -372,7 +371,7 @@ algorithm
     case (_,_,_,_,_,_,_,inEEquation,_,_,_,errorCount)
       equation
         true = errorCount == Error.getNumErrorMessages();
-        s = SCode.equationStr(inEEquation);
+        s = SCodeDump.equationStr(inEEquation);
         Error.addSourceMessage(Error.EQUATION_GENERIC_FAILURE, {s}, SCode.equationFileInfo(inEEquation));
       then
         fail();
@@ -501,7 +500,7 @@ algorithm
 /*    case (cache,env,ih,mods,pre,csets,ci_state,eqn as SCode.EQ_EQUALS(expLeft = e1,expRight = e2,info = info),initial_,impl,graph)
       equation 
         failure(checkTupleCallEquation(e1,e2));
-        s = SCode.equationStr(eqn);
+        s = SCodeDump.equationStr(eqn);
         Error.addSourceMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY,{s},info);
       then fail();*/
 
@@ -836,7 +835,7 @@ algorithm
     case (_,env,ih,_,_,_,_,eqn,_,impl,graph)
       equation
         true = RTOpts.debugFlag("failtrace");
-        s = SCode.equationStr(eqn);
+        s = SCodeDump.equationStr(eqn);
         Debug.fprint("failtrace", "- instEquationCommonWork failed for eqn: ");
         Debug.fprint("failtrace", s +& " in scope:" +& Env.getScopeName(env) +& "\n");
       then
@@ -2801,7 +2800,7 @@ algorithm
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "InstSection.instIfTrueBranches failed on equations: " +&
-                       Util.stringDelimitList(Util.listMap(e, SCode.equationStr), "\n"));
+                       Util.stringDelimitList(Util.listMap(e, SCodeDump.equationStr), "\n"));
       then
         fail();
   end matchcontinue;
@@ -3789,8 +3788,8 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         b0 = Types.equivtypes(t1, t2);
         s0 = Util.if_(b0,"types equivalent;","types NOT equivalent");
-        s1 = SCode.flowStr(flow1) +& " " +& SCode.streamStr(stream1);
-        s2 = SCode.flowStr(flow2) +& " " +& SCode.streamStr(stream2);
+        s1 = SCodeDump.flowStr(flow1) +& " " +& SCodeDump.streamStr(stream1);
+        s2 = SCodeDump.flowStr(flow2) +& " " +& SCodeDump.streamStr(stream2);
         Debug.trace("- InstSection.checkConnectTypes(");
         Debug.trace(s0);
         Debug.trace(ComponentReference.printComponentRefStr(c1));

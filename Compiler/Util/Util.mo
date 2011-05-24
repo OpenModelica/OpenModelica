@@ -30,7 +30,7 @@
  */
 
 encapsulated package Util
-" file:         Util.mo
+" file:        Util.mo
   package:     Util
   description: Miscellanous MetaModelica Compiler (MMC) utilities
 

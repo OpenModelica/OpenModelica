@@ -73,6 +73,7 @@ PrefixUtil.mo \
 SCode.mo \
 SCodeCheck.mo \
 SCodeDependency.mo \
+SCodeDump.mo \
 SCodeEnv.mo \
 SCodeHashTable.mo \
 SCodeLookup.mo \
@@ -80,6 +81,7 @@ SCodeFlattenImports.mo \
 SCodeFlattenExtends.mo \
 SCodeFlattenRedeclare.mo \
 SCodeFlatten.mo \
+SCodeMod.mo \
 SCodeUtil.mo \
 Static.mo \
 Types.mo \

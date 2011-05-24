@@ -42,12 +42,10 @@ public import Absyn;
 public import SCode;
 public import SCodeEnv;
 
-protected import Debug;
 protected import Dump;
 protected import Error;
-protected import ErrorExt;
-protected import System;
 protected import Util;
+protected import SCodeDump;
 
 public function checkDuplicateClasses
   input SCode.Program inProgram;
@@ -335,7 +333,7 @@ algorithm
           info = info)), _)
       equation
         err_count = Error.getNumErrorMessages();
-        ty = SCode.restrictionStringPP(res);
+        ty = SCodeDump.restrictionStringPP(res);
         checkRedeclarationReplaceable(name, ty, repl, inInfo, info);
         checkRedeclarationFinal(name, ty, fin, inInfo, info);
         checkRedeclarationVisibility(name, ty, vis, inInfo, info);

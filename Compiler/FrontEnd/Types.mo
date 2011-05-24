@@ -90,6 +90,7 @@ protected import System;
 protected import ValuesUtil;
 protected import DAEUtil;
 protected import OptManager;
+protected import SCodeDump;
 
 public function discreteType
 "function: discreteType
@@ -2648,7 +2649,7 @@ algorithm
     case DAE.TYPES_VAR(name = n,attributes = DAE.ATTR(variability = var),visibility = vis,ty = typ,binding = bind)
       equation
         s1 = printTypeStr(typ);
-        vs = SCode.variabilityString(var);
+        vs = SCodeDump.variabilityString(var);
         s2 = printBindingStr(bind);
         str = stringAppendList({s1," ",n," ",vs," ",s2});
       then

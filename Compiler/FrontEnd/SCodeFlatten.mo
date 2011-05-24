@@ -52,6 +52,7 @@ protected import RTOpts;
 protected import SCodeEnv;
 protected import System;
 protected import Util;
+protected import SCodeLookup;
 
 protected type Env = SCodeEnv.Env;
 
@@ -107,8 +108,9 @@ public function flattenClassInProgram
 algorithm
   outProgram := matchcontinue(inClassName, inProgram)
     local
-      Env env;
+      Env env, env2, env3;
       SCode.Program prog;
+      
 
     case (_, prog)
       equation
@@ -120,7 +122,8 @@ algorithm
         
         (prog, env) = SCodeDependency.analyse(inClassName, env, prog);
         (prog, env) = SCodeFlattenImports.flattenProgram(prog, env);
-        prog = SCodeFlattenExtends.flattenProgram(prog, env);
+        env = SCodeEnv.updateExtendsInEnv(env);
+        prog = SCodeFlattenExtends.flattenProgram(inClassName, env, prog);
         
         //System.stopTimer();
         //Debug.traceln("SCodeFlatten.flattenClassInProgram took " +& 
@@ -153,9 +156,7 @@ algorithm
         env = SCodeEnv.buildInitialEnv();
         env = SCodeEnv.extendEnvWithClasses(prog, env);
         env = SCodeEnv.updateExtendsInEnv(env);
-
         (prog, env) = SCodeFlattenImports.flattenProgram(prog, env);
-        prog = SCodeFlattenExtends.flattenProgram(prog, env);
       then
         prog;
 

@@ -214,7 +214,7 @@ algorithm
         (item, type_env) = lookupClass(type_path, inEnv, info, inPrintError);
         redeclares = SCodeFlattenRedeclare.extractRedeclaresFromModifier(
           mods, inEnv);
-        (item, type_env) = SCodeFlattenRedeclare.replaceRedeclaredClassesInEnv(
+        (item, type_env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
           redeclares, item, type_env, inEnv);
         (item, env) = lookupNameInItem(inName, item, type_env, inPrintError);
       then
@@ -479,7 +479,7 @@ algorithm
         analyseTypeSpec(ty, inEnv, inInfo);
         (ty_item, ty_env) = SCodeLookup.lookupTypeSpec(ty, inEnv, inInfo);
         ty_env = SCodeEnv.mergeItemEnv(ty_item, ty_env);
-        // TODO! Analyse array dimenstion from attributes! 
+        // TODO! Analyse array dimensions from attributes! 
         analyseModifier(mods, inEnv, ty_env, inInfo);
         analyseComment(cmt, inEnv, inInfo);
       then

@@ -113,6 +113,7 @@ protected import DAEUtil;
 protected import PrefixUtil;
 protected import CevalScript;
 protected import VarTransform;
+protected import SCodeDump;
 
 public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. lists of expressions."
   input Env.Cache inCache;
@@ -7195,7 +7196,7 @@ algorithm
       equation
         // transform modifications into function arguments and prefix the UNQUALIFIED component
         // references with the function prefix, here world.
-        Debug.fprintln("static", "Found modifications: " +& SCode.printModStr(mod));
+        Debug.fprintln("static", "Found modifications: " +& SCodeDump.printModStr(mod));
         /* modification elaboration doesn't work as World is not a package!
            anyhow we can deal with this in a different way, see below
         // build the prefix
@@ -7510,7 +7511,7 @@ algorithm
         //print(" args: " +& Util.stringDelimitList(Util.listMap(args_1,ExpressionDump.printExpStr), ", ") +& "\n");
         (cache,env_2,cl) = Lookup.buildRecordConstructorClass(cache, recordEnv, recordCl);
         // here we get the constantness of DEFAULT ARGUMENTS!
-        // print("Record env: " +& Env.printEnvStr(env_2) +& "\nclass: " +& SCode.printClassStr(cl) +& "\n");
+        // print("Record env: " +& Env.printEnvStr(env_2) +& "\nclass: " +& SCodeDump.printClassStr(cl) +& "\n");
         (cache,newslots2,constDefaultArgs,_) = fillDefaultSlots(cache, newslots, cl, env_2, impl, {}, pre, info);
         vect_dims = slotsVectorizable(newslots2);
                 
@@ -7627,7 +7628,7 @@ algorithm
         (cache,SCode.CLASS(restriction = re),_) = Lookup.lookupClass(cache,env,fn,false);
         false = SCode.isFunctionOrExtFunction(re);
         fn_str = Absyn.pathString(fn);
-        s = SCode.restrString(re);
+        s = SCodeDump.restrString(re);
         Error.addSourceMessage(Error.LOOKUP_FUNCTION_GOT_CLASS, {fn_str,s}, info);
       then
         (cache,NONE());

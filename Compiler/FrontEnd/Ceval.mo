@@ -5261,8 +5261,8 @@ algorithm
           "\n env: " +& Env.printEnvPathStr(env) +&
           "\n subs: " +& Util.stringDelimitList(Util.listMap(subs, ExpressionDump.printSubscriptStr), ", ") +&
           "\n value: " +& ValuesUtil.printValStr(inValue) +&
-          "\n dim sizes: " +& Util.stringDelimitList(Util.listMap(dims, intString), ", ") +&
-          "\n env: " +& Env.printEnvStr(env)  
+          "\n dim sizes: " +& Util.stringDelimitList(Util.listMap(dims, intString), ", ") /*+&
+          "\n env: " +& Env.printEnvStr(env)*/
         );
       then
         fail();

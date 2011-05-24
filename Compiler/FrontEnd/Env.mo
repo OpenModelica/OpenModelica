@@ -189,6 +189,7 @@ protected import Util;
 protected import Types;
 protected import OptManager;
 protected import RTOpts;
+protected import SCodeDump;
 
 public constant Env emptyEnv={} "- Values" ;
 
@@ -1035,7 +1036,7 @@ algorithm
         s1 = printAvlTreeStr(ht);
         s2 = printAvlTreeStr(httypes);
         s3 = printImportsStr(imps);
-        encflag_str = SCode.encapsulatedStr(encflag);
+        encflag_str = SCodeDump.encapsulatedStr(encflag);
         res = stringAppendList(
           "FRAME: " :: sid :: " (enc=" :: encflag_str ::
           ") \nclasses and vars:\n=============\n" :: s1 :: "   Types:\n======\n" :: s2 :: "   Imports:\n=======\n" :: s3 :: {});
@@ -1045,9 +1046,7 @@ algorithm
 end printFrameStr;
 
 protected function printFrameVarsStr "function: printFrameVarsStr
-
-  Print only the variables in a Frame to a string.
-"
+  Print only the variables in a Frame to a string."
   input Frame inFrame;
   output String outString;
 algorithm
@@ -1064,7 +1063,7 @@ algorithm
     case FRAME(optName = SOME(sid),clsAndVars = ht,types = httypes,imports = imps,connectionSet = crs,encapsulatedPrefix = encflag)
       equation
         s1 = printAvlTreeStr(ht);
-        encflag_str = SCode.encapsulatedStr(encflag);
+        encflag_str = SCodeDump.encapsulatedStr(encflag);
         res = stringAppendList(
           {"FRAME: ",sid," (enc=",encflag_str,
           ") \nclasses and vars:\n=============\n",s1,"\n\n\n"});
@@ -1074,7 +1073,7 @@ algorithm
     case FRAME(optName = NONE(),clsAndVars = ht,types = httypes,imports = imps,connectionSet = crs,encapsulatedPrefix = encflag)
       equation
         s1 = printAvlTreeStr(ht);
-        encflag_str = SCode.encapsulatedStr(encflag);
+        encflag_str = SCodeDump.encapsulatedStr(encflag);
         res = stringAppendList(
           {"FRAME: unnamed (enc=",encflag_str,
           ") \nclasses and vars:\n=============\n",s1,"\n\n\n"});
@@ -1140,8 +1139,8 @@ algorithm
 
     case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(variability = var),ty = tp,binding = bind)),declaration = SOME((elt,_)),instStatus = i,env = (compframe :: _))))
       equation
-        s = SCode.variabilityString(var);
-        elt_str = SCode.printElementStr(elt);
+        s = SCodeDump.variabilityString(var);
+        elt_str = SCodeDump.printElementStr(elt);
         tp_str = Types.unparseType(tp);
         var_str = Types.unparseVar(tv);
         frame_str = printFrameVarsStr(compframe);
@@ -1154,8 +1153,8 @@ algorithm
 
     case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(variability = var),ty = tp)),declaration = SOME((elt,_)),instStatus = i,env = {})))
       equation
-        s = SCode.variabilityString(var);
-        elt_str = SCode.printElementStr(elt);
+        s = SCodeDump.variabilityString(var);
+        elt_str = SCodeDump.printElementStr(elt);
         tp_str = Types.unparseType(tp);
         var_str = Types.unparseVar(tv);
         res = stringAppendList(
@@ -1636,21 +1635,21 @@ algorithm
       equation
         str = "var:    " +& name +& " " +& Types.unparseType(tp) +& "("
         +& Types.printTypeStr(tp) +& ")" +& " attr: " +& 
-        SCode.flowStr(flowPrefix) +& ", " +&
-        SCode.streamStr(streamPrefix) +& ", " +&
-        SCode.accessibilityString(accessibility) +& ", " +&
-        SCode.variabilityString(variability) +& ", " +&
-        SCode.innerouterString(innerOuter);
+        SCodeDump.flowStr(flowPrefix) +& ", " +&
+        SCodeDump.streamStr(streamPrefix) +& ", " +&
+        SCodeDump.accessibilityString(accessibility) +& ", " +&
+        SCodeDump.variabilityString(variability) +& ", " +&
+        SCodeDump.innerouterString(innerOuter);
       then str;
     
     case(VAR(declaration = SOME((SCode.COMPONENT(name=name,typeSpec=tsp,prefixes=SCode.PREFIXES(innerOuter=innerOuter),attributes=SCode.ATTR(_, flowPrefix, streamPrefix, accessibility, variability, direction)), _)))) 
       equation
         str = "var:    " +& name +& " " +& Dump.unparseTypeSpec(tsp) +& " attr: " +& 
-        SCode.flowStr(flowPrefix) +& ", " +&
-        SCode.streamStr(streamPrefix) +& ", " +&
-        SCode.accessibilityString(accessibility) +& ", " +&
-        SCode.variabilityString(variability) +& ", " +&
-        SCode.innerouterString(innerOuter);
+        SCodeDump.flowStr(flowPrefix) +& ", " +&
+        SCodeDump.streamStr(streamPrefix) +& ", " +&
+        SCodeDump.accessibilityString(accessibility) +& ", " +&
+        SCodeDump.variabilityString(variability) +& ", " +&
+        SCodeDump.innerouterString(innerOuter);
       then str;
     
     case(CLASS(cl=SCode.CLASS(name=name))) 

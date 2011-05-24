@@ -68,6 +68,7 @@ protected import ExpressionDump;
 protected import RTOpts;
 protected import Types;
 protected import Util;
+protected import SCodeDump;
 
 public function algorithmEmpty "Returns true if algorithm is empty, i.e. no statements"
   input Algorithm alg;
@@ -388,7 +389,7 @@ algorithm
         rhs_str = ExpressionDump.printExpStr(rhs);
         str1 = Util.stringDelimitList(Util.listMap(lprop, Types.printPropStr), ", ");
         str2 = Types.printPropStr(rprop);
-        strInitial = SCode.printInitialStr(initial_);
+        strInitial = SCodeDump.printInitialStr(initial_);
         Debug.traceln("- Algorithm.makeTupleAssignment failed on: \n\t" +& 
           lhs_str +& " = " +& rhs_str +& 
           "\n\tprops lhs: (" +& str1 +& ") =  props rhs: " +& str2 +&

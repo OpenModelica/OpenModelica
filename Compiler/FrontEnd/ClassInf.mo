@@ -179,6 +179,7 @@ protected import Print;
 protected import Error;
 protected import RTOpts;
 protected import Util;
+protected import SCodeDump;
 
 public function printStateStr "- Printing
 
@@ -606,7 +607,7 @@ algorithm
       equation
         str1 = Absyn.pathString(getStateName(st));
         str2 = printStateStr(st);
-        str3 = SCode.restrString(re);
+        str3 = SCodeDump.restrString(re);
         Error.addSourceMessage(Error.RESTRICTION_VIOLATION, {str1,str2,str3}, info);
       then
         fail();

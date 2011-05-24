@@ -64,6 +64,7 @@ protected import Mod;
 protected import RTOpts;
 protected import Types;
 protected import Util;
+protected import SCodeDump;
 
 public type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 
@@ -137,12 +138,12 @@ algorithm
         tp = Inst.removeSelfReference(className, tp);
         // print(className +& "\n");
         // print("Type: " +& Absyn.pathString(tp) +& "\n");
-        (cache,(c as SCode.CLASS(name=cn,encapsulatedPrefix=encf,restriction=r)),cenv) = Lookup.lookupClass(cache,env, tp, false);
+        (cache,(c as SCode.CLASS(name=cn,encapsulatedPrefix=encf,restriction=r)),cenv) = Lookup.lookupClass(cache, env, tp, false);
         // print("Found " +& cn +& "\n");
 
         outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
         
-        (cache,cenv1,ih,els,eq1,ieq1,alg1,ialg1) = instDerivedClasses(cache,cenv,ih,outermod,c,impl,info);
+        (cache,cenv1,ih,els,eq1,ieq1,alg1,ialg1) = instDerivedClasses(cache,cenv,ih,outermod,pre,c,impl,info);
         
         (cache,tp_1) = Inst.makeFullyQualified(cache,/* adrpo: cenv1?? FIXME */env, tp);
         
@@ -264,7 +265,7 @@ algorithm
           "className: " +&  className +& "\n\t" +&
           "env:       " +&  Env.printEnvPathStr(env) +& "\n\t" +&
           "mods:      " +&  Mod.printModStr(mod) +& "\n\t" +&
-          "elems:     " +&  Util.stringDelimitList(Util.listMap(rest, SCode.printElementStr), ", ")
+          "elems:     " +&  Util.stringDelimitList(Util.listMap(rest, SCodeDump.printElementStr), ", ")
           );
       then
         fail();
@@ -441,7 +442,7 @@ algorithm
         classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,externalDecl1,annotationLst1,comment1);
         elt = SCode.CLASS(name1, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classDef, info1);
         emod = Mod.renameTopLevelNamedSubMod(emod,name1,name2);
-        // Debug.traceln("class extends: " +& SCode.printElementStr(compelt) +& "  " +& SCode.printElementStr(elt));
+        // Debug.traceln("class extends: " +& SCodeDump.printElementStr(compelt) +& "  " +& SCodeDump.printElementStr(elt));
       then 
         (emod,(compelt,mod1,b)::(elt,DAE.NOMOD(),true)::rest);
     
@@ -471,6 +472,7 @@ public function instDerivedClasses
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
   input Boolean inBoolean;
   input Absyn.Info info "File information of the extends element";
@@ -484,7 +486,7 @@ public function instDerivedClasses
   output list<SCode.AlgorithmSection> outSCodeAlgorithmLst6;
 algorithm
   (outCache,outEnv1,outIH,outSCodeElementLst2,outSCodeEquationLst3,outSCodeEquationLst4,outSCodeAlgorithmLst5,outSCodeAlgorithmLst6):=
-  matchcontinue (inCache,inEnv,inIH,inMod,inClass,inBoolean,info)
+  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inClass,inBoolean,info)
     local
       list<SCode.Element> elt;
       list<Env.Frame> env,cenv;
@@ -502,8 +504,10 @@ algorithm
       String n,name;
       Option<Absyn.ExternalDecl> extdecl;
       Absyn.Info info;
+      DAE.Mod daeDMOD;
+      Prefix.Prefix pre;
 
-    case (cache,env,ih,mod,SCode.CLASS(name = name, classDef =
+    case (cache,env,ih,mod,pre,SCode.CLASS(name = name, classDef =
           SCode.PARTS(elementLst = elt,
                       normalEquationLst = eq,initialEquationLst = ieq,
                       normalAlgorithmLst = alg,initialAlgorithmLst = ialg,
@@ -514,18 +518,22 @@ algorithm
       then
         (cache,env,ih,elt,eq,ieq,alg,ialg);
 
-    case (cache,env,ih,mod,SCode.CLASS(info = info, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(tp, _),modifications = dmod)),impl,_)
+    case (cache,env,ih,mod,pre,SCode.CLASS(info = info, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(tp, _),modifications = dmod)),impl, _)
       equation
-        (cache,c,cenv) = Lookup.lookupClass(cache,env, tp, true);
-        (cache,env,ih,elt,eq,ieq,alg,ialg) = instDerivedClasses(cache,cenv,ih, mod, c, impl, info)
+        (cache, c, cenv) = Lookup.lookupClass(cache, env, tp, true);
+        // modifiers should be evaluated in the current scope for derived!
+        (cache,daeDMOD) = Mod.elabMod(cache, env, ih, pre, dmod, impl, info);
+        // merge in the class env
+        mod = Mod.merge(mod, daeDMOD, cenv, pre);
+        (cache,env,ih,elt,eq,ieq,alg,ialg) = instDerivedClasses(cache, cenv, ih, mod, pre, c, impl, info)
         "Mod.lookup_modification_p(mod, c) => innermod & We have to merge and apply modifications as well!" ;
       then
         (cache,env,ih,elt,eq,ieq,alg,ialg);
 
-    case (cache,env,ih,mod,SCode.CLASS(name=n, classDef = SCode.ENUMERATION(enumLst,cmt), info = info),impl,_)
+    case (cache,env,ih,mod,pre,SCode.CLASS(name=n, classDef = SCode.ENUMERATION(enumLst,cmt), info = info),impl,_)
       equation
         c = Inst.instEnumeration(n, enumLst, cmt, info);
-        (cache,env,ih,elt,eq,ieq,alg,ialg) = instDerivedClasses(cache,env,ih, mod, c, impl,info);
+        (cache,env,ih,elt,eq,ieq,alg,ialg) = instDerivedClasses(cache, env, ih, mod, pre, c, impl,info);
       then
         (cache,env,ih,elt,eq,ieq,alg,ialg);
 
@@ -654,7 +662,7 @@ algorithm
           "\nmod = " +& Mod.printModStr(inMod) +&
           "\ncmod = " +& Mod.printModStr(cmod) +&
           "\nbool = " +& Util.if_(b, "true", "false") +& "\n" +&
-          SCode.printElementStr(comp)
+          SCodeDump.printElementStr(comp)
           );
       then
         fail();
@@ -821,7 +829,7 @@ algorithm
     
     case (cache,env,SCode.COMPONENT(name, prefixes, attributes, typeSpec, modifications, comment, condition, info),ht)
       equation
-        //Debug.fprintln("debug","fix comp " +& SCode.printElementStr(elt));
+        //Debug.fprintln("debug","fix comp " +& SCodeDump.printElementStr(elt));
         (cache,modifications) = fixModifications(cache,env,modifications,ht);
         (cache,typeSpec) = fixTypeSpec(cache,env,typeSpec,ht);
       then 
@@ -844,7 +852,7 @@ algorithm
     
     case (cache,env,SCode.EXTENDS(extendsPath,vis,modifications,optAnnotation,info),ht)
       equation
-        //Debug.fprintln("debug","fix extends " +& SCode.printElementStr(elt));
+        //Debug.fprintln("debug","fix extends " +& SCodeDump.printElementStr(elt));
         (cache,modifications) = fixModifications(cache,env,modifications,ht);
       then 
         (cache,SCode.EXTENDS(extendsPath,vis,modifications,optAnnotation,info));
@@ -853,7 +861,7 @@ algorithm
 
     case (cache,env,elt,ht)
       equation
-        Debug.fprintln("failtrace", "InstExtends.fixElement failed: " +& SCode.printElementStr(elt));
+        Debug.fprintln("failtrace", "InstExtends.fixElement failed: " +& SCodeDump.printElementStr(elt));
       then fail();
     
   end matchcontinue;

@@ -75,6 +75,7 @@ protected import Util;
 protected import Values;
 protected import ValuesUtil;
 protected import System;
+protected import SCodeDump;
 
 protected 
 uniontype FullMod "used for error reporting"
@@ -168,7 +169,7 @@ algorithm
     case (cache,env,ih,pre,mod,impl,info)
       equation
         Debug.fprint("failtrace", "#-- elab_mod ");
-        str = SCode.printModStr(mod);
+        str = SCodeDump.printModStr(mod);
         Debug.fprint("failtrace", str);
         Debug.fprint("failtrace", " failed\n");
         print("elab mod failed, mod:");print(str);print("\n");
@@ -687,7 +688,7 @@ algorithm
     case (mod,env,pre)
       equation
         print("- elab_untyped_mod ");
-        s = SCode.printModStr(mod);
+        s = SCodeDump.printModStr(mod);
         print(s);
         print(" failed\n");
       then
@@ -2378,7 +2379,7 @@ algorithm
       equation
         elist_1 = Util.listMap(elist, Util.tuple21);
         finalPrefixstr = Util.if_(SCode.finalBool(finalPrefix), " final", "");
-        str_lst = Util.listMap(elist_1, SCode.printElementStr);
+        str_lst = Util.listMap(elist_1, SCodeDump.printElementStr);
         str = Util.stringDelimitList(str_lst, ", ");
         res = stringAppendList({"(redeclare(",finalPrefixstr,str,"))"});
       then
@@ -2442,7 +2443,7 @@ algorithm
     case(DAE.REDECL(tplSCodeElementModLst = tup),depth)
       equation
         s1 = Util.stringDelimitList(Util.listMap(Util.listMap(tup,Util.tuple21),SCode.elementName),", ");
-        //print(Util.stringDelimitList(Util.listMap(Util.listMap(tup,Util.tuple21),SCode.printElementStr),",") +& "\n");
+        //print(Util.stringDelimitList(Util.listMap(Util.listMap(tup,Util.tuple21),SCodeDump.printElementStr),",") +& "\n");
         //s2 = Util.stringDelimitList(Util.listMap1(Util.listMap(tup,Util.tuple22),prettyPrintMod,0),", ");
         //print(" (depth: " +& intString(depth) +& " (("+&s2+&")))Redeclaration of element(s): " +& s1 +& "\n");
         //print(" ok\n");
@@ -2513,7 +2514,7 @@ algorithm
     
     case(DAE.NAMEMOD(id,(m as DAE.REDECL(fp, ep, elist))))
       equation
-        s1 = Util.stringDelimitList(Util.listMap(Util.listMap(elist, Util.tuple21), SCode.printElementStr), ", ");
+        s1 = Util.stringDelimitList(Util.listMap(Util.listMap(elist, Util.tuple21), SCodeDump.printElementStr), ", ");
         s2 = id +& "(redeclare " +& 
              Util.if_(SCode.eachBool(ep),"each ","") +&
              Util.if_(SCode.finalBool(fp),"final ","") +& s1 +& ")";

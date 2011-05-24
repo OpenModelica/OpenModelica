@@ -38,19 +38,19 @@ encapsulated package SCode
 
   This module contains data structures to describe a Modelica
   model in a more convenient (canonical) way than the Absyn module does.
-  Also local functions for printing and query of SCode are defined.
+  Local functions for query of SCode are defined.
+  
+  Printing and translating to string functions are now moved to SCodeDump! (2011-05-21)
 
-  See also SCodeUtil.mo for translation functions
-  from Absyn representation to SCode representation.
+  See also SCodeUtil.mo for translation functions from Absyn representation to SCode representation.
 
   The SCode representation is used as input to the Inst module"
 
 public import Absyn;
 
-public type Ident = Absyn.Ident "Some definitions are borrowed from `Absyn\'";
-
+// Some definitions are aliased from Absyn
+public type Ident = Absyn.Ident;
 public type Path = Absyn.Path;
-
 public type Subscript = Absyn.Subscript;
 
 public
@@ -94,7 +94,7 @@ uniontype Mod "- Modifications"
 
   record MOD
     Final finalPrefix "final prefix";    
-    Each  eachPrefix "each prefix";    
+    Each  eachPrefix "each prefix";
     list<SubMod> subModLst;
     Option<tuple<Absyn.Exp,Boolean>> binding "The binding expression of a modification
     has an expression and a Boolean delayElaboration which is true if elaboration(type checking)
@@ -576,190 +576,8 @@ protected import ModUtil;
 protected import Print;
 protected import Error;
 protected import SCodeCheck;
+protected import SCodeDump;
 
-protected function elseWhenEquationStr
-"@author: adrpo
-  Return the elsewhen parts as a string."
-  input  list<tuple<Absyn.Exp, list<EEquation>>> tplAbsynExpEEquationLstLst;
-  output String str;
-algorithm
-  str := match(tplAbsynExpEEquationLstLst)
-    local
-      Absyn.Exp exp;
-      list<EEquation> eqn_lst;
-      list<tuple<Absyn.Exp, list<EEquation>>> rest;
-      String s1, s2, s3, res;
-      list<String> str_lst;
-    
-    case ({}) then "";
-    
-    case ((exp,eqn_lst)::rest)
-      equation
-        s1 = Dump.printExpStr(exp);
-        str_lst = Util.listMap(eqn_lst, equationStr);
-        s2 = Util.stringDelimitList(str_lst, "\n");
-        s3 = elseWhenEquationStr(tplAbsynExpEEquationLstLst);
-        res = stringAppendList({"\nelsewhen ",s1," then\n",s2,"\n", s3});
-      then 
-        res;
-  end match;
-end elseWhenEquationStr;
-
-public function equationStr
-"function: equationStr
-  author: PA
-  Return the equation as a string."
-  input EEquation inEEquation;
-  output String outString;
-algorithm
-  outString := match (inEEquation)
-    local
-      String s1,s2,s3,s4,res,id;
-      list<String> tb_strs,fb_strs,str_lst;
-      Absyn.Exp e1,e2,exp;
-      list<Absyn.Exp> ifexp;
-      list<EEquation> ttb,fb,eqn_lst;
-      list<list<EEquation>> tb;
-      Absyn.ComponentRef cr1,cr2,cr;
-      Absyn.FunctionArgs fargs;
-      list<tuple<Absyn.Exp, list<EEquation>>> tplAbsynExpEEquationLstLst;
-      
-    case (EQ_IF(condition = e1::ifexp,thenBranch = ttb::tb,elseBranch = fb))
-      equation
-        s1 = Dump.printExpStr(e1);
-        tb_strs = Util.listMap(ttb, equationStr);
-        fb_strs = Util.listMap(fb, equationStr);
-        s2 = Util.stringDelimitList(tb_strs, "\n");
-        s3 = Util.stringDelimitList(fb_strs, "\n");
-        s4 = elseIfEquationStr(ifexp,tb);
-        res = stringAppendList({"if ",s1," then ",s2,s4,"else ",s3,"end if;"});
-      then
-        res;
-    case (EQ_EQUALS(expLeft = e1,expRight = e2))
-      equation
-        s1 = Dump.printExpStr(e1);
-        s2 = Dump.printExpStr(e2);
-        res = stringAppendList({s1," = ",s2,";"});
-      then
-        res;
-    case (EQ_CONNECT(crefLeft = cr1,crefRight = cr2))
-      equation
-        s1 = Dump.printComponentRefStr(cr1);
-        s2 = Dump.printComponentRefStr(cr2);
-        res = stringAppendList({"connect(",s1,", ",s2,");"});
-      then
-        res;
-    case (EQ_FOR(index = id,range = exp,eEquationLst = eqn_lst))
-      equation
-        s1 = Dump.printExpStr(exp);
-        str_lst = Util.listMap(eqn_lst, equationStr);
-        s2 = Util.stringDelimitList(str_lst, "\n");
-        res = stringAppendList({"for ",id," in ",s1," loop\n",s2,"\nend for;"});
-      then
-        res;
-    case (EQ_WHEN(condition=exp, eEquationLst=eqn_lst, tplAbsynExpEEquationLstLst=tplAbsynExpEEquationLstLst))
-      equation
-        s1 = Dump.printExpStr(exp);
-        str_lst = Util.listMap(eqn_lst, equationStr);
-        s2 = Util.stringDelimitList(str_lst, "\n");
-        s3 = elseWhenEquationStr(tplAbsynExpEEquationLstLst);
-        res = stringAppendList({"when ",s1," then\n",s2,s3,"\nend when;"});
-      then 
-        res;
-    case (EQ_ASSERT(condition = e1,message = e2))
-      equation
-        s1 = Dump.printExpStr(e1);
-        s2 = Dump.printExpStr(e2);
-        res = stringAppendList({"assert(",s1,", ",s2,");"});
-      then
-        res;
-    case (EQ_REINIT(cref = cr,expReinit = e1))
-      equation
-        s1 = Dump.printComponentRefStr(cr);
-        s2 = Dump.printExpStr(e1);
-        res = stringAppendList({"reinit(",s1,", ",s2,");"});
-      then
-        res;
-    case(EQ_NORETCALL(functionName = cr, functionArgs = fargs))
-      equation
-        s1 = Dump.printComponentRefStr(cr);
-        s2 = Dump.printFunctionArgsStr(fargs);
-        res = s1 +& "(" +& s2 +& ");";
-      then res;
-  end match;
-end equationStr;
-
-protected function prettyPrintOptModifier 
-"Author BZ, 2008-07
- Pretty print SCode.Mod"
-input Option<Absyn.Modification> oam;
-input String comp;
-output String str;
-algorithm str := matchcontinue(oam,comp)
-  local
-    Absyn.Modification m;
-  case(NONE(),_) then "";
-  case(SOME(m),comp)
-    equation
-      str = prettyPrintModifier(m,comp);
-      then
-        str;
-  end matchcontinue;
-end prettyPrintOptModifier;
-
-protected function prettyPrintModifier "
-Author BZ, 2008-07
-Helper function for prettyPrintOptModifier"
-  input Absyn.Modification oam;
-  input String comp;
-  output String str;
-algorithm str := matchcontinue(oam,comp)
-  local
-    Absyn.Modification m;
-    Absyn.Exp exp;
-    list<Absyn.ElementArg> laea;
-    Absyn.ElementArg aea;
-  case(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp)),comp)
-    equation
-      str = comp +& " = " +&Dump.printExpStr(exp);
-      then
-        str;
-  case(Absyn.CLASSMOD((laea as aea::{}),Absyn.NOMOD()),comp)
-    equation
-    str = comp +& "(" +&prettyPrintElementModifier(aea) +&")";
-    then
-      str;
-  case(Absyn.CLASSMOD((laea as _::{}),Absyn.NOMOD()),comp)
-    equation
-      str = comp +& "({" +& Util.stringDelimitList(Util.listMap(laea,prettyPrintElementModifier),", ") +& "})";
-    then
-      str;
-  end matchcontinue;
-end prettyPrintModifier;
-
-protected function prettyPrintElementModifier 
-"Author BZ, 2008-07
- Helper function for prettyPrintOptModifier
- TODO: implement type of new redeclare component"
-  input Absyn.ElementArg aea;
-  output String str;
-algorithm str := matchcontinue(aea)
-  local
-    Option<Absyn.Modification> oam;
-    String compName;
-    Absyn.ElementSpec spec;
-    Absyn.ComponentRef cr;
-  case(Absyn.MODIFICATION(modification = oam,componentRef=cr))
-    equation
-      compName = Absyn.printComponentRefStr(cr);
-    then prettyPrintOptModifier(oam,compName);
-  case(Absyn.REDECLARATION(elementSpec=spec))
-    equation
-      compName = Absyn.elementSpecName(spec);
-    then
-      "Redeclaration of (" +& compName +& ")";
-end matchcontinue;
-end prettyPrintElementModifier;
 
 public function stripSubmod
 "function: stripSubmod
@@ -862,623 +680,6 @@ algorithm
   end matchcontinue;
 end getElementNamedFromElts;
 
-public function printMod
-"function: printMod
-  This function prints a modification.
-  The code is excluded from the report for brevity."
-  input Mod m;
-  String s;
-algorithm
-  s := printModStr(m);
-  Print.printBuf(s);
-end printMod;
-
-public function printModStr
-"function: printModStr
-  Prints Mod to a string."
-  input Mod inMod;
-  output String outString;
-algorithm
-  outString := matchcontinue (inMod)
-    local
-      String finalPrefixstr,str,res,each_str,subs_str,ass_str;
-      list<String> strs;
-      Final finalPrefix;
-      list<Element> elist;
-      Each each_;
-      list<SubMod> subs;
-      Option<tuple<Absyn.Exp,Boolean>> ass;
-    
-    case (NOMOD()) then "";
-    
-    case REDECL(finalPrefix = finalPrefix,elementLst = elist)
-      equation
-        Print.printBuf("redeclare(");
-        finalPrefixstr = finalStr(finalPrefix);
-        strs = Util.listMap(elist, printElementStr);
-        str = Util.stringDelimitList(strs, ",");
-        res = stringAppendList({"redeclare(",finalPrefixstr,str,")"});
-      then
-        res;
-    
-    case MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = ass)
-      equation
-        finalPrefixstr = finalStr(finalPrefix);
-        each_str = eachStr(each_);
-        subs_str = printSubs1Str(subs);
-        ass_str = printEqmodStr(ass);
-        res = stringAppendList({finalPrefixstr,each_str,subs_str,ass_str});
-      then
-        res;
-    case _
-      equation
-        Print.printBuf("#-- Inst.printModStr failed\n");
-      then
-        fail();
-  end matchcontinue;
-end printModStr;
-
-public function restrString
-"function: restrString
-  Prints Restriction to a string."
-  input Restriction inRestriction;
-  output String outString;
-algorithm
-  outString:=
-  match (inRestriction)
-    case R_CLASS() then "CLASS";
-    case R_OPTIMIZATION() then "OPTIMIZATION";
-    case R_MODEL() then "MODEL";
-    case R_RECORD() then "RECORD";
-    case R_BLOCK() then "BLOCK";
-    case R_CONNECTOR(false) then "CONNECTOR";
-    case R_CONNECTOR(true) then "EXPANDABLE_CONNECTOR";
-    case R_OPERATOR(false) then "OPERATOR";
-    case R_OPERATOR(true) then "OPERATOR_FUNCTION";
-    case R_TYPE() then "TYPE";
-    case R_PACKAGE() then "PACKAGE";
-    case R_FUNCTION() then "FUNCTION";
-    case R_EXT_FUNCTION() then "EXTFUNCTION";
-    case R_ENUMERATION() then "ENUMERATION";
-    case R_METARECORD(_,_) then "METARECORD";
-    case R_UNIONTYPE() then "UNIONTYPE";
-    // predefined types
-    case R_PREDEFINED_INTEGER() then "PREDEFINED_INT";
-    case R_PREDEFINED_REAL() then "PREDEFINED_REAL";
-    case R_PREDEFINED_STRING() then "PREDEFINED_STRING";
-    case R_PREDEFINED_BOOLEAN() then "PREDEFINED_BOOL";
-    case R_PREDEFINED_ENUMERATION() then "PREDEFINED_ENUM";
-  end match;
-end restrString;
-
-public function restrictionStringPP
-  "Translates a Restriction to a String."
-  input Restriction inRestriction;
-  output String outString;
-algorithm
-  outString := match(inRestriction)
-    case R_CLASS() then "class";
-    case R_OPTIMIZATION() then "optimization";
-    case R_MODEL() then "model";
-    case R_RECORD() then "record";
-    case R_BLOCK() then "block";
-    case R_CONNECTOR(true) then "expandable connector";
-    case R_CONNECTOR(false) then "connector";
-    case R_OPERATOR(true) then "operator function";
-    case R_OPERATOR(false) then "operator";
-    case R_TYPE() then "type";
-    case R_PACKAGE() then "package";
-    case R_FUNCTION() then "function";
-    case R_EXT_FUNCTION() then "external function";
-    case R_ENUMERATION() then "enumeration";
-    case R_PREDEFINED_INTEGER() then "IntegerType";
-    case R_PREDEFINED_REAL() then "RealType";
-    case R_PREDEFINED_STRING() then "StringType";
-    case R_PREDEFINED_BOOLEAN() then "BooleanType";
-    case R_PREDEFINED_ENUMERATION() then "EnumType";
-    case R_METARECORD(name = _) then "record";
-    case R_UNIONTYPE() then "uniontype";
-    else "#Internal error: missing case in SCode.restrictionStringPP#";
-  end match;
-end restrictionStringPP;
-
-public function printRestr
-"function: printRestr
-  Prints Restriction to the Print buffer."
-  input Restriction restr;
-  String str;
-algorithm
-  str := restrString(restr);
-  Print.printBuf(str);
-end printRestr;
-
-protected function printFinal
-"function: printFinal
-  Prints \"final\" to the Print buffer."
-  input Boolean inBoolean;
-algorithm
-  _ := matchcontinue (inBoolean)
-    case false then ();
-    case true
-      equation
-        Print.printBuf(" final ");
-      then
-        ();
-  end matchcontinue;
-end printFinal;
-
-protected function printSubsStr
-"function: printSubsStr
-  Prints a SubMod list to a string."
-  input list<SubMod> inSubModLst;
-  output String outString;
-algorithm
-  outString := matchcontinue (inSubModLst)
-    local
-      String s,res,n,mod_str,str,sub_str;
-      Mod mod;
-      list<SubMod> subs;
-      list<Subscript> ss;
-    case {} then "";
-    case {NAMEMOD(ident = n,A = mod)}
-      equation
-        s = printModStr(mod);
-        res = n +& " " +& s;
-      then
-        res;
-    case (NAMEMOD(ident = n,A = mod) :: subs)
-      equation
-        mod_str = printModStr(mod);
-        str = printSubsStr(subs);
-        res = stringAppendList({n, " ", mod_str, ", ", str});
-      then
-        res;
-    case {IDXMOD(subscriptLst = ss,an = mod)}
-      equation
-        str = Dump.printSubscriptsStr(ss);
-        mod_str = printModStr(mod);
-        res = stringAppend(str, mod_str);
-      then
-        res;
-    case (IDXMOD(subscriptLst = ss,an = mod) :: subs)
-      equation
-        str = Dump.printSubscriptsStr(ss);
-        mod_str = printModStr(mod);
-        sub_str = printSubsStr(subs);
-        res = stringAppendList({str,mod_str,", ",sub_str});
-      then
-        res;
-  end matchcontinue;
-end printSubsStr;
-
-public function printSubs1Str
-"function: printSubs1Str
-  Helper function to printSubsStr."
-  input list<SubMod> inSubModLst;
-  output String outString;
-algorithm
-  outString:=
-  matchcontinue (inSubModLst)
-    local
-      String s,res;
-      list<SubMod> l;
-    case {} then "";
-    case l
-      equation
-        s = printSubsStr(l);
-        res = stringAppendList({"(",s,")"});
-      then
-        res;
-  end matchcontinue;
-end printSubs1Str;
-
-protected function printEqmodStr
-"function: printEqmodStr
-  Helper function to printModStr."
-  input Option<tuple<Absyn.Exp,Boolean>> inAbsynExpOption;
-  output String outString;
-algorithm
-  outString := match (inAbsynExpOption)
-    local
-      String str,res;
-      Absyn.Exp e;
-      Boolean b;
-    case NONE() then "";
-    case SOME((e,b))
-      equation
-        str = Dump.printExpStr(e);
-        res = stringAppend(" = ", str);
-      then
-        res;
-  end match;
-end printEqmodStr;
-
-public function printElementList
-"function: printElementList
-  Print Element list to Print buffer."
-  input list<Element> inElementLst;
-algorithm
-  _ := matchcontinue (inElementLst)
-    local
-      Element x;
-      list<Element> xs;
-    case ({}) then ();
-    case ((x :: xs))
-      equation
-        printElement(x);
-        printElementList(xs);
-      then
-        ();
-  end matchcontinue;
-end printElementList;
-
-public function printElement
-"function: printElement
-  Print Element to Print buffer."
-  input Element elt;
-  String str;
-algorithm
-  str := printElementStr(elt);
-  Print.printBuf(str);
-end printElement;
-
-public function printElementStr
-"function: printElementStr
-  Print Element to a string."
-  input Element inElement;
-  output String outString;
-algorithm
-  outString :=  matchcontinue (inElement)
-    local
-      String str,str2,res,n,mod_str,s,vs,modStr,strFinalPrefix,strReplaceablePrefix,prefStr;
-      Absyn.Path path;
-      Mod mod;
-      Final finalPrefix;
-      Replaceable repl;
-      Visibility vis;
-      Redeclare red;
-      Absyn.InnerOuter io;
-      Element cl;
-      Variability var;
-      Absyn.TypeSpec tySpec;
-      Option<Comment> comment;
-      Absyn.Import imp;
-      Prefixes pref;
-
-    case EXTENDS(baseClassPath = path,modifications = mod)
-      equation
-        str = Absyn.pathString(path);
-        modStr = printModStr(mod);
-        res = stringAppendList({"EXTENDS(",str,", modification=",modStr,")"});
-      then
-        res;
-    case COMPONENT(name = n,
-                   prefixes = pref as PREFIXES(
-                     innerOuter=io,
-                     finalPrefix = finalPrefix,
-                     replaceablePrefix = repl,
-                     visibility = vis,
-                     redeclarePrefix = red),
-                     attributes = ATTR(variability = var),typeSpec = tySpec,
-                   modifications = mod,comment = comment)
-      equation
-        mod_str = printModStr(mod);
-        s = Dump.unparseTypeSpec(tySpec);
-        vs = variabilityString(var);
-        str2 = innerouterString(io);
-        prefStr = prefixesStr(pref);
-        res = stringAppendList({"COMPONENT(",n, " in/out: ", str2, " mod: ",mod_str, " tp: ", s," var :",vs," prefixes: ",prefStr,")"});
-      then
-        res;
-    case inElement
-      equation
-        res = printClassStr(inElement);
-      then
-        res;
-    case (IMPORT(imp = imp))
-      equation
-         str = "IMPORT("+& Absyn.printImportString(imp) +& ");";
-      then str;
-  end matchcontinue;
-end printElementStr;
-
-public function unparseElementStr
-"function: unparseElementStr
-  Print Element to a string."
-  input Element inElement;
-  output String outString;
-algorithm
-  outString := match (inElement)
-    local
-      String str,res,n,mod_str,s,vs,ioStr;
-      Absyn.TypeSpec typath;
-      Mod mod;
-      Element cl;
-      Variability var;
-      Option<Comment> comment;
-      Absyn.Path path;
-      Absyn.Import imp;
-      Absyn.InnerOuter io;
-
-    case EXTENDS(baseClassPath = path,modifications = mod)
-      equation
-        str = Absyn.pathString(path);
-        res = stringAppendList({"extends ",str,";"});
-      then
-        res;
-
-    case COMPONENT(name = n,prefixes = PREFIXES(innerOuter = io),
-                   attributes = ATTR(variability = var),
-                   typeSpec = typath,modifications = mod,comment = comment)
-      equation
-        ioStr = Dump.unparseInnerouterStr(io);
-        mod_str = printModStr(mod);
-        s = Dump.unparseTypeSpec(typath);
-        vs = unparseVariability(var);
-        vs = Util.if_(stringEq(vs, ""), "", vs +& " ");
-        res = stringAppendList({ioStr,vs,s," ",n," ",mod_str,";\n"});
-      then
-        res;
-
-    case inElement
-      equation
-        str = printClassStr(inElement);
-        res = stringAppendList({"class ",str,";\n"});
-      then
-        res;
-
-    case (IMPORT(imp = imp))
-      equation
-         str = "import "+& Absyn.printImportString(imp) +& ";";
-      then str;
-  end match;
-end unparseElementStr;
-
-public function shortElementStr
-"function: shortElementStr
-  Print Element to a string."
-  input Element inElement;
-  output String outString;
-algorithm
-  outString := match (inElement)
-    local
-      String str,res,n,mod_str,s,vs,ioStr;
-      Absyn.TypeSpec typath;
-      Mod mod;
-      Element cl;
-      Variability var;
-      Option<Comment> comment;
-      Absyn.Path path;
-      Absyn.Import imp;
-      Absyn.InnerOuter io;
-
-    case EXTENDS(baseClassPath = path,modifications = mod)
-      equation
-        str = Absyn.pathString(path);
-        str = str +& printModStr(mod);        
-        res = stringAppendList({"extends ",str,";"});
-      then
-        res;
-
-    case COMPONENT(name = n,prefixes = PREFIXES(innerOuter = io),attributes = ATTR(variability = var),
-                   typeSpec = typath,modifications = mod,comment = comment)
-      equation
-        ioStr = Dump.unparseInnerouterStr(io);
-        mod_str = printModStr(mod);
-        s = Dump.unparseTypeSpec(typath);
-        vs = unparseVariability(var);
-        vs = Util.if_(stringEq(vs, ""), "", vs +& " ");
-        mod_str = Util.if_(stringEq(mod_str, ""),"", " " +& mod_str); 
-        res = stringAppendList({ioStr,vs,s," ",n,mod_str,";"});
-      then
-        res;
-
-    case CLASS(name = n)
-      equation
-        res = stringAppendList({"class ",n,";"});
-      then
-        res;
-
-    case (IMPORT(imp = imp))
-      equation
-         str = "import "+& Absyn.printImportString(imp) +& ";";
-      then str;
-  end match;
-end shortElementStr;
-
-public function printClassStr "
-  prints a class to a string"
-  input Element inClass;
-  output String outString;
-algorithm
-  outString := match (inClass)
-    local
-      String s,res,id,re,strPartialPrefix,strEncapsulatedPrefix,prefStr;
-      Partial p;
-      Encapsulated en;
-      Restriction rest;
-      ClassDef def;
-      Visibility vis;
-      Redeclare red;
-      Final fin;
-      Absyn.InnerOuter io;
-      Replaceable rep;
-      Prefixes pref;
-        
-    case (CLASS(name = id,prefixes = pref as PREFIXES(vis,red,fin,io,rep),partialPrefix = p,encapsulatedPrefix = en,restriction = rest,classDef = def))
-      equation
-        s = printClassdefStr(def);
-        re = restrString(rest);
-        strPartialPrefix = Util.if_(partialBool(p), "true", "false");
-        strEncapsulatedPrefix = Util.if_(encapsulatedBool(en), "true", "false");
-        prefStr = prefixesStr(pref);
-        res = stringAppendList({"CLASS(",id,", partial = ",strPartialPrefix, ", encapsulated = ", strEncapsulatedPrefix, ", prefixes: ",prefStr, ", ", re, ", ", s, ")\n"});
-      then
-        res;
-  end match;
-end printClassStr;
-
-public function printClassdefStr
-"function printClassdefStr
-  prints the class definition to a string"
-  input ClassDef inClassDef;
-  output String outString;
-algorithm
-  outString := matchcontinue (inClassDef)
-    local
-      list<String> elts_str;
-      String s1,res,s2,s3,baseClassName;
-      list<Element> elts;
-      list<Equation> eqns,ieqns;
-      list<AlgorithmSection> alg,ial;
-      Option<Absyn.ExternalDecl> ext;
-      Absyn.TypeSpec typeSpec;
-      Mod mod;
-      list<Enum> enumLst;
-      list<Absyn.Path> plst;
-      Absyn.Path path;
-      list<String> slst;
-      
-    case (PARTS(elementLst = elts,
-                normalEquationLst = eqns,
-                initialEquationLst = ieqns,
-                normalAlgorithmLst = alg,
-                initialAlgorithmLst = ial,
-                externalDecl = ext))
-      equation
-        elts_str = Util.listMap(elts, printElementStr);
-        s1 = Util.stringDelimitList(elts_str, ",\n");
-        res = stringAppendList({"PARTS(\n",s1,",_,_,_,_,_)"});
-      then
-        res;
-    /* adrpo: handle also the case: model extends X end X; */
-    case (CLASS_EXTENDS(
-              baseClassName = baseClassName,
-              modifications = mod,
-              composition = PARTS(
-              elementLst = elts,
-              normalEquationLst = eqns,
-              initialEquationLst = ieqns,
-              normalAlgorithmLst = alg,
-              initialAlgorithmLst = ial,
-              externalDecl = ext)))
-      equation
-        elts_str = Util.listMap(elts, printElementStr);
-        s1 = Util.stringDelimitList(elts_str, ",\n");
-        res = stringAppendList({"CLASS_EXTENDS(", baseClassName, " PARTS(\n",s1,",_,_,_,_,_)"});
-      then
-        res;
-    case (DERIVED(typeSpec = typeSpec,modifications = mod))
-      equation
-        s2 = Dump.unparseTypeSpec(typeSpec);
-        s3 = printModStr(mod);
-        res = stringAppendList({"DERIVED(",s2,",",s3,")"});
-      then
-        res;
-    case (ENUMERATION(enumLst, _))
-      equation
-        s1 = Util.stringDelimitList(Util.listMap(enumLst, printEnumStr), ", ");
-        res = stringAppendList({"ENUMERATION(", s1, ")"});
-      then
-        res;
-    case (OVERLOAD(plst, _))
-      equation
-        s1 = Util.stringDelimitList(Util.listMap(plst, Absyn.pathString), ", ");
-        res = stringAppendList({"OVERLOAD(", s1, ")"});
-      then
-        res;
-    case (PDER(path, slst, _))
-      equation
-        s1 = Absyn.pathString(path);
-        s2 = Util.stringDelimitList(slst, ", ");
-        res = stringAppendList({"PDER(", s1, ", ", s2, ")"});
-      then
-        res;
-    case (_)
-      equation
-        res = "SCode.printClassdefStr -> UNKNOWN_CLASS(CheckME)";
-      then
-        res;
-  end matchcontinue;
-end printClassdefStr;
-
-public function printEnumStr
-  input Enum en;
-  output String str;
-algorithm
-  str := match (en)
-    local
-      String s;
-    case ENUM(s, _) then s;
-  end match;
-end printEnumStr;
-
-public function attrVariability
-"function attrVariability
-  Return the variability attribute from Attributes"
-  input Attributes attr;
-  output Variability var;
-algorithm
-  var := match (attr)
-    local Variability v;
-    case  ATTR(variability = v) then v;
-  end match;
-end attrVariability;
-
-public function variabilityString
-"function: variabilityString
-  Print Variability to a string."
-  input Variability inVariability;
-  output String outString;
-algorithm
-  outString := match (inVariability)
-    case (VAR()) then "VAR";
-    case (DISCRETE()) then "DISCRETE";
-    case (PARAM()) then "PARAM";
-    case (CONST()) then "CONST";
-  end match;
-end variabilityString;
-
-public function accessibilityString
-"function: accessibilityString
-  Print Accessibility to a string."
-  input Accessibility inAccessibility;
-  output String outString;
-algorithm
-  outString := match (inAccessibility)
-    case (RW()) then "RW";
-    case (RO()) then "RO";
-    case (WO()) then "WO";
-  end match;
-end accessibilityString;
-
-public function innerouterString
-"function: innerouterString
-  Print a inner outer info to a string."
-  input Absyn.InnerOuter innerOuter;
-  output String outString;
-algorithm
-  outString := match (innerOuter)
-    case (Absyn.INNER_OUTER()) then "INNER/OUTER";
-    case (Absyn.INNER()) then "INNER";
-    case (Absyn.OUTER()) then "OUTER";
-    case (Absyn.NOT_INNER_OUTER()) then "";
-  end match;
-end innerouterString;
-
-public function unparseVariability
-"function: variabilityString
-  Print Variability to a string."
-  input Variability inVariability;
-  output String outString;
-algorithm
-  outString := match (inVariability)
-    case (VAR()) then "";
-    case (DISCRETE()) then "discrete";
-    case (PARAM()) then "parameter";
-    case (CONST()) then "constant";
-  end match;
-end unparseVariability;
 
 public function isElementExtends "
 Author BZ, 2009-01
@@ -1585,6 +786,23 @@ algorithm
     
   end matchcontinue;
 end componentNames;
+
+public function elementInfo "retrieves the element info"
+  input Element e;
+  output Absyn.Info info;
+algorithm
+  info := match(e)
+    local
+      Absyn.Info i;
+    
+    case(IMPORT(info = i)) then i;
+    case(EXTENDS(info = i)) then i;
+    case(CLASS(info = i)) then i;
+    case(COMPONENT(info = i)) then i;
+    case(DEFINEUNIT(name = _)) then fail();    
+    
+  end match;
+end elementInfo;
 
 public function elementName ""
   input Element e;
@@ -2368,50 +1586,12 @@ protected function arrayDimEqual
    end matchcontinue;
 end arrayDimEqual;
 
-public function equationStr2
-"Takes a SCode.Equation rather then EEquation as equationStr does."
-  input Equation eqns;
-  output String s;
-algorithm
-  s := matchcontinue(eqns)
-    local EEquation e;
-    case(EQUATION(eEquation=e)) then equationStr(e);
-  end matchcontinue;
-end equationStr2;
-
-protected function elseIfEquationStr
-"Author BZ, 2008-09
- Function for printing elseif statements to string."
-  input list<Absyn.Exp> conditions;
-  input list<list<EEquation>> elseIfBodies;
-  output String elseIfString;
-algorithm
-  elseIfString := match(conditions,elseIfBodies)
-    local
-      Absyn.Exp cond;
-      list<EEquation> eib;
-      String conString, bodyString,recString,resString;
-      list<String> bodyStrings;
-    case({},{}) then "";
-    case(cond::conditions,eib::elseIfBodies)
-      equation
-        conString = Dump.printExpStr(cond);
-        bodyStrings = Util.listMap(eib, equationStr);
-        bodyString = Util.stringDelimitList(bodyStrings, "\n");
-        recString = elseIfEquationStr(conditions,elseIfBodies);
-        recString = Util.if_(Util.isEmptyString(recString), "", "\n" +& recString);
-        resString = " elseif " +& conString +& " then\n" +& bodyString +& recString;
-      then
-        resString;
-  end match;
-end elseIfEquationStr;
-
 public function setClassRestriction "Sets the restriction of a SCode Class"
   input Restriction r;
   input Element cl;
   output Element outCl;
 algorithm
-  outCl := matchcontinue(r,cl)
+  outCl := matchcontinue(r, cl)
     local 
       ClassDef parts; 
       Partial p;
@@ -2419,18 +1599,55 @@ algorithm
       Ident id; 
       Absyn.Info info;
       Prefixes prefixes;
-      
-    case(r,CLASS(id,prefixes,e,p,_,parts,info)) 
+      Restriction oldR;
+    
+    // check if restrictions are equal, so you can return the same thing!
+    case(r, CLASS(restriction = oldR))
+      equation
+        true = restrictionEqual(r, oldR);
+      then 
+        cl;
+    
+    // not equal, change
+    case(r, CLASS(id,prefixes,e,p,_,parts,info)) 
       then CLASS(id,prefixes,e,p,r,parts,info);
   end matchcontinue;
 end setClassRestriction;
+
+public function setClassName "Sets the name of a SCode Class"
+  input Ident name;
+  input Element cl;
+  output Element outCl;
+algorithm
+  outCl := matchcontinue(name, cl)
+    local 
+      ClassDef parts;
+      Partial p;
+      Encapsulated e;  
+      Absyn.Info info;
+      Prefixes prefixes;
+      Restriction r;
+      Ident id;
+      
+    // check if restrictions are equal, so you can return the same thing!
+    case(name, CLASS(name = id))
+      equation
+        true = stringEqual(name, id);
+      then 
+        cl;      
+    
+    // not equal, change
+    case(name, CLASS(_,prefixes,e,p,r,parts,info)) 
+      then CLASS(name,prefixes,e,p,r,parts,info);
+  end matchcontinue;
+end setClassName;
 
 public function setClassPartialPrefix "Sets the partial prefix of a SCode Class"
   input Partial partialPrefix;
   input Element cl;
   output Element outCl;
 algorithm
-  outCl := match(partialPrefix,cl)
+  outCl := matchcontinue(partialPrefix, cl)
     local 
       ClassDef parts;
       Encapsulated e;
@@ -2438,10 +1655,19 @@ algorithm
       Absyn.Info info;
       Restriction restriction;
       Prefixes prefixes;
+      Partial oldPartialPrefix;
     
+    // check if partial prefix are equal, so you can return the same thing!
+    case(partialPrefix,CLASS(partialPrefix = oldPartialPrefix))
+      equation
+        true = valueEq(partialPrefix, oldPartialPrefix); 
+      then 
+        cl;
+    
+    // not the same, change
     case(partialPrefix,CLASS(id,prefixes,e,_,restriction,parts,info)) 
       then CLASS(id,prefixes,e,partialPrefix,restriction,parts,info);
-  end match;
+  end matchcontinue;
 end setClassPartialPrefix;
 
 protected function findIteratorInEEquation
@@ -2639,17 +1865,6 @@ algorithm
       then (comps,names);
   end match;
 end getClassComponents;
-
-public function printInitialStr
-"prints SCode.Initial to a string"
-  input Initial initial_;
-  output String str;
-algorithm
-  str := match(initial_)
-    case (INITIAL()) then "initial";
-    case (NON_INITIAL()) then "non initial";
-  end match;
-end printInitialStr;
 
 public function makeEnumType
   "Creates an EnumType element from an enumeration literal and an optional
@@ -3805,46 +3020,6 @@ algorithm
   outElement := CLASS(n, pf, ep, pp, r, inClassDef, i);
 end setElementClassDefinition;
 
-public function flowStr
-  input Flow inFlow;
-  output String str;
-algorithm
-  str := match(inFlow)
-    case (FLOW()) then "flow";
-    case (NOT_FLOW()) then "";
-  end match;
-end flowStr;
-
-public function streamStr
-  input Stream inStream;
-  output String str;
-algorithm
-  str := match(inStream)
-    case (STREAM()) then "stream";
-    case (NOT_STREAM()) then "";
-  end match;
-end streamStr;
-
-public function encapsulatedStr
-  input Encapsulated inEncapsulated;
-  output String str;
-algorithm
-  str := match(inEncapsulated)
-    case (ENCAPSULATED()) then "encapsulated ";
-    case (NOT_ENCAPSULATED()) then "";
-  end match;
-end encapsulatedStr;
-
-public function visibilityStr
-  input Visibility inVisibility;
-  output String str;
-algorithm
-  str := match(inVisibility)
-    case (PUBLIC()) then "public ";
-    case (PROTECTED()) then "protected ";
-  end match;
-end visibilityStr;
-
 public function visibilityBool
   "returns true for PUBLIC and false for PROTECTED"
   input Visibility inVisibility;
@@ -3879,26 +3054,6 @@ algorithm
   end match;
 end visibilityEqual;
 
-public function finalStr
-  input Final inFinal;
-  output String str;
-algorithm
-  str := match(inFinal)
-    case (FINAL()) then "final ";
-    case (NOT_FINAL()) then "";
-  end match;
-end finalStr;
-
-public function eachStr
-  input Each inEach;
-  output String str;
-algorithm
-  str := match(inEach)
-    case (EACH()) then "each ";
-    case (NOT_EACH()) then "";
-  end match;
-end eachStr;
-
 public function eachBool
   input Each inEach;
   output Boolean bEach;
@@ -3926,16 +3081,6 @@ algorithm
   PREFIXES(redeclarePrefix = outRedeclare) := inPrefixes;
 end prefixesRedeclare;
 
-public function redeclareStr
-  input Redeclare inRedeclare;
-  output String str;
-algorithm
-  str := match(inRedeclare)
-    case (REDECLARE()) then "redeclare ";
-    case (NOT_REDECLARE()) then "";
-  end match;
-end redeclareStr;
-
 public function redeclareBool
   input Redeclare inRedeclare;
   output Boolean bRedeclare;
@@ -3955,37 +3100,6 @@ algorithm
     case (false) then NOT_REDECLARE();
   end match;
 end boolRedeclare;
-
-public function replaceableStr
-  input Replaceable inReplaceable;
-  output String strReplaceable;
-  output String strConstraint;
-algorithm
-  (strReplaceable, strConstraint) := match(inReplaceable)
-    local Absyn.ConstrainClass cc;
-    case (REPLACEABLE(SOME(cc))) then ("replaceable ", Dump.unparseConstrainclassStr(cc));
-    case (REPLACEABLE(NONE())) then ("replaceable ", "");
-    case (NOT_REPLACEABLE()) then ("", "");
-  end match;
-end replaceableStr;
-
-public function replaceablePrefixStr
-  input Replaceable inReplaceable;
-  output String strReplaceable;
-algorithm
-  (strReplaceable) := match(inReplaceable)
-    local Absyn.ConstrainClass cc;
-    case (REPLACEABLE(_)) then "replaceable ";
-    case (NOT_REPLACEABLE()) then "";
-  end match;
-end replaceablePrefixStr;
-
-public function replaceableConstrainClassStr
-  input Replaceable inReplaceable;
-  output String strReplaceable;
-algorithm
-  (_, strReplaceable) := replaceableStr(inReplaceable);
-end replaceableConstrainClassStr;
 
 public function replaceableBool
   input Replaceable inReplaceable;
@@ -4284,32 +3398,6 @@ algorithm
   PREFIXES(replaceablePrefix = repl) := prefixes;
 end prefixesReplaceable;
 
-public function prefixesStr "Returns prefixes as string"
-  input Prefixes prefixes;
-  output String str;
-algorithm
-  str := matchcontinue(prefixes)
-    local
-      Visibility v;
-      Redeclare rd;
-      Final f;
-      Absyn.InnerOuter io;
-      Replaceable rpl;
-      String s;
-        
-    case(PREFIXES(v,rd,f,io,rpl))
-      equation
-        s = visibilityStr(v) +& 
-            redeclareStr(rd) +& 
-            finalStr(f) +& 
-            Absyn.innerOuterStr(io) +& 
-            replaceablePrefixStr(rpl);
-      then 
-        s;
-    
-  end matchcontinue;
-end prefixesStr;
-
 public function elementPrefixes
   input Element inElement;
   output Prefixes outPrefixes;
@@ -4392,6 +3480,18 @@ algorithm
   ATTR(ad, f, s, a, v, _) := inAttributes;
   outAttributes := ATTR(ad, f, s, a, v, inDirection);
 end setAttributesDirection;
+
+public function attrVariability
+"function attrVariability
+  Return the variability attribute from Attributes"
+  input Attributes attr;
+  output Variability var;
+algorithm
+  var := match (attr)
+    local Variability v;
+    case  ATTR(variability = v) then v;
+  end match;
+end attrVariability;
 
 end SCode;
 

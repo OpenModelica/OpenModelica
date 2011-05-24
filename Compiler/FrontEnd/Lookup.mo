@@ -72,7 +72,7 @@ protected import Mod;
 protected import Prefix;
 protected import Static;
 protected import UnitAbsyn;
-// protected import ModUtil;
+protected import SCodeDump;
 
 public uniontype SearchStrategy
   record SEARCH_LOCAL_ONLY
@@ -1484,7 +1484,7 @@ algorithm
     // Not found in cache, lookup and instantiate.
     case(cache,env,path,mod,msg)
       equation
-        // Debug.traceln("lookupAndInstantiate " +& Absyn.pathString(path) +& ", s:" +& Env.printEnvPathStr(env) +& "m:" +& SCode.printModStr(mod));
+        // Debug.traceln("lookupAndInstantiate " +& Absyn.pathString(path) +& ", s:" +& Env.printEnvPathStr(env) +& "m:" +& SCodeDump.printModStr(mod));
         (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = lookupClass(cache, env, path, msg);
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2), Env.restrictionToScopeType(r));
         new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
@@ -1503,7 +1503,7 @@ algorithm
     case(cache,env,path,mod,msg)
       equation
         true = RTOpts.debugFlag("failtrace");
-        Debug.traceln( "- Lookup.lookupAndInstantiate failed " +&  Absyn.pathString(path) +& " with mod: " +& SCode.printModStr(mod) +& " in scope " +& Env.printEnvPathStr(env));
+        Debug.traceln( "- Lookup.lookupAndInstantiate failed " +&  Absyn.pathString(path) +& " with mod: " +& SCodeDump.printModStr(mod) +& " in scope " +& Env.printEnvPathStr(env));
      then 
        fail();
   end matchcontinue;
@@ -1997,7 +1997,7 @@ algorithm
     /* a class with parts */
     case (cache,env,cl as SCode.CLASS(name = name,info = info),mods)
       equation
-        (cache,env,_,elts,_,_,_,_) = InstExtends.instDerivedClasses(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),cl,true,info);
+        (cache,env,_,elts,_,_,_,_) = InstExtends.instDerivedClasses(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),cl,true,info);
         env = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(name), SOME(Env.CLASS_SCOPE()));
         fpath = Env.getEnvName(env);
         (cdefelts,classExtendsElts,extendsElts,compElts) = Inst.splitElts(elts);
@@ -2009,7 +2009,7 @@ algorithm
         //       Util.listMap(
         //         eltsMods, 
         //         Util.tuple21),
-        //       SCode.printElementStr), "\n"));
+        //       SCodeDump.printElementStr), "\n"));
         (env1,_) = Inst.addClassdefsToEnv(env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), cdefelts, false, NONE());
         (_,env1,_) = Inst.addComponentsToEnv(Env.emptyCache(),env1,InnerOuter.emptyInstHierarchy,mods,Prefix.NOPRE(),Connect.emptySet,ClassInf.RECORD(fpath),eltsMods,eltsMods,{},{},true);
         funcelts = buildRecordConstructorElts(eltsMods,mods,env1);
@@ -2017,7 +2017,7 @@ algorithm
     
     // fail
     case(cache,env,cl,mods) equation
-      Debug.traceln("buildRecordConstructorClass2 failed, cl:"+&SCode.printClassStr(cl)+&"\n");
+      Debug.traceln("buildRecordConstructorClass2 failed, cl:"+&SCodeDump.printClassStr(cl)+&"\n");
     then fail();
       /* TODO: short class defs */
   end matchcontinue;
@@ -2157,7 +2157,7 @@ algorithm
     case ((comp,cmod)::_,mods,_)
       equation
         true = RTOpts.debugFlag("failtrace");
-        Debug.traceln("- Lookup.buildRecordConstructorElts failed " +& SCode.printElementStr(comp) +& " with mod: " +& Mod.printModStr(cmod) +& " and: " +& Mod.printModStr(mods));
+        Debug.traceln("- Lookup.buildRecordConstructorElts failed " +& SCodeDump.printElementStr(comp) +& " with mod: " +& Mod.printModStr(cmod) +& " and: " +& Mod.printModStr(mods));
       then fail();
   end matchcontinue;
 end buildRecordConstructorElts;

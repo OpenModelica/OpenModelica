@@ -70,6 +70,7 @@ protected import SCodeUtil;
 protected import Static;
 protected import System;
 protected import Util;
+protected import SCodeDump;
 
 protected function generatePositionalArgs "function: generatePositionalArgs
   author: KS
@@ -1796,7 +1797,7 @@ algorithm
       equation
         ld2 = SCodeUtil.translateEitemlist(ld, SCode.PUBLIC());
         (ld2 as _::_) = Util.listFilterBoolean(ld2, SCode.isNotComponent);
-        str = Util.stringDelimitList(Util.listMap(ld2, SCode.unparseElementStr),", ");
+        str = Util.stringDelimitList(Util.listMap(ld2, SCodeDump.unparseElementStr),", ");
         Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT,{str},info);
       then (cache,NONE());
       
@@ -1811,7 +1812,7 @@ algorithm
         ld3 = Util.listSelect1(ld2, Absyn.INPUT(), SCode.isComponentWithDirection);
         ld4 = Util.listSelect1(ld2, Absyn.OUTPUT(), SCode.isComponentWithDirection);
         (ld2 as _::_) = listAppend(ld3,ld4); // I don't care that this is slow; it's just for error message generation
-        str = Util.stringDelimitList(Util.listMap(ld2, SCode.unparseElementStr),", ");
+        str = Util.stringDelimitList(Util.listMap(ld2, SCodeDump.unparseElementStr),", ");
         Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT,{str},info);
       then (cache,NONE());
       

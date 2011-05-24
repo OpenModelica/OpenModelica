@@ -59,6 +59,7 @@ protected import Types;
 protected import ClassInf;
 protected import Algorithm;
 protected import RTOpts;
+protected import SCodeDump;
 
 public function printDAE "function: printDAE
   This function prints out a list of elements (i.e. a DAE)
@@ -930,7 +931,7 @@ algorithm
       String s;
     case SCode.ANNOTATION(modification = ann_mod)
       equation
-        s = " annotation" +& SCode.printModStr(ann_mod);
+        s = " annotation" +& SCodeDump.printModStr(ann_mod);
       then
         s;
   end match;

@@ -59,6 +59,7 @@ protected import Debug;
 protected import Dump;
 protected import Util;
 protected import RTOpts;
+protected import SCodeDump;
 
 public
 type InstanceHierarchy = list<Instance> "an instance hierarchy is a list of instances";
@@ -137,7 +138,7 @@ algorithm
     case (ih,scope,c::_)
       equation
         true = RTOpts.debugFlag("instance");
-        Debug.fprintln("instance", "InstanceHierarchy.createInstanceFromProgram failed on class:" +& SCode.printClassStr(c));
+        Debug.fprintln("instance", "InstanceHierarchy.createInstanceFromProgram failed on class:" +& SCodeDump.printClassStr(c));
       then
         fail();
   end matchcontinue;
@@ -319,7 +320,7 @@ algorithm
     case (scope, el::rest)
       equation
         true = RTOpts.debugFlag("instance");
-        Debug.fprintln("instance", "InstanceHierarchy.createInstanceHierarchyFromElements failed on element: " +& SCode.unparseElementStr(el));
+        Debug.fprintln("instance", "InstanceHierarchy.createInstanceHierarchyFromElements failed on element: " +& SCodeDump.unparseElementStr(el));
       then
         fail();
   end matchcontinue;
@@ -612,7 +613,7 @@ algorithm
     case (CONNECTS(connectEquations, actualConnects), l)
       equation
         indent = Dump.indentStr(l) +& "+";
-        str = Util.stringDelimitList(Util.listMap(connectEquations, SCode.equationStr), "\n" +& indent);
+        str = Util.stringDelimitList(Util.listMap(connectEquations, SCodeDump.equationStr), "\n" +& indent);
         print("\n" +& indent +& str);
         str = Util.stringDelimitList(Util.listMap(actualConnects, Dump.printComponentRefStr), ", ");
         print(str);
@@ -648,9 +649,9 @@ algorithm
                          attributes = SCode.ATTR(variability = var),
                          typeSpec = typath,modifications = mod,comment = comment)
       equation
-        mod_str = SCode.printModStr(mod);
+        mod_str = SCodeDump.printModStr(mod);
         s = Dump.unparseTypeSpec(typath);
-        vs = SCode.unparseVariability(var);
+        vs = SCodeDump.unparseVariability(var);
         res = stringAppendList({vs," ",s," ",n,mod_str,";"});
       then
         res;

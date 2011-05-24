@@ -61,6 +61,7 @@ protected import Types;
 protected import Util;
 protected import SCodeCheck;
 protected import SCodeFlatten;
+protected import SCodeDump;
 
 public function translateAbsyn2SCode
 "function: translateAbsyn2SCode
@@ -102,7 +103,7 @@ algorithm
         sp = listReverse(sp);
         SCodeCheck.checkDuplicateClasses(sp);
         
-        //print(Util.stringDelimitList(Util.listMap(sp, SCode.printClassStr), "\n"));
+        //print(Util.stringDelimitList(Util.listMap(sp, SCodeDump.printClassStr), "\n"));
         // retrieve the expandable connector presence external flag
         // hasExpandableConnectors = System.getHasExpandableConnectors();
         // (ih, sp) = ExpandableConnectors.elaborateExpandableConnectors(sp, hasExpandableConnectors);
@@ -120,7 +121,7 @@ protected
   SCode.Element cl;
 algorithm
   cl := translateClass(inClass);
-  // print("\n" +& SCode.printElementStr(cl) +& "\n");
+  // print("\n" +& SCodeDump.printElementStr(cl) +& "\n");
   outAcc := cl :: acc;
 end translate2;
 
@@ -1654,14 +1655,14 @@ algorithm
     case ((c as Absyn.CREF_IDENT(subscripts = (_ :: _))),(mod as SCode.MOD(subModLst = (_ :: _))))
       equation
         c_str = Dump.printComponentRefStr(c);
-        mod_str = SCode.printModStr(mod);
+        mod_str = SCodeDump.printModStr(mod);
         Error.addMessage(Error.ILLEGAL_MODIFICATION, {mod_str,c_str});
       then
         fail();
     case ((c as Absyn.CREF_QUAL(subScripts = (_ :: _))),(mod as SCode.MOD(subModLst = (_ :: _))))
       equation
         c_str = Dump.printComponentRefStr(c);
-        mod_str = SCode.printModStr(mod);
+        mod_str = SCodeDump.printModStr(mod);
         Error.addMessage(Error.ILLEGAL_MODIFICATION, {mod_str,c_str});
       then
         fail();

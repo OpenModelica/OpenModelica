@@ -87,6 +87,7 @@ protected import Error;
 protected import RTOpts;
 protected import SCodeCheck;
 protected import Util;
+protected import SCodeDump;
 
 public function extendEnvWithClassExtends
   input SCode.Element inClassExtends;
@@ -304,19 +305,32 @@ protected function addElementRedeclarationsToEnv2
 algorithm
   outEnv := matchcontinue(inRedeclare, inEnv)
     local
-      SCode.Ident cls_name;
+      SCode.Ident cls_name, name;
       Absyn.Info info;
       Absyn.Path path;
       Env env, class_env;
       Item base_item, item;
+      SCode.Element redecl;
 
-    case (SCode.CLASS(name = cls_name, info = info), _)
+    // redeclare-as-element class
+    case (redecl as SCode.CLASS(name = cls_name, info = info), _)
       equation
         (path, base_item) = SCodeLookup.lookupBaseClass(cls_name, inEnv, info);
-        class_env = SCodeEnv.makeClassEnvironment(inRedeclare, true);
-        item = SCodeEnv.newClassItem(inRedeclare, class_env,
-          SCodeEnv.USERDEFINED());
+        class_env = SCodeEnv.makeClassEnvironment(redecl, true);
+        item = SCodeEnv.newClassItem(inRedeclare, class_env, SCodeEnv.USERDEFINED());
         item = SCodeEnv.linkItemUsage(base_item, item);
+        env = addRedeclareToEnvExtendsTable(item, path, inEnv, info);
+      then
+        env;
+
+    // redeclare-as-element componeent
+    case (redecl as SCode.COMPONENT(typeSpec = Absyn.TPATH(path, _) , info = info), _)
+      equation
+        //(base_item as SCodeEnv.CLASS(cls = redecl), path, _) = SCodeLookup.lookupClassName(path, inEnv, info);
+        //class_env = SCodeEnv.makeClassEnvironment(redecl, false);
+        //item = SCodeEnv.newClassItem(redecl, class_env, SCodeEnv.USERDEFINED());
+        //item = SCodeEnv.linkItemUsage(base_item, item);
+        item = SCodeEnv.newVarItem(redecl, true);
         env = addRedeclareToEnvExtendsTable(item, path, inEnv, info);
       then
         env;
@@ -333,7 +347,7 @@ algorithm
 end addElementRedeclarationsToEnv2;
 
 protected function addRedeclareToEnvExtendsTable
-  input Item inClass;
+  input Item inRedeclaredElement;
   input Absyn.Path inBaseClass;
   input Env inEnv;
   input Absyn.Info inInfo;
@@ -344,37 +358,47 @@ protected
   Option<SCode.Element> cei;
 algorithm
   SCodeEnv.EXTENDS_TABLE(bcl, re, cei) := SCodeEnv.getEnvExtendsTable(inEnv);
-  bcl := addRedeclareToEnvExtendsTable2(inClass, inBaseClass, bcl);
+  bcl := addRedeclareToEnvExtendsTable2(inRedeclaredElement, inBaseClass, bcl);
   outEnv := SCodeEnv.setEnvExtendsTable(SCodeEnv.EXTENDS_TABLE(bcl, re, cei), inEnv);
 end addRedeclareToEnvExtendsTable;
 
 protected function addRedeclareToEnvExtendsTable2
-  input Item inClass;
+  input Item inRedeclaredElement;
   input Absyn.Path inBaseClass;
   input list<Extends> inExtends;
   output list<Extends> outExtends;
 algorithm
-  outExtends := matchcontinue(inClass, inBaseClass, inExtends)
+  outExtends := matchcontinue(inRedeclaredElement, inBaseClass, inExtends)
     local
       Extends ex;
       list<Extends> exl;
       Absyn.Path bc;
       list<SCodeEnv.Redeclaration> el;
       Absyn.Info info;
-      SCode.Ident cls_name;
+      SCode.Ident name;
       SCodeEnv.Redeclaration redecl;
 
-    case (SCodeEnv.CLASS(cls = _), _, (SCodeEnv.EXTENDS(bc, el, info)) :: exl)
+    // redeclare-as-class 
+    case (SCodeEnv.CLASS(cls = _), _, SCodeEnv.EXTENDS(bc, el, info) :: exl)
       equation
         true = Absyn.pathEqual(inBaseClass, bc);
-        redecl = SCodeEnv.PROCESSED_MODIFIER(inClass);
+        redecl = SCodeEnv.PROCESSED_MODIFIER(inRedeclaredElement);
+        ex = SCodeEnv.EXTENDS(bc, redecl :: el, info);
+      then
+        ex :: exl;
+
+    // redeclare-as-element component
+    case (SCodeEnv.VAR(var = _), _, SCodeEnv.EXTENDS(bc, el, info) :: exl)
+      equation
+        true = Absyn.pathEqual(inBaseClass, bc);
+        redecl = SCodeEnv.PROCESSED_MODIFIER(inRedeclaredElement);
         ex = SCodeEnv.EXTENDS(bc, redecl :: el, info);
       then
         ex :: exl;
 
     case (_, _, ex :: exl)
       equation
-        exl = addRedeclareToEnvExtendsTable2(inClass, inBaseClass, exl);
+        exl = addRedeclareToEnvExtendsTable2(inRedeclaredElement, inBaseClass, exl);
       then
         ex :: exl;
     
@@ -436,12 +460,17 @@ algorithm
       then
         SCodeEnv.RAW_MODIFIER(SCode.COMPONENT(name, prefixes, attr, 
           Absyn.TPATH(path, array_dim), mods, cmt, cond, info));
+    
+    // TODO! is this correct??
+    case (SCodeEnv.PROCESSED_MODIFIER(_), _)
+      then
+        inRedeclare;
 
     else
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.traceln("- SCodeFlattenRedeclare.qualifyRedeclare failed on " +&
-          SCode.printElementStr(SCodeEnv.getRedeclarationElement(inRedeclare)) +& 
+          SCodeDump.printElementStr(SCodeEnv.getRedeclarationElement(inRedeclare)) +& 
           " in " +& Absyn.pathString(SCodeEnv.getEnvPath(inEnv)));
       then
         fail();
@@ -470,7 +499,7 @@ algorithm
 
     case (_, bc, _, _, _, SCodeLookup.INSERT_REDECLARES())
       equation
-        (item, env) = replaceRedeclaredClassesInEnv(inRedeclares,
+        (item, env) = replaceRedeclaredElementsInEnv(inRedeclares,
           inBaseClassItem, inBaseClassEnv, inEnv);
       then
         (SOME(item), SOME(env));
@@ -479,7 +508,7 @@ algorithm
   end matchcontinue;
 end replaceRedeclares;
 
-public function replaceRedeclaredClassesInEnv
+public function replaceRedeclaredElementsInEnv
   "If a variable has modifications that redeclare classes in it's instance we
   need to replace those classes in the environment so that the lookup finds the
   right classes. This function takes a list of redeclares from a variables
@@ -498,6 +527,9 @@ algorithm
       SCodeEnv.Frame item_env;
       SCodeEnv.ClassType cls_ty;
 
+    // no redeclares!
+    case ({}, _, _, _) then (inItem, inTypeEnv);
+
     case (_, SCodeEnv.VAR(var = _), _, _) then (inItem, inTypeEnv);
 
     case (_, SCodeEnv.CLASS(cls = cls, env = {item_env}, classType = cls_ty), _, _)
@@ -513,13 +545,14 @@ algorithm
     else
       equation
         true = RTOpts.debugFlag("failtrace");
-        Debug.trace("- SCodeFlattenRedeclare.replaceRedeclaredClassesInEnv failed for ");
-        Debug.traceln(SCodeEnv.getItemName(inItem) +& " in " +& 
-          SCodeEnv.getEnvName(inVarEnv));
+        Debug.trace("- SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv failed for: ");
+        Debug.traceln("redeclares: " +& 
+          Util.stringDelimitList(Util.listMap(inRedeclares, SCodeEnv.printRedeclarationStr), "\n---------\n") +&  
+          " item: " +& SCodeEnv.getItemName(inItem) +& " in scope:" +& SCodeEnv.getEnvName(inVarEnv));
       then
         fail();
   end matchcontinue;
-end replaceRedeclaredClassesInEnv;
+end replaceRedeclaredElementsInEnv;
 
 public function extractRedeclaresFromModifier
   "Returns a list of redeclare elements given a redeclaration modifier."

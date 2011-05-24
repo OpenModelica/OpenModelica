@@ -44,7 +44,7 @@ public import Absyn;
 public import SCode;
 public import Util;
 
-protected import Debug;
+protected import SCodeDump;
 protected import Error;
 protected import SCodeFlattenRedeclare;
 protected import SCodeLookup;
@@ -180,10 +180,21 @@ protected
   AvlTree cls_and_vars;
   Item item;
 algorithm
-  FRAME(clsAndVars = cls_and_vars) :: _ := inEnv;
-  item := avlTreeGet(cls_and_vars, inName);
-  {cls_env} := getItemEnv(item);
-  outEnv := enterFrame(cls_env, inEnv);
+  outEnv := matchcontinue(inEnv, inName)
+    case (inEnv, inName)
+      equation
+        FRAME(clsAndVars = cls_and_vars) :: _ = inEnv;
+        item = avlTreeGet(cls_and_vars, inName);
+        {cls_env} = getItemEnv(item);
+        outEnv = enterFrame(cls_env, inEnv);
+      then
+        outEnv;
+    case (inEnv, inName)
+      equation
+        print("Failed to enterScope: " +& inName +& " in env: " +& printEnvStr(inEnv) +& "\n");
+      then
+        fail();
+  end matchcontinue;
 end enterScope;
 
 public function enterFrame
@@ -561,8 +572,19 @@ public function getItemInEnv
 protected
   AvlTree tree;
 algorithm
-  FRAME(clsAndVars = tree) :: _ := inEnv;
-  outItem := avlTreeGet(tree, inItemName);
+  outItem := matchcontinue(inItemName, inEnv)
+    case (inItemName, inEnv)
+      equation
+        FRAME(clsAndVars = tree) :: _ = inEnv;
+        outItem = avlTreeGet(tree, inItemName);
+      then
+        outItem;
+    case (inItemName, inEnv)
+      equation
+        print("- SCodeEnv.getItemInEnv failed on: " +& inItemName +& " in env:" +& printEnvStr(inEnv) +& "\n");
+      then
+        fail();
+  end matchcontinue;
 end getItemInEnv;
 
 protected function extendEnvWithImport
@@ -881,12 +903,22 @@ algorithm
       SCode.Ident name;
       SCode.Element cls;
 
+    // redeclare-as-element component
+    case (SCode.COMPONENT(name = _, prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())), _)
+      equation
+        env = addElementRedeclarationToEnvExtendsTable(inElement, inEnv);        
+        env = extendEnvWithVar(inElement, env);
+      then
+        env;
+
+    // normal component
     case (SCode.COMPONENT(name = _), _)
       equation
         env = extendEnvWithVar(inElement, inEnv);
       then
         env;
 
+    // redeclare-as-element class
     case (SCode.CLASS(name = name, prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())), _)
       equation
         false = isClassExtends(inElement);
@@ -895,6 +927,7 @@ algorithm
       then
         env;
 
+    // normal class
     case (SCode.CLASS(name = _), _)
       equation
         env = extendEnvWithClassDef(inElement, inEnv);
@@ -1214,6 +1247,23 @@ algorithm
   end match;
 end getItemInfo;
 
+public function itemStr
+  "Returns the name of an environment item."
+  input Item inItem;
+  output String outName;
+algorithm
+  outName := match(inItem)
+    local 
+      String name;
+      SCode.Element el;
+
+    case VAR(var = el) 
+      then SCodeDump.printElementStr(el);
+    case CLASS(cls = el) 
+      then SCodeDump.printElementStr(el);
+  end match;
+end itemStr;
+
 public function getItemName
   "Returns the name of an environment item."
   input Item inItem;
@@ -1530,9 +1580,15 @@ protected function printExtendsTableStr
   output String outString;
 protected
   list<Extends> bcl;
+  list<SCode.Element> re;
+  Option<SCode.Element> cei;  
 algorithm
-  EXTENDS_TABLE(baseClasses = bcl) := inExtendsTable;
-  outString := Util.stringDelimitList(Util.listMap(bcl, printExtendsStr), "\n");
+  EXTENDS_TABLE(baseClasses = bcl, redeclaredElements = re, classExtendsInfo = cei) := inExtendsTable;
+  outString := Util.stringDelimitList(Util.listMap(bcl, printExtendsStr), "\n") +& 
+    "\n\t\tRedeclare elements:\n\t\t\t" +&
+    Util.stringDelimitList(Util.listMap(re, SCodeDump.printElementStr), "\n\t\t\t") +&
+    "\n\t\tClass extends:\n\t\t\t" +&
+    Util.stringOption(Util.applyOption(cei, SCodeDump.printElementStr)); 
 end printExtendsTableStr;
 
 protected function printExtendsStr
@@ -1549,11 +1605,11 @@ algorithm
   outString := "\t\t" +& Absyn.pathString(bc) +& "(" +& mods_str +& ")";
 end printExtendsStr;
 
-protected function printRedeclarationStr
+public function printRedeclarationStr
   input Redeclaration inRedeclare;
   output String outString;
 algorithm
-  outString := SCode.printElementStr(getRedeclarationElement(inRedeclare));
+  outString := SCodeDump.printElementStr(getRedeclarationElement(inRedeclare));
 end printRedeclarationStr;
 
 protected function printImportTableStr
