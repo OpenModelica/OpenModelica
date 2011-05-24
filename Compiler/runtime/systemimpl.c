@@ -79,7 +79,11 @@ extern "C" {
 #define MAXPATHLEN MAX_PATH
 #define S_IFLNK  0120000  /* symbolic link */
 
-/*#include <rpc.h>*/
+#if defined(__MINGW32__) /* include dirent for MINGW */
+#include <sys/types.h>
+#include <dirent.h>
+#endif
+
 #else
 /* includes/defines specific for LINUX/OS X */
 #include <ctype.h>

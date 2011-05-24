@@ -82,6 +82,7 @@ SCodeFlattenExtends.mo \
 SCodeFlattenRedeclare.mo \
 SCodeFlatten.mo \
 SCodeMod.mo \
+SCodeFlat.mo \
 SCodeUtil.mo \
 Static.mo \
 Types.mo \

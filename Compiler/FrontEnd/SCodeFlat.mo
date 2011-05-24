@@ -51,9 +51,9 @@ Idea: *everything in Modelica can be reduced to components*
 - derived:    class A = B[AD](mods);
   + encoded as A.B[AD](mods) A.$e(B);
 - equations:  equation  eq1; eq2; eq3;
-  + encoded as Type Type.$equations{eq1,eq2,eq3};
+  + encoded as Type.$eq Type.$eq{eq1,eq2,eq3};
 - algorithms: algorithm al1; al2; al3;
-  + encoded as Type Type.$algorithms{al1,al2,al3}; "
+  + encoded as Type.$al Type.$al{al1,al2,al3}; "
 
 public import Absyn;
 public import SCode;
@@ -61,8 +61,8 @@ public import SCode;
 public constant String extendsName = "$e";
 public constant String derivedName = "$d";
 
-public constant String algorithmsName = "$a";
-public constant String equationsName = "$e";
+public constant String algorithmsName = "$al";
+public constant String equationsName = "$eq";
 
 public
 uniontype Kind
@@ -90,7 +90,7 @@ type TypePath = list<Type>
      RP.N                                                       RP.N;
      RP.N.$d(P(redeclare R = P_R))                              RP.N.$d(P);";
 
-uniontype Component "a component";
+uniontype Component "a component"
   record C
     SCode.Ident   name         "the type name, for derived/extends we use the predefined constants above: extendsName and derivedName";
     SCode.Element origin       "the element from which the component originates";
