@@ -1470,6 +1470,7 @@ int SystemImpl__getLoadModelPath(const char *name, void *prios, void *mps, const
             /* Search for an appropriate version of the library */
             outPrio = prio;
             prio = getPrio(version,versionLen);
+            if (prio == 0 && 0 == strcmp("Modelica",name) && 0 == strcmp(version,"3.1")) prio = -1;
             /* TODO: Use something better than strcmp. We need natural sort for all cases... */
             if (prio < defaultPrio || (prio == defaultPrio && strcmp(version, defaultVersion) > 0)) {
               defaultPrio = prio;
