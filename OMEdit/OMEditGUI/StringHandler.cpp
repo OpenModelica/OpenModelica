@@ -398,22 +398,28 @@ QStringList StringHandler::unparseStrings(QString value)
   value = value.trimmed();
   if (value[0] != '{') return lst; // ERROR?
   int i=1;
+  QString res;
   while (value[i] == '"') {
-    QString res;
     i++;
     while (value.at(i) != '"') {
       CONSUME_CHAR(value,res,i);
       i++;
     }
     i++;
-    lst.append(res);
-    if (value[i] == '}') return lst;
+    if (value[i] == '}') {
+      lst.append(res);
+      return lst;
+    }
     if (value[i] == ',') {
+      lst.append(res);
       i++;
+      res = "";
       continue;
     }
-    fprintf(stderr, "error?\n");
-    return lst; // ERROR?
+    while (value[i] != '"' && value[i] != '\0') {
+      i++;
+      fprintf(stderr, "error? malformed string-list. skipping: %c\n", value[i].toAscii());
+    }
   }
   return lst; // ERROR?
 }
