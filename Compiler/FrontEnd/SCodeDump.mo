@@ -48,10 +48,10 @@ protected import Print;
 protected function elseWhenEquationStr
 "@author: adrpo
   Return the elsewhen parts as a string."
-  input  list<tuple<Absyn.Exp, list<SCode.EEquation>>> tplAbsynExpEEquationLstLst;
+  input  list<tuple<Absyn.Exp, list<SCode.EEquation>>> elseBranches;
   output String str;
 algorithm
-  str := match(tplAbsynExpEEquationLstLst)
+  str := match(elseBranches)
     local
       Absyn.Exp exp;
       list<SCode.EEquation> eqn_lst;
@@ -66,7 +66,7 @@ algorithm
         s1 = Dump.printExpStr(exp);
         str_lst = Util.listMap(eqn_lst, equationStr);
         s2 = Util.stringDelimitList(str_lst, "\n");
-        s3 = elseWhenEquationStr(tplAbsynExpEEquationLstLst);
+        s3 = elseWhenEquationStr(elseBranches);
         res = stringAppendList({"\nelsewhen ",s1," then\n",s2,"\n", s3});
       then 
         res;
@@ -90,7 +90,7 @@ algorithm
       list<list<SCode.EEquation>> tb;
       Absyn.ComponentRef cr1,cr2,cr;
       Absyn.FunctionArgs fargs;
-      list<tuple<Absyn.Exp, list<SCode.EEquation>>> tplAbsynExpEEquationLstLst;
+      list<tuple<Absyn.Exp, list<SCode.EEquation>>> elseBranches;
       
     case (SCode.EQ_IF(condition = e1::ifexp,thenBranch = ttb::tb,elseBranch = fb))
       equation
@@ -125,12 +125,12 @@ algorithm
         res = stringAppendList({"for ",id," in ",s1," loop\n",s2,"\nend for;"});
       then
         res;
-    case (SCode.EQ_WHEN(condition=exp, eEquationLst=eqn_lst, tplAbsynExpEEquationLstLst=tplAbsynExpEEquationLstLst))
+    case (SCode.EQ_WHEN(condition=exp, eEquationLst=eqn_lst, elseBranches=elseBranches))
       equation
         s1 = Dump.printExpStr(exp);
         str_lst = Util.listMap(eqn_lst, equationStr);
         s2 = Util.stringDelimitList(str_lst, "\n");
-        s3 = elseWhenEquationStr(tplAbsynExpEEquationLstLst);
+        s3 = elseWhenEquationStr(elseBranches);
         res = stringAppendList({"when ",s1," then\n",s2,s3,"\nend when;"});
       then 
         res;

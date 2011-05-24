@@ -274,7 +274,7 @@ uniontype EEquation
   record EQ_WHEN "the when equation"
     Absyn.Exp        condition "the when condition";
     list<EEquation>  eEquationLst "the equation list";
-    list<tuple<Absyn.Exp, list<EEquation>>> tplAbsynExpEEquationLstLst "the elsewhen expression and equation list";
+    list<tuple<Absyn.Exp, list<EEquation>>> elseBranches "the elsewhen expression and equation list";
     Option<Comment> comment;
     Absyn.Info info;
   end EQ_WHEN;
@@ -1718,7 +1718,7 @@ algorithm
           true = stringEq(id, id_1);
           lst=Absyn.findIteratorInExp(id,e_1);
         then lst;
-      case (id,EQ_WHEN(condition = e_1, eEquationLst = eeqLst, tplAbsynExpEEquationLstLst = ew))
+      case (id,EQ_WHEN(condition = e_1, eEquationLst = eeqLst, elseBranches = ew))
         equation
           lst_1=Absyn.findIteratorInExp(id,e_1);
           lst_2=findIteratorInEEquationLst(id,eeqLst);

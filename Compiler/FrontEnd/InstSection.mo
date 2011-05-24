@@ -583,7 +583,7 @@ algorithm
          When statements are instantiated by evaluating the
          conditional expression.
          */ 
-    case (cache,env,ih,mod,pre,csets,ci_state, eq as SCode.EQ_WHEN(condition = e,eEquationLst = el,tplAbsynExpEEquationLstLst = ((ee,eel) :: eex),info=info),(initial_ as SCode.NON_INITIAL()),impl,graph) 
+    case (cache,env,ih,mod,pre,csets,ci_state, eq as SCode.EQ_WHEN(condition = e,eEquationLst = el,elseBranches = ((ee,eel) :: eex),info=info),(initial_ as SCode.NON_INITIAL()),impl,graph) 
       equation 
         checkForNestedWhen(eq);
         (cache,e_1,prop1,_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
@@ -607,7 +607,7 @@ algorithm
       then
         (cache,env_2,ih,dae,csets,ci_state_2,graph);
                         
-    case (cache,env,ih,mod,pre,csets,ci_state, eq as SCode.EQ_WHEN(condition = e,eEquationLst = el,tplAbsynExpEEquationLstLst = {}, info = info),(initial_ as SCode.NON_INITIAL()),impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state, eq as SCode.EQ_WHEN(condition = e,eEquationLst = el,elseBranches = {}, info = info),(initial_ as SCode.NON_INITIAL()),impl,graph)
       equation 
         checkForNestedWhen(eq);
         (cache,e_1,prop1,_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
@@ -4379,7 +4379,7 @@ algorithm
       list<SCode.EEquation> el;
       list<list<SCode.EEquation>> el2;
       list<tuple<Absyn.Exp, list<SCode.EEquation>>> tpl_el;
-    case SCode.EQ_WHEN(eEquationLst = el, tplAbsynExpEEquationLstLst = tpl_el)
+    case SCode.EQ_WHEN(eEquationLst = el, elseBranches = tpl_el)
       equation
         checkForNestedWhenInEqList(el);
         el2 = Util.listMap(tpl_el, Util.tuple22);
