@@ -486,6 +486,11 @@ QStringList OMCProxy::loadStandardLibrary()
         return empty;
       }
       res.append("ModelicaServices");
+      sendCommand("loadModel(ModelicaReference)");
+      if (!StringHandler::unparseBool(getResult())) {
+        return empty;
+      }
+      res.append("ModelicaReference");
       if (version >= 3.2) {
         sendCommand("loadModel(Complex)");
         if (!StringHandler::unparseBool(getResult())) return empty;
