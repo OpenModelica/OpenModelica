@@ -371,6 +371,16 @@ public function moFiles
   external "C" outStringLst=System_moFiles(inString) annotation(Library = "omcruntime");
 end moFiles;
 
+public function getLoadModelPath
+  input String className;
+  input list<String> prios;
+  input list<String> mps;
+  output String dir;
+  output String name;
+  output Boolean isDir;
+  external "C" System_getLoadModelPath(className,prios,mps,dir,name,isDir) annotation(Library = "omcruntime");
+end getLoadModelPath;
+
 public function time
   output Real outReal;
   external "C" outReal=SystemImpl__time() annotation(Library = "omcruntime");

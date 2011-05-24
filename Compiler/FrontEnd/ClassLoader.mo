@@ -57,10 +57,11 @@ public function loadClass
   If the classname is qualified, the complete package is loaded.
   E.g. load_class(Modelica.SIunits.Voltage) -> whole Modelica package loaded."
   input Absyn.Path inPath;
-  input String inString;
+  input list<String> priorityList;
+  input String modelicaPath;
   output Absyn.Program outProgram;
 algorithm
-  outProgram := matchcontinue (inPath,inString)
+  outProgram := matchcontinue (inPath,priorityList,modelicaPath)
     local
       String gd,classname,mp,pack;
       list<String> mps;
@@ -68,33 +69,23 @@ algorithm
       Absyn.Path rest,path;
       Absyn.TimeStamp ts;
     /* Simple names: Just load the file if it can be found in $OPENMODELICALIBRARY */
-    case (Absyn.IDENT(name = classname),mp)
+    case (Absyn.IDENT(name = classname),priorityList,mp)
       equation
         gd = System.groupDelimiter();
         mps = System.strtok(mp, gd);
-        p = loadClassFromMps(classname, mps);
+        p = loadClassFromMps(classname, priorityList, mps);
       then
         p;
     /* Qualified names: First check if it is defined in a file pack.mo */
-    case (Absyn.QUALIFIED(name = pack,path = rest),mp)
+    case (Absyn.QUALIFIED(name = pack,path = rest),priorityList,mp)
       equation
         gd = System.groupDelimiter();
         mps = System.strtok(mp, gd);
-        p = loadClassFromMps(pack, mps);
-      then
-        p;
-    /* Qualified names: Else, load the complete package and then check that the package contains the file */
-    case ((path as Absyn.QUALIFIED(name = pack,path = rest)),mp)
-      equation
-        ts = Absyn.getNewTimeStamp();
-        gd = System.groupDelimiter();
-        mps = System.strtok(mp, gd);
-        p = loadCompletePackageFromMps(pack, mps, Absyn.TOP(), Absyn.PROGRAM({},Absyn.TOP(),ts));
-        // _ = Interactive.getPathedClassInProgram(path, p);
+        p = loadClassFromMps(pack, priorityList, mps);
       then
         p;
     /* failure */
-    case (_,_)
+    else
       equation
         Debug.fprint("failtrace", "ClassLoader.loadClass failed\n");
       then
@@ -119,115 +110,59 @@ algorithm
 end existDirectoryFile;
 
 protected function loadClassFromMps
-"function: loadClassFromMps
-  Loads a class or classes from a set of paths in OPENMODELICALIBRARY"
-  input Absyn.Ident inIdent;
-  input list<String> inStringLst;
+"Loads a class or classes from a set of paths in OPENMODELICALIBRARY"
+  input String id;
+  input list<String> prios;
+  input list<String> mps;
   output Absyn.Program outProgram;
+protected
+  String mp,name;
+  Boolean isDir;
 algorithm
-  outProgram := matchcontinue (inIdent,inStringLst)
-    local
-      Absyn.Program p;
-      String class_,mp;
-      list<String> mps;
-    case (class_,(mp :: mps))
-      equation
-        p = loadClassFromMp(class_, mp);
-      then
-        p;
-    case (class_,(_ :: mps))
-      equation
-        p = loadClassFromMps(class_, mps);
-      then
-        p;
-  end matchcontinue;
+  (mp,name,isDir) := System.getLoadModelPath(id,prios,mps);
+  outProgram := loadClassFromMp(id, mp, name, isDir);
 end loadClassFromMps;
 
 protected function loadClassFromMp
-"function: loadClassFromMp
-  This function loads a modelica class \"className\" from the file path
-  \"<mp>/className.mo\" or it loads complete package from
-  \"<mp>/className/package.mo\""
-  input Absyn.Ident inIdent;
-  input String inString;
+  input String id "the actual class name";
+  input String path;
+  input String name;
+  input Boolean isDir;
   output Absyn.Program outProgram;
 algorithm
-  outProgram := matchcontinue (inIdent,inString)
+  outProgram := match (id,path,name,isDir)
     local
       String mp,pd,classfile,classfile_1,class_,mp_1,dirfile,packfile;
       Absyn.Program p;
       Absyn.TimeStamp ts;
 
-    case (class_,mp_1)
+    case (_,path,name,false)
       equation
-        mp = System.trim(mp_1, " \"\t");
         pd = System.pathDelimiter();
-        classfile = stringAppend(class_, ".mo");
-        classfile_1 = stringAppendList({mp,pd,classfile});
-        existRegularFile(classfile_1);
-        p = Parser.parse(classfile_1);
+        p = Parser.parse(path +& pd +& name);
       then
         p;
 
-    case (class_,mp_1)
+    case (id,path,name,true)
       equation
         ts = Absyn.getNewTimeStamp();
-        mp = System.trim(mp_1, " \"\t");
-        pd = System.pathDelimiter();
-        dirfile = stringAppendList({mp,pd,class_});
-        packfile = stringAppendList({dirfile,pd,"package.mo"});
-        existDirectoryFile(dirfile);
-        existRegularFile(packfile);
-        Print.printBuf("Class is package stored in a directory, loading whole package(incl. subdir)\n");
-        p = loadCompletePackageFromMp(class_, mp, Absyn.TOP(), Absyn.PROGRAM({},Absyn.TOP(), ts));
+        p = loadCompletePackageFromMp(id, name, path, Absyn.TOP(), Absyn.PROGRAM({},Absyn.TOP(), ts));
       then
         p;
-    case (_,_)
-      equation
-        Debug.fprint("failtrace", "ClassLoader.loadClassFromMp failed\n");
-      then
-        fail();
-  end matchcontinue;
+  end match;
 end loadClassFromMp;
-
-protected function loadCompletePackageFromMps
-"function: loadCompletePackageFromMps
-  Loads a whole package from the ModelicaPaths defined in OPENMODELICALIBRARY"
-  input Absyn.Ident inIdent;
-  input list<String> inStringLst;
-  input Absyn.Within inWithin;
-  input Absyn.Program inProgram;
-  output Absyn.Program outProgram;
-algorithm
-  outProgram := matchcontinue (inIdent,inStringLst,inWithin,inProgram)
-    local
-      Absyn.Program p,oldp;
-      String pack,mp;
-      Absyn.Within within_;
-      list<String> mps;
-    case (pack,(mp :: _),within_,oldp)
-      equation
-        p = loadCompletePackageFromMp(pack, mp, within_, oldp);
-      then
-        p;
-    case (pack,(_ :: mps),within_,oldp)
-      equation
-        p = loadCompletePackageFromMps(pack, mps, within_, oldp);
-      then
-        p;
-  end matchcontinue;
-end loadCompletePackageFromMps;
 
 protected function loadCompletePackageFromMp
 "function: loadCompletePackageFromMp
   Loads a whole package from the ModelicaPaths defined in OPENMODELICALIBRARY"
+  input String id "actual class identifier";
   input Absyn.Ident inIdent;
   input String inString;
   input Absyn.Within inWithin;
   input Absyn.Program inProgram;
   output Absyn.Program outProgram;
 algorithm
-  outProgram := match (inIdent,inString,inWithin,inProgram)
+  outProgram := match (id,inIdent,inString,inWithin,inProgram)
     local
       String pd,mp_1,packagefile,subdirstr,pack,mp;
       list<Absyn.Class> p1,oldc;
@@ -236,7 +171,7 @@ algorithm
       list<String> subdirs;
       Absyn.Path wpath_1,wpath;
       Absyn.TimeStamp ts;
-    case (pack,mp,(within_ as Absyn.TOP()),Absyn.PROGRAM(classes = oldc))
+    case (id,pack,mp,(within_ as Absyn.TOP()),Absyn.PROGRAM(classes = oldc))
       equation
         pd = System.pathDelimiter();
         mp_1 = stringAppendList({mp,pd,pack});
@@ -250,12 +185,12 @@ algorithm
         subdirs = System.subDirectories(mp_1);
         subdirs = Util.sort(subdirs, Util.strcmpBool);
         subdirstr = Util.stringDelimitList(subdirs, ", ");
-        p2 = loadCompleteSubdirs(subdirs, pack, mp_1, within_, p1_1);
-        p = loadCompleteSubfiles(pack, mp_1, within_, p2);
+        p2 = loadCompleteSubdirs(subdirs, id, mp_1, within_, p1_1);
+        p = loadCompleteSubfiles(id, mp_1, within_, p2);
       then
         p;
 
-    case (pack,mp,(within_ as Absyn.WITHIN(path = wpath)),Absyn.PROGRAM(classes = oldc))
+    case (id,pack,mp,(within_ as Absyn.WITHIN(path = wpath)),Absyn.PROGRAM(classes = oldc))
       equation
         pd = System.pathDelimiter();
         mp_1 = stringAppendList({mp,pd,pack});
@@ -269,13 +204,12 @@ algorithm
         subdirs = System.subDirectories(mp_1);
         subdirs = Util.sort(subdirs, Util.strcmpBool);
         subdirstr = Util.stringDelimitList(subdirs, ", ");
-        p2 = loadCompleteSubdirs(subdirs, pack, mp_1, within_, p1_1);
-        wpath_1 = Absyn.joinPaths(wpath, Absyn.IDENT(pack));
-        p = loadCompleteSubfiles(pack, mp_1, within_, p2);
+        p2 = loadCompleteSubdirs(subdirs, id, mp_1, within_, p1_1);
+        p = loadCompleteSubfiles(id, mp_1, within_, p2);
       then
         p;
 
-    case (_,_,_,_)
+    else
       equation
         // adrpo: not needed as it might fail due to no package file!
         // print("ClassLoader.loadCompletePackageFromMp failed\n");
@@ -309,7 +243,7 @@ algorithm
     case ((pack :: packs),pack1,mp,(within_ as Absyn.WITHIN(path = pack2)),oldp)
       equation
         pack_1 = Absyn.joinPaths(pack2, Absyn.IDENT(pack1));
-        p = loadCompletePackageFromMp(pack, mp, Absyn.WITHIN(pack_1), oldp);
+        p = loadCompletePackageFromMp(pack, pack, mp, Absyn.WITHIN(pack_1), oldp);
         p_1 = loadCompleteSubdirs(packs, pack1, mp, within_, p);
       then
         p_1;
@@ -317,7 +251,7 @@ algorithm
     case ((pack :: packs),pack1,mp,(within_ as Absyn.TOP()),oldp)
       equation
         pack_1 = Absyn.joinPaths(Absyn.IDENT(pack1), Absyn.IDENT(pack));
-        p = loadCompletePackageFromMp(pack, mp, Absyn.WITHIN(Absyn.IDENT(pack1)), oldp);
+        p = loadCompletePackageFromMp(pack, pack, mp, Absyn.WITHIN(Absyn.IDENT(pack1)), oldp);
         p_1 = loadCompleteSubdirs(packs, pack1, mp, within_, p);
       then
         p_1;
@@ -479,7 +413,7 @@ algorithm
     case (Absyn.PROGRAM(classes = (Absyn.CLASS(name = id) :: res),within_ = a,globalBuildTimes=ts),dir)
       equation
         path = Absyn.IDENT(id);
-        pnew = loadClass(path, dir);
+        pnew = loadClass(path, {"default"}, dir);
         p_res = loadModelFromEachClass(Absyn.PROGRAM(res,a,ts), dir);
         p_1 = Interactive.updateProgram(pnew, p_res);
       then

@@ -593,4 +593,11 @@ extern void System_getGCStatus(int *used, int *allocated)
   *allocated = -1;
 }
 
+extern void System_getLoadModelPath(const char *className, void *prios, void *mps, const char **dir, char **name, int *isDir)
+{
+  *name = NULL;
+  if (SystemImpl__getLoadModelPath(className,prios,mps,dir,name,isDir)) MMC_THROW();
+  /* TODO: Do not strdup in parent... */
+}
+
 }

@@ -476,7 +476,7 @@ algorithm
      equation
        path = parsePathFromString(lib);
        mp = Settings.getModelicaPath();
-       pnew = ClassLoader.loadClass(path, mp);
+       pnew = ClassLoader.loadClass(path, {"default"}, mp);
        pnew = Interactive.updateProgram(pnew, p);
        newst = Interactive.SYMBOLTABLE(pnew,aDep,NONE(),ic,iv,cf,lf);
        newst = loadLibs(rest, newst); // load the remaining

@@ -973,8 +973,14 @@ function generateCode "The input is a function name for which C-code is generate
 external "builtin";
 end generateCode;
 
-function loadModel "Parses the getModelicaPath(), and finds the package to load. If the input is Modelica.XXX, the complete Modelica AST is loaded."
+function loadModel "Parses the getModelicaPath(), and finds the package to load.
+If the input is Modelica.XXX, the complete Modelica AST is loaded.
+
+Default priority is: no version name > highest main release > highest pre-release > lexical sort of others.
+If none of the searched versions exist, false is returned and an error is added to the buffer.
+"
   input TypeName className;
+  input String[:] priorityVersion := {"default"};
   output Boolean success;
 external "builtin";
 end loadModel;

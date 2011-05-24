@@ -1405,6 +1405,97 @@ int SystemImpl__lpsolve55(void *lA, void *lB, void *ix, void **res)
   return info;
 }
 
+static int getPrio(const char *ver, size_t versionLen)
+{
+  if (!ver) return 0;
+  int status = 0;
+  while (*ver && versionLen) {
+    if (*ver >= '0' && *ver <= '9') status = 1;
+    else if (status == 1 && *ver == '.') status = 2;
+    else if (status == 1 && *ver == ' ') return 2;
+    else return 3;
+    ver++;
+    versionLen--;
+  }
+  /* TODO: Handle pre-release, release, non-release */
+  return 1;
+}
+
+int SystemImpl__getLoadModelPath(const char *name, void *prios, void *mps, const char **outDir, char **outName, int *isDir)
+{
+  size_t nlen = strlen(name);
+  int outPrio = INT_MAX;
+  int defaultPrio = INT_MAX;
+  char *defaultVersion = NULL;
+  while (RML_NILHDR != RML_GETHDR(mps)) {
+    const char *mp = RML_STRINGDATA(RML_CAR(mps));
+    DIR *dir = opendir(mp);
+    struct dirent *ent;
+    mps = RML_CDR(mps);
+    if (!dir) continue;
+    while (ent = readdir(dir)) {
+      if (0 == strncmp(name, ent->d_name, nlen)) {
+        const char *version;
+        int prio = 0, cIsDir = 1;
+        void *priosWork = prios;
+        size_t versionLen = 0;
+        /* Check if file is dir or mo-file; and if it has a version-string or not */
+        if (ent->d_name[nlen] == ' ') {
+          version = ent->d_name+nlen+1;
+          versionLen = strlen(version);
+          if (versionLen >= 3 && version[versionLen-3] == '.' && version[versionLen-2] == 'm' && version[versionLen-1] == 'o') {
+            if (versionLen == 3) version = NULL;
+            cIsDir = 0;
+            versionLen -= 3;
+          }
+        } else if (ent->d_name[nlen] == '\0') {
+          version = NULL;
+        } else if (0 == strcmp(ent->d_name+nlen,".mo")) {
+          version = NULL;
+          cIsDir = 0;
+        } else {
+          continue;
+        }
+        /* Check if this file has higher priority than the last found match */
+        while (RML_NILHDR != RML_GETHDR(priosWork)) {
+          if (prio > outPrio) break;
+          const char *cverPrio = RML_STRINGDATA(RML_CAR(priosWork));
+          priosWork = RML_CDR(priosWork);
+          /* fprintf(stderr, "'%s' '%s' %d\n", cverPrio, version, versionLen); */
+          if (0 == strcmp("default",cverPrio)) {
+            /* Search for an appropriate version of the library */
+            outPrio = prio;
+            prio = getPrio(version,versionLen);
+            /* TODO: Use something better than strcmp. We need natural sort for all cases... */
+            if (prio < defaultPrio || (prio == defaultPrio && strcmp(version, defaultVersion) > 0)) {
+              defaultPrio = prio;
+              *outDir = mp;
+              if (*outName) free(*outName);
+              if (defaultVersion) free(defaultVersion);
+              *outName = strdup(ent->d_name);
+              defaultVersion = version ? strdup(version) : NULL;
+              *isDir = cIsDir;
+            }
+            break;
+          } else if (version && 0 == strncmp(version,cverPrio,versionLen)) {
+            outPrio = prio;
+            *outDir = mp;
+            if (*outName) free(*outName);
+            *outName = strdup(ent->d_name);
+            *isDir = cIsDir;
+          }
+          prio++;
+        } /* prios loop */
+      } /* strcmp */
+    } /* readdir loop */
+    closedir(dir);
+  }
+  if (defaultVersion) free(defaultVersion);
+  /* if (*outName) fprintf(stderr, "Found version: %s\n", *outName); */
+  return outPrio == INT_MAX;
+}
+
+
 #ifdef __cplusplus
 }
 #endif

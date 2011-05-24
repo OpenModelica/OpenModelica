@@ -851,7 +851,7 @@ algorithm
     
     case (cache,env,"setCompileCommand",{Values.STRING(cmd)},st,msg)
       equation
-        cmd = Util.rawStringToInputString(cmd);
+        // cmd = Util.rawStringToInputString(cmd);
         Settings.setCompileCommand(cmd);
       then
         (cache,Values.BOOL(true),st);
@@ -868,7 +868,7 @@ algorithm
         
     case (cache,env,"setTempDirectoryPath",{Values.STRING(cmd)},st,msg)
       equation
-        cmd = Util.rawStringToInputString(cmd);
+        // cmd = Util.rawStringToInputString(cmd);
         Settings.setTempDirectoryPath(cmd);
       then
         (cache,Values.BOOL(true),st);
@@ -893,7 +893,7 @@ algorithm
 
     case (cache,env,"setInstallationDirectoryPath",{Values.STRING(cmd)},st,msg)
       equation
-        cmd = Util.rawStringToInputString(cmd);
+        // cmd = Util.rawStringToInputString(cmd);
         Settings.setInstallationDirectoryPath(cmd);
       then
         (cache,Values.BOOL(true),st);
@@ -912,7 +912,7 @@ algorithm
         
     case (cache,env,"setModelicaPath",{Values.STRING(cmd)},st,msg)
       equation
-        cmd = Util.rawStringToInputString(cmd);
+        // cmd = Util.rawStringToInputString(cmd);
         Settings.setModelicaPath(cmd);
       then
         (cache,Values.BOOL(true),st);
@@ -1280,7 +1280,7 @@ algorithm
     case (cache,env,"generateSeparateCode",{},st,msg)
       then (cache,Values.BOOL(false),st);
 
-    case (cache,env,"loadModel",{Values.CODE(Absyn.C_TYPENAME(path))},
+    case (cache,env,"loadModel",{Values.CODE(Absyn.C_TYPENAME(path)),Values.ARRAY(valueLst=cvars)},
           (st as Interactive.SYMBOLTABLE(
             ast = p,depends=aDep,instClsLst = ic,
             lstVarVal = iv,compiledFunctions = cf,
@@ -1289,22 +1289,20 @@ algorithm
             but where to get t? */
       equation
         mp = Settings.getModelicaPath();
-        pnew = ClassLoader.loadClass(path, mp);
+        strings = Util.listMap(cvars, ValuesUtil.extractValueString);
+        pnew = ClassLoader.loadClass(path, strings, mp);
         p = Interactive.updateProgram(pnew, p);
         str = Print.getString();
         newst = Interactive.SYMBOLTABLE(p,aDep,NONE(),{},iv,cf,lf);
       then
         (Env.emptyCache(),Values.BOOL(true),newst);
         
-    case (cache,env,"loadModel",{Values.CODE(Absyn.C_TYPENAME(path))},st,msg)
+    case (cache,env,"loadModel",Values.CODE(Absyn.C_TYPENAME(path))::_,st,msg)
       equation
         pathstr = ModUtil.pathString(path);
         Error.addMessage(Error.LOAD_MODEL_ERROR, {pathstr});
       then
         (cache,Values.BOOL(false),st);
-        
-    case (cache,env,"loadModel",{Values.CODE(Absyn.C_TYPENAME(path))},st,msg)
-    then (cache,Values.BOOL(false),st);  /* loadModel failed */
         
     case (cache,env,"loadFile",{Values.STRING(name)},
           (st as Interactive.SYMBOLTABLE(
@@ -1318,7 +1316,7 @@ algorithm
         (Env.emptyCache(),Values.BOOL(true),Interactive.SYMBOLTABLE(newp,aDep,NONE(),ic,iv,cf,lf));
         
     case (cache,env,"loadFile",{Values.STRING(name)},st,msg)
-    then (cache,Values.BOOL(false),st);
+      then (cache,Values.BOOL(false),st);
         
     case (cache,env,"loadString",{Values.STRING(str),Values.STRING(name)},
           (st as Interactive.SYMBOLTABLE(

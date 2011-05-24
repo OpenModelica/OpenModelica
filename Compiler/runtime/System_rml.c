@@ -2038,3 +2038,18 @@ RML_BEGIN_LABEL(System__lpsolve55)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getLoadModelPath)
+{
+  const char *outDir;
+  char *outName = NULL;
+  int isDir;
+  if (mk_icon(SystemImpl__getLoadModelPath(RML_STRINGDATA(rmlA0),rmlA1,rmlA2,&outDir,&outName,&isDir)))
+    RML_TAILCALLK(rmlFC);
+  rmlA0 = mk_scon(outDir);
+  rmlA1 = mk_scon(outName);
+  free(outName);
+  rmlA2 = mk_icon(isDir);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
