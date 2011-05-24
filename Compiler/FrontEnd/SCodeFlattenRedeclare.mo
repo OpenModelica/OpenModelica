@@ -324,13 +324,11 @@ algorithm
         env;
 
     // redeclare-as-element componeent
-    case (redecl as SCode.COMPONENT(typeSpec = Absyn.TPATH(path, _) , info = info), _)
+    case (redecl as SCode.COMPONENT(name = name, info = info), _)
       equation
-        //(base_item as SCodeEnv.CLASS(cls = redecl), path, _) = SCodeLookup.lookupClassName(path, inEnv, info);
-        //class_env = SCodeEnv.makeClassEnvironment(redecl, false);
-        //item = SCodeEnv.newClassItem(redecl, class_env, SCodeEnv.USERDEFINED());
-        //item = SCodeEnv.linkItemUsage(base_item, item);
+        (path, base_item) = SCodeLookup.lookupBaseClass(name, inEnv, info);
         item = SCodeEnv.newVarItem(redecl, true);
+        item = SCodeEnv.linkItemUsage(base_item, item);
         env = addRedeclareToEnvExtendsTable(item, path, inEnv, info);
       then
         env;
@@ -338,7 +336,7 @@ algorithm
     else
       equation
         true = RTOpts.debugFlag("failtrace");
-        Debug.traceln("- SCodeEnv.addElementRedeclarationsToEnv failed for " +&
+        Debug.traceln("- SCodeFlattenRedeclare.addElementRedeclarationsToEnv failed for " +&
           SCode.elementName(inRedeclare) +& " in " +& 
           SCodeEnv.getEnvName(inEnv) +& "\n");
       then
