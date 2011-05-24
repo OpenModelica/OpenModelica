@@ -41,7 +41,7 @@ release: omc
 c_runtime: mkbuilddirs
 	$(MAKE) -C c_runtime -f $(defaultMakefileTarget)
 
-docs: mkbuilddirs
+docs: mkbuilddirs omlibrary
 	(cp -p doc/*.pdf doc/*.txt doc/OpenModelicaAPI-Howto/*.pdf $(builddir_doc)/omc)
 	rm -f build/doc/omc/CMakeLists.txt
 	(cp -p Examples/*.* $(builddir_doc)/omc/testmodels/)
@@ -103,7 +103,8 @@ susgen:
 	(cd Compiler/susan_codegen/SimCode/GenTest && time $(MAKE) -f Makefile)
 
 omlibrary:
-	(cd libraries/ && find . -type d -not -path "*svn*" -exec install -m755 -d ../build/lib/omlibrary/{} \;)
+	test ! -f ../build/lib/omlibrary && \
+	(cd libraries/ && find . -type d -not -path "*svn*" -exec install -m755 -d ../build/lib/omlibrary/{} \;) && \
 	(cd libraries/ && find . -type f -not -path "*svn*" -exec install -m644 {} ../build/lib/omlibrary/{} \;)
 
 distclean: clean

@@ -100,23 +100,13 @@ char* SettingsImpl__getModelicaPath() {
   const char *path = getenv("OPENMODELICALIBRARY");
   int i = 0;
   if (path == NULL) {
-    // By default, this is <omhome>/lib/omlibrary/mslXX:<omhome>/lib/omlibrary/common
-    const int num_msl_version = 4;
-    const char *msl_versions[] = {"msl31","msl32","msl221","msl16"};
+    // By default, this is <omhome>/lib/omlibrary/
     const char *omhome = SettingsImpl__getInstallationDirectoryPath();
     if (omhome == NULL)
       return NULL;
     int lenOmhome = strlen(omhome);
-    char *buffer = (char*) malloc(2*lenOmhome+100);
-    int i;
-    for (i=0; i<num_msl_version; i++) {
-      snprintf(buffer,2*lenOmhome+100,"%s/lib/omlibrary/%s",omhome,msl_versions[i]);
-      if (SystemImpl__directoryExists(buffer)) {
-        snprintf(buffer,2*lenOmhome+100,"%s/lib/omlibrary/%s:%s/lib/omlibrary/common",omhome,msl_versions[i],omhome);
-        return buffer;
-      }
-    }
-    snprintf(buffer,2*lenOmhome+100,"%s/lib/omlibrary/common",omhome);
+    char *buffer = (char*) malloc(lenOmhome+100);
+    snprintf(buffer,lenOmhome+100,"%s/lib/omlibrary",omhome);
     return buffer;
   }
 
