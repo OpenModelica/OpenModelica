@@ -11747,9 +11747,7 @@ algorithm
     case (modelpath,p,id,f)
       equation
         cdef = getPathedClassInProgram(modelpath, p);
-        str = getNamedAnnotationInClass(cdef,id,f);
-        // fail if is empty!
-        false = stringEq(str, "");
+        SOME(str) = getNamedAnnotationInClass(cdef,id,f);
       then
         str;
     
@@ -11758,6 +11756,72 @@ algorithm
         "{}";
   end matchcontinue;
 end getNamedAnnotation;
+
+public function getUsesAnnotation
+"function: getNamedAnnotation
+  This function takes a Path and a Program and returns a comma separated
+  string of values for the Documentation annotation for the class named by the
+  first argument."
+  input Absyn.Program p;
+  output list<tuple<Absyn.Path,list<String>>> usesStr;
+algorithm
+  usesStr := matchcontinue (p)
+    local
+      Absyn.Class cdef;
+    
+    case (Absyn.PROGRAM(classes={cdef}))
+      equation
+        SOME(usesStr) = getNamedAnnotationInClass(cdef,"uses",getUsesAnnotationString);
+      then
+        usesStr;
+    
+    else {};
+  end matchcontinue;
+end getUsesAnnotation;
+
+protected function getUsesAnnotationString
+  input Option<Absyn.Modification> mod;
+  output list<tuple<Absyn.Path,list<String>>> usesStr;
+algorithm
+  usesStr := match (mod)
+    local 
+      list<Absyn.ElementArg> arglst;
+      list<String> strs;
+      String s;
+
+    case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
+      then getUsesAnnotationString2(arglst);    
+  end match;
+end getUsesAnnotationString;
+
+protected function getUsesAnnotationString2
+  input list<Absyn.ElementArg> eltArgs;
+  output list<tuple<Absyn.Path,list<String>>> strs;
+algorithm
+  strs := matchcontinue (eltArgs)
+    local
+      Absyn.Exp exp;
+      list<Absyn.ElementArg> xs;
+      String name, s, version;
+      list<tuple<Absyn.Path,list<String>>> ss;
+
+    case ({}) then {};
+
+    case (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = name),
+      modification=SOME(Absyn.CLASSMOD(elementArgLst={
+        Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name="version"),modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.STRING(version)))))
+      })))::xs)
+      equation
+        ss = getUsesAnnotationString2(xs);
+      then (Absyn.IDENT(name),{version})::ss;
+    
+    case (_::xs)
+      equation
+        ss = getUsesAnnotationString2(xs);
+      then ss;
+
+    end matchcontinue;
+end getUsesAnnotationString2;
 
 protected function getIconAnnotation
 "function: getIconAnnotation
@@ -12740,44 +12804,45 @@ algorithm
   end matchcontinue;
 end getAnnotationStr;
 
-protected function getNamedAnnotationInClass
+public function getNamedAnnotationInClass
 "function: getNamedAnnotationInClass
   Retrieve the documentation annotation as a
   string from the class passed as argument."
   input Absyn.Class inClass;
   input Absyn.Ident id;
   input ModFunc f;
-  output String outString;
+  output Option<TypeA> outString;
+  replaceable type TypeA subtypeof Any;
   partial function ModFunc
     input Option<Absyn.Modification> mod;
-    output String docStr;
+    output TypeA docStr;
   end ModFunc;
 algorithm
   outString := matchcontinue (inClass,id,f)
     local
-      String str,res;
+      TypeA str,res;
       list<Absyn.ClassPart> parts;
       list<Absyn.ElementArg> annlst;
 
     case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),id,f)
       equation
-        str = getNamedAnnotationInParts(parts,id,f);
+        SOME(str) = getNamedAnnotationInParts(parts,id,f);
       then
-        str;
+        SOME(str);
 
     case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)),id,f)
       equation
-        str = getNamedAnnotationInParts(parts,id,f);
+        SOME(str) = getNamedAnnotationInParts(parts,id,f);
       then
-        str;
+        SOME(str);
 
     case (Absyn.CLASS(body = Absyn.DERIVED(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_)))),id,f)
       equation
-        res = getNamedAnnotationStr(annlst,id,f);
+        SOME(res) = getNamedAnnotationStr(annlst,id,f);
       then
-        res;
+        SOME(res);
 
-    case (_,_,_) then "";
+    else NONE();
 
   end matchcontinue;
 end getNamedAnnotationInClass;
@@ -12788,92 +12853,75 @@ protected function getNamedAnnotationInParts
   input list<Absyn.ClassPart> inAbsynClassPartsLst;
   input Absyn.Ident id;
   input ModFunc f;
-  output String outString;
+  output Option<TypeA> outString;
+  replaceable type TypeA subtypeof Any;
   partial function ModFunc
     input Option<Absyn.Modification> mod;
-    output String docStr;
+    output TypeA docStr;
   end ModFunc;
 algorithm
   outString := matchcontinue (inAbsynClassPartsLst,id,f)
     local
-      String str;
+      TypeA str;
       list<Absyn.ElementItem> contents;
       list<Absyn.ClassPart> rest;
       list<Absyn.EquationItem> eqItems;
       list<Absyn.AlgorithmItem> alItems;
       list<Absyn.ElementArg> elArgs;
     
-    case ({},_,_) then "";
+    case ({},_,_) then NONE();
     
     // search in public
     case (Absyn.PUBLIC(contents)::rest, id, f)
       equation
-        str = getNamedAnnotationInElItems(contents,id,f);
-        // make it sure is not empty!
-        false = stringEqual(str, "");
+        SOME(str) = getNamedAnnotationInElItems(contents,id,f);
       then
-        str;
+        SOME(str);
     
     // search in protected
     case (Absyn.PROTECTED(contents)::rest, id, f)
       equation
-        str = getNamedAnnotationInElItems(contents,id,f);
-        // make it sure is not empty!
-        false = stringEqual(str, "");
+        SOME(str) = getNamedAnnotationInElItems(contents,id,f);
       then
-        str;
+        SOME(str);
 
     // search in equations
     case (Absyn.EQUATIONS(eqItems)::rest, id, f)
       equation
-        str = getNamedAnnotationInEquItems(eqItems,id,f);
-        // make it sure is not empty!
-        false = stringEqual(str, "");
+        SOME(str) = getNamedAnnotationInEquItems(eqItems,id,f);
       then
-        str;
+        SOME(str);
     
     // search in intial equations
     case (Absyn.INITIALEQUATIONS(eqItems)::rest, id, f)
       equation
-        str = getNamedAnnotationInEquItems(eqItems,id,f);
-        // make it sure is not empty!
-        false = stringEqual(str, "");
+        SOME(str) = getNamedAnnotationInEquItems(eqItems,id,f);
       then
-        str;
+        SOME(str);
 
     // search in algorithms
     case (Absyn.ALGORITHMS(alItems)::rest, id, f)
       equation
-        str = getNamedAnnotationInAlgItems(alItems,id,f);
-        // make it sure is not empty!
-        false = stringEqual(str, "");
+        SOME(str) = getNamedAnnotationInAlgItems(alItems,id,f);
       then
-        str;
+        SOME(str);
     
     // search in initial algorithms
     case (Absyn.INITIALALGORITHMS(alItems)::rest, id, f)
       equation
-        str = getNamedAnnotationInAlgItems(alItems,id,f);
-        // make it sure is not empty!
-        false = stringEqual(str, "");
+        SOME(str) = getNamedAnnotationInAlgItems(alItems,id,f);
       then
-        str;
+        SOME(str);
     
     // search in exernal declarations
     case (Absyn.EXTERNAL(annotation_ = SOME(Absyn.ANNOTATION(elArgs)))::rest, id, f)
       equation
-        str = getNamedAnnotationStr(elArgs,id,f);
-        // make it sure is not empty!
-        false = stringEqual(str, "");
+        SOME(str) = getNamedAnnotationStr(elArgs,id,f);
       then
-        str;
+        SOME(str);
 
     // try next
-    case (_ :: rest,id,f)
-      equation
-        str = getNamedAnnotationInParts(rest,id,f);
-      then
-        str;
+    case (_ :: rest,id,f) then getNamedAnnotationInParts(rest,id,f);
   end matchcontinue;
 end getNamedAnnotationInParts;
 
@@ -12885,31 +12933,28 @@ protected function getNamedAnnotationInElItems
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input Absyn.Ident id;
   input ModFunc f;
-  output String outString;
+  output Option<TypeA> outString;
+  replaceable type TypeA subtypeof Any;
   partial function ModFunc
     input Option<Absyn.Modification> mod;
-    output String docStr;
+    output TypeA docStr;
   end ModFunc;
 algorithm
   outString := matchcontinue (inAbsynElementItemLst,id,f)
     local
-      String s1,str;
+      TypeA s1,str;
       list<Absyn.ElementArg> annlst;
       list<Absyn.ElementItem> xs;
     
-    case ({},_,_) then "";
+    case ({},_,_) then NONE();
     
     case ((Absyn.ANNOTATIONITEM(annotation_ = Absyn.ANNOTATION(elementArgs = annlst)) :: _),id,f)
       equation
-        s1 = getNamedAnnotationStr(annlst,id,f);
+        SOME(s1) = getNamedAnnotationStr(annlst,id,f);
       then
-        s1;
+        SOME(s1);
     
-    case ((_ :: xs),id,f)
-      equation
-        str = getNamedAnnotationInElItems(xs,id,f);
-      then
-        str;
+    case ((_ :: xs),id,f) then getNamedAnnotationInElItems(xs,id,f);
   end matchcontinue;
 end getNamedAnnotationInElItems;
 
@@ -12920,31 +12965,28 @@ protected function getNamedAnnotationInEquItems
   input list<Absyn.EquationItem> inAbsynEquItemLst;
   input Absyn.Ident id;
   input ModFunc f;
-  output String outString;
+  output Option<TypeA> outString;
+  replaceable type TypeA subtypeof Any;
   partial function ModFunc
     input Option<Absyn.Modification> mod;
-    output String docStr;
+    output TypeA docStr;
   end ModFunc;
 algorithm
   outString := matchcontinue (inAbsynEquItemLst,id,f)
     local
-      String s1,str;
+      TypeA s1,str;
       list<Absyn.ElementArg> annlst;
       list<Absyn.EquationItem> xs;
     
-    case ({},_,_) then "";
+    case ({},_,_) then NONE();
     
     case (Absyn.EQUATIONITEMANN(annotation_ = Absyn.ANNOTATION(elementArgs = annlst)) :: _, id, f)
       equation
-        s1 = getNamedAnnotationStr(annlst,id,f);
+        SOME(s1) = getNamedAnnotationStr(annlst,id,f);
       then
-        s1;
+        SOME(s1);
     
-    case ((_ :: xs),id,f)
-      equation
-        str = getNamedAnnotationInEquItems(xs,id,f);
-      then
-        str;
+    case ((_ :: xs),id,f) then getNamedAnnotationInEquItems(xs,id,f);
   end matchcontinue;
 end getNamedAnnotationInEquItems;
 
@@ -12955,31 +12997,28 @@ protected function getNamedAnnotationInAlgItems
   input list<Absyn.AlgorithmItem> inAbsynAlgItemLst;
   input Absyn.Ident id;
   input ModFunc f;
-  output String outString;
+  output Option<TypeA> outString;
+  replaceable type TypeA subtypeof Any;
   partial function ModFunc
     input Option<Absyn.Modification> mod;
-    output String docStr;
+    output TypeA docStr;
   end ModFunc;
 algorithm
   outString := matchcontinue (inAbsynAlgItemLst,id,f)
     local
-      String s1,str;
+      TypeA s1,str;
       list<Absyn.ElementArg> annlst;
       list<Absyn.AlgorithmItem> xs;
     
-    case ({},_,_) then "";
+    case ({},_,_) then NONE();
     
     case (Absyn.ALGORITHMITEMANN(annotation_ = Absyn.ANNOTATION(elementArgs = annlst)) :: _, id, f)
       equation
-        s1 = getNamedAnnotationStr(annlst,id,f);
+        SOME(s1) = getNamedAnnotationStr(annlst,id,f);
       then
-        s1;
+        SOME(s1);
     
-    case ((_ :: xs),id,f)
-      equation
-        str = getNamedAnnotationInAlgItems(xs,id,f);
-      then
-        str;
+    case ((_ :: xs),id,f) then getNamedAnnotationInAlgItems(xs,id,f);
   end matchcontinue;
 end getNamedAnnotationInAlgItems;
 
@@ -13046,15 +13085,16 @@ protected function getNamedAnnotationStr
   input list<Absyn.ElementArg> inAbsynElementArgLst;
   input Absyn.Ident id;
   input ModFunc f;
-  output String outString;
+  output Option<TypeA> outString;
+  replaceable type TypeA subtypeof Any;
   partial function ModFunc
     input Option<Absyn.Modification> mod;
-    output String docStr;
+    output TypeA docStr;
   end ModFunc;
 algorithm
   outString := matchcontinue (inAbsynElementArgLst,id,f)
     local
-      String str;
+      TypeA str;
       Absyn.ElementArg ann;
       Option<Absyn.Modification> mod;
       list<Absyn.ElementArg> xs;
@@ -13065,17 +13105,13 @@ algorithm
         true = stringEq(id1, id2);
         str = f(mod);
       then
-        str;
+        SOME(str);
     
-    case ((_ :: xs),id,f)
-      equation
-        str = getNamedAnnotationStr(xs,id,f);
-      then
-        str;
+    case ((_ :: xs),id,f) then getNamedAnnotationStr(xs,id,f);
   end matchcontinue;
 end getNamedAnnotationStr;
 
-protected function getAnnotationValue
+public function getAnnotationValue
   input Option<Absyn.Modification> mod;
   output String str;
 algorithm
@@ -13095,6 +13131,18 @@ algorithm
     case (_) then "{}";
   end matchcontinue;
 end getAnnotationValue;
+
+public function getAnnotationStringValueOrFail
+  input Option<Absyn.Modification> mod;
+  output String str;
+algorithm
+  str := match (mod)
+    local 
+      String s;
+
+    case (SOME(Absyn.CLASSMOD(elementArgLst = {}, eqMod=Absyn.EQMOD(exp=Absyn.STRING(s))))) then s;
+  end match;
+end getAnnotationStringValueOrFail;
 
 public function getExperimentAnnotationString
 "@author: adrpo

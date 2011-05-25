@@ -293,6 +293,8 @@ public constant ErrorID INVALID_TYPE_PREFIX=179;
 public constant ErrorID LINEAR_SYSTEM_INVALID=180;
 public constant ErrorID LINEAR_SYSTEM_SINGULAR=181;
 public constant ErrorID EMPTY_ARRAY=182;
+public constant ErrorID LOAD_MODEL_DIFFERENT_VERSIONS=183;
+public constant ErrorID LOAD_MODEL=184;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -501,6 +503,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (RESTRICTION_VIOLATION,TRANSLATION(),ERROR(),"Restriction violation: %s is a %s, not a %s"),
           (ZERO_STEP_IN_ARRAY_CONSTRUCTOR, TRANSLATION(), ERROR(),
           "Step equals 0 in array constructor %s."),
+          (LOAD_MODEL_DIFFERENT_VERSIONS,SCRIPTING(),WARNING(),"Requested package %s of version %s, but this package was already loaded with version %s. You might experience problems if these versions are incompatible."),
+          (LOAD_MODEL,SCRIPTING(),ERROR(),"Failed to load package %s (%s) using MODELICAPATH %s."),
           
            /*
           (CONNECT_STREAM_TO_NONSTREAM,TRANSLATION(),ERROR(),

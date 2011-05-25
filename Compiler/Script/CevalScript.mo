@@ -579,6 +579,86 @@ algorithm
   end matchcontinue;
 end simOptionsAsString;
 
+protected function loadModel
+  input list<tuple<Absyn.Path,list<String>>> modelsToLoad;
+  input String modelicaPath;
+  input Absyn.Program p;
+  input Boolean forceLoad;
+  output Absyn.Program pnew;
+  output Boolean success;
+algorithm
+  (pnew,success) := matchcontinue (modelsToLoad,modelicaPath,p,forceLoad)
+    local
+      Absyn.Path path;
+      String pathStr,versions;
+      list<String> strings;
+      Boolean b,b1,b2;
+    case ({},_,p,_) then (p,true);
+    case ((path,strings)::modelsToLoad,modelicaPath,p,forceLoad)
+      equation
+        b = checkModelLoaded(path,strings,p,forceLoad);
+        pnew = Debug.bcallret3(not b, ClassLoader.loadClass, path, strings, modelicaPath, Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp));
+        p = Interactive.updateProgram(pnew, p);
+        (p,b1) = loadModel(Interactive.getUsesAnnotation(pnew),modelicaPath,p,false);
+        (p,b2) = loadModel(modelsToLoad,modelicaPath,p,forceLoad);
+      then (p,b1 and b2);
+    case ((path,strings)::_,modelicaPath,p,_)
+      equation
+        pathStr = Absyn.pathString(path);
+        versions = Util.stringDelimitList(strings,",");
+        Error.addMessage(Error.LOAD_MODEL,{pathStr,versions,modelicaPath});
+      then (p,false);
+  end matchcontinue;
+end loadModel;
+
+protected function checkModelLoaded
+  input Absyn.Path path;
+  input list<String> validVersions;
+  input Absyn.Program p;
+  input Boolean forceLoad;
+  output Boolean loaded;
+algorithm
+  loaded := matchcontinue (path,validVersions,p,forceLoad)
+    local
+      Absyn.Class cdef;
+      String str1,str2;
+      Option<String> ostr2;
+    case (_,_,_,true) then false;
+    case (path,{str1},p,false)
+      equation
+        cdef = Interactive.getPathedClassInProgram(path,p);
+        ostr2 = Interactive.getNamedAnnotationInClass(cdef,"version",Interactive.getAnnotationStringValueOrFail);
+        checkValidVersion(path,str1,ostr2);
+      then true;
+    else false;
+  end matchcontinue;
+end checkModelLoaded;
+
+protected function checkValidVersion
+  input Absyn.Path path;
+  input String version;
+  input Option<String> actualVersion;
+algorithm
+  _ := matchcontinue (path,version,actualVersion)
+    local
+      String pathStr,str1,str2;
+    case (_,str1,SOME(str2))
+      equation
+        true = stringEq(str1,str2);
+      then ();
+    case (path,str1,SOME(str2))
+      equation
+        pathStr = Absyn.pathString(path);
+        Error.addMessage(Error.LOAD_MODEL_DIFFERENT_VERSIONS,{pathStr,str1,str2});
+      then ();
+    case (path,str1,NONE())
+      equation
+        pathStr = Absyn.pathString(path);
+        Error.addMessage(Error.LOAD_MODEL_DIFFERENT_VERSIONS,{pathStr,str1,"unknown"});
+      then ();
+  end matchcontinue;
+end checkValidVersion;
+
 public function cevalInteractiveFunctions
 "function cevalInteractiveFunctions
   This function evaluates the functions
@@ -1290,12 +1370,11 @@ algorithm
       equation
         mp = Settings.getModelicaPath();
         strings = Util.listMap(cvars, ValuesUtil.extractValueString);
-        pnew = ClassLoader.loadClass(path, strings, mp);
-        p = Interactive.updateProgram(pnew, p);
+        (p,b) = loadModel({(path,strings)},mp,p,true);
         str = Print.getString();
         newst = Interactive.SYMBOLTABLE(p,aDep,NONE(),{},iv,cf,lf);
       then
-        (Env.emptyCache(),Values.BOOL(true),newst);
+        (Env.emptyCache(),Values.BOOL(b),newst);
         
     case (cache,env,"loadModel",Values.CODE(Absyn.C_TYPENAME(path))::_,st,msg)
       equation

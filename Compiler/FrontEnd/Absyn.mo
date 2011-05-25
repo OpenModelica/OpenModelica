@@ -109,38 +109,6 @@ uniontype Program
     Within       within_ "Within clause" ;
     TimeStamp    globalBuildTimes "";
   end PROGRAM;
-
-   /*
-   adrpo: 2008-11-30 !THESE SEEMS NOT TO BE USED ANYMORE!
-
-   ModExtension: The following 3 nodes are not standard Modelica
-   Nodes such as BEGIN_DEFINITION and END_DEFINITION
-   can be used for representing packages and classes that are entered piecewise,
-   e.g., first entering the package head (as BEGIN_DEFINITION),
-   then the contained definitions, then an end package repesented as END_DEFINITION.
-
-  record BEGIN_DEFINITION
-    Path         path  "path for split definitions" ;
-    Restriction  restriction   "Class restriction" ;
-    Boolean      partialPrefix      "true if partial" ;
-    Boolean      encapsulatedPrefix "true if encapsulated" ;
-  end BEGIN_DEFINITION;
-
-  record END_DEFINITION
-    Ident  name   "name for split definitions" ;
-  end END_DEFINITION;
-
-  record COMP_DEFINITION
-    ElementSpec  element    "element for split definitions" ;
-    Option<Path> insertInto "insert into, Default: NONE" ;
-  end COMP_DEFINITION;
-
-  record IMPORT_DEFINITION
-    ElementSpec   importElementFor "For split definitions" ;
-    Option<Path>  insertInto       "Insert into, Default: NONE" ;
-  end IMPORT_DEFINITION;
-  */
-
 end Program;
 
 public
@@ -150,7 +118,6 @@ uniontype Within "Within Clauses"
   end WITHIN;
 
   record TOP end TOP;
-
 end Within;
 
 public
