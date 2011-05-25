@@ -721,7 +721,7 @@ algorithm
         new_env_1 = extendFrameV(env,
           DAE.TYPES_VAR(
             name,
-            DAE.ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.RW(), variability, Absyn.BIDIR(), Absyn.NOT_INNER_OUTER()),
+            DAE.ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(),  variability, Absyn.BIDIR(), Absyn.NOT_INNER_OUTER()),
             SCode.PUBLIC(),
             type_,
             binding,
@@ -1626,28 +1626,25 @@ algorithm
       Absyn.TypeSpec tsp;
       SCode.Flow flowPrefix "flow";
       SCode.Stream streamPrefix "stream";
-      SCode.Accessibility accessibility "accessibility";
       SCode.Variability variability "variability";
       Absyn.Direction direction "direction";
       Absyn.InnerOuter innerOuter "inner, outer,  inner outer or unspecified";
       
-    case(VAR(instantiated=DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(flowPrefix, streamPrefix, accessibility, variability, direction, innerOuter),ty=tp))) 
+    case(VAR(instantiated=DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(flowPrefix, streamPrefix, variability, direction, innerOuter),ty=tp))) 
       equation
         str = "var:    " +& name +& " " +& Types.unparseType(tp) +& "("
         +& Types.printTypeStr(tp) +& ")" +& " attr: " +& 
         SCodeDump.flowStr(flowPrefix) +& ", " +&
         SCodeDump.streamStr(streamPrefix) +& ", " +&
-        SCodeDump.accessibilityString(accessibility) +& ", " +&
         SCodeDump.variabilityString(variability) +& ", " +&
         SCodeDump.innerouterString(innerOuter);
       then str;
     
-    case(VAR(declaration = SOME((SCode.COMPONENT(name=name,typeSpec=tsp,prefixes=SCode.PREFIXES(innerOuter=innerOuter),attributes=SCode.ATTR(_, flowPrefix, streamPrefix, accessibility, variability, direction)), _)))) 
+    case(VAR(declaration = SOME((SCode.COMPONENT(name=name,typeSpec=tsp,prefixes=SCode.PREFIXES(innerOuter=innerOuter),attributes=SCode.ATTR(_, flowPrefix, streamPrefix, variability, direction)), _)))) 
       equation
         str = "var:    " +& name +& " " +& Dump.unparseTypeSpec(tsp) +& " attr: " +& 
         SCodeDump.flowStr(flowPrefix) +& ", " +&
         SCodeDump.streamStr(streamPrefix) +& ", " +&
-        SCodeDump.accessibilityString(accessibility) +& ", " +&
         SCodeDump.variabilityString(variability) +& ", " +&
         SCodeDump.innerouterString(innerOuter);
       then str;

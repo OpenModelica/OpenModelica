@@ -207,7 +207,6 @@ algorithm
       SCode.Final fin;
       SCode.Flow fp;
       SCode.Stream sp;
-      SCode.Accessibility acc;
       Option<Absyn.Exp> cond;
       SCode.Partial pp;
       SCode.Encapsulated ep;
@@ -224,7 +223,7 @@ algorithm
 
     case (_, SCode.COMPONENT(name = n,
                              prefixes = SCode.PREFIXES(vis, red, fin, io, rep),
-                             attributes = SCode.ATTR(ad, fp, sp, acc, var, direction),
+                             attributes = SCode.ATTR(ad, fp, sp, var, direction),
                              typeSpec = typath,
                              modifications = mod,
                              condition = cond), _)
@@ -238,7 +237,7 @@ algorithm
         res;
 
     // derived
-    case (inName, SCode.CLASS(classDef = SCode.DERIVED(typeSpec = typath, modifications = mod, attributes = SCode.ATTR(ad, fp, sp, acc, var, direction))), _)
+    case (inName, SCode.CLASS(classDef = SCode.DERIVED(typeSpec = typath, modifications = mod, attributes = SCode.ATTR(ad, fp, sp, var, direction))), _)
       equation
         true = stringEq(inName, SCodeFlat.derivedName);
         s1 = flowStr(fp) +& streamStr(sp) +& variabilityStr(var) +& directionStr(direction);

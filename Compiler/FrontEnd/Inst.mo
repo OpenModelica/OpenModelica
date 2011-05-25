@@ -2287,15 +2287,15 @@ end isBuiltInClass;
 
 protected constant DAE.Type stateSelectType = (DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},
           {
-          DAE.TYPES_VAR("never",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
+          DAE.TYPES_VAR("never",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
              (DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),NONE()),DAE.UNBOUND(),NONE()),
-          DAE.TYPES_VAR("avoid",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
+          DAE.TYPES_VAR("avoid",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
              (DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),NONE()),DAE.UNBOUND(),NONE()),
-          DAE.TYPES_VAR("default",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
+          DAE.TYPES_VAR("default",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
              (DAE.T_ENUMERATION(SOME(3),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),NONE()),DAE.UNBOUND(),NONE()),
-          DAE.TYPES_VAR("prefer",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
+          DAE.TYPES_VAR("prefer",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
              (DAE.T_ENUMERATION(SOME(4),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),NONE()),DAE.UNBOUND(),NONE()),
-          DAE.TYPES_VAR("always",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
+          DAE.TYPES_VAR("always",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),
              (DAE.T_ENUMERATION(SOME(5),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),NONE()),DAE.UNBOUND(),NONE())
           },{}),NONE());
 
@@ -2639,7 +2639,7 @@ algorithm
       equation
         failure(equality(c=DAE.C_VAR()));
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
-      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
         SCode.PUBLIC(),t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
         
     case(cache,env,id,SOME(v),bind,expectedTp,DAE.PROP(bindTp as (DAE.T_ARRAY(arrayDim = d),_),c))
@@ -2648,7 +2648,7 @@ algorithm
         true = OptManager.getOption("checkModel");
         expectedTp = Types.liftArray(expectedTp, d);
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
-      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
         SCode.PUBLIC(),t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
         
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
@@ -2656,7 +2656,7 @@ algorithm
         failure(equality(c=DAE.C_VAR()));
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
         (cache,v,_) = Ceval.ceval(cache,env, bind1, false,NONE(), NONE(), Ceval.NO_MSG());
-      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
       SCode.PUBLIC(),t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
 
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp as (DAE.T_ARRAY(arrayDim = d),_),c))
@@ -2666,14 +2666,14 @@ algorithm
         expectedTp = Types.liftArray(expectedTp, d);
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
         (cache,v,_) = Ceval.ceval(cache,env, bind1, false,NONE(), NONE(), Ceval.NO_MSG());
-      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
       SCode.PUBLIC(),t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
       
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
       equation
         failure(equality(c=DAE.C_VAR()));
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
-      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+      then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
       SCode.PUBLIC(),t_1,DAE.EQBOUND(bind1,NONE(),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
 
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
@@ -4285,7 +4285,7 @@ algorithm
                         SCode.R_TYPE(),
                         SCode.DERIVED(
                           tSpec,SCode.NOMOD(),
-                          SCode.ATTR({}, SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.RW(), SCode.VAR(), Absyn.BIDIR()),
+                          SCode.ATTR({}, SCode.NOT_FLOW(), SCode.NOT_STREAM(),  SCode.VAR(), Absyn.BIDIR()),
                           NONE()),
                         Absyn.dummyInfo);
         (cache,cenv,ih,_,_,csets,ty,_,oDA,_)=instClass(cache,env,ih,UnitAbsyn.noStore,DAE.NOMOD(),pre,csets,c,dims,impl,INNER_CALL(), ConnectionGraph.EMPTY);
@@ -5887,7 +5887,6 @@ algorithm
       Absyn.InnerOuter io;
       SCode.Attributes attr;
       list<Absyn.Subscript> ad;
-      SCode.Accessibility acc;
       SCode.Variability param;
       Absyn.Direction dir;
       Absyn.TypeSpec t;
@@ -5932,7 +5931,7 @@ algorithm
                                      replaceablePrefix = repl
                                    ),
                                    attributes = (attr as SCode.ATTR(arrayDims = ad,flowPrefix = flowPrefix,
-                                                                    streamPrefix = streamPrefix,accessibility = acc,
+                                                                    streamPrefix = streamPrefix,
                                                                     variability = param,direction = dir)),
                                    typeSpec = (tss as Absyn.TPATH(tpp, _)),
                                    modifications = m,
@@ -5967,7 +5966,7 @@ algorithm
                                      replaceablePrefix = repl
                                    ),
                                    attributes = (attr as SCode.ATTR(arrayDims = ad,flowPrefix = flowPrefix,
-                                                                    streamPrefix = streamPrefix,accessibility = acc,
+                                                                    streamPrefix = streamPrefix,
                                                                     variability = param,direction = dir)),
                                    typeSpec = (t as Absyn.TCOMPLEX(_,_,_)),
                                    modifications = m,
@@ -6050,7 +6049,6 @@ algorithm
       Absyn.InnerOuter io;
       SCode.Attributes attr;
       list<Absyn.Subscript> ad;
-      SCode.Accessibility acc;
       SCode.Variability param;
       Absyn.Direction dir;
       Absyn.TypeSpec t;
@@ -6067,7 +6065,7 @@ algorithm
     // a component
     case (cache,env,ih,mods,pre,csets,ci_state,
           ((comp as SCode.COMPONENT(n,SCode.PREFIXES(vis,redecl,finalPrefix,io,repl),
-                                    attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir),
+                                    attr as SCode.ATTR(ad,flowPrefix,streamPrefix,param,dir),
                                     t,m,comment,condition,info),cmod) :: xs),
           inst_dims,impl)
       equation
@@ -6094,7 +6092,7 @@ algorithm
 
         // Debug.traceln("  extendFrameV comp " +& n +& " m:" +& Mod.printModStr(cmod_1) +& " compm: " +& Mod.printModStr(compmod) +& " cm: " +& Mod.printModStr(cmod));
         env_1 = Env.extendFrameV(env,
-          DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),vis,
+          DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,param,dir,io),vis,
           (DAE.T_NOTYPE(),NONE()),DAE.UNBOUND(),NONE()), SOME((comp,cmod_1)), Env.VAR_UNTYPED(), {});
         (cache,env_2,ih) = addComponentsToEnv2(cache, env_1, ih, mods, pre, csets, ci_state, xs, inst_dims, impl);
         // adpro: this was twice!
@@ -6465,7 +6463,7 @@ algorithm
         
         cls = SCode.CLASS(id, SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), 
           SCode.NOT_PARTIAL(), SCode.R_TYPE(), SCode.DERIVED(ts, SCode.NOMOD(),
-          SCode.ATTR(ad, fp, sp, SCode.RW(), SCode.VAR(), Absyn.BIDIR()),
+          SCode.ATTR(ad, fp, sp,  SCode.VAR(), Absyn.BIDIR()),
           NONE()), info);
        
         // The variable declaration and the (optional) equation modification are inspected for array dimensions.
@@ -7732,7 +7730,6 @@ algorithm
       SCode.Stream streamPrefix;
       Option<SCode.Comment> comment;
       Option<DAE.VariableAttributes> dae_var_attr;
-      SCode.Accessibility acc;
       SCode.Variability vt;
       Absyn.Direction dir;
       Option<DAE.Exp> start;
@@ -8474,7 +8471,7 @@ algorithm
         env = Env.extendFrameV(inEnv,
           DAE.TYPES_VAR(
             lit,
-            DAE.ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.RO(), SCode.VAR(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER()),
+            DAE.ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(),  SCode.VAR(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER()),
             SCode.PUBLIC(),
             (DAE.T_NOTYPE(),NONE()),
             DAE.UNBOUND(),
@@ -8677,7 +8674,6 @@ algorithm
       Absyn.InnerOuter io;
       SCode.Attributes attr;
       list<Absyn.Subscript> ad;
-      SCode.Accessibility acc;
       SCode.Variability param;
       Absyn.Direction dir;
       Absyn.Path t;
@@ -8722,7 +8718,7 @@ algorithm
     case (cache,env,ih,pre,mods,cref,ci_state,csets,impl,updatedComps)
       equation
         id = Absyn.crefFirstIdent(cref);
-        (cache,tyVar,SOME((SCode.COMPONENT(n,pf as SCode.PREFIXES(innerOuter = io),(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),Absyn.TPATH(t, _),m,comment,cond,info),cmod)),_)
+        (cache,tyVar,SOME((SCode.COMPONENT(n,pf as SCode.PREFIXES(innerOuter = io),(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,param,dir)),Absyn.TPATH(t, _),m,comment,cond,info),cmod)),_)
           = Lookup.lookupIdent(cache, env, id);
         //Debug.traceln("update comp " +& n +& " with mods:" +& Mod.printModStr(mods) +& " m:" +& SCodeDump.printModStr(m) +& " cm:" +& Mod.printModStr(cmod));
         (cache,cl,cenv) = Lookup.lookupClass(cache, env, t, false);
@@ -8735,7 +8731,7 @@ algorithm
         crefs_2 = removeCrefFromCrefs(crefs_1, cref);
         updatedComps = BaseHashTable.add((cref,0),updatedComps);
         (cache,env2,ih,csets,updatedComps) = updateComponentsInEnv2(cache, env, ih, pre, mods, crefs_2, ci_state, csets, impl, updatedComps);
-        (cache,env_1,ih,csets_1,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),info,m,cmod,mods,cref,ci_state,csets,impl,updatedComps);
+        (cache,env_1,ih,csets_1,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(flowPrefix,streamPrefix,param,dir,io),info,m,cmod,mods,cref,ci_state,csets,impl,updatedComps);
       then
         (cache,env_1,ih,csets_1,updatedComps);
 
@@ -11513,7 +11509,6 @@ algorithm
     local
       DAE.Exp exp;
       DAE.Properties prop;
-      SCode.Accessibility acc;
       DAE.ExtArg extarg;
       list<Env.Frame> env;
       Option<String> n,lang;
@@ -11522,12 +11517,13 @@ algorithm
       Boolean impl;
       Env.Cache cache;
       Prefix.Prefix pre;
+      DAE.Attributes attr;
 
     case (cache,_,Absyn.EXTERNALDECL(output_ = NONE()),_,_,_) then (cache,DAE.NOEXTARG());  /* impl */ 
 
     case (cache,env,Absyn.EXTERNALDECL(funcName = n,lang = lang,output_ = SOME(cref),args = args),impl,pre,info)
       equation 
-        (cache,SOME((exp,prop,acc))) = Static.elabCref(cache,env,cref,impl,false /* Do NOT vectorize arrays; we require a CREF */,pre,info);
+        (cache,SOME((exp,prop,attr))) = Static.elabCref(cache,env,cref,impl,false /* Do NOT vectorize arrays; we require a CREF */,pre,info);
         (cache,extarg) = instExtGetFargsSingle(cache,env,exp,prop);
         assertExtArgOutputIsCrefVariable(extarg,Types.getPropType(prop),Types.propAllConst(prop),info);
       then
@@ -13175,7 +13171,6 @@ algorithm
       Boolean impl;
       SCode.Attributes attr;
       list<Absyn.Subscript> dim;
-      SCode.Accessibility acc;
       SCode.Variability var;
       Absyn.Direction dir;
       Absyn.Path t;
@@ -13200,7 +13195,7 @@ algorithm
                           ),
                           attributes = (attr as 
                           SCode.ATTR(arrayDims = dim,flowPrefix = f,streamPrefix=s,
-                                     accessibility = acc, variability = var,direction = dir)),
+                                     variability = var,direction = dir)),
                           typeSpec = Absyn.TPATH(t, _),modifications = mod,
                           comment = comment,
                           info = info),
@@ -13209,7 +13204,7 @@ algorithm
         // - Prefixes (constant, parameter, final, discrete, input, output, ...) of the remaining record components are removed.
         var = SCode.VAR();
         dir = Absyn.INPUT();
-        attr = SCode.ATTR(dim,f,s,acc,var,dir);
+        attr = SCode.ATTR(dim,f,s,var,dir);
 
         //Debug.fprint("recconst", "inst_record_constructor_elt called\n");
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, t, true);
@@ -13227,7 +13222,7 @@ algorithm
         Debug.fcall("recconst", Mod.printMod, mod_1);
         (cache,bind) = makeBinding(cache,env, attr, mod_1, tp_1, Prefix.NOPRE(), id, info);
       then
-        (cache,ih,DAE.TYPES_VAR(id,DAE.ATTR(f,s,acc,var,dir,Absyn.NOT_INNER_OUTER()),vis,tp_1,bind,NONE()));
+        (cache,ih,DAE.TYPES_VAR(id,DAE.ATTR(f,s,var,dir,Absyn.NOT_INNER_OUTER()),vis,tp_1,bind,NONE()));
 
     case (cache,env,ih,elt,outerMod,impl)
       equation
@@ -14142,7 +14137,6 @@ algorithm
       Env.Env env,compenv,cenv;
       Integer i1,i2;
       list<Absyn.Subscript> ad;
-      SCode.Accessibility acc;
       SCode.Variability param;
       Absyn.Direction dir;
       Ident n;
@@ -14170,7 +14164,7 @@ algorithm
 
     case(cache,env,ih,store,cl1,c1 as Absyn.CREF_IDENT(name = n) ,sty,state,csets,
          (attr as SCode.ATTR(arrayDims = ad, flowPrefix = flowPrefix, streamPrefix = streamPrefix,
-                             accessibility = acc, variability = param, direction = dir)),
+                             variability = param, direction = dir)),
          _,impl,inst_dims,pre,mods,info)
          // we have reference to ourself, try to instantiate type.
       equation
@@ -14184,7 +14178,7 @@ algorithm
 
         io = SCode.prefixesInnerOuter(inPrefixes);
         vis = SCode.prefixesVisibility(inPrefixes);
-        new_var = DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),vis,ty,DAE.UNBOUND(),NONE());
+        new_var = DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,param,dir,io),vis,ty,DAE.UNBOUND(),NONE());
         env = Env.updateFrameV(env, new_var, Env.VAR_TYPED(), compenv);
       then
         (cache,env,ih,store,cl2);
@@ -14341,7 +14335,6 @@ algorithm
       Absyn.ArrayDim ad;
       SCode.Flow fl;
       SCode.Stream st;
-      SCode.Accessibility acc;
       Absyn.Direction dir;
       SCode.Variability vt;
 
@@ -14350,8 +14343,8 @@ algorithm
     // if variability is constant, do not override it!
     case(attr as SCode.ATTR(variability = SCode.CONST()),_) then attr;
     // if classprefix is parameter or constant, override component variability
-    case(SCode.ATTR(ad,fl,st,acc,_,dir),Prefix.PREFIX(_,Prefix.CLASSPRE(vt)))
-      then SCode.ATTR(ad,fl,st,acc,vt,dir);
+    case(SCode.ATTR(ad,fl,st,_,dir),Prefix.PREFIX(_,Prefix.CLASSPRE(vt)))
+      then SCode.ATTR(ad,fl,st,vt,dir);
     // anything else
     case(attr,_) then attr;
   end matchcontinue;

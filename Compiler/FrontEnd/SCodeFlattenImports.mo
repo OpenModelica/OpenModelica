@@ -259,13 +259,12 @@ protected
   Absyn.ArrayDim ad;
   SCode.Flow fp;
   SCode.Stream sp;
-  SCode.Accessibility acc;
   SCode.Variability var;
   Absyn.Direction dir;
 algorithm
-  SCode.ATTR(ad, fp, sp, acc, var, dir) := inAttributes;
+  SCode.ATTR(ad, fp, sp, var, dir) := inAttributes;
   ad := Util.listMap2(ad, flattenSubscript, inEnv, inInfo);
-  outAttributes := SCode.ATTR(ad, fp, sp, acc, var, dir);
+  outAttributes := SCode.ATTR(ad, fp, sp, var, dir);
 end flattenAttributes;
 
 protected function flattenTypeSpec

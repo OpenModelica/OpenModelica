@@ -692,7 +692,7 @@ algorithm
         (cache,e_1,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = _),_), constFlag = DAE.C_VAR()),_)
           = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
         // adrpo: the iterator is not in the environment, this would fail!
-        // (cache,DAE.ATTR(false,false,SCode.RW(),_,_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_,_) 
+        // (cache,DAE.ATTR(false,false,/*SCode.RW()*/_,_,_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_,_) 
         //  = Lookup.lookupVar(cache,env, ComponentReference.makeCrefIdent(i,DAE.ET_OTHER(),{})) "for loops with non-constant iteration bounds" ;
         Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {"Non-constant iteration bounds", "No suggestion"}, info);
       then
@@ -1781,7 +1781,7 @@ algorithm
         // we can unroll ONLY if we have a constant/parameter range expression
         true = listMember(cnst, {DAE.C_CONST(), DAE.C_PARAM()});
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
-        (cache,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RW(),_,_,_),(_,_),DAE.UNBOUND(),_,_,_,_,_) 
+        (cache,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),/*SCode.RW()*/_,_,_),(_,_),DAE.UNBOUND(),_,_,_,_,_) 
         = Lookup.lookupVar(cache, env_1, ComponentReference.makeCrefIdent(i,DAE.ET_OTHER(),{}));
         (cache,v,_) = Ceval.ceval(cache, env_1, e_1, impl, NONE(), NONE(), Ceval.MSG()) "FIXME: Check bounds";
         (cache,stmts) = loopOverRange(cache, env_1, ih, pre, i, v, sl, source, initial_, impl, unrollForLoops);
@@ -2556,13 +2556,12 @@ protected function makeAssignment
   input DAE.Properties inLhsProps;
   input DAE.Exp inRhs;
   input DAE.Properties inRhsProps;
-  input SCode.Accessibility inAccessibility;
+  input DAE.Attributes inAttributes;
   input SCode.Initial inInitial;
   input DAE.ElementSource inSource;
   output Algorithm.Statement outStatement;
 algorithm
-  outStatement := match (inLhs, inLhsProps, inRhs, inRhsProps,
-      inAccessibility, inInitial, inSource)
+  outStatement := match (inLhs, inLhsProps, inRhs, inRhsProps, inAttributes, inInitial, inSource)
     local
       list<DAE.Properties> wild_props;
       Integer wild_count;
@@ -2583,7 +2582,7 @@ algorithm
         Algorithm.makeTupleAssignment(inLhs :: wilds, inLhsProps :: wild_props, inRhs, inRhsProps, inInitial, inSource);
     
     // Otherwise, call Algorithm.makeAssignment as usual.
-    else Algorithm.makeAssignment(inLhs, inLhsProps, inRhs, inRhsProps, inAccessibility, inInitial, inSource);
+    else Algorithm.makeAssignment(inLhs, inLhsProps, inRhs, inRhsProps, inAttributes, inInitial, inSource);
   end match;
 end makeAssignment;
 
@@ -2885,7 +2884,6 @@ algorithm
       DAE.ComponentRef c1_1,c2_1,c1_2,c2_2;
       DAE.ExpType t1,t2;
       DAE.Properties prop1,prop2;
-      SCode.Accessibility acc;
       DAE.Attributes attr1,attr2;
       SCode.Flow flowPrefix1,flowPrefix2;
       SCode.Stream streamPrefix1,streamPrefix2;
@@ -2933,13 +2931,13 @@ algorithm
       equation
         ErrorExt.rollBack("expandableConnectors");
         // Skip collection of dae functions here they can not be present in connector references
-        (cache,SOME((DAE.CREF(c1_1,t1),prop1,acc))) = Static.elabCref(cache,env, c1, impl, false, pre, info);
-        (cache,SOME((DAE.CREF(c2_1,t2),prop2,acc))) = Static.elabCref(cache,env, c2, impl, false, pre, info);
+        (cache,SOME((DAE.CREF(c1_1,t1),prop1,attr1))) = Static.elabCref(cache,env, c1, impl, false, pre, info);
+        (cache,SOME((DAE.CREF(c2_1,t2),prop2,attr2))) = Static.elabCref(cache,env, c2, impl, false, pre, info);
 
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
-        (cache,attr1 as DAE.ATTR(flowPrefix1,streamPrefix1,_,vt1,_,io1),ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
-        (cache,attr2 as DAE.ATTR(flowPrefix2,streamPrefix2,_,vt2,_,io2),ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
+        (cache,attr1 as DAE.ATTR(flowPrefix1,streamPrefix1,vt1,_,io1),ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
+        (cache,attr2 as DAE.ATTR(flowPrefix2,streamPrefix2,vt2,_,io2),ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
         validConnector(ty1) "Check that the type of the connectors are good." ;
         validConnector(ty2);
         checkConnectTypes(env, ih, c1_2, ty1, attr1, c2_2, ty2, attr2, io1, io2, info);
@@ -3047,7 +3045,6 @@ algorithm
       DAE.ComponentRef c1_1,c2_1,c1_2,c2_2;
       DAE.ExpType t1,t2;
       DAE.Properties prop1,prop2;
-      SCode.Accessibility acc1,acc2,acc;
       DAE.Attributes attr1,attr2,attr;
       SCode.Flow flowPrefix1,flowPrefix2;
       SCode.Stream streamPrefix1,streamPrefix2;
@@ -3075,14 +3072,14 @@ algorithm
     // both c1 and c2 are expandable
     case (cache,env,ih,sets,pre,c1,c2,impl,graph,info)
       equation
-        (cache,SOME((DAE.CREF(c1_1,t1),prop1,acc))) = Static.elabCref(cache, env, c1, impl, false, pre, info);
-        (cache,SOME((DAE.CREF(c2_1,t2),prop2,acc))) = Static.elabCref(cache, env, c2, impl, false, pre, info);
+        (cache,SOME((DAE.CREF(c1_1,t1),prop1,attr1))) = Static.elabCref(cache, env, c1, impl, false, pre, info);
+        (cache,SOME((DAE.CREF(c2_1,t2),prop2,attr2))) = Static.elabCref(cache, env, c2, impl, false, pre, info);
         (cache,c1_2) = Static.canonCref(cache, env, c1_1, impl);
         (cache,c2_2) = Static.canonCref(cache, env, c2_1, impl);
         (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
         (cache,attr2,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
-        DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),_,vt1,_,io1) = attr1;
-        DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),_,vt2,_,io2) = attr2;
+        DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),vt1,_,io1) = attr1;
+        DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),vt2,_,io2) = attr2;
         true = isExpandableConnectorType(ty1);
         true = isExpandableConnectorType(ty2);
 
@@ -3140,7 +3137,7 @@ algorithm
       equation
         // c2 is expandable
         (cache,NONE()) = Static.elabCref(cache, env, c2, impl, false,pre,info);
-        (cache,SOME((DAE.CREF(c1_1,t1),prop1,acc))) = Static.elabCref(cache,env,c1,impl,false,pre,info);
+        (cache,SOME((DAE.CREF(c1_1,t1),prop1,attr))) = Static.elabCref(cache,env,c1,impl,false,pre,info);
         // Debug.fprintln("expandable", 
         //   "connect(existing, expandable)(" +& 
         //      Dump.printComponentRefStr(c1) +& ", " +&
@@ -3168,7 +3165,7 @@ algorithm
       equation
         // c1 is expandable        
         (cache,NONE()) = Static.elabCref(cache, env, c1, impl, false, pre, info);
-        (cache,SOME((DAE.CREF(c2_1,t2),prop2,acc2))) = Static.elabCref(cache, env, c2, impl, false, pre, info);
+        (cache,SOME((DAE.CREF(c2_1,t2),prop2,attr2))) = Static.elabCref(cache, env, c2, impl, false, pre, info);
 
         // Debug.fprintln("expandable", 
         //   ">>>> connect(expandable, existing)(" +& 
@@ -3180,7 +3177,7 @@ algorithm
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
         (cache,attr2,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
         // bind the attributes
-        DAE.ATTR(flowPrefix2,streamPrefix2,acc2,vt2,dir2,io2) = attr2;
+        DAE.ATTR(flowPrefix2,streamPrefix2,vt2,dir2,io2) = attr2;
         
         // Debug.fprintln("expandable", 
         //   "1 connect(expandable, existing)(" +& 
@@ -3224,7 +3221,7 @@ algorithm
         // add to the environment of the expandable 
         // connector the new virtual variable.
         envExpandable = Env.extendFrameV(envExpandable,
-          DAE.TYPES_VAR(componentName,DAE.ATTR(flowPrefix2,streamPrefix2,acc2,vt2,dirFlipped,io2),
+          DAE.TYPES_VAR(componentName,DAE.ATTR(flowPrefix2,streamPrefix2,vt2,dirFlipped,io2),
           SCode.PUBLIC(),ty2,DAE.UNBOUND(),NONE()), NONE(), Env.VAR_TYPED(), 
           // add empty here to connect individual components!
           envComponentEmpty);
@@ -3253,7 +3250,7 @@ algorithm
       equation
         // c1 is expandable        
         (cache,NONE()) = Static.elabCref(cache, env, c1, impl, false, pre, info);
-        (cache,SOME((DAE.CREF(c2_1,t2),prop2,acc2))) = Static.elabCref(cache, env, c2, impl, false, pre, info);
+        (cache,SOME((DAE.CREF(c2_1,t2),prop2,attr2))) = Static.elabCref(cache, env, c2, impl, false, pre, info);
         
         // Debug.fprintln("expandable", 
         //   ">>>> connect(expandable, existing)(" +& 
@@ -3265,7 +3262,7 @@ algorithm
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
         (cache,attr2,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
         // bind the attributes
-        DAE.ATTR(flowPrefix2,streamPrefix2,acc2,vt2,dir2,io2) = attr2;
+        DAE.ATTR(flowPrefix2,streamPrefix2,vt2,dir2,io2) = attr2;
         
         // Debug.fprintln("expandable", 
         //   "1 connect(expandable, existing)(" +& 
@@ -3307,7 +3304,7 @@ algorithm
         // add to the environment of the expandable 
         // connector the new virtual variable.
         envExpandable = Env.extendFrameV(envExpandable,
-          DAE.TYPES_VAR(componentName,DAE.ATTR(flowPrefix2,streamPrefix2,acc2,vt2,dirFlipped,io2),
+          DAE.TYPES_VAR(componentName,DAE.ATTR(flowPrefix2,streamPrefix2,vt2,dirFlipped,io2),
           SCode.PUBLIC(),ty2,DAE.UNBOUND(),NONE()), NONE(), Env.VAR_TYPED(),
           envComponent);
         // ******************************************************************************
@@ -3340,7 +3337,7 @@ algorithm
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
         (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
         // bind the attributes
-        DAE.ATTR(flowPrefix1,streamPrefix1,acc1,vt1,dir1,io1) = attr1;
+        DAE.ATTR(flowPrefix1,streamPrefix1,vt1,dir1,io1) = attr1;
         
         // then connect the components normally.
         (cache,env,ih,sets,dae,graph) = instConnect(cache,env,ih,sets,pre,c1,c2,impl,graph,info);
@@ -3351,7 +3348,7 @@ algorithm
         // declare the added component in the DAE!
         (cache,c1_2) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_2);
         daeExpandable = Inst.daeDeclare(c1_2, state, ty1, 
-           SCode.ATTR({}, flowPrefix1, streamPrefix1, acc1, vt1, dir1), 
+           SCode.ATTR({}, flowPrefix1, streamPrefix1, vt1, dir1), 
            SCode.PUBLIC(), NONE(), {}, NONE(), NONE(), 
            SOME(SCode.COMMENT(NONE(), SOME("virtual variable in expandable connector"))), 
            io1, SCode.NOT_FINAL(), source, true);
@@ -3371,8 +3368,8 @@ algorithm
     case (cache,env,ih,sets,pre,c1,c2,impl,graph,info)
       equation        
         // both of these are OK
-        (cache,SOME((DAE.CREF(c1_1,t1),prop1,acc))) = Static.elabCref(cache,env, c1, impl, false, pre, info);
-        (cache,SOME((DAE.CREF(c2_1,t2),prop2,acc))) = Static.elabCref(cache,env, c2, impl, false, pre, info);
+        (cache,SOME((DAE.CREF(c1_1,t1),prop1,attr1))) = Static.elabCref(cache,env, c1, impl, false, pre, info);
+        (cache,SOME((DAE.CREF(c2_1,t2),prop2,attr2))) = Static.elabCref(cache,env, c2, impl, false, pre, info);
 
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
@@ -4499,7 +4496,6 @@ algorithm
       DAE.ComponentRef ce,ce_1;
       DAE.ExpType t;
       DAE.Properties cprop,eprop,prop,prop1,prop2;
-      SCode.Accessibility acc;
       DAE.Exp e_1,e_2,cre,cre2;
       DAE.Statement stmt;
       list<Env.Frame> env;
@@ -4520,42 +4516,43 @@ algorithm
       DAE.Exp e2_2,e2_2_2;
       Absyn.Exp left;
       DAE.Pattern pattern;
+      DAE.Attributes attr;
    
     /* v := expr; */
     case (cache,env,ih,pre,Absyn.CREF(cr),e_1,eprop,info,source,initial_,impl,unrollForLoops) 
       equation     
-        (cache,SOME((cre,cprop,acc))) = Static.elabCref(cache, env, cr, impl, false,pre,info);
+        (cache,SOME((cre,cprop,attr))) = Static.elabCref(cache, env, cr, impl, false,pre,info);
         (cache,DAE.CREF(ce,t)) = PrefixUtil.prefixExp(cache, env, ih, cre, pre);
         (cache,ce_1) = Static.canonCref(cache, env, ce, impl);
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = makeAssignment(Expression.makeCrefExp(ce_1,t), cprop, e_2, eprop, acc, initial_, source);
+        stmt = makeAssignment(Expression.makeCrefExp(ce_1,t), cprop, e_2, eprop, attr, initial_, source);
       then
         (cache,{stmt});
 
         /* der(x) := ... */
     case (cache,env,ih,pre,e2 as Absyn.CALL(function_ = Absyn.CREF_IDENT(name="der"),functionArgs=(Absyn.FUNCTIONARGS(args={Absyn.CREF(cr)})) ),e_1,eprop,info,source,initial_,impl,unrollForLoops)
       equation 
-        (cache,SOME((_,cprop,acc))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
+        (cache,SOME((_,cprop,attr))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
         (cache,(e2_2 as DAE.CALL(path=_)),_,_) = Static.elabExp(cache,env, e2, impl,NONE(),true,pre,info);
         (cache,e2_2_2) = PrefixUtil.prefixExp(cache, env, ih, e2_2, pre);
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = makeAssignment(e2_2_2, cprop, e_2, eprop, SCode.RW(), initial_, source);
+        stmt = makeAssignment(e2_2_2, cprop, e_2, eprop, attr /*SCode.RW()*/, initial_, source);
       then
         (cache,{stmt});
 
     // v[i] := expr (in e.g. for loops)
     case (cache,env,ih,pre,Absyn.CREF(cr),e_1,eprop,info,source,initial_,impl,unrollForLoops)
       equation 
-        (cache,SOME((cre,cprop,acc))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
+        (cache,SOME((cre,cprop,attr))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
         (cache,cre2) = PrefixUtil.prefixExp(cache, env, ih, cre, pre);
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = makeAssignment(cre2, cprop, e_2, eprop, acc, initial_, source);
+        stmt = makeAssignment(cre2, cprop, e_2, eprop, attr, initial_, source);
       then
         (cache,{stmt});
 
@@ -4606,7 +4603,7 @@ algorithm
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_2, pre);
         eprops = Types.propTuplePropList(eprop);
         source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmts = Algorithm.makeAssignmentsList(expl_2, cprops, expl_1, eprops, SCode.RW(), initial_, source);
+        stmts = Algorithm.makeAssignmentsList(expl_2, cprops, expl_1, eprops, /* SCode.RW() */ DAE.dummyAttrVar, initial_, source);
       then
         (cache,stmts);
 

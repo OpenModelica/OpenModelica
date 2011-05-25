@@ -490,7 +490,6 @@ algorithm
       DAE.ComponentRef cr;
       SCode.Flow fl;
       SCode.Stream st;
-      SCode.Accessibility acc;
       SCode.Variability var;
       Absyn.Direction dir;
       tuple<DAE.TType, Option<Absyn.Path>> ty;
@@ -498,7 +497,7 @@ algorithm
       DAE.Attributes attr;
       
     case DAE.NOEXTARG() then "void";
-    case DAE.EXTARG(componentRef = cr,attributes = DAE.ATTR(flowPrefix = fl,streamPrefix=st,accessibility = acc,variability = var,direction = dir),type_ = ty)
+    case DAE.EXTARG(componentRef = cr,attributes = DAE.ATTR(flowPrefix = fl,streamPrefix=st,variability = var,direction = dir),type_ = ty)
       equation
         crstr = ComponentReference.printComponentRefStr(cr);
         dirstr = Dump.directionSymbol(dir);

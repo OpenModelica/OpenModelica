@@ -795,19 +795,6 @@ algorithm
   end match;
 end variabilityString;
 
-public function accessibilityString
-"function: accessibilityString
-  Print Accessibility to a string."
-  input SCode.Accessibility inAccessibility;
-  output String outString;
-algorithm
-  outString := match (inAccessibility)
-    case (SCode.RW()) then "RW";
-    case (SCode.RO()) then "RO";
-    case (SCode.WO()) then "WO";
-  end match;
-end accessibilityString;
-
 public function innerouterString
 "function: innerouterString
   Print a inner outer info to a string."

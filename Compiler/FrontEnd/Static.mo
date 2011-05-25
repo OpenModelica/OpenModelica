@@ -5198,7 +5198,7 @@ algorithm
       equation
         (cache,(exp_1 as DAE.CREF(cr_1,_)),DAE.PROP(tp1,_),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
         Types.simpleType(tp1);
-        (cache,DAE.ATTR(_,_,_,SCode.DISCRETE(),_,_),_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
+        (cache,DAE.ATTR(_,_,SCode.DISCRETE(),_,_),_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
         exp_1 = Expression.makeBuiltinCall("change", {exp_1}, DAE.ET_BOOL());
       then
         (cache, exp_1, DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()));
@@ -6696,9 +6696,9 @@ protected function elabCallInteractive "function: elabCallInteractive
           DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
           {
           DAE.TYPES_VAR("flatClass",
-          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
           DAE.TYPES_VAR("exeFile",
-          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},NONE(),NONE()),NONE());
+          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},NONE(),NONE()),NONE());
       then
         (cache,Expression.makeBuiltinCall("translateModel",
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),filenameprefix},DAE.ET_STRING()),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
@@ -6713,9 +6713,9 @@ protected function elabCallInteractive "function: elabCallInteractive
         DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
          {
           DAE.TYPES_VAR("flatClass",
-          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
           DAE.TYPES_VAR("exeFile",
-          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},NONE(),NONE()),NONE());
+          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},NONE(),NONE()),NONE());
       then
         (cache,Expression.makeBuiltinCall("translateModelCPP",
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),filenameprefix},DAE.ET_STRING()),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
@@ -6730,9 +6730,9 @@ protected function elabCallInteractive "function: elabCallInteractive
           DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
           {
           DAE.TYPES_VAR("flatClass",
-          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
           DAE.TYPES_VAR("exeFile",
-          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},NONE(),NONE()),NONE());
+          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},NONE(),NONE()),NONE());
       then
         (cache,Expression.makeBuiltinCall("translateModelFMU",
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),filenameprefix},DAE.ET_STRING()),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
@@ -6748,9 +6748,9 @@ protected function elabCallInteractive "function: elabCallInteractive
           DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
           {
           DAE.TYPES_VAR("flatClass",
-          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
           DAE.TYPES_VAR("exeFile",
-          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},NONE(),NONE()),NONE());
+          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},NONE(),NONE()),NONE());
       then
         (cache,Expression.makeBuiltinCall("exportDAEtoMatlab",
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),filenameprefix},DAE.ET_STRING()),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
@@ -9401,14 +9401,12 @@ function: elabCref
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
-  output Option<tuple<DAE.Exp,DAE.Properties,SCode.Accessibility>> res;
+  output Option<tuple<DAE.Exp,DAE.Properties,DAE.Attributes>> res;
 algorithm
-  (outCache,res) :=
-  matchcontinue (inCache,inEnv,inComponentRef,inImplict,performVectorization,inPrefix,info)
+  (outCache,res) := matchcontinue (inCache,inEnv,inComponentRef,inImplict,performVectorization,inPrefix,info)
     local
       DAE.ComponentRef c_1;
       DAE.Const const,const1,const2;
-      SCode.Accessibility acc,acc_1;
       SCode.Variability variability;
       Option<Absyn.Path> optPath;
       DAE.Type t,origt;
@@ -9436,6 +9434,7 @@ algorithm
       Env.Env packageEnv;
       Absyn.ComponentRef cPackage;
       list<DAE.Exp> indexes;
+      DAE.Attributes attr;
 
     // wildcard
     case (cache,env,c as Absyn.WILD(),impl,doVect,_,info)
@@ -9444,31 +9443,32 @@ algorithm
         et = Types.elabType(t);
         crefExp = Expression.makeCrefExp(DAE.WILD(),et);
       then
-        (cache,SOME((crefExp,DAE.PROP(t, DAE.C_VAR()),SCode.WO())));
+        (cache,SOME((crefExp,DAE.PROP(t, DAE.C_VAR()),DAE.dummyAttrVar)));
 
     // MetaModelica arrays are only used in function context as IDENT, and at most one subscript
     // No vectorization is performed
     case (cache,env,c as Absyn.CREF_IDENT(name=id, subscripts={Absyn.SUBSCRIPT(e)}),impl,doVect,pre,info)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        (cache,SOME((exp1,DAE.PROP((DAE.T_META_ARRAY(t),_), const1),acc_1))) = elabCref(cache,env,Absyn.CREF_IDENT(id,{}),false,false,pre,info);
+        (cache,SOME((exp1,DAE.PROP((DAE.T_META_ARRAY(t),_), const1),attr))) = elabCref(cache,env,Absyn.CREF_IDENT(id,{}),false,false,pre,info);
         (cache,exp2,DAE.PROP((DAE.T_INTEGER(_),_), const2),_) = elabExp(cache,env,e,impl,NONE(),false,pre,info);
         const = Types.constAnd(const1,const2);
         expASUB = Expression.makeASUB(exp1,{exp2});
       then
-        (cache,SOME((expASUB,DAE.PROP(t, const),SCode.WO())));
+        (cache,SOME((expASUB,DAE.PROP(t, const),attr)));
 
     // a normal cref
     case (cache,env,c,impl,doVect,pre,info) /* impl */
       equation
         (cache,c_1,const) = elabCrefSubs(cache, env, c, Prefix.NOPRE(), impl, info);
-        (cache,DAE.ATTR(_,_,acc,variability,_,io),t,binding,forIteratorConstOpt,splicedExpData,_,_,_) = Lookup.lookupVar(cache, env, c_1);
-        variability = applySubscriptsVariability(variability, const);
-        (cache,exp,const,acc_1) = elabCref2(cache, env, c_1, acc, variability, forIteratorConstOpt, io, t, binding, doVect, splicedExpData, pre, info);
+        (cache,attr,t,binding,forIteratorConstOpt,splicedExpData,_,_,_) = Lookup.lookupVar(cache, env, c_1);
+        variability = applySubscriptsVariability(DAEUtil.getAttrVariability(attr), const);
+        attr = DAEUtil.setAttrVariability(attr, variability);
+        (cache,exp,const,attr) = elabCref2(cache, env, c_1, attr, forIteratorConstOpt, t, binding, doVect, splicedExpData, pre, info);
         exp = makeASUBArrayAdressing(c,cache,env,impl,exp,splicedExpData,doVect,pre,info);
         t = fixEnumerationType(t);
       then
-        (cache,SOME((exp,DAE.PROP(t, const),acc_1)));
+        (cache,SOME((exp,DAE.PROP(t, const),attr)));
         
     // An enumeration type => array of enumeration literals.
     case (cache, env, c, impl, doVect, pre, info)
@@ -9481,7 +9481,7 @@ algorithm
         enum_lit_strs = SCode.componentNames(cl);
         (exp, t) = makeEnumerationArray(path, enum_lit_strs);
       then
-        (cache,SOME((exp,DAE.PROP(t, DAE.C_CONST()),SCode.RO())));
+        (cache,SOME((exp,DAE.PROP(t, DAE.C_CONST()),DAE.dummyAttrConst /* RO */)));
         
     // MetaModelica Partial Function
     case (cache,env,c,impl,doVect,pre,info)
@@ -9501,7 +9501,7 @@ algorithm
         // This is not done by lookup - only elabCall. So we should do it here.
         (cache,Util.SUCCESS()) = instantiateDaeFunction(cache,env,path,isBuiltinFn,NONE(),true);
       then
-        (cache,SOME((exp,DAE.PROP(t,DAE.C_CONST()),SCode.RO())));
+        (cache,SOME((exp,DAE.PROP(t,DAE.C_CONST()),DAE.dummyAttrConst /* RO */)));
     
     // MetaModelica extension
     case (cache,env,Absyn.CREF_IDENT("NONE",{}),impl,doVect,_,info)
@@ -9823,10 +9823,8 @@ protected function elabCref2
   input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.ComponentRef inComponentRef;
-  input SCode.Accessibility inAccessibility;
-  input SCode.Variability inVariability;
+  input DAE.Attributes inAttributes;
   input Option<DAE.Const> forIteratorConstOpt;
-  input Absyn.InnerOuter io;
   input DAE.Type inType;
   input DAE.Binding inBinding;
   input Boolean performVectorization "true => vectorized expressions";
@@ -9836,14 +9834,13 @@ protected function elabCref2
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Const outConst;
-  output SCode.Accessibility outAccessibility;
+  output DAE.Attributes outAttributes;
 algorithm
-  (outCache,outExp,outConst,outAccessibility) :=
-  matchcontinue (inCache,inEnv,inComponentRef,inAccessibility,inVariability,forIteratorConstOpt,io,inType,inBinding,performVectorization,splicedExpData,inPrefix,info)
+  (outCache,outExp,outConst,outAttributes) :=
+  matchcontinue (inCache,inEnv,inComponentRef,inAttributes,forIteratorConstOpt,inType,inBinding,performVectorization,splicedExpData,inPrefix,info)
     local
       DAE.ExpType  expTy;
       DAE.ComponentRef cr,cr_1,cref;
-      SCode.Accessibility acc,acc_1;
       DAE.Type t,tt,et,tp,idTp;
       DAE.Exp e,e_1,exp;
       Option<DAE.Exp> sexp;
@@ -9860,21 +9857,23 @@ algorithm
       Prefix.Prefix pre;
       Integer i;
       Absyn.Path p;
+      DAE.Attributes attr, attr1, attr2;
+      Absyn.InnerOuter io;
 
     // If type not yet determined, component must be referencing itself.
     // The constantness is undecidable since binding is not available. return C_VAR
-    case (cache,_,cr,acc,var,_,io,(t as (DAE.T_NOTYPE(),_)),_,doVect,_,_,info)
+    case (cache,_,cr,attr,_,(t as (DAE.T_NOTYPE(),_)),_,doVect,_,_,info)
       equation
         expTy = Types.elabType(t);
         // adrpo: 2010-11-09
         //  use the variability to generate the constantness
         //  instead of returning *variabile* variability DAE.C_VAR()      
-        const = variabilityToConst(var);
+        const = variabilityToConst(DAEUtil.getAttrVariability(attr));
       then
-        (cache, DAE.CREF(cr,expTy), const, acc);
+        (cache, DAE.CREF(cr,expTy), const, attr);
 
     // adrpo: report a warning if the binding came from a start value!
-    case (cache,env,cr,acc,SCode.PARAM(),forIteratorConstOpt,io,tt,bind as DAE.EQBOUND(source = DAE.BINDING_FROM_START_VALUE()),doVect,splicedExpData,inPrefix,info)
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),forIteratorConstOpt,tt,bind as DAE.EQBOUND(source = DAE.BINDING_FROM_START_VALUE()),doVect,splicedExpData,inPrefix,info)
       equation
         true = Types.getFixedVarAttribute(tt);
         s = ComponentReference.printComponentRefStr(cr);
@@ -9883,59 +9882,61 @@ algorithm
         str = DAEUtil.printBindingExpStr(inBinding);
         Error.addMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING, {s,str}); // Don't add source info here... Many models give multiple errors that are not filtered out
         bind = DAEUtil.setBindingSource(bind, DAE.BINDING_FROM_DEFAULT_VALUE());
-        (cache, e_1, const, acc) = elabCref2(cache,env,cr,acc,inVariability,forIteratorConstOpt,io,tt,bind,doVect,splicedExpData,inPrefix,info);
+        (cache, e_1, const, attr) = elabCref2(cache,env,cr,attr,forIteratorConstOpt,tt,bind,doVect,splicedExpData,inPrefix,info);
       then
-        (cache,e_1,const,acc);
+        (cache,e_1,const,attr);
 
     // a variable
-    case (cache,_,cr,acc,SCode.VAR(),_,io,tt,_,doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),_,info)
+    case (cache,_,cr,attr as DAE.ATTR(variability = SCode.VAR()),_,tt,_,doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),_,info)
       equation
         expTy = Types.elabType(tt);
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
         e = crefVectorize(doVect, Expression.makeCrefExp(cr_1,expTy), tt, sexp, expIdTy, true);
       then
-        (cache,e,DAE.C_VAR(),acc);
+        (cache,e,DAE.C_VAR(),attr);
 
     // a discrete variable
-    case (cache,_,cr,acc,SCode.DISCRETE(),_,io,tt,_,doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,info)
+    case (cache,_,cr,attr as DAE.ATTR(variability = SCode.DISCRETE()),_,tt,_,doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,info)
       equation
         expTy = Types.elabType(tt);
         cr_1 = fillCrefSubscripts(cr, tt);
         expIdTy = Types.elabType(idTp);
         e = crefVectorize(doVect, Expression.makeCrefExp(cr_1,expTy), tt, NONE(), expIdTy, true);
       then
-        (cache,e,DAE.C_VAR(),acc);
+        (cache,e,DAE.C_VAR(),attr);
 
     // an enumeration literal -> simplify to a literal expression
-    case (cache,env,cr,_,SCode.CONST(),_,_,(DAE.T_ENUMERATION(index = SOME(i), path = p), _),_,_,_,_,info)
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,(DAE.T_ENUMERATION(index = SOME(i), path = p), _),_,_,_,_,info)
       equation
         p = Absyn.joinPaths(p, ComponentReference.crefLastPath(cr));
       then
-        (cache, DAE.ENUM_LITERAL(p, i), DAE.C_CONST(), SCode.RO());
+        (cache, DAE.ENUM_LITERAL(p, i), DAE.C_CONST(), attr);
          
     // a constant -> evaluate binding
-    case (cache,env,cr,acc,SCode.CONST(),_,io,tt,binding,doVect,_,_,info)
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,tt,binding,doVect,_,_,info)
       equation
         (cache,v) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG());
         e = ValuesUtil.valueExp(v);
         et = Types.typeOfValue(v);
         (e_1,_) = Types.matchType(e, et, tt, true);
       then
-        (cache,e_1,DAE.C_CONST(),SCode.RO());
+        (cache,e_1,DAE.C_CONST(),attr);
     
     // a constant with some for iterator constness -> don't constant evaluate
-    case (cache,env,cr,acc,SCode.CONST(),SOME(_),io,tt,_,doVect,_,_,info)
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),SOME(_),tt,_,doVect,_,_,info)
       equation
         expTy = Types.elabType(tt);
       then
-        (cache,Expression.makeCrefExp(cr,expTy),DAE.C_CONST(),SCode.RO());
+        (cache,Expression.makeCrefExp(cr,expTy),DAE.C_CONST(),attr);
 
     // evaluate parameters only if "evalparam" or RTOpts.getEvaluateParametersInAnnotations()is set
     // TODO! also ceval if annotation Evaluate=true.
-    case (cache,env,cr,acc,SCode.PARAM(),_,io,tt,DAE.VALBOUND(valBound = v),doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,info)
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),_,tt,DAE.VALBOUND(valBound = v),doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,info)
       equation
         true = boolOr(RTOpts.debugFlag("evalparam"), RTOpts.getEvaluateParametersInAnnotations());
+        // make it a constant if evalparam is used
+        attr = DAEUtil.setAttrVariability(attr, SCode.CONST());
         expTy = Types.elabType(tt);
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
@@ -9945,13 +9946,15 @@ algorithm
         et = Types.typeOfValue(v);
         (e_1,_) = Types.matchType(e, et, tt, true);
       then
-        (cache,e_1,DAE.C_PARAM(),SCode.RO());
+        (cache,e_1,DAE.C_PARAM(),attr);
 
     // a binding equation and evalparam
-    case (cache,env,cr,acc,var,_,io,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,info) 
+    case (cache,env,cr,attr as DAE.ATTR(variability = var),_,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,info) 
       equation         
         true = SCode.isParameterOrConst(var);
         true = boolOr(RTOpts.debugFlag("evalparam"), RTOpts.getEvaluateParametersInAnnotations());
+        // make it a constant if evalparam is used
+        attr = DAEUtil.setAttrVariability(attr, SCode.CONST());        
         expTy = Types.elabType(tt) "Constants with equal bindings should be constant, i.e. true
                                     but const is passed on, allowing constants to have wrong bindings
                                     This must be caught later on.";
@@ -9963,20 +9966,20 @@ algorithm
         et = Types.typeOfValue(v);
         (e_1,_) = Types.matchType(e, et, tt, true);
       then
-        (cache,e_1,DAE.C_PARAM(),SCode.RO());
+        (cache,e_1,DAE.C_PARAM(),attr);
 
     // vectorization of parameters with valuebound
-    case (cache,env,cr,acc,SCode.PARAM(),_,io,tt,DAE.VALBOUND(valBound = v),doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,info)
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),_,tt,DAE.VALBOUND(valBound = v),doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,info)
       equation
         expTy = Types.elabType(tt);
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
         e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy,true);
       then
-        (cache,e_1,DAE.C_PARAM(),acc);
+        (cache,e_1,DAE.C_PARAM(),attr);
 
     // a constant with a binding
-    case (cache,env,cr,acc,SCode.CONST(),_,io,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,info)
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,info)
       equation 
         expTy = Types.elabType(tt) "Constants with equal bindings should be constant, i.e. true
                                     but const is passed on, allowing constants to have wrong bindings
@@ -9985,38 +9988,38 @@ algorithm
         cr_1 = fillCrefSubscripts(cr, tt);
         e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy,true);
       then
-        (cache,e_1,const,acc);
+        (cache,e_1,const,attr);
 
     // vectorization of parameters with binding equations
-    case (cache,env,cr,acc,SCode.PARAM(),_,io,tt,DAE.EQBOUND(exp = exp ,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),_,info)
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),_,tt,DAE.EQBOUND(exp = exp ,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),_,info)
       equation
         expTy = Types.elabType(tt) "parameters with equal binding becomes C_PARAM" ;
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
         e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,sexp,expIdTy,true);
       then
-        (cache,e_1,DAE.C_PARAM(),acc);
+        (cache,e_1,DAE.C_PARAM(),attr);
 
     // variables with constant binding
-    case (cache,env,cr,acc,_,_,io,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),_,info)
+    case (cache,env,cr,attr,_,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),_,info)
       equation
         expTy = Types.elabType(tt) "..the rest should be non constant, even if they have a constant binding." ;
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
         e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy,true);
       then
-        (cache,e_1,DAE.C_VAR(),acc);
+        (cache,e_1,DAE.C_VAR(),attr);
 
     // if value not constant, but references another parameter, which has a value perform value propagation.
-    case (cache,env,cr,acc,variability,forIteratorConstOpt,io,tp,DAE.EQBOUND(exp = DAE.CREF(componentRef = cref,ty = _),constant_ = DAE.C_VAR()),doVect,splicedExpData,pre,info)
+    case (cache,env,cr,attr1,forIteratorConstOpt,tp,DAE.EQBOUND(exp = DAE.CREF(componentRef = cref,ty = _),constant_ = DAE.C_VAR()),doVect,splicedExpData,pre,info)
       equation
-        (cache,DAE.ATTR(_,_,acc_1,variability_1,_,io),t,binding_1,_,_,_,_,_) = Lookup.lookupVar(cache, env, cref);
-        (cache,e,const,acc) = elabCref2(cache, env, cref, acc_1, variability_1,forIteratorConstOpt, io, t, binding_1,doVect,splicedExpData,pre,info);
+        (cache,attr2,t,binding_1,_,_,_,_,_) = Lookup.lookupVar(cache, env, cref);
+        (cache,e,const,attr2) = elabCref2(cache,env,cref,attr2,forIteratorConstOpt,t,binding_1,doVect,splicedExpData,pre,info);
       then
-        (cache,e,const,acc);
+        (cache,e,const,attr2);
 
     // report error
-    case (cache,_,cr,_,_,_,_,_,DAE.EQBOUND(exp = exp,constant_ = DAE.C_VAR()),doVect,_,pre,info)
+    case (cache,_,cr,_,_,_,DAE.EQBOUND(exp = exp,constant_ = DAE.C_VAR()),doVect,_,pre,info)
       equation
         s = ComponentReference.printComponentRefStr(cr);
         str = ExpressionDump.printExpStr(exp);
@@ -10027,7 +10030,7 @@ algorithm
         fail();
 
     // constants without value produce error. (as long as not for iterator)
-    case (cache,env,cr,acc,SCode.CONST(),NONE()/*not foriter*/,io,tt,DAE.UNBOUND(),doVect,_,pre,info)
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),NONE()/*not foriter*/,tt,DAE.UNBOUND(),doVect,_,pre,info)
       equation
         s = ComponentReference.printComponentRefStr(cr);
         scope = Env.printEnvPathStr(env);
@@ -10038,10 +10041,10 @@ algorithm
         expTy = Types.elabType(tt);
         cr_1 = fillCrefSubscripts(cr, tt);
       then
-        (cache,Expression.makeCrefExp(cr_1,expTy),DAE.C_CONST(),acc);
+        (cache,Expression.makeCrefExp(cr_1,expTy),DAE.C_CONST(),attr);
 
     // parameters without value but with fixed=false is ok, these are given value during initialization. (as long as not for iterator)
-    case (cache,env,cr,acc,SCode.PARAM(),NONE()/* not foriter*/,io,tt,DAE.UNBOUND(),
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),NONE()/* not foriter*/,tt,DAE.UNBOUND(),
         doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),_,info)
       equation
         false = Types.getFixedVarAttribute(tt);
@@ -10050,19 +10053,19 @@ algorithm
         cr_1 = fillCrefSubscripts(cr, tt);
         e = crefVectorize(doVect, Expression.makeCrefExp(cr_1,expTy), tt, sexp,expIdTy,true);
       then
-        (cache,e,DAE.C_PARAM(),acc);
+        (cache,e,DAE.C_PARAM(),attr);
 
     // outer parameters without value is ok.
-    case (cache,env,cr,acc,SCode.PARAM(),_,io,tt,DAE.UNBOUND(),doVect,_,_,info)
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM(), innerOuter = io),_,tt,DAE.UNBOUND(),doVect,_,_,info)
       equation
         (_,true) = InnerOuter.innerOuterBooleans(io);
         expTy = Types.elabType(tt);
         cr_1 = fillCrefSubscripts(cr, tt);
       then
-        (cache,Expression.makeCrefExp(cr_1,expTy),DAE.C_PARAM(),acc);
+        (cache,Expression.makeCrefExp(cr_1,expTy),DAE.C_PARAM(),attr);
 
     // parameters without value with fixed=true or no fixed attribute set produce warning (as long as not for iterator)                 
-    case (cache,env,cr,acc,SCode.PARAM(),forIteratorConstOpt,io,tt,DAE.UNBOUND(),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),pre,info)
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),forIteratorConstOpt,tt,DAE.UNBOUND(),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),pre,info)
       equation
         s = ComponentReference.printComponentRefStr(cr);
         genWarning = not (Util.isSome(forIteratorConstOpt) or OptManager.getOption("checkModel"));
@@ -10075,10 +10078,10 @@ algorithm
         cr_1 = fillCrefSubscripts(cr, tt);
         e_1 = crefVectorize(doVect, Expression.makeCrefExp(cr_1,expTy), tt,NONE(), expIdTy, true);
       then
-        (cache,e_1,DAE.C_PARAM(),acc);
+        (cache,e_1,DAE.C_PARAM(),attr);
       
     // failure!
-    case (cache,env,cr,acc,var,_,io,tp,bind,doVect,_,pre,info)
+    case (cache,env,cr,attr,_,tp,bind,doVect,_,pre,info)
       equation
         true = RTOpts.debugFlag("failtrace");
         pre_str = PrefixUtil.printPrefixStr2(pre);
@@ -10873,7 +10876,7 @@ algorithm
     case (cache,env,Absyn.CREF_QUAL(name = id,subScripts = ss as _::_,componentRef = subs),crefPrefix,impl,info)
       equation
         (cache,cr) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,crefPrefix,ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
-        (cache,DAE.ATTR(_,_,_,vt,_,_),t,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr);
+        (cache,DAE.ATTR(_,_,vt,_,_),t,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr);
         sl = Types.getDimensions(t);
         ty = Types.elabType(t);
         (cache,ss_1,const1) = elabSubscriptsDims(cache,env, ss, sl, impl,crefPrefix,info);

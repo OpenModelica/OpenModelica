@@ -443,7 +443,7 @@ algorithm
     case(ev as DAE.COMPLEX_VAR(name,tp))
       equation
         ty = expTypetoTypesType(tp);
-        tv = DAE.TYPES_VAR(name,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RW(), SCode.VAR(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER()),
+        tv = DAE.TYPES_VAR(name,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(), SCode.VAR(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER()),
                            SCode.PUBLIC(),ty,DAE.UNBOUND(),NONE());
       then
         tv;
@@ -1200,7 +1200,7 @@ algorithm
         tp = typeOfValue(v);
         rest = valuesToVars(vs, ids);
       then
-        (DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+        (DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
                        SCode.PUBLIC(),tp,DAE.UNBOUND(),
                        NONE()) :: rest);
     case (_,_)
@@ -1365,13 +1365,12 @@ algorithm
       SCode.Visibility vis;
       Type tp;
       Binding bind;
-      SCode.Accessibility a;
       SCode.Variability v;
       Absyn.InnerOuter io;
       Option<DAE.Const> cnstForRange;
     
-    case DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,a,v,_,io),vis,tp,bind,cnstForRange)
-    then DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,a,v,Absyn.INPUT(),io),vis,tp,bind,cnstForRange);
+    case DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,v,_,io),vis,tp,bind,cnstForRange)
+    then DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,v,Absyn.INPUT(),io),vis,tp,bind,cnstForRange);
 
   end matchcontinue;
 end setVarInput;
@@ -1389,14 +1388,13 @@ algorithm
       SCode.Stream streamPrefix;
       Type tp;
       Binding bind;
-      SCode.Accessibility a;
       SCode.Variability v;
       Absyn.InnerOuter io;
       Option<DAE.Const> cnstForRange;
       Absyn.Direction d;
     
-    case (DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,a,v,d,io),p,tp,bind,cnstForRange),ty)
-    then DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,a,v,d,io),p,ty,bind,cnstForRange);
+    case (DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,v,d,io),p,tp,bind,cnstForRange),ty)
+    then DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,v,d,io),p,ty,bind,cnstForRange);
 
   end match;
 end setVarType;
@@ -1811,58 +1809,58 @@ algorithm
 
    case ((DAE.T_ENUMERATION(index = SOME(_)),_),"quantity") 
      then DAE.TYPES_VAR("quantity",
-          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
           SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.VALBOUND(Values.STRING(""),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
 
     // Should be bound to the first element of DAE.T_ENUMERATION list higher up in the call chain
     case ((DAE.T_ENUMERATION(index = SOME(_)),_),"min")       
       then DAE.TYPES_VAR("min",
-           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
            SCode.PUBLIC(),(DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"min,max"},{},{}),NONE()),DAE.UNBOUND(),NONE());
 
     // Should be bound to the last element of DAE.T_ENUMERATION list higher up in the call chain 
     case ((DAE.T_ENUMERATION(index = SOME(_)),_),"max") 
       then DAE.TYPES_VAR("max",
-           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
            SCode.PUBLIC(),(DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"min,max"},{},{}),NONE()),DAE.UNBOUND(),NONE());
 
     // Should be bound to the last element of DAE.T_ENUMERATION list higher up in the call chain 
     case ((DAE.T_ENUMERATION(index = SOME(_)),_),"start") 
       then DAE.TYPES_VAR("start",
-           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
            SCode.PUBLIC(),DAE.T_BOOL_DEFAULT,DAE.UNBOUND(),NONE());
 
     // Needs to be set to true/false higher up the call chain depending on variability of instance 
     case ((DAE.T_ENUMERATION(index = SOME(_)),_),"fixed") 
       then DAE.TYPES_VAR("fixed",
-           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
            SCode.PUBLIC(),DAE.T_BOOL_DEFAULT,DAE.UNBOUND(),NONE());
     case ((DAE.T_ENUMERATION(index = SOME(_)),_),"enable") then DAE.TYPES_VAR("enable",
-           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
            SCode.PUBLIC(),DAE.T_BOOL_DEFAULT,DAE.VALBOUND(Values.BOOL(true),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
         
 //    case ((DAE.T_ENUM(),_),"quantity") then DAE.TYPES_VAR("quantity",
-//          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+//          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
 //          SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.VALBOUND(Values.STRING("")));
 
 //    case ((DAE.T_ENUM(),_),"min") then DAE.TYPES_VAR("min",
-//           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+//           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
 //           SCode.PUBLIC(),(DAE.T_ENUM(),NONE()),DAE.UNBOUND(),NONE());  /* Should be bound to the first element of
 //  DAE.T_ENUMERATION list higher up in the call chain */
 //    case ((DAE.T_ENUM(),_),"max") then DAE.TYPES_VAR("max",
-//           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+//           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
 //           SCode.PUBLIC(),(DAE.T_ENUM(),NONE()),DAE.UNBOUND(),NONE());  /* Should be bound to the last element of 
 //  DAE.T_ENUMERATION list higher up in the call chain */ 
 //    case ((DAE.T_ENUM(),_),"start") then DAE.TYPES_VAR("start",
-//           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+//           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
 //           SCode.PUBLIC(),DAE.T_BOOL_DEFAULT,DAE.UNBOUND(),NONE());  /* Should be bound to the last element of 
 //  DAE.T_ENUMERATION list higher up in the call chain */ 
 //    case ((DAE.T_ENUM(),_),"fixed") then DAE.TYPES_VAR("fixed",
-//           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+//           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
 //           SCode.PUBLIC(),DAE.T_BOOL_DEFAULT,DAE.UNBOUND(),NONE());  /* Needs to be set to true/false higher up the call chain
 //  depending on variability of instance */
 //    case ((DAE.T_ENUM(),_),"enable") then DAE.TYPES_VAR("enable",
-//           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+//           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
 //           SCode.PUBLIC(),DAE.T_BOOL_DEFAULT,DAE.VALBOUND(Values.BOOL(true)));
   end matchcontinue;
 end lookupInBuiltin;

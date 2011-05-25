@@ -140,13 +140,12 @@ public function makeAssignment
   input DAE.Properties inProperties2;
   input DAE.Exp inExp3;
   input DAE.Properties inProperties4;
-  input SCode.Accessibility inAccessibility5;
+  input DAE.Attributes inAttributes;
   input SCode.Initial initial_;
   input DAE.ElementSource source;
   output Statement outStatement;
 algorithm
-  outStatement:=
-  matchcontinue (inExp1,inProperties2,inExp3,inProperties4,inAccessibility5,initial_,source)
+  outStatement := matchcontinue (inExp1,inProperties2,inExp3,inProperties4,inAttributes,initial_,source)
     local
       Ident lhs_str,rhs_str,lt_str,rt_str;
       DAE.Exp lhs,rhs;
@@ -154,7 +153,7 @@ algorithm
       DAE.ComponentRef cr;
       tuple<DAE.TType, Option<Absyn.Path>> lt,rt;
 
-    /* It is not allowed to assign to a constant */
+    // It is not allowed to assign to a constant
     case (lhs,lprop,rhs,rprop,_,initial_,source)
       equation
         DAE.C_CONST() = Types.propAnyConst(lprop);
@@ -164,7 +163,7 @@ algorithm
       then
         fail();
 
-    /* assign to parameter in algorithm okay if record */
+    // assign to parameter in algorithm okay if record
     case ((lhs as DAE.CREF(componentRef=cr)),lhprop,rhs,rhprop,_,SCode.NON_INITIAL(),source)
       equation
         DAE.C_PARAM() = Types.propAnyConst(lhprop);
@@ -172,7 +171,7 @@ algorithm
         outStatement = makeAssignment2(lhs,lhprop,rhs,rhprop,source);
       then outStatement;
 
-    /* assign to parameter in algorithm produce error */
+    // assign to parameter in algorithm produce error
     case (lhs,lprop,rhs,rprop,_,SCode.NON_INITIAL(),source)
       equation
         DAE.C_PARAM() = Types.propAnyConst(lprop);
@@ -181,8 +180,9 @@ algorithm
         Error.addSourceMessage(Error.ASSIGN_PARAM_ERROR, {lhs_str,rhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
-    /* assignment to a constant, report error */
-    case (lhs,_,rhs,_,SCode.RO(),_,source)
+    
+    // assignment to a constant, report error
+    case (lhs,_,rhs,_,DAE.ATTR(variability = SCode.CONST()),_,source)
       equation
         lhs_str = ExpressionDump.printExpStr(lhs);
         rhs_str = ExpressionDump.printExpStr(rhs);
@@ -190,7 +190,7 @@ algorithm
       then
         fail();
 
-    /* assignment to parameter ok in initial algorithm */
+    // assignment to parameter ok in initial algorithm
     case (lhs,lhprop,rhs,rhprop,_,SCode.INITIAL(),source)
       equation
         DAE.C_PARAM() = Types.propAnyConst(lhprop);
@@ -289,12 +289,12 @@ public function makeAssignmentsList
   input list<DAE.Properties> lhsProps;
   input list<DAE.Exp> rhsExps;
   input list<DAE.Properties> rhsProps;
-  input SCode.Accessibility accessibility;
+  input DAE.Attributes attributes;
   input SCode.Initial initial_;
   input DAE.ElementSource source;
   output list<Statement> assignments;
 algorithm
-  assignments := match(lhsExps, lhsProps, rhsExps, rhsProps, accessibility, initial_, source)
+  assignments := match(lhsExps, lhsProps, rhsExps, rhsProps, attributes, initial_, source)
     local
       DAE.Exp lhs, rhs;
       list<DAE.Exp> rest_lhs, rest_rhs;
@@ -306,8 +306,8 @@ algorithm
     case (lhs :: rest_lhs, lhs_prop :: rest_lhs_prop, 
           rhs :: rest_rhs, rhs_prop :: rest_rhs_prop, _, _, _)
       equation
-        ass = makeAssignment(lhs, lhs_prop, rhs, rhs_prop, accessibility, initial_, source);
-        rest_ass = makeAssignmentsList(rest_lhs, rest_lhs_prop, rest_rhs, rest_rhs_prop, accessibility, initial_, source);
+        ass = makeAssignment(lhs, lhs_prop, rhs, rhs_prop, attributes, initial_, source);
+        rest_ass = makeAssignmentsList(rest_lhs, rest_lhs_prop, rest_rhs, rest_rhs_prop, attributes, initial_, source);
       then
         ass :: rest_ass;
   end match;

@@ -637,13 +637,15 @@ uniontype Attributes "- Attributes"
   record ATTR
     SCode.Flow          flowPrefix "flow" ;
     SCode.Stream        streamPrefix "stream" ;
-    SCode.Accessibility accessibility "accessibility" ;
     SCode.Variability   variability "variability" ;
     Absyn.Direction     direction "direction" ;
     Absyn.InnerOuter    innerOuter "inner, outer,  inner outer or unspecified";
   end ATTR;
-
 end Attributes;
+
+public 
+constant Attributes dummyAttrVar   = ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.VAR(),   Absyn.BIDIR(), Absyn.NOT_INNER_OUTER()); 
+constant Attributes dummyAttrConst = ATTR(SCode.NOT_FLOW(), SCode.NOT_STREAM(), SCode.CONST(), Absyn.BIDIR(), Absyn.NOT_INNER_OUTER());
 
 public uniontype BindingSource "where this binding came from: either default binding or start value"
   record BINDING_FROM_DEFAULT_VALUE "the binding came from the default value" end BINDING_FROM_DEFAULT_VALUE;

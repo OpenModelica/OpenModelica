@@ -284,7 +284,7 @@ algorithm
         sv = translateVariability(v);
         adim = listAppend(extraADim, adim);
       then
-        SCode.ATTR(adim, sf, ss, SCode.RW(), sv, dir);
+        SCode.ATTR(adim, sf, ss,  sv, dir);
   end matchcontinue;
 end translateAttributes;
 
@@ -1185,7 +1185,7 @@ algorithm
       then
         (SCode.COMPONENT(n,
           SCode.PREFIXES(vis,sRed,sFin,io,sRep),
-          SCode.ATTR(tot_dim,sFl,sSt,SCode.RW(),pa_1,di),
+          SCode.ATTR(tot_dim,sFl,sSt,pa_1,di),
           t,mod,comment_1,cond,info) :: xs_1);
 
     case (cc,finalPrefix,_,repl,vis,Absyn.IMPORT(import_ = imp, info = info),_)
@@ -1995,7 +1995,7 @@ protected
 algorithm
   ts := Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE())},NONE());
   cd := SCode.DERIVED(ts,SCode.NOMOD(),
-                      SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RW(),SCode.VAR(),Absyn.BIDIR()),
+                      SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR()),
                       NONE());
   elt := SCode.CLASS(
            str,

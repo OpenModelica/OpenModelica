@@ -527,7 +527,6 @@ uniontype Attributes "- Attributes"
     Absyn.ArrayDim arrayDims "the array dimensions of the component";
     Flow   flowPrefix   "the flow prefix";
     Stream streamPrefix "the stream prefix";
-    Accessibility accessibility "the accessibility of the component: RW (read/write), RO (read only), WO (write only)" ;
     Variability variability " the variability: parameter, discrete, variable, constant" ;
     Absyn.Direction direction "the direction: input, output or bidirectional" ;
   end ATTR;
@@ -540,14 +539,6 @@ uniontype Variability "the variability of a component"
   record PARAM    "a parameter"         end PARAM;
   record CONST    "a constant"          end CONST;
 end Variability;
-
-public
-uniontype Accessibility "These are attributes that apply to a declared component."
-  record RW "read/write"            end RW;
-  record RO "read-only"             end RO;
-  record WO "write-only (not used)" end WO;
-end Accessibility;
-
 
 public /* adrpo: previously present in Inst.mo */
 uniontype Initial "the initial attribute of an algorithm or equation
@@ -567,7 +558,7 @@ public constant Prefixes defaultPrefixes =
     NOT_REPLACEABLE()); 
 
 public constant Attributes defaultConstAttr =
-  ATTR({}, NOT_FLOW(), NOT_STREAM(), RO(), CONST(), Absyn.BIDIR());
+  ATTR({}, NOT_FLOW(), NOT_STREAM(), CONST(), Absyn.BIDIR());
 
 // .......... functionality .........
 protected import Util;
@@ -1487,18 +1478,16 @@ public function attributesEqual
 algorithm
   equal:= matchcontinue(attr1,attr2)
     local
-      Accessibility acc1,acc2;
       Variability var1,var2;
       Flow fl1,fl2;
       Stream st1,st2;
       Absyn.ArrayDim ad1,ad2;
       Absyn.Direction dir1,dir2;
       
-    case(ATTR(ad1,fl1,st1,acc1,var1,dir1),ATTR(ad2,fl2,st2,acc2,var2,dir2))
+    case(ATTR(ad1,fl1,st1,var1,dir1),ATTR(ad2,fl2,st2,var2,dir2))
       equation
         true = arrayDimEqual(ad1,ad2);
         true = valueEq(fl1,fl2);
-        true = accessibilityEqual(acc1,acc2);
         true = variabilityEqual(var1,var2);
         true = directionEqual(dir1,dir2);
         true = valueEq(st1,st2);  // added Modelica 3.1 stream connectors
@@ -1509,21 +1498,6 @@ algorithm
     
   end matchcontinue;
 end attributesEqual;
-
-protected function accessibilityEqual
-"function accessibilityEqual
-  Returns true if two  Accessibliy properties are equal"
-  input Accessibility acc1;
-  input Accessibility acc2;
-  output Boolean equal;
-algorithm
-  equal := matchcontinue(acc1,acc2)
-    case(RW(), RW()) then true;
-    case(RO(), RO()) then true;
-    case(WO(), WO()) then true;
-    case(_, _) then false;
-  end matchcontinue;
-end accessibilityEqual;
 
 public function variabilityEqual
 "function variabilityEqual
@@ -3259,19 +3233,17 @@ algorithm
       Absyn.ArrayDim ad1,ad2,ad;
       Flow f1,f2,f;
       Stream s1,s2,s;
-      Accessibility a1,a2,a;
     
     case(ele,NONE()) then SOME(ele);
-    case(ATTR(ad1,f1,s1,a1,v1,d1), SOME(ATTR(ad2,f2,s2,a2,v2,d2)))
+    case(ATTR(ad1,f1,s1,v1,d1), SOME(ATTR(ad2,f2,s2,v2,d2)))
       equation
         f = boolFlow(boolOr(flowBool(f1),flowBool(f2)));
         s = boolStream(boolOr(streamBool(s1),streamBool(s2)));
         v = propagateVariability(v1,v2);
         d = propagateDirection(d1,d2);
-        a = propagateAccessibility(a1,a2);
         ad = ad1; // TODO! CHECK if ad1 == ad2!
       then
-        SOME(ATTR(ad,f,s,a,v,d));
+        SOME(ATTR(ad,f,s,v,d));
   end match;
 end mergeAttributes;
 
@@ -3286,18 +3258,6 @@ algorithm
     case(v1,_) then v1;
   end matchcontinue;
 end propagateVariability;
-
-protected function propagateAccessibility 
-"Helper function for mergeAttributes"
-  input Accessibility a1;
-  input Accessibility a2;
-  output Accessibility a;
-algorithm 
-  a := matchcontinue(a1,a2)
-    case(a1,RW()) then a1;
-    case(a1,_) then a1;
-  end matchcontinue;
-end propagateAccessibility;
 
 protected function propagateDirection 
 "Helper function for mergeAttributes"
@@ -3458,12 +3418,11 @@ public function removeAttributeDimensions
 protected
   Flow f;
   Stream s;
-  Accessibility a;
   Variability v;
   Absyn.Direction d;
 algorithm
-  ATTR(_, f, s, a, v, d) := inAttributes;
-  outAttributes := ATTR({}, f, s, a, v, d);
+  ATTR(_, f, s, v, d) := inAttributes;
+  outAttributes := ATTR({}, f, s, v, d);
 end removeAttributeDimensions;
 
 public function setAttributesDirection
@@ -3474,11 +3433,10 @@ protected
   Absyn.ArrayDim ad;
   Flow f;
   Stream s;
-  Accessibility a;
   Variability v;
 algorithm
-  ATTR(ad, f, s, a, v, _) := inAttributes;
-  outAttributes := ATTR(ad, f, s, a, v, inDirection);
+  ATTR(ad, f, s, v, _) := inAttributes;
+  outAttributes := ATTR(ad, f, s, v, inDirection);
 end setAttributesDirection;
 
 public function attrVariability

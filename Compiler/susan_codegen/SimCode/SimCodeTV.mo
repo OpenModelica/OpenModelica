@@ -1816,7 +1816,6 @@ uniontype Attributes "- Attributes"
     Absyn.ArrayDim arrayDims "the array dimensions of the component";
     Flow   flowPrefix   "the flow prefix";
     Stream streamPrefix "the stream prefix";
-    Accessibility accesibility "the accesibility of the component: RW (read/write), RO (read only), WO (write only)" ;
     Variability variability " the variability: parameter, discrete, variable, constant" ;
     Absyn.Direction direction "the direction: input, output or bidirectional" ;
   end ATTR;
@@ -1828,12 +1827,6 @@ uniontype Variability "the variability of a component"
   record PARAM    "a parameter"         end PARAM;
   record CONST    "a constant"          end CONST;
 end Variability;
-
-uniontype Accessibility "These are attributes that apply to a declared component."
-  record RW "read/write"            end RW;
-  record RO "read-only"             end RO;
-  record WO "write-only (not used)" end WO;
-end Accessibility;
 
 uniontype Initial "the initial attribute of an algorithm or equation
  Intial is used as argument to instantiation-function for

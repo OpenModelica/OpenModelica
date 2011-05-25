@@ -163,8 +163,8 @@ public constant SCode.Prefixes commonPrefixes =
     SCode.NOT_REPLACEABLE()); 
 
 protected
-constant SCode.Attributes attrConst = SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.CONST(),Absyn.BIDIR()); 
-constant SCode.Attributes attrParam = SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RW(),SCode.PARAM(),Absyn.BIDIR());
+constant SCode.Attributes attrConst = SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.CONST(),Absyn.BIDIR()); 
+constant SCode.Attributes attrParam = SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR());
 
 /*
 - The primitive types
@@ -271,7 +271,7 @@ protected constant SCode.Element booleanType=SCode.CLASS("Boolean",commonPrefixe
 
 /* The builtin variable time. See also variableIsBuiltin */
 protected constant DAE.Var timeVar=DAE.TYPES_VAR("time",
-          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+          DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER()),
           SCode.PUBLIC(),DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `time\' variable" ;
 
 protected constant DAE.Type stringIntInt2string=(

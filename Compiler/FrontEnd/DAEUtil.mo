@@ -5492,13 +5492,25 @@ public function setAttrVariability
 protected
   SCode.Flow fp;
   SCode.Stream sp;
-  SCode.Accessibility acc;
   Absyn.Direction dir;
   Absyn.InnerOuter io;
 algorithm
-  DAE.ATTR(fp, sp, acc, _, dir, io) := inAttr;
-  outAttr := DAE.ATTR(fp, sp, acc, inVar, dir, io);
+  DAE.ATTR(fp, sp, _, dir, io) := inAttr;
+  outAttr := DAE.ATTR(fp, sp, inVar, dir, io);
 end setAttrVariability;
+
+public function getAttrVariability
+  "Get the variability attribute in an Attributes record."
+  input DAE.Attributes inAttr;
+  output SCode.Variability outVar;
+protected
+  SCode.Flow fp;
+  SCode.Stream sp;
+  Absyn.Direction dir;
+  Absyn.InnerOuter io;
+algorithm
+  DAE.ATTR(fp, sp, outVar, dir, io) := inAttr;
+end getAttrVariability;
 
 public function addSymbolicTransformation
   input DAE.ElementSource source;
@@ -5593,15 +5605,13 @@ public function translateSCodeAttrToDAEAttr
 protected
   SCode.Flow fp;
   SCode.Stream sp;
-  SCode.Accessibility acc;
   SCode.Variability var;
   Absyn.Direction dir;
   Absyn.InnerOuter io;
 algorithm
-  SCode.ATTR(flowPrefix = fp, streamPrefix = sp, accessibility = acc, 
-    variability = var, direction = dir) := inAttributes;
+  SCode.ATTR(flowPrefix = fp, streamPrefix = sp, variability = var, direction = dir) := inAttributes;
   SCode.PREFIXES(innerOuter = io) := inPrefixes;
-  outAttributes := DAE.ATTR(fp, sp, acc, var, dir, io);
+  outAttributes := DAE.ATTR(fp, sp, var, dir, io);
 end translateSCodeAttrToDAEAttr;
 
 end DAEUtil;

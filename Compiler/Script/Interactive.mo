@@ -1324,7 +1324,7 @@ algorithm
       equation
         (_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
         env_1 = Env.updateFrameV(env,
-          DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+          DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
           SCode.PUBLIC(),tp,DAE.VALBOUND(v,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()), Env.VAR_TYPED(), {});
         env_2 = addVarsToEnv(rest, env_1);
       then
@@ -1333,7 +1333,7 @@ algorithm
       equation
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{})));
         env_1 = Env.extendFrameV(env,
-          DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
+          DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
           SCode.PUBLIC(),tp,DAE.VALBOUND(v,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()),NONE(), Env.VAR_UNTYPED(), {});
         env_2 = addVarsToEnv(rest, env_1);
       then
