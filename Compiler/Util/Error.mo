@@ -31,7 +31,7 @@
 
 encapsulated package Error
 "
-  file:         Error.mo
+  file:        Error.mo
   package:     Error
   description: Error handling
 
