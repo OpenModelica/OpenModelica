@@ -15,7 +15,7 @@ typedef struct {
 } MHeader_t;
 
 typedef struct {
-  char *name;
+  char *name,*descr;
   int isParam;
   /* Parameters are stored in data_1, variables in data_2; parameters are defined at any time, variables only within the simulation start/stop interval */
   int index;

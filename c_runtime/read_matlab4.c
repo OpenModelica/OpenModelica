@@ -137,8 +137,30 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
       }
       break;
     }
-    case 2: {
-      if (-1==fseek(reader->file,matrix_length,SEEK_CUR)) return "Corrupt header: description matrix";
+    case 2: { /* description */
+      if (binTrans==1) {
+        for (i=0; i<hdr.ncols; i++) {
+          reader->allInfo[i].name = (char*) malloc(hdr.mrows+1);
+          if (fread(reader->allInfo[i].name,hdr.mrows,1,reader->file) != 1) return "Corrupt header: names matrix";
+          reader->allInfo[i].descr[hdr.mrows] = '\0';
+         }
+      } else if (binTrans==0) {
+        int j;
+        char* tmp = (char*) malloc(hdr.ncols*hdr.mrows+1);
+        if (fread(tmp,hdr.ncols*hdr.mrows,1,reader->file) != 1)  {
+          free(tmp);
+          return "Corrupt header: names matrix";
+        }
+        for (i=0; i<hdr.mrows; i++) {
+          reader->allInfo[i].descr = (char*) malloc(hdr.ncols+1);
+          for(j=0; j<hdr.ncols; j++) {
+            reader->allInfo[i].descr[j] = tmp[j*hdr.mrows+i];   
+          }
+          reader->allInfo[i].descr[hdr.ncols] = '\0';
+          /* fprintf(stderr, "    Adding variable %s\n", reader->allInfo[i].name); */
+        }
+        free(tmp);
+      }
       break;
     }
     case 3: { /* "dataInfo" */
