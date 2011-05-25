@@ -16,7 +16,7 @@ ifndef OMDEV
 else
 	configUnix = 
 endif
-RML_COMPAT=$(top_builddir)/c_runtime/rml_compatibility.h
+RML_COMPAT=$(top_builddir)/c_runtime/meta/rml_compatibility.h
 
 SRC	= RTOpts_rml.c Print_rml.c System_rml.c Settings_rml.c \
   SimulationResults_rml.c IOStreamExt_rml.c Database.c Socket_rml.c

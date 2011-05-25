@@ -2269,15 +2269,12 @@ algorithm
   end match;
 end unparseComponentitemStr;
 
-protected function unparseComponentCondition "function: unparseComponentCondition
-
-  Prints a ComponentCondition option to a string.
-"
+public function unparseComponentCondition "function: unparseComponentCondition
+  Prints a ComponentCondition option to a string."
   input Option<Absyn.ComponentCondition> inAbsynComponentConditionOption;
   output String outString;
 algorithm
-  outString:=
-  match (inAbsynComponentConditionOption)
+  outString := match (inAbsynComponentConditionOption)
     local
       Ident s1,res;
       Absyn.Exp cond;

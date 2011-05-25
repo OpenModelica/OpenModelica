@@ -98,7 +98,9 @@ algorithm
         // set the external flag that signals the presence of expandable connectors in the model
         System.setHasStreamConnectors(false);
         sp = Util.listFold(initialClasses, translate2, {});
+        // call flatten program on the initial classes only    
         sp = SCodeFlatten.flattenCompleteProgram(sp);
+        // translate given absyn to scode. 
         sp = Util.listFold(inClasses, translate2, sp);
         sp = listReverse(sp);
         SCodeCheck.checkDuplicateClasses(sp);

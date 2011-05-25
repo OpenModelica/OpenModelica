@@ -40,7 +40,7 @@ ModelicaParser_rml.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h .
 ModelicaParser_omc.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h ../Compiler/OpenModelicaBootstrappingHeader.h
 
 Parser_rml.o: $(HFILES) parse.c
-Parser_omc.o: $(HFILES) parse.c ../c_runtime/rml_compatibility.h
+Parser_omc.o: $(HFILES) parse.c ../c_runtime/meta/rml_compatibility.h
 
 libomparse_rml.a: Parser_rml.o $(OBJS) ModelicaParser_rml.o
 	rm -f $@

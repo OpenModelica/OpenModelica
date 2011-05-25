@@ -54,6 +54,8 @@ protected import Dump;
 protected import RTOpts;
 protected import SCodeLookup;
 protected import SCodeDump;
+protected import SCodeFlat;
+protected import SCodeFlatDump;
 
 public function flattenProgram
   "Flattens the last class in a program."
@@ -64,23 +66,20 @@ public function flattenProgram
 algorithm
   outProgram := matchcontinue(inClassName, inEnv, inProgram)
     local
-      SCodeHashTable.HashTable hashTable;
-      SCodeEnv.Env envEnclosing;
-      SCode.Element cls;
+      SCodeFlat.FlatProgram flatProgram;
 
     case (_, _, _)
       equation
-        //false = RTOpts.debugFlag("scodeFlatten");
+        false = RTOpts.debugFlag("scodeFlatten");
       then
         inProgram;
 
     else
       equation
-        (SCodeEnv.CLASS(cls, _, _), _, envEnclosing) = SCodeLookup.lookupClassName(inClassName, inEnv, Absyn.dummyInfo);
-        cls = flattenClass(cls, envEnclosing);
-        outProgram = inProgram;
+        (flatProgram, _) = SCodeFlat.flattenProgram(inProgram, SCodeFlat.EXTRA(inEnv, {}, {}, {}, {}, Absyn.dummyInfo));
+        SCodeFlatDump.outputFlatProgram(flatProgram);
       then
-        outProgram;
+        inProgram;
 
   end matchcontinue;
 end flattenProgram;

@@ -2,9 +2,23 @@ AR = ar -ru
 ANSI= #-ansi
 CXXFLAGS := $(CFLAGS) -Wall $(ANSI) $(EXTRA_CFLAGS)
 CFLAGS := $(CFLAGS) -Wall $(ANSI) -pedantic $(EXTRA_CFLAGS)
-CPPFLAGS = -I. -Iinteractive/
+CPPFLAGS = -I. -Iinteractive/ -Imeta/ -I../
 FFLAGS  = -O -fexceptions
 # P.A: before, g77 had -O3 or -O2 but that caused a bug in DDASRT, giving infinite loop.
+
+META_OBJS = \
+meta/meta_modelica.o \
+meta/meta_modelica_builtin.o \
+meta/meta_modelica_real.o \
+meta/meta_modelica_string_lit.o \
+meta/meta_modelica_catch.o \
+meta/meta_modelica_gc.o \
+meta/meta_modelica_gc_list.o \
+meta/meta_modelica_gc_stack.o \
+meta/meta_modelica_gc_roots.o \
+meta/meta_modelica_gc_pages.o \
+meta/meta_modelica_gc_stats.o \
+meta/meta_modelica_gc_settings.o 
 
 OBJS = $(FOBJS) boolean_array.o index_spec.o integer_array.o memory_pool.o \
 base_array.o real_array.o string_array.o read_write.o utility.o \
@@ -12,11 +26,9 @@ modelica_string.o bigden.o \
 ddasrt.o  dlinpk.o  enorm.o   hybrd1.o  nelmead.o  qform.o   r1updt.o \
 biglag.o  ddassl.o  dogleg.o  fdjac1.o  hybrj.o   newuoa.o   qrfac.o   trsapp.o \
 daux.o    dlamch.o  dpmpar.o  hybrd.o   lsame.o   newuob.o   r1mpyq.o  update.o division.o\
-java_interface.o meta_modelica.o meta_modelica_builtin.o meta_modelica_real.o \
-meta_modelica_string_lit.o meta_modelica_catch.o rtclock.o ModelicaUtilities.o \
+java_interface.o rtclock.o ModelicaUtilities.o \
 simulation_varinfo.o read_matlab4.o read_csv.o \
-meta_modelica_gc.o meta_modelica_gc_list.o meta_modelica_gc_stack.o \
-meta_modelica_gc_roots.o meta_modelica_gc_pages.o meta_modelica_gc_stats.o meta_modelica_gc_settings.o \
+$(META_OBJS) \
 $(EXTRA_OBJS)
 
 SIMOBJS = $(FOBJS) simulation_runtime.o simulation_init.o simulation_input.o \
@@ -32,6 +44,20 @@ simulation_result_mat.o simulation_delay.o tables.o options.o dgesv_aux.o \
 simulation_modelinfo.o $(EXTRA_SIMOBJS) \
 solver_qss/solver_qss.o solver_qss/sampler.o solver_qss/integrator.o solver_qss/qss_signal.o solver_qss/static_function.o solver_qss/cross_detector.o
 
+META_HFILES = \
+meta/rml_compatibility.h \
+meta/meta_modelica_builtin.h \
+meta/meta_modelica_builtin_boxptr.h \
+meta/meta_modelica_gc.h \
+meta/meta_modelica_real.h \
+meta/meta_modelica_string_lit.h \
+meta/meta_modelica.h \
+meta/meta_modelica_gc_stack.h \
+meta/meta_modelica_gc_list.h \
+meta/meta_modelica_gc_roots.h \
+meta/meta_modelica_gc_pages.h \
+meta/meta_modelica_gc_stats.h \
+meta/meta_modelica_gc_settings.h  
 
 HFILES = \
 base_array.h \
@@ -51,12 +77,6 @@ jni_md_solaris.h \
 jni_md_windows.h \
 matrix.h \
 memory_pool.h \
-meta_modelica_builtin.h \
-meta_modelica_builtin_boxptr.h \
-meta_modelica_gc.h \
-meta_modelica_real.h \
-meta_modelica_string_lit.h \
-meta_modelica.h \
 modelica.h \
 modelica_string.h \
 ModelicaUtilities.h \
@@ -66,7 +86,6 @@ read_csv.h \
 read_write.h \
 real_array.h \
 ringbuffer.h \
-rml_compatibility.h \
 rtclock.h \
 sendData/sendData.h \
 simulation_delay.h \
@@ -84,19 +103,13 @@ simulation_runtime.h \
 simulation_varinfo.h \
 solver_main.h \
 string_array.h \
-meta_modelica_gc_stack.h \
-meta_modelica_gc_list.h \
-meta_modelica_gc_roots.h \
-meta_modelica_gc_pages.h \
-meta_modelica_gc_stats.h \
-meta_modelica_gc_settings.h \
 utility.h \
 linearize.h \
 fmu_model_interface.h \
 fmiModelFunctions.h \
 fmiModelTypes.h \
 solver_qss/solver_qss.h \
-
+$(META_HFILES)
 
 LIBS = libc_runtime.a libsim.a interactive/libinteractive.a \
   ModelicaExternalC/libModelicaExternalC.a libsim_ompd.a
@@ -112,10 +125,10 @@ $(SIMOBJS) : $(HFILES)
 $(OBJS) : $(HFILES)
 
 # Commented out due to the script not running on all platform, and rarely changes
-#meta_modelica_string_lit.h: meta_modelica_gen_string_lit.sh
+#meta/meta_modelica_string_lit.h: meta/meta_modelica_gen_string_lit.sh
 #	sh $< h > $@.tmp
 #	mv $@.tmp $@
-#meta_modelica_string_lit.c: meta_modelica_gen_string_lit.sh
+#meta/meta_modelica_string_lit.c: meta/meta_modelica_gen_string_lit.sh
 #	sh $< > $@.tmp
 #	mv $@.tmp $@
 
@@ -127,14 +140,12 @@ libsim.a : $(SIMOBJS) $(HFILES)
 	$(AR) $@ $(SIMOBJS)
 	ranlib $@
 
-
 libsim_ompd.a : $(SIMOBJSOMPD) $(HFILES)
 	$(AR) $@ $(SIMOBJSOMPD)
 	ranlib $@
 
 simulation_runtime_ompd.o: simulation_runtime.cpp
 	$(CXX) $(CPPFLAGS) -c -o $@ simulation_runtime.cpp -D_OMC_QSS_LIB
-  
 
 ModelicaExternalC/libModelicaExternalC.a: $(addprefix ModelicaExternalC/,ModelicaInternal.c ModelicaStrings.c ModelicaTablesImpl.c) $(HFILES)
 	$(MAKE) -C ModelicaExternalC -f $(EXTERNALCMAKEFILE)
@@ -146,8 +157,8 @@ libf2c/libf2c.a :
 	cd libf2c && $(MAKE) -f $(LIBF2CMAKEFILE)
 	ranlib $@
 
-meta_modelica_catch.o : meta_modelica_catch.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c -g $<
+meta/meta_modelica_catch.o : meta/meta_modelica_catch.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ -g $<
 
 # Requires IEEE floating-point precision
 simulation_input.o : simulation_input.cpp

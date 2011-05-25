@@ -915,6 +915,16 @@ algorithm
   end match;
 end encapsulatedStr;
 
+public function partialStr
+  input SCode.Partial inPartial;
+  output String str;
+algorithm
+  str := match(inPartial)
+    case (SCode.PARTIAL())     then "partial ";
+    case (SCode.NOT_PARTIAL()) then "";
+  end match;
+end partialStr;
+
 public function visibilityStr
   input SCode.Visibility inVisibility;
   output String str;
