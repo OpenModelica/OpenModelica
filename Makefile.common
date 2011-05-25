@@ -102,10 +102,11 @@ sustst:
 susgen:
 	(cd Compiler/susan_codegen/SimCode/GenTest && time $(MAKE) -f Makefile)
 
-omlibrary:
-	test -d ./build/lib/omlibrary || \
-	((cd libraries/ && find . -type d -not -path "*svn*" -exec install -m755 -d ../build/lib/omlibrary/{} \;) && \
-	(cd libraries/ && find . -type f -not -path "*svn*" -exec install -m644 {} ../build/lib/omlibrary/{} \;))
+omlibrary: build/lib/omlibrary/stamp
+build/lib/omlibrary/stamp: libraries/README
+	(cd libraries/ && find . -type d -not -path "*svn*" -exec install -m755 -d ../build/lib/omlibrary/{} \;)
+	(cd libraries/ && find . -type f -not -path "*svn*" -exec install -m644 {} ../build/lib/omlibrary/{} \;)
+	touch $@
 
 distclean: clean
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
