@@ -16,7 +16,7 @@ OmniORB
 https://openmodelica.ida.liu.se/svn/OpenModelica/installers/windows/OMDev/lib/omniORB-4.1.4-mingw and set the path in 
 OMEditGUI.pro file accordingly.
 - Load the project in Qt Creator, build and run.
-- Copy omniORB414_rt.dll and omniORB414_rtd.dll from /omniORB-4.1.4-mingw/bin/x86_win32 to /location-where-OMEdit.exe-is-created.
+- Copy omniORB414_rt.dll and omnithread34_rt.dll from /omniORB-4.1.4-mingw/bin/x86_win32 to /location-where-OMEdit.exe-is-created.
 
 ------------------------------
 Adeel.
