@@ -43,8 +43,10 @@ void omc_free_matlab4_reader(ModelicaMatReader *reader)
   unsigned int i;
   fclose(reader->file);
   free(reader->fileName); reader->fileName=NULL;
-  for (i=0; i<reader->nall; i++)
+  for (i=0; i<reader->nall; i++) {
     free(reader->allInfo[i].name);
+    free(reader->allInfo[i].descr);
+  }
   free(reader->allInfo); reader->allInfo=NULL;
   free(reader->params); reader->params=NULL;
   for (i=0; i<reader->nvar*2; i++)
@@ -101,7 +103,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
     }
     case 1: { /* "names" */
       unsigned int i;
-      if (binTrans==0) 
+      if (binTrans==0)
          reader->nall = hdr.mrows;
       else
         reader->nall = hdr.ncols;
@@ -138,10 +140,11 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
       break;
     }
     case 2: { /* description */
+      unsigned int i;
       if (binTrans==1) {
         for (i=0; i<hdr.ncols; i++) {
-          reader->allInfo[i].name = (char*) malloc(hdr.mrows+1);
-          if (fread(reader->allInfo[i].name,hdr.mrows,1,reader->file) != 1) return "Corrupt header: names matrix";
+          reader->allInfo[i].descr = (char*) malloc(hdr.mrows+1);
+          if (fread(reader->allInfo[i].descr,hdr.mrows,1,reader->file) != 1) return "Corrupt header: names matrix";
           reader->allInfo[i].descr[hdr.mrows] = '\0';
          }
       } else if (binTrans==0) {
