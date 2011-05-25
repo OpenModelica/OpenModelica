@@ -220,6 +220,79 @@ storeExtrapolationData()
   globalData->oldTime = globalData->timeValue;
 }
 
+/** function storeExtrapolationDataEvent
+ * author: wbraun
+ *
+ * Stores variables (states, derivatives and algebraic) to be used
+ * by e.g. numerical solvers to extrapolate values as start values.
+ *
+ * This function overwrites all old value with the current.
+ * This function is called after events.
+ */
+void
+storeExtrapolationDataEvent()
+{
+  int i;
+  for (i = 0; i < globalData->nStates; i++)
+    {
+      globalData->states_old2[i] = globalData->states[i];
+      globalData->statesDerivatives_old2[i] = globalData->statesDerivatives[i];
+      globalData->states_old[i] = globalData->states[i];
+      globalData->statesDerivatives_old[i] = globalData->statesDerivatives[i];
+    }
+  for (i = 0; i < globalData->nAlgebraic; i++)
+    {
+      globalData->algebraics_old2[i] =  globalData->algebraics[i];
+      globalData->algebraics_old[i] = globalData->algebraics[i];
+    }
+  for (i = 0; i < globalData->intVariables.nAlgebraic; i++)
+    {
+      globalData->intVariables.algebraics_old2[i] = globalData->intVariables.algebraics[i];
+      globalData->intVariables.algebraics_old[i] = globalData->intVariables.algebraics[i];
+    }
+  for (i = 0; i < globalData->boolVariables.nAlgebraic; i++)
+    {
+      globalData->boolVariables.algebraics_old2[i] = globalData->boolVariables.algebraics[i];
+      globalData->boolVariables.algebraics_old[i] = globalData->boolVariables.algebraics[i];
+    }
+  globalData->oldTime2 = globalData->timeValue;
+  globalData->oldTime = globalData->timeValue;
+}
+
+/** function restoreExtrapolationDataOld
+ * author: wbraun
+ *
+ * Restores variables (states, derivatives and algebraic).
+ *
+ * This function overwrites all variable with old values.
+ * This function is called while the initialization to be able
+ * initialize all ZeroCrossing relations.
+ */
+void
+restoreExtrapolationDataOld()
+{
+  int i;
+  for (i = 0; i < globalData->nStates; i++)
+    {
+      globalData->states[i] = globalData->states_old[i];
+      globalData->statesDerivatives[i] = globalData->statesDerivatives_old[i];
+    }
+  for (i = 0; i < globalData->nAlgebraic; i++)
+    {
+      globalData->algebraics[i] = globalData->algebraics_old[i];
+    }
+  for (i = 0; i < globalData->intVariables.nAlgebraic; i++)
+    {
+      globalData->intVariables.algebraics[i] = globalData->intVariables.algebraics_old[i];
+    }
+  for (i = 0; i < globalData->boolVariables.nAlgebraic; i++)
+    {
+      globalData->boolVariables.algebraics[i] = globalData->boolVariables.algebraics_old[i];
+    }
+  globalData->timeValue = globalData->oldTime;
+}
+
+
 /* \brief determine verboselevel by investigating flag -lv=flags
  *
  * Flags are or'ed to a returnvalue.

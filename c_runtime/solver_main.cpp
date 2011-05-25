@@ -245,10 +245,6 @@ void update_DAEsystem(){
   int IterationNum = 0;
 
   functionDAE(&needToIterate);
-  if (sim_verbose >= LOG_SOLVER)
-    {
-      sim_result->emit();
-    }
   while (checkForDiscreteChanges() || needToIterate)
     {
       if (needToIterate)
@@ -396,8 +392,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
         }
       saveall();
       sim_result->emit();
-      storeExtrapolationData();
-      storeExtrapolationData();
+      storeExtrapolationDataEvent();
   }
   catch (TerminateSimulationException &e)
   {
@@ -510,6 +505,9 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
               stateEvents++;
               reset = true;
               dideventstep = 1;
+
+              //due to an event overwrite old values
+              storeExtrapolationDataEvent();
             }
           else if (sampleEvent_actived)
             {
@@ -518,6 +516,8 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
               reset = true;
               dideventstep = 1;
               sampleEvent_actived = 0;
+              //due to an event overwrite old values
+              storeExtrapolationDataEvent();
             }
           else
             {

@@ -285,30 +285,28 @@ main_initialize(const std::string* method)
     init_method = *method;
   }
 
+  if (sim_verbose >= LOG_SOLVER)
+  {
+    sim_result->emit();
+  }
+  /* call initialize function and save start values */
   saveall();
   initial_function();
+  storeExtrapolationDataEvent();
+  saveall();
+
+  /* Initialize all relations that are ZeroCrossings */
   update_DAEsystem();
+  /* And restore start values and helpvars*/
+  restoreExtrapolationDataOld();
+  restoreHelpVars();
+  saveall();
   if (sim_verbose >= LOG_SOLVER)
   {
     sim_result->emit();
   }
-  // do some initial stuff
+  // start with the real initialization
   globalData->init = 1;
-  initial_function();
-  if (sim_verbose >= LOG_SOLVER)
-  {
-    sim_result->emit();
-  }
-  //saveall();
-  //update_DAEsystem();
-
-  storeExtrapolationData();
-  storeExtrapolationData();
-
-  if (sim_verbose >= LOG_SOLVER)
-  {
-    sim_result->emit();
-  }
 
   //first try with the given method as default simplex and
   //then try with the other one
@@ -333,10 +331,8 @@ main_initialize(const std::string* method)
       retVal = 1;
     }
   }
-
   saveall();
-  storeExtrapolationData();
-  storeExtrapolationData();
+  storeExtrapolationDataEvent();
 
   if (sim_verbose >= LOG_SOLVER)
   {
@@ -350,8 +346,7 @@ main_initialize(const std::string* method)
   {
     sim_result->emit();
   }
-  storeExtrapolationData();
-  storeExtrapolationData();
+  storeExtrapolationDataEvent();
   globalData->init = 0;
   return retVal;
 }

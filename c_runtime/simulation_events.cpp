@@ -50,8 +50,6 @@ using namespace std;
 
 double* gout = 0;
 double* gout_old = 0;
-double* gout_backup = 0;
-modelica_boolean* gout_res = 0;
 modelica_boolean* backuprelations = 0;
 long* zeroCrossingEnabled = 0;
 long inUpdate = 0;
@@ -81,7 +79,6 @@ initializeEventData()
 
   gout = 0;
   gout_old = 0;
-  gout_backup = 0;
   backuprelations = 0;
   zeroCrossingEnabled = 0;
   inUpdate = 0;
@@ -90,8 +87,6 @@ initializeEventData()
   // load default initial values.
   gout = new double[globalData->nZeroCrossing];
   gout_old = new double[globalData->nZeroCrossing];
-  gout_backup = new double[globalData->nZeroCrossing];
-  gout_res = new modelica_boolean[globalData->nZeroCrossing];
   backuprelations = new modelica_boolean[globalData->nZeroCrossing];
   h_saved = new double[globalData->nHelpVars];
   x_saved = new double[globalData->nStates];
@@ -101,8 +96,8 @@ initializeEventData()
   bool_saved = new modelica_boolean[globalData->boolVariables.nAlgebraic];
   str_saved = new const char*[globalData->stringVariables.nAlgebraic];
   zeroCrossingEnabled = new long[globalData->nZeroCrossing];
-  if (!y_saved || !gout || !gout_old || !gout_backup || !backuprelations
-      || !gout_res || !h_saved || !x_saved || !xd_saved || !int_saved
+  if (!y_saved || !gout || !gout_old || !backuprelations
+      || !h_saved || !x_saved || !xd_saved || !int_saved
       || !bool_saved || !str_saved || !zeroCrossingEnabled)
     {
       cerr << "Could not allocate memory for global event data structures"
@@ -112,8 +107,6 @@ initializeEventData()
   // adrpo 2006-11-30 -> init the damn structures!
   memset(gout, 0, sizeof(double) * globalData->nZeroCrossing);
   memset(gout_old, 0, sizeof(double) * globalData->nZeroCrossing);
-  memset(gout_backup, 0, sizeof(double) * globalData->nZeroCrossing);
-  memset(gout_res, 0, sizeof(modelica_boolean) * globalData->nZeroCrossing);
   memset(backuprelations, 0, sizeof(modelica_boolean) * globalData->nZeroCrossing);
   memset(h_saved, 0, sizeof(double) * globalData->nHelpVars);
   memset(x_saved, 0, sizeof(double) * globalData->nStates);
@@ -142,8 +135,6 @@ deinitializeEventData()
   delete[] bool_saved;
   delete[] gout;
   delete[] gout_old;
-  delete[] gout_backup;
-  delete[] gout_res;
   delete[] backuprelations;
   delete[] zeroCrossingEnabled;
   delete[] str_saved;
@@ -427,6 +418,21 @@ saveall()
       str_saved[i] = globalData->stringVariables.algebraics[i];
     }
 }
+/** function restoreHelpVars
+ * author: wbraun
+ *
+ * workaround function to reset all helpvar that are used for when-equations.
+ */
+void
+restoreHelpVars()
+{
+  for (int i = 0; i < globalData->nHelpVars; i++)
+    {
+      globalData->helpVars[i] = 0;
+    }
+}
+
+
 
 void
 checkTermination()
@@ -1122,6 +1128,7 @@ SaveZeroCrossings()
   std::copy(gout, gout + globalData->nZeroCrossing, gout_old);
   function_onlyZeroCrossings(gout, &globalData->timeValue);
 }
+
 
 void
 initializeZeroCrossings()

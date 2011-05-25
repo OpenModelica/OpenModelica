@@ -330,6 +330,8 @@ const char* getNameBool(modelica_boolean* ptr);
 const char* getNameString(const char** ptr);
 
 void storeExtrapolationData();
+void storeExtrapolationDataEvent();
+void restoreExtrapolationDataOld();
 
 /* function for calculating ouput values */
 /*used in DDASRT fortran function*/

@@ -63,6 +63,8 @@ deinitializeEventData();
 
 void
 saveall();
+void
+restoreHelpVars();
 
 double
 Sample(double t, double start, double interval);
