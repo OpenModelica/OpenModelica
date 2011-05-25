@@ -476,26 +476,16 @@ QStringList OMCProxy::loadStandardLibrary()
     sendCommand("getNamedAnnotation(Modelica,version)");
     QString versionStr = StringHandler::unparseStrings(getResult()).at(0);
     double version = versionStr.toDouble();
-    res.append("Modelica");
+    res = getClassNames();
+    sendCommand("loadModel(ModelicaReference)");
+    if (!StringHandler::unparseBool(getResult())) {
+      return empty;
+    }
+    res.append("ModelicaReference");
 
     if (version >= 3.0 && version < 4.0) {
       deleteClass("Modelica.Media");
       deleteClass("Modelica.Fluid");
-      sendCommand("loadModel(ModelicaServices)");
-      if (!StringHandler::unparseBool(getResult())) {
-        return empty;
-      }
-      res.append("ModelicaServices");
-      sendCommand("loadModel(ModelicaReference)");
-      if (!StringHandler::unparseBool(getResult())) {
-        return empty;
-      }
-      res.append("ModelicaReference");
-      if (version >= 3.2) {
-        sendCommand("loadModel(Complex)");
-        if (!StringHandler::unparseBool(getResult())) return empty;
-        res.append("Complex");
-      }
     } else {
       if (version < 2) sendCommand("setAnnotationVersion(\"1.x\")");
       else if (version < 3) sendCommand("setAnnotationVersion(\"2.x\")");
@@ -503,7 +493,8 @@ QStringList OMCProxy::loadStandardLibrary()
                       "Modelica Standard Library version " + versionStr + " is unsupported", "OK");
     }
  
-    mIsStandardLibraryLoaded = true;    
+    mIsStandardLibraryLoaded = true;
+    res.sort();
     return res;
 }
 
