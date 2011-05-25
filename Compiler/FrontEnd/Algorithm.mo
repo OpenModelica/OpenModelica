@@ -152,16 +152,7 @@ algorithm
       DAE.Properties lprop,rprop,lhprop,rhprop;
       DAE.ComponentRef cr;
       tuple<DAE.TType, Option<Absyn.Path>> lt,rt;
-
-    // It is not allowed to assign to a constant
-    case (lhs,lprop,rhs,rprop,_,initial_,source)
-      equation
-        DAE.C_CONST() = Types.propAnyConst(lprop);
-        lhs_str = ExpressionDump.printExpStr(lhs);
-        rhs_str = ExpressionDump.printExpStr(rhs);
-        Error.addSourceMessage(Error.ASSIGN_CONSTANT_ERROR, {lhs_str,rhs_str}, DAEUtil.getElementSourceFileInfo(source));
-      then
-        fail();
+      Absyn.Direction direction;
 
     // assign to parameter in algorithm okay if record
     case ((lhs as DAE.CREF(componentRef=cr)),lhprop,rhs,rhprop,_,SCode.NON_INITIAL(),source)
@@ -185,8 +176,16 @@ algorithm
     case (lhs,_,rhs,_,DAE.ATTR(variability = SCode.CONST()),_,source)
       equation
         lhs_str = ExpressionDump.printExpStr(lhs);
-        rhs_str = ExpressionDump.printExpStr(rhs);
-        Error.addSourceMessage(Error.ASSIGN_READONLY_ERROR, {lhs_str,rhs_str}, DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.ASSIGN_READONLY_ERROR, {"constant",lhs_str}, DAEUtil.getElementSourceFileInfo(source));
+      then
+        fail();
+
+    // assignment to an input, report error - but keep going anyway; bootstrapping needs this :(
+    case (lhs,_,rhs,_,DAE.ATTR(direction=Absyn.INPUT()),_,source)
+      equation
+        false = RTOpts.acceptMetaModelicaGrammar();
+        lhs_str = ExpressionDump.printExpStr(lhs);
+        Error.addSourceMessage(Error.ASSIGN_READONLY_ERROR, {"input",lhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
 
@@ -197,9 +196,10 @@ algorithm
         outStatement = makeAssignment2(lhs,lhprop,rhs,rhprop,source);
       then outStatement;
 
-    case (lhs,lhprop,rhs,rhprop,_,_,source)
+    case (lhs,lhprop,rhs,rhprop,DAE.ATTR(direction=direction),_,source)
       equation
         DAE.C_VAR() = Types.propAnyConst(lhprop);
+        true = RTOpts.acceptMetaModelicaGrammar() or (not valueEq(Absyn.INPUT(),direction));
         outStatement = makeAssignment2(lhs,lhprop,rhs,rhprop,source);
       then outStatement;
 

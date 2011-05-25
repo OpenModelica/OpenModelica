@@ -383,7 +383,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (ASSIGN_PARAM_ERROR,TRANSLATION(),ERROR(),
           "Trying to assign to parameter component in %s := %s"),
           (ASSIGN_READONLY_ERROR,TRANSLATION(),ERROR(),
-          "Trying to assign to readonly component in %s := %s"),
+          "Trying to assign to %s component %s"),
           (ASSIGN_TYPE_MISMATCH_ERROR,TRANSLATION(),ERROR(),
           "Type mismatch in assignment in %s := %s of %s := %s"),
           (IF_CONDITION_TYPE_ERROR,TRANSLATION(),ERROR(),
