@@ -554,7 +554,7 @@ algorithm
       list<Values.Value> valueLst;
       Integer i;
       String str,id1,id2;
-      Real r;
+      Real r,r1,r2;
     
       /* arcxxx(xxx(e)) => e; xxx(arcxxx(e)) => e */
     case (DAE.CALL(path=Absyn.IDENT("sin"),expLst={DAE.CALL(path=Absyn.IDENT("asin"),expLst={e})}))
@@ -579,6 +579,16 @@ algorithm
         e = Expression.makeBuiltinCall("sin",{e},DAE.ET_REAL());
       then DAE.BINARY(DAE.RCONST(0.5),DAE.MUL(DAE.ET_REAL()),e);
         
+      /* sin^2(x)+cos^2(x) = 1 */
+    case (DAE.BINARY(DAE.BINARY(DAE.CALL(path=Absyn.IDENT(id1),expLst={e1}),DAE.POW(DAE.ET_REAL()),DAE.RCONST(r1)),
+                     DAE.ADD(_),
+                     DAE.BINARY(DAE.CALL(path=Absyn.IDENT(id2),expLst={e2}),DAE.POW(DAE.ET_REAL()),DAE.RCONST(r2))))
+      equation
+        true = realEq(r1,r2) and realEq(r1,2.0);
+        true = (stringEq(id1,"sin") and stringEq(id2,"cos")) or (stringEq(id1,"cos") and stringEq(id2,"sin"));
+        true = Expression.expEqual(e1,e2);
+      then DAE.RCONST(1.0);
+
   end matchcontinue;
 end simplifyTrigIdentities;
 
