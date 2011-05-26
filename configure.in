@@ -206,6 +206,7 @@ dnl check for lpsolve55
 AC_ARG_WITH(static-lpsolve,  [  --with-static-lpsolve=DIR  (default to dynamic linking; searches /usr if no other directory is provided)],[WANT_STATIC_LPSOLVE="$withval"],[WANT_STATIC_LPSOLVE="no"])
 
 if test "$WANT_STATIC_LPSOLVE" = "no"; then
+  LIBS=""
   AC_SEARCH_LIBS(dlopen,dl)
   AC_SEARCH_LIBS(sqrt,m)
   AC_SEARCH_LIBS(colamd,colamd)
