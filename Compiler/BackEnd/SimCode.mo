@@ -8985,8 +8985,9 @@ algorithm
         true = "Windows_NT" ==& System.os();
         str = "-l" +& str;
         strs = getLibraryStringInGccFormat(Absyn.STRING("Lapack"));
-        strs = str :: "-llpsolve55" :: "-lmico2313" :: "-lws2_32" :: "-lregex" :: strs;
-      then strs;
+        strs = str :: "-lsqlite3" :: "-llpsolve55" :: "-lmico2313" :: "-lws2_32" :: "-lregex" :: strs;
+      then 
+        strs;
         
         // The library is not actually named libLapack.so.
         // Which is a problem, since MSL says it does.
@@ -9004,7 +9005,8 @@ algorithm
     case Absyn.STRING(str as "omcruntime")
       equation
         false = "Windows_NT" ==& System.os();
-      then System.getRuntimeLibs();
+      then 
+        System.getRuntimeLibs();
         
         // If the string contains a dot, it's a good path that should not be prefix -l
     case Absyn.STRING(str)

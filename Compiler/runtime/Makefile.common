@@ -19,7 +19,7 @@ endif
 RML_COMPAT=$(top_builddir)/c_runtime/meta/rml_compatibility.h
 
 SRC	= RTOpts_rml.c Print_rml.c System_rml.c Settings_rml.c \
-  SimulationResults_rml.c IOStreamExt_rml.c Database_rml.c Socket_rml.c sqlite/sqlite3.c
+  SimulationResults_rml.c IOStreamExt_rml.c Database_rml.c Socket_rml.c 
 
 CPPSRC  = unitparser.cpp UnitParserExt_rml.cpp ptolemyio_rml.cpp \
   BackendDAEEXT_rml.cpp ErrorMessage.cpp Error_rml.cpp OptManager_rml.cpp \
@@ -82,4 +82,4 @@ ptolemyio_omc.o : ptolemyio.cpp $(RML_COMPAT)
 ErrorMessage.o : ErrorMessage.cpp ErrorMessage.hpp
 
 clean:
-	$(RM) -rf *.a *.o omc_communication.cc omc_communication.h omc_communication-* sqlite/*.o
+	$(RM) -rf *.a *.o omc_communication.cc omc_communication.h omc_communication-* 
