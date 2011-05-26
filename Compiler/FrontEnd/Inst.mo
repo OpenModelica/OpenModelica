@@ -10403,15 +10403,12 @@ algorithm
     local
       list<SCode.Annotation> anns;
       list<SCode.Element> elemDecl;
-      Absyn.Annotation absynann;
       SCode.Annotation ann;
     
     case(SCode.PARTS(annotationLst = anns, elementLst = elemDecl, externalDecl=NONE()),baseFunc,inCache,inEnv,inIH,inPrefix,info)
     then getDeriveAnnotation2(anns,elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix,info);
 
-    case(SCode.PARTS(annotationLst = anns, elementLst = elemDecl, externalDecl=SOME(Absyn.EXTERNALDECL(annotation_=SOME(absynann)))),baseFunc,inCache,inEnv,inIH,inPrefix,info)
-    equation
-      ann = SCodeUtil.translateAnnotation(absynann);
+    case(SCode.PARTS(annotationLst = anns, elementLst = elemDecl, externalDecl=SOME(SCode.EXTERNALDECL(annotation_=SOME(ann)))),baseFunc,inCache,inEnv,inIH,inPrefix,info)
     then getDeriveAnnotation2(ann::anns,elemDecl,baseFunc,inCache,inEnv,inIH,inPrefix,info);
 
     case(SCode.CLASS_EXTENDS(composition=SCode.PARTS(annotationLst = anns, elementLst = elemDecl)),baseFunc,inCache,inEnv,inIH,inPrefix,info)
@@ -10861,7 +10858,7 @@ algorithm
       SCode.Partial p;
       SCode.Encapsulated e;
       SCode.Restriction r;
-      Option<Absyn.ExternalDecl> extDecl;
+      Option<SCode.ExternalDecl> extDecl;
       list<SCode.Element> elts, stripped_elts;
       Env.Cache cache;
       InstanceHierarchy ih;
@@ -11013,10 +11010,10 @@ algorithm
       String fname,lang,n;
       list<DAE.ExtArg> fargs;
       DAE.ExtArg rettype;
-      Option<Absyn.Annotation> ann;
+      Option<SCode.Annotation> ann;
       DAE.ExternalDecl daeextdecl;
       list<Env.Frame> env;
-      Absyn.ExternalDecl extdecl,orgextdecl;
+      SCode.ExternalDecl extdecl,orgextdecl;
       Boolean impl;
       list<SCode.Element> els;
       Env.Cache cache;
@@ -11059,11 +11056,11 @@ protected function isExtExplicitCall
 "function: isExtExplicitCall  
   If the external function id is present, then a function call must
   exist, i.e. explicit call was written in the external clause."
-  input Absyn.ExternalDecl inExternalDecl;
+  input SCode.ExternalDecl inExternalDecl;
 algorithm 
   _ := match (inExternalDecl)
     local String id;
-    case Absyn.EXTERNALDECL(funcName = SOME(id)) then ();
+    case SCode.EXTERNALDECL(funcName = SOME(id)) then ();
   end match;
 end isExtExplicitCall;
 
@@ -11080,8 +11077,8 @@ protected function instExtMakeExternaldecl
   where each var can be input or output."
   input Ident inIdent;
   input list<SCode.Element> inSCodeElementLst;
-  input Absyn.ExternalDecl inExternalDecl;
-  output Absyn.ExternalDecl outExternalDecl;
+  input SCode.ExternalDecl inExternalDecl;
+  output SCode.ExternalDecl outExternalDecl;
 algorithm 
   outExternalDecl := matchcontinue (inIdent,inSCodeElementLst,inExternalDecl)
     local
@@ -11090,29 +11087,29 @@ algorithm
       list<list<Absyn.Exp>> explists;
       list<Absyn.Exp> exps;
       Absyn.ComponentRef retcref;
-      Absyn.ExternalDecl extdecl;
+      SCode.ExternalDecl extdecl;
       String id;
       Option<String> lang;
 
     /* the case with only one output var, and that cannot be 
      * array, otherwise instExtMakeCrefs outvar will fail 
      */      
-    case (id,els,Absyn.EXTERNALDECL(lang = lang))
+    case (id,els,SCode.EXTERNALDECL(lang = lang))
       equation 
         (outvar :: {}) = Util.listFilter(els, isOutputVar);
         invars = Util.listFilter(els, isInputVar);
         explists = Util.listMap(invars, instExtMakeCrefs);
         exps = Util.listFlatten(explists);
         {Absyn.CREF(retcref)} = instExtMakeCrefs(outvar);
-        extdecl = Absyn.EXTERNALDECL(SOME(id),lang,SOME(retcref),exps,NONE());
+        extdecl = SCode.EXTERNALDECL(SOME(id),lang,SOME(retcref),exps,NONE());
       then
         extdecl;
-    case (id,els,Absyn.EXTERNALDECL(lang = lang))
+    case (id,els,SCode.EXTERNALDECL(lang = lang))
       equation 
         inoutvars = Util.listFilter(els, isInoutVar);
         explists = Util.listMap(inoutvars, instExtMakeCrefs);
         exps = Util.listFlatten(explists);
-        extdecl = Absyn.EXTERNALDECL(SOME(id),lang,NONE(),exps,NONE());
+        extdecl = SCode.EXTERNALDECL(SOME(id),lang,NONE(),exps,NONE());
       then
         extdecl;
     case (_,_,_)
@@ -11228,14 +11225,14 @@ end instExtMakeCrefs2;
 protected function instExtGetFname 
 "function: instExtGetFname
   Returns the function name of the externally defined function."
-  input Absyn.ExternalDecl inExternalDecl;
+  input SCode.ExternalDecl inExternalDecl;
   input Ident inIdent;
   output Ident outIdent;
 algorithm 
   outIdent := match (inExternalDecl,inIdent)
     local String id,fid;
-    case (Absyn.EXTERNALDECL(funcName = SOME(id)),_) then id;
-    case (Absyn.EXTERNALDECL(funcName = NONE()),fid) then fid;
+    case (SCode.EXTERNALDECL(funcName = SOME(id)),_) then id;
+    case (SCode.EXTERNALDECL(funcName = NONE()),fid) then fid;
   end match;
 end instExtGetFname;
 
@@ -11244,12 +11241,12 @@ protected function instExtGetAnnotation
   author: PA
   Return the annotation associated with an external function declaration.
   If no annotation is found, check the classpart annotations."
-  input Absyn.ExternalDecl inExternalDecl;
-  output Option<Absyn.Annotation> outAbsynAnnotationOption;
+  input SCode.ExternalDecl inExternalDecl;
+  output Option<SCode.Annotation> outAnnotation;
 algorithm 
-  outAbsynAnnotationOption := match (inExternalDecl)
-    local Option<Absyn.Annotation> ann;
-    case (Absyn.EXTERNALDECL(annotation_ = ann)) then ann;
+  outAnnotation := match (inExternalDecl)
+    local Option<SCode.Annotation> ann;
+    case (SCode.EXTERNALDECL(annotation_ = ann)) then ann;
   end match;
 end instExtGetAnnotation;
 
@@ -11257,13 +11254,13 @@ protected function instExtGetLang
 "function: instExtGetLang
   Return the implementation language of the external function declaration.
   Defaults to \"C\" if no language specified."
-  input Absyn.ExternalDecl inExternalDecl;
+  input SCode.ExternalDecl inExternalDecl;
   output String outString;
 algorithm 
   outString := match (inExternalDecl)
     local String lang;
-    case Absyn.EXTERNALDECL(lang = SOME(lang)) then lang;
-    case Absyn.EXTERNALDECL(lang = NONE()) then "C";
+    case SCode.EXTERNALDECL(lang = SOME(lang)) then lang;
+    case SCode.EXTERNALDECL(lang = NONE()) then "C";
   end match;
 end instExtGetLang;
 
@@ -11375,7 +11372,7 @@ protected function instExtGetFargs
   instantiates function arguments, i.e. actual parameters, in external declaration."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input Absyn.ExternalDecl inExternalDecl;
+  input SCode.ExternalDecl inExternalDecl;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
@@ -11395,7 +11392,7 @@ algorithm
       Boolean impl;
       Env.Cache cache;
       Prefix.Prefix pre;
-    case (cache,env,Absyn.EXTERNALDECL(funcName = id,lang = lang,output_ = retcr,args = absexps),impl,pre,info)
+    case (cache,env,SCode.EXTERNALDECL(funcName = id,lang = lang,output_ = retcr,args = absexps),impl,pre,info)
       equation 
         (cache,exps,props,_) = elabExpListExt(cache,env, absexps, impl,NONE(),pre,info);
         (cache,extargs) = instExtGetFargs2(cache,env, exps, props);
@@ -11502,7 +11499,7 @@ protected function instExtGetRettype
   Instantiates the return type of an external declaration."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input Absyn.ExternalDecl inExternalDecl;
+  input SCode.ExternalDecl inExternalDecl;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
@@ -11523,9 +11520,9 @@ algorithm
       Prefix.Prefix pre;
       DAE.Attributes attr;
 
-    case (cache,_,Absyn.EXTERNALDECL(output_ = NONE()),_,_,_) then (cache,DAE.NOEXTARG());  /* impl */ 
+    case (cache,_,SCode.EXTERNALDECL(output_ = NONE()),_,_,_) then (cache,DAE.NOEXTARG());  /* impl */ 
 
-    case (cache,env,Absyn.EXTERNALDECL(funcName = n,lang = lang,output_ = SOME(cref),args = args),impl,pre,info)
+    case (cache,env,SCode.EXTERNALDECL(funcName = n,lang = lang,output_ = SOME(cref),args = args),impl,pre,info)
       equation 
         (cache,SOME((exp,prop,attr))) = Static.elabCref(cache,env,cref,impl,false /* Do NOT vectorize arrays; we require a CREF */,pre,info);
         (cache,extarg) = instExtGetFargsSingle(cache,env,exp,prop);

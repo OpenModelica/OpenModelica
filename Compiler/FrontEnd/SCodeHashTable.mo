@@ -125,7 +125,7 @@ uniontype Section
     list<SCode.Equation>             initialEquationLst  "the list of initial equations";
     list<SCode.AlgorithmSection>     normalAlgorithmLst  "the list of algorithms";
     list<SCode.AlgorithmSection>     initialAlgorithmLst "the list of initial algorithms";
-    Option<Absyn.ExternalDecl>       externalDecl        "used by external functions";
+    Option<SCode.ExternalDecl>       externalDecl        "used by external functions";
     list<SCode.Annotation>           annotationLst       "the list of annotations found in between class elements, equations and algorithms";
     Option<SCode.Comment>            comment             "the class comment";
   end SECTION;
@@ -468,7 +468,7 @@ algorithm
       list<SCode.Equation> ie "the list of initial equations";
       list<SCode.AlgorithmSection> na "the list of algorithms";
       list<SCode.AlgorithmSection> ia "the list of initial algorithms";
-      Option<Absyn.ExternalDecl> ed "used by external functions";
+      Option<SCode.ExternalDecl> ed "used by external functions";
       list<SCode.Annotation> al "the list of annotations found in between class elements, equations and algorithms";
       Option<SCode.Comment> c "the class comment";
       SCode.ClassDef cDef;
@@ -914,7 +914,7 @@ algorithm
       list<SCode.Equation>             initialEquationLst  "the list of initial equations";
       list<SCode.AlgorithmSection>     normalAlgorithmLst  "the list of algorithms";
       list<SCode.AlgorithmSection>     initialAlgorithmLst "the list of initial algorithms";
-      Option<Absyn.ExternalDecl>       externalDecl        "used by external functions";
+      Option<SCode.ExternalDecl>       externalDecl        "used by external functions";
       list<SCode.Annotation>           annotationLst       "the list of annotations found in between class elements, equations and algorithms";
       Option<SCode.Comment>            comment             "the class comment";
     

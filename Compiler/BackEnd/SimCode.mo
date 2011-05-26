@@ -52,62 +52,63 @@ encapsulated package SimCode
 "
 
 // public imports
+public import Absyn;
 public import Algorithm;
 public import BackendDAE;
 public import BackendDAEUtil;
-public import Values;
-public import Types;
-public import Env;
+public import Ceval;
+public import DAE;
 public import Dependency;
-public import Interactive;
+public import Env;
 public import HashTableExpToIndex;
 public import HashTableStringToPath;
-public import Absyn;
-public import Ceval;
-public import Tpl;
-public import SCode;
-public import DAE;
 public import Inline;
+public import Interactive;
+public import SCode;
+public import Tpl;
+public import Types;
+public import Values;
 
 // protected imports
-protected import BackendQSS;
-protected import BackendDump;
 protected import BackendDAECreate;
 protected import BackendDAEOptimize;
 protected import BackendDAETransform;
+protected import BackendDump;
 protected import BackendEquation;
+protected import BackendQSS;
 protected import BackendVariable;
 protected import BackendVarTransform;
 protected import BaseHashTable;
 protected import Builtin;
+protected import CevalScript;
 protected import ClassInf;
 protected import ComponentReference;
+protected import DAEDump;
 protected import DAEUtil;
+protected import Debug;
+protected import Error;
 protected import Expression;
 protected import ExpressionDump;
-protected import ExpressionSolve;
 protected import ExpressionSimplify;
+protected import ExpressionSolve;
+protected import InnerOuter;
+protected import Inst;
+protected import Mod;
+protected import ModUtil;
+protected import PartFn;
+protected import RTOpts;
 protected import SCodeUtil;
+protected import Settings;
 protected import SimCodeC;
-protected import SimCodeCSharp;
 protected import SimCodeCpp;
+protected import SimCodeCSharp;
 protected import SimCodeDump;
 protected import SimCodeFMU;
 protected import SimCodeQSS;
-protected import Util;
-protected import Debug;
-protected import Error;
-protected import Inst;
-protected import InnerOuter;
-protected import Settings;
-protected import RTOpts;
 protected import System;
-protected import VarTransform;
-protected import CevalScript;
-protected import ModUtil;
-protected import DAEDump;
-protected import PartFn;
+protected import Util;
 protected import ValuesUtil;
+protected import VarTransform;
 
 
 public
@@ -1642,7 +1643,7 @@ algorithm
       list<SimExtArg> simextargs;
       SimExtArg extReturn;
       DAE.ExtArg extretarg;
-      Option<Absyn.Annotation> ann;
+      Option<SCode.Annotation> ann;
       DAE.ExternalDecl extdecl;
       list<Variable> outVars, inVars, biVars, funArgs, varDecls;
       list<RecordDeclaration> recordDecls;
@@ -8872,7 +8873,7 @@ protected function generateExtFunctionIncludes
   Collects the includes and libs for an external function
   by investigating the annotation of an external function."
   input Absyn.Path path;
-  input Option<Absyn.Annotation> inAbsynAnnotationOption;
+  input Option<SCode.Annotation> inAbsynAnnotationOption;
   output list<String> includes;
   output list<String> includeDirs;
   output list<String> libs;
@@ -8880,13 +8881,14 @@ algorithm
   (includes,includeDirs,libs):=
   match (path,inAbsynAnnotationOption)
     local
-      list<Absyn.ElementArg> eltarg;
-    case (path,SOME(Absyn.ANNOTATION(eltarg)))
+      SCode.Mod mod;
+
+    case (path,SOME(SCode.ANNOTATION(mod)))
       equation
-        libs = generateExtFunctionIncludesLibstr(eltarg);
-        includes = generateExtFunctionIncludesIncludestr(eltarg);
-        libs = generateExtFunctionLibraryDirectoryFlags(path,eltarg,libs);
-        includeDirs = generateExtFunctionIncludeDirectoryFlags(path,eltarg,includes);
+        libs = generateExtFunctionIncludesLibstr(mod);
+        includes = generateExtFunctionIncludesIncludestr(mod);
+        libs = generateExtFunctionLibraryDirectoryFlags(path,mod,libs);
+        includeDirs = generateExtFunctionIncludeDirectoryFlags(path,mod,includes);
       then
         (includes,includeDirs,libs);
     case (_,NONE()) then ({},{},{});
@@ -8896,18 +8898,18 @@ end generateExtFunctionIncludes;
 protected function generateExtFunctionIncludeDirectoryFlags
   "Process LibraryDirectory and IncludeDirectory"
   input Absyn.Path path;
-  input list<Absyn.ElementArg> eltarg;
+  input SCode.Mod inMod;
   input list<String> includes;
   output list<String> outDirs;
 algorithm
-  outDirs := matchcontinue (path,eltarg,includes)
+  outDirs := matchcontinue (path,inMod,includes)
     local
       String str;
-    case (_,eltarg,{}) then {};
-    case (_,eltarg,_)
+    case (_,_,{}) then {};
+    case (_,_,_)
       equation
-        Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.STRING(str))) =
-        Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("IncludeDirectory",{}));
+        SCode.MOD(binding = SOME((Absyn.STRING(str), _))) =
+          Mod.getUnelabedSubMod(inMod, "IncludeDirectory");
         str = CevalScript.getFullPathFromUri(str,false);
         str = "\"-I"+&str+&"\"";
       then {str};
@@ -8925,18 +8927,18 @@ end generateExtFunctionIncludeDirectoryFlags;
 protected function generateExtFunctionLibraryDirectoryFlags
   "Process LibraryDirectory and IncludeDirectory"
   input Absyn.Path path;
-  input list<Absyn.ElementArg> eltarg;
+  input SCode.Mod inMod;
   input list<String> libs;
   output list<String> outLibs;
 algorithm
-  outLibs := matchcontinue (path,eltarg,libs)
+  outLibs := matchcontinue (path,inMod,libs)
     local
       String str,str1,str2,str3,platform1,platform2;
-    case (_,eltarg,{}) then {};
-    case (_,eltarg,libs)
+    case (_,_,{}) then {};
+    case (_,_,libs)
       equation
-        Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.STRING(str))) =
-        Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("LibraryDirectory",{}));
+        SCode.MOD(binding = SOME((Absyn.STRING(str), _))) =
+          Mod.getUnelabedSubMod(inMod, "LibraryDirectory");
         str = CevalScript.getFullPathFromUri(str,false);
         platform1 = System.openModelicaPlatform();
         platform2 = System.modelicaPlatform();
@@ -9029,51 +9031,48 @@ algorithm
 end getLibraryStringInGccFormat;
 
 protected function generateExtFunctionIncludesLibstr
-  input list<Absyn.ElementArg> inAbsynElementArgLst;
+  input SCode.Mod inMod;
   output list<String> outStringLst;
 algorithm
-  outStringLst:=
-  matchcontinue (inAbsynElementArgLst)
+  outStringLst:= matchcontinue (inMod)
     local
-      list<Absyn.ElementArg> eltarg;
       list<Absyn.Exp> arr;
       list<String> libs;
       list<list<String>> libsList;
       Absyn.Exp exp;
-    case (eltarg)
+    case (_)
       equation
-        Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.ARRAY(arr))) =
-        Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("Library",{}));
+        SCode.MOD(binding = SOME((Absyn.ARRAY(arr), _))) =
+          Mod.getUnelabedSubMod(inMod, "Library");
         libsList = Util.listMap(arr, getLibraryStringInGccFormat);
       then
         Util.listFlatten(libsList);
-    case (eltarg)
+    case (_)
       equation
-        Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp)) =
-        Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("Library",{}));
+        SCode.MOD(binding = SOME((exp, _))) =
+          Mod.getUnelabedSubMod(inMod, "Library");
         libs = getLibraryStringInGccFormat(exp);
       then
         libs;
-    case (_) then {};
+    else {};
   end matchcontinue;
 end generateExtFunctionIncludesLibstr;
 
 protected function generateExtFunctionIncludesIncludestr
-  input list<Absyn.ElementArg> inAbsynElementArgLst;
+  input SCode.Mod inMod;
   output list<String> outStringLst;
 algorithm
-  outStringLst:=
-  matchcontinue (inAbsynElementArgLst)
+  outStringLst:= matchcontinue (inMod)
     local
       String inc,inc_1;
-      list<Absyn.ElementArg> eltarg;
-    case (eltarg)
+    case (_)
       equation
-        Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.STRING(inc))) = Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("Include",{}));
+        SCode.MOD(binding = SOME((Absyn.STRING(inc), _))) =
+          Mod.getUnelabedSubMod(inMod, "Include");
         inc_1 = System.stringReplace(inc, "\\\"", "\"");
       then
         {inc_1};
-    case (eltarg) then {};
+    else {};
   end matchcontinue;
 end generateExtFunctionIncludesIncludestr;
 

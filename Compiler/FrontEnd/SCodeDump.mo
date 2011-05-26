@@ -699,7 +699,7 @@ algorithm
       list<SCode.Element> elts;
       list<SCode.Equation> eqns,ieqns;
       list<SCode.AlgorithmSection> alg,ial;
-      Option<Absyn.ExternalDecl> ext;
+      Option<SCode.ExternalDecl> ext;
       Absyn.TypeSpec typeSpec;
       SCode.Mod mod;
       list<SCode.Enum> enumLst;

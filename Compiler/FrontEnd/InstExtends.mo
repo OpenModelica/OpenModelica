@@ -410,7 +410,7 @@ algorithm
       SCode.Prefixes prefixes1,prefixes2;
       SCode.Visibility vis1,vis2;
       String name1,name2,env_path;
-      Option<Absyn.ExternalDecl> externalDecl1,externalDecl2;
+      Option<SCode.ExternalDecl> externalDecl1,externalDecl2;
       list<SCode.Annotation> annotationLst1,annotationLst2;
       Option<SCode.Comment> comment1,comment2;
       list<SCode.Element> els1,els2;
@@ -502,7 +502,7 @@ algorithm
       Option<SCode.Comment> cmt;
       list<SCode.Enum> enumLst;
       String n,name;
-      Option<Absyn.ExternalDecl> extdecl;
+      Option<SCode.ExternalDecl> extdecl;
       Absyn.Info info;
       DAE.Mod daeDMOD;
       Prefix.Prefix pre;
@@ -884,7 +884,7 @@ algorithm
       list<SCode.Element> elts;
       list<SCode.Equation> ne,ie;
       list<SCode.AlgorithmSection> na,ia;
-      Option<Absyn.ExternalDecl> ed;
+      Option<SCode.ExternalDecl> ed;
       list<SCode.Annotation> ann;
       Option<SCode.Comment> c;
       Absyn.TypeSpec ts;

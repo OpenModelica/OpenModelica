@@ -118,7 +118,7 @@ algorithm
       list<SCode.Element> el, ex, cl, im, co, ud;
       list<SCode.Equation> neql, ieql;
       list<SCode.AlgorithmSection> nal, ial;
-      Option<Absyn.ExternalDecl> extdecl;
+      Option<SCode.ExternalDecl> extdecl;
       list<SCode.Annotation> annl;
       Option<SCode.Comment> cmt;
       Absyn.TypeSpec ty;

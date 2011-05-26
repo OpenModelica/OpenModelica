@@ -312,7 +312,7 @@ algorithm
       list<SCode.Annotation> anns;
       list<SCode.Equation> eqs,initeqs;
       list<SCode.AlgorithmSection> als,initals;
-      Option<Absyn.ExternalDecl> decl;
+      Option<SCode.ExternalDecl> decl;
       list<Absyn.ClassPart> parts;
       list<String> vars;
       list<SCode.Enum> lst_1;
@@ -407,13 +407,14 @@ protected function translateAlternativeExternalAnnotation
   annotation is used for this purpose.
   For instance, instead of external \"C\" annotation(Library=\"foo.lib\";
   it says external \"C\" ; annotation(Library=\"foo.lib\";"
-input Option<Absyn.ExternalDecl> decl;
+input Option<SCode.ExternalDecl> decl;
 input list<Absyn.ClassPart> parts;
-output Option<Absyn.ExternalDecl> outDecl;
+output Option<SCode.ExternalDecl> outDecl;
 algorithm
   outDecl := matchcontinue(decl,parts)
     local
-      Absyn.Annotation ann;
+      Absyn.Annotation aann;
+      SCode.Annotation ann;
       Option<SCode.Ident> name ;
       Option<String> l ;
       Option<Absyn.ComponentRef> out ;
@@ -423,30 +424,36 @@ algorithm
     // none
     case (NONE(),_) then NONE();
     // Already filled.
-    case (decl as SOME(Absyn.EXTERNALDECL(annotation_ = SOME(_))),_) then decl;
+    case (decl as SOME(SCode.EXTERNALDECL(annotation_ = SOME(_))),_) then decl;
     // EXTERNALDECL.
-    case (SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.EXTERNAL(_,SOME(ann))::_)
-    then SOME(Absyn.EXTERNALDECL(name,l,out,a,SOME(ann)));
+    case (SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),Absyn.EXTERNAL(_,SOME(aann))::_)
+      equation
+        ann = translateAnnotation(aann);
+      then SOME(SCode.EXTERNALDECL(name,l,out,a,SOME(ann)));
   // Annotation item.
-    case (SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PUBLIC(Absyn.ANNOTATIONITEM(ann)::_)::_)
-    then SOME(Absyn.EXTERNALDECL(name,l,out,a,SOME(ann)));
+    case (SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PUBLIC(Absyn.ANNOTATIONITEM(aann)::_)::_)
+      equation
+        ann = translateAnnotation(aann);
+      then SOME(SCode.EXTERNALDECL(name,l,out,a,SOME(ann)));
     // Next element in public list
-    case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PUBLIC(_::els)::cls)
+    case(decl as SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PUBLIC(_::els)::cls)
     then translateAlternativeExternalAnnotation(decl,Absyn.PUBLIC(els)::cls);
   // Next classpart list
-    case (decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PUBLIC({})::cls)
+    case (decl as SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PUBLIC({})::cls)
     then translateAlternativeExternalAnnotation(decl,cls);
 
-  case (SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PROTECTED(Absyn.ANNOTATIONITEM(ann)::_)::_)
-    then SOME(Absyn.EXTERNALDECL(name,l,out,a,SOME(ann)));
+  case (SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PROTECTED(Absyn.ANNOTATIONITEM(aann)::_)::_)
+    equation
+      ann = translateAnnotation(aann);
+    then SOME(SCode.EXTERNALDECL(name,l,out,a,SOME(ann)));
     // Next element in public list
-    case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PROTECTED(_::els)::cls)
+    case(decl as SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PROTECTED(_::els)::cls)
     then translateAlternativeExternalAnnotation(decl,Absyn.PROTECTED(els)::cls);
   // Next classpart list
-    case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PROTECTED({})::cls)
+    case(decl as SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PROTECTED({})::cls)
     then translateAlternativeExternalAnnotation(decl,cls);
   // Next in list
-  case(decl as SOME(Absyn.EXTERNALDECL(name,l,out,a,NONE())),_::cls)
+  case(decl as SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),_::cls)
     then translateAlternativeExternalAnnotation(decl,cls);
   // not found
     case (decl,_) then decl;
@@ -829,17 +836,28 @@ end translateBranches;
 
 protected function translateClassdefExternaldecls
 "function: translateClassdefExternaldecls
-  Converts an Absyn.ClassPart list to an Absyn.ExternalDecl option.
+  Converts an Absyn.ClassPart list to an SCode.ExternalDecl option.
   The list should only contain one external declaration, so pick the first one."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
-  output Option<Absyn.ExternalDecl> outAbsynExternalDeclOption;
+  output Option<SCode.ExternalDecl> outAbsynExternalDeclOption;
 algorithm
   outAbsynExternalDeclOption := match (inAbsynClassPartLst)
     local
       Absyn.ExternalDecl decl;
-      Option<Absyn.ExternalDecl> res;
+      Option<SCode.ExternalDecl> res;
       list<Absyn.ClassPart> rest;
-    case ((Absyn.EXTERNAL(externalDecl = decl) :: _)) then SOME(decl);
+      Option<SCode.Ident> fn_name;
+      Option<String> lang;
+      Option<Absyn.ComponentRef> output_;
+      list<Absyn.Exp> args;
+      Option<Absyn.Annotation> aann;
+      Option<SCode.Annotation> sann;
+
+    case (Absyn.EXTERNAL(externalDecl = 
+        Absyn.EXTERNALDECL(fn_name, lang, output_, args, aann)) :: _)
+      equation
+        sann = Util.applyOption(aann, translateAnnotation);
+      then SOME(SCode.EXTERNALDECL(fn_name, lang, output_, args, sann));
     case ((_ :: rest))
       equation
         res = translateClassdefExternaldecls(rest);

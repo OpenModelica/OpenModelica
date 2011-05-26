@@ -1386,14 +1386,14 @@ protected
   SCode.Element cdef;
   list<Env.Frame> env_1;
   String fid,id;
-  Option<Absyn.ExternalDecl> extdecl;
+  Option<SCode.ExternalDecl> extdecl;
   Option<String> lan;
   Option<Absyn.ComponentRef> out;
   list<Absyn.Exp> args;
 algorithm
   (outCache,cdef,env_1) := Lookup.lookupClass(inCache,env, funcpath, false);
   SCode.CLASS(name=fid,restriction = SCode.R_EXT_FUNCTION(), classDef=SCode.PARTS(externalDecl=extdecl)) := cdef;
-  SOME(Absyn.EXTERNALDECL(SOME(id),lan,out,args,_)) := extdecl;
+  SOME(SCode.EXTERNALDECL(SOME(id),lan,out,args,_)) := extdecl;
   isKnownExternalFunc(fid, id);
   res := cevalKnownExternalFuncs2(fid, id, vals, msg);
 end cevalKnownExternalFuncs;

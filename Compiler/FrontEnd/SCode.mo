@@ -167,7 +167,7 @@ uniontype ClassDef
     list<Equation>             initialEquationLst  "the list of initial equations";
     list<AlgorithmSection>     normalAlgorithmLst  "the list of algorithms";
     list<AlgorithmSection>     initialAlgorithmLst "the list of initial algorithms";
-    Option<Absyn.ExternalDecl> externalDecl        "used by external functions";
+    Option<ExternalDecl>       externalDecl        "used by external functions";
     list<Annotation>           annotationLst       "the list of annotations found in between class elements, equations and algorithms";
     Option<Comment>            comment             "the class comment";
   end PARTS;
@@ -227,6 +227,18 @@ uniontype Annotation
   end ANNOTATION;
 
 end Annotation;
+
+public
+uniontype ExternalDecl "Declaration of an external function call - ExternalDecl"
+  record EXTERNALDECL
+    Option<Ident>        funcName "The name of the external function" ;
+    Option<String>       lang     "Language of the external function" ;
+    Option<Absyn.ComponentRef> output_  "output parameter as return value" ;
+    list<Absyn.Exp>      args     "only positional arguments, i.e. expression list" ;
+    Option<Annotation>   annotation_ ;
+  end EXTERNALDECL;
+
+end ExternalDecl;
 
 public
 uniontype Equation "- Equations"
@@ -452,7 +464,7 @@ uniontype Stream "the stream prefix"
 end Stream;
 
 public
-uniontype Flow "the flore prefix"
+uniontype Flow "the flow prefix"
   record FLOW     "a flow prefix"     end FLOW;
   record NOT_FLOW "a non flow prefix" end NOT_FLOW;
 end Flow;
@@ -2882,12 +2894,11 @@ algorithm
       String inc,outVar1,outVar2,name1,name2;
       list<String> argsStr;
       list<Absyn.Exp> args;
-    case (CLASS(name=name,restriction=R_EXT_FUNCTION(),classDef=PARTS(externalDecl=SOME(Absyn.EXTERNALDECL(funcName=NONE(),lang=SOME("builtin"))))),_,_)
+    case (CLASS(name=name,restriction=R_EXT_FUNCTION(),classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=NONE(),lang=SOME("builtin"))))),_,_)
       then name;
-    case (CLASS(restriction=R_EXT_FUNCTION(),classDef=PARTS(externalDecl=SOME(Absyn.EXTERNALDECL(funcName=SOME(name),lang=SOME("builtin"))))),_,_)
+    case (CLASS(restriction=R_EXT_FUNCTION(),classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("builtin"))))),_,_)
       then name;
-    case (CLASS(restriction=R_EXT_FUNCTION(),
-      classDef=PARTS(externalDecl=SOME(Absyn.EXTERNALDECL(funcName=SOME(name),lang=SOME("C"),output_=SOME(Absyn.CREF_IDENT(outVar2,{})),args=args)))),inVars,{outVar1})
+    case (CLASS(restriction=R_EXT_FUNCTION(), classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("C"),output_=SOME(Absyn.CREF_IDENT(outVar2,{})),args=args)))),inVars,{outVar1})
       equation
         true = listMember(name,{"sin","cos","tan","asin","acos","atan","atan2","sinh","cosh","tanh","exp","log","log10","sqrt"});
         true = outVar2 ==& outVar1;
@@ -2896,7 +2907,7 @@ algorithm
       then name;
     case (CLASS(name=name,
       restriction=R_EXT_FUNCTION(),
-      classDef=PARTS(externalDecl=SOME(Absyn.EXTERNALDECL(funcName=NONE(),lang=SOME("C"))))),_,_)
+      classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=NONE(),lang=SOME("C"))))),_,_)
       equation
         true = listMember(name,{"sin","cos","tan","asin","acos","atan","atan","sinh","cosh","tanh","exp","log","log10","sqrt"});
       then name;
@@ -2970,7 +2981,7 @@ protected
   list<Element> el;
   list<Equation> nel, iel;
   list<AlgorithmSection> nal, ial;
-  Option<Absyn.ExternalDecl> ed;
+  Option<ExternalDecl> ed;
   list<Annotation> annl;
   Option<Comment> c;
 algorithm

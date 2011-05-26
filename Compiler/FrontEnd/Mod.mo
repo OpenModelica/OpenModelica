@@ -3184,5 +3184,39 @@ algorithm
   end matchcontinue;
 end checkDuplicatesInFullMods;
 
+public function getUnelabedSubMod
+  input SCode.Mod inMod;
+  input SCode.Ident inIdent;
+  output SCode.Mod outSubMod;
+protected
+  list<SCode.SubMod> submods;
+algorithm
+  SCode.MOD(subModLst = submods) := inMod;
+  outSubMod := getUnelabedSubMod2(submods, inIdent);
+end getUnelabedSubMod;
+
+protected function getUnelabedSubMod2
+  input list<SCode.SubMod> inSubMods;
+  input SCode.Ident inIdent;
+  output SCode.Mod outMod;
+algorithm
+  outMod := matchcontinue(inSubMods, inIdent)
+    local
+      SCode.Ident id;
+      SCode.Mod m;
+      list<SCode.SubMod> rest_mods;
+
+    case (SCode.NAMEMOD(ident = id, A = m) :: _, _)
+      equation
+        true = stringEqual(id, inIdent);
+      then
+        m;
+
+    case (_ :: rest_mods, _)
+      then getUnelabedSubMod2(rest_mods, inIdent);
+
+  end matchcontinue;
+end getUnelabedSubMod2;
+        
 end Mod;
 

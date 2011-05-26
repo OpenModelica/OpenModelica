@@ -411,7 +411,7 @@ algorithm
       list<SCode.AlgorithmSection> nal, ial;
       Option<SCode.Comment> cmt;
       list<SCode.Annotation> annl;
-      Option<Absyn.ExternalDecl> ext_decl;
+      Option<SCode.ExternalDecl> ext_decl;
       Boolean is_ext_obj;
       Env ty_env;
       Item ty_item;
@@ -1109,22 +1109,20 @@ end analyseTypeSpec;
 
 protected function analyseExternalDecl
   "Analyses an external declaration."
-  input Option<Absyn.ExternalDecl> inExtDecl;
+  input Option<SCode.ExternalDecl> inExtDecl;
   input Env inEnv;
   input Absyn.Info inInfo;
 algorithm
   _ := match(inExtDecl, inEnv, inInfo)
     local
-      Absyn.Annotation ann;
-      SCode.Annotation sann;
+      SCode.Annotation ann;
       list<Absyn.Exp> args;
 
     // An external declaration might have an annotation that we need to analyse.
-    case (SOME(Absyn.EXTERNALDECL(args = args, annotation_ = SOME(ann))), _, _)
+    case (SOME(SCode.EXTERNALDECL(args = args, annotation_ = SOME(ann))), _, _)
       equation
         Util.listMap02(args, analyseExp, inEnv, inInfo);
-        sann = SCodeUtil.translateAnnotation(ann);
-        analyseAnnotation(sann, inEnv, inInfo);
+        analyseAnnotation(ann, inEnv, inInfo);
       then
         ();
 
@@ -1785,7 +1783,7 @@ algorithm
       list<SCode.Element> el;
       list<SCode.Equation> neq, ieq;
       list<SCode.AlgorithmSection> nal, ial;
-      Option<Absyn.ExternalDecl> ext_decl;
+      Option<SCode.ExternalDecl> ext_decl;
       list<SCode.Annotation> annl;
       Option<SCode.Comment> cmt;
       SCode.Ident bc;

@@ -440,7 +440,7 @@ public uniontype ExternalDecl
     list<ExtArg> args;
     ExtArg returnArg;
     String language;
-    Option<Absyn.Annotation> ann;
+    Option<SCode.Annotation> ann;
   end EXTERNALDECL;
 end ExternalDecl;
 

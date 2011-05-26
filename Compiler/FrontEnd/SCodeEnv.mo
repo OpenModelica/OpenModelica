@@ -308,7 +308,7 @@ public function getClassType
 algorithm
   outType := match(inClassDef)
     // A builtin class.
-    case (SCode.PARTS(externalDecl = SOME(Absyn.EXTERNALDECL(
+    case (SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(
         lang = SOME("builtin"))))) 
       then BUILTIN();
     // A user-defined class (i.e. not builtin).

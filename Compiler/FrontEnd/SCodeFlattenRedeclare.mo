@@ -106,7 +106,7 @@ algorithm
       Absyn.Info info;
       Env env, cls_env;
       SCode.Mod mods;
-      Option<Absyn.ExternalDecl> ext_decl;
+      Option<SCode.ExternalDecl> ext_decl;
       list<SCode.Annotation> annl;
       Option<SCode.Comment> cmt;
       list<SCode.Equation> nel, iel;
