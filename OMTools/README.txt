@@ -11,3 +11,10 @@ OR
 ------------------------------
 Adeel.
 adeel.asghar@liu.se
+
+
+2011-05-26 Updated by adrpo [Adrian.Pop@liu.se]
+-----------------------------------------------
+Moved all bin and qtlibs directory to:
+OMDev\tools\OMTools
+(https://openmodelica.ida.liu.se/svn/OpenModelica/installers/windows/OMDev/tools)
