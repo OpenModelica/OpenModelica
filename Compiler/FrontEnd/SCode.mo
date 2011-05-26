@@ -425,10 +425,18 @@ uniontype Redeclare "the redeclare prefix"
   record NOT_REDECLARE "a non redeclare prefix" end NOT_REDECLARE;
 end Redeclare;
 
+public uniontype ConstrainClass
+  record CONSTRAINCLASS
+    Absyn.Path constrainingClass;
+    Mod modifier;
+    Option<Comment> comment;
+  end CONSTRAINCLASS;
+end ConstrainClass;
+
 public
 uniontype Replaceable "the replaceable prefix"
   record REPLACEABLE "a replaceable prefix containing an optional constraint"
-    Option<Absyn.ConstrainClass> cc  "the constraint class"; 
+    Option<ConstrainClass> cc  "the constraint class"; 
   end REPLACEABLE;
   record NOT_REPLACEABLE "a non replaceable prefix" end NOT_REPLACEABLE;
 end Replaceable;
@@ -3098,10 +3106,10 @@ end replaceableBool;
 
 public function replaceableOptConstraint
   input Replaceable inReplaceable;
-  output Option<Absyn.ConstrainClass> outOptConstrainClass;
+  output Option<ConstrainClass> outOptConstrainClass;
 algorithm
   outOptConstrainClass := match(inReplaceable)
-    local Option<Absyn.ConstrainClass> cc;
+    local Option<ConstrainClass> cc;
     case (REPLACEABLE(cc)) then cc;
     case (NOT_REPLACEABLE()) then NONE();
   end match;
@@ -3109,7 +3117,7 @@ end replaceableOptConstraint;
 
 public function boolReplaceable
   input Boolean inBoolReplaceable;
-  input Option<Absyn.ConstrainClass> inOptConstrainClass;
+  input Option<ConstrainClass> inOptConstrainClass;
   output Replaceable outReplaceable;
 algorithm
   outReplaceable := matchcontinue(inBoolReplaceable, inOptConstrainClass)
@@ -3317,13 +3325,16 @@ public function replaceableEqual "Returns true if two replaceable attributes are
 algorithm
   equal := matchcontinue(r1,r2)
     local
-      Absyn.ElementSpec e1, e2;
+      Absyn.Path p1, p2;
+      Mod m1, m2;
     
     case(NOT_REPLACEABLE(),NOT_REPLACEABLE()) then true;  
     
-    case(REPLACEABLE(SOME(Absyn.CONSTRAINCLASS(elementSpec=e1))),REPLACEABLE(SOME(Absyn.CONSTRAINCLASS(elementSpec=e2))))
+    case(REPLACEABLE(SOME(CONSTRAINCLASS(constrainingClass = p1, modifier = m1))),
+         REPLACEABLE(SOME(CONSTRAINCLASS(constrainingClass = p2, modifier = m2))))
       equation
-        true = valueEq(e1, e2);         
+        true = Absyn.pathEqual(p1, p2);
+        true = modEqual(m1, m2);
       then 
         true;
     

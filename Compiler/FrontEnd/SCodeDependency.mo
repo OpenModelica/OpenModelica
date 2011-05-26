@@ -699,7 +699,7 @@ algorithm
       Absyn.Info info;
       SCode.Attributes attr;
       Option<Absyn.Exp> cond_exp;
-      Option<Absyn.ConstrainClass> cc;
+      Option<SCode.ConstrainClass> cc;
       SCode.Element cls;
       Item ty_item;
       Env ty_env;
@@ -932,13 +932,25 @@ end analyseRedeclare;
 
 protected function analyseConstrainClass
   "Analyses a constrain class, i.e. given by constrainedby."
-  input Option<Absyn.ConstrainClass> inCC;
+  input Option<SCode.ConstrainClass> inCC;
   input Env inEnv;
   input Absyn.Info inInfo;
 algorithm
   _ := match(inCC, inEnv, inInfo)
-    // TODO Add code here.
-    case (_, _, _) then ();
+    local
+      Absyn.Path path;
+      SCode.Mod mod;
+      Env env;
+
+    case (SOME(SCode.CONSTRAINCLASS(constrainingClass = path, modifier = mod)), _, _)
+      equation
+        analyseClass(path, inEnv, inInfo);
+        (_, _, env) = SCodeLookup.lookupClassName(path, inEnv, inInfo);
+        analyseModifier(mod, inEnv, env, inInfo);
+      then
+        ();
+
+    else ();
   end match;
 end analyseConstrainClass;
 
@@ -1715,7 +1727,7 @@ protected
   SCodeEnv.Frame class_frame;
   Env class_env;
   Absyn.Path cls_path;
-  Option<Absyn.ConstrainClass> cc;
+  Option<SCode.ConstrainClass> cc;
 algorithm
   SCode.CLASS(name, prefixes, ep, pp, res, cdef, info) := inClass;
   // TODO! FIXME! add cc to the used classes!

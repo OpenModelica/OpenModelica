@@ -355,8 +355,16 @@ public function replaceableStr
   output String strReplaceable;
 algorithm
   strReplaceable := match(inReplaceable)
-    local Absyn.ConstrainClass cc;
-    case (SCode.REPLACEABLE(SOME(cc))) then "{r:" +& Dump.unparseConstrainclassStr(cc) +& "}";
+    local
+      Absyn.Path cc_path;
+      SCode.Mod cc_mod;
+      String path_str, mod_str;
+
+    case (SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(cc_path, cc_mod, _))))
+      equation
+        path_str = Absyn.pathString(cc_path);
+        mod_str = SCodeDump.printModStr(cc_mod);
+      then "{r:" +& path_str +& "(" +& mod_str +& ")}";
     case (SCode.REPLACEABLE(NONE()))   then "{r:}";
     case (SCode.NOT_REPLACEABLE())     then "{}";
   end match;

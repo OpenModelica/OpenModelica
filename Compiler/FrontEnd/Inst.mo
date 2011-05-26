@@ -7004,7 +7004,7 @@ algorithm
       Env.Cache cache;
       InstanceHierarchy ih;
 
-      Option<Absyn.ConstrainClass> cc;
+      Option<SCode.ConstrainClass> cc;
       list<SCode.Element> compsOnConstrain;
       Absyn.InnerOuter io;
       SCode.Attributes at;
@@ -7037,7 +7037,7 @@ algorithm
           SCode.COMPONENT(name = n2,
                           prefixes = SCode.PREFIXES(
                             finalPrefix = SCode.NOT_FINAL(),
-                            replaceablePrefix = repl2 as SCode.REPLACEABLE((cc as SOME(Absyn.CONSTRAINCLASS(elementSpec=_)))),
+                            replaceablePrefix = repl2 as SCode.REPLACEABLE((cc as SOME(_))),
                             visibility = vis2),
                           typeSpec = t2,
                           modifications = old_mod),
@@ -7206,36 +7206,35 @@ protected function extractConstrainingComps
 "Author: BZ, 2009-07
  This function examines a optional Absyn.ConstrainClass argument.
  If there is a constraining class, lookup the class and return its elements."
-  input Option<Absyn.ConstrainClass> cc;
+  input Option<SCode.ConstrainClass> cc;
   input Env.Env env;
   input Prefix.Prefix pre;
   output list<SCode.Element> elems;
 algorithm
   elems := matchcontinue(cc,env,pre)
     local
-      Absyn.Path path,derP;
-      list<Absyn.ElementArg> args;
-      Env.Env clenv;
+      Absyn.Path path;
       SCode.Element cl;
       String name;
       list<SCode.Element> selems,extendselts,compelts,extcompelts,classextendselts;
       list<tuple<SCode.Element, DAE.Mod>> extcomps;
-      Option<Absyn.Annotation> annOpt;
-    
+      SCode.Mod mod;
+      Option<SCode.Comment> cmt;
+
     case(NONE(),_,_) then {};
-    case(SOME(Absyn.CONSTRAINCLASS(elementSpec = Absyn.EXTENDS(path,args,annOpt))),env,pre)
+    case(SOME(SCode.CONSTRAINCLASS(constrainingClass = path)),env,pre)
       equation
-        (_,(cl as SCode.CLASS(name = name, classDef = SCode.PARTS(elementLst=selems))) ,clenv) = Lookup.lookupClass(Env.emptyCache(),env,path,false);
+        (_,(cl as SCode.CLASS(name = name, classDef = SCode.PARTS(elementLst=selems))), _) = Lookup.lookupClass(Env.emptyCache(),env,path,false);
         (_,classextendselts,extendselts,compelts) = splitElts(selems);
         (_,_,_,_,extcomps,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(),  pre, extendselts, classextendselts, ClassInf.UNKNOWN(Absyn.IDENT("")), name, true, false);
         extcompelts = Util.listMap(extcomps,Util.tuple21);
         compelts = listAppend(compelts,extcompelts);
       then
         compelts;
-    case(SOME(Absyn.CONSTRAINCLASS(elementSpec = Absyn.EXTENDS(path,args,annOpt))),env,pre)
+    case (SOME(SCode.CONSTRAINCLASS(path, mod, cmt)), _, _)
       equation
-        (_,(cl as SCode.CLASS(classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = derP)))) ,clenv) = Lookup.lookupClass(Env.emptyCache(),env,path,false);
-        compelts = extractConstrainingComps(SOME(Absyn.CONSTRAINCLASS(Absyn.EXTENDS(derP,{},annOpt),NONE())),env,pre);
+        (_,(cl as SCode.CLASS(classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = path)))),_) = Lookup.lookupClass(Env.emptyCache(),env,path,false);
+        compelts = extractConstrainingComps(SOME(SCode.CONSTRAINCLASS(path, mod, cmt)),env,pre);
       then
         compelts;
   end matchcontinue;

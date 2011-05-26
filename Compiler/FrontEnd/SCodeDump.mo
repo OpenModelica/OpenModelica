@@ -958,8 +958,17 @@ public function replaceableStr
   output String strConstraint;
 algorithm
   (strReplaceable, strConstraint) := match(inReplaceable)
-    local Absyn.ConstrainClass cc;
-    case (SCode.REPLACEABLE(SOME(cc))) then ("replaceable ", Dump.unparseConstrainclassStr(cc));
+    local
+      Absyn.Path path;
+      SCode.Mod mod;
+      String path_str, mod_str;
+
+    case (SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(
+        constrainingClass = path, modifier = mod)))) 
+      equation
+        path_str = Absyn.pathString(path);
+        mod_str = printModStr(mod);
+      then ("replaceable ", path_str +& "(" +& mod_str +& ")");
     case (SCode.REPLACEABLE(NONE())) then ("replaceable ", "");
     case (SCode.NOT_REPLACEABLE()) then ("", "");
   end match;

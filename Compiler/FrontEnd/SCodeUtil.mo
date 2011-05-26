@@ -1144,6 +1144,7 @@ algorithm
       SCode.Visibility vis;
       SCode.Flow sFl;
       SCode.Stream sSt;
+      Option<SCode.ConstrainClass> scc;
 
     case (cc,finalPrefix,_,repl,vis, Absyn.CLASSDEF(replaceable_ = rp, class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,finalPrefix = fi,encapsulatedPrefix = e,restriction = re,body = de,info = i))),_)
       equation
@@ -1153,7 +1154,8 @@ algorithm
         (_, redecl) = translateRedeclarekeywords(repl);
         sRed = SCode.boolRedeclare(redecl);
         sFin = SCode.boolFinal(finalPrefix);
-        sRep = Util.if_(rp,SCode.REPLACEABLE(cc),SCode.NOT_REPLACEABLE());
+        scc = translateConstrainClass(cc);
+        sRep = Util.if_(rp,SCode.REPLACEABLE(scc),SCode.NOT_REPLACEABLE());
         sEnc = SCode.boolEncapsulated(e);
         sPar = SCode.boolPartial(pa); 
         cls = SCode.CLASS(
@@ -1197,7 +1199,8 @@ algorithm
         comment_1 = translateComment(comment);
         sFin = SCode.boolFinal(finalPrefix);
         sRed = SCode.boolRedeclare(redecl);
-        sRep = Util.if_(repl_1,SCode.REPLACEABLE(cc),SCode.NOT_REPLACEABLE());
+        scc = translateConstrainClass(cc);
+        sRep = Util.if_(repl_1,SCode.REPLACEABLE(scc),SCode.NOT_REPLACEABLE());
         sFl = SCode.boolFlow(fl);
         sSt = SCode.boolStream(st);
       then
@@ -1305,6 +1308,32 @@ algorithm
     else (false, false);
   end match;
 end translateRedeclarekeywords;
+
+protected function translateConstrainClass
+  input Option<Absyn.ConstrainClass> inConstrainClass;
+  output Option<SCode.ConstrainClass> outConstrainClass;
+algorithm
+  outConstrainClass := match(inConstrainClass)
+    local
+      Absyn.Path cc_path;
+      list<Absyn.ElementArg> eltargs;
+      Option<Absyn.Comment> cmt;
+      Option<SCode.Comment> cc_cmt;
+      Absyn.Modification mod;
+      SCode.Mod cc_mod;
+
+    case SOME(Absyn.CONSTRAINCLASS(elementSpec = 
+        Absyn.EXTENDS(path = cc_path, elementArg = eltargs), comment = cmt))
+      equation
+        mod = Absyn.CLASSMOD(eltargs, Absyn.NOMOD());
+        cc_mod = translateMod(SOME(mod), SCode.NOT_FINAL(), SCode.NOT_EACH());
+        cc_cmt = translateComment(cmt);
+      then
+        SOME(SCode.CONSTRAINCLASS(cc_path, cc_mod, cc_cmt));
+  
+    else NONE();
+  end match;
+end translateConstrainClass;
 
 protected function translateVariability
 "function: translateVariability
