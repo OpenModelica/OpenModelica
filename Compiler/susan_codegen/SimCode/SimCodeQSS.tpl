@@ -273,8 +273,6 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
 
   #endif
   
-  <%SimCodeC.functionGetName(modelInfo)%>
-  
   <%SimCodeC.functionSetLocalData()%>
   
   <%SimCodeC.functionInitializeDataStruc()%>

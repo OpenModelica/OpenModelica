@@ -4355,6 +4355,7 @@ fi
 
 
 if test "$WANT_STATIC_LPSOLVE" = "no"; then
+  LIBS=""
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing dlopen" >&5
 $as_echo_n "checking for library containing dlopen... " >&6; }
 if test "${ac_cv_search_dlopen+set}" = set; then :

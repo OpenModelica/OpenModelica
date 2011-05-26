@@ -347,8 +347,9 @@ do { \
       int i = 0; \
       printf("Result of mixed system discrete variables:\n"); \
       for (i = 0; i < size; i++) { \
-        printf("%s = %d  pre(%s)= %d\n",getNameBool(loc_ptrs[i]),*loc_ptrs[i], \
-                        getNameBool(loc_ptrs[i]),localData->boolVariables.algebraics_saved[loc_ptrs[i]-localData->boolVariables.algebraics]); \
+        int ix = (loc_ptrs[i]-localData->boolVariables.algebraics); \
+        const char *__name = localData->bool_alg_names[ix].name; \
+        printf("%s = %d  pre(%s)= %d\n",__name, *loc_ptrs[i], __name, localData->boolVariables.algebraics_saved[ix]); \
       } \
   } \
 } while(0)

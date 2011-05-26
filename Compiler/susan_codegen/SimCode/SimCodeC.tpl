@@ -104,8 +104,6 @@ case simCode as SIMCODE(__) then
   
   <%equationInfo(appendLists(appendAllequation(JacobianMatrixes),allEquations))%>
   
-  <%functionGetName(modelInfo)%>
-  
   <%functionSetLocalData()%>
   
   <%functionInitializeDataStruc()%>
@@ -487,66 +485,6 @@ template globalDataDiscAttrInt(Boolean isDiscrete)
   case false then "0"
 end globalDataDiscAttrInt;
 
-
-template functionGetName(ModelInfo modelInfo)
- "Generates function in simulation file."
-::=
-match modelInfo
-case MODELINFO(vars=SIMVARS(__)) then
-  <<
-  const char* getNameReal(double* ptr)
-  {
-    <%vars.stateVars |> SIMVAR(__) =>
-      'if (&<%cref(name)%> == ptr) return state_names[<%index%>].name;'
-    ;separator="\n"%>
-    <%vars.derivativeVars |> SIMVAR(__) =>
-      'if (&<%cref(name)%> == ptr) return derivative_names[<%index%>].name;'
-    ;separator="\n"%>
-    <%vars.algVars |> SIMVAR(__) =>
-      'if (&<%cref(name)%> == ptr) return algvars_names[<%index%>].name;'
-    ;separator="\n"%>
-    <%vars.paramVars |> SIMVAR(__) =>
-      'if (&<%cref(name)%> == ptr) return param_names[<%index%>].name;'
-    ;separator="\n"%>
-    return "";
-  }
-  
-  const char* getNameInt(modelica_integer* ptr)
-  {
-    <%vars.intAlgVars |> SIMVAR(__) =>
-      'if (&<%cref(name)%> == ptr) return int_alg_names[<%index%>].name;'
-    ;separator="\n"%>
-    <%vars.intParamVars |> SIMVAR(__) =>
-      'if (&<%cref(name)%> == ptr) return int_param_names[<%index%>].name;'
-    ;separator="\n"%>
-    return "";
-  }
-  
-  const char* getNameBool(modelica_boolean* ptr)
-  {
-    <%vars.boolAlgVars |> SIMVAR(__) =>
-      'if (&<%cref(name)%> == ptr) return bool_alg_names[<%index%>].name;'
-    ;separator="\n"%>
-    <%vars.boolParamVars |> SIMVAR(__) =>
-      'if (&<%cref(name)%> == ptr) return bool_param_names[<%index%>].name;'
-    ;separator="\n"%>
-    return "";
-  }
-  
-  const char* getNameString(const char** ptr)
-  {
-    <%vars.stringAlgVars |> SIMVAR(__) =>
-      'if (&<%cref(name)%> == ptr) return string_alg_names[<%index%>].name;'
-    ;separator="\n"%>
-    <%vars.stringParamVars |> SIMVAR(__) =>
-      'if (&<%cref(name)%> == ptr) return string_param_names[<%index%>].name;'
-    ;separator="\n"%>
-    return "";
-  }
-  >>
-end functionGetName;
-
-
 template functionSetLocalData()
  "Generates function in simulation file."
 ::=
@@ -628,6 +566,7 @@ template functionInitializeDataStruc()
     } else {
       returnData->statesDerivatives = 0;
       returnData->statesDerivativesFilterOutput = 0;
+
       returnData->statesDerivatives_old = 0;
       returnData->statesDerivatives_old2 = 0;
       returnData->statesDerivativesBackup = 0;
