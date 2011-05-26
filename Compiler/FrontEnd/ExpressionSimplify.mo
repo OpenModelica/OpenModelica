@@ -172,6 +172,12 @@ algorithm
       then 
         ((e2,true));
     
+    case ((e,_))
+      equation
+        e2 = simplifyTrigIdentities(e);
+      then 
+        ((e2,true));
+
     /* simplify different casts. Optimized to only run simplify1 once on subexpression e*/
     case ((DAE.CAST(ty = tp,exp=e),_))
       equation
@@ -293,7 +299,7 @@ algorithm
       String str;
     case (exp,_,false)
       equation
-        //print("End fixp: " +& ExpressionDump.printExpStr(exp) +& "\n");
+        // print("End fixp: " +& ExpressionDump.printExpStr(exp) +& "\n");
       then (exp,false);
     case (exp,0,_)
       equation
@@ -302,7 +308,9 @@ algorithm
       then (exp,false); 
     case (exp,n,_)
       equation
+        // print("simplify1 start: " +& ExpressionDump.printExpStr(exp) +& "\n");
         ((exp,b)) = Expression.traverseExp(exp,simplifyWork,false);
+        // print("simplify1 iter: " +& ExpressionDump.printExpStr(exp) +& "\n");
         (exp,_) = simplify1FixP(exp,n-1,b);
       then (exp,b);
   end match;
@@ -532,11 +540,53 @@ algorithm
   outExp:=DAE.CAST(inType,inExp);
 end addCast;
 
-protected function simplifyBuiltinCalls "simplifies some builtin calls (with no constant expressions"
-  input DAE.Exp exp "NOTE: assumes call arguments NOT YET SIMPLIFIED (for efficiency reasons)";
+protected function simplifyTrigIdentities
+  input DAE.Exp exp;
   output DAE.Exp outExp;
 algorithm
-  outExp := match(exp)
+  outExp := matchcontinue (exp)
+    local
+      list<DAE.Exp> expl;
+      DAE.Exp e,len_exp,just_exp,e1,e2;
+      DAE.ExpType tp;
+      list<DAE.Exp> v1, v2;
+      Boolean scalar;
+      list<Values.Value> valueLst;
+      Integer i;
+      String str,id1,id2;
+      Real r;
+    
+      /* arcxxx(xxx(e)) => e; xxx(arcxxx(e)) => e */
+    case (DAE.CALL(path=Absyn.IDENT("sin"),expLst={DAE.CALL(path=Absyn.IDENT("asin"),expLst={e})}))
+      then e;
+    case (DAE.CALL(path=Absyn.IDENT("cos"),expLst={DAE.CALL(path=Absyn.IDENT("acos"),expLst={e})}))
+      then e;
+    case (DAE.CALL(path=Absyn.IDENT("tan"),expLst={DAE.CALL(path=Absyn.IDENT("atan"),expLst={e})}))
+      then e;
+    case (DAE.CALL(path=Absyn.IDENT("asin"),expLst={DAE.CALL(path=Absyn.IDENT("sin"),expLst={e})}))
+      then e;
+    case (DAE.CALL(path=Absyn.IDENT("acos"),expLst={DAE.CALL(path=Absyn.IDENT("cos"),expLst={e})}))
+      then e;
+    case (DAE.CALL(path=Absyn.IDENT("atan"),expLst={DAE.CALL(path=Absyn.IDENT("tan"),expLst={e})}))
+      then e;
+
+      /* sin(2*x) = 2*sin(x)*cos(x) */
+    case (DAE.BINARY(DAE.CALL(path=Absyn.IDENT(id1),expLst={e1}),DAE.MUL(_),DAE.CALL(path=Absyn.IDENT(id2),expLst={e2})))
+      equation
+        true = (stringEq(id1,"sin") and stringEq(id2,"cos")) or (stringEq(id1,"cos") and stringEq(id2,"sin"));
+        true = Expression.expEqual(e1,e2);
+        e = DAE.BINARY(DAE.RCONST(2.0),DAE.MUL(DAE.ET_REAL()),e1);
+        e = Expression.makeBuiltinCall("sin",{e},DAE.ET_REAL());
+      then DAE.BINARY(DAE.RCONST(0.5),DAE.MUL(DAE.ET_REAL()),e);
+        
+  end matchcontinue;
+end simplifyTrigIdentities;
+
+protected function simplifyBuiltinCalls "simplifies some builtin calls (with no constant expressions)"
+  input DAE.Exp exp;
+  output DAE.Exp outExp;
+algorithm
+  outExp := matchcontinue (exp)
     local
       list<DAE.Exp> expl;
       DAE.Exp e,len_exp,just_exp,e1,e2;
@@ -604,9 +654,8 @@ algorithm
     // sqrt(e ^ r) => e ^ (0.5 * r)
     case DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={DAE.BINARY(e1,DAE.POW(ty = DAE.ET_REAL()),e2)})
       then DAE.BINARY(e1,DAE.POW(DAE.ET_REAL()),DAE.BINARY(DAE.RCONST(0.5),DAE.MUL(DAE.ET_REAL()),e2));
-
     
-  end match;
+  end matchcontinue;
 end simplifyBuiltinCalls;
 
 protected function simplifyBuiltinStringFormat
@@ -3102,7 +3151,7 @@ algorithm
       list<DAE.Exp> exp_lst,exp_lst_1;
       DAE.ComponentRef cr1,cr2;
       Boolean b;
-      Real r;
+      Real r,r1,r2,r3;
     
     // constants   
     case (oper,e1,e2)
@@ -3355,6 +3404,20 @@ algorithm
       then
         DAE.BINARY(e1_1,DAE.MUL(ty),e2);
     
+    // r1 * (r2 * e) => (r1*r2)*e
+    case (DAE.MUL(ty = _),DAE.RCONST(real = r1),DAE.BINARY(DAE.RCONST(real = r2),DAE.MUL(DAE.ET_REAL()),e2))
+      equation
+        r3 = r1 *. r2;
+      then
+        DAE.BINARY(DAE.RCONST(r3),DAE.MUL(DAE.ET_REAL()),e2);
+    
+    // r1 * (e * r2) => (r1*r2)*e
+    case (DAE.MUL(ty = _),DAE.RCONST(real = r1),DAE.BINARY(e2,DAE.MUL(DAE.ET_REAL()),DAE.RCONST(real = r2)))
+      equation
+        r3 = r1 *. r2;
+      then
+        DAE.BINARY(DAE.RCONST(r3),DAE.MUL(DAE.ET_REAL()),e2);
+
     // 0 / x = 0
     case (DAE.DIV(ty = ty),e1,e2)
       equation
