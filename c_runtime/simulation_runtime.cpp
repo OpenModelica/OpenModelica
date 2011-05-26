@@ -172,6 +172,137 @@ void setTermMsg(const char *msg)
   TermMsg = msg;
 }
 
+static void deInitializeDataStruc2(DATA *data)
+{
+  if(!data)
+    return;
+  deInitializeDataStruc(data) /* external objects */;
+
+  if (data->states) {
+    free(data->states);
+    data->states = 0;
+  }
+
+  if (data->states_old) {
+    free(data->states_old);
+    data->states_old = 0;
+  }
+
+  if (data->states_old2) {
+    free(data->states_old2);
+    data->states_old2 = 0;
+  }
+
+  if (data->statesDerivatives) {
+    free(data->statesDerivatives);
+    data->statesDerivatives = 0;
+  }
+
+  if (data->statesDerivatives_old) {
+    free(data->statesDerivatives_old);
+    data->statesDerivatives_old = 0;
+  }
+
+  if (data->statesDerivatives_old2) {
+    free(data->statesDerivatives_old2);
+    data->statesDerivatives_old2 = 0;
+  }
+
+  if (data->algebraics) {
+    free(data->algebraics);
+    data->algebraics = 0;
+  }
+
+  if (data->algebraics_old) {
+    free(data->algebraics_old);
+    data->algebraics_old = 0;
+  }
+
+  if (data->algebraics_old2) {
+    free(data->algebraics_old2);
+    data->algebraics_old2 = 0;
+  }
+
+  if (data->parameters) {
+    free(data->parameters);
+    data->parameters = 0;
+  }
+
+  if (data->inputVars) {
+    free(data->inputVars);
+    data->inputVars = 0;
+  }
+
+  if (data->outputVars) {
+    free(data->outputVars);
+    data->outputVars = 0;
+  }
+  
+  if (data->intVariables.algebraics) {
+    free(data->intVariables.algebraics);
+    data->intVariables.algebraics = 0;
+  }
+
+  if (data->intVariables.algebraics_old) {
+    free(data->intVariables.algebraics_old);
+    data->intVariables.algebraics_old = 0;
+  }
+
+  if (data->intVariables.algebraics_old2) {
+    free(data->intVariables.algebraics_old2);
+    data->intVariables.algebraics_old2 = 0;
+  }
+
+  if (data->boolVariables.algebraics) {
+    free(data->boolVariables.algebraics);
+    data->boolVariables.algebraics = 0;
+  }
+
+  if (data->boolVariables.algebraics_old) {
+    free(data->boolVariables.algebraics_old);
+    data->boolVariables.algebraics_old = 0;
+  }
+
+  if (data->boolVariables.algebraics_old2) {
+    free(data->boolVariables.algebraics_old2);
+    data->boolVariables.algebraics_old2 = 0;
+  }
+
+  if (data->realAlias) {
+    free(data->realAlias);
+    data->realAlias = 0;
+  }
+
+  if (data->intVariables.alias) {
+    free(data->intVariables.alias);
+    data->intVariables.alias = 0;
+  }
+
+  if (data->boolVariables.alias) {
+    free(data->boolVariables.alias);
+    data->boolVariables.alias = 0;
+  }
+
+  if (data->stringVariables.alias) {
+    free(data->stringVariables.alias);
+    data->stringVariables.alias = 0;
+  }
+
+  if (data->jacobianVars) {
+    free(data->jacobianVars);
+    data->jacobianVars = 0;
+  }
+  
+  if (data->initialResiduals){
+    free(data->initialResiduals);
+    data->initialResiduals = 0;
+  }
+  if (data->rawSampleExps) {
+    free(data->rawSampleExps);
+    data->rawSampleExps = 0;
+  }
+}
+
 /** function storeExtrapolationData
  * author: PA
  *
@@ -511,7 +642,7 @@ startNonInteractiveSimulation(int argc, char**argv)
   }
   
   deinitDelay();
-  deInitializeDataStruc(globalData);
+  deInitializeDataStruc2(globalData);
 
   return retVal;
 }
@@ -930,7 +1061,7 @@ main(int argc, char**argv)
     retVal = startNonInteractiveSimulation(argc, argv);
   }
 
-  deInitializeDataStruc(globalData);
+  deInitializeDataStruc2(globalData);
   free(globalData);
   fflush(NULL);
   EXIT(retVal);
