@@ -161,6 +161,7 @@ protected import ValuesUtil;
 protected import System;
 protected import SCodeFlatten;
 protected import SCodeDump;
+protected import Database;
 
 public function newIdent
 "function: newIdent
@@ -1926,6 +1927,7 @@ algorithm
       c as SCode.CLASS(restriction=r, name=className),
       vis,inst_dims,impl,callscope,graph,instSingleCref)
       equation
+        //System.startTimer();
         (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph) =
            instClassIn_dispatch(inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,inVisibility,inInstDims,implicitInstantiation,callscope,inGraph,instSingleCref);
         
@@ -1952,6 +1954,8 @@ algorithm
           "\n\tdae:\n" +& DAEDump.dump2str(dae));
         */
         //checkModelBalancingFilterByRestriction(r, envPathOpt, dae);
+        //System.stopTimer();
+        //_ = Database.query(0, "insert into Inst values(\"" +& Absyn.pathString(fullEnvPathPlusClass) +& "\", " +& realString(System.getTimerIntervalTime()) +& ");");
       then
         (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
 

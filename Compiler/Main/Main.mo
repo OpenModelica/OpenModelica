@@ -75,6 +75,7 @@ protected import InnerOuter;
 protected import ClassLoader;
 protected import TplMain;
 protected import DAEDump;
+protected import Database;
 
 protected function serverLoop
 "function: serverLoop
@@ -1148,6 +1149,7 @@ algorithm
       Boolean ismode,icmode,imode,imode_1;
       String omhome,oldpath,newpath;
       Interactive.InteractiveSymbolTable symbolTable;
+      list<tuple<String, String>> dbResult;
       
       // Setup mingw path only once.
     case _
@@ -1159,7 +1161,13 @@ algorithm
         oldpath = System.readEnv("PATH");
         newpath = stringAppendList({omhome,"\\mingw\\bin;",omhome,"\\lib;",oldpath});
         _ = System.setEnv("PATH",newpath,true);
-      then fail();
+        
+        // setup an file database (for in-memory use :memory: as name)
+        //Database.open(0, "omc.db");
+        //_ = Database.query(0, "create table if not exists Inst(id string not null, value real not null)");
+        //_ = Database.query(0, "begin transaction;");
+      then 
+        fail();
     
     case args as _::_
       equation
@@ -1193,8 +1201,11 @@ algorithm
         Debug.fcall("errorbuf", print, errstr);
         */
         // print("Total time for timer: " +& realString(System.getTimerCummulatedTime()) +& "\n");
+        //dbResult = Database.query(0, "end transaction;");
+        //dbResult = Database.query(0, "select * from Inst");
       then
         ();
+    
     case _
       equation
         true = System.userIsRoot();
@@ -1204,6 +1215,7 @@ algorithm
         print("* OpenModelica allows execution of arbitrary commands.\n");
         print("* The good news is there is no reason to run OpenModelica as root.\n");
       then fail();
+    
     case args as _::_
       equation
         false = System.userIsRoot();
@@ -1211,11 +1223,13 @@ algorithm
         failure(args_1 = RTOpts.args(args));
         printUsage();
       then ();
+    
     case {}
       equation
         false = System.userIsRoot();
         printUsage();
       then ();
+    
     case _
       equation
         false = System.userIsRoot();
@@ -1239,5 +1253,6 @@ algorithm
       then fail();
   end matchcontinue;
 end main;
+
 end Main;
 
