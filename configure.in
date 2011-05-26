@@ -15,6 +15,7 @@ AC_SUBST(with_qwt_suffix)
 AC_SUBST(LIBSOCKET)
 AC_SUBST(LIBNSL)
 AC_SUBST(LIBLPSOLVE55)
+AC_SUBST(LPSOLVEINC)
 AC_SUBST(USE_CORBA)
 AC_SUBST(QT_USE_CORBA)
 AC_SUBST(CORBA_QMAKE_INCLUDES)
@@ -226,7 +227,9 @@ else
   AC_MSG_RESULT([$LIBLPSOLVE55])
   LIBS=""
 fi
-
+AC_CHECK_HEADER([lp_lib.h],[LPSOLVEINC=lp_lib.h],[
+  AC_CHECK_HEADER([lpsolve/lp_lib.h],[LPSOLVEINC=lpsolve/lp_lib.h],[AC_MSG_ERROR([failed to find lpsolve55 headers])])
+])
 
 
 dnl check for socket
@@ -244,7 +247,7 @@ AC_CHECK_FUNC(gethostbyname,
   AC_CHECK_LIB(nsl,gethostbyname, [AC_MSG_RESULT([yes]); LIBNSL="-lnsl"],[AC_MSG_ERROR([neither gethostbyname nor libnsl.a found])])
 ])
 
-# AC_CHECK_LIB(sqlite3,sqlite3_libversion,[],[AC_MSG_ERROR([sqlite3 not found])])
+AC_CHECK_LIB(sqlite3,sqlite3_libversion,[],[AC_MSG_ERROR([sqlite3 not found])])
 
 dnl should we use corba?
 

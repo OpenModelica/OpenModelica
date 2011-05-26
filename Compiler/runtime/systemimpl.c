@@ -1364,7 +1364,7 @@ int SystemImpl__dgesv(void *lA, void *lB, void **res)
   return info;
 }
 
-#include "lp_lib.h"
+#include CONFIG_LPSOLVEINC
 
 int SystemImpl__lpsolve55(void *lA, void *lB, void *ix, void **res)
 {

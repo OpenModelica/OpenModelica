@@ -56,8 +56,10 @@
 #define CONFIG_DLL_EXT ".dll"
 #define CONFIG_OS "Windows_NT"
 #define CONFIG_CORBALIBS "-L$(OPENMODELICAHOME)/lib/omc -lmico2313"
+#define CONFIG_LPSOLVEINC "lp_lib.h"
 /* Windows is always "special" */
 #define CONFIG_SYSTEMLIBS mk_nil()
+
 
 #if defined(__i386__) || defined(__x86_64__) || defined(_MSC_VER)
   /*

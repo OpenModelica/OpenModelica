@@ -28,6 +28,7 @@
  *
  */
 
+#include "config.h"
 #include "unitparser.h"
 #include <iostream>
 #include <sstream>
@@ -40,12 +41,12 @@
 #ifndef WIN32
 #define WIN32
 #endif
-#include "lp_lib.h"
+#include CONFIG_LPSOLVEINC
 #endif
 
 #else
 
-#include "lp_lib.h"
+#include CONFIG_LPSOLVEINC
 
 #endif
 
