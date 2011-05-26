@@ -546,6 +546,7 @@ algorithm
       list<Values.Value> valueLst;
       Integer i;
       String str;
+      Real r;
     
     // min/max function on arrays of only 1 element
     case (DAE.CALL(path=Absyn.IDENT("min"),expLst={DAE.ARRAY(array={e})})) then e;
@@ -599,6 +600,12 @@ algorithm
 
     case (DAE.CALL(path = Absyn.IDENT("stringAppendList"), builtin = true, expLst = {DAE.LIST(expl)}))
       then simplifyStringAppendList(expl,{},false);
+        
+    // sqrt(e ^ r) => e ^ (0.5 * r)
+    case DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={DAE.BINARY(e1,DAE.POW(ty = DAE.ET_REAL()),e2)})
+      then DAE.BINARY(e1,DAE.POW(DAE.ET_REAL()),DAE.BINARY(DAE.RCONST(0.5),DAE.MUL(DAE.ET_REAL()),e2));
+
+    
   end match;
 end simplifyBuiltinCalls;
 
@@ -3095,6 +3102,7 @@ algorithm
       list<DAE.Exp> exp_lst,exp_lst_1;
       DAE.ComponentRef cr1,cr2;
       Boolean b;
+      Real r;
     
     // constants   
     case (oper,e1,e2)
@@ -3433,6 +3441,17 @@ algorithm
       then
         res;
     
+    // sqrt(e) ^ 2.0 => e
+    case (oper as DAE.POW(ty = _),DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e}),DAE.RCONST(r))
+      equation
+        true = realEq(r,2.0);
+      then e;
+
+    // sqrt(e) ^ r => sqrt(e) ^ 0.5*r
+    case (oper as DAE.POW(ty = _),DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e1}),e)
+      then
+        DAE.BINARY(e1,oper,DAE.BINARY(DAE.RCONST(0.5),DAE.MUL(DAE.ET_REAL()),e));
+
     // 1 ^ e => 1
     case (DAE.POW(ty = _),e1,e)
       equation
