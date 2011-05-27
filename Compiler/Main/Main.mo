@@ -749,8 +749,7 @@ algorithm
       BackendDAE.BackendDAE dlow,dlow_1;
       array<list<Integer>> m,mT;
       array<Integer> v1,v2;
-      list<list<Integer>> comps;
-      BackendDAE.StrongComponentsX compsX;
+      BackendDAE.StrongComponents comps;
       list<SCode.Element> p;
       Absyn.Program ap;
       DAE.DAElist dae,daeimpl;
@@ -765,8 +764,8 @@ algorithm
         true = runBackendQ();
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
-        (dlow_1,m,mT,v1,v2,comps,compsX) = BackendDAEUtil.getSolvedSystem(cache,env,dlow,funcs,NONE(),NONE(),NONE());
-        modpar(dlow_1,compsX);
+        (dlow_1,m,mT,v1,v2,comps) = BackendDAEUtil.getSolvedSystem(cache,env,dlow,funcs,NONE(),NONE(),NONE());
+        modpar(dlow_1,comps);
         Debug.execStat("Lowering Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
         simcodegen(dlow_1,funcs,classname,p,ap,daeimpl,m,mT,v1,v2,comps);
       then
@@ -788,7 +787,7 @@ protected function modpar
 "function: modpar
   The automatic paralellzation module."
   input BackendDAE.BackendDAE inBackendDAE;
-  input BackendDAE.StrongComponentsX inComps;
+  input BackendDAE.StrongComponents inComps;
 algorithm
   _ := matchcontinue (inBackendDAE,inComps)
     local
@@ -796,16 +795,16 @@ algorithm
       BackendDAE.BackendDAE dae;
       Real l,b,t1,t2,time;
       String timestr,nps;
-      BackendDAE.StrongComponentsX compsX;
+      BackendDAE.StrongComponents comps;
     case (_,_)
       equation
         n = RTOpts.noProc() "If modpar not enabled, nproc = 0, return" ;
         (n == 0) = true;
       then
         ();
-    case (dae,compsX)
+    case (dae,comps)
       equation
-        TaskGraph.buildTaskgraph(dae, compsX);
+        TaskGraph.buildTaskgraph(dae, comps);
         TaskGraphExt.dumpGraph("model.viz");
         l = RTOpts.latency();
         b = RTOpts.bandwidth();
@@ -850,10 +849,10 @@ protected function simcodegen
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT9;
   input array<Integer> inIntegerArray6;
   input array<Integer> inIntegerArray7;
-  input list<list<Integer>> inIntegerLstLst10;
+  input BackendDAE.StrongComponents inComps;
 algorithm
   _:=
-  matchcontinue (inBackendDAE5,inFunctionTree,inPath,inProgram2,inProgram3,inDAElist4,inIncidenceMatrix8,inIncidenceMatrixT9,inIntegerArray6,inIntegerArray7,inIntegerLstLst10)
+  matchcontinue (inBackendDAE5,inFunctionTree,inPath,inProgram2,inProgram3,inDAElist4,inIncidenceMatrix8,inIncidenceMatrixT9,inIntegerArray6,inIntegerArray7,inComps)
     local
       BackendDAE.BackendDAE dlow;
       DAE.FunctionTree functionTree;
@@ -865,7 +864,7 @@ algorithm
       DAE.DAElist dae;
       array<Integer> ass1,ass2;
       array<list<Integer>> m,mt;
-      list<list<Integer>> comps;
+      BackendDAE.StrongComponents comps;
       SimCode.SimulationSettings simSettings;
       String methodbyflag;
       Boolean methodflag;

@@ -1036,6 +1036,19 @@ algorithm
   end match;
 end equationSetnth;
 
+public function getEqns "function: getEqns
+  author: Frenkel TUD 2011-05
+  retursn the equations given by the list of indexes"
+  input list<BackendDAE.Value> inIndxes;
+  input BackendDAE.EquationArray inEquationArray;
+  output list<BackendDAE.Equation> outEqns;
+protected
+  list<BackendDAE.Value> indxs;
+algorithm
+  indxs := Util.listMap1(inIndxes, intSub, 1);
+  outEqns := Util.listMap1r(indxs, BackendDAEUtil.equationNth, inEquationArray);  
+end getEqns;
+  
 public function equationDelete "function: equationDelete
   author: Frenkel TUD 2010-12
   Delets the equations from the list of Integers."

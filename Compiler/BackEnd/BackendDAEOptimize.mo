@@ -2828,7 +2828,7 @@ public function tearingSystem
   output BackendDAE.IncidenceMatrixT outMT;
   output array<Integer> outV1;
   output array<Integer> outV2;
-  output BackendDAE.StrongComponents outComps;
+  output list<list<Integer>> outComps;
   output list<list<Integer>> outResEqn;
   output list<list<Integer>> outTearVar;
 algorithm
@@ -2839,32 +2839,60 @@ algorithm
       BackendDAE.IncidenceMatrix m,m_1;
       BackendDAE.IncidenceMatrixT mT,mT_1;
       array<Integer> v1,v2,v1_1,v2_1;
-      BackendDAE.StrongComponents comps,comps_1;
-      list<list<Integer>> r,t;
+      BackendDAE.StrongComponents comps;
+      list<list<Integer>> r,t,comps_1,comps_2;
     case (dlow,m,mT,v1,v2,comps)
       equation
         Debug.fcall("tearingdump", print, "Tearing\n==========\n");
         // get residual eqn and tearing var for each block
         // copy dlow
         dlow1 = copyDaeLowforTearing(dlow);
-        (r,t,_,dlow_1,m_1,mT_1,v1_1,v2_1,comps_1) = tearingSystem1(dlow,dlow1,m,mT,v1,v2,comps);
+        comps_1 = Util.listMap(comps,getEqnIndxFromComp);
+        (r,t,_,dlow_1,m_1,mT_1,v1_1,v2_1,comps_2) = tearingSystem1(dlow,dlow1,m,mT,v1,v2,comps_1);
         Debug.fcall("tearingdump", BackendDump.dumpIncidenceMatrix, m_1);
         Debug.fcall("tearingdump", BackendDump.dumpIncidenceMatrixT, mT_1);
         Debug.fcall("tearingdump", BackendDump.dump, dlow_1);
         Debug.fcall("tearingdump", BackendDump.dumpMatching, v1_1);
-        Debug.fcall("tearingdump", BackendDump.dumpComponents, comps_1);
+        //Debug.fcall("tearingdump", BackendDump.dumpComponents, comps_2);
         Debug.fcall("tearingdump", print, "==========\n");
         Debug.fcall2("tearingdump", BackendDump.dumpTearing, r,t);
         Debug.fcall("tearingdump", print, "==========\n");
       then
-        (dlow_1,m_1,mT_1,v1_1,v2_1,comps_1,r,t);
+        (dlow_1,m_1,mT_1,v1_1,v2_1,comps_2,r,t);
     case (dlow,m,mT,v1,v2,comps)
       equation
         Debug.fcall("tearingdump", print, "No Tearing\n==========\n");
       then
-        (dlow,m,mT,v1,v2,comps,{},{});
+        fail();
   end matchcontinue;
 end tearingSystem;
+
+protected function getEqnIndxFromComp
+"function: getEqnIndxFromComp
+  author: Frenkel TUD"
+  input BackendDAE.StrongComponent inComp;
+  output list<Integer> outEqnIndexLst;
+algorithm
+  outEqnIndexLst:=
+  matchcontinue (inComp)
+    local
+      Integer e,i;
+      list<Integer> elst;
+      Boolean b;
+    case (BackendDAE.SINGLEEQUATION(eqn=e))
+      then
+        {e};
+    case (BackendDAE.EQUATIONSYSTEM(eqns=elst))
+      then
+        elst;        
+    case (BackendDAE.SINGLEARRAY(eqns=elst))
+      then
+        elst;
+    case (BackendDAE.SINGLEALGORITHM(eqns=elst))
+      then
+        elst;       
+  end matchcontinue;
+end getEqnIndxFromComp;
 
 protected function copyDaeLowforTearing
 " function: copyDaeLowforTearing
@@ -2920,7 +2948,7 @@ protected function tearingSystem1
   input BackendDAE.IncidenceMatrixT inMT;
   input array<Integer> inV1;
   input array<Integer> inV2;
-  input BackendDAE.StrongComponents inComps;
+  input list<list<Integer>> inComps;
   output list<list<Integer>> outResEqn;
   output list<list<Integer>> outTearVar;
   output BackendDAE.BackendDAE outDlow;
@@ -2929,7 +2957,7 @@ protected function tearingSystem1
   output BackendDAE.IncidenceMatrixT outMT;
   output array<Integer> outV1;
   output array<Integer> outV2;
-  output BackendDAE.StrongComponents outComps;
+  output list<list<Integer>> outComps;
 algorithm
   (outResEqn,outTearVar,outDlow,outDlow1,outM,outMT,outV1,outV2,outComps):=
   matchcontinue (inDlow,inDlow1,inM,inMT,inV1,inV2,inComps)
@@ -2938,7 +2966,7 @@ algorithm
       BackendDAE.IncidenceMatrix m,m_1,m_3,m_4;
       BackendDAE.IncidenceMatrixT mT,mT_1,mT_3,mT_4;
       array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2,v1_3,v2_3;
-      BackendDAE.StrongComponents comps,comps_1;
+      list<list<Integer>> comps,comps_1;
       list<Integer> tvars,comp,comp_1,tearingvars,residualeqns,tearingeqns;
       list<list<Integer>> r,t;
       Integer ll;
@@ -3156,8 +3184,8 @@ algorithm
       BackendDAE.IncidenceMatrix m,m_1,m_2,m_3;
       BackendDAE.IncidenceMatrixT mT,mT_1,mT_2,mT_3;
       array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2;
-      BackendDAE.StrongComponents comps,comps_1,onecomp,morecomps;
-      BackendDAE.StrongComponentsX compsX;
+      BackendDAE.StrongComponents comps;
+      list<list<Integer>> comps_1,comps_2,onecomp,morecomps;
       list<Integer> vars,comp,comp_1,comp_2,exclude,cmops_flat,onecomp_flat,othereqns,resteareqns;
       String str,str1,str2;
       Integer tearingvar,residualeqn,compcount,tearingeqnid;
@@ -3225,9 +3253,10 @@ algorithm
         dlow_1 = BackendDAE.DAE(vars_1,knvars,exobj,av,eqns_2,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
         dlow1_1 = BackendDAE.DAE(ordvars1,knvars,exobj,av,eqns1_1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
         // try causalisation
-        (dlow_2,m_2,mT_2,v1_1,v2_1,comps,compsX) = BackendDAEUtil.transformBackendDAE(dlow_1,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE(),NONE());
+        (dlow_2,m_2,mT_2,v1_1,v2_1,comps) = BackendDAEUtil.transformBackendDAE(dlow_1,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE(),NONE());
+        comps_1 = Util.listMap(comps,getEqnIndxFromComp);
         // check strongComponents and split it into two lists: len(comp)==1 and len(comp)>1
-        (morecomps,onecomp) = splitComps(comps);
+        (morecomps,onecomp) = splitComps(comps_1);
         // try to solve the equations
         onecomp_flat = Util.listFlatten(onecomp);
         // remove residual equations and tearing eqns
@@ -3235,12 +3264,12 @@ algorithm
         othereqns = Util.listSelect1(onecomp_flat,resteareqns,Util.listNotContains);
         eqns1_2 = solveEquations(eqns1_1,othereqns,v2_1,vars_1,crlst);
          // if we have not make alle equations causal select next residual equation
-        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_3,dlow1_2,m_3,mT_3,v1_2,v2_2,comps_1,compcount) = tearingSystem4(dlow_2,dlow1_1,m_2,mT_2,v1_1,v2_1,comps,residualeqn::residualeqns,tearingvar::tearingvars,tearingeqnid::tearingeqns,comp,0,crlst);
+        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_3,dlow1_2,m_3,mT_3,v1_2,v2_2,comps_2,compcount) = tearingSystem4(dlow_2,dlow1_1,m_2,mT_2,v1_1,v2_1,comps_1,residualeqn::residualeqns,tearingvar::tearingvars,tearingeqnid::tearingeqns,comp,0,crlst);
         // check
         true = ((listLength(residualeqns_1) > listLength(residualeqns)) and
                 (listLength(tearingvars_1) > listLength(tearingvars)) ) or (compcount == 0);
         // get specifig comps
-        cmops_flat = Util.listFlatten(comps_1);
+        cmops_flat = Util.listFlatten(comps_2);
         comp_2 = Util.listSelect1(cmops_flat,comp,Util.listContains);
       then
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_3,dlow1_2,m_3,mT_3,v1_2,v2_2,comp_2);
@@ -3279,7 +3308,7 @@ protected function tearingSystem4
   input BackendDAE.IncidenceMatrixT inMT;
   input array<Integer> inV1;
   input array<Integer> inV2;
-  input BackendDAE.StrongComponents inComps;
+  input list<list<Integer>> inComps;
   input list<Integer> inResEqns;
   input list<Integer> inTearVars;
   input list<Integer> inTearEqns;
@@ -3295,7 +3324,7 @@ protected function tearingSystem4
   output BackendDAE.IncidenceMatrixT outMT;
   output array<Integer> outV1;
   output array<Integer> outV2;
-  output BackendDAE.StrongComponents outComp;
+  output list<list<Integer>> outComp;
   output Integer outCompCount;
 algorithm
   (outResEqns,outTearVars,outTearEqns,outDlow,outDlow1,outM,outMT,outV1,outV2,outComp,outCompCount):=
@@ -3305,7 +3334,7 @@ algorithm
       BackendDAE.IncidenceMatrix m,m_1,m_2;
       BackendDAE.IncidenceMatrixT mT,mT_1,mT_2;
       array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2;
-      BackendDAE.StrongComponents comps,comps_1;
+      list<list<Integer>> comps,comps_1;
       list<Integer> tvars,comp,comp_1,tearingvars,residualeqns,ccomp,r,t,r_1,t_1,te,te_1,tearingeqns;
       Integer ll,compcount,compcount_1,compcount_2;
       list<Boolean> checklst;
@@ -3490,14 +3519,14 @@ protected function splitComps
   splits the comp in two list
   1: len(comp) == 1
   2: len(comp) > 1"
-  input BackendDAE.StrongComponents inComps;
-  output BackendDAE.StrongComponents outComps;
-  output BackendDAE.StrongComponents outComps1;
+  input list<list<Integer>> inComps;
+  output list<list<Integer>> outComps;
+  output list<list<Integer>> outComps1;
 algorithm
   (outComps,outComps1):=
   matchcontinue (inComps)
     local
-      BackendDAE.StrongComponents rest,comps,comps1;
+      list<list<Integer>> rest,comps,comps1;
       list<Integer> comp;
       Integer v;
     case ({}) then ({},{});
@@ -3643,7 +3672,6 @@ algorithm
       array<Integer> v1,v2,v4,v31;
       list<Integer> v3;
       BackendDAE.StrongComponents comps1;
-      BackendDAE.StrongComponentsX compsX1;
       list<BackendDAE.Var> derivedVariables;
       list<BackendDAE.Var> derivedVars;
       BackendDAE.BinTree jacElements;
@@ -3690,7 +3718,7 @@ algorithm
 
         Debug.fcall("execJacstat",print, "*** analytical Jacobians -> removed simply equations: " +& realString(clock()) +& "\n" );
         // figure out new matching and the strong components  
-        (dlow,m,mT,v1,v2,comps1,compsX1) = BackendDAEUtil.transformBackendDAE(dlow,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE(),NONE());
+        (dlow,m,mT,v1,v2,comps1) = BackendDAEUtil.transformBackendDAE(dlow,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE(),NONE());
         Debug.fcall("jacdump2", BackendDump.bltdump, ("jacdump2",dlow,m,mT,v1,v2,comps1));
         Debug.fcall("execJacstat",print, "*** analytical Jacobians -> performed matching and sorting: " +& realString(clock()) +& "\n" );
        
@@ -3729,33 +3757,34 @@ algorithm
 
         Debug.fcall("execJacstat",print, "*** analytical Jacobians -> removed simply equations: " +& realString(clock()) +& "\n" );
         // figure out new matching and the strong components  
-        (dlow,m,mT,v1,v2,comps1,compsX1) = BackendDAEUtil.transformBackendDAE(dlow,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE(),NONE());
+        (dlow,m,mT,v1,v2,comps1) = BackendDAEUtil.transformBackendDAE(dlow,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE(),NONE());
         Debug.fcall("jacdump2", BackendDump.bltdump, ("jacdump2",dlow,m,mT,v1,v2,comps1));
         
         Debug.fcall("execJacstat",print, "*** analytical Jacobians -> performed matching and sorting: " +& realString(clock()) +& "\n" );
        
         Debug.fcall("jacdump2", BackendDump.dumpComponents, comps1);
         then (dlow,v1,v2,comps1);
-    case(_, _, _, _, _) equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"Linearization.generateLinearMatrix failed"});
-    then fail();
+     else
+       equation
+       Error.addMessage(Error.INTERNAL_ERROR, {"Linearization.generateLinearMatrix failed"});
+     then fail();
    end matchcontinue;
 end generateLinearMatrix;
 
 protected function splitBlocks2 
 //function: splitBlocks2
 //author: wbraun 
-  input BackendDAE.StrongComponents inIntegerLstLst;
+  input BackendDAE.StrongComponents inComps;
   input array<Integer> inIntegerArray;
   input Integer inPos;
-  output BackendDAE.StrongComponents outIntegerLstLst1;
-  output BackendDAE.StrongComponents outIntegerLstLst2;
+  output BackendDAE.StrongComponents outComps1;
+  output BackendDAE.StrongComponents outComps2;
 algorithm
-  (outIntegerLstLst1,outIntegerLstLst2):=
-  matchcontinue (inIntegerLstLst,inIntegerArray,inPos)
+  (outComps1,outComps2):=
+  matchcontinue (inComps,inIntegerArray,inPos)
     local
-      list<list<BackendDAE.Value>> states,output_,blocks;
-      list<BackendDAE.Value> block_;
+      BackendDAE.StrongComponents states,output_,blocks;
+      BackendDAE.StrongComponent block_;
       array<BackendDAE.Value> arr;
       BackendDAE.Value i;
     case ({},_,_) then ({},{});
@@ -3782,14 +3811,14 @@ protected function markArray
   // function : markArray
   // author : wbraun
   input list<Integer> inVars1;
-  input list<list<Integer>> inVars2;
+  input BackendDAE.StrongComponents inVars2;
   input array<Integer> inInt;
   output array<Integer> outJacobian;
 algorithm
   outJacobian := matchcontinue(inVars1,inVars2,inInt)
     local
       list<Integer> rest;
-      list<list<Integer>> vars;
+      BackendDAE.StrongComponents vars;
       Integer var;
       Integer i;
       array<Integer> arr,arr1;
@@ -3798,9 +3827,9 @@ algorithm
     case({},_,arr) then arr;
     case(var::rest,vars,arr)
       equation
-        i = Util.listlistPosition(var,vars);
+        i = eqnPositionInComps(var,vars);
         Debug.fcall("markblocks",print,"Var " +& intString(var) +& " at pos : " +& intString(i) +& "\n");
-        arr1 = arrayCreate(i+1,1);
+        arr1 = arrayCreate(i,1);
         arr = Util.arrayCopy(arr1,arr);
         arr = markArray(rest,vars,arr);
         s = Util.listMap(arrayList(arr),intString);
@@ -3808,12 +3837,66 @@ algorithm
         Debug.fcall("markblocks",print,str);
         Debug.fcall("markblocks",print,"\n");
       then arr;
-     case(_,_,_)
+    else
        equation
         Debug.fcall("failtrace",print,"Linearization.MarkArray failed\n");
        then fail();
   end matchcontinue;
 end markArray;
+
+protected function eqnPositionInComps
+"function: eqnPositionInComps
+  author: Frenkel TUD
+  Retrieves the position of a equation in the strong components"
+  input Integer inInteger;
+  input BackendDAE.StrongComponents inComps;
+  output Integer outIndex;
+algorithm
+  outIndex:= eqnPositionInComps1(inInteger,inComps,1);
+end eqnPositionInComps;
+
+protected function eqnPositionInComps1
+"function: eqnPositionInComps1
+  author: Frenkel TUD
+  Retrieves the position of a equation in the strong components"
+  input Integer inInteger;
+  input BackendDAE.StrongComponents inComps;
+  input Integer inInteger1;
+  output Integer outIndex;
+algorithm
+  outIndex:=
+  matchcontinue (inInteger,inComps,inInteger1)
+    local
+      Integer e,i,v;
+      list<Integer> elst;
+      BackendDAE.StrongComponents comps;
+    case (i,BackendDAE.SINGLEEQUATION(eqn=e)::comps,v)
+      equation
+         true = intEq(i,e);
+      then
+        v;
+    case (i,BackendDAE.EQUATIONSYSTEM(eqns=elst)::comps,v)
+      equation
+        true = listMember(i,elst);        
+      then
+        v;        
+    case (i,BackendDAE.SINGLEARRAY(eqns=elst)::comps,v)
+      equation
+        true = listMember(i,elst);        
+      then
+        v;   
+    case (i,BackendDAE.SINGLEALGORITHM(eqns=elst)::comps,v)
+      equation
+        true = listMember(i,elst);        
+      then
+        v;          
+    case (i,_::comps,v)
+      equation
+        e = eqnPositionInComps1(i,comps,v+1);
+      then
+        e;
+  end matchcontinue;
+end eqnPositionInComps1;
 
 protected function getVarIndex
   // function : getVarIndex

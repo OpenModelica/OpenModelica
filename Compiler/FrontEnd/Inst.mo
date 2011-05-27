@@ -14281,7 +14281,7 @@ input Integer inInt;
 output list<String> outNames;
 output Integer outInt;
 algorithm
-  outNames := matchcontinue(inList,inInt)
+  (outNames,outInt) := matchcontinue(inList,inInt)
   local
     Integer i,i1,i2;
     String s;

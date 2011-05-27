@@ -798,9 +798,8 @@ public function strongComponents "function: strongComponents
   input array<Integer> inIntegerArray3;
   input array<Integer> inIntegerArray4;
   output BackendDAE.StrongComponents outComps;
-  output BackendDAE.StrongComponentsX outCompsX;
 algorithm
-  (outComps,outCompsX) :=
+  (outComps) :=
   matchcontinue (inDAE,inIncidenceMatrix1,inIncidenceMatrixT2,inIntegerArray3,inIntegerArray4)
     local
       BackendDAE.Value n,i;
@@ -809,7 +808,7 @@ algorithm
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
       array<BackendDAE.Value> ass1,ass2;
-      BackendDAE.StrongComponentsX compsX;
+      BackendDAE.StrongComponents comps1;
     case (inDAE,m,mt,ass1,ass2)
       equation
         n = arrayLength(m);
@@ -817,10 +816,9 @@ algorithm
         BackendDAEEXT.initNumber(n);
         (i,stack,comps) = strongConnectMain(m, mt, ass1, ass2, n, 0, 1, {}, {});
         
-        compsX = analyseStrongComponents(comps,inDAE,m,mt,ass1,ass2);
-        // BackendDump.dumpComponentsX(compsX);
+        comps1 = analyseStrongComponents(comps,inDAE,m,mt,ass1,ass2);
       then
-        (comps,compsX);
+        (comps1);
     case (_,_,_,_,_)
       equation
         Debug.fprint("failtrace", "strong_components failed\n");
@@ -841,15 +839,15 @@ protected function analyseStrongComponents"function: analyseStrongComponents
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;  
   input array<Integer> inAss1;
   input array<Integer> inAss2;  
-  output BackendDAE.StrongComponentsX outComps;
+  output BackendDAE.StrongComponents outComps;
 algorithm
   outComps:=
   match (inComps,inDAE,inIncidenceMatrix,inIncidenceMatrixT,inAss1,inAss2)
     local
       list<BackendDAE.Value> comp;
       list<list<BackendDAE.Value>> comps;
-      BackendDAE.StrongComponentsX acomps;
-      BackendDAE.StrongComponentX acomp;
+      BackendDAE.StrongComponents acomps;
+      BackendDAE.StrongComponent acomp;
       array<Integer> ass1,ass2;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
@@ -877,7 +875,7 @@ protected function analyseStrongComponent"function: analyseStrongComponent
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;   
   input array<Integer> inAss1;
   input array<Integer> inAss2;  
-  output BackendDAE.StrongComponentX outComp;
+  output BackendDAE.StrongComponent outComp;
 algorithm
   outComp:=
   match (inComp,inDAE,inIncidenceMatrix,inIncidenceMatrixT,inAss1,inAss2)
@@ -891,7 +889,7 @@ algorithm
       BackendDAE.Variables vars;
       list<BackendDAE.Equation> eqn_lst;
       BackendDAE.EquationArray eqns;
-      BackendDAE.StrongComponentX compX;
+      BackendDAE.StrongComponent compX;
     case (compelem::{},_,_,_,_,ass2)
       equation
         v = ass2[compelem];  
@@ -921,7 +919,7 @@ protected function analyseStrongComponentBlock"function: analyseStrongComponentB
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;   
   input array<Integer> inAss1;
   input array<Integer> inAss2;  
-  output BackendDAE.StrongComponentX outComp;
+  output BackendDAE.StrongComponent outComp;
 algorithm
   outComp:=
   matchcontinue (inComp,inEqnLst,inVarVarindxLst,inDAE,inIncidenceMatrix,inIncidenceMatrixT,inAss1,inAss2)
@@ -2730,7 +2728,7 @@ protected function propagateDummyFixedAttribute
 algorithm
   outBackendDAE := matchcontinue (inBackendDAE,inIntegerLst,inComponentRef,inInteger)
     local
-      list<BackendDAE.Value> eqns_1,eqns;
+      list<BackendDAE.Value> eqns;
       list<BackendDAE.Equation> eqns_lst;
       list<BackendDAE.Key> crefs;
       DAE.ComponentRef state,dummy;
@@ -2749,8 +2747,7 @@ algorithm
    /* eqns dummy state */
     case ((dae as BackendDAE.DAE(vars,kv,ev,av,e,se,ie,ae,al,ei,eoc)),eqns,dummy,dummy_no)
       equation
-        eqns_1 = Util.listMap1(eqns, intSub, 1);
-        eqns_lst = Util.listMap1r(eqns_1, BackendDAEUtil.equationNth, e);
+        eqns_lst = BackendEquation.getEqns(eqns,e);
         crefs = BackendEquation.equationsCrefs(eqns_lst);
         (crefs, _) = Util.listDeleteMemberOnTrue(dummy, crefs, ComponentReference.crefEqualNoStringCompare);
         state = findState(vars, crefs);
@@ -2765,8 +2762,7 @@ algorithm
     // Never propagate fixed=true
     case ((dae as BackendDAE.DAE(vars,kv,ev,av,e,se,ie,ae,al,ei,eoc)),eqns,dummy,dummy_no)
       equation
-        eqns_1 = Util.listMap1(eqns, intSub, 1);
-        eqns_lst = Util.listMap1r(eqns_1, BackendDAEUtil.equationNth, e);
+        eqns_lst = BackendEquation.getEqns(eqns,e);
         crefs = BackendEquation.equationsCrefs(eqns_lst);
         (crefs, _) = Util.listDeleteMemberOnTrue(dummy, crefs, ComponentReference.crefEqualNoStringCompare);
         state = findState(vars, crefs);

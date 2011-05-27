@@ -439,13 +439,7 @@ uniontype StateOrder
 end StateOrder;
 
 public
-type StrongComponent = list<Value>;
-
-public
-type StrongComponents = list<StrongComponent> "- Order of the equations the have to be solved" ;
-
-public
-uniontype StrongComponentX
+uniontype StrongComponent
   record SINGLEEQUATION
     Value eqn;  
     Value var;
@@ -471,10 +465,10 @@ uniontype StrongComponentX
   end SINGLEALGORITHM;
 
 
-end StrongComponentX;
+end StrongComponent;
 
 public
-type StrongComponentsX = list<StrongComponentX> "- Order of the equations the have to be solved" ;
+type StrongComponents = list<StrongComponent> "- Order of the equations the have to be solved" ;
 
 public
 uniontype DivZeroExpReplace "- Should the division operator replaced by a operator with check of the denominator"

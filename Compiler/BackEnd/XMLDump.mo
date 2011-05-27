@@ -685,28 +685,59 @@ algorithm
   end match;
 end dumpArrayEqns2;
 
+protected function dumpBltInvolvedEquations
+"function: dumpBltInvolvedEquations"
+  input BackendDAE.StrongComponent inComp;
+algorithm
+  _:=
+  match (inComp)
+    local
+      Integer e;
+      list<Integer> elst;
+    case (BackendDAE.SINGLEEQUATION(eqn=e))
+      equation
+         dumpStrTagAttrNoChild(stringAppend(INVOLVED,EQUATION_), stringAppend(EQUATION,ID_), intString(e));
+      then
+        ();
+    case (BackendDAE.EQUATIONSYSTEM(eqns=elst))
+      equation
+        dumpBltInvolvedEquations1(elst);        
+      then
+        ();        
+    case (BackendDAE.SINGLEARRAY(eqns=elst))
+      equation
+        dumpBltInvolvedEquations1(elst);       
+      then
+        ();   
+    case (BackendDAE.SINGLEALGORITHM(eqns=elst))
+      equation
+        dumpBltInvolvedEquations1(elst);        
+      then
+        ();          
+  end match;
+end dumpBltInvolvedEquations;
 
-public function dumpBltInvolvedEquations "
+public function dumpBltInvolvedEquations1 "
 This function dumps the equation ID for each block of the BLT
 using an xml representation:
 <involvedEquation equationId=\"\"/>
 ...
 "
-  input list<BackendDAE.Value> inList;
+  input list<Integer> inList;
 algorithm
   _:=
   match(inList)
       local
         BackendDAE.Value el;
-        list<BackendDAE.Value> remList;
+        list<Integer> remList;
     case {} then ();
     case(el :: remList)
       equation
         dumpStrTagAttrNoChild(stringAppend(INVOLVED,EQUATION_), stringAppend(EQUATION,ID_), intString(el));
-        dumpBltInvolvedEquations(remList);
+        dumpBltInvolvedEquations1(remList);
       then();
   end match;
-end dumpBltInvolvedEquations;
+end dumpBltInvolvedEquations1;
 
 public function dumpBindValueExpression "
 This function is necessary for printing the
@@ -804,8 +835,8 @@ algorithm
   match (inIntegerLstLst,inInteger)
     local
       BackendDAE.Value ni,i_1,i;
-      list<BackendDAE.Value> l;
-      list<list<BackendDAE.Value>> lst;
+      BackendDAE.StrongComponent l;
+      BackendDAE.StrongComponents lst;
     case ({},_) then ();
     case ((l :: lst),i)
       equation
@@ -2697,11 +2728,10 @@ algorithm
       array<list<Integer>> m,mT;
       array<Integer> v1,v2;
       BackendDAE.StrongComponents comps;
-      BackendDAE.StrongComponentsX compsX;
   case (false,false,_) then ();
   case (true,true,dlow)
     equation
-      (_,m,mT,v1,v2,comps,compsX) = BackendDAEUtil.transformBackendDAE(dlow,DAEUtil.avlTreeNew(),NONE(),NONE(),NONE(),NONE());
+      (_,m,mT,v1,v2,comps) = BackendDAEUtil.transformBackendDAE(dlow,DAEUtil.avlTreeNew(),NONE(),NONE(),NONE(),NONE());
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(ORIGINAL_INCIDENCE_MATRIX);
       dumpIncidenceMatrix(m);
@@ -2724,7 +2754,7 @@ algorithm
     then ();
   case (false,true,dlow)
     equation
-      (_,m,mT,v1,v2,comps,compsX) = BackendDAEUtil.transformBackendDAE(dlow,DAEUtil.avlTreeNew(),NONE(),NONE(),NONE(),NONE());
+      (_,m,mT,v1,v2,comps) = BackendDAEUtil.transformBackendDAE(dlow,DAEUtil.avlTreeNew(),NONE(),NONE(),NONE(),NONE());
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(SOLVING_INFO);
       dumpMatching(v1);

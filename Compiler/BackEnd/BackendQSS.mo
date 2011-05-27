@@ -103,12 +103,13 @@ algorithm
        list<Integer> whenEqClausesInd, whenReinitClausesInd, whenEqInd, reinitVarsOut, varsSolvedInEqsList, whenClausesInBlocks, tempIndList;       
        list<Integer> variableIndicesList,ass1List, ass2List, stateVarIndices, discreteVarIndices, zcSamplesInd, reinitsInBlocks;
        list<Integer> nBlocksList;
-       BackendDAE.StrongComponents comps;
-       list<list<Integer>> blt_states,blt_no_states, stateEq_flat, globalIncidenceList, mappedEquations, whenEqIncidenceMatList; 
+       BackendDAE.StrongComponents comps,blt_states,blt_no_states;
+       list<list<Integer>> stateEq_flat, globalIncidenceList, mappedEquations, whenEqIncidenceMatList; 
        list<list<Integer>> whenReinitIncidenceMatList, mappedEqReinitMatList, reinitVarsIn;
        list<list<Integer>> DEVS_blocks_outVars, DEVS_blocks_inVars, zc_inVars, conns, whenEq_flat, tempListList, whenClausesBlocks;
        list<list<Integer>> when_blocks_outVars, when_blocks_inVars, reinit_blocks_outVars, reinit_blocks_inVars;
        list<list<list<Integer>>> stateEq_blt, whenEq_blt, whenEqInBlocks;
+       list<BackendDAE.StrongComponents> stateEq_bltX,whenEq_bltX;
        array<list<Integer>> mappedEquationsMat, mappedEquationsMatT;
        list<String> ss;
        String s;
@@ -167,11 +168,12 @@ algorithm
         // STEP 2      
         // MAP STATE EQUATIONS BACK TO BLT BLOCKS        
         
-        stateEq_blt = Util.listMap2(stateEq_flat, mapEquationsInBLTBlocks_tail, blt_states, {}) "Map state equations back in BLT blocks";
-        whenEq_blt = Util.listMap2(whenEq_flat, mapEquationsInBLTBlocks_tail, blt_states, {}) "Map when equations back in BLT blocks";
+        stateEq_bltX = Util.listMap2(stateEq_flat, mapEquationsInBLTBlocks_tail, blt_states, {}) "Map state equations back in BLT blocks";
+        whenEq_bltX = Util.listMap2(whenEq_flat, mapEquationsInBLTBlocks_tail, blt_states, {}) "Map when equations back in BLT blocks";
+        stateEq_blt = Util.listListMap(stateEq_bltX,getEqnIndxFromComp);
         
         // More info, variables and parameters
-        eqs = Util.listMap3(stateEq_blt, generateEqFromBlt,dlow,ass1,ass2);
+        eqs = Util.listMap3(stateEq_bltX, generateEqFromBlt,dlow,ass1,ass2);
         nEquations = arrayLength(m);
         nStatic = listLength(stateEq_blt);
         nIntegr = listLength(stateVarIndices);
@@ -203,7 +205,7 @@ algorithm
         
         // Map equations to DEVS blocks
         mappedEquations = constructEmptyList(nEquations, {});
-        mappedEquations = mapStateEquationsInDEVSblocks(stateEq_blt, mappedEquations, nIntegr+1);
+        mappedEquations = mapStateEquationsInDEVSblocks(stateEq_bltX, mappedEquations, nIntegr+1);
         mappedEquationsMat = listArray(mappedEquations);
  
         // -------------------------------------------------------------------------
@@ -324,7 +326,7 @@ algorithm
         
       then
         qssInfo; 
-   case (_,_,_,_,_,_)
+    else
       equation
         print("- Main function BackendQSS.generateStructureCodeQSS failed\n");
       then
@@ -2232,7 +2234,7 @@ public function splitStateEqSet
   It is based on the traversal done in BackendDAEUtil.generateStatePartition().
   author: florosx - May 2011
 "
-  input list<list<Integer>> inIntegerLstLst1;
+  input BackendDAE.StrongComponents inComps;
   input BackendDAE.BackendDAE inBackendDAE;
   input array<BackendDAE.Value> inIntegerArray1;
   input array<BackendDAE.Value> inIntegerArray2;
@@ -2242,7 +2244,7 @@ public function splitStateEqSet
  
 algorithm
   (sortedEquationsIndices):=
-  matchcontinue (inIntegerLstLst1,inBackendDAE,inIntegerArray1,inIntegerArray2,inIncidenceMatrix,inIncidenceMatrixT)
+  matchcontinue (inComps,inBackendDAE,inIntegerArray1,inIntegerArray2,inIncidenceMatrix,inIncidenceMatrixT)
     local
       BackendDAE.BackendDAE dae;
       BackendDAE.Value size;
@@ -2253,7 +2255,8 @@ algorithm
       array<BackendDAE.Value> ass1,ass2;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
-      list<list<Integer>> arrList, comps;
+      BackendDAE.StrongComponents comps;
+      list<list<Integer>> arrList;
       
     case (comps,(dae as BackendDAE.DAE(orderedVars = v)),ass1,ass2,m,mt)
       equation
@@ -2469,7 +2472,7 @@ function sortEquationsBLT
   Sorts equations according to their order in the BLT blocks
 "
   input list<list<Integer>> inList;
-  input list<list<Integer>> inComps;
+  input BackendDAE.StrongComponents inComps;
   input list<list<Integer>> inListAcc;
   output list<list<Integer>> outList;
 algorithm
@@ -2479,12 +2482,12 @@ algorithm
       array<Integer> ass1,ass2;
       list<list<Integer>> localAccList;
       list<list<Integer>> restList;
-      list<list<Integer>> comps;
+      BackendDAE.StrongComponents comps;
       list<Integer> comps2,elem,firstList;
     case ({},_,localAccList) then localAccList;
     case (firstList :: restList,comps,localAccList)      
       equation 
-        comps2 = Util.listFlatten(comps);
+        comps2 = getStrongComponentsEqnFlat(comps,{});
         elem = Util.listIntersectionOnTrue(comps2,firstList,intEq);
         localAccList = listAppend(localAccList,{elem});
         localAccList = sortEquationsBLT(restList,comps,localAccList);
@@ -2497,22 +2500,69 @@ algorithm
   end matchcontinue;
 end sortEquationsBLT;
 
+protected function getStrongComponentsEqnFlat
+"function: getStrongComponentsEqnFlat
+  author: Frenkel TUD"
+  input BackendDAE.StrongComponents inComp;
+  input list<Integer> accCompsFlat;
+  output list<Integer> compsFlat;
+algorithm
+  compsFlat:=
+  matchcontinue (inComp,accCompsFlat)
+    local
+      BackendDAE.StrongComponents comps;
+      Integer e;
+      list<Integer> eqns,elst,elst1,l;
+    case ({},elst) then elst;
+    case (BackendDAE.SINGLEEQUATION(eqn=e)::comps,elst) 
+      equation
+        elst1 = listAppend(elst, {e});
+        l = getStrongComponentsEqnFlat(comps,elst1);
+      then
+        l; 
+    case (BackendDAE.EQUATIONSYSTEM(eqns=eqns)::comps,elst) 
+      equation
+        elst1 = listAppend(elst, eqns);
+        l = getStrongComponentsEqnFlat(comps,elst1);
+      then
+        l;        
+    case (BackendDAE.SINGLEARRAY(eqns=eqns)::comps,elst) 
+      equation
+        elst1 = listAppend(elst, eqns);
+        l = getStrongComponentsEqnFlat(comps,elst1);
+      then
+        l;  
+    case (BackendDAE.SINGLEALGORITHM(eqns=eqns)::comps,elst) 
+      equation
+        elst1 = listAppend(elst, eqns);
+        l = getStrongComponentsEqnFlat(comps,elst1);
+      then
+        l;        
+    else
+      equation
+         print("- BackendQSS.getStrongComponentsEqnFlat failed\n");
+      then
+        fail();
+  end matchcontinue;
+end getStrongComponentsEqnFlat;
+
 public function mapEquationsInBLTBlocks_tail
 "function: mapEquationsInBLTBlocks_tail
   author: florosx
 "    
    input list<Integer> inIntegerLst1;
-   input list<list<Integer>> inIntegerLstLst1;
-   input list<list<Integer>> inIntegerLstLst2;
-   output list<list<Integer>> cur_state_blocks;
+   input BackendDAE.StrongComponents inIntegerLstLst1;
+   input BackendDAE.StrongComponents inIntegerLstLst2;
+   output BackendDAE.StrongComponents cur_state_blocks;
    
 algorithm 
   cur_state_blocks :=
   matchcontinue (inIntegerLst1, inIntegerLstLst1, inIntegerLstLst2)    
     local
-      list<list<Integer>> sorted_indices, blt_states;   
-      list<Integer> state_equations, cur_block, remain_state_equations, rest_eq;
-      list<list<Integer>> rest_blocks, state_blocks; 
+      list<list<Integer>> sorted_indices;   
+      list<Integer> state_equations, rest_eq, remain_state_equations;
+      BackendDAE.StrongComponent cur_block;
+      BackendDAE.StrongComponents rest_blocks, state_blocks; 
       Integer cur_eq;
       
     case (_, {}, state_blocks) then listReverse(state_blocks);
@@ -2520,7 +2570,7 @@ algorithm
                        
     case (cur_eq :: rest_eq , cur_block :: rest_blocks , state_blocks)
       equation
-        true = listMember(cur_eq, cur_block);
+        true = eqnInComp(cur_eq, cur_block);
         state_blocks = cur_block::state_blocks;
         remain_state_equations = removeRedundantEquations(rest_eq, cur_block, {});
         state_blocks = mapEquationsInBLTBlocks_tail(remain_state_equations, rest_blocks, state_blocks);
@@ -2528,12 +2578,12 @@ algorithm
         (state_blocks);
     case (cur_eq :: rest_eq , cur_block :: rest_blocks , state_blocks)
       equation
-        false = listMember(cur_eq, cur_block);
+        false = eqnInComp(cur_eq, cur_block);
         state_equations = cur_eq::rest_eq;
         state_blocks = mapEquationsInBLTBlocks_tail(state_equations, rest_blocks, state_blocks);
       then
         (state_blocks);
-    case (_,_,_)
+    else
       equation
         print("- BackendQSS.mapEquationsInBLTBlocks_tail failed\n");
       then
@@ -2541,31 +2591,73 @@ algorithm
    end matchcontinue;
 end mapEquationsInBLTBlocks_tail;
 
+protected function eqnInComp
+"function: eqnInComp
+  author: Frenkel TUD"
+  input Integer inInteger;
+  input BackendDAE.StrongComponent inComp;
+  output Boolean outBool;
+algorithm
+  outBool:=
+  matchcontinue (inInteger,inComp)
+    local
+      Integer e,i;
+      list<Integer> elst;
+      Boolean b;
+    case (i,BackendDAE.SINGLEEQUATION(eqn=e))
+      equation
+         b = intEq(i,e);
+      then
+        b;
+    case (i,BackendDAE.EQUATIONSYSTEM(eqns=elst))
+      equation
+        b = listMember(i,elst);        
+      then
+        b;        
+    case (i,BackendDAE.SINGLEARRAY(eqns=elst))
+      equation
+        b = listMember(i,elst);        
+      then
+        b;   
+    case (i,BackendDAE.SINGLEALGORITHM(eqns=elst))
+      equation
+        b = listMember(i,elst);        
+      then
+        b;          
+    else
+      then
+        false;
+  end matchcontinue;
+end eqnInComp;
+
 public function removeRedundantEquations
 "function: removeRedundantEquations
   author: florosx
 "    
-   input list<Integer> inIntegerLst1, inIntegerLst2, inIntegerLst3;
+   input list<Integer> inIntegerLst1;
+   input BackendDAE.StrongComponent inIntegerLst2;
+   input list<Integer> inIntegerLst3;
    output list<Integer> remaining_equations;
    
 algorithm 
   remaining_equations :=
   matchcontinue (inIntegerLst1, inIntegerLst2, inIntegerLst3)    
     local  
-      list<Integer> rest_eq, cur_block, non_redundant_eq;
+      BackendDAE.StrongComponent cur_block;
+      list<Integer> rest_eq, non_redundant_eq;
       Integer cur_eq;
    case ({},_,non_redundant_eq)
       equation
       then(non_redundant_eq);
     case (cur_eq :: rest_eq , cur_block, non_redundant_eq)
       equation
-        true = listMember(cur_eq, cur_block);
+        true = eqnInComp(cur_eq, cur_block);
         non_redundant_eq = removeRedundantEquations(rest_eq, cur_block, non_redundant_eq);
       then
          (non_redundant_eq);
     case (cur_eq :: rest_eq , cur_block, non_redundant_eq)
       equation
-        false = listMember(cur_eq, cur_block);
+        false = eqnInComp(cur_eq, cur_block);
         non_redundant_eq = listAppend(non_redundant_eq, {cur_eq});
         non_redundant_eq = removeRedundantEquations(rest_eq, cur_block, non_redundant_eq);
       then
@@ -2578,9 +2670,32 @@ algorithm
      end matchcontinue;
 end removeRedundantEquations;
 
-
-
-
+protected function getEqnIndxFromComp
+"function: getEqnIndxFromComp
+  author: Frenkel TUD"
+  input BackendDAE.StrongComponent inComp;
+  output list<Integer> outEqnIndexLst;
+algorithm
+  outEqnIndexLst:=
+  matchcontinue (inComp)
+    local
+      Integer e,i;
+      list<Integer> elst;
+      Boolean b;
+    case (BackendDAE.SINGLEEQUATION(eqn=e))
+      then
+        {e};
+    case (BackendDAE.EQUATIONSYSTEM(eqns=elst))
+      then
+        elst;        
+    case (BackendDAE.SINGLEARRAY(eqns=elst))
+      then
+        elst;
+    case (BackendDAE.SINGLEALGORITHM(eqns=elst))
+      then
+        elst;       
+  end matchcontinue;
+end getEqnIndxFromComp;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /////  PART - UTIL FUNCTIONS
@@ -3090,18 +3205,18 @@ end constructTrivialList;
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 protected function generateEqFromBlt
-  input list<list<Integer>> blt;
+  input BackendDAE.StrongComponents comps;
   input BackendDAE.BackendDAE dlow;
   input array<Integer> ass1, ass2;
   output list<SimCode.SimEqSystem> out;
 algorithm
   out := 
-    match (blt,dlow,ass1,ass2)
+    match (comps,dlow,ass1,ass2)
       local
         list<SimCode.SimEqSystem> out2;
       case (_,_,_,_)
       equation
-        out2 = SimCode.createEquations(false, false, false, false, false, dlow, ass1, ass2, blt, {});
+        out2 = SimCode.createEquations(false, false, false, false, false, dlow, ass1, ass2, comps, {});
         then out2;
     end match;
 end generateEqFromBlt;
@@ -3424,19 +3539,18 @@ protected function mapStateEquationsInDEVSblocks
   author: XF
   date: 25-6-2010 
 " 
-  input list<list<list<Integer>>> state_DEVSblocks1;
+  input list<BackendDAE.StrongComponents> state_DEVSblocks1;
   input list<list<Integer>> mappedEquations1;
   input Integer blockIndex1;
   
   output list<list<Integer>> mappedEquations; 
-  
 algorithm
   (mappedEquations):=
   matchcontinue(state_DEVSblocks1, mappedEquations1, blockIndex1)
      local
        
-       list<list<Integer>> cur_state_blocks;
-       list<list<list<Integer>>> rest_blocks;
+       BackendDAE.StrongComponents cur_state_blocks;
+       list<BackendDAE.StrongComponents>rest_blocks;
        list<Integer> cur_state_flat;
        list<list<Integer>> mappedEquations_intermed;
        Integer blockIndex;
@@ -3448,14 +3562,13 @@ algorithm
         
        case (cur_state_blocks :: rest_blocks, mappedEquations_intermed, blockIndex)
          equation
-            cur_state_flat = Util.listFlatten(cur_state_blocks);
+            cur_state_flat = getStrongComponentsEqnFlat(cur_state_blocks,{});
             mappedEquations_intermed = mapEquationInDEVSblocks1(mappedEquations_intermed, cur_state_flat, blockIndex);
             mappedEquations = mapStateEquationsInDEVSblocks(rest_blocks, mappedEquations_intermed, blockIndex+1);
          then
             (mappedEquations);  
   end matchcontinue;
 end mapStateEquationsInDEVSblocks;
-
 
 protected function mapEquationInDEVSblocks1 
 "function: Helper function for mapEquationInDEVSblocks

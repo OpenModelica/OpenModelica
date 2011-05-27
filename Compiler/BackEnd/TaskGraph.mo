@@ -65,7 +65,7 @@ protected import VarTransform;
 
 public function buildTaskgraph ""
   input BackendDAE.BackendDAE inBackendDAE;
-  input BackendDAE.StrongComponentsX inComps;
+  input BackendDAE.StrongComponents inComps;
 algorithm
   _ := matchcontinue (inBackendDAE,inComps)
     local
@@ -73,7 +73,7 @@ algorithm
       list<BackendDAE.Var> vars,knvars;
       BackendDAE.BackendDAE dae;
       BackendDAE.VariableArray vararr,knvararr;
-      BackendDAE.StrongComponentsX comps;
+      BackendDAE.StrongComponents comps;
       DAE.ComponentRef cref_;
 
     case ((dae as BackendDAE.DAE(orderedVars = BackendDAE.VARIABLES(varArr = vararr),knownVars = BackendDAE.VARIABLES(varArr = knvararr))),comps)
@@ -262,14 +262,14 @@ end addVariables;
 
 protected function buildBlocks
   input BackendDAE.BackendDAE inBackendDAE;
-  input BackendDAE.StrongComponentsX inComps;
+  input BackendDAE.StrongComponents inComps;
 algorithm
   _:=
   matchcontinue (inBackendDAE,inComps)
     local
       BackendDAE.BackendDAE dae;
-      BackendDAE.StrongComponentsX comps;
-      BackendDAE.StrongComponentX comp;
+      BackendDAE.StrongComponents comps;
+      BackendDAE.StrongComponent comp;
       Integer eqn;
     case (_,{}) then ();
     case (dae,(comp as BackendDAE.SINGLEEQUATION(eqn=_))::comps)
@@ -294,7 +294,7 @@ end buildBlocks;
 
 protected function buildEquation "Build task graph for a single equation."
   input BackendDAE.BackendDAE inBackendDAE;
-  input BackendDAE.StrongComponentX inComp;
+  input BackendDAE.StrongComponent inComp;
 algorithm
   _:=
   matchcontinue (inBackendDAE,inComp)
@@ -638,7 +638,7 @@ end addEdgesFromVars;
 
 protected function buildSystem "Build task graph for a system of equations"
   input BackendDAE.BackendDAE inBackendDAE;
-  input BackendDAE.StrongComponentX inComp;  
+  input BackendDAE.StrongComponent inComp;  
 algorithm
   _:=
   match (inBackendDAE,inComp)
@@ -647,7 +647,7 @@ algorithm
       list<String> predtasks;
       list<Integer> predtaskids;
       BackendDAE.BackendDAE dae;
-      BackendDAE.StrongComponentX comp;
+      BackendDAE.StrongComponent comp;
       list<BackendDAE.Value> eqns,vars;
     case (dae,comp as BackendDAE.EQUATIONSYSTEM(eqns=eqns,vars=vars))
       equation

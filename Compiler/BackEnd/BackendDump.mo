@@ -1544,24 +1544,24 @@ algorithm
   print("\n");
 end dumpList;
 
-public function dumpComponents "function: dumpComponents
+public function dumpComponentsOLD "function: dumpComponents
   author: PA
 
   Prints the blocks of the BLT sorting on stdout.
 "
-  input BackendDAE.StrongComponents l;
+  input list<list<Integer>> l;
 algorithm
   print("Blocks\n");
   print("=======\n");
   dumpComponents2(l, 1);
-end dumpComponents;
+end dumpComponentsOLD;
 
 protected function dumpComponents2 "function: dumpComponents2
   author: PA
 
   Helper function to dump_components.
 "
-  input BackendDAE.StrongComponents inIntegerLstLst;
+  input list<list<Integer>> inIntegerLstLst;
   input Integer inInteger;
 algorithm
   _:=
@@ -1698,7 +1698,7 @@ algorithm
   dumpIncidenceMatrix(m);
   dumpIncidenceMatrixT(mT);
   dumpMatching(v1);
-  dumpComponentsAdvanced(comps,v2,ode);
+  dumpComponents(comps);
 end bltdump;
 
 public function dumpComponentsAdvanced "function: dumpComponents
@@ -1706,7 +1706,7 @@ public function dumpComponentsAdvanced "function: dumpComponents
 
   Prints the blocks of the BLT sorting on stdout.
 "
-  input BackendDAE.StrongComponents l;
+  input list<list<Integer>> l;
   input array<Integer> v2;
   input BackendDAE.BackendDAE ode;
 protected
@@ -1723,7 +1723,7 @@ protected function dumpComponentsAdvanced2 "function: dumpComponents2
 
   Helper function to dump_components.
 "
-  input BackendDAE.StrongComponents inIntegerLstLst;
+  input list<list<Integer>> inIntegerLstLst;
   input Integer inInteger;
   input array<Integer> v2;
   input BackendDAE.Variables vars;
@@ -1805,16 +1805,16 @@ algorithm
   end match;
 end dumpComponentsAdvanced3;
 
-public function dumpComponentsX
-  input BackendDAE.StrongComponentsX inComps;
+public function dumpComponents
+  input BackendDAE.StrongComponents inComps;
 algorithm
   print("StrongComponents\n");
   print("=======\n");  
-  Util.listMap0(inComps,dumpComponentX);
-end dumpComponentsX;
+  Util.listMap0(inComps,dumpComponent);
+end dumpComponents;
 
-public function dumpComponentX
-  input BackendDAE.StrongComponentX inComp;
+public function dumpComponent
+  input BackendDAE.StrongComponent inComp;
 algorithm
   _:=
   match (inComp)
@@ -1872,7 +1872,7 @@ algorithm
       then
         ();        
   end match;  
-end dumpComponentX;
+end dumpComponent;
 
 /*******************************************/
 /* Debug dump functions */
