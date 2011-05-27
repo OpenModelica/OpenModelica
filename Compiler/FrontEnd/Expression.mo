@@ -1299,6 +1299,20 @@ algorithm
   end match;
 end subscriptExp;
 
+public function subscriptNonExpandedExp
+"function: subscriptNonExpandedExp
+  Returns the expression in a subscript representing non-expanded array.
+  If the subscript is not WHOLE_NONEXP the function fails."
+  input Subscript inSubscript;
+  output DAE.Exp outExp;
+algorithm
+  outExp:=
+  match (inSubscript)
+    local DAE.Exp e;
+    case (DAE.WHOLE_NONEXP(exp = e)) then e;
+  end match;
+end subscriptNonExpandedExp;
+
 public function nthArrayExp
 "function: nthArrayExp
   author: PA

@@ -6306,6 +6306,8 @@ algorithm
         // Fails if multiple decls not identical
         already_declared = checkMultiplyDeclared(cache, env, mods, pre, csets, 
           ci_state, (comp, cmod), inst_dims, impl);
+        m = traverseModAddDims(cache, env, pre, m, inst_dims, ad);
+        comp = SCode.COMPONENT(name, prefixes, attr, ts, m, comment, cond, info);
         ci_state = ClassInf.trans(ci_state, ClassInf.FOUND_COMPONENT(name));
         cref = ComponentReference.makeCrefIdent(name, DAE.ET_OTHER(), {});
         (cache, vn) = PrefixUtil.prefixCref(cache, env, ih, pre, cref);
@@ -14031,6 +14033,383 @@ algorithm osubs:= matchcontinue(subs)
 end matchcontinue;
 end traverseModAddFinal4;
 
+protected function traverseModAddDims
+"The function used to modify modifications for non-expanded arrays"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Prefix.Prefix inPrefix;
+  input SCode.Mod inMod;
+  input InstDims inInstDims;
+  input list<Absyn.Subscript> inDecDims;
+  output SCode.Mod outMod;
+algorithm 
+  outMod := matchcontinue(inCache,inEnv,inPrefix,inMod,inInstDims,inDecDims)
+  local
+    Env.Cache cache;
+    Env.Env env;
+    Prefix.Prefix pre;
+    SCode.Mod mod, mod2;
+    InstDims inst_dims;
+    list<Absyn.Subscript> decDims;
+    list<list<DAE.Exp>> exps;
+    list<list<Absyn.Exp>> aexps;
+    list<Option<Absyn.Exp>> adims;
+    
+  case (_,_,_,mod,_,_) //If arrays are expanded, no action is needed
+    equation
+      true = RTOpts.splitArrays();
+    then
+      mod; 
+/*  case (_,_,_,mod,inst_dims,decDims)
+    equation
+      subs = Util.listFlatten(inst_dims);
+      exps = Util.listMap(subs,Expression.subscriptNonExpandedExp);
+      aexps = Util.listMap(exps, Expression.unelabExp);
+      adims = Util.listMap(decDims, Absyn.subscriptExpOpt);
+      mod2 = traverseModAddDims2(mod, aexps, adims, true);
+      
+    then       
+      mod2;*/
+  case (cache,env,pre,mod,inst_dims,decDims)
+    equation
+      exps = Util.listListMap(inst_dims,Expression.subscriptNonExpandedExp);
+      aexps = Util.listListMap(exps, Expression.unelabExp);
+      adims = Util.listMap(decDims, Absyn.subscriptExpOpt);
+      mod2 = traverseModAddDims4(cache,env,pre,mod, aexps, adims, true);
+      
+    then       
+      mod2;
+  end matchcontinue;
+end traverseModAddDims;
+
+protected function traverseModAddDims4
+"Helper function  for traverseModAddDims"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Prefix.Prefix inPrefix;
+  input SCode.Mod inMod;
+  input list<list<Absyn.Exp>> inExps;
+  input list<Option<Absyn.Exp>> inExpOpts;
+  input Boolean inIsTop;
+  output SCode.Mod outMod;
+algorithm 
+  outMod := matchcontinue(inCache,inEnv,inPrefix,inMod,inExps,inExpOpts,inIsTop)
+  local
+    Env.Cache cache;
+    Env.Env env;
+    Prefix.Prefix pre;
+    SCode.Mod mod;
+    Boolean is_top;
+    SCode.Final f;
+    list<SCode.SubMod> submods,submods2;
+    Option<tuple<Absyn.Exp,Boolean>> tup,tup2;
+    list<list<Absyn.Exp>> exps;
+    list<Option<Absyn.Exp>> expOpts;
+    
+    case (_,_,_,SCode.NOMOD(),_,_,_) then SCode.NOMOD();
+    case (_,_,_,mod as SCode.REDECL(finalPrefix=_),_,_,_) then mod;  // Though redeclarations may need some processing as well
+    case (cache,env,pre,SCode.MOD(f, SCode.NOT_EACH(),submods,tup),exps,expOpts,_)
+      equation
+        submods2 = traverseModAddDims5(cache,env,pre,submods,exps,expOpts);
+        tup2 = insertSubsInTuple2(tup,exps);
+      then
+        SCode.MOD(f, SCode.NOT_EACH(),submods2,tup2); 
+/*    case (SCode.MOD(f, Absyn.EACH(),submods,tup),exps,expOpts,is_top)
+      equation
+        submods2 = traverseModAddDims3(submods,exps,expOpts);
+        tup2 = insertSubsInTuple(tup,exps);
+      then
+        SCode.MOD(f, Absyn.NON_EACH(),submods2,tup2); */
+  end matchcontinue;
+end traverseModAddDims4;
+
+protected function traverseModAddDims5
+"Helper function  for traverseModAddDims2"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Prefix.Prefix inPrefix;
+  input list<SCode.SubMod> inMods;
+  input list<list<Absyn.Exp>> inExps;
+  input list<Option<Absyn.Exp>> inExpOpts;
+  output list<SCode.SubMod> outMods;
+algorithm 
+  outMods := matchcontinue(inCache,inEnv,inPrefix,inMods,inExps,inExpOpts)
+  local
+    Env.Cache cache;
+    Env.Env env;
+    Prefix.Prefix pre;
+    SCode.Mod mod,mod2;
+    list<SCode.SubMod> smods,smods2;
+    Ident n;
+    case (_,_,_,{},_,_) then {};
+    case (cache,env,pre,SCode.NAMEMOD(n,mod)::smods,inExps,inExpOpts)
+      equation
+        mod2 = traverseModAddDims4(cache,env,pre,mod,inExps,inExpOpts,false);
+        smods2 = traverseModAddDims5(cache,env,pre,smods,inExps,inExpOpts);
+      then
+        SCode.NAMEMOD(n,mod2)::smods2;
+    case (_,_,_,SCode.IDXMOD(an=_)::_,_,_)
+      equation
+        print("Cannot process IDXMOD in the case of non-expanded arrays");
+      then
+        fail();      
+  end matchcontinue;
+end traverseModAddDims5;
+
+
+/*protected function traverseModAddDims2
+"Helper function  for traverseModAddDims"
+  input SCode.Mod inMod;
+  input list<Absyn.Exp> inExps;
+  input list<Option<Absyn.Exp>> inExpOpts;
+  input Boolean inIsTop;
+  output SCode.Mod outMod;
+algorithm 
+  outMod := matchcontinue(inMod,inExps,inExpOpts,inIsTop)
+  local
+    SCode.Mod mod;
+    Boolean f,is_top;
+    list<SCode.SubMod> submods,submods2;
+    Option<tuple<Absyn.Exp,Boolean>> tup,tup2;
+    list<Absyn.Exp> exps;
+    list<Option<Absyn.Exp>> expOpts;
+    
+    case (SCode.NOMOD(),_,_,_) then SCode.NOMOD();
+    case (mod as SCode.REDECL(finalPrefix=_),_,_,_) then mod;  // Though redeclarations may need some processing as well
+    case (SCode.MOD(f, Absyn.NON_EACH(),submods,tup),exps,expOpts,_)
+      equation
+        submods2 = traverseModAddDims3(submods,exps,expOpts);
+        tup2 = insertSubsInTuple(tup,exps);
+      then
+        SCode.MOD(f, Absyn.NON_EACH(),submods2,tup2); 
+  end matchcontinue;
+end traverseModAddDims2;
+
+protected function traverseModAddDims3
+"Helper function  for traverseModAddDims2"
+  input list<SCode.SubMod> inMods;
+  input list<Absyn.Exp> inExps;
+  input list<Option<Absyn.Exp>> inExpOpts;
+  output list<SCode.SubMod> outMods;
+algorithm 
+  outMods := matchcontinue(inMods,inExps,inExpOpts)
+  local
+    SCode.Mod mod,mod2;
+    list<SCode.SubMod> smods,smods2;
+    Ident n;
+    case ({},_,_) then {};
+    case (SCode.NAMEMOD(n,mod)::smods,inExps,inExpOpts)
+      equation
+        mod2 = traverseModAddDims2(mod,inExps,inExpOpts,false);
+        smods2 = traverseModAddDims3(smods,inExps,inExpOpts);
+      then
+        SCode.NAMEMOD(n,mod2)::smods2;
+    case (SCode.IDXMOD(an=_)::_,_,_)
+      equation
+        print("Cannot process IDXMOD in the case of non-expanded arrays");
+      then
+        fail();      
+  end matchcontinue;
+end traverseModAddDims3;
+
+protected function insertSubsInTuple
+input Option<tuple<Absyn.Exp,Boolean>> inOpt;
+input list<Absyn.Exp> inExps;
+output Option<tuple<Absyn.Exp,Boolean>> outOpt;
+algorithm
+  outOpt := matchcontinue(inOpt,inExps)
+  local
+    list<Absyn.Exp> exps;
+    Absyn.Exp e,e2;
+    Boolean b;
+    list<Absyn.Subscript> subs;
+    list<Absyn.Ident> vars;
+    tuple<Absyn.Exp,Boolean> tp;
+    
+    case (NONE(),_) then NONE();
+    case (SOME(tp as (e,b)), exps)
+      equation
+        vars = generateUnusedNames(e,exps);
+        subs = stringsSubs(vars);
+        ((e2,_)) = Absyn.traverseExp(e,Absyn.crefInsertSubscripts2, subs);
+        e2 = wrapIntoFor(e2,vars,exps);
+      then
+        SOME((e2,b));
+  end matchcontinue;
+end insertSubsInTuple;*/
+
+protected function insertSubsInTuple2
+input Option<tuple<Absyn.Exp,Boolean>> inOpt;
+input list<list<Absyn.Exp>> inExps;
+output Option<tuple<Absyn.Exp,Boolean>> outOpt;
+algorithm
+  outOpt := matchcontinue(inOpt,inExps)
+  local
+    list<list<Absyn.Exp>> exps;
+    Absyn.Exp e,e2;
+    Boolean b;
+    list<list<Absyn.Subscript>> subs;
+    list<list<Absyn.Ident>> vars;
+    tuple<Absyn.Exp,Boolean> tp;
+    
+    case (NONE(),_) then NONE();
+    case (SOME(tp as (e,b)), exps)
+      equation
+        vars = generateUnusedNamesLstCall(e,exps);
+        subs = Util.listListMap(vars,stringSub);
+        ((e2,_)) = Absyn.traverseExp(e,Absyn.crefInsertSubscriptLstLst, subs);
+        e2 = wrapIntoForLst(e2,vars,exps);
+      then
+        SOME((e2,b));
+  end matchcontinue;
+end insertSubsInTuple2;
+
+protected function generateUnusedNames
+"Generates a list of variable names which are not used in any of expressions.
+The number of variables is the same as the length of input list.
+TODO: Write the REAL function!"
+input Absyn.Exp inExp;
+input list<Absyn.Exp> inList;
+output list<String> outNames;
+algorithm
+  (outNames,_) := generateUnusedNames2(inList,1);
+end generateUnusedNames;
+
+protected function generateUnusedNames2
+input list<Absyn.Exp> inList;
+input Integer inInt;
+output list<String> outNames;
+output Integer outInt;
+algorithm
+  outNames := matchcontinue(inList,inInt)
+  local
+    Integer i,i1,i2;
+    String s;
+    list<String> names;
+    list<Absyn.Exp> exps;
+    case ({},i) then ({},i);
+    case (_::exps,i)
+      equation
+        s = intString(i);
+        s = "i" +& s;
+        i1 = i + 1;
+        (names,i2) = generateUnusedNames2(exps,i1);
+      then
+        (s::names,i2);    
+  end matchcontinue;
+end generateUnusedNames2;
+
+protected function generateUnusedNamesLst
+input list<list<Absyn.Exp>> inList;
+input Integer inInt;
+output list<list<String>> outNames;
+output Integer outInt;
+algorithm
+  (outNames,outInt) := matchcontinue(inList,inInt)
+  local
+    Integer i,i1,i2;
+    String s;
+    list<list<String>> names;
+    list<String> ns;
+    list<list<Absyn.Exp>> exps;
+    list<Absyn.Exp> e0;
+    case ({},i) then ({},i);
+    case (e0::exps,i)
+      equation
+        (ns,i1) = generateUnusedNames2(e0,i);
+        (names,i2) = generateUnusedNamesLst(exps,i1);
+      then
+        (ns::names,i2);    
+  end matchcontinue;
+end generateUnusedNamesLst;
+
+protected function generateUnusedNamesLstCall
+"Generates a list of lists of variable names which are not used in any of expressions.
+The structure of lsis of lists is the same as of input list of lists.
+TODO: Write the REAL function!"
+input Absyn.Exp inExp;
+input list<list<Absyn.Exp>> inList;
+output list<list<String>> outNames;
+algorithm
+  (outNames,_) := generateUnusedNamesLst(inList,1);
+end generateUnusedNamesLstCall;
+
+protected function stringsSubs
+input list<String> inNames;
+output list<Absyn.Subscript> outSubs;
+algorithm
+  outSubs := matchcontinue(inNames)
+  local
+    String n;
+    list<String> names;
+    list<Absyn.Subscript> subs;
+    case {} then {};
+    case n::names
+      equation
+        subs = stringsSubs(names);
+      then
+        Absyn.SUBSCRIPT(Absyn.CREF(Absyn.CREF_IDENT(n,{})))::subs;    
+  end matchcontinue;
+end stringsSubs;
+
+protected function stringSub
+input String inName;
+output Absyn.Subscript outSub;
+algorithm
+  outSub := matchcontinue(inName)
+  local
+    String n;
+    case n
+      then
+        Absyn.SUBSCRIPT(Absyn.CREF(Absyn.CREF_IDENT(n,{})));    
+  end matchcontinue;
+end stringSub;
+
+protected function wrapIntoFor
+input Absyn.Exp inExp;
+input list<String> inNames;
+input list<Absyn.Exp> inRanges;
+output Absyn.Exp outExp;
+algorithm
+  outExp := matchcontinue(inExp,inNames,inRanges)
+  local
+    Absyn.Exp e,e2,r;
+    String n;
+    list<String> names;
+    list<Absyn.Exp> ranges;
+    case (e,{},{}) then e;
+    case (e,n::names,r::ranges)
+      equation
+        e2 = wrapIntoFor(e, names, ranges);
+      then
+        Absyn.CALL(Absyn.CREF_IDENT("array",{}),
+           Absyn.FOR_ITER_FARG(e2,{Absyn.ITERATOR(n,NONE(),SOME(Absyn.RANGE(Absyn.INTEGER(1),NONE(),r)))}));
+  end matchcontinue;
+end wrapIntoFor;           
+    
+protected function wrapIntoForLst
+input Absyn.Exp inExp;
+input list<list<String>> inNames;
+input list<list<Absyn.Exp>> inRanges;
+output Absyn.Exp outExp;
+algorithm
+  outExp := matchcontinue(inExp,inNames,inRanges)
+  local
+    Absyn.Exp e,e2,e3;
+    list<String> n;
+    list<list<String>> names;
+    list<Absyn.Exp> r;
+    list<list<Absyn.Exp>> ranges;
+    case (e,{},{}) then e;
+    case (e,n::names,r::ranges)
+      equation
+        e2 = wrapIntoForLst(e, names, ranges);
+        e3 = wrapIntoFor(e2, n, r);
+      then
+        e3;
+  end matchcontinue;
+end wrapIntoForLst;           
+    
 protected function modifyInstantiateClass
 "function: modifyInstantiateClass
  Here we check a modifier and a path,

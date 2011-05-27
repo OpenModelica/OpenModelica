@@ -5109,4 +5109,70 @@ algorithm
   end matchcontinue;
 end innerOuterStr;
 
+public function subscriptExpOpt
+  input Subscript inSub;
+  output Option<Exp> outExpOpt;
+algorithm
+  outExpOpt := matchcontinue(inSub)
+    local 
+      Exp e;
+      case SUBSCRIPT(subScript = e)
+        then SOME(e);
+      case NOSUB()
+        then NONE();
+  end matchcontinue;
+end subscriptExpOpt;              
+
+public function crefInsertSubscriptLstLst
+  input tuple<Exp,list<list<Subscript>>> inTpl;
+  output tuple<Exp,list<list<Subscript>>> outTpl;
+algorithm
+  outTpl := matchcontinue(inTpl)
+  local
+    ComponentRef cref,cref2;
+    list<list<Subscript>> subs;
+    Exp e;
+    case ((CREF(componentRef=cref),subs))
+      equation
+        cref2 = crefInsertSubscriptLstLst2(cref,subs);
+      then
+         ((CREF(cref2),subs));
+    case ((e,subs)) then ((e,subs));
+  end matchcontinue;
+end crefInsertSubscriptLstLst;
+
+public function crefInsertSubscriptLstLst2
+"Helper function to crefInsertSubscriptLstLst"
+  input ComponentRef inCref;
+  input list<list<Subscript>> inSubs;
+  output ComponentRef outCref;
+algorithm
+  outCref := matchcontinue(inCref,inSubs)
+    local
+      ComponentRef cref, cref2;
+      Ident n;
+      list<list<Subscript>> subs;
+      list<Subscript> s;
+      case (cref,{})
+        then cref;
+      case (CREF_IDENT(name = n), {s})
+        then CREF_IDENT(n,s);    
+      case (CREF_QUAL(name = n, componentRef = cref), s::subs)
+        equation
+          cref2 = crefInsertSubscriptLstLst2(cref, subs);
+        then
+          CREF_QUAL(n,s,cref2);          
+      case (CREF_FULLYQUALIFIED(componentRef = cref), subs)
+        equation
+          cref2 = crefInsertSubscriptLstLst2(cref, subs);
+        then
+          CREF_FULLYQUALIFIED(cref2);
+      case (CREF_INVALID(componentRef = cref), subs)
+        equation
+          cref2 = crefInsertSubscriptLstLst2(cref, subs);
+        then
+          CREF_INVALID(cref2);
+  end matchcontinue;
+end crefInsertSubscriptLstLst2;
+          
 end Absyn;
