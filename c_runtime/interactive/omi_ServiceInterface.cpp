@@ -17,13 +17,13 @@
  * "Interactive Simulation of SysML Models using Modelica" (Chapter 5)
  */
 
-#include "omi_ServiceInterface.h"
-#include "omi_Control.h"
-#include "omi_Transfer.h"
 #include "simulation_runtime.h"
 #include "simulation_input.h"
 #include "solver_main.h"
 #include "options.h"
+#include "omi_ServiceInterface.h"
+#include "omi_Control.h"
+#include "omi_Transfer.h"
 
 //Global Data Mutex
 Mutex gdMutex;
