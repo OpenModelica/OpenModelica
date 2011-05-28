@@ -99,7 +99,7 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
   let fmiVersion = '1.0' 
   let modelName = dotPath(modelInfo.name)
-  let modelIdentifier = fileNamePrefix
+  let modelIdentifier = underscorePath(modelInfo.name)
   let description = ''
   let author = ''
   let version= '' 
