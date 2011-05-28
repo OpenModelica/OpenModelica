@@ -12,6 +12,7 @@ Adrian Pop, adrpo@ida.liu.se, date above.
    user: anonymous
    pass: none    <-- write "none" here
    + this package contains all prerequisites to compile OMC on Windows using MinGW+MSys
+   + NOTE THAT YOU MUST UPDATE THIS PACKAGE IF YOU CANNOT COMPILE OpenModelica any longer!
 
 2. Make sure you place the OMDev package into:
    c:\OMDev\
