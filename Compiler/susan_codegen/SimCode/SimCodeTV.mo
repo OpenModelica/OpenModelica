@@ -1855,6 +1855,11 @@ package Util
     output String cString;
   end escapeModelicaStringToCString;
 
+  function escapeModelicaStringToXmlString
+    input String modelicaString;
+    output String xmlString;
+  end escapeModelicaStringToXmlString;
+
 	function getCurrentDateTime
 	  output DateTime dt;
 	end getCurrentDateTime;

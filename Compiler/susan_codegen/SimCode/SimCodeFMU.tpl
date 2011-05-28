@@ -261,7 +261,7 @@ match simVar
   case SIMVAR(__) then
   let valueReference = '<%System.tmpTick()%>'
   let variability = getVariablity(varKind)
-  let description = if comment then 'description="<%comment%>"' 
+  let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"' 
   let alias = getAliasVar(aliasvar)
   let caus = getCausality(causality)
   <<
@@ -509,7 +509,7 @@ template initVal(Exp initialValue)
   match initialValue 
   case ICONST(__) then integer
   case RCONST(__) then real
-  case SCONST(__) then '"<%Util.escapeModelicaStringToCString(string)%>"'
+  case SCONST(__) then '"<%Util.escapeModelicaStringToXmlString(string)%>"'
   case BCONST(__) then if bool then "true" else "false"
   case ENUM_LITERAL(__) then '<%index%>/*ENUM:<%dotPath(name)%>*/'
   else "*ERROR* initial value of unknown type"

@@ -7247,6 +7247,17 @@ algorithm
   cString := System.stringReplace(System.escapedString(modelicaString), "\n", "\\n");
 end escapeModelicaStringToCString;
 
+public function escapeModelicaStringToXmlString
+  input String modelicaString;
+  output String xmlString;
+algorithm
+  // C cannot handle newline in string constants
+  xmlString := System.stringReplace(modelicaString, "&", "&amp;");
+  xmlString := System.stringReplace(xmlString, "\\\"", "&quot;");
+  xmlString := System.stringReplace(xmlString, "<", "&lt;");
+  xmlString := System.stringReplace(xmlString, ">", "&gt;");
+end escapeModelicaStringToXmlString;
+
 public function listlistTranspose "{{1,2,3}{4,5,6}} => {{1,4},{2,5},{3,6}}"
   input list<list<Type_a>> inLst;
   output list<list<Type_a>> outLst;
