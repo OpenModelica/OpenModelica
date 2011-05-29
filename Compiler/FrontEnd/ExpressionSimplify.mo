@@ -3428,6 +3428,29 @@ algorithm
       then
         DAE.BINARY(DAE.RCONST(r3),DAE.MUL(DAE.ET_REAL()),e2);
 
+    // sqrt(e) * e => e^1.5
+    case (DAE.MUL(ty = _),DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e1}),e2)
+      equation
+        true = Expression.expEqual(e1,e2);
+      then
+        DAE.BINARY(e1,DAE.POW(DAE.ET_REAL()),DAE.RCONST(1.5));
+    case (DAE.MUL(ty = _),e1,DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e2}))
+      equation
+        true = Expression.expEqual(e1,e2);
+      then
+        DAE.BINARY(e1,DAE.POW(DAE.ET_REAL()),DAE.RCONST(1.5));
+    // sqrt(e) * e^r => e^(r+0.5)
+    case (DAE.MUL(ty = _),DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e1}),DAE.BINARY(e2,DAE.POW(ty=_),e))
+      equation
+        true = Expression.expEqual(e1,e2);
+      then
+        DAE.BINARY(e1,DAE.POW(DAE.ET_REAL()),DAE.BINARY(e,DAE.ADD(DAE.ET_REAL()),DAE.RCONST(0.5)));
+    case (DAE.MUL(ty = _),DAE.BINARY(e1,DAE.POW(ty=_),e),DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e2}))
+      equation
+        true = Expression.expEqual(e1,e2);
+      then
+        DAE.BINARY(e1,DAE.POW(DAE.ET_REAL()),DAE.BINARY(e,DAE.ADD(DAE.ET_REAL()),DAE.RCONST(0.5)));
+
     // 0 / x = 0
     case (DAE.DIV(ty = ty),e1,e2)
       equation
