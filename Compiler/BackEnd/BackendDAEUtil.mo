@@ -4785,7 +4785,7 @@ end calculateJacobianRow;
 
 public function getArrayEquationSub"function: getArrayEquationSub
   author: Frenkel TUD
-  helper for calculateJacobianRow and SimCode.dlowEqToExp"
+  helper for calculateJacobianRow"
   input Integer Index;
   input list<Option<Integer>> inAD;
   input list<tuple<Integer,list<list<DAE.Subscript>>>> inList;
@@ -6283,6 +6283,7 @@ algorithm
   (BackendDAEOptimize.inlineArrayEqnPast,"inlineArrayEqn"),
   (BackendDAEOptimize.removeUnusedParameterPast,"removeUnusedParameter"),
   (BackendDAEOptimize.removeUnusedVariablesPast,"removeUnusedVariables"),
+  (BackendDAEOptimize.constantLinearSystem,"constantLinearSystem"),
   (BackendDump.dumpComponentsGraphStr,"dumpComponentsGraphStr")};
   strPastOptModules := getPastOptModulesString();
   strPastOptModules := Util.getOptionOrDefault(ostrPastOptModules,strPastOptModules);

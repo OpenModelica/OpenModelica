@@ -896,7 +896,7 @@ algorithm
       then BackendDAE.SINGLEEQUATION(compelem,v);
     case (comp,inDAE as BackendDAE.DAE(orderedVars=vars,orderedEqs=eqns),m,mt,ass1,ass2)
       equation
-        (eqn_lst,var_varindx_lst) = Util.listMap32(comp, getEquationAndSolvedVar, eqns, vars, ass2);
+        (eqn_lst,var_varindx_lst) = Util.listMap32(comp, getEquationAndSolvedVar_Internal, eqns, vars, ass2);
         compX = analyseStrongComponentBlock(comp,eqn_lst,var_varindx_lst,inDAE,m,mt,ass1,ass2);   
       then
         compX;
@@ -1164,8 +1164,68 @@ algorithm
   end matchcontinue;
 end replaceDerOpInExpTraverser;
 
-protected function getEquationAndSolvedVar
+public function getEquationAndSolvedVar
 "function: getEquationAndSolvedVar
+  author: PA
+  Retrieves the equation and the variable solved in that equation
+  given an equation number and the variable assignments2"
+  input BackendDAE.StrongComponent inComp;
+  input BackendDAE.EquationArray inEquationArray;
+  input BackendDAE.Variables inVariables;
+  output list<BackendDAE.Equation> outEquation;
+  output list<BackendDAE.Var> outVar;
+  output Integer outIndex;
+algorithm
+  (outEquation,outVar,outIndex):=
+  matchcontinue (inComp,inEquationArray,inVariables)
+    local
+      Integer e_1,v,e;
+      list<Integer> elst,vlst;
+      BackendDAE.Equation eqn;
+      BackendDAE.Var var;
+      list<BackendDAE.Equation> eqnlst;
+      list<BackendDAE.Var> varlst;
+      BackendDAE.EquationArray eqns;
+      BackendDAE.Variables vars;
+    case (BackendDAE.SINGLEEQUATION(eqn=e,var=v),eqns,vars) /* equation no. assignments2 */
+      equation
+        e_1 = e - 1;
+        eqn = BackendDAEUtil.equationNth(eqns, e_1);
+        var = BackendVariable.getVarAt(vars, v);
+      then
+        ({eqn},{var},e);
+    case (BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst),eqns,vars) /* equation no. assignments2 */
+      equation
+        eqnlst = BackendEquation.getEqns(elst,eqns);        
+        varlst = Util.listMap1r(vlst, BackendVariable.getVarAt, vars);
+        e = Util.listFirst(elst);        
+      then
+        (eqnlst,varlst,e);        
+    case (BackendDAE.SINGLEARRAY(eqns=elst,vars=vlst),eqns,vars) /* equation no. assignments2 */
+      equation
+        eqnlst = BackendEquation.getEqns(elst,eqns);      
+        varlst = Util.listMap1r(vlst, BackendVariable.getVarAt, vars);        
+        e = Util.listFirst(elst);        
+      then
+        (eqnlst,varlst,e);  
+    case (BackendDAE.SINGLEALGORITHM(eqns=elst,vars=vlst),eqns,vars) /* equation no. assignments2 */
+      equation
+        eqnlst = BackendEquation.getEqns(elst,eqns);  
+        varlst = Util.listMap1r(vlst, BackendVariable.getVarAt, vars);        
+        e = Util.listFirst(elst);        
+      then
+        (eqnlst,varlst,e);         
+    case (inComp,eqns,vars) /* equation no. assignments2 */
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.fprintln("failtrace", "SimCode.getEquationAndSolvedVar failed!");
+      then
+        fail();
+  end matchcontinue;
+end getEquationAndSolvedVar;
+
+protected function getEquationAndSolvedVar_Internal
+"function: getEquationAndSolvedVar_Internal
   author: PA
   Retrieves the equation and the variable solved in that equation
   given an equation number and the variable assignments2"
@@ -1196,11 +1256,11 @@ algorithm
     case (e,eqns,vars,ass2) /* equation no. assignments2 */
       equation
         true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "BackendDAETransform.getEquationAndSolvedVar failed at index: " +& intString(e));
+        Debug.fprintln("failtrace", "BackendDAETransform.getEquationAndSolvedVar_Internal failed at index: " +& intString(e));
       then
         fail();
   end matchcontinue;
-end getEquationAndSolvedVar;
+end getEquationAndSolvedVar_Internal;
 
 protected function strongConnectMain "function: strongConnectMain
   author: PA

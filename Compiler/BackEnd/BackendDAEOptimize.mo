@@ -69,6 +69,7 @@ protected import ExpressionSimplify;
 protected import Error;
 protected import Inline;
 protected import RTOpts;
+protected import System;
 protected import Util;
 protected import Values;
 protected import ValuesUtil;
@@ -2807,6 +2808,240 @@ algorithm
   end matchcontinue;
 end checkUnusedVariablesExp;
 
+/* 
+ * constant jacobians. Linear system of equations (A x = b) where
+ * A and b are constants.
+ */
+
+public function constantLinearSystem
+"function constantLinearSystem"
+    input BackendDAE.BackendDAE inDAE;
+    input DAE.FunctionTree inFunctionTree;
+    input BackendDAE.IncidenceMatrix inM;
+    input BackendDAE.IncidenceMatrix inMT;
+    input array<Integer> inAss1;  
+    input array<Integer> inAss2;  
+    input BackendDAE.StrongComponents inComps;  
+    output BackendDAE.BackendDAE outDAE;
+    output BackendDAE.IncidenceMatrix outM;
+    output BackendDAE.IncidenceMatrix outMT;
+    output array<Integer> outAss1;  
+    output array<Integer> outAss2;  
+    output BackendDAE.StrongComponents outComps; 
+    output Boolean outRunMatching;
+algorithm
+  (outDAE,outM,outMT,outAss1,outAss2,outComps,outRunMatching):= 
+    matchcontinue(inDAE,inFunctionTree,inM,inMT,inAss1,inAss2,inComps)
+    local
+      BackendDAE.BackendDAE dae,dae1;
+      DAE.FunctionTree funcs;
+      BackendDAE.Variables vars,knvars,exobj,avars,vars1,knvars1;
+      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1;
+      array<BackendDAE.MultiDimEquation> arreqns;
+      array<DAE.Algorithm> algorithms;
+      BackendDAE.EventInfo einfo;
+      list<BackendDAE.WhenClause> whenClauseLst;
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.IncidenceMatrix mT;
+      array<Integer> ass1,ass2;
+      BackendDAE.StrongComponents comps,comps1;
+      Boolean b;
+      list<Integer> eqnlst;
+     BackendDAE.BinTree movedVars;
+    case (inDAE,inFunctionTree,inM,inMT,inAss1,inAss2,inComps)
+      equation
+        (dae as BackendDAE.DAE(vars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT,ass1,ass2,comps1,b,eqnlst,movedVars) = constantLinearSystem1(inDAE,inFunctionTree,inM,inMT,inAss1,inAss2,inComps,{},BackendDAE.emptyBintree);
+        // move changed variables         
+        (vars1,knvars1) = BackendVariable.moveVariables(vars,knvars,movedVars);
+        // remove changed eqns
+        eqns1 = BackendEquation.equationDelete(eqns,eqnlst);
+      then
+        (BackendDAE.DAE(vars1,knvars,exobj,aliasVars,eqns1,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT,ass1,ass2,comps1,b);
+  end matchcontinue;  
+end constantLinearSystem;
+
+protected function constantLinearSystem1
+"function constantLinearSystem1"
+    input BackendDAE.BackendDAE inDAE;
+    input DAE.FunctionTree inFunctionTree;
+    input BackendDAE.IncidenceMatrix inM;
+    input BackendDAE.IncidenceMatrix inMT;
+    input array<Integer> inAss1;  
+    input array<Integer> inAss2;  
+    input BackendDAE.StrongComponents inComps;  
+    input list<Integer> inEqnlst;
+    input BackendDAE.BinTree inMovedVars;
+    output BackendDAE.BackendDAE outDAE;
+    output BackendDAE.IncidenceMatrix outM;
+    output BackendDAE.IncidenceMatrix outMT;
+    output array<Integer> outAss1;  
+    output array<Integer> outAss2;  
+    output BackendDAE.StrongComponents outComps; 
+    output Boolean outRunMatching;
+    output list<Integer> outEqnlst;
+    output BackendDAE.BinTree movedVars;
+protected
+  Option<BackendDAE.IncidenceMatrix> om,omT;
+algorithm
+  (outDAE,outM,outMT,outAss1,outAss2,outComps,outRunMatching,outEqnlst,outMovedVars):=
+  matchcontinue (inDAE,inFunctionTree,inM,inMT,inAss1,inAss2,inComps,inEqnlst,inMovedVars)
+    local
+      BackendDAE.BackendDAE dae,dae1;
+      DAE.FunctionTree funcs;
+      BackendDAE.Variables vars,knvars,exobj,avars,vars1,knvars1;
+      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1;
+      array<BackendDAE.MultiDimEquation> arreqns;
+      array<DAE.Algorithm> algorithms;
+      BackendDAE.EventInfo einfo;
+      list<BackendDAE.WhenClause> whenClauseLst;
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.IncidenceMatrix mT;
+      array<Integer> ass1,ass2;
+      BackendDAE.StrongComponents comps,comps1;
+      BackendDAE.StrongComponent comp;
+      Boolean b;
+      list<BackendDAE.Equation> eqn_lst; 
+      list<BackendDAE.Var> var_lst;
+      list<Integer> eindex;
+      list<DAE.Exp> beqs;
+      list<DAE.ElementSource> sources;
+      list<Real> rhsVals,solvedVals;
+      list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+      list<list<Real>> jacVals;
+      Integer linInfo;
+      list<DAE.ComponentRef> names;
+      list<Integer> remeqnlst;
+      BackendDAE.BinTree movedVars;
+    case (dae,funcs,inM,inMT,inAss1,inAss2,{},inEqnlst,inMovedVars)
+      then
+        (dae,inM,inMT,inAss1,inAss2,{},false,inEqnlst,inMovedVars);
+    case (BackendDAE.DAE(vars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),funcs,inM,inMT,inAss1,inAss2,(comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,jac=SOME(jac),jacType=BackendDAE.JAC_CONSTANT()))::comps,inEqnlst,inMovedVars)
+      equation
+        (eqn_lst,var_lst,_) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
+        var_lst = listReverse(var_lst);
+        eqns1 = BackendDAEUtil.listEquation(eqn_lst);
+        ((_,_,_,beqs,sources)) = BackendEquation.traverseBackendDAEEqns(eqns1,BackendEquation.equationToExp,(vars,arreqns,{},{},{}));
+        beqs = listReverse(beqs);
+        rhsVals = ValuesUtil.valueReals(Util.listMap(beqs,Ceval.cevalSimple));
+        jacVals = evaluateConstantJacobian(listLength(var_lst),jac);
+        (solvedVals,linInfo) = System.dgesv(jacVals,rhsVals);
+        names = Util.listMap(var_lst,BackendVariable.varCref);  
+        checkLinearSystem(linInfo,names,jacVals,rhsVals);
+        sources = Util.listMap1(sources, DAEUtil.addSymbolicTransformation, DAE.LINEAR_SOLVED(names,jacVals,rhsVals,solvedVals));           
+        vars1 = changeconstantLinearSystemVars(var_lst,solvedVals,sources,vars);
+        dae = BackendDAE.DAE(vars1,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc);                    
+        (dae1,m,mT,ass1,ass2,comps1,b,remeqnlst,movedVars) = constantLinearSystem1(dae,funcs,inM,inMT,inAss1,inAss2,comps,inEqnlst,inMovedVars);
+      then
+        (dae1,m,mT,ass1,ass2,comp::comps1,b,remeqnlst,movedVars);
+    case (dae,funcs,inM,inMT,inAss1,inAss2,comp::comps,inEqnlst,inMovedVars)
+      equation
+         (dae1,m,mT,ass1,ass2,comps1,b,remeqnlst,movedVars) = constantLinearSystem1(dae,funcs,inM,inMT,inAss1,inAss2,comps,inEqnlst,inMovedVars);
+      then
+        (dae1,m,mT,ass1,ass2,comp::comps1,b,remeqnlst,movedVars);
+  end matchcontinue;  
+end constantLinearSystem1;
+
+protected function changeconstantLinearSystemVars 
+  input list<BackendDAE.Var> inVarLst;
+  input list<Real> inSolvedVals;
+  input list<DAE.ElementSource> inSources;
+  input BackendDAE.Variables inVars;
+  output BackendDAE.Variables outVars;
+algorithm
+    outVars := matchcontinue (inVarLst,inSolvedVals,inSources,inVars)
+    local
+      BackendDAE.Var v,v1;
+      list<BackendDAE.Var> varlst;
+      DAE.ElementSource s;
+      list<DAE.ElementSource> slst;
+      BackendDAE.Variables vars,vars1,vars2;
+      Real r;
+      list<Real> rlst;
+    case ({},{},{},vars) then vars;      
+    case (v::varlst,r::rlst,s::slst,vars)
+      equation
+        v1 = BackendVariable.setBindExp(v,DAE.RCONST(r));  
+        // ToDo: merge source of var and equation
+        vars1 = BackendVariable.addVar(v1,vars);
+        vars2 = changeconstantLinearSystemVars(varlst,rlst,slst,vars1);
+      then vars2;
+  end matchcontinue; 
+end changeconstantLinearSystemVars;
+
+public function evaluateConstantJacobian
+  "Evaluate a constant jacobian so we can solve a linear system during runtime"
+  input Integer size;
+  input list<tuple<Integer,Integer,BackendDAE.Equation>> jac;
+  output list<list<Real>> vals;
+protected
+  array<array<Real>> valarr;
+  array<Real> tmp;
+  list<array<Real>> tmp2;
+  list<Real> rs;
+algorithm
+  rs := Util.listFill(0.0,size);
+  tmp := listArray(rs);
+  tmp2 := Util.listMap(Util.listFill(tmp,size),arrayCopy);
+  valarr := listArray(tmp2);
+  Util.listMap01(jac,valarr,evaluateConstantJacobian2);
+  tmp2 := arrayList(valarr);
+  vals := Util.listMap(tmp2,arrayList);
+end evaluateConstantJacobian;
+
+protected function evaluateConstantJacobian2
+  input tuple<Integer,Integer,BackendDAE.Equation> jac;
+  input array<array<Real>> vals;
+algorithm
+  _ := match (jac,vals)
+    local
+      DAE.Exp exp;
+      Integer i1,i2;
+      Real r;
+    case ((i1,i2,BackendDAE.RESIDUAL_EQUATION(exp=exp)),vals)
+      equation
+        Values.REAL(r) = Ceval.cevalSimple(exp);
+        _ = arrayUpdate(arrayGet(vals,i1),i2,r);
+      then ();
+  end match;
+end evaluateConstantJacobian2;
+
+protected function checkLinearSystem
+  input Integer info;
+  input list<DAE.ComponentRef> vars;
+  input list<list<Real>> jac;
+  input list<Real> rhs;
+algorithm
+  _ := matchcontinue (info,vars,jac,rhs)
+    local
+      String infoStr,syst,varnames,varname,rhsStr,jacStr;
+    case (0,_,_,_) then ();
+    case (info,vars,jac,rhs)
+      equation
+        true = info > 0;
+        varname = ComponentReference.printComponentRefStr(listGet(vars,info));
+        infoStr = intString(info);
+        varnames = Util.stringDelimitList(Util.listMap(vars,ComponentReference.printComponentRefStr)," ;\n  ");
+        rhsStr = Util.stringDelimitList(Util.listMap(rhs, realString)," ;\n  ");
+        jacStr = Util.stringDelimitList(Util.listMap1(Util.listListMap(jac,realString),Util.stringDelimitList," , ")," ;\n  ");
+        syst = stringAppendList({"\n[\n  ", jacStr, "\n]\n  *\n[\n  ",varnames,"\n]\n  =\n[\n  ",rhsStr,"\n]"});
+        Error.addMessage(Error.LINEAR_SYSTEM_SINGULAR, {syst,infoStr,varname});
+      then fail();
+    case (info,vars,jac,rhs)
+      equation
+        true = info < 0;
+        varnames = Util.stringDelimitList(Util.listMap(vars,ComponentReference.printComponentRefStr)," ;\n  ");
+        rhsStr = Util.stringDelimitList(Util.listMap(rhs, realString)," ; ");
+        jacStr = Util.stringDelimitList(Util.listMap1(Util.listListMap(jac,realString),Util.stringDelimitList," , ")," ; ");
+        syst = stringAppendList({"[", jacStr, "] * [",varnames,"] = [",rhsStr,"]"});
+        Error.addMessage(Error.LINEAR_SYSTEM_INVALID, {"LAPACK/dgesv",syst});
+      then fail();
+  end matchcontinue;
+end checkLinearSystem;
+
 /*  
  * tearing system of equations stuff 
  */ 
@@ -3542,43 +3777,6 @@ algorithm
         (comp::comps,comps1);
   end matchcontinue;
 end splitComps;
-
-public function evaluateConstantJacobian
-  "Evaluate a constant jacobian so we can solve a linear system during runtime"
-  input Integer size;
-  input list<tuple<Integer,Integer,BackendDAE.Equation>> jac;
-  output list<list<Real>> vals;
-protected
-  array<array<Real>> valarr;
-  array<Real> tmp;
-  list<array<Real>> tmp2;
-  list<Real> rs;
-algorithm
-  rs := Util.listFill(0.0,size);
-  tmp := listArray(rs);
-  tmp2 := Util.listMap(Util.listFill(tmp,size),arrayCopy);
-  valarr := listArray(tmp2);
-  Util.listMap01(jac,valarr,evaluateConstantJacobian2);
-  tmp2 := arrayList(valarr);
-  vals := Util.listMap(tmp2,arrayList);
-end evaluateConstantJacobian;
-
-protected function evaluateConstantJacobian2
-  input tuple<Integer,Integer,BackendDAE.Equation> jac;
-  input array<array<Real>> vals;
-algorithm
-  _ := match (jac,vals)
-    local
-      DAE.Exp exp;
-      Integer i1,i2;
-      Real r;
-    case ((i1,i2,BackendDAE.RESIDUAL_EQUATION(exp=exp)),vals)
-      equation
-        Values.REAL(r) = Ceval.cevalSimple(exp);
-        _ = arrayUpdate(arrayGet(vals,i1),i2,r);
-      then ();
-  end match;
-end evaluateConstantJacobian2;
 
 protected function solveEquations
 " function: solveEquations

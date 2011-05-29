@@ -43,11 +43,13 @@ public import BackendDAE;
 public import DAE;
 
 protected import BackendDAEUtil;
+protected import BackendDump;
 protected import BackendVariable;
 protected import ClassInf;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
+protected import Error;
 protected import Expression;
 protected import ExpressionSimplify;
 protected import Util;
@@ -1055,12 +1057,21 @@ public function equationDelete "function: equationDelete
   input BackendDAE.EquationArray inEquationArray;
   input list<Integer> inIntLst;
   output BackendDAE.EquationArray outEquationArray;
-protected
-  list<BackendDAE.Equation> eqnlst,eqnlst1;
 algorithm
-   eqnlst := BackendDAEUtil.equationList(inEquationArray);
-   eqnlst1 := Util.listDeletePositions(eqnlst,inIntLst);
-   outEquationArray :=  BackendDAEUtil.listEquation(eqnlst1);
+  outEquationArray := match (inEquationArray,inIntLst)
+    local
+      list<BackendDAE.Equation> eqnlst,eqnlst1;
+    case (inEquationArray,{})
+      then
+        inEquationArray;
+    case (inEquationArray,inIntLst)
+      equation
+        eqnlst = BackendDAEUtil.equationList(inEquationArray);
+        eqnlst1 = Util.listDeletePositions(eqnlst,inIntLst);
+        outEquationArray =  BackendDAEUtil.listEquation(eqnlst1);
+      then
+        outEquationArray;
+  end match;   
 end equationDelete;
 
 public function equationToResidualForm "function: equationToResidualForm
@@ -1109,6 +1120,61 @@ algorithm
         fail();
   end matchcontinue;
 end equationToResidualForm;
+
+public function equationToExp
+  input tuple<BackendDAE.Equation, tuple<BackendDAE.Variables,array<BackendDAE.MultiDimEquation>,list<tuple<Integer,list<list<DAE.Subscript>>>>,list<DAE.Exp>,list<DAE.ElementSource>>> inTpl;
+  output tuple<BackendDAE.Equation, tuple<BackendDAE.Variables,array<BackendDAE.MultiDimEquation>,list<tuple<Integer,list<list<DAE.Subscript>>>>,list<DAE.Exp>,list<DAE.ElementSource>>> outTpl;  
+algorithm
+  outTpl := matchcontinue inTpl
+    local
+      Integer   index;
+      DAE.Exp e;
+      DAE.Exp e1,e2,new_exp,new_exp1,rhs_exp,rhs_exp_1,rhs_exp_2;
+      list<Integer> ds;
+      list<Option<Integer>> ad;
+      list<DAE.Subscript> subs;
+      BackendDAE.Equation eqn;
+      BackendDAE.Variables v;
+      array<BackendDAE.MultiDimEquation> arrayEqs;
+      list<tuple<Integer,list<list<DAE.Subscript>>>> entrylst,entrylst1;
+      list<DAE.Exp> explst;
+      list<DAE.ElementSource> sources;
+      DAE.ElementSource source;
+      
+    case ((eqn as BackendDAE.RESIDUAL_EQUATION(exp=e,source=source),(v, arrayEqs,entrylst,explst,sources)))
+      equation
+        rhs_exp = BackendDAEUtil.getEqnsysRhsExp(e, v);
+        (rhs_exp_1,_) = ExpressionSimplify.simplify(rhs_exp);
+      then ((eqn,(v, arrayEqs,entrylst,rhs_exp_1::explst,source::sources)));
+        
+    case ((eqn as BackendDAE.EQUATION(exp=e1, scalar=e2,source=source),(v, arrayEqs,entrylst,explst,sources)))
+      equation
+        new_exp = Expression.expSub(e1,e2);
+        rhs_exp = BackendDAEUtil.getEqnsysRhsExp(new_exp, v);
+        rhs_exp_1 = Expression.negate(rhs_exp);
+        (rhs_exp_2,_) = ExpressionSimplify.simplify(rhs_exp_1);
+      then ((eqn,(v, arrayEqs,entrylst,rhs_exp_2::explst,source::sources)));
+        
+    case ((eqn as BackendDAE.ARRAY_EQUATION(index=index,source=source),(v, arrayEqs,entrylst,explst,sources)))
+      equation
+        BackendDAE.MULTIDIM_EQUATION(dimSize=ds,left=e1, right=e2) = arrayEqs[index+1];
+        new_exp = Expression.expSub(e1,e2);
+        ad = Util.listMap(ds,Util.makeOption);
+        (subs,entrylst1) = BackendDAEUtil.getArrayEquationSub(index,ad,entrylst);
+        new_exp1 = Expression.applyExpSubscripts(new_exp,subs);
+        rhs_exp = BackendDAEUtil.getEqnsysRhsExp(new_exp1, v);
+        rhs_exp_1 = Expression.negate(rhs_exp);
+        (rhs_exp_2,_) = ExpressionSimplify.simplify(rhs_exp_1);
+      then ((eqn,(v, arrayEqs,entrylst1,rhs_exp_2::explst,source::sources)));
+        
+    case ((eqn,_))
+      equation
+        BackendDump.dumpEqns({eqn});
+        Error.addSourceMessage(Error.INTERNAL_ERROR,{"dlowEqToExp failed"},equationInfo(eqn));
+      then
+        fail();
+  end matchcontinue;
+end equationToExp;
 
 public function equationInfo "Retrieve the line number information from a BackendDAE.BackendDAE equation"
   input BackendDAE.Equation eq;
