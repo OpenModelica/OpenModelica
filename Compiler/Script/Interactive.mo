@@ -3726,12 +3726,12 @@ algorithm
         true = stringEq(id, id2);
       then
         res;
-    case (Absyn.CREF_QUAL(name = id,subScripts = a,componentRef = cr1),Absyn.CREF_IDENT(name = id2),Absyn.CREF_IDENT(name = id3))
+    case (Absyn.CREF_QUAL(name = id,subscripts = a,componentRef = cr1),Absyn.CREF_IDENT(name = id2),Absyn.CREF_IDENT(name = id3))
       equation
         true = stringEq(id, id2);
       then
         Absyn.CREF_QUAL(id3,a,cr1);
-    case (Absyn.CREF_QUAL(name = id,subScripts = a,componentRef = cr1),Absyn.CREF_QUAL(name = id2,componentRef = cr2),Absyn.CREF_QUAL(name = id3,componentRef = cr3))
+    case (Absyn.CREF_QUAL(name = id,subscripts = a,componentRef = cr1),Absyn.CREF_QUAL(name = id2,componentRef = cr2),Absyn.CREF_QUAL(name = id3,componentRef = cr3))
       equation
         true = stringEq(id, id2);
         cr = replaceStartInComponentRef2(cr1, cr2, cr3);

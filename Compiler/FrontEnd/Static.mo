@@ -6988,7 +6988,7 @@ algorithm
         (cache,subs_1,_) = elabSubscripts(cache,env, subs, impl,pre,info);
       then
         (cache,ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),subs_1));
-    case (cache,env,Absyn.CREF_QUAL(name = id,subScripts = subs,componentRef = cr),impl,pre,info)
+    case (cache,env,Absyn.CREF_QUAL(name = id,subscripts = subs,componentRef = cr),impl,pre,info)
       equation
         (cache,subs_1,_) = elabSubscripts(cache,env, subs, impl,pre,info);
         (cache,cr_1) = elabUntypedCref(cache,env, cr, impl,pre,info);
@@ -10775,7 +10775,7 @@ algorithm
       then 
         cref;
     
-    case Absyn.CREF_QUAL(name = i,subScripts = {},componentRef = c)
+    case Absyn.CREF_QUAL(name = i,subscripts = {},componentRef = c)
       equation
         cref = absynCrefToComponentReference(c);
         cref = ComponentReference.makeCrefQual(i, DAE.ET_OTHER(), {}, cref);
@@ -10853,7 +10853,7 @@ algorithm
         (cache,ComponentReference.makeCrefIdent(id,ty,ss_1),const);
         
     // QUAL,with no subscripts => looking for var in the top env!
-    case (cache,env,Absyn.CREF_QUAL(name = id,subScripts = {},componentRef = subs),crefPrefix,impl,info)
+    case (cache,env,Absyn.CREF_QUAL(name = id,subscripts = {},componentRef = subs),crefPrefix,impl,info)
       equation
         (cache,cr) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,crefPrefix,ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
         //print("env:");print(Env.printEnvStr(env));print("\n");
@@ -10865,7 +10865,7 @@ algorithm
         (cache,ComponentReference.makeCrefQual(id,ty,{},cr),const);
 
     // QUAL,with no subscripts second case => look for class
-    case (cache,env,Absyn.CREF_QUAL(name = id,subScripts = {},componentRef = subs),crefPrefix,impl,info)
+    case (cache,env,Absyn.CREF_QUAL(name = id,subscripts = {},componentRef = subs),crefPrefix,impl,info)
       equation
         crefPrefix = PrefixUtil.prefixAdd(id,{},crefPrefix,SCode.VAR(),ClassInf.UNKNOWN(Absyn.IDENT(""))); // variability doesn't matter
         (cache,cr,const) = elabCrefSubs(cache,env, subs,crefPrefix,impl,info);
@@ -10873,7 +10873,7 @@ algorithm
         (cache,ComponentReference.makeCrefQual(id,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),{},cr),const);
     
     // QUAL,with constant subscripts
-    case (cache,env,Absyn.CREF_QUAL(name = id,subScripts = ss as _::_,componentRef = subs),crefPrefix,impl,info)
+    case (cache,env,Absyn.CREF_QUAL(name = id,subscripts = ss as _::_,componentRef = subs),crefPrefix,impl,info)
       equation
         (cache,cr) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,crefPrefix,ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
         (cache,DAE.ATTR(_,_,vt,_,_),t,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr);
@@ -11148,7 +11148,7 @@ algorithm
       then (cache, DAE.WHOLEDIM(), DAE.C_CONST(), NONE());
 
     // some subscript, try to elaborate it
-    case (cache, env, Absyn.SUBSCRIPT(subScript = sub), impl, pre, info)
+    case (cache, env, Absyn.SUBSCRIPT(subscript = sub), impl, pre, info)
       equation 
         (cache, sub_1, prop as DAE.PROP(constFlag = const), _) = 
           elabExp(cache, env, sub, impl, NONE(), true, pre, info);
@@ -13024,7 +13024,7 @@ algorithm
 
     // Size expression that refers to the array itself, such as 
     // Real x(:, size(x, 1)).
-    case (_, _, _, Absyn.SUBSCRIPT(subScript = Absyn.CALL(function_ =
+    case (_, _, _, Absyn.SUBSCRIPT(subscript = Absyn.CALL(function_ =
         Absyn.CREF_IDENT(name = "size"), functionArgs = Absyn.FUNCTIONARGS(args =
         {Absyn.CREF(componentRef = cr), size_arg}))), _, _, _, _, _)
       equation
@@ -13034,7 +13034,7 @@ algorithm
         (inCache, dim);
 
     // Array dimension from an enumeration.
-    case (_, _, _, Absyn.SUBSCRIPT(subScript = Absyn.CREF(cr)), _, _, _, _, _)
+    case (_, _, _, Absyn.SUBSCRIPT(subscript = Absyn.CREF(cr)), _, _, _, _, _)
       equation
         type_path = Absyn.crefToPath(cr);
         (_, cls as SCode.CLASS(name = name, restriction = SCode.R_ENUMERATION(),
@@ -13047,7 +13047,7 @@ algorithm
         (inCache, DAE.DIM_ENUM(enum_type_name, enum_literals, enum_size));
 
     // Frenkel TUD try next enum. 
-    case (_, _, _, Absyn.SUBSCRIPT(subScript = Absyn.CREF(cr)), _, _, _, _, _)
+    case (_, _, _, Absyn.SUBSCRIPT(subscript = Absyn.CREF(cr)), _, _, _, _, _)
       equation
         type_path = Absyn.crefToPath(cr);
         (_, SCode.CLASS(restriction = SCode.R_TYPE(), classDef =
@@ -13060,7 +13060,7 @@ algorithm
     // For all other cases we need to elaborate the subscript expression, so the
     // expression is elaborated and passed on to elabArrayDim2 to avoid doing
     // the elaboration several times.
-    case (_, _, _, Absyn.SUBSCRIPT(subScript = sub), _, _, _, _, _)
+    case (_, _, _, Absyn.SUBSCRIPT(subscript = sub), _, _, _, _, _)
       equation
         (cache, e, prop, _) = elabExp(inCache, inEnv, sub, inImpl, inST,
           inDoVect, inPrefix, inInfo);

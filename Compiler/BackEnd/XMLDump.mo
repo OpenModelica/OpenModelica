@@ -251,7 +251,7 @@ protected import ValuesUtil;
   protected constant String BIND_VALUE              = "bindValue";
 
   //Name of the element representing the subscript, for example the array's index.
-  protected constant String SUBSCRIPT               = "subScript";
+  protected constant String SUBSCRIPT               = "subscript";
 
   //Additional info for variables.
   protected constant String HASH_TB_CREFS_LIST          = "hashTb";

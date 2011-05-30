@@ -946,7 +946,7 @@ uniontype Subscript "The Subscript uniontype is used both in array declarations 
   record NOSUB end NOSUB;
 
   record SUBSCRIPT
-    Exp subScript "subScript" ;
+    Exp subscript "subscript" ;
   end SUBSCRIPT;
 
 end Subscript;
@@ -961,7 +961,7 @@ uniontype ComponentRef "A component reference is the fully or partially qualifie
   end CREF_FULLYQUALIFIED;
   record CREF_QUAL
     Ident name "name" ;
-    list<Subscript> subScripts "subScripts" ;
+    list<Subscript> subscripts "subscripts" ;
     ComponentRef componentRef "componentRef" ;
   end CREF_QUAL;
 
@@ -2026,7 +2026,7 @@ algorithm
       then
         (CREF_FULLYQUALIFIED(cr), tup);
 
-    case (CREF_QUAL(name = name, subScripts = subs, componentRef = cr), _)
+    case (CREF_QUAL(name = name, subscripts = subs, componentRef = cr), _)
       equation
         (subs, tup) = Util.listMapAndFold(subs, traverseExpBidirSubs, inTuple);
         (cr, tup) = traverseExpBidirCref(cr, tup);
@@ -2065,7 +2065,7 @@ algorithm
       Exp sub_exp;
       tuple<FuncType, FuncType, Argument> tup;
 
-    case (SUBSCRIPT(subScript = sub_exp), tup)
+    case (SUBSCRIPT(subscript = sub_exp), tup)
       equation
         (sub_exp, tup) = traverseExpBidir(sub_exp, tup);
       then
@@ -2920,7 +2920,7 @@ algorithm
       equation
         cr = crefReplaceFirstIdent(cr,replPath);
       then CREF_FULLYQUALIFIED(cr);
-    case (CREF_QUAL(componentRef = cr, subScripts = subs),replPath)
+    case (CREF_QUAL(componentRef = cr, subscripts = subs),replPath)
       equation
         cref = pathToCref(replPath);
         cref = addSubscriptsLast(cref,subs);
@@ -3550,8 +3550,8 @@ algorithm
       list<Subscript> subs;
     
     case (CREF_IDENT(name = _)) then fail();
-    case (CREF_QUAL(name = str,subScripts = subs, componentRef = CREF_IDENT(name = _))) then CREF_IDENT(str,subs);
-    case (CREF_QUAL(name = str,subScripts = subs,componentRef = c))
+    case (CREF_QUAL(name = str,subscripts = subs, componentRef = CREF_IDENT(name = _))) then CREF_IDENT(str,subs);
+    case (CREF_QUAL(name = str,subscripts = subs,componentRef = c))
       equation
         c_1 = crefStripLast(c);
       then
@@ -3622,7 +3622,7 @@ algorithm
       Path p;
       ComponentRef c;
     case CREF_IDENT(name = i,subscripts = {}) then IDENT(i);
-    case CREF_QUAL(name = i,subScripts = {},componentRef = c)
+    case CREF_QUAL(name = i,subscripts = {},componentRef = c)
       equation
         p = crefToPath(c);
       then
@@ -3740,7 +3740,7 @@ algorithm
       Ident id;
       ComponentRef cr;
     case CREF_IDENT(name = id, subscripts = {}) then id;
-    case CREF_QUAL(name = id, subScripts = {}) then id;
+    case CREF_QUAL(name = id, subscripts = {}) then id;
     case CREF_FULLYQUALIFIED(componentRef = cr) then crefFirstIdentNoSubs(cr);
   end match;
 end crefFirstIdentNoSubs;
@@ -3794,7 +3794,7 @@ algorithm
     
     case CREF_IDENT(name = i,subscripts = {}) then false;
     
-    case CREF_QUAL(name = i,subScripts = {},componentRef = c)
+    case CREF_QUAL(name = i,subscripts = {},componentRef = c)
       equation
         b = crefHasSubscripts(c);
       then
@@ -3872,7 +3872,7 @@ algorithm
       list<Subscript> subs,s;
       ComponentRef cr_1,cr;
     case (CREF_IDENT(name = id,subscripts= subs)) then CREF_IDENT(id,{});
-    case (CREF_QUAL(name= id,subScripts= s,componentRef = cr))
+    case (CREF_QUAL(name= id,subscripts= s,componentRef = cr))
       equation
         cr_1 = crefStripLastSubs(cr);
       then
@@ -3901,7 +3901,7 @@ algorithm
       equation
         failure(CREF_FULLYQUALIFIED(_) = cr2);
       then CREF_QUAL(id,sub,cr2);
-    case (CREF_QUAL(name = id,subScripts = sub,componentRef = cr),cr2)
+    case (CREF_QUAL(name = id,subscripts = sub,componentRef = cr),cr2)
       equation
         cr_1 = joinCrefs(cr, cr2);
       then
@@ -4088,7 +4088,7 @@ algorithm
         true = subscriptsEqual(ss1,ss2);
       then
         true;
-    case (CREF_QUAL(name = id,subScripts = ss1, componentRef = cr1),CREF_QUAL(name = id2,subScripts = ss2, componentRef = cr2))
+    case (CREF_QUAL(name = id,subscripts = ss1, componentRef = cr1),CREF_QUAL(name = id2,subscripts = ss2, componentRef = cr2))
       equation
         true = stringEq(id, id2);
         true = subscriptsEqual(ss1,ss2);
@@ -5116,7 +5116,7 @@ algorithm
   outExpOpt := matchcontinue(inSub)
     local 
       Exp e;
-      case SUBSCRIPT(subScript = e)
+      case SUBSCRIPT(subscript = e)
         then SOME(e);
       case NOSUB()
         then NONE();

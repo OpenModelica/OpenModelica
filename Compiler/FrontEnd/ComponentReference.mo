@@ -358,7 +358,7 @@ algorithm
         makeCrefIdent(id,DAE.ET_OTHER(),subs_1);
     
     // qualified
-    case (Absyn.CREF_QUAL(name = id,subScripts = subs,componentRef = cr))
+    case (Absyn.CREF_QUAL(name = id,subscripts = subs,componentRef = cr))
       equation
         cr_1 = toExpCref(cr);
         subs_1 = toExpCrefSubs(subs);
@@ -395,7 +395,7 @@ algorithm
     case ({}) then {};
     
     // integer subscripts become indexes of integers
-    case ((Absyn.SUBSCRIPT(subScript = Absyn.INTEGER(value = i)) :: xs))
+    case ((Absyn.SUBSCRIPT(subscript = Absyn.INTEGER(value = i)) :: xs))
       equation
         xs_1 = toExpCrefSubs(xs);
       then
@@ -403,7 +403,7 @@ algorithm
     
     // cref subscripts become indexes of crefs 
     // => Assumes index is INTEGER. FIXME! TODO!: what about if index is an array?
-    case ((Absyn.SUBSCRIPT(subScript = Absyn.CREF(componentRef = cr)) :: xs)) 
+    case ((Absyn.SUBSCRIPT(subscript = Absyn.CREF(componentRef = cr)) :: xs)) 
       equation
         cr_1 = toExpCref(cr);
         xs_1 = toExpCrefSubs(xs);

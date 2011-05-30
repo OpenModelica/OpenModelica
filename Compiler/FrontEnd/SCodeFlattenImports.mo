@@ -588,7 +588,7 @@ algorithm
     local
       Absyn.Exp exp;
 
-    case (Absyn.SUBSCRIPT(subScript = exp), _, _)
+    case (Absyn.SUBSCRIPT(subscript = exp), _, _)
       equation
         exp = flattenExp(exp, inEnv, inInfo);
       then

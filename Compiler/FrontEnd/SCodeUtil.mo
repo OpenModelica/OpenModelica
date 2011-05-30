@@ -1708,7 +1708,7 @@ algorithm
         Error.addMessage(Error.ILLEGAL_MODIFICATION, {mod_str,c_str});
       then
         fail();
-    case ((c as Absyn.CREF_QUAL(subScripts = (_ :: _))),(mod as SCode.MOD(subModLst = (_ :: _))))
+    case ((c as Absyn.CREF_QUAL(subscripts = (_ :: _))),(mod as SCode.MOD(subModLst = (_ :: _))))
       equation
         c_str = Dump.printComponentRefStr(c);
         mod_str = SCodeDump.printModStr(mod);
@@ -1721,7 +1721,7 @@ algorithm
         mod_1 = translateSubSub(ss, mod);
       then
         SCode.NAMEMOD(i,mod_1);
-    case (Absyn.CREF_QUAL(name = i,subScripts = ss,componentRef = path),mod)
+    case (Absyn.CREF_QUAL(name = i,subscripts = ss,componentRef = path),mod)
       equation
         sub = translateSub(path, mod);
         mod = SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{sub},NONE());

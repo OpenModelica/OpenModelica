@@ -532,7 +532,7 @@ algorithm
         (item, cref);
 
     // Qualified identifier.
-    case (Absyn.CREF_QUAL(name = name, subScripts = subs, 
+    case (Absyn.CREF_QUAL(name = name, subscripts = subs, 
         componentRef = cref_rest), _)
       equation
         // Look in the local scope.
@@ -905,7 +905,7 @@ algorithm
       String cref_str, env_str;
 
     // Special case for StateSelect, do nothing.
-    case (Absyn.CREF_QUAL(name = "StateSelect", subScripts = {}, 
+    case (Absyn.CREF_QUAL(name = "StateSelect", subscripts = {}, 
         componentRef = Absyn.CREF_IDENT(name = _)), _, _)
       then inCref;
 
@@ -991,14 +991,14 @@ algorithm
       Absyn.ComponentRef cref;
       Absyn.Path env_path;
 
-    case (Absyn.CREF_QUAL(name = id1, subScripts = {}, componentRef = cref), 
+    case (Absyn.CREF_QUAL(name = id1, subscripts = {}, componentRef = cref), 
           Absyn.QUALIFIED(name = id2, path = env_path))
       equation
         true = stringEqual(id1, id2);
       then
         crefStripEnvPrefix2(cref, env_path);
 
-    case (Absyn.CREF_QUAL(name = id1, subScripts = {}, componentRef = cref),
+    case (Absyn.CREF_QUAL(name = id1, subscripts = {}, componentRef = cref),
           Absyn.IDENT(name = id2))
       equation
         true = stringEqual(id1, id2);

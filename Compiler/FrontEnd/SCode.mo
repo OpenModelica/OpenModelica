@@ -2446,7 +2446,7 @@ algorithm
       then
         (Absyn.CREF_FULLYQUALIFIED(cr), tup);
 
-    case (Absyn.CREF_QUAL(name = name, subScripts = subs, componentRef = cr), _)
+    case (Absyn.CREF_QUAL(name = name, subscripts = subs, componentRef = cr), _)
       equation
         (cr, tup) = traverseComponentRefExps(cr, inTuple);
         (subs, tup) = Util.listMapAndFold(subs, traverseSubscriptExps, tup);
@@ -2483,7 +2483,7 @@ algorithm
       TraverseFunc traverser;
       Argument arg;
     
-    case (Absyn.SUBSCRIPT(subScript = sub_exp), (traverser, arg))
+    case (Absyn.SUBSCRIPT(subscript = sub_exp), (traverser, arg))
       equation
         ((sub_exp, arg)) = traverser((sub_exp, arg));
       then

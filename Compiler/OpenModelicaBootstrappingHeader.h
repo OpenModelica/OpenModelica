@@ -2884,7 +2884,7 @@ static void *Absyn__NOSUB = MMC_REFSTRUCTLIT(Absyn__NOSUB__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Subscript_SUBSCRIPT__desc_added
 #define Absyn_Subscript_SUBSCRIPT__desc_added
-const char* Absyn_Subscript_SUBSCRIPT__desc__fields[1] = {"subScript"};
+const char* Absyn_Subscript_SUBSCRIPT__desc__fields[1] = {"subscript"};
 struct record_description Absyn_Subscript_SUBSCRIPT__desc = {
   "Absyn_Subscript_SUBSCRIPT",
   "Absyn.Subscript.SUBSCRIPT",
@@ -2895,7 +2895,7 @@ struct record_description Absyn_Subscript_SUBSCRIPT__desc = {
 extern struct record_description Absyn_Subscript_SUBSCRIPT__desc;
 #endif
 #define Absyn__SUBSCRIPT_3dBOX1 4
-#define Absyn__SUBSCRIPT(subScript) (mmc_mk_box2(4,&Absyn_Subscript_SUBSCRIPT__desc,subScript))
+#define Absyn__SUBSCRIPT(subscript) (mmc_mk_box2(4,&Absyn_Subscript_SUBSCRIPT__desc,subscript))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ComponentRef_CREF__FULLYQUALIFIED__desc_added
 #define Absyn_ComponentRef_CREF__FULLYQUALIFIED__desc_added
@@ -2914,7 +2914,7 @@ extern struct record_description Absyn_ComponentRef_CREF__FULLYQUALIFIED__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ComponentRef_CREF__QUAL__desc_added
 #define Absyn_ComponentRef_CREF__QUAL__desc_added
-const char* Absyn_ComponentRef_CREF__QUAL__desc__fields[3] = {"name","subScripts","componentRef"};
+const char* Absyn_ComponentRef_CREF__QUAL__desc__fields[3] = {"name","subscripts","componentRef"};
 struct record_description Absyn_ComponentRef_CREF__QUAL__desc = {
   "Absyn_ComponentRef_CREF__QUAL",
   "Absyn.ComponentRef.CREF_QUAL",
@@ -2925,7 +2925,7 @@ struct record_description Absyn_ComponentRef_CREF__QUAL__desc = {
 extern struct record_description Absyn_ComponentRef_CREF__QUAL__desc;
 #endif
 #define Absyn__CREF_5fQUAL_3dBOX3 4
-#define Absyn__CREF_5fQUAL(name,subScripts,componentRef) (mmc_mk_box4(4,&Absyn_ComponentRef_CREF__QUAL__desc,name,subScripts,componentRef))
+#define Absyn__CREF_5fQUAL(name,subscripts,componentRef) (mmc_mk_box4(4,&Absyn_ComponentRef_CREF__QUAL__desc,name,subscripts,componentRef))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ComponentRef_CREF__IDENT__desc_added
 #define Absyn_ComponentRef_CREF__IDENT__desc_added

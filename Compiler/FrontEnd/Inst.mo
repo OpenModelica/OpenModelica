@@ -8571,7 +8571,7 @@ algorithm
       list<Absyn.ComponentRef> l1,l2,res;
       Absyn.Exp exp;
       list<Absyn.Subscript> rest;
-    case ((Absyn.SUBSCRIPT(subScript = exp) :: rest))
+    case ((Absyn.SUBSCRIPT(subscript = exp) :: rest))
       equation
         l1 = getCrefFromDim(rest);
         l2 = Absyn.getCrefFromExp(exp,true);

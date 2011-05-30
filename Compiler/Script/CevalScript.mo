@@ -3009,7 +3009,7 @@ algorithm
         (cache,res) = cevalAstArraydim(cache,env, xs, impl, st, msg, info);
       then
         (cache,Absyn.NOSUB() :: res);
-    case (cache,env,(Absyn.SUBSCRIPT(subScript = e) :: xs),impl,st,msg,info)
+    case (cache,env,(Absyn.SUBSCRIPT(subscript = e) :: xs),impl,st,msg,info)
       equation
         (cache,res) = cevalAstArraydim(cache,env, xs, impl, st, msg, info);
         (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg, info);

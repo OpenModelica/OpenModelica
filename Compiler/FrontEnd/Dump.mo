@@ -2345,7 +2345,7 @@ algorithm
         Print.printBuf("Absyn.NOSUB");
       then
         ();
-    case (Absyn.SUBSCRIPT(subScript = e1))
+    case (Absyn.SUBSCRIPT(subscript = e1))
       equation
         Print.printBuf("Absyn.SUBSCRIPT(");
         printExp(e1);
@@ -2368,7 +2368,7 @@ algorithm
       Ident s;
       Absyn.Exp e1;
     case (Absyn.NOSUB()) then ":";
-    case (Absyn.SUBSCRIPT(subScript = e1))
+    case (Absyn.SUBSCRIPT(subscript = e1))
       equation
         s = printExpStr(e1);
       then
@@ -3501,7 +3501,7 @@ algorithm
       then
         ();
     
-    case Absyn.CREF_QUAL(name = s,subScripts = subs,componentRef = cr)
+    case Absyn.CREF_QUAL(name = s,subscripts = subs,componentRef = cr)
       equation
         Print.printBuf("Absyn.CREF_QUAL(\"");
         Print.printBuf(s);
@@ -3577,7 +3577,7 @@ algorithm
       then
         s_1;
     
-    case Absyn.CREF_QUAL(name = s,subScripts = subs,componentRef = cr)
+    case Absyn.CREF_QUAL(name = s,subscripts = subs,componentRef = cr)
       equation
         crs = printComponentRefStr(cr);
         subsstr = printSubscriptsStr(subs);
@@ -5321,11 +5321,11 @@ algorithm
       String s;
       Absyn.ComponentRef p;
       list<Absyn.Subscript> subscripts;
-    case Absyn.CREF_QUAL(name = s, subScripts = subscripts, componentRef = p)
+    case Absyn.CREF_QUAL(name = s, subscripts = subscripts, componentRef = p)
       equation
         Print.printBuf("record Absyn.CREF_QUAL name = \"");
         Print.printBuf(s);
-        Print.printBuf("\", subScripts = ");
+        Print.printBuf("\", subscripts = ");
         printListAsCorbaString(subscripts, printSubscriptAsCorbaString, ",");
         Print.printBuf(", componentRef = ");
         printComponentRefAsCorbaString(p);
@@ -6371,15 +6371,15 @@ protected function printSubscriptAsCorbaString
 algorithm
   _ := match subscript
     local
-      Absyn.Exp subScript;
+      Absyn.Exp sub;
     case Absyn.NOSUB()
       equation
         Print.printBuf("record Absyn.NOSUB end Absyn.NOSUB;");
       then ();
-    case Absyn.SUBSCRIPT(subScript)
+    case Absyn.SUBSCRIPT(sub)
       equation
-        Print.printBuf("record Absyn.SUBSCRIPT subScript = ");
-        printExpAsCorbaString(subScript);
+        Print.printBuf("record Absyn.SUBSCRIPT subscript = ");
+        printExpAsCorbaString(sub);
         Print.printBuf(" end Absyn.SUBSCRIPT;");
       then ();
   end match;

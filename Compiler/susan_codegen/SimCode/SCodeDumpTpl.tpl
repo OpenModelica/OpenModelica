@@ -656,7 +656,7 @@ template dumpCref(Absyn.ComponentRef cref)
 ::=
 match cref
   case CREF_QUAL(__) then 
-    '<%name%><%dumpSubscripts(subScripts)%>.<%dumpCref(componentRef)%>'
+    '<%name%><%dumpSubscripts(subscripts)%>.<%dumpCref(componentRef)%>'
   case CREF_IDENT(__) 
     then '<%name%><%dumpSubscripts(subscripts)%>'
   case CREF_FULLYQUALIFIED(__) then '.<%dumpCref(componentRef)%>'
@@ -891,7 +891,7 @@ template dumpSubscript(Absyn.Subscript subscript)
 ::=
 match subscript
   case NOSUB(__) then ':'
-  case SUBSCRIPT(__) then dumpExp(subScript)
+  case SUBSCRIPT(__) then dumpExp(subscript)
 end dumpSubscript;
 
 template dumpAnnotationOpt(Option<SCode.Annotation> annotation)
