@@ -3174,25 +3174,27 @@ protected function simplifyBinaryCommutativeWork
 algorithm
   exp := matchcontinue (op,lhs,rhs)
     local
-      DAE.Exp e1_1,e3,e,e1,e2,res,e_1,one;
-      Operator oper;
+      DAE.Exp e1_1,e3,e4,e,e1,e2,res,e_1,one;
+      Operator oper,op1,op2;
       Type ty,ty2,tp,tp2,ty1;
       list<DAE.Exp> exp_lst,exp_lst_1;
       DAE.ComponentRef cr1,cr2;
       Boolean b;
       Real r,r1,r2,r3;
-    // (a+b)c1 => ac1+bc1, for constant c1
+    // (a+b)c1 => ac1+bc1, for constant c1 and a or b
     case (DAE.MUL(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = ty2),exp2 = e2),e3)
       equation
         true = Expression.isConst(e3);
+        true = Expression.isConst(e1) or Expression.isConst(e2);
         res = DAE.BINARY(DAE.BINARY(e3,DAE.MUL(ty),e1),DAE.ADD(ty2),DAE.BINARY(e3,DAE.MUL(ty),e2));
       then
         res;
     
-    // (a-b)c1 => a/c1-b/c1, for constant c1
+    // (a-b)c1 => a/c1-b/c1, for constant c1 and a or b
     case (DAE.MUL(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.SUB(ty = ty2),exp2 = e2),e3)
       equation
         true = Expression.isConst(e3);
+        true = Expression.isConst(e1) or Expression.isConst(e2);
         res = DAE.BINARY(DAE.BINARY(e3,DAE.MUL(ty),e1),DAE.SUB(ty2),DAE.BINARY(e3,DAE.MUL(ty),e2));
       then
         res;
@@ -3259,6 +3261,29 @@ algorithm
         r3 = r1 *. r2;
       then
         DAE.BINARY(DAE.RCONST(r3),DAE.MUL(DAE.ET_REAL()),e2);
+
+    // (e*e1) + (e*e2) => e*(e1+e2)
+    case (op1 as DAE.ADD(ty = _),DAE.BINARY(e1,op2 as DAE.MUL(ty=_),e2),DAE.BINARY(e3,DAE.MUL(ty=_),e4))
+      equation
+        true = Expression.expEqual(e1,e3);
+      then
+        DAE.BINARY(e1,op2,DAE.BINARY(e2,op1,e4));
+    case (op1 as DAE.ADD(ty = _),DAE.BINARY(e1,op2 as DAE.MUL(ty=_),e2),DAE.BINARY(e3,DAE.MUL(ty=_),e4))
+      equation
+        true = Expression.expEqual(e2,e4);
+      then
+        DAE.BINARY(e2,op2,DAE.BINARY(e1,op1,e3));
+    // (e*e1) - (e*e2) => e*(e1-e2)
+    case (op1 as DAE.SUB(ty = _),DAE.BINARY(e1,op2 as DAE.MUL(ty=_),e2),DAE.BINARY(e3,DAE.MUL(ty=_),e4))
+      equation
+        true = Expression.expEqual(e1,e3);
+      then
+        DAE.BINARY(e1,op2,DAE.BINARY(e2,op1,e4));
+    case (op1 as DAE.SUB(ty = _),DAE.BINARY(e1,op2 as DAE.MUL(ty=_),e2),DAE.BINARY(e3,DAE.MUL(ty=_),e4))
+      equation
+        true = Expression.expEqual(e2,e4);
+      then
+        DAE.BINARY(e2,op2,DAE.BINARY(e1,op1,e3));
 
     // sqrt(e) * e => e^1.5
     case (DAE.MUL(ty = _),DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e1}),e2)
