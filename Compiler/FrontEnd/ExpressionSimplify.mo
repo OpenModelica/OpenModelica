@@ -3185,7 +3185,7 @@ algorithm
     case (DAE.MUL(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = ty2),exp2 = e2),e3)
       equation
         true = Expression.isConst(e3);
-        res = DAE.BINARY(DAE.BINARY(e1,DAE.MUL(ty),e3),DAE.ADD(ty2),DAE.BINARY(e2,DAE.MUL(ty),e3));
+        res = DAE.BINARY(DAE.BINARY(e3,DAE.MUL(ty),e1),DAE.ADD(ty2),DAE.BINARY(e3,DAE.MUL(ty),e2));
       then
         res;
     
@@ -3193,7 +3193,7 @@ algorithm
     case (DAE.MUL(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.SUB(ty = ty2),exp2 = e2),e3)
       equation
         true = Expression.isConst(e3);
-        res = DAE.BINARY(DAE.BINARY(e1,DAE.MUL(ty),e3),DAE.SUB(ty2),DAE.BINARY(e2,DAE.MUL(ty),e3));
+        res = DAE.BINARY(DAE.BINARY(e3,DAE.MUL(ty),e1),DAE.SUB(ty2),DAE.BINARY(e3,DAE.MUL(ty),e2));
       then
         res;
     
@@ -3202,6 +3202,76 @@ algorithm
       equation
         e = DAE.BINARY(e1,DAE.SUB(tp),e2);
       then e;
+
+    // 0+e => e
+    case (DAE.ADD(ty = ty),e1,e2)
+      equation
+        true = Expression.isZero(e1);
+      then
+        e2;
+    
+    // (e1/e2)e3 => (e1e3)/e2
+    case (DAE.MUL(ty = tp),e1,DAE.BINARY(exp1 = e2,operator = DAE.DIV(ty = tp2),exp2 = e3))
+      equation
+        res = DAE.BINARY(DAE.BINARY(e1,DAE.MUL(tp),e2),DAE.DIV(tp2),e3);
+      then
+        res;
+    
+    // 0 * a = 0
+    case (DAE.MUL(ty = ty),_,e2)
+      equation
+        true = Expression.isZero(e2);
+      then
+        e2;
+    
+    // 1 * a = a
+    case (DAE.MUL(ty = ty),e1,e2)
+      equation
+        true = Expression.isConstOne(e2);
+      then
+        e1;
+    
+    // -1 * a = -a
+    case (DAE.MUL(ty = ty),e1,e2)
+      equation
+        true = Expression.isConstMinusOne(e2);
+        e = DAE.UNARY(DAE.UMINUS(ty),e1);
+      then 
+        e;
+    
+    // -a * -b = a * b
+    case (DAE.MUL(ty = ty),DAE.UNARY(operator = DAE.UMINUS(ty = ty1),exp = e1),DAE.UNARY(operator = DAE.UMINUS(ty = ty2),exp = e2))
+      equation
+        e = DAE.BINARY(e1,DAE.MUL(ty),e2);
+      then
+        e;
+    
+    // r1 * (r2 * e) => (r1*r2)*e
+    case (DAE.MUL(ty = _),DAE.RCONST(real = r1),DAE.BINARY(DAE.RCONST(real = r2),DAE.MUL(DAE.ET_REAL()),e2))
+      equation
+        r3 = r1 *. r2;
+      then
+        DAE.BINARY(DAE.RCONST(r3),DAE.MUL(DAE.ET_REAL()),e2);
+    
+    // r1 * (e * r2) => (r1*r2)*e
+    case (DAE.MUL(ty = _),DAE.RCONST(real = r1),DAE.BINARY(e2,DAE.MUL(DAE.ET_REAL()),DAE.RCONST(real = r2)))
+      equation
+        r3 = r1 *. r2;
+      then
+        DAE.BINARY(DAE.RCONST(r3),DAE.MUL(DAE.ET_REAL()),e2);
+
+    // sqrt(e) * e => e^1.5
+    case (DAE.MUL(ty = _),DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e1}),e2)
+      equation
+        true = Expression.expEqual(e1,e2);
+      then
+        DAE.BINARY(e1,DAE.POW(DAE.ET_REAL()),DAE.RCONST(1.5));
+    // sqrt(e) * e^r => e^(r+0.5)
+    case (DAE.MUL(ty = _),DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e1}),DAE.BINARY(e2,DAE.POW(ty=_),e))
+      equation
+        true = Expression.expEqual(e1,e2);
+      then
+        DAE.BINARY(e1,DAE.POW(DAE.ET_REAL()),DAE.BINARY(e,DAE.ADD(DAE.ET_REAL()),DAE.RCONST(0.5)));
   end matchcontinue;
 end simplifyBinaryCommutativeWork;
 
@@ -3328,20 +3398,6 @@ algorithm
       then
         e;
     
-    // add with 0
-    case (DAE.ADD(ty = ty),e1,e2)
-      equation
-        true = Expression.isZero(e1);
-      then
-        e2;
-    
-    // add to 0 
-    case (DAE.ADD(ty = ty),e1,e2)
-      equation
-        true = Expression.isZero(e2);
-      then
-        e1;
-    
     // subtract from zero
     case (DAE.SUB(ty = ty),e1,e2)
       equation
@@ -3372,115 +3428,6 @@ algorithm
       then
         e;
     
-    // (e1/e2)e3 => (e1e3)/e2
-    case (DAE.MUL(ty = tp),DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = tp2),exp2 = e2),e3)
-      equation
-        res = DAE.BINARY(DAE.BINARY(e1,DAE.MUL(tp),e3),DAE.DIV(tp2),e2);
-      then
-        res;
-    
-    // e1(e2/e3) => (e1e2)/e3
-    case (DAE.MUL(ty = tp),e1,DAE.BINARY(exp1 = e2,operator = DAE.DIV(ty = tp2),exp2 = e3))
-      equation
-        res = DAE.BINARY(DAE.BINARY(e1,DAE.MUL(tp),e2),DAE.DIV(tp2),e3);
-      then
-        res;
-    
-    // a * 0 = 0
-    case (DAE.MUL(ty = ty),e1,e2)
-      equation
-        true = Expression.isZero(e1);
-      then
-        e1;
-    
-    // 0 * a = 0
-    case (DAE.MUL(ty = ty),e1,e2)
-      equation
-        true = Expression.isZero(e2);
-      then
-        e2;
-    
-    // a * 1 = a 
-    case (DAE.MUL(ty = ty),e1,e2)
-      equation
-        true = Expression.isConstOne(e1);
-      then
-        e2;
-    
-    // 1 * a = a
-    case (DAE.MUL(ty = ty),e1,e2)
-      equation
-        true = Expression.isConstOne(e2);
-      then
-        e1;
-    
-    // a * -1 = -a 
-    case (DAE.MUL(ty = ty),e1,e2)
-      equation
-        true = Expression.isConstMinusOne(e1);
-        e = DAE.UNARY(DAE.UMINUS(ty),e2);
-      then
-        e;
-    
-    // -1 * a = -a
-    case (DAE.MUL(ty = ty),e1,e2)
-      equation
-        true = Expression.isConstMinusOne(e2);
-        e = DAE.UNARY(DAE.UMINUS(ty),e1);
-      then 
-        e;
-    
-    // -a * -b = a * b
-    case (DAE.MUL(ty = ty),DAE.UNARY(operator = DAE.UMINUS(ty = ty1),exp = e1),DAE.UNARY(operator = DAE.UMINUS(ty = ty2),exp = e2))
-      equation
-        e = DAE.BINARY(e1,DAE.MUL(ty),e2);
-      then
-        e;
-    
-    // e1  -e2 => -e1  e2 
-    case (DAE.MUL(ty = ty),e1,DAE.UNARY(operator = DAE.UMINUS(ty = ty2),exp = e2))
-      equation
-        e1_1 = DAE.UNARY(DAE.UMINUS(ty),e1);
-      then
-        DAE.BINARY(e1_1,DAE.MUL(ty),e2);
-    
-    // r1 * (r2 * e) => (r1*r2)*e
-    case (DAE.MUL(ty = _),DAE.RCONST(real = r1),DAE.BINARY(DAE.RCONST(real = r2),DAE.MUL(DAE.ET_REAL()),e2))
-      equation
-        r3 = r1 *. r2;
-      then
-        DAE.BINARY(DAE.RCONST(r3),DAE.MUL(DAE.ET_REAL()),e2);
-    
-    // r1 * (e * r2) => (r1*r2)*e
-    case (DAE.MUL(ty = _),DAE.RCONST(real = r1),DAE.BINARY(e2,DAE.MUL(DAE.ET_REAL()),DAE.RCONST(real = r2)))
-      equation
-        r3 = r1 *. r2;
-      then
-        DAE.BINARY(DAE.RCONST(r3),DAE.MUL(DAE.ET_REAL()),e2);
-
-    // sqrt(e) * e => e^1.5
-    case (DAE.MUL(ty = _),DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e1}),e2)
-      equation
-        true = Expression.expEqual(e1,e2);
-      then
-        DAE.BINARY(e1,DAE.POW(DAE.ET_REAL()),DAE.RCONST(1.5));
-    case (DAE.MUL(ty = _),e1,DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e2}))
-      equation
-        true = Expression.expEqual(e1,e2);
-      then
-        DAE.BINARY(e1,DAE.POW(DAE.ET_REAL()),DAE.RCONST(1.5));
-    // sqrt(e) * e^r => e^(r+0.5)
-    case (DAE.MUL(ty = _),DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e1}),DAE.BINARY(e2,DAE.POW(ty=_),e))
-      equation
-        true = Expression.expEqual(e1,e2);
-      then
-        DAE.BINARY(e1,DAE.POW(DAE.ET_REAL()),DAE.BINARY(e,DAE.ADD(DAE.ET_REAL()),DAE.RCONST(0.5)));
-    case (DAE.MUL(ty = _),DAE.BINARY(e1,DAE.POW(ty=_),e),DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e2}))
-      equation
-        true = Expression.expEqual(e1,e2);
-      then
-        DAE.BINARY(e1,DAE.POW(DAE.ET_REAL()),DAE.BINARY(e,DAE.ADD(DAE.ET_REAL()),DAE.RCONST(0.5)));
-
     // 0 / x = 0
     case (DAE.DIV(ty = ty),e1,e2)
       equation
@@ -3599,6 +3546,14 @@ algorithm
         res = DAE.BINARY(e1,DAE.POW(DAE.ET_REAL()),DAE.BINARY(e2,DAE.MUL(DAE.ET_REAL()),e3));
       then
         res;
+        
+    // e1  -e2 => -e1  e2
+    // Note: This rule is *not* commutative 
+    case (DAE.MUL(ty = ty),e1,DAE.UNARY(operator = DAE.UMINUS(ty = ty2),exp = e2))
+      equation
+        e1_1 = DAE.UNARY(DAE.UMINUS(ty),e1);
+      then
+        DAE.BINARY(e1_1,DAE.MUL(ty),e2);    
     
     // relation: cr1 == cr2, where cr1 and cr2 are the same
     case (DAE.EQUAL(_),DAE.CREF(cr1,_),DAE.CREF(cr2,_)) 
