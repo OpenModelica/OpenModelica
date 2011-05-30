@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
         }
     }
     // finally show the main window
-    mainwindow.showMaximized();
+    mainwindow.show();
     // hide the splash screen
     splashScreen.finish(&mainwindow);
     if (mainwindow.mExitApplication)        // if there is some issue in running the application.
