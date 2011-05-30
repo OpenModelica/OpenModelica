@@ -3270,9 +3270,9 @@ algorithm
         DAE.BINARY(e1,op2,DAE.BINARY(e2,op1,e4));
     case (op1 as DAE.ADD(ty = _),DAE.BINARY(e1,op2 as DAE.MUL(ty=_),e2),DAE.BINARY(e3,DAE.MUL(ty=_),e4))
       equation
-        true = Expression.expEqual(e2,e4);
+        true = Expression.expEqual(e1,e4);
       then
-        DAE.BINARY(e2,op2,DAE.BINARY(e1,op1,e3));
+        DAE.BINARY(e1,op2,DAE.BINARY(e2,op1,e3));
     // (e*e1) - (e*e2) => e*(e1-e2)
     case (op1 as DAE.SUB(ty = _),DAE.BINARY(e1,op2 as DAE.MUL(ty=_),e2),DAE.BINARY(e3,DAE.MUL(ty=_),e4))
       equation
@@ -3281,9 +3281,9 @@ algorithm
         DAE.BINARY(e1,op2,DAE.BINARY(e2,op1,e4));
     case (op1 as DAE.SUB(ty = _),DAE.BINARY(e1,op2 as DAE.MUL(ty=_),e2),DAE.BINARY(e3,DAE.MUL(ty=_),e4))
       equation
-        true = Expression.expEqual(e2,e4);
+        true = Expression.expEqual(e1,e4);
       then
-        DAE.BINARY(e2,op2,DAE.BINARY(e1,op1,e3));
+        DAE.BINARY(e1,op2,DAE.BINARY(e2,op1,e3));
 
     // sqrt(e) * e => e^1.5
     case (DAE.MUL(ty = _),DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e1}),e2)
