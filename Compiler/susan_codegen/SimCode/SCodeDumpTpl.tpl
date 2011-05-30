@@ -139,14 +139,14 @@ match class
     let cdef_str = dumpClassDef(classDef)
     let header_str = dumpClassHeader(classDef, name)
     let footer_str = dumpClassFooter(classDef, cdef_str, name)
-    let cmt_str = dumpClassComment(classDef)
-    let cmt2_str = if cdef_str then 
-        if cmt_str then 
-          '<%\n%> <%cmt_str%>' 
-        else "" 
-      else cmt_str
+    //let cmt_str = dumpClassComment(classDef)
+    //let cmt2_str = if cdef_str then 
+    //    if cmt_str then 
+    //      '<%\n%> <%cmt_str%>' 
+    //    else "" 
+    //  else cmt_str
     <<
-    <%prefixes_str%> <%header_str%><%cmt2_str%> <%footer_str%>
+    <%prefixes_str%> <%header_str%> <%footer_str%>
     >>
 end dumpClass;
 
@@ -167,16 +167,26 @@ match classDef
     let nal_str = dumpAlgorithmSections(normalAlgorithmLst, "algorithm")
     let ial_str = dumpAlgorithmSections(initialAlgorithmLst, "initial algorithm")
     let extdecl_str = dumpExternalDeclOpt(externalDecl)
-    let annl_str = (annotationLst |> ann => dumpAnnotation(ann) ;separator="\n")
-    <<
-    <%el_str%>
-      <%annl_str%>
-    <%ieq_str%>
-    <%ial_str%>
-    <%neq_str%>
-    <%nal_str%>
-      <%extdecl_str%>
-    >>
+    let annl_str = (annotationLst |> ann => dumpAnnotationElement(ann) ;separator="\n")
+    //let cmt_str = dumpClassComment(comment)
+    let cdef_str = 
+      <<
+      <%el_str%>
+        <%annl_str%>
+      <%ieq_str%>
+      <%ial_str%>
+      <%neq_str%>
+      <%nal_str%>
+        <%extdecl_str%>
+      >>
+    let cmt_str = if cdef_str then
+      <<
+
+        <%dumpClassComment(comment)%>
+      >>
+      else
+      dumpClassComment(comment)
+    cdef_str
   case CLASS_EXTENDS(__) then
     let mod_str = dumpModifier(modifications)
     let cdef_str = dumpClassDef(composition)
@@ -222,23 +232,12 @@ match classDef
       >>
 end dumpClassFooter;
 
-template dumpClassComment(SCode.ClassDef classDef)
-::=
-match classDef
-  case PARTS(__) then dumpClassComment2(comment)
-  case CLASS_EXTENDS(__) then dumpClassComment(composition)
-  case DERIVED(__) then dumpClassComment2(comment)
-  case ENUMERATION(__) then dumpClassComment2(comment)
-  case OVERLOAD(__) then dumpClassComment2(comment)
-  case PDER(__) then dumpClassComment2(comment)
-end dumpClassComment;
-
-template dumpClassComment2(Option<SCode.Comment> comment)
+template dumpClassComment(Option<SCode.Comment> comment)
 ::= 
   match comment 
     case SOME(CLASS_COMMENT(comment = SOME(cmt))) then dumpComment(cmt)
     case SOME(cmt as COMMENT(__)) then dumpComment(cmt)
-end dumpClassComment2;
+end dumpClassComment;
 
 template dumpComponent(SCode.Element component)
 ::=
@@ -250,8 +249,9 @@ match component
     let attr_dim_str = dumpAttributeDim(attributes)
     let type_str = dumpTypeSpec(typeSpec)
     let mod_str = dumpModifier(modifications)
+    let cond_str = match condition case SOME(cond) then ' if <%dumpExp(cond)%>'
     let cmt_str = dumpCommentOpt(comment)
-    '<%prefix_str%><%attr_pre_str%><%type_str%><%attr_dim_str%> <%name%><%mod_str%><%cc_str%><%cmt_str%>' 
+    '<%prefix_str%><%attr_pre_str%><%type_str%><%attr_dim_str%> <%name%><%mod_str%><%cc_str%><%cond_str%><%cmt_str%>' 
 end dumpComponent;
 
 template dumpDefineUnit(SCode.Element defineUnit)
@@ -901,8 +901,12 @@ end dumpAnnotationOpt;
 template dumpAnnotation(SCode.Annotation annotation)
 ::=
 match annotation
-  case ANNOTATION(__) then 'annotation<%dumpModifier(modification)%>;'
+  case ANNOTATION(__) then ' annotation<%dumpModifier(modification)%>'
 end dumpAnnotation;
+
+template dumpAnnotationElement(SCode.Annotation annotation)
+::= '<%dumpAnnotation(annotation)%>;'
+end dumpAnnotationElement;
 
 template dumpExternalDeclOpt(Option<ExternalDecl> externalDecl)
 ::= match externalDecl case SOME(extdecl) then dumpExternalDecl(extdecl)
