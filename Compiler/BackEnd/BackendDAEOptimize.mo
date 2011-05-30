@@ -2885,7 +2885,7 @@ protected function constantLinearSystem1
 protected
   Option<BackendDAE.IncidenceMatrix> om,omT;
 algorithm
-  (outDAE,outM,outMT,outAss1,outAss2,outComps,outRunMatching,outEqnlst,outMovedVars):=
+  (outDAE,outM,outMT,outAss1,outAss2,outComps,outRunMatching,outEqnlst,movedVars):=
   matchcontinue (inDAE,inFunctionTree,inM,inMT,inAss1,inAss2,inComps,inEqnlst,inMovedVars)
     local
       BackendDAE.BackendDAE dae,dae1;
