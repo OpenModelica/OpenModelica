@@ -53,6 +53,7 @@ protected import SCodeEnv;
 protected import System;
 protected import Util;
 protected import SCodeLookup;
+protected import SCodeDump;
 
 protected type Env = SCodeEnv.Env;
 
@@ -121,8 +122,8 @@ algorithm
         env = SCodeEnv.updateExtendsInEnv(env);
         
         (prog, env) = SCodeDependency.analyse(inClassName, env, prog);
+        //print(SCodeDump.programStr(prog) +& "\n");
         (prog, env) = SCodeFlattenImports.flattenProgram(prog, env);
-        env = SCodeEnv.updateExtendsInEnv(env);
         prog = SCodeFlattenExtends.flattenProgram(inClassName, env, prog);
         
         //System.stopTimer();

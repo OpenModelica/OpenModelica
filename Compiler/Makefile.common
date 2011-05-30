@@ -114,6 +114,7 @@ TaskGraph.mo \
 XMLDump.mo
 
 TEMPLATE = \
+SCodeDumpTpl.mo \
 SimCodeC.mo \
 SimCodeCSharp.mo \
 SimCodeDump.mo \

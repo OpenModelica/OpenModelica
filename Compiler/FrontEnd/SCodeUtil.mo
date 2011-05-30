@@ -2065,5 +2065,4 @@ algorithm
   end match;  
 end translateEach;
 
-
 end SCodeUtil;

@@ -4185,7 +4185,7 @@ algorithm
 end printRow;
 
 
-protected function expPriority "function: expPriority
+public function expPriority "function: expPriority
 
  Returns a priority number for an expression.
  This function is used to output parenthesis when needed, e.g., 3(1+2) should output 3(1+2)

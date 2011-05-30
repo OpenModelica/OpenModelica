@@ -44,201 +44,22 @@ public import SCode;
 protected import Dump;
 protected import Util;
 protected import Print;
+protected import SCodeDumpTpl;
+protected import Tpl;
 
-protected function elseWhenEquationStr
-"@author: adrpo
-  Return the elsewhen parts as a string."
-  input  list<tuple<Absyn.Exp, list<SCode.EEquation>>> elseBranches;
-  output String str;
+public function programStr
+  input SCode.Program inProgram;
+  output String outString;
 algorithm
-  str := match(elseBranches)
-    local
-      Absyn.Exp exp;
-      list<SCode.EEquation> eqn_lst;
-      list<tuple<Absyn.Exp, list<SCode.EEquation>>> rest;
-      String s1, s2, s3, res;
-      list<String> str_lst;
-    
-    case ({}) then "";
-    
-    case ((exp,eqn_lst)::rest)
-      equation
-        s1 = Dump.printExpStr(exp);
-        str_lst = Util.listMap(eqn_lst, equationStr);
-        s2 = Util.stringDelimitList(str_lst, "\n");
-        s3 = elseWhenEquationStr(elseBranches);
-        res = stringAppendList({"\nelsewhen ",s1," then\n",s2,"\n", s3});
-      then 
-        res;
-  end match;
-end elseWhenEquationStr;
+  outString := Tpl.tplString(SCodeDumpTpl.dumpProgram, inProgram);
+end programStr;
 
 public function equationStr
-"function: equationStr
-  author: PA
-  Return the equation as a string."
   input SCode.EEquation inEEquation;
   output String outString;
 algorithm
-  outString := match (inEEquation)
-    local
-      String s1,s2,s3,s4,res,id;
-      list<String> tb_strs,fb_strs,str_lst;
-      Absyn.Exp e1,e2,exp;
-      list<Absyn.Exp> ifexp;
-      list<SCode.EEquation> ttb,fb,eqn_lst;
-      list<list<SCode.EEquation>> tb;
-      Absyn.ComponentRef cr1,cr2,cr;
-      Absyn.FunctionArgs fargs;
-      list<tuple<Absyn.Exp, list<SCode.EEquation>>> elseBranches;
-      
-    case (SCode.EQ_IF(condition = e1::ifexp,thenBranch = ttb::tb,elseBranch = fb))
-      equation
-        s1 = Dump.printExpStr(e1);
-        tb_strs = Util.listMap(ttb, equationStr);
-        fb_strs = Util.listMap(fb, equationStr);
-        s2 = Util.stringDelimitList(tb_strs, "\n");
-        s3 = Util.stringDelimitList(fb_strs, "\n");
-        s4 = elseIfEquationStr(ifexp,tb);
-        res = stringAppendList({"if ",s1," then ",s2,s4,"else ",s3,"end if;"});
-      then
-        res;
-    case (SCode.EQ_EQUALS(expLeft = e1,expRight = e2))
-      equation
-        s1 = Dump.printExpStr(e1);
-        s2 = Dump.printExpStr(e2);
-        res = stringAppendList({s1," = ",s2,";"});
-      then
-        res;
-    case (SCode.EQ_CONNECT(crefLeft = cr1,crefRight = cr2))
-      equation
-        s1 = Dump.printComponentRefStr(cr1);
-        s2 = Dump.printComponentRefStr(cr2);
-        res = stringAppendList({"connect(",s1,", ",s2,");"});
-      then
-        res;
-    case (SCode.EQ_FOR(index = id,range = exp,eEquationLst = eqn_lst))
-      equation
-        s1 = Dump.printExpStr(exp);
-        str_lst = Util.listMap(eqn_lst, equationStr);
-        s2 = Util.stringDelimitList(str_lst, "\n");
-        res = stringAppendList({"for ",id," in ",s1," loop\n",s2,"\nend for;"});
-      then
-        res;
-    case (SCode.EQ_WHEN(condition=exp, eEquationLst=eqn_lst, elseBranches=elseBranches))
-      equation
-        s1 = Dump.printExpStr(exp);
-        str_lst = Util.listMap(eqn_lst, equationStr);
-        s2 = Util.stringDelimitList(str_lst, "\n");
-        s3 = elseWhenEquationStr(elseBranches);
-        res = stringAppendList({"when ",s1," then\n",s2,s3,"\nend when;"});
-      then 
-        res;
-    case (SCode.EQ_ASSERT(condition = e1,message = e2))
-      equation
-        s1 = Dump.printExpStr(e1);
-        s2 = Dump.printExpStr(e2);
-        res = stringAppendList({"assert(",s1,", ",s2,");"});
-      then
-        res;
-    case (SCode.EQ_REINIT(cref = cr,expReinit = e1))
-      equation
-        s1 = Dump.printComponentRefStr(cr);
-        s2 = Dump.printExpStr(e1);
-        res = stringAppendList({"reinit(",s1,", ",s2,");"});
-      then
-        res;
-    case(SCode.EQ_NORETCALL(functionName = cr, functionArgs = fargs))
-      equation
-        s1 = Dump.printComponentRefStr(cr);
-        s2 = Dump.printFunctionArgsStr(fargs);
-        res = s1 +& "(" +& s2 +& ");";
-      then res;
-  end match;
+  outString := Tpl.tplString(SCodeDumpTpl.dumpEEquation, inEEquation);
 end equationStr;
-
-protected function prettyPrintOptModifier 
-"Author BZ, 2008-07
- Pretty print SCode.Mod"
-input Option<Absyn.Modification> oam;
-input String comp;
-output String str;
-algorithm str := matchcontinue(oam,comp)
-  local
-    Absyn.Modification m;
-  case(NONE(),_) then "";
-  case(SOME(m),comp)
-    equation
-      str = prettyPrintModifier(m,comp);
-      then
-        str;
-  end matchcontinue;
-end prettyPrintOptModifier;
-
-protected function prettyPrintModifier "
-Author BZ, 2008-07
-Helper function for prettyPrintOptModifier"
-  input Absyn.Modification oam;
-  input String comp;
-  output String str;
-algorithm str := matchcontinue(oam,comp)
-  local
-    Absyn.Modification m;
-    Absyn.Exp exp;
-    list<Absyn.ElementArg> laea;
-    Absyn.ElementArg aea;
-  case(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp)),comp)
-    equation
-      str = comp +& " = " +&Dump.printExpStr(exp);
-      then
-        str;
-  case(Absyn.CLASSMOD((laea as aea::{}),Absyn.NOMOD()),comp)
-    equation
-    str = comp +& "(" +&prettyPrintElementModifier(aea) +&")";
-    then
-      str;
-  case(Absyn.CLASSMOD((laea as _::{}),Absyn.NOMOD()),comp)
-    equation
-      str = comp +& "({" +& Util.stringDelimitList(Util.listMap(laea,prettyPrintElementModifier),", ") +& "})";
-    then
-      str;
-  end matchcontinue;
-end prettyPrintModifier;
-
-protected function prettyPrintElementModifier 
-"Author BZ, 2008-07
- Helper function for prettyPrintOptModifier
- TODO: implement type of new redeclare component"
-  input Absyn.ElementArg aea;
-  output String str;
-algorithm str := matchcontinue(aea)
-  local
-    Option<Absyn.Modification> oam;
-    String compName;
-    Absyn.ElementSpec spec;
-    Absyn.ComponentRef cr;
-  case(Absyn.MODIFICATION(modification = oam,componentRef=cr))
-    equation
-      compName = Absyn.printComponentRefStr(cr);
-    then prettyPrintOptModifier(oam,compName);
-  case(Absyn.REDECLARATION(elementSpec=spec))
-    equation
-      compName = Absyn.elementSpecName(spec);
-    then
-      "Redeclaration of (" +& compName +& ")";
-end matchcontinue;
-end prettyPrintElementModifier;
-
-public function printMod
-"function: printMod
-  This function prints a modification.
-  The code is excluded from the report for brevity."
-  input SCode.Mod m;
-  String s;
-algorithm
-  s := printModStr(m);
-  Print.printBuf(s);
-end printMod;
 
 public function printModStr
 "function: printModStr
@@ -246,43 +67,7 @@ public function printModStr
   input SCode.Mod inMod;
   output String outString;
 algorithm
-  outString := matchcontinue (inMod)
-    local
-      String finalPrefixstr,str,res,each_str,subs_str,ass_str;
-      list<String> strs;
-      SCode.Final finalPrefix;
-      list<SCode.Element> elist;
-      SCode.Each each_;
-      list<SCode.SubMod> subs;
-      Option<tuple<Absyn.Exp,Boolean>> ass;
-    
-    case SCode.NOMOD() then "";
-    
-    case SCode.REDECL(finalPrefix = finalPrefix,elementLst = elist)
-      equation
-        Print.printBuf("redeclare(");
-        finalPrefixstr = finalStr(finalPrefix);
-        strs = Util.listMap(elist, printElementStr);
-        str = Util.stringDelimitList(strs, ",");
-        res = stringAppendList({"redeclare(",finalPrefixstr,str,")"});
-      then
-        res;
-    
-    case SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = ass)
-      equation
-        finalPrefixstr = finalStr(finalPrefix);
-        each_str = eachStr(each_);
-        subs_str = printSubs1Str(subs);
-        ass_str = printEqmodStr(ass);
-        res = stringAppendList({finalPrefixstr,each_str,subs_str,ass_str});
-      then
-        res;
-    case _
-      equation
-        Print.printBuf("#-- SCodeDump.printModStr failed\n");
-      then
-        fail();
-  end matchcontinue;
+  outString := Tpl.tplString(SCodeDumpTpl.dumpModifier, inMod);
 end printModStr;
 
 public function restrString
@@ -322,30 +107,7 @@ public function restrictionStringPP
   input SCode.Restriction inRestriction;
   output String outString;
 algorithm
-  outString := match(inRestriction)
-    case SCode.R_CLASS() then "class";
-    case SCode.R_OPTIMIZATION() then "optimization";
-    case SCode.R_MODEL() then "model";
-    case SCode.R_RECORD() then "record";
-    case SCode.R_BLOCK() then "block";
-    case SCode.R_CONNECTOR(true) then "expandable connector";
-    case SCode.R_CONNECTOR(false) then "connector";
-    case SCode.R_OPERATOR(true) then "operator function";
-    case SCode.R_OPERATOR(false) then "operator";
-    case SCode.R_TYPE() then "type";
-    case SCode.R_PACKAGE() then "package";
-    case SCode.R_FUNCTION() then "function";
-    case SCode.R_EXT_FUNCTION() then "external function";
-    case SCode.R_ENUMERATION() then "enumeration";
-    case SCode.R_PREDEFINED_INTEGER() then "IntegerType";
-    case SCode.R_PREDEFINED_REAL() then "RealType";
-    case SCode.R_PREDEFINED_STRING() then "StringType";
-    case SCode.R_PREDEFINED_BOOLEAN() then "BooleanType";
-    case SCode.R_PREDEFINED_ENUMERATION() then "EnumType";
-    case SCode.R_METARECORD(name = _) then "record";
-    case SCode.R_UNIONTYPE() then "uniontype";
-    else "#Internal error: missing case in SCode.restrictionStringPP#";
-  end match;
+  outString := Tpl.tplString(SCodeDumpTpl.dumpRestriction, inRestriction);
 end restrictionStringPP;
 
 public function printRestr
@@ -372,94 +134,6 @@ algorithm
         ();
   end matchcontinue;
 end printFinal;
-
-protected function printSubsStr
-"function: printSubsStr
-  Prints a SCode.SubMod list to a string."
-  input list<SCode.SubMod> inSubModLst;
-  output String outString;
-algorithm
-  outString := matchcontinue (inSubModLst)
-    local
-      String s,res,n,mod_str,str,sub_str;
-      SCode.Mod mod;
-      list<SCode.SubMod> subs;
-      list<SCode.Subscript> ss;
-    
-    case {} then "";
-    
-    case {SCode.NAMEMOD(ident = n,A = mod)}
-      equation
-        s = printModStr(mod);
-        res = n +& " " +& s;
-      then
-        res;
-    case (SCode.NAMEMOD(ident = n,A = mod) :: subs)
-      equation
-        mod_str = printModStr(mod);
-        str = printSubsStr(subs);
-        res = stringAppendList({n, " ", mod_str, ", ", str});
-      then
-        res;
-    case {SCode.IDXMOD(subscriptLst = ss,an = mod)}
-      equation
-        str = Dump.printSubscriptsStr(ss);
-        mod_str = printModStr(mod);
-        res = stringAppend(str, mod_str);
-      then
-        res;
-    case (SCode.IDXMOD(subscriptLst = ss,an = mod) :: subs)
-      equation
-        str = Dump.printSubscriptsStr(ss);
-        mod_str = printModStr(mod);
-        sub_str = printSubsStr(subs);
-        res = stringAppendList({str,mod_str,", ",sub_str});
-      then
-        res;
-  end matchcontinue;
-end printSubsStr;
-
-public function printSubs1Str
-"function: printSubs1Str
-  Helper function to printSubsStr."
-  input list<SCode.SubMod> inSubModLst;
-  output String outString;
-algorithm
-  outString:=
-  matchcontinue (inSubModLst)
-    local
-      String s,res;
-      list<SCode.SubMod> l;
-    case {} then "";
-    case l
-      equation
-        s = printSubsStr(l);
-        res = stringAppendList({"(",s,")"});
-      then
-        res;
-  end matchcontinue;
-end printSubs1Str;
-
-protected function printEqmodStr
-"function: printEqmodStr
-  Helper function to printModStr."
-  input Option<tuple<Absyn.Exp,Boolean>> inAbsynExpOption;
-  output String outString;
-algorithm
-  outString := match (inAbsynExpOption)
-    local
-      String str,res;
-      Absyn.Exp e;
-      Boolean b;
-    case NONE() then "";
-    case SOME((e,b))
-      equation
-        str = Dump.printExpStr(e);
-        res = stringAppend(" = ", str);
-      then
-        res;
-  end match;
-end printEqmodStr;
 
 public function printElementList
 "function: printElementList
@@ -556,50 +230,7 @@ public function unparseElementStr
   input SCode.Element inElement;
   output String outString;
 algorithm
-  outString := match (inElement)
-    local
-      String str,res,n,mod_str,s,vs,ioStr;
-      Absyn.TypeSpec typath;
-      SCode.Mod mod;
-      SCode.Element cl;
-      SCode.Variability var;
-      Option<SCode.Comment> comment;
-      Absyn.Path path;
-      Absyn.Import imp;
-      Absyn.InnerOuter io;
-
-    case SCode.EXTENDS(baseClassPath = path,modifications = mod)
-      equation
-        str = Absyn.pathString(path);
-        res = stringAppendList({"extends ",str,";"});
-      then
-        res;
-
-    case SCode.COMPONENT(name = n,prefixes = SCode.PREFIXES(innerOuter = io),
-                   attributes = SCode.ATTR(variability = var),
-                   typeSpec = typath,modifications = mod,comment = comment)
-      equation
-        ioStr = Dump.unparseInnerouterStr(io);
-        mod_str = printModStr(mod);
-        s = Dump.unparseTypeSpec(typath);
-        vs = unparseVariability(var);
-        vs = Util.if_(stringEq(vs, ""), "", vs +& " ");
-        res = stringAppendList({ioStr,vs,s," ",n," ",mod_str,";\n"});
-      then
-        res;
-
-    case inElement
-      equation
-        str = printClassStr(inElement);
-        res = stringAppendList({"class ",str,";\n"});
-      then
-        res;
-
-    case (SCode.IMPORT(imp = imp))
-      equation
-         str = "import "+& Absyn.printImportString(imp) +& ";";
-      then str;
-  end match;
+  outString := Tpl.tplString(SCodeDumpTpl.dumpElement, inElement);
 end unparseElementStr;
 
 public function shortElementStr
@@ -833,33 +464,6 @@ algorithm
     case(SCode.EQUATION(eEquation=e)) then equationStr(e);
   end matchcontinue;
 end equationStr2;
-
-protected function elseIfEquationStr
-"Author BZ, 2008-09
- Function for printing elseif statements to string."
-  input list<Absyn.Exp> conditions;
-  input list<list<SCode.EEquation>> elseIfBodies;
-  output String elseIfString;
-algorithm
-  elseIfString := match(conditions,elseIfBodies)
-    local
-      Absyn.Exp cond;
-      list<SCode.EEquation> eib;
-      String conString, bodyString,recString,resString;
-      list<String> bodyStrings;
-    case({},{}) then "";
-    case(cond::conditions,eib::elseIfBodies)
-      equation
-        conString = Dump.printExpStr(cond);
-        bodyStrings = Util.listMap(eib, equationStr);
-        bodyString = Util.stringDelimitList(bodyStrings, "\n");
-        recString = elseIfEquationStr(conditions,elseIfBodies);
-        recString = Util.if_(Util.isEmptyString(recString), "", "\n" +& recString);
-        resString = " elseif " +& conString +& " then\n" +& bodyString +& recString;
-      then
-        resString;
-  end match;
-end elseIfEquationStr;
 
 public function printInitialStr
 "prints SCode.Initial to a string"

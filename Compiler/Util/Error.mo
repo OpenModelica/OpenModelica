@@ -598,7 +598,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (DUPLICATE_CLASSES_TOP_LEVEL,TRANSLATION(),ERROR(),
           "Duplicate classes on top level is not allowed (got %s)."),
           (DUPLICATE_ELEMENTS_NOT_IDENTICAL,TRANSLATION(),ERROR(),
-          "Duplicate elements (due to inherited elements) not identical:\n\tfirst element is:  %s\tsecond element is: %s"),
+          "Duplicate elements (due to inherited elements) not identical:\n\tfirst element is:  %s\n\tsecond element is: %s"),
           (DUPLICATE_ELEMENTS_NOT_SYNTACTICALLY_IDENTICAL,TRANSLATION(),WARNING(),
           "Duplicate elements (due to inherited elements) not syntactically identical but semantically identical:\n\tfirst element is:  %s\tsecond element is: %s\tModelica specification requires that elements are exactly identical."),          
           (DUPLICATE_CLASSES_NOT_EQUIVALENT,TRANSLATION(),ERROR(),
