@@ -1,5 +1,6 @@
 # includes
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/meta)
 
 # OMC Compiler
 SET(OMC_DEBUG ${OMCTRUNCHOME}/build/bin/omcd.exe)
@@ -8,6 +9,7 @@ MESSAGE(" omc is " ${OMC_DEBUG})
 ADD_SUBDIRECTORY(libf2c)
 ADD_SUBDIRECTORY(sendData)
 ADD_SUBDIRECTORY(ModelicaExternalC)
+ADD_SUBDIRECTORY(meta)
 
 # -------------------------------------------------------------
 # MACRO definitions
@@ -38,12 +40,13 @@ ENDMACRO(SHOW_VARIABLE)
 MACRO(BUILDMODEL model dir Flags CSRC)
 
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime)
-
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime/meta)
+  
   # Variablen fuer openmodelica2sarturis
-  SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp
+  SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_init.txt)
-  SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp
+  SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
   #               ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
 				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.h
 				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_records.c)
@@ -58,7 +61,7 @@ MACRO(BUILDMODEL model dir Flags CSRC)
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
 
   ADD_EXECUTABLE(${model} ${OMC_OUTPUT} ${CSRC})
-  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c sendData ModelicaExternalC)
+  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c meta sendData ModelicaExternalC)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
@@ -74,15 +77,16 @@ ENDMACRO(BUILDMODEL)
 MACRO(BUILDMODELMOS model mos Flags CSRC)
 
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime)
-
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime/meta)
+  
   SET(OMC_MODELNAME ${model})  
   # generate model.mos 
   
   # Variablen fuer openmodelica2sarturis
-  SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp
+  SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_init.txt)
-  SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp
+  SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
   #                ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
 				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.h
 				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_records.c)
@@ -96,7 +100,7 @@ MACRO(BUILDMODELMOS model mos Flags CSRC)
 
  
   ADD_EXECUTABLE(${model} ${OMC_OUTPUT} ${CSRC})
-  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c sendData ModelicaExternalC)
+  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c meta sendData ModelicaExternalC)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
@@ -112,7 +116,8 @@ ENDMACRO(BUILDMODELMOS)
 MACRO(BUILDMODELFMU model dir Flags CSRC)
 
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime)
-
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime/meta)
+  
   SET(OMC_MODELNAME ${model})  
   SET(OMC_MODELDIR ${dir})  
   # generate model.mos 
@@ -120,10 +125,10 @@ MACRO(BUILDMODELFMU model dir Flags CSRC)
   CONFIGURE_FILE(${MOSFILE_IN} ${dir}/${model}_FMU.mos)
   
   # Variablen fuer openmodelica2sarturis
-  SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp
+  SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_init.txt)
-  SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp
+  SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
                   ${CMAKE_CURRENT_BINARY_DIR}/${model}_FMU.cpp
   #               ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
 				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.h
@@ -141,7 +146,7 @@ MACRO(BUILDMODELFMU model dir Flags CSRC)
 				   ${OMCTRUNCHOME}/c_runtime/fmiModelTypes.h)
   
   ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
-  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c sendData ModelicaExternalC)
+  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c meta sendData ModelicaExternalC)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
@@ -157,15 +162,16 @@ ENDMACRO(BUILDMODELFMU)
 MACRO(BUILDMODELFMUMOS model mos Flags CSRC)
 
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime)
-
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime/meta)
+ 
   SET(OMC_MODELNAME ${model})  
   # generate model.mos 
   
   # Variablen fuer openmodelica2sarturis
-  SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp
+  SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_init.txt)
-  SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp
+  SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
                   ${CMAKE_CURRENT_BINARY_DIR}/${model}_FMU.cpp
   #               ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
 				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.h
@@ -182,8 +188,9 @@ MACRO(BUILDMODELFMUMOS model mos Flags CSRC)
                    ${OMCTRUNCHOME}/c_runtime/fmiModelFunctions.h
 				   ${OMCTRUNCHOME}/c_runtime/fmiModelTypes.h)
   
+  ADD_DEFINITIONS(/TP)
   ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
-  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c sendData ModelicaExternalC)
+  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c meta sendData ModelicaExternalC)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
@@ -215,6 +222,10 @@ ELSE(MODELS_INSTALL)
    HIDE_VARIABLE(MODELS_INSTALL_PATH)
 ENDIF(MODELS_INSTALL)
 
+#					   meta_modelica.c 
+#					   meta_modelica_builtin.cpp
+#					   meta_modelica_real.cpp meta_modelica_string_lit.c
+
 # Quellen und Header
 SET(c_runtime_sources  boolean_array.c index_spec.c integer_array.c
                        memory_pool.c base_array.c real_array.c
@@ -226,19 +237,15 @@ SET(c_runtime_sources  boolean_array.c index_spec.c integer_array.c
 					   trsapp.c daux.c    dlamch.c  dpmpar.c
 					   hybrd.c   lsame.c   newuob.c   r1mpyq.c
 					   update.c division.c java_interface.c
-					   meta_modelica.c 
-#					   meta_modelica_builtin.cpp
-#					   meta_modelica_real.cpp meta_modelica_string_lit.c
 					   rtclock.c ModelicaUtilities.c simulation_varinfo.c
 					   read_matlab4.c read_csv.cpp)
 
 SET(c_runtime_headers  blaswrap.h f2c.h integer_array.h memory_pool.h
                        modelica_string.h base_array.h inline.h real_array.h
 					   string_array.h boolean_array.h index_spec.h matrix.h
-					   modelica.h read_write.h utility.h meta_modelica.h
-					   meta_modelica_builtin.h java_interface.h jni.h division.h
+					   modelica.h read_write.h utility.h
+					   java_interface.h jni.h division.h
 					   jni_md.h jni_md_solaris.h jni_md_windows.h fortran_types.h
-#					   meta_modelica_builtin.h meta_modelica_real.h meta_modelica_string_lit.h
 					   rtclock.h ModelicaUtilities.h simulation_varinfo.h read_matlab4.h read_csv.h
 					   sendData/sendData.h)				 
 						 
@@ -263,7 +270,7 @@ if(WIN32)
 #add_definitions(/MT)
 endif(WIN32)
 ADD_LIBRARY(c_runtime ${c_runtime_sources} ${c_runtime_headers})
-TARGET_LINK_LIBRARIES(c_runtime f2c)
+TARGET_LINK_LIBRARIES(c_runtime f2c meta)
 # Library sim
 if(WIN32)
 #add_definitions(/MT)
