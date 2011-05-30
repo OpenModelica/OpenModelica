@@ -222,6 +222,13 @@ algorithm
         ((e_1,true));
     
     // binary scalar simplifications
+    case (((DAE.BINARY(exp1 = e1,operator = op,exp2 = e2)),_))
+      equation
+        e_1 = simplifyBinaryCommutative(op, e1, e2);
+      then
+        ((e_1,true));
+    
+    // binary scalar simplifications
     case (((exp as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2)),_))
       equation
         e_1 = simplifyBinary(op, e1, e2);
@@ -3145,7 +3152,60 @@ algorithm
   end match;
 end safeIntOp;
 
-public function simplifyBinary
+protected function simplifyBinaryCommutative
+  "This function simplifies commutative binary expressions."
+  input Operator op;
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  output DAE.Exp exp;
+algorithm
+  exp := matchcontinue (op,lhs,rhs)
+    case (op,lhs,rhs) then simplifyBinaryCommutativeWork(op,lhs,rhs);
+    case (op,lhs,rhs) then simplifyBinaryCommutativeWork(op,rhs,lhs);
+  end matchcontinue;
+end simplifyBinaryCommutative;
+
+protected function simplifyBinaryCommutativeWork
+  "This function simplifies commutative binary expressions."
+  input Operator op;
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  output DAE.Exp exp;
+algorithm
+  exp := matchcontinue (op,lhs,rhs)
+    local
+      DAE.Exp e1_1,e3,e,e1,e2,res,e_1,one;
+      Operator oper;
+      Type ty,ty2,tp,tp2,ty1;
+      list<DAE.Exp> exp_lst,exp_lst_1;
+      DAE.ComponentRef cr1,cr2;
+      Boolean b;
+      Real r,r1,r2,r3;
+    // (a+b)c1 => ac1+bc1, for constant c1
+    case (DAE.MUL(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = ty2),exp2 = e2),e3)
+      equation
+        true = Expression.isConst(e3);
+        res = DAE.BINARY(DAE.BINARY(e1,DAE.MUL(ty),e3),DAE.ADD(ty2),DAE.BINARY(e2,DAE.MUL(ty),e3));
+      then
+        res;
+    
+    // (a-b)c1 => a/c1-b/c1, for constant c1
+    case (DAE.MUL(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.SUB(ty = ty2),exp2 = e2),e3)
+      equation
+        true = Expression.isConst(e3);
+        res = DAE.BINARY(DAE.BINARY(e1,DAE.MUL(ty),e3),DAE.SUB(ty2),DAE.BINARY(e2,DAE.MUL(ty),e3));
+      then
+        res;
+    
+    // a+(-b)
+    case (DAE.ADD(ty = tp),e1,DAE.UNARY(operator = DAE.UMINUS(ty = tp2),exp = e2))
+      equation
+        e = DAE.BINARY(e1,DAE.SUB(tp),e2);
+      then e;
+  end matchcontinue;
+end simplifyBinaryCommutativeWork;
+
+protected function simplifyBinary
 "function: simplifyBinary
   This function simplifies binary expressions."
   input Operator inOperator2;
@@ -3189,36 +3249,6 @@ algorithm
         res = DAE.BINARY(DAE.BINARY(e1,DAE.DIV(ty),e3),DAE.SUB(ty2),DAE.BINARY(e2,DAE.DIV(ty),e3));
       then
         res;
-    
-    // (a+b)c1 => ac1+bc1, for constant c1
-    case (DAE.MUL(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = ty2),exp2 = e2),e3)
-      equation
-        true = Expression.isConst(e3);
-        res = DAE.BINARY(DAE.BINARY(e1,DAE.MUL(ty),e3),DAE.ADD(ty2),DAE.BINARY(e2,DAE.MUL(ty),e3));
-      then
-        res;
-    
-    // (a-b)c1 => a/c1-b/c1, for constant c1
-    case (DAE.MUL(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.SUB(ty = ty2),exp2 = e2),e3)
-      equation
-        true = Expression.isConst(e3);
-        res = DAE.BINARY(DAE.BINARY(e1,DAE.MUL(ty),e3),DAE.SUB(ty2),DAE.BINARY(e2,DAE.MUL(ty),e3));
-      then
-        res;
-    
-    // a+(-b)
-    case (DAE.ADD(ty = tp),e1,DAE.UNARY(operator = DAE.UMINUS(ty = tp2),exp = e2))
-      equation
-        e = DAE.BINARY(e1,DAE.SUB(tp),e2);
-      then
-        e;
-            
-    // (-b)+a
-    case (DAE.ADD(ty = tp),DAE.UNARY(operator = DAE.UMINUS(ty = tp2),exp = e2), e1)
-      equation
-        e1 = DAE.BINARY(e1,DAE.SUB(tp),e2);
-      then
-        e1;
     
     // a/(b/c) => (ac)/b)
     case (DAE.DIV(ty = tp),e1,DAE.BINARY(exp1 = e2,operator = DAE.DIV(ty = tp2),exp2 = e3))
