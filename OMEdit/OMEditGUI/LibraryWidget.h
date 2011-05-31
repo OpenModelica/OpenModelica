@@ -63,7 +63,7 @@ class LibraryComponent;
 class ModelicaTreeNode : public QTreeWidgetItem
 {
 public:
-    ModelicaTreeNode(QString text, QString parentName, QString tooltip, int type, QTreeWidget *parent = 0);
+    ModelicaTreeNode(QString text, QString parentName,QString namestruc, QString tooltip, int type, QTreeWidget *parent = 0);
     static QIcon getModelicaNodeIcon(int type);
 
     int mType;
@@ -107,7 +107,7 @@ public slots:
 class LibraryTreeNode : public QTreeWidgetItem
 {
 public:
-    LibraryTreeNode(QString text, QString parentName, QString tooltip, QTreeWidget *parent = 0);
+    LibraryTreeNode(QString text, QString parentName,QString namestruc , QString tooltip, QTreeWidget *parent = 0);
 
     int mType;
     QString mName;

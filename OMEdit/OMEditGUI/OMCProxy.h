@@ -97,6 +97,7 @@ public:
     bool isStandardLibraryLoaded();
     QStringList getClassNames(QString className = QString());
     QStringList getClassNamesRecursive(QString className);
+    QStringList getClassInformation(QString modelName);
     QStringList getPackages(QString packageName);
     bool isPackage(QString className);
     bool isBuiltinType(QString typeName);

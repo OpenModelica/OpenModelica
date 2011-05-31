@@ -157,6 +157,10 @@ QString StringHandler::getSubStringFromDots(QString value)
     return list.at(list.count() - 1);
 }
 
+
+
+
+
 //! Removes the last dot from the string.
 //! @param value is the string which is parsed.
 QString StringHandler::removeLastDot(QString value)

@@ -44,16 +44,16 @@
 
 #include "LibraryWidget.h"
 
-ModelicaTreeNode::ModelicaTreeNode(QString text, QString parentName, QString tooltip, int type, QTreeWidget *parent)
+ModelicaTreeNode::ModelicaTreeNode(QString text, QString parentName, QString namestruc ,QString tooltip, int type, QTreeWidget *parent)
     : QTreeWidgetItem(parent)
 {
     mType = type;
     mName = text;
     mParentName = parentName;
-    mNameStructure = tooltip;
+    mNameStructure = namestruc;
 
     setText(0, mName);
-    setToolTip(0, mNameStructure);
+    setToolTip(0, tooltip);
     setIcon(0, getModelicaNodeIcon(mType));
 }
 
@@ -188,12 +188,16 @@ void ModelicaTree::addNode(QString name, int type, QString parentName, QString p
 
     if (parentName.isEmpty())
     {
-        newTreePost = new ModelicaTreeNode(name, parentName, parentStructure + name, type, this);
+        QStringList info = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(parentStructure + name);
+        QString toolt = "Name: " + name + "\n" + "Description: " + info[1] + "\n" + "Location: " + info[2] + "\n" + "Path: " + parentStructure + name + "\n" + "Type: " + info[0] ;
+        newTreePost = new ModelicaTreeNode(name, parentName, parentStructure + name, toolt , type, this);
         insertTopLevelItem(0, newTreePost);
     }
     else
     {
-        newTreePost = new ModelicaTreeNode(name, parentName, parentStructure + name, type);
+        QStringList info = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(parentStructure + name);
+        QString toolt = "Name: " + name + "\n" + "Description: " + info[1] + "\n" + "Location: " + info[2] + "\n" + "Path: " + parentStructure + name + "\n" + "Type: " + info[0] ;
+        newTreePost = new ModelicaTreeNode(name, parentName, parentStructure + name,toolt, type);
         ModelicaTreeNode *treeNode = getNode(StringHandler::removeLastDot(parentStructure));
         treeNode->addChild(newTreePost);
     }
@@ -443,15 +447,15 @@ void ModelicaTree::loadingLibraryComponent(ModelicaTreeNode *treeNode, QString c
     }
 }
 
-LibraryTreeNode::LibraryTreeNode(QString text, QString parentName, QString tooltip, QTreeWidget *parent)
+LibraryTreeNode::LibraryTreeNode(QString text, QString parentName, QString namestruc , QString tooltip, QTreeWidget *parent)
     : QTreeWidgetItem(parent)
 {
     mName = text;
     mParentName = parentName;
-    mNameStructure = tooltip;
+    mNameStructure = namestruc;
 
     setText(0, mName);
-    setToolTip(0, mNameStructure);
+    setToolTip(0, tooltip);
 }
 
 LibraryTree::LibraryTree(LibraryWidget *pParent)
@@ -506,10 +510,14 @@ void LibraryTree::addModelicaStandardLibrary()
 {
     // load Modelica Standard Library.
     QStringList libs = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->loadStandardLibrary();
+
+
     if (mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->isStandardLibraryLoaded())
     {
         foreach (QString lib, libs) {
-            LibraryTreeNode *newTreePost = new LibraryTreeNode(lib, QString(""), lib, this);
+            QStringList info = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(lib);
+            QString toolt = "Name: " + lib + "\n" + "Description: " + info[1] + "\n" + "Location: " + info[2] + "\n" + "Path: " + lib + "\n" + "Type: " + info[0] ;
+            LibraryTreeNode *newTreePost = new LibraryTreeNode(lib, QString(""),lib , toolt, this);
             int classType = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassRestriction(lib);
             newTreePost->mType = classType;
             newTreePost->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
@@ -562,10 +570,13 @@ void LibraryTree::loadModelicaLibraryHierarchy(QString value, QString prefixStr)
         QTreeWidgetItemIterator it(this);
         while (*it)
         {
-            if ((*it)->toolTip(0) == value)
-            {
-                (*it)->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicator);
-            }
+            LibraryTreeNode *pItem = dynamic_cast<LibraryTreeNode*>(*it);
+            if (pItem->mNameStructure.compare(value) == 0)
+                pItem->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicator);
+            //if (StringHandler::getSubStringAfterPath((*it)->toolTip(0)) == value)
+            //{
+            //    (*it)->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicator);
+            //}
             ++it;
         }
     }
@@ -611,8 +622,11 @@ void LibraryTree::addClass(QList<LibraryTreeNode *> *tempPackageNodesList,
 {
     mpParentLibraryWidget->mpParentMainWindow->mpStatusBar->showMessage(QString("Loading: ")
                                                                       .append(parentStructure + className));
+    QString lib = QString(parentStructure + className);
+    QStringList info = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(lib);
+    QString toolt = "Name: " + className + "\n" + "Description: " + info[1] + "\n" + "Location: " + info[2] + "\n" + "Path: " + lib + "\n" + "Type: " + info[0] ;
     LibraryTreeNode *newTreePost = new LibraryTreeNode(className, parentClassName,
-                                                       QString(parentStructure + className), (QTreeWidget*)0);
+                                                       lib,toolt,(QTreeWidget*)0);
 
     // If Loaded class is package show treewidgetitem expand indicator
     // Remove if using load once library feature
@@ -653,10 +667,15 @@ void LibraryTree::addNodes(QList<LibraryTreeNode *> nodes)
             QTreeWidgetItemIterator it(this);
             while (*it)
             {
-                if ((*it)->toolTip(0) == StringHandler::removeLastWordAfterDot(node->mNameStructure))
+                LibraryTreeNode *pItem = dynamic_cast<LibraryTreeNode*>(*it);
+                if (pItem->mNameStructure.compare(StringHandler::removeLastWordAfterDot(node->mNameStructure)) == 0)
                 {
-                    (*it)->addChild(node);
+                    pItem->addChild(node);
                 }
+                //if (StringHandler::getSubStringAfterPath((*it)->toolTip(0)) == StringHandler::removeLastWordAfterDot(node->mNameStructure))
+                //{
+                 //   (*it)->addChild(node);
+                //}
                 ++it;
             }
         }
@@ -666,9 +685,17 @@ void LibraryTree::addNodes(QList<LibraryTreeNode *> nodes)
 bool LibraryTree::isTreeItemLoaded(QTreeWidgetItem *item)
 {
     foreach (QString str, mTreeList)
-        if (str == item->toolTip(0))
-            return false;
-    return true;
+    {
+        LibraryTreeNode *pItem = dynamic_cast<LibraryTreeNode*>(item);
+        if (pItem->mNameStructure.compare(str) == 0)
+        return false;
+
+        //if (str == StringHandler::getSubStringAfterPath(item->toolTip(0)))
+         //  return false;
+    }
+        return true;
+
+
 }
 
 bool LibraryTree::sortNodesAscending(const LibraryTreeNode *node1, const LibraryTreeNode *node2)
@@ -682,10 +709,11 @@ void LibraryTree::expandLib(QTreeWidgetItem *item)
 {
     if (isTreeItemLoaded(item))
     {
-        mTreeList.append(item->toolTip(0));
+        LibraryTreeNode *pItem = dynamic_cast<LibraryTreeNode*>(item);
+        mTreeList.append(pItem->mNameStructure);
         // Set the cursor to wait.
         setCursor(Qt::WaitCursor);
-        loadModelicaLibraryHierarchy(item->toolTip(0));
+        loadModelicaLibraryHierarchy(pItem->mNameStructure);
         item->setExpanded(true);
         mpParentLibraryWidget->mpParentMainWindow->mpStatusBar->clearMessage();
         // Remove the wait cursor
@@ -772,21 +800,24 @@ void LibraryTree::viewDocumentation()
 {
     MainWindow *pMainWindow = mpParentLibraryWidget->mpParentMainWindow;
     pMainWindow->documentationdock->show();
-    pMainWindow->mpDocumentationWidget->show(mpParentLibraryWidget->mSelectedLibraryNode->toolTip(0));
+    LibraryTreeNode *pItem = dynamic_cast<LibraryTreeNode*>(mpParentLibraryWidget->mSelectedLibraryNode);
+    pMainWindow->mpDocumentationWidget->show(pItem->mNameStructure);
 }
 
 void LibraryTree::flatModel()
 {
+    LibraryTreeNode *pItem = dynamic_cast<LibraryTreeNode*>(mpParentLibraryWidget->mSelectedLibraryNode);
     FlatModelWidget *widget = new FlatModelWidget(mpParentLibraryWidget->mSelectedLibraryNode->text(0),
-                                                  mpParentLibraryWidget->mSelectedLibraryNode->toolTip(0),
+                                                  pItem->mNameStructure,
                                                   mpParentLibraryWidget->mpParentMainWindow);
     widget->show();
 }
 
 void LibraryTree::checkLibraryModel()
 {
+    LibraryTreeNode *pItem = dynamic_cast<LibraryTreeNode*>(mpParentLibraryWidget->mSelectedLibraryNode);
     CheckModelWidget *widget = new CheckModelWidget(mpParentLibraryWidget->mSelectedLibraryNode->text(0),
-                                                    mpParentLibraryWidget->mSelectedLibraryNode->toolTip(0),
+                                                    pItem->mNameStructure,
                                                     mpParentLibraryWidget->mpParentMainWindow);
     widget->show();
 }
@@ -838,7 +869,7 @@ void LibraryTree::treeItemPressed(QTreeWidgetItem *item)
     drag->setMimeData(mimeData);
 
     // get the component SVG to show on drag
-    LibraryComponent *libraryComponent = mpParentLibraryWidget->getLibraryComponentObject(item->toolTip(0));
+    LibraryComponent *libraryComponent = mpParentLibraryWidget->getLibraryComponentObject(node->mNameStructure);
 
     if (libraryComponent)
     {
@@ -1118,7 +1149,9 @@ void SearchMSLWidget::searchMSL()
 
     foreach (QString foundedItem, foundedItemsList)
     {
-        LibraryTreeNode *newTreePost = new LibraryTreeNode(foundedItem, QString(""), foundedItem, mpSearchedItemsTree);
+        QStringList info = mpParentMainWindow->mpOMCProxy->getClassInformation(foundedItem);
+        QString toolt = "Name: " + foundedItem + "\n" + "Description: " + info[1] + "\n" + "Location: " + info[2] + "\n" + "Path: " + foundedItem + "\n" + "Type: " + info[0] ;
+        LibraryTreeNode *newTreePost = new LibraryTreeNode(foundedItem, QString(""), foundedItem,toolt, mpSearchedItemsTree);
         newTreePost->mType = mpParentMainWindow->mpOMCProxy->getClassRestriction(foundedItem);
         mpSearchedItemsTree->insertTopLevelItem(0, newTreePost);
 
@@ -1277,7 +1310,10 @@ void LibraryWidget::updateNodeText(QString text, QString textStructure, Modelica
     treeNode->mName = text;
     treeNode->mNameStructure = textStructure;
     treeNode->setText(0, text);
-    treeNode->setToolTip(0, textStructure);
+    QStringList info = mpParentMainWindow->mpOMCProxy->getClassInformation(textStructure);
+    QString toolt = "Name: " + text + "\n" + "Description: " + info[1] + "\n" + "Location: " + info[2] + "\n" + "Path: " + textStructure + "\n" + "Type: " + info[0] ;
+
+    treeNode->setToolTip(0, toolt);
 
     // if the node has childs
     int count = treeNode->childCount();
