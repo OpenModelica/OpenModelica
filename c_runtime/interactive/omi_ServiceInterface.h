@@ -94,7 +94,7 @@ void fillSimDataNames_AND_SimDataNamesFilter_WithValuesFromGlobalData(
 //************ END Global Data Value Request and Manipulation ************
 
 /*
- * Calls the "read_input(...)" function from "simulation_input.cpp" and stores the simulation start data into
+ * Calls the "read_input_xml(...)" function from "simulation_input.cpp" and stores the simulation start data into
  * a set of variables from "omi_Calculation.cpp"
  */
 void getSimulationStartData(double*, long*, double*, string*, string*);

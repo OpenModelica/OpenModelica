@@ -249,6 +249,7 @@ typedef struct sim_DATA {
 
   const char* modelName; /* For error messages */
   const char* modelFilePrefix; /* For filenames, input/output */
+  const char* modelGUID; /* to check if the model_init.xml match the model */
   const struct omc_varInfo* statesNames;
   const struct omc_varInfo* stateDerivativesNames;
   const struct omc_varInfo* algebraicsNames;

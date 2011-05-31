@@ -386,7 +386,10 @@ int SystemImpl__writeFile(const char* filename, const char* data)
     fclose(file);
     return 1;
   }
-  fflush(file);
+  if (fflush(file) != 0)
+  {
+    fprintf(stderr, "System.writeFile: error flushing file: %s!\n", filename);
+  }
   fclose(file);
   return 0;
 }

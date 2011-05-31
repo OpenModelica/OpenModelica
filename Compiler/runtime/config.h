@@ -36,7 +36,7 @@
 #define DEFAULT_CC "gcc"
 #define DEFAULT_CXX "g++"
 
-#define DEFAULT_LDFLAGS "-lc_runtime -lregex"
+#define DEFAULT_LDFLAGS "-lc_runtime -lregex -lexpat"
 
 #define CONFIG_PLATFORM "WIN32"
 #define CONFIG_MODELICA_SPEC_PLATFORM "win32"

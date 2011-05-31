@@ -289,10 +289,14 @@ static int PrintImpl__writeBuf(const char* filename)
       "Error writing to file %s.",
       c_tokens,
       1);
+    fprintf(stderr, "Print.writeBuf: error writing to file: %s!\n", filename);
     fclose(file);
     return 1;
   }
-  fflush(file);
+  if (fflush(file) != 0)
+  {
+    fprintf(stderr, "Print.writeBuf: error flushing file: %s!\n", filename);
+  }
   fclose(file);
   return 0;
 }

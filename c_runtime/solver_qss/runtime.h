@@ -1,7 +1,7 @@
 #ifndef QSS_RUNTIME
 #define QSS_RUNTIME
 #include "simulation_runtime.h"
-#include "simulation_input.h"
+#include "simulation_input_xml.h"
 #include "simulation_init.h"
 #include "simulation_events.h"
 #include "simulation_result.h"

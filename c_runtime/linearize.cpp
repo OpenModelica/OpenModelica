@@ -62,7 +62,7 @@ int linearize()
   int size_A = globalData->nStates;
   int size_Inputs = globalData->nInputVars;
   int size_Outputs = globalData->nOutputVars;
-  double* matrixA   = new double[size_A*size_A];
+  double* matrixA = new double[size_A*size_A];
   double* matrixB = new double[size_A*size_Inputs];
   double* matrixC = new double[size_Outputs*size_A];
   double* matrixD = new double[size_Outputs*size_Inputs];
@@ -118,6 +118,7 @@ int linearize()
 
   FILE *fout = fopen(filename.c_str(),"wb");
   fprintf(fout, linear_model_frame, strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str());
+  fflush(fout);
   fclose(fout);
 
   return 0;

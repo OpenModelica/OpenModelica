@@ -884,7 +884,7 @@ algorithm
     
     case (cache,env,"translateModel",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,msg)
       equation
-        (cache,ret_val,st_1,_,_,_,_) = translateModel(cache,env, className, st, filenameprefix,true,NONE());
+        (cache,ret_val,st_1,_,_,_,_) = translateModel(cache, env, className, st, filenameprefix, true, NONE());
       then
         (cache,ret_val,st_1);
    
@@ -899,7 +899,7 @@ algorithm
         
     case (cache,env,"translateModelFMU",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,msg)
       equation
-        (cache,ret_val,st_1) = translateModelFMU(cache,env, className, st, filenameprefix, true, NONE());
+        (cache,ret_val,st_1) = translateModelFMU(cache, env, className, st, filenameprefix, true, NONE());
       then
         (cache,ret_val,st_1);
     
@@ -2325,7 +2325,7 @@ algorithm
         true = (build >. edit);
         oldDir = System.pwd();
         changeToTempDirectory(cdToTemp);
-        init_filename = stringAppendList({filenameprefix,"_init.txt"});
+        init_filename = stringAppendList({filenameprefix,"_init.xml"});
         exeFile = filenameprefix +& System.getExeExt();
         existFile = System.regularFileExists(exeFile);
         _ = System.cd(oldDir);
@@ -2352,7 +2352,7 @@ algorithm
         //  starttime_r, stoptime_r, interval_r, tolerance_r, method_str,options_str,outputFormat_str);
         
         System.realtimeTick(RT_CLOCK_BUILD_MODEL);
-        init_filename = filenameprefix +& "_init.txt"; //a hack ? should be at one place somewhere
+        init_filename = filenameprefix +& "_init.xml"; //a hack ? should be at one place somewhere
         //win1 = getWithinStatement(classname);
         s3 = extractNoCleanCommand(noClean);
         
@@ -2471,7 +2471,7 @@ algorithm
         stringAppendList({omhome,
           omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile"," ",fileprefix," ",noClean});
         Debug.fprintln("dynload", "compileModel: running " +& s_call);
-        0 = System.systemCall(s_call)  ;
+        0 = System.systemCall(s_call);
         Debug.fprintln("dynload", "compileModel: successful! ");
       then
         ();

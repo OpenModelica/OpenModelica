@@ -30,7 +30,7 @@
  */
 
 encapsulated package SimCode
-" file:         SimCode.mo
+" file:        SimCode.mo
   package:     SimCode
   description: Code generation using Susan templates
 
@@ -8814,48 +8814,48 @@ algorithm
     local
       String str,str2,omhome,omhomelib,lpsolvelib;
       
-      // Lapack on MinGW/Windows is linked against f2c
+    // Lapack on MinGW/Windows is linked against f2c
     case Absyn.STRING("Lapack")
       equation
         true = "Windows_NT" ==& System.os();
       then {"-llapack-mingw", "-ltmglib-mingw", "-lblas-mingw", "-lf2c"};
       
-        // omcruntime on windows needs linking with mico2313 and wsock!
+    // omcruntime on windows needs linking with mico2313 and wsock and then some :)
     case Absyn.STRING(str as "omcruntime")
       equation
         true = "Windows_NT" ==& System.os();
         str = "-l" +& str;
         strs = getLibraryStringInGccFormat(Absyn.STRING("Lapack"));
-        strs = str :: "-lsqlite3" :: "-llpsolve55" :: "-lmico2313" :: "-lws2_32" :: "-lregex" :: strs;
+        strs = str :: "-lexpat" :: "-lsqlite3" :: "-llpsolve55" :: "-lmico2313" :: "-lws2_32" :: "-lregex" :: strs;
       then 
         strs;
         
-        // The library is not actually named libLapack.so.
-        // Which is a problem, since MSL says it does.
+    // The library is not actually named libLapack.so.
+    // Which is a problem, since MSL says it does.
     case Absyn.STRING("Lapack") then {"-llapack"};
         
-        // Wonder if there may be issues if we have duplicates in the Corba libs
-        // and the other libs. Some other developer will probably swear over this
-        // hack some day, but at least I get an early weekend.
+    // Wonder if there may be issues if we have duplicates in the Corba libs
+    // and the other libs. Some other developer will probably swear over this
+    // hack some day, but at least I get an early weekend.
     case Absyn.STRING("OpenModelicaCorba")
       equation
         str = System.getCorbaLibs();
       then {str};
         
-        // If omcruntime is linked statically against omniORB, we need to include those here as well
+    // If omcruntime is linked statically against omniORB, we need to include those here as well
     case Absyn.STRING(str as "omcruntime")
       equation
         false = "Windows_NT" ==& System.os();
       then 
         System.getRuntimeLibs();
         
-        // If the string contains a dot, it's a good path that should not be prefix -l
+    // If the string contains a dot, it's a good path that should not be prefix -l
     case Absyn.STRING(str)
       equation
         false = -1 == System.stringFind(str, ".");
       then {str};
         
-        // If the string starts with a -, it's probably -l or -L gcc flags
+    // If the string starts with a -, it's probably -l or -L gcc flags
     case Absyn.STRING(str)
       equation
         true = "-" ==& stringGetStringChar(str, 1);

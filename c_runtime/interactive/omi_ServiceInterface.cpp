@@ -18,7 +18,7 @@
  */
 
 #include "simulation_runtime.h"
-#include "simulation_input.h"
+#include "simulation_input_xml.h"
 #include "solver_main.h"
 #include "options.h"
 #include "omi_ServiceInterface.h"
@@ -449,7 +449,7 @@ void fillSimDataNames_AND_SimDataNamesFilter_WithValuesFromGlobalData(
 //****** END OPTIMIZATION ******
 
 /*
- * Calls the "read_input(...)" function from "simulation_input.cpp" and stores the simulation start data into
+ * Calls the "read_input_xml(...)" function from "simulation_input.cpp" and stores the simulation start data into
  * a set of variables from "omi_Calculation.cpp"
  */
 void getSimulationStartData(double *stepSize, long *outputSteps,
@@ -461,7 +461,7 @@ void getSimulationStartData(double *stepSize, long *outputSteps,
 
   gdMutex.Lock();
 
-  read_input(argcTEMP, argvTEMP, globalData, &start, &stop, stepSize,
+  read_input_xml(argcTEMP, argvTEMP, globalData, &start, &stop, stepSize,
       outputSteps, tolerance, method, outputFormat, &variableFilter);
   callExternalObjectConstructors(globalData);
 

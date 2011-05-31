@@ -41,7 +41,7 @@
 #include <regex.h>
 #endif
 #include "simulation_runtime.h"
-#include "simulation_input.h"
+#include "simulation_input_xml.h"
 #include "solver_main.h"
 
 #ifdef _OMC_QSS_LIB
@@ -578,7 +578,7 @@ startNonInteractiveSimulation(int argc, char**argv)
   long outputSteps = 500;
   double tolerance = 1e-4;
   string method, outputFormat, variableFilter;
-  read_input(argc, argv, globalData, &start, &stop, &stepSize, &outputSteps,
+  read_input_xml(argc, argv, globalData, &start, &stop, &stepSize, &outputSteps,
       &tolerance, &method, &outputFormat, &variableFilter);
   initializeOutputFilter(globalData,variableFilter);
   callExternalObjectConstructors(globalData);

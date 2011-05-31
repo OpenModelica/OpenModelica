@@ -53,17 +53,30 @@ template translateModel(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
-  let()= textFile(simulationFile(simCode), '<%fileNamePrefix%>.c')
+  let guid = getUUIDStr()
+  
+  let()= textFile(simulationMakefile(simCode), '<%fileNamePrefix%>.makefile') // write the makefile first!  
+  
   let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls), '<%fileNamePrefix%>_functions.h')
+  
   let()= textFile(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, literals), '<%fileNamePrefix%>_functions.c')
+  
   let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
-  let()= textFile(simulationMakefile(simCode), '<%fileNamePrefix%>.makefile')
-  if simulationSettingsOpt then //tests the Option<> for SOME()
-     let()= textFile(simulationInitFile(simCode), '<%fileNamePrefix%>_init.txt')
-     "" //empty result for true case 
-  //else "" //the else is automatically empty, too
+  
+  let _ = if simulationSettingsOpt then //tests the Option<> for SOME()
+            let()= textFile(simulationInitFile(simCode,guid), '<%fileNamePrefix%>_init.xml')
+            ""
+          else 
+            "" //the else is automatically empty, too
+  
+  // adpro: write the main .c file last! Make on windows doesn't seem to realize that 
+  //        the .c file is newer than the .o file if we have succesive simulate commands
+  //        for the same model (i.e. see testsuite/linearize/simextfunction.mos).
+  let()= textFile(simulationFile(simCode,guid), '<%fileNamePrefix%>.c')
+  
   //this top-level template always returns an empty result 
   //since generated texts are written to files directly
+  ""
 end translateModel;
 
 
@@ -83,7 +96,7 @@ case FUNCTIONCODE(__) then
 end translateFunctions;
 
 
-template simulationFile(SimCode simCode)
+template simulationFile(SimCode simCode, String guid)
  "Generates code for main C file for simulation target."
 ::=
 match simCode
@@ -100,7 +113,7 @@ case simCode as SIMCODE(__) then
   #else
   int measure_time_flag = 0;
   #endif
-  <%globalData(modelInfo,fileNamePrefix)%>
+  <%globalData(modelInfo,fileNamePrefix,guid)%>
   
   <%equationInfo(appendLists(appendAllequation(JacobianMatrixes),allEquations))%>
   
@@ -177,14 +190,15 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
 end simulationFileHeader;
 
 
-template globalData(ModelInfo modelInfo, String fileNamePrefix)
+template globalData(ModelInfo modelInfo, String fileNamePrefix, String guid)
  "Generates global data in simulation file."
 ::=
 let () = System.tmpTickReset(1000)
 match modelInfo
 case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   <<
-  #define NHELP <%varInfo.numHelpVars%>
+  #define MODEL_GUID  "{<%guid%>}" // to check if the init file match the model!
+  #define NHELP <%varInfo.numHelpVars%> // number of helper vars
   #define NG <%varInfo.numZeroCrossings%> // number of zero crossings
   #define NG_SAM <%varInfo.numTimeEvents%> // number of zero crossings that are samples
   #define NX <%varInfo.numStateVars%>  // number of states
@@ -199,13 +213,13 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   #define MAXORD 5
   #define NYSTR <%varInfo.numStringAlgVars%> // number of alg. string variables
   #define NASTR <%varInfo.numStringAliasVars%> // number of alias string variables
-  #define NPSTR <%varInfo.numStringParamVars%> // number of alg. string variables
+  #define NPSTR <%varInfo.numStringParamVars%> // number of string parameters
   #define NYINT <%varInfo.numIntAlgVars%> // number of alg. int variables
   #define NAINT <%varInfo.numIntAliasVars%> // number of alias int variables
-  #define NPINT <%varInfo.numIntParams%> // number of alg. int variables
+  #define NPINT <%varInfo.numIntParams%> // number of int parameters
   #define NYBOOL <%varInfo.numBoolAlgVars%> // number of alg. bool variables
   #define NABOOL <%varInfo.numBoolAliasVars%> // number of alias bool variables
-  #define NPBOOL <%varInfo.numBoolParams%> // number of alg. bool variables
+  #define NPBOOL <%varInfo.numBoolParams%> // number of bool parameters
   #define NJACVARS <%varInfo.numJacobianVars%> // number of jacobian variables
   
   static DATA* localData = 0;
@@ -538,6 +552,7 @@ template functionInitializeDataStruc()
     returnData->var_attr = var_attr;
     returnData->modelName = model_name;
     returnData->modelFilePrefix = model_fileprefix;
+    returnData->modelGUID = MODEL_GUID;
     returnData->statesNames = state_names;
     returnData->stateDerivativesNames = derivative_names;
     returnData->algebraicsNames = algvars_names;
@@ -594,7 +609,7 @@ case EXTOBJINFO(__) then
       >>
     ;separator="\n")
   <<
-  /* Has to be performed after _init.txt file has been read */
+  /* Has to be performed after _init.xml file has been read */
   void callExternalObjectConstructors(DATA* localData) {
     <%varDecls%>
     state mem_state;
@@ -1896,51 +1911,95 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   MAINFILE=<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.c
   MAINOBJ=<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.o
   
-  .PHONY: <%fileNamePrefix%>
-  <%fileNamePrefix%>: $(MAINOBJ) <%fileNamePrefix%>_records.o
+  .PHONY: clean <%fileNamePrefix%>
+  <%fileNamePrefix%>: clean $(MAINOBJ) <%fileNamePrefix%>_records.o
   <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(EXEEXT) $(MAINOBJ) <%fileNamePrefix%>_records.o $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> -lsim -linteractive $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> 
   <%fileNamePrefix%>.conv.c: <%fileNamePrefix%>.c
   <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
   <%\t%> @mv $@.tmp $@
   $(MAINOBJ): $(MAINFILE) <%fileNamePrefix%>_functions.c <%fileNamePrefix%>_functions.h
+  clean:
+  <%\t%> @rm -f <%fileNamePrefix%>_records.o $(MAINOBJ) 
   >>
 end simulationMakefile;
 
+template xsdateTime(DateTime dt)
+ "YYYY-MM-DDThh:mm:ssZ"
+::=
+  match dt
+  case DATETIME(__) then '<%year%>-<%twodigit(mon)%>-<%twodigit(mday)%>T<%twodigit(hour)%>:<%twodigit(min)%>:<%twodigit(sec)%>Z'
+end xsdateTime;
 
-template simulationInitFile(SimCode simCode)
+template simulationInitFile(SimCode simCode, String guid)
  "Generates the contents of the makefile for the simulation case."
 ::=
 match simCode
-case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as SIMVARS(__)), 
+case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINFO(__), vars = vars as SIMVARS(__)), 
              simulationSettingsOpt = SOME(s as SIMULATION_SETTINGS(__))) 
   then
   <<
-  <%s.startTime%> // start value
-  <%s.stopTime%> // stop value
-  <%s.stepSize%> // step value
-  <%s.tolerance%> // tolerance
-  "<%s.method%>" // method
-  "<%s.outputFormat%>" // outputFormat
-  "<%s.variableFilter%>" // variableFilter
-  <%vi.numStateVars%> // n states
-  <%vi.numAlgVars%> // n alg vars
-  <%vi.numParams%> // n parameters
-  <%vi.numIntParams%> // n int parameters
-  <%vi.numIntAlgVars%> // n int variables
-  <%vi.numBoolParams%> // n bool parameters
-  <%vi.numBoolAlgVars%> // n bool variables
-  <%vi.numStringParamVars%> // n string-parameters
-  <%vi.numStringAlgVars%> // n string variables
-  <%initVals(vars.stateVars)%>
-  <%initVals(vars.derivativeVars)%>
-  <%initVals(vars.algVars)%>
-  <%initVals(vars.paramVars)%>
-  <%initVals(vars.intParamVars)%>
-  <%initVals(vars.intAlgVars)%>
-  <%initVals(vars.boolParamVars)%>
-  <%initVals(vars.boolAlgVars)%>    
-  <%initVals(vars.stringParamVars)%>
-  <%initVals(vars.stringAlgVars)%>  
+  <?xml version = "1.0" encoding="UTF-8"?>
+  
+  <!-- description of the model interface using an extention of the FMI standard -->
+  <fmiModelDescription 
+    fmiVersion                          = "1.0"
+    
+    modelName                           = "<%dotPath(modelInfo.name)%>"
+    modelIdentifier                     = "<%underscorePath(modelInfo.name)%>"
+    
+    guid                                = "{<%guid%>}"
+    
+    generationTool                      = "OpenModelica Compiler <%getVersionNr()%>"
+    generationDateAndTime               = "<%xsdateTime(getCurrentDateTime())%>"
+    
+    variableNamingConvention            = "structured"
+    
+    numberOfHelperVariables             = "<%vi.numHelpVars%>"  cmt_numberOfHelperVariables             = "NHELP:    number of helper variables,                         OMC" 
+    numberOfEventIndicators             = "<%vi.numZeroCrossings%>"  cmt_numberOfEventIndicators             = "NG:       number of zero crossings,                           FMI"
+    numberOfTimeEvents                  = "<%vi.numTimeEvents%>"  cmt_numberOfTimeEvents                  = "NG_SAM:   number of zero crossings that are samples,          OMC"
+                
+    numberOfInputVariables              = "<%vi.numInVars%>"  cmt_numberOfInputVariables              = "NI:       number of inputvar on topmodel,                     OMC"
+    numberOfOutputVariables             = "<%vi.numOutVars%>"  cmt_numberOfOutputVariables             = "NO:       number of outputvar on topmodel,                    OMC"
+ 
+    numberOfResidualsForInitialization  = "<%vi.numResiduals%>"  cmt_numberOfResidualsForInitialization  = "NR:       number of residuals for initialialization function, OMC"
+    numberOfExternalObjects             = "<%vi.numExternalObjects%>"  cmt_numberOfExternalObjects             = "NEXT:     number of external objects,                         OMC"
+    numberOfFunctions                   = "<%listLength(functions)%>"  cmt_numberOfFunctions                   = "NFUNC:    number of functions used by the simulation,         OMC"
+    numberOfJacobianVariables           = "<%vi.numJacobianVars%>"  cmt_numberOfJacobianVariables           = "NJACVARS: number of jacobian variables,                       OMC"    
+ 
+    numberOfContinuousStates            = "<%vi.numStateVars%>"  cmt_numberOfContinuousStates            = "NX:       number of states,                                   FMI"     
+    numberOfRealAlgebraicVariables      = "<%vi.numAlgVars%>"  cmt_numberOfRealAlgebraicVariables      = "NY:       number of real variables,                           OMC"
+    numberOfRealAlgebraicAliasVariables = "<%vi.numAlgAliasVars%>"  cmt_numberOfRealAlgebraicAliasVariables = "NA:       number of alias variables,                          OMC"
+    numberOfRealParameters              = "<%vi.numParams%>"  cmt_numberOfRealParameters              = "NP:       number of parameters,                               OMC"
+
+    numberOfIntegerAlgebraicVariables   = "<%vi.numIntAlgVars%>"  cmt_numberOfIntegerAlgebraicVariables   = "NYINT:    number of alg. int variables,                       OMC"
+    numberOfIntegerAliasVariables       = "<%vi.numIntAliasVars%>"  cmt_numberOfIntegerAliasVariables       = "NAINT:    number of alias int variables,                      OMC"
+    numberOfIntegerParameters           = "<%vi.numIntParams%>"  cmt_numberOfIntegerParameters           = "NPINT:    number of int parameters,                           OMC"    
+      
+    numberOfStringAlgebraicVariables    = "<%vi.numStringAlgVars%>"  cmt_numberOfStringAlgebraicVariables    = "NYSTR:    number of alg. string variables,                    OMC"
+    numberOfStringAliasVariables        = "<%vi.numStringAliasVars%>"  cmt_numberOfStringAliasVariables        = "NASTR:    number of alias string variables,                   OMC"
+    numberOfStringParameters            = "<%vi.numStringParamVars%>"  cmt_numberOfStringParameters            = "NPSTR:    number of string parameters,                        OMC"
+  
+    numberOfBooleanAlgebraicVariables   = "<%vi.numBoolAlgVars%>"  cmt_numberOfBooleanAlgebraicVariables   = "NYBOOL:   number of alg. bool variables,                      OMC"
+    numberOfBooleanAliasVariables       = "<%vi.numBoolAliasVars%>"  cmt_numberOfBooleanAliasVariables       = "NABOOL:   number of alias bool variables,                     OMC"
+    numberOfBooleanParameters           = "<%vi.numBoolParams%>"  cmt_numberOfBooleanParameters           = "NPBOOL:   number of bool parameters,                          OMC" >
+
+    
+    <!-- startTime, stopTime, tolerance are FMI specific, all others are OMC specific -->
+    <DefaultExperiment 
+      startTime      = "<%s.startTime%>"      
+      stopTime       = "<%s.stopTime%>"       
+      stepSize       = "<%s.stepSize%>"       
+      tolerance      = "<%s.tolerance%>"      
+      solver         = "<%s.method%>"         
+      outputFormat   = "<%s.outputFormat%>"   
+      variableFilter = "<%s.variableFilter%>" />
+    
+    <!-- variables in the model -->
+    <%ModelVariables(modelInfo)%>
+    
+          
+  </fmiModelDescription>
+  
   >>
 end simulationInitFile;
 
@@ -1960,11 +2019,22 @@ template initVal(Exp initialValue)
   match initialValue 
   case ICONST(__) then integer
   case RCONST(__) then real
-  case SCONST(__) then '"<%Util.escapeModelicaStringToCString(string)%>"'
+  case SCONST(__) then '<%Util.escapeModelicaStringToCString(string)%>'
   case BCONST(__) then if bool then "true" else "false"
-  case ENUM_LITERAL(__) then '<%index%>/*ENUM:<%dotPath(name)%>*/'
+  case ENUM_LITERAL(__) then '<%index%> /*ENUM:<%dotPath(name)%>*/'
   else error(sourceInfo(), 'initial value of unknown type: <%printExpStr(initialValue)%>')
 end initVal;
+
+template initValXml(Exp initialValue) 
+::=
+  match initialValue 
+  case ICONST(__) then integer
+  case RCONST(__) then real
+  case SCONST(__) then '<%Util.escapeModelicaStringToXmlString(string)%>'
+  case BCONST(__) then if bool then "true" else "false"
+  case ENUM_LITERAL(__) then '<%index%> /*ENUM:<%dotPath(name)%>*/'
+  else error(sourceInfo(), 'initial value of unknown type: <%printExpStr(initialValue)%>')
+end initValXml;
 
 template commonHeader()
 ::=
@@ -6197,6 +6267,137 @@ let() = Tpl.addTemplateError(errMessage)
 #error "<% errMessage %>"<%\n%>
 >>
 end errorMsg;
+
+template ModelVariables(ModelInfo modelInfo)
+ "Generates code for ModelVariables file for FMU target."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  <<
+  <ModelVariables>
+  <%System.tmpTickReset(1000)%>
+  
+  <%vars.stateVars       |> var hasindex i0 => ScalarVariable(var,i0,"rSta") ;separator="\n"%>  
+  <%vars.derivativeVars  |> var hasindex i0 => ScalarVariable(var,i0,"rDer") ;separator="\n"%>
+  <%vars.algVars         |> var hasindex i0 => ScalarVariable(var,i0,"rAlg") ;separator="\n"%>
+  <%vars.paramVars       |> var hasindex i0 => ScalarVariable(var,i0,"rPar") ;separator="\n"%>
+  <%vars.aliasVars       |> var hasindex i0 => ScalarVariable(var,i0,"rAli") ;separator="\n"%>
+  
+  <%vars.intAlgVars      |> var hasindex i0 => ScalarVariable(var,i0,"iAlg") ;separator="\n"%>
+  <%vars.intParamVars    |> var hasindex i0 => ScalarVariable(var,i0,"iPar") ;separator="\n"%>
+  <%vars.intAliasVars    |> var hasindex i0 => ScalarVariable(var,i0,"iAli") ;separator="\n"%>
+  
+  <%vars.boolAlgVars     |> var hasindex i0 => ScalarVariable(var,i0,"bAlg") ;separator="\n"%>
+  <%vars.boolParamVars   |> var hasindex i0 => ScalarVariable(var,i0,"bPar") ;separator="\n"%>  
+  <%vars.boolAliasVars   |> var hasindex i0 => ScalarVariable(var,i0,"bAli") ;separator="\n"%>  
+  
+  <%vars.stringAlgVars   |> var hasindex i0 => ScalarVariable(var,i0,"sAlg") ;separator="\n"%>
+  <%vars.stringParamVars |> var hasindex i0 => ScalarVariable(var,i0,"sPar") ;separator="\n"%> 
+  <%vars.stringAliasVars |> var hasindex i0 => ScalarVariable(var,i0,"sAli") ;separator="\n"%> 
+  </ModelVariables> 
+  >>
+end ModelVariables;
+
+template ScalarVariable(SimVar simVar, Integer classIndex, String classType)
+ "Generates code for ScalarVariable file for FMU target."
+::=
+match simVar
+case SIMVAR(__) then
+  <<
+  <ScalarVariable 
+    <%ScalarVariableAttribute(simVar, classIndex, classType)%>>
+    <%ScalarVariableType(type_,unit,displayUnit,initialValue,isFixed)%>
+  </ScalarVariable>  
+  >>
+end ScalarVariable;
+
+template ScalarVariableAttribute(SimVar simVar, Integer classIndex, String classType)
+ "Generates code for ScalarVariable Attribute file for FMU target."
+::=
+match simVar
+  case SIMVAR(source = SOURCE(info = info)) then
+  let valueReference = '<%System.tmpTick()%>'
+  let variability = getVariablity(varKind)
+  let description = if comment then 'description = "<%Util.escapeModelicaStringToXmlString(comment)%>"' 
+  let alias = getAliasVar(aliasvar)
+  let caus = getCausality(causality)
+  <<
+  name = "<%crefStr(name)%>" 
+  valueReference = "<%valueReference%>"
+  <%description%>  
+  variability = "<%variability%>" isDiscrete = "<%isDiscrete%>" 
+  causality = "<%caus%>" 
+  alias = <%alias%>
+  classIndex = "<%classIndex%>" classType = "<%classType%>"
+  <%getInfoArgs(info)%>
+  >>  
+end ScalarVariableAttribute;
+
+template getInfoArgs(Info info)
+::=
+  match info
+  case INFO(__) then 'fileName = "<%Util.escapeModelicaStringToXmlString(fileName)%>" startLine = "<%lineNumberStart%>" startColumn = "<%columnNumberStart%>" endLine = "<%lineNumberEnd%>" endColumn = "<%columnNumberEnd%>" fileWritable = "<%if isReadOnly then false else true%>"'
+end getInfoArgs;
+
+template getCausality(Causality c)
+ "Returns the Causality Attribute of ScalarVariable."
+::=
+match c
+  case NONECAUS(__) then "none"
+  case INTERNAL(__) then "internal"
+  case OUTPUT(__) then "output"
+  case INPUT(__) then "input"
+end getCausality;
+
+template getVariablity(VarKind varKind)
+ "Returns the variablity Attribute of ScalarVariable."
+::=
+match varKind
+  case DISCRETE(__) then "discrete"
+  case PARAM(__) then "parameter"
+  case CONST(__) then "constant"
+  else "continuous"
+end getVariablity;
+
+template getAliasVar(AliasVariable aliasvar)
+ "Returns the alias Attribute of ScalarVariable."
+::=
+match aliasvar
+  case NOALIAS(__) then '"noAlias"'
+  case ALIAS(__) then '"alias" aliasVariable="<%crefStr(varName)%>"'
+  case NEGATEDALIAS(__) then '"negatedAlias" aliasVariable="<%crefStr(varName)%>"'
+  else '"noAlias"'
+end getAliasVar;
+
+template ScalarVariableType(DAE.ExpType type_, String unit, String displayUnit, Option<DAE.Exp> initialValue, Boolean isFixed)
+ "Generates code for ScalarVariable Type file for FMU target."
+::=
+  match type_
+    case ET_INT(__) then '<Integer <%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)%> />' 
+    case ET_REAL(__) then '<Real <%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)%> />' 
+    case ET_BOOL(__) then '<Boolean <%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)%> />' 
+    case ET_STRING(__) then '<String <%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)%> />' 
+    case ET_ENUMERATION(__) then '<Integer <%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)%> />' 
+    else 'UNKOWN_TYPE'
+end ScalarVariableType;
+
+template ScalarVariableTypeCommonAttribute(Option<DAE.Exp> initialValue, Boolean isFixed)
+ "Generates code for ScalarVariable Type file for FMU target."
+::=
+match initialValue
+  case SOME(exp) then 'start="<%initValXml(exp)%>" fixed="<%isFixed%>"' 
+  case NONE() then 'start="0.0" fixed="<%isFixed%>"'
+end ScalarVariableTypeCommonAttribute;
+
+template ScalarVariableTypeRealAttribute(String unit, String displayUnit)
+ "Generates code for ScalarVariable Type Real file for FMU target."
+::=
+let unit_ = if unit then 'unit="<%unit%>"' else ''
+let displayUnit_ = if displayUnit then ' displayUnit="<%displayUnit%>"' else ''
+<<
+<%unit_%><%displayUnit_%>
+>>
+end ScalarVariableTypeRealAttribute;
 
 end SimCodeC;
 

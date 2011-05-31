@@ -311,7 +311,7 @@ void init_ompd()
   long outputSteps = 500;
   double tolerance = 1e-4;
   string method, outputFormat, variableFilter;
-  read_input(argc, argv, globalData, &start, &stop, &stepSize, &outputSteps, &tolerance, &method, &outputFormat, &variableFilter);
+  read_input_xml(argc, argv, globalData, &start, &stop, &stepSize, &outputSteps, &tolerance, &method, &outputFormat, &variableFilter);
   initializeOutputFilter(globalData,variableFilter);
   callExternalObjectConstructors(globalData);
   globalData->lastEmittedTime = start;

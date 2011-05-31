@@ -59,21 +59,22 @@ template translateModel(SimCode simCode,QSSinfo qssInfo)
 ::=
 match simCode
 case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
-  let()= textFile(simulationFile(simCode,qssInfo), 'modelica_funcs.cpp')
+  let guid = getUUIDStr()
+  let()= textFile(simulationFile(simCode,qssInfo,guid), 'modelica_funcs.cpp')
   let()= textFile(SimCodeC.simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls), 'model_functions.h')
   let()= textFile(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, literals), 'model_functions.cpp')
   let()= textFile(SimCodeC.recordsFile(fileNamePrefix, recordDecls), 'model_records.c')
   let()= textFile(simulationMakefile(simCode), '<%fileNamePrefix%>.makefile')
   let()= textFile(structureFile(simCode,qssInfo), 'modelica_structure.pds')
   if simulationSettingsOpt then //tests the Option<> for SOME()
-     let()= textFile(SimCodeC.simulationInitFile(simCode), 'model_init.txt')
+     let()= textFile(SimCodeC.simulationInitFile(simCode,guid), 'model_init.xml')
      "" //empty result for true case 
   //else "" //the else is automatically empty, too
   //this top-level template always returns an empty result 
   //since generated texts are written to files directly
 end translateModel;
 
-template simulationFile(SimCode simCode, QSSinfo qssInfo)
+template simulationFile(SimCode simCode, QSSinfo qssInfo, String guid)
  "Generates code for main C file for simulation target."
 ::=
 match simCode
@@ -91,7 +92,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
   #endif
  
 
-  <%SimCodeC.globalData(modelInfo,fileNamePrefix)%>
+  <%SimCodeC.globalData(modelInfo,fileNamePrefix,guid)%>
 
   <%SimCodeC.equationInfo(appendLists(appendAllequation(JacobianMatrixes),allEquations))%>
 

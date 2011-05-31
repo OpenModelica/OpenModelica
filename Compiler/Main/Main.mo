@@ -1088,7 +1088,7 @@ algorithm
   print("\t                           Model.cpp           the model C++ code\n");
   print("\t                           Model_functions.cpp the model functions C++ code\n");
   print("\t                           Model.makefile      the makefile to compile the model.\n");
-  print("\t                           Model_init.txt      the initial values for parameters\n");
+  print("\t                           Model_init.xml      the initial values for parameters and start values\n");
   print("\t+d=interactive             will start omc as a server listening on the socket interface\n");
   print("\t+d=interactiveCorba        will start omc as a server listening on the Corba interface\n");
   print("\t+c=corbaName               works togheter with +d=interactiveCorba;\n");

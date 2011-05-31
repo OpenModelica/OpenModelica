@@ -29,29 +29,22 @@
  *
  */
 
-#include "simulation_varinfo.h"
+/*
+ * File: simulation_input.h
+ *
+ *
+ *
+ */
 
-void printErrorEqSyst(equationSystemError err, struct omc_equationInfo eq, double var)
-{
-  switch (err) {
-  case ERROR_AT_TIME:
-    printf("Error solving nonlinear system %s at time %g\n", eq.name, var);
-    break;
-  case NO_PROGRESS_START_POINT:
-    printf("Solving nonlinear system %s: iteration not making progress, trying with different starting points (+%g)\n", eq.name, var);
-    break;
-  case NO_PROGRESS_FACTOR:
-    printf("Solving nonlinear system %s: iteration not making progress, trying to decrease factor to %g\n", eq.name, var);
-    break;
-  case IMPROPER_INPUT:
-    printf("improper input parameters to nonlinear eq. syst: %s at time %g\n", eq.name, var);
-    break;
-  default:
-    printf("Unknown equation system error: %d %s %g\n", err, eq.name, var);
-  }
-}
+#ifndef _SIMULATION_INPUT_H
+#define _SIMULATION_INPUT_H
 
-void printInfo(FILE *stream, omc_fileInfo info)
-{
-  fprintf(stream, "[%s:%d:%d-%d:%d:%s]", info.filename, info.lineStart, info.colStart, info.lineEnd, info.colEnd, info.readonly ? "readonly" : "writable");
-}
+#include "simulation_runtime.h"
+
+void read_input_xml(int argc, char **argv,
+                    DATA *simData,
+                    double *start, double *stop,
+                    double *stepSize, long *outputSteps,
+                    double *tolerance, string* method, string* outputFormat, string* variableFilter);
+
+#endif

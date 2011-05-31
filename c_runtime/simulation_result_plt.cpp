@@ -101,7 +101,7 @@ void simulation_result_plt::emit()
   if (actualPoints < maxPoints) {
     if(!isInteractiveSimulation())add_result(simulationResultData,&actualPoints); //used for non-interactive simulation
   } else {
-    maxPoints = 1.4*maxPoints + (maxPoints-actualPoints) + 2000;
+    maxPoints = (long)(1.4*maxPoints + (maxPoints-actualPoints) + 2000);
     // cerr << "realloc simulationResultData to a size of " << maxPoints * dataSize * sizeof(double) << endl;
     simulationResultData = (double*)realloc(simulationResultData, maxPoints * dataSize * sizeof(double));
     if (!simulationResultData) {
