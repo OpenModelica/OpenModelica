@@ -3626,6 +3626,7 @@ public
  constant DAE.ExpType etNoRetCall   = DAE.ET_NORETCALL();
  constant DAE.ExpType etFuncRefVar  = DAE.ET_FUNCTION_REFERENCE_VAR();
  constant DAE.ExpType etMetaType    = DAE.ET_METATYPE();
+ constant DAE.ExpType etOther        = DAE.ET_OTHER();
 
 public function elabType 
 "@author: adrpo
@@ -3639,11 +3640,14 @@ algorithm
     local
       TypeMemoryEntryListArray tyMem;
       TypeMemoryEntryList tyLst;
+      TypeMemoryEntry tyEnt;
       DAE.ExpType expTy;
       Type t;
       TType tt;
       Integer indexBasedOnValueConstructor;
       String str;
+      Option<Absyn.Path> opt_path;
+      Absyn.Path p;
 
     // speedup some of the types that do not actually translate contents 
     case ((DAE.T_INTEGER(varLstInt = _),_)) then etInt;
@@ -3659,6 +3663,9 @@ algorithm
     case ((DAE.T_META_ARRAY(_),_)) then etMetaType;
     case ((DAE.T_METAOPTION(_),_)) then etMetaType;
     case ((DAE.T_METATUPLE(_),_)) then etMetaType;
+    case ((DAE.T_NOTYPE(), _)) then etOther;
+    case ((DAE.T_ANYTYPE(_), _)) then etOther;
+      
     case ((DAE.T_COMPLEX(complexVarLst={},complexTypeOption=SOME(t)),_)) then elabType(t);
 
     // see if we have it in memory
@@ -3671,12 +3678,19 @@ algorithm
         indexBasedOnValueConstructor = valueConstructor(tt);
         tyLst = arrayGet(tyMem, indexBasedOnValueConstructor + 1);
         // search in the list for a translation
-        expTy = Util.assoc(inType, tyLst);
+        // Also, move the found value to the head of the cache list, so that
+        // recently used types are found faster. This improves performance quite
+        // a lot in some cases such as EngineV6.
+        (tyLst, SOME(tyEnt as (_, expTy))) = 
+          Util.listDeleteMemberOnTrue(inType, tyLst, typeMemoryEntryEq);
+        tyLst = tyEnt :: tyLst;
+        tyMem = arrayUpdate(tyMem, indexBasedOnValueConstructor + 1, tyLst);
+        setGlobalRoot(memoryIndex, tyMem);
       then
         expTy;
     
     // we didn't find it, add it
-    case (inType as (tt, _))
+    case (inType as (tt, opt_path))
       equation
         // call the function to get the DAE.ExpType translation from DAE.Type
         expTy = elabType_dispatch(inType);
@@ -3692,6 +3706,7 @@ algorithm
         setGlobalRoot(memoryIndex, tyMem);
       then 
         expTy;
+
     else
       equation
         str = "Types.elabType failed for: " +& unparseType(inType);
@@ -3755,6 +3770,117 @@ algorithm
       then DAE.ET_OTHER();
   end matchcontinue;
 end elabType_dispatch;
+
+protected function typeMemoryEntryEq
+  input DAE.Type inType1;
+  input tuple<DAE.Type, DAE.ExpType> inType2;
+  output Boolean outEq;
+protected
+  DAE.Type ty2;
+algorithm
+  (ty2, _) := inType2;
+  outEq := typesElabEquivalent(inType1, ty2);
+end typeMemoryEntryEq;
+
+protected function typesElabEquivalent
+  "This function checks if two types will result in the same elaborated type.
+  Used by elabType to check if a matching elaborated type already exists."
+  input DAE.Type inType1;
+  input DAE.Type inType2;
+  output Boolean isEqual;
+algorithm
+  isEqual := matchcontinue(inType1, inType2)
+    local
+      DAE.TType ty1, ty2;
+
+    case ((ty1, _), (ty2, _))
+      then ttypesElabEquivalent(ty1, ty2);
+
+    else false;
+  end matchcontinue;
+end typesElabEquivalent;
+     
+protected function ttypesElabEquivalent
+  "Helper function to typesElabEquivalent. Checks if two TType will result in
+  the same elaborated type."
+  input DAE.TType inType1;
+  input DAE.TType inType2;
+  output Boolean isEqual;
+algorithm
+  isEqual := match(inType1, inType2)
+    local
+      ClassInf.State cty1, cty2;
+      list<DAE.Var> vars1, vars2;
+      DAE.Dimension ad1, ad2;
+      DAE.Type ty1, ty2;
+      Absyn.Path p1, p2;
+      list<String> names1, names2;
+      list<DAE.Type> types1, types2;
+
+    case (DAE.T_COMPLEX(complexClassType = cty1, complexVarLst = vars1),
+          DAE.T_COMPLEX(complexClassType = cty2, complexVarLst = vars2))
+      equation
+        true = Absyn.pathEqual(ClassInf.getStateName(cty1),
+                               ClassInf.getStateName(cty2));
+        true = Util.isListEqualWithCompareFunc(vars1, vars2, 
+          varsElabEquivalent);
+      then
+        true;
+
+    case (DAE.T_ARRAY(arrayDim = ad1, arrayType = ty1),
+          DAE.T_ARRAY(arrayDim = ad2, arrayType = ty2))
+      equation
+        true = valueEq(ad1, ad2);
+        true = typesElabEquivalent(ty1, ty2);
+      then
+        true;
+
+    case (DAE.T_ENUMERATION(path = p1, names = names1),
+          DAE.T_ENUMERATION(path = p2, names = names2))
+      equation
+        true = Absyn.pathEqual(p1, p2);
+        true = Util.isListEqualWithCompareFunc(names1, names2, stringEqual);
+      then
+        true;
+
+    case (DAE.T_TUPLE(tupleType = types1), 
+          DAE.T_TUPLE(tupleType = types2))
+      then Util.isListEqualWithCompareFunc(types1, types2,
+          typesElabEquivalent);
+
+    case (DAE.T_BOXED(ty = ty1),
+          DAE.T_BOXED(ty = ty2))
+      then typesElabEquivalent(ty1, ty2);
+
+    else valueEq(inType1, inType2);
+
+  end match;
+end ttypesElabEquivalent;
+        
+protected function varsElabEquivalent
+  "Helper function to ttypesElabEquivalent. Check if two DAE.Var will result in
+  the same DAE.ExpVar after elaboration."
+  input DAE.Var inVar1;
+  input DAE.Var inVar2;
+  output Boolean isEqual;
+algorithm
+  isEqual := matchcontinue(inVar1, inVar2)
+    local
+      DAE.Ident id1, id2;
+      DAE.Type ty1, ty2;
+
+    case (DAE.TYPES_VAR(name = id1, ty = ty1), 
+          DAE.TYPES_VAR(name = id2, ty = ty2))
+      equation
+        true = stringEqual(id1, id2);
+        true = typesElabEquivalent(ty1, ty2);
+      then
+        true;
+
+    else false;
+
+  end matchcontinue;
+end varsElabEquivalent;
 
 public function matchProp
 "function: matchProp
