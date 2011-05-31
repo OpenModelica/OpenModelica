@@ -3183,16 +3183,10 @@ algorithm
   _ := matchcontinue(r1, r2)
     // package can be extendended by package
     case (SCode.R_PACKAGE(), SCode.R_PACKAGE()) then ();
-    // operator -> operator
-    case (SCode.R_OPERATOR(false), SCode.R_OPERATOR(false)) then ();
     // function -> function
     case (SCode.R_FUNCTION(), SCode.R_FUNCTION()) then ();
     // external function -> function
     case (SCode.R_EXT_FUNCTION(), SCode.R_FUNCTION()) then ();
-    // operator function -> function 
-    case (SCode.R_OPERATOR(true), SCode.R_FUNCTION()) then ();
-    // operator function -> operator function
-    case (SCode.R_OPERATOR(true), SCode.R_OPERATOR(true)) then ();
     // type -> type
     case (SCode.R_TYPE(), SCode.R_TYPE()) then ();
     // record -> record
@@ -3225,6 +3219,14 @@ algorithm
     case (SCode.R_CLASS(), SCode.R_BLOCK()) then ();
     // class -> class
     case (SCode.R_CLASS(), SCode.R_CLASS()) then ();
+    // operator -> operator
+    case (SCode.R_OPERATOR(), SCode.R_OPERATOR()) then ();
+    // operator function -> function 
+    case (SCode.R_OPERATOR_FUNCTION(), SCode.R_FUNCTION()) then ();
+    // operator function -> operator function
+    case (SCode.R_OPERATOR_FUNCTION(), SCode.R_OPERATOR_FUNCTION()) then ();
+    // operator record
+    case (SCode.R_OPERATOR_RECORD(), SCode.R_OPERATOR_RECORD()) then ();
   end matchcontinue;
 end checkExtendsRestrictionMatch;
 

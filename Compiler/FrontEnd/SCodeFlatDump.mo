@@ -434,8 +434,9 @@ algorithm
     case SCode.R_BLOCK() then "BL";
     case SCode.R_CONNECTOR(true) then "EC";
     case SCode.R_CONNECTOR(false) then "CN";
-    case SCode.R_OPERATOR(true) then "OF";
-    case SCode.R_OPERATOR(false) then "OP";
+    case SCode.R_OPERATOR_FUNCTION() then "OF";
+    case SCode.R_OPERATOR_RECORD() then "OR";
+    case SCode.R_OPERATOR() then "OP";
     case SCode.R_TYPE() then "TY";
     case SCode.R_PACKAGE() then "PK";
     case SCode.R_FUNCTION() then "FU";

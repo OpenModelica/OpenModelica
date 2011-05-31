@@ -338,9 +338,9 @@ package SCode
     record R_CONNECTOR
       Boolean isExpandable;
     end R_CONNECTOR;
-    record R_OPERATOR
-      Boolean isFunction;
-    end R_OPERATOR;
+    record R_OPERATOR end R_OPERATOR;
+    record R_OPERATOR_FUNCTION end R_OPERATOR_FUNCTION;
+    record R_OPERATOR_RECORD end R_OPERATOR_RECORD;
     record R_TYPE end R_TYPE;
     record R_PACKAGE end R_PACKAGE;
     record R_FUNCTION end R_FUNCTION;

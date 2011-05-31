@@ -55,6 +55,7 @@ public type Ident = String;
 protected import Print;
 protected import Util;
 protected import Debug;
+protected import Error;
 
 public function dumpExpStr
   input Absyn.Exp exp;
@@ -204,7 +205,7 @@ public function unparseClassStr
   input String innerouterStr;
   output String outString;
 algorithm
-  outString := matchcontinue (indent,ourClass,finalStr,redeclareKeywords,innerouterStr)
+  outString := match (indent,ourClass,finalStr,redeclareKeywords,innerouterStr)
     local
       Ident is,s4,s5,str,n,fi,io,s6,s8,s9,baseClassName;
       Integer i_1,i;
@@ -326,7 +327,11 @@ algorithm
         str = stringAppendList({is,prefixKeywords,restrictionStr," ",n," = der(",s4,", ",s5,")", s6});
       then
         str;
-  end matchcontinue;
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Dump.unparseClassStr"});
+      then fail();
+  end match;
 end unparseClassStr;
 
 public function unparseClassAttributesStr
@@ -550,7 +555,7 @@ public function unparseRestrictionStr
   input Absyn.Restriction inRestriction;
   output String outString;
 algorithm
-  outString := matchcontinue (inRestriction)
+  outString := match (inRestriction)
     case Absyn.R_CLASS() then "class";
     case Absyn.R_OPTIMIZATION() then "optimization";
     case Absyn.R_MODEL() then "model";
@@ -570,8 +575,8 @@ algorithm
     case Absyn.R_OPERATOR() then "operator";
     case Absyn.R_OPERATOR_FUNCTION() then "operator function";
     case Absyn.R_OPERATOR_RECORD() then "operator record";
-    case _ then "*unknown*";
-  end matchcontinue;
+    else "*unknown*";
+  end match;
 end unparseRestrictionStr;
 
 public function printIstmtStr
@@ -907,6 +912,10 @@ algorithm
         str = stringAppendList({" = ",s1});
       then
         str;
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Dump.unparseClassModificationStr"});
+      then fail();
   end matchcontinue;
 end unparseClassModificationStr;
 
@@ -992,6 +1001,10 @@ algorithm
         str = stringAppendList({s4,s5});
       then
         str;
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Dump.unparseElementArgStr"});
+      then fail();
   end match;
 end unparseElementArgStr;
 
@@ -1168,7 +1181,7 @@ protected function unparseClassPartStr
   input Boolean inBoolean;
   output String outString;
 algorithm
-  outString := matchcontinue (inInteger,inClassPart,inBoolean)
+  outString := match (inInteger,inClassPart,inBoolean)
     local
       Integer i,i_1;
       Ident s1,is,str,langstr,outputstr,expstr,annstr,annstr2,ident,res;
@@ -1302,7 +1315,12 @@ algorithm
         res = stringAppendList({"\n",is,"external ",langstr," ",annstr,";",annstr2,"\n"});
       then
         res;
-  end matchcontinue;
+
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Dump.unparseClassPartStr"});
+      then fail();
+  end match;
 end unparseClassPartStr;
 
 protected function getExtlangStr
@@ -1583,8 +1601,7 @@ public function unparseElementStr "function: unparseElementStr
   input Absyn.Element inElement;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inInteger,inElement)
+  outString := match (inInteger,inElement)
     local
       Ident s1,s2,s3,s4,s5,str,name,text;
       Integer i;
@@ -1639,10 +1656,11 @@ algorithm
         str = stringAppendList({"/* Absyn.TEXT(NONE(), \"",text,"\", ",s1,"); */"});
       then
         str;
-    case(_,_) equation
-      print("unparseElementStr failed\n");
-    then fail();
-  end matchcontinue;
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Dump.unparseElementStr"});
+      then fail();
+  end match;
 end unparseElementStr;
 
 protected function unparseConstrainclassOptStr

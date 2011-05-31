@@ -3978,6 +3978,7 @@ algorithm
 
     /* MetaModelica restriction */
     case R_UNIONTYPE() then "UNIONTYPE";
+    else "* Unknown restriction *";
   end match;
 end restrString;
 

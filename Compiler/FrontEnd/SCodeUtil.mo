@@ -206,8 +206,9 @@ algorithm
     case (_,Absyn.R_CONNECTOR()) then SCode.R_CONNECTOR(false);
     case (_,Absyn.R_EXP_CONNECTOR()) equation System.setHasExpandableConnectors(true); then SCode.R_CONNECTOR(true);
 
-    case (_,Absyn.R_OPERATOR()) then SCode.R_OPERATOR(false);
-    case (_,Absyn.R_OPERATOR_FUNCTION()) then SCode.R_OPERATOR(true);
+    case (_,Absyn.R_OPERATOR()) then SCode.R_OPERATOR();
+    case (_,Absyn.R_OPERATOR_FUNCTION()) then SCode.R_OPERATOR_FUNCTION();
+    case (_,Absyn.R_OPERATOR_RECORD()) then SCode.R_OPERATOR_RECORD();
 
     case (_,Absyn.R_TYPE()) then SCode.R_TYPE();
     case (_,Absyn.R_PACKAGE()) then SCode.R_PACKAGE();

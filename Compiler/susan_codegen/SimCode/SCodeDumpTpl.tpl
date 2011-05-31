@@ -768,8 +768,9 @@ match restriction
   case R_BLOCK(__) then 'block'
   case R_CONNECTOR(__) then
     if isExpandable then 'expandable connector' else 'connector'
-  case R_OPERATOR(__) then
-    if isFunction then 'operator function' else 'operator'
+  case R_OPERATOR(__) then 'operator'
+  case R_OPERATOR_FUNCTION(__) then 'operator function'
+  case R_OPERATOR_RECORD(__) then 'operator record'
   case R_TYPE(__) then 'type'
   case R_PACKAGE(__) then 'package'
   case R_FUNCTION(__) then 'function'

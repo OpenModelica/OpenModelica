@@ -84,8 +84,9 @@ algorithm
     case SCode.R_BLOCK() then "BLOCK";
     case SCode.R_CONNECTOR(false) then "CONNECTOR";
     case SCode.R_CONNECTOR(true) then "EXPANDABLE_CONNECTOR";
-    case SCode.R_OPERATOR(false) then "OPERATOR";
-    case SCode.R_OPERATOR(true) then "OPERATOR_FUNCTION";
+    case SCode.R_OPERATOR() then "OPERATOR";
+    case SCode.R_OPERATOR_FUNCTION() then "OPERATOR_FUNCTION";
+    case SCode.R_OPERATOR_RECORD() then "OPERATOR_RECORD";
     case SCode.R_TYPE() then "TYPE";
     case SCode.R_PACKAGE() then "PACKAGE";
     case SCode.R_FUNCTION() then "FUNCTION";

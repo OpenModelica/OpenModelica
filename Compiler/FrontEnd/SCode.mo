@@ -63,9 +63,9 @@ uniontype Restriction
   record R_CONNECTOR "a connector"
     Boolean isExpandable "is expandable?";
   end R_CONNECTOR;
-  record R_OPERATOR "an operator definition"
-    Boolean isFunction "is this operator a function?";
-  end R_OPERATOR;
+  record R_OPERATOR end R_OPERATOR;
+  record R_OPERATOR_FUNCTION end R_OPERATOR_FUNCTION;
+  record R_OPERATOR_RECORD end R_OPERATOR_RECORD;
   record R_TYPE end R_TYPE;
   record R_PACKAGE end R_PACKAGE;
   record R_FUNCTION end R_FUNCTION;
@@ -1035,8 +1035,9 @@ algorithm
      case (R_BLOCK(),R_BLOCK()) then true;
      case (R_CONNECTOR(true),R_CONNECTOR(true)) then true; // expandable connectors
      case (R_CONNECTOR(false),R_CONNECTOR(false)) then true; // non expandable connectors
-     case (R_OPERATOR(true),R_OPERATOR(true)) then true; // operator
-     case (R_OPERATOR(false),R_OPERATOR(false)) then true; // operator function
+     case (R_OPERATOR(),R_OPERATOR()) then true; // operator
+     case (R_OPERATOR_FUNCTION(),R_OPERATOR_FUNCTION()) then true; // operator function
+     case (R_OPERATOR_RECORD(),R_OPERATOR_RECORD()) then true; // operator function
      case (R_TYPE(),R_TYPE()) then true;
      case (R_PACKAGE(),R_PACKAGE()) then true;
      case (R_FUNCTION(),R_FUNCTION()) then true;
