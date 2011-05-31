@@ -175,8 +175,8 @@ algorithm
 
     case (c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = d,info = file_info))
       equation
-        true = RTOpts.debugFlag("translate");
-        Debug.fprintln("translate", "SCodeUtil.translateAbsyn2SCodeClass: Translating class failed:" +& n+&"\n");
+        n = "SCodeUtil.translateAbsyn2SCodeClass failed: " +& n;
+        Error.addSourceMessage(Error.INTERNAL_ERROR,{n},file_info);
       then
         fail();
   end matchcontinue;
