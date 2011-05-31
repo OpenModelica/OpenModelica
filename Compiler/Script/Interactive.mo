@@ -2452,24 +2452,6 @@ algorithm
       then
         (resstr,st);
 
-        // list(cr) added here to speed up model editor. Also exists in Ceval
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "list");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        resstr = listClass(cr, p);
-        resstr = stringAppendList({"\"",resstr,"\""});
-      then
-        (resstr,st);
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "list");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        failure(resstr = listClass(cr, p));
-      then
-        ("",st);
-
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "setOption");
