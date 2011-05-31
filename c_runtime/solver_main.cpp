@@ -354,7 +354,8 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
     {
       cout << "Calculated bound parameters" << endl;
     }
-  // Evaluate all constant equations
+  // Evaluate all constant equations during initialization
+  globalData->init = 1;
   functionAliasEquations();
 
   // Calculate initial values from initial_function()
