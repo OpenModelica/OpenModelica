@@ -7,4 +7,5 @@ SUBDIRS += ../OMEdit/OMEditGUI \
     ../OMNotebook/OMNotebookGUI \
     ../OMNotebook/OMPlotWindow \
     ../OMOptim/build/OMOptim.pro \
-    ../OMPlot/OMPlotGUI
+    ../OMPlot/OMPlotGUI \
+    ../OMPlot/OMPlotGUI/OMPlotLib.pro
