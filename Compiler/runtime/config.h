@@ -83,7 +83,7 @@
 
 #else /* Unix */
 
-#define DEFAULT_LDFLAGS "-lc_runtime"
+#define DEFAULT_LDFLAGS "-lc_runtime -lregex -lexpat"
 
 #include "config.unix.h"
 
