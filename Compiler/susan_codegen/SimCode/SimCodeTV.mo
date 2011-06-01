@@ -358,6 +358,7 @@ package SimCode
       list<String> libs;
       String language;
       Absyn.Info info;
+      Boolean dynamicLoad;
     end EXTERNAL_FUNCTION;
     record RECORD_CONSTRUCTOR
       Absyn.Path name;
@@ -520,6 +521,11 @@ package SimCode
       input Integer i;
       output String s;
     end twodigit;
+
+   function countDynamicExternalFunctions
+      input list<Function> inFncLst;
+      output Integer outDynLoadFuncs;     
+   end countDynamicExternalFunctions;
 
 end SimCode;
 

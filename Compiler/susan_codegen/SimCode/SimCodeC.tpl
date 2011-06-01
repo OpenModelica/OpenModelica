@@ -2357,13 +2357,20 @@ template functionHeader(Function fn, Boolean inFunc)
   match fn
     case FUNCTION(__) then
       <<
-      <%functionHeaderNormal(underscorePath(name), functionArguments, outVars, inFunc)%>
-      <%functionHeaderBoxed(underscorePath(name), functionArguments, outVars, isBoxedFunction(fn))%>
+      <%functionHeaderNormal(underscorePath(name), functionArguments, outVars, inFunc, false)%>
+      <%functionHeaderBoxed(underscorePath(name), functionArguments, outVars, isBoxedFunction(fn), false)%>
+      >> 
+    case EXTERNAL_FUNCTION(dynamicLoad=true) then
+      <<
+      <%functionHeaderNormal(underscorePath(name), funArgs, outVars, inFunc, true)%>
+      <%functionHeaderBoxed(underscorePath(name), funArgs, outVars, isBoxedFunction(fn), true)%>
+
+      <%extFunDefDynamic(fn)%>
       >> 
     case EXTERNAL_FUNCTION(__) then
       <<
-      <%functionHeaderNormal(underscorePath(name), funArgs, outVars, inFunc)%>
-      <%functionHeaderBoxed(underscorePath(name), funArgs, outVars, isBoxedFunction(fn))%>
+      <%functionHeaderNormal(underscorePath(name), funArgs, outVars, inFunc, false)%>
+      <%functionHeaderBoxed(underscorePath(name), funArgs, outVars, isBoxedFunction(fn), false)%>
   
       <%extFunDef(fn)%>
       >> 
@@ -2460,16 +2467,16 @@ template recordDefinitionHeader(String origName, String encName, Integer numFiel
   >>
 end recordDefinitionHeader;
 
-template functionHeaderNormal(String fname, list<Variable> fargs, list<Variable> outVars, Boolean inFunc)
-::= functionHeaderImpl(fname, fargs, outVars, inFunc, false)
+template functionHeaderNormal(String fname, list<Variable> fargs, list<Variable> outVars, Boolean inFunc, Boolean dynamicLoad)
+::= functionHeaderImpl(fname, fargs, outVars, inFunc, false, dynamicLoad)
 end functionHeaderNormal;
 
-template functionHeaderBoxed(String fname, list<Variable> fargs, list<Variable> outVars, Boolean isBoxed)
+template functionHeaderBoxed(String fname, list<Variable> fargs, list<Variable> outVars, Boolean isBoxed, Boolean dynamicLoad)
 ::= if acceptMetaModelicaGrammar() then
-    if isBoxed then '#define boxptr_<%fname%> _<%fname%><%\n%>' else functionHeaderImpl(fname, fargs, outVars, false, true)
+    if isBoxed then '#define boxptr_<%fname%> _<%fname%><%\n%>' else functionHeaderImpl(fname, fargs, outVars, false, true, dynamicLoad)
 end functionHeaderBoxed;
 
-template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> outVars, Boolean inFunc, Boolean boxed)
+template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> outVars, Boolean inFunc, Boolean boxed, Boolean dynamicLoad)
  "Generates function header for a Modelica/MetaModelica function. Generates a
 
   boxed version of the header if boxed = true, otherwise a normal header"
@@ -2505,10 +2512,10 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
   } <%fname%>_rettype<%boxStr%>;
   <%inFnStr%>
 
-  <%fname%>_rettype<%boxStr%> <%boxPtrStr%>_<%fname%>(<%fargsStr%>);
+  <%if dynamicLoad then '' else '<%fname%>_rettype<%boxStr%> <%boxPtrStr%>_<%fname%>(<%fargsStr%>);'%>
   >> else <<
 
-  void <%boxPtrStr%>_<%fname%>(<%fargsStr%>);
+  <%if dynamicLoad then '' else 'void <%boxPtrStr%>_<%fname%>(<%fargsStr%>);'%>
   >>
 end functionHeaderImpl;
 
@@ -2544,6 +2551,19 @@ case func as EXTERNAL_FUNCTION(__) then
   let fargsStr = extFunDefArgs(extArgs, language)
   'extern <%extReturnType(extReturn)%> <%fn_name%>(<%fargsStr%>);'
 end extFunDef;
+
+template extFunDefDynamic(Function fn)
+ "Generates function header for an external function."
+::=
+match fn
+case func as EXTERNAL_FUNCTION(__) then
+  let fn_name = extFunctionName(extName, language)
+  let fargsStr = extFunDefArgs(extArgs, language)
+  <<
+  typedef <%extReturnType(extReturn)%> (*ptrT_<%fn_name%>)(<%fargsStr%>);
+  extern ptrT_<%fn_name%> ptr_<%fn_name%>;
+  >>
+end extFunDefDynamic;
 
 template extFunctionName(String name, String language)
 ::=
@@ -2807,6 +2827,10 @@ case efn as EXTERNAL_FUNCTION(__) then
   }
   >>
   <<
+  <% if dynamicLoad then
+  <<  
+  ptrT_<%extFunctionName(extName, language)%> ptr_<%extFunctionName(extName, language)%>=NULL;
+  >> %>  
   <%fnBody%>
 
   <% if inFunc then
@@ -3246,6 +3270,14 @@ template extFunCallC(Function fun, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*
 ::=
 match fun
 case EXTERNAL_FUNCTION(__) then
+  let fname = if dynamicLoad then 'ptr_<%extFunctionName(extName, language)%>' else '<%extName%>'
+  let dynamicCheck = if dynamicLoad then 
+  <<
+  if (<%fname%>==NULL) {
+    MODELICA_TERMINATE("dynamic external function <%extFunctionName(extName, language)%> not set!")
+  } else
+  >>
+    else ''
   let args = (extArgs |> arg =>
       extArg(arg, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     ;separator=", ")
@@ -3256,7 +3288,8 @@ case EXTERNAL_FUNCTION(__) then
   <<
   <%extArgs |> arg => extFunCallVardecl(arg, &varDecls /*BUFD*/) ;separator="\n"%>
   <%match extReturn case SIMEXTARG(__) then extFunCallVardecl(extReturn, &varDecls /*BUFD*/)%>
-  <%returnAssign%><%extName%>(<%args%>);
+  <%dynamicCheck%>
+  <%returnAssign%><%fname%>(<%args%>);
   <%extArgs |> arg => extFunCallVarcopy(arg) ;separator="\n"%>
   <%match extReturn case SIMEXTARG(__) then extFunCallVarcopy(extReturn)%>
   >>

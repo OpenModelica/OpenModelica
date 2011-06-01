@@ -99,7 +99,7 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
   let fmiVersion = '1.0' 
   let modelName = dotPath(modelInfo.name)
-  let modelIdentifier = underscorePath(modelInfo.name)
+  let modelIdentifier = fileNamePrefix
   let description = ''
   let author = ''
   let version= '' 
@@ -237,6 +237,8 @@ case MODELINFO(vars=SIMVARS(__)) then
   <%vars.stringAliasVars |> var =>
     ScalarVariable(var)
   ;separator="\n"%> 
+  <%System.tmpTickReset(0)%>
+  <%externalFunctions(modelInfo)%>    
   </ModelVariables>  
   >>
 end ModelVariables;
@@ -333,6 +335,27 @@ template ScalarVariableTypeRealAttribute(String unit, String displayUnit)
   >>
 end ScalarVariableTypeRealAttribute;
 
+template externalFunctions(ModelInfo modelInfo)
+ "Generates external function definitions."
+::=  
+match modelInfo
+case MODELINFO(__) then
+  (functions |> fn => externalFunction(fn) ; separator="\n")
+end externalFunctions;
+
+template externalFunction(Function fn)
+ "Generates external function definitions."
+::=
+  match fn
+    case EXTERNAL_FUNCTION(dynamicLoad=true) then
+      let fname = extFunctionName(extName, language)
+      <<
+      <ExternalFunction
+        name="<%fname%>"
+        valueReference="<%System.tmpTick()%>"/> 
+      >> 
+end externalFunction;
+
 
 template fmumodel_identifierFile(SimCode simCode, String guid)
  "Generates code for ModelDescription file for FMU target."
@@ -401,7 +424,7 @@ let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,intAdd(varInfo.numBoolParam
   #define NUMBER_OF_INTEGERS <%numberOfIntegers%>
   #define NUMBER_OF_STRINGS <%numberOfStrings%>
   #define NUMBER_OF_BOOLEANS <%numberOfBooleans%>
-  #define NUMBER_OF_EXTERNALFUNCTIONS 0
+  #define NUMBER_OF_EXTERNALFUNCTIONS <%countDynamicExternalFunctions(functions)%>
   
   // define variable data for model
   <%System.tmpTickReset(0)%>
@@ -428,6 +451,8 @@ let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,intAdd(varInfo.numBoolParam
   #define STATES { <%vars.stateVars |> SIMVAR(__) => '<%cref(name)%>_'  ;separator=", "%> }
   #define STATESDERIVATIVES { <%vars.derivativeVars |> SIMVAR(__) => '<%cref(name)%>_'  ;separator=", "%> }
   
+  <%System.tmpTickReset(0)%>
+  <%(functions |> fn => defineExternalFunction(fn) ; separator="\n")%>
   >>
 end ModelDefineData;
 
@@ -448,6 +473,17 @@ match simVar
   #define <%cref(name)%>_ <%System.tmpTick()%> <%description%>
   >>
 end DefineVariables;
+
+template defineExternalFunction(Function fn)
+ "Generates external function definitions."
+::=
+  match fn
+    case EXTERNAL_FUNCTION(dynamicLoad=true) then
+      let fname = extFunctionName(extName, language)
+      <<
+      #define $P<%fname%> <%System.tmpTick()%>
+      >> 
+end defineExternalFunction;
 
 template setStartValues(ModelInfo modelInfo)
  "Generates code in c file for function setStartValues() which will set start values for all variables." 
@@ -753,9 +789,11 @@ template setExternalFunction(ModelInfo modelInfo)
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
+  let externalFuncs = setExternalFunctionsSwitch(functions) 
   <<
   fmiStatus setExternalFunction(ModelInstance* c, const fmiValueReference vr, const void* value){
     switch (vr) {
+        <%externalFuncs%>
         default: 
         	return fmiError;
     }
@@ -764,6 +802,23 @@ case MODELINFO(vars=SIMVARS(__)) then
   
   >>
 end setExternalFunction;
+
+template setExternalFunctionsSwitch(list<Function> functions)
+ "Generates external function definitions."
+::=  
+  (functions |> fn => setExternalFunctionSwitch(fn) ; separator="\n")
+end setExternalFunctionsSwitch;
+
+template setExternalFunctionSwitch(Function fn)
+ "Generates external function definitions."
+::=
+  match fn
+    case EXTERNAL_FUNCTION(dynamicLoad=true) then
+      let fname = extFunctionName(extName, language)
+      <<
+      case $P<%fname%> : ptr_<%fname%>=(ptrT_<%fname%>)value; break;
+      >> 
+end setExternalFunctionSwitch;
 
 template SwitchVars(SimVar simVar, String arrayName)
  "Generates code for defining variables in c file for FMU target. "
@@ -841,8 +896,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   MAINFILE=<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.c
   
   .PHONY: <%fileNamePrefix%>
-  <%fileNamePrefix%>: $(MAINFILE) <%fileNamePrefix%>_functions.c <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_records.c
-  <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(DLLEXT) $(MAINFILE) <%dirExtra%> <%libsPos1%> <%libsPos2%> -lsim -linteractive $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> <%fileNamePrefix%>_records.c  
+  <%fileNamePrefix%>: $(MAINFILE) <%fileNamePrefix%>_FMU.c <%fileNamePrefix%>_functions.c <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_records.c
+  <%\t%> $(CXX) -shared -I. -o <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>_FMU.c $(MAINFILE) <%dirExtra%> <%libsPos1%> <%libsPos2%> -lsim -linteractive $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> <%fileNamePrefix%>_records.c  
   
   <%\t%> mkdir -p <%fileNamePrefix%>
   <%\t%> mkdir -p <%fileNamePrefix%>/binaries

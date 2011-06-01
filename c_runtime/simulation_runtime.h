@@ -398,7 +398,7 @@ void setTermMsg(const char*);
 
 #define MODELICA_ASSERT(info,msg) { terminationAssert = 1; setTermMsg(msg); TermInfo = info; }
 
-#define MODELICA_TERMINATE(msg)  { modelTermination=1; terminationTerminate = 1; setTermMsg(msg); TermInfo = omc_dummyFileInfo; }
+#define MODELICA_TERMINATE(msg)  { modelTermination=1; terminationTerminate = 1; setTermMsg(msg); TermInfo.filename=""; TermInfo.lineStart=-1; TermInfo.colStart=-1; TermInfo.lineEnd=-1; TermInfo.colEnd=-1; TermInfo.readonly=-1; }
 
 #define initial() localData->init
 #define terminal() localData->terminal

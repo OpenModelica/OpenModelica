@@ -44,7 +44,7 @@ MACRO(BUILDMODEL model dir Flags CSRC)
   
   # Variablen fuer openmodelica2sarturis
   SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
-                 ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
+                 ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.c
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_init.txt)
   SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
   #               ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
@@ -84,7 +84,7 @@ MACRO(BUILDMODELMOS model mos Flags CSRC)
   
   # Variablen fuer openmodelica2sarturis
   SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
-                 ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
+                 ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.c
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_init.txt)
   SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
   #                ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
@@ -99,6 +99,7 @@ MACRO(BUILDMODELMOS model mos Flags CSRC)
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
 
  
+  ADD_DEFINITIONS(/TP ${model}.c)
   ADD_EXECUTABLE(${model} ${OMC_OUTPUT} ${CSRC})
   TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c meta sendData ModelicaExternalC)
 
@@ -126,10 +127,10 @@ MACRO(BUILDMODELFMU model dir Flags CSRC)
   
   # Variablen fuer openmodelica2sarturis
   SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
-                 ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
+                 ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.c
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_init.txt)
   SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
-                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_FMU.cpp
+                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_FMU.c
   #               ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
 				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.h
 				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_records.c)
@@ -169,10 +170,10 @@ MACRO(BUILDMODELFMUMOS model mos Flags CSRC)
   
   # Variablen fuer openmodelica2sarturis
   SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
-                 ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
+                 ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.c
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_init.txt)
   SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
-                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_FMU.cpp
+                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_FMU.c
   #               ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
 				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.h
 				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_records.c)
@@ -188,7 +189,7 @@ MACRO(BUILDMODELFMUMOS model mos Flags CSRC)
                    ${OMCTRUNCHOME}/c_runtime/fmiModelFunctions.h
 				   ${OMCTRUNCHOME}/c_runtime/fmiModelTypes.h)
   
-  ADD_DEFINITIONS(/TP)
+  ADD_DEFINITIONS(/TP ${model}.c)
   ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
   TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c meta sendData ModelicaExternalC)
 

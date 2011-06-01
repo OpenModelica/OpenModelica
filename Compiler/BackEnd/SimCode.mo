@@ -306,6 +306,7 @@ uniontype Function
     list<String> libs; //need this one for C#
     String language "C or Fortran";
     Absyn.Info info;
+    Boolean dynamicLoad;
   end EXTERNAL_FUNCTION;
   record RECORD_CONSTRUCTOR
     Absyn.Path name;
@@ -1650,6 +1651,7 @@ algorithm
       Absyn.Path name;
       DAE.ElementSource source;
       Absyn.Info info;
+      Boolean dynamicLoad;
       
       // Modelica functions.
     case (DAE.FUNCTION(path = fpath, source = source,
@@ -1683,7 +1685,7 @@ algorithm
         inVars = Util.listMap(DAEUtil.getInputVars(daeElts), daeInOutSimVar);
         biVars = Util.listMap(DAEUtil.getBidirVars(daeElts), daeInOutSimVar);
         (recordDecls,rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
-        (fn_includes, fn_includeDirs, fn_libs) = generateExtFunctionIncludes(fpath,ann);
+        (fn_includes, fn_includeDirs, fn_libs,dynamicLoad) = generateExtFunctionIncludes(fpath,ann);
         includes = Util.listUnion(fn_includes, includes);
         includeDirs = Util.listUnion(fn_includeDirs, includeDirs);
         libs = Util.listUnion(fn_libs, libs);
@@ -1693,7 +1695,7 @@ algorithm
         info = DAEUtil.getElementSourceFileInfo(source);
       then
         (EXTERNAL_FUNCTION(fpath, extfnname, funArgs, simextargs, extReturn,
-          inVars, outVars, biVars, fn_libs, lang, info),
+          inVars, outVars, biVars, fn_libs, lang, info, dynamicLoad),
           rt_1,recordDecls,includes,includeDirs,libs);
         
         // Record constructor.
@@ -8718,21 +8720,24 @@ protected function generateExtFunctionIncludes
   output list<String> includes;
   output list<String> includeDirs;
   output list<String> libs;
+  output Boolean dynamcLoad;
 algorithm
-  (includes,includeDirs,libs):=
+  (includes,includeDirs,libs,dynamcLoad):=
   match (path,inAbsynAnnotationOption)
     local
       SCode.Mod mod;
+      Boolean b;
 
     case (path,SOME(SCode.ANNOTATION(mod)))
       equation
+        b = generateExtFunctionDynamicLoad(mod);
         libs = generateExtFunctionIncludesLibstr(mod);
         includes = generateExtFunctionIncludesIncludestr(mod);
         libs = generateExtFunctionLibraryDirectoryFlags(path,mod,libs);
         includeDirs = generateExtFunctionIncludeDirectoryFlags(path,mod,includes);
       then
-        (includes,includeDirs,libs);
-    case (_,NONE()) then ({},{},{});
+        (includes,includeDirs,libs,b);
+    case (_,NONE()) then ({},{},{},false);
   end match;
 end generateExtFunctionIncludes;
 
@@ -8918,6 +8923,26 @@ algorithm
     else {};
   end matchcontinue;
 end generateExtFunctionIncludesIncludestr;
+
+protected function generateExtFunctionDynamicLoad
+  input SCode.Mod inMod;
+  output Boolean outDynamicLoad;
+algorithm
+  outDynamicLoad:= matchcontinue (inMod)
+    local
+      list<Absyn.Exp> arr;
+      list<String> libs;
+      list<list<String>> libsList;
+      Boolean b;
+    case (_)
+      equation
+        SCode.MOD(binding = SOME((Absyn.BOOL(b), _))) =
+          Mod.getUnelabedSubMod(inMod, "DynamicLoad");
+      then
+        b;
+    else false;
+  end matchcontinue;
+end generateExtFunctionDynamicLoad;
 
 protected function matchFnRefs
 "Used together with getMatchingExps"
@@ -10799,6 +10824,30 @@ algorithm
   SIMVAR(name=name) := var;
 end varName;
 
+public function countDynamicExternalFunctions
+  input list<Function> inFncLst;
+  output Integer outDynLoadFuncs;
+algorithm
+  outDynLoadFuncs:= matchcontinue(inFncLst)
+  local 
+     list<Function> rest;
+     Function fn;
+     Integer i;
+  case({})
+     then 
+       0;
+  case(EXTERNAL_FUNCTION(dynamicLoad=true)::rest)
+     equation
+      i = countDynamicExternalFunctions(rest);
+    then 
+      intAdd(i,1);
+  case(fn::rest)
+    equation
+      i = countDynamicExternalFunctions(rest);
+    then 
+      i;
+end matchcontinue;
+end countDynamicExternalFunctions;
 
 
 end SimCode;
