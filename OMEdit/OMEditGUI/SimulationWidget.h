@@ -74,6 +74,8 @@ private:
     QComboBox *mpOutputFormatComboBox;
     QLabel *mpFileNameLabel;
     QLineEdit *mpFileNameTextBox;
+    QLabel *mpVariableFilterLabel;
+    QLineEdit *mpVariableFilterTextBox;
     QLabel *mpCflagsLabel;
     QLineEdit *mpCflagsTextBox;
     QGroupBox *mpSaveSimulationGroup;

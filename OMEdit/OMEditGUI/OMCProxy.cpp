@@ -149,7 +149,7 @@ bool OMCProxy::startServer()
         QString omcPath;
         #ifdef WIN32
           if (!omhome)
-            throw std::runtime_error(GUIMessages::getMessage(GUIMessages::OPEN_MODELICA_HOME_NOT_FOUND).toLocal8Bit());
+            throw std::runtime_error(GUIMessages::getMessage(GUIMessages::OPEN_MODELICA_HOME_NOT_FOUND).toStdString());
           omcPath = QString( omhome ) + "/bin/omc.exe";
         #else /* unix */
           omcPath = (omhome ? QString(omhome)+"/bin/omc" : QString(CONFIG_DEFAULT_OPENMODELICAHOME) + "/bin/omc");
@@ -518,15 +518,8 @@ QStringList OMCProxy::getClassInformation(QString modelName)
 {
     sendCommand("getClassInformation(" + modelName + ")");
     QString result = getResult();
-    QStringList emp;
-    emp << "" << "" << "" << "" << "";
-    if(result=="")
-     { return emp;}
-    else
-    {
     QStringList list = StringHandler::unparseStrings(result);
     return list;
-    }
 }
 
 

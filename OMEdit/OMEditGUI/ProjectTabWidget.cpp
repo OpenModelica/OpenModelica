@@ -2303,9 +2303,6 @@ void ProjectTabWidget::saveProjectTab(int index, bool saveAs)
 
     QString tabName = tabText(index);
 
-
-
-
     if (saveAs)
     {
         if (saveModel(saveAs))
@@ -2355,9 +2352,7 @@ void ProjectTabWidget::saveProjectTab(int index, bool saveAs)
     QString oldModelName = pCurrentTab->mModelName;
     QString oldModelNameStructure = pCurrentTab->mModelNameStructure;
     ModelicaTreeNode *node = pCurrentTab->mpParentProjectTabWidget->mpParentMainWindow->mpLibrary->mpModelicaTree->getNode(pCurrentTab->mModelNameStructure);
-        pCurrentTab->mpParentProjectTabWidget->mpParentMainWindow->mpLibrary->updateNodeText(oldModelName, oldModelNameStructure, node);
-
-
+    pCurrentTab->mpParentProjectTabWidget->mpParentMainWindow->mpLibrary->updateNodeText(oldModelName, oldModelNameStructure, node);
 }
 
 //! Saves the model in the active project tab to a model file.

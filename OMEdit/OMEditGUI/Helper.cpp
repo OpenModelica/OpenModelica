@@ -132,7 +132,7 @@ QString Helper::sphereBrushIcon = QString(":/Resources/icons/sphere.png");
 QString Helper::sphereBrush = QString("Sphere");
 Qt::BrushStyle Helper::sphereBrushStyle = Qt::RadialGradientPattern;
 
-QString Helper::ModelicaSimulationMethods = "DASSL,DASSL2,Euler,Runge-Kutta";
+QString Helper::ModelicaSimulationMethods = "DASSL,DASSL2,Euler,RungeKutta";
 QString Helper::ModelicaSimulationOutputFormats = "mat,plt,csv,empty";
 
 QString GUIMessages::getMessage(int type)

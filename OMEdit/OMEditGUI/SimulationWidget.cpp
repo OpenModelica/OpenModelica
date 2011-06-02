@@ -97,7 +97,9 @@ void SimulationWidget::setUpForm()
     mpOutputFormatComboBox->addItems(Helper::ModelicaSimulationOutputFormats.toLower().split(","));
     mpFileNameLabel = new QLabel(tr("File Name (Optional):"));
     mpFileNameTextBox = new QLineEdit(tr(""));
-    mpCflagsLabel = new QLabel(tr("Compiler Flags:"));
+    mpVariableFilterLabel = new QLabel(tr("Variable Filter (Optional):"));
+    mpVariableFilterTextBox = new QLineEdit(tr(""));
+    mpCflagsLabel = new QLabel(tr("Compiler Flags (Optional):"));
     mpCflagsTextBox = new QLineEdit(tr(""));
 
     gridIntegrationLayout->addWidget(mpMethodLabel, 0, 0);
@@ -108,8 +110,10 @@ void SimulationWidget::setUpForm()
     gridIntegrationLayout->addWidget(mpOutputFormatComboBox, 2, 1);
     gridIntegrationLayout->addWidget(mpFileNameLabel, 3, 0);
     gridIntegrationLayout->addWidget(mpFileNameTextBox, 3, 1);
-    gridIntegrationLayout->addWidget(mpCflagsLabel, 4, 0);
-    gridIntegrationLayout->addWidget(mpCflagsTextBox, 4, 1);
+    gridIntegrationLayout->addWidget(mpVariableFilterLabel, 4, 0);
+    gridIntegrationLayout->addWidget(mpVariableFilterTextBox, 4, 1);
+    gridIntegrationLayout->addWidget(mpCflagsLabel, 5, 0);
+    gridIntegrationLayout->addWidget(mpCflagsTextBox, 5, 1);
     mpIntegrationGroup->setLayout(gridIntegrationLayout);
 
     // save simulations options
@@ -253,6 +257,9 @@ void SimulationWidget::simulate()
         if (!mpFileNameTextBox->text().isEmpty())
             simualtionParameters.append(tr(", fileNamePrefix=")).append("\"")
                             .append(mpFileNameTextBox->text()).append("\"");
+        if (!mpVariableFilterTextBox->text().isEmpty())
+            simualtionParameters.append(tr(", variableFilter=")).append("\"")
+                            .append(mpVariableFilterTextBox->text()).append("\"");
         if (!mpCflagsTextBox->text().isEmpty())
             simualtionParameters.append(tr(", cflags=")).append("\"")
                             .append(mpCflagsTextBox->text()).append("\"");
