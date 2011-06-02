@@ -612,6 +612,7 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
+SQLITE3_LIBS
 OPENMODELICA_SPEC_PLATFORM
 MODELICA_SPEC_PLATFORM
 OMSHELL_TERMINAL
@@ -695,6 +696,7 @@ enable_option_checking
 enable_rml_trace
 enable_omshell_terminal
 with_static_lpsolve
+with_static_sqlite
 with_CORBA
 with_MICO
 with_omniORB
@@ -1333,6 +1335,7 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-static-lpsolve=DIR  (default to dynamic linking; searches /usr if no other directory is provided)
+  --with-static-sqlite=FILE  (default to dynamic linking)
   --with-CORBA=DIR       use mico corba installed in DIR (or use mico-config)
   --with-MICO=DIR        use mico corba installed in DIR (or use mico-config)
   --with-omniORB=DIR     use omniORB installed in DIR
@@ -2224,6 +2227,7 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 
 
 
@@ -4862,6 +4866,16 @@ fi
 fi
 
 
+
+# Check whether --with-static-sqlite was given.
+if test "${with_static_sqlite+set}" = set; then :
+  withval=$with_static_sqlite; WANT_STATIC_SQLITE="$withval"
+else
+  WANT_STATIC_SQLITE="no"
+fi
+
+
+LIBS=""
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sqlite3_libversion in -lsqlite3" >&5
 $as_echo_n "checking for sqlite3_libversion in -lsqlite3... " >&6; }
 if test "${ac_cv_lib_sqlite3_sqlite3_libversion+set}" = set; then :
@@ -4909,6 +4923,14 @@ else
   as_fn_error $? "sqlite3 not found" "$LINENO" 5
 fi
 
+
+if test "$WANT_STATIC_SQLITE" = "no"; then
+  SQLITE3_LIBS=$LIBS
+elif test ! -f "$WANT_STATIC_SQLITE" ; then
+  as_fn_error $? "File not found: $WANT_STATIC_SQLITE" "$LINENO" 5
+else
+  SQLITE3_LIBS=$WANT_STATIC_SQLITE
+fi
 
 
 
