@@ -2856,9 +2856,12 @@ algorithm
         // move changed variables         
         (vars1,knvars1) = BackendVariable.moveVariables(vars,knvars,movedVars);
         // remove changed eqns
+        eqnlst = Util.listMap1(eqnlst,intSub,1);
         eqns1 = BackendEquation.equationDelete(eqns,eqnlst);
+        dae1 = BackendDAE.DAE(vars1,knvars1,exobj,aliasVars,eqns1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
+        (m,mT) = BackendDAEUtil.incidenceMatrix(dae1, BackendDAE.NORMAL());
       then
-        (BackendDAE.DAE(vars1,knvars,exobj,aliasVars,eqns1,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT,ass1,ass2,comps1,b);
+        (dae1,m,mT,ass1,ass2,comps1,b);
   end matchcontinue;  
 end constantLinearSystem;
 
@@ -2906,7 +2909,7 @@ algorithm
       Boolean b;
       list<BackendDAE.Equation> eqn_lst; 
       list<BackendDAE.Var> var_lst;
-      list<Integer> eindex;
+      list<Integer> eindex,remeqnlst,remeqnlst1;
       list<DAE.Exp> beqs;
       list<DAE.ElementSource> sources;
       list<Real> rhsVals,solvedVals;
@@ -2914,8 +2917,7 @@ algorithm
       list<list<Real>> jacVals;
       Integer linInfo;
       list<DAE.ComponentRef> names;
-      list<Integer> remeqnlst;
-      BackendDAE.BinTree movedVars;
+      BackendDAE.BinTree movedVars,movedVars1;
     case (dae,funcs,inM,inMT,inAss1,inAss2,{},inEqnlst,inMovedVars)
       then
         (dae,inM,inMT,inAss1,inAss2,{},false,inEqnlst,inMovedVars);
@@ -2925,7 +2927,7 @@ algorithm
         var_lst = listReverse(var_lst);
         eqns1 = BackendDAEUtil.listEquation(eqn_lst);
         ((_,_,_,beqs,sources)) = BackendEquation.traverseBackendDAEEqns(eqns1,BackendEquation.equationToExp,(vars,arreqns,{},{},{}));
-        beqs = listReverse(beqs);
+        //beqs = listReverse(beqs);
         rhsVals = ValuesUtil.valueReals(Util.listMap(beqs,Ceval.cevalSimple));
         jacVals = evaluateConstantJacobian(listLength(var_lst),jac);
         (solvedVals,linInfo) = System.dgesv(jacVals,rhsVals);
@@ -2934,9 +2936,11 @@ algorithm
         sources = Util.listMap1(sources, DAEUtil.addSymbolicTransformation, DAE.LINEAR_SOLVED(names,jacVals,rhsVals,solvedVals));           
         vars1 = changeconstantLinearSystemVars(var_lst,solvedVals,sources,vars);
         dae = BackendDAE.DAE(vars1,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc);                    
-        (dae1,m,mT,ass1,ass2,comps1,b,remeqnlst,movedVars) = constantLinearSystem1(dae,funcs,inM,inMT,inAss1,inAss2,comps,inEqnlst,inMovedVars);
+        remeqnlst = listAppend(eindex,inEqnlst);
+        movedVars = BackendDAEUtil.treeAddList(inMovedVars, names);
+        (dae1,m,mT,ass1,ass2,comps1,b,remeqnlst1,movedVars1) = constantLinearSystem1(dae,funcs,inM,inMT,inAss1,inAss2,comps,remeqnlst,movedVars);
       then
-        (dae1,m,mT,ass1,ass2,comp::comps1,b,remeqnlst,movedVars);
+        (dae1,m,mT,ass1,ass2,comp::comps1,true,remeqnlst1,movedVars1);
     case (dae,funcs,inM,inMT,inAss1,inAss2,comp::comps,inEqnlst,inMovedVars)
       equation
          (dae1,m,mT,ass1,ass2,comps1,b,remeqnlst,movedVars) = constantLinearSystem1(dae,funcs,inM,inMT,inAss1,inAss2,comps,inEqnlst,inMovedVars);
