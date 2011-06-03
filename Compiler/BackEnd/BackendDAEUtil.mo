@@ -6266,7 +6266,7 @@ public function getPastOptModulesString
 " function: getPreOptModulesString"
   output list<String> strPastOptModules;
 algorithm
- strPastOptModules := RTOpts.getPastOptModules({"lateInline","inlineArrayEqn","removeSimpleEquations"});           
+ strPastOptModules := RTOpts.getPastOptModules({"lateInline","inlineArrayEqn","constantLinearSystem","removeSimpleEquations"});           
 end getPastOptModulesString;
 
 protected function getPastOptModules
