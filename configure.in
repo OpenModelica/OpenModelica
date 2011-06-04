@@ -173,6 +173,10 @@ AC_CHECK_HEADER(readline/history.h,,AC_MSG_ERROR([readline missing]))
 AC_SEARCH_LIBS(readline,readline,,[AC_MSG_ERROR([readline missing])])
 fi
 
+dnl Misc. headers
+
+AC_CHECK_HEADER(expat.h,,AC_MSG_ERROR([expat missing]))
+
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_TYPE_SIZE_T

@@ -4184,6 +4184,16 @@ fi
 
 fi
 
+
+ac_fn_c_check_header_mongrel "$LINENO" "expat.h" "ac_cv_header_expat_h" "$ac_includes_default"
+if test "x$ac_cv_header_expat_h" = x""yes; then :
+
+else
+  as_fn_error $? "expat missing" "$LINENO" 5
+fi
+
+
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for an ANSI C-conforming const" >&5
 $as_echo_n "checking for an ANSI C-conforming const... " >&6; }
 if test "${ac_cv_c_const+set}" = set; then :
