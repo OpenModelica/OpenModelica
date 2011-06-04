@@ -1866,22 +1866,26 @@ algorithm
       list<tuple<DAE.ComponentRef,Integer>> states;  
       BackendDAE.Assignments ass1,ass2; 
       array<BackendDAE.Value> vec1,vec2;
+      String smeqs;
 
     case (BackendDAE.REDUCE_INDEX(),dae,m,mt,inFunctions,ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst))
       equation
         eqns = BackendDAEEXT.getMarkedEqns();
         diff_eqns = BackendDAEEXT.getDifferentiatedEqns();
         eqns_1 = Util.listSetDifferenceOnTrue(eqns, diff_eqns, intEq);
-         print("marked equations:");print(Util.stringDelimitList(Util.listMap(eqns_1,intString),","));
-         print("\n");
-         print(BackendDump.dumpMarkedEqns(dae, eqns));
-
+        Debug.fcall("bltdump", print, "Reduce Index\n");
+        Debug.fcall("bltdump", print, "marked equations: ");
+        Debug.fcall("bltdump", BackendDump.debuglst, (eqns_1,intString));
+        Debug.fcall("bltdump", print, "\n");
+        smeqs = BackendDump.dumpMarkedEqns(dae, eqns);
+        Debug.fcall("bltdump", print, smeqs);
         (dae,deqns,derivedAlgs1,derivedMultiEqn1,orgEqns,so1) = differentiateEqnsX(dae,eqns_1,inFunctions,derivedAlgs,derivedMultiEqn,so);
         //dae = replaceStateOrder(deqns,dae,so1);
-        print("Update Incidence Matrix: "); BackendDump.debuglst((deqns,intString)); print("\n");
+        Debug.fcall("bltdump", print, "Update Incidence Matrix: ");
+        Debug.fcall("bltdump", BackendDump.debuglst,(deqns,intString));
+        Debug.fcall("bltdump", print, "\n");
         (m,mt) = BackendDAEUtil.updateIncidenceMatrix(dae, m, mt, deqns);
-         print("new DAE:");
-         BackendDump.dump(dae);
+        Debug.fcall("bltdump", BackendDump.dump, dae);
       then
         (dae,m,mt,ass1,ass2,derivedAlgs1,derivedMultiEqn1,(so1,orgEqns::orgEqnsLst));
 
@@ -1892,22 +1896,18 @@ algorithm
       equation
          vec1 = assignmentsVector(ass1);
          vec2 = assignmentsVector(ass2);
-         BackendDump.dumpMatching(vec1);
-         BackendDump.dumpMatching(vec2);         
+         Debug.fcall("bltdump", print, "Reduce Index Endstep\n");
+         Debug.fcall("bltdump", BackendDump.dumpMatching, vec1);
+         Debug.fcall("bltdump", BackendDump.dumpMatching, vec2);      
         (orgEqnsLst1,ae1,al1,wclst1) = replaceStateOrderOrgEqns(orgEqnsLst,ae,al,wclst,so);
-          dumpEqnsX(orgEqnsLst);
-          dumpStateOrder(so);
+         Debug.fcall("bltdump", dumpEqnsX, orgEqnsLst);
+         Debug.fcall("bltdump", dumpStateOrder, so);        
         states = statesCandidates(dae,so);
         (dae,m,mt,states,ass1,ass2) = selectDummyStates(orgEqnsLst1,so,dae,m,mt,states,ass1,ass2);  
-         print("new DAE:");
-         BackendDump.dump(dae);        
-         BackendDump.dumpIncidenceMatrix(m);
-         BackendDump.dumpIncidenceMatrixT(mt);
          vec1 = assignmentsVector(ass1);
          vec2 = assignmentsVector(ass2);
-         BackendDump.dumpMatching(vec1);
-         BackendDump.dumpMatching(vec2);         
-      then (dae,m,mt,ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst));
+        Debug.fcall("bltdump", BackendDump.bltdump, ("new DAE:",dae,m,mt,vec1,vec2,{}));
+     then (dae,m,mt,ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst));
 
     case (BackendDAE.REDUCE_INDEX(),dae,m,mt,_,_,_,_,_,_)
       equation
@@ -1928,7 +1928,7 @@ algorithm
       then
         fail();
 
-    case (_,_,_,_,_,_,_,_,_,_)
+    else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"- BackendDAETransform.reduceIndexDummyDerX failed!"});
       then
@@ -2026,7 +2026,7 @@ algorithm
       Integer leneqns;
     case (false,inEquationArray,inInteger,inEquation)
       equation
-        print("Replace Eqn with diffeqn "); print(intString(inInteger)); print("\n");
+        Debug.fcall("bltdump", BackendDump.debugStrIntStr, (("Replace Eqn with diffeqn "),inInteger,"\n")); 
         eqns = BackendEquation.equationSetnth(inEquationArray,inInteger-1,inEquation);
       then
         (inInteger,eqns);      
@@ -2034,7 +2034,7 @@ algorithm
       equation
         eqns = BackendEquation.equationAdd(inEquation,inEquationArray);
         leneqns = BackendDAEUtil.equationSize(eqns);
-        print("Add diffEqn "); print(intString(leneqns)); print(" old eqn"); print(intString(inInteger)); print("\n");
+        Debug.fcall("bltdump", BackendDump.debugStrIntStrIntString, (("Add diffEqn "),leneqns," old eqn",inInteger,"\n")); 
         BackendDAEEXT.markDifferentiated(inInteger) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
       then
         (leneqns,eqns);
@@ -2165,20 +2165,21 @@ algorithm
     case ({},inStateOrd,inBackendDAE,m,mt,inStates,ass1,ass2) then (inBackendDAE,m,mt,inStates,ass1,ass2);
     case ((e,orgeqn)::rest,inStateOrd,(dae as BackendDAE.DAE(v,kv,ev,av,eqns,seqns,ie,ae,al,BackendDAE.EVENT_INFO(wclst,zc),eoc)),m,mt,inStates,ass1,ass2)
       equation
-         print("Select Dummy State from Eqn "); print(intString(e)); print("  "); print(BackendDump.equationStr(orgeqn)); print("\n");
+        Debug.fcall("bltdump", BackendDump.debugStrIntStr, (("Select Dummy State from Eqn "),e,"  ")); 
+        Debug.fcall("bltdump",  print ,BackendDump.equationStr(orgeqn));
         // get candidates
         str = Util.stringDelimitList(Util.listMap(inStates,dumpStates)," : "); 
-        print("Candidates: "); print(str); print("\n");
+        Debug.fcall("bltdump", print, "\nCandidates: " +& str +& "\n"); 
         // get Jacobian
         jac = calculateJacobian(orgeqn,ae,al,inStates);
         str = Util.stringDelimitList(Util.listMap(jac,ExpressionDump.printExpStr)," : "); 
-        print("Jac: "); print(str); print("\n");
+        Debug.fcall("bltdump", print, "Jac: " +& str +& "\n"); 
         // analyse jac -> get dummy derivative candidate
         (dummydercand,dyndummydercand) = analyseJac(jac,inStates);
         str = Util.stringDelimitList(Util.listMap(dummydercand,dumpStates1)," : "); 
-        print("Dummy DerCandidates: "); print(str); print("\n");
+        Debug.fcall("bltdump", print, "Dummy DerCandidates: " +& str +& "\n");
         str = Util.stringDelimitList(Util.listMap(dyndummydercand,dumpStates1)," : "); 
-        print("Dynamic DummyDer Candidates: "); print(str); print("\n");
+        Debug.fcall("bltdump", print, "Dynamic DummyDer Candidates: " +& str +& "\n");
         // add derived equation at the end      
         eqns_1 = BackendEquation.equationAdd(orgeqn,eqns);
         ep = arrayLength(m)+1;
@@ -2238,9 +2239,9 @@ algorithm
         ass1 = assignmentsExpand(ass1, 1);
         ass2 = assignmentsExpand(ass2, 1);  
         ast =  getAssigned(stateno,ass1,ass2);
-        print("Assign: "); print(intString(stateno)); print(" "); print(intString(ep)); print("\n");
+        Debug.fcall("bltdump", BackendDump.debugStrIntStrIntString, ("Assign: ",stateno," ",ep,"\n"));
         (ass1,ass2) = assign(stateno, ep, ass1, ass2);         
-        print("Assign: "); print(intString(ep)); print(" "); print(intString(ast)); print("\n");
+        Debug.fcall("bltdump", BackendDump.debugStrIntStrIntString, ("Assign: ",ep," ",ast,"\n"));
         (ass1,ass2) = assign(ep, ast, ass1, ass2);      
       then
         (dae,m,mt,states,ass1,ass2);
@@ -2283,23 +2284,25 @@ algorithm
         ep1 = ep+1;
         ep2 = ep+2;
         ep3 = ep+3;
-        print("Update Incidence Matrix: "); BackendDump.debuglst(({ep1,ep2,ep3},intString)); print("\n");
+        Debug.fcall("bltdump", print, "Update Incidence Matrix: ");
+        Debug.fcall("bltdump", BackendDump.debuglst,({ep1,ep2,ep3},intString));
+        Debug.fcall("bltdump", print, "\n");
         (m,mt) = BackendDAEUtil.updateIncidenceMatrix(dae, m, mt, {ep1,ep2,ep3});
         ass1 = assignmentsExpand(ass1, 4);
         ass2 = assignmentsExpand(ass2, 4);  
         ast =  getAssigned(stateno,ass1,ass2);
         ast1 =  getAssigned(stateno1,ass1,ass2);
-        print("Assign: "); print(intString(stateno)); print(" "); print(intString(ep)); print("\n");
+        Debug.fcall("bltdump", BackendDump.debugStrIntStrIntString, ("Assign: ",stateno," ",ep,"\n"));
         (ass1,ass2) = assign(stateno, ep, ass1, ass2);        
-        print("Assign: "); print(intString(stateno1)); print(" "); print(intString(ep1)); print("\n");
+        Debug.fcall("bltdump", BackendDump.debugStrIntStrIntString, ("Assign: ",stateno1," ",ep1,"\n"));
         (ass1,ass2) = assign(stateno1, ep1, ass1, ass2);        
-        print("Assign: "); print(intString(ep)); print(" "); print(intString(ast)); print("\n");
+        Debug.fcall("bltdump", BackendDump.debugStrIntStrIntString, ("Assign: ",ep," ",ast,"\n"));
         (ass1,ass2) = assign(ep, ast, ass1, ass2);        
-        print("Assign: "); print(intString(ep1)); print(" "); print(intString(ast1)); print("\n");
+        Debug.fcall("bltdump", BackendDump.debugStrIntStrIntString, ("Assign: ",ep1," ",ast1,"\n"));
         (ass1,ass2) = assign(ep1, ast1, ass1, ass2);        
-        print("Assign: "); print(intString(ep2)); print(" "); print(intString(ep2)); print("\n");
+        Debug.fcall("bltdump", BackendDump.debugStrIntStrIntString, ("Assign: ",ep2," ",ep2,"\n"));
         (ass1,ass2) = assign(ep2, ep2, ass1, ass2);        
-        print("Assign: "); print(intString(ep3)); print(" "); print(intString(ep3)); print("\n");
+        Debug.fcall("bltdump", BackendDump.debugStrIntStrIntString, ("Assign: ",ep3," ",ep3,"\n"));
         (ass1,ass2) = assign(ep3, ep3, ass1, ass2);        
       then
         (dae,m,mt,states,ass1,ass2);
@@ -2378,10 +2381,12 @@ algorithm
     case (dummystates,stateindx,dae,m,mt,states,inStateOrd)
       equation
         (state,stateno) = selectDummyState(dummystates, stateindx, dae, m, mt);
-         print("Selected ");print(ComponentReference.printComponentRefStr(state));print(" as dummy state\n");
-         print(" From candidates:");print(Util.stringDelimitList(Util.listMap(dummystates,ComponentReference.printComponentRefStr),", "));print("\n");
+        Debug.fcall("bltdump", BackendDump.debugStrCrefStr, ("Selected ",state," as dummy state\n"));
+        Debug.fcall("bltdump", print ," From candidates:");
+        Debug.fcall("bltdump", BackendDump.debuglst ,(dummystates,ComponentReference.printComponentRefStr));
+        Debug.fcall("bltdump", print ,"\n");
         (dummy_der,dae) = newDummyVar(state, dae, DAE.NEW_DUMMY_DER(state,dummystates));
-         print("Chosen dummy: ");print(ComponentReference.printComponentRefStr(dummy_der));print("\n");
+        Debug.fcall("bltdump", BackendDump.debugStrCrefStr, ("Chosen dummy: ",dummy_der," as dummy state\n"));
         changedeqns = BackendDAEUtil.eqnsForVarWithStates(mt, stateno);
         stateexp = Expression.crefExp(state);
         tp = Expression.typeof(stateexp);
@@ -2390,13 +2395,15 @@ algorithm
         (dae,m,mt) = replaceDummyDer(stateexpcall, dummyderexp, dae, m, mt, changedeqns)
         "We need to change variables in the differentiated equations and in the equations having the dummy derivative" ;
         dae = makeAlgebraic(dae, state);
-        print("Update Incidence Matrix: "); BackendDump.debuglst((changedeqns,intString)); print("\n");
+        Debug.fcall("bltdump", print ,"Update Incidence Matrix: ");
+        Debug.fcall("bltdump", BackendDump.debuglst, (changedeqns,intString));
+        Debug.fcall("bltdump", print ,"\n");
         (m,mt) = BackendDAEUtil.updateIncidenceMatrix(dae, m, mt, changedeqns);
         // update statecandidates
         states = updateStateCandidates(state,states,inStateOrd,BackendVariable.daeVars(dae));
       then
         (dae,m,mt,states,state,dummy_der,stateno);
-    case (_,_,_,_,_,_,_)
+    else
       equation
          print("selectDummyDerivative failed");
       then fail();

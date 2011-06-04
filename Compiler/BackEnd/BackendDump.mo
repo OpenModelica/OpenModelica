@@ -1898,6 +1898,16 @@ algorithm
   print(a +& intString(b) +& c);
 end debugStrIntStr;
 
+public function debugStrIntStrIntString
+  input tuple<String,Integer,String,Integer,String> inTpl;
+protected
+  String a,c,e;
+  Integer b,d;
+algorithm
+  (a,b,c,d,e) := inTpl;
+  print(a +& intString(b) +& c +& intString(d) +& e);
+end debugStrIntStrIntString;
+
 public function debugCrefStrIntStr
   input tuple<DAE.ComponentRef,String,Integer,String> inTpl;
 protected
