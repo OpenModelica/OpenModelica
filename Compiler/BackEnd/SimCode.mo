@@ -3343,7 +3343,7 @@ algorithm
     case (includeWhen, skipDiscInZc, false, skipDiscInAlgorithm, linearSystem, dlow as BackendDAE.DAE(orderedVars=vars), ass1, ass2, BackendDAE.SINGLEEQUATION(var=index) :: restComps, helpVarInfo)
       equation
         v = BackendVariable.getVarAt(vars,index);
-        true = hasDiscreteVar({v});
+        true = BackendVariable.hasDiscreteVar({v});
         equations = createEquations(includeWhen, skipDiscInZc, false,  skipDiscInAlgorithm, linearSystem, dlow, ass1, ass2, restComps, helpVarInfo);
       then
         equations;
@@ -3352,7 +3352,7 @@ algorithm
     case (includeWhen, true, genDiscrete,  skipDiscInAlgorithm, linearSystem, dlow as BackendDAE.DAE(orderedVars=vars, orderedEqs=eqns), ass1, ass2, BackendDAE.SINGLEEQUATION(eqn=index,var=vindex) :: restComps, helpVarInfo)
       equation
         v = BackendVariable.getVarAt(vars,vindex);
-        true = hasDiscreteVar({v});
+        true = BackendVariable.hasDiscreteVar({v});
         zcEqns = BackendDAECreate.zeroCrossingsEquations(dlow);
         true = listMember(index, zcEqns);
         equations = createEquations(includeWhen, true, genDiscrete,  skipDiscInAlgorithm, linearSystem, dlow, ass1, ass2, restComps, helpVarInfo);
@@ -4027,7 +4027,7 @@ algorithm
       array<Algorithm.Algorithm> al;
       BackendDAE.EventInfo ev;
       array<Integer> ass1,ass2;
-      list<Integer> block_;
+      list<Integer> ieqns,ivars,disc_eqns,disc_vars;
       BackendDAE.ExternalObjectClasses eoc;
       list<SimVar> simVarsDisc;
       list<SimEqSystem> discEqs;
@@ -4046,12 +4046,14 @@ algorithm
       Integer index;
       
       // create always a linear system of equations 
-    case (genDiscrete,skipDiscInAlgorithm,true,(daelow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,comp as BackendDAE.EQUATIONSYSTEM(jac=jac,jacType=jac_tp),helpVarInfo)
+    case (genDiscrete,skipDiscInAlgorithm,true,(daelow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,comp as BackendDAE.EQUATIONSYSTEM(eqns=ieqns,vars=ivars,jac=jac,jacType=jac_tp),helpVarInfo)
       equation
         //print("\ncreateOdeSystem -> Linear: ...\n");
         //BackendDump.printEquations(block_,daelow);
         // extract the variables and equations of the block.
-        (eqn_lst,var_lst,index) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
+        eqn_lst = BackendEquation.getEqns(ieqns,eqns);
+        var_lst = Util.listMap1r(ivars, BackendVariable.getVarAt, vars);
+        index = Util.listFirst(ieqns);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
         ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);
         // States are solved for der(x) not x.
@@ -4067,64 +4069,70 @@ algorithm
         equations_ = createOdeSystem2(false, genDiscrete, skipDiscInAlgorithm, vars_1,knvars_1,eqns_1,ae1,al,jac, jac_tp, helpVarInfo,index);
       then
         equations_;
-        
-        // mixed system of equations, continuous part only
-    case (false, skipDiscInAlgorithm, false,(daelow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,comp,helpVarInfo)
+    case (genDiscrete,skipDiscInAlgorithm,true,(daelow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,comp as BackendDAE.MIXEDEQUATIONSYSTEM(eqns=ieqns,vars=ivars,jac=jac,jacType=jac_tp,disc_eqns=disc_eqns,disc_vars=disc_vars),helpVarInfo)
       equation
-        //print("\ncreateOdeSystem -> Mixed: cont\n");
+        //print("\ncreateOdeSystem -> Linear: ...\n");
         //BackendDump.printEquations(block_,daelow);
-        (eqn_lst,var_lst,index) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
+        // extract the variables and equations of the block.
+        ieqns = listAppend(ieqns,disc_eqns);
+        eqn_lst = BackendEquation.getEqns(ieqns,eqns);
+        ivars = listAppend(ivars,disc_vars);
+        var_lst = Util.listMap1r(ivars, BackendVariable.getVarAt, vars);
+        index = Util.listFirst(ieqns);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
-        true = isMixedSystem(var_lst,eqn_lst);
         ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);
-        (cont_eqn,cont_var,disc_eqn,disc_var) = splitMixedEquations(eqn_lst, var_lst);
         // States are solved for der(x) not x.
-        cont_var1 = Util.listMap(cont_var, transformXToXd);
-        vars_1 = BackendDAEUtil.listVar(cont_var1);
+        var_lst_1 = Util.listMap(var_lst, transformXToXd);
+        vars_1 = BackendDAEUtil.listVar(var_lst_1);
         // because listVar orders the elements not like listEquation the pairs of (var is solved in equation)
         // is  twisted, simple reverse one list
         eqn_lst = listReverse(eqn_lst);
+        eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
+        knvars_1 = BackendEquation.equationsVars(eqns_1,knvars);
+        // if BackendDAEUtil.JAC_NONLINEAR() then set to time_varying
+        jac_tp = changeJactype(jac_tp);
+        equations_ = createOdeSystem2(false, genDiscrete, skipDiscInAlgorithm, vars_1,knvars_1,eqns_1,ae1,al,jac, jac_tp, helpVarInfo,index);
+      then
+        equations_;        
+        // mixed system of equations, continuous part only
+    case (false, skipDiscInAlgorithm, false,(daelow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,BackendDAE.MIXEDEQUATIONSYSTEM(eqns=ieqns,vars=ivars,jac=jac,jacType=jac_tp,disc_eqns=disc_eqns,disc_vars=disc_vars),helpVarInfo)
+      equation
+        //print("\ncreateOdeSystem -> Mixed: cont\n");
+        //BackendDump.printEquations(block_,daelow);
+        cont_eqn = BackendEquation.getEqns(ieqns,eqns); 
+        disc_eqn = BackendEquation.getEqns(disc_eqns,eqns); 
+        cont_var = Util.listMap1r(ivars, BackendVariable.getVarAt, vars);
+        disc_var = Util.listMap1r(disc_vars, BackendVariable.getVarAt, vars);
+        index = Util.listFirst(ieqns);
+        cont_eqn = replaceDerOpInEquationList(cont_eqn);
+        ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);
+        // States are solved for der(x) not x.
+        cont_var1 = Util.listMap(cont_var, transformXToXd);
+        vars_1 = BackendDAEUtil.listVar(cont_var1);
         eqns_1 = BackendDAEUtil.listEquation(cont_eqn);
-        ave = BackendDAEUtil.emptyAliasVariables();
         eeqns = BackendDAEUtil.listEquation({});
         knvars_1 = BackendEquation.equationsVars(eqns_1,knvars);
-        cont_subsystem_dae = BackendDAE.DAE(vars_1,knvars_1,exvars,ave,eqns_1,eeqns,eeqns,ae1,al,ev,eoc);
-        (m,mt) = BackendDAEUtil.incidenceMatrix(cont_subsystem_dae, BackendDAE.ABSOLUTE());
-        //mt = BackendDAEUtil.transposeMatrix(m);
-        // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
-        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m, mt,true);
-        jac_tp = BackendDAEUtil.analyzeJacobian(cont_subsystem_dae, jac);
         equations_ = createOdeSystem2(false, false, skipDiscInAlgorithm, vars_1,knvars_1,eqns_1,ae1,al,jac, jac_tp, helpVarInfo,index);
       then
         equations_;
         
         // mixed system of equations, both continous and discrete eqns
-    case (true, skipDiscInAlgorithm, false,(dlow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,comp,helpVarInfo)
+    case (true, skipDiscInAlgorithm, false,(dlow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,BackendDAE.MIXEDEQUATIONSYSTEM(eqns=ieqns,vars=ivars,jac=jac,jacType=jac_tp,disc_eqns=disc_eqns,disc_vars=disc_vars),helpVarInfo)
       equation
         //print("\ncreateOdeSystem -> Mixed: cont. and discrete\n");
         //BackendDump.printEquations(block_,dlow);
-        (eqn_lst,var_lst,index) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
-        eqn_lst = replaceDerOpInEquationList(eqn_lst);
-        true = isMixedSystem(var_lst,eqn_lst);
-        ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);
-        (cont_eqn,cont_var,disc_eqn,disc_var) = splitMixedEquations(eqn_lst, var_lst);
+        cont_eqn = BackendEquation.getEqns(ieqns,eqns); 
+        disc_eqn = BackendEquation.getEqns(disc_eqns,eqns); 
+        cont_var = Util.listMap1r(ivars, BackendVariable.getVarAt, vars);
+        disc_var = Util.listMap1r(disc_vars, BackendVariable.getVarAt, vars);
+        index = Util.listFirst(ieqns);
+        cont_eqn = replaceDerOpInEquationList(cont_eqn);
+        ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);     
         // States are solved for der(x) not x.
         cont_var1 = Util.listMap(cont_var, transformXToXd);
         vars_1 = BackendDAEUtil.listVar(cont_var1);
-        // because listVar orders the elements not like listEquation the pairs of (var is solved in equation)
-        // is  twisted, simple reverse one list
-        eqn_lst = listReverse(eqn_lst);
         eqns_1 = BackendDAEUtil.listEquation(cont_eqn);
-        ave = BackendDAEUtil.emptyAliasVariables();
-        eeqns = BackendDAEUtil.listEquation({});
         knvars_1 = BackendEquation.equationsVars(eqns_1,knvars);
-        cont_subsystem_dae = BackendDAE.DAE(vars_1,knvars_1,exvars,ave,eqns_1,eeqns,eeqns,ae1,al,ev,eoc);
-        (m,mt) = BackendDAEUtil.incidenceMatrix(cont_subsystem_dae, BackendDAE.ABSOLUTE());
-        //mt = BackendDAEUtil.transposeMatrix(m);
-        // calculate jacobian. If constant, linear system of equations.
-        // Otherwise nonlinear
-        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m, mt, true);
-        jac_tp = BackendDAEUtil.analyzeJacobian(cont_subsystem_dae, jac);
         {equation_} = createOdeSystem2(true, true,  skipDiscInAlgorithm, vars_1,knvars_1,eqns_1,ae1,al,jac, jac_tp, helpVarInfo,index);
         simVarsDisc = Util.listMap2(disc_var, dlowvarToSimvar,NONE(),knvars);
         discEqs = extractDiscEqs(disc_eqn, disc_var);
@@ -6946,7 +6954,7 @@ algorithm
       equation
         v = ass2[eqnIndx];
         var = BackendVariable.getVarAt(vars,v);
-        b = hasDiscreteVar({var});
+        b = BackendVariable.hasDiscreteVar({var});
         eqnLst1 = Util.listConsOnTrue(not b,e,eqnLst);
       then ((e,(eqnIndx+1,ass2,vars,eqnLst1)));
     case (inTpl) then inTpl;
@@ -7555,70 +7563,6 @@ algorithm
   end matchcontinue;
 end generateMixedDiscretePossibleValues2;
 
-protected function splitMixedEquations "function: splitMixedEquations
-  author: PA
-
-  Splits the equation of a mixed equation system into its continuous and
-  discrete parts.
-
-  Even though the matching algorithm might say that a discrete variable is solved in a specific equation
-  (when part of a mixed system) this is not always correct. It might be impossible to solve the discrete
-  variable from that equation, for instance solving v from equation x = v < 0; This happens for e.g. the Gear model.
-  Instead, to split the equations and variables the following scheme is used:
-
-  1. Split the variables into continuous and discrete.
-  2. For each discrete variable v, select among the equations where it is present
-   for an equation v = expr. (This could be done
-   by looking at incidence matrix but for now we look through all equations. This is sufficiently
-   efficient for small systems of mixed equations < 100)
-  3. The equations not selected in step 2 are continuous equations.
-"
-  input list<BackendDAE.Equation> eqnLst;
-  input list<BackendDAE.Var> varLst;
-  output list<BackendDAE.Equation> contEqnLst;
-  output list<BackendDAE.Var> contVarLst;
-  output list<BackendDAE.Equation> discEqnLst;
-  output list<BackendDAE.Var> discVarLst;
-algorithm
-  (contEqnLst,contVarLst,discEqnLst,discVarLst):=
-  match (eqnLst,varLst)
-    case (eqnLst,varLst) equation
-      discVarLst = Util.listSelect(varLst,BackendDAEUtil.isVarDiscrete);
-      contVarLst = Util.listSetDifferenceOnTrue(varLst,discVarLst,BackendVariable.varEqual);
-      discEqnLst = Util.listMap1(discVarLst,findDiscreteEquation,eqnLst);
-      contEqnLst = Util.listSetDifferenceOnTrue(eqnLst,discEqnLst,BackendEquation.equationEqual);
-    then (contEqnLst,contVarLst,discEqnLst,discVarLst);
-  end match;
-end splitMixedEquations;
-
-protected function findDiscreteEquation "help function to splitMixedEquations, finds the discrete equation
-on the form v = expr for solving variable v"
-  input BackendDAE.Var v;
-  input list<BackendDAE.Equation> eqnLst;
-  output BackendDAE.Equation eqn;
-algorithm
-  eqn := matchcontinue(v,eqnLst)
-    local Expression.ComponentRef cr1,cr;
-      DAE.Exp e2;
-    case (v,(eqn as BackendDAE.EQUATION(DAE.CREF(cr,_),e2,_))::_) equation
-      cr1=BackendVariable.varCref(v);
-      true = ComponentReference.crefEqualNoStringCompare(cr1,cr);
-    then eqn;
-    case(v,(eqn as BackendDAE.EQUATION(e2,DAE.CREF(cr,_),_))::_) equation
-      cr1=BackendVariable.varCref(v);
-      true = ComponentReference.crefEqualNoStringCompare(cr1,cr);
-    then eqn;
-    case(v,_::eqnLst) equation
-      eqn = findDiscreteEquation(v,eqnLst);
-    then eqn;
-    case(v,_) equation
-      print("findDiscreteEquation failed, searching for ");
-      print(ComponentReference.printComponentRefStr(BackendVariable.varCref(v)));
-      print("\n");
-    then fail();
-  end matchcontinue;
-end findDiscreteEquation;
-
 protected function isMixedSystem "function: isMixedSystem
   author: PA
 
@@ -7639,8 +7583,8 @@ algorithm
     then false;
     case (vs,eqns)
       equation
-        true = hasDiscreteVar(vs);
-        true = hasContinousVar(vs);
+        true = BackendVariable.hasDiscreteVar(vs);
+        true = BackendVariable.hasContinousVar(vs);
       then
         true;
     case (_,_) then false;
@@ -8352,52 +8296,6 @@ algorithm
   flagSet := RTOpts.debugFlag("noevents");
   res := boolNot(flagSet);
 end useZerocrossing;
-
-protected function hasDiscreteVar
-"Returns true if var list contains a discrete time variable."
-  input list<BackendDAE.Var> inBackendDAEVarLst;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := match (inBackendDAEVarLst)
-    local
-      Boolean res;
-      BackendDAE.Var v;
-      list<BackendDAE.Var> vs;
-    case ((BackendDAE.VAR(varKind=BackendDAE.DISCRETE()) :: _)) then true;
-    case ((BackendDAE.VAR(varType=BackendDAE.INT()) :: _)) then true;
-    case ((BackendDAE.VAR(varType=BackendDAE.BOOL()) :: _)) then true;
-    case ((v :: vs))
-      equation
-        res = hasDiscreteVar(vs);
-      then
-        res;
-    case ({}) then false;
-  end match;
-end hasDiscreteVar;
-
-protected function hasContinousVar
-"Returns true if var list contains a continous time variable."
-  input list<BackendDAE.Var> inBackendDAEVarLst;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := match (inBackendDAEVarLst)
-    local
-      Boolean res;
-      BackendDAE.Var v;
-      list<BackendDAE.Var> vs;
-    case ((BackendDAE.VAR(varKind=BackendDAE.VARIABLE()) :: _)) then true;
-    case ((BackendDAE.VAR(varKind=BackendDAE.STATE()) :: _)) then true;
-    case ((BackendDAE.VAR(varKind=BackendDAE.STATE_DER()) :: _)) then true;
-    case ((BackendDAE.VAR(varKind=BackendDAE.DUMMY_DER()) :: _)) then true;
-    case ((BackendDAE.VAR(varKind=BackendDAE.DUMMY_STATE()) :: _)) then true;
-    case ((v :: vs))
-      equation
-        res = hasContinousVar(vs);
-      then
-        res;
-    case ({}) then false;
-  end match;
-end hasContinousVar;
 
 protected function getCrefFromExp
 "Assume input Exp is CREF and return the ComponentRef, fail otherwise."

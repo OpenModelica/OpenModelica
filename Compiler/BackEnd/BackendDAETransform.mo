@@ -931,8 +931,9 @@ algorithm
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrix mt;
       BackendDAE.Variables vars,evars,vars_1;
-      list<BackendDAE.Equation> eqn_lst;
-      list<BackendDAE.Var> var_lst,var_lst_1;
+      list<BackendDAE.Equation> eqn_lst,cont_eqn,disc_eqn;
+      list<BackendDAE.Var> var_lst,var_lst_1,cont_var,disc_var;
+      list<Integer> indxcont_var,indxdisc_var,indxcont_eqn,indxdisc_eqn;
       BackendDAE.AliasVariables av;
       BackendDAE.EquationArray eqns_1,eqns,eeqns;
       BackendDAE.BackendDAE subsystem_dae;
@@ -953,6 +954,34 @@ algorithm
         varindxs = Util.listMap(var_varindx_lst,Util.tuple22);        
       then
         BackendDAE.SINGLEARRAY(i,comp,varindxs);
+    case (comp,eqn_lst,var_varindx_lst,inDAE as BackendDAE.DAE(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae,algorithms=al),m,mt,ass1,ass2)
+      equation
+        var_lst = Util.listMap(var_varindx_lst,Util.tuple21);
+        true = BackendVariable.hasDiscreteVar(var_lst);
+        true = BackendVariable.hasContinousVar(var_lst);
+        varindxs = Util.listMap(var_varindx_lst,Util.tuple22);
+        eqn_lst = replaceDerOpInEquationList(eqn_lst);
+        ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);
+        (cont_eqn,cont_var,disc_eqn,disc_var,indxcont_eqn,indxcont_var,indxdisc_eqn,indxdisc_var) = splitMixedEquations(eqn_lst, comp, var_lst, varindxs);
+        // States are solved for der(x) not x.
+        var_lst_1 = Util.listMap(cont_var, transformXToXd);
+        vars_1 = BackendDAEUtil.listVar(var_lst_1);
+        // because listVar orders the elements not like listEquation the pairs of (var is solved in equation)
+        // is  twisted, simple reverse one list
+        eqn_lst = listReverse(eqn_lst);
+        eqns_1 = BackendDAEUtil.listEquation(cont_eqn);
+        av = BackendDAEUtil.emptyAliasVariables();
+        eeqns = BackendDAEUtil.listEquation({});
+        evars = BackendDAEUtil.listVar({});
+        subsystem_dae = BackendDAE.DAE(vars_1,evars,evars,av,eqns_1,eeqns,eeqns,ae1,al,BackendDAE.EVENT_INFO({},{}),{});
+        (m,mt) = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
+        //mt = BackendDAEUtil.transposeMatrix(m);
+        // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
+        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m, mt,true);
+        // Jacobian of a Linear System is always linear 
+        jac_tp = BackendDAEUtil.analyzeJacobian(subsystem_dae, jac);
+      then
+        BackendDAE.MIXEDEQUATIONSYSTEM(indxcont_eqn,indxcont_var,jac,jac_tp,indxdisc_eqn,indxdisc_var);        
     case (comp,eqn_lst,var_varindx_lst,inDAE as BackendDAE.DAE(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae,algorithms=al),m,mt,ass1,ass2)
       equation
         var_lst = Util.listMap(var_varindx_lst,Util.tuple21);
@@ -978,7 +1007,7 @@ algorithm
         jac_tp = BackendDAEUtil.analyzeJacobian(subsystem_dae, jac);
       then
         BackendDAE.EQUATIONSYSTEM(comp,varindxs,jac,jac_tp);
-    case (_,_,_,_,_,_,_,_)
+    else
       equation
         print("- BackendDAETransform.analyseStrongComponentBlock failed\n");
       then
@@ -1180,7 +1209,7 @@ algorithm
   matchcontinue (inComp,inEquationArray,inVariables)
     local
       Integer e_1,v,e;
-      list<Integer> elst,vlst;
+      list<Integer> elst,vlst,disc_eqns,disc_vars;
       BackendDAE.Equation eqn;
       BackendDAE.Var var;
       list<BackendDAE.Equation> eqnlst;
@@ -1194,6 +1223,15 @@ algorithm
         var = BackendVariable.getVarAt(vars, v);
       then
         ({eqn},{var},e);
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(eqns=elst,vars=vlst,disc_eqns=disc_eqns,disc_vars=disc_vars),eqns,vars) /* equation no. assignments2 */
+      equation
+        elst = listAppend(elst,disc_eqns);
+        eqnlst = BackendEquation.getEqns(elst,eqns);   
+        vlst = listAppend(vlst,disc_vars);     
+        varlst = Util.listMap1r(vlst, BackendVariable.getVarAt, vars);
+        e = Util.listFirst(elst);        
+      then
+        (eqnlst,varlst,e);          
     case (BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst),eqns,vars) /* equation no. assignments2 */
       equation
         eqnlst = BackendEquation.getEqns(elst,eqns);        
@@ -1261,6 +1299,178 @@ algorithm
         fail();
   end matchcontinue;
 end getEquationAndSolvedVar_Internal;
+
+public function splitMixedEquations "function: splitMixedEquations
+  author: PA
+
+  Splits the equation of a mixed equation system into its continuous and
+  discrete parts.
+
+  Even though the matching algorithm might say that a discrete variable is solved in a specific equation
+  (when part of a mixed system) this is not always correct. It might be impossible to solve the discrete
+  variable from that equation, for instance solving v from equation x = v < 0; This happens for e.g. the Gear model.
+  Instead, to split the equations and variables the following scheme is used:
+
+  1. Split the variables into continuous and discrete.
+  2. For each discrete variable v, select among the equations where it is present
+   for an equation v = expr. (This could be done
+   by looking at incidence matrix but for now we look through all equations. This is sufficiently
+   efficient for small systems of mixed equations < 100)
+  3. The equations not selected in step 2 are continuous equations.
+"
+  input list<BackendDAE.Equation> eqnLst;
+  input list<Integer> indxEqnLst;
+  input list<BackendDAE.Var> varLst;
+  input list<Integer> indxVarLst;
+  output list<BackendDAE.Equation> contEqnLst;
+  output list<BackendDAE.Var> contVarLst;
+  output list<BackendDAE.Equation> discEqnLst;
+  output list<BackendDAE.Var> discVarLst;
+  output list<Integer> indxcontEqnLst;
+  output list<Integer> indxcontVarLst;
+  output list<Integer> indxdiscEqnLst;
+  output list<Integer> indxdiscVarLst;
+algorithm
+  (contEqnLst,contVarLst,discEqnLst,discVarLst,indxcontEqnLst,indxcontVarLst,indxdiscEqnLst,indxdiscVarLst):=
+  match (eqnLst,indxEqnLst,varLst,indxVarLst)
+    local list<tuple<BackendDAE.Equation,Integer>> eqnindxlst;
+    case (eqnLst,indxEqnLst,varLst,indxVarLst) equation
+      (discVarLst,contVarLst,indxdiscVarLst,indxcontVarLst) = splitVars(varLst,indxVarLst,BackendDAEUtil.isVarDiscrete,{},{},{},{});
+      eqnindxlst = Util.listMap1(discVarLst,findDiscreteEquation,(eqnLst,indxEqnLst));
+      discEqnLst = Util.listMap(eqnindxlst,Util.tuple21);
+      indxdiscEqnLst = Util.listMap(eqnindxlst,Util.tuple22);
+      contEqnLst = Util.listSetDifferenceOnTrue(eqnLst,discEqnLst,BackendEquation.equationEqual);
+      indxcontEqnLst = Util.listSetDifferenceOnTrue(indxEqnLst,indxdiscEqnLst,intEq);
+    then (contEqnLst,contVarLst,discEqnLst,discVarLst,indxcontEqnLst,indxcontVarLst,indxdiscEqnLst,indxdiscVarLst);
+  end match;
+end splitMixedEquations;
+
+public function splitVars
+  "Helper function to splitMixedEquations."
+  input list<Type_a> inList;
+  input list<Type_b> inListb;
+  input PredicateFunc inFunc;
+  input list<Type_a> inTrueList;
+  input list<Type_a> inFalseList;
+  input list<Type_b> inTrueListb;
+  input list<Type_b> inFalseListb;
+  output list<Type_a> outTrueList;
+  output list<Type_a> outFalseList;
+  output list<Type_b> outTrueListb;
+  output list<Type_b> outFalseListb;
+
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+
+  partial function PredicateFunc
+    input Type_a inElement;
+    output Boolean outResult;
+  end PredicateFunc;
+algorithm
+  (outTrueList, outFalseList,outTrueListb, outFalseListb) := 
+  match(inList, inListb, inFunc, inTrueList, inFalseList, inTrueListb, inFalseListb)
+    local
+      Type_a e;
+      Type_b eb;
+      list<Type_a> rest_e, tl, fl;
+      list<Type_b> rest_eb, tlb, flb;
+      Boolean pred;
+
+    case ({}, {}, _, tl, fl, tlb, flb) 
+      then (listReverse(tl), listReverse(fl),listReverse(tlb), listReverse(flb));
+
+    case (e :: rest_e,eb :: rest_eb, _, tl, fl, tlb, flb)
+      equation
+        pred = inFunc(e);
+        (tl, fl,tlb, flb) = splitVars1(e, rest_e,eb, rest_eb, pred, inFunc, tl, fl, tlb, flb);
+      then
+        (tl, fl,tlb, flb);
+  end match;
+end splitVars;
+
+public function splitVars1
+  "Helper function to splitVars."
+  input Type_a inHead;
+  input list<Type_a> inRest;
+  input Type_b inHeadb;
+  input list<Type_b> inRestb;
+  input Boolean inPred;
+  input PredicateFunc inFunc;
+  input list<Type_a> inTrueList;
+  input list<Type_a> inFalseList;
+  input list<Type_b> inTrueListb;
+  input list<Type_b> inFalseListb;
+  output list<Type_a> outTrueList;
+  output list<Type_a> outFalseList;
+  output list<Type_b> outTrueListb;
+  output list<Type_b> outFalseListb;
+
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+
+  partial function PredicateFunc
+    input Type_a inElement;
+    output Boolean outResult;
+  end PredicateFunc;
+algorithm
+  (outTrueList, outFalseList,outTrueListb, outFalseListb) := 
+  match(inHead, inRest,inHeadb, inRestb, inPred, inFunc, inTrueList, inFalseList,inTrueListb, inFalseListb)
+    local
+      Boolean pred;
+      Type_a e;
+      Type_b eb;
+      list<Type_a> rl, tl, fl;
+      list<Type_b> rlb, tlb, flb;
+
+    case (_, _, _, _, true, _, tl, fl, tlb, flb)
+      equation
+        tl = inHead :: tl;
+        tlb = inHeadb :: tlb;
+        (tl, fl, tlb, flb) = splitVars(inRest, inRestb, inFunc, tl, fl, tlb, flb);
+      then
+        (tl, fl, tlb, flb);
+
+    case (_, _, _, _, false, _, tl, fl, tlb, flb)
+      equation
+        fl = inHead :: fl;
+        flb = inHeadb :: flb;
+        (tl, fl, tlb, flb) = splitVars(inRest, inRestb, inFunc, tl, fl, tlb, flb);
+      then
+        (tl, fl, tlb, flb);
+  end match;
+end splitVars1;
+
+protected function findDiscreteEquation "help function to splitMixedEquations, finds the discrete equation
+on the form v = expr for solving variable v"
+  input BackendDAE.Var v;
+  input tuple<list<BackendDAE.Equation>,list<Integer>> eqnIndxLst;
+  output tuple<BackendDAE.Equation,Integer> eqnindx;
+algorithm
+  eqnindx := matchcontinue(v,eqnIndxLst)
+    local Expression.ComponentRef cr1,cr;
+      DAE.Exp e2;
+      Integer i;
+      BackendDAE.Equation eqn;
+      list<Integer> ilst;
+      list<BackendDAE.Equation> eqnLst;
+    case (v,(((eqn as BackendDAE.EQUATION(DAE.CREF(cr,_),e2,_))::_),i::_)) equation
+      cr1=BackendVariable.varCref(v);
+      true = ComponentReference.crefEqualNoStringCompare(cr1,cr);
+    then ((eqn,i));
+    case(v,(((eqn as BackendDAE.EQUATION(e2,DAE.CREF(cr,_),_))::_),i::_)) equation
+      cr1=BackendVariable.varCref(v);
+      true = ComponentReference.crefEqualNoStringCompare(cr1,cr);
+    then ((eqn,i));
+    case(v,(_::eqnLst,_::ilst)) equation
+      ((eqn,i)) = findDiscreteEquation(v,(eqnLst,ilst));
+    then ((eqn,i));
+    case(v,_) equation
+      print("findDiscreteEquation failed, searching for ");
+      print(ComponentReference.printComponentRefStr(BackendVariable.varCref(v)));
+      print("\n");
+    then fail();
+  end matchcontinue;
+end findDiscreteEquation;
 
 protected function strongConnectMain "function: strongConnectMain
   author: PA

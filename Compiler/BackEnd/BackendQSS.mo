@@ -2512,7 +2512,7 @@ algorithm
     local
       BackendDAE.StrongComponents comps;
       Integer e;
-      list<Integer> eqns,elst,elst1,l;
+      list<Integer> eqns,elst,elst1,l,disc_eqns;
     case ({},elst) then elst;
     case (BackendDAE.SINGLEEQUATION(eqn=e)::comps,elst) 
       equation
@@ -2525,7 +2525,14 @@ algorithm
         elst1 = listAppend(elst, eqns);
         l = getStrongComponentsEqnFlat(comps,elst1);
       then
-        l;        
+        l;   
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(eqns=eqns,disc_eqns=disc_eqns)::comps,elst) 
+      equation
+        elst1 = listAppend(elst, eqns);
+        elst1 = listAppend(elst1, disc_eqns);
+        l = getStrongComponentsEqnFlat(comps,elst1);
+      then
+        l;              
     case (BackendDAE.SINGLEARRAY(eqns=eqns)::comps,elst) 
       equation
         elst1 = listAppend(elst, eqns);
@@ -2602,7 +2609,7 @@ algorithm
   matchcontinue (inInteger,inComp)
     local
       Integer e,i;
-      list<Integer> elst;
+      list<Integer> elst,disc_eqns;
       Boolean b;
     case (i,BackendDAE.SINGLEEQUATION(eqn=e))
       equation
@@ -2613,7 +2620,13 @@ algorithm
       equation
         b = listMember(i,elst);        
       then
-        b;        
+        b;   
+    case (i,BackendDAE.MIXEDEQUATIONSYSTEM(eqns=elst,disc_eqns=disc_eqns))
+      equation
+        elst = listAppend(elst,disc_eqns);
+        b = listMember(i,elst);        
+      then
+        b;               
     case (i,BackendDAE.SINGLEARRAY(eqns=elst))
       equation
         b = listMember(i,elst);        
@@ -2680,14 +2693,19 @@ algorithm
   matchcontinue (inComp)
     local
       Integer e,i;
-      list<Integer> elst;
+      list<Integer> elst,disc_eqns;
       Boolean b;
     case (BackendDAE.SINGLEEQUATION(eqn=e))
       then
         {e};
     case (BackendDAE.EQUATIONSYSTEM(eqns=elst))
       then
-        elst;        
+        elst;  
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(eqns=elst,disc_eqns=disc_eqns))
+      equation
+        elst = listAppend(elst,disc_eqns);
+      then
+        elst;              
     case (BackendDAE.SINGLEARRAY(eqns=elst))
       then
         elst;

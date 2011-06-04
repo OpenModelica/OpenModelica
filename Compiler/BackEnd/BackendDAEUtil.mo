@@ -2517,7 +2517,7 @@ algorithm
       BackendDAE.StrongComponents comps,states,output_;
       BackendDAE.StrongComponent comp;
       BackendDAE.Value e,mark_value;
-      list<BackendDAE.Value> eqns;
+      list<BackendDAE.Value> eqns,disc_eqns;
       array<BackendDAE.Value> arr;
     
     case ({},_) then ({},{});
@@ -2549,7 +2549,15 @@ algorithm
         true = blockIsDynamic(eqns, arr) "block is dynamic, belong in dynamic section" ;
         (states,output_) = splitBlocks(comps, arr);
       then
-        ((comp :: states),output_);        
+        ((comp :: states),output_);   
+        
+    case ((comp as BackendDAE.MIXEDEQUATIONSYSTEM(eqns=eqns,disc_eqns=disc_eqns)) :: comps,arr)
+      equation
+        eqns = listAppend(eqns,disc_eqns);
+        true = blockIsDynamic(eqns, arr) "block is dynamic, belong in dynamic section" ;
+        (states,output_) = splitBlocks(comps, arr);
+      then
+        ((comp :: states),output_);              
     
     case ((comp :: comps),arr)
       equation
@@ -3812,7 +3820,7 @@ algorithm
   matchcontinue (inInteger,inComps)
     local
       Integer e,i;
-      list<Integer> elst;
+      list<Integer> elst,disc_eqns;
       BackendDAE.StrongComponents comps;
       BackendDAE.StrongComponent comp;
     case (i,(comp as BackendDAE.SINGLEEQUATION(eqn=e))::comps)
@@ -3824,7 +3832,13 @@ algorithm
       equation
         true = listMember(i,elst);        
       then
-        comp;        
+        comp;  
+    case (i,(comp as BackendDAE.MIXEDEQUATIONSYSTEM(eqns=elst,disc_eqns=disc_eqns))::comps)
+      equation
+        elst = listAppend(elst,disc_eqns);
+        true = listMember(i,elst);        
+      then
+        comp;               
     case (i,(comp as BackendDAE.SINGLEARRAY(eqns=elst))::comps)
       equation
         true = listMember(i,elst);        

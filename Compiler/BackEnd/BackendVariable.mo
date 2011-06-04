@@ -777,6 +777,54 @@ algorithm
   end matchcontinue;
 end isVarDiscrete;
 
+public function hasDiscreteVar
+"Returns true if var list contains a discrete time variable."
+  input list<BackendDAE.Var> inBackendDAEVarLst;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (inBackendDAEVarLst)
+    local
+      Boolean res;
+      BackendDAE.Var v;
+      list<BackendDAE.Var> vs;
+    case ((v :: vs))
+      equation
+        true = isVarDiscrete(v);
+      then
+        true;
+    case ((v :: vs))
+      equation
+        res = hasDiscreteVar(vs);
+      then
+        res;
+    case ({}) then false;
+  end matchcontinue;
+end hasDiscreteVar;
+
+public function hasContinousVar
+"Returns true if var list contains a continous time variable."
+  input list<BackendDAE.Var> inBackendDAEVarLst;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inBackendDAEVarLst)
+    local
+      Boolean res;
+      BackendDAE.Var v;
+      list<BackendDAE.Var> vs;
+    case ((BackendDAE.VAR(varKind=BackendDAE.VARIABLE()) :: _)) then true;
+    case ((BackendDAE.VAR(varKind=BackendDAE.STATE()) :: _)) then true;
+    case ((BackendDAE.VAR(varKind=BackendDAE.STATE_DER()) :: _)) then true;
+    case ((BackendDAE.VAR(varKind=BackendDAE.DUMMY_DER()) :: _)) then true;
+    case ((BackendDAE.VAR(varKind=BackendDAE.DUMMY_STATE()) :: _)) then true;
+    case ((v :: vs))
+      equation
+        res = hasContinousVar(vs);
+      then
+        res;
+    case ({}) then false;
+  end match;
+end hasContinousVar;
+
 /* TODO: Is this correct? */
 public function isVarAlg
   input BackendDAE.Var var;

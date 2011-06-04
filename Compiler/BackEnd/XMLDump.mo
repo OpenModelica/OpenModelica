@@ -693,12 +693,18 @@ algorithm
   match (inComp)
     local
       Integer e;
-      list<Integer> elst;
+      list<Integer> elst,disc_eqns;
     case (BackendDAE.SINGLEEQUATION(eqn=e))
       equation
          dumpStrTagAttrNoChild(stringAppend(INVOLVED,EQUATION_), stringAppend(EQUATION,ID_), intString(e));
       then
         ();
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(eqns=elst,disc_eqns=disc_eqns))
+      equation
+        elst = listAppend(elst,disc_eqns);
+        dumpBltInvolvedEquations1(elst);        
+      then
+        ();         
     case (BackendDAE.EQUATIONSYSTEM(eqns=elst))
       equation
         dumpBltInvolvedEquations1(elst);        

@@ -2885,8 +2885,6 @@ protected function constantLinearSystem1
     output Boolean outRunMatching;
     output list<Integer> outEqnlst;
     output BackendDAE.BinTree movedVars;
-protected
-  Option<BackendDAE.IncidenceMatrix> om,omT;
 algorithm
   (outDAE,outM,outMT,outAss1,outAss2,outComps,outRunMatching,outEqnlst,movedVars):=
   matchcontinue (inDAE,inFunctionTree,inM,inMT,inAss1,inAss2,inComps,inEqnlst,inMovedVars)
@@ -2909,7 +2907,7 @@ algorithm
       Boolean b;
       list<BackendDAE.Equation> eqn_lst; 
       list<BackendDAE.Var> var_lst;
-      list<Integer> eindex,remeqnlst,remeqnlst1;
+      list<Integer> eindex,vindx,remeqnlst,remeqnlst1;
       list<DAE.Exp> beqs;
       list<DAE.ElementSource> sources;
       list<Real> rhsVals,solvedVals;
@@ -2921,10 +2919,64 @@ algorithm
     case (dae,funcs,inM,inMT,inAss1,inAss2,{},inEqnlst,inMovedVars)
       then
         (dae,inM,inMT,inAss1,inAss2,{},false,inEqnlst,inMovedVars);
-    case (BackendDAE.DAE(vars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),funcs,inM,inMT,inAss1,inAss2,(comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,jac=SOME(jac),jacType=BackendDAE.JAC_CONSTANT()))::comps,inEqnlst,inMovedVars)
+    case (dae as BackendDAE.DAE(orderedVars=vars,orderedEqs=eqns),funcs,inM,inMT,inAss1,inAss2,(comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=SOME(jac),jacType=BackendDAE.JAC_CONSTANT()))::comps,inEqnlst,inMovedVars)
       equation
-        (eqn_lst,var_lst,_) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
+        eqn_lst = BackendEquation.getEqns(eindex,eqns);        
+        var_lst = Util.listMap1r(vindx, BackendVariable.getVarAt, vars);
         var_lst = listReverse(var_lst);
+        (dae,movedVars) = solveLinearSystem(dae,eqn_lst,var_lst,jac,inMovedVars);
+        remeqnlst = listAppend(eindex,inEqnlst);
+        (dae1,m,mT,ass1,ass2,comps1,b,remeqnlst1,movedVars1) = constantLinearSystem1(dae,funcs,inM,inMT,inAss1,inAss2,comps,remeqnlst,movedVars);
+      then
+        (dae1,m,mT,ass1,ass2,comp::comps1,true,remeqnlst1,movedVars1);
+    case (dae as BackendDAE.DAE(orderedVars=vars,orderedEqs=eqns),funcs,inM,inMT,inAss1,inAss2,(comp as BackendDAE.MIXEDEQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=SOME(jac),jacType=BackendDAE.JAC_CONSTANT()))::comps,inEqnlst,inMovedVars)
+      equation
+        eqn_lst = BackendEquation.getEqns(eindex,eqns);        
+        var_lst = Util.listMap1r(vindx, BackendVariable.getVarAt, vars);
+        var_lst = listReverse(var_lst);
+        (dae,movedVars) = solveLinearSystem(dae,eqn_lst,var_lst,jac,inMovedVars);
+        remeqnlst = listAppend(eindex,inEqnlst);
+        (dae1,m,mT,ass1,ass2,comps1,b,remeqnlst1,movedVars1) = constantLinearSystem1(dae,funcs,inM,inMT,inAss1,inAss2,comps,remeqnlst,movedVars);
+      then
+        (dae1,m,mT,ass1,ass2,comp::comps1,true,remeqnlst1,movedVars1);        
+    case (dae,funcs,inM,inMT,inAss1,inAss2,comp::comps,inEqnlst,inMovedVars)
+      equation
+         (dae1,m,mT,ass1,ass2,comps1,b,remeqnlst,movedVars) = constantLinearSystem1(dae,funcs,inM,inMT,inAss1,inAss2,comps,inEqnlst,inMovedVars);
+      then
+        (dae1,m,mT,ass1,ass2,comp::comps1,b,remeqnlst,movedVars);
+  end matchcontinue;  
+end constantLinearSystem1;
+
+protected function solveLinearSystem
+"function constantLinearSystem1"
+    input BackendDAE.BackendDAE inDAE;
+    input list<BackendDAE.Equation> eqn_lst; 
+    input list<BackendDAE.Var> var_lst; 
+    input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+    input BackendDAE.BinTree inMovedVars;
+    output BackendDAE.BackendDAE outDAE;
+    output BackendDAE.BinTree outMovedVars;
+algorithm
+  (outDAE,outMovedVars):=
+  match (inDAE,eqn_lst,var_lst,jac,inMovedVars)
+    local
+      BackendDAE.Variables vars,knvars,exobj,avars,vars1,knvars1;
+      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1;
+      array<BackendDAE.MultiDimEquation> arreqns;
+      array<DAE.Algorithm> algorithms;
+      BackendDAE.EventInfo einfo;
+      list<BackendDAE.WhenClause> whenClauseLst;
+      BackendDAE.ExternalObjectClasses eoc;
+      list<DAE.Exp> beqs;
+      list<DAE.ElementSource> sources;
+      list<Real> rhsVals,solvedVals;
+      list<list<Real>> jacVals;
+      Integer linInfo;
+      list<DAE.ComponentRef> names;
+      BackendDAE.BinTree movedVars;
+    case (BackendDAE.DAE(vars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),eqn_lst,var_lst,jac,inMovedVars)
+      equation
         eqns1 = BackendDAEUtil.listEquation(eqn_lst);
         ((_,_,_,beqs,sources)) = BackendEquation.traverseBackendDAEEqns(eqns1,BackendEquation.equationToExp,(vars,arreqns,{},{},{}));
         //beqs = listReverse(beqs);
@@ -2935,19 +2987,11 @@ algorithm
         checkLinearSystem(linInfo,names,jacVals,rhsVals);
         sources = Util.listMap1(sources, DAEUtil.addSymbolicTransformation, DAE.LINEAR_SOLVED(names,jacVals,rhsVals,solvedVals));           
         vars1 = changeconstantLinearSystemVars(var_lst,solvedVals,sources,vars);
-        dae = BackendDAE.DAE(vars1,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc);                    
-        remeqnlst = listAppend(eindex,inEqnlst);
         movedVars = BackendDAEUtil.treeAddList(inMovedVars, names);
-        (dae1,m,mT,ass1,ass2,comps1,b,remeqnlst1,movedVars1) = constantLinearSystem1(dae,funcs,inM,inMT,inAss1,inAss2,comps,remeqnlst,movedVars);
       then
-        (dae1,m,mT,ass1,ass2,comp::comps1,true,remeqnlst1,movedVars1);
-    case (dae,funcs,inM,inMT,inAss1,inAss2,comp::comps,inEqnlst,inMovedVars)
-      equation
-         (dae1,m,mT,ass1,ass2,comps1,b,remeqnlst,movedVars) = constantLinearSystem1(dae,funcs,inM,inMT,inAss1,inAss2,comps,inEqnlst,inMovedVars);
-      then
-        (dae1,m,mT,ass1,ass2,comp::comps1,b,remeqnlst,movedVars);
-  end matchcontinue;  
-end constantLinearSystem1;
+        (BackendDAE.DAE(vars1,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),movedVars);
+  end match;  
+end solveLinearSystem;
 
 protected function changeconstantLinearSystemVars 
   input list<BackendDAE.Var> inVarLst;

@@ -1820,7 +1820,7 @@ algorithm
   match (inComp)
     local
       BackendDAE.Value i,v;
-      list<BackendDAE.Value> ilst,vlst;
+      list<BackendDAE.Value> ilst,vlst,disc_ilst,disc_vlst;
       list<String> ls;
       String s;
       BackendDAE.JacobianType jacType;
@@ -1849,6 +1849,31 @@ algorithm
         print("\n");
       then
         ();
+    case BackendDAE.MIXEDEQUATIONSYSTEM(eqns=ilst,vars=vlst,jacType=jacType,disc_eqns=disc_ilst,disc_vars=disc_vlst)
+      equation
+        print("{{");
+        ls = Util.listMap(ilst, intString);
+        s = Util.stringDelimitList(ls, ", ");
+        print(s);
+        print(":");
+        ls = Util.listMap(vlst, intString);
+        s = Util.stringDelimitList(ls, ", ");
+        print(s);
+        print("}, {");
+        ls = Util.listMap(disc_ilst, intString);
+        s = Util.stringDelimitList(ls, ", ");
+        print(s);
+        print(":");
+        ls = Util.listMap(disc_vlst, intString);
+        s = Util.stringDelimitList(ls, ", ");
+        print(s);
+        print("}}, Size: ");
+        print(intString(intAdd(listLength(ilst),listLength(disc_ilst))));
+        print(" ");
+        print(BackendDAEUtil.jacobianTypeStr(jacType)); 
+        print("\n");
+      then
+        ();        
     case BackendDAE.SINGLEARRAY(arrayIndx=i,vars=vlst)
       equation
         print("Array ");

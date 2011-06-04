@@ -452,6 +452,15 @@ uniontype StrongComponent
     JacobianType jacType;
   end EQUATIONSYSTEM; 
   
+  record MIXEDEQUATIONSYSTEM
+    list<Value> eqns;
+    list<Value> vars "be carefule with states, this are solved for der(x)";
+    Option<list<tuple<Integer, Integer, Equation>>> jac;
+    JacobianType jacType;
+    list<Value> disc_eqns;
+    list<Value> disc_vars;
+  end MIXEDEQUATIONSYSTEM;   
+  
   record SINGLEARRAY
     Value arrayIndx;
     list<Value> eqns;
