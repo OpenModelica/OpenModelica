@@ -2710,6 +2710,14 @@ algorithm
       DAE.FunctionTree funcs;
       DAE.Exp e1;
       list<DAE.ComponentRef> newStates;
+      DAE.ComponentRef cr;
+      String str;
+    case((DAE.CALL(Absyn.IDENT(name = "der"),{DAE.CALL(Absyn.IDENT(name = "der"),{e1 as DAE.CREF(componentRef=cr)},tuple_ = false,builtin = true)},tuple_ = false,builtin = true),(vars,funcs)))
+      equation
+        str = ComponentReference.crefStr(cr);
+        str = stringAppendList({"The model includes derivatives of order > 1 for: ",str,". That is not supported. Real d", str, " = der(", str, ") *might* result in a solvable model"});
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then fail();      
     case((DAE.CALL(Absyn.IDENT(name = "der"),{e1},tuple_ = false,builtin = true),(vars,funcs)))
       equation
         e1 = Derive.differentiateExpTime(e1,(vars,funcs));
