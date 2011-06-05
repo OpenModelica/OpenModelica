@@ -51,6 +51,7 @@ public import BackendDump;
 
 
 protected import BackendVariable;
+protected import BackendDAETransform;
 protected import ComponentReference;
 
 public
@@ -2511,36 +2512,12 @@ algorithm
   matchcontinue (inComp,accCompsFlat)
     local
       BackendDAE.StrongComponents comps;
-      Integer e;
-      list<Integer> eqns,elst,elst1,l,disc_eqns;
+      BackendDAE.StrongComponent comp;
+      list<Integer> eqns,elst,elst1,l;
     case ({},elst) then elst;
-    case (BackendDAE.SINGLEEQUATION(eqn=e)::comps,elst) 
+    case (comp::comps,elst) 
       equation
-        elst1 = listAppend(elst, {e});
-        l = getStrongComponentsEqnFlat(comps,elst1);
-      then
-        l; 
-    case (BackendDAE.EQUATIONSYSTEM(eqns=eqns)::comps,elst) 
-      equation
-        elst1 = listAppend(elst, eqns);
-        l = getStrongComponentsEqnFlat(comps,elst1);
-      then
-        l;   
-    case (BackendDAE.MIXEDEQUATIONSYSTEM(eqns=eqns,disc_eqns=disc_eqns)::comps,elst) 
-      equation
-        elst1 = listAppend(elst, eqns);
-        elst1 = listAppend(elst1, disc_eqns);
-        l = getStrongComponentsEqnFlat(comps,elst1);
-      then
-        l;              
-    case (BackendDAE.SINGLEARRAY(eqns=eqns)::comps,elst) 
-      equation
-        elst1 = listAppend(elst, eqns);
-        l = getStrongComponentsEqnFlat(comps,elst1);
-      then
-        l;  
-    case (BackendDAE.SINGLEALGORITHM(eqns=eqns)::comps,elst) 
-      equation
+        (eqns,_) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
         elst1 = listAppend(elst, eqns);
         l = getStrongComponentsEqnFlat(comps,elst1);
       then
@@ -2609,34 +2586,19 @@ algorithm
   matchcontinue (inInteger,inComp)
     local
       Integer e,i;
-      list<Integer> elst,disc_eqns;
+      list<Integer> elst;
       Boolean b;
     case (i,BackendDAE.SINGLEEQUATION(eqn=e))
       equation
          b = intEq(i,e);
       then
         b;
-    case (i,BackendDAE.EQUATIONSYSTEM(eqns=elst))
+    case (i,inComp)
       equation
+        (elst,_) = BackendDAETransform.getEquationAndSolvedVarIndxes(inComp);
         b = listMember(i,elst);        
       then
         b;   
-    case (i,BackendDAE.MIXEDEQUATIONSYSTEM(eqns=elst,disc_eqns=disc_eqns))
-      equation
-        elst = listAppend(elst,disc_eqns);
-        b = listMember(i,elst);        
-      then
-        b;               
-    case (i,BackendDAE.SINGLEARRAY(eqns=elst))
-      equation
-        b = listMember(i,elst);        
-      then
-        b;   
-    case (i,BackendDAE.SINGLEALGORITHM(eqns=elst))
-      equation
-        b = listMember(i,elst);        
-      then
-        b;          
     else
       then
         false;
@@ -2689,30 +2651,7 @@ protected function getEqnIndxFromComp
   input BackendDAE.StrongComponent inComp;
   output list<Integer> outEqnIndexLst;
 algorithm
-  outEqnIndexLst:=
-  matchcontinue (inComp)
-    local
-      Integer e,i;
-      list<Integer> elst,disc_eqns;
-      Boolean b;
-    case (BackendDAE.SINGLEEQUATION(eqn=e))
-      then
-        {e};
-    case (BackendDAE.EQUATIONSYSTEM(eqns=elst))
-      then
-        elst;  
-    case (BackendDAE.MIXEDEQUATIONSYSTEM(eqns=elst,disc_eqns=disc_eqns))
-      equation
-        elst = listAppend(elst,disc_eqns);
-      then
-        elst;              
-    case (BackendDAE.SINGLEARRAY(eqns=elst))
-      then
-        elst;
-    case (BackendDAE.SINGLEALGORITHM(eqns=elst))
-      then
-        elst;       
-  end matchcontinue;
+  (outEqnIndexLst,_):= BackendDAETransform.getEquationAndSolvedVarIndxes(inComp);
 end getEqnIndxFromComp;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

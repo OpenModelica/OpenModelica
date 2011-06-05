@@ -89,6 +89,7 @@ public import RTOpts;
 protected import Algorithm;
 protected import BackendDAEUtil;
 protected import BackendVariable;
+protected import BackendDAETransform;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
@@ -699,27 +700,12 @@ algorithm
          dumpStrTagAttrNoChild(stringAppend(INVOLVED,EQUATION_), stringAppend(EQUATION,ID_), intString(e));
       then
         ();
-    case (BackendDAE.MIXEDEQUATIONSYSTEM(eqns=elst,disc_eqns=disc_eqns))
+    case (inComp)
       equation
-        elst = listAppend(elst,disc_eqns);
+        (elst,_) = BackendDAETransform.getEquationAndSolvedVarIndxes(inComp);
         dumpBltInvolvedEquations1(elst);        
       then
-        ();         
-    case (BackendDAE.EQUATIONSYSTEM(eqns=elst))
-      equation
-        dumpBltInvolvedEquations1(elst);        
-      then
-        ();        
-    case (BackendDAE.SINGLEARRAY(eqns=elst))
-      equation
-        dumpBltInvolvedEquations1(elst);       
-      then
-        ();   
-    case (BackendDAE.SINGLEALGORITHM(eqns=elst))
-      equation
-        dumpBltInvolvedEquations1(elst);        
-      then
-        ();          
+        ();                
   end match;
 end dumpBltInvolvedEquations;
 

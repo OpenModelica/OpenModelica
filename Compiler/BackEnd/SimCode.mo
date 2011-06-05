@@ -4020,7 +4020,7 @@ algorithm
       BackendDAE.Variables vars_1,vars,knvars,exvars,knvars_1;
       BackendDAE.AliasVariables av,ave;
       BackendDAE.EquationArray eqns_1,eqns,se,ie,eeqns,eieqns;
-      BackendDAE.BackendDAE cont_subsystem_dae,daelow,subsystem_dae,dlow;
+      BackendDAE.BackendDAE cont_subsystem_dae,daelow,subsystem_dae;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       BackendDAE.JacobianType jac_tp;
       array<BackendDAE.MultiDimEquation> ae,ae1;
@@ -4039,7 +4039,7 @@ algorithm
       BackendDAE.IncidenceMatrix m_2,m_3,m;
       BackendDAE.IncidenceMatrixT mT_2,mT_3,mt;
       BackendDAE.StrongComponents comps;
-      BackendDAE.StrongComponent comp;
+      BackendDAE.StrongComponent comp,comp1;
       list<Integer> comps_flat;
       list<list<Integer>> r,t,comps_1;
       list<Integer> rf,tf;
@@ -4069,76 +4069,56 @@ algorithm
         equations_ = createOdeSystem2(false, genDiscrete, skipDiscInAlgorithm, vars_1,knvars_1,eqns_1,ae1,al,jac, jac_tp, helpVarInfo,index);
       then
         equations_;
-    case (genDiscrete,skipDiscInAlgorithm,true,(daelow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,comp as BackendDAE.MIXEDEQUATIONSYSTEM(eqns=ieqns,vars=ivars,jac=jac,jacType=jac_tp,disc_eqns=disc_eqns,disc_vars=disc_vars),helpVarInfo)
+    case (genDiscrete,skipDiscInAlgorithm,true,(daelow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,comp as BackendDAE.MIXEDEQUATIONSYSTEM(disc_eqns=disc_eqns,disc_vars=disc_vars),helpVarInfo)
       equation
         //print("\ncreateOdeSystem -> Linear: ...\n");
         //BackendDump.printEquations(block_,daelow);
         // extract the variables and equations of the block.
-        ieqns = listAppend(ieqns,disc_eqns);
-        eqn_lst = BackendEquation.getEqns(ieqns,eqns);
-        ivars = listAppend(ivars,disc_vars);
-        var_lst = Util.listMap1r(ivars, BackendVariable.getVarAt, vars);
-        index = Util.listFirst(ieqns);
+        (eqn_lst,var_lst,index) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
         ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);
-        // States are solved for der(x) not x.
-        var_lst_1 = Util.listMap(var_lst, transformXToXd);
+        var_lst_1 = Util.listMap(var_lst, transformXToXd); // States are solved for der(x) not x.
         vars_1 = BackendDAEUtil.listVar(var_lst_1);
         // because listVar orders the elements not like listEquation the pairs of (var is solved in equation)
         // is  twisted, simple reverse one list
         eqn_lst = listReverse(eqn_lst);
         eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
+        ave = BackendDAEUtil.emptyAliasVariables();
+        eeqns = BackendDAEUtil.listEquation({});
         knvars_1 = BackendEquation.equationsVars(eqns_1,knvars);
+        subsystem_dae = BackendDAE.DAE(vars_1,knvars_1,exvars,ave,eqns_1,eeqns,eeqns,ae1,al,ev,eoc);
+        (m,mt) = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
+        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m, mt,false) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
+        jac_tp = BackendDAEUtil.analyzeJacobian(subsystem_dae, jac);
         // if BackendDAEUtil.JAC_NONLINEAR() then set to time_varying
         jac_tp = changeJactype(jac_tp);
         equations_ = createOdeSystem2(false, genDiscrete, skipDiscInAlgorithm, vars_1,knvars_1,eqns_1,ae1,al,jac, jac_tp, helpVarInfo,index);
       then
         equations_;        
         // mixed system of equations, continuous part only
-    case (false, skipDiscInAlgorithm, false,(daelow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,BackendDAE.MIXEDEQUATIONSYSTEM(eqns=ieqns,vars=ivars,jac=jac,jacType=jac_tp,disc_eqns=disc_eqns,disc_vars=disc_vars),helpVarInfo)
+    case (false, skipDiscInAlgorithm, false,daelow,ass1,ass2,BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1),helpVarInfo)
       equation
-        //print("\ncreateOdeSystem -> Mixed: cont\n");
-        //BackendDump.printEquations(block_,daelow);
-        cont_eqn = BackendEquation.getEqns(ieqns,eqns); 
-        disc_eqn = BackendEquation.getEqns(disc_eqns,eqns); 
-        cont_var = Util.listMap1r(ivars, BackendVariable.getVarAt, vars);
-        disc_var = Util.listMap1r(disc_vars, BackendVariable.getVarAt, vars);
-        index = Util.listFirst(ieqns);
-        cont_eqn = replaceDerOpInEquationList(cont_eqn);
-        ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);
-        // States are solved for der(x) not x.
-        cont_var1 = Util.listMap(cont_var, transformXToXd);
-        vars_1 = BackendDAEUtil.listVar(cont_var1);
-        eqns_1 = BackendDAEUtil.listEquation(cont_eqn);
-        eeqns = BackendDAEUtil.listEquation({});
-        knvars_1 = BackendEquation.equationsVars(eqns_1,knvars);
-        equations_ = createOdeSystem2(false, false, skipDiscInAlgorithm, vars_1,knvars_1,eqns_1,ae1,al,jac, jac_tp, helpVarInfo,index);
+        equations_ = createEquations(true,false,false,skipDiscInAlgorithm,false,daelow,ass1,ass2,{comp1},helpVarInfo);
       then
         equations_;
         
         // mixed system of equations, both continous and discrete eqns
-    case (true, skipDiscInAlgorithm, false,(dlow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,BackendDAE.MIXEDEQUATIONSYSTEM(eqns=ieqns,vars=ivars,jac=jac,jacType=jac_tp,disc_eqns=disc_eqns,disc_vars=disc_vars),helpVarInfo)
+    case (true, skipDiscInAlgorithm, false,(daelow as BackendDAE.DAE(vars,knvars,exvars,av,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1,disc_eqns=ieqns,disc_vars=ivars),helpVarInfo)
       equation
         //print("\ncreateOdeSystem -> Mixed: cont. and discrete\n");
         //BackendDump.printEquations(block_,dlow);
-        cont_eqn = BackendEquation.getEqns(ieqns,eqns); 
-        disc_eqn = BackendEquation.getEqns(disc_eqns,eqns); 
-        cont_var = Util.listMap1r(ivars, BackendVariable.getVarAt, vars);
-        disc_var = Util.listMap1r(disc_vars, BackendVariable.getVarAt, vars);
-        index = Util.listFirst(ieqns);
-        cont_eqn = replaceDerOpInEquationList(cont_eqn);
-        ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);     
-        // States are solved for der(x) not x.
-        cont_var1 = Util.listMap(cont_var, transformXToXd);
-        vars_1 = BackendDAEUtil.listVar(cont_var1);
-        eqns_1 = BackendDAEUtil.listEquation(cont_eqn);
-        knvars_1 = BackendEquation.equationsVars(eqns_1,knvars);
-        {equation_} = createOdeSystem2(true, true,  skipDiscInAlgorithm, vars_1,knvars_1,eqns_1,ae1,al,jac, jac_tp, helpVarInfo,index);
+        disc_eqn = BackendEquation.getEqns(ieqns,eqns); 
+        disc_var = Util.listMap1r(ivars, BackendVariable.getVarAt, vars);
+        {equation_} = createEquations(true,false,false,skipDiscInAlgorithm,false,daelow,ass1,ass2,{comp1},helpVarInfo);  
         simVarsDisc = Util.listMap2(disc_var, dlowvarToSimvar,NONE(),knvars);
         discEqs = extractDiscEqs(disc_eqn, disc_var);
         // adrpo: TODO! FIXME! THIS FUNCTION is madness!
         //        for 34 discrete values you need a list of 34 about 4926277576697053184 times!!!
+        (ieqns,ivars) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp1);
+        cont_eqn = BackendEquation.getEqns(ieqns,eqns);
+        cont_var = Util.listMap1r(ivars, BackendVariable.getVarAt, vars);
         (values, value_dims) = extractValuesAndDims(cont_eqn, cont_var, disc_eqn, disc_var); // ({1,0},{2});
+        index = Util.listFirst(ieqns);
         //(values, value_dims) = ({1,0},{2});
       then
         {SES_MIXED(index, equation_, simVarsDisc, discEqs, values, value_dims)};

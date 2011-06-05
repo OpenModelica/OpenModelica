@@ -926,7 +926,7 @@ algorithm
     local
       Integer i;
       list<BackendDAE.Value> comp,varindxs;
-      list<tuple<BackendDAE.Var,BackendDAE.Value>> var_varindx_lst;
+      list<tuple<BackendDAE.Var,BackendDAE.Value>> var_varindx_lst,var_varindx_lst_cond;
       array<Integer> ass1,ass2;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrix mt;
@@ -941,7 +941,7 @@ algorithm
       array<DAE.Algorithm> al;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       BackendDAE.JacobianType jac_tp;
-
+      BackendDAE.StrongComponent sc;
     case (comp,eqn_lst,var_varindx_lst,inDAE,m,mt,ass1,ass2)
       equation
         SOME(i) = singleAlgorithmEquation(eqn_lst,NONE());
@@ -960,28 +960,11 @@ algorithm
         true = BackendVariable.hasDiscreteVar(var_lst);
         true = BackendVariable.hasContinousVar(var_lst);
         varindxs = Util.listMap(var_varindx_lst,Util.tuple22);
-        eqn_lst = replaceDerOpInEquationList(eqn_lst);
-        ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);
         (cont_eqn,cont_var,disc_eqn,disc_var,indxcont_eqn,indxcont_var,indxdisc_eqn,indxdisc_var) = splitMixedEquations(eqn_lst, comp, var_lst, varindxs);
-        // States are solved for der(x) not x.
-        var_lst_1 = Util.listMap(cont_var, transformXToXd);
-        vars_1 = BackendDAEUtil.listVar(var_lst_1);
-        // because listVar orders the elements not like listEquation the pairs of (var is solved in equation)
-        // is  twisted, simple reverse one list
-        eqn_lst = listReverse(eqn_lst);
-        eqns_1 = BackendDAEUtil.listEquation(cont_eqn);
-        av = BackendDAEUtil.emptyAliasVariables();
-        eeqns = BackendDAEUtil.listEquation({});
-        evars = BackendDAEUtil.listVar({});
-        subsystem_dae = BackendDAE.DAE(vars_1,evars,evars,av,eqns_1,eeqns,eeqns,ae1,al,BackendDAE.EVENT_INFO({},{}),{});
-        (m,mt) = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
-        //mt = BackendDAEUtil.transposeMatrix(m);
-        // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
-        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m, mt,true);
-        // Jacobian of a Linear System is always linear 
-        jac_tp = BackendDAEUtil.analyzeJacobian(subsystem_dae, jac);
+        var_varindx_lst_cond = Util.makeTupleList(cont_var,indxcont_var);
+        sc = analyseStrongComponentBlock(indxcont_eqn,cont_eqn,var_varindx_lst_cond,inDAE,m,mt,ass1,ass2);
       then
-        BackendDAE.MIXEDEQUATIONSYSTEM(indxcont_eqn,indxcont_var,jac,jac_tp,indxdisc_eqn,indxdisc_var);        
+        BackendDAE.MIXEDEQUATIONSYSTEM(sc,indxdisc_eqn,indxdisc_var);        
     case (comp,eqn_lst,var_varindx_lst,inDAE as BackendDAE.DAE(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae,algorithms=al),m,mt,ass1,ass2)
       equation
         var_lst = Util.listMap(var_varindx_lst,Util.tuple21);
@@ -1209,54 +1192,56 @@ algorithm
   matchcontinue (inComp,inEquationArray,inVariables)
     local
       Integer e_1,v,e;
-      list<Integer> elst,vlst,disc_eqns,disc_vars;
+      list<Integer> elst,vlst;
       BackendDAE.Equation eqn;
       BackendDAE.Var var;
-      list<BackendDAE.Equation> eqnlst;
-      list<BackendDAE.Var> varlst;
+      list<BackendDAE.Equation> eqnlst,eqnlst1;
+      list<BackendDAE.Var> varlst,varlst1;
       BackendDAE.EquationArray eqns;
       BackendDAE.Variables vars;
-    case (BackendDAE.SINGLEEQUATION(eqn=e,var=v),eqns,vars) /* equation no. assignments2 */
+      BackendDAE.StrongComponent comp;
+    case (BackendDAE.SINGLEEQUATION(eqn=e,var=v),eqns,vars) 
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
         var = BackendVariable.getVarAt(vars, v);
       then
         ({eqn},{var},e);
-    case (BackendDAE.MIXEDEQUATIONSYSTEM(eqns=elst,vars=vlst,disc_eqns=disc_eqns,disc_vars=disc_vars),eqns,vars) /* equation no. assignments2 */
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp,disc_eqns=elst,disc_vars=vlst),eqns,vars) 
       equation
-        elst = listAppend(elst,disc_eqns);
-        eqnlst = BackendEquation.getEqns(elst,eqns);   
-        vlst = listAppend(vlst,disc_vars);     
-        varlst = Util.listMap1r(vlst, BackendVariable.getVarAt, vars);
+        eqnlst1 = BackendEquation.getEqns(elst,eqns);   
+        varlst1 = Util.listMap1r(vlst, BackendVariable.getVarAt, vars);
         e = Util.listFirst(elst);        
+        (eqnlst,varlst,_) = getEquationAndSolvedVar(comp,eqns,vars);
+        eqnlst = listAppend(eqnlst,eqnlst1);
+        varlst = listAppend(varlst,varlst1);
       then
         (eqnlst,varlst,e);          
-    case (BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst),eqns,vars) /* equation no. assignments2 */
+    case (BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst),eqns,vars) 
       equation
         eqnlst = BackendEquation.getEqns(elst,eqns);        
         varlst = Util.listMap1r(vlst, BackendVariable.getVarAt, vars);
         e = Util.listFirst(elst);        
       then
         (eqnlst,varlst,e);        
-    case (BackendDAE.SINGLEARRAY(eqns=elst,vars=vlst),eqns,vars) /* equation no. assignments2 */
+    case (BackendDAE.SINGLEARRAY(eqns=elst,vars=vlst),eqns,vars) 
       equation
         eqnlst = BackendEquation.getEqns(elst,eqns);      
         varlst = Util.listMap1r(vlst, BackendVariable.getVarAt, vars);        
         e = Util.listFirst(elst);        
       then
         (eqnlst,varlst,e);  
-    case (BackendDAE.SINGLEALGORITHM(eqns=elst,vars=vlst),eqns,vars) /* equation no. assignments2 */
+    case (BackendDAE.SINGLEALGORITHM(eqns=elst,vars=vlst),eqns,vars)
       equation
         eqnlst = BackendEquation.getEqns(elst,eqns);  
         varlst = Util.listMap1r(vlst, BackendVariable.getVarAt, vars);        
         e = Util.listFirst(elst);        
       then
         (eqnlst,varlst,e);         
-    case (inComp,eqns,vars) /* equation no. assignments2 */
+    case (inComp,eqns,vars)
       equation
         true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "SimCode.getEquationAndSolvedVar failed!");
+        Debug.fprintln("failtrace", "BackendDAETransform.getEquationAndSolvedVar failed!");
       then
         fail();
   end matchcontinue;
@@ -1299,6 +1284,49 @@ algorithm
         fail();
   end matchcontinue;
 end getEquationAndSolvedVar_Internal;
+
+public function getEquationAndSolvedVarIndxes
+"function: getEquationAndSolvedVarIndxes
+  author: Frenkel TUD
+  Retrieves the equation and the variable indexes solved in that equation
+  given an equation number and the variable assignments2"
+  input BackendDAE.StrongComponent inComp;
+  output list<Integer> outEquation;
+  output list<Integer> outVar;
+algorithm
+  (outEquation,outVar):=
+  matchcontinue(inComp)
+    local
+      Integer e_1,v,e;
+      list<Integer> elst,vlst,elst1,vlst1;
+      BackendDAE.StrongComponent comp;
+    case (BackendDAE.SINGLEEQUATION(eqn=e,var=v)) 
+      then
+        ({e},{v});
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp,disc_eqns=elst,disc_vars=vlst))
+      equation       
+        (elst1,vlst1) = getEquationAndSolvedVarIndxes(comp);
+        elst = listAppend(elst1,elst);
+        vlst = listAppend(vlst1,vlst);
+      then
+        (elst,vlst);          
+    case (BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst))      
+      then
+        (elst,vlst);        
+    case (BackendDAE.SINGLEARRAY(eqns=elst,vars=vlst))     
+      then
+        (elst,vlst);  
+    case (BackendDAE.SINGLEALGORITHM(eqns=elst,vars=vlst))     
+      then
+        (elst,vlst);         
+    else
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.fprintln("failtrace", "BackendDAETransform.getEquationAndSolvedVarIndxes failed!");
+      then
+        fail();
+  end matchcontinue;
+end getEquationAndSolvedVarIndxes;
 
 public function splitMixedEquations "function: splitMixedEquations
   author: PA

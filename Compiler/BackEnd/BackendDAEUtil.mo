@@ -2516,50 +2516,20 @@ algorithm
     local
       BackendDAE.StrongComponents comps,states,output_;
       BackendDAE.StrongComponent comp;
-      BackendDAE.Value e,mark_value;
-      list<BackendDAE.Value> eqns,disc_eqns;
+      list<BackendDAE.Value> eqns;
       array<BackendDAE.Value> arr;
     
     case ({},_) then ({},{});
-
-    case ((comp as BackendDAE.SINGLEEQUATION(eqn=e)) :: comps,arr)
-      equation
-        mark_value = arr[e];
-        false = intEq(mark_value,0) "block is dynamic, belong in dynamic section" ;
-        (states,output_) = splitBlocks(comps, arr);
-      then
-        ((comp :: states),output_);
-    
-    case ((comp as BackendDAE.SINGLEALGORITHM(eqns=eqns)) :: comps,arr)
-      equation
-        true = blockIsDynamic(eqns, arr) "block is dynamic, belong in dynamic section" ;
-        (states,output_) = splitBlocks(comps, arr);
-      then
-        ((comp :: states),output_);
-
-    case ((comp as BackendDAE.SINGLEARRAY(eqns=eqns)) :: comps,arr)
-      equation
-        true = blockIsDynamic(eqns, arr) "block is dynamic, belong in dynamic section" ;
-        (states,output_) = splitBlocks(comps, arr);
-      then
-        ((comp :: states),output_);
         
-    case ((comp as BackendDAE.EQUATIONSYSTEM(eqns=eqns)) :: comps,arr)
+    case (comp::comps,arr)
       equation
-        true = blockIsDynamic(eqns, arr) "block is dynamic, belong in dynamic section" ;
-        (states,output_) = splitBlocks(comps, arr);
-      then
-        ((comp :: states),output_);   
-        
-    case ((comp as BackendDAE.MIXEDEQUATIONSYSTEM(eqns=eqns,disc_eqns=disc_eqns)) :: comps,arr)
-      equation
-        eqns = listAppend(eqns,disc_eqns);
+        (eqns,_) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
         true = blockIsDynamic(eqns, arr) "block is dynamic, belong in dynamic section" ;
         (states,output_) = splitBlocks(comps, arr);
       then
         ((comp :: states),output_);              
     
-    case ((comp :: comps),arr)
+    case (comp :: comps,arr)
       equation
         (states,output_) = splitBlocks(comps, arr) "block is not dynamic, belong in output section" ;
       then
@@ -3819,33 +3789,13 @@ algorithm
   outComp:=
   matchcontinue (inInteger,inComps)
     local
-      Integer e,i;
-      list<Integer> elst,disc_eqns;
+      Integer i;
+      list<Integer> elst;
       BackendDAE.StrongComponents comps;
       BackendDAE.StrongComponent comp;
-    case (i,(comp as BackendDAE.SINGLEEQUATION(eqn=e))::comps)
+    case (i,comp::comps)
       equation
-         true = intEq(i,e);
-      then
-        comp;
-    case (i,(comp as BackendDAE.EQUATIONSYSTEM(eqns=elst))::comps)
-      equation
-        true = listMember(i,elst);        
-      then
-        comp;  
-    case (i,(comp as BackendDAE.MIXEDEQUATIONSYSTEM(eqns=elst,disc_eqns=disc_eqns))::comps)
-      equation
-        elst = listAppend(elst,disc_eqns);
-        true = listMember(i,elst);        
-      then
-        comp;               
-    case (i,(comp as BackendDAE.SINGLEARRAY(eqns=elst))::comps)
-      equation
-        true = listMember(i,elst);        
-      then
-        comp;   
-    case (i,(comp as BackendDAE.SINGLEALGORITHM(eqns=elst))::comps)
-      equation
+        (elst,_) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
         true = listMember(i,elst);        
       then
         comp;          

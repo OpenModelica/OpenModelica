@@ -2852,7 +2852,7 @@ algorithm
      BackendDAE.BinTree movedVars;
     case (inDAE,inFunctionTree,inM,inMT,inAss1,inAss2,inComps)
       equation
-        (dae as BackendDAE.DAE(vars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT,ass1,ass2,comps1,b,eqnlst,movedVars) = constantLinearSystem1(inDAE,inFunctionTree,inM,inMT,inAss1,inAss2,inComps,{},BackendDAE.emptyBintree);
+        (dae as BackendDAE.DAE(vars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),b,eqnlst,movedVars) = constantLinearSystem1(inDAE,inFunctionTree,inComps,{},BackendDAE.emptyBintree);
         // move changed variables         
         (vars1,knvars1) = BackendVariable.moveVariables(vars,knvars,movedVars);
         // remove changed eqns
@@ -2861,7 +2861,7 @@ algorithm
         dae1 = BackendDAE.DAE(vars1,knvars1,exobj,aliasVars,eqns1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
         (m,mT) = BackendDAEUtil.incidenceMatrix(dae1, BackendDAE.NORMAL());
       then
-        (dae1,m,mT,ass1,ass2,comps1,b);
+        (dae1,m,mT,inAss1,inAss2,inComps,b);
   end matchcontinue;  
 end constantLinearSystem;
 
@@ -2869,27 +2869,18 @@ protected function constantLinearSystem1
 "function constantLinearSystem1"
     input BackendDAE.BackendDAE inDAE;
     input DAE.FunctionTree inFunctionTree;
-    input BackendDAE.IncidenceMatrix inM;
-    input BackendDAE.IncidenceMatrix inMT;
-    input array<Integer> inAss1;  
-    input array<Integer> inAss2;  
     input BackendDAE.StrongComponents inComps;  
     input list<Integer> inEqnlst;
     input BackendDAE.BinTree inMovedVars;
     output BackendDAE.BackendDAE outDAE;
-    output BackendDAE.IncidenceMatrix outM;
-    output BackendDAE.IncidenceMatrix outMT;
-    output array<Integer> outAss1;  
-    output array<Integer> outAss2;  
-    output BackendDAE.StrongComponents outComps; 
     output Boolean outRunMatching;
     output list<Integer> outEqnlst;
     output BackendDAE.BinTree movedVars;
 algorithm
-  (outDAE,outM,outMT,outAss1,outAss2,outComps,outRunMatching,outEqnlst,movedVars):=
-  matchcontinue (inDAE,inFunctionTree,inM,inMT,inAss1,inAss2,inComps,inEqnlst,inMovedVars)
+  (outDAE,outRunMatching,outEqnlst,movedVars):=
+  matchcontinue (inDAE,inFunctionTree,inComps,inEqnlst,inMovedVars)
     local
-      BackendDAE.BackendDAE dae,dae1;
+      BackendDAE.BackendDAE dae,dae1,dae2;
       DAE.FunctionTree funcs;
       BackendDAE.Variables vars,knvars,exobj,avars,vars1,knvars1;
       BackendDAE.AliasVariables aliasVars;
@@ -2899,12 +2890,9 @@ algorithm
       BackendDAE.EventInfo einfo;
       list<BackendDAE.WhenClause> whenClauseLst;
       BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrix mT;
-      array<Integer> ass1,ass2;
-      BackendDAE.StrongComponents comps,comps1;
-      BackendDAE.StrongComponent comp;
-      Boolean b;
+      BackendDAE.StrongComponents comps;
+      BackendDAE.StrongComponent comp,comp1;
+      Boolean b,b1;
       list<BackendDAE.Equation> eqn_lst; 
       list<BackendDAE.Var> var_lst;
       list<Integer> eindex,vindx,remeqnlst,remeqnlst1;
@@ -2916,34 +2904,30 @@ algorithm
       Integer linInfo;
       list<DAE.ComponentRef> names;
       BackendDAE.BinTree movedVars,movedVars1;
-    case (dae,funcs,inM,inMT,inAss1,inAss2,{},inEqnlst,inMovedVars)
+    case (dae,funcs,{},inEqnlst,inMovedVars)
       then
-        (dae,inM,inMT,inAss1,inAss2,{},false,inEqnlst,inMovedVars);
-    case (dae as BackendDAE.DAE(orderedVars=vars,orderedEqs=eqns),funcs,inM,inMT,inAss1,inAss2,(comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=SOME(jac),jacType=BackendDAE.JAC_CONSTANT()))::comps,inEqnlst,inMovedVars)
+        (dae,false,inEqnlst,inMovedVars);
+    case (dae as BackendDAE.DAE(orderedVars=vars,orderedEqs=eqns),funcs,(comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=SOME(jac),jacType=BackendDAE.JAC_CONSTANT()))::comps,inEqnlst,inMovedVars)
       equation
         eqn_lst = BackendEquation.getEqns(eindex,eqns);        
         var_lst = Util.listMap1r(vindx, BackendVariable.getVarAt, vars);
         var_lst = listReverse(var_lst);
         (dae,movedVars) = solveLinearSystem(dae,eqn_lst,var_lst,jac,inMovedVars);
         remeqnlst = listAppend(eindex,inEqnlst);
-        (dae1,m,mT,ass1,ass2,comps1,b,remeqnlst1,movedVars1) = constantLinearSystem1(dae,funcs,inM,inMT,inAss1,inAss2,comps,remeqnlst,movedVars);
+        (dae1,b,remeqnlst1,movedVars1) = constantLinearSystem1(dae,funcs,comps,remeqnlst,movedVars);
       then
-        (dae1,m,mT,ass1,ass2,comp::comps1,true,remeqnlst1,movedVars1);
-    case (dae as BackendDAE.DAE(orderedVars=vars,orderedEqs=eqns),funcs,inM,inMT,inAss1,inAss2,(comp as BackendDAE.MIXEDEQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=SOME(jac),jacType=BackendDAE.JAC_CONSTANT()))::comps,inEqnlst,inMovedVars)
+        (dae1,true,remeqnlst1,movedVars1);
+    case (dae,funcs,(comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1))::comps,inEqnlst,inMovedVars)
       equation
-        eqn_lst = BackendEquation.getEqns(eindex,eqns);        
-        var_lst = Util.listMap1r(vindx, BackendVariable.getVarAt, vars);
-        var_lst = listReverse(var_lst);
-        (dae,movedVars) = solveLinearSystem(dae,eqn_lst,var_lst,jac,inMovedVars);
-        remeqnlst = listAppend(eindex,inEqnlst);
-        (dae1,m,mT,ass1,ass2,comps1,b,remeqnlst1,movedVars1) = constantLinearSystem1(dae,funcs,inM,inMT,inAss1,inAss2,comps,remeqnlst,movedVars);
+        (dae1,b,remeqnlst,movedVars) = constantLinearSystem1(dae,funcs,{comp1},inEqnlst,inMovedVars);
+        (dae2,b1,remeqnlst1,movedVars1) = constantLinearSystem1(dae1,funcs,comps,remeqnlst,movedVars);
       then
-        (dae1,m,mT,ass1,ass2,comp::comps1,true,remeqnlst1,movedVars1);        
-    case (dae,funcs,inM,inMT,inAss1,inAss2,comp::comps,inEqnlst,inMovedVars)
+        (dae2,b1 or b,remeqnlst1,movedVars1);        
+    case (dae,funcs,comp::comps,inEqnlst,inMovedVars)
       equation
-         (dae1,m,mT,ass1,ass2,comps1,b,remeqnlst,movedVars) = constantLinearSystem1(dae,funcs,inM,inMT,inAss1,inAss2,comps,inEqnlst,inMovedVars);
+         (dae1,b,remeqnlst,movedVars) = constantLinearSystem1(dae,funcs,comps,inEqnlst,inMovedVars);
       then
-        (dae1,m,mT,ass1,ass2,comp::comps1,b,remeqnlst,movedVars);
+        (dae1,b,remeqnlst,movedVars);
   end matchcontinue;  
 end constantLinearSystem1;
 

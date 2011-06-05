@@ -51,6 +51,7 @@ public import SCode;
 protected import Absyn;
 protected import BackendDAEUtil;
 protected import BackendVariable;
+protected import BackendDAETransform;
 protected import ComponentReference;
 protected import DAE;
 protected import DAEUtil;
@@ -648,45 +649,17 @@ algorithm
       list<Integer> predtaskids;
       BackendDAE.BackendDAE dae;
       BackendDAE.StrongComponent comp;
-      list<BackendDAE.Value> eqns,vars,disc_eqns,disc_vars;
-    case (dae,comp as BackendDAE.MIXEDEQUATIONSYSTEM(eqns=eqns,vars=vars,disc_eqns=disc_eqns,disc_vars=disc_vars))
+      list<BackendDAE.Value> eqns,vars;
+    case (dae,comp)
       equation
         print("build system\n");
         tid = TaskGraphExt.newTask("equation system");
-        eqns = listAppend(eqns,disc_eqns);
-        vars = listAppend(vars,disc_vars);
+        (eqns,vars) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
         predtasks = buildSystem2(dae, eqns, vars, tid);
         predtaskids = Util.listMap(predtasks, TaskGraphExt.getTask);
         addPredecessors(tid, predtaskids, predtasks, 0);
       then
         ();      
-    case (dae,comp as BackendDAE.EQUATIONSYSTEM(eqns=eqns,vars=vars))
-      equation
-        print("build system\n");
-        tid = TaskGraphExt.newTask("equation system");
-        predtasks = buildSystem2(dae, eqns, vars, tid);
-        predtaskids = Util.listMap(predtasks, TaskGraphExt.getTask);
-        addPredecessors(tid, predtaskids, predtasks, 0);
-      then
-        ();
-    case (dae,comp as BackendDAE.SINGLEARRAY(eqns=eqns,vars=vars))
-      equation
-        print("build system\n");
-        tid = TaskGraphExt.newTask("equation system");
-        predtasks = buildSystem2(dae, eqns, vars, tid);
-        predtaskids = Util.listMap(predtasks, TaskGraphExt.getTask);
-        addPredecessors(tid, predtaskids, predtasks, 0);
-      then
-        ();
-    case (dae,comp as BackendDAE.SINGLEALGORITHM(eqns=eqns,vars=vars))
-      equation
-        print("build system\n");
-        tid = TaskGraphExt.newTask("equation system");
-        predtasks = buildSystem2(dae, eqns, vars, tid);
-        predtaskids = Util.listMap(predtasks, TaskGraphExt.getTask);
-        addPredecessors(tid, predtaskids, predtasks, 0);
-      then
-        ();
     else
       equation
         print("build_system failed\n");

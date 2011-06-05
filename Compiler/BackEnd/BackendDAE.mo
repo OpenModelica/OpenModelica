@@ -453,10 +453,7 @@ uniontype StrongComponent
   end EQUATIONSYSTEM; 
   
   record MIXEDEQUATIONSYSTEM
-    list<Value> eqns;
-    list<Value> vars "be carefule with states, this are solved for der(x)";
-    Option<list<tuple<Integer, Integer, Equation>>> jac;
-    JacobianType jacType;
+    StrongComponent condSystem;
     list<Value> disc_eqns;
     list<Value> disc_vars;
   end MIXEDEQUATIONSYSTEM;   
