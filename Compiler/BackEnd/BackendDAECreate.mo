@@ -62,7 +62,7 @@ protected import OptManager;
 protected import RTOpts;
 protected import SCode;
 protected import Util;
-
+protected import BackendDump;
 
 public function lower
 "function: lower
@@ -3060,21 +3060,25 @@ algorithm
     local
       DAE.Exp e,e1,e2,e_1,eres;
       BackendDAE.Variables vars,knvars;
-      list<BackendDAE.ZeroCrossing> zeroCrossings,zc;
+      list<BackendDAE.ZeroCrossing> zeroCrossings,zc_lst;
       DAE.Operator op;
-      Integer indx,eq_count,wc_count,itmp;
+      Integer indx,eq_count,wc_count,itmp,new_idx;
       list<Integer> eqs;
       String s1;
+      BackendDAE.ZeroCrossing zc;
       
     case (((e as DAE.CALL(path = Absyn.IDENT(name = "noEvent"))),((zeroCrossings,indx),(eq_count,wc_count,vars,knvars))))
     then ((e,false,((zeroCrossings,indx),(eq_count,wc_count,vars,knvars))));
     case (((e as DAE.CALL(path = Absyn.IDENT(name = "sample"))),((zeroCrossings,indx),(eq_count,wc_count,vars,knvars))))
       equation
-        zc = makeZeroCrossings({e}, {eq_count}, {wc_count});
-        zc = listAppend(zeroCrossings, zc);
-        zc = mergeZeroCrossings(zc);
-        indx = indx + (listLength(zc) - listLength(zeroCrossings));
-      then ((e,true,((zc,indx),(eq_count,wc_count,vars,knvars))));
+    
+        zc_lst = makeZeroCrossings({e}, {eq_count}, {wc_count});
+        zc_lst = listAppend(zeroCrossings, zc_lst);
+        zc_lst = mergeZeroCrossings(zc_lst);
+        itmp = (listLength(zc_lst)-listLength(zeroCrossings));
+         indx = indx + (listLength(zc_lst) - listLength(zeroCrossings));
+      // Debug.fcall("relidx",print, "sample index: " +& intString(indx) +& "\n");  
+      then ((e,true,((zc_lst,indx),(eq_count,wc_count,vars,knvars))));
     // function with discrete expressions generate no zerocrossing
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),((zeroCrossings,indx),(eq_count,wc_count,vars,knvars)))) 
       equation
@@ -3085,14 +3089,12 @@ algorithm
     // All other functions generate zerocrossing.
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),((zeroCrossings,indx),(eq_count,wc_count,vars,knvars))))
       equation
-        e_1 = DAE.RELATION(e1,op,e2,indx,NONE());
-        zc = makeZeroCrossings({e_1}, {eq_count}, {wc_count});
-        zc = listAppend(zeroCrossings, zc);
-        zc = mergeZeroCrossings(zc);
-        itmp = (listLength(zc)-listLength(zeroCrossings));
-        eres = Util.if_((itmp>0),e_1,e);
-        indx = indx + itmp;
-      then ((eres,true,((zc,indx),(eq_count,wc_count,vars,knvars))));
+         new_idx=listLength(zeroCrossings);
+        e_1 = DAE.RELATION(e1,op,e2,new_idx,NONE());
+         {zc} = makeZeroCrossings({e_1}, {eq_count}, {wc_count});
+        ((eres,zc_lst,indx))=zerocrossingindex(e_1,indx,zeroCrossings,zc);
+     //Debug.fcall("relidx",print, "collectZC result zc : "  +& ExpressionDump.printExpStr(eres)+& "index: " +& intString(indx) +& "\n");
+      then ((eres,true,((zc_lst,indx),(eq_count,wc_count,vars,knvars))));  
     case ((e,((zeroCrossings,indx),(eq_count,wc_count,vars,knvars)))) then ((e,true,((zeroCrossings,indx),(eq_count,wc_count,vars,knvars))));
   end matchcontinue;
 end collectZC;
@@ -3102,7 +3104,7 @@ protected function collectZCAlgs "function: collectZeroCrossings
 
   Collects zero crossings in algorithms stamts, beside for loops those are
   processed by collectZCAlgsFor
-  
+
   modified: 2011-01 by wbraun 
 "
   input tuple<DAE.Exp, tuple<DAE.Exp, list<DAE.Exp>,DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables,list<BackendDAE.Equation>>>> inTplExpExpTplExpExpLstVariables;
@@ -3116,22 +3118,23 @@ algorithm
       list<DAE.Statement> stmts;
       BackendDAE.Variables vars,knvars;
       list<BackendDAE.Equation> eqns;
-      list<BackendDAE.ZeroCrossing> zeroCrossings,zc;
+      list<BackendDAE.ZeroCrossing> zeroCrossings,zc_lst;
       DAE.Operator op;
-      Integer indx,alg_indx,itmp;
+      Integer indx,alg_indx,itmp,new_idx;
       list<Integer> eqs;
       String s1;
-      
+       BackendDAE.ZeroCrossing zc;
     case (((e as DAE.CALL(path = Absyn.IDENT(name = "noEvent"))),(iterator,le,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns))))
     then ((e,false,(iterator,le,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns))));
     case (((e as DAE.CALL(path = Absyn.IDENT(name = "sample"))),(iterator,le,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns))))
       equation
         eqs = BackendEquation.equationAlgorithmEqnsNr(eqns,alg_indx,0);
-        zc = makeZeroCrossings({e}, eqs, {});
-        zc = listAppend(zeroCrossings, zc);
-        zc = mergeZeroCrossings(zc);
-        indx = indx + (listLength(zc) - listLength(zeroCrossings));
-      then ((e,true,(iterator,le,range,(zc,indx),(alg_indx,vars,knvars,eqns))));
+        zc_lst = makeZeroCrossings({e}, eqs, {});
+        zc_lst = listAppend(zeroCrossings, zc_lst);
+        zc_lst = mergeZeroCrossings(zc_lst);
+        indx = indx + (listLength(zc_lst) - listLength(zeroCrossings));
+       // Debug.fcall("relidx",print, "sample index algotihm: " +& intString(indx) +& "\n");  
+      then ((e,true,(iterator,le,range,(zc_lst,indx),(alg_indx,vars,knvars,eqns))));
     // function with discrete expressions generate no zerocrossing
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(iterator,le,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns)))) 
       equation
@@ -3141,18 +3144,63 @@ algorithm
     // All other functions generate zerocrossing.
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(iterator,le,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns))))
       equation
-        e_1 = DAE.RELATION(e1,op,e2,indx,NONE());
+       // e_1 = DAE.RELATION(e1,op,e2,indx,NONE());
         eqs = BackendEquation.equationAlgorithmEqnsNr(eqns,alg_indx,0);
-        zc = makeZeroCrossings({e_1}, eqs, {});
-        zc = listAppend(zeroCrossings, zc);
-        zc = mergeZeroCrossings(zc);
-        itmp = (listLength(zc)-listLength(zeroCrossings));
-        eres = Util.if_((itmp>0),e_1,e);
-        indx = indx + itmp;
-      then ((eres,true,(iterator,le,range,(zc,indx),(alg_indx,vars,knvars,eqns))));
+        new_idx=listLength(zeroCrossings);
+        e_1 = DAE.RELATION(e1,op,e2,new_idx,NONE());
+       {zc} = makeZeroCrossings({e_1}, eqs, {});
+      ((eres,zc_lst,indx))=zerocrossingindex(e_1,indx,zeroCrossings,zc);
+      // Debug.fcall("relidx",print, "collectZCAlgs result zc : "  +& ExpressionDump.printExpStr(eres)+& "index:"  +& intString(indx) +& "\n");
+      then ((eres,true,(iterator,le,range,(zc_lst,indx),(alg_indx,vars,knvars,eqns))));
     case ((e,(iterator,le,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns)))) then ((e,true,(iterator,le,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns))));
   end matchcontinue;
 end collectZCAlgs;
+
+
+
+protected function zerocrossingindex
+  input DAE.Exp exp;
+  input Integer index;
+  input list<BackendDAE.ZeroCrossing> zeroCrossings;
+  input BackendDAE.ZeroCrossing zc;
+  output tuple<DAE.Exp,list<BackendDAE.ZeroCrossing>,Integer> out_exp;
+algorithm out_exp := matchcontinue (exp,index,zeroCrossings,/*inputzeroinfo,*/zc)
+  local
+      DAE.Exp exp,e_1,e1,e2;
+       DAE.Operator op;
+       list<BackendDAE.ZeroCrossing> newzero,existzero,zc_lst;
+      BackendDAE.ZeroCrossing z_c,zc1;
+       Integer indx,length,eq_count,wc_count/*, new_idx*/;
+      BackendDAE.Variables vars,knvars;
+      String str;
+  case ((exp as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),index,zeroCrossings,z_c)
+     equation
+        {} = Util.listSelect1(zeroCrossings,z_c/*zc1*/, sameZeroCrossing);
+        zc_lst = listAppend(zeroCrossings, {z_c});
+        //Debug.fcall("relidx",print, " zerocrossingindex 1 : "  +& ExpressionDump.printExpStr(exp) +& " index: " +& intString(index) +& "\n");
+      	then 
+       	  ((exp,zc_lst,index));
+  case ((exp as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),index,zeroCrossings,z_c)
+     equation
+        newzero= Util.listSelect1(zeroCrossings,z_c, sameZeroCrossing);
+        length=listLength(newzero);
+         BackendDAE.ZERO_CROSSING((e_1 as DAE.RELATION(_,_,_,indx,_)),_,_)=Util.listFirst(newzero);
+        //Debug.fcall("relidx",print, " zerocrossingindex 2: results "  +& ExpressionDump.printExpStr(e_1)+& "index: " +& intString(indx) +& " lenght: " +& intString(length) +& "\n");
+        then 
+       	  ((e_1,zeroCrossings,indx));
+    case (exp ,_,_,_)
+     equation
+        str = " failure in zerocrossingindex for: "  +& ExpressionDump.printExpStr(exp);
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then fail();
+
+   end matchcontinue;
+
+end zerocrossingindex;
+
+
+
+
 
 protected function traverseStmtsExps "function: traverseStmtExps
   Handles the traversing of list<DAE.Statement>.
@@ -3394,6 +3442,7 @@ algorithm
         zc = listAppend(zeroCrossings, zc);
         zc = mergeZeroCrossings(zc);
         indx = indx + (listLength(zc) - listLength(zeroCrossings));
+            Debug.fcall("relidx",print, "collectZCAlgsFor sample" +& "\n");
       then ((e,true,(iterator,inExpLst,range,(zc,indx),(alg_indx,vars,knvars,eqns))));
     // function with discrete expressions generate no zerocrossing.
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(iterator,inExpLst,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns)))) 
@@ -3418,6 +3467,7 @@ algorithm
         zc = mergeZeroCrossings(zc);
         itmp = (listLength(zc)-listLength(zeroCrossings));
         eres = Util.if_((itmp>0),e_1,e);
+         Debug.fcall("relidx",print, "collectZCAlgsFor result zc : "  +& ExpressionDump.printExpStr(eres)+& "index:"  +& intString(indx) +& "\n");
       then ((eres,true,(iterator,inExpLst,range,(zc,indx),(alg_indx,vars,knvars,eqns))));
     // All other functions generate zerocrossing.  
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(iterator,inExpLst,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns))))
@@ -3433,6 +3483,7 @@ algorithm
         itmp = (listLength(zc)-listLength(zeroCrossings));
         indx = indx + itmp;
         eres = Util.if_((itmp>0),e_1,e);
+            Debug.fcall("relidx",print, "collectZCAlgsFor result zc : "  +& ExpressionDump.printExpStr(eres)+& "index:"  +& intString(indx) +& "\n");
       then ((eres,true,(iterator,inExpLst,range,(zc,indx),(alg_indx,vars,knvars,eqns))));
     case ((e,(iterator,inExpLst,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns)))) then ((e,true,(iterator,inExpLst,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns))));
   end matchcontinue;
