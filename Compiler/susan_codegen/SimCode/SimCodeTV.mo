@@ -316,6 +316,7 @@ package SimCode
       DAE.ElementSource source;
       Causality causality;
       Option<Integer> variable_index;
+      list <String> numArrayElement;
     end SIMVAR;
   end SimVar;
   

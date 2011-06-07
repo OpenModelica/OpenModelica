@@ -28,7 +28,7 @@ template translateFunctions(FunctionCode functionCode)
 end translateFunctions;
 
 template simulationHeaderFile(SimCode simCode)
- "Generates code for main cpp file for simulation target."
+ "Generates code for header file for simulation target."
 ::=
 match simCode
 case SIMCODE(__) then
@@ -67,7 +67,7 @@ MAINFILE=<%lastIdentOfPath(modelInfo.name)%><% if acceptMetaModelicaGrammar() th
 
 .PHONY: <%lastIdentOfPath(modelInfo.name)%>
 <%lastIdentOfPath(modelInfo.name)%>: $(MAINFILE) 
-<%\t%>$(CXX) -shared -I. -o $(MODELICA_SYSTEM_LIB) $(MAINFILE) -L"..//Test//Base/"    $(CFLAGS)  $(LDFLAGS) -lSystem -Wl,-Bstatic  -Wl,-Bdynamic
+<%\t%>$(CXX) -shared -I. -o $(MODELICA_SYSTEM_LIB) $(MAINFILE) -L"..//Test//Base/"    $(CFLAGS)  $(LDFLAGS) -lSystem -lMath -Wl,-Bstatic  -Wl,-Bdynamic
 	 
 >>
 end simulationMakefile;
@@ -101,6 +101,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	  //Instantiate auxiliary object for event handling functionality
 	  _event_handling.resetHelpVar =  boost::bind(&<%lastIdentOfPath(modelInfo.name)%>::resetHelpVar, this, _1);
 	  _historyImpl = new HistoryImplType(globalSettings);
+	  <%arrayReindex(simCode)%>
+	  <%arrayInit(simCode)%>
     }
     
     <%lastIdentOfPath(modelInfo.name)%>::~<%lastIdentOfPath(modelInfo.name)%>() 
@@ -152,7 +154,7 @@ template Update(SimCode simCode)
 match simCode
 case SIMCODE(__) then
   <<
-   <%update(odeEquations,algebraicEquations,whenClauses,simCode)%>
+   <%update(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>
   >>
 end Update;
   
@@ -483,63 +485,118 @@ template MemberVariableDefine(SimVar simVar, String arrayName)
 match arrayName
 case "algebraics" then
  	match simVar
-  	case SIMVAR(__) then
+  	case SIMVAR(name=CREF_IDENT(subscriptLst = {})) then
       <<
        <%variableType(type_)%> <%cref(name)%>;
+       >>
+    case v as SIMVAR(name=CREF_IDENT(subscriptLst = sub),arrayCref=SOME(_),numArrayElement=num) then
+      <<
+       multi_array<<%variableType(type_)%>,<%listLength(sub)%>> <%arraycref(name)%>;
        >>
          end match
 case "parameters" then
     match simVar
-  	case SIMVAR(__) then
+  	case SIMVAR(name=CREF_IDENT(subscriptLst = {})) then
         << 
          <%variableType(type_)%> <%cref(name)%>;
          >>
+    case v as SIMVAR(name=CREF_IDENT(subscriptLst = sub),arrayCref=SOME(_),numArrayElement=num) then
+      <<
+       multi_array<<%variableType(type_)%>,<%listLength(sub)%>> <%arraycref(name)%>;
+       >>
          end match
 case "intVariables.algebraics" then
     match simVar
-  	case SIMVAR(__) then
+  	case SIMVAR(name=CREF_IDENT(subscriptLst = {})) then
         << 
           <%variableType(type_)%> <%cref(name)%>;
          >>
+    case v as SIMVAR(name=CREF_IDENT(subscriptLst = sub),arrayCref=SOME(_),numArrayElement=num) then
+      <<
+       multi_array<<%variableType(type_)%>,<%listLength(sub)%>> <%arraycref(name)%>;
+       >>
          end match
 case "intVariables.parameters" then
     match simVar
-  	case SIMVAR(__) then
+  	case SIMVAR(name=CREF_IDENT(subscriptLst = {})) then
         << 
            <%variableType(type_)%> <%cref(name)%>;
          >>
+    case v as SIMVAR(name=CREF_IDENT(subscriptLst = sub),arrayCref=SOME(_),numArrayElement=num) then
+      <<
+       multi_array<<%variableType(type_)%>,<%listLength(sub)%>> <%arraycref(name)%>;
+       >>
          end match
 case "boolVariables.algebraics" then
     match simVar
-  	case SIMVAR(__) then
+  	case SIMVAR(name=CREF_IDENT(subscriptLst = {})) then
         << 
           <%variableType(type_)%> <%cref(name)%>;
          >>
+    case v as SIMVAR(name=CREF_IDENT(subscriptLst = sub),arrayCref=SOME(_),numArrayElement=num) then
+      <<
+       multi_array<<%variableType(type_)%>,<%listLength(sub)%>> <%arraycref(name)%>;
+       >>
          end match
 case "boolVariables.parameters" then
     match simVar
-  	case SIMVAR(__) then
+  	case SIMVAR(name=CREF_IDENT(subscriptLst = {})) then
         << 
           <%variableType(type_)%> <%cref(name)%>;
          >>
+    case v as SIMVAR(name=CREF_IDENT(subscriptLst = sub),arrayCref=SOME(_),numArrayElement=num) then
+      <<
+       multi_array<<%variableType(type_)%>,<%listLength(sub)%>> <%arraycref(name)%>;
+       >>
          end match
 case "stringVariables.algebraics" then
     match simVar
-  	case SIMVAR(__) then
+  	case SIMVAR(name=CREF_IDENT(subscriptLst = {})) then
         << 
           <%variableType(type_)%> <%cref(name)%>;
          >>
+    case v as SIMVAR(name=CREF_IDENT(subscriptLst = sub),arrayCref=SOME(_),numArrayElement=num) then
+      <<
+       multi_array<<%variableType(type_)%>,<%listLength(sub)%>> <%arraycref(name)%>;
+       >>
          end match
 case "stringVariables.parameters" then
     match simVar
-  	case SIMVAR(__) then
+  	case SIMVAR(name=CREF_IDENT(subscriptLst = {})) then
         << 
            <%variableType(type_)%> <%cref(name)%>;
          >>
+    case v as SIMVAR(name=CREF_IDENT(subscriptLst = sub),arrayCref=SOME(_),numArrayElement=num) then
+      <<
+       multi_array<<%variableType(type_)%>,<%listLength(sub)%>> <%arraycref(name)%>;
+       >>
          end match
-
-
 end MemberVariableDefine;
+
+template arrayConstruct(ModelInfo modelInfo)
+::=
+match modelInfo
+case MODELINFO(vars = vars as SIMVARS(__)) 
+  then
+  <<
+  <%arrayConstruct1(vars.algVars)%>
+  <%arrayConstruct1(vars.intAlgVars)%>
+  <%arrayConstruct1(vars.boolAlgVars)%>
+  <%arrayConstruct1(vars.stringAlgVars)%>
+  <%arrayConstruct1(vars.paramVars)%>
+  <%arrayConstruct1(vars.intParamVars)%>
+  <%arrayConstruct1(vars.boolParamVars)%>
+  <%arrayConstruct1(vars.stringParamVars)%>
+  >>
+end arrayConstruct;
+
+template arrayConstruct1(list<SimVar> varsLst) ::=
+  varsLst |> v as SIMVAR(name=CREF_IDENT(subscriptLst=_),arrayCref=SOME(_)) =>
+  <<
+    ,<%arraycref(name)%>(boost::extents[<%v.numArrayElement;separator="]["%>])
+  >> 
+  ;separator="\n"
+end arrayConstruct1;
 
 template variableType(DAE.ExpType type)
  "Generates integer for use in arrays in global data section."
@@ -550,7 +607,6 @@ template variableType(DAE.ExpType type)
   case ET_INT(__)         then "int"
   case ET_BOOL(__)        then "bool"
 end variableType;
-
 
 template lastIdentOfPath(Path modelName) ::=
   match modelName
@@ -566,7 +622,7 @@ template cref(ComponentRef cr)
   case CREF_IDENT(ident = "xloc") then crefStr(cr)
   case CREF_IDENT(ident = "time") then "time"
   case WILD(__) then ''
-  else "$" + crefToCStr(cr)
+  else "$"+crefToCStr(cr)
 end cref;
 
 template crefToCStr(ComponentRef cr)
@@ -582,7 +638,7 @@ end crefToCStr;
 template subscriptsToCStr(list<Subscript> subscripts)
 ::=
   if subscripts then
-    '$lB<%subscripts |> s => subscriptToCStr(s) ;separator="$c"%>$rB'
+    '[<%subscripts |> s => subscriptToCStr(s) ;separator="]["%>]'
 end subscriptsToCStr;
 
 template subscriptToCStr(Subscript subscript)
@@ -593,6 +649,24 @@ template subscriptToCStr(Subscript subscript)
   case WHOLEDIM(__) then "WHOLEDIM"
   else "UNKNOWN_SUBSCRIPT"
 end subscriptToCStr;
+
+template arraycref(ComponentRef cr)
+::=
+  match cr
+  case CREF_IDENT(ident = "xloc") then crefStr(cr)
+  case CREF_IDENT(ident = "time") then "time"
+  case WILD(__) then ''
+  else "$"+crefToCStr1(cr)
+end arraycref;
+
+template crefToCStr1(ComponentRef cr)
+::=
+  match cr
+  case CREF_IDENT(__) then '<%ident%>'
+  case CREF_QUAL(__) then '<%ident%><%subscriptsToCStr(subscriptLst)%>$P<%crefToCStr(componentRef)%>'
+  case WILD(__) then ''
+  else "CREF_NOT_IDENT_OR_QUAL"
+end crefToCStr1;
 
 template crefStr(ComponentRef cr)
  "Generates the name of a variable for variable name array."
@@ -630,6 +704,7 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as SIMVARS(__))) 
   then
   <<
+  <%arrayConstruct(modelInfo)%>
   <%initVals(vars.paramVars)%>
   <%initVals(vars.intParamVars)%>
   <%initVals(vars.boolParamVars)%>
@@ -638,7 +713,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as S
 end simulationInitFile;
 
 template initVals(list<SimVar> varsLst) ::=
-  varsLst |> SIMVAR(__) =>
+  varsLst |> SIMVAR(name=CREF_IDENT(subscriptLst = {})) =>
   <<
     ,<%cref(name)%>(<%match initialValue 
     case SOME(v) then initVal(v)
@@ -647,6 +722,57 @@ template initVals(list<SimVar> varsLst) ::=
     >>  
   ;separator="\n"
 end initVals;
+
+template arrayInit(SimCode simCode)
+ "Generates the contents of the makefile for the simulation case."
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as SIMVARS(__))) 
+  then
+  <<
+  <%initVals1(vars.paramVars)%>
+  <%initVals1(vars.intParamVars)%>
+  <%initVals1(vars.boolParamVars)%>
+  <%initVals1(vars.stringParamVars)%>
+  >>
+end arrayInit;
+
+template initVals1(list<SimVar> varsLst) ::=
+  varsLst |> SIMVAR(name=CREF_IDENT(subscriptLst=_)) =>
+  <<
+    <%cref(name)%>=<%match initialValue 
+    case SOME(v) then initVal(v)
+      else ""
+    %>;
+    >> 
+  ;separator="\n"
+end initVals1;
+
+template arrayReindex(SimCode simCode)
+ "Generates the contents of the makefile for the simulation case."
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as SIMVARS(__))) 
+  then
+  <<
+  <%arrayReindex1(vars.algVars)%>
+  <%arrayReindex1(vars.intAlgVars)%>
+  <%arrayReindex1(vars.boolAlgVars)%>
+  <%arrayReindex1(vars.stringAlgVars)%>
+  <%arrayReindex1(vars.paramVars)%>
+  <%arrayReindex1(vars.intParamVars)%>
+  <%arrayReindex1(vars.boolParamVars)%>
+  <%arrayReindex1(vars.stringParamVars)%>
+  >>
+end arrayReindex;
+
+template arrayReindex1(list<SimVar> varsLst) ::=
+  varsLst |> SIMVAR(name=CREF_IDENT(subscriptLst=_),arrayCref=SOME(_)) =>
+  <<
+    <%arraycref(name)%>.reindex(1);
+  >> 
+  ;separator="\n"
+end arrayReindex1;
 
 template initVal(Exp initialValue) 
 ::=
@@ -924,11 +1050,11 @@ template expTypeShort(DAE.ExpType type)
  "Generate type helper."
 ::=
   match type
-  case ET_INT(__)         then "integer"  
+  case ET_INT(__)         then "int"  
   case ET_REAL(__)        then "double"
   case ET_STRING(__)      then if acceptMetaModelicaGrammar() then "metatype" else "string"
   case ET_BOOL(__)        then "bool"
-  case ET_ENUMERATION(__) then "integer"  
+  case ET_ENUMERATION(__) then "int"  
   case ET_OTHER(__)       then "complex"
   case ET_ARRAY(__)       then expTypeShort(ty)   
   case ET_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
@@ -1199,19 +1325,43 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   match exp
   case e as ICONST(__)          then '<%integer%>' /* Yes, we need to cast int to long on 64-bit arch... */
   case e as RCONST(__)          then real
-  case BCONST(__)               then if bool then "(1)" else "(0)" 
+  case e as BCONST(__)          then if bool then "(1)" else "(0)" 
   case e as CREF(__)            then daeExpCrefRhs(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-  case SCONST(__)               then daeExpSconst(string, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+  case e as CAST(__)            then daeExpCast(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+  case e as SCONST(__)          then daeExpSconst(string, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as UNARY(__)           then daeExpUnary(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as LBINARY(__)         then daeExpLbinary(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as LUNARY(__)          then daeExpLunary(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-  case BINARY(__)               then daeExpBinary(operator, exp1, exp2, context, &preExp, &varDecls,simCode)
-  case IFEXP(__)                then daeExpIf(expCond, expThen, expElse, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode)
-  case RELATION(__)             then daeExpRelation(operator, index,exp1, exp2, context, &preExp, &varDecls,simCode)
+  case e as BINARY(__)          then daeExpBinary(operator, exp1, exp2, context, &preExp, &varDecls,simCode)
+  case e as IFEXP(__)           then daeExpIf(expCond, expThen, expElse, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode)
+  case e as RELATION(__)        then daeExpRelation(operator, index,exp1, exp2, context, &preExp, &varDecls,simCode)
   case e as CALL(__)            then daeExpCall(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   else ""
 end daeExp;
 
+
+template daeExpCast(Exp exp, Context context, Text &preExp /*BUFP*/,
+                    Text &varDecls /*BUFP*/,SimCode simCode)
+ "Generates code for a cast expression."
+::=
+match exp
+case CAST(__) then
+  let expVar = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+  match ty
+  case ET_INT(__)   then '((int)<%expVar%>)'  
+  case ET_REAL(__)  then '((double)<%expVar%>)'
+  case ET_ENUMERATION(__)   then '((modelica_integer)<%expVar%>)'
+  case ET_BOOL(__)   then '((bool)<%expVar%>)'  
+  case ET_ARRAY(__) then
+    let arrayTypeStr = expTypeArray(ty)
+    let tvar = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
+    let to = expTypeShort(ty)
+    let from = expTypeFromExpShort(exp)
+    let &preExp += 'cast_<%from%>_array_to_<%to%>(&<%expVar%>, &<%tvar%>);<%\n%>'
+    '<%tvar%>'
+  else 
+    '(<%expVar%>) /* could not cast, using the variable as it is */'
+end daeExpCast;
 
 template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
                     Text &varDecls /*BUFP*/,SimCode simCode)
@@ -1266,8 +1416,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
             path=IDENT(name="pre"), expLst={arg as CREF(__)}) then
     let retType = '<%expTypeArrayIf(arg.ty)%>'
     let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-    let cast = match arg.ty case ET_INT(__) then "(modelica_integer)" 
-                            case ET_ENUMERATION(__) then "(modelica_integer)" //else ""
+    let cast = match arg.ty case ET_INT(__) then "(int)" 
+                            case ET_ENUMERATION(__) then "(int)" //else ""
     let &preExp += '<%retVar%> = <%cast%>pre(<%cref(arg.componentRef)%>);<%\n%>'
     '<%retVar%>'
   
@@ -1285,7 +1435,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
             path=IDENT(name="max"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
-    'modelica_integer_max((modelica_integer)<%var1%>,(modelica_integer)<%var2%>)'
+    'int_max((int)<%var1%>,(int)<%var2%>)'
   
   case CALL(tuple_=false, builtin=true, ty = ET_REAL(),
             path=IDENT(name="min"), expLst={e1,e2}) then
@@ -1297,7 +1447,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
             path=IDENT(name="min"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
-    'modelica_integer_min((modelica_integer)<%var1%>,(modelica_integer)<%var2%>)'
+    'int_min((int)<%var1%>,(int)<%var2%>)'
   
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="abs"), expLst={e1}, ty = ET_INT()) then
@@ -1449,13 +1599,13 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let minlenExp = daeExp(minlen, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let leftjustExp = daeExp(leftjust, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let signdigExp = daeExp(signdig, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-    let &preExp += '<%tvar%> = modelica_real_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>, <%signdigExp%>);<%\n%>'
+    let &preExp += '<%tvar%> = double_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>, <%signdigExp%>);<%\n%>'
     '<%tvar%>'
     
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="delay"),
             expLst={ICONST(integer=index), e, d, delayMax}) then
-    let tvar = tempDecl("modelica_real", &varDecls /*BUFD*/)
+    let tvar = tempDecl("double", &varDecls /*BUFD*/)
     let var1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let var2 = daeExp(d, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let var3 = daeExp(delayMax, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
@@ -1466,13 +1616,13 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
             path=IDENT(name="integer"),
             expLst={toBeCasted}) then
     let castedVar = daeExp(toBeCasted, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-    '((modelica_integer)<%castedVar%>)'
+    '((int)<%castedVar%>)'
     
    case CALL(tuple_=false, builtin=true,
             path=IDENT(name="Integer"),
             expLst={toBeCasted}) then
     let castedVar = daeExp(toBeCasted, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-    '((modelica_integer)<%castedVar%>)'
+    '((int)<%castedVar%>)'
   
   case CALL(tuple_=false, builtin=true, path=IDENT(name="clock"), expLst={}) then
     'mmc_clock()'
@@ -1692,8 +1842,8 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
     if box then
       box
     else if crefIsScalar(cr, context) then
-      let cast = match ty case ET_INT(__) then "(modelica_integer)"
-                          case ET_ENUMERATION(__) then "(modelica_integer)" //else ""
+      let cast = match ty case ET_INT(__) then "(int)"
+                          case ET_ENUMERATION(__) then "(int)" //else ""
       '<%cast%><%contextCref(cr,context,simCode)%>'
     else 
      if crefSubIsScalar(cr) then
@@ -1740,7 +1890,7 @@ template daeExpCrefRhsIndexSpec(list<Subscript> subs, Context context,
         >>
       case SLICE(__) then
         let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-        let tmp = tempDecl("modelica_integer", &varDecls /*BUFD*/)
+        let tmp = tempDecl("int", &varDecls /*BUFD*/)
         let &preExp += '<%tmp%> = size_of_dimension_integer_array(<%expPart%>, 1);<%\n%>'
         <<
         (int) <%tmp%>, integer_array_make_index_array(&<%expPart%>), 'A'
@@ -2048,21 +2198,109 @@ template algStatement(DAE.Statement it, Context context, Text &varDecls,SimCode 
     <%elseExpr(else_, context,&preExp, &varDecls, simCode)%>
     >>
 
+  case STMT_FOR(range=rng as RANGE(__)) then
+    let identType = expType(type_, iterIsArray) //TODO: ?? what is this for ... no array typed iterator is possible ???
+    let identTypeShort = expTypeShort(type_)
+    let stmtStr = (statementLst |> stmt => algStatement(stmt, context, &varDecls,simCode)
+                   ;separator="\n")
+    algStmtForRange_impl(rng, iter, identType, identTypeShort, stmtStr, context, &varDecls,simCode)
   
   case STMT_WHILE(__)  then
     let &preExp = buffer ""
     let var = daeExp(exp, context, &preExp,&varDecls, simCode)
     <<
-    for(;;) {
-      <%preExp%>
-      if (!<%var%>) break;
+    while (1) {
+    <%preExp%>
+    if (!<%var%>) break;
       <%statementLst |> stmt => algStatement(stmt, context,&varDecls,simCode) ;separator="\n"%>
     }
     >>
   
-   case _ then "NOT_IMPLEMENTED_ALG_STATEMENT"
+    
+  case STMT_TUPLE_ASSIGN(__)   then "STMT_TUPLE_ASSIGN_NI"
+  case STMT_ASSERT(__)         then "STMT_ASSERT_NI"
+  case STMT_TERMINATE(__)      then "STMT_TERMINATE_NI"
+  case STMT_WHEN(__)           then algStmtWhen(it, context,&varDecls, simCode)
+
+  case STMT_BREAK(__)          then 'break; //break stmt<%\n%>'
+  case STMT_FAILURE(__)        then "STMT_FAILURE_NI"
+  case STMT_TRY(__)            then "STMT_TRY_NI"
+  case STMT_CATCH(__)          then "STMT_CATCH_NI"
+  case STMT_THROW(__)          then "STMT_THROW_NI"
+  case STMT_RETURN(__)         then "STMT_RETURN_NI"
+  case STMT_NORETCALL(__)      then "STMT_NORETCALL_NI"
+  case STMT_REINIT(__)         then "STMT_REINIT_NI"
+  case _ then "NOT_IMPLEMENTED_ALG_STATEMENT"
       
 end algStatement;
+
+template algStmtWhen(DAE.Statement when, Context context, Text &varDecls /*BUFP*/,SimCode simCode)
+ "Generates a when algorithm statement."
+::=
+match context
+case SIMULATION(genDiscrete=true) then
+  match when
+  case STMT_WHEN(__) then
+    <<
+    
+    if (<%helpVarIndices |> idx => edgeHelpVar(idx) ;separator=" || "%>) {
+      <% statementLst |> stmt =>  algStatement(stmt, context, &varDecls,simCode)
+         ;separator="\n" %>
+    }
+    <%algStatementWhenElse(elseWhen, &varDecls,simCode)%>
+    >>
+  end match
+end algStmtWhen;
+
+template algStatementWhenElse(Option<DAE.Statement> stmt, Text &varDecls /*BUFP*/,SimCode simCode)
+ "Helper to algStmtWhen."
+::=
+match stmt
+case SOME(when as STMT_WHEN(__)) then
+  let elseCondStr = (when.helpVarIndices |> idx => edgeHelpVar(idx)
+                      ;separator=" || ")
+  <<
+  else if (<%elseCondStr%>) {
+    <% when.statementLst |> stmt =>  algStatement(stmt, contextSimulationDiscrete,&varDecls,simCode)
+       ;separator="\n"%>
+  }
+  <%algStatementWhenElse(when.elseWhen, &varDecls,simCode)%>
+  >>
+end algStatementWhenElse;
+
+template edgeHelpVar(String idx) ::=
+   '_event_handling.edge(_event_handling[<%idx%>],"h<%idx%>")'
+end edgeHelpVar;
+
+template algStmtForRange_impl(Exp range, Ident iterator, String type, String shortType, Text body, Context context, Text &varDecls,SimCode simCode)
+ "The implementation of algStmtForRange, which is also used by daeExpReduction."
+::=
+match range
+case RANGE(__) then
+  let iterName = iterator
+  let &stopVar = buffer ""
+  let &preExp = buffer ""
+  let startValue = daeExp(exp, context, &preExp, &varDecls,simCode)
+  let stopValue = daeExp(range, context, &preExp, &varDecls,simCode)
+  let res = tempDecl(type, &varDecls /*BUFC*/)
+  match expOption 
+  case SOME(eo) then
+    let &stepVar = buffer "" 
+    let stepValue = daeExp(eo, context, &preExp,&varDecls,simCode)
+    <<
+    <%preExp%>
+    for(<%type%> <%iterName%> = <%startValue%>;(<%stepValue%> > 0? <%iterName%><=<%stopValue%> : <%stopValue%><=<%iterName%>); <%iterName%> += <%stepValue%>) { 
+      <%body%>
+    }
+    >>
+  else //optimization for 1 step
+    <<
+    <%preExp%>
+    for(<%type%> <%iterName%> = <%startValue%>; <%iterName%><=<%stopValue%>; <%iterName%> += 1) { 
+      <%body%>
+    }
+    >>
+end algStmtForRange_impl;
 
 template scalarLhsCref(Exp ecr, Context context, Text &preExp,Text &varDecls, SimCode simCode) ::=
 match ecr
@@ -2210,7 +2448,7 @@ template resetTimeEvents(list<SampleCondition> sampleConditions,SimCode simCode)
 
 ::=
 match simCode
-case SIMCODE(__) then
+case SIMCODE(sampleConditions=sam) then
   << 
      <%resetTimeEvent(sampleConditions,simCode)%>
      double h[<%helpvarlength(simCode)%>];
@@ -2387,15 +2625,15 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Sim
     >> 
 end giveZeroFunc3;
 
-template conditionvariable1(list<ZeroCrossing> zeroCrossings,SimCode simCode)
+template conditionvarZero(list<ZeroCrossing> zeroCrossings,SimCode simCode)
 ::=
 
   (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
-    conditionvariable2(i0, relation_, simCode)
+    conditionvarZero1(i0, relation_, simCode)
   ;separator="\n")
-end conditionvariable1;
+end conditionvarZero;
 
-template conditionvariable2(Integer index1, Exp relation,SimCode simCode)
+template conditionvarZero1(Integer index1, Exp relation,SimCode simCode)
 
 ::=
   match relation
@@ -2403,7 +2641,7 @@ template conditionvariable2(Integer index1, Exp relation,SimCode simCode)
     <<
      bool _condition<%zerocrossingIndex%>;
     >>
-end conditionvariable2;
+end conditionvarZero1;
 
 template conditionvarSample(list<SampleCondition> sampleConditions,SimCode simCode)
 ::=
@@ -2427,7 +2665,7 @@ end conditionvarSample1;
 template conditionvariable(list<ZeroCrossing> zeroCrossings,list<SampleCondition> sampleConditions,SimCode simCode)
  
 ::=
-  let conditionvariable = conditionvariable1(zeroCrossings,simCode)
+  let conditionvariable = conditionvarZero(zeroCrossings,simCode)
   let conditionvarsample = conditionvarSample(sampleConditions,simCode)
   <<
    <%conditionvariable%>
@@ -2439,14 +2677,14 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
  "Generate type helper."
 ::=
   match exp
-  case ICONST(__)        then match flag case 8 then "int" case 1 then "integer" else "modelica_integer"
-  case RCONST(__)        then match flag case 1 then "double" else "modelica_real"
+  case ICONST(__)        then match flag case 8 then "int" case 1 then "int" else "int"
+  case RCONST(__)        then match flag case 1 then "double" else "double"
   case SCONST(__)        then if acceptMetaModelicaGrammar() then
                                 (match flag case 1 then "metatype" else "modelica_metatype")
                               else
                                 (match flag case 1 then "string" else "modelica_string")
   case BCONST(__)        then match flag case 1 then "bool" else "modelica_boolean"
-  case ENUM_LITERAL(__)  then match flag case 8 then "int" case 1 then "integer" else "modelica_integer"
+  case ENUM_LITERAL(__)  then match flag case 8 then "int" case 1 then "int" else "int"
   case e as BINARY(__)
   case e as UNARY(__)
   case e as LBINARY(__)
@@ -2541,15 +2779,18 @@ template checkForDiscreteEvents(list<ComponentRef> discreteModelVars,SimCode sim
   >>
 end checkForDiscreteEvents;
 
-template update(list<SimEqSystem> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,SimCode simCode)
+template update(list<SimEqSystem> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
  "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let continous = (continousEquations |> eq =>
       equation_(eq, contextOther, &varDecls /*BUFC*/,simCode)
     ;separator="\n")
+  let paraEquations = (parameterEquations |> eq =>
+      equation_(eq, contextOther, &varDecls /*BUFD*/,simCode)
+    ;separator="\n") 
   let discrete = (discreteEquations |> eq =>
-      equation_(eq, contextInlineSolver, &varDecls /*BUFC*/,simCode)
+      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFC*/,simCode)
     ;separator="\n")
   let reinit = (whenClauses |> when hasindex i0 =>
          genreinits(when, &varDecls,i0,simCode)
@@ -2562,6 +2803,7 @@ template update(list<SimEqSystem> continousEquations,list<SimEqSystem> discreteE
     <%varDecls%>
    if(command & CONTINOUS)
   {
+    <%paraEquations%>
     <%continous%>
   }
    if (command & DISCRETE)
