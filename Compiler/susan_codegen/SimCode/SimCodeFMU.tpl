@@ -897,7 +897,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   
   .PHONY: <%fileNamePrefix%>
   <%fileNamePrefix%>: $(MAINFILE) <%fileNamePrefix%>_FMU.c <%fileNamePrefix%>_functions.c <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_records.c
-  <%\t%> $(CXX) -shared -I. -o <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>_FMU.c $(MAINFILE) <%dirExtra%> <%libsPos1%> <%libsPos2%> -lsim -linteractive $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> <%fileNamePrefix%>_records.c  
+  <%\t%> $(CXX) -shared -I. -o <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>_FMU.c $(MAINFILE) <%dirExtra%> <%libsPos1%> <%libsPos2%> -lsim $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> <%fileNamePrefix%>_records.c  
   
   <%\t%> mkdir -p <%fileNamePrefix%>
   <%\t%> mkdir -p <%fileNamePrefix%>/binaries

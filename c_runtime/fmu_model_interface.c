@@ -408,7 +408,7 @@ fmiStatus fmiSetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, c
     "fmiSetReal: nvr = %d", nvr);
   // no check wether setting the value is allowed in the current state
   for (i=0; i<nvr; i++) {
-    if (vrOutOfRange(comp, "fmiSetReal", vr[i], NUMBER_OF_REALS))
+    if (vrOutOfRange(comp, "fmiSetReal", vr[i], NUMBER_OF_REALS+NUMBER_OF_STATES))
       return fmiError;
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiSetReal: #r%d# = %.16g", vr[i], value[i]);
@@ -564,7 +564,7 @@ fmiStatus fmiGetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, f
      comp->outputsvalid = fmiTrue;
   }
   for (i=0; i<nvr; i++) {
-    if (vrOutOfRange(comp, "fmiGetReal", vr[i], NUMBER_OF_REALS))
+    if (vrOutOfRange(comp, "fmiGetReal", vr[i], NUMBER_OF_REALS+NUMBER_OF_STATES))
       return fmiError;
     value[i] = getReal(comp, vr[i]); // to be implemented by the includer of this file
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
