@@ -6614,10 +6614,10 @@ public function isArrayType
   input DAE.ExpType inType;
   output Boolean b;
 algorithm
-  b := matchcontinue inType
+  b := match inType
     case DAE.ET_ARRAY(_,_) then true;
-    case _ then false;
-  end matchcontinue;
+    else false;
+  end match;
 end isArrayType;
 
 public function isRecordType
@@ -6630,6 +6630,17 @@ algorithm
     else false;
   end match;
 end isRecordType;
+
+public function isOtherType
+  "Return true if the type is ET_OTHER"
+  input Type inType;
+  output Boolean b;
+algorithm
+  b := match(inType)
+    case DAE.ET_OTHER() then true;
+    else false;
+  end match;
+end isOtherType;
 
 public function dimensionsEqual
   "Returns whether two dimensions are equal or not."

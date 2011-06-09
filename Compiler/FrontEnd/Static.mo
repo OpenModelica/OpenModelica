@@ -3027,67 +3027,173 @@ algorithm
       list<DAE.Dimension> dims;
       DAE.Dimension d;
       list<DAE.Exp> dim_expl;
-      
-    // size(A,x) for an array A with known dimensions and constant x. 
-    // Returns the size of the x:th dimension.
-    case (cache, env, {arraycr, dim}, _, impl, pre, info) 
-      equation
-        (cache,dimp,_,_) = elabExp(cache, env, dim, impl,NONE(), true, pre, info);
-        dim_int = Expression.expInt(dimp);
-        (cache, arraycrefe, _, _) = elabExp(cache, env, arraycr, impl,NONE(), false, pre, info);
-        ety = Expression.typeof(arraycrefe);
-        dims = Expression.arrayTypeDimensions(ety);
-        d = listNth(dims, dim_int - 1);
-        exp = Expression.dimensionSizeExp(d);
-        prop = DAE.PROP(DAE.T_INTEGER_DEFAULT, DAE.C_CONST());
-      then
-        (cache, exp, prop);
 
-    // The previous case failed, return a call to the size function instead.
     case (cache, env, {arraycr, dim}, _, impl, pre, info)
       equation
-        (cache,dimp,_,_) = elabExp(cache, env, dim, impl,NONE(), true,pre,info);
-        (cache,arraycrefe,_,_) = elabExp(cache, env, arraycr, impl,NONE(), true,pre,info);
-        exp = DAE.SIZE(arraycrefe,SOME(dimp));
-        c_1 = Util.if_(Env.inFunctionScope(env), DAE.C_VAR(), DAE.C_PARAM());
-        prop = DAE.PROP(DAE.T_INTEGER_DEFAULT, c_1);
-      then
-        (cache,exp,prop);
-
-    // size(A) for an array A with known dimensions. Returns an array of all dimensions of A.
-    case (cache,env,{arraycr},_,impl,pre,info)
-      equation
-        (cache, arraycrefe, _, _) = elabExp(cache, env, arraycr, impl,NONE(), false, pre, info);
+        (cache, dimp, _, _) = 
+          elabExp(cache, env, dim, impl, NONE(), true, pre, info);
+        (cache, arraycrefe, _, _) = 
+          elabExp(cache, env, arraycr, impl, NONE(), false, pre, info);
         ety = Expression.typeof(arraycrefe);
-        dims = Expression.arrayTypeDimensions(ety);
-        dim_expl = Util.listMap(dims, Expression.dimensionSizeExp);
-        dim_int = listLength(dim_expl);
-        exp = DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_INTEGER(dim_int)}), true, dim_expl);
-        prop = DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(dim_int), DAE.T_INTEGER_DEFAULT),NONE()), DAE.C_CONST());
+        dims = Expression.arrayDimension(ety);
+        (SOME(exp), SOME(prop)) =
+          elabBuiltinSizeIndex(arraycrefe, ety, dimp, dims, env, info);
       then
         (cache, exp, prop);
-        
-    // The previous case failed, return a call to the size function instead.
-    case (cache,env,{arraycr},_,impl,pre,info)
+      
+    case (cache, env, {arraycr}, _, impl, pre, info)
       equation
-        (cache,arraycrefe,DAE.PROP(arrtp,_),_) = elabExp(cache,env, arraycr, impl,NONE(),true,pre,info);
-        b = Types.dimensionsKnown(arrtp);
-        c_1 = Types.boolConstSize(b);
-        exp = DAE.SIZE(arraycrefe,NONE());
-        prop = DAE.PROP((DAE.T_ARRAY(DAE.DIM_UNKNOWN(), DAE.T_INTEGER_DEFAULT),NONE()), c_1);
+        (cache, arraycrefe, DAE.PROP(arrtp, _), _) = 
+          elabExp(cache, env, arraycr, impl, NONE(), false, pre, info);
+        ety = Expression.typeof(arraycrefe);
+        dims = Expression.arrayDimension(ety);
+        (exp, prop) = elabBuiltinSizeNoIndex(arraycrefe, ety, dims, arrtp, info);
       then
-        (cache,exp,prop);
-        
-    // failure!
-    case (cache,env,expl,_,impl,pre,info)
-      equation
-        true = RTOpts.debugFlag("failtrace");
-        sp = PrefixUtil.printPrefixStr3(pre);
-        Debug.fprintln("failtrace", "- Static.elabBuiltinSize failed on: " +& Dump.printExpLstStr(expl) +& " in component: " +& sp);
-      then
-        fail();
+        (cache, exp, prop);
+
   end matchcontinue;
 end elabBuiltinSize;
+
+protected function elabBuiltinSizeNoIndex
+  "Helper function to elabBuiltinSize. Elaborates the size(A) operator."
+  input DAE.Exp inArrayExp;
+  input DAE.ExpType inArrayExpType;
+  input list<DAE.Dimension> inDimensions;
+  input DAE.Type inArrayType;
+  input Absyn.Info inInfo;
+  output DAE.Exp outSizeExp;
+  output DAE.Properties outProperties;
+algorithm
+  (outSizeExp, outProperties) := 
+  matchcontinue(inArrayExp, inArrayExpType, inDimensions, inArrayType, inInfo) 
+    local
+      list<DAE.Exp> dim_expl;
+      Integer dim_int;
+      DAE.Exp exp;
+      DAE.Properties prop;
+      Boolean b;
+      DAE.Const cnst;
+      DAE.TType ty;
+      String exp_str, size_str;
+
+    // size of a scalar is not allowed.
+    case (_, _, {}, _, _)
+      equation
+        // Make sure that we have a proper type here. We might get ET_OTHER if
+        // the size expression is part of a modifier, in which case we can't
+        // determine if it's a scalar or array.
+        false = Expression.isOtherType(inArrayExpType);
+        exp_str = ExpressionDump.printExpStr(inArrayExp);
+        size_str = "size(" +& exp_str +& ")";
+        Error.addSourceMessage(Error.INVALID_ARGUMENT_TYPE,
+          {"1", size_str, "array expression"}, inInfo);
+      then
+        fail();
+  
+    // size(A) for an array A with known dimensions. 
+    // Returns an array of all dimensions of A.
+    case (_, _, _ :: _, _, _)
+      equation
+        dim_expl = Util.listMap(inDimensions, Expression.dimensionSizeExp);
+        dim_int = listLength(dim_expl);
+        exp = DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_INTEGER(dim_int)}), 
+          true, dim_expl);
+        ty = DAE.T_ARRAY(DAE.DIM_INTEGER(dim_int), DAE.T_INTEGER_DEFAULT);
+        prop = DAE.PROP((ty, NONE()), DAE.C_CONST());
+      then
+        (exp, prop);
+
+    // If we couldn't evaluate the size expression or find any problems with it,
+    // just generate a call to size and let the runtime sort it out.
+    case (_, _, _ :: _, _, _)
+      equation
+        b = Types.dimensionsKnown(inArrayType);
+        cnst = Types.boolConstSize(b);
+        exp = DAE.SIZE(inArrayExp,NONE());
+        ty = DAE.T_ARRAY(DAE.DIM_UNKNOWN(), DAE.T_INTEGER_DEFAULT);
+        prop = DAE.PROP((ty, NONE()), cnst);
+      then
+        (exp, prop);
+
+  end matchcontinue;
+end elabBuiltinSizeNoIndex;
+
+protected function elabBuiltinSizeIndex
+  "Helper function to elabBuiltinSize. Elaborates the size(A, x) operator."
+  input DAE.Exp inArrayExp;
+  input DAE.ExpType inArrayType;
+  input DAE.Exp inIndexExp;
+  input list<DAE.Dimension> inDimensions;
+  input Env.Env inEnv;
+  input Absyn.Info inInfo;
+  output Option<DAE.Exp> outSizeExp;
+  output Option<DAE.Properties> outProperties;
+algorithm
+  (outSizeExp, outProperties) := 
+  matchcontinue(inArrayExp, inArrayType, inIndexExp, inDimensions, inEnv, inInfo)
+    local
+      Integer dim_int, dim_count;
+      DAE.Exp exp;
+      DAE.Dimension dim;
+      DAE.Properties prop;
+      DAE.Const cnst;
+      String exp_str, index_str, size_str, dim_str;
+
+    // size of a scalar is not allowed.
+    case (_, _, _, {}, _, _)
+      equation
+        // Make sure that we have a proper type here. We might get ET_OTHER if
+        // the size expression is part of a modifier, in which case we can't
+        // determine if it's a scalar or array.
+        false = Expression.isOtherType(inArrayType);
+        exp_str = ExpressionDump.printExpStr(inArrayExp);
+        index_str = ExpressionDump.printExpStr(inIndexExp);
+        size_str = "size(" +& exp_str +& ", " +& index_str +& ")";        
+        Error.addSourceMessage(Error.INVALID_ARGUMENT_TYPE,
+          {"1", size_str, "array expression"}, inInfo);
+      then
+        (NONE(), NONE());
+
+    // size(A, x) for an array A with known dimensions and constant x.
+    // Returns the size of the x:th dimension.
+    case (_, _, _, _, _, _)
+      equation
+        dim_int = Expression.expInt(inIndexExp);
+        dim_count = listLength(inDimensions);
+        true = (dim_int > 0 and dim_int <= dim_count);
+        dim = listNth(inDimensions, dim_int - 1);
+        exp = Expression.dimensionSizeExp(dim);
+        prop = DAE.PROP(DAE.T_INTEGER_DEFAULT, DAE.C_CONST());
+      then
+        (SOME(exp), SOME(prop));
+
+    // The index is out of bounds.
+    case (_, _, _, _, _, _)
+      equation
+        false = Expression.isOtherType(inArrayType);
+        dim_int = Expression.expInt(inIndexExp);
+        dim_count = listLength(inDimensions);
+        true = (dim_int <= 0 or dim_int > dim_count);
+        index_str = intString(dim_int);
+        exp_str = ExpressionDump.printExpStr(inArrayExp);
+        dim_str = intString(dim_count);
+        Error.addSourceMessage(Error.INVALID_SIZE_INDEX,
+          {index_str, exp_str, dim_str}, inInfo);
+      then
+        (NONE(), NONE());
+
+    // If we couldn't evaluate the size expression or find any problems with it,
+    // just generate a call to size and let the runtime sort it out.
+    case (_, _, _, _, _, _)
+      equation
+        exp = DAE.SIZE(inArrayExp, SOME(inIndexExp));
+        cnst = Util.if_(Env.inFunctionScope(inEnv), DAE.C_VAR(), DAE.C_PARAM());
+        prop = DAE.PROP(DAE.T_INTEGER_DEFAULT, cnst);
+      then
+        (SOME(exp), SOME(prop));
+  
+  end matchcontinue;
+end elabBuiltinSizeIndex;
 
 protected function elabBuiltinNDims
 "@author Stefan Vorkoetter <svorkoetter@maplesoft.com>
