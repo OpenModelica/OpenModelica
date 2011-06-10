@@ -10,9 +10,9 @@ CPPSRC = omi_Calculation.cpp omi_Control.cpp omi_ResultManager.cpp \
 SHELL	= /bin/sh
 CC = @CC@
 CXX = @CXX@
-CFLAGS	+= -O3 -I.. -I.
+CFLAGS	+= @CFLAGS@
 CXXFLAGS = $(CFLAGS)
-CPPFLAGS = -Wall
+CPPFLAGS = -I.. -Wall
 
 OBJ = $(CPPSRC:.cpp=.o)
 
