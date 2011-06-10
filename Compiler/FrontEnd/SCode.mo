@@ -3474,5 +3474,15 @@ algorithm
   end match;
 end attrVariability;
 
+public function isDerivedClassDef
+  input ClassDef inClassDef;
+  output Boolean isDerived;
+algorithm
+  isDerived := match(inClassDef)
+    case DERIVED(typeSpec = _) then true;
+    else false;
+  end match;
+end isDerivedClassDef;
+
 end SCode;
 

@@ -640,7 +640,7 @@ algorithm
         env = replaceElementInEnv(path, replacement, inEnv);
       then
         env;
-
+        
     // An unprocessed redeclaration.
     case (SCodeEnv.RAW_MODIFIER(modifier = _), _)
       equation

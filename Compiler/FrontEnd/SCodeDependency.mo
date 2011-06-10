@@ -292,7 +292,7 @@ algorithm
       equation
         markItemAsUsed(inItem, env);
         env = SCodeEnv.enterFrame(cls_env, env);
-        analyseClassDef(cdef, res, env, info);
+        analyseClassDef(cdef, res, env, false, info);
         analyseMetaType(res, env, info);
         _ :: env = env;
         analyseRedeclaredClass(cls, env);
@@ -398,9 +398,10 @@ protected function analyseClassDef
   input SCode.ClassDef inClassDef;
   input SCode.Restriction inRestriction;
   input Env inEnv;
+  input Boolean inInModifierScope;
   input Absyn.Info inInfo;
 algorithm
-  _ := matchcontinue(inClassDef, inRestriction, inEnv, inInfo)
+  _ := matchcontinue(inClassDef, inRestriction, inEnv, inInModifierScope, inInfo)
     local
       list<SCode.Element> el;
       SCode.Element e1, e2;
@@ -413,7 +414,7 @@ algorithm
       list<SCode.Annotation> annl;
       Option<SCode.ExternalDecl> ext_decl;
       Boolean is_ext_obj;
-      Env ty_env;
+      Env ty_env, env;
       Item ty_item;
       SCode.Attributes attr;
 
@@ -421,7 +422,7 @@ algorithm
     case (SCode.PARTS(elementLst = el, normalEquationLst = nel, 
         initialEquationLst = iel, normalAlgorithmLst = nal, 
         initialAlgorithmLst = ial, externalDecl = ext_decl,
-        annotationLst = annl, comment = cmt), _, _, _)
+        annotationLst = annl, comment = cmt), _, _, _, _)
       equation
         Util.listMap02(el, analyseElement, inEnv, inRestriction);
         Util.listMap01(nel, inEnv, analyseEquation);
@@ -437,7 +438,7 @@ algorithm
     // The previous case failed, which might happen for an external object.
     // Check if the class definition is an external object and analyse it if
     // that's the case.
-    case (SCode.PARTS(elementLst = el), _, _, _)
+    case (SCode.PARTS(elementLst = el), _, _, _, _)
       equation
         isExternalObject(el, inEnv, inInfo);
         analyseClass(Absyn.IDENT("constructor"), inEnv, inInfo);
@@ -446,38 +447,20 @@ algorithm
         ();
 
     // A class extends.
-    case (SCode.CLASS_EXTENDS(baseClassName = bc), _, _, _)
+    case (SCode.CLASS_EXTENDS(baseClassName = bc), _, _, _, _)
       equation
         Error.addSourceMessage(Error.INTERNAL_ERROR, 
           {"SCodeDependency.analyseClassDef failed on CLASS_EXTENDS"}, inInfo);
       then
         fail();
-    //case (SCode.CLASS_EXTENDS(baseClassName = bc, modifications = mods,
-    //    elementLst = el, normalEquationLst = nel, initialEquationLst = iel,
-    //    normalAlgorithmLst = nal, initialAlgorithmLst = ial, 
-    //    annotationLst = annl, comment = cmt), _, _, _)
-    //  equation
-    //    analyseClass(Absyn.IDENT(bc), inEnv, inInfo);
-    //    (ty_item, _, ty_env) =
-    //      SCodeLookup.lookupBaseClassName(Absyn.IDENT(bc), inEnv, inInfo);
-    //    ty_env = SCodeEnv.mergeItemEnv(ty_item, ty_env);
-    //    analyseModifier(mods, inEnv, ty_env, inInfo);
-    //    Util.listMap02(el, analyseElement, inEnv, inRestriction);
-    //    Util.listMap01(nel, inEnv, analyseEquation);
-    //    Util.listMap01(iel, inEnv, analyseEquation);
-    //    Util.listMap01(nal, inEnv, analyseAlgorithm);
-    //    Util.listMap01(ial, inEnv, analyseAlgorithm);
-    //    Util.listMap02(annl, analyseAnnotation, inEnv, inInfo);
-    //    analyseComment(cmt, inEnv, inInfo);
-    //  then
-    //    ();
 
     // A derived class definition.
     case (SCode.DERIVED(typeSpec = ty, modifications = mods, attributes = attr, comment = cmt),
-        _, _, _)
+        _, _ :: env, _, _)
       equation
-        analyseTypeSpec(ty, inEnv, inInfo);
-        (ty_item, ty_env) = SCodeLookup.lookupTypeSpec(ty, inEnv, inInfo);
+        env = Util.if_(inInModifierScope, inEnv, env);
+        analyseTypeSpec(ty, env, inInfo);
+        (ty_item, ty_env) = SCodeLookup.lookupTypeSpec(ty, env, inInfo);
         ty_env = SCodeEnv.mergeItemEnv(ty_item, ty_env);
         // TODO! Analyse array dimensions from attributes! 
         analyseModifier(mods, inEnv, ty_env, inInfo);
@@ -486,9 +469,9 @@ algorithm
         ();
 
     // Other cases which doesn't need to be analysed.
-    case (SCode.ENUMERATION(enumLst = _), _, _, _) then ();
-    case (SCode.OVERLOAD(pathLst = _), _, _, _) then ();
-    case (SCode.PDER(functionPath = _), _, _, _) then ();
+    case (SCode.ENUMERATION(enumLst = _), _, _, _, _) then ();
+    case (SCode.OVERLOAD(pathLst = _), _, _, _, _) then ();
+    case (SCode.PDER(functionPath = _), _, _, _, _) then ();
 
   end matchcontinue;
 end analyseClassDef;
@@ -889,14 +872,14 @@ algorithm
     // A redeclaration modifier, analyse the redeclarations.
     case (SCode.REDECL(elementLst = el), _, _, _)
       equation
-        Util.listMap02(el, analyseRedeclare, inEnv, inTypeEnv);
+        Util.listMap02(el, analyseRedeclareModifier, inEnv, inTypeEnv);
       then
         ();
   end match;
 end analyseModifier;
 
-protected function analyseRedeclare
-  "Analyses a redeclaration element."
+protected function analyseRedeclareModifier
+  "Analyses a redeclaration modifier element."
   input SCode.Element inElement;
   input Env inEnv;
   input Env inTypeEnv;
@@ -916,7 +899,7 @@ algorithm
     case (SCode.CLASS(prefixes = prefixes, classDef = cdef,
         restriction = restr, info = info), _, _)
       equation
-        analyseClassDef(cdef, restr, inEnv, info);
+        analyseClassDef(cdef, restr, inEnv, true, info);
         analyseConstrainClass(SCode.replaceableOptConstraint(SCode.prefixesReplaceable(prefixes)), inEnv, info);
       then
         ();
@@ -928,7 +911,7 @@ algorithm
       then
         ();
   end match;
-end analyseRedeclare;
+end analyseRedeclareModifier;
 
 protected function analyseConstrainClass
   "Analyses a constrain class, i.e. given by constrainedby."
@@ -993,10 +976,11 @@ protected
   Option<Env> env;
 algorithm
   (item, env) := lookupNameMod(Absyn.IDENT(inIdent), inTypeEnv, inInfo);
-  analyseNameMod2(item, env, inEnv, inTypeEnv, inMod, inInfo);
+  analyseNameMod2(inIdent, item, env, inEnv, inTypeEnv, inMod, inInfo);
 end analyseNameMod;
 
 protected function analyseNameMod2
+  input SCode.Ident inIdent;
   input Option<Item> inItem;
   input Option<Env> inItemEnv;
   input Env inEnv;
@@ -1004,16 +988,17 @@ protected function analyseNameMod2
   input SCode.Mod inModifier;
   input Absyn.Info inInfo;
 algorithm
-  _ := match(inItem, inItemEnv, inEnv, inTypeEnv, inModifier, inInfo)
+  _ := match(inIdent, inItem, inItemEnv, inEnv, inTypeEnv, inModifier, inInfo)
     local
       Item item;
       Env env;
 
-    case (SOME(item), SOME(env), _, _, _, _)
+    case (_, SOME(item), SOME(env), _, _, _, _)
       equation
         SCodeCheck.checkModifierIfRedeclare(item, inModifier, inInfo);
         analyseItem(item, env);
-        analyseModifier(inModifier, inEnv, inTypeEnv, inInfo);
+        env = SCodeEnv.mergeItemEnv(item, env);
+        analyseModifier(inModifier, inEnv, env, inInfo);
       then
         ();
 
