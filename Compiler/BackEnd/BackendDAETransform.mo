@@ -2458,7 +2458,7 @@ algorithm
       list<tuple<DAE.ComponentRef,Integer>> states;
       list<Integer> stateindx,changedeqns;
       DAE.ComponentRef dummystate,dummystate1,dsxy,derdummystate,derdummystate1,dsxycont;
-      DAE.Exp dse1,dse2,ds1,ds2,dxdye,dds1,dds2,cont,cont1,dxdyecont;
+      DAE.Exp dse1,dse2,ds1,ds2,dxdye,dds1,dds2,cont,cont1,dxdyecont,icont;
       Integer stateno,stateno1,ep,ep1,ep2,ep3,ast,ast1;
       BackendDAE.Equation eq,deq,eqcont;
       BackendDAE.Var dsxyvar,dsxyvarcont;
@@ -2506,15 +2506,16 @@ algorithm
         ds2 = Expression.crefExp(dummystate1);
         dds1 = Expression.crefExp(derdummystate);
         dds2 = Expression.crefExp(derdummystate1);
-        cont1 = DAE.RELATION(DAE.CALL(Absyn.IDENT("abs"),{dse1},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),DAE.LESS(DAE.ET_REAL()),DAE.CALL(Absyn.IDENT("abs"),{dse2},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),0,NONE());
+        cont1 = DAE.RELATION(DAE.CALL(Absyn.IDENT("abs"),{dse2},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),DAE.LESS(DAE.ET_REAL()),DAE.CALL(Absyn.IDENT("abs"),{dse1},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),0,NONE());
         ((cont,_)) = Expression.traverseExp(dxdyecont, traversingComponentRefToPre, 0);
-        eq = BackendDAE.EQUATION(dxdye,DAE.IFEXP(cont,ds1,ds2),DAE.emptyElementSource);
+        icont = DAE.IFEXP(DAE.CALL(Absyn.IDENT("initial"),{},false,true,DAE.ET_BOOL(),DAE.NO_INLINE()),dxdyecont,cont);
+        eq = BackendDAE.EQUATION(dxdye,DAE.IFEXP(icont,ds2,ds1),DAE.emptyElementSource);
         dae = BackendEquation.equationAddDAE(eq,dae); 
-        deq = BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{dxdye},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),DAE.IFEXP(cont,dds1,dds2),DAE.emptyElementSource);
+        deq = BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{dxdye},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),DAE.IFEXP(icont,dds2,dds1),DAE.emptyElementSource);
         dae = BackendEquation.equationAddDAE(deq,dae); 
         
-        wc = BackendDAE.WHEN_CLAUSE(dxdyecont,{BackendDAE.REINIT(dsxy,ds1,DAE.emptyElementSource)},NONE());
-        wc1 = BackendDAE.WHEN_CLAUSE(DAE.LUNARY(DAE.NOT(DAE.ET_BOOL()),dxdyecont),{BackendDAE.REINIT(dsxy,ds2,DAE.emptyElementSource)},NONE());
+        wc = BackendDAE.WHEN_CLAUSE(dxdyecont,{BackendDAE.REINIT(dsxy,ds2,DAE.emptyElementSource)},NONE());
+        wc1 = BackendDAE.WHEN_CLAUSE(DAE.LUNARY(DAE.NOT(DAE.ET_BOOL()),dxdyecont),{BackendDAE.REINIT(dsxy,ds1,DAE.emptyElementSource)},NONE());
         dae = BackendDAEUtil.whenClauseAddDAE({wc,wc1},dae);
         eqcont = BackendDAE.EQUATION(dxdyecont,cont1,DAE.emptyElementSource);
         dae = BackendEquation.equationAddDAE(eqcont,dae); 
