@@ -275,7 +275,7 @@ end setIndexReductionMethod;
 
 public function simCodeTarget "Default is set by +simCodeTarget=C"
   output String target;
-  external "C" RTOpts_simCodeTarget() annotation(Library = "omcruntime");
+  external "C" target=RTOpts_simCodeTarget() annotation(Library = "omcruntime");
 end simCodeTarget;
 
 end RTOpts;

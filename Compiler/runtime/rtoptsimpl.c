@@ -356,9 +356,7 @@ static int set_indexReductionMethod(const char *flagstr)
   indexReductionMethod_set = 1;
 
   /*
-  for (i=0; i<pastOptModulec; i++) {
-    printf("\nindexReductionMethod=%s\n",indexReductionMethodstr);
-  }
+   printf("\nindexReductionMethod=%s\n",indexReductionMethodstr);
   */
   return 0;
 }

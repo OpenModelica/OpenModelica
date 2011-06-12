@@ -393,12 +393,10 @@ RML_END_LABEL
 RML_BEGIN_LABEL(RTOpts__getIndexReductionMethod)
 {
   void *defaultMethod = rmlA0;
-  void *res = (void*)mk_nil();
 
   if (indexReductionMethod_set == 1)
   {
-    res = (void*)mk_cons(mk_scon(indexReductionMethodstr),res);
-    rmlA0 = (void*)res;
+    rmlA0 = mk_scon(indexReductionMethodstr);
   }
   RML_TAILCALLK(rmlSC);
 }
