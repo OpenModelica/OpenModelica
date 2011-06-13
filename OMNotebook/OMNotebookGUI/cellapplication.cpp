@@ -202,10 +202,6 @@ namespace IAEX
       exit(1);
     }
 
-    // 2006-02-13 AF, create temp dir
-    if( !dir.exists( "OMNotebook_tempfiles" ) )
-      dir.mkdir( "OMNotebook_tempfiles" );
-
     // 2005-12-17 AF, Create instance (load styles) of stylesheet
     // 2006-04-10 AF, use environment variable to find stylesheet.xml
     Stylesheet *sheet;
@@ -381,9 +377,6 @@ namespace IAEX
         QMessageBox::warning( 0, "Warning", msg, "OK" );
       }
     }
-
-    // 2006-02-13 AF, remove temp dir
-    dir.rmdir( "OMNotebook_tempfiles" );
   }
 
   /*!
