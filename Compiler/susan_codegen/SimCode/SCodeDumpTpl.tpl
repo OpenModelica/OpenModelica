@@ -198,7 +198,7 @@ match classDef
     let mod_str = dumpModifier(modifications)
     let attr_str = dumpAttributes(attributes) 
     let cmt_str = dumpCommentOpt(comment) 
-    '= <%type_str%><%mod_str%><%cmt_str%>' 
+    '= <%attr_str%><%type_str%><%mod_str%><%cmt_str%>' 
   case ENUMERATION(__) then
     let enum_str = if enumLst then
         (enumLst |> enum => dumpEnumLiteral(enum) ;separator=", ")
