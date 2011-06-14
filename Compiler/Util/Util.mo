@@ -8222,6 +8222,7 @@ algorithm
     local
       Type_a x;
       list<Type_a> l;
+    
     case (x,{},acc) then {x}::acc;
     case (x,{l},acc) then (x::l)::acc;
     case (x,l::lst,acc)
@@ -8230,5 +8231,174 @@ algorithm
       then acc;
   end match;
 end allCombinations4;
+
+public function arrayMember
+"returns the index if found or 0 if not found.
+ considers array indexed from 1"
+  input array<Option<Type_a>> inArr;
+  input Integer inFilledSize "the filled size of the array, it might be less than arrayLength";
+  input Option<Type_a> inElement;
+  output Integer index;
+protected
+  replaceable type Type_a subtypeof Any;
+algorithm
+  index := matchcontinue(inArr, inFilledSize, inElement)
+    local
+      array<Option<Type_a>> arr;
+      Integer i, len, pos;
+    
+    // array is empty
+    case (arr, inFilledSize, inElement)
+      equation
+        true = intEq(0, inFilledSize);
+      then
+        0;
+    
+    // array is not empty
+    case (arr, inFilledSize, inElement)
+      equation
+        i = arrayMemberLoop(arr, inElement, 1, inFilledSize);
+      then
+        i;
+  end matchcontinue;
+end arrayMember;
+
+protected function arrayMemberLoop
+"returns the index if found or 0 if not found.
+ considers array indexed from 1"
+  input array<Option<Type_a>> inArr;
+  input Option<Type_a> inElement;
+  input Integer currentIndex;
+  input Integer length;
+  output Integer index;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  index := matchcontinue(inArr, inElement, currentIndex, length)
+    local
+      array<Option<Type_a>> arr;
+      Integer i, len, pos;
+      Option<Type_a> e;
+    
+    // we're at the end
+    case (arr, inElement, i, len)
+      equation
+        true = intEq(i, len);
+      then
+        0;
+    
+    // not at the end, see if we find it
+    case (arr, inElement, i, len)
+      equation
+        e = arrayGet(arr, i);
+        true = valueEq(e, inElement);
+      then
+        i;
+        
+    // not at the end, see if we find it
+    case (arr, inElement, i, len)
+      equation
+        e = arrayGet(arr, i);
+        false = valueEq(e, inElement);
+        i = arrayMemberLoop(arr, inElement, i + 1, len);
+      then
+        i;
+  end matchcontinue;
+end arrayMemberLoop;
+
+public function arrayFind
+"returns the index if found or 0 if not found.
+ considers array indexed from 1"
+  input array<Option<Type_a>> inArr;
+  input Integer inFilledSize "the filled size of the array, it might be less than arrayLength";
+  input FuncType inFunc;
+  input Type_b inExtra;  
+  output Integer index;
+protected
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  partial function FuncType
+    input Type_a inElement;
+    input Type_b inExtra;
+    output Boolean isMatch;
+  end FuncType;  
+algorithm
+  index := matchcontinue(inArr, inFilledSize, inFunc, inExtra)
+    local
+      array<Option<Type_a>> arr;
+      Integer i, len, pos;
+    
+    // array is empty
+    case (arr, inFilledSize, inFunc, inExtra)
+      equation
+        true = intEq(0, inFilledSize);
+      then
+        0;
+    
+    // array is not empty
+    case (arr, inFilledSize, inFunc, inExtra)
+      equation
+        i = arrayFindLoop(arr, inFunc, inExtra, 1, inFilledSize);
+      then
+        i;
+  end matchcontinue;
+end arrayFind;
+
+protected function arrayFindLoop
+"returns the index if found or 0 if not found.
+ considers array indexed from 1"
+  input array<Option<Type_a>> inArr;
+  input FuncType inFunc;
+  input Type_b inExtra;
+  input Integer currentIndex;
+  input Integer length;
+  output Integer index;
+protected
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  partial function FuncType
+    input Type_a inElement;
+    input Type_b inExtra;
+    output Boolean isMatch;
+  end FuncType;
+algorithm
+  index := matchcontinue(inArr, inFunc, inExtra, currentIndex, length)
+    local
+      array<Option<Type_a>> arr;
+      Integer i, len, pos;
+      Type_a e;
+    
+    // we're at the end
+    case (arr, _, _, i, len)
+      equation
+        true = intEq(i, len);
+      then
+        0;
+    
+    // not at the end, see if we find it
+    case (arr, inFunc, inExtra, i, len)
+      equation
+        SOME(e) = arrayGet(arr, i);
+        true = inFunc(e, inExtra);
+      then
+        i;
+        
+    // not at the end, see if we find it
+    case (arr, inFunc, inExtra, i, len)
+      equation
+        SOME(e) = arrayGet(arr, i);
+        false = inFunc(e, inExtra);
+        i = arrayFindLoop(arr, inFunc, inExtra, i + 1, len);
+      then
+        i;
+    
+    // not at the end, see if we find it
+    case (arr, inFunc, inExtra, i, len)
+      equation
+        NONE() = arrayGet(arr, i);
+        i = arrayFindLoop(arr, inFunc, inExtra, i + 1, len);
+      then
+        i;
+  end matchcontinue;
+end arrayFindLoop;
 
 end Util;
