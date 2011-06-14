@@ -69,6 +69,7 @@
 #include "xmlparser.h"
 #include "cursorposvisitor.h"
 #include "notebook.h"
+#include "omcinteractiveenvironment.h"
 
 
 namespace IAEX
@@ -644,7 +645,7 @@ namespace IAEX
     QDir dir;
 
     // 2006-02-13 AF, store images in temp dir
-    dir.setPath( dir.absolutePath() + "/OMNotebook_tempfiles" );
+    dir.setPath( OmcInteractiveEnvironment::TmpPath() );
 
     QString name;
     while( true )

@@ -288,4 +288,13 @@ namespace IAEX
     result.remove( "\"" );
     return result;
   }
+
+  QString OmcInteractiveEnvironment::TmpPath()
+  {
+    OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance();
+    env->evalExpression(QString("getTempDirectoryPath()"));
+    QString result = env->getResult();
+    result.remove( "\"" );
+    return result+"/OpenModelica/";
+  }
 }

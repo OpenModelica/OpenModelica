@@ -186,10 +186,7 @@ namespace IAEX
 
     // Avoid cluttering the whole disk with omc temp-files
     OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance();
-    QString getTempStr = "getTempDirectoryPath()";
-    env->evalExpression( getTempStr );
-    QString tmpDir = env->getResult()+"/OpenModelica/";
-    tmpDir.remove("\"");
+    QString tmpDir = OmcInteractiveEnvironment::TmpPath();
     if (!QDir().exists(tmpDir)) QDir().mkdir(tmpDir);
     tmpDir = QDir(tmpDir).canonicalPath();
     cout << "Temp.Dir " << tmpDir.toStdString() << std::endl;
@@ -410,74 +407,6 @@ namespace IAEX
    */
   void CellApplication::addToPasteboard(Cell *c)
   {
-    /*
-    // 2006-02-13 AF, DON'T KNOW IF I NEED TO COPY IMAGE
-
-    // 2006-01-12 AF, copy any images in the cell
-    QString html = c->textHtml();
-    if( typeid(InputCell) == typeid( (*c) ))
-    {
-      InputCell *iCell = dynamic_cast<InputCell*>(c);
-      html = iCell->textOutputHtml();
-    }
-
-    int pos(0);
-    while( true )
-    {
-      int start = html.indexOf( "<img src=\"", pos, Qt::CaseInsensitive );
-      if( start >= 0 )
-      {
-        // found start of imagename
-        start += 10;
-        int end = html.indexOf( "\"", start );
-        if( end >= 0 )
-        {
-          //found end of imagename
-          QString imagename = html.mid( start, end - start );
-          imagename.remove( "file:///" );
-          QImage image( imagename );
-          QString newImagename = imagename.mid( 0, imagename.length() - 4 ) + "_omnotebook_pasteboardcopy.png";
-
-          //cout << "PASTEBOARD:Imagename = " << imagename.toStdString() << endl;
-          //cout << "PASTEBOARD:Imagename = " << newImagename.toStdString() << endl;
-
-          if( !image.isNull() )
-          {
-            // 2006-02-13 AF, store images in temp dir
-            QDir dir;
-            dir.setPath( dir.absolutePath() + "/OMNotebook_tempfiles" );
-
-            QImageWriter writer( dir.absolutePath() + "/" + newImagename, "png" );
-            writer.setDescription( "Temporary OMNotebook image" );
-            writer.setQuality( 100 );
-            writer.write( image );
-
-            html.replace( imagename, newImagename );
-            removeTempFiles( newImagename );
-          }
-
-          pos = start + newImagename.length() + 1;
-        }
-        else
-          break;
-      }
-      else
-        break;
-    }
-
-    //set html back
-    if( typeid(InputCell) == typeid( (*c) ))
-    {
-      InputCell *iCell = dynamic_cast<InputCell*>(c);
-      iCell->setTextOutputHtml( html );
-      pasteboard_.push_back(iCell);
-    }
-    else
-    {
-      c->setTextHtml( html );
-      pasteboard_.push_back(c);
-    }
-    */
     pasteboard_.push_back(c);
   }
 

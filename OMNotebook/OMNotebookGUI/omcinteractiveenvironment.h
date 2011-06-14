@@ -57,6 +57,7 @@ namespace IAEX
     static bool startOMC();
     static QString OMCVersion();
     static QString OpenModelicaHome();
+    static QString TmpPath();
 
   private:
     static OmcInteractiveEnvironment* selfInstance;
