@@ -61,9 +61,9 @@ uniontype Relation "a relation is either simple Source->Target or double Source<
 end Relation;
 
 // add more here as you please
-type IntRelation = Relation<Integer, Integer> "Integer - Integer relation type";
-type IntRelation = Relation<String, Integer> "String - Integer relation type";
-type IntRelation = Relation<Integer, String> "String - Integer relation type";
+type IntIntRelation = Relation<Integer, Integer> "Integer - Integer relation type";
+type StrIntRelation = Relation<String, Integer> "String - Integer relation type";
+type IntStrRelation = Relation<Integer, String> "String - Integer relation type";
 
 function createSingle
   input FuncTypeKeyCompareSource inCompareFuncSource;
