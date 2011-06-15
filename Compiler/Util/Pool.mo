@@ -46,6 +46,7 @@ uniontype Pool
     Integer filledSize;
     Integer maxSize;
     array<Option<TV>> elements;
+    Integer lastAdded "the index of the last added element; important for addUnique, to know the index of last added as it may not be filledSize";
   end POOL;
 end Pool;
 
@@ -62,8 +63,54 @@ protected
   array<Option<TV>> arr;
 algorithm
   arr := arrayCreate(defaultPoolSize, NONE());
-  outPool := POOL(0, defaultPoolSize, arr); 
+  outPool := POOL(0, defaultPoolSize, arr, 0); 
 end create;
+
+public
+function clone
+"@clones the pool"
+  input Pool<TV> inPool;
+  output Pool<TV> outPool;
+protected
+  replaceable type TV subtypeof Any;
+  Integer filledSize;
+  Integer maxSize;
+  array<Option<TV>> elements, newElements;
+  Integer lastAdded;
+algorithm
+  POOL(filledSize, maxSize, elements, lastAdded) := inPool;
+  newElements := arrayCopy(elements);
+  outPool := POOL(filledSize, maxSize, elements, lastAdded);  
+end clone;
+
+public
+function clear
+"@clears the pool of all elements, the size stay in place"
+  input Pool<TV> inPool;
+  output Pool<TV> outPool;
+protected
+  replaceable type TV subtypeof Any;
+  Integer filledSize;
+  Integer maxSize;
+  array<Option<TV>> elements;
+  Integer lastAdded;
+algorithm
+  POOL(filledSize, maxSize, elements, lastAdded) := inPool;
+  elements := arrayCreate(maxSize, NONE());
+  outPool := POOL(0, maxSize, elements, 0);  
+end clear;
+
+public
+function delete
+"@deletes the pool by creating a pool with 0 elements"
+  input Pool<TV> inPool;
+  input Integer defaultPoolSize;
+  output Pool<TV> outPool;
+protected
+  replaceable type TV subtypeof Any;
+algorithm
+  outPool := create(0);  
+end delete;
 
 function add
 "@adds an element to the pool.
@@ -87,7 +134,7 @@ algorithm
       array<Option<TV>> arr, newArr;
       TV el;
       
-    case (POOL(fs, mx, arr), el, inUpdateFuncOpt)
+    case (POOL(fs, mx, arr, _), el, inUpdateFuncOpt)
       equation
         // no need to grow the array
         newIndex = fs + 1;
@@ -99,9 +146,9 @@ algorithm
         arr = arrayUpdate(arr, newIndex, SOME(el));
         fs = newIndex;
       then
-        (POOL(fs, mx, arr), fs);
+        (POOL(fs, mx, arr, fs), fs);
     
-    case (POOL(fs, mx, arr), el, inUpdateFuncOpt)
+    case (POOL(fs, mx, arr, _), el, inUpdateFuncOpt)
       equation
         // need to grow the array
         newIndex = fs + 1;
@@ -117,7 +164,7 @@ algorithm
         newArr = arrayUpdate(newArr, newIndex, SOME(inElement));
         fs = newIndex;
       then
-        (POOL(fs, mx, arr), fs);
+        (POOL(fs, mx, arr, fs), fs);
   end matchcontinue; 
 end add;
 
@@ -140,8 +187,9 @@ algorithm
   (outPool, outIndex) := matchcontinue(inPool, inElement, inUpdateFuncOpt)
     local 
       Pool<TV> pool;
-      Integer index, newIndex;
+      Integer index, newIndex, fs, mx;
       TV el;
+      array<Option<TV>> arr;
     
     // pool is empty
     case (pool, el, inUpdateFuncOpt)
@@ -162,12 +210,12 @@ algorithm
         (pool, index);
     
     // pool is not empty, search for it
-    case (pool, el, _)
+    case (pool as POOL(fs, mx, arr, _), el, _)
       equation
         // see if is in there, 0 means not in there!
         index = member(pool, el);
       then
-        (pool, index);
+        (POOL(fs, mx, arr, index), index);
   end matchcontinue; 
 end addUnique;
 
@@ -244,15 +292,16 @@ algorithm
     local 
       Pool<TV> pool;
       TV el;
-      Integer fs, mx;
+      Integer fs, mx, la;
       array<Option<TV>> elements;
-       
-    // set it
-    case (POOL(fs, mx, elements), inIndex, el)
+    
+    // set it! 
+    // TODO! FIXME! update filledSize if inIndex > filledSize, check for max, grow array if inIndex > max
+    case (POOL(fs, mx, elements, la), inIndex, el)
       equation
         elements = arrayUpdate(elements, inIndex, SOME(el));
       then
-        POOL(fs, mx, elements);
+        POOL(fs, mx, elements, la);
     
     // failure
     case (pool, inIndex, _)
@@ -262,6 +311,18 @@ algorithm
         fail();
   end matchcontinue; 
 end set;
+
+function empty
+"@is the pool empty?" 
+  input Pool<TV> inPool;
+  output Boolean isEmpty;
+protected
+  replaceable type TV subtypeof Any;
+  Integer fs;
+algorithm
+  POOL(filledSize = fs) := inPool;
+  isEmpty := intEq(fs, 0);
+end empty;
 
 function next
 "@which will be the next element in pool?, returns filled size + 1" 
@@ -274,6 +335,17 @@ algorithm
   POOL(filledSize = fs) := inPool;
   outNextIndex := fs + 1;
 end next;
+
+function lastAdded
+"@which will be the next element in pool?, returns filled size + 1" 
+  input Pool<TV> inPool;
+  output Integer outLastAddedIndex;
+protected
+  replaceable type TV subtypeof Any;
+  Integer fs;
+algorithm
+  POOL(lastAdded = outLastAddedIndex) := inPool;
+end lastAdded;
 
 function size
 "@what is the maximum size" 

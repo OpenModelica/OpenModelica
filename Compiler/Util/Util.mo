@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, LinkÃ¶ping University,
+ * Copyright (c) 1998-CurrentYear, Linköping University,
  * Department of Computer and Information Science,
- * SE-58183 LinkÃ¶ping, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from LinkÃ¶ping University, either from the above address,
+ * from Linköping University, either from the above address,
  * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
  * http://www.openmodelica.org, and in the OpenModelica distribution. 
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
@@ -8400,5 +8400,160 @@ algorithm
         i;
   end matchcontinue;
 end arrayFindLoop;
+
+public function arrayApply
+"apply a function to each element of the array"
+  input array<Option<Type_a>> inArr;
+  input Integer inFilledSize "the filled size of the array, it might be less than arrayLength";
+  input FuncType inFunc;
+  input Type_b inExtra;
+  output array<Option<Type_a>> outArr;
+protected
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  partial function FuncType
+    input Option<Type_a> inElement;
+    input Type_b inExtra;
+  end FuncType;  
+algorithm
+  outArr := matchcontinue(inArr, inFilledSize, inFunc, inExtra)
+    local
+      array<Option<Type_a>> arr;
+      Integer i, len, pos;
+    
+    // array is empty
+    case (arr, inFilledSize, inFunc, inExtra)
+      equation
+        true = intEq(0, inFilledSize);
+      then
+        arr;
+    
+    // array is not empty
+    case (arr, inFilledSize, inFunc, inExtra)
+      equation
+        arr = arrayApplyLoop(arr, inFunc, inExtra, 1, inFilledSize);
+      then
+        arr;
+  end matchcontinue;
+end arrayApply;
+
+protected function arrayApplyLoop
+"returns the index if found or 0 if not found.
+ considers array indexed from 1"
+  input array<Option<Type_a>> inArr;
+  input FuncType inFunc;
+  input Type_b inExtra;
+  input Integer currentIndex;
+  input Integer length;
+  output array<Option<Type_a>> outArr;
+protected
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  partial function FuncType
+    input Option<Type_a> inElement;
+    input Type_b inExtra;
+  end FuncType;
+algorithm
+  outArr := matchcontinue(inArr, inFunc, inExtra, currentIndex, length)
+    local
+      array<Option<Type_a>> arr;
+      Integer i, len, pos;
+      Option<Type_a> e;
+    
+    // we're at the end
+    case (arr, _, _, i, len)
+      equation
+        true = intEq(i, len);
+      then
+        arr;
+    
+    // not at the end, see if we find it
+    case (arr, inFunc, inExtra, i, len)
+      equation
+        e = arrayGet(arr, i);
+        inFunc(e, inExtra);
+        arr = arrayApplyLoop(arr, inFunc, inExtra, i + 1, len);
+      then
+        arr;
+  end matchcontinue;
+end arrayApplyLoop;
+
+public function arrayApplyR
+"apply a function to each element of the array;
+ the extra is the first argument in the apply function"
+  input array<Option<Type_a>> inArr;
+  input Integer inFilledSize "the filled size of the array, it might be less than arrayLength";
+  input FuncType inFunc;
+  input Type_b inExtra;
+  output array<Option<Type_a>> outArr;
+protected
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  partial function FuncType
+    input Type_b inExtra;
+    input Option<Type_a> inElement;
+  end FuncType;  
+algorithm
+  outArr := matchcontinue(inArr, inFilledSize, inFunc, inExtra)
+    local
+      array<Option<Type_a>> arr;
+      Integer i, len, pos;
+    
+    // array is empty
+    case (arr, inFilledSize, inFunc, inExtra)
+      equation
+        true = intEq(0, inFilledSize);
+      then
+        arr;
+    
+    // array is not empty
+    case (arr, inFilledSize, inFunc, inExtra)
+      equation
+        arr = arrayApplyRLoop(arr, inFunc, inExtra, 1, inFilledSize);
+      then
+        arr;
+  end matchcontinue;
+end arrayApplyR;
+
+protected function arrayApplyRLoop
+"returns the index if found or 0 if not found.
+ considers array indexed from 1"
+  input array<Option<Type_a>> inArr;
+  input FuncType inFunc;
+  input Type_b inExtra;
+  input Integer currentIndex;
+  input Integer length;
+  output array<Option<Type_a>> outArr;
+protected
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  partial function FuncType
+    input Type_b inExtra;
+    input Option<Type_a> inElement;
+  end FuncType;
+algorithm
+  outArr := matchcontinue(inArr, inFunc, inExtra, currentIndex, length)
+    local
+      array<Option<Type_a>> arr;
+      Integer i, len, pos;
+      Option<Type_a> e;
+    
+    // we're at the end
+    case (arr, _, _, i, len)
+      equation
+        true = intEq(i, len);
+      then
+        arr;
+    
+    // not at the end, see if we find it
+    case (arr, inFunc, inExtra, i, len)
+      equation
+        e = arrayGet(arr, i);
+        inFunc(inExtra, e);
+        arr = arrayApplyRLoop(arr, inFunc, inExtra, i + 1, len);
+      then
+        arr;
+  end matchcontinue;
+end arrayApplyRLoop;
 
 end Util;
