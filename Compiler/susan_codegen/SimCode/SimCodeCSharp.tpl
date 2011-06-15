@@ -284,14 +284,29 @@ template modelDataMembers(ModelInfo modelInfo, SimCode simCode) ::=
 match modelInfo
 case MODELINFO(varInfo = VARINFO(__), vars = SIMVARS(__)) then
 <<
+#region Model description
 const int 
-  NHELP = <%varInfo.numHelpVars%>, NG = <%varInfo.numZeroCrossings%>,
+  NHELP = <%varInfo.numHelpVars%>, 
+  NG = <%varInfo.numZeroCrossings%>,
   NG_SAM = <%varInfo.numTimeEvents%>,
-  NX = <%varInfo.numStateVars%>, NY = <%varInfo.numAlgVars%>, NP = <%varInfo.numParams%>,
-  NYI = <%varInfo.numIntAlgVars%>, NYB = <%varInfo.numBoolAlgVars%>,
-  NPI = <%varInfo.numIntParams%>, NPB = <%varInfo.numBoolParams%>,
-  NO = <%varInfo.numOutVars%>, NI = <%varInfo.numInVars%>, NR = <%varInfo.numResiduals%>,
-  NEXT = <%varInfo.numExternalObjects%>, NYSTR = <%varInfo.numStringAlgVars%>, NPSTR = <%varInfo.numStringParamVars%>;
+  NX = <%varInfo.numStateVars%>, 
+  NY = <%varInfo.numAlgVars%>, 
+  NA = <%varInfo.numAlgAliasVars%>, // number of alias variables
+  NP = <%varInfo.numParams%>,
+  NO = <%varInfo.numOutVars%>, 
+  NI = <%varInfo.numInVars%>, 
+  NR = <%varInfo.numResiduals%>,
+  NEXT = <%varInfo.numExternalObjects%>, 
+  //NFUNC = <%listLength(functions)%>, // number of functions used by the simulation
+  NYSTR = <%varInfo.numStringAlgVars%>, 
+  NASTR = <%varInfo.numStringAliasVars%>, // number of alias string variables
+  NYI = <%varInfo.numIntAlgVars%>,
+  NAI = <%varInfo.numIntAliasVars%>, // number of alias int variables
+  NYB = <%varInfo.numBoolAlgVars%>,
+  NAB = <%varInfo.numBoolAliasVars%>, // number of alias bool variables
+  NPI = <%varInfo.numIntParams%>, 
+  NPB = <%varInfo.numBoolParams%>,
+  NPSTR = <%varInfo.numStringParamVars%>;
 
 public override string ModelName        { get { return "<%dotPath(name)%>"; }}
 public override int HelpVarsCount       { get { return NHELP; } }
@@ -313,15 +328,20 @@ public override int MaximumOrder { get { return 5; } }
 public override int StringVarsCount { get { return NYSTR; } }
 public override int StringParametersCount { get { return NPSTR; } }
 
+#endregion
+
 #region VariableInfos
 public static readonly SimVarInfo[] VariableInfosStatic = new[] {
 	<%{  
 		varInfos("State", vars.stateVars, false, simCode),
 		varInfos("StateDer", vars.derivativeVars, false, simCode),
 		varInfos("Algebraic", vars.algVars, false, simCode),
-		varInfos("AlgebraicInt", vars.intAlgVars, false, simCode),
-		varInfos("AlgebraicBool", vars.boolAlgVars, false, simCode),
-		varInfos("Parameter", vars.paramVars, true, simCode),
+		varInfos("alias Algebraic", vars.aliasVars, false, simCode),
+        varInfos("AlgebraicInt", vars.intAlgVars, false, simCode),
+		varInfos("alias AlgebraicInt", vars.intAliasVars, false, simCode),
+        varInfos("AlgebraicBool", vars.boolAlgVars, false, simCode),
+		varInfos("alias AlgebraicBool", vars.boolAliasVars, false, simCode),
+        varInfos("Parameter", vars.paramVars, true, simCode),
 		varInfos("ParameterInt", vars.intParamVars, true, simCode),
 		varInfos("ParameterBool", vars.boolParamVars, true, simCode)
 	} ;separator=",\n\n"%>
@@ -379,13 +399,46 @@ public <%lastIdentOfPath(name)%>() {
 >>
 end modelDataMembers;
 
-template varInfos(String typeName, list<SimVar> varsLst, Boolean isMInd, SimCode simCode) ::=
+template simVarTypeName(VarKind varKind, ExpType type_) ::=
+  match varKind 
+  case VARIABLE(__)    then "Algebraic" + simVarTypeNamePostfix(type_)
+  case STATE(__)       then "State"
+  case STATE_DER(__)   then "StateDer"
+  case DUMMY_DER(__)   //then "Algebraic" 
+  case DUMMY_STATE(__) then "Algebraic" 
+  case DISCRETE(__)    then 'Algebraic<%simVarTypeNamePostfix(type_)%>/*d*/'
+  case PARAM(__)       then "Parameter" + simVarTypeNamePostfix(type_)
+  else error(sourceInfo(), "Unexpected simVarTypeName varKind")
+  //case EXTOBJ(__)      then "EO"
+  //case CONST(__)       then "CONST_VAR_KIND"
+end simVarTypeName;
+
+template simVarTypeNamePostfix(ExpType type_) ::=
+  match type_ 
+  case ET_INT(__)  then "Int"
+  case ET_REAL(__) then ""
+  case ET_BOOL(__) then "Bool"
+  case ET_STRING(__) then "String"
+  case ET_ENUMERATION(__) then "/*Enum*/"
+  //case ET_COMPLEX(__) then "Complex"
+  //case ET_ARRAY(__) then "Array"
+  //case ET_OTHER(__) then "Other"
+  else error(sourceInfo(), "Unknown simVarTypeNamePostfix")
+end simVarTypeNamePostfix;
+
+template varInfos(String regionName, list<SimVar> varsLst, Boolean isMInd, SimCode simCode) ::=
   if varsLst then 
     <<
-    #region <%typeName%> variable infos
-    <% varsLst |> SIMVAR(__) => 
+    #region <%regionName%> variable infos
+    <% varsLst |> sv as SIMVAR(__) => 
+       let typeIdxAndAliasMode = 
+          match aliasvar
+          case NOALIAS(__)      then '<%simVarTypeName(sv.varKind, sv.type_)%>,<%sv.index%>, 0'
+          case ALIAS(__)        then '<%cref2simvar(varName, simCode) |> SIMVAR(__) => '<%simVarTypeName(varKind, type_)%>, <%index%>'%>, 1/*alias to <%crefStr(varName, simCode)%>*/'
+          case NEGATEDALIAS(__) then '<%cref2simvar(varName, simCode) |> SIMVAR(__) => '<%simVarTypeName(varKind, type_)%>, <%index%>'%>, -1/*alias to <%crefStr(varName, simCode)%>*/'
+          else error(sourceInfo(), "Unknown alias var type")           
        <<
-	   new SimVarInfo( "<%crefStr(name, simCode)%>", "<%Util.escapeModelicaStringToCString(comment)%>", SimVarType.<%typeName%>, <%index%>, <%isMInd%>)
+	   new SimVarInfo( "<%crefStr(name, simCode)%>", "<%Util.escapeModelicaStringToCString(comment)%>", SimVarType.<%typeIdxAndAliasMode%>)
 	   >> ;separator=",\n"
 	%>
     #endregion<%\n%>    
@@ -665,6 +718,41 @@ template zeroCrossing(Exp it, Integer index, SimCode simCode) ::=
     let e1 = daeExp(exp1, contextOther, &preExp, simCode)
     let e2 = daeExp(exp2, contextOther, &preExp, simCode)
     <<
+    <%preExp%>
+    gout[<%index%>] = <%
+                    match operator
+                    case LESS(__)
+                    case LESSEQ(__)    then '<%e1%> - <%e2%>' //space is mandatory here ... (X--1) must be (X - -1)
+                    case GREATER(__)
+                    case GREATEREQ(__) then '<%e2%> - <%e1%>'
+                    case EQUAL(__) then '<%e2%> == <%e1%>'
+                    case NEQUAL(__) then '<%e2%> != <%e1%>'             
+                    else "!!!unsupported ZC operator!!!"
+                   %>;      
+    >>
+    /* to be deleted
+     {var _zen = zeroCrossingEnabled[<%index%>]; //ZEROCROSSING(<%index%>, <%zeroCrossingOpFunc(operator)%>(<%e1%>, <%e2%>));
+
+     if (eulerInUse || _zen!=0.0){
+          <%preExp%>
+          var _exp = (<%
+                    match operator
+                    case LESS(__)
+                    case LESSEQ(__)    then '<%e1%> - <%e2%>' //space is mandatory here ... (X--1) must be (X - -1)
+                    case GREATER(__)
+                    case GREATEREQ(__) then '<%e2%> - <%e1%>'
+                    case EQUAL(__) then '<%e2%> == <%e1%>'
+                    case NEQUAL(__) then '<%e2%> != <%e1%>'             
+                    else "!!!unsupported ZC operator!!!"
+                   %>);         
+          gout[<%index%>] = eulerInUse ? exp : _zen*exp;
+        }
+     else
+        gout[<%index%>] = 1.0;
+    }*/
+    
+    /*  to be deleted  
+    <<
     {<%preExp%>var _zen = zeroCrossingEnabled[<%index%>]; //ZEROCROSSING(<%index%>, <%zeroCrossingOpFunc(operator)%>(<%e1%>, <%e2%>));
     gout[<%index%>] = (_zen != 0) ? _zen * (<%match operator
                                            case LESS(__)
@@ -675,7 +763,8 @@ template zeroCrossing(Exp it, Integer index, SimCode simCode) ::=
                                            case NEQUAL(__) then '<%e2%> != <%e1%>'    			
                                            else "!!!unsupported ZC operator!!!"
                                           %>) : 1.0; }
-    >>    
+    >>
+    */
   case CALL(path=IDENT(name="sample"), expLst={start, interval}) then
     let &preExp = buffer "" //is ignored
     let eStart = daeExp(start, contextOther, &preExp, simCode)
