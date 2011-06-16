@@ -4605,7 +4605,7 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption) :=
   matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
-      tuple<DAE.TType, Option<Absyn.Path>> tp;
+      DAE.Type tp;
       list<Integer> sizelst;
       Values.Value v;
       Env.Env env;
@@ -5087,7 +5087,7 @@ algorithm
     local
       DAE.ComponentRef cr_1,cr,e1;
       list<DAE.Subscript> subsc;
-      tuple<DAE.TType, Option<Absyn.Path>> tp;
+      DAE.Type tp;
       list<Integer> sizelst;
       Values.Value res,v,e_val;
       list<Env.Frame> env;

@@ -1183,7 +1183,7 @@ algorithm
   outDae := matchcontinue (inExp1,inProperties2,inExp3,inProperties4,source,inInitial5,inImplicit)
     local
       DAE.Exp e1_1,e1,e2,e2_1;
-      tuple<DAE.TType, Option<Absyn.Path>> t_1,t1,t2,t;
+      DAE.Type t_1,t1,t2,t;
       DAE.DAElist dae;
       DAE.Properties p1,p2;
       SCode.Initial initial_;
@@ -2888,7 +2888,7 @@ algorithm
       SCode.Flow flowPrefix1,flowPrefix2;
       SCode.Stream streamPrefix1,streamPrefix2;
       Boolean impl;
-      tuple<DAE.TType, Option<Absyn.Path>> ty1,ty2;
+      DAE.Type ty1,ty2;
       Connect.Face f1,f2;
       Connect.Sets sets_1,sets,sets_2,sets_3;
       DAE.DAElist dae;
@@ -3049,7 +3049,7 @@ algorithm
       SCode.Flow flowPrefix1,flowPrefix2;
       SCode.Stream streamPrefix1,streamPrefix2;
       Boolean impl;
-      tuple<DAE.TType, Option<Absyn.Path>> ty1,ty2,ty;
+      DAE.Type ty1,ty2,ty;
       Connect.Sets sets;
       DAE.DAElist dae, daeExpandable;
       list<Env.Frame> env, envExpandable, envComponent, env1, env2, envComponentEmpty;
@@ -3405,7 +3405,7 @@ protected function updateEnvComponentsOnQualPath
   input Env.Env inEnv "the environment we should update!";
   input DAE.ComponentRef virtualExpandableCref;
   input DAE.Attributes virtualExpandableAttr;
-  input tuple<DAE.TType, Option<Absyn.Path>> virtualExpandableTy;
+  input DAE.Type virtualExpandableTy;
   input DAE.Binding virtualExpandableBinding;
   input Option<DAE.Const> virtualExpandableCnstForRange;
   input Env.Env virtualExpandableEnv "the virtual component environment!";
@@ -3419,7 +3419,7 @@ algorithm
       Env.Env topEnv "the environment we should update!";
       DAE.ComponentRef veCref, qualCref;
       DAE.Attributes veAttr,currentAttr;
-      tuple<DAE.TType, Option<Absyn.Path>> veTy,currentTy;
+      DAE.Type veTy,currentTy;
       DAE.Binding veBinding,currentBinding;
       Option<DAE.Const> veCnstForRange,currentCnstForRange;
       Env.Env veEnv "the virtual component environment!";
@@ -3596,7 +3596,7 @@ algorithm
   _ := matchcontinue (inType)
     local
       ClassInf.State state;
-      tuple<DAE.TType, Option<Absyn.Path>> tp,t;
+      DAE.Type tp,t;
       String str;
     case ((DAE.T_REAL(varLstReal = _),_)) then ();
     case ((DAE.T_INTEGER(_),_)) then ();
@@ -4142,7 +4142,7 @@ algorithm
       list<Env.Frame> env;
       Prefix.Prefix pre;
       Connect.Face f1,f2;
-      tuple<DAE.TType, Option<Absyn.Path>> t1,t2;
+      DAE.Type t1,t2;
       DAE.DAElist dae,dae1,dae2;
       SCode.Flow flowPrefix;
       SCode.Stream streamPrefix;
@@ -4211,7 +4211,7 @@ algorithm
       DAE.Attributes attr1,attr2;
       SCode.Flow flow1,flow2;
       SCode.Stream stream1;
-      tuple<DAE.TType, Option<Absyn.Path>> ty1,ty2;
+      DAE.Type ty1,ty2;
       list<DAE.Var> xs1,xs2;
       SCode.Variability vta,vtb;
       DAE.ExpType ty_2;

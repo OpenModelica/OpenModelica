@@ -624,7 +624,7 @@ public function extendFrameT "function: extendFrameT
 algorithm
   outEnv := matchcontinue (inEnv,inIdent,inType)
     local
-      list<tuple<DAE.TType, Option<Absyn.Path>>> tps;
+      list<DAE.Type> tps;
       AvlTree httypes_1,httypes;
       AvlTree ht;
       Option<Ident> sid;
@@ -634,7 +634,7 @@ algorithm
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       SCode.Encapsulated encflag;
       Ident n;
-      tuple<DAE.TType, Option<Absyn.Path>> t;
+      DAE.Type t;
       list<SCode.Element> defineUnits;
 
     case ((FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),n,t)
@@ -1127,14 +1127,14 @@ algorithm
       Ident s,elt_str,tp_str,var_str,frame_str,bind_str,res,n,lenstr;
       DAE.Var tv;
       SCode.Variability var;
-      tuple<DAE.TType, Option<Absyn.Path>> tp;
+      DAE.Type tp;
       DAE.Binding bind,bnd;
       SCode.Element elt;
       InstStatus i;
       Frame compframe;
       Env env;
       Integer len;
-      list<tuple<DAE.TType, Option<Absyn.Path>>> lst;
+      list<DAE.Type> lst;
       Absyn.Import imp;
 
     case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(variability = var),ty = tp,binding = bind)),declaration = SOME((elt,_)),instStatus = i,env = (compframe :: _))))

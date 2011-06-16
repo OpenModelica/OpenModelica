@@ -915,7 +915,7 @@ algorithm
   outTypesSubModLst := matchcontinue (inExpExpLst,inExpSubscriptLst,inInteger,inMod)
     local
       DAE.Exp e_1,x,e,e_2;
-      tuple<DAE.TType, Option<Absyn.Path>> t_1,t;
+      DAE.Type t_1,t;
       list<DAE.SubMod> mods1,mods2,mods;
       Integer n_1,n;
       list<DAE.Exp> xs;
@@ -1622,7 +1622,7 @@ algorithm
   outTypesEqModOption := matchcontinue (inTypesEqModOption,inIntegerLst)
     local
       Option<DAE.EqMod> emod;
-      tuple<DAE.TType, Option<Absyn.Path>> t_1,t;
+      DAE.Type t_1,t;
       DAE.Exp e,exp,exp2;
       Values.Value e_val_1,e_val;
       DAE.Const c;

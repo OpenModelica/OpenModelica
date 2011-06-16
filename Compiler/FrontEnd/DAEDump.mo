@@ -492,7 +492,7 @@ algorithm
       SCode.Stream st;
       SCode.Variability var;
       Absyn.Direction dir;
-      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      DAE.Type ty;
       DAE.Exp exp,dim;
       DAE.Attributes attr;
       

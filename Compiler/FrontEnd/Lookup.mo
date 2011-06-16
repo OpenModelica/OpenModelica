@@ -651,7 +651,7 @@ algorithm
       Boolean more,unique;
       list<Env.Frame> env,classEnv,componentEnv,prevFrames;
       DAE.Attributes attr;
-      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      DAE.Type ty;
       DAE.Binding bind;
       list<Env.Item> fs;
       Env.Cache cache;
@@ -1002,7 +1002,7 @@ algorithm
   matchcontinue (inCache,inEnv,inComponentRef)
     local
       DAE.Attributes attr;
-      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      DAE.Type ty;
       DAE.Binding binding;
       list<Env.Frame> env, componentEnv, classEnv;
       DAE.ComponentRef cref;
@@ -1091,7 +1091,7 @@ algorithm
   matchcontinue (inCache,inEnv,inComponentRef,searchStrategy)
     local
       DAE.Attributes attr;
-      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      DAE.Type ty;
       DAE.Binding binding;
       Option<String> sid;
       Env.AvlTree ht;
@@ -1357,7 +1357,7 @@ algorithm
   matchcontinue (inCache,inEnv,inComponentRef)
     local
       DAE.Attributes attr;
-      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      DAE.Type ty;
       DAE.Binding binding;
       Option<String> sid;
       Env.AvlTree ht;
@@ -1620,7 +1620,7 @@ algorithm
       Option<String> sid;
       Env.AvlTree httypes;
       Env.AvlTree ht;
-      list<tuple<DAE.TType, Option<Absyn.Path>>> res;
+      list<DAE.Type> res;
       list<Env.Frame> env,fs,env_1,env2,env_2;
       String pack,str;
       SCode.Element c;
@@ -1726,7 +1726,7 @@ algorithm
   (outCache,outType,outEnv):=
   matchcontinue (inCache,inEnv,inPath)
     local
-      tuple<DAE.TType, Option<Absyn.Path>> c;
+      DAE.Type c;
       list<Env.Frame> env_1,env,fs;
       Option<String> sid;
       Env.AvlTree httypes;
@@ -1764,7 +1764,7 @@ algorithm
   (outCache,outType,outEnv):=
   match (inCache,inBinTree1,inBinTree2,inEnv3,inIdent4)
     local
-      tuple<DAE.TType, Option<Absyn.Path>> t;
+      DAE.Type t;
       Env.AvlTree httypes;
       Env.AvlTree ht;
       list<Env.Frame> env;
@@ -1795,7 +1795,7 @@ algorithm
   (outCache,outType,outEnv):=
   matchcontinue (inCache,item,inEnv3,inIdent4)
     local
-      tuple<DAE.TType, Option<Absyn.Path>> t,ty;
+      DAE.Type t,ty;
       list<Env.Frame> env,cenv,env_1,env_3;
       String id,n;
       SCode.Element cdef;
@@ -1849,13 +1849,13 @@ protected function lookupFunctionsInFrame
 algorithm
   (outCache,outTypesTypeLst) := matchcontinue (inCache,inBinTree1,inBinTree2,inEnv3,inIdent4,info)
     local
-      list<tuple<DAE.TType, Option<Absyn.Path>>> tps;
+      list<DAE.Type> tps;
       Env.AvlTree httypes;
       Env.AvlTree ht;
       list<Env.Frame> env,cenv,env_1;
       String id,n;
       SCode.Element cdef;
-      tuple<DAE.TType, Option<Absyn.Path>> ftype,t;
+      DAE.Type ftype,t;
       DAE.TType tty;
       Env.Cache cache;
       SCode.Restriction restr;
@@ -2427,7 +2427,7 @@ algorithm
   outType:=
   matchcontinue (inType,inExpSubscriptLst)
     local
-      tuple<DAE.TType, Option<Absyn.Path>> t,t_1;
+      DAE.Type t,t_1;
       DAE.Dimension dim;
       Option<Absyn.Path> p;
       list<DAE.Subscript> ys,s;
@@ -2615,7 +2615,7 @@ algorithm
       SCode.Stream streamPrefix;
       SCode.Variability vt,vt2;
       Absyn.Direction di;
-      tuple<DAE.TType, Option<Absyn.Path>> ty,ty_1,idTp;
+      DAE.Type ty,ty_1,idTp;
       DAE.Binding bind,binding;
       Env.AvlTree ht;
       list<DAE.Subscript> ss;

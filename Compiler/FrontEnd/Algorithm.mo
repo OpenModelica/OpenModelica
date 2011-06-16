@@ -151,7 +151,7 @@ algorithm
       DAE.Exp lhs,rhs;
       DAE.Properties lprop,rprop,lhprop,rhprop;
       DAE.ComponentRef cr;
-      tuple<DAE.TType, Option<Absyn.Path>> lt,rt;
+      DAE.Type lt,rt;
       Absyn.Direction direction;
 
     // assign to parameter in algorithm okay if record
@@ -334,7 +334,7 @@ algorithm
       list<DAE.Properties> lprop,lhprops;
       DAE.Exp rhs;
       DAE.Properties rprop;
-      list<tuple<DAE.TType, Option<Absyn.Path>>> lhrtypes,tpl;
+      list<DAE.Type> lhrtypes,tpl;
       list<DAE.TupleConst> clist;
       
     case (lhs,lprop,rhs,rprop,initial_,source)
@@ -405,7 +405,7 @@ protected function getPropExpType "function: getPropExpType
   input DAE.Properties p;
   output DAE.ExpType t;
 protected
-  tuple<DAE.TType, Option<Absyn.Path>> ty;
+  DAE.Type ty;
 algorithm
   ty := Types.getPropType(p);
   t := getTypeExpType(ty);
@@ -419,7 +419,7 @@ protected function getTypeExpType "function: getTypeExpType
 algorithm
   outType:=
   matchcontinue (inType)
-    local tuple<DAE.TType, Option<Absyn.Path>> t;
+    local DAE.Type t;
     case ((DAE.T_INTEGER(varLstInt = _),_)) then DAE.ET_INT();
     case ((DAE.T_REAL(varLstReal = _),_)) then DAE.ET_REAL();
     case ((DAE.T_STRING(varLstString = _),_)) then DAE.ET_STRING();
@@ -457,7 +457,7 @@ algorithm
       list<Statement> tb,fb;
       list<tuple<DAE.Exp, DAE.Properties, list<Statement>>> eib;
       Ident e_str,t_str;
-      tuple<DAE.TType, Option<Absyn.Path>> t;
+      DAE.Type t;
       DAE.Properties prop;
     case (DAE.BCONST(true),_,tb,eib,fb,source)
       then tb;
@@ -495,7 +495,7 @@ algorithm
       DAE.Exp e;
       list<tuple<DAE.Exp, DAE.Properties, list<Statement>>> xs;
       Ident e_str,t_str;
-      tuple<DAE.TType, Option<Absyn.Path>> t;
+      DAE.Type t;
     case ({},{}) then DAE.NOELSE();  /* This removes empty else branches */
     case ({},fb) then DAE.ELSE(fb);
     case (((DAE.BCONST(true),DAE.PROP(type_ = t),b) :: xs),fb) then DAE.ELSE(b);
@@ -533,7 +533,7 @@ algorithm
       DAE.ExpType et;
       Ident i,e_str,t_str;
       DAE.Exp e;
-      tuple<DAE.TType, Option<Absyn.Path>> t;
+      DAE.Type t;
       list<Statement> stmts;
     case (i,e,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = t),_)),stmts,source)
       equation
@@ -566,7 +566,7 @@ algorithm
       DAE.Exp e;
       list<Statement> stmts;
       Ident e_str,t_str;
-      tuple<DAE.TType, Option<Absyn.Path>> t;
+      DAE.Type t;
     case (e,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_)),stmts,source) then DAE.STMT_WHILE(e,stmts,source);
     case (e,DAE.PROP(type_ = t),_,source)
       equation
@@ -595,7 +595,7 @@ algorithm
       list<Statement> stmts;
       Option<Statement> elsew;
       Ident e_str,t_str;
-      tuple<DAE.TType, Option<Absyn.Path>> t;
+      DAE.Type t;
     case (e,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_)),stmts,elsew,source) then DAE.STMT_WHEN(e,stmts,elsew,{},source);
     case (e,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = (DAE.T_BOOL(varLstBool = _),_)),_)),stmts,elsew,source) then DAE.STMT_WHEN(e,stmts,elsew,{},source);
     case (e,DAE.PROP(type_ = t),_,_,source)

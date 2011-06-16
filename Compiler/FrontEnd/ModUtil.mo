@@ -384,7 +384,7 @@ algorithm
       type_ = ty,partialPrefix = partialPrefix,inlineType=inlineType,source = source))
       local
         Absyn.Path n;
-        tuple<DAE.TType, Option<Absyn.Path>> ty;
+        DAE.Type ty;
         DAE.InlineType inlineType;
       equation
         daeLst = stringPrefixElements(str, daeLst, daeLst);
@@ -397,7 +397,7 @@ algorithm
       type_ = ty,source = source))
       local
         Absyn.Path n;
-        tuple<DAE.TType, Option<Absyn.Path>> ty;
+        DAE.Type ty;
       equation
         daeLst = stringPrefixElements(str, daeLst, daeLst);
       then
