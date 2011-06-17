@@ -62,7 +62,6 @@ protected import OptManager;
 protected import RTOpts;
 protected import SCode;
 protected import Util;
-protected import BackendDump;
 
 public function lower
 "function: lower

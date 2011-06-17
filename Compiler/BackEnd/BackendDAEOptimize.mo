@@ -2348,6 +2348,12 @@ algorithm
         DAE.Exp e;
         Integer k;
         DAE.Operator op;
+      case (e1 as DAE.CREF(componentRef = cr),DAE.UNARY(operator=op as DAE.UMINUS(ty=_),exp=DAE.CREF(componentRef = _)),inVars)
+        then fail();
+      case (e1 as DAE.CREF(componentRef = cr),DAE.CREF(componentRef = _),inVars)
+        then fail();
+      case (DAE.UNARY(operator=op as DAE.UMINUS(ty=_),exp=e1 as DAE.CREF(componentRef = cr)),DAE.CREF(componentRef = _),inVars)
+        then fail();
       // a = -f(...);
       case (e1 as DAE.CREF(componentRef = cr),DAE.UNARY(operator=op as DAE.UMINUS(ty=_),exp=e2),inVars)
         equation

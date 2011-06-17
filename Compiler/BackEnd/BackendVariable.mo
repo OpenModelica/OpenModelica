@@ -404,7 +404,7 @@ algorithm
       Option<DAE.VariableAttributes> attr;
     case (BackendDAE.VAR(values = attr))
       equation
-        sv=DAEUtil.getStartAttrFail(attr);
+        sv=DAEUtil.getStartAttr(attr);
       then sv;
    end matchcontinue;
 end varStartValue;

@@ -2610,7 +2610,7 @@ algorithm
       then
         arr_1;
     
-    case (_,_,_,_,_,_)
+    else
       equation
         print("- BackendDAEUtil.markStateEquations failed\n");
       then

@@ -428,7 +428,7 @@ uniontype DAEHandlerJop
 end DAEHandlerJop;
 
 public
-type DAEHandlerArg = tuple<StateOrder,list<list<tuple<Integer,Equation>>>>;
+type DAEHandlerArg = tuple<StateOrder,list<tuple<Integer,list<tuple<Equation,Boolean>>>>>;
 
 public
 uniontype StateOrder 
