@@ -3075,6 +3075,20 @@ algorithm
   PREFIXES(redeclarePrefix = outRedeclare) := inPrefixes;
 end prefixesRedeclare;
 
+public function prefixesSetRedeclare
+  input Prefixes inPrefixes;
+  input Redeclare inRedeclare;
+  output Prefixes outPrefixes;
+protected
+  Visibility v;
+  Final f;
+  Absyn.InnerOuter io;
+  Replaceable rp;
+algorithm
+  PREFIXES(v, _, f, io, rp) := inPrefixes;
+  outPrefixes := PREFIXES(v, inRedeclare, f, io, rp);
+end prefixesSetRedeclare;
+
 public function redeclareBool
   input Redeclare inRedeclare;
   output Boolean bRedeclare;

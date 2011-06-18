@@ -209,6 +209,7 @@ algorithm
     case (_, SCodeEnv.FRAME(clsAndVars = cls_and_vars) :: _)
       equation
         item = SCodeEnv.avlTreeGet(cls_and_vars, inName);
+        item = SCodeEnv.resolveAlias(item, cls_and_vars);
       then
         (SOME(item), SOME(Absyn.IDENT(inName)), SOME(inEnv));
 

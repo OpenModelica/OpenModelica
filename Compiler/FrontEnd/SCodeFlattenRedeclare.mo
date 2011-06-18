@@ -40,6 +40,7 @@ encapsulated package SCodeFlattenRedeclare
   handle redeclares. There are three different types of redeclares that are
   handled: redeclare modifiers, element redeclares and class extends.
 
+  REDECLARE MODIFIERS:
   Redeclare modifiers are redeclarations given as modifiers on an extends
   clause. When an extends clause is added to the environment with
   SCodeEnv.extendEnvWithExtends these modifiers are extracted with
@@ -48,6 +49,7 @@ encapsulated package SCodeFlattenRedeclare
   to search for an identifier in a base class, these elements are replaced in
   the environment prior to searching in it by the replaceRedeclares function.
 
+  ELEMENT REDECLARES:
   Element redeclares are similar to redeclare modifiers, but they are declared
   as standalone elements that redeclare an inherited element. When the
   environment is built they are initially added to a list of elements in the
@@ -58,6 +60,7 @@ encapsulated package SCodeFlattenRedeclare
   redeclares are then added to the list of redeclarations in the correct
   SCodeEnv.EXTENDS, and handled in the same way as redeclare modifiers.
 
+  CLASS EXTENDS:
   Class extends are handled by adding them to the environment with
   extendEnvWithClassExtends. This function adds the given class as a normal
   class to the environment, and sets the class extends information field in
@@ -66,8 +69,23 @@ encapsulated package SCodeFlattenRedeclare
   with SCodeEnv.updateExtendsInEnv, and updateClassExtends is called.
   updateClassExtends looks up the full path to the base class of the class
   extends, and adds an extends clause to the class that extends from the base
-  class. Class extends on the form 'redeclare class extends X' are thus
-  translated to 'class X extends BaseClass.X', and then mostly handled like a
+  class. 
+  
+  However, since it's possible to redeclare the base class of a class
+  extends it's possible that the base class is replaced with a class that
+  extends from it. If the base class were to be replaced with this class it
+  would mean that the class extends itself, causing a loop. To avoid this an
+  alias for the base class is added instead, and the base class itself is added
+  with the BASE_CLASS_SUFFIX defined in SCodeEnv. The alias can then be safely
+  redeclared while preserving the base class for the class extends to extend
+  from. It's somewhat difficult to only add aliases for classes that are used by
+  class extends though, so an alias is added for all replaceable classes in
+  SCodeEnv.extendEnvWithClassDef for simplicity's sake. The function
+  SCodeEnv.resolveAlias is then used to resolve any alias items to the real
+  items whenever an item is looked up in the environment.
+  
+  Class extends on the form 'redeclare class extends X' are thus
+  translated to 'class X extends BaseClass.X$base', and then mostly handled like a
   normal class. Some care is needed in the dependency analysis to make sure
   that nothing important is removed, see comment in
   SCodeDependency.analyseClassExtends.  
@@ -246,12 +264,14 @@ algorithm
       Env env;
       SCode.Element cls;
       Item item;
-      Absyn.Path info;
+      Absyn.Path info, p;
+      String n;
 
     case (_, _, _, _, cls_frame :: env)
       equation
         (path, item) = lookupClassExtendsBaseClass(inName, env, inInfo);
         SCodeCheck.checkClassExtendsReplaceability(item, Absyn.dummyInfo);
+        path = Absyn.pathReplaceIdent(path, inName +& SCodeEnv.BASE_CLASS_SUFFIX);
         ext = SCode.EXTENDS(path, SCode.PUBLIC(), inMods, NONE(), inInfo);
         {cls_frame} = SCodeEnv.extendEnvWithExtends(ext, {cls_frame});
         cls = SCode.addElementToClass(ext, inClass);
@@ -272,14 +292,27 @@ algorithm
     local
       Absyn.Path path;
       Item item;
+      String basename;
 
+    case (_, _, _)
+      equation
+        basename = inName +& SCodeEnv.BASE_CLASS_SUFFIX;
+        (path, item) = SCodeLookup.lookupBaseClass(basename, inEnv, inInfo);
+        path = Absyn.joinPaths(path, Absyn.IDENT(basename));
+      then
+        (path, item);
+
+    // The previous case might fail if we try to class extend from a
+    // non-replaceable class which doesn't have have an alias. To get the
+    // correct error message later we look the class up via the non-alias name
+    // instead and return that result if found.
     case (_, _, _)
       equation
         (path, item) = SCodeLookup.lookupBaseClass(inName, inEnv, inInfo);
         path = Absyn.joinPaths(path, Absyn.IDENT(inName));
       then
         (path, item);
-
+        
     else
       equation
         Error.addSourceMessage(Error.INVALID_REDECLARATION_OF_CLASS,
@@ -323,7 +356,7 @@ algorithm
       then
         env;
 
-    // redeclare-as-element componeent
+    // redeclare-as-element component
     case (redecl as SCode.COMPONENT(name = name, info = info), _)
       equation
         (path, base_item) = SCodeLookup.lookupBaseClass(name, inEnv, info);
@@ -444,6 +477,7 @@ algorithm
           )), _)
       equation
         path = SCodeLookup.qualifyPath(path, inEnv, info, SOME(Error.LOOKUP_ERROR));
+        prefixes = SCode.prefixesSetRedeclare(prefixes, SCode.NOT_REDECLARE());
       then
         SCodeEnv.RAW_MODIFIER(SCode.CLASS(name, prefixes, ep, pp, res,
             SCode.DERIVED(Absyn.TPATH(path, ad), mods, attr, cmt),
@@ -759,7 +793,10 @@ algorithm
     else
       equation
         true = RTOpts.debugFlag("failtrace");
-        Debug.traceln("- SCodeFlattenRedeclare.replaceElementInEnv3 failed.");
+        Debug.trace("- SCodeFlattenRedeclare.replaceElementInEnv3 failed for ");
+        Debug.trace(Absyn.pathString(inPath));
+        Debug.trace(" in ");
+        Debug.traceln(SCodeEnv.getEnvName(inEnv));
       then
         fail();
 
@@ -810,7 +847,7 @@ protected function replaceElementInClassEnv
   input Env inEnv;
   output Env outEnv;
 algorithm
-  outEnv := match(inClassPath, inElement, inEnv)
+  outEnv := matchcontinue(inClassPath, inElement, inEnv)
     local
       Option<String> frame_name;
       SCodeEnv.FrameType ty;
@@ -838,16 +875,44 @@ algorithm
     case (Absyn.QUALIFIED(name = name, path = path), _,
         SCodeEnv.FRAME(frame_name, ty, tree, exts, imps, is_used) :: rest_env)
       equation
-        SCodeEnv.CLASS(cls = cls, env = class_env, classType = cls_ty) = 
-          SCodeEnv.avlTreeGet(tree, name);
+        item = SCodeEnv.avlTreeGet(tree, name);
+        (name, SCodeEnv.CLASS(cls = cls, env = class_env, classType = cls_ty)) = 
+          replaceElementInClassEnv2(name, item, tree);
         class_env = replaceElementInClassEnv(path, inElement, class_env);
         tree = SCodeEnv.avlTreeReplace(tree, name, 
           SCodeEnv.newClassItem(cls, class_env, cls_ty));
       then
         SCodeEnv.FRAME(frame_name, ty, tree, exts, imps, is_used) :: rest_env;
 
-  end match;
+  end matchcontinue;
 end replaceElementInClassEnv;
+
+protected function replaceElementInClassEnv2
+  "Helper function to replaceElementInClassEnv. Makes sure that the replacement
+  is done in the correct class with regards to aliases."
+  input String inName;
+  input SCodeEnv.Item inItem;
+  input SCodeEnv.AvlTree inTree;
+  output String outName;
+  output SCodeEnv.Item outItem;
+algorithm
+  (outName, outItem) := match(inName, inItem, inTree)
+    local
+      String name;
+      SCodeEnv.Item item;
+
+    // An alias. Resolve it and return the correct name of the aliased class.
+    case (_, SCodeEnv.ALIAS(path = Absyn.IDENT(name)), _)
+      equation
+        item = SCodeEnv.avlTreeGet(inTree, name);
+        (name, item) = replaceElementInClassEnv2(name, item, inTree);
+      then
+        (name, item);
+
+    else (inName, inItem);
+
+  end match;
+end replaceElementInClassEnv2;
 
 protected function processRedeclaration
   input SCodeEnv.Redeclaration inRedeclare;

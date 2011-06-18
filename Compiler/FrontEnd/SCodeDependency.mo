@@ -1700,34 +1700,62 @@ protected function collectUsedClass
   input Absyn.Path inAccumPath;
   output SCode.Element outClass;
   output Env outAccumEnv;
-protected
-  SCode.Ident name;
-  SCode.Prefixes prefixes;
-  SCode.Restriction res;
-  SCode.ClassDef cdef;
-  SCode.Encapsulated ep;
-  SCode.Partial pp;
-  Absyn.Info info;
-  Item item;
-  SCodeEnv.Frame class_frame;
-  Env class_env;
-  Absyn.Path cls_path;
-  Option<SCode.ConstrainClass> cc;
 algorithm
-  SCode.CLASS(name, prefixes, ep, pp, res, cdef, info) := inClass;
-  // TODO! FIXME! add cc to the used classes!
-  cc := SCode.replaceableOptConstraint(SCode.prefixesReplaceable(prefixes));
-  // Check if the class is used.
-  item := SCodeEnv.avlTreeGet(inClsAndVars, name);
-  true := checkClassUsed(item, cdef);
-  // The class is used, recursively collect it's contents.
-  {class_frame} := SCodeEnv.getItemEnv(item);
-  (cdef, class_env) := 
-    collectUsedClassDef(cdef, class_frame, inClassName, inAccumPath);
-  // Add the class to the new environment.
-  outClass := SCode.CLASS(name, prefixes, ep, pp, res, cdef, info);
-  item := updateItemEnv(item, outClass, class_env);
-  outAccumEnv := SCodeEnv.extendEnvWithItem(item, inAccumEnv, name);
+  (outClass, outAccumEnv) := 
+  match(inClass, inClsAndVars, inClassName, inAccumEnv, inAccumPath)
+    local
+      SCode.Ident name, basename;
+      SCode.Prefixes prefixes;
+      SCode.Restriction res;
+      SCode.ClassDef cdef;
+      SCode.Encapsulated ep;
+      SCode.Partial pp;
+      Absyn.Info info;
+      Item item, resolved_item;
+      SCodeEnv.Frame class_frame;
+      Env class_env, env;
+      Absyn.Path cls_path;
+      Option<SCode.ConstrainClass> cc;
+      SCode.Element cls;
+  
+    case (SCode.CLASS(name, prefixes as SCode.PREFIXES(replaceablePrefix =
+        SCode.REPLACEABLE(cc)), ep, pp, res, cdef, info), _, _, _, _)
+      equation
+        // Check if the class is used.
+        item = SCodeEnv.avlTreeGet(inClsAndVars, name);
+        resolved_item = SCodeEnv.resolveAlias(item, inClsAndVars);
+        true = checkClassUsed(resolved_item, cdef);
+        // The class is used, recursively collect its contents.
+        {class_frame} = SCodeEnv.getItemEnv(resolved_item);
+        (cdef, class_env) =
+          collectUsedClassDef(cdef, class_frame, inClassName, inAccumPath);
+        cls = SCode.CLASS(name, prefixes, ep, pp, res, cdef, info);
+        resolved_item = updateItemEnv(resolved_item, cls, class_env);
+        basename = name +& SCodeEnv.BASE_CLASS_SUFFIX;
+        env = SCodeEnv.extendEnvWithItem(resolved_item, inAccumEnv, basename);
+        env = SCodeEnv.extendEnvWithItem(item, env, name);
+      then
+        (cls, env);
+
+    case (SCode.CLASS(name, prefixes, ep, pp, res, cdef, info), _, _, _, _)
+      equation
+        // TODO! FIXME! add cc to the used classes!
+        cc = SCode.replaceableOptConstraint(SCode.prefixesReplaceable(prefixes));
+        // Check if the class is used.
+        item = SCodeEnv.avlTreeGet(inClsAndVars, name);
+        true = checkClassUsed(item, cdef);
+        // The class is used, recursively collect it's contents.
+        {class_frame} = SCodeEnv.getItemEnv(item);
+        (cdef, class_env) = 
+          collectUsedClassDef(cdef, class_frame, inClassName, inAccumPath);
+        // Add the class to the new environment.
+        cls = SCode.CLASS(name, prefixes, ep, pp, res, cdef, info);
+        item = updateItemEnv(item, cls, class_env);
+        env = SCodeEnv.extendEnvWithItem(item, inAccumEnv, name);
+      then
+        (cls, env);
+
+  end match;
 end collectUsedClass;
 
 protected function checkClassUsed

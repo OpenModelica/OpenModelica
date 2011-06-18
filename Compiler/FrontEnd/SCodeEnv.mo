@@ -137,10 +137,16 @@ public uniontype Item
     Env env;
     ClassType classType;
   end CLASS;
+
+  record ALIAS 
+    "An alias for another Item, see comment in SCodeFlattenRedeclare package."
+    Absyn.Path path;
+  end ALIAS;
 end Item;
 
 public type Env = list<Frame>;
 public constant Env emptyEnv = {};
+public constant String BASE_CLASS_SUFFIX = "$base";
 
 public function newEnvironment
   "Returns a new environment with only one frame."
@@ -185,6 +191,7 @@ algorithm
       equation
         FRAME(clsAndVars = cls_and_vars) :: _ = inEnv;
         item = avlTreeGet(cls_and_vars, inName);
+        item = resolveAlias(item, cls_and_vars);
         {cls_env} = getItemEnv(item);
         outEnv = enterFrame(cls_env, inEnv);
       then
@@ -455,6 +462,8 @@ algorithm
         CLASS(cls = elem, classType = cls_ty, env = 
           {FRAME(name, ft, cv, exts, imps, _)}))
       then CLASS(elem, {FRAME(name, ft, cv, exts, imps, is_used)}, cls_ty);
+
+    else inDestItem;
   end match;
 end linkItemUsage;
 
@@ -466,7 +475,7 @@ protected function extendEnvWithClassDef
 algorithm
   outEnv := match(inClassDefElement, inEnv)
     local
-      String cls_name;
+      String cls_name, alias_name;
       Env class_env, env;
       SCode.ClassDef cdef;
       Absyn.Path cls_path;
@@ -478,6 +487,18 @@ algorithm
     case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)), _)
       then
         SCodeFlattenRedeclare.extendEnvWithClassExtends(inClassDefElement, inEnv);
+
+    case (SCode.CLASS(name = cls_name, classDef = cdef, 
+        prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), _)
+      equation
+        class_env = makeClassEnvironment(inClassDefElement, false);
+        cls_type = getClassType(cdef);
+        alias_name = cls_name +& BASE_CLASS_SUFFIX;
+        env = extendEnvWithItem(newClassItem(inClassDefElement, class_env, cls_type),
+          inEnv, alias_name);
+        env = extendEnvWithItem(ALIAS(Absyn.IDENT(alias_name)), env, cls_name);
+      then
+        env;
 
     // A normal class.
     case (SCode.CLASS(name = cls_name, classDef = cdef), _)
@@ -577,6 +598,7 @@ algorithm
       equation
         FRAME(clsAndVars = tree) :: _ = inEnv;
         outItem = avlTreeGet(tree, inItemName);
+        outItem = resolveAlias(outItem, tree);
       then
         outItem;
     case (inItemName, inEnv)
@@ -1411,6 +1433,28 @@ algorithm
   end match;
 end getRedeclarationElement;
 
+public function resolveAlias
+  "Resolved an alias by looking up the aliased item recursively in the AvlTree
+  until a non-alias item is found."
+  input Item inItem;
+  input AvlTree inTree;
+  output Item outItem;
+algorithm
+  outItem := match(inItem, inTree)
+    local
+      String name;
+      Item item;
+
+    case (ALIAS(path = Absyn.IDENT(name)), _)
+      equation
+        item = avlTreeGet(inTree, name);
+      then
+        resolveAlias(item, inTree);
+
+    else inItem;
+  end match;
+end resolveAlias;
+
 public function buildInitialEnv
   "Build a new environment that contains some things that can't be represented
   in ModelicaBuiltin or MetaModelicaBuiltin."
@@ -1564,13 +1608,20 @@ public function printAvlValueStr
 algorithm
   outString := match(inValue)
     local
-      String key_str;
+      String key_str, alias_str;
+      Absyn.Path path;
 
     case (AVLTREEVALUE(key = key_str, value = CLASS(cls = _)))
       then "\t\tClass " +& key_str +& "\n";
 
     case (AVLTREEVALUE(key = key_str, value = VAR(var = _)))
       then "\t\tVar " +& key_str +& "\n";
+
+    case (AVLTREEVALUE(key = key_str, value = ALIAS(path = path)))
+      equation
+        alias_str = Absyn.pathString(path);
+      then
+        "\t\tAlias " +& key_str +& " -> " +& alias_str +& "\n";
 
   end match;
 end printAvlValueStr;
