@@ -2182,7 +2182,7 @@ algorithm
       array<BackendDAE.Value> vec1,vec2;
       String smeqs;
       list<tuple<BackendDAE.Equation,BackendDAE.Equation,Integer,Integer>> orgdiffEqns,orgdiffEqns1;
-      option<tuple<BackendDAE.Equation,BackendDAE.Equation,Integer,Integer>> ceqn;
+      Option<tuple<BackendDAE.Equation,BackendDAE.Equation,Integer,Integer>> ceqn;
 
     case (BackendDAE.REDUCE_INDEX(),dae,m,mt,inFunctions,ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst))
       equation
