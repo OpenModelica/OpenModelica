@@ -1,11 +1,11 @@
 #ifndef __FMU_MODEL_INTERFACE_C__
 #define __FMU_MODEL_INTERFACE_C__
 
-#include <string>
+//#include <string>
 #include "solver_main.h"
-
+#ifdef __cplusplus
 extern "C" {
-
+#endif
 // array of value references of states
 #if NUMBER_OF_STATES>0
 fmiValueReference vrStates[NUMBER_OF_STATES] = STATES;
@@ -747,8 +747,8 @@ fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx) {
   if (nullPointer(comp, "fmiGetDerivatives", "derivatives[]", derivatives))
     return fmiError;
 #if NUMBER_OF_STATES>0
-  if (comp->eventInfo.stateValuesChanged == fmiTrue)
-  {
+  //if (comp->eventInfo.stateValuesChanged == fmiTrue)
+  //{
     // calculate new values
     int needToIterate = 0;
     functionDAE(&needToIterate);
@@ -759,7 +759,7 @@ fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx) {
         "fmiGetDerivatives: #r%d# = %.16g", vr, derivatives[i]);
     }
     comp->eventInfo.stateValuesChanged = fmiFalse;
-  }
+  //}
 #endif
   return fmiOK;
 }
@@ -828,14 +828,14 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
 
               std::string init_method = std::string("simplex");
 
-              try{
+              /*try{
                 if (main_initialize(&init_method))
                   {
                     comp->functions.logger(c, comp->instanceName, fmiError, "log",
                     "fmiInitialize: main_initialize failed");
                     return fmiError;
                   }
-
+				  */
                 SaveZeroCrossings();
                 saveall();
 
@@ -855,13 +855,13 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
                 saveall();
                 storeExtrapolationData();
                 storeExtrapolationData();
-              }
+              /*}
               catch (TerminateSimulationException &e)
               {
                 comp->functions.logger(c, comp->instanceName, fmiError, "log",
                 "fmiInitialize: fmiInitialize failed!");
                 return fmiError;
-              }
+              }*/
               // Initialization complete
 
               comp->state = modelInitialized;
@@ -937,10 +937,9 @@ fmiStatus fmiSetExternalFunction(fmiComponent c, fmiValueReference vr[], size_t 
   }
   return fmiOK;
 };
-
+#ifdef __cplusplus
 }
-
-
+#endif
 // relation functions used in zero crossing detection
 fmiReal
 FmiLess(fmiReal a, fmiReal b)
@@ -965,6 +964,5 @@ FmiGreaterEq(fmiReal a, fmiReal b)
 {
   return b - a;
 }
-
 
 #endif

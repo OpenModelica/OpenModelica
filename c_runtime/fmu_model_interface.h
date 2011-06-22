@@ -8,7 +8,7 @@
 #include <assert.h>
 #include "fmiModelFunctions.h"
 #include "simulation_runtime.h"
-#include "simulation_init.h"
+//#include "simulation_init.h"
 
 // macros used to define variables
 #define  r(vr) comp->r[vr]

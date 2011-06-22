@@ -129,9 +129,9 @@
 
 /* Version number */
 #define fmiVersion "1.0"
-
+#ifdef __cplusplus
 extern "C" {
-
+#endif
 /* Inquire version numbers of header files */
    DllExport const char* fmiGetModelTypesPlatform();
    DllExport const char* fmiGetVersion();
@@ -210,5 +210,7 @@ extern "C" {
    DllExport fmiStatus fmiGetStateValueReferences   (fmiComponent c, fmiValueReference vrx[], size_t nx);
    DllExport fmiStatus fmiTerminate                 (fmiComponent c);
    DllExport fmiStatus fmiSetExternalFunction       (fmiComponent c, fmiValueReference vr[], size_t nvr, const void* value[]);
+#ifdef __cplusplus
 }
+#endif
 #endif // fmiModelFunctions_h

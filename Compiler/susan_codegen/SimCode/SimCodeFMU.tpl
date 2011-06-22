@@ -382,8 +382,7 @@ case SIMCODE(__) then
   fmiStatus setInteger(ModelInstance* comp, const fmiValueReference vr, const fmiInteger value);  
   fmiBoolean getBoolean(ModelInstance* comp, const fmiValueReference vr);  
   fmiStatus setBoolean(ModelInstance* comp, const fmiValueReference vr, const fmiBoolean value);  
-  fmiString getString(ModelInstance* comp, const fmiValueReference vr);  
-  fmiStatus setString(ModelInstance* comp, const fmiValueReference vr, const fmiString value);  
+  fmiString getString(ModelInstance* comp, const fmiValueReference vr);    
   fmiStatus setExternalFunction(ModelInstance* c, const fmiValueReference vr, const void* value);
   
   <%ModelDefineData(modelInfo)%>
@@ -401,7 +400,6 @@ case SIMCODE(__) then
   <%getBooleanFunction(modelInfo)%>
   <%setBooleanFunction(modelInfo)%>
   <%getStringFunction(modelInfo)%>
-  <%setStringFunction(modelInfo)%>
   <%setExternalFunction(modelInfo)%>  
   
   >>
@@ -764,26 +762,6 @@ case MODELINFO(vars=SIMVARS(__)) then
   >>
 end getStringFunction;
 
-template setStringFunction(ModelInfo modelInfo)
- "Generates setString function for c file."
-::=
-match modelInfo
-case MODELINFO(vars=SIMVARS(__)) then
-  <<
-  fmiStatus setString(ModelInstance* comp, const fmiValueReference vr, const fmiString value) {
-    switch (vr) {
-        <%vars.stringAlgVars |> var => SwitchVarsSet(var,"stringVariables.algebraics") ;separator="\n"%>
-        <%vars.stringParamVars |> var => SwitchVarsSet(var,"stringVariables.parameters") ;separator="\n"%>
-        <%vars.stringAliasVars |> var => SwitchAliasVarsSet(var,"stringVariables.alias") ;separator="\n"%>
-        default: 
-        	return fmiError;
-    }
-    return fmiOK;
-  }
-  
-  >>
-end setStringFunction;
-
 template setExternalFunction(ModelInfo modelInfo)
  "Generates setString function for c file."
 ::=
@@ -893,25 +871,41 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   PERL=perl
-  MAINFILE=<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.c
+  MAINFILE=<%fileNamePrefix%>_FMU<% if acceptMetaModelicaGrammar() then ".conv"%>.c
   
-  .PHONY: <%fileNamePrefix%>
-  <%fileNamePrefix%>: $(MAINFILE) <%fileNamePrefix%>_FMU.c <%fileNamePrefix%>_functions.c <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_records.c
-  <%\t%> $(CXX) -shared -I. -o <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>_FMU.c $(MAINFILE) <%dirExtra%> <%libsPos1%> <%libsPos2%> -lsim $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> <%fileNamePrefix%>_records.c  
-  
-  <%\t%> mkdir -p <%fileNamePrefix%>
-  <%\t%> mkdir -p <%fileNamePrefix%>/binaries
-  <%\t%> mkdir -p <%fileNamePrefix%>/binaries/<%platfrom%>
-  <%\t%> mkdir -p <%fileNamePrefix%>/sources
-  
+  .PHONY: <%fileNamePrefix%>_FMU
+  <%fileNamePrefix%>_FMU: <%fileNamePrefix%>.def
+  <%\t%> dlltool -d <%fileNamePrefix%>.def --dllname <%fileNamePrefix%>.dll --output-lib <%fileNamePrefix%>.lib --kill-at
   <%\t%> mv <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>/binaries/<%platfrom%>/
+  <%\t%> mv <%fileNamePrefix%>.lib <%fileNamePrefix%>/binaries/<%platfrom%>/
   <%\t%> mv <%fileNamePrefix%>.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>.c
   <%\t%> mv <%fileNamePrefix%>_FMU.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_FMU.c
   <%\t%> mv <%fileNamePrefix%>_functions.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.c
   <%\t%> mv <%fileNamePrefix%>_functions.h <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.h
   <%\t%> mv <%fileNamePrefix%>_records.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_records.c
   <%\t%> mv modelDescription.xml <%fileNamePrefix%>/modelDescription.xml
-  <%\t%> cd <%fileNamePrefix%>
+  <%\t%> cd <%fileNamePrefix%>; zip -r <%fileNamePrefix%>.fmu *
+  
+  <%fileNamePrefix%>.def: <%fileNamePrefix%>.dll 
+  <%\t%> $(CXX) -shared -I. -o <%fileNamePrefix%>.dll <%fileNamePrefix%>_FMU2.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o -I"C:/dev/OpenModelica/build//include/omc" -I.      -lsim -linteractive  -O3 -falign-functions -msse2 -mfpmath=sse   -lsendData -lQtNetwork-mingw -lQtCore-mingw -lQtGui-mingw -luuid -lole32 -lws2_32 -L"C:/dev/OpenModelica/build//lib/omc" -lc_runtime -lregex -lexpat -Wl,-Bstatic -lf2c -Wl,--output-def,<%fileNamePrefix%>.def
+  
+  <%fileNamePrefix%>.dll: <%fileNamePrefix%>_FMU2.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o
+  <%\t%> $(CXX) -shared -I. -o <%fileNamePrefix%>.dll <%fileNamePrefix%>_FMU2.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o -I"C:/dev/OpenModelica/build//include/omc" -I.      -lsim -linteractive  -O3 -falign-functions -msse2 -mfpmath=sse   -lsendData -lQtNetwork-mingw -lQtCore-mingw -lQtGui-mingw -luuid -lole32 -lws2_32 -L"C:/dev/OpenModelica/build//lib/omc" -lc_runtime -lregex -lexpat -Wl,-Bstatic -lf2c -Wl,--kill-at
+  
+  <%fileNamePrefix%>_FMU2.o: 
+  <%\t%> $(CXX)  -O3 -falign-functions -msse2 -mfpmath=sse   -I"C:/dev/OpenModelica/build//include/omc" -I.    -c -o <%fileNamePrefix%>_FMU2.o <%fileNamePrefix%>_FMU.c
+  
+  <%fileNamePrefix%>.o: 
+  <%\t%> $(CC)  -O3 -falign-functions -msse2 -mfpmath=sse   -I"C:/dev/OpenModelica/build//include/omc" -I.    -c -o <%fileNamePrefix%>.o <%fileNamePrefix%>.c
+  
+  <%fileNamePrefix%>_records.o: 
+  <%\t%> $(CC)  -O3 -falign-functions -msse2 -mfpmath=sse   -I"C:/dev/OpenModelica/build//include/omc" -I.    -c -o <%fileNamePrefix%>_records.o <%fileNamePrefix%>_records.c
+    
+  <%\t%> mkdir -p <%fileNamePrefix%>
+  <%\t%> mkdir -p <%fileNamePrefix%>/binaries
+  <%\t%> mkdir -p <%fileNamePrefix%>/binaries/<%platfrom%>
+  <%\t%> mkdir -p <%fileNamePrefix%>/sources
+  
   
   <%fileNamePrefix%>.conv.c: <%fileNamePrefix%>.c
   <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
