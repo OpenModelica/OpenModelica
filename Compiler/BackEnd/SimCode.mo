@@ -2024,7 +2024,7 @@ algorithm
         blt_states1=Util.if_(ifcpp,comps,blt_states);
 
         (contBlocks, discBlocks) = splitOutputBlocks(dlow2, ass1, ass2, m, mt, blt_no_states1);
-        contBlocks1=Util.if_(ifcpp,discBlocks,contBlocks); 
+        contBlocks1=Util.if_(ifcpp,discBlocks,blt_no_states1); 
         odeEquations = createEquations(false, false, ifcpp, false, false, dlow2, ass1, ass2, blt_states1, helpVarInfo);
         algebraicEquations = createEquations(ifcpp, false, ifcpp, false, false, dlow2, ass1, ass2, contBlocks1, helpVarInfo);
         allEquations = createEquations(true, false, true, false, false, dlow2, ass1, ass2, comps, helpVarInfo);
