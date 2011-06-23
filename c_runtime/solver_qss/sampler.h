@@ -4,7 +4,7 @@
 
 int functionDAE_output();
 
-class Sampler: public Simulator
+class Sampler: public SimulatorQSS
 {
 public:
   Sampler(long numSteps,double start,double stop);

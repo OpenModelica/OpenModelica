@@ -54,7 +54,7 @@ QssSignal *X;     // States
 QssSignal *q;     // Quantized versions of states
 QssSignal *alg;   // Quantized versions of the algebraics
 QssSignal *zc;    // Quantized versions of the zero crossings 
-Simulator **childs;
+SimulatorQSS **childs;
 
 string *result_file_cstr;
 
@@ -213,7 +213,7 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
 
   const unsigned int size=globalData->nStates + staticBlocks + zeroCrossings + 1 /*Sampler */;
 
-  childs = new Simulator *[size];
+  childs = new SimulatorQSS *[size];
   tn = new double [size];
   const double dQmin=tolerance/100,dQrel=tolerance;
   // Create one integrator for each state

@@ -3,7 +3,7 @@
 #include "simulation_runtime.h"
 
 
-class IntegratorQSS: public Simulator
+class IntegratorQSS: public SimulatorQSS
 {
 public:
   IntegratorQSS(double dqm, double dqr);
@@ -19,7 +19,7 @@ private:
   int order;
 };
 
-class IntegratorQSS2: public Simulator
+class IntegratorQSS2: public SimulatorQSS
 {
 public:
   IntegratorQSS2(double dqm, double dqr);

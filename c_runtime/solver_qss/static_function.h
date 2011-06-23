@@ -3,7 +3,7 @@
 #include "runtime.h"
 #include "simulation_runtime.h"
 
-class StaticFunction: public Simulator
+class StaticFunction: public SimulatorQSS
 {
 public:
   StaticFunction(int ord, double dqm, double dqr, int devsIndex);

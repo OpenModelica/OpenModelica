@@ -1,6 +1,6 @@
 #include "runtime.h"
 
-class CrossDetector: public Simulator
+class CrossDetector: public SimulatorQSS
 {
 
 public:
