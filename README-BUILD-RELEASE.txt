@@ -1,19 +1,33 @@
+/*
+ * RCS: $Id: README-BUILD-RELEASE.txt 9149 2011-06-23 05:50:25Z adrpo $
+ */
+
 ---------------------------------------------------------------------------
          How to build the OpenModelica release on Windows using MSVC
 ---------------------------------------------------------------------------
 
 
              Previous update: 2010-04-27 Adrian Pop, Adrian.Pop@liu.se 
-             Last update:     2011-03-05 Adrian Pop, Adrian.Ppo@liu.se
+             Last update:     2011-06-23 Adrian Pop, Adrian.Ppo@liu.se
 
 The following step-by-step guides explain how to
 build the OpenModelica release .msi file on Windows
 using the Microsoft Visual Studio .NET 2010
 
+NOTE: for checkout of any of the SVN directories you will need this user/pass:
+      user: anonymous
+      pass: none      <- write none here
+
+BIG NOTE WARNING!
+ - DO NOT ADD MinGW and omclibrary to the Setup project ever again
+   as it takes *FOREVER* to delete them from it. Instead save the project
+   before adding them as the last step before building, add them then
+   build the .msi, then replace Setup.vdproj with the copy you made!
+ - This is done to keep Setup.vdproj small and sort of like template
+   (See also Step 11). 
+
 00. Checkout the sources from Subversion:
      https://openmodelica.org/svn/OpenModelica/trunk -> trunk
-     user: anonymous
-     pass: none      <- write none here
 
     Checkout the VC7 directory from Subversion:
       https://openmodelica.org/svn/OpenModelica/installers/windows/VC7
@@ -42,23 +56,29 @@ using the Microsoft Visual Studio .NET 2010
     See in Subversion which files were added since the
     last modification of Setup.vdproj
     
+    Note that changes in the way we handle OPENMODELICALIBRARY
+    and what changes happened to the trunk\libraries since
+    last change in Setup.vdproj have to be taken into account.
+    Currently libraries in trunk\libraries are copied to 
+    \trunk\build\lib\omlibrary.  
+    
 04. Additional needed files:
     - take qtlibs from:
       https://www.ida.liu.se/~adrpo/omc/omdev/qtlibs/
       unpack it, point it by environment variable QTHOME
-    - unpack trunk\Compiler\VC7\Setup\zips\mingw-3.4.5.tar.gz
+    - svn checkout https://openmodelica.ida.liu.se/svn/OpenModelica/installers/windows/OMDev/tools/mingw
       -> to \trunk\build\MinGW
-    - take 
-      copy trunk\libraries\msl*
-      -> to \trunk\build\
-    - build trunk\OMShell then you will get a file:
-      \trunk\OMShell\Release\OMShell.exe
-    - build trunk\OMNotebook then you will get a file:
-      trunk\OMNotebook\OMNotebookQT4\Release\OMNotebook.exe
-      Also, you need to put these files in the directory:
-      trunk\OMNotebook\OMNotebookQT4\Release\
-      commands.xml, modelicacolors.xml, stylesheet.xml
-      OMNotebookHelp.onb, pltplot.jar (from trunk/Compiler/VC7/Setup/bin/ptplot.jar)
+    - add files *.xml (commands.xml, modelicacolors.xml, stylesheet.xml) in the directory:
+      trunk\OMNotebook\OMNotebookQT4\
+      to \trunk\build\share\omnotebook and \trunk\build\share\omshell 
+    - add file OMNotebookHelp.onb in the directory:
+      trunk\OMNotebook\OMNotebookQT4\
+      to \trunk\build\share\omnotebook
+    - add pltplot.jar (from trunk/Compiler/VC7/Setup/bin/ptplot.jar)
+      to \trunk\build\bin
+    - build OMShell, OMNotebook, OMPlot, OMOptim, OMPlotWindow using Qt SDK
+      into $OMDev\tools\OMTools\bin
+    - update $OMDev\tools\OMTools\qtdlls with the newest from Qt SDK!
 
 05. Update the version into:
     - documentation
@@ -68,6 +88,8 @@ using the Microsoft Visual Studio .NET 2010
 06. Open the trunk/Compiler/VC7/omc/omc.snl
 
 07. DO NOT build the omc project!
+    Select all files in the Setup project and in the property window change 
+    Vital to false to prevent re-installation if any of the files are replaced! 
 
 08. Open Setup, go to a file, right click on it and say->Properties Window
     Then, click on Setup and in the Properties change:
@@ -80,8 +102,24 @@ using the Microsoft Visual Studio .NET 2010
 10. Locate Uninstall.bat in the solution, edit it and replace the
     number with the latest product upgrade code.
 
-11. Right click on Setup project and say Build
-    Fix any errors that might appear!
+11. Save Setup.vdproj, Exit Visual Studio, make a copy of Setup.vdproj
+    Note: We DO NOT SAVE THE Setup.vdproj AFTER WE ADDED
+          trunk\build\MinGW and trunk\build\omc\omlibrary
+          to it as it takes FOREVER to delete them from
+          the FileSystemView!! 
+    Open Visual Studio and do these steps: 
+    - add trunk\build\MinGW to the FileSystemView
+      in the Visual Studio project here: \MinGW
+    - add trunk\build\lib\omlibrary to the FileSystemView
+      in the Visual Studio project here: lib\omlibrary
+    - select all files in the Setup project in the Solution explorer
+      and change in the property window Vital to false!
+    - SAVE All  
+    - right click on Setup project and say Build
+    - fix any errors that might appear!
+    - REPLACE Setup.vdproj with the
+      copy you made at the start of Step 11
+      so that it doesn't include MinGW and omclibrary!
 
 12. You get a Setup.msi into trunk\Compiler\VC7\Setup\Release
     Copy it to a release folder with name:
@@ -115,7 +153,7 @@ using the Microsoft Visual Studio .NET 2010
         C:\OpenModelica[x.y.z]\MinGW and compilation/simulation
         works fine 
     - Install the new OpenModelica
-    - test OMShell, OMNotebook, OMEdit, OMPlot*
+    - test OMShell, OMNotebook, OMEdit, OMPlot*, OMOptim
     
 15. Be extremely proud and glad, you made it! :)
 

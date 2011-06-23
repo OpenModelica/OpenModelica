@@ -83,12 +83,13 @@ Adrian Pop, adrpo@ida.liu.se, date above.
     - Ctrl+B and type: omlibrary
 
 12. To run the OpenModelica testsuite:
-    - Ctrl+B and type: test
+    - Ctrl+B and type: testlog
+      Will get you a trunk\testsuite\testsuite-trace.txt
     To run the testsuite from MSYS terminal:
     - run OMDev/tools/msys/msys.bat and in the terminal you write
       >export OPENMODELICAHOME="c:\\path\\to\\your\\OpenModelica\\build"
-      # If you use a different path than OPENMODELICAHOME/lib/omlibrary/msl31...
-      >export OPENMODELICALIBRARY="c:\\path\\to\\your\\OpenModelica\\build\ModelicaLibrary"
+      # If you use a different path than OPENMODELICAHOME/lib/omlibrary/...
+      >export OPENMODELICALIBRARY="c:\\path\\to\\your\\OpenModelica\\build\\lib\\omlibrary"
       >cd testsuite
       testsuite> make
 
