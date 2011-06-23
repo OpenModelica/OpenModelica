@@ -5071,7 +5071,7 @@ $as_echo "ok" >&6; }
   if test "Darwin" = `uname`; then
     CORBALIBS="$WANT_OMNIORB/lib/libomniORB4.a $WANT_OMNIORB/lib/libomnithread.a -lpthread"
   else
-    CORBALIBS="-lomniORB4 -lomnithread -lpthread"
+    CORBALIBS="-L\"$WANT_OMNIORB/lib\" -lomniORB4 -lomnithread -lpthread"
   fi
   DESIRED_CORBA="omniorb"
 else
