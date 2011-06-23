@@ -875,18 +875,31 @@ match platform
   
   <%fileNamePrefix%>_records.o: 
   <%\t%> $(CC)  -O3 -falign-functions -msse2 -mfpmath=sse   -I"C:/dev/OpenModelica/build//include/omc" -I.    -c -o <%fileNamePrefix%>_records.o <%fileNamePrefix%>_records.c
-  >>         
-  case "LINUX" then
+
+  <%\t%> mkdir -p <%fileNamePrefix%>
+  <%\t%> mkdir -p <%fileNamePrefix%>/binaries
+  <%\t%> mkdir -p <%fileNamePrefix%>/binaries/<%platform%>
+  <%\t%> mkdir -p <%fileNamePrefix%>/sources
+  >>    
+  case "LINUX"     
+  case "Unix" then
   << 
-  <%fileNamePrefix%>_FMU: $(MAINFILE) <%fileNamePrefix%>_FMU.c <%fileNamePrefix%>_functions.c <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_records.c
-  <%\t%> $(CC) -I. -o <%fileNamePrefix%>$(DLLEXT) $(MAINFILE) -lsim -linteractive <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -Wl,-Bdynamic"%> 
+  <%fileNamePrefix%>: $(MAINFILE) <%fileNamePrefix%>_FMU.c <%fileNamePrefix%>_functions.c <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_records.c
+  <%\t%> $(CXX) -shared -I. -o <%fileNamePrefix%>$(DLLEXT) $(MAINFILE) <%dirExtra%> <%libsPos1%> <%libsPos2%> -lsim $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> <%fileNamePrefix%>_records.c
+
+  <%\t%> mkdir -p <%fileNamePrefix%>
+  <%\t%> mkdir -p <%fileNamePrefix%>/binaries
+
+  <%\t%> mkdir -p <%fileNamePrefix%>/binaries/<%platform%>
+  <%\t%> mkdir -p <%fileNamePrefix%>/sources
+
   <%\t%> mv <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>/binaries/<%platform%>/
-  <%\t%> mv <%fileNamePrefix%>.lib <%fileNamePrefix%>/binaries/<%platform%>/
+  <%\t%> mv <%fileNamePrefix%>_FMU.libs <%fileNamePrefix%>/binaries/<%platform%>/
   <%\t%> mv <%fileNamePrefix%>.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>.c
   <%\t%> mv <%fileNamePrefix%>_FMU.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_FMU.c
   <%\t%> mv <%fileNamePrefix%>_functions.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.c
   <%\t%> mv <%fileNamePrefix%>_functions.h <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.h
-  <%\t%> mv <%fileNamePrefix%>_records.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_records.c
+  <%\t%> mv <%fileNamePrefix%>_records.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_records.c 
   <%\t%> mv modelDescription.xml <%fileNamePrefix%>/modelDescription.xml
   <%\t%> cd <%fileNamePrefix%>; zip -r <%fileNamePrefix%>.fmu *
   >>
@@ -918,6 +931,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   EXEEXT=<%makefileParams.exeext%>
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
+  PLATLINUX = <%platfrom%>
+  PLAT34 = <%makefileParams.platform%>
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
   LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
@@ -926,12 +941,6 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   
   .PHONY: <%fileNamePrefix%>_FMU
   <%compilecmds%>
-  
-  <%\t%> mkdir -p <%fileNamePrefix%>
-  <%\t%> mkdir -p <%fileNamePrefix%>/binaries
-  <%\t%> mkdir -p <%fileNamePrefix%>/binaries/<%platfrom%>
-  <%\t%> mkdir -p <%fileNamePrefix%>/sources
-  
   
   <%fileNamePrefix%>.conv.c: <%fileNamePrefix%>.c
   <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
@@ -945,6 +954,7 @@ template getPlatformString(String platform)
 match platform
   case "WIN32" then "win32"
   case "LINUX" then "linux"
+  case "Unix" then "unix"
 end getPlatformString;
 
 end SimCodeFMU;
