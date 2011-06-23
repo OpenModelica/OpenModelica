@@ -24,7 +24,13 @@ BIG NOTE WARNING!
    before adding them as the last step before building, add them then
    build the .msi, then replace Setup.vdproj with the copy you made!
  - This is done to keep Setup.vdproj small and sort of like template
-   (See also Step 11). 
+   (See also Step 11).
+ - Visual Studio Setup projects are crap! 
+   The more files you add the slower they move!
+   Also, the biggest issue is that you can add directories by drag-and-drop
+   from Windows Explorer BUT YOU CANNOT DELETE THEM ANYMORE! You will have 
+   to delete each file in each directory added until you can delete the 
+   directories! 
 
 00. Checkout the sources from Subversion:
      https://openmodelica.org/svn/OpenModelica/trunk -> trunk
@@ -68,6 +74,16 @@ BIG NOTE WARNING!
       unpack it, point it by environment variable QTHOME
     - svn checkout https://openmodelica.ida.liu.se/svn/OpenModelica/installers/windows/OMDev/tools/mingw
       -> to \trunk\build\MinGW
+      Clean up (to be easy to add MinGW to the Setup.vdproj, otherwise it takes forever!):
+       REMOVE all .svn directories from it! Search .svn, select all .svn directories, Delete!
+       REMOVE MinGW\lib\mlton
+       REMOVE MinGW\share\doc\mlton
+       ZIP    MinGW\doc\*.* to MinGW\doc\doc.zip and delete them
+       ZIP    MinGW\info\*.* to MinGW\info\info.zip and delete them
+       ZIP    MinGW\man\*.* to MinGW\man\man.zip and delete them
+      Note that this step will have to be repeated starting from svn checkout 
+      again if anything has changed in svn MinGW directory since last build. 
+      
     - add files *.xml (commands.xml, modelicacolors.xml, stylesheet.xml) in the directory:
       trunk\OMNotebook\OMNotebookQT4\
       to \trunk\build\share\omnotebook and \trunk\build\share\omshell 
