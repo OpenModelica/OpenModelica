@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, LinkÃ¶pings University,
+ * Copyright (c) 1998-2010, Linköpings University,
  * Department of Computer and Information Science,
- * SE-58183 LinkÃ¶ping, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from LinkÃ¶pings University, either from the above address,
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -36,7 +36,7 @@
 #define DEFAULT_CC "gcc"
 #define DEFAULT_CXX "g++"
 
-#define DEFAULT_LDFLAGS "-lc_runtime -lregex -lexpat"
+#define DEFAULT_LDFLAGS "-lregex -lexpat"
 
 #define CONFIG_PLATFORM "WIN32"
 #define CONFIG_MODELICA_SPEC_PLATFORM "win32"
@@ -83,7 +83,7 @@
 
 #else /* Unix */
 
-#define DEFAULT_LDFLAGS "-lc_runtime -lexpat"
+#define DEFAULT_LDFLAGS "-lexpat"
 
 #include "config.unix.h"
 

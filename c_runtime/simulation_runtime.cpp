@@ -1044,9 +1044,7 @@ initRuntimeAndSimulation(int argc, char**argv)
  * -r res.plt write result to file.
  */
 
-#ifndef _OMC_QSS_LIB
-int
-main(int argc, char**argv)
+int _main_SimulationRuntime(int argc, char**argv)
 {
   int retVal = -1;
   
@@ -1066,4 +1064,3 @@ main(int argc, char**argv)
   fflush(NULL);
   EXIT(retVal);
 }
-#endif 

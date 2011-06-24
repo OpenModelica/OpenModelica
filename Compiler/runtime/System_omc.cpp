@@ -30,6 +30,7 @@
 
 extern "C" {
 
+#include <ctype.h> /* for toupper */
 #include "modelica.h"
 #include "rml_compatibility.h"
 #include "systemimpl.c"
@@ -276,6 +277,17 @@ extern char* System_substring(const char *str, int start, int stop)
   substring[len2] = '\0';
 
   return substring;
+}
+
+extern char* System_toupper(const char *str)
+{
+  int i;
+  char* strToUpper = strdup(str);
+  for (i = 0; i < strlen(strToUpper); i++)
+  {
+    strToUpper[i] = toupper(strToUpper[i]);
+  }
+  return strToUpper;
 }
 
 const char* System_getClassnamesForSimulation()

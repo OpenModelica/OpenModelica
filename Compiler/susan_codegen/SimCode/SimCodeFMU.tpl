@@ -862,19 +862,19 @@ match platform
   <%\t%> cd <%fileNamePrefix%>; zip -r <%fileNamePrefix%>.fmu *
   
   <%fileNamePrefix%>.def: <%fileNamePrefix%>.dll
-  <%\t%> $(CXX) -shared -I. -o <%fileNamePrefix%>.dll <%fileNamePrefix%>_FMU2.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o -I"C:/dev/OpenModelica/build//include/omc" -I.      -lsim -linteractive  -O3 -falign-functions -msse2 -mfpmath=sse   -lsendData -lQtNetwork-mingw -lQtCore-mingw -lQtGui-mingw -luuid -lole32 -lws2_32 -L"C:/dev/OpenModelica/build//lib/omc" -lc_runtime -lregex -lexpat -Wl,-Bstatic -lf2c -Wl,--output-def,<%fileNamePrefix%>.def
+  <%\t%> $(CXX) -shared -I. -o <%fileNamePrefix%>.dll <%fileNamePrefix%>_FMU2.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -linteractive $(SENDDATALIBS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> -Wl,--output-def,<%fileNamePrefix%>.def
   
   <%fileNamePrefix%>.dll: <%fileNamePrefix%>_FMU2.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o
-  <%\t%> $(CXX) -shared -I. -o <%fileNamePrefix%>.dll <%fileNamePrefix%>_FMU2.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o -I"C:/dev/OpenModelica/build//include/omc" -I.      -lsim -linteractive  -O3 -falign-functions -msse2 -mfpmath=sse   -lsendData -lQtNetwork-mingw -lQtCore-mingw -lQtGui-mingw -luuid -lole32 -lws2_32 -L"C:/dev/OpenModelica/build//lib/omc" -lc_runtime -lregex -lexpat -Wl,-Bstatic -lf2c -Wl,--kill-at
+  <%\t%> $(CXX) -shared -I. -o <%fileNamePrefix%>.dll <%fileNamePrefix%>_FMU2.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o  $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -linteractive $(SENDDATALIBS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> -Wl,--kill-at
   
   <%fileNamePrefix%>_FMU2.o: 
-  <%\t%> $(CXX)  -O3 -falign-functions -msse2 -mfpmath=sse   -I"C:/dev/OpenModelica/build//include/omc" -I.    -c -o <%fileNamePrefix%>_FMU2.o <%fileNamePrefix%>_FMU.c
+  <%\t%> $(CXX) $(CPPFLAGS) $(CFLAGS) -c -o <%fileNamePrefix%>_FMU2.o <%fileNamePrefix%>_FMU.c
   
   <%fileNamePrefix%>.o: 
-  <%\t%> $(CC)  -O3 -falign-functions -msse2 -mfpmath=sse   -I"C:/dev/OpenModelica/build//include/omc" -I.    -c -o <%fileNamePrefix%>.o <%fileNamePrefix%>.c
+  <%\t%> $(CC) $(CPPFLAGS) $(CFLAGS) -c -o <%fileNamePrefix%>.o <%fileNamePrefix%>.c
   
   <%fileNamePrefix%>_records.o: 
-  <%\t%> $(CC)  -O3 -falign-functions -msse2 -mfpmath=sse   -I"C:/dev/OpenModelica/build//include/omc" -I.    -c -o <%fileNamePrefix%>_records.o <%fileNamePrefix%>_records.c
+  <%\t%> $(CC)  $(CPPFLAGS) $(CFLAGS) -c -o <%fileNamePrefix%>_records.o <%fileNamePrefix%>_records.c
 
   <%\t%> mkdir -p <%fileNamePrefix%>
   <%\t%> mkdir -p <%fileNamePrefix%>/binaries
@@ -885,7 +885,7 @@ match platform
   case "Unix" then
   << 
   <%fileNamePrefix%>: $(MAINFILE) <%fileNamePrefix%>_FMU.c <%fileNamePrefix%>_functions.c <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_records.c
-  <%\t%> $(CXX) -shared -I. -o <%fileNamePrefix%>$(DLLEXT) $(MAINFILE) <%dirExtra%> <%libsPos1%> <%libsPos2%> -lsim $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> <%fileNamePrefix%>_records.c
+  <%\t%> $(CXX) -shared -I. -o <%fileNamePrefix%>$(DLLEXT) $(MAINFILE) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> <%fileNamePrefix%>_records.c
 
   <%\t%> mkdir -p <%fileNamePrefix%>
   <%\t%> mkdir -p <%fileNamePrefix%>/binaries
@@ -934,7 +934,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   PLATLINUX = <%platfrom%>
   PLAT34 = <%makefileParams.platform%>
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
-  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
+  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -lSimulationRuntimeC <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   PERL=perl
   MAINFILE=<%fileNamePrefix%>_FMU<% if acceptMetaModelicaGrammar() then ".conv"%>.c

@@ -20,7 +20,7 @@ meta/meta_modelica_gc_pages.o \
 meta/meta_modelica_gc_stats.o \
 meta/meta_modelica_gc_settings.o 
 
-OBJS = $(FOBJS) boolean_array.o index_spec.o integer_array.o memory_pool.o \
+OBJS = boolean_array.o index_spec.o integer_array.o memory_pool.o \
 base_array.o real_array.o string_array.o read_write.o utility.o \
 modelica_string.o bigden.o \
 ddasrt.o  dlinpk.o  enorm.o   hybrd1.o  nelmead.o  qform.o   r1updt.o \
@@ -28,21 +28,25 @@ biglag.o  ddassl.o  dogleg.o  fdjac1.o  hybrj.o   newuoa.o   qrfac.o   trsapp.o 
 daux.o    dlamch.o  dpmpar.o  hybrd.o   lsame.o   newuob.o   r1mpyq.o  update.o division.o\
 java_interface.o rtclock.o ModelicaUtilities.o \
 simulation_varinfo.o read_matlab4.o read_csv.o \
+simulation_init.o simulation_input.o simulation_input_xml.o \
+simulation_events.o linearize.o solver_main.o \
+simulation_result_plt.o simulation_result_csv.o \
+simulation_result_mat.o simulation_delay.o tables.o options.o dgesv_aux.o \
+simulation_modelinfo.o \
 $(META_OBJS) \
-$(EXTRA_OBJS)
+$(EXTRA_OBJS) \
+$(EXTRA_SIMOBJS)
 
-SIMOBJS = $(FOBJS) simulation_runtime.o simulation_init.o simulation_input.o simulation_input_xml.o \
-simulation_events.o linearize.o solver_main.o \
-simulation_result_plt.o simulation_result_csv.o \
-simulation_result_mat.o simulation_delay.o tables.o options.o dgesv_aux.o \
-simulation_modelinfo.o $(EXTRA_SIMOBJS)
+SIM_OBJS = $(OBJS) simulation_runtime.o
 
-SIMOBJSOMPD = $(FOBJS) simulation_runtime_ompd.o simulation_init.o simulation_input.o simulation_input_xml.o \
-simulation_events.o linearize.o solver_main.o \
-simulation_result_plt.o simulation_result_csv.o \
-simulation_result_mat.o simulation_delay.o tables.o options.o dgesv_aux.o \
-simulation_modelinfo.o $(EXTRA_SIMOBJS) \
-solver_qss/solver_qss.o solver_qss/sampler.o solver_qss/integrator.o solver_qss/qss_signal.o solver_qss/static_function.o solver_qss/cross_detector.o
+QSS_OBJS = $(OBJS) \
+simulation_runtime_qss.o \
+solver_qss/solver_qss.o \
+solver_qss/sampler.o \
+solver_qss/integrator.o \
+solver_qss/qss_signal.o \
+solver_qss/static_function.o \
+solver_qss/cross_detector.o 
 
 META_HFILES = \
 meta/rml_compatibility.h \
@@ -112,8 +116,8 @@ fmiModelTypes.h \
 solver_qss/solver_qss.h \
 $(META_HFILES)
 
-LIBS = libc_runtime.a libsim.a interactive/libinteractive.a \
-  ModelicaExternalC/libModelicaExternalC.a libsim_ompd.a
+LIBS = libSimulationRuntimeC.a libSimulationRuntimeQss.a interactive/libinteractive.a \
+  ModelicaExternalC/libModelicaExternalC.a 
 
 .PHONY : libsendData.a interactive/libinteractive.a ModelicaExternalC/libModelicaExternalC.a
 
@@ -122,8 +126,8 @@ all : install
 simulation_result_plt.o : $(CONFIG_H)
 
 #recompile all if a header changes!
-$(SIMOBJS) : $(HFILES)
-$(OBJS) : $(HFILES)
+$(SIM_OBJS) : $(HFILES)
+$(QSS_OBJS) : $(HFILES)
 
 # Commented out due to the script not running on all platform, and rarely changes
 #meta/meta_modelica_string_lit.h: meta/meta_modelica_gen_string_lit.sh
@@ -133,19 +137,15 @@ $(OBJS) : $(HFILES)
 #	sh $< > $@.tmp
 #	mv $@.tmp $@
 
-libc_runtime.a : $(OBJS) $(HFILES)
-	$(AR) $@ $(OBJS)
+libSimulationRuntimeC.a : $(SIM_OBJS) $(HFILES)
+	$(AR) $@ $(SIM_OBJS)
 	ranlib $@
 
-libsim.a : $(SIMOBJS) $(HFILES)
-	$(AR) $@ $(SIMOBJS)
-	ranlib $@
+libSimulationRuntimeQss.a : $(QSS_OBJS) $(HFILES)
+	$(AR) $@ $(QSS_OBJS)
+	ranlib $@	
 
-libsim_ompd.a : $(SIMOBJSOMPD) $(HFILES)
-	$(AR) $@ $(SIMOBJSOMPD)
-	ranlib $@
-
-simulation_runtime_ompd.o: simulation_runtime.cpp
+simulation_runtime_qss.o: simulation_runtime.cpp
 	$(CXX) $(CPPFLAGS) -c -o $@ simulation_runtime.cpp -D_OMC_QSS_LIB
 
 ModelicaExternalC/libModelicaExternalC.a: $(addprefix ModelicaExternalC/,ModelicaInternal.c ModelicaStrings.c ModelicaTablesImpl.c) $(HFILES)
@@ -167,7 +167,7 @@ simulation_input.o : simulation_input.cpp
 simulation_events.o : simulation_events.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -mfpmath=sse -c -g $<
 
-install: libc_runtime.a libsim.a libsim_ompd.a $(LIBF2C) interactive/libinteractive.a $(LIBSENDDATA) omdevinstall ModelicaExternalC/libModelicaExternalC.a
+install: libSimulationRuntimeC.a libSimulationRuntimeQss.a $(LIBF2C) interactive/libinteractive.a $(LIBSENDDATA) omdevinstall ModelicaExternalC/libModelicaExternalC.a
 	cp $(HFILES) $(builddir_inc)/
 	cp fmu_model_interface.c $(builddir_inc)/
 	cp $(LIBS) $(builddir_lib)/
@@ -183,11 +183,8 @@ clean :
 	$(MAKE) -C java_interface -f $(JAVAMAKEFILE) clean
 	$(MAKE) -C interactive -f $(INTERACTIVEMAKEFILE) clean
 	$(MAKE) -C ModelicaExternalC -f $(EXTERNALCMAKEFILE) clean
-	rm -f libc_runtime.a
-	rm -f libsim.a
-	rm -f libsim_ompd.a
-	rm -f $(OBJS)
-	rm -f $(SIMOBJS)
+	rm -f libSimulationRuntimeC.a libSimulationRuntimeQss.a
+	rm -f $(OBJS) $(SIM_OBJS) $(QSS_OBJS)
 	cd sendData && rm -fr release debug *sendData*.o *sendData*.a
 	rm -rf sendData/release sendData/debug
 	rm -f sendData.o sendData.a sendData/sendDataHumbug.o sendData/releasesendData.o sendData/Makefile solver_qss/*.o

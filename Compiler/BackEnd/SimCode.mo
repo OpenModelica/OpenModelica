@@ -1695,6 +1695,8 @@ algorithm
         extReturn = extArgsToSimExtArgs(extretarg);
         (simextargs, extReturn) = fixOutputIndex(outVars, simextargs, extReturn);
         info = DAEUtil.getElementSourceFileInfo(source);
+        // make lang to-upper as we have FORTRAN 77 and Fortran 77 in the Modelica Library!
+        lang = System.toupper(lang);
       then
         (EXTERNAL_FUNCTION(fpath, extfnname, funArgs, simextargs, extReturn,
           inVars, outVars, biVars, fn_libs, lang, info, dynamicLoad),

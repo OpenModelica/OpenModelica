@@ -127,7 +127,7 @@ static doublereal c_b588 = 1.;
     static integer mband, lenpd;
     static doublereal atoli;
     static integer msave, leniw, itemp, nzflg;
-    extern /* Subroutine */ int dcopy_(integer *, doublereal *, integer *, 
+    extern /* Subroutine */ int _omc_dcopy_(integer *, doublereal *, integer *,
       doublereal *, integer *);
     static integer ntemp, lenrw;
     static doublereal tdist;
@@ -1390,7 +1390,7 @@ L350:
     *idid = 4;
     *t = rwork[41];
 /* *SS* 1997 next line added to return current value of yprime */
-    dcopy_(neq, &rwork[le], &c__1, &yprime[1], &c__1);
+    _omc_dcopy_(neq, &rwork[le], &c__1, &yprime[1], &c__1);
     goto L580;
 
 L390:
@@ -1428,7 +1428,7 @@ L400:
     *idid = 4;
     *t = rwork[41];
 /* *SS* 1997 next line added to return current value of yprime */
-    dcopy_(neq, &rwork[le], &c__1, &yprime[1], &c__1);
+    _omc_dcopy_(neq, &rwork[le], &c__1, &yprime[1], &c__1);
     done = TRUE_;
     goto L490;
 
@@ -1695,7 +1695,7 @@ L527:
     *idid = 4;
     *t = rwork[41];
 /* *SS* 1997 next line added to return current value of yprime */
-    dcopy_(neq, &rwork[le], &c__1, &yprime[1], &c__1);
+    _omc_dcopy_(neq, &rwork[le], &c__1, &yprime[1], &c__1);
     goto L580;
 
 L529:
@@ -2136,7 +2136,7 @@ L760:
     static doublereal x, t1, temp1, temp2;
     static integer jflag;
     static doublereal hming;
-    extern /* Subroutine */ int dcopy_(integer *, doublereal *, integer *, 
+    extern /* Subroutine */ int _omc_dcopy_(integer *, doublereal *, integer *,
       doublereal *, integer *);
     static logical zroot;
     extern /* Subroutine */ int ddatrp_(doublereal *, doublereal *, 
@@ -2408,7 +2408,7 @@ L350:
     goto L350;
 L360:
     rwork[41] = x;
-    dcopy_(ng, &gx[1], &c__1, &g0[1], &c__1);
+    _omc_dcopy_(ng, &gx[1], &c__1, &g0[1], &c__1);
     if (jflag == 4) {
   goto L390;
     }
@@ -2444,7 +2444,7 @@ L390:
     /* Local variables */
     static integer i__;
     static doublereal t2, tmax;
-    extern /* Subroutine */ int dcopy_(integer *, doublereal *, integer *, 
+    extern /* Subroutine */ int _omc_dcopy_(integer *, doublereal *, integer *,
       doublereal *, integer *);
     static logical xroot, zroot, sgnchg;
     static integer imxold, nxlast;
@@ -2658,7 +2658,7 @@ L240:
     }
 /* SIGN CHANGE BETWEEN X0 AND X2, SO REPLACE X1 WITH X2. ---------------- */
     *x1 = *x2;
-    dcopy_(ng, &gx[1], &c__1, &g1[1], &c__1);
+    _omc_dcopy_(ng, &gx[1], &c__1, &g1[1], &c__1);
     *last = 1;
     xroot = FALSE_;
     goto L270;
@@ -2668,12 +2668,12 @@ L250:
     }
 /* ZERO VALUE AT X2 AND NO SIGN CHANGE IN (X0,X2), SO X2 IS A ROOT. ----- */
     *x1 = *x2;
-    dcopy_(ng, &gx[1], &c__1, &g1[1], &c__1);
+    _omc_dcopy_(ng, &gx[1], &c__1, &g1[1], &c__1);
     xroot = TRUE_;
     goto L270;
 /* NO SIGN CHANGE BETWEEN X0 AND X2.  REPLACE X0 WITH X2. --------------- */
 L260:
-    dcopy_(ng, &gx[1], &c__1, &g0[1], &c__1);
+    _omc_dcopy_(ng, &gx[1], &c__1, &g0[1], &c__1);
     *x0 = *x2;
     *last = 0;
     xroot = FALSE_;
@@ -2687,7 +2687,7 @@ L270:
 L300:
     *jflag = 2;
     *x = *x1;
-    dcopy_(ng, &g1[1], &c__1, &gx[1], &c__1);
+    _omc_dcopy_(ng, &g1[1], &c__1, &gx[1], &c__1);
     i__1 = *ng;
     for (i__ = 1; i__ <= i__1; ++i__) {
   jroot[i__] = 0;
@@ -2713,7 +2713,7 @@ L400:
 
 /* ZERO VALUE AT X1 AND NO SIGN CHANGE IN (X0,X1).  RETURN JFLAG = 3. --- */
     *x = *x1;
-    dcopy_(ng, &g1[1], &c__1, &gx[1], &c__1);
+    _omc_dcopy_(ng, &g1[1], &c__1, &gx[1], &c__1);
     i__1 = *ng;
     for (i__ = 1; i__ <= i__1; ++i__) {
   jroot[i__] = 0;
@@ -2727,7 +2727,7 @@ L400:
 
 /* NO SIGN CHANGES IN THIS INTERVAL.  SET X = X1, RETURN JFLAG = 4. ----- */
 L420:
-    dcopy_(ng, &g1[1], &c__1, &gx[1], &c__1);
+    _omc_dcopy_(ng, &g1[1], &c__1, &gx[1], &c__1);
     *x = *x1;
     *jflag = 4;
     return 0;

@@ -42,11 +42,12 @@ extern "C" {
 #endif
 
 
-
-int dgesv_(integer *n, integer *nrhs, doublereal *a, integer
+extern
+int _omc_dgesv_(integer *n, integer *nrhs, doublereal *a, integer
      *lda, integer *ipiv, doublereal *b, integer *ldb, integer *info);
 
-void hybrd_(void (*) (int*, double *, double*, int*),
+extern
+void _omc_hybrd_(void (*) (int*, double *, double*, int*),
       int* n, double* x,double* fvec,double* xtol,
       int* maxfev, int* ml,int* mu,double* epsfcn,
       double* diag,int* mode, double* factor,
@@ -54,7 +55,8 @@ void hybrd_(void (*) (int*, double *, double*, int*),
       int* ldfjac,double* r, int* lr, double* qtf,
       double* wa1,double* wa2,double* wa3,double* wa4);
 
-void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
+extern
+void * _omc_hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
       int *n,double*x,double*fvec,double*fjac,int *ldfjac,double*xtol,int* maxfev,
       double* diag,int *mode,double*factor,int *nprint,int*info,int*nfev,int*njev,
       double* r,int *lr,double*qtf,double*wa1,double*wa2,
@@ -92,7 +94,7 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
    int retries2 = 0; \
    while(!giveUp) { \
      giveUp = 1; \
-     hybrd_(residual,&n, nls_x,nls_fvec,&xtol,&maxfev,&ml,&mu,&epsfcn, \
+     _omc_hybrd_(residual,&n, nls_x,nls_fvec,&xtol,&maxfev,&ml,&mu,&epsfcn, \
           nls_diag,&mode,&factor,&nprint,&info,&nfev,nls_fjac,&ldfjac, \
         nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4); \
       if (info == 0) { \
@@ -137,7 +139,7 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
    int retries2 = 0; \
    while(!giveUp) { \
      giveUp = 1; \
-     hybrd_(residual,&n, nls_x,nls_fvec,&xtol,&maxfev,&ml,&mu,&epsfcn, \
+     _omc_hybrd_(residual,&n, nls_x,nls_fvec,&xtol,&maxfev,&ml,&mu,&epsfcn, \
           nls_diag,&mode,&factor,&nprint,&info,&nfev,nls_fjac,&ldfjac, \
         nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4); \
       if (info == 0) { \
@@ -178,7 +180,7 @@ void * hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
    int retries = 0; \
    while(!giveUp) { \
      giveUp = 1; \
-     hybrj_(residual,&n, nls_x,nls_fvec,nls_fjac,&ldfjac,&xtol,&maxfev,\
+     _omc_hybrj_(residual,&n, nls_x,nls_fvec,nls_fjac,&ldfjac,&xtol,&maxfev,\
           nls_diag,&mode,&factor,&nprint,&info,&nfev,&njev, \
         nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4); \
       if (info == 0) { \
@@ -225,7 +227,7 @@ integer lda = n /* Leading dimension of A */; integer ldb=n; /* Leading dimensio
 integer * ipiv = (integer*) calloc(n,sizeof(integer)); /* Pivott indices */ \
 assert(ipiv != 0); \
 integer info = 0; /* output */ \
-dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
+_omc_dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
  if (info < 0) { \
    if (sim_verbose >= LOG_NONLIN_SYS) \
      printf("Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,localData->timeValue,info); \
@@ -243,7 +245,7 @@ integer lda = n /* Leading dimension of A */; integer ldb=n; /* Leading dimensio
 integer * ipiv = (integer*) calloc(n,sizeof(integer)); /* Pivott indices */ \
 assert(ipiv != 0); \
 integer info = 0; /* output */ \
-dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
+_omc_dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
  if (info < 0) { \
    if (sim_verbose >= LOG_NONLIN_SYS) \
      printf("Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,localData->timeValue,info); \

@@ -830,13 +830,13 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.cflags%> -D_OMC_QSS -g -D_OMC_OMPD
-  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
+  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -lSimulationRuntimeQss <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   PERL=perl
   
   .PHONY: <%fileNamePrefix%>
   <%fileNamePrefix%>: <%fileNamePrefix%>.conv.cpp model_functions.cpp model_functions.h model_records.c
-  <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(EXEEXT) <%fileNamePrefix%>.conv.cpp model_functions.cpp <%dirExtra%> <%libsPos1%> <%libsPos2%> -lsim_ompd -linteractive $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> model_records.c 
+  <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(EXEEXT) <%fileNamePrefix%>.conv.cpp model_functions.cpp <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -linteractive $(SENDDATALIBS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> model_records.c 
   <%fileNamePrefix%>.conv.cpp: modelica_funcs.cpp
   <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
   <%\t%> @mv $@.tmp $@

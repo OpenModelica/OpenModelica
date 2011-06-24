@@ -12,7 +12,7 @@
 
 #include "f2c.h"
 
-/* Subroutine */ int hybrd1_(U_fp fcn, integer *n, doublereal *x, doublereal *
+/* Subroutine */ int _omc_hybrd1_(U_fp fcn, integer *n, doublereal *x, doublereal *
   fvec, doublereal *tol, integer *info, doublereal *wa, integer *lwa)
 {
     /* Initialized data */
@@ -28,7 +28,7 @@
     static integer j, ml, lr, mu, mode, nfev;
     static doublereal xtol;
     static integer index;
-    extern /* Subroutine */ int hybrd_(U_fp, integer *, doublereal *,
+    extern /* Subroutine */ int _omc_hybrd_(U_fp, integer *, doublereal *,
       doublereal *, doublereal *, integer *, integer *, integer *,
       doublereal *, doublereal *, integer *, doublereal *, integer *,
       integer *, integer *, doublereal *, integer *, doublereal *,
@@ -151,7 +151,7 @@
     nprint = 0;
     lr = *n * (*n + 1) / 2;
     index = *n * 6 + lr;
-    hybrd_((U_fp)fcn, n, &x[1], &fvec[1], &xtol, &maxfev, &ml, &mu, &epsfcn, &
+    _omc_hybrd_((U_fp)fcn, n, &x[1], &fvec[1], &xtol, &maxfev, &ml, &mu, &epsfcn, &
       wa[1], &mode, &factor, &nprint, info, &nfev, &wa[index + 1], n, &
       wa[*n * 6 + 1], &lr, &wa[*n + 1], &wa[(*n << 1) + 1], &wa[*n * 3
       + 1], &wa[(*n << 2) + 1], &wa[*n * 5 + 1]);

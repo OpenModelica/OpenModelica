@@ -17,7 +17,7 @@ AST = $(top_builddir)/Parser/libomparse_rml.a $(top_builddir)/Parser/libantlr3.a
 
 RTOBJ   = \
 $(srcdir)/runtime/runtime.a \
-$(srcdir)/../c_runtime/libc_runtime.a \
+$(srcdir)/../c_runtime/libSimulationRuntimeC.a \
 $(srcdir)/modpar/libmodpar.a
 
 FRONTEND_DIR=$(srcdir)/FrontEnd

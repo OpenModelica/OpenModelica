@@ -1877,6 +1877,13 @@ package Util
   	output list<Type_a> outTypeALst;
 	  replaceable type Type_a subtypeof Any;
 	end listFill;
+	
+	function listUnion 
+    input list<Type_a> inTypeALst1;
+    input list<Type_a> inTypeALst2;
+    output list<Type_a> outTypeALst;
+    replaceable type Type_a subtypeof Any;
+  end listUnion;
 
 end Util;
 

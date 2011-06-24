@@ -17,7 +17,7 @@
 static integer c__1 = 1;
 static logical c_false = FALSE_;
 
-/* Subroutine */ int hybrj_(S_fp fcn, integer *n, doublereal *x, doublereal *
+/* Subroutine */ int _omc_hybrj_(S_fp fcn, integer *n, doublereal *x, doublereal *
   fvec, doublereal *fjac, integer *ldfjac, doublereal *xtol, integer *
   maxfev, doublereal *diag, integer *mode, doublereal *factor, integer *
   nprint, integer *info, integer *nfev, integer *njev, doublereal *r__,

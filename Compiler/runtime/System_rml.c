@@ -169,6 +169,8 @@ RML_BEGIN_LABEL(System__toupper)
   int i;
   for (i=0; i<len; i++)
     res[i] = toupper(base[i]);
+  // fix the end!
+  res[i] = '\0';
   rmlA0 = (void*) mk_scon(res);
 
   /* adrpo added 2004-10-29 */

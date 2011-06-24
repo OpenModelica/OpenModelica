@@ -403,6 +403,11 @@ void setTermMsg(const char*);
 #define initial() localData->init
 #define terminal() localData->terminal
 
+/* the main function of the simulation runtime!
+ * simulation runtime no longer has main, is defined by the generated model code which calls this function.
+ */
+extern int _main_SimulationRuntime(int argc, char**argv);
+
 #ifdef __cplusplus
 }
 #endif

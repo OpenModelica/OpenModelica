@@ -1835,9 +1835,19 @@ template simulationFunctionsFile(String filePrefix, list<Function> functions, li
   
   <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n"%>
   <%functionBodies(functions)%>
+  
   #ifdef __cplusplus
   }
   #endif
+  
+  /* forward the main in the simulation runtime */
+  extern int _main_SimulationRuntime(int argc, char**argv);
+  
+  /* call the simulation runtime main from our main! */
+  int main(int argc, char**argv)
+  {
+    return _main_SimulationRuntime(argc, argv);
+  }  
   
   >>
   /* adpro: leave a newline at the end of file to get rid of warnings! */
@@ -1905,7 +1915,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
   CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc" -I. <%dirExtra%> <%makefileParams.includes ; separator=" "%>
-  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
+  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -lSimulationRuntimeC <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   PERL=perl
   MAINFILE=<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.c
@@ -1913,7 +1923,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   
   .PHONY: clean <%fileNamePrefix%>
   <%fileNamePrefix%>: clean $(MAINOBJ) <%fileNamePrefix%>_records.o
-  <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(EXEEXT) $(MAINOBJ) <%fileNamePrefix%>_records.o $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> -lsim -linteractive $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> 
+  <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(EXEEXT) $(MAINOBJ) <%fileNamePrefix%>_records.o $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -linteractive $(SENDDATALIBS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> 
   <%fileNamePrefix%>.conv.c: <%fileNamePrefix%>.c
   <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
   <%\t%> @mv $@.tmp $@
@@ -2111,7 +2121,7 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   EXEEXT=<%makefileParams.exeext%>
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS= -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%>
-  LDFLAGS= -L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
+  LDFLAGS= -L"<%makefileParams.omhome%>/lib/omc" -lSimulationRuntimeC <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   PERL=perl
   MAINFILE=<%name%><% if acceptMetaModelicaGrammar() then ".conv"%>.c
@@ -2441,7 +2451,7 @@ end recordDeclarationHeader;
 template recordDefinition(String origName, String encName, String fieldNames, Integer numFields)
  "Generates the definition struct for a record declaration."
 ::=
-  /* adrpo 2011-03-14 make MSVC happy, no arrays of 0 size! */
+  /* adrpo: 2011-03-14 make MSVC happy, no arrays of 0 size! */
   let fieldsDescription = 
       match numFields 
        case 0 then
@@ -2661,7 +2671,14 @@ template extFunDefArgF77(SimExtArg extArg)
     '<%typeStr%> /*<%name%>*/'
 
   case SIMEXTARGEXP(__) then '<%extTypeF77(type_,true)%>'
-  case SIMEXTARGSIZE(__) then 'int const *'
+  
+  /* adpro: 2011-06-23 
+   * DO NOT USE CONST HERE as sometimes is used with size(A, 1) 
+   * sometimes with n in Modelica.Math.Matrices.Lapack and you
+   * get conflicting external definitions in the same Model_function.h 
+   * file 
+   */
+  case SIMEXTARGSIZE(__) then 'int *' 
 end extFunDefArgF77;
 
 
@@ -3286,7 +3303,7 @@ case EXTERNAL_FUNCTION(__) then
     else
       ""
   <<
-  <%extArgs |> arg => extFunCallVardecl(arg, &varDecls /*BUFD*/) ;separator="\n"%>
+  <%Util.listUnion(extArgs, extArgs) |> arg => extFunCallVardecl(arg, &varDecls /*BUFD*/) ;separator="\n"%>
   <%match extReturn case SIMEXTARG(__) then extFunCallVardecl(extReturn, &varDecls /*BUFD*/)%>
   <%dynamicCheck%>
   <%returnAssign%><%fname%>(<%args%>);
@@ -3306,7 +3323,7 @@ case EXTERNAL_FUNCTION(__) then
     else
       ""
   <<
-  <%extArgs |> arg => extFunCallVardeclF77(arg, &varDecls) ;separator="\n"%>
+  <%Util.listUnion(extArgs, extArgs) |> arg => extFunCallVardeclF77(arg, &varDecls) ;separator="\n"%>
   <%match extReturn case SIMEXTARG(__) then extFunCallVardeclF77(extReturn, &varDecls /*BUFD*/)%>
   <%biVars |> arg => extFunCallBiVarF77(arg, &preExp, &varDecls) ;separator="\n"%>
   <%returnAssign%><%extName%>_(<%args%>);

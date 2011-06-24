@@ -17,7 +17,7 @@
 static integer c__1 = 1;
 static logical c_false = FALSE_;
 
-/* Subroutine */ int hybrd_(S_fp fcn, integer *n, doublereal *x, doublereal *
+/* Subroutine */ int _omc_hybrd_(S_fp fcn, integer *n, doublereal *x, doublereal *
   fvec, doublereal *xtol, integer *maxfev, integer *ml, integer *mu, 
   doublereal *epsfcn, doublereal *diag, integer *mode, doublereal *
   factor, integer *nprint, integer *info, integer *nfev, doublereal *
@@ -649,5 +649,5 @@ L300:
 
 /*     last card of subroutine hybrd. */
 
-} /* hybrd_ */
+} /* _omc_hybrd_ */
 

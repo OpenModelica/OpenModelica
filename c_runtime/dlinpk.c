@@ -12,6 +12,13 @@
 
 #include "f2c.h"
 
+
+/* forward, not extern! */
+int _omc_internal_dlinpk_dscal_(integer *, doublereal *, doublereal *, integer *);
+integer _omc_internal_dlinpk_idamax_(integer *, doublereal *, integer *);
+doublereal _omc_internal_dlinpk_ddot_(integer *, doublereal *, integer *, doublereal *, integer *);
+int _omc_internal_dlinpk_daxpy_(integer *, doublereal *, doublereal *, integer *, doublereal *, integer *);
+
 /* Table of constant values */
 
 static integer c__1 = 1;
@@ -26,10 +33,6 @@ static integer c__1 = 1;
     static integer j, k, l;
     static doublereal t;
     static integer kp1, nm1;
-    extern /* Subroutine */ int dscal_(integer *, doublereal *, doublereal *,
-      integer *), daxpy_(integer *, doublereal *, doublereal *, integer
-      *, doublereal *, integer *);
-    extern integer idamax_(integer *, doublereal *, integer *);
 
 
 /*     dgefa factors a double precision matrix by gaussian elimination. */
@@ -100,7 +103,7 @@ static integer c__1 = 1;
 /*        find l = pivot index */
 
   i__2 = *n - k + 1;
-  l = idamax_(&i__2, &a[k + k * a_dim1], &c__1) + k - 1;
+  l = _omc_internal_dlinpk_idamax_(&i__2, &a[k + k * a_dim1], &c__1) + k - 1;
   ipvt[k] = l;
 
 /*        zero pivot implies this column already triangularized */
@@ -123,7 +126,7 @@ L10:
 
   t = -1. / a[k + k * a_dim1];
   i__2 = *n - k;
-  dscal_(&i__2, &t, &a[k + 1 + k * a_dim1], &c__1);
+  _omc_internal_dlinpk_dscal_(&i__2, &t, &a[k + 1 + k * a_dim1], &c__1);
 
 /*           row elimination with column indexing */
 
@@ -137,7 +140,7 @@ L10:
       a[k + j * a_dim1] = t;
 L20:
       i__3 = *n - k;
-      daxpy_(&i__3, &t, &a[k + 1 + k * a_dim1], &c__1, &a[k + 1 + j *
+      _omc_internal_dlinpk_daxpy_(&i__3, &t, &a[k + 1 + k * a_dim1], &c__1, &a[k + 1 + j *
         a_dim1], &c__1);
 /* L30: */
   }
@@ -166,11 +169,6 @@ L70:
     static integer k, l;
     static doublereal t;
     static integer kb, nm1;
-    extern doublereal ddot_(integer *, doublereal *, integer *, doublereal *,
-      integer *);
-    extern /* Subroutine */ int daxpy_(integer *, doublereal *, doublereal *,
-      integer *, doublereal *, integer *);
-
 
 /*     dgesl solves the double precision system */
 /*     a * x = b  or  trans(a) * x = b */
@@ -259,7 +257,7 @@ L70:
   b[k] = t;
 L10:
   i__2 = *n - k;
-  daxpy_(&i__2, &t, &a[k + 1 + k * a_dim1], &c__1, &b[k + 1], &c__1);
+  _omc_internal_dlinpk_daxpy_(&i__2, &t, &a[k + 1 + k * a_dim1], &c__1, &b[k + 1], &c__1);
 /* L20: */
     }
 L30:
@@ -272,7 +270,7 @@ L30:
   b[k] /= a[k + k * a_dim1];
   t = -b[k];
   i__2 = k - 1;
-  daxpy_(&i__2, &t, &a[k * a_dim1 + 1], &c__1, &b[1], &c__1);
+  _omc_internal_dlinpk_daxpy_(&i__2, &t, &a[k * a_dim1 + 1], &c__1, &b[1], &c__1);
 /* L40: */
     }
     goto L100;
@@ -284,7 +282,7 @@ L50:
     i__1 = *n;
     for (k = 1; k <= i__1; ++k) {
   i__2 = k - 1;
-  t = ddot_(&i__2, &a[k * a_dim1 + 1], &c__1, &b[1], &c__1);
+  t = _omc_internal_dlinpk_ddot_(&i__2, &a[k * a_dim1 + 1], &c__1, &b[1], &c__1);
   b[k] = (b[k] - t) / a[k + k * a_dim1];
 /* L60: */
     }
@@ -298,7 +296,7 @@ L50:
     for (kb = 1; kb <= i__1; ++kb) {
   k = *n - kb;
   i__2 = *n - k;
-  b[k] += ddot_(&i__2, &a[k + 1 + k * a_dim1], &c__1, &b[k + 1], &c__1);
+  b[k] += _omc_internal_dlinpk_ddot_(&i__2, &a[k + 1 + k * a_dim1], &c__1, &b[k + 1], &c__1);
   l = ipvt[k];
   if (l == k) {
       goto L70;
@@ -325,11 +323,6 @@ L100:
     static integer i__, j, k, l, m;
     static doublereal t;
     static integer i0, j0, j1, lm, mm, ju, jz, kp1, nm1;
-    extern /* Subroutine */ int dscal_(integer *, doublereal *, doublereal *,
-      integer *), daxpy_(integer *, doublereal *, doublereal *, integer
-      *, doublereal *, integer *);
-    extern integer idamax_(integer *, doublereal *, integer *);
-
 
 /*     dgbfa factors a double precision band matrix by elimination. */
 
@@ -478,7 +471,7 @@ L50:
   i__2 = *ml, i__3 = *n - k;
   lm = min(i__2,i__3);
   i__2 = lm + 1;
-  l = idamax_(&i__2, &abd[m + k * abd_dim1], &c__1) + m - 1;
+  l = _omc_internal_dlinpk_idamax_(&i__2, &abd[m + k * abd_dim1], &c__1) + m - 1;
   ipvt[k] = l + k - m;
 
 /*        zero pivot implies this column already triangularized */
@@ -500,7 +493,7 @@ L60:
 /*           compute multipliers */
 
   t = -1. / abd[m + k * abd_dim1];
-  dscal_(&lm, &t, &abd[m + 1 + k * abd_dim1], &c__1);
+  _omc_internal_dlinpk_dscal_(&lm, &t, &abd[m + 1 + k * abd_dim1], &c__1);
 
 /*           row elimination with column indexing */
 
@@ -524,7 +517,7 @@ L60:
       abd[l + j * abd_dim1] = abd[mm + j * abd_dim1];
       abd[mm + j * abd_dim1] = t;
 L70:
-      daxpy_(&lm, &t, &abd[m + 1 + k * abd_dim1], &c__1, &abd[mm + 1 +
+      _omc_internal_dlinpk_daxpy_(&lm, &t, &abd[m + 1 + k * abd_dim1], &c__1, &abd[mm + 1 +
         j * abd_dim1], &c__1);
 /* L80: */
   }
@@ -554,11 +547,6 @@ L130:
     static integer k, l, m;
     static doublereal t;
     static integer kb, la, lb, lm, nm1;
-    extern doublereal ddot_(integer *, doublereal *, integer *, doublereal *,
-      integer *);
-    extern /* Subroutine */ int daxpy_(integer *, doublereal *, doublereal *,
-      integer *, doublereal *, integer *);
-
 
 /*     dgbsl solves the double precision band system */
 /*     a * x = b  or  trans(a) * x = b */
@@ -660,7 +648,7 @@ L130:
   b[l] = b[k];
   b[k] = t;
 L10:
-  daxpy_(&lm, &t, &abd[m + 1 + k * abd_dim1], &c__1, &b[k + 1], &c__1);
+  _omc_internal_dlinpk_daxpy_(&lm, &t, &abd[m + 1 + k * abd_dim1], &c__1, &b[k + 1], &c__1);
 /* L20: */
     }
 L30:
@@ -675,7 +663,7 @@ L30:
   la = m - lm;
   lb = k - lm;
   t = -b[k];
-  daxpy_(&lm, &t, &abd[la + k * abd_dim1], &c__1, &b[lb], &c__1);
+  _omc_internal_dlinpk_daxpy_(&lm, &t, &abd[la + k * abd_dim1], &c__1, &b[lb], &c__1);
 /* L40: */
     }
     goto L100;
@@ -689,7 +677,7 @@ L50:
   lm = min(k,m) - 1;
   la = m - lm;
   lb = k - lm;
-  t = ddot_(&lm, &abd[la + k * abd_dim1], &c__1, &b[lb], &c__1);
+  t = _omc_internal_dlinpk_ddot_(&lm, &abd[la + k * abd_dim1], &c__1, &b[lb], &c__1);
   b[k] = (b[k] - t) / abd[m + k * abd_dim1];
 /* L60: */
     }
@@ -708,7 +696,7 @@ L50:
 /* Computing MIN */
   i__2 = *ml, i__3 = *n - k;
   lm = min(i__2,i__3);
-  b[k] += ddot_(&lm, &abd[m + 1 + k * abd_dim1], &c__1, &b[k + 1], &
+  b[k] += _omc_internal_dlinpk_ddot_(&lm, &abd[m + 1 + k * abd_dim1], &c__1, &b[k + 1], &
     c__1);
   l = ipvt[k];
   if (l == k) {
@@ -726,7 +714,7 @@ L100:
     return 0;
 } /* dgbsl_ */
 
-/* Subroutine */ int daxpy_(integer *n, doublereal *da, doublereal *dx,
+/* Subroutine */ int _omc_internal_dlinpk_daxpy_(integer *n, doublereal *da, doublereal *dx,
   integer *incx, doublereal *dy, integer *incy)
 {
     /* System generated locals */
@@ -805,9 +793,9 @@ L40:
 /* L50: */
     }
     return 0;
-} /* daxpy_ */
+} /* _omc_internal_dlinpk_daxpy_ */
 
-/* Subroutine */ int dcopy_(integer *n, doublereal *sx, integer *incx,
+/* Subroutine */ int _omc_dcopy_(integer *n, doublereal *sx, integer *incx,
   doublereal *sy, integer *incy)
 {
     /* System generated locals */
@@ -888,7 +876,7 @@ L40:
     return 0;
 } /* dcopy_ */
 
-/* Subroutine */ int dscal_(integer *n, doublereal *da, doublereal *dx,
+/* Subroutine */ int _omc_internal_dlinpk_dscal_(integer *n, doublereal *da, doublereal *dx,
   integer *incx)
 {
     /* System generated locals */
@@ -955,9 +943,9 @@ L40:
 /* L50: */
     }
     return 0;
-} /* dscal_ */
+} /* _omc_internal_dlinpk_dscal_ */
 
-doublereal ddot_(integer *n, doublereal *dx, integer *incx, doublereal *dy,
+doublereal _omc_internal_dlinpk_ddot_(integer *n, doublereal *dx, integer *incx, doublereal *dy,
   integer *incy)
 {
     /* System generated locals */
@@ -1039,9 +1027,9 @@ L40:
 L60:
     ret_val = dtemp;
     return ret_val;
-} /* ddot_ */
+} /* _omc_internal_dlinpk_ddot_ */
 
-doublereal dnrm2_(integer *n, doublereal *dx, integer *incx)
+doublereal _omc_dnrm2_(integer *n, doublereal *dx, integer *incx)
 {
     /* Initialized data */
 
@@ -1240,7 +1228,7 @@ L300:
     return ret_val;
 } /* dnrm2_ */
 
-integer idamax_(integer *n, doublereal *dx, integer *incx)
+integer _omc_internal_dlinpk_idamax_(integer *n, doublereal *dx, integer *incx)
 {
     /* System generated locals */
     integer ret_val, i__1;
@@ -1304,5 +1292,5 @@ L30:
   ;
     }
     return ret_val;
-} /* idamax_ */
+} /* _omc_internal_dlinpk_idamax_ */
 

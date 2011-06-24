@@ -1325,6 +1325,14 @@ static int SystemImpl__uriToClassAndPath(const char *uri, const char **scheme, c
   return 1;
 }
 
+/* adrpo 2011-06-23
+ * extern definition to dgesv_ from -llapack
+ * as we do not link with -lsim and the one
+ * in matrix.h got renamed to _omc_dgesv_ to
+ * avoid name clashes!
+ */
+extern int dgesv_(integer *n, integer *nrhs, doublereal *a, integer *lda, integer *ipiv, doublereal *b, integer *ldb, integer *info);
+
 int SystemImpl__dgesv(void *lA, void *lB, void **res)
 {
   integer sz = 0, i = 0, j = 0;

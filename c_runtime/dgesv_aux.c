@@ -6,8 +6,25 @@
    Peter Aronsson, MathCore Engineering 2005-06-16.
 */
 
+/* forward, not external */
+integer _omc_internal_idamax_(integer *, doublereal *, integer *);
+int _omc_internal_dgetrf_(integer *, integer *, doublereal *, integer *, integer *, integer *);
+int _omc_internal_dgetrs_(char *, integer *, integer *, doublereal *, integer *, integer *, doublereal *, integer *, integer *);
+int _omc_internal_dscal_(integer *, doublereal *, doublereal *,integer *);
+int _omc_internal_dswap_(integer *, doublereal *, integer *, doublereal *, integer *);
+logical _omc_internal_lsame_(char *, char *);
+int _omc_internal_dtrsm_(char *, char *, char *, char *,integer *, integer *, doublereal *, doublereal *, integer *, doublereal *, integer *);
+int _omc_internal_xerbla_(char *, integer *);
+int _omc_internal_dlaswp_(integer *, doublereal *, integer *, integer *, integer *, integer *, integer *);
+int _omc_internal_dgemm_(char *, char *, integer *, integer *, integer *, doublereal *, doublereal *, integer *, doublereal *, integer *, doublereal *, doublereal *, integer *);
+int _omc_internal_dtrsm_(char *, char *, char *, char *,integer *, integer *, doublereal *, doublereal *, integer *,doublereal *, integer *);
+int _omc_internal_dgetf2_(integer *, integer *, doublereal *, integer *, integer *, integer*);
+integer _omc_internal_ilaenv_(integer *, char *, char *, integer *, integer *, integer *, integer *, ftnlen, ftnlen);
+integer _omc_internal_ieeeck_(integer *, real *, real *);
+int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, integer *, doublereal *, integer *, doublereal *, integer *);
 
-/* Subroutine */ int dgesv_(integer *n, integer *nrhs, doublereal *a, integer
+
+/* Subroutine */ int _omc_dgesv_(integer *n, integer *nrhs, doublereal *a, integer
   *lda, integer *ipiv, doublereal *b, integer *ldb, integer *info)
 {
 /*  -- LAPACK driver routine (version 3.0) --
@@ -76,9 +93,6 @@
     /* System generated locals */
     integer a_dim1, a_offset, b_dim1, b_offset, i__1;
     /* Local variables */
-    extern /* Subroutine */ int dgetrf_(integer *, integer *, doublereal *,
-      integer *, integer *, integer *), xerbla_(char *, integer *), dgetrs_(char *, integer *, integer *, doublereal *,
-      integer *, integer *, doublereal *, integer *, integer *);
 
     a_dim1 = *lda;
     a_offset = 1 + a_dim1 * 1;
@@ -101,18 +115,18 @@
     }
     if (*info != 0) {
   i__1 = -(*info);
-  xerbla_("DGESV ", &i__1);
+  _omc_internal_xerbla_("DGESV ", &i__1);
   return 0;
     }
 
 /*     Compute the LU factorization of A. */
 
-    dgetrf_(n, n, &a[a_offset], lda, &ipiv[1], info);
+    _omc_internal_dgetrf_(n, n, &a[a_offset], lda, &ipiv[1], info);
     if (*info == 0) {
 
 /*        Solve the system A*X = B, overwriting B with X. */
 
-  dgetrs_("No transpose", n, nrhs, &a[a_offset], lda, &ipiv[1], &b[
+  _omc_internal_dgetrs_("No transpose", n, nrhs, &a[a_offset], lda, &ipiv[1], &b[
     b_offset], ldb, info);
     }
     return 0;
@@ -122,7 +136,7 @@
 } /* dgesv_ */
 
 
-/* Subroutine */ int dgetrs_(char *trans, integer *n, integer *nrhs,
+/* Subroutine */ int _omc_internal_dgetrs_(char *trans, integer *n, integer *nrhs,
   doublereal *a, integer *lda, integer *ipiv, doublereal *b, integer *
   ldb, integer *info)
 {
@@ -192,12 +206,6 @@
     /* System generated locals */
     integer a_dim1, a_offset, b_dim1, b_offset, i__1;
     /* Local variables */
-    extern logical lsame_(char *, char *);
-    extern /* Subroutine */ int dtrsm_(char *, char *, char *, char *,
-      integer *, integer *, doublereal *, doublereal *, integer *,
-      doublereal *, integer *), xerbla_(
-      char *, integer *), dlaswp_(integer *, doublereal *,
-      integer *, integer *, integer *, integer *, integer *);
     static logical notran;
 
 
@@ -211,8 +219,8 @@
 
     /* Function Body */
     *info = 0;
-    notran = lsame_(trans, "N");
-    if (! notran && ! lsame_(trans, "T") && ! lsame_(
+    notran = _omc_internal_lsame_(trans, "N");
+    if (! notran && ! _omc_internal_lsame_(trans, "T") && ! _omc_internal_lsame_(
       trans, "C")) {
   *info = -1;
     } else if (*n < 0) {
@@ -226,7 +234,7 @@
     }
     if (*info != 0) {
   i__1 = -(*info);
-  xerbla_("DGETRS", &i__1);
+  _omc_internal_xerbla_("DGETRS", &i__1);
   return 0;
     }
 
@@ -242,16 +250,16 @@
 
           Apply row interchanges to the right hand sides. */
 
-  dlaswp_(nrhs, &b[b_offset], ldb, &c__1, n, &ipiv[1], &c__1);
+  _omc_internal_dlaswp_(nrhs, &b[b_offset], ldb, &c__1, n, &ipiv[1], &c__1);
 
 /*        Solve L*X = B, overwriting B with X. */
 
-  dtrsm_("Left", "Lower", "No transpose", "Unit", n, nrhs, &c_b12, &a[
+  _omc_internal_dtrsm_("Left", "Lower", "No transpose", "Unit", n, nrhs, &c_b12, &a[
     a_offset], lda, &b[b_offset], ldb);
 
 /*        Solve U*X = B, overwriting B with X. */
 
-  dtrsm_("Left", "Upper", "No transpose", "Non-unit", n, nrhs, &c_b12, &
+  _omc_internal_dtrsm_("Left", "Upper", "No transpose", "Non-unit", n, nrhs, &c_b12, &
     a[a_offset], lda, &b[b_offset], ldb);
     } else {
 
@@ -259,26 +267,26 @@
 
           Solve U'*X = B, overwriting B with X. */
 
-  dtrsm_("Left", "Upper", "Transpose", "Non-unit", n, nrhs, &c_b12, &a[
+  _omc_internal_dtrsm_("Left", "Upper", "Transpose", "Non-unit", n, nrhs, &c_b12, &a[
     a_offset], lda, &b[b_offset], ldb);
 
 /*        Solve L'*X = B, overwriting B with X. */
 
-  dtrsm_("Left", "Lower", "Transpose", "Unit", n, nrhs, &c_b12, &a[
+  _omc_internal_dtrsm_("Left", "Lower", "Transpose", "Unit", n, nrhs, &c_b12, &a[
     a_offset], lda, &b[b_offset], ldb);
 
 /*        Apply row interchanges to the solution vectors. */
 
-  dlaswp_(nrhs, &b[b_offset], ldb, &c__1, n, &ipiv[1], &c_n1);
+  _omc_internal_dlaswp_(nrhs, &b[b_offset], ldb, &c__1, n, &ipiv[1], &c_n1);
     }
 
     return 0;
 
 /*     End of DGETRS */
 
-} /* dgetrs_ */
+} /* _omc_internal_dgetrs_ */
 
-/* Subroutine */ int dtrsm_(char *side, char *uplo, char *transa, char *diag,
+/* Subroutine */ int _omc_internal_dtrsm_(char *side, char *uplo, char *transa, char *diag,
   integer *m, integer *n, doublereal *alpha, doublereal *a, integer *
   lda, doublereal *b, integer *ldb)
 {
@@ -289,10 +297,8 @@
     static doublereal temp;
     static integer i__, j, k;
     static logical lside;
-    extern logical lsame_(char *, char *);
     static integer nrowa;
     static logical upper;
-    extern /* Subroutine */ int xerbla_(char *, integer *);
     static logical nounit;
 #define a_ref(a_1,a_2) a[(a_2)*a_dim1 + a_1]
 #define b_ref(a_1,a_2) b[(a_2)*b_dim1 + a_1]
@@ -388,23 +394,23 @@
     b_offset = 1 + b_dim1 * 1;
     b -= b_offset;
     /* Function Body */
-    lside = lsame_(side, "L");
+    lside = _omc_internal_lsame_(side, "L");
     if (lside) {
   nrowa = *m;
     } else {
   nrowa = *n;
     }
-    nounit = lsame_(diag, "N");
-    upper = lsame_(uplo, "U");
+    nounit = _omc_internal_lsame_(diag, "N");
+    upper = _omc_internal_lsame_(uplo, "U");
     info = 0;
-    if (! lside && ! lsame_(side, "R")) {
+    if (! lside && ! _omc_internal_lsame_(side, "R")) {
   info = 1;
-    } else if (! upper && ! lsame_(uplo, "L")) {
+    } else if (! upper && ! _omc_internal_lsame_(uplo, "L")) {
   info = 2;
-    } else if (! lsame_(transa, "N") && ! lsame_(transa,
-       "T") && ! lsame_(transa, "C")) {
+    } else if (! _omc_internal_lsame_(transa, "N") && ! _omc_internal_lsame_(transa,
+       "T") && ! _omc_internal_lsame_(transa, "C")) {
   info = 3;
-    } else if (! lsame_(diag, "U") && ! lsame_(diag,
+    } else if (! _omc_internal_lsame_(diag, "U") && ! _omc_internal_lsame_(diag,
       "N")) {
   info = 4;
     } else if (*m < 0) {
@@ -417,7 +423,7 @@
   info = 11;
     }
     if (info != 0) {
-  xerbla_("DTRSM ", &info);
+  _omc_internal_xerbla_("DTRSM ", &info);
   return 0;
     }
 /*     Quick return if possible. */
@@ -439,7 +445,7 @@
     }
 /*     Start the operations. */
     if (lside) {
-  if (lsame_(transa, "N")) {
+  if (_omc_internal_lsame_(transa, "N")) {
 /*           Form  B := alpha*inv( A )*B. */
       if (upper) {
     i__1 = *n;
@@ -537,7 +543,7 @@
       }
   }
     } else {
-  if (lsame_(transa, "N")) {
+  if (_omc_internal_lsame_(transa, "N")) {
 /*           Form  B := alpha*B*inv( A ). */
       if (upper) {
     i__1 = *n;
@@ -675,13 +681,13 @@
     }
     return 0;
 /*     End of DTRSM . */
-} /* dtrsm_ */
+} /* _omc_internal_dtrsm_ */
 
 #undef a_ref
 #undef b_ref
 
 
-/* Subroutine */ int dgetrf_(integer *m, integer *n, doublereal *a, integer *
+/* Subroutine */ int _omc_internal_dgetrf_(integer *m, integer *n, doublereal *a, integer *
   lda, integer *ipiv, integer *info)
 {
 /*  -- LAPACK routine (version 3.0) --
@@ -749,21 +755,8 @@
     integer a_dim1, a_offset, i__1, i__2, i__3, i__4, i__5;
     /* Local variables */
     static integer i__, j;
-    extern /* Subroutine */ int dgemm_(char *, char *, integer *, integer *,
-      integer *, doublereal *, doublereal *, integer *, doublereal *,
-      integer *, doublereal *, doublereal *, integer *);
     static integer iinfo;
-    extern /* Subroutine */ int dtrsm_(char *, char *, char *, char *,
-      integer *, integer *, doublereal *, doublereal *, integer *,
-      doublereal *, integer *), dgetf2_(
-      integer *, integer *, doublereal *, integer *, integer *, integer
-      *);
     static integer jb, nb;
-    extern /* Subroutine */ int xerbla_(char *, integer *);
-    extern integer ilaenv_(integer *, char *, char *, integer *, integer *,
-      integer *, integer *, ftnlen, ftnlen);
-    extern /* Subroutine */ int dlaswp_(integer *, doublereal *, integer *,
-      integer *, integer *, integer *, integer *);
 #define a_ref(a_1,a_2) a[(a_2)*a_dim1 + a_1]
 
 
@@ -783,7 +776,7 @@
     }
     if (*info != 0) {
   i__1 = -(*info);
-  xerbla_("DGETRF", &i__1);
+  _omc_internal_xerbla_("DGETRF", &i__1);
   return 0;
     }
 
@@ -795,13 +788,13 @@
 
 /*     Determine the block size for this environment. */
 
-    nb = ilaenv_(&c__1, "DGETRF", " ", m, n, &c_n1, &c_n1, (ftnlen)6, (ftnlen)
+    nb = _omc_internal_ilaenv_(&c__1, "DGETRF", " ", m, n, &c_n1, &c_n1, (ftnlen)6, (ftnlen)
       1);
     if (nb <= 1 || nb >= min(*m,*n)) {
 
 /*        Use unblocked code. */
 
-  dgetf2_(m, n, &a[a_offset], lda, &ipiv[1], info);
+  _omc_internal_dgetf2_(m, n, &a[a_offset], lda, &ipiv[1], info);
     } else {
 
 /*        Use blocked code. */
@@ -817,7 +810,7 @@
              singularity. */
 
       i__3 = *m - j + 1;
-      dgetf2_(&i__3, &jb, &a_ref(j, j), lda, &ipiv[j], &iinfo);
+      _omc_internal_dgetf2_(&i__3, &jb, &a_ref(j, j), lda, &ipiv[j], &iinfo);
 
 /*           Adjust INFO and the pivot indices. */
 
@@ -836,7 +829,7 @@
 
       i__3 = j - 1;
       i__4 = j + jb - 1;
-      dlaswp_(&i__3, &a[a_offset], lda, &j, &i__4, &ipiv[1], &c__1);
+      _omc_internal_dlaswp_(&i__3, &a[a_offset], lda, &j, &i__4, &ipiv[1], &c__1);
 
       if (j + jb <= *n) {
 
@@ -844,13 +837,13 @@
 
     i__3 = *n - j - jb + 1;
     i__4 = j + jb - 1;
-    dlaswp_(&i__3, &a_ref(1, j + jb), lda, &j, &i__4, &ipiv[1], &
+    _omc_internal_dlaswp_(&i__3, &a_ref(1, j + jb), lda, &j, &i__4, &ipiv[1], &
       c__1);
 
 /*              Compute block row of U. */
 
     i__3 = *n - j - jb + 1;
-    dtrsm_("Left", "Lower", "No transpose", "Unit", &jb, &i__3, &
+    _omc_internal_dtrsm_("Left", "Lower", "No transpose", "Unit", &jb, &i__3, &
       c_b16, &a_ref(j, j), lda, &a_ref(j, j + jb), lda);
     if (j + jb <= *m) {
 
@@ -858,7 +851,7 @@
 
         i__3 = *m - j - jb + 1;
         i__4 = *n - j - jb + 1;
-        dgemm_("No transpose", "No transpose", &i__3, &i__4, &jb,
+        _omc_internal_dgemm_("No transpose", "No transpose", &i__3, &i__4, &jb,
           &c_b19, &a_ref(j + jb, j), lda, &a_ref(j, j + jb),
            lda, &c_b16, &a_ref(j + jb, j + jb), lda);
     }
@@ -870,11 +863,11 @@
 
 /*     End of DGETRF */
 
-} /* dgetrf_ */
+} /* _omc_internal_dgetrf_ */
 
 #undef a_ref
 
-/* Subroutine */ int xerbla_(char *srname, integer *info)
+/* Subroutine */ int _omc_internal_xerbla_(char *srname, integer *info)
 {
 /*  -- LAPACK auxiliary routine (preliminary version) --
        Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
@@ -927,9 +920,9 @@
 /*     End of XERBLA */
 
     return 0;
-} /* xerbla_ */
+} /* _omc_internal_xerbla_ */
 
-/* Subroutine */ int dgemm_(char *transa, char *transb, integer *m, integer *
+/* Subroutine */ int _omc_internal_dgemm_(char *transa, char *transb, integer *m, integer *
   n, integer *k, doublereal *alpha, doublereal *a, integer *lda,
   doublereal *b, integer *ldb, doublereal *beta, doublereal *c__,
   integer *ldc)
@@ -942,9 +935,7 @@
     static logical nota, notb;
     static doublereal temp;
     static integer i__, j, l, ncola;
-    extern logical lsame_(char *, char *);
     static integer nrowa, nrowb;
-    extern /* Subroutine */ int xerbla_(char *, integer *);
 #define a_ref(a_1,a_2) a[(a_2)*a_dim1 + a_1]
 #define b_ref(a_1,a_2) b[(a_2)*b_dim1 + a_1]
 #define c___ref(a_1,a_2) c__[(a_2)*c_dim1 + a_1]
@@ -1050,8 +1041,8 @@
     c_offset = 1 + c_dim1 * 1;
     c__ -= c_offset;
     /* Function Body */
-    nota = lsame_(transa, "N");
-    notb = lsame_(transb, "N");
+    nota = _omc_internal_lsame_(transa, "N");
+    notb = _omc_internal_lsame_(transb, "N");
     if (nota) {
   nrowa = *m;
   ncola = *k;
@@ -1066,11 +1057,11 @@
     }
 /*     Test the input parameters. */
     info = 0;
-    if (! nota && ! lsame_(transa, "C") && ! lsame_(
+    if (! nota && ! _omc_internal_lsame_(transa, "C") && ! _omc_internal_lsame_(
       transa, "T")) {
   info = 1;
-    } else if (! notb && ! lsame_(transb, "C") && !
-      lsame_(transb, "T")) {
+    } else if (! notb && ! _omc_internal_lsame_(transb, "C") && !
+      _omc_internal_lsame_(transb, "T")) {
   info = 2;
     } else if (*m < 0) {
   info = 3;
@@ -1086,7 +1077,7 @@
   info = 13;
     }
     if (info != 0) {
-  xerbla_("DGEMM ", &info);
+  _omc_internal_xerbla_("DGEMM ", &info);
   return 0;
     }
 /*     Quick return if possible. */
@@ -1234,12 +1225,12 @@
     }
     return 0;
 /*     End of DGEMM . */
-} /* dgemm_ */
+} /* _omc_internal_dgemm_ */
 #undef c___ref
 #undef b_ref
 #undef a_ref
 
-/* Subroutine */ int dlaswp_(integer *n, doublereal *a, integer *lda, integer
+/* Subroutine */ int _omc_internal_dlaswp_(integer *n, doublereal *a, integer *lda, integer
   *k1, integer *k2, integer *ipiv, integer *incx)
 {
 /*  -- LAPACK auxiliary routine (version 3.0) --
@@ -1374,12 +1365,12 @@
 
 /*     End of DLASWP */
 
-} /* dlaswp_ */
+} /* _omc_internal_dlaswp_ */
 
 #undef a_ref
 
 
-logical lsame_(char *ca, char *cb)
+logical _omc_internal_lsame_(char *ca, char *cb)
 {
 /*  -- LAPACK auxiliary routine (version 3.0) --
        Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
@@ -1476,9 +1467,9 @@ e
        End of LSAME */
 
     return ret_val;
-} /* lsame_ */
+} /* _omc_internal_lsame_ */
 
-integer ilaenv_(integer *ispec, char *name__, char *opts, integer *n1,
+integer _omc_internal_ilaenv_(integer *ispec, char *name__, char *opts, integer *n1,
   integer *n2, integer *n3, integer *n4, ftnlen name_len, ftnlen
   opts_len)
 {
@@ -1594,7 +1585,6 @@ integer ilaenv_(integer *ispec, char *name__, char *opts, integer *n1,
     static integer nbmin;
     static char c1[1], c2[2], c3[3], c4[2];
     static integer ic, nb;
-    extern integer ieeeck_(integer *, real *, real *);
     static integer iz, nx;
     static char subnam[6];
 
@@ -2066,7 +2056,7 @@ L1000:
        ILAENV = 0 */
     ret_val = 1;
     if (ret_val == 1) {
-  ret_val = ieeeck_(&c__0, &c_b162, &c_b163);
+  ret_val = _omc_internal_ieeeck_(&c__0, &c_b162, &c_b163);
     }
     return ret_val;
 
@@ -2077,15 +2067,15 @@ L1100:
        ILAENV = 0 */
     ret_val = 1;
     if (ret_val == 1) {
-  ret_val = ieeeck_(&c__1, &c_b162, &c_b163);
+  ret_val = _omc_internal_ieeeck_(&c__1, &c_b162, &c_b163);
     }
     return ret_val;
 
 /*     End of ILAENV */
 
-} /* ilaenv_ */
+} /* _omc_internal_ilaenv_ */
 
-integer ieeeck_(integer *ispec, real *zero, real *one)
+integer _omc_internal_ieeeck_(integer *ispec, real *zero, real *one)
 {
 /*  -- LAPACK auxiliary routine (version 3.0) --
        Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,
@@ -2230,9 +2220,9 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
     }
 
     return ret_val;
-} /* ieeeck_ */
+} /* _omc_internal_ieeeck_ */
 
-/* Subroutine */ int dgetf2_(integer *m, integer *n, doublereal *a, integer *
+/* Subroutine */ int _omc_internal_dgetf2_(integer *m, integer *n, doublereal *a, integer *
   lda, integer *ipiv, integer *info)
 {
 /*  -- LAPACK routine (version 3.0) --
@@ -2298,16 +2288,8 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
     integer a_dim1, a_offset, i__1, i__2, i__3;
     doublereal d__1;
     /* Local variables */
-    extern /* Subroutine */ int dger_(integer *, integer *, doublereal *,
-      doublereal *, integer *, doublereal *, integer *, doublereal *,
-      integer *);
     static integer j;
-    extern /* Subroutine */ int dscal_(integer *, doublereal *, doublereal *,
-      integer *), dswap_(integer *, doublereal *, integer *, doublereal
-      *, integer *);
     static integer jp;
-    extern integer idamax_(integer *, doublereal *, integer *);
-    extern /* Subroutine */ int xerbla_(char *, integer *);
 #define a_ref(a_1,a_2) a[(a_2)*a_dim1 + a_1]
 
 
@@ -2327,7 +2309,7 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
     }
     if (*info != 0) {
   i__1 = -(*info);
-  xerbla_("DGETF2", &i__1);
+  _omc_internal_xerbla_("DGETF2", &i__1);
   return 0;
     }
 
@@ -2343,14 +2325,14 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
 /*        Find pivot and test for singularity. */
 
   i__2 = *m - j + 1;
-  jp = j - 1 + idamax_(&i__2, &a_ref(j, j), &c__1);
+  jp = j - 1 + _omc_internal_idamax_(&i__2, &a_ref(j, j), &c__1);
   ipiv[j] = jp;
   if (a_ref(jp, j) != 0.) {
 
 /*           Apply the interchange to columns 1:N. */
 
       if (jp != j) {
-    dswap_(n, &a_ref(j, 1), lda, &a_ref(jp, 1), lda);
+    _omc_internal_dswap_(n, &a_ref(j, 1), lda, &a_ref(jp, 1), lda);
       }
 
 /*           Compute elements J+1:M of J-th column. */
@@ -2358,7 +2340,7 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
       if (j < *m) {
     i__2 = *m - j;
     d__1 = 1. / a_ref(j, j);
-    dscal_(&i__2, &d__1, &a_ref(j + 1, j), &c__1);
+    _omc_internal_dscal_(&i__2, &d__1, &a_ref(j + 1, j), &c__1);
       }
 
   } else if (*info == 0) {
@@ -2372,7 +2354,7 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
 
       i__2 = *m - j;
       i__3 = *n - j;
-      dger_(&i__2, &i__3, &c_b6, &a_ref(j + 1, j), &c__1, &a_ref(j, j +
+      _omc_internal_dger_(&i__2, &i__3, &c_b6, &a_ref(j + 1, j), &c__1, &a_ref(j, j +
         1), lda, &a_ref(j + 1, j + 1), lda);
   }
 /* L10: */
@@ -2381,12 +2363,12 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
 
 /*     End of DGETF2 */
 
-} /* dgetf2_ */
+} /* _omc_internal_dgetf2_ */
 
 #undef a_ref
 
 
-/* Subroutine */ int dger_(integer *m, integer *n, doublereal *alpha,
+/* Subroutine */ int _omc_internal_dger_(integer *m, integer *n, doublereal *alpha,
   doublereal *x, integer *incx, doublereal *y, integer *incy,
   doublereal *a, integer *lda)
 {
@@ -2396,7 +2378,6 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
     static integer info;
     static doublereal temp;
     static integer i__, j, ix, jy, kx;
-    extern /* Subroutine */ int xerbla_(char *, integer *);
 #define a_ref(a_1,a_2) a[(a_2)*a_dim1 + a_1]
 /*  Purpose
     =======
@@ -2471,7 +2452,7 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
   info = 9;
     }
     if (info != 0) {
-  xerbla_("DGER  ", &info);
+  _omc_internal_xerbla_("DGER  ", &info);
   return 0;
     }
 /*     Quick return if possible. */
@@ -2523,10 +2504,10 @@ integer ieeeck_(integer *ispec, real *zero, real *one)
     }
     return 0;
 /*     End of DGER  . */
-} /* dger_ */
+} /* _omc_internal_dger_ */
 #undef a_ref
 
-/* Subroutine */ int dscal_(integer *n, doublereal *da, doublereal *dx,
+/* Subroutine */ int _omc_internal_dscal_(integer *n, doublereal *da, doublereal *dx,
   integer *incx)
 {
     /* System generated locals */
@@ -2583,10 +2564,10 @@ L40:
 /* L50: */
     }
     return 0;
-} /* dscal_ */
+} /* _omc_internal_dscal_ */
 
 
-/* Subroutine */ int dswap_(integer *n, doublereal *dx, integer *incx,
+/* Subroutine */ int _omc_internal_dswap_(integer *n, doublereal *dx, integer *incx,
   doublereal *dy, integer *incy)
 {
     /* System generated locals */
@@ -2662,10 +2643,10 @@ L40:
 /* L50: */
     }
     return 0;
-} /* dswap_ */
+} /* _omc_internal_dswap_ */
 
 
-integer idamax_(integer *n, doublereal *dx, integer *incx)
+integer _omc_internal_idamax_(integer *n, doublereal *dx, integer *incx)
 {
     /* System generated locals */
     integer ret_val, i__1;
@@ -2721,5 +2702,5 @@ L30:
   ;
     }
     return ret_val;
-} /* idamax_ */
+} /* _omc_internal_idamax_ */
 
