@@ -79,7 +79,7 @@ int base_array_ok(base_array_t *a)
     for (i = 0; i < a->ndims; ++i) {
         if (a->dim_size[i] < 0)
         {
-          fprintf(stderr, "base_array.c: array dimension size for dimension %d is < 0!\n", (int) a->dim_size[i]); fflush(stderr);
+          fprintf(stderr, "base_array.c: array dimension size for dimension %d is %d < 0!\n", i, (int) a->dim_size[i]); fflush(stderr);
           return 0;
         }
     }
