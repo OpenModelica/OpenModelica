@@ -105,6 +105,7 @@ protected import SimCodeCSharp;
 protected import SimCodeDump;
 protected import SimCodeFMU;
 protected import SimCodeQSS;
+protected import SimCodeAdevs;
 protected import System;
 protected import Util;
 protected import ValuesUtil;
@@ -1093,6 +1094,10 @@ algorithm
    case (simCode,_,"Cpp")
       equation
         Tpl.tplNoret(SimCodeCpp.translateModel, simCode);
+      then ();
+   case (simCode,_,"Adevs")
+      equation
+        Tpl.tplNoret(SimCodeAdevs.translateModel, simCode);
       then ();
     case (simCode,(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents),"QSS")
       equation

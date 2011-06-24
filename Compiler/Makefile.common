@@ -119,6 +119,7 @@ SimCodeC.mo \
 SimCodeCSharp.mo \
 SimCodeDump.mo \
 SimCodeQSS.mo \
+SimCodeAdevs.mo \
 SimCodeCpp.mo \
 SimCodeFMU.mo \
 Tpl.mo \
