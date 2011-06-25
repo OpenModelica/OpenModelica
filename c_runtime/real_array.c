@@ -345,7 +345,7 @@ void indexed_assign_real_array(real_array_t* source,
 
 void index_real_array(real_array_t* source,
                       index_spec_t* source_spec,
-          real_array_t* dest)
+                      real_array_t* dest)
 {
     _index_t* idx_vec1;
     _index_t* idx_size;

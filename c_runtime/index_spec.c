@@ -39,15 +39,34 @@
 int index_spec_ok(index_spec_t* s)
 {
     int i;
-    if (!s) return 0;
-    if (s->ndims < 0) return 0;
-    if (!s->dim_size) return 0;
-    if (!s->index) return 0;
+    if (!s)
+    {
+      fprintf(stderr,"index_spec_ok: the index spec is NULL!\n"); fflush(stderr);
+      return 0;
+    }
+    if (s->ndims < 0)
+    {
+      fprintf(stderr,"index_spec_ok: the index spec dimensions are negative: %d!\n", (int)s->ndims); fflush(stderr);
+      return 0;
+    }
+    if (!s->dim_size)
+    {
+      fprintf(stderr,"index_spec_ok: the index spec dimensions sizes is NULL!\n"); fflush(stderr);
+      return 0;
+    }
+    if (!s->index)
+    {
+      fprintf(stderr,"index_spec_ok: the index spec index array is NULL!\n"); fflush(stderr);
+      return 0;
+    }
     for (i = 0; i < s->ndims; ++i) {
-        if (s->dim_size[i] < 0) return 0;
+        if (s->dim_size[i] < 0)
+        {
+          fprintf(stderr,"index_spec_ok: the index spec dimension size for dimension %d is negative: %d!\n", i, (int)s->dim_size[i]); fflush(stderr);
+          return 0;
+        }
         if ((s->index[i] == 0) && (s->dim_size[i] != 1)) {
-            fprintf(stderr,"index[%d] == 0, size == %d\n",
-                    i, (unsigned int) s->dim_size[i]);
+            fprintf(stderr,"index[%d] == 0, size == %d\n", i, (unsigned int) s->dim_size[i]); fflush(stderr);
             return 0;
         }
     }
@@ -70,7 +89,7 @@ void alloc_index_spec(index_spec_t* s)
  * create_index_spec
  *
  * Creates a subscript, i.e. index_spec_t from the arguments.
- * nridx - number of indixes.
+ * nridx - number of indexes.
  * Each index consist of a size and a pointer to indixes.
  *
  * For instance to create the indexes in a[1,{2,3}] you
@@ -155,26 +174,28 @@ void print_index_spec(index_spec_t* spec)
 {
   int i,k;
   printf("[");
-  for(i = 0; i < spec->ndims; ++i) {
-        switch (spec->index_type[i]) {
-        case 'S':
-      printf("%d", (int) *spec->index[i]);
-            break;
-        case 'A':
-      printf("{");
-      for (k = 0; k < spec->dim_size[i]; ++k) {
-        printf("%d", (int) spec->index[i][k]);
-        if (k != (spec->dim_size[i] - 1)) printf(",");
-      }
-      printf("}");
-            break;
-        case 'W':
-      printf(":");
-            break;
-        default:
-            printf("INVALID TYPE %c.", spec->index_type[i]);
-            break;
+  for(i = 0; i < spec->ndims; ++i)
+  {
+    switch (spec->index_type[i])
+    {
+      case 'S':
+        printf("%d", (int) *spec->index[i]);
+        break;
+      case 'A':
+        printf("{");
+        for (k = 0; k < spec->dim_size[i]; ++k) {
+          printf("%d", (int) spec->index[i][k]);
+          if (k != (spec->dim_size[i] - 1)) printf(",");
         }
+        printf("}");
+        break;
+      case 'W':
+        printf(":");
+        break;
+      default:
+        printf("INVALID TYPE %c.", spec->index_type[i]);
+        break;
+    }
     if (i != (spec->ndims - 1)) printf(", ");
   }
   printf("]");

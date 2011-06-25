@@ -56,6 +56,14 @@ void base_array_create(base_array_t *dest, void *data, int ndims, va_list ap)
     for (i = 0; i < ndims; ++i) {
         dest->dim_size[i] = va_arg(ap, int);
     }
+
+    /* uncomment for debugging!
+    fprintf(stderr, "created array ndims[%d] (", ndims);
+    for (i = 0; i < ndims; ++i) {
+      fprintf(stderr, "size(%d)=[%d], ", i, (int)dest->dim_size[i]);
+    }
+    fprintf(stderr, ")\n"); fflush(stderr);
+    */
 }
 
 int base_array_ok(base_array_t *a)
@@ -166,13 +174,18 @@ int index_spec_fit_base_array(index_spec_t *s, base_array_t *a)
 {
     int i, j;
 
-    if (s->ndims != a->ndims) return 0;
+    if (s->ndims != a->ndims)
+    {
+      fprintf(stderr, "index spec dimensions and array dimensions do not agree %d != %d\n",
+          (int)s->ndims, (int)a->ndims); fflush(stderr);
+      return 0;
+    }
     for (i = 0; i < s->ndims; ++i) {
         if (s->dim_size[i] == 0) {
             if ((s->index[i][0] <= 0) || (s->index[i][0] > a->dim_size[i])) {
                 fprintf(stderr,
                         "scalar s->index[%d][0] == %d incorrect, a->dim_size[%d] == %d\n",
-                        i, (int) s->index[i][0], i, (int) a->dim_size[i]);
+                        i, (int) s->index[i][0], i, (int) a->dim_size[i]); fflush(stderr);
                 return 0;
             }
   }
@@ -182,7 +195,7 @@ int index_spec_fit_base_array(index_spec_t *s, base_array_t *a)
                                 (s->index[i][j] > a->dim_size[i]))) {
                 fprintf(stderr,
                         "array s->index[%d][%d] == %d incorrect, a->dim_size[%d] == %d\n",
-                        i, j, (int) s->index[i][j], i, (int) a->dim_size[i]);
+                        i, j, (int) s->index[i][j], i, (int) a->dim_size[i]); fflush(stderr);
                 return 0;
             }
   }
@@ -193,12 +206,13 @@ int index_spec_fit_base_array(index_spec_t *s, base_array_t *a)
 
 size_t base_array_nr_of_elements(base_array_t *a)
 {
-    int i;
-    size_t nr_of_elements = 1;
-    for (i = 0; i < a->ndims; ++i) {
-  nr_of_elements *= a->dim_size[i];
-    }
-    return nr_of_elements;
+  int i;
+  size_t nr_of_elements = 1;
+  for (i = 0; i < a->ndims; ++i)
+  {
+     nr_of_elements *= a->dim_size[i];
+  }
+  return nr_of_elements;
 }
 
 void simple_alloc_1d_base_array(base_array_t *dest, int n, void *data)
@@ -228,6 +242,14 @@ size_t alloc_base_array(base_array_t *dest, int ndims, va_list ap)
     for (i = 0; i < ndims; ++i) {
         dest->dim_size[i] = va_arg(ap, _index_t);
     }
+
+    /* uncomment for debugging!
+    fprintf(stderr, "alloc array ndims[%d] (", ndims);
+    for (i = 0; i < ndims; ++i) {
+      fprintf(stderr, "size(%d)=[%d], ", i, (int)dest->dim_size[i]);
+    }
+    fprintf(stderr, ")\n"); fflush(stderr);
+    */
 
     return base_array_nr_of_elements(dest);
 }
