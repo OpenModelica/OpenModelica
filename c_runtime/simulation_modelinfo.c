@@ -54,8 +54,8 @@ static void indent(FILE *fout, int n) {
 static void printPlotCommand(FILE *plt, const char *plotFormat, const char *title, const char *prefix, int numFnsAndBlocks, int i, int id) {
   const char *format = "plot \"%s_prof.data\" binary format=\"%%*uint32%%2double%%*%duint32%%%ddouble\" using 1:%d w l lw 1\n";
   const char *formatCount = "plot \"%s_prof.data\" binary format=\"%%*uint32%%*2double%%%duint32%%*%ddouble\" using %d w l lw 1\n";
-  unsigned long nmin,nmax;
-  double ymin,ymax;
+  unsigned long nmin = 0, nmax = 0;
+  double ymin = 0.0, ymax = 0.0;
   if (!plt) return;
   /* PNG */
   fputs("set terminal png size 32,32\n", plt);

@@ -42,8 +42,9 @@
 extern "C" {
 #endif
 
-// The inline implementations require the use of some temporary storage
-// Dimension 0 is swapped with the states array at the end of each time step
+/* The inline implementations require the use of some temporary storage
+ * Dimension 0 is swapped with the states array at the end of each time step
+ */
 extern double** work_states;
 extern const int inline_work_states_ndims;
 
