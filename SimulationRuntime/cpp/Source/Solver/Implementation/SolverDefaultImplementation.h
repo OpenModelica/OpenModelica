@@ -67,6 +67,7 @@ public:
 
 
 	double
+		_tInit,							///< (initiale) Startzeit (wird nicht vom Solver verändert)
 		_tCurrent,						///< current time (is changed by the solver)
 		_tEnd,							///< end time
 		_tLastSuccess,					///< time of last successfull integration step (before zero crossing)
@@ -98,6 +99,7 @@ public:
 	
 	double
 		*_zeroVal,						///< Vector (of dimension _dimZeroF) containing values of all zero functions
+		*_zeroValInit,					///< Vektor (der Dimension _dimZeroF) mit Nullstellenfunktionswerten am Anfang des Integrationsintervalles
 		*_zeroValLastSuccess;			///< Vector (of dimension _dimZeroF) containing values of all zero functions of last sucessfull integration step (before zero crossing) 
 
 	bool

@@ -13,7 +13,7 @@
 *  system of equations A * X = B.
 ********************************/
 
-extern "C" void /*DGESV*/dgesv_(long int *n, long int *nrhs, double *J, long int *ldj, double *pivot, 
+extern "C" void dgesv_(long int *n, long int *nrhs, double *J, long int *ldj, double *pivot, 
 					  double *b, long int *ldb, long int *idid);
 
 

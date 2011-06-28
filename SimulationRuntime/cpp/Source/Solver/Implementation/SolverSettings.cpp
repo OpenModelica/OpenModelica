@@ -4,12 +4,13 @@
 #include "SolverSettings.h"
 
 SolverSettings::SolverSettings( IGlobalSettings* globalSettings)
-: _hInit		(globalSettings->gethOutput() )
-, _hUpperLimit	(globalSettings->getEndTime() - globalSettings->getStartTime())
-, _hLowerLimit	(10*UROUND)
-, _endTimeTol	(1e-6)
-, _zeroTol		(1e-4)
-, _zeroTimeTol	(1e-12)
+	: _hInit		(globalSettings->gethOutput() )
+	, _hUpperLimit	(globalSettings->getEndTime() - globalSettings->getStartTime())
+	, _hLowerLimit	(10*UROUND)
+	, _endTimeTol	(1e-6)
+	, _zeroTol		(1e-4)
+	, _zeroTimeTol	(1e-12)
+	,_zeroRatio(1.0)
 
 {	
 	_globalSettings = globalSettings ;
@@ -75,4 +76,14 @@ IGlobalSettings* SolverSettings::getGlobalSettings()
 
 void SolverSettings::load(string)
 {
+}
+
+double SolverSettings::getZeroRatio()
+{
+	return _zeroRatio ;
+}
+
+void SolverSettings::setZeroRatio(double ratio)
+{
+	_zeroRatio=ratio;
 }

@@ -23,12 +23,9 @@ public:
 	enum EULERMETHOD
 	{
 		EULERFORWARD	= 0,	///< Explicit Euler
-		HEUN			= 1,	///< Method of Heun 
-		MODIFIEDEULER	= 2,	///< Euler-Cauchy 
-		MODIFIEDHEUN	= 3,	///< Heun, order 3
-		EULERBACKWARD	= 4,	///< Implicit Euler
-		MIDPOINT		= 5,		///< Midpoint rule
-		LINEAREULER		= 6
+		EULERBACKWARD	= 1,	///< Implicit Euler
+		MIDPOINT		= 2,		///< Midpoint rule
+		
 	};
 
 	/// Enum to choose the method for zero search

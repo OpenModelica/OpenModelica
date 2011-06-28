@@ -21,28 +21,32 @@ Copyright (c) 2008, OSMC
 class BOOST_EXTENSION_SOLVERSETTINGS_DECL SolverSettings : public ISolverSettings
 {
 public:
-	/*DLL_EXPORT*/ SolverSettings( IGlobalSettings* globalSettings);
+	 SolverSettings( IGlobalSettings* globalSettings);
 
 	/// Initial step size (default: 1e-2)
-	/*DLL_EXPORT*/ virtual double gethInit();
-	/*DLL_EXPORT*/ virtual void sethInit(double);
+	 virtual double gethInit();
+	virtual void sethInit(double);
 	/// Lower limit for step size during integration (default: should be machine precision)
-	/*DLL_EXPORT*/ virtual double getLowerLimit();
-	/*DLL_EXPORT*/ virtual void setLowerLimit(double);
+	virtual double getLowerLimit();
+	virtual void setLowerLimit(double);
 	/// Upper limit for step size during integration (default: _endTime-_startTime)
-	/*DLL_EXPORT*/ virtual double getUpperLimit();
-	/*DLL_EXPORT*/ virtual void setUpperLimit(double);
+	virtual double getUpperLimit();
+	virtual void setUpperLimit(double);
 	/// Tolerance to reach _endTime (default: 1e-6)
-	/*DLL_EXPORT*/ virtual double getEndTimeTol();
-	/*DLL_EXPORT*/ virtual void setEndTimeTol(double);
+	 virtual double getEndTimeTol();
+	virtual void setEndTimeTol(double);
 	/// Tolerance to find a zero search (abs(f(t))<_zeroTol) (default: 1e-5)
-	/*DLL_EXPORT*/ virtual double getZeroTol();
-	/*DLL_EXPORT*/ virtual void setZeroTol(double);
+	 virtual double getZeroTol();
+	 virtual void setZeroTol(double);
 	/// Tolerance to find the time of a zero ((t-t_last)<_zeroTimeTol) (default: 1e-12)
-	/*DLL_EXPORT*/ virtual double getZeroTimeTol();
-	/*DLL_EXPORT*/ virtual void setZeroTimeTol(double) ;
-	///  Global simulation settings
-	/*DLL_EXPORT*/ virtual IGlobalSettings* getGlobalSettings();
+	 virtual double getZeroTimeTol();
+   virtual void setZeroTimeTol(double) ;
+	
+   	 virtual double getZeroRatio();
+    virtual void setZeroRatio(double) ;
+
+   ///  Global simulation settings
+	virtual IGlobalSettings* getGlobalSettings();
 	virtual void load(string);
 private:
 	double
@@ -51,8 +55,8 @@ private:
 		_hUpperLimit,		///< Upper limit for step size during integration (default: _endTime-_startTime)
 		_endTimeTol,			///< Tolerance to reach _endTime (default: 1e-6)
 		_zeroTol,			///< Tolerance to find a zero search (abs(f(t))<_zeroTol) (default: 1e-5)
-		_zeroTimeTol;		///< Tolerance to find the time of a zero ((t-t_last)<_zeroTimeTol) (default: 1e-12)
-		
+		_zeroTimeTol,		///< Tolerance to find the time of a zero ((t-t_last)<_zeroTimeTol) (default: 1e-12)
+		_zeroRatio;		///< = Hinit_{afterZero} / Hinit_{orig} Verhältnis zwischen Originaler Initialschrittweite und Anfangsschrittweite nach Neustart des Solvers
 	 IGlobalSettings*	
 		_globalSettings;	///< Global simulation settings
 

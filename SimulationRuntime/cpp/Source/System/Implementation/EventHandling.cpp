@@ -172,7 +172,7 @@ bool EventHandling::IterateEventQueue(const bool* events,update_events_type upda
 	//check if new events occured
 	crestart = !(std::equal (events, events+dimf,events_before));
 
-	return ((drestart||crestart)); //returns true if new events occured
+	return/* ((drestart||crestart))*/false; //returns true if new events occured
 }
 
 

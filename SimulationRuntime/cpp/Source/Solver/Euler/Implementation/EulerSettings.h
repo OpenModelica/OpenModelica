@@ -20,40 +20,40 @@ class /*BOOST_EXTENSION_EULERSETTINGS_DECL*/ EulerSettings : public IEulerSettin
 {
 
 public:
-	/*DLL_EXPORT*/ EulerSettings(IGlobalSettings* globalSettings);
+	EulerSettings(IGlobalSettings* globalSettings);
   /**
 	Choise of solution method according to EULERMETHOD ([0,1,2,3,4,5]; default: 0)
 	**/
-	/*DLL_EXPORT*/ virtual unsigned int getEulerMethod();
-	/*DLL_EXPORT*/ virtual  void setEulerMetoh(unsigned int);
+	 virtual unsigned int getEulerMethod();
+	 virtual  void setEulerMetoh(unsigned int);
 	/**
 	 Choise of method for zero search according to ZEROSEARCHMETHOD ([0,1]; default: 0)
 	*/
-	/*DLL_EXPORT*/ virtual unsigned int getZeroSearchMethod();
-    /*DLL_EXPORT*/ virtual void setZeroSearchMethod(unsigned int );		
+	virtual unsigned int getZeroSearchMethod();
+    virtual void setZeroSearchMethod(unsigned int );		
         
 	/**
 	Determination of number of zeros in one intervall (used only for methods [2,3]) ([true,false]; default: false)
 	*/
-	/*DLL_EXPORT*/ virtual bool getUseSturmSequence();
-	/*DLL_EXPORT*/ virtual void setUseSturmSequence(bool);
+	 virtual bool getUseSturmSequence();
+	virtual void setUseSturmSequence(bool);
 	/**
 	For implicit methods only. Choise between fixpoint and newton-iteration  kann eine Newtoniteration gewählt werden. ([false,true]; default: false = Fixpunktiteration)
 	*/
-	/*DLL_EXPORT*/ virtual bool getUseNewtonIteration();
-	/*DLL_EXPORT*/ virtual void setUseNewtonIteration(bool);	
+	 virtual bool getUseNewtonIteration();
+	 virtual void setUseNewtonIteration(bool);	
 	/**
 	Equidistant output(by interpolation polynominal) ([true,false]; default: false)
 	*/
-	/*DLL_EXPORT*/ virtual bool getDenseOutput();
-	/*DLL_EXPORT*/ virtual void setDenseOutput(bool);	
+	 virtual bool getDenseOutput();
+	 virtual void setDenseOutput(bool);	
         /**
 	Tolerance for newton iteration (used when _useNewtonIteration=true) (default: 1e-8)	
 	*/
-	/*DLL_EXPORT*/ virtual double getIterTol();
-	/*DLL_EXPORT*/ virtual void setIterTol(double);
+	 virtual double getIterTol();
+	virtual void setIterTol(double);
 	//initializes the settings object by an xml file
-	/*DLL_EXPORT*/ virtual void load(std::string xml_file);
+	 virtual void load(std::string xml_file);
 private:
 	int 
 		_method,				///< Choise of solution method according to EULERMETHOD ([0,1,2,3,4,5]; default: 0)

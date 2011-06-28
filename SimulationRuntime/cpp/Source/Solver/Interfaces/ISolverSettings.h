@@ -37,6 +37,8 @@ public:
 	/// Tolerance to find the time of a zero ((t-t_last)<_zeroTimeTol) (default: 1e-12)
 	virtual double getZeroTimeTol() = 0;
 	virtual void setZeroTimeTol(double) = 0;
+	virtual double getZeroRatio()= 0;
+    virtual void setZeroRatio(double) = 0;
 	///  Global simulation settings
 	virtual IGlobalSettings* getGlobalSettings()=0;
     virtual void load(string)=0;

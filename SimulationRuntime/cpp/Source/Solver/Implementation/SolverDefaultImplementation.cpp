@@ -11,7 +11,7 @@ SolverDefaultImplementation::SolverDefaultImplementation(IDAESystem* system, ISo
 : _system				(system)
 , _settings				((ISolverSettings*)settings)
 
-
+, _tInit				(0.0)
 , _tCurrent				(0.0)
 , _tEnd					(0.0)
 , _tLastSuccess			(0.0)
@@ -19,7 +19,7 @@ SolverDefaultImplementation::SolverDefaultImplementation(IDAESystem* system, ISo
 
 , _h					(0.0)
 
-, _firstCall			(true)
+//, _firstCall			(true)
 , _firstStep			(true)
 
 , _totStps				(0)
@@ -29,7 +29,7 @@ SolverDefaultImplementation::SolverDefaultImplementation(IDAESystem* system, ISo
 , _zeros				(0)
 
 , _zeroStatus			(IDAESolver::UNCHANGED_SIGN)
-
+, _zeroValInit			(NULL)
 , _dimZeroFunc			(0)
 , _zeroVal				(NULL)
 , _zeroValLastSuccess	(NULL)
@@ -44,6 +44,8 @@ SolverDefaultImplementation::~SolverDefaultImplementation()
 {
 	if(_zeroVal)
 		delete [] _zeroVal;
+	if(_zeroValInit)
+		delete [] _zeroValInit;
 	if(_zeroValLastSuccess)
 		delete [] _zeroValLastSuccess;
 	if(_events)
@@ -104,6 +106,8 @@ void SolverDefaultImplementation::init()
 
 		if(_zeroVal)
 			delete [] _zeroVal;
+		if(_zeroValInit)
+			delete [] _zeroValInit;
 		if(_zeroValLastSuccess)
 			delete [] _zeroValLastSuccess;
 		if(_events)
@@ -112,9 +116,11 @@ void SolverDefaultImplementation::init()
 		_zeroVal			= new double[_dimZeroFunc];
 		_zeroValLastSuccess	= new double[_dimZeroFunc];
 		_events				= new bool[_dimZeroFunc];
+		_zeroValInit			= new double[_dimZeroFunc];
 
 		event_system->giveZeroFunc(_zeroVal,_settings->getZeroTol());
 		memcpy(_zeroValLastSuccess,_zeroVal,_dimZeroFunc*sizeof(double));
+		memcpy(_zeroValInit,_zeroVal,_dimZeroFunc*sizeof(double));
 		memset(_events,false,_dimZeroFunc*sizeof(bool));
 	}
      _time_events = event_system->getTimeEvents();
@@ -133,72 +139,95 @@ void SolverDefaultImplementation::init()
 	// Set initial step size
 	//_h = _settings->_globalSettings->_hOutput;	
 }
-void SolverDefaultImplementation::updateEventState()
-{
-	dynamic_cast<IEvent*>(_system)->giveZeroFunc(_zeroVal,_settings->getZeroTol());
-	setZeroState();
-	if (_zeroStatus == IDAESolver::ZERO_CROSSING)	 // An event triggered an other event
-	{
-		_tLastSuccess = _tCurrent;		 // Concurrently occured events are in the time tollerance
-		setZeroState();				     // Upate status of events vector
-	}
-}
 
 void SolverDefaultImplementation::setZeroState()
 {
-	// Reset Zero-State
-	_zeroStatus = IDAESolver::UNCHANGED_SIGN;
-
-
 	
-	// For all zero functions...
+		// Reset Zero-State
+	_zeroStatus = IDAESolver::UNCHANGED_SIGN;;
+	
+	// Alle Elemente im ZeroFunction-Array durchgehen
 	for (int i=0; i<_dimZeroFunc; ++i)
 	{
-		// Check for change in sign in each zero function
-		if (_zeroVal[i] * _zeroValLastSuccess[i] <= 0.0 && fabs(_zeroVal[i]-_zeroValLastSuccess[i]) > UROUND)
+		// Überprüfung auf Vorzeichenwechsel
+		// wenn _zeroVal[i] = _zeroValLastSuccess[i] = 0 ist.
+		//if (_zeroVal[i] * _zeroValLastSuccess[i] <= 0 && (_zeroVal[i]!= 0.0 || _zeroValLastSuccess[i] != 0.0))
+		if (_zeroVal[i] * _zeroValLastSuccess[i] <= 0 && abs(_zeroVal[i]-_zeroValLastSuccess[i])>UROUND)
 		{
-			// EQUAL_ZERO
-			//-----------
-			// Check whether value zero function is smaller than tolerance OR step size is smaller than time-tolerance
+		
+			// Überprüfung, ob rechte Seite kleiner als vorgegebene Toleranz ist
 			if ( (fabs(_zeroVal[i])) < _settings->getZeroTol() || (_tCurrent != 0 && (_tCurrent-_tLastSuccess) < _settings->getZeroTimeTol()) ) 
 			{
+				
+				//  Eintrag im Array liegt innerhalb Toleranzbereich und gilt als =0
 				_zeroStatus = IDAESolver::EQUAL_ZERO;
-				
-				// Store which zero function caused event
-				_events[i] = true; //_zeroSign = sgn(_zeroVal[i]-_zeroValLastSuccess[i]);
-				
-				// zeroVal is not allowed to be =0, since otherwise the direction of sign change cannot be determined in next step
+				_events[i] = true;
+				// ZeroVal darf nicht null werden, da sonst im nächsten Schritt 
+				// die Richtung des Vorzeichenwechsels nicht erkannt werden kann
 				if ( _zeroVal[i] == 0.0 )
 					_zeroVal[i] = -sgn(_zeroValLastSuccess[i]) * UROUND;
 			}
-
-			// ZERO_CROSSING
-			//--------------
 			else
 			{
-				// Change in sign, but zeroVal is not smaller than given tolerance
+			  
+				// Vorzeichenwechsel, aber Eintrag ist größer (oder kleiner) als Toleranzbereich
 				_zeroStatus = IDAESolver::ZERO_CROSSING;
-				
-				// Reset zeroSign
-				_events[i] = 0;
-				// Store time of last rejected step
-				_tLastUnsucess = _tCurrent;
 
+				// Rest ZeroSign
+				_events[i] = false;
+
+				// Zeitpunkt des letzten verworfenen Schrittes abspeichern
+				_tLastUnsucess = _tCurrent;
 				break;
 			}
 		}
-
-		// UNCHANGED_SIGN
-		//----------------
 		else
 			_events[i] = false;
-			
 	}
+	// Bei erstem Schritt können gleichzeitig meherere Vorzeichenwechsel auftreten, hier gilt für den Fall : 
+	//_zeroVal[i]-_zeroValLastSuccess[i])<UROUND
+	if (_tLastSuccess == 0.0 && _zeroStatus == IDAESolver::EQUAL_ZERO)
+	{
+		for (int i=0; i<_dimZeroFunc; ++i)
+		{
+		// Überprüfung auf Vorzeichenwechsel
+		if (_zeroVal[i] * _zeroValLastSuccess[i] <= 0)
+		{
+			// Überprüfung, ob rechte Seite kleiner als vorgegebene Toleranz ist
+			if ( (fabs(_zeroVal[i])) < _settings->getZeroTol()  || (_tCurrent != 0 && (_tCurrent-_tLastSuccess) <_settings->getZeroTimeTol()) ) 
+			{
+				
+				//  Eintrag im Array liegt innerhalb Toleranzbereich und gilt als =0
+				_zeroStatus = IDAESolver::EQUAL_ZERO;
+				_events[i] = true;
+				// ZeroVal darf nicht null werden, da sonst im nächsten Schritt 
+				// die Richtung des Vorzeichenwechsels nicht erkannt werden kann
+				if ( _zeroVal[i] == 0.0 )
+					_zeroVal[i] = -sgn(_zeroValLastSuccess[i]) * UROUND;
+			}
+			else
+			{
+				
+				// Vorzeichenwechsel, aber Eintrag ist größer (oder kleiner) als Toleranzbereich
+				_zeroStatus = IDAESolver::ZERO_CROSSING;
 
-	// NO_ZERO
-	//--------------
+				// Rest ZeroSign
+				_events[i] = false;
+
+				// Zeitpunkt des letzten verworfenen Schrittes abspeichern
+				_tLastUnsucess = _tCurrent;
+				break;
+			}
+		}
+		else
+			_events[i] = false;
+		}
+	}
+	// Sofern Nullstellensuche aktiv, wird überprüft ob über den Punkt wo ZeroCrossing war schon drüber ist.
+	// Wenn ja, gab es wohl doch keine Nullstelle (Berechnungsfehler wg. zu großer Schrittweite)
 	if (_zeroSearchActive && (_tCurrent > _tLastUnsucess))
 		_zeroStatus = IDAESolver::NO_ZERO;
+
 }
 
 
@@ -235,7 +264,16 @@ void SolverDefaultImplementation::writeToFile(const int& stp, const double& t, c
         _system->writeOutput(_outputCommand);
 	}
 }
-
+void SolverDefaultImplementation::updateEventState()
+{
+	dynamic_cast<IEvent*>(_system)->giveZeroFunc(_zeroVal,_settings->getZeroTol());
+	setZeroState();
+	if (_zeroStatus == IDAESolver::ZERO_CROSSING)	 // An event triggered an other event
+	{
+		_tLastSuccess = _tCurrent;		 // Concurrently occured events are in the time tollerance
+		setZeroState();				     // Upate status of events vector
+	}
+}
 using boost::extensions::factory;
 
 BOOST_EXTENSION_TYPE_MAP_FUNCTION {
