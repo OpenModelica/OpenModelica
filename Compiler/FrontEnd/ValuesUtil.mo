@@ -1117,6 +1117,17 @@ algorithm
   end matchcontinue;
 end valueReals;
 
+public function arrayValueInts
+  "Returns the integer values of a Values array."
+  input Value inValue;
+  output list<Integer> outReal;
+protected
+  list<Values.Value> vals;
+algorithm
+  Values.ARRAY(valueLst=vals) := inValue;
+  outReal := Util.listMap(vals, valueInteger);
+end arrayValueInts;
+
 public function arrayValueReals "function: valueReals
 
   Return the real value of a Value. If the value is an integer,
@@ -1131,6 +1142,32 @@ algorithm
   outReal := valueReals(vals);
 end arrayValueReals;
 
+public function matrixValueReals
+  "Returns the real values of a Values matrix."
+  input Value inValue;
+  output list<list<Real>> outReals;
+protected
+  list<Values.Value> vals;
+algorithm
+  outReals := matchcontinue(inValue)
+    local
+      list<Values.Value> vals;
+      list<Real> reals;
+
+    // A matrix.
+    case Values.ARRAY(valueLst = vals)
+      then Util.listMap(vals, arrayValueReals);
+
+    // A 1-dimensional array.
+    case Values.ARRAY(valueLst = vals)
+      equation
+        reals = valueReals(vals); 
+      then
+        Util.listMap(reals, Util.listCreate);
+
+  end matchcontinue;
+end matrixValueReals;
+  
 public function valueNeg "function: valueNeg
   author: PA
 
@@ -1877,6 +1914,14 @@ algorithm
   end match;
 end arrayValues;
 
+public function arrayScalar
+  "If an array contains only one value, returns that value. Otherwise fails."
+  input Value inValue;
+  output Value outValue;
+algorithm
+  Values.ARRAY(valueLst = {outValue}) := inValue;
+end arrayScalar;
+
 public function makeReal "Creates a real value "
   input Real r;
   output Value v;
@@ -1921,6 +1966,30 @@ algorithm
       then Values.ARRAY(vlst,{i1});
   end matchcontinue;
 end makeArray;
+
+public function makeIntArray
+  "Creates a Value.ARRAY from a list of integers."
+  input list<Integer> inInts;
+  output Value outArray;
+algorithm
+  outArray := makeArray(Util.listMap(inInts, makeInteger));
+end makeIntArray;
+
+public function makeRealArray
+  "Creates a Values.ARRAY from a list of reals."
+  input list<Real> inReals;
+  output Value outArray;
+algorithm
+  outArray := makeArray(Util.listMap(inReals, makeReal));
+end makeRealArray;
+
+public function makeRealMatrix
+  "Creates a matrix (ARRAY of ARRAY) from a list of list of reals."
+  input list<list<Real>> inReals;
+  output Value outArray;
+algorithm
+  outArray := makeArray(Util.listMap(inReals, makeRealArray));
+end makeRealMatrix;
 
 public function valString "function: valString
 

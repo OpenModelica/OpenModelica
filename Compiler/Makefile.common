@@ -167,6 +167,7 @@ Database.mo \
 Parser.mo \
 UnitParserExt.mo \
 IOStreamExt.mo \
+Lapack.mo \
 OptManager.mo \
 Print.mo \
 RTOpts.mo \

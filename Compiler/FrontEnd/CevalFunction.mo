@@ -71,8 +71,10 @@ protected import Error;
 protected import Expression;
 protected import ExpressionDump;
 protected import Graph;
+protected import Lapack;
 protected import Lookup;
 protected import RTOpts;
+protected import System;
 protected import Types;
 protected import Util;
 protected import ValuesUtil;
@@ -162,9 +164,12 @@ algorithm
       list<FunctionVar> func_params;
       Env.Cache cache;
       Env.Env env;
-      list<Values.Value> return_values;
+      list<Values.Value> return_values, input_values;
       Values.Value return_value;
       SymbolTable st;
+      String ext_fun_name;
+      list<DAE.ExtArg> ext_fun_args;
+      DAE.ExtArg ext_fun_ret;
 
     case (_, _, _, DAE.FUNCTION_DEF(body = body), _, _, st)
       equation
@@ -191,6 +196,38 @@ algorithm
       then
         (cache, return_value, st);
     
+    case (_, _, _, DAE.FUNCTION_EXT(body = body, externalDecl = 
+        DAE.EXTERNALDECL(name = ext_fun_name, 
+                         args = ext_fun_args, 
+                         returnArg = ext_fun_ret)), _, _, st)
+      equation
+        // Get all variables from the function. Ignore everything else, since
+        // external functions shouldn't have statements.
+        (vars, _) = Util.listSplitOnFirstMatch(body, DAEUtil.isNotVar);
+        // Save the output variables, so that we can return their values when
+        // we're done.
+        output_vars = Util.listFilter(vars, DAEUtil.isOutputVar);
+
+        // Pair the input arguments to input parameters and sort the function
+        // variables by dependencies.
+        func_params = pairFuncParamsWithArgs(vars, inFuncArgs);
+        func_params = sortFunctionVarsByDependency(func_params);
+
+        // Create an environment for the function and add all function variables.
+        (cache, env, st) = 
+          setupFunctionEnvironment(inCache, inEnv, inFuncName, func_params, st);
+        
+        // Call the function.
+        (cache, env, st) = 
+          evaluateExternalFunc(ext_fun_name, ext_fun_args, cache, env, st);
+
+        // Fetch the values of the output variables.
+        return_values = Util.listMap1(output_vars, getFunctionReturnValue, env);
+        // If we have several output variables they should be boxed into a tuple.
+        return_value = boxReturnValue(return_values);
+      then
+        (cache, return_value, st);
+
     else
       equation
         Debug.fprintln("failtrace", "- CevalFunction.evaluateFunction failed.\n");
@@ -239,6 +276,612 @@ algorithm
 
   end match;
 end pairFuncParamsWithArgs;
+
+protected function evaluateExtInputArg
+  "Evaluates an external function argument to a value."
+  input DAE.ExtArg inArgument;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input SymbolTable inST;
+  output Values.Value outValue;
+  output Env.Cache outCache;
+  output SymbolTable outST;
+algorithm
+  (outValue, outCache, outST) := matchcontinue(inArgument, inCache, inEnv, inST)
+    local
+      DAE.ComponentRef cref;
+      DAE.Type ty;
+      DAE.Exp exp;
+      Values.Value val;
+      Env.Cache cache;
+      SymbolTable st;
+      String err_str;
+
+    case (DAE.EXTARG(componentRef = cref, type_ = ty), _, _, _)
+      equation
+        val = getVariableValue(cref, ty, inEnv);
+      then
+        (val, inCache, inST);
+
+    case (DAE.EXTARGEXP(exp = exp), cache, _, st)
+      equation
+        (cache, val, st) = cevalExp(exp, cache, inEnv, st);
+      then
+        (val, cache, st);
+
+    case (DAE.EXTARGSIZE(componentRef = cref, exp = exp), cache, _, st)
+      equation
+        exp = DAE.SIZE(DAE.CREF(cref, DAE.ET_OTHER()), SOME(exp));
+        (cache, val, st) = cevalExp(exp, cache, inEnv, st);
+      then
+        (val, cache, st);
+
+    else
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        err_str = DAEDump.dumpExtArgStr(inArgument);
+        Debug.traceln("- CevalFunction.evaluateExtInputArg failed on " +& err_str);
+      then
+        fail();
+
+  end matchcontinue;
+end evaluateExtInputArg;
+
+protected function evaluateExtIntArg
+  "Evaluates an external function argument to an Integer."
+  input DAE.ExtArg inArg;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input SymbolTable inST;
+  output Integer outValue;
+  output Env.Cache outCache;
+  output SymbolTable outST;
+algorithm
+  (Values.INTEGER(outValue), outCache, outST) :=
+    evaluateExtInputArg(inArg, inCache, inEnv, inST);
+end evaluateExtIntArg;
+
+protected function evaluateExtRealArg
+  "Evaluates an external function argument to a Real."
+  input DAE.ExtArg inArg;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input SymbolTable inST;
+  output Real outValue;
+  output Env.Cache outCache;
+  output SymbolTable outST;
+algorithm
+  (Values.REAL(outValue), outCache, outST) :=
+    evaluateExtInputArg(inArg, inCache, inEnv, inST);
+end evaluateExtRealArg;
+
+protected function evaluateExtStringArg
+  "Evaluates an external function argument to a String."
+  input DAE.ExtArg inArg;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input SymbolTable inST;
+  output String outValue;
+  output Env.Cache outCache;
+  output SymbolTable outST;
+algorithm
+  (Values.STRING(outValue), outCache, outST) :=
+    evaluateExtInputArg(inArg, inCache, inEnv, inST);
+end evaluateExtStringArg;
+  
+protected function evaluateExtIntArrayArg
+  "Evaluates an external function argument to an Integer array."
+  input DAE.ExtArg inArg;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input SymbolTable inST;
+  output list<Integer> outValue;
+  output Env.Cache outCache;
+  output SymbolTable outST;
+protected
+  Values.Value val;
+algorithm
+  (val, outCache, outST) :=
+    evaluateExtInputArg(inArg, inCache, inEnv, inST);
+  outValue := ValuesUtil.arrayValueInts(val);
+end evaluateExtIntArrayArg;
+
+protected function evaluateExtRealArrayArg
+  "Evaluates an external function argument to a Real array."
+  input DAE.ExtArg inArg;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input SymbolTable inST;
+  output list<Real> outValue;
+  output Env.Cache outCache;
+  output SymbolTable outST;
+protected
+  Values.Value val;
+algorithm
+  (val, outCache, outST) :=
+    evaluateExtInputArg(inArg, inCache, inEnv, inST);
+  outValue := ValuesUtil.arrayValueReals(val);
+end evaluateExtRealArrayArg;
+
+protected function evaluateExtRealMatrixArg
+  "Evaluates an external function argument to a Real matrix."
+  input DAE.ExtArg inArg;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input SymbolTable inST;
+  output list<list<Real>> outValue;
+  output Env.Cache outCache;
+  output SymbolTable outST;
+protected
+  Values.Value val;
+algorithm
+  (val, outCache, outST) :=
+    evaluateExtInputArg(inArg, inCache, inEnv, inST);
+  outValue := ValuesUtil.matrixValueReals(val);
+end evaluateExtRealMatrixArg;
+
+protected function evaluateExtOutputArg
+  "Returns the component reference to an external function output."
+  input DAE.ExtArg inArg;
+  output DAE.ComponentRef outCref;
+algorithm
+  DAE.EXTARG(componentRef = outCref) := inArg;
+end evaluateExtOutputArg;
+
+protected function assignExtOutputs
+  "Assigns the outputs from an external function to the correct variables in the
+  environment."
+  input list<DAE.ExtArg> inArgs;
+  input list<Values.Value> inValues;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input SymbolTable inST;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
+  output SymbolTable outST;
+algorithm
+  (outCache, outEnv, outST) := match(inArgs, inValues, inCache, inEnv, inST)
+    local
+      DAE.ExtArg arg;
+      Values.Value val;
+      list<DAE.ExtArg> rest_args;
+      list<Values.Value> rest_vals;
+      Env.Cache cache;
+      SymbolTable st;
+      Env.Env env;
+      DAE.ComponentRef cr;
+
+    case ({}, {}, _, _, _) then (inCache, inEnv, inST);
+
+    case (arg :: rest_args, val :: rest_vals, cache, env, st)
+      equation
+        cr = evaluateExtOutputArg(arg);
+        val = unliftExtOutputValue(cr, val, env);
+        (cache, env, st) = assignVariable(cr, val, cache, env, st);
+        (cache, env, st) = assignExtOutputs(rest_args, rest_vals, cache, env, st);
+      then
+        (cache, env, st);
+        
+  end match;
+end assignExtOutputs;
+
+protected function unliftExtOutputValue
+  "Some external functions don't make much difference between arrays and
+  matrices, so this function converts a matrix value to an array value when
+  needed."
+  input DAE.ComponentRef inCref;
+  input Values.Value inValue;
+  input Env.Env inEnv;
+  output Values.Value outValue;
+algorithm
+  outValue := matchcontinue(inCref, inValue, inEnv)
+    local
+      DAE.Type ty;
+      list<Values.Value> vals;
+      Integer dim;
+
+    // Matrix value, array type => convert.
+    case (_, Values.ARRAY(valueLst = vals as Values.ARRAY(valueLst = _) :: _,
+          dimLst = dim :: _), _)
+      equation
+        ((DAE.T_ARRAY(arrayType = ty), _), _) =
+          getVariableTypeAndBinding(inCref, inEnv);
+        false = Types.isArray(ty);
+        vals = Util.listMap(vals, ValuesUtil.arrayScalar);
+      then
+        Values.ARRAY(vals, {dim});
+
+    // Otherwise, do nothing.
+    else inValue;
+  end matchcontinue;
+end unliftExtOutputValue;
+  
+protected function evaluateExternalFunc
+  "This function evaluates an external function, at the moment this means a
+  LAPACK function. This function was automatically generated. No programmers
+  were hurt during the generation of this function."
+  input String inFuncName;
+  input list<DAE.ExtArg> inFuncArgs;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input SymbolTable inST;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
+  output SymbolTable outST;
+algorithm
+  (outCache, outEnv, outST) :=
+  match(inFuncName, inFuncArgs, inCache, inEnv, inST)
+    local
+      DAE.ExtArg arg_JOBU, arg_JOBVL, arg_JOBVR, arg_JOBVT, arg_TRANS, arg_INFO, arg_K;
+      DAE.ExtArg arg_KL, arg_KU, arg_LDA, arg_LDAB, arg_LDB, arg_LDU, arg_LDVL;
+      DAE.ExtArg arg_LDVR, arg_LDVT, arg_LWORK, arg_M, arg_N, arg_NRHS, arg_P;
+      DAE.ExtArg arg_RANK, arg_RCOND, arg_IPIV, arg_JPVT, arg_ALPHAI, arg_ALPHAR, arg_BETA;
+      DAE.ExtArg arg_C, arg_D, arg_DL, arg_DU, arg_TAU, arg_WI, arg_WORK;
+      DAE.ExtArg arg_WR, arg_X, arg_A, arg_AB, arg_B, arg_S, arg_U;
+      DAE.ExtArg arg_VL, arg_VR, arg_VT;
+      Values.Value val_INFO, val_RANK, val_IPIV, val_JPVT, val_ALPHAI, val_ALPHAR, val_BETA;
+      Values.Value val_C, val_D, val_DL, val_DU, val_TAU, val_WI, val_WORK;
+      Values.Value val_WR, val_X, val_A, val_AB, val_B, val_S, val_U;
+      Values.Value val_VL, val_VR, val_VT;
+      Integer INFO, K, KL, KU, LDA, LDAB, LDB, LDU, LDVL, LDVR, LDVT, LWORK, M, N, NRHS, P, RANK;
+      Real RCOND;
+      String JOBU, JOBVL, JOBVR, JOBVT, TRANS;
+      list<Integer> IPIV, JPVT;
+      list<Real> ALPHAI, ALPHAR, BETA, C, D, DL, DU, TAU, WI, WORK, WR, X, S;
+      list<list<Real>> A, AB, B, U, VL, VR, VT;
+      list<DAE.ExtArg> arg_out;
+      list<Values.Value> val_out;
+      Env.Cache cache;
+      Env.Env env;
+      SymbolTable st;
+      
+    case("dgeev", {arg_JOBVL, arg_JOBVR, arg_N, arg_A, arg_LDA, arg_WR, arg_WI,
+                   arg_VL, arg_LDVL, arg_VR, arg_LDVR, arg_WORK, arg_LWORK, arg_INFO},
+        cache, env, st)
+      equation
+        (JOBVL, cache, st) = evaluateExtStringArg(arg_JOBVL, cache, env, st);
+        (JOBVR, cache, st) = evaluateExtStringArg(arg_JOBVR, cache, env, st);
+        (N, cache, st) = evaluateExtIntArg(arg_N, cache, env, st);
+        (A, cache, st) = evaluateExtRealMatrixArg(arg_A, cache, env, st);
+        (LDA, cache, st) = evaluateExtIntArg(arg_LDA, cache, env, st);
+        (LDVL, cache, st) = evaluateExtIntArg(arg_LDVL, cache, env, st);
+        (LDVR, cache, st) = evaluateExtIntArg(arg_LDVR, cache, env, st);
+        (WORK, cache, st) = evaluateExtRealArrayArg(arg_WORK, cache, env, st);
+        (LWORK, cache, st) = evaluateExtIntArg(arg_LWORK, cache, env, st);
+        (A, WR, WI, VL, VR, WORK, INFO) =
+          Lapack.dgeev(JOBVL, JOBVR, N, A, LDA, LDVL, LDVR, WORK, LWORK);
+        val_A = ValuesUtil.makeRealMatrix(A);
+        val_WR = ValuesUtil.makeRealArray(WR);
+        val_WI = ValuesUtil.makeRealArray(WI);
+        val_VL = ValuesUtil.makeRealMatrix(VL);
+        val_VR = ValuesUtil.makeRealMatrix(VR);
+        val_WORK = ValuesUtil.makeRealArray(WORK);
+        val_INFO = ValuesUtil.makeInteger(INFO);
+        arg_out = {arg_A, arg_WR, arg_WI, arg_VL, arg_VR, arg_WORK, arg_INFO};
+        val_out = {val_A, val_WR, val_WI, val_VL, val_VR, val_WORK, val_INFO};
+        (cache, env, st) = assignExtOutputs(arg_out, val_out, cache, env, st);
+      then
+        (cache, env, st);
+    
+    case("dgegv", {arg_JOBVL, arg_JOBVR, arg_N, arg_A, arg_LDA, arg_B, arg_LDB,
+                   arg_ALPHAR, arg_ALPHAI, arg_BETA, arg_VL, arg_LDVL, arg_VR, arg_LDVR,
+                   arg_WORK, arg_LWORK, arg_INFO},
+        cache, env, st)
+      equation
+        (JOBVL, cache, st) = evaluateExtStringArg(arg_JOBVL, cache, env, st);
+        (JOBVR, cache, st) = evaluateExtStringArg(arg_JOBVR, cache, env, st);
+        (N, cache, st) = evaluateExtIntArg(arg_N, cache, env, st);
+        (A, cache, st) = evaluateExtRealMatrixArg(arg_A, cache, env, st);
+        (LDA, cache, st) = evaluateExtIntArg(arg_LDA, cache, env, st);
+        (B, cache, st) = evaluateExtRealMatrixArg(arg_B, cache, env, st);
+        (LDB, cache, st) = evaluateExtIntArg(arg_LDB, cache, env, st);
+        (LDVL, cache, st) = evaluateExtIntArg(arg_LDVL, cache, env, st);
+        (LDVR, cache, st) = evaluateExtIntArg(arg_LDVR, cache, env, st);
+        (WORK, cache, st) = evaluateExtRealArrayArg(arg_WORK, cache, env, st);
+        (LWORK, cache, st) = evaluateExtIntArg(arg_LWORK, cache, env, st);
+        (ALPHAR, ALPHAI, BETA, VL, VR, WORK, INFO) =
+          Lapack.dgegv(JOBVL, JOBVR, N, A, LDA, B, LDB, LDVL, LDVR, WORK, LWORK);
+        val_ALPHAR = ValuesUtil.makeRealArray(ALPHAR);
+        val_ALPHAI = ValuesUtil.makeRealArray(ALPHAI);
+        val_BETA = ValuesUtil.makeRealArray(BETA);
+        val_VL = ValuesUtil.makeRealMatrix(VL);
+        val_VR = ValuesUtil.makeRealMatrix(VR);
+        val_WORK = ValuesUtil.makeRealArray(WORK);
+        val_INFO = ValuesUtil.makeInteger(INFO);
+        arg_out = {arg_ALPHAR, arg_ALPHAI, arg_BETA, arg_VL, arg_VR, arg_WORK, arg_INFO};
+        val_out = {val_ALPHAR, val_ALPHAI, val_BETA, val_VL, val_VR, val_WORK, val_INFO};
+        (cache, env, st) = assignExtOutputs(arg_out, val_out, cache, env, st);
+      then
+        (cache, env, st);
+    
+    case("dgels", {arg_TRANS, arg_M, arg_N, arg_NRHS, arg_A, arg_LDA, arg_B,
+                   arg_LDB, arg_WORK, arg_LWORK, arg_INFO},
+        cache, env, st)
+      equation
+        (TRANS, cache, st) = evaluateExtStringArg(arg_TRANS, cache, env, st);
+        (M, cache, st) = evaluateExtIntArg(arg_M, cache, env, st);
+        (N, cache, st) = evaluateExtIntArg(arg_N, cache, env, st);
+        (NRHS, cache, st) = evaluateExtIntArg(arg_NRHS, cache, env, st);
+        (A, cache, st) = evaluateExtRealMatrixArg(arg_A, cache, env, st);
+        (LDA, cache, st) = evaluateExtIntArg(arg_LDA, cache, env, st);
+        (B, cache, st) = evaluateExtRealMatrixArg(arg_B, cache, env, st);
+        (LDB, cache, st) = evaluateExtIntArg(arg_LDB, cache, env, st);
+        (WORK, cache, st) = evaluateExtRealArrayArg(arg_WORK, cache, env, st);
+        (LWORK, cache, st) = evaluateExtIntArg(arg_LWORK, cache, env, st);
+        (A, B, WORK, INFO) =
+          Lapack.dgels(TRANS, M, N, NRHS, A, LDA, B, LDB, WORK, LWORK);
+        val_A = ValuesUtil.makeRealMatrix(A);
+        val_B = ValuesUtil.makeRealMatrix(B);
+        val_WORK = ValuesUtil.makeRealArray(WORK);
+        val_INFO = ValuesUtil.makeInteger(INFO);
+        arg_out = {arg_A, arg_B, arg_WORK, arg_INFO};
+        val_out = {val_A, val_B, val_WORK, val_INFO};
+        (cache, env, st) = assignExtOutputs(arg_out, val_out, cache, env, st);
+      then
+        (cache, env, st);
+    
+    case("dgelsx", {arg_M, arg_N, arg_NRHS, arg_A, arg_LDA, arg_B, arg_LDB,
+                    arg_JPVT, arg_RCOND, arg_RANK, arg_WORK, arg_LWORK, arg_INFO},
+        cache, env, st)
+      equation
+        (M, cache, st) = evaluateExtIntArg(arg_M, cache, env, st);
+        (N, cache, st) = evaluateExtIntArg(arg_N, cache, env, st);
+        (NRHS, cache, st) = evaluateExtIntArg(arg_NRHS, cache, env, st);
+        (A, cache, st) = evaluateExtRealMatrixArg(arg_A, cache, env, st);
+        (LDA, cache, st) = evaluateExtIntArg(arg_LDA, cache, env, st);
+        (B, cache, st) = evaluateExtRealMatrixArg(arg_B, cache, env, st);
+        (LDB, cache, st) = evaluateExtIntArg(arg_LDB, cache, env, st);
+        (JPVT, cache, st) = evaluateExtIntArrayArg(arg_JPVT, cache, env, st);
+        (RCOND, cache, st) = evaluateExtRealArg(arg_RCOND, cache, env, st);
+        (WORK, cache, st) = evaluateExtRealArrayArg(arg_WORK, cache, env, st);
+        (LWORK, cache, st) = evaluateExtIntArg(arg_LWORK, cache, env, st);
+        (A, B, JPVT, RANK, INFO) =
+          Lapack.dgelsx(M, N, NRHS, A, LDA, B, LDB, JPVT, RCOND, WORK, LWORK);
+        val_A = ValuesUtil.makeRealMatrix(A);
+        val_B = ValuesUtil.makeRealMatrix(B);
+        val_JPVT = ValuesUtil.makeIntArray(JPVT);
+        val_RANK = ValuesUtil.makeInteger(RANK);
+        val_INFO = ValuesUtil.makeInteger(INFO);
+        arg_out = {arg_A, arg_B, arg_JPVT, arg_RANK, arg_INFO};
+        val_out = {val_A, val_B, val_JPVT, val_RANK, val_INFO};
+        (cache, env, st) = assignExtOutputs(arg_out, val_out, cache, env, st);
+      then
+        (cache, env, st);
+    
+    case("dgesv", {arg_N, arg_NRHS, arg_A, arg_LDA, arg_IPIV, arg_B, arg_LDB,
+                   arg_INFO},
+        cache, env, st)
+      equation
+        (N, cache, st) = evaluateExtIntArg(arg_N, cache, env, st);
+        (NRHS, cache, st) = evaluateExtIntArg(arg_NRHS, cache, env, st);
+        (A, cache, st) = evaluateExtRealMatrixArg(arg_A, cache, env, st);
+        (LDA, cache, st) = evaluateExtIntArg(arg_LDA, cache, env, st);
+        (B, cache, st) = evaluateExtRealMatrixArg(arg_B, cache, env, st);
+        (LDB, cache, st) = evaluateExtIntArg(arg_LDB, cache, env, st);
+        (A, IPIV, B, INFO) =
+          Lapack.dgesv(N, NRHS, A, LDA, B, LDB);
+        val_A = ValuesUtil.makeRealMatrix(A);
+        val_IPIV = ValuesUtil.makeIntArray(IPIV);
+        val_B = ValuesUtil.makeRealMatrix(B);
+        val_INFO = ValuesUtil.makeInteger(INFO);
+        arg_out = {arg_A, arg_IPIV, arg_B, arg_INFO};
+        val_out = {val_A, val_IPIV, val_B, val_INFO};
+        (cache, env, st) = assignExtOutputs(arg_out, val_out, cache, env, st);
+      then
+        (cache, env, st);
+    
+    case("dgglse", {arg_M, arg_N, arg_P, arg_A, arg_LDA, arg_B, arg_LDB,
+                    arg_C, arg_D, arg_X, arg_WORK, arg_LWORK, arg_INFO},
+        cache, env, st)
+      equation
+        (M, cache, st) = evaluateExtIntArg(arg_M, cache, env, st);
+        (N, cache, st) = evaluateExtIntArg(arg_N, cache, env, st);
+        (P, cache, st) = evaluateExtIntArg(arg_P, cache, env, st);
+        (A, cache, st) = evaluateExtRealMatrixArg(arg_A, cache, env, st);
+        (LDA, cache, st) = evaluateExtIntArg(arg_LDA, cache, env, st);
+        (B, cache, st) = evaluateExtRealMatrixArg(arg_B, cache, env, st);
+        (LDB, cache, st) = evaluateExtIntArg(arg_LDB, cache, env, st);
+        (C, cache, st) = evaluateExtRealArrayArg(arg_C, cache, env, st);
+        (D, cache, st) = evaluateExtRealArrayArg(arg_D, cache, env, st);
+        (WORK, cache, st) = evaluateExtRealArrayArg(arg_WORK, cache, env, st);
+        (LWORK, cache, st) = evaluateExtIntArg(arg_LWORK, cache, env, st);
+        (A, B, C, D, X, WORK, INFO) =
+          Lapack.dgglse(M, N, P, A, LDA, B, LDB, C, D, WORK, LWORK);
+        val_A = ValuesUtil.makeRealMatrix(A);
+        val_B = ValuesUtil.makeRealMatrix(B);
+        val_C = ValuesUtil.makeRealArray(C);
+        val_D = ValuesUtil.makeRealArray(D);
+        val_X = ValuesUtil.makeRealArray(X);
+        val_WORK = ValuesUtil.makeRealArray(WORK);
+        val_INFO = ValuesUtil.makeInteger(INFO);
+        arg_out = {arg_A, arg_B, arg_C, arg_D, arg_X, arg_WORK, arg_INFO};
+        val_out = {val_A, val_B, val_C, val_D, val_X, val_WORK, val_INFO};
+        (cache, env, st) = assignExtOutputs(arg_out, val_out, cache, env, st);
+      then
+        (cache, env, st);
+    
+    case("dgtsv", {arg_N, arg_NRHS, arg_DL, arg_D, arg_DU, arg_B, arg_LDB,
+                   arg_INFO},
+        cache, env, st)
+      equation
+        (N, cache, st) = evaluateExtIntArg(arg_N, cache, env, st);
+        (NRHS, cache, st) = evaluateExtIntArg(arg_NRHS, cache, env, st);
+        (DL, cache, st) = evaluateExtRealArrayArg(arg_DL, cache, env, st);
+        (D, cache, st) = evaluateExtRealArrayArg(arg_D, cache, env, st);
+        (DU, cache, st) = evaluateExtRealArrayArg(arg_DU, cache, env, st);
+        (B, cache, st) = evaluateExtRealMatrixArg(arg_B, cache, env, st);
+        (LDB, cache, st) = evaluateExtIntArg(arg_LDB, cache, env, st);
+        (DL, D, DU, B, INFO) =
+          Lapack.dgtsv(N, NRHS, DL, D, DU, B, LDB);
+        val_DL = ValuesUtil.makeRealArray(DL);
+        val_D = ValuesUtil.makeRealArray(D);
+        val_DU = ValuesUtil.makeRealArray(DU);
+        val_B = ValuesUtil.makeRealMatrix(B);
+        val_INFO = ValuesUtil.makeInteger(INFO);
+        arg_out = {arg_DL, arg_D, arg_DU, arg_B, arg_INFO};
+        val_out = {val_DL, val_D, val_DU, val_B, val_INFO};
+        (cache, env, st) = assignExtOutputs(arg_out, val_out, cache, env, st);
+      then
+        (cache, env, st);
+    
+    case("dgbsv", {arg_N, arg_KL, arg_KU, arg_NRHS, arg_AB, arg_LDAB, arg_IPIV,
+                   arg_B, arg_LDB, arg_INFO},
+        cache, env, st)
+      equation
+        (N, cache, st) = evaluateExtIntArg(arg_N, cache, env, st);
+        (KL, cache, st) = evaluateExtIntArg(arg_KL, cache, env, st);
+        (KU, cache, st) = evaluateExtIntArg(arg_KU, cache, env, st);
+        (NRHS, cache, st) = evaluateExtIntArg(arg_NRHS, cache, env, st);
+        (AB, cache, st) = evaluateExtRealMatrixArg(arg_AB, cache, env, st);
+        (LDAB, cache, st) = evaluateExtIntArg(arg_LDAB, cache, env, st);
+        (B, cache, st) = evaluateExtRealMatrixArg(arg_B, cache, env, st);
+        (LDB, cache, st) = evaluateExtIntArg(arg_LDB, cache, env, st);
+        (AB, IPIV, B, INFO) =
+          Lapack.dgbsv(N, KL, KU, NRHS, AB, LDAB, B, LDB);
+        val_AB = ValuesUtil.makeRealMatrix(AB);
+        val_IPIV = ValuesUtil.makeIntArray(IPIV);
+        val_B = ValuesUtil.makeRealMatrix(B);
+        val_INFO = ValuesUtil.makeInteger(INFO);
+        arg_out = {arg_AB, arg_IPIV, arg_B, arg_INFO};
+        val_out = {val_AB, val_IPIV, val_B, val_INFO};
+        (cache, env, st) = assignExtOutputs(arg_out, val_out, cache, env, st);
+      then
+        (cache, env, st);
+    
+    case("dgesvd", {arg_JOBU, arg_JOBVT, arg_M, arg_N, arg_A, arg_LDA, arg_S,
+                    arg_U, arg_LDU, arg_VT, arg_LDVT, arg_WORK, arg_LWORK, arg_INFO},
+        cache, env, st)
+      equation
+        (JOBU, cache, st) = evaluateExtStringArg(arg_JOBU, cache, env, st);
+        (JOBVT, cache, st) = evaluateExtStringArg(arg_JOBVT, cache, env, st);
+        (M, cache, st) = evaluateExtIntArg(arg_M, cache, env, st);
+        (N, cache, st) = evaluateExtIntArg(arg_N, cache, env, st);
+        (A, cache, st) = evaluateExtRealMatrixArg(arg_A, cache, env, st);
+        (LDA, cache, st) = evaluateExtIntArg(arg_LDA, cache, env, st);
+        (LDU, cache, st) = evaluateExtIntArg(arg_LDU, cache, env, st);
+        (LDVT, cache, st) = evaluateExtIntArg(arg_LDVT, cache, env, st);
+        (WORK, cache, st) = evaluateExtRealArrayArg(arg_WORK, cache, env, st);
+        (LWORK, cache, st) = evaluateExtIntArg(arg_LWORK, cache, env, st);
+        (A, S, U, VT, WORK, INFO) =
+          Lapack.dgesvd(JOBU, JOBVT, M, N, A, LDA, LDU, LDVT, WORK, LWORK);
+        val_A = ValuesUtil.makeRealMatrix(A);
+        val_S = ValuesUtil.makeRealArray(S);
+        val_U = ValuesUtil.makeRealMatrix(U);
+        val_VT = ValuesUtil.makeRealMatrix(VT);
+        val_WORK = ValuesUtil.makeRealArray(WORK);
+        val_INFO = ValuesUtil.makeInteger(INFO);
+        arg_out = {arg_A, arg_S, arg_U, arg_VT, arg_WORK, arg_INFO};
+        val_out = {val_A, val_S, val_U, val_VT, val_WORK, val_INFO};
+        (cache, env, st) = assignExtOutputs(arg_out, val_out, cache, env, st);
+      then
+        (cache, env, st);
+    
+    case("dgetrf", {arg_M, arg_N, arg_A, arg_LDA, arg_IPIV, arg_INFO},
+        cache, env, st)
+      equation
+        (M, cache, st) = evaluateExtIntArg(arg_M, cache, env, st);
+        (N, cache, st) = evaluateExtIntArg(arg_N, cache, env, st);
+        (A, cache, st) = evaluateExtRealMatrixArg(arg_A, cache, env, st);
+        (LDA, cache, st) = evaluateExtIntArg(arg_LDA, cache, env, st);
+        (A, IPIV, INFO) =
+          Lapack.dgetrf(M, N, A, LDA);
+        val_A = ValuesUtil.makeRealMatrix(A);
+        val_IPIV = ValuesUtil.makeIntArray(IPIV);
+        val_INFO = ValuesUtil.makeInteger(INFO);
+        arg_out = {arg_A, arg_IPIV, arg_INFO};
+        val_out = {val_A, val_IPIV, val_INFO};
+        (cache, env, st) = assignExtOutputs(arg_out, val_out, cache, env, st);
+      then
+        (cache, env, st);
+    
+    case("dgetrs", {arg_TRANS, arg_N, arg_NRHS, arg_A, arg_LDA, arg_IPIV, arg_B,
+                    arg_LDB, arg_INFO},
+        cache, env, st)
+      equation
+        (TRANS, cache, st) = evaluateExtStringArg(arg_TRANS, cache, env, st);
+        (N, cache, st) = evaluateExtIntArg(arg_N, cache, env, st);
+        (NRHS, cache, st) = evaluateExtIntArg(arg_NRHS, cache, env, st);
+        (A, cache, st) = evaluateExtRealMatrixArg(arg_A, cache, env, st);
+        (LDA, cache, st) = evaluateExtIntArg(arg_LDA, cache, env, st);
+        (IPIV, cache, st) = evaluateExtIntArrayArg(arg_IPIV, cache, env, st);
+        (B, cache, st) = evaluateExtRealMatrixArg(arg_B, cache, env, st);
+        (LDB, cache, st) = evaluateExtIntArg(arg_LDB, cache, env, st);
+        (B, INFO) =
+          Lapack.dgetrs(TRANS, N, NRHS, A, LDA, IPIV, B, LDB);
+        val_B = ValuesUtil.makeRealMatrix(B);
+        val_INFO = ValuesUtil.makeInteger(INFO);
+        arg_out = {arg_B, arg_INFO};
+        val_out = {val_B, val_INFO};
+        (cache, env, st) = assignExtOutputs(arg_out, val_out, cache, env, st);
+      then
+        (cache, env, st);
+    
+    case("dgetri", {arg_N, arg_A, arg_LDA, arg_IPIV, arg_WORK, arg_LWORK, arg_INFO},
+        cache, env, st)
+      equation
+        (N, cache, st) = evaluateExtIntArg(arg_N, cache, env, st);
+        (A, cache, st) = evaluateExtRealMatrixArg(arg_A, cache, env, st);
+        (LDA, cache, st) = evaluateExtIntArg(arg_LDA, cache, env, st);
+        (IPIV, cache, st) = evaluateExtIntArrayArg(arg_IPIV, cache, env, st);
+        (WORK, cache, st) = evaluateExtRealArrayArg(arg_WORK, cache, env, st);
+        (LWORK, cache, st) = evaluateExtIntArg(arg_LWORK, cache, env, st);
+        (A, WORK, INFO) =
+          Lapack.dgetri(N, A, LDA, IPIV, WORK, LWORK);
+        val_A = ValuesUtil.makeRealMatrix(A);
+        val_WORK = ValuesUtil.makeRealArray(WORK);
+        val_INFO = ValuesUtil.makeInteger(INFO);
+        arg_out = {arg_A, arg_WORK, arg_INFO};
+        val_out = {val_A, val_WORK, val_INFO};
+        (cache, env, st) = assignExtOutputs(arg_out, val_out, cache, env, st);
+      then
+        (cache, env, st);
+    
+    case("dgeqpf", {arg_M, arg_N, arg_A, arg_LDA, arg_JPVT, arg_TAU, arg_WORK,
+                    arg_INFO},
+        cache, env, st)
+      equation
+        (M, cache, st) = evaluateExtIntArg(arg_M, cache, env, st);
+        (N, cache, st) = evaluateExtIntArg(arg_N, cache, env, st);
+        (A, cache, st) = evaluateExtRealMatrixArg(arg_A, cache, env, st);
+        (LDA, cache, st) = evaluateExtIntArg(arg_LDA, cache, env, st);
+        (JPVT, cache, st) = evaluateExtIntArrayArg(arg_JPVT, cache, env, st);
+        (WORK, cache, st) = evaluateExtRealArrayArg(arg_WORK, cache, env, st);
+        (A, JPVT, TAU, INFO) =
+          Lapack.dgeqpf(M, N, A, LDA, JPVT, WORK);
+        val_A = ValuesUtil.makeRealMatrix(A);
+        val_JPVT = ValuesUtil.makeIntArray(JPVT);
+        val_TAU = ValuesUtil.makeRealArray(TAU);
+        val_INFO = ValuesUtil.makeInteger(INFO);
+        arg_out = {arg_A, arg_JPVT, arg_TAU, arg_INFO};
+        val_out = {val_A, val_JPVT, val_TAU, val_INFO};
+        (cache, env, st) = assignExtOutputs(arg_out, val_out, cache, env, st);
+      then
+        (cache, env, st);
+    
+    case("dorgqr", {arg_M, arg_N, arg_K, arg_A, arg_LDA, arg_TAU, arg_WORK,
+                    arg_LWORK, arg_INFO},
+        cache, env, st)
+      equation
+        (M, cache, st) = evaluateExtIntArg(arg_M, cache, env, st);
+        (N, cache, st) = evaluateExtIntArg(arg_N, cache, env, st);
+        (K, cache, st) = evaluateExtIntArg(arg_K, cache, env, st);
+        (A, cache, st) = evaluateExtRealMatrixArg(arg_A, cache, env, st);
+        (LDA, cache, st) = evaluateExtIntArg(arg_LDA, cache, env, st);
+        (TAU, cache, st) = evaluateExtRealArrayArg(arg_TAU, cache, env, st);
+        (WORK, cache, st) = evaluateExtRealArrayArg(arg_WORK, cache, env, st);
+        (LWORK, cache, st) = evaluateExtIntArg(arg_LWORK, cache, env, st);
+        (A, WORK, INFO) =
+          Lapack.dorgqr(M, N, K, A, LDA, TAU, WORK, LWORK);
+        val_A = ValuesUtil.makeRealMatrix(A);
+        val_WORK = ValuesUtil.makeRealArray(WORK);
+        val_INFO = ValuesUtil.makeInteger(INFO);
+        arg_out = {arg_A, arg_WORK, arg_INFO};
+        val_out = {val_A, val_WORK, val_INFO};
+        (cache, env, st) = assignExtOutputs(arg_out, val_out, cache, env, st);
+      then
+        (cache, env, st);
+  end match;
+end evaluateExternalFunc;
 
 protected function evaluateElements
   "This function evaluates a list of elements."
@@ -324,6 +967,7 @@ algorithm
       list<DAE.Statement> statements;
       LoopControl loop_ctrl;
       SymbolTable st;
+      String str;
 
     case (DAE.STMT_ASSIGN(exp1 = lhs, exp = rhs), cache, env, st)
       equation
@@ -388,6 +1032,15 @@ algorithm
         _ = cevalExp(rhs, inEnv);
       then
         (inEnv, NEXT());*/
+
+    // Special case for print for now, see comment on case above.
+    case (DAE.STMT_NORETCALL(exp = DAE.CALL(path = Absyn.IDENT("print"),
+        expLst = {rhs})), _, _, _)
+      equation
+        (cache, Values.STRING(str), st) = cevalExp(rhs, inCache, inEnv, inST);
+        print(str);
+      then
+        (cache, inEnv, NEXT(), st);
 
     case (DAE.STMT_RETURN(source = _), _, _, _)
       then

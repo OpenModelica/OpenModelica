@@ -71,29 +71,30 @@ protected import CevalFunction;
 protected import CevalScript;
 protected import ClassInf;
 protected import ComponentReference;
+protected import Connect;
 protected import Debug;
 protected import Derive;
 protected import Dump;
 protected import DynLoad;
 protected import Error;
 protected import Expression;
-protected import ExpressionSimplify;
 protected import ExpressionDump;
+protected import ExpressionSimplify;
+protected import InnerOuter;
 protected import Inst;
 protected import Lookup;
+protected import Mod;
 protected import ModUtil;
-protected import RTOpts;
+protected import OptManager;
+protected import Prefix;
 protected import Print;
+protected import RTOpts;
 protected import SCode;
 protected import Static;
 protected import System;
 protected import Types;
 protected import Util;
 protected import ValuesUtil;
-protected import InnerOuter;
-protected import Prefix;
-protected import Connect;
-protected import OptManager;
 
 public function ceval "
   This function is used when the value of a constant expression is
@@ -1177,6 +1178,7 @@ algorithm
       SCode.ClassDef cdef;
       String error_Str;
       DAE.Function func;
+      SCode.Restriction res;
     
     // External functions that are "known" should be evaluated without compilation, e.g. all math functions
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,impl,st,dim,msg)
@@ -1199,9 +1201,10 @@ algorithm
         (cache, 
          sc as SCode.CLASS(
           partialPrefix = SCode.NOT_PARTIAL(), 
-          restriction = SCode.R_FUNCTION(), 
+          restriction = res,
           classDef = cdef),
          env) = Lookup.lookupClass(cache, env, funcpath, true);
+        isCevaluableFunction(sc);
         (cache, env, _) = Inst.implicitFunctionInstantiation(
           cache,
           env,
@@ -1422,6 +1425,75 @@ algorithm
     case ("substring","ModelicaStrings_substring") then ();
   end match;
 end isKnownExternalFunc;
+
+protected function isCevaluableFunction
+  "Checks if an element is a function or external function that can be evaluated
+  by CevalFunction."
+  input SCode.Element inElement;
+algorithm
+  _ := match(inElement)
+    local
+      String fid;
+      SCode.Mod mod;
+      Absyn.Exp lib;
+
+    // All functions can be evaluated.
+    case (SCode.CLASS(restriction = SCode.R_FUNCTION())) then ();
+
+    // But only some external functions.
+    case (SCode.CLASS(restriction = SCode.R_EXT_FUNCTION(), 
+        classDef = SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(
+          funcName = SOME(fid), 
+          annotation_ = SOME(SCode.ANNOTATION(mod)))))))
+      equation
+        SCode.MOD(binding = SOME((lib, _))) = Mod.getUnelabedSubMod(mod, "Library");
+        true = checkLibraryUsage("Lapack", lib);
+        isCevaluableFunction2(fid);
+      then
+        ();
+  end match;
+end isCevaluableFunction;
+
+protected function checkLibraryUsage
+  input String inLibrary;
+  input Absyn.Exp inExp;
+  output Boolean isUsed;
+algorithm
+  isUsed := match(inLibrary, inExp)
+    local
+      String s;
+      list<Absyn.Exp> exps;
+
+    case (_, Absyn.STRING(s)) then stringEq(s, inLibrary);
+    case (_, Absyn.ARRAY(exps))
+      then Util.listContainsWithCompareFunc(inLibrary, exps, checkLibraryUsage);
+  end match;
+end checkLibraryUsage;
+        
+protected function isCevaluableFunction2
+  "Checks if a function name belongs to a known external function that we can
+  constant evaluate."
+  input String inFuncName;
+algorithm
+  _ := match(inFuncName)
+    local
+      // Lapack functions.
+      case "dgbsv" then ();
+      case "dgeev" then ();
+      case "dgegv" then ();
+      case "dgels" then ();
+      case "dgelsx" then ();
+      case "dgeqpf" then ();
+      case "dgesv" then ();
+      case "dgesvd" then ();
+      case "dgetrf" then ();
+      case "dgetri" then ();
+      case "dgetrs" then ();
+      case "dgglse" then ();
+      case "dgtsv" then ();
+      case "dorgqr" then ();
+  end match;
+end isCevaluableFunction2;
 
 protected function cevalKnownExternalFuncs2 "function: cevalKnownExternalFuncs2
   author: PA

@@ -660,7 +660,7 @@ void cat_alloc_real_array(int k, real_array_t* dest, int n,
       dest->data = real_alloc(new_k_dim_size);
       dest->dim_size = size_alloc(1);
       dest->dim_size[0] = new_k_dim_size;
-      dest->ndims = 2;
+      dest->ndims = 1;
 
       for(i = 0, j = 0; i < n; ++i) {
         for(c = 0; c < elts[i]->dim_size[0]; ++c) {
