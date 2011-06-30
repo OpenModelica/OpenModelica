@@ -231,8 +231,13 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
 
   #ifdef extraPolate
   #undef extraPolate
-  #endif
   #define extraPolate(v) v
+  #endif
+
+  #ifdef check_discrete_values
+  #undef check_discrete_values
+  #define check_discrete_values(size,numValues) found_solution = 1
+  #endif
 
   #define time timeValue
   #define localData this
@@ -287,6 +292,7 @@ end simulationCppFile;
 template declareExtraResiduals(list<SimEqSystem> allEquations)
 ::=
   (allEquations |> eqn => (match eqn
+     case eq as SES_MIXED(__) then declareExtraResiduals(listFill(eq.cont,1))
      case eq as SES_NONLINEAR(__) then
      <<
      void residualFunc<%index%>_cpp(int *n, double* xloc, double* res, int* iflag);
@@ -299,7 +305,7 @@ template makeExtraResiduals(list<SimEqSystem> allEquations, String name)
  "Generates functions in simulation file."
 ::=
   (allEquations |> eqn => (match eqn
-     case eq as SES_MIXED(__) then functionExtraResiduals(listFill(eq.cont,1))
+     case eq as SES_MIXED(__) then makeExtraResiduals(listFill(eq.cont,1),name)
      case eq as SES_NONLINEAR(__) then
      let &varDecls = buffer "" /*BUFD*/
      let algs = (eq.eqs |> eq2 as SES_ALGORITHM(__) =>
