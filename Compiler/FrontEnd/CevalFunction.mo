@@ -78,9 +78,10 @@ protected import System;
 protected import Types;
 protected import Util;
 protected import ValuesUtil;
+protected import SCodeDump;
 
 // [TYPE]  Types
-public type SymbolTable = Option<Interactive.InteractiveSymbolTable>;
+public type SymbolTable = Option<Interactive.SymbolTable>;
 
 protected type FunctionVar = tuple<DAE.Element, Option<Values.Value>>;
 
@@ -117,6 +118,7 @@ algorithm
       String func_name;
       Env.Cache cache;
       SymbolTable st;
+      Boolean partialPrefix;
 
     // The DAE.FUNCTION structure might contain an optional function derivative
     // mapping which is why functions below is a list. We only evaluate the
@@ -133,11 +135,14 @@ algorithm
       then
         (cache, result, st);
 
-    else
+    case (_, _, DAE.FUNCTION(
+        path = p,
+        functions = func :: _,
+        type_ = ty,
+        partialPrefix = partialPrefix), _, st)
       equation
         true = RTOpts.debugFlag("failtrace");
-        Debug.traceln("- CevalFunction.evaluate failed for function ");
-        Debug.traceln(DAEDump.dumpFunctionStr(inFunction));
+        Debug.traceln("- CevalFunction.evaluate failed for function: " +& Util.if_(partialPrefix, "partial ", "") +& Absyn.pathString(p));
       then
         fail();
   end matchcontinue;
@@ -230,7 +235,7 @@ algorithm
 
     else
       equation
-        Debug.fprintln("failtrace", "- CevalFunction.evaluateFunction failed.\n");
+        Debug.fprintln("evalfunc", "- CevalFunction.evaluateFunction failed.\n");
       then
         fail();
   end matchcontinue;
@@ -257,7 +262,7 @@ algorithm
 
     case ((var as DAE.VAR(direction = DAE.INPUT())) :: _, {})
       equation
-        Debug.fprintln("failtrace", "- CevalFunction.pairFuncParamsWithArgs " 
+        Debug.fprintln("evalfunc", "- CevalFunction.pairFuncParamsWithArgs " 
          +& "failed because of too few input arguments.");
       then
         fail();
@@ -1052,7 +1057,7 @@ algorithm
 
     else
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = RTOpts.debugFlag("evalfunc");
         Debug.traceln("- CevalFunction.evaluateStatement failed for:");
         Debug.traceln(DAEDump.ppStatementStr(inStatement));
       then
@@ -1276,7 +1281,7 @@ algorithm
 
     case (DAE.STMT_FOR(range = range), _, _, _)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = RTOpts.debugFlag("evalfunc");
         Debug.traceln("- evaluateForStatement not implemented for:");
         Debug.traceln(ExpressionDump.printExpStr(range));
       then
@@ -1378,7 +1383,7 @@ algorithm
     case DAE.CREF(componentRef = cref) then cref;
     else
       equation
-        Debug.fprintln("failtrace", 
+        Debug.fprintln("evalfunc", 
           "- CevalFunction.extractLhsComponentRef failed on " +&
           ExpressionDump.printExpStr(inExp) +& "\n");
       then
@@ -1488,7 +1493,7 @@ algorithm
     
     case (_, env, (e, _), _)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = RTOpts.debugFlag("evalfunc");
         Debug.traceln("- CevalFunction.extendEnvWithFunctionVars failed for:");
         Debug.traceln(DAEDump.dumpElementsStr({e}));
       then
@@ -1832,7 +1837,7 @@ algorithm
     
     case (_, sub :: _, _, _, _, _)
       equation
-        Debug.fprintln("failtrace", "- CevalFunction.appendDimensions2 failed");
+        Debug.fprintln("evalfunc", "- CevalFunction.appendDimensions2 failed");
       then
         fail();
   end matchcontinue;
@@ -2076,7 +2081,7 @@ algorithm
 
     case (_, _, sub :: _, _, _, _)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = RTOpts.debugFlag("evalfunc");
         print("- CevalFunction.assignVector failed on: ");
         print(ExpressionDump.printSubscriptStr(sub) +& "\n");
       then
@@ -2247,7 +2252,7 @@ algorithm
         Values.ARRAY(values, int_dim :: dims);
     case (_)
       equation
-        Debug.fprintln("failtrace", "- CevalFunction.generateDefaultBinding failed\n");
+        Debug.fprintln("evalfunc", "- CevalFunction.generateDefaultBinding failed\n");
       then
         fail();
   end matchcontinue;

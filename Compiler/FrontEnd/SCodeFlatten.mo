@@ -124,7 +124,7 @@ algorithm
         (prog, env) = SCodeDependency.analyse(inClassName, env, prog);
         //print(SCodeDump.programStr(prog) +& "\n");
         (prog, env) = SCodeFlattenImports.flattenProgram(prog, env);
-        prog = SCodeFlattenExtends.flattenProgram(inClassName, env, prog);
+        prog = SCodeFlattenExtends.flattenProgram(inClassName, prog, env);
         
         //System.stopTimer();
         //Debug.traceln("SCodeFlatten.flattenClassInProgram took " +& 

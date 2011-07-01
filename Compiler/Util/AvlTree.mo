@@ -36,6 +36,8 @@ encapsulated package AvlTree
 
   RCS: $Id: Tree.mo 9152 2011-05-28 08:08:28Z adrpo $
   
+  @author: adrpo
+  
   A generic AvlTree with type variables for Key and Val."
 
 public
@@ -78,6 +80,7 @@ uniontype Tree "a tree is a node and two optional printing functions"
        - true if update is allowed
        - false if update should not be done
        - should print an error message and fail if it wants to fail the update";
+    String name "a name for this tree so you know which one it is if you have more";
   end TREE;  
 end Tree;
 
@@ -109,15 +112,24 @@ constant Node<Key,Val> emptyNode = NODE(NO_ITEM(), 0, NO_NODE(), NO_NODE());
 
 protected import Error;
 
+public function name
+"return the name of the tree"
+  input Tree<Key,Val> tree;
+  output String name;
+algorithm
+  TREE(name = name) := tree;   
+end name;
+
 public function create 
 "Return an empty tree with the given printing functions attached"
+  input String name "a name for this tree so you know which one it is if you have more";
   input FuncTypeKeyCompare inKeyCompareFunc;
   input Option<FuncTypeKeyToStr> inKeyStrFuncOpt;
   input Option<FuncTypeValToStr> inValStrFuncOpt;
   input Option<FuncTypeItemUpdateCheck> inUpdateCheckFuncOpt;
   output Tree<Key,Val> tree;
 algorithm
-  tree := TREE(emptyNode, inKeyCompareFunc, inKeyStrFuncOpt, inValStrFuncOpt, inUpdateCheckFuncOpt);
+  tree := TREE(emptyNode, inKeyCompareFunc, inKeyStrFuncOpt, inValStrFuncOpt, inUpdateCheckFuncOpt, name);
 end create;
 
 public function hasPrintingFunctions
@@ -175,6 +187,14 @@ algorithm
   TREE(valStrFuncOpt = SOME(outVal2StrFunc)) := tree;
 end getValToStrFunc;
 
+protected function newLeafNode
+  input Item<Key,Val> inItem;
+  input Integer height;
+  output Node<Key,Val> outNode;
+algorithm
+  outNode := NODE(inItem, 1, NO_NODE(), NO_NODE());
+end newLeafNode;
+
 public function add
 "inserts a new item into the tree."
   input Tree<Key,Val> inTree;
@@ -182,7 +202,7 @@ public function add
   input Val inVal;
   output Tree<Key,Val> outTree;
 algorithm
-  outTree := match(inTree, inKey, inVal)
+  outTree := matchcontinue(inTree, inKey, inVal)
     local
       Key key, rkey;
       Val val;
@@ -191,30 +211,24 @@ algorithm
       Option<FuncTypeKeyToStr> kf;
       Option<FuncTypeValToStr> vf;
       Option<FuncTypeItemUpdateCheck> uf;
+      String str, n;
 
     // call addNode on the root
-    case (TREE(node, cf, kf, vf, uf), key, val)
+    case (TREE(node, cf, kf, vf, uf, n), key, val)
       equation
         node = addNode(inTree, node, key, val); // send the tree down to the nodes for compare function and update check
       then 
-        TREE(node, cf, kf, vf, uf);
+        TREE(node, cf, kf, vf, uf, n);
 
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"AvlTree.add failed"});
+        str = "AvlTree.add name: " +& name(inTree) +& " failed!";
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
       then 
         fail();
 
-  end match;
+  end matchcontinue;
 end add;
-
-protected function newLeafNode
-  input Item<Key,Val> inItem;
-  input Integer height;
-  output Node<Key,Val> outNode;
-algorithm
-  outNode := NODE(inItem, 1, NO_NODE(), NO_NODE());
-end newLeafNode;
 
 protected function addNode
 "Inserts a new item into the tree root node"
@@ -232,6 +246,7 @@ algorithm
       FuncTypeKeyCompare keyCompareFunc;
       Node<Key,Val> n;
       Integer order;
+      String str;
 
     // empty node
     case (_, NO_NODE(), _, _)
@@ -256,7 +271,8 @@ algorithm
  
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"AvlTree.addNode failed"});
+        str = "AvlTree.addNode name: " +& name(inTree) +& " failed!";
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
 
   end match;
@@ -271,7 +287,7 @@ protected function addNode_dispatch
   input Val inVal;
   output Node<Key,Val> outNode;
 algorithm
-  outNode := match(inTree, inNode, inKeyComp, inKey, inVal)
+  outNode := matchcontinue(inTree, inNode, inKeyComp, inKey, inVal)
     local
       Key key;
       Val val;
@@ -324,7 +340,7 @@ algorithm
         n = addNode(inTree, n, key, val);
       then
         NODE(i, h, n, r);
-  end match;
+  end matchcontinue;
 end addNode_dispatch;
 
 public function get
@@ -403,16 +419,18 @@ algorithm
       Option<FuncTypeItemUpdateCheck> uf;       
       Node<Key,Val> node;
       Integer order;
+      String n, str;
 
-    case (TREE(node, keyCompareFunc, kf, vf, uf), key, val)
+    case (TREE(node, keyCompareFunc, kf, vf, uf, n), key, val)
       equation
         node = replaceNode(inTree, node, key, val);
       then 
-        TREE(node, keyCompareFunc, kf, vf, uf); 
+        TREE(node, keyCompareFunc, kf, vf, uf, n); 
     
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"AvlTree.replace failed"});
+        str = "AvlTree.replace name: " +& name(inTree) +& " failed!";
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
 
   end match;
@@ -426,7 +444,7 @@ public function replaceNode
   input Val inVal;
   output Node<Key,Val> outNode;
 algorithm
-  outTree := match(inTree, inNode, inKey, inVal)
+  outNode := match(inTree, inNode, inKey, inVal)
     local
       Key key, rkey;
       Val val;
@@ -491,7 +509,7 @@ protected function emptyNodeIfNoNode
   input Node<Key,Val> inNode;
   output Node<Key,Val> outNode;
 algorithm
-  outT := match(inNode)
+  outNode := match(inNode)
     case (NO_NODE()) then emptyNode;
     case (NODE(item = _)) then inNode;
   end match;
@@ -729,7 +747,7 @@ protected function prettyPrintTreeStr_dispatch
   input String inIndent;
   output String outString;
 algorithm
-  outString := match(inTree, inIndent)
+  outString := matchcontinue(inTree, inIndent)
     local
       Node<Key,Val> node;
       String res;
@@ -738,7 +756,7 @@ algorithm
       equation
         false = hasPrintingFunctions(inTree);
       then
-       "TreePrintError<NO_PRINTING_FUNCTIONS_ATTACHED>";
+       "TreePrintError<NO_PRINTING_FUNCTIONS_ATTACHED> name[" +& name(inTree) +& "]";
     
     case (TREE(root = node), _)
       equation
@@ -746,7 +764,7 @@ algorithm
       then
         res;
     
-  end match;
+  end matchcontinue;
 end prettyPrintTreeStr_dispatch;
 
 protected function prettyPrintNodeStr
@@ -786,11 +804,11 @@ algorithm
   end match;
 end prettyPrintNodeStr;
 
-protected function printTreeStr
+public function printTreeStr
   input Tree<Key,Val> inTree;
   output String outString;
 algorithm
-  outString := match(inTree)
+  outString := matchcontinue(inTree)
     local
       Node<Key,Val> node;
       String str;
@@ -799,7 +817,7 @@ algorithm
      equation
        false = hasPrintingFunctions(inTree);
      then
-       "TreePrintError<NO_PRINTING_FUNCTIONS_ATTACHED>";
+       "TreePrintError<NO_PRINTING_FUNCTIONS_ATTACHED> name[" +& name(inTree) +& "]";
 
     case TREE(root = node)
       equation
@@ -807,7 +825,7 @@ algorithm
       then
         str;
         
-  end match;
+  end matchcontinue;
 end printTreeStr;
 
 protected function printNodeStr
@@ -862,7 +880,9 @@ algorithm
 end printItemStr;
 
 public function getKeyOfVal
-"search for a key that has val as value, fails if it cannot find it"
+"search for a key that has val as value, fails if it cannot find it;
+ if there are multiple keys pointing to the same value only the first 
+ one encountered is returned"
   input Tree<Key,Val> inTree;
   input Val inVal;
   output Key outKey;
@@ -922,6 +942,142 @@ algorithm
         
   end matchcontinue;
 end getKeyOfValNode;
+
+public function addUnique
+"inserts a new item into the tree if is not there 
+ and returns the new item.
+ if the key is there then it returns the already
+ exiting item and doe not update the tree."
+  input Tree<Key,Val> inTree;
+  input Key inKey;
+  input Val inVal;
+  output Tree<Key,Val> outTree;
+  output Item<Key,Val> outItem;
+algorithm
+  (outTree, outItem) := matchcontinue(inTree, inKey, inVal)
+    local
+      Key key, rkey;
+      Val val;
+      Node<Key,Val> node;
+      FuncTypeKeyCompare cf;
+      Option<FuncTypeKeyToStr> kf;
+      Option<FuncTypeValToStr> vf;
+      Option<FuncTypeItemUpdateCheck> uf;
+      String str, n;
+      Item<Key,Val> item;
+
+    // call addNode on the root
+    case (TREE(node, cf, kf, vf, uf, n), key, val)
+      equation
+        (node, item) = addNodeUnique(inTree, node, key, val); // send the tree down to the nodes for compare function and update check
+      then 
+        (TREE(node, cf, kf, vf, uf, n), item);
+
+    else
+      equation
+        str = "AvlTree.addUnique name: " +& name(inTree) +& " failed!";
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then 
+        fail();
+
+  end matchcontinue;
+end addUnique;
+
+protected function addNodeUnique
+"Inserts a new item into the tree root node if is not there and returns the new item.
+ if is there it returns the existing item."
+  input Tree<Key,Val> inTree "sent down so we can use the update check function";
+  input Node<Key,Val> inNode "the node to add item to";
+  input Key inKey;
+  input Val inVal;
+  output Node<Key,Val> outNode;
+  output Item<Key,Val> outItem;
+algorithm
+  (outNode, outItem) := match(inTree, inNode, inKey, inVal)
+    local
+      Key key, rkey;
+      Val val;
+      Item<Key,Val> item;
+      FuncTypeKeyCompare keyCompareFunc;
+      Node<Key,Val> n;
+      Integer order;
+      String str;
+
+    // empty node
+    case (_, NO_NODE(), _, _)
+     equation
+       item = ITEM(inKey, inVal);
+       n = newLeafNode(item, 1);
+     then
+       (n, item);
+        
+    // empty node item
+    case (_, NODE(item = NO_ITEM(), left = NO_NODE(), right = NO_NODE()), key, val)
+      equation
+        item = ITEM(key, val);
+        n = newLeafNode(item, 1);
+      then 
+        (n, item);
+
+    case (TREE(keyCompareFunc = keyCompareFunc), NODE(item = ITEM(key = rkey)), key, val)
+      equation
+        order = keyCompareFunc(key, rkey);
+        (n, item) = addNodeUnique_dispatch(inTree,inNode,order,key,val);
+        n = balance(n);
+      then 
+        (n, item);
+ 
+    else
+      equation
+        str = "AvlTree.addNodeUnique name: " +& name(inTree) +& " failed!";
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then 
+        fail();
+  end match;
+end addNodeUnique;
+
+protected function addNodeUnique_dispatch
+"Helper function to addNode."
+  input Tree<Key,Val> inTree "sent down so we can use the update check function";
+  input Node<Key,Val> inNode;
+  input Integer inKeyComp;
+  input Key inKey;
+  input Val inVal;
+  output Node<Key,Val> outNode;
+  output Item<Key,Val> outItem;
+algorithm
+  (outNode, outItem) := matchcontinue(inTree, inNode, inKeyComp, inKey, inVal)
+    local
+      Key key;
+      Val val;
+      Node<Key,Val> l, r, n;
+      Integer h;
+      Item<Key,Val> i, it;
+      FuncTypeItemUpdateCheck updateCheckFunc;
+
+    // replacements of nodes are not allowed in addUnique
+    // we don't care about update check functions here 
+    case (_, NODE(i, h, l, r), 0, key, val)
+      then
+        (inNode, i); // return the same node, no update for addUnique!
+
+    // insert into right subtree.
+    case (_, NODE(item = i, height = h, left = l, right = r), 1, key, val)
+      equation
+        n = emptyNodeIfNoNode(r);
+        (n, it) = addNodeUnique(inTree, n, key, val);
+      then  
+        (NODE(i, h, l, n), it);
+
+    // Insert into left subtree.
+    case (_, NODE(item = i, height = h, left = l, right = r), -1, key, val)
+      equation
+        n = emptyNodeIfNoNode(l);
+        (n, it) = addNodeUnique(inTree, n, key, val);
+      then
+        (NODE(i, h, n, r), it);
+  end matchcontinue;
+end addNodeUnique_dispatch;
 
 end AvlTree;
 

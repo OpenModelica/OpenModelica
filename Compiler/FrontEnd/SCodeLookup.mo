@@ -99,6 +99,7 @@ protected import RTOpts;
 protected import SCodeCheck;
 protected import SCodeFlattenImports;
 protected import SCodeFlattenRedeclare;
+protected import Dump;
 
 public function lookupSimpleName
   "Looks up a simple identifier in the environment and returns the environment
@@ -892,47 +893,6 @@ algorithm
     SOME(Error.LOOKUP_VARIABLE_ERROR));
 end lookupVariableName;
 
-public function lookupComponentRef
-  "Look up a component reference in the environment and returns it fully
-  qualified."
-  input Absyn.ComponentRef inCref;
-  input Env inEnv;
-  input Absyn.Info inInfo;
-  output Absyn.ComponentRef outCref;
-algorithm
-  outCref := matchcontinue(inCref, inEnv, inInfo)
-    local
-      Absyn.ComponentRef cref;
-      String cref_str, env_str;
-
-    // Special case for StateSelect, do nothing.
-    case (Absyn.CREF_QUAL(name = "StateSelect", subscripts = {}, 
-        componentRef = Absyn.CREF_IDENT(name = _)), _, _)
-      then inCref;
-
-    // Wildcard.
-    case (Absyn.WILD(), _, _) then inCref;
-
-    // All other component references.
-    case (_, _, _)
-      equation
-        // First look up all subscripts, because all subscripts should be found
-        // in the enclosing scope of the component reference.
-        cref = SCodeFlattenImports.flattenComponentRefSubs(inCref, inEnv, inInfo);
-        // Then look up the component reference itself.
-        cref = lookupComponentRef2(cref, inEnv);
-        cref = crefStripEnvPrefix(cref, inEnv);
-      then
-        cref;
-
-    // Otherwise, mark the cref as invalid, which is ok as long as it's not
-    // actually used anywhere.
-    //else then Absyn.CREF_INVALID(inCref);
-    else inCref;
-
-  end matchcontinue;
-end lookupComponentRef;
-
 protected function crefStripEnvPrefix
   "Removes the entire environment prefix from the given component reference, or
   returns the unchanged reference. This is done because models might import
@@ -1008,14 +968,57 @@ algorithm
   end matchcontinue;
 end crefStripEnvPrefix2;
 
-public function lookupComponentRef2
+public function lookupComponentRef
+  "Look up a component reference in the environment and returns it fully
+  qualified."
+  input Absyn.ComponentRef inCref;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  output Absyn.ComponentRef outCref;
+algorithm
+  outCref := matchcontinue(inCref, inEnv, inInfo)
+    local
+      Absyn.ComponentRef cref;
+      String cref_str, env_str;
+      Env env;
+
+    // Special case for StateSelect, do nothing.
+    case (Absyn.CREF_QUAL(name = "StateSelect", subscripts = {}, 
+        componentRef = Absyn.CREF_IDENT(name = _)), _, _)
+      then inCref;
+
+    // Wildcard.
+    case (Absyn.WILD(), _, _) then inCref;
+
+    // All other component references.
+    case (_, _, _)
+      equation
+        // First look up all subscripts, because all subscripts should be found
+        // in the enclosing scope of the component reference.
+        cref = SCodeFlattenImports.flattenComponentRefSubs(inCref, inEnv, inInfo);
+        // Then look up the component reference itself.
+        (cref, env) = lookupComponentRef2(cref, inEnv);
+        cref = crefStripEnvPrefix(cref, inEnv);
+      then
+        cref;
+
+    // Otherwise, mark the cref as invalid, which is ok as long as it's not
+    // actually used anywhere.
+    //else then Absyn.CREF_INVALID(inCref);
+    else inCref;
+
+  end matchcontinue;
+end lookupComponentRef;
+
+protected function lookupComponentRef2
   "Helper function to lookupComponentRef. Does the actual look up of the
   component reference."
   input Absyn.ComponentRef inCref;
   input Env inEnv;
   output Absyn.ComponentRef outCref;
+  output Env outEnv;
 algorithm
-  outCref := match(inCref, inEnv)
+  (outCref, outEnv) := match(inCref, inEnv)
     local
       Absyn.ComponentRef cref, rest_cref;
       Absyn.Ident name;
@@ -1027,10 +1030,10 @@ algorithm
     // A simple name.
     case (Absyn.CREF_IDENT(name, subs), _)
       equation
-        (_, path, _) = lookupSimpleName(name, inEnv);
+        (_, path, env) = lookupSimpleName(name, inEnv);
         cref = Absyn.pathToCrefWithSubs(path, subs);
       then
-        cref;
+        (cref, env);
 
     // A qualified name.
     case (Absyn.CREF_QUAL(name, subs, rest_cref), _)
@@ -1044,17 +1047,177 @@ algorithm
         (item, rest_cref) = lookupCrefInItem(rest_cref, item, env);
         cref = joinCrefs(cref, rest_cref);
       then
-        cref;
+        (cref, env);
 
     // A fully qualified name.
     case (Absyn.CREF_FULLYQUALIFIED(componentRef = cref), _)
       equation
         cref = lookupCrefFullyQualified(cref, inEnv);
+        env = SCodeEnv.getEnvTopScope(inEnv);
       then
-        cref;
+        (cref, env);
 
   end match;
 end lookupComponentRef2;
+
+
+public function lookupComponentRefForceQualified
+  "Look up a component reference in the environment and returns it fully
+  qualified."
+  input Absyn.ComponentRef inCref;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  output Absyn.ComponentRef outCref;
+algorithm
+  outCref := matchcontinue(inCref, inEnv, inInfo)
+    local
+      Absyn.ComponentRef cref;
+      String cref_str, env_str;
+      Env env;
+
+    // Special case for StateSelect, do nothing.
+    case (Absyn.CREF_QUAL(name = "StateSelect", subscripts = {}, 
+        componentRef = Absyn.CREF_IDENT(name = _)), _, _)
+      then inCref;
+
+    // Wildcard.
+    case (Absyn.WILD(), _, _) then inCref;
+
+    // All other component references.
+    case (_, _, _)
+      equation
+        // First look up all subscripts, because all subscripts should be found
+        // in the enclosing scope of the component reference.
+        cref = SCodeFlattenImports.flattenComponentRefSubs(inCref, inEnv, inInfo);
+        // Then look up the component reference itself.
+        (cref, env) = lookupComponentRef2ForceQualified(cref, inEnv);
+        //print(SCodeEnv.getEnvName(env) +& "//" +& SCodeEnv.getEnvName(inEnv) +& "/Cref qual?: " +& Dump.printComponentRefStr(cref) +& "\n");
+        cref = crefStripEnvPrefix(cref, inEnv);
+        //print(SCodeEnv.getEnvName(env) +& "//" +& SCodeEnv.getEnvName(inEnv) +& "/Cref strip?: " +& Dump.printComponentRefStr(cref) +& "\n");
+      then
+        cref;
+
+    // Otherwise, mark the cref as invalid, which is ok as long as it's not
+    // actually used anywhere.
+    //else then Absyn.CREF_INVALID(inCref);
+    else inCref;
+
+  end matchcontinue;
+end lookupComponentRefForceQualified;
+
+protected function lookupComponentRef2ForceQualified
+  "Helper function to lookupComponentRef. Does the actual look up of the
+  component reference."
+  input Absyn.ComponentRef inCref;
+  input Env inEnv;
+  output Absyn.ComponentRef outCref;
+  output Env outEnv;
+algorithm
+  (outCref, outEnv) := match(inCref, inEnv)
+    local
+      Absyn.ComponentRef cref, rest_cref;
+      Absyn.Ident name;
+      list<Absyn.Subscript> subs;
+      Absyn.Path path, new_path;
+      Env env;
+      Item item;
+
+    // A simple name.
+    case (Absyn.CREF_IDENT(name, subs), _)
+      equation
+        (_, path, env) = lookupSimpleName(name, inEnv);
+        path = checkJoinPaths(inEnv, env, path);
+        cref = Absyn.pathToCrefWithSubs(path, subs);
+      then
+        (cref, env);
+
+    // A qualified name.
+    case (Absyn.CREF_QUAL(name, subs, rest_cref), _)
+      equation
+        // Lookup the first identifier.
+        (item, new_path, env) = lookupSimpleName(name, inEnv);
+        new_path = checkJoinPaths(inEnv, env, new_path);
+        cref = Absyn.pathToCrefWithSubs(new_path, subs);
+
+        // Lookup the rest of the cref in the enclosing scope of the first
+        // identifier.
+        (item, rest_cref) = lookupCrefInItem(rest_cref, item, env);
+        cref = joinCrefs(cref, rest_cref);
+      then
+        (cref, env);
+
+    // A fully qualified name.
+    case (Absyn.CREF_FULLYQUALIFIED(componentRef = cref), _)
+      equation
+        cref = lookupCrefFullyQualified(cref, inEnv);
+        env = SCodeEnv.getEnvTopScope(inEnv);
+      then
+        (cref, env);
+
+  end match;
+end lookupComponentRef2ForceQualified;
+
+protected function checkJoinPaths
+  input Env inCurrentEnv "our current env where we do lookup";
+  input Env inCrefEnv "the env in which we found the cref";
+  input Absyn.Path inPath "the cref path";
+  output Absyn.Path outPath "the path joined with the cref env if all OK";
+algorithm
+  outPath := matchcontinue(inCurrentEnv, inCrefEnv, inPath)
+    local
+      Absyn.Path pCUR, pCREF, p;
+      SCode.Element c;
+      Env rest_env; 
+      SCodeEnv.FrameType frame_type;
+      String name;
+    
+    /*
+    // check if we find it in the local env, do not join
+    case (inCurrentEnv, inCrefEnv, inPath)
+      equation
+        name = Absyn.pathFirstIdent(inPath);
+        // if is local, do not join!
+        (SOME(_), _, _) = lookupInLocalScope(name, inCurrentEnv);
+      then
+        inPath;
+    
+    // check if we find it in the local env of enclosing scope, do not join
+    case (SCodeEnv.FRAME(frameType = frame_type) :: rest_env, inCrefEnv, inPath)
+      equation
+        frameNotEncapsulated(frame_type);
+        name = Absyn.pathFirstIdent(inPath);
+        (SOME(_), _, _) = lookupSimpleName2(name, rest_env);
+      then
+        inPath;
+    */
+    
+    // check the paths
+    case (inCurrentEnv, inCrefEnv, inPath)
+      equation
+        pCUR = SCodeEnv.getEnvPath(inCurrentEnv);
+        pCREF = SCodeEnv.getEnvPath(inCrefEnv);
+        // if cref path is prefix of current cref, DO NOT JOIN!
+        true = boolOr(Absyn.pathPrefixOf(pCREF, pCUR), Absyn.pathPrefixOf(pCREF, inPath));
+      then
+        inPath;
+        
+    // check the paths
+    case (inCurrentEnv, inCrefEnv, inPath)
+      equation
+        pCUR = SCodeEnv.getEnvPath(inCurrentEnv);
+        pCREF = SCodeEnv.getEnvPath(inCrefEnv);
+        // if cref path is NOT prefix of current cref, DO JOIN!
+        false = Absyn.pathPrefixOf(pCREF, pCUR);
+        p = Absyn.joinPaths(pCREF, inPath);
+      then
+        p;
+    
+    // if we failed above it means top scope, just return the path
+    case (_, _, inPath) then inPath;
+        
+  end matchcontinue;
+end checkJoinPaths;
+  
 
 public function lookupCrefFullyQualified
   input Absyn.ComponentRef inCref;

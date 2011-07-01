@@ -584,9 +584,11 @@ algorithm
       DAE.Pattern pat;
       Absyn.CodeNode code;
       DAE.ReductionIterators riters;
+      DAE.ComponentRef name;
+      String index_str, scope, tyStr;
 
-      String index_str;
-
+    case (DAE.EMPTY(scope = scope, name = name, tyStr = tyStr), _, _, _) 
+      then "<EMPTY(scope: " +& scope +& ", name: " +& ComponentReference.printComponentRefStr(name) +& ", ty: " +& tyStr +& ")>";
       
     case (DAE.END(), _, _, _) then "end";
     

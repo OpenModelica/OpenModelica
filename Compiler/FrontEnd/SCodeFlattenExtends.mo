@@ -47,6 +47,10 @@ public import Absyn;
 public import SCode;
 public import SCodeEnv;
 public import SCodeHashTable;
+public import SCodeDependency;
+public import AvlTree;
+public import Scope;
+public import Name;
 
 protected import BaseHashTable;
 protected import Debug;
@@ -56,17 +60,55 @@ protected import SCodeLookup;
 protected import SCodeDump;
 protected import SCodeFlat;
 protected import SCodeFlatDump;
+protected import SCodeGraph;
+protected import Util;
+
+public
+uniontype Item
+  record I
+    SCode.Element el;
+    list<SCode.Mod> mods;
+    SCodeEnv.Env env;
+  end I;
+end Item;
+
+constant ScopeId topScopeId = 0 "the scopeId of the top level";
+
+type ScopeId = Integer;
+type Tree = AvlTree.Tree<ScopeId, Item> "the tree of environments";
+type Names = Name.Names;
+type Scopes = Scope.Scopes; 
+
+uniontype EnvTree
+  record ET
+    Names          names  "the names in the scopes";
+    Scopes         scopes "the scopes";
+    Tree           tree   "the environment tree";    
+  end ET;
+end EnvTree;
+
+uniontype Extra
+  record E
+    ScopeId parentId  "the parent scope";
+    EnvTree tree      "the tree passed down";
+    SCodeEnv.Env cEnv "the current environment";
+  end E;
+end Extra;
 
 public function flattenProgram
   "Flattens the last class in a program."
   input Absyn.Path inClassName;
-  input SCodeEnv.Env inEnv;
   input SCode.Program inProgram;
+  input SCodeEnv.Env inEnv;  
   output SCode.Program outProgram;
 algorithm
-  outProgram := matchcontinue(inClassName, inEnv, inProgram)
+  outProgram := matchcontinue(inClassName, inProgram, inEnv)
     local
-      SCodeFlat.FlatProgram flatProgram;
+      SCodeGraph.Graph graph;
+      SCodeGraph.Context context;
+      SCode.Element c;
+      SCodeEnv.Env env;
+      SCodeFlat.FlatProgram fp;
 
     case (_, _, _)
       equation
@@ -74,13 +116,17 @@ algorithm
       then
         inProgram;
 
-    else
+    case (_, _, _)
       equation
-        (flatProgram, _) = SCodeFlat.flattenProgram(inProgram, SCodeFlat.EXTRA(inEnv, {}, {}, {}, {}, Absyn.dummyInfo));
-        SCodeFlatDump.outputFlatProgram(flatProgram);
+        
+        (SCodeEnv.CLASS(c, _, _), _, env) = SCodeLookup.lookupClassName(inClassName, inEnv, Absyn.dummyInfo);
+        c = flattenClass(c, env);
+        
+        print("FinalSCodeProgram:\n-----------------------\n" +& 
+         Util.stringDelimitList(Util.listMap(inProgram, SCodeDump.unparseElementStr), "\n") +& 
+         "\n-----------------------------\n");
       then
         inProgram;
-
   end matchcontinue;
 end flattenProgram;
 
@@ -107,13 +153,20 @@ algorithm
       
     case (cl as SCode.CLASS(n, pref, ep, pp, restr, cDef, info), env)
       equation
-        print("Flattening: " +& SCodeDump.printElementStr(cl) +& "\n");
+        print(SCodeEnv.getEnvName(env) +& "/CL:" +& SCodeDump.shortElementStr(cl) +& "\n");
         className = SCode.className(cl);        
         element = cl;
         env = SCodeEnv.enterScope(env, className);
         cDef = flattenClassDef(cDef, env, info);        
       then 
         SCode.CLASS(n, pref, ep, pp, restr, cDef, info);
+        
+    case (cl, env)
+      equation
+        print("ERROR Flattening: " +& SCodeDump.shortElementStr(cl) +& "\n");
+      then 
+        cl;
+        
   end matchcontinue; 
 end flattenClass;
 
@@ -164,6 +217,18 @@ algorithm
       then 
         cDef;
     
+    // handle derived from builtin
+    case (SCode.DERIVED(Absyn.TPATH(path, _), mod, attr, cmt), env, info)
+      equation        
+        // Remove the extends from the local scope before flattening the derived
+        // type, because the type should not be looked up via itself.
+        env = SCodeEnv.removeExtendsFromLocalScope(env);
+        
+        (SCodeEnv.CLASS(cls = el as SCode.CLASS(classDef = cDef, info = info), classType = SCodeEnv.BUILTIN()), path, env) = 
+          SCodeLookup.lookupBaseClassName(path, env, info);                
+      then 
+        cDef;
+    
     // handle derived!
     case (SCode.DERIVED(Absyn.TPATH(path, _), mod, attr, cmt), env, info)
       equation        
@@ -174,7 +239,7 @@ algorithm
         (SCodeEnv.CLASS(cls = el as SCode.CLASS(classDef = cDef, info = info), classType = cls_ty), path, env) = 
           SCodeLookup.lookupBaseClassName(path, env, info);
 
-        print("Flattening derived: " +& SCodeDump.printElementStr(el) +& "\n");
+        print(SCodeEnv.getEnvName(env) +& "/DE:" +& SCodeDump.shortElementStr(el) +& "\n");
         
         // entering the base class
         env = SCodeEnv.enterScope(env, Absyn.pathLastIdent(path));
@@ -221,7 +286,7 @@ algorithm
     // handle rest
     case (el::rest, env, info)
       equation
-        print("Flattening element: " +& SCodeDump.printElementStr(el) +& "\n");
+        //print("Flattening element: " +& SCodeDump.shortElementStr(el) +& "\n");
         lst1 = flattenElement(el, env, info);
         lst2 = flattenElements(rest, env, info);
         lst = listAppend(lst1, lst2);
@@ -263,7 +328,7 @@ algorithm
         (SCodeEnv.CLASS(cls = cl as SCode.CLASS(classDef = cDef, info = info), classType = cls_ty), path, env) = 
           SCodeLookup.lookupBaseClassName(path, env, info);
         
-        print("Flattening extends: " +& SCodeDump.printElementStr(cl) +& "\n");
+        print(SCodeEnv.getEnvName(env) +& "/EXT:" +& SCodeDump.shortElementStr(el) +& "\n");
         
         // entering the base class
         env = SCodeEnv.enterScope(env, Absyn.pathLastIdent(path));

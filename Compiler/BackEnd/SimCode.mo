@@ -186,8 +186,23 @@ uniontype ModelInfo
     VarInfo varInfo;
     SimVars vars;
     list<Function> functions;
+    //Files files "all the files from Absyn.Info and DAE.ELementSource";
   end MODELINFO;
 end ModelInfo;
+
+type Files = list<FileInfo>;
+
+uniontype FileInfo 
+  "contains all the .mo files present in all Absyn.Info and DAE.ElementSource.info 
+   of all the variables, functions, etc from SimCode that have origin info.
+   it is used to generate the file information in one place and use an index
+   whenever we need to refer to one file from a var or function.
+   this is done so that we don't repeat long filenames everywhere."
+  record FILEINFO
+    String fileName "fileName where the class/component is defined in";
+    Boolean isReadOnly "isReadOnly : (true|false). Should be true for libraries";    
+  end FILEINFO;
+end FileInfo;
 
 // Number of variables of various types in a Modelica model.
 uniontype VarInfo
@@ -646,7 +661,6 @@ algorithm
   end matchcontinue;
 end cref2simvar;
 
-
 public function derComponentRef
 "Used by templates to derrive a cref in a der(cref) expression.
  Particularly, this function is called for the C# code generator,
@@ -945,13 +959,13 @@ public function translateModelFMU
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path className "path for the model";
-  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Interactive.SymbolTable inInteractiveSymbolTable;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimulationSettings> inSimSettingsOpt;
   output Env.Cache outCache;
   output Values.Value outValue;
-  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+  output Interactive.SymbolTable outInteractiveSymbolTable;
   output BackendDAE.BackendDAE outBackendDAE;
   output list<String> outStringLst;
   output String outFileDir;
@@ -970,7 +984,7 @@ algorithm
       BackendDAE.StrongComponents comps;
       Absyn.ComponentRef a_cref;
       list<String> libs;
-      Interactive.InteractiveSymbolTable st;
+      Interactive.SymbolTable st;
       Absyn.Program p,ptot;
       //DAE.Exp fileprefix;
       Env.Cache cache;
@@ -1131,13 +1145,13 @@ public function translateModel
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path className "path for the model";
-  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Interactive.SymbolTable inInteractiveSymbolTable;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimulationSettings> inSimSettingsOpt;
   output Env.Cache outCache;
   output Values.Value outValue;
-  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+  output Interactive.SymbolTable outInteractiveSymbolTable;
   output BackendDAE.BackendDAE outBackendDAE;
   output list<String> outStringLst;
   output String outFileDir;
@@ -1156,7 +1170,7 @@ algorithm
       BackendDAE.StrongComponents comps;
       Absyn.ComponentRef a_cref;
       list<String> libs;
-      Interactive.InteractiveSymbolTable st;
+      Interactive.SymbolTable st;
       Absyn.Program p,ptot;
       //DAE.Exp fileprefix;
       Env.Cache cache;
@@ -1883,18 +1897,24 @@ algorithm
       DAE.ExpType type_;
       DAE.Exp exp;
       Integer newOutputIndex;
+    
     case (SIMEXTARG(cref, isInput, outputIndex, isArray, type_), outVars)
       equation
         true = outputIndex == -1;
         newOutputIndex = findIndexInList(cref, outVars, 1);
-      then SIMEXTARG(cref, isInput, newOutputIndex, isArray, type_);
+      then 
+        SIMEXTARG(cref, isInput, newOutputIndex, isArray, type_);
+    
     case (SIMEXTARGSIZE(cref, isInput, outputIndex, type_, exp), outVars)
       equation
         true = outputIndex == -1;
         newOutputIndex = findIndexInList(cref, outVars, 1);
-      then SIMEXTARGSIZE(cref, isInput, newOutputIndex, type_, exp);
+      then 
+        SIMEXTARGSIZE(cref, isInput, newOutputIndex, type_, exp);
+            
     case (simExtArgIn, _)
-    then simExtArgIn;
+      then 
+        simExtArgIn;
   end matchcontinue;
 end assignOutputIndex;
 
@@ -2072,8 +2092,10 @@ algorithm
         
         modelInfo = expandModelInfoVars(LinearMats,modelInfo);
         Debug.fcall("execJacstat",print, "*** SimCode -> generate analytical Jacobians done!: " +& realString(clock()) +& "\n" );
-        crefToSimVarHT = createCrefToSimVarHT(modelInfo);
         
+        Debug.fcall("execHash",print, "*** SimCode -> generate cref2simVar hastable: " +& realString(clock()) +& "\n" );
+        crefToSimVarHT = createCrefToSimVarHT(modelInfo);
+        Debug.fcall("execHash",print, "*** SimCode -> generate cref2simVar hastable done!: " +& realString(clock()) +& "\n" );        
        
         simCode = SIMCODE(modelInfo,
           {},
@@ -2100,6 +2122,11 @@ algorithm
           simSettingsOpt,
           filenamePrefix,
           crefToSimVarHT);
+        
+        Debug.fcall("execFiles",print, "*** SimCode -> collect all files started: " +& realString(clock()) +& "\n" );
+        // adrpo: collect all the files from Absyn.Info and DAE.ElementSource
+        // simCode = collectAllFiles(simCode);
+        Debug.fcall("execFiles",print, "*** SimCode -> collect all files done!: " +& realString(clock()) +& "\n" );
       then
         simCode;
     else
@@ -2109,7 +2136,6 @@ algorithm
         fail();
   end matchcontinue;
 end createSimCode;
-
 
 protected function expandModelInfoVars
 "Expand Modelinfo with jacobain Vars"
@@ -5823,7 +5849,8 @@ algorithm
       Integer na_bool,ny_string,np_string,na_string;
       list<SimVar> states1,states_lst,states_lst2,der_states_lst;
       list<SimVar> states_2,derivatives_2,derivative;
-    case (class_, dlow, functions, numHelpVars, numResiduals, fileDir,true)
+    
+    case (class_, dlow, functions, numHelpVars, numResiduals, fileDir, true)
       equation
         //name = Absyn.pathStringNoQual(class_);
         directory = System.trim(fileDir, "\"");
@@ -5859,10 +5886,11 @@ algorithm
          derivatives_2=replaceindex1(derivative,der_states_lst);
          //Debug.fcall("cppvar",print,"state varibales: \n " +&dumpVarinfoList(states_lst2));
       then
-        MODELINFO(class_, directory, varInfo,SIMVARS(states_2,derivatives_2,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,
-                  intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,stringAlgVars,stringParamVars,stringAliasVars,extObjVars,jacobianVars,constVars), functions);
+        MODELINFO(class_, directory, varInfo, SIMVARS(states_2,derivatives_2,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,
+                  intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,stringAlgVars,stringParamVars,stringAliasVars,extObjVars,jacobianVars,constVars), 
+                  functions);
     
-     case (class_, dlow, functions, numHelpVars, numResiduals, fileDir,false)
+    case (class_, dlow, functions, numHelpVars, numResiduals, fileDir, false)
       equation
         //name = Absyn.pathStringNoQual(class_);
         directory = System.trim(fileDir, "\"");
@@ -5891,6 +5919,7 @@ algorithm
                  ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,0,0);
       then
         MODELINFO(class_, directory, varInfo, vars, functions);
+    
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.createModelInfo failed"});
@@ -6535,7 +6564,7 @@ algorithm
         ht = Util.listFold(stringParamVars, addSimVarToHashTable, ht);
         ht = Util.listFold(stringAliasVars, addSimVarToHashTable, ht);
         ht = Util.listFold(extObjVars, addSimVarToHashTable, ht);
-         ht = Util.listFold(constVars, addSimVarToHashTable, ht);
+        ht = Util.listFold(constVars, addSimVarToHashTable, ht);
       then
         ht;
     case (_)
@@ -6611,6 +6640,7 @@ algorithm
     local
       DAE.ComponentRef name;
       Absyn.Path fname;
+    
     case (DAE.CREF(componentRef=name),inVar) then ALIAS(name);
     case (DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CREF(componentRef=name)),inVar) then NEGATEDALIAS(name);
     case (DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CREF(componentRef=name)),inVar) then NEGATEDALIAS(name);
@@ -10769,6 +10799,24 @@ algorithm
 end matchcontinue;
 end countDynamicExternalFunctions;
 
+protected function getFilesFromSimVar
+  input SimVar inSimVar;
+  input Files inFiles;
+  output SimVar outSimVar;
+  output Files outFiles;
+algorithm
+  (outSimVar,outFiles) := match(inSimVar, inFiles)
+    local
+      Files files;
+      DAE.ElementSource source;
+      
+    case (SIMVAR(source = source), files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+      then 
+        (inSimVar,files);               
+  end match;
+end getFilesFromSimVar;
 
 protected function arraydim1 ""
   input list<Expression.Subscript> subscript1;
@@ -10788,5 +10836,641 @@ algorithm outString := matchcontinue(subscript1)
        (s1 :: s2);
 end matchcontinue;
 end arraydim1;
+
+protected function getFilesFromSimVars
+  input SimVars inSimVars;
+  input Files inFiles;
+  output Files outFiles;
+algorithm
+  outFiles := match(inSimVars, inFiles)
+    local
+      Files files;
+      list<SimVar> stateVars,derivativeVars,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,intAliasVars,
+                   boolAliasVars,paramVars,intParamVars,boolParamVars,stringAlgVars,stringParamVars,stringAliasVars,
+                   extObjVars,jacobianVars,constVars;      
+      
+    case (SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, 
+                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, jacobianVars, constVars),
+          files)
+      equation
+        (_, files) = Util.listListMapAndFold(
+                       {stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, 
+                        paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, jacobianVars, constVars}, 
+                       getFilesFromSimVar, files);
+      then 
+        files;               
+  end match;
+end getFilesFromSimVars;
+
+protected function getFilesFromFunctions
+  input list<Function> functions;
+  input Files inFiles;
+  output Files outFiles;
+algorithm
+  outFiles := match(functions, inFiles)
+    local
+      Files files;
+      list<Function> rest;
+      Absyn.Info info;
+
+    // handle empty
+    case ({}, files) then files;
+    
+    // handle FUNCTION
+    case (FUNCTION(info = info)::rest, files)
+      equation
+        files = getFilesFromAbsynInfo(info, files);
+        files = getFilesFromFunctions(rest, files);        
+      then
+        files;
+
+    // handle EXTERNAL_FUNCTION
+    case (EXTERNAL_FUNCTION(info = info)::rest, files)
+      equation
+        files = getFilesFromAbsynInfo(info, files);
+        files = getFilesFromFunctions(rest, files);        
+      then
+        files;
+    
+    // handle RECORD_CONSTRUCTOR
+    case (RECORD_CONSTRUCTOR(info = info)::rest, files)
+      equation
+        files = getFilesFromAbsynInfo(info, files);
+        files = getFilesFromFunctions(rest, files);
+      then
+        files;
+  end match;
+end getFilesFromFunctions;
+
+protected function getFilesFromSimEqSystemOpt
+  input Option<SimEqSystem> inSimEqSystemOpt;
+  input Files inFiles;
+  output Files outFiles;
+algorithm
+  outFiles := match(inSimEqSystemOpt, inFiles)
+    local
+      Files files;
+      SimEqSystem sys;
+      
+    case (NONE(), files) then files;
+    case (SOME(sys), files)
+      equation
+        (_, files) = getFilesFromSimEqSystem(sys, files);
+      then 
+        files;
+  end match;
+end getFilesFromSimEqSystemOpt;
+
+protected function getFilesFromSimEqSystem
+  input SimEqSystem inSimEqSystem;
+  input Files inFiles;
+  output SimEqSystem outSimEqSystem;
+  output Files outFiles;  
+algorithm
+  (outSimEqSystem,outFiles) := match(inSimEqSystem, inFiles)
+    local
+      Files files;
+      DAE.ElementSource source;
+      list<DAE.Statement> statements;
+      list<SimVar> vars;
+      list<tuple<Integer, Integer, SimEqSystem>> simJac;
+      list<SimEqSystem> systems;
+      SimEqSystem system;
+      Option<SimEqSystem> systemOpt;
+      
+    case (SES_RESIDUAL(source = source), files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+      then 
+        (inSimEqSystem,files);
+    
+    case (SES_SIMPLE_ASSIGN(source = source), files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+      then 
+        (inSimEqSystem,files);
+    
+    case (SES_ARRAY_CALL_ASSIGN(source = source), files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+      then 
+        (inSimEqSystem,files);
+        
+    case (SES_ALGORITHM(statements), files)
+      equation
+        files = getFilesFromStatements(statements, files);
+      then 
+        (inSimEqSystem,files);
+    
+    case (SES_LINEAR(vars = vars, simJac = simJac), files)
+      equation
+        (_, files) = Util.listMapAndFold(vars, getFilesFromSimVar, files);
+        systems = Util.listMap(simJac, Util.tuple33);
+        files = getFilesFromSimEqSystems({systems}, files);
+      then 
+        (inSimEqSystem,files);
+    
+    case (SES_NONLINEAR(eqs = systems), files)
+      equation
+        files = getFilesFromSimEqSystems({systems}, files);
+      then 
+        (inSimEqSystem,files);
+    
+    case (SES_MIXED(cont = system, discVars = vars, discEqs = systems), files)
+      equation
+        (_, files) = Util.listMapAndFold(vars, getFilesFromSimVar, files);
+        files = getFilesFromSimEqSystems({system::systems}, files);
+      then 
+        (inSimEqSystem,files);
+        
+    case (SES_WHEN(source = source, elseWhen = systemOpt), files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromSimEqSystemOpt(systemOpt, files);
+      then 
+        (inSimEqSystem,files);
+        
+  end match;
+end getFilesFromSimEqSystem;
+
+protected function getFilesFromSimEqSystems
+  input list<list<SimEqSystem>> inSimEqSystems;
+  input Files inFiles;
+  output Files outFiles;
+algorithm
+  outFiles := match(inSimEqSystems, inFiles)
+    local
+      Files files;
+      
+    case (inSimEqSystems, files)
+      equation
+        (_, files) = Util.listListMapAndFold(inSimEqSystems, getFilesFromSimEqSystem, files);
+      then 
+        files;               
+  end match;
+end getFilesFromSimEqSystems;
+
+protected function getFilesFromStatementsElse
+  input DAE.Else inElse;
+  input Files inFiles;
+  output Files outFiles;
+algorithm
+  outFiles := match(inElse, inFiles)
+    local
+      Files files;
+      list<DAE.Statement> rest,stmts;
+      DAE.Else elsePart;
+      
+    case (DAE.NOELSE(), files) then files;
+      
+    case (DAE.ELSEIF(statementLst = stmts, else_ = elsePart), files)
+      equation
+        files = getFilesFromStatements(stmts, files);
+        files = getFilesFromStatementsElse(elsePart, files);
+      then
+        files;
+    
+    case (DAE.ELSE(statementLst = stmts), files)
+      equation
+        files = getFilesFromStatements(stmts, files);
+      then
+        files;
+  end match;
+end getFilesFromStatementsElse;
+
+protected function getFilesFromStatementsElseWhen
+  input Option<DAE.Statement> inStatementOpt;
+  input Files inFiles;
+  output Files outFiles;
+algorithm
+  outFiles := match(inStatementOpt, inFiles)
+    local
+      Files files;
+      DAE.Statement stmt;
+      
+    case (NONE(), files) then files;
+    case (SOME(stmt), files) then getFilesFromStatements({stmt}, files);
+  end match;
+end getFilesFromStatementsElseWhen;
+
+protected function getFilesFromStatements
+  input list<DAE.Statement> inStatements;
+  input Files inFiles;
+  output Files outFiles;
+algorithm
+  outFiles := match(inStatements, inFiles)
+    local
+      Files files;
+      DAE.ElementSource source;
+      list<DAE.Statement> rest,stmts;
+      DAE.Else elsePart;
+      Option<DAE.Statement> elseWhen;      
+      
+    // handle empty
+    case ({}, files) then files;
+      
+    case (DAE.STMT_ASSIGN(source = source)::rest, files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromStatements(rest, files);
+      then 
+        files;
+    
+    case (DAE.STMT_TUPLE_ASSIGN(source = source)::rest, files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromStatements(rest, files);
+      then 
+        files;
+    
+    case (DAE.STMT_ASSIGN_ARR(source = source)::rest, files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromStatements(rest, files);
+      then 
+        files;
+    
+    case (DAE.STMT_IF(source = source, statementLst = stmts, else_ = elsePart)::rest, files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromStatements(stmts, files);
+        files = getFilesFromStatementsElse(elsePart, files);
+        files = getFilesFromStatements(rest, files);
+      then 
+        files;
+        
+    case (DAE.STMT_FOR(source = source, statementLst = stmts)::rest, files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromStatements(stmts, files);
+        files = getFilesFromStatements(rest, files);
+      then 
+        files;
+        
+    case (DAE.STMT_WHILE(source = source, statementLst = stmts)::rest, files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromStatements(stmts, files);
+        files = getFilesFromStatements(rest, files);
+      then 
+        files;
+        
+    case (DAE.STMT_WHEN(source = source, statementLst = stmts, elseWhen = elseWhen)::rest, files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromStatements(stmts, files);
+        files = getFilesFromStatementsElseWhen(elseWhen, files);
+        files = getFilesFromStatements(rest, files);
+      then 
+        files;
+        
+    case (DAE.STMT_ASSERT(source = source)::rest, files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromStatements(rest, files);
+      then 
+        files;
+        
+    case (DAE.STMT_TERMINATE(source = source)::rest, files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromStatements(rest, files);
+      then 
+        files;
+        
+    case (DAE.STMT_REINIT(source = source)::rest, files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromStatements(rest, files);
+      then 
+        files;
+        
+    case (DAE.STMT_NORETCALL(source = source)::rest, files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromStatements(rest, files);
+      then 
+        files;
+        
+    case (DAE.STMT_RETURN(source = source)::rest, files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromStatements(rest, files);
+      then 
+        files;
+        
+    case (DAE.STMT_BREAK(source = source)::rest, files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromStatements(rest, files);
+      then 
+        files;
+        
+    case (DAE.STMT_FAILURE(source = source, body = stmts)::rest, files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromStatements(stmts, files);
+        files = getFilesFromStatements(rest, files);
+      then 
+        files;
+    
+    case (DAE.STMT_TRY(source = source, tryBody = stmts)::rest, files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromStatements(stmts, files);
+        files = getFilesFromStatements(rest, files);
+      then 
+        files;
+        
+    case (DAE.STMT_CATCH(source = source, catchBody = stmts)::rest, files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromStatements(stmts, files);
+        files = getFilesFromStatements(rest, files);
+      then 
+        files;
+        
+    case (DAE.STMT_THROW(source = source)::rest, files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromStatements(rest, files);
+      then 
+        files;
+  end match;
+end getFilesFromStatements;
+
+protected function getFilesFromWhenClausesReinits
+  input list<BackendDAE.WhenOperator> inWhenOperators;
+  input Files inFiles;
+  output Files outFiles;
+algorithm
+  outFiles := match(inWhenOperators, inFiles)
+    local
+      Files files;
+      DAE.ElementSource source;
+      list<BackendDAE.WhenOperator> rest; 
+      
+    // handle empty
+    case ({}, files) then files;
+      
+    case (BackendDAE.REINIT(source = source)::rest, files)
+      equation
+        files = getFilesFromDAEElementSource(source, files);
+        files = getFilesFromWhenClausesReinits(rest, files);
+      then 
+        files;
+    
+  end match;
+end getFilesFromWhenClausesReinits;
+
+protected function getFilesFromWhenClauses
+  input list<SimWhenClause> inSimWhenClauses;
+  input Files inFiles;
+  output Files outFiles;
+algorithm
+  outFiles := match(inSimWhenClauses, inFiles)
+    local
+      Files files;
+      list<SimWhenClause> rest;
+      list<BackendDAE.WhenOperator> reinits; 
+      
+    // handle empty
+    case ({}, files) then files;
+      
+    case (SIM_WHEN_CLAUSE(reinits = reinits)::rest, files)
+      equation
+        files = getFilesFromWhenClausesReinits(reinits, files);
+        files = getFilesFromWhenClauses(rest, files);
+      then 
+        files;
+    
+  end match;
+end getFilesFromWhenClauses;
+
+protected function getFilesFromExtObjInfo
+  input ExtObjInfo inExtObjInfo;
+  input Files inFiles;
+  output Files outFiles;
+algorithm
+  outFiles := match(inExtObjInfo, inFiles)
+    local
+      Files files;
+      list<SimVar> vars;
+      
+    case (EXTOBJINFO(vars = vars), files)
+      equation
+        (_, files) = Util.listMapAndFold(vars, getFilesFromSimVar, files);
+      then 
+        files;
+    
+  end match;
+end getFilesFromExtObjInfo;
+
+protected function getFilesFromJacobianMatrixes
+  input list<JacobianMatrix> inJacobianMatrixes;
+  input Files inFiles;
+  output Files outFiles;
+algorithm
+  outFiles := match(inJacobianMatrixes, inFiles)
+    local
+      Files files;
+      list<JacobianMatrix> rest;
+      list<SimEqSystem> systems;
+      list<SimVar> vars;
+   
+    // handle empty   
+    case ({}, files) then files;
+    
+    // handle rest  
+    case ((systems, vars, _)::rest, files)
+      equation
+        files = getFilesFromSimEqSystems({systems}, files);
+        (_, files) = Util.listMapAndFold(vars, getFilesFromSimVar, files);
+        files = getFilesFromJacobianMatrixes(rest, files);
+      then 
+        files;
+
+  end match;
+end getFilesFromJacobianMatrixes;
+
+protected function collectAllFiles
+  input SimCode inSimCode;
+  output SimCode outSimCode;
+algorithm
+  outSimCode := matchcontinue(inSimCode)
+    local
+      ModelInfo modelInfo;
+      list<DAE.Exp> literals "shared literals";
+      list<RecordDeclaration> recordDecls;
+      list<String> externalFunctionIncludes;
+      list<SimEqSystem> allEquations,odeEquations,algebraicEquations,residualEquations,initialEquations,parameterEquations,removedEquations,sampleEquations;
+      list<DAE.Statement> algorithmAndEquationAsserts;
+      list<BackendDAE.ZeroCrossing> zeroCrossings;
+      list<SampleCondition> sampleConditions;
+      list<HelpVarInfo> helpVarInfo;
+      list<SimWhenClause> whenClauses;
+      list<DAE.ComponentRef> discreteModelVars;
+      ExtObjInfo extObjInfo;
+      MakefileParams makefileParams;
+      DelayedExpression delayedExps;
+      list<JacobianMatrix> JacobianMatrixes;
+      Option<SimulationSettings> simulationSettingsOpt;
+      String fileNamePrefix;
+      HashTableCrefToSimVar crefToSimVarHT;
+      Absyn.Path name;
+      String directory;
+      VarInfo varInfo;
+      SimVars vars;
+      list<Function> functions;
+      Files files "all the files from Absyn.Info and DAE.ELementSource";      
+
+    case inSimCode
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+      then
+        inSimCode;
+    
+    case SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,algebraicEquations,residualEquations,initialEquations, 
+                 parameterEquations,removedEquations,algorithmAndEquationAsserts,zeroCrossings,sampleConditions,sampleEquations,helpVarInfo,whenClauses,
+                 discreteModelVars,extObjInfo,makefileParams,delayedExps,JacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT)
+      equation
+        MODELINFO(name, directory, varInfo, vars, functions) = modelInfo;
+        files = {};
+        files = getFilesFromSimVars(vars, files);
+        files = getFilesFromFunctions(functions, files);
+        files = getFilesFromSimEqSystems({allEquations,odeEquations,algebraicEquations,residualEquations,
+                                          initialEquations,parameterEquations,removedEquations,sampleEquations}, files);
+        files = getFilesFromStatements(algorithmAndEquationAsserts, files);
+        files = getFilesFromWhenClauses(whenClauses, files);   
+        files = getFilesFromExtObjInfo(extObjInfo, files);
+        files = getFilesFromJacobianMatrixes(JacobianMatrixes, files);
+        files = Util.sort(files, greaterFileInfo);
+        modelInfo = MODELINFO(name, directory, varInfo, vars, functions);
+      then
+        SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,algebraicEquations,residualEquations,initialEquations, 
+                  parameterEquations,removedEquations,algorithmAndEquationAsserts,zeroCrossings,sampleConditions,sampleEquations,helpVarInfo,whenClauses,
+                  discreteModelVars,extObjInfo,makefileParams,delayedExps,JacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT);
+                  
+    case inSimCode
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.collectAllFiles failed to collect files from SimCode!"});        
+      then
+        inSimCode;
+  end matchcontinue;
+end collectAllFiles;
+
+protected function getFilesFromDAEElementSource
+  input DAE.ElementSource inSource;
+  input Files inFiles;
+  output Files outFiles;
+algorithm
+  outFiles := match(inSource, inFiles)
+    local
+      Files files;
+      Absyn.Info info;
+      
+    case (DAE.SOURCE(info = info), files) 
+      equation
+        files = getFilesFromAbsynInfo(info, files);
+      then 
+        files;
+  end match;
+end getFilesFromDAEElementSource;
+
+protected function getFilesFromAbsynInfo
+  input Absyn.Info inInfo;
+  input Files inFiles;
+  output Files outFiles;
+algorithm
+  outFiles := match(inInfo, inFiles)
+    local
+      Files files;
+      String f;
+      Boolean ro;
+      FileInfo fi;
+      
+    case (Absyn.INFO(fileName = f, isReadOnly = ro), files) 
+      equation
+        fi = FILEINFO(f, ro);
+        // add it only if is not already there!
+        files = Util.listConsOnTrue(Util.listNotContains(fi, files), fi, files);
+      then 
+        files;
+  end match;
+end getFilesFromAbsynInfo;
+
+protected function equalFileInfo
+"compare to FileInfo and return true if the filenames are equal, isReadOnly is ignored here"
+  input FileInfo inFileInfo1;
+  input FileInfo inFileInfo2;
+  output Boolean isMatch;
+protected
+  String f1, f2;
+algorithm
+  FILEINFO(f1, _) := inFileInfo1;
+  FILEINFO(f2, _) := inFileInfo2;
+  isMatch := stringEq(f1, f2);
+end equalFileInfo;
+
+protected function greaterFileInfo
+"compare to FileInfo and returns true if the fileName1 is greater than fileName2, isReadOnly is ignored here"
+  input FileInfo inFileInfo1;
+  input FileInfo inFileInfo2;
+  output Boolean isGreater;
+protected
+  String f1, f2;
+  Integer compare;
+algorithm
+  FILEINFO(f1, _) := inFileInfo1;
+  FILEINFO(f2, _) := inFileInfo2;
+  compare := stringCompare(f1, f2);
+  isGreater := intGt(compare, 0);
+end greaterFileInfo;
+
+protected function getFileIndexFromFiles
+"fetch the index in the list of files"
+  input String file;
+  input Files files;
+  output Integer index;
+algorithm
+  index := matchcontinue(file, files)
+    local
+      Integer i;
+      
+    case (file, files)
+      equation
+        i = Util.listFindWithCompareFunc(files, FILEINFO(file, false), equalFileInfo, false);
+      then
+        i; 
+  end matchcontinue;
+end getFileIndexFromFiles;
+
+public function fileName2fileIndex
+"Used by templates to find a fileIndex for given fileName"
+  input String inFileName;
+  input Files inFiles;
+  output Integer outFileIndex;
+algorithm
+  outFileIndex := matchcontinue(inFileName, inFiles)
+    local
+      String errstr;
+      String file;
+      Files files;
+      Integer index;
+      
+    case (file, files)
+      equation
+        index = getFileIndexFromFiles(file, files);
+      then 
+        index;
+        
+    case (file, _)
+      equation
+        //errstr = "Template did not find the file: "+& file +& " in the SimCode.modelInfo.files.";
+        //Error.addMessage(Error.INTERNAL_ERROR, {errstr});
+      then
+        -1;
+  end matchcontinue;
+end fileName2fileIndex;
 
 end SimCode;

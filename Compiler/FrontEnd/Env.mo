@@ -190,6 +190,7 @@ protected import Types;
 protected import OptManager;
 protected import RTOpts;
 protected import SCodeDump;
+protected import Mod;
 
 public constant Env emptyEnv={} "- Values" ;
 
@@ -391,23 +392,31 @@ algorithm
       Env env;
       Item item;
       Integer h;
+   
    // Classes
-   case(AVLTREENODE(SOME(AVLTREEVALUE(k,CLASS(cl,env))),h,l,r),classEnv) equation
+   case(AVLTREENODE(SOME(AVLTREEVALUE(k,CLASS(cl,env))),h,l,r),classEnv) 
+     equation
       l = updateEnvClassesInTreeOpt(l,classEnv);
       r = updateEnvClassesInTreeOpt(r,classEnv);
-   then AVLTREENODE(SOME(AVLTREEVALUE(k,CLASS(cl,classEnv))),h,l,r);
+     then 
+       AVLTREENODE(SOME(AVLTREEVALUE(k,CLASS(cl,classEnv))),h,l,r);
 
    // Other items
-   case(AVLTREENODE(SOME(AVLTREEVALUE(k,item)),h,l,r),classEnv) equation
+   case(AVLTREENODE(SOME(AVLTREEVALUE(k,item)),h,l,r),classEnv) 
+     equation
       l = updateEnvClassesInTreeOpt(l,classEnv);
       r = updateEnvClassesInTreeOpt(r,classEnv);
-   then AVLTREENODE(SOME(AVLTREEVALUE(k,item)),h,l,r);
+     then 
+       AVLTREENODE(SOME(AVLTREEVALUE(k,item)),h,l,r);
 
    // nothing
-   case(AVLTREENODE(NONE(),h,l,r),classEnv) equation
+   case(AVLTREENODE(NONE(),h,l,r),classEnv) 
+     equation
       l = updateEnvClassesInTreeOpt(l,classEnv);
       r = updateEnvClassesInTreeOpt(r,classEnv);
-   then AVLTREENODE(NONE(),h,l,r);
+     then 
+       AVLTREENODE(NONE(),h,l,r);
+     
   end matchcontinue;
 end updateEnvClassesInTree;
 
@@ -460,6 +469,65 @@ algorithm
         fail();
   end matchcontinue;
 end extendFrameC;
+
+public function updateFrameC "function: updateFrameC
+  This function updates a component already added to the environment, but
+  that prior to the update did not have any binding. I.e this function is
+  called in the second stage of instantiation with declare before use."
+  input Env inEnv;
+  input SCode.Element inClass;
+  input Env inClassEnv;
+  output Env outEnv;
+algorithm
+  outEnv := matchcontinue (inEnv,inClass,inClassEnv)
+    local
+      SCode.Encapsulated encflag;
+      InstStatus i;
+      Option<tuple<SCode.Element, DAE.Mod>> c;
+      AvlTree httypes;
+      AvlTree ht,ht_1;
+      Option<Ident> sid;
+      Option<ScopeType> st;
+      list<AvlValue> imps;
+      Env fs, env, frames, classEnv, oldCE;
+      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
+      SCode.Element e, oldE;
+      Ident n,id;
+      list<SCode.Element> defineUnits;
+
+    case (env,e,classEnv)
+      equation
+        // Debug.fprintln("instTrace", "Updating class: " +& valueStr(CLASS(e, classEnv)) +& "\nIn env/cenv:" +& printEnvPathStr(env) +& "/" +& printEnvPathStr(classEnv)); 
+      then 
+        fail();
+
+    // empty case
+    case ({},_,_) then {};
+    
+    case ((FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),e as SCode.CLASS(name = n),classEnv)
+      equation
+        CLASS(oldE,oldCE) = avlTreeGet(ht, n);
+        (ht_1) = avlTreeAdd(ht, n, CLASS(e, classEnv));
+      then
+        (FRAME(sid,st,ht_1,httypes,imps,crs,encflag,defineUnits) :: fs);
+    
+    // Also check frames above, e.g. when variable is in base class
+    case ((FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),e,classEnv) 
+      equation
+        frames = updateFrameC(fs, e, classEnv);
+      then
+        (FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: frames);
+    
+    case (_,e,classEnv)
+      equation
+        print("- Env.updateFrameC failed\n");
+        print("  - class: ");
+        print(SCodeDump.unparseElementStr(e));
+        print("\n");
+      then
+        fail();
+  end matchcontinue;
+end updateFrameC;
 
 public function extendFrameClasses "function: extendFrameClasses
   Adds all clases in a Program to the environment."
@@ -578,31 +646,28 @@ algorithm
       DAE.Var v;
       Ident n,id;
       list<SCode.Element> defineUnits;
+      AvlValue var;
 
     case ({},_,i,_) then {};  /* fully instantiated env of component */
+    
     case ((FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),i,env)
       equation
-        VAR(_,c,_,_) = avlTreeGet(ht, n);
+        (var as VAR(_,c,_,_)) = avlTreeGet(ht, n);
+        // Debug.fprintln("instTrace", "Updating variable: " +& valueStr(VAR(v,c,i,env)) +& "\n In current env:" +& printEnvPathStr(inEnv1));
+        // Debug.fprintln("instTrace", "Previous variable: " +& valueStr(var) +& "\nIn current env:" +& printEnvPathStr(inEnv1));
         (ht_1) = avlTreeAdd(ht, n, VAR(v,c,i,env));
       then
         (FRAME(sid,st,ht_1,httypes,imps,crs,encflag,defineUnits) :: fs);
+    
     case ((FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),i,env) /* Also check frames above, e.g. when variable is in base class */
       equation
         frames = updateFrameV(fs, v, i, env);
       then
         (FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: frames);
-    case ((FRAME(sid,st,ht, httypes,imps,crs,encflag,defineUnits) :: fs),DAE.TYPES_VAR(name = n),_,_)
-      equation
-        /*Print.printBuf("- update_frame_v, variable ");
-        Print.printBuf(n);
-        Print.printBuf(" not found\n rest of env:");
-        printEnv(fs);
-        Print.printBuf("\n");*/
-      then
-        (FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs);
+    
     case (_,(v as DAE.TYPES_VAR(name = id)),_,_)
       equation
-        print("- update_frame_v failed\n");
+        print("- Env.updateFrameV failed\n");
         print("  - variable: ");
         print(Types.printVarStr(v));
         print("\n");
@@ -1039,7 +1104,7 @@ algorithm
         encflag_str = SCodeDump.encapsulatedStr(encflag);
         res = stringAppendList(
           "FRAME: " :: sid :: " (enc=" :: encflag_str ::
-          ") \nclasses and vars:\n=============\n" :: s1 :: "   Types:\n======\n" :: s2 :: "   Imports:\n=======\n" :: s3 :: {});
+          ") \nClasses and Vars:\n=============\n" :: s1 :: "\nTypes:\n======\n" :: s2 :: "\nImports:\n=======\n" :: s3 :: {});
       then
         res;
   end match;
@@ -1050,8 +1115,7 @@ protected function printFrameVarsStr "function: printFrameVarsStr
   input Frame inFrame;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inFrame)
+  outString := matchcontinue (inFrame)
     local
       Ident s1,encflag_str,res,sid;
       AvlTree httypes;
@@ -1115,14 +1179,12 @@ algorithm
 end printImportsStr;
 
 protected function printFrameElementStr "function: printFrameElementStr
-
   Print frame element to a string
 "
   input tuple<Ident, Item> inTplIdentItem;
   output String outString;
 algorithm
-  outString:=
-  match (inTplIdentItem)
+  outString := match (inTplIdentItem)
     local
       Ident s,elt_str,tp_str,var_str,frame_str,bind_str,res,n,lenstr;
       DAE.Var tv;
@@ -1285,6 +1347,7 @@ algorithm
     Option<Env> ie;
     array<EnvCache> arr;
     array<DAE.FunctionTree> ef;
+    
     case (_,inCache as CACHE(envCache=NONE()),_) then inCache;
 
     case (fullpath,CACHE(SOME(arr),ie,ef),env)
@@ -1616,6 +1679,33 @@ algorithm
   str := k;
 end keyStr;
 
+protected function printElementAndModOpt
+  input Option<tuple<SCode.Element, DAE.Mod>> elAndMod;
+  output String str;
+algorithm
+  str := matchcontinue(elAndMod)
+    local
+      DAE.Mod m;
+      SCode.Element e;
+      
+    case (NONE()) then "";
+    case (SOME((e,m))) 
+      then "[el:" +& SCodeDump.unparseElementStr(e) +& ", mod" +& Mod.printModStr(m) +& "], ";
+    
+  end matchcontinue; 
+end printElementAndModOpt;
+
+protected function printInstStatus
+  input InstStatus instStatus;
+  output String str;
+algorithm
+  str := matchcontinue(instStatus)
+    case (VAR_UNTYPED()) then "inst: var untyped";
+    case (VAR_TYPED())   then "inst: var typed";
+    case (VAR_DAE())     then "inst: var dae";
+  end matchcontinue; 
+end printInstStatus;
+
 public function valueStr "prints a Value to a string"
   input AvlValue v;
   output String str;
@@ -1629,29 +1719,36 @@ algorithm
       SCode.Variability variability "variability";
       Absyn.Direction direction "direction";
       Absyn.InnerOuter innerOuter "inner, outer,  inner outer or unspecified";
+      Option<tuple<SCode.Element, DAE.Mod>> elAndmod;
+      InstStatus instStatus;
+      String s1, s2, s3, s4, s5, s6;
+      DAE.Binding binding;
+      SCode.Element e;
+      Env env;
       
-    case(VAR(instantiated=DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(flowPrefix, streamPrefix, variability, direction, innerOuter),ty=tp))) 
+      
+    case(VAR(instantiated=DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(flowPrefix, streamPrefix, variability, direction, innerOuter),ty=tp,binding=binding),
+             declaration = elAndmod, instStatus=instStatus, env = env)) 
       equation
+        s1 = SCodeDump.flowStr(flowPrefix);
+        s1 = Util.if_(stringEq(s1, ""), "", s1 +& ", ");
+        s2 = SCodeDump.streamStr(streamPrefix);
+        s2 = Util.if_(stringEq(s2, ""), "", s2 +& ", ");
+        s3 = SCodeDump.variabilityString(variability); 
+        s3 = Util.if_(stringEq(s3, ""), "", s3 +& ", ");
+        s4 = Dump.unparseDirectionSymbolStr(direction);
+        s4 = Util.if_(stringEq(s4, ""), "", s4 +& ", ");
+        s5 = SCodeDump.innerouterString(innerOuter);
+        s5 = Util.if_(stringEq(s5, ""), "", s5 +& ", ");
+                
         str = "var:    " +& name +& " " +& Types.unparseType(tp) +& "("
-        +& Types.printTypeStr(tp) +& ")" +& " attr: " +& 
-        SCodeDump.flowStr(flowPrefix) +& ", " +&
-        SCodeDump.streamStr(streamPrefix) +& ", " +&
-        SCodeDump.variabilityString(variability) +& ", " +&
-        SCodeDump.innerouterString(innerOuter);
+        +& Types.printTypeStr(tp) +& ") binding: " +& Types.printBindingStr(binding) +& " attr: " +& s1 +& s2 +& s3 +& s4 +& s5 +&
+        printElementAndModOpt(elAndmod) +& printInstStatus(instStatus) +& " env: " +& printEnvPathStr(env); 
       then str;
     
-    case(VAR(declaration = SOME((SCode.COMPONENT(name=name,typeSpec=tsp,prefixes=SCode.PREFIXES(innerOuter=innerOuter),attributes=SCode.ATTR(_, flowPrefix, streamPrefix, variability, direction)), _)))) 
+    case(CLASS(cl= e as SCode.CLASS(name=name), env = env)) 
       equation
-        str = "var:    " +& name +& " " +& Dump.unparseTypeSpec(tsp) +& " attr: " +& 
-        SCodeDump.flowStr(flowPrefix) +& ", " +&
-        SCodeDump.streamStr(streamPrefix) +& ", " +&
-        SCodeDump.variabilityString(variability) +& ", " +&
-        SCodeDump.innerouterString(innerOuter);
-      then str;
-    
-    case(CLASS(cl=SCode.CLASS(name=name))) 
-      equation
-        str = "class:  " +& name;
+        str = "class: " +& SCodeDump.shortElementStr(e) +& " env: " +& printEnvPathStr(env);
       then str;
     
     case(TYPE(tp::_)) 
@@ -2145,14 +2242,14 @@ algorithm
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);
-        res = "\n" +& valueStr(rval) +& ",  " +& s2 +&",  " +& s3;
+        res = "\n" +& valueStr(rval) +& ",  " +& Util.if_(stringEq(s2, ""), "", s2 +& ", ") +& s3;
       then
         res;
     case (AVLTREENODE(value = NONE(),left = l,right = r))
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);
-        res = s2 +& ", "+& s3;
+        res = Util.if_(stringEq(s2, ""), "", s2 +& ", ") +& s3;
       then
         res;
   end match;

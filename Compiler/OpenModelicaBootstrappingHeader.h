@@ -245,6 +245,21 @@ extern struct record_description Values_Value_META__FAIL__desc;
 static const MMC_DEFSTRUCTLIT(Values__META_5fFAIL__struct,1,18) {&Values_Value_META__FAIL__desc}};
 static void *Values__META_5fFAIL = MMC_REFSTRUCTLIT(Values__META_5fFAIL__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Values_Value_EMPTY__desc_added
+#define Values_Value_EMPTY__desc_added
+const char* Values_Value_EMPTY__desc__fields[4] = {"scope","name","ty","tyStr"};
+struct record_description Values_Value_EMPTY__desc = {
+  "Values_Value_EMPTY",
+  "Values.Value.EMPTY",
+  Values_Value_EMPTY__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Values_Value_EMPTY__desc;
+#endif
+#define Values__EMPTY_3dBOX4 19
+#define Values__EMPTY(scope,name,ty,tyStr) (mmc_mk_box5(19,&Values_Value_EMPTY__desc,scope,name,ty,tyStr))
+#ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_IntRealOp_MULOP__desc_added
 #define Values_IntRealOp_MULOP__desc_added
 const char* Values_IntRealOp_MULOP__desc__fields[1] = {"no fileds"};
@@ -356,50 +371,50 @@ extern struct record_description Interactive_CompiledCFunction_CFunction__desc;
 #define Interactive__CFunction_3dBOX5 3
 #define Interactive__CFunction(path,retType,funcHandle,buildTime,loadedFromFile) (mmc_mk_box6(3,&Interactive_CompiledCFunction_CFunction__desc,path,retType,funcHandle,buildTime,loadedFromFile))
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Interactive_InteractiveStmt_IALG__desc_added
-#define Interactive_InteractiveStmt_IALG__desc_added
-const char* Interactive_InteractiveStmt_IALG__desc__fields[1] = {"algItem"};
-struct record_description Interactive_InteractiveStmt_IALG__desc = {
-  "Interactive_InteractiveStmt_IALG",
-  "Interactive.InteractiveStmt.IALG",
-  Interactive_InteractiveStmt_IALG__desc__fields
+#ifndef Interactive_Statement_IALG__desc_added
+#define Interactive_Statement_IALG__desc_added
+const char* Interactive_Statement_IALG__desc__fields[1] = {"algItem"};
+struct record_description Interactive_Statement_IALG__desc = {
+  "Interactive_Statement_IALG",
+  "Interactive.Statement.IALG",
+  Interactive_Statement_IALG__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Interactive_InteractiveStmt_IALG__desc;
+extern struct record_description Interactive_Statement_IALG__desc;
 #endif
 #define Interactive__IALG_3dBOX1 3
-#define Interactive__IALG(algItem) (mmc_mk_box2(3,&Interactive_InteractiveStmt_IALG__desc,algItem))
+#define Interactive__IALG(algItem) (mmc_mk_box2(3,&Interactive_Statement_IALG__desc,algItem))
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Interactive_InteractiveStmt_IEXP__desc_added
-#define Interactive_InteractiveStmt_IEXP__desc_added
-const char* Interactive_InteractiveStmt_IEXP__desc__fields[1] = {"exp"};
-struct record_description Interactive_InteractiveStmt_IEXP__desc = {
-  "Interactive_InteractiveStmt_IEXP",
-  "Interactive.InteractiveStmt.IEXP",
-  Interactive_InteractiveStmt_IEXP__desc__fields
+#ifndef Interactive_Statement_IEXP__desc_added
+#define Interactive_Statement_IEXP__desc_added
+const char* Interactive_Statement_IEXP__desc__fields[1] = {"exp"};
+struct record_description Interactive_Statement_IEXP__desc = {
+  "Interactive_Statement_IEXP",
+  "Interactive.Statement.IEXP",
+  Interactive_Statement_IEXP__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Interactive_InteractiveStmt_IEXP__desc;
+extern struct record_description Interactive_Statement_IEXP__desc;
 #endif
 #define Interactive__IEXP_3dBOX1 4
-#define Interactive__IEXP(exp) (mmc_mk_box2(4,&Interactive_InteractiveStmt_IEXP__desc,exp))
+#define Interactive__IEXP(exp) (mmc_mk_box2(4,&Interactive_Statement_IEXP__desc,exp))
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Interactive_InteractiveStmts_ISTMTS__desc_added
-#define Interactive_InteractiveStmts_ISTMTS__desc_added
-const char* Interactive_InteractiveStmts_ISTMTS__desc__fields[2] = {"interactiveStmtLst","semicolon"};
-struct record_description Interactive_InteractiveStmts_ISTMTS__desc = {
-  "Interactive_InteractiveStmts_ISTMTS",
-  "Interactive.InteractiveStmts.ISTMTS",
-  Interactive_InteractiveStmts_ISTMTS__desc__fields
+#ifndef Interactive_Statements_ISTMTS__desc_added
+#define Interactive_Statements_ISTMTS__desc_added
+const char* Interactive_Statements_ISTMTS__desc__fields[2] = {"interactiveStmtLst","semicolon"};
+struct record_description Interactive_Statements_ISTMTS__desc = {
+  "Interactive_Statements_ISTMTS",
+  "Interactive.Statements.ISTMTS",
+  Interactive_Statements_ISTMTS__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Interactive_InteractiveStmts_ISTMTS__desc;
+extern struct record_description Interactive_Statements_ISTMTS__desc;
 #endif
 #define Interactive__ISTMTS_3dBOX2 3
-#define Interactive__ISTMTS(interactiveStmtLst,semicolon) (mmc_mk_box3(3,&Interactive_InteractiveStmts_ISTMTS__desc,interactiveStmtLst,semicolon))
+#define Interactive__ISTMTS(interactiveStmtLst,semicolon) (mmc_mk_box3(3,&Interactive_Statements_ISTMTS__desc,interactiveStmtLst,semicolon))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Interactive_InstantiatedClass_INSTCLASS__desc_added
 #define Interactive_InstantiatedClass_INSTCLASS__desc_added
@@ -416,20 +431,20 @@ extern struct record_description Interactive_InstantiatedClass_INSTCLASS__desc;
 #define Interactive__INSTCLASS_3dBOX3 3
 #define Interactive__INSTCLASS(qualName,daeElementLst,env) (mmc_mk_box4(3,&Interactive_InstantiatedClass_INSTCLASS__desc,qualName,daeElementLst,env))
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Interactive_InteractiveVariable_IVAR__desc_added
-#define Interactive_InteractiveVariable_IVAR__desc_added
-const char* Interactive_InteractiveVariable_IVAR__desc__fields[3] = {"varIdent","value","type_"};
-struct record_description Interactive_InteractiveVariable_IVAR__desc = {
-  "Interactive_InteractiveVariable_IVAR",
-  "Interactive.InteractiveVariable.IVAR",
-  Interactive_InteractiveVariable_IVAR__desc__fields
+#ifndef Interactive_Variable_IVAR__desc_added
+#define Interactive_Variable_IVAR__desc_added
+const char* Interactive_Variable_IVAR__desc__fields[3] = {"varIdent","value","type_"};
+struct record_description Interactive_Variable_IVAR__desc = {
+  "Interactive_Variable_IVAR",
+  "Interactive.Variable.IVAR",
+  Interactive_Variable_IVAR__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Interactive_InteractiveVariable_IVAR__desc;
+extern struct record_description Interactive_Variable_IVAR__desc;
 #endif
 #define Interactive__IVAR_3dBOX3 3
-#define Interactive__IVAR(varIdent,value,type_) (mmc_mk_box4(3,&Interactive_InteractiveVariable_IVAR__desc,varIdent,value,type_))
+#define Interactive__IVAR(varIdent,value,type_) (mmc_mk_box4(3,&Interactive_Variable_IVAR__desc,varIdent,value,type_))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Interactive_LoadedFile_FILE__desc_added
 #define Interactive_LoadedFile_FILE__desc_added
@@ -446,20 +461,20 @@ extern struct record_description Interactive_LoadedFile_FILE__desc;
 #define Interactive__FILE_3dBOX3 3
 #define Interactive__FILE(fileName,loadTime,classNamesQualified) (mmc_mk_box4(3,&Interactive_LoadedFile_FILE__desc,fileName,loadTime,classNamesQualified))
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Interactive_InteractiveSymbolTable_SYMBOLTABLE__desc_added
-#define Interactive_InteractiveSymbolTable_SYMBOLTABLE__desc_added
-const char* Interactive_InteractiveSymbolTable_SYMBOLTABLE__desc__fields[7] = {"ast","depends","explodedAst","instClsLst","lstVarVal","compiledFunctions","loadedFiles"};
-struct record_description Interactive_InteractiveSymbolTable_SYMBOLTABLE__desc = {
-  "Interactive_InteractiveSymbolTable_SYMBOLTABLE",
-  "Interactive.InteractiveSymbolTable.SYMBOLTABLE",
-  Interactive_InteractiveSymbolTable_SYMBOLTABLE__desc__fields
+#ifndef Interactive_SymbolTable_SYMBOLTABLE__desc_added
+#define Interactive_SymbolTable_SYMBOLTABLE__desc_added
+const char* Interactive_SymbolTable_SYMBOLTABLE__desc__fields[7] = {"ast","depends","explodedAst","instClsLst","lstVarVal","compiledFunctions","loadedFiles"};
+struct record_description Interactive_SymbolTable_SYMBOLTABLE__desc = {
+  "Interactive_SymbolTable_SYMBOLTABLE",
+  "Interactive.SymbolTable.SYMBOLTABLE",
+  Interactive_SymbolTable_SYMBOLTABLE__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Interactive_InteractiveSymbolTable_SYMBOLTABLE__desc;
+extern struct record_description Interactive_SymbolTable_SYMBOLTABLE__desc;
 #endif
 #define Interactive__SYMBOLTABLE_3dBOX7 3
-#define Interactive__SYMBOLTABLE(ast,depends,explodedAst,instClsLst,lstVarVal,compiledFunctions,loadedFiles) (mmc_mk_box8(3,&Interactive_InteractiveSymbolTable_SYMBOLTABLE__desc,ast,depends,explodedAst,instClsLst,lstVarVal,compiledFunctions,loadedFiles))
+#define Interactive__SYMBOLTABLE(ast,depends,explodedAst,instClsLst,lstVarVal,compiledFunctions,loadedFiles) (mmc_mk_box8(3,&Interactive_SymbolTable_SYMBOLTABLE__desc,ast,depends,explodedAst,instClsLst,lstVarVal,compiledFunctions,loadedFiles))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Interactive_Component_COMPONENTITEM__desc_added
 #define Interactive_Component_COMPONENTITEM__desc_added

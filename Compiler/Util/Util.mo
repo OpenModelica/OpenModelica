@@ -8271,6 +8271,7 @@ protected function arrayMemberLoop
   input Integer currentIndex;
   input Integer length;
   output Integer index;
+protected
   replaceable type Type_a subtypeof Any;
 algorithm
   index := matchcontinue(inArr, inElement, currentIndex, length)
@@ -8555,5 +8556,92 @@ algorithm
         arr;
   end matchcontinue;
 end arrayApplyRLoop;
+
+public function arrayMemberEqualityFunc
+"returns the index if found or 0 if not found.
+ considers array indexed from 1.
+ it gets an equality check function!"
+  input array<Option<Type_a>> inArr;
+  input Integer inFilledSize "the filled size of the array, it might be less than arrayLength";
+  input Option<Type_a> inElement;
+  input FuncTypeEquality inEqualityCheckFunction;
+  output Integer index;
+protected
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeEquality
+    input Option<Type_a> inElOld;
+    input Option<Type_a> inElNew;
+    output Boolean isEqual;
+  end FuncTypeEquality;  
+algorithm
+  index := matchcontinue(inArr, inFilledSize, inElement, inEqualityCheckFunction)
+    local
+      array<Option<Type_a>> arr;
+      Integer i, len, pos;
+    
+    // array is empty
+    case (arr, inFilledSize, inElement, _)
+      equation
+        true = intEq(0, inFilledSize);
+      then
+        0;
+    
+    // array is not empty
+    case (arr, inFilledSize, inElement, inEqualityCheckFunction)
+      equation
+        i = arrayMemberEqualityFuncLoop(arr, inElement, inEqualityCheckFunction, 1, inFilledSize);
+      then
+        i;
+  end matchcontinue;
+end arrayMemberEqualityFunc;
+
+protected function arrayMemberEqualityFuncLoop
+"returns the index if found or 0 if not found.
+ considers array indexed from 1"
+  input array<Option<Type_a>> inArr;
+  input Option<Type_a> inElement;
+  input FuncTypeEquality inEqualityCheckFunction;
+  input Integer currentIndex;
+  input Integer length;
+  output Integer index;
+protected
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeEquality
+    input Option<Type_a> inElOld;
+    input Option<Type_a> inElNew;
+    output Boolean isEqual;
+  end FuncTypeEquality;  
+algorithm
+  index := matchcontinue(inArr, inElement, inEqualityCheckFunction, currentIndex, length)
+    local
+      array<Option<Type_a>> arr;
+      Integer i, len, pos;
+      Option<Type_a> e;
+    
+    // we're at the end
+    case (arr, inElement, _, i, len)
+      equation
+        true = intEq(i, len);
+      then
+        0;
+    
+    // not at the end, see if we find it
+    case (arr, inElement, inEqualityCheckFunction, i, len)
+      equation
+        e = arrayGet(arr, i);
+        true = inEqualityCheckFunction(e, inElement);
+      then
+        i;
+        
+    // not at the end, see if we find it
+    case (arr, inElement, inEqualityCheckFunction, i, len)
+      equation
+        e = arrayGet(arr, i);
+        false = inEqualityCheckFunction(e, inElement);
+        i = arrayMemberEqualityFuncLoop(arr, inElement, inEqualityCheckFunction, i + 1, len);
+      then
+        i;
+  end matchcontinue;
+end arrayMemberEqualityFuncLoop;
 
 end Util;

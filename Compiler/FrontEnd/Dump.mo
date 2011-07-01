@@ -582,14 +582,14 @@ end unparseRestrictionStr;
 public function printIstmtStr
 "function: printIstmtStr
   Prints an interactive statement to a string."
-  input Interactive.InteractiveStmts inInteractiveStmts;
+  input Interactive.Statements inStatements;
   output String strIstmt;
 algorithm
-  strIstmt := matchcontinue (inInteractiveStmts)
+  strIstmt := matchcontinue (inStatements)
     local
       Absyn.AlgorithmItem alg;
       Absyn.Exp expr;
-      list<Interactive.InteractiveStmt> l;
+      list<Interactive.Statement> l;
       Boolean sc;
       String str;
       
@@ -625,13 +625,13 @@ end printIstmtStr;
 public function dumpIstmt
 "function: dumpIstmt
   Dumps an interactive statement to the Print buffer."
-  input Interactive.InteractiveStmts inInteractiveStmts;
+  input Interactive.Statements inStatements;
 algorithm
-  _ := matchcontinue (inInteractiveStmts)
+  _ := matchcontinue (inStatements)
     local
       Absyn.AlgorithmItem alg;
       Absyn.Exp expr;
-      list<Interactive.InteractiveStmt> l;
+      list<Interactive.Statement> l;
       Boolean sc;
     
     case (Interactive.ISTMTS(interactiveStmtLst = {Interactive.IALG(algItem = alg)}))
@@ -2176,10 +2176,8 @@ algorithm
   end match;
 end unparseVariabilitySymbolStr;
 
-protected function unparseDirectionSymbolStr "function: unparseDirectionSymbolStr
-
-  Returns a prettyprinted string of direction.
-"
+public function unparseDirectionSymbolStr "function: unparseDirectionSymbolStr
+  Returns a prettyprinted string of direction."
   input Absyn.Direction inDirection;
   output String outString;
 algorithm
@@ -2192,13 +2190,10 @@ algorithm
 end unparseDirectionSymbolStr;
 
 public function printComponent "function: printComponent
-
-  Prints a Component to the Print buffer.
-"
+  Prints a Component to the Print buffer."
   input Absyn.Component inComponent;
 algorithm
-  _:=
-  match (inComponent)
+  _ := match (inComponent)
     local
       Ident n;
       list<Absyn.Subscript> a;
@@ -2218,13 +2213,10 @@ algorithm
 end printComponent;
 
 protected function printComponentitem "function: printComponentitem
-
-  Prints a ComponentItem to the Print buffer.
-"
+  Prints a ComponentItem to the Print buffer."
   input Absyn.ComponentItem inComponentItem;
 algorithm
-  _:=
-  match (inComponentItem)
+  _ := match (inComponentItem)
     local
       Absyn.Component c;
       Option<Absyn.Exp> optcond;

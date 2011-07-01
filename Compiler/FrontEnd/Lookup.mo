@@ -31,7 +31,7 @@
 
 encapsulated package Lookup
 "
-  file:         Lookup.mo
+  file:        Lookup.mo
   package:     Lookup
   description: Scoping rules
 
@@ -203,6 +203,7 @@ algorithm
       equation
         env_2 = Env.openScope(env_1, encflag, SOME(id), SOME(Env.CLASS_SCOPE()));
         ci_state = ClassInf.start(r, Env.getEnvName(env_2));
+        // Debug.fprintln("instTrace", "LOOKUP TYPE ICD: " +& Env.printEnvPathStr(env_1) +& " path:" +& Absyn.pathString(path));
         (cache,env_3,_,_,_,_,_,types,_,_,_,_) =
         Inst.instClassIn(
           cache,env_2,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
@@ -226,6 +227,7 @@ algorithm
     // Classes that are external objects. Implicitly instantiate to get type
     case (cache,env_1,path,c)
       equation
+        // Debug.fprintln("instTrace", "LOOKUP TYPE ICD: " +& Env.printEnvPathStr(env_1) +& " path:" +& Absyn.pathString(path));        
         true = Inst.classIsExternalObject(c);
         (cache,_::env_1,_,_,_,_,_,_,_,_) = Inst.instClass(
           cache,env_1,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
@@ -241,6 +243,7 @@ algorithm
     // up the type.
     case (cache,env_1,path,c as SCode.CLASS(name = id,restriction=restr))
       equation
+        // Debug.fprintln("instTrace", "LOOKUP TYPE ICD: " +& Env.printEnvPathStr(env_1) +& " path:" +& Absyn.pathString(path));        
         true = SCode.isFunctionOrExtFunction(restr);
         (cache,env_2,_) =
         Inst.implicitFunctionTypeInstantiation(cache,env_1,InnerOuter.emptyInstHierarchy,c);
@@ -451,6 +454,7 @@ algorithm
       Env.Cache cache;
       Env.Env env,prevFrames;
       Env.Frame frame;
+    
     // Qualified names first identifier cached in previous frames
     case (cache,env,id,path,SOME(frame),prevFrames,inState,msg)
       equation
@@ -509,15 +513,17 @@ algorithm
       String id;
     
     case (cache,env,path,_,SOME(frame),prevFrames,inState,msg)
-      equation 
+      equation
         env = frame::env;
         (cache,c,env,prevFrames) = lookupClass2(cache,env,path,prevFrames,inState,msg);
+        // Debug.fprintln("instTrace", "LOOKUP CLASS QUALIFIED FRAME: " +& Env.printEnvPathStr(env) +& " path: " +& Absyn.pathString(path) +& " class: " +& SCodeDump.shortElementStr(c));
       then (cache,c,env,prevFrames);
     
     case (cache,env,path,SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr),NONE(),_,inState,msg)
       equation 
         env = Env.openScope(env, encflag, SOME(id), Env.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, Env.getEnvName(env));
+        // Debug.fprintln("instTrace", "LOOKUP CLASS QUALIFIED PARTIALICD: " +& Env.printEnvPathStr(env) +& " path: " +& Absyn.pathString(path) +& " class: " +& SCodeDump.shortElementStr(c));
         (cache,env,_,_) =
         Inst.partialInstClassIn(
           cache,env,InnerOuter.emptyInstHierarchy,
@@ -812,6 +818,7 @@ algorithm
         (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache,{fr}, path, false);
         env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
+        // Debug.fprintln("instTrace", "LOOKUP MORE UNQUALIFIED IMPORTED ICD: " +& Env.printEnvPathStr(env) +& "." +& ident);
        (cache,(f :: _),_,_) =
        Inst.partialInstClassIn(
           cache,env2,InnerOuter.emptyInstHierarchy,
@@ -876,6 +883,7 @@ algorithm
         (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1,prevFrames) = lookupClass2(cache,{fr},path,prevFrames,Util.makeStatefulBoolean(false),false);
         env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
+        // Debug.fprintln("instTrace", "LOOKUP UNQUALIFIED IMPORTED ICD: " +& Env.printEnvPathStr(env) +& "." +& ident);
         (cache,env2,_,cistate1) =
         Inst.partialInstClassIn(
           cache,env2,InnerOuter.emptyInstHierarchy,
@@ -1221,13 +1229,21 @@ algorithm
         
     // lookup of constants on form A.B in packages. instantiate package and look inside.
     case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref),prevFrames,inState) /* First part of name is a class. */ 
-      equation 
+      equation
         (NONE(),prevFrames) = lookupPrevFrames(id,prevFrames);
-        (cache,(c as SCode.CLASS(name=n,encapsulatedPrefix=encflag,restriction=r)),env2,prevFrames) = lookupClass2(cache,env,Absyn.IDENT(id),prevFrames,Util.makeStatefulBoolean(true) /* In order to use the prevFrames, we need to make sure we can't instantiate one of the classes too soon! */,false);
+        (cache,(c as SCode.CLASS(name=n,encapsulatedPrefix=encflag,restriction=r)),env2,prevFrames) = 
+          lookupClass2(
+            cache,
+            env,
+            Absyn.IDENT(id),
+            prevFrames,
+            Util.makeStatefulBoolean(true) /* In order to use the prevFrames, we need to make sure we can't instantiate one of the classes too soon! */,
+            false);
         Util.setStatefulBoolean(inState,true);
         env3 = Env.openScope(env2, encflag, SOME(n), Env.restrictionToScopeType(r));
         ci_state = ClassInf.start(r, Env.getEnvName(env3));
         filterCref = makeOptIdentOrNone(cref);
+        // Debug.fprintln("instTrace", "LOOKUP VAR IN PACKAGES ICD: " +& Env.printEnvPathStr(env3) +& " var: " +& ComponentReference.printComponentRefStr(cref));
         (cache,env5,_,_,_,_,_,_,_,_,_,_) =
         Inst.instClassIn(
           cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
@@ -1271,6 +1287,8 @@ algorithm
     // Search among unqualified imports, e.g. import A.B.* 
     case (cache,(env as (Env.FRAME(optName = sid,imports = items) :: _)),(cr as DAE.CREF_IDENT(ident = id,subscriptLst = sb)),prevFrames,inState)
       equation
+        // no unqual import in MetaModelica!
+        //false = RTOpts.acceptMetaModelicaGrammar();
         (cache,p_env,attr,ty,bind,cnstForRange,unique,splicedExpData,componentEnv,name) = lookupUnqualifiedImportedVarInFrame(cache,items, env, id);
         reportSeveralNamesError(unique,id);
         Util.setStatefulBoolean(inState,true);
@@ -1490,6 +1508,7 @@ algorithm
         dmod = Mod.elabUntypedMod(mod,env,Prefix.NOPRE());
         //(cache,dmod,_ /* Return fn's here */) = Mod.elabMod(cache,env,Prefix.NOPRE(),mod,true); - breaks things but is needed for other things... bleh
         // Debug.traceln("dmod: " +& Mod.printModStr(dmod));
+        // Debug.fprintln("instTrace", "LOOKUP AND INST ICD: " +& Env.printEnvPathStr(cenv) +& "." +& cn2);
         (cache,classEnv,_,_) =
         Inst.partialInstClassIn(
           cache,cenv_2,InnerOuter.emptyInstHierarchy,
@@ -1647,6 +1666,7 @@ algorithm
         (cache,(c as SCode.CLASS(name=str,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache,f::fs, id, false);
         true = SCode.isFunctionOrExtFunction(restr);
         // get function dae from instantiation
+        // Debug.fprintln("instTrace", "LOOKUP FUNCTIONS IN ENV ID ICD: " +& Env.printEnvPathStr(env_1) +& "." +& str);
         (cache,(env_2 as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes)::_)),_)
            = Inst.implicitFunctionTypeInstantiation(cache,env_1,InnerOuter.emptyInstHierarchy, c);
          
@@ -1663,6 +1683,7 @@ algorithm
 
         //(cache,_,env_2,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
         //   ci_state, c, SCode.PUBLIC()/*FIXME:prot*/, {}, false, ConnectionGraph.EMPTY);
+        // Debug.fprintln("instTrace", "LOOKUP FUNCTIONS IN ENV QUAL ICD: " +& Env.printEnvPathStr(env2) +& "." +& str);
         (cache,env_2,_,cistate1) =
         Inst.partialInstClassIn(
           cache, env2, InnerOuter.emptyInstHierarchy,
@@ -1825,6 +1846,7 @@ algorithm
     case (cache,Env.CLASS((cdef as SCode.CLASS(restriction=restr)),cenv),env,id)
       equation
         true = SCode.isFunctionOrExtFunction(restr);
+        // Debug.fprintln("instTrace", "LOOKUP TYPE IN FRAME ICD: " +& Env.printEnvPathStr(env) +& " id:" +& id);
         (cache ,env_1,_) = Inst.implicitFunctionInstantiation(
           cache,cenv,InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {});
@@ -1895,6 +1917,7 @@ algorithm
         Env.CLASS((cdef as SCode.CLASS(restriction=restr)),cenv) = Env.avlTreeGet(ht, id);
         true = SCode.isFunctionOrExtFunction(restr) "If found class that is function.";
         //function dae collected from instantiation
+        // Debug.fprintln("instTrace", "LOOKUP FUNCTIONS IN FRAME ICD: " +& Env.printEnvPathStr(env) +& "." +& id);
         (cache,env_1,_) =
         Inst.implicitFunctionTypeInstantiation(cache,cenv,InnerOuter.emptyInstHierarchy,cdef) ;
         
@@ -1907,6 +1930,7 @@ algorithm
         equation
           Env.CLASS(cdef,cenv) = Env.avlTreeGet(ht, id);
           true = Inst.classIsExternalObject(cdef);
+          // Debug.fprintln("instTrace", "LOOKUP FUNCTIONS IN FRAME ICD: " +& Env.printEnvPathStr(env) +& "." +& id);
           (cache,env_1,_,_,_,_,t,_,_,_) = 
           Inst.instClass(
             cache,cenv,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
@@ -1932,9 +1956,10 @@ protected
   Env.Env env_1;
 algorithm
   (outCache,_,cdef) := buildRecordConstructorClass(cache,env,cdef);
+  name := SCode.className(cdef);
+  // Debug.fprintln("instTrace", "LOOKUP BUILD RECORD TY ICD: " +& Env.printEnvPathStr(env) +& "." +& name);
   (outCache,outEnv,_) := Inst.implicitFunctionTypeInstantiation(
      outCache,env,InnerOuter.emptyInstHierarchy, cdef);
-  name := SCode.className(cdef);
   (outCache,ftype,_) := lookupTypeInEnv(outCache,outEnv,Absyn.IDENT(name));
 end buildRecordType;
 
@@ -2237,7 +2262,7 @@ algorithm
       Env.Cache cache;
             
     case (cache,env as (frame::_),id,prevFrames,inState,msg) 
-      equation 
+      equation
         (cache,c,env_1,prevFrames) = lookupClassInFrame(cache,frame,env,id,prevFrames,inState,msg);
         Util.setStatefulBoolean(inState,true);
       then
@@ -2649,7 +2674,7 @@ algorithm
     // Qualified variables looked up through component environment with a spliced exp
     case (cache,ht,xCref as (DAE.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)))
       equation 
-        (cache,DAE.TYPES_VAR(_,DAE.ATTR(_,_,vt2,_,_),_,ty2,bind,cnstForRange),_,_,componentEnv) = lookupVar2(cache,ht, id);
+        (cache,DAE.TYPES_VAR(_,DAE.ATTR(_,_,vt2,_,_),_,ty2,bind,cnstForRange),_,_,componentEnv) = lookupVar2(cache, ht, id);
         // outer variables are not local!
         // this doesn't work yet!
         // false = Absyn.isOuter(io);

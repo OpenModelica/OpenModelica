@@ -3309,6 +3309,11 @@ algorithm
       DAE.ReductionIterators riters,riters_1;
       DAE.ComponentRef cr,cr_1;
     
+    case ((e as DAE.EMPTY(scope = _)),rel,ext_arg)
+      equation
+        res = rel((e,ext_arg));
+      then res;
+
     case ((e as DAE.ICONST(_)),rel,ext_arg)
       equation
         res = rel((e,ext_arg));

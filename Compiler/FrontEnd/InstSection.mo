@@ -371,7 +371,7 @@ algorithm
     case (_,_,_,_,_,_,_,inEEquation,_,_,_,errorCount)
       equation
         true = errorCount == Error.getNumErrorMessages();
-        s = SCodeDump.equationStr(inEEquation);
+        s = "\n" +& SCodeDump.equationStr(inEEquation);
         Error.addSourceMessage(Error.EQUATION_GENERIC_FAILURE, {s}, SCode.equationFileInfo(inEEquation));
       then
         fail();
@@ -453,6 +453,7 @@ algorithm
       Real priority;
       Absyn.FunctionArgs fargs;
       DAE.Exp exp;
+      Option<Values.Value> containsEmpty;
 
     /* connect statements */
     case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQ_CONNECT(crefLeft = c1,crefRight = c2,info = info),initial_,impl,graph) 
@@ -512,10 +513,13 @@ algorithm
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
         (DAE.PROP((DAE.T_BOOL(_),_),cnst)) = Types.propsAnd(props);
         true = Types.isParameterOrConstant(cnst);
-        (cache,valList) = Ceval.cevalList(cache,env, expl1, impl,NONE(), Ceval.NO_MSG());
+        (cache,valList,_) = Ceval.cevalList(cache, env, expl1, impl, NONE(), Ceval.NO_MSG());
+        // check if valList contains Values.EMPTY()
+        containsEmpty = ValuesUtil.containsEmpty(valList);
+        generateNoConstantBindingError(containsEmpty, info);
         blist = Util.listMap(valList,ValuesUtil.valueBool);
         b = Util.selectList(blist, tb, fb);
-        (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, b, impl, Inst.alwaysUnroll, graph);
+        (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache, env, ih, mod, pre, csets, ci_state, instEEquation, b, impl, Inst.alwaysUnroll, graph);
       then
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph);
         
@@ -530,7 +534,7 @@ algorithm
         (cache, _,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
         (DAE.PROP((DAE.T_BOOL(_),_),DAE.C_PARAM())) = Types.propsAnd(props);
         b = Util.selectList({true}, tb, fb);
-        (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, b, impl, Inst.alwaysUnroll, graph);
+        (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache, env, ih, mod, pre, csets, ci_state, instEEquation, b, impl, Inst.alwaysUnroll, graph);
       then
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph);
 
@@ -540,14 +544,14 @@ algorithm
       equation 
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
         (DAE.PROP((DAE.T_BOOL(_),_),_)) = Types.propsAnd(props);
-        (cache,valList) = Ceval.cevalList(cache,env, expl1, impl,NONE(), Ceval.NO_MSG());
+        (cache,valList,_) = Ceval.cevalList(cache,env, expl1, impl,NONE(), Ceval.NO_MSG());
         blist = Util.listMap(valList,ValuesUtil.valueBool);
         b = Util.selectList(blist, tb, fb);
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEInitialEquation, b, impl, Inst.alwaysUnroll, graph);
       then
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph);
 
-        // IF_EQUATION when condition is not constant 
+    // IF_EQUATION when condition is not constant 
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info = info),SCode.NON_INITIAL(),impl,graph)
       equation 
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
@@ -557,7 +561,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         
-        (cache,env_1,ih,daeLLst,_,ci_state_1,graph) = instIfTrueBranches(cache,env,ih, mod, pre, csets, ci_state,tb, false, impl, graph);
+        (cache,env_1,ih,daeLLst,_,ci_state_1,graph) = instIfTrueBranches(cache, env,ih, mod, pre, csets, ci_state, tb, false, impl, graph);
         (cache,env_2,ih,DAE.DAE(daeElts2),_,ci_state_2,graph) = Inst.instList(cache,env_1,ih, mod, pre, csets, ci_state, instEEquation, fb, impl, Inst.alwaysUnroll, graph) "There are no connections inside if-clauses." ;
         dae = DAE.DAE({DAE.IF_EQUATION(expl1,daeLLst,daeElts2,source)});
       then
@@ -838,6 +842,7 @@ algorithm
         s = SCodeDump.equationStr(eqn);
         Debug.fprint("failtrace", "- instEquationCommonWork failed for eqn: ");
         Debug.fprint("failtrace", s +& " in scope:" +& Env.getScopeName(env) +& "\n");
+        //print("ENV: " +& Env.printEnvStr(env) +& "\n");
       then
         fail();
   end matchcontinue;
@@ -4459,6 +4464,7 @@ algorithm
       Absyn.Exp value;
       Absyn.Info info;
       String str;
+    
     case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent=var,value=value,info=info),source,initial_,impl,unrollForLoops,_)
       equation
         (cache,e_1,eprop,_) = Static.elabExp(cache,env,value,impl,NONE(),true,pre,info);
@@ -4643,5 +4649,26 @@ algorithm
         fail();
   end matchcontinue;
 end instAssignment2;
+
+protected function generateNoConstantBindingError
+  input Option<Values.Value> emptyValueOpt;
+  input Absyn.Info info;
+algorithm
+  _ := matchcontinue(emptyValueOpt, info)
+    local
+      String scope "the scope where we could not find the binding";
+      String name "the name of the variable";
+      Values.Value ty "the DAE.Type translated to Value using defaults";
+      String tyStr "the type of the variable";
+    
+    case (NONE(), _) then ();
+    case (SOME(Values.EMPTY(scope, name, ty, tyStr)), info)
+      equation
+         Error.addSourceMessage(Error.NO_CONSTANT_BINDING, {name, scope}, info);
+      then
+        fail();
+    
+  end matchcontinue;
+end generateNoConstantBindingError;
 
 end InstSection;

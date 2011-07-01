@@ -17,6 +17,7 @@ SRCHSRCDIR = $(SRCH:%.h=$(srcdir)/%.h)
 
 vpath %.mo $(FRONTEND_DIR)
 vpath %.mo $(BACKEND_DIR)
+vpath %.mo $(GLOBAL_DIR)
 vpath %.mo $(TEMPLATE_DIR)
 vpath %.mo $(SCRIPT_DIR)
 vpath %.mo $(UTIL_DIR)

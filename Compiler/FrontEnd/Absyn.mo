@@ -871,21 +871,12 @@ uniontype CodeNode "The Code uniontype is used for Meta-programming. It originat
 end CodeNode;
 
 
-
 uniontype FunctionArgs "The FunctionArgs uniontype consists of a list of positional arguments
   followed by a list of named arguments (Modelica v2.0)"
   record FUNCTIONARGS
     list<Exp> args "args" ;
     list<NamedArg> argNames "argNames" ;
   end FUNCTIONARGS;
-
-  /*
-  record FOR_ITER_FARG
-    Exp from "from" ;
-    Ident var "var" ;
-    Exp to "to" ;
-  end FOR_ITER_FARG;
-  */
 
   record FOR_ITER_FARG
      Exp  exp "iterator expression";
@@ -1059,12 +1050,13 @@ end Comment;
 
 public
 uniontype ExternalDecl "Declaration of an external function call - ExternalDecl"
+  
   record EXTERNALDECL
     Option<Ident>        funcName "The name of the external function" ;
     Option<String>       lang     "Language of the external function" ;
     Option<ComponentRef> output_  "output parameter as return value" ;
     list<Exp>            args     "only positional arguments, i.e. expression list" ;
-    Option<Annotation>   annotation_ ;
+    Option<Annotation>   annotation_;
   end EXTERNALDECL;
 
 end ExternalDecl;

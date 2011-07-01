@@ -251,6 +251,9 @@ algorithm
       Absyn.Path path;
       Absyn.Import imp;
       Absyn.InnerOuter io;
+      SCode.Redeclare rdp;
+      SCode.Replaceable rpp;
+      SCode.Partial pp;
 
     case SCode.EXTENDS(baseClassPath = path,modifications = mod)
       equation
@@ -260,25 +263,49 @@ algorithm
       then
         res;
 
-    case SCode.COMPONENT(name = n,prefixes = SCode.PREFIXES(innerOuter = io),attributes = SCode.ATTR(variability = var),
-                   typeSpec = typath,modifications = mod,comment = comment)
+    case SCode.COMPONENT(name = n)
       equation
-        ioStr = Dump.unparseInnerouterStr(io);
-        mod_str = printModStr(mod);
-        s = Dump.unparseTypeSpec(typath);
-        vs = unparseVariability(var);
-        vs = Util.if_(stringEq(vs, ""), "", vs +& " ");
-        mod_str = Util.if_(stringEq(mod_str, ""),"", " " +& mod_str); 
-        res = stringAppendList({ioStr,vs,s," ",n,mod_str,";"});
+        res = unparseElementStr(inElement);
       then
         res;
 
-    case SCode.CLASS(name = n)
+    case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp), 
+                     classDef = SCode.DERIVED(typeSpec = _))
       equation
-        res = stringAppendList({"class ",n,";"});
+        res = unparseElementStr(inElement);
       then
         res;
 
+    case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp))
+      equation
+        ioStr = Dump.unparseInnerouterStr(io) +& redeclareStr(rdp) +& replaceablePrefixStr(rpp) +& partialStr(pp);
+        res = stringAppendList({ioStr, "class ",n,";"});
+      then
+        res;
+
+    case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp), 
+                     classDef = SCode.CLASS_EXTENDS(baseClassName = str))
+      equation
+        ioStr = Dump.unparseInnerouterStr(io) +& redeclareStr(rdp) +& replaceablePrefixStr(rpp) +& partialStr(pp);
+        res = stringAppendList({ioStr, "class extends ",n," extends ", str, ";"});
+      then
+        res;
+        
+    case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp), 
+                     classDef = SCode.ENUMERATION(enumLst = _))
+      equation
+        ioStr = Dump.unparseInnerouterStr(io) +& redeclareStr(rdp) +& replaceablePrefixStr(rpp) +& partialStr(pp);
+        res = stringAppendList({ioStr, "class ",n," enumeration;"});
+      then
+        res;
+    
+    case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp))
+      equation
+        ioStr = Dump.unparseInnerouterStr(io) +& redeclareStr(rdp) +& replaceablePrefixStr(rpp) +& partialStr(pp);
+        res = stringAppendList({ioStr, "class ",n,";"});
+      then
+        res;    
+    
     case (SCode.IMPORT(imp = imp))
       equation
          str = "import "+& Absyn.printImportString(imp) +& ";";

@@ -329,9 +329,7 @@ algorithm
 end printState;
 
 public function getStateName "function: getStateName
-
-  Returns the classname of the state.
-"
+  Returns the classname of the state."
   input State inState;
   output Absyn.Path outPath;
 algorithm

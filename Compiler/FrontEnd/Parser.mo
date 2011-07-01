@@ -51,9 +51,9 @@ end parse;
 
 public function parseexp "Parse a mos-file"
   input String filename;
-  output Interactive.InteractiveStmts outInteractiveStmts;
+  output Interactive.Statements outStatements;
 
-  external "C" outInteractiveStmts=Parser_parseexp(filename) annotation(Library = {"omcruntime","omparse","antlr3"});
+  external "C" outStatements=Parser_parseexp(filename) annotation(Library = {"omcruntime","omparse","antlr3"});
 end parseexp;
 
 public function parsestring "Parse a string as if it were a stored definition"
@@ -66,8 +66,8 @@ end parsestring;
 public function parsestringexp "Parse a string as if it was a sequence of statements"
   input String str;
   input String infoFilename := "<interactive>";
-  output Interactive.InteractiveStmts outInteractiveStmts;
-  external "C" outInteractiveStmts=Parser_parsestringexp(str) annotation(Library = {"omcruntime","omparse","antlr3"});
+  output Interactive.Statements outStatements;
+  external "C" outStatements=Parser_parsestringexp(str) annotation(Library = {"omcruntime","omparse","antlr3"});
 end parsestringexp;
 end Parser;
 

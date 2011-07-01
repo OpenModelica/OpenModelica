@@ -366,6 +366,7 @@ algorithm
         comment = cmt, info = info), env))
       equation
         cref = SCodeLookup.lookupComponentRef(cref, env, info);
+        
         equ = SCode.EQ_NORETCALL(cref, fargs, cmt, info);
         (equ, _) = SCode.traverseEEquationExps(equ, (traverseExp, (env, info)));
       then
@@ -660,6 +661,7 @@ algorithm
     case ((Absyn.CALL(function_ = cref, functionArgs = args), 
         tup as (env, info)))
       equation
+        //cref = SCodeLookup.lookupComponentRefForceQualified(cref, env, info);
         cref = SCodeLookup.lookupComponentRef(cref, env, info);
         // TODO: handle function arguments
       then

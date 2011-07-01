@@ -276,11 +276,15 @@ algorithm
       SCode.Attributes attr1;
       list<SCode.Enum> enumLst;
       Option<SCode.Comment> comment;
+      SCode.Element element;
 
     /* the empty case */
     case(cache,env,_,pre,f,{},_,_) then ({});
 
-    // Only derived classdefinitions supported in redeclares for now. TODO: What is allowed according to spec?
+    // Only derived classdefinitions supported in redeclares for now. 
+    // TODO: What is allowed according to spec? adrpo: 2011-06-28: is not decided yet, 
+    //       but i think only derived even if in the Modelica.Media we have redeclare-as-element 
+    //       replacing entire functions with PARTS and everything, so i added the case below
     case(cache,env,ih,pre,f,
       SCode.CLASS(cn,
         SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp,mod,attr1,cmt),i)::elts,impl,info)
@@ -309,6 +313,13 @@ algorithm
       then 
         ((SCode.COMPONENT(compname,SCode.PREFIXES(vis,redecl,fi,io,repl),attr,tp1,mod,cmt,cond,i),emod)::modElts);
 
+    // redeclare failure?
+    case(cache,env,ih,pre,f,element::elts,impl,info)
+      equation
+        //print("Unhandled element redeclare (we keep it as it is!): " +& SCodeDump.unparseElementStr(element) +& "\n");
+        modElts = elabModRedeclareElements(cache,env,ih,pre,f,elts,impl,info);
+      then
+        (element,DAE.NOMOD())::modElts;
   end match;
 end elabModRedeclareElements;
 
@@ -534,6 +545,7 @@ algorithm
       Env.Cache cache;
       InstanceHierarchy ih;
       String str;
+    
     case (cache,_,_,_,DAE.NOMOD(),impl,info) then (cache,DAE.NOMOD());
 
     case (cache,_,_,_,(m as DAE.REDECL(finalPrefix = _)),impl,info) then (cache,m);
@@ -541,7 +553,7 @@ algorithm
     case (cache,env,ih,pre,(m as DAE.MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,eqModOption = SOME(DAE.UNTYPED(e)))),impl,info)
       equation
         (cache,subs_1) = updateSubmods(cache, env, ih, pre, subs, impl, info);
-        (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
+        (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true, pre, info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
         (cache,e_val) = elabModValue(cache,env,e_1,prop);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
@@ -561,6 +573,11 @@ algorithm
         (cache,subs_1) = updateSubmods(cache, env, ih, pre, subs, impl, info);
       then
         (cache,DAE.MOD(f,each_,subs_1,NONE()));
+
+    /*case (cache,env,ih,pre,m,impl,info) // here silently fail, it will be caught in Inst.updateComponentInEnv
+      equation
+      then
+        (cache,m);*/
 
     case (cache,env,ih,pre,m,impl,info)
       equation
@@ -1684,13 +1701,13 @@ end indexEqmod;
 public function merge "
 A mid step for merging two modifiers.
 It validates that the merging is allowed(considering final modifier)."
-  input DAE.Mod inMod1;
-  input DAE.Mod inMod2;
+  input DAE.Mod inModOuter "the outer mod which should overwrite the inner mod";
+  input DAE.Mod inModInner "the inner mod";
   input Env.Env inEnv;
   input Prefix.Prefix inPrefix;
   output DAE.Mod outMod;
 algorithm 
-  outMod:= matchcontinue (inMod1,inMod2,inEnv,inPrefix)
+  outMod:= matchcontinue (inModOuter,inModInner,inEnv,inPrefix)
     local
       DAE.Mod m;
       list<DAE.SubMod> submods;
@@ -1701,32 +1718,39 @@ algorithm
     case (DAE.NOMOD(),m,_,_) then m;
     case (m,DAE.NOMOD(),_,_) then m;
       
-    case(inMod1,inMod2,inEnv,inPrefix)
+    case(inModOuter,inModInner,inEnv,inPrefix)
       equation
-        true = merge2(inMod2);
-      then doMerge(inMod1,inMod2,inEnv,inPrefix);
+        true = merge2(inModInner);
+      then doMerge(inModOuter,inModInner,inEnv,inPrefix);
 
-    case(inMod1,inMod2,inEnv,inPrefix)
+    case(inModOuter,inModInner,inEnv,inPrefix)
       equation
-        true = modSubsetOrEqualOrNonOverlap(inMod1,inMod2);
-      then doMerge(inMod1,inMod2,inEnv,inPrefix);
+        true = modSubsetOrEqualOrNonOverlap(inModOuter,inModInner);
+      then doMerge(inModOuter,inModInner,inEnv,inPrefix);
 
-    case(inMod1,inMod2,inEnv,inPrefix)
+    // two exactly the same redeclares, return just one!
+    case(inModOuter as DAE.REDECL(finalPrefix = _),inModInner  as DAE.REDECL(finalPrefix = _),inEnv,inPrefix)
       equation
-        false = merge2(inMod2);
-        false = modSubsetOrEqualOrNonOverlap(inMod1,inMod2);
+        true = valueEq(inModOuter,inModInner);
+      then 
+        inModOuter;
+
+    case(inModOuter,inModInner,inEnv,inPrefix)
+      equation
+        false = merge2(inModInner);
+        false = modSubsetOrEqualOrNonOverlap(inModOuter,inModInner);
         p = Env.getEnvPath(inEnv);
         s = Absyn.optPathString(p);
         // put both modifiers in one big modifier
         strPrefix = PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix);
-        submods = {DAE.NAMEMOD("", inMod1), DAE.NAMEMOD("", inMod2)};
+        submods = {DAE.NAMEMOD("", inModOuter), DAE.NAMEMOD("", inModInner)};
         m = DAE.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), submods, NONE());
         s = s +& "\n\tby using modifiers: " +&  strPrefix +& printSubsStr(submods, true) +& 
         " that do not agree.";
         
         Error.addMessage(Error.FINAL_OVERRIDE, {s}); // having a string there incase we
         // print(" final override: " +& s +& "\n ");
-        // print("trying to override final while merging mod1:\n" +& printModStr(inMod1) +& " with mod2(final):\n" +& printModStr(inMod2) +& "\n");
+        // print("trying to override final while merging mod1:\n" +& printModStr(inModOuter) +& " with mod2(final):\n" +& printModStr(inModInner) +& "\n");
       then fail();
   end matchcontinue;
 end merge;
@@ -1754,13 +1778,13 @@ protected function doMerge "function: merge
   This function merges two modifications into one.
   The first argument is the *outer* modification that 
   should take precedence over the *inner* modification."
-  input DAE.Mod inMod1;
-  input DAE.Mod inMod2;
+  input DAE.Mod inModOuter "the outer mod which should overwrite the inner mod";
+  input DAE.Mod inModInner "the inner mod";
   input Env.Env inEnv3;
   input Prefix.Prefix inPrefix4;
   output DAE.Mod outMod;
 algorithm
-  outMod := matchcontinue (inMod1,inMod2,inEnv3,inPrefix4)
+  outMod := matchcontinue (inModOuter,inModInner,inEnv3,inPrefix4)
     local
       DAE.Mod m,m1_1,m2_1,m_2,mod,mods,outer_,inner_,mm1,mm2,mm3,cm,icm;
       SCode.Visibility vis;
@@ -1788,14 +1812,14 @@ algorithm
       SCode.Restriction res;
       SCode.Prefixes pf;
     
-    //case (inMod1,inMod2,_,_)
+    //case (inModOuter,inModInner,_,_)
     //  equation
-    //    print("Merging: " +& printModStr(inMod1) +& " with " +& printModStr(inMod2) +& "\n");
+    //    print("Merging: " +& printModStr(inModOuter) +& " with " +& printModStr(inModInner) +& "\n");
     //  then 
     //    fail();
     
     case (m,DAE.NOMOD(),_,_) then m;
-    
+        
     // redeclaring same component
     case (DAE.REDECL(finalPrefix = f1,eachPrefix = each1, tplSCodeElementModLst =
     {(SCode.COMPONENT(name = id1,
@@ -2087,7 +2111,8 @@ algorithm
         true = eqModSubsetOrEqual(eqmod1,eqmod2);
       then 
         true;
-    case(DAE.REDECL(_,_,_),DAE.REDECL(_,_,_)) then false;
+    case(DAE.REDECL(_,_,_),DAE.REDECL(_,_,_))
+      then false;
     case(DAE.NOMOD(),DAE.NOMOD()) then true;
     case(mod1, mod2) then false;
     case(mod1, mod2) 
@@ -2365,34 +2390,34 @@ algorithm
   outString := matchcontinue (inMod)
     local
       list<SCode.Element> elist_1;
-      Ident finalPrefixstr,str,res,s1_1,s2;
+      Ident prefix,str,res,s1_1,s2;
       list<Ident> str_lst,s1;
       SCode.Final finalPrefix;
       list<tuple<SCode.Element, DAE.Mod>> elist;
-      SCode.Each each_;
+      SCode.Each eachPrefix;
       list<DAE.SubMod> subs;
       Option<DAE.EqMod> eq;
     
     case (DAE.NOMOD()) then "()";
     
-    case DAE.REDECL(finalPrefix = finalPrefix,tplSCodeElementModLst = elist)
+    case DAE.REDECL(finalPrefix = finalPrefix,eachPrefix = eachPrefix,tplSCodeElementModLst = elist)
       equation
         elist_1 = Util.listMap(elist, Util.tuple21);
-        finalPrefixstr = Util.if_(SCode.finalBool(finalPrefix), " final", "");
-        str_lst = Util.listMap(elist_1, SCodeDump.printElementStr);
+        prefix =  SCodeDump.finalStr(finalPrefix) +& SCodeDump.eachStr(eachPrefix);
+        str_lst = Util.listMap(elist_1, SCodeDump.unparseElementStr);
         str = Util.stringDelimitList(str_lst, ", ");
-        res = stringAppendList({"(redeclare(",finalPrefixstr,str,"))"});
+        res = stringAppendList({"(",prefix,str,")"});
       then
         res;
     
-    case DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,eqModOption = eq)
+    case DAE.MOD(finalPrefix = finalPrefix,eachPrefix = eachPrefix,subModLst = subs,eqModOption = eq)
       equation
-        finalPrefixstr = Util.if_(SCode.finalBool(finalPrefix), " final", "");
+        prefix =  SCodeDump.finalStr(finalPrefix) +& SCodeDump.eachStr(eachPrefix);
         s1 = printSubs1Str(subs);
         s1_1 = Util.stringDelimitList(s1, ",");
         s1_1 = Util.if_(listLength(subs)>=1," {" +& s1_1 +& "} ",s1_1);
         s2 = printEqmodStr(eq);
-        str = stringAppendList({finalPrefixstr,s1_1,s2});
+        str = stringAppendList({prefix,s1_1,s2});
       then
         str;
     
@@ -2666,7 +2691,11 @@ algorithm
         res = stringAppend(" =(untyped) ", str);
       then
         res;
-    case(_) equation print(" ---printEqmodStr FAILED--- "); then fail();
+    case(_) 
+      equation 
+        res = "---Mod.printEqmodStr FAILED---"; 
+      then 
+        res;
   end matchcontinue;
 end printEqmodStr;
 
@@ -3217,6 +3246,6 @@ algorithm
 
   end matchcontinue;
 end getUnelabedSubMod2;
-        
+      
 end Mod;
 

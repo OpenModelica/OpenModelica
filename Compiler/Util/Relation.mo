@@ -211,7 +211,7 @@ function name
   input Relation<Source, Target> inRelation;
   output String name;
 algorithm
-  outString := matchcontinue(inRelation)
+  name := matchcontinue(inRelation)
     local String n;
     case (UNIDIRECTIONAL(name = n)) then n;
     case (BIDIRECTIONAL(name = n)) then n;

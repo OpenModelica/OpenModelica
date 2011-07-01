@@ -30,7 +30,7 @@
  */
 
 encapsulated package Types
-" file:         Types.mo
+" file:        Types.mo
   package:     Types
   description: Type system
 
@@ -91,6 +91,7 @@ protected import ValuesUtil;
 protected import DAEUtil;
 protected import OptManager;
 protected import SCodeDump;
+protected import Mod;
 
 public function discreteType
 "function: discreteType
@@ -884,16 +885,21 @@ algorithm
   
     case((inmod as DAE.REDECL(f,e,redecls)),componentModified)
       equation
+        Debug.fprint("redecl","Removing redeclare mods: " +& componentModified +&" before" +& Mod.printModStr(inmod) +& "\n");  
         redecls = removeRedeclareMods(redecls,componentModified);
         outmod = Util.if_(listLength(redecls) > 0,DAE.REDECL(f,e,redecls), DAE.NOMOD());
+        Debug.fprint("redecl","Removing redeclare mods: " +& componentModified +&" after" +& Mod.printModStr(outmod) +& "\n");
       then
         outmod;
 
     case(DAE.MOD(f,e,subs,oem),componentModified)
       equation
+        Debug.fprint("redecl","Removing redeclare mods: " +& componentModified +&" before" +& Mod.printModStr(inmod) +& "\n");
         subs = removeModInSubs(subs,componentModified);
+        outmod = DAE.MOD(f,e,subs,oem);
+        Debug.fprint("redecl","Removing redeclare mods: " +& componentModified +&" after" +& Mod.printModStr(outmod) +& "\n");
       then
-        DAE.MOD(f,e,subs,oem);
+        outmod;
   end match;
 end removeMod;
 
@@ -962,9 +968,7 @@ end match;
 end removeModInSubs;
 
 public function getDimensionSizes "function: getDimensionSizes
-
-  Return the dimension sizes of a Type.
-"
+  Return the dimension sizes of a Type."
   input Type inType;
   output list<Integer> outIntegerLst;
 algorithm
@@ -1177,7 +1181,6 @@ algorithm
 end valuesToMods;
 
 public function valuesToVars "function valuesToVars
-
   Translates a list of Values.Value to a Var list, using a list
   of identifiers as component names.
   Used e.g. when retrieving the type of a record value."
@@ -1231,7 +1234,11 @@ algorithm
       Absyn.Path cname,path,utPath;
       list<Ident> ids;
       list<DAE.Exp> explist;
+      Values.Value valType;
+      
 
+    case Values.EMPTY(ty = valType) then typeOfValue(valType);
+    
     case (Values.INTEGER(integer = _)) then (DAE.T_INTEGER_DEFAULT);
     case (Values.REAL(real = _)) then (DAE.T_REAL_DEFAULT);
     case (Values.STRING(string = _)) then (DAE.T_STRING_DEFAULT);
@@ -1241,21 +1248,25 @@ algorithm
         path = Absyn.pathPrefix(path);
       then
         ((DAE.T_ENUMERATION(SOME(index), path, {}, {}, {}),NONE()));
+    
     case ((w as Values.ARRAY(valueLst = (v :: vs))))
       equation
         tp = typeOfValue(v);
         dim1 = listLength((v :: vs));
       then
         ((DAE.T_ARRAY(DAE.DIM_INTEGER(dim1),tp),NONE()));
+    
     case ((w as Values.ARRAY(valueLst = ({}))))
       equation
       then
         ((DAE.T_ARRAY(DAE.DIM_INTEGER(0),(DAE.T_NOTYPE(),NONE())),NONE()));
+    
     case ((w as Values.TUPLE(valueLst = vs)))
       equation
         ts = Util.listMap(vs, typeOfValue);
       then
         ((DAE.T_TUPLE(ts),NONE()));
+    
     case Values.RECORD(record_ = cname,orderd = vl,comp = ids, index = -1)
       equation
         vars = valuesToVars(vl, ids);
@@ -1285,22 +1296,27 @@ algorithm
       equation
         tp = (DAE.T_METAOPTION((DAE.T_NOTYPE(),NONE())),NONE());
       then tp;
+    
     case Values.OPTION(SOME(v))
       equation
         tp = boxIfUnboxedType(typeOfValue(v));
         tp = (DAE.T_METAOPTION(tp),NONE());
       then tp;
+    
     case Values.META_TUPLE(valueLst = vs)
       equation
         ts = Util.listMap(vs, typeOfValue);
         ts = Util.listMap(ts, boxIfUnboxedType);
       then
         ((DAE.T_METATUPLE(ts),NONE()));
+    
     case Values.META_BOX(v)
       equation
         tp = typeOfValue(v);
       then boxIfUnboxedType(tp);
+    
     case Values.NORETCALL() then DAE.T_NORETCALL_DEFAULT;
+    
     case (v)
       equation
         str = "- Types.typeOfValue failed: " +& ValuesUtil.valString(v);
@@ -2319,7 +2335,7 @@ algorithm
   end match;
 end unparseTupleconst;
 
-public function printTypeStr "function: printType
+public function printTypeStr "function: printTypeStr
   This function prints a textual description of a Modelica type to a string.  
   If the type is not one of the primitive types, it simply prints composite."
   input Type inType;
@@ -2474,6 +2490,11 @@ algorithm
       equation
       then
         "()";
+
+    // Code
+    case ((DAE.T_CODE(DAE.C_TYPENAME()),_)) then "$Code(TypeName)";
+    case ((DAE.T_CODE(DAE.C_VARIABLENAME()),_)) then "$Code(VariableName)";
+    case ((DAE.T_CODE(DAE.C_VARIABLENAMES()),_)) then "$Code(VariableName[:])";
 
     // All the other ones we don't handle
     case ((_,_)) then "printTypeStr failed";
@@ -4398,6 +4419,7 @@ algorithm
 
     case (e, t1 as (DAE.T_ARRAY(arrayType = _),_), (DAE.T_BOXED(t2), _), _)
       equation
+        //true = RTOpts.acceptMetaModelicaGrammar();
         (e, t1) = matchType(e, t1, unboxedType(t2), printFailtrace);
         t2 = (DAE.T_BOXED(t1), NONE());
         t = elabType(t2);
@@ -6774,5 +6796,113 @@ algorithm
     // case ((DAE.T_STRING(_),_),(DAE.T_STRING(_),_))   then DAE.T_STRING_DEFAULT;
   end matchcontinue;
 end scalarSuperType;
+
+protected function optInteger
+  input Option<Integer> inInt;
+  output Integer outInt;
+algorithm
+  outInt := match(inInt)
+    local Integer i;
+    case (SOME(i)) then i;
+    case _ then -1;
+  end match;
+end optInteger;
+
+public function typeToValue "function: typeToValue
+  This function builds Values.Value out of a type using generated bindings."
+  input Type inType;
+  output Values.Value defaultValue;
+algorithm
+  defaultValue := matchcontinue (inType)
+    local
+      list<Var> vars;
+      list<Ident> comp;
+      ClassInf.State st;
+      Option<Type> bc;
+      DAE.Dimension dim;
+      Type t,ty,restype;
+      list<FuncArg> params;
+      list<Type> tys;
+      String s1,s2,compType;
+      Absyn.Path path;
+      Integer i;
+      Option<Integer> iOpt;
+      Values.Value v;
+      list<Values.Value> valueLst, ordered;
+    
+    case ((DAE.T_INTEGER(varLstInt = vars),_)) then Values.INTEGER(0);
+    case ((DAE.T_REAL(varLstReal = vars),_)) then Values.REAL(0.0);
+    case ((DAE.T_STRING(varLstString = vars),_)) then Values.STRING("<EMPTY>");
+    case ((DAE.T_BOOL(varLstBool = vars),_)) then Values.BOOL(false);
+    case ((DAE.T_ENUMERATION(index = iOpt, path = path),_))
+      equation
+        i = optInteger(iOpt); 
+      then 
+        Values.ENUM_LITERAL(path, i);    
+    
+    case ((DAE.T_COMPLEX(complexClassType = st,complexVarLst = vars,complexTypeOption = bc),_))
+      equation
+        (ordered, comp) = varsToValues(vars);
+        path = ClassInf.getStateName(st); 
+      then 
+        Values.RECORD(path, ordered, comp, -1);
+    
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(i),arrayType = t),_))
+      equation
+        v = typeToValue(t);
+        valueLst = Util.listFill(v, i);
+      then
+        Values.ARRAY(valueLst, {i});
+        
+    case ((DAE.T_TUPLE(tupleType = tys),_))
+      equation
+        valueLst = Util.listMap(tys, typeToValue);
+        v = Values.TUPLE(valueLst);
+      then
+        v;
+
+    // All the other ones we don't handle
+    case ((_,_))
+      equation
+        print("- Types.typeToValue failed on unhandled Type"); 
+      then 
+        fail();
+    
+  end matchcontinue;
+end typeToValue;
+
+public function varsToValues "function varsToValues
+  Translates a list of Var list to Values.Value, the 
+  names of the variables as component names.
+  Used e.g. when retrieving the type of a record value."
+  input list<Var> inVarLst;
+  output list<Values.Value> outValuesValueLst;
+  output list<String> outExpIdentLst;
+algorithm
+  (outValuesValueLst,outExpIdentLst) := matchcontinue (inVarLst)
+    local
+      Type tp;
+      list<Var> rest;
+      Values.Value v;
+      list<Values.Value> restVals;
+      Ident id;
+      list<Ident> restIds;
+
+    case ({}) then ({}, {});
+    
+    case (DAE.TYPES_VAR(name = id,ty = tp)::rest)
+      equation
+        v = typeToValue(tp);
+        (restVals, restIds) = varsToValues(rest);
+      then
+        (v::restVals, id::restIds);
+    
+    case (_)
+      equation
+        Debug.fprint("failtrace", "- Types.varsToValues failed\n");
+      then
+        fail();
+  end matchcontinue;
+end varsToValues;
 
 end Types;

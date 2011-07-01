@@ -30,7 +30,7 @@
  */
 
 encapsulated package SCodeUtil
-" file:         SCodeUtil.mo
+" file:        SCodeUtil.mo
   package:     SCodeUtil
   description: SCodeUtil translates Absyn to SCode intermediate form
 
@@ -2065,5 +2065,198 @@ algorithm
     case (Absyn.NON_EACH()) then SCode.NOT_EACH();
   end match;  
 end translateEach;
+
+public function getRedeclareAsElements
+"get the redeclare-as-element elements"
+  input list<SCode.Element> elements;
+  output list<SCode.Element> outElements;
+algorithm
+  outElements := matchcontinue (elements)
+    local
+      SCode.Element el;
+      list<SCode.Element> els,els1;
+    
+    // empty
+    case ({}) then {};
+
+    // redeclare-as-element component
+    case ((el as SCode.COMPONENT(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())))::els)
+      equation
+        els1 = getRedeclareAsElements(els);
+      then 
+        el::els1;
+    
+    // redeclare-as-element class extends, ignore!
+    case ((el as SCode.CLASS(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE()), classDef = SCode.CLASS_EXTENDS(baseClassName = _)))::els)
+      equation
+        els1 = getRedeclareAsElements(els);
+      then 
+        els1;
+        
+    // redeclare-as-element class!
+    case ((el as SCode.CLASS(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())))::els)
+      equation
+        els1 = getRedeclareAsElements(els);
+      then
+        el::els1;
+    
+    // rest
+    case (_::els)
+      equation
+        els1 = getRedeclareAsElements(els);
+      then 
+        els1;
+  end matchcontinue;
+end getRedeclareAsElements;
+
+public function addRedeclareAsElementsToExtends
+"add the redeclare-as-element elements to extends"
+  input list<SCode.Element> inElements;
+  input list<SCode.Element> redeclareElements;
+  output list<SCode.Element> outExtendsElements;
+algorithm
+  outExtendsElements := matchcontinue (inElements, redeclareElements)
+    local
+      SCode.Element el;
+      list<SCode.Element> redecls, rest, out;
+      Absyn.Path baseClassPath;
+      SCode.Visibility visibility;
+      SCode.Mod mod;
+      Option<SCode.Annotation> ann "the extends annotation";
+      Absyn.Info info;
+      SCode.Mod redeclareMod;
+    
+    // empty, return the same
+    case (_, {}) then inElements;
+
+    // empty elements
+    case ({}, _) then {};
+
+    // we got some
+    case (SCode.EXTENDS(baseClassPath, visibility, mod, ann, info)::rest, redecls)
+      equation
+        redeclareMod = SCode.REDECL(SCode.NOT_FINAL(), SCode.NOT_EACH(), redecls);
+        mod = mergeSCodeMods(redeclareMod, mod);
+        out = addRedeclareAsElementsToExtends(rest, redecls);
+      then 
+        SCode.EXTENDS(baseClassPath, visibility, mod, ann, info)::out;
+    
+    // failure 
+    case ((el as SCode.EXTENDS(baseClassPath = _))::rest, redecls)
+      equation
+        print("- SCodeUtil.addRedeclareAsElementsToExtends failed on:\nextends:\n\t" +& SCodeDump.shortElementStr(el) +& 
+                 "\nredeclares:\n" +& Util.stringDelimitList(Util.listMap(redecls, SCodeDump.unparseElementStr), "\n") +& "\n");
+      then
+        fail();
+        
+    // ignore non-extends
+    case (el::rest, redecls)
+      equation
+        out = addRedeclareAsElementsToExtends(rest, redecls);
+      then 
+        el::out;
+    
+  end matchcontinue;
+end addRedeclareAsElementsToExtends;
+
+protected function mergeSCodeMods
+  input SCode.Mod inModOuter;
+  input SCode.Mod inModInner;
+  output SCode.Mod outMod;
+algorithm
+  outMod := matchcontinue(inModOuter, inModInner)
+    local 
+      SCode.Final f1, f2;
+      SCode.Each e1, e2;
+      list<SCode.Element> els, redecls;
+      list<SCode.SubMod> subMods, newSubMods;
+      Option<tuple<Absyn.Exp, Boolean>> b;
+
+    // inner is NOMOD
+    case (SCode.REDECL(f1, e1, redecls), SCode.NOMOD()) then inModOuter; 
+      
+    // both are redeclarations
+    case (SCode.REDECL(f1, e1, redecls), SCode.REDECL(f2, e2, els))
+      equation
+        els = listAppend(redecls, els);
+      then
+        SCode.REDECL(f2, e2, els);
+         
+    // inner is mod
+    case (SCode.REDECL(f1, e1, redecls), SCode.MOD(f2, e2, subMods, b))
+      equation
+        // we need to make each redcls element into a submod!
+        newSubMods = makeElementsIntoSubMods(f1, e1, redecls);
+        newSubMods = listAppend(newSubMods, subMods);
+      then
+        SCode.MOD(f2, e2, newSubMods, b);
+         
+    // failure
+    case (_, _)
+      equation
+        print("SCodeUtil.mergeSCodeMods failed on:\nouterMod: " +& SCodeDump.printModStr(inModOuter) +& 
+               "\ninnerMod: " +& SCodeDump.printModStr(inModInner) +& "\n");  
+      then
+        fail();
+
+  end matchcontinue;
+end mergeSCodeMods;
+
+protected function makeElementsIntoSubMods
+"transform elements into submods with named mods"
+  input SCode.Final inFinal;
+  input SCode.Each inEach;
+  input list<SCode.Element> inElements;
+  output list<SCode.SubMod> outSubMods;
+algorithm
+  outSubMods := matchcontinue (inFinal, inEach, inElements)
+    local
+      SCode.Element el;
+      list<SCode.Element> rest;
+      SCode.Final f;
+      SCode.Each e;
+      SCode.Ident n;
+      list<SCode.SubMod> newSubMods;
+    
+    // empty
+    case (f, e, {}) then {};
+
+    // class extends, error!
+    case (f, e, (el as SCode.CLASS(name = n, classDef = SCode.CLASS_EXTENDS(baseClassName = _)))::rest)
+      equation
+        // print an error here
+        print("- SCodeUtil.makeElementsIntoSubMods ignoring class-extends redeclare-as-element: " +& SCodeDump.unparseElementStr(el) +& "\n");
+        // recurse  
+        newSubMods = makeElementsIntoSubMods(f, e, rest);
+      then 
+        newSubMods;
+
+    // component
+    case (f, e, (el as SCode.COMPONENT(name = n))::rest)
+      equation
+        // recurse
+        newSubMods = makeElementsIntoSubMods(f, e, rest);
+      then 
+        SCode.NAMEMOD(n,SCode.REDECL(f,e,{el}))::newSubMods;
+        
+    // class
+    case (f, e, (el as SCode.CLASS(name = n))::rest)
+      equation
+        // recurse
+        newSubMods = makeElementsIntoSubMods(f, e, rest);
+      then 
+        SCode.NAMEMOD(n,SCode.REDECL(f,e,{el}))::newSubMods;
+    
+    // rest
+    case (f, e, el::rest)
+      equation
+        // print an error here
+        print("- SCodeUtil.makeElementsIntoSubMods ignoring redeclare-as-element redeclaration: " +& SCodeDump.unparseElementStr(el) +& "\n");
+        // recurse  
+        newSubMods = makeElementsIntoSubMods(f, e, rest);
+      then 
+        newSubMods;
+  end matchcontinue;
+end makeElementsIntoSubMods;
 
 end SCodeUtil;

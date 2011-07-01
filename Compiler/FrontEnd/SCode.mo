@@ -691,7 +691,6 @@ algorithm
   end matchcontinue;
 end getElementNamedFromElts;
 
-
 public function isElementExtends "
 Author BZ, 2009-01
 check if an element is of type EXTENDS or not."
@@ -3497,6 +3496,18 @@ algorithm
     else false;
   end match;
 end isDerivedClassDef;
+
+public function isConnector
+  input Restriction inRestriction;
+  output Boolean isConnector;
+algorithm
+  isConnector := match(inRestriction)
+    case (R_CONNECTOR(_)) then true;
+    else false;
+  end match;
+end isConnector;
+
+
 
 end SCode;
 

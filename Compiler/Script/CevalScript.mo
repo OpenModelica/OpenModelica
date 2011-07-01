@@ -30,7 +30,7 @@
  */
 
 encapsulated package CevalScript
-" file:         CevalScript.mo
+" file:        CevalScript.mo
   package:     CevalScript
   description: Constant propagation of expressions
 
@@ -262,7 +262,7 @@ protected function cevalCurrentSimulationResultExp
   input Env.Cache cache;
   input Env.Env env;
   input String inputFilename;
-  input Interactive.InteractiveSymbolTable st;
+  input Interactive.SymbolTable st;
   input Ceval.Msg msg;
   output Env.Cache outCache;
   output String filename;
@@ -351,7 +351,7 @@ end getSimulationOption;
 public function buildSimulationOptionsFromModelExperimentAnnotation
 "@author: adrpo
   retrieve annotation(experiment(....)) values and build a SimulationOptions object to return"
-  input Interactive.InteractiveSymbolTable inSymTab;
+  input Interactive.SymbolTable inSymTab;
   input Absyn.Path inModelPath;
   input String inFileNamePrefix;
   output SimulationOptions outSimOpt;
@@ -663,22 +663,28 @@ public function cevalInteractiveFunctions
 "function cevalInteractiveFunctions
   This function evaluates the functions
   defined in the interactive environment."
-  input Env.Cache cache;
-  input Env.Env env;
-  input DAE.Exp exp "expression to evaluate";
-  input Interactive.InteractiveSymbolTable st;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input DAE.Exp inExp "expression to evaluate";
+  input Interactive.SymbolTable inSymbolTable;
   input Ceval.Msg msg;
   output Env.Cache outCache;
   output Values.Value outValue;
-  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+  output Interactive.SymbolTable outInteractiveSymbolTable;
 algorithm
-  (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (cache,env,exp,st,msg)
+  (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (inCache,inEnv,inExp,inSymbolTable,msg)
     local
+      Env.Cache cache;
+      Env.Env env;
+      DAE.Exp exp;      
       list<DAE.Exp> eLst;
       list<Values.Value> valLst;
       String name;
       Values.Value value;
       Real t1,t2,time;
+      Interactive.SymbolTable st;
+      Option<Interactive.SymbolTable> stOpt;
+      
       // This needs to be first because otherwise it takes 0 time to get the value :)
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "timing"),expLst = {exp}),st,msg)
       equation
@@ -691,9 +697,11 @@ algorithm
 
     case (cache,env,DAE.CALL(path=Absyn.IDENT(name),builtin=true,expLst=eLst),st,msg)
       equation
-        (cache,valLst) = Ceval.cevalList(cache,env,eLst,true,SOME(st),msg);
+        (cache,valLst,stOpt) = Ceval.cevalList(cache,env,eLst,true,SOME(st),msg);
+        st = Util.getOptionOrDefault(stOpt, st);
         (cache,value,st) = cevalInteractiveFunctions2(cache,env,name,valLst,st,msg);
-      then (cache,value,st);
+      then 
+        (cache,value,st);
 
   end matchcontinue;
 end cevalInteractiveFunctions;
@@ -704,17 +712,18 @@ protected function cevalInteractiveFunctions2
   defined in the interactive environment."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input String functionName;
-  input list<Values.Value> vals;
-  input Interactive.InteractiveSymbolTable st;
+  input String inFunctionName;
+  input list<Values.Value> inVals;
+  input Interactive.SymbolTable inSt;
   input Ceval.Msg msg;
   output Env.Cache outCache;
   output Values.Value outValue;
-  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+  output Interactive.SymbolTable outInteractiveSymbolTable;
 algorithm
-  (outCache,outValue,outInteractiveSymbolTable):=
-  matchcontinue (inCache,inEnv,functionName,vals,st,msg)
+  (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (inCache,inEnv,inFunctionName,inVals,inSt,msg)
     local
+      String functionName;
+      list<Values.Value> vals;
       Absyn.Path path,p1,classpath,className;
       list<SCode.Element> scodeP,sp;
       Option<list<SCode.Element>> fp;
@@ -722,10 +731,10 @@ algorithm
       SCode.Element c;
       String s1,str,str1,str2,str3,re,token,varid,cmd,executable,executable1,method_str,outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,errMsg,errorStr,uniqueStr,interpolation,title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix;
       DAE.ComponentRef cr,cref,classname;
-      Interactive.InteractiveSymbolTable newst,st_1;
+      Interactive.SymbolTable newst,st_1,st;
       Absyn.Program p,pnew,newp,ptot;
       list<Interactive.InstantiatedClass> ic,ic_1;
-      list<Interactive.InteractiveVariable> iv;
+      list<Interactive.Variable> iv;
       list<Interactive.CompiledCFunction> cf;
       DAE.Type tp;
       Absyn.Class absynClass;
@@ -744,7 +753,7 @@ algorithm
       Integer size,length,resI,timeStampI,i,n;
       list<String> vars_1,vars_2,args,strings,strVars,strs,visvars;
       Real t1,t2,time,timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2;
-      Interactive.InteractiveStmts istmts;
+      Interactive.Statements istmts;
       Boolean bval, b, externalWindow, legend, grid, logX, logY, points, gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive,ifcpp;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
@@ -1536,7 +1545,7 @@ algorithm
       then
         (cache,value,st);
         
-    case (cache,env,"readSimulationResult",_,_,_)
+    case (cache,env,"readSimulationResult",_,st,_)
       equation
         Error.addMessage(Error.SCRIPT_READ_SIM_RES_ERROR, {});
       then (cache,Values.META_FAIL(),st);
@@ -2004,12 +2013,12 @@ public function getIncidenceMatrix "function getIncidenceMatrix
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path className "path for the model";
-  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Interactive.SymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
   input String filenameprefix;
   output Env.Cache outCache;
   output Values.Value outValue;
-  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+  output Interactive.SymbolTable outInteractiveSymbolTable;
   output String outString;
 algorithm
   (outCache,outValue,outInteractiveSymbolTable,outString):=
@@ -2022,9 +2031,9 @@ algorithm
       list<Interactive.InstantiatedClass> ic_1,ic;
       BackendDAE.BackendDAE dlow;
       Absyn.ComponentRef a_cref;
-      Interactive.InteractiveSymbolTable st;
+      Interactive.SymbolTable st;
       Absyn.Program p;
-      list<Interactive.InteractiveVariable> iv;
+      list<Interactive.Variable> iv;
       list<Interactive.CompiledCFunction> cf;
       Ceval.Msg msg;
       DAE.Exp fileprefix;
@@ -2061,13 +2070,13 @@ protected function translateModel "function translateModel
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path className "path for the model";
-  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Interactive.SymbolTable inInteractiveSymbolTable;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
   output Env.Cache outCache;
   output Values.Value outValue;
-  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+  output Interactive.SymbolTable outInteractiveSymbolTable;
   output BackendDAE.BackendDAE outBackendDAE;
   output list<String> outStringLst;
   output String outFileDir;
@@ -2079,7 +2088,7 @@ algorithm
       Env.Cache cache;
       list<Env.Frame> env;
       BackendDAE.BackendDAE indexed_dlow;
-      Interactive.InteractiveSymbolTable st;
+      Interactive.SymbolTable st;
       list<String> libs;
       Values.Value outValMsg;
       String file_dir, fileNamePrefix;
@@ -2100,13 +2109,13 @@ end translateModel;
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path className "path for the model";
-  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Interactive.SymbolTable inInteractiveSymbolTable;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
   output Env.Cache outCache;
   output Values.Value outValue;
-  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+  output Interactive.SymbolTable outInteractiveSymbolTable;
   output BackendDAE.BackendDAE outBackendDAE;
   output list<String> outStringLst;
   output String outFileDir;
@@ -2118,7 +2127,7 @@ algorithm
       Env.Cache cache;
       list<Env.Frame> env;
       BackendDAE.BackendDAE indexed_dlow;
-      Interactive.InteractiveSymbolTable st;
+      Interactive.SymbolTable st;
       list<String> libs;
       Values.Value outValMsg;
       String file_dir, fileNamePrefix;
@@ -2138,13 +2147,13 @@ protected function translateModelFMU "function translateModelFMU
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path className "path for the model";
-  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Interactive.SymbolTable inInteractiveSymbolTable;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
   output Env.Cache outCache;
   output Values.Value outValue;
-  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+  output Interactive.SymbolTable outInteractiveSymbolTable;
 algorithm
   (outCache,outValue,outInteractiveSymbolTable):=
   match (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy,inSimSettingsOpt)
@@ -2152,7 +2161,7 @@ algorithm
       Env.Cache cache;
       list<Env.Frame> env;
       BackendDAE.BackendDAE indexed_dlow;
-      Interactive.InteractiveSymbolTable st;
+      Interactive.SymbolTable st;
       list<String> libs;
       Values.Value outValMsg;
       String file_dir, fileNamePrefix, str;
@@ -2180,11 +2189,11 @@ public function translateGraphics "function: translates the graphical annotation
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path className;
-  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Interactive.SymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
   output Values.Value outValue;
-  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+  output Interactive.SymbolTable outInteractiveSymbolTable;
 algorithm
   (outCache,outValue,outInteractiveSymbolTable) :=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
@@ -2192,9 +2201,9 @@ algorithm
       list<SCode.Element> sp;
       list<Env.Frame> env;
       list<Interactive.InstantiatedClass> ic;
-      Interactive.InteractiveSymbolTable st;
+      Interactive.SymbolTable st;
       Absyn.Program p;
-      list<Interactive.InteractiveVariable> iv;
+      list<Interactive.Variable> iv;
       list<Interactive.CompiledCFunction> cf;
       Ceval.Msg msg;
       Env.Cache cache;
@@ -2235,7 +2244,7 @@ protected function calculateSimulationSettings "function calculateSimulationSett
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Values.Value> vals;
-  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Interactive.SymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
   output SimCode.SimulationSettings outSimSettings;
@@ -2244,7 +2253,7 @@ algorithm
   match (inCache,inEnv,vals,inInteractiveSymbolTable,inMsg)
     local
       String method_str,options_str,outputFormat_str,variableFilter_str,s;
-      Interactive.InteractiveSymbolTable st;
+      Interactive.SymbolTable st;
       Values.Value starttime_v,stoptime_v,tolerance_v;
       Integer interval_i;
       Real starttime_r,stoptime_r,tolerance_r;
@@ -2278,13 +2287,13 @@ protected function buildModel "function buildModel
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Values.Value> vals;
-  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Interactive.SymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
   output String outString1 "className";
   output String outString2 "method";
   output String outputFormat_str;
-  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable3;
+  output Interactive.SymbolTable outInteractiveSymbolTable3;
   output String outString4 "initFileName";
   output list<tuple<String,Values.Value>> resultValues;
 algorithm
@@ -2292,7 +2301,7 @@ algorithm
   matchcontinue (inCache,inEnv,vals,inInteractiveSymbolTable,inMsg)
     local
       Values.Value ret_val;
-      Interactive.InteractiveSymbolTable st,st_1,st2;
+      Interactive.SymbolTable st,st_1,st2;
       BackendDAE.BackendDAE indexed_dlow_1;
       list<String> libs;
       String file_dir,init_filename,method_str,filenameprefix,oldDir,exeFile,s3;
@@ -2307,7 +2316,7 @@ algorithm
       list<SCode.Element> sp;
       list<Values.Value> vals;
       list<Interactive.InstantiatedClass> ic;
-      list<Interactive.InteractiveVariable> iv;
+      list<Interactive.Variable> iv;
       Ceval.Msg msg;
       Env.Cache cache;
       Boolean cdToTemp,existFile;
@@ -2547,7 +2556,7 @@ protected function extractFilePrefix "function extractFilePrefix
   input Env.Cache cache;
   input Env.Env env;
   input DAE.Exp filenameprefix;
-  input Interactive.InteractiveSymbolTable st;
+  input Interactive.SymbolTable st;
   input Ceval.Msg msg;
   output Env.Cache outCache;
   output String outString;
@@ -2567,7 +2576,7 @@ public function cevalAstExp
   input Env.Env inEnv;
   input Absyn.Exp inExp;
   input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Ceval.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
@@ -2580,7 +2589,7 @@ algorithm
       list<Env.Frame> env;
       Absyn.Operator op;
       Boolean impl;
-      Option<Interactive.InteractiveSymbolTable> st;
+      Option<Interactive.SymbolTable> st;
       Ceval.Msg msg;
       list<tuple<Absyn.Exp, Absyn.Exp>> nest_1,nest;
       Absyn.ComponentRef cr;
@@ -2694,7 +2703,7 @@ public function cevalAstExpList
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Ceval.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
@@ -2708,7 +2717,7 @@ algorithm
       Absyn.Exp e_1,e;
       list<Absyn.Exp> res,es;
       Boolean impl;
-      Option<Interactive.InteractiveSymbolTable> st;
+      Option<Interactive.SymbolTable> st;
       Env.Cache cache;
     
     case (cache,env,{},_,_,msg,info) then (cache,{});
@@ -2727,7 +2736,7 @@ protected function cevalAstExpListList "function: cevalAstExpListList"
   input Env.Env inEnv;
   input list<list<Absyn.Exp>> inAbsynExpLstLst;
   input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Ceval.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
@@ -2741,7 +2750,7 @@ algorithm
       list<Absyn.Exp> e_1,e;
       list<list<Absyn.Exp>> res,es;
       Boolean impl;
-      Option<Interactive.InteractiveSymbolTable> st;
+      Option<Interactive.SymbolTable> st;
       Env.Cache cache;
     
     case (cache,env,{},_,_,msg,info) then (cache,{});
@@ -2762,7 +2771,7 @@ protected function cevalAstExpexpList
   input Env.Env inEnv;
   input list<tuple<Absyn.Exp, Absyn.Exp>> inTplAbsynExpAbsynExpLst;
   input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Ceval.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
@@ -2776,7 +2785,7 @@ algorithm
       list<tuple<Absyn.Exp, Absyn.Exp>> res,xs;
       list<Env.Frame> env;
       Boolean impl;
-      Option<Interactive.InteractiveSymbolTable> st;
+      Option<Interactive.SymbolTable> st;
       Env.Cache cache;
     case (cache,_,{},_,_,msg,info) then (cache,{});
     case (cache,env,((e1,e2) :: xs),impl,st,msg,info)
@@ -2797,7 +2806,7 @@ public function cevalAstElt
   input Env.Env inEnv;
   input Absyn.Element inElement;
   input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
   output Absyn.Element outElement;
@@ -2816,7 +2825,7 @@ algorithm
       Absyn.Info info;
       Integer sline,scolumn,eline,ecolumn;
       Option<Absyn.ConstrainClass> c;
-      Option<Interactive.InteractiveSymbolTable> st;
+      Option<Interactive.SymbolTable> st;
       Ceval.Msg msg;
       Env.Cache cache;
     case (cache,env,Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = io,name = id,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = tp,components = citems),info = (info as Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scolumn,lineNumberEnd = eline,columnNumberEnd = ecolumn)),constrainClass = c),impl,st,msg)
@@ -2834,7 +2843,7 @@ protected function cevalAstCitems
   input Env.Env inEnv;
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
   input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Ceval.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
@@ -2852,7 +2861,7 @@ algorithm
       Option<Absyn.Exp> cond;
       Option<Absyn.Comment> cmt;
       Boolean impl;
-      Option<Interactive.InteractiveSymbolTable> st;
+      Option<Interactive.SymbolTable> st;
       Absyn.ComponentItem x;
       Env.Cache cache;
     case (cache,_,{},_,_,msg,info) then (cache,{});
@@ -2877,7 +2886,7 @@ protected function cevalAstModopt
   input Env.Env inEnv;
   input Option<Absyn.Modification> inAbsynModificationOption;
   input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Ceval.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
@@ -2889,7 +2898,7 @@ algorithm
       Absyn.Modification res,mod;
       list<Env.Frame> env;
       Boolean st;
-      Option<Interactive.InteractiveSymbolTable> impl;
+      Option<Interactive.SymbolTable> impl;
       Ceval.Msg msg;
       Env.Cache cache;
     case (cache,env,SOME(mod),st,impl,msg,info)
@@ -2908,7 +2917,7 @@ protected function cevalAstModification "function: cevalAstModification
   input Env.Env inEnv;
   input Absyn.Modification inModification;
   input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Ceval.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
@@ -2921,7 +2930,7 @@ algorithm
       list<Absyn.ElementArg> eltargs_1,eltargs;
       list<Env.Frame> env;
       Boolean impl;
-      Option<Interactive.InteractiveSymbolTable> st;
+      Option<Interactive.SymbolTable> st;
       Ceval.Msg msg;
       Env.Cache cache;
       Absyn.Info info2;
@@ -2945,7 +2954,7 @@ protected function cevalAstEltargs "function: cevalAstEltargs
   input Env.Env inEnv;
   input list<Absyn.ElementArg> inAbsynElementArgLst;
   input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Ceval.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
@@ -2962,7 +2971,7 @@ algorithm
       Absyn.Each e;
       Absyn.ComponentRef cr;
       Option<String> stropt;
-      Option<Interactive.InteractiveSymbolTable> st;
+      Option<Interactive.SymbolTable> st;
       Absyn.ElementArg m;
       Env.Cache cache;
     case (cache,env,{},_,_,msg,info) then (cache,{});
@@ -2987,7 +2996,7 @@ protected function cevalAstArraydim "function: cevalAstArraydim
   input Env.Env inEnv;
   input Absyn.ArrayDim inArrayDim;
   input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Ceval.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
@@ -3000,7 +3009,7 @@ algorithm
       Ceval.Msg msg;
       list<Absyn.Subscript> res,xs;
       Boolean impl;
-      Option<Interactive.InteractiveSymbolTable> st;
+      Option<Interactive.SymbolTable> st;
       Absyn.Exp e_1,e;
       Env.Cache cache;
     case (cache,env,{},_,_,msg,info) then (cache,{});
@@ -3023,11 +3032,11 @@ public function checkModel "function: checkModel
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path className;
-  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Interactive.SymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
   output Values.Value outValue;
-  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+  output Interactive.SymbolTable outInteractiveSymbolTable;
 algorithm
   (outCache,outValue,outInteractiveSymbolTable) :=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
@@ -3037,9 +3046,9 @@ algorithm
       list<Env.Frame> env;
       list<Interactive.InstantiatedClass> ic;
       BackendDAE.BackendDAE dlow,dlow1;
-      Interactive.InteractiveSymbolTable st;
+      Interactive.SymbolTable st;
       Absyn.Program p,ptot;
-      list<Interactive.InteractiveVariable> iv;
+      list<Interactive.Variable> iv;
       list<Interactive.CompiledCFunction> cf;
       Ceval.Msg msg;
       Env.Cache cache;
@@ -3318,10 +3327,10 @@ protected function dumpXMLDAE "function dumpXMLDAE
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Values.Value> vals;
-  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Interactive.SymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
-  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable3;
+  output Interactive.SymbolTable outInteractiveSymbolTable3;
   output String xml_filename "initFileName";
   output String xml_contents;
 algorithm
@@ -3331,7 +3340,7 @@ algorithm
       Boolean cdToTemp;
       String cname_str,filenameprefix,oldDir,translationLevel;
       list<Interactive.InstantiatedClass> ic_1,ic;
-      list<Interactive.InteractiveVariable> iv;
+      list<Interactive.Variable> iv;
       list<Interactive.CompiledCFunction> cf;
       list<Env.Frame> env;
       Absyn.Path classname;
@@ -3339,7 +3348,7 @@ algorithm
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
       Env.Cache cache;
       Boolean addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
-      Interactive.InteractiveSymbolTable st,st_1;
+      Interactive.SymbolTable st,st_1;
       Ceval.Msg msg;
       list<DAE.Function> funcelems;
       array<Integer> ass1,ass2;
@@ -3547,11 +3556,11 @@ public function checkAllModelsRecursive
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path className;
-  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Interactive.SymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
   output Values.Value outValue;
-  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+  output Interactive.SymbolTable outInteractiveSymbolTable;
 algorithm
   (outCache,outValue,outInteractiveSymbolTable):=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
@@ -3559,9 +3568,9 @@ algorithm
       list<Absyn.Path> allClassPaths;
       list<SCode.Element> sp;
       list<Interactive.InstantiatedClass> ic;
-      Interactive.InteractiveSymbolTable st;
+      Interactive.SymbolTable st;
       Absyn.Program p;
-      list<Interactive.InteractiveVariable> iv;
+      list<Interactive.Variable> iv;
       list<Interactive.CompiledCFunction> cf;
       Ceval.Msg msg;
       Env.Cache cache;
@@ -3610,7 +3619,7 @@ function checkAll
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Path> allClasses;
-  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Interactive.SymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
 algorithm
   _ := matchcontinue (inCache,inEnv,allClasses,inInteractiveSymbolTable,inMsg)
@@ -3619,9 +3628,9 @@ algorithm
       Absyn.Path className;
       list<SCode.Element> sp;
       list<Interactive.InstantiatedClass> ic;
-      Interactive.InteractiveSymbolTable st;
+      Interactive.SymbolTable st;
       Absyn.Program p;
-      list<Interactive.InteractiveVariable> iv;
+      list<Interactive.Variable> iv;
       list<Interactive.CompiledCFunction> cf;
       Ceval.Msg msg;
       Env.Cache cache;
@@ -3673,19 +3682,19 @@ public function buildModelBeast "function buildModelBeast
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Values.Value> vals;
-  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Interactive.SymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
   output String outString1 "className";
   output String outString2 "method";
-  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable3;
+  output Interactive.SymbolTable outInteractiveSymbolTable3;
   output String outString4 "initFileName";
 algorithm
   (outCache,outString1,outString2,outInteractiveSymbolTable3,outString4):=
   match (inCache,inEnv,vals,inInteractiveSymbolTable,inMsg)
     local
       Values.Value ret_val;
-      Interactive.InteractiveSymbolTable st,st_1,st2;
+      Interactive.SymbolTable st,st_1,st2;
       BackendDAE.BackendDAE indexed_dlow_1;
       list<String> libs;
       String file_dir,method_str,filenameprefix,oldDir,s3;
@@ -3697,7 +3706,7 @@ algorithm
       Values.Value starttime,stoptime,interval,method,tolerance,fileprefix,storeInTemp,noClean,options;
       list<SCode.Element> sp;
       list<Interactive.InstantiatedClass> ic;
-      list<Interactive.InteractiveVariable> iv;
+      list<Interactive.Variable> iv;
       Ceval.Msg msg;
       Absyn.Within win1;
       Env.Cache cache;
@@ -3750,6 +3759,41 @@ algorithm
   functionName := ModUtil.pathStringReplaceDot(functionPath, "_");
 end generateFunctionName;
 
+public function getFunctionDependencies
+"returns all function dependencies as paths, also the main function and the function tree"
+  input Env.Cache cache;
+  input Absyn.Path functionName;
+  output DAE.Function mainFunction "the main function";
+  output list<Absyn.Path> dependencies "the dependencies as paths";
+  output DAE.FunctionTree funcs "the function tree";
+algorithm
+  funcs := Env.getFunctionTree(cache);
+  // First check if the main function exists... If it does not it might be an interactive function...
+  mainFunction := DAEUtil.getNamedFunction(functionName, funcs);
+  dependencies := SimCode.getCalledFunctionsInFunction(functionName,funcs);
+end getFunctionDependencies;
+
+public function collectDependencies
+"collects all function dependencies, also the main function, uniontypes, metarecords"
+  input Env.Cache inCache;
+  input Env.Env env;
+  input Absyn.Path functionName;
+  output Env.Cache outCache;
+  output DAE.Function mainFunction;
+  output list<DAE.Function> dependencies;
+  output list<DAE.Type> metarecordTypes;
+protected
+  list<Absyn.Path> uniontypePaths,paths;
+  DAE.FunctionTree funcs;
+algorithm
+  (mainFunction, paths, funcs) := getFunctionDependencies(inCache, functionName);
+  // The list of functions is not ordered, so we need to filter out the main function...
+  dependencies := Util.listMap1(paths, DAEUtil.getNamedFunction, funcs);
+  dependencies := Util.listSetDifference(dependencies, {mainFunction});
+  uniontypePaths := DAEUtil.getUniontypePaths(dependencies,{});
+  (outCache,metarecordTypes) := Lookup.lookupMetarecordsRecursive(inCache, env, uniontypePaths);
+end collectDependencies;
+
 public function cevalGenerateFunction "function: cevalGenerateFunction
   Generates code for a given function name."
   input Env.Cache inCache;
@@ -3758,8 +3802,7 @@ public function cevalGenerateFunction "function: cevalGenerateFunction
   output Env.Cache outCache;
   output String functionName;
 algorithm
-  (outCache,functionName) :=
-  matchcontinue (inCache,inEnv,inPath)
+  (outCache,functionName) := matchcontinue (inCache,inEnv,inPath)
     local
       String pathstr;
       list<Env.Frame> env;
@@ -3775,19 +3818,10 @@ algorithm
       equation
         false = RTOpts.debugFlag("nogen");
         false = RTOpts.debugFlag("generateCodeCheat");
-        funcs = Env.getFunctionTree(cache);
-        // First check if the main function exists... If it does not it might be an interactive function...
-        mainFunction = DAEUtil.getNamedFunction(path, funcs);
-        pathstr = generateFunctionName(path);
-        paths = SimCode.getCalledFunctionsInFunction(path,funcs);
-
-        // The list of functions is not ordered, so we need to filter out the main function...
-        funcs = Env.getFunctionTree(cache);
-        d = Util.listMap1(paths, DAEUtil.getNamedFunction, funcs);
-        d = Util.listSetDifference(d, {mainFunction});
-        uniontypePaths = DAEUtil.getUniontypePaths(d,{});
-        (cache,metarecordTypes) = Lookup.lookupMetarecordsRecursive(cache, env, uniontypePaths);
         
+        (cache, mainFunction, d, metarecordTypes) = collectDependencies(cache, env, path);
+        
+        pathstr = generateFunctionName(path);
         SimCode.translateFunctions(pathstr, SOME(mainFunction), d, metarecordTypes, {});
         compileModel(pathstr, {}, "", "", "");
       then
@@ -3807,7 +3841,6 @@ algorithm
         pathstr = generateFunctionName(path);
         
         // The list of functions is not ordered, so we need to filter out the main function...
-        funcs = Env.getFunctionTree(cache);
         d = DAEUtil.getFunctionList(funcs);
         SimCode.translateFunctions(pathstr, NONE(), d, {}, {});
       then

@@ -82,14 +82,13 @@ protected function serverLoop
   This function is the main loop of the server listening
   to a port which recieves modelica expressions."
   input Integer inInteger;
-  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
-  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+  input Interactive.SymbolTable inInteractiveSymbolTable;
+  output Interactive.SymbolTable outInteractiveSymbolTable;
 algorithm
-  outInteractiveSymbolTable:=
-  matchcontinue (inInteger,inInteractiveSymbolTable)
+  outInteractiveSymbolTable := matchcontinue (inInteger,inInteractiveSymbolTable)
     local
       String str,replystr;
-      Interactive.InteractiveSymbolTable newsymb,ressymb,isymb;
+      Interactive.SymbolTable newsymb,ressymb,isymb;
       Integer shandle;
     case (shandle,isymb)
       equation
@@ -186,23 +185,22 @@ protected function handleCommand
   If the command is quit, the function returns false, otherwise it sends
   the string to the parse function and returns true."
   input String inString;
-  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Interactive.SymbolTable inInteractiveSymbolTable;
   output Boolean outBoolean;
   output String outString;
-  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+  output Interactive.SymbolTable outInteractiveSymbolTable;
 algorithm
-  (outBoolean,outString,outInteractiveSymbolTable):=
-  matchcontinue (inString,inInteractiveSymbolTable)
+  (outBoolean,outString,outInteractiveSymbolTable) := matchcontinue (inString,inInteractiveSymbolTable)
     local
       String str,msg,res_1,res,evalstr,expmsg,debugstr;
-      Interactive.InteractiveSymbolTable isymb,newisymb;
+      Interactive.SymbolTable isymb,newisymb;
       Absyn.Program p,p_1,newprog,iprog;
       AbsynDep.Depends aDep;
-      list<Interactive.InteractiveVariable> vars_1,vars;
+      list<Interactive.Variable> vars_1,vars;
       list<Interactive.CompiledCFunction> cf_1,cf;
       list<SCode.Element> a;
       list<Interactive.InstantiatedClass> b;
-      Interactive.InteractiveStmts exp;
+      Interactive.Statements exp;
       list<Interactive.LoadedFile> lf;
     case (str,isymb)
       equation
@@ -441,8 +439,8 @@ end parsePathFromString;
 
 protected function loadLibs
  input list<String> inLibs;
- input Interactive.InteractiveSymbolTable inSymTab;
- output Interactive.InteractiveSymbolTable outSymTab;
+ input Interactive.SymbolTable inSymTab;
+ output Interactive.SymbolTable outSymTab;
 algorithm
  outSymTab := matchcontinue(inLibs, inSymTab)
    local
@@ -450,12 +448,12 @@ algorithm
      list<String> rest;
      Absyn.Program pnew, p;
      list<Interactive.InstantiatedClass> ic;
-     list<Interactive.InteractiveVariable> iv;
+     list<Interactive.Variable> iv;
      list<Interactive.CompiledCFunction> cf;
      list<SCode.Element> sp;
      list<Interactive.LoadedFile> lf;
      AbsynDep.Depends aDep;
-     Interactive.InteractiveSymbolTable st, newst;
+     Interactive.SymbolTable st, newst;
      Absyn.Path path;
 
    // no libs or end, return!
@@ -509,8 +507,8 @@ algorithm
       list<String>  libs;
       Absyn.Path cname;
       Boolean silent,notsilent;
-      Interactive.InteractiveStmts stmts;
-      Interactive.InteractiveSymbolTable newst, st;
+      Interactive.Statements stmts;
+      Interactive.SymbolTable newst, st;
       Env.Cache cache;
       Env.Env env;
       DAE.FunctionTree funcs;
@@ -697,6 +695,7 @@ algorithm
                                         s);
       then
         (c, Env.emptyEnv, d, s, Absyn.lastClassname(program));
+    
     case (_)
       equation
         // If a class to instantiate was given on the command line, instantiate
@@ -929,12 +928,12 @@ protected function interactivemode
 "function: interactivemode
   Initiate the interactive mode using socket communication."
   input list<String> inStringLst;
-  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Interactive.SymbolTable inInteractiveSymbolTable;
 algorithm
   _:=
   match (inStringLst,inInteractiveSymbolTable)
     local Integer shandle;
-     Interactive.InteractiveSymbolTable symbolTable;
+     Interactive.SymbolTable symbolTable;
     case (_,symbolTable)
       equation
         print("Opening a socket on port " +& intString(29500) +& "\n");
@@ -949,12 +948,12 @@ protected function interactivemodeCorba
 "function: interactivemodeCorba
   Initiate the interactive mode using corba communication."
   input list<String> inStringLst;
-  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Interactive.SymbolTable inInteractiveSymbolTable;
 algorithm
   _:=
   matchcontinue (inStringLst,inInteractiveSymbolTable)
    local
-     Interactive.InteractiveSymbolTable symbolTable;
+     Interactive.SymbolTable symbolTable;
     case (_,symbolTable)
       equation
         Corba.initialize();
@@ -975,14 +974,14 @@ end interactivemodeCorba;
 protected function serverLoopCorba
 "function: serverLoopCorba
   This function is the main loop of the server for a CORBA impl."
-  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
-  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+  input Interactive.SymbolTable inInteractiveSymbolTable;
+  output Interactive.SymbolTable outInteractiveSymbolTable;
 algorithm
   outInteractiveSymbolTable:=
   matchcontinue (inInteractiveSymbolTable)
     local
       String str,replystr;
-      Interactive.InteractiveSymbolTable newsymb,ressymb,isymb;
+      Interactive.SymbolTable newsymb,ressymb,isymb;
     case (isymb)
       equation
         str = Corba.waitForCommand();
@@ -1011,16 +1010,16 @@ protected function readSettings
  author: x02lucpo
  Checks if 'settings.mos' exist and uses handleCommand with runScript(...) to execute it.
  Checks if '-s <file>.mos' has been
- returns Interactive.InteractiveSymbolTable which is used in the rest of the loop"
+ returns Interactive.SymbolTable which is used in the rest of the loop"
   input list<String> inStringLst;
-  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+  output Interactive.SymbolTable outInteractiveSymbolTable;
 algorithm
   outInteractiveSymbolTable:=
   matchcontinue (inStringLst)
     local
       list<String> args;
       String str;
-      Interactive.InteractiveSymbolTable outSymbolTable;
+      Interactive.SymbolTable outSymbolTable;
     case (args)
       equation
         outSymbolTable = Interactive.emptySymboltable;
@@ -1043,14 +1042,14 @@ end readSettings;
 
 protected function readSettingsFile
  input String filePath;
-  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
-  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+  input Interactive.SymbolTable inInteractiveSymbolTable;
+  output Interactive.SymbolTable outInteractiveSymbolTable;
 algorithm
  outInteractiveSymbolTable :=
   matchcontinue (filePath,inInteractiveSymbolTable)
     local
       String file;
-      Interactive.InteractiveSymbolTable inSymbolTable, outSymbolTable;
+      Interactive.SymbolTable inSymbolTable, outSymbolTable;
       String str;
     case (file,inSymbolTable)
       equation
@@ -1114,6 +1113,7 @@ algorithm
   print("\t+d=dynload                 display debug information about dynamic loading of compiled functions\n");
   print("\t+d=nogen                   do not use the dynamic loading.\n");
   print("\t+d=usedep                  use dependency analysis to speed up the compilation. [experimental].\n");
+  print("\t+d=showStatement           will show the statement that is currently executed in a .mos file.\n");  
   print("\t                           default is to not use the dependency analysis.\n");
   print("\t+d=noevalfunc              do not use the function interpreter, uses dynamic loading instead.\n");
   print("\t                           default is to use the function interpreter.\n");
@@ -1147,7 +1147,7 @@ algorithm
       list<String> args_1,args;
       Boolean ismode,icmode,imode,imode_1;
       String omhome,oldpath,newpath;
-      Interactive.InteractiveSymbolTable symbolTable;
+      Interactive.SymbolTable symbolTable;
       list<tuple<String, String>> dbResult;
       
       // Setup mingw path only once.

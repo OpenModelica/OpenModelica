@@ -31,7 +31,7 @@
 
 encapsulated package ExpressionSimplify
 "
-  file:         ExpressionSimplify.mo
+  file:        ExpressionSimplify.mo
   package:     ExpressionSimplify
   description: ExpressionSimplify
 
@@ -140,7 +140,7 @@ algorithm
       Option<Values.Value> v;
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators riters;
-        
+
     // noEvent propagated to relations and event triggering functions
     case ((DAE.CALL(Absyn.IDENT("noEvent"),{e},tpl,builtin,tp,inlineType),b))
       equation

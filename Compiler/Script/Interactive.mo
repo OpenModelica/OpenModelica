@@ -93,7 +93,7 @@ uniontype CompiledCFunction
 end CompiledCFunction;
 
 public
-uniontype InteractiveStmt
+uniontype Statement
 "An Statement given in the interactive environment can either be
  an Algorithm statement or an expression.
  - Interactive Statement"
@@ -105,18 +105,18 @@ uniontype InteractiveStmt
     Absyn.Exp exp "exp" ;
   end IEXP;
 
-end InteractiveStmt;
+end Statement;
 
 public
-uniontype InteractiveStmts
+uniontype Statements
   "Several interactive statements are used in Modelica scripts.
   - Interactive Statements"
   record ISTMTS
-    list<InteractiveStmt> interactiveStmtLst "interactiveStmtLst" ;
+    list<Statement> interactiveStmtLst "interactiveStmtLst" ;
     Boolean semicolon "semicolon; true = statement ending with a semicolon. The result will not be shown in the interactive environment." ;
   end ISTMTS;
 
-end InteractiveStmts;
+end Statements;
 
 public
 uniontype InstantiatedClass "- Instantiated Class"
@@ -129,14 +129,14 @@ uniontype InstantiatedClass "- Instantiated Class"
 end InstantiatedClass;
 
 public
-uniontype InteractiveVariable "- Interactive Variable"
+uniontype Variable "- Interactive Variable"
   record IVAR
     Absyn.Ident varIdent "varIdent ; The variable identifier" ;
     Values.Value value "value ; The value" ;
     DAE.Type type_ "type ; The type of the expression" ;
   end IVAR;
 
-end InteractiveVariable;
+end Variable;
 
 public
 uniontype LoadedFile
@@ -151,18 +151,18 @@ uniontype LoadedFile
 end LoadedFile;
 
 public
-uniontype InteractiveSymbolTable "- Interactive Symbol Table"
+uniontype SymbolTable "- Interactive Symbol Table"
   record SYMBOLTABLE
     Absyn.Program ast "ast ; The ast" ;
     AbsynDep.Depends depends "the dependency information";
     Option<SCode.Program> explodedAst "the explodedAst is invalidated every time the program is updated";
     list<InstantiatedClass> instClsLst "instClsLst ;  List of instantiated classes" ;
-    list<InteractiveVariable> lstVarVal "lstVarVal ; List of variables with values" ;
+    list<Variable> lstVarVal "lstVarVal ; List of variables with values" ;
     list<CompiledCFunction> compiledFunctions "compiledFunctions ; List of compiled functions, F.Q name + type + functionhandler" ;
     list<LoadedFile> loadedFiles "The list of the loaded files with their load time." ;
   end SYMBOLTABLE;
 
-end InteractiveSymbolTable;
+end SymbolTable;
 
 public
 uniontype Component "- a component in a class
@@ -234,7 +234,7 @@ protected import Constants;
 protected import Refactor;
 protected import RTOpts;
 
-public constant InteractiveSymbolTable emptySymboltable =
+public constant SymbolTable emptySymboltable =
      SYMBOLTABLE(Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp),
                  AbsynDep.DEPENDS(AbsynDep.AVLTREENODE(NONE(),0,NONE(),NONE()),AbsynDep.AVLTREENODE(NONE(),0,NONE(),NONE())),
                  NONE(),
@@ -246,29 +246,29 @@ public constant InteractiveSymbolTable emptySymboltable =
 public function evaluate
 "function: evaluate
   This function evaluates expressions or statements feed interactively to the compiler.
-  inputs:   (InteractiveStmts, InteractiveSymbolTable, bool /* verbose */)
+  inputs:   (Statements, SymbolTable, bool /* verbose */)
   outputs:   string:
                      The resulting string after evaluation. If an error has occurred, this string
                      will be empty. The error messages can be retrieved by calling print_messages_str()
                      in Error.mo.
-             InteractiveSymbolTable"
-  input InteractiveStmts inInteractiveStmts;
-  input InteractiveSymbolTable inInteractiveSymbolTable;
+             SymbolTable"
+  input Statements inStatements;
+  input SymbolTable inSymbolTable;
   input Boolean inBoolean;
   output String outString;
-  output InteractiveSymbolTable outInteractiveSymbolTable;
+  output SymbolTable outSymbolTable;
 algorithm
-  (outString,outInteractiveSymbolTable):=
-  matchcontinue (inInteractiveStmts,inInteractiveSymbolTable,inBoolean)
+  (outString,outSymbolTable) := matchcontinue (inStatements,inSymbolTable,inBoolean)
     local
       String res,res_1,res2,res_2;
-      InteractiveSymbolTable newst,st,newst_1;
+      SymbolTable newst,st,newst_1;
       Boolean echo,semicolon,verbose;
-      InteractiveStmt x;
-      list<InteractiveStmt> xs;
+      Statement x;
+      list<Statement> xs;
 
     case (ISTMTS(interactiveStmtLst = {x},semicolon = semicolon),st,verbose)
       equation
+        showStatement(x, semicolon); 
         (res,newst) = evaluate2(ISTMTS({x},verbose), st);
         echo = getEcho();
         res_1 = selectResultstr(res, semicolon, verbose, echo);
@@ -277,6 +277,7 @@ algorithm
 
     case (ISTMTS(interactiveStmtLst = (x :: xs),semicolon = semicolon),st,verbose)
       equation
+        showStatement(x, semicolon);
         (res,newst) = evaluate2(ISTMTS({x},semicolon), st);
         echo = getEcho();
         res_1 = selectResultstr(res, semicolon, verbose, echo);
@@ -293,31 +294,26 @@ public function evaluateToStdOut
   The resulting string after evaluation is printed. 
   If an error has occurred, this string will be empty. 
   The error messages can be retrieved by calling print_messages_str() in Error.mo."
-  input InteractiveStmts inInteractiveStmts;
-  input InteractiveSymbolTable inInteractiveSymbolTable;
+  input Statements inStatements;
+  input SymbolTable inSymbolTable;
   input Boolean inBoolean;
-  output InteractiveSymbolTable outInteractiveSymbolTable;
+  output SymbolTable outSymbolTable;
 algorithm
-  outInteractiveSymbolTable := matchcontinue (inInteractiveStmts,inInteractiveSymbolTable,inBoolean)
+  outSymbolTable := matchcontinue (inStatements,inSymbolTable,inBoolean)
     local
       String res,res_1;
-      InteractiveSymbolTable newst,st,newst_1;
+      SymbolTable newst,st,newst_1;
       Boolean echo,semicolon,verbose;
-      InteractiveStmt x;
-      InteractiveStmts new;
-      list<InteractiveStmt> xs;
+      Statement x;
+      Statements new;
+      list<Statement> xs;
 
     case (ISTMTS(interactiveStmtLst = {x},semicolon = semicolon),st,verbose)
       equation 
+        showStatement(x,semicolon);
         new = ISTMTS({x},verbose);
-        
-        //System.startTimer();
-        //str = Dump.printIstmtStr(new);
-        //print("\nEvaluate: " +& str);
         (res,newst) = evaluate2(new, st);
-        //System.stopTimer();
-        //print("\nEvaluate: " +& str +& ": " +&  realString(System.getTimerIntervalTime()));
-        
+                
         echo = getEcho();
         res_1 = selectResultstr(res, semicolon, verbose, echo);
         print(res_1);
@@ -326,15 +322,9 @@ algorithm
 
     case (ISTMTS(interactiveStmtLst = (x :: xs),semicolon = semicolon),st,verbose)
       equation
+        showStatement(x,semicolon);
         new = ISTMTS({x},semicolon);
-                
-        //System.startTimer();
-        //str = Dump.printIstmtStr(new);
-        //print("\nEvaluate: " +& str);
         (res,newst) = evaluate2(new, st);
-        //System.stopTimer();
-        //print("\nEvaluate: " +& str +& ": " +&  realString(System.getTimerIntervalTime()));
-
         echo = getEcho();
         res_1 = selectResultstr(res, semicolon, verbose, echo);
         print(res_1);
@@ -343,6 +333,22 @@ algorithm
         newst_1;
   end matchcontinue;
 end evaluateToStdOut;
+
+protected function showStatement
+  input Statement s;
+  input Boolean semicolon;
+algorithm
+  _:= matchcontinue(s, semicolon)
+    case (s, semicolon)
+      equation
+        true = RTOpts.debugFlag("showStatement");
+        print("Evaluating: " +& Dump.printIstmtStr(ISTMTS({s}, semicolon)) +& "\n");        
+      then 
+        ();
+    
+    else ();
+  end matchcontinue;
+end showStatement;
 
 protected function selectResultstr
 "function: selectResultstr
@@ -382,12 +388,12 @@ public function typeCheckFunction
   Errors are handled using side effects in Error.mo
 Note: This does not work for recursive functions, so don't use it!"
   input Absyn.Program inProgram;
-  input InteractiveSymbolTable inInteractiveSymbolTable;
+  input SymbolTable inSymbolTable;
 algorithm
-  _ := matchcontinue (inProgram,inInteractiveSymbolTable)
+  _ := matchcontinue (inProgram,inSymbolTable)
     local
       Absyn.Restriction restriction;
-      InteractiveSymbolTable st;
+      SymbolTable st;
       list<Env.Frame> env,env_1;
       SCode.Element scode_class;
       Absyn.Class absyn_class,cls;
@@ -437,20 +443,20 @@ end typeCheckFunction;
 public function evaluate2
 "function: evaluate2
   Helper function to evaluate."
-  input InteractiveStmts inInteractiveStmts;
-  input InteractiveSymbolTable inInteractiveSymbolTable;
+  input Statements inStatements;
+  input SymbolTable inSymbolTable;
   output String outString;
-  output InteractiveSymbolTable outInteractiveSymbolTable;
+  output SymbolTable outSymbolTable;
 algorithm
-  (outString,outInteractiveSymbolTable) := matchcontinue (inInteractiveStmts,inInteractiveSymbolTable)
+  (outString,outSymbolTable) := matchcontinue (inStatements,inSymbolTable)
     local
       String varsStr,str,str_1;
-      InteractiveSymbolTable st,newst,st_1;
-      InteractiveStmts stmts;
+      SymbolTable st,newst,st_1;
+      Statements stmts;
       Absyn.AlgorithmItem algitem;
       Boolean outres;
       Absyn.Exp exp;
-      list<InteractiveVariable> vars;
+      list<Variable> vars;
     /* intercept getVersion() */
     case
       (ISTMTS(interactiveStmtLst =
@@ -511,16 +517,16 @@ protected function evaluateAlgStmt "function: evaluateAlgStmt
    are recursivly evalutated and a new interactive symbol table is returned.
 "
   input Absyn.AlgorithmItem inAlgorithmItem;
-  input InteractiveSymbolTable inInteractiveSymbolTable;
+  input SymbolTable inSymbolTable;
   output String outString;
-  output InteractiveSymbolTable outInteractiveSymbolTable;
+  output SymbolTable outSymbolTable;
 algorithm
-  (outString,outInteractiveSymbolTable) := matchcontinue (inAlgorithmItem,inInteractiveSymbolTable)
+  (outString,outSymbolTable) := matchcontinue (inAlgorithmItem,inSymbolTable)
     local
       list<Env.Frame> env;
       DAE.Exp econd,msg_1,sexp,srexp;
       DAE.Properties prop,rprop;
-      InteractiveSymbolTable st_1,st_2,st_3,st_4,st,newst;
+      SymbolTable st_1,st_2,st_3,st_4,st,newst;
       Absyn.Exp cond,msg,exp,rexp;
       Absyn.Program p;
       String str,ident;
@@ -533,7 +539,7 @@ algorithm
       tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> cond1;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> cond2,cond3,elseifexpitemlist;
       list<Absyn.AlgorithmItem> algitemlist,elseitemlist;
-      list<InteractiveVariable> vars;
+      list<Variable> vars;
       String iter,estr;
       list<Absyn.AlgorithmItem> algItemList;
       Values.Value startv, stepv, stopv;
@@ -686,16 +692,16 @@ protected function evaluateForStmt
   input String iter "The iterator variable which will be assigned different values";
   input list<Values.Value> valList "List of values that the iterator later will be assigned to";
   input list<Absyn.AlgorithmItem> algItemList;
-  input InteractiveSymbolTable inInteractiveSymbolTable;
-  output InteractiveSymbolTable outInteractiveSymbolTable;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
 algorithm
-  outInteractiveSymbolTable:=
-  match (iter,valList,algItemList, inInteractiveSymbolTable)
+  outSymbolTable:=
+  match (iter,valList,algItemList, inSymbolTable)
     local
       Values.Value val;
       list<Values.Value> vallst;
       list<Absyn.AlgorithmItem> algItems;
-      InteractiveSymbolTable st1,st2,st3,st4,st5;
+      SymbolTable st1,st2,st3,st4,st5;
       String str;
     case (iter, val::vallst, algItems, st1)
     equation
@@ -720,14 +726,14 @@ protected function evaluateForStmtRangeOpt
   input Values.Value stepVal;
   input Values.Value stopVal;
   input list<Absyn.AlgorithmItem> algItemList;
-  input InteractiveSymbolTable inInteractiveSymbolTable;
-  output InteractiveSymbolTable outInteractiveSymbolTable;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
 algorithm
-  outInteractiveSymbolTable := matchcontinue (iter, startVal, stepVal, stopVal, algItemList, inInteractiveSymbolTable)
+  outSymbolTable := matchcontinue (iter, startVal, stepVal, stopVal, algItemList, inSymbolTable)
     local
       Values.Value startv, stepv, stopv, nextv;
       list<Absyn.AlgorithmItem> algItems;
-      InteractiveSymbolTable st1,st2,st3,st4,st5;
+      SymbolTable st1,st2,st3,st4,st5;
     
     case (iter, startv, stepv, stopv, algItems, st1)
       equation
@@ -754,14 +760,14 @@ protected function evaluateWhileStmt
   input Values.Value inValue;
   input Absyn.Exp inExp;
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
-  input InteractiveSymbolTable inInteractiveSymbolTable;
+  input SymbolTable inSymbolTable;
   input Absyn.Info info;
-  output InteractiveSymbolTable outInteractiveSymbolTable;
+  output SymbolTable outSymbolTable;
 algorithm
-  outInteractiveSymbolTable:=
-  matchcontinue (inValue,inExp,inAbsynAlgorithmItemLst,inInteractiveSymbolTable,info)
+  outSymbolTable:=
+  matchcontinue (inValue,inExp,inAbsynAlgorithmItemLst,inSymbolTable,info)
     local
-      InteractiveSymbolTable st,st_1,st_2,st_3;
+      SymbolTable st,st_1,st_2,st_3;
       Values.Value value;
       Absyn.Exp exp;
       list<Absyn.AlgorithmItem> algitemlst;
@@ -799,14 +805,14 @@ protected function evaluatePartOfIfStatement
   input Absyn.Exp inExp;
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
   input list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> inTplAbsynExpAbsynAlgorithmItemLstLst;
-  input InteractiveSymbolTable inInteractiveSymbolTable;
+  input SymbolTable inSymbolTable;
   input Absyn.Info info;
-  output InteractiveSymbolTable outInteractiveSymbolTable;
+  output SymbolTable outSymbolTable;
 algorithm
-  outInteractiveSymbolTable:=
-  matchcontinue (inValue,inExp,inAbsynAlgorithmItemLst,inTplAbsynExpAbsynAlgorithmItemLstLst,inInteractiveSymbolTable,info)
+  outSymbolTable:=
+  matchcontinue (inValue,inExp,inAbsynAlgorithmItemLst,inTplAbsynExpAbsynAlgorithmItemLstLst,inSymbolTable,info)
     local
-      InteractiveSymbolTable st_1,st;
+      SymbolTable st_1,st;
       list<Absyn.AlgorithmItem> algitemlst;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> algrest;
       String estr,tstr;
@@ -839,14 +845,14 @@ protected function evaluateIfStatementLst
   Evaluates all parts of a if statement
   (i.e. a list of exp  statements)"
   input list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> inTplAbsynExpAbsynAlgorithmItemLstLst;
-  input InteractiveSymbolTable inInteractiveSymbolTable;
+  input SymbolTable inSymbolTable;
   input Absyn.Info info;
-  output InteractiveSymbolTable outInteractiveSymbolTable;
+  output SymbolTable outSymbolTable;
 algorithm
-  outInteractiveSymbolTable:=
-  match (inTplAbsynExpAbsynAlgorithmItemLstLst,inInteractiveSymbolTable,info)
+  outSymbolTable:=
+  match (inTplAbsynExpAbsynAlgorithmItemLstLst,inSymbolTable,info)
     local
-      InteractiveSymbolTable st,st_1,st_2;
+      SymbolTable st,st_1,st_2;
       Values.Value value;
       Absyn.Exp exp;
       list<Absyn.AlgorithmItem> algitemlst;
@@ -865,13 +871,13 @@ protected function evaluateAlgStmtLst
 "function: evaluateAlgStmtLst
    Evaluates a list of algorithm statements"
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
-  input InteractiveSymbolTable inInteractiveSymbolTable;
-  output InteractiveSymbolTable outInteractiveSymbolTable;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
 algorithm
-  outInteractiveSymbolTable:=
-  match (inAbsynAlgorithmItemLst,inInteractiveSymbolTable)
+  outSymbolTable:=
+  match (inAbsynAlgorithmItemLst,inSymbolTable)
     local
-      InteractiveSymbolTable st,st_1,st_2;
+      SymbolTable st,st_1,st_2;
       Absyn.AlgorithmItem algitem;
       list<Absyn.AlgorithmItem> algrest;
     case ({},st) then st;
@@ -892,26 +898,26 @@ protected function evaluateExpr
    Note that this function may fail.
 
    Input:  Absyn.Exp - Expression to be evaluated
-           InteractiveSymbolTable - The symbol table
+           SymbolTable - The symbol table
    Output: Values.Value - Resulting value of the expression"
   input Absyn.Exp inExp;
-  input InteractiveSymbolTable inInteractiveSymbolTable;
+  input SymbolTable inSymbolTable;
   input Absyn.Info info;
   output Values.Value outValue;
-  output InteractiveSymbolTable outInteractiveSymbolTable;
+  output SymbolTable outSymbolTable;
 algorithm
-  (outValue,outInteractiveSymbolTable):=
-  matchcontinue (inExp,inInteractiveSymbolTable,info)
+  (outValue,outSymbolTable):=
+  matchcontinue (inExp,inSymbolTable,info)
     local
       list<Env.Frame> env;
       DAE.Exp sexp;
       DAE.Properties prop;
-      InteractiveSymbolTable st_1,st_2,st;
+      SymbolTable st_1,st_2,st;
       Values.Value value;
       Absyn.Exp exp;
       Absyn.Program p;
       Env.Cache cache;
-      list<InteractiveVariable> vars;
+      list<Variable> vars;
       Absyn.ComponentRef cr;
 
       /* Special case to lookup fields of records.
@@ -936,12 +942,12 @@ protected function stringRepresOfExpr
    This function returns a string representation of an expression. For example expression
    33+22 will result in \"55\" and expression: \"my\" + \"string\" will result in  \"\"my\"+\"string\"\". "
   input Absyn.Exp exp;
-  input InteractiveSymbolTable st;
+  input SymbolTable st;
   output String estr;
   list<Env.Frame> env;
   DAE.Exp sexp;
   DAE.Properties prop;
-  InteractiveSymbolTable st_1;
+  SymbolTable st_1;
 algorithm
   env := buildEnvFromSymboltable(st);
   (_,sexp,prop,SOME(st_1)) := Static.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true,Prefix.NOPRE(),Absyn.dummyInfo);
@@ -956,19 +962,19 @@ protected function evaluateExprToStr
    and the errors will be stated using Error.mo
 
    Input:  Absyn.Exp - Expression to be evaluated
-           InteractiveSymbolTable - The symbol table
+           SymbolTable - The symbol table
    Output: string - The resulting value represented as a string"
   input Absyn.Exp inExp;
-  input InteractiveSymbolTable inInteractiveSymbolTable;
+  input SymbolTable inSymbolTable;
   input Absyn.Info info;
   output String outString;
-  output InteractiveSymbolTable outInteractiveSymbolTable;
+  output SymbolTable outSymbolTable;
 algorithm
-  (outString,outInteractiveSymbolTable):=
-  matchcontinue (inExp,inInteractiveSymbolTable,info)
+  (outString,outSymbolTable):=
+  matchcontinue (inExp,inSymbolTable,info)
     local
       Values.Value value;
-      InteractiveSymbolTable st_1,st;
+      SymbolTable st_1,st;
       String str;
       Absyn.Exp exp;
     case (exp,st,info)
@@ -1005,7 +1011,7 @@ end getIdentFromTupleCrefexp;
 protected function getVariableNames
 "function: getVariableNames
   Return a string containing a comma separated list of variables."
-  input list<InteractiveVariable> vars;
+  input list<Variable> vars;
   output String res;
   list<String> strlst;
   String str;
@@ -1018,14 +1024,14 @@ end getVariableNames;
 protected function getVariableListStr
 "function: getVariableListStr
   Helper function to getVariableNames"
-  input list<InteractiveVariable> inInteractiveVariableLst;
+  input list<Variable> inVariableLst;
   output list<String> outStringLst;
 algorithm
   outStringLst:=
-  matchcontinue (inInteractiveVariableLst)
+  matchcontinue (inVariableLst)
     local
       list<String> res;
-      list<InteractiveVariable> vs;
+      list<Variable> vs;
       String p;
     case ({}) then {};
     case ((IVAR(varIdent = "$echo") :: vs))
@@ -1046,14 +1052,14 @@ public function getTypeOfVariable
   Return the type of an interactive variable,
   given a list of variables and a variable identifier."
   input Absyn.Ident inIdent;
-  input list<InteractiveVariable> inInteractiveVariableLst;
+  input list<Variable> inVariableLst;
   output DAE.Type outType;
 algorithm
-  outType := matchcontinue (inIdent,inInteractiveVariableLst)
+  outType := matchcontinue (inIdent,inVariableLst)
     local
       String id,varid;
       DAE.Type tp;
-      list<InteractiveVariable> rest;
+      list<Variable> rest;
     
     case (id,{}) then fail();
     case (varid,(IVAR(varIdent = id,type_ = tp) :: rest))
@@ -1077,13 +1083,13 @@ protected function addVarsToSymboltable
   input list<Absyn.Ident> inAbsynIdentLst;
   input list<Values.Value> inValuesValueLst;
   input list<DAE.Type> inTypesTypeLst;
-  input InteractiveSymbolTable inInteractiveSymbolTable;
-  output InteractiveSymbolTable outInteractiveSymbolTable;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
 algorithm
-  outInteractiveSymbolTable:=
-  match (inAbsynIdentLst,inValuesValueLst,inTypesTypeLst,inInteractiveSymbolTable)
+  outSymbolTable:=
+  match (inAbsynIdentLst,inValuesValueLst,inTypesTypeLst,inSymbolTable)
     local
-      InteractiveSymbolTable st,st_1,st_2;
+      SymbolTable st,st_1,st_2;
       String id;
       list<String> idrest;
       Values.Value v;
@@ -1106,13 +1112,13 @@ public function addVarToSymboltable
   input Absyn.Ident inIdent;
   input Values.Value inValue;
   input DAE.Type inType;
-  input InteractiveSymbolTable inInteractiveSymbolTable;
-  output InteractiveSymbolTable outInteractiveSymbolTable;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
 algorithm
-  outInteractiveSymbolTable:=
-  match (inIdent,inValue,inType,inInteractiveSymbolTable)
+  outSymbolTable:=
+  match (inIdent,inValue,inType,inSymbolTable)
     local
-      list<InteractiveVariable> vars_1,vars;
+      list<Variable> vars_1,vars;
       String ident;
       Values.Value v;
       DAE.Type t;
@@ -1148,13 +1154,13 @@ public function appendVarToSymboltable
   input Absyn.Ident inIdent;
   input Values.Value inValue;
   input DAE.Type inType;
-  input InteractiveSymbolTable inInteractiveSymbolTable;
-  output InteractiveSymbolTable outInteractiveSymbolTable;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
 algorithm
-  outInteractiveSymbolTable:=
-  match (inIdent,inValue,inType,inInteractiveSymbolTable)
+  outSymbolTable:=
+  match (inIdent,inValue,inType,inSymbolTable)
     local
-      list<InteractiveVariable> vars_1,vars;
+      list<Variable> vars_1,vars;
       String ident;
       Values.Value v;
       DAE.Type t;
@@ -1183,13 +1189,13 @@ end appendVarToSymboltable;
 
 public function deleteVarFromSymboltable
   input Absyn.Ident inIdent;
-  input InteractiveSymbolTable inInteractiveSymbolTable;
-  output InteractiveSymbolTable outInteractiveSymbolTable;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
 algorithm
-  outInteractiveSymbolTable:=
-  match (inIdent,inInteractiveSymbolTable)
+  outSymbolTable:=
+  match (inIdent,inSymbolTable)
     local
-      list<InteractiveVariable> vars_1,vars;
+      list<Variable> vars_1,vars;
       String ident;
       Absyn.Program p;
       Option<list<SCode.Element>> sp;
@@ -1217,14 +1223,14 @@ end deleteVarFromSymboltable;
 protected function deleteVarFromVarlist
 "deletes the first variable found"
   input Absyn.Ident inIdent;
-  input list<InteractiveVariable> inInteractiveVariableLst;
-  output list<InteractiveVariable> outInteractiveVariableLst;
+  input list<Variable> inVariableLst;
+  output list<Variable> outVariableLst;
 algorithm
-  outInteractiveVariableLst := matchcontinue (inIdent,inInteractiveVariableLst)
+  outVariableLst := matchcontinue (inIdent,inVariableLst)
     local
       String ident,id2;
-      list<InteractiveVariable> rest, rest2;
-      InteractiveVariable var;
+      list<Variable> rest, rest2;
+      Variable var;
 
     case (ident,{})
       then {};
@@ -1248,15 +1254,15 @@ protected function addVarToVarlist
   input Absyn.Ident inIdent;
   input Values.Value inValue;
   input DAE.Type inType;
-  input list<InteractiveVariable> inInteractiveVariableLst;
-  output list<InteractiveVariable> outInteractiveVariableLst;
+  input list<Variable> inVariableLst;
+  output list<Variable> outVariableLst;
 algorithm
-  outInteractiveVariableLst := matchcontinue (inIdent,inValue,inType,inInteractiveVariableLst)
+  outVariableLst := matchcontinue (inIdent,inValue,inType,inVariableLst)
     local
       String ident,id2;
       Values.Value v,val2;
       DAE.Type t,t2;
-      list<InteractiveVariable> rest,rest_1;
+      list<Variable> rest,rest_1;
     case (ident,v,t,(IVAR(varIdent = id2) :: rest))
       equation
         true = stringEq(ident, id2);
@@ -1277,16 +1283,16 @@ public function buildEnvFromSymboltable
    author: PA
    Builds an environment from a symboltable by adding all
    interactive variables and their bindings to the environment."
-  input InteractiveSymbolTable inInteractiveSymbolTable;
+  input SymbolTable inSymbolTable;
   output Env.Env outEnv;
 algorithm
-  outEnv := match (inInteractiveSymbolTable)
+  outEnv := match (inSymbolTable)
     local
       list<SCode.Element> p_1,sp;
       list<Env.Frame> env,env_1;
       Absyn.Program p;
       list<InstantiatedClass> ic;
-      list<InteractiveVariable> vars;
+      list<Variable> vars;
       list<CompiledCFunction> cf;
     case (SYMBOLTABLE(explodedAst = SOME(p_1), lstVarVal = vars))
       equation
@@ -1308,18 +1314,18 @@ end buildEnvFromSymboltable;
 protected function addVarsToEnv
 "function: addVarsToEnv
   Helper function to buildEnvFromSymboltable."
-  input list<InteractiveVariable> inInteractiveVariableLst;
+  input list<Variable> inVariableLst;
   input Env.Env inEnv;
   output Env.Env outEnv;
 algorithm
   outEnv:=
-  matchcontinue (inInteractiveVariableLst,inEnv)
+  matchcontinue (inVariableLst,inEnv)
     local
       list<Env.Frame> env_1,env_2,env;
       String id;
       Values.Value v;
       DAE.Type tp;
-      list<InteractiveVariable> rest;
+      list<Variable> rest;
     case ((IVAR(varIdent = id,value = v,type_ = tp) :: rest),env)
       equation
         (_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
@@ -1344,7 +1350,7 @@ end addVarsToEnv;
 
 protected function matchApiFunction
   "Checks if the interactive statement list contains a function with the given name."
-  input InteractiveStmts inStmts;
+  input Statements inStmts;
   input String inFunctionName;
 algorithm
   _ := match(inStmts, inFunctionName)
@@ -1360,7 +1366,7 @@ end matchApiFunction;
 
 protected function getApiFunctionArgs
   "Returns a list of arguments to the function in the interactive statement list."
-  input InteractiveStmts inStmts;
+  input Statements inStmts;
   output list<Absyn.Exp> outArgs;
 algorithm
   outArgs := match(inStmts)
@@ -1372,7 +1378,7 @@ end getApiFunctionArgs;
 
 protected function getApiFunctionNamedArgs
   "Returns a list of named arguments to the function in the interactive statement list."
-  input InteractiveStmts inStmts;
+  input Statements inStmts;
   output list<Absyn.NamedArg> outArgs;
 algorithm
   outArgs := match(inStmts)
@@ -1388,23 +1394,23 @@ protected function evaluateGraphicalApi2
   The reason for having two function is that the generated c-code can
   not be complied in Visual studio if the number of rules are large.
   This was actually fixed in the latest version of MetaModelica Compiler (MMC)!"
-  input InteractiveStmts inInteractiveStmts;
-  input InteractiveSymbolTable inInteractiveSymbolTable;
+  input Statements inStatements;
+  input SymbolTable inSymbolTable;
   output String outString;
-  output InteractiveSymbolTable outInteractiveSymbolTable;
+  output SymbolTable outSymbolTable;
 algorithm
-  (outString,outInteractiveSymbolTable):=
-  matchcontinue (inInteractiveStmts,inInteractiveSymbolTable)
+  (outString,outSymbolTable):=
+  matchcontinue (inStatements,inSymbolTable)
     local
       Absyn.Program newp,p,p_1;
       String resstr,ident,filename,cmt,variability,causality,name,value,top_names_str,annotationVersion;
       Absyn.ComponentRef class_,subident,comp_ref,cr,crident;
       Absyn.Modification mod;
-      InteractiveSymbolTable st, newst;
+      SymbolTable st, newst;
       Absyn.Path p_class;
       Boolean finalPrefix,flowPrefix,streamPrefix,protected_,repl,dref1,dref2,addFunctions,noSimplify,show;
       Integer rest,limit;
-      InteractiveStmts istmts;
+      Statements istmts;
 
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation
@@ -1615,20 +1621,20 @@ protected function evaluateGraphicalApi
    NOTE: Do NOT ADD more rules to thisfunction, instead add
    them to evaluate_graphical_api2, since it wont compile in
    Visual Studio otherwise."
-  input InteractiveStmts inInteractiveStmts;
-  input InteractiveSymbolTable inInteractiveSymbolTable;
+  input Statements inStatements;
+  input SymbolTable inSymbolTable;
   output String outString;
-  output InteractiveSymbolTable outInteractiveSymbolTable;
+  output SymbolTable outSymbolTable;
 algorithm
-  (outString,outInteractiveSymbolTable):=
-  matchcontinue (inInteractiveStmts,inInteractiveSymbolTable)
+  (outString,outSymbolTable):=
+  matchcontinue (inStatements,inSymbolTable)
     local
       Absyn.Program p_1,p,newp,p1;
       list<Absyn.Class> aclasses;
       String resstr,name,top_names_str,str,cmt,s1,res_str,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname;
       Absyn.ComponentRef class_,ident,subident,cr,tp,model_,cr1,cr2,c1,c2,old_cname,new_cname,cname,from_ident,to_ident;
       Absyn.Exp exp;
-      InteractiveSymbolTable st,newst;
+      SymbolTable st,newst;
       list<SCode.Element> s,s_1;
       Absyn.Modification mod;
       Absyn.Path path_1,path,wpath;
@@ -1637,7 +1643,7 @@ algorithm
       Boolean b1,b2,b,omcfound,gcc_res,touch_res,rm_res,uname_res;
       list<LoadedFile> lf;
       AbsynDep.Depends aDep;
-      InteractiveStmts istmts;
+      Statements istmts;
       Absyn.Path modelpath;
       list<String> vars;
       list<Values.Value> vals;
@@ -9015,14 +9021,13 @@ public function removeCompiledFunctions
   input list<CompiledCFunction> inTplAbsynPathTypesTypeLst;
   output list<CompiledCFunction> outTplAbsynPathTypesTypeLst;
 algorithm
-  outTplAbsynPathTypesTypeLst:=
-  matchcontinue (inProgram,inTplAbsynPathTypesTypeLst)
+  outTplAbsynPathTypesTypeLst := matchcontinue (inProgram,inTplAbsynPathTypesTypeLst)
     local
       list<CompiledCFunction> cfs_1,cfs;
       String id;
     case (Absyn.PROGRAM(classes = {Absyn.CLASS(name = id,restriction = Absyn.R_FUNCTION())}),cfs)
       equation
-        cfs_1 = removeCf(Absyn.IDENT(id), cfs);
+        cfs_1 = removeCf(cfs, Absyn.IDENT(id));
       then
         cfs_1;
     case (_,cfs) then cfs;
@@ -9045,7 +9050,7 @@ algorithm
       list<Absyn.ClassPart> parts;
     case (p, Absyn.CLASS(restriction = Absyn.R_FUNCTION()), cf)
       equation
-        newCF = removeCf(p, cf);
+        newCF = removeCf(cf, p);
       then
         newCF;
     /* a classs with parts */
@@ -9096,7 +9101,7 @@ algorithm
    case (p,Absyn.EXTERNAL(externalDecl = Absyn.EXTERNALDECL(funcName = SOME(id))) :: rest, cf)
      equation
        p1 = Absyn.joinPaths(p, Absyn.IDENT(id));
-       newCF = removeCf(p1, cf);
+       newCF = removeCf(cf, p1);
        newCF_1 = removeAnyPartsFunctions(p, rest, newCF);
      then
        newCF_1;
@@ -9140,35 +9145,67 @@ algorithm
   end matchcontinue;
 end removeAnyEltsFunctions;
 
-public function removeCf
+public function removeCfAndDependencies
 "function: removeCf
   Helper function to removeCompiledFunctions and removeAnySubFunctions."
-  input Absyn.Path inPath;
-  input list<CompiledCFunction> inTplAbsynPathTypesTypeLst;
-  output list<CompiledCFunction> outTplAbsynPathTypesTypeLst;
+  input list<CompiledCFunction> inCompiledFunctions;
+  input list<Absyn.Path> functionAndDependencies "the main function path plus all dependencies!";
+  output list<CompiledCFunction> outCompiledFunctions;
 algorithm
-  outTplAbsynPathTypesTypeLst:=
-  matchcontinue (inPath,inTplAbsynPathTypesTypeLst)
+  outCompiledFunctions := matchcontinue (inCompiledFunctions, functionAndDependencies)
     local
-      list<CompiledCFunction> res,rest;
-      Absyn.Path p1,p2;
+      list<CompiledCFunction> cf;
+      Absyn.Path functionName;
+      list<Absyn.Path> functionNames;
       DAE.Type t;
       Integer funcHandle;
       String tmp;
       CompiledCFunction item;
-    case (_,{}) then {};
-      //t as (DAE.T_FUNCTION(fargs,(outtype as (DAE.T_COMPLEX(ClassInf.RECORD(_),_,_),_))),_)),env_1)
-    case (p1,(CFunction(p2,t,funcHandle,_,_) :: rest))
+    
+    case ({}, _) then {};
+      
+    case (_, {}) then {};
+    
+    case (cf, functionName::functionNames)
       equation
-        true = ModUtil.pathEqual(p1, p2);
-        tmp = ModUtil.pathStringReplaceDot(p1, "_");
+        cf = removeCf(cf, functionName);
+        cf = removeCfAndDependencies(cf, functionNames);
+      then
+        cf;
+    
+  end matchcontinue;
+end removeCfAndDependencies;
+
+public function removeCf
+"function: removeCf
+  Helper function to removeCompiledFunctions and removeAnySubFunctions."
+  input list<CompiledCFunction> inCompiledFunctions;
+  input Absyn.Path functionName "the main function path";
+  output list<CompiledCFunction> outCompiledFunctions;
+algorithm
+  outCompiledFunctions := matchcontinue (inCompiledFunctions, functionName)
+    local
+      list<CompiledCFunction> res,rest;
+      Absyn.Path functionInCf, functionName;
+      DAE.Type t;
+      Integer funcHandle;
+      String tmp;
+      CompiledCFunction item;
+    
+    case ({}, _) then {};
+    
+    case ((CFunction(functionInCf,t,funcHandle,_,_) :: rest), _)
+      equation
+        true = ModUtil.pathEqual(functionInCf, functionName);
+        tmp = ModUtil.pathStringReplaceDot(functionName, "_");
         System.freeFunction(funcHandle);
-        res = removeCf(p1, rest);
+        res = removeCf(rest, functionName);
       then
         res;
-    case (p1,(item :: rest))
+    
+    case ((item :: rest), _)
       equation
-        res = removeCf(p1, rest);
+        res = removeCf(rest, functionName);
       then
         (item :: res);
   end matchcontinue;
@@ -9243,15 +9280,15 @@ public function addScope
    and IMPORT_DEFINITION so an empty class definition can be
    inserted at the correct place."
   input Absyn.Program inProgram;
-  input list<InteractiveVariable> inInteractiveVariableLst;
+  input list<Variable> inVariableLst;
   output Absyn.Program outProgram;
 algorithm
   outProgram:=
-  matchcontinue (inProgram,inInteractiveVariableLst)
+  matchcontinue (inProgram,inVariableLst)
     local
       Absyn.Path path,newpath,path2;
       list<Absyn.Class> cls;
-      list<InteractiveVariable> vars;
+      list<Variable> vars;
       Absyn.Within w;
       Absyn.TimeStamp ts;
       Absyn.Program p;
@@ -9284,13 +9321,13 @@ public function updateScope
    1. BEGIN_DEFINITION ident appends ident to scope
    2.END_DEFINITION ident removes ident from scope"
   input Absyn.Program inProgram;
-  input list<InteractiveVariable> inInteractiveVariableLst;
-  output list<InteractiveVariable> outInteractiveVariableLst;
+  input list<Variable> inVariableLst;
+  output list<Variable> outVariableLst;
 algorithm
-  outInteractiveVariableLst:=
-  match (inProgram,inInteractiveVariableLst)
+  outVariableLst:=
+  match (inProgram,inVariableLst)
     local
-      list<InteractiveVariable> vars;
+      list<Variable> vars;
 
     /*
     case (Absyn.BEGIN_DEFINITION(path = Absyn.IDENT(name = id)),vars)
@@ -9337,14 +9374,14 @@ protected function removeVarFromVarlist
 "function: removeVarFromVarlist
   Helper function to updateScope."
   input Absyn.Ident inIdent;
-  input list<InteractiveVariable> inInteractiveVariableLst;
-  output list<InteractiveVariable> outInteractiveVariableLst;
+  input list<Variable> inVariableLst;
+  output list<Variable> outVariableLst;
 algorithm
-  outInteractiveVariableLst := matchcontinue (inIdent,inInteractiveVariableLst)
+  outVariableLst := matchcontinue (inIdent,inVariableLst)
     local
       String id1,id2;
-      list<InteractiveVariable> rest,rest_1;
-      InteractiveVariable v;
+      list<Variable> rest,rest_1;
+      Variable v;
     
     case (_,{}) then {};
     
@@ -9366,16 +9403,16 @@ end removeVarFromVarlist;
 protected function getVariableValue
 "function: getVariableValue
   Return the value of an interactive variable
-  from a list of InteractiveVariable."
+  from a list of Variable."
   input Absyn.Ident inIdent;
-  input list<InteractiveVariable> inInteractiveVariableLst;
+  input list<Variable> inVariableLst;
   output Values.Value outValue;
 algorithm
-  outValue := matchcontinue (inIdent,inInteractiveVariableLst)
+  outValue := matchcontinue (inIdent,inVariableLst)
     local
       String id1,id2;
       Values.Value v;
-      list<InteractiveVariable> rest;
+      list<Variable> rest;
     
     case (id1,(IVAR(varIdent = id2,value = v) :: _))
       equation
@@ -9395,9 +9432,9 @@ end getVariableValue;
 protected function getVariableValueLst
 "function: getVariableValue
   Return the value of an interactive variable
-  from a list of InteractiveVariable."
+  from a list of Variable."
   input list<String> ids;
-  input list<InteractiveVariable> vars;
+  input list<Variable> vars;
   output Values.Value val;
 algorithm
   val := matchcontinue (ids,vars)
@@ -9405,7 +9442,7 @@ algorithm
       Integer ix;
       String id1,id2,id3;
       Values.Value v;
-      list<InteractiveVariable> rest;
+      list<Variable> rest;
       list<String> comp;
       list<Values.Value> vals;
       DAE.Type t;
@@ -10244,9 +10281,9 @@ protected function getNthInheritedClass
   the nth inherited class in the class referenced by the ComponentRef."
   input Absyn.ComponentRef inComponentRef;
   input Integer inInteger;
-  input InteractiveSymbolTable st;
+  input SymbolTable st;
   output String outString;
-  output InteractiveSymbolTable outSt;
+  output SymbolTable outSt;
 algorithm
   (outString,outSt) := matchcontinue (inComponentRef,inInteger,st)
     local
@@ -10757,9 +10794,9 @@ public function getComponents
    This function takes a `ComponentRef\', a `Program\' and an int and  returns
    a list of all components, as returned by get_nth_component."
   input Absyn.ComponentRef inComponentRef;
-  input InteractiveSymbolTable st;
+  input SymbolTable st;
   output String outString;
-  output InteractiveSymbolTable outSt;
+  output SymbolTable outSt;
 algorithm
   (outString,outSt) := matchcontinue (inComponentRef,st)
     local
@@ -17968,19 +18005,19 @@ protected function loadFileInteractiveQualified
  This function loads a file ONLY if the
  file is newer than the one already loaded."
   input  String fileName               "Filename to load";
-  input  InteractiveSymbolTable st     "The symboltable where to load the file";
+  input  SymbolTable st     "The symboltable where to load the file";
   output String topClassNamesQualified "The names of the classes from file, qualified!";
-  output InteractiveSymbolTable newst  "The new interactive symboltable";
+  output SymbolTable newst  "The new interactive symboltable";
 algorithm
   (topClassNamesQualified, newst) := matchcontinue (fileName, st)
     local
       String file               "Filename to load";
-      InteractiveSymbolTable s  "The symboltable where to load the file";
+      SymbolTable s  "The symboltable where to load the file";
       String topNamesStr;
       Absyn.Program pAst,newP;
       list<SCode.Element> eAst;
       list<InstantiatedClass> ic;
-      list<InteractiveVariable> iv;
+      list<Variable> iv;
       list<LoadedFile> lf, newLF;
       list<CompiledCFunction> cf;
       AbsynDep.Depends aDep;
@@ -18297,18 +18334,18 @@ protected function parseFile
  This function just parses a file and report contents ONLY if the
  file is newer than the one already loaded."
   input  String fileName               "Filename to load";
-  input  InteractiveSymbolTable st     "The symboltable where to load the file";
+  input  SymbolTable st     "The symboltable where to load the file";
   output String topClassNamesQualified "The names of the classes from file, qualified!";
-  output InteractiveSymbolTable newst  "The new interactive symboltable";
+  output SymbolTable newst  "The new interactive symboltable";
 algorithm
   (topClassNamesQualified, newst) := matchcontinue (fileName, st)
     local
       String file               "Filename to load";
-      InteractiveSymbolTable s  "The symboltable where to load the file";
+      SymbolTable s  "The symboltable where to load the file";
       String topNamesStr;
       Absyn.Program pAst,newP;
       list<InstantiatedClass> ic;
-      list<InteractiveVariable> iv;
+      list<Variable> iv;
       list<LoadedFile> lf, newLF;
       list<CompiledCFunction> cf;
       AbsynDep.Depends aDep;
@@ -18785,15 +18822,15 @@ algorithm
 end getComponentInClass;
 
 public function setSymbolTableAST
-  input InteractiveSymbolTable inSymTab;
+  input SymbolTable inSymTab;
   input Absyn.Program inAST;
-  output InteractiveSymbolTable outSymTab;
+  output SymbolTable outSymTab;
 algorithm
   outSymTab := match(inSymTab, inAST)
     local
       AbsynDep.Depends d;
       list<InstantiatedClass> i;
-      list<InteractiveVariable> v;
+      list<Variable> v;
       list<CompiledCFunction> c;
       list<LoadedFile> l;
     case (SYMBOLTABLE(depends = d, instClsLst = i, 
@@ -18803,7 +18840,7 @@ algorithm
 end setSymbolTableAST;
 
 public function getSymbolTableAST
-  input InteractiveSymbolTable inSymTab;
+  input SymbolTable inSymTab;
   output Absyn.Program outAST;
 algorithm
   outAST := match(inSymTab)    
@@ -18855,9 +18892,9 @@ end getAllClassesInClass;
 public function symbolTableToSCode
 "Similar to SCodeUtil.translateAbsyn2SCode
   But this updates the symboltable to cache the translation."
-  input InteractiveSymbolTable st;
+  input SymbolTable st;
   output SCode.Program program;
-  output InteractiveSymbolTable outSt;
+  output SymbolTable outSt;
 algorithm
   (program,outSt) := match st
     local
@@ -18865,7 +18902,7 @@ algorithm
       AbsynDep.Depends depends;
       Option<SCode.Program> explodedAst;
       list<InstantiatedClass> instClsLst;
-      list<InteractiveVariable> lstVarVal;
+      list<Variable> lstVarVal;
       list<CompiledCFunction> compiledFunctions;
       list<LoadedFile> loadedFiles;
       
@@ -18876,5 +18913,42 @@ algorithm
       then (program,SYMBOLTABLE(ast,depends,SOME(program),instClsLst,lstVarVal,compiledFunctions,loadedFiles));
   end match;
 end symbolTableToSCode;
+
+public function getCompiledFunctions
+"function: getCompiledFunctions"
+  input SymbolTable inSymTab;
+  output list<CompiledCFunction> compiledFunctions;
+algorithm
+  SYMBOLTABLE(compiledFunctions = compiledFunctions) := inSymTab;
+end getCompiledFunctions;
+
+public function dumpCompiledFunctions
+"function: dumpCompiledFunctions"
+  input SymbolTable inSymTab;
+  output String compiledFunctionsStr;
+protected
+  list<CompiledCFunction> compiledFunctions;
+algorithm
+  compiledFunctions := getCompiledFunctions(inSymTab);
+  compiledFunctionsStr := "Functions:\n\t" +& Util.stringDelimitList(Util.listMap(compiledFunctions, dumpCompiledFunction), "\n\t");
+end dumpCompiledFunctions;
+
+public function dumpCompiledFunction
+"function: dumpCompiledFunctions"
+  input CompiledCFunction inCompiledFunction;
+  output String compiledFunctionStr;
+protected
+  Absyn.Path path;
+  DAE.Type retType;
+  Integer funcHandle;
+  Real buildTime "the build time for this function";
+  String loadedFromFile "the file we loaded this function from";  
+algorithm
+  CFunction(path, retType, funcHandle, buildTime, loadedFromFile) := inCompiledFunction;
+  compiledFunctionStr := Absyn.pathString(path) +& 
+                         " ty: " +& Types.printTypeStr(retType) +& 
+                         " build: " +& realString(buildTime) +&
+                         " file: " +& loadedFromFile;
+end dumpCompiledFunction;
 
 end Interactive;

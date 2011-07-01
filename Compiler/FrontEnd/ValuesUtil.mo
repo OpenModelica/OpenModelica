@@ -860,14 +860,11 @@ algorithm
 end powElementwiseArrayelt;
 
 public function expValue "function: expValue
-
-  Returns the value of constant expressions in DAE.Exp
-"
+  Returns the value of constant expressions in DAE.Exp"
   input DAE.Exp inExp;
   output Value outValue;
 algorithm
-  outValue:=
-  match (inExp)
+  outValue := match (inExp)
     local
       Integer i;
       Real r;
@@ -888,7 +885,7 @@ algorithm
     local
       Integer dim;
       list<DAE.Exp> explist;
-      DAE.Type vt;
+      DAE.Type vt, ty;
       DAE.ExpType t;
       DAE.Exp e;
       Values.Value v;
@@ -900,7 +897,7 @@ algorithm
       list<DAE.Dimension> dims;
       Integer i;
       Real r;
-      String s;
+      String s, scope, name, tyStr;
       Boolean b;
       list<DAE.Exp> expl;
       list<DAE.ExpType> tpl;
@@ -909,6 +906,8 @@ algorithm
       Integer ix;
       Absyn.Path path;
       Absyn.CodeNode code;
+      Value valType;
+      DAE.ExpType ety; 
 
     case (Values.INTEGER(integer = i)) then DAE.ICONST(i);
     case (Values.REAL(real = r))       then DAE.RCONST(r);
@@ -967,7 +966,7 @@ algorithm
 
     case(Values.RECORD(path,vallist,namelst,-1))
       equation
-        expl=Util.listMap(vallist,valueExp);
+        expl = Util.listMap(vallist,valueExp);
         tpl = Util.listMap(expl,Expression.typeof);
         varlst = Util.listThreadMap(namelst,tpl,Expression.makeVar);
       then DAE.CALL(path,expl,false,false,DAE.ET_COMPLEX(path,varlst,ClassInf.RECORD(path)),DAE.NO_INLINE());
@@ -1026,6 +1025,12 @@ algorithm
     case (Values.CODE(A=code))
       then DAE.CODE(code,DAE.ET_OTHER());
 
+    case (Values.EMPTY(scope = scope, name = name, tyStr = tyStr, ty = valType))
+      equation
+        ety = Types.elabType(Types.typeOfValue(valType));
+      then 
+        DAE.EMPTY(scope, DAE.CREF_IDENT(name, ety, {}), ety, tyStr);
+    
     case (v)
       equation
         s = "ValuesUtil.valueExp failed for " +& valString(v);
@@ -1992,9 +1997,7 @@ algorithm
 end makeRealMatrix;
 
 public function valString "function: valString
-
-  This function returns a textual representation of a value.
-"
+  This function returns a textual representation of a value."
   input Value inValue;
   output String outString;
 protected
@@ -2009,16 +2012,13 @@ algorithm
 end valString;
 
 public function valString2 "function: valString
-
   This function returns a textual representation of a value.
-  Uses an external buffer to store intermediate results.
-"
+  Uses an external buffer to store intermediate results."
   input Value inValue;
 algorithm
-  _ :=
-  matchcontinue (inValue)
+  _ := matchcontinue (inValue)
     local
-      String s,s_1,recordName;
+      String s, s_1, recordName, tyStr, scope, name;
       Integer n;
       Real x;
       list<Value> xs,vs;
@@ -2083,6 +2083,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    
     case ((r as Values.RECORD(record_ = recordPath, orderd = xs, comp = ids)))
       equation
         recordName = Absyn.pathString(recordPath);
@@ -2092,6 +2093,7 @@ algorithm
         Print.printBuf("end " +& recordName +& ";");
       then
         ();
+    
     case ((Values.OPTION(SOME(r))))
       equation
         Print.printBuf("SOME(");
@@ -2121,7 +2123,7 @@ algorithm
       then
         ();
 
-        // MetaModelica list
+    // MetaModelica list
     case Values.LIST(valueLst = vs)
       equation
         Print.printBuf("{");
@@ -2129,7 +2131,8 @@ algorithm
         Print.printBuf("}");
       then
         ();
-        // MetaModelica array
+    
+    // MetaModelica array
     case Values.META_ARRAY(valueLst = vs)
       equation
         Print.printBuf("meta_array(");
@@ -2137,6 +2140,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    
     /* Until is it no able to get from an string Enumeration the C-Enumeration use the index value */
     /* Example: This is yet not possible Enum.e1 \\ PEnum   ->  1 \\ PEnum  with enum Enum(e1,e2), Enum PEnum; */
     case (Values.ENUM_LITERAL(index = n, name=p))
@@ -2145,11 +2149,19 @@ algorithm
         Print.printBuf(s);
       then
         ();
+    
     case(Values.NORETCALL()) then ();
+    
     case (Values.META_FAIL())
       equation
         Print.printBuf("fail()");
       then ();
+        
+    case (Values.EMPTY(scope = scope, name = name, tyStr = tyStr))
+      equation
+        Print.printBuf("/* <EMPTY(scope: " +& scope +& ", name: " +& name +& ", ty: " +& tyStr +& ")> */");
+      then ();
+    
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"ValuesUtil.valString2 failed"});
@@ -2165,12 +2177,13 @@ protected function valRecordString
   input list<Value> xs;
   input list<String> ids;
 algorithm
-  _ := match (xs,ids)
+  _ := matchcontinue (xs,ids)
     local
       String id;
       Value x;
-      
+    
     case ({},{}) then ();
+            
     case (x :: (xs as (_ :: _)),id :: (ids as (_ :: _)))
       equation
         Print.printBuf("    ");
@@ -2181,6 +2194,7 @@ algorithm
         valRecordString(xs,ids);
       then
         ();
+    
     case (x :: {},id :: {})
       equation
         Print.printBuf("    ");
@@ -2190,7 +2204,15 @@ algorithm
         Print.printBuf("\n");
       then
         ();
-  end match;
+        
+    case (xs,ids)
+      equation
+        print("ValuesUtil.valRecordString failed:\nids: "+& Util.stringDelimitList(ids, ", ") +&
+        "\nvals: " +& Util.stringDelimitList(Util.listMap(xs, valString), ", ") +& "\n");
+      then 
+        fail();
+  
+  end matchcontinue;
 end valRecordString;
 
 protected function valListString "function: valListString
@@ -2594,5 +2616,47 @@ algorithm
     case (Values.LIST(vals),_) then vals;
   end match;
 end arrayOrListVals;
+
+public function containsEmpty
+"returns true if the values list contains empty values!"
+  input list<Values.Value> inValues;
+  output Option<Values.Value> outOptValue;
+algorithm
+  outOptValue := match(inValues)
+    local 
+      Values.Value v;
+      list<Values.Value> rest, lst;
+      Option<Values.Value> vOpt;
+    
+    case ((v as Values.EMPTY(scope = _))::rest) then SOME(v);
+
+    case (Values.ARRAY(valueLst = lst)::rest)
+      equation 
+        vOpt = containsEmpty(lst);
+      then 
+        vOpt;
+
+    case (Values.RECORD(orderd = lst)::rest)
+      equation 
+        vOpt = containsEmpty(lst);
+      then 
+        vOpt;
+
+    case (Values.TUPLE(valueLst = lst)::rest)
+      equation 
+        vOpt = containsEmpty(lst);
+      then 
+        vOpt;
+    
+    case (_::rest)
+      equation 
+        vOpt = containsEmpty(rest);
+      then 
+        vOpt;
+    
+    case (_) then NONE();
+
+  end match;
+end containsEmpty;
 
 end ValuesUtil;

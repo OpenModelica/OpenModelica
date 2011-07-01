@@ -30,7 +30,7 @@
  */
 
 encapsulated package Static
-" file:         Static.mo
+" file:        Static.mo
   package:     Static
   description: Static analysis of expressions
 
@@ -120,14 +120,14 @@ public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. list
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input Boolean inImplicit;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
   output list<DAE.Properties> outTypesPropertiesLst;
-  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+  output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outExpExpLst,outTypesPropertiesLst,outInteractiveInteractiveSymbolTableOption):=
   elabExpList2(inCache,inEnv,inAbsynExpLst,DAE.T_NOTYPE_DEFAULT,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info);
@@ -139,20 +139,20 @@ protected function elabExpList2 "Expression elaboration of Absyn.Exp list, i.e. 
   input list<Absyn.Exp> inAbsynExpLst;
   input DAE.Type ty "The type of the last evaluated expression; used to speed up instantiation of enumerations :)";
   input Boolean inImplicit;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
   output list<DAE.Properties> outTypesPropertiesLst;
-  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+  output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outExpExpLst,outTypesPropertiesLst,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,ty,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
     local
       Boolean impl;
-      Option<Interactive.InteractiveSymbolTable> st,st_1,st_2;
+      Option<Interactive.SymbolTable> st,st_1,st_2;
       DAE.Exp exp;
       DAE.Properties p;
       list<DAE.Exp> exps;
@@ -198,20 +198,20 @@ public function elabExpListList
   input list<list<Absyn.Exp>> inAbsynExpLstLst;
   input DAE.Type ty "The type of the last evaluated expression; used to speed up instantiation of enumerations :)";
   input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> st;
+  input Option<Interactive.SymbolTable> st;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<list<DAE.Exp>> outExpExpLstLst;
   output list<list<DAE.Properties>> outTypesPropertiesLstLst;
-  output Option<Interactive.InteractiveSymbolTable> outST;
+  output Option<Interactive.SymbolTable> outST;
 algorithm
   (outCache,outExpExpLstLst,outTypesPropertiesLstLst,outST):=
   match (inCache,inEnv,inAbsynExpLstLst,ty,inBoolean,st,performVectorization,inPrefix,info)
     local
       Boolean impl;
-      Option<Interactive.InteractiveSymbolTable> st_1,st_2;
+      Option<Interactive.SymbolTable> st_1,st_2;
       list<DAE.Exp> exp;
       list<DAE.Properties> p;
       list<list<DAE.Exp>> exps;
@@ -241,14 +241,14 @@ protected function elabExpOptAndMatchType "
   input Option<Absyn.Exp> oExp;
   input DAE.Type defaultType;
   input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inSt;
+  input Option<Interactive.SymbolTable> inSt;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache cache;
   output Option<DAE.Exp> outExp;
   output DAE.Properties prop;
-  output Option<Interactive.InteractiveSymbolTable> st;
+  output Option<Interactive.SymbolTable> st;
 algorithm
   (cache,outExp,prop,st) := match (inCache,inEnv,oExp,defaultType,inBoolean,inSt,performVectorization,inPrefix,info)
     local
@@ -274,14 +274,14 @@ function: elabExp
   input Env.Env inEnv;
   input Absyn.Exp inExp;
   input Boolean inImplicit;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-  output Option<Interactive.InteractiveSymbolTable> st;
+  output Option<Interactive.SymbolTable> st;
 algorithm
   (outCache,outExp,outProperties,st) := elabExp2(inCache,inEnv,inExp,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info,Error.getNumErrorMessages());
 end elabExp;
@@ -297,7 +297,7 @@ function: elabExp
   input Env.Env inEnv;
   input Absyn.Exp inExp;
   input Boolean inImplicit;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
@@ -305,7 +305,7 @@ function: elabExp
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+  output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExp,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info,numErrorMessages)
@@ -315,7 +315,7 @@ algorithm
       Real r;
       String expstr,str1,str2,s,msg;
       DAE.Dimension dim1,dim2;
-      Option<Interactive.InteractiveSymbolTable> st,st_1,st_2,st_3;
+      Option<Interactive.SymbolTable> st,st_1,st_2,st_3;
       DAE.Exp exp,e1_1,e2_1,e1_2,e2_2,exp_1,e_1,e_2,e3_1,mexp,mexp_1,arrexp;
       DAE.Properties prop,prop1,prop2,prop3;
       list<Env.Frame> env;
@@ -384,7 +384,7 @@ algorithm
 
     case (cache,env,Absyn.CREF(componentRef = cr),impl,st,doVect,pre,info,_)
       equation
-        (cache,SOME((exp,prop,_))) = elabCref(cache,env, cr, impl,doVect,pre,info);
+        (cache,SOME((exp,prop,_))) = elabCref(cache, env, cr, impl, doVect, pre, info);
       then
         (cache,exp,prop,st);
 
@@ -503,6 +503,7 @@ algorithm
         (types,consts) = splitProps(props);
       then
         (cache,DAE.TUPLE(es_1),DAE.PROP_TUPLE((DAE.T_TUPLE(types),NONE()),DAE.TUPLE_CONST(consts)),st);
+    
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FOR_ITER_FARG(exp = e, iterators=iterators)),impl,st,doVect,pre,info,_) /* Array-related expressions Elab reduction expressions, including array() constructor */
       equation
         (cache,e_1,prop,st_1) = elabCallReduction(cache,env, fn, e, iterators, impl, st,doVect,pre,info);
@@ -659,14 +660,14 @@ Note: Because of this, the function has to rollback or delete an ErrorExt checkp
   input Absyn.Exp trueExp;
   input Absyn.Exp falseExp;
   input Boolean impl;
-  input Option<Interactive.InteractiveSymbolTable> st;
+  input Option<Interactive.SymbolTable> st;
   input Boolean vect;
   input Prefix.Prefix pre;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties prop;
-  output Option<Interactive.InteractiveSymbolTable> outSt;
+  output Option<Interactive.SymbolTable> outSt;
 algorithm
   (outCache,outExp,prop,outSt) := matchcontinue (cache,env,condExp,condProp,trueExp,falseExp,impl,st,vect,pre,info)
     local
@@ -709,14 +710,14 @@ This is used by Inst.mo when handling a var := {...} statement
   input list<Absyn.Exp> inExpList;
   input DAE.Properties inProp;
   input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+  output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption) :=
   matchcontinue (inCache,inEnv,inExpList,inProp,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info)
@@ -724,7 +725,7 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       Boolean impl,doVect;
-      Option<Interactive.InteractiveSymbolTable> st;
+      Option<Interactive.SymbolTable> st;
       DAE.Properties prop;
       DAE.Const c;
       Prefix.Prefix pre;
@@ -1052,14 +1053,14 @@ protected function elabCallReduction
   input Absyn.Exp reductionExp;
   input Absyn.ForIterators iterators;
   input Boolean impl;
-  input Option<Interactive.InteractiveSymbolTable> inST;
+  input Option<Interactive.SymbolTable> inST;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-  output Option<Interactive.InteractiveSymbolTable> outST;
+  output Option<Interactive.SymbolTable> outST;
 algorithm
   (outCache,outExp,outProperties,outST):=
   matchcontinue (inCache,inEnv,reductionFn,reductionExp,iterators,impl,
@@ -1069,7 +1070,7 @@ algorithm
       DAE.Type fulliterty,iterty,expty,expty_tmp;
       DAE.Const iterconst,expconst,const,guardconst;
       list<Env.Frame> env_foldExp,env_1,env;
-      Option<Interactive.InteractiveSymbolTable> st;
+      Option<Interactive.SymbolTable> st;
       DAE.Properties prop;
       Absyn.Path fn_1;
       Absyn.ComponentRef fn;
@@ -1123,7 +1124,7 @@ protected function elabCallReductionIterators
   input Env.Env env;
   input Absyn.ForIterators iterators;
   input Boolean impl;
-  input Option<Interactive.InteractiveSymbolTable> st;
+  input Option<Interactive.SymbolTable> st;
   input Boolean doVect;
   input Prefix.Prefix pre;
   input Absyn.Info info;
@@ -1133,7 +1134,7 @@ protected function elabCallReductionIterators
   output list<DAE.Dimension> outDims;
   output DAE.Const const;
   output Boolean hasGuardExp;
-  output Option<Interactive.InteractiveSymbolTable> outST;
+  output Option<Interactive.SymbolTable> outST;
 algorithm
   (outCache,envWithIterators,outIterators,outDims,const,hasGuardExp,outST) := matchcontinue (cache,env,iterators,impl,st,doVect,pre,info)
     local
@@ -1784,14 +1785,14 @@ protected function elabRange
   input Env.Env inEnv;
   input Absyn.Exp inRangeExp;
   input Boolean inImpl;
-  input Option<Interactive.InteractiveSymbolTable> inST;
+  input Option<Interactive.SymbolTable> inST;
   input Boolean inVect;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProps;
-  output Option<Interactive.InteractiveSymbolTable> outST;
+  output Option<Interactive.SymbolTable> outST;
 algorithm
   (outCache, outExp, outProps, outST) := 
   matchcontinue(inCache, inEnv, inRangeExp, inImpl, inST, inVect, inPrefix, info)
@@ -1801,7 +1802,7 @@ algorithm
       DAE.Exp start_exp, step_exp, stop_exp, range_exp;
       DAE.Type ty, start_t, step_t, stop_t;
       DAE.Const co, start_c, step_c, stop_c;
-      Option<Interactive.InteractiveSymbolTable> st;
+      Option<Interactive.SymbolTable> st;
       Env.Cache cache;
       DAE.ExpType ety;
       list<String> error_strs;
@@ -2019,7 +2020,7 @@ protected function elabPartEvalFunction
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Exp inExp;
-  input Option<Interactive.InteractiveSymbolTable> inSymbolTableOption;
+  input Option<Interactive.SymbolTable> inSymbolTableOption;
   input Boolean inImpl;
   input Boolean inVect;
   input Prefix.Prefix inPrefix;
@@ -2027,7 +2028,7 @@ protected function elabPartEvalFunction
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-  output Option<Interactive.InteractiveSymbolTable> outSymbolTableOption;
+  output Option<Interactive.SymbolTable> outSymbolTableOption;
 algorithm
   (outCache,outExp,outProperties,outSymbolTableOption) := matchcontinue(inCache,inEnv,inExp,inSymbolTableOption,inImpl,inVect,inPrefix,info)
     local
@@ -2036,7 +2037,7 @@ algorithm
       Absyn.ComponentRef cref;
       list<Absyn.Exp> posArgs;
       list<Absyn.NamedArg> namedArgs;
-      Option<Interactive.InteractiveSymbolTable> st;
+      Option<Interactive.SymbolTable> st;
       Boolean impl,doVect;
       Absyn.Path p;
       list<DAE.Exp> args;
@@ -2393,7 +2394,7 @@ protected function elabMatrixComma "function elabMatrixComma
   input list<DAE.Exp> es;
   input list<DAE.Properties> props;
   input Boolean inBoolean3;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption4;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption4;
   input Boolean inBoolean5;
   input Integer inInteger6;
   input Boolean performVectorization;
@@ -2416,7 +2417,7 @@ algorithm
       Boolean array,impl,havereal,a,scalar,doVect;
       DAE.ExpType at;
       list<Env.Frame> env;
-      Option<Interactive.InteractiveSymbolTable> st;
+      Option<Interactive.SymbolTable> st;
       list<DAE.Exp> els_1,els;
       Env.Cache cache;
       Prefix.Prefix pre;
@@ -2737,7 +2738,7 @@ protected function elabMatrixSemi
   input list<list<DAE.Exp>> expss;
   input list<list<DAE.Properties>> propss;
   input Boolean inBoolean3;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption4;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption4;
   input Boolean inBoolean5;
   input Integer inInteger6;
   input Boolean performVectorization;
@@ -2760,7 +2761,7 @@ algorithm
       DAE.ExpType at;
       Boolean a,impl,havereal;
       list<Env.Frame> env;
-      Option<Interactive.InteractiveSymbolTable> st;
+      Option<Interactive.SymbolTable> st;
       list<DAE.Exp> els,els_1,els_2;
       list<list<DAE.Exp>> elss;
       Ident el_str,t1_str,t2_str,dim1_str,dim2_str,el_str1,pre_str;
@@ -3285,7 +3286,7 @@ algorithm
         (cache,s_1,prop,_) = elabExp(cache, env, s, impl,NONE(),true,pre,info);
         (cache,dims_1,dimprops,_) = elabExpList(cache,env, dims, impl,NONE(),true,pre,info);
         sty = Types.getPropType(prop);
-        (cache,dimvals) = Ceval.cevalList(cache,env, dims_1, impl,NONE(), Ceval.NO_MSG());
+        (cache,dimvals,_) = Ceval.cevalList(cache,env, dims_1, impl, NONE(), Ceval.NO_MSG());
         c1 = Types.elabTypePropToConst(prop::dimprops);
         (cache,exp,prop) = elabBuiltinFill2(cache,env, s_1, sty, dimvals,c1,pre);
       then
@@ -3298,7 +3299,7 @@ algorithm
       equation
         c1 = unevaluatedFunctionVariability(env);
         (cache, s_1, prop, _) = elabExp(cache, env, s, impl,NONE(), true,pre,info);
-        (cache, dims_1, dimprops, _) = elabExpList(cache, env, dims, impl,NONE(), true,pre,info);
+        (cache, dims_1, dimprops, _) = elabExpList(cache, env, dims, impl, NONE(), true,pre,info);
         sty = Types.getPropType(prop);
         sty = makeFillArgListType(sty, dimprops);
         exp_type = Types.elabType(sty);
@@ -4500,9 +4501,7 @@ algorithm
 end elabBuiltinMinMaxCommon;
 
 protected function elabBuiltinAbs "function: elabBuiltinAbs
-
-  This function elaborates on the builtin operator abs
-"
+  This function elaborates on the builtin operator abs"
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -4514,8 +4513,7 @@ protected function elabBuiltinAbs "function: elabBuiltinAbs
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp s1_1;
       list<Env.Frame> env;
@@ -4539,9 +4537,7 @@ algorithm
 end elabBuiltinAbs;
 
 protected function elabBuiltinDiv "function: elabBuiltinDiv
-
-  This function elaborates on the builtin operator div.
-"
+  This function elaborates on the builtin operator div."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -4553,8 +4549,7 @@ protected function elabBuiltinDiv "function: elabBuiltinDiv
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
-  (outCache,outExp,outProperties):=
-  match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  (outCache,outExp,outProperties) := match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp s1_1,s2_1;
       DAE.Const c1,c2;
@@ -4584,8 +4579,7 @@ protected function elabBuiltinDelay "
 Author BZ
 TODO: implement,
 fix types, so we can have integer as input
-verify that the input is correct.
-"
+verify that the input is correct."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -4972,7 +4966,7 @@ algorithm
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       list<Absyn.ComponentRef> cref_list1,cref_list2,cref_list;
-      Interactive.InteractiveSymbolTable symbol_table;
+      Interactive.SymbolTable symbol_table;
       list<Env.Frame> gen_env,env;
       DAE.Exp s1_1,s2_1,call;
       DAE.Properties st;
@@ -5025,7 +5019,7 @@ algorithm
   match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       list<Absyn.ComponentRef> cref_list;
-      Interactive.InteractiveSymbolTable symbol_table;
+      Interactive.SymbolTable symbol_table;
       list<Env.Frame> gen_env,env;
       DAE.Exp s1_1;
       DAE.Properties st;
@@ -5069,14 +5063,14 @@ protected function absynCrefListToInteractiveVarList "function: absynCrefListToI
   a variable and still get the variable name.
 "
   input list<Absyn.ComponentRef> inAbsynComponentRefLst;
-  input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
+  input Interactive.SymbolTable inInteractiveSymbolTable;
   input DAE.Type inType;
-  output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
+  output Interactive.SymbolTable outInteractiveSymbolTable;
 algorithm
   outInteractiveSymbolTable:=
   matchcontinue (inAbsynComponentRefLst,inInteractiveSymbolTable,inType)
     local
-      Interactive.InteractiveSymbolTable symbol_table,symbol_table_1,symbol_table_2;
+      Interactive.SymbolTable symbol_table,symbol_table_1,symbol_table_2;
       Absyn.Path path;
       Ident path_str;
       Absyn.ComponentRef cr;
@@ -6424,21 +6418,21 @@ function: elabCall
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   input Integer numErrorMessages;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+  output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inComponentRef,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inPrefix,info,numErrorMessages)
     local
       DAE.Exp e;
       DAE.Properties prop;
-      Option<Interactive.InteractiveSymbolTable> st;
+      Option<Interactive.SymbolTable> st;
       list<Env.Frame> env;
       Absyn.ComponentRef fn;
       list<Absyn.Exp> args;
@@ -6508,6 +6502,7 @@ algorithm
         Debug.fprintln("sei", fnstr);
       then
         (cache,e,prop,st);
+    
     case (cache,env,fn,args,nargs,impl,st,pre,info,numErrorMessages)
       equation
         true = RTOpts.debugFlag("failtrace");
@@ -6554,7 +6549,7 @@ protected function calculateSimulationTimes
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
   input CevalScript.SimulationOptions inSimOpt;
@@ -6569,7 +6564,7 @@ algorithm
       Absyn.ComponentRef cr;
       list<Absyn.NamedArg> args;
       Boolean impl;
-      Interactive.InteractiveSymbolTable st;
+      Interactive.SymbolTable st;
       Prefix.Prefix pre;
       Absyn.Info info;
       DAE.Exp startTime "start time, default 0.0";
@@ -6631,7 +6626,7 @@ public function getSimulationArguments
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
   output Env.Cache outCache;
@@ -6645,7 +6640,7 @@ algorithm
       list<Absyn.NamedArg> args;
       list<String> pathIdents;
       Boolean impl;
-      Interactive.InteractiveSymbolTable st;
+      Interactive.SymbolTable st;
       Prefix.Prefix pre;
       Absyn.Info info;
       String cname_str;
@@ -6747,13 +6742,13 @@ protected function elabCallInteractive "function: elabCallInteractive
   input list<Absyn.Exp> inExps;
   input list<Absyn.NamedArg> inNamedArgs;
   input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+  output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
  algorithm
   (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inComponentRef,inExps,inNamedArgs,inBoolean,inInteractiveInteractiveSymbolTableOption,inPrefix,info)
@@ -6762,14 +6757,14 @@ protected function elabCallInteractive "function: elabCallInteractive
       list<Env.Frame> env;
       Absyn.ComponentRef cr,cr2;
       Boolean impl,enabled;
-      Interactive.InteractiveSymbolTable st;
+      Interactive.SymbolTable st;
       Ident varid,cname_str,filename,str;
       DAE.Exp filenameprefix,size_exp,exp_1,bool_exp_1,storeInTemp,e1_1,e2_1,interpolation,title,legend,grid,logX,logY,xLabel,yLabel,points,xRange,yRange,arr,translationLevel,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,crefExp,crefExp1,crefExp2;
       DAE.Type recordtype;
       list<Absyn.NamedArg> args;
       list<DAE.Exp> vars_1,vars_2,vars_3,excludeList;
       DAE.Properties ptop,prop;
-      Option<Interactive.InteractiveSymbolTable> st_1;
+      Option<Interactive.SymbolTable> st_1;
       Integer size,var_len,port,excludeListSize;
       list<Absyn.Exp> vars,strings;
       Absyn.Exp size_absyn,exp,bool_exp,e1,e2,e3,stringArray;
@@ -7022,7 +7017,7 @@ protected function getOptionalNamedArg "function: getOptionalNamedArg
 "
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean inBoolean;
   input Ident inIdent;
   input DAE.Type inType;
@@ -7040,7 +7035,7 @@ algorithm
       DAE.Type t,tp;
       DAE.Const c1;
       list<Env.Frame> env;
-      Option<Interactive.InteractiveSymbolTable> st;
+      Option<Interactive.SymbolTable> st;
       Boolean impl;
       Ident id,id2;
       list<Absyn.NamedArg> xs;
@@ -7188,12 +7183,15 @@ algorithm
       Integer handle;
       Real buildTime;
       String fileName;
+    
     case ({},_) then (false, -1, -1.0, "");
+    
     case ((Interactive.CFunction(path1,ty,handle,buildTime,fileName) :: rest),path2)
       equation
         true = ModUtil.pathEqual(path1, path2);
       then
         (true, handle, buildTime, fileName);
+    
     case ((Interactive.CFunction(path1,ty,_,_,_) :: rest),path2)
       equation
         false = ModUtil.pathEqual(path1, path2);
@@ -7230,7 +7228,7 @@ protected function transformFunctionArgumentsIntoModifications
   input Env.Cache cache;
   input Env.Env env;
   input Boolean impl;
-  input Option<Interactive.InteractiveSymbolTable> inSymTab;
+  input Option<Interactive.SymbolTable> inSymTab;
   input SCode.Element inClass;
   input list<Absyn.Exp> inPositionalArguments;
   input list<Absyn.NamedArg> inNamedArguments;
@@ -7262,7 +7260,7 @@ protected function transformFunctionArgumentsIntoModifications
   input Env.Cache cache;
   input Env.Env env;
   input Boolean impl;
-  input Option<Interactive.InteractiveSymbolTable> inSymTab;
+  input Option<Interactive.SymbolTable> inSymTab;
   input SCode.Element inClass;
   input list<Absyn.Exp> inPositionalArguments;
   input list<Absyn.NamedArg> inNamedArguments;
@@ -7413,7 +7411,7 @@ function: elabCallArgs
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Boolean inBoolean;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
@@ -7475,7 +7473,7 @@ function: elabCallArgs
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Boolean inBoolean;
   input Util.StatefulBoolean stopElab;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
@@ -7499,7 +7497,7 @@ algorithm
       list<Absyn.NamedArg> nargs, translatedNArgs;
       Boolean impl,tuple_,builtin,isPure;
       DAE.InlineType inlineType;
-      Option<Interactive.InteractiveSymbolTable> st;
+      Option<Interactive.SymbolTable> st;
       list<DAE.Type> typelist;
       list<DAE.Dimension> vect_dims;
       DAE.Exp call_exp,callExp;
@@ -7789,7 +7787,7 @@ protected function elabCallArgsMetarecord
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Boolean inBoolean;
   input Util.StatefulBoolean stopElab;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
@@ -7811,7 +7809,7 @@ algorithm
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
       Boolean impl;
-      Option<Interactive.InteractiveSymbolTable> st;
+      Option<Interactive.SymbolTable> st;
       list<DAE.Type> tys;
       DAE.Exp daeExp;
       Ident fn_str;
@@ -7972,7 +7970,7 @@ protected function instantiateImplicitRecordConstructors
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> args;
-  input Option<Interactive.InteractiveSymbolTable> st;
+  input Option<Interactive.SymbolTable> st;
   output Env.Cache outCache;
 algorithm
   outCache := matchcontinue(inCache, inEnv, args, st)
@@ -9517,7 +9515,6 @@ algorithm
       Option<Absyn.Path> optPath;
       DAE.Type t,origt;
       DAE.TType tt;
-      DAE.Binding binding;
       DAE.Exp exp,exp1,exp2,crefExp,expASUB;
       DAE.Properties prop;
       list<Env.Frame> env;
@@ -9526,7 +9523,7 @@ algorithm
       Boolean impl,doVect,isBuiltinFn,isBuiltinFnOrInlineBuiltin;
       DAE.ExpType et;
       Absyn.InnerOuter io;
-      String s,scope;
+      String s,scope,n;
       Lookup.SplicedExpData splicedExpData;
       Absyn.Path path,fpath;
       list<String> enum_lit_strs;
@@ -9541,6 +9538,20 @@ algorithm
       Absyn.ComponentRef cPackage;
       list<DAE.Exp> indexes;
       DAE.Attributes attr;
+      String name "name";
+      DAE.Attributes attributes "attributes";
+      SCode.Visibility visibility "protected/public";
+      DAE.Type ty "type" ;
+      DAE.Binding binding "binding ; equation modification";
+      Option<DAE.Const> constOfForIteratorRange "the constant-ness of the range if this is a for iterator, NONE() if is NOT a for iterator";
+      Env.InstStatus instStatus;
+      Absyn.ArrayDim ad;
+      DAE.Mod cmod;
+      Option<SCode.Comment> comment;
+      SCode.Prefixes pref;
+      SCode.Mod m;
+      Option<Absyn.Exp> cond;
+      Absyn.Path tpath;      
 
     // wildcard
     case (cache,env,c as Absyn.WILD(),impl,doVect,_,info)
@@ -9627,6 +9638,21 @@ algorithm
         // Debug.traceln("ENVIRONMENT:\n" +& Env.printEnvStr(env));
       then
         fail();
+    
+    /*
+    // maybe we do have it but without a binding, so maybe we can actually type it!
+    case (cache,env,c,impl,doVect,pre,info)
+      equation
+        failure((_,_,_) = elabCrefSubs(cache,env, c, Prefix.NOPRE(),impl,info));
+        id = Absyn.crefFirstIdent(c);
+        (cache,DAE.TYPES_VAR(name, attributes, visibility, ty, binding, constOfForIteratorRange), 
+               SOME((cl as SCode.COMPONENT(n, pref, SCode.ATTR(arrayDims = ad), Absyn.TPATH(tpath, _),m,comment,cond,info),cmod)),instStatus)
+          = Lookup.lookupIdent(cache, env, id);
+        print("Static: cref:" +& Absyn.printComponentRefStr(c) +& " component first ident:\n" +& SCodeDump.unparseElementStr(cl) +& "\n");
+        (cache, cl, env) = Lookup.lookupClass(cache, env, tpath, false);
+        print("Static: cref:" +& Absyn.printComponentRefStr(c) +& " class component first ident:\n" +& SCodeDump.unparseElementStr(cl) +& "\n");
+      then
+        (cache,NONE());*/    
     
     case (cache,env,c,impl,doVect,pre,info)
       equation
@@ -9955,7 +9981,7 @@ algorithm
       DAE.Const const;
       SCode.Variability variability_1,variability,var;
       DAE.Binding binding_1,bind;
-      String s,str,scope,pre_str;
+      String s,str,scope,pre_str,tyStr;
       DAE.Binding binding;
       Env.Cache cache;
       Boolean doVect,genWarning;
@@ -10018,7 +10044,7 @@ algorithm
         p = Absyn.joinPaths(p, ComponentReference.crefLastPath(cr));
       then
         (cache, DAE.ENUM_LITERAL(p, i), DAE.C_CONST(), attr);
-         
+                 
     // a constant -> evaluate binding
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,tt,binding,doVect,_,_,info)
       equation
@@ -10135,7 +10161,7 @@ algorithm
       then
         fail();
 
-    // constants without value produce error. (as long as not for iterator)
+    // constants without value should not produce error if they are not in a simulation model!
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),NONE()/*not foriter*/,tt,DAE.UNBOUND(),doVect,_,pre,info)
       equation
         s = ComponentReference.printComponentRefStr(cr);
@@ -10146,8 +10172,16 @@ algorithm
         Debug.fprintln("static","- Static.elabCref2 failed on: " +& pre_str +& s +& " with no constant binding in scope: " +& scope);
         expTy = Types.elabType(tt);
         cr_1 = fillCrefSubscripts(cr, tt);
+        // tyStr = Types.printTypeStr(tt);
+        // do not fail yet, just add an empty expression, 
+        // we check for empty exp and empty values in certain 
+        // places only, i.e. equations, array dimensions, final 
+        // DAE if is send to simulation! Modelica requires that
+        // all things have a binding IN A SIMULATION MODEL!        
+        // e = DAE.EMPTY(scope, cr_1, expTy, tyStr);
+        e = Expression.makeCrefExp(cr_1,expTy); 
       then
-        (cache,Expression.makeCrefExp(cr_1,expTy),DAE.C_CONST(),attr);
+        (cache,e,DAE.C_CONST(),attr);
 
     // parameters without value but with fixed=false is ok, these are given value during initialization. (as long as not for iterator)
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),NONE()/* not foriter*/,tt,DAE.UNBOUND(),
@@ -10969,12 +11003,12 @@ algorithm
         (cache,cr,const) = elabCrefSubs(cache,env,subs,crefPrefix,impl,info);
       then
         (cache,ComponentReference.makeCrefQual(id,ty,{},cr),const);
-
+        
     // QUAL,with no subscripts second case => look for class
     case (cache,env,Absyn.CREF_QUAL(name = id,subscripts = {},componentRef = subs),crefPrefix,impl,info)
       equation
         crefPrefix = PrefixUtil.prefixAdd(id,{},crefPrefix,SCode.VAR(),ClassInf.UNKNOWN(Absyn.IDENT(""))); // variability doesn't matter
-        (cache,cr,const) = elabCrefSubs(cache,env, subs,crefPrefix,impl,info);
+        (cache,cr,const) = elabCrefSubs(cache, env, subs, crefPrefix, impl, info);
       then
         (cache,ComponentReference.makeCrefQual(id,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),{},cr),const);
     
@@ -11428,7 +11462,7 @@ protected function makeIfexp "function: makeIfexp
   input DAE.Exp inExp6;
   input DAE.Properties inProperties7;
   input Boolean inBoolean8;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption9;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption9;
   input Prefix.Prefix inPrefix;
   output Env.Cache outCache;
   output DAE.Exp outExp;
@@ -11442,7 +11476,7 @@ algorithm
       list<Env.Frame> env;
       DAE.Type t2,t3,t2_1,t3_1,t1;
       Boolean impl;
-      Option<Interactive.InteractiveSymbolTable> st;
+      Option<Interactive.SymbolTable> st;
       Ident e_str,t_str,e1_str,t1_str,e2_str,t2_str,pre_str;
       Env.Cache cache;
       Prefix.Prefix pre;
@@ -11513,7 +11547,7 @@ protected function cevalIfexpIfConstant "function: cevalIfexpIfConstant
   input DAE.Exp inExp4;
   input DAE.Const inConst5;
   input Boolean inBoolean6;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption7;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption7;
   output Env.Cache outCache;
   output DAE.Exp outExp;
 algorithm
@@ -11523,7 +11557,7 @@ algorithm
       list<Env.Frame> env;
       DAE.Exp e1,e2,e3,res;
       Boolean impl,cond;
-      Option<Interactive.InteractiveSymbolTable> st;
+      Option<Interactive.SymbolTable> st;
       Env.Cache cache;
     case (cache,env,e1,e2,e3,DAE.C_VAR(),impl,st) then (cache,DAE.IFEXP(e1,e2,e3));
     case (cache,env,e1,e2,e3,DAE.C_PARAM(),impl,st) then (cache,DAE.IFEXP(e1,e2,e3));
@@ -13041,7 +13075,7 @@ public function elabArrayDims
   input Absyn.ComponentRef inComponentRef;
   input list<Absyn.Subscript> inDimensions;
   input Boolean inImplicit;
-  input Option<Interactive.InteractiveSymbolTable> inST;
+  input Option<Interactive.SymbolTable> inST;
   input Boolean inDoVect;
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
@@ -13059,7 +13093,7 @@ protected function elabArrayDims2
   input Absyn.ComponentRef inCref;
   input list<Absyn.Subscript> inDimensions;
   input Boolean inImplicit;
-  input Option<Interactive.InteractiveSymbolTable> inST;
+  input Option<Interactive.SymbolTable> inST;
   input Boolean inDoVect;
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
@@ -13098,7 +13132,7 @@ protected function elabArrayDim
   input Absyn.ComponentRef inCref;
   input Absyn.Subscript inDimension;
   input Boolean inImpl;
-  input Option<Interactive.InteractiveSymbolTable> inST;
+  input Option<Interactive.SymbolTable> inST;
   input Boolean inDoVect;
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
@@ -13195,7 +13229,7 @@ protected function elabArrayDim2
   input DAE.Exp inExp;
   input DAE.Properties inProperties;
   input Boolean inImpl;
-  input Option<Interactive.InteractiveSymbolTable> inST;
+  input Option<Interactive.SymbolTable> inST;
   input Boolean inDoVect;
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;

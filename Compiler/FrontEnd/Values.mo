@@ -46,6 +46,8 @@ encapsulated package Values
 
 public import Absyn;
 
+protected import DAE;
+
 public
 uniontype Value
   record INTEGER
@@ -117,7 +119,17 @@ uniontype Value
     we need to propagate this value in order to avoid running the code over and over again.
     This is mostly an optimization."
   end META_FAIL;
-  
+    
+  record EMPTY 
+    "an empty value, meaning a constant without a binding. is used to be able to continue the evaluation of a model even if there are constants with
+     no bindings. at the end, when we have the DAE we should have no EMPTY values or expressions in it when we need to simulate the model.
+     From Modelica specification: a package may we look inside should not be partial in a simulation model!"
+    String scope "the scope where we could not find the binding";
+    String name "the name of the variable";
+    Value ty "the DAE.Type translated to Value using defaults";
+    String tyStr "the type of the variable";
+  end EMPTY;
+    
 end Value;
 
 public uniontype IntRealOp

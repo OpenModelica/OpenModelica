@@ -22,13 +22,14 @@ $(srcdir)/modpar/libmodpar.a
 
 FRONTEND_DIR=$(srcdir)/FrontEnd
 BACKEND_DIR=$(srcdir)/BackEnd
+GLOBAL_DIR=$(srcdir)/Global
 TEMPLATE_DIR=$(srcdir)/Template
 SCRIPT_DIR=$(srcdir)/Script
 UTIL_DIR=$(srcdir)/Util
 MAIN_DIR=$(srcdir)/Main
-ALL_DIRS = $(FRONTEND_DIR) $(BACKEND_DIR) $(TEMPLATE_DIR) $(UTIL_DIR) $(SCRIPT_DIR) $(MAIN_DIR)
-RML_INCLUDE_ALL_DIRS = -I$(FRONTEND_DIR) -I$(BACKEND_DIR) -I$(TEMPLATE_DIR) -I$(UTIL_DIR) -I$(SCRIPT_DIR) -I$(MAIN_DIR)
-RMLC_INCLUDE_ALL_DIRS = -I$(FRONTEND_DIR),-I$(BACKEND_DIR),-I$(TEMPLATE_DIR),-I$(UTIL_DIR),-I$(SCRIPT_DIR),-I$(MAIN_DIR)
+ALL_DIRS = $(FRONTEND_DIR) $(BACKEND_DIR) $(TEMPLATE_DIR) $(UTIL_DIR) $(SCRIPT_DIR) $(MAIN_DIR) $(GLOBAL_DIR)
+RML_INCLUDE_ALL_DIRS = -I$(FRONTEND_DIR) -I$(BACKEND_DIR) -I$(TEMPLATE_DIR) -I$(UTIL_DIR) -I$(SCRIPT_DIR) -I$(MAIN_DIR) -I$(GLOBAL_DIR)
+RMLC_INCLUDE_ALL_DIRS = -I$(FRONTEND_DIR),-I$(BACKEND_DIR),-I$(TEMPLATE_DIR),-I$(UTIL_DIR),-I$(SCRIPT_DIR),-I$(MAIN_DIR),-I$(GLOBAL_DIR)
 
 FRONTEND = \
 Absyn.mo \
@@ -60,6 +61,7 @@ Inline.mo \
 InnerOuter.mo \
 Inst.mo \
 InstExtends.mo \
+InstInfo.mo \
 InstSection.mo \
 InstanceHierarchy.mo \
 Lookup.mo \
@@ -80,6 +82,7 @@ SCodeLookup.mo \
 SCodeFlattenImports.mo \
 SCodeFlattenExtends.mo \
 SCodeFlattenRedeclare.mo \
+SCodeSimplify.mo \
 SCodeFlatten.mo \
 SCodeMod.mo \
 SCodeFlat.mo \
@@ -91,8 +94,14 @@ UnitAbsyn.mo \
 UnitAbsynBuilder.mo \
 UnitChecker.mo \
 Values.mo \
-ValuesUtil.mo
-
+ValuesUtil.mo \
+Instance.mo \
+Reference.mo \
+Visited.mo \
+Element.mo \
+Node.mo \
+Edge.mo \
+SCodeGraph.mo 
 
 BACKEND = \
 BackendDAE.mo \
@@ -113,6 +122,9 @@ SimCode.mo \
 TaskGraph.mo \
 XMLDump.mo
 
+GLOBAL = \
+Global.mo
+
 TEMPLATE = \
 SCodeDumpTpl.mo \
 SimCodeC.mo \
@@ -130,6 +142,7 @@ TplParser.mo \
 Unparsing.mo
 
 UTIL = \
+AvlTree.mo \
 BaseHashTable.mo \
 Debug.mo \
 Error.mo \
@@ -145,6 +158,10 @@ HashTableExpToIndex.mo \
 HashTableExpType.mo \
 IOStream.mo \
 Util.mo \
+Pool.mo \
+Name.mo \
+Scope.mo \
+Relation.mo \
 VarTransform.mo \
 # Not used by OpenModelica!
 # HashTable4.mo \
@@ -181,7 +198,7 @@ BackendDAEEXT.mo \
 
 
 # all modules
-SRCMO   = $(FRONTEND) $(BACKEND) $(TEMPLATE) $(UTIL) $(SCRIPT) $(MAIN)
+SRCMO   = $(FRONTEND) $(BACKEND) $(GLOBAL) $(TEMPLATE) $(UTIL) $(SCRIPT) $(MAIN)
 ALLMO   = $(SRCMO) $(EXTERNAL)
 SRCC    = $(SRCMO:%.mo=%.c)
 SRCH    = $(SRCC:%.c=%.h)

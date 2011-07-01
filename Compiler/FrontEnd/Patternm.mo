@@ -566,7 +566,7 @@ public function elabMatchExpression
   input Env.Env env;
   input Absyn.Exp matchExp;
   input Boolean impl;
-  input Option<Interactive.InteractiveSymbolTable> inSt;
+  input Option<Interactive.SymbolTable> inSt;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
@@ -574,7 +574,7 @@ public function elabMatchExpression
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-  output Option<Interactive.InteractiveSymbolTable> outSt;
+  output Option<Interactive.SymbolTable> outSt;
 algorithm
   (outCache,outExp,outProperties,outSt) := matchcontinue (cache,env,matchExp,impl,inSt,performVectorization,inPrefix,info,numError)
     local
@@ -584,7 +584,7 @@ algorithm
       list<Absyn.ElementItem> decls;
       list<Absyn.Case> cases;
       list<DAE.Element> matchDecls;
-      Option<Interactive.InteractiveSymbolTable> st;
+      Option<Interactive.SymbolTable> st;
       Prefix.Prefix pre;
       list<DAE.Exp> elabExps;
       list<DAE.MatchCase> elabCases;
@@ -1462,14 +1462,14 @@ protected function elabMatchCases
   input list<Absyn.Case> cases;
   input list<DAE.Type> tys;
   input Boolean impl;
-  input Option<Interactive.InteractiveSymbolTable> st;
+  input Option<Interactive.SymbolTable> st;
   input Boolean performVectorization;
   input Prefix.Prefix pre;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.MatchCase> elabCases;
   output DAE.Type resType;
-  output Option<Interactive.InteractiveSymbolTable> outSt;
+  output Option<Interactive.SymbolTable> outSt;
 protected
   list<DAE.Exp> resExps;
   list<DAE.Type> resTypes;
@@ -1484,7 +1484,7 @@ protected function elabMatchCases2
   input list<Absyn.Case> cases;
   input list<DAE.Type> tys;
   input Boolean impl;
-  input Option<Interactive.InteractiveSymbolTable> st;
+  input Option<Interactive.SymbolTable> st;
   input Boolean performVectorization;
   input Prefix.Prefix pre;
   input list<DAE.Exp> accExps "Order does matter";
@@ -1493,7 +1493,7 @@ protected function elabMatchCases2
   output list<DAE.MatchCase> elabCases;
   output list<DAE.Exp> resExps;
   output list<DAE.Type> resTypes;
-  output Option<Interactive.InteractiveSymbolTable> outSt;
+  output Option<Interactive.SymbolTable> outSt;
 algorithm
   (outCache,elabCases,resExps,resTypes,outSt) := match (cache,env,cases,tys,impl,st,performVectorization,pre,accExps,accTypes)
     local
@@ -1518,14 +1518,14 @@ protected function elabMatchCase
   input Absyn.Case acase;
   input list<DAE.Type> tys;
   input Boolean impl;
-  input Option<Interactive.InteractiveSymbolTable> st;
+  input Option<Interactive.SymbolTable> st;
   input Boolean performVectorization;
   input Prefix.Prefix pre;
   output Env.Cache outCache;
   output DAE.MatchCase elabCase;
   output Option<DAE.Exp> resExp;
   output Option<DAE.Type> resType;
-  output Option<Interactive.InteractiveSymbolTable> outSt;
+  output Option<Interactive.SymbolTable> outSt;
 algorithm
   (outCache,elabCase,resExp,resType,outSt) := match (cache,env,acase,tys,impl,st,performVectorization,pre)
     local
@@ -1572,7 +1572,7 @@ protected function elabResultExp
   input list<DAE.Statement> body "Is input in case we want to optimize for tail-recursion";
   input Absyn.Exp exp;
   input Boolean impl;
-  input Option<Interactive.InteractiveSymbolTable> st;
+  input Option<Interactive.SymbolTable> st;
   input Boolean performVectorization;
   input Prefix.Prefix pre;
   input Absyn.Info info;
@@ -1581,7 +1581,7 @@ protected function elabResultExp
   output Option<DAE.Exp> resExp;
   output Absyn.Info resultInfo;
   output Option<DAE.Type> resType;
-  output Option<Interactive.InteractiveSymbolTable> outSt;
+  output Option<Interactive.SymbolTable> outSt;
 algorithm
   (outCache,outBody,resExp,resultInfo,resType,outSt) := matchcontinue (cache,env,body,exp,impl,st,performVectorization,pre,info)
     local

@@ -29,14 +29,14 @@
  *
  */
 
-encapsulated package SCodeFlat
-" file:        SCodeFlat.mo
-  package:     SCodeFlat
-  description: SCodeFlat is a flattened form of SCode
+encapsulated package SCodeSimplify
+" file:        SCodeSimplify.mo
+  package:     SCodeSimplify
+  description: SCodeSimplify is a flattened form of SCode
 
-  RCS: $Id: SCodeFlat.mo 8980 2011-05-13 09:12:21Z perost $
+  RCS: $Id: SCodeSimplify.mo 8980 2011-05-13 09:12:21Z perost $
 
-  The SCodeFlat representation is used to simplify the models even further.
+  The SCodeSimplify representation is used to simplify the models even further.
   
 Flattening:
 -----------
@@ -528,11 +528,11 @@ algorithm
         
      case (el, inRedeclareAsElementMod, iExtra as EXTRA(env = env, ctp = ctp, ccp = ccp, cjo = cjo, cfp = cfp, nfo = info))
        equation
-         print("- SCodeFlat.flattenElement failed on element: " +& SCodeDump.shortElementStr(el) +& "\n");
+         print("- SCodeSimplify.flattenElement failed on element: " +& SCodeDump.shortElementStr(el) +& "\n");
        then
          fail();
   end matchcontinue; 
 end flattenElement;
 
-end SCodeFlat;
+end SCodeSimplify;
 
