@@ -1181,8 +1181,6 @@ uniontype Exp "Expressions
     ReductionIterators iterators;
   end REDUCTION;
 
-  record END "array index to last element, e.g. a{end}:=1;" end END;
-
   /* Part of MetaModelica extension. KS */
   record LIST "MetaModelica list"
     list<Exp> valList;

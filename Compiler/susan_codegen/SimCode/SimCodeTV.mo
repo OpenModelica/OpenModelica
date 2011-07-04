@@ -839,7 +839,6 @@ package DAE
       Exp expr;
       ReductionIterators iterators;
     end REDUCTION;
-    record END end END;
     record LIST
       list<Exp> valList;
     end LIST;

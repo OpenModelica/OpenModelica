@@ -373,7 +373,9 @@ algorithm
         (cache,DAE.BCONST(b),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),st);
 
     case (cache,_,Absyn.END(),impl,st,doVect,_,info,_)
-    then (cache,DAE.END(),DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_CONST()),st);
+      equation
+        Error.addSourceMessage(Error.END_ILLEGAL_USE_ERROR, {}, info);
+      then fail();
 
     case (cache,env,Absyn.CREF(componentRef = cr),impl,st,doVect,pre,info,_) // BoschRexroth specifics
       equation
@@ -9577,6 +9579,7 @@ algorithm
     // a normal cref
     case (cache,env,c,impl,doVect,pre,info) /* impl */
       equation
+        c = replaceEnd(c);
         (cache,c_1,const) = elabCrefSubs(cache, env, c, Prefix.NOPRE(), impl, info);
         (cache,attr,t,binding,forIteratorConstOpt,splicedExpData,_,_,_) = Lookup.lookupVar(cache, env, c_1);
         variability = applySubscriptsVariability(DAEUtil.getAttrVariability(attr), const);
@@ -9590,6 +9593,7 @@ algorithm
     // An enumeration type => array of enumeration literals.
     case (cache, env, c, impl, doVect, pre, info)
       equation
+        c = replaceEnd(c);
         path = Absyn.crefToPath(c);
         (cache, cl as SCode.CLASS(restriction = SCode.R_ENUMERATION()), env) = 
           Lookup.lookupClass(cache, env, path, false);
@@ -13302,5 +13306,83 @@ algorithm
 
   end matchcontinue;
 end elabArrayDim2;
+
+protected function consStrippedCref
+  input Absyn.Exp e;
+  input list<Absyn.Exp> es;
+  output list<Absyn.Exp> oes;
+algorithm
+  oes := match (e,es)
+    local
+      Absyn.ComponentRef cr;
+    case (Absyn.CREF(cr),es)
+      equation
+        cr = Absyn.crefStripLastSubs(cr);
+      then Absyn.CREF(cr)::es;
+    else es;
+  end match;
+end consStrippedCref;
+
+protected function replaceEndEnter
+  "Single pass traversal that replaces end-expressions with the correct size-expression.
+  It uses a couple of stacks and crap to handle all of this :)."
+  input tuple<Absyn.Exp,tuple<list<Absyn.Exp>,list<Integer>,list<Boolean>>> itpl;
+  output tuple<Absyn.Exp,tuple<list<Absyn.Exp>,list<Integer>,list<Boolean>>> otpl;
+algorithm
+  otpl := match itpl
+    local
+      Absyn.Exp cr,exp;
+      list<Absyn.Exp> crs;
+      list<Integer> li;
+      Integer i,ni;
+      list<Boolean> bs;
+      Boolean isCr,inc;
+    case ((exp,(crs,i::li,bs as (inc::_))))
+      equation
+        isCr = Absyn.isCref(exp);
+        bs = Util.if_(isCr,true::bs,false::bs);
+        ni = Util.if_(isCr,0,i+1);
+        li = Util.if_(inc,ni::li,i::li);
+        li = Util.if_(isCr,0::li,li);
+        crs = consStrippedCref(exp,crs);
+      then ((exp,(crs,li,bs)));
+  end match;
+end replaceEndEnter;
+
+protected function replaceEndExit
+  "Single pass traversal that replaces end-expressions with the correct size-expression.
+  It uses a couple of stacks and crap to handle all of this :)."
+  input tuple<Absyn.Exp,tuple<list<Absyn.Exp>,list<Integer>,list<Boolean>>> itpl;
+  output tuple<Absyn.Exp,tuple<list<Absyn.Exp>,list<Integer>,list<Boolean>>> otpl;
+algorithm
+  otpl := match itpl
+    local
+      Absyn.Exp cr,exp;
+      list<Absyn.Exp> crs;
+      Integer i;
+      list<Integer> li;
+      list<Boolean> bs;
+    case ((Absyn.END(),(crs as (cr::_),li as (i::_),_::bs)))
+      then ((Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({cr,Absyn.INTEGER(i)},{})),(crs,li,bs)));
+    case ((cr as Absyn.CREF(_),(_::crs,_::li,_::bs)))
+      then ((cr,(crs,li,bs)));
+    case ((exp,(crs,li,_::bs))) then ((exp,(crs,li,bs)));
+  end match;
+end replaceEndExit;
+
+protected function replaceEnd
+  "Single pass traversal that replaces end-expressions with the correct size-expression.
+  It uses a couple of stacks and crap to handle all of this :)."
+  input Absyn.ComponentRef cr;
+  output Absyn.ComponentRef ocr;
+protected
+  Absyn.ComponentRef stripcr;
+algorithm
+  // print("replaceEnd start " +& Dump.printExpStr(Absyn.CREF(cr)) +& "\n");
+  stripcr := Absyn.crefStripLastSubs(cr);
+  // print("stripCref        " +& Dump.printExpStr(Absyn.CREF(stripcr)) +& "\n");
+  (ocr,_) := Absyn.traverseExpBidirCref(cr,(replaceEndEnter,replaceEndExit,({Absyn.CREF(stripcr)},{0},{true})));
+  // print("replaceEnd  end  " +& Dump.printExpStr(Absyn.CREF(ocr)) +& "\n");
+end replaceEnd;
 
 end Static;

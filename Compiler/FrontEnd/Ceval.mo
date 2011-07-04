@@ -180,16 +180,6 @@ algorithm
     case (cache,_,DAE.ENUM_LITERAL(name = name, index = i),_,stOpt,_,_)
       then (cache, Values.ENUM_LITERAL(name, i), stOpt);
 
-    case (cache,_,DAE.END(),_,stOpt,SOME(dim),_) then (cache,Values.INTEGER(dim),stOpt);
-
-    case (cache,_,DAE.END(),_,stOpt,NONE(), MSG())
-      equation
-        Error.addMessage(Error.END_ILLEGAL_USE_ERROR, {});
-      then
-        fail();
-
-    case (cache,_,DAE.END(),_,stOpt,NONE(), NO_MSG()) then fail();
-    
     case (cache,env,DAE.CODE(code = Absyn.C_EXPRESSION(exp = exp)),impl,stOpt,_,msg)
       equation
         (cache,exp_1) = CevalScript.cevalAstExp(cache,env, exp, impl, stOpt, msg, Absyn.dummyInfo);

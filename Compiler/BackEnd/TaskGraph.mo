@@ -968,11 +968,6 @@ algorithm
         print("TaskGraph.buildExpression(REDUCTION) not impl. yet\n");
       then
         fail();
-    case (DAE.END())
-      equation
-        print("TaskGraph.buildExpression(END) not impl. yet\n");
-      then
-        fail();
     case (e)
       equation
         print("-TaskGraph.buildExpression failed\n Exp = ");

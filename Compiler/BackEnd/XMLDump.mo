@@ -1589,13 +1589,6 @@ algorithm
       Absyn.Path fcn;
       list<DAE.Exp> args,es;
       list<list<tuple<DAE.Exp, Boolean>>> ebs;
-    case (DAE.END())
-    ////////////////////////////////////////////////
-    //////    TO DO: ADD SUPPORT TO END     ////////
-    ////////////////////////////////////////////////
-      equation
-        Print.printBuf("end");
-      then ();
     case (DAE.ICONST(integer = x))
       equation
         dumpStrMathMLNumberAttr(intString(x),MathMLType,MathMLInteger);

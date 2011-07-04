@@ -283,7 +283,6 @@ algorithm
     then 
       Absyn.CALL(acref, Absyn.FOR_ITER_FARG(ae1, aiters));
 
-    case(DAE.END()) then Absyn.END();
   end matchcontinue;
 end unelabExp;
 
@@ -1619,7 +1618,6 @@ algorithm
       then liftArrayR(Types.elabType(ty),DAE.DIM_UNKNOWN());
     case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(exprType=ty)))
       then Types.elabType(ty);
-    case (DAE.END()) then DAE.ET_OTHER();  /* Can be any type. */
     case (DAE.SIZE(_,NONE())) then DAE.ET_ARRAY(DAE.ET_INT(),{DAE.DIM_UNKNOWN()});
     case (DAE.SIZE(_,SOME(_))) then DAE.ET_INT();
     
@@ -3595,8 +3593,6 @@ algorithm
     // Why don't we call rel() for these expressions?
     case (e as DAE.CODE(code = _),rel,ext_arg) then ((e,ext_arg));
       
-    case (DAE.END(),_,ext_arg) then ((DAE.END(),ext_arg));
-
     case (e,rel,ext_arg)
       equation
         str = ExpressionDump.printExpStr(e);
@@ -3980,9 +3976,6 @@ algorithm
       then
         ((DAE.BOX(e1_1),ext_arg_1));
     
-    // ---------------------
-    case (DAE.END(),_,ext_arg) then ((DAE.END(),ext_arg));
-
     case (e,rel,ext_arg)
       equation
         str = ExpressionDump.printExpStr(e);
@@ -4594,8 +4587,6 @@ algorithm
       then
         (DAE.REDUCTION(reductionInfo, e1, riters), tup);
 
-    case (DAE.END(), _) then (inExp, inTuple);
-
     case (DAE.LIST(valList = expl), tup)
       equation
         (expl, tup) = traverseExpListBidir(expl, tup);
@@ -5147,8 +5138,6 @@ algorithm
     
     case (DAE.SIZE(exp=e1,sz=SOME(e2)),_) then isConstWork(e1,isConstWork(e2,true));
     
-    case (DAE.END(),_) then true;
-      
       /*TODO:Make this work for multiple iters, guard exps*/
     case (DAE.REDUCTION(expr=e1,iterators={DAE.REDUCTIONITER(exp=e2)}),_)
       then isConstWork(e1,isConstWork(e2,true));
@@ -6257,7 +6246,6 @@ algorithm
         res;
     
     // end id
-    case (DAE.END(),DAE.END(),_,_) then true;
     /*// everything else failed, try structural equality
     case (e1,e2)
       equation

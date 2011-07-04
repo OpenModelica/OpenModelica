@@ -5167,5 +5167,15 @@ algorithm
           CREF_INVALID(cref2);
   end matchcontinue;
 end crefInsertSubscriptLstLst2;
+
+public function isCref
+  input Exp exp;
+  output Boolean b;
+algorithm
+  b := match exp
+    case CREF(_) then true;
+    else false;
+  end match;
+end isCref;
           
 end Absyn;

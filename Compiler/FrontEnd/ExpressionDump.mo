@@ -590,8 +590,6 @@ algorithm
     case (DAE.EMPTY(scope = scope, name = name, tyStr = tyStr), _, _, _) 
       then "<EMPTY(scope: " +& scope +& ", name: " +& ComponentReference.printComponentRefStr(name) +& ", ty: " +& tyStr +& ")>";
       
-    case (DAE.END(), _, _, _) then "end";
-    
     case (DAE.ICONST(integer = i), _, _, _)
       equation
         s = intString(i);
@@ -1006,7 +1004,6 @@ algorithm
     case (DAE.ENUM_LITERAL(name = _)) then 0;
     case (DAE.CREF(_,_)) then 0;
     case (DAE.ASUB(_,_)) then 0;
-    case (DAE.END()) then 0;
     case (DAE.CAST(_,_)) then 0;
     case (DAE.CALL(path=_)) then 0;
     case (DAE.PARTEVALFUNCTION(path=_)) then 0;
@@ -1128,8 +1125,6 @@ algorithm
       Real r;
       Boolean b;
       list<list<tuple<DAE.Exp, Boolean>>> lstes;
-    
-    case (DAE.END()) then Graphviz.NODE("END",{},{});
     
     case (DAE.ICONST(integer = i))
       equation
@@ -1318,13 +1313,6 @@ algorithm
       Real r;
       list<list<tuple<DAE.Exp,Boolean>>> lstes;
       Boolean b;
-    
-    case (DAE.END(),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        res_str = stringAppendList({gen_str,"END","\n"});
-      then
-        res_str;
     
     case (DAE.ICONST(integer = x),level) /* Graphviz.LNODE(\"ICONST\",{s},{},{}) */
       equation
