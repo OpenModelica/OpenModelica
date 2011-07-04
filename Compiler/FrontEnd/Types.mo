@@ -6864,9 +6864,10 @@ algorithm
     // All the other ones we don't handle
     case ((_,_))
       equation
-        print("- Types.typeToValue failed on unhandled Type ");
+        true = RTOpts.debugFlag("failtrace");
+        Debug.trace("- Types.typeToValue failed on unhandled Type ");
         s1 = printTypeStr(inType);
-        print(s1 +& "\n");
+        Debug.traceln(s1);
       then 
         fail();
     
