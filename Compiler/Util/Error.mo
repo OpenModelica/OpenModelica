@@ -295,6 +295,7 @@ public constant ErrorID LOAD_MODEL_DIFFERENT_VERSIONS=183;
 public constant ErrorID LOAD_MODEL=184;
 public constant ErrorID INVALID_ARGUMENT_TYPE=185;
 public constant ErrorID INVALID_SIZE_INDEX=186;
+public constant ErrorID ALGORITHM_TRANSITION_FAILURE=187;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -424,6 +425,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "In class %s, class restriction 'type' can only be derived from predefined types."),
           (EQUATION_TRANSITION_FAILURE,TRANSLATION(),ERROR(),
           "Equations are not allowed in %s."),
+          (ALGORITHM_TRANSITION_FAILURE,TRANSLATION(),ERROR(),
+          "Algorithm section is not allowed in %s."),
           (UNKNOWN_EXTERNAL_LANGUAGE,TRANSLATION(),ERROR(),
           "Unknown external language %s in external function declaration"),
           (DIFFERENT_NO_EQUATION_IF_BRANCHES,TRANSLATION(),ERROR(),

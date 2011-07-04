@@ -2183,6 +2183,7 @@ algorithm
       Connect.Sets csets;
       ClassInf.State ci_state;
       list<SCode.Statement> statements;
+      SCode.Statement stmt;
       Boolean impl;
       Env.Cache cache;
       Prefix.Prefix pre;
@@ -2191,10 +2192,12 @@ algorithm
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
       DAE.DAElist dae;
+      String s;
       
     case (cache,env,ih,_,pre,csets,ci_state,SCode.ALGORITHM(statements = statements),impl,unrollForLoops,graph) /* impl */ 
       equation 
         // set the source of this element
+        ci_state = ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM());
         source = DAEUtil.createElementSource(Absyn.dummyInfo, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
         (cache,statements_1) = instStatements(cache, env, ih, pre, statements, source, SCode.NON_INITIAL(), impl, unrollForLoops);
@@ -2203,6 +2206,13 @@ algorithm
         dae = DAE.DAE({DAE.ALGORITHM(DAE.ALGORITHM_STMTS(statements_1),source)});
       then
         (cache,env,ih,dae,csets,ci_state,graph);
+
+    case (_,_,_,_,_,_,ci_state,SCode.ALGORITHM(statements = stmt::_),_,_,_)
+      equation
+        failure(_ = ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM()));
+        s = ClassInf.printStateStr(ci_state);
+        Error.addMessage(Error.ALGORITHM_TRANSITION_FAILURE,{s});
+      then fail();
 
     case (_,_,_,_,_,_,_,algSCode,_,_,_)
       equation 
