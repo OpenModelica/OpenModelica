@@ -3163,41 +3163,39 @@ protected function zerocrossingindex
   input list<BackendDAE.ZeroCrossing> zeroCrossings;
   input BackendDAE.ZeroCrossing zc;
   output tuple<DAE.Exp,list<BackendDAE.ZeroCrossing>,Integer> out_exp;
-algorithm out_exp := matchcontinue (exp,index,zeroCrossings,/*inputzeroinfo,*/zc)
-  local
+algorithm
+  out_exp := matchcontinue (exp,index,zeroCrossings,/*inputzeroinfo,*/zc)
+    local
       DAE.Exp exp,e_1,e1,e2;
-       DAE.Operator op;
-       list<BackendDAE.ZeroCrossing> newzero,existzero,zc_lst;
+      DAE.Operator op;
+      list<BackendDAE.ZeroCrossing> newzero,existzero,zc_lst;
       BackendDAE.ZeroCrossing z_c,zc1;
-       Integer indx,length,eq_count,wc_count/*, new_idx*/;
+      Integer indx,length,eq_count,wc_count/*, new_idx*/;
       BackendDAE.Variables vars,knvars;
       String str;
-  case ((exp as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),index,zeroCrossings,z_c)
-     equation
+    case ((exp as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),index,zeroCrossings,z_c)
+      equation
         {} = Util.listSelect1(zeroCrossings,z_c/*zc1*/, sameZeroCrossing);
         zc_lst = listAppend(zeroCrossings, {z_c});
         //Debug.fcall("relidx",print, " zerocrossingindex 1 : "  +& ExpressionDump.printExpStr(exp) +& " index: " +& intString(index) +& "\n");
-      	then 
-       	  ((exp,zc_lst,index));
-  case ((exp as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),index,zeroCrossings,z_c)
-     equation
+      then 
+         ((exp,zc_lst,index));
+    case ((exp as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),index,zeroCrossings,z_c)
+      equation
         newzero= Util.listSelect1(zeroCrossings,z_c, sameZeroCrossing);
         length=listLength(newzero);
-         BackendDAE.ZERO_CROSSING((e_1 as DAE.RELATION(_,_,_,indx,_)),_,_)=Util.listFirst(newzero);
+        BackendDAE.ZERO_CROSSING((e_1 as DAE.RELATION(_,_,_,indx,_)),_,_)=Util.listFirst(newzero);
         //Debug.fcall("relidx",print, " zerocrossingindex 2: results "  +& ExpressionDump.printExpStr(e_1)+& "index: " +& intString(indx) +& " lenght: " +& intString(length) +& "\n");
-        then 
-       	  ((e_1,zeroCrossings,indx));
+      then 
+        ((e_1,zeroCrossings,indx));
     case (exp ,_,_,_)
-     equation
+      equation
         str = " failure in zerocrossingindex for: "  +& ExpressionDump.printExpStr(exp);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
 
    end matchcontinue;
-
 end zerocrossingindex;
-
-
 
 
 
