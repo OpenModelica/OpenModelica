@@ -139,8 +139,6 @@ public constant ErrorID UNBOUND_VALUE=24;
 public constant ErrorID NEGATIVE_SQRT=25;
 public constant ErrorID NO_CONSTANT_BINDING=26;
 public constant ErrorID TYPE_NOT_FROM_PREDEFINED=27;
-public constant ErrorID EQUATION_IN_RECORD=28;
-public constant ErrorID EQUATION_IN_CONNECTOR=29;
 public constant ErrorID UNKNOWN_EXTERNAL_LANGUAGE=30;
 public constant ErrorID DIFFERENT_NO_EQUATION_IF_BRANCHES=31;
 public constant ErrorID UNDERDET_EQN_SYSTEM=32;
@@ -424,10 +422,6 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "No constant value for variable %s in scope %s."),
           (TYPE_NOT_FROM_PREDEFINED,TRANSLATION(),ERROR(),
           "In class %s, class restriction 'type' can only be derived from predefined types."),
-          (EQUATION_IN_RECORD,TRANSLATION(),ERROR(),
-          "In class %s, equations not allowed in records"),
-          (EQUATION_IN_CONNECTOR,TRANSLATION(),ERROR(),
-          "In class %s, equations not allowed in connectors"),
           (EQUATION_TRANSITION_FAILURE,TRANSLATION(),ERROR(),
           "Equations are not allowed in %s."),
           (UNKNOWN_EXTERNAL_LANGUAGE,TRANSLATION(),ERROR(),

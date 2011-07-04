@@ -93,18 +93,13 @@ uniontype State "- Machine states, the string contains the classname."
     Absyn.Path path;
   end ENUMERATION;
 
-  record HAS_EQUATIONS
+  record HAS_RESTRICTIONS
     Absyn.Path path;
-  end HAS_EQUATIONS;
+    Boolean hasEquations;
+    Boolean hasAlgorithms;
+    Boolean hasConstraints;
+  end HAS_RESTRICTIONS;
   
-  record HAS_CONSTRAINTS
-    Absyn.Path path;
-  end HAS_CONSTRAINTS;
-
-  record IS_NEW
-    Absyn.Path path;
-  end IS_NEW;
-
   record TYPE_INTEGER
     Absyn.Path path;
   end TYPE_INTEGER;
@@ -164,6 +159,8 @@ public
 uniontype Event "- Events"
   record FOUND_EQUATION "There are equations inside the current definition" end FOUND_EQUATION;
     
+  record FOUND_ALGORITHM "There are algorithms inside the current definition" end FOUND_ALGORITHM;
+
   record FOUND_CONSTRAINT "There are constranit (equations) inside the current definition" end FOUND_CONSTRAINT;
 
   record NEWDEF "A definition with elements, i.e. a long definition" end NEWDEF;
@@ -193,7 +190,9 @@ public function printStateStr "- Printing
 algorithm
   outString:=
   matchcontinue (inState)
-    local Absyn.Path p;
+    local
+      Absyn.Path p;
+      Boolean b1,b2,b3;
     case UNKNOWN(path = p) then "unknown";
     case OPTIMIZATION(path = p) then "optimization";
     case MODEL(path = p) then "model";
@@ -207,9 +206,9 @@ algorithm
     case TYPE_REAL(path = p) then "Real";
     case TYPE_STRING(path = p) then "String";
     case TYPE_BOOL(path = p) then "Boolean";
-    case IS_NEW(path = p) then "new def";
-    case HAS_EQUATIONS(path = p) then "has eqn";
-    case HAS_CONSTRAINTS(path = p) then "has constr";
+    case HAS_RESTRICTIONS(path = p, hasEquations = false, hasAlgorithms = false, hasConstraints = false) then "new def";
+    case HAS_RESTRICTIONS(path = p, hasEquations = b1, hasAlgorithms = b2, hasConstraints = b3)
+      then "has" +& Util.if_(b1," equations","") +& Util.if_(b2," algorithms","") +& Util.if_(b1," constraints","");
     case EXTERNAL_OBJ(_) then "ExternalObject";
     case META_TUPLE(p) then "tuple";
     case META_LIST(p) then "list";
@@ -307,24 +306,12 @@ algorithm
         Print.printBuf(Absyn.pathString(p));
       then
         ();
-    case IS_NEW(path = p)
+    case HAS_RESTRICTIONS(path = p)
       equation
-        Print.printBuf("IS_NEW ");
+        Print.printBuf("HAS_RESTRICTIONS ");
         Print.printBuf(Absyn.pathString(p));
-      then
-        ();
-    case HAS_EQUATIONS(path = p)
-      equation
-        Print.printBuf("HAS_EQUATIONS ");
-        Print.printBuf(Absyn.pathString(p));
-      then
-        ();
-    case HAS_CONSTRAINTS(path = p)
-      equation
-        Print.printBuf("HAS_CONSTRAINTS ");
-        Print.printBuf(Absyn.pathString(p));
-      then
-        ();
+        Print.printBuf(printStateStr(inState));
+      then ();
   end matchcontinue;
 end printState;
 
@@ -347,9 +334,7 @@ algorithm
     case PACKAGE(path = p) then p;
     case FUNCTION(path = p) then p;
     case ENUMERATION(path = p) then p;
-    case HAS_EQUATIONS(path = p) then p;
-    case HAS_CONSTRAINTS(path = p) then p;
-    case IS_NEW(path = p) then p;
+    case HAS_RESTRICTIONS(path = p) then p;
     case TYPE_INTEGER(path = p) then p;
     case TYPE_REAL(path = p) then p;
     case TYPE_STRING(path = p) then p;
@@ -432,10 +417,10 @@ algorithm
       Absyn.Path p;
       State st;
       Event ev;
-      Boolean isExpandable,b;
+      Boolean isExpandable,b,b1,b2,b3;
       String s;
       list<String> msg;
-    case (UNKNOWN(path = p),NEWDEF()) then IS_NEW(p);  /* Event `NEWDEF\' */
+    case (UNKNOWN(path = p),NEWDEF()) then HAS_RESTRICTIONS(p,false,false,false);  /* Event `NEWDEF\' */
     case (OPTIMIZATION(path = p),NEWDEF()) then OPTIMIZATION(p);
     case (MODEL(path = p),NEWDEF()) then MODEL(p);
     case (RECORD(path = p),NEWDEF()) then RECORD(p);
@@ -445,7 +430,6 @@ algorithm
     case (PACKAGE(path = p),NEWDEF()) then PACKAGE(p);
     case (FUNCTION(path = p),NEWDEF()) then FUNCTION(p);
     case (ENUMERATION(path = p),NEWDEF()) then ENUMERATION(p);
-    case (IS_NEW(path = p),NEWDEF()) then IS_NEW(p);
     case (TYPE_INTEGER(path = p),NEWDEF()) then TYPE_INTEGER(p);
     case (TYPE_REAL(path = p),NEWDEF()) then TYPE_REAL(p);
     case (TYPE_STRING(path = p),NEWDEF()) then TYPE_STRING(p);
@@ -455,12 +439,12 @@ algorithm
     case (META_RECORD(path = p),NEWDEF()) then META_RECORD(p);  // Added 2009-08-18. sjoelund
 
    /* Event 'FOUND_COMPONENT' */
-    case (UNKNOWN(path = p),FOUND_COMPONENT(name = _)) then IS_NEW(p);  /* Event `NEWDEF\' */
-    case (OPTIMIZATION(path = p),FOUND_COMPONENT(name = _)) then OPTIMIZATION(p);
-    case (MODEL(path = p),FOUND_COMPONENT(name = _)) then MODEL(p);
-    case (RECORD(path = p),FOUND_COMPONENT(name = _)) then RECORD(p);
-    case (BLOCK(path = p),FOUND_COMPONENT(name = _)) then BLOCK(p);
-    case (CONNECTOR(path = p,isExpandable = isExpandable),FOUND_COMPONENT(name = _)) then CONNECTOR(p,isExpandable);
+    case (UNKNOWN(path = p),FOUND_COMPONENT(name = _)) then HAS_RESTRICTIONS(p,false,false,false);  /* Event `NEWDEF\' */
+    case (OPTIMIZATION(path = p),FOUND_COMPONENT(name = _)) then inState;
+    case (MODEL(path = p),FOUND_COMPONENT(name = _)) then inState;
+    case (RECORD(path = p),FOUND_COMPONENT(name = _)) then inState;
+    case (BLOCK(path = p),FOUND_COMPONENT(name = _)) then inState;
+    case (CONNECTOR(path = p),FOUND_COMPONENT(name = _)) then inState;
     case (TYPE(path = p),FOUND_COMPONENT(name = s)) // A type can not contain new components
       equation
         b = isBasicTypeComponentName(s);
@@ -470,47 +454,37 @@ algorithm
       then TYPE(p);
     /* adrpo 2009-05-15: type Orientation can contain equalityConstraint function! */
     //case (TYPE(path = p),FOUND_COMPONENT()) then TYPE(p);
-    case (PACKAGE(path = p),FOUND_COMPONENT(name = _)) then PACKAGE(p);
-    case (FUNCTION(path = p),FOUND_COMPONENT(name = _)) then FUNCTION(p);
-    case (ENUMERATION(path = p),FOUND_COMPONENT(name = _)) then ENUMERATION(p);
-    case (IS_NEW(path = p),FOUND_COMPONENT(name = _)) then IS_NEW(p);
-    case (TYPE_INTEGER(path = p),FOUND_COMPONENT(name = _)) then TYPE_INTEGER(p);
-    case (TYPE_REAL(path = p),FOUND_COMPONENT(name = _)) then TYPE_REAL(p);
-    case (TYPE_STRING(path = p),FOUND_COMPONENT(name = _)) then TYPE_STRING(p);
-    case (TYPE_BOOL(path = p),FOUND_COMPONENT(name = _)) then TYPE_BOOL(p);
-    case (TYPE_ENUM(path = p),FOUND_COMPONENT(name = _)) then TYPE_ENUM(p);
-    case (META_RECORD(path = p),FOUND_COMPONENT(name = _)) then META_RECORD(p);  // Added 2009-08-19. sjoelund
+    case (PACKAGE(path = p),FOUND_COMPONENT(name = _)) then inState;
+    case (FUNCTION(path = p),FOUND_COMPONENT(name = _)) then inState;
+    case (ENUMERATION(path = p),FOUND_COMPONENT(name = _)) then inState;
+    case (HAS_RESTRICTIONS(path = _),FOUND_COMPONENT(name = _)) then inState;
+    case (TYPE_INTEGER(path = p),FOUND_COMPONENT(name = _)) then inState;
+    case (TYPE_REAL(path = p),FOUND_COMPONENT(name = _)) then inState;
+    case (TYPE_STRING(path = p),FOUND_COMPONENT(name = _)) then inState;
+    case (TYPE_BOOL(path = p),FOUND_COMPONENT(name = _)) then inState;
+    case (TYPE_ENUM(path = p),FOUND_COMPONENT(name = _)) then inState;
+    case (META_RECORD(path = p),FOUND_COMPONENT(name = _)) then inState;  // Added 2009-08-19. sjoelund
 
    /* Event `FOUND_EQUATION\' */
-    case (UNKNOWN(path = p),FOUND_EQUATION()) then HAS_EQUATIONS(p);
-    case (OPTIMIZATION(path = p),FOUND_EQUATION()) then HAS_EQUATIONS(p);
-    case (OPTIMIZATION(path = p),FOUND_CONSTRAINT()) then HAS_CONSTRAINTS(p);
-    case (IS_NEW(path = p),FOUND_EQUATION()) then HAS_EQUATIONS(p);
-    case (MODEL(path = p),FOUND_EQUATION()) then MODEL(p);
-    case (RECORD(path = p),FOUND_EQUATION())
-      equation
-        s = Absyn.pathString(p);
-        Error.addMessage(Error.EQUATION_IN_RECORD, {s});
-      then
-        fail();
-    case (BLOCK(path = p),FOUND_EQUATION()) then BLOCK(p);
-    case (CONNECTOR(path = p,isExpandable = isExpandable),FOUND_EQUATION())
-      equation
-        s = Absyn.pathString(p);
-        Error.addMessage(Error.EQUATION_IN_CONNECTOR, {s});
-      then
-        fail();
-    case (TYPE(path = p),FOUND_EQUATION()) then fail();
-    case (PACKAGE(path = p),FOUND_EQUATION()) then fail();
-    case (PACKAGE(path = p),FOUND_CONSTRAINT()) then fail();
-    case (BLOCK(path = p),FOUND_CONSTRAINT()) then fail();
-    case (FUNCTION(path = p),FOUND_CONSTRAINT()) then fail();
-    case (RECORD(path = p),FOUND_CONSTRAINT()) then fail();
-    case (MODEL(path = p),FOUND_CONSTRAINT()) then fail();
-    case (FUNCTION(path = p),FOUND_CONSTRAINT()) then fail();
-    case (FUNCTION(path = p),FOUND_EQUATION()) then fail();
-    case (HAS_EQUATIONS(path = p),FOUND_EQUATION()) then HAS_EQUATIONS(p);
-    case (HAS_CONSTRAINTS(path = p),FOUND_CONSTRAINT()) then HAS_CONSTRAINTS(p);
+    case (UNKNOWN(path = p),FOUND_EQUATION()) then HAS_RESTRICTIONS(p,true,false,false);
+    case (OPTIMIZATION(path = p),FOUND_EQUATION()) then inState;
+    case (OPTIMIZATION(path = p),FOUND_CONSTRAINT()) then inState;
+    case (OPTIMIZATION(path = p),FOUND_ALGORITHM()) then inState;
+
+    case (MODEL(path = p),FOUND_EQUATION()) then inState;
+    case (BLOCK(path = p),FOUND_EQUATION()) then inState;
+
+    case (MODEL(path = p),FOUND_ALGORITHM()) then inState;
+    case (BLOCK(path = p),FOUND_ALGORITHM()) then inState;
+    case (FUNCTION(path = p),FOUND_ALGORITHM()) then inState;
+    
+    case (HAS_RESTRICTIONS(path=p,hasEquations=b1,hasAlgorithms=b2,hasConstraints=b3),FOUND_EQUATION()) then HAS_RESTRICTIONS(p,true,b2,b3);
+    case (HAS_RESTRICTIONS(path=p,hasEquations=b1,hasAlgorithms=b2,hasConstraints=b3),FOUND_CONSTRAINT()) then HAS_RESTRICTIONS(p,b1,b2,true);
+    case (HAS_RESTRICTIONS(path=p,hasEquations=b1,hasAlgorithms=b2,hasConstraints=b3),FOUND_ALGORITHM()) then HAS_RESTRICTIONS(p,b1,true,b3);
+
+    case (_,FOUND_EQUATION()) then fail();
+    case (_,FOUND_CONSTRAINT()) then fail();
+
     case (st,ev)
       equation
         true = RTOpts.debugFlag("failtrace");
@@ -537,24 +511,21 @@ algorithm
     
     case (UNKNOWN(path = p),_) then ();
     
-    case (IS_NEW(path = p),SCode.R_CLASS()) then ();
-    case (HAS_EQUATIONS(path = p),SCode.R_CLASS()) then ();
-    case (HAS_EQUATIONS(path = p),SCode.R_OPTIMIZATION()) then ();
-    case (HAS_CONSTRAINTS(path = p),SCode.R_OPTIMIZATION()) then ();
-    
+    case (HAS_RESTRICTIONS(path = p),SCode.R_CLASS()) then ();
+    case (HAS_RESTRICTIONS(path = p),SCode.R_MODEL()) then ();
+    case (HAS_RESTRICTIONS(path = p),SCode.R_OPTIMIZATION()) then ();
     case (MODEL(path = p),SCode.R_MODEL()) then ();
-    case (IS_NEW(path = p),SCode.R_MODEL()) then ();
-    case (HAS_EQUATIONS(path = p),SCode.R_MODEL()) then ();
-    
+
+   
     case (RECORD(path = p),SCode.R_RECORD()) then ();
-    case (IS_NEW(path = p),SCode.R_RECORD()) then ();
+    case (HAS_RESTRICTIONS(path = p,hasEquations=false,hasConstraints=false,hasAlgorithms=false),SCode.R_RECORD()) then ();
     
     case (BLOCK(path = p),SCode.R_BLOCK()) then ();
-    case (HAS_EQUATIONS(path = p),SCode.R_BLOCK()) then ();
+    case (MODEL(path = p),SCode.R_MODEL()) then ();
     
     case (CONNECTOR(path = _,isExpandable=false),SCode.R_CONNECTOR(false)) then ();
     case (CONNECTOR(path = _,isExpandable=true),SCode.R_CONNECTOR(true)) then ();
-    case (IS_NEW(path = _),SCode.R_CONNECTOR(_)) then ();
+    case (HAS_RESTRICTIONS(path = p,hasEquations=false,hasConstraints=false,hasAlgorithms=false),SCode.R_CONNECTOR(_)) then ();
     case (TYPE_INTEGER(path = _),SCode.R_CONNECTOR(_)) then ();
     case (TYPE_REAL(path = _),SCode.R_CONNECTOR(_)) then ();
     case (TYPE_STRING(path = _),SCode.R_CONNECTOR(_)) then ();
@@ -570,10 +541,11 @@ algorithm
     case (TYPE_ENUM(path = p),SCode.R_TYPE()) then ();
     case (ENUMERATION(p),SCode.R_TYPE()) then ();
     
-    case (IS_NEW(path = p),SCode.R_PACKAGE()) then ();
     case (PACKAGE(path = p),SCode.R_PACKAGE()) then ();
-    case (IS_NEW(path = p),SCode.R_FUNCTION()) then ();
+    case (HAS_RESTRICTIONS(path = p,hasEquations=false,hasConstraints=false,hasAlgorithms=false),SCode.R_PACKAGE()) then ();
+
     case (FUNCTION(path = p),SCode.R_FUNCTION()) then ();
+    case (HAS_RESTRICTIONS(path = p,hasEquations=false,hasConstraints=false),SCode.R_FUNCTION()) then ();
     case (META_TUPLE(p),SCode.R_TYPE()) then ();
     case (META_LIST(p),SCode.R_TYPE()) then ();
     case (META_OPTION(p),SCode.R_TYPE()) then ();
@@ -637,8 +609,6 @@ algorithm
     case (PACKAGE(path = _),(PACKAGE(path = _) :: rest)) then true;
     case (FUNCTION(path = _),(FUNCTION(path = _) :: rest)) then true;
     case (ENUMERATION(path = _),(ENUMERATION(path = _) :: rest)) then true;
-    case (HAS_EQUATIONS(path = _),(HAS_EQUATIONS(path = _) :: rest)) then true;
-    case (IS_NEW(path = _),(IS_NEW(path = _) :: rest)) then true;
     case (TYPE_INTEGER(path = _),(TYPE_INTEGER(path = _) :: rest)) then true;
     case (TYPE_REAL(path = _),(TYPE_REAL(path = _) :: rest)) then true;
     case (TYPE_STRING(path = _),(TYPE_STRING(path = _) :: rest)) then true;
