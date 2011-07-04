@@ -1790,7 +1790,7 @@ algorithm
         (cache,env2,_,_,dae1,_,_,_,_) = Inst.instElementList(
           cache,env2, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, dummyFunc, ld_mod, {},
-          impl, Inst.INNER_CALL(), ConnectionGraph.EMPTY);
+          impl, Inst.INNER_CALL(), ConnectionGraph.EMPTY, true);
       then (cache,SOME((env2,dae1)));
       
     case (cache,env,ld,scopeName,impl,info)

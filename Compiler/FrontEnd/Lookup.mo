@@ -2906,7 +2906,7 @@ algorithm
     cache,env,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
     DAE.NOMOD(),Prefix.NOPRE(), Connect.emptySet,
     ClassInf.FUNCTION(Absyn.IDENT("")), Util.listMap1(els,Util.makeTuple2,DAE.NOMOD()),
-    {}, false, Inst.INNER_CALL(), ConnectionGraph.EMPTY);
+    {}, false, Inst.INNER_CALL(), ConnectionGraph.EMPTY, true);
   varlst := Types.boxVarLst(varlst);
   ftype := (DAE.T_METARECORD(utPath,index,varlst),SOME(path));
   // print("buildMetaRecordType " +& id +& " in scope " +& Env.printEnvPathStr(env) +& " OK " +& Types.unparseType(ftype) +&"\n");

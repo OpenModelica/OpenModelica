@@ -2216,7 +2216,7 @@ algorithm
 
         // we should instantiate with no modifications, they don't belong to the class, they belong to the component!
         (cache,env_2,ih,store,dae1,csets,ci_state_1,tys1,graph) = 
-            instElementList(cache,env_1,ih,store, /* DAE.NOMOD() */ mods, pre, csets, ci_state_1, comp, inst_dims, impl,callscope,graph);
+            instElementList(cache,env_1,ih,store, /* DAE.NOMOD() */ mods, pre, csets, ci_state_1, comp, inst_dims, impl,callscope,graph,true);
         
         (cache,fq_class) = makeFullyQualified(cache,env_2, Absyn.IDENT(n));
         eqConstraint = equalityConstraint(env_2, els, info);
@@ -3377,7 +3377,7 @@ algorithm
 
         //(cache, cdefelts_2) = removeConditionalComponents(cache, env2, cdefelts_2, pre);
         (cache,env3,ih,store,dae1,csets1,ci_state1,tys,graph) =
-          instElementList(cache, env2, ih, store, mods , pre, csets, ci_state, cdefelts_2, inst_dims, impl, INNER_CALL(), graph);
+          instElementList(cache, env2, ih, store, mods , pre, csets, ci_state, cdefelts_2, inst_dims, impl, INNER_CALL(), graph,true);
         mods = Types.removeFirstSubsRedecl(mods);
         
         ErrorExt.rollBack("instClassdefBasicType1"); // rollback before going into instBasictypeBaseclass 
@@ -3681,7 +3681,7 @@ algorithm
         compelts_2 = listAppend(compelts_2, comp_cond);
 
         (cache,env5,ih,store,dae1,csets1,ci_state2,vars,graph) = 
-          instElementList(cache, env4, ih, store, mods, pre, csets, ci_state1, compelts_2, inst_dims, impl, callscope, graph);
+          instElementList(cache, env4, ih, store, mods, pre, csets, ci_state1, compelts_2, inst_dims, impl, callscope, graph, true);
 
         // If we are currently instantiating a connector, add all flow variables
         // in it as inside connectors.
@@ -4987,7 +4987,7 @@ algorithm
         //lst_constantEls = listAppend(extcomps,lst_constantEls);
         (cache,env3,ih,_,_,_,ci_state2,_,_) =
            instElementList(cache, env3, ih, UnitAbsyn.noStore, mods, pre, csets, ci_state1, lst_constantEls,
-                          inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY) "instantiate constants";
+                          inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY, false) "instantiate constants";
         // Debug.traceln("partialInstClassdef OK " +& className);
       then
         (cache,env3,ih,ci_state2);
@@ -5396,6 +5396,7 @@ public function instElementList
   input Boolean inImplInst;
   input CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
+  input Boolean inStopOnError;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
@@ -5411,7 +5412,7 @@ algorithm
   el := sortElementList(inElements, inEnv);
   (outCache, outEnv, outIH, outStore, outDae, outSets, outState, outTypesVarLst, outGraph) := 
     instElementList2(inCache, inEnv, inIH, store, inMod, inPrefix, inSets,
-      inState, el, inInstDims, inImplInst, inCallingScope, inGraph);
+      inState, el, inInstDims, inImplInst, inCallingScope, inGraph, inStopOnError);
 end instElementList;
 
 protected function sortElementList
@@ -5623,15 +5624,16 @@ public function instElementList2
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
-  input DAE.Mod inMod2;
-  input Prefix.Prefix inPrefix3;
-  input Connect.Sets inSets4;
-  input ClassInf.State inState5;
-  input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst6;
-  input InstDims inInstDims7;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
+  input Connect.Sets inSets;
+  input ClassInf.State inState;
+  input list<tuple<SCode.Element, DAE.Mod>> inElements;
+  input InstDims inInstDims;
   input Boolean inImplicit;
   input CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
+  input Boolean inStopOnError;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
@@ -5643,7 +5645,8 @@ public function instElementList2
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,store,inMod2,inPrefix3,inSets4,inState5,inTplSCodeElementModLst6,inInstDims7,inImplicit,inCallingScope,inGraph)
+  matchcontinue (inCache, inEnv, inIH, store, inMod, inPrefix, inSets, inState,
+      inElements, inInstDims, inImplicit, inCallingScope, inGraph, inStopOnError)
     local
       list<Env.Frame> env,env_1,env_2;
       Connect.Sets csets,csets_1,csets_2;
@@ -5666,13 +5669,13 @@ algorithm
       String comp_name;
       DAE.ComponentRef comp_cr;
 
-    case (cache,env,ih,store,_,_,csets,ci_state,{},_,_,_,graph)
+    case (cache,env,ih,store,_,_,csets,ci_state,{},_,_,_,graph,_)
       then (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,{},graph);
 
     // Don't instantiate conditional components with condition = false.
     case (cache, env, ih, store, mod, pre, csets, ci_state, 
         (el as (SCode.COMPONENT(name = comp_name, info = info, condition=SOME(_)), _)) :: els, inst_dims,
-        impl, callscope, graph)
+        impl, callscope, graph, _)
       equation
         // check for duplicate modifications
         ele = Util.tuple21(el);
@@ -5689,13 +5692,14 @@ algorithm
 
         (cache, env, ih, store, dae, csets, ci_state, tys, graph) =
           instElementList2(cache, env, ih, store, mod, pre, csets, ci_state, els,
-            inst_dims, impl, callscope, graph);
+            inst_dims, impl, callscope, graph, inStopOnError);
       then
         (cache, env, ih, store, dae, csets, ci_state, tys, graph);
 
     /* most work done in inst_element. */
-    case (cache,env,ih,store,mod,pre,csets,ci_state,el :: els,inst_dims,impl,callscope,graph)
+    case (cache,env,ih,store,mod,pre,csets,ci_state,el :: els,inst_dims,impl,callscope,graph, _)
       equation
+        ErrorExt.setCheckpoint("instElementList2"); 
         // Debug.fprintln("instTrace", "INST ELEMENT: " +& Env.printEnvPathStr(env) +& " el: " +& SCodeDump.shortElementStr(Util.tuple21(el)) +& " mods: " +& Mod.printModStr(mod));
         // check for duplicate modifications
         ele = Util.tuple21(el);
@@ -5710,21 +5714,34 @@ algorithm
         //print("Instantiating element: " +& str +& " in scope " +& Env.getScopeName(env) +& ", elements to go: " +& intString(listLength(els)) +&
         //"\t mods: " +& Mod.printModStr(mod) +&  "\n");
 
-                 
         (cache,env_1,ih,store,dae1,csets_1,ci_state_1,tys1,graph) =
           instElement(cache,env,ih,store, mod, pre, csets, ci_state, el, inst_dims, impl, callscope, graph);
         /*s1 = Util.if_(stringEq("n", str),DAE.dumpElementsStr(dae1),"");
         print(s1) "To print what happened to a specific var";*/
         Error.updateCurrentComponent("",Absyn.dummyInfo);
         (cache,env_2,ih,store,dae2,csets_2,ci_state_2,tys2,graph) =
-          instElementList2(cache,env_1,ih,store, mod, pre, csets_1, ci_state_1, els, inst_dims, impl, callscope, graph);
+          instElementList2(cache,env_1,ih,store, mod, pre, csets_1, ci_state_1,
+            els, inst_dims, impl, callscope, graph, inStopOnError);
         tys = listAppend(tys1, tys2);
         dae = DAEUtil.joinDaes(dae1, dae2);
+        ErrorExt.delCheckpoint("instElementList2");
       then
         (cache,env_2,ih,store,dae,csets_2,ci_state_2,tys,graph);
 
-    case (_,_,_,_,_,_,_,_,els,_,_,_,_)
+    // If inStopOnError is false, skip the failed element and continue.
+    case (cache, env, ih, store, mod, pre, csets, ci_state, _ :: els, inst_dims,
+        impl, callscope, graph, false)
       equation
+        ErrorExt.rollBack("instElementList2"); 
+        (cache, env_2, ih, store, dae2, csets_2, ci_state_2, tys2, graph) =
+          instElementList2(cache, env, ih, store, mod, pre, csets, ci_state,
+            els, inst_dims, impl, callscope, graph, inStopOnError);
+      then
+        (cache, env_2, ih, store, dae2, csets_2, ci_state_2, tys2, graph);
+
+    case (_,_,_,_,_,_,_,_,els,_,_,_,_,_)
+      equation
+        ErrorExt.delCheckpoint("instElementList2");
         //print("instElementList2 failed\n ");
         // no need for this line as we already printed the crappy element that we couldn't instantiate
         // Debug.fprintln("failtrace", "- Inst.instElementList failed");
@@ -9172,13 +9189,7 @@ algorithm
     // if we don't have a redeclare, take the binding from mod_3
     case (cache,env,cenv,ih,pre,path,name,ad,cl,attr,_,dattr,info,m,cmod,mod,cref,ci_state,csets,impl,updatedComps)
       equation        
-        ErrorExt.setCheckpoint("updateComponentInEnv2");
-        (cache,m_1) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), m, impl, info)
-        "Prefix does not matter, since we only update types
-         in env, and does not make any dae elements, etc.." ;
-        ErrorExt.rollBack("updateComponentInEnv2")
-        "Rollback all error since we are only interested in type, not value at this point.
-         Errors that occur in elabMod which does not fail the function will be accepted.";
+        (cache, m_1) = updateComponentInEnv3(cache, env, ih, m, impl, info);
         classmod = Mod.lookupModificationP(mod, path);
         mm = Mod.lookupCompModification(mod, name);
         // make sure is not a redeclare
@@ -9225,13 +9236,7 @@ algorithm
     // mod is a redeclare, take binding from m!
     case (cache,env,cenv,ih,pre,path,name,ad,cl,attr,_,dattr,info,m,cmod,mod,cref,ci_state,csets,impl,updatedComps)
       equation        
-        ErrorExt.setCheckpoint("updateComponentInEnv2");
-        (cache,m_1) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), m, impl, info)
-        "Prefix does not matter, since we only update types
-         in env, and does not make any dae elements, etc.." ;
-        ErrorExt.rollBack("updateComponentInEnv2")
-        "Rollback all error since we are only interested in type, not value at this point.
-         Errors that occur in elabMod which does not fail the function will be accepted.";
+        (cache, m_1) = updateComponentInEnv3(cache, env, ih, m, impl, info);
         classmod = Mod.lookupModificationP(mod, path);
         mm = Mod.lookupCompModification(mod, name);
         mod = Mod.merge(classmod, mm, env, Prefix.NOPRE());
@@ -9279,6 +9284,44 @@ algorithm
       then fail();
   end matchcontinue;
 end updateComponentInEnv2;
+
+protected function updateComponentInEnv3
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input InstanceHierarchy inIH;
+  input SCode.Mod inMod;
+  input Boolean inImpl;
+  input Absyn.Info inInfo;
+  output Env.Cache outCache;
+  output DAE.Mod outMod;
+algorithm
+  (outCache, outMod) := 
+  matchcontinue(inCache, inEnv, inIH, inMod, inImpl, inInfo)
+    local
+      DAE.Mod mod;
+      Env.Cache cache;
+
+    case (_, _, _, _, _, _)
+      equation
+        ErrorExt.setCheckpoint("updateComponentInEnv3");
+        (cache, mod) = 
+          Mod.elabMod(inCache, inEnv, inIH, Prefix.NOPRE(), inMod, inImpl, inInfo)
+        "Prefix does not matter, since we only update types
+         in env, and does not make any dae elements, etc.." ;
+        ErrorExt.rollBack("updateComponentInEnv3")
+        "Rollback all error since we are only interested in type, not value at
+         this point. Errors that occur in elabMod which does not fail the
+         function will be accepted.";
+      then
+        (cache, mod);
+
+    else
+      equation
+        ErrorExt.rollBack("updateComponentInEnv3");
+      then
+        fail();
+  end matchcontinue;
+end updateComponentInEnv3;
 
 protected function instDimExpLst
 "function: instDimExpLst

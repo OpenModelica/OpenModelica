@@ -6864,7 +6864,9 @@ algorithm
     // All the other ones we don't handle
     case ((_,_))
       equation
-        print("- Types.typeToValue failed on unhandled Type"); 
+        print("- Types.typeToValue failed on unhandled Type ");
+        s1 = printTypeStr(inType);
+        print(s1 +& "\n");
       then 
         fail();
     
