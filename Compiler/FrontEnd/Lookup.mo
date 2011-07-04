@@ -1201,6 +1201,7 @@ algorithm
       Option<DAE.ComponentRef> filterCref;
       Boolean unique;
       DAE.ExpType ety;
+      Env.AvlTree ht;
 
       // If we search for A1.A2....An.x while in scope A1.A2...An, just search for x. 
       // Must do like this to ensure finite recursion 
@@ -1263,14 +1264,10 @@ algorithm
         (cache,env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
 
     // Lookup where the first identifier is a component.
-    case (cache, env, cr as DAE.CREF_QUAL(ident = id, identType = ety, 
-        subscriptLst = sb, componentRef = cref), _, _)
+    case (cache, env as (Env.FRAME(clsAndVars = ht) :: _), cr, _, _)
       equation
-        (cache, attr, ty, bind, cnstForRange, splicedExpData, classEnv,
-         componentEnv, name) = lookupVarLocal(cache, env, DAE.CREF_IDENT(id, ety, sb));
-        (cache, attr2, ty, bind, cnstForRange, splicedExpData, classEnv,
-         componentEnv, name) = lookupVarLocal(cache, componentEnv, cref);
-        attr = propagateVariability(attr2, attr);
+        (cache, attr, ty, bind, cnstForRange, splicedExpData, componentEnv, name) = 
+          lookupVarF(cache, ht, cr);
       then
         (cache, env, attr, ty, bind, cnstForRange, splicedExpData, componentEnv, name);
 
@@ -1311,19 +1308,6 @@ algorithm
         fail();
   end matchcontinue;
 end lookupVarInPackages;
-
-protected function propagateVariability
-  input DAE.Attributes inComponentAttr;
-  input DAE.Attributes inStructureAttr;
-  output DAE.Attributes outAttr;
-protected
-  SCode.Variability var1, var2;
-algorithm
-  DAE.ATTR(variability = var1) := inComponentAttr;
-  DAE.ATTR(variability = var2) := inStructureAttr;
-  outAttr := DAEUtil.setAttrVariability(inComponentAttr, 
-    SCode.variabilityOr(var1, var2));
-end propagateVariability;
 
 protected function makeOptIdentOrNone "
 Author: BZ, 2009-04
