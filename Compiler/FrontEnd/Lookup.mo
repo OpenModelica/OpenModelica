@@ -390,7 +390,7 @@ algorithm
     case (cache,env,path,prevFrames,inState,msg)
       equation        
         // Debug.traceln("lookupClass " +& Absyn.pathString(path) +& " s:" +& Env.printEnvPathStr(env));
-        SOME(scope) = Env.getEnvPath(env);
+        scope = Env.getEnvName(env);
         f::fs = Env.cacheGet(scope,path,cache);
         Util.setStatefulBoolean(inState,true);
         id = Absyn.pathLastIdent(path);
@@ -468,7 +468,7 @@ algorithm
     case (cache,env,id,path,NONE(),prevFrames,inState,msg)
       equation
         // false = Util.getStatefulBoolean(inState); ???
-        SOME(scope) = Env.getEnvPath(env);
+        scope = Env.getEnvName(env);
         env = Env.cacheGet(scope,Absyn.IDENT(id),cache);
         Util.setStatefulBoolean(inState,true);
         (cache,c,env,prevFrames) = lookupClass2(cache,env,path,{},inState,msg);
@@ -1217,7 +1217,7 @@ algorithm
     case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref),prevFrames,inState) /* First part of name is a class. */ 
       equation
         (NONE(),prevFrames) = lookupPrevFrames(id,prevFrames);
-        SOME(scope) = Env.getEnvPath(env);
+        scope = Env.getEnvName(env);
         path = ComponentReference.crefToPath(cr);
         id = Absyn.pathLastIdent(path);
         path = Absyn.stripLast(path);
@@ -1476,7 +1476,7 @@ algorithm
     case(cache,env,path,mod,msg) /* Should we only lookup if it is SCode.NOMOD? */
       equation
         (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = lookupClass(cache,env,path,msg);
-        SOME(scope) = Env.getEnvPath(cenv);
+        scope = Env.getEnvName(cenv);
         ident = Absyn.pathLastIdent(path);
        classEnv = Env.cacheGet(scope,Absyn.IDENT(ident),cache);
       then 

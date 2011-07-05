@@ -896,22 +896,34 @@ algorithm
   end match;
 end getClassName;
 
-public function getEnvName "returns the FQ name of the environment, see also getEnvPath"
-input Env env;
-output Absyn.Path path;
+public function getEnvName
+  "Returns the FQ name of the environment, see also getEnvPath"
+  input Env inEnv;
+  output Absyn.Path outPath;
+protected
+  Ident id;
+  Env rest;
 algorithm
-  path := matchcontinue(env)
-    case(env) equation
-      SOME(path) = getEnvPath(env);
-    then path;
-    case _
-      equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.traceln("- Env.getEnvName failed");
-        _ = getEnvPath(env);
-      then fail();
-  end matchcontinue;
+  FRAME(optName = SOME(id)) :: rest := inEnv;
+  outPath := getEnvName2(rest, Absyn.IDENT(id));
 end getEnvName;
+   
+public function getEnvName2
+  input Env inEnv;
+  input Absyn.Path inPath;
+  output Absyn.Path outPath;
+algorithm
+  outPath := match(inEnv, inPath)
+    local
+      Ident id;
+      Env rest;
+
+    case (FRAME(optName = SOME(id)) :: rest, _)
+      then getEnvName2(rest, Absyn.QUALIFIED(id, inPath));
+
+    else inPath;
+  end match;
+end getEnvName2;
 
 public function getEnvPath "function: getEnvPath
   This function returns all partially instantiated parents as an Absyn.Path
@@ -919,23 +931,21 @@ public function getEnvPath "function: getEnvPath
   the topmost unnamed frame. If the environment is only the topmost frame,
   NONE() is returned."
   input Env inEnv;
-  output Option<Absyn.Path> outAbsynPathOption;
+  output Option<Absyn.Path> outEnvPath;
 algorithm
-  outAbsynPathOption := match (inEnv)
+  outEnvPath := matchcontinue(inEnv)
     local
-      Ident id;
-      Absyn.Path path,path_1;
-      Env rest;
-    case ({FRAME(optName = SOME(id)),FRAME(optName = NONE())}) then SOME(Absyn.IDENT(id));
-    case ((FRAME(optName = SOME(id)) :: rest))
+      Absyn.Path path;
+
+    case _
       equation
-        SOME(path) = getEnvPath(rest);
-        path_1 = Absyn.joinPaths(path, Absyn.IDENT(id));
+        path = getEnvName(inEnv);
       then
-        SOME(path_1);
+        SOME(path);
+
     else NONE();
-  end match;
-end getEnvPath;
+  end matchcontinue;
+end getEnvPath;  
 
 public function getEnvPathNoImplicitScope "function: getEnvPath
   This function returns all partially instantiated parents as an Absyn.Path
