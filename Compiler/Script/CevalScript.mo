@@ -1197,16 +1197,13 @@ algorithm
       then
         (cache,Values.STRING("Unknown model.\n"),st);
         
-    case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast=p),msg)
+    case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(path))},st,msg)
       equation
-        ptot = Dependency.getTotalProgram(path,p);
-        scodeP = SCodeUtil.translateAbsyn2SCode(ptot);
-        str = Print.getErrorString() "we do not want error msg twice.." ;
-        failure((_,_,_,_) =
-        Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,scodeP,path));
-        Print.clearErrorBuf();
-        Print.printErrorBuf(str);
-        str = Print.getErrorString();
+        b = Error.getNumMessages() == 0;
+        cname = Absyn.pathString(path);
+        str = "Internal error, instantiation of " +& cname +& 
+          " failed with no error message.";
+        str = Util.if_(b, str, "");
       then
         (cache,Values.STRING(str),st);
 
