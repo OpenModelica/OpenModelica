@@ -919,7 +919,7 @@ match externalDecl
     let func_args_str = (args |> arg => dumpExp(arg) ;separator=", ")
     let func_str = if func_name_str then ' <%func_name_str%>(<%func_args_str%>)'
     let lang_str = match lang case SOME(l) then ' "<%l%>"'
-    let output_str = match output_ case SOME(name) then '<%dumpCref(name)%> ='
+    let output_str = match output_ case SOME(name) then ' <%dumpCref(name)%> ='
     'external<%lang_str%><%output_str%><%func_str%>;'
 end dumpExternalDecl;
 
