@@ -885,19 +885,19 @@ algorithm
   
     case((inmod as DAE.REDECL(f,e,redecls)),componentModified)
       equation
-        Debug.fprint("redecl","Removing redeclare mods: " +& componentModified +&" before" +& Mod.printModStr(inmod) +& "\n");  
+        //Debug.fprint("redecl","Removing redeclare mods: " +& componentModified +&" before" +& Mod.printModStr(inmod) +& "\n");  
         redecls = removeRedeclareMods(redecls,componentModified);
         outmod = Util.if_(listLength(redecls) > 0,DAE.REDECL(f,e,redecls), DAE.NOMOD());
-        Debug.fprint("redecl","Removing redeclare mods: " +& componentModified +&" after" +& Mod.printModStr(outmod) +& "\n");
+        //Debug.fprint("redecl","Removing redeclare mods: " +& componentModified +&" after" +& Mod.printModStr(outmod) +& "\n");
       then
         outmod;
 
     case(DAE.MOD(f,e,subs,oem),componentModified)
       equation
-        Debug.fprint("redecl","Removing redeclare mods: " +& componentModified +&" before" +& Mod.printModStr(inmod) +& "\n");
+        //Debug.fprint("redecl","Removing redeclare mods: " +& componentModified +&" before" +& Mod.printModStr(inmod) +& "\n");
         subs = removeModInSubs(subs,componentModified);
         outmod = DAE.MOD(f,e,subs,oem);
-        Debug.fprint("redecl","Removing redeclare mods: " +& componentModified +&" after" +& Mod.printModStr(outmod) +& "\n");
+        //Debug.fprint("redecl","Removing redeclare mods: " +& componentModified +&" after" +& Mod.printModStr(outmod) +& "\n");
       then
         outmod;
   end match;
