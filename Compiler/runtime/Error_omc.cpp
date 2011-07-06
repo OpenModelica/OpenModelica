@@ -69,4 +69,9 @@ extern void Error_addSourceMessage(int _id, const char* _msg_type, const char* _
   }
 }
 
+extern int Error_getNumMessages()
+{
+  return errorMessageQueue.size();
+}
+
 }

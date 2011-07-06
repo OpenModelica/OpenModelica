@@ -87,6 +87,58 @@ extern "C" {
 #define strncasecmp strnicmp
 #endif
 
+extern int dgeev_(const char *jobvl, const char *jobvr, integer *n, 
+  doublereal *a, integer *lda, doublereal *wr, doublereal *wi, doublereal *vl,
+  integer *ldvl, doublereal *vr, integer *ldvr, doublereal *work, 
+  integer *lwork, integer *info);
+
+extern int dgegv_(const char *jobvl, const char *jobvr, integer *n, doublereal *a, 
+  integer *lda, doublereal *b, integer *ldb, doublereal *alphar, 
+  doublereal *alphai, doublereal *beta, doublereal *vl, integer *ldvl,
+  doublereal *vr, integer *ldvr, doublereal *work, integer *lwork, 
+  integer *info); 
+
+extern int dgels_(const char *trans, integer *m, integer *n, integer *nrhs, 
+  doublereal *a, integer *lda, doublereal *b, integer *ldb, doublereal *work,
+  integer *lwork, integer *info);
+
+extern int dgelsx_(integer *m, integer *n, integer *nrhs, doublereal *a, 
+  integer *lda, doublereal *b, integer *ldb, integer *jpvt, doublereal *rcond,
+  integer *rank, doublereal *work, integer *info);
+
+extern int dgesv_(integer *n, integer *nrhs, doublereal *a, integer *lda,
+  integer *ipiv, doublereal *b, integer *ldb, integer *info);
+
+extern int dgglse_(integer *m, integer *n, integer *p, doublereal *a,
+  integer *lda, doublereal *b, integer *ldb, doublereal *c, doublereal *d,
+  doublereal *x, doublereal *work, integer *lwork, integer *info);
+
+extern int dgtsv_(integer *n, integer *nrhs, doublereal *dl, doublereal *d,
+  doublereal *du, doublereal *b, integer *ldb, integer *info);
+
+extern int dgbsv_(integer *n, integer *kl, integer *ku, integer *nrhs,
+  doublereal *ab, integer *ldab, integer *ipiv, doublereal *b,
+  integer *ldb, integer *info);
+
+extern int dgesvd_(const char *jobu, const char *jobvt, integer *m, integer *n,
+  doublereal *a, integer *lda, doublereal *s, doublereal *u, integer *ldu,
+  doublereal *vt, integer *ldvt, doublereal *work, integer *lwork, integer *info);
+
+extern int dgetrf_(integer *m, integer *n, doublereal *a, integer *lda,
+  integer *ipiv, integer *info);
+
+extern int dgetrs_(const char *trans, integer *n, integer *nrhs, doublereal *a,
+  integer *lda, integer *ipiv, doublereal *b, integer *ldb, integer *info);
+
+extern int dgetri_(integer *n, doublereal *a, integer *lda, integer *ipiv,
+  doublereal *work, integer *lwork, integer *info);
+
+extern int dgeqpf_(integer *m, integer *n, doublereal *a, integer *lda,
+  integer *jpvt, doublereal *tau, doublereal *work, integer *info);
+
+extern int dorgqr_(integer *m, integer *n, integer *k, doublereal *a,
+  integer *lda, doublereal *tau, doublereal *work, integer *lwork, integer *info);
+
 double* alloc_real_matrix(int N, int M, void *data)
 {
   double *matrix;
@@ -554,7 +606,7 @@ void LapackImpl__dgesvd(void *JOBU, void *JOBVT, void *M, void *N, void *inA,
   ldu = RML_UNTAGFIXNUM(LDU);
   ldvt = RML_UNTAGFIXNUM(LDVT);
   lwork = RML_UNTAGFIXNUM(LWORK);
-  lds = min(m, n);
+  lds = (m < n ? m : n);
  
   if(*jobu == 'A') ucol = m;
   else if(*jobu == 'S') ucol = lds;
@@ -592,7 +644,7 @@ void LapackImpl__dgetrf(void *M, void *N, void *inA, void *LDA, void **outA,
   m = RML_UNTAGFIXNUM(M);
   n = RML_UNTAGFIXNUM(N);
   lda = RML_UNTAGFIXNUM(LDA);
-  ldipiv = min(m, n);
+  ldipiv = (m < n ? m : n);
 
   a = alloc_real_matrix(lda, n, inA);
   ipiv = alloc_zeroed_int_vector(ldipiv);
@@ -670,7 +722,7 @@ void LapackImpl__dgeqpf(void *M, void *N, void *inA, void *LDA, void *inJPVT,
   n = RML_UNTAGFIXNUM(N);
   lda = RML_UNTAGFIXNUM(LDA);
   lwork = 3 * n;
-  ldtau = min(m, n);
+  ldtau = (m < n ? m : n);
 
   a = alloc_real_matrix(lda, n, inA);
   jpvt = alloc_int_vector(n, inJPVT);
