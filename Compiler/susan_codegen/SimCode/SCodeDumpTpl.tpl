@@ -791,13 +791,8 @@ template dumpModifier(SCode.Mod modifier)
 match modifier
   case MOD(__) then
     let binding_str = dumpModifierBinding(binding)
-    let prefix_str = match subModLst 
-      case NAMEMOD(A = m) :: _ then 
-        dumpModifierPrefix(m)
-      case IDXMOD(an = m) :: _ then
-        dumpModifierPrefix(m)
     let submod_str = if subModLst then 
-      '(<%prefix_str%><%(subModLst |> submod => dumpSubModifier(submod) ;separator=", ")%>)'
+      '(<%(subModLst |> submod => dumpSubModifier(submod) ;separator=", ")%>)'
     '<%submod_str%><%binding_str%>'
 end dumpModifier;
 
@@ -818,10 +813,9 @@ template dumpRedeclModifier(SCode.Mod modifier)
 ::=
 match modifier
   case REDECL(__) then
-    let final_str = dumpFinal(finalPrefix)
     let each_str = dumpEach(eachPrefix)
-    let el_str = (elementLst |> e => dumpElement(e) ;separator=", ")
-    '<%final_str%><%each_str%><%el_str%>'
+    (elementLst |> e => 
+      '<%each_str%><%dumpElement(e)%>' ;separator=", ")
 end dumpRedeclModifier;
     
 template dumpModifierBinding(Option<tuple<Absyn.Exp, Boolean>> binding)
@@ -832,11 +826,11 @@ template dumpSubModifier(SCode.SubMod submod)
 ::=
 match submod
   case NAMEMOD(A = MOD(__)) then
-    '<%ident%><%dumpModifier(A)%>'
+    '<%dumpModifierPrefix(A)%><%ident%><%dumpModifier(A)%>'
   case NAMEMOD(A = REDECL(__)) then
     '<%dumpRedeclModifier(A)%>'
   case IDXMOD(__) then
-    '<%dumpSubscripts(subscriptLst)%><%dumpModifier(an)%>'
+    '<%dumpModifierPrefix(an)%><%dumpSubscripts(subscriptLst)%><%dumpModifier(an)%>'
 end dumpSubModifier;
 
 template dumpAttributes(SCode.Attributes attributes)
