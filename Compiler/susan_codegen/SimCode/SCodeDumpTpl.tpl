@@ -895,12 +895,16 @@ end dumpAnnotationOpt;
 
 template dumpAnnotation(SCode.Annotation annotation)
 ::=
-match annotation
-  case ANNOTATION(__) then ' annotation<%dumpModifier(modification)%>'
+if RTOpts.showAnnotations() then
+  match annotation
+    case ANNOTATION(__) then ' annotation<%dumpModifier(modification)%>'
 end dumpAnnotation;
 
 template dumpAnnotationElement(SCode.Annotation annotation)
-::= '<%dumpAnnotation(annotation)%>;'
+::= 
+  let annstr = '<%dumpAnnotation(annotation)%>'
+  if annstr then
+    '<%annstr%>;'
 end dumpAnnotationElement;
 
 template dumpExternalDeclOpt(Option<ExternalDecl> externalDecl)
@@ -925,15 +929,16 @@ end dumpCommentOpt;
 
 template dumpComment(SCode.Comment comment)
 ::= 
-match comment
-  case COMMENT(__) then
-    let ann_str = dumpAnnotationOpt(annotation_)
-    let cmt_str = dumpCommentStr(comment)
-    '<%cmt_str%><%ann_str%>'
-  case CLASS_COMMENT(__) then
-    let annl_str = (annotations |> ann => dumpAnnotation(ann) ;separator="\n")
-    let cmt_str = dumpCommentOpt(comment)
-    '<%cmt_str%><%annl_str%>'
+if RTOpts.showAnnotations() then
+  match comment
+    case COMMENT(__) then
+      let ann_str = dumpAnnotationOpt(annotation_)
+      let cmt_str = dumpCommentStr(comment)
+      '<%cmt_str%><%ann_str%>'
+    case CLASS_COMMENT(__) then
+      let annl_str = (annotations |> ann => dumpAnnotation(ann) ;separator="\n")
+      let cmt_str = dumpCommentOpt(comment)
+      '<%cmt_str%><%annl_str%>'
 end dumpComment;
 
 template dumpCommentStr(Option<String> comment)

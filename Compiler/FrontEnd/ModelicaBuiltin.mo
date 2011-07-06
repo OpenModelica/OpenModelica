@@ -1011,6 +1011,13 @@ function save
 external "builtin";
 end save;
 
+function saveTotalSCode
+  input String fileName;
+  input TypeName className;
+  output Boolean success;
+external "builtin";
+end saveTotalSCode;
+
 function translateGraphics
   input TypeName className;
   output String result;

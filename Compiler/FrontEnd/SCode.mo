@@ -3507,7 +3507,22 @@ algorithm
   end match;
 end isConnector;
 
+public function removeBuiltinsFromTopScope
+  input Program inProgram;
+  output Program outProgram;
+algorithm
+  outProgram := Util.listFilter(inProgram, isNotBuiltinClass);
+end removeBuiltinsFromTopScope;
 
+protected function isNotBuiltinClass
+  input Element inClass;
+algorithm
+  _ := match(inClass)
+    case CLASS(classDef = PARTS(externalDecl = 
+      SOME(EXTERNALDECL(lang = SOME("builtin"))))) then fail();
+    else ();
+  end match;
+end isNotBuiltinClass;
 
 end SCode;
 

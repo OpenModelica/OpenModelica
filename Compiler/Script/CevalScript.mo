@@ -87,6 +87,8 @@ protected import Parser;
 protected import Print;
 protected import Refactor;
 protected import RTOpts;
+protected import SCodeDump;
+protected import SCodeFlatten;
 protected import SimCode;
 protected import System;
 protected import Static;
@@ -725,7 +727,7 @@ algorithm
       String functionName;
       list<Values.Value> vals;
       Absyn.Path path,p1,classpath,className;
-      list<SCode.Element> scodeP,sp;
+      SCode.Program scodeP,sp;
       Option<list<SCode.Element>> fp;
       list<Env.Frame> env;
       SCode.Element c;
@@ -1467,6 +1469,20 @@ algorithm
         Error.addMessage(Error.LOOKUP_ERROR, {cname,"global"});
       then
         (cache,Values.BOOL(false),st);
+        
+    case (cache, env, "saveTotalSCode", 
+        {Values.STRING(filename), Values.CODE(Absyn.C_TYPENAME(classpath))}, st, msg)
+      equation
+        (scodeP, st) = Interactive.symbolTableToSCode(st);
+        scodeP = SCodeFlatten.flattenClassInProgram(classpath, scodeP);
+        scodeP = SCode.removeBuiltinsFromTopScope(scodeP);
+        str = SCodeDump.programStr(scodeP);
+        System.writeFile(filename, str);
+      then
+        (cache, Values.BOOL(true), st);
+        
+    case (cache, env, "saveTotalSCode", _, st, msg)
+      then (cache, Values.BOOL(false), st);
         
     case (cache,env,"getAstAsCorbaString",{Values.STRING("<interactive>")},st as Interactive.SYMBOLTABLE(ast=p),msg)
       equation
