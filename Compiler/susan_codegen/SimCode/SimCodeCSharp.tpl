@@ -456,8 +456,8 @@ template initVals(String arrName, list<SimVar> varsLst, SimCode simCode) ::=
       case vStr as "false"
       case vStr as "(0)" then
         '//<%arrName%>[<%sv.index%>] = <%vStr%>; //<%crefStr(sv.name, simCode)%> --> zero val' 
-      case "true" then //a hack for now
-       '<%arrName%>[<%sv.index%>] = 1.0; //true //<%crefStr(sv.name, simCode)%>'
+      //case "true" then //a hack for now
+      // '<%arrName%>[<%sv.index%>] = 1.0; //true //<%crefStr(sv.name, simCode)%>'
       case vStr then
        '<%arrName%>[<%sv.index%>] = <%vStr%>; //<%crefStr(sv.name, simCode)%>'
   	  end match
@@ -725,8 +725,8 @@ template zeroCrossing(Exp it, Integer index, SimCode simCode) ::=
                     case LESSEQ(__)    then '<%e1%> - <%e2%>' //space is mandatory here ... (X--1) must be (X - -1)
                     case GREATER(__)
                     case GREATEREQ(__) then '<%e2%> - <%e1%>'
-                    case EQUAL(__) then '<%e2%> == <%e1%>'
-                    case NEQUAL(__) then '<%e2%> != <%e1%>'             
+                    case EQUAL(__) then '/*HACK*/(<%e2%> == <%e1%>) ? 0.0 : 1.0' //'<%e2%> == <%e1%>'
+                    case NEQUAL(__) then '/*HACK*/(<%e2%> != <%e1%>) ? 0.0 : 1.0' //'<%e2%> != <%e1%>'             
                     else "!!!unsupported ZC operator!!!"
                    %>;      
     >>
@@ -940,9 +940,10 @@ public override bool CheckForDiscreteChanges()
 end functionCheckForDiscreteChanges;
 
 template edgeHelpVar(String idx) ::=
-   '(/*edge(h[<idx%>])*/H[<%idx%>]!=0.0 && preH[<%idx%>]==0.0)'
+   '(/*edge(h[<%idx%>])*/H[<%idx%>]!=0.0 && preH[<%idx%>]==0.0)'
 end edgeHelpVar;
 
+//TODO: eliminate this entirely  ??
 template daeExpToReal(Exp exp, Context context, Text &preExp, SimCode simCode) ::=
 	daeExp(exp, context, &preExp, simCode)
 	+ (match expTypeFromExp(exp) case "bool" then " ?1.0:0.0") //TODO: a HACK ?
@@ -954,7 +955,7 @@ template equation_(SimEqSystem eq, Context context, SimCode simCode) ::=
 match eq
 case SES_SIMPLE_ASSIGN(__) then
   let &preExp = buffer ""
-  let expPart = daeExpToReal(exp, context, &preExp, simCode)
+  let expPart = daeExp(exp, context, &preExp, simCode) //was daeExpToReal
   <<
   <%preExp%>
   <%cref(cref, simCode)%> = <%expPart%>;
@@ -975,7 +976,7 @@ case SES_LINEAR(__) then
   var <%bname%> = new double[<%size%>]; //declare_vector(<%bname%>, <%size%>);
   <%simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
      let &preExp = buffer ""
-     let expPart = daeExpToReal(eq.exp, context, &preExp, simCode)
+     let expPart = daeExpToReal(eq.exp, context, &preExp, simCode) 
      '<%preExp%><%aname%>[<%row%>+<%col%>*<%size%>] = <%expPart%>; //set_matrix_elt(<%aname%>, <%row%>, <%col%>, <%size%>, <%expPart%>);'
   ;separator="\n"%>
   <%beqs|> it hasindex i0 =>
@@ -999,16 +1000,19 @@ case SES_MIXED(__) then
   let discLoc2 = 
     discEqs |> discEq as SES_SIMPLE_ASSIGN(__) hasindex i0 =>
         <<
-        double discrete_loc2_<%i0%> = <%daeExpToReal(discEq.exp, context, &preDisc, simCode)%>;
-        <%cref(discEq.cref, simCode)%> = discrete_loc2_<%i0%>;
+        <%cref(discEq.cref, simCode)%> = <%daeExp(discEq.exp, context, &preDisc, simCode)%>;
+        double discrete_loc2_<%i0%> = <%crefToReal(discEq.cref, simCode)%>;
         >>
+        //double discrete_loc2_<%i0%> = <%daeExpToReal(discEq.exp, context, &preDisc, simCode)%>;
+        //<%cref(discEq.cref, simCode)%> = discrete_loc2_<%i0%>;
+        
         ;separator="\n"
   	/*
   	match discEqs
     case { discEq as SES_SIMPLE_ASSIGN(__) } then
       <<
       <%cref(discEq.cref, simCode)%> = <%daeExpToReal(discEq.exp, context, &preDisc, simCode)%>;
-      double discrete_loc2_0 = <%cref(discEq.cref, simCode)%>;
+      double discrete_loc2_0 = <%crefToReal(discEq.cref, simCode)%>;
       >>
   	case discEqs then
       <<
@@ -1016,7 +1020,7 @@ case SES_MIXED(__) then
       <%discEqs |> discEq as SES_SIMPLE_ASSIGN(__) hasindex i0 =>
         <<
         <%cref(discEq.cref, simCode)%> = <%daeExpToReal(exp, context, &preDisc, simCode)%>;
-        discrete_loc2[<%i0%>] = <%cref(discEq.cref, simCode)%>;
+        discrete_loc2[<%i0%>] = <%crefToReal(discEq.cref, simCode)%>;
         >>
         ;separator="\n"%>
       >>
@@ -1029,13 +1033,13 @@ case SES_MIXED(__) then
     do {
 	  <%
 	    discVars |> SIMVAR(__) hasindex i0 => 
-	      'double discrete_loc_<%i0%> = <%cref(name, simCode)%>;'
+	      'double discrete_loc_<%i0%> = <%crefToReal(name, simCode)%>;'
 	    ;separator=",\n"
 	   
 	   /*match discVars
 	    case { var as SIMVAR(__) } then
 	      <<
-	      double discrete_loc_0 = <%cref(var.name, simCode)%>;
+	      double discrete_loc_0 = <%crefToReal(var.name, simCode)%>;
           >>
 	    case discVars then
 	      <<
@@ -1085,7 +1089,7 @@ case SES_MIXED(__) then
             } else {
               var curValOffset = cur_value_indx*<%numDiscVarsStr%>;
               <% discVars |> SIMVAR(__) hasindex i0 =>
-                  '<%cref(name, simCode)%> = values[curValOffset+<%i0%>];'
+                  '<%cref(name, simCode)%> = <%convertRealExpForCref('values[curValOffset+<%i0%>]', name, simCode)%>;'
                  ;separator="\n"
               %>
             }
@@ -1110,7 +1114,8 @@ case SES_NONLINEAR(__) then
     %>
     SolveNonlinearSystem(ResidualFun<%index%>, nls_x, nls_xold, <%index%>);
     <%crefs |> name hasindex i0 => 
-    '<%cref(name, simCode)%> = nls_x[<%i0%>];' ;separator="\n"
+    '<%cref(name, simCode)%> = <%convertRealExpForCref('nls_x[<%i0%>]', name, simCode)%>;' 
+      ;separator="\n"
     %>
   } //end_nonlinear_system();
   >>
@@ -1186,6 +1191,27 @@ template representationArrayNameTypePostfix(ExpType type_) ::=
   else "BAD_ARRAY_NAME_POSTFIX"
 end representationArrayNameTypePostfix;
 
+//TODO: a HACK ?
+template crefToReal(ComponentRef cr, SimCode simCode) ::=
+<</*(double)<% crefStr(cr, simCode) 
+            %>*/<% cref2simvar(cr, simCode) |> SIMVAR(__) => //representationCref(cr, simCode)
+                   '<%representationArrayName(varKind, type_)%>[<% index %>]'
+                   + (match type_ case ET_BOOL(__) 
+                      then "?1.0:0.0")
+                %>
+>>
+end crefToReal;
+
+//TODO: a HACK ?
+template convertRealExpForCref(Text realExp, ComponentRef cr, SimCode simCode) ::=
+  cref2simvar(cr, simCode) |> SIMVAR(__) =>
+     match type_ 
+     case ET_BOOL(__) then '(<%realExp%>) != 0.0'
+     case ET_INT(__) then '(int)(<%realExp%>)'
+     else realExp                
+
+end convertRealExpForCref;
+
 template preCref(ComponentRef cr, SimCode simCode) ::=
 '/*pre(<%crefStr(cr, simCode)%>)*/pre<%representationCref(cr, simCode)%>'
 end preCref;
@@ -1215,11 +1241,20 @@ template crefStr(ComponentRef cr, SimCode simCode)
  "Generates the name of a variable for variable name array."
 ::=
   match cr
-  case CREF_IDENT(__) then ident + subscriptsStr(subscriptLst, simCode)
+  case CREF_IDENT(__) then csharpIdent(ident) + subscriptsStr(subscriptLst, simCode)
   case CREF_QUAL(ident = "$DER") then 'der(<%crefStr(componentRef, simCode)%>)'
   case CREF_QUAL(__) then '<%ident%><%subscriptsStr(subscriptLst, simCode)%>.<%crefStr(componentRef, simCode)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefStr;
+
+template csharpIdent(String ident)
+ "Generates the name of a variable for variable name array."
+::=
+  match ident
+  case "string" then "@string"
+  case "int"    then "@int"
+  else ident
+end csharpIdent;
 
 template subscriptsStr(list<Subscript> subscripts, SimCode simCode)
  "Generares subscript part of the name."
@@ -1623,13 +1658,14 @@ template daeExpCrefRhs(Exp ecr, Context context, Text &preExp, SimCode simCode) 
     if box then
       box
     else if crefIsScalar(cr, context) then
-      match ecr.ty 
-      case ET_INT(__)  then '(int)<%contextCref(cr, context, simCode)%>'
-      case ET_BOOL(__) then 
-      	match context
-      	case FUNCTION_CONTEXT(__) then contextCref(cr, context, simCode) //TODO: a hack!
-      	else '(<%contextCref(cr, context, simCode)%> !=0.0)'
-      else contextCref(cr, context, simCode)
+      //match ecr.ty 
+      //case ET_INT(__)  then '(int)<%contextCref(cr, context, simCode)%>'
+      //case ET_BOOL(__) then 
+      //	match context
+      //	case FUNCTION_CONTEXT(__) then contextCref(cr, context, simCode) //TODO: a hack!
+      //	else '(<%contextCref(cr, context, simCode)%> !=0.0)'
+      //else 
+      contextCref(cr, context, simCode)
     else if crefSubIsScalar(cr) then
       // The array subscript results in a scalar
       //let ety = match ecr.ty case ET_ARRAY(__) then "array" else "noarray"
@@ -1941,14 +1977,36 @@ template daeExpCall(Exp it, Context context, Text &preExp, SimCode simCode) ::=
     %><% preCref(arg.componentRef, simCode) %>
     >>
   
+  //'(/*edge(h[<%idx%>])*/H[<%idx%>]!=0.0 && preH[<%idx%>]==0.0)'
   case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="min"), expLst={e1,e2}) then
-    'Math.Min(<%daeExp(e1, context, &preExp, simCode)%>,<%daeExp(e2, context, &preExp, simCode)%>)'
+            path=IDENT(name="edge"), expLst={arg as CREF(__)}) then
+    <<
+    (/*edge*/<% cref(arg.componentRef, simCode) %> && !(<% preCref(arg.componentRef, simCode) %>))
+    >>
   
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="max"), expLst={e1,e2}) then
     'Math.Max(<%daeExp(e1, context, &preExp, simCode)%>,<%daeExp(e2, context, &preExp, simCode)%>)'
   
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="min"), expLst={e1,e2}) then
+    'Math.Min(<%daeExp(e1, context, &preExp, simCode)%>,<%daeExp(e2, context, &preExp, simCode)%>)'
+  
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="mod"), expLst={e1,e2}) then
+    let var1 = daeExp(e1, context, &preExp, simCode)
+    let var2 = daeExp(e2, context, &preExp, simCode)
+    'Mod_<%expTypeShort(ty)%>(<%var1%>,<%var2%>)'    
+  
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="abs"), expLst={e1}, ty = ET_INT()) then
+    let var1 = daeExp(e1, context, &preExp, simCode)
+    'Abs_int(<%var1%>)'
+    
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="abs"), expLst={s1}) then
+    'Math.Abs(<%daeExp(s1, context, &preExp, simCode)%>)'
+    
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="log"), expLst={s1}) then
     'Math.Log(<%daeExp(s1, context, &preExp, simCode)%>)'
