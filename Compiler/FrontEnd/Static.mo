@@ -11559,22 +11559,33 @@ protected function cevalIfexpIfConstant "function: cevalIfexpIfConstant
   output DAE.Exp outExp;
 algorithm
   (outCache,outExp) :=
-  match (inCache,inEnv1,inExp2,inExp3,inExp4,inConst5,inBoolean6,inST,inInfo)
+  matchcontinue (inCache,inEnv1,inExp2,inExp3,inExp4,inConst5,inBoolean6,inST,inInfo)
     local
       list<Env.Frame> env;
       DAE.Exp e1,e2,e3,res;
       Boolean impl,cond;
       Option<Interactive.SymbolTable> st;
       Env.Cache cache;
+      Ceval.Msg msg;
+
     case (cache,env,e1,e2,e3,DAE.C_VAR(),impl,st,_) then (cache,DAE.IFEXP(e1,e2,e3));
     case (cache,env,e1,e2,e3,DAE.C_PARAM(),impl,st,_) then (cache,DAE.IFEXP(e1,e2,e3));
     case (cache,env,e1,e2,e3,DAE.C_CONST(),impl,st,_)
       equation
-        (cache,Values.BOOL(cond),_) = Ceval.ceval(cache,env, e1, impl, st,NONE(), Ceval.MSG(inInfo));
+        msg = Util.if_(Env.inFunctionScope(env), Ceval.NO_MSG(), Ceval.MSG(inInfo));  
+        (cache,Values.BOOL(cond),_) = Ceval.ceval(cache,env, e1, impl, st,NONE(), msg);
         res = Util.if_(cond, e2, e3);
       then
         (cache,res);
-  end match;
+    // Allow ceval of constant if expressions to fail. This is needed because of
+    // the stupid Lookup which instantiates packages without modifiers.
+    case (cache,env,e1,e2,e3,DAE.C_CONST(),impl,st,_)
+      equation
+        true = Env.inFunctionScope(env);
+      then
+        (cache, DAE.IFEXP(e1, e2, e3));
+    
+  end matchcontinue;
 end cevalIfexpIfConstant;
 
 protected function constIfexp "function: constIfexp
