@@ -480,8 +480,8 @@ algorithm
         //  Returns the output parameters from the function.
         (cache,e1_1,prop1,_) = Static.elabExp(cache, env, e1, impl, NONE(), true /*do vectorization*/, pre, info);
         (cache,e2_1,prop2,_) = Static.elabExp(cache, env, e2, impl, NONE(), true /*do vectorization*/, pre, info);
-        (cache, e1_1, prop1) = Ceval.cevalIfConstant(cache, env, e1_1, prop1, impl);
-        (cache, e2_1, prop2) = Ceval.cevalIfConstant(cache, env, e2_1, prop2, impl);
+        (cache, e1_1, prop1) = Ceval.cevalIfConstant(cache, env, e1_1, prop1, impl, info);
+        (cache, e2_1, prop2) = Ceval.cevalIfConstant(cache, env, e2_1, prop2, impl, info);
          
         (cache,e1_1,e2_1,prop1) = condenseArrayEquation(cache,env,e1,e2,e1_1,e2_1,prop1,prop2,impl,pre,info);
         (cache,e1_2) = PrefixUtil.prefixExp(cache,env, ih, e1_1, pre);
@@ -591,7 +591,7 @@ algorithm
       equation 
         checkForNestedWhen(eq);
         (cache,e_1,prop1,_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
-        (cache, e_1, prop1) = Ceval.cevalIfConstant(cache, env, e_1, prop1, impl);
+        (cache, e_1, prop1) = Ceval.cevalIfConstant(cache, env, e_1, prop1, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
 
         // set the source of this element
@@ -615,7 +615,7 @@ algorithm
       equation 
         checkForNestedWhen(eq);
         (cache,e_1,prop1,_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
-        (cache, e_1, prop1) = Ceval.cevalIfConstant(cache, env, e_1, prop1, impl);
+        (cache, e_1, prop1) = Ceval.cevalIfConstant(cache, env, e_1, prop1, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         
         // set the source of this element
@@ -657,7 +657,7 @@ algorithm
         (cache,e_1,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = id_t),_), constFlag = cnst),_) = 
           Static.elabExp(cache,env, e, impl,NONE(),true, pre, info);
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
-        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl,NONE(), NONE(), Ceval.MSG()) "FIXME: Check bounds" ;
+        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl,NONE(), NONE(), Ceval.MSG(info)) "FIXME: Check bounds" ;
         (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, id_t, v, el, initial_, impl,graph);
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
@@ -705,9 +705,9 @@ algorithm
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_ASSERT(condition = e1,message = e2,info = info),initial_,impl,graph)
       equation 
         (cache,e1_1,prop1 as DAE.PROP((DAE.T_BOOL(_),_),_),_) = Static.elabExp(cache,env, e1, impl,NONE(),true,pre,info) "assert statement" ;
-        (cache, e1_1, prop1) = Ceval.cevalIfConstant(cache, env, e1_1, prop1, impl);
+        (cache, e1_1, prop1) = Ceval.cevalIfConstant(cache, env, e1_1, prop1, impl, info);
         (cache,e2_1,prop2 as DAE.PROP((DAE.T_STRING(_),_),_),_) = Static.elabExp(cache,env, e2, impl,NONE(),true,pre,info);
-        (cache, e2_1, prop2) = Ceval.cevalIfConstant(cache, env, e2_1, prop2, impl);
+        (cache, e2_1, prop2) = Ceval.cevalIfConstant(cache, env, e2_1, prop2, impl, info);
         (cache,e1_2) = PrefixUtil.prefixExp(cache, env, ih, e1_1, pre);
         (cache,e2_2) = PrefixUtil.prefixExp(cache, env, ih, e2_1, pre);
 
@@ -722,7 +722,7 @@ algorithm
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_TERMINATE(message= e1, info=info),initial_,impl,graph)
       equation 
         (cache,e1_1,prop1 as DAE.PROP((DAE.T_STRING(_),_),_),_) = Static.elabExp(cache,env, e1, impl,NONE(),true,pre,info);
-        (cache, e1_1, prop1) = Ceval.cevalIfConstant(cache, env, e1_1, prop1, impl);
+        (cache, e1_1, prop1) = Ceval.cevalIfConstant(cache, env, e1_1, prop1, impl, info);
         (cache,e1_2) = PrefixUtil.prefixExp(cache, env, ih, e1_1, pre);
 
         // set the source of this element
@@ -736,9 +736,9 @@ algorithm
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_REINIT(cref = cr,expReinit = e2,info = info),initial_,impl,graph)
       equation 
         (cache,SOME((e1_1 as DAE.CREF(cr_1,t),tprop1,_))) = Static.elabCref(cache,env, cr, impl,false,pre,info) "reinit statement" ;
-        (cache, e1_1, tprop1) = Ceval.cevalIfConstant(cache, env, e1_1, tprop1, impl);
+        (cache, e1_1, tprop1) = Ceval.cevalIfConstant(cache, env, e1_1, tprop1, impl, info);
         (cache,e2_1,tprop2,_) = Static.elabExp(cache,env, e2, impl,NONE(),true,pre,info);
-        (cache, e2_1, tprop2) = Ceval.cevalIfConstant(cache, env, e2_1, tprop2, impl);
+        (cache, e2_1, tprop2) = Ceval.cevalIfConstant(cache, env, e2_1, tprop2, impl, info);
         (e2_1,_) = Types.matchProp(e2_1,tprop2,tprop1,true);
         (cache,e1_1,e2_1,tprop1) = condenseArrayEquation(cache,env,Absyn.CREF(cr),e2,e1_1,e2_1,tprop1,tprop2,impl,pre,info);
         (cache,e2_2) = PrefixUtil.prefixExp(cache, env, ih, e2_1, pre);
@@ -826,7 +826,7 @@ algorithm
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(functionName = cr, functionArgs = fargs, info = info),initial_,impl,graph)
       equation 
         (cache,exp,prop1,_) = Static.elabExp(cache,env,Absyn.CALL(cr,fargs),impl,NONE(),false,pre,info);
-        (cache, exp, prop1) = Ceval.cevalIfConstant(cache, env, exp, prop1, impl);
+        (cache, exp, prop1) = Ceval.cevalIfConstant(cache, env, exp, prop1, impl, info);
         (cache,exp) = PrefixUtil.prefixExp(cache,env,ih,exp,pre);
 
         // set the source of this element
@@ -988,9 +988,9 @@ algorithm
       true = Expression.containFunctioncall(elabedE2);
       (e1,prop) = expandTupleEquationWithWild(e1,prop2,prop);
       (cache,elabedE1_2,prop1,_) = Static.elabExp(cache,env, e1, impl,NONE(),false,pre,info);
-      (cache, elabedE1_2, prop1) = Ceval.cevalIfConstant(cache, env, elabedE1_2, prop1, impl);
+      (cache, elabedE1_2, prop1) = Ceval.cevalIfConstant(cache, env, elabedE1_2, prop1, impl, info);
       (cache,elabedE2_2,prop2,_) = Static.elabExp(cache,env, e2, impl,NONE(),false,pre,info);
-      (cache, elabedE2_2, prop2) = Ceval.cevalIfConstant(cache, env, elabedE2_2, prop2, impl);
+      (cache, elabedE2_2, prop2) = Ceval.cevalIfConstant(cache, env, elabedE2_2, prop2, impl, info);
       then
         (cache,elabedE1_2,elabedE2_2,prop);
     case(cache,env,e1,e2,elabedE1,elabedE2,prop,prop2,impl,_,_)
@@ -1782,13 +1782,13 @@ algorithm
     case (cache,env,ih,pre,{Absyn.ITERATOR(i,NONE(),SOME(e))},sl,info,source,initial_,impl,unrollForLoops)
       equation
         (cache,e_1,prop as DAE.PROP((DAE.T_ARRAY(arrayType = id_t),_),cnst),_) = Static.elabExp(cache, env, e, impl,NONE(), true, pre,info);
-        (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
+        (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
         // we can unroll ONLY if we have a constant/parameter range expression
         true = listMember(cnst, {DAE.C_CONST(), DAE.C_PARAM()});
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
         (cache,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),/*SCode.RW()*/_,_,_),(_,_),DAE.UNBOUND(),_,_,_,_,_) 
         = Lookup.lookupVar(cache, env_1, ComponentReference.makeCrefIdent(i,DAE.ET_OTHER(),{}));
-        (cache,v,_) = Ceval.ceval(cache, env_1, e_1, impl, NONE(), NONE(), Ceval.MSG()) "FIXME: Check bounds";
+        (cache,v,_) = Ceval.ceval(cache, env_1, e_1, impl, NONE(), NONE(), Ceval.MSG(info)) "FIXME: Check bounds";
         (cache,stmts) = loopOverRange(cache, env_1, ih, pre, i, v, sl, source, initial_, impl, unrollForLoops);
       then
         (cache,stmts);
@@ -2009,7 +2009,7 @@ algorithm
     case (cache,env,ih,pre,{Absyn.ITERATOR(i,NONE(),SOME(e))},sl,info,source,initial_,impl,unrollForLoops)
       equation
         (cache,e_1,(prop as DAE.PROP((DAE.T_ARRAY(_,t),_),cnst)),_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
-        (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl);
+        (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache,env, ih, e_1, pre);
         env_1 = addForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
         (cache,sl_1) = instStatements(cache, env_1, ih, pre, sl, source, initial_, impl, unrollForLoops);
@@ -2022,7 +2022,7 @@ algorithm
     case (cache,env,ih,pre,Absyn.ITERATOR(i,NONE(),SOME(e))::restIterators,sl,info,source,initial_,impl,unrollForLoops)
       equation        
         (cache,e_1,(prop as DAE.PROP((DAE.T_ARRAY(_,t),_),cnst)),_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
-        (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl);
+        (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         env_1 = addForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
         (cache,stmts) = instForStatement_dispatch(cache,env_1,ih,pre,restIterators,sl,info,source,initial_,impl,unrollForLoops);
@@ -2057,7 +2057,7 @@ algorithm
         // e = Absyn.RANGE(1,NONE(),Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
         e=rangeExpression(tpl);
         (cache,e_1,(prop as DAE.PROP((DAE.T_ARRAY(_,t),_),cnst)),_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
-        (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl);
+        (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         env_1 = addForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
         (cache,sl_1) = instStatements(cache,env_1,ih,pre,sl,source,initial_,impl,unrollForLoops);
@@ -2073,7 +2073,7 @@ algorithm
         // e = Absyn.RANGE(1,NONE(),Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
         e=rangeExpression(tpl);
         (cache,e_1,(prop as DAE.PROP((DAE.T_ARRAY(_,t),_),cnst)),_) = Static.elabExp(cache,env, e, impl,NONE(), true,pre,info);
-        (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl);
+        (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         env_1 = addForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
         (cache,sl_1) = instForStatement_dispatch(cache,env_1,ih,pre,restIterators,sl,info,source,initial_,impl,unrollForLoops);
@@ -2376,7 +2376,7 @@ algorithm
     case (cache,env,ih,pre,SCode.ALG_IF(boolExpr = e,trueBranch = tb,elseIfBranch = eib,elseBranch = fb,info = info),source,initial_,impl,unrollForLoops)
       equation 
         (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
-        (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
+        (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         (cache,tb_1)= instStatements(cache,env,ih,pre, tb, source, initial_,impl,unrollForLoops);
         (cache,eib_1) = instElseIfs(cache,env,ih,pre, eib, source, initial_,impl,unrollForLoops,info);
@@ -2397,7 +2397,7 @@ algorithm
     case (cache,env,ih,pre,SCode.ALG_WHILE(boolExpr = e,whileBody = sl, info = info),source,initial_,impl,unrollForLoops)
       equation 
         (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
-        (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
+        (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         (cache,sl_1) = instStatements(cache,env,ih,pre,sl,source,initial_,impl,unrollForLoops);
         source = DAEUtil.addElementSourceFileInfo(source, info);
@@ -2410,7 +2410,7 @@ algorithm
       equation 
         false = containsWhenStatements(sl);
         (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
-        (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
+        (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         (cache,sl_1) = instStatements(cache, env, ih, pre, sl, source, initial_, impl, unrollForLoops);
         source = DAEUtil.addElementSourceFileInfo(source, info);
@@ -2424,7 +2424,7 @@ algorithm
         false = containsWhenStatements(sl);
         (cache,{stmt1}) = instStatement(cache,env,ih,pre,SCode.ALG_WHEN_A(elseWhenRest,comment,info),source,initial_,impl,unrollForLoops);
         (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
-        (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
+        (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         (cache,sl_1) = instStatements(cache, env, ih, pre, sl, source, initial_, impl, unrollForLoops);
         source = DAEUtil.addElementSourceFileInfo(source, info);
@@ -2444,10 +2444,10 @@ algorithm
           functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg},argNames = {}), info = info),source,initial_,impl,unrollForLoops)
       equation 
         (cache,cond_1,cprop,_) = Static.elabExp(cache, env, cond, impl,NONE(), true,pre,info);
-        (cache, cond_1, cprop) = Ceval.cevalIfConstant(cache, env, cond_1, cprop, impl);
+        (cache, cond_1, cprop) = Ceval.cevalIfConstant(cache, env, cond_1, cprop, impl, info);
         (cache,cond_2) = PrefixUtil.prefixExp(cache, env, ih, cond_1, pre);
         (cache,msg_1,msgprop,_) = Static.elabExp(cache, env, msg, impl,NONE(), true,pre,info);
-        (cache, msg_1, msgprop) = Ceval.cevalIfConstant(cache, env, msg_1, msgprop, impl);
+        (cache, msg_1, msgprop) = Ceval.cevalIfConstant(cache, env, msg_1, msgprop, impl, info);
         (cache,msg_2) = PrefixUtil.prefixExp(cache, env, ih, msg_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmts = Algorithm.makeAssert(cond_2, msg_2, cprop, msgprop, source);
@@ -2459,7 +2459,7 @@ algorithm
           functionArgs = Absyn.FUNCTIONARGS(args = {msg},argNames = {}), info = info),source,initial_,impl,unrollForLoops)
       equation 
         (cache,msg_1,msgprop,_) = Static.elabExp(cache, env, msg, impl,NONE(), true,pre,info);
-        (cache, msg_1, msgprop) = Ceval.cevalIfConstant(cache, env, msg_1, msgprop, impl);
+        (cache, msg_1, msgprop) = Ceval.cevalIfConstant(cache, env, msg_1, msgprop, impl, info);
         (cache,msg_2) = PrefixUtil.prefixExp(cache, env, ih, msg_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = Algorithm.makeTerminate(msg_2, msgprop, source);
@@ -2471,10 +2471,10 @@ algorithm
           functionArgs = Absyn.FUNCTIONARGS(args = {var,value},argNames = {}), info = info),source,initial_,impl,unrollForLoops)
       equation 
         (cache,var_1,varprop,_) = Static.elabExp(cache, env, var, impl,NONE(), true,pre,info);
-        (cache, var_1, varprop) = Ceval.cevalIfConstant(cache, env, var_1, varprop, impl);
+        (cache, var_1, varprop) = Ceval.cevalIfConstant(cache, env, var_1, varprop, impl, info);
         (cache,var_2) = PrefixUtil.prefixExp(cache, env, ih, var_1, pre);
         (cache,value_1,valprop,_) = Static.elabExp(cache, env, value, impl,NONE(), true,pre,info);
-        (cache, value_1, valprop) = Ceval.cevalIfConstant(cache, env, value_1, valprop, impl);
+        (cache, value_1, valprop) = Ceval.cevalIfConstant(cache, env, value_1, valprop, impl, info);
         (cache,value_2) = PrefixUtil.prefixExp(cache, env, ih, value_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = Algorithm.makeReinit(var_2, value_2, varprop, valprop, source);
@@ -2857,7 +2857,7 @@ algorithm
     case (cache,env,ih,pre,((e,l) :: tail),source,initial_,impl,unrollForLoops,info)
       equation
         (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
-        (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
+        (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         (cache,stmts) = instStatements(cache, env, ih, pre, l, source, initial_, impl, unrollForLoops);
         (cache,tail_1) = instElseIfs(cache,env,ih,pre,tail, source, initial_, impl, unrollForLoops,info);
@@ -4540,7 +4540,7 @@ algorithm
         (cache,SOME((cre,cprop,attr))) = Static.elabCref(cache, env, cr, impl, false,pre,info);
         (cache,DAE.CREF(ce,t)) = PrefixUtil.prefixExp(cache, env, ih, cre, pre);
         (cache,ce_1) = Static.canonCref(cache, env, ce, impl);
-        (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
+        (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = makeAssignment(Expression.makeCrefExp(ce_1,t), cprop, e_2, eprop, attr, initial_, source);
@@ -4553,7 +4553,7 @@ algorithm
         (cache,SOME((_,cprop,attr))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
         (cache,(e2_2 as DAE.CALL(path=_)),_,_) = Static.elabExp(cache,env, e2, impl,NONE(),true,pre,info);
         (cache,e2_2_2) = PrefixUtil.prefixExp(cache, env, ih, e2_2, pre);
-        (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
+        (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = makeAssignment(e2_2_2, cprop, e_2, eprop, attr /*SCode.RW()*/, initial_, source);
@@ -4565,7 +4565,7 @@ algorithm
       equation 
         (cache,SOME((cre,cprop,attr))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
         (cache,cre2) = PrefixUtil.prefixExp(cache, env, ih, cre, pre);
-        (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
+        (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = makeAssignment(cre2, cprop, e_2, eprop, attr, initial_, source);
@@ -4576,7 +4576,7 @@ algorithm
     case (cache,env,ih,pre,Absyn.TUPLE(expressions = expl),e_1,eprop,info,source,initial_,impl,unrollForLoops)
       equation
         true = MetaUtil.onlyCrefExpressions(expl);
-        (cache, e_1 as DAE.CALL(path=_), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
+        (cache, e_1 as DAE.CALL(path=_), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         (cache,expl_1,cprops,_) = Static.elabExpList(cache, env, expl, impl,NONE(),false,pre,info);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_1, pre);
@@ -4591,7 +4591,7 @@ algorithm
         true = RTOpts.acceptMetaModelicaGrammar();
         true = MetaUtil.onlyCrefExpressions(expl);
         true = Types.isTuple(Types.getPropType(eprop));
-        (cache, e_1 as DAE.MATCHEXPRESSION(matchType=_), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
+        (cache, e_1 as DAE.MATCHEXPRESSION(matchType=_), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         (cache,expl_1,cprops,_) = Static.elabExpList(cache, env, expl, impl,NONE(),false,pre,info);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_1, pre);
@@ -4613,8 +4613,8 @@ algorithm
     /* Tuple with rhs constant */
     case (cache,env,ih,pre,Absyn.TUPLE(expressions = expl),e_1,eprop,info,source,initial_,impl,unrollForLoops)
       equation 
-        (cache, e_1 as DAE.TUPLE(PR = expl_1), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
-        (_,_,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e_1, false,NONE(), NONE(), Ceval.MSG());
+        (cache, e_1 as DAE.TUPLE(PR = expl_1), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
+        (_,_,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e_1, false,NONE(), NONE(), Ceval.MSG(info));
         (cache,expl_2,cprops,_) = Static.elabExpList(cache,env, expl, impl,NONE(),false,pre,info);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_2, pre);
         eprops = Types.propTuplePropList(eprop);

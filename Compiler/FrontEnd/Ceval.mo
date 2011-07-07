@@ -63,7 +63,10 @@ public import Lookup;
 
 public
 uniontype Msg
-  record MSG "Give error message" end MSG;
+  record MSG "Give error message" 
+    Absyn.Info info;
+  end MSG;
+
   record NO_MSG "Do not give error message" end NO_MSG;
 end Msg;
 
@@ -163,6 +166,7 @@ algorithm
       list<DAE.Type> tys;
       DAE.ReductionIterators iterators;
       list<list<Values.Value>> valMatrix;
+      Absyn.Info info;
 
     // uncomment for debugging 
     // case (cache,env,inExp,_,st,_,_) 
@@ -241,17 +245,20 @@ algorithm
         (cache,Values.LIST(v::vallst),stOpt);
 
     // MetaModelica Partial Function. sjoelund 
-    case (cache,env,DAE.CREF(componentRef = cr, ty = DAE.ET_FUNCTION_REFERENCE_VAR()),impl,stOpt,_,MSG())
+    case (cache,env,DAE.CREF(componentRef = cr, 
+        ty = DAE.ET_FUNCTION_REFERENCE_VAR()),impl,stOpt,_,MSG(info = info))
       equation
         str = ComponentReference.crefStr(cr);
-        Error.addMessage(Error.META_CEVAL_FUNCTION_REFERENCE, {str});
+        Error.addSourceMessage(Error.META_CEVAL_FUNCTION_REFERENCE, {str}, info);
       then
         fail();
 
-    case (cache,env,DAE.CREF(componentRef = cr, ty = DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = _)),impl,stOpt,_,MSG())
+    case (cache,env,DAE.CREF(componentRef = cr, 
+        ty = DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = _)), impl, stOpt, _, 
+        MSG(info = info))
       equation
         str = ComponentReference.crefStr(cr);
-        Error.addMessage(Error.META_CEVAL_FUNCTION_REFERENCE, {str});
+        Error.addSourceMessage(Error.META_CEVAL_FUNCTION_REFERENCE, {str}, info);
       then
         fail();
 
@@ -828,11 +835,13 @@ public function cevalIfConstant
   input DAE.Exp inExp;
   input DAE.Properties inProp;
   input Boolean impl;
+  input Absyn.Info inInfo;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProp;
 algorithm
-  (outCache,outExp,outProp) := matchcontinue(inCache, inEnv, inExp, inProp, impl)
+  (outCache, outExp, outProp) := 
+  matchcontinue(inCache, inEnv, inExp, inProp, impl, inInfo)
     local 
         DAE.Exp e;
         Values.Value v;
@@ -841,26 +850,26 @@ algorithm
       DAE.Type tp;
         
     case (_, _, e as DAE.CALL(ty = DAE.ET_ARRAY(arrayDimensions = _)), 
-        DAE.PROP(constFlag = DAE.C_PARAM()), _)
+        DAE.PROP(constFlag = DAE.C_PARAM()), _, _)
       equation
-        (e, prop) = cevalWholedimRetCall(e, inCache, inEnv);
+        (e, prop) = cevalWholedimRetCall(e, inCache, inEnv, inInfo);
       then
         (inCache, e, prop);
     
-    case (_, _, e, DAE.PROP(constFlag = DAE.C_PARAM(), type_ = tp), _) // BoschRexroth specifics
+    case (_, _, e, DAE.PROP(constFlag = DAE.C_PARAM(), type_ = tp), _, _) // BoschRexroth specifics
       equation
         false = OptManager.getOption("cevalEquation");
       then
         (inCache, e, DAE.PROP(tp, DAE.C_VAR()));
     
-    case (_, _, e, DAE.PROP(constFlag = DAE.C_CONST()), _)
+    case (_, _, e, DAE.PROP(constFlag = DAE.C_CONST()), _, _)
       equation
         (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), NONE(), NO_MSG());
         e = ValuesUtil.valueExp(v);
       then
         (cache, e, inProp);
     
-    case (_, _, e, DAE.PROP_TUPLE(tupleConst = _), _)
+    case (_, _, e, DAE.PROP_TUPLE(tupleConst = _), _, _)
       equation
         DAE.C_CONST() = Types.propAllConst(inProp);
         (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), NONE(), NO_MSG());
@@ -868,7 +877,7 @@ algorithm
       then
         (cache, e, inProp);
     
-    case (_, _, e, DAE.PROP_TUPLE(tupleConst = _), _) // BoschRexroth specifics
+    case (_, _, e, DAE.PROP_TUPLE(tupleConst = _), _, _) // BoschRexroth specifics
       equation
         false = OptManager.getOption("cevalEquation");
         DAE.C_PARAM() = Types.propAllConst(inProp);
@@ -876,7 +885,7 @@ algorithm
       then
         fail();
     
-    case (_, _, _, _, _)
+    case (_, _, _, _, _, _)
       equation
         // If we fail to evaluate, at least we should simplify the expression
         (e,_) = ExpressionSimplify.simplify1(inExp);
@@ -891,10 +900,11 @@ protected function cevalWholedimRetCall
   input DAE.Exp inExp;
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input Absyn.Info inInfo;
   output DAE.Exp outExp;
   output DAE.Properties outProp;
 algorithm
-  (outExp, outProp) := match(inExp, inCache, inEnv)
+  (outExp, outProp) := match(inExp, inCache, inEnv, inInfo)
     local
       DAE.Exp e;
       Absyn.Path p;
@@ -907,10 +917,11 @@ algorithm
       DAE.ExpType cevalExpType;
            
      case (e as DAE.CALL(path = p, expLst = el, tuple_ = t, builtin = b, 
-           ty = DAE.ET_ARRAY(arrayDimensions = dims), inlineType = i), _, _)
+           ty = DAE.ET_ARRAY(arrayDimensions = dims), inlineType = i), _, _, _)
        equation
          true = Expression.arrayContainWholeDimension(dims);
-         (_, v, _) = ceval(inCache, inEnv, e, true,NONE(), NONE(), MSG());
+         (_, v, _) = ceval(inCache, inEnv, e, true,NONE(), NONE(),
+             MSG(inInfo));
          cevalType = Types.typeOfValue(v);
          cevalExpType = Types.elabType(cevalType);
        then
@@ -925,20 +936,21 @@ public function cevalRangeIfConstant
   input DAE.Exp inExp;
   input DAE.Properties inProp;
   input Boolean impl;
+  input Absyn.Info inInfo;
   output Env.Cache outCache;
   output DAE.Exp outExp;
 algorithm
-  (outCache, outExp) := matchcontinue(inCache, inEnv, inExp, inProp, impl)
+  (outCache, outExp) := matchcontinue(inCache, inEnv, inExp, inProp, impl, inInfo)
     local
       DAE.Exp e1, e2;
       Option<DAE.Exp> e3;
       DAE.ExpType ty;
       Env.Cache cache;
       
-    case (_, _, DAE.RANGE(ty = ty, exp = e1, range = e2, expOption = e3), _, _)
+    case (_, _, DAE.RANGE(ty = ty, exp = e1, range = e2, expOption = e3), _, _, _)
       equation
-        (cache, e1, _) = cevalIfConstant(inCache, inEnv, e1, inProp, impl);
-        (cache, e2, _) = cevalIfConstant(cache, inEnv, e2, inProp, impl);
+        (cache, e1, _) = cevalIfConstant(inCache, inEnv, e1, inProp, impl, inInfo);
+        (cache, e2, _) = cevalIfConstant(cache, inEnv, e2, inProp, impl, inInfo);
       then
         (inCache, DAE.RANGE(ty, e1, e3, e2));
     else (inCache, inExp);
@@ -1674,6 +1686,7 @@ algorithm
       list<DAE.Exp> es;
       Env.Cache cache;
       list<list<tuple<DAE.Exp, Boolean>>> mat;
+      Absyn.Info info;
     
     case (cache,_,DAE.MATRIX(scalar=mat),DAE.ICONST(1),_,st,_)
       equation
@@ -1729,14 +1742,15 @@ algorithm
       then
         fail();
     
-    case (cache,env,DAE.CREF(componentRef = cr),dimExp,(impl as false),st,MSG())
+    case (cache,env,DAE.CREF(componentRef = cr),dimExp,(impl as false),st,
+        MSG(info = info))
       equation
         (cache,attr,tp,bind,_,_,_,_,_) = Lookup.lookupVar(cache, env, cr) "If dimensions not known and impl=false, error message";
         false = Types.dimensionsKnown(tp);
         cr_str = ComponentReference.printComponentRefStr(cr);
         dim_str = ExpressionDump.printExpStr(dimExp);
         size_str = stringAppendList({"size(",cr_str,", ",dim_str,")"});
-        Error.addMessage(Error.DIMENSION_NOT_KNOWN, {size_str});
+        Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN, {size_str}, info);
       then
         fail();
     
@@ -1747,11 +1761,12 @@ algorithm
       then
         fail();
     
-    case (cache,env,(exp as DAE.CREF(componentRef = cr,ty = crtp)),dimExp,(impl as false),st,MSG())
+    case (cache,env,(exp as DAE.CREF(componentRef = cr,ty = crtp)),dimExp,
+        (impl as false),st,MSG(info = info))
       equation
         (cache,attr,tp,DAE.UNBOUND(),_,_,_,_,_) = Lookup.lookupVar(cache, env, cr) "For crefs without value binding" ;
         expstr = ExpressionDump.printExpStr(exp);
-        Error.addMessage(Error.UNBOUND_VALUE, {expstr});
+        Error.addSourceMessage(Error.UNBOUND_VALUE, {expstr}, info);
       then
         fail();
     
@@ -1819,7 +1834,7 @@ algorithm
       then
         (cache,v2,st_1);
     
-    case (cache,env,exp,dimExp,impl,st,MSG())
+    case (cache,env,exp,dimExp,impl,st,MSG(info = _))
       equation
         true = RTOpts.debugFlag("failtrace");
         Print.printErrorBuf("#-- Ceval.cevalBuiltinSize failed: ");
@@ -3673,6 +3688,8 @@ algorithm
       Msg msg;
       String exp1_str,exp2_str,lh_str,rh_str;
       Env.Cache cache; Boolean b;
+      Absyn.Info info;
+
     case (cache,env,{exp1,exp2},impl,st,msg)
       equation
         (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st,NONE(), msg);
@@ -3709,13 +3726,13 @@ algorithm
         ri_1 = intDiv(ri1,ri2);
       then
         (cache,Values.INTEGER(ri_1),st);
-    case (cache,env,{exp1,exp2},impl,st,MSG())
+    case (cache,env,{exp1,exp2},impl,st,MSG(info = info))
       equation
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,NONE(), MSG());
+        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,NONE(), inMsg);
         (rv2 ==. 0.0) = true;
         exp1_str = ExpressionDump.printExpStr(exp1);
         exp2_str = ExpressionDump.printExpStr(exp2);
-        Error.addMessage(Error.DIVISION_BY_ZERO, {exp1_str,exp2_str});
+        Error.addSourceMessage(Error.DIVISION_BY_ZERO, {exp1_str,exp2_str}, info);
       then
         fail();
     case (cache,env,{exp1,exp2},impl,st,NO_MSG())
@@ -3724,9 +3741,9 @@ algorithm
         (rv2 ==. 0.0) = true;
       then
         fail();
-    case (cache,env,{exp1,exp2},impl,st,MSG())
+    case (cache,env,{exp1,exp2},impl,st,MSG(info = info))
       equation
-        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st,NONE(), MSG());
+        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st,NONE(), inMsg);
         (ri2 == 0) = true;
         lh_str = ExpressionDump.printExpStr(exp1);
         rh_str = ExpressionDump.printExpStr(exp2);
@@ -3767,6 +3784,8 @@ algorithm
       Integer ri,ri1,ri2,ri_1;
       String lhs_str,rhs_str;
       Env.Cache cache;
+      Absyn.Info info;
+
     case (cache,env,{exp1,exp2},impl,st,msg)
       equation
         (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st,NONE(), msg);
@@ -3812,13 +3831,13 @@ algorithm
         ri_1 = realInt(rvd);
       then
         (cache,Values.INTEGER(ri_1),st);
-    case (cache,env,{exp1,exp2},impl,st,MSG())
+    case (cache,env,{exp1,exp2},impl,st,MSG(info = info))
       equation
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,NONE(), MSG());
+        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,NONE(), inMsg);
         (rv2 ==. 0.0) = true;
         lhs_str = ExpressionDump.printExpStr(exp1);
         rhs_str = ExpressionDump.printExpStr(exp2);
-        Error.addMessage(Error.MODULO_BY_ZERO, {lhs_str,rhs_str});
+        Error.addSourceMessage(Error.MODULO_BY_ZERO, {lhs_str,rhs_str}, info);
       then
         fail();
     case (cache,env,{exp1,exp2},impl,st,NO_MSG())
@@ -3827,13 +3846,13 @@ algorithm
         (rv2 ==. 0.0) = true;
       then
         fail();
-    case (cache,env,{exp1,exp2},impl,st,MSG())
+    case (cache,env,{exp1,exp2},impl,st,MSG(info = info))
       equation
-        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st,NONE(), MSG());
+        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st,NONE(), inMsg);
         (ri2 == 0) = true;
         lhs_str = ExpressionDump.printExpStr(exp1);
         rhs_str = ExpressionDump.printExpStr(exp2);
-        Error.addMessage(Error.MODULO_BY_ZERO, {lhs_str,rhs_str});
+        Error.addSourceMessage(Error.MODULO_BY_ZERO, {lhs_str,rhs_str}, info);
       then
         fail();
     case (cache,env,{exp1,exp2},impl,st,NO_MSG())
@@ -4138,15 +4157,18 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
+      Absyn.Info info;
+
     case (cache,env,{exp1},impl,st,msg)
       equation
         (exp1_1,_) = ExpressionSimplify.simplify(exp1);
         ret_val = ExpressionDump.printExpStr(exp1_1) "this should be used instead but unelab_exp must be able to unelaborate a complete exp Expression.unelab_exp(simplifyd_exp\') => absyn_exp" ;
       then
         (cache,Values.STRING(ret_val),st);
-    case (_,_,_,_,st,MSG()) /* =>  (Values.CODE(Absyn.C_EXPRESSION(absyn_exp)),st) */
+    case (_,_,_,_,st,MSG(info = info)) /* =>  (Values.CODE(Absyn.C_EXPRESSION(absyn_exp)),st) */
       equation
-        print("#- Simplification failed. Ceval.cevalBuildinSimplify failed.\n");
+        Error.addSourceMessage(Error.COMPILER_ERROR, 
+          {"Simplification failed. Ceval.cevalBuiltinSimplify failed."}, info);
       then
         fail();
   end matchcontinue;
@@ -4177,6 +4199,8 @@ algorithm
       Msg msg;
       String exp1_str,exp2_str;
       Env.Cache cache;
+      Absyn.Info info;
+
     case (cache,env,{exp1,exp2},impl,st,msg)
       equation
         (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st,NONE(), msg);
@@ -4211,13 +4235,14 @@ algorithm
         ri_1 = ri1 - ri2 * di;
       then
         (cache,Values.INTEGER(ri_1),st);
-    case (cache,env,{exp1,exp2},impl,st,MSG())
+    case (cache,env,{exp1,exp2},impl,st,MSG(info = info))
       equation
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,NONE(), MSG());
+        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st,NONE(),
+            inMsg);
         (rv2 ==. 0.0) = true;
         exp1_str = ExpressionDump.printExpStr(exp1);
         exp2_str = ExpressionDump.printExpStr(exp2);
-        Error.addMessage(Error.REM_ARG_ZERO, {exp1_str,exp2_str});
+        Error.addSourceMessage(Error.REM_ARG_ZERO, {exp1_str,exp2_str}, info);
       then
         fail();
     case (cache,env,{exp1,exp2},impl,st,NO_MSG())
@@ -4226,13 +4251,13 @@ algorithm
         (rv2 ==. 0.0) = true;
       then
         fail();
-    case (cache,env,{exp1,exp2},impl,st,MSG())
+    case (cache,env,{exp1,exp2},impl,st,MSG(info = info))
       equation
-        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st,NONE(), MSG());
+        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st,NONE(), inMsg);
         (ri2 == 0) = true;
         exp1_str = ExpressionDump.printExpStr(exp1);
         exp2_str = ExpressionDump.printExpStr(exp2);
-        Error.addMessage(Error.REM_ARG_ZERO, {exp1_str,exp2_str});
+        Error.addSourceMessage(Error.REM_ARG_ZERO, {exp1_str,exp2_str}, info);
       then
         fail();
     case (cache,env,{exp1,exp2},impl,st,NO_MSG())
@@ -4416,6 +4441,8 @@ algorithm
       Msg msg;
       Env.Cache cache;
       Values.Value res;
+      Absyn.Info info;
+
     case (cache,env,{exp},impl,st,msg)
       equation
         (cache,Values.ARRAY(rv2,{dimension}),_) = ceval(cache,env, exp, impl, st,NONE(), msg);
@@ -4424,9 +4451,10 @@ algorithm
         res = Values.ARRAY(retExp,{dimension,dimension});
       then
         (cache,res,st);
-    case (_,_,_,_,_,MSG())
+    case (_,_,_,_,_,MSG(info = info))
       equation
-        Print.printErrorBuf("#- Error, could not evaulate diagonal. Ceval.cevalBuiltinDiagonal failed.\n");
+        Error.addSourceMessage(Error.COMPILER_ERROR,
+          {"Could not evaluate diagonal. Ceval.cevalBuiltinDiagonal failed."}, info);
       then
         fail();
   end matchcontinue;
@@ -4461,6 +4489,8 @@ algorithm
       Msg msg;
       Env.Cache cache;
       Values.Value v;
+      Absyn.Info info;
+      String str;
     
     case (cache,env,s1,impl,st,matrixDimension,row,{},msg)
       equation
@@ -4533,10 +4563,11 @@ algorithm
       then
         (cache,listIN);
     
-    case (_,_,_,_,_,matrixDimension,row,list_,MSG())
+    case (_,_,_,_,_,matrixDimension,row,list_,MSG(info = info))
       equation
         true = RTOpts.debugFlag("ceval");
-        Debug.traceln("- Ceval.cevalBuiltinDiagonal2 failed");
+        str = Error.infoStr(info);
+        Debug.traceln(str +& " Ceval.cevalBuiltinDiagonal2 failed");
       then
         fail();
   end matchcontinue;
@@ -4566,6 +4597,8 @@ algorithm
       Msg msg;
       Env.Cache cache;
       String str;
+      Absyn.Info info;
+
     case (cache,env,{xe,ye},impl,st,msg)
       equation
         (cache,Values.ARRAY(xv,{3}),_) = ceval(cache,env, xe, impl, st,NONE(), msg);
@@ -4573,10 +4606,10 @@ algorithm
         res = ValuesUtil.crossProduct(xv,yv);
       then
         (cache,res,st);
-    case (_,_,_,_,_,MSG())
+    case (_,_,_,_,_,MSG(info = info))
       equation
         str = "cross" +& ExpressionDump.printExpStr(DAE.TUPLE(inExpExpLst));
-        Error.addMessage(Error.FAILED_TO_EVALUATE_EXPRESSION, {str});
+        Error.addSourceMessage(Error.FAILED_TO_EVALUATE_EXPRESSION, {str}, info);
       then
         fail();
   end matchcontinue;
@@ -4606,6 +4639,8 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
+      Absyn.Info info;
+
     case (cache,env,{exp},impl,st,msg)
       equation
         (cache,Values.ARRAY(vlst,i1::_),_) = ceval(cache,env, exp, impl, st,NONE(), msg);
@@ -4613,9 +4648,10 @@ algorithm
         vlst_1 = cevalBuiltinTranspose2(vlst, 1, i2::i1::il);
       then
         (cache,Values.ARRAY(vlst_1,i2::i1::il),st);
-    case (_,_,_,_,_,MSG())
+    case (_,_,_,_,_,MSG(info = info))
       equation
-        Print.printErrorBuf("#- Error, could not evaluate transpose. Celab.cevalBuildinTranspose failed.\n");
+        Error.addSourceMessage(Error.COMPILER_ERROR, 
+          {"Could not evaluate transpose. Celab.cevalBuildinTranspose failed."}, info);
       then
         fail();
   end matchcontinue;
@@ -5061,6 +5097,7 @@ algorithm
       DAE.Type ty;
       DAE.Attributes attr;
       Lookup.SplicedExpData splicedExpData;
+      Absyn.Info info;
 
     // Try to lookup the variables binding and constant evaluate it.
     case (cache, env, c, impl, msg)
@@ -5072,12 +5109,12 @@ algorithm
         (cache, v);
 
     // failure in lookup and we have the MSG go-ahead to print the error
-    case (cache,env,c,(impl as false),MSG())
+    case (cache,env,c,(impl as false),MSG(info = info))
       equation
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, c));
         scope_str = Env.printEnvPathStr(env);
         str = ComponentReference.printComponentRefStr(c);
-        Error.addMessage(Error.LOOKUP_VARIABLE_ERROR, {str,scope_str});
+        Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR, {str,scope_str}, info);
       then
         fail();
     
@@ -5113,17 +5150,18 @@ algorithm
       Env.Cache cache;
       Values.Value v;
       String str, scope_str, s1, s2, s3;
+      Absyn.Info info;
     
     // A variable with no binding and SOME for range constness -> a for iterator
     case (_, _, _, _, _, DAE.UNBOUND(), SOME(_), _, _, _, _, _, _) then fail();
     
     // A variable without a binding -> error in a simulation model
     // and we can only check that at the DAE level!
-    case (_, _, _, _, _, DAE.UNBOUND(), NONE(), _, _, _, _, false, MSG())
+    case (_, _, _, _, _, DAE.UNBOUND(), NONE(), _, _, _, _, false, MSG(info = info))
       equation
         str = ComponentReference.printComponentRefStr(inCref);
         scope_str = Env.printEnvPathStr(inEnv);
-        Error.addMessage(Error.NO_CONSTANT_BINDING, {str, scope_str});
+        Error.addSourceMessage(Error.NO_CONSTANT_BINDING, {str, scope_str}, info);
         Debug.fprintln("ceval", "- Ceval.cevalCref on: " +& str +& 
           " failed with no constant binding in scope: " +& scope_str);
         // build a default binding for it!
@@ -5187,9 +5225,9 @@ algorithm
       then
         (cache,res);
 
-    case (cache,env,_,DAE.UNBOUND(),(impl as false),MSG()) then fail();
+    case (cache,env,_,DAE.UNBOUND(),(impl as false),MSG(_)) then fail();
 
-    case (cache,env,_,DAE.UNBOUND(),(impl as true),MSG())
+    case (cache,env,_,DAE.UNBOUND(),(impl as true),MSG(_))
       equation
         Debug.fprint("ceval", "#- Ceval.cevalCrefBinding: Ignoring unbound when implicit");
       then
@@ -5260,7 +5298,7 @@ algorithm
         (cache,res);
 
     // if the binding has constant-ness DAE.C_VAR we cannot constant evaluate.
-    case (cache,env,_,DAE.EQBOUND(exp = exp,constant_ = DAE.C_VAR()),impl,MSG())
+    case (cache,env,_,DAE.EQBOUND(exp = exp,constant_ = DAE.C_VAR()),impl,MSG(_))
       equation
         true = RTOpts.debugFlag("ceval");
         Debug.fprint("ceval", "#- Ceval.cevalCrefBinding failed (nonconstant EQBOUND(");
@@ -5535,13 +5573,15 @@ algorithm
 
     case(e)
       equation
-        (_,val as Values.STRING(ret),_) = ceval(Env.emptyCache(), Env.emptyEnv, e, true, NONE(), NONE(), MSG());
+        (_,val as Values.STRING(ret),_) = ceval(Env.emptyCache(), Env.emptyEnv,
+            e, true, NONE(), NONE(), MSG(Absyn.dummyInfo));
       then
         ret;
   
     case(e)
       equation
-        (_,val,_) = ceval(Env.emptyCache(), Env.emptyEnv, e, true, NONE(), NONE(), MSG());
+        (_,val,_) = ceval(Env.emptyCache(), Env.emptyEnv, e, true, NONE(),
+            NONE(), MSG(Absyn.dummyInfo));
         ret = ValuesUtil.printValStr(val);
       then
         ret;
@@ -6465,7 +6505,7 @@ public function cevalSimple
   input DAE.Exp exp;
   output Values.Value val;
 algorithm
-  (_,val,_) := ceval(Env.emptyCache(),{},exp,false,NONE(),NONE(),MSG());
+  (_,val,_) := ceval(Env.emptyCache(),{},exp,false,NONE(),NONE(),MSG(Absyn.dummyInfo));
 end cevalSimple;
 
 end Ceval;

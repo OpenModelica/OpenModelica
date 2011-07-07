@@ -681,14 +681,14 @@ algorithm
         ErrorExt.setCheckpoint("Static.elabExp:IFEXP");
         (cache,etrueExp,trueProp,st) = elabExp(cache,env,trueExp,impl,st,vect,pre,info);
         (cache,efalseExp,falseProp,st) = elabExp(cache,env,falseExp,impl,st,vect,pre,info);
-        (cache,outExp,prop) = makeIfexp(cache,env,condExp,condProp,etrueExp,trueProp,efalseExp,falseProp,impl,st,pre);
+        (cache,outExp,prop) = makeIfexp(cache,env,condExp,condProp,etrueExp,trueProp,efalseExp,falseProp,impl,st,pre,info);
         ErrorExt.delCheckpoint("Static.elabExp:IFEXP");
       then (cache,outExp,prop,st);
     case (cache,env,condExp,condProp,trueExp,falseExp,impl,st,vect,pre,info)
       equation
         ErrorExt.setCheckpoint("Static.elabExp:IFEXP:HACK") "Extra rollback point so we get the regular error message only once if the hack fails";
         true = Types.isParameterOrConstant(Types.propAllConst(condProp));
-        (cache,Values.BOOL(b),_) = Ceval.ceval(cache,env,condExp,impl,NONE(),NONE(),Ceval.MSG());
+        (cache,Values.BOOL(b),_) = Ceval.ceval(cache,env,condExp,impl,NONE(),NONE(),Ceval.MSG(info));
         (cache,outExp,prop,st) = elabExp(cache,env,Util.if_(b,trueExp,falseExp),impl,st,vect,pre,info);
         ErrorExt.delCheckpoint("Static.elabExp:IFEXP:HACK");
         ErrorExt.rollBack("Static.elabExp:IFEXP");
@@ -1158,7 +1158,7 @@ algorithm
       equation
         (cache,iterExp,DAE.PROP(fulliterty,iterconst),st) = elabExp(cache, env, aiterExp, impl, st, doVect,pre,info);
         // We need to evaluate the iterator because the rest of the compiler is stupid
-        (cache,iterExp,_) = Ceval.cevalIfConstant(cache,env,iterExp,DAE.PROP(fulliterty,DAE.C_CONST()),impl);
+        (cache,iterExp,_) = Ceval.cevalIfConstant(cache,env,iterExp,DAE.PROP(fulliterty,DAE.C_CONST()),impl, info);
         (iterty,dim) = Types.unliftArrayOrList(fulliterty);
         
         // print("iterator type: " +& Types.unparseType(iterty) +& "\n");
@@ -1663,7 +1663,7 @@ algorithm
         (cache,e1_1,prop1) = elabGraphicsExp(cache,env, e1, impl,pre,info);
         (cache,e2_1,prop2) = elabGraphicsExp(cache,env, e2, impl,pre,info);
         (cache,e3_1,prop3) = elabGraphicsExp(cache,env, e3, impl,pre,info);
-        (cache,e_1,prop) = makeIfexp(cache,env, e1_1, prop1, e2_1, prop2, e3_1, prop3, impl,NONE(),pre);
+        (cache,e_1,prop) = makeIfexp(cache,env, e1_1, prop1, e2_1, prop2, e3_1, prop3, impl,NONE(),pre, info);
       then
         (cache,e_1,prop);
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,pre,info) /* Function calls */
@@ -5388,7 +5388,7 @@ algorithm
     case (cache,env,(dim_aexp :: matrices),_,impl,pre,info) /* impl */
       equation
         (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),const1),_) = elabExp(cache,env, dim_aexp, impl,NONE(),true,pre,info);
-        (cache,Values.INTEGER(dim),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), NONE(), Ceval.MSG());
+        (cache,Values.INTEGER(dim),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), NONE(), Ceval.MSG(info));
         (cache,matrices_1,props,_) = elabExpList(cache,env, matrices, impl,NONE(),true,pre,info);
         true = sameDimensionsExceptionDimX(props,dim);
         const2 = elabArrayConst(props);
@@ -5492,7 +5492,7 @@ algorithm
       equation
         (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),c),_) = elabExp(cache,env, dim, impl,NONE(),true,pre,info);
         true = Types.isParameterOrConstant(c);
-        msg = Util.if_(OptManager.getOption("checkModel"), Ceval.NO_MSG(), Ceval.MSG());
+        msg = Util.if_(OptManager.getOption("checkModel"), Ceval.NO_MSG(), Ceval.MSG(info));
         (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), NONE(), msg);
         dim_size = DAE.DIM_INTEGER(size);
         ty = Types.liftArrayListDims(DAE.T_INTEGER_DEFAULT, {dim_size, dim_size});
@@ -5919,7 +5919,7 @@ algorithm
         elabExp(cache,env, n, impl,NONE(),true,pre,info);
       true = Types.isParameterOrConstant(c3);
       (cache,Values.INTEGER(size),_) = 
-        Ceval.ceval(cache,env, n1, false,NONE(), NONE(), Ceval.MSG());
+        Ceval.ceval(cache,env, n1, false,NONE(), NONE(), Ceval.MSG(info));
       c = Types.constAnd(c1,c2);
       res_type = DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_INTEGER(size)});
       call = Expression.makeBuiltinCall("linspace", {x2, y2, n1}, res_type);
@@ -10052,7 +10052,7 @@ algorithm
     // a constant -> evaluate binding
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,tt,binding,doVect,_,_,info)
       equation
-        (cache,v) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG());
+        (cache,v) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG(info));
         e = ValuesUtil.valueExp(v);
         et = Types.typeOfValue(v);
         (e_1,_) = Types.matchType(e, et, tt, true);
@@ -10077,7 +10077,7 @@ algorithm
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
         e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy,true);
-        (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),NONE(),Ceval.MSG());
+        (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),NONE(),Ceval.MSG(info));
         e = ValuesUtil.valueExp(v);
         et = Types.typeOfValue(v);
         (e_1,_) = Types.matchType(e, et, tt, true);
@@ -10097,7 +10097,7 @@ algorithm
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
         e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy,true);
-        (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),NONE(),Ceval.MSG());
+        (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),NONE(),Ceval.MSG(info));
         e = ValuesUtil.valueExp(v);
         et = Types.typeOfValue(v);
         (e_1,_) = Types.matchType(e, et, tt, true);
@@ -11170,7 +11170,7 @@ algorithm
         (cache, dsub, const, prop) = elabSubscript(inCache, inEnv, asub, inImpl,
           inPrefix, inInfo);
         (cache, dsub) = elabSubscriptsDims3(cache, inEnv, dsub, dim,
-          const, prop, inImpl);
+          const, prop, inImpl, inInfo);
         const = Types.constAnd(const, inConst);
         elabed_subs = dsub :: inElabSubscripts;
         (cache, elabed_subs, const) = elabSubscriptsDims2(cache, inEnv,
@@ -11190,11 +11190,12 @@ protected function elabSubscriptsDims3
   input DAE.Const inConst;
   input Option<DAE.Properties> inProperties;
   input Boolean inImpl;
+  input Absyn.Info inInfo;
   output Env.Cache outCache;
   output DAE.Subscript outSubscript;
 algorithm
   (outCache, outSubscript) := matchcontinue(inCache, inEnv,
-      inSubscript, inDimension, inConst, inProperties, inImpl)
+      inSubscript, inDimension, inConst, inProperties, inImpl, inInfo)
     local
       Env.Cache cache;
       DAE.Subscript sub;
@@ -11208,7 +11209,7 @@ algorithm
     // available until expansion, which happens later on)
     // Note that for loops are expanded 'on the fly' and should therefore not be
     // treated in this way.
-    case (_, _, _, _, _, _, _)
+    case (_, _, _, _, _, _, _, _)
       equation
         true = Env.inForIterLoopScope(inEnv);
         true = Expression.dimensionKnown(inDimension);
@@ -11216,7 +11217,7 @@ algorithm
         (inCache, inSubscript);
 
     // Keep non-fixed parameters.
-    case (_, _, _, _, _, SOME(prop), _)
+    case (_, _, _, _, _, SOME(prop), _, _)
       equation
         true = Types.isParameter(inConst);
         ty = Types.getPropType(prop);
@@ -11226,18 +11227,18 @@ algorithm
 
     // If the subscript contains a param or const then it should be evaluated to
     // the value.
-    case (_, _, _, _, _, _, _)
+    case (_, _, _, _, _, _, _, _)
       equation
         int_dim = Expression.dimensionSize(inDimension);
         true = Types.isParameterOrConstant(inConst);
         (cache, sub) = Ceval.cevalSubscript(inCache, inEnv, inSubscript,
-          int_dim, inImpl, Ceval.MSG());
+          int_dim, inImpl, Ceval.MSG(inInfo));
       then
         (cache, sub);
 
     // If the previous case failed and we're just checking the model, try again
     // but skip the constant evaluation.
-    case (_, _, _, _, _, _, _)
+    case (_, _, _, _, _, _, _, _)
       equation
         true = OptManager.getOption("checkModel");
         true = Types.isParameterOrConstant(inConst);
@@ -11245,7 +11246,7 @@ algorithm
         (inCache, inSubscript);
        
     // If not constant, keep as is.
-    case (_, _, _, _, _, _, _)
+    case (_, _, _, _, _, _, _, _)
       equation
         true = Expression.dimensionKnown(inDimension);
         false = Types.isParameterOrConstant(inConst);
@@ -11253,7 +11254,7 @@ algorithm
         (inCache, inSubscript);
 
     // For unknown dimension, ':', keep as is.
-    case (_, _, _, DAE.DIM_UNKNOWN(), _, _, _)
+    case (_, _, _, DAE.DIM_UNKNOWN(), _, _, _, _)
       then (inCache, inSubscript);
 
   end matchcontinue;
@@ -11297,7 +11298,7 @@ algorithm
         (cache, sub_1, prop as DAE.PROP(constFlag = const), _) = 
           elabExp(cache, env, sub, impl, NONE(), true, pre, info);
         (cache, sub_1, prop as DAE.PROP(type_ = ty)) = 
-          Ceval.cevalIfConstant(cache, env, sub_1, prop, impl);
+          Ceval.cevalIfConstant(cache, env, sub_1, prop, impl, info);
         sub_2 = elabSubscriptType(ty, sub, sub_1, pre, env);
       then
         (cache, sub_2, const, SOME(prop));
@@ -11466,14 +11467,15 @@ protected function makeIfexp "function: makeIfexp
   input DAE.Exp inExp6;
   input DAE.Properties inProperties7;
   input Boolean inBoolean8;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption9;
+  input Option<Interactive.SymbolTable> inST;
   input Prefix.Prefix inPrefix;
+  input Absyn.Info inInfo;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv1,inExp2,inProperties3,inExp4,inProperties5,inExp6,inProperties7,inBoolean8,inInteractiveInteractiveSymbolTableOption9,inPrefix)
+  matchcontinue (inCache,inEnv1,inExp2,inProperties3,inExp4,inProperties5,inExp6,inProperties7,inBoolean8,inST,inPrefix,inInfo)
     local
       DAE.Const c,c1,c2,c3;
       DAE.Exp exp,e1,e2,e3,e2_1,e3_1;
@@ -11485,42 +11487,42 @@ algorithm
       Env.Cache cache;
       Prefix.Prefix pre;
 
-    case (cache,env,e1,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_),constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,_)
+    case (cache,env,e1,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_),constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,_, _)
       equation
         true = Types.semiEquivTypes(t2, t3);
         c = constIfexp(e1, c1, c2, c3);
-        (cache,exp) = cevalIfexpIfConstant(cache,env, e1, e2, e3, c1, impl, st);
+        (cache,exp) = cevalIfexpIfConstant(cache,env, e1, e2, e3, c1, impl, st, inInfo);
       then
         (cache,exp,DAE.PROP(t2,c));
 
-    case (cache,env,e1,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_),constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,_)
+    case (cache,env,e1,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_),constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,_, _)
       equation
         (e2_1,t2_1) = Types.matchType(e2, t2, t3, true);
         c = constIfexp(e1, c1, c2, c3) "then-part type converted to match else-part" ;
-        (cache,exp) = cevalIfexpIfConstant(cache,env, e1, e2_1, e3, c1, impl, st);
+        (cache,exp) = cevalIfexpIfConstant(cache,env, e1, e2_1, e3, c1, impl, st, inInfo);
       then
         (cache,exp,DAE.PROP(t2_1,c));
 
-    case (cache,env,e1,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_),constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,_)
+    case (cache,env,e1,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_),constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,_, _)
       equation
         (e3_1,t3_1) = Types.matchType(e3, t3, t2, true);
         c = constIfexp(e1, c1, c2, c3) "else-part type converted to match then-part" ;
-        (cache,exp) = cevalIfexpIfConstant(cache,env, e1, e2, e3_1, c1, impl, st);
+        (cache,exp) = cevalIfexpIfConstant(cache,env, e1, e2, e3_1, c1, impl, st, inInfo);
       then
         (cache,exp,DAE.PROP(t2,c));
 
-    case (cache,env,e1,DAE.PROP(type_ = t1,constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,pre)
+    case (cache,env,e1,DAE.PROP(type_ = t1,constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,pre,_)
       equation
         failure(equality(t1 = DAE.T_BOOL_DEFAULT));
         e_str = ExpressionDump.printExpStr(e1);
         t_str = Types.unparseType(t1);
         pre_str = PrefixUtil.printPrefixStr3(pre);
         t_str = t_str +& " (in component: "+&pre_str+&")";
-        Error.addMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str,t_str});
+        Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str,t_str}, inInfo);
       then
         fail();
 
-    case (cache,env,e1,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_),constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,pre)
+    case (cache,env,e1,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_),constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,pre,_)
       equation
         false = Types.semiEquivTypes(t2, t3);
         e1_str = ExpressionDump.printExpStr(e2);
@@ -11528,11 +11530,11 @@ algorithm
         e2_str = ExpressionDump.printExpStr(e3);
         t2_str = Types.unparseType(t3);
         pre_str = PrefixUtil.printPrefixStr3(pre);
-        Error.addMessage(Error.TYPE_MISMATCH_IF_EXP, {pre_str,e1_str,t1_str,e2_str,t2_str});
+        Error.addSourceMessage(Error.TYPE_MISMATCH_IF_EXP, {pre_str,e1_str,t1_str,e2_str,t2_str}, inInfo);
       then
         fail();
 
-    case (_,_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         Print.printBuf("- Static.makeIfexp failed\n");
       then
@@ -11551,23 +11553,24 @@ protected function cevalIfexpIfConstant "function: cevalIfexpIfConstant
   input DAE.Exp inExp4;
   input DAE.Const inConst5;
   input Boolean inBoolean6;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption7;
+  input Option<Interactive.SymbolTable> inST;
+  input Absyn.Info inInfo;
   output Env.Cache outCache;
   output DAE.Exp outExp;
 algorithm
   (outCache,outExp) :=
-  match (inCache,inEnv1,inExp2,inExp3,inExp4,inConst5,inBoolean6,inInteractiveInteractiveSymbolTableOption7)
+  match (inCache,inEnv1,inExp2,inExp3,inExp4,inConst5,inBoolean6,inST,inInfo)
     local
       list<Env.Frame> env;
       DAE.Exp e1,e2,e3,res;
       Boolean impl,cond;
       Option<Interactive.SymbolTable> st;
       Env.Cache cache;
-    case (cache,env,e1,e2,e3,DAE.C_VAR(),impl,st) then (cache,DAE.IFEXP(e1,e2,e3));
-    case (cache,env,e1,e2,e3,DAE.C_PARAM(),impl,st) then (cache,DAE.IFEXP(e1,e2,e3));
-    case (cache,env,e1,e2,e3,DAE.C_CONST(),impl,st)
+    case (cache,env,e1,e2,e3,DAE.C_VAR(),impl,st,_) then (cache,DAE.IFEXP(e1,e2,e3));
+    case (cache,env,e1,e2,e3,DAE.C_PARAM(),impl,st,_) then (cache,DAE.IFEXP(e1,e2,e3));
+    case (cache,env,e1,e2,e3,DAE.C_CONST(),impl,st,_)
       equation
-        (cache,Values.BOOL(cond),_) = Ceval.ceval(cache,env, e1, impl, st,NONE(), Ceval.MSG());
+        (cache,Values.BOOL(cond),_) = Ceval.ceval(cache,env, e1, impl, st,NONE(), Ceval.MSG(inInfo));
         res = Util.if_(cond, e2, e3);
       then
         (cache,res);
@@ -13278,14 +13281,14 @@ algorithm
     case (_, _, _, DAE.PROP((DAE.T_INTEGER(_), _), _), true, _, _, _, _)
       equation
         (cache, e, _) = 
-          Ceval.cevalIfConstant(inCache, inEnv, inExp, inProperties, inImpl);
+          Ceval.cevalIfConstant(inCache, inEnv, inExp, inProperties, inImpl, inInfo);
       then
         (cache, SOME(DAE.DIM_EXP(e)));
 
     case (_, _, _, _, _, _, _, _, _)
       equation
         (cache, e as DAE.SIZE(_, _), _) = 
-          Ceval.cevalIfConstant(inCache, inEnv, inExp, inProperties, inImpl);
+          Ceval.cevalIfConstant(inCache, inEnv, inExp, inProperties, inImpl, inInfo);
       then
         (cache, SOME(DAE.DIM_EXP(e)));
 

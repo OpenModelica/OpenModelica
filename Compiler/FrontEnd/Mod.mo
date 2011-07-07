@@ -140,8 +140,8 @@ algorithm
         (cache,subs_1) = elabSubmods(cache, env, ih, pre, subs, impl,info);
         // print("Mod.elabMod: calling elabExp on mod exp: " +& Dump.printExpStr(e) +& " in env: " +& Env.printEnvPathStr(env) +& "\n");
         (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), RTOpts.splitArrays(),pre,info); // Vectorize only if arrays are expanded
-        (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
-        (cache,e_val) = elabModValue(cache, env, e_1, prop);
+        (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
+        (cache,e_val) = elabModValue(cache, env, e_1, prop, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre)
         "Bug: will cause elaboration of parameters without value to fail,
          But this can be ok, since a modifier is present, giving it a value from outer modifications.." ;
@@ -354,27 +354,29 @@ protected function elabModValue
   input Env.Env inEnv;
   input DAE.Exp inExp;
   input DAE.Properties inProp;
+  input Absyn.Info inInfo;
   output Env.Cache outCache;
   output Option<Values.Value> outValuesValueOption;
 algorithm
-  (outCache,outValuesValueOption) := matchcontinue (inCache,inEnv,inExp,inProp)
+  (outCache,outValuesValueOption) := 
+  matchcontinue (inCache,inEnv,inExp,inProp, inInfo)
     local
       Values.Value v;
       Ceval.Msg msg;
       Env.Cache cache;
       DAE.Const c;
-    case (_,_,_,_)
+    case (_,_,_,_,_)
       equation
         c = Types.propAllConst(inProp);
         // Don't ceval variables.
         false = Types.constIsVariable(c);
         // Show error messages from ceval only if the expression is a constant.
-        msg = Util.if_(Types.constIsConst(c), Ceval.MSG(), Ceval.NO_MSG());
+        msg = Util.if_(Types.constIsConst(c), Ceval.MSG(inInfo), Ceval.NO_MSG());
         (cache,v,_) = Ceval.ceval(inCache, inEnv, inExp, false,NONE(), NONE(), msg);
       then
         (cache,SOME(v));
     // Constant evaluation failed, return no value.
-    case (_,_,_,_) then (inCache,NONE());
+    case (_,_,_,_,_) then (inCache,NONE());
   end matchcontinue;
 end elabModValue;
 
@@ -554,8 +556,8 @@ algorithm
       equation
         (cache,subs_1) = updateSubmods(cache, env, ih, pre, subs, impl, info);
         (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true, pre, info);
-        (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
-        (cache,e_val) = elabModValue(cache,env,e_1,prop);
+        (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
+        (cache,e_val) = elabModValue(cache,env,e_1,prop,info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         Debug.fprint("updmod", "Updated mod: ");
         Debug.fprintln("updmod", Debug.fcallret1("updmod", printModStr, DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,NONE(),prop,SOME(e)))),""));
@@ -1665,7 +1667,7 @@ algorithm
       then
         emod;
 
-        // For modifiers without value, apply subscript operator
+    // For modifiers without value, apply subscript operator
     case (SOME(DAE.TYPED(e,NONE(),DAE.PROP(t,c),_)),(x :: xs))
       equation
         t_1 = Types.unliftArray(t);
@@ -1677,16 +1679,15 @@ algorithm
 
     case (SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = t))), _)
       equation
-                /* Trying to apply a non-array modifier to an array, which isn't
-                 * really allowed but working anyway. Some standard Modelica libraries
-                 * are missing the 'each' keyword though (i.e. the DoublePendulum
-                 * example), and therefore relying on this behaviour, so just print a
-                 * warning here. */
+        // Trying to apply a non-array modifier to an array, which isn't really
+        // allowed but working anyway. Some standard Modelica libraries are
+        // missing the 'each' keyword though (e.g. the DoublePendulum example),
+        // and therefore relying on this behaviour, so just print a warning here.
         failure(t_1 = Types.unliftArray(t));
         exp_str = ExpressionDump.printExpStr(exp);
-                Error.addMessage(Error.MODIFIER_NON_ARRAY_TYPE_WARNING, {exp_str});
-            then 
-              fail();
+        Error.addMessage(Error.MODIFIER_NON_ARRAY_TYPE_WARNING, {exp_str});
+      then 
+        fail();
 
     case (SOME(eq),inIntegerLst) 
       equation

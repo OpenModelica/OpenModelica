@@ -5287,7 +5287,7 @@ algorithm
     // Special case for components beeing redeclared, we might instantiate partial classes when instantiating var(-> instVar2->instClass) to update component in env.
     case (cache,env,ih,pre,((comp,(cmod as DAE.REDECL(_,_,{(redComp,redMod)}))) :: xs),ci_state,csets,impl)
       equation
-        info = Absyn.dummyInfo; // TODO: Get info from the comp? Is it always a COMPONENT?
+        info = SCode.elementInfo(redComp);
         umod = Mod.unelabMod(cmod);
         crefs = getCrefFromMod(umod);
         crefs_1 = getCrefFromCompDim(comp) "get crefs from dimension arguments";
@@ -5319,7 +5319,7 @@ algorithm
 
     case (cache,env,ih,pre,((comp, cmod as DAE.MOD(subModLst = _)) :: xs),ci_state,csets,impl)
       equation
-        info = Absyn.dummyInfo; // TODO: Get info from the comp? Is it always a COMPONENT?
+        info = SCode.elementInfo(comp);
         umod = Mod.unelabMod(cmod);
         crefs = getCrefFromMod(umod);
         crefs_1 = getCrefFromCompDim(comp);
@@ -10122,7 +10122,7 @@ algorithm
     case (cache,env,cref,path,ad,SOME(DAE.UNTYPED(aexp)),impl,st,doVect, _,pre,info,inst_dims)
       equation
         (cache,e_1,prop,_) = Static.elabExp(cache,env, aexp, impl, st,doVect,pre,info);
-        (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
+        (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
         t = Types.getPropType(prop);
         (cache,dim1) = Static.elabArrayDims(cache,env, cref, ad, impl, st,doVect,pre,info);
         dim2 = elabArraydimType(t, ad, e_1, path, pre, cref, info,inst_dims);
@@ -11837,9 +11837,9 @@ algorithm
           functionArgs = Absyn.FUNCTIONARGS(args = (args as {arraycr,dim}),argNames = nargs))),impl,st,pre,info)
       equation         
         (cache,dimp,prop as DAE.PROP(dimty,_),_) = Static.elabExp(cache, env, dim, impl,NONE(),false,pre,info);
-        (cache, dimp, prop) = Ceval.cevalIfConstant(cache, env, dimp, prop, impl);
+        (cache, dimp, prop) = Ceval.cevalIfConstant(cache, env, dimp, prop, impl, info);
         (cache,arraycrefe,arraycrprop,_) = Static.elabExp(cache, env, arraycr, impl,NONE(),false,pre,info);
-        (cache, arraycrefe, arraycrprop) = Ceval.cevalIfConstant(cache, env, arraycrefe, arraycrprop, impl);
+        (cache, arraycrefe, arraycrprop) = Ceval.cevalIfConstant(cache, env, arraycrefe, arraycrprop, impl, info);
         exp = DAE.SIZE(arraycrefe,SOME(dimp));
       then
         (cache,exp,DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_VAR()),st);
@@ -11847,7 +11847,7 @@ algorithm
     case (cache,env,absynExp,impl,st,pre,info)
       equation 
         (cache,e,prop,st) = Static.elabExp(cache, env, absynExp, impl, st,false,pre,info);
-        (cache, e, prop) = Ceval.cevalIfConstant(cache, env, e, prop, impl);
+        (cache, e, prop) = Ceval.cevalIfConstant(cache, env, e, prop, impl, info);
       then
         (cache,e,prop,st);
     case (cache,env,absynExp,impl,st,pre,info)
@@ -13901,11 +13901,11 @@ algorithm
 
     case(SCode.CLASS(name = name, info = info)) then (name, info);
     case(SCode.COMPONENT(name = name, info=info)) then (name, info);      
-    case(SCode.EXTENDS(baseClassPath=path))
+    case(SCode.EXTENDS(baseClassPath=path, info = info))
       equation
         ret = Absyn.pathString(path);
       then 
-        (ret, Absyn.dummyInfo);
+        (ret, info);
     case(SCode.IMPORT(imp = imp, info = info))
       equation 
         name = Absyn.printImportString(imp);
@@ -15176,7 +15176,7 @@ algorithm
           Static.elabExp(cache, env, cond, false, NONE(), false, pre, info);
         true = Types.isBoolean(t);
         true = Types.isParameterOrConstant(c);
-        (cache, Values.BOOL(b), _) = Ceval.ceval(cache, env, e, false, NONE(), NONE(), Ceval.MSG());
+        (cache, Values.BOOL(b), _) = Ceval.ceval(cache, env, e, false, NONE(), NONE(), Ceval.MSG(info));
       then
         (b, cache);
     case (_, _, _, _, _, info)

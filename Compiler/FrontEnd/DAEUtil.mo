@@ -1718,12 +1718,16 @@ algorithm
       DAE.Element el;
       Env.Cache cache;
       Env.Env env;
+      DAE.ElementSource source;
+      Absyn.Info info;
 
     case (cache,env,cname,{},_) then (cache,Values.RECORD(cname,{},{},-1));  /* impl */
-    case (cache,env,cname,DAE.VAR(componentRef = cr, binding = SOME(rhs)) :: rest, impl)
+    case (cache,env,cname,DAE.VAR(componentRef = cr, binding = SOME(rhs),
+          source= source) :: rest, impl)
       equation
         // Debug.fprintln("failtrace", "- DAEUtil.daeToRecordValue typeOfRHS: " +& ExpressionDump.typeOfString(rhs));
-        (cache, value,_) = Ceval.ceval(cache, env, rhs, impl,NONE(), NONE(), Ceval.MSG());
+        info = getElementSourceFileInfo(source);
+        (cache, value,_) = Ceval.ceval(cache, env, rhs, impl,NONE(), NONE(), Ceval.MSG(info));
         (cache, Values.RECORD(cname,vals,names,ix)) = daeToRecordValue(cache, env, cname, rest, impl);
         cr_str = ComponentReference.printComponentRefStr(cr);
       then
