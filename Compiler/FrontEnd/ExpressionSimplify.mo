@@ -606,8 +606,9 @@ algorithm
   outExp := matchcontinue (exp)
     local
       list<DAE.Exp> expl;
-      DAE.Exp e,len_exp,just_exp,e1,e2;
+      DAE.Exp e,len_exp,just_exp,e1,e2,e3,e4;
       DAE.ExpType tp;
+      DAE.Operator op;
       list<DAE.Exp> v1, v2;
       Boolean scalar;
       list<Values.Value> valueLst;
@@ -672,6 +673,32 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={DAE.BINARY(e1,DAE.POW(ty = DAE.ET_REAL()),e2)})
       then DAE.BINARY(e1,DAE.POW(DAE.ET_REAL()),DAE.BINARY(DAE.RCONST(0.5),DAE.MUL(DAE.ET_REAL()),e2));
     
+    // delay of constant expression
+    case DAE.CALL(path=Absyn.IDENT("delay"),expLst={e1,_,_})
+      equation
+        true = Expression.isConst(e1);
+      then e1;
+
+    // delay of constant subexpression
+    case DAE.CALL(path=Absyn.IDENT("delay"),expLst={DAE.BINARY(e1,op,e2),e3,e4},ty=tp)
+      equation
+        true = Expression.isConst(e1);
+        e = Expression.makeBuiltinCall("delay",{e2,e3,e4},tp);
+      then DAE.BINARY(e1,op,e);
+
+    // delay of constant subexpression
+    case DAE.CALL(path=Absyn.IDENT("delay"),expLst={DAE.BINARY(e1,op,e2),e3,e4},ty=tp)
+      equation
+        true = Expression.isConst(e2);
+        e = Expression.makeBuiltinCall("delay",{e1,e3,e4},tp);
+      then DAE.BINARY(e,op,e2);
+
+    // delay(-x) = -delay(x)
+    case DAE.CALL(path=Absyn.IDENT("delay"),expLst={DAE.UNARY(op,e),e3,e4},ty=tp)
+      equation
+        e = Expression.makeBuiltinCall("delay",{e,e3,e4},tp);
+      then DAE.UNARY(op,e);
+
   end matchcontinue;
 end simplifyBuiltinCalls;
 
