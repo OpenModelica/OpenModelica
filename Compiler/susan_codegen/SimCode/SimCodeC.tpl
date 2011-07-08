@@ -852,7 +852,7 @@ template functionStoreDelayed(DelayedExpression delayed)
                       &preExp /*BUFC*/, &varDecls /*BUFD*/)
       <<
       <%preExp%>
-      storeDelayedExpression(<%id%>, <%eRes%>);
+      storeDelayedExpression(<%id%>, <%eRes%>);<%\n%>
       >>
     ))
   <<

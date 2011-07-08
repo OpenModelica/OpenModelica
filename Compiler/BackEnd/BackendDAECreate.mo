@@ -47,6 +47,7 @@ protected import Algorithm;
 protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendVariable;
+protected import BaseHashTable;
 protected import ComponentReference;
 protected import ClassInf;
 protected import DAEDump;
@@ -57,6 +58,7 @@ protected import Error;
 protected import Expression;
 protected import ExpressionSimplify;
 protected import ExpressionDump;
+protected import HashTableExpToIndex;
 protected import Inline;
 protected import OptManager;
 protected import RTOpts;
@@ -2080,9 +2082,11 @@ algorithm
   (outDAE,outTree) := match(inDAE,functionTree)
     local
       DAE.DAElist dae;
+      HashTableExpToIndex.HashTable ht;
     case (dae,functionTree)
       equation
-        (dae,functionTree,_) = DAEUtil.traverseDAE(dae, functionTree, transformDelayExpressions, 0);
+        ht = HashTableExpToIndex.emptyHashTableSized(100);
+        (dae,functionTree,_) = DAEUtil.traverseDAE(dae, functionTree, transformDelayExpressions, (ht,0));
       then
         (dae,functionTree);
   end match;
@@ -2090,11 +2094,11 @@ end processDelayExpressions;
 
 protected function transformDelayExpressions
 "Helper for processDelayExpressions()"
-  input tuple<DAE.Exp,Integer> itpl;
-  output tuple<DAE.Exp,Integer> otpl;
+  input tuple<DAE.Exp,tuple<HashTableExpToIndex.HashTable,Integer>> itpl;
+  output tuple<DAE.Exp,tuple<HashTableExpToIndex.HashTable,Integer>> otpl;
 protected
   DAE.Exp e;
-  Integer i;
+  tuple<HashTableExpToIndex.HashTable,Integer> i;
 algorithm
   (e,i) := itpl;
   otpl := Expression.traverseExp(e, transformDelayExpression, i);
@@ -2103,21 +2107,29 @@ end transformDelayExpressions;
 protected function transformDelayExpression
 "Insert a unique index into the arguments of a delay() expression.
 Repeat delay as maxDelay if not present."
-  input tuple<DAE.Exp, Integer> inTuple;
-  output tuple<DAE.Exp, Integer> outTuple;
+  input tuple<DAE.Exp, tuple<HashTableExpToIndex.HashTable,Integer>> inTuple;
+  output tuple<DAE.Exp, tuple<HashTableExpToIndex.HashTable,Integer>> outTuple;
 algorithm
   outTuple := matchcontinue(inTuple)
     local
       DAE.Exp e, e1, e2, e3;
+      list<DAE.Exp> es;
+      HashTableExpToIndex.HashTable ht;
       Integer i;
       Boolean t, b;
       DAE.ExpType ty;
       DAE.InlineType it;
-    case ((DAE.CALL(Absyn.IDENT("delay"), {e1, e2}, t, b, ty, it), i))
-      then ((DAE.CALL(Absyn.IDENT("delay"), {DAE.ICONST(i), e1, e2, e2}, t, b, ty, it), i + 1));
-    case ((DAE.CALL(Absyn.IDENT("delay"), {e1, e2, e3}, t, b, ty, it), i))
-      then ((DAE.CALL(Absyn.IDENT("delay"), {DAE.ICONST(i), e1, e2, e3}, t, b, ty, it), i + 1));
-    case ((e, i)) then ((e, i));
+    case ((e as DAE.CALL(Absyn.IDENT("delay"), es, t, b, ty, it), (ht,_)))
+      equation
+        i = BaseHashTable.get(e,ht);
+      then ((DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(i)::es, t, b, ty, it), (ht,i)));
+
+    case ((e as DAE.CALL(Absyn.IDENT("delay"), es, t, b, ty, it), (ht,i)))
+      equation
+        ht = BaseHashTable.add((e,i),ht);
+      then ((DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(i)::es, t, b, ty, it), (ht,i+1)));
+
+    else inTuple;
   end matchcontinue;
 end transformDelayExpression;
 
