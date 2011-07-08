@@ -8115,7 +8115,7 @@ algorithm
             inInstDims, inImpl, inComment, inInfo, inGraph);
       then
         (cache, env, ih, store, dae, csets, ty, graph);
-            
+
     // Array variables with unknown dimensions, e.g. Real x[:] = [some expression that can be used to determine dimension]. 
     case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_)))),pre,csets,n,cl,attr,pf,
       ((dim as DAE.DIM_UNKNOWN()) :: dims),idxs,inst_dims,impl,comment,info,graph)
@@ -8172,6 +8172,14 @@ algorithm
         //ty_1 = liftNonBasicTypes(ty,dim); // Do not lift types extending basic type, they are already array types.
       then
         (cache,compenv,ih,store,dae,csets,ty,graph);
+
+    // Array variable with unknown dimensions, but no binding
+    case (cache,env,ih,store,ci_state,DAE.NOMOD(),pre,csets,n,cl,attr,pf,
+      ((dim as DAE.DIM_UNKNOWN()) :: dims),idxs,inst_dims,impl,comment,info,graph)
+      equation
+        Error.addSourceMessage(Error.FAILURE_TO_DEDUCE_DIMS_NO_MOD,{n},info);
+      then
+        fail();
 
     // failtrace 
     case (_,env,ih,_,_,mod,pre,_,n,_,_,_,_,_,_,_,_,_,_)

@@ -296,6 +296,7 @@ public constant ErrorID LOAD_MODEL=184;
 public constant ErrorID INVALID_ARGUMENT_TYPE=185;
 public constant ErrorID INVALID_SIZE_INDEX=186;
 public constant ErrorID ALGORITHM_TRANSITION_FAILURE=187;
+public constant ErrorID FAILURE_TO_DEDUCE_DIMS_NO_MOD=188;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -760,6 +761,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Cyclically dependent constants or parameters found in scope %s: %s"),
           (FAILURE_TO_DEDUCE_DIMS_FROM_MOD,TRANSLATION(),WARNING(),
           "Failed to deduce dimensions of %s due to unknown dimensions of modifier %s."),
+          (FAILURE_TO_DEDUCE_DIMS_NO_MOD,TRANSLATION(),ERROR(),
+          "Failed to deduce dimensions of %s due to missing binding equation."),
           (REPLACEABLE_BASE_CLASS,TRANSLATION(),ERROR(),
           "Base class %s is replaceable."),
           (NON_REPLACEABLE_CLASS_EXTENDS,TRANSLATION(),ERROR(),
