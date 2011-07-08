@@ -5003,6 +5003,12 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var2 = daeExp(e2, context, &preExp, &varDecls)
     'modelica_integer_max((modelica_integer)<%var1%>,(modelica_integer)<%var2%>)'
   
+  case CALL(tuple_=false, builtin=true, ty = ty,
+            path=IDENT(name="sum"), expLst={e}) then
+    let arr = daeExp(e, context, &preExp, &varDecls)
+    let ty_str = '<%expTypeArray(ty)%>'
+    'sum_<%ty_str%>(&<%arr%>)'
+  
   case CALL(tuple_=false, builtin=true, ty = ET_REAL(),
             path=IDENT(name="min"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
@@ -5336,12 +5342,13 @@ template daeExpRange(Exp exp, Context context, Text &preExp /*BUFP*/,
  "Generates code for a range expression."
 ::=
   match exp
-  case RANGE(expOption = NONE()) then
+  case RANGE(__) then
     let ty_str = expTypeArray(ty)
     let start_exp = daeExp(exp, context, &preExp, &varDecls)
     let stop_exp = daeExp(range, context, &preExp, &varDecls)
     let tmp = tempDecl(ty_str, &varDecls)
-    let &preExp += 'create_integer_range_array(&<%tmp%>, <%start_exp%>, 1, <%stop_exp%>);<%\n%>'
+    let step = match expOption case SOME(stepExp) then daeExp(stepExp, context, &preExp, &varDecls) else "1"
+    let &preExp += 'create_<%ty_str%>_from_range(&<%tmp%>, <%start_exp%>, <%step%>, <%stop_exp%>);<%\n%>'
     '<%tmp%>'
 end daeExpRange;
 

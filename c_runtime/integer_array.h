@@ -83,7 +83,7 @@ void copy_integer_array_data_mem(integer_array_t* source,
 /* Copy integer array*/
 void copy_integer_array(integer_array_t* source, integer_array_t* dest);
 
-void create_integer_range_array(integer_array_t *dest, int start, int step, int stop);
+void create_integer_array_from_range(integer_array_t *dest, int start, int step, int stop);
 
 modelica_integer* calc_integer_index(int ndims,_index_t* idx_vec,
                                      integer_array_t* arr);

@@ -171,7 +171,7 @@ inline int integer_ge(int x, int y)
 
 /* Creates an integer array from a range with a start, stop and step value.
  * Ex: 1:2:6 => {1,3,5} */
-void create_integer_range_array(integer_array_t *dest, int start, int step, int stop)
+void create_integer_array_from_range(integer_array_t *dest, int start, int step, int stop)
 {
   size_t elements;
   size_t i;
