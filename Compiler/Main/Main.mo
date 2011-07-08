@@ -338,6 +338,7 @@ protected function isModelicaScriptFile
   list<String> lst;
   String last;
 algorithm
+  true := System.regularFileExists(filename);
   lst := System.strtok(filename, ".");
   last :: _ := listReverse(lst);
   true := stringEq(last, "mos");
