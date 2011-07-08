@@ -556,8 +556,7 @@ algorithm
       equation
         env = buildEnvFromSymboltable(st);
         (cache,econd,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, cond, true, SOME(st),true,Prefix.NOPRE(),info);
-        (_,Values.BOOL(true),SOME(st_2)) = Ceval.ceval(cache,env, econd, true,
-            SOME(st_1),NONE(), Ceval.MSG(info));
+        (_,Values.BOOL(true),SOME(st_2)) = Ceval.ceval(cache,env, econd, true,SOME(st_1),Ceval.MSG(info));
       then
         ("",st_2);
 
@@ -567,8 +566,7 @@ algorithm
       equation
         env = buildEnvFromSymboltable(st);
         (cache,msg_1,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, msg, true, SOME(st),true,Prefix.NOPRE(),info);
-        (_,Values.STRING(str),SOME(st_2)) = Ceval.ceval(cache,env, msg_1, true,
-            SOME(st_1),NONE(), Ceval.MSG(info));
+        (_,Values.STRING(str),SOME(st_2)) = Ceval.ceval(cache,env, msg_1, true,SOME(st_1),Ceval.MSG(info));
       then
         (str,st_2);
 
@@ -577,8 +575,7 @@ algorithm
         env = buildEnvFromSymboltable(st);
         exp = Absyn.CALL(cr,fargs);
         (cache,sexp,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache(), env, exp, true, SOME(st),true,Prefix.NOPRE(),info);
-        (_,_,SOME(st_2)) = Ceval.ceval(cache, env, sexp, true,
-            SOME(st_1),NONE(), Ceval.MSG(info));
+        (_,_,SOME(st_2)) = Ceval.ceval(cache, env, sexp, true,SOME(st_1),Ceval.MSG(info));
       then
         ("",st_2);
 
@@ -603,8 +600,7 @@ algorithm
       equation
         env = buildEnvFromSymboltable(st);
         (cache,sexp,DAE.PROP(_,_),SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true,Prefix.NOPRE(),info);
-        (_,value,SOME(st_2)) = Ceval.ceval(cache,env, sexp, true,
-            SOME(st_1),NONE(), Ceval.MSG(info));
+        (_,value,SOME(st_2)) = Ceval.ceval(cache,env, sexp, true,SOME(st_1),Ceval.MSG(info));
         t = Types.typeOfValue(value) "This type can be more specific than the elaborated type; if the dimensions are unknown...";
         str = ValuesUtil.valString(value);
         newst = addVarToSymboltable(ident, value, t, st_2);
@@ -621,8 +617,7 @@ algorithm
         (cache,srexp,rprop,SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, rexp, true, SOME(st),true,Prefix.NOPRE(),info);
         ((DAE.T_TUPLE(types),_)) = Types.getPropType(rprop);
         idents = Util.listMap(crefexps, getIdentFromTupleCrefexp);
-        (_,Values.TUPLE(values),SOME(st_2)) = Ceval.ceval(cache, env, srexp,
-            true, SOME(st_1),NONE(), Ceval.MSG(info));
+        (_,Values.TUPLE(values),SOME(st_2)) = Ceval.ceval(cache, env, srexp, true, SOME(st_1), Ceval.MSG(info));
         newst = addVarsToSymboltable(idents, values, types, st_2);
       then
         ("",newst);
@@ -937,7 +932,7 @@ algorithm
         env = buildEnvFromSymboltable(st);
         (cache,sexp,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache(), env, exp, true, SOME(st),true,Prefix.NOPRE(),info);
         (_,value,SOME(st_2)) = Ceval.ceval(cache,env, sexp, true,
-            SOME(st_1),NONE(), Ceval.MSG(info));
+            SOME(st_1),Ceval.MSG(info));
       then
         (value,st_2);
   end matchcontinue;

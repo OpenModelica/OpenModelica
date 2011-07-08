@@ -272,7 +272,7 @@ algorithm
   (outCache,filename) := match (cache,env,inputFilename,st,msg)
     case (_,_,"<default>",_,_)
       equation
-        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(),true,SOME(st),NONE(),msg);
+        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(),true,SOME(st),msg);
       then (cache,filename);
     else (cache,inputFilename);
   end match;
@@ -691,7 +691,7 @@ algorithm
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "timing"),expLst = {exp}),st,msg)
       equation
         t1 = System.time();
-        (cache,value,SOME(st)) = Ceval.ceval(cache,env, exp, true, SOME(st),NONE(), msg);
+        (cache,value,SOME(st)) = Ceval.ceval(cache,env, exp, true, SOME(st),msg);
         t2 = System.time();
         time = t2 -. t1;
       then
@@ -1802,7 +1802,7 @@ algorithm
         
     case (cache,env,"val",{cvar,Values.REAL(timeStamp)},st,msg)
       equation
-        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(), true, SOME(st),NONE(), msg);
+        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(), true, SOME(st),msg);
         varNameStr = ValuesUtil.printCodeVariableName(cvar);
         val = SimulationResults.val(filename,varNameStr,timeStamp);
       then (cache,Values.REAL(val),st);
@@ -2574,7 +2574,7 @@ protected function extractFilePrefix "function extractFilePrefix
   output Env.Cache outCache;
   output String outString;
 algorithm
-  (outCache,Values.STRING(outString),_) := Ceval.ceval(cache, env, filenameprefix, true, SOME(st),NONE(), msg);
+  (outCache,Values.STRING(outString),_) := Ceval.ceval(cache, env, filenameprefix, true, SOME(st),msg);
 end extractFilePrefix;
 
 public function cevalAstExp
@@ -2663,7 +2663,7 @@ algorithm
     case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "Eval",subscripts = {}),functionArgs = Absyn.FUNCTIONARGS(args = {e},argNames = {})),impl,st,msg,info)
       equation
         (cache,daeExp,_,_) = Static.elabExp(cache, env, e, impl, st, true, Prefix.NOPRE(), info);
-        (cache,Values.CODE(Absyn.C_EXPRESSION(exp)),_) = Ceval.ceval(cache, env, daeExp, impl, st, NONE(), msg);
+        (cache,Values.CODE(Absyn.C_EXPRESSION(exp)),_) = Ceval.ceval(cache, env, daeExp, impl, st, msg);
       then
         (cache,exp);
     

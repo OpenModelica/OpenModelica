@@ -372,11 +372,11 @@ algorithm
         false = Types.constIsVariable(c);
         // Show error messages from ceval only if the expression is a constant.
         msg = Util.if_(Types.constIsConst(c), Ceval.MSG(inInfo), Ceval.NO_MSG());
-        (cache,v,_) = Ceval.ceval(inCache, inEnv, inExp, false,NONE(), NONE(), msg);
+        (cache,v,_) = Ceval.ceval(inCache, inEnv, inExp, false,NONE(), msg);
       then
         (cache,SOME(v));
     // Constant evaluation failed, return no value.
-    case (_,_,_,_,_) then (inCache,NONE());
+    else (inCache,NONE());
   end matchcontinue;
 end elabModValue;
 

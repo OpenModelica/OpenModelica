@@ -1727,7 +1727,7 @@ algorithm
       equation
         // Debug.fprintln("failtrace", "- DAEUtil.daeToRecordValue typeOfRHS: " +& ExpressionDump.typeOfString(rhs));
         info = getElementSourceFileInfo(source);
-        (cache, value,_) = Ceval.ceval(cache, env, rhs, impl,NONE(), NONE(), Ceval.MSG(info));
+        (cache, value,_) = Ceval.ceval(cache, env, rhs, impl, NONE(), Ceval.MSG(info));
         (cache, Values.RECORD(cname,vals,names,ix)) = daeToRecordValue(cache, env, cname, rest, impl);
         cr_str = ComponentReference.printComponentRefStr(cr);
       then
