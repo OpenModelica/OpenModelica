@@ -525,6 +525,14 @@ algorithm
         acc = listReverse(v::acc);
       then
         acc;
+
+    case (arr,pos,lastpos,acc)
+      equation
+        (pos == lastpos) = true;
+        NONE() = arr[pos + 1];
+        acc = listReverse(acc);
+      then
+        acc;
     
     case (arr,pos,lastpos,acc)
       equation
