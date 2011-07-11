@@ -2768,6 +2768,7 @@ case FUNCTION(__) then
     <%funArgs%>
     /* functionBodyRegularFunction: locals */
     <%varDecls%>
+    _tailrecursive:
     /* functionBodyRegularFunction: out inits */
     <%outVarInits%>
     
@@ -5171,6 +5172,15 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let argStr = daeExp(s1, context, &preExp, &varDecls)
     unboxRecord(argStr, ty, &preExp, &varDecls)
   
+  case exp as CALL(attr=attr as CALL_ATTR(tailCall=tail as TAIL(__))) then
+    let res = <<
+    /* Tail recursive call <%printExpStr(exp)%> */
+    <%daeExpTailCall(expLst,tail.vars,context,&preExp,&varDecls)%>goto _tailrecursive;
+    /* TODO: Make sure any eventual dead code below is never generated */
+    >>
+    let &preExp += res
+    ""
+
   case exp as CALL(attr=attr as CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>' ;separator=", ")
     let funName = '<%underscorePath(path)%>'
@@ -5202,6 +5212,15 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
         '<%retVar%>'
 end daeExpCall;
 
+template daeExpTailCall(list<DAE.Exp> es, list<String> vs, Context context, Text &preExp, Text &varDecls)
+::=
+  match es
+  case e::erest then
+    match vs
+    case v::vrest then
+      let exp = daeExp(e,context,&preExp,&varDecls)
+      '_<%v%> = <%exp%>;<%\n%><%daeExpTailCall(erest, vrest, context, &preExp, &varDecls)%>'
+end daeExpTailCall;
 
 template daeExpCallBuiltinPrefix(Boolean builtin)
  "Helper to daeExpCall."

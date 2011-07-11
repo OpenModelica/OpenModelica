@@ -16469,12 +16469,14 @@ algorithm
       equation
         name = Expression.simpleCrefName(lhs);
         rhs = optimizeStatementTail2(path,rhs,{name},invars,outvars,source);
-      then fail();
+        stmt = Util.if_(Expression.isTailCall(rhs),DAE.STMT_NORETCALL(rhs,source),DAE.STMT_ASSIGN(tp,lhs,rhs,source));
+      then stmt;
     case (path,DAE.STMT_TUPLE_ASSIGN(tp,lhsLst,rhs,source),invars,outvars)
       equation
         lhsNames = Util.listMap(lhsLst,Expression.simpleCrefName);
         rhs = optimizeStatementTail2(path,rhs,lhsNames,invars,outvars,source);
-      then fail();
+        stmt = Util.if_(Expression.isTailCall(rhs),DAE.STMT_NORETCALL(rhs,source),DAE.STMT_TUPLE_ASSIGN(tp,lhsLst,rhs,source));
+      then stmt;
     else stmt;
   end matchcontinue;
 end optimizeStatementTail;
@@ -16503,12 +16505,16 @@ algorithm
     local
       Absyn.Path path1,path2;
       String str;
-    case (path1,DAE.CALL(path=path2),vars,source)
+      DAE.InlineType i;
+      Boolean b1,b2;
+      DAE.ExpType tp;
+      list<DAE.Exp> es;
+    case (path1,DAE.CALL(path=path2,expLst=es,attr=DAE.CALL_ATTR(tp,b1,b2,i,DAE.NO_TAIL())),vars,source)
       equation
-        // str = "Tail recursion of: " +& ExpressionDump.printExpStr(rhs) +& " with input vars: " +& Util.stringDelimitList(vars,",");
-        // Error.addSourceMessage(Error.COMPILER_NOTIFICATION,{str},DAEUtil.getElementSourceFileInfo(source));
-        // TODO: Embed input variable names to the function call or whatever...
-      then fail();
+        true = Absyn.pathEqual(path1,path2);
+        str = "Tail recursion of: " +& ExpressionDump.printExpStr(rhs) +& " with input vars: " +& Util.stringDelimitList(vars,",");
+        Error.addSourceMessage(Error.COMPILER_NOTIFICATION,{str},DAEUtil.getElementSourceFileInfo(source));
+      then DAE.CALL(path2,es,DAE.CALL_ATTR(tp,b1,b2,i,DAE.TAIL(vars)));
   end match;
 end optimizeStatementTail3;
 

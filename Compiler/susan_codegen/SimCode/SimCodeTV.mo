@@ -1310,6 +1310,14 @@ package DAE
       Exp after;
     end OP_DERIVE;
   end SymbolicOperation;
+
+  uniontype TailCall
+    record NO_TAIL
+    end NO_TAIL;
+    record TAIL
+      list<String> vars;
+    end TAIL;
+  end TailCall;
 end DAE;
 
 
@@ -1891,6 +1899,14 @@ package Util
     output list<Type_a> outTypeALst;
     replaceable type Type_a subtypeof Any;
   end listUnion;
+
+  function listThreadTuple
+    replaceable type Type_b subtypeof Any;
+    input list<Type_a> inTypeALst;
+    input list<Type_b> inTypeBLst;
+    output list<tuple<Type_a, Type_b>> outTplTypeATypeBLst;
+    replaceable type Type_a subtypeof Any;
+  end listThreadTuple;
 
 end Util;
 

@@ -7019,5 +7019,15 @@ algorithm
   DAE.CREF(componentRef=DAE.CREF_IDENT(ident=name,subscriptLst={})) := exp; 
 end simpleCrefName;
 
+public function isTailCall
+  input DAE.Exp exp;
+  output Boolean isTail;
+algorithm
+  isTail := match exp
+    case DAE.CALL(attr=DAE.CALL_ATTR(tailCall=DAE.TAIL(vars=_))) then true;
+    else false;
+  end match;
+end isTailCall;
+
 end Expression;
 
