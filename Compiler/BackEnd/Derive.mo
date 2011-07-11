@@ -337,7 +337,7 @@ algorithm
       list<DAE.ComponentRef> crefs;
       list<Boolean> blst;
       String e_str,str;
-      DAE.Exp e,e_1,e1_1,e2_1,e1,e2,e3_1,e3,d_e1,exp,e0,zero;
+      DAE.Exp e,e_1,e1_1,e2_1,e1,e2,e3_1,e3,d_e1,exp,e0,zero,call1,call2;
       BackendDAE.Variables timevars;
       DAE.Operator op;
       list<DAE.Exp> expl_1,expl,sub;
@@ -353,6 +353,7 @@ algorithm
       list<DAE.ExpVar> varLst;
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators iters;
+      DAE.CallAttributes attr;
 
     case (DAE.ICONST(integer = _),_) then DAE.RCONST(0.0);
     case (DAE.RCONST(real = _),_) then DAE.RCONST(0.0);
@@ -371,7 +372,7 @@ algorithm
     case ((e as DAE.CREF(componentRef = cr,ty = tp as DAE.ET_COMPLEX(name=a,varLst=varLst,complexClassType=ClassInf.RECORD(_)))),(timevars,functions))
       equation
         expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr);
-        e1 = DAE.CALL(a,expl,false,false,tp,DAE.NO_INLINE());
+        e1 = DAE.CALL(a,expl,DAE.CALL_ATTR(tp,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
       then
         differentiateExpTime(e1,(timevars,functions));
     // case for arrays
@@ -384,22 +385,21 @@ algorithm
     case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,functions))
       equation
         (_,_) = BackendVariable.getVar(cr, timevars);
-      then
-        DAE.CALL(Absyn.IDENT("der"),{e},false,true,tp,DAE.NO_INLINE());
+      then DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal);
 
     case (DAE.CALL(path = Absyn.IDENT("sin"),expLst = {e}),(timevars,functions))
       equation
         e_1 = differentiateExpTime(e, (timevars,functions)) "der(sin(x)) = der(x)cos(x)" ;
       then
         DAE.BINARY(e_1,DAE.MUL(DAE.ET_REAL()),
-          DAE.CALL(Absyn.IDENT("cos"),{e},false,true,DAE.ET_REAL(),DAE.NO_INLINE()));
+          DAE.CALL(Absyn.IDENT("cos"),{e},DAE.callAttrBuiltinReal));
 
     case (DAE.CALL(path = Absyn.IDENT("cos"),expLst = {e}),(timevars,functions))
       equation
         e_1 = differentiateExpTime(e, (timevars,functions)) "der(cos(x)) = -der(x)sin(x)" ;
       then
         DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),DAE.BINARY(e_1,DAE.MUL(DAE.ET_REAL()),
-          DAE.CALL(Absyn.IDENT("sin"),{e},false,true,DAE.ET_REAL(),DAE.NO_INLINE())));
+          DAE.CALL(Absyn.IDENT("sin"),{e},DAE.callAttrBuiltinReal)));
 
         // der(arccos(x)) = -der(x)/sqrt(1-x^2)
     case (DAE.CALL(path = Absyn.IDENT("acos"),expLst = {e}),(timevars,functions))
@@ -408,7 +408,7 @@ algorithm
       then
         DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),
           DAE.CALL(Absyn.IDENT("sqrt"),{DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(DAE.ET_REAL()),DAE.BINARY(e,DAE.MUL(DAE.ET_REAL()),e))},
-                   false,true,DAE.ET_REAL(),DAE.NO_INLINE())));
+                   DAE.callAttrBuiltinReal)));
 
         // der(arcsin(x)) = der(x)/sqrt(1-x^2)
       case (DAE.CALL(path = Absyn.IDENT("asin"),expLst = {e}),(timevars,functions))
@@ -417,7 +417,7 @@ algorithm
         then
          DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),
             DAE.CALL(Absyn.IDENT("sqrt"),{DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(DAE.ET_REAL()),DAE.BINARY(e,DAE.MUL(DAE.ET_REAL()),e))},
-                     false,true,DAE.ET_REAL(),DAE.NO_INLINE()));
+                     DAE.callAttrBuiltinReal));
 
         // der(arctan(x)) = der(x)/1+x^2
       case (DAE.CALL(path = Absyn.IDENT("atan"),expLst = {e}),(timevars,functions))
@@ -448,7 +448,7 @@ algorithm
         e_1 = differentiateExpTime(e, (timevars,functions)) "der(exp(x)) = der(x)exp(x)" ;
       then
         DAE.BINARY(e_1,DAE.MUL(DAE.ET_REAL()),
-          DAE.CALL(fname,{e},false,true,DAE.ET_REAL(),DAE.NO_INLINE()));
+          DAE.CALL(fname,{e},DAE.callAttrBuiltinReal));
 
     case (DAE.CALL(path = Absyn.IDENT("log"),expLst = {e}),(timevars,functions))
       equation
@@ -456,40 +456,42 @@ algorithm
       then
         DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),e);
 
-    case (DAE.CALL(path = fname as Absyn.IDENT("max"),expLst = expl,tuple_=false,builtin = true,ty=tp,inlineType=inl),(timevars,functions))
+    case (DAE.CALL(path = fname as Absyn.IDENT("max"),expLst = expl,attr=DAE.CALL_ATTR(ty=tp)),(timevars,functions))
       equation
         expl_1 = Util.listMap1(expl, differentiateExpTime, (timevars,functions));
       then
-        DAE.CALL(fname,expl_1,false,true,tp,inl);
+        Expression.makeBuiltinCall("max",expl_1,tp);
 
-    case (DAE.CALL(path = fname as Absyn.IDENT("min"),expLst = expl,tuple_=false,builtin = true,ty=tp,inlineType=inl),(timevars,functions))
+    case (DAE.CALL(path = fname as Absyn.IDENT("min"),expLst = expl,attr=DAE.CALL_ATTR(ty=tp)),(timevars,functions))
       equation
         expl_1 = Util.listMap1(expl, differentiateExpTime, (timevars,functions));
       then
-        DAE.CALL(fname,expl_1,false,true,tp,inl);
+        Expression.makeBuiltinCall("min",expl_1,tp);
 
-    case (e0 as DAE.CALL(path = Absyn.IDENT("sqrt"),expLst = {e},tuple_=false,builtin = true,ty=tp,inlineType=inl),(timevars,functions))
+    case (e0 as DAE.CALL(path = Absyn.IDENT("sqrt"),expLst = {e}),(timevars,functions))
       equation
         e_1 = differentiateExpTime(e, (timevars,functions)) "sqrt(x) = der(x)/(2*sqrt(x))" ;
       then
         DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),
           DAE.BINARY(DAE.RCONST(2.0),DAE.MUL(DAE.ET_REAL()),e0));
 
-    case (DAE.CALL(path = fname as Absyn.IDENT("cross"),expLst = {e1,e2},tuple_=false,builtin = true,ty=tp,inlineType=inl),(timevars,functions))
+    case (DAE.CALL(path = fname as Absyn.IDENT("cross"),expLst = {e1,e2},attr=DAE.CALL_ATTR(ty=tp)),(timevars,functions))
       equation
         e1_1 = differentiateExpTime(e1, (timevars,functions));
         e2_1 = differentiateExpTime(e2, (timevars,functions));
+        call1 = Expression.makeBuiltinCall("cross",{e1,e2_1},tp);
+        call2 = Expression.makeBuiltinCall("cross",{e1_1,e2},tp);
       then
-        DAE.BINARY(DAE.CALL(fname,{e1,e2_1},false,true,tp,inl),DAE.ADD_ARR(tp),DAE.CALL(fname,{e1_1,e2},false,true,tp,inl));
+        DAE.BINARY(call1,DAE.ADD_ARR(tp),call2);
 
-    case (DAE.CALL(path = fname as Absyn.IDENT("transpose"),expLst = expl,tuple_=false,builtin = true,ty=tp,inlineType=inl),(timevars,functions))
+    case (DAE.CALL(path = fname as Absyn.IDENT("transpose"),expLst=expl,attr=DAE.CALL_ATTR(ty=tp)),(timevars,functions))
       equation
         expl_1 = Util.listMap1(expl, differentiateExpTime, (timevars,functions));
       then
-        DAE.CALL(fname,expl_1,false,true,tp,inl);
+        Expression.makeBuiltinCall("transpose",expl_1,tp);
 
     // abs(x)
-    case (DAE.CALL(path=Absyn.IDENT("abs"), expLst={exp},tuple_ = b,builtin = c,ty=tp,inlineType=inl),(timevars,functions)) 
+    case (DAE.CALL(path=Absyn.IDENT("abs"), expLst={exp},attr=DAE.CALL_ATTR(ty=tp)),(timevars,functions)) 
       equation
         e1_1 = differentiateExpTime(exp, (timevars,functions));
       then 
@@ -579,13 +581,13 @@ algorithm
       then
         DAE.IFEXP(e1,e2_1,e3_1);
     
-    case (DAE.CALL(path = (a as Absyn.IDENT(name = "der")),expLst = expl,tuple_ = b,builtin = c,ty=tp,inlineType=inl),(timevars,functions))
+    case (DAE.CALL(path = (a as Absyn.IDENT(name = "der")),expLst = expl,attr=attr),(timevars,functions))
       equation
         expl_1 = Util.listMap1(expl, differentiateExpTime, (timevars,functions));
       then
-        DAE.CALL(a,expl_1,b,c,tp,inl);
+        DAE.CALL(a,expl_1,attr);
     
-    case (e as DAE.CALL(path = a,expLst = expl,tuple_ = b,builtin = c,ty=tp),(timevars,functions))
+    case (e as DAE.CALL(path = a,expLst = expl,attr=DAE.CALL_ATTR(ty=tp)),(timevars,functions))
       equation
         // if only parameters no derivative needed
         crefslstls = Util.listMap(expl,Expression.extractCrefsFromExp);
@@ -596,7 +598,7 @@ algorithm
       then
         e1;
     
-    case (e as DAE.CALL(path = a,expLst = expl,tuple_ = b,builtin = c),(timevars,functions))
+    case (e as DAE.CALL(path = a,expLst = expl),(timevars,functions))
       equation
         // get Derivative function
         e1 = differentiateFunctionTime(e,(timevars,functions));
@@ -604,7 +606,7 @@ algorithm
       then
         e2;
     
-    case (e as DAE.CALL(path = a,expLst = expl,tuple_ = b,builtin = c),(timevars,functions))
+    case (e as DAE.CALL(path = a,expLst = expl),(timevars,functions))
       equation
         e_str = ExpressionDump.printExpStr(e);
         Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {e_str});
@@ -921,8 +923,9 @@ algorithm
       list<DAE.Type> tlst;
       list<String> typlststring;
       String typstring,dastring;
+      DAE.TailCall tc;
     
-    case (DAE.CALL(path=a,expLst=expl,tuple_=b,builtin=c,ty=ty,inlineType=inl),(timevars,functions))
+    case (DAE.CALL(path=a,expLst=expl,attr=DAE.CALL_ATTR(tuple_=b,builtin=c,ty=ty,tailCall=tc)),(timevars,functions))
       equation
         // get function mapper
         (mapper,tp) = getFunctionMapper(a,functions);
@@ -934,9 +937,9 @@ algorithm
         dexpl = Util.listMap1(expl1,differentiateExpTime,(timevars,functions));
         expl1 = listAppend(expl,dexpl);
       then
-        DAE.CALL(da,expl1,b,c,ty,dinl);
+        DAE.CALL(da,expl1,DAE.CALL_ATTR(ty,b,c,dinl,tc));
     
-    case (DAE.CALL(path=a,expLst=expl,tuple_=b,builtin=c,ty=ty,inlineType=inl),(timevars,functions))
+    case (DAE.CALL(path=a,expLst=expl),(timevars,functions))
       equation
         // get function mapper
         (mapper,tp) = getFunctionMapper(a,functions);
@@ -1207,7 +1210,7 @@ algorithm
     local
       Real rval;
       DAE.ComponentRef cr,crx,tv;
-      DAE.Exp e,e1_1,e2_1,e1,e2,const_one,d_e1,d_e2,exp,e_1,exp_1,cond,zero;
+      DAE.Exp e,e1_1,e2_1,e1,e2,const_one,d_e1,d_e2,exp,e_1,exp_1,cond,zero,call;
       DAE.ExpType tp, ctp;
       Absyn.Path a,fname;
       Boolean b,c;
@@ -1220,6 +1223,7 @@ algorithm
       Option<Values.Value> v;
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators riters;
+      DAE.CallAttributes attr;
     
     case (DAE.ICONST(integer = _),_,_) then DAE.RCONST(0.0);
 
@@ -1292,15 +1296,14 @@ algorithm
         false = Expression.expContains(e1, Expression.makeCrefExp(tv,tp));
         true  = Expression.expContains(e2,Expression.makeCrefExp(tv,tp));
         d_e2 = differentiateExp(e2, tv, differentiateIfExp);
-        exp = DAE.BINARY(d_e2,DAE.MUL(tp),
-          DAE.BINARY(e,DAE.MUL(tp),DAE.CALL(Absyn.IDENT("log"),{e1},false,true,tp,DAE.NO_INLINE()))
-          );
+        call = Expression.makeBuiltinCall("log",{e1},tp);
+        exp = DAE.BINARY(d_e2,DAE.MUL(tp),DAE.BINARY(e,DAE.MUL(tp),call));
       then
         exp;
 
     // ax^(a-1)
     case (DAE.BINARY(exp1 = (e1 as DAE.CALL(path = (a as Absyn.IDENT(name = "der")),
-          expLst = {(exp as DAE.CREF(componentRef = cr))},tuple_ = b,builtin = c,ty=ctp,inlineType=inl)),
+          expLst = {(exp as DAE.CREF(componentRef = cr))},attr=attr)),
           operator = DAE.POW(ty = tp),exp2 = e2),tv,differentiateIfExp)
       equation
         true = ComponentReference.crefEqual(cr, tv) "der(e)^x => xder(e,2)der(e)^(x-1)" ;
@@ -1308,7 +1311,7 @@ algorithm
         const_one = differentiateExp(Expression.makeCrefExp(tv,tp), tv, differentiateIfExp);
       then
         DAE.BINARY(
-          DAE.BINARY(DAE.CALL(a,{exp,DAE.ICONST(2)},b,c,ctp,inl),DAE.MUL(tp),e2),DAE.MUL(tp),
+          DAE.BINARY(DAE.CALL(a,{exp,DAE.ICONST(2)},attr),DAE.MUL(tp),e2),DAE.MUL(tp),
           DAE.BINARY(e1,DAE.POW(tp),DAE.BINARY(e2,DAE.SUB(tp),const_one)));
 
     // f\'g + fg\'
@@ -1353,7 +1356,7 @@ algorithm
       then
         DAE.LUNARY(op,e_1);
     
-    case (DAE.CALL(path=Absyn.IDENT(name),builtin=true,expLst={exp}),tv,differentiateIfExp)
+    case (DAE.CALL(path=Absyn.IDENT(name),attr=DAE.CALL_ATTR(builtin=true),expLst={exp}),tv,differentiateIfExp)
       equation
         true = Expression.expContains(exp,Expression.crefExp(tv));
       then differentiateCallExp1Arg(name,exp,tv,differentiateIfExp);
@@ -1368,11 +1371,11 @@ algorithm
         
     // der(x)
     case (DAE.CALL(path = (a as Absyn.IDENT(name = "der")),expLst =
-          {(exp as DAE.CREF(componentRef = cr))},tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
+          {(exp as DAE.CREF(componentRef = cr))},attr=attr),tv,differentiateIfExp)
       equation
         true = ComponentReference.crefEqual(cr, tv);
       then
-        DAE.CALL(a,{exp,DAE.ICONST(2)},b,c,tp,inl);
+        DAE.CALL(a,{exp,DAE.ICONST(2)},attr);
     
     // der(arctan2(y,0)) = der(sign(y)*pi/2) = 0
     case (DAE.CALL(path = Absyn.IDENT("atan2"),expLst = {e,e1}),tv,differentiateIfExp)

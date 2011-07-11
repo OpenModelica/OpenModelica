@@ -1045,7 +1045,8 @@ algorithm
       Boolean tu,bi;
       DAE.InlineType inl;
       Integer i,numArgs;
-    case((DAE.CALL(p,args,tu,bi,ty,inl),dae))
+      DAE.CallAttributes attr;
+    case((DAE.CALL(p,args,attr),dae))
       equation
         (DAE.PARTEVALFUNCTION(p1,args1,_),i) = getPartEvalFunction(args,0);
         numArgs = listLength(args1);
@@ -1053,7 +1054,7 @@ algorithm
         p_1 = makeNewFnPath(p,p1);
         dae = buildNewFunction(dae,p,p1,numArgs);
       then
-        ((DAE.CALL(p_1,args_1,tu,bi,ty,inl),dae));
+        ((DAE.CALL(p_1,args_1,attr),dae));
     case((e,dae)) then ((e,dae));
   end matchcontinue;
 end elabExp;
@@ -1712,6 +1713,8 @@ algorithm
       DAE.InlineType inl;
       list<DAE.Exp> args,args2,args_1;
       list<DAE.ComponentRef> crefs;
+      DAE.CallAttributes attr;
+      DAE.TailCall tc;
     // remove unbox calls from simple types
     case((DAE.UNBOX(exp = e as DAE.CALL(path=orig_p)),(p,inputs,dae,current)))
       equation
@@ -1719,7 +1722,7 @@ algorithm
       then
         ((e,(p,inputs,dae,current)));
     // fix recursive calls
-    case((DAE.CALL(orig_p,args,tup,bui,ty,inl),(p,inputs,dae,current)))
+    case((DAE.CALL(orig_p,args,attr),(p,inputs,dae,current)))
       equation
         true = Absyn.pathEqual(orig_p,current);
         new_p = makeNewFnPath(orig_p,p);
@@ -1727,9 +1730,9 @@ algorithm
         args2 = Util.listMap(crefs,Expression.crefExp);
         args_1 = replaceFnRef(args,args2);
       then
-        ((DAE.CALL(new_p,args_1,tup,bui,ty,inl),(p,inputs,dae,current)));
+        ((DAE.CALL(new_p,args_1,attr),(p,inputs,dae,current)));
     // fix calls to function pointer
-    case((DAE.CALL(orig_p,args,tup,false,ty,inl),(p,inputs,dae,current)))
+    case((DAE.CALL(orig_p,args,DAE.CALL_ATTR(ty,tup,false,inl,tc)),(p,inputs,dae,current)))
       equation
         failure(_ = DAEUtil.getNamedFunctionFromList(orig_p,dae)); // if function exists, do not replace call
         crefs = Util.listMap(inputs,DAEUtil.varCref);
@@ -1738,7 +1741,7 @@ algorithm
         args_1 = listAppend(args,args2);
         ty_1 = Expression.unboxExpType(ty);
       then
-        ((DAE.CALL(p,args_1,tup,false,ty_1,inl),(p,inputs,dae,current)));
+        ((DAE.CALL(p,args_1,DAE.CALL_ATTR(ty_1,tup,false,inl,tc)),(p,inputs,dae,current)));
     case((e,(p,inputs,dae,current))) then ((e,(p,inputs,dae,current)));
   end matchcontinue;
 end fixCall;
@@ -1791,17 +1794,17 @@ algorithm
         true = Expression.typeBuiltin(et);
       then
         true;
-    case({DAE.CALL(ty = DAE.ET_BOXED(et))})
+    case({DAE.CALL(attr=DAE.CALL_ATTR(ty = DAE.ET_BOXED(et)))})
       equation
         true = Expression.typeBuiltin(et);
       then
         true;
-    case({DAE.CALL(ty = et)})
+    case({DAE.CALL(attr=DAE.CALL_ATTR(ty = et))})
       equation
         true = Expression.typeBuiltin(et);
       then
         true;
-    case(_) then false;
+    else false;
   end matchcontinue;
 end isSimpleArg;
 

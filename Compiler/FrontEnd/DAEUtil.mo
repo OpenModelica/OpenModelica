@@ -2020,7 +2020,7 @@ algorithm
       Boolean b,bt;
       Integer i;
       Option<DAE.Exp> eopt_1,eopt;
-      DAE.InlineType il;
+      DAE.CallAttributes attr;
     
     case (DAE.CREF(componentRef = cr,ty = t))
       equation
@@ -2063,11 +2063,11 @@ algorithm
         e3_1 = toModelicaFormExp(e3);
       then
         DAE.IFEXP(e1_1,e2_1,e3_1);
-    case (DAE.CALL(path = f,expLst = expl,tuple_ = bt,builtin = b,ty=tp,inlineType=il))
+    case (DAE.CALL(path = f,expLst = expl,attr = attr))
       equation
         expl_1 = Util.listMap(expl, toModelicaFormExp);
       then
-        DAE.CALL(f,expl_1,bt,b,tp,il);
+        DAE.CALL(f,expl_1,attr);
     case (DAE.ARRAY(ty = t,scalar = b,array = expl))
       equation
         expl_1 = Util.listMap(expl, toModelicaFormExp);

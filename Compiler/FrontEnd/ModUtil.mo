@@ -127,6 +127,7 @@ algorithm
       DAE.ExpType tp;
       Integer index_;
       Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
+      DAE.CallAttributes attr;
       
     case (str,r,rarg,DAE.CREF(componentRef = cr,ty = t))
       equation
@@ -184,11 +185,11 @@ algorithm
       then
         DAE.IFEXP(e1_1,e2_1,e3_1);
     
-    case (str,r,rarg,DAE.CALL(path = p,expLst = el,tuple_ = b,builtin = bi,ty = tp,inlineType = inl))
+    case (str,r,rarg,DAE.CALL(p,el,attr))
       equation
         el_1 = stringPrefixComponentRefs(str, r, rarg, el);
       then
-        DAE.CALL(p,el_1,b,bi,tp,inl);
+        DAE.CALL(p,el_1,attr);
     
     case (str,r,rarg,DAE.ARRAY(ty = t,scalar = b,array = el))
       equation

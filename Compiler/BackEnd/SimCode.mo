@@ -2619,11 +2619,12 @@ algorithm
       Boolean tup,builtin_;
       DAE.ExpType exty;
       DAE.InlineType inty;
-    case (((e as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,tuple_=tup,builtin=builtin_, ty=exty, inlineType=inty)),(nhelpvars,helpvars)))
+      DAE.CallAttributes attr;
+    case (((e as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,attr=attr)),(nhelpvars,helpvars)))
       equation
         nhelpvars = nhelpvars+1;
         args_ = listAppend(args_,{DAE.ICONST(nhelpvars)});
-        e = DAE.CALL(name, args_, tup, builtin_, exty, inty);
+        e = DAE.CALL(name, args_, attr);
         helpvars = listAppend(helpvars,{(nhelpvars,e,-1)});
       then ((e,(nhelpvars,helpvars)));
     case ((e,(nhelpvars,helpvars)))
@@ -3048,7 +3049,7 @@ algorithm
       list<Algorithm.Statement> inasserts;
     
     // special case for time, it is never part of the equation system  
-    case (((e as DAE.CALL(tuple_=false, builtin=true,path=Absyn.IDENT(name="sqrt"), expLst={e1})),inasserts))
+    case (((e as DAE.CALL(path=Absyn.IDENT(name="sqrt"), expLst={e1})),inasserts))
       equation
         estr = "Model error: Argument of sqrt should be >= 0";
         addAssert = DAE.STMT_ASSERT(DAE.RELATION(e1,DAE.GREATEREQ(DAE.ET_REAL()),DAE.RCONST(0.0),-1,NONE()),DAE.SCONST(estr),DAE.emptyElementSource);
@@ -3769,14 +3770,15 @@ algorithm
       DAE.ExpType exty;
       DAE.InlineType inty;
       DAE.Exp condition1;
+      DAE.CallAttributes attr;
     case (_, {},_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Could not find help var index for condition"});
       then fail();
-    case (condition as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,tuple_=tup,builtin=builtin_, ty=exty, inlineType=inty), (hindex, e, _) :: restHelpVarInfo, helpVarInfo1)
+    case (condition as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,attr=attr), (hindex, e, _) :: restHelpVarInfo, helpVarInfo1)
       equation
         args_ = listAppend(args_,{DAE.ICONST(hindex)});
-        condition1 = DAE.CALL(name, args_, tup, builtin_, exty, inty);
+        condition1 = DAE.CALL(name, args_, attr);
         true = Expression.expEqual(condition1, e);
         //s1 = ExpressionDump.printExpStr(condition1);
         //s2 = ExpressionDump.printExpStr(e);
@@ -3837,11 +3839,12 @@ algorithm
    Boolean tup,builtin_;
    DAE.ExpType exty;
    DAE.InlineType inty;
+   DAE.CallAttributes attr;
   case(condition, {}) then condition;
-  case (condition as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,tuple_=tup,builtin=builtin_, ty=exty, inlineType=inty), (hindex, e, _) :: restHelpVarInfo)
+  case (condition as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,attr=attr), (hindex, e, _) :: restHelpVarInfo)
       equation
         args_ = listAppend(args_,{DAE.ICONST(hindex)});
-        condition1 = DAE.CALL(name, args_, tup, builtin_, exty, inty);
+        condition1 = DAE.CALL(name, args_, attr);
         true = Expression.expEqual(condition1, e);
         //s1 = ExpressionDump.printExpStr(condition1);
         //s2 = ExpressionDump.printExpStr(e);
@@ -5679,18 +5682,19 @@ algorithm
       Boolean tup,builtin_;
       DAE.ExpType exty;
       DAE.InlineType inty;
+      DAE.CallAttributes attr;
     // if no HelpVar created yet, create one
-    case (condition as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,tuple_=tup,builtin=builtin_, ty=exty, inlineType=inty), {}, nh)
+    case (condition as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,attr=attr), {}, nh)
       equation
         nh = nh + 1;
         args_ = listAppend(args_,{DAE.ICONST(nh)});
-        condition = DAE.CALL(name, args_, tup, builtin_, exty, inty);
+        condition = DAE.CALL(name, args_, attr);
         //Error.addMessage(Error.INTERNAL_ERROR, {"Could not find help var index for Sample condition"});
       then ((condition,nh),{(nh,condition,-1)});
-    case (condition as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,tuple_=tup,builtin=builtin_, ty=exty, inlineType=inty), (hindex, e, _) :: restHelpVarInfo,_)
+    case (condition as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,attr=attr), (hindex, e, _) :: restHelpVarInfo,_)
       equation
         args_ = listAppend(args_,{DAE.ICONST(hindex)});
-        condition = DAE.CALL(name, args_, tup, builtin_, exty, inty);
+        condition = DAE.CALL(name, args_, attr);
         true = Expression.expEqual(condition, e);
       then ((condition, hindex),{});
     case (condition, (hindex, e, _) :: restHelpVarInfo,nh)
@@ -6862,6 +6866,7 @@ algorithm
       Boolean tup,builtin_;
       DAE.ExpType exty;
       DAE.InlineType inty;
+      DAE.CallAttributes attr;
       
     case (nextInd, DAE.STMT_WHEN(DAE.ARRAY(ty,scalar,el),statementLst,NONE(),_,source))
       equation
@@ -6870,10 +6875,10 @@ algorithm
         helpVarIndices = Util.listMap1(helpVarIndices1,intAdd,nextInd-1);
       then (helpvars1,DAE.STMT_WHEN(DAE.ARRAY(ty,scalar,el1), statementLst,NONE(),helpVarIndices,source),nextInd1);
         
-    case (nextInd, DAE.STMT_WHEN(condition as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,tuple_=tup,builtin=builtin_, ty=exty, inlineType=inty),statementLst,NONE(),_,source))
+    case (nextInd, DAE.STMT_WHEN(condition as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,attr=attr),statementLst,NONE(),_,source))
       equation
         args_ = listAppend(args_,{DAE.ICONST(nextInd)});
-        condition = DAE.CALL(name, args_, tup, builtin_, exty, inty);
+        condition = DAE.CALL(name, args_, attr);
       then ({(nextInd,condition,-1)},DAE.STMT_WHEN(condition, statementLst,NONE(),{nextInd},source),nextInd+1);
         
     case (nextInd, DAE.STMT_WHEN(condition,statementLst,NONE(),_,source))
@@ -6888,10 +6893,10 @@ algorithm
         helpvars = listAppend(helpvars1,helpvars2);
       then (helpvars,DAE.STMT_WHEN(DAE.ARRAY(ty,scalar,el1), statementLst,SOME(statement),helpVarIndices,source),nextInd1);
         
-    case (nextInd, DAE.STMT_WHEN(condition as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,tuple_=tup,builtin=builtin_, ty=exty, inlineType=inty),statementLst,SOME(elseWhen),_,source))
+    case (nextInd, DAE.STMT_WHEN(condition as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,attr=attr),statementLst,SOME(elseWhen),_,source))
       equation
         args_ = listAppend(args_,{DAE.ICONST(nextInd)});
-        condition = DAE.CALL(name, args_, tup, builtin_, exty, inty);
+        condition = DAE.CALL(name, args_, attr);
         (helpvars1,statement,nextInd1) = generateHelpVarsInStatement(nextInd+1,elseWhen);
       then ((nextInd,condition,-1)::helpvars1,
           DAE.STMT_WHEN(condition, statementLst,SOME(statement),{nextInd},source),nextInd1);
@@ -6930,14 +6935,14 @@ algorithm
       list<DAE.Exp> args_;
       Boolean tup,builtin_;
       DAE.ExpType exty;
-      DAE.InlineType inty;
+      DAE.CallAttributes attr;
       
     case (nextInd, {}) then ({},{},nextInd);
       
-    case (nextInd, ((condition as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,tuple_=tup,builtin=builtin_, ty=exty, inlineType=inty))::rest))
+    case (nextInd, ((condition as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,attr=attr))::rest))
       equation
         args_ = listAppend(args_,{DAE.ICONST(nextInd)});
-        condition = DAE.CALL(name, args_, tup, builtin_, exty, inty);
+        condition = DAE.CALL(name, args_, attr);
         (helpvars1,el1,nextInd1) = generateHelpVarsInArrayCondition(nextInd+1,rest);
       then ((nextInd,condition,-1)::helpvars1,condition::el1,nextInd1);
         
@@ -7013,7 +7018,7 @@ algorithm
         //startv = DAEUtil.getStartAttr(attr);
         e = Expression.crefExp(cr);
         tp = Expression.typeof(e);
-        startv = DAE.CALL(Absyn.IDENT("pre"), {e}, false, true, tp,DAE.NO_INLINE());
+        startv = Expression.makeBuiltinCall("pre", {e}, tp);
       then
         ((v,(BackendDAE.EQUATION(e,startv,source)::eqns,av)));
     case (((v as BackendDAE.VAR(varName = cr,varKind = BackendDAE.STATE(),values = attr,source=source)),(eqns,av))) /* add equations for variables with fixed = true */
@@ -7025,7 +7030,7 @@ algorithm
         //startv = DAEUtil.getStartAttr(attr);
         e = Expression.crefExp(cr);
         tp = Expression.typeof(e);
-        startv = DAE.CALL(Absyn.IDENT("pre"), {e}, false, true, tp,DAE.NO_INLINE());
+        startv = Expression.makeBuiltinCall("pre", {e}, tp);
       then
         ((v,(BackendDAE.EQUATION(e,startv,source)::eqns,av)));
     case (((v as BackendDAE.VAR(varName = cr,varKind = BackendDAE.DUMMY_STATE(),values = attr,source=source)),(eqns,av))) /* add equations for variables with fixed = true */
@@ -7037,7 +7042,7 @@ algorithm
         //startv = DAEUtil.getStartAttr(attr);
         e = Expression.crefExp(cr);
         tp = Expression.typeof(e);
-        startv = DAE.CALL(Absyn.IDENT("pre"), {e}, false, true, tp,DAE.NO_INLINE());
+        startv = Expression.makeBuiltinCall("pre", {e}, tp);
       then
         ((v,(BackendDAE.EQUATION(e,startv,source)::eqns,av)));
     case ((inTpl)) then inTpl;
@@ -7069,16 +7074,17 @@ algorithm
       Boolean tup,builtin_;
       DAE.ExpType exty;
       DAE.InlineType inty;
+      DAE.CallAttributes attr;
     
     case ({},_,_,_) then ("",{});
     
     //expand sample conditions with helpindex
-    case ((e as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,tuple_=tup,builtin=builtin_, ty=exty, inlineType=inty)) :: el,i,helpVarIndex, false)
+    case ((e as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,attr=attr)) :: el,i,helpVarIndex, false)
       equation
         i_str = intString(i);
         helpVarIndexStr = intString(helpVarIndex);
         args_ = listAppend(args_,{DAE.ICONST(helpVarIndex)});
-        e = DAE.CALL(name, args_, tup, builtin_, exty, inty);
+        e = DAE.CALL(name, args_, attr);
         helpInfo = (helpVarIndex,e,i);
         res = stringAppendList(
           {"  if (edge(localData->helpVars[",helpVarIndexStr,"])) AddEvent(",i_str,
@@ -7089,12 +7095,12 @@ algorithm
       then
         (res_1,(helpInfo :: helpVarInfoList));
     //expand sample conditions with helpindex
-    case ((e as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,tuple_=tup,builtin=builtin_, ty=exty, inlineType=inty)) :: el,i,helpVarIndex, true)
+    case ((e as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,attr=attr)) :: el,i,helpVarIndex, true)
       equation
         i_str = intString(i);
         helpVarIndexStr = intString(helpVarIndex);
         args_ = listAppend(args_,{DAE.ICONST(helpVarIndex)});
-        e = DAE.CALL(name, args_, tup, builtin_, exty, inty);
+        e = DAE.CALL(name, args_, attr);
         helpInfo = (helpVarIndex,e,i);
         res = stringAppendList(
           {"  else if (edge(localData->helpVars[",helpVarIndexStr,"])) AddEvent(",i_str,
@@ -7163,12 +7169,12 @@ algorithm
       list<DAE.Exp> args_;
       Boolean tup,builtin_;
       DAE.ExpType exty;
-      DAE.InlineType inty;
-    case ((e as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,tuple_=tup,builtin=builtin_, ty=exty, inlineType=inty),(helpVarInfoList,helpVarIndex)))
+      DAE.CallAttributes attr;
+    case ((e as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,attr=attr),(helpVarInfoList,helpVarIndex)))
       equation
         helpVarIndex = helpVarIndex + 1;
         args_ = listAppend(args_,{DAE.ICONST(helpVarIndex)});
-        e = DAE.CALL(name, args_, tup, builtin_, exty, inty);
+        e = DAE.CALL(name, args_, attr);
         helpInfo = (helpVarIndex,e,-1);
       then
         ((e,((helpInfo :: helpVarInfoList),helpVarIndex)));
@@ -8360,7 +8366,7 @@ algorithm
   outBoolean := match (inExp)
     local
       Boolean res, builtin;
-    case DAE.CALL(builtin=builtin)
+    case DAE.CALL(attr=DAE.CALL_ATTR(builtin=builtin))
       equation
         res = boolNot(builtin);
       then
@@ -8586,7 +8592,7 @@ algorithm
       DAE.Exp e;
       Absyn.Path path;
       list<Absyn.Path> acc,filter;
-    case ((e as DAE.CALL(path = path, builtin = false),(acc,filter)))
+    case ((e as DAE.CALL(path = path, attr = DAE.CALL_ATTR(builtin = false)),(acc,filter)))
       equation
         path = Absyn.makeNotFullyQualified(path);
         false = Util.listContainsWithCompareFunc(path,filter,Absyn.pathEqual);
@@ -8974,11 +8980,11 @@ algorithm
     case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV(ty),exp2 = e2),(vars,varlst,dzer,divLst)))
       equation
         (se,true) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
-      then ((DAE.CALL(Absyn.IDENT("DIVISION"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE()), (vars,varlst,dzer,divLst) ));
+      then ((DAE.CALL(Absyn.IDENT("DIVISION"), {e1,e2,DAE.SCONST(se)}, DAE.CALL_ATTR(ty, false, true, DAE.NO_INLINE(), DAE.NO_TAIL())), (vars,varlst,dzer,divLst) ));
     case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
       equation
         (se,false) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
-      then ((e, (vars,varlst,dzer,DAE.CALL(Absyn.IDENT("DIVISION"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
+      then ((e, (vars,varlst,dzer,DAE.CALL(Absyn.IDENT("DIVISION"), {e1,e2,DAE.SCONST(se)}, DAE.CALL_ATTR(ty, false, true, DAE.NO_INLINE(), DAE.NO_TAIL()))::divLst) ));
         
         /*
          case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARR(ty),exp2 = e2), dlowmode as (dlow,_)))
@@ -8993,11 +8999,11 @@ algorithm
     case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARRAY_SCALAR(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
       equation
         (se,true) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
-      then ((DAE.CALL(Absyn.IDENT("DIVISION_ARRAY_SCALAR"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE()), (vars,varlst,dzer,divLst) ));
+      then ((DAE.CALL(Absyn.IDENT("DIVISION_ARRAY_SCALAR"), {e1,e2,DAE.SCONST(se)}, DAE.CALL_ATTR(ty, false, true, DAE.NO_INLINE(), DAE.NO_TAIL())), (vars,varlst,dzer,divLst) ));
     case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARRAY_SCALAR(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
       equation
         (se,false) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
-      then ((e, (vars,varlst,dzer,DAE.CALL(Absyn.IDENT("DIVISION_ARRAY_SCALAR"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
+      then ((e, (vars,varlst,dzer,DAE.CALL(Absyn.IDENT("DIVISION_ARRAY_SCALAR"), {e1,e2,DAE.SCONST(se)}, DAE.CALL_ATTR(ty, false, true, DAE.NO_INLINE(), DAE.NO_TAIL()))::divLst) ));
         
     case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
       equation
@@ -9007,11 +9013,11 @@ algorithm
     case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
       equation
         (se,true) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
-      then ((DAE.CALL(Absyn.IDENT("DIVISION_SCALAR_ARRAY"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE()), (vars,varlst,dzer,divLst) ));
+      then ((DAE.CALL(Absyn.IDENT("DIVISION_SCALAR_ARRAY"), {e1,e2,DAE.SCONST(se)}, DAE.CALL_ATTR(ty, false, true, DAE.NO_INLINE(), DAE.NO_TAIL())), (vars,varlst,dzer,divLst) ));
     case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
       equation
         (se,false) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
-      then ((e, (vars,varlst,dzer,DAE.CALL(Absyn.IDENT("DIVISION_SCALAR_ARRAY"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
+      then ((e, (vars,varlst,dzer,DAE.CALL(Absyn.IDENT("DIVISION_SCALAR_ARRAY"), {e1,e2,DAE.SCONST(se)}, DAE.CALL_ATTR(ty, false, true, DAE.NO_INLINE(), DAE.NO_TAIL()))::divLst) ));
     case(inExp) then (inExp);
   end matchcontinue;
 end traversingDivExpFinder;
@@ -10162,7 +10168,7 @@ algorithm outDerExps := matchcontinue(inVars)
       //true = DAELow.isStateVar(v);
       rec = makeCallDerExp(vars);
     then
-      DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(cr,DAE.ET_OTHER())},false,false,DAE.ET_OTHER(),DAE.NO_INLINE())::rec;
+      DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(cr,DAE.ET_REAL())},DAE.callAttrBuiltinReal)::rec;
   //case((v as DAELow.VAR(varKind = DAELow.DUMMY_STATE(),varName = cr))::vars)
    // equation
       //true = DAELow.isStateVar(v);
@@ -10205,7 +10211,7 @@ algorithm (out,sysOrdOneVars) := matchcontinue(derExp,inEqns,inEqnsOrg)
       true = Expression.expEqual(e1,derExp);
       inEqnsOrg = Util.listRemoveOnTrue(eq,Util.isEqual,inEqnsOrg);
       Debug.fcall("cppvar",print, "\nFound equation containing " +& ExpressionDump.printExpStr(derExp) +& " Other side: " +& ExpressionDump.printExpStr(e2) +& ", extracted crefs: " +& ExpressionDump.printExpStr(deriveVar) +& "\n");
-      (rec,crefs) = locateDerAndSerachOtherSide2(DAE.CALL(Absyn.IDENT("der"),{e2},false,false,DAE.ET_OTHER(),DAE.NO_INLINE()),inEqnsOrg);
+      (rec,crefs) = locateDerAndSerachOtherSide2(DAE.CALL(Absyn.IDENT("der"),{e2},DAE.callAttrBuiltinReal),inEqnsOrg);
       (highestIndex as (_,i1),_) = locateDerAndSerachOtherSide(derExp,eqs,inEqnsOrg);
       rec = rec+1;
       highestIndex = Util.if_(i1>rec,highestIndex,(cr,rec-1));
@@ -10217,7 +10223,7 @@ algorithm (out,sysOrdOneVars) := matchcontinue(derExp,inEqns,inEqnsOrg)
       true = Expression.expEqual(e2,derExp);
       inEqnsOrg = Util.listRemoveOnTrue(eq,Util.isEqual,inEqnsOrg);
       Debug.fcall("cppvar",print, "\nFound equation containing " +& ExpressionDump.printExpStr(derExp) +& " Other side: " +& ExpressionDump.printExpStr(e1) +& ", extracted crefs: " +& ExpressionDump.printExpStr(deriveVar) +& "\n");
-      (rec,crefs) = locateDerAndSerachOtherSide2(DAE.CALL(Absyn.IDENT("der"),{e1},false,false,DAE.ET_OTHER(),DAE.NO_INLINE()),inEqnsOrg);
+      (rec,crefs) = locateDerAndSerachOtherSide2(DAE.CALL(Absyn.IDENT("der"),{e1},DAE.callAttrBuiltinReal),inEqnsOrg);
       (highestIndex as (_,i1),_) = locateDerAndSerachOtherSide(derExp,eqs,inEqnsOrg);
       rec = rec+1;
       highestIndex = Util.if_(i1>rec,highestIndex,(cr,rec-1));

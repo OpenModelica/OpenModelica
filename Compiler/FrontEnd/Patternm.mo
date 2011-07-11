@@ -909,7 +909,7 @@ algorithm
         ht = addLocalCrefSubs(subs,ht);
         ht = BaseHashTable.add((name,Absyn.IDENT("")), ht);
       then ((exp,ht));
-    case ((exp as DAE.CALL(path=Absyn.IDENT(name), builtin=false),ht))
+    case ((exp as DAE.CALL(path=Absyn.IDENT(name), attr=DAE.CALL_ATTR(builtin=false)),ht))
       equation
         ht = BaseHashTable.add((name,Absyn.IDENT("")), ht);
       then ((exp,ht));

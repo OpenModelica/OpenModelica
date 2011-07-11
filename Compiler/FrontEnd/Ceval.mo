@@ -309,7 +309,7 @@ algorithm
         (cache,v,stOpt);
 
     // adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem 
-    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = builtin)),impl,stOpt,msg)
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),impl,stOpt,msg)
       equation
         // do not handle Connection.isRoot here!        
         false = stringEq("Connection.isRoot", Absyn.pathString(funcpath));
@@ -835,7 +835,7 @@ algorithm
         DAE.Properties prop;
       DAE.Type tp;
         
-    case (_, _, e as DAE.CALL(ty = DAE.ET_ARRAY(arrayDimensions = _)), 
+    case (_, _, e as DAE.CALL(attr = DAE.CALL_ATTR(ty = DAE.ET_ARRAY(arrayDimensions = _))), 
         DAE.PROP(constFlag = DAE.C_PARAM()), _, _)
       equation
         (e, prop) = cevalWholedimRetCall(e, inCache, inEnv, inInfo);
@@ -901,16 +901,17 @@ algorithm
       Values.Value v;
       DAE.Type cevalType;
       DAE.ExpType cevalExpType;
+      DAE.TailCall tc;
            
-     case (e as DAE.CALL(path = p, expLst = el, tuple_ = t, builtin = b, 
-           ty = DAE.ET_ARRAY(arrayDimensions = dims), inlineType = i), _, _, _)
+     case (e as DAE.CALL(path = p, expLst = el, attr = DAE.CALL_ATTR(tuple_ = t, builtin = b, 
+           ty = DAE.ET_ARRAY(arrayDimensions = dims), inlineType = i, tailCall = tc)), _, _, _)
        equation
          true = Expression.arrayContainWholeDimension(dims);
          (_, v, _) = ceval(inCache, inEnv, e, true,NONE(), MSG(inInfo));
          cevalType = Types.typeOfValue(v);
          cevalExpType = Types.elabType(cevalType);
        then
-         (DAE.CALL(p, el, t, b, cevalExpType, i), DAE.PROP(cevalType, DAE.C_PARAM()));
+         (DAE.CALL(p, el, DAE.CALL_ATTR(cevalExpType, t, b, i, tc)), DAE.PROP(cevalType, DAE.C_PARAM()));
   end match;
 end cevalWholedimRetCall;
 
@@ -995,14 +996,14 @@ algorithm
         (cache,v,st) = cevalBuiltinSizeMatrix(cache,env, exp, impl, st, msg);
       then
         (cache,v,st);
-    case (cache,env,DAE.CALL(path = path,expLst = args,builtin = true),impl,st,msg)
+    case (cache,env,DAE.CALL(path = path,expLst = args,attr = DAE.CALL_ATTR(builtin = true)),impl,st,msg)
       equation
         id = Absyn.pathString(path);
         handler = cevalBuiltinHandler(id);
         (cache,v,st) = handler(cache,env, args, impl, st, msg);
       then
         (cache,v,st);
-    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = (builtin as true))),impl,(st as NONE()),msg)
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = true))),impl,(st as NONE()),msg)
       equation
         (cache,vallst,st) = cevalList(cache, env, expl, impl, st, msg);
         (cache,newval,st) = cevalCallFunction(cache, env, e, vallst, impl, st, msg);
@@ -1166,21 +1167,21 @@ algorithm
       SCode.Restriction res;
     
     // External functions that are "known" should be evaluated without compilation, e.g. all math functions
-    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,impl,st,msg)
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,impl,st,msg)
       equation
         (cache,newval) = cevalKnownExternalFuncs(cache,env, funcpath, vallst, msg);
       then
         (cache,newval,st);
 
     // This case prevents the constructor call of external objects of being evaluated
-    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl, builtin = builtin)),vallst,impl,st,msg)
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,impl,st,msg)
       equation
         cevalIsExternalObjectConstructor(cache,funcpath,env);
       then
         fail();
        
     // Record constructors
-    case(cache,env,(e as DAE.CALL(path = funcpath,ty = DAE.ET_COMPLEX(complexClassType = ClassInf.RECORD(complexName), varLst=varLst))),vallst,impl,st,msg)
+    case(cache,env,(e as DAE.CALL(path = funcpath,attr = DAE.CALL_ATTR(ty = DAE.ET_COMPLEX(complexClassType = ClassInf.RECORD(complexName), varLst=varLst)))),vallst,impl,st,msg)
       equation
         Debug.fprintln("dynload", "CALL: record constructor: func: " +& Absyn.pathString(funcpath) +& " type path: " +& Absyn.pathString(complexName));
         true = ModUtil.pathEqual(funcpath,complexName);
@@ -1190,7 +1191,7 @@ algorithm
         (cache,Values.RECORD(funcpath,vallst,varNames,-1),st);
 
     // try function interpretation
-    case (cache,env, DAE.CALL(path = funcpath, builtin = false), vallst, impl, st, msg)
+    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(builtin = false)), vallst, impl, st, msg)
       equation
         false = RTOpts.debugFlag("noevalfunc");
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env));
@@ -1218,7 +1219,7 @@ algorithm
         (cache, newval, st);
 
     // see if function is in CF list and the build time is less than the edit time
-    case (cache,env,(e as DAE.CALL(path = funcpath, expLst = expl, builtin = false)),vallst,impl,// (impl as true)
+    case (cache,env,(e as DAE.CALL(path = funcpath, expLst = expl, attr = DAE.CALL_ATTR(builtin = false))),vallst,impl,// (impl as true)
       (st as SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))),msg)
       equation
         false = RTOpts.debugFlag("nogen");
@@ -1239,7 +1240,7 @@ algorithm
         (cache,newval,st);
     
     // see if function is in CF list and the build time is less than the edit time
-    case (cache,env,(e as DAE.CALL(path = funcpath, expLst = expl, builtin = false)),vallst,impl,// impl as true
+    case (cache,env,(e as DAE.CALL(path = funcpath, expLst = expl, attr = DAE.CALL_ATTR(builtin = false))),vallst,impl,// impl as true
       (st as SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))),msg)
       equation
         false = RTOpts.debugFlag("nogen");
@@ -1263,7 +1264,7 @@ algorithm
         (cache,newval,st);
 
     // not in CF list, we have a symbol table, generate function and update symtab
-    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = false)),vallst,impl,
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = false))),vallst,impl,
           SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,a,b,c,cf,lf)),msg) // yeha! we have a symboltable!
       equation
         false = RTOpts.debugFlag("nogen");
@@ -1306,7 +1307,7 @@ algorithm
 
     
     // no symtab, WE SHOULD NOT EVALUATE! 
-    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = false)),vallst,impl,NONE(),msg) // crap! we have no symboltable!
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = false))),vallst,impl,NONE(),msg) // crap! we have no symboltable!
       equation
         false = RTOpts.debugFlag("nogen");
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
@@ -1329,7 +1330,7 @@ algorithm
       then
         (cache,newval,NONE());
 
-    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,impl,st,msg)
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,impl,st,msg)
       equation
         Debug.fprintln("dynload", "CALL: FAILED to constant evaluate function: " +& Absyn.pathString(funcpath)); 
         error_Str = Absyn.pathString(funcpath);

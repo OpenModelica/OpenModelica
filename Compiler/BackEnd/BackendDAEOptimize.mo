@@ -3519,7 +3519,7 @@ algorithm
         // add equation to calc org var
         expCref = Expression.crefExp(cr);
         eqns_2 = BackendEquation.equationAdd(BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("tearing"),
-                          {},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),
+                          {},DAE.callAttrBuiltinReal),
                           expCref, DAE.emptyElementSource),eqns_1);
 
         tearingeqnid = BackendDAEUtil.equationSize(eqns_2);
@@ -4772,15 +4772,16 @@ algorithm
       Boolean tuple_, builtin;
       DAE.InlineType inlineType;
       Integer nArgs1, nArgs2;
+      DAE.CallAttributes attr;
     case ( _, {}, _, _, _) then (DAE.RCONST(0.0));
-    case (currVar::restVar, currDerVar::restDerVar, functionCall as DAE.CALL(expLst=varExpListTotal, tuple_=tuple_, builtin=builtin, ty=et, inlineType=inlineType), derFname, nDerArgs)
+    case (currVar::restVar, currDerVar::restDerVar, functionCall as DAE.CALL(expLst=varExpListTotal, attr=attr), derFname, nDerArgs)
       equation
         e = partialAnalyticalDifferentiation(restVar, restDerVar, functionCall, derFname, nDerArgs);
         nArgs1 = listLength(varExpListTotal);
         nArgs2 = listLength(restDerVar);
         varExpList1Added = Util.listReplaceAtWithFill(DAE.RCONST(0.0),nArgs1 + nDerArgs - 1, varExpListTotal ,DAE.RCONST(0.0));
         varExpList1Added = Util.listReplaceAtWithFill(DAE.RCONST(1.0),nArgs1 + nDerArgs - (nArgs2 + 1), varExpList1Added,DAE.RCONST(0.0));
-        derFun = DAE.CALL(derFname, varExpList1Added, tuple_, builtin, et, inlineType);
+        derFun = DAE.CALL(derFname, varExpList1Added, attr);
       then DAE.BINARY(e, DAE.ADD(DAE.ET_REAL()), DAE.BINARY(derFun, DAE.MUL(DAE.ET_REAL()), currDerVar));
   end match;
 end partialAnalyticalDifferentiation;
@@ -4801,8 +4802,9 @@ algorithm
       Boolean tuple_, builtin;
       DAE.InlineType inlineType;
       Integer nArgs1, nArgs2;
+      DAE.CallAttributes attr;
     case ({}, _, _, _) then (DAE.RCONST(0.0));
-    case (currVar::restVar, currDerVar::restDerVar, inState, functionCall as DAE.CALL(path=fname, expLst=varExpListTotal, tuple_=tuple_, builtin=builtin, ty=et, inlineType=inlineType))
+    case (currVar::restVar, currDerVar::restDerVar, inState, functionCall as DAE.CALL(path=fname, expLst=varExpListTotal, attr=attr))
       equation
         e = partialNumericalDifferentiation(restVar, restDerVar, inState, functionCall);
         absCurr = DAE.LBINARY(DAE.RELATION(currVar,DAE.GREATER(DAE.ET_REAL()),DAE.RCONST(1e-8),-1,NONE()),DAE.OR(DAE.ET_BOOL()),DAE.RELATION(currVar,DAE.LESS(DAE.ET_REAL()),DAE.RCONST(-1e-8),-1,NONE()));
@@ -4810,7 +4812,7 @@ algorithm
         nArgs1 = listLength(varExpListTotal);
         nArgs2 = listLength(restVar);
         varExpListHAdded = Util.listReplaceAtWithFill(DAE.BINARY(currVar, DAE.ADD(DAE.ET_REAL()),delta),nArgs1-(nArgs2+1), varExpListTotal,DAE.RCONST(0.0));
-        derFun = DAE.BINARY(DAE.BINARY(DAE.CALL(fname, varExpListHAdded, tuple_, builtin, et, inlineType), DAE.SUB(DAE.ET_REAL()), DAE.CALL(fname, varExpListTotal, tuple_, builtin, et, inlineType)), DAE.DIV(DAE.ET_REAL()), delta);
+        derFun = DAE.BINARY(DAE.BINARY(DAE.CALL(fname, varExpListHAdded, attr), DAE.SUB(DAE.ET_REAL()), DAE.CALL(fname, varExpListTotal, attr)), DAE.DIV(DAE.ET_REAL()), delta);
       then DAE.BINARY(e, DAE.ADD(DAE.ET_REAL()), DAE.BINARY(derFun, DAE.MUL(DAE.ET_REAL()), currDerVar));
   end match;
 end partialNumericalDifferentiation;
@@ -5306,7 +5308,7 @@ algorithm
     then dxlist;
       
     // extern functions (analytical and numeric)
-    case (e as DAE.CALL(path=fname, expLst=expList1, tuple_=tuple_, builtin=builtin, ty=et, inlineType=inlineType), xlist, functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars)
+    case (e as DAE.CALL(path=fname, expLst=expList1), xlist, functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars)
       equation
        dxlist = createDiffListMeta(e,xlist,diffNumCall, SOME((functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars)));
     then dxlist;
@@ -5544,16 +5546,17 @@ algorithm
     list<DAE.ComponentRef> diffVars;
     DAE.FunctionTree functions;
     list<tuple<Integer,DAE.derivativeCond>> conditions;
+    DAE.CallAttributes attr;
     //Option<tuple<DAE.FunctionTree, list<BackendDAE.Var>, list<BackendDAE.Var>, list<BackendDAE.Var>, list<BackendDAE.Var>, list<BackendDAE.Var>>> inTpl;
     // extern functions (analytical)
-    case ((e as DAE.CALL(path=fname, expLst=expList1, tuple_=tuple_, builtin=builtin, ty=et, inlineType=inlineType), x, SOME((functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars))))
+    case ((e as DAE.CALL(path=fname, expLst=expList1), x, SOME((functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars))))
       equation
         nArgs = listLength(expList1);
         (DAE.FUNCTION_DER_MAPPER(derivativeFunction=derFname,conditionRefs=conditions), tp) = Derive.getFunctionMapper(fname, functions);
         expList2 = deriveExpListwrtstate(expList1, nArgs, conditions, x, functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars);
         e1 = partialAnalyticalDifferentiation(expList1, expList2, e, derFname, listLength(expList2));
       then e1;
-    case ((e as DAE.CALL(path=fname, expLst=expList1, tuple_=tuple_, builtin=builtin, ty=et, inlineType=inlineType), x, SOME((functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars))))
+    case ((e as DAE.CALL(path=fname, expLst=expList1), x, SOME((functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars))))
       equation
         //(SOME((functions, inputVars, paramVars, stateVars, knownVars, diffVars))) = inTpl;
         nArgs = listLength(expList1);
@@ -5582,13 +5585,13 @@ algorithm
     //sin(x)
     case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("sin")))
       equation
-        e = DAE.BINARY(inExp1, DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("cos"),{inExp2},false,true,DAE.ET_REAL(),DAE.NO_INLINE()));
+        e = DAE.BINARY(inExp1, DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("cos"),{inExp2},DAE.callAttrBuiltinReal));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
     // cos(x)
     case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("cos")))
       equation
-        e = DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()), DAE.BINARY(inExp1,DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("sin"),{inExp2},false,true,DAE.ET_REAL(),DAE.NO_INLINE())));
+        e = DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()), DAE.BINARY(inExp1,DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("sin"),{inExp2},DAE.callAttrBuiltinReal)));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
     // ln(x)
@@ -5600,13 +5603,13 @@ algorithm
     // log10(x)
     case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("log10")))          
       equation
-        e = DAE.BINARY(inExp1, DAE.DIV(DAE.ET_REAL()), DAE.BINARY(inExp2, DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("log"),{DAE.RCONST(10.0)},false,true,DAE.ET_REAL(),DAE.NO_INLINE())));
+        e = DAE.BINARY(inExp1, DAE.DIV(DAE.ET_REAL()), DAE.BINARY(inExp2, DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("log"),{DAE.RCONST(10.0)},DAE.callAttrBuiltinReal)));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
     // exp(x)
     case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("exp")))    
       equation
-        e = DAE.BINARY(inExp1,DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("exp"),{inExp2},false,true,DAE.ET_REAL(),DAE.NO_INLINE()));
+        e = DAE.BINARY(inExp1,DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("exp"),{inExp2},DAE.callAttrBuiltinReal));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
     // sqrt(x)
@@ -5615,7 +5618,7 @@ algorithm
         e = DAE.BINARY(
           DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.ET_REAL()),
           DAE.BINARY(DAE.RCONST(2.0),DAE.MUL(DAE.ET_REAL()),
-          DAE.CALL(Absyn.IDENT("sqrt"),{inExp2},false,true,DAE.ET_REAL(),DAE.NO_INLINE()))),DAE.MUL(DAE.ET_REAL()),inExp1);
+          DAE.CALL(Absyn.IDENT("sqrt"),{inExp2},DAE.callAttrBuiltinReal))),DAE.MUL(DAE.ET_REAL()),inExp1);
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
    // abs(x)
@@ -5670,7 +5673,7 @@ algorithm
       equation
         z1 = DAE.BINARY(inExp1, DAE.DIV(et), inOrgExp1);
         z1 = DAE.BINARY(inOrgExp2, DAE.MUL(et), z1);
-        z2 = DAE.CALL(Absyn.IDENT("log"), {inOrgExp1}, false, true, DAE.ET_REAL(), DAE.NO_INLINE());
+        z2 = DAE.CALL(Absyn.IDENT("log"), {inOrgExp1}, DAE.callAttrBuiltinReal);
         z2 = DAE.BINARY(inExp2, DAE.MUL(et), z2);
         z1 = DAE.BINARY(z1, DAE.ADD(et), z2);
         z2 = DAE.BINARY(inOrgExp1, DAE.POW(et), inOrgExp2);

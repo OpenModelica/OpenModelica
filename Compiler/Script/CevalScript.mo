@@ -697,7 +697,7 @@ algorithm
       then
         (cache,Values.REAL(time),st);
 
-    case (cache,env,DAE.CALL(path=Absyn.IDENT(name),builtin=true,expLst=eLst),st,msg)
+    case (cache,env,DAE.CALL(path=Absyn.IDENT(name),attr=DAE.CALL_ATTR(builtin=true),expLst=eLst),st,msg)
       equation
         (cache,valLst,stOpt) = Ceval.cevalList(cache,env,eLst,true,SOME(st),msg);
         st = Util.getOptionOrDefault(stOpt, st);
@@ -3925,7 +3925,7 @@ algorithm
       list<String> acc;
       String name;
       DAE.ComponentRef cr;
-    case ((e as DAE.CALL(path = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED(name,Absyn.IDENT(_))), builtin = false),acc))
+    case ((e as DAE.CALL(path = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED(name,Absyn.IDENT(_))), attr = DAE.CALL_ATTR(builtin = false)),acc))
       equation
         acc = Util.listConsOnTrue(not listMember(name,acc),name,acc);
       then ((e,acc));

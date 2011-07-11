@@ -3436,7 +3436,7 @@ algorithm outExp := matchcontinue(inExp)
         expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         i = listLength(expl);
         true = intGt(i,0);
-        e_new = DAE.CALL(name,expl,false,false,t,DAE.NO_INLINE());
+        e_new = DAE.CALL(name,expl,DAE.CALL_ATTR(t,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
         restpl = Expression.traverseExp(e_new, traversingextendArrExp, (funcs,true));
     then 
       (restpl);
@@ -5205,6 +5205,7 @@ algorithm
       Boolean b;
       DAE.InlineType i;
       DAE.ExpType ty;
+      DAE.CallAttributes attr;
     
     case({},vars) then {};
     
@@ -5234,13 +5235,13 @@ algorithm
       then 
         (DAE.UNARY(op,e1)::expl);
     
-    case(DAE.CALL(path,expl2,tpl,b,ty,i)::expl,vars) 
+    case(DAE.CALL(path,expl2,attr)::expl,vars) 
       equation
         repl = makeZeroReplacements(vars);
         (expl2 as _::_) = ifBranchesFreeFromVar(expl2,vars);
         expl = ifBranchesFreeFromVar(expl,vars);
       then 
-        (DAE.CALL(path,expl2,tpl,b,ty,i)::expl);
+        (DAE.CALL(path,expl2,attr)::expl);
     
     case(_::expl,vars) 
       equation

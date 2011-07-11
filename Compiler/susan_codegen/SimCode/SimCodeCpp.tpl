@@ -1370,14 +1370,12 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   match call
   // special builtins
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="edge"),
+  case CALL(path=IDENT(name="edge"),
             expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     '_event_handling.edge(<%var1%>,"<%var1%>")'
     
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="pre"),
+  case CALL(path=IDENT(name="pre"),
             expLst={arg as CREF(__)}) then
     let var1 = daeExp(arg, context, &preExp, &varDecls,simCode)
     '_event_handling.pre(<%var1%>,"<%cref(arg.componentRef)%>")'
@@ -1389,17 +1387,15 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let eIndex = daeExp(index, contextOther, &preExp, &varDecls /*BUFD*/,simCode)
      '_condition<%eIndex%>'
     
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="DIVISION"),
+  case CALL(path=IDENT(name="DIVISION"),
             expLst={e1, e2, DAE.SCONST(string=string)}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
     '(<%var1%>/<%var2%>)'
   
-  case CALL(tuple_=false, builtin=true, ty=ty, 
-            path=IDENT(name="DIVISION_ARRAY_SCALAR"),
-            expLst={e1, e2, DAE.SCONST(string=string)}) then
-    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" 
+  case CALL(path=IDENT(name="DIVISION_ARRAY_SCALAR"),
+            expLst={e1, e2, DAE.SCONST(string=string)},attr=attr as CALL_ATTR(__)) then
+    let type = match attr.ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" 
                         case ET_ARRAY(ty=ET_ENUMERATION(__)) then "integer_array"
                         else "real_array"
     let var = tempDecl(type, &varDecls)
@@ -1409,11 +1405,9 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += 'division_alloc_<%type%>_scalar(&<%var1%>, <%var2%>, &<%var%>,"<%var3%>");<%\n%>'
     '<%var%>'
     
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="der"), expLst={arg as CREF(__)}) then
+  case CALL(path=IDENT(name="der"), expLst={arg as CREF(__)}) then
     '$P$DER<%cref(arg.componentRef)%>'
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="pre"), expLst={arg as CREF(__)}) then
+  case CALL(path=IDENT(name="pre"), expLst={arg as CREF(__)}) then
     let retType = '<%expTypeArrayIf(arg.ty)%>'
     let retVar = tempDecl(retType, &varDecls /*BUFD*/)
     let cast = match arg.ty case ET_INT(__) then "(int)" 
@@ -1425,43 +1419,37 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     if acceptMetaModelicaGrammar() then 'print(<%var1%>)' else 'puts(<%var1%>)'
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="max"), ty = ET_REAL(), expLst={e1,e2}) then
+  case CALL(path=IDENT(name="max"), attr=CALL_ATTR(ty = ET_REAL()), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
     'fmax(<%var1%>,<%var2%>)'
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="max"), expLst={e1,e2}) then
+  case CALL(path=IDENT(name="max"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
     'int_max((int)<%var1%>,(int)<%var2%>)'
   
-  case CALL(tuple_=false, builtin=true, ty = ET_REAL(),
+  case CALL(attr=CALL_ATTR(ty = ET_REAL()),
             path=IDENT(name="min"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
     'fmin(<%var1%>,<%var2%>)'
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="min"), expLst={e1,e2}) then
+  case CALL(path=IDENT(name="min"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
     'int_min((int)<%var1%>,(int)<%var2%>)'
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="abs"), expLst={e1}, ty = ET_INT()) then
+  case CALL(path=IDENT(name="abs"), expLst={e1}, attr=CALL_ATTR(ty = ET_INT())) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     'labs(<%var1%>)'
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="abs"), expLst={e1}) then
+  case CALL(path=IDENT(name="abs"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     'fabs(<%var1%>)'
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="sqrt"),
-            expLst={e1}) then
+  case CALL(path=IDENT(name="sqrt"),
+            expLst={e1},attr=attr as CALL_ATTR(__)) then
     //relation = DAE.LBINARY(e1,DAE.GREATEREQ(ET_REAL()),DAE.RCONST(0))
     //string = DAE.SCONST('Model error: Argument of sqrt should  >= 0')
     //let retPre = assertCommon(relation,s, context, &varDecls)
@@ -1471,65 +1459,57 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let retType = '<%funName%>_rettype'
     let &preExp += '<%retPre%>'
     let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(builtin)%><%funName%>(<%argStr%>);<%\n%>'
-    if builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
+    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
+    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="div"), expLst={e1,e2}, ty = ET_INT()) then
+  case CALL(path=IDENT(name="div"), expLst={e1,e2}, attr=CALL_ATTR(ty = ET_INT())) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
     'ldiv(<%var1%>,<%var2%>).quot'
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="div"), expLst={e1,e2}) then
+  case CALL(path=IDENT(name="div"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
     'trunc(<%var1%>/<%var2%>)'
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="mod"), expLst={e1,e2}) then
+  case CALL(path=IDENT(name="mod"), expLst={e1,e2}, attr=attr as CALL_ATTR(__)) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
-    'modelica_mod_<%expTypeShort(ty)%>(<%var1%>,<%var2%>)'
+    'modelica_mod_<%expTypeShort(attr.ty)%>(<%var1%>,<%var2%>)'
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="max"), expLst={array}) then
+  case CALL(path=IDENT(name="max"), expLst={array}) then
     let expVar = daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let arr_tp_str = '<%expTypeFromExpArray(array)%>'
     let tvar = tempDecl(expTypeFromExpModelica(array), &varDecls /*BUFD*/)
     let &preExp += '<%tvar%> = max_<%arr_tp_str%>(&<%expVar%>);<%\n%>'
     '<%tvar%>'
     
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="min"), expLst={array}) then
+  case CALL(path=IDENT(name="min"), expLst={array}) then
     let expVar = daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let arr_tp_str = '<%expTypeFromExpArray(array)%>'
     let tvar = tempDecl(expTypeFromExpModelica(array), &varDecls /*BUFD*/)
     let &preExp += '<%tvar%> = min_<%arr_tp_str%>(&<%expVar%>);<%\n%>'
     '<%tvar%>'
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="fill"), expLst=val::dims) then
+  case CALL(path=IDENT(name="fill"), expLst=val::dims, attr=attr as CALL_ATTR(__)) then
     let valExp = daeExp(val, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let dimsExp = (dims |> dim =>
       daeExp(dim, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode) ;separator=", ")
-    let ty_str = '<%expTypeArray(ty)%>'
+    let ty_str = '<%expTypeArray(attr.ty)%>'
     let tvar = tempDecl(ty_str, &varDecls /*BUFD*/)
     let &preExp += 'fill_alloc_<%ty_str%>(&<%tvar%>, <%valExp%>, <%listLength(dims)%>, <%dimsExp%>);<%\n%>'
     '<%tvar%>'
     
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="cat"), expLst=dim::arrays) then
+  case CALL(path=IDENT(name="cat"), expLst=dim::arrays, attr=attr as CALL_ATTR(__)) then
     let dim_exp = daeExp(dim, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let arrays_exp = (arrays |> array =>
       daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode) ;separator=", &")
-    let ty_str = '<%expTypeArray(ty)%>'
+    let ty_str = '<%expTypeArray(attr.ty)%>'
     let tvar = tempDecl(ty_str, &varDecls /*BUFD*/)
     let &preExp += 'cat_alloc_<%ty_str%>(<%dim_exp%>, &<%tvar%>, <%listLength(arrays)%>, &<%arrays_exp%>);<%\n%>'
     '<%tvar%>'
     
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="promote"), expLst={A, n}) then
+  case CALL(path=IDENT(name="promote"), expLst={A, n}) then
     let var1 = daeExp(A, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let var2 = daeExp(n, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let arr_tp_str = '<%expTypeFromExpArray(A)%>'
@@ -1537,16 +1517,14 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += 'promote_alloc_<%arr_tp_str%>(&<%var1%>, <%var2%>, &<%tvar%>);<%\n%>'
     '<%tvar%>'
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="transpose"), expLst={A}) then
+  case CALL(path=IDENT(name="transpose"), expLst={A}) then
     let var1 = daeExp(A, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let arr_tp_str = '<%expTypeFromExpArray(A)%>'
     let tvar = tempDecl(arr_tp_str, &varDecls /*BUFD*/)
     let &preExp += 'transpose_alloc_<%arr_tp_str%>(&<%var1%>, &<%tvar%>);<%\n%>'
     '<%tvar%>'
    
-   case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="cross"), expLst={v1, v2}) then
+   case CALL(path=IDENT(name="cross"), expLst={v1, v2}) then
     let var1 = daeExp(v1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let var2 = daeExp(v2, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let arr_tp_str = '<%expTypeFromExpArray(v1)%>'
@@ -1554,25 +1532,22 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += 'cross_alloc_<%arr_tp_str%>(&<%var1%>, &<%var2%>, &<%tvar%>);<%\n%>'
     '<%tvar%>'
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="identity"), expLst={A}) then
+  case CALL(path=IDENT(name="identity"), expLst={A}) then
     let var1 = daeExp(A, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let arr_tp_str = '<%expTypeFromExpArray(A)%>'
     let tvar = tempDecl(arr_tp_str, &varDecls /*BUFD*/)
     let &preExp += 'identity_alloc_<%arr_tp_str%>(<%var1%>, &<%tvar%>);<%\n%>'
     '<%tvar%>'
    
-   case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="rem"),
-            expLst={e1, e2}) then
+   case CALL(path=IDENT(name="rem"),
+             expLst={e1, e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
     let typeStr = expTypeFromExpShort(e1)
     'modelica_rem_<%typeStr%>(<%var1%>,<%var2%>)'
     
-   case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="String"),
-            expLst={s, format}) then
+   case CALL(path=IDENT(name="String"),
+             expLst={s, format}) then
     let tvar = tempDecl("modelica_string", &varDecls /*BUFD*/)
     let sExp = daeExp(s, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let formatExp = daeExp(format, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
@@ -1580,9 +1555,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string_format(<%sExp%>, <%formatExp%>);<%\n%>'
     '<%tvar%>'
     
-   case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="String"),
-            expLst={s, minlen, leftjust}) then
+   case CALL(path=IDENT(name="String"),
+             expLst={s, minlen, leftjust}) then
     let tvar = tempDecl("modelica_string", &varDecls /*BUFD*/)
     let sExp = daeExp(s, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let minlenExp = daeExp(minlen, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
@@ -1591,8 +1565,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>);<%\n%>'
     '<%tvar%>'
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="String"),
+  case CALL(path=IDENT(name="String"),
             expLst={s, minlen, leftjust, signdig}) then
     let tvar = tempDecl("modelica_string", &varDecls /*BUFD*/)
     let sExp = daeExp(s, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
@@ -1602,8 +1575,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += '<%tvar%> = double_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>, <%signdigExp%>);<%\n%>'
     '<%tvar%>'
     
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="delay"),
+  case CALL(path=IDENT(name="delay"),
             expLst={ICONST(integer=index), e, d, delayMax}) then
     let tvar = tempDecl("double", &varDecls /*BUFD*/)
     let var1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
@@ -1612,54 +1584,49 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += '<%tvar%> = delayImpl(<%index%>, <%var1%>, time, <%var2%>, <%var3%>);<%\n%>'
     '<%tvar%>'
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="integer"),
+  case CALL(path=IDENT(name="integer"),
             expLst={toBeCasted}) then
     let castedVar = daeExp(toBeCasted, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     '((int)<%castedVar%>)'
     
-   case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="Integer"),
-            expLst={toBeCasted}) then
+   case CALL(path=IDENT(name="Integer"),
+             expLst={toBeCasted}) then
     let castedVar = daeExp(toBeCasted, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     '((int)<%castedVar%>)'
   
-  case CALL(tuple_=false, builtin=true, path=IDENT(name="clock"), expLst={}) then
+  case CALL(path=IDENT(name="clock"), expLst={}) then
     'mmc_clock()'
 
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="noEvent"),
+  case CALL(path=IDENT(name="noEvent"),
             expLst={e1}) then
     daeExp(e1, context, &preExp, &varDecls,simCode)
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="anyString"),
+  case CALL(path=IDENT(name="anyString"),
             expLst={e1}) then
     'mmc_anyString(<%daeExp(e1, context, &preExp, &varDecls,simCode)%>)'
     
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="mmc_get_field"),
+  case CALL(path=IDENT(name="mmc_get_field"),
             expLst={s1, ICONST(integer=i)}) then
     let tvar = tempDecl("modelica_metatype", &varDecls /*BUFD*/)
     let expPart = daeExp(s1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let &preExp += '<%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%expPart%>), <%i%>));<%\n%>'
     '<%tvar%>'
   
-  case exp as CALL(__) then
+  case exp as CALL(attr=attr as CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
     let funName = '<%underscorePath(path)%>'
     let retType = '<%funName%>_rettype'
     let retVar = match exp
-      case CALL(ty=ET_NORETCALL(__)) then ""
+      case CALL(attr=CALL_ATTR(ty=ET_NORETCALL(__))) then ""
       else tempDecl(retType, &varDecls)
-    let &preExp += if not builtin then match context case SIMULATION(__) then
+    let &preExp += if not attr.builtin then match context case SIMULATION(__) then
       <<
       #ifdef _OMC_MEASURE_TIME
       SIM_PROF_TICK_FN(<%funName%>_index);
       #endif<%\n%>
       >>
-    let &preExp += '<%if retVar then '<%retVar%> = '%><%daeExpCallBuiltinPrefix(builtin)%><%funName%>(<%argStr%>);<%\n%>'
-    let &preExp += if not builtin then match context case SIMULATION(__) then
+    let &preExp += '<%if retVar then '<%retVar%> = '%><%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
+    let &preExp += if not attr.builtin then match context case SIMULATION(__) then
       <<
       #ifdef _OMC_MEASURE_TIME
       SIM_PROF_ACC_FN(<%funName%>_index);
@@ -1667,12 +1634,12 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
       >>
     match exp
       // no return calls
-      case CALL(ty=ET_NORETCALL(__)) then '/* NORETCALL */'
+      case CALL(attr=CALL_ATTR(ty=ET_NORETCALL(__))) then '/* NORETCALL */'
       // non tuple calls (single return value)
-      case CALL(tuple_=false) then
-        if builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
+      case CALL(attr=CALL_ATTR(tuple_=false)) then
+        if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
       // tuple calls (multiple return values)
-      case CALL(tuple_=true) then
+      case CALL(attr=CALL_ATTR(tuple_=true)) then
         '<%retVar%>'
   
     
@@ -2084,7 +2051,7 @@ template expTypeFromExp(Exp it) ::=
   case LUNARY(__)     then expTypeFromOp(operator)
   case RELATION(__)   then "bool" //TODO: a HACK, it was expTypeFromOp(operator)
   case IFEXP(__)      then expTypeFromExp(expThen)
-  case CALL(__)       then expTypeShort(ty)
+  case CALL(attr=CALL_ATTR(__))       then expTypeShort(attr.ty)
   case ARRAY(__)
   case MATRIX(__)
   case RANGE(__)
@@ -2691,7 +2658,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case e as LUNARY(__)
   case e as RELATION(__) then expTypeFromOpFlag(e.operator, flag)
   case IFEXP(__)         then expTypeFromExpFlag(expThen, flag)
-  case CALL(__)          then expTypeFlag(ty, flag)
+  case CALL(attr=CALL_ATTR(__))          then expTypeFlag(attr.ty, flag)
   case c as ARRAY(__)
   case c as MATRIX(__)
   case c as RANGE(__)

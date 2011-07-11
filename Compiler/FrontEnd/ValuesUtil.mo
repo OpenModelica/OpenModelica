@@ -969,7 +969,7 @@ algorithm
         expl = Util.listMap(vallist,valueExp);
         tpl = Util.listMap(expl,Expression.typeof);
         varlst = Util.listThreadMap(namelst,tpl,Expression.makeVar);
-      then DAE.CALL(path,expl,false,false,DAE.ET_COMPLEX(path,varlst,ClassInf.RECORD(path)),DAE.NO_INLINE());
+      then DAE.CALL(path,expl,DAE.CALL_ATTR(DAE.ET_COMPLEX(path,varlst,ClassInf.RECORD(path)),false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 
     case(Values.ENUM_LITERAL(name = path, index = ix))
       then DAE.ENUM_LITERAL(path, ix);
@@ -1015,7 +1015,7 @@ algorithm
       then DAE.METARECORDCALL(path,explist,namelst,ix);
 
     case (Values.META_FAIL())
-      then DAE.CALL(Absyn.IDENT("fail"),{},false,true,DAE.ET_OTHER(),DAE.NO_INLINE());
+      then DAE.CALL(Absyn.IDENT("fail"),{},DAE.callAttrBuiltinOther);
 
     case (Values.META_BOX(v))
       equation

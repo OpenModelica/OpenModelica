@@ -1376,7 +1376,7 @@ algorithm
         dae;
         
     // split a constant complex equation to its elements 
-    case ((e1 as DAE.CREF(assignedCr,_)),(e2 as DAE.CALL(path=_,ty=ty)),tt as (DAE.T_COMPLEX(complexVarLst = _),_),source,initial_)
+    case ((e1 as DAE.CREF(assignedCr,_)),(e2 as DAE.CALL(attr=DAE.CALL_ATTR(ty=ty))),tt as (DAE.T_COMPLEX(complexVarLst = _),_),source,initial_)
       equation
         elabedType = Types.elabType(tt);
         true = Expression.equalTypes(elabedType,ty);
@@ -2366,6 +2366,7 @@ algorithm
       DAE.InlineType inlineType;
       DAE.ExpType tp;
       String str;
+      DAE.CallAttributes attr;
 
     case (cache,env,ih,pre,SCode.ALG_ASSIGN(info = _),source,initial_,impl,unrollForLoops)
       equation
@@ -2484,13 +2485,13 @@ algorithm
     /* generic NORETCALL */
     case (cache,env,ih,pre,(SCode.ALG_NORETCALL(functionCall = callFunc, functionArgs = callArgs, info = info)),source,initial_,impl,unrollForLoops)
       equation
-        (cache, DAE.CALL(ap, eexpl, tuple_, builtin, tp, inlineType), varprop, _) = 
+        (cache, DAE.CALL(ap, eexpl, attr), varprop, _) = 
           Static.elabExp(cache, env, Absyn.CALL(callFunc, callArgs), impl,NONE(), true,pre,info);
         // DO NOT PREFIX THIS PATH; THE PREFIX IS ONLY USED FOR COMPONENTS, NOT NAMES OF FUNCTIONS.... 
         // ap = PrefixUtil.prefixPath(ap,pre);
         (cache,eexpl) = PrefixUtil.prefixExpList(cache, env, ih, eexpl, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = DAE.STMT_NORETCALL(DAE.CALL(ap,eexpl,tuple_,builtin,tp,inlineType),source);
+        stmt = DAE.STMT_NORETCALL(DAE.CALL(ap,eexpl,attr),source);
       then
         (cache,{stmt});
          
@@ -4043,7 +4044,7 @@ algorithm
         breakDAEElements = 
           {DAE.ARRAY_EQUATION({DAE.DIM_INTEGER(idim1)}, zeroVector,
                         DAE.CALL(fpath1,{crefExp1, crefExp2},
-                                 false, false, DAE.ET_REAL(), inlineType1), // use the inline type
+                                 DAE.CALL_ATTR(DAE.ET_REAL(), false, false, inlineType1, DAE.NO_TAIL())), // use the inline type
                         source // set the origin of the element
                         )};
         graph = ConnectionGraph.addConnection(graph, c1_1, c2_1, breakDAEElements);

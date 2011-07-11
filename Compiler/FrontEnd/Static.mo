@@ -1504,11 +1504,11 @@ algorithm
       DAE.Exp e1,e2,e;
       Absyn.Path funcname;
       DAE.Const c;
-    case (DAE.BINARY(exp1 = e1,operator = DAE.USERDEFINED(fqName = funcname),exp2 = e2),c) then DAE.CALL(funcname,{e1,e2},false,false,DAE.ET_OTHER(),DAE.NO_INLINE());
-    case (DAE.UNARY(operator = DAE.USERDEFINED(fqName = funcname),exp = e1),c) then DAE.CALL(funcname,{e1},false,false,DAE.ET_OTHER(),DAE.NO_INLINE());
-    case (DAE.LBINARY(exp1 = e1,operator = DAE.USERDEFINED(fqName = funcname),exp2 = e2),c) then DAE.CALL(funcname,{e1,e2},false,false,DAE.ET_OTHER(),DAE.NO_INLINE());
-    case (DAE.LUNARY(operator = DAE.USERDEFINED(fqName = funcname),exp = e1),c) then DAE.CALL(funcname,{e1},false,false,DAE.ET_OTHER(),DAE.NO_INLINE());
-    case (DAE.RELATION(exp1 = e1,operator = DAE.USERDEFINED(fqName = funcname),exp2 = e2),c) then DAE.CALL(funcname,{e1,e2},false,false,DAE.ET_OTHER(),DAE.NO_INLINE());
+    case (DAE.BINARY(exp1 = e1,operator = DAE.USERDEFINED(fqName = funcname),exp2 = e2),c) then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.ET_OTHER(),false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+    case (DAE.UNARY(operator = DAE.USERDEFINED(fqName = funcname),exp = e1),c) then DAE.CALL(funcname,{e1},DAE.CALL_ATTR(DAE.ET_OTHER(),false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+    case (DAE.LBINARY(exp1 = e1,operator = DAE.USERDEFINED(fqName = funcname),exp2 = e2),c) then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.ET_OTHER(),false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+    case (DAE.LUNARY(operator = DAE.USERDEFINED(fqName = funcname),exp = e1),c) then DAE.CALL(funcname,{e1},DAE.CALL_ATTR(DAE.ET_OTHER(),false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+    case (DAE.RELATION(exp1 = e1,operator = DAE.USERDEFINED(fqName = funcname),exp2 = e2),c) then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.ET_OTHER(),false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
     case (e,_) then e;
   end matchcontinue;
 end replaceOperatorWithFcall;
@@ -5551,8 +5551,7 @@ algorithm
       (cache,exp,_,_) = elabExp(cache, env, exp0, false,NONE(), false,pre,info);
       then
         (cache,
-        DAE.CALL(Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), {exp},
-             false, true, DAE.ET_BOOL(),DAE.NO_INLINE()),
+        DAE.CALL(Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), {exp}, DAE.callAttrBuiltinBool),
         DAE.PROP(DAE.T_BOOL_DEFAULT, DAE.C_VAR()));
   end match;
 end elabBuiltinIsRoot;
@@ -7548,7 +7547,7 @@ algorithm
         //tyconst = elabConsts(outtype, const);
         //prop = getProperties(outtype, tyconst);
       then
-        (cache,SOME((DAE.CALL(fn,args_2,false,false,tp,DAE.NO_INLINE()),DAE.PROP((DAE.T_NOTYPE(),NONE()),DAE.C_CONST()))));
+        (cache,SOME((DAE.CALL(fn,args_2,DAE.CALL_ATTR(tp,false,false,DAE.NO_INLINE(),DAE.NO_TAIL())),DAE.PROP((DAE.T_NOTYPE(),NONE()),DAE.C_CONST()))));
 
     // adrpo: deal with function call via an instance: MultiBody world.gravityAcceleration
     case (cache, env, fn, args, nargs, impl, stopElab, st,pre,info)
@@ -7640,7 +7639,7 @@ algorithm
         args_2 = expListFromSlots(newslots2);
                         
         tp = complexTypeFromSlots(newslots2,ClassInf.RECORD(fn));
-        callExp = DAE.CALL(fn,args_2,false,false,tp,DAE.NO_INLINE());
+        callExp = DAE.CALL(fn,args_2,DAE.CALL_ATTR(tp,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
         
         // create a replacement for input variables -> their binding
         //inputVarsRepl = createInputVariableReplacements(newslots2, VarTransform.emptyReplacements());
@@ -7694,7 +7693,7 @@ algorithm
         tp = Types.elabType(restype);
         (cache,args_2,slots2) = addDefaultArgs(cache,env,args_1,fn,slots,impl,pre,info);
         true = Util.listFold(slots2, slotAnd, true);
-        callExp = DAE.CALL(fn_1,args_2,tuple_,builtin,tp,inlineType);
+        callExp = DAE.CALL(fn_1,args_2,DAE.CALL_ATTR(tp,tuple_,builtin,inlineType,DAE.NO_TAIL()));
         
         // create a replacement for input variables -> their binding
         //inputVarsRepl = createInputVariableReplacements(slots2, VarTransform.emptyReplacements());
@@ -8148,11 +8147,11 @@ algorithm
         (vect_exp_1,prop);*/
         
     /* Scalar expression, i.e function call */
-    case (e as DAE.CALL(path = fn,expLst = args,tuple_ = tuple_,builtin = builtin,ty = etp,inlineType=inl),(dim :: ad),slots,DAE.PROP(tp,c)) 
+    case (e as DAE.CALL(path = _),(dim :: ad),slots,DAE.PROP(tp,c)) 
       equation 
         int_dim = Expression.dimensionSize(dim);
         exp_type = Types.elabType(Types.liftArray(tp, dim)) "pass type of vectorized result expr";
-        vect_exp = vectorizeCallScalar(DAE.CALL(fn,args,tuple_,builtin,etp,inl), exp_type, int_dim, slots);
+        vect_exp = vectorizeCallScalar(e, exp_type, int_dim, slots);
         tp = Types.liftArray(tp, dim);
         (vect_exp_1,prop) = vectorizeCall(vect_exp, ad, slots, DAE.PROP(tp,c));
       then
@@ -8289,7 +8288,7 @@ algorithm
       DAE.ExpType e_type, arr_type;
       Integer dim;
       list<Slot> slots;
-    case ((callexp as DAE.CALL(path = fn,expLst = args,tuple_ = tuple_,builtin = builtin)),e_type,dim,slots) /* cur_dim */
+    case ((callexp as DAE.CALL(expLst = args)),e_type,dim,slots) /* cur_dim */
       equation
         expl = vectorizeCallScalar2(args, slots, 1, dim, callexp);
         e_type = Expression.unliftArray(e_type);
@@ -8329,7 +8328,8 @@ algorithm
       Boolean t,b;
       DAE.InlineType inl;
       DAE.ExpType tp;
-    case (expl,slots,cur_dim,dim,DAE.CALL(path = fn,expLst = args,tuple_ = t,builtin = b,ty=tp,inlineType=inl)) /* cur_dim - current indx in dim dim - dimension size */
+      DAE.CallAttributes attr;
+    case (expl,slots,cur_dim,dim,DAE.CALL(fn,args,attr)) /* cur_dim - current indx in dim dim - dimension size */
       equation
         (cur_dim <= dim) = true;
         callargs = vectorizeCallScalar3(expl, slots, cur_dim);
@@ -8337,7 +8337,7 @@ algorithm
         cur_dim_1 = cur_dim + 1;
         res = vectorizeCallScalar2(expl, slots, cur_dim_1, dim, inExp5);
       then
-        (DAE.CALL(fn,callargs,t,b,tp,inl) :: res);
+        (DAE.CALL(fn,callargs,attr) :: res);
     case (_,_,_,_,_) then {};
   end matchcontinue;
 end vectorizeCallScalar2;
@@ -10764,14 +10764,15 @@ algorithm
       Boolean tuple_,builtin;
       DAE.InlineType inl;
       DAE.ExpType tp;
+      DAE.CallAttributes attr;
     // empty list
     case (e,{}) then {};
     // vectorize call
-    case ((callexp as DAE.CALL(path = fn,expLst = args,tuple_ = tuple_,builtin = builtin,ty=tp,inlineType=inl)),(e :: es))
+    case ((callexp as DAE.CALL(fn,args,attr)),(e :: es))
       equation
         es_1 = callVectorize(callexp, es);
       then
-        (DAE.CALL(fn,(e :: args),tuple_,builtin,tp,inl) :: es_1);
+        (DAE.CALL(fn,(e :: args),attr) :: es_1);
     case (_,_)
       equation
         Debug.fprintln("failtrace", "- Static.callVectorize failed");

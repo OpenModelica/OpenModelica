@@ -1417,6 +1417,7 @@ algorithm
       Option<DAE.Exp> foldExp;
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators iters;
+      DAE.CallAttributes attr;
       
       // Note: Most of these functions check if a subexpression did a replacement.
       // If it did not, we do not create a new copy of the expression (to save some memory). 
@@ -1473,18 +1474,18 @@ algorithm
       then
         (DAE.IFEXP(e1_1,e2_1,e3_1),true);
       /* Special case when a variable in pre() is an alias for unary minus of another */
-    case (DAE.CALL(path = path as Absyn.IDENT("pre"),expLst = {e as DAE.CREF(componentRef = _)},tuple_ = isTuple,builtin = c,ty=tp,inlineType=inlineType),repl,cond)
+    case (DAE.CALL(path = path as Absyn.IDENT("pre"),expLst = {e as DAE.CREF(componentRef = _)},attr=attr),repl,cond)
       equation
         true = replaceExpCond(cond, e);
         (DAE.UNARY(DAE.UMINUS(ety),e),true) = replaceExp(e, repl, cond);
       then
-        (DAE.UNARY(DAE.UMINUS(ety),DAE.CALL(path,{e},isTuple,c,tp,inlineType)),true);
-    case ((e as DAE.CALL(path = path,expLst = expl,tuple_ = isTuple,builtin = c,ty=tp,inlineType=inlineType)),repl,cond)
+        (DAE.UNARY(DAE.UMINUS(ety),DAE.CALL(path,{e},attr)),true);
+    case ((e as DAE.CALL(path = path,expLst = expl,attr=attr)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
         (expl_1,true) = replaceExpList(expl, repl, cond, {}, false);
       then
-        (DAE.CALL(path,expl_1,isTuple,c,tp,inlineType),true);
+        (DAE.CALL(path,expl_1,attr),true);
     case ((e as DAE.ARRAY(ty = tp,scalar = c,array = expl)),repl,cond)
       equation
         true = replaceExpCond(cond, e);

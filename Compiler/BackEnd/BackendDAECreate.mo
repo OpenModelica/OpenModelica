@@ -464,7 +464,7 @@ algorithm
         b2 = OptManager.getOption("checkModel");
         true = boolOr(b1, b2);
         
-        s = DAE.STMT_NORETCALL(DAE.CALL(func_name, args, false, false, DAE.ET_NORETCALL(), DAE.NORM_INLINE()),source);
+        s = DAE.STMT_NORETCALL(DAE.CALL(func_name, args, DAE.CALL_ATTR(DAE.ET_NORETCALL(), false, false, DAE.NORM_INLINE(), DAE.NO_TAIL())),source);
         a = Inline.inlineAlgorithm(DAE.ALGORITHM_STMTS({s}),(SOME(functionTree),{DAE.NORM_INLINE()}));
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,a::algs,ialgs,whenclauses_1,extObjCls,states);
@@ -1163,7 +1163,7 @@ algorithm
       list<DAE.ComponentRef> crlst;
       list<BackendDAE.Var> varlst;
       BackendDAE.Type btp;
-    case((e1 as DAE.CALL(path=path,ty=ty as DAE.ET_ARRAY(arrayDimensions=ad,ty=tp)),(vars,i,aeqs,source)))
+    case((e1 as DAE.CALL(path=path,attr = DAE.CALL_ATTR(ty=ty as DAE.ET_ARRAY(arrayDimensions=ad,ty=tp))),(vars,i,aeqs,source)))
      equation
       dimSize = Util.listMap(ad, Expression.dimensionSize);
       cr = ComponentReference.pathToCref(path);
@@ -2119,15 +2119,16 @@ algorithm
       Boolean t, b;
       DAE.ExpType ty;
       DAE.InlineType it;
-    case ((e as DAE.CALL(Absyn.IDENT("delay"), es, t, b, ty, it), (ht,_)))
+      DAE.CallAttributes attr;
+    case ((e as DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht,_)))
       equation
         i = BaseHashTable.get(e,ht);
-      then ((DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(i)::es, t, b, ty, it), (ht,i)));
+      then ((DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(i)::es, attr), (ht,i)));
 
-    case ((e as DAE.CALL(Absyn.IDENT("delay"), es, t, b, ty, it), (ht,i)))
+    case ((e as DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht,i)))
       equation
         ht = BaseHashTable.add((e,i),ht);
-      then ((DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(i)::es, t, b, ty, it), (ht,i+1)));
+      then ((DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(i)::es, attr), (ht,i+1)));
 
     else inTuple;
   end matchcontinue;
@@ -2180,8 +2181,7 @@ algorithm
         /*
          * adrpo: after a bit of talk with Francesco Casella & Peter Aronsson we will add der($dummy) = 0;
          */
-        (vars_1,(BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),
-                          {exp},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),
+        (vars_1,(BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{exp},DAE.callAttrBuiltinReal),
                           DAE.RCONST(0.0), DAE.emptyElementSource)  :: eqns));
 
   end match;
@@ -2723,13 +2723,13 @@ algorithm
       list<DAE.ComponentRef> newStates;
       DAE.ComponentRef cr;
       String str;
-    case((DAE.CALL(Absyn.IDENT(name = "der"),{DAE.CALL(Absyn.IDENT(name = "der"),{e1 as DAE.CREF(componentRef=cr)},tuple_ = false,builtin = true)},tuple_ = false,builtin = true),(vars,funcs)))
+    case((DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={e1 as DAE.CREF(componentRef=cr)})}),(vars,funcs)))
       equation
         str = ComponentReference.crefStr(cr);
         str = stringAppendList({"The model includes derivatives of order > 1 for: ",str,". That is not supported. Real d", str, " = der(", str, ") *might* result in a solvable model"});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();      
-    case((DAE.CALL(Absyn.IDENT(name = "der"),{e1},tuple_ = false,builtin = true),(vars,funcs)))
+    case((DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={e1}),(vars,funcs)))
       equation
         e1 = Derive.differentiateExpTime(e1,(vars,funcs));
         (e1,_) = ExpressionSimplify.simplify(e1);

@@ -795,9 +795,7 @@ package DAE
     record CALL
       Absyn.Path path;
       list<Exp> expLst;
-      Boolean tuple_;
-      Boolean builtin;
-      ExpType ty;
+      CallAttributes attr;
     end CALL;
     record ARRAY
       ExpType ty;
@@ -881,6 +879,16 @@ package DAE
     end PATTERN;
   end Exp;
   
+  uniontype CallAttributes
+    record CALL_ATTR
+      ExpType ty "The type of the return value, if several return values this is undefined";
+      Boolean tuple_ "tuple" ;
+      Boolean builtin "builtin Function call" ;
+      InlineType inlineType;
+      TailCall tailCall "Input variables of the function if the call is tail-recursive";
+    end CALL_ATTR;
+  end CallAttributes;
+
   uniontype ReductionIterator
     record REDUCTIONITER
       String id;

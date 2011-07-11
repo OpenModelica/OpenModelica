@@ -2751,12 +2751,12 @@ algorithm
         ds2 = Expression.crefExp(dummystate1);
         dds1 = Expression.crefExp(derdummystate);
         dds2 = Expression.crefExp(derdummystate1);
-        cont1 = DAE.RELATION(DAE.CALL(Absyn.IDENT("abs"),{dse2},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),DAE.LESS(DAE.ET_REAL()),DAE.CALL(Absyn.IDENT("abs"),{dse1},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),0,NONE());
+        cont1 = DAE.RELATION(DAE.CALL(Absyn.IDENT("abs"),{dse2},DAE.callAttrBuiltinReal),DAE.LESS(DAE.ET_REAL()),DAE.CALL(Absyn.IDENT("abs"),{dse1},DAE.callAttrBuiltinReal),0,NONE());
         ((cont,_)) = Expression.traverseExp(dxdyecont, traversingComponentRefToPre, 0);
-        icont = DAE.LBINARY(DAE.CALL(Absyn.IDENT("initial"),{},false,true,DAE.ET_BOOL(),DAE.NO_INLINE()),DAE.OR(DAE.ET_BOOL()),cont);
+        icont = DAE.LBINARY(DAE.CALL(Absyn.IDENT("initial"),{},DAE.callAttrBuiltinBool),DAE.OR(DAE.ET_BOOL()),cont);
         eq = BackendDAE.EQUATION(dxdye,DAE.IFEXP(icont,ds2,ds1),DAE.emptyElementSource);
         dae = BackendEquation.equationAddDAE(eq,dae); 
-        deq = BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{dxdye},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),DAE.IFEXP(icont,dds2,dds1),DAE.emptyElementSource);
+        deq = BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{dxdye},DAE.callAttrBuiltinReal),DAE.IFEXP(icont,dds2,dds1),DAE.emptyElementSource);
         dae = BackendEquation.equationAddDAE(deq,dae); 
         
         wc = BackendDAE.WHEN_CLAUSE(dxdyecont,{BackendDAE.REINIT(dsxy,ds2,DAE.emptyElementSource)},NONE());
@@ -2809,7 +2809,7 @@ algorithm
     
     case((e as DAE.CREF(_,_), i))
       then
-        ((DAE.CALL(Absyn.IDENT("pre"),{e},false,true,DAE.ET_REAL(),DAE.NO_INLINE()), i ));
+        ((DAE.CALL(Absyn.IDENT("pre"),{e},DAE.callAttrBuiltinReal), i ));
     
     case(inExp) then inExp;
     
@@ -2873,8 +2873,7 @@ algorithm
         Debug.fcall("bltdump", BackendDump.debugStrCrefStr, ("Chosen dummy: ",dummy_der," as dummy state\n"));
         changedeqns = BackendDAEUtil.eqnsForVarWithStates(mt, stateno);
         stateexp = Expression.crefExp(state);
-        tp = Expression.typeof(stateexp);
-        stateexpcall = DAE.CALL(Absyn.IDENT("der"),{stateexp},false,true,tp,DAE.NO_INLINE());
+        stateexpcall = DAE.CALL(Absyn.IDENT("der"),{stateexp},DAE.callAttrBuiltinReal);
         dummyderexp = Expression.crefExp(dummy_der);
         (dae,m,mt) = replaceDummyDer(stateexpcall, dummyderexp, dae, m, mt, changedeqns)
         "We need to change variables in the differentiated equations and in the equations having the dummy derivative" ;
@@ -3183,8 +3182,7 @@ algorithm
         reqns = BackendDAEUtil.eqnsForVarWithStates(mt, stateno);
         changedeqns = Util.listUnionOnTrue(deqns, reqns, intEq);
         stateexp = Expression.crefExp(state);
-        tp = Expression.typeof(stateexp);
-        stateexpcall = DAE.CALL(Absyn.IDENT("der"),{stateexp},false,true,tp,DAE.NO_INLINE());
+        stateexpcall = DAE.CALL(Absyn.IDENT("der"),{stateexp},DAE.callAttrBuiltinReal);
         dummyderexp = Expression.crefExp(dummy_der);
         (dae,m,mt) = replaceDummyDer(stateexpcall, dummyderexp, dae, m, mt, changedeqns)
         "We need to change variables in the differentiated equations and in the equations having the dummy derivative" ;

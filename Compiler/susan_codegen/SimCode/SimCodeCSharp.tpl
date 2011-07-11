@@ -1949,8 +1949,7 @@ end daeExpIf;
 template daeExpCall(Exp it, Context context, Text &preExp, SimCode simCode) ::=
   match it
   // special builtins
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="DIVISION"),
+  case CALL(path=IDENT(name="DIVISION"),
             expLst={e1, e2, DAE.SCONST(string=string)}) then
     let var1 = daeExp(e1, context, &preExp, simCode)
     let msg = Util.escapeModelicaStringToCString(string)
@@ -1965,12 +1964,10 @@ template daeExpCall(Exp it, Context context, Text &preExp, SimCode simCode) ::=
     end match 
     
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="der"), expLst={arg as CREF(__)}) then
+  case CALL(path=IDENT(name="der"), expLst={arg as CREF(__)}) then
     derCref(arg.componentRef, simCode)
     
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="pre"), expLst={arg as CREF(__)}) then
+  case CALL(path=IDENT(name="pre"), expLst={arg as CREF(__)}) then
     //let retType = expType(arg.ty)
     <<
     <%match arg.ty case ET_INT(__) then "(int)"
@@ -1978,75 +1975,63 @@ template daeExpCall(Exp it, Context context, Text &preExp, SimCode simCode) ::=
     >>
   
   //'(/*edge(h[<%idx%>])*/H[<%idx%>]!=0.0 && preH[<%idx%>]==0.0)'
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="edge"), expLst={arg as CREF(__)}) then
+  case CALL(path=IDENT(name="edge"), expLst={arg as CREF(__)}) then
     <<
     (/*edge*/<% cref(arg.componentRef, simCode) %> && !(<% preCref(arg.componentRef, simCode) %>))
     >>
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="max"), expLst={e1,e2}) then
+  case CALL(path=IDENT(name="max"), expLst={e1,e2}) then
     'Math.Max(<%daeExp(e1, context, &preExp, simCode)%>,<%daeExp(e2, context, &preExp, simCode)%>)'
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="min"), expLst={e1,e2}) then
+  case CALL(path=IDENT(name="min"), expLst={e1,e2}) then
     'Math.Min(<%daeExp(e1, context, &preExp, simCode)%>,<%daeExp(e2, context, &preExp, simCode)%>)'
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="mod"), expLst={e1,e2}) then
+  case CALL(path=IDENT(name="mod"), expLst={e1,e2}, attr=attr as CALL_ATTR(__)) then
     let var1 = daeExp(e1, context, &preExp, simCode)
     let var2 = daeExp(e2, context, &preExp, simCode)
-    'Mod_<%expTypeShort(ty)%>(<%var1%>,<%var2%>)'    
+    'Mod_<%expTypeShort(attr.ty)%>(<%var1%>,<%var2%>)'
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="abs"), expLst={e1}, ty = ET_INT()) then
+  case CALL(path=IDENT(name="abs"), expLst={e1}, attr=CALL_ATTR(ty = ET_INT())) then
     let var1 = daeExp(e1, context, &preExp, simCode)
     'Abs_int(<%var1%>)'
     
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="abs"), expLst={s1}) then
+  case CALL(path=IDENT(name="abs"), expLst={s1}) then
     'Math.Abs(<%daeExp(s1, context, &preExp, simCode)%>)'
     
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="log"), expLst={s1}) then
+  case CALL(path=IDENT(name="log"), expLst={s1}) then
     'Math.Log(<%daeExp(s1, context, &preExp, simCode)%>)'
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="log10"), expLst={s1}) then
+  case CALL(path=IDENT(name="log10"), expLst={s1}) then
     'Math.Log10(<%daeExp(s1, context, &preExp, simCode)%>)'
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="exp"), expLst={s1}) then
+  case CALL(path=IDENT(name="exp"), expLst={s1}) then
     'Math.Exp(<%daeExp(s1, context, &preExp, simCode)%>)'
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="sin"), expLst={s1}) then
+  case CALL(path=IDENT(name="sin"), expLst={s1}) then
     'Math.Sin(<%daeExp(s1, context, &preExp, simCode)%>)'
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="sqrt"), expLst={s1}) then
+  case CALL(path=IDENT(name="sqrt"), expLst={s1}) then
     'Math.Sqrt(<%daeExp(s1, context, &preExp, simCode)%>)'
   
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="noEvent"), expLst={s1}) then
+  case CALL(path=IDENT(name="noEvent"), expLst={s1}) then
     '(/*noEvent*/<%daeExp(s1, context, &preExp, simCode)%>)'
   
     
   // TODO: add more special builtins (Codegen.generateBuiltinFunction)
   // no return calls
-  case CALL(tuple_=false, ty=ET_NORETCALL(__)) then
+  case CALL(attr=CALL_ATTR(tuple_=false,ty=ET_NORETCALL(__))) then
     let argStr = (expLst |> it => daeExp(it, context, &preExp, simCode) ;separator=", ")
-    let &preExp += '<%underscorePrefix(builtin)%><%underscorePath(path)%>(<%argStr%>);<%\n%>'
+    let &preExp += '<%underscorePrefix(attr.builtin)%><%underscorePath(path)%>(<%argStr%>);<%\n%>'
     <<
     /* NORETCALL */
     >>
   // non tuple calls (single return value)
-  case CALL(tuple_=false) then
+  case CALL(attr=attr as CALL_ATTR(tuple_=false)) then
     let argStr = (expLst |> it => daeExp(it, context, &preExp, simCode) ;separator=", ")
     let funName = underscorePath(path)
     <<
-    <%underscorePrefix(builtin)
-    %><%funName%>(<%argStr%>)<%if not builtin then '/* !!!TODO:.<%funName%>_rettype_1 */'%>
+    <%underscorePrefix(attr.builtin)
+    %><%funName%>(<%argStr%>)<%if not attr.builtin then '/* !!!TODO:.<%funName%>_rettype_1 */'%>
     >>
   case _ then "daeExpCall:NOT_YET_IMPLEMENTED"
 end daeExpCall;
@@ -2197,7 +2182,7 @@ template expTypeFromExp(Exp it) ::=
   case LUNARY(__)     then expTypeFromOp(operator)
   case RELATION(__)   then "bool" //TODO: a HACK, it was expTypeFromOp(operator)
   case IFEXP(__)      then expTypeFromExp(expThen)
-  case CALL(__)       then expTypeShort(ty)
+  case CALL(attr=attr as CALL_ATTR(__)) then expTypeShort(attr.ty)
   case ARRAY(__)
   case MATRIX(__)
   case RANGE(__)

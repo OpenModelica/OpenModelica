@@ -655,6 +655,7 @@ algorithm
       Option<DAE.Exp> foldExp;
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators riters;
+      DAE.CallAttributes attr;
       
     // no prefix, return the input expression
     case (cache,_,_,e,Prefix.NOPRE()) then (cache,e);
@@ -762,11 +763,11 @@ algorithm
       then
         (cache,DAE.SIZE(cref_1,NONE()));
 
-    case (cache,env,ih,DAE.CALL(path = f,expLst = es,tuple_ = tup,builtin = bi,ty = tp,inlineType = inl),p)
+    case (cache,env,ih,DAE.CALL(f,es,attr),p)
       equation
         (cache,es_1) = prefixExpList(cache, env, ih, es, p);
       then
-        (cache,DAE.CALL(f,es_1,tup,bi,tp,inl));
+        (cache,DAE.CALL(f,es_1,attr));
 
     case (cache,env,ih,DAE.ARRAY(ty = t,scalar = sc,array = {}),p)
       then

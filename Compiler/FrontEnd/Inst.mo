@@ -10715,7 +10715,7 @@ algorithm
         inlineType = isInlineFunc2(c);
         partialPrefixBool = SCode.partialBool(partialPrefix);
         
-        daeElts = optimizeFunction(fpath,daeElts,NONE(),{});
+        daeElts = optimizeFunction(fpath,daeElts,NONE(),{},{},{});
         cmt = extractClassDefComment(cache, env, cd);
       then
         (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(daeElts)::derFuncs,ty1,partialPrefixBool,inlineType,source,cmt)});
@@ -13524,7 +13524,7 @@ algorithm
         inAccumNames = listReverse(inAccumNames);
 
         ety = Types.elabType(Types.arrayElementType(inRecordType));
-        exp = DAE.CALL(inRecordName, inAccumExps, false, false, ety, DAE.NORM_INLINE());
+        exp = DAE.CALL(inRecordName, inAccumExps, DAE.CALL_ATTR(ety, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL()));
         val = Values.RECORD(inRecordName, inAccumVals, inAccumNames, -1);
         (exp, val) = liftRecordBinding(inRecordType, exp, val);
         binding = DAE.EQBOUND(exp, SOME(val), DAE.C_CONST(), DAE.BINDING_FROM_DEFAULT_VALUE());
@@ -16395,32 +16395,121 @@ protected function optimizeFunction
   input list<DAE.Element> elts;
   input Option<DAE.Element> oalg;
   input list<DAE.Element> acc;
+  input list<String> invars;
+  input list<String> outvars;
   output list<DAE.Element> outElts;
 algorithm
-  outElts := match (path,elts,oalg,acc)
+  outElts := match (path,elts,oalg,acc,invars,outvars)
     local
       list<DAE.Statement> stmts;
       DAE.Element elt,elt1,elt2;
       DAE.ElementSource source;
-      String str;
+      String str,name;
     // No algorithm section; allowed
-    case (_,{},NONE(),acc) then listReverse(acc);
-    case (_,{},SOME(elt),acc)
+    case (_,{},NONE(),acc,_,_) then listReverse(acc);
+    case (path,{},SOME(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)),acc,invars,outvars)
       equation
-        // TODO: Add tail recursion optimization here
-      then listReverse(elt::acc);
+        // Adding tail recursion optimization
+        stmts = optimizeLastStatementTail(path,stmts,listReverse(invars),listReverse(outvars),{});
+      then listReverse(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)::acc);
       // Remove empty sections
-    case (path,(elt1 as DAE.ALGORITHM(algorithm_=DAE.ALGORITHM_STMTS({})))::elts,oalg,acc)
-      then optimizeFunction(path,elts,oalg,acc);
-    case (path,(elt1 as DAE.ALGORITHM(source=source))::elts,SOME(elt2),acc)
+    case (path,(elt1 as DAE.ALGORITHM(algorithm_=DAE.ALGORITHM_STMTS({})))::elts,oalg,acc,invars,outvars)
+      then optimizeFunction(path,elts,oalg,acc,invars,outvars);
+    case (path,(elt1 as DAE.ALGORITHM(source=source))::elts,SOME(elt2),acc,invars,outvars)
       equation
         str = Absyn.pathString(path);
         Error.addSourceMessage(Error.FUNCTION_MULTIPLE_ALGORITHM,{str},DAEUtil.getElementSourceFileInfo(source));
-      then optimizeFunction(path,elts,SOME(elt1),elt2::acc);
-    case (path,(elt as DAE.ALGORITHM(source=_))::elts,NONE(),acc)
-      then optimizeFunction(path,elts,SOME(elt),acc);
-    case (path,elt::elts,oalg,acc) then optimizeFunction(path,elts,oalg,elt::acc);
+      then optimizeFunction(path,elts,SOME(elt1),elt2::acc,invars,outvars);
+    case (path,(elt as DAE.ALGORITHM(source=_))::elts,NONE(),acc,invars,outvars)
+      then optimizeFunction(path,elts,SOME(elt),acc,invars,outvars);
+    case (path,(elt as DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name),direction=DAE.OUTPUT()))::elts,oalg,acc,invars,outvars)
+      then optimizeFunction(path,elts,oalg,elt::acc,invars,name::outvars);
+    case (path,(elt as DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name),direction=DAE.INPUT()))::elts,oalg,acc,invars,outvars)
+      then optimizeFunction(path,elts,oalg,elt::acc,name::invars,outvars);
+    case (path,elt::elts,oalg,acc,invars,outvars) then optimizeFunction(path,elts,oalg,elt::acc,invars,outvars);
   end match;
 end optimizeFunction;
+
+protected function optimizeLastStatementTail
+  input Absyn.Path path;
+  input list<DAE.Statement> stmts;
+  input list<String> invars;
+  input list<String> outvars;
+  input list<DAE.Statement> acc;
+  output list<DAE.Statement> ostmts;
+algorithm
+  ostmts := match (path,stmts,invars,outvars,acc)
+    local
+      DAE.Statement stmt;
+    case (path,{stmt},invars,outvars,acc)
+      equation
+        stmt = optimizeStatementTail(path,stmt,invars,outvars);
+      then listReverse(stmt::acc);
+    case (path,stmt::stmts,invars,outvars,acc) then optimizeLastStatementTail(path,stmts,invars,outvars,stmt::acc);
+  end match;
+end optimizeLastStatementTail;
+
+protected function optimizeStatementTail
+  input Absyn.Path path;
+  input DAE.Statement stmt;
+  input list<String> invars;
+  input list<String> outvars;
+  output DAE.Statement ostmt;
+algorithm
+  ostmt := matchcontinue (path,stmt,invars,outvars)
+    local
+      DAE.ComponentRef cr;
+      DAE.ExpType tp;
+      DAE.Exp lhs,rhs;
+      list<DAE.Exp> lhsLst;
+      String name;
+      list<String> lhsNames;
+      DAE.ElementSource source;
+    case (path,DAE.STMT_ASSIGN(tp,lhs,rhs,source),invars,outvars)
+      equation
+        name = Expression.simpleCrefName(lhs);
+        rhs = optimizeStatementTail2(path,rhs,{name},invars,outvars,source);
+      then fail();
+    case (path,DAE.STMT_TUPLE_ASSIGN(tp,lhsLst,rhs,source),invars,outvars)
+      equation
+        lhsNames = Util.listMap(lhsLst,Expression.simpleCrefName);
+        rhs = optimizeStatementTail2(path,rhs,lhsNames,invars,outvars,source);
+      then fail();
+    else stmt;
+  end matchcontinue;
+end optimizeStatementTail;
+
+protected function optimizeStatementTail2
+  input Absyn.Path path;
+  input DAE.Exp rhs;
+  input list<String> lhsVars;
+  input list<String> invars;
+  input list<String> outvars;
+  input DAE.ElementSource source;
+  output DAE.Exp orhs;
+algorithm
+  true:=valueEq(lhsVars,outvars);
+  orhs := optimizeStatementTail3(path,rhs,invars,source);
+end optimizeStatementTail2;
+
+protected function optimizeStatementTail3
+  input Absyn.Path path;
+  input DAE.Exp rhs;
+  input list<String> vars;
+  input DAE.ElementSource source;
+  output DAE.Exp orhs;
+algorithm
+  orhs := match (path,rhs,vars,source)
+    local
+      Absyn.Path path1,path2;
+      String str;
+    case (path1,DAE.CALL(path=path2),vars,source)
+      equation
+        // str = "Tail recursion of: " +& ExpressionDump.printExpStr(rhs) +& " with input vars: " +& Util.stringDelimitList(vars,",");
+        // Error.addSourceMessage(Error.COMPILER_NOTIFICATION,{str},DAEUtil.getElementSourceFileInfo(source));
+        // TODO: Embed input variable names to the function call or whatever...
+      then fail();
+  end match;
+end optimizeStatementTail3;
 
 end Inst;

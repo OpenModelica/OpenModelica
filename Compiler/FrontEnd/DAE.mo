@@ -1108,10 +1108,7 @@ uniontype Exp "Expressions
   record CALL
     Absyn.Path path;
     list<Exp> expLst;
-    Boolean tuple_ "tuple" ;
-    Boolean builtin "builtin Function call" ;
-    ExpType ty "The type of the return value, if several return values this is undefined";
-    InlineType inlineType;
+    CallAttributes attr;
   end CALL;
 
   record PARTEVALFUNCTION
@@ -1243,6 +1240,29 @@ uniontype Exp "Expressions
   /* --- */
 
 end Exp;
+
+public uniontype TailCall
+  record NO_TAIL "Not tail-recursive"
+  end NO_TAIL;
+  record TAIL
+    list<String> vars;
+  end TAIL;
+end TailCall;
+
+public constant CallAttributes callAttrBuiltinBool = CALL_ATTR(ET_BOOL(),false,true,NO_INLINE(),NO_TAIL());
+public constant CallAttributes callAttrBuiltinReal = CALL_ATTR(ET_REAL(),false,true,NO_INLINE(),NO_TAIL());
+public constant CallAttributes callAttrBuiltinOther = CALL_ATTR(ET_OTHER(),false,true,NO_INLINE(),NO_TAIL());
+
+public
+uniontype CallAttributes
+  record CALL_ATTR
+    ExpType ty "The type of the return value, if several return values this is undefined";
+    Boolean tuple_ "tuple" ;
+    Boolean builtin "builtin Function call" ;
+    InlineType inlineType;
+    TailCall tailCall "Input variables of the function if the call is tail-recursive";
+  end CALL_ATTR;
+end CallAttributes;
 
 public uniontype ReductionInfo
   record REDUCTIONINFO "A separate uniontype containing the information not required by traverseExp, etc"

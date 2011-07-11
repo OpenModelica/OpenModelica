@@ -215,10 +215,11 @@ algorithm
       ae3 = unelabExp(e3);
     then Absyn.IFEXP(ae1,ae2,ae3,{});
 
-    case(DAE.CALL(path,expl,_,_,_,_)) equation
-      aexpl = Util.listMap(expl,unelabExp);
-      acref = Absyn.pathToCref(path);
-    then Absyn.CALL(acref,Absyn.FUNCTIONARGS(aexpl,{}));
+    case (DAE.CALL(path,expl,_))
+      equation
+        aexpl = Util.listMap(expl,unelabExp);
+        acref = Absyn.pathToCref(path);
+      then Absyn.CALL(acref,Absyn.FUNCTIONARGS(aexpl,{}));
 
     case(DAE.PARTEVALFUNCTION(path,expl,_))
       equation
@@ -424,7 +425,7 @@ algorithm
         (_,e_cref) = Static.elabUntypedCref(Env.emptyCache(),Env.emptyEnv,cref,false,Prefix.NOPRE(),Absyn.dummyInfo);
         e = crefExp(e_cref);
       then 
-        DAE.CALL(Absyn.IDENT("der"),{e},false,false,DAE.ET_OTHER(),DAE.NO_INLINE());
+        DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal);
   end match;
 end CodeVarToCref;
 
@@ -666,7 +667,7 @@ traversal function for addNoEventToRelations"
 algorithm
   outTpl := matchcontinue(inTpl)
   local DAE.Exp e; Integer i;
-    case((e as DAE.RELATION(exp1=_),i)) then ((DAE.CALL(Absyn.IDENT("noEvent"),{e},false,true,DAE.ET_BOOL(),DAE.NO_INLINE()),i));
+    case((e as DAE.RELATION(exp1=_),i)) then ((DAE.CALL(Absyn.IDENT("noEvent"),{e},DAE.callAttrBuiltinBool),i));
     case((e,i)) then ((e,i));
   end matchcontinue;
 end addNoEventToRelationExp;
@@ -689,7 +690,7 @@ algorithm
     case (((e as DAE.CALL(path=_)), i))
       equation
         true = isEventTriggeringFunctionExp(e);
-      then ((DAE.CALL(Absyn.IDENT("noEvent"),{e},false,true,DAE.ET_BOOL(),DAE.NO_INLINE()),i));
+      then ((DAE.CALL(Absyn.IDENT("noEvent"),{e},DAE.callAttrBuiltinBool),i));
     case ((e,i)) then ((e,i));
   end matchcontinue;
 end addNoEventToEventTriggeringFunctionsExp;
@@ -1602,8 +1603,8 @@ algorithm
     case (DAE.LUNARY(operator = op)) then typeofOp(op);
     case (DAE.RELATION(operator = op)) then typeofOp(op);
     case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3)) then typeof(e2);
-    case (DAE.CALL(path = _,ty=tp)) then tp;
-    case (DAE.PARTEVALFUNCTION(path = _,ty=tp)) then tp;
+    case (DAE.CALL(attr = DAE.CALL_ATTR(ty=tp))) then tp;
+    case (DAE.PARTEVALFUNCTION(ty=tp)) then tp;
     case (DAE.ARRAY(ty = tp)) then tp;
     case (DAE.MATRIX(ty = tp)) then tp;
     case (DAE.RANGE(ty = tp)) then tp;
@@ -2403,7 +2404,7 @@ public function makeNoEvent " adds a noEvent call around an expression"
 input DAE.Exp e1;
 output DAE.Exp res;
 algorithm
-  res := DAE.CALL(Absyn.IDENT("noEvent"),{e1},false,true,DAE.ET_BOOL(),DAE.NO_INLINE());
+  res := DAE.CALL(Absyn.IDENT("noEvent"),{e1},DAE.callAttrBuiltinBool);
 end makeNoEvent;
 
 public function makeNestedIf "creates a nested if expression given a list of conditions and
@@ -2417,9 +2418,10 @@ algorithm
   local DAE.Exp c,tbExp;
     case({c},{tbExp},fExp)
     then DAE.IFEXP(c,tbExp,fExp);
-    case(c::conds,tbExp::tbExps,fExp) equation
-      ifExp = makeNestedIf(conds,tbExps,fExp);
-    then DAE.IFEXP(c,tbExp,ifExp);
+    case(c::conds,tbExp::tbExps,fExp)
+      equation
+        ifExp = makeNestedIf(conds,tbExps,fExp);
+      then DAE.IFEXP(c,tbExp,ifExp);
   end matchcontinue;
 end makeNestedIf;
 
@@ -2753,7 +2755,7 @@ protected
   Operator op;
 algorithm
   tp := typeof(e1);
-  b := DAEUtil.expTypeArray(tp) "  array_elt_type(tp) => tp\'" ;
+  b := DAEUtil.expTypeArray(tp);
   op := Util.if_(b,DAE.MUL_ARR(tp),DAE.MUL(tp));
   outExp := DAE.BINARY(e1,op,e2);
 end expMul;
@@ -2769,7 +2771,7 @@ protected
   Type tp;
 algorithm
   tp := typeof(e1);
-  outExp := DAE.CALL(Absyn.IDENT("max"),{e1,e2},false,true,tp,DAE.NO_INLINE());
+  outExp := DAE.CALL(Absyn.IDENT("max"),{e1,e2},DAE.CALL_ATTR(tp,false,true,DAE.NO_INLINE(),DAE.NO_TAIL()));
 end expMaxScalar;
 
 public function expMinScalar
@@ -2784,7 +2786,7 @@ protected
   Boolean b;
 algorithm
   tp := typeof(e1);
-  outExp := DAE.CALL(Absyn.IDENT("min"),{e1,e2},false,true,tp,DAE.NO_INLINE());
+  outExp := DAE.CALL(Absyn.IDENT("min"),{e1,e2},DAE.CALL_ATTR(tp,false,true,DAE.NO_INLINE(),DAE.NO_TAIL()));
 end expMinScalar;
 
 public function makeProductVector "takes and expression e1 and a list of expressisions {v1,v2,...,vn} and returns
@@ -2967,18 +2969,6 @@ algorithm
     
   end matchcontinue;
 end makeAsubAddIndex;
-
-public function expLn
-"function expLn
-  author: PA
-  Takes the natural logarithm of an expression."
-  input DAE.Exp e1;
-  output DAE.Exp outExp;
-  Type tp;
-algorithm
-  tp := typeof(e1);
-  outExp := DAE.CALL(Absyn.IDENT("log"),{e1},false,true,tp,DAE.NO_INLINE());
-end expLn;
 
 public function makeIntegerExp
 "Creates an integer constant expression given the integer input."
@@ -3296,7 +3286,7 @@ algorithm
       list<DAE.Element> localDecls;
       tuple<DAE.Exp,Type_a> res;
       list<String> fieldNames;
-      DAE.InlineType  inl;
+      DAE.CallAttributes attr;
       list<DAE.MatchCase> cases,cases_1;
       DAE.MatchType matchTy;
       Integer index_;
@@ -3403,10 +3393,10 @@ algorithm
       then
         ((e,ext_arg_4));
     
-    case ((e as DAE.CALL(path = fn,expLst = expl,tuple_ = t,builtin = built,ty=tp,inlineType = inl)),rel,ext_arg)
+    case ((e as DAE.CALL(path = fn,expLst = expl,attr = attr)),rel,ext_arg)
       equation
         ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
-        e = Util.if_(referenceEq(expl,expl_1),e,DAE.CALL(fn,expl_1,t,built,tp,inl));
+        e = Util.if_(referenceEq(expl,expl_1),e,DAE.CALL(fn,expl_1,attr));
         ((e,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((e,ext_arg_2));
@@ -3788,7 +3778,6 @@ algorithm
       Integer i;
       String id,str;
       list<String> fieldNames;
-      DAE.InlineType  inl;
       list<list<tuple<DAE.Exp, Boolean>>> lstexpl_1,lstexpl;
       Integer iscalar;
       Integer index_;
@@ -3797,6 +3786,7 @@ algorithm
       Option<Values.Value> v;
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators riters;
+      DAE.CallAttributes attr;
     
     case (e as DAE.ICONST(_),rel,ext_arg) then ((e,ext_arg));
     case (e as DAE.RCONST(_),rel,ext_arg) then ((e,ext_arg));
@@ -3853,11 +3843,11 @@ algorithm
         ((DAE.IFEXP(e1_1,e2_1,e3_1),ext_arg_3));
     
     // call
-    case ((e as DAE.CALL(path = fn,expLst = expl,tuple_ = t,builtin = built,ty=tp,inlineType = inl)),rel,ext_arg)
+    case ((e as DAE.CALL(path = fn,expLst = expl,attr = attr)),rel,ext_arg)
       equation
         ((expl_1,ext_arg_1)) = traverseExpListTopDown(expl, rel, ext_arg);
       then
-        ((DAE.CALL(fn,expl_1,t,built,tp,inl),ext_arg_1));
+        ((DAE.CALL(fn,expl_1,attr),ext_arg_1));
     
     case ((e as DAE.PARTEVALFUNCTION(path = fn, expList = expl, ty = tp)),rel,ext_arg)
       equation
@@ -4456,12 +4446,12 @@ algorithm
       Absyn.Path path;
       Boolean b1, b2;
       Type ty;
-      DAE.InlineType inl_ty;
       list<String> strl;
       Option<Values.Value> v;
       DAE.Type dty;
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators riters;
+      DAE.CallAttributes attr;
 
     case (DAE.ICONST(integer = _), _) then (inExp, inTuple);
     case (DAE.RCONST(real = _), _) then (inExp, inTuple);
@@ -4517,12 +4507,11 @@ algorithm
       then
         (DAE.IFEXP(e1, e2, e3), tup);
 
-    case (DAE.CALL(path = path, expLst = expl, tuple_ = b1, builtin = b2, 
-        ty = ty, inlineType = inl_ty), tup)
+    case (DAE.CALL(path = path, expLst = expl, attr = attr), tup)
       equation
         (expl, tup) = traverseExpListBidir(expl, tup);
       then
-        (DAE.CALL(path, expl, b1, b2, ty, inl_ty), tup);
+        (DAE.CALL(path, expl, attr), tup);
 
     case (DAE.PARTEVALFUNCTION(path = path, expList = expl, ty = ty), tup)
       equation
@@ -5497,7 +5486,7 @@ algorithm
     case (DAE.CALL(path = Absyn.IDENT(name = "actualStream"))) then false;
     
     // a call that has an return array type returns true 
-    case (DAE.CALL(path = _, ty = DAE.ET_ARRAY(_,_))) then true;
+    case (DAE.CALL(attr = DAE.CALL_ATTR(ty = DAE.ET_ARRAY(_,_)))) then true;
     
     // any other call returns false
     case (DAE.CALL(path = _)) then false;
@@ -6873,7 +6862,7 @@ public function makeBuiltinCall
   output DAE.Exp call;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  call := DAE.CALL(Absyn.IDENT(name),args,false,true,result_type,DAE.NO_INLINE());
+  call := DAE.CALL(Absyn.IDENT(name),args,DAE.CALL_ATTR(result_type,false,true,DAE.NO_INLINE(),DAE.NO_TAIL()));
 end makeBuiltinCall;
 
 public function reductionIterName
@@ -7022,6 +7011,13 @@ algorithm
       then (iter::iters, arg);
   end match;
 end traverseReductionIterators;
+
+public function simpleCrefName
+  input DAE.Exp exp;
+  output String name;
+algorithm
+  DAE.CREF(componentRef=DAE.CREF_IDENT(ident=name,subscriptLst={})) := exp; 
+end simpleCrefName;
 
 end Expression;
 

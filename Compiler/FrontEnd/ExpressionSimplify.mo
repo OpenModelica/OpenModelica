@@ -140,9 +140,10 @@ algorithm
       Option<Values.Value> v;
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators riters;
+      DAE.TailCall tc;
 
     // noEvent propagated to relations and event triggering functions
-    case ((DAE.CALL(Absyn.IDENT("noEvent"),{e},tpl,builtin,tp,inlineType),b))
+    case ((DAE.CALL(path=Absyn.IDENT("noEvent"),expLst={e}),b))
       equation
         (e1,_) = simplify1(Expression.stripNoEvent(e));
         e2 = Expression.addNoEventToRelations(e1);
@@ -151,14 +152,14 @@ algorithm
       then 
         ((e3,b));
     
-    case ((DAE.CALL(Absyn.IDENT("pre"), {e as DAE.ASUB(exp = exp)}, tpl, builtin, tp, inlineType), b))
+    case ((DAE.CALL(path=Absyn.IDENT("pre"), expLst={e as DAE.ASUB(exp = exp)}), b))
       equation
         true = Expression.isConst(exp);
       then
         ((e, true));
         
     // normal call 
-    case ((e as DAE.CALL(fn,expl,tpl,builtin,tp,inlineType),_))
+    case ((e as DAE.CALL(expLst=expl),_))
       equation
         true = Expression.isConstWorkList(expl, true);
         e2 = simplifyBuiltinConstantCalls(e);
@@ -166,7 +167,7 @@ algorithm
         ((e2,true));
     
     // simplify some builtin calls, like cross, etc
-    case ((e as DAE.CALL(fn,expl,tpl,builtin as true,tp,inlineType),_))
+    case ((e as DAE.CALL(attr=DAE.CALL_ATTR(builtin = true)),_))
       equation
         e2 = simplifyBuiltinCalls(e);
       then 
@@ -185,13 +186,12 @@ algorithm
       then ((e,true));
     
     // simplify identity 
-    case ((DAE.CALL( (path as Absyn.IDENT(name = "identity")), {DAE.ICONST(n)}, b,b2, t,b3),_))
+    case ((DAE.CALL(path = Absyn.IDENT(name = "identity"), expLst = {DAE.ICONST(n)}),_))
       equation
         matrix = simplifyIdentity(1,n);
         e = DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_INT(),{DAE.DIM_INTEGER(n),DAE.DIM_INTEGER(n)}),
           false,matrix);
-      then
-        ((e,true));
+      then ((e,true));
 
     // MetaModelica builtin operators are calls
     case ((e,_))
@@ -426,41 +426,41 @@ algorithm
         e = Util.listFold(listReverse(el), Expression.makeCons, e2);
       then e;
 
-    case DAE.CALL(path=Absyn.IDENT("listAppend"),expLst={e1,DAE.LIST(valList={})},ty=tp)
+    case DAE.CALL(path=Absyn.IDENT("listAppend"),expLst={e1,DAE.LIST(valList={})})
       then e1;
 
-    case DAE.CALL(path=path as Absyn.IDENT("intString"),expLst={DAE.ICONST(i)},ty=tp)
+    case DAE.CALL(path=path as Absyn.IDENT("intString"),expLst={DAE.ICONST(i)})
       equation
         s = intString(i);
       then DAE.SCONST(s);
 
-    case DAE.CALL(path=path as Absyn.IDENT("realString"),expLst={DAE.RCONST(r)},ty=tp)
+    case DAE.CALL(path=path as Absyn.IDENT("realString"),expLst={DAE.RCONST(r)})
       equation
         s = realString(r);
       then DAE.SCONST(s);
 
-    case DAE.CALL(path=path as Absyn.IDENT("boolString"),expLst={DAE.BCONST(b)},ty=tp)
+    case DAE.CALL(path=path as Absyn.IDENT("boolString"),expLst={DAE.BCONST(b)})
       equation
         s = boolString(b);
       then DAE.SCONST(s);
 
-    case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.LIST(el)},ty=tp)
+    case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.LIST(el)})
       equation
         el = listReverse(el);
         e1_1 = DAE.LIST(el);
       then e1_1;
 
-    case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("list"),ty,v,foldExp),e1,riters)},ty=tp)
+    case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("list"),ty,v,foldExp),e1,riters)})
       equation
         e1 = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("listReverse"),ty,v,foldExp),e1,riters);
       then e1;
 
-    case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("listReverse"),ty,v,foldExp),e1,riters)},ty=tp)
+    case DAE.CALL(path=path as Absyn.IDENT("listReverse"),expLst={DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("listReverse"),ty,v,foldExp),e1,riters)})
       equation
         e1 = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("list"),ty,v,foldExp),e1,riters);
       then e1;
 
-    case DAE.CALL(path=path as Absyn.IDENT("listLength"),expLst={DAE.LIST(el)},ty=tp)
+    case DAE.CALL(path=path as Absyn.IDENT("listLength"),expLst={DAE.LIST(el)})
       equation
         i = listLength(el);
       then DAE.ICONST(i);
@@ -619,33 +619,33 @@ algorithm
     // min/max function on arrays of only 1 element
     case (DAE.CALL(path=Absyn.IDENT("min"),expLst={DAE.ARRAY(array={e})})) then e;
     case (DAE.CALL(path=Absyn.IDENT("max"),expLst={DAE.ARRAY(array={e})})) then e;
-    case (DAE.CALL(path=Absyn.IDENT("min"),ty=DAE.ET_ARRAY(tp,{_}),expLst={DAE.ARRAY(array={e1,e2})}))
+    case (DAE.CALL(path=Absyn.IDENT("min"),attr=DAE.CALL_ATTR(ty=DAE.ET_ARRAY(tp,{_})),expLst={DAE.ARRAY(array={e1,e2})}))
       equation
         e = Expression.makeBuiltinCall("min",{e1,e2},tp);
       then e;
-    case (DAE.CALL(path=Absyn.IDENT("max"),ty=DAE.ET_ARRAY(tp,{_}),expLst={DAE.ARRAY(array={e1,e2})}))
+    case (DAE.CALL(path=Absyn.IDENT("max"),attr=DAE.CALL_ATTR(ty=DAE.ET_ARRAY(tp,{_})),expLst={DAE.ARRAY(array={e1,e2})}))
       equation
         e = Expression.makeBuiltinCall("max",{e1,e2},tp);
       then e;
-    case (DAE.CALL(path=Absyn.IDENT("min"),ty=DAE.ET_BOOL(),expLst={e1,e2}))
+    case (DAE.CALL(path=Absyn.IDENT("min"),attr=DAE.CALL_ATTR(ty=DAE.ET_BOOL()),expLst={e1,e2}))
       equation
         e = DAE.LBINARY(e1,DAE.AND(DAE.ET_BOOL()),e2);
       then e;
-    case (DAE.CALL(path=Absyn.IDENT("max"),ty=DAE.ET_BOOL(),expLst={e1,e2}))
+    case (DAE.CALL(path=Absyn.IDENT("max"),attr=DAE.CALL_ATTR(ty=DAE.ET_BOOL()),expLst={e1,e2}))
       equation
         e = DAE.LBINARY(e1,DAE.OR(DAE.ET_BOOL()),e2);
       then e;
-    case (DAE.CALL(path=Absyn.IDENT("min"),ty=DAE.ET_ARRAY(DAE.ET_BOOL(),_),expLst={DAE.ARRAY(array=expl)}))
+    case (DAE.CALL(path=Absyn.IDENT("min"),attr=DAE.CALL_ATTR(ty=DAE.ET_ARRAY(DAE.ET_BOOL(),_)),expLst={DAE.ARRAY(array=expl)}))
       equation
         e = Expression.makeLBinary(expl,DAE.AND(DAE.ET_BOOL()));
       then e;
-    case (DAE.CALL(path=Absyn.IDENT("max"),ty=DAE.ET_ARRAY(DAE.ET_BOOL(),_),expLst={DAE.ARRAY(array=expl)}))
+    case (DAE.CALL(path=Absyn.IDENT("max"),attr=DAE.CALL_ATTR(ty=DAE.ET_ARRAY(DAE.ET_BOOL(),_)),expLst={DAE.ARRAY(array=expl)}))
       equation
         e = Expression.makeLBinary(expl,DAE.OR(DAE.ET_BOOL()));
       then e;
 
     // cross
-    case (e as DAE.CALL(path = Absyn.IDENT("cross"), builtin = true, expLst = expl))
+    case (e as DAE.CALL(path = Absyn.IDENT("cross"), expLst = expl))
       equation
         {DAE.ARRAY(array = v1),DAE.ARRAY(array = v2)} = expl;
         expl = Static.elabBuiltinCross2(v1, v2);
@@ -656,17 +656,17 @@ algorithm
         DAE.ARRAY(tp, scalar,expl);
     
     // Simplify built-in function fill. MathCore depends on this being done here, do not remove!
-    case (DAE.CALL(path = Absyn.IDENT("fill"), builtin = true, expLst = e::expl))
+    case (DAE.CALL(path = Absyn.IDENT("fill"), expLst = e::expl))
       equation
         valueLst = Util.listMap(expl, ValuesUtil.expValue);
         (_,outExp,_) = Static.elabBuiltinFill2(Env.emptyCache(), Env.emptyEnv, e, (DAE.T_NOTYPE(),NONE()), valueLst, DAE.C_CONST(),Prefix.NOPRE());
       then
         outExp;
 
-    case (DAE.CALL(path = Absyn.IDENT("String"), builtin = true, expLst = {e,len_exp,just_exp}))
+    case (DAE.CALL(path = Absyn.IDENT("String"), expLst = {e,len_exp,just_exp}))
       then simplifyBuiltinStringFormat(e,len_exp,just_exp);
 
-    case (DAE.CALL(path = Absyn.IDENT("stringAppendList"), builtin = true, expLst = {DAE.LIST(expl)}))
+    case (DAE.CALL(path = Absyn.IDENT("stringAppendList"), expLst = {DAE.LIST(expl)}))
       then simplifyStringAppendList(expl,{},false);
         
     // sqrt(e ^ r) => e ^ (0.5 * r)
@@ -680,21 +680,21 @@ algorithm
       then e1;
 
     // delay of constant subexpression
-    case DAE.CALL(path=Absyn.IDENT("delay"),expLst={DAE.BINARY(e1,op,e2),e3,e4},ty=tp)
+    case DAE.CALL(path=Absyn.IDENT("delay"),expLst={DAE.BINARY(e1,op,e2),e3,e4},attr=DAE.CALL_ATTR(ty=tp))
       equation
         true = Expression.isConst(e1);
         e = Expression.makeBuiltinCall("delay",{e2,e3,e4},tp);
       then DAE.BINARY(e1,op,e);
 
     // delay of constant subexpression
-    case DAE.CALL(path=Absyn.IDENT("delay"),expLst={DAE.BINARY(e1,op,e2),e3,e4},ty=tp)
+    case DAE.CALL(path=Absyn.IDENT("delay"),expLst={DAE.BINARY(e1,op,e2),e3,e4},attr=DAE.CALL_ATTR(ty=tp))
       equation
         true = Expression.isConst(e2);
         e = Expression.makeBuiltinCall("delay",{e1,e3,e4},tp);
       then DAE.BINARY(e,op,e2);
 
     // delay(-x) = -delay(x)
-    case DAE.CALL(path=Absyn.IDENT("delay"),expLst={DAE.UNARY(op,e),e3,e4},ty=tp)
+    case DAE.CALL(path=Absyn.IDENT("delay"),expLst={DAE.UNARY(op,e),e3,e4},attr=DAE.CALL_ATTR(ty=tp))
       equation
         e = Expression.makeBuiltinCall("delay",{e,e3,e4},tp);
       then DAE.UNARY(op,e);

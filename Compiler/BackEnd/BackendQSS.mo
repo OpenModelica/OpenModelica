@@ -2022,20 +2022,21 @@ algorithm
       Boolean builtin "builtin Function call" ;
       DAE.ExpType ty "The type of the return value, if several return values this is undefined";
       DAE.InlineType inlineType;
-    case ((e as (DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst=expLst,tuple_=tuple_,builtin=builtin, ty=ty,inlineType=inlineType)),i),_) 
+      DAE.CallAttributes attr;
+    case ((e as (DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst=expLst, attr=attr)),i),_) 
     equation
       zce = Util.listMap(zeroCrossings,extractExpresionFromZeroCrossing);
       // Remove extra argument to sample since in the zce list there is none
       expLst2 = Util.listFirst(Util.listPartition(expLst,2));
-      e = DAE.CALL(Absyn.IDENT("sample"), expLst2,tuple_,builtin,ty,inlineType);
+      e = DAE.CALL(Absyn.IDENT("sample"),expLst2,attr);
       index = listExpPos(zce,e,0);
-      result = ((DAE.CALL(Absyn.IDENT("samplecondition"), {DAE.ICONST(index)}, false, true, DAE.ET_BOOL(), DAE.NO_INLINE()),i));
+      result = ((DAE.CALL(Absyn.IDENT("samplecondition"), {DAE.ICONST(index)}, DAE.callAttrBuiltinBool),i));
       then result;
     case ((e as DAE.RELATION(_,_,_,_,_),i),_) 
     equation
       zce = Util.listMap(zeroCrossings,extractExpresionFromZeroCrossing);
       index = listExpPos(zce,e,0);
-      then ((DAE.CALL(Absyn.IDENT("condition"), {DAE.ICONST(index)}, false, true, DAE.ET_BOOL(), DAE.NO_INLINE()),i));
+      then ((DAE.CALL(Absyn.IDENT("condition"), {DAE.ICONST(index)}, DAE.callAttrBuiltinBool),i));
     case ((e as DAE.CREF(_,_),i),_)
       then ((e,i));
     case ((e as DAE.BCONST(_),i),_)
@@ -2169,7 +2170,7 @@ algorithm
          case ((e,(zce,index)))
           equation
             true = Expression.expEqual(e , zce);
-          then ((DAE.CALL(Absyn.IDENT("condition"), {DAE.ICONST(index)}, false, true, DAE.ET_BOOL(), DAE.NO_INLINE()), (zce,index)));
+          then ((DAE.CALL(Absyn.IDENT("condition"), {DAE.ICONST(index)}, DAE.callAttrBuiltinBool), (zce,index)));
          case ((e,(zce,index)))
           equation
             then ((e,(zce,index)));
