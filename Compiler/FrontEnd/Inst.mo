@@ -8174,12 +8174,14 @@ algorithm
         (cache,compenv,ih,store,dae,csets,ty,graph);
 
     // Array variable with unknown dimensions, but no binding
+    /*
     case (cache,env,ih,store,ci_state,DAE.NOMOD(),pre,csets,n,cl,attr,pf,
       ((dim as DAE.DIM_UNKNOWN()) :: dims),idxs,inst_dims,impl,comment,info,graph)
       equation
         Error.addSourceMessage(Error.FAILURE_TO_DEDUCE_DIMS_NO_MOD,{n},info);
       then
         fail();
+    */
 
     // failtrace 
     case (_,env,ih,_,_,mod,pre,_,n,_,_,_,_,_,_,_,_,_,_)
