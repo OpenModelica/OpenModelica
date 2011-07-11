@@ -10695,7 +10695,6 @@ algorithm
     /* normal functions */
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(classDef=cd,partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(),info = info)),inst_dims)
       equation
-        inlineType = isInlineFunc2(c);
         (cache,cenv,ih,_,DAE.DAE(daeElts),csets_1,ty,st,_,_) =
           instClass(cache, env, ih, UnitAbsynBuilder.emptyInstStore(), mod, pre, csets, c, inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY);
         Util.listMap01(daeElts,info,checkFunctionElement);
@@ -10708,9 +10707,13 @@ algorithm
         ty1 = setFullyQualifiedTypename(ty,fpath);
 
         env_1 = Env.extendFrameT(env_1, n, ty1);
+        
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        inlineType = isInlineFunc2(c);
         partialPrefixBool = SCode.partialBool(partialPrefix);
+        
+        daeElts = optimizeFunction(fpath,daeElts,NONE(),{});
         cmt = extractClassDefComment(cache, env, cd);
       then
         (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(daeElts)::derFuncs,ty1,partialPrefixBool,inlineType,source,cmt)});
@@ -16383,5 +16386,39 @@ algorithm
     case (_) then false;
   end matchcontinue;
 end redeclareBasicType; 
+
+protected function optimizeFunction
+  "Does for example tail recursion optimization"
+  input Absyn.Path path;
+  input list<DAE.Element> elts;
+  input Option<DAE.Element> oalg;
+  input list<DAE.Element> acc;
+  output list<DAE.Element> outElts;
+algorithm
+  outElts := match (path,elts,oalg,acc)
+    local
+      list<DAE.Statement> stmts;
+      DAE.Element elt,elt1,elt2;
+      DAE.ElementSource source;
+      String str;
+    // No algorithm section; allowed
+    case (_,{},NONE(),acc) then listReverse(acc);
+    case (_,{},SOME(elt),acc)
+      equation
+        // TODO: Add tail recursion optimization here
+      then listReverse(elt::acc);
+      // Remove empty sections
+    case (path,(elt1 as DAE.ALGORITHM(algorithm_=DAE.ALGORITHM_STMTS({})))::elts,oalg,acc)
+      then optimizeFunction(path,elts,oalg,acc);
+    case (path,(elt1 as DAE.ALGORITHM(source=source))::elts,SOME(elt2),acc)
+      equation
+        str = Absyn.pathString(path);
+        Error.addSourceMessage(Error.FUNCTION_MULTIPLE_ALGORITHM,{str},DAEUtil.getElementSourceFileInfo(source));
+      then optimizeFunction(path,elts,SOME(elt1),elt2::acc);
+    case (path,(elt as DAE.ALGORITHM(source=_))::elts,NONE(),acc)
+      then optimizeFunction(path,elts,SOME(elt),acc);
+    case (path,elt::elts,oalg,acc) then optimizeFunction(path,elts,oalg,elt::acc);
+  end match;
+end optimizeFunction;
 
 end Inst;
