@@ -5714,6 +5714,8 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
   let caseRes = (match c.result
     case SOME(TUPLE(PR=exps)) then
       (exps |> e hasindex i1 fromindex 1 => '<%res%>_targ<%i1%> = <%daeExp(e,context,&preRes,&varDeclsCaseInner)%>;<%\n%>')
+    case SOME(exp as CALL(attr=CALL_ATTR(tailCall=TAIL(__)))) then
+      daeExp(exp, context, &preRes, &varDeclsCaseInner)
     case SOME(exp as CALL(attr=CALL_ATTR(tuple_=true))) then
       let retStruct = daeExp(exp, context, &preRes, &varDeclsCaseInner)
       (tupleAssignExps |> cr hasindex i1 fromindex 1 =>

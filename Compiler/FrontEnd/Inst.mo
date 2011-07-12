@@ -16508,14 +16508,17 @@ algorithm
       String str;
       DAE.InlineType i;
       Boolean b1,b2;
-      DAE.ExpType tp;
-      list<DAE.Exp> es;
+      DAE.ExpType tp,et;
+      list<DAE.Exp> es,inputs;
       DAE.Exp e1,e2,e3;
+      list<DAE.Element> localDecls;
+      DAE.MatchType matchType;
+      list<DAE.MatchCase> cases;
     case (path1,DAE.CALL(path=path2,expLst=es,attr=DAE.CALL_ATTR(tp,b1,b2,i,DAE.NO_TAIL())),vars,source)
       equation
         true = Absyn.pathEqual(path1,path2);
         str = "Tail recursion of: " +& ExpressionDump.printExpStr(rhs) +& " with input vars: " +& Util.stringDelimitList(vars,",");
-        Error.addSourceMessage(Error.COMPILER_NOTIFICATION,{str},DAEUtil.getElementSourceFileInfo(source));
+        Debug.bcall3(RTOpts.debugFlag("tail"),Error.addSourceMessage,Error.COMPILER_NOTIFICATION,{str},DAEUtil.getElementSourceFileInfo(source));
       then (DAE.CALL(path2,es,DAE.CALL_ATTR(tp,b1,b2,i,DAE.TAIL(vars))),true);
     case (path,DAE.IFEXP(e1,e2,e3),vars,source)
       equation
@@ -16523,8 +16526,42 @@ algorithm
         (e3,b2) = optimizeStatementTail3(path,e3,vars,source);
         true = b1 or b2;
       then (DAE.IFEXP(e1,e2,e3),true);
+    case (path,DAE.MATCHEXPRESSION(matchType as DAE.MATCH(_) /*TODO:matchcontinue*/,inputs,localDecls,cases,et),vars,source)
+      equation
+        cases = optimizeStatementTailMatchCases(path,cases,false,{},vars,source);
+      then (DAE.MATCHEXPRESSION(matchType,inputs,localDecls,cases,et),true);
     else (rhs,false);
   end matchcontinue;
 end optimizeStatementTail3;
+
+protected function optimizeStatementTailMatchCases
+  input Absyn.Path path;
+  input list<DAE.MatchCase> cases;
+  input Boolean changed;
+  input list<DAE.MatchCase> acc;
+  input list<String> vars;
+  input DAE.ElementSource source;
+  output list<DAE.MatchCase> ocases;
+algorithm
+  ocases := matchcontinue (path,cases,changed,acc,vars,source)
+    local
+      list<DAE.Pattern> patterns;
+      list<DAE.Element> localDecls;
+      list<DAE.Statement> body;
+      Option<DAE.Exp> result;
+      Absyn.Info resultInfo,info;
+      Integer jump;
+      DAE.MatchCase case_;
+      DAE.Exp exp;
+    case (_,{},true,acc,_,_) then listReverse(acc);
+    case (path,DAE.CASE(patterns,localDecls,body,SOME(exp),resultInfo,jump,info)::cases,_,acc,vars,source)
+      equation
+        (exp,true) = optimizeStatementTail3(path,exp,vars,source);
+        case_ = DAE.CASE(patterns,localDecls,body,SOME(exp),resultInfo,jump,info);
+      then optimizeStatementTailMatchCases(path,cases,true,case_::acc,vars,source);
+    case (path,case_::cases,changed,acc,vars,source)
+      then optimizeStatementTailMatchCases(path,cases,changed,case_::acc,vars,source);
+  end matchcontinue;
+end optimizeStatementTailMatchCases;
 
 end Inst;
