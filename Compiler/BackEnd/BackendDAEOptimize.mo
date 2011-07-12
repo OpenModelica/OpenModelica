@@ -2132,10 +2132,10 @@ algorithm
       BackendVarTransform.VariableReplacements repl;
       BackendDAE.Variables vars,knvars,exobj;
       BackendDAE.AliasVariables aliasVars;
-      BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1;
-      array<BackendDAE.MultiDimEquation> arreqns,arreqns1;
-      array<DAE.Algorithm> algorithms,algorithms1;
-      BackendDAE.EventInfo einfo,einfo1;
+      BackendDAE.EquationArray remeqns,inieqns,eqns1;
+      array<BackendDAE.MultiDimEquation> arreqns1;
+      array<DAE.Algorithm> algorithms1;
+      BackendDAE.EventInfo einfo1;
       BackendDAE.ExternalObjectClasses eoc;
       list<list<DAE.Exp>> crefOrDerCreflst;
       array<list<DAE.Exp>> crefOrDerCrefarray;

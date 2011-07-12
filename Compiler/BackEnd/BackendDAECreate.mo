@@ -3243,8 +3243,7 @@ algorithm
       Absyn.Path fnName;
       Absyn.MatchType matchType;
       DAE.Pattern pattern;
-      
-      BackendDAE.Variables vars,knvars;
+      BackendDAE.Variables vars;
       
     case ({},_,extraArg,knvars) then (({},extraArg));
       

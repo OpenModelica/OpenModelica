@@ -361,6 +361,7 @@ public constant ErrorID META_UNUSED_AS_BINDING=5028;
 public constant ErrorID MATCH_TO_SWITCH_OPTIMIZATION=5029;
 public constant ErrorID REDUCTION_TYPE_ERROR=5030;
 public constant ErrorID UNSUPPORTED_REDUCTION_TYPE=5031;
+public constant ErrorID MATCH_SHADOWING_OPTIMIZER=5032;
 
 public constant ErrorID COMPILER_ERROR = 5999;
 public constant ErrorID COMPILER_WARNING = 6000;
@@ -709,6 +710,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (LINSPACE_ILLEGAL_SIZE_ARG,TRANSLATION(),ERROR(),"In expression %s, third argument to linspace must be >= 2"),
           (INTERACTIVE_ASSIGN, SCRIPTING(),ERROR(), "Interactive assignment of %s failed for expression %s."),
           (MATCH_SHADOWING, TRANSLATION(),ERROR(), " Local variable '%s' shadows input or result variables in a {match,matchcontinue} expression."),
+          (MATCH_SHADOWING_OPTIMIZER, TRANSLATION(),ERROR(), "Cannot optimize function due to a local variable having the same name as an input variable: %s."),
           (META_POLYMORPHIC, TRANSLATION(),ERROR(), " %s uses invalid subtypeof syntax. Only subtypeof Any is supported."),
           (META_FUNCTION_TYPE_NO_PARTIAL_PREFIX, TRANSLATION(),ERROR(), "%s is used as a function reference, but doesn't specify the partial prefix."),
           (IF_EQUATION_WARNING,SYMBOLIC(),WARNING(), "If-equations are only partially supported. Ignoring %s"),

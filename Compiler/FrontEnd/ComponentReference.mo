@@ -1016,7 +1016,6 @@ algorithm
   res := match(refEq, cr1, cr2)
     local
       DAE.Ident n1, n2;
-      DAE.ComponentRef cr1, cr2;
       Boolean r;
 
     case (true, _, _) then true;

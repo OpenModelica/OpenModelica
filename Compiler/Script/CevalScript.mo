@@ -2037,7 +2037,7 @@ algorithm
   (outCache,outValue,outInteractiveSymbolTable,outString):=
   match (inCache,inEnv,className,inInteractiveSymbolTable,inMsg,filenameprefix)
     local
-      String filenameprefix,filename,file_dir, str;
+      String filename,file_dir, str;
       list<SCode.Element> p_1,sp;
       DAE.DAElist dae_1,dae;
       list<Env.Frame> env;

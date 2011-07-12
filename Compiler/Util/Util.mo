@@ -8222,7 +8222,6 @@ protected function allCombinations4
 algorithm
   out := match (x,lst,acc)
     local
-      Type_a x;
       list<Type_a> l;
     
     case (x,{},acc) then {x}::acc;

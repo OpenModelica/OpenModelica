@@ -16528,11 +16528,35 @@ algorithm
       then (DAE.IFEXP(e1,e2,e3),true);
     case (path,DAE.MATCHEXPRESSION(matchType as DAE.MATCH(_) /*TODO:matchcontinue*/,inputs,localDecls,cases,et),vars,source)
       equation
+        checkShadowing(localDecls,vars);
         cases = optimizeStatementTailMatchCases(path,cases,false,{},vars,source);
       then (DAE.MATCHEXPRESSION(matchType,inputs,localDecls,cases,et),true);
     else (rhs,false);
   end matchcontinue;
 end optimizeStatementTail3;
+
+protected function checkShadowing
+  input list<DAE.Element> elts;
+  input list<String> vars;
+algorithm
+  _ := matchcontinue (elts,vars)
+    local
+      String name;
+      DAE.ElementSource source;
+    case ({},_) then ();
+    case (DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name))::elts,vars)
+      equation
+        // TODO: Make this scale better than squared
+        false = listMember(name,vars);
+        checkShadowing(elts,vars);
+      then ();
+    case (DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name),source=source)::elts,vars)
+      equation
+        true = listMember(name,vars);
+        Error.addSourceMessage(Error.COMPILER_WARNING,{name},DAEUtil.getElementSourceFileInfo(source));
+      then fail();
+  end matchcontinue;
+end checkShadowing;
 
 protected function optimizeStatementTailMatchCases
   input Absyn.Path path;

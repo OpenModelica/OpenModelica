@@ -10527,7 +10527,6 @@ algorithm
       String comment;
       String unit;
       String displayUnit;
-      Integer index;
       Option<DAE.Exp> initialValue;
       Boolean isFixed;
       DAE.ExpType type_;

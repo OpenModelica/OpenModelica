@@ -2351,7 +2351,7 @@ protected function transformIfEqToExpr2
 algorithm
   outElts := match (elts,onlyConstantEval)
     local
-      list<DAE.Element> rest_result,rest,sublist_result,sublist,elts,res,res2;
+      list<DAE.Element> rest_result,rest,sublist_result,sublist,res,res2;
       DAE.Element subresult,el;
       String name;
       DAE.ElementSource source "the origin of the element";

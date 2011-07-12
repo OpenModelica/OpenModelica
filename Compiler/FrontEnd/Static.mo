@@ -1251,7 +1251,6 @@ algorithm
       DAE.Type ty,typeA,typeB,resType;
       Absyn.Path path;
       Values.Value v;
-      list<DAE.Dimension> dims;
     case (cache,env,Absyn.IDENT(name = "array"), _, ty, _, dims, b, _)
       equation
         ty = Util.listFoldR(dims,Types.liftArray,ty);

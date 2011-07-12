@@ -2655,7 +2655,6 @@ algorithm
     local
       DAE.Exp e1,e2,res;
       list<DAE.Exp> rest,lst;
-      Operator op;
       String str;
     case ({},DAE.AND(_)) then DAE.BCONST(true);
     case ({},DAE.OR(_)) then DAE.BCONST(false);
