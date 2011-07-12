@@ -9187,7 +9187,7 @@ algorithm
   outCompiledFunctions := matchcontinue (inCompiledFunctions, functionName)
     local
       list<CompiledCFunction> res,rest;
-      Absyn.Path functionInCf, functionName;
+      Absyn.Path functionInCf;
       DAE.Type t;
       Integer funcHandle;
       String tmp;
