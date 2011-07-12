@@ -3947,7 +3947,7 @@ protected function assignWithExpand "function: assignWithExpand
   output BackendDAE.Assignments outAssignments1;
   output BackendDAE.Assignments outAssignments2;
 algorithm
-  outAssignments := matchcontinue (inInteger1,inInteger2,inAssignments1,inAssignments2)
+  (outAssignments1,outAssignments2) := matchcontinue (inInteger1,inInteger2,inAssignments1,inAssignments2)
     local
       BackendDAE.Value s,n,v,d,d1,d2;
       BackendDAE.Assignments ass1,ass2;

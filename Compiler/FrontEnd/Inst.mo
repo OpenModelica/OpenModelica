@@ -16553,7 +16553,7 @@ algorithm
     case (DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name),source=source)::elts,vars)
       equation
         true = listMember(name,vars);
-        Error.addSourceMessage(Error.COMPILER_WARNING,{name},DAEUtil.getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.MATCH_SHADOWING_OPTIMIZER,{name},DAEUtil.getElementSourceFileInfo(source));
       then fail();
   end matchcontinue;
 end checkShadowing;
