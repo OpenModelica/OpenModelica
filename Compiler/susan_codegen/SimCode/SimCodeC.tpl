@@ -4931,10 +4931,10 @@ case IFEXP(__) then
       <%condVar%> = (modelica_boolean)<%condExp%>;
       if (<%condVar%>) {
         <%preExpThen%>
-        <%resVar%> = (<%resVarType%>)<%eThen%>;
+        <%if eThen then '<%resVar%> = (<%resVarType%>)<%eThen%>;'%>
       } else {
         <%preExpElse%>
-        <%resVar%> = (<%resVarType%>)<%eElse%>;
+        <%if eElse then '<%resVar%> = (<%resVarType%>)<%eElse%>;'%>
       }<%\n%>
       >>
       resVar)

@@ -16491,7 +16491,7 @@ protected function optimizeStatementTail2
   output DAE.Exp orhs;
 algorithm
   true:=valueEq(lhsVars,outvars);
-  orhs := optimizeStatementTail3(path,rhs,invars,source);
+  (orhs,true) := optimizeStatementTail3(path,rhs,invars,source);
 end optimizeStatementTail2;
 
 protected function optimizeStatementTail3
@@ -16500,8 +16500,9 @@ protected function optimizeStatementTail3
   input list<String> vars;
   input DAE.ElementSource source;
   output DAE.Exp orhs;
+  output Boolean isTailRecursive;
 algorithm
-  orhs := match (path,rhs,vars,source)
+  (orhs,isTailRecursive) := matchcontinue (path,rhs,vars,source)
     local
       Absyn.Path path1,path2;
       String str;
@@ -16509,13 +16510,21 @@ algorithm
       Boolean b1,b2;
       DAE.ExpType tp;
       list<DAE.Exp> es;
+      DAE.Exp e1,e2,e3;
     case (path1,DAE.CALL(path=path2,expLst=es,attr=DAE.CALL_ATTR(tp,b1,b2,i,DAE.NO_TAIL())),vars,source)
       equation
         true = Absyn.pathEqual(path1,path2);
         str = "Tail recursion of: " +& ExpressionDump.printExpStr(rhs) +& " with input vars: " +& Util.stringDelimitList(vars,",");
         Error.addSourceMessage(Error.COMPILER_NOTIFICATION,{str},DAEUtil.getElementSourceFileInfo(source));
-      then DAE.CALL(path2,es,DAE.CALL_ATTR(tp,b1,b2,i,DAE.TAIL(vars)));
-  end match;
+      then (DAE.CALL(path2,es,DAE.CALL_ATTR(tp,b1,b2,i,DAE.TAIL(vars))),true);
+    case (path,DAE.IFEXP(e1,e2,e3),vars,source)
+      equation
+        (e2,b1) = optimizeStatementTail3(path,e2,vars,source);
+        (e3,b2) = optimizeStatementTail3(path,e3,vars,source);
+        true = b1 or b2;
+      then (DAE.IFEXP(e1,e2,e3),true);
+    else (rhs,false);
+  end matchcontinue;
 end optimizeStatementTail3;
 
 end Inst;
