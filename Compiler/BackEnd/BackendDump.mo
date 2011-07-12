@@ -1377,7 +1377,7 @@ algorithm
         i_1 = i + 1;
         (len == i_1) = true;
         s = intString(i_1);
-        eqn = v[i + 1];
+        eqn = v[i_1];
         s2 = intString(eqn);
         print("var ");
         print(s);
@@ -1392,7 +1392,7 @@ algorithm
         i_1 = i + 1;
         (len == i_1) = false;
         s = intString(i_1);
-        eqn = v[i + 1];
+        eqn = v[i_1];
         s2 = intString(eqn);
         print("var ");
         print(s);
@@ -1916,7 +1916,7 @@ algorithm
   print(a +& intString(b) +& c);
 end debugStrIntStr;
 
-public function debugStrIntStrIntString
+public function debugStrIntStrIntStr
   input tuple<String,Integer,String,Integer,String> inTpl;
 protected
   String a,c,e;
@@ -1924,7 +1924,7 @@ protected
 algorithm
   (a,b,c,d,e) := inTpl;
   print(a +& intString(b) +& c +& intString(d) +& e);
-end debugStrIntStrIntString;
+end debugStrIntStrIntStr;
 
 public function debugCrefStrIntStr
   input tuple<DAE.ComponentRef,String,Integer,String> inTpl;

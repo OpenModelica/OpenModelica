@@ -4600,7 +4600,7 @@ algorithm
         SOME(jac) = calculateJacobianRows(eqn_lst, vars, ae, m, mt,differentiateIfExp);
       then
         SOME(jac);
-    case (_,_,_,_,_,_) then NONE();  /* no analythic jacobian available */
+    else then NONE();  /* no analythic jacobian available */
   end matchcontinue;
 end calculateJacobian;
 
@@ -6156,7 +6156,7 @@ protected
   String strIndexReductionMethod;
 algorithm
  allIndexReductionMethods := {(BackendDAETransform.reduceIndexDummyDer,"dummyDerivative"),
-                              (BackendDAETransform.reduceIndexDummyDerX,"dummyDerivativeX")};
+                              (BackendDAETransform.reduceIndexDynamicStateSelection,"DynamicStateSelection")};
  strIndexReductionMethod := getIndexReductionMethodString();
  strIndexReductionMethod := Util.getOptionOrDefault(ostrIndexReductionMethod,strIndexReductionMethod);
  IndexReductionMethod := selectIndexReductionMethod(strIndexReductionMethod,allIndexReductionMethods);

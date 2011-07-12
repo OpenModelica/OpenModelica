@@ -46,7 +46,6 @@ encapsulated package SCodeUtil
   The SCode representation is then used as input to the Inst module"
 
 public import Absyn;
-public import RTOpts;
 public import SCode;
 
 protected import Builtin;

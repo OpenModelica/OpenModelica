@@ -1608,7 +1608,6 @@ algorithm
         exp_1 = differentiateExp(exp, tv, differentiateIfExp);
         exp_2 = Expression.makeBuiltinCall("sign",{exp_1},DAE.ET_INT());
       then DAE.BINARY(exp_2,DAE.MUL(DAE.ET_REAL()),exp_1);
-    
   end match;
 end differentiateCallExp1Arg;
 

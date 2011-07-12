@@ -42,6 +42,7 @@ public import DAE;
 public import SCode;
 public import Values;
 public import HashTable2;
+public import HashTable3;
 public import HashTable4;
 public import HashTableCG;
 
@@ -428,13 +429,16 @@ uniontype DAEHandlerJop
 end DAEHandlerJop;
 
 public
-type DAEHandlerArg = tuple<StateOrder,list<tuple<Integer,list<tuple<Equation,Boolean>>>>>;
+type DAEHandlerArg = tuple<StateOrder,ConstraintEquations>;
+
+public
+type ConstraintEquations = list<tuple<Integer,list<Equation>>>;
 
 public
 uniontype StateOrder 
   record STATEORDER
     HashTableCG.HashTable hashTable "x -> dx.";
-    HashTableCG.HashTable invHashTable "dx -> x.";
+    HashTable3.HashTable invHashTable "dx -> x.";
   end STATEORDER;
 end StateOrder;
 
