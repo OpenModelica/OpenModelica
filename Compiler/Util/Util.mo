@@ -4779,23 +4779,25 @@ end listRemoveNth;
 public function listRemoveOnTrue "
 Go trough a list and when function is true, remove that element.
 "
-  input Type_a inTypeALst1;
-  input FuncTypeType_aType_aToBoolean inFuncTypeTypeATypeAToBoolean3;
+  input Type_b inTypeALst1;
+  input FuncTypeType_aType_bToBoolean inFuncTypeTypeATypeBToBoolean3;
   input list<Type_a> inTypeALst2;
   output list<Type_a> outTypeALst;
   replaceable type Type_a subtypeof Any;
-  partial function FuncTypeType_aType_aToBoolean
-    input Type_a inTypeA1;
+  replaceable type Type_b subtypeof Any;
+  partial function FuncTypeType_aType_bToBoolean
+    input Type_b inTypeA1;
     input Type_a inTypeA2;
     output Boolean outBoolean;
-  end FuncTypeType_aType_aToBoolean;
+  end FuncTypeType_aType_bToBoolean;
 algorithm
   outTypeALst:=
-  matchcontinue (inTypeALst1,inFuncTypeTypeATypeAToBoolean3,inTypeALst2)
+  matchcontinue (inTypeALst1,inFuncTypeTypeATypeBToBoolean3,inTypeALst2)
     local
       list<Type_a> res,xs;
-      FuncTypeType_aType_aToBoolean p;
-      Type_a x,y;
+      FuncTypeType_aType_bToBoolean p;
+      Type_a y;
+      Type_b x;
     case (x,p,{}) then {};
     case (x,p,y::xs)
       equation
