@@ -804,7 +804,7 @@ public function modelicaPlatform "Returns the standardized platform name accordi
   Else, the empty string is returned 
   "
   output String platform;
-  external "C" System_modelicaPlatform() annotation(Library = "omcruntime");
+  external "C" platform=System_modelicaPlatform() annotation(Library = "omcruntime");
 end modelicaPlatform;
 
 public function openModelicaPlatform "
@@ -812,7 +812,7 @@ public function openModelicaPlatform "
   mingw32 is returned for OMDEV
   "
   output String platform;
-  external "C" System_openModelicaPlatform() annotation(Library = "omcruntime");
+  external "C" platform=System_openModelicaPlatform() annotation(Library = "omcruntime");
 end openModelicaPlatform;
 
 public function getGCStatus
