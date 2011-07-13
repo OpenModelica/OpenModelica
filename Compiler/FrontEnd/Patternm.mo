@@ -749,7 +749,9 @@ algorithm
         ix = findMinMod(ixs,1);
       then (DAE.ET_STRING(),ix);
     case ({},_,_,_) then (ty,0);
-    case ({_},_,_,1) then (ty,0);
+    // Sadly, we cannot switch a default uniontype as the previous case in not guaranteed
+    // to succeed matching if it matches for subpatterns.
+    case ({_},_,DAE.ET_INT(),1) then (ty,0);
   end match;
 end findPatternToConvertToSwitch2;
 
