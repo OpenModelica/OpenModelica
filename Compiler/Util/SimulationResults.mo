@@ -72,7 +72,7 @@ public function readSimulationResultSize
 end readSimulationResultSize;
 
 public function close
-  external "C" SimulationResultsImpl__close() annotation(Library = "omcruntime");
+  external "C" SimulationResults_close() annotation(Library = "omcruntime");
 end close;
 
 

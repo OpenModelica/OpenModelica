@@ -71,4 +71,9 @@ void* SimulationResults_cmpSimulationResults(const char *filename,const char *re
   return SimulationResultsCmp_compareResults(filename,reffilename,logfilename,refTol,absTol,vars);
 }
 
+void SimulationResults_close()
+{
+  SimulationResultsImpl__close(&simresglob);
+}
+
 }
