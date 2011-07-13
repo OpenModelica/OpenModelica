@@ -298,6 +298,7 @@ public constant ErrorID INVALID_SIZE_INDEX=186;
 public constant ErrorID ALGORITHM_TRANSITION_FAILURE=187;
 public constant ErrorID FAILURE_TO_DEDUCE_DIMS_NO_MOD=188;
 public constant ErrorID FUNCTION_MULTIPLE_ALGORITHM=189;
+public constant ErrorID STATEMENT_GENERIC_FAILURE=190;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -715,6 +716,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_FUNCTION_TYPE_NO_PARTIAL_PREFIX, TRANSLATION(),ERROR(), "%s is used as a function reference, but doesn't specify the partial prefix."),
           (IF_EQUATION_WARNING,SYMBOLIC(),WARNING(), "If-equations are only partially supported. Ignoring %s"),
           (EQUATION_GENERIC_FAILURE,TRANSLATION(),ERROR(),"Failed to instantiate equation %s"),
+          (STATEMENT_GENERIC_FAILURE,TRANSLATION(),ERROR(),"Failed to instantiate statement:\n%s"),
           (COMPONENT_NAME_SAME_AS_TYPE_NAME,GRAMMAR(),WARNING(),"Component %s has the same name as its type %s.\n\tThis is forbidden by Modelica specification and may lead to lookup errors."),
           (META_MATCH_EQUATION_FORBIDDEN,TRANSLATION(),ERROR(),"Match expression equation sections forbid the use of %s-equations."),
           (META_UNIONTYPE_ALIAS_MODS,TRANSLATION(),ERROR(),"Uniontype was not generated correctly. One possible cause is modifications, which are not allowed."),
