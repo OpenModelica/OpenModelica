@@ -3721,7 +3721,7 @@ algorithm
       list<Integer> stateindx,changedeqns,slst;
       DAE.ComponentRef dummystate,dummystate1,dsxy,derdummystate,derdummystate1,dsxycont;
       DAE.Exp dse1,dse2,ds1,ds2,dxdye,dds1,dds2,cont,cont1,dxdyecont,icont;
-      Integer stateno,stateno1,ep,ep1,ep2,ep3,ast,ast1;
+      Integer stateno,stateno1,ep1,ep2,ep3,ast,ast1;
       BackendDAE.Equation eq,deq,eqcont;
       BackendDAE.Var dsxyvar,dsxyvarcont,dummyvar;
       BackendDAE.BackendDAE dae,dae1,dae2;
