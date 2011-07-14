@@ -60,7 +60,7 @@ public function parsestring "Parse a string as if it were a stored definition"
   input String str;
   input String infoFilename := "<interactive>";
   output Absyn.Program outProgram;
-  external "C" outProgram=Parser_parsestring(str) annotation(Library = {"omcruntime","omparse","antlr3"});
+  external "C" outProgram=Parser_parsestring(str,infoFilename) annotation(Library = {"omcruntime","omparse","antlr3"});
 end parsestring;
 
 public function parsestringexp "Parse a string as if it was a sequence of statements"
