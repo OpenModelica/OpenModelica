@@ -307,20 +307,18 @@ void debug_int_array(const char *name, int N, int *data)
   printf("}\n");
 }
 
-void LapackImpl__dgeev(void *JOBVL, void *JOBVR, void *N, void *inA, void *LDA, 
-    void *LDVL, void *LDVR, void *inWORK, void *LWORK, void **outA, void **WR,
-    void **WI, void **VL, void **VR, void **outWORK, void **INFO)
+void LapackImpl__dgeev(const char *jobvl, const char *jobvr, int N, void *inA, int LDA, 
+    int LDVL, int LDVR, void *inWORK, int LWORK, void **outA, void **WR,
+    void **WI, void **VL, void **VR, void **outWORK, int *INFO)
 {
   integer n, lda, ldvl, ldvr, lwork, info = 0;
   double *a, *wr, *wi, *vl, *vr, *work;
-  const char *jobvl = RML_STRINGDATA(JOBVL);
-  const char *jobvr = RML_STRINGDATA(JOBVR);
 
-  n = RML_UNTAGFIXNUM(N);
-  lda = RML_UNTAGFIXNUM(LDA);
-  ldvl = RML_UNTAGFIXNUM(LDVL);
-  ldvr = RML_UNTAGFIXNUM(LDVR);
-  lwork = RML_UNTAGFIXNUM(LWORK);
+  n = N;
+  lda = LDA;
+  ldvl = LDVL;
+  ldvr = LDVR;
+  lwork = LWORK;
 
   a = alloc_real_matrix(lda, n, inA);
   work = alloc_real_vector(lwork, inWORK);
@@ -338,7 +336,7 @@ void LapackImpl__dgeev(void *JOBVL, void *JOBVR, void *N, void *inA, void *LDA,
   *VL = mk_rml_real_matrix(ldvl, n, vl);
   *VR = mk_rml_real_matrix(ldvr, n, vr);
   *outWORK = mk_rml_real_vector(lwork, work);
-  *INFO = mk_icon(info);
+  *INFO = info;
 
   free(a);
   free(work);
@@ -348,22 +346,20 @@ void LapackImpl__dgeev(void *JOBVL, void *JOBVR, void *N, void *inA, void *LDA,
   free(vr);
 }
 
-void LapackImpl__dgegv(void *JOBVL, void *JOBVR, void *N, void *A, void *LDA,
-    void *B, void *LDB, void *LDVL, void *LDVR, void *inWORK, void *LWORK, 
+void LapackImpl__dgegv(const char *jobvl, const char *jobvr, int N, void *A, int LDA,
+    void *B, int LDB, int LDVL, int LDVR, void *inWORK, int LWORK, 
     void **ALPHAR, void **ALPHAI, void **BETA, void **VL, void **VR, 
-    void **outWORK, void **INFO)
+    void **outWORK, int *INFO)
 {
   integer n, lda, ldb, ldvl, ldvr, lwork, info = 0;
   double *a, *b, *work, *alphar, *alphai, *beta, *vl, *vr;
-  const char *jobvl = RML_STRINGDATA(JOBVL);
-  const char *jobvr = RML_STRINGDATA(JOBVR);
 
-  n = RML_UNTAGFIXNUM(N);
-  lda = RML_UNTAGFIXNUM(LDA);
-  ldb = RML_UNTAGFIXNUM(LDB);
-  ldvl = RML_UNTAGFIXNUM(LDVL);
-  ldvr = RML_UNTAGFIXNUM(LDVR);
-  lwork = RML_UNTAGFIXNUM(LWORK);
+  n = N;
+  lda = LDA;
+  ldb = LDB;
+  ldvl = LDVL;
+  ldvr = LDVR;
+  lwork = LWORK;
 
   a = alloc_real_matrix(lda, n, A);
   b = alloc_real_matrix(ldb, n, B);
@@ -383,7 +379,7 @@ void LapackImpl__dgegv(void *JOBVL, void *JOBVR, void *N, void *A, void *LDA,
   *VL = mk_rml_real_matrix(ldvl, n, vl);
   *VR = mk_rml_real_matrix(ldvl, n, vr);
   *outWORK = mk_rml_real_vector(lwork, work);
-  *INFO = mk_icon(info);
+  *INFO = info;
 
   free(a);
   free(b);
@@ -395,20 +391,19 @@ void LapackImpl__dgegv(void *JOBVL, void *JOBVR, void *N, void *A, void *LDA,
   free(work);
 }
 
-void LapackImpl__dgels(void *TRANS, void *M, void *N, void *NRHS, void *inA,
-    void *LDA, void *inB, void *LDB, void *inWORK, void *LWORK, void **outA,
-    void **outB, void **outWORK, void **INFO)
+void LapackImpl__dgels(const char *trans, int M, int N, int NRHS, void *inA,
+    int LDA, void *inB, int LDB, void *inWORK, int LWORK, void **outA,
+    void **outB, void **outWORK, int *INFO)
 {
   integer m, n, nrhs, lda, ldb, lwork, info = 0;
   double *a, *b, *work;
-  const char *trans = RML_STRINGDATA(TRANS);
 
-  m = RML_UNTAGFIXNUM(M);
-  n = RML_UNTAGFIXNUM(N);
-  nrhs = RML_UNTAGFIXNUM(NRHS);
-  lda = RML_UNTAGFIXNUM(LDA);
-  ldb = RML_UNTAGFIXNUM(LDB);
-  lwork = RML_UNTAGFIXNUM(LWORK);
+  m = M;
+  n = N;
+  nrhs = NRHS;
+  lda = LDA;
+  ldb = LDB;
+  lwork = LWORK;
 
   a = alloc_real_matrix(lda, n, inA);
   b = alloc_real_matrix(lda, nrhs, inB);
@@ -419,29 +414,27 @@ void LapackImpl__dgels(void *TRANS, void *M, void *N, void *NRHS, void *inA,
   *outA = mk_rml_real_matrix(lda, n, a);
   *outB = mk_rml_real_matrix(lda, nrhs, b);
   *outWORK = mk_rml_real_vector(lwork, work);
-  *INFO = mk_icon(info);
+  *INFO = info;
 
   free(a);
   free(b);
   free(work);
 }
 
-void LapackImpl__dgelsx(void *M, void *N, void *NRHS, void *inA, void *LDA, 
-    void *inB, void *LDB, void *inJPVT, void *RCOND, void *WORK, void *LWORK,
-    void **outA, void **outB, void **outJPVT, void **RANK, void **INFO) 
+void LapackImpl__dgelsx(int M, int N, int NRHS, void *inA, int LDA, 
+    void *inB, int LDB, void *inJPVT, double rcond, void *WORK, int LWORK,
+    void **outA, void **outB, void **outJPVT, int *RANK, int *INFO) 
 {
   integer m, n, nrhs, lda, ldb, rank = 0, info = 0, lwork;
-  double rcond;
   double *a, *b, *work;
   integer *jpvt;
 
-  m = RML_UNTAGFIXNUM(M);
-  n = RML_UNTAGFIXNUM(N);
-  nrhs = RML_UNTAGFIXNUM(NRHS);
-  lda = RML_UNTAGFIXNUM(LDA);
-  ldb = RML_UNTAGFIXNUM(LDB);
-  rcond = rml_prim_get_real(RCOND);
-  lwork = RML_UNTAGFIXNUM(LWORK);
+  m = M;
+  n = N;
+  nrhs = NRHS;
+  lda = LDA;
+  ldb = LDB;
+  lwork = LWORK;
 
   a = alloc_real_matrix(lda, n, inA);
   b = alloc_real_matrix(ldb, nrhs, inB);
@@ -453,8 +446,8 @@ void LapackImpl__dgelsx(void *M, void *N, void *NRHS, void *inA, void *LDA,
   *outA = mk_rml_real_matrix(lda, n, a);
   *outB = mk_rml_real_matrix(lda, nrhs, b);
   *outJPVT = mk_rml_int_vector(n, jpvt);
-  *RANK = mk_icon(rank);
-  *INFO = mk_icon(info);
+  *RANK = rank;
+  *INFO = info;
 
   free(a);
   free(b);
@@ -462,17 +455,17 @@ void LapackImpl__dgelsx(void *M, void *N, void *NRHS, void *inA, void *LDA,
   free(jpvt);
 }
 
-void LapackImpl__dgesv(void *N, void *NRHS, void *inA, void *LDA, void *inB,
-    void *LDB, void **outA, void **IPIV, void **outB, void **INFO)
+void LapackImpl__dgesv(int N, int NRHS, void *inA, int LDA, void *inB,
+    int LDB, void **outA, void **IPIV, void **outB, int *INFO)
 {
   integer n, nrhs, lda, ldb, info = 0;
   integer *ipiv;
   double *a, *b;
 
-  n = RML_UNTAGFIXNUM(N);
-  nrhs = RML_UNTAGFIXNUM(NRHS);
-  lda = RML_UNTAGFIXNUM(LDA);
-  ldb = RML_UNTAGFIXNUM(LDB);
+  n = N;
+  nrhs = NRHS;
+  lda = LDA;
+  ldb = LDB;
 
   a = alloc_real_matrix(lda, n, inA);
   b = alloc_real_matrix(ldb, nrhs, inB);
@@ -483,27 +476,27 @@ void LapackImpl__dgesv(void *N, void *NRHS, void *inA, void *LDA, void *inB,
   *outA = mk_rml_real_matrix(lda, n, a);
   *outB = mk_rml_real_matrix(ldb, nrhs, b);
   *IPIV = mk_rml_int_vector(n, ipiv);
-  *INFO = mk_icon(info);
+  *INFO = info;
 
   free(a);
   free(b);
   free(ipiv);
 }
 
-void LapackImpl__dgglse(void *M, void *N, void *P, void *inA, void *LDA, 
-    void *inB, void *LDB, void *inC, void *inD, void *inWORK, void *LWORK, 
+void LapackImpl__dgglse(int M, int N, int P, void *inA, int LDA, 
+    void *inB, int LDB, void *inC, void *inD, void *inWORK, int LWORK, 
     void **outA, void **outB, void **outC, void **outD, void **outX, 
-    void **outWORK, void **outINFO)
+    void **outWORK, int *outINFO)
 {
   integer m, n, p, lda, ldb, lwork, info = 0;
   double *a, *b, *c, *d, *x, *work;
 
-  m = RML_UNTAGFIXNUM(M);
-  n = RML_UNTAGFIXNUM(N);
-  p = RML_UNTAGFIXNUM(P);
-  lda = RML_UNTAGFIXNUM(LDA);
-  ldb = RML_UNTAGFIXNUM(LDB);
-  lwork = RML_UNTAGFIXNUM(LWORK);
+  m = M;
+  n = N;
+  p = P;
+  lda = LDA;
+  ldb = LDB;
+  lwork = LWORK;
 
   a = alloc_real_matrix(lda, n, inA);
   b = alloc_real_matrix(ldb, n, inB);
@@ -520,7 +513,7 @@ void LapackImpl__dgglse(void *M, void *N, void *P, void *inA, void *LDA,
   *outD = mk_rml_real_vector(p, d);
   *outX = mk_rml_real_vector(n, x);
   *outWORK = mk_rml_real_vector(lwork, work);
-  *outINFO = mk_icon(info);
+  *outINFO = info;
 
   free(a);
   free(b);
@@ -530,16 +523,16 @@ void LapackImpl__dgglse(void *M, void *N, void *P, void *inA, void *LDA,
   free(work);
 }
 
-void LapackImpl__dgtsv(void *N, void *NRHS, void *inDL, void *inD, void *inDU,
-    void *inB, void *LDB, void **outDL, void **outD, void **outDU, void **outB,
-    void **INFO)
+void LapackImpl__dgtsv(int N, int NRHS, void *inDL, void *inD, void *inDU,
+    void *inB, int LDB, void **outDL, void **outD, void **outDU, void **outB,
+    int *INFO)
 {
   integer n, nrhs, ldb, info = 0;
   double *dl, *d, *du, *b;
 
-  n = RML_UNTAGFIXNUM(N);
-  nrhs = RML_UNTAGFIXNUM(NRHS);
-  ldb = RML_UNTAGFIXNUM(LDB);
+  n = N;
+  nrhs = NRHS;
+  ldb = LDB;
 
   dl = alloc_real_vector(n - 1, inDL);
   d = alloc_real_vector(n, inD);
@@ -552,7 +545,7 @@ void LapackImpl__dgtsv(void *N, void *NRHS, void *inDL, void *inD, void *inDU,
   *outD = mk_rml_real_vector(n, d);
   *outDU = mk_rml_real_vector(n - 1, du);
   *outB = mk_rml_real_matrix(ldb, nrhs, b);
-  *INFO = mk_icon(info);
+  *INFO = info;
 
   free(dl);
   free(d);
@@ -560,20 +553,20 @@ void LapackImpl__dgtsv(void *N, void *NRHS, void *inDL, void *inD, void *inDU,
   free(b);
 }
 
-void LapackImpl__dgbsv(void *N, void *KL, void *KU, void *NRHS, void *inAB, 
-    void *LDAB, void *inB, void *LDB, void **outAB, void **IPIV, void **outB,
-    void **INFO)
+void LapackImpl__dgbsv(int N, int KL, int KU, int NRHS, void *inAB, 
+    int LDAB, void *inB, int LDB, void **outAB, void **IPIV, void **outB,
+    int *INFO)
 {
   integer n, kl, ku, nrhs, ldab, ldb, info = 0;
   double *ab, *b;
   integer *ipiv;
 
-  n = RML_UNTAGFIXNUM(N);
-  kl = RML_UNTAGFIXNUM(KL);
-  ku = RML_UNTAGFIXNUM(KU);
-  nrhs = RML_UNTAGFIXNUM(NRHS);
-  ldab = RML_UNTAGFIXNUM(LDAB);
-  ldb = RML_UNTAGFIXNUM(LDB);
+  n = N;
+  kl = KL;
+  ku = KU;
+  nrhs = NRHS;
+  ldab = LDAB;
+  ldb = LDB;
 
   ab = alloc_real_matrix(ldab, n, inAB);
   b = alloc_real_matrix(ldb, nrhs, inB);
@@ -584,28 +577,26 @@ void LapackImpl__dgbsv(void *N, void *KL, void *KU, void *NRHS, void *inAB,
   *outAB = mk_rml_real_matrix(ldab, n, ab);
   *outB = mk_rml_real_matrix(ldb, nrhs, b);
   *IPIV = mk_rml_int_vector(n, ipiv);
-  *INFO = mk_icon(info);
+  *INFO = info;
 
   free(ab);
   free(b);
   free(ipiv);
 }
 
-void LapackImpl__dgesvd(void *JOBU, void *JOBVT, void *M, void *N, void *inA,
-    void *LDA, void *LDU, void *LDVT, void *inWORK, void *LWORK, void **outA,
-    void **S, void **U, void **VT, void **outWORK, void **INFO)
+void LapackImpl__dgesvd(const char *jobu, const char *jobvt, int M, int N, void *inA,
+    int LDA, int LDU, int LDVT, void *inWORK, int LWORK, void **outA,
+    void **S, void **U, void **VT, void **outWORK, int *INFO)
 {
   integer m, n, lda, ldu, ldvt, lwork, lds, ucol = 0, info = 0;
   double *a, *s, *u = NULL, *vt, *work;
-  const char *jobu = RML_STRINGDATA(JOBU);
-  const char *jobvt = RML_STRINGDATA(JOBVT);
 
-  m = RML_UNTAGFIXNUM(M);
-  n = RML_UNTAGFIXNUM(N);
-  lda = RML_UNTAGFIXNUM(LDA);
-  ldu = RML_UNTAGFIXNUM(LDU);
-  ldvt = RML_UNTAGFIXNUM(LDVT);
-  lwork = RML_UNTAGFIXNUM(LWORK);
+  m = M;
+  n = N;
+  lda = LDA;
+  ldu = LDU;
+  ldvt = LDVT;
+  lwork = LWORK;
   lds = (m < n ? m : n);
  
   if(*jobu == 'A') ucol = m;
@@ -625,7 +616,7 @@ void LapackImpl__dgesvd(void *JOBU, void *JOBVT, void *M, void *N, void *inA,
   if(ucol) *U = mk_rml_real_matrix(ldu, ucol, u);
   *VT = mk_rml_real_matrix(ldvt, n, vt);
   *outWORK = mk_rml_real_vector(lwork, work);
-  *INFO = mk_icon(info);
+  *INFO = info;
 
   free(a);
   free(s);
@@ -634,16 +625,16 @@ void LapackImpl__dgesvd(void *JOBU, void *JOBVT, void *M, void *N, void *inA,
   free(work);
 }
 
-void LapackImpl__dgetrf(void *M, void *N, void *inA, void *LDA, void **outA,
-    void **IPIV, void **INFO)
+void LapackImpl__dgetrf(int M, int N, void *inA, int LDA, void **outA,
+    void **IPIV, int *INFO)
 {
   integer m, n, lda, ldipiv, info = 0;
   double *a;
   integer *ipiv;
 
-  m = RML_UNTAGFIXNUM(M);
-  n = RML_UNTAGFIXNUM(N);
-  lda = RML_UNTAGFIXNUM(LDA);
+  m = M;
+  n = N;
+  lda = LDA;
   ldipiv = (m < n ? m : n);
 
   a = alloc_real_matrix(lda, n, inA);
@@ -653,24 +644,23 @@ void LapackImpl__dgetrf(void *M, void *N, void *inA, void *LDA, void **outA,
 
   *outA = mk_rml_real_matrix(lda, n, a);
   *IPIV = mk_rml_int_vector(ldipiv, ipiv);
-  *INFO = mk_icon(info);
+  *INFO = info;
 
   free(a);
   free(ipiv);
 }
 
-void LapackImpl__dgetrs(void *TRANS, void *N, void *NRHS, void *inA, void *LDA,
-    void *IPIV, void *inB, void *LDB, void **outB, void **INFO)
+void LapackImpl__dgetrs(const char *trans, int N, int NRHS, void *inA, int LDA,
+    void *IPIV, void *inB, int LDB, void **outB, int *INFO)
 {
   integer n, nrhs, lda, ldb, info = 0;
   double *a, *b;
   integer *ipiv;
-  const char *trans = RML_STRINGDATA(TRANS);
 
-  n = RML_UNTAGFIXNUM(N);
-  nrhs = RML_UNTAGFIXNUM(NRHS);
-  lda = RML_UNTAGFIXNUM(LDA);
-  ldb = RML_UNTAGFIXNUM(LDB);
+  n = N;
+  nrhs = NRHS;
+  lda = LDA;
+  ldb = LDB;
 
   a = alloc_real_matrix(lda, n, inA);
   b = alloc_real_matrix(ldb, nrhs, inB);
@@ -679,23 +669,23 @@ void LapackImpl__dgetrs(void *TRANS, void *N, void *NRHS, void *inA, void *LDA,
   dgetrs_(&*trans, &n, &nrhs, a, &lda, ipiv, b, &ldb, &info);
 
   *outB = mk_rml_real_matrix(ldb, nrhs, b);
-  *INFO = mk_icon(info);
+  *INFO = info;
 
   free(a);
   free(b);
   free(ipiv);
 }
 
-void LapackImpl__dgetri(void *N, void *inA, void *LDA, void *IPIV, void *inWORK,
-    void *LWORK, void **outA, void **outWORK, void **INFO)
+void LapackImpl__dgetri(int N, void *inA, int LDA, void *IPIV, void *inWORK,
+    int LWORK, void **outA, void **outWORK, int *INFO)
 {
   integer n, lda, lwork, info = 0;
   double *a, *work;
   integer *ipiv;
 
-  n = RML_UNTAGFIXNUM(N);
-  lda = RML_UNTAGFIXNUM(LDA);
-  lwork = RML_UNTAGFIXNUM(LWORK);
+  n = N;
+  lda = LDA;
+  lwork = LWORK;
 
   a = alloc_real_matrix(lda, n, inA);
   work = alloc_real_vector(lwork, inWORK);
@@ -705,22 +695,23 @@ void LapackImpl__dgetri(void *N, void *inA, void *LDA, void *IPIV, void *inWORK,
 
   *outA = mk_rml_real_matrix(lda, n, a);
   *outWORK = mk_rml_real_vector(lwork, work);
-  *INFO = mk_icon(info);
+  *INFO = info;
 
   free(a);
   free(work);
+  free(ipiv);
 }
 
-void LapackImpl__dgeqpf(void *M, void *N, void *inA, void *LDA, void *inJPVT, 
-    void *WORK, void **outA, void **outJPVT, void **TAU, void **INFO)
+void LapackImpl__dgeqpf(int M, int N, void *inA, int LDA, void *inJPVT, 
+    void *WORK, void **outA, void **outJPVT, void **TAU, int *INFO)
 {
   integer m, n, lda, lwork, ldtau, info = 0;
   double *a, *tau, *work;
   integer *jpvt;
 
-  m = RML_UNTAGFIXNUM(M);
-  n = RML_UNTAGFIXNUM(N);
-  lda = RML_UNTAGFIXNUM(LDA);
+  m = M;
+  n = N;
+  lda = LDA;
   lwork = 3 * n;
   ldtau = (m < n ? m : n);
 
@@ -734,21 +725,26 @@ void LapackImpl__dgeqpf(void *M, void *N, void *inA, void *LDA, void *inJPVT,
   *outA = mk_rml_real_matrix(lda, n, a);
   *outJPVT = mk_rml_int_vector(n, jpvt);
   *TAU = mk_rml_real_vector(ldtau, tau);
-  *INFO = mk_icon(info);
+  *INFO = info;
+  
+  free(a);
+  free(jpvt);
+  free(tau);
+  free(work);
 }
 
-void LapackImpl__dorgqr(void *M, void *N, void *K, void *inA, void *LDA, 
-    void *TAU, void *inWORK, void *LWORK, void **outA, void **outWORK, 
-    void **INFO)
+void LapackImpl__dorgqr(int M, int N, int K, void *inA, int LDA, 
+    void *TAU, void *inWORK, int LWORK, void **outA, void **outWORK, 
+    int *INFO)
 {
   integer m, n, k, lda, lwork, info = 0;
   double *a, *tau, *work;
 
-  m = RML_UNTAGFIXNUM(M);
-  n = RML_UNTAGFIXNUM(N);
-  k = RML_UNTAGFIXNUM(K);
-  lda = RML_UNTAGFIXNUM(LDA);
-  lwork = RML_UNTAGFIXNUM(LWORK);
+  m = M;
+  n = N;
+  k = K;
+  lda = LDA;
+  lwork = LWORK;
 
   a = alloc_real_matrix(lda, n, inA);
   tau = alloc_real_vector(k, TAU);
@@ -758,7 +754,7 @@ void LapackImpl__dorgqr(void *M, void *N, void *K, void *inA, void *LDA,
 
   *outA = mk_rml_real_matrix(lda, n, a);
   *outWORK = mk_rml_real_vector(lwork, work);
-  *INFO = mk_icon(info);
+  *INFO = info;
 
   free(a);
   free(tau);
