@@ -2807,6 +2807,8 @@ case FUNCTION(__) then
     <%if outVars then "out = "%>_<%fname%>(<%functionArguments |> var => funArgName(var) ;separator=", "%>);
     MMC_CATCH_TOP(return 1)
     <%if outVars then (outVars |> var hasindex i1 fromindex 1 => writeOutVar(var, i1) ;separator="\n") else "write_noretcall(outVar);"%>
+    fflush(NULL);
+    
     return 0;
   }
   >>
@@ -4809,6 +4811,7 @@ case rel as RELATION(__) then
     case NEQUAL(ty = ET_ENUMERATION(__))    then '(<%e1%> != <%e2%>)'
     
     else "daeExpRelation:ERR"
+
 end daeExpRelation;
 
 
