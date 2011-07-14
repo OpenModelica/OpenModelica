@@ -404,18 +404,19 @@ protected function reEvaluateInitialIfEqns "
 Author BZ 
 This is a backpatch to fix the case of 'connection.isRoot' in initial if equations. 
 After the class is instantiated a second sweep is done to check the initial if equations conditions.
-If all conditions are constand, we return only the 'correct' branch equations."
+If all conditions are constant, we return only the 'correct' branch equations."
   input Env.Cache cache;
   input Env.Env env;
   input DAE.DAElist dae;
   input Boolean isTopCall;
   output DAE.DAElist odae;
-algorithm odae := match(cache,env,dae,isTopCall)
+algorithm
+  odae := match(cache,env,dae,isTopCall)
   local
     list<DAE.Element> elems;
   case(cache,env,DAE.DAE(elementLst = elems),true)
     equation
-      elems = reEvaluateInitialIfEqns2(cache,env,elems);
+      elems = listReverse(Util.listFold_3(elems,reEvaluateInitialIfEqns2,{},cache,env));
     then
       DAE.DAE(elems);
   case(_,_,dae,false) then dae;
@@ -423,41 +424,33 @@ algorithm odae := match(cache,env,dae,isTopCall)
 end reEvaluateInitialIfEqns;
 
 protected function reEvaluateInitialIfEqns2 ""
+  input list<DAE.Element> acc;
+  input DAE.Element elem;
   input Env.Cache cache;
   input Env.Env env;
-  input list<DAE.Element> elems;
   output list<DAE.Element> oelems;
-algorithm oelems := matchcontinue(cache,env,elems)
-  local
-    list<DAE.Exp> conds;
-    list<Values.Value> valList;
-    list<list<DAE.Element>> tbs;
-    list<DAE.Element> fb,selectedBranch;
-    DAE.Element elem;
-    DAE.ElementSource source;
-    list<Boolean> blist;
-    case(_,_,{}) then {};
-  case(cache,env,(elem as DAE.INITIAL_IF_EQUATION(condition1 = conds, equations2=tbs, equations3=fb, source=source))::elems)
-    equation
-      //print(" (Initial if)To ceval: " +& Util.stringDelimitList(Util.listMap(conds,ExpressionDump.printExpStr),", ") +& "\n");
-      (cache,valList,_) = Ceval.cevalList(cache,env, conds, true, NONE(), Ceval.NO_MSG());
-      //print(" Ceval res: ("+&Util.stringDelimitList(Util.listMap(valList,ValuesUtil.printValStr),",")+&")\n");
-
-      blist = Util.listMap(valList,ValuesUtil.valueBool);
-      selectedBranch = Util.selectList(blist, tbs, fb);
-      selectedBranch = makeDAEElementInitial(selectedBranch);
-      oelems = reEvaluateInitialIfEqns2(cache,env,elems);
-      oelems = listAppend(selectedBranch,oelems);
-      
-      //print("RETURN _INITIAL_ DAE: " +& DAEDump.dumpDAEElementsStr(DAE.DAE(selectedBranch,DAE.AVLTREENODE(NONE(),0,NONE(),NONE()))) +& "\n");
-      //print(" INSTEAD OF: " +& DAEDump.dumpDAEElementsStr(DAE.DAE({elem},DAE.AVLTREENODE(NONE(),0,NONE(),NONE()))) +& "\n");
-    then
-      oelems;
-  case(cache,env,elem::elems)
-    equation
-      oelems = reEvaluateInitialIfEqns2(cache,env,elems);
-    then
-      elem::oelems;
+algorithm
+  oelems := matchcontinue (acc,elem,cache,env)
+    local
+      list<DAE.Exp> conds;
+      list<Values.Value> valList;
+      list<list<DAE.Element>> tbs;
+      list<DAE.Element> fb,selectedBranch;
+      DAE.Element elem;
+      DAE.ElementSource source;
+      list<Boolean> blist;
+    case (acc,DAE.INITIAL_IF_EQUATION(condition1 = conds, equations2=tbs, equations3=fb, source=source),cache,env)
+      equation
+        //print(" (Initial if)To ceval: " +& Util.stringDelimitList(Util.listMap(conds,ExpressionDump.printExpStr),", ") +& "\n");
+        (cache,valList,_) = Ceval.cevalList(cache,env, conds, true, NONE(), Ceval.NO_MSG());
+        //print(" Ceval res: ("+&Util.stringDelimitList(Util.listMap(valList,ValuesUtil.printValStr),",")+&")\n");
+        
+        blist = Util.listMap(valList,ValuesUtil.valueBool);
+        selectedBranch = Util.selectList(blist, tbs, fb);
+        selectedBranch = makeDAEElementInitial(selectedBranch);
+      then listAppend(selectedBranch,acc);
+    else elem::acc;
+    
   end matchcontinue;
 end reEvaluateInitialIfEqns2;
 
@@ -1391,7 +1384,7 @@ protected function updateDeducedUnits "updates the deduced units in each DAE.VAR
   input DAE.DAElist dae;
   output DAE.DAElist outDae;
 algorithm
-  outDae := matchcontinue(callScope,store,dae)
+  outDae := match (callScope,store,dae)
     local
       HashTable.HashTable ht;
       Integer indx;
@@ -1401,25 +1394,43 @@ algorithm
       Option<DAE.VariableAttributes> varOpt;
       DAE.Element elt,v;
       list<DAE.Element> elts;
-    case(false,_,dae) then dae;
 
       /* Only traverse on top scope */
-    case(true,store as UnitAbsyn.INSTSTORE(UnitAbsyn.STORE(vec,_),ht,_),DAE.DAE((v as DAE.VAR(variableAttributesOption=varOpt as SOME(DAE.VAR_ATTR_REAL(unit = NONE()))))::elts)) equation
-      indx = BaseHashTable.get(DAEUtil.varCref(v),ht);
-      SOME(unit) = vec[indx];
-      unitStr = UnitAbsynBuilder.unit2str(unit);
-      varOpt = DAEUtil.setUnitAttr(varOpt,DAE.SCONST(unitStr));
-      v = DAEUtil.setVariableAttributes(v,varOpt);
-      DAE.DAE(elts) = updateDeducedUnits(true,store,DAE.DAE(elts));
-      then DAE.DAE(v::elts);
+    case (true,store as UnitAbsyn.INSTSTORE(UnitAbsyn.STORE(vec,_),ht,_),DAE.DAE(elts))
+      equation
+        elts = Util.listMap2(elts,updateDeducedUnits2,vec,ht);
+      then DAE.DAE(elts);
         
-    case(true,store,DAE.DAE(elt::elts)) equation
-      DAE.DAE(elts) = updateDeducedUnits(true,store,DAE.DAE(elts));
-    then DAE.DAE(elt::elts);
-    case(true,store,DAE.DAE({})) then DAE.DAE({});
-
-  end matchcontinue;
+    else dae;
+  end match;
 end updateDeducedUnits;
+
+protected function updateDeducedUnits2 "updates the deduced units in each DAE.VAR"
+  input DAE.Element elt;
+  input array<Option<UnitAbsyn.Unit>> vec;
+  input HashTable.HashTable ht;
+  output DAE.Element oelt;
+algorithm
+  oelt := matchcontinue (elt,vec,ht)
+    local
+      Integer indx;
+      String unitStr;
+      UnitAbsyn.Unit unit;
+      Option<DAE.VariableAttributes> varOpt;
+      DAE.ComponentRef cr;
+
+      /* Only traverse on top scope */
+    case ((DAE.VAR(componentRef=cr,variableAttributesOption=varOpt as SOME(DAE.VAR_ATTR_REAL(unit = NONE())))),vec,ht)
+      equation
+        indx = BaseHashTable.get(cr,ht);
+        SOME(unit) = vec[indx];
+        unitStr = UnitAbsynBuilder.unit2str(unit);
+        varOpt = DAEUtil.setUnitAttr(varOpt,DAE.SCONST(unitStr));
+      then DAEUtil.setVariableAttributes(elt,varOpt);
+
+    else elt;
+  end matchcontinue;
+end updateDeducedUnits2;
 
 protected function reportUnitConsistency "reports CONSISTENT or INCOMPLETE error message depending on content of store"
   input Boolean topScope;

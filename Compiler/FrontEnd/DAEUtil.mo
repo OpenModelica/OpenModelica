@@ -649,12 +649,10 @@ algorithm
 end removeInnerAttribute;
 
 public function varCref " returns the component reference of a variable"
-input DAE.Element elt;
-output DAE.ComponentRef cr;
+  input DAE.Element elt;
+  output DAE.ComponentRef cr;
 algorithm
-  cr := match(elt)
-    case(DAE.VAR(componentRef = cr)) then cr;
-  end match;
+  DAE.VAR(componentRef = cr) := elt;
 end varCref;
 
 
