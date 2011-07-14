@@ -436,7 +436,6 @@ algorithm
       list<Values.Value> valList;
       list<list<DAE.Element>> tbs;
       list<DAE.Element> fb,selectedBranch;
-      DAE.Element elem;
       DAE.ElementSource source;
       list<Boolean> blist;
     case (acc,DAE.INITIAL_IF_EQUATION(condition1 = conds, equations2=tbs, equations3=fb, source=source),cache,env)
@@ -450,7 +449,6 @@ algorithm
         selectedBranch = makeDAEElementInitial(selectedBranch);
       then listAppend(selectedBranch,acc);
     else elem::acc;
-    
   end matchcontinue;
 end reEvaluateInitialIfEqns2;
 
