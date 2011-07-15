@@ -5088,114 +5088,114 @@ algorithm
       
     // handle empty case
     case ({}, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) 
-    then (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
+    then (listReverse(v_acc),listReverse(ie_acc),listReverse(ia_acc),listReverse(e_acc),listReverse(a_acc),listReverse(o_acc));
     
     // variables
     case ((el as DAE.VAR(kind=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, el::v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
-        (el::v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
   
     // initial equations
     case ((el as DAE.INITIALEQUATION(exp1=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,el::ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
-        (v_acc,el::ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
     case ((el as DAE.INITIAL_ARRAY_EQUATION(exp=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,el::ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
-        (v_acc,el::ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
     case ((el as DAE.INITIAL_COMPLEX_EQUATION(lhs=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,el::ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
-        (v_acc,el::ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
     case ((el as DAE.INITIALDEFINE(exp=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,el::ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
-        (v_acc,el::ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
     case ((el as DAE.INITIAL_IF_EQUATION(condition1=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,el::ie_acc,ia_acc,e_acc,a_acc,o_acc);
       then
-        (v_acc,el::ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
 
     // equations
     case ((el as DAE.EQUATION(exp=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
       then
-        (v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
     case ((el as DAE.EQUEQUATION(cr1=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
       then
-        (v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
     case ((el as DAE.ARRAY_EQUATION(exp=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
       then
-        (v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
     case ((el as DAE.COMPLEX_EQUATION(lhs=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
       then
-        (v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
     case ((el as DAE.DEFINE(exp=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
       then
-        (v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
     case ((el as DAE.ASSERT(condition=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
       then
-        (v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
     case ((el as DAE.IF_EQUATION(condition1=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
       then
-        (v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
     case ((el as DAE.WHEN_EQUATION(condition=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
       then
-        (v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
     case ((el as DAE.REINIT(exp=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
       then
-        (v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
     case ((el as DAE.NORETCALL(functionName=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
       then
-        (v_acc,ie_acc,ia_acc,el::e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
         
     // initial algorithms
     case ((el as DAE.INITIALALGORITHM(algorithm_=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,el::ia_acc,e_acc,a_acc,o_acc);
       then
-        (v_acc,ie_acc,el::ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
 
     // algorithms
     case ((el as DAE.ALGORITHM(algorithm_=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,el::a_acc,o_acc);
       then
-        (v_acc,ie_acc,ia_acc,e_acc,el::a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
         
     // external objects
     case ((el as DAE.EXTOBJECTCLASS(path=_))::rest,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
       equation
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,el::o_acc);
       then
-        (v_acc,ie_acc,ia_acc,e_acc,a_acc,el::o_acc);
+        (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
   end match;
 end splitElements_dispatch;
 
