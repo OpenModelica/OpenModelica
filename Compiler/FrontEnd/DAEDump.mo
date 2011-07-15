@@ -2828,7 +2828,7 @@ protected function dumpEquationsStream "function: dumpEquationsStream
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
 algorithm
-  outStream := matchcontinue (inElementLst, inStream)
+  outStream := match (inElementLst, inStream)
     local
       String s1,s2,s;
       DAE.Exp e1,e2,e;
@@ -2977,7 +2977,7 @@ algorithm
         str = dumpEquationsStream(xs, str);
       then
         str;
-  end matchcontinue;
+  end match;
 end dumpEquationsStream;
 
 protected function dumpIfEquationsStream ""
