@@ -9448,6 +9448,13 @@ algorithm
       list<Values.Value> vals;
       DAE.Type t;
     
+    case (id1::_, (IVAR(varIdent = id2) :: rest))
+      equation
+        false = stringEq(id1, id2);
+        v = getVariableValueLst(ids, rest);
+      then
+        v;
+
     case (id1::id2::ids, (IVAR(varIdent = id3,value = Values.RECORD(orderd = vals, comp = comp),type_ = t) :: _))
       equation
         true = stringEq(id1, id3);
@@ -9460,13 +9467,6 @@ algorithm
     case ({id1}, (IVAR(varIdent = id2,value = v,type_ = t) :: _))
       equation
         true = stringEq(id1, id2);
-      then
-        v;
-    
-    case (id1::_, (IVAR(varIdent = id2) :: rest))
-      equation
-        false = stringEq(id1, id2);
-        v = getVariableValueLst(ids, rest);
       then
         v;
     
