@@ -49,12 +49,15 @@ extern "C" {
 
 static const MMC_DEFSTRINGLIT(_OMC_LIT_NEG_INF,4,"-inf");
 static const MMC_DEFSTRINGLIT(_OMC_LIT_POS_INF,3,"inf");
-static const MMC_DEFSTRINGLIT(_OMC_LIT_NAN,    3,"NaN");
+static const MMC_DEFSTRINGLIT(_OMC_LIT_NAN,3,"NaN");
 
 realString_rettype realString(modelica_real r)
 {
-  /* 64-bit (1+11+52) double: -d.[15 digits]E-[4 digits] = ~24 digits max.
-   * Add safety margin. */
+  /* NOTE: The RML runtime uses the same code as this function.
+   * If you update one, you must update the other or the testsuite might break
+   *
+   * 64-bit (1+11+52) double: -d.[15 digits]E-[4 digits] = ~24 digits max.
+   * Add safety margin in case some C runtime is trigger happy. */
   static char buffer[32];
   modelica_string res;
   // fprintf(stderr, "\nrealString(%g)\n", r);
