@@ -4163,7 +4163,7 @@ algorithm
         wc = BackendDAE.WHEN_CLAUSE(dxdyecont,{BackendDAE.REINIT(dsxy,ds2,DAE.emptyElementSource)},NONE());
         wc1 = BackendDAE.WHEN_CLAUSE(DAE.LUNARY(DAE.NOT(DAE.ET_BOOL()),dxdyecont),{BackendDAE.REINIT(dsxy,ds1,DAE.emptyElementSource)},NONE());
         dae = BackendDAEUtil.whenClauseAddDAE({wc,wc1},dae);
-        eqcont = BackendDAE.EQUATION(dxdyecont,cont1,DAE.emptyElementSource);
+        eqcont = BackendDAE.EQUATION(dxdyecont,DAE.IFEXP(DAE.CALL(Absyn.IDENT("initial"),{},DAE.callAttrBuiltinBool),DAE.BCONST(true),cont1),DAE.emptyElementSource);
         dae = BackendEquation.equationAddDAE(eqcont,dae);
         ep2 = ep1+1;
         ep3 = ep1+2;
