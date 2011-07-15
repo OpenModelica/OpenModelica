@@ -65,7 +65,8 @@ intString_rettype intString(modelica_integer i)
 
 modelica_metatype boxptr_intMax(modelica_metatype a,modelica_metatype b)
 {
-  return a > b ? a : b;
+  /* We need to unbox because pointers may be unsigned */
+  return mmc_unbox_integer(a) > mmc_unbox_integer(b) ? a : b;
 }
 
 /* String Character Conversion */
