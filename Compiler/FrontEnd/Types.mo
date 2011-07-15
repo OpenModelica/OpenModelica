@@ -1194,7 +1194,7 @@ algorithm
       list<Var> rest;
       Values.Value v;
       list<Values.Value> vs;
-      Ident id;
+      String id,str;
       list<Ident> ids;
 
     case ({},{}) then {};

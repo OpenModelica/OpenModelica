@@ -222,11 +222,11 @@ inline static int anyStringWork(void* any, int ix)
   int i;
   void *data;
   struct record_description *desc;
-  char buf[34] = {0};
+  /* char buf[34] = {0}; */
 
   if (MMC_IS_IMMEDIATE(any)) {
     checkAnyStringBufSize(ix,40);
-    ix += sprintf(anyStringBuf+ix, "%ld", (long) MMC_UNTAGFIXNUM(any));
+    ix += sprintf(anyStringBuf+ix, "%ld", (signed long) MMC_UNTAGFIXNUM(any));
     return ix;
   }
   

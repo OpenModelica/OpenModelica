@@ -397,7 +397,7 @@ static int mmc_to_value(void* mmc, void** res)
       namelst = mk_cons(mk_scon(t != NULL ? (const char*) t : "(null)"), namelst);
     }
     *res = (void *) Values__RECORD(name_to_path(desc->path),
-                                   varlst, namelst, mk_icon(ctor-3));
+                                   varlst, namelst, mk_icon(((long)ctor)-3));
     return 0;
   }
 
