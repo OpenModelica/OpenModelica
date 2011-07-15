@@ -1943,32 +1943,34 @@ algorithm
 end getDerStateOrder;
 
 protected function addOrgEqn
-  input list<tuple<Integer,list<BackendDAE.Equation>>> inOrgEqns;
+  input BackendDAE.ConstraintEquations inOrgEqns;
   input Integer e;
   input BackendDAE.Equation inEqn;
-  output list<tuple<Integer,list<BackendDAE.Equation>>> outOrgEqns;
+  input Boolean b;
+  output BackendDAE.ConstraintEquations outOrgEqns;
 algorithm
   outOrgEqns :=
-  matchcontinue (inOrgEqns,e,inEqn)
+  matchcontinue (inOrgEqns,e,inEqn,b)
     local
-      list<BackendDAE.Equation> orgeqns;
-      Integer e,e1;
-      list<tuple<Integer,list<BackendDAE.Equation>>> rest,orgeqnslst;
+      list<tuple<BackendDAE.Equation,Boolean>> orgeqns;
+      Integer e1;
+      Boolean b1;
+      BackendDAE.ConstraintEquations rest,orgeqnslst;
     
-    case ({},e,inEqn) then {(e,{inEqn})};
-    case ((e1,orgeqns)::rest,e,inEqn)
+    case ({},e,inEqn,b) then {(e,{(inEqn,b)})};
+    case ((e1,orgeqns)::rest,e,inEqn,b)
       equation
         true = intGt(e1,e);
       then
-        (e,{inEqn})::((e1,orgeqns)::rest);
-    case ((e1,orgeqns)::rest,e,inEqn)
+        (e,{(inEqn,b)})::((e1,orgeqns)::rest);
+    case ((e1,orgeqns)::rest,e,inEqn,b)
       equation
         true = intEq(e1,e);
       then
-        (e1,inEqn::orgeqns)::rest;     
-    case ((e1,orgeqns)::rest,e,inEqn)
+        (e1,(inEqn,b)::orgeqns)::rest;     
+    case ((e1,orgeqns)::rest,e,inEqn,b)
       equation
-        orgeqnslst = addOrgEqn(rest,e,inEqn);
+        orgeqnslst = addOrgEqn(rest,e,inEqn,b);
       then
         (e1,orgeqns)::orgeqnslst;            
   end matchcontinue;
@@ -2014,7 +2016,7 @@ algorithm
 end getOrgEqn;
 
 protected function getVarsOfOrgEqn
-  input list<tuple<Integer,list<BackendDAE.Equation>>> inOrgEqns;
+  input BackendDAE.ConstraintEquations inOrgEqns;
   input BackendDAE.Variables inVars;
   output BackendDAE.Variables outVars;
 algorithm
@@ -2024,12 +2026,14 @@ algorithm
       BackendDAE.Equation eqn;
       list<BackendDAE.Equation> eqns;
       list<BackendDAE.Equation> orgeqn;
-      list<tuple<Integer,list<BackendDAE.Equation>>> rest;
+      list<tuple<BackendDAE.Equation,Boolean>> orgeqntpl;
+      BackendDAE.ConstraintEquations rest;
       BackendDAE.Variables vars,v,vars1;
     
     case ({},_) then BackendDAEUtil.emptyVars();
-    case ((_,orgeqn)::rest,v)
+    case ((_,orgeqntpl)::rest,v)
       equation
+        orgeqn = Util.listMap(orgeqntpl,Util.tuple21);
         vars = getVarsOfOrgEqn(rest,v);
         vars1 = BackendEquation.equationsLstVars(orgeqn,v,vars);
       then
@@ -2196,7 +2200,7 @@ algorithm
       list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedAlgs1;
       list<tuple<Integer,Integer,Integer>> derivedMultiEqn,derivedMultiEqn1;
       BackendDAE.StateOrder so,so1;
-      list<tuple<Integer,list<BackendDAE.Equation>>> orgEqnsLst,orgEqnsLst1,orgEqnsLst2;
+      BackendDAE.ConstraintEquations orgEqnsLst,orgEqnsLst1,orgEqnsLst2;
       list<tuple<Integer,list<tuple<Integer,Integer,Boolean>>>> orgEqnsLst_1;
       BackendDAE.EquationArray eqnsarr_1,eqnsarr,seqns,ie;
       BackendDAE.Variables v,kv,ev;
@@ -2269,9 +2273,9 @@ algorithm
          Debug.fcall("bltdump", dumpStateOrder, so);        
          Debug.fcall("bltdump", BackendDump.bltdump, ("reduced ODE:",dae,m,mt,vec1,vec2,{}));
         (dae,m,mt,orgEqnsLst_1) = addOrgEqntoDAE(orgEqnsLst,dae,m,mt,so,inFunctions); 
-        (dae,SOME(m),SOME(mt)) = BackendDAEOptimize.inlineArrayEqn(dae,inFunctions,SOME(m),SOME(mt)); 
+        (dae,m,mt) = replaceScalarArrayEqns(orgEqnsLst_1,dae,m,mt,inFunctions); 
         (dae,m,mt,ass1,ass2,so,orgEqnsLst_1) = prozessAlliasStates(orgEqnsLst_1,dae,m,mt,ass1,ass2,so,{});         
-         Debug.fcall("bltdump", BackendDump.bltdump, ("reduced full ODE:",dae,m,mt,vec1,vec2,{}));
+         Debug.fcall("bltdump", BackendDump.bltdump, ("reduced full ODE",dae,m,mt,vec1,vec2,{}));
          Debug.fcall("bltdump", dumpEqns1X, (orgEqnsLst_1,dae));
          Debug.fcall("bltdump", dumpStateOrder, so);        
          Debug.fcall("bltdump", print, "Select State Candidates\n");
@@ -2312,6 +2316,108 @@ algorithm
   end matchcontinue;
 end reduceIndexDynamicStateSelection;
 
+protected function replaceScalarArrayEqns
+"function: replaceScalarArrayEqns
+  author: Frenkel TUD"
+  input list<tuple<Integer,list<tuple<Integer,Integer,Boolean>>>> inOrgEqns;
+  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.IncidenceMatrix inIncidenceMatrix;
+  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
+  input DAE.FunctionTree inFunctions;
+  output BackendDAE.BackendDAE outBackendDAE;
+  output BackendDAE.IncidenceMatrix outIncidenceMatrix;
+  output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;  
+algorithm
+  (outBackendDAE,outIncidenceMatrix,outIncidenceMatrixT):=
+  matchcontinue (inOrgEqns,inBackendDAE,inIncidenceMatrix,inIncidenceMatrixT,inFunctions)
+    local
+      BackendDAE.BackendDAE dae,dae1;
+      BackendDAE.IncidenceMatrix m,m1;
+      BackendDAE.IncidenceMatrixT mt,mt1; 
+      array<list<BackendDAE.Equation>> arrayListeqns;  
+      array<BackendDAE.MultiDimEquation> ae; 
+      list<Integer> updateeqns;  
+    case ({},dae,m,mt,_)
+       then (dae,m,mt);
+    case (inOrgEqns,dae as BackendDAE.DAE(arrayEqs=ae),m,mt,inFunctions)
+      equation
+        arrayListeqns = arrayCreate(arrayLength(ae), {});
+        arrayListeqns = getScalarArrayEqns(inOrgEqns,dae,arrayListeqns);
+        // replace them
+        (dae1,updateeqns,_) = BackendDAEOptimize.doReplaceScalarArrayEqns(arrayListeqns,dae);
+        // update Incidence matrix
+        (m1,mt1) = BackendDAEUtil.updateIncidenceMatrix(dae,m,mt,updateeqns);        
+      then
+        (dae1,m1,mt1);
+  end matchcontinue;
+end replaceScalarArrayEqns; 
+
+protected function getScalarArrayEqns
+"function: addOrgEqntoDAE
+  author: Frenkel TUD"
+  input list<tuple<Integer,list<tuple<Integer,Integer,Boolean>>>> inOrgEqns;
+  input BackendDAE.BackendDAE inBackendDAE;
+  input array<list<BackendDAE.Equation>> inArrayListeqns;
+  output array<list<BackendDAE.Equation>> outArrayListeqns;
+algorithm
+  outArrayListeqns:=
+  matchcontinue (inOrgEqns,inBackendDAE,inArrayListeqns)
+    local
+      list<tuple<Integer,Integer,Boolean>> eqns;
+      list<tuple<Integer,list<tuple<Integer,Integer,Boolean>>>> rest;
+      BackendDAE.BackendDAE dae;
+      array<list<BackendDAE.Equation>> arrayListeqns;     
+    case ({},dae,arrayListeqns)
+       then arrayListeqns;
+    case ((_,eqns)::rest,dae,arrayListeqns)
+      equation
+        arrayListeqns = getScalarArrayEqns1(eqns,dae,arrayListeqns);
+        arrayListeqns =  getScalarArrayEqns(rest,dae,arrayListeqns);
+      then
+        arrayListeqns;
+  end matchcontinue;
+end getScalarArrayEqns;         
+         
+protected function getScalarArrayEqns1
+"function: addOrgEqntoDAE
+  author: Frenkel TUD"
+  input list<tuple<Integer,Integer,Boolean>> inOrgEqns;
+  input BackendDAE.BackendDAE inBackendDAE;
+  input array<list<BackendDAE.Equation>> inArrayListeqns;
+  output array<list<BackendDAE.Equation>> outArrayListeqns;
+algorithm
+  outArrayListeqns:=
+  matchcontinue (inOrgEqns,inBackendDAE,inArrayListeqns)
+    local
+      Integer e,i,e_1;
+      BackendDAE.BackendDAE dae;
+      list<tuple<Integer,Integer,Boolean>> rest;
+      BackendDAE.EquationArray eqnsarr;
+      array<BackendDAE.MultiDimEquation> ae;
+      array<list<BackendDAE.Equation>> arrayListeqns;
+      BackendDAE.MultiDimEquation meqn;
+      list<BackendDAE.Equation> eqns;
+    case ({},inBackendDAE,arrayListeqns) 
+      then arrayListeqns;
+    case ((e,_,_)::rest,dae as BackendDAE.DAE(orderedEqs=eqnsarr,arrayEqs=ae),arrayListeqns)
+      equation
+        e_1 = e - 1;
+        BackendDAE.ARRAY_EQUATION(index=i) = BackendDAEUtil.equationNth(eqnsarr, e_1);
+        {} = arrayListeqns[i+1];
+        meqn = ae[i+1];
+        eqns = BackendDAEOptimize.getScalarArrayEqns(meqn);
+        arrayListeqns = arrayUpdate(arrayListeqns,i+1,eqns);
+        arrayListeqns = getScalarArrayEqns1(rest,dae,arrayListeqns);
+      then
+        arrayListeqns;
+    case ((_,_,_)::rest,dae,arrayListeqns)
+      equation
+        arrayListeqns = getScalarArrayEqns1(rest,dae,arrayListeqns);
+      then
+        arrayListeqns;       
+  end matchcontinue;
+end getScalarArrayEqns1;   
+
 protected function traverseStateOrderFinder
 "autor: Frenkel TUD 2010-11"
  input tuple<BackendDAE.Equation, tuple<BackendDAE.StateOrder,BackendDAE.Variables>> inTpl;
@@ -2345,14 +2451,14 @@ protected function differentiateEqnsDynamicState
   input BackendDAE.StateOrder inStateOrd;
   input BackendDAE.IncidenceMatrix inM;
   input BackendDAE.IncidenceMatrixT inMT;
-  input list<tuple<Integer,list<BackendDAE.Equation>>> inOrgEqnsLst;
+  input BackendDAE.ConstraintEquations inOrgEqnsLst;
   output BackendDAE.BackendDAE outBackendDAE1;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrixT outMT;
   output list<tuple<Integer,Integer,Integer>> outDerivedAlgs;
   output list<tuple<Integer,Integer,Integer>> outDerivedMultiEqn;
   output BackendDAE.StateOrder outStateOrd;
-  output list<tuple<Integer,list<BackendDAE.Equation>>> outOrgEqnsLst;
+  output BackendDAE.ConstraintEquations outOrgEqnsLst;
 algorithm
   (outBackendDAE1,outM,outMT,outDerivedAlgs,outDerivedMultiEqn,outStateOrd,outOrgEqnsLst):=
   matchcontinue (inBackendDAE1,inIntegerLst6,inFunctions,inDerivedAlgs,inDerivedMultiEqn,inStateOrd,inM,inMT,inOrgEqnsLst)
@@ -2374,7 +2480,7 @@ algorithm
       list<tuple<Integer,Integer,Integer>> derivedMultiEqn,derivedMultiEqn1;
       BackendDAE.StateOrder so,so1;
       DAE.ComponentRef cr,dcr,cr1;
-      list<tuple<Integer,list<BackendDAE.Equation>>> orgEqnsLst;
+      BackendDAE.ConstraintEquations orgEqnsLst;
       list<BackendDAE.Var> vlst;
       list<DAE.ComponentRef> crlst;
       list<tuple<DAE.ComponentRef,Integer>> states;
@@ -2395,7 +2501,8 @@ algorithm
         Debug.fcall("bltdump", BackendDump.debugStrCrefStrCrefStr, (("Add State Order "),cr," : ",dcr,"\n"));
         so = addStateOrder(cr,dcr,inStateOrd);
         BackendDAEEXT.markDifferentiated(e);
-        (dae,m,mt,derivedAlgs1,derivedMultiEqn1,so1,orgEqnsLst) = differentiateEqnsDynamicState(dae,  es, inFunctions,inDerivedAlgs,inDerivedMultiEqn,so,m,mt,inOrgEqnsLst);
+        orgEqnsLst = addOrgEqn(inOrgEqnsLst,e,eqn,true);
+        (dae,m,mt,derivedAlgs1,derivedMultiEqn1,so1,orgEqnsLst) = differentiateEqnsDynamicState(dae,  es, inFunctions,inDerivedAlgs,inDerivedMultiEqn,so,m,mt,orgEqnsLst);
       then
         (dae,m,mt,derivedAlgs1,derivedMultiEqn1,so1,orgEqnsLst);
     case ((dae as BackendDAE.DAE(v,kv,ev,av,eqns,seqns,ie,ae,al,BackendDAE.EVENT_INFO(wclst,zc),eoc)),(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn,inStateOrd,m,mt,inOrgEqnsLst)
@@ -2418,7 +2525,7 @@ algorithm
         Debug.fcall("bltdump", print, "\n");        
         (m,mt) = BackendDAEUtil.updateIncidenceMatrix(dae1, m, mt, e::eqnslst);
         (dae2,m,mt) = updateDummyStateIncidenceMatrix(ilst,dae1,m,mt);
-        orgEqnsLst = addOrgEqn(inOrgEqnsLst,e,eqn);
+        orgEqnsLst = addOrgEqn(inOrgEqnsLst,e,eqn,false);
         (dae2,m,mt,derivedAlgs1,derivedMultiEqn1,so1,orgEqnsLst) = differentiateEqnsDynamicState(dae2, es, inFunctions,derivedAlgs,derivedMultiEqn,so,m,mt,orgEqnsLst);
       then
         (dae2,m,mt,derivedAlgs1,derivedMultiEqn1,so1,orgEqnsLst);
@@ -2641,7 +2748,7 @@ protected function statesCandidates
   author: Frenkel TUD 2011-05"
   input BackendDAE.BackendDAE inBackendDAE;
   input BackendDAE.StateOrder inStateOrd;
-  input list<tuple<Integer,list<BackendDAE.Equation>>> orgEqnsLst;
+  input BackendDAE.ConstraintEquations orgEqnsLst;
   output list<tuple<DAE.ComponentRef,Integer>> outStates;
 algorithm
   outStates := match (inBackendDAE,inStateOrd,orgEqnsLst)
@@ -2917,7 +3024,7 @@ end analyseEqnJac;
 protected function addOrgEqntoDAE
 "function: addOrgEqntoDAE
   author: Frenkel TUD"
-  input list<tuple<Integer,list<BackendDAE.Equation>>> inOrgEqns;
+  input BackendDAE.ConstraintEquations inOrgEqns;
   input BackendDAE.BackendDAE inBackendDAE;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
@@ -2931,8 +3038,8 @@ algorithm
   (outBackendDAE,outIncidenceMatrix,outIncidenceMatrixT,outOrgEqns):=
   matchcontinue (inOrgEqns,inBackendDAE,inIncidenceMatrix,inIncidenceMatrixT,inStateOrd,inFunctions)
     local
-      list<BackendDAE.Equation> eqns;
-      list<tuple<Integer,list<BackendDAE.Equation>>> rest;
+      list<tuple<BackendDAE.Equation,Boolean>> eqns;
+      BackendDAE.ConstraintEquations rest;
       BackendDAE.BackendDAE dae,dae1,dae2;
       BackendDAE.IncidenceMatrix m,m1,m2;
       BackendDAE.IncidenceMatrixT mt,mt1,mt2;      
@@ -2944,7 +3051,7 @@ algorithm
        then (dae,m,mt,{});
     case ((e,eqns)::rest,dae,m,mt,so,inFunctions)
       equation
-        (dae1,m1,mt1,eqns_1) = addOrgEqntoDAE1(eqns,dae,m,mt,so,inFunctions);
+        (dae1,m1,mt1,eqns_1) = addOrgEqntoDAE1(eqns,dae,m,mt,so,inFunctions,e);
         (dae2,m2,mt2,orgeqns) =  addOrgEqntoDAE(rest,dae1,m1,mt1,so,inFunctions);
       then
         (dae2,m2,mt2,(e,eqns_1)::orgeqns);
@@ -2954,23 +3061,24 @@ end addOrgEqntoDAE;
 protected function addOrgEqntoDAE1
 "function: addOrgEqntoDAE
   author: Frenkel TUD"
-  input list<BackendDAE.Equation> inOrgEqns;
+  input list<tuple<BackendDAE.Equation,Boolean>> inOrgEqns;
   input BackendDAE.BackendDAE inBackendDAE;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;  
   input BackendDAE.StateOrder inStateOrd;  
   input DAE.FunctionTree inFunctions;
+  input Integer e;
   output BackendDAE.BackendDAE outBackendDAE;
   output BackendDAE.IncidenceMatrix outIncidenceMatrix;
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;  
   output list<tuple<Integer,Integer,Boolean>> outOrgEqns;
 algorithm
   (outBackendDAE,outIncidenceMatrix,outIncidenceMatrixT,outOrgEqns):=
-  matchcontinue (inOrgEqns,inBackendDAE,inIncidenceMatrix,inIncidenceMatrixT,inStateOrd,inFunctions)
+  matchcontinue (inOrgEqns,inBackendDAE,inIncidenceMatrix,inIncidenceMatrixT,inStateOrd,inFunctions,e)
     local
-      Integer e,ep,l;
+      Integer ep,l;
       BackendDAE.Equation orgeqn;
-      list<BackendDAE.Equation> rest;
+      list<tuple<BackendDAE.Equation,Boolean>> rest;
       BackendDAE.BackendDAE dae,dae1,dae2;
       BackendDAE.IncidenceMatrix m,m1,m2;
       BackendDAE.IncidenceMatrixT mt,mt1,mt2;
@@ -2985,9 +3093,9 @@ algorithm
       list<BackendDAE.WhenClause> wclst;
       list<BackendDAE.ZeroCrossing> zc;
       BackendDAE.ExternalObjectClasses eoc;      
-    case ({},inBackendDAE,m,mt,_,_) 
+    case ({},inBackendDAE,m,mt,_,_,_) 
       then (inBackendDAE,m,mt,{});
-    case (orgeqn::rest,dae as BackendDAE.DAE(v,kv,ev,av,eqnsarr,seqns,ie,ae,al,BackendDAE.EVENT_INFO(wclst,zc),eoc),m,mt,so,inFunctions)
+    case ((orgeqn,false)::rest,dae as BackendDAE.DAE(v,kv,ev,av,eqnsarr,seqns,ie,ae,al,BackendDAE.EVENT_INFO(wclst,zc),eoc),m,mt,so,inFunctions,e)
       equation
         (orgeqn,al,ae,wclst,(so,_)) = traverseBackendDAEExpsEqn(orgeqn, al, ae, wclst, replaceStateOrderExp,(so,v));
         // add the equations     
@@ -2998,9 +3106,16 @@ algorithm
         states = BackendEquation.equationsStates({orgeqn},BackendVariable.daeVars(dae));
         l = listLength(states);
         // next 
-        (dae2,m2,mt2,orgEqnslst) = addOrgEqntoDAE1(rest,dae1,m1,mt1,so,inFunctions);
+        (dae2,m2,mt2,orgEqnslst) = addOrgEqntoDAE1(rest,dae1,m1,mt1,so,inFunctions,e);
       then
         (dae2,m2,mt2,(ep,l,false)::orgEqnslst);
+    case ((orgeqn,true)::rest,dae,m,mt,so,inFunctions,e)
+      equation
+        // next 
+        (dae2,m2,mt2,orgEqnslst) = addOrgEqntoDAE1(rest,dae,m,mt,so,inFunctions,e);
+      then
+        (dae2,m2,mt2,(e,0,true)::orgEqnslst);
+
   end matchcontinue;
 end addOrgEqntoDAE1;         
 
@@ -4254,7 +4369,7 @@ algorithm
         Debug.fcall("bltdump", BackendDump.debugStrCrefStr, ("updateStateCandidates: ",cr,"\n"));
         states = updateStateCandidates1(crlst,inStateOrd,vars);
         states1 = updateStateCandidates2(crs,vars);
-        states = listAppend(states1,states);
+        states = Util.listUnion(states1,states);
       then
         states;
     case ((cr,_)::crlst,inStateOrd,vars)
@@ -4452,13 +4567,13 @@ end calculateJacobian;
 protected function dumpEqnsX
 "function: dumpEqnsX
   author: Frenkel TUD"
-  input tuple<list<tuple<Integer,list<BackendDAE.Equation>>>,array<BackendDAE.MultiDimEquation>> orgEqns;
+  input tuple<BackendDAE.ConstraintEquations,array<BackendDAE.MultiDimEquation>> orgEqns;
 algorithm
   _:=
   matchcontinue (orgEqns)
     local
-      list<BackendDAE.Equation> orgeqns;
-      list<tuple<Integer,list<BackendDAE.Equation>>> rest;
+      list<tuple<BackendDAE.Equation,Boolean>> orgeqns;
+      BackendDAE.ConstraintEquations rest;
       Integer i;
       array<BackendDAE.MultiDimEquation> ae;
     case (({},_)) then ();
@@ -4475,19 +4590,19 @@ end dumpEqnsX;
 protected function dumpEqnsX1
 "function: dumpEqnsX
   author: Frenkel TUD"
-  input list<BackendDAE.Equation> orgEqns;
+  input list<tuple<BackendDAE.Equation,Boolean>> orgEqns;
   input array<BackendDAE.MultiDimEquation> inMEqn;
 algorithm
   _:=
   matchcontinue (orgEqns,inMEqn)
     local
       BackendDAE.Equation orgeqn;
-      list<BackendDAE.Equation> rest;
+      list<tuple<BackendDAE.Equation,Boolean>> rest;
       array<BackendDAE.MultiDimEquation> ae;
       DAE.Exp exp1,exp2;
       Integer i;
     case ({},_) then ();
-    case ((orgeqn as BackendDAE.ARRAY_EQUATION(index=i))::rest,ae)
+    case (((orgeqn as BackendDAE.ARRAY_EQUATION(index=i)),_)::rest,ae)
       equation
         BackendDAE.MULTIDIM_EQUATION(left=exp1,right=exp2) = ae[i+1];
         print("  "); print(BackendDump.equationStr(orgeqn)); print("\n");         
@@ -4495,7 +4610,7 @@ algorithm
         dumpEqnsX1(rest,ae);
       then
         ();
-    case (orgeqn::rest,ae)
+    case ((orgeqn,_)::rest,ae)
       equation
         print("  "); print(BackendDump.equationStr(orgeqn)); print("\n");         
         dumpEqnsX1(rest,ae);

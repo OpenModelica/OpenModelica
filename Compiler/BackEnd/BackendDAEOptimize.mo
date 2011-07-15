@@ -171,7 +171,7 @@ algorithm
   end match;
 end inlineArrayEqn1;
 
-protected function doReplaceScalarArrayEqns
+public function doReplaceScalarArrayEqns
 "function: doReplaceScalarArrayEqns
 autor: Frenkel TUD 2011-5"
   input array<list<BackendDAE.Equation>> arraylisteqns;
@@ -215,7 +215,7 @@ algorithm
   end matchcontinue;
 end doReplaceScalarArrayEqns;
 
-protected function getScalarArrayEqns"
+public function getScalarArrayEqns"
 Author: Frenkel TUD 2011-02"
   input  BackendDAE.MultiDimEquation inAEqn;
   output list<BackendDAE.Equation> outEqsLst;
@@ -233,45 +233,49 @@ algorithm
       equation
         true = Expression.isArray(e1) or Expression.isMatrix(e1);
         true = Expression.isArray(e2) or Expression.isMatrix(e2);
-        ea1 = Expression.flattenArrayExpToList(e1);
-        ea2 = Expression.flattenArrayExpToList(e2);
-        ealst = Util.listThreadTuple(ea1,ea2);
-        eqns = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
+        eqns = generateScalarArrayEqns(e1,e2,source);
       then
         eqns;
     case BackendDAE.MULTIDIM_EQUATION(left=e1 as DAE.CREF(componentRef =_),right=e2,source=source)
       equation
         true = Expression.isArray(e2) or Expression.isMatrix(e2);
         ((e1_1,(_,_))) = BackendDAEUtil.extendArrExp((e1,(NONE(),false)));
-        ea1 = Expression.flattenArrayExpToList(e1_1);
-        ea2 = Expression.flattenArrayExpToList(e2);
-        ealst = Util.listThreadTuple(ea1,ea2);
-        eqns = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
+        eqns = generateScalarArrayEqns(e1_1,e2,source);
       then
         eqns; 
     case BackendDAE.MULTIDIM_EQUATION(left=e1,right=e2 as DAE.CREF(componentRef =_),source=source)
       equation
         true = Expression.isArray(e1) or Expression.isMatrix(e1);
         ((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
-        ea1 = Expression.flattenArrayExpToList(e1);
-        ea2 = Expression.flattenArrayExpToList(e2_1);
-        ealst = Util.listThreadTuple(ea1,ea2);
-        eqns = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
+        eqns = generateScalarArrayEqns(e1,e2_1,source);
       then
         eqns;     
     case BackendDAE.MULTIDIM_EQUATION(left=e1 as DAE.CREF(componentRef =_),right=e2 as DAE.CREF(componentRef =_),source=source)
       equation
         ((e1_1,(_,_))) = BackendDAEUtil.extendArrExp((e1,(NONE(),false)));
         ((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
-        ea1 = Expression.flattenArrayExpToList(e1_1);
-        ea2 = Expression.flattenArrayExpToList(e2_1);
-        ealst = Util.listThreadTuple(ea1,ea2);
-        eqns = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
+        eqns = generateScalarArrayEqns(e1_1,e2_1,source);
       then
         eqns;             
     case aeqn then {};
   end matchcontinue;
 end getScalarArrayEqns;
+
+protected function generateScalarArrayEqns"
+Author: Frenkel TUD 2011-02"
+  input  DAE.Exp e1;
+  input  DAE.Exp e2;
+  input DAE.ElementSource source;
+  output list<BackendDAE.Equation> eqns;
+protected
+  list<DAE.Exp> ea1,ea2;
+  list<tuple<DAE.Exp,DAE.Exp>> ealst;
+algorithm
+  ea1 := Expression.flattenArrayExpToList(e1);
+  ea2 := Expression.flattenArrayExpToList(e2);
+  ealst := Util.listThreadTuple(ea1,ea2);
+  eqns := Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
+end generateScalarArrayEqns;
 
 protected function replaceScalarArrayEqns
   "Help function to e.g. inlineArrayEqn"

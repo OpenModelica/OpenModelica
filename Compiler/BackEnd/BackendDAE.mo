@@ -432,7 +432,8 @@ public
 type DAEHandlerArg = tuple<StateOrder,ConstraintEquations>;
 
 public
-type ConstraintEquations = list<tuple<Integer,list<Equation>>>;
+type ConstraintEquations = list<tuple<Integer,list<tuple<Equation,Boolean>>>>;
+
 
 public
 uniontype StateOrder 
