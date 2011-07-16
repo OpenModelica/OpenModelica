@@ -2439,45 +2439,41 @@ end evaluateAnnotationTraverse;
 
 public function getParameterVars
 "function: getParameterVars"
-  input DAE.DAElist inDAElist;
-  input HashTable2.HashTable inHt;
+  input DAE.DAElist dae;
+  input HashTable2.HashTable ht;
+  output HashTable2.HashTable oht;
+protected
+  list<DAE.Element> elts;
+algorithm
+  DAE.DAE(elts) := dae;
+  oht := Util.listFold(elts,getParameterVars2,ht);
+end getParameterVars;
+
+protected function getParameterVars2
+  input DAE.Element elt;
+  input HashTable2.HashTable ht;
   output HashTable2.HashTable ouHt;
 algorithm
-  (ouHt) := matchcontinue (inDAElist,inHt)
+  (ouHt) := matchcontinue (elt,ht)
     local
-      list<DAE.Element> rest,sublist;
-      DAE.Element el;
-      HashTable2.HashTable ht,ht1,ht2;
       DAE.ComponentRef cr;
       DAE.Exp e;
       Option<DAE.VariableAttributes> dae_var_attr;
-    case (DAE.DAE({}),ht) then ht;
-    case (DAE.DAE((DAE.COMP(dAElist = sublist) :: rest)),ht)
-      equation
-        ht1 = getParameterVars(DAE.DAE(sublist),ht);
-        ht2 = getParameterVars(DAE.DAE(rest),ht1);
-      then
-        ht2;
-    case (DAE.DAE(((DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e)))):: rest),ht)
-      equation
-        ht1 = BaseHashTable.add((cr,e),ht);
-        ht2 = getParameterVars(DAE.DAE(rest),ht1);
-      then
-        ht2;
-    case (DAE.DAE(((DAE.VAR(componentRef = cr,kind=DAE.PARAM(),variableAttributesOption=dae_var_attr))):: rest),ht)
+      list<DAE.Element> elts;
+
+    case (DAE.COMP(dAElist = elts),ht) then Util.listFold(elts,getParameterVars2,ht);
+
+    case (DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e)),ht)
+      then BaseHashTable.add((cr,e),ht);
+
+    case (DAE.VAR(componentRef = cr,kind=DAE.PARAM(),variableAttributesOption=dae_var_attr),ht)
       equation
         e = getStartAttrFail(dae_var_attr);
-        ht1 = BaseHashTable.add((cr,e),ht);
-        ht2 = getParameterVars(DAE.DAE(rest),ht1);
-      then
-        ht2;
-    case (DAE.DAE(el :: rest),ht)
-      equation
-        ht1 = getParameterVars(DAE.DAE(rest),ht);
-      then
-        ht1;
+      then BaseHashTable.add((cr,e),ht);
+
+    else ht;
   end matchcontinue;
-end getParameterVars;
+end getParameterVars2;
 
 public function evaluateAnnotation1
 "function: evaluateAnnotation1
