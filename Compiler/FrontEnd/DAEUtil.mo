@@ -2478,16 +2478,29 @@ end getParameterVars2;
 public function evaluateAnnotation1
 "function: evaluateAnnotation1
   evaluates the annotation Evaluate"
-  input DAE.DAElist inDAElist;
-  input HashTable2.HashTable inPV;
-  input HashTable2.HashTable inHt;
-  output HashTable2.HashTable ouHt;
+  input DAE.DAElist dae;
+  input HashTable2.HashTable pv;
+  input HashTable2.HashTable ht;
+  output HashTable2.HashTable oht;
   output Boolean hasEvaluate;
+protected
+  list<DAE.Element> elts;
 algorithm
-  (ouHt,hasEvaluate) := matchcontinue (inDAElist,inPV,inHt)
+  DAE.DAE(elts) := dae;
+  ((oht,hasEvaluate)) := Util.listFold_2(elts,evaluateAnnotation1Fold,(ht,false),pv);
+end evaluateAnnotation1;
+
+protected function evaluateAnnotation1Fold
+"function: evaluateAnnotation1
+  evaluates the annotation Evaluate"
+  input tuple<HashTable2.HashTable,Boolean> tpl;
+  input HashTable2.HashTable inPV;
+  input DAE.Element el;
+  output tuple<HashTable2.HashTable,Boolean> otpl;
+algorithm
+  otpl := matchcontinue (tpl,inPV,el)
     local
       list<DAE.Element> rest,sublist;
-      DAE.Element el;
       SCode.Comment comment;
       HashTable2.HashTable ht,ht1,ht2,pv;
       DAE.ComponentRef cr;
@@ -2495,38 +2508,27 @@ algorithm
       list<SCode.Annotation> annos;
       DAE.Exp e,e1;
       Boolean b,b1;
-    case (DAE.DAE({}),_,ht) then (ht,false);
-    case (DAE.DAE((DAE.COMP(dAElist = sublist) :: rest)),pv,ht)
-      equation
-        (ht1,b) = evaluateAnnotation1(DAE.DAE(sublist),pv,ht);
-        (ht2,b1) = evaluateAnnotation1(DAE.DAE(rest),pv,ht1);
-      then
-        (ht2,b or b1);
-    case (DAE.DAE(((DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),absynCommentOption=SOME(comment)))):: rest),pv,ht)
+    case (tpl,pv,DAE.COMP(dAElist = sublist))
+      then Util.listFold_2(sublist,evaluateAnnotation1Fold,tpl,pv);
+    case ((ht,_),pv,DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),absynCommentOption=SOME(comment)))
       equation
         SCode.COMMENT(annotation_=SOME(anno)) = comment;
         true = hasBooleanNamedAnnotation1({anno},"Evaluate");
         e1 = evaluateParameter(e,pv);
         ht1 = BaseHashTable.add((cr,e1),ht);
-        (ht2,_) = evaluateAnnotation1(DAE.DAE(rest),pv,ht1);
       then
-        (ht2,true);
-    case (DAE.DAE(((DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),absynCommentOption=SOME(comment)))):: rest),pv,ht)
+        ((ht1,true));
+    case ((ht,_),pv,DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),absynCommentOption=SOME(comment)))
       equation
         SCode.CLASS_COMMENT(annotations=annos) = comment;
         true = hasBooleanNamedAnnotation1(annos,"Evaluate");
         e1 = evaluateParameter(e,pv);
         ht1 = BaseHashTable.add((cr,e1),ht);
-        (ht2,_) = evaluateAnnotation1(DAE.DAE(rest),pv,ht1);
       then
-        (ht2,true);
-    case (DAE.DAE(el :: rest),pv,ht)
-      equation
-        (ht1,b) = evaluateAnnotation1(DAE.DAE(rest),pv,ht);
-      then
-        (ht1,b);
+        ((ht1,true));
+    case (tpl,_,_) then tpl;
   end matchcontinue;
-end evaluateAnnotation1;
+end evaluateAnnotation1Fold;
 
 public function evaluateParameter
 "function: evaluateParameter"
