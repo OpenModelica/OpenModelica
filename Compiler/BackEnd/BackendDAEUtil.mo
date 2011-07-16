@@ -1444,7 +1444,20 @@ protected function updateAliasVars
   input BackendDAE.AliasVariables inAliases;
   output BackendDAE.AliasVariables outAliases;
 algorithm
-  (outAliases) := matchcontinue(inTableList1,inExp1,inExp2,inAliases)
+  (outAliases) := Util.listFold_3(inTableList1,updateAliasVarsFold,inAliases,inExp1,inExp2);
+end updateAliasVars;
+
+protected function updateAliasVarsFold
+" Helper function to changeAliasVariables.
+  Collect all variables and update the alias exp binding.  
+"
+  input BackendDAE.AliasVariables inAliases;
+  input tuple<HashTable4.Key,HashTable4.Value> item;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  output BackendDAE.AliasVariables outAliases;
+algorithm
+  (outAliases) := matchcontinue(inAliases,item,inExp1,inExp2)
     local
       list<tuple<HashTable4.Key,HashTable4.Value>> rest;
       DAE.Exp exp,exp2;
@@ -1455,8 +1468,7 @@ algorithm
       DAE.ExpType ty;
       Boolean b;
       
-      case ({},_,_,inAliases) then inAliases;
-      case (((exp,cref))::rest,inExp1,inExp2,inAliases as BackendDAE.ALIASVARS(aliasVars=aliasvars))
+      case (inAliases as BackendDAE.ALIASVARS(aliasVars=aliasvars),(exp,cref),inExp1,inExp2)
         equation
           Debug.fcall("debugAlias",BackendDump.debugStrExpStr,("*** search for: ",inExp1,"\n"));
           ty = Expression.typeof(inExp2);
@@ -1471,15 +1483,13 @@ algorithm
           v = BackendVariable.mergeVariableOperations(v,Util.if_(Expression.expEqual(exp,exp2),{},{DAE.SUBSTITUTION({exp2},exp)}));
           aliasVariables = addAliasVariables({v},inAliases);
           Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("RES *** ComponentRef : ",cref," = Exp : ",exp2,"\n"));
-          aliasVariables =  updateAliasVars(rest,inExp1,inExp2,aliasVariables);
         then aliasVariables;
-      case (((exp,cref))::rest,inExp1,inExp2,aliasVariables)
+      case (aliasVariables,(exp,cref),_,_)
         equation
           Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("*** let ",cref," with binding Exp : ",exp,"\n"));
-          aliasVariables = updateAliasVars(rest,inExp1,inExp2,aliasVariables);
         then aliasVariables;
    end matchcontinue;
-end updateAliasVars;
+end updateAliasVarsFold;
 
 protected function  compareExpAlias
 "function helper function to getAllValues. 

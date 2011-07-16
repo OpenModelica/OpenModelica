@@ -495,7 +495,7 @@ algorithm
     case ((n,size,arr))
       equation
         lastpos = n - 1;
-        lst = valueArrayList2(arr, 0, lastpos, {});
+        lst = valueArrayList2(arr, false, 0, lastpos, {});
       then
         lst;
   end matchcontinue;
@@ -503,6 +503,7 @@ end valueArrayList;
 
 protected function valueArrayList2 "Helper function to valueArrayList"
   input array<Option<tuple<Key,Value>>> inVarOptionArray1;
+  input Boolean posEq;
   input Integer inInteger2;
   input Integer inInteger3;
   input list<tuple<Key,Value>> acc;
@@ -511,45 +512,25 @@ protected function valueArrayList2 "Helper function to valueArrayList"
   replaceable type Key subtypeof Any;
   replaceable type Value subtypeof Any;
 algorithm
-  outVarLst := matchcontinue (inVarOptionArray1,inInteger2,inInteger3, acc)
+  outVarLst := match (inVarOptionArray1,posEq,inInteger2,inInteger3, acc)
     local
       tuple<Key,Value> v;
       array<Option<tuple<Key,Value>>> arr;
       Integer pos,lastpos,pos_1;
       list<tuple<Key,Value>> res;
     
-    case (arr,pos,lastpos,acc)
+    case (arr,true,pos,lastpos,acc)
       equation
-        (pos == lastpos) = true;
-        SOME(v) = arr[pos + 1];
-        acc = listReverse(v::acc);
-      then
-        acc;
-
-    case (arr,pos,lastpos,acc)
-      equation
-        (pos == lastpos) = true;
-        NONE() = arr[pos + 1];
-        acc = listReverse(acc);
-      then
-        acc;
+        acc = Util.listConsOption(arr[pos + 1],acc);
+      then listReverse(acc);
     
-    case (arr,pos,lastpos,acc)
+    case (arr,false,pos,lastpos,acc)
       equation
         pos_1 = pos + 1;
-        SOME(v) = arr[pos + 1];
-        res = valueArrayList2(arr, pos_1, lastpos, v::acc);
-      then
-        res;
+        acc = Util.listConsOption(arr[pos + 1],acc);
+      then valueArrayList2(arr, pos_1==lastpos, pos_1, lastpos, acc);
     
-    case (arr,pos,lastpos,acc)
-      equation
-        pos_1 = pos + 1;
-        NONE() = arr[pos + 1];
-        res = valueArrayList2(arr, pos_1, lastpos, acc);
-      then
-        res;
-  end matchcontinue;
+  end match;
 end valueArrayList2;
 
 public function hashTableCurrentSize
