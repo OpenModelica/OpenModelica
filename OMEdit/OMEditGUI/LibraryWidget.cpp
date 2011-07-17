@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  * Main Authors 2010: Syed Adeel Asghar, Sonia Tariq
- *
+ * Contributors 2011: Abhinn Kothari
  */
 
 /*
@@ -89,14 +89,17 @@ ModelicaTree::ModelicaTree(LibraryWidget *parent)
     setHeaderLabel(tr("Modelica Files"));
     setIconSize(Helper::iconSize);
     setColumnCount(1);
+    setDragEnabled(true);
     setIndentation(Helper::treeIndentation);
     setContextMenuPolicy(Qt::CustomContextMenu);
     setExpandsOnDoubleClick(false);
 
     createActions();
-
+    connect(this, SIGNAL(itemPressed(QTreeWidgetItem*,int)), SLOT(modelicaTreeItemPressed(QTreeWidgetItem*)));
     connect(this, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(openProjectTab(QTreeWidgetItem*,int)));
     connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
+    connect(this, SIGNAL(changeTab()), SLOT(tabChanged()));
+
     connect(mpParentLibraryWidget, SIGNAL(addModelicaTreeNode(QString,int,QString,QString)),
             SLOT(addNode(QString,int,QString,QString)));
 }
@@ -125,6 +128,15 @@ void ModelicaTree::createActions()
     mpDeleteAction = new QAction(QIcon(":/Resources/icons/delete.png"), tr("Delete"), this);
     mpDeleteAction->setStatusTip(tr("Delete the modelica model"));
     connect(mpDeleteAction, SIGNAL(triggered()), SLOT(deleteNodeTriggered()));
+
+    mpCopyModelAction = new QAction(QIcon(":/Resources/icons/copy.png"), tr("Copy"), this);
+    mpCopyModelAction->setStatusTip(tr("Copy the modelica model"));
+    connect(mpCopyModelAction, SIGNAL(triggered()), SLOT(copyModel()));
+
+    mpPasteModelAction = new QAction(QIcon(":/Resources/icons/paste.png"), tr("Paste"), this);
+    mpPasteModelAction->setStatusTip(tr("Paste the modelica model"));
+    mpPasteModelAction->setDisabled(true);
+    connect(mpPasteModelAction, SIGNAL(triggered()), SLOT(pasteModel()));
 }
 
 ModelicaTreeNode* ModelicaTree::getNode(QString name)
@@ -135,6 +147,11 @@ ModelicaTreeNode* ModelicaTree::getNode(QString name)
             return node;
     }
     return 0;
+}
+
+QList<ModelicaTreeNode*> ModelicaTree::getModelicaTreeNodes()
+{
+    return mModelicaTreeNodesList;
 }
 
 void ModelicaTree::deleteNode(ModelicaTreeNode *item)
@@ -185,16 +202,33 @@ void ModelicaTree::removeChildNodes(ModelicaTreeNode *item)
 void ModelicaTree::addNode(QString name, int type, QString parentName, QString parentStructure)
 {
     ModelicaTreeNode *newTreePost;
-    QStringList info = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(parentStructure + name);
 
+
+
+    mpParentLibraryWidget->mpParentMainWindow->mpStatusBar->showMessage(QString("Loading: ")
+                                                                      .append(parentStructure + name));
     if (parentName.isEmpty())
     {
-        newTreePost = new ModelicaTreeNode(name, parentName, parentStructure + name, StringHandler::createTooltip(info, name, parentStructure + name), type, this);
+        QStringList info = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(parentStructure + name);
+        if(info[2].contains("interactive"))
+        {
+                info[2]="";
+        }
+        QString toolt = "Name: " + name + "\n" + "Description: " + info[1] + "\n" + "Location: " + info[2] + "\n" + "Path: " + parentStructure + name + "\n" + "Type: " + info[0] ;
+        newTreePost = new ModelicaTreeNode(name, parentName, parentStructure + name, toolt , type, this);
         insertTopLevelItem(0, newTreePost);
+
     }
     else
     {
-        newTreePost = new ModelicaTreeNode(name, parentName, parentStructure + name, StringHandler::createTooltip(info, name, parentStructure + name), type);
+        QStringList info = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(parentStructure + name);
+        if(info[2].contains("interactive"))
+        {
+                info[2]="";
+        }
+
+        QString toolt = "Name: " + name + "\n" + "Description: " + info[1] + "\n" + "Location: " + info[2] + "\n" + "Path: " + parentStructure + name + "\n" + "Type: " + info[0] ;
+        newTreePost = new ModelicaTreeNode(name, parentName, parentStructure + name,toolt, type);
         ModelicaTreeNode *treeNode = getNode(StringHandler::removeLastDot(parentStructure));
         treeNode->addChild(newTreePost);
     }
@@ -204,8 +238,27 @@ void ModelicaTree::addNode(QString name, int type, QString parentName, QString p
     while (libraryLoader->isRunning())
         qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
 
-    setCurrentItem(newTreePost);
+    //setCurrentItem(newTreePost);
     mModelicaTreeNodesList.append(newTreePost);
+
+    QString result;
+    result = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getIconAnnotation(parentStructure+name);
+    LibraryComponent *libComponent = new LibraryComponent(result, parentStructure +name,
+                                                          mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy);
+
+    QPixmap pixmap = libComponent->getComponentPixmap(Helper::iconSize);
+    if (pixmap.isNull())
+    {
+        if (QString(parentStructure+name).toLower().contains("usersguide"))
+            newTreePost->setIcon(0, QIcon(":/Resources/icons/info-icon.png"));
+        else
+            newTreePost->setIcon(0, ModelicaTreeNode::getModelicaNodeIcon(newTreePost->mType));
+    }
+    else
+    {
+        newTreePost->setIcon(0, QIcon(libComponent->getComponentPixmap(Helper::iconSize)));
+    }
+    mpParentLibraryWidget->addModelicaComponentObject(libComponent);
 }
 
 void ModelicaTree::openProjectTab(QTreeWidgetItem *item, int column)
@@ -223,7 +276,9 @@ void ModelicaTree::openProjectTab(QTreeWidgetItem *item, int column)
     if (pCurrentTab)
     {
         pMainWindow->mpProjectTabs->setCurrentWidget(pCurrentTab);
+
         isFound = true;
+        //emit changeTab();
     }
     // if the tab is closed by user then reopen it and set it as current tab
     if (!isFound)
@@ -233,6 +288,7 @@ void ModelicaTree::openProjectTab(QTreeWidgetItem *item, int column)
         {
             pMainWindow->mpProjectTabs->addTab(pCurrentTab, pCurrentTab->mModelName);
             pMainWindow->mpProjectTabs->setCurrentWidget(pCurrentTab);
+
             pMainWindow->mpProjectTabs->mRemovedTabsList.removeOne(pCurrentTab);
             isFound = true;
         }
@@ -272,6 +328,15 @@ void ModelicaTree::showContextMenu(QPoint point)
         menu.addAction(mpDeleteAction);
         menu.addAction(mpCheckModelAction);
         menu.addAction(mpFlatModelAction);
+        menu.addAction(mpCopyModelAction);
+        point.setY(point.y() + adjust);
+        menu.exec(mapToGlobal(point));
+    }
+
+    else
+    {
+        QMenu menu(mpParentLibraryWidget);
+        menu.addAction(mpPasteModelAction);
         point.setY(point.y() + adjust);
         menu.exec(mapToGlobal(point));
     }
@@ -385,6 +450,45 @@ bool ModelicaTree::deleteNodeTriggered(ModelicaTreeNode *node, bool askQuestion)
     }
 }
 
+void ModelicaTree::copyModel(ModelicaTreeNode *node)
+{
+
+    QString msg;
+    MainWindow *pMainWindow = mpParentLibraryWidget->mpParentMainWindow;
+    ModelicaTreeNode *treeNode;
+    if (!node)
+        treeNode = mpParentLibraryWidget->mSelectedModelicaNode;
+    else
+        treeNode = node;
+
+
+
+    QClipboard *clipboard = QApplication::clipboard();
+
+
+    clipboard->setText(treeNode->mNameStructure);
+
+     if(!clipboard->text().isEmpty())
+         mpPasteModelAction->setDisabled(false);
+
+
+}
+
+void ModelicaTree::pasteModel()
+{
+    QString nameStruct;
+
+       QClipboard *clipboard = QApplication::clipboard();
+
+
+    MainWindow *pMainWindow = mpParentLibraryWidget->mpParentMainWindow;
+
+       if(!clipboard->text().isEmpty())
+    pMainWindow->mpModelCreator->createCopy(clipboard->text());
+
+}
+
+
 void ModelicaTree::saveChildModels(QString modelName, QString filePath)
 {
     MainWindow *pMainWindow = mpParentLibraryWidget->mpParentMainWindow;
@@ -442,6 +546,51 @@ void ModelicaTree::loadingLibraryComponent(ModelicaTreeNode *treeNode, QString c
     {
         treeNode->setIcon(0, QIcon(libComponent->getComponentPixmap(Helper::iconSize)));
     }
+}
+
+void ModelicaTree::tabChanged()
+{
+
+  mpParentLibraryWidget->mpParentMainWindow->mpComponentBrowser->addComponentBrowserNode();
+}
+
+
+//modelica tree item is pressed or drag
+void ModelicaTree::modelicaTreeItemPressed(QTreeWidgetItem *item)
+{
+
+    if (qApp->mouseButtons() != Qt::LeftButton)
+        return;
+
+    if (!item)
+        return;
+
+//  if item is package then return
+//  if (mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->isWhat(StringHandler::PACKAGE, item->toolTip(0)))
+//      return;
+
+    ModelicaTreeNode *node = dynamic_cast<ModelicaTreeNode*>(item);
+    QByteArray itemData;
+    QDataStream dataStream(&itemData, QIODevice::WriteOnly);
+    dataStream << node->mName << node->mNameStructure << node->mType;
+
+    QMimeData *mimeData = new QMimeData;
+    mimeData->setData("image/modelica-component", itemData);
+
+    qreal adjust = 35;
+    QDrag *drag = new QDrag(this);
+    drag->setMimeData(mimeData);
+
+    // get the component SVG to show on drag
+    LibraryComponent *libraryComponent = mpParentLibraryWidget->getModelicaLibraryComponentObject(node->mNameStructure);
+
+    if (libraryComponent)
+    {
+        QPixmap pixmap = libraryComponent->getComponentPixmap(QSize(50, 50));
+        drag->setPixmap(pixmap);
+        drag->setHotSpot(QPoint((drag->hotSpot().x() + adjust), (drag->hotSpot().y() + adjust)));
+    }
+    drag->exec(Qt::CopyAction);
 }
 
 LibraryTreeNode::LibraryTreeNode(QString text, QString parentName, QString namestruc , QString tooltip, QTreeWidget *parent)
@@ -513,11 +662,13 @@ void LibraryTree::addModelicaStandardLibrary()
     {
         foreach (QString lib, libs) {
             QStringList info = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(lib);
-            LibraryTreeNode *newTreePost = new LibraryTreeNode(lib, QString(""),lib , StringHandler::createTooltip(info, lib, lib), this);
+            QString toolt = "Name: " + lib + "\n" + "Description: " + info[1] + "\n" + "Location: " + info[2] + "\n" + "Path: " + lib + "\n" + "Type: " + info[0] ;
+            LibraryTreeNode *newTreePost = new LibraryTreeNode(lib, QString(""),lib , toolt, this);
             int classType = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassRestriction(lib);
             newTreePost->mType = classType;
             newTreePost->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
             insertTopLevelItem(0, newTreePost);
+
 
             // get the Icon for Modelica tree node
             LibraryLoader *libraryLoader = new LibraryLoader(newTreePost, lib, this);
@@ -620,8 +771,9 @@ void LibraryTree::addClass(QList<LibraryTreeNode *> *tempPackageNodesList,
                                                                       .append(parentStructure + className));
     QString lib = QString(parentStructure + className);
     QStringList info = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(lib);
+    QString toolt = "Name: " + className + "\n" + "Description: " + info[1] + "\n" + "Location: " + info[2] + "\n" + "Path: " + lib + "\n" + "Type: " + info[0] ;
     LibraryTreeNode *newTreePost = new LibraryTreeNode(className, parentClassName,
-                                                       lib, StringHandler::createTooltip(info, className, lib), (QTreeWidget*)0);
+                                                       lib,toolt,(QTreeWidget*)0);
 
     // If Loaded class is package show treewidgetitem expand indicator
     // Remove if using load once library feature
@@ -769,6 +921,7 @@ void LibraryTree::showComponent()
     if (pCurrentTab)
     {
         pProjectTabs->setCurrentWidget(pCurrentTab);
+
         isFound = true;
     }
     // if the tab is closed by user then reopen it and set it as current tab
@@ -779,6 +932,7 @@ void LibraryTree::showComponent()
         {
             pProjectTabs->addTab(pCurrentTab, pCurrentTab->mModelName);
             pProjectTabs->setCurrentWidget(pCurrentTab);
+
             pProjectTabs->mRemovedTabsList.removeOne(pCurrentTab);
             isFound = true;
         }
@@ -824,6 +978,7 @@ void LibraryTree::loadingLibraryComponent(LibraryTreeNode *treeNode, QString cla
     LibraryComponent *libComponent = new LibraryComponent(result, className,
                                                           mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy);
 
+
     QPixmap pixmap = libComponent->getComponentPixmap(Helper::iconSize);
     if (pixmap.isNull())
     {
@@ -839,8 +994,15 @@ void LibraryTree::loadingLibraryComponent(LibraryTreeNode *treeNode, QString cla
     mpParentLibraryWidget->addComponentObject(libComponent);
 }
 
+void LibraryTree::tabChanged()
+{
+
+  mpParentLibraryWidget->mpParentMainWindow->mpComponentBrowser->addComponentBrowserNode();
+}
+
 void LibraryTree::treeItemPressed(QTreeWidgetItem *item)
 {
+
     if (qApp->mouseButtons() != Qt::LeftButton)
         return;
 
@@ -1145,7 +1307,8 @@ void SearchMSLWidget::searchMSL()
     foreach (QString foundedItem, foundedItemsList)
     {
         QStringList info = mpParentMainWindow->mpOMCProxy->getClassInformation(foundedItem);
-        LibraryTreeNode *newTreePost = new LibraryTreeNode(foundedItem, QString(""), foundedItem, StringHandler::createTooltip(info, StringHandler::getLastWordAfterDot(foundedItem), foundedItem), mpSearchedItemsTree);
+        QString toolt = "Name: " + foundedItem + "\n" + "Description: " + info[1] + "\n" + "Location: " + info[2] + "\n" + "Path: " + foundedItem + "\n" + "Type: " + info[0] ;
+        LibraryTreeNode *newTreePost = new LibraryTreeNode(foundedItem, QString(""), foundedItem,toolt, mpSearchedItemsTree);
         newTreePost->mType = mpParentMainWindow->mpOMCProxy->getClassRestriction(foundedItem);
         mpSearchedItemsTree->insertTopLevelItem(0, newTreePost);
 
@@ -1187,6 +1350,11 @@ LibraryWidget::~LibraryWidget()
     {
         delete libraryComponent;
     }
+
+    foreach (LibraryComponent *libraryComponent, mModelicaComponentsList)
+    {
+        delete libraryComponent;
+    }
     delete mpLibraryTree;
     delete mpModelicaTree;
     delete mpLibraryTabs;
@@ -1204,6 +1372,7 @@ void LibraryWidget::addModelFiles(QString fileName, QString parentFileName, QStr
         this->addModelicaNode(fileName, mpParentMainWindow->mpOMCProxy->getClassRestriction(fileName),
                               parentFileName, parentStructure);
         parentStructure = fileName;
+
     }
     else
     {
@@ -1224,11 +1393,15 @@ void LibraryWidget::addModelFiles(QString fileName, QString parentFileName, QStr
 void LibraryWidget::loadFile(QString path, QStringList modelsList)
 {
     // load the file in OMC
+    mpParentMainWindow->mpProgressBar->setRange(0,0);
+    mpParentMainWindow->showProgressBar();
+
     if (!mpParentMainWindow->mpOMCProxy->loadFile(path))
     {
         QString message = QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).append(" ").arg(path))
                           .append("\n").append(mpParentMainWindow->mpOMCProxy->getErrorString());
         mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(message);
+        mpParentMainWindow->hideProgressBar();
         return;
     }
     // if file loading is fine add the models
@@ -1238,6 +1411,7 @@ void LibraryWidget::loadFile(QString path, QStringList modelsList)
     }
     // make the modelica files tab visible in library widget dock window
     mpLibraryTabs->setCurrentWidget(mpModelicaTree);
+    mpParentMainWindow->hideProgressBar();
 }
 
 void LibraryWidget::loadModel(QString modelText, QStringList modelsList)
@@ -1262,6 +1436,7 @@ void LibraryWidget::loadModel(QString modelText, QStringList modelsList)
 
 void LibraryWidget::addComponentObject(LibraryComponent *libraryComponent)
 {
+
     mComponentsList.append(libraryComponent);
 }
 
@@ -1277,13 +1452,49 @@ Component* LibraryWidget::getComponentObject(QString className)
 
 LibraryComponent* LibraryWidget::getLibraryComponentObject(QString className)
 {
+
+
     foreach (LibraryComponent *libraryComponent, mComponentsList)
+    {
+        if (libraryComponent->mClassName == className)
+{
+
+    return libraryComponent;
+
+
+}
+    }
+    return 0;
+}
+
+
+void LibraryWidget::addModelicaComponentObject(LibraryComponent *libraryComponent)
+{
+    mModelicaComponentsList.append(libraryComponent);
+
+}
+
+Component* LibraryWidget::getModelicaComponentObject(QString className)
+{
+    foreach (LibraryComponent *libraryComponent, mModelicaComponentsList)
+    {
+        if (libraryComponent->mClassName == className)
+            return libraryComponent->mpComponent;
+    }
+    return 0;
+}
+
+LibraryComponent* LibraryWidget::getModelicaLibraryComponentObject(QString className)
+{
+    foreach (LibraryComponent *libraryComponent, mModelicaComponentsList)
     {
         if (libraryComponent->mClassName == className)
             return libraryComponent;
     }
     return 0;
 }
+
+
 
 void LibraryWidget::updateNodeText(QString text, QString textStructure, ModelicaTreeNode *node)
 {
@@ -1305,7 +1516,9 @@ void LibraryWidget::updateNodeText(QString text, QString textStructure, Modelica
     treeNode->mNameStructure = textStructure;
     treeNode->setText(0, text);
     QStringList info = mpParentMainWindow->mpOMCProxy->getClassInformation(textStructure);
-    treeNode->setToolTip(0, StringHandler::createTooltip(info, text, textStructure));
+    QString toolt = "Name: " + text + "\n" + "Description: " + info[1] + "\n" + "Location: " + info[2] + "\n" + "Path: " + textStructure + "\n" + "Type: " + info[0] ;
+
+    treeNode->setToolTip(0, toolt);
 
     // if the node has childs
     int count = treeNode->childCount();
@@ -1389,3 +1602,219 @@ void LibraryLoader::run()
     else
         emit loadLibraryComponent(mpModelicaTreeNode, mClassName);
 }
+
+ComponentBrowserTreeNode::ComponentBrowserTreeNode(QString text, QString parentName, QString namestruc ,QString tooltip, int type, QTreeWidget *parent)
+    : QTreeWidgetItem(parent)
+{
+    mType = type;
+    mName = text;
+    mParentName = parentName;
+    mNameStructure = namestruc;
+
+    setText(0, mName);
+    setToolTip(0, tooltip);
+    setStatusTip(0,"component browser tree");
+
+    //setIcon(0, getModelicaNodeIcon(mType));
+}
+
+
+ComponentBrowserTree::ComponentBrowserTree(ComponentBrowserWidget *parent)
+    : QTreeWidget(parent)
+{
+    mpParentComponentBrowserWidget = parent;
+    setFrameShape(QFrame::StyledPanel);
+    setHeaderLabel(tr("Outline"));
+    setIconSize(Helper::iconSize);
+    setColumnCount(1);
+    //setDragEnabled(true);
+    setIndentation(Helper::treeIndentation);
+    setContextMenuPolicy(Qt::CustomContextMenu);
+    setExpandsOnDoubleClick(false);
+
+    //createActions();
+    //connect(this, SIGNAL(itemPressed(QTreeWidgetItem*,int)), SLOT(modelicaTreeItemPressed(QTreeWidgetItem*)));
+    //connect(this, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(openProjectTab(QTreeWidgetItem*,int)));
+    //connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
+    connect(mpParentComponentBrowserWidget, SIGNAL(addComponentBrowserTreeNode()),
+            SLOT(editComponentBrowser()));
+}
+ComponentBrowserTree::~ComponentBrowserTree()
+{
+    // delete all the items in the tree
+    for (int i = 0; i < topLevelItemCount(); ++i)
+        qDeleteAll(topLevelItem(i)->takeChildren());
+}
+
+ComponentBrowserTreeNode* ComponentBrowserTree::getBrowserNode(QString name)
+{
+
+    foreach (ComponentBrowserTreeNode *node, mComponentBrowserTreeNodeList)
+    {
+
+        if (node->mNameStructure == name)
+        {
+            return node;
+
+
+        }
+
+    }
+    return 0;
+}
+
+
+void ComponentBrowserTree::deleteBrowserNode(ComponentBrowserTreeNode *item)
+{
+
+    int count = item->childCount();
+
+    for (int i = 0 ; i < count ; i++)
+    {
+        ComponentBrowserTreeNode *treeNode = dynamic_cast<ComponentBrowserTreeNode*>(item->child(i));
+        deleteBrowserNode(treeNode);
+    }
+    // Delete the node from list as well
+    mComponentBrowserTreeNodeList.removeOne(item);
+    // Delete the tab of the parent item as well
+
+
+
+ }
+
+void ComponentBrowserTree::addBrowserNode(QString name, int type,QString className,QString parentName, QString parentStructure)
+{
+
+    QString toolt;
+    ComponentBrowserTreeNode *newTreePost;
+    if (parentName.isEmpty())
+    {
+        QStringList info = mpParentComponentBrowserWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(className);
+
+        if(!info.isEmpty())
+        toolt = "Name: " + name + "\n" + "Description: " + info[1] + "\n" + "Location: " + info[2] + "\n" + "Path: " + parentStructure + name + "\n" + "Type: " + info[0] ;
+        else
+          toolt = className;
+        newTreePost = new ComponentBrowserTreeNode(name, parentName, parentStructure + name, toolt , type, this);
+        insertTopLevelItem(0, newTreePost);
+
+
+
+    }
+    else
+    {
+        QStringList info = mpParentComponentBrowserWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(className);
+
+        if(!info.isEmpty())
+        toolt = "Name: " + name + "\n" + "Description: " + info[1] + "\n" + "Location: " + info[2] + "\n" + "Path: " + parentStructure + name + "\n" + "Type: " + info[0] ;
+        else
+          toolt = className;
+
+        newTreePost = new ComponentBrowserTreeNode(name, parentName, parentStructure + name,toolt,type);
+        ComponentBrowserTreeNode *treeNode = getBrowserNode(StringHandler::removeLastDot(parentStructure));
+        treeNode->addChild(newTreePost);
+
+    }
+
+
+    setCurrentItem(newTreePost);
+
+
+    mComponentBrowserTreeNodeList.append(newTreePost);
+    this->setVisible(true);
+
+ }
+
+void ComponentBrowserTree::addBrowserChild(QString name,QString className, int type, QString parentName, QString parentStructure)
+{
+addBrowserNode(name,type,className,parentName,parentStructure);
+
+
+QList<ComponentsProperties*> components =mpParentComponentBrowserWidget->mpParentMainWindow->mpOMCProxy->getComponents(className);
+
+
+foreach(ComponentsProperties *abc , components)
+ {
+
+     int comptype =mpParentComponentBrowserWidget->mpParentMainWindow->mpOMCProxy->getClassRestriction(abc->getClassName());
+
+     addBrowserChild(abc->getName(),abc->getClassName(),comptype,name,parentStructure+name+".");
+
+
+ }
+
+
+}
+
+
+void ComponentBrowserTree::editComponentBrowser()
+{
+// deleting information of the previous tab from the component browser
+    if(!mComponentBrowserTreeNodeList.isEmpty())
+  {  ComponentBrowserTreeNode *node = mComponentBrowserTreeNodeList.first();
+
+    deleteBrowserNode(node);
+
+    if (node->childCount())
+        qDeleteAll(node->takeChildren());
+    delete node;
+  }
+
+
+    ProjectTabWidget *pProjectTab = mpParentComponentBrowserWidget->mpParentMainWindow->mpProjectTabs;
+   ProjectTab *pCurrentTab= pProjectTab->getCurrentTab();
+   if(pCurrentTab)
+   {
+           QString name = pCurrentTab->mModelName;
+   QString namestruct= pCurrentTab->mModelNameStructure;
+
+
+   int type= pProjectTab->getCurrentTab()->mModelicaType;
+   //adding the current model
+  addBrowserChild(name,name,type,tr(""),tr(""));
+
+
+collapseAll();
+if(this->depth()>=0)
+this->expandToDepth(0);
+   }
+}
+
+ComponentBrowserWidget::ComponentBrowserWidget(MainWindow *parent)
+    : QWidget(parent)
+{
+    mpParentMainWindow = parent;
+
+    //mpComponentBrowserTabs= new QTabWidget;
+    //mpComponentBrowserTabs->setTabPosition(QTabWidget::South);
+
+
+    mpComponentBrowserTree = new ComponentBrowserTree(this);
+    //mpModelicaTree = new ModelicaTree(this);
+
+    //mpComponentBrowserTabs->addTab(mpComponentBrowserTree,"hello");
+    //mpLibraryTabs->addTab(mpModelicaTree, "Modelica Files");
+
+    mpGrid = new QVBoxLayout(this);
+    mpGrid->setContentsMargins(0, 0, 0, 0);
+    mpGrid->addWidget(mpComponentBrowserTree);
+
+    setLayout(mpGrid);
+}
+
+ComponentBrowserWidget::~ComponentBrowserWidget()
+{
+    // delete all the loaded components
+
+    //delete mpLibraryTree;
+    //delete mpModelicaTree;
+    delete mpComponentBrowserTree;
+    //delete mpComponentBrowserTabs;
+}
+
+void ComponentBrowserWidget::addComponentBrowserNode()
+{
+
+    emit addComponentBrowserTreeNode();
+}
+

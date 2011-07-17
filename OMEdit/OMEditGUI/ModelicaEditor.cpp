@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  * Main Authors 2010: Syed Adeel Asghar, Sonia Tariq
- *
+ * Contributors 2011: Abhinn Kothari
  */
 
 #include "ModelicaEditor.h"
@@ -241,8 +241,7 @@ void ModelicaTextHighlighter::initializeSettings()
 
     mHighlightingRules.clear();
     HighlightingRule rule;
-
-    mTextFormat.setForeground(mpModelicaTextSettings->getTextRuleColor());
+            mTextFormat.setForeground(mpModelicaTextSettings->getTextRuleColor());
     mKeywordFormat.setForeground(mpModelicaTextSettings->getKeywordRuleColor());
     mTypeFormat.setForeground(mpModelicaTextSettings->getTypeRuleColor());
     mSingleLineCommentFormat.setForeground(mpModelicaTextSettings->getCommentRuleColor());

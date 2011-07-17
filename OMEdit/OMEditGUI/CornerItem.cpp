@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  * Main Authors 2010: Syed Adeel Asghar, Sonia Tariq
- *
+ * Contributors 2011: Abhinn Kothari
  */
 
 #include "CornerItem.h"
@@ -325,8 +325,12 @@ void RectangleCornerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 QVariant RectangleCornerItem::itemChange(GraphicsItemChange change, const QVariant &value)
 {
     QGraphicsItem::itemChange(change, value);
+
+
+
     if (change == QGraphicsItem::ItemPositionHasChanged)
     {
+
         emit itemMoved(mConnectedPointIndex, value.toPointF());
     }
     return value;

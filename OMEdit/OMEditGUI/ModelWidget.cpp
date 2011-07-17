@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  * Main Authors 2010: Syed Adeel Asghar, Sonia Tariq
- *
+ * Contributors 2011: Abhinn Kothari
  */
 
 #include <QMessageBox>
@@ -153,8 +153,101 @@ void ModelCreator::create()
     //open the new tab in central widget and add the model to tree.
     mpParentMainWindow->mpLibrary->addModelicaNode(mpNameTextBox->text(), mType,
                                                    mpParentPackageCombo->currentText(), modelStructure);
+
     mpParentMainWindow->mpProjectTabs->addNewProjectTab(mpNameTextBox->text(), modelStructure, mType);
     accept();
+}
+
+
+void ModelCreator::createCopy(QString modelname)
+{
+
+
+                  QString newname = StringHandler::removeLastWordAfterDot(modelname);
+
+    if (modelname.isEmpty())
+    {
+        QMessageBox::critical(this, Helper::applicationName + " - Error",
+                              GUIMessages::getMessage(GUIMessages::ENTER_NAME).
+                              arg(StringHandler::getModelicaClassType(mType)), tr("OK"));
+        return;
+    }
+    QString model, parentPackage, modelStructure;
+    int i=1;
+    //if (mpParentPackageCombo->currentText().isEmpty())
+    //{
+
+        model = newname + QString::number(i);
+
+        while(mpParentMainWindow->mpOMCProxy->existClass(model))
+        {
+            i=i+1;
+            model = newname + QString::number(i) ;
+        }
+        parentPackage = QString("in Global Scope");
+        QString listmodel = mpParentMainWindow->mpOMCProxy->list(modelname);
+        listmodel = listmodel.replace("model " + modelname , "model " + model);
+        listmodel = listmodel.replace("end " + modelname , "end " + model);
+
+
+
+   // }
+   // else
+   // {
+     //   model = QString(mpParentPackageCombo->currentText()).append(".").append(mpNameTextBox->text());
+      //  parentPackage = QString("in Package '").append(mpParentPackageCombo->currentText()).append("'");
+      //  modelStructure = QString(mpParentPackageCombo->currentText()).append(".");
+   // }
+
+    // Check whether model exists or not.
+    //if (mpParentMainWindow->mpOMCProxy->existClass(model))
+   // {
+     //   QMessageBox::critical(this, Helper::applicationName + " - Error",
+      //                        GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).
+       //                       arg(StringHandler::getModelicaClassType(mType)).arg(model).arg(parentPackage),
+        //                      tr("OK"));
+        //return;
+   // }
+    // create the model.
+    //if (mpParentPackageCombo->currentText().isEmpty())
+   // {
+        if (!mpParentMainWindow->mpOMCProxy->copyClass(listmodel))
+        {
+            QMessageBox::critical(this, Helper::applicationName + " - Error",
+                                 GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).
+                                 arg(mpParentMainWindow->mpOMCProxy->getResult()).append("\n\n").
+                                 append(GUIMessages::getMessage(GUIMessages::NO_OPEN_MODELICA_KEYWORDS)), tr("OK"));
+            return;
+        }
+    //}
+    //else
+   // {
+     //   if(!mpParentMainWindow->mpOMCProxy->createSubClass(StringHandler::getModelicaClassType(mType).toLower(),
+       //                                                    mpNameTextBox->text(),
+         //                                                  mpParentPackageCombo->currentText()))
+       // {
+         //   QMessageBox::critical(this, Helper::applicationName + " - Error",
+           //                       GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).
+             //                     arg(mpParentMainWindow->mpOMCProxy->getResult()).append("\n\n").
+               //                   append(GUIMessages::getMessage(GUIMessages::NO_OPEN_MODELICA_KEYWORDS)), tr("OK"));
+            //return;
+       // }
+   // }
+
+    //open the new tab in central widget and add the model to tree.
+
+    mpParentMainWindow->mpLibrary->addModelicaNode(model, mpParentMainWindow->mpOMCProxy->getClassRestriction(modelname),
+                                                   "", "");
+    //mpParentMainWindow->mpProjectTabs->addNewProjectTab(model,"", mpParentMainWindow->mpOMCProxy->getClassRestriction(modelname));
+
+   // mpParentMainWindow->mpProjectTabs->getCurrentTab()->getModelicaTextToolButton()->click();
+
+    //mpParentMainWindow->mpOMCProxy->addClassAnnotation(model,mpParentMainWindow->mpOMCProxy->getCla)
+  //  ProjectTab *pCurrentTab = mpParentMainWindow->mpProjectTabs->getCurrentTab();
+
+
+   // pCurrentTab->mpModelicaEditor->setText(listmodel);
+
 }
 
 RenameClassWidget::RenameClassWidget(QString name, QString nameStructure, MainWindow *parent)

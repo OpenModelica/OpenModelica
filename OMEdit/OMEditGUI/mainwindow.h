@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  * Main Authors 2010: Syed Adeel Asghar, Sonia Tariq
- *
+ * Contributors 2011: Abhinn Kothari
  */
 
 /*
@@ -80,6 +80,7 @@ class GraphicsView;
 class GraphicsScene;
 class SearchMSLWidget;
 class LibraryWidget;
+class ComponentBrowserWidget;
 class ModelCreator;
 class SimulationWidget;
 class PlotWindowContainer;
@@ -102,6 +103,7 @@ public:
     QGridLayout *mpTabgrid;
     SearchMSLWidget *mpSearchMSLWidget;
     LibraryWidget *mpLibrary;
+    ComponentBrowserWidget *mpComponentBrowser;
     SimulationWidget *mpSimulationWidget;
     PlotWindowContainer *mpPlotWindowContainer;
     InteractiveSimulationTabWidget *mpInteractiveSimualtionTabWidget;
@@ -165,6 +167,7 @@ public:
     QAction *polygonAction;
     QAction *textAction;
     QAction *bitmapAction;
+    QAction *connectAction;
     QActionGroup *viewActionGroup;
     QAction *modelingViewAction;
     QAction *plottingViewAction;
@@ -184,6 +187,7 @@ public:
     QDockWidget *plotdock;
     QDockWidget *documentationdock;
     QDockWidget *searchMSLdock;
+    QDockWidget *compbrowsedock;
 
     bool mExitApplication;
 
@@ -211,6 +215,7 @@ private slots:
     void openUserManual();
     void openAbout();
     void toggleShapesButton();
+    void changeConnectMode();
     void focusMSLSearch(bool visible);
     void switchToModelingView();
     void switchToPlottingView();
@@ -226,6 +231,12 @@ private:
     void createToolbars();
     QDockWidget *messagedock;
     QDockWidget *libdock;
+protected:
+    virtual void dragEnterEvent(QDragEnterEvent *event);
+    virtual void dragMoveEvent(QDragMoveEvent *event);
+    virtual void dropEvent(QDropEvent *event);
+signals:
+     void fileOpen(QString filename);
 };
 
 #endif // MAINWINDOW_H

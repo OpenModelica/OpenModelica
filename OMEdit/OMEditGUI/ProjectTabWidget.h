@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  * Main Authors 2010: Syed Adeel Asghar, Sonia Tariq
- *
+ * Contributors 2011: Abhinn Kothari
  */
 
 /*
@@ -124,6 +124,10 @@ public:
     ProjectTab *mpParentProjectTab;
     QAction *mpCancelConnectionAction;
     QAction *mpRotateIconAction;
+    QAction *mpHorizontalFlipAction;
+    QAction *mpCopyComponentAction;
+    QAction *mpPasteComponentAction;
+    QAction *mpVerticalFlipAction;
     QAction *mpRotateAntiIconAction;
     QAction *mpResetRotation;
     QAction *mpDeleteIconAction;
@@ -135,6 +139,7 @@ signals:
     void keyPressRight();
     void keyPressRotateClockwise();
     void keyPressRotateAntiClockwise();
+    void currentChange(int index);
 public slots:
     void updateSceneRect(const QRectF &rect);
     void addConnector(Component *pComponent);
@@ -146,6 +151,7 @@ public slots:
     void showGridLines(bool showLines);
     void selectAll();
     void addClassAnnotation();
+    void pasteComponent();
 protected:
     virtual void dragMoveEvent(QDragMoveEvent *event);
     virtual void dropEvent(QDropEvent *event);
@@ -245,6 +251,7 @@ public:
 signals:
     void tabAdded();
     void tabRemoved();
+
     void modelSaved(QString modelName, QString filePath);
 public slots:
     void addProjectTab(ProjectTab *projectTab, QString modelName, QString modelStructure);
@@ -264,6 +271,7 @@ public slots:
     void updateTabIndexes();
     void enableProjectToolbar();
     void disableProjectToolbar();
+    void tabChanged();
 protected:
     virtual void keyPressEvent(QKeyEvent *event);
 };

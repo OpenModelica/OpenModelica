@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  * Main Authors 2010: Syed Adeel Asghar, Sonia Tariq
- *
+ * Contributors 2011: Abhinn Kothari
  */
 
 #include "Helper.h"
@@ -73,6 +73,7 @@ qreal Helper::shapesStrokeWidth = 5.0;
 QString Helper::modelicaLibrarySearchText = QString("Search Modelica Standard Library");
 QString Helper::noItemFound = QString("Sorry, no items found");
 QString Helper::running_Simulation = QString("Running Simulation");
+QString Helper::running_Simulation_text = QString("Running Simulation.\nPlease wait for a while.");
 QString Helper::starting_interactive_simulation_server = QString("Starting Interactive Simulation Server");
 QString Helper::omi_network_address = QString("127.0.0.1");
 quint16 Helper::omi_control_client_port = 10501;
@@ -213,6 +214,12 @@ QString GUIMessages::getMessage(int type)
         return "You cannot insert %1, it is a %2. Only connector is allowed on the icon layer.";
     case PLOT_PARAMETRIC_DIFF_FILES:
         return "You cannot do a plot parametric between two different simulation result files. Make sure you select two variables from the same simulation result file.";
+    case FILE_FORMAT_NOT_SUPPORTED:
+        return "The file format is not supported. You can only open .mo files here.";
+    case INCORRECT_HTML_TAGS:
+        return "The html tags in the documentation are incorrect. Give correct starting and ending html tags and save it again.";
+    case ITEM_DROPPED_ON_ITSELF:
+        return "You cannot drop an item on itself.";
     default:
         return "";
     }

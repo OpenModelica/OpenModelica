@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  * Main Authors 2010: Syed Adeel Asghar, Sonia Tariq
- *
+ * Contributors 2011: Abhinn Kothari
  */
 
 #include "OptionsWidget.h"
@@ -191,6 +191,8 @@ void OptionsWidget::readModelicaTextSettings()
         mpModelicaTextSettings->setCommentRuleColor(QColor(mSettings.value("commentRule/color").toUInt()));
     if (mSettings.contains("numberRule/color"))
         mpModelicaTextSettings->setNumberRuleColor(QColor(mSettings.value("numberRule/color").toUInt()));
+
+
 }
 
 void OptionsWidget::readPenStyleSettings()
@@ -198,10 +200,18 @@ void OptionsWidget::readPenStyleSettings()
     if (mSettings.contains("penstyle/color"))
     {
         if (mSettings.value("penstyle/color").toString().isEmpty())
+           {
             mpPenStylePage->setPenColor(Qt::transparent);
+           mpPenStylePage->setColorViewerPixmap(Qt::transparent);
+           }
         else
+        {
             mpPenStylePage->setPenColor(QColor(mSettings.value("penstyle/color").toUInt()));
+            mpPenStylePage->setColorViewerPixmap(QColor(mSettings.value("penstyle/color").toUInt()));
+        }
     }
+
+
     if (mSettings.contains("penstyle/pattern"))
         mpPenStylePage->setPenPattern(mSettings.value("penstyle/pattern").toString());
     if (mSettings.contains("penstyle/thickness"))
@@ -215,12 +225,29 @@ void OptionsWidget::readBrushStyleSettings()
     if (mSettings.contains("brushstyle/color"))
     {
         if (mSettings.value("brushstyle/color").toString().isEmpty())
+        {
             mpBrushStylePage->setBrushColor(Qt::transparent);
+            mpBrushStylePage->setColorViewerPixmap(Qt::transparent);
+        }
         else
+        {
             mpBrushStylePage->setBrushColor(mSettings.value("brushstyle/color").toUInt());
+            mpBrushStylePage->setColorViewerPixmap(QColor(mSettings.value("brushstyle/color").toUInt()));
+        }
+
     }
     if (mSettings.contains("brushstyle/pattern"))
+    {
         mpBrushStylePage->setBrushPattern(mSettings.value("brushstyle/pattern").toString());
+        if(mpBrushStylePage->getBrushPattern()==Qt::NoBrush)
+        {
+            mpBrushStylePage->setBrushColor(Qt::transparent);
+            mpBrushStylePage->setColorViewerPixmap(Qt::transparent);
+            mpBrushStylePage->setNoColorCheckBox(true);
+
+        }
+
+    }
 }
 
 void OptionsWidget::saveGeneralSettings()
@@ -759,6 +786,7 @@ void PenStylePage::pickColor()
         return;
 
     setPenColor(color);
+    setColorViewerPixmap(color);
     mpNoColorCheckBox->setChecked(false);
 }
 
@@ -803,6 +831,7 @@ BrushStylePage::BrushStylePage(OptionsWidget *pParent)
     mpPatternLabel = new QLabel(tr("Pattern:"));
     mpPatternsComboBox = new QComboBox;
     mpPatternsComboBox->setIconSize(Helper::iconSize);
+    mpPatternsComboBox->addItem(tr("NoBrush"), Qt::NoBrush);
     mpPatternsComboBox->addItem(QIcon(Helper::solidBrushIcon), Helper::solidBrush, Helper::solidBrushStyle);
     mpPatternsComboBox->addItem(QIcon(Helper::horizontalBrushIcon), Helper::horizontalBrush, Helper::horizontalBrushStyle);
     mpPatternsComboBox->addItem(QIcon(Helper::verticalBrushIcon), Helper::verticalBrush, Helper::verticalBrushStyle);
@@ -815,9 +844,9 @@ BrushStylePage::BrushStylePage(OptionsWidget *pParent)
     mpPatternsComboBox->addItem(QIcon(Helper::sphereBrushIcon), Helper::sphereBrush, Helper::sphereBrushStyle);
 
     // set default values
-    setBrushColor(Qt::transparent);            // transparent
+    setBrushColor(QColor (0, 0, 255));            // transparent
     setColorViewerPixmap(getBrushColor());
-    setBrushPattern(tr("Solid"));              // Qt::SolidPattern
+    setBrushPattern(tr("NoBrush"));              // Qt::NoBrushPattern
 
     QGridLayout *mainLayout = new QGridLayout;
     mainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -845,6 +874,8 @@ void BrushStylePage::pickColor()
 
     setBrushColor(color);
     mpNoColorCheckBox->setChecked(false);
+    setColorViewerPixmap(color);
+
     // if a brush color is picked up and user has selected no color for pen then make the pen color transparent
     if (mpParentOptionsWidget->mpPenStylePage->getNoColorCheckBox())
         setColorViewerPixmap(Qt::transparent);

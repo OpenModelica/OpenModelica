@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  * Main Authors 2010: Syed Adeel Asghar, Sonia Tariq
- *
+ * Contributors 2011: Abhinn Kothari
  */
 
 /*
@@ -60,7 +60,6 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     setWindowTitle(Helper::applicationName + " - "  + Helper::applicationIntroText);
     setWindowIcon(QIcon(":/Resources/icons/omeditor.png"));
     setMinimumSize(400, 300);
-    resize(800, 600);
     setContentsMargins(1, 1, 1, 1);
 
     //Create a centralwidget for the main window
@@ -114,6 +113,13 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     libdock->setWidget(mpLibrary);
     addDockWidget(Qt::LeftDockWidgetArea, libdock);
 
+    //create a dock for the component browser
+    compbrowsedock = new QDockWidget(tr("Model Browser"), this);
+    compbrowsedock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    mpComponentBrowser = new ComponentBrowserWidget(this);
+    compbrowsedock->setWidget(mpComponentBrowser);
+    addDockWidget(Qt::LeftDockWidgetArea, compbrowsedock);
+
     //Set dock widget corner owner
     setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
 
@@ -144,6 +150,8 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
 
     //Create Actions, Toolbar and Menus
     splashScreen->showMessage("Creating Components", Qt::AlignRight, Qt::white);
+//    this->setDragMode(QGraphicsView::RubberBandDrag);
+    this->setAcceptDrops(true);
     this->createActions();
     this->createToolbars();
     this->createMenus();
@@ -175,9 +183,12 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     mpStatusBar->addPermanentWidget(mpProgressBar);
     this->setStatusBar(mpStatusBar);
 
+   // mpComponentBrowser = new ComponentBrowserWidget(this);
+
     // Create a New Project Widget
     mpModelCreator = new ModelCreator(this);
 
+        connect(this, SIGNAL(fileOpen(QString)), mpProjectTabs, SLOT(openFile(QString)));
     QMetaObject::connectSlotsByName(this);
 }
 
@@ -204,6 +215,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
         // Close the OMC Connection
         this->mpOMCProxy->stopServer();
         delete mpOMCProxy;
+        mpProjectTabs->blockSignals(true);
         event->accept();
     }
     else
@@ -211,6 +223,89 @@ void MainWindow::closeEvent(QCloseEvent *event)
         event->ignore();
     }
 }
+
+void MainWindow::dragEnterEvent(QDragEnterEvent *event)
+{
+   event->setDropAction(Qt::CopyAction);
+   event->accept();
+}
+
+
+//! Defines what happens when moving an object in the MainWindow.
+//! @param event contains information of the drag operation.
+void MainWindow::dragMoveEvent(QDragMoveEvent *event)
+{
+   if(event->mimeData()->hasFormat("application/x-qt-windows-mime;value=\"FileName\""))
+    {
+
+        event->setDropAction(Qt::CopyAction);
+        event->accept();
+    }
+    else
+    {
+        event->ignore();
+    }
+}
+
+//! Defines what happens when drop a file in a Main Window.
+//! @param event contains information of the drop operation.
+void MainWindow::dropEvent(QDropEvent *event)
+{
+    this->setFocus();
+
+
+
+    if (!event->mimeData()->hasFormat("application/x-qt-windows-mime;value=\"FileName\""))
+    {
+        event->ignore();
+
+        return;
+    }
+
+
+   else
+    {
+
+
+
+
+ QByteArray itemData = event->mimeData()->data("application/x-qt-windows-mime;value=\"FileNameW\"");
+ QString filename = QString::fromUtf16((ushort*)itemData.data(), itemData.size() / 2);
+
+
+
+filename=filename.trimmed();
+
+
+
+
+ if(filename.contains(".mo",Qt::CaseInsensitive))
+ {
+     int i = filename.indexOf(".mo",0,Qt::CaseInsensitive);
+     filename = filename.left(i+3);
+    emit fileOpen(filename);
+    event->accept();
+ }
+
+ else
+ {
+
+     QString message = QString(GUIMessages::getMessage(GUIMessages::FILE_FORMAT_NOT_SUPPORTED));
+     mpMessageWidget->printGUIErrorMessage(message);
+
+
+     event->ignore();
+
+     return;
+
+ }
+
+}
+
+
+}
+
+
 
 //! Defines the actions used by the toolbars
 void MainWindow::createActions()
@@ -395,6 +490,12 @@ void MainWindow::createActions()
     bitmapAction->setStatusTip(tr("Imports a Bitmap."));
     bitmapAction->setCheckable(true);
     connect(bitmapAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
+
+    connectAction = new QAction(QIcon(":/Resources/icons/connector-icon.png"), tr("Connect/Unconnect Mode"),this);
+    connectAction->setStatusTip(tr("Changes to/from connect mode"));
+    connectAction->setCheckable(true);
+    connectAction->setChecked(true);
+    connect(connectAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
 
     viewActionGroup = new QActionGroup(this);
     viewActionGroup->setExclusive(true);
@@ -591,8 +692,11 @@ void MainWindow::createToolbars()
     shapesToolBar->addAction(rectangleAction);
     shapesToolBar->addAction(ellipseAction);
     shapesToolBar->addAction(textAction);
+
     //ADD bitmapaction HK
     shapesToolBar->addAction(bitmapAction);
+    shapesToolBar->addSeparator();
+    shapesToolBar->addAction(connectAction);
 
     simulationToolBar = addToolBar(tr("Simulation"));
     simulationToolBar->setAllowedAreas(Qt::TopToolBarArea);
@@ -1019,6 +1123,11 @@ void MainWindow::toggleShapesButton()
             shapeAction->setChecked(false);
         }
     }
+}
+
+void MainWindow::changeConnectMode()
+{
+
 }
 
 //! Sets the focus on the MSL search text box when the MSL Search dock window is shown

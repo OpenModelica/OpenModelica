@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  * Main Authors 2010: Syed Adeel Asghar, Sonia Tariq
- *
+ * Contributors 2011: Abhinn Kothari
  */
 
 #include "Component.h"
@@ -39,11 +39,16 @@ Component::Component(QString value, QString name, QString className, QPointF pos
       mIsConnector(connector), mpOMCProxy(omc), mpGraphicsView(graphicsView)
 {
     mIsLibraryComponent = false;
+    mpComponentProperties=0;
+    //QList<ComponentsProperties*> components = mpOMCProxy->getComponents(className);
     mpParentComponent = pParent;
     mIconParametersList.append(mpOMCProxy->getParameters(mpGraphicsView->mpParentProjectTab->mModelNameStructure,
                                                          mClassName, mName));
 
     parseAnnotationString(this, value);
+    mpTransformation = new Transformation(this);
+    setTransform(mpTransformation->getTransformationMatrix());
+
     // if component is an icon
     if ((mType == StringHandler::ICON))
     {
@@ -72,6 +77,10 @@ Component::Component(QString value, QString name, QString className, QPointF pos
     }
     // if everything is fine with icon then add it to scene
     mpGraphicsView->scene()->addItem(this);
+
+
+    if (mType == StringHandler::ICON && mIsConnector==true)
+  connect(this, SIGNAL(componentClicked(Component*)), mpGraphicsView, SLOT(addConnector(Component*)));
 }
 
 /* Called for inheritance annotation instance */
@@ -118,7 +127,10 @@ Component::Component(QString value, QString transformationString,ComponentsPrope
 
     // if type is diagram then allow connections not for icon view
     if (mpParentComponent->mType == StringHandler::ICON)
+    {
+
         connect(this, SIGNAL(componentClicked(Component*)), mpGraphicsView, SLOT(addConnector(Component*)));
+    }
 }
 
 /* Used for Library Component */
@@ -229,7 +241,10 @@ Component::~Component()
 {
     // delete all the list of shapes
     foreach(ShapeAnnotation *shape, mpShapesList)
+    {
+
         delete shape;
+    }
 
 //    // delete the list of all components
 //    foreach(Component *component, mpComponentsList)
@@ -240,10 +255,29 @@ Component::~Component()
 //        delete component;
 }
 
+bool Component::getIsConnector()
+{
+    return mIsConnector;
+}
+
 //! Parses the result of getIconAnnotation command.
 //! @param value is the result of getIconAnnotation command obtained from OMC.
 bool Component::parseAnnotationString(Component *item, QString value, bool libraryIcon)
 {
+    int i =0;
+
+    foreach(ShapeAnnotation *shape, mpShapesList)
+    {
+        qDebug() << "in parseannotation "<< getName() <<mpShapesList.size()<<shape->getShapeAnnotation();
+        mpShapesList.removeOne(shape);
+        delete shape;
+    }
+
+  /*  if(!item->getName().isEmpty())
+    {
+
+    qDebug() << "in parseannotation "<< getName() <<mpShapesList.size();
+}*/
     value = StringHandler::removeFirstLastCurlBrackets(value);
     if (value.isEmpty())
     {
@@ -343,6 +377,7 @@ bool Component::parseAnnotationString(Component *item, QString value, bool libra
             item->mpShapesList.append(bitmapAnnotation);
         }
     }
+
 }
 
 QRectF Component::boundingRect() const
@@ -382,6 +417,11 @@ void Component::createActions()
     mpIconPropertiesAction = new QAction(QIcon(":/Resources/icons/tool.png"), tr("Properties"), mpGraphicsView);
     mpIconPropertiesAction->setStatusTip(tr("Shows the item properties"));
     connect(mpIconPropertiesAction, SIGNAL(triggered()), SLOT(openIconProperties()));
+
+    //to set/unset the connect mode of a connector
+    //mpIsConnectModeAction = new QAction(QIcon(":/Resources/icons/tool.png"), tr("Connect/Unconnect Mode"), mpGraphicsView);
+    //mpIsConnectModeAction->setStatusTip(tr("Shows the item properties"));
+    //connect(mpIsConnectModeAction, SIGNAL(triggered()), SLOT(changeConnectMode()));
 }
 
 void Component::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -393,9 +433,30 @@ void Component::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
 
 void Component::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
+         MainWindow *pMainWindow =mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+
     // if user is viewing the component in Icon View
     if ((mpGraphicsView->mIconType == StringHandler::ICON) or (mpGraphicsView->mpParentProjectTab->isReadOnly()))
         return;
+
+    if(mIsConnector==true)
+    {
+//     if(event->button()==Qt::LeftButton && !this->flags().testFlag((QGraphicsItem::ItemIsMovable)))
+         if(event->button()==Qt::LeftButton && pMainWindow->connectAction->isChecked())
+     {
+         emit componentClicked(this);
+
+     }
+     else
+     {
+
+         QGraphicsItem::mousePressEvent(event);
+     }
+
+    }
+
+    else
+    {
     // if we are creating the connector then make sure user can not select and move components
     if ((mpGraphicsView->mIsCreatingConnector) and !mpParentComponent)
     {
@@ -408,14 +469,17 @@ void Component::mousePressEvent(QGraphicsSceneMouseEvent *event)
         setComponentFlags();
     }
 
-    if (event->button() == Qt::LeftButton)
+    if (event->button() == Qt::LeftButton  && pMainWindow->connectAction->isChecked())
     {
         emit componentClicked(this);
     }
 
     // call the mouse press event only if component is the root component
     if (!mpParentComponent)
+    {
         QGraphicsItem::mousePressEvent(event);
+    }
+    }
 }
 
 //! Event when mouse cursor enters component icon.
@@ -453,13 +517,19 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
     menu.addAction(pComponent->mpGraphicsView->mpRotateIconAction);
     menu.addAction(pComponent->mpGraphicsView->mpRotateAntiIconAction);
     menu.addAction(pComponent->mpGraphicsView->mpResetRotation);
+    //menu.addAction(pComponent->mpGraphicsView->mpHorizontalFlipAction);
+    //menu.addAction(pComponent->mpGraphicsView->mpVerticalFlipAction);
     menu.addSeparator();
     menu.addAction(pComponent->mpGraphicsView->mpDeleteIconAction);
+    //menu.addAction(pComponent->mpGraphicsView->mpCopyComponentAction);
     if (pComponent->mType == StringHandler::ICON)
     {
         menu.addSeparator();
         menu.addAction(pComponent->mpIconAttributesAction);
         menu.addAction(pComponent->mpIconPropertiesAction);
+        menu.addSeparator();
+    //    if(mIsConnector==true)
+        //menu.addAction(pComponent->mpIsConnectModeAction);
     }
     menu.exec(event->screenPos());
 }
@@ -474,10 +544,13 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         {
             setSelectionBoxActive();
             setCursor(Qt::SizeAllCursor);
+            connect(mpGraphicsView->mpHorizontalFlipAction, SIGNAL(triggered()), SLOT(flipHorizontal()));
+            connect(mpGraphicsView->mpVerticalFlipAction, SIGNAL(triggered()), SLOT(flipVertical()));
             connect(mpGraphicsView->mpRotateIconAction, SIGNAL(triggered()), SLOT(rotateClockwise()));
             connect(mpGraphicsView->mpRotateAntiIconAction, SIGNAL(triggered()), SLOT(rotateAntiClockwise()));
             connect(mpGraphicsView->mpResetRotation, SIGNAL(triggered()), SLOT(resetRotation()));
             connect(mpGraphicsView->mpDeleteIconAction, SIGNAL(triggered()), SLOT(deleteMe()));
+            connect(mpGraphicsView->mpCopyComponentAction, SIGNAL(triggered()), SLOT(copyComponent()));
             connect(mpGraphicsView, SIGNAL(keyPressDelete()), SLOT(deleteMe()));
             connect(mpGraphicsView, SIGNAL(keyPressUp()), SLOT(moveUp()));
             connect(mpGraphicsView, SIGNAL(keyPressDown()), SLOT(moveDown()));
@@ -490,10 +563,13 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         {
             setSelectionBoxPassive();
             unsetCursor();
+            disconnect(mpGraphicsView->mpHorizontalFlipAction, SIGNAL(triggered()),this, SLOT(flipHorizontal()));
+            disconnect(mpGraphicsView->mpVerticalFlipAction, SIGNAL(triggered()),this, SLOT(flipVertical()));
             disconnect(mpGraphicsView->mpRotateIconAction, SIGNAL(triggered()), this, SLOT(rotateClockwise()));
             disconnect(mpGraphicsView->mpRotateAntiIconAction, SIGNAL(triggered()), this, SLOT(rotateAntiClockwise()));
             disconnect(mpGraphicsView->mpResetRotation, SIGNAL(triggered()), this, SLOT(resetRotation()));
             disconnect(mpGraphicsView->mpDeleteIconAction, SIGNAL(triggered()), this, SLOT(deleteMe()));
+            disconnect(mpGraphicsView->mpCopyComponentAction, SIGNAL(triggered()), this, SLOT(copyComponent()));
             disconnect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()));
             disconnect(mpGraphicsView, SIGNAL(keyPressUp()), this, SLOT(moveUp()));
             disconnect(mpGraphicsView, SIGNAL(keyPressDown()), this, SLOT(moveDown()));
@@ -746,12 +822,68 @@ void Component::deleteMe()
             mpGraphicsView->addClassAnnotation();
     }
     delete(this);
+
+
 }
+
+void Component::copyComponent()
+{
+   GraphicsView *pGraphicsView = qobject_cast<GraphicsView*>(const_cast<QObject*>(sender()));
+
+Component *newComponent;
+QString name = mpGraphicsView->getUniqueComponentName(this->getName().toLower());
+QPointF point;
+point= QPointF((this->pos().x()) +1.0 ,(this->pos().y()) +1.0);
+newComponent = new Component(this,name,point,this->mType,this->getIsConnector(),mpGraphicsView);
+     //remove the component from the scene
+    //mpGraphicsView->scene()->removeItem(this);
+     //if the signal is not send by graphicsview then call addclassannotation
+//    if (!pGraphicsView)
+//    {
+//        if (mpGraphicsView->mIconType == StringHandler::ICON)
+//            mpGraphicsView->addClassAnnotation();
+//    }
+//    delete(this);
+mpGraphicsView->addComponentObject(newComponent);
+
+QClipboard *clipboard = QApplication::clipboard();
+
+
+clipboard->setText(this->getName());
+
+ //if(!clipboard->text().isEmpty())
+     //mpGraphicsView->mpPasteComponentAction->setDisabled(false);
+
+
+}
+
+
 
 void Component::openIconProperties()
 {
     IconProperties *iconProperties = new IconProperties(this, mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
     iconProperties->show();
+}
+
+void Component::changeConnectMode()
+{
+    if(!this->flags().testFlag((QGraphicsItem::ItemIsMovable)))
+    setFlag(QGraphicsItem::ItemIsMovable);
+    else
+    setFlag(QGraphicsItem::ItemIsMovable, false);
+
+    if(!this->flags().testFlag((QGraphicsItem::ItemIsSelectable)))
+        setFlag(QGraphicsItem::ItemIsSelectable);
+    else
+        setFlag(QGraphicsItem::ItemIsSelectable,false);
+
+    if(!this->flags().testFlag((QGraphicsItem::ItemSendsGeometryChanges)))
+        setFlag(QGraphicsItem::ItemSendsGeometryChanges);
+    else
+       setFlag(QGraphicsItem::ItemSendsGeometryChanges,false);
+
+
+
 }
 
 void Component::openIconAttributes()
@@ -839,7 +971,12 @@ QString Component::getClassName()
 
 Component* Component::getParentComponent()
 {
+ if(!mpParentComponent)
+    return this;
+ else
     return mpParentComponent;
+
+
 }
 
 Component* Component::getRootParentComponent()

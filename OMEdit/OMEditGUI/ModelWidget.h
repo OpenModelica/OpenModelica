@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  * Main Authors 2010: Syed Adeel Asghar, Sonia Tariq
- *
+ * Contributors 2011: Abhinn Kothari
  */
 
 #ifndef MODELWIDGET_H
@@ -49,6 +49,7 @@ public:
     ModelCreator(MainWindow *parent);
     ~ModelCreator();
     void show(int type);
+    void createCopy(QString modelname);
 
     MainWindow *mpParentMainWindow;
 private:

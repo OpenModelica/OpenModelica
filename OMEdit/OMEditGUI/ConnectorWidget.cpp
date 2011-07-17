@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  * Main Authors 2010: Syed Adeel Asghar, Sonia Tariq
- *
+ * Contributors 2011: Abhinn Kothari
  */
 
 /*
@@ -86,6 +86,7 @@ Connector::Connector(Component *pStartPort, Component *pEndPort, GraphicsView *p
             mGeometries.push_back(Connector::DIAGONAL);
     }
 
+
     mEndComponentConnected = true;
     emit endComponentConnected();
     this->setPassive();
@@ -121,15 +122,19 @@ Connector::Connector(Component *pStartPort, Component *pEndPort, GraphicsView *p
 
 void Connector::addPoint(QPointF point)
 {
+
     //! @todo make it better
     mPoints.append(point);
+
     if(getNumberOfLines() == 0 && (fabs(mpStartComponent->mpTransformation->getRotateAngle()) == 0 || fabs(mpStartComponent->mpTransformation->getRotateAngle()) == 180))
     {
         mGeometries.push_back(Connector::HORIZONTAL);
+
     }
     else if(getNumberOfLines() == 0 && (fabs(mpStartComponent->mpTransformation->getRotateAngle()) == 90 || fabs(mpStartComponent->mpTransformation->getRotateAngle()) == 270))
     {
         mGeometries.push_back(Connector::VERTICAL);
+
     }
     else if(getNumberOfLines() != 0 && mGeometries.back() == Connector::HORIZONTAL)
     {
@@ -144,8 +149,14 @@ void Connector::addPoint(QPointF point)
         mGeometries.push_back(Connector::DIAGONAL);
         //Give new line correct angle!
     }
+
     if(mPoints.size() > 1)
+    {
+
+
         drawConnector();
+
+    }
 }
 
 void Connector::setStartComponent(Component *pComponent)
@@ -155,9 +166,10 @@ void Connector::setStartComponent(Component *pComponent)
 
 void Connector::setEndComponent(Component *pCompoent)
 {
-    this->mEndComponentConnected = true;
-    this->mpEndComponent = pCompoent;
 
+    this->mpEndComponent = pCompoent;
+    this->addPoint(pCompoent->mapToScene(pCompoent->boundingRect().center()));
+    this->mEndComponentConnected = true;
     //Make all lines selectable and all lines except first and last movable
     if(mpLines.size() > 1)
     {
@@ -166,6 +178,8 @@ void Connector::setEndComponent(Component *pCompoent)
     }
     for(std::size_t i=0; i!=mpLines.size(); ++i)
         mpLines[i]->setFlag(QGraphicsItem::ItemIsSelectable, true);
+
+
 
     emit endComponentConnected();
     //this->setPassive();
@@ -242,6 +256,48 @@ void Connector::updateConnectionAnnotationString()
 
     annotationString.append(")");
 
+    if(getStartComponent()->getIsConnector()==true && getEndComponent()->getIsConnector()==true)
+    {
+        QString startIconCompName = getStartComponent()->getName();
+
+        QString endIconCompName = getEndComponent()->getName();
+        MainWindow *pMainWindow = mpParentGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+
+        pMainWindow->mpOMCProxy->updateConnection(startIconCompName,
+                                                  endIconCompName,
+                                                  mpParentGraphicsView->mpParentProjectTab->mModelNameStructure,
+                                                  annotationString);
+    }
+    else if(getStartComponent()->getIsConnector()==false && getEndComponent()->getIsConnector()==true)
+        {
+        QString startIconName = getStartComponent()->getParentComponent()->getName();
+        QString startIconCompName = getStartComponent()->mpComponentProperties->getName();
+
+        QString endIconCompName = getEndComponent()->getName();
+        MainWindow *pMainWindow = mpParentGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+
+        pMainWindow->mpOMCProxy->updateConnection(startIconName + "." + startIconCompName,
+                                                  endIconCompName,
+                                                  mpParentGraphicsView->mpParentProjectTab->mModelNameStructure,
+                                                  annotationString);
+        }
+   else if(getStartComponent()->getIsConnector()==true && getEndComponent()->getIsConnector()==false)
+    {
+
+        QString startIconCompName = getStartComponent()->getName();
+        QString endIconName = getEndComponent()->getParentComponent()->getName();
+        QString endIconCompName = getEndComponent()->mpComponentProperties->getName();
+        MainWindow *pMainWindow = mpParentGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+
+        pMainWindow->mpOMCProxy->updateConnection(startIconCompName,
+                                                  endIconName + "." + endIconCompName,
+                                                  mpParentGraphicsView->mpParentProjectTab->mModelNameStructure,
+                                                  annotationString);
+    }
+
+
+else
+    {
     QString startIconName = getStartComponent()->getParentComponent()->getName();
     QString startIconCompName = getStartComponent()->mpComponentProperties->getName();
     QString endIconName = getEndComponent()->getParentComponent()->getName();
@@ -252,12 +308,15 @@ void Connector::updateConnectionAnnotationString()
                                               endIconName + "." + endIconCompName,
                                               mpParentGraphicsView->mpParentProjectTab->mModelNameStructure,
                                               annotationString);
+    }
 }
 
 void Connector::drawConnector(bool isRotated)
 {
+
     if (!mEndComponentConnected)
     {
+
         //Remove all lines
         while(!mpLines.empty())
         {
@@ -290,6 +349,7 @@ void Connector::drawConnector(bool isRotated)
     }
     else
     {
+
         if (isRotated)
         {
             //Retrieve start and end points from ports in case components have moved
@@ -389,6 +449,7 @@ void Connector::moveAllPoints(qreal offsetX, qreal offsetY)
 //! @see setPassive()
 void Connector::doSelect(bool lineSelected, int lineNumber)
 {
+
     if(this->mEndComponentConnected)     //Non-finished lines shall not be selectable
     {
         if(lineSelected)
@@ -597,6 +658,7 @@ void ConnectorLine::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 //! Defines what shall happen if the line is selected or moved.
 QVariant ConnectorLine::itemChange(GraphicsItemChange change, const QVariant &value)
 {
+
     if (change == QGraphicsItem::ItemSelectedHasChanged)
     {
          emit lineSelected(this->isSelected(), this->mLineNumber);

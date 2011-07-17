@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  * Main Authors 2010: Syed Adeel Asghar, Sonia Tariq
- *
+ * Contributors 2011: Abhinn Kothari
  */
 
 #ifndef SHAPEANNOTATION_H
@@ -42,7 +42,7 @@
 class MainWindow;
 class GraphicsView;
 class RectangleCornerItem;
-
+class ShapeProperties;
 // Base class for all shapes annotations
 class ShapeAnnotation : public QObject, public QGraphicsItem
 {
@@ -50,22 +50,44 @@ class ShapeAnnotation : public QObject, public QGraphicsItem
     Q_INTERFACES(QGraphicsItem)
 private:
     QAction *mpShapePropertiesAction;
+    QAction *mpTextPropertiesAction;
+    QAction *mpShapePenStyleAction;
+    QAction *mpShapeBrushStyleAction;
+
+    QAction *mpNoArrowAction;
+    QAction *mpHalfArrowAction;
+    QAction *mpOpenArrowAction;
+    QAction *mpFilledArrowAction;
+    QAction *mpNoEndArrowAction;
+    QAction *mpHalfEndArrowAction;
+    QAction *mpOpenEndArrowAction;
+    QAction *mpFilledEndArrowAction;
+
+    QSettings mSettings;
 public:
     ShapeAnnotation(QGraphicsItem *parent = 0);
     ShapeAnnotation(GraphicsView *graphicsView, QGraphicsItem *parent = 0);
     ~ShapeAnnotation();
     void initializeFields();
+    void readSettings();
+    void readPenStyleSettings();
+    void readBrushStyleSettings();
     void createActions();
     void setSelectionBoxActive();
     void setSelectionBoxPassive();
     void setSelectionBoxHover();
+    void changePenProperty();
+    void changeBrushProperty();
+
+    //void changeColour();
     virtual QString getShapeAnnotation();
     QRectF getBoundingRect() const;
     QPainterPath addPathStroker(QPainterPath &path) const;
-
+    ShapeProperties *mpShapeProperties;
     GraphicsView *mpGraphicsView;
 signals:
    void updateShapeAnnotation();
+
 public slots:
     void deleteMe();
     void doSelect();
@@ -75,9 +97,31 @@ public slots:
     void moveLeft();
     void moveRight();
     void rotateClockwise();
+    void flipHorizontal();
+    void flipVertical();
     void rotateAntiClockwise();
     void resetRotation();
+    //void copyComponent();
+    //void pasteComponent();
+    QColor getLineColor();
+    Qt::PenStyle getLinePattern();
+    double getLineThickness();
+    bool getLineSmooth();
+    QColor getFillColor();
+    Qt::BrushStyle getFillPattern();
+    void noArrowLine();
+    void halfArrowLine();
+    void openArrowLine();
+    void filledArrowLine();
+    void noEndArrowLine();
+    void halfEndArrowLine();
+    void openEndArrowLine();
+    void filledEndArrowLine();
+
     void openShapeProperties();
+    void openTextProperties();
+    //void openPenStyleProperties();
+    //void openBrushStyleProperties();
 protected:
     bool mVisible;
     QPointF mOrigin;
@@ -129,25 +173,55 @@ private:
     QLabel *mpPenColorViewerLabel;
     QPushButton *mpPenColorPickButton;
     QColor mPenColor;
+    Qt::PenStyle mPenPattern;
+    double mPenThickness;
+    bool mPenSmooth;
+    QLabel *mpSmoothLabel;
     QCheckBox *mpPenNoColorCheckBox;
     QLabel *mpPenPatternLabel;
     QComboBox *mpPenPatternsComboBox;
     QLabel *mpPenThicknessLabel;
     QDoubleSpinBox *mpPenThicknessSpinBox;
+    QCheckBox *mpSmoothCheckBox;
     // Brush style controls
     QGroupBox *mpBrushStyleGroup;
     QLabel *mpBrushColorLabel;
     QLabel *mpBrushColorViewerLabel;
     QPushButton *mpBrushColorPickButton;
     QColor mBrushColor;
+    Qt::BrushStyle mBrushPattern;
     QCheckBox *mpBrushNoColorCheckBox;
     QLabel *mpBrushPatternLabel;
     QComboBox *mpBrushPatternsComboBox;
+    QPushButton *mpCancelButton;
+    QPushButton *mpOkButton;
+    QDialogButtonBox *mpButtonBox;
+
+signals:
+    void colourChanged();
 public:
     ShapeProperties(ShapeAnnotation *pShape, MainWindow *pParent);
     void setShapeType();
     void setUpDialog();
     void setUpLineDialog();
+    void setInitPenColor(QColor color);
+    void setInitPenPattern(Qt::PenStyle pattern);
+    void setInitPenThickness(double thickness);
+    void setInitPenSmooth(bool smooth);
+    QColor getPenColor();
+    void setPenPattern();
+    QString getPenPatternString();
+    Qt::PenStyle getPenPattern();
+    void setPenThickness();
+    double getPenThickness();
+    void setPenSmooth();
+    bool getPenSmooth();
+    void setInitBrushColor(QColor color);
+    void setInitBrushPattern(Qt::BrushStyle pattern);
+    QColor getBrushColor();
+    void setBrushPattern();
+    QString getBrushPatternString();
+    Qt::BrushStyle getBrushPattern();
     QVBoxLayout* createHorizontalLine();
     QVBoxLayout* createPenControls();
     QVBoxLayout* createBrushControls();
@@ -160,7 +234,10 @@ public slots:
     void pickPenColor();
     void penNoColorChecked(int state);
     void pickBrushColor();
+
     void brushNoColorChecked(int state);
+    void applyChanges();
+
 };
 
 #endif // SHAPEANNOTATION_H

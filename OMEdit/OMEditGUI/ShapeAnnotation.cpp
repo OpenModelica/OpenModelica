@@ -28,23 +28,25 @@
  * See the full OSMC Public License conditions for more details.
  *
  * Main Authors 2010: Syed Adeel Asghar, Sonia Tariq
- *
+ * Contributors 2011: Abhinn Kothari
  */
 
 #include "ShapeAnnotation.h"
 #include "ProjectTabWidget.h"
 
 ShapeAnnotation::ShapeAnnotation(QGraphicsItem *parent)
-    : QGraphicsItem(parent)
+    : QGraphicsItem(parent), mSettings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit")
 {
     mpGraphicsView = 0;
+
 }
 
 ShapeAnnotation::ShapeAnnotation(GraphicsView *graphicsView, QGraphicsItem *parent)
-    : QGraphicsItem(parent)
+    : QGraphicsItem(parent),mSettings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit")
 {
     mpGraphicsView = graphicsView;
     createActions();
+
 }
 
 ShapeAnnotation::~ShapeAnnotation()
@@ -91,7 +93,15 @@ void ShapeAnnotation::initializeFields()
     mOrigin.setY(0);
     mRotation = 0;
 
-    mLineColor = QColor (0, 0, 255);
+     //loads the initial saved settings for the shape
+
+
+
+
+    mLineColor=QColor(0,0,255);
+
+
+
     this->mFillColor = QColor (0, 0, 255);
     mLinePattern = Qt::SolidLine;
     this->mFillPattern = Qt::NoBrush;
@@ -106,13 +116,92 @@ void ShapeAnnotation::initializeFields()
     mIsCustomShape = false;
     mIsFinishedCreatingShape = false;
     mIsRectangleCorneItemClicked = false;
+    readSettings();
 }
+
+
+void ShapeAnnotation::readSettings()
+{
+    mSettings.sync();
+    readPenStyleSettings();
+    readBrushStyleSettings();
+}
+
+
+
+void ShapeAnnotation::readPenStyleSettings()
+{
+    if (mSettings.contains("penstyle/color"))
+    {
+        if (mSettings.value("penstyle/color").toString().isEmpty())
+            mLineColor=Qt::transparent;
+        else
+            mLineColor= QColor(mSettings.value("penstyle/color").toUInt());
+    }
+
+
+    if (mSettings.contains("penstyle/pattern"))
+          mLinePattern = mLinePatternsMap.value(mSettings.value("penstyle/pattern").toString());
+        //  mLinePattern=Qt::PenStyle(mSettings.value("penstyle/pattern"));
+    if (mSettings.contains("penstyle/thickness"))
+      mThickness=mSettings.value("penstyle/thickness").toDouble();
+    if (mSettings.contains("penstyle/smooth"))
+     mSmooth= mSettings.value("penstyle/smooth").toBool();
+}
+
+void ShapeAnnotation::readBrushStyleSettings()
+{
+    if (mSettings.contains("brushstyle/color"))
+    {
+        if (mSettings.value("brushstyle/color").toString().isEmpty())
+            mFillColor= Qt::transparent;
+        else
+           mFillColor= QColor(mSettings.value("brushstyle/color").toUInt());
+    }
+    if (mSettings.contains("brushstyle/pattern"))
+    mFillPattern = mFillPatternsMap.value(mSettings.value("brushstyle/pattern").toString());
+        //mFillPattern=Qt::BrushStyle(mSettings.value("brushstyle/pattern"));
+}
+
+
 
 void ShapeAnnotation::createActions()
 {
-    mpShapePropertiesAction = new QAction(QIcon(":/Resources/icons/tool.png"), tr("Properties"), this);
+    mpShapePropertiesAction = new QAction(QIcon(":/Resources/icons/tool.png"), tr("Properties"), mpGraphicsView);
     mpShapePropertiesAction->setStatusTip(tr("Shows the shape properties"));
     connect(mpShapePropertiesAction, SIGNAL(triggered()), SLOT(openShapeProperties()));
+
+
+    //for editing properties of text
+    mpTextPropertiesAction = new QAction(QIcon(":/Resources/icons/tool.png"), tr("TextProperties"), mpGraphicsView);
+    mpTextPropertiesAction->setStatusTip(tr("Shows the shape text properties"));
+    connect(mpTextPropertiesAction, SIGNAL(triggered()), SLOT(openTextProperties()));
+    //for arrow of line
+    mpNoArrowAction = new QAction(tr("NoArrow(Start)"), mpGraphicsView);
+    mpNoArrowAction->setStatusTip(tr("No Arrow on the line"));
+    connect(mpNoArrowAction, SIGNAL(triggered()), SLOT(noArrowLine()));
+    mpHalfArrowAction = new QAction(tr("HalfArrow(Start)"), mpGraphicsView);
+    mpHalfArrowAction->setStatusTip(tr("Half Arrow for the line"));
+    connect(mpHalfArrowAction, SIGNAL(triggered()), SLOT(halfArrowLine()));
+    mpOpenArrowAction = new QAction(tr("OpenArrow(Start)"), mpGraphicsView);
+    mpOpenArrowAction->setStatusTip(tr("Open Arrow on the line"));
+    connect(mpOpenArrowAction, SIGNAL(triggered()), SLOT(openArrowLine()));
+    mpFilledArrowAction = new QAction(tr("FilledArrow(Start)"), mpGraphicsView);
+    mpFilledArrowAction->setStatusTip(tr("Filled Arrow for the line"));
+    connect(mpFilledArrowAction, SIGNAL(triggered()), SLOT(filledArrowLine()));
+    mpNoEndArrowAction = new QAction(tr("NoArrow(End)"), mpGraphicsView);
+    mpNoEndArrowAction->setStatusTip(tr("No Arrow on the line"));
+    connect(mpNoEndArrowAction, SIGNAL(triggered()), SLOT(noEndArrowLine()));
+    mpHalfEndArrowAction = new QAction(tr("HalfArrow(End)"), mpGraphicsView);
+    mpHalfEndArrowAction->setStatusTip(tr("Half Arrow for the line"));
+    connect(mpHalfEndArrowAction, SIGNAL(triggered()), SLOT(halfEndArrowLine()));
+    mpOpenEndArrowAction = new QAction(tr("OpenArrow(End)"), mpGraphicsView);
+    mpOpenEndArrowAction->setStatusTip(tr("Open Arrow on the line"));
+    connect(mpOpenEndArrowAction, SIGNAL(triggered()), SLOT(openEndArrowLine()));
+    mpFilledEndArrowAction = new QAction(tr("FilledArrow(End"), mpGraphicsView);
+    mpFilledEndArrowAction->setStatusTip(tr("Filled Arrow for the line"));
+    connect(mpFilledEndArrowAction, SIGNAL(triggered()), SLOT(filledEndArrowLine()));
+
 }
 
 void ShapeAnnotation::setSelectionBoxActive()
@@ -178,6 +267,8 @@ void ShapeAnnotation::deleteMe()
     delete this;
 }
 
+
+
 void ShapeAnnotation::doSelect()
 {
     mIsRectangleCorneItemClicked = true;
@@ -198,9 +289,26 @@ void ShapeAnnotation::doUnSelect()
 //! @see moveRight()
 void ShapeAnnotation::moveUp()
 {
+
+
+
+    //qDebug() << "in update R22:: " <<mExtent<<mapFromScene(mapToScene(this->pos()));
+   // QPointF point = mExtent.at(0);
+   // point.ry()++;
+   // mExtent.replace(0, point);
+   // point = mExtent.at(1);
+   // point.ry()++;
+   // mExtent.replace(1, point);
+    //qDebug() << "in update R33:: " <<mExtent<<mapFromScene(mapToScene(this->pos()));
     this->setPos(this->pos().x(), this->mapFromScene(this->mapToScene(this->pos())).y()+1);
     mpGraphicsView->scene()->update();
+
+    //qDebug() << "in update R11:: " <<mExtent.at(0);
     emit updateShapeAnnotation();
+    //qDebug() << "in update R22:: " <<mExtent.at(0);
+    //mExtent.replace(0,mapToScene(mExtent.at(0)));
+    //mExtent.replace(1,mapToScene(mExtent.at(1)));
+    //qDebug() << "in update R33:: " <<mExtent.at(0);
 }
 
 //! Slot that moves component one pixel downwards
@@ -212,6 +320,9 @@ void ShapeAnnotation::moveDown()
     this->setPos(this->pos().x(), this->mapFromScene(this->mapToScene(this->pos())).y()-1);
     mpGraphicsView->scene()->update();
     emit updateShapeAnnotation();
+
+    //mExtent.replace(0,mapToScene(mExtent.at(0)));
+    //mExtent.replace(1,mapToScene(mExtent.at(1)));
 }
 
 //! Slot that moves component one pixel leftwards
@@ -223,6 +334,8 @@ void ShapeAnnotation::moveLeft()
     this->setPos(this->mapFromScene(this->mapToScene(this->pos())).x()-1, this->pos().y());
     mpGraphicsView->scene()->update();
     emit updateShapeAnnotation();
+    //mExtent.replace(0,mapToScene(mExtent.at(0)));
+    //mExtent.replace(1,mapToScene(mExtent.at(1)));
 }
 
 //! Slot that moves component one pixel rightwards
@@ -234,10 +347,14 @@ void ShapeAnnotation::moveRight()
     this->setPos(this->mapFromScene(this->mapToScene(this->pos())).x()+1, this->pos().y());
     mpGraphicsView->scene()->update();
     emit updateShapeAnnotation();
+   // mExtent.replace(0,mapToScene(mExtent.at(0)));
+   // mExtent.replace(1,mapToScene(mExtent.at(1)));
 }
 
 void ShapeAnnotation::rotateClockwise()
 {
+
+    //qDebug() << "in update before rot:: " <<mExtent;
     qreal rotation = this->rotation();
     qreal rotateIncrement = -90;
 
@@ -245,6 +362,64 @@ void ShapeAnnotation::rotateClockwise()
         this->setRotation(0);
     else
         this->setRotation(rotation + rotateIncrement);
+
+mpGraphicsView->scene()->update();
+    //qDebug() << "in update MFAO " <<mExtent.size();
+    //qDebug() << "in update R11:: " <<mExtent.at(0);
+    emit updateShapeAnnotation();
+   // qDebug() << "in update after rot:: " <<mExtent;
+    //mExtent.replace(0,mapFromScene(this->mRectangleCornerItemsList.at(0)->pos()));
+    //mExtent.replace(1,mapFromScene(this->mRectangleCornerItemsList.at(1)->pos()));
+    //qDebug() << "in update corner pos after replace:: " <<this->mRectangleCornerItemsList.at(0)->pos();
+
+//qDebug() << "in update :: " <<mExtent;
+//mpGraphicsView->scene()->update();
+}
+
+void ShapeAnnotation::flipHorizontal()
+{
+
+
+    QRectF rectan = this->boundingRect();
+    qreal lft =rectan.left();
+    qreal rght = rectan.right();
+
+
+
+    qreal trans =0- lft-rght;
+
+
+
+
+
+
+           this->scale(-1,1);
+this->translate(trans,0);
+
+    emit updateShapeAnnotation();
+}
+
+
+void ShapeAnnotation::flipVertical()
+{
+
+    QRectF rectan = this->boundingRect();
+    qreal tp =rectan.top();
+    qreal btm = rectan.bottom();
+
+
+
+    qreal trans =0- tp-btm;
+
+
+
+
+
+
+           this->scale(1,-1);
+this->translate(0,trans);
+
+    emit updateShapeAnnotation();
 }
 
 void ShapeAnnotation::rotateAntiClockwise()
@@ -257,18 +432,135 @@ void ShapeAnnotation::rotateAntiClockwise()
         this->setRotation(0);
     else
         this->setRotation(rotation + rotateIncrement);
+
+        emit updateShapeAnnotation();
 }
 
 void ShapeAnnotation::resetRotation()
 {
     this->setRotation(0);
+
+        emit updateShapeAnnotation();
 }
+//pen stlye changed for the selected shape shape
+void ShapeAnnotation::changePenProperty()
+{
+
+
+    this->mLineColor = mpShapeProperties->getPenColor().rgba();
+    this->mLinePattern= mpShapeProperties->getPenPattern();
+    this->mThickness =mpShapeProperties->getPenThickness();
+    this->mSmooth=mpShapeProperties->getPenSmooth();
+
+
+}
+
+//brush style changed for the selected shape
+void ShapeAnnotation::changeBrushProperty()
+{
+    this->mFillColor=mpShapeProperties->getBrushColor();
+    this->mFillPattern=mpShapeProperties->getBrushPattern();
+}
+
+
 
 void ShapeAnnotation::openShapeProperties()
 {
-    ShapeProperties *pShapeProperties = new ShapeProperties(this, mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
-    pShapeProperties->show();
+     //if (qobject_cast<TextAnnotation*>(this))
+       //{
+
+
+        //mpGraphicsView->mpTextWidget = new TextWidget(mpGraphicsView->mpTextShape, mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
+        //mpGraphicsView->mpTextWidget -> show();
+        //mpGraphicsView->mpTextWidget->setUpForm();
+      //}
+       //else
+     //{
+
+    mpShapeProperties = new ShapeProperties(this, mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
+    mpShapeProperties->show();
+     //}
 }
+
+void ShapeAnnotation::openTextProperties()
+{
+        mpGraphicsView->mpTextWidget = new TextWidget(mpGraphicsView->mpTextShape, mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
+        mpGraphicsView->mpTextWidget -> show();
+        //mpGraphicsView->mpTextWidget->setUpForm();
+
+}
+
+
+QColor ShapeAnnotation::getLineColor()
+{
+    return mLineColor;
+}
+
+Qt::PenStyle ShapeAnnotation::getLinePattern()
+{
+    return mLinePattern;
+}
+
+double ShapeAnnotation::getLineThickness()
+{
+    return mThickness;
+}
+
+bool ShapeAnnotation::getLineSmooth()
+{
+    return mSmooth;
+}
+
+QColor ShapeAnnotation::getFillColor()
+{
+    return mFillColor;
+}
+
+Qt::BrushStyle ShapeAnnotation::getFillPattern()
+{
+    return mFillPattern;
+}
+
+void ShapeAnnotation::noArrowLine()
+{
+  this->mStartArrow = ShapeAnnotation::None;
+}
+
+void ShapeAnnotation::halfArrowLine()
+{
+  this->mStartArrow = ShapeAnnotation::Half;
+}
+
+void ShapeAnnotation::openArrowLine()
+{
+  this->mStartArrow = ShapeAnnotation::Open;
+}
+
+void ShapeAnnotation::filledArrowLine()
+{
+  this->mStartArrow = ShapeAnnotation::Filled;
+}
+
+void ShapeAnnotation::noEndArrowLine()
+{
+  this->mEndArrow = ShapeAnnotation::None;
+}
+
+void ShapeAnnotation::halfEndArrowLine()
+{
+  this->mEndArrow = ShapeAnnotation::Half;
+}
+
+void ShapeAnnotation::openEndArrowLine()
+{
+  this->mEndArrow = ShapeAnnotation::Open;
+}
+
+void ShapeAnnotation::filledEndArrowLine()
+{
+  this->mEndArrow = ShapeAnnotation::Filled;
+}
+
 
 //! Event when mouse cursor enters component icon.
 void ShapeAnnotation::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
@@ -339,7 +631,10 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
         if (this->isSelected())
         {
             setSelectionBoxActive();
+
             // make the connections now
+            connect(mpGraphicsView->mpHorizontalFlipAction, SIGNAL(triggered()), SLOT(flipHorizontal()), Qt::UniqueConnection);
+            connect(mpGraphicsView->mpVerticalFlipAction, SIGNAL(triggered()), SLOT(flipVertical()), Qt::UniqueConnection);
             connect(mpGraphicsView->mpRotateIconAction, SIGNAL(triggered()), SLOT(rotateClockwise()), Qt::UniqueConnection);
             connect(mpGraphicsView->mpRotateAntiIconAction, SIGNAL(triggered()), SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
             connect(mpGraphicsView->mpResetRotation, SIGNAL(triggered()), SLOT(resetRotation()), Qt::UniqueConnection);
@@ -351,11 +646,15 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
             connect(mpGraphicsView, SIGNAL(keyPressRight()), SLOT(moveRight()), Qt::UniqueConnection);
             connect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), SLOT(rotateClockwise()), Qt::UniqueConnection);
             connect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
+            //connect(mpShapeProperties, SIGNAL(colourChanged()),this, SLOT(changeProperty()));
+
         }
         // if use has clicked on corner item then dont make it passive
         else if (!mIsRectangleCorneItemClicked)
         {
             setSelectionBoxPassive();
+            disconnect(mpGraphicsView->mpHorizontalFlipAction, SIGNAL(triggered()), this,SLOT(flipHorizontal()));
+            disconnect(mpGraphicsView->mpVerticalFlipAction, SIGNAL(triggered()), this,SLOT(flipVertical()));
             disconnect(mpGraphicsView->mpRotateIconAction, SIGNAL(triggered()), this, SLOT(rotateClockwise()));
             disconnect(mpGraphicsView->mpRotateAntiIconAction, SIGNAL(triggered()), this, SLOT(rotateAntiClockwise()));
             disconnect(mpGraphicsView->mpResetRotation, SIGNAL(triggered()), this, SLOT(resetRotation()));
@@ -367,7 +666,7 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
             disconnect(mpGraphicsView, SIGNAL(keyPressRight()), this, SLOT(moveRight()));
             disconnect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwise()));
             disconnect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()));
-
+           // disconnect(mpShapeProperties, SIGNAL(colourChanged()),this, SLOT(changeProperty()));
         }
     }
     return value;
@@ -386,15 +685,45 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 //        return;
 //    }
 
-//    setSelected(true);
-//    QMenu menu(mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
-//    menu.addAction(mpGraphicsView->mpRotateIconAction);
-//    menu.addAction(mpGraphicsView->mpRotateAntiIconAction);
-//    menu.addAction(mpGraphicsView->mpResetRotation);
-//    menu.addSeparator();
-//    menu.addAction(mpGraphicsView->mpDeleteIconAction);
-//    menu.addAction(mpShapePropertiesAction);
-//    menu.exec(event->screenPos());
+  setSelected(true);
+    QMenu menu(mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
+    QMenu menuArrow(mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
+
+    menu.addAction(mpGraphicsView->mpRotateIconAction);
+   menu.addAction(mpGraphicsView->mpRotateAntiIconAction);
+    menu.addAction(mpGraphicsView->mpResetRotation);
+    //menu.addAction(mpGraphicsView->mpHorizontalFlipAction);
+   // menu.addAction(mpGraphicsView->mpVerticalFlipAction);
+    menu.addSeparator();
+    menu.addAction(mpGraphicsView->mpDeleteIconAction);
+    menu.addAction(mpShapePropertiesAction);
+    if (qobject_cast<TextAnnotation*>(this))
+      {
+          menu.addAction(mpTextPropertiesAction);
+
+      }
+
+    if (qobject_cast<LineAnnotation*>(this))
+      {
+          menuArrow.setTitle("LineArrows");
+          menuArrow.addAction(mpNoArrowAction);
+          menuArrow.addAction(mpHalfArrowAction);
+          menuArrow.addAction(mpOpenArrowAction);
+         menuArrow.addAction(mpFilledArrowAction);
+         menuArrow.addSeparator();
+         menuArrow.addAction(mpNoEndArrowAction);
+         menuArrow.addAction(mpHalfEndArrowAction);
+         menuArrow.addAction(mpOpenEndArrowAction);
+        menuArrow.addAction(mpFilledEndArrowAction);
+          menu.addAction(menuArrow.menuAction());
+
+
+      }
+
+    //menu.addAction(mpShapePenStyleAction);
+    //menu.addAction(mpShapeBrushStyleAction);
+    menu.addSeparator();
+    menu.exec(event->screenPos());
 }
 
 ShapeProperties::ShapeProperties(ShapeAnnotation *pShape, MainWindow *pParent)
@@ -406,6 +735,8 @@ ShapeProperties::ShapeProperties(ShapeAnnotation *pShape, MainWindow *pParent)
 
     mpParentMainWindow = pParent;
     mpShape = pShape;
+
+
     // set the shape type, whether it is Line, Rectangle, Ellipse etc...
     setShapeType();
     // set up the dialog based on shape type.
@@ -415,7 +746,22 @@ ShapeProperties::ShapeProperties(ShapeAnnotation *pShape, MainWindow *pParent)
 void ShapeProperties::setShapeType()
 {
     if (qobject_cast<LineAnnotation*>(mpShape))
+       {
         mShapeType = ShapeProperties::Line;
+
+       }
+
+    else if (qobject_cast<TextAnnotation*>(mpShape))
+       {
+        mShapeType = ShapeProperties::Text;
+        //qDebug() << "in update scene rect :: ";
+
+
+       }
+    else
+    {
+        mShapeType= ShapeProperties::Rectangle;
+    }
 }
 
 void ShapeProperties::setUpDialog()
@@ -424,7 +770,15 @@ void ShapeProperties::setUpDialog()
     {
         case ShapeProperties::Line:
             setUpLineDialog();
+
             break;
+
+
+
+    default:
+           setUpLineDialog();
+
+    break;
     }
 }
 
@@ -432,7 +786,7 @@ void ShapeProperties::setUpLineDialog()
 {
     setWindowTitle(QString(Helper::applicationName).append(" - Line Properties"));
 
-    mpHeadingLabel = new QLabel(tr("Line Properties"));
+    mpHeadingLabel = new QLabel(tr("Properties"));
     mpHeadingLabel->setFont(QFont("", Helper::headingFontSize));
     mpHeadingLabel->setAlignment(Qt::AlignTop);
 
@@ -440,9 +794,26 @@ void ShapeProperties::setUpLineDialog()
     layout->addWidget(mpHeadingLabel);
     layout->addLayout(createHorizontalLine());
     layout->addLayout(createPenControls());
+    if(mShapeType!=ShapeProperties::Line)
+    {
     layout->addLayout(createBrushControls());
+    }
+    mpOkButton = new QPushButton(tr("OK"));
+    mpOkButton->setAutoDefault(true);
+    connect(mpOkButton, SIGNAL(pressed()), SLOT(applyChanges()));
+    mpCancelButton = new QPushButton(tr("Cancel"));
+    mpCancelButton->setAutoDefault(false);
+    connect(mpCancelButton, SIGNAL(pressed()), SLOT(reject()));
 
-    setLayout(layout);
+    mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+    mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+    mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+
+    QGridLayout *mainLayout = new QGridLayout;
+    mainLayout->addLayout(layout, 0, 0);
+    mainLayout->addWidget(mpButtonBox, 4, 0);
+
+    setLayout(mainLayout);
 }
 
 QVBoxLayout* ShapeProperties::createHorizontalLine()
@@ -483,6 +854,17 @@ QVBoxLayout* ShapeProperties::createPenControls()
     mpPenThicknessSpinBox->setLocale(QLocale("C"));
     mpPenThicknessSpinBox->setRange(0.25, 100.0);
     mpPenThicknessSpinBox->setSingleStep(0.5);
+    mpSmoothLabel = new QLabel(tr("Smooth:"));
+    mpSmoothCheckBox = new QCheckBox(tr("Bezier Curve"));
+
+
+    setInitPenColor(mpShape->getLineColor());
+    QPixmap pixmap(Helper::iconSize);
+    pixmap.fill(mPenColor);
+    mpPenColorViewerLabel->setPixmap(pixmap);
+    setInitPenPattern(mpShape->getLinePattern());
+    setInitPenThickness(mpShape->getLineThickness());
+    setInitPenSmooth(mpShape->getLineSmooth());
 
     QGridLayout *mainLayout = new QGridLayout;
     mainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -494,6 +876,9 @@ QVBoxLayout* ShapeProperties::createPenControls()
     mainLayout->addWidget(mpPenPatternsComboBox, 3, 0);
     mainLayout->addWidget(mpPenThicknessLabel, 4, 0, 1, 2);
     mainLayout->addWidget(mpPenThicknessSpinBox, 5, 0);
+    mainLayout->addWidget(mpSmoothLabel, 6, 0, 1, 2);
+    mainLayout->addWidget(mpSmoothCheckBox, 7, 0);
+
     mpPenStyleGroup->setLayout(mainLayout);
 
     QVBoxLayout *layout = new QVBoxLayout;
@@ -516,6 +901,7 @@ QVBoxLayout* ShapeProperties::createBrushControls()
     mpBrushPatternLabel = new QLabel(tr("Pattern:"));
     mpBrushPatternsComboBox = new QComboBox;
     mpBrushPatternsComboBox->setIconSize(Helper::iconSize);
+    mpBrushPatternsComboBox->addItem(tr("NoBrush"), Qt::NoBrush);
     mpBrushPatternsComboBox->addItem(QIcon(":/Resources/icons/solid.png"), tr("Solid"), Qt::SolidPattern);
     mpBrushPatternsComboBox->addItem(QIcon(":/Resources/icons/horizontal.png"), tr("Horizontal"), Qt::HorPattern);
     mpBrushPatternsComboBox->addItem(QIcon(":/Resources/icons/vertical.png"), tr("Vertical"), Qt::VerPattern);
@@ -526,6 +912,13 @@ QVBoxLayout* ShapeProperties::createBrushControls()
     mpBrushPatternsComboBox->addItem(QIcon(":/Resources/icons/horizontalcylinder.png"), tr("HorizontalCylinder"), Qt::LinearGradientPattern);
     mpBrushPatternsComboBox->addItem(QIcon(":/Resources/icons/verticalcylinder.png"), tr("VertitalCylinder"), Qt::Dense1Pattern);
     mpBrushPatternsComboBox->addItem(QIcon(":/Resources/icons/sphere.png"), tr("Sphere"), Qt::RadialGradientPattern);
+
+    setInitBrushColor(mpShape->getFillColor());
+    QPixmap pixmap(Helper::iconSize);
+    pixmap.fill(mBrushColor);
+    mpBrushColorViewerLabel->setPixmap(pixmap);
+    setInitBrushPattern(mpShape->getFillPattern());
+
 
     QGridLayout *mainLayout = new QGridLayout;
     mainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -541,6 +934,24 @@ QVBoxLayout* ShapeProperties::createBrushControls()
     layout->setContentsMargins(0, 0, 0, 0);
     layout->addWidget(mpBrushStyleGroup);
     return layout;
+}
+
+//functions to set initial settings in the properties widget
+void ShapeProperties::setInitPenPattern(Qt::PenStyle pattern)
+{
+    int index = mpPenPatternsComboBox->findData(pattern);
+    if (index != -1)
+        mpPenPatternsComboBox->setCurrentIndex(index);
+}
+
+void ShapeProperties::setInitPenThickness(double thickness)
+{
+    mpPenThicknessSpinBox->setValue(thickness);
+}
+
+void ShapeProperties::setInitPenSmooth(bool smooth)
+{
+    mpSmoothCheckBox->setChecked(smooth);
 }
 
 void ShapeProperties::pickPenColor()
@@ -559,11 +970,57 @@ void ShapeProperties::pickPenColor()
     }
 }
 
+void ShapeProperties::setInitPenColor(QColor color)
+{
+    mPenColor = color;
+}
+
+QColor ShapeProperties::getPenColor()
+{
+    // if user selects no pen color and selects a brush color then return pen color as transparent
+    if ((mpPenNoColorCheckBox->checkState() == Qt::Checked) and
+        (mBrushColor.spec() != QColor::Invalid))
+        return Qt::transparent;
+    // if user selects no pen color and selects no brush color then return pen color as black(default)
+    else if ((mpPenNoColorCheckBox->checkState() == Qt::Checked) and
+             (mBrushColor.spec() == QColor::Invalid))
+        return Qt::black;
+    else
+        return mPenColor;
+}
+
+void ShapeProperties::setPenPattern()
+{
+    //int index = mpPenPatternsComboBox->findText(pattern, Qt::MatchExactly);
+    //if (index != -1)
+    //mpPenPatternsComboBox->setCurrentIndex(index);
+    if(mpPenPatternsComboBox->currentIndex()== -1)
+    {
+     mPenPattern= Qt::SolidLine;
+    }
+    else
+    {
+    mPenPattern = Qt::PenStyle(mpPenPatternsComboBox->itemData(mpPenPatternsComboBox->currentIndex()).toInt());
+    }
+}
+
+QString ShapeProperties::getPenPatternString()
+{
+    return mpPenPatternsComboBox->currentText();
+}
+
+Qt::PenStyle ShapeProperties::getPenPattern()
+{
+    //return Qt::PenStyle(mpPenPatternsComboBox->itemData(mpPenPatternsComboBox->currentIndex()).toInt());
+    return mPenPattern;
+}
+
+
 void ShapeProperties::penNoColorChecked(int state)
 {
     if (state == Qt::Checked)
     {
-        if (mBrushColor.spec() != QColor::Invalid)
+        if (mBrushColor.spec() == QColor::Invalid)
         {
             QPixmap pixmap(Helper::iconSize);
             pixmap.fill(Qt::black);
@@ -587,6 +1044,40 @@ void ShapeProperties::penNoColorChecked(int state)
     }
 }
 
+
+void ShapeProperties::setPenThickness()
+{
+    mPenThickness = mpPenThicknessSpinBox->value();
+}
+
+double ShapeProperties::getPenThickness()
+{
+    return mPenThickness;
+}
+
+
+void ShapeProperties::setPenSmooth()
+{
+   mPenSmooth= mpSmoothCheckBox->isChecked();
+}
+
+bool ShapeProperties::getPenSmooth()
+{
+    return mPenSmooth;
+}
+
+void ShapeProperties::setInitBrushColor(QColor color)
+{
+    mBrushColor = color;
+}
+
+void ShapeProperties::setInitBrushPattern(Qt::BrushStyle pattern)
+{
+    int index = mpBrushPatternsComboBox->findData(pattern);
+    if (index != -1)
+        mpBrushPatternsComboBox->setCurrentIndex(index);
+}
+
 void ShapeProperties::pickBrushColor()
 {
     QColor color = QColorDialog::getColor();
@@ -596,12 +1087,49 @@ void ShapeProperties::pickBrushColor()
 
     mBrushColor = color;
 
+
+
     if (mpBrushNoColorCheckBox->checkState() == Qt::Unchecked)
     {
         QPixmap pixmap(Helper::iconSize);
         pixmap.fill(mBrushColor);
         mpBrushColorViewerLabel->setPixmap(pixmap);
     }
+}
+
+
+QColor ShapeProperties::getBrushColor()
+{
+    if (mpBrushNoColorCheckBox->checkState() == Qt::Checked)
+        return Qt::transparent;
+    else
+        return mBrushColor;
+}
+
+void ShapeProperties::setBrushPattern()
+{
+    //int index = mpPenPatternsComboBox->findText(pattern, Qt::MatchExactly);
+    //if (index != -1)
+    //mpPenPatternsComboBox->setCurrentIndex(index);
+    if(mpBrushPatternsComboBox->currentIndex()== -1)
+    {
+     mBrushPattern= Qt::NoBrush;
+    }
+    else
+    {
+    mBrushPattern = Qt::BrushStyle(mpBrushPatternsComboBox->itemData(mpBrushPatternsComboBox->currentIndex()).toInt());
+    }
+}
+
+QString ShapeProperties::getBrushPatternString()
+{
+    return mpBrushPatternsComboBox->currentText();
+}
+
+Qt::BrushStyle ShapeProperties::getBrushPattern()
+{
+    //return Qt::PenStyle(mpPenPatternsComboBox->itemData(mpPenPatternsComboBox->currentIndex()).toInt());
+    return mBrushPattern;
 }
 
 void ShapeProperties::brushNoColorChecked(int state)
@@ -616,6 +1144,34 @@ void ShapeProperties::brushNoColorChecked(int state)
     {
         QPixmap pixmap(Helper::iconSize);
         pixmap.fill(mBrushColor);
-        mpPenColorViewerLabel->setPixmap(pixmap);
+        mpBrushColorViewerLabel->setPixmap(pixmap);
     }
 }
+
+
+void ShapeProperties::applyChanges()
+{
+    //saveGeneralSettings();
+    //saveModelicaTextSettings();
+    // emit the signal so that all syntax highlighters are updated
+
+    //sets the value of changed variable
+    setPenPattern();
+    setPenThickness();
+    setPenSmooth();
+
+
+    mpShape->changePenProperty();
+    if(mShapeType!=ShapeProperties::Line)
+    {
+    setBrushPattern();
+    mpShape->changeBrushProperty();
+    }
+
+
+    //savePenStyleSettings();
+    //saveBrushStyleSettings();
+    //mSettings.sync();
+    accept();
+}
+

@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  * Main Authors 2010: Syed Adeel Asghar, Sonia Tariq
- *
+ * Contributors 2011: Abhinn Kothari
  */
 
 //! @file   OMCProxy.cpp
@@ -148,8 +148,8 @@ bool OMCProxy::startServer()
         const char *omhome = getenv("OPENMODELICAHOME");
         QString omcPath;
         #ifdef WIN32
-          if (!omhome)
-            throw std::runtime_error(GUIMessages::getMessage(GUIMessages::OPEN_MODELICA_HOME_NOT_FOUND).toStdString());
+          //if (!omhome)
+            //throw std::runtime_error(GUIMessages::getMessage(GUIMessages::OPEN_MODELICA_HOME_NOT_FOUND).toLocal8Bit());
           omcPath = QString( omhome ) + "/bin/omc.exe";
         #else /* unix */
           omcPath = (omhome ? QString(omhome)+"/bin/omc" : QString(CONFIG_DEFAULT_OPENMODELICAHOME) + "/bin/omc");
@@ -518,8 +518,15 @@ QStringList OMCProxy::getClassInformation(QString modelName)
 {
     sendCommand("getClassInformation(" + modelName + ")");
     QString result = getResult();
+    QStringList emp;
+    emp << "" << "" << "" << "" << "";
+    if(result=="")
+     { return emp;}
+    else
+    {
     QStringList list = StringHandler::unparseStrings(result);
     return list;
+    }
 }
 
 
@@ -1040,6 +1047,15 @@ bool OMCProxy::createClass(QString type, QString className)
         return true;
 }
 
+bool OMCProxy::copyClass(QString copyText)
+{
+    sendCommand(copyText);
+    if (getResult().toLower().contains("error"))
+        return false;
+    else
+        return true;
+}
+
 bool OMCProxy::createSubClass(QString type, QString className, QString parentClassName)
 {
     sendCommand("within " + parentClassName + "; " + type + " " + className + " end " + className + ";");
@@ -1142,7 +1158,7 @@ bool OMCProxy::saveModifiedModel(QString modelText)
 QString OMCProxy::list(QString className)
 {
     sendCommand("list(" + className + ")");
-    return StringHandler::unparse(getResult());
+    return StringHandler::removeFirstLastQuotes(getResult()).trimmed();
 }
 
 bool OMCProxy::addClassAnnotation(QString className, QString annotation)

@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  * Main Authors 2010: Syed Adeel Asghar, Sonia Tariq
- *
+ * Contributors 2011: Abhinn Kothari
  */
 
 #include "DocumentationWidget.h"
@@ -38,6 +38,7 @@ DocumentationWidget::DocumentationWidget(MainWindow *pParent)
 {
     mpParentMainWindow = pParent;
     mpDocumentationViewer = new DocumentationViewer(this);
+    mpDocumentationEditor = new DocumentationEditor(this);
     mpHeadingLabel = new QLabel;
     mpHeadingLabel->setFont(QFont("", Helper::headingFontSize - 5));
     mpHeadingLabel->setAlignment(Qt::AlignTop);
@@ -48,13 +49,32 @@ DocumentationWidget::DocumentationWidget(MainWindow *pParent)
     mpPixmapLabel->setFrameStyle(QFrame::Sunken | QFrame::StyledPanel);
     mpPixmapLabel->setAlignment(Qt::AlignCenter);
 
+    mpEditButton = new QPushButton(tr("Edit"));
+    mpEditButton->setAutoDefault(true);
+    mpEditButton->setMaximumSize(QSize(100,20));
+    connect(mpEditButton, SIGNAL(pressed()), SLOT(editDocumentation()));
+    mpSaveButton = new QPushButton(tr("Save"));
+    mpSaveButton->setAutoDefault(false);
+    mpSaveButton->setMaximumSize(QSize(100,20));
+    connect(mpSaveButton, SIGNAL(pressed()), SLOT(saveChanges()));
+
+    //mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+    //mpButtonBox->addButton(mpEditButton, QDialogButtonBox::ActionRole);
+    //mpButtonBox->addButton(mpSaveButton, QDialogButtonBox::ActionRole);
+
+
+
+
     QHBoxLayout *horizontalLayout = new QHBoxLayout;
     horizontalLayout->addWidget(mpPixmapLabel);
     horizontalLayout->addWidget(mpHeadingLabel);
+    horizontalLayout->addWidget(mpSaveButton);
+    horizontalLayout->addWidget(mpEditButton);
 
     QVBoxLayout *verticalLayout = new QVBoxLayout;
     verticalLayout->addLayout(horizontalLayout);
     verticalLayout->addWidget(mpDocumentationViewer);
+    verticalLayout->addWidget(mpDocumentationEditor);
 
     setLayout(verticalLayout);
 }
@@ -62,10 +82,12 @@ DocumentationWidget::DocumentationWidget(MainWindow *pParent)
 DocumentationWidget::~DocumentationWidget()
 {
     delete mpDocumentationViewer;
+    delete mpDocumentationEditor;
 }
 
 void DocumentationWidget::show(QString className)
 {
+    mClassName=className;
     mpHeadingLabel->setText(className);    
 
     LibraryComponent *libraryComponent = mpParentMainWindow->mpLibrary->getLibraryComponentObject(className);
@@ -73,15 +95,95 @@ void DocumentationWidget::show(QString className)
     {
         mpPixmapLabel->setVisible(true);
         mpPixmapLabel->setPixmap(libraryComponent->getComponentPixmap(QSize(75, 75)));
+        mpEditButton->setVisible(false);
+        mpSaveButton->setVisible(false);
     }
     else
     {
         mpPixmapLabel->setVisible(false);
+        mpEditButton->setVisible(true);
+        mpEditButton->setDisabled(false);
+        mpSaveButton->setVisible(true);
+        mpSaveButton->setDisabled(true);
     }
+
+    //mpEditButton->setVisible(true);
+
 
     QString documentation = mpParentMainWindow->mpOMCProxy->getDocumentationAnnotation(className);
     mpDocumentationViewer->setHtml(documentation, mpDocumentationViewer->getBaseUrl());
-    setVisible(true);
+    mpDocumentationViewer->setVisible(true);
+//    mpDocumentationEditor->setText(mpParentMainWindow->mpOMCProxy->getDocumentationAnnotation(className));
+    mpDocumentationEditor->setVisible(false);
+    //showDocumentationEditView(className);
+}
+
+void DocumentationWidget::showDocumentationEditView(QString className)
+{
+     QString validText;
+    mpDocumentationViewer->hide();
+
+    // get the already existing documentation text of the model
+    mpDocumentationEditor->toPlainText();
+    mpDocumentationEditor->setPlainText(mpParentMainWindow->mpOMCProxy->getDocumentationAnnotation(className));
+
+
+
+    mpDocumentationEditor->setFocus();
+    mpDocumentationEditor->show();
+}
+
+void DocumentationWidget::editDocumentation()
+{
+ showDocumentationEditView(mClassName);
+ mpEditButton->setDisabled(true);
+ mpSaveButton->setDisabled(false);
+}
+
+void DocumentationWidget::saveChanges()
+{
+
+     QString doc = mpDocumentationEditor->toPlainText();
+
+
+   if(doc.startsWith("<html>",Qt::CaseSensitive) && doc.endsWith("</html>",Qt::CaseSensitive))
+   {
+    mpParentMainWindow->mpOMCProxy->addClassAnnotation(mClassName,"annotate=Documentation(info = \""+doc+"\")");
+    show(mClassName);
+   }
+   else
+   {
+       QString message = QString(GUIMessages::getMessage(GUIMessages::INCORRECT_HTML_TAGS));
+       mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(message);
+
+   }
+
+
+
+}
+
+DocumentationEditor::DocumentationEditor(DocumentationWidget *pParent)
+    : QTextEdit(pParent)
+{
+    mpParentDocumentationWidget = pParent;
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    setTabStopWidth(Helper::tabWidth);
+    setObjectName(tr("DocumentationEditor"));
+    setAutoFormatting(QTextEdit::AutoNone);
+    setAcceptRichText(false);
+    // depending on the project tab readonly state set the text view readonly state
+    //setReadOnly(mpParentProjectTab->isReadOnly());
+    //connect(this, SIGNAL(focusOut()), mpParentProjectTab, SLOT(modelicaEditorTextChanged()));
+  //   mpModelicaTextSettings = mpParentDocumentationWidget->mpParentMainWindow->mpOptionsWidget->mpModelicaTextSettings;
+    this->setFontFamily(qApp->font().family());             // get system font
+//      this->setFontFamily(mpModelicaTextSettings->getFontFamily());
+         this->setFontPointSize(10.0);
+
+//    this->document()->setDefaultFont(QFont(mpModelicaTextSettings->getFontFamily(), mpModelicaTextSettings->getFontSize()));
+
+
+
 }
 
 DocumentationViewer::DocumentationViewer(DocumentationWidget *pParent)
@@ -123,6 +225,7 @@ void DocumentationViewer::processLinkClick(QUrl url)
     {
         QDesktopServices::openUrl(url);
     }
+
     // if the user has clicked on some Modelica Links like Modelica://
     else if (url.toString().startsWith("Modelica"))
     {

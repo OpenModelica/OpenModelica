@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  * Main Authors 2010: Syed Adeel Asghar, Sonia Tariq
- *
+ * Contributors 2011: Abhinn Kothari
  */
 
 #ifndef COMPONENT_H
@@ -79,6 +79,7 @@ private:
     CornerItem *mpBottomRightCornerItem;
     QAction *mpIconPropertiesAction;
     QAction *mpIconAttributesAction;
+    QAction *mpIsConnectModeAction;
 
     void createActions();
 public:
@@ -138,9 +139,11 @@ public:
     void addConnector(Connector *item);
     void setComponentFlags();
     void unsetComponentFlags();
+    bool getIsConnector();
     QString getTransformationString();
 signals:
     void componentClicked(Component*);
+    void connectorComponentClicked(Component*);
     void componentMoved();
     void componentPositionChanged();
     void componentDeleted();
@@ -152,8 +155,11 @@ public slots:
     void showSelectionBox();
     void resizeComponent(qreal resizeFactorX, qreal resizeFactorY);
     void deleteMe();
+    void copyComponent();
+    //void pasteComponent();
     void openIconProperties();
     void openIconAttributes();
+    void changeConnectMode();
 protected:
     virtual void mousePressEvent(QGraphicsSceneMouseEvent *event);
     virtual void hoverEnterEvent(QGraphicsSceneHoverEvent *event);

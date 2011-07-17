@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  * Main Authors 2010: Syed Adeel Asghar, Sonia Tariq
- *
+ * Contributors 2011: Abhinn Kothari
  */
 
 #ifndef DOCUMENTATIONWIDGET_H
@@ -40,21 +40,67 @@
 
 
 class DocumentationViewer;
+class DocumentationEditor;
 
 class DocumentationWidget : public QWidget
 {
+    Q_OBJECT
 private:
+
+public slots:
+    void editDocumentation();
+    void saveChanges();
 
 public:
     DocumentationWidget(MainWindow *pParent);
     ~DocumentationWidget();
     void show(QString className);
+    void showDocumentationEditView(QString className);
+
 
     MainWindow *mpParentMainWindow;
     DocumentationViewer *mpDocumentationViewer;
+    DocumentationEditor *mpDocumentationEditor;
     QLabel *mpHeadingLabel;
     QLabel *mpPixmapLabel;
+    QPushButton *mpEditButton;
+    QPushButton *mpSaveButton;
+    QDialogButtonBox *mpButtonBox;
+    QString mClassName;
+
 };
+class ModelicaTextSettings;
+class DocumentationEditor : public QTextEdit
+{
+    Q_OBJECT
+public:
+    DocumentationEditor(DocumentationWidget *pParent);
+    QString getModelName();
+    void findText(const QString &text, bool forward);
+    bool validateText();
+    DocumentationWidget *mpParentDocumentationWidget;
+    ModelicaTextSettings *mpModelicaTextSettings;
+    //ProjectTab *mpParentProjectTab;
+    //QString mLastValidText;
+    //QString mErrorString;
+    //QWidget *mpFindWidget;
+    //QLabel *mpSearchLabelImage;
+    //QLabel *mpSearchLabel;
+    //QLineEdit *mpSearchTextBox;
+    //QToolButton *mpPreviuosButton;
+    //QToolButton *mpNextButton;
+    //QCheckBox *mpMatchCaseCheckBox;
+    //QCheckBox *mpMatchWholeWordCheckBox;
+    //QToolButton *mpCloseButton;
+signals:
+    bool focusOut();
+public slots:
+    //void hideFindWidget();
+    //void updateButtons();
+    //void findNextText();
+    //void findPreviuosText();
+};
+
 
 class DocumentationViewer : public QWebView
 {

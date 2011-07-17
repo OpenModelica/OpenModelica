@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  * Main Authors 2010: Syed Adeel Asghar, Sonia Tariq
- *
+ * Contributors 2011: Abhinn Kothari
  */
 
 #ifndef HELPER_H
@@ -76,6 +76,7 @@ public:
     static QString modelicaLibrarySearchText;
     static QString noItemFound;
     static QString running_Simulation;
+    static QString running_Simulation_text;
     static QString starting_interactive_simulation_server;
     static QString omi_network_address;
     static quint16 omi_control_client_port;
@@ -177,7 +178,10 @@ public:
         SELECT_VARIABLE_FOR_OMI,
         DIAGRAM_VIEW_DROP_MSG,
         ICON_VIEW_DROP_MSG,
-        PLOT_PARAMETRIC_DIFF_FILES
+        PLOT_PARAMETRIC_DIFF_FILES,
+        INCORRECT_HTML_TAGS,
+        FILE_FORMAT_NOT_SUPPORTED,
+        ITEM_DROPPED_ON_ITSELF
     };
 
     static QString getMessage(int type);

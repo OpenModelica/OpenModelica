@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  * Main Authors 2010: Syed Adeel Asghar, Sonia Tariq
- *
+ * Contributors 2011: Abhinn Kothari
  */
 
 #ifndef OMCPROXY_H
@@ -127,6 +127,7 @@ public:
     bool parseFile(QString fileName);
     QStringList parseString(QString value);
     bool createClass(QString type, QString className);
+    bool copyClass(QString copyText);
     bool createSubClass(QString type, QString className, QString parentClassName);
     bool updateSubClass(QString parentClassName, QString modelText);
     bool createModel(QString modelName);

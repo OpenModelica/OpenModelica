@@ -82,6 +82,7 @@ void RectangleAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsIte
     {
         setTransformOriginPoint(boundingRect().center());
     }
+
     drawRectangleAnnotaion(painter);
 }
 
@@ -129,7 +130,11 @@ void RectangleAnnotation::drawRectangleAnnotaion(QPainter *painter)
     // make the pen width upper rounded if rectangle is rounded
     qreal thickness;
     if (mCornerRadius > 0)
-        thickness = ceil(mThickness);
+       {
+        }
+           thickness = ceil(mThickness);
+
+
 
     QPen pen(mLineColor, thickness, mLinePattern);
     pen.setCosmetic(true);
@@ -137,6 +142,7 @@ void RectangleAnnotation::drawRectangleAnnotaion(QPainter *painter)
 
     path.addRoundedRect(getBoundingRect(), mCornerRadius, mCornerRadius);
     painter->drawPath(path);
+
 }
 
 void RectangleAnnotation::addPoint(QPointF point)
@@ -151,6 +157,7 @@ void RectangleAnnotation::updateEndPoint(QPointF point)
 
 void RectangleAnnotation::drawRectangleCornerItems()
 {
+
     mIsFinishedCreatingShape = true;
     for (int i = 0 ; i < this->mExtent.size() ; i++)
     {
@@ -159,6 +166,7 @@ void RectangleAnnotation::drawRectangleCornerItems()
         mRectangleCornerItemsList.append(rectangleCornerItem);
     }
     emit updateShapeAnnotation();
+
 }
 
 QString RectangleAnnotation::getShapeAnnotation()
@@ -211,6 +219,7 @@ QString RectangleAnnotation::getShapeAnnotation()
     annotationString.append(QString::number(mapToScene(mExtent.at(0)).y())).append("},{");
     annotationString.append(QString::number(mapToScene(mExtent.at(1)).x())).append(",");
     annotationString.append(QString::number(mapToScene(mExtent.at(1)).y()));
+
     annotationString.append("}}");        
 
     annotationString.append(")");
@@ -219,6 +228,7 @@ QString RectangleAnnotation::getShapeAnnotation()
 
 void RectangleAnnotation::updatePoint(int index, QPointF point)
 {
+
     mExtent.replace(index, point);
 }
 

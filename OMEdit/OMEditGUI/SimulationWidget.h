@@ -100,42 +100,4 @@ private:
     QLabel *mpText;
 };
 
-/*
-class ComponentBrowser;
-
-class ComponentBrowserNode : public QTreeWidgetItem
-{
-private:
-    QString mName;
-    QString mClassName;
-    QString mParentName;
-    QString mNameStructure;
-public:
-    ComponentBrowserNode(QString name, QString className, QString parentName, QTreeWidget *pParent = 0);
-
-    QString getName();
-    QString getClassName();
-    QString getParentName();
-    QString getNameStructure();
-};
-
-class ComponentBrowser : public QTreeWidget
-{
-    Q_OBJECT
-private:
-    MainWindow *mpParentMainWindow;
-    QList<ComponentBrowserNode*> mComponentBrowserNodesList;
-    QList<ComponentBrowserNode*> mExpandedNodesList;
-public:
-    ComponentBrowser(MainWindow *pParent);
-    ~ComponentBrowser();
-
-    void addComponents(QString className, QString parentStructure);
-    ComponentBrowserNode* getNode(QString name);
-    bool isTreeItemLoaded(ComponentBrowserNode *item);
-public slots:
-    void getComponents(QTreeWidgetItem *item);
-};
-*/
-
 #endif // SIMULATIONWIDGET_H
