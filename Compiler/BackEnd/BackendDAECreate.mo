@@ -2195,28 +2195,31 @@ protected function detectImplicitDiscrete
   input list<BackendDAE.Equation> inEquationLst;
   output BackendDAE.Variables outVariables;
 algorithm
-  outVariables := matchcontinue (inVariables,inEquationLst)
+  outVariables := Util.listFoldR(inEquationLst,detectImplicitDiscreteFold,inVariables);
+end detectImplicitDiscrete;
+
+protected function detectImplicitDiscreteFold
+"function: detectImplicitDiscrete
+  This function updates the variable kind to discrete
+  for variables set in when equations."
+  input BackendDAE.Variables inVariables;
+  input BackendDAE.Equation inEquation;
+  output BackendDAE.Variables outVariables;
+algorithm
+  outVariables := matchcontinue (inVariables,inEquation)
     local
       BackendDAE.Variables v,v_1,v_2;
       DAE.ComponentRef cr;
       list<BackendDAE.Equation> xs;
       BackendDAE.Var var;
-    case (v,{}) then v;
-    case (v,(BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = cr)) :: xs))
+    case (v,(BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = cr))))
       equation
         ((var :: _),_) = BackendVariable.getVar(cr, v);
         var = BackendVariable.setVarKind(var,BackendDAE.DISCRETE());
-        v_1 = BackendVariable.addVar(var, v);
-        v_2 = detectImplicitDiscrete(v_1, xs);
-      then
-        v_2;
-    case (v,(_ :: xs))
-      equation
-        v_1 = detectImplicitDiscrete(v, xs);
-      then
-        v_1;
+      then BackendVariable.addVar(var, v);
+    else inVariables;
   end matchcontinue;
-end detectImplicitDiscrete;
+end detectImplicitDiscreteFold;
 
 protected function detectImplicitDiscreteAlgs
 "function: detectImplicitDiscreteAlgs
@@ -2454,7 +2457,7 @@ algorithm
     local list<BackendDAE.Equation> algEqns,diffEqns,res,eqns,resArrayEqns;
     case (eqns)
       equation
-        (algEqns,diffEqns,resArrayEqns) = extractAlgebraicAndDifferentialEqn(eqns);
+        (algEqns,diffEqns,resArrayEqns) = extractAlgebraicAndDifferentialEqn(eqns,{},{},{});
         res = Util.listFlatten({algEqns, diffEqns,resArrayEqns});
       then
         res;
@@ -2472,60 +2475,55 @@ protected function extractAlgebraicAndDifferentialEqn
   Splits the equation list into two lists. One that only contain differential
   equations and one that only contain algebraic equations."
   input list<BackendDAE.Equation> inEquationLst;
+  input list<BackendDAE.Equation> accAlg;
+  input list<BackendDAE.Equation> accResDiff;
+  input list<BackendDAE.Equation> accArr;
   output list<BackendDAE.Equation> outEquationLst1;
   output list<BackendDAE.Equation> outEquationLst2;
   output list<BackendDAE.Equation> outEquationLst3;
 algorithm
-  (outEquationLst1,outEquationLst2,outEquationLst3):= matchcontinue (inEquationLst)
+  (outEquationLst1,outEquationLst2,outEquationLst3):= match (inEquationLst,accAlg,accResDiff,accArr)
     local
       list<BackendDAE.Equation> resAlgEqn,resDiffEqn,rest,resArrayEqns;
       BackendDAE.Equation eqn,alg;
       DAE.Exp exp1,exp2;
       BackendDAE.Value indx;
       list<DAE.Exp> expl;
-    case ({}) then ({},{},{});  /* algebraic equations differential equations */
-    case (((eqn as BackendDAE.EQUATION(exp = exp1,scalar = exp2)) :: rest)) /* scalar equation */
+      Boolean isalg;
+    case ({},accAlg,accResDiff,accArr) then (listReverse(accAlg),listReverse(accResDiff),listReverse(accArr));
+      /* algebraic equations differential equations */
+    case (((eqn as BackendDAE.EQUATION(exp = exp1,scalar = exp2)) :: rest),accAlg,accResDiff,accArr) /* scalar equation */
       equation
-        true = isAlgebraic(exp1);
-        true = isAlgebraic(exp2);
-        (resAlgEqn,resDiffEqn,resArrayEqns) = extractAlgebraicAndDifferentialEqn(rest);
+        isalg = isAlgebraic(exp1) and isAlgebraic(exp2);
+        accAlg = Util.listConsOnTrue(isalg, eqn, accAlg);
+        accResDiff = Util.listConsOnTrue(not isalg, eqn, accResDiff);
+        (accAlg,accResDiff,accArr) = extractAlgebraicAndDifferentialEqn(rest,accAlg,accResDiff,accArr);
       then
-        ((eqn :: resAlgEqn),resDiffEqn,resArrayEqns);
-    case (((eqn as BackendDAE.COMPLEX_EQUATION(lhs = exp1,rhs = exp2)) :: rest)) /* complex equation */
+        (accAlg,accResDiff,accArr);
+    case (((eqn as BackendDAE.COMPLEX_EQUATION(lhs = exp1,rhs = exp2)) :: rest),accAlg,accResDiff,accArr) /* complex equation */
       equation
-        true = isAlgebraic(exp1);
-        true = isAlgebraic(exp2);
-        (resAlgEqn,resDiffEqn,resArrayEqns) = extractAlgebraicAndDifferentialEqn(rest);
+        isalg = isAlgebraic(exp1) and isAlgebraic(exp2);
+        accAlg = Util.listConsOnTrue(isalg, eqn, accAlg);
+        accResDiff = Util.listConsOnTrue(not isalg, eqn, accResDiff);
+        (accAlg,accResDiff,accArr) = extractAlgebraicAndDifferentialEqn(rest,accAlg,accResDiff,accArr);
       then
-        ((eqn :: resAlgEqn),resDiffEqn,resArrayEqns);
-    case (((eqn as BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl)) :: rest)) /* array equation */
+        (accAlg,accResDiff,accArr);
+    case (((eqn as BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl)) :: rest),accAlg,accResDiff,accArr) /* array equation */
       equation
         // fails if not all call results are true
-        true = Util.listMapAllValue(expl, isAlgebraic, true);
-        (resAlgEqn,resDiffEqn,resArrayEqns) = extractAlgebraicAndDifferentialEqn(rest);
+        isalg = Util.listMapAllValue(expl, isAlgebraic, true);
+        accArr = Util.listConsOnTrue(isalg, eqn, accArr);
+        accResDiff = Util.listConsOnTrue(not isalg, eqn, accResDiff);
+        (accAlg,accResDiff,accArr) = extractAlgebraicAndDifferentialEqn(rest,accAlg,accResDiff,accArr);
       then
-        (resAlgEqn,resDiffEqn,(eqn :: resArrayEqns));
-    case (((eqn as BackendDAE.EQUATION(exp = exp1,scalar = exp2)) :: rest))
+        (accAlg,accResDiff,accArr);
+    case ((alg :: rest),accAlg,accResDiff,accArr)
       equation
-        (resAlgEqn,resDiffEqn,resArrayEqns) = extractAlgebraicAndDifferentialEqn(rest);
+        accAlg = alg::accAlg;
+        (accAlg,accResDiff,accArr) = extractAlgebraicAndDifferentialEqn(rest,accAlg,accResDiff,accArr);
       then
-        (resAlgEqn,(eqn :: resDiffEqn),resArrayEqns);
-    case (((eqn as BackendDAE.COMPLEX_EQUATION(lhs = exp1,rhs = exp2)) :: rest))
-      equation
-        (resAlgEqn,resDiffEqn,resArrayEqns) = extractAlgebraicAndDifferentialEqn(rest);
-      then
-        (resAlgEqn,(eqn :: resDiffEqn),resArrayEqns);
-    case (((eqn as BackendDAE.ARRAY_EQUATION(index = _)) :: rest))
-      equation
-        (resAlgEqn,resDiffEqn,resArrayEqns) = extractAlgebraicAndDifferentialEqn(rest);
-      then
-        (resAlgEqn,(eqn :: resDiffEqn),resArrayEqns);
-    case ((alg :: rest))
-      equation
-        (resAlgEqn,resDiffEqn,resArrayEqns) = extractAlgebraicAndDifferentialEqn(rest) "Put algorithms in algebraic equations" ;
-      then
-        ((alg :: resAlgEqn),resDiffEqn,resArrayEqns);
-  end matchcontinue;
+        (accAlg,accResDiff,accArr);
+  end match;
 end extractAlgebraicAndDifferentialEqn;
 
 public function isAlgebraic "function: isDiscreteExp

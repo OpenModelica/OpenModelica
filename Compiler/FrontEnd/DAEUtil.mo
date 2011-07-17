@@ -2335,7 +2335,7 @@ algorithm
       list<DAE.Element> elts;
     case (DAE.DAE(elts),onlyConstantEval)
       equation
-        elts = transformIfEqToExpr2(elts,onlyConstantEval);
+        elts = transformIfEqToExpr2(elts,onlyConstantEval,{});
       then DAE.DAE(elts);
   end match;
 end transformIfEqToExpr;
@@ -2345,33 +2345,33 @@ protected function transformIfEqToExpr2
   transform all if equations to ordinary equations involving if-expressions"
   input list<DAE.Element> elts;
   input Boolean onlyConstantEval "if true, only perform the constant evaluation part, not transforming to if-expr";
+  input list<DAE.Element> acc;
   output list<DAE.Element> outElts;
 algorithm
-  outElts := match (elts,onlyConstantEval)
+  outElts := match (elts,onlyConstantEval,acc)
     local
       list<DAE.Element> rest_result,rest,sublist_result,sublist,res,res2;
       DAE.Element subresult,el;
       String name;
       DAE.ElementSource source "the origin of the element";
-    case ({},onlyConstantEval) then {};
-    case (DAE.COMP(ident = name,dAElist = sublist,source=source) :: rest,onlyConstantEval)
+    case ({},onlyConstantEval,acc) then listReverse(acc);
+    case (DAE.COMP(ident = name,dAElist = sublist,source=source) :: rest,onlyConstantEval,acc)
       equation
-        sublist_result = transformIfEqToExpr2(sublist,onlyConstantEval);
-        rest_result = transformIfEqToExpr2(rest,onlyConstantEval);
+        sublist_result = transformIfEqToExpr2(sublist,onlyConstantEval,{});
         subresult = DAE.COMP(name,sublist_result,source,NONE());
-      then subresult :: rest_result;
-    case ((el as (DAE.IF_EQUATION(source = _)))::rest,onlyConstantEval)
+        acc = transformIfEqToExpr2(rest,onlyConstantEval,subresult::acc);
+      then acc;
+    case ((el as (DAE.IF_EQUATION(source = _)))::rest,onlyConstantEval,acc)
       equation
         elts= ifEqToExpr(el,onlyConstantEval);
-        res2 = transformIfEqToExpr2(rest,onlyConstantEval);
-        res = listAppend(elts, res2);
+        acc = transformIfEqToExpr2(rest,onlyConstantEval,listAppend(elts,acc));
       then
-        res;
-    case (el :: rest,onlyConstantEval)
+        acc;
+    case (el :: rest,onlyConstantEval,acc)
       equation
-        elts = transformIfEqToExpr2(rest,onlyConstantEval);
+        elts = transformIfEqToExpr2(rest,onlyConstantEval,el::acc);
       then
-        el :: elts;
+        elts;
   end match;
 end transformIfEqToExpr2;
 
@@ -2831,7 +2831,7 @@ algorithm
       equation
         equations = selectBranches(cond, true_branch, false_branch,source,false,onlyConstantEval);
         // transform further if needed
-      then transformIfEqToExpr2(equations,onlyConstantEval);
+      then transformIfEqToExpr2(equations,onlyConstantEval,{});
     // handle the erroneous case where the number of equations are not equal in different branches
     /* BUG: The comparison of # equations in different branches below is wrong.
     The Modelica.Blocks.Examples.PID_Controller shows why. if an assert is present in one of the branches, the number

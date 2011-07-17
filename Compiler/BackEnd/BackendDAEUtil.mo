@@ -3862,7 +3862,7 @@ algorithm
         arr = arrayCreate(numberOfEqs, {});
         lstT = Util.listFill({},numberofVars);
         arrT = listArray(lstT);
-        (arr,arrT) = incidenceMatrixDispatch(vars, eqns, wc, arr,arrT, 0, numberOfEqs, inIndexType);
+        (arr,arrT) = incidenceMatrixDispatch(vars, eqns, wc, arr,arrT, 0, numberOfEqs, intLt(0, numberOfEqs), inIndexType);
       then
         (arr,arrT);
     
@@ -3902,11 +3902,12 @@ protected function incidenceMatrixDispatch
   input BackendDAE.IncidenceMatrixT inIncidenceArrayT;
   input Integer index;
   input Integer numberOfEqs;
+  input Boolean stop;
   input BackendDAE.IndexType inIndexType;
   output BackendDAE.IncidenceMatrix outIncidenceArray;
   output BackendDAE.IncidenceMatrixT outIncidenceArrayT;
 algorithm
-  (outIncidenceArray,outIncidenceArrayT) := matchcontinue (inVariables, inEqsArr, inWhenClause, inIncidenceArray, inIncidenceArrayT, index, numberOfEqs, inIndexType)
+  (outIncidenceArray,outIncidenceArrayT) := match (inVariables, inEqsArr, inWhenClause, inIncidenceArray, inIncidenceArrayT, index, numberOfEqs, stop, inIndexType)
     local
       list<BackendDAE.Value> row;
       BackendDAE.Variables vars;
@@ -3918,16 +3919,11 @@ algorithm
       Integer i,n;
     
     // i = n (we reach the end)
-    case (vars, eqArr, wc, iArr, iArrT, i, n, inIndexType)
-      equation
-        false = intLt(i, n);
-      then 
-        (iArr,iArrT);
+    case (vars, eqArr, wc, iArr, iArrT, i, n, false, inIndexType) then (iArr,iArrT);
     
     // i < n 
-    case (vars, eqArr, wc, iArr, iArrT, i, n, inIndexType)
+    case (vars, eqArr, wc, iArr, iArrT, i, n, true, inIndexType)
       equation
-        true = intLt(i, n);
         // get the equation
         e = equationNth(eqArr, i);
         // compute the row
@@ -3937,16 +3933,18 @@ algorithm
         // put it in the arrays
         iArr = arrayUpdate(iArr, i+1, row);
         iArrT = fillincidenceMatrixT(row,i+1,iArrT);
-        (iArr,iArrT) = incidenceMatrixDispatch(vars, eqArr, wc, iArr, iArrT, i + 1, n, inIndexType);
+        (iArr,iArrT) = incidenceMatrixDispatch(vars, eqArr, wc, iArr, iArrT, i + 1, n, intLt(i + 1, n), inIndexType);
       then
         (iArr,iArrT);
     
+    /* Unreachable due to tail recursion, which we really need
     case (vars, eqArr, wc, iArr, iArrT, i, n, inIndexType)
       equation
         print("- BackendDAEUtil.incidenceMatrixDispatch failed\n");
       then
         fail();
-  end matchcontinue;
+    */
+  end match;
 end incidenceMatrixDispatch;
 
 protected function fillincidenceMatrixT

@@ -1550,8 +1550,11 @@ protected function traverseIncidenceMatrix
     input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix,Type_a> inTpl;
     output tuple<list<Integer>,BackendDAE.IncidenceMatrix,Type_a> outTpl;
   end FuncType;
+protected
+  Integer len;
 algorithm
-  (outM,outTypeA) := traverseIncidenceMatrix1(inM,func,1,arrayLength(inM),inTypeA);
+  len := arrayLength(inM);
+  (outM,outTypeA) := traverseIncidenceMatrix1(inM,func,1,len,intGt(1,len),inTypeA);
 end traverseIncidenceMatrix;
 
 protected function traverseIncidenceMatrix1 
@@ -1562,6 +1565,7 @@ protected function traverseIncidenceMatrix1
   input FuncType func;
   input Integer pos "iterated 1..len";
   input Integer len "length of array";
+  input Boolean stop;
   input Type_a inTypeA;
   output BackendDAE.IncidenceMatrix outM;
   output Type_a outTypeA;
@@ -1570,29 +1574,28 @@ protected function traverseIncidenceMatrix1
     output tuple<list<Integer>,BackendDAE.IncidenceMatrix,Type_a> outTpl;
   end FuncType;
 algorithm
-  (outM,outTypeA) := matchcontinue(inM,func,pos,len,inTypeA)
+  (outM,outTypeA) := match (inM,func,pos,len,stop,inTypeA)
     local 
       BackendDAE.IncidenceMatrix m,m1,m2;
       Type_a extArg,extArg1,extArg2;
       list<Integer> eqns,eqns1;
     
-    case(inM,func,pos,len,inTypeA) equation 
-      true = intGt(pos,len);
-    then (inM,inTypeA);
+    case(inM,func,pos,len,true,inTypeA) then (inM,inTypeA);
     
-    case(inM,func,pos,len,inTypeA) equation
-      ((eqns,m,extArg)) = func((inM[pos],pos,inM,inTypeA));
-      eqns1 = Util.listRemoveOnTrue(pos,intLt,eqns);
-      (m1,extArg1) = traverseIncidenceMatrixList(eqns1,m,func,arrayLength(m),pos,extArg);
-      (m2,extArg2) = traverseIncidenceMatrix1(m1,func,pos+1,len,extArg1);
-    then (m2,extArg2);
+    case(inM,func,pos,len,false,inTypeA)
+      equation
+        ((eqns,m,extArg)) = func((inM[pos],pos,inM,inTypeA));
+        eqns1 = Util.listRemoveOnTrue(pos,intLt,eqns);
+        (m1,extArg1) = traverseIncidenceMatrixList(eqns1,m,func,arrayLength(m),pos,extArg);
+        (m2,extArg2) = traverseIncidenceMatrix1(m1,func,pos+1,len,intGt(pos+1,len),extArg1);
+      then (m2,extArg2);
       
-    case (_,_,_,_,_)
+    else
       equation
         Debug.fprintln("failtrace", "- BackendDAEOptimize.traverseIncidenceMatrix1 failed");
       then
         fail();       
-  end matchcontinue;
+  end match;
 end traverseIncidenceMatrix1;
 
 protected function traverseIncidenceMatrixList 
