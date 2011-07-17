@@ -2559,8 +2559,7 @@ algorithm
   end matchcontinue;
 end evaluateParameter;
 
-
-public function evaluateAnnotation2
+protected function evaluateAnnotation2
 "function: evaluateAnnotation2
   evaluates the parameters with bindings parameters with annotation Evaluate"
   input DAE.DAElist inDAElist;
@@ -2575,24 +2574,23 @@ algorithm
     case (DAE.DAE({}),ht) then ({},ht);
     case (DAE.DAE(elementLst=elementLst),ht)
       equation
-        (elementLst1,ht1) = evaluateAnnotation3(elementLst,ht);
+        (elementLst1,ht1) = Util.listMapAndFold(elementLst,evaluateAnnotation3,ht);
       then
         (elementLst1,ht1);
   end matchcontinue;
 end evaluateAnnotation2;
 
-public function evaluateAnnotation3
+protected function evaluateAnnotation3
 "function: evaluateAnnotation3
   evaluates the parameters with bindings parameters with annotation Evaluate"
-  input list<DAE.Element> inDAElist;
+  input DAE.Element iel;
   input HashTable2.HashTable inHt;
-  output list<DAE.Element> outDAElist;
+  output DAE.Element oel;
   output HashTable2.HashTable outHt;
 algorithm
-  (outDAElist,outHt) := matchcontinue (inDAElist,inHt)
+  (oel,outHt) := matchcontinue (iel,inHt)
     local
       list<DAE.Element> rest,sublist,sublist1,newlst;
-      DAE.Element el;
       HashTable2.HashTable ht,ht1,ht2;
       DAE.ComponentRef cr;
       SCode.Annotation anno;
@@ -2614,31 +2612,24 @@ algorithm
       Absyn.InnerOuter innerOuter;
       Integer i,j;
       
-    case ({},ht) then ({},ht);
-    case (DAE.COMP(ident=ident,dAElist = sublist,source=source,comment=comment) :: rest,ht)
+    case (DAE.COMP(ident=ident,dAElist = sublist,source=source,comment=comment),ht)
       equation
-        (sublist1,ht1) = evaluateAnnotation3(sublist,ht);
-        (newlst,ht2) = evaluateAnnotation3(rest,ht1);
+        (sublist1,ht1) = Util.listMapAndFold(sublist,evaluateAnnotation3,ht);
       then
-        (DAE.COMP(ident,sublist1,source,comment)::newlst,ht2);
-    case (((DAE.VAR(componentRef = cr,kind=DAE.PARAM(),direction=direction,protection=protection,ty=ty,binding=SOME(e),dims=dims,flowPrefix=flowPrefix,streamPrefix=streamPrefix,
-            source=source,variableAttributesOption=variableAttributesOption,absynCommentOption=absynCommentOption,innerOuter=innerOuter)):: rest),ht)
+        (DAE.COMP(ident,sublist1,source,comment),ht1);
+    case (DAE.VAR(componentRef = cr,kind=DAE.PARAM(),direction=direction,protection=protection,ty=ty,binding=SOME(e),dims=dims,flowPrefix=flowPrefix,streamPrefix=streamPrefix,
+            source=source,variableAttributesOption=variableAttributesOption,absynCommentOption=absynCommentOption,innerOuter=innerOuter),ht)
       equation
         ((e1,(_,i,j))) = Expression.traverseExp(e,evaluateAnnotationTraverse,(ht,0,0));
         (e2,ht1) = evaluateAnnotation4(cr,e1,i,j,ht);
-        (newlst,ht2) = evaluateAnnotation3(rest,ht1);
       then
         (DAE.VAR(cr,DAE.PARAM(),direction,protection,ty,SOME(e2),dims,flowPrefix,streamPrefix,
-            source,variableAttributesOption,absynCommentOption,innerOuter)::newlst,ht2);
-    case (el :: rest,ht)
-      equation
-        (newlst,ht1) = evaluateAnnotation3(rest,ht);
-      then
-        (el::newlst,ht1);
+            source,variableAttributesOption,absynCommentOption,innerOuter),ht1);
+    else (iel,inHt);
   end matchcontinue;
 end evaluateAnnotation3;
 
-public function evaluateAnnotation4
+protected function evaluateAnnotation4
 "function: evaluateAnnotation4
   evaluates the parameters with bindings parameters with annotation Evaluate"
   input DAE.ComponentRef inCr;
