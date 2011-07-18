@@ -129,12 +129,8 @@ void RectangleAnnotation::drawRectangleAnnotaion(QPainter *painter)
 
     // make the pen width upper rounded if rectangle is rounded
     qreal thickness;
-    if (mCornerRadius > 0)
-       {
-        }
-           thickness = ceil(mThickness);
-
-
+    // if (mCornerRadius > 0) // this is commented intentionally so that we dont need path stroker. Also helps in svg rendering
+    thickness = ceil(mThickness);
 
     QPen pen(mLineColor, thickness, mLinePattern);
     pen.setCosmetic(true);

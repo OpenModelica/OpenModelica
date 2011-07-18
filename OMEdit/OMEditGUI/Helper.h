@@ -50,6 +50,7 @@ public:
     static QString omFileTypes;
     static QString omnotebookFileTypes;
     static QString imageFileTypes;
+    static QString svgFileTypes;
     static QString tmpPath;
     static QString settingsFileName;
     static QString documentationBaseUrl;

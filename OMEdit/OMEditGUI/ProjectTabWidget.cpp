@@ -970,7 +970,11 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
             QMenu menu(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
             mpCancelConnectionAction->setText("Context Menu");
             //menu.addAction(mpPasteComponentAction);
-            menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportAsImage);
+            //menu.addSeparator();
+            menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportAsImageAction);
+            menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportAsSvgAction);
+            menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->printModelAction);
+            menu.addSeparator();
             menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportToOMNotebookAction);
             menu.exec(event->globalPos());
             return;         // return from it because at a time we only want one context menu.
@@ -3229,7 +3233,11 @@ void ProjectTabWidget::enableProjectToolbar()
         // enable the shapes tool bar
         mpParentMainWindow->shapesToolBar->setEnabled(true);
         // enable the export as image action
-        mpParentMainWindow->exportAsImage->setEnabled(true);
+        mpParentMainWindow->exportAsImageAction->setEnabled(true);
+        // enable the export as svg action
+        mpParentMainWindow->exportAsSvgAction->setEnabled(true);
+        // enable the print model action
+        mpParentMainWindow->printModelAction->setEnabled(true);
         // enable the export to omnotebook action
         mpParentMainWindow->exportToOMNotebookAction->setEnabled(true);
         mToolBarEnabled = true;
@@ -3249,7 +3257,11 @@ void ProjectTabWidget::disableProjectToolbar()
         // disable the shapes tool bar
         mpParentMainWindow->shapesToolBar->setEnabled(false);
         // disable the export as image action
-        mpParentMainWindow->exportAsImage->setEnabled(false);
+        mpParentMainWindow->exportAsImageAction->setEnabled(false);
+        // disable the export as svg action
+        mpParentMainWindow->exportAsSvgAction->setEnabled(false);
+        // disable the print model action
+        mpParentMainWindow->printModelAction->setEnabled(false);
         // enable the export to omnotebook action
         mpParentMainWindow->exportToOMNotebookAction->setEnabled(false);
         mToolBarEnabled = false;

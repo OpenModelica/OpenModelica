@@ -96,7 +96,12 @@ void PolygonAnnotation::drawPolygonAnnotaion(QPainter *painter)
         painter->setBrush(QBrush(this->mFillColor, this->mFillPattern));
         break;
     }
-    QPen pen(this->mLineColor, this->mThickness, this->mLinePattern);
+
+    qreal thickness;
+    // if (mCornerRadius > 0) // this is commented intentionally so that we dont need path stroker. Also helps in svg rendering
+    thickness = ceil(mThickness);
+
+    QPen pen(this->mLineColor, thickness, this->mLinePattern);
     pen.setCosmetic(true);
     painter->setPen(pen);
 

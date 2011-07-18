@@ -143,10 +143,12 @@ void LineAnnotation::drawLineAnnotaion(QPainter *painter)
     qreal thickness;
 
     // make the pen width upper rounded for spline, otherwise spline is distorted
-    if (mSmooth)
-        thickness = ceil(mThickness);
-    else
-        thickness = mThickness;
+    thickness = ceil(mThickness);
+    // this is commented intentionally so that we dont need path stroker. Also helps in svg rendering
+//    if (mSmooth)
+//        thickness = ceil(mThickness);
+//    else
+//        thickness = mThickness;
 
     QPen pen(this->mLineColor, thickness, this->mLinePattern);
     pen.setCosmetic(true);
@@ -162,7 +164,7 @@ void LineAnnotation::drawLineAnnotaion(QPainter *painter)
     else
         painter->drawPolygon(drawArrow(mPoints.at(0), mPoints.at(1), mArrowSize * 2, mStartArrow));
 
-    painter->drawPath(getShape());
+    painter->drawPath(getShape());    
 
     // draw end arrow
     if (mEndArrow == ShapeAnnotation::Filled)
