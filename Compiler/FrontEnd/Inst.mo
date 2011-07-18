@@ -10708,7 +10708,7 @@ algorithm
       equation
         (cache,cenv,ih,_,DAE.DAE(daeElts),csets_1,ty,st,_,_) =
           instClass(cache, env, ih, UnitAbsynBuilder.emptyInstStore(), mod, pre, csets, c, inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY);
-        Util.listMap01(daeElts,info,checkFunctionElement);
+        Util.listMap02(daeElts,checkFunctionElement,false,info);
         env_1 = Env.extendFrameC(env,c);
         (cache,fpath) = makeFullyQualified(cache, env_1, Absyn.IDENT(n));
         derFuncs = getDeriveAnnotation(cd,fpath,cache,cenv,ih,pre,info);
@@ -10736,6 +10736,7 @@ algorithm
         (cache,cenv,ih,_,DAE.DAE(daeElts),csets_1,ty,st,_,_) =
           instClass(cache,env,ih, UnitAbsynBuilder.emptyInstStore(),mod, pre,
             csets, c, inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY);
+        Util.listMap02(daeElts,checkFunctionElement,true,info);
         //env_11 = Env.extendFrameC(cenv,c);
         // Only created to be able to get FQ path.
         (cache,fpath) = makeFullyQualified(cache,cenv, Absyn.IDENT(n));
@@ -10751,6 +10752,7 @@ algorithm
           instClassdef(cache, env_1, ih, UnitAbsyn.noStore, mod, pre, csets_1,
               ClassInf.FUNCTION(fpath), n,parts, restr, vis, partialPrefix, encapsulatedPrefix, inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY,NONE(),info) "how to get this? impl" ;
         (cache,ih,extdecl) = instExtDecl(cache, tempenv,ih, n, parts, true, pre,info) "impl" ;
+        checkExternalFunction(daeElts,extdecl,info);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
@@ -11565,6 +11567,20 @@ algorithm
         fail();
   end matchcontinue;
 end instExtDecl;
+
+protected function checkExternalFunction "
+  * All in-/outputs are referenced
+  * There must be no algorithm section (checked earlier)
+  "
+  input list<DAE.Element> els;
+  input DAE.ExternalDecl decl;
+  input Absyn.Info info;
+protected
+  Integer i;
+algorithm
+  // TODO: Check me
+  i := 1;
+end checkExternalFunction;
 
 protected function isExtExplicitCall 
 "function: isExtExplicitCall  
@@ -16248,15 +16264,16 @@ protected function checkFunctionElement
 "Verifies that an element of a function is correct, i.e.
 public input/output, protected variable/parameter/constant or algorithm section"
   input DAE.Element elt;
+  input Boolean isExternal;
   input Absyn.Info info;
 algorithm
-  _ := match (elt,info)
+  _ := match (elt,isExternal,info)
     local
       DAE.ComponentRef cr;
       String name,str;
       DAE.ElementSource source;
       // Until we fix warnings, we need to pass these through... Also, it's used in MSL
-    case (DAE.VAR(protection=DAE.PUBLIC()),_) then ();
+    case (DAE.VAR(protection=DAE.PUBLIC()),_,_) then ();
         /*
     case (DAE.VAR(protection=DAE.PUBLIC(),direction=DAE.INPUT()),_) then ();
     case (DAE.VAR(protection=DAE.PUBLIC(),direction=DAE.OUTPUT()),_) then ();
@@ -16270,19 +16287,19 @@ algorithm
         Error.addSourceMessage(Error.FUNCTION_ELEMENT_WRONG_PROTECTION,{name,"public","protected"},DAEUtil.getElementSourceFileInfo(source));
       then fail();
       */
-    case (DAE.VAR(protection=DAE.PROTECTED(),direction=DAE.BIDIR()),_) then ();
-    case (DAE.VAR(source=source,componentRef=cr,protection=DAE.PROTECTED()),_)
+    case (DAE.VAR(protection=DAE.PROTECTED(),direction=DAE.BIDIR()),_,_) then ();
+    case (DAE.VAR(source=source,componentRef=cr,protection=DAE.PROTECTED()),_,_)
       equation
         name = ComponentReference.printComponentRefStr(cr);
         Error.addSourceMessage(Error.FUNCTION_ELEMENT_WRONG_PROTECTION,{name,"protected","public"},DAEUtil.getElementSourceFileInfo(source));
       then fail();
         
-    case (DAE.ALGORITHM(algorithm_=DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN(exp=DAE.METARECORDCALL(path=_))})),info)
+    case (DAE.ALGORITHM(algorithm_=DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN(exp=DAE.METARECORDCALL(path=_))})),_,info)
       equation
         // We need to know the inlineType to make a good notification
         // Error.addSourceMessage(true,Error.COMPILER_NOTIFICATION, {"metarecordcall"}, info);
       then ();
-    case (DAE.ALGORITHM(algorithm_=_),_) then ();
+    case (DAE.ALGORITHM(algorithm_=_),false,_) then ();
     else
       equation
         str = DAEDump.dumpElementsStr({elt});
