@@ -1411,7 +1411,7 @@ int SystemImpl__lpsolve55(void *lA, void *lB, void *ix, void **res)
   }
   info=solve(lp);
   //print_lp(lp);
-  get_ptr_variables(lp,&vres);
+  if (info==0 || info==1) get_ptr_variables(lp,&vres);
   *res = mk_nil();
   while (sz--) {
     *res = mk_cons(mk_rcon(vres[sz]),*res);

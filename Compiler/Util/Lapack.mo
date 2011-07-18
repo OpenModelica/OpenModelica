@@ -199,9 +199,9 @@ public function dgbsv
   output list<list<Real>> outAB;
   output list<Integer> outIPIV;
   output list<list<Real>> outB;
-  output Integer inINFO;
+  output Integer outINFO;
   external "C" LapackImpl__dgbsv(inN, inKL, inKU, inNRHS, inAB, inLDAB, inB,
-    inLDB, outAB, outIPIV, outB)
+    inLDB, outAB, outIPIV, outB, outINFO)
     annotation(Library = {"omcruntime", "Lapack"});
 end dgbsv;
 

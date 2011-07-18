@@ -10752,7 +10752,7 @@ algorithm
           instClassdef(cache, env_1, ih, UnitAbsyn.noStore, mod, pre, csets_1,
               ClassInf.FUNCTION(fpath), n,parts, restr, vis, partialPrefix, encapsulatedPrefix, inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY,NONE(),info) "how to get this? impl" ;
         (cache,ih,extdecl) = instExtDecl(cache, tempenv,ih, n, parts, true, pre,info) "impl" ;
-        checkExternalFunction(daeElts,extdecl,info);
+        checkExternalFunction(daeElts,extdecl,n);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
@@ -11574,13 +11574,56 @@ protected function checkExternalFunction "
   "
   input list<DAE.Element> els;
   input DAE.ExternalDecl decl;
-  input Absyn.Info info;
+  input String name;
 protected
   Integer i;
 algorithm
-  // TODO: Check me
-  i := 1;
+  Util.listMap02(els,checkExternalFunctionOutputAssigned,decl,name);
 end checkExternalFunction;
+
+protected function checkExternalFunctionOutputAssigned
+"All outputs must either have a default binding or be used in the external function
+declaration as there is no way to make assignments in external functions."
+  input DAE.Element v;
+  input DAE.ExternalDecl decl;
+  input String name;
+algorithm
+  _ := match (v,decl,name)
+    local
+      DAE.ExtArg arg;
+      list<DAE.ExtArg> args;
+      Boolean b;
+      Option<DAE.Exp> binding;
+      String str;
+      DAE.ComponentRef cr;
+      DAE.ElementSource source;
+    case (DAE.VAR(direction=DAE.OUTPUT(),componentRef=cr,binding=binding,source=source),DAE.EXTERNALDECL(returnArg=arg,args=args),name)
+      equation
+        args = Util.listSelect1(arg::args,cr,extArgCrefEq);
+        // Some weird functions pass the same output twice so we cannot check for exactly 1 occurance
+        // Interfacing with LAPACK routines is fun, fun, fun :)
+        b = listLength(args)>0 or Util.isSome(binding);
+        str = Debug.bcallret1(not b,ComponentReference.printComponentRefStr,cr,"");
+        Error.assertionOrAddSourceMessage(b,Error.EXTERNAL_NOT_SINGLE_RESULT,{str,name},DAEUtil.getElementSourceFileInfo(source));
+      then ();
+    else ();
+  end match;
+end checkExternalFunctionOutputAssigned;
+
+protected function extArgCrefEq
+  "See if an external argument matches a cref"
+  input DAE.ExtArg arg;
+  input DAE.ComponentRef cr2;
+  output Boolean b;
+algorithm
+  b := match (arg,cr2)
+    local
+      DAE.ComponentRef cr1;
+    case (DAE.EXTARG(componentRef=cr1),cr2)
+      then ComponentReference.crefEqualNoStringCompare(cr1,cr2);
+    else false;
+  end match;
+end extArgCrefEq;
 
 protected function isExtExplicitCall 
 "function: isExtExplicitCall  

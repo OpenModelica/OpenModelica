@@ -299,6 +299,7 @@ public constant ErrorID ALGORITHM_TRANSITION_FAILURE=187;
 public constant ErrorID FAILURE_TO_DEDUCE_DIMS_NO_MOD=188;
 public constant ErrorID FUNCTION_MULTIPLE_ALGORITHM=189;
 public constant ErrorID STATEMENT_GENERIC_FAILURE=190;
+public constant ErrorID EXTERNAL_NOT_SINGLE_RESULT=191;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -743,6 +744,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_TYPE_MISMATCH_PATTERN,TRANSLATION(),ERROR(),"Type mismatch in pattern %s\nactual type:\n  %s\nexpected type:\n  %s"),
           (META_DECONSTRUCTOR_NOT_RECORD,TRANSLATION(),ERROR(),"Call pattern is not a record deconstructor %s"),
           (META_MATCHEXP_RESULT_TYPES,TRANSLATION(),ERROR(),"Match expression has mismatched result types:%s"),
+          (EXTERNAL_NOT_SINGLE_RESULT,TRANSLATION(),ERROR(),"%s is an unbound output in external function %s. Either add it to the external declaration or add a default binding."),
           (RECURSIVE_SHORT_CLASS_DEFINITION,TRANSLATION(),ERROR(),"Recursive short class definition of %s in terms of %s"),
           (FUNCTION_ELEMENT_WRONG_PROTECTION,TRANSLATION(),ERROR(),"%s was declared %s but should be %s."),
           (FUNCTION_ELEMENT_WRONG_KIND,TRANSLATION(),ERROR(),"Element is not allowed in function context: %s"),
