@@ -488,7 +488,7 @@ template functionPreWhenCondition (list<tuple<DAE.Exp, Integer>> conditions, Tex
 	let &preExp += <<localData->helpVars[<%hvar%>] = <% helpInit %>;
 
 	>>
-	'edge(localData->helpVars[<%hvar%>])'
+  'localData->helpVars[<%hvar%>] && !localData->helpVars_saved[<%hvar%>] /* edge */'
 	;separator=" || ")
 end functionPreWhenCondition;
 
