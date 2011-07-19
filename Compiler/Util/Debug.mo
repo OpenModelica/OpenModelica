@@ -410,6 +410,30 @@ algorithm
   end match;
 end bcall;
 
+public function bcall1
+"function: bcall1
+  bool controlled calling of function."
+  input Boolean inBoolean;
+  input FuncTypeType_aType_bTo inFuncTypeTypeATypeBTo;
+  input Type_a inTypeA;
+  partial function FuncTypeType_aType_bTo
+    input Type_a inTypeA;
+  end FuncTypeType_aType_bTo;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  _ := match (inBoolean,inFuncTypeTypeATypeBTo,inTypeA)
+    local
+      FuncTypeType_aType_bTo func;
+      Type_a a;
+    case (true,func,a)
+      equation
+        func(a);
+      then
+        ();
+    case (false,_,_) then ();
+  end match;
+end bcall1;
+
 public function bcall2
 "function: bcall2
   bool controlled calling of function."

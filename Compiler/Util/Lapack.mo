@@ -296,7 +296,7 @@ public function dorgqr
   output list<list<Real>> outA;
   output list<Real> outWORK;
   output Integer outINFO;
-  external "C" LapackImpl__dorgqr(inM, inN, inK, inA, inLDA, inTAU, inWORK,
+  external "C" LapackImpl__dorgqr(inM, inN, inK, inA, inLDA, inTAU, inWORK, inLWORK,
     outA, outWORK, outINFO) annotation(Library = {"omcruntime", "Lapack"});
 end dorgqr;
 

@@ -809,24 +809,7 @@ Checks wheter a list contains a value or not."
   output Boolean contains;
   replaceable type Type_a subtypeof Any;
 algorithm
-  contains := matchcontinue (ele,elems)
-    local
-      Type_a a,b;
-      list<Type_a> rest;
-      Boolean bool;
-    
-    case (_,{}) then false;
-    case (a,b::rest)
-      equation
-        equality(a = b);
-      then
-        true;
-    case (a,_::rest)
-      equation
-        bool = listContains(a,rest);
-      then
-        bool;
-  end matchcontinue;
+  contains := listMember(ele,elems);
 end listContains;
 
 public function listNotContains "function: listNotContains
@@ -836,23 +819,7 @@ Checks wheter a list contains a value or not."
   output Boolean contains;
   replaceable type Type_a subtypeof Any;
 algorithm
-  contains := matchcontinue (ele,elems)
-    local
-      Type_a a,b;
-      list<Type_a> rest;
-      Boolean bool;
-    case (_,{}) then true;
-    case (a,b::rest)
-      equation
-        equality(a = b);
-      then
-        false;
-    case (a,_::rest)
-      equation
-        bool = listNotContains(a,rest);
-      then
-        bool;
-  end matchcontinue;
+  contains := not listMember(ele,elems);
 end listNotContains;
 
 public function listContainsWithCompareFunc "function: listContains

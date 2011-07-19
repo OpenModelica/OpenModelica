@@ -67,7 +67,7 @@ public function parsestringexp "Parse a string as if it was a sequence of statem
   input String str;
   input String infoFilename := "<interactive>";
   output Interactive.Statements outStatements;
-  external "C" outStatements=Parser_parsestringexp(str) annotation(Library = {"omcruntime","omparse","antlr3"});
+  external "C" outStatements=Parser_parsestringexp(str,infoFilename) annotation(Library = {"omcruntime","omparse","antlr3"});
 end parsestringexp;
 end Parser;
 

@@ -10630,7 +10630,7 @@ algorithm
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = SCode.R_RECORD())),inst_dims)
       equation
         (cache,c,cenv) = Lookup.lookupRecordConstructorClass(cache,env,Absyn.IDENT(n));
-        (cache,env,ih,{DAE.FUNCTION(fpath,_,ty1,false,_,source,_)}) = implicitFunctionInstantiation2(cache,cenv,ih,mod,pre,csets,c,inst_dims);
+        (cache,env,ih,{DAE.FUNCTION(fpath,_,ty1,false,_,source,_)}) = implicitFunctionInstantiation2(cache,cenv,ih,mod,pre,csets,c,inst_dims,true);
         fun = DAE.RECORD_CONSTRUCTOR(fpath,ty1,source);
         cache = Env.addDaeFunction(cache, {fun});
       then (cache,env,ih);
@@ -10639,7 +10639,7 @@ algorithm
       equation
         failure(SCode.R_RECORD() = r);
         true = MetaUtil.strictRMLCheck(RTOpts.debugFlag("rml"),c);
-        (cache,env,ih,funs) = implicitFunctionInstantiation2(cache,env,ih,mod,pre,csets,c,inst_dims);
+        (cache,env,ih,funs) = implicitFunctionInstantiation2(cache,env,ih,mod,pre,csets,c,inst_dims,false);
         cache = Env.addDaeFunction(cache, funs);
       then (cache,env,ih);
 
@@ -10666,12 +10666,13 @@ protected function implicitFunctionInstantiation2
   input Connect.Sets inSets;
   input SCode.Element inClass;
   input InstDims inInstDims;
+  input Boolean instFunctionTypeOnly "if true, do no additional checking of the function";
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output list<DAE.Function> funcs;
 algorithm
-  (outCache,outEnv,outIH,funcs):= matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inClass,inInstDims)
+  (outCache,outEnv,outIH,funcs):= matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inClass,inInstDims,instFunctionTypeOnly)
     local
       Connect.Sets csets_1,csets;
       DAE.Type ty,ty1;
@@ -10704,7 +10705,7 @@ algorithm
       Option<SCode.Comment> cmt;
     
     /* normal functions */
-    case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(classDef=cd,partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(),info = info)),inst_dims)
+    case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(classDef=cd,partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(),info = info)),inst_dims,instFunctionTypeOnly)
       equation
         (cache,cenv,ih,_,DAE.DAE(daeElts),csets_1,ty,st,_,_) =
           instClass(cache, env, ih, UnitAbsynBuilder.emptyInstStore(), mod, pre, csets, c, inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY);
@@ -10726,12 +10727,14 @@ algorithm
         
         daeElts = optimizeFunction(fpath,daeElts,NONE(),{},{},{});
         cmt = extractClassDefComment(cache, env, cd);
+        /* Not working 100% yet... Also, a lot of code has unused inputs :( */
+        Debug.bcall3(false and RTOpts.acceptMetaModelicaGrammar() and not instFunctionTypeOnly,checkFunctionInputUsed,daeElts,NONE(),Absyn.pathString(fpath));
       then
         (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(daeElts)::derFuncs,ty1,partialPrefixBool,inlineType,source,cmt)});
 
     /* External functions should also have their type in env, but no dae. */
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(partialPrefix=partialPrefix,name = n,restriction = (restr as SCode.R_EXT_FUNCTION()),
-        classDef = cd as (parts as SCode.PARTS(elementLst = els)), info=info, encapsulatedPrefix = encapsulatedPrefix)),inst_dims)
+        classDef = cd as (parts as SCode.PARTS(elementLst = els)), info=info, encapsulatedPrefix = encapsulatedPrefix)),inst_dims,instFunctionTypeOnly)
       equation
         (cache,cenv,ih,_,DAE.DAE(daeElts),csets_1,ty,st,_,_) =
           instClass(cache,env,ih, UnitAbsynBuilder.emptyInstStore(),mod, pre,
@@ -10752,25 +10755,25 @@ algorithm
           instClassdef(cache, env_1, ih, UnitAbsyn.noStore, mod, pre, csets_1,
               ClassInf.FUNCTION(fpath), n,parts, restr, vis, partialPrefix, encapsulatedPrefix, inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY,NONE(),info) "how to get this? impl" ;
         (cache,ih,extdecl) = instExtDecl(cache, tempenv,ih, n, parts, true, pre,info) "impl" ;
-        checkExternalFunction(daeElts,extdecl,n);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         partialPrefixBool = SCode.partialBool(partialPrefix);
         cmt = extractClassDefComment(cache, env, cd);
+        checkExternalFunction(daeElts,extdecl,Absyn.pathString(fpath));
       then
         (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_EXT(daeElts,extdecl)::derFuncs,ty1,partialPrefixBool,DAE.NO_INLINE(),source,cmt)});
 
     /* Instantiate overloaded functions */
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = (restr as SCode.R_FUNCTION()),
-          classDef = SCode.OVERLOAD(pathLst = funcnames))),inst_dims)
+          classDef = SCode.OVERLOAD(pathLst = funcnames))),inst_dims,_)
       equation
         (cache,env_1,ih,resfns) = instOverloadedFunctions(cache,env,ih, n, funcnames) "Overloaded functions" ;
       then
         (cache,env_1,ih,resfns);
     
     // handle failure
-    case (_,env,_,_,_,_,SCode.CLASS(name=n),_)
+    case (_,env,_,_,_,_,SCode.CLASS(name=n),_,_)
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.traceln("- Inst.implicitFunctionInstantiation2 failed " +& n);
@@ -10825,7 +10828,7 @@ algorithm
         (cache,p) = makeFullyQualified(cache,cenv,p);
         // add to cache before instantiating, to break recursion for recursive definitions.
         cache = Env.addCachedInstFuncGuard(cache,p);
-        (cache,_,ih,funcs) = implicitFunctionInstantiation2(cache,cenv,ih,DAE.NOMOD(),Prefix.NOPRE(), Connect.emptySet,cdef,{});
+        (cache,_,ih,funcs) = implicitFunctionInstantiation2(cache,cenv,ih,DAE.NOMOD(),Prefix.NOPRE(), Connect.emptySet,cdef,{},false);
         
         funcs = addNameToDerivativeMapping(funcs,path);
         cache = Env.addDaeFunction(cache, funcs);
@@ -11398,7 +11401,7 @@ algorithm
       equation
         stripped_elts = Util.listMap(elts,stripFuncOutputsMod);
         stripped_class = SCode.CLASS(id,prefixes,e,p,r,SCode.PARTS(elts,{},{},{},{},extDecl,annotationLst,NONE()),info);
-        (cache,env_1,ih,funs) = implicitFunctionInstantiation2(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, stripped_class, {});
+        (cache,env_1,ih,funs) = implicitFunctionInstantiation2(cache,env,ih,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, stripped_class, {},true);
         /* Only external functions are valid without an algorithm section... */
         cache = Env.addDaeExtFunction(cache, funs);
       then
@@ -11579,7 +11582,131 @@ protected
   Integer i;
 algorithm
   Util.listMap02(els,checkExternalFunctionOutputAssigned,decl,name);
+  checkFunctionInputUsed(els,SOME(decl),name);
 end checkExternalFunction;
+
+protected function checkFunctionInputUsed
+  input list<DAE.Element> elts;
+  input Option<DAE.ExternalDecl> decl;
+  input String name;
+protected
+  list<DAE.Element> invars,vars,algs;
+algorithm
+  (vars,_,_,_,algs,_) := DAEUtil.splitElements(elts);
+  invars := Util.listFilter(vars,DAEUtil.isInputVar);
+  invars := checkExternalDeclInputUsed(invars,decl);
+  invars := Util.listSelect1(invars,vars,checkVarBindingsInputUsed);
+  (_,invars) := DAEUtil.traverseDAE2(algs,checkExpInputUsed,invars);
+  Util.listMap01(invars,name,warnUnusedFunctionVar);
+end checkFunctionInputUsed;
+
+protected function warnUnusedFunctionVar
+  input DAE.Element v;
+  input String name;
+protected
+  DAE.ComponentRef cr;
+  DAE.ElementSource source;
+  String str;
+algorithm
+  DAE.VAR(componentRef=cr,source=source) := v;
+  str := ComponentReference.printComponentRefStr(cr);
+  Error.addSourceMessage(Error.FUNCTION_UNUSED_INPUT,{str,name},DAEUtil.getElementSourceFileInfo(source));
+end warnUnusedFunctionVar;
+
+protected function checkExternalDeclInputUsed
+  input list<DAE.Element> names;
+  input Option<DAE.ExternalDecl> decl;
+  output list<DAE.Element> onames;
+algorithm
+  onames := match (names,decl)
+    local
+      list<DAE.ExtArg> args;
+      DAE.ExtArg arg;
+    case (names,NONE()) then names;
+    case ({},_) then {};
+    case (names,SOME(DAE.EXTERNALDECL(returnArg=arg,args=args)))
+      equation
+        names = Util.listSelect1(names,arg::args,checkExternalDeclArgs);
+      then names;
+  end match;
+end checkExternalDeclInputUsed;
+
+protected function checkExpInputUsed
+  input tuple<DAE.Exp,list<DAE.Element>> tpl;
+  output tuple<DAE.Exp,list<DAE.Element>> otpl;
+protected
+  DAE.Exp exp;
+  list<DAE.Element> els;
+algorithm
+  (exp,els) := tpl;
+  otpl := Expression.traverseExp(exp,checkExpInputUsed2,els);
+end checkExpInputUsed;
+
+protected function checkExpInputUsed2
+  input tuple<DAE.Exp,list<DAE.Element>> tpl;
+  output tuple<DAE.Exp,list<DAE.Element>> otpl;
+algorithm
+  otpl := matchcontinue tpl
+    local
+      DAE.Exp exp;
+      list<DAE.Element> els;
+      DAE.ComponentRef cr;
+      Absyn.Path path;
+    case ((exp as DAE.CREF(componentRef=cr),els))
+      equation
+        els = Util.listSelect1(els,cr,checkExpInputUsed3);
+      then ((exp,els));
+    case ((exp as DAE.CALL(path=path),els))
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        cr = ComponentReference.pathToCref(path);
+        els = Util.listSelect1(els,cr,checkExpInputUsed3);
+      then ((exp,els));
+    else tpl;
+  end matchcontinue;
+end checkExpInputUsed2;
+
+protected function checkExpInputUsed3
+  input DAE.Element el;
+  input DAE.ComponentRef cr2;
+  output Boolean noteq;
+protected
+  DAE.ComponentRef cr1;
+algorithm
+  DAE.VAR(componentRef=cr1) := el;
+  noteq := not ComponentReference.crefEqualNoStringCompare(cr1,cr2);
+end checkExpInputUsed3;
+
+protected function checkVarBindingsInputUsed
+  input DAE.Element v;
+  input list<DAE.Element> els;
+  output Boolean notfound;
+algorithm
+  notfound := not Util.listContainsWithCompareFunc(v,els,checkVarBindingInputUsed);
+end checkVarBindingsInputUsed;
+
+protected function checkVarBindingInputUsed
+  input DAE.Element v;
+  input DAE.Element el;
+  output Boolean found;
+algorithm
+  found := match (v,el)
+    local
+      DAE.Exp exp;
+      DAE.ComponentRef cr;
+    case (DAE.VAR(componentRef=_),DAE.VAR(direction=DAE.INPUT())) then false;
+    case (DAE.VAR(componentRef=cr),DAE.VAR(binding=SOME(exp))) then Expression.expHasCref(exp,cr);
+    else false;
+  end match;
+end checkVarBindingInputUsed;
+
+protected function checkExternalDeclArgs
+  input DAE.Element v;
+  input list<DAE.ExtArg> args;
+  output Boolean notfound;
+algorithm
+  notfound := not Util.listContainsWithCompareFunc(v,args,extArgCrefEq);
+end checkExternalDeclArgs;
 
 protected function checkExternalFunctionOutputAssigned
 "All outputs must either have a default binding or be used in the external function
@@ -11599,10 +11726,9 @@ algorithm
       DAE.ElementSource source;
     case (DAE.VAR(direction=DAE.OUTPUT(),componentRef=cr,binding=binding,source=source),DAE.EXTERNALDECL(returnArg=arg,args=args),name)
       equation
-        args = Util.listSelect1(arg::args,cr,extArgCrefEq);
         // Some weird functions pass the same output twice so we cannot check for exactly 1 occurance
         // Interfacing with LAPACK routines is fun, fun, fun :)
-        b = listLength(args)>0 or Util.isSome(binding);
+        b = Util.listContainsWithCompareFunc(v,arg::args,extArgCrefEq) or Util.isSome(binding);
         str = Debug.bcallret1(not b,ComponentReference.printComponentRefStr,cr,"");
         Error.assertionOrAddSourceMessage(b,Error.EXTERNAL_NOT_SINGLE_RESULT,{str,name},DAEUtil.getElementSourceFileInfo(source));
       then ();
@@ -11612,15 +11738,21 @@ end checkExternalFunctionOutputAssigned;
 
 protected function extArgCrefEq
   "See if an external argument matches a cref"
+  input DAE.Element v;
   input DAE.ExtArg arg;
-  input DAE.ComponentRef cr2;
   output Boolean b;
 algorithm
-  b := match (arg,cr2)
+  b := match (v,arg)
     local
-      DAE.ComponentRef cr1;
-    case (DAE.EXTARG(componentRef=cr1),cr2)
+      DAE.ComponentRef cr1,cr2;
+      DAE.Exp exp;
+    case (DAE.VAR(componentRef=cr1),DAE.EXTARG(componentRef=cr2))
       then ComponentReference.crefEqualNoStringCompare(cr1,cr2);
+    case (DAE.VAR(direction=DAE.OUTPUT()),_) then false;
+    case (DAE.VAR(componentRef=cr1),DAE.EXTARGSIZE(componentRef=cr2))
+      then ComponentReference.crefEqualNoStringCompare(cr1,cr2);
+    case (DAE.VAR(componentRef=cr1),DAE.EXTARGEXP(exp=exp))
+      then Expression.expHasCref(exp,cr1);
     else false;
   end match;
 end extArgCrefEq;

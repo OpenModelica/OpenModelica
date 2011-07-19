@@ -3773,7 +3773,7 @@ algorithm
       list<DAE.Exp> expl_1,expl;
       Absyn.Path fn,path;
       Boolean t,scalar,built;
-      Type tp;
+      Type tp,et;
       Integer i;
       String id,str;
       list<String> fieldNames;
@@ -3786,6 +3786,9 @@ algorithm
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators riters;
       DAE.CallAttributes attr;
+      list<DAE.Element> localDecls;
+      DAE.MatchType matchType;
+      list<DAE.MatchCase> cases;
     
     case (e as DAE.ICONST(_),rel,ext_arg) then ((e,ext_arg));
     case (e as DAE.RCONST(_),rel,ext_arg) then ((e,ext_arg));
@@ -3945,7 +3948,14 @@ algorithm
     case ((e as DAE.META_OPTION(oe1)),rel,ext_arg)
       equation
         ((oe1,ext_arg)) = traverseExpOptTopDown(oe1, rel, ext_arg);
-      then ((e,ext_arg));
+      then ((DAE.META_OPTION(oe1),ext_arg));
+
+    case ((e as DAE.MATCHEXPRESSION(matchType,expl,localDecls,cases,et)),rel,ext_arg)
+      equation
+        ((expl,ext_arg)) = traverseExpListTopDown(expl,rel,ext_arg);
+        // TODO: Traverse cases 
+      then
+        ((DAE.MATCHEXPRESSION(matchType,expl,localDecls,cases,et),ext_arg));
 
     case ((e as DAE.METARECORDCALL(fn,expl,fieldNames,i)),rel,ext_arg)
       equation
@@ -4057,11 +4067,13 @@ public function traverseExpListTopDown
 algorithm
   outTpl := match(expl,rel,ext_arg)
   local DAE.Exp e,e1; list<DAE.Exp> expl1;
-    case({},_,ext_arg) then (({},ext_arg));
-    case(e::expl,rel,ext_arg) equation
-      ((e1,ext_arg)) = traverseExpTopDown(e, rel, ext_arg);
-      ((expl1,ext_arg)) = traverseExpListTopDown(expl,rel,ext_arg);
-    then ((e1::expl1,ext_arg));
+    case({},_,ext_arg)
+      then (({},ext_arg));
+    case(e::expl,rel,ext_arg)
+      equation
+        ((e1,ext_arg)) = traverseExpTopDown(e, rel, ext_arg);
+        ((expl1,ext_arg)) = traverseExpListTopDown(expl,rel,ext_arg);
+      then ((e1::expl1,ext_arg));
   end match;
 end traverseExpListTopDown;
 
@@ -4158,7 +4170,7 @@ algorithm
       then
         ((e, true));
     
-    case(inExp) then inExp;
+    case (inExp) then inExp;
     
   end matchcontinue;
 end traversingComponentRefPresent;
@@ -4220,13 +4232,13 @@ algorithm
       ComponentRef cr,cr1;
       DAE.Exp e;
     
-    case((e as DAE.CREF(componentRef = cr1), (cr,false)))
+    case ((e as DAE.CREF(componentRef = cr1), (cr,false)))
       equation
         b = ComponentReference.crefEqualNoStringCompare(cr,cr1);
       then
         ((e,not b,(cr,b)));
     
-    case(((e,(cr,b)))) then ((e,not b,(cr,b)));
+    case (((e,(cr,b)))) then ((e,not b,(cr,b)));
     
   end matchcontinue;
 end traversingexpHasCref;

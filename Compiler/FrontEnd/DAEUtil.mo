@@ -5605,4 +5605,11 @@ algorithm
   outAttributes := DAE.ATTR(fp, sp, var, dir, io);
 end translateSCodeAttrToDAEAttr;
 
+public function varName
+  input DAE.Element var;
+  output String name;
+algorithm
+  DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name)) := var;
+end varName;
+
 end DAEUtil;

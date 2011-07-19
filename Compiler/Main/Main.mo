@@ -767,7 +767,7 @@ algorithm
         (dlow_1,m,mT,v1,v2,comps) = BackendDAEUtil.getSolvedSystem(cache,env,dlow,funcs,NONE(),NONE(),NONE());
         modpar(dlow_1,comps);
         Debug.execStat("Lowering Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
-        simcodegen(dlow_1,funcs,classname,p,ap,daeimpl,m,mT,v1,v2,comps);
+        simcodegen(dlow_1,funcs,classname,ap,daeimpl,m,mT,v1,v2,comps);
       then
         ();
     case (_,_,_,_,_,_,_)
@@ -842,7 +842,6 @@ protected function simcodegen
   input BackendDAE.BackendDAE inBackendDAE5;
   input DAE.FunctionTree inFunctionTree;
   input Absyn.Path inPath;
-  input SCode.Program inProgram2;
   input Absyn.Program inProgram3;
   input DAE.DAElist inDAElist4;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix8;
@@ -852,7 +851,7 @@ protected function simcodegen
   input BackendDAE.StrongComponents inComps;
 algorithm
   _:=
-  matchcontinue (inBackendDAE5,inFunctionTree,inPath,inProgram2,inProgram3,inDAElist4,inIncidenceMatrix8,inIncidenceMatrixT9,inIntegerArray6,inIntegerArray7,inComps)
+  matchcontinue (inBackendDAE5,inFunctionTree,inPath,inProgram3,inDAElist4,inIncidenceMatrix8,inIncidenceMatrixT9,inIntegerArray6,inIntegerArray7,inComps)
     local
       BackendDAE.BackendDAE dlow;
       DAE.FunctionTree functionTree;
@@ -869,7 +868,7 @@ algorithm
       String methodbyflag;
       Boolean methodflag;
 
-    case (dlow,functionTree,classname,p,ap,dae,m,mt,ass1,ass2,comps) /* classname ass1 ass2 blocks */
+    case (dlow,functionTree,classname,ap,dae,m,mt,ass1,ass2,comps) /* classname ass1 ass2 blocks */
       equation
         true = RTOpts.simulationCg();
         Print.clearErrorBuf();
@@ -928,40 +927,28 @@ end fixModelicaOutput;
 protected function interactivemode
 "function: interactivemode
   Initiate the interactive mode using socket communication."
-  input list<String> inStringLst;
-  input Interactive.SymbolTable inInteractiveSymbolTable;
+  input Interactive.SymbolTable symbolTable;
 algorithm
-  _:=
-  match (inStringLst,inInteractiveSymbolTable)
-    local Integer shandle;
-     Interactive.SymbolTable symbolTable;
-    case (_,symbolTable)
-      equation
-        print("Opening a socket on port " +& intString(29500) +& "\n");
-        shandle = Socket.waitforconnect(29500);
-        _ = serverLoop(shandle, symbolTable);
-      then
-        ();
-  end match;
+  print("Opening a socket on port " +& intString(29500) +& "\n");
+  _ := serverLoop(Socket.waitforconnect(29500), symbolTable);
 end interactivemode;
 
 protected function interactivemodeCorba
 "function: interactivemodeCorba
   Initiate the interactive mode using corba communication."
-  input list<String> inStringLst;
   input Interactive.SymbolTable inInteractiveSymbolTable;
 algorithm
   _:=
-  matchcontinue (inStringLst,inInteractiveSymbolTable)
+  matchcontinue inInteractiveSymbolTable
    local
      Interactive.SymbolTable symbolTable;
-    case (_,symbolTable)
+    case symbolTable
       equation
         Corba.initialize();
         _ = serverLoopCorba(symbolTable);
       then
         ();
-    case (_,symbolTable)
+    case symbolTable
       equation
         failure(Corba.initialize());
         Print.printBuf("Failed to initialize Corba! Is another OMC already running?\n");
@@ -1191,9 +1178,9 @@ algorithm
         imode = boolOr(ismode, icmode);
         imode_1 = boolNot(imode);
         // see if the interactive Socket mode is active
-        Debug.bcall2(ismode, interactivemode, args_1,symbolTable);
+        Debug.bcall1(ismode, interactivemode, symbolTable);
         // see if the interactive Corba mode is active
-        Debug.bcall2(icmode, interactivemodeCorba, args_1,symbolTable);
+        Debug.bcall1(icmode, interactivemodeCorba, symbolTable);
         // non of the interactive mode was set, flatten the file
         Debug.bcall(imode_1, translateFile, args_1);
         /*
