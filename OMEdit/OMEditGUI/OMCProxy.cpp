@@ -518,18 +518,9 @@ QStringList OMCProxy::getClassInformation(QString modelName)
 {
     sendCommand("getClassInformation(" + modelName + ")");
     QString result = getResult();
-    QStringList emp;
-    emp << "" << "" << "" << "" << "";
-    if(result=="")
-     { return emp;}
-    else
-    {
     QStringList list = StringHandler::unparseStrings(result);
     return list;
-    }
 }
-
-
 
 //! Gets the list of classes from OMC recursively.
 //! @param className is the name of the class whose sub classes are retrieved.

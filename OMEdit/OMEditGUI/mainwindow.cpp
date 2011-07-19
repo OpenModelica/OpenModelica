@@ -1032,7 +1032,6 @@ void MainWindow::importModelfromOMNotebook()
         {
             mpProjectTabs->openModel(nodes.at(i).toElement().text());
         }
-        //qDebug() << nodes.at(i).nodeName() << nodes.at(i).toElement().text();
         progressBar.setValue(value++);
     }
     progressBar.hide();

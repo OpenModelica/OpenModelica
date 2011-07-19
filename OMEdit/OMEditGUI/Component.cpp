@@ -268,16 +268,10 @@ bool Component::parseAnnotationString(Component *item, QString value, bool libra
 
     foreach(ShapeAnnotation *shape, mpShapesList)
     {
-        qDebug() << "in parseannotation "<< getName() <<mpShapesList.size()<<shape->getShapeAnnotation();
         mpShapesList.removeOne(shape);
         delete shape;
     }
 
-  /*  if(!item->getName().isEmpty())
-    {
-
-    qDebug() << "in parseannotation "<< getName() <<mpShapesList.size();
-}*/
     value = StringHandler::removeFirstLastCurlBrackets(value);
     if (value.isEmpty())
     {

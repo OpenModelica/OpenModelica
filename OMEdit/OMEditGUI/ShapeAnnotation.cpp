@@ -289,9 +289,6 @@ void ShapeAnnotation::doUnSelect()
 //! @see moveRight()
 void ShapeAnnotation::moveUp()
 {
-
-
-
     //qDebug() << "in update R22:: " <<mExtent<<mapFromScene(mapToScene(this->pos()));
    // QPointF point = mExtent.at(0);
    // point.ry()++;

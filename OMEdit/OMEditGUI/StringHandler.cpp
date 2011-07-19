@@ -157,10 +157,6 @@ QString StringHandler::getSubStringFromDots(QString value)
     return list.at(list.count() - 1);
 }
 
-
-
-
-
 //! Removes the last dot from the string.
 //! @param value is the string which is parsed.
 QString StringHandler::removeLastDot(QString value)
@@ -408,6 +404,15 @@ QStringList StringHandler::unparseStrings(QString value)
     while (value.at(i) != '"') {
       CONSUME_CHAR(value,res,i);
       i++;
+      /* if we have unexpected double quotes then, however omc should return \" */
+      /* remove this block once fixed in omc */
+      if (value[i] == '"' && value[i+1] != ',') {
+          if (value[i+1] != '}') {
+              CONSUME_CHAR(value,res,i);
+              i++;
+          }
+      }
+      /* remove this block once fixed in omc */
     }
     i++;
     if (value[i] == '}') {
@@ -499,4 +504,22 @@ QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, 
     }
   }
   return QString();
+}
+
+QString StringHandler::createTooltip(QStringList info, QString name, QString path)
+{
+    if (info.size() < 3)
+        return path;
+    else
+    {
+        QString tooltip = QString("Type: ").append(info[0]).append("\n")
+                            .append("Name: ").append(name).append("\n")
+                            .append("Description: ").append(info[1]).append("\n");
+        if (QString(info[2]).compare("<interactive>") == 0)
+            tooltip.append("Location: ").append("\n");
+        else
+            tooltip.append("Location: ").append(info[2]).append("\n");
+        tooltip.append("Path: ").append(path);
+        return tooltip;
+    }
 }

@@ -69,7 +69,7 @@ public:
     static bool unparseBool(QString value);
     static QString getSaveFileName(QWidget* parent = 0, const QString &caption = QString(), QString * dir = 0, const QString & filter = QString(), QString * selectedFilter = 0, const QString &defaultSuffix = QString());
     static QString getOpenFileName(QWidget* parent = 0, const QString &caption = QString(), QString * dir = 0, const QString & filter = QString(), QString * selectedFilter = 0);
-
+    static QString createTooltip(QStringList info, QString name, QString path);
 protected:
     static QString mLastOpenDir;
 };
