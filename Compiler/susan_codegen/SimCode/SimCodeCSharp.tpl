@@ -1614,7 +1614,7 @@ template daeExp(Exp inExp, Context context, Text &preExp, SimCode simCode) ::=
   case BINARY(__)     then daeExpBinary(operator, exp1, exp2, context, &preExp, simCode)
   case LUNARY(__)
   case UNARY(__)      then daeExpUnary(operator, exp, context, &preExp, simCode)
-  case RELATION(__)   then daeExpRelation(operator, exp1, exp2, context, &preExp, simCode)
+  case RELATION(__)   then daeExpRelation(inExp, context, &preExp, simCode)
   case IFEXP(__)      then daeExpIf(expCond, expThen, expElse, context, &preExp, simCode)
   case CALL(__)       then daeExpCall(inExp, context, &preExp, simCode)
   // PARTEVALFUNCTION
@@ -1850,50 +1850,77 @@ template daeExpUnary(Operator it, Exp exp, Context context, Text &preExp, SimCod
 end daeExpUnary;
 
 
-template daeExpRelation(Operator op, Exp exp1, Exp exp2, Context context, Text &preExp, SimCode simCode) ::=
-  let e1 = daeExp(exp1, context, &preExp, simCode)
-  let e2 = daeExp(exp2, context, &preExp, simCode)
-  let simrel = daeExpSimRelation(context, op, e1, e2, &preExp) 
-  if  simrel then simrel
-  else //non-SIMULATION context or precise equality 
-    match op
-    case LESS(ty = ET_BOOL(__))        then '(!<%e1%> && <%e2%>)'
-    case LESS(ty = ET_STRING(__))      then "# string comparison not supported\n"
-    case LESS(ty = ET_INT(__))
-    case LESS(ty = ET_REAL(__))        then '(<%e1%> < <%e2%>)'
-    case GREATER(ty = ET_BOOL(__))     then '(<%e1%> && !<%e2%>)'
-    case GREATER(ty = ET_STRING(__))   then "# string comparison not supported\n"
-    case GREATER(ty = ET_INT(__))
-    case GREATER(ty = ET_REAL(__))     then '(<%e1%> > <%e2%>)'
-    case LESSEQ(ty = ET_BOOL(__))      then '(!<%e1%> || <%e2%>)'
-    case LESSEQ(ty = ET_STRING(__))    then "# string comparison not supported\n"
-    case LESSEQ(ty = ET_INT(__))
-    case LESSEQ(ty = ET_REAL(__))      then '(<%e1%> <= <%e2%>)'
-    case GREATEREQ(ty = ET_BOOL(__))   then '(<%e1%> || !<%e2%>)'
-    case GREATEREQ(ty = ET_STRING(__)) then "# string comparison not supported\n"
-    case GREATEREQ(ty = ET_INT(__))
-    case GREATEREQ(ty = ET_REAL(__))   then '(<%e1%> >= <%e2%>)'
-    case EQUAL(ty = ET_BOOL(__))       then '((!<%e1%> && !<%e2%>) || (<%e1%> && <%e2%>))'
-    case EQUAL(ty = ET_STRING(__))
-    case EQUAL(ty = ET_INT(__))
-    case EQUAL(ty = ET_REAL(__))       then '(<%e1%> == <%e2%>)'
-    case NEQUAL(ty = ET_BOOL(__))      then '((!<%e1%> && <%e2%>) || (<%e1%> && !<%e2%>))'
-    case NEQUAL(ty = ET_STRING(__))
-    case NEQUAL(ty = ET_INT(__))
-    case NEQUAL(ty = ET_REAL(__))      then '(<%e1%> != <%e2%>)'
-    case _                         then "daeExpRelation:ERR"
+template daeExpRelation(Exp inExp, Context context, Text &preExp, SimCode simCode) ::=
+  match inExp
+  case RELATION(__) then
+    let e1 = daeExp(exp1, context, &preExp, simCode)
+    let e2 = daeExp(exp2, context, &preExp, simCode)
+    let simrel = daeExpSimRelation(inExp, context, e1, e2, &preExp) 
+    if  simrel then simrel
+    else //non-SIMULATION context or precise equality 
+      match operator
+      case LESS(ty = ET_BOOL(__))        then '(!<%e1%> && <%e2%>)'
+      case LESS(ty = ET_STRING(__))      then "# string comparison not supported\n"
+      case LESS(ty = ET_INT(__))
+      case LESS(ty = ET_REAL(__))        then '(<%e1%> < <%e2%>)'
+      case GREATER(ty = ET_BOOL(__))     then '(<%e1%> && !<%e2%>)'
+      case GREATER(ty = ET_STRING(__))   then "# string comparison not supported\n"
+      case GREATER(ty = ET_INT(__))
+      case GREATER(ty = ET_REAL(__))     then '(<%e1%> > <%e2%>)'
+      case LESSEQ(ty = ET_BOOL(__))      then '(!<%e1%> || <%e2%>)'
+      case LESSEQ(ty = ET_STRING(__))    then "# string comparison not supported\n"
+      case LESSEQ(ty = ET_INT(__))
+      case LESSEQ(ty = ET_REAL(__))      then '(<%e1%> <= <%e2%>)'
+      case GREATEREQ(ty = ET_BOOL(__))   then '(<%e1%> || !<%e2%>)'
+      case GREATEREQ(ty = ET_STRING(__)) then "# string comparison not supported\n"
+      case GREATEREQ(ty = ET_INT(__))
+      case GREATEREQ(ty = ET_REAL(__))   then '(<%e1%> >= <%e2%>)'
+      case EQUAL(ty = ET_BOOL(__))       then '((!<%e1%> && !<%e2%>) || (<%e1%> && <%e2%>))'
+      case EQUAL(ty = ET_STRING(__))
+      case EQUAL(ty = ET_INT(__))
+      case EQUAL(ty = ET_REAL(__))       then '(<%e1%> == <%e2%>)'
+      case NEQUAL(ty = ET_BOOL(__))      then '((!<%e1%> && <%e2%>) || (<%e1%> && !<%e2%>))'
+      case NEQUAL(ty = ET_STRING(__))
+      case NEQUAL(ty = ET_INT(__))
+      case NEQUAL(ty = ET_REAL(__))      then '(<%e1%> != <%e2%>)'
+      case _                         then "daeExpRelation:ERR"
 end daeExpRelation;
 
 
-template daeExpSimRelation(Context it, Operator op, Text e1, Text e2, Text &preExp) ::=
-	match it
-	case SIMULATION(__) then 
-	   match op
-	   case LESS(__)      then SimRelationSimple(e1, e2, " <", &preExp)
-	   case LESSEQ(__)    then SimRelationEqual(e1, e2, " <", &preExp)
-	   case GREATER(__)   then SimRelationSimple(e1, e2, " >", &preExp)
-	   case GREATEREQ(__) then SimRelationEqual(e1, e2, " >", &preExp)
+template daeExpSimRelation(Exp inExp, Context it, Text e1, Text e2, Text &preExp) ::=
+match it
+case sim as SIMULATION(__) then
+  match inExp
+  case RELATION(__) then
+	 let op = 
+	 	(match operator 
+	 	 case LESS(__)      then " < "
+	     case LESSEQ(__)    then " <= "
+	     case GREATER(__)   then " > "
+	     case GREATEREQ(__) then " >= "
+	     case EQUAL(__)     then " == "
+	     case _             then "daeExpSimRelation:ERR")
+	 let &res = buffer ""
+	 let &preExp +=
+	   match index
+	   case -1 then
+	     '<%tempDecl("bool", res)%> = <%e1%><%op%><%e2%>;'
+	   else if sim.genDiscrete then
+	           <<
+	           <%tempDecl("bool", res)%> = <%e1%><%op%><%e2%>;
+	           backuprelations[<%index%>] = <%res%>;
+	           >>
+	        else
+	           '<%tempDecl("bool", res)%> = backuprelations[<%index%>];'
+	 res
+	   /*
+	   match operator
+	   case LESS(__)      then SimRelationSimple(inExp, e1, e2, " < ", &preExp)
+	   case LESSEQ(__)    then SimRelationEqual(e1, e2, " <= ", &preExp)
+	   case GREATER(__)   then SimRelationSimple(e1, e2, " > ", &preExp)
+	   case GREATEREQ(__) then SimRelationEqual(e1, e2, " >= ", &preExp)
 	   end match
+	   */
 end daeExpSimRelation;
 
 
@@ -1902,8 +1929,9 @@ template SimRelationSimple(Text e1, Text e2, String op, Text &preExp) ::=
   let &preExp += 
     <<
     // RELATION( <%e1%><%op%> <%e2%> ) macro expansion
-    <%tempDecl("bool", res)%> = <%e1%><%op%> <%e2%>; if (!<%res%> && isInUpdate && (<%e1%><%op%>= <%e2%>)) { SwapOldVars(); double res1 = <%e1%> - <%e2%>;  SwapOldVars12(); <%res%> = res1<%op%>= (<%e1%> - <%e2%>); SwapOldVars2(); }<%\n%>
+    
     >>
+    //<%tempDecl("bool", res)%> = <%e1%><%op%> <%e2%>; if (!<%res%> && isInUpdate && (<%e1%><%op%>= <%e2%>)) { SwapOldVars(); double res1 = <%e1%> - <%e2%>;  SwapOldVars12(); <%res%> = res1<%op%>= (<%e1%> - <%e2%>); SwapOldVars2(); }<%\n%>
   res 
 end SimRelationSimple;
 
