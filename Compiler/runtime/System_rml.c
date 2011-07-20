@@ -777,19 +777,32 @@ RML_END_LABEL
 /*
  * @author ppriv
  */
-static modelica_integer tmp_tick_no = 0;
 
 RML_BEGIN_LABEL(System__tmpTick)
 {
-  rmlA0 = (void*) mk_icon(tmp_tick_no++);
+  rmlA0 = (void*) mk_icon(SystemImpl_tmpTick());
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(System__tmpTickReset)
 {
-  tmp_tick_no = RML_UNTAGFIXNUM(rmlA0);
-    RML_TAILCALLK(rmlSC);
+  SystemImpl_tmpTickReset(RML_UNTAGFIXNUM(rmlA0));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__tmpTickIndex)
+{
+  rmlA0 = (void*) mk_icon(SystemImpl_tmpTickIndex(RML_UNTAGFIXNUM(rmlA0)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__tmpTickResetIndex)
+{
+  SystemImpl_tmpTickResetIndex(RML_UNTAGFIXNUM(rmlA0),RML_UNTAGFIXNUM(rmlA1));
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 

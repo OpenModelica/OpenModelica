@@ -104,7 +104,8 @@ int mmc_GC_init_default(void);
 /* clear of MetaModelica GC */
 int mmc_GC_clear(void);
 /* add pointers to roots */
-int mmc_GC_add_root(modelica_metatype*, mmc_GC_local_state_type local_GC_state, const char*);
+#define mmc_GC_add_root(A,B,C) mmc_GC_add_roots(A,1,B,C)
+int mmc_GC_add_roots(modelica_metatype*, int, mmc_GC_local_state_type local_GC_state, const char*);
 /* save the current roots mark */
 mmc_GC_local_state_type mmc_GC_save_roots_state(const char* name);
 /* remove the current roots mark */

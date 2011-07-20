@@ -1513,6 +1513,32 @@ int SystemImpl__getLoadModelPath(const char *name, void *prios, void *mps, const
   return outPrio == INT_MAX;
 }
 
+#define MAX_TMP_TICK 16
+static modelica_integer tmp_tick_no[MAX_TMP_TICK] = {0};
+
+extern int SystemImpl_tmpTick()
+{
+  return tmp_tick_no[0]++;
+}
+
+extern void SystemImpl_tmpTickReset(int start)
+{
+  tmp_tick_no[0] = start;
+}
+
+extern int SystemImpl_tmpTickIndex(int index)
+{
+  assert(index < MAX_TMP_TICK && index >= 0);
+  /* fprintf(stderr, "tmpTickIndex %d => %d\n", index, tmp_tick_no[index]); */
+  return tmp_tick_no[index]++;
+}
+
+extern void SystemImpl_tmpTickResetIndex(int start, int index)
+{
+  assert(index < MAX_TMP_TICK && index >= 0);
+  /* fprintf(stderr, "tmpTickResetIndex %d => %d\n", index, start); */
+  tmp_tick_no[index] = start;
+}
 
 #ifdef __cplusplus
 }

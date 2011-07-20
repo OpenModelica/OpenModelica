@@ -2730,6 +2730,7 @@ template functionBodyRegularFunction(Function fn, Boolean inFunc)
 match fn
 case FUNCTION(__) then
   let()= System.tmpTickReset(1)
+  let()= System.tmpTickResetIndex(0,1) /* Boxed array indices */
   let fname = underscorePath(name)
   let retType = if outVars then '<%fname%>_rettype' else "void"
   let &varDecls = buffer "" /*BUFD*/
@@ -2750,6 +2751,8 @@ case FUNCTION(__) then
       varOutput(var, retVar, i1, &varDecls, &outVarInits, &outVarCopy, &outVarAssign)
       ;separator="\n"; empty /* increase the counter! */
     )
+  let &varDecls += addRootsTempArray()
+  /* Needs to be done last as it messes with the tmp ticks :) */
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
   <%retType%> _<%fname%>(<%functionArguments |> var => funArgDefinition(var) ;separator=", "%>)
@@ -2928,6 +2931,7 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
  "Helper template for functionBodyBoxed, does all the real work."
 ::=
   let() = System.tmpTickReset(1)
+  let()= System.tmpTickResetIndex(0,1) /* Boxed array indices */
   let fname = underscorePath(name)
   let retType = if outvars then '<%fname%>_rettype' else "void"
   let retTypeBoxed = if outvars then '<%retType%>boxed' else "void"
@@ -2950,6 +2954,7 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
       then 'mmc_GC_local_state_type mmc_GC_local_state = mmc_GC_save_roots_state("boxptr__<%fname%>");'%>
   
     <%varDecls%>
+    <%addRootsTempArray()%>
     <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
     <%varBox%>
     <%if outvars then '<%funRetVar%> = '%>_<%fname%>(<%args%>);
@@ -5931,32 +5936,35 @@ end outDecl;
 template tempDecl(String ty, Text &varDecls /*BUFP*/)
  "Declares a temporary variable in varDecls and returns the name."
 ::=
-  let newVar = 'tmp<%System.tmpTick()%>'
-  let initVarAddRoot 
-         = match ty /* TODO! FIXME! UGLY! UGLY! hack! */ 
-             case "modelica_metatype"
-             case "metamodelica_string"
-             case "metamodelica_string_const"
-             case "stringListStringChar_rettype"
-             case "stringAppendList_rettype"
-             case "stringGetStringChar_rettype"
-             case "stringUpdateStringChar_rettype"
-             case "listReverse_rettype"
-             case "listAppend_rettype"
-             case "listGet_rettype"
-             case "listDelete_rettype"
-             case "listRest_rettype"
-             case "listFirst_rettype"
-             case "arrayGet_rettype"
-             case "arrayCreate_rettype"
-             case "arrayList_rettype"
-             case "listArray_rettype"
-             case "arrayUpdate_rettype"
-             case "arrayCopy_rettype"
-             case "arrayAdd_rettype"
-             case "getGlobalRoot_rettype"
-               then ' = NULL;  mmc_GC_add_root(&<%newVar%>, mmc_GC_local_state, "<%newVar%>");' else ';'
-  let &varDecls += '<%ty%> <%newVar%><%initVarAddRoot%><%\n%>'
+  let newVar
+         =
+    match ty /* TODO! FIXME! UGLY! UGLY! hack! */ 
+      case "modelica_metatype"
+      case "metamodelica_string"
+      case "metamodelica_string_const"
+      case "stringListStringChar_rettype"
+      case "stringAppendList_rettype"
+      case "stringGetStringChar_rettype"
+      case "stringUpdateStringChar_rettype"
+      case "listReverse_rettype"
+      case "listAppend_rettype"
+      case "listGet_rettype"
+      case "listDelete_rettype"
+      case "listRest_rettype"
+      case "listFirst_rettype"
+      case "arrayGet_rettype"
+      case "arrayCreate_rettype"
+      case "arrayList_rettype"
+      case "listArray_rettype"
+      case "arrayUpdate_rettype"
+      case "arrayCopy_rettype"
+      case "arrayAdd_rettype"
+      case "getGlobalRoot_rettype"
+        then 'tmpMeta[<%System.tmpTickIndex(1)%>]'
+      else
+        let newVarIx = 'tmp<%System.tmpTick()%>'
+        let &varDecls += '<%ty%> <%newVarIx%>;<%\n%>'
+        newVarIx
   newVar
 end tempDecl;
 
@@ -6650,6 +6658,18 @@ let displayUnit_ = if displayUnit then ' displayUnit="<%displayUnit%>"' else ''
 <%unit_%><%displayUnit_%>
 >>
 end ScalarVariableTypeRealAttribute;
+
+template addRootsTempArray()
+::=
+  let() = System.tmpTickResetIndex(0,2)
+  match System.tmpTickIndex(1)
+    case 0 then ""
+    case i then
+      <<
+      modelica_metatype tmpMeta[<%i%>] = {0};
+      mmc_GC_add_roots(tmpMeta, <%i%>, mmc_GC_local_state, "Array of temporaries");
+      >>
+end addRootsTempArray;
 
 end SimCodeC;
 

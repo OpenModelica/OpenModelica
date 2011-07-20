@@ -576,16 +576,31 @@ public function getHasInnerOuterDefinitions
   external "C" hasInnerOuterDefinitions=System_getHasInnerOuterDefinitions() annotation(Library = "omcruntime");
 end getHasInnerOuterDefinitions;
 
-public function tmpTick "returns a tick that can be reset"
-output Integer tickNo;
-  external "C" tickNo = System_tmpTick() annotation(Library = "omcruntime");
+public function tmpTick
+  "returns a tick that can be reset"
+  output Integer tickNo;
+  external "C" tickNo = SystemImpl_tmpTick() annotation(Library = "omcruntime");
 end tmpTick;
 
-public function tmpTickReset "resets the tick so it restarts on start
-"
-input Integer start;
-  external "C" System_tmpTickReset(start) annotation(Library = "omcruntime");
+public function tmpTickReset
+  "resets the tick so it restarts on start"
+  input Integer start;
+  external "C" SystemImpl_tmpTickReset(start) annotation(Library = "omcruntime");
 end tmpTickReset;
+
+public function tmpTickIndex
+  "returns a tick that can be reset. TODO: remove me when bootstrapped (default argument index=0)"
+  input Integer index;
+  output Integer tickNo;
+  external "C" tickNo = SystemImpl_tmpTickIndex(index) annotation(Library = "omcruntime");
+end tmpTickIndex;
+
+public function tmpTickResetIndex
+  "resets the tick so it restarts on start. TODO: remove me when bootstrapped (default argument index=0)"
+  input Integer start;
+  input Integer index;
+  external "C" SystemImpl_tmpTickResetIndex(start,index) annotation(Library = "omcruntime");
+end tmpTickResetIndex;
 
 public function getSendDataLibs
 "Returns a string containing the compiler flags used for SENDDATALIBS"

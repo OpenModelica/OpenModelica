@@ -90,18 +90,6 @@ extern double System_realtimeTock(int ix)
   return rt_tock(ix);
 }
 
-static modelica_integer tmp_tick_no = 0;
-
-extern int System_tmpTick()
-{
-  return tmp_tick_no++;
-}
-
-extern void System_tmpTickReset(int start)
-{
-  tmp_tick_no = start;
-}
-
 extern const char* System_getSendDataLibs()
 {
   return LDFLAGS_SENDDATA;

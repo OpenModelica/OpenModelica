@@ -602,6 +602,16 @@ package System
     input Integer start;
   end tmpTickReset;
 
+  function tmpTickIndex
+    input Integer index;
+    output Integer tickNo;
+  end tmpTickIndex;
+  
+  function tmpTickResetIndex
+    input Integer start;
+    input Integer index;
+  end tmpTickResetIndex;
+
   function getCurrentTimeStr
     output String timeStr;
   end getCurrentTimeStr;
