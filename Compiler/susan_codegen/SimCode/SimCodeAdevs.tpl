@@ -136,6 +136,9 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
          double epsilon;
 		 // These must be accessed via a pointer to localVal
 		 double timeValue, $P$old$timeValue;
+         // Helping variables for when clauses
+         bool helpVars[<%vi.numHelpVars%>], helpVars_saved[<%vi.numHelpVars%>];
+         const int numHelpVars() const { return <%vi.numHelpVars%>; }
 
          void save_vars();
          void restore_vars();
@@ -356,7 +359,15 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
   {
       <%(zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
 	    'if (state_event[<%i0%>]) zc<%i0%> = !zc<%i0%>;') ; separator="\n"%>
+      // Record the values of the when clauses before the event
+      for (int i = 0; i < numHelpVars(); i++)
+          helpVars_saved[i] = helpVars[i];
 	  calc_vars(q);
+      // Update the values of the when clauses to the new values
+      for (int i = 0; i < numHelpVars(); i++)
+          helpVars[i] = helpVars_saved[i];
+      // Reinitialize state variables that need to be reinitialized
+      <%(vars.stateVars |> SIMVAR(__) => 'q[<%index%>]=<%cref(name)%>;') ;separator="\n"%>
   }
 
   >>
@@ -425,6 +436,8 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
        <%initVals(vars.intParamVars)%>
        <%initVals(vars.boolParamVars)%>
        <%(zeroCrossings |> ZERO_CROSSING(__) hasindex i0 => 'zc<%i0%> = -1;') ; separator="\n"%>
+       for (int i = 0; i < numHelpVars(); i++)
+           helpVars_saved[i] = false;
        // Calculate any equations that provide initial values
        <%makeInitialEqns(initialEquations)%>
 	   // Calculate derived values
@@ -1389,23 +1402,6 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
    <%body%>  
   >>
 end functionWhenReinitStatementThen;
-
-//Pavol: this one is never used, is it obsolete ??
-template functionWhenReinitStatementElse(list<WhenOperator> reinits, Text &preExp /*BUFP*/,
-                            Text &varDecls /*BUFP*/)
- "Generates re-init statement for when equation."
-::=
-  let body = (reinits |> reinit =>
-    match reinit
-    case REINIT(__) then 
-      let val = daeExp(value, contextSimulationDiscrete,
-                   &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      '<%cref(stateVar)%> = $P$PRE<%cref(stateVar)%>;';separator="\n"
-    )
-  <<
-   <%body%>  
-  >>
-end functionWhenReinitStatementElse;
 
 template functionODE(list<SimEqSystem> derivativEquations, Text method)
  "Generates function in simulation file."
