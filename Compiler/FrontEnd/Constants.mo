@@ -411,11 +411,12 @@ end OnMouseDownEditString;
 //
 // annotation(Dialog(enable = parameter-expression, tab = \"tab\", group = \"group\"));
 //
-// record Dialog
-//   parameter String tab = \"General\";
-//   parameter String group = \"Parameters\";
-//   parameter Boolean enable = true;
-// end Dialog;
+record Dialog
+   parameter String tab = \"General\";
+   parameter String group = \"Parameters\";
+   parameter Boolean enable = true;
+end Dialog;
+
 //
 // connector Frame \"Frame of a mechanical system\"
 //   ...

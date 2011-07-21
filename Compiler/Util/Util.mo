@@ -3951,22 +3951,41 @@ public function listSelect "function: listSelect
     output Boolean outBoolean;
   end FuncTypeType_aToBoolean;
 algorithm
-  outTypeALst:=
-  match (inTypeALst,inFuncTypeTypeAToBoolean)
+  outTypeALst := listSelect_tail(inTypeALst,inFuncTypeTypeAToBoolean, {});
+end listSelect;
+
+protected function listSelect_tail "function: listSelect_tail
+  This function retrieves all elements of a list for which
+  the passed function evaluates to true. The elements that
+  evaluates to false are thus removed from the list."
+  input list<Type_a> inTypeALst;
+  input FuncTypeType_aToBoolean inFuncTypeTypeAToBoolean;
+  input list<Type_a> inAcc;
+  output list<Type_a> outTypeALst;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aToBoolean
+    input Type_a inTypeA;
+    output Boolean outBoolean;
+  end FuncTypeType_aToBoolean;
+algorithm
+  outTypeALst := match (inTypeALst,inFuncTypeTypeAToBoolean,inAcc)
     local
-      list<Type_a> xs_1,xs;
+      list<Type_a> xs_1,xs, newLst;
       Type_a x;
       FuncTypeType_aToBoolean cond;
       Boolean res;
-    case ({},_) then {};
-    case ((x :: xs),cond)
+    
+    // revese at end  
+    case ({},_,inAcc) then listReverse(inAcc);
+    // put in accumulator if result is true
+    case ((x :: xs),cond,inAcc)
       equation
         res = cond(x);
-        xs_1 = listSelect(xs, cond);
+        xs_1 = listSelect_tail(xs, cond, if_(res, x::inAcc, inAcc));
       then
-        if_(res, x::xs_1, xs_1);
+        xs_1;
   end match;
-end listSelect;
+end listSelect_tail;
 
 public function listSelect1 "function listSelect1
   This function retrieves all elements of a list for which
@@ -3985,23 +4004,47 @@ public function listSelect1 "function listSelect1
     output Boolean outBoolean;
   end FuncTypeType_aType_bToBoolean;
 algorithm
-  outTypeALst:=
-  match (inTypeALst,inTypeB,inFuncTypeTypeATypeBToBoolean)
+  outTypeALst := listSelect1_tail(inTypeALst,inTypeB,inFuncTypeTypeATypeBToBoolean,{});
+end listSelect1;
+
+protected function listSelect1_tail "function listSelect1_tail
+  This function retrieves all elements of a list for which
+  the passed function evaluates to true. The elements that
+  evaluates to false are thus removed from the list.
+  This function has an extra argument to testing function."
+  input list<Type_a> inTypeALst;
+  input Type_b inTypeB;
+  input FuncTypeType_aType_bToBoolean inFuncTypeTypeATypeBToBoolean;
+  input list<Type_a> inAcc;  
+  output list<Type_a> outTypeALst;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  partial function FuncTypeType_aType_bToBoolean
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    output Boolean outBoolean;
+  end FuncTypeType_aType_bToBoolean;
+algorithm
+  outTypeALst := match (inTypeALst,inTypeB,inFuncTypeTypeATypeBToBoolean,inAcc)
     local
       Type_b arg;
       list<Type_a> xs_1,xs;
       Type_a x;
       FuncTypeType_aType_bToBoolean cond;
       Boolean res;
-    case ({},arg,_) then {};
-    case ((x :: xs),arg,cond)
+    
+    // revese at end
+    case ({},arg,_,inAcc) then listReverse(inAcc);
+    
+    // collect the ones that match in the accumulator
+    case ((x :: xs),arg,cond,inAcc)
       equation
         res = cond(x, arg);
-        xs_1 = listSelect1(xs, arg, cond);
+        xs_1 = listSelect1_tail(xs, arg, cond, if_(res, x::inAcc, inAcc));
       then
-        if_(res, x::xs_1, xs_1);
+        xs_1;
   end match;
-end listSelect1;
+end listSelect1_tail;
 
 public function listSelect2 "function listSelect1
   Same as listSelect above, but with extra argument to testing function."
@@ -4020,23 +4063,47 @@ public function listSelect2 "function listSelect1
     output Boolean outBoolean;
   end FuncTypeType_aType_bToBoolean;
 algorithm
-  outTypeALst:=
-  match (inTypeALst,inTypeB,inTypeC,inFuncTypeTypeATypeBToBoolean)
+  outTypeALst := listSelect2_tail(inTypeALst,inTypeB,inTypeC,inFuncTypeTypeATypeBToBoolean,{});
+end listSelect2;
+
+protected function listSelect2_tail "function listSelect2_tail
+  Same as listSelect above, but with extra argument to testing function."
+  input list<Type_a> inTypeALst;
+  input Type_b inTypeB;
+  input Type_c inTypeC;
+  input FuncTypeType_aType_bToBoolean inFuncTypeTypeATypeBToBoolean;
+  input list<Type_a> inAcc;  
+  output list<Type_a> outTypeALst;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  partial function FuncTypeType_aType_bToBoolean
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    input Type_c inTypeC;
+    output Boolean outBoolean;
+  end FuncTypeType_aType_bToBoolean;
+algorithm
+  outTypeALst:= match (inTypeALst,inTypeB,inTypeC,inFuncTypeTypeATypeBToBoolean,inAcc)
     local
       Type_b arg1; Type_c arg2;
       list<Type_a> xs_1,xs;
       Type_a x;
       FuncTypeType_aType_bToBoolean cond;
       Boolean res;
-    case ({},arg1,arg2,_) then {};
-    case ((x :: xs),arg1,arg2,cond)
+    
+    // revese at the end
+    case ({},arg1,arg2,_,inAcc) then listReverse(inAcc);
+    
+    // collect into the accumulator if it matches!
+    case ((x :: xs),arg1,arg2,cond,inAcc)
       equation
         res = cond(x, arg1,arg2);
-        xs_1 = listSelect2(xs, arg1,arg2, cond);
+        xs_1 = listSelect2_tail(xs, arg1,arg2, cond, if_(res, x::inAcc, inAcc));
       then
-        if_(res, x::xs_1, xs_1);
+        xs_1;
   end match;
-end listSelect2;
+end listSelect2_tail;
 
 public function listSelect1R "function listSelect1R
   Same as listSelect1 above, but with swapped arguments."
@@ -4052,29 +4119,52 @@ public function listSelect1R "function listSelect1R
     output Boolean outBoolean;
   end FuncTypeType_bType_aToBoolean;
 algorithm
-  outTypeALst:=
-  matchcontinue (inTypeALst,inTypeB,inFuncTypeTypeBTypeAToBoolean)
+  outTypeALst := listSelect1R_tail(inTypeALst,inTypeB,inFuncTypeTypeBTypeAToBoolean,{});
+end listSelect1R;
+
+protected function listSelect1R_tail "function listSelect1R_tail
+  Same as listSelect1 above, but with swapped arguments."
+  input list<Type_a> inTypeALst;
+  input Type_b inTypeB;
+  input FuncTypeType_bType_aToBoolean inFuncTypeTypeBTypeAToBoolean;
+  input list<Type_a> inAcc;
+  output list<Type_a> outTypeALst;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  partial function FuncTypeType_bType_aToBoolean
+    input Type_b inTypeB;
+    input Type_a inTypeA;
+    output Boolean outBoolean;
+  end FuncTypeType_bType_aToBoolean;
+algorithm
+  outTypeALst := matchcontinue (inTypeALst,inTypeB,inFuncTypeTypeBTypeAToBoolean,inAcc)
     local
       Type_b arg;
       list<Type_a> xs_1,xs;
       Type_a x;
       Boolean res;
       FuncTypeType_bType_aToBoolean cond;
-    case ({},arg,_) then {};
-    case ((x :: xs),arg,cond)
+    
+    // revese at the end
+    case ({},arg,_,inAcc) then listReverse(inAcc);
+    
+    // collect in accumulator if it matches!
+    case ((x :: xs),arg,cond,inAcc)
       equation
         res = cond(arg, x);
-        xs_1 = listSelect1R(xs, arg, cond);
-      then
-        if_(res, x::xs_1, xs_1);
-    case ((x :: xs),arg,cond)
-      equation
-        false = cond(arg, x);
-        xs_1 = listSelect1R(xs, arg, cond);
+        xs_1 = listSelect1R_tail(xs, arg, cond, if_(res, x::inAcc, inAcc));
       then
         xs_1;
+    
+    /*// this case does NOT MATTER!!
+    case ((x :: xs),arg,cond,inAcc)
+      equation
+        false = cond(arg, x);
+        xs_1 = listSelect1R_tail(xs, arg, cond, inAcc);
+      then
+        xs_1;*/
   end matchcontinue;
-end listSelect1R;
+end listSelect1R_tail;
 
 public function listPosition "function: listPosition
   Takes a value and a list of values and returns the (first) position

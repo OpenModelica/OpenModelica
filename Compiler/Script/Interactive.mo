@@ -13969,6 +13969,62 @@ algorithm
   end matchcontinue;
 end getComponentitemsAnnotations;
 
+protected function getComponentitemsAnnotationsElArgs
+"function: getComponentitemsAnnotationsElArgs
+  Helper function to getComponentitemsAnnotationsFromItems."
+  input list<Absyn.ElementArg> inElArgLst;
+  input Env.Env inEnv;
+  input Absyn.Class inClass;
+  input Absyn.Program inFullProgram;
+  input Absyn.Path inModelPath;
+  output list<String> outStringLst;
+algorithm
+  outStringLst := matchcontinue (inElArgLst,inEnv,inClass,inFullProgram,inModelPath)
+    local
+      list<Env.Frame> env,env_1;
+      SCode.Element c,c_1;
+      SCode.Mod mod_1;
+      DAE.Mod mod_2;
+      DAE.DAElist dae;
+      Connect.Sets cs;
+      DAE.Type t;
+      ClassInf.State state;
+      String gexpstr,gexpstr_1,annName;
+      list<String> res;
+      list<Absyn.ElementArg> mod, rest;
+      Env.Cache cache;
+
+    // handle empty
+    case ({},env,inClass,inFullProgram,inModelPath) then {};
+    
+    case (Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT(annName,_),SOME(Absyn.CLASSMOD(mod,Absyn.NOMOD())),_) :: rest,env,inClass,inFullProgram,inModelPath)
+      equation
+        
+        (cache,c,env_1) = Lookup.lookupClass(Env.emptyCache(),env, Absyn.IDENT(annName), false);
+        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH());
+        (cache,mod_2) = Mod.elabMod(cache, env_1, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Absyn.dummyInfo);
+        c_1 = SCode.classSetPartial(c, SCode.NOT_PARTIAL());
+        (_,_,_,_,dae,cs,t,state,_,_) =
+          Inst.instClass(cache, env_1,InnerOuter.emptyInstHierarchy,
+                         UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), Connect.emptySet,
+                         c_1, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
+        gexpstr = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
+        
+        gexpstr_1 = stringAppendList({annName,"(",gexpstr,")"});
+        res = getComponentitemsAnnotationsElArgs(rest, env, inClass,inFullProgram,inModelPath);
+      then
+        (gexpstr_1 :: res);
+
+    case (Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT(annName,_), SOME(Absyn.CLASSMOD(mod,Absyn.NOMOD())),_) :: rest,env,inClass,inFullProgram,inModelPath)
+      equation
+        gexpstr_1 = stringAppendList({annName,"(error)"});
+        res = getComponentitemsAnnotationsElArgs(rest, env, inClass,inFullProgram,inModelPath);
+      then
+        (gexpstr_1 :: res);    
+
+  end matchcontinue;
+end getComponentitemsAnnotationsElArgs;
+
 protected function getComponentitemsAnnotationsFromItems
 "function: getComponentitemsAnnotationsFromItems
   Helper function to getComponentitemsAnnotations."
@@ -13979,7 +14035,7 @@ protected function getComponentitemsAnnotationsFromItems
   input Absyn.Path inModelPath;
   output list<String> outStringLst;
 algorithm
-  outStringLst := match (inAbsynComponentItemLst,inEnv,inClass,inFullProgram,inModelPath)
+  outStringLst := matchcontinue (inAbsynComponentItemLst,inEnv,inClass,inFullProgram,inModelPath)
     local
       list<Env.Frame> env,env_1;
       SCode.Element c,c_1;
@@ -13989,9 +14045,9 @@ algorithm
       Connect.Sets cs;
       DAE.Type t;
       ClassInf.State state;
-      String gexpstr,gexpstr_1;
+      String gexpstr,gexpstr_1,annName;
       list<String> res;
-      list<Absyn.ElementArg> mod;
+      list<Absyn.ElementArg> mod, annotations;
       list<Absyn.ComponentItem> rest;
       Env.Cache cache;
 
@@ -14000,18 +14056,13 @@ algorithm
     
     case ((Absyn.COMPONENTITEM(comment = SOME(
       Absyn.COMMENT(
-            SOME(Absyn.ANNOTATION((Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("Placement",_),SOME(Absyn.CLASSMOD(mod,Absyn.NOMOD())),_) :: _))),
+            SOME(Absyn.ANNOTATION(annotations)),
             _))) :: rest),env,inClass,inFullProgram,inModelPath)
       equation
-        (cache,c,env_1) = Lookup.lookupClass(Env.emptyCache(),env, Absyn.IDENT("Placement"), false);
-        mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH());
-        (cache,mod_2) = Mod.elabMod(cache, env_1, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Absyn.dummyInfo);
-        c_1 = SCode.classSetPartial(c, SCode.NOT_PARTIAL());
-        (_,_,_,_,dae,cs,t,state,_,_) =
-          Inst.instClass(cache, env_1,InnerOuter.emptyInstHierarchy,
-                         UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), Connect.emptySet,
-                         c_1, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
-        gexpstr = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
+        
+        res = getComponentitemsAnnotationsElArgs(annotations,env,inClass,inFullProgram,inModelPath);
+        gexpstr = Util.stringDelimitList(res, ", ");
+        
         gexpstr_1 = stringAppendList({"{",gexpstr,"}"});
         res = getComponentitemsAnnotationsFromItems(rest, env, inClass,inFullProgram,inModelPath);
       then
@@ -14027,7 +14078,7 @@ algorithm
       then 
         {"{}"};
 
-  end match;
+  end matchcontinue;
 end getComponentitemsAnnotationsFromItems;
 
 protected function getComponentAnnotation

@@ -1609,7 +1609,7 @@ algorithm
         (i_1,stack_3,comps_2);
     else
       equation
-        Debug.fprint("failtrace", "-strong_connect failed for eqn " +& intString(inInteger5) +& "\n");
+        Debug.fprint("failtrace", "- BackendDAETransform.strongConnect failed for eqn " +& intString(inInteger5) +& "\n");
       then
         fail();
   end matchcontinue;
@@ -1712,6 +1712,11 @@ algorithm
       list<list<BackendDAE.Value>> comps_1,comps_2,comps;
       array<list<BackendDAE.Value>> m,mt;
       array<BackendDAE.Value> a1,a2;
+    
+    // empty case
+    case ({},m,mt,a1,a2,i,v,stack,comps) then (i,stack,comps);    
+    
+    // nw is 0
     case ((w :: ws),m,mt,a1,a2,i,v,stack,comps)
       equation
         0 = BackendDAEEXT.getNumber(w);
@@ -1723,6 +1728,8 @@ algorithm
         (i,stack,comps_2) = iterateReachableNodes(ws, m, mt, a1, a2, i, v, stack, comps_1);
       then
         (i,stack,comps_2);
+    
+    // nw 
     case ((w :: ws),m,mt,a1,a2,i,v,stack,comps)
       equation
         nw = BackendDAEEXT.getNumber(w);
@@ -1741,7 +1748,7 @@ algorithm
         (i,stack,comps_1) = iterateReachableNodes(ws, m, mt, a1, a2, i, v, stack, comps);
       then
         (i,stack,comps_1);
-    case ({},m,mt,a1,a2,i,v,stack,comps) then (i,stack,comps);
+    
   end matchcontinue;
 end iterateReachableNodes;
 
