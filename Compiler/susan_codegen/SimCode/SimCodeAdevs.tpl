@@ -140,7 +140,10 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
 		 bool atEvent;
          // Helping variables for when clauses
          bool helpVars[<%vi.numHelpVars%>], helpVars_saved[<%vi.numHelpVars%>];
-         const int numHelpVars() const { return <%vi.numHelpVars%>; }
+         int numHelpVars() const { return <%vi.numHelpVars%>; }
+         // Zero crossing variables
+         int zc[<%vi.numZeroCrossings%>];
+         int numZeroCrossings() const { return <%vi.numZeroCrossings%>; }
 
          void save_vars();
          void restore_vars();
@@ -220,7 +223,6 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
    <%(vars.paramVars |> SIMVAR(__) => 'double <%cref(name)%>;') ;separator="\n"%>
    <%(vars.intParamVars |> SIMVAR(__) => 'int <%cref(name)%>;') ;separator="\n"%>
    <%(vars.boolParamVars |> SIMVAR(__) => 'bool <%cref(name)%>;') ;separator="\n"%>
-   <%(zeroCrossings |> ZERO_CROSSING(__) hasindex i0 => 'int zc<%i0%>;') ; separator="\n"%> 
    >>
 end makeMemberVariables;
 
@@ -258,9 +260,17 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
   #define Adevs_GreaterEq(exp1,exp2) ((exp1)-(exp2))
   // True to false transitions occur at zero,
   // False to true transitions at positive epsilon
-  #define ADEVS_ZEROCROSSING(index,expr) z[ index ] = expr-(!zc##index)*epsilon
-  #define ADEVS_RELATIONTOZC(var,exp1,exp2,index,OpSym) if (zc##index == -1) zc##index=((exp1) OpSym (exp2)); var=zc##index
-  #define ADEVS_SAVEZEROCROSS(var,exp1,exp2,index,OpSym) if (zc##index == -1) zc##index=((exp1) OpSym (exp2)); var=zc##index
+  #define ADEVS_ZEROCROSSING(index,expr) z[index] = expr-(!zc[index])*epsilon
+  #define ADEVS_RELATIONTOZC(var,exp1,exp2,index,OpSym) \
+	  if (0 <= index) { \
+		  if (zc[index] == -1) zc[index]=((exp1) OpSym (exp2)); \
+          var=zc[index]; \
+	  } else var=((exp1) OpSym (exp2)) 
+  #define ADEVS_SAVEZEROCROSS(var,exp1,exp2,index,OpSym) \
+	  if (0 <= index) { \
+		  if (zc[index] == -1) zc[index]=((exp1) OpSym (exp2)); \
+          var=zc[index]; \
+	  } else var=((exp1) OpSym (exp2))
 
   <%lastIdentOfPath(modelInfo.name)%>::<%lastIdentOfPath(modelInfo.name)%>(int extra_state_events): 
       ode_system<OMC_ADEVS_IO_TYPE>(
@@ -361,8 +371,9 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
   void <%lastIdentOfPath(modelInfo.name)%>::internal_event(double* q, const bool* state_event)
   {
 	  atEvent = true;
-      <%(zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
-	    'if (state_event[<%i0%>]) zc<%i0%> = !zc<%i0%>;') ; separator="\n"%>
+	  // Switch the state event variables
+	  for (int i = 0; i < numZeroCrossings(); i++)
+	     if (state_event[i]) zc[i] = !zc[i];
       // Record the values of the when clauses before the event
       for (int i = 0; i < numHelpVars(); i++)
           helpVars_saved[i] = helpVars[i];
@@ -370,7 +381,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
 	  calc_vars(q);
       // Update the values of the when clauses to the new values
       for (int i = 0; i < numHelpVars(); i++)
-          helpVars[i] = helpVars_saved[i];
+          helpVars_saved[i] = helpVars[i];
       // Reinitialize state variables that need to be reinitialized
       <%(vars.stateVars |> SIMVAR(__) => 'q[<%index%>]=<%cref(name)%>;') ;separator="\n"%>
 	  atEvent = false;
@@ -431,7 +442,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
    <<
    void <%lastIdentOfPath(modelInfo.name)%>::clear_event_flags()
    {
-       <%(zeroCrossings |> ZERO_CROSSING(__) hasindex i0 => 'zc<%i0%> = -1;') ; separator="\n"%>
+	   for (int i = 0; i < numZeroCrossings(); i++) zc[i] = -1;
    }
 
    void <%lastIdentOfPath(modelInfo.name)%>::init(double* q)
@@ -448,6 +459,8 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
        <%initVals(vars.paramVars)%>
        <%initVals(vars.intParamVars)%>
        <%initVals(vars.boolParamVars)%>
+	   // Save these to the old values so that pre() and edge() work
+	   save_vars();
        for (int i = 0; i < numHelpVars(); i++)
            helpVars_saved[i] = false;
        // Calculate any equations that provide initial values
@@ -456,7 +469,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
 	   calc_vars();
        // Set initial state and helper variable values for the integrator
        for (int i = 0; i < numHelpVars(); i++)
-          helpVars[i] = helpVars_saved[i];
+          helpVars_saved[i] = helpVars[i];
        <%(vars.stateVars |> SIMVAR(__) => 'q[<%index%>]=<%cref(name)%>;') ;separator="\n"%>
    }
    >>
@@ -532,7 +545,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
       }
 	  // Calculate the odes
       <%allEqns(allEquations,whenClauses)%>
-	  if (iterate) calc_vars(q,true);
+	  if (iterate) calc_vars(NULL,true);
   }
   >>
 end makeDerFuncCalculator;
@@ -1386,9 +1399,10 @@ if reinits then
 //Reinit inside whenclause index: <%int%>
 <%preExp%>
 <%helpInits%>
-if (<%helpIf%>) { 
-<%ifthen%>
-iterate = true;
+if (atEvent) {
+   if (<%helpIf%>) { 
+   <%ifthen%>
+   }
 }
 >>
 end genreinits;
@@ -1405,7 +1419,9 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
                    &preExp /*BUFC*/, &varDecls /*BUFD*/)
      <<
       <%preExp%>
+	            double <%cref(stateVar)%>_tmp = <%cref(stateVar)%>;
                 <%cref(stateVar)%> = <%val%>;
+				iterate = iterate || (<%cref(stateVar)%>_tmp != <%cref(stateVar)%>);
                 >>
     case TERMINATE(__) then 
       let &preExp = buffer "" /*BUFD*/
@@ -2220,11 +2236,13 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   <<
   <%preExp%>
   <%helpInits%>
-  if (<%helpIf%>) {
-    <%preExp2%>
-    <%cref(left)%> = <%exp%>;
-  } else {
-    <%cref(left)%> = $P$old<%cref(left)%>;
+  if (atEvent) {
+      if (<%helpIf%>) {
+          <%preExp2%>
+          <%cref(left)%> = <%exp%>;
+      } else {
+          <%cref(left)%> = $P$old<%cref(left)%>;
+      }
   }
   >>
   case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
@@ -2241,13 +2259,15 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   <<
   <%preExp%>
   <%helpInits%>
-  if (<%helpIf%>) {
-    <%preExp2%>
-    <%cref(left)%> = <%exp%>;
-  }
-  <%elseWhen%>
-  else {
-    <%cref(left)%> = $P$old<%cref(left)%>;
+  if (atEvent) {
+      if (<%helpIf%>) {
+          <%preExp2%>
+          <%cref(left)%> = <%exp%>;
+      }
+      <%elseWhen%>
+      else {
+         <%cref(left)%> = $P$old<%cref(left)%>;
+      }
   }
   >> 
 end equationWhen;
@@ -5183,11 +5203,11 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   case CALL(path=IDENT(name="pre"), expLst={arg}) then
     daeExpCallPre(arg, context, preExp, varDecls)
   case CALL(path=IDENT(name="edge"), expLst={arg as CREF(__)}) then
-    '(atEvent && <%cref(arg.componentRef)%> && !$P$old<%cref(arg.componentRef)%>)'
+    '(<%cref(arg.componentRef)%> && !$P$old<%cref(arg.componentRef)%>)'
   case CALL(path=IDENT(name="edge"), expLst={exp}) then
     error(sourceInfo(), 'Code generation does not support edge(<%printExpStr(exp)%>)')
   case CALL(path=IDENT(name="change"), expLst={arg as CREF(__)}) then
-    '(atEvent && <%cref(arg.componentRef)%> != $P$old<%cref(arg.componentRef)%>)'
+    '(<%cref(arg.componentRef)%> != $P$old<%cref(arg.componentRef)%>)'
   case CALL(path=IDENT(name="change"), expLst={exp}) then
     error(sourceInfo(), 'Code generation does not support change(<%printExpStr(exp)%>)')
   
