@@ -49,6 +49,7 @@ public import Values;
 
 protected import ComponentReference;
 protected import DAEUtil;
+protected import Error;
 protected import Expression;
 protected import Types;
 protected import Util;
@@ -506,17 +507,27 @@ end replaceFnInFnLst;
 protected function elabElements
 "function: elabElements
   goes through a list of DAE.Element for partevalfunction"
-  input list<DAE.Element> inElementList;
-  input list<DAE.Function> inDAE;
-  output list<DAE.Element> outElementList;
-  output list<DAE.Function> outDAE;
+  input list<DAE.Element> els;
+  input list<DAE.Function> dae;
+  output list<DAE.Element> oels;
+  output list<DAE.Function> odae;
 algorithm
-  (outElementList,outDAE) := matchcontinue(inElementList,inDAE)
+  (oels,odae) := Util.listMapAndFold(els,elabElement,dae);
+end elabElements;
+
+protected function elabElement
+"function: elabElements
+  goes through a list of DAE.Element for partevalfunction"
+  input DAE.Element el;
+  input list<DAE.Function> dae;
+  output DAE.Element oel;
+  output list<DAE.Function> odae;
+algorithm
+  (oel,odae) := match (el,dae)
     local
       DAE.Function f1,f2;
-      DAE.Element el,el_1;
+      DAE.Element el_1;
       list<DAE.Element> cdr,cdr_1,elts,elts_1;
-      list<DAE.Function> dae;
       list<list<DAE.Element>> elm,elm_1;
       DAE.ComponentRef cref;
       DAE.VarKind kind;
@@ -538,176 +549,146 @@ algorithm
       DAE.Algorithm alg,alg_1;
       DAE.ElementSource source "the origin of the element";
 
-    case({},dae) then ({},dae);
     case(DAE.VAR(cref,kind,direction,protection,ty,binding,dims,flowPrefix,streamPrefix,source,
-                 variableAttributesOption,absynCommentOption,innerOuter) :: cdr,dae)
+                 variableAttributesOption,absynCommentOption,innerOuter),dae)
       equation
         (binding,dae) = elabExpOption(binding,dae);
-        (cdr_1,dae) = elabElements(cdr,dae);
       then
         (DAE.VAR(cref,kind,direction,protection,ty,binding,dims,flowPrefix,streamPrefix,source,
-                 variableAttributesOption,absynCommentOption,innerOuter) :: cdr_1,dae);
+                 variableAttributesOption,absynCommentOption,innerOuter),dae);
 
-    case(DAE.DEFINE(cref,e,source) :: cdr,dae)
+    case(DAE.DEFINE(cref,e,source),dae)
       equation
         ((e_1,dae)) = Expression.traverseExp(e,elabExp,dae);
-        (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.DEFINE(cref,e_1,source) :: cdr_1,dae);
+        (DAE.DEFINE(cref,e_1,source),dae);
 
-    case(DAE.INITIALDEFINE(cref,e,source) :: cdr,dae)
+    case(DAE.INITIALDEFINE(cref,e,source),dae)
       equation
         ((e_1,dae)) = Expression.traverseExp(e,elabExp,dae);
-        (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.INITIALDEFINE(cref,e_1,source) :: cdr_1,dae);
+        (DAE.INITIALDEFINE(cref,e_1,source),dae);
 
-    case(DAE.EQUATION(e1,e2,source) :: cdr,dae)
+    case(DAE.EQUATION(e1,e2,source),dae)
       equation
         ((e1_1,dae)) = Expression.traverseExp(e1,elabExp,dae);
         ((e2_1,dae)) = Expression.traverseExp(e2,elabExp,dae);
-        (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.EQUATION(e1_1,e2_1,source) :: cdr_1,dae);
+        (DAE.EQUATION(e1_1,e2_1,source),dae);
 
-    case(DAE.ARRAY_EQUATION(ilst,e1,e2,source) :: cdr,dae)
+    case(DAE.ARRAY_EQUATION(ilst,e1,e2,source),dae)
       equation
         ((e1_1,dae)) = Expression.traverseExp(e1,elabExp,dae);
         ((e2_1,dae)) = Expression.traverseExp(e2,elabExp,dae);
-        (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.ARRAY_EQUATION(ilst,e1_1,e2_1,source) :: cdr_1,dae);
+        (DAE.ARRAY_EQUATION(ilst,e1_1,e2_1,source),dae);
 
-    case(DAE.INITIAL_ARRAY_EQUATION(ilst,e1,e2,source) :: cdr,dae)
+    case(DAE.INITIAL_ARRAY_EQUATION(ilst,e1,e2,source),dae)
       equation
         ((e1_1,dae)) = Expression.traverseExp(e1,elabExp,dae);
         ((e2_1,dae)) = Expression.traverseExp(e2,elabExp,dae);
-        (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.INITIAL_ARRAY_EQUATION(ilst,e1_1,e2_1,source) :: cdr_1,dae);
+        (DAE.INITIAL_ARRAY_EQUATION(ilst,e1_1,e2_1,source),dae);
 
-    case(DAE.COMPLEX_EQUATION(e1,e2,source) :: cdr,dae)
+    case(DAE.COMPLEX_EQUATION(e1,e2,source),dae)
       equation
         ((e1_1,dae)) = Expression.traverseExp(e1,elabExp,dae);
         ((e2_1,dae)) = Expression.traverseExp(e2,elabExp,dae);
-        (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.COMPLEX_EQUATION(e1_1,e2_1,source) :: cdr_1,dae);
+        (DAE.COMPLEX_EQUATION(e1_1,e2_1,source),dae);
 
-    case(DAE.INITIAL_COMPLEX_EQUATION(e1,e2,source) :: cdr,dae)
+    case(DAE.INITIAL_COMPLEX_EQUATION(e1,e2,source),dae)
       equation
         ((e1_1,dae)) = Expression.traverseExp(e1,elabExp,dae);
         ((e2_1,dae)) = Expression.traverseExp(e2,elabExp,dae);
-        (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.INITIAL_COMPLEX_EQUATION(e1_1,e2_1,source) :: cdr_1,dae);
+        (DAE.INITIAL_COMPLEX_EQUATION(e1_1,e2_1,source),dae);
 
-    case(DAE.WHEN_EQUATION(e,elts,NONE(),source) :: cdr,dae)
+    case(DAE.WHEN_EQUATION(e,elts,NONE(),source),dae)
       equation
         ((e_1,dae)) = Expression.traverseExp(e,elabExp,dae);
         (elts_1,dae) = elabElements(elts,dae);
-        (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.WHEN_EQUATION(e_1,elts_1,NONE(),source) :: cdr_1,dae);
+        (DAE.WHEN_EQUATION(e_1,elts_1,NONE(),source),dae);
 
-    case(DAE.WHEN_EQUATION(e,elts,SOME(el),source) :: cdr,dae)
+    case(DAE.WHEN_EQUATION(e,elts,SOME(el),source),dae)
       equation
         ((e_1,dae)) = Expression.traverseExp(e,elabExp,dae);
         (elts_1,dae) = elabElements(elts,dae);
         ({el_1},dae) = elabElements({el},dae);
-        (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.WHEN_EQUATION(e_1,elts_1,SOME(el_1),source) :: cdr_1,dae);
+        (DAE.WHEN_EQUATION(e_1,elts_1,SOME(el_1),source),dae);
 
-    case(DAE.IF_EQUATION(elst,elm,elts,source) :: cdr,dae)
+    case(DAE.IF_EQUATION(elst,elm,elts,source),dae)
       equation
         (elst_1,dae) = elabExpList(elst,dae);
         (elm_1,{dae}) = Util.listMap1_2(elm,elabElements,dae);
         (elts_1,dae) = elabElements(elts,dae);
-        (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.IF_EQUATION(elst_1,elm_1,elts_1,source) :: cdr_1,dae);
+        (DAE.IF_EQUATION(elst_1,elm_1,elts_1,source),dae);
 
-    case(DAE.INITIAL_IF_EQUATION(elst,elm,elts,source) :: cdr,dae)
+    case(DAE.INITIAL_IF_EQUATION(elst,elm,elts,source),dae)
       equation
         (elst_1,dae) = elabExpList(elst,dae);
         (elm_1,{dae}) = Util.listMap1_2(elm,elabElements,dae);
         (elts_1,dae) = elabElements(elts,dae);
-        (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.INITIAL_IF_EQUATION(elst_1,elm_1,elts_1,source) :: cdr_1,dae);
+        (DAE.INITIAL_IF_EQUATION(elst_1,elm_1,elts_1,source),dae);
 
-    case(DAE.INITIALEQUATION(e1,e2,source) :: cdr,dae)
+    case(DAE.INITIALEQUATION(e1,e2,source),dae)
       equation
         ((e1_1,dae)) = Expression.traverseExp(e1,elabExp,dae);
         ((e2_1,dae)) = Expression.traverseExp(e2,elabExp,dae);
-        (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.INITIALEQUATION(e1_1,e2_1,source) :: cdr_1,dae);
+        (DAE.INITIALEQUATION(e1_1,e2_1,source),dae);
 
-    case(DAE.ALGORITHM(alg,source) :: cdr,dae)
+    case(DAE.ALGORITHM(alg,source),dae)
       equation
         (alg_1,dae) = elabAlg(alg,dae);
-        (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.ALGORITHM(alg_1,source) :: cdr_1,dae);
+        (DAE.ALGORITHM(alg_1,source),dae);
 
-    case(DAE.INITIALALGORITHM(alg,source) :: cdr,dae)
+    case(DAE.INITIALALGORITHM(alg,source),dae)
       equation
         (alg_1,dae) = elabAlg(alg,dae);
-        (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.INITIALALGORITHM(alg_1,source) :: cdr_1,dae);
+        (DAE.INITIALALGORITHM(alg_1,source),dae);
 
-    case(DAE.COMP(i,elts,source,absynCommentOption) :: cdr,dae)
+    case(DAE.COMP(i,elts,source,absynCommentOption),dae)
       equation
         (elts_1,dae) = elabElements(elts,dae);
-        (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.COMP(i,elts_1,source,absynCommentOption) :: cdr_1,dae);
+        (DAE.COMP(i,elts_1,source,absynCommentOption),dae);
 
-    case(DAE.ASSERT(e1,e2,source) :: cdr,dae)
+    case(DAE.ASSERT(e1,e2,source),dae)
       equation
         ((e1_1,dae)) = Expression.traverseExp(e1,elabExp,dae);
         ((e2_1,dae)) = Expression.traverseExp(e2,elabExp,dae);
-        (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.ASSERT(e1_1,e2_1,source) :: cdr_1,dae);
+        (DAE.ASSERT(e1_1,e2_1,source),dae);
 
-    case(DAE.TERMINATE(e,source) :: cdr,dae)
+    case(DAE.TERMINATE(e,source),dae)
       equation
         ((e_1,dae)) = Expression.traverseExp(e,elabExp,dae);
-        (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.TERMINATE(e_1,source) :: cdr_1,dae);
+        (DAE.TERMINATE(e_1,source),dae);
 
-    case(DAE.REINIT(cref,e,source) :: cdr,dae)
+    case(DAE.REINIT(cref,e,source),dae)
       equation
         ((e_1,dae)) = Expression.traverseExp(e,elabExp,dae);
-        (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.REINIT(cref,e_1,source) :: cdr_1,dae);
+        (DAE.REINIT(cref,e_1,source),dae);
 
-    case(DAE.NORETCALL(p,elst,source) :: cdr,dae)
+    case(DAE.NORETCALL(p,elst,source),dae)
       equation
         (elst_1,dae) = elabExpList(elst,dae);
-        (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.NORETCALL(p,elst_1,source) :: cdr_1,dae);
+        (DAE.NORETCALL(p,elst_1,source),dae);
 
-    case(el :: cdr,dae)
-      equation
-        (cdr_1,dae) = elabElements(cdr,dae);
-      then
-        (el :: cdr_1,dae);
+    case(el,dae) then (el,dae);
 
-    case(_,_)
-      equation
-        Debug.fprintln("failtrace","PartFn.elabElements failed");
-      then
-        fail();
-  end matchcontinue;
-end elabElements;
+  end match;
+end elabElement;
 
 protected function elabFunctions
   input list<DAE.Function> fns;
