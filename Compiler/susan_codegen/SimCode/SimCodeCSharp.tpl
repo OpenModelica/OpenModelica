@@ -1899,7 +1899,8 @@ case sim as SIMULATION(__) then
 	     case GREATER(__)   then " > "
 	     case GREATEREQ(__) then " >= "
 	     case EQUAL(__)     then " == "
-	     case _             then "daeExpSimRelation:ERR")
+	     case NEQUAL(__)	then " != "
+	     case _             then " daeExpSimRelation:ERR ")
 	 let &res = buffer ""
 	 let &preExp +=
 	   match index
