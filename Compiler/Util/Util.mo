@@ -1945,8 +1945,34 @@ public function listMap3 "function listMap3
   replaceable type Type_d subtypeof Any;
   replaceable type Type_e subtypeof Any;
 algorithm
+  outTypeELst := listMap3_tail(inTypeALst,inFuncTypeTypeATypeBTypeCTypeDToTypeE,inTypeB,inTypeC,inTypeD,{});
+end listMap3;
+
+protected function listMap3_tail "function listMap3
+  Takes a list and a function and three extra arguments passed to the function.
+  The function produces one new value which is used for creating a new list."
+  input list<Type_a> inTypeALst;
+  input FuncTypeType_aType_bType_cType_dToType_e inFuncTypeTypeATypeBTypeCTypeDToTypeE;
+  input Type_b inTypeB;
+  input Type_c inTypeC;
+  input Type_d inTypeD;
+  input list<Type_e> acc;
+  output list<Type_e> outTypeELst;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aType_bType_cType_dToType_e
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    input Type_c inTypeC;
+    input Type_d inTypeD;
+    output Type_e outTypeE;
+  end FuncTypeType_aType_bType_cType_dToType_e;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  replaceable type Type_e subtypeof Any;
+algorithm
   outTypeELst:=
-  match (inTypeALst,inFuncTypeTypeATypeBTypeCTypeDToTypeE,inTypeB,inTypeC,inTypeD)
+  match (inTypeALst,inFuncTypeTypeATypeBTypeCTypeDToTypeE,inTypeB,inTypeC,inTypeD,acc)
     local
       Type_e f_1;
       list<Type_e> r_1;
@@ -1956,15 +1982,15 @@ algorithm
       Type_b extraarg1;
       Type_c extraarg2;
       Type_d extraarg3;
-    case ({},_,_,_,_) then {};
-    case ((f :: r),fn,extraarg1,extraarg2,extraarg3)
+    case ({},_,_,_,_,acc) then listReverse(acc);
+    case ((f :: r),fn,extraarg1,extraarg2,extraarg3,acc)
       equation
         f_1 = fn(f, extraarg1, extraarg2, extraarg3);
-        r_1 = listMap3(r, fn, extraarg1, extraarg2, extraarg3);
+        r_1 = listMap3_tail(r, fn, extraarg1, extraarg2, extraarg3, f_1 :: acc);
       then
-        (f_1 :: r_1);
+        r_1;
   end match;
-end listMap3;
+end listMap3_tail;
 
 public function listMap4 "function listMap4
   Takes a list and a function and four extra arguments passed to the function.
