@@ -136,12 +136,15 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
          double epsilon;
 		 // These must be accessed via a pointer to localVal
 		 double timeValue, $P$old$timeValue;
+		 // Are we at an event?
+		 bool atEvent;
          // Helping variables for when clauses
          bool helpVars[<%vi.numHelpVars%>], helpVars_saved[<%vi.numHelpVars%>];
          const int numHelpVars() const { return <%vi.numHelpVars%>; }
 
          void save_vars();
          void restore_vars();
+		 void clear_event_flags();
 
       protected:
 		 /**
@@ -149,11 +152,11 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
 		  * State variables will be initialized to q if provided,
 		  * or left unchanged if not.
 		  */
-         void calc_vars(const double* q = NULL);
+         void calc_vars(const double* q = NULL, bool doReinit = false);
          /**
            * These methods may be used to change paramters
            * and state variables at events. Remember to call
-           * calc_vars(q) if you change anything.
+           * calc_vars(q,true) if you change anything.
            */
 		 <%makeSetAccessors(modelInfo)%>
    };
@@ -357,17 +360,20 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
 
   void <%lastIdentOfPath(modelInfo.name)%>::internal_event(double* q, const bool* state_event)
   {
+	  atEvent = true;
       <%(zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
 	    'if (state_event[<%i0%>]) zc<%i0%> = !zc<%i0%>;') ; separator="\n"%>
       // Record the values of the when clauses before the event
       for (int i = 0; i < numHelpVars(); i++)
           helpVars_saved[i] = helpVars[i];
+	  save_vars();
 	  calc_vars(q);
       // Update the values of the when clauses to the new values
       for (int i = 0; i < numHelpVars(); i++)
           helpVars[i] = helpVars_saved[i];
       // Reinitialize state variables that need to be reinitialized
       <%(vars.stateVars |> SIMVAR(__) => 'q[<%index%>]=<%cref(name)%>;') ;separator="\n"%>
+	  atEvent = false;
   }
 
   >>
@@ -423,9 +429,16 @@ template makeInit(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
    <<
+   void <%lastIdentOfPath(modelInfo.name)%>::clear_event_flags()
+   {
+       <%(zeroCrossings |> ZERO_CROSSING(__) hasindex i0 => 'zc<%i0%> = -1;') ; separator="\n"%>
+   }
+
    void <%lastIdentOfPath(modelInfo.name)%>::init(double* q)
    { 
+	   atEvent = false;
 	   timeValue = q[numVars()-1] = 0.0;
+	   clear_event_flags();
 	   // Get initial values as given in the model
        <%initVals(vars.stateVars)%>
        <%initVals(vars.derivativeVars)%>
@@ -435,14 +448,15 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
        <%initVals(vars.paramVars)%>
        <%initVals(vars.intParamVars)%>
        <%initVals(vars.boolParamVars)%>
-       <%(zeroCrossings |> ZERO_CROSSING(__) hasindex i0 => 'zc<%i0%> = -1;') ; separator="\n"%>
        for (int i = 0; i < numHelpVars(); i++)
            helpVars_saved[i] = false;
        // Calculate any equations that provide initial values
        <%makeInitialEqns(initialEquations)%>
 	   // Calculate derived values
 	   calc_vars();
-       // Set initial state variable values for the integrator
+       // Set initial state and helper variable values for the integrator
+       for (int i = 0; i < numHelpVars(); i++)
+          helpVars[i] = helpVars_saved[i];
        <%(vars.stateVars |> SIMVAR(__) => 'q[<%index%>]=<%cref(name)%>;') ;separator="\n"%>
    }
    >>
@@ -505,9 +519,11 @@ template makeDerFuncCalculator(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
   <<
-  void <%lastIdentOfPath(modelInfo.name)%>::calc_vars(const double* q)
+  void <%lastIdentOfPath(modelInfo.name)%>::calc_vars(const double* q, bool doReinit)
   {
+	  bool iterate = false;
       active_model = this;
+	  if (doReinit) clear_event_flags();
 	  // Copy state variable arrays to values used in the odes
 	  if (q != NULL)
 	  {
@@ -515,20 +531,25 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
           <%(vars.stateVars |> SIMVAR(__) => '<%cref(name)%>=q[<%index%>];') ;separator="\n"%>
       }
 	  // Calculate the odes
-      <%allEqns(allEquations)%>
+      <%allEqns(allEquations,whenClauses)%>
+	  if (iterate) calc_vars(q,true);
   }
   >>
 end makeDerFuncCalculator;
 
-template allEqns(list<SimEqSystem> allEquationsPlusWhen)
+template allEqns(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whenClauses)
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let eqs = (allEquationsPlusWhen |> eq =>
       equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/)
     ;separator="\n")
+  let reinit = (whenClauses |> when hasindex i0 =>
+      genreinits(when, &varDecls,i0)
+    ;separator="\n")
   <<
   <%varDecls%>
   <%eqs%>
+  <%reinit%>
   >>
 end allEqns;
 
@@ -1345,7 +1366,6 @@ case ASSERT(source=SOURCE(info=info)) then
   assertCommon(condition, message, contextSimulationDiscrete, &varDecls, info)
 end functionWhenReinitStatement;
 
-
 template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int)
 " Generates reinit statemeant"
 ::=
@@ -1357,19 +1377,19 @@ case SIM_WHEN_CLAUSE(__) then
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>] /* edge */'
+      '(localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>]) /* edge */'
     ;separator=" || ")
   let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/)                     
 
 if reinits then  
 <<
-
-  //For whenclause index: <%int%>
-  <%preExp%>
-  <%helpInits%>
-  if (<%helpIf%>) { 
-    <%ifthen%>
-  }
+//Reinit inside whenclause index: <%int%>
+<%preExp%>
+<%helpInits%>
+if (<%helpIf%>) { 
+<%ifthen%>
+iterate = true;
+}
 >>
 end genreinits;
 
@@ -1386,7 +1406,6 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
      <<
       <%preExp%>
                 <%cref(stateVar)%> = <%val%>;
-                *needToIterate=1;
                 >>
     case TERMINATE(__) then 
       let &preExp = buffer "" /*BUFD*/
@@ -2035,7 +2054,7 @@ case eqn as SES_ARRAY_CALL_ASSIGN(__) then
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>] /* edge */'
+      '(localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>]) /* edge */'
     ;separator=" || ")C*/, &varDecls /*BUFD*/)
   match expTypeFromExpShort(eqn.exp)
   case "boolean" then
@@ -2194,7 +2213,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>] /* edge */'
+      '(localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>]) /* edge */'
     ;separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
@@ -2205,7 +2224,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
     <%preExp2%>
     <%cref(left)%> = <%exp%>;
   } else {
-    <%cref(left)%> = $P$PRE<%cref(left)%>;
+    <%cref(left)%> = $P$old<%cref(left)%>;
   }
   >>
   case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
@@ -2214,7 +2233,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>] /* edge */'
+      '(localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>]) /* edge */'
     ;separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
@@ -2228,7 +2247,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   }
   <%elseWhen%>
   else {
-    <%cref(left)%> = $P$PRE<%cref(left)%>;
+    <%cref(left)%> = $P$old<%cref(left)%>;
   }
   >> 
 end equationWhen;
@@ -2241,7 +2260,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>] /* edge */'
+      '(localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>]) /* edge */'
     ;separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
@@ -2255,7 +2274,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseW
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>] /* edge */'
+      '(localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>]) /* edge */'
     ;separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
@@ -4428,7 +4447,7 @@ case SIMULATION(genDiscrete=true) then
     let else = algStatementWhenElse(elseWhen, &varDecls /*BUFD*/)
     <<
     <%preIf%>
-    if (<%helpVarIndices |> idx => 'localData->helpVars[<%idx%>] && !localData->helpVars_saved[<%idx%>] /* edge */' ;separator=" || "%>) {
+    if (<%helpVarIndices |> idx => '(localData->helpVars[<%idx%>] && !localData->helpVars_saved[<%idx%>]) /* edge */' ;separator=" || "%>) {
       <%statements%>
     }
     <%else%>
@@ -4486,7 +4505,7 @@ case SOME(when as STMT_WHEN(__)) then
     ;separator="\n")
   let else = algStatementWhenElse(when.elseWhen, &varDecls /*BUFD*/)
   let elseCondStr = (when.helpVarIndices |> hidx =>
-      'localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>] /* edge */'
+      '(localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>]) /* edge */'
     ;separator=" || ")
   <<
   else if (<%elseCondStr%>) {
@@ -4531,7 +4550,7 @@ template algStmtReinit(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     if (sim_verbose >= LOG_EVENTS) {
       printf("reinit <%expPart1%> = %f\n", <%expPart1%>);
     }
-    $P$PRE<%expPart1%> = <%expPart1%>;
+    $P$old<%expPart1%> = <%expPart1%>;
     <%preExp%>
     <%expPart1%> = <%expPart2%>;
     >>
@@ -5164,11 +5183,11 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   case CALL(path=IDENT(name="pre"), expLst={arg}) then
     daeExpCallPre(arg, context, preExp, varDecls)
   case CALL(path=IDENT(name="edge"), expLst={arg as CREF(__)}) then
-    '(<%cref(arg.componentRef)%> && !$P$PRE<%cref(arg.componentRef)%>)'
+    '(atEvent && <%cref(arg.componentRef)%> && !$P$old<%cref(arg.componentRef)%>)'
   case CALL(path=IDENT(name="edge"), expLst={exp}) then
     error(sourceInfo(), 'Code generation does not support edge(<%printExpStr(exp)%>)')
   case CALL(path=IDENT(name="change"), expLst={arg as CREF(__)}) then
-    '(<%cref(arg.componentRef)%> != $P$PRE<%cref(arg.componentRef)%>)'
+    '(atEvent && <%cref(arg.componentRef)%> != $P$old<%cref(arg.componentRef)%>)'
   case CALL(path=IDENT(name="change"), expLst={exp}) then
     error(sourceInfo(), 'Code generation does not support change(<%printExpStr(exp)%>)')
   
@@ -5658,11 +5677,11 @@ template daeExpCallPre(Exp exp, Context context, Text &preExp /*BUFP*/,
 ::=
   match exp
   case cr as CREF(__) then
-    '$P$PRE<%cref(cr.componentRef)%>'
+    '$P$old<%cref(cr.componentRef)%>'
   case ASUB(exp = cr as CREF(__), sub = {sub_exp}) then
     let offset = daeExp(sub_exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let cref = cref(cr.componentRef)
-    '*(&$P$PRE<%cref%> + <%offset%>)'
+    '*(&$P$old<%cref%> + <%offset%>)'
   else
     error(sourceInfo(), 'Code generation does not support pre(<%printExpStr(exp)%>)')
 end daeExpCallPre; 
