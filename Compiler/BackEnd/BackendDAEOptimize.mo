@@ -1570,30 +1570,46 @@ protected function traverseIncidenceMatrix1
     output tuple<list<Integer>,BackendDAE.IncidenceMatrix,Type_a> outTpl;
   end FuncType;
 algorithm
-  (outM,outTypeA) := matchcontinue(inM,func,pos,len,inTypeA)
+  (outM,outTypeA) := traverseIncidenceMatrix2(inM,func,pos,len,intGt(pos,len),inTypeA);
+end traverseIncidenceMatrix1;
+
+protected function traverseIncidenceMatrix2 
+" function: traverseIncidenceMatrix1
+  autor: Frenkel TUD 2010-12"
+  replaceable type Type_a subtypeof Any;
+  input BackendDAE.IncidenceMatrix inM;
+  input FuncType func;
+  input Integer pos "iterated 1..len";
+  input Integer len "length of array";
+  input Boolean stop;
+  input Type_a inTypeA;
+  output BackendDAE.IncidenceMatrix outM;
+  output Type_a outTypeA;
+  partial function FuncType
+    input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix,Type_a> inTpl;
+    output tuple<list<Integer>,BackendDAE.IncidenceMatrix,Type_a> outTpl;
+  end FuncType;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  (outM,outTypeA) := match (inM,func,pos,len,stop,inTypeA)
     local 
       BackendDAE.IncidenceMatrix m,m1,m2;
       Type_a extArg,extArg1,extArg2;
       list<Integer> eqns,eqns1;
     
-    case(inM,func,pos,len,inTypeA) equation 
-      true = intGt(pos,len);
+    case(inM,func,pos,len,true,inTypeA)
     then (inM,inTypeA);
     
-    case(inM,func,pos,len,inTypeA) equation
-      ((eqns,m,extArg)) = func((inM[pos],pos,inM,inTypeA));
-      eqns1 = Util.listRemoveOnTrue(pos,intLt,eqns);
-      (m1,extArg1) = traverseIncidenceMatrixList(eqns1,m,func,arrayLength(m),pos,extArg);
-      (m2,extArg2) = traverseIncidenceMatrix1(m1,func,pos+1,len,extArg1);
-    then (m2,extArg2);
-      
-    case (_,_,_,_,_)
+    case(inM,func,pos,len,false,inTypeA)
       equation
-        Debug.fprintln("failtrace", "- BackendDAEOptimize.traverseIncidenceMatrix1 failed");
-      then
-        fail();       
-  end matchcontinue;
-end traverseIncidenceMatrix1;
+        ((eqns,m,extArg)) = func((inM[pos],pos,inM,inTypeA));
+        eqns1 = Util.listRemoveOnTrue(pos,intLt,eqns);
+        (m1,extArg1) = traverseIncidenceMatrixList(eqns1,m,func,arrayLength(m),pos,extArg);
+        (m2,extArg2) = traverseIncidenceMatrix1(m1,func,pos+1,len,extArg1);
+      then (m2,extArg2);
+      
+  end match;
+end traverseIncidenceMatrix2;
 
 protected function traverseIncidenceMatrixList 
 " function: traverseIncidenceMatrixList
