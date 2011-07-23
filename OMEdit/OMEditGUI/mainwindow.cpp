@@ -62,6 +62,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     setWindowTitle(Helper::applicationName + " - "  + Helper::applicationIntroText);
     setWindowIcon(QIcon(":/Resources/icons/omeditor.png"));
     setMinimumSize(400, 300);
+    resize(800, 600);
     setContentsMargins(1, 1, 1, 1);
 
     //Create a centralwidget for the main window

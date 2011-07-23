@@ -323,22 +323,22 @@ void GraphicsView::addComponentoView(QString name, QString className, QPointF po
     if (diagram)
     {
         QString result = pMainWindow->mpOMCProxy->getDiagramAnnotation(className);
-        newComponent = new Component(result, name, className, point, StringHandler::ICON, isConnector,
-                                     pMainWindow->mpOMCProxy, this);
-
+        newComponent = new Component(result, name, className, point, StringHandler::ICON, isConnector, pMainWindow->mpOMCProxy, this);
     }
     else
     {
         if (!oldComponent)
         {
-
+            LibraryComponent *libComponent;
             QString result = pMainWindow->mpOMCProxy->getIconAnnotation(className);
-            newComponent = new Component(result, name, className, point, StringHandler::ICON, isConnector,
-                                         pMainWindow->mpOMCProxy, this);
+            libComponent = new LibraryComponent(result, className, pMainWindow->mpOMCProxy);
+            // add the component to library widget components lists
+            pMainWindow->mpLibrary->addComponentObject(libComponent);
+            // create a new component now.
+            newComponent = new Component(result, name, className, point, StringHandler::ICON, isConnector, pMainWindow->mpOMCProxy, this);
         }
         else
         {
-
             newComponent = new Component(oldComponent, name, point, StringHandler::ICON, isConnector, this);
         }
     }
@@ -356,18 +356,18 @@ void GraphicsView::addComponentObject(Component *component)
                                           mpParentProjectTab->mModelNameStructure);
     // add the annotations of icon
     component->updateAnnotationString(false);
+    // only update the modelicatext of model if its a diagram view
+    // for icon view the modeltext is updated in updateannotationstring->addclassannotation
+    if (mIconType == StringHandler::DIAGRAM)
+        mpParentProjectTab->mpModelicaEditor->setText(pMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
+    // add the component to the local list
     mComponentsList.append(component);
-
-
-  emit currentChange(1);
-   //foreach(Component *abc , mComponentsList)
-
+    // emit currentchange signal so that componentbrowsertree is updated
+    emit currentChange(1);
 }
 
 void GraphicsView::deleteComponentObject(Component *component)
 {
-
-
     // First Remove the Connector associated to this icon
     int i = 0;
     while(i != mConnectorsVector.size())
@@ -383,10 +383,12 @@ void GraphicsView::deleteComponentObject(Component *component)
             ++i;
         }
     }
-    // remove the icon now
+    // remove the icon now from local list
     mComponentsList.removeOne(component);
+    // delete the component from OMC
     mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->deleteComponent(component->getName(), mpParentProjectTab->mModelNameStructure);
-
+    mpParentProjectTab->mpModelicaEditor->setText(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
+    // emit currentchange signal so that componentbrowsertree is updated
     emit currentChange(1);
 }
 
@@ -604,11 +606,13 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
                 foreach (Connector *connector, mConnectorsVector)
                 {
                     if ((connector->getStartComponent()->mpParentComponent == component) or
-                        (connector->getEndComponent()->mpParentComponent == component))
+                        (connector->getEndComponent()->mpParentComponent == component) or (connector->getStartComponent() == component) or
+                        (connector->getEndComponent() == component))
                     {
                         connector->updateConnectionAnnotationString();
                     }
                 }
+                mpParentProjectTab->mpModelicaEditor->setText(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
             }
             component->isMousePressed = false;
         }
@@ -990,282 +994,146 @@ void GraphicsView::updateSceneRect(const QRectF &rect)
 }
 
 //! Begins creation of connector or complete creation of connector depending on the mIsCreatingConnector flag.
-//! @param pPort is a pointer to the clicked port, either start or end depending on the mIsCreatingConnector flag.
-//! @param doNotRegisterUndo is true if the added connector shall not be registered in the undo stack, for example if this function is called by a redo function.
+//! @param pComponent is a pointer to the clicked Component, either start or end depending on the mIsCreatingConnector flag.
 void GraphicsView::addConnector(Component *pComponent)
 {
-
     //When clicking start port
     if (!mIsCreatingConnector)
     {
-
         QPointF startPos = pComponent->mapToScene(pComponent->boundingRect().center());
-
         this->mpConnector = new Connector(pComponent, this);
-
         this->scene()->addItem(mpConnector);
         this->mIsCreatingConnector = true;
         //if component is a connector
-        if(pComponent->getIsConnector() ==true)
-        {
-            pComponent->addConnector(this->mpConnector);
-        }
+        if (pComponent->mpParentComponent)
+            pComponent->getParentComponent()->addConnector(this->mpConnector);
         else
-        {
-        pComponent->getParentComponent()->addConnector(this->mpConnector);
-        }
+            pComponent->addConnector(this->mpConnector);
 
         this->mpConnector->setStartComponent(pComponent);
-
         this->mpConnector->addPoint(startPos);
-
         this->mpConnector->addPoint(startPos);
-
         this->mpConnector->drawConnector();
-
-
     }
     // When clicking end port
     else
     {
         Component *pStartComponent = this->mpConnector->getStartComponent();
-        // add the code to check if we can connect to component or not.
-        MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
-
-
-
-        //if component is a connector
-        if(pComponent->getIsConnector() ==true && pStartComponent->getIsConnector()==true)
+        QString startIconName, startIconCompName, endIconName, endIconCompName;
+        if (pStartComponent->mpParentComponent)
         {
-            QString startIconCompName = pStartComponent->getName();
+            startIconName = QString(pStartComponent->mpParentComponent->getName()).append(".");
+            startIconCompName = pStartComponent->mpComponentProperties->getName();
+        }
+        else
+        {
+            startIconCompName = pStartComponent->getName();
+        }
+        if (pComponent->mpParentComponent)
+        {
+            endIconName = QString(pComponent->mpParentComponent->getName()).append(".");
+            endIconCompName = pComponent->mpComponentProperties->getName();
+        }
+        else
+        {
+            endIconCompName = pComponent->getName();
+        }
 
-            QString endIconCompName = pComponent->getName();
+        createConnection(pStartComponent, QString(startIconName).append(startIconCompName),
+                         pComponent, QString(endIconName).append(endIconCompName));
+        //if both components are connectors
+//        if (pComponent->getIsConnector() && pStartComponent->getIsConnector())
+//        {
+//            startIconCompName = pStartComponent->getName();
+//            endIconCompName = pComponent->getName();
+//            // create connection
+//            createConnection(pStartComponent, startIconCompName, pComponent, endIconCompName);
+//        }
+//        //if only end component is a connector
+//        else if (pComponent->getIsConnector() && !pStartComponent->getIsConnector())
+//        {
+//            startIconName = pStartComponent->getParentComponent()->getName();
+//            startIconCompName = pStartComponent->mpComponentProperties->getName();
+//            endIconCompName = pComponent->getName();
+//            // create connection
+//            createConnection(pStartComponent, QString(startIconName).append(".").append(startIconCompName), pComponent, endIconCompName);
+//        }
+//        //if only start component is a connector
+//        else if (!pComponent->getIsConnector() && pStartComponent->getIsConnector())
+//        {
+//            startIconCompName = pStartComponent->getName();
+//            endIconName = pComponent->getParentComponent()->getName();
+//            endIconCompName = pComponent->mpComponentProperties->getName();
+//            // create connection
+//            createConnection(pStartComponent, startIconCompName, pComponent, QString(endIconName).append(".").append(endIconCompName));
+//        }
+//        // if both components are not connectors
+//        else
+//        {
+//            startIconName = pStartComponent->getParentComponent()->getName();
+//            startIconCompName = pStartComponent->mpComponentProperties->getName();
+//            endIconName = pComponent->getParentComponent()->getName();
+//            endIconCompName = pComponent->mpComponentProperties->getName();
+//            // create connection
+//            createConnection(pStartComponent, QString(startIconName).append(".").append(startIconCompName), pComponent,
+//                             QString(endIconName).append(".").append(endIconCompName));
+//        }
+    }
+}
 
-            // If both components are same
-            if (pStartComponent == pComponent)
+void GraphicsView::createConnection(Component *pStartComponent, QString startIconCompName, Component *pComponent, QString endIconCompName)
+{
+    MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+    // If both components are same
+    if (pStartComponent == pComponent)
+    {
+        removeConnector();
+        pMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::SAME_PORT_CONNECT));
+    }
+    else
+    {
+        if (pMainWindow->mpOMCProxy->addConnection(startIconCompName, endIconCompName, mpParentProjectTab->mModelNameStructure))
+        {
+            // Check if both ports connected are compatible or not.
+            if (pMainWindow->mpOMCProxy->instantiateModelSucceeds(mpParentProjectTab->mModelNameStructure))
             {
-                removeConnector();
-                pMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::SAME_PORT_CONNECT));
+                this->mIsCreatingConnector = false;
+                QPointF newPos = pComponent->mapToScene(pComponent->boundingRect().center());
+                this->mpConnector->updateEndPoint(newPos);
+                if (pComponent->mpParentComponent)
+                    pComponent->getParentComponent()->addConnector(this->mpConnector);
+                else
+                    pComponent->addConnector(this->mpConnector);
+                this->mpConnector->setEndComponent(pComponent);
+                // update the last point to the center of component
+                this->mpConnector->updateEndPoint(pComponent->boundingRect().center());
+                this->mpConnector->drawConnector(false);
+                this->mConnectorsVector.append(mpConnector);
+                // add the connection annotation to OMC
+                mpConnector->updateConnectionAnnotationString();
+                mpParentProjectTab->mpModelicaEditor->setText(pMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
+                pMainWindow->mpMessageWidget->printGUIInfoMessage("Connected: (" + startIconCompName + ", " + endIconCompName + ")");
             }
             else
             {
-                if (pMainWindow->mpOMCProxy->addConnection(startIconCompName,
-                                                           endIconCompName,
-                                                           mpParentProjectTab->mModelNameStructure))
-                {
-                    // Check if both ports connected are compatible or not.
-                    if (pMainWindow->mpOMCProxy->instantiateModelSucceeds(mpParentProjectTab->mModelNameStructure))
-                    {
-
-
-                        this->mIsCreatingConnector = false;
-                        QPointF newPos = pComponent->mapToScene(pComponent->boundingRect().center());
-                        this->mpConnector->updateEndPoint(newPos);
-
-                        pComponent->addConnector(this->mpConnector);
-
-                        this->mpConnector->setEndComponent(pComponent);
-
-                        //this->mpConnector->addPoint(newPos);
-
-                        //this->mpConnector->addPoint(newPos);
-
-                        this->mConnectorsVector.append(mpConnector);
-
-                        // add the connection annotation to OMC
-                        mpConnector->updateConnectionAnnotationString();
-
-                        pMainWindow->mpMessageWidget->printGUIInfoMessage("Connected: (" + startIconCompName +
-                                                                          ", " + endIconCompName + ")");
-                    }
-                    else
-                    {
-
-                        removeConnector();
-
-                        //! @todo make the error message better
-                        pMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::INCOMPATIBLE_CONNECTORS));
-                        pMainWindow->mpMessageWidget->printGUIErrorMessage(pMainWindow->mpOMCProxy->getErrorString());
-                        // remove the connection from model
-
-                        pMainWindow->mpOMCProxy->deleteConnection(startIconCompName,
-                                                                  endIconCompName,
-                                                                  mpParentProjectTab->mModelNameStructure);
-
-                    }
-                }
-            }
-        }
-        //if only end component is a connector
-        else if(pComponent->getIsConnector() ==true && pStartComponent->getIsConnector()==false)
-        {
-            QString startIconName = pStartComponent->getParentComponent()->getName();
-            QString startIconCompName = pStartComponent->mpComponentProperties->getName();
-            QString endIconCompName = pComponent->getName();
-
-
-            // If both components are same
-            if (pStartComponent == pComponent)
-            {
                 removeConnector();
-                pMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::SAME_PORT_CONNECT));
-            }
-            else
-            {
-
-                if (pMainWindow->mpOMCProxy->addConnection(startIconName + "." + startIconCompName,
-                                                           endIconCompName,
-                                                           mpParentProjectTab->mModelNameStructure))
-                {
-                    // Check if both ports connected are compatible or not.
-                    if (pMainWindow->mpOMCProxy->instantiateModelSucceeds(mpParentProjectTab->mModelNameStructure))
-                    {
-
-
-                        this->mIsCreatingConnector = false;
-                        QPointF newPos = pComponent->mapToScene(pComponent->boundingRect().center());
-                        this->mpConnector->updateEndPoint(newPos);
-
-                        pComponent->addConnector(this->mpConnector);
-
-                        this->mpConnector->setEndComponent(pComponent);
-
-                        this->mConnectorsVector.append(mpConnector);
-
-                        // add the connection annotation to OMC
-                        mpConnector->updateConnectionAnnotationString();
-
-                        pMainWindow->mpMessageWidget->printGUIInfoMessage("Connected: (" + startIconName + "." +  startIconCompName +
-                                                                          ", " + endIconCompName + ")");
-                    }
-                    else
-                    {
-
-                        removeConnector();
-
-                        //! @todo make the error message better
-                        pMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::INCOMPATIBLE_CONNECTORS));
-                        pMainWindow->mpMessageWidget->printGUIErrorMessage(pMainWindow->mpOMCProxy->getErrorString());
-                        // remove the connection from model
-
-                        pMainWindow->mpOMCProxy->deleteConnection(startIconName + "." + startIconCompName,
-                                                                  endIconCompName,
-                                                                  mpParentProjectTab->mModelNameStructure);
-
-                    }
-                }
+                // since this is an on purpose connection delete so dont make model unsaved :)
+                // so to avoid model unsaving we have to blovk signals of Modelica editor
+                mpParentProjectTab->mpModelicaEditor->blockSignals(true);
+                // remove the connection from model
+                pMainWindow->mpOMCProxy->deleteConnection(startIconCompName, endIconCompName, mpParentProjectTab->mModelNameStructure);
+                mpParentProjectTab->mpModelicaEditor->blockSignals(false);
+                //! @todo make the error message better
+                pMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::INCOMPATIBLE_CONNECTORS));
+                pMainWindow->mpMessageWidget->printGUIErrorMessage(pMainWindow->mpOMCProxy->getErrorString());
             }
         }
-        //if only start component is a connector
-        else if(pComponent->getIsConnector() ==false && pStartComponent->getIsConnector()==true)
-      {
-        Component *pStartComponent = this->mpConnector->getStartComponent();
-        // add the code to check if we can connect to component or not.
-        MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
-
-        QString startIconCompName = pStartComponent->getName();
-        QString endIconName = pComponent->getParentComponent()->getName();
-        QString endIconCompName = pComponent->mpComponentProperties->getName();
-
-        // If both components are same
-        if (pStartComponent == pComponent)
-        {
-            removeConnector();
-            pMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::SAME_PORT_CONNECT));
-        }
-        else
-        {
-            if (pMainWindow->mpOMCProxy->addConnection(startIconCompName,
-                                                       endIconName + "." + endIconCompName,
-                                                       mpParentProjectTab->mModelNameStructure))
-            {
-                // Check if both ports connected are compatible or not.
-                if (pMainWindow->mpOMCProxy->instantiateModelSucceeds(mpParentProjectTab->mModelNameStructure))
-                {
-                    this->mIsCreatingConnector = false;
-                    QPointF newPos = pComponent->mapToScene(pComponent->boundingRect().center());
-                    this->mpConnector->updateEndPoint(newPos);
-                    pComponent->getParentComponent()->addConnector(this->mpConnector);
-                    this->mpConnector->setEndComponent(pComponent);
-                    this->mConnectorsVector.append(mpConnector);
-                    // add the connection annotation to OMC
-                    mpConnector->updateConnectionAnnotationString();
-                    pMainWindow->mpMessageWidget->printGUIInfoMessage("Connected: (" + startIconCompName +
-                                                                      ", " + endIconName + "." + endIconCompName + ")");
-                }
-                else
-                {
-                    removeConnector();
-                    //! @todo make the error message better
-                    pMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::INCOMPATIBLE_CONNECTORS));
-                    pMainWindow->mpMessageWidget->printGUIErrorMessage(pMainWindow->mpOMCProxy->getErrorString());
-                    // remove the connection from model
-                    pMainWindow->mpOMCProxy->deleteConnection(startIconCompName,
-                                                              endIconName + "." + endIconCompName,
-                                                              mpParentProjectTab->mModelNameStructure);
-                }
-            }
-        }
-      }
-
-
-        else
-      {
-        Component *pStartComponent = this->mpConnector->getStartComponent();
-        // add the code to check if we can connect to component or not.
-        MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
-        QString startIconName = pStartComponent->getParentComponent()->getName();
-        QString startIconCompName = pStartComponent->mpComponentProperties->getName();
-        QString endIconName = pComponent->getParentComponent()->getName();
-        QString endIconCompName = pComponent->mpComponentProperties->getName();
-
-        // If both components are same
-        if (pStartComponent == pComponent)
-        {
-            removeConnector();
-            pMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::SAME_PORT_CONNECT));
-        }
-        else
-        {
-            if (pMainWindow->mpOMCProxy->addConnection(startIconName + "." + startIconCompName,
-                                                       endIconName + "." + endIconCompName,
-                                                       mpParentProjectTab->mModelNameStructure))
-            {
-                // Check if both ports connected are compatible or not.
-                if (pMainWindow->mpOMCProxy->instantiateModelSucceeds(mpParentProjectTab->mModelNameStructure))
-                {
-                    this->mIsCreatingConnector = false;
-                    QPointF newPos = pComponent->mapToScene(pComponent->boundingRect().center());
-                    this->mpConnector->updateEndPoint(newPos);
-                    pComponent->getParentComponent()->addConnector(this->mpConnector);
-                    this->mpConnector->setEndComponent(pComponent);
-                    this->mConnectorsVector.append(mpConnector);
-                    // add the connection annotation to OMC
-                    mpConnector->updateConnectionAnnotationString();
-                    pMainWindow->mpMessageWidget->printGUIInfoMessage("Connected: (" + startIconName + "." + startIconCompName +
-                                                                      ", " + endIconName + "." + endIconCompName + ")");
-                }
-                else
-                {
-                    removeConnector();
-                    //! @todo make the error message better
-                    pMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::INCOMPATIBLE_CONNECTORS));
-                    pMainWindow->mpMessageWidget->printGUIErrorMessage(pMainWindow->mpOMCProxy->getErrorString());
-                    // remove the connection from model
-                    pMainWindow->mpOMCProxy->deleteConnection(startIconName + "." + startIconCompName,
-                                                              endIconName + "." + endIconCompName,
-                                                              mpParentProjectTab->mModelNameStructure);
-                }
-            }
-        }
-      }
     }
 }
 
 //! Removes the current connecting connector from the model.
 void GraphicsView::removeConnector()
 {
-
     if (mIsCreatingConnector)
     {
         scene()->removeItem(mpConnector);
@@ -1293,7 +1161,6 @@ void GraphicsView::removeConnector()
 
 //! Removes the connector from the model.
 //! @param pConnector is a pointer to the connector to remove.
-//! @param doNotRegisterUndo is true if the removal of the connector shall not be registered in the undo stack, for example if this function is called by a redo-function.
 void GraphicsView::removeConnector(Connector* pConnector)
 {
     bool doDelete = false;
@@ -1310,102 +1177,45 @@ void GraphicsView::removeConnector(Connector* pConnector)
         if(mConnectorsVector.empty())
             break;
     }
-    if(doDelete)
+    if (doDelete)
     {
-
         // If GUI delete is successful then remove the connection from omc as well.
-
-        if(pConnector->getStartComponent()->getIsConnector()==true && pConnector->getEndComponent()->getIsConnector()==true)
+        QString startIconName, startIconCompName, endIconName, endIconCompName;
+        if (pConnector->getStartComponent()->mpParentComponent)
         {
-            MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
-
-            QString startIconCompName = pConnector->getStartComponent()->getName();
-
-            QString endIconCompName = pConnector->getEndComponent()->getName();
-
-            if (pMainWindow->mpOMCProxy->deleteConnection(startIconCompName,
-                                                           endIconCompName,
-                                                           mpParentProjectTab->mModelNameStructure))
-            {
-    //            pMainWindow->mpMessageWidget->printGUIInfoMessage("Disconnected: (" + startComponentName + "." + startIconCompName +
-    //                                                              ", " + endComponentName + "." + endIconCompName + ")");
-            }
-            else
-            {
-                pMainWindow->mpMessageWidget->printGUIErrorMessage(pMainWindow->mpOMCProxy->getErrorString());
-            }
-        }
-
-        else if(pConnector->getStartComponent()->getIsConnector()==true && pConnector->getEndComponent()->getIsConnector()==false)
-     {
-
-
-     MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
-
-     QString startIconCompName = pConnector->getStartComponent()->getName();
-     QString endComponentName = pConnector->getEndComponent()->getParentComponent()->getName();
-     QString endIconCompName = pConnector->getEndComponent()->mpComponentProperties->getName();
-
-     if (pMainWindow->mpOMCProxy->deleteConnection(startIconCompName,
-                                                    endComponentName + "." + endIconCompName,
-                                                    mpParentProjectTab->mModelNameStructure))
-     {
-//            pMainWindow->mpMessageWidget->printGUIInfoMessage("Disconnected: (" + startComponentName + "." + startIconCompName +
-//                                                              ", " + endComponentName + "." + endIconCompName + ")");
-     }
-     else
-     {
-         pMainWindow->mpMessageWidget->printGUIErrorMessage(pMainWindow->mpOMCProxy->getErrorString());
-     }
-     }
-        else if(pConnector->getStartComponent()->getIsConnector()==false && pConnector->getEndComponent()->getIsConnector()==true)
-     {
-
-
-     MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
-     QString startComponentName = pConnector->getStartComponent()->getParentComponent()->getName();
-     QString startIconCompName = pConnector->getStartComponent()->mpComponentProperties->getName();
-
-     QString endIconCompName = pConnector->getEndComponent()->getName();
-
-     if (pMainWindow->mpOMCProxy->deleteConnection(startComponentName + "." + startIconCompName,
-                                                    endIconCompName,
-                                                    mpParentProjectTab->mModelNameStructure))
-     {
-//            pMainWindow->mpMessageWidget->printGUIInfoMessage("Disconnected: (" + startComponentName + "." + startIconCompName +
-//                                                              ", " + endComponentName + "." + endIconCompName + ")");
-     }
-     else
-     {
-         pMainWindow->mpMessageWidget->printGUIErrorMessage(pMainWindow->mpOMCProxy->getErrorString());
-     }
-     }
-
-           else
-        {
-
-
-        MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
-        QString startComponentName = pConnector->getStartComponent()->getParentComponent()->getName();
-        QString startIconCompName = pConnector->getStartComponent()->mpComponentProperties->getName();
-        QString endComponentName = pConnector->getEndComponent()->getParentComponent()->getName();
-        QString endIconCompName = pConnector->getEndComponent()->mpComponentProperties->getName();
-
-        if (pMainWindow->mpOMCProxy->deleteConnection(startComponentName + "." + startIconCompName,
-                                                       endComponentName + "." + endIconCompName,
-                                                       mpParentProjectTab->mModelNameStructure))
-        {
-//            pMainWindow->mpMessageWidget->printGUIInfoMessage("Disconnected: (" + startComponentName + "." + startIconCompName +
-//                                                              ", " + endComponentName + "." + endIconCompName + ")");
+            startIconName = QString(pConnector->getStartComponent()->mpParentComponent->getName()).append(".");
+            startIconCompName = pConnector->getStartComponent()->mpComponentProperties->getName();
         }
         else
         {
-            pMainWindow->mpMessageWidget->printGUIErrorMessage(pMainWindow->mpOMCProxy->getErrorString());
+            startIconCompName = pConnector->getStartComponent()->getName();
         }
+        if (pConnector->getEndComponent()->mpParentComponent)
+        {
+            endIconName = QString(pConnector->getEndComponent()->mpParentComponent->getName()).append(".");
+            endIconCompName = pConnector->getEndComponent()->mpComponentProperties->getName();
         }
+        else
+        {
+            endIconCompName = pConnector->getEndComponent()->getName();
+        }
+        // delete Connection
+        deleteConnection(QString(startIconName).append(startIconCompName), QString(endIconName).append(endIconCompName));
+        // delete the connector object
         delete pConnector;
+        // remove connector object from local connector vector
         mConnectorsVector.remove(i);
     }
+}
+
+void GraphicsView::deleteConnection(QString startIconCompName, QString endIconCompName)
+{
+    MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+
+    if (pMainWindow->mpOMCProxy->deleteConnection(startIconCompName, endIconCompName, mpParentProjectTab->mModelNameStructure))
+        mpParentProjectTab->mpModelicaEditor->setText(pMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
+    else
+        pMainWindow->mpMessageWidget->printGUIErrorMessage(pMainWindow->mpOMCProxy->getErrorString());
 }
 
 //! Resets zoom factor to 100%.
@@ -1498,122 +1308,156 @@ void GraphicsView::addClassAnnotation()
     annotationString.append(")");
 
     // add the class annotation to model through OMC
-    if (!pMainWindow->mpOMCProxy->addClassAnnotation(mpParentProjectTab->mModelNameStructure, annotationString))
+    if (pMainWindow->mpOMCProxy->addClassAnnotation(mpParentProjectTab->mModelNameStructure, annotationString))
     {
-       pMainWindow->mpMessageWidget->printGUIErrorMessage("Error in class annotation " +
-                                                          pMainWindow->mpOMCProxy->getResult());
+        // update modelicatext of model
+        mpParentProjectTab->mpModelicaEditor->setText(pMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
     }
-
-    ModelicaTree *pModelicaTree = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpLibrary->mpModelicaTree;
-    ModelicaTreeNode *pModelicaTreeNode = pModelicaTree->getNode(mpParentProjectTab->mModelNameStructure);
-
-    LibraryLoader *libraryLoader = new LibraryLoader(pModelicaTreeNode, mpParentProjectTab->mModelNameStructure,
-                                                     pModelicaTree);
-    libraryLoader->start(QThread::HighestPriority);
-    while (libraryLoader->isRunning())
-        qApp->processEvents();
-
-    if (mIconType == StringHandler::ICON && pModelicaTreeNode->mType!=StringHandler::CONNECTOR)
+    else
     {
-    QList<ModelicaTreeNode*> pModelicaTreeNodes = pModelicaTree->getModelicaTreeNodes();
-    QList<Component*> componentslist;
-    QString result;
-    result= pMainWindow->mpOMCProxy->getIconAnnotation(mpParentProjectTab->mModelNameStructure);
-
-    foreach (ModelicaTreeNode *node, pModelicaTreeNodes)
+       pMainWindow->mpMessageWidget->printGUIErrorMessage("Error in class annotation " + pMainWindow->mpOMCProxy->getResult());
+    }
+    // update model icon if something is changed in icon view
+    if (mIconType == StringHandler::ICON)
     {
-       ProjectTab *projectTab= mpParentProjectTab->mpParentProjectTabWidget->getTabByName(node->mNameStructure);
-       if(projectTab)
-       {
-       componentslist=projectTab->mpDiagramGraphicsView->mComponentsList;
+        ModelicaTree *pModelicaTree = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpLibrary->mpModelicaTree;
+        ModelicaTreeNode *pModelicaTreeNode = pModelicaTree->getNode(mpParentProjectTab->mModelNameStructure);
 
+        LibraryLoader *libraryLoader = new LibraryLoader(pModelicaTreeNode, mpParentProjectTab->mModelNameStructure,
+                                                         pModelicaTree);
+        libraryLoader->start(QThread::HighestPriority);
+        while (libraryLoader->isRunning())
+            qApp->processEvents();
 
-           foreach (Component *component, componentslist)
+        /* since the icon of this model has changed in some way so it might be possible that this model is being used in some other models,
+           so we look through the modelica files tree and check the components of all models against our current model.
+           If a match is found we get the icon annotation of the model and update it.
+           */
+        QList<ModelicaTreeNode*> pModelicaTreeNodes = pModelicaTree->getModelicaTreeNodes();
+        QList<Component*> componentslist;
+        QString result;
+        result= pMainWindow->mpOMCProxy->getIconAnnotation(mpParentProjectTab->mModelNameStructure);
+
+        foreach (ModelicaTreeNode *node, pModelicaTreeNodes)
+        {
+           ProjectTab *projectTab = mpParentProjectTab->mpParentProjectTabWidget->getTabByName(node->mNameStructure);
+           if (projectTab)
            {
-               if(component->getClassName()==mpParentProjectTab->mModelNameStructure)
+               componentslist = projectTab->mpDiagramGraphicsView->mComponentsList;
+               foreach (Component *component, componentslist)
                {
-
-                   component->parseAnnotationString(component,result);
-                     projectTab->mpDiagramGraphicsView->scene()->update();
-
-
-
+                   if (component->getClassName().compare(mpParentProjectTab->mModelNameStructure) == 0)
+                   {
+                       result = pMainWindow->mpOMCProxy->getIconAnnotation(mpParentProjectTab->mModelNameStructure);
+                       component->parseAnnotationString(component, result);
+                       projectTab->mpDiagramGraphicsView->scene()->update();
+                   }
                }
            }
-
-
-       }
+        }
     }
 
+//    if (mIconType == StringHandler::ICON && pModelicaTreeNode->mType!=StringHandler::CONNECTOR)
+//    {
+//    QList<ModelicaTreeNode*> pModelicaTreeNodes = pModelicaTree->getModelicaTreeNodes();
+//    QList<Component*> componentslist;
+//    QString result;
+//    result= pMainWindow->mpOMCProxy->getIconAnnotation(mpParentProjectTab->mModelNameStructure);
 
-    }
-
-    else if (mIconType == StringHandler::ICON && pModelicaTreeNode->mType==StringHandler::CONNECTOR)
-    {
-    QList<ModelicaTreeNode*> pModelicaTreeNodes = pModelicaTree->getModelicaTreeNodes();
-    QList<Component*> componentslist;
-    QString result;
-    result= pMainWindow->mpOMCProxy->getIconAnnotation(mpParentProjectTab->mModelNameStructure);
-
-    foreach (ModelicaTreeNode *node, pModelicaTreeNodes)
-    {
-       ProjectTab *projectTab= mpParentProjectTab->mpParentProjectTabWidget->getTabByName(node->mNameStructure);
-       if(projectTab)
-       {
-       componentslist=projectTab->mpIconGraphicsView->mComponentsList;
+//    foreach (ModelicaTreeNode *node, pModelicaTreeNodes)
+//    {
+//       ProjectTab *projectTab= mpParentProjectTab->mpParentProjectTabWidget->getTabByName(node->mNameStructure);
+//       if(projectTab)
+//       {
+//       componentslist=projectTab->mpDiagramGraphicsView->mComponentsList;
 
 
-           foreach (Component *component, componentslist)
-           {
-               if(component->getClassName()==mpParentProjectTab->mModelNameStructure)
-               {
+//           foreach (Component *component, componentslist)
+//           {
+//               if(component->getClassName()==mpParentProjectTab->mModelNameStructure)
+//               {
 
-                   component->parseAnnotationString(component,result);
-                     projectTab->mpIconGraphicsView->scene()->update();
+//                   component->parseAnnotationString(component,result);
+//                     projectTab->mpDiagramGraphicsView->scene()->update();
 
 
 
-               }
-           }
+//               }
+//           }
 
 
-       }
-    }
+//       }
+//    }
 
 
-    }
+//    }
 
-   else if (mIconType == StringHandler::DIAGRAM && pModelicaTreeNode->mType==StringHandler::CONNECTOR )
-    {
-    QList<ModelicaTreeNode*> pModelicaTreeNodes = pModelicaTree->getModelicaTreeNodes();
-    QList<Component*> componentslist;
+//    else if (mIconType == StringHandler::ICON && pModelicaTreeNode->mType==StringHandler::CONNECTOR)
+//    {
+//    QList<ModelicaTreeNode*> pModelicaTreeNodes = pModelicaTree->getModelicaTreeNodes();
+//    QList<Component*> componentslist;
+//    QString result;
+//    result= pMainWindow->mpOMCProxy->getIconAnnotation(mpParentProjectTab->mModelNameStructure);
 
-
-   QString result= pMainWindow->mpOMCProxy->getDiagramAnnotation(mpParentProjectTab->mModelNameStructure);
-
-   foreach (ModelicaTreeNode *node, pModelicaTreeNodes)
-    {
-       ProjectTab *projectTab= mpParentProjectTab->mpParentProjectTabWidget->getTabByName(node->mNameStructure);
-       if(projectTab)
-       {
-           componentslist=projectTab->mpDiagramGraphicsView->mComponentsList;
-            foreach (Component *component, componentslist)
-           {
-               if(component->getClassName()==mpParentProjectTab->mModelNameStructure)
-               {
-
-                   component->parseAnnotationString(component,result);
-
-                     projectTab->mpDiagramGraphicsView->scene()->update();
-               }
-           }
+//    foreach (ModelicaTreeNode *node, pModelicaTreeNodes)
+//    {
+//       ProjectTab *projectTab= mpParentProjectTab->mpParentProjectTabWidget->getTabByName(node->mNameStructure);
+//       if(projectTab)
+//       {
+//       componentslist=projectTab->mpIconGraphicsView->mComponentsList;
 
 
-       }
-    }
+//           foreach (Component *component, componentslist)
+//           {
+//               if(component->getClassName()==mpParentProjectTab->mModelNameStructure)
+//               {
+
+//                   component->parseAnnotationString(component,result);
+//                     projectTab->mpIconGraphicsView->scene()->update();
 
 
-    }
+
+//               }
+//           }
+
+
+//       }
+//    }
+
+
+//    }
+
+//   else if (mIconType == StringHandler::DIAGRAM && pModelicaTreeNode->mType==StringHandler::CONNECTOR )
+//    {
+//    QList<ModelicaTreeNode*> pModelicaTreeNodes = pModelicaTree->getModelicaTreeNodes();
+//    QList<Component*> componentslist;
+
+
+//   QString result= pMainWindow->mpOMCProxy->getDiagramAnnotation(mpParentProjectTab->mModelNameStructure);
+
+//   foreach (ModelicaTreeNode *node, pModelicaTreeNodes)
+//    {
+//       ProjectTab *projectTab= mpParentProjectTab->mpParentProjectTabWidget->getTabByName(node->mNameStructure);
+//       if(projectTab)
+//       {
+//           componentslist=projectTab->mpDiagramGraphicsView->mComponentsList;
+//            foreach (Component *component, componentslist)
+//           {
+//               if(component->getClassName()==mpParentProjectTab->mModelNameStructure)
+//               {
+
+//                   component->parseAnnotationString(component,result);
+
+//                     projectTab->mpDiagramGraphicsView->scene()->update();
+//               }
+//           }
+
+
+//       }
+//    }
+
+
+//    }
 
 }
 
@@ -1626,10 +1470,6 @@ GraphicsScene::GraphicsScene(int iconType, ProjectTab *parent)
     : QGraphicsScene(parent), mIconType(iconType)
 {
     mpParentProjectTab = parent;
-
-    // only attach the haschanged slot if we are viewing the icon view.
-    // if (mIconType == StringHandler::ICON)
-    connect(this, SIGNAL(changed( const QList<QRectF> & )),mpParentProjectTab, SLOT(hasChanged()));
 }
 
 //GraphicsViewScroll::GraphicsViewScroll(GraphicsView *graphicsView, QWidget *parent)
@@ -1824,47 +1664,6 @@ void ProjectTab::updateModel(QString name)
     }
 }
 
-//! Should be called when a model has changed in some sense,
-//! e.g. a component added or a connection has changed.
-void ProjectTab::hasChanged()
-{
-    // if the model is readonly then simply return.........e.g Ground, Inertia, EMF etc.
-    // if model is a child then simply return.....
-    if (isReadOnly() or isChild())
-        return;
-
-    if (mIsSaved)
-    {
-        QString tabName = mpParentProjectTabWidget->tabText(mpParentProjectTabWidget->currentIndex());
-        tabName.append("*");
-        mpParentProjectTabWidget->setTabText(mpParentProjectTabWidget->currentIndex(), tabName);
-        mIsSaved = false;
-    }
-
-//    qreal left = fabs(mpDiagramGraphicsView->sceneRect().left()) + 10;
-//    if (mpDiagramGraphicsView->sceneRect().left() < 0)
-//        left = -left;
-//    qreal top = fabs(mpDiagramGraphicsView->sceneRect().top()) + 20;
-//    if (mpDiagramGraphicsView->sceneRect().top() < 0)
-//        top = -top;
-//    qreal width = mpDiagramGraphicsView->sceneRect().width() + 30;
-//    qreal height = mpDiagramGraphicsView->sceneRect().height() + 20;
-
-//    QRectF mSourceRectangle(left, top, width, height);
-//    QRectF mTargetRectangle = mpDiagramGraphicsView->sceneRect();
-//    QPixmap pixmap(Helper::iconSize);
-//    pixmap.fill(QColor(Qt::transparent));
-//    QPainter painter(&pixmap);
-//    painter.setWindow(mTargetRectangle.toRect());
-//    painter.scale(1.0, -1.0);
-//    mpDiagramGraphicsView->scene()->render(&painter, mTargetRectangle, mSourceRectangle);
-//    painter.end();
-
-//    ModelicaTree *pModelicaTree = mpParentProjectTabWidget->mpParentMainWindow->mpLibrary->mpModelicaTree;
-//    ModelicaTreeNode *pModelicaTreeNode = pModelicaTree->getNode(mModelNameStructure);
-//    pModelicaTreeNode->setIcon(0, QIcon(pixmap));
-}
-
 void ProjectTab::showIconView(bool checked)
 {
     // validate the modelica text before switching to diagram view
@@ -1912,10 +1711,10 @@ void ProjectTab::showModelicaTextView(bool checked)
     mpIconGraphicsView->hide();
     mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::MODELICATEXT));
     // get the modelica text of the model
+    mpModelicaEditor->blockSignals(true);
     mpModelicaEditor->setText(mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->list(mModelNameStructure));
-
+    mpModelicaEditor->blockSignals(false);
     mpModelicaEditor->mLastValidText = mpModelicaEditor->toPlainText();
-
     mpModelicaEditor->setFocus();
     mpModelicaEditorWidget->show();
 }
@@ -2087,7 +1886,7 @@ void ProjectTab::getModelComponents()
         else
         {
             mpDiagramGraphicsView->addComponentoView(componentProperties->getName(),
-                                                     componentProperties->getClassName(), QPointF(0.0, 0.0), true,
+                                                     componentProperties->getClassName(), QPointF(0.0, 0.0), false,
                                                      false, false);
             if (!static_cast<QString>(componentsAnnotationsList.at(i)).toLower().contains("error"))
             {
@@ -2146,16 +1945,35 @@ void ProjectTab::getModelConnections()
         // get start and end ports
         Component *pStartPort = 0;
         Component *pEndPort = 0;
-        foreach (Component *component, pStartComponent->mpComponentsList)
+        // if a connector type is connected then we only get one item in startComponentList and endComponentList
+        // check the startcomponentlist
+        if (startComponentList.size() < 2)
         {
-            if (component->mpComponentProperties->getName() == startComponentList.at(1))
-                pStartPort = component;
+            pStartPort = pStartComponent;
         }
-
-        foreach (Component *component, pEndComponent->mpComponentsList)
+        // look for port from the parent component
+        else
         {
-            if (component->mpComponentProperties->getName() == endComponentList.at(1))
-                pEndPort = component;
+            foreach (Component *component, pStartComponent->mpComponentsList)
+            {
+                if (component->mpComponentProperties->getName() == startComponentList.at(1))
+                    pStartPort = component;
+            }
+        }
+        // if a connector type is connected then we only get one item in startComponentList and endComponentList
+        // check the startcomponentlist
+        if (endComponentList.size() < 2)
+        {
+            pEndPort = pEndComponent;
+        }
+        // look for port from the parent component
+        else
+        {
+            foreach (Component *component, pEndComponent->mpComponentsList)
+            {
+                if (component->mpComponentProperties->getName() == endComponentList.at(1))
+                    pEndPort = component;
+            }
         }
 
         // if Start port and end port not found then continue the loop
@@ -2437,7 +2255,40 @@ bool ProjectTab::modelicaEditorTextChanged()
     // make mIsSaved to false inorder to save the changes to file as well.
     mIsSaved = false;
     MainWindow *pMainWindow = mpParentProjectTabWidget->mpParentMainWindow;
-    QString modelName = mpModelicaEditor->getModelName();
+    QStringList models = mpModelicaEditor->getModelsNames();
+    // if there was some error in modelicatext then
+    if (models.size() == 0)
+    {
+        pMainWindow->mpOMCProxy->setResult(mpModelicaEditor->mErrorString);
+        return false;
+    }
+    // first delete the node from tree and delete the model from omc
+    QString modelNameStructure = mModelNameStructure;
+    mModelNameStructure = tr("");
+    ModelicaTree *pTree = mpParentProjectTabWidget->mpParentMainWindow->mpLibrary->mpModelicaTree;
+    pTree->deleteNodeTriggered(pTree->getNode(modelNameStructure), false);
+    // if the modelicatext is fine then do the processing on the list of models we get
+    mpParentProjectTabWidget->mpParentMainWindow->mpLibrary->loadModel(mpModelicaEditor->toPlainText(), models);
+    QString modelsText = mpModelicaEditor->toPlainText();
+    // now update the current opened tab
+    mModelNameStructure = models.first();
+    updateTabName(StringHandler::getLastWordAfterDot(mModelNameStructure), mModelNameStructure);
+    // clear the complete view before loading the models again
+    mpIconGraphicsView->removeAllConnectors();
+    mpIconGraphicsView->deleteAllComponentObjects();
+    mpIconGraphicsView->deleteAllShapesObject();
+    mpDiagramGraphicsView->removeAllConnectors();
+    mpDiagramGraphicsView->deleteAllComponentObjects();
+    mpDiagramGraphicsView->deleteAllShapesObject();
+    mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->loadString(modelsText);
+    // get the model components and connectors now
+    getModelComponents();
+    getModelConnections();
+    getModelIconDiagram();
+    // change the model type label in the status bar of projecttab
+    mpModelicaTypeLabel->setText(StringHandler::getModelicaClassType(mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->getClassRestriction(mModelNameStructure)));
+
+/*
     if (!modelName.isEmpty())
     {
         QString modelNameStructure;
@@ -2490,14 +2341,7 @@ bool ProjectTab::modelicaEditorTextChanged()
                     {
                         pMainWindow->mpLibrary->addModelFiles(model, mModelNameStructure,
                                                               mModelNameStructure + tr(".") + model);
-                    }/*
-                    QStringList modelsList = pMainWindow->mpOMCProxy->getClassNames(mModelNameStructure);
-                    foreach (QString model, modelsList)
-                    {
-                        pMainWindow->mpLibrary->addModelFiles(model,
-                                                          StringHandler::removeLastWordAfterDot(mModelNameStructure),
-                                                          StringHandler::removeLastWordAfterDot(mModelNameStructure));
-                    }*/
+                    }
 
                 }
                 return true;
@@ -2569,6 +2413,7 @@ bool ProjectTab::modelicaEditorTextChanged()
         pMainWindow->mpOMCProxy->setResult(mpModelicaEditor->mErrorString);
         return false;
     }
+    */
 }
 
 //! @class ProjectTabWidget
@@ -2714,29 +2559,19 @@ void ProjectTabWidget::addProjectTab(ProjectTab *projectTab, QString modelName, 
     projectTab->mIsSaved = true;
     projectTab->mModelName = modelName;
     projectTab->mModelNameStructure = modelStructure;
-
     projectTab->mModelFileName = mpParentMainWindow->mpOMCProxy->getSourceFile(modelStructure);
     projectTab->setModelFilePathLabel(projectTab->mModelFileName);
-
     projectTab->mpDiagramGraphicsScene->blockSignals(true);
     projectTab->mpIconGraphicsScene->blockSignals(true);
     projectTab->mTabPosition = addTab(projectTab, modelName);
-
+    projectTab->mpModelicaEditor->blockSignals(true);
     projectTab->getModelComponents();
     projectTab->getModelConnections();
     projectTab->getModelIconDiagram();
-
+    projectTab->mpModelicaEditor->blockSignals(false);
     setCurrentWidget(projectTab);
     projectTab->mpDiagramGraphicsScene->blockSignals(false);
     projectTab->mpIconGraphicsScene->blockSignals(false);
-
-
-    //emit currentChanged(1);
-    /* when we add the models and connections to the model, GraphicsView hasChanged will be called
-       which mark the model as not saved, so just make it save again manually. */
-//    QString tabName = tabText(currentIndex());
-//    tabName.chop(1);
-//    setTabText(currentIndex(), tabName);
 }
 
 //! Adds a ProjectTab object (a new tab) to itself.
@@ -2744,38 +2579,41 @@ void ProjectTabWidget::addProjectTab(ProjectTab *projectTab, QString modelName, 
 void ProjectTabWidget::addNewProjectTab(QString modelName, QString modelStructure, int modelicaType)
 {
     ProjectTab *newTab;
-    if (modelStructure.isEmpty())
-    {
+//    if (modelStructure.isEmpty())
+//    {
         newTab = new ProjectTab(modelicaType, StringHandler::ICON, false, false, this);
         newTab->mIsSaved = false;
-    }
-    else
-    {
-        newTab = new ProjectTab(modelicaType, StringHandler::ICON, false, true, this);
-        ProjectTab *pParentTab = getTabByName(StringHandler::removeLastDot(modelStructure));
-        if (pParentTab)
-        {
-            // set the text of the model and make it unsaved.
-            pParentTab->mpModelicaEditor->setText(mpParentMainWindow->mpOMCProxy->list
-                                                 (StringHandler::removeLastDot(modelStructure)));
-            pParentTab->mIsSaved = true;
-            pParentTab->hasChanged();
-        }
-    }
+//    }
+//    else
+//    {
+//        newTab = new ProjectTab(modelicaType, StringHandler::ICON, false, true, this);
+//        ProjectTab *pParentTab = getTabByName(StringHandler::removeLastDot(modelStructure));
+//        if (pParentTab)
+//        {
+//            // set the text of the model and make it unsaved.
+//            pParentTab->mpModelicaEditor->blockSignals(true);
+//            pParentTab->mpModelicaEditor->setText(mpParentMainWindow->mpOMCProxy->list
+//                                                 (StringHandler::removeLastDot(modelStructure)));
+//            pParentTab->mpModelicaEditor->blockSignals(false);
+//            pParentTab->mIsSaved = true;
+//        }
+//    }
     newTab->mModelName = modelName;
     newTab->mModelNameStructure = modelStructure + modelName;
-    newTab->mTabPosition = addTab(newTab, newTab->isChild() ? modelName : modelName.append(QString("*")));
+    newTab->mpModelicaEditor->setText(mpParentMainWindow->mpOMCProxy->list(newTab->mModelNameStructure));
+//    if (modelStructure.isEmpty())
+        newTab->mTabPosition = addTab(newTab, newTab->isChild() ? modelName : modelName.append(QString("*")));
+//    else
+//        newTab->mTabPosition = addTab(newTab, modelName);
     setCurrentWidget(newTab);
-
-    //emit currentChanged(1);
     // make the icon view visible and focused for key press events
     newTab->showDiagramView(true);
 }
 
 void ProjectTabWidget::addDiagramViewTab(QTreeWidgetItem *item, int column)
 {
-
     Q_UNUSED(column);
+
     LibraryTreeNode *treeNode = dynamic_cast<LibraryTreeNode*>(item);
     ProjectTab *newTab = new ProjectTab(mpParentMainWindow->mpOMCProxy->getClassRestriction(treeNode->mNameStructure),
                                         StringHandler::DIAGRAM, true, false, this);
@@ -2790,7 +2628,7 @@ void ProjectTabWidget::addDiagramViewTab(QTreeWidgetItem *item, int column)
                             newTab->mpDiagramGraphicsView);
 
     Component *oldIconComponent = mpParentMainWindow->mpLibrary->getComponentObject(newTab->mModelNameStructure);
-      Component *newIconComponent;
+    Component *newIconComponent;
 
     if (!oldIconComponent)
     {
@@ -2804,9 +2642,8 @@ void ProjectTabWidget::addDiagramViewTab(QTreeWidgetItem *item, int column)
         newIconComponent = new Component(oldIconComponent, newTab->mModelName, QPointF (0,0), StringHandler::ICON,
                                         false, newTab->mpIconGraphicsView);
     }
+    newTab->mpModelicaEditor->setText(mpParentMainWindow->mpOMCProxy->list(newTab->mModelNameStructure));
     setCurrentWidget(newTab);
-
-    //emit currentChanged(1);
     // make the icon view visible and focused for key press events
     newTab->showDiagramView(true);
 }
@@ -3268,9 +3105,9 @@ void ProjectTabWidget::disableProjectToolbar()
 
 void ProjectTabWidget::tabChanged()
 {
-
-mpParentMainWindow->mpComponentBrowser->addComponentBrowserNode();
+    mpParentMainWindow->mpComponentBrowser->addComponentBrowserNode();
 }
+
 void ProjectTabWidget::keyPressEvent(QKeyEvent *event)
 {
     ProjectTab *pCurrentTab = getCurrentTab();

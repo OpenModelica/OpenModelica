@@ -102,6 +102,7 @@ public:
     bool isPackage(QString className);
     bool isBuiltinType(QString typeName);
     bool isWhat(int type, QString className);
+    bool isProtected(QString parameter, QString className);
     int getClassRestriction(QString modelName);
     QList<IconParameters*> getParameters(QString modelName, QString className, QString name);
     IconParameters* getIconParameter(QList<IconParameters*> list, QString value);

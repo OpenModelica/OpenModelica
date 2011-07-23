@@ -78,9 +78,9 @@ Component::Component(QString value, QString name, QString className, QPointF pos
     // if everything is fine with icon then add it to scene
     mpGraphicsView->scene()->addItem(this);
 
-
-    if (mType == StringHandler::ICON && mIsConnector==true)
-  connect(this, SIGNAL(componentClicked(Component*)), mpGraphicsView, SLOT(addConnector(Component*)));
+    // if type is diagram then allow connections not for icon view
+    if (mType == StringHandler::ICON && mIsConnector)
+        connect(this, SIGNAL(componentClicked(Component*)), mpGraphicsView, SLOT(addConnector(Component*)));
 }
 
 /* Called for inheritance annotation instance */
@@ -102,7 +102,7 @@ Component::Component(QString value, QString className, int type, bool connector,
 }
 
 /* Called for component annotation instance */
-Component::Component(QString value, QString transformationString,ComponentsProperties *pComponentProperties, int type,
+Component::Component(QString value, QString transformationString, ComponentsProperties *pComponentProperties, int type,
                      bool connector, Component *pParent)
      : ShapeAnnotation(pParent), mAnnotationString(value), mTransformationString(transformationString),
        mpComponentProperties(pComponentProperties), mType(type), mIsConnector(connector)
@@ -126,16 +126,13 @@ Component::Component(QString value, QString transformationString,ComponentsPrope
         getRootParentComponent()->mRectangle = mRectangle;
 
     // if type is diagram then allow connections not for icon view
-    if (mpParentComponent->mType == StringHandler::ICON)
-    {
-
+    if (mType == StringHandler::ICON && mIsConnector)
         connect(this, SIGNAL(componentClicked(Component*)), mpGraphicsView, SLOT(addConnector(Component*)));
-    }
 }
 
 /* Used for Library Component */
-Component::Component(QString value, QString className, OMCProxy *omc, Component *pParent)
-    : ShapeAnnotation(pParent), mAnnotationString(value), mClassName(className), mpOMCProxy(omc)
+Component::Component(QString value, QString className, bool connector, OMCProxy *omc, Component *pParent)
+    : ShapeAnnotation(pParent), mAnnotationString(value), mClassName(className), mIsConnector(connector), mpOMCProxy(omc)
 {
     mIsLibraryComponent = true;
     mpParentComponent = pParent;
@@ -148,8 +145,8 @@ Component::Component(QString value, QString className, OMCProxy *omc, Component 
 }
 
 /* Used for Library Component. Called for inheritance annotation instance */
-Component::Component(QString value, QString className, Component *pParent)
-    : ShapeAnnotation(pParent), mAnnotationString(value), mClassName(className)
+Component::Component(QString value, QString className, bool connector, Component *pParent)
+    : ShapeAnnotation(pParent), mAnnotationString(value), mClassName(className), mIsConnector(connector)
 {
     setFlag(QGraphicsItem::ItemStacksBehindParent);
 
@@ -158,7 +155,6 @@ Component::Component(QString value, QString className, Component *pParent)
     mpOMCProxy = pParent->mpOMCProxy;
     mpComponentProperties = 0;
     mType = StringHandler::ICON;
-    mIsConnector = false;
     parseAnnotationString(this, mAnnotationString, true);
 
     //! @todo Since for some components we get empty annotations but its inherited componets does have annotations
@@ -168,10 +164,10 @@ Component::Component(QString value, QString className, Component *pParent)
 }
 
 /* Used for Library Component. Called for component annotation instance */
-Component::Component(QString value, QString transformationString, ComponentsProperties *pComponentProperties,
+Component::Component(QString value, QString transformationString, ComponentsProperties *pComponentProperties, bool connector,
                      Component *pParent)
     : ShapeAnnotation(pParent), mAnnotationString(value), mTransformationString(transformationString),
-      mpComponentProperties(pComponentProperties)
+      mpComponentProperties(pComponentProperties), mIsConnector(connector)
 {
     mName = mpComponentProperties->getName();
     mClassName = mpComponentProperties->getClassName();
@@ -179,7 +175,6 @@ Component::Component(QString value, QString transformationString, ComponentsProp
     mpParentComponent = pParent;
     mpOMCProxy = pParent->mpOMCProxy;
     mType = StringHandler::ICON;
-    mIsConnector = false;
 
     parseAnnotationString(this, mAnnotationString, true);
     mpTransformation = new Transformation(this);
@@ -371,7 +366,6 @@ bool Component::parseAnnotationString(Component *item, QString value, bool libra
             item->mpShapesList.append(bitmapAnnotation);
         }
     }
-
 }
 
 QRectF Component::boundingRect() const
@@ -427,30 +421,17 @@ void Component::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
 
 void Component::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-         MainWindow *pMainWindow =mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
-
+    MainWindow *pMainWindow = mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
     // if user is viewing the component in Icon View
     if ((mpGraphicsView->mIconType == StringHandler::ICON) or (mpGraphicsView->mpParentProjectTab->isReadOnly()))
         return;
 
-    if(mIsConnector==true)
+    // if component is a connector type then emit the componentClicked signal
+    if (event->button() == Qt::LeftButton  && pMainWindow->connectAction->isChecked() && mIsConnector)
     {
-//     if(event->button()==Qt::LeftButton && !this->flags().testFlag((QGraphicsItem::ItemIsMovable)))
-         if(event->button()==Qt::LeftButton && pMainWindow->connectAction->isChecked())
-     {
-         emit componentClicked(this);
-
-     }
-     else
-     {
-
-         QGraphicsItem::mousePressEvent(event);
-     }
-
+        emit componentClicked(this);
     }
 
-    else
-    {
     // if we are creating the connector then make sure user can not select and move components
     if ((mpGraphicsView->mIsCreatingConnector) and !mpParentComponent)
     {
@@ -463,16 +444,10 @@ void Component::mousePressEvent(QGraphicsSceneMouseEvent *event)
         setComponentFlags();
     }
 
-    if (event->button() == Qt::LeftButton  && pMainWindow->connectAction->isChecked())
-    {
-        emit componentClicked(this);
-    }
-
     // call the mouse press event only if component is the root component
     if (!mpParentComponent)
     {
         QGraphicsItem::mousePressEvent(event);
-    }
     }
 }
 
@@ -583,6 +558,8 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
             updateAnnotationString();
             // update connectors annotations that are associated to this component
             emit componentPositionChanged();
+            ProjectTab *pProjectTab = mpGraphicsView->mpParentProjectTab;
+            pProjectTab->mpModelicaEditor->setText(mpOMCProxy->list(pProjectTab->mModelNameStructure));
         }
     }
 #if (QT_VERSION >= QT_VERSION_CHECK(4, 7, 0))
@@ -591,6 +568,8 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         emit componentRotated(true);
         updateAnnotationString();
         updateSelectionBox();
+        ProjectTab *pProjectTab = mpGraphicsView->mpParentProjectTab;
+        pProjectTab->mpModelicaEditor->setText(mpOMCProxy->list(pProjectTab->mModelNameStructure));
     }
 #endif
     return value;
@@ -798,6 +777,9 @@ void Component::resizeComponent(qreal resizeFactorX, qreal resizeFactorY)
     {
         this->scale(resizeFactorX, resizeFactorY);
         emit componentScaled();
+        updateAnnotationString();
+        ProjectTab *pProjectTab = mpGraphicsView->mpParentProjectTab;
+        pProjectTab->mpModelicaEditor->setText(mpOMCProxy->list(pProjectTab->mModelNameStructure));
     }
 }
 
@@ -847,11 +829,7 @@ clipboard->setText(this->getName());
 
  //if(!clipboard->text().isEmpty())
      //mpGraphicsView->mpPasteComponentAction->setDisabled(false);
-
-
 }
-
-
 
 void Component::openIconProperties()
 {
@@ -996,7 +974,7 @@ void Component::getClassComponents(QString className, int type)
         // stop here, because the class can not contain any components, etc.
         if(this->mpOMCProxy->isBuiltinType(inheritedClass))
         {
-          mpInheritanceList.append(new Component("", inheritedClass, this));
+          mpInheritanceList.append(new Component("", inheritedClass, mpOMCProxy->isWhat(StringHandler::CONNECTOR, inheritedClass), this));
           return;
         }
 
@@ -1005,7 +983,7 @@ void Component::getClassComponents(QString className, int type)
         Component *inheritance;
         if (mIsLibraryComponent)
         {
-            inheritance  = new Component(annotationString, inheritedClass, this);
+            inheritance  = new Component(annotationString, inheritedClass, mpOMCProxy->isWhat(StringHandler::CONNECTOR, inheritedClass), this);
         }
         else
         {
@@ -1022,11 +1000,17 @@ void Component::getClassComponents(QString className, int type)
     foreach (ComponentsProperties *componentProperties, components)
     {
         if (static_cast<QString>(componentsAnnotationsList.at(i)).toLower().contains("error"))
+        {
+            i++;
             continue;
+        }
 
         // if component is protected we don't show it in the icon layer.
         if (componentProperties->getProtected())
+        {
+            i++;
             continue;
+        }
 
         if (StringHandler::removeFirstLastCurlBrackets(componentsAnnotationsList.at(i)).length() > 0)
         {
@@ -1037,7 +1021,7 @@ void Component::getClassComponents(QString className, int type)
                 Component *component;
                 if (mIsLibraryComponent)
                 {
-                    component = new Component(result, componentsAnnotationsList.at(i), componentProperties, this);
+                    component = new Component(result, componentsAnnotationsList.at(i), componentProperties, true, this);
                 }
                 else
                 {

@@ -63,7 +63,7 @@ public:
 
     void addPoint(QPointF point);
     void setStartComponent(Component *pComponent);
-    void setEndComponent(Component *pCompoent);
+    void setEndComponent(Component *pComponent);
     int getNumberOfLines();
     Connector::geometryType getGeometry(int lineNumber);
     Component* getStartComponent();

@@ -46,6 +46,7 @@ ModelicaEditor::ModelicaEditor(ProjectTab *pParent)
     // depending on the project tab readonly state set the text view readonly state
     setReadOnly(mpParentProjectTab->isReadOnly());
     connect(this, SIGNAL(focusOut()), mpParentProjectTab, SLOT(modelicaEditorTextChanged()));
+    connect(this, SIGNAL(textChanged()), SLOT(hasChanged()));
 
     mpFindWidget = new QWidget;
     mpFindWidget->setContentsMargins(0, 0, 0, 0);
@@ -84,35 +85,51 @@ ModelicaEditor::ModelicaEditor(ProjectTab *pParent)
     updateButtons();
 }
 
-QString ModelicaEditor::getModelName()
+QStringList ModelicaEditor::getModelsNames()
 {
     // read the name from the text
-    OMCProxy *omc = new OMCProxy(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow, false);
-    QString modelName = QString();
-    if (omc->saveModifiedModel(this->toPlainText()))
-        modelName = StringHandler::removeFirstLastCurlBrackets(omc->getResult());
-    else
-        mErrorString = omc->getResult();
-    omc->stopServer();
-//    OMCProxy *pOMCProxy = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy;
-//    if (toPlainText().isEmpty())
-//        mErrorString = tr("Start and End modifiers are different");
+//    OMCProxy *omc = new OMCProxy(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow, false);
+//    QString modelName = QString();
+//    if (omc->saveModifiedModel(this->toPlainText()))
+//        modelName = StringHandler::removeFirstLastCurlBrackets(omc->getResult());
 //    else
-//    {
-//        QStringList list = pOMCProxy->parseString(toPlainText());
-//        if (list.size() == 0)
-//        {
-//            mErrorString = pOMCProxy->getErrorString();
-//        }
-//        else if (list.size() > 1)
-//        {
-//            mErrorString = QString("Two many models... complex system");
-//        }
-//        else
-//            modelName = list.last();
-//    }
+//        mErrorString = omc->getResult();
+//    omc->stopServer();
 
-    return modelName;
+    OMCProxy *pOMCProxy = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy;
+    QStringList models;
+    if (toPlainText().isEmpty())
+        mErrorString = tr("Start and End modifiers are different");
+    else
+    {
+        models = pOMCProxy->parseString(toPlainText());
+        if (models.size() == 0)
+        {
+            mErrorString = pOMCProxy->getErrorString();
+        }
+    }
+    bool existModel = false;
+    QStringList existingmodelsList;
+    // check if the model already exists
+    foreach(QString model, models)
+    {
+        if (mpParentProjectTab->mModelName.compare(model) != 0)
+        {
+            if (pOMCProxy->existClass(model))
+            {
+                existingmodelsList.append(model);
+                existModel = true;
+            }
+        }
+    }
+    // check if existModel is true
+    if (existModel)
+    {
+        mErrorString = QString(GUIMessages::getMessage(GUIMessages::REDEFING_EXISTING_MODELS)).arg(existingmodelsList.join(",")).append("\n")
+                       .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD));
+        return QStringList();
+    }
+    return models;
 }
 
 void ModelicaEditor::findText(const QString &text, bool forward)
@@ -202,6 +219,20 @@ bool ModelicaEditor::validateText()
         }
     }
     return true;
+}
+
+void ModelicaEditor::hasChanged()
+{
+    if (mpParentProjectTab->isReadOnly())
+        return;
+
+    if (mpParentProjectTab->mIsSaved)
+    {
+        QString tabName = mpParentProjectTab->mpParentProjectTabWidget->tabText(mpParentProjectTab->mpParentProjectTabWidget->currentIndex());
+        tabName.append("*");
+        mpParentProjectTab->mpParentProjectTabWidget->setTabText(mpParentProjectTab->mpParentProjectTabWidget->currentIndex(), tabName);
+        mpParentProjectTab->mIsSaved = false;
+    }
 }
 
 void ModelicaEditor::hideFindWidget()

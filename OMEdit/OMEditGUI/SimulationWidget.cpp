@@ -120,7 +120,6 @@ void SimulationWidget::setUpForm()
     QGridLayout *gridSaveSimulationLayout = new QGridLayout;
     mpSaveSimulationGroup = new QGroupBox(tr("Save Simulation"));
     mpSaveSimulationCheckbox = new QCheckBox(tr("Save simulation settings inside model"));
-    mpSaveSimulationCheckbox->setChecked(true);
 
     gridSaveSimulationLayout->addWidget(mpSaveSimulationCheckbox, 0, 0);
     mpSaveSimulationGroup->setLayout(gridSaveSimulationLayout);
@@ -438,6 +437,7 @@ void SimulationWidget::saveSimulationOptions()
     annotationString.append(")");
     // send the simulations options annotation to OMC
     mpParentMainWindow->mpOMCProxy->addClassAnnotation(projectTab->mModelNameStructure, annotationString);
+    projectTab->mpModelicaEditor->setText(mpParentMainWindow->mpOMCProxy->list(projectTab->mModelNameStructure));
 }
 
 ProgressDialog::ProgressDialog(SimulationWidget *pParent)

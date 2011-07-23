@@ -113,117 +113,127 @@ void Transformation::parseTransformationString3X(QString value)
     value = StringHandler::removeFirstLastCurlBrackets(value);
     if (value.isEmpty())
         return;
-    QStringList list = StringHandler::getStrings(value);
+    QStringList annotations = StringHandler::getStrings(value, '(', ')');
 
-    mWidth = mpComponent->boundingRect().width();
-    mHeight = mpComponent->boundingRect().height();
-
-    // if mWidth and mHeight is zero then give it fixed with and height of 200. Otherwise OMEdit will crash!!!!
-    // e.g BusUsage crash problem!!!!!
-    if (mWidth < 1)
-        mWidth = 200.0;
-    if (mHeight < 1)
-        mHeight = 200.0;
-
-    // get transformations of diagram
-    // get the visible value
-    mVisible = static_cast<QString>(list.at(0)).contains("true");
-    // origin x position
-    mOrigin.setX(static_cast<QString>(list.at(1)).toFloat());
-    // origin y position
-    mOrigin.setY(static_cast<QString>(list.at(2)).toFloat());
-    // extent1 x
-    mExtent1.setX(static_cast<QString>(list.at(3)).toFloat());
-    // extent1 y
-    mExtent1.setY(static_cast<QString>(list.at(4)).toFloat());
-    // extent1 x
-    mExtent2.setX(static_cast<QString>(list.at(5)).toFloat());
-    // extent1 y
-    mExtent2.setY(static_cast<QString>(list.at(6)).toFloat());
-
-    if ((mExtent1.x() == -mExtent2.x()) and (mExtent1.y() == -mExtent2.y()))
+    foreach (QString annotation, annotations)
     {
-        mPositionX = mOrigin.x();
-        mPositionY = mOrigin.y();
+        if (annotation.startsWith("Placement"))
+        {
+            annotation = annotation.mid(QString("Placement").length());
+            annotation = StringHandler::removeFirstLastBrackets(annotation);
+            QStringList list = StringHandler::getStrings(annotation);
+
+            mWidth = mpComponent->boundingRect().width();
+            mHeight = mpComponent->boundingRect().height();
+
+            // if mWidth and mHeight is zero then give it fixed with and height of 200. Otherwise OMEdit will crash!!!!
+            // e.g BusUsage crash problem!!!!!
+            if (mWidth < 1)
+                mWidth = 200.0;
+            if (mHeight < 1)
+                mHeight = 200.0;
+
+            // get transformations of diagram
+            // get the visible value
+            mVisible = static_cast<QString>(list.at(0)).contains("true");
+            // origin x position
+            mOrigin.setX(static_cast<QString>(list.at(1)).toFloat());
+            // origin y position
+            mOrigin.setY(static_cast<QString>(list.at(2)).toFloat());
+            // extent1 x
+            mExtent1.setX(static_cast<QString>(list.at(3)).toFloat());
+            // extent1 y
+            mExtent1.setY(static_cast<QString>(list.at(4)).toFloat());
+            // extent1 x
+            mExtent2.setX(static_cast<QString>(list.at(5)).toFloat());
+            // extent1 y
+            mExtent2.setY(static_cast<QString>(list.at(6)).toFloat());
+
+            if ((mExtent1.x() == -mExtent2.x()) and (mExtent1.y() == -mExtent2.y()))
+            {
+                mPositionX = mOrigin.x();
+                mPositionY = mOrigin.y();
+            }
+            else
+            {
+                mPositionX = (mExtent1.x() + mExtent2.x()) / 2;
+                mPositionY = (mExtent1.y() + mExtent2.y()) / 2;
+            }
+
+            qreal tempwidth = fabs(mExtent1.x() - mExtent2.x());
+            qreal tempHeight = fabs(mExtent1.y() - mExtent2.y());
+
+            mScale = tempwidth / mWidth;
+            mAspectRatio = tempHeight / (mHeight * mScale);
+
+            mFlipHorizontal = mExtent2.x() < mExtent1.x();
+            mFlipVertical = mExtent2.y() < mExtent1.y();
+
+            // rotate angle
+            mRotateAngle = static_cast<QString>(list.at(7)).toFloat();
+
+            try
+            {
+                // get transformations of icon now
+                // origin x position
+                bool ok = true;
+                mOriginIcon.setX(static_cast<QString>(list.at(8)).toFloat(&ok));
+                if (!ok)
+                    throw std::runtime_error("Invalid number format exception");
+                // origin y position
+                mOriginIcon.setY(static_cast<QString>(list.at(9)).toFloat(&ok));
+                if (!ok)
+                    throw std::runtime_error("Invalid number format exception");
+                // extent1 x
+                mExtent1Icon.setX(static_cast<QString>(list.at(10)).toFloat(&ok));
+                if (!ok)
+                    throw std::runtime_error("Invalid number format exception");
+                // extent1 y
+                mExtent1Icon.setY(static_cast<QString>(list.at(11)).toFloat(&ok));
+                if (!ok)
+                    throw std::runtime_error("Invalid number format exception");
+                // extent1 x
+                mExtent2Icon.setX(static_cast<QString>(list.at(12)).toFloat(&ok));
+                if (!ok)
+                    throw std::runtime_error("Invalid number format exception");
+                // extent1 y
+                mExtent2Icon.setY(static_cast<QString>(list.at(13)).toFloat(&ok));
+                if (!ok)
+                    throw std::runtime_error("Invalid number format exception");
+                // rotate angle
+                mRotateAngleIcon = static_cast<QString>(list.at(14)).toFloat(&ok);
+                if (!ok)
+                    throw std::runtime_error("Invalid number format exception");
+            }
+            catch(std::exception &exception)
+            {
+                Q_UNUSED(exception);
+                mOriginIcon = mOrigin;
+                mExtent1Icon = mExtent1;
+                mExtent2Icon = mExtent2;
+                mRotateAngleIcon = mRotateAngle;
+            }
+            if ((mExtent1Icon.x() == -mExtent2Icon.x()) and (mExtent1Icon.y() == -mExtent2Icon.y()))
+            {
+                mPositionXIcon = mOriginIcon.x();
+                mPositionYIcon = mOriginIcon.y();
+            }
+            else
+            {
+                mPositionXIcon = (mExtent1Icon.x() + mExtent2Icon.x()) / 2;
+                mPositionYIcon = (mExtent1Icon.y() + mExtent2Icon.y()) / 2;
+            }
+
+            qreal tempwidthIcon = fabs(mExtent1Icon.x() - mExtent2Icon.x());
+            qreal tempHeightIcon = fabs(mExtent1Icon.y() - mExtent2Icon.y());
+
+            mScaleIcon = tempwidthIcon / mWidth;
+            mAspectRatioIcon = tempHeightIcon / (mHeight * mScale);
+
+            mFlipHorizontalIcon = mExtent2Icon.x() < mExtent1Icon.x();
+            mFlipVerticalIcon = mExtent2Icon.y() < mExtent1Icon.y();
+        }
     }
-    else
-    {
-        mPositionX = (mExtent1.x() + mExtent2.x()) / 2;
-        mPositionY = (mExtent1.y() + mExtent2.y()) / 2;
-    }
-
-    qreal tempwidth = fabs(mExtent1.x() - mExtent2.x());
-    qreal tempHeight = fabs(mExtent1.y() - mExtent2.y());
-
-    mScale = tempwidth / mWidth;
-    mAspectRatio = tempHeight / (mHeight * mScale);
-
-    mFlipHorizontal = mExtent2.x() < mExtent1.x();
-    mFlipVertical = mExtent2.y() < mExtent1.y();
-
-    // rotate angle
-    mRotateAngle = static_cast<QString>(list.at(7)).toFloat();
-
-    try
-    {
-        // get transformations of icon now
-        // origin x position
-        bool ok = true;
-        mOriginIcon.setX(static_cast<QString>(list.at(8)).toFloat(&ok));
-        if (!ok)
-            throw std::runtime_error("Invalid number format exception");
-        // origin y position
-        mOriginIcon.setY(static_cast<QString>(list.at(9)).toFloat(&ok));
-        if (!ok)
-            throw std::runtime_error("Invalid number format exception");
-        // extent1 x
-        mExtent1Icon.setX(static_cast<QString>(list.at(10)).toFloat(&ok));
-        if (!ok)
-            throw std::runtime_error("Invalid number format exception");
-        // extent1 y
-        mExtent1Icon.setY(static_cast<QString>(list.at(11)).toFloat(&ok));
-        if (!ok)
-            throw std::runtime_error("Invalid number format exception");
-        // extent1 x
-        mExtent2Icon.setX(static_cast<QString>(list.at(12)).toFloat(&ok));
-        if (!ok)
-            throw std::runtime_error("Invalid number format exception");
-        // extent1 y
-        mExtent2Icon.setY(static_cast<QString>(list.at(13)).toFloat(&ok));
-        if (!ok)
-            throw std::runtime_error("Invalid number format exception");
-        // rotate angle
-        mRotateAngleIcon = static_cast<QString>(list.at(14)).toFloat(&ok);
-        if (!ok)
-            throw std::runtime_error("Invalid number format exception");
-    }
-    catch(std::exception &exception)
-    {
-        Q_UNUSED(exception);
-        mOriginIcon = mOrigin;
-        mExtent1Icon = mExtent1;
-        mExtent2Icon = mExtent2;
-        mRotateAngleIcon = mRotateAngle;
-    }
-    if ((mExtent1Icon.x() == -mExtent2Icon.x()) and (mExtent1Icon.y() == -mExtent2Icon.y()))
-    {
-        mPositionXIcon = mOriginIcon.x();
-        mPositionYIcon = mOriginIcon.y();
-    }
-    else
-    {
-        mPositionXIcon = (mExtent1Icon.x() + mExtent2Icon.x()) / 2;
-        mPositionYIcon = (mExtent1Icon.y() + mExtent2Icon.y()) / 2;
-    }
-
-    qreal tempwidthIcon = fabs(mExtent1Icon.x() - mExtent2Icon.x());
-    qreal tempHeightIcon = fabs(mExtent1Icon.y() - mExtent2Icon.y());
-
-    mScaleIcon = tempwidthIcon / mWidth;
-    mAspectRatioIcon = tempHeightIcon / (mHeight * mScale);
-
-    mFlipHorizontalIcon = mExtent2Icon.x() < mExtent1Icon.x();
-    mFlipVerticalIcon = mExtent2Icon.y() < mExtent1Icon.y();
 }
 
 QTransform Transformation::getTransformationMatrix()

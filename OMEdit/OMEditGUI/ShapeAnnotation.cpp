@@ -350,7 +350,6 @@ void ShapeAnnotation::moveRight()
 
 void ShapeAnnotation::rotateClockwise()
 {
-
     //qDebug() << "in update before rot:: " <<mExtent;
     qreal rotation = this->rotation();
     qreal rotateIncrement = -90;
@@ -360,10 +359,10 @@ void ShapeAnnotation::rotateClockwise()
     else
         this->setRotation(rotation + rotateIncrement);
 
-mpGraphicsView->scene()->update();
-    //qDebug() << "in update MFAO " <<mExtent.size();
-    //qDebug() << "in update R11:: " <<mExtent.at(0);
-    emit updateShapeAnnotation();
+    mpGraphicsView->scene()->update();
+    // if not component instance then updateshapeannotation, component handles this in his own class
+    if (!dynamic_cast<Component*>(this))
+        emit updateShapeAnnotation();
    // qDebug() << "in update after rot:: " <<mExtent;
     //mExtent.replace(0,mapFromScene(this->mRectangleCornerItemsList.at(0)->pos()));
     //mExtent.replace(1,mapFromScene(this->mRectangleCornerItemsList.at(1)->pos()));
@@ -430,13 +429,16 @@ void ShapeAnnotation::rotateAntiClockwise()
     else
         this->setRotation(rotation + rotateIncrement);
 
+    // if not component instance then updateshapeannotation, component handles this in his own class
+    if (!dynamic_cast<Component*>(this))
         emit updateShapeAnnotation();
 }
 
 void ShapeAnnotation::resetRotation()
 {
     this->setRotation(0);
-
+    // if not component instance then updateshapeannotation, component handles this in his own class
+    if (!dynamic_cast<Component*>(this))
         emit updateShapeAnnotation();
 }
 //pen stlye changed for the selected shape shape

@@ -204,33 +204,15 @@ void ModelicaTree::addNode(QString name, int type, QString parentName, QString p
     ModelicaTreeNode *newTreePost;
     QStringList info = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(parentStructure + name);
 
-    mpParentLibraryWidget->mpParentMainWindow->mpStatusBar->showMessage(QString("Loading: ")
-                                                                      .append(parentStructure + name));
+    mpParentLibraryWidget->mpParentMainWindow->mpStatusBar->showMessage(QString("Loading: ").append(parentStructure + name));
     if (parentName.isEmpty())
     {
-
         newTreePost = new ModelicaTreeNode(name, parentName, parentStructure + name, StringHandler::createTooltip(info, name, parentStructure + name), type, this);
-
-//        if(info[2].contains("interactive"))
-//        {
-//                info[2]="";
-//        }
-//        QString toolt = "Name: " + name + "\n" + "Description: " + info[1] + "\n" + "Location: " + info[2] + "\n" + "Path: " + parentStructure + name + "\n" + "Type: " + info[0] ;
-//        newTreePost = new ModelicaTreeNode(name, parentName, parentStructure + name, toolt , type, this);
         insertTopLevelItem(0, newTreePost);
-
     }
     else
     {
         newTreePost = new ModelicaTreeNode(name, parentName, parentStructure + name, StringHandler::createTooltip(info, name, parentStructure + name), type);
-//        QStringList info = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(parentStructure + name);
-//        if(info[2].contains("interactive"))
-//        {
-//                info[2]="";
-//        }
-
-//        QString toolt = "Name: " + name + "\n" + "Description: " + info[1] + "\n" + "Location: " + info[2] + "\n" + "Path: " + parentStructure + name + "\n" + "Type: " + info[0] ;
-//        newTreePost = new ModelicaTreeNode(name, parentName, parentStructure + name,toolt, type);
         ModelicaTreeNode *treeNode = getNode(StringHandler::removeLastDot(parentStructure));
         treeNode->addChild(newTreePost);
     }
@@ -240,6 +222,7 @@ void ModelicaTree::addNode(QString name, int type, QString parentName, QString p
     while (libraryLoader->isRunning())
         qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
 
+    //! @note the below line is commented intentionally to avoid flickering of Modelica Tree while loading large libraries.
     //setCurrentItem(newTreePost);
     mModelicaTreeNodesList.append(newTreePost);
 
@@ -250,16 +233,10 @@ void ModelicaTree::addNode(QString name, int type, QString parentName, QString p
 
     QPixmap pixmap = libComponent->getComponentPixmap(Helper::iconSize);
     if (pixmap.isNull())
-    {
-        if (QString(parentStructure+name).toLower().contains("usersguide"))
-            newTreePost->setIcon(0, QIcon(":/Resources/icons/info-icon.png"));
-        else
-            newTreePost->setIcon(0, ModelicaTreeNode::getModelicaNodeIcon(newTreePost->mType));
-    }
+        newTreePost->setIcon(0, ModelicaTreeNode::getModelicaNodeIcon(newTreePost->mType));
     else
-    {
         newTreePost->setIcon(0, QIcon(libComponent->getComponentPixmap(Helper::iconSize)));
-    }
+
     mpParentLibraryWidget->addModelicaComponentObject(libComponent);
 }
 
@@ -308,6 +285,9 @@ void ModelicaTree::openProjectTab(QTreeWidgetItem *item, int column)
             newTab = new ProjectTab(treeNode->mType, StringHandler::DIAGRAM, false, true, pMainWindow->mpProjectTabs);
             newTab->mIsSaved = true;
         }
+        newTab->mpModelicaEditor->blockSignals(true);
+        newTab->mpModelicaEditor->setText(pMainWindow->mpOMCProxy->list(treeNode->mNameStructure));
+        newTab->mpModelicaEditor->blockSignals(false);
         pMainWindow->mpProjectTabs->addProjectTab(newTab, treeNode->mName, treeNode->mNameStructure);
         // make the icon view visible and focused for key press events
         newTab->showDiagramView(true);
@@ -659,19 +639,15 @@ void LibraryTree::addModelicaStandardLibrary()
     // load Modelica Standard Library.
     QStringList libs = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->loadStandardLibrary();
 
-
     if (mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->isStandardLibraryLoaded())
     {
         foreach (QString lib, libs) {
             QStringList info = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(lib);
             LibraryTreeNode *newTreePost = new LibraryTreeNode(lib, QString(""),lib , StringHandler::createTooltip(info, lib, lib), this);
-//            QString toolt = "Name: " + lib + "\n" + "Description: " + info[1] + "\n" + "Location: " + info[2] + "\n" + "Path: " + lib + "\n" + "Type: " + info[0] ;
-//            LibraryTreeNode *newTreePost = new LibraryTreeNode(lib, QString(""),lib , toolt, this);
             int classType = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassRestriction(lib);
             newTreePost->mType = classType;
             newTreePost->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
             insertTopLevelItem(0, newTreePost);
-
 
             // get the Icon for Modelica tree node
             LibraryLoader *libraryLoader = new LibraryLoader(newTreePost, lib, this);
@@ -679,9 +655,6 @@ void LibraryTree::addModelicaStandardLibrary()
             while (libraryLoader->isRunning())
                 qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
         }
-
-//        addClass("Ground", "", "Modelica.Electrical.Analog.Basic.", true);
-//        addClass("Resistor", "", "Modelica.Electrical.Analog.Basic.", true);
     }
 }
 
@@ -774,10 +747,6 @@ void LibraryTree::addClass(QList<LibraryTreeNode *> *tempPackageNodesList,
                                                                       .append(parentStructure + className));
     QString lib = QString(parentStructure + className);
     QStringList info = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(lib);
-//    QString toolt = "Name: " + className + "\n" + "Description: " + info[1] + "\n" + "Location: " + info[2] + "\n" + "Path: " + lib + "\n" + "Type: " + info[0] ;
-//    LibraryTreeNode *newTreePost = new LibraryTreeNode(className, parentClassName,
-//                                                       lib,toolt,(QTreeWidget*)0);
-
     LibraryTreeNode *newTreePost = new LibraryTreeNode(className, parentClassName, lib, StringHandler::createTooltip(info, className, lib),
                                                        (QTreeWidget*)0);
     // If Loaded class is package show treewidgetitem expand indicator
@@ -978,23 +947,35 @@ void LibraryTree::checkLibraryModel()
 
 void LibraryTree::loadingLibraryComponent(LibraryTreeNode *treeNode, QString className)
 {
+    OMCProxy *pOMCProxy = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy;
     QString result;
-    result = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getIconAnnotation(className);
-    LibraryComponent *libComponent = new LibraryComponent(result, className,
-                                                          mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy);
-
+    result = pOMCProxy->getIconAnnotation(className);
+    LibraryComponent *libComponent = new LibraryComponent(result, className, pOMCProxy);
 
     QPixmap pixmap = libComponent->getComponentPixmap(Helper::iconSize);
+    // if the component does not have icon annotation check if it has non standard dymola annotation or not.
     if (pixmap.isNull())
     {
-        if (QString(className).toLower().contains("usersguide"))
-            treeNode->setIcon(0, QIcon(":/Resources/icons/info-icon.png"));
+        pOMCProxy->sendCommand("getNamedAnnotation(" + className + ", __Dymola_DocumentationClass)");
+        if (StringHandler::unparseBool(pOMCProxy->getResult()) || QString(className).startsWith("Modelica.UsersGuide", Qt::CaseInsensitive)
+                || QString(className).startsWith("ModelicaServices.UsersGuide", Qt::CaseInsensitive))
+        {
+            result = pOMCProxy->getIconAnnotation("ModelicaReference.Icons.Information");
+            libComponent = new LibraryComponent(result, className, pOMCProxy);
+            pixmap = libComponent->getComponentPixmap(Helper::iconSize);
+            // if still the pixmap is null for some unknown reasons then used the pre defined image
+            if (pixmap.isNull())
+                treeNode->setIcon(0, QIcon(":/Resources/icons/info-icon.png"));
+            else
+                treeNode->setIcon(0, QIcon(pixmap));
+        }
+        // if the component does not have non standard dymola annotation as well.
         else
             treeNode->setIcon(0, ModelicaTreeNode::getModelicaNodeIcon(treeNode->mType));
     }
     else
     {
-        treeNode->setIcon(0, QIcon(libComponent->getComponentPixmap(Helper::iconSize)));
+        treeNode->setIcon(0, QIcon(pixmap));
     }
     mpParentLibraryWidget->addComponentObject(libComponent);
 }
@@ -1312,8 +1293,6 @@ void SearchMSLWidget::searchMSL()
     foreach (QString foundedItem, foundedItemsList)
     {
         QStringList info = mpParentMainWindow->mpOMCProxy->getClassInformation(foundedItem);
-//        QString toolt = "Name: " + foundedItem + "\n" + "Description: " + info[1] + "\n" + "Location: " + info[2] + "\n" + "Path: " + foundedItem + "\n" + "Type: " + info[0] ;
-//        LibraryTreeNode *newTreePost = new LibraryTreeNode(foundedItem, QString(""), foundedItem,toolt, mpSearchedItemsTree);
         LibraryTreeNode *newTreePost = new LibraryTreeNode(foundedItem, QString(""), foundedItem, StringHandler::createTooltip(info, StringHandler::getLastWordAfterDot(foundedItem), foundedItem), mpSearchedItemsTree);
         newTreePost->mType = mpParentMainWindow->mpOMCProxy->getClassRestriction(foundedItem);
         mpSearchedItemsTree->insertTopLevelItem(0, newTreePost);
@@ -1399,7 +1378,7 @@ void LibraryWidget::addModelFiles(QString fileName, QString parentFileName, QStr
 void LibraryWidget::loadFile(QString path, QStringList modelsList)
 {
     // load the file in OMC
-    mpParentMainWindow->mpProgressBar->setRange(0,0);
+    mpParentMainWindow->mpProgressBar->setRange(0, 0);
     mpParentMainWindow->showProgressBar();
 
     if (!mpParentMainWindow->mpOMCProxy->loadFile(path))
@@ -1539,7 +1518,7 @@ void LibraryWidget::updateNodeText(QString text, QString textStructure, Modelica
 LibraryComponent::LibraryComponent(QString value, QString className, OMCProxy *omc)
 {
     mClassName = className;
-    mpComponent = new Component(value, className, omc);
+    mpComponent = new Component(value, className, omc->isWhat(StringHandler::CONNECTOR, className), omc);
 
     if (mpComponent->mRectangle.width() > 1)
         mRectangle = mpComponent->mRectangle;
@@ -1619,11 +1598,10 @@ ComponentBrowserTreeNode::ComponentBrowserTreeNode(QString text, QString parentN
 
     setText(0, mName);
     setToolTip(0, tooltip);
-    setStatusTip(0,"component browser tree");
+    //setStatusTip(0,"component browser tree");
 
     //setIcon(0, getModelicaNodeIcon(mType));
 }
-
 
 ComponentBrowserTree::ComponentBrowserTree(ComponentBrowserWidget *parent)
     : QTreeWidget(parent)
@@ -1633,17 +1611,11 @@ ComponentBrowserTree::ComponentBrowserTree(ComponentBrowserWidget *parent)
     setHeaderLabel(tr("Outline"));
     setIconSize(Helper::iconSize);
     setColumnCount(1);
-    //setDragEnabled(true);
     setIndentation(Helper::treeIndentation);
     setContextMenuPolicy(Qt::CustomContextMenu);
     setExpandsOnDoubleClick(false);
 
-    //createActions();
-    //connect(this, SIGNAL(itemPressed(QTreeWidgetItem*,int)), SLOT(modelicaTreeItemPressed(QTreeWidgetItem*)));
-    //connect(this, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(openProjectTab(QTreeWidgetItem*,int)));
-    //connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
-    connect(mpParentComponentBrowserWidget, SIGNAL(addComponentBrowserTreeNode()),
-            SLOT(editComponentBrowser()));
+    connect(mpParentComponentBrowserWidget, SIGNAL(addComponentBrowserTreeNode()), SLOT(editComponentBrowser()));
 }
 ComponentBrowserTree::~ComponentBrowserTree()
 {
@@ -1654,25 +1626,16 @@ ComponentBrowserTree::~ComponentBrowserTree()
 
 ComponentBrowserTreeNode* ComponentBrowserTree::getBrowserNode(QString name)
 {
-
     foreach (ComponentBrowserTreeNode *node, mComponentBrowserTreeNodeList)
     {
-
-        if (node->mNameStructure == name)
-        {
+        if (node->mNameStructure.compare(name) == 0)
             return node;
-
-
-        }
-
     }
     return 0;
 }
 
-
 void ComponentBrowserTree::deleteBrowserNode(ComponentBrowserTreeNode *item)
 {
-
     int count = item->childCount();
 
     for (int i = 0 ; i < count ; i++)
@@ -1682,124 +1645,87 @@ void ComponentBrowserTree::deleteBrowserNode(ComponentBrowserTreeNode *item)
     }
     // Delete the node from list as well
     mComponentBrowserTreeNodeList.removeOne(item);
-    // Delete the tab of the parent item as well
+}
 
-
-
- }
-
-void ComponentBrowserTree::addBrowserNode(QString name, int type,QString className,QString parentName, QString parentStructure)
+void ComponentBrowserTree::addBrowserNode(QString name, int type, QString className, QString parentName, QString parentStructure)
 {
-
-    QString toolt;
     ComponentBrowserTreeNode *newTreePost;
     if (parentName.isEmpty())
     {
         QStringList info = mpParentComponentBrowserWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(className);
-
-        if(!info.isEmpty())
-        toolt = "Name: " + name + "\n" + "Description: " + info[1] + "\n" + "Location: " + info[2] + "\n" + "Path: " + parentStructure + name + "\n" + "Type: " + info[0] ;
-        else
-          toolt = className;
-        newTreePost = new ComponentBrowserTreeNode(name, parentName, parentStructure + name, toolt , type, this);
+        newTreePost = new ComponentBrowserTreeNode(name, parentName, parentStructure + name, StringHandler::createTooltip(info, name, parentStructure + name), type, this);
         insertTopLevelItem(0, newTreePost);
-
-
-
     }
     else
     {
         QStringList info = mpParentComponentBrowserWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(className);
-
-        if(!info.isEmpty())
-        toolt = "Name: " + name + "\n" + "Description: " + info[1] + "\n" + "Location: " + info[2] + "\n" + "Path: " + parentStructure + name + "\n" + "Type: " + info[0] ;
-        else
-          toolt = className;
-
-        newTreePost = new ComponentBrowserTreeNode(name, parentName, parentStructure + name,toolt,type);
+        newTreePost = new ComponentBrowserTreeNode(name, parentName, parentStructure + name, StringHandler::createTooltip(info, name, parentStructure + name), type);
         ComponentBrowserTreeNode *treeNode = getBrowserNode(StringHandler::removeLastDot(parentStructure));
         treeNode->addChild(newTreePost);
-
     }
-
-
-    setCurrentItem(newTreePost);
-
+    //setCurrentItem(newTreePost);
 
     mComponentBrowserTreeNodeList.append(newTreePost);
-    this->setVisible(true);
-
+    //this->setVisible(true);
  }
 
-void ComponentBrowserTree::addBrowserChild(QString name,QString className, int type, QString parentName, QString parentStructure)
+void ComponentBrowserTree::addBrowserChild(QString name, QString className, int type, QString parentName, QString parentStructure)
 {
-addBrowserNode(name,type,className,parentName,parentStructure);
-
-
-QList<ComponentsProperties*> components =mpParentComponentBrowserWidget->mpParentMainWindow->mpOMCProxy->getComponents(className);
-
-
-foreach(ComponentsProperties *abc , components)
- {
-
-     int comptype =mpParentComponentBrowserWidget->mpParentMainWindow->mpOMCProxy->getClassRestriction(abc->getClassName());
-
-     addBrowserChild(abc->getName(),abc->getClassName(),comptype,name,parentStructure+name+".");
-
-
- }
-
-
+    // add node to the tree
+    addBrowserNode(name, type, className, parentName, parentStructure);
+    int componentType;
+    // look for inherited components of a model
+    int inheritanceCount = mpParentComponentBrowserWidget->mpParentMainWindow->mpOMCProxy->getInheritanceCount(className);
+    for(int i = 1 ; i <= inheritanceCount ; i++)
+    {
+        QString inheritedClass = mpParentComponentBrowserWidget->mpParentMainWindow->mpOMCProxy->getNthInheritedClass(className, i);
+        componentType = mpParentComponentBrowserWidget->mpParentMainWindow->mpOMCProxy->getClassRestriction(inheritedClass);
+        addBrowserChild(StringHandler::getLastWordAfterDot(inheritedClass), inheritedClass, componentType, name,
+                        QString(parentStructure).append(name).append("."));
+    }
+    // look for components of a model
+    QList<ComponentsProperties*> components = mpParentComponentBrowserWidget->mpParentMainWindow->mpOMCProxy->getComponents(className);
+    foreach(ComponentsProperties *componentProperties , components)
+    {
+        componentType = mpParentComponentBrowserWidget->mpParentMainWindow->mpOMCProxy->getClassRestriction(componentProperties->getClassName());
+        addBrowserChild(componentProperties->getName(), componentProperties->getClassName(), componentType, name,
+                        QString(parentStructure).append(name).append("."));
+    }
 }
-
 
 void ComponentBrowserTree::editComponentBrowser()
 {
-// deleting information of the previous tab from the component browser
-    if(!mComponentBrowserTreeNodeList.isEmpty())
-  {  ComponentBrowserTreeNode *node = mComponentBrowserTreeNodeList.first();
+    // deleting information of the previous tab from the component browser
+    if (!mComponentBrowserTreeNodeList.isEmpty())
+    {
+        ComponentBrowserTreeNode *node = mComponentBrowserTreeNodeList.first();
+        deleteBrowserNode(node);
 
-    deleteBrowserNode(node);
-
-    if (node->childCount())
-        qDeleteAll(node->takeChildren());
-    delete node;
-  }
-
+        if (node->childCount())
+            qDeleteAll(node->takeChildren());
+        delete node;
+    }
 
     ProjectTabWidget *pProjectTab = mpParentComponentBrowserWidget->mpParentMainWindow->mpProjectTabs;
-   ProjectTab *pCurrentTab= pProjectTab->getCurrentTab();
-   if(pCurrentTab)
-   {
-           QString name = pCurrentTab->mModelName;
-   QString namestruct= pCurrentTab->mModelNameStructure;
+    ProjectTab *pCurrentTab= pProjectTab->getCurrentTab();
 
+    if (pCurrentTab)
+    {
+        int type= pProjectTab->getCurrentTab()->mModelicaType;
+        //adding the current model
+        addBrowserChild(pCurrentTab->mModelName, pCurrentTab->mModelNameStructure, type, tr(""), tr(""));
 
-   int type= pProjectTab->getCurrentTab()->mModelicaType;
-   //adding the current model
-  addBrowserChild(name,name,type,tr(""),tr(""));
-
-
-collapseAll();
-if(this->depth()>=0)
-this->expandToDepth(0);
-   }
+        collapseAll();
+        if (depth() >= 0)
+            expandToDepth(0);
+    }
 }
 
 ComponentBrowserWidget::ComponentBrowserWidget(MainWindow *parent)
     : QWidget(parent)
 {
     mpParentMainWindow = parent;
-
-    //mpComponentBrowserTabs= new QTabWidget;
-    //mpComponentBrowserTabs->setTabPosition(QTabWidget::South);
-
-
     mpComponentBrowserTree = new ComponentBrowserTree(this);
-    //mpModelicaTree = new ModelicaTree(this);
-
-    //mpComponentBrowserTabs->addTab(mpComponentBrowserTree,"hello");
-    //mpLibraryTabs->addTab(mpModelicaTree, "Modelica Files");
 
     mpGrid = new QVBoxLayout(this);
     mpGrid->setContentsMargins(0, 0, 0, 0);
@@ -1820,7 +1746,5 @@ ComponentBrowserWidget::~ComponentBrowserWidget()
 
 void ComponentBrowserWidget::addComponentBrowserNode()
 {
-
     emit addComponentBrowserTreeNode();
 }
-

@@ -99,6 +99,8 @@ public:
     void deleteShapeObject(ShapeAnnotation *shape);
     void deleteAllShapesObject();
     void removeAllConnectors();
+    void createConnection(Component *pStartComponent, QString startIconCompName, Component *pComponent, QString endIconCompName);
+    void deleteConnection(QString startIconCompName, QString endIconCompName);
 
     QList<Component*> mComponentsList;
     QList<ShapeAnnotation*> mShapesList;
@@ -220,7 +222,6 @@ public:
     bool mIsSaved;
     int mTabPosition;
 public slots:
-    void hasChanged();
     void showIconView(bool checked);
     void showDiagramView(bool checked);
     void showModelicaTextView(bool checked);

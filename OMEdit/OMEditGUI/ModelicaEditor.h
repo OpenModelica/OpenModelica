@@ -43,7 +43,7 @@ class ModelicaEditor : public QTextEdit
     Q_OBJECT
 public:
     ModelicaEditor(ProjectTab *pParent);
-    QString getModelName();
+    QStringList getModelsNames();
     void findText(const QString &text, bool forward);
     bool validateText();
 
@@ -62,6 +62,7 @@ public:
 signals:
     bool focusOut();
 public slots:
+    void hasChanged();
     void hideFindWidget();
     void updateButtons();
     void findNextText();

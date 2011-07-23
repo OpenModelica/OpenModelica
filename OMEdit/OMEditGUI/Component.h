@@ -89,9 +89,9 @@ public:
     Component(QString value, QString transformationString, ComponentsProperties *pComponentProperties, int type,
               bool connector, Component *pParent = 0);
     /* Used for Library Component */
-    Component(QString value, QString className, OMCProxy *omc, Component *pParent = 0);
-    Component(QString value, QString className, Component *pParent = 0);
-    Component(QString value, QString transformationString, ComponentsProperties *pComponentProperties,
+    Component(QString value, QString className, bool connector, OMCProxy *omc, Component *pParent = 0);
+    Component(QString value, QString className, bool connector, Component *pParent = 0);
+    Component(QString value, QString transformationString, ComponentsProperties *pComponentProperties, bool connector,
               Component *pParent = 0);
     /* Used for Library Component */
     /* Copy Constructors */

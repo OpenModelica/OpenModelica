@@ -343,7 +343,7 @@ QStringList OMCProxy::createPackagesList()
     foreach (QString package, classesList)
     {
         // if package is Modelica skip it.
-        if (package != tr("Modelica") and package != tr("ModelicaServices"))
+        if (package != tr("Modelica") and package != tr("ModelicaServices") and package != tr("ModelicaReference"))
             addPackage(&packagesList, package, tr(""));
     }
     return packagesList;
@@ -600,12 +600,11 @@ bool OMCProxy::isWhat(int type, QString className)
         return false;
 }
 
-
-
-
-
-
-
+bool OMCProxy::isProtected(QString parameter, QString className)
+{
+    sendCommand("isProtected(" + parameter + "," + className + ")");
+    return StringHandler::unparseBool(getResult());
+}
 
 int OMCProxy::getClassRestriction(QString modelName)
 {

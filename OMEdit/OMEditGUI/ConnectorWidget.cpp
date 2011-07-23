@@ -86,18 +86,19 @@ Connector::Connector(Component *pStartPort, Component *pEndPort, GraphicsView *p
             mGeometries.push_back(Connector::DIAGONAL);
     }
 
-
     mEndComponentConnected = true;
     emit endComponentConnected();
     this->setPassive();
-    connect(mpEndComponent->mpParentComponent, SIGNAL(componentDeleted()), SLOT(deleteMe()));
+    if (mpEndComponent->mpParentComponent)
+        connect(mpEndComponent->mpParentComponent, SIGNAL(componentDeleted()), SLOT(deleteMe()));
+    else
+        connect(mpEndComponent, SIGNAL(componentDeleted()), SLOT(deleteMe()));
 
     //Create the lines, so that drawConnector has something to work with
     for(int i = 0 ; i < mPoints.size()-1 ; ++i)
     {
         ConnectorLine *tempLine = new ConnectorLine(mapFromScene(mPoints[i]).x(), mapFromScene(mPoints[i]).y(),
-                                                    mapFromScene(mPoints[i+1]).x(), mapFromScene(mPoints[i+1]).y(),
-                                                    i, this);
+                                                    mapFromScene(mPoints[i+1]).x(), mapFromScene(mPoints[i+1]).y(), i, this);
 
         mpLines.push_back(tempLine);
         tempLine->setConnected();
@@ -116,25 +117,28 @@ Connector::Connector(Component *pStartPort, Component *pEndPort, GraphicsView *p
     for(int i = 0 ; i < mpLines.size() ; ++i)
         mpLines[i]->setFlag(QGraphicsItem::ItemIsSelectable, true);
 
-    mpStartComponent->mpParentComponent->addConnector(this);
-    mpEndComponent->mpParentComponent->addConnector(this);
+    if (mpStartComponent->mpParentComponent)
+        mpStartComponent->mpParentComponent->addConnector(this);
+    else
+        mpStartComponent->addConnector(this);
+
+    if (mpEndComponent->mpParentComponent)
+        mpEndComponent->mpParentComponent->addConnector(this);
+    else
+        mpEndComponent->addConnector(this);
 }
 
 void Connector::addPoint(QPointF point)
 {
-
     //! @todo make it better
     mPoints.append(point);
-
     if(getNumberOfLines() == 0 && (fabs(mpStartComponent->mpTransformation->getRotateAngle()) == 0 || fabs(mpStartComponent->mpTransformation->getRotateAngle()) == 180))
     {
         mGeometries.push_back(Connector::HORIZONTAL);
-
     }
     else if(getNumberOfLines() == 0 && (fabs(mpStartComponent->mpTransformation->getRotateAngle()) == 90 || fabs(mpStartComponent->mpTransformation->getRotateAngle()) == 270))
     {
         mGeometries.push_back(Connector::VERTICAL);
-
     }
     else if(getNumberOfLines() != 0 && mGeometries.back() == Connector::HORIZONTAL)
     {
@@ -149,14 +153,8 @@ void Connector::addPoint(QPointF point)
         mGeometries.push_back(Connector::DIAGONAL);
         //Give new line correct angle!
     }
-
     if(mPoints.size() > 1)
-    {
-
-
         drawConnector();
-
-    }
 }
 
 void Connector::setStartComponent(Component *pComponent)
@@ -164,11 +162,9 @@ void Connector::setStartComponent(Component *pComponent)
     this->mpStartComponent = pComponent;
 }
 
-void Connector::setEndComponent(Component *pCompoent)
+void Connector::setEndComponent(Component *pComponent)
 {
-
-    this->mpEndComponent = pCompoent;
-    this->addPoint(pCompoent->mapToScene(pCompoent->boundingRect().center()));
+    this->mpEndComponent = pComponent;
     this->mEndComponentConnected = true;
     //Make all lines selectable and all lines except first and last movable
     if(mpLines.size() > 1)
@@ -178,8 +174,6 @@ void Connector::setEndComponent(Component *pCompoent)
     }
     for(std::size_t i=0; i!=mpLines.size(); ++i)
         mpLines[i]->setFlag(QGraphicsItem::ItemIsSelectable, true);
-
-
 
     emit endComponentConnected();
     //this->setPassive();
@@ -256,67 +250,35 @@ void Connector::updateConnectionAnnotationString()
 
     annotationString.append(")");
 
-    if(getStartComponent()->getIsConnector()==true && getEndComponent()->getIsConnector()==true)
+    QString startIconName, startIconCompName, endIconName, endIconCompName;
+    if (getStartComponent()->mpParentComponent)
     {
-        QString startIconCompName = getStartComponent()->getName();
-
-        QString endIconCompName = getEndComponent()->getName();
-        MainWindow *pMainWindow = mpParentGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
-
-        pMainWindow->mpOMCProxy->updateConnection(startIconCompName,
-                                                  endIconCompName,
-                                                  mpParentGraphicsView->mpParentProjectTab->mModelNameStructure,
-                                                  annotationString);
+        startIconName = QString(getStartComponent()->mpParentComponent->getName()).append(".");
+        startIconCompName = getStartComponent()->mpComponentProperties->getName();
     }
-    else if(getStartComponent()->getIsConnector()==false && getEndComponent()->getIsConnector()==true)
-        {
-        QString startIconName = getStartComponent()->getParentComponent()->getName();
-        QString startIconCompName = getStartComponent()->mpComponentProperties->getName();
-
-        QString endIconCompName = getEndComponent()->getName();
-        MainWindow *pMainWindow = mpParentGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
-
-        pMainWindow->mpOMCProxy->updateConnection(startIconName + "." + startIconCompName,
-                                                  endIconCompName,
-                                                  mpParentGraphicsView->mpParentProjectTab->mModelNameStructure,
-                                                  annotationString);
-        }
-   else if(getStartComponent()->getIsConnector()==true && getEndComponent()->getIsConnector()==false)
+    else
     {
-
-        QString startIconCompName = getStartComponent()->getName();
-        QString endIconName = getEndComponent()->getParentComponent()->getName();
-        QString endIconCompName = getEndComponent()->mpComponentProperties->getName();
-        MainWindow *pMainWindow = mpParentGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
-
-        pMainWindow->mpOMCProxy->updateConnection(startIconCompName,
-                                                  endIconName + "." + endIconCompName,
-                                                  mpParentGraphicsView->mpParentProjectTab->mModelNameStructure,
-                                                  annotationString);
+        startIconCompName = getStartComponent()->getName();
     }
-
-
-else
+    if (getEndComponent()->mpParentComponent)
     {
-    QString startIconName = getStartComponent()->getParentComponent()->getName();
-    QString startIconCompName = getStartComponent()->mpComponentProperties->getName();
-    QString endIconName = getEndComponent()->getParentComponent()->getName();
-    QString endIconCompName = getEndComponent()->mpComponentProperties->getName();
+        endIconName = QString(getEndComponent()->mpParentComponent->getName()).append(".");
+        endIconCompName = getEndComponent()->mpComponentProperties->getName();
+    }
+    else
+    {
+        endIconCompName = getEndComponent()->getName();
+    }
+    // send the updateconnection command to omc
     MainWindow *pMainWindow = mpParentGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
-
-    pMainWindow->mpOMCProxy->updateConnection(startIconName + "." + startIconCompName,
-                                              endIconName + "." + endIconCompName,
-                                              mpParentGraphicsView->mpParentProjectTab->mModelNameStructure,
-                                              annotationString);
-    }
+    pMainWindow->mpOMCProxy->updateConnection(startIconName + startIconCompName, endIconName + endIconCompName,
+                                              mpParentGraphicsView->mpParentProjectTab->mModelNameStructure, annotationString);
 }
 
 void Connector::drawConnector(bool isRotated)
 {
-
     if (!mEndComponentConnected)
     {
-
         //Remove all lines
         while(!mpLines.empty())
         {
@@ -330,8 +292,7 @@ void Connector::drawConnector(bool isRotated)
             for(int i = 0; i != mPoints.size()-1; ++i)
             {
                 mpConnectorLine = new ConnectorLine(mapFromScene(mPoints[i]).x(), mapFromScene(mPoints[i]).y(),
-                                                    mapFromScene(mPoints[i+1]).x(), mapFromScene(mPoints[i+1]).y(),
-                                                    mpLines.size(), this);
+                                                    mapFromScene(mPoints[i+1]).x(), mapFromScene(mPoints[i+1]).y(), i, this);
                 mpConnectorLine->setPassive();
                 connect(mpConnectorLine,SIGNAL(lineSelected(bool, int)),this,SLOT(doSelect(bool, int)));
                 connect(mpConnectorLine,SIGNAL(lineMoved(int)),this, SLOT(updateLine(int)));
@@ -349,7 +310,6 @@ void Connector::drawConnector(bool isRotated)
     }
     else
     {
-
         if (isRotated)
         {
             //Retrieve start and end points from ports in case components have moved
@@ -449,7 +409,6 @@ void Connector::moveAllPoints(qreal offsetX, qreal offsetY)
 //! @see setPassive()
 void Connector::doSelect(bool lineSelected, int lineNumber)
 {
-
     if(this->mEndComponentConnected)     //Non-finished lines shall not be selectable
     {
         if(lineSelected)
@@ -658,7 +617,6 @@ void ConnectorLine::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 //! Defines what shall happen if the line is selected or moved.
 QVariant ConnectorLine::itemChange(GraphicsItemChange change, const QVariant &value)
 {
-
     if (change == QGraphicsItem::ItemSelectedHasChanged)
     {
          emit lineSelected(this->isSelected(), this->mLineNumber);
@@ -666,6 +624,10 @@ QVariant ConnectorLine::itemChange(GraphicsItemChange change, const QVariant &va
     if (change == QGraphicsItem::ItemPositionHasChanged)
     {
         emit lineMoved(this->mLineNumber);
+        mpParentConnector->updateConnectionAnnotationString();
+        ProjectTab *pProjectTab = mpParentConnector->mpParentGraphicsView->mpParentProjectTab;
+        OMCProxy *pOMCProxy = mpParentConnector->mpParentGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy;
+        pProjectTab->mpModelicaEditor->setText(pOMCProxy->list(pProjectTab->mModelNameStructure));
     }
     return value;
 }

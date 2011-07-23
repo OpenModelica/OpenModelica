@@ -442,68 +442,48 @@ bool StringHandler::unparseBool(QString value)
 
 QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, QString * dir, const QString &filter, QString * selectedFilter, const QString &defaultSuffix)
 {
-  QString dir_str;
+    QString dir_str;
 
-  if (dir)
-  {
-    dir_str = *dir;
-  }
-  else
-  {
-    dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
-  }
-
-  QFileDialog fileDialog(parent, caption, dir_str, filter);
-  
-  if (selectedFilter) fileDialog.selectNameFilter(*selectedFilter);
-  if (defaultSuffix.length()) fileDialog.setDefaultSuffix(defaultSuffix);
-  fileDialog.setFileMode(QFileDialog::AnyFile);
-  fileDialog.setAcceptMode(QFileDialog::AcceptSave);
-
-  if (fileDialog.exec()) 
-  { 
-    QStringList fileNames = fileDialog.selectedFiles(); 
-    
-    if (fileNames.count()) 
+    if (dir)
     {
-      mLastOpenDir = fileDialog.directory().absolutePath();
-      return fileNames.at(0); 
+        dir_str = *dir;
     }
-  }
+    else
+    {
+        dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
+    }
 
-  return QString();
+    QString fileName = QFileDialog::getSaveFileName(parent, caption, dir_str, filter, selectedFilter);
+    if (!fileName.isEmpty())
+    {
+        QFileInfo fileInfo(fileName);
+        mLastOpenDir = fileInfo.absolutePath();
+        return fileName;
+    }
+    return QString();
 }
 
 QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, QString * dir, const QString &filter, QString * selectedFilter)
 {
-  QString dir_str;
+    QString dir_str;
 
-  if (dir)
-  {
-    dir_str = *dir;
-  }
-  else
-  {
-    dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
-  }
-
-  QFileDialog fileDialog(parent, caption, dir_str, filter);
-
-  if (selectedFilter) fileDialog.selectNameFilter(*selectedFilter);
-  fileDialog.setFileMode(QFileDialog::AnyFile);
-  fileDialog.setAcceptMode(QFileDialog::AcceptOpen);
-
-  if (fileDialog.exec()) 
-  { 
-    QStringList fileNames = fileDialog.selectedFiles(); 
-    
-    if (fileNames.count()) 
+    if (dir)
     {
-      mLastOpenDir = fileDialog.directory().absolutePath(); 
-      return fileNames.at(0); 
+        dir_str = *dir;
     }
-  }
-  return QString();
+    else
+    {
+        dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
+    }
+
+    QString fileName = QFileDialog::getOpenFileName(parent, caption, dir_str, filter, selectedFilter);
+    if (!fileName.isEmpty())
+    {
+        QFileInfo fileInfo(fileName);
+        mLastOpenDir = fileInfo.absolutePath();
+        return fileName;
+    }
+    return QString();
 }
 
 QString StringHandler::createTooltip(QStringList info, QString name, QString path)

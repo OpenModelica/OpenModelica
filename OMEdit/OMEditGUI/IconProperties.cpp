@@ -127,6 +127,12 @@ void IconProperties::setUpDialog()
                                   iconParameter->getDefaultValue() : iconParameter->getValue());
         mParameterTextBoxesList.append(parameterTextBox);
 
+        if (mpComponent->mpOMCProxy->isProtected(iconParameter->getName(), mpComponent->getClassName()))
+        {
+            parameterLabel->setEnabled(false);
+            parameterTextBox->setEnabled(false);
+        }
+
         QLabel *parameterComment = new QLabel;
         parameterComment->setText(iconParameter->getComment());
 
@@ -171,13 +177,11 @@ void IconProperties::updateIconProperties()
     {
         if (!mpComponent->mpGraphicsView->checkComponentName(iconName))
         {
-            pMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(
-                                                               GUIMessages::SAME_COMPONENT_NAME));
+            pMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_NAME));
         }
         else
         {
-            if (mpComponent->mpOMCProxy->renameComponentInClass(pProjectTab->mModelNameStructure,
-                                                                mpComponent->getName(),
+            if (mpComponent->mpOMCProxy->renameComponentInClass(pProjectTab->mModelNameStructure, mpComponent->getName(),
                                                                 mpIconNameTextBox->text().trimmed()))
             {
                 // if renameComponent command is successful update the component with new name
@@ -197,17 +201,20 @@ void IconProperties::updateIconProperties()
     // update the parameter if it is changed
     for (int i = 0 ; i < mpComponent->mIconParametersList.size() ; i++)
     {
-        IconParameters *iconParameter = mpComponent->mIconParametersList.at(i);
-        mpComponent->mpOMCProxy->setComponentModifierValue(pProjectTab->mModelNameStructure,
-                                                           QString(mpComponent->getName()).append(".")
-                                                           .append(iconParameter->getName()),
-                                                           mParameterTextBoxesList.at(i)->text().trimmed());
+        // if the paramter value has changed only then update it
+        if (mParameterTextBoxesList.at(i)->isModified())
+        {
+            IconParameters *iconParameter = mpComponent->mIconParametersList.at(i);
+            mpComponent->mpOMCProxy->setComponentModifierValue(pProjectTab->mModelNameStructure, QString(mpComponent->getName()).append(".")
+                                                               .append(iconParameter->getName()),
+                                                               mParameterTextBoxesList.at(i)->text().trimmed());
 
-        // update the gui text now
-        parameterOldValueString = QString(iconParameter->getName()).append("=").append(iconParameter->getValue());
-        parameterNewValueString = QString(iconParameter->getName()).append("=").append(mParameterTextBoxesList.at(i)->text().trimmed());
-        mpComponent->updateParameterValue(parameterOldValueString, parameterNewValueString);
-        iconParameter->setValue(mParameterTextBoxesList.at(i)->text().trimmed());
+            // update the gui text now
+            parameterOldValueString = QString(iconParameter->getName()).append("=").append(iconParameter->getValue());
+            parameterNewValueString = QString(iconParameter->getName()).append("=").append(mParameterTextBoxesList.at(i)->text().trimmed());
+            mpComponent->updateParameterValue(parameterOldValueString, parameterNewValueString);
+            iconParameter->setValue(mParameterTextBoxesList.at(i)->text().trimmed());
+        }
     }
     accept();
 }
