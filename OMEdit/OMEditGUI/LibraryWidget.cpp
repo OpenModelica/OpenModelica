@@ -238,6 +238,7 @@ void ModelicaTree::addNode(QString name, int type, QString parentName, QString p
         newTreePost->setIcon(0, QIcon(libComponent->getComponentPixmap(Helper::iconSize)));
 
     mpParentLibraryWidget->addModelicaComponentObject(libComponent);
+    mpParentLibraryWidget->mpParentMainWindow->mpStatusBar->clearMessage();
 }
 
 void ModelicaTree::openProjectTab(QTreeWidgetItem *item, int column)
@@ -708,30 +709,6 @@ void LibraryTree::loadModelicaLibraryHierarchy(QString value, QString prefixStr)
         addNodes(tempPackageNodesList);
         addNodes(tempNonPackageNodesList);
     }
-
-    /*
-        Open the Following code and comment the above if loading library once.
-    */
-
-//    if (this->mpParentMainWindow->mpOMCProxy->isPackage(prefixStr + value))
-//    {
-//        //if value is Modelica then dont send it to addClass. Because we already added it statically.
-//        if (value != tr("Modelica"))
-//        {
-//            this->mpParentMainWindow->statusBar->showMessage(QString("Loading: ").append(prefixStr + value));
-//            addClass(value, StringHandler::getSubStringFromDots(prefixStr), prefixStr);
-//        }
-//        QStringList list = this->mpParentMainWindow->mpOMCProxy->getClassNames(prefixStr + value);
-//        prefixStr += value + ".";
-//        foreach (QString str, list)
-//        {
-//            loadModelicaLibraryHierarchy(str, prefixStr);
-//        }
-//    }
-//    else
-//    {
-//        addClass(value, StringHandler::getSubStringFromDots(prefixStr), prefixStr);
-//    }
 }
 
 //! Let the user to point out a OM Class and adds it to the library widget.
@@ -1354,15 +1331,13 @@ void LibraryWidget::addModelFiles(QString fileName, QString parentFileName, QStr
 {
     if (parentFileName.isEmpty())
     {
-        this->addModelicaNode(fileName, mpParentMainWindow->mpOMCProxy->getClassRestriction(fileName),
-                              parentFileName, parentStructure);
+        this->addModelicaNode(fileName, mpParentMainWindow->mpOMCProxy->getClassRestriction(fileName), parentFileName, parentStructure);
         parentStructure = fileName;
-
     }
     else
     {
-        this->addModelicaNode(fileName, mpParentMainWindow->mpOMCProxy->getClassRestriction(parentStructure),
-                              parentFileName, StringHandler::removeLastWordAfterDot(parentStructure).append("."));
+        this->addModelicaNode(fileName, mpParentMainWindow->mpOMCProxy->getClassRestriction(parentStructure), parentFileName,
+                              StringHandler::removeLastWordAfterDot(parentStructure).append("."));
     }
 
     if (this->mpParentMainWindow->mpOMCProxy->isPackage(parentStructure))

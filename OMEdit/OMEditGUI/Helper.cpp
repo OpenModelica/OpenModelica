@@ -216,7 +216,7 @@ QString GUIMessages::getMessage(int type)
     case PLOT_PARAMETRIC_DIFF_FILES:
         return "You cannot do a plot parametric between two different simulation result files. Make sure you select two variables from the same simulation result file.";
     case FILE_FORMAT_NOT_SUPPORTED:
-        return "The file format is not supported. You can only open .mo files here.";
+        return "The file '%1' is not a valid Modelica file. The file format is not supported. You can only open .mo files here.";
     case INCORRECT_HTML_TAGS:
         return "The html tags in the documentation are incorrect. Give correct starting and ending html tags and save it again.";
     case ITEM_DROPPED_ON_ITSELF:

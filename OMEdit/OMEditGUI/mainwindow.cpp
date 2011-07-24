@@ -238,16 +238,15 @@ void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 //! @param event contains information of the drag operation.
 void MainWindow::dragMoveEvent(QDragMoveEvent *event)
 {
-   if(event->mimeData()->hasFormat("application/x-qt-windows-mime;value=\"FileName\""))
-    {
-
-        event->setDropAction(Qt::CopyAction);
-        event->accept();
-    }
-    else
-    {
-        event->ignore();
-    }
+   if(event->mimeData()->hasFormat("text/uri-list"))
+   {
+       event->setDropAction(Qt::CopyAction);
+       event->accept();
+   }
+   else
+   {
+       event->ignore();
+   }
 }
 
 //! Defines what happens when drop a file in a Main Window.
@@ -255,60 +254,42 @@ void MainWindow::dragMoveEvent(QDragMoveEvent *event)
 void MainWindow::dropEvent(QDropEvent *event)
 {
     this->setFocus();
-
-
-
-    if (!event->mimeData()->hasFormat("application/x-qt-windows-mime;value=\"FileName\""))
+    if (!event->mimeData()->hasFormat("text/uri-list"))
     {
         event->ignore();
-
         return;
     }
-
-
-   else
+    else
     {
-
-
-
-
- QByteArray itemData = event->mimeData()->data("application/x-qt-windows-mime;value=\"FileNameW\"");
- QString filename = QString::fromUtf16((ushort*)itemData.data(), itemData.size() / 2);
-
-
-
-filename=filename.trimmed();
-
-
-
-
- if(filename.contains(".mo",Qt::CaseInsensitive))
- {
-     int i = filename.indexOf(".mo",0,Qt::CaseInsensitive);
-     filename = filename.left(i+3);
-    emit fileOpen(filename);
-    event->accept();
- }
-
- else
- {
-
-     QString message = QString(GUIMessages::getMessage(GUIMessages::FILE_FORMAT_NOT_SUPPORTED));
-     mpMessageWidget->printGUIErrorMessage(message);
-
-
-     event->ignore();
-
-     return;
-
- }
-
+        bool fileOpened = false;
+        foreach (QUrl fileUrl, event->mimeData()->urls())
+        {
+            QFileInfo fileInfo(fileUrl.toLocalFile());
+            if (fileInfo.suffix().compare("mo", Qt::CaseInsensitive) == 0)
+            {
+                emit fileOpen(fileInfo.absoluteFilePath());
+                fileOpened = true;
+            }
+            else
+            {
+                QString message = QString(GUIMessages::getMessage(GUIMessages::FILE_FORMAT_NOT_SUPPORTED).arg(fileInfo.fileName()));
+                mpMessageWidget->printGUIErrorMessage(message);
+            }
+        }
+        // if one file is valid and opened then accept the event
+        if (fileOpened)
+        {
+            event->accept();
+            return;
+        }
+        // if all files are invalid Modelica files ignore the event.
+        else
+        {
+            event->ignore();
+            return;
+        }
+    }
 }
-
-
-}
-
-
 
 //! Defines the actions used by the toolbars
 void MainWindow::createActions()

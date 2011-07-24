@@ -148,7 +148,6 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
 //! @param event contains information of the drag operation.
 void GraphicsView::dragMoveEvent(QDragMoveEvent *event)
 {
-
     // check if the view is readonly or not
     if (mpParentProjectTab->isReadOnly())
     {
@@ -156,15 +155,11 @@ void GraphicsView::dragMoveEvent(QDragMoveEvent *event)
         return;
     }
 
-
-
-    if (event->mimeData()->hasFormat("image/modelica-component") || event->mimeData()->hasFormat("application/x-qt-windows-mime;value=\"FileName\""))
+    if (event->mimeData()->hasFormat("image/modelica-component") || event->mimeData()->hasFormat("text/uri-list"))
     {
         event->setDropAction(Qt::CopyAction);
         event->accept();
     }
-
-
     else
     {
         event->ignore();
@@ -177,7 +172,6 @@ void GraphicsView::dropEvent(QDropEvent *event)
 {
     this->setFocus();
 
-
     // check if the view is readonly or not
     if (mpParentProjectTab->isReadOnly())
     {
@@ -185,130 +179,114 @@ void GraphicsView::dropEvent(QDropEvent *event)
         return;
     }
 
-
-
-
-    if (!event->mimeData()->hasFormat("image/modelica-component") && !event->mimeData()->hasFormat("application/x-qt-windows-mime;value=\"FileName\""))
+    if (!event->mimeData()->hasFormat("image/modelica-component") && !event->mimeData()->hasFormat("text/uri-list"))
     {
         event->ignore();
-
         return;
     }
-
-
-    else
-
-{
-
-    if(event->mimeData()->hasFormat("application/x-qt-windows-mime;value=\"FileName\""))
-    {
-
-        QByteArray itemData = event->mimeData()->data("application/x-qt-windows-mime;value=\"FileNameW\"");
-        QString filename = QString::fromUtf16((ushort*)itemData.data(), itemData.size() / 2);
-
-
-
-       filename=filename.trimmed();
-
-
-
-
-        if(filename.contains(".mo",Qt::CaseInsensitive))
-        {
-            int i = filename.indexOf(".mo",0,Qt::CaseInsensitive);
-            filename = filename.left(i+3);
-          mpParentProjectTab->mpParentProjectTabWidget->openFile(filename);
-           event->accept();
-        }
-
-        else
-        {
-
-            QString message = QString(GUIMessages::getMessage(GUIMessages::FILE_FORMAT_NOT_SUPPORTED));
-         mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(message);
-
-
-            event->ignore();
-
-            return;
-
-        }
-
-
-    }
     else
     {
-    QByteArray itemData = event->mimeData()->data("image/modelica-component");
-    QDataStream dataStream(&itemData, QIODevice::ReadOnly);
-
-    QString name, classname;
-    int type;
-    QPointF point (mapToScene(event->pos()));
-    dataStream >> name >> classname >> type;
-
-    MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
-
-    //item not to be dropped on itself
-    name = StringHandler::getLastWordAfterDot(name);
-    if(name!=mpParentProjectTab->mModelName)
-    {
-        name = getUniqueComponentName(name.toLower());
-    // if dropping an item on the diagram layer
-    if (mIconType == StringHandler::DIAGRAM)
-    {
-        // if item is a class, model, block, connector or record. then we can drop it to the graphicsview
-        if ((type == StringHandler::CLASS) or (type == StringHandler::MODEL) or (type == StringHandler::BLOCK) or
-            (type == StringHandler::CONNECTOR) or (type == StringHandler::RECORD))
+        if (event->mimeData()->hasFormat("text/uri-list"))
         {
-            if (type == StringHandler::CONNECTOR)
+            bool fileOpened = false;
+            foreach (QUrl fileUrl, event->mimeData()->urls())
             {
-                addComponentoView(name, classname, point, true, true, true);
-                mpParentProjectTab->mpIconGraphicsView->addComponentoView(name, classname, point, true, false);
+                QFileInfo fileInfo(fileUrl.toLocalFile());
+                if (fileInfo.suffix().compare("mo", Qt::CaseInsensitive) == 0)
+                {
+                    mpParentProjectTab->mpParentProjectTabWidget->openFile(fileInfo.absoluteFilePath());
+                    fileOpened = true;
+                }
+                else
+                {
+                    QString message = QString(GUIMessages::getMessage(GUIMessages::FILE_FORMAT_NOT_SUPPORTED).arg(fileInfo.fileName()));
+                    mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(message);
+                }
             }
+            // if one file is valid and opened then accept the event
+            if (fileOpened)
+            {
+                event->accept();
+                return;
+            }
+            // if all files are invalid Modelica files ignore the event.
             else
             {
-                addComponentoView(name, classname, point);
+                event->ignore();
+                return;
             }
-            event->accept();
         }
         else
         {
-            pMainWindow->mpMessageWidget->printGUIInfoMessage(GUIMessages::getMessage(GUIMessages::DIAGRAM_VIEW_DROP_MSG)
-                                                              .arg(classname)
-                                                              .arg(StringHandler::getModelicaClassType(type)));
-            event->ignore();
-        }
-    }
-    // if dropping an item on the icon layer
-    else if (mIconType == StringHandler::ICON)
-    {
-        // if item is a connector. then we can drop it to the graphicsview
-        if (type == StringHandler::CONNECTOR)
-        {
-            addComponentoView(name, classname, point, true, false);
-            mpParentProjectTab->mpDiagramGraphicsView->addComponentoView(name, classname, point, true,
-                                                                         true, true);
-            event->accept();
-        }
-        else
-        {
-            pMainWindow->mpMessageWidget->printGUIInfoMessage(GUIMessages::getMessage(GUIMessages::ICON_VIEW_DROP_MSG)
-                                                              .arg(classname)
-                                                              .arg(StringHandler::getModelicaClassType(type)));
-            event->ignore();
-        }
-    }
-  }
-    //if dropping an item on itself
-    else
-    {
+            QByteArray itemData = event->mimeData()->data("image/modelica-component");
+            QDataStream dataStream(&itemData, QIODevice::ReadOnly);
 
-        pMainWindow->mpMessageWidget->printGUIInfoMessage(GUIMessages::getMessage(GUIMessages::ITEM_DROPPED_ON_ITSELF)
-                                                          );
-        event->ignore();
+            QString name, classname;
+            int type;
+            QPointF point (mapToScene(event->pos()));
+            dataStream >> name >> classname >> type;
+
+            MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+
+            //item not to be dropped on itself
+            name = StringHandler::getLastWordAfterDot(name);
+            if(name!=mpParentProjectTab->mModelName)
+            {
+                name = getUniqueComponentName(name.toLower());
+                // if dropping an item on the diagram layer
+                if (mIconType == StringHandler::DIAGRAM)
+                {
+                    // if item is a class, model, block, connector or record. then we can drop it to the graphicsview
+                    if ((type == StringHandler::CLASS) or (type == StringHandler::MODEL) or (type == StringHandler::BLOCK) or
+                        (type == StringHandler::CONNECTOR) or (type == StringHandler::RECORD))
+                    {
+                        if (type == StringHandler::CONNECTOR)
+                        {
+                            addComponentoView(name, classname, point, true, true, true);
+                            mpParentProjectTab->mpIconGraphicsView->addComponentoView(name, classname, point, true, false);
+                        }
+                        else
+                        {
+                            addComponentoView(name, classname, point);
+                        }
+                        event->accept();
+                    }
+                    else
+                    {
+                        pMainWindow->mpMessageWidget->printGUIInfoMessage(GUIMessages::getMessage(GUIMessages::DIAGRAM_VIEW_DROP_MSG)
+                                                                          .arg(classname)
+                                                                          .arg(StringHandler::getModelicaClassType(type)));
+                        event->ignore();
+                    }
+                }
+                // if dropping an item on the icon layer
+                else if (mIconType == StringHandler::ICON)
+                {
+                    // if item is a connector. then we can drop it to the graphicsview
+                    if (type == StringHandler::CONNECTOR)
+                    {
+                        addComponentoView(name, classname, point, true, false);
+                        mpParentProjectTab->mpDiagramGraphicsView->addComponentoView(name, classname, point, true,
+                                                                                     true, true);
+                        event->accept();
+                    }
+                    else
+                    {
+                        pMainWindow->mpMessageWidget->printGUIInfoMessage(GUIMessages::getMessage(GUIMessages::ICON_VIEW_DROP_MSG)
+                                                                          .arg(classname)
+                                                                          .arg(StringHandler::getModelicaClassType(type)));
+                        event->ignore();
+                    }
+                }
+            }
+            //if dropping an item on itself
+            else
+            {
+                pMainWindow->mpMessageWidget->printGUIInfoMessage(GUIMessages::getMessage(GUIMessages::ITEM_DROPPED_ON_ITSELF));
+                event->ignore();
+            }
+        }
     }
-    }
-}
 }
 
 void GraphicsView::addComponentoView(QString name, QString className, QPointF point, bool isConnector,
