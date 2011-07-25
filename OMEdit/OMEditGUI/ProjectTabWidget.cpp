@@ -1087,7 +1087,7 @@ void GraphicsView::addConnector(Component *pComponent)
                if(abc->getIndexValue()!=-1)
                {
                    flag=1;
-                   this->mpConnector->setConnectorisArray(true);
+                   this->mpConnector->setEndConnectorisArray(true);
                    maxIndex=abc->getIndexValue();
 
                }
@@ -1364,14 +1364,14 @@ void GraphicsView::removeConnector(Connector* pConnector)
         if (pConnector->getEndComponent()->mpParentComponent)
         {
             endIconName = QString(pConnector->getEndComponent()->mpParentComponent->getName()).append(".");
-            if(pConnector->getConnectorisArray()==false)
+            if(pConnector->getEndConnectorisArray()==false)
             endIconCompName = pConnector->getEndComponent()->mpComponentProperties->getName();
             else
             endIconCompName = pConnector->getEndComponent()->mpComponentProperties->getName() + "[" + pConnector->mpConnectorArrayMenu->getConnectorIndex() + "]";
         }
         else
         {
-            if(pConnector->getConnectorisArray()==false)
+            if(pConnector->getEndConnectorisArray()==false)
             endIconCompName = pConnector->getEndComponent()->getName();
             else
             endIconCompName = pConnector->getEndComponent()->getName() + "[" + pConnector->mpConnectorArrayMenu->getConnectorIndex() + "]";

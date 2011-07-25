@@ -67,20 +67,20 @@ public:
     void addPoint(QPointF point);
     void setStartComponent(Component *pComponent);
     void setEndComponent(Component *pComponent);
-    void setConnectorisArray(bool isArray);
+    void setEndConnectorisArray(bool isArray);
     void setStartConnectorisArray(bool isArray);
     int getNumberOfLines();
     Connector::geometryType getGeometry(int lineNumber);
     Component* getStartComponent();
     Component* getEndComponent();
-    bool getConnectorisArray();
+    bool getEndConnectorisArray();
     bool getStartConnectorisArray();
     ConnectorLine* getLine(int line);
     bool isActive();
 private:
     ConnectorLine *mpConnectorLine;
     Component *mpStartComponent;
-    bool mConnectorIsArray;
+    bool mEndConnectorIsArray;
     bool mStartConnectorIsArray;
     Component *mpEndComponent;
     QVector<QPointF> mPoints;

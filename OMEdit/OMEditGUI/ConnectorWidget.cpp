@@ -52,7 +52,8 @@ Connector::Connector(Component *pComponent, GraphicsView *pParentView, QGraphics
     setZValue(-1.0);
     this->updateStartPoint(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()));
     this->mEndComponentConnected = false;
-    this->mConnectorIsArray=false;
+    this->mStartConnectorIsArray=false;
+    this->mEndConnectorIsArray=false;
     this->mIsActive = false;
     this->mpStartConnectorArrayMenu= new ConnectorArrayMenu(this,mpParentGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
     this->mpConnectorArrayMenu= new ConnectorArrayMenu(this,mpParentGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
@@ -182,9 +183,9 @@ void Connector::setEndComponent(Component *pComponent)
     //this->setPassive();
 }
 
-void Connector::setConnectorisArray(bool isArray)
+void Connector::setEndConnectorisArray(bool isArray)
 {
-    this->mConnectorIsArray = isArray;
+    this->mEndConnectorIsArray = isArray;
 }
 
 void Connector::setStartConnectorisArray(bool isArray)
@@ -215,9 +216,9 @@ Component* Connector::getEndComponent()
     return mpEndComponent;
 }
 
-bool Connector::getConnectorisArray()
+bool Connector::getEndConnectorisArray()
 {
-    return mConnectorIsArray;
+    return mEndConnectorIsArray;
 }
 
 bool Connector::getStartConnectorisArray()
@@ -296,14 +297,14 @@ void Connector::updateConnectionAnnotationString()
     if (getEndComponent()->mpParentComponent)
     {
         endIconName = QString(getEndComponent()->mpParentComponent->getName()).append(".");
-        if(this->getConnectorisArray()==false)
+        if(this->getEndConnectorisArray()==false)
         endIconCompName = getEndComponent()->mpComponentProperties->getName();
         else
         endIconCompName = getEndComponent()->mpComponentProperties->getName() + "[" + this->mpConnectorArrayMenu->getConnectorIndex() + "]";
     }
     else
     {
-        if(this->getConnectorisArray()==false)
+        if(this->getEndConnectorisArray()==false)
         endIconCompName = getEndComponent()->getName();
         else
         endIconCompName = getEndComponent()->getName() + "[" + this->mpConnectorArrayMenu->getConnectorIndex() + "]";
@@ -666,15 +667,15 @@ QVariant ConnectorLine::itemChange(GraphicsItemChange change, const QVariant &va
     if (change == QGraphicsItem::ItemPositionHasChanged)
     {
         emit lineMoved(this->mLineNumber);
-        if (!isMousePressed)
-        {
+       // if (!isMousePressed)
+       // {
             mpParentConnector->updateConnectionAnnotationString();
             // update connectors annotations that are associated to this component
             ProjectTab *pProjectTab = mpParentConnector->mpParentGraphicsView->mpParentProjectTab;
             OMCProxy *pOMCProxy = mpParentConnector->mpParentGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy;
             pProjectTab->mpModelicaEditor->setText(pOMCProxy->list(pProjectTab->mModelNameStructure));
 
-        }
+       // }
 
 
     }

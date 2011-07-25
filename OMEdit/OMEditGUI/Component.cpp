@@ -553,14 +553,14 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         emit componentMoved();
         // if user has changed the postion using the keyboard then update annotations
         // if user changes the position with mouse we handle it in mouse events of graphicsview
-        //if (!isMousePressed)
-       // {
+        if (!isMousePressed)
+        {
             updateAnnotationString();
             // update connectors annotations that are associated to this component
             emit componentPositionChanged();
             ProjectTab *pProjectTab = mpGraphicsView->mpParentProjectTab;
             pProjectTab->mpModelicaEditor->setText(mpOMCProxy->list(pProjectTab->mModelNameStructure));
-       // }
+        }
     }
 #if (QT_VERSION >= QT_VERSION_CHECK(4, 7, 0))
     else if (change == QGraphicsItem::ItemRotationHasChanged)
