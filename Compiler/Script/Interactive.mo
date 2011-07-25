@@ -11211,16 +11211,8 @@ algorithm
     case ({},_,_) then {};
     case ((Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = cn1,connector2 = cn2)) :: xs),c1,c2)
       equation
-        p1 = Absyn.crefToPath(c1);
-        s1 = Absyn.pathString(p1);
-        p2 = Absyn.crefToPath(c2);
-        s2 = Absyn.pathString(p2);
-        pn1 = Absyn.crefToPath(cn1);
-        sn1 = Absyn.pathString(pn1);
-        pn2 = Absyn.crefToPath(cn2);
-        sn2 = Absyn.pathString(pn2);
-        true = stringEq(s1, sn1);
-        true = stringEq(s2, sn2);
+        true = Absyn.crefEqual(c1,cn1);
+        true = Absyn.crefEqual(c2,cn2);
         res = deleteEquationInEqlist(xs, c1, c2);
       then
         res;
