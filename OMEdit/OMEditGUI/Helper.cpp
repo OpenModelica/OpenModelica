@@ -219,6 +219,8 @@ QString GUIMessages::getMessage(int type)
         return "The file '%1' is not a valid Modelica file. The file format is not supported. You can only open .mo files here.";
     case INCORRECT_HTML_TAGS:
         return "The html tags in the documentation are incorrect. Give correct starting and ending html tags and save it again.";
+    case ENTER_VALID_INTEGER:
+        return "Enter a valid Positive Integer";
     case ITEM_DROPPED_ON_ITSELF:
         return "You cannot drop an item on itself.";
     default:

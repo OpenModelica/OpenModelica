@@ -48,6 +48,7 @@
 class ConnectorLine;
 class GraphicsView;
 class Component;
+class ConnectorArrayMenu;
 
 class Connector : public QGraphicsWidget
 {
@@ -60,22 +61,31 @@ public:
     enum geometryType {VERTICAL, HORIZONTAL, DIAGONAL};
     GraphicsView *mpParentGraphicsView;
     QVector<ConnectorLine*> mpLines;
+    ConnectorArrayMenu *mpConnectorArrayMenu;
+    ConnectorArrayMenu *mpStartConnectorArrayMenu;
 
     void addPoint(QPointF point);
     void setStartComponent(Component *pComponent);
     void setEndComponent(Component *pComponent);
+    void setConnectorisArray(bool isArray);
+    void setStartConnectorisArray(bool isArray);
     int getNumberOfLines();
     Connector::geometryType getGeometry(int lineNumber);
     Component* getStartComponent();
     Component* getEndComponent();
+    bool getConnectorisArray();
+    bool getStartConnectorisArray();
     ConnectorLine* getLine(int line);
     bool isActive();
 private:
     ConnectorLine *mpConnectorLine;
     Component *mpStartComponent;
+    bool mConnectorIsArray;
+    bool mStartConnectorIsArray;
     Component *mpEndComponent;
     QVector<QPointF> mPoints;
     QVector<geometryType> mGeometries;
+
     bool mEndComponentConnected;
     bool mIsActive;
 signals:
@@ -112,6 +122,7 @@ public:
     void setPassive();
     void setHovered();
     void setLine(QPointF pos1, QPointF pos2);
+    bool isMousePressed;
     int getLineNumber();
 public slots:
     void setConnected();
@@ -136,6 +147,31 @@ private:
     QPen mActivePen;
     QPen mPassivePen;
     QPen mHoverPen;
+};
+
+class ConnectorArrayMenu : public QDialog
+{
+    Q_OBJECT
+public:
+    ConnectorArrayMenu(Connector *pConnector, QWidget *pParent = 0);
+    Connector *mpConnector;
+~ConnectorArrayMenu();
+void show(int maxIndex);
+   // void setText(QString text);
+private:
+    QLabel *mpIndexLabel;
+    QString mConnectorIndex;
+    QLineEdit *mpIndexTextBox;
+    QPushButton *mpCancelButton;
+    QPushButton *mpOkButton;
+    QDialogButtonBox *mpButtonBox;
+    int mMaxIndex;
+public slots:
+
+    QString getConnectorIndex();
+    void setConnectorIndex(QString connectorIndex);
+    void addIndex();
+    void reject();
 };
 
 #endif // CONNECTORWIDGET_H

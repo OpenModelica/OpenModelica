@@ -250,6 +250,7 @@ void GraphicsView::dropEvent(QDropEvent *event)
                             addComponentoView(name, classname, point);
                         }
                         event->accept();
+                        emit currentChange(1);
                     }
                     else
                     {
@@ -269,6 +270,7 @@ void GraphicsView::dropEvent(QDropEvent *event)
                         mpParentProjectTab->mpDiagramGraphicsView->addComponentoView(name, classname, point, true,
                                                                                      true, true);
                         event->accept();
+                        emit currentChange(1);
                     }
                     else
                     {
@@ -341,7 +343,7 @@ void GraphicsView::addComponentObject(Component *component)
     // add the component to the local list
     mComponentsList.append(component);
     // emit currentchange signal so that componentbrowsertree is updated
-    emit currentChange(1);
+    //emit currentChange(1);
 }
 
 void GraphicsView::deleteComponentObject(Component *component)
@@ -992,6 +994,47 @@ void GraphicsView::addConnector(Component *pComponent)
         this->mpConnector->addPoint(startPos);
         this->mpConnector->addPoint(startPos);
         this->mpConnector->drawConnector();
+
+        MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+        QList<ComponentsProperties*> components =pMainWindow->mpOMCProxy->getComponents(pComponent->getParentComponent()->getClassName());
+        QString startIconCompName;
+        if (pComponent->mpParentComponent)
+        {
+
+            startIconCompName = pComponent->mpComponentProperties->getName();
+        }
+        else
+        {
+            startIconCompName = pComponent->getName();
+        }
+
+        int flag=0;
+
+          int maxIndex=0;
+        //to check whether the component is an array of connectors
+        foreach(ComponentsProperties *abc , components)
+         {
+
+           if(abc->getName()==startIconCompName)
+           {
+               if(abc->getIndexValue()!=-1)
+               {
+                   flag=1;
+                   this->mpConnector->setStartConnectorisArray(true);
+                   maxIndex=abc->getIndexValue();
+
+               }
+           }
+         }
+
+        if(flag!=0)
+        {
+
+          mpConnector->mpStartConnectorArrayMenu->show(maxIndex);
+        }
+
+
+
     }
     // When clicking end port
     else
@@ -1001,11 +1044,22 @@ void GraphicsView::addConnector(Component *pComponent)
         if (pStartComponent->mpParentComponent)
         {
             startIconName = QString(pStartComponent->mpParentComponent->getName()).append(".");
+            if(this->mpConnector->getStartConnectorisArray()==false)
             startIconCompName = pStartComponent->mpComponentProperties->getName();
+            else
+            startIconCompName = pStartComponent->mpComponentProperties->getName() + "[" + this->mpConnector->mpStartConnectorArrayMenu->getConnectorIndex() + "]";
+
+
+
         }
         else
         {
+
+            if(this->mpConnector->getStartConnectorisArray()==false)
             startIconCompName = pStartComponent->getName();
+            else
+            startIconCompName = pStartComponent->getName() + "[" + this->mpConnector->mpStartConnectorArrayMenu->getConnectorIndex() + "]";
+
         }
         if (pComponent->mpParentComponent)
         {
@@ -1016,6 +1070,36 @@ void GraphicsView::addConnector(Component *pComponent)
         {
             endIconCompName = pComponent->getName();
         }
+
+
+        MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+        QList<ComponentsProperties*> components =pMainWindow->mpOMCProxy->getComponents(pComponent->getParentComponent()->getClassName());
+
+        int flag=0;
+
+          int maxIndex=0;
+        //to check whether the component is an array of connectors
+        foreach(ComponentsProperties *abc , components)
+         {
+
+           if(abc->getName()==endIconCompName)
+           {
+               if(abc->getIndexValue()!=-1)
+               {
+                   flag=1;
+                   this->mpConnector->setConnectorisArray(true);
+                   maxIndex=abc->getIndexValue();
+
+               }
+           }
+         }
+        if(flag!=0)
+        {
+          this->mpConnector->setEndComponent(pComponent);
+          mpConnector->mpConnectorArrayMenu->show(maxIndex);
+        }
+        else
+        {
 
         createConnection(pStartComponent, QString(startIconName).append(startIconCompName),
                          pComponent, QString(endIconName).append(endIconCompName));
@@ -1055,7 +1139,7 @@ void GraphicsView::addConnector(Component *pComponent)
 //            // create connection
 //            createConnection(pStartComponent, QString(startIconName).append(".").append(startIconCompName), pComponent,
 //                             QString(endIconName).append(".").append(endIconCompName));
-//        }
+        }
     }
 }
 
@@ -1107,6 +1191,108 @@ void GraphicsView::createConnection(Component *pStartComponent, QString startIco
             }
         }
     }
+}
+
+void GraphicsView::addConnectorForArray(Component *pStartComponent,Component *pEndComponent ,int index)
+{
+
+    if(index==-1)
+    {
+        removeConnector();
+    }
+
+    else
+    {
+        QString indexStr = QString::number(index);
+        this->mpConnector->mpConnectorArrayMenu->setConnectorIndex(indexStr);
+        QString startIconName, startIconCompName, endIconName, endIconCompName;
+        if (pStartComponent->mpParentComponent)
+        {
+            startIconName = QString(pStartComponent->mpParentComponent->getName()).append(".");
+            if(this->mpConnector->getStartConnectorisArray()==false)
+            startIconCompName = pStartComponent->mpComponentProperties->getName();
+            else
+            startIconCompName = pStartComponent->mpComponentProperties->getName() + "[" + this->mpConnector->mpStartConnectorArrayMenu->getConnectorIndex() + "]";
+        }
+        else
+        {
+
+            if(this->mpConnector->getStartConnectorisArray()==false)
+            startIconCompName = pStartComponent->getName();
+            else
+            startIconCompName = pStartComponent->getName() + "[" + this->mpConnector->mpStartConnectorArrayMenu->getConnectorIndex() + "]";
+        }
+        if (pEndComponent->mpParentComponent)
+        {
+            endIconName = QString(pEndComponent->mpParentComponent->getName()).append(".");
+            endIconCompName = pEndComponent->mpComponentProperties->getName() + "[" + indexStr + "]";
+        }
+        else
+        {
+            endIconCompName = pEndComponent->getName() + "[" + indexStr + "]";
+        }
+
+        createConnection(pStartComponent, QString(startIconName).append(startIconCompName),
+                         pEndComponent, QString(endIconName).append(endIconCompName));
+   //  MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+     //QString startIconName = pStartComponent->getParentComponent()->getName();
+     //QString startIconCompName = pStartComponent->mpComponentProperties->getName();
+    // QString endIconName = pEndComponent->getParentComponent()->getName();
+    // QString endIconCompName = pEndComponent->mpComponentProperties->getName()+ "[" + indexStr + "]";
+
+  /*  if (pStartComponent == pEndComponent)
+    {
+        removeConnector();
+        pMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::SAME_PORT_CONNECT));
+    }
+    else
+    {
+
+
+
+
+        if (pMainWindow->mpOMCProxy->addConnection(startIconName + "." + startIconCompName,
+                                                   endIconName + "." + endIconCompName + "[" + indexStr + "]",
+                                                   mpParentProjectTab->mModelNameStructure))
+        {
+
+            // Check if both ports connected are compatible or not.
+            if (pMainWindow->mpOMCProxy->instantiateModelSucceeds(mpParentProjectTab->mModelNameStructure))
+            {
+
+                this->mIsCreatingConnector = false;
+
+                QPointF newPos = pEndComponent->mapToScene(pEndComponent->boundingRect().center());
+
+                this->mpConnector->updateEndPoint(newPos);
+
+                pEndComponent->getParentComponent()->addConnector(this->mpConnector);
+
+                //this->mpConnector->setEndComponent(pEndComponent);
+                this->mConnectorsVector.append(mpConnector);
+
+                // add the connection annotation to OMC
+                mpConnector->updateConnectionAnnotationString();
+
+                pMainWindow->mpMessageWidget->printGUIInfoMessage("Connected: (" + startIconName + "." + startIconCompName +
+                                                                  ", " + endIconName + "." + endIconCompName + "["+ indexStr +"]" + ")");
+            }
+            else
+            {
+                qDebug()<<"flag";
+                removeConnector();
+                //! @todo make the error message better
+                pMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::INCOMPATIBLE_CONNECTORS));
+                pMainWindow->mpMessageWidget->printGUIErrorMessage(pMainWindow->mpOMCProxy->getErrorString());
+                // remove the connection from model
+                pMainWindow->mpOMCProxy->deleteConnection(startIconName + "." + startIconCompName,
+                                                          endIconName + "." + endIconCompName + "["+ indexStr +"]",
+                                                          mpParentProjectTab->mModelNameStructure);
+            }
+        }
+
+    }*/
+}
 }
 
 //! Removes the current connecting connector from the model.
@@ -1162,20 +1348,33 @@ void GraphicsView::removeConnector(Connector* pConnector)
         if (pConnector->getStartComponent()->mpParentComponent)
         {
             startIconName = QString(pConnector->getStartComponent()->mpParentComponent->getName()).append(".");
-            startIconCompName = pConnector->getStartComponent()->mpComponentProperties->getName();
+            if(pConnector->getStartConnectorisArray()==false)
+            startIconCompName =pConnector->getStartComponent()->mpComponentProperties->getName();
+            else
+            startIconCompName = pConnector->getStartComponent()->mpComponentProperties->getName() + "[" + pConnector->mpStartConnectorArrayMenu->getConnectorIndex() + "]";
         }
         else
         {
             startIconCompName = pConnector->getStartComponent()->getName();
+            if(pConnector->getStartConnectorisArray()==false)
+            startIconCompName =pConnector->getStartComponent()->getName();
+            else
+            startIconCompName = pConnector->getStartComponent()->getName() + "[" + pConnector->mpStartConnectorArrayMenu->getConnectorIndex() + "]";
         }
         if (pConnector->getEndComponent()->mpParentComponent)
         {
             endIconName = QString(pConnector->getEndComponent()->mpParentComponent->getName()).append(".");
+            if(pConnector->getConnectorisArray()==false)
             endIconCompName = pConnector->getEndComponent()->mpComponentProperties->getName();
+            else
+            endIconCompName = pConnector->getEndComponent()->mpComponentProperties->getName() + "[" + pConnector->mpConnectorArrayMenu->getConnectorIndex() + "]";
         }
         else
         {
+            if(pConnector->getConnectorisArray()==false)
             endIconCompName = pConnector->getEndComponent()->getName();
+            else
+            endIconCompName = pConnector->getEndComponent()->getName() + "[" + pConnector->mpConnectorArrayMenu->getConnectorIndex() + "]";
         }
         // delete Connection
         deleteConnection(QString(startIconName).append(startIconCompName), QString(endIconName).append(endIconCompName));

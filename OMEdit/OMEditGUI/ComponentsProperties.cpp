@@ -59,6 +59,8 @@ ComponentsProperties::ComponentsProperties(QString value)
     this->mCasualityMap.insert("unspecified", "none");
     this->mCasuality.clear();
 
+    this->mIndex="";
+    this->mIndexValue=0;
     parseString(value);
 }
 
@@ -69,6 +71,18 @@ void ComponentsProperties::parseString(QString value)
 
     int index = 0;
     QStringList list = StringHandler::getStrings(value);
+     mIndex = StringHandler::removeFirstLastCurlBrackets(list.at(list.size()-1));
+
+
+            bool ok;
+            if(mIndex.isEmpty())
+            mIndexValue=-1;
+            else if(mIndex=="n")
+                mIndexValue=-2;
+            else
+                mIndexValue=mIndex.toInt(&ok,10);
+
+
 
     if (list.size() > 0)
         this->mClassName = list.at(0);
@@ -201,4 +215,15 @@ bool ComponentsProperties::getInner()
 bool ComponentsProperties::getOuter()
 {
     return mIsOuter;
+}
+
+
+int ComponentsProperties::getIndexValue()
+{
+    return mIndexValue;
+}
+
+QString ComponentsProperties::getIndex()
+{
+    return mIndex;
 }

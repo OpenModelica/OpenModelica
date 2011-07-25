@@ -42,6 +42,7 @@ class ComponentsProperties
 public:
     ComponentsProperties(QString value);
     void parseString(QString value);
+    QString getIndex();
     QString getClassName();
     QString getName();
     QString getComment();
@@ -50,6 +51,7 @@ public:
     bool getFlow();
     bool getFinal();
     bool getReplaceable();
+    int getIndexValue();
     QString getCasuality();
     bool getInner();
     bool getOuter();
@@ -57,6 +59,8 @@ private:
     QString mClassName;
     QString mName;
     QString mComment;
+    QString mIndex;
+    int mIndexValue;
     bool mIsProtected;
     bool mIsFinal;
     bool mIsFlow;
