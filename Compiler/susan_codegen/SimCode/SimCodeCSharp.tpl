@@ -721,12 +721,12 @@ template zeroCrossing(Exp it, Integer index, SimCode simCode) ::=
     <%preExp%>
     gout[<%index%>] = <%
                     match operator
-                    case LESS(__)
-                    case LESSEQ(__)    then '<%e1%> - <%e2%>' //space is mandatory here ... (X--1) must be (X - -1)
                     case GREATER(__)
+                    case LESSEQ(__)    then '<%e1%> - <%e2%>' //space is mandatory here ... (X--1) must be (X - -1)
+                    case LESS(__)
                     case GREATEREQ(__) then '<%e2%> - <%e1%>'
-                    case EQUAL(__) then '/*HACK*/(<%e2%> == <%e1%>) ? 0.0 : 1.0' //'<%e2%> == <%e1%>'
-                    case NEQUAL(__) then '/*HACK*/(<%e2%> != <%e1%>) ? 0.0 : 1.0' //'<%e2%> != <%e1%>'             
+                    case EQUAL(__)
+                    case NEQUAL(__) then '/*BE AWARE*/Math.Abs(<%e1%> - <%e2%>)' // maybe a HACK, but mathematically correct against the domain change test: (gout > 0) <> (gout_old > 0)               
                     else "!!!unsupported ZC operator!!!"
                    %>;      
     >>
