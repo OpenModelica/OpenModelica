@@ -1933,6 +1933,11 @@ package ComponentReference
     output list<DAE.Subscript> subs;
   end crefSubs;
 
+  function crefLastType
+    input DAE.ComponentRef inRef;
+    output DAE.ExpType res;
+  end crefLastType;
+
 end ComponentReference;
 
 package Expression

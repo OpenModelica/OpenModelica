@@ -4371,16 +4371,28 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
           let arrName = contextCref(crefStripLastSubs(cr), context)
           let arrayType = expTypeArray(ty)
           let dimsLenStr = listLength(crefSubs(cr))
-          let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
-              daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-            ;separator=", ")
           match arrayType
             case "metatype_array" then
+              let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
+                 daeExp(exp, context, &preExp, &varDecls)
+                 ;separator=", ")
               'arrayGet(<%arrName%>,<%dimsValuesStr%>) /* DAE.CREF */'
             else
-              <<
-              (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
-              >>
+              match context
+              case FUNCTION_CONTEXT(__) then
+                let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
+                  daeExp(exp, context, &preExp, &varDecls)
+                  ;separator=", ")
+                <<
+                (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
+                >>
+              else
+                match crefLastType(cr)
+                case et as ET_ARRAY(__) then
+                <<
+                (&<%arrName%>)[<%threadDimSubList(et.arrayDimensions,crefSubs(cr),context,&preExp,&varDecls)%>]
+                >>
+                else error(sourceInfo(),'Indexing non-array <%printExpStr(ecr)%>')
         else
           // The array subscript denotes a slice
           let &preExp += '/* daeExpCrefRhs2 SLICE(<%ExpressionDump.printExpStr(ecr)%>) preExp  */<%\n%>'
@@ -4399,6 +4411,28 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
      */
     >>
 end daeExpCrefRhs2;
+
+template threadDimSubList(list<Dimension> dims, list<Subscript> subs, Context context, Text &preExp, Text &varDecls)
+  "Do direct indexing since sizes are known during compile-time"
+::=
+  match subs
+  case {} then error(sourceInfo(),"Empty dimensions in indexing cref?")
+  case (sub as INDEX(__))::subrest
+  then
+    match dims
+      case _::dimrest
+      then
+        let estr = daeExp(sub.exp, context, &preExp, &varDecls)
+        '((<%estr%>)<%
+          dimrest |> dim =>
+          match dim
+          case DIM_INTEGER(__) then '*<%integer%>'
+          case DIM_ENUM(__) then '*<%size%>'
+          else error(sourceInfo(),"Non-constant dimension in simulation context")
+        %>)<%match subrest case {} then "" else '+<%threadDimSubList(dimrest,subrest,context,&preExp,&varDecls)%>'%>'
+      else error(sourceInfo(),"Less subscripts that dimensions in indexing cref? That's odd!")
+  else error(sourceInfo(),"Non-index subscript in indexing cref? That's odd!")
+end threadDimSubList;
 
 template daeExpCrefRhsIndexSpec(list<Subscript> subs, Context context,
                                 Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
@@ -5146,6 +5180,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   
   case CALL(path=IDENT(name="delay"), expLst={ICONST(integer=index), e, d, delayMax}) then
     let tvar = tempDecl("modelica_real", &varDecls /*BUFD*/)
+
     let var1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let var2 = daeExp(d, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let var3 = daeExp(delayMax, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
