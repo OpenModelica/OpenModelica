@@ -556,11 +556,21 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
         // this flag is just used to have seperate identify for if statement in mouse release event of graphicsview
         this->mIsMovingComponents = true;
         // save the position of all components
+
         foreach (Component *component, mComponentsList)
         {
             component->mOldPosition = component->pos();
             component->isMousePressed = true;
         }
+
+     /*   foreach(Connector *connector , mConnectorsVector)
+        {
+            foreach(ConnectorLine *connectorline , connector->mpLines)
+               {
+                   qDebug()<<"moving comp";
+                   connectorline->isMousePressed = true;
+               }
+        }*/
     }
     /* don't send mouse press events to items if we are creating something, only send them if creating a connector
        because for connector we need to select end port */
@@ -573,6 +583,7 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
 
 void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
 {
+
     if ((event->button() == Qt::LeftButton) && (this->mIsMovingComponents))
     {
         this->mIsMovingComponents = false;
@@ -591,6 +602,13 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
                     {
                         connector->updateConnectionAnnotationString();
                     }
+
+                       // foreach(ConnectorLine *connectorline , connector->mpLines)
+                         //  {
+                           //    qDebug()<<"graphic mouse release" ;
+                            //   connectorline->isMousePressed = false;
+                          // }
+
                 }
                 mpParentProjectTab->mpModelicaEditor->setText(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
             }
@@ -1044,7 +1062,7 @@ void GraphicsView::addConnector(Component *pComponent)
         if (pStartComponent->mpParentComponent)
         {
             startIconName = QString(pStartComponent->mpParentComponent->getName()).append(".");
-            if(this->mpConnector->getStartConnectorisArray()==false)
+            if(!this->mpConnector->getStartConnectorisArray())
             startIconCompName = pStartComponent->mpComponentProperties->getName();
             else
             startIconCompName = pStartComponent->mpComponentProperties->getName() + "[" + this->mpConnector->mpStartConnectorArrayMenu->getConnectorIndex() + "]";
@@ -1055,7 +1073,7 @@ void GraphicsView::addConnector(Component *pComponent)
         else
         {
 
-            if(this->mpConnector->getStartConnectorisArray()==false)
+            if(!this->mpConnector->getStartConnectorisArray())
             startIconCompName = pStartComponent->getName();
             else
             startIconCompName = pStartComponent->getName() + "[" + this->mpConnector->mpStartConnectorArrayMenu->getConnectorIndex() + "]";
@@ -1209,7 +1227,7 @@ void GraphicsView::addConnectorForArray(Component *pStartComponent,Component *pE
         if (pStartComponent->mpParentComponent)
         {
             startIconName = QString(pStartComponent->mpParentComponent->getName()).append(".");
-            if(this->mpConnector->getStartConnectorisArray()==false)
+            if(!this->mpConnector->getStartConnectorisArray())
             startIconCompName = pStartComponent->mpComponentProperties->getName();
             else
             startIconCompName = pStartComponent->mpComponentProperties->getName() + "[" + this->mpConnector->mpStartConnectorArrayMenu->getConnectorIndex() + "]";
@@ -1217,7 +1235,7 @@ void GraphicsView::addConnectorForArray(Component *pStartComponent,Component *pE
         else
         {
 
-            if(this->mpConnector->getStartConnectorisArray()==false)
+            if(!this->mpConnector->getStartConnectorisArray())
             startIconCompName = pStartComponent->getName();
             else
             startIconCompName = pStartComponent->getName() + "[" + this->mpConnector->mpStartConnectorArrayMenu->getConnectorIndex() + "]";
@@ -1348,7 +1366,7 @@ void GraphicsView::removeConnector(Connector* pConnector)
         if (pConnector->getStartComponent()->mpParentComponent)
         {
             startIconName = QString(pConnector->getStartComponent()->mpParentComponent->getName()).append(".");
-            if(pConnector->getStartConnectorisArray()==false)
+            if(!pConnector->getStartConnectorisArray())
             startIconCompName =pConnector->getStartComponent()->mpComponentProperties->getName();
             else
             startIconCompName = pConnector->getStartComponent()->mpComponentProperties->getName() + "[" + pConnector->mpStartConnectorArrayMenu->getConnectorIndex() + "]";
@@ -1356,7 +1374,7 @@ void GraphicsView::removeConnector(Connector* pConnector)
         else
         {
             startIconCompName = pConnector->getStartComponent()->getName();
-            if(pConnector->getStartConnectorisArray()==false)
+            if(!pConnector->getStartConnectorisArray())
             startIconCompName =pConnector->getStartComponent()->getName();
             else
             startIconCompName = pConnector->getStartComponent()->getName() + "[" + pConnector->mpStartConnectorArrayMenu->getConnectorIndex() + "]";
@@ -1364,14 +1382,14 @@ void GraphicsView::removeConnector(Connector* pConnector)
         if (pConnector->getEndComponent()->mpParentComponent)
         {
             endIconName = QString(pConnector->getEndComponent()->mpParentComponent->getName()).append(".");
-            if(pConnector->getEndConnectorisArray()==false)
+            if(!pConnector->getEndConnectorisArray())
             endIconCompName = pConnector->getEndComponent()->mpComponentProperties->getName();
             else
             endIconCompName = pConnector->getEndComponent()->mpComponentProperties->getName() + "[" + pConnector->mpConnectorArrayMenu->getConnectorIndex() + "]";
         }
         else
         {
-            if(pConnector->getEndConnectorisArray()==false)
+            if(!pConnector->getEndConnectorisArray())
             endIconCompName = pConnector->getEndComponent()->getName();
             else
             endIconCompName = pConnector->getEndComponent()->getName() + "[" + pConnector->mpConnectorArrayMenu->getConnectorIndex() + "]";

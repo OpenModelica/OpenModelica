@@ -279,7 +279,7 @@ void Connector::updateConnectionAnnotationString()
     if (getStartComponent()->mpParentComponent)
     {
         startIconName = QString(getStartComponent()->mpParentComponent->getName()).append(".");
-        if(this->getStartConnectorisArray()==false)
+        if(!this->getStartConnectorisArray())
         startIconCompName = getStartComponent()->mpComponentProperties->getName();
         else
         startIconCompName = getStartComponent()->mpComponentProperties->getName() + "[" + this->mpStartConnectorArrayMenu->getConnectorIndex() + "]";
@@ -288,7 +288,7 @@ void Connector::updateConnectionAnnotationString()
     else
     {
 
-        if(this->getStartConnectorisArray()==false)
+        if(!this->getStartConnectorisArray())
         startIconCompName = getStartComponent()->getName();
         else
         startIconCompName = getStartComponent()->getName() + "[" + this->mpStartConnectorArrayMenu->getConnectorIndex() + "]";
@@ -297,14 +297,14 @@ void Connector::updateConnectionAnnotationString()
     if (getEndComponent()->mpParentComponent)
     {
         endIconName = QString(getEndComponent()->mpParentComponent->getName()).append(".");
-        if(this->getEndConnectorisArray()==false)
+        if(!this->getEndConnectorisArray())
         endIconCompName = getEndComponent()->mpComponentProperties->getName();
         else
         endIconCompName = getEndComponent()->mpComponentProperties->getName() + "[" + this->mpConnectorArrayMenu->getConnectorIndex() + "]";
     }
     else
     {
-        if(this->getEndConnectorisArray()==false)
+        if(!this->getEndConnectorisArray())
         endIconCompName = getEndComponent()->getName();
         else
         endIconCompName = getEndComponent()->getName() + "[" + this->mpConnectorArrayMenu->getConnectorIndex() + "]";
@@ -596,14 +596,20 @@ void ConnectorLine::setHovered()
 //! Defines what shall happen if a mouse key is pressed while hovering a connector line.
 void ConnectorLine::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-    //isMousePressed=true;
+    isMousePressed=true;
     QGraphicsLineItem::mousePressEvent(event);
 }
 
 //! Defines what shall happen if a mouse key is released while hovering a connector line.
 void ConnectorLine::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
-    //isMousePressed=false;
+    mpParentConnector->updateConnectionAnnotationString();
+    // update connectors annotations that are associated to this component
+    ProjectTab *pProjectTab = mpParentConnector->mpParentGraphicsView->mpParentProjectTab;
+    OMCProxy *pOMCProxy = mpParentConnector->mpParentGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy;
+    pProjectTab->mpModelicaEditor->setText(pOMCProxy->list(pProjectTab->mModelNameStructure));
+
+    isMousePressed=false;
     QGraphicsLineItem::mouseReleaseEvent(event);
 }
 
@@ -660,6 +666,8 @@ void ConnectorLine::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
 //! Defines what shall happen if the line is selected or moved.
 QVariant ConnectorLine::itemChange(GraphicsItemChange change, const QVariant &value)
 {
+
+
     if (change == QGraphicsItem::ItemSelectedHasChanged)
     {
          emit lineSelected(this->isSelected(), this->mLineNumber);
@@ -667,15 +675,16 @@ QVariant ConnectorLine::itemChange(GraphicsItemChange change, const QVariant &va
     if (change == QGraphicsItem::ItemPositionHasChanged)
     {
         emit lineMoved(this->mLineNumber);
-       // if (!isMousePressed)
-       // {
+       if (!isMousePressed)
+        {
+            qDebug()<<"connector item change" ;
             mpParentConnector->updateConnectionAnnotationString();
             // update connectors annotations that are associated to this component
             ProjectTab *pProjectTab = mpParentConnector->mpParentGraphicsView->mpParentProjectTab;
             OMCProxy *pOMCProxy = mpParentConnector->mpParentGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy;
             pProjectTab->mpModelicaEditor->setText(pOMCProxy->list(pProjectTab->mModelNameStructure));
 
-       // }
+        }
 
 
     }
@@ -768,7 +777,7 @@ void ConnectorArrayMenu::addIndex()
 bool ok;
     int index= mpIndexTextBox->text().toInt(&ok,10);
 
-    if(ok==true)
+    if(ok)
 {
     if(index>=0 && index<=mMaxIndex || index>=0 && mMaxIndex ==-2)
     {

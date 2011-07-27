@@ -291,9 +291,9 @@ signals:
 class ComponentBrowserTreeNode : public QTreeWidgetItem
 {
 public:
-    ComponentBrowserTreeNode(QString text, QString parentName,QString namestruc, QString tooltip, int type, QTreeWidget *parent = 0);
+    ComponentBrowserTreeNode(QString text, QString parentName,QString classname, QString namestruc, QString tooltip, int type, QTreeWidget *parent = 0);
    // static QIcon getModelicaNodeIcon(int type);
-
+      QString mClassName;
     int mType;
    QString mName;
     QString mParentName;
@@ -311,7 +311,7 @@ public:
     void addBrowserNode(QString name, int type, QString className, QString parentName=QString(), QString parentStructure=QString());
 
     void deleteBrowserNode(ComponentBrowserTreeNode *item);
-    void addBrowserChild(QString name,QString className, int type, QString parentName=QString(), QString parentStructure=QString());
+    void addBrowserChild(QString name,QString className,QString parentStructure=QString());
     //void removeChildNodes(ModelicaTreeNode *item);
 
      ComponentBrowserWidget *mpParentComponentBrowserWidget;
@@ -325,6 +325,7 @@ signals:
     //void nodeDeleted();
 private slots:
     //void modelicaTreeItemPressed(QTreeWidgetItem *item);
+    void expandTree(QTreeWidgetItem *item);
 
    public slots:
     void editComponentBrowser();
