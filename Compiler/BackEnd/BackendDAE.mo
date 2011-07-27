@@ -353,6 +353,8 @@ uniontype TreeValue "Each node in the binary tree can have a value associated wi
   - Tree Value"
   record TREEVALUE
     Key key "Key" ;
+    String str;
+    Integer hash;
     Value value "Value" ;
   end TREEVALUE;
 

@@ -7007,6 +7007,19 @@ algorithm
   res := (v < 0);
 end intNegative;
 
+public function intSign
+  input Integer i;
+  output Integer o;
+algorithm
+  o := match i
+    case 0 then 0;
+    case i
+      equation
+        i = if_(i>0,1,-1);
+      then i;
+  end match;
+end intSign;
+
 public function optionToList "function: optionToList
   Returns an empty list for NONE() and a list containing
   the element for SOME(element). To use with listAppend"

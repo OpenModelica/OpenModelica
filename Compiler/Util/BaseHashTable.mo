@@ -71,6 +71,7 @@ protected import Util;
 public constant Integer lowBucketSize =  257;
 public constant Integer avgBucketSize = 2053;
 public constant Integer bigBucketSize = 4013;
+public constant Integer hugeBucketSize = 536870879 "2^29 - 33 is prime :)";
 public constant Integer defaultBucketSize = avgBucketSize;
 
 public function bucketToValuesSize

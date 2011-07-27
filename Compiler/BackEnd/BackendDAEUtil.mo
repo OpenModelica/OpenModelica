@@ -1994,7 +1994,7 @@ algorithm
     case (BackendDAE.TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()),klst,vlst) 
       then (klst,vlst);
     
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(key,value)),leftSubTree = left,rightSubTree = right),klst,vlst)
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(key=key,value=value)),leftSubTree = left,rightSubTree = right),klst,vlst)
       equation
         (klst,vlst) = bintreeToListOpt(left, klst, vlst);
         (klst,vlst) = bintreeToListOpt(right, klst, vlst);
@@ -2997,6 +2997,20 @@ end whenClauseAddDAE;
   BackendDAE.BinTree stuff
  **************************/
 
+protected function keyCompareNinjaSecretHashTricks
+  "Super ninja secret that allows you to implement a binary tree based on the hash of strings.
+  And only do string comparisons for those rare conflicts (we use 63-bit integers, so conflicts should be
+  very, very rare)"
+  input String lstr;
+  input Integer lhash;
+  input String rstr;
+  input Integer rhash;
+  output Integer cmp;
+algorithm
+  cmp := Util.intSign(lhash-rhash);
+  cmp := Debug.bcallret2(cmp == 0, stringCompare, lstr, rstr, cmp);
+end keyCompareNinjaSecretHashTricks;
+
 public function treeGet "function: treeGet
   author: PA
 
@@ -3009,55 +3023,57 @@ public function treeGet "function: treeGet
   output BackendDAE.Value v;
 protected
   String keystr;
+  Integer keyhash;
 algorithm
   keystr := ComponentReference.printComponentRefStr(key);
-  v := treeGet3(bt, keystr, treeGet2(bt, keystr));
+  keyhash := System.stringHashDjb2Mod(keystr,BaseHashTable.hugeBucketSize);
+  v := treeGet3(bt, keystr, keyhash, treeGet2(bt, keystr, keyhash));
 end treeGet;
 
 protected function treeGet2
   "Helper function to treeGet"
   input BackendDAE.BinTree inBinTree;
-  input String inString;
+  input String keystr;
+  input Integer keyhash;
   output Integer compResult;
 algorithm
-  compResult := match (inBinTree,inString)
+  compResult := match (inBinTree,keystr,keyhash)
     local
-      String rkeystr,keystr;
+      String rkeystr;
+      Integer rkeyhash;
       DAE.ComponentRef rkey;
       
     // found it
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(key=rkey))),keystr)
-      equation
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-      then stringCompare(rkeystr, keystr);
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(str=rkeystr,hash=rkeyhash))),keystr,keyhash)
+      then keyCompareNinjaSecretHashTricks(rkeystr, rkeyhash, keystr, keyhash);
   end match;
 end treeGet2;
 
 protected function treeGet3
   "Helper function to treeGet"
   input BackendDAE.BinTree inBinTree;
-  input String inString;
+  input String keystr;
+  input Integer keyhash;
   input Integer compResult;
   output BackendDAE.Value outValue;
 algorithm
-  outValue := match (inBinTree,inString,compResult)
+  outValue := match (inBinTree,keystr,keyhash,compResult)
     local
-      String keystr;
       BackendDAE.Value rval;
       BackendDAE.BinTree right, left;
       
     // found it
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(value=rval))),keystr,0) then rval;
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(value=rval))),keystr,keyhash,0) then rval;
     // search right
-    case (BackendDAE.TREENODE(rightSubTree = SOME(right)),keystr,1)
+    case (BackendDAE.TREENODE(rightSubTree = SOME(right)),keystr,keyhash,1)
       equation
-        compResult = treeGet2(right, keystr);
-      then treeGet3(right, keystr, compResult);
+        compResult = treeGet2(right, keystr, keyhash);
+      then treeGet3(right, keystr, keyhash, compResult);
     // search left
-    case (BackendDAE.TREENODE(leftSubTree = SOME(left)),keystr,-1)
+    case (BackendDAE.TREENODE(leftSubTree = SOME(left)),keystr,keyhash,-1)
       equation
-        compResult = treeGet2(left, keystr);
-      then treeGet3(left, keystr, compResult);
+        compResult = treeGet2(left, keystr, keyhash);
+      then treeGet3(left, keystr, keyhash, compResult);
   end match;
 end treeGet3;
 
@@ -3088,156 +3104,155 @@ public function treeAdd "function: treeAdd
   author: PA
   Copied from generic implementation. Changed that no hashfunction is passed
   since a string (ComponentRef) can not be uniquely mapped to an int. Therefore we need to compare two strings
-  to get a unique ordering."
+  to get a unique ordering.
+  
+  Actually, hashing is still important in order to speed up comparison of strings... So it was re-added in a
+  good way, see function keyCompareNinjaSecretHashTricks"
   input BackendDAE.BinTree inBinTree;
   input BackendDAE.Key inKey;
   input BackendDAE.Value inValue;
   output BackendDAE.BinTree outBinTree;
+protected
+  String str;
 algorithm
-  outBinTree := matchcontinue (inBinTree,inKey,inValue)
+  str := ComponentReference.printComponentRefStr(inKey);
+  // We use modulo hashes in order to avoid problems with boxing/unboxing of integers in bootstrapped OMC
+  outBinTree := treeAdd2(inBinTree,inKey,System.stringHashDjb2Mod(str,BaseHashTable.hugeBucketSize),str,inValue);
+end treeAdd;
+
+protected function treeAdd2 "function: treeAdd
+  author: PA
+  Copied from generic implementation. Changed that no hashfunction is passed
+  since a string (ComponentRef) can not be uniquely mapped to an int. Therefore we need to compare two strings
+  to get a unique ordering."
+  input BackendDAE.BinTree inBinTree;
+  input BackendDAE.Key inKey;
+  input Integer keyhash;
+  input String keystr;
+  input BackendDAE.Value inValue;
+  output BackendDAE.BinTree outBinTree;
+algorithm
+  outBinTree := matchcontinue (inBinTree,inKey,keyhash,keystr,inValue)
     local
-      DAE.ComponentRef key,rkey;
+      DAE.ComponentRef nkey,key,rkey;
       BackendDAE.Value value,rval,cmpval;
-      String rkeystr,keystr;
+      String rkeystr;
       Option<BackendDAE.BinTree> left,right;
       BackendDAE.BinTree t_1,t,right_1,left_1;
-      DAE.ComponentRef nkey;
+      Integer rhash;
+      Option<BackendDAE.TreeValue> optVal;
     
-    case (BackendDAE.TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()),key,value)
-      equation
-        nkey = key;
+    case (BackendDAE.TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()),key,keyhash,keystr,value)
       then 
-        BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(nkey,value)),NONE(),NONE());
+        BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(key,keystr,keyhash,value)),NONE(),NONE());
     
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = right),key,value)
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = left,rightSubTree = right),key,keyhash,keystr,value)
       equation
-        rkeystr = ComponentReference.printComponentRefStr(rkey) "Replace this node" ;
-        keystr = ComponentReference.printComponentRefStr(key);
-        0 = stringCompare(rkeystr, keystr);
+        0 = keyCompareNinjaSecretHashTricks(rkeystr,rhash,keystr,keyhash);
       then
-        BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,value)),left,right);
+        BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,rkeystr,rhash,value)),left,right);
     
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = (right as SOME(t))),key,value)
+    case (BackendDAE.TREENODE(value = optVal as SOME(BackendDAE.TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = left,rightSubTree = (right as SOME(t))),key,keyhash,keystr,value)
       equation
-        keystr = ComponentReference.printComponentRefStr(key) "Insert to right subtree";
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = true;
-        t_1 = treeAdd(t, key, value);
+        1 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
+        t_1 = treeAdd2(t, key, keyhash, keystr, value);
       then
-        BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,rval)),left,SOME(t_1));
+        BackendDAE.TREENODE(optVal,left,SOME(t_1));
     
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = left,rightSubTree = (right as NONE())),key,value)
+    case (BackendDAE.TREENODE(value = optVal as SOME(BackendDAE.TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = left,rightSubTree = (right as NONE())),key,keyhash,keystr,value)
       equation
-        keystr = ComponentReference.printComponentRefStr(key) "Insert to right node";
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = true;
-        right_1 = treeAdd(BackendDAE.TREENODE(NONE(),NONE(),NONE()), key, value);
+        1 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
+        right_1 = treeAdd2(BackendDAE.TREENODE(NONE(),NONE(),NONE()), key, keyhash, keystr, value);
       then
-        BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,rval)),left,SOME(right_1));
+        BackendDAE.TREENODE(optVal,left,SOME(right_1));
     
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = (left as SOME(t)),rightSubTree = right),key,value)
+    case (BackendDAE.TREENODE(value = optVal as SOME(BackendDAE.TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = (left as SOME(t)),rightSubTree = right),key,keyhash,keystr,value)
       equation
-        keystr = ComponentReference.printComponentRefStr(key) "Insert to left subtree";
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = false;
-        t_1 = treeAdd(t, key, value);
+        -1 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
+        t_1 = treeAdd2(t, key, keyhash, keystr, value);
       then
-        BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,rval)),SOME(t_1),right);
+        BackendDAE.TREENODE(optVal,SOME(t_1),right);
     
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = (left as NONE()),rightSubTree = right),key,value)
+    case (BackendDAE.TREENODE(value = optVal as SOME(BackendDAE.TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = (left as NONE()),rightSubTree = right),key,keyhash,keystr,value)
       equation
-        keystr = ComponentReference.printComponentRefStr(key) "Insert to left node";
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        cmpval = stringCompare(rkeystr, keystr);
-        (cmpval > 0) = false;
-        left_1 = treeAdd(BackendDAE.TREENODE(NONE(),NONE(),NONE()), key, value);
+        -1 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
+        left_1 = treeAdd2(BackendDAE.TREENODE(NONE(),NONE(),NONE()), key, keyhash, keystr, value);
       then
-        BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,rval)),SOME(left_1),right);
+        BackendDAE.TREENODE(optVal,SOME(left_1),right);
     
-    case (_,_,_)
+    else
       equation
         print("- BackendDAEUtil.treeAdd failed\n");
       then
         fail();
   end matchcontinue;
-end treeAdd;
+end treeAdd2;
 
-protected function treeDelete "function: treeDelete
+protected function treeDelete2 "function: treeDelete
   author: PA
   This function deletes an entry from the BinTree."
   input BackendDAE.BinTree inBinTree;
-  input BackendDAE.Key inKey;
+  input String keystr;
+  input Integer keyhash;
   output BackendDAE.BinTree outBinTree;
 algorithm
-  outBinTree := matchcontinue (inBinTree,inKey)
+  outBinTree := matchcontinue (inBinTree,keystr,keyhash)
     local
       BackendDAE.BinTree bt,right,left,t;
       DAE.ComponentRef key,rkey;
-      String rkeystr,keystr;
+      String rkeystr;
       BackendDAE.TreeValue rightmost;
       Option<BackendDAE.BinTree> optRight,optLeft,optTree;
       BackendDAE.Value rval;
       Option<BackendDAE.TreeValue> optVal;
+      Integer rhash;
       
-    case ((bt as BackendDAE.TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE())),key) 
+    case ((bt as BackendDAE.TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE())),_,_) 
       then bt;
     
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = optLeft,rightSubTree = SOME(right)),key)
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = optLeft,rightSubTree = SOME(right)),keystr,keyhash)
       equation
-        rkeystr = ComponentReference.printComponentRefStr(rkey) "delete this node, when existing right node" ;
-        keystr = ComponentReference.printComponentRefStr(key);
-        0 = stringCompare(rkeystr, keystr);
+        0 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
         (rightmost,right) = treeDeleteRightmostValue(right);
         optRight = treePruneEmptyNodes(right);
       then
         BackendDAE.TREENODE(SOME(rightmost),optLeft,optRight);
     
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = SOME(left as BackendDAE.TREENODE(value=_)),rightSubTree = NONE()),key)
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = SOME(left as BackendDAE.TREENODE(value=_)),rightSubTree = NONE()),keystr,keyhash)
       equation
-        rkeystr = ComponentReference.printComponentRefStr(rkey) "delete this node, when no right node, but left node" ;
-        keystr = ComponentReference.printComponentRefStr(key);
-        0 = stringCompare(rkeystr, keystr);
+        0 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
       then
         left;
     
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = NONE(),rightSubTree = NONE()),key)
+    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = NONE(),rightSubTree = NONE()),keystr,keyhash)
       equation
-        rkeystr = ComponentReference.printComponentRefStr(rkey) "delete this node, when no left or right node" ;
-        keystr = ComponentReference.printComponentRefStr(key);
-        0 = stringCompare(rkeystr, keystr);
+        0 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
       then
         BackendDAE.TREENODE(NONE(),NONE(),NONE());
     
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree = optLeft,rightSubTree = SOME(t)),key)
+    case (BackendDAE.TREENODE(value = optVal as SOME(BackendDAE.TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = optLeft,rightSubTree = SOME(t)),keystr,keyhash)
       equation
-        keystr = ComponentReference.printComponentRefStr(key) "delete in right subtree" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        1 = stringCompare(rkeystr, keystr);
-        t = treeDelete(t, key);
+        1 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
+        t = treeDelete2(t, keystr, keyhash);
         optTree = treePruneEmptyNodes(t);
       then
-        BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,rval)),optLeft,optTree);
+        BackendDAE.TREENODE(optVal,optLeft,optTree);
     
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rval)),leftSubTree =  SOME(t),rightSubTree = optRight),key)
+    case (BackendDAE.TREENODE(value = optVal as SOME(BackendDAE.TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree =  SOME(t),rightSubTree = optRight),keystr,keyhash)
       equation
-        keystr = ComponentReference.printComponentRefStr(key) "delete in left subtree" ;
-        rkeystr = ComponentReference.printComponentRefStr(rkey);
-        -1 = stringCompare(rkeystr, keystr);
-        t = treeDelete(t, key);
+        -1 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
+        t = treeDelete2(t, keystr, keyhash);
         optTree = treePruneEmptyNodes(t);
       then
-        BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,rval)),optTree,optRight);
+        BackendDAE.TREENODE(optVal,optTree,optRight);
     
-    case (_,_)
+    else
       equation
         print("- BackendDAEUtil.treeDelete failed\n");
       then
         fail();
   end matchcontinue;
-end treeDelete;
+end treeDelete2;
 
 protected function treeDeleteRightmostValue "function: treeDeleteRightmostValue
   author: PA
@@ -3279,7 +3294,7 @@ algorithm
       then
         (treeVal,BackendDAE.TREENODE(NONE(),NONE(),NONE()));
     
-    case (bt)
+    else
       equation
         print("- Backend.treeDeleteRightmostValue failed\n");
       then
