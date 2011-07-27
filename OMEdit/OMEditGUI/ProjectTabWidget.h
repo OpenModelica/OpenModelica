@@ -143,7 +143,6 @@ signals:
     void keyPressRotateAntiClockwise();
     void currentChange(int index);
 public slots:
-    void updateSceneRect(const QRectF &rect);
     void addConnector(Component *pComponent);
     void removeConnector();
     void removeConnector(Connector* pConnector);

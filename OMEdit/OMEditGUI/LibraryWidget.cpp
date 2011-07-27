@@ -1628,8 +1628,6 @@ void ComponentBrowserTree::deleteBrowserNode(ComponentBrowserTreeNode *item)
 
 void ComponentBrowserTree::addBrowserNode(QString name, int type, QString className, QString parentName, QString parentStructure)
 {
-
-                    qDebug()<<"paretn struct" << parentStructure;
     ComponentBrowserTreeNode *newTreePost;
     if (parentName.isEmpty())
     {
@@ -1646,7 +1644,7 @@ void ComponentBrowserTree::addBrowserNode(QString name, int type, QString classN
         treeNode->addChild(newTreePost);
     }
     //setCurrentItem(newTreePost);
-        newTreePost->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+    newTreePost->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
     mComponentBrowserTreeNodeList.append(newTreePost);
     //this->setVisible(true);
  }

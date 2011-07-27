@@ -42,8 +42,7 @@ QString Helper::OpenModelicaLibrary = QString();
 QString Helper::omcServerName = "OMEdit";
 QString Helper::omFileTypes = "Modelica Files (*.mo)";
 QString Helper::omnotebookFileTypes = "OMNotebook Files (*.onb *.onbz *.nb)";
-QString Helper::imageFileTypes = "Image Files (*.png *.bmp)";
-QString Helper::svgFileTypes = "SVG files (*.svg *.svgz *.svg.gz)";
+QString Helper::imageFileTypes = "Image Files (*.png *.svg *.bmp *.jpg)";
 #ifdef WIN32
 QString Helper::tmpPath = QString(getenv("OPENMODELICAHOME")).replace("\\", "/").append(QString("/tmp/OMEdit"));
 #else
@@ -133,6 +132,10 @@ Qt::BrushStyle Helper::verticalCylinderBrushStyle = Qt::Dense1Pattern;
 QString Helper::sphereBrushIcon = QString(":/Resources/icons/sphere.png");
 QString Helper::sphereBrush = QString("Sphere");
 Qt::BrushStyle Helper::sphereBrushStyle = Qt::RadialGradientPattern;
+
+QString Helper::exportAsImage = QString("Exporting model as an Image");
+QString Helper::exportToOMNotebook = QString("Exporting model to OMNotebook");
+QString Helper::importFromOMNotebook = QString("Importing model from OMNotebook");
 
 QString Helper::ModelicaSimulationMethods = "DASSL,DASSL2,Euler,RungeKutta";
 QString Helper::ModelicaSimulationOutputFormats = "mat,plt,csv,empty";

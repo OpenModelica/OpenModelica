@@ -400,20 +400,10 @@ void MainWindow::createActions()
     importFromOMNotebookAction->setStatusTip(tr("Imports the models from OMNotebook"));
     connect(importFromOMNotebookAction, SIGNAL(triggered()), SLOT(importModelfromOMNotebook()));
 
-    exportAsImageAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.png"), tr("Export as Image (png)"), this);
-    exportAsImageAction->setStatusTip(tr("Exports the current model to Image (png)"));
+    exportAsImageAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.png"), tr("Export as an Image"), this);
+    exportAsImageAction->setStatusTip(tr("Exports the current model to Image"));
     exportAsImageAction->setEnabled(false);
     connect(exportAsImageAction, SIGNAL(triggered()), SLOT(exportModelAsImage()));
-
-    exportAsSvgAction = new QAction(tr("Export as SVG"), this);
-    exportAsSvgAction->setStatusTip(tr("Exports the current model to SVG"));
-    exportAsSvgAction->setEnabled(false);
-    connect(exportAsSvgAction, SIGNAL(triggered()), SLOT(exportModelAsSvg()));
-
-    printModelAction = new QAction(tr("Print"), this);
-    printModelAction->setStatusTip(tr("Prints the current model"));
-    printModelAction->setEnabled(false);
-    connect(printModelAction, SIGNAL(triggered()), SLOT(printModel()));
 
     openOptions = new QAction(tr("Options"), this);
     openOptions->setStatusTip(tr("Shows the options window"));
@@ -582,13 +572,13 @@ void MainWindow::createMenus()
     menuEdit->addAction(pasteAction);
 
     QAction *searchMSLAction = searchMSLdock->toggleViewAction();
-    searchMSLAction->setText(tr("&Search MSL"));
+    searchMSLAction->setText(tr("Search MSL"));
     searchMSLAction->setShortcut(QKeySequence("Ctrl+Shift+f"));
     searchMSLAction->setIcon(QIcon(":/Resources/icons/search.png"));
     QAction *libAction = libdock->toggleViewAction();
-    libAction->setText(tr("&Components"));
+    libAction->setText(tr("Components"));
     QAction *messageAction = messagedock->toggleViewAction();
-    messageAction->setText(tr("&Messages"));
+    messageAction->setText(tr("Messages"));
 
     menuView->addAction(searchMSLAction);
     menuView->addAction(libAction);
@@ -836,47 +826,37 @@ void MainWindow::openOMShell()
 //! @see importModelfromOMNotebook();
 void MainWindow::exportModelToOMNotebook()
 {
-    QDir fileDialogSaveDir;
-
-    QString omnotebookFileName = StringHandler::getSaveFileName(this, tr("Export to OMNotebook"),
-                                                                NULL,
-                                                                Helper::omnotebookFileTypes, NULL, "onb");
+    QString omnotebookFileName = StringHandler::getSaveFileName(this, tr("Export to OMNotebook"), NULL, Helper::omnotebookFileTypes, NULL, "onb");
 
     // if user cancels the operation. or closes the export dialog box.
     if (omnotebookFileName.isEmpty())
         return;
 
     // create a progress bar
-    int endtime = 6;
+    int endtime = 6;    // since in total we do six things while exporting to OMNotebook
     int value = 1;
-    QProgressDialog progressBar(this, Qt::WindowTitleHint);
-    progressBar.setMinimum(0);
-    progressBar.setMaximum(endtime);
-    progressBar.setLabelText(tr("Exporting model to OMNotebook"));
-    progressBar.setCancelButton(0);
-    progressBar.setWindowModality(Qt::WindowModal);
-    progressBar.setWindowTitle(QString(Helper::applicationName).append(" - Export to OMNotebook"));
-    progressBar.setValue(value);
-    progressBar.show();
-
+    // show the progressbar and set the message in status bar
+    mpStatusBar->showMessage(Helper::exportToOMNotebook);
+    mpProgressBar->setRange(0, endtime);
+    showProgressBar();
     // create the xml for the omnotebook file.
     QDomDocument xmlDocument;
     // create Notebook element
     QDomElement notebookElement = xmlDocument.createElement("Notebook");
     xmlDocument.appendChild(notebookElement);
-    progressBar.setValue(value++);
+    mpProgressBar->setValue(value++);
     // create title cell
     createOMNotebookTitleCell(xmlDocument, notebookElement);
-    progressBar.setValue(value++);
+    mpProgressBar->setValue(value++);
     // create image cell
     QStringList pathList = omnotebookFileName.split('/');
     pathList.removeLast();
     QString modelImagePath(pathList.join("/"));
     createOMNotebookImageCell(xmlDocument, notebookElement, modelImagePath);
-    progressBar.setValue(value++);
+    mpProgressBar->setValue(value++);
     // create a code cell
     createOMNotebookCodeCell(xmlDocument, notebookElement);
-    progressBar.setValue(value++);
+    mpProgressBar->setValue(value++);
 
     // create a file object and write the xml in it.
     QFile omnotebookFile(omnotebookFileName);
@@ -884,8 +864,10 @@ void MainWindow::exportModelToOMNotebook()
     QTextStream textStream(&omnotebookFile);
     textStream << xmlDocument.toString();
     omnotebookFile.close();
-    progressBar.setValue(value++);
-    progressBar.hide();
+    mpProgressBar->setValue(value++);
+    // hide the progressbar and clear the message in status bar
+    mpStatusBar->clearMessage();
+    hideProgressBar();
 }
 
 //! creates a title cell in omnotebook xml file
@@ -965,138 +947,111 @@ void MainWindow::createOMNotebookCodeCell(QDomDocument xmlDocument, QDomElement 
 //! @see exportModelToOMNotebook();
 void MainWindow::importModelfromOMNotebook()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, tr("Choose File"),
-                                                    QDir::homePath(),
-                                                    Helper::omnotebookFileTypes);
+    QString fileName = StringHandler::getOpenFileName(this, tr("Choose File"), NULL, Helper::omnotebookFileTypes);
     if (fileName.isEmpty())
         return;
 
     // create a progress bar
-    int endtime = 3;
+    int endtime = 3;    // since in total we do three things while exporting to OMNotebook
     int value = 1;
-    QProgressDialog progressBar(this, Qt::WindowTitleHint);
-    progressBar.setMinimum(0);
-    progressBar.setMaximum(endtime);
-    progressBar.setAutoReset(false);
-    progressBar.setLabelText(tr("Importing data from OMNotebook"));
-    progressBar.setCancelButton(0);
-    progressBar.setWindowModality(Qt::WindowModal);
-    progressBar.setWindowTitle(QString(Helper::applicationName).append(" - Import from OMNotebook"));
-    progressBar.setValue(value);
-    progressBar.show();
-
+    // show the progressbar and set the message in status bar
+    mpStatusBar->showMessage(Helper::importFromOMNotebook);
+    mpProgressBar->setRange(0, endtime);
+    showProgressBar();
     // open the xml file
     QFile file(fileName);
     if (!file.open(QIODevice::ReadOnly))
     {
         mpMessageWidget->printGUIErrorMessage(tr("Error opening the file"));
-        progressBar.hide();
+        hideProgressBar();
         return;
     }
-    progressBar.setValue(value++);
+    mpProgressBar->setValue(value++);
 
     // create the xml from the omnotebook file.
     QDomDocument xmlDocument;
     if (!xmlDocument.setContent(&file))
     {
         mpMessageWidget->printGUIErrorMessage(tr("Error reading the xml file."));
-        progressBar.hide();
+        hideProgressBar();
         return;
     }
-    progressBar.setValue(value++);
+    mpProgressBar->setValue(value++);
     // read the file
     QDomNodeList nodes = xmlDocument.elementsByTagName(tr("Input"));
     endtime = endtime + nodes.size();
-    progressBar.setMaximum(endtime);
+    mpProgressBar->setMaximum(endtime);
     for (int i = 0; i < nodes.size(); i++)
     {
         if (nodes.at(i).toElement().text().toLower().startsWith("model"))
         {
             mpProjectTabs->openModel(nodes.at(i).toElement().text());
         }
-        progressBar.setValue(value++);
+        mpProgressBar->setValue(value++);
     }
-    progressBar.hide();
+    // hide the progressbar and clear the message in status bar
+    mpStatusBar->clearMessage();
+    hideProgressBar();
 }
 
-//! Exports the current model as png image
-//! @see exportModelAsSvg()
-//! @see printModel()
+//! Exports the current model as image
 void MainWindow::exportModelAsImage()
 {
-    QString imageFileName = StringHandler::getSaveFileName(this, tr("Export as Image"), NULL,
-                                                           Helper::imageFileTypes, NULL, "png");
+    QString fileName = StringHandler::getSaveFileName(this, tr("Export as Image"), NULL, Helper::imageFileTypes, NULL, "png");
 
     // if user cancels the operation. or closes the export dialog box.
-    if (imageFileName.isEmpty())
+    if (fileName.isEmpty())
         return;
 
+    // show the progressbar and set the message in status bar
+    mpProgressBar->setRange(0, 0);
+    showProgressBar();
+    mpStatusBar->showMessage(Helper::exportAsImage);
+    // get the current tab
     ProjectTab *pCurrentTab = mpProjectTabs->getCurrentTab();
-    QPixmap modelImage(pCurrentTab->mpDiagramGraphicsView->viewport()->size());
-    modelImage.fill(QColor(Qt::transparent));
-
-    QPainter painter(&modelImage);
-    painter.setWindow(pCurrentTab->mpDiagramGraphicsView->viewport()->rect());
-    // paint the background color first
-    painter.fillRect(modelImage.rect(), pCurrentTab->mpDiagramGraphicsView->palette().background());
-    // paint all the items
-    pCurrentTab->mpDiagramGraphicsView->render(&painter, QRectF(painter.viewport()), pCurrentTab->mpDiagramGraphicsView->viewport()->rect());
-    painter.end();
-
-    // save the image
-    if (!modelImage.save(imageFileName))
-        mpMessageWidget->printGUIErrorMessage("Error saving the image file.");
-}
-
-//! Exports the current model as SVG
-//! @see exportModelAsImage()
-//! @see printModel()
-void MainWindow::exportModelAsSvg()
-{
-    QString svgFileName = StringHandler::getSaveFileName(this, tr("Export as SVG"), NULL,
-                                                           Helper::svgFileTypes, NULL, "svg");
-
-    // if user cancels the operation. or closes the export dialog box.
-    if (svgFileName.isEmpty())
-        return;
-
-    ProjectTab *pCurrentTab = mpProjectTabs->getCurrentTab();
+    QPainter painter;
     QSvgGenerator svgGenerator;
-    svgGenerator.setTitle(tr("OMEdit - OpenModelica Connection Editor"));
-    svgGenerator.setDescription(tr("Generated by OpenModelica Connection Editor Tool"));
-    svgGenerator.setSize(pCurrentTab->mpDiagramGraphicsView->viewport()->size());
-    svgGenerator.setFileName(svgFileName);
+    QPixmap modelImage(pCurrentTab->mpDiagramGraphicsView->viewport()->size());
+    GraphicsView *graphicsView;
+    if (pCurrentTab->mpIconGraphicsView->isVisible())
+         graphicsView = pCurrentTab->mpIconGraphicsView;
+    else
+        graphicsView = pCurrentTab->mpDiagramGraphicsView;
 
-    QPainter painter(&svgGenerator);
-    painter.setWindow(pCurrentTab->mpDiagramGraphicsView->viewport()->rect());
-    // paint the background color first
-    painter.fillRect(painter.viewport(), pCurrentTab->mpDiagramGraphicsView->palette().background());
-    // paint all the items
-    pCurrentTab->mpDiagramGraphicsView->render(&painter, QRectF(painter.viewport()), pCurrentTab->mpDiagramGraphicsView->viewport()->rect());
-    painter.end();
-}
-
-//! Prints the current model
-//! @see exportModelAsImage()
-//! @see exportModelAsSvg()
-void MainWindow::printModel()
-{
-    ProjectTab *pCurrentTab = mpProjectTabs->getCurrentTab();
-    QPrinter printer;
-    printer.setDocName("OMEdit-Print");
-    printer.setCreator("OpenModelica Connection Editor");
-
-    QPrintDialog printerDialog(&printer);
-    if (printerDialog.exec())
+    // export svg
+    if (fileName.endsWith(".svg"))
     {
-        QPainter painter(&printer);
-        painter.setWindow(pCurrentTab->mpDiagramGraphicsView->viewport()->rect());
-        // paint the background color first
-        painter.fillRect(painter.viewport(), pCurrentTab->mpDiagramGraphicsView->palette().background());
-        // paint all the items
-        pCurrentTab->mpDiagramGraphicsView->render(&painter, QRectF(painter.viewport()), pCurrentTab->mpDiagramGraphicsView->viewport()->rect());
-        painter.end();
+        svgGenerator.setTitle(tr("OMEdit - OpenModelica Connection Editor"));
+        svgGenerator.setDescription(tr("Generated by OpenModelica Connection Editor Tool"));
+        svgGenerator.setSize(graphicsView->viewport()->size());
+        svgGenerator.setViewBox(graphicsView->viewport()->rect());
+        svgGenerator.setFileName(fileName);
+        painter.begin(&svgGenerator);
     }
+    else
+    {
+        modelImage.fill(QColor(Qt::transparent));
+        painter.begin(&modelImage);
+    }
+
+    painter.setWindow(graphicsView->viewport()->rect());
+    // paint the background color first
+    if (graphicsView->mIconType == StringHandler::DIAGRAM)
+        painter.fillRect(painter.viewport(), graphicsView->palette().background());
+    else
+        painter.fillRect(painter.viewport(), Qt::white);
+    // paint all the items
+    graphicsView->render(&painter);
+    painter.end();
+
+    if (!fileName.endsWith(".svg"))
+    {
+        if (!modelImage.save(fileName))
+            mpMessageWidget->printGUIErrorMessage("Error saving the image file.");
+    }
+    // hide the progressbar and clear the message in status bar
+    mpStatusBar->clearMessage();
+    hideProgressBar();
 }
 
 void MainWindow::openConfigurationOptions()

@@ -146,8 +146,6 @@ public:
     QAction *exportToOMNotebookAction;
     QAction *importFromOMNotebookAction;
     QAction *exportAsImageAction;
-    QAction *exportAsSvgAction;
-    QAction *printModelAction;
     QAction *openOptions;
     QAction *gridLinesAction;
     QAction *resetZoomAction;
@@ -211,8 +209,6 @@ private slots:
     void createOMNotebookCodeCell(QDomDocument xmlDocument, QDomElement pDomElement);
     void importModelfromOMNotebook();
     void exportModelAsImage();
-    void exportModelAsSvg();
-    void printModel();
     void openConfigurationOptions();
     void flatModel();
     void checkModel();

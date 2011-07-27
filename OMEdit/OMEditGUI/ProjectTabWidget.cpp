@@ -967,28 +967,23 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
     ShapeAnnotation *pShape = static_cast<ShapeAnnotation*>(itemAt(event->pos()));
     if (!pShape)
     {
+        QMenu menu(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
+        mpCancelConnectionAction->setText("Context Menu");
+        menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportAsImageAction);
+        menu.addSeparator();
+        menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportToOMNotebookAction);
+
         if (StringHandler::DIAGRAM == mIconType)
         {
-            QMenu menu(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
-            mpCancelConnectionAction->setText("Context Menu");
             //menu.addAction(mpPasteComponentAction);
             //menu.addSeparator();
-            menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportAsImageAction);
-            menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportAsSvgAction);
-            menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->printModelAction);
-            menu.addSeparator();
-            menu.addAction(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->exportToOMNotebookAction);
-            menu.exec(event->globalPos());
-            return;         // return from it because at a time we only want one context menu.
+
         }
+
+        menu.exec(event->globalPos());
+        return;         // return from it because at a time we only want one context menu.
     }
     QGraphicsView::contextMenuEvent(event);
-}
-
-void GraphicsView::updateSceneRect(const QRectF &rect)
-{
-
-
 }
 
 //! Begins creation of connector or complete creation of connector depending on the mIsCreatingConnector flag.
@@ -2952,11 +2947,7 @@ bool ProjectTabWidget::saveModel(bool saveAs)
     // if first time save or doing a saveas
     if(pCurrentTab->mModelFileName.isEmpty() | saveAs)
     {
-        QDir fileDialogSaveDir;
-
-        modelFileName = StringHandler::getSaveFileName(this, tr(saveAs ? "Save File As" : "Save File"),
-                                                       NULL,
-                                                       Helper::omFileTypes, NULL, "mo");
+        modelFileName = StringHandler::getSaveFileName(this, tr(saveAs ? "Save File As" : "Save File"), NULL, Helper::omFileTypes, NULL, "mo");
 
         if (modelFileName.isEmpty())
         {
@@ -3264,10 +3255,6 @@ void ProjectTabWidget::enableProjectToolbar()
         mpParentMainWindow->shapesToolBar->setEnabled(true);
         // enable the export as image action
         mpParentMainWindow->exportAsImageAction->setEnabled(true);
-        // enable the export as svg action
-        mpParentMainWindow->exportAsSvgAction->setEnabled(true);
-        // enable the print model action
-        mpParentMainWindow->printModelAction->setEnabled(true);
         // enable the export to omnotebook action
         mpParentMainWindow->exportToOMNotebookAction->setEnabled(true);
         mToolBarEnabled = true;
@@ -3288,10 +3275,6 @@ void ProjectTabWidget::disableProjectToolbar()
         mpParentMainWindow->shapesToolBar->setEnabled(false);
         // disable the export as image action
         mpParentMainWindow->exportAsImageAction->setEnabled(false);
-        // disable the export as svg action
-        mpParentMainWindow->exportAsSvgAction->setEnabled(false);
-        // disable the print model action
-        mpParentMainWindow->printModelAction->setEnabled(false);
         // enable the export to omnotebook action
         mpParentMainWindow->exportToOMNotebookAction->setEnabled(false);
         mToolBarEnabled = false;
