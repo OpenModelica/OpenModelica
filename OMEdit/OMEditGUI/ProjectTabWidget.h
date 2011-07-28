@@ -90,7 +90,7 @@ public:
     void addComponentoView(QString name, QString className, QPointF point, bool isConnector = false,
                            bool addObject = true, bool diagram = false);
     void addComponentObject(Component *icon);
-    void deleteComponentObject(Component *icon);
+    void deleteComponentObject(Component *component, bool update = true);
     void deleteAllComponentObjects();
     Component* getComponentObject(QString componentName);
     QString getUniqueComponentName(QString iconName, int number = 1);
@@ -100,7 +100,7 @@ public:
     void deleteAllShapesObject();
     void removeAllConnectors();
     void createConnection(Component *pStartComponent, QString startIconCompName, Component *pComponent, QString endIconCompName);
-    void deleteConnection(QString startIconCompName, QString endIconCompName);
+    void deleteConnection(QString startIconCompName, QString endIconCompName, bool update = true);
     void addConnectorForArray(Component *pStartComponent,Component *pEndComponent ,int index);
     QList<Component*> mComponentsList;
     QList<ShapeAnnotation*> mShapesList;
@@ -145,13 +145,13 @@ signals:
 public slots:
     void addConnector(Component *pComponent);
     void removeConnector();
-    void removeConnector(Connector* pConnector);
+    void removeConnector(Connector* pConnector, bool update = true);
     void resetZoom();
     void zoomIn();
     void zoomOut();
     void showGridLines(bool showLines);
     void selectAll();
-    void addClassAnnotation();
+    void addClassAnnotation(bool update = true);
     void pasteComponent();
 protected:
     virtual void dragMoveEvent(QDragMoveEvent *event);
@@ -237,12 +237,15 @@ public:
     ProjectTabWidget(MainWindow *parent);
     ~ProjectTabWidget();
     ProjectTab* getCurrentTab();
+    ProjectTab* getProjectTab(QString name);
     ProjectTab* getTabByName(QString name);
     ProjectTab* getRemovedTabByName(QString name);
+
     int addTab(ProjectTab *tab, QString tabName);
     void removeTab(int index);
     void disableTabs(bool disable);
     void setSourceFile(QString modelName, QString modelFileName);
+    void saveChilds(ProjectTab *pProjectTab);
 
     MainWindow *mpParentMainWindow;
     bool mShowLines;

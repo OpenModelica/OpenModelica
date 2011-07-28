@@ -87,15 +87,6 @@ ModelicaEditor::ModelicaEditor(ProjectTab *pParent)
 
 QStringList ModelicaEditor::getModelsNames()
 {
-    // read the name from the text
-//    OMCProxy *omc = new OMCProxy(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow, false);
-//    QString modelName = QString();
-//    if (omc->saveModifiedModel(this->toPlainText()))
-//        modelName = StringHandler::removeFirstLastCurlBrackets(omc->getResult());
-//    else
-//        mErrorString = omc->getResult();
-//    omc->stopServer();
-
     OMCProxy *pOMCProxy = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy;
     QStringList models;
     if (toPlainText().isEmpty())
@@ -221,17 +212,46 @@ bool ModelicaEditor::validateText()
     return true;
 }
 
+void ModelicaEditor::setText(const QString &text)
+{
+    if (text != toPlainText())
+        QTextEdit::setText(text);
+}
+
 void ModelicaEditor::hasChanged()
 {
     if (mpParentProjectTab->isReadOnly())
         return;
 
-    if (mpParentProjectTab->mIsSaved)
+    QString tabName = mpParentProjectTab->mpParentProjectTabWidget->tabText(mpParentProjectTab->mpParentProjectTabWidget->currentIndex());
+    if (!tabName.endsWith("*"))
     {
-        QString tabName = mpParentProjectTab->mpParentProjectTabWidget->tabText(mpParentProjectTab->mpParentProjectTabWidget->currentIndex());
         tabName.append("*");
         mpParentProjectTab->mpParentProjectTabWidget->setTabText(mpParentProjectTab->mpParentProjectTabWidget->currentIndex(), tabName);
-        mpParentProjectTab->mIsSaved = false;
+    }
+    mpParentProjectTab->mIsSaved = false;
+    if (mpParentProjectTab->isChild())
+    {
+        // find the parent tree node of this model
+        ModelicaTree *pModelicaTree = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpLibrary->mpModelicaTree;
+        ModelicaTreeNode *node = pModelicaTree->getNode(mpParentProjectTab->mModelNameStructure);
+        while (node->parent() != 0)
+            node = dynamic_cast<ModelicaTreeNode*>(node->parent());
+        // find the project tab of the parent of this model.
+        ProjectTab *pProjectTab;
+        MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+        pProjectTab = pMainWindow->mpProjectTabs->getProjectTab(node->mNameStructure);
+        // if the parent project tab is found then make it unsaved as well.
+        if (pProjectTab)
+        {
+            tabName = mpParentProjectTab->mpParentProjectTabWidget->tabText(pProjectTab->mTabPosition);
+            if (!tabName.endsWith("*"))
+            {
+                tabName.append("*");
+                mpParentProjectTab->mpParentProjectTabWidget->setTabText(pProjectTab->mTabPosition, tabName);
+            }
+            pProjectTab->mIsSaved = false;
+        }
     }
 }
 

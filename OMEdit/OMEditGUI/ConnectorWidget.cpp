@@ -596,20 +596,24 @@ void ConnectorLine::setHovered()
 //! Defines what shall happen if a mouse key is pressed while hovering a connector line.
 void ConnectorLine::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
-    isMousePressed=true;
+    isMousePressed = true;
+    mOldPosition = pos();
     QGraphicsLineItem::mousePressEvent(event);
 }
 
 //! Defines what shall happen if a mouse key is released while hovering a connector line.
 void ConnectorLine::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
-    mpParentConnector->updateConnectionAnnotationString();
-    // update connectors annotations that are associated to this component
-    ProjectTab *pProjectTab = mpParentConnector->mpParentGraphicsView->mpParentProjectTab;
-    OMCProxy *pOMCProxy = mpParentConnector->mpParentGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy;
-    pProjectTab->mpModelicaEditor->setText(pOMCProxy->list(pProjectTab->mModelNameStructure));
+    if (mOldPosition != pos())
+    {
+        mpParentConnector->updateConnectionAnnotationString();
+        // update connectors annotations that are associated to this component
+        ProjectTab *pProjectTab = mpParentConnector->mpParentGraphicsView->mpParentProjectTab;
+        OMCProxy *pOMCProxy = mpParentConnector->mpParentGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy;
+        pProjectTab->mpModelicaEditor->setText(pOMCProxy->list(pProjectTab->mModelNameStructure));
+    }
 
-    isMousePressed=false;
+    isMousePressed = false;
     QGraphicsLineItem::mouseReleaseEvent(event);
 }
 

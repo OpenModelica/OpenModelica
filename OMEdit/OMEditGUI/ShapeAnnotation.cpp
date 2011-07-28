@@ -267,8 +267,6 @@ void ShapeAnnotation::deleteMe()
     delete this;
 }
 
-
-
 void ShapeAnnotation::doSelect()
 {
     mIsRectangleCorneItemClicked = true;

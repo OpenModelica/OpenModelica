@@ -62,6 +62,7 @@ public:
 signals:
     bool focusOut();
 public slots:
+    void setText(const QString &text);
     void hasChanged();
     void hideFindWidget();
     void updateButtons();

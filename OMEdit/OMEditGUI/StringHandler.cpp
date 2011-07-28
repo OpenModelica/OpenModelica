@@ -440,9 +440,10 @@ bool StringHandler::unparseBool(QString value)
   return value == "true";
 }
 
-QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, QString * dir, const QString &filter, QString * selectedFilter, const QString &defaultSuffix)
+QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, QString * dir, const QString &filter, QString * selectedFilter, const QString &defaultSuffix, const QString *purposedName)
 {
     QString dir_str;
+    QString fileName;
 
     if (dir)
     {
@@ -453,7 +454,11 @@ QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, 
         dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
     }
 
-    QString fileName = QFileDialog::getSaveFileName(parent, caption, dir_str, filter, selectedFilter);
+    if (purposedName)
+        fileName = QFileDialog::getSaveFileName(parent, caption, QString(dir_str).append("/").append(*purposedName), filter, selectedFilter);
+    else
+        fileName = QFileDialog::getSaveFileName(parent, caption, dir_str, filter, selectedFilter);
+
     if (!fileName.isEmpty())
     {
         QFileInfo fileInfo(fileName);

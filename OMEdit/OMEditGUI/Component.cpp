@@ -784,22 +784,20 @@ void Component::resizeComponent(qreal resizeFactorX, qreal resizeFactorY)
 }
 
 //! Tells the component to ask its parent to delete it.
-void Component::deleteMe()
+void Component::deleteMe(bool update)
 {
     GraphicsView *pGraphicsView = qobject_cast<GraphicsView*>(const_cast<QObject*>(sender()));
     // delete the component from model
-    mpGraphicsView->deleteComponentObject(this);
+    mpGraphicsView->deleteComponentObject(this, update);
     // remove the component from the scene
     mpGraphicsView->scene()->removeItem(this);
     // if the signal is not send by graphicsview then call addclassannotation
     if (!pGraphicsView)
     {
         if (mpGraphicsView->mIconType == StringHandler::ICON)
-            mpGraphicsView->addClassAnnotation();
+            mpGraphicsView->addClassAnnotation(update);
     }
     delete(this);
-
-
 }
 
 void Component::copyComponent()

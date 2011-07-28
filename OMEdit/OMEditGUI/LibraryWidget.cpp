@@ -174,14 +174,11 @@ void ModelicaTree::deleteNode(ModelicaTreeNode *item)
         pMainWindow->mpProjectTabs->removeTab(pCurrentTab->mTabPosition);
         emit nodeDeleted();
     }
-    // Delete the tab from the list of removed tabs
-    else
+    // Delete the tab from the list of removed tabs if it exists in that list.
+    pCurrentTab = pMainWindow->mpProjectTabs->getRemovedTabByName(item->mNameStructure);
+    if (pCurrentTab)
     {
-        pCurrentTab = pMainWindow->mpProjectTabs->getRemovedTabByName(item->mNameStructure);
-        if (pCurrentTab)
-        {
-            pMainWindow->mpProjectTabs->mRemovedTabsList.removeOne(pCurrentTab);
-        }
+        pMainWindow->mpProjectTabs->mRemovedTabsList.removeOne(pCurrentTab);
     }
 }
 
@@ -256,9 +253,7 @@ void ModelicaTree::openProjectTab(QTreeWidgetItem *item, int column)
     if (pCurrentTab)
     {
         pMainWindow->mpProjectTabs->setCurrentWidget(pCurrentTab);
-
         isFound = true;
-        //emit changeTab();
     }
     // if the tab is closed by user then reopen it and set it as current tab
     if (!isFound)
@@ -268,7 +263,7 @@ void ModelicaTree::openProjectTab(QTreeWidgetItem *item, int column)
         {
             pMainWindow->mpProjectTabs->addTab(pCurrentTab, pCurrentTab->mModelName);
             pMainWindow->mpProjectTabs->setCurrentWidget(pCurrentTab);
-
+            // remove the tab from removedtablist
             pMainWindow->mpProjectTabs->mRemovedTabsList.removeOne(pCurrentTab);
             isFound = true;
         }
@@ -284,7 +279,6 @@ void ModelicaTree::openProjectTab(QTreeWidgetItem *item, int column)
         else
         {
             newTab = new ProjectTab(treeNode->mType, StringHandler::DIAGRAM, false, true, pMainWindow->mpProjectTabs);
-            newTab->mIsSaved = true;
         }
         newTab->mpModelicaEditor->blockSignals(true);
         newTab->mpModelicaEditor->setText(pMainWindow->mpOMCProxy->list(treeNode->mNameStructure));
@@ -378,10 +372,10 @@ bool ModelicaTree::deleteNodeTriggered(ModelicaTreeNode *node, bool askQuestion)
     switch (treeNode->mType)
     {
     case StringHandler::PACKAGE:
-        msg = "Are you sure you want to delete? Everything contained inside this Package will also be deleted.";
+        msg = GUIMessages::getMessage(GUIMessages::DELETE_PACKAGE_MSG).arg(treeNode->mName);
         break;
     default:
-        msg = "Are you sure you want to delete?";
+        msg = GUIMessages::getMessage(GUIMessages::DELETE_MSG).arg(treeNode->mName);
         break;
     }
 
@@ -872,7 +866,6 @@ void LibraryTree::showComponent()
     if (pCurrentTab)
     {
         pProjectTabs->setCurrentWidget(pCurrentTab);
-
         isFound = true;
     }
     // if the tab is closed by user then reopen it and set it as current tab
@@ -883,7 +876,7 @@ void LibraryTree::showComponent()
         {
             pProjectTabs->addTab(pCurrentTab, pCurrentTab->mModelName);
             pProjectTabs->setCurrentWidget(pCurrentTab);
-
+            // remove the tab from removedtablist
             pProjectTabs->mRemovedTabsList.removeOne(pCurrentTab);
             isFound = true;
         }
@@ -1476,9 +1469,7 @@ void LibraryWidget::updateNodeText(QString text, QString textStructure, Modelica
     treeNode->mNameStructure = textStructure;
     treeNode->setText(0, text);
     QStringList info = mpParentMainWindow->mpOMCProxy->getClassInformation(textStructure);
-    QString toolt = "Name: " + text + "\n" + "Description: " + info[1] + "\n" + "Location: " + info[2] + "\n" + "Path: " + textStructure + "\n" + "Type: " + info[0] ;
-
-    treeNode->setToolTip(0, toolt);
+    treeNode->setToolTip(0, StringHandler::createTooltip(info, text, textStructure));
 
     // if the node has childs
     int count = treeNode->childCount();

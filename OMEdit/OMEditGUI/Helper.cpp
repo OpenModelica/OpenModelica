@@ -226,6 +226,10 @@ QString GUIMessages::getMessage(int type)
         return "Enter a valid Positive Integer";
     case ITEM_DROPPED_ON_ITSELF:
         return "You cannot drop an item on itself.";
+    case DELETE_PACKAGE_MSG:
+        return "Are you sure you want to delete '%1'? Everything contained inside this Package will also be deleted.";
+    case DELETE_MSG:
+        return "Are you sure you want to delete '%1'?";
     default:
         return "";
     }

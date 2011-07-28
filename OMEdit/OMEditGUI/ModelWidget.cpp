@@ -81,8 +81,7 @@ ModelCreator::~ModelCreator()
 void ModelCreator::show(int type)
 {
     mType = type;
-    setWindowTitle(QString(Helper::applicationName).append(" - Create New ")
-                   .append(StringHandler::getModelicaClassType(mType)));
+    setWindowTitle(QString(Helper::applicationName).append(" - Create New ").append(StringHandler::getModelicaClassType(mType)));
     mpNameLabel->setText(StringHandler::getModelicaClassType(mType).append(" Name:"));
     mpNameTextBox->setText(tr(""));
     mpNameTextBox->setFocus();
@@ -96,8 +95,7 @@ void ModelCreator::create()
 {
     if (mpNameTextBox->text().isEmpty())
     {
-        QMessageBox::critical(this, Helper::applicationName + " - Error",
-                              GUIMessages::getMessage(GUIMessages::ENTER_NAME).
+        QMessageBox::critical(this, Helper::applicationName + " - Error", GUIMessages::getMessage(GUIMessages::ENTER_NAME).
                               arg(StringHandler::getModelicaClassType(mType)), tr("OK"));
         return;
     }
@@ -117,20 +115,16 @@ void ModelCreator::create()
     // Check whether model exists or not.
     if (mpParentMainWindow->mpOMCProxy->existClass(model))
     {
-        QMessageBox::critical(this, Helper::applicationName + " - Error",
-                              GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).
-                              arg(StringHandler::getModelicaClassType(mType)).arg(model).arg(parentPackage),
-                              tr("OK"));
+        QMessageBox::critical(this, Helper::applicationName + " - Error", GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).
+                              arg(StringHandler::getModelicaClassType(mType)).arg(model).arg(parentPackage), tr("OK"));
         return;
     }
     // create the model.
     if (mpParentPackageCombo->currentText().isEmpty())
     {
-        if (!mpParentMainWindow->mpOMCProxy->createClass(StringHandler::getModelicaClassType(mType).toLower(),
-                                                         mpNameTextBox->text()))
+        if (!mpParentMainWindow->mpOMCProxy->createClass(StringHandler::getModelicaClassType(mType).toLower(), mpNameTextBox->text()))
         {
-            QMessageBox::critical(this, Helper::applicationName + " - Error",
-                                 GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).
+            QMessageBox::critical(this, Helper::applicationName + " - Error", GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).
                                  arg(mpParentMainWindow->mpOMCProxy->getResult()).append("\n\n").
                                  append(GUIMessages::getMessage(GUIMessages::NO_OPEN_MODELICA_KEYWORDS)), tr("OK"));
             return;
@@ -138,12 +132,10 @@ void ModelCreator::create()
     }
     else
     {
-        if(!mpParentMainWindow->mpOMCProxy->createSubClass(StringHandler::getModelicaClassType(mType).toLower(),
-                                                           mpNameTextBox->text(),
+        if(!mpParentMainWindow->mpOMCProxy->createSubClass(StringHandler::getModelicaClassType(mType).toLower(), mpNameTextBox->text(),
                                                            mpParentPackageCombo->currentText()))
         {
-            QMessageBox::critical(this, Helper::applicationName + " - Error",
-                                  GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).
+            QMessageBox::critical(this, Helper::applicationName + " - Error", GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).
                                   arg(mpParentMainWindow->mpOMCProxy->getResult()).append("\n\n").
                                   append(GUIMessages::getMessage(GUIMessages::NO_OPEN_MODELICA_KEYWORDS)), tr("OK"));
             return;
@@ -151,9 +143,7 @@ void ModelCreator::create()
     }
 
     //open the new tab in central widget and add the model to tree.
-    mpParentMainWindow->mpLibrary->addModelicaNode(mpNameTextBox->text(), mType,
-                                                   mpParentPackageCombo->currentText(), modelStructure);
-
+    mpParentMainWindow->mpLibrary->addModelicaNode(mpNameTextBox->text(), mType, mpParentPackageCombo->currentText(), modelStructure);
     mpParentMainWindow->mpProjectTabs->addNewProjectTab(mpNameTextBox->text(), modelStructure, mType);
     accept();
 }

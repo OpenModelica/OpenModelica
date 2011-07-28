@@ -346,7 +346,11 @@ void GraphicsView::addComponentObject(Component *component)
     //emit currentChange(1);
 }
 
-void GraphicsView::deleteComponentObject(Component *component)
+//! Delete the component and its corresponding connectors from the components list and OMC.
+//! @param component is the object to be deleted.
+//! @param update flag is used to check whether we need to update the modelica editor text or not.
+//! @see deleteAllComponentObjects()
+void GraphicsView::deleteComponentObject(Component *component, bool update)
 {
     // First Remove the Connector associated to this icon
     int i = 0;
@@ -355,7 +359,7 @@ void GraphicsView::deleteComponentObject(Component *component)
         if((mConnectorsVector[i]->getStartComponent()->getParentComponent()->getName() == component->getName()) or
            (mConnectorsVector[i]->getEndComponent()->getParentComponent()->getName() == component->getName()))
         {
-            this->removeConnector(mConnectorsVector[i]);
+            this->removeConnector(mConnectorsVector[i], update);
             i = 0;   //Restart iteration if map has changed
         }
         else
@@ -365,18 +369,24 @@ void GraphicsView::deleteComponentObject(Component *component)
     }
     // remove the icon now from local list
     mComponentsList.removeOne(component);
+    OMCProxy *pOMCProxy = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy;
     // delete the component from OMC
-    mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->deleteComponent(component->getName(), mpParentProjectTab->mModelNameStructure);
-    mpParentProjectTab->mpModelicaEditor->setText(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
-    // emit currentchange signal so that componentbrowsertree is updated
-    emit currentChange(1);
+    pOMCProxy->deleteComponent(component->getName(), mpParentProjectTab->mModelNameStructure);
+    if (update)
+    {
+        mpParentProjectTab->mpModelicaEditor->setText(pOMCProxy->list(mpParentProjectTab->mModelNameStructure));
+        // emit currentchange signal so that componentbrowsertree is updated
+        emit currentChange(1);
+    }
 }
 
+//! Delete all the component and their corresponding connectors from the model.
+//! @see deleteComponentObject(Component *component, bool update)
 void GraphicsView::deleteAllComponentObjects()
 {
     foreach (Component *component, mComponentsList)
     {
-        component->deleteMe();
+        component->deleteMe(false);
     }
 }
 
@@ -442,7 +452,7 @@ void GraphicsView::removeAllConnectors()
     int i = 0;
     while(i != mConnectorsVector.size())
     {
-        this->removeConnector(mConnectorsVector[i]);
+        this->removeConnector(mConnectorsVector[i], false);
         i = 0;   //Restart iteration if map has changed
     }
 }
@@ -1322,7 +1332,6 @@ void GraphicsView::removeConnector()
         int i = 0;
         while(i != mConnectorsVector.size())
         {
-
             if(mConnectorsVector[i]->isActive())
             {
                 this->removeConnector(mConnectorsVector[i]);
@@ -1338,7 +1347,7 @@ void GraphicsView::removeConnector()
 
 //! Removes the connector from the model.
 //! @param pConnector is a pointer to the connector to remove.
-void GraphicsView::removeConnector(Connector* pConnector)
+void GraphicsView::removeConnector(Connector *pConnector, bool update)
 {
     bool doDelete = false;
     int i;
@@ -1390,7 +1399,7 @@ void GraphicsView::removeConnector(Connector* pConnector)
             endIconCompName = pConnector->getEndComponent()->getName() + "[" + pConnector->mpConnectorArrayMenu->getConnectorIndex() + "]";
         }
         // delete Connection
-        deleteConnection(QString(startIconName).append(startIconCompName), QString(endIconName).append(endIconCompName));
+        deleteConnection(QString(startIconName).append(startIconCompName), QString(endIconName).append(endIconCompName), update);
         // delete the connector object
         delete pConnector;
         // remove connector object from local connector vector
@@ -1398,12 +1407,21 @@ void GraphicsView::removeConnector(Connector* pConnector)
     }
 }
 
-void GraphicsView::deleteConnection(QString startIconCompName, QString endIconCompName)
+//! Deletes the connection from OMC.
+//! @param startIconCompName is starting component name string.
+//! @param endIconCompName is ending component name string.
+//! @param update flag is used to check whether we need to update the modelica editor text or not.
+//! @see removeConnector()
+//! @see removeConnector(Connector *pConnector, bool update)
+void GraphicsView::deleteConnection(QString startIconCompName, QString endIconCompName, bool update)
 {
     MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
 
     if (pMainWindow->mpOMCProxy->deleteConnection(startIconCompName, endIconCompName, mpParentProjectTab->mModelNameStructure))
-        mpParentProjectTab->mpModelicaEditor->setText(pMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
+    {
+        if (update)
+            mpParentProjectTab->mpModelicaEditor->setText(pMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
+    }
     else
         pMainWindow->mpMessageWidget->printGUIErrorMessage(pMainWindow->mpOMCProxy->getErrorString());
 }
@@ -1468,8 +1486,11 @@ void GraphicsView::selectAll()
     }
 }
 
-void GraphicsView::addClassAnnotation()
-{    
+//! Adds the annotation string of Icon and Diagram layer to the model. Also creates the model icon in the tree.
+//! If some custom models are cross referenced then update them accordingly.
+//! @param update flag is used to check whether we need to update the modelica editor text or not.
+void GraphicsView::addClassAnnotation(bool update)
+{
     MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
     int counter = 0;
     QString annotationString;
@@ -1501,7 +1522,8 @@ void GraphicsView::addClassAnnotation()
     if (pMainWindow->mpOMCProxy->addClassAnnotation(mpParentProjectTab->mModelNameStructure, annotationString))
     {
         // update modelicatext of model
-        mpParentProjectTab->mpModelicaEditor->setText(pMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
+        if (update)
+            mpParentProjectTab->mpModelicaEditor->setText(pMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
     }
     else
     {
@@ -1513,8 +1535,7 @@ void GraphicsView::addClassAnnotation()
         ModelicaTree *pModelicaTree = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpLibrary->mpModelicaTree;
         ModelicaTreeNode *pModelicaTreeNode = pModelicaTree->getNode(mpParentProjectTab->mModelNameStructure);
 
-        LibraryLoader *libraryLoader = new LibraryLoader(pModelicaTreeNode, mpParentProjectTab->mModelNameStructure,
-                                                         pModelicaTree);
+        LibraryLoader *libraryLoader = new LibraryLoader(pModelicaTreeNode, mpParentProjectTab->mModelNameStructure, pModelicaTree);
         libraryLoader->start(QThread::HighestPriority);
         while (libraryLoader->isRunning())
             qApp->processEvents();
@@ -1684,7 +1705,7 @@ GraphicsScene::GraphicsScene(int iconType, ProjectTab *parent)
 ProjectTab::ProjectTab(int modelicaType, int iconType, bool readOnly, bool isChild, ProjectTabWidget *parent)
     : QWidget(parent)
 {
-    mIsSaved = true;
+    mIsSaved = false;
     mModelFileName.clear();
     mpParentProjectTabWidget = parent;
     mModelicaType = modelicaType;
@@ -1998,48 +2019,12 @@ void ProjectTab::getModelComponents()
     int i = 0;
     foreach (ComponentsProperties *componentProperties, components)
     {
-//        //! @todo add the code to check if components are of types Real, so that we dont check annotation for them.
-//        Component *oldComponent = pMainWindow->mpLibrary->getComponentObject(componentProperties->getClassName());
-//        Component *newComponent;
-//        // create a component
-//        if (!pMainWindow->mpOMCProxy->isWhat(StringHandler::PACKAGE, componentProperties->getClassName()))
-//        {
-//            // Check if the icon is already loaded.
-//            QString iconName;
-//            iconName = componentProperties->getName();
-
-//            if (!oldComponent)
-//            {
-//                LibraryComponent *libComponent;
-//                QString result = pMainWindow->mpOMCProxy->getIconAnnotation(componentProperties->getClassName());
-//                libComponent = new LibraryComponent(result, componentProperties->getClassName(),
-//                                                    mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy);
-//                // add the component to library widget components lists
-//                mpParentProjectTabWidget->mpParentMainWindow->mpLibrary->addComponentObject(libComponent);
-//                // create a new copy component here
-//                newComponent = new Component(libComponent->mpComponent, iconName, QPointF(0.0, 0.0),
-//                                             StringHandler::ICON, false, mpDiagramGraphicsView);
-////                newComponent = new Component(result, iconName, componentProperties->getClassName(), QPointF(0.0, 0.0),
-////                                             StringHandler::ICON, false, pMainWindow->mpOMCProxy, mpGraphicsView);
-//            }
-//            else
-//            {
-//                // create a new copy component here
-//                newComponent = new Component(oldComponent, iconName, QPointF(0.0, 0.0), StringHandler::ICON,
-//                                             false, mpDiagramGraphicsView);
-//            }
-//            //mpGraphicsView->addComponentObject(newComponent);
-//            mpDiagramGraphicsView->mComponentsList.append(newComponent);
-//        }
-
         if (pMainWindow->mpOMCProxy->isWhat(StringHandler::CONNECTOR, componentProperties->getClassName()))
         {
-            mpDiagramGraphicsView->addComponentoView(componentProperties->getName(),
-                                                     componentProperties->getClassName(), QPointF(0.0, 0.0), true,
-                                                     false, true);
-            mpIconGraphicsView->addComponentoView(componentProperties->getName(),
-                                                  componentProperties->getClassName(), QPointF(0.0, 0.0), true,
-                                                  false);
+            mpDiagramGraphicsView->addComponentoView(componentProperties->getName(), componentProperties->getClassName(), QPointF(0.0, 0.0),
+                                                     true, false, true);
+            mpIconGraphicsView->addComponentoView(componentProperties->getName(), componentProperties->getClassName(), QPointF(0.0, 0.0),
+                                                  true, false);
 
             if (!static_cast<QString>(componentsAnnotationsList.at(i)).toLower().contains("error"))
             {
@@ -2055,19 +2040,25 @@ void ProjectTab::getModelComponents()
                     {
                         pDiagramComponent->mTransformationString = componentsAnnotationsList.at(i);
                         transformation = new Transformation(pDiagramComponent);
+                        // unset the ItemSendsGeometryChanges flag otherwise we will get alot of itemchange events which are not needed here.
+                        pDiagramComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
                         // We need to reset the matrix before applying tranformations.
                         pDiagramComponent->resetTransform();
                         pDiagramComponent->scale(transformation->getScale(), transformation->getScale());
                         pDiagramComponent->setPos(transformation->getPositionX(), transformation->getPositionY());
+                        pDiagramComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
                         pDiagramComponent->setRotation(transformation->getRotateAngle());
                     }
                     if (pIconComponent)
                     {
                         pIconComponent->mTransformationString = componentsAnnotationsList.at(i);
+                        // unset the ItemSendsGeometryChanges flag otherwise we will get alot of itemchange events which are not needed here.
+                        pIconComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
                         // We need to reset the matrix before applying tranformations.
                         pIconComponent->resetTransform();
                         pIconComponent->scale(transformation->getScaleIcon(), transformation->getScaleIcon());
                         pIconComponent->setPos(transformation->getPositionXIcon(), transformation->getPositionYIcon());
+                        pIconComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
                         pIconComponent->setRotation(transformation->getRotateAngleIcon());
                     }
                 }
@@ -2075,9 +2066,8 @@ void ProjectTab::getModelComponents()
         }
         else
         {
-            mpDiagramGraphicsView->addComponentoView(componentProperties->getName(),
-                                                     componentProperties->getClassName(), QPointF(0.0, 0.0), false,
-                                                     false, false);
+            mpDiagramGraphicsView->addComponentoView(componentProperties->getName(), componentProperties->getClassName(), QPointF(0.0, 0.0),
+                                                     false, false, false);
             if (!static_cast<QString>(componentsAnnotationsList.at(i)).toLower().contains("error"))
             {
                 // get the diagram component object we just created
@@ -2089,11 +2079,13 @@ void ProjectTab::getModelComponents()
                     {
                         pDiagramComponent->mTransformationString = componentsAnnotationsList.at(i);
                         Transformation *transformation = new Transformation(pDiagramComponent);
-                        //newComponent->setTransform(transformation->getTransformationMatrix());
+                        // unset the ItemSendsGeometryChanges flag otherwise we will get alot of itemchange events which are not needed here.
+                        pDiagramComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, false);
                         //! @todo We need to reset the matrix before applying tranformations.
                         pDiagramComponent->resetTransform();
                         pDiagramComponent->scale(transformation->getScale(), transformation->getScale());
                         pDiagramComponent->setPos(transformation->getPositionX(), transformation->getPositionY());
+                        pDiagramComponent->setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
                         pDiagramComponent->setRotation(transformation->getRotateAngle());
                     }
                 }
@@ -2442,8 +2434,6 @@ QToolButton* ProjectTab::getModelicaTextToolButton()
 //! @see updateModel(QString name)
 bool ProjectTab::modelicaEditorTextChanged()
 {
-    // make mIsSaved to false inorder to save the changes to file as well.
-    mIsSaved = false;
     MainWindow *pMainWindow = mpParentProjectTabWidget->mpParentMainWindow;
     QStringList models = mpModelicaEditor->getModelsNames();
     // if there was some error in modelicatext then
@@ -2609,7 +2599,7 @@ bool ProjectTab::modelicaEditorTextChanged()
 //! @class ProjectTabWidget
 //! @brief The ProjectTabWidget class is a container class for ProjectTab class
 
-//! ProjectTabWidget contains ProjectTabWidget widgets.
+//! ProjectTabWidget contains ProjectTab widgets.
 
 //! Constructor.
 //! @param parent defines a parent to the new instanced object.
@@ -2629,15 +2619,13 @@ ProjectTabWidget::ProjectTabWidget(MainWindow *parent)
     connect(this, SIGNAL(tabAdded()), SLOT(enableProjectToolbar()));
     connect(this, SIGNAL(tabRemoved()), SLOT(disableProjectToolbar()));
     connect(this, SIGNAL(currentChanged(int)), SLOT(tabChanged()));
-    //connect(this, SIGNAL(currentChange(int)), SLOT(tabChanged()));
 
     emit tabRemoved();
     connect(mpParentMainWindow->resetZoomAction, SIGNAL(triggered()),this,SLOT(resetZoom()));
     connect(mpParentMainWindow->zoomInAction, SIGNAL(triggered()),this,SLOT(zoomIn()));
     connect(mpParentMainWindow->zoomOutAction, SIGNAL(triggered()),this,SLOT(zoomOut()));
     connect(mpParentMainWindow->mpLibrary->mpModelicaTree, SIGNAL(nodeDeleted()), SLOT(updateTabIndexes()));
-    connect(this, SIGNAL(modelSaved(QString,QString)), mpParentMainWindow->mpLibrary->mpModelicaTree,
-            SLOT(saveChildModels(QString,QString)));
+    connect(this, SIGNAL(modelSaved(QString,QString)), mpParentMainWindow->mpLibrary->mpModelicaTree, SLOT(saveChildModels(QString,QString)));
 }
 
 ProjectTabWidget::~ProjectTabWidget()
@@ -2659,6 +2647,21 @@ ProjectTabWidget::~ProjectTabWidget()
 ProjectTab* ProjectTabWidget::getCurrentTab()
 {
     return qobject_cast<ProjectTab *>(currentWidget());
+}
+
+ProjectTab* ProjectTabWidget::getProjectTab(QString name)
+{
+    ProjectTab *pProjectTab = getTabByName(name);
+    if (pProjectTab)
+        return pProjectTab;
+    else
+    {
+        pProjectTab = getRemovedTabByName(name);
+        if (pProjectTab)
+            return pProjectTab;
+        else
+            return 0;
+    }
 }
 
 ProjectTab* ProjectTabWidget::getTabByName(QString name)
@@ -2689,7 +2692,13 @@ ProjectTab* ProjectTabWidget::getRemovedTabByName(QString name)
 //! Reimplemented function to add the Tab.
 int ProjectTabWidget::addTab(ProjectTab *tab, QString tabName)
 {
-    int position = QTabWidget::addTab(tab, tabName);
+    int position;
+    // if tab is not saved then add the star with the name
+    position = QTabWidget::addTab(tab, QString(tabName).append(tab->mIsSaved ? "" : "*"));
+//    if (!tab->mIsSaved)
+//        position = QTabWidget::addTab(tab, tabName);
+//    else
+//        position = QTabWidget::addTab(tab, tabName);
     emit tabAdded();
     return position;
 }
@@ -2700,15 +2709,7 @@ void ProjectTabWidget::removeTab(int index)
     // if tab is saved and user is just closing it then save it to mRemovedTabsList, so that we can open it later on
     ProjectTab *pCurrentTab = qobject_cast<ProjectTab *>(widget(index));
     QTabWidget::removeTab(index);
-    if (pCurrentTab->mIsSaved)
-    {
-        mRemovedTabsList.append(pCurrentTab);
-    }
-    else
-    {
-        // delete the tab if user dont save it, becasue removetab only removes the widget don't delete it
-        delete pCurrentTab;
-    }
+    mRemovedTabsList.append(pCurrentTab);
     emit tabRemoved();
 }
 
@@ -2742,6 +2743,31 @@ void ProjectTabWidget::setSourceFile(QString modelName, QString modelFileName)
     }
 }
 
+void ProjectTabWidget::saveChilds(ProjectTab *pProjectTab)
+{
+    // get the corresponding tree node first
+    ModelicaTreeNode *item = mpParentMainWindow->mpLibrary->mpModelicaTree->getNode(pProjectTab->mModelNameStructure);
+    // loop through all the childs of the tree node.
+    int count = item->childCount();
+    // Close the corresponding tabs if open
+    for (int i = 0 ; i < count ; i++)
+    {
+        ModelicaTreeNode *treeNode = dynamic_cast<ModelicaTreeNode*>(item->child(i));
+        ProjectTab *pProjectTab = getProjectTab(treeNode->mNameStructure);
+        if (pProjectTab)
+        {
+            QString tabName = tabText(pProjectTab->mTabPosition);
+            // make sure we only trim * and not any letter of model name.
+            if (tabName.endsWith('*'))
+                tabName.chop(1);
+
+            setTabText(pProjectTab->mTabPosition, tabName);
+            pProjectTab->mIsSaved = true;
+            saveChilds(pProjectTab);
+        }
+    }
+}
+
 //! Adds an existing ProjectTab object to itself.
 //! @see closeProjectTab(int index)
 void ProjectTabWidget::addProjectTab(ProjectTab *projectTab, QString modelName, QString modelStructure)
@@ -2768,33 +2794,11 @@ void ProjectTabWidget::addProjectTab(ProjectTab *projectTab, QString modelName, 
 //! @see closeProjectTab(int index)
 void ProjectTabWidget::addNewProjectTab(QString modelName, QString modelStructure, int modelicaType)
 {
-    ProjectTab *newTab;
-//    if (modelStructure.isEmpty())
-//    {
-        newTab = new ProjectTab(modelicaType, StringHandler::ICON, false, false, this);
-        newTab->mIsSaved = false;
-//    }
-//    else
-//    {
-//        newTab = new ProjectTab(modelicaType, StringHandler::ICON, false, true, this);
-//        ProjectTab *pParentTab = getTabByName(StringHandler::removeLastDot(modelStructure));
-//        if (pParentTab)
-//        {
-//            // set the text of the model and make it unsaved.
-//            pParentTab->mpModelicaEditor->blockSignals(true);
-//            pParentTab->mpModelicaEditor->setText(mpParentMainWindow->mpOMCProxy->list
-//                                                 (StringHandler::removeLastDot(modelStructure)));
-//            pParentTab->mpModelicaEditor->blockSignals(false);
-//            pParentTab->mIsSaved = true;
-//        }
-//    }
+    ProjectTab *newTab = new ProjectTab(modelicaType, StringHandler::ICON, false, modelStructure.isEmpty() ? false : true, this);
     newTab->mModelName = modelName;
     newTab->mModelNameStructure = modelStructure + modelName;
     newTab->mpModelicaEditor->setText(mpParentMainWindow->mpOMCProxy->list(newTab->mModelNameStructure));
-//    if (modelStructure.isEmpty())
-        newTab->mTabPosition = addTab(newTab, newTab->isChild() ? modelName : modelName.append(QString("*")));
-//    else
-//        newTab->mTabPosition = addTab(newTab, modelName);
+    newTab->mTabPosition = addTab(newTab, modelName);
     setCurrentWidget(newTab);
     // make the icon view visible and focused for key press events
     newTab->showDiagramView(true);
@@ -2807,6 +2811,7 @@ void ProjectTabWidget::addDiagramViewTab(QTreeWidgetItem *item, int column)
     LibraryTreeNode *treeNode = dynamic_cast<LibraryTreeNode*>(item);
     ProjectTab *newTab = new ProjectTab(mpParentMainWindow->mpOMCProxy->getClassRestriction(treeNode->mNameStructure),
                                         StringHandler::DIAGRAM, true, false, this);
+    newTab->mIsSaved = true;
     newTab->mModelName = treeNode->mName;
     newTab->mModelNameStructure = treeNode->mNameStructure;
     newTab->mTabPosition = addTab(newTab, StringHandler::getLastWordAfterDot(treeNode->mNameStructure));
@@ -2863,11 +2868,9 @@ void ProjectTabWidget::saveProjectTab(int index, bool saveAs)
     // if the model is readonly then simply return.........e.g Ground, Inertia, EMF etc.
     if (pCurrentTab->isReadOnly())
         return;
-
     // validate the modelica text before saving the model
     if (!pCurrentTab->mpModelicaEditor->validateText())
         return;
-
     // if model is a child model then give user a message and return
     if (pCurrentTab->isChild())
     {
@@ -2878,9 +2881,6 @@ void ProjectTabWidget::saveProjectTab(int index, bool saveAs)
     }
 
     QString tabName = tabText(index);
-
-
-
 
     if (saveAs)
     {
@@ -2898,24 +2898,7 @@ void ProjectTabWidget::saveProjectTab(int index, bool saveAs)
     else
     {
         // if user presses ctrl + s and model is already saved
-        if (pCurrentTab->mIsSaved)
-        {
-            //Nothing to do except for package
-            if (pCurrentTab->mModelicaType == StringHandler::PACKAGE)
-            {
-                if (saveModel(saveAs))
-                {
-                    // make sure we only trim * and not any letter of model name.
-                    if (tabName.endsWith('*'))
-                        tabName.chop(1);
-
-                    setTabText(index, tabName);
-                    pCurrentTab->mIsSaved = true;
-                }
-            }
-        }
-        // if model is not saved then save it
-        else
+        if (!pCurrentTab->mIsSaved)
         {
             if (saveModel(saveAs))
             {
@@ -2925,6 +2908,8 @@ void ProjectTabWidget::saveProjectTab(int index, bool saveAs)
 
                 setTabText(index, tabName);
                 pCurrentTab->mIsSaved = true;
+                // since the saving of package is successfull so now we go through all the childs of package and make them saved.
+                saveChilds(pCurrentTab);
             }
         }
     }
@@ -2947,7 +2932,8 @@ bool ProjectTabWidget::saveModel(bool saveAs)
     // if first time save or doing a saveas
     if(pCurrentTab->mModelFileName.isEmpty() | saveAs)
     {
-        modelFileName = StringHandler::getSaveFileName(this, tr(saveAs ? "Save File As" : "Save File"), NULL, Helper::omFileTypes, NULL, "mo");
+        modelFileName = StringHandler::getSaveFileName(this, tr(saveAs ? "Save File As" : "Save File"), NULL, Helper::omFileTypes, NULL, "mo",
+                                                       &pCurrentTab->mModelName);
 
         if (modelFileName.isEmpty())
         {
@@ -3005,50 +2991,50 @@ bool ProjectTabWidget::saveModel(bool saveAs)
 //! @see closeAllProjectTabs()
 bool ProjectTabWidget::closeProjectTab(int index)
 {
-    ModelicaTree *pTree = mpParentMainWindow->mpLibrary->mpModelicaTree;
-    ProjectTab *pCurrentTab = dynamic_cast<ProjectTab*>(widget(index));
-    if (!(pCurrentTab->mIsSaved))
-    {
-        QString modelName;
-        modelName = tabText(index);
-        modelName.chop(1);
-        QMessageBox *msgBox = new QMessageBox(mpParentMainWindow);
-        msgBox->setWindowTitle(QString(Helper::applicationName).append(" - Question"));
-        msgBox->setIcon(QMessageBox::Question);
-        msgBox->setText(QString(GUIMessages::getMessage(GUIMessages::SAVED_MODEL))
-                        .arg(pCurrentTab->getModelicaTypeLabel()).arg(pCurrentTab->mModelName));
-        msgBox->setInformativeText(GUIMessages::getMessage(GUIMessages::SAVE_CHANGES));
-        msgBox->setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
-        msgBox->setDefaultButton(QMessageBox::Save);
+//    ModelicaTree *pTree = mpParentMainWindow->mpLibrary->mpModelicaTree;
+//    ProjectTab *pCurrentTab = dynamic_cast<ProjectTab*>(widget(index));
+//    if (!(pCurrentTab->mIsSaved))
+//    {
+//        QString modelName;
+//        modelName = tabText(index);
+//        modelName.chop(1);
+//        QMessageBox *msgBox = new QMessageBox(mpParentMainWindow);
+//        msgBox->setWindowTitle(QString(Helper::applicationName).append(" - Question"));
+//        msgBox->setIcon(QMessageBox::Question);
+//        msgBox->setText(QString(GUIMessages::getMessage(GUIMessages::SAVED_MODEL))
+//                        .arg(pCurrentTab->getModelicaTypeLabel()).arg(pCurrentTab->mModelName));
+//        msgBox->setInformativeText(GUIMessages::getMessage(GUIMessages::SAVE_CHANGES));
+//        msgBox->setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+//        msgBox->setDefaultButton(QMessageBox::Save);
 
-        int answer = msgBox->exec();
+//        int answer = msgBox->exec();
 
-        switch (answer)
-        {
-        case QMessageBox::Save:
-            // Save was clicked
-            saveProjectTab(index, false);
-            removeTab(index);
-            return true;
-        case QMessageBox::Discard:
-            // Don't Save was clicked
-            //if (pTree->deleteNodeTriggered(pTree->getNode(pCurrentTab->mModelNameStructure)))
-                //removeTab(index);
-            pTree->deleteNodeTriggered(pTree->getNode(pCurrentTab->mModelNameStructure), false);
-            return true;
-        case QMessageBox::Cancel:
-            // Cancel was clicked
-            return false;
-        default:
-            // should never be reached
-            return false;
-        }
-    }
-    else
-    {
+//        switch (answer)
+//        {
+//        case QMessageBox::Save:
+//            // Save was clicked
+//            saveProjectTab(index, false);
+//            removeTab(index);
+//            return true;
+//        case QMessageBox::Discard:
+//            // Don't Save was clicked
+//            //if (pTree->deleteNodeTriggered(pTree->getNode(pCurrentTab->mModelNameStructure)))
+//                //removeTab(index);
+//            pTree->deleteNodeTriggered(pTree->getNode(pCurrentTab->mModelNameStructure), false);
+//            return true;
+//        case QMessageBox::Cancel:
+//            // Cancel was clicked
+//            return false;
+//        default:
+//            // should never be reached
+//            return false;
+//        }
+//    }
+//    else
+//    {
         removeTab(index);
         return true;
-    }
+//    }
 }
 
 //! Closes all opened projects.

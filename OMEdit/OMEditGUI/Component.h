@@ -154,7 +154,7 @@ public slots:
     void updateAnnotationString(bool updateBothViews = true);
     void showSelectionBox();
     void resizeComponent(qreal resizeFactorX, qreal resizeFactorY);
-    void deleteMe();
+    void deleteMe(bool update = true);
     void copyComponent();
     //void pasteComponent();
     void openIconProperties();

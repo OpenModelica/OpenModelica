@@ -123,6 +123,7 @@ public:
     void setHovered();
     void setLine(QPointF pos1, QPointF pos2);
     bool isMousePressed;
+    QPointF mOldPosition;
     int getLineNumber();
 public slots:
     void setConnected();

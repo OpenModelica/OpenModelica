@@ -186,7 +186,9 @@ public:
         INCORRECT_HTML_TAGS,
         FILE_FORMAT_NOT_SUPPORTED,
         ENTER_VALID_INTEGER,
-        ITEM_DROPPED_ON_ITSELF
+        ITEM_DROPPED_ON_ITSELF,
+        DELETE_PACKAGE_MSG,
+        DELETE_MSG
     };
 
     static QString getMessage(int type);

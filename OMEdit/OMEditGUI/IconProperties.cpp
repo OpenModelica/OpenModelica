@@ -171,6 +171,7 @@ void IconProperties::updateIconProperties()
     QString iconName = mpIconNameTextBox->text().trimmed();
     ProjectTab *pProjectTab = mpComponent->mpGraphicsView->mpParentProjectTab;
     MainWindow *pMainWindow = pProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+    bool valueChanged = false;
 
     // update the component name if it is changed
     if (mpComponent->getName() != iconName)
@@ -186,6 +187,7 @@ void IconProperties::updateIconProperties()
             {
                 // if renameComponent command is successful update the component with new name
                 mpComponent->updateName(mpIconNameTextBox->text().trimmed());
+                valueChanged = true;
             }
             else
             {
@@ -209,12 +211,19 @@ void IconProperties::updateIconProperties()
                                                                .append(iconParameter->getName()),
                                                                mParameterTextBoxesList.at(i)->text().trimmed());
 
+            valueChanged = true;
             // update the gui text now
             parameterOldValueString = QString(iconParameter->getName()).append("=").append(iconParameter->getValue());
             parameterNewValueString = QString(iconParameter->getName()).append("=").append(mParameterTextBoxesList.at(i)->text().trimmed());
             mpComponent->updateParameterValue(parameterOldValueString, parameterNewValueString);
             iconParameter->setValue(mParameterTextBoxesList.at(i)->text().trimmed());
         }
+    }
+    if (valueChanged)
+    {
+        ProjectTab *pProjectTab = mpComponent->mpGraphicsView->mpParentProjectTab;
+        ProjectTabWidget *pProjectTabs = mpComponent->mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget;
+        pProjectTab->mpModelicaEditor->setText(pProjectTabs->mpParentMainWindow->mpOMCProxy->list(pProjectTab->mModelNameStructure));
     }
     accept();
 }
