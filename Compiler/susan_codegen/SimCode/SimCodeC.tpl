@@ -96,6 +96,7 @@ case FUNCTIONCODE(__) then
 end translateFunctions;
 
 
+
 template simulationFile(SimCode simCode, String guid)
  "Generates code for main C file for simulation target."
 ::=
@@ -5384,21 +5385,24 @@ case CAST(__) then
 end daeExpCast;
 
 
-template daeExpAsub(Exp exp, Context context, Text &preExp /*BUFP*/,
+template daeExpAsub(Exp inExp, Context context, Text &preExp /*BUFP*/,
                     Text &varDecls /*BUFP*/)
  "Generates code for an asub expression."
 ::=
-  match expTypeFromExpShort(exp)
+  match expTypeFromExpShort(inExp)
   case "metatype" then
   // MetaModelica Array
-    (match exp case ASUB(exp=e, sub={idx}) then
+    (match inExp case ASUB(exp=e, sub={idx}) then
       let e1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let idx1 = daeExp(idx, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       'arrayGet(<%e1%>,<%idx1%>) /* DAE.ASUB */')
   // Modelica Array
   else
-  match exp
+  match inExp
   
+  case ASUB(exp=ASUB(__)) then
+    error(sourceInfo(),'Nested array subscripting *should* have been handled by the routine creating the asub, but for some reason it was not: <%printExpStr(exp)%>')
+
   // Faster asub: Do not construct a whole new array just to access one subscript
   case ASUB(exp=exp as ARRAY(scalar=true), sub={idx}) then
     let res = tempDecl(expTypeFromExpShort(exp),&varDecls)
@@ -5426,36 +5430,7 @@ template daeExpAsub(Exp exp, Context context, Text &preExp /*BUFP*/,
     res
   
   case ASUB(exp=RANGE(ty=t), sub={idx}) then
-    'ASUB_EASY_CASE'
-  
-  case ASUB(exp=ASUB(
-              exp=ASUB(
-                exp=ASUB(exp=e, sub={ICONST(integer=i)}),
-                sub={ICONST(integer=j)}),
-              sub={ICONST(integer=k)}),
-            sub={ICONST(integer=l)}) then
-    let e1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let typeShort = expTypeFromExpShort(e)
-    '<%typeShort%>_get_4D(&<%e1%>, <%incrementInt(i,-1)%>, <%incrementInt(j,-1)%>, <%incrementInt(k,-1)%>, <%incrementInt(l,-1)%>)'            
-  
-  case ASUB(exp=ASUB(
-              exp=ASUB(exp=e, sub={ICONST(integer=i)}),
-              sub={ICONST(integer=j)}),
-            sub={ICONST(integer=k)}) then
-    let e1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let typeShort = expTypeFromExpShort(e)
-    '<%typeShort%>_get_3D(&<%e1%>, <%incrementInt(i,-1)%>, <%incrementInt(j,-1)%>, <%incrementInt(k,-1)%>)'            
-  
-  case ASUB(exp=ASUB(exp=e, sub={ICONST(integer=i)}),
-            sub={ICONST(integer=j)}) then
-    let e1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let typeShort = expTypeFromExpShort(e)
-    '<%typeShort%>_get_2D(&<%e1%>, <%incrementInt(i,-1)%>, <%incrementInt(j,-1)%>)'            
-  
-  case ASUB(exp=e, sub={ICONST(integer=i)}) then
-    let e1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let typeShort = expTypeFromExpShort(e)
-    '<%typeShort%>_get(&<%e1%>, <%incrementInt(i,-1)%>)'
+    error(sourceInfo(),'ASUB_EASY_CASE <%printExpStr(exp)%>')
   
   case ASUB(exp=ecr as CREF(__), sub=subs) then
     let arrName = daeExpCrefRhs(buildCrefExpFromAsub(ecr, subs), context,
@@ -5464,50 +5439,24 @@ template daeExpAsub(Exp exp, Context context, Text &preExp /*BUFP*/,
       arrName
     else
       arrayScalarRhs(ecr.ty, subs, arrName, context, &preExp, &varDecls)
-  
-  case ASUB(exp=ASUB(
-              exp=ASUB(
-                exp=ASUB(exp=e, sub={ENUM_LITERAL(index=i)}),
-                sub={ENUM_LITERAL(index=j)}),
-              sub={ENUM_LITERAL(index=k)}),
-            sub={ENUM_LITERAL(index=l)}) then
-    let e1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let typeShort = expTypeFromExpShort(e)
-    '<%typeShort%>_get_4D(&<%e1%>, <%incrementInt(i,-1)%>, <%incrementInt(j,-1)%>, <%incrementInt(k,-1)%>, <%incrementInt(l,-1)%>)'            
-  
-  case ASUB(exp=ASUB(
-              exp=ASUB(exp=e, sub={ENUM_LITERAL(index=i)}),
-              sub={ENUM_LITERAL(index=j)}),
-            sub={ENUM_LITERAL(index=k)}) then
-    let e1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let typeShort = expTypeFromExpShort(e)
-    '<%typeShort%>_get_3D(&<%e1%>, <%incrementInt(i,-1)%>, <%incrementInt(j,-1)%>, <%incrementInt(k,-1)%>)'            
-  
-  case ASUB(exp=ASUB(exp=e, sub={ENUM_LITERAL(index=i)}),
-            sub={ENUM_LITERAL(index=j)}) then
-    let e1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let typeShort = expTypeFromExpShort(e)
-    '<%typeShort%>_get_2D(&<%e1%>, <%incrementInt(i,-1)%>, <%incrementInt(j,-1)%>)'
-  
-  case ASUB(exp=e, sub={ENUM_LITERAL(index=i)}) then
-    let e1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let typeShort = expTypeFromExpShort(e)
-    '<%typeShort%>_get(&<%e1%>, <%incrementInt(i,-1)%>)'
-  
-  case ASUB(exp=e, sub={index}) then
-    let exp = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let expIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let typeShort = expTypeFromExpShort(e)
-    '<%typeShort%>_get(&<%exp%>, ((<%expIndex%>) - 1))'
-  
+    
   case ASUB(exp=e, sub=indexes) then
     let exp = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let expIndexes = (indexes |> index => '<%daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>' ;separator=", ")
-    'CODEGEN_COULD_NOT_HANDLE_ASUB(<%exp%>[<%expIndexes%>])'
+    let typeShort = expTypeFromExpShort(e)
+    let expIndexes = (indexes |> index => '<%daeExpASubIndex(index, context, &preExp, &varDecls)%>' ;separator=", ")
+    '<%typeShort%>_get<%match listLength(indexes) case 1 then "" case i then '_<%i%>D'%>(&<%exp%>, <%expIndexes%>)'
   
-  else
-    'OTHER_ASUB'
+  case exp then
+    error(sourceInfo(),'OTHER_ASUB <%printExpStr(exp)%>')
 end daeExpAsub;
+
+template daeExpASubIndex(Exp exp, Context context, Text &preExp, Text &varDecls)
+::=
+match exp
+  case ICONST(__) then incrementInt(integer,-1)
+  case ENUM_LITERAL(__) then incrementInt(index,-1)
+  else daeExp(exp,context,&preExp,&varDecls)
+end daeExpASubIndex;
 
 template daeExpCallPre(Exp exp, Context context, Text &preExp /*BUFP*/,
                        Text &varDecls /*BUFP*/)

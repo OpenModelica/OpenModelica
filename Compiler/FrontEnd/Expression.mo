@@ -2508,9 +2508,18 @@ algorithm
   outExp := matchcontinue(inExp,inSubs)    
     local
       DAE.Exp exp;
+      list<DAE.Exp> subs,subs1,subs2;
     
+      /* We need to be careful when constructing ASUB's. All subscripts should be in a list. */
+    case (DAE.ASUB(exp,subs1),subs2)
+      equation
+        subs = listAppend(subs1,subs2);
+        exp = DAE.ASUB(exp,subs);
+      then 
+        exp;
+
     // do not check the DAE.ASUB  
-    case(inExp,inSubs) 
+    case(inExp,inSubs)
       equation
         false = RTOpts.debugFlag("checkASUB");
         exp = DAE.ASUB(inExp,inSubs);
