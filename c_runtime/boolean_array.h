@@ -185,5 +185,6 @@ void convert_alloc_boolean_array_to_f77(boolean_array_t* a,
                                         boolean_array_t* dest);
 void convert_alloc_boolean_array_from_f77(boolean_array_t* a,
                                           boolean_array_t* dest);
+void fill_alloc_boolean_array(boolean_array_t* dest, modelica_boolean value, int ndims, ...);
 
 #endif

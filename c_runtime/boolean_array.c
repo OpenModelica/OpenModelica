@@ -863,3 +863,20 @@ void convert_alloc_boolean_array_from_f77(boolean_array_t* a,
     }
     transpose_boolean_array(a, dest);
 }
+
+/* Fills an array with a value. */
+void fill_alloc_boolean_array(boolean_array_t* dest, modelica_boolean value, int ndims, ...)
+{
+    size_t i;
+    size_t elements = 0;
+    va_list ap;
+    va_start(ap, ndims);
+    elements = alloc_base_array(dest, ndims, ap);
+    va_end(ap);
+    dest->data = integer_alloc(elements);
+    
+    for(i = 0; i < elements; ++i)
+    {
+        boolean_set(dest, i, value);
+    }
+}
