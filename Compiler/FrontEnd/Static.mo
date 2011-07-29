@@ -4303,7 +4303,7 @@ protected function sameDimensionsExceptionDimX
 algorithm
   types := Util.listMap(inProps, Types.getPropType);
   dims := Util.listMap(types, Types.getDimensions);
-  dims := Util.listRemoveNth(dims, dimException);
+  dims := Util.listMap1(dims, Util.listRemoveNth, dimException);
   res := sameDimensions2(dims);
 end sameDimensionsExceptionDimX;
 
@@ -5410,8 +5410,9 @@ algorithm
     case (cache,env,(dim_aexp :: matrices),_,impl,pre,info)
       equation
         (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),const1),_) = elabExp(cache,env, dim_aexp, impl,NONE(),true,pre,info);
+        (cache,Values.INTEGER(dim),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), Ceval.MSG(info));
         (cache,matrices_1,props,_) = elabExpList(cache,env, matrices, impl,NONE(),true,pre,info);
-        false = sameDimensions(props);
+        false = sameDimensionsExceptionDimX(props,dim);
         lst = Util.listMap((dim_aexp :: matrices), Dump.printExpStr);
         s = Util.stringDelimitList(lst, ", ");
         sp = PrefixUtil.printPrefixStr3(pre);
@@ -5447,6 +5448,10 @@ algorithm
     case ((DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), 1, _)
       then
         inType1;
+
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_EXP(exp=_),arrayType = tp),p), 1, _)
+      then
+        ((DAE.T_ARRAY(DAE.DIM_UNKNOWN(),tp),p));
 
     case ((DAE.T_ARRAY(arrayDim = dim,arrayType = tp),p),n,n_args)
       equation
@@ -7646,7 +7651,7 @@ algorithm
         // replace references to inputs in the arguments  
         //callExp = VarTransform.replaceExp(callExp, inputVarsRepl, NONE());
         
-        (call_exp,prop_1) = vectorizeCall(callExp, vect_dims, newslots2, prop);
+        (call_exp,prop_1) = vectorizeCall(callExp, vect_dims, newslots2, prop, info);
         //print(" RECORD CONSTRUCT("+&Absyn.pathString(fn)+&")= "+&Exp.printExpStr(call_exp)+&"\n");
        /* Instantiate the function and add to dae function tree*/
         (cache,status) = instantiateDaeFunction(cache,recordEnv,fn,false/*record constructor never builtin*/,SOME(recordCl),true);
@@ -7702,7 +7707,7 @@ algorithm
 
         //debugPrintString = Util.if_(Util.isEqual(DAE.NORM_INLINE,inline)," Inline: " +& Absyn.pathString(fn_1) +& "\n", "");print(debugPrintString);
         
-        (call_exp,prop_1) = vectorizeCall(callExp, vect_dims, slots2, prop);
+        (call_exp,prop_1) = vectorizeCall(callExp, vect_dims, slots2, prop, info);
 
         /* Instantiate the function and add to dae function tree*/
         (cache,status) = instantiateDaeFunction(cache,env,fn,builtin,NONE(),true);
@@ -8096,12 +8101,13 @@ protected function vectorizeCall "function: vectorizeCall
   input list<DAE.Dimension> inTypesArrayDimLst;
   input list<Slot> inSlotLst;
   input DAE.Properties inProperties;
+  input Absyn.Info info;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
-  (outExp,outProperties) := matchcontinue (inExp,inTypesArrayDimLst,inSlotLst,inProperties)
+  (outExp,outProperties) := matchcontinue (inExp,inTypesArrayDimLst,inSlotLst,inProperties,info)
     local
-      DAE.Exp e,vect_exp,vect_exp_1;
+      DAE.Exp e,vect_exp,vect_exp_1,dimexp;
       DAE.Type tp;
       DAE.Properties prop;
       DAE.ExpType exp_type;
@@ -8115,16 +8121,24 @@ algorithm
       list<DAE.Dimension> ad;
       list<Slot> slots;
       DAE.ExpType etp;
+      String str;
     
-    case (e,{},_,prop) then (e,prop);
+    case (e,{},_,prop,_) then (e,prop);
     
     // If the dimension is not defined we can't vectorize the call. If we are running
     // checkModel this should succeed anyway, since we might be checking a function
     // that takes a vector of unknown size. So pretend that the dimension is 1.
-    case (e, (DAE.DIM_UNKNOWN() :: ad), slots, prop)
+    case (e, (DAE.DIM_UNKNOWN() :: ad), slots, prop, info)
       equation
         true = OptManager.getOption("checkModel");
-        (vect_exp_1, prop) = vectorizeCall(e, DAE.DIM_INTEGER(1) :: ad, slots, prop);
+        (vect_exp_1, prop) = vectorizeCall(e, DAE.DIM_INTEGER(1) :: ad, slots, prop, info);
+      then 
+        (vect_exp_1, prop);
+      /* TODO: Remove me :D */
+    case (e, (DAE.DIM_EXP(exp=_) :: ad), slots, prop, info)
+      equation
+        true = OptManager.getOption("checkModel");
+        (vect_exp_1, prop) = vectorizeCall(e, DAE.DIM_INTEGER(1) :: ad, slots, prop, info);
       then 
         (vect_exp_1, prop);
         
@@ -8145,31 +8159,40 @@ algorithm
       then
         (vect_exp_1,prop);*/
         
+    /* Scalar expression, non-constant but known dimensions */
+    case (e as DAE.CALL(path = _),(DAE.DIM_EXP(exp=dimexp) :: ad),slots,DAE.PROP(tp,c),info)
+      equation
+        str = "Cannot vectorize call with dimension: " +& ExpressionDump.printExpStr(dimexp);
+        Error.addSourceMessage(Error.INTERNAL_ERROR,{str},info);
+      then
+        fail();
+
     /* Scalar expression, i.e function call */
-    case (e as DAE.CALL(path = _),(dim :: ad),slots,DAE.PROP(tp,c)) 
+    case (e as DAE.CALL(path = _),(dim :: ad),slots,DAE.PROP(tp,c),info)
       equation 
         int_dim = Expression.dimensionSize(dim);
         exp_type = Types.elabType(Types.liftArray(tp, dim)) "pass type of vectorized result expr";
         vect_exp = vectorizeCallScalar(e, exp_type, int_dim, slots);
         tp = Types.liftArray(tp, dim);
-        (vect_exp_1,prop) = vectorizeCall(vect_exp, ad, slots, DAE.PROP(tp,c));
+        (vect_exp_1,prop) = vectorizeCall(vect_exp, ad, slots, DAE.PROP(tp,c),info);
       then
         (vect_exp_1,prop);
     
     /* array expression of function calls */
-    case (DAE.ARRAY(scalar = scalar,array = expl),(dim :: ad),slots,DAE.PROP(tp,c)) 
+    case (DAE.ARRAY(scalar = scalar,array = expl),(dim :: ad),slots,DAE.PROP(tp,c),info)
       equation
         int_dim = Expression.dimensionSize(dim);
         exp_type = Types.elabType(Types.liftArray(tp, dim));
         vect_exp = vectorizeCallArray(inExp, int_dim, slots);
         tp = Types.liftArrayRight(tp, dim);
-        (vect_exp_1,prop) = vectorizeCall(vect_exp, ad, slots, DAE.PROP(tp,c));
+        (vect_exp_1,prop) = vectorizeCall(vect_exp, ad, slots, DAE.PROP(tp,c),info);
       then
         (vect_exp_1,prop);
         
-    case (_,_,_,_)
+    case (_,dim::_,_,_,_)
       equation
-        Debug.fprintln("failtrace", "- Static.vectorizeCall failed");
+        str = ExpressionDump.dimensionString(dim);
+        Debug.fprintln("failtrace", "- Static.vectorizeCall failed: " +& str);
       then
         fail();
   end matchcontinue;
@@ -8577,10 +8600,13 @@ protected function sameArraydimLst
   input list<DAE.Dimension> inTypesArrayDimLst2;
 algorithm
   _:=
-  match (inTypesArrayDimLst1,inTypesArrayDimLst2)
+  matchcontinue (inTypesArrayDimLst1,inTypesArrayDimLst2)
     local
       Integer i1,i2;
       list<DAE.Dimension> ads1,ads2;
+      DAE.Exp e1,e2;
+      DAE.Dimension ad1,ad2;
+      String str1,str2,str;
     case ({},{}) then ();
     case ((DAE.DIM_INTEGER(integer = i1) :: ads1),(DAE.DIM_INTEGER(integer = i2) :: ads2))
       equation
@@ -8593,7 +8619,21 @@ algorithm
         sameArraydimLst(ads1, ads2);
       then
         ();
-  end match;
+    case (DAE.DIM_EXP(e1) :: ads1,DAE.DIM_EXP(e2) :: ads2)
+      equation
+        true = Expression.expEqual(e1,e2);
+        sameArraydimLst(ads1, ads2);
+      then
+        ();
+    case (ad1 :: ads1,ad2 :: ads2)
+      equation
+        str1 = ExpressionDump.dimensionString(ad1);
+        str2 = ExpressionDump.dimensionString(ad2);
+        str = "Could not vectorize function because dimensions "+&str1+&" and "+&str2+&"mismatch.";
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then
+        fail();
+  end matchcontinue;
 end sameArraydimLst;
 
 protected function getProperties
@@ -11203,6 +11243,7 @@ algorithm
       Integer int_dim;
       DAE.Properties prop;
       DAE.Type ty;
+      DAE.Exp e;
 
     // If in for iterator loop scope the subscript should never be evaluated to
     // a value (since the parameter/const value of iterator variables are not
@@ -11236,6 +11277,15 @@ algorithm
       then
         (cache, sub);
 
+    case (_, _, _, DAE.DIM_EXP(exp=e), _, _, _, _)
+      equation
+        true = Types.isParameterOrConstant(inConst);
+        (cache, Values.INTEGER(integer=int_dim), _) = Ceval.ceval(inCache,inEnv,e,true,NONE(),Ceval.MSG(inInfo)); 
+        (cache, sub) = Ceval.cevalSubscript(inCache, inEnv, inSubscript,
+          int_dim, inImpl, Ceval.MSG(inInfo));
+      then
+        (cache, sub);
+
     // If the previous case failed and we're just checking the model, try again
     // but skip the constant evaluation.
     case (_, _, _, _, _, _, _, _)
@@ -11253,8 +11303,10 @@ algorithm
       then
         (inCache, inSubscript);
 
-    // For unknown dimension, ':', keep as is.
+    // For unknown dimensions, ':', keep as is.
     case (_, _, _, DAE.DIM_UNKNOWN(), _, _, _, _)
+      then (inCache, inSubscript);
+    case (_, _, _, DAE.DIM_EXP(_), _, _, _, _)
       then (inCache, inSubscript);
 
   end matchcontinue;

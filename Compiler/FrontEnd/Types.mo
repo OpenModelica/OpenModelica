@@ -1499,6 +1499,7 @@ algorithm
       DAE.Dimension dim1,dim2;
       list<FuncArg> farg1,farg2;
       DAE.CodeType c1,c2;
+      DAE.Exp e1,e2;
     
     case ((DAE.T_ANYTYPE(_),_),(_,_)) then true;
     case ((_,_),(DAE.T_ANYTYPE(_),_)) then true;
@@ -1529,6 +1530,14 @@ algorithm
       then
         true;
         
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_EXP(exp = e1), arrayType = t1), _), (DAE.T_ARRAY(arrayDim = DAE.DIM_EXP(exp = e2),arrayType = t2), _))
+      equation
+        /* HUGE TODO: FIXME: After MSL is updated? */
+        // true = Expression.expEqual(e1,e2);
+        true = subtype(t1, t2);
+      then
+        true;
+
     case ((DAE.T_ARRAY(arrayType = t1), _), (DAE.T_ARRAY(arrayDim = DAE.DIM_EXP(exp = _), arrayType = t2), _))
       equation
         true = OptManager.getOption("checkModel");
@@ -6517,6 +6526,20 @@ algorithm
   end match;
 end prefixTraversedPolymorphicType;
 
+public function makeExpDimensionsUnknown
+  input tuple<Type,Integer/*dummy*/> tpl;
+  output tuple<Type,Integer/*dummy*/> otpl;
+algorithm
+  otpl := match tpl
+    local
+      Type ty;
+      Option<Absyn.Path> op;
+    case (((DAE.T_ARRAY(DAE.DIM_EXP(exp=_),ty),op),_))
+      then (((DAE.T_ARRAY(DAE.DIM_UNKNOWN(),ty),op),1));
+    else tpl;
+  end match;
+end makeExpDimensionsUnknown;
+
 public function traverseType
   input tuple<Type,A> tpl;
   input Func fn;
@@ -6614,6 +6637,10 @@ algorithm
         ((ty,a)) = traverseType((ty,a),fn);
         ty = (DAE.T_FUNCTION(farg,ty,functionAttributes),op);
         tpl = fn((ty,a));
+      then tpl;
+    case (tpl as (((DAE.T_CODE(_),_)),_),_)
+      equation
+        tpl = fn(tpl);
       then tpl;
     case ((ty,_),_)
       equation

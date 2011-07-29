@@ -1691,120 +1691,6 @@ algorithm
   end match;
 end instClassBasictype;
 
-/*
-public function instClassIn "
-  This rule instantiates the contents of a class definition, with a new
-  environment already setup.
-  The *implicitInstantiation* boolean indicates if the class should be
-  instantiated implicit, i.e. without generating DAE.
-  The last option is a even stronger indication of implicit instantiation,
-  used when looking up variables in packages. This must be used because
-  generation of functions in implicit instanitation (according to
-  *implicitInstantiation* boolean) can cause circular dependencies
-  (e.g. if a function uses a constant in its body)"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input InstanceHierarchy inIH;
-  input UnitAbsyn.InstStore store;
-  input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
-  input Connect.Sets inSets;
-  input ClassInf.State inState;
-  input SCode.Element inClass;
-  input SCode.Visbibility inVisiblity;
-  input InstDims inInstDims;
-  input Boolean implicitInstantiation;
-  input ConnectionGraph.ConnectionGraph inGraph;
-  input Option<DAE.ComponentRef> instSingleCref;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
-  output InstanceHierarchy outIH;
-  output UnitAbsyn.InstStore outStore;
-  output DAE.DAElist outDae;
-  output Connect.Sets outSets;
-  output ClassInf.State outState;
-  output list<DAE.Var> outTypesVarLst;
-  output Option<DAE.Type> outTypesTypeOption;
-  output Option<SCode.Attributes> optDerAttr;
-  output DAE.EqualityConstraint outEqualityConstraint;
-  output ConnectionGraph.ConnectionGraph outGraph;
-algorithm
-  (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,inVisiblity,inInstDims,implicitInstantiation,inGraph,instSingleCref)
-    local
-      Option<DAE.Type> bc;
-      list<Env.Frame> env,env_1;
-      DAE.Mod mods;
-      Prefix.Prefix pre;
-      list<DAE.ComponentRef> crs;
-      ClassInf.State ci_state,ci_state_1;
-      SCode.Element c,cls;
-      InstDims inst_dims;
-      Boolean impl;
-      SCode.Visibility vis;
-      String clsname,implstr,n;
-      DAE.DAElist dae;
-      Connect.Sets csets_1,csets;
-      list<DAE.Var> tys;
-      SCode.Restriction r,rCached;
-      SCode.ClassDef d;
-      Env.Cache cache;
-      list<DAE.ComponentRef> dc;
-      Real t1,t2,time; Boolean b;
-      list<Connect.OuterConnect> oc;
-      Option<SCode.Attributes> oDA;
-      DAE.EqualityConstraint equalityConstraint;
-      ConnectionGraph.ConnectionGraph graph;
-      InstanceHierarchy ih;
-      InstHashTable instHash;
-      tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, DAE.Mod, Prefix.Prefix,
-            Connect.Sets, ClassInf.State, SCode.Element, Boolean, InstDims, Boolean,
-            ConnectionGraph.ConnectionGraph, Option<DAE.ComponentRef>> inputs;
-      tuple<Env, DAE.DAElist, Connect.Sets, ClassInf.State, list<DAE.Var>, Option<DAE.Type>,
-            Option<SCode.Attributes>, DAE.EqualityConstraint> outputs;
-      Absyn.Path fullEnvPathPlusClass;
-      Option<Absyn.Path> envPathOpt;
-      String className, str1, str2;
-
-      DAE.Mod aa_1;
-      Prefix.Prefix aa_2;
-      Connect.Sets aa_3;
-      ClassInf.State aa_4;
-      SCode.Element aa_5;
-      Boolean aa_6;
-      InstDims aa_7;
-      Boolean aa_8;
-      Option<DAE.ComponentRef> aa_9;
-      replaceable type Type_a subtypeof Any;
-      Type_a bbx, bby;
-      CachedInstItem partialFunc;
-      Real t1, t2, t;
-
-    //case (cache,env,ih,store,mods,pre,csets,ci_state,c as SCode.CLASS(name=className),vis,inst_dims,impl,graph,instSingleCref)
-    //  equation
-    //    print("\n" +& Dump.indentStr(System.getTimerStackIndex()) +& "(" +& className);
-    //    System.startTimer();
-    //  then
-    //  fail();
-
-    case (cache,env,ih,store,mods,pre,csets,ci_state,c as SCode.CLASS(name=className),vis,inst_dims,impl,graph,instSingleCref)
-      equation        
-        (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph) = instClassIn2(cache,env,ih,store,mods,pre,csets,ci_state,c,vis,inst_dims,impl,graph,instSingleCref);
-        //System.stopTimer();
-        //print("\n" +& Dump.indentStr(System.getTimerStackIndex()) +& " " +& className +& ": " +& realString(System.getTimerIntervalTime()) +& ")");
-      then 
-        (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
-    
-    case (cache,env,ih,store,mods,pre,csets,ci_state,c as SCode.CLASS(name=className),vis,inst_dims,impl,graph,instSingleCref)
-      equation
-        //System.stopTimer();
-        //print("\n" +& Dump.indentStr(System.getTimerStackIndex()) +& " FAILED: " +& className +& ": " +& realString(System.getTimerIntervalTime()) +& ")");
-      then
-        fail();
- end matchcontinue;
-end instClassIn;
-*/
-
 public function instClassIn "
   This rule instantiates the contents of a class definition, with a new
   environment already setup.
@@ -2748,6 +2634,7 @@ algorithm
       DAE.Type tp,tp_1;
       list<DAE.Dimension> lst;
       InstDims inst_dims;
+      String str;
     case ({},tp) then NONE();
     case (inst_dims,tp)
       equation
@@ -2755,6 +2642,14 @@ algorithm
         tp_1 = arrayBasictypeBaseclass2(lst, tp);
       then
         SOME(tp_1);
+        /*
+    case (inst_dims,tp)
+      equation
+        str = Util.stringDelimitList(Util.listMap(Util.listFlatten(inst_dims),ExpressionDump.printSubscriptStr),",");
+        str = "Inst.arrayBasictypeBaseclass failed: " +& str;
+        Error.addMessage(Error.INTERNAL_ERROR,{str});
+      then fail();
+      */
   end matchcontinue;
 end arrayBasictypeBaseclass;
 
@@ -2782,7 +2677,7 @@ algorithm
         res = instdimsIntOptList(ss);
       then
         DAE.DIM_UNKNOWN() :: res;
-    // The case of non-expanded arrays.      
+    // The case of non-expanded arrays.
     case (DAE.WHOLE_NONEXP(exp=e) :: ss) 
       equation
         false = RTOpts.splitArrays();
@@ -6676,7 +6571,7 @@ algorithm
           cenv, ih, store, ci_state, mod_1, pre, csets, name, cls, attr,
           prefixes, dims, {}, inst_dims, impl, comment, info, graph, env2);
         
-        // print("instElement -> component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
+        // print("instElement -> component: " +& name +& " ty: " +& Types.printTypeStr(ty) +& "\n");
         
         //The environment is extended (updated) with the new variable binding. 
         (cache, binding) = makeBinding(cache, env2, attr, mod, ty, pre, name, info);
@@ -7625,7 +7520,7 @@ algorithm
 
         // outer doesn't generate a visible DAE
         outerDAE = DAEUtil.emptyDae;
-       
+        
         innerScope = Env.printEnvPathStr(componentDefinitionParentEnv);
 
         // add to instance hierarchy
@@ -8103,6 +7998,7 @@ algorithm
         (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,DAE.ET_OTHER(),{}));
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
         //Do all dimensions...
+        // print("dims: " +& Util.stringDelimitList(Util.listMap(dims,ExpressionDump.dimensionString),",") +& "\n");
         dims_1 = instDimExpLst(dims, impl);
 
         // set the source of this element
@@ -8567,6 +8463,7 @@ algorithm
       list<DAE.Dimension> xs;
       Option<Absyn.Path> p;
       DAE.TType tty;
+      DAE.Dimension dim;
     case ({},ty) then ty;
     case ((DAE.DIM_INTEGER(integer = i) :: xs),(tty,p))
       equation
@@ -8588,11 +8485,11 @@ algorithm
         ty_1 = makeArrayType(xs, (tty, p));
       then
         ((DAE.T_ARRAY(DAE.DIM_UNKNOWN(), ty_1), p));
-    case (DAE.DIM_EXP(exp = _) :: xs, (tty, p))
+    case ((dim as DAE.DIM_EXP(exp = _)) :: xs, (tty, p))
       equation
         ty_1 = makeArrayType(xs, (tty, p));
       then
-        ((DAE.T_ARRAY(DAE.DIM_UNKNOWN(), ty_1), p));
+        ((DAE.T_ARRAY(dim, ty_1), p));
     case (_,_)
       equation
         Debug.fprintln("failtrace", "- Inst.makeArrayType failed");
@@ -10717,7 +10614,7 @@ algorithm
         (cache) = instantiateDerivativeFuncs(cache,env,ih,derFuncs,fpath);
 
         ty1 = setFullyQualifiedTypename(ty,fpath);
-
+        ((ty1,_)) = Types.traverseType((ty1,-1),Types.makeExpDimensionsUnknown);
         env_1 = Env.extendFrameT(env_1, n, ty1);
         
         // set the source of this element
@@ -10749,6 +10646,7 @@ algorithm
         (cache) = instantiateDerivativeFuncs(cache,env,ih,derFuncs,fpath);
 
         ty1 = setFullyQualifiedTypename(ty,fpath);
+        ((ty1,_)) = Types.traverseType((ty1,-1),Types.makeExpDimensionsUnknown);
         env_1 = Env.extendFrameT(cenv, n, ty1);
         vis = SCode.PUBLIC();
         (cache,tempenv,ih,_,_,_,_,_,_,_,_,_) =
