@@ -301,6 +301,7 @@ public constant ErrorID FUNCTION_MULTIPLE_ALGORITHM=189;
 public constant ErrorID STATEMENT_GENERIC_FAILURE=190;
 public constant ErrorID EXTERNAL_NOT_SINGLE_RESULT=191;
 public constant ErrorID FUNCTION_UNUSED_INPUT=192;
+public constant ErrorID ARRAY_TYPE_MISMATCH=193;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -798,6 +799,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (EXTERNAL_FUNCTION_RESULT_ARRAY_TYPE,TRANSLATION(),ERROR(),"The lhs (result) of the external function declaration has array type (%s), but this is not allowed in the specification. You need to pass it as an input to the function (preferably also with a size()-expression to avoid out-of-bounds errors in the external call)."),
           (LINEAR_SYSTEM_INVALID,SYMBOLIC(),ERROR(),"Linear solver (%s) returned invalid input for linear system %s."),
           (LINEAR_SYSTEM_SINGULAR,SYMBOLIC(),ERROR(),"When solving linear system %1\n  U(%2,%2) = 0.0, which means system is singular for variable %3."),
+          (ARRAY_TYPE_MISMATCH,TRANSLATION(),ERROR(),"Array types mismatch: %s and %s."),
           (FUNCTION_UNUSED_INPUT,SYMBOLIC(),WARNING(),"Unused input variable %s in function %s."),
           (FUNCTION_MULTIPLE_ALGORITHM,TRANSLATION(),WARNING(),
           "The behaviour of multiple algorithm sections in function %s is not standard Modelica. OpenModelica will execute the sections in the order in which they were declared or inherited (same ordering as inherited input/output arguments, which also are not standardized)."),

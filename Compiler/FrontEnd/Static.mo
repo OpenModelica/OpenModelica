@@ -5372,9 +5372,10 @@ algorithm
       Integer dim,num_matrices;
       list<DAE.Exp> matrices_1;
       list<DAE.Properties> props;
-      DAE.Type result_type,result_type_1;
+      DAE.Type result_type,result_type_1,ty;
       list<Env.Frame> env;
       list<Absyn.Exp> matrices;
+      list<DAE.Type> tys,tys2;
       Boolean impl;
       DAE.Properties tp;
       list<Ident> lst;
@@ -5389,11 +5390,14 @@ algorithm
         (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),const1),_) = elabExp(cache,env, dim_aexp, impl,NONE(),true,pre,info);
         (cache,Values.INTEGER(dim),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), Ceval.MSG(info));
         (cache,matrices_1,props,_) = elabExpList(cache,env, matrices, impl,NONE(),true,pre,info);
-        true = sameDimensionsExceptionDimX(props,dim);
+        tys = Util.listMap(props,Types.getPropType);
+        ty::tys2 = Util.listMap1(tys,Types.makeNthDimUnknown,dim);
+        result_type = Util.listFold1(tys2,Types.arraySuperType,info,ty);
+        matrices_1 = Types.matchTypes(matrices_1,tys,result_type,false);
+        // true = sameDimensionsExceptionDimX(props,dim);
         const2 = elabArrayConst(props);
         const = Types.constAnd(const1, const2);
         num_matrices = listLength(matrices_1);
-        (DAE.PROP(type_ = result_type) :: _) = props;
         result_type_1 = elabBuiltinCat2(result_type, dim, num_matrices);
         etp = Types.elabType(result_type_1);
         exp = Expression.makeBuiltinCall("cat", dim_exp :: matrices_1, etp);

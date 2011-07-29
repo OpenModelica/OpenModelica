@@ -5477,7 +5477,6 @@ algorithm
   end matchcontinue;
 end listReduce_tail;
 
-
 public function arrayReplaceAtWithFill "
   Takes
   - an element,

@@ -5582,7 +5582,7 @@ algorithm
         exps = matchTypes(exps,tys,expected,printFailtrace);
       then
         e::exps;
-    case (e::_,ty::_,expected,_)
+    case (e::_,ty::_,expected,true)
       equation
         print("- Types.matchTypes failed for " +& ExpressionDump.printExpStr(e) +& " from " +& unparseType(ty) +& " to " +& unparseType(expected) +& "\n");
       then fail();
@@ -6934,5 +6934,71 @@ algorithm
         fail();
   end matchcontinue;
 end varsToValues;
+
+public function makeNthDimUnknown
+  "Real [3,2,1],3 => Real [3,2,:]"
+  input Type ty;
+  input Integer dim;
+  output Type oty;
+algorithm
+  oty := match (ty,dim)
+    local
+      DAE.Dimension ad;
+      Type ty1;
+      Option<Absyn.Path> op;
+    case ((DAE.T_ARRAY(_,ty1),op),1) then ((DAE.T_ARRAY(DAE.DIM_UNKNOWN(),ty1),op));
+    case ((DAE.T_ARRAY(ad,ty1),op),dim)
+      equation
+        ty1 = makeNthDimUnknown(ty1,dim-1);
+      then ((DAE.T_ARRAY(ad,ty1),op));
+  end match;
+end makeNthDimUnknown;
+
+public function arraySuperType
+  "Selects the supertype out of two array-types. Integer may be promoted to Real."
+  input Type ty1;
+  input Absyn.Info info;
+  input Type ty2;
+  output Type ty;
+algorithm
+  ty := matchcontinue (ty1,info,ty2)
+    local
+      String str1,str2;
+    case (ty1,_,ty2)
+      equation
+        true = isInteger(arrayElementType(ty1));
+        true = isReal(arrayElementType(ty2));
+        ((ty1,_)) = traverseType((ty1,-1),replaceIntegerTypeWithReal);
+        true = subtype(ty1,ty2);
+      then ty1;
+    case (ty1,_,ty2)
+      equation
+        true = isInteger(arrayElementType(ty2));
+        true = isReal(arrayElementType(ty1));
+        ((ty2,_)) = traverseType((ty2,-1),replaceIntegerTypeWithReal);
+        true = subtype(ty1,ty2);
+      then ty1;
+    case (ty1,_,ty2)
+      equation
+        true = subtype(ty1,ty2);
+      then ty1;
+    case (ty1,info,ty2)
+      equation
+        str1 = unparseType(ty1);
+        str2 = unparseType(ty2);
+        Error.addSourceMessage(Error.ARRAY_TYPE_MISMATCH,{str1,str2},info);
+      then fail();
+  end matchcontinue;
+end arraySuperType;
+
+protected function replaceIntegerTypeWithReal
+  input tuple<Type,Integer> tpl;
+  output tuple<Type,Integer> oty;
+algorithm
+  oty := match tpl
+    case (((DAE.T_INTEGER(_),_),_)) then ((DAE.T_REAL_DEFAULT,1));
+    else tpl;
+  end match;
+end replaceIntegerTypeWithReal;
 
 end Types;
