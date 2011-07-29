@@ -710,6 +710,11 @@ algorithm
       equation
       states = BackendDAEUtil.treeAdd(states, v, 0);
     then (BackendDAE.STATE(),states);
+    // Or states have StateSelect.prefer
+    case (DAE.VARIABLE(),_,v,_,_,_,states,SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.PREFER()))))
+      equation
+      states = BackendDAEUtil.treeAdd(states, v, 0);
+    then (BackendDAE.STATE(),states);
 
     case (DAE.VARIABLE(),(DAE.T_BOOL(_),_),cr,dir,flowPrefix,_,states,_)
       equation
