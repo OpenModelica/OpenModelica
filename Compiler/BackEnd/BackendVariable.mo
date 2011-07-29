@@ -919,6 +919,87 @@ algorithm
   end matchcontinue;
 end isVarBoolAlg;
 
+public function isVarConst
+  input BackendDAE.Var var;
+  output Boolean result;
+algorithm
+  result :=
+  matchcontinue (var)
+    local
+      BackendDAE.Type typeVar;
+    /* bool variable */
+    case (BackendDAE.VAR(varType = typeVar as BackendDAE.BOOL()))
+      then false;
+    /* int variable */
+    case (BackendDAE.VAR(varType = typeVar as BackendDAE.INT()))
+      then false;
+    /* string variable */
+    case (BackendDAE.VAR(varType = typeVar as BackendDAE.STRING()))
+      then false;
+    /* non-string variable */
+    case (var)
+      equation
+        true = isConst(var);
+      then true;
+    case (_)
+      then false;
+  end matchcontinue;
+end isVarConst;
+
+public function isVarStringConst
+  input BackendDAE.Var var;
+  output Boolean result;
+algorithm
+  result :=
+  matchcontinue (var)
+    local
+      BackendDAE.Type typeVar;
+    /* string variable */
+    case (BackendDAE.VAR(varType = typeVar as BackendDAE.STRING()))
+      equation
+        true = isConst(var);
+      then true;
+    case (_)
+      then false;
+  end matchcontinue;
+end isVarStringConst;
+
+public function isVarIntConst
+  input BackendDAE.Var var;
+  output Boolean result;
+algorithm
+  result :=
+  matchcontinue (var)
+    local
+      BackendDAE.Type typeVar;
+    /* int variable */
+    case (BackendDAE.VAR(varType = typeVar as BackendDAE.INT()))
+      equation
+        true = isConst(var);
+      then true;
+    case (_)
+      then false;
+  end matchcontinue;
+end isVarIntConst;
+
+public function isVarBoolConst
+  input BackendDAE.Var var;
+  output Boolean result;
+algorithm
+  result :=
+  matchcontinue (var)
+    local
+      BackendDAE.Type typeVar;
+    /* string variable */
+    case (BackendDAE.VAR(varType = typeVar as BackendDAE.BOOL()))
+      equation
+        true = isConst(var);
+      then true;
+    case (_)
+      then false;
+  end matchcontinue;
+end isVarBoolConst;
+
 /* TODO: Is this correct? */
 public function isVarParam
   input BackendDAE.Var var;
@@ -947,32 +1028,6 @@ algorithm
   end matchcontinue;
 end isVarParam;
 
-public function isVarConst
-  input BackendDAE.Var var;
-  output Boolean result;
-algorithm
-  result :=
-  matchcontinue (var)
-    local
-      BackendDAE.Type typeVar;
-    /* bool variable */
-    case (BackendDAE.VAR(varType = typeVar as BackendDAE.BOOL()))
-      then false;
-    /* int variable */
-    case (BackendDAE.VAR(varType = typeVar as BackendDAE.INT()))
-      then false;
-    /* string variable */
-    case (BackendDAE.VAR(varType = typeVar as BackendDAE.STRING()))
-      then false;
-    /* non-string variable */
-    case (var)
-      equation
-        true = isConst(var);
-      then true;
-    case (_)
-      then false;
-  end matchcontinue;
-end isVarConst;
 
 public function isVarStringParam
   input BackendDAE.Var var;
@@ -991,6 +1046,7 @@ algorithm
       then false;
   end matchcontinue;
 end isVarStringParam;
+
 
 public function isVarIntParam
   input BackendDAE.Var var;

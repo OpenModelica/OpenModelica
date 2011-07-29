@@ -296,6 +296,9 @@ package SimCode
 	    list<SimVar> extObjVars;
 	    list<SimVar> jacobianVars; //all vars for the matrices A,B,C,D
 	    list<SimVar> constVars;
+	    list<SimVar> intConstVars;
+      list<SimVar> boolConstVars;
+      list<SimVar> stringConstVars;
 	  end SIMVARS;
 	end SimVars;
   
