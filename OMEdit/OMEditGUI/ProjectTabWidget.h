@@ -101,7 +101,7 @@ public:
     void removeAllConnectors();
     void createConnection(Component *pStartComponent, QString startIconCompName, Component *pComponent, QString endIconCompName);
     void deleteConnection(QString startIconCompName, QString endIconCompName, bool update = true);
-    void addConnectorForArray(Component *pStartComponent,Component *pEndComponent ,int index);
+    void addConnectorForArray(Component *pStartComponent,Component *pEndComponent ,int startindex, int endindex);
     QList<Component*> mComponentsList;
     QList<ShapeAnnotation*> mShapesList;
     LineAnnotation *mpLineShape;

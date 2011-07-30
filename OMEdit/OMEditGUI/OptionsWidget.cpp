@@ -248,6 +248,15 @@ void OptionsWidget::readBrushStyleSettings()
         }
 
     }
+
+    if (mSettings.contains("brushstyle/color"))
+    {
+        if (mSettings.value("brushstyle/color").toString().isEmpty())
+        {
+        mpBrushStylePage->setBrushPattern("NoBrush");
+        }
+    }
+
 }
 
 void OptionsWidget::saveGeneralSettings()
@@ -288,10 +297,19 @@ void OptionsWidget::savePenStyleSettings()
 void OptionsWidget::saveBrushStyleSettings()
 {
     if (mpBrushStylePage->getBrushColor() == Qt::transparent)
+    {
         mSettings.setValue("brushstyle/color", tr(""));
+        mSettings.setValue("brushstyle/pattern", tr("NoBrush"));
+    }
+
     else
-        mSettings.setValue("brushstyle/color", mpBrushStylePage->getBrushColor().rgba());
+     {   mSettings.setValue("brushstyle/color", mpBrushStylePage->getBrushColor().rgba());
     mSettings.setValue("brushstyle/pattern", mpBrushStylePage->getBrushPatternString());
+     }
+
+
+
+
 }
 
 void OptionsWidget::setUpDialog()

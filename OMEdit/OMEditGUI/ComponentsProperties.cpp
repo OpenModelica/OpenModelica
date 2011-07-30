@@ -68,7 +68,7 @@ void ComponentsProperties::parseString(QString value)
 {
     if (value.isEmpty())
         return;
-
+// retrieving the index value in case the connecting port is an array type
     int index = 0;
     QStringList list = StringHandler::getStrings(value);
      mIndex = StringHandler::removeFirstLastCurlBrackets(list.at(list.size()-1));

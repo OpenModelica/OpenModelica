@@ -292,10 +292,9 @@ class ComponentBrowserTreeNode : public QTreeWidgetItem
 {
 public:
     ComponentBrowserTreeNode(QString text, QString parentName,QString classname, QString namestruc, QString tooltip, int type, QTreeWidget *parent = 0);
-   // static QIcon getModelicaNodeIcon(int type);
-      QString mClassName;
+    QString mClassName;
     int mType;
-   QString mName;
+    QString mName;
     QString mParentName;
     QString mNameStructure;
 };
@@ -312,67 +311,33 @@ public:
 
     void deleteBrowserNode(ComponentBrowserTreeNode *item);
     void addBrowserChild(QString name,QString className,QString parentStructure=QString());
-    //void removeChildNodes(ModelicaTreeNode *item);
-
-     ComponentBrowserWidget *mpParentComponentBrowserWidget;
+    ComponentBrowserWidget *mpParentComponentBrowserWidget;
 private:
-    QList<ComponentBrowserTreeNode*> mComponentBrowserTreeNodeList;
-    //QAction *mpRenameAction;
-    //QAction *mpDeleteAction;
-    //QAction *mpCheckModelAction;
-    //QAction *mpFlatModelAction;
-signals:
-    //void nodeDeleted();
+    QList<ComponentBrowserTreeNode*> mComponentBrowserTreeNodeList;    
 private slots:
-    //void modelicaTreeItemPressed(QTreeWidgetItem *item);
     void expandTree(QTreeWidgetItem *item);
 
-   public slots:
+public slots:
     void editComponentBrowser();
-    //void openProjectTab(QTreeWidgetItem *item, int column);
-    //void showContextMenu(QPoint point);
-    //void renameClass();
-    //void checkModelicaModel();
-    //void flatModel();
-    //bool deleteNodeTriggered(ModelicaTreeNode *node = 0, bool askQuestion = true);
-    //void saveChildModels(QString modelName, QString filePath);
-    //void loadingLibraryComponent(ModelicaTreeNode *treeNode, QString className);
 };
 
 class ComponentBrowserWidget : public QWidget
 {
     Q_OBJECT
 public:
-
-ComponentBrowserTree *mpComponentBrowserTree;
+    ComponentBrowserTree *mpComponentBrowserTree;
     QTabWidget *mpComponentBrowserTabs;
     //Member functions
     ComponentBrowserWidget(MainWindow *parent);
     ~ComponentBrowserWidget();
     void addComponentBrowserNode();
-    //void addModelFiles(QString fileName, QString parentFileName=QString(), QString parentStructure=QString());
-    //void loadFile(QString path, QStringList modelsList);
-    //void loadModel(QString modelText, QStringList modelsList);
-    //void addComponentObject(LibraryComponent *libraryComponent);
-    //void addModelicaComponentObject(LibraryComponent *libraryComponent);
-    //Component* getComponentObject(QString className);
-    //Component* getModelicaComponentObject(QString className);
-    //LibraryComponent* getLibraryComponentObject(QString className);
-    //LibraryComponent* getModelicaLibraryComponentObject(QString className);
-    //void updateNodeText(QString text, QString textStructure, ModelicaTreeNode *node = 0);
-
     MainWindow *mpParentMainWindow;
-    //ModelicaTreeNode *mSelectedModelicaNode;
     QTreeWidgetItem *mSelectedLibraryNode;
 signals:
     void addComponentBrowserTreeNode();
 private:
     //Member variables
     QVBoxLayout *mpGrid;
-    //QList<LibraryComponent*> mComponentsList;
-    //component list of custom modelica models
-    //QList<LibraryComponent*> mModelicaComponentsList;
-
 };
 
 

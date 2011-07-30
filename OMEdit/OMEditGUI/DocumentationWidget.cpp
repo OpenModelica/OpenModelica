@@ -57,14 +57,6 @@ DocumentationWidget::DocumentationWidget(MainWindow *pParent)
     mpSaveButton->setAutoDefault(false);
     mpSaveButton->setMaximumSize(QSize(100,20));
     connect(mpSaveButton, SIGNAL(pressed()), SLOT(saveChanges()));
-
-    //mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
-    //mpButtonBox->addButton(mpEditButton, QDialogButtonBox::ActionRole);
-    //mpButtonBox->addButton(mpSaveButton, QDialogButtonBox::ActionRole);
-
-
-
-
     QHBoxLayout *horizontalLayout = new QHBoxLayout;
     horizontalLayout->addWidget(mpPixmapLabel);
     horizontalLayout->addWidget(mpHeadingLabel);
@@ -106,16 +98,10 @@ void DocumentationWidget::show(QString className)
         mpSaveButton->setVisible(true);
         mpSaveButton->setDisabled(true);
     }
-
-    //mpEditButton->setVisible(true);
-
-
     QString documentation = mpParentMainWindow->mpOMCProxy->getDocumentationAnnotation(className);
     mpDocumentationViewer->setHtml(documentation, mpDocumentationViewer->getBaseUrl());
     mpDocumentationViewer->setVisible(true);
-//    mpDocumentationEditor->setText(mpParentMainWindow->mpOMCProxy->getDocumentationAnnotation(className));
     mpDocumentationEditor->setVisible(false);
-    //showDocumentationEditView(className);
 }
 
 void DocumentationWidget::showDocumentationEditView(QString className)
@@ -126,9 +112,6 @@ void DocumentationWidget::showDocumentationEditView(QString className)
     // get the already existing documentation text of the model
     mpDocumentationEditor->toPlainText();
     mpDocumentationEditor->setPlainText(mpParentMainWindow->mpOMCProxy->getDocumentationAnnotation(className));
-
-
-
     mpDocumentationEditor->setFocus();
     mpDocumentationEditor->show();
 }
@@ -142,10 +125,7 @@ void DocumentationWidget::editDocumentation()
 
 void DocumentationWidget::saveChanges()
 {
-
      QString doc = mpDocumentationEditor->toPlainText();
-
-
    if(doc.startsWith("<html>",Qt::CaseSensitive) && doc.endsWith("</html>",Qt::CaseSensitive))
    {
     mpParentMainWindow->mpOMCProxy->addClassAnnotation(mClassName,"annotate=Documentation(info = \""+doc+"\")");
@@ -157,9 +137,6 @@ void DocumentationWidget::saveChanges()
        mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(message);
 
    }
-
-
-
 }
 
 DocumentationEditor::DocumentationEditor(DocumentationWidget *pParent)
@@ -172,18 +149,8 @@ DocumentationEditor::DocumentationEditor(DocumentationWidget *pParent)
     setObjectName(tr("DocumentationEditor"));
     setAutoFormatting(QTextEdit::AutoNone);
     setAcceptRichText(false);
-    // depending on the project tab readonly state set the text view readonly state
-    //setReadOnly(mpParentProjectTab->isReadOnly());
-    //connect(this, SIGNAL(focusOut()), mpParentProjectTab, SLOT(modelicaEditorTextChanged()));
-  //   mpModelicaTextSettings = mpParentDocumentationWidget->mpParentMainWindow->mpOptionsWidget->mpModelicaTextSettings;
     this->setFontFamily(qApp->font().family());             // get system font
-//      this->setFontFamily(mpModelicaTextSettings->getFontFamily());
-         this->setFontPointSize(10.0);
-
-//    this->document()->setDefaultFont(QFont(mpModelicaTextSettings->getFontFamily(), mpModelicaTextSettings->getFontSize()));
-
-
-
+    this->setFontPointSize(10.0);
 }
 
 DocumentationViewer::DocumentationViewer(DocumentationWidget *pParent)

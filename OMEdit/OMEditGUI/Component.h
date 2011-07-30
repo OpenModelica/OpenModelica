@@ -110,6 +110,7 @@ public:
     OMCProxy *mpOMCProxy;
     GraphicsView *mpGraphicsView;
     ComponentsProperties *mpComponentProperties;
+    QList<ComponentsProperties*> mpChildComponentProperties;
     Transformation *mpTransformation;
     QList<ShapeAnnotation*> mpShapesList;
     QList<Component*> mpInheritanceList;

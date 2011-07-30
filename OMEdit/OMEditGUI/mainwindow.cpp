@@ -226,7 +226,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
         event->ignore();
     }
 }
-
+//when the dragged object enters the main window
+//! @param event contains information of the drag operation.
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 {
    event->setDropAction(Qt::CopyAction);
@@ -259,6 +260,7 @@ void MainWindow::dropEvent(QDropEvent *event)
         event->ignore();
         return;
     }
+    //retrieves the filenames of all the dragged files in list and opens the valid files.
     else
     {
         bool fileOpened = false;

@@ -70,6 +70,8 @@ public:
 
 };
 class ModelicaTextSettings;
+
+//class for editing the documentation
 class DocumentationEditor : public QTextEdit
 {
     Q_OBJECT
@@ -80,25 +82,9 @@ public:
     bool validateText();
     DocumentationWidget *mpParentDocumentationWidget;
     ModelicaTextSettings *mpModelicaTextSettings;
-    //ProjectTab *mpParentProjectTab;
-    //QString mLastValidText;
-    //QString mErrorString;
-    //QWidget *mpFindWidget;
-    //QLabel *mpSearchLabelImage;
-    //QLabel *mpSearchLabel;
-    //QLineEdit *mpSearchTextBox;
-    //QToolButton *mpPreviuosButton;
-    //QToolButton *mpNextButton;
-    //QCheckBox *mpMatchCaseCheckBox;
-    //QCheckBox *mpMatchWholeWordCheckBox;
-    //QToolButton *mpCloseButton;
+
 signals:
     bool focusOut();
-public slots:
-    //void hideFindWidget();
-    //void updateButtons();
-    //void findNextText();
-    //void findPreviuosText();
 };
 
 

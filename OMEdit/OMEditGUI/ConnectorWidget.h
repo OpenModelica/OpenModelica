@@ -62,8 +62,6 @@ public:
     GraphicsView *mpParentGraphicsView;
     QVector<ConnectorLine*> mpLines;
     ConnectorArrayMenu *mpConnectorArrayMenu;
-    ConnectorArrayMenu *mpStartConnectorArrayMenu;
-
     void addPoint(QPointF point);
     void setStartComponent(Component *pComponent);
     void setEndComponent(Component *pComponent);
@@ -157,20 +155,32 @@ public:
     ConnectorArrayMenu(Connector *pConnector, QWidget *pParent = 0);
     Connector *mpConnector;
 ~ConnectorArrayMenu();
-void show(int maxIndex);
+void show(int startMaxIndex, int endMaxIndex);
    // void setText(QString text);
 private:
-    QLabel *mpIndexLabel;
-    QString mConnectorIndex;
-    QLineEdit *mpIndexTextBox;
+    QLabel *mpLabel;
+    QLabel *mpStartIndexLabel;
+    QLabel *mpEndIndexLabel;
+    QLabel *mpStartMaxLabel;
+    QLabel *mpEndMaxLabel;
+    QString mEndConnectorIndex;
+    QString mStartConnectorIndex;
+
+    QLineEdit *mpStartIndexTextBox;
+    QLineEdit *mpEndIndexTextBox;
     QPushButton *mpCancelButton;
     QPushButton *mpOkButton;
     QDialogButtonBox *mpButtonBox;
-    int mMaxIndex;
+    int mStartMaxIndex;
+    int mEndMaxIndex;
+    bool mStartArrayExist;
+    bool mEndArrayExist;
 public slots:
 
-    QString getConnectorIndex();
-    void setConnectorIndex(QString connectorIndex);
+    QString getEndConnectorIndex();
+    void setEndConnectorIndex(QString connectorIndex);
+    QString getStartConnectorIndex();
+    void setStartConnectorIndex(QString connectorIndex);
     void addIndex();
     void reject();
 };

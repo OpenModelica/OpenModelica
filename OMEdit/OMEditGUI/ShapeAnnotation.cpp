@@ -92,16 +92,8 @@ void ShapeAnnotation::initializeFields()
     mOrigin.setX(0);
     mOrigin.setY(0);
     mRotation = 0;
-
      //loads the initial saved settings for the shape
-
-
-
-
     mLineColor=QColor(0,0,255);
-
-
-
     this->mFillColor = QColor (0, 0, 255);
     mLinePattern = Qt::SolidLine;
     this->mFillPattern = Qt::NoBrush;
@@ -138,8 +130,6 @@ void ShapeAnnotation::readPenStyleSettings()
         else
             mLineColor= QColor(mSettings.value("penstyle/color").toUInt());
     }
-
-
     if (mSettings.contains("penstyle/pattern"))
           mLinePattern = mLinePatternsMap.value(mSettings.value("penstyle/pattern").toString());
         //  mLinePattern=Qt::PenStyle(mSettings.value("penstyle/pattern"));
@@ -160,18 +150,15 @@ void ShapeAnnotation::readBrushStyleSettings()
     }
     if (mSettings.contains("brushstyle/pattern"))
     mFillPattern = mFillPatternsMap.value(mSettings.value("brushstyle/pattern").toString());
-        //mFillPattern=Qt::BrushStyle(mSettings.value("brushstyle/pattern"));
+    if(mFillColor==Qt::transparent)
+    mFillPattern= Qt::NoBrush;
 }
-
-
 
 void ShapeAnnotation::createActions()
 {
     mpShapePropertiesAction = new QAction(QIcon(":/Resources/icons/tool.png"), tr("Properties"), mpGraphicsView);
     mpShapePropertiesAction->setStatusTip(tr("Shows the shape properties"));
     connect(mpShapePropertiesAction, SIGNAL(triggered()), SLOT(openShapeProperties()));
-
-
     //for editing properties of text
     mpTextPropertiesAction = new QAction(QIcon(":/Resources/icons/tool.png"), tr("TextProperties"), mpGraphicsView);
     mpTextPropertiesAction->setStatusTip(tr("Shows the shape text properties"));
@@ -369,59 +356,34 @@ void ShapeAnnotation::rotateClockwise()
 //qDebug() << "in update :: " <<mExtent;
 //mpGraphicsView->scene()->update();
 }
-
+//currently not working correctly
 void ShapeAnnotation::flipHorizontal()
 {
-
-
     QRectF rectan = this->boundingRect();
     qreal lft =rectan.left();
     qreal rght = rectan.right();
-
-
-
     qreal trans =0- lft-rght;
-
-
-
-
-
-
-           this->scale(-1,1);
-this->translate(trans,0);
-
+    this->scale(-1,1);
+    this->translate(trans,0);
     emit updateShapeAnnotation();
 }
-
-
+//currently not working correctly
 void ShapeAnnotation::flipVertical()
 {
-
     QRectF rectan = this->boundingRect();
     qreal tp =rectan.top();
     qreal btm = rectan.bottom();
-
-
-
     qreal trans =0- tp-btm;
-
-
-
-
-
-
-           this->scale(1,-1);
-this->translate(0,trans);
+    this->scale(1,-1);
+    this->translate(0,trans);
 
     emit updateShapeAnnotation();
 }
 
 void ShapeAnnotation::rotateAntiClockwise()
 {
-
     qreal rotation = this->rotation();
     qreal rotateIncrement = 90;
-
     if (rotation == 270)
         this->setRotation(0);
     else
@@ -442,14 +404,10 @@ void ShapeAnnotation::resetRotation()
 //pen stlye changed for the selected shape shape
 void ShapeAnnotation::changePenProperty()
 {
-
-
     this->mLineColor = mpShapeProperties->getPenColor().rgba();
     this->mLinePattern= mpShapeProperties->getPenPattern();
     this->mThickness =mpShapeProperties->getPenThickness();
     this->mSmooth=mpShapeProperties->getPenSmooth();
-
-
 }
 
 //brush style changed for the selected shape
@@ -459,32 +417,17 @@ void ShapeAnnotation::changeBrushProperty()
     this->mFillPattern=mpShapeProperties->getBrushPattern();
 }
 
-
-
 void ShapeAnnotation::openShapeProperties()
 {
-     //if (qobject_cast<TextAnnotation*>(this))
-       //{
-
-
-        //mpGraphicsView->mpTextWidget = new TextWidget(mpGraphicsView->mpTextShape, mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
-        //mpGraphicsView->mpTextWidget -> show();
-        //mpGraphicsView->mpTextWidget->setUpForm();
-      //}
-       //else
-     //{
-
     mpShapeProperties = new ShapeProperties(this, mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
     mpShapeProperties->show();
-     //}
+
 }
 
 void ShapeAnnotation::openTextProperties()
 {
         mpGraphicsView->mpTextWidget = new TextWidget(mpGraphicsView->mpTextShape, mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
-        mpGraphicsView->mpTextWidget -> show();
-        //mpGraphicsView->mpTextWidget->setUpForm();
-
+        mpGraphicsView->mpTextWidget -> show();    
 }
 
 
@@ -732,8 +675,6 @@ ShapeProperties::ShapeProperties(ShapeAnnotation *pShape, MainWindow *pParent)
 
     mpParentMainWindow = pParent;
     mpShape = pShape;
-
-
     // set the shape type, whether it is Line, Rectangle, Ellipse etc...
     setShapeType();
     // set up the dialog based on shape type.
@@ -742,19 +683,16 @@ ShapeProperties::ShapeProperties(ShapeAnnotation *pShape, MainWindow *pParent)
 
 void ShapeProperties::setShapeType()
 {
+    //if the selected shape is a line
     if (qobject_cast<LineAnnotation*>(mpShape))
-       {
+    {
         mShapeType = ShapeProperties::Line;
-
-       }
-
+    }
+    //if the selected shape is a text
     else if (qobject_cast<TextAnnotation*>(mpShape))
-       {
+    {
         mShapeType = ShapeProperties::Text;
-        //qDebug() << "in update scene rect :: ";
-
-
-       }
+    }
     else
     {
         mShapeType= ShapeProperties::Rectangle;
@@ -765,17 +703,16 @@ void ShapeProperties::setUpDialog()
 {
     switch (mShapeType)
     {
-        case ShapeProperties::Line:
-            setUpLineDialog();
+    //only open pen properties if its a line
+    case ShapeProperties::Line:
+        setUpLineDialog();
 
-            break;
-
-
+        break;
 
     default:
-           setUpLineDialog();
+        setUpLineDialog();
 
-    break;
+        break;
     }
 }
 
@@ -1148,27 +1085,15 @@ void ShapeProperties::brushNoColorChecked(int state)
 
 void ShapeProperties::applyChanges()
 {
-    //saveGeneralSettings();
-    //saveModelicaTextSettings();
-    // emit the signal so that all syntax highlighters are updated
-
-    //sets the value of changed variable
     setPenPattern();
     setPenThickness();
     setPenSmooth();
-
-
     mpShape->changePenProperty();
     if(mShapeType!=ShapeProperties::Line)
     {
     setBrushPattern();
     mpShape->changeBrushProperty();
     }
-
-
-    //savePenStyleSettings();
-    //saveBrushStyleSettings();
-    //mSettings.sync();
     accept();
 }
 

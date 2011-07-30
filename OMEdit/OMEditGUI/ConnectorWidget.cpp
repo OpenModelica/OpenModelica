@@ -55,7 +55,7 @@ Connector::Connector(Component *pComponent, GraphicsView *pParentView, QGraphics
     this->mStartConnectorIsArray=false;
     this->mEndConnectorIsArray=false;
     this->mIsActive = false;
-    this->mpStartConnectorArrayMenu= new ConnectorArrayMenu(this,mpParentGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
+    //connector array menu ,asks for index incase either the start or the end or both ports of the connector is an array.
     this->mpConnectorArrayMenu= new ConnectorArrayMenu(this,mpParentGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
     this->drawConnector();
 }
@@ -130,6 +130,9 @@ Connector::Connector(Component *pStartPort, Component *pEndPort, GraphicsView *p
         mpEndComponent->mpParentComponent->addConnector(this);
     else
         mpEndComponent->addConnector(this);
+
+
+    this->mpConnectorArrayMenu= new ConnectorArrayMenu(this,mpParentGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
 }
 
 void Connector::addPoint(QPointF point)
@@ -215,12 +218,12 @@ Component* Connector::getEndComponent()
 {
     return mpEndComponent;
 }
-
+//if end port is a connector array
 bool Connector::getEndConnectorisArray()
 {
     return mEndConnectorIsArray;
 }
-
+//if start port is a connector array
 bool Connector::getStartConnectorisArray()
 {
     return mStartConnectorIsArray;
@@ -280,34 +283,34 @@ void Connector::updateConnectionAnnotationString()
     {
         startIconName = QString(getStartComponent()->mpParentComponent->getName()).append(".");
         if(!this->getStartConnectorisArray())
-        startIconCompName = getStartComponent()->mpComponentProperties->getName();
+            startIconCompName = getStartComponent()->mpComponentProperties->getName();
         else
-        startIconCompName = getStartComponent()->mpComponentProperties->getName() + "[" + this->mpStartConnectorArrayMenu->getConnectorIndex() + "]";
+            startIconCompName = getStartComponent()->mpComponentProperties->getName() + "[" + this->mpConnectorArrayMenu->getStartConnectorIndex() + "]";
 
     }
     else
     {
 
         if(!this->getStartConnectorisArray())
-        startIconCompName = getStartComponent()->getName();
+            startIconCompName = getStartComponent()->getName();
         else
-        startIconCompName = getStartComponent()->getName() + "[" + this->mpStartConnectorArrayMenu->getConnectorIndex() + "]";
+            startIconCompName = getStartComponent()->getName() + "[" + this->mpConnectorArrayMenu->getStartConnectorIndex() + "]";
 
     }
     if (getEndComponent()->mpParentComponent)
     {
         endIconName = QString(getEndComponent()->mpParentComponent->getName()).append(".");
         if(!this->getEndConnectorisArray())
-        endIconCompName = getEndComponent()->mpComponentProperties->getName();
+            endIconCompName = getEndComponent()->mpComponentProperties->getName();
         else
-        endIconCompName = getEndComponent()->mpComponentProperties->getName() + "[" + this->mpConnectorArrayMenu->getConnectorIndex() + "]";
+            endIconCompName = getEndComponent()->mpComponentProperties->getName() + "[" + this->mpConnectorArrayMenu->getEndConnectorIndex() + "]";
     }
     else
     {
         if(!this->getEndConnectorisArray())
-        endIconCompName = getEndComponent()->getName();
+            endIconCompName = getEndComponent()->getName();
         else
-        endIconCompName = getEndComponent()->getName() + "[" + this->mpConnectorArrayMenu->getConnectorIndex() + "]";
+            endIconCompName = getEndComponent()->getName() + "[" + this->mpConnectorArrayMenu->getEndConnectorIndex() + "]";
 
     }
     // send the updateconnection command to omc
@@ -420,7 +423,7 @@ void Connector::updateEndPoint(QPointF point)
 //! @param lineNumber is the number of the line that has moved.
 void Connector::updateLine(int lineNumber)
 {
-   if ((mEndComponentConnected) && (lineNumber != 0) && (lineNumber != int(mpLines.size())))
+    if ((mEndComponentConnected) && (lineNumber != 0) && (lineNumber != int(mpLines.size())))
     {
         if(mGeometries[lineNumber] == Connector::HORIZONTAL)
         {
@@ -457,8 +460,8 @@ void Connector::doSelect(bool lineSelected, int lineNumber)
             this->setActive();
             for (int i=0; i != mpLines.size(); ++i)
             {
-               if(i != (std::size_t)lineNumber)     //I think this means that only one line in a connector can be selected at one time
-                   mpLines[i]->setSelected(false);
+                if(i != (std::size_t)lineNumber)     //I think this means that only one line in a connector can be selected at one time
+                    mpLines[i]->setSelected(false);
             }
         }
         else
@@ -466,16 +469,16 @@ void Connector::doSelect(bool lineSelected, int lineNumber)
             bool noneSelected = true;
             for (int i=0; i != mpLines.size(); ++i)
             {
-               if(mpLines[i]->isSelected())
+                if(mpLines[i]->isSelected())
                 {
-                   noneSelected = false;
-               }
+                    noneSelected = false;
+                }
             }
             if(noneSelected)
             {
                 this->setPassive();
             }
-       }
+        }
     }
 }
 
@@ -604,6 +607,7 @@ void ConnectorLine::mousePressEvent(QGraphicsSceneMouseEvent *event)
 //! Defines what shall happen if a mouse key is released while hovering a connector line.
 void ConnectorLine::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
+
     if (mOldPosition != pos())
     {
         mpParentConnector->updateConnectionAnnotationString();
@@ -612,6 +616,7 @@ void ConnectorLine::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
         OMCProxy *pOMCProxy = mpParentConnector->mpParentGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy;
         pProjectTab->mpModelicaEditor->setText(pOMCProxy->list(pProjectTab->mModelNameStructure));
     }
+
 
     isMousePressed = false;
     QGraphicsLineItem::mouseReleaseEvent(event);
@@ -674,12 +679,13 @@ QVariant ConnectorLine::itemChange(GraphicsItemChange change, const QVariant &va
 
     if (change == QGraphicsItem::ItemSelectedHasChanged)
     {
-         emit lineSelected(this->isSelected(), this->mLineNumber);
+        emit lineSelected(this->isSelected(), this->mLineNumber);
     }
     if (change == QGraphicsItem::ItemPositionHasChanged)
     {
         emit lineMoved(this->mLineNumber);
-       if (!isMousePressed)
+        //only call update when the mouse is not pressed, i.e. movement through arrow keys
+        if (!isMousePressed)
         {
             mpParentConnector->updateConnectionAnnotationString();
             // update connectors annotations that are associated to this component
@@ -710,7 +716,8 @@ void ConnectorLine::setLine(QPointF pos1, QPointF pos2)
                                this->mapFromParent(pos2).x(),this->mapFromParent(pos2).y());
 }
 
-
+//! Consructor for the connector array menu
+//! @param pConnector is the connector for which the connector array for the start or end port is defined
 ConnectorArrayMenu::ConnectorArrayMenu(Connector *pConnector,QWidget *pParent)
     : QDialog(pParent, Qt::WindowTitleHint)
 {
@@ -719,9 +726,15 @@ ConnectorArrayMenu::ConnectorArrayMenu(Connector *pConnector,QWidget *pParent)
     //setModal(true);
 
     // Create the Text Box, File Dialog and Labels
-    mpIndexLabel = new QLabel;
-    mpIndexTextBox = new QLineEdit;
-
+    mpLabel= new QLabel;
+    mpStartIndexLabel = new QLabel;
+    mpStartIndexTextBox = new QLineEdit;
+    mpEndIndexLabel = new QLabel;
+    mpEndIndexTextBox = new QLineEdit;
+    mpStartMaxLabel= new QLabel;
+    mpEndMaxLabel= new QLabel;
+    mEndArrayExist=false;
+    mStartArrayExist=false;
 
     // Create the buttons
     mpOkButton = new QPushButton(tr("OK"));
@@ -737,10 +750,15 @@ ConnectorArrayMenu::ConnectorArrayMenu(Connector *pConnector,QWidget *pParent)
 
     // Create a layout
     QGridLayout *mainLayout = new QGridLayout;
-    mainLayout->addWidget(mpIndexLabel, 0, 0);
-    mainLayout->addWidget(mpIndexTextBox, 1, 0);
+    mainLayout->addWidget(mpLabel, 0, 0);
+    mainLayout->addWidget(mpStartIndexLabel, 1, 0);
+    mainLayout->addWidget(mpStartIndexTextBox, 2, 0);
+    mainLayout->addWidget(mpStartMaxLabel, 2, 0);
+    mainLayout->addWidget(mpEndIndexLabel, 3, 0);
+    mainLayout->addWidget(mpEndIndexTextBox, 4, 0);
+    mainLayout->addWidget(mpEndMaxLabel, 4, 0);
 
-    mainLayout->addWidget(mpButtonBox, 4, 0);
+    mainLayout->addWidget(mpButtonBox, 6, 0);
 
     setLayout(mainLayout);
 }
@@ -749,97 +767,152 @@ ConnectorArrayMenu::~ConnectorArrayMenu()
 {
 
 }
-
-void ConnectorArrayMenu::show(int maxIndex)
+//displays the array menu for adding indices incase either one is a connector array.
+void ConnectorArrayMenu::show(int startMaxIndex, int endMaxIndex)
 {
+    setWindowTitle(QString(Helper::applicationName).append(" - Connector Array Menu "));
+    Component *pEndComponent = this->mpConnector->getEndComponent();
+    Component *pStartComponent = this->mpConnector->getStartComponent();
 
-    setWindowTitle(QString(Helper::applicationName).append(" - Create New "));
-    mpIndexLabel->setText(" Index:");
-    mpIndexTextBox->setText(tr(""));
-    mpIndexTextBox->setFocus();
-     mMaxIndex=maxIndex;
+
+    QString startIconName, startIconCompName, endIconName, endIconCompName;
+    if (pStartComponent->mpParentComponent)
+    {
+        startIconName = QString(pStartComponent->mpParentComponent->getName()).append(".");
+        startIconCompName = pStartComponent->mpComponentProperties->getName();
+    }
+    else
+    {
+        startIconCompName = pStartComponent->getName();
+    }
+    if (pEndComponent->mpParentComponent)
+    {
+        endIconName = QString(pEndComponent->mpParentComponent->getName()).append(".");
+        endIconCompName = pEndComponent->mpComponentProperties->getName();
+    }
+    else
+    {
+        endIconCompName = pEndComponent->getName();
+    }
+    mpLabel->setText(tr(""));
+    //if start port is a connector array
+    if(this->mpConnector->getStartConnectorisArray())
+    {
+        mpStartIndexLabel->setText(" Enter Index in the Array For Start Component :");
+        mpStartIndexTextBox->setText(tr(""));
+        if(startMaxIndex>0)
+            mpStartMaxLabel->setText("\t \t \tMaximum Index:     " + QString ::number(startMaxIndex));
+        else
+            mpStartMaxLabel->setText("\t \t \tMaximum Index:  No Bound");
+        mpStartIndexTextBox->setFocus();
+        mpStartIndexTextBox->setMaximumSize(QSize(100,20));
+        mStartArrayExist=true;
+        startIconCompName.append("[ i ]");
+    }
+    else
+    {
+        mpStartIndexLabel->hide();
+        mpStartIndexTextBox->hide();
+        mpStartMaxLabel->hide();
+        mpEndIndexTextBox->setFocus();
+    }
+    //if end port is a connector array
+    if(this->mpConnector->getEndConnectorisArray())
+    {
+        mpEndIndexLabel->setText(" Enter Index in the Array For End Component :");
+        mpEndIndexTextBox->setMaximumSize(QSize(100,20));
+        mpEndIndexTextBox->setText(tr(""));
+        if(endMaxIndex>0)
+            mpEndMaxLabel->setText("\t \t \tMaximum Index:     " + QString ::number(endMaxIndex));
+        else
+            mpEndMaxLabel->setText("\t \t \tMaximum Index:  No Bound");
+        mEndArrayExist=true;
+        endIconCompName.append("[ j ]");
+    }
+    else
+    {
+        mpEndIndexLabel->hide();
+        mpEndIndexTextBox->hide();
+        mpEndMaxLabel->hide();
+    }
+
+
+    mpLabel->setText("CONNECT  " + startIconName+startIconCompName + "   WITH   "+ endIconName + endIconCompName);
+    mStartMaxIndex=startMaxIndex;
+    mEndMaxIndex=endMaxIndex;
     setVisible(true);
-
 }
 
-QString ConnectorArrayMenu::getConnectorIndex()
+QString ConnectorArrayMenu::getEndConnectorIndex()
 {
-    return mConnectorIndex;
+    return mEndConnectorIndex;
 }
 
-void ConnectorArrayMenu::setConnectorIndex(QString connectorIndex )
+void ConnectorArrayMenu::setEndConnectorIndex(QString connectorIndex )
 {
-    mConnectorIndex=connectorIndex;
+    mEndConnectorIndex=connectorIndex;
 }
 
+QString ConnectorArrayMenu::getStartConnectorIndex()
+{
+    return mStartConnectorIndex;
+}
+
+void ConnectorArrayMenu::setStartConnectorIndex(QString connectorIndex )
+{
+    mStartConnectorIndex=connectorIndex;
+}
+//called when OK Button is pressed , stores the value of the indexes
+//and sends command for creating connection
 void ConnectorArrayMenu::addIndex()
 {
-bool ok;
-    int index= mpIndexTextBox->text().toInt(&ok,10);
+    bool ok1,ok2;
+    int startindex=0,endindex=0;
+    if(mStartArrayExist)
+        startindex= mpStartIndexTextBox->text().toInt(&ok1,10);
+    if(mEndArrayExist)
+        endindex= mpEndIndexTextBox->text().toInt(&ok2,10);
 
-    if(ok)
-{
-    if(index>=0 && index<=mMaxIndex || index>=0 && mMaxIndex ==-2)
+    if((ok1||!mStartArrayExist) && (ok2 || !mEndArrayExist))
     {
 
-         Component *pEndComponent = this->mpConnector->getEndComponent();
-         Component *pStartComponent = this->mpConnector->getStartComponent();
-         QString indexStr = QString::number(index);
-         this->setConnectorIndex(indexStr);
-
-
-         if(!pEndComponent)
-         accept();
-
-             else
-         {
-            this->mpConnector->mpParentGraphicsView->addConnectorForArray(pStartComponent,pEndComponent,index);
-            accept();
-         }
+        if((startindex>=0 && (startindex<=mStartMaxIndex ||  mStartMaxIndex ==-2 || mStartMaxIndex==-1)) &&(endindex>=0 && (endindex<=mEndMaxIndex ||  mEndMaxIndex ==-2 || mEndMaxIndex==-1)))
+        {
+            Component *pEndComponent = this->mpConnector->getEndComponent();
+            Component *pStartComponent = this->mpConnector->getStartComponent();
+            QString startIndexStr = QString::number(startindex);
+            QString endIndexStr = QString::number(endindex);
+            this->setEndConnectorIndex(endIndexStr);
+            this->setStartConnectorIndex(startIndexStr);
+            if(pEndComponent && pStartComponent)
+            {
+                this->mpConnector->mpParentGraphicsView->addConnectorForArray(pStartComponent,pEndComponent,startindex , endindex);
+                accept();
+            }
+        }
+        else
+        {   QMessageBox::critical(this, Helper::applicationName + " - Error",
+                                  GUIMessages::getMessage(GUIMessages::ENTER_VALID_INTEGER).
+                                  arg("less than equal to"+QString::number(mStartMaxIndex)), tr("OK"));
+            return;
+        }
     }
     else
     {
-        if(mMaxIndex==-2)
-        {
-            QMessageBox::critical(this, Helper::applicationName + " - Error",
-                                  GUIMessages::getMessage(GUIMessages::ENTER_VALID_INTEGER)
-                                  , tr("OK"));
-        }
-        else
-        {
         QMessageBox::critical(this, Helper::applicationName + " - Error",
                               GUIMessages::getMessage(GUIMessages::ENTER_VALID_INTEGER).
-                              arg("less than equal to"+QString::number(mMaxIndex)), tr("OK"));
-        }
-        return;
-    }
-}
-    else
-    {
-        if(mMaxIndex==-2)
-        {
-            QMessageBox::critical(this, Helper::applicationName + " - Error",
-                                  GUIMessages::getMessage(GUIMessages::ENTER_VALID_INTEGER)
-                                  , tr("OK"));
-        }
-        else
-        {
-        QMessageBox::critical(this, Helper::applicationName + " - Error",
-                              GUIMessages::getMessage(GUIMessages::ENTER_VALID_INTEGER).
-                              arg("less than equal to"+QString::number(mMaxIndex)), tr("OK"));
-        }
+                              arg("less than equal to"+QString::number(mStartMaxIndex)), tr("OK"));
+
         return;
     }
 
 }
-
+//rejects and removes the connector
 void ConnectorArrayMenu::reject()
 {
     Component *pEndComponent = this->mpConnector->getEndComponent();
     Component *pStartComponent = this->mpConnector->getStartComponent();
-this->mpConnector->mpParentGraphicsView->addConnectorForArray(pStartComponent,pEndComponent,-1);
-            QDialog::reject();
+    this->mpConnector->mpParentGraphicsView->addConnectorForArray(pStartComponent,pEndComponent,-1,-1);
+    QDialog::reject();
 
 }
-
-

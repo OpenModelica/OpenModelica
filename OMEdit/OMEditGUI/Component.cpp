@@ -87,6 +87,7 @@ Component::Component(QString value, QString name, QString className, QPointF pos
 Component::Component(QString value, QString className, int type, bool connector, Component *pParent)
     : ShapeAnnotation(pParent), mAnnotationString(value), mClassName(className), mType(type), mIsConnector(connector)
 {
+
     setFlag(QGraphicsItem::ItemStacksBehindParent);
     mIsLibraryComponent = false;
     mpParentComponent = pParent;
@@ -94,6 +95,8 @@ Component::Component(QString value, QString className, int type, bool connector,
     mpGraphicsView = pParent->mpGraphicsView;
     mpComponentProperties = 0;
     parseAnnotationString(this, mAnnotationString);
+
+    //this->mpChildComponentProperties = mpOMCProxy->getComponents(this->mClassName);
 
     //! @todo Since for some components we get empty annotations but its inherited componets does have annotations
     //! @todo so set the parent give the parent bounding box the value of inherited class boundingbox.
@@ -109,6 +112,7 @@ Component::Component(QString value, QString transformationString, ComponentsProp
 {
     mName = mpComponentProperties->getName();
     mClassName = mpComponentProperties->getClassName();
+
     mIsLibraryComponent = false;
     mpParentComponent = pParent;
     mpOMCProxy = pParent->mpOMCProxy;
@@ -119,7 +123,7 @@ Component::Component(QString value, QString transformationString, ComponentsProp
 
     mpTransformation = new Transformation(this);
     setTransform(mpTransformation->getTransformationMatrix());
-
+    //this->mpChildComponentProperties = mpOMCProxy->getComponents(this->mClassName);
     //! @todo Since for some components we get empty annotations but its inherited componets does have annotations
     //! @todo so set the parent give the parent bounding box the value of inherited class boundingbox.
     if (mRectangle.width() > 1)
@@ -142,6 +146,7 @@ Component::Component(QString value, QString className, bool connector, OMCProxy 
 
     parseAnnotationString(this, value, true);
     getClassComponents(mClassName, mType);
+
 }
 
 /* Used for Library Component. Called for inheritance annotation instance */
@@ -156,6 +161,7 @@ Component::Component(QString value, QString className, bool connector, Component
     mpComponentProperties = 0;
     mType = StringHandler::ICON;
     parseAnnotationString(this, mAnnotationString, true);
+    //this->mpChildComponentProperties = mpOMCProxy->getComponents(this->mClassName);
 
     //! @todo Since for some components we get empty annotations but its inherited componets does have annotations
     //! @todo so set the parent give the parent bounding box the value of inherited class boundingbox.
@@ -177,6 +183,7 @@ Component::Component(QString value, QString transformationString, ComponentsProp
     mType = StringHandler::ICON;
 
     parseAnnotationString(this, mAnnotationString, true);
+    //this->mpChildComponentProperties = mpOMCProxy->getComponents(this->mClassName);
     mpTransformation = new Transformation(this);
     setTransform(mpTransformation->getTransformationMatrix());
 
@@ -202,6 +209,8 @@ Component::Component(Component *pComponent, QString name, QPointF position, int 
     mIconParametersList.append(mpOMCProxy->getParameters(mpGraphicsView->mpParentProjectTab->mModelNameStructure,
                                                          mClassName, mName));
     parseAnnotationString(this, mAnnotationString);
+
+    this->mpChildComponentProperties = mpOMCProxy->getComponents(this->mClassName);
     // if component is an icon
     if ((mType == StringHandler::ICON))
     {
@@ -555,6 +564,25 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         // if user changes the position with mouse we handle it in mouse events of graphicsview
         if (!isMousePressed)
         {
+            /*if(mIsConnector)
+            {
+                Component *pComponent;
+                if (mpGraphicsView->mIconType == StringHandler::ICON)
+                {
+
+
+            pComponent = mpGraphicsView->mpParentProjectTab->mpDiagramGraphicsView->getComponentObject(getName());
+            pComponent->setPos(this->pos());
+                }
+
+                else if(mpGraphicsView->mIconType == StringHandler::DIAGRAM)
+                {
+                    //Component *pComponent;
+                    pComponent = mpGraphicsView->mpParentProjectTab->mpIconGraphicsView->getComponentObject(getName());
+                    pComponent->setPos(this->pos());
+                }
+                pComponent->updateAnnotationString();
+            }*/
             updateAnnotationString();
             // update connectors annotations that are associated to this component
             emit componentPositionChanged();
@@ -736,6 +764,7 @@ void Component::updateAnnotationString(bool updateBothViews)
     }
     if (mIsConnector and updateBothViews)
     {
+
         if (mpGraphicsView->mIconType == StringHandler::ICON)
         {
             // first get the component from diagram view and get the transformations
@@ -800,6 +829,9 @@ void Component::deleteMe(bool update)
     delete(this);
 }
 
+
+//copying a component or a selected scene, currently non functional,just works for a single
+//component, to do
 void Component::copyComponent()
 {
    GraphicsView *pGraphicsView = qobject_cast<GraphicsView*>(const_cast<QObject*>(sender()));
@@ -834,7 +866,7 @@ void Component::openIconProperties()
     IconProperties *iconProperties = new IconProperties(this, mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
     iconProperties->show();
 }
-
+//to change from non connecting mode to conecting mode for a connector or vice versa.
 void Component::changeConnectMode()
 {
     if(!this->flags().testFlag((QGraphicsItem::ItemIsMovable)))
@@ -991,8 +1023,9 @@ void Component::getClassComponents(QString className, int type)
         mpInheritanceList.append(inheritance);
         getClassComponents(inheritedClass, type);
     }
-
+        \
     QList<ComponentsProperties*> components = mpOMCProxy->getComponents(className);
+    this->mpChildComponentProperties=components;
     QStringList componentsAnnotationsList = mpOMCProxy->getComponentAnnotations(className);
     int i = 0;
     foreach (ComponentsProperties *componentProperties, components)
@@ -1082,6 +1115,8 @@ void Component::getClassComponents(QString className, int type, Component *pPare
     }
 
     QList<ComponentsProperties*> components = mpOMCProxy->getComponents(className);
+    this->mpChildComponentProperties=components;
+
     QStringList componentsAnnotationsList = mpOMCProxy->getComponentAnnotations(className);
     int i = 0;
     foreach (ComponentsProperties *componentProperties, components)
@@ -1139,7 +1174,7 @@ void Component::getClassComponents(QString className, int type, Component *pPare
 
 //! this function is called when we need to create a copy of one component
 void Component::copyClassComponents(Component *pComponent)
-{
+{ 
     foreach(Component *inheritance, pComponent->mpInheritanceList)
     {
         Component *inheritanceComponent = new Component(inheritance->mAnnotationString, inheritance->mClassName,
