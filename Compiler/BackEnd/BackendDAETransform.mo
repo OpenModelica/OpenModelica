@@ -2905,7 +2905,7 @@ protected function processOrgEnqs
   output BackendDAE.Assignments outAssignments1;
   output BackendDAE.Assignments outAssignments2;  
 algorithm
-  (outBackendDAE,outIncidenceMatrix,outIncidenceMatrixT,outStates,outAssignments1,outAssignments2):=
+  (outBackendDAE,outIncidenceMatrix,outIncidenceMatrixT,outAssignments1,outAssignments2):=
   matchcontinue (inOrgEqns,inStateOrd,inBackendDAE,inIncidenceMatrix,inIncidenceMatrixT,inFunctionTree,inAssignments1,inAssignments2)
     local
       list<tuple<Integer,list<tuple<Integer,Integer,Boolean>>>> orgEqns,orgEqns1;
