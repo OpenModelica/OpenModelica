@@ -10,8 +10,8 @@ template translateModel(SimCode simCode) ::=
   let()= textFile(simulationHeaderFile(simCode), '<%lastIdentOfPath(modelInfo.name)%>.h')
   let()= textFile(simulationCppFile(simCode), '<%lastIdentOfPath(modelInfo.name)%>.cpp')
   //let()= textFile(simulationInitFile(simCode), '<%fileNamePrefix%>_init.txt')
- //let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions), 'Functions.h')
- //let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions), 'Functions.cpp')
+  let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions), 'Functions.h')
+  let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions), 'Functions.cpp')
   //let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
   let()= textFile(simulationMakefile(simCode), '<%fileNamePrefix%>.makefile')
      "" // empty result of the top-level template .., only side effects
@@ -46,7 +46,7 @@ template simulationFunctionsFile(SimCode simCode, list<Function> functions)
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__)) then
   <<
-  #include "stdafx.h"
+  #include "Modelica.h"
   #include "Functions.h"
   
    Functions::Functions() 
@@ -104,10 +104,11 @@ CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc/cpp
 LDFLAGS=-L"<%makefileParams.omhome%>/bin" -L$(BOOST_LIBS)
 
 MAINFILE=<%lastIdentOfPath(modelInfo.name)%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
+FUNCTIONFILE=Functions.cpp
 
 .PHONY: <%lastIdentOfPath(modelInfo.name)%>
 <%lastIdentOfPath(modelInfo.name)%>: $(MAINFILE) 
-<%\t%>$(CXX) -shared -I. -o $(MODELICA_SYSTEM_LIB) $(MAINFILE) -L"..//Test//Base/"    $(CFLAGS)  $(LDFLAGS) -lSystem -lMath -Wl,-Bstatic  -Wl,-Bdynamic
+<%\t%>$(CXX) -shared -I. -o $(MODELICA_SYSTEM_LIB) $(MAINFILE) $(FUNCTIONFILE)  -L"..//Test//Base/"    $(CFLAGS)  $(LDFLAGS) -lSystem -lMath -Wl,-Bstatic  -Wl,-Bdynamic
 	 
 >>
 end simulationMakefile;
@@ -230,8 +231,8 @@ case FUNCTION(__) then
   let retType = if outVars then '<%fname%>RefRetType' else "void"
   let &varDecls = buffer "" /*BUFD*/
   let &varInits = buffer "" /*BUFD*/
-  let retVar = if outVars then tempDecl(retType, &varDecls /*BUFD*/)
-  let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls /*BUFD*/)
+  //let retVar = if outVars then tempDecl(retType, &varDecls /*BUFD*/)
+  //let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls /*BUFD*/)
   let _ = (variableDeclarations |> var hasindex i1 fromindex 1 =>
       varInit(var, "", i1, &varDecls /*BUFD*/, &varInits /*BUFC*/,simCode) ; empty /* increase the counter! */
     )
@@ -243,22 +244,19 @@ case FUNCTION(__) then
   let &outVarCopy = buffer ""
   let &outVarAssign = buffer ""
   let _ = (outVars |> var hasindex i1 fromindex 1 =>
-     varOutput(var, retVar, i1, &varDecls, &outVarInits, &outVarCopy, &outVarAssign, simCode)
+     varOutput(fn, var, i1, &varDecls, &outVarInits, &outVarCopy, &outVarAssign, simCode)
       ;separator="\n"; empty /* increase the counter! */
      )
   //let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
   <%retType%> Functions::<%fname%>(<%functionArguments |> var => funArgDefinition(var,simCode) ;separator=", "%>)
-  {
-  
+  {  
     <%varDecls%>
-  
     <%outVarInits%>
     <%varInits%>
-    /* functionBodyRegularFunction: body */
     <%bodyPart%>
     <%outVarAssign%>
-    return <%if outVars then ' <%retVar%>' %>;
+    return <%if outVars then '_<%fname%>' %>;
   }
   
   <% if inFunc then
@@ -281,10 +279,13 @@ case FUNCTION(__) then
   >>
 end functionBodyRegularFunction;
 
-template varOutput(Variable var, String dest, Integer ix, Text &varDecls,
+template varOutput(Function fn, Variable var, Integer ix, Text &varDecls,
           Text &varInits, Text &varCopy, Text &varAssign, SimCode simCode)
  "Generates code to copy result value from a function to dest."
 ::=
+match fn
+case FUNCTION(__) then
+ let fname = underscorePath(name)
 match var
 /* The storage size of arrays is known at call time, so they can be allocated
  * before set_memory_state. Strings are not known, so we copy them, etc...
@@ -296,12 +297,12 @@ case var as VARIABLE(ty = ET_STRING(__)) then
       let &varCopy += '<%strVar%> = strdup(<%contextCref(var.name,contextFunction,simCode)%>);<%\n%>'
       let &varAssign +=
         <<
-        <%dest%> = init_modelica_string(<%strVar%>);
+        _<%fname%> = init_modelica_string(<%strVar%>);
         free(<%strVar%>);<%\n%>
         >>
       ""
     else
-      let &varAssign += '<%dest%>= <%contextCref(var.name,contextFunction,simCode)%>;<%\n%>'
+      let &varAssign += '_<%fname%>= <%contextCref(var.name,contextFunction,simCode)%>;<%\n%>'
       ""
 case var as VARIABLE(__) then
   let marker = '<%contextCref(var.name,contextFunction,simCode)%>'
@@ -311,15 +312,15 @@ case var as VARIABLE(__) then
       daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/,simCode)
     ;separator=", ")
   if instDims then
-    let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%dest%>.targ<%ix%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
-    let &varAssign += 'copy_<%expTypeShort(var.ty)%>_array_data(&<%contextCref(var.name,contextFunction,simCode)%>, &<%dest%>.targ<%ix%>);<%\n%>'
+    //let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%dest%>.targ<%ix%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
+    //let &varAssign += 'copy_<%expTypeShort(var.ty)%>_array_data(&<%contextCref(var.name,contextFunction,simCode)%>, &<%dest%>.targ<%ix%>);<%\n%>'
     ""
   else
    // let &varInits += initRecordMembers(var)
-    let &varAssign += '<%dest%> = <%contextCref(var.name,contextFunction,simCode)%>;<%\n%>'
+    let &varAssign += '_<%fname%> = <%contextCref(var.name,contextFunction,simCode)%>;<%\n%>'
     ""
 case var as FUNCTION_PTR(__) then
-    let &varAssign += '<%dest%> = (modelica_fnptr) _<%var.name%>;<%\n%>'
+    let &varAssign += '_<%fname%> = (modelica_fnptr) _<%var.name%>;<%\n%>'
     ""
 end varOutput;
 
@@ -580,7 +581,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	 
      <%MemberVariable(modelInfo)%>
      <%conditionvariable(zeroCrossings,sampleConditions,simCode)%>
-    // Functions _functions;
+     Functions _functions;
      HistoryImplType* _historyImpl;
    };
   >>
