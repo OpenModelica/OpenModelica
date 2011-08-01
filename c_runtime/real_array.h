@@ -234,4 +234,6 @@ void convert_alloc_real_array_from_f77(real_array_t* a, real_array_t* dest);
 void cast_integer_array_to_real(integer_array_t*, real_array_t*);
 void cast_real_array_to_integer(real_array_t*, integer_array_t*);
 
+void fill_alloc_real_array(real_array_t* dest, modelica_real value, int ndims, ...);
+
 #endif

@@ -873,7 +873,7 @@ void fill_alloc_boolean_array(boolean_array_t* dest, modelica_boolean value, int
     va_start(ap, ndims);
     elements = alloc_base_array(dest, ndims, ap);
     va_end(ap);
-    dest->data = integer_alloc(elements);
+    dest->data = boolean_alloc(elements);
     
     for(i = 0; i < elements; ++i)
     {

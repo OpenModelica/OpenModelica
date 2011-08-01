@@ -1444,3 +1444,21 @@ void cast_real_array_to_integer(real_array_t* a, integer_array_t* dest)
     put_integer_element((modelica_integer)real_get(a,i),i,dest);
   }
 }
+
+/* Fills an array with a value. */
+void fill_alloc_real_array(real_array_t* dest, modelica_real value, int ndims, ...)
+{
+    size_t i;
+    size_t elements = 0;
+    va_list ap;
+    va_start(ap, ndims);
+    elements = alloc_base_array(dest, ndims, ap);
+    va_end(ap);
+    fprintf(stderr, "elements: ndim %d %ld\n", ndims, elements);
+    dest->data = real_alloc(elements);
+    
+    for(i = 0; i < elements; ++i)
+    {
+        real_set(dest, i, value);
+    }
+}
