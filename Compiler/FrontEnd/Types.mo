@@ -4125,7 +4125,7 @@ algorithm
       Integer nmax,oi;
       DAE.Dimension dim1, dim2, dim11, dim22;
       list<DAE.Dimension> dims;
-      Type ty1,ty2,t1,t2,t_1,t_2,ty0;
+      Type ty1,ty2,t1,t2,t_1,t_2,ty0,ty;
       Option<Absyn.Path> p,p1,p2;
       DAE.Exp begin_1,step_1,stop_1,begin,step,stop,e_1,e,exp;
       list<list<tuple<DAE.Exp, Boolean>>> ell_1,ell,melist;
@@ -4227,9 +4227,10 @@ algorithm
       equation
         true = Expression.dimensionsKnownAndEqual(dim11, dim22);
         ell_1 = typeConvertMatrix(ell, t1, t2,dim1,dim11,printFailtrace);
-        at = elabType(ty0);
+        ty = (DAE.T_ARRAY(dim1,(DAE.T_ARRAY(dim11,t2),p1)),p2);
+        at = elabType(ty);
       then
-        (DAE.MATRIX(at,nmax,ell_1),(DAE.T_ARRAY(dim1,(DAE.T_ARRAY(dim11,t2),p1)),p2));
+        (DAE.MATRIX(at,nmax,ell_1),ty);
 
         /* Arbitrary expressions, expression dimension [dim1], expected dimension [dim2] */
     case (e,(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
