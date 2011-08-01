@@ -3397,17 +3397,17 @@ template extFunCallVardeclF77(SimExtArg arg, Text &varDecls)
   case SIMEXTARG(isInput = true, isArray = true, type_ = ty, cref = c) then
     let &varDecls += '<%expTypeArrayIf(ty)%> <%extVarName(c)%>;<%\n%>'
     'convert_alloc_<%expTypeArray(ty)%>_to_f77(&<%contextCref(c,contextFunction)%>, &<%extVarName(c)%>);'
-  case SIMEXTARG(outputIndex = oi, isArray = ia, type_= ty, cref = c) then
+  case ea as SIMEXTARG(outputIndex = oi, isArray = ia, type_= ty, cref = c) then
     match oi case 0 then "" else
       match ia
         case false then
           let default_val = typeDefaultValue(ty)
-          let default_exp = match default_val case "" then "" else ' = <%default_val%>'
+          let default_exp = if ea.hasBinding then "" else match default_val case "" then "" else ' = <%default_val%>'
           let &varDecls += '<%extTypeF77(ty,false)%> <%extVarName(c)%><%default_exp%>;<%\n%>'
           ""
         else
           let &varDecls += '<%expTypeArrayIf(ty)%> <%extVarName(c)%>;<%\n%>'
-          'convert_alloc_<%expTypeArray(ty)%>_to_f77(&out.targ<%oi%>, &<%extVarName(c)%>);'
+          if not ea.hasBinding then 'convert_alloc_<%expTypeArray(ty)%>_to_f77(&out.targ<%oi%>, &<%extVarName(c)%>);'
   case SIMEXTARG(type_ = ty, cref = c) then
     let &varDecls += '<%extTypeF77(ty,false)%> <%extVarName(c)%>;<%\n%>'
     ""
@@ -5155,6 +5155,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   case CALL(path=IDENT(name="String"), expLst={s, format}) then
     let tvar = tempDecl("modelica_string", &varDecls /*BUFD*/)
     let sExp = daeExp(s, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+
     let formatExp = daeExp(format, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let typeStr = expTypeFromExpModelica(s)
     let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string_format(<%sExp%>, <%formatExp%>);<%\n%>'

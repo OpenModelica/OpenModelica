@@ -355,6 +355,7 @@ uniontype SimExtArg
     Boolean isInput;
     Integer outputIndex; // > 0 if output
     Boolean isArray;
+    Boolean hasBinding "avoid double allocation";
     DAE.ExpType type_;
   end SIMEXTARG;
   record SIMEXTARGEXP
@@ -1850,7 +1851,7 @@ algorithm
         outputIndex = Util.if_(isOutput, -1, 0); // correct output index is added later by fixOutputIndex
         isArray = Types.isArray(type_);
         expType = Types.elabType(type_);
-      then SIMEXTARG(componentRef, isInput, outputIndex, isArray, expType);
+      then SIMEXTARG(componentRef, isInput, outputIndex, isArray, false /*fixed later*/, expType);
     case DAE.EXTARGEXP(exp_, type_)
       equation
         expType = Types.elabType(type_);
@@ -1896,22 +1897,22 @@ algorithm
       DAE.ComponentRef cref;
       Boolean isInput;
       Integer outputIndex; // > 0 if output
-      Boolean isArray;
+      Boolean isArray,hasBinding;
       DAE.ExpType type_;
       DAE.Exp exp;
       Integer newOutputIndex;
     
-    case (SIMEXTARG(cref, isInput, outputIndex, isArray, type_), outVars)
+    case (SIMEXTARG(cref, isInput, outputIndex, isArray, _, type_), outVars)
       equation
         true = outputIndex == -1;
-        newOutputIndex = findIndexInList(cref, outVars, 1);
+        (newOutputIndex,hasBinding) = findIndexInList(cref, outVars, 1);
       then 
-        SIMEXTARG(cref, isInput, newOutputIndex, isArray, type_);
+        SIMEXTARG(cref, isInput, newOutputIndex, isArray, hasBinding, type_);
     
     case (SIMEXTARGSIZE(cref, isInput, outputIndex, type_, exp), outVars)
       equation
         true = outputIndex == -1;
-        newOutputIndex = findIndexInList(cref, outVars, 1);
+        (newOutputIndex,_) = findIndexInList(cref, outVars, 1);
       then 
         SIMEXTARGSIZE(cref, isInput, newOutputIndex, type_, exp);
             
@@ -1926,22 +1927,24 @@ protected function findIndexInList
   input list<Variable> outVars;
   input Integer currentIndex;
   output Integer crefIndexInOutVars;
+  output Boolean hasBinding;
 algorithm
-  crefIndexInOutVars :=
+  (crefIndexInOutVars,hasBinding) :=
   matchcontinue (cref, outVars, currentIndex)
     local
       DAE.ComponentRef name;
       list<Variable> restOutVars;
-    case (cref, {}, currentIndex)
-    then -1;
-    case (cref, VARIABLE(name=name) :: restOutVars, currentIndex)
+      Option<DAE.Exp> v;
+    case (cref, {}, currentIndex) then (-1,false);
+    case (cref, VARIABLE(name=name,value=v) :: restOutVars, currentIndex)
       equation
         true = ComponentReference.crefEqualNoStringCompare(cref,name);
-      then currentIndex;
+      then (currentIndex,Util.isSome(v));
     case (cref, _ :: restOutVars, currentIndex)
       equation
         currentIndex = currentIndex + 1;
-      then findIndexInList(cref, restOutVars, currentIndex);
+        (currentIndex,hasBinding) = findIndexInList(cref, restOutVars, currentIndex);
+      then (currentIndex,hasBinding);
   end matchcontinue;
 end findIndexInList;
 

@@ -389,6 +389,7 @@ package SimCode
       Boolean isInput;
       Integer outputIndex;
       Boolean isArray;
+      Boolean hasBinding;
       DAE.ExpType type_;
     end SIMEXTARG;
     record SIMEXTARGEXP
