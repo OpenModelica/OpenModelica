@@ -617,7 +617,7 @@ algorithm
       constList = Types.getConstList(propList);
       c = Util.listFold(constList, Types.constAnd, DAE.C_CONST());
       t = Types.boxIfUnboxedType(Util.listReduce(typeList, Types.superType));
-      es_1 = Types.matchTypes(es_1, typeList, t, true);
+      (es_1,_) = Types.matchTypes(es_1, typeList, t, true);
       prop = DAE.PROP((DAE.T_LIST(t),NONE()),c);
     then (cache,DAE.LIST(es_1),prop,st_2);
        // ----------------------------------
@@ -5393,7 +5393,7 @@ algorithm
         tys = Util.listMap(props,Types.getPropType);
         ty::tys2 = Util.listMap1(tys,Types.makeNthDimUnknown,dim);
         result_type = Util.listFold1(tys2,Types.arraySuperType,info,ty);
-        matrices_1 = Types.matchTypes(matrices_1,tys,result_type,false);
+        (matrices_1,tys) = Types.matchTypes(matrices_1,tys,result_type,false);
         // true = sameDimensionsExceptionDimX(props,dim);
         const2 = elabArrayConst(props);
         const = Types.constAnd(const1, const2);

@@ -1002,7 +1002,7 @@ algorithm
         explist = Util.listMap(vallist, valueExp);
         typelist = Util.listMap(vallist, Types.typeOfValue);
         vt = Types.boxIfUnboxedType(Util.listReduce(typelist,Types.superType));
-        explist = Types.matchTypes(explist, typelist, vt, true);
+        (explist,_) = Types.matchTypes(explist, typelist, vt, true);
       then DAE.LIST(explist);
 
       /* MetaRecord */

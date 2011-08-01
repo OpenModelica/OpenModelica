@@ -605,7 +605,7 @@ protected function simplifyBuiltinCalls "simplifies some builtin calls (with no 
 algorithm
   outExp := matchcontinue (exp)
     local
-      list<DAE.Exp> expl;
+      list<DAE.Exp> es,expl;
       DAE.Exp e,len_exp,just_exp,e1,e2,e3,e4;
       DAE.ExpType tp;
       DAE.Operator op;
@@ -699,8 +699,61 @@ algorithm
         e = Expression.makeBuiltinCall("delay",{e,e3,e4},tp);
       then DAE.UNARY(op,e);
 
+    case DAE.CALL(path=Absyn.IDENT("cat"),expLst=_::{e1}) then e1;
+
+    case DAE.CALL(path=Absyn.IDENT("cat"),expLst=DAE.ICONST(i)::es,attr=DAE.CALL_ATTR(ty=tp))
+      equation
+        es = simplifyCat(i,es,{},false);
+        i = listLength(es);
+        e = Expression.makeBuiltinCall("cat",DAE.ICONST(i)::es,tp);
+      then e;
+
   end matchcontinue;
 end simplifyBuiltinCalls;
+
+protected function simplifyCat
+  input Integer dim;
+  input list<DAE.Exp> es;
+  input list<DAE.Exp> acc;
+  input Boolean changed;
+  output list<DAE.Exp> oes;
+algorithm
+  oes := matchcontinue (dim,es,acc,changed)
+    local
+      list<DAE.Exp> es1,es2,esn;
+      DAE.Exp e;
+      Boolean sc;
+      DAE.Dimension ndim,dim1,dim2,dim11,dim21;
+      list<DAE.Dimension> dims;
+      DAE.ExpType etp;
+      Integer i1,i2,i;
+      list<list<tuple<DAE.Exp,Boolean>>> ms1,ms2,mss;
+    case (_,{},acc,true) then listReverse(acc);
+    case (1,DAE.ARRAY(array=es1,scalar=sc,ty=DAE.ET_ARRAY(arrayDimensions=dim1::dims,ty=etp))::DAE.ARRAY(array=es2,ty=DAE.ET_ARRAY(arrayDimensions=dim2::_))::es,acc,_)
+      equation
+        esn = listAppend(es1,es2);
+        ndim = Expression.addDimensions(dim1,dim2);
+        etp = DAE.ET_ARRAY(etp,ndim::dims);
+        e = DAE.ARRAY(etp,sc,esn);
+      then simplifyCat(dim,e::es,acc,true);
+    case (1,DAE.MATRIX(scalar=ms1,integer=i1,ty=DAE.ET_ARRAY(arrayDimensions=dim1::dims,ty=etp))::DAE.MATRIX(scalar=ms2,integer=i2,ty=DAE.ET_ARRAY(arrayDimensions=dim2::_))::es,acc,_)
+      equation
+        i = i1+i2;
+        mss = listAppend(ms1,ms2);
+        ndim = Expression.addDimensions(dim1,dim2);
+        etp = DAE.ET_ARRAY(etp,ndim::dims);
+        e = DAE.MATRIX(etp,i,mss);
+      then simplifyCat(dim,e::es,acc,true);
+    case (2,DAE.MATRIX(scalar=ms1,integer=i,ty=DAE.ET_ARRAY(arrayDimensions=dim11::dim1::dims,ty=etp))::DAE.MATRIX(scalar=ms2,ty=DAE.ET_ARRAY(arrayDimensions=_::dim2::_))::es,acc,_)
+      equation
+        mss = Util.listThreadMap(ms1,ms2,listAppend);
+        ndim = Expression.addDimensions(dim1,dim2);
+        etp = DAE.ET_ARRAY(etp,dim11::ndim::dims);
+        e = DAE.MATRIX(etp,i,mss);
+      then simplifyCat(dim,e::es,acc,true);
+    case (dim,e::es,acc,changed) then simplifyCat(dim,es,e::acc,changed);
+  end matchcontinue;
+end simplifyCat;
 
 protected function simplifyBuiltinStringFormat
   input DAE.Exp exp;

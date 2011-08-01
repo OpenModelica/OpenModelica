@@ -5571,18 +5571,20 @@ public function matchTypes
   input Type expected;
   input Boolean printFailtrace;
   output list<DAE.Exp> outExps;
+  output list<Type> outTys;
 algorithm
-  outExps := matchcontinue (exps,tys,expected,printFailtrace)
+  (outExps,outTys) := matchcontinue (exps,tys,expected,printFailtrace)
     local
       DAE.Type ty;
+      list<DAE.Type> otys;
       DAE.Exp e;
-    case ({},{},_,_) then {};
+    case ({},{},_,_) then ({},{});
     case (e::exps,ty::tys,expected,printFailtrace)
       equation
-        (e,_) = matchType(e,ty,expected,printFailtrace);
-        exps = matchTypes(exps,tys,expected,printFailtrace);
+        (e,ty) = matchType(e,ty,expected,printFailtrace);
+        (exps,otys) = matchTypes(exps,tys,expected,printFailtrace);
       then
-        e::exps;
+        (e::exps,ty::otys);
     case (e::_,ty::_,expected,true)
       equation
         print("- Types.matchTypes failed for " +& ExpressionDump.printExpStr(e) +& " from " +& unparseType(ty) +& " to " +& unparseType(expected) +& "\n");

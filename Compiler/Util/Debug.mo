@@ -72,38 +72,56 @@ public function fprint
 "function: fprint
   author: LS
   Flag controlled debugging"
-  input String inString1;
-  input String inString2;
+  input String flag;
+  input String str;
+  // annotation(__OpenModelica_EarlyInline=true);
 algorithm
-  _ := matchcontinue (inString1,inString2)
-    local String flag,str;
-    case (flag,str)
-      equation
-        true = RTOpts.debugFlag(flag);
-        Print.printErrorBuf(str);
-      then
-        ();
-    case (_,_) then ();
-  end matchcontinue;
+  bprint(RTOpts.debugFlag(flag),str);
 end fprint;
+
+public function bprint
+"function: bprint
+  author: LS
+  Boolean controlled debugging"
+  input Boolean cond;
+  input String str;
+  // annotation(__OpenModelica_EarlyInline=true);
+algorithm
+  _ := match (cond,str)
+    case (true,str)
+      equation
+        Print.printErrorBuf(str);
+      then ();
+    else ();
+  end match;
+end bprint;
+
+public function bprintln
+"function: bprintln
+  author: LS
+  Boolean controlled debugging"
+  input Boolean cond;
+  input String str;
+  // annotation(__OpenModelica_EarlyInline=true);
+algorithm
+  _ := match (cond,str)
+    case (true,str)
+      equation
+        Print.printErrorBuf(str);
+        Print.printErrorBuf("\n");
+      then ();
+    else ();
+  end match;
+end bprintln;
 
 public function fprintln
 "function: fprintln
   Flag controlled debugging, printing with newline."
-  input String inString1;
-  input String inString2;
+  input String flag;
+  input String str;
+  // annotation(__OpenModelica_EarlyInline=true);
 algorithm
-  _ := matchcontinue (inString1,inString2)
-    local String flag,str;
-    case (flag,str)
-      equation
-        true = RTOpts.debugFlag(flag);
-        Print.printErrorBuf(str);
-        Print.printErrorBuf("\n");
-      then
-        ();
-    case (_,_) then ();
-  end matchcontinue;
+  bprintln(RTOpts.debugFlag(flag),str);
 end fprintln;
 
 public function fprintl
@@ -111,6 +129,7 @@ public function fprintl
   flag controlled debugging, printing of string list."
   input String inString;
   input list<String> inStringLst;
+  // annotation(__OpenModelica_EarlyInline=true);
 algorithm
   _ := matchcontinue (inString,inStringLst)
     local

@@ -1665,7 +1665,7 @@ algorithm
         ty = Types.superType(ty, ty);
         ty = Types.unboxedType(ty);
         ty = Types.makeRegularTupleFromMetaTupleOnTrue(Types.allTuple(tys),ty);
-        exps = Types.matchTypes(exps, tys, ty, true);
+        (exps,_) = Types.matchTypes(exps, tys, ty, true);
         cases = fixCaseReturnTypes2(cases,exps,info);
       then (cases,ty);
     else

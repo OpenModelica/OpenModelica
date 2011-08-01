@@ -1541,6 +1541,34 @@ algorithm
   end match;
 end dimensionSize;
 
+public function addDimensions
+  input DAE.Dimension dim1;
+  input DAE.Dimension dim2;
+  output DAE.Dimension dim;
+algorithm
+  dim := match(dim1,dim2)
+    local
+      Integer i1,i2,i;
+    case (DAE.DIM_INTEGER(integer = i1),DAE.DIM_INTEGER(integer = i2))
+      equation
+        i = i1+i2;
+      then DAE.DIM_INTEGER(i);
+    case (DAE.DIM_ENUM(size = i1),DAE.DIM_INTEGER(integer = i2))
+      equation
+        i = i1+i2;
+      then DAE.DIM_INTEGER(i);
+    case (DAE.DIM_INTEGER(integer = i1),DAE.DIM_ENUM(size = i2))
+      equation
+        i = i1+i2;
+      then DAE.DIM_INTEGER(i);
+    case (DAE.DIM_ENUM(size = i1),DAE.DIM_ENUM(size = i2))
+      equation
+        i = i1+i2;
+      then DAE.DIM_INTEGER(i);
+    else DAE.DIM_UNKNOWN();
+  end match;
+end addDimensions;
+
 public function dimensionSizeAll
   "Extracts an integer from an array dimension. Also handles DIM_EXP and
   DIM_UNKNOWN if checkModel is used."
