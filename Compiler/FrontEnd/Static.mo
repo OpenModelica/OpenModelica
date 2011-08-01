@@ -3286,9 +3286,12 @@ algorithm
       equation
         (cache,s_1,prop,_) = elabExp(cache, env, s, impl,NONE(),true,pre,info);
         (cache,dims_1,dimprops,_) = elabExpList(cache,env, dims, impl,NONE(),true,pre,info);
+        (dims_1,_) = Types.matchTypes(dims_1, Util.listMap(dimprops,Types.getPropType), DAE.T_INTEGER_DEFAULT, false);
+        c1 = Types.elabTypePropToConst(dimprops);
+        failure(DAE.C_VAR() = c1);
+        c1 = Types.constAnd(c1,Types.propAllConst(prop));
         sty = Types.getPropType(prop);
         (cache,dimvals,_) = Ceval.cevalList(cache,env, dims_1, impl, NONE(), Ceval.NO_MSG());
-        c1 = Types.elabTypePropToConst(prop::dimprops);
         (cache,exp,prop) = elabBuiltinFill2(cache,env, s_1, sty, dimvals,c1,pre);
       then
         (cache,exp,prop);
@@ -3301,6 +3304,7 @@ algorithm
         c1 = unevaluatedFunctionVariability(env);
         (cache, s_1, prop, _) = elabExp(cache, env, s, impl,NONE(), true,pre,info);
         (cache, dims_1, dimprops, _) = elabExpList(cache, env, dims, impl, NONE(), true,pre,info);
+        (dims_1,_) = Types.matchTypes(dims_1, Util.listMap(dimprops,Types.getPropType), DAE.T_INTEGER_DEFAULT, false);
         sty = Types.getPropType(prop);
         sty = makeFillArgListType(sty, dimprops);
         exp_type = Types.elabType(sty);
