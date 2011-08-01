@@ -526,6 +526,14 @@ algorithm
         mexps_1 = matrixExpMap1(mexps, addCast, tp2);
       then DAE.MATRIX(tp,n,mexps_1);
     
+    // fill(e, ...) can be simplified
+    case(DAE.CALL(path=Absyn.IDENT("fill"),expLst=e::exps),tp) 
+      equation
+        tp_1 = Util.listFold(exps,Expression.unliftArrayIgnoreFirst,tp);
+        e = DAE.CAST(tp_1,e);
+        e = Expression.makeBuiltinCall("fill",e::exps,tp);
+      then e;
+
     // expression already has a specified cast type.
     case(e,tp) 
       equation

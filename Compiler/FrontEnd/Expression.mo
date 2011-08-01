@@ -837,6 +837,15 @@ algorithm
   end matchcontinue;
 end unliftArray;
 
+public function unliftArrayIgnoreFirst
+  input A a;
+  input Type inType;
+  output Type outType;
+  replaceable type A subtypeof Any;
+algorithm
+  outType := unliftArray(inType);
+end unliftArrayIgnoreFirst;
+
 public function unliftExp
   input DAE.Exp inExp;
   output DAE.Exp outExp;

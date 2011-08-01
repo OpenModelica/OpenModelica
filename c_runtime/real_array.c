@@ -1454,7 +1454,6 @@ void fill_alloc_real_array(real_array_t* dest, modelica_real value, int ndims, .
     va_start(ap, ndims);
     elements = alloc_base_array(dest, ndims, ap);
     va_end(ap);
-    fprintf(stderr, "elements: ndim %d %ld\n", ndims, elements);
     dest->data = real_alloc(elements);
     
     for(i = 0; i < elements; ++i)
