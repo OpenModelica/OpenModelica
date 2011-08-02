@@ -8100,6 +8100,8 @@ algorithm
   end matchcontinue;
 end isExternalObjectFunction;
 
+constant String vectorizeArg = "$vectorizeArg";
+
 protected function vectorizeCall "function: vectorizeCall
   author: PA
 
@@ -8120,20 +8122,22 @@ algorithm
   (outExp,outProperties) := matchcontinue (inExp,inTypesArrayDimLst,inSlotLst,inProperties,info)
     local
       DAE.Exp e,vect_exp,vect_exp_1,dimexp;
-      DAE.Type tp;
+      DAE.Type tp,tp0;
       DAE.Properties prop;
-      DAE.ExpType exp_type;
+      DAE.ExpType exp_type,etp;
       DAE.Const c;
       Absyn.Path fn;
-      list<DAE.Exp> args,expl;
+      list<DAE.Exp> args,expl,es;
       Boolean tuple_,builtin,scalar;
       DAE.InlineType inl;
       Integer int_dim;
       DAE.Dimension dim;
       list<DAE.Dimension> ad;
       list<Slot> slots;
-      DAE.ExpType etp;
       String str;
+      DAE.CallAttributes attr;
+      DAE.ReductionInfo rinfo;
+      DAE.ReductionIterator riter;
     
     case (e,{},_,prop,_) then (e,prop);
     
@@ -8171,10 +8175,25 @@ algorithm
       then
         (vect_exp_1,prop);*/
         
+    case (DAE.CALL(fn,es,attr),{DAE.DIM_UNKNOWN()},slots,prop as DAE.PROP(tp,c),info)
+      equation
+        (es,vect_exp) = vectorizeCallUnknownDimension(es,slots,{},NONE(),info);
+        tp0 = Types.liftArrayRight(tp, DAE.DIM_INTEGER(0));
+        tp = Types.liftArrayRight(tp, DAE.DIM_UNKNOWN());
+        prop = DAE.PROP(tp,c);
+        e = DAE.CALL(fn,es,attr);
+        etp = Types.elabType(tp0);
+        rinfo = DAE.REDUCTIONINFO(Absyn.IDENT("array"),tp,SOME(Values.ARRAY({},{0})),NONE());
+        tp = Types.expTypetoTypesType(Expression.typeof(vect_exp));
+        riter = DAE.REDUCTIONITER(vectorizeArg,vect_exp,NONE(),tp);
+        e = DAE.REDUCTION(rinfo,e,{riter});
+      then
+        (e,prop);
+
     /* Scalar expression, non-constant but known dimensions */
     case (e as DAE.CALL(path = _),(DAE.DIM_EXP(exp=dimexp) :: ad),slots,DAE.PROP(tp,c),info)
       equation
-        str = "Cannot vectorize call with dimension: " +& ExpressionDump.printExpStr(dimexp);
+        str = "Cannot vectorize call with dimension [" +& ExpressionDump.printExpStr(dimexp) +& "]";
         Error.addSourceMessage(Error.INTERNAL_ERROR,{str},info);
       then
         fail();
@@ -8209,6 +8228,42 @@ algorithm
         fail();
   end matchcontinue;
 end vectorizeCall;
+
+protected function vectorizeCallUnknownDimension
+  "Returns the new call arguments and a reduction iterator argument"
+  input list<DAE.Exp> es;
+  input list<Slot> slots;
+  input list<DAE.Exp> acc;
+  input Option<DAE.Exp> found;
+  input Absyn.Info info;
+  output list<DAE.Exp> oes;
+  output DAE.Exp ofound;
+algorithm
+  (oes,ofound) := match (es,slots,acc,found,info)
+    local
+      DAE.Exp e,e1,e2;
+      String s1,s2;
+    case ({},{},acc,SOME(e),info) then (listReverse(acc),e);
+    case ({},{},_,NONE(),info)
+      equation
+        Error.addSourceMessage(Error.INTERNAL_ERROR,{"Static.vectorizeCallUnknownDimension could not find any slot to vectorize"},info);
+      then fail();
+    case (e::es,SLOT(typesArrayDimLst={})::slots,acc,found,info)
+      equation
+        (oes,ofound) = vectorizeCallUnknownDimension(es,slots,e::acc,found,info);
+      then (oes,ofound);
+    case (e1::_,_,acc,SOME(e2),info)
+      equation
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
+        Error.addSourceMessage(Error.VECTORIZE_TWO_UNKNOWN,{s1,s2},info);
+      then fail();
+    case (e::es,_::slots,acc,_,info)
+      equation
+        (oes,ofound) = vectorizeCallUnknownDimension(es,slots,DAE.CREF(DAE.CREF_IDENT(vectorizeArg,DAE.ET_REAL(),{}),DAE.ET_REAL())::acc,SOME(e),info);
+      then (oes,ofound);
+  end match;
+end vectorizeCallUnknownDimension;
 
 protected function vectorizeCallArray
 "function : vectorizeCallArray

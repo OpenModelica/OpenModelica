@@ -302,6 +302,7 @@ public constant ErrorID STATEMENT_GENERIC_FAILURE=190;
 public constant ErrorID EXTERNAL_NOT_SINGLE_RESULT=191;
 public constant ErrorID FUNCTION_UNUSED_INPUT=192;
 public constant ErrorID ARRAY_TYPE_MISMATCH=193;
+public constant ErrorID VECTORIZE_TWO_UNKNOWN=194;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -490,6 +491,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Illegal connecting two outer connectors in statement connect(%s, %s)"),
           (CONNECTOR_ARRAY_NONCONSTANT,TRANSLATION(),ERROR(),
           "in statement %s, subscript %s is not a parameter or constant"),
+          (VECTORIZE_TWO_UNKNOWN,TRANSLATION(),ERROR(),
+          "Could not vectorize call with unknown dimensions due to finding two foreach arguments: %s and %s."),
 
           (CONNECTOR_ARRAY_DIFFERENT,TRANSLATION(),ERROR(),
           "Unmatched dimension in equation connect(%s, %s)"),
