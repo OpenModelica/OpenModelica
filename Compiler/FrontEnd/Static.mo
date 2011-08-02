@@ -1686,7 +1686,7 @@ algorithm
         (cache,stop_1,DAE.PROP(stop_t,c_stop)) = elabGraphicsExp(cache,env, stop, impl,pre,info);
         (start_2,NONE(),stop_2,rt) = deoverloadRange((start_1,start_t),NONE(), (stop_1,stop_t));
         const = Types.constAnd(c_start, c_stop);
-        (cache, t) = elabRangeType(cache, env, start_1, NONE(), stop_1, start_t, rt, impl);
+        (cache, t) = elabRangeType(cache, env, start_1, NONE(), stop_1, start_t, rt, const, impl);
       then
         (cache,DAE.RANGE(rt,start_1,NONE(),stop_1),DAE.PROP(t,const));
     case (cache,env,Absyn.RANGE(start = start,step = SOME(step),stop = stop),impl,pre,info)
@@ -1697,7 +1697,7 @@ algorithm
         (start_2,SOME(step_2),stop_2,rt) = deoverloadRange((start_1,start_t), SOME((step_1,step_t)), (stop_1,stop_t));
         c1 = Types.constAnd(c_start, c_step);
         const = Types.constAnd(c1, c_stop);
-        (cache, t) = elabRangeType(cache, env, start_1, SOME(step_1), stop_1, start_t, rt, impl);
+        (cache, t) = elabRangeType(cache, env, start_1, SOME(step_1), stop_1, start_t, rt, const, impl);
       then
         (cache,DAE.RANGE(rt,start_2,SOME(step_2),stop_2),DAE.PROP(t,const));
     case (cache,env,Absyn.ARRAY(arrayExp = es),impl,pre,info)
@@ -1819,7 +1819,7 @@ algorithm
         (start_exp, NONE(), stop_exp, ety) = 
           deoverloadRange((start_exp, start_t), NONE(), (stop_exp, stop_t));
         co = Types.constAnd(start_c, stop_c);
-        (cache, ty) = elabRangeType(cache, inEnv, start_exp, NONE(), stop_exp, start_t, ety, inImpl);
+        (cache, ty) = elabRangeType(cache, inEnv, start_exp, NONE(), stop_exp, start_t, ety, co, inImpl);
         range_exp = DAE.RANGE(ety, start_exp, NONE(), stop_exp);
       then
         (cache, range_exp, DAE.PROP(ty, co), st);
@@ -1836,7 +1836,7 @@ algorithm
         (start_exp, SOME(step_exp), stop_exp, ety) = 
           deoverloadRange((start_exp, start_t), SOME((step_exp, step_t)), (stop_exp, stop_t));
         co = Types.constAnd(start_c, stop_c);
-        (cache, ty) = elabRangeType(cache, inEnv, start_exp, SOME(step_exp), stop_exp, start_t, ety, inImpl);
+        (cache, ty) = elabRangeType(cache, inEnv, start_exp, SOME(step_exp), stop_exp, start_t, ety, co, inImpl);
         range_exp = DAE.RANGE(ety, start_exp, SOME(step_exp), stop_exp);
       then
         (cache, range_exp, DAE.PROP(ty, co), st);
@@ -1866,20 +1866,24 @@ protected function elabRangeType
   input DAE.Exp inStop;
   input DAE.Type inType;
   input DAE.ExpType inExpType;
+  input DAE.Const co;
   input Boolean inImpl;
   output Env.Cache outCache;
   output DAE.Type outType;
 algorithm
   (outCache, outType) := matchcontinue(inCache, inEnv, inStart, inStep, inStop, inType,
-      inExpType, inImpl)
+      inExpType, co, inImpl)
     local
       DAE.Exp step_exp;
       Values.Value start_val, step_val, stop_val;
       Integer dim;
       Env.Cache cache;
 
+    case (_, _, _, _, _, _, _, DAE.C_VAR(), _)
+      then (inCache, (DAE.T_ARRAY(DAE.DIM_UNKNOWN(), inType), NONE()));
+
     // No step value.
-    case (_, _, _, NONE(), _, _, _, _)
+    case (_, _, _, NONE(), _, _, _, _, _)
       equation
         (cache, start_val, _) = Ceval.ceval(inCache, inEnv, inStart, inImpl, NONE(), Ceval.NO_MSG());
         (cache, stop_val, _) = Ceval.ceval(cache, inEnv, inStop, inImpl, NONE(), Ceval.NO_MSG());
@@ -1888,7 +1892,7 @@ algorithm
         (cache, (DAE.T_ARRAY(DAE.DIM_INTEGER(dim), inType), NONE()));
 
     // Some step value.
-    case (_, _, _, SOME(step_exp), _, _, _, _)
+    case (_, _, _, SOME(step_exp), _, _, _, _, _)
       equation
         (cache, start_val, _) = Ceval.ceval(inCache, inEnv, inStart, inImpl, NONE(), Ceval.NO_MSG());
         (cache, step_val, _) = Ceval.ceval(cache, inEnv, step_exp, inImpl, NONE(), Ceval.NO_MSG());
