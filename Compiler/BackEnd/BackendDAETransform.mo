@@ -2919,7 +2919,6 @@ algorithm
       array<BackendDAE.MultiDimEquation> ae;
       list<list<tuple<DAE.ComponentRef,DAE.Exp,Integer,Integer>>> dummystates;
       list<list<tuple<Integer,Option<DAE.Exp>>>> sysjac;
-      array<list<tuple<Integer,Option<DAE.Exp>>>> arraysysjac;
       BackendDAE.StateOrder so;
     case ({},_,inBackendDAE,inIncidenceMatrix,inIncidenceMatrixT,inFunctionTree,ass1,ass2)
       then (inBackendDAE,inIncidenceMatrix,inIncidenceMatrixT,ass1,ass2);
@@ -2929,7 +2928,7 @@ algorithm
         (orgEqns1,orgEqnLevel) = getOrgEqn(orgEqns,{});
         states = statesCandidates(dae,inStateOrd,orgEqnLevel);
         (dae,m,mt,ass1,ass2,so,states1,orgEqnLevel,orgEqns1,_) = processAlliasStates(orgEqnLevel,dae,m,mt,ass1,ass2,inStateOrd,states,{},orgEqns1);
-        states1 = sortStateCandidates(states,dae,m,mt);
+        states1 = sortStateCandidates(states1,dae,m,mt);
         Debug.fcall("bltdump", print, "\nCandidates (" +& intString(listLength(orgEqnLevel)) +& "," +& intString(listLength(states1)) +& "): " +& Util.stringDelimitList(Util.listMap(states1,dumpStates),"\n") +& "\nselect Dummy States for Level\n");
         (sysjac,orgEqnLevel) = calculateJacobianSystem(orgEqnLevel,dae,states1);
         (dae1,m,mt,ass1,ass2,states1) = processEqnsLevel(orgEqnLevel,sysjac,so,dae,m,mt,ass1,ass2,inFunctionTree,states1);
@@ -3006,14 +3005,14 @@ algorithm
   b:=
   match (inOrgEqnLevel,inOrgEqnLevel1)
     local
-      Integer l,l1,i,i1,i_1,i1_1;
+      Integer l,l1,i,i1,i_1,i1_1,e,e1;
       list<tuple<Integer,Option<DAE.Exp>>> eqnjac,eqnjac1;
-    case (((_,_,l),eqnjac),((_,_,l1),eqnjac1))
+    case (((_,e,l),eqnjac),((_,e1,l1),eqnjac1))
       equation
         (i,i1) = analyseEqnJac(eqnjac);       
         (i_1,i1_1) = analyseEqnJac(eqnjac1);       
       then
-        sortOrgEqnLevel1(i,i1,i_1,i1_1); 
+        sortOrgEqnLevel1(i,i1,i_1,i1_1);
   end match;
 end sortOrgEqnLevel;
 
@@ -3035,13 +3034,9 @@ algorithm
       then
         intGt(i,i1); 
     case (_,0,_,i)
-      equation
-        true = intGt(i,0);
       then
         true; 
     case (_,i,_,0)
-      equation
-        true = intGt(i,0);
       then
         false;
     case (_,i,_,i1)
@@ -3050,8 +3045,9 @@ algorithm
   end matchcontinue;
 end sortOrgEqnLevel1;
 
+
 protected function analyseEqnJac
-"function: sortOrgEqnLevel1
+"function: analyseEqnJac
   author: Frenkel TUD 2011-05
   helper for sortOrgEqnLevel1"
   input list<tuple<Integer,Option<DAE.Exp>>> inEqnJac;
@@ -3182,7 +3178,7 @@ algorithm
 end processAlliasStates; 
 
 protected function processEqnsLevel
-"function: processAlliasStates
+"function: processEqnsLevel
   author: Frenkel TUD 2011-05
   processes the orgeqnlevel"
   input list<tuple<Integer,Integer,Integer>> inOrgEqns;
@@ -3234,13 +3230,61 @@ algorithm
         orgeqnssysjac = Util.makeTuple(inOrgEqns,inSysjac);
         orgeqnssysjac = Util.sort(orgeqnssysjac,sortOrgEqnLevel);
         orgeqns = Util.listMap(orgeqnssysjac,Util.tuple21);
-        dummystates = selectDummyStates(orgeqns,inStateOrd,inBackendDAE,m,mt,inFunctionTree,inStates,{});
+        //dumpEqns2((orgeqns,inBackendDAE));
+        Debug.fcall("bltdump", print, "\nCandidates:\n" +& Util.stringDelimitList(Util.listMap(inStates,dumpStates),"\n") +& "\n");
+        states = removeFixedfromStates(inStates,BackendVariable.daeVars(inBackendDAE));
+        dummystates = selectDummyStates(orgeqns,inStateOrd,inBackendDAE,m,mt,inFunctionTree,states,{});
         Debug.fcall("bltdump", print, "add dummy derivatives\n");
         (dae1,m,mt,ass1,ass2,states2) = makeDummyStates(dummystates,inBackendDAE,m,mt,ass1,ass2,inStates);        
       then
         (dae1,m,mt,ass1,ass2,states2); 
+     case (inOrgEqns,inSysjac,inStateOrd,inBackendDAE,m,mt,ass1,ass2,inFunctionTree,inStates)
+      equation
+        Debug.fcall("bltdump", print, "Sort OrgEqn Level\n");
+        orgeqnssysjac = Util.makeTuple(inOrgEqns,inSysjac);
+        orgeqnssysjac = Util.sort(orgeqnssysjac,sortOrgEqnLevel);
+        orgeqns = Util.listMap(orgeqnssysjac,Util.tuple21);
+        //dumpEqns2((orgeqns,inBackendDAE));
+        dummystates = selectDummyStates(orgeqns,inStateOrd,inBackendDAE,m,mt,inFunctionTree,inStates,{});
+        Debug.fcall("bltdump", print, "add dummy derivatives\n");
+        (dae1,m,mt,ass1,ass2,states2) = makeDummyStates(dummystates,inBackendDAE,m,mt,ass1,ass2,inStates);        
+      then
+        (dae1,m,mt,ass1,ass2,states2);         
   end matchcontinue;
 end processEqnsLevel;
+
+protected function removeFixedfromStates
+"function: removeFixedfromStates
+  author: Frenkel TUD 2011-05
+  processes the orgeqnlevel"
+  input list<tuple<DAE.ComponentRef,Integer>> inStates;
+  input BackendDAE.Variables inVars;
+  output list<tuple<DAE.ComponentRef,Integer>> outStates; 
+algorithm
+  outStats := matchcontinue (inStates,inVars)
+    local
+       DAE.ComponentRef cr;
+       Integer i;
+       list<tuple<DAE.ComponentRef,Integer>> rest,states;
+       BackendDAE.Var var;
+      case ({},_) 
+        then {};
+      case((cr,i)::rest,inVars)
+        equation
+          var = BackendVariable.getVarAt(inVars,i);
+          true = BackendVariable.varFixed(var);
+          states = removeFixedfromStates(rest,inVars);
+        then
+          states; 
+      case((cr,i)::rest,inVars)
+        equation
+          var = BackendVariable.getVarAt(inVars,i);
+          false = BackendVariable.varFixed(var);
+          states = removeFixedfromStates(rest,inVars);
+        then
+          (cr,i)::states; 
+    end matchcontinue;  
+end removeFixedfromStates;
 
 protected function processOneStateEqns
 "function: processOneStateEqns
@@ -3571,7 +3615,7 @@ algorithm
       equation
         e_1 = ep - 1;
         orgeqn = BackendDAEUtil.equationNth(eqns, e_1); 
-        Debug.fcall("bltdump", print, " Calculate Jacobian for eqn:\n"); 
+        Debug.fcall("bltdump", print, " Calculate Jacobian for eqn: " +& intString(e) +& "\n"); 
         Debug.fcall("bltdump",  print ,BackendDump.equationStr(orgeqn));
         // get Jacobian
         jac = calculateJacobian(orgeqn,ae,al,inStates);
@@ -3656,7 +3700,7 @@ algorithm
         // get Jacobian
         jac = calculateJacobian(orgeqn,ae,al,inStates);
         str = Util.stringDelimitList(Util.listMap(jac,ExpressionDump.printExpStr)," : "); 
-        Debug.fcall("bltdump", print, "Jac: " +& str +& "\n"); 
+        Debug.fcall("bltdump", print, "\nJac: " +& str +& "\n"); 
         // analyse jac -> get dummy derivative candidate
         (dummydercand,dyndummydercand) = analyseJac(jac,inStates,knvars);
         str = Util.stringDelimitList(Util.listMap(dummydercand,dumpStates1)," : "); 
@@ -4259,7 +4303,7 @@ algorithm
         b = crInVars(crlst,vars);
       then
         b;
-    case (cr::crlst,vars)
+   case (cr::crlst,vars)
       equation
         failure((_,_) = BackendVariable.getVar(cr,vars));
       then
@@ -4532,6 +4576,60 @@ algorithm
         ();
   end matchcontinue;
 end dumpEqns1X1;
+
+protected function dumpEqns2
+"function: dumpEqns1X
+  author: Frenkel TUD"
+  input tuple<list<tuple<Integer,Integer,Integer>>,BackendDAE.BackendDAE> orgEqns;
+algorithm
+  _:=
+  matchcontinue (orgEqns)
+    local
+      tuple<Integer,Integer,Integer> orgeqn;
+      list<tuple<Integer,Integer,Integer>> rest;
+      BackendDAE.BackendDAE dae;
+    case (({},_)) then ();
+    case ((orgeqn::rest,dae))
+      equation
+        dumpEqns21(orgeqn,dae);
+        dumpEqns2((rest,dae));
+      then
+        ();
+  end matchcontinue;
+end dumpEqns2;
+
+protected function dumpEqns21
+"function: dumpEqns1X1
+  author: Frenkel TUD"
+  input tuple<Integer,Integer,Integer> orgEqns;
+  input BackendDAE.BackendDAE dae;
+algorithm
+  _:=
+  matchcontinue (orgEqns,dae)
+    local
+      BackendDAE.Equation orgeqn;
+      BackendDAE.EquationArray eqns;
+      array<BackendDAE.MultiDimEquation> ae;
+      DAE.Exp exp1,exp2;
+      Integer i,e,l,e_1,ep;
+    case ((e,ep,l),dae as BackendDAE.DAE(orderedEqs=eqns,arrayEqs=ae))
+      equation
+        e_1 = ep - 1;
+        (orgeqn as BackendDAE.ARRAY_EQUATION(index=i)) = BackendDAEUtil.equationNth(eqns, e_1); 
+        BackendDAE.MULTIDIM_EQUATION(left=exp1,right=exp2) = ae[i+1];
+        print("  "); print(intString(ep)); print("  ");  print(BackendDump.equationStr(orgeqn)); print("\n");         
+        print("  "); print(ExpressionDump.printExpStr(exp1)); print(" = "); print(ExpressionDump.printExpStr(exp2)); print("\n");
+      then
+        ();
+    case ((e,ep,l),dae as BackendDAE.DAE(orderedEqs=eqns))
+      equation
+        e_1 = ep - 1;
+        orgeqn = BackendDAEUtil.equationNth(eqns, e_1); 
+        print("  "); print(intString(ep)); print("  ");  print(BackendDump.equationStr(orgeqn)); print("\n");         
+      then
+        ();
+  end matchcontinue;
+end dumpEqns21;
 
 protected function dumpStates
 "function: dumpStates
