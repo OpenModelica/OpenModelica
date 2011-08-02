@@ -279,7 +279,11 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
     long &outputSteps, double &tolerance, int flag)
 {
 
-  //Stats
+  // Set tolerance for DASSL integration
+  reltol = tolerance;
+  abstol = tolerance;
+
+  // Setup some variables for statistics
   int stateEvents = 0;
   int sampleEvents = 0;
 
