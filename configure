@@ -4059,6 +4059,7 @@ else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 fi
+rmlinc=$rmlhome/include/plain/
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking if the user wants RML -trace support" >&5
 $as_echo_n "checking if the user wants RML -trace support... " >&6; }

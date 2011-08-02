@@ -136,6 +136,7 @@ if test ! -f "$rmlhome/include/plain/rml.h" ; then
 else
   AC_MSG_RESULT([yes])
 fi
+rmlinc=$rmlhome/include/plain/
 
 AC_MSG_CHECKING([if the user wants RML -trace support])
 RML_TRACE=",-ftrace"
