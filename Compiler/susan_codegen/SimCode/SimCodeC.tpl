@@ -4059,6 +4059,7 @@ case STMT_NORETCALL(__) then
   <%preExp%>
   <%expPart%>;
   >>
+
 end algStmtNoretcall;
 
 
@@ -6147,7 +6148,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case c as CAST(__)
   case c as CREF(__)
   case c as CODE(__)     then expTypeFlag(c.ty, flag)
-  case ASUB(__)          then expTypeFromExpFlag(exp, flag)
+  case c as ASUB(__)     then expTypeFlag(typeof(c), flag)
   case REDUCTION(__)     then expTypeFlag(typeof(exp), flag)
   case BOX(__)
   case CONS(__)
