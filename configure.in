@@ -214,7 +214,7 @@ if test "$WANT_STATIC_LPSOLVE" = "no"; then
   AC_SEARCH_LIBS(dlopen,dl)
   AC_SEARCH_LIBS(sqrt,m)
   AC_SEARCH_LIBS(colamd,colamd)
-  AC_SEARCH_LIBS(make_lp,[lpsolve55_pic lpsolve55],[],[AC_MSG_ERROR([linking failed])])
+  AC_SEARCH_LIBS(make_lp,[lpsolve55_pic lpsolve55],[],[AC_MSG_ERROR([lpsolve linking failed using $LIBS])])
   LIBLPSOLVE55=$LIBS
   LIBS=""
 else

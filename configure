@@ -4592,7 +4592,7 @@ if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
 else
-  as_fn_error $? "linking failed" "$LINENO" 5
+  as_fn_error $? "lpsolve linking failed using $LIBS" "$LINENO" 5
 fi
 
   LIBLPSOLVE55=$LIBS
