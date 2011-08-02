@@ -1198,7 +1198,6 @@ algorithm
       Env.Cache cache;
       Option<DAE.Const> cnstForRange;
       Absyn.Path path,scope;
-      Option<DAE.ComponentRef> filterCref;
       Boolean unique;
       DAE.ExpType ety;
       Env.AvlTree ht;
@@ -1243,13 +1242,12 @@ algorithm
         Util.setStatefulBoolean(inState,true);
         env3 = Env.openScope(env2, encflag, SOME(n), Env.restrictionToScopeType(r));
         ci_state = ClassInf.start(r, Env.getEnvName(env3));
-        filterCref = makeOptIdentOrNone(cref);
         // Debug.fprintln("instTrace", "LOOKUP VAR IN PACKAGES ICD: " +& Env.printEnvPathStr(env3) +& " var: " +& ComponentReference.printComponentRefStr(cref));
         (cache,env5,_,_,_,_,_,_,_,_,_,_) =
         Inst.instClassIn(
           cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, SCode.PUBLIC(), {}, /*true*/false, Inst.INNER_CALL(), ConnectionGraph.EMPTY, filterCref);
+          ci_state, c, SCode.PUBLIC(), {}, /*true*/false, Inst.INNER_CALL(), ConnectionGraph.EMPTY, NONE());
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,env5,cref,prevFrames,inState);
       then
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
