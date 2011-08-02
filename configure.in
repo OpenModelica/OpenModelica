@@ -130,8 +130,7 @@ AC_CHECK_HEADERS(sys/time.h sqlite3.h, [], [AC_MSG_ERROR(Missing header files)])
 AC_CHECK_HEADERS(f2c.h, [], [LIBF2C=libf2c/libf2c.a])
 
 AC_MSG_CHECKING([for rml includefiles in $rmlhome])
-rmlinc=`find $rmlhome/include -follow -type d -name plain |grep include/plain`
-if test -z "$rmlinc" ; then
+if test ! -f "$rmlhome/include/plain/rml.h" ; then
   AC_MSG_ERROR([rml headers not found])
   AC_MSG_RESULT([no])
 else

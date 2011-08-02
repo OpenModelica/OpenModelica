@@ -4051,8 +4051,7 @@ done
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for rml includefiles in $rmlhome" >&5
 $as_echo_n "checking for rml includefiles in $rmlhome... " >&6; }
-rmlinc=`find $rmlhome/include -follow -type d -name plain |grep include/plain`
-if test -z "$rmlinc" ; then
+if test ! -f "$rmlhome/include/plain/rml.h" ; then
   as_fn_error $? "rml headers not found" "$LINENO" 5
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
