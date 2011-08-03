@@ -3261,7 +3261,7 @@ protected function removeFixedfromStates
   input BackendDAE.Variables inVars;
   output list<tuple<DAE.ComponentRef,Integer>> outStates; 
 algorithm
-  outStats := matchcontinue (inStates,inVars)
+  outStates := matchcontinue (inStates,inVars)
     local
        DAE.ComponentRef cr;
        Integer i;
