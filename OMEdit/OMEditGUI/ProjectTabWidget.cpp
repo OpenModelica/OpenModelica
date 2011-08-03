@@ -2048,12 +2048,19 @@ void ProjectTab::getModelConnections()
 
         // get the connector annotations from OMC
         QString connectionAnnotationString;
-        QStringList connectionAnnotationList;
+        QStringList connectionAnnotationList, shapesList;
         connectionAnnotationString = pMainWindow->mpOMCProxy->getNthConnectionAnnotation(mModelNameStructure, i);
-
-        connectionAnnotationString = connectionAnnotationString.mid(QString("Line").length());
-        connectionAnnotationString = StringHandler::removeFirstLastBrackets(connectionAnnotationString);
-
+        shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(connectionAnnotationString), '(', ')');
+        // Now parse the shapes available in list
+        foreach (QString shape, shapesList)
+        {
+            shape = StringHandler::removeFirstLastCurlBrackets(shape);
+            if (shape.startsWith("Line"))
+            {
+                shape = shape.mid(QString("Line").length());
+                connectionAnnotationString = StringHandler::removeFirstLastBrackets(shape);
+            }
+        }
         connectionAnnotationList = StringHandler::getStrings(connectionAnnotationString);
         // if the connectionAnnotationString is empty then continue the loop,
         // because connection is not valid then

@@ -1086,12 +1086,19 @@ void Component::getClassComponents(QString className, int type, Component *pPare
         for (int i = 1 ; i <= connections ; i++)
         {
             QString result = mpOMCProxy->getNthConnectionAnnotation(className, i);
-            if (result.contains("Line"))
+            QStringList shapesList;
+            shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(result), '(', ')');
+            // Now parse the shapes available in list
+            foreach (QString shape, shapesList)
             {
-                result = result.mid(QString("Line").length());
-                result = StringHandler::removeFirstLastBrackets(result);
-                LineAnnotation *lineAnnotation = new LineAnnotation(result, pParent);
-                Q_UNUSED(lineAnnotation);
+                shape = StringHandler::removeFirstLastCurlBrackets(shape);
+                if (shape.startsWith("Line"))
+                {
+                    shape = shape.mid(QString("Line").length());
+                    result = StringHandler::removeFirstLastBrackets(shape);
+                    LineAnnotation *lineAnnotation = new LineAnnotation(result, pParent);
+                    Q_UNUSED(lineAnnotation);
+                }
             }
         }
     }
