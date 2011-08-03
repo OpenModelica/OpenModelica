@@ -571,12 +571,14 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
                 dasslStats[i] += dasslStatsTmp[i];
             }
           //Check for termination of terminate() or assert()
-          if (terminationAssert || terminationTerminate)
+          if (terminationAssert || terminationTerminate || modelErrorCode)
             {
               terminationAssert = 0;
               terminationTerminate = 0;
               checkForAsserts();
               checkTermination();
+              if (modelErrorCode)
+            	  retValIntegrator = 1;
             }
 
           if (retValIntegrator)

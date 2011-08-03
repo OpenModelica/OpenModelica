@@ -114,7 +114,7 @@ void * _omc_hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
           if (sim_verbose >= LOG_NONLIN_SYS) { \
             printf("Solving nonlinear system: iteration not making progress, trying with different starting points (+1e-6)\n"); \
           } else if ((info == 4 || info == 5) && retries2 < 1) { /*Then try with old values (instead of extrapolating )*/ \
-            retries = 0; retries2++; \
+            retries = 0; retries2++; giveUp = 0; \
             int i = 0; \
             for (i = 0; i < n; i++) { nls_x[i] = nls_xold[i]; } \
           } else if (info >= 2 && info <= 5) { \
@@ -146,18 +146,18 @@ void * _omc_hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
           printErrorEqSyst(IMPROPER_INPUT,no,time); \
       } \
         if ((info == 4 || info == 5) && retries < 3) { /* first try to decrease factor*/ \
-        retries++; giveUp = 0; \
+        retries++;  giveUp = 0; \
         factor = factor / 10.0; \
            if (sim_verbose & LOG_NONLIN_SYS)  \
           printErrorEqSyst(NO_PROGRESS_FACTOR,no,factor); \
       } else if ((info == 4 || info == 5) && retries < 5) { /* Then, try with different starting point*/  \
         int i = 0; \
         for (i = 0; i < n; i++) { nls_x[i] += 0.1; }; \
-        retries++; giveUp=0; \
+        retries++;  giveUp=0; \
         if (sim_verbose >= LOG_NONLIN_SYS) \
           printErrorEqSyst(NO_PROGRESS_START_POINT,no,1e-6); \
       } else if ((info == 4 || info == 5) && retries2 < 1) { /*Then try with old values (instead of extrapolating )*/ \
-        retries = 0; retries2++; \
+        retries = 0; retries2++; giveUp = 0; \
         int i = 0; \
         for (i = 0; i < n; i++) { nls_x[i] = nls_xold[i]; } \
       } \
