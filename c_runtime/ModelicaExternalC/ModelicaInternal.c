@@ -622,6 +622,7 @@ static const char* ModelicaInternal_readLine(const char* fileName, int lineNumbe
      size_t lineLen;
      size_t iLines;
      long   offset;
+     if (!fp) goto ERROR;
 
   /* Read upto line lineNumber-1 */
      iLines = 0;
@@ -661,7 +662,7 @@ static const char* ModelicaInternal_readLine(const char* fileName, int lineNumbe
                   line = ModelicaAllocateString(0);
                   return line;
 
-     ERROR      : fclose(fp);
+     ERROR      : if (fp) fclose(fp);
                   ModelicaFormatError("Error when reading line %i from file\n\"%s\":\n%s",
                                       lineNumber, fileName, strerror(errno));
                   return "";
