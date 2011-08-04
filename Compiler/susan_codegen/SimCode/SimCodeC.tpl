@@ -4060,6 +4060,7 @@ case STMT_NORETCALL(__) then
   <%expPart%>;
   >>
 
+
 end algStmtNoretcall;
 
 
@@ -5291,7 +5292,7 @@ case ARRAY(__) then
       let prefix = if scalar then '(<%expTypeFromExpModelica(e)%>)' else '&'
       '<%prefix%><%daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>'
     ;separator=", ")
-  let &preExp += 'array_alloc_<%scalarPrefix%><%arrayTypeStr%>(&<%arrayVar%>, <%listLength(array)%>, <%params%>);<%\n%>'
+  let &preExp += 'array_alloc_<%scalarPrefix%><%arrayTypeStr%>(&<%arrayVar%>, <%listLength(array)%><%if params then ", "%><%params%>);<%\n%>'
   arrayVar
 end daeExpArray;
 
@@ -5407,7 +5408,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp /*BUFP*/,
 
   // Faster asub: Do not construct a whole new array just to access one subscript
   case ASUB(exp=exp as ARRAY(scalar=true), sub={idx}) then
-    let res = tempDecl(expTypeFromExpShort(exp),&varDecls)
+    let res = tempDecl(expTypeFromExpModelica(exp),&varDecls)
     let idx1 = daeExp(idx, context, &preExp, &varDecls)
     let expl = (exp.array |> e hasindex i1 fromindex 1 =>
       let &caseVarDecls = buffer ""
@@ -6241,6 +6242,7 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
     then
       let &unboxBuf = buffer ""
       let urhs = (match p.ty
+
         case SOME(et) then unboxVariable(rhs, et, &unboxBuf, &varDecls)
         else rhs
       )

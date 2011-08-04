@@ -535,14 +535,12 @@ void array_scalar_boolean_array(boolean_array_t* dest, int n,
  * Creates(incl allocation) an array from scalar elements.
  */
 
-void array_alloc_scalar_boolean_array(boolean_array_t* dest, int n,
-                                      m_boolean first,...)
+void array_alloc_scalar_boolean_array(boolean_array_t* dest, int n, ...)
 {
     int i;
     va_list ap;
     simple_alloc_1d_boolean_array(dest,n);
-    va_start(ap,first);
-    put_boolean_element(first,0,dest);
+    va_start(ap,n);
     for (i = 1; i < n; ++i) {
         put_boolean_element((m_boolean) va_arg(ap, int),i,dest);
     }

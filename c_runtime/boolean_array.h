@@ -138,8 +138,7 @@ void array_alloc_boolean_array(boolean_array_t* dest,int n,
 /* array(s1,s2,s3)  for scalars s1,s2,s3 */
 void array_scalar_boolean_array(boolean_array_t* dest,int n,
                                 m_boolean first,...);
-void array_alloc_scalar_boolean_array(boolean_array_t* dest,int n,
-                                      m_boolean first,...);
+void array_alloc_scalar_boolean_array(boolean_array_t* dest,int n,...);
 
 m_boolean* boolean_array_element_addr(boolean_array_t* source,int ndims,...);
 m_boolean* boolean_array_element_addr1(boolean_array_t* source,int ndims,int dim1);
