@@ -1124,7 +1124,9 @@ end calculateVarSizes;
 
 public function calculateValues "function: calculateValues
   author: PA
-  This function calculates the values from the parameter binding expressions."
+  This function calculates the values from the parameter binding expressions.
+  modefication: wbraun 
+  Use really only parameter bindungs for evaluation."
   input Env.Cache cache;
   input Env.Env env;
   input BackendDAE.BackendDAE inBackendDAE;
@@ -1132,8 +1134,8 @@ public function calculateValues "function: calculateValues
 algorithm
   outBackendDAE := match (cache,env,inBackendDAE)
     local
-      list<BackendDAE.Var> knvarlst;
-      BackendDAE.Variables knvars,vars,extVars;
+      list<BackendDAE.Var> knvarlst,varlst1,varlst2;
+      BackendDAE.Variables knvars,vars,extVars,paramvars;
       BackendDAE.AliasVariables av;
       BackendDAE.EquationArray eqns,seqns,ie;
       array<BackendDAE.MultiDimEquation> ae;
@@ -1144,8 +1146,10 @@ algorithm
                  removedEqs = seqns,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = wc,extObjClasses=extObjCls))
       equation
         knvarlst = varList(knvars);
-        knvarlst = Util.listMap3(knvarlst, calculateValue, cache, env, knvars);
-        knvars = listVar(knvarlst);
+        (varlst1,varlst2) = Util.listSplitOnTrue(knvarlst,BackendVariable.isParam);
+        paramvars = listVar(varlst1);
+        knvarlst = Util.listMap3(varlst1, calculateValue, cache, env, paramvars);
+        knvars = listVar(listAppend(knvarlst,varlst2));
       then
         BackendDAE.DAE(vars,knvars,extVars,av,eqns,seqns,ie,ae,al,wc,extObjCls);
   end match;

@@ -541,7 +541,7 @@ void array_alloc_scalar_boolean_array(boolean_array_t* dest, int n, ...)
     va_list ap;
     simple_alloc_1d_boolean_array(dest,n);
     va_start(ap,n);
-    for (i = 1; i < n; ++i) {
+    for (i = 0; i < n; ++i) {
         put_boolean_element((m_boolean) va_arg(ap, int),i,dest);
     }
     va_end(ap);
