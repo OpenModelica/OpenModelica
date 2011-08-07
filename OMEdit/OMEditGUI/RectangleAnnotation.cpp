@@ -153,7 +153,6 @@ void RectangleAnnotation::updateEndPoint(QPointF point)
 
 void RectangleAnnotation::drawRectangleCornerItems()
 {
-
     mIsFinishedCreatingShape = true;
     for (int i = 0 ; i < this->mExtent.size() ; i++)
     {
@@ -162,7 +161,6 @@ void RectangleAnnotation::drawRectangleCornerItems()
         mRectangleCornerItemsList.append(rectangleCornerItem);
     }
     emit updateShapeAnnotation();
-
 }
 
 QString RectangleAnnotation::getShapeAnnotation()

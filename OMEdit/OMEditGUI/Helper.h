@@ -51,8 +51,6 @@ public:
     static QString omnotebookFileTypes;
     static QString imageFileTypes;
     static QString tmpPath;
-    static QString settingsFileName;
-    static QString documentationBaseUrl;
     static QString readOnly;
     static QString writeAble;
     static QString iconView;

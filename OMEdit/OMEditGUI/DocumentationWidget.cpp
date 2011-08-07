@@ -39,6 +39,7 @@ DocumentationWidget::DocumentationWidget(MainWindow *pParent)
     mpParentMainWindow = pParent;
     mpDocumentationViewer = new DocumentationViewer(this);
     mpDocumentationEditor = new DocumentationEditor(this);
+    setIsCustomModel(false);
     mpHeadingLabel = new QLabel;
     mpHeadingLabel->setFont(QFont("", Helper::headingFontSize - 5));
     mpHeadingLabel->setAlignment(Qt::AlignTop);
@@ -87,16 +88,23 @@ void DocumentationWidget::show(QString className)
     {
         mpPixmapLabel->setVisible(true);
         mpPixmapLabel->setPixmap(libraryComponent->getComponentPixmap(QSize(75, 75)));
-        mpEditButton->setVisible(false);
-        mpSaveButton->setVisible(false);
     }
     else
     {
         mpPixmapLabel->setVisible(false);
+    }
+    // show edit and save buttons if show is called for a custom model
+    if (isCustomModel())
+    {
         mpEditButton->setVisible(true);
         mpEditButton->setDisabled(false);
         mpSaveButton->setVisible(true);
         mpSaveButton->setDisabled(true);
+    }
+    else
+    {
+        mpEditButton->setVisible(false);
+        mpSaveButton->setVisible(false);
     }
     QString documentation = mpParentMainWindow->mpOMCProxy->getDocumentationAnnotation(className);
     mpDocumentationViewer->setHtml(documentation, mpDocumentationViewer->getBaseUrl());
@@ -106,9 +114,7 @@ void DocumentationWidget::show(QString className)
 
 void DocumentationWidget::showDocumentationEditView(QString className)
 {
-     QString validText;
     mpDocumentationViewer->hide();
-
     // get the already existing documentation text of the model
     mpDocumentationEditor->toPlainText();
     mpDocumentationEditor->setPlainText(mpParentMainWindow->mpOMCProxy->getDocumentationAnnotation(className));
@@ -116,27 +122,36 @@ void DocumentationWidget::showDocumentationEditView(QString className)
     mpDocumentationEditor->show();
 }
 
+void DocumentationWidget::setIsCustomModel(bool isCustomModel)
+{
+    mIsCustomModel = isCustomModel;
+}
+
+bool DocumentationWidget::isCustomModel()
+{
+    return mIsCustomModel;
+}
+
 void DocumentationWidget::editDocumentation()
 {
- showDocumentationEditView(mClassName);
- mpEditButton->setDisabled(true);
- mpSaveButton->setDisabled(false);
+    showDocumentationEditView(mClassName);
+    mpEditButton->setDisabled(true);
+    mpSaveButton->setDisabled(false);
 }
 
 void DocumentationWidget::saveChanges()
 {
-     QString doc = mpDocumentationEditor->toPlainText();
-   if(doc.startsWith("<html>",Qt::CaseSensitive) && doc.endsWith("</html>",Qt::CaseSensitive))
-   {
-    mpParentMainWindow->mpOMCProxy->addClassAnnotation(mClassName,"annotate=Documentation(info = \""+doc+"\")");
-    show(mClassName);
-   }
-   else
-   {
-       QString message = QString(GUIMessages::getMessage(GUIMessages::INCORRECT_HTML_TAGS));
-       mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(message);
-
-   }
+    QString doc = mpDocumentationEditor->toPlainText();
+    if(doc.startsWith("<html>",Qt::CaseSensitive) && doc.endsWith("</html>",Qt::CaseSensitive))
+    {
+        mpParentMainWindow->mpOMCProxy->addClassAnnotation(mClassName,"annotate=Documentation(info = \""+doc+"\")");
+        show(mClassName);
+    }
+    else
+    {
+        QString message = QString(GUIMessages::getMessage(GUIMessages::INCORRECT_HTML_TAGS));
+        mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(message);
+    }
 }
 
 DocumentationEditor::DocumentationEditor(DocumentationWidget *pParent)
@@ -158,8 +173,10 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pParent)
 {
     mpParentDocumentationWidget = pParent;
     // set the base url for documentation.
+    mpParentDocumentationWidget->mpParentMainWindow->mpOMCProxy->sendCommand("getNamedAnnotation(Modelica,version)");
+    QString versionStr = StringHandler::unparseStrings(mpParentDocumentationWidget->mpParentMainWindow->mpOMCProxy->getResult()).at(0);
     // We need to replace the back slashes(\) with forward slash(/), since QWebView baseurl doesn't handle it.
-    QString baseUrl = QString(Helper::OpenModelicaLibrary).replace("\\", "/").append(Helper::documentationBaseUrl);
+    QString baseUrl = QString(Helper::OpenModelicaLibrary).replace("\\", "/").append("/Modelica ").append(versionStr).append("/Images/");
     setBaseUrl(baseUrl);
     // set page font settings
     settings()->setFontFamily(QWebSettings::StandardFont, "Verdana");

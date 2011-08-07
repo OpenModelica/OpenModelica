@@ -122,6 +122,7 @@ public:
     bool mIsCreatingEllipse;
     bool mIsCreatingText;    
     bool mIsCreatingBitmap;
+    bool mCustomScale;
     QVector<Connector*> mConnectorsVector;
     ProjectTab *mpParentProjectTab;
     QAction *mpCancelConnectionAction;
@@ -164,6 +165,7 @@ protected:
     virtual void keyPressEvent(QKeyEvent *event);
     virtual void keyReleaseEvent(QKeyEvent *event);
     virtual void contextMenuEvent(QContextMenuEvent *event);
+    virtual void resizeEvent(QResizeEvent *event);
 };
 
 class ProjectTabWidget; //Forward declaration
@@ -187,7 +189,7 @@ private:
     bool mReadOnly;
     bool mIsChild;
 public:
-    ProjectTab(int modelicaType, int iconType, bool readOnly, bool isChild, ProjectTabWidget *parent = 0);
+    ProjectTab(QString name, QString nameStructure, int modelicaType, int iconType, bool readOnly, bool isChild, bool openMode, ProjectTabWidget *parent = 0);
     ~ProjectTab();
     void updateTabName(QString name, QString nameStructure);
     void updateModel(QString name);
@@ -220,6 +222,7 @@ public:
     int mIconType;
     bool mIsSaved;
     int mTabPosition;
+    bool mOpenMode;
 public slots:
     void showIconView(bool checked);
     void showDiagramView(bool checked);

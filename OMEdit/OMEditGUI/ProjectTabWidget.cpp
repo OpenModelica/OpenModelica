@@ -65,8 +65,9 @@ GraphicsView::GraphicsView(int iconType, ProjectTab *parent)
     this->mIsCreatingPolygon = false;
     this->mIsCreatingRectangle = false;
     this->mIsCreatingEllipse = false;
-    this->mIsCreatingText = false;    
+    this->mIsCreatingText = false;
     this->mIsCreatingBitmap = false;
+    this->mCustomScale = false;
     //this->setMinimumSize(Helper::viewWidth, Helper::viewHeight);
     this->setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
     this->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
@@ -74,11 +75,10 @@ GraphicsView::GraphicsView(int iconType, ProjectTab *parent)
     this->centerOn(this->sceneRect().center());
     this->createActions();
     this->createMenus();
-
+    this->scale(1.0, -1.0);
     // if user is viewing some readonly component then dont draw backgrounds.
     if (!mpParentProjectTab->isReadOnly())
     {
-        this->scale(2.0, -2.0);
         if (mIconType == StringHandler::DIAGRAM)
         {
             this->setStyleSheet(QString("background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1")
@@ -90,16 +90,11 @@ GraphicsView::GraphicsView(int iconType, ProjectTab *parent)
             this->setStyleSheet(QString("background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1")
                                          .append(", stop: 0 gray, stop: 1 lightGray);"));
         }
-    }
-    // if readonly view then don't scale the graphics view
-    else
-    {
-        this->scale(1.0, -1.0);
-    }
-
+    }    
     connect(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->gridLinesAction,
             SIGNAL(toggled(bool)), this, SLOT(showGridLines(bool)));
     connect(this, SIGNAL(currentChange(int)),mpParentProjectTab->mpParentProjectTabWidget, SLOT(tabChanged()));
+    addClassAnnotation();
 }
 
 void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
@@ -108,7 +103,6 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
 
     if (mpParentProjectTab->isReadOnly())
         return;
-
     // draw scene rectangle
     painter->setPen(Qt::black);
     painter->setBrush(QBrush(Qt::white, Qt::SolidPattern));
@@ -122,20 +116,20 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
 
         int xAxis = sceneRect().x();
         int yAxis = sceneRect().y();
-
         // Horizontal Lines
+        yAxis += 20;
         while (yAxis < sceneRect().right())
         {
-            yAxis += 20;
             painter->drawLine(xAxis, yAxis, sceneRect().right(), yAxis);
+            yAxis += 20;
         }
-
         // Vertical Lines
         yAxis = sceneRect().y();
+        xAxis += 20;
         while (xAxis < sceneRect().bottom())
         {
-            xAxis += 20;
             painter->drawLine(xAxis, yAxis, xAxis, sceneRect().bottom());
+            xAxis += 20;
         }
     }
     //draw scene rectangle again without brush
@@ -991,13 +985,35 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
         {
             //menu.addAction(mpPasteComponentAction);
             //menu.addSeparator();
-
         }
 
         menu.exec(event->globalPos());
         return;         // return from it because at a time we only want one context menu.
     }
     QGraphicsView::contextMenuEvent(event);
+}
+
+void GraphicsView::resizeEvent(QResizeEvent *event)
+{
+    this->setStyleSheet(this->styleSheet().append(QString(" border: 1px solid gray;")));
+    // only resize the view if user has not set any custom scaling like zoom in and zoom out.
+    if (!mCustomScale)
+    {
+        // since some Modelica components have diagrams larger i.e chaucircuit.
+        // so for such components we need to scale itemsbounding rect :) this case is only valid for modelica libray components.
+        if (mpParentProjectTab->isReadOnly())
+        {
+            if ((sceneRect().width() < scene()->itemsBoundingRect().width()) || (sceneRect().width() < scene()->itemsBoundingRect().width()))
+                fitInView(scene()->itemsBoundingRect(), Qt::KeepAspectRatio);
+            else
+                fitInView(sceneRect(), Qt::KeepAspectRatio);
+        }
+        else
+        {
+            fitInView(sceneRect(), Qt::KeepAspectRatio);
+        }
+    }
+    QGraphicsView::resizeEvent(event);
 }
 
 //! Begins creation of connector or complete creation of connector depending on the mIsCreatingConnector flag.
@@ -1315,7 +1331,9 @@ void GraphicsView::deleteConnection(QString startIconCompName, QString endIconCo
 void GraphicsView::resetZoom()
 {
     this->resetMatrix();
-    this->scale(2.0, -2.0);
+    this->scale(1.0, -1.0);
+    this->mCustomScale = false;
+    resizeEvent(new QResizeEvent(QSize(0,0), QSize(0,0)));
 }
 
 //! Increases zoom factor by 15%.
@@ -1325,6 +1343,7 @@ void GraphicsView::zoomIn()
 {
     //this->scale(1.15, 1.15);
     this->scale(1.12, 1.12);
+    this->mCustomScale = true;
 }
 
 //! Decreases zoom factor by 13.04% (1 - 1/1.15).
@@ -1334,6 +1353,7 @@ void GraphicsView::zoomOut()
 {
     //if (transform().m11() != 2.0 and transform().m22() != -2.0)
     this->scale(1/1.12, 1/1.12);
+    this->mCustomScale = true;
 }
 
 void GraphicsView::showGridLines(bool showLines)
@@ -1374,6 +1394,9 @@ void GraphicsView::selectAll()
 //! @param update flag is used to check whether we need to update the modelica editor text or not.
 void GraphicsView::addClassAnnotation(bool update)
 {
+    if (mpParentProjectTab->mOpenMode || mpParentProjectTab->isReadOnly())
+        return;
+
     MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
     int counter = 0;
     QString annotationString;
@@ -1387,6 +1410,12 @@ void GraphicsView::addClassAnnotation(bool update)
     {
        annotationString.append("Diagram(");
     }
+    // add the coordinate system first
+//    annotationString.append("coordinateSystem=CoordinateSystem(extent={");
+//    annotationString.append("{").append(QString::number(sceneRect().x())).append(", ").append(QString::number(sceneRect().y())).append("}, ");
+//    annotationString.append("{").append(QString::number(sceneRect().width() - fabs(sceneRect().x()))).append(", ")
+//            .append(QString::number(sceneRect().height() - fabs(sceneRect().y()))).append("}})");
+    // add the graphics annotations
     if (mShapesList.size() > 0)
     {
        annotationString.append("graphics={");
@@ -1416,20 +1445,21 @@ void GraphicsView::addClassAnnotation(bool update)
     ModelicaTree *pModelicaTree = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpLibrary->mpModelicaTree;
     ModelicaTreeNode *pModelicaTreeNode = pModelicaTree->getNode(mpParentProjectTab->mModelNameStructure);
 
+    if (!pModelicaTreeNode)
+        return;
+
     if (mIconType == StringHandler::ICON)
     {
         LibraryLoader *libraryLoader = new LibraryLoader(pModelicaTreeNode, mpParentProjectTab->mModelNameStructure, pModelicaTree);
         libraryLoader->start(QThread::HighestPriority);
         while (libraryLoader->isRunning())
             qApp->processEvents();
-
-
     }
 
-        /* since the icon of this model has changed in some way so it might be possible that this model is being used in some other models,
-           so we look through the modelica files tree and check the components of all models against our current model.
-           If a match is found we get the icon annotation of the model and update it.
-           */
+    /* since the icon of this model has changed in some way so it might be possible that this model is being used in some other models,
+       so we look through the modelica files tree and check the components of all models against our current model.
+       If a match is found we get the icon annotation of the model and update it.
+       */
       /*  QList<ModelicaTreeNode*> pModelicaTreeNodes = pModelicaTree->getModelicaTreeNodes();
         QList<Component*> componentslist;
         QString result;
@@ -1454,77 +1484,74 @@ void GraphicsView::addClassAnnotation(bool update)
         }
     */
 
-    if (mIconType == StringHandler::ICON && pModelicaTreeNode->mType!=StringHandler::CONNECTOR)
+    if (mIconType == StringHandler::ICON && pModelicaTreeNode->mType != StringHandler::CONNECTOR)
     {
-    QList<ModelicaTreeNode*> pModelicaTreeNodes = pModelicaTree->getModelicaTreeNodes();
-    QList<Component*> componentslist;
-    QString result;
-    result= pMainWindow->mpOMCProxy->getIconAnnotation(mpParentProjectTab->mModelNameStructure);
+        QList<ModelicaTreeNode*> pModelicaTreeNodes = pModelicaTree->getModelicaTreeNodes();
+        QList<Component*> componentslist;
+        QString result;
+        result= pMainWindow->mpOMCProxy->getIconAnnotation(mpParentProjectTab->mModelNameStructure);
         foreach (ModelicaTreeNode *node, pModelicaTreeNodes)
         {
-       ProjectTab *projectTab= mpParentProjectTab->mpParentProjectTabWidget->getTabByName(node->mNameStructure);
-       if(projectTab)
+            ProjectTab *projectTab= mpParentProjectTab->mpParentProjectTabWidget->getTabByName(node->mNameStructure);
+            if(projectTab)
             {
-       componentslist=projectTab->mpDiagramGraphicsView->mComponentsList;
-          foreach (Component *component, componentslist)
+                componentslist=projectTab->mpDiagramGraphicsView->mComponentsList;
+                foreach (Component *component, componentslist)
                 {
-               if(component->getClassName()==mpParentProjectTab->mModelNameStructure)
-                     {
-                   component->parseAnnotationString(component,result);
-                     projectTab->mpDiagramGraphicsView->scene()->update();
-                     }
+                    if(component->getClassName()==mpParentProjectTab->mModelNameStructure)
+                    {
+                        component->parseAnnotationString(component,result);
+                        projectTab->mpDiagramGraphicsView->scene()->update();
+                    }
                 }
             }
         }
     }
-
-    else if (mIconType == StringHandler::ICON && pModelicaTreeNode->mType==StringHandler::CONNECTOR)
+    else if (mIconType == StringHandler::ICON && pModelicaTreeNode->mType == StringHandler::CONNECTOR)
     {
-
-
-    QList<ModelicaTreeNode*> pModelicaTreeNodes = pModelicaTree->getModelicaTreeNodes();
-    QList<Component*> componentslist;
-    QString result;
-    result= pMainWindow->mpOMCProxy->getIconAnnotation(mpParentProjectTab->mModelNameStructure);
-    foreach (ModelicaTreeNode *node, pModelicaTreeNodes)
-    {
-       ProjectTab *projectTab= mpParentProjectTab->mpParentProjectTabWidget->getTabByName(node->mNameStructure);
-       if(projectTab)
-       {
-       componentslist=projectTab->mpIconGraphicsView->mComponentsList;
-           foreach (Component *component, componentslist)
-           {
-               if(component->getClassName()==mpParentProjectTab->mModelNameStructure)
-               {
-                   component->parseAnnotationString(component,result);
-                     projectTab->mpIconGraphicsView->scene()->update();
-               }
-           }
-       }
+        QList<ModelicaTreeNode*> pModelicaTreeNodes = pModelicaTree->getModelicaTreeNodes();
+        QList<Component*> componentslist;
+        QString result;
+        result= pMainWindow->mpOMCProxy->getIconAnnotation(mpParentProjectTab->mModelNameStructure);
+        foreach (ModelicaTreeNode *node, pModelicaTreeNodes)
+        {
+            ProjectTab *projectTab= mpParentProjectTab->mpParentProjectTabWidget->getTabByName(node->mNameStructure);
+            if(projectTab)
+            {
+                componentslist=projectTab->mpIconGraphicsView->mComponentsList;
+                foreach (Component *component, componentslist)
+                {
+                    if(component->getClassName()==mpParentProjectTab->mModelNameStructure)
+                    {
+                        component->parseAnnotationString(component,result);
+                        projectTab->mpIconGraphicsView->scene()->update();
+                    }
+                }
+            }
+        }
     }
-    }
-   else if (mIconType == StringHandler::DIAGRAM && pModelicaTreeNode->mType==StringHandler::CONNECTOR )
+    else if (mIconType == StringHandler::DIAGRAM && pModelicaTreeNode->mType == StringHandler::CONNECTOR )
     {
-    QList<ModelicaTreeNode*> pModelicaTreeNodes = pModelicaTree->getModelicaTreeNodes();
-    QList<Component*> componentslist;
-    QString result= pMainWindow->mpOMCProxy->getDiagramAnnotation(mpParentProjectTab->mModelNameStructure);
-      foreach (ModelicaTreeNode *node, pModelicaTreeNodes)
-    {
-       ProjectTab *projectTab= mpParentProjectTab->mpParentProjectTabWidget->getTabByName(node->mNameStructure);
-       if(projectTab)
-       {
-           componentslist=projectTab->mpDiagramGraphicsView->mComponentsList;
-            foreach (Component *component, componentslist)
-           {
-               if(component->getClassName()==mpParentProjectTab->mModelNameStructure)
-               {
-                   component->parseAnnotationString(component,result);
-                     projectTab->mpDiagramGraphicsView->scene()->update();
-               }
-           }
-       }
+        QList<ModelicaTreeNode*> pModelicaTreeNodes = pModelicaTree->getModelicaTreeNodes();
+        QList<Component*> componentslist;
+        QString result= pMainWindow->mpOMCProxy->getDiagramAnnotation(mpParentProjectTab->mModelNameStructure);
+        foreach (ModelicaTreeNode *node, pModelicaTreeNodes)
+        {
+            ProjectTab *projectTab= mpParentProjectTab->mpParentProjectTabWidget->getTabByName(node->mNameStructure);
+            if(projectTab)
+            {
+                componentslist=projectTab->mpDiagramGraphicsView->mComponentsList;
+                foreach (Component *component, componentslist)
+                {
+                    if(component->getClassName()==mpParentProjectTab->mModelNameStructure)
+                    {
+                        component->parseAnnotationString(component,result);
+                        projectTab->mpDiagramGraphicsView->scene()->update();
+                    }
+                }
+            }
+        }
     }
- }
 }
 
 //! @class GraphicsScene
@@ -1557,16 +1584,26 @@ GraphicsScene::GraphicsScene(int iconType, ProjectTab *parent)
 
 //! Constructor.
 //! @param parent defines a parent to the new instanced object.
-ProjectTab::ProjectTab(int modelicaType, int iconType, bool readOnly, bool isChild, ProjectTabWidget *parent)
+ProjectTab::ProjectTab(QString name, QString nameStructure, int modelicaType, int iconType, bool readOnly, bool isChild, bool openMode,
+                       ProjectTabWidget *parent)
     : QWidget(parent)
 {
     mIsSaved = false;
     mModelFileName.clear();
     mpParentProjectTabWidget = parent;
+    mModelName = name;
+    mModelNameStructure = nameStructure;
     mModelicaType = modelicaType;
     mIconType = iconType;
+    mOpenMode = openMode;
     setReadOnly(readOnly);
     setIsChild(isChild);
+
+    // create a modelica text editor for modelica text
+    mpModelicaEditor = new ModelicaEditor(this);
+    MainWindow *pMainWindow = mpParentProjectTabWidget->mpParentMainWindow;
+    mpModelicaTextHighlighter = new ModelicaTextHighlighter(pMainWindow->mpOptionsWidget->mpModelicaTextSettings, mpModelicaEditor->document());
+    connect(pMainWindow->mpOptionsWidget, SIGNAL(modelicaTextSettingsChanged()), mpModelicaTextHighlighter, SLOT(settingsChanged()));
 
     // icon graphics framework
     mpDiagramGraphicsScene = new GraphicsScene(StringHandler::DIAGRAM, this);
@@ -1577,14 +1614,6 @@ ProjectTab::ProjectTab(int modelicaType, int iconType, bool readOnly, bool isChi
     mpIconGraphicsScene = new GraphicsScene(StringHandler::ICON, this);
     mpIconGraphicsView = new GraphicsView(StringHandler::ICON, this);
     mpIconGraphicsView->setScene(mpIconGraphicsScene);
-
-    // create a modelica text editor for modelica text
-    mpModelicaEditor = new ModelicaEditor(this);
-    MainWindow *pMainWindow = mpParentProjectTabWidget->mpParentMainWindow;
-    mpModelicaTextHighlighter = new ModelicaTextHighlighter(pMainWindow->mpOptionsWidget->mpModelicaTextSettings,
-                                                            mpModelicaEditor->document());
-    connect(pMainWindow->mpOptionsWidget, SIGNAL(modelicaTextSettingsChanged()), mpModelicaTextHighlighter,
-            SLOT(settingsChanged()));
 
     // set Project Status Bar lables
     mpReadOnlyLabel = isReadOnly() ? new QLabel(Helper::readOnly) : new QLabel(Helper::writeAble);
@@ -1690,10 +1719,8 @@ ProjectTab::ProjectTab(int modelicaType, int iconType, bool readOnly, bool isChi
     tabLayout->addWidget(mpIconGraphicsView);
     tabLayout->addWidget(mpModelicaEditorWidget);
     setLayout(tabLayout);
-        //emit mpModelicaEditor->focusOut();
     // Hide the modelica text view, icon view and show diagram view
     mpModelicaEditorWidget->hide();
-
     mpIconGraphicsView->hide();
     mpIconToolButton->setChecked(true);
 }
@@ -1788,6 +1815,7 @@ void ProjectTab::showModelicaTextView(bool checked)
 void ProjectTab::showDocumentationView()
 {
     mpParentProjectTabWidget->mpParentMainWindow->documentationdock->show();
+    mpParentProjectTabWidget->mpParentMainWindow->mpDocumentationWidget->setIsCustomModel(true);
     mpParentProjectTabWidget->mpParentMainWindow->mpDocumentationWidget->show(mModelNameStructure);
 }
 
@@ -2006,7 +2034,6 @@ void ProjectTab::getModelConnections()
                     QString arrayPort = startComponentList.at(1).left(startbrac);
                     startindex = startComponentList.at(1).mid(startbrac+1,endbrac-startbrac-1).toInt(&ok,10);
 
-                    qDebug() << "in start port " <<arrayPort << startindex;
                     if (component->mpComponentProperties->getName() == arrayPort)
                         pStartPort = component;
                 }
@@ -2035,7 +2062,6 @@ void ProjectTab::getModelConnections()
                     int endbrac = endComponentList.at(1).indexOf("]");
                     QString arrayPort = endComponentList.at(1).left(startbrac);
                     endindex = endComponentList.at(1).mid(startbrac+1,endbrac-startbrac-1).toInt(&ok,10);
-                    qDebug() << "in end port " <<arrayPort <<endindex;
                     if (component->mpComponentProperties->getName() == arrayPort)
                         pEndPort = component;
                 }
@@ -2102,6 +2128,8 @@ void ProjectTab::getModelConnections()
 void ProjectTab::getModelShapes(QString annotationString, int type)
 {
     MainWindow *pMainWindow = mpParentProjectTabWidget->mpParentMainWindow;
+    qreal x1, y1, x2, y2, width, height;
+    bool valuesSwaped = false;
     annotationString = StringHandler::removeFirstLastCurlBrackets(annotationString);
     if (annotationString.isEmpty())
     {
@@ -2112,9 +2140,43 @@ void ProjectTab::getModelShapes(QString annotationString, int type)
 
     if (pMainWindow->mpOMCProxy->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
     {
+//        if (list.size() < 8)
+//            return;
+//        // read the coordinate system values
+//        x1 = static_cast<QString>(list.at(0)).toFloat();
+//        y1 = static_cast<QString>(list.at(1)).toFloat();
+//        x2 = static_cast<QString>(list.at(2)).toFloat();
+//        y2 = static_cast<QString>(list.at(3)).toFloat();
+//        // according to modelica annotation standard, the first point of coordinate system should always be less than the second one.
+//        if (x1 > x2)
+//        {
+//            qSwap(x1, x2);
+//            valuesSwaped = true;
+//        }
+//        if (y1 > y2)
+//        {
+//            qSwap(y1, y2);
+//            valuesSwaped = true;
+//        }
+//        width = x2 - x1;
+//        height = y2 - y1;
+
+//        if (type == StringHandler::ICON)
+//        {
+//            mpIconGraphicsView->setSceneRect(x1, y1, width, height);
+//            if (valuesSwaped)
+//                mpIconGraphicsView->addClassAnnotation();
+//        }
+//        else if (type == StringHandler::DIAGRAM)
+//        {
+//            mpDiagramGraphicsView->setSceneRect(x1, y1, width, height);
+//            if (valuesSwaped)
+//                mpIconGraphicsView->addClassAnnotation();
+//        }
+
         if (list.size() < 9)
             return;
-
+        // read the shapes
         shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(8)), '(', ')');
     }
     else if (pMainWindow->mpOMCProxy->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION2X)
@@ -2122,6 +2184,41 @@ void ProjectTab::getModelShapes(QString annotationString, int type)
         if (list.size() < 4)
             return;
 
+        // read the coordinate system values
+//        x1 = static_cast<QString>(list.at(0)).toFloat();
+//        y1 = static_cast<QString>(list.at(1)).toFloat();
+//        x2 = static_cast<QString>(list.at(2)).toFloat();
+//        y2 = static_cast<QString>(list.at(3)).toFloat();
+//        // according to modelica annotation standard, the first point of coordinate system should always be less than the second one.
+//        if (x1 > x2)
+//        {
+//            qSwap(x1, x2);
+//            valuesSwaped = true;
+//        }
+//        if (y1 > y2)
+//        {
+//            qSwap(y1, y2);
+//            valuesSwaped = true;
+//        }
+//        width = x2 - x1;
+//        height = y2 - y1;
+
+//        if (type == StringHandler::ICON)
+//        {
+//            mpIconGraphicsView->setSceneRect(x1, y1, width, height);
+//            if (valuesSwaped)
+//                mpIconGraphicsView->addClassAnnotation();
+//        }
+//        else if (type == StringHandler::DIAGRAM)
+//        {
+//            mpDiagramGraphicsView->setSceneRect(x1, y1, width, height);
+//            if (valuesSwaped)
+//                mpIconGraphicsView->addClassAnnotation();
+//        }
+
+        if (list.size() < 5)
+            return;
+        // read the shapes
         shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(4)), '(', ')');
     }
 
@@ -2287,8 +2384,8 @@ void ProjectTab::getModelIconDiagram()
 {
     MainWindow *pMainWindow = mpParentProjectTabWidget->mpParentMainWindow;
     QString iconAnnotationString = pMainWindow->mpOMCProxy->getIconAnnotation(mModelNameStructure);
-    QString diagramAnnotationString = pMainWindow->mpOMCProxy->getDiagramAnnotation(mModelNameStructure);
     getModelShapes(iconAnnotationString, StringHandler::ICON);
+    QString diagramAnnotationString = pMainWindow->mpOMCProxy->getDiagramAnnotation(mModelNameStructure);
     getModelShapes(diagramAnnotationString, StringHandler::DIAGRAM);
 }
 
@@ -2693,9 +2790,8 @@ void ProjectTabWidget::addProjectTab(ProjectTab *projectTab, QString modelName, 
 //! @see closeProjectTab(int index)
 void ProjectTabWidget::addNewProjectTab(QString modelName, QString modelStructure, int modelicaType)
 {
-    ProjectTab *newTab = new ProjectTab(modelicaType, StringHandler::ICON, false, modelStructure.isEmpty() ? false : true, this);
-    newTab->mModelName = modelName;
-    newTab->mModelNameStructure = modelStructure + modelName;
+    ProjectTab *newTab = new ProjectTab(modelName, modelStructure + modelName, modelicaType, StringHandler::ICON, false,
+                                        modelStructure.isEmpty() ? false : true, false, this);
     newTab->mpModelicaEditor->setText(mpParentMainWindow->mpOMCProxy->list(newTab->mModelNameStructure));
     newTab->mTabPosition = addTab(newTab, modelName);
     setCurrentWidget(newTab);
@@ -2708,15 +2804,14 @@ void ProjectTabWidget::addDiagramViewTab(QTreeWidgetItem *item, int column)
     Q_UNUSED(column);
 
     LibraryTreeNode *treeNode = dynamic_cast<LibraryTreeNode*>(item);
-    ProjectTab *newTab = new ProjectTab(mpParentMainWindow->mpOMCProxy->getClassRestriction(treeNode->mNameStructure),
-                                        StringHandler::DIAGRAM, true, false, this);
+    ProjectTab *newTab = new ProjectTab(treeNode->mName, treeNode->mNameStructure,
+                                        mpParentMainWindow->mpOMCProxy->getClassRestriction(treeNode->mNameStructure), StringHandler::DIAGRAM,
+                                        true, false, false, this);
     newTab->mIsSaved = true;
-    newTab->mModelName = treeNode->mName;
-    newTab->mModelNameStructure = treeNode->mNameStructure;
     newTab->mTabPosition = addTab(newTab, StringHandler::getLastWordAfterDot(treeNode->mNameStructure));
 
     Component *diagram;
-    QString result = mpParentMainWindow->mpOMCProxy->getDiagramAnnotation(treeNode->toolTip(0));
+    QString result = mpParentMainWindow->mpOMCProxy->getDiagramAnnotation(treeNode->mNameStructure);
     diagram = new Component(result, newTab->mModelName, newTab->mModelNameStructure, QPointF (0,0),
                             StringHandler::DIAGRAM, false, mpParentMainWindow->mpOMCProxy,
                             newTab->mpDiagramGraphicsView);
@@ -3168,7 +3263,7 @@ void ProjectTabWidget::disableProjectToolbar()
 
 void ProjectTabWidget::tabChanged()
 {
-    mpParentMainWindow->mpComponentBrowser->addComponentBrowserNode();
+    mpParentMainWindow->mpModelBrowser->addModelBrowserNode();
 }
 
 void ProjectTabWidget::keyPressEvent(QKeyEvent *event)

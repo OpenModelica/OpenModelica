@@ -46,17 +46,17 @@ class DocumentationWidget : public QWidget
 {
     Q_OBJECT
 private:
-
+    bool mIsCustomModel;
 public slots:
     void editDocumentation();
     void saveChanges();
-
 public:
     DocumentationWidget(MainWindow *pParent);
     ~DocumentationWidget();
     void show(QString className);
     void showDocumentationEditView(QString className);
-
+    void setIsCustomModel(bool isCustomModel);
+    bool isCustomModel();
 
     MainWindow *mpParentMainWindow;
     DocumentationViewer *mpDocumentationViewer;
@@ -67,7 +67,6 @@ public:
     QPushButton *mpSaveButton;
     QDialogButtonBox *mpButtonBox;
     QString mClassName;
-
 };
 class ModelicaTextSettings;
 

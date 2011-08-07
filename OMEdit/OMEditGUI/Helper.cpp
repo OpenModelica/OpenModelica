@@ -50,8 +50,6 @@ QString Helper::tmpPath = QString(getenv("OPENMODELICAHOME")).replace("\\", "/")
 // Don't randomize the path as then it becomes annoying to remove all dirs
 QString Helper::tmpPath = QString("/tmp/OMEdit");
 #endif
-QString Helper::settingsFileName = QString("OMEdit-Settings.xml");
-QString Helper::documentationBaseUrl = QString("/Modelica/Images/");
 QString Helper::readOnly = QString("Read-Only");
 QString Helper::writeAble = QString("Writeable");
 QString Helper::iconView = QString("Icon View");
@@ -62,8 +60,8 @@ int Helper::viewWidth = 2000;
 int Helper::viewHeight = 2000;
 qreal Helper::globalDiagramXScale = 1.0;
 qreal Helper::globalDiagramYScale = 1.0;
-qreal Helper::globalIconXScale = 0.15;
-qreal Helper::globalIconYScale = 0.15;
+qreal Helper::globalIconXScale = 0.12;
+qreal Helper::globalIconYScale = 0.12;
 int Helper::treeIndentation = 13;
 QSize Helper::iconSize = QSize(20, 20);
 QSize Helper::buttonIconSize = QSize(20, 20);

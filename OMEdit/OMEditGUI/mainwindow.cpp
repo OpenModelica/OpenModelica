@@ -116,12 +116,12 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     libdock->setWidget(mpLibrary);
     addDockWidget(Qt::LeftDockWidgetArea, libdock);
 
-    //create a dock for the component browser
-    compbrowsedock = new QDockWidget(tr("Model Browser"), this);
-    compbrowsedock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    mpComponentBrowser = new ComponentBrowserWidget(this);
-    compbrowsedock->setWidget(mpComponentBrowser);
-    addDockWidget(Qt::LeftDockWidgetArea, compbrowsedock);
+    //create a dock for the model browser
+    modelBrowserdock = new QDockWidget(tr("Model Browser"), this);
+    modelBrowserdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    mpModelBrowser = new ModelBrowserWidget(this);
+    modelBrowserdock->setWidget(mpModelBrowser);
+    addDockWidget(Qt::LeftDockWidgetArea, modelBrowserdock);
 
     //Set dock widget corner owner
     setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
@@ -579,11 +579,14 @@ void MainWindow::createMenus()
     searchMSLAction->setIcon(QIcon(":/Resources/icons/search.png"));
     QAction *libAction = libdock->toggleViewAction();
     libAction->setText(tr("Components"));
+    QAction *modelBrowserAction = modelBrowserdock->toggleViewAction();
+    modelBrowserAction->setText(tr("Model Browser"));
     QAction *messageAction = messagedock->toggleViewAction();
     messageAction->setText(tr("Messages"));
 
     menuView->addAction(searchMSLAction);
     menuView->addAction(libAction);
+    menuView->addAction(modelBrowserAction);
     menuView->addAction(messageAction);
     //menuView->addAction(fileToolBar->toggleViewAction());
     //menuView->addAction(editToolBar->toggleViewAction());

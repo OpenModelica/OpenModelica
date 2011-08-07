@@ -274,16 +274,19 @@ void ModelicaTree::openProjectTab(QTreeWidgetItem *item, int column)
         ProjectTab *newTab;
         if (treeNode->mParentName.isEmpty())
         {
-            newTab = new ProjectTab(treeNode->mType, StringHandler::DIAGRAM, false, false, pMainWindow->mpProjectTabs);
+            newTab = new ProjectTab(treeNode->mName, treeNode->mNameStructure, treeNode->mType, StringHandler::DIAGRAM, false, false, true,
+                                    pMainWindow->mpProjectTabs);
         }
         else
         {
-            newTab = new ProjectTab(treeNode->mType, StringHandler::DIAGRAM, false, true, pMainWindow->mpProjectTabs);
+            newTab = new ProjectTab(treeNode->mName, treeNode->mNameStructure, treeNode->mType, StringHandler::DIAGRAM, false, true, true,
+                                    pMainWindow->mpProjectTabs);
         }
         newTab->mpModelicaEditor->blockSignals(true);
         newTab->mpModelicaEditor->setText(pMainWindow->mpOMCProxy->list(treeNode->mNameStructure));
         newTab->mpModelicaEditor->blockSignals(false);
         pMainWindow->mpProjectTabs->addProjectTab(newTab, treeNode->mName, treeNode->mNameStructure);
+        newTab->mOpenMode = false;
         // make the icon view visible and focused for key press events
         newTab->showDiagramView(true);
     }
@@ -518,7 +521,7 @@ void ModelicaTree::loadingLibraryComponent(ModelicaTreeNode *treeNode, QString c
 
 void ModelicaTree::tabChanged()
 {
-  mpParentLibraryWidget->mpParentMainWindow->mpComponentBrowser->addComponentBrowserNode();
+  mpParentLibraryWidget->mpParentMainWindow->mpModelBrowser->addModelBrowserNode();
 }
 
 
@@ -884,6 +887,7 @@ void LibraryTree::viewDocumentation()
     MainWindow *pMainWindow = mpParentLibraryWidget->mpParentMainWindow;
     pMainWindow->documentationdock->show();
     LibraryTreeNode *pItem = dynamic_cast<LibraryTreeNode*>(mpParentLibraryWidget->mSelectedLibraryNode);
+    pMainWindow->mpDocumentationWidget->setIsCustomModel(false);
     pMainWindow->mpDocumentationWidget->show(pItem->mNameStructure);
 }
 
@@ -943,7 +947,7 @@ void LibraryTree::loadingLibraryComponent(LibraryTreeNode *treeNode, QString cla
 void LibraryTree::tabChanged()
 {
 
-  mpParentLibraryWidget->mpParentMainWindow->mpComponentBrowser->addComponentBrowserNode();
+  mpParentLibraryWidget->mpParentMainWindow->mpModelBrowser->addModelBrowserNode();
 }
 
 void LibraryTree::treeItemPressed(QTreeWidgetItem *item)
@@ -1379,7 +1383,6 @@ void LibraryWidget::loadModel(QString modelText, QStringList modelsList)
 
 void LibraryWidget::addComponentObject(LibraryComponent *libraryComponent)
 {
-
     mComponentsList.append(libraryComponent);
 }
 
@@ -1395,26 +1398,19 @@ Component* LibraryWidget::getComponentObject(QString className)
 
 LibraryComponent* LibraryWidget::getLibraryComponentObject(QString className)
 {
-
-
     foreach (LibraryComponent *libraryComponent, mComponentsList)
     {
         if (libraryComponent->mClassName == className)
-{
-
-    return libraryComponent;
-
-
-}
+        {
+            return libraryComponent;
+        }
     }
     return 0;
 }
 
-
 void LibraryWidget::addModelicaComponentObject(LibraryComponent *libraryComponent)
 {
     mModelicaComponentsList.append(libraryComponent);
-
 }
 
 Component* LibraryWidget::getModelicaComponentObject(QString className)
@@ -1437,8 +1433,6 @@ LibraryComponent* LibraryWidget::getModelicaLibraryComponentObject(QString class
     return 0;
 }
 
-
-
 void LibraryWidget::updateNodeText(QString text, QString textStructure, ModelicaTreeNode *node)
 {
     ModelicaTreeNode *treeNode;
@@ -1453,14 +1447,12 @@ void LibraryWidget::updateNodeText(QString text, QString textStructure, Modelica
     {
         pCurrentTab->updateTabName(text, textStructure);
     }
-
     // udate the node
     treeNode->mName = text;
     treeNode->mNameStructure = textStructure;
     treeNode->setText(0, text);
     QStringList info = mpParentMainWindow->mpOMCProxy->getClassInformation(textStructure);
     treeNode->setToolTip(0, StringHandler::createTooltip(info, text, textStructure));
-
     // if the node has childs
     int count = treeNode->childCount();
     for (int i = 0 ; i < count ; i++)
@@ -1544,7 +1536,7 @@ void LibraryLoader::run()
         emit loadLibraryComponent(mpModelicaTreeNode, mClassName);
 }
 
-ComponentBrowserTreeNode::ComponentBrowserTreeNode(QString text, QString parentName,QString classname, QString namestruc ,QString tooltip, int type, QTreeWidget *parent)
+ModelBrowserTreeNode::ModelBrowserTreeNode(QString text, QString parentName,QString classname, QString namestruc ,QString tooltip, int type, QTreeWidget *parent)
     : QTreeWidgetItem(parent)
 {
     mType = type;
@@ -1556,10 +1548,10 @@ ComponentBrowserTreeNode::ComponentBrowserTreeNode(QString text, QString parentN
     setToolTip(0, tooltip);
 }
 
-ComponentBrowserTree::ComponentBrowserTree(ComponentBrowserWidget *parent)
+ModelBrowserTree::ModelBrowserTree(ModelBrowserWidget *parent)
     : QTreeWidget(parent)
 {
-    mpParentComponentBrowserWidget = parent;
+    mpParentModelBrowserWidget = parent;
     setFrameShape(QFrame::StyledPanel);
     setHeaderLabel(tr("Outline"));
     setIconSize(Helper::iconSize);
@@ -1568,21 +1560,19 @@ ComponentBrowserTree::ComponentBrowserTree(ComponentBrowserWidget *parent)
     setContextMenuPolicy(Qt::CustomContextMenu);
     setExpandsOnDoubleClick(false);
 
-    connect(mpParentComponentBrowserWidget, SIGNAL(addComponentBrowserTreeNode()), SLOT(editComponentBrowser()));
+    connect(mpParentModelBrowserWidget, SIGNAL(addModelBrowserTreeNode()), SLOT(editModelBrowser()));
     connect(this, SIGNAL(itemExpanded(QTreeWidgetItem*)), SLOT(expandTree(QTreeWidgetItem*)));
 }
-ComponentBrowserTree::~ComponentBrowserTree()
+ModelBrowserTree::~ModelBrowserTree()
 {
     // delete all the items in the tree
     for (int i = 0; i < topLevelItemCount(); ++i)
         qDeleteAll(topLevelItem(i)->takeChildren());
 }
 
-
-
-ComponentBrowserTreeNode* ComponentBrowserTree::getBrowserNode(QString name)
+ModelBrowserTreeNode* ModelBrowserTree::getBrowserNode(QString name)
 {
-    foreach (ComponentBrowserTreeNode *node, mComponentBrowserTreeNodeList)
+    foreach (ModelBrowserTreeNode *node, mModelBrowserTreeNodeList)
     {
         if (node->mNameStructure.compare(name) == 0)
             return node;
@@ -1590,71 +1580,70 @@ ComponentBrowserTreeNode* ComponentBrowserTree::getBrowserNode(QString name)
     return 0;
 }
 
-void ComponentBrowserTree::deleteBrowserNode(ComponentBrowserTreeNode *item)
+void ModelBrowserTree::deleteBrowserNode(ModelBrowserTreeNode *item)
 {
     int count = item->childCount();
 
     for (int i = 0 ; i < count ; i++)
     {
-        ComponentBrowserTreeNode *treeNode = dynamic_cast<ComponentBrowserTreeNode*>(item->child(i));
+        ModelBrowserTreeNode *treeNode = dynamic_cast<ModelBrowserTreeNode*>(item->child(i));
         deleteBrowserNode(treeNode);
     }
     // Delete the node from list as well
-    mComponentBrowserTreeNodeList.removeOne(item);
+    mModelBrowserTreeNodeList.removeOne(item);
 }
 
-void ComponentBrowserTree::addBrowserNode(QString name, int type, QString className, QString parentName, QString parentStructure)
+void ModelBrowserTree::addBrowserNode(QString name, int type, QString className, QString parentName, QString parentStructure)
 {
-    ComponentBrowserTreeNode *newTreePost;
+    ModelBrowserTreeNode *newTreePost;
     if (parentName.isEmpty())
     {
-        QStringList info = mpParentComponentBrowserWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(className);
-        newTreePost = new ComponentBrowserTreeNode(name, parentName,className, parentStructure + name, StringHandler::createTooltip(info, name, parentStructure + name), type, this);
+        QStringList info = mpParentModelBrowserWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(className);
+        newTreePost = new ModelBrowserTreeNode(name, parentName,className, parentStructure + name, StringHandler::createTooltip(info, name, parentStructure + name), type, this);
         insertTopLevelItem(0, newTreePost);
     }
     else
     {
-        QStringList info = mpParentComponentBrowserWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(className);
-        newTreePost = new ComponentBrowserTreeNode(name, parentName,className, parentStructure + name , StringHandler::createTooltip(info, name, parentStructure + name), type);
-        ComponentBrowserTreeNode *treeNode = getBrowserNode(StringHandler::removeLastDot(parentStructure));
+        QStringList info = mpParentModelBrowserWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(className);
+        newTreePost = new ModelBrowserTreeNode(name, parentName,className, parentStructure + name , StringHandler::createTooltip(info, name, parentStructure + name), type);
+        ModelBrowserTreeNode *treeNode = getBrowserNode(StringHandler::removeLastDot(parentStructure));
 
         treeNode->addChild(newTreePost);
     }
     newTreePost->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
-    mComponentBrowserTreeNodeList.append(newTreePost);
+    mModelBrowserTreeNodeList.append(newTreePost);
 }
 
-void ComponentBrowserTree::addBrowserChild(QString name, QString className,QString parentStructure)
+void ModelBrowserTree::addBrowserChild(QString name, QString className,QString parentStructure)
 {
     int componentType;
     // look for inherited components of a model
-    int inheritanceCount = mpParentComponentBrowserWidget->mpParentMainWindow->mpOMCProxy->getInheritanceCount(className);
+    int inheritanceCount = mpParentModelBrowserWidget->mpParentMainWindow->mpOMCProxy->getInheritanceCount(className);
     for(int i = 1 ; i <= inheritanceCount ; i++)
     {
-        QString inheritedClass = mpParentComponentBrowserWidget->mpParentMainWindow->mpOMCProxy->getNthInheritedClass(className, i);
-        componentType = mpParentComponentBrowserWidget->mpParentMainWindow->mpOMCProxy->getClassRestriction(inheritedClass);
+        QString inheritedClass = mpParentModelBrowserWidget->mpParentMainWindow->mpOMCProxy->getNthInheritedClass(className, i);
+        componentType = mpParentModelBrowserWidget->mpParentMainWindow->mpOMCProxy->getClassRestriction(inheritedClass);
         //adding nodes to the tree
         addBrowserNode(StringHandler::getLastWordAfterDot(inheritedClass), componentType,inheritedClass, name,
                         QString(parentStructure));
     }
 
     // look for components of a model
-    QList<ComponentsProperties*> components = mpParentComponentBrowserWidget->mpParentMainWindow->mpOMCProxy->getComponents(className);
+    QList<ComponentsProperties*> components = mpParentModelBrowserWidget->mpParentMainWindow->mpOMCProxy->getComponents(className);
     foreach(ComponentsProperties *componentProperties , components)
     {
-        componentType = mpParentComponentBrowserWidget->mpParentMainWindow->mpOMCProxy->getClassRestriction(componentProperties->getClassName());
+        componentType = mpParentModelBrowserWidget->mpParentMainWindow->mpOMCProxy->getClassRestriction(componentProperties->getClassName());
         //adding nodes to the tree
-        addBrowserNode(componentProperties->getName(), componentType,componentProperties->getClassName(),  name,
-                        QString(parentStructure));
+        addBrowserNode(componentProperties->getName(), componentType,componentProperties->getClassName(),  name, QString(parentStructure));
     }
 }
 
-void ComponentBrowserTree::editComponentBrowser()
+void ModelBrowserTree::editModelBrowser()
 {
     //deleting information of the previous model from the browser
-    if (!mComponentBrowserTreeNodeList.isEmpty())
+    if (!mModelBrowserTreeNodeList.isEmpty())
     {
-        ComponentBrowserTreeNode *node = mComponentBrowserTreeNodeList.first();
+        ModelBrowserTreeNode *node = mModelBrowserTreeNodeList.first();
         deleteBrowserNode(node);
 
         if (node->childCount())
@@ -1662,7 +1651,7 @@ void ComponentBrowserTree::editComponentBrowser()
         delete node;
     }
     //getting the currently opened project tab
-    ProjectTabWidget *pProjectTab = mpParentComponentBrowserWidget->mpParentMainWindow->mpProjectTabs;
+    ProjectTabWidget *pProjectTab = mpParentModelBrowserWidget->mpParentMainWindow->mpProjectTabs;
     ProjectTab *pCurrentTab= pProjectTab->getCurrentTab();
 
     if (pCurrentTab)
@@ -1670,17 +1659,17 @@ void ComponentBrowserTree::editComponentBrowser()
         int type= pProjectTab->getCurrentTab()->mModelicaType;
         //adding the current model
         addBrowserNode(pCurrentTab->mModelName, type, pCurrentTab->mModelNameStructure, tr(""), tr(""));
-        mComponentBrowserTreeNodeList.first()->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+        mModelBrowserTreeNodeList.first()->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
     }
 
 }
 
-void ComponentBrowserTree::expandTree(QTreeWidgetItem *item)
+void ModelBrowserTree::expandTree(QTreeWidgetItem *item)
 {
     //load the components(child) only if they have not been loaded once.
     if(item->childCount()==0)
     {
-        ComponentBrowserTreeNode *pItem = dynamic_cast<ComponentBrowserTreeNode*>(item);
+        ModelBrowserTreeNode *pItem = dynamic_cast<ModelBrowserTreeNode*>(item);
         addBrowserChild(pItem->mName, pItem->mClassName,pItem->mNameStructure + ".");
     }
     else
@@ -1689,25 +1678,25 @@ void ComponentBrowserTree::expandTree(QTreeWidgetItem *item)
     }
 }
 
-ComponentBrowserWidget::ComponentBrowserWidget(MainWindow *parent)
+ModelBrowserWidget::ModelBrowserWidget(MainWindow *parent)
     : QWidget(parent)
 {
     mpParentMainWindow = parent;
-    mpComponentBrowserTree = new ComponentBrowserTree(this);
+    mpModelBrowserTree = new ModelBrowserTree(this);
 
     mpGrid = new QVBoxLayout(this);
     mpGrid->setContentsMargins(0, 0, 0, 0);
-    mpGrid->addWidget(mpComponentBrowserTree);
+    mpGrid->addWidget(mpModelBrowserTree);
 
     setLayout(mpGrid);
 }
 
-ComponentBrowserWidget::~ComponentBrowserWidget()
+ModelBrowserWidget::~ModelBrowserWidget()
 {
-    delete mpComponentBrowserTree;   
+    delete mpModelBrowserTree;   
 }
 
-void ComponentBrowserWidget::addComponentBrowserNode()
+void ModelBrowserWidget::addModelBrowserNode()
 {
-    emit addComponentBrowserTreeNode();
+    emit addModelBrowserTreeNode();
 }

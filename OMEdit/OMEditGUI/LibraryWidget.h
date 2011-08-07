@@ -57,10 +57,10 @@ class MainWindow;
 class Component;
 class OMCProxy;
 class LibraryWidget;
-class ComponentBrowserWidget;
+class ModelBrowserWidget;
 class ModelicaTree;
 class LibraryComponent;
-class ComponentBrowserTree;
+class ModelBrowserTree;
 class ModelicaTreeNode : public QTreeWidgetItem
 {
 public:
@@ -288,10 +288,11 @@ signals:
     void loadLibraryComponent(ModelicaTreeNode *treeNode, QString className);
 };
 
-class ComponentBrowserTreeNode : public QTreeWidgetItem
+class ModelBrowserTreeNode : public QTreeWidgetItem
 {
 public:
-    ComponentBrowserTreeNode(QString text, QString parentName,QString classname, QString namestruc, QString tooltip, int type, QTreeWidget *parent = 0);
+    ModelBrowserTreeNode(QString text, QString parentName, QString classname, QString namestruc, QString tooltip, int type,
+                         QTreeWidget *parent = 0);
     QString mClassName;
     int mType;
     QString mName;
@@ -299,46 +300,43 @@ public:
     QString mNameStructure;
 };
 
-class ComponentBrowserTree : public QTreeWidget
+class ModelBrowserTree : public QTreeWidget
 {
     Q_OBJECT
 public:
-    ComponentBrowserTree(ComponentBrowserWidget *parent);
-    ~ComponentBrowserTree();
+    ModelBrowserTree(ModelBrowserWidget *parent);
+    ~ModelBrowserTree();
     //void createActions();
-    ComponentBrowserTreeNode* getBrowserNode(QString name);
+    ModelBrowserTreeNode* getBrowserNode(QString name);
     void addBrowserNode(QString name, int type, QString className, QString parentName=QString(), QString parentStructure=QString());
-
-    void deleteBrowserNode(ComponentBrowserTreeNode *item);
+    void deleteBrowserNode(ModelBrowserTreeNode *item);
     void addBrowserChild(QString name,QString className,QString parentStructure=QString());
-    ComponentBrowserWidget *mpParentComponentBrowserWidget;
+    ModelBrowserWidget *mpParentModelBrowserWidget;
 private:
-    QList<ComponentBrowserTreeNode*> mComponentBrowserTreeNodeList;    
+    QList<ModelBrowserTreeNode*> mModelBrowserTreeNodeList;
 private slots:
     void expandTree(QTreeWidgetItem *item);
 
 public slots:
-    void editComponentBrowser();
+    void editModelBrowser();
 };
 
-class ComponentBrowserWidget : public QWidget
+class ModelBrowserWidget : public QWidget
 {
     Q_OBJECT
 public:
-    ComponentBrowserTree *mpComponentBrowserTree;
-    QTabWidget *mpComponentBrowserTabs;
+    ModelBrowserTree *mpModelBrowserTree;
     //Member functions
-    ComponentBrowserWidget(MainWindow *parent);
-    ~ComponentBrowserWidget();
-    void addComponentBrowserNode();
+    ModelBrowserWidget(MainWindow *parent);
+    ~ModelBrowserWidget();
+    void addModelBrowserNode();
     MainWindow *mpParentMainWindow;
-    QTreeWidgetItem *mSelectedLibraryNode;
+    QTreeWidgetItem *mSelectedModelBrowserNode;
 signals:
-    void addComponentBrowserTreeNode();
+    void addModelBrowserTreeNode();
 private:
     //Member variables
     QVBoxLayout *mpGrid;
 };
-
 
 #endif // LIBRARYWIDGET_H

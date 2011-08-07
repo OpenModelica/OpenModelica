@@ -80,7 +80,7 @@ class GraphicsView;
 class GraphicsScene;
 class SearchMSLWidget;
 class LibraryWidget;
-class ComponentBrowserWidget;
+class ModelBrowserWidget;
 class ModelCreator;
 class SimulationWidget;
 class PlotWindowContainer;
@@ -103,7 +103,7 @@ public:
     QGridLayout *mpTabgrid;
     SearchMSLWidget *mpSearchMSLWidget;
     LibraryWidget *mpLibrary;
-    ComponentBrowserWidget *mpComponentBrowser;
+    ModelBrowserWidget *mpModelBrowser;
     SimulationWidget *mpSimulationWidget;
     PlotWindowContainer *mpPlotWindowContainer;
     InteractiveSimulationTabWidget *mpInteractiveSimualtionTabWidget;
@@ -187,7 +187,7 @@ public:
     QDockWidget *plotdock;
     QDockWidget *documentationdock;
     QDockWidget *searchMSLdock;
-    QDockWidget *compbrowsedock;
+    QDockWidget *modelBrowserdock;
 
     bool mExitApplication;
 
