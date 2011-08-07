@@ -94,7 +94,6 @@ GraphicsView::GraphicsView(int iconType, ProjectTab *parent)
     connect(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->gridLinesAction,
             SIGNAL(toggled(bool)), this, SLOT(showGridLines(bool)));
     connect(this, SIGNAL(currentChange(int)),mpParentProjectTab->mpParentProjectTabWidget, SLOT(tabChanged()));
-    addClassAnnotation();
 }
 
 void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
