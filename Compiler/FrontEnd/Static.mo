@@ -9615,7 +9615,43 @@ function: elabCref
   output Env.Cache outCache;
   output Option<tuple<DAE.Exp,DAE.Properties,DAE.Attributes>> res;
 algorithm
-  (outCache,res) := matchcontinue (inCache,inEnv,inComponentRef,inImplict,performVectorization,inPrefix,info)
+  (outCache,res) := elabCref1(inCache,inEnv,inComponentRef,inImplict,performVectorization,inPrefix,true,info);
+end elabCref;
+
+public function elabCrefNoEval "
+  Some functions expect a DAE.ComponentRef back and use this instead of elabCref :)
+"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.ComponentRef inComponentRef;
+  input Boolean inImplict "implicit instantiation";
+  input Boolean performVectorization "true => generates vectorized expressions, {v[1],v[2],...}";
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output Option<tuple<DAE.Exp,DAE.Properties,DAE.Attributes>> res;
+algorithm
+  (outCache,res) := elabCref1(inCache,inEnv,inComponentRef,inImplict,performVectorization,inPrefix,false,info);
+end elabCrefNoEval;
+
+protected function elabCref1 "
+function: elabCref
+  Elaborate on a component reference.  Check the type of the
+  component referred to, and check if the environment contains
+  either a constant binding for that variable, or if it contains an
+  equation binding with a constant expression."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.ComponentRef inComponentRef;
+  input Boolean inImplict "implicit instantiation";
+  input Boolean performVectorization "true => generates vectorized expressions, {v[1],v[2],...}";
+  input Prefix.Prefix inPrefix;
+  input Boolean evalCref;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output Option<tuple<DAE.Exp,DAE.Properties,DAE.Attributes>> res;
+algorithm
+  (outCache,res) := matchcontinue (inCache,inEnv,inComponentRef,inImplict,performVectorization,inPrefix,evalCref,info)
     local
       DAE.ComponentRef c_1;
       DAE.Const const,const1,const2;
@@ -9628,7 +9664,7 @@ algorithm
       list<Env.Frame> env;
       Absyn.ComponentRef c;
       Env.Cache cache;
-      Boolean impl,doVect,isBuiltinFn,isBuiltinFnOrInlineBuiltin;
+      Boolean impl,doVect,isBuiltinFn,isBuiltinFnOrInlineBuiltin,hasZeroSizeDim;
       DAE.ExpType et;
       Absyn.InnerOuter io;
       String s,scope,n;
@@ -9662,7 +9698,7 @@ algorithm
       Absyn.Path tpath;      
 
     // wildcard
-    case (cache,env,c as Absyn.WILD(),impl,doVect,_,info)
+    case (cache,env,c as Absyn.WILD(),impl,doVect,_,_,info)
       equation
         t = (DAE.T_ANYTYPE(NONE()),NONE());
         et = Types.elabType(t);
@@ -9672,10 +9708,10 @@ algorithm
 
     // MetaModelica arrays are only used in function context as IDENT, and at most one subscript
     // No vectorization is performed
-    case (cache,env,c as Absyn.CREF_IDENT(name=id, subscripts={Absyn.SUBSCRIPT(e)}),impl,doVect,pre,info)
+    case (cache,env,c as Absyn.CREF_IDENT(name=id, subscripts={Absyn.SUBSCRIPT(e)}),impl,doVect,pre,evalCref,info)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        (cache,SOME((exp1,DAE.PROP((DAE.T_META_ARRAY(t),_), const1),attr))) = elabCref(cache,env,Absyn.CREF_IDENT(id,{}),false,false,pre,info);
+        (cache,SOME((exp1,DAE.PROP((DAE.T_META_ARRAY(t),_), const1),attr))) = elabCref1(cache,env,Absyn.CREF_IDENT(id,{}),false,false,pre,evalCref,info);
         (cache,exp2,DAE.PROP((DAE.T_INTEGER(_),_), const2),_) = elabExp(cache,env,e,impl,NONE(),false,pre,info);
         const = Types.constAnd(const1,const2);
         expASUB = Expression.makeASUB(exp1,{exp2});
@@ -9683,21 +9719,22 @@ algorithm
         (cache,SOME((expASUB,DAE.PROP(t, const),attr)));
 
     // a normal cref
-    case (cache,env,c,impl,doVect,pre,info) /* impl */
+    case (cache,env,c,impl,doVect,pre,evalCref,info) /* impl */
       equation
         c = replaceEnd(c);
-        (cache,c_1,const) = elabCrefSubs(cache, env, c, Prefix.NOPRE(), impl, info);
+        (cache,c_1,const,hasZeroSizeDim) = elabCrefSubs(cache, env, c, Prefix.NOPRE(), impl, false, info);
         (cache,attr,t,binding,forIteratorConstOpt,splicedExpData,_,_,_) = Lookup.lookupVar(cache, env, c_1);
         variability = applySubscriptsVariability(DAEUtil.getAttrVariability(attr), const);
         attr = DAEUtil.setAttrVariability(attr, variability);
         (cache,exp,const,attr) = elabCref2(cache, env, c_1, attr, forIteratorConstOpt, t, binding, doVect, splicedExpData, pre, info);
         exp = makeASUBArrayAdressing(c,cache,env,impl,exp,splicedExpData,doVect,pre,info);
         t = fixEnumerationType(t);
+        (exp,const) = evaluateEmptyVariable(hasZeroSizeDim and evalCref,exp,t,const);
       then
         (cache,SOME((exp,DAE.PROP(t, const),attr)));
         
     // An enumeration type => array of enumeration literals.
-    case (cache, env, c, impl, doVect, pre, info)
+    case (cache, env, c, impl, doVect, pre, evalCref, info)
       equation
         c = replaceEnd(c);
         path = Absyn.crefToPath(c);
@@ -9711,7 +9748,7 @@ algorithm
         (cache,SOME((exp,DAE.PROP(t, DAE.C_CONST()),DAE.dummyAttrConst /* RO */)));
         
     // MetaModelica Partial Function
-    case (cache,env,c,impl,doVect,pre,info)
+    case (cache,env,c,impl,doVect,pre,evalCref,info)
       equation
         //true = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
         path = Absyn.crefToPath(c);
@@ -9731,14 +9768,14 @@ algorithm
         (cache,SOME((exp,DAE.PROP(t,DAE.C_CONST()),DAE.dummyAttrConst /* RO */)));
     
     // MetaModelica extension
-    case (cache,env,Absyn.CREF_IDENT("NONE",{}),impl,doVect,_,info)
+    case (cache,env,Absyn.CREF_IDENT("NONE",{}),impl,doVect,_,_,info)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         Error.addSourceMessage(Error.META_NONE_CREF, {}, info);
       then
         (cache,NONE());
     
-    case (cache,env,c,impl,doVect,pre,info)
+    case (cache,env,c,impl,doVect,pre,_,info)
       equation
         // enabled with +d=failtrace
         true = RTOpts.debugFlag("failtrace");
@@ -9764,16 +9801,65 @@ algorithm
       then
         (cache,NONE());*/    
     
-    case (cache,env,c,impl,doVect,pre,info)
+    case (cache,env,c,impl,doVect,pre,_,info)
       equation
-        failure((_,_,_) = elabCrefSubs(cache,env, c, Prefix.NOPRE(),impl,info));
+        failure((_,_,_,_) = elabCrefSubs(cache,env, c, Prefix.NOPRE(),impl,false,info));
         s = Dump.printComponentRefStr(c);
         scope = Env.printEnvPathStr(env);
         Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR, {s,scope}, info); // - no need to add prefix info since problem only depends on the scope?
       then
         (cache,NONE());
   end matchcontinue;
-end elabCref;
+end elabCref1;
+
+protected function evaluateEmptyVariable
+  "A variable with a 0-length dimension can be evaluated.
+  This is good to do because otherwise the C-code contains references to non-existing variables"
+  input Boolean hasZeroSizeDim;
+  input DAE.Exp exp;
+  input DAE.Type ty;
+  input DAE.Const c;
+  output DAE.Exp oexp;
+  output DAE.Const oc;
+algorithm
+  (oexp,oc) := matchcontinue (hasZeroSizeDim,exp,ty,c)
+    local
+      Boolean sc,a;
+      DAE.ExpType et;
+      list<DAE.Subscript> ss;
+      DAE.ComponentRef cr;
+      list<DAE.Exp> sub;
+    case (true,DAE.ASUB(sub=sub),ty,c)
+      equation
+        // TODO: Use a DAE.ERROR() or something if this has subscripts?
+        a = Types.isArray(ty);
+        sc = boolNot(a);
+        et = Types.elabType(ty);
+        exp = DAE.ARRAY(et,sc,{});
+        exp = Expression.makeASUB(exp,sub);
+      then (exp,c);
+
+    case (true,DAE.CREF(componentRef=cr),ty,c)
+      equation
+        a = Types.isArray(ty);
+        sc = boolNot(a);
+        et = Types.elabType(ty);
+        {} = ComponentReference.crefLastSubs(cr);
+        exp = DAE.ARRAY(et,sc,{});
+      then (exp,c);
+    case (true,DAE.CREF(componentRef=cr),ty,c)
+      equation
+        // TODO: Use a DAE.ERROR() or something if this has subscripts?
+        a = Types.isArray(ty);
+        sc = boolNot(a);
+        et = Types.elabType(ty);
+        (ss as _::_) = ComponentReference.crefLastSubs(cr);
+        exp = DAE.ARRAY(et,sc,{});
+        exp = Expression.makeASUB(exp,Util.listMap(ss,Expression.subscriptExp));
+      then (exp,c);
+    case (_,exp,_,c) then (exp,c);
+  end matchcontinue;
+end evaluateEmptyVariable;
 
 public function fixEnumerationType
   "Removes the index from an enumeration type."
@@ -11049,14 +11135,16 @@ protected function elabCrefSubs
   input Absyn.ComponentRef inComponentRef;
   input Prefix.Prefix crefPrefix "the accumulated cref, required for lookup";
   input Boolean inBoolean;
+  input Boolean hasZeroSizeDim;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.ComponentRef outComponentRef;
   output DAE.Const outConst "The constness of the subscripts. Note: This is not the same as
   the constness of a cref with subscripts! (just becase x[1,2] has a constant subscript list does
   not mean that the variable x[1,2] is constant)";
+  output Boolean outHasZeroSizeDim;
 algorithm
-  (outCache,outComponentRef,outConst) := matchcontinue (inCache,inEnv,inComponentRef,crefPrefix,inBoolean,info)
+  (outCache,outComponentRef,outConst,outHasZeroSizeDim) := matchcontinue (inCache,inEnv,inComponentRef,crefPrefix,inBoolean,hasZeroSizeDim,info)
     local
       DAE.Type t;
       list<DAE.Dimension> sl;
@@ -11089,7 +11177,7 @@ algorithm
     */
     
     // IDENT
-    case (cache,env,Absyn.CREF_IDENT(name = id,subscripts = ss),crefPrefix,impl,info)
+    case (cache,env,Absyn.CREF_IDENT(name = id,subscripts = ss),crefPrefix,impl,hasZeroSizeDim,info)
       equation
         // Debug.traceln("Try elabSucscriptsDims " +& id);
         (cache,cr) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,crefPrefix,ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
@@ -11097,34 +11185,35 @@ algorithm
         // print("elabCrefSubs type of: " +& id +& " is " +& Types.printTypeStr(t) +& "\n");
         // Debug.traceln("    elabSucscriptsDims " +& id +& " got var");
         ty = Types.elabType(t);
+        ((_,hasZeroSizeDim)) = Types.traverseType((t,hasZeroSizeDim),Types.isZeroLengthArray);
         sl = Types.getDimensions(t);
         /*Constant evaluate subscripts on form x[1,p,q] where p,q are constants or parameters*/
         (cache,ss_1,const) = elabSubscriptsDims(cache,env, ss, sl, impl,crefPrefix,info);
       then       
-        (cache,ComponentReference.makeCrefIdent(id,ty,ss_1),const);
+        (cache,ComponentReference.makeCrefIdent(id,ty,ss_1),const,hasZeroSizeDim);
         
     // QUAL,with no subscripts => looking for var in the top env!
-    case (cache,env,Absyn.CREF_QUAL(name = id,subscripts = {},componentRef = subs),crefPrefix,impl,info)
+    case (cache,env,Absyn.CREF_QUAL(name = id,subscripts = {},componentRef = subs),crefPrefix,impl,hasZeroSizeDim,info)
       equation
         (cache,cr) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,crefPrefix,ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
         //print("env:");print(Env.printEnvStr(env));print("\n");
         (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr);
         ty = Types.elabType(t);
         crefPrefix = PrefixUtil.prefixAdd(id,{},crefPrefix,SCode.VAR(),ClassInf.UNKNOWN(Absyn.IDENT(""))); // variability doesn't matter
-        (cache,cr,const) = elabCrefSubs(cache,env,subs,crefPrefix,impl,info);
+        (cache,cr,const,hasZeroSizeDim) = elabCrefSubs(cache,env,subs,crefPrefix,impl,hasZeroSizeDim,info);
       then
-        (cache,ComponentReference.makeCrefQual(id,ty,{},cr),const);
+        (cache,ComponentReference.makeCrefQual(id,ty,{},cr),const,hasZeroSizeDim);
         
     // QUAL,with no subscripts second case => look for class
-    case (cache,env,Absyn.CREF_QUAL(name = id,subscripts = {},componentRef = subs),crefPrefix,impl,info)
+    case (cache,env,Absyn.CREF_QUAL(name = id,subscripts = {},componentRef = subs),crefPrefix,impl,hasZeroSizeDim,info)
       equation
         crefPrefix = PrefixUtil.prefixAdd(id,{},crefPrefix,SCode.VAR(),ClassInf.UNKNOWN(Absyn.IDENT(""))); // variability doesn't matter
-        (cache,cr,const) = elabCrefSubs(cache, env, subs, crefPrefix, impl, info);
+        (cache,cr,const,hasZeroSizeDim) = elabCrefSubs(cache, env, subs, crefPrefix, impl, hasZeroSizeDim, info);
       then
-        (cache,ComponentReference.makeCrefQual(id,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),{},cr),const);
+        (cache,ComponentReference.makeCrefQual(id,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),{},cr),const,hasZeroSizeDim);
     
     // QUAL,with constant subscripts
-    case (cache,env,Absyn.CREF_QUAL(name = id,subscripts = ss as _::_,componentRef = subs),crefPrefix,impl,info)
+    case (cache,env,Absyn.CREF_QUAL(name = id,subscripts = ss as _::_,componentRef = subs),crefPrefix,impl,hasZeroSizeDim,info)
       equation
         (cache,cr) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,crefPrefix,ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
         (cache,DAE.ATTR(_,_,vt,_,_),t,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr);
@@ -11134,19 +11223,19 @@ algorithm
         //indexes = Expression.subscriptsInt(ss_1);
         //crefPrefix = Prefix.prefixAdd(id,indexes,crefPrefix,vt);
         crefPrefix = PrefixUtil.prefixAdd(id, {}, crefPrefix, vt,ClassInf.UNKNOWN(Absyn.IDENT("")));
-        (cache,cr,const2) = elabCrefSubs(cache,env, subs,crefPrefix,impl,info);
+        (cache,cr,const2,hasZeroSizeDim) = elabCrefSubs(cache,env, subs,crefPrefix,impl,hasZeroSizeDim,info);
         const = Types.constAnd(const1, const2);
       then
-        (cache,ComponentReference.makeCrefQual(id,ty,ss_1,cr),const);
+        (cache,ComponentReference.makeCrefQual(id,ty,ss_1,cr),const,hasZeroSizeDim);
 
-    case (cache, env, Absyn.CREF_FULLYQUALIFIED(componentRef = absynCr), crefPrefix, impl, info)
+    case (cache, env, Absyn.CREF_FULLYQUALIFIED(componentRef = absynCr), crefPrefix, impl, hasZeroSizeDim, info)
       equation
-        (cache, cr, const1) = elabCrefSubs(cache, env, absynCr, crefPrefix, impl, info);
+        (cache, cr, const1, hasZeroSizeDim) = elabCrefSubs(cache, env, absynCr, crefPrefix, impl, hasZeroSizeDim, info);
       then
-        (cache, cr, const1);
+        (cache, cr, const1, hasZeroSizeDim);
 
     // failure
-    case (cache,env,acr,crefPrefix,impl,info)
+    case (cache,env,acr,crefPrefix,impl,hasZeroSizeDim,info)
       equation 
         // FAILTRACE REMOVE
         true = RTOpts.debugFlag("failtrace");

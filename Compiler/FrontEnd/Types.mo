@@ -7004,4 +7004,17 @@ algorithm
   end match;
 end replaceIntegerTypeWithReal;
 
+public function isZeroLengthArray
+  input tuple<Type,Boolean> tpl;
+  output tuple<Type,Boolean> otpl;
+algorithm
+  otpl := match tpl
+    local
+      Type ty;
+    case ((ty as (DAE.T_ARRAY(arrayDim=DAE.DIM_INTEGER(integer=0)),_),_)) then ((ty,true));
+    case ((ty as (DAE.T_ARRAY(arrayDim=DAE.DIM_ENUM(size=0)),_),_)) then ((ty,true));
+    else tpl;
+  end match;
+end isZeroLengthArray;
+
 end Types;

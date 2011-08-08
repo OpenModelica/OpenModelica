@@ -2978,8 +2978,8 @@ algorithm
       equation
         ErrorExt.rollBack("expandableConnectors");
         // Skip collection of dae functions here they can not be present in connector references
-        (cache,SOME((DAE.CREF(c1_1,t1),prop1,attr1))) = Static.elabCref(cache,env, c1, impl, false, pre, info);
-        (cache,SOME((DAE.CREF(c2_1,t2),prop2,attr2))) = Static.elabCref(cache,env, c2, impl, false, pre, info);
+        (cache,SOME((DAE.CREF(c1_1,t1),prop1,attr1))) = Static.elabCrefNoEval(cache,env, c1, impl, false, pre, info);
+        (cache,SOME((DAE.CREF(c2_1,t2),prop2,attr2))) = Static.elabCrefNoEval(cache,env, c2, impl, false, pre, info);
 
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
