@@ -4061,6 +4061,7 @@ case STMT_NORETCALL(__) then
   >>
 
 
+
 end algStmtNoretcall;
 
 
@@ -6369,6 +6370,18 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
       static const size_t <%name%>_strlen = <%unescapedStringLength(string)%>;
       static const char <%name%>[<%intAdd(1,unescapedStringLength(string))%>] = <%name%>_data;
       >>
+  case lit as ARRAY(ty=ty as ET_ARRAY(__)) then
+    let ndim = listLength(ty.arrayDimensions)
+    let sty = expTypeShort(ty)
+    let dims = (ty.arrayDimensions |> dim => dimension(dim) ;separator=", ")
+    let data = flattenArrayExpToList(lit) |> exp => literalExpConstArrayVal(exp) ; separator=", "
+    <<
+    static _index_t <%name%>_dims[<%ndim%>] = {<%dims%>};
+    static const modelica_<%sty%> <%name%>_data[] = {<%data%>};
+    static <%sty%>_array const <%name%> = {
+      <%ndim%>, <%name%>_dims, (void*) <%name%>_data
+    };
+    >>
   case BOX(exp=exp as ICONST(__)) then
     <<
     <%meta%> = MMC_IMMEDIATE(MMC_TAGFIXNUM(<%exp.integer%>));
@@ -6428,6 +6441,16 @@ template literalExpConstBoxedVal(Exp lit)
   case lit as SHARED_LITERAL(__) then '_OMC_LIT<%lit.index%>'
   else error(sourceInfo(), 'literalExpConstBoxedVal failed: <%printExpStr(lit)%>') 
 end literalExpConstBoxedVal;
+
+template literalExpConstArrayVal(Exp lit)
+::=
+  match lit
+  case ICONST(__) then integer
+  case lit as BCONST(__) then if lit.bool then 1 else 0
+  case RCONST(__) then real
+  case lit as SHARED_LITERAL(__) then '_OMC_LIT<%lit.index%>'
+  else error(sourceInfo(), 'literalExpConstArrayVal failed: <%printExpStr(lit)%>') 
+end literalExpConstArrayVal;
 
 template equationInfo(list<SimEqSystem> eqs)
 ::=

@@ -4024,6 +4024,9 @@ algorithm
     case (e as DAE.PATTERN(pattern=_),rel,ext_arg)
       then ((e,ext_arg));
     
+    case (e as DAE.SHARED_LITERAL(index=_),rel,ext_arg)
+      then ((e,ext_arg));
+
     case (e,rel,ext_arg)
       equation
         str = ExpressionDump.printExpStr(e);

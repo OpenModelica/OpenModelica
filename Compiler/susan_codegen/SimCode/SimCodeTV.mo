@@ -1966,6 +1966,11 @@ package Expression
     output Option<Integer> oi;
   end realExpIntLit;
 
+  function flattenArrayExpToList
+    input DAE.Exp e;
+    output list<DAE.Exp> expLst;
+  end flattenArrayExpToList;
+
 end Expression;
 
 package ExpressionDump

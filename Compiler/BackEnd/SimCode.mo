@@ -1243,12 +1243,7 @@ algorithm
     case (name, SOME(daeMainFunction), daeElements, metarecordTypes, includes)
       equation
         // Create FunctionCode
-        (daeElements,(_,(_,_,literals))) = 
-          DAEUtil.traverseDAEFunctions(
-            daeMainFunction::daeElements,
-            Expression.traverseSubexpressionsHelper,
-            (replaceLiteralExp,(0,HashTableExpToIndex.emptyHashTableSized(BaseHashTable.bigBucketSize),{})));
-        literals = listReverse(literals);
+        (daeElements,literals) = findLiterals(daeMainFunction::daeElements);
         (mainFunction::fns, extraRecordDecls, includes, includeDirs, libs) = elaborateFunctions(daeElements, metarecordTypes, literals, includes);
         checkValidMainFunction(name, mainFunction);
         makefileParams = createMakefileParams(includeDirs, libs);
@@ -1260,12 +1255,7 @@ algorithm
     case (name, NONE(), daeElements, metarecordTypes, includes)
       equation
         // Create FunctionCode
-        (daeElements,(_,(_,_,literals))) = 
-          DAEUtil.traverseDAEFunctions(
-            daeElements,
-            Expression.traverseSubexpressionsHelper,
-            (replaceLiteralExp,(0,HashTableExpToIndex.emptyHashTableSized(BaseHashTable.bigBucketSize),{})));
-        literals = listReverse(literals);
+        (daeElements,literals) = findLiterals(daeElements);
         (fns, extraRecordDecls, includes, includeDirs, libs) = elaborateFunctions(daeElements, metarecordTypes, literals, includes);
         makefileParams = createMakefileParams(includeDirs, libs);
         fnCode = FUNCTIONCODE(name, NONE(), fns, literals, includes, makefileParams, extraRecordDecls);
@@ -1275,6 +1265,60 @@ algorithm
         ();
   end match;
 end translateFunctions;
+
+protected function findLiterals
+  "Finds all literal expressions in the DAE"
+  input list<DAE.Function> fns;
+  output list<DAE.Function> ofns;
+  output list<DAE.Exp> literals;
+algorithm
+  (ofns,(_,_,literals)) := DAEUtil.traverseDAEFunctions(
+    fns, findLiteralsHelper,
+    (0,HashTableExpToIndex.emptyHashTableSized(BaseHashTable.bigBucketSize),{}));
+  literals := listReverse(literals);
+end findLiterals;
+
+protected function findLiteralsHelper
+  input tuple<DAE.Exp,tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>>> inTpl;
+  output tuple<DAE.Exp,tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>>> outTpl;
+protected
+  DAE.Exp exp;
+  tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> tpl;
+algorithm
+  (exp,tpl) := inTpl;
+  ((exp,tpl)) := Expression.traverseExp(exp,replaceLiteralExp,tpl);
+  ((exp,tpl)) := Expression.traverseExpTopDown(exp,replaceLiteralArrayExp,tpl);
+  outTpl := (exp,tpl);
+end findLiteralsHelper;
+
+protected function replaceLiteralArrayExp
+  "The tuples contain:
+  * The expression to be replaced (or not)
+  * Index of next literal
+  * HashTable Exp->Index (Number of the literal)
+  * The list of literals
+  
+  Handles only array expressions (needs to be performed in a top-down fashion)
+  "
+  input tuple<DAE.Exp,tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>>> inTpl;
+  output tuple<DAE.Exp,Boolean,tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>>> outTpl;
+algorithm
+  outTpl := matchcontinue inTpl
+    local
+      DAE.Exp exp;
+      tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> tpl;
+    case ((exp as DAE.ARRAY(array=_),_))
+      equation
+        isLiteralArrayExp(exp);
+        ((exp,tpl)) = replaceLiteralExp2(inTpl);
+      then ((exp,false,tpl));
+    case ((exp as DAE.ARRAY(array=_),tpl))
+      equation
+        failure(isLiteralArrayExp(exp));
+      then ((exp,false,tpl));
+    case ((exp,tpl)) then ((exp,true,tpl));
+  end matchcontinue;
+end replaceLiteralArrayExp;
 
 protected function replaceLiteralExp
   "The tuples contain:
@@ -1394,6 +1438,31 @@ algorithm
     else fail();
   end match;
 end isTrivialLiteralExp;
+
+protected function isLiteralArrayExp
+  input DAE.Exp exp;
+algorithm
+  _ := match exp
+    local
+      DAE.Exp e1,e2;
+      list<DAE.Exp> expl;
+    case DAE.SCONST(_) then ();
+    case DAE.ICONST(_) then ();
+    case DAE.RCONST(_) then ();
+    case DAE.BCONST(_) then ();
+    case DAE.ARRAY(array=expl) equation Util.listMap0(expl,isLiteralArrayExp); then ();
+    case DAE.ENUM_LITERAL(index = _) then ();
+    case DAE.META_OPTION(NONE()) then ();
+    case DAE.META_OPTION(SOME(exp)) equation isLiteralArrayExp(exp); then ();
+    case DAE.BOX(exp) equation isLiteralArrayExp(exp); then ();
+    case DAE.CONS(car = e1, cdr = e2) equation isLiteralArrayExp(e1); isLiteralArrayExp(e2); then ();
+    case DAE.LIST(valList = expl) equation Util.listMap0(expl,isLiteralArrayExp); then ();
+    case DAE.META_TUPLE(expl) equation Util.listMap0(expl,isLiteralArrayExp); then ();
+    case DAE.METARECORDCALL(args=expl) equation Util.listMap0(expl,isLiteralArrayExp); then ();
+    case DAE.SHARED_LITERAL(index=_) then ();
+    else fail();
+  end match;
+end isLiteralArrayExp;
 
 protected function isLiteralExp
 "Returns if the expression may be replaced by a constant literal"

@@ -4178,8 +4178,8 @@ algorithm
       equation
         true = Expression.dimensionKnown(dim1);
         elist_1 = typeConvertArray(elist, ty1, ty2, dim1,printFailtrace);
-        ety1 = elabType(ty1);
-        dims = Expression.arrayDimension(ety1);
+        ety1 = elabType(ty2);
+        dims = Expression.arrayDimension(elabType(ty1));
         a = isArray(ty2);
         sc = boolNot(a);
         //TODO: Verify correctness of return value.
