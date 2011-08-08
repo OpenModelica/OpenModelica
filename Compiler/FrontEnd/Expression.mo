@@ -4021,6 +4021,9 @@ algorithm
       then
         ((DAE.BOX(e1_1),ext_arg_1));
     
+    case (e as DAE.PATTERN(pattern=_),rel,ext_arg)
+      then ((e,ext_arg));
+    
     case (e,rel,ext_arg)
       equation
         str = ExpressionDump.printExpStr(e);
@@ -4113,9 +4116,8 @@ public function traverseExpListTopDown
 algorithm
   outTpl := match(expl,rel,ext_arg)
   local DAE.Exp e,e1; list<DAE.Exp> expl1;
-    case({},_,ext_arg)
-      then (({},ext_arg));
-    case(e::expl,rel,ext_arg)
+    case ({},_,ext_arg) then (({},ext_arg));
+    case (e::expl,rel,ext_arg)
       equation
         ((e1,ext_arg)) = traverseExpTopDown(e, rel, ext_arg);
         ((expl1,ext_arg)) = traverseExpListTopDown(expl,rel,ext_arg);
