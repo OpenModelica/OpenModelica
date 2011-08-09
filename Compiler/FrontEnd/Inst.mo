@@ -11351,7 +11351,7 @@ algorithm
       String id,overloadname;
       SCode.Encapsulated encflag;
       list<DAE.Element> daeElts;
-      list<tuple<String, DAE.Type>> args;
+      list<DAE.FuncArg> args;
       DAE.Type tp,ty;
       ClassInf.State st;
       Absyn.Path fpath,ovlfpath,fn;

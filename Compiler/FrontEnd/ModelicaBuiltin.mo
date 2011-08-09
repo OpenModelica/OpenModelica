@@ -66,11 +66,8 @@ external "builtin";
 end constrain;
 
 function sample
-  input Real start;
-  input Real interval;
-  // Implement it like this?
-  // parameter input Real start(fixed=false);
-  // parameter input Real interval(fixed=false);
+  parameter input Real start(fixed=false);
+  parameter input Real interval(fixed=false);
   output Boolean isSample;
   annotation(__OpenModelica_Impure = true);
 external "builtin";

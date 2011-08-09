@@ -1752,7 +1752,7 @@ algorithm
       list<DAE.Element> algs, vars; //, bivars, invars, outvars;
       list<String> includes,libs,fn_libs,fn_includes,fn_includeDirs,rt,rt_1;
       Absyn.Path fpath;
-      list<tuple<String, Types.Type>> args;
+      list<DAE.FuncArg> args;
       Types.Type restype,tp;
       list<DAE.ExtArg> extargs;
       list<SimExtArg> simextargs;
@@ -1853,27 +1853,27 @@ algorithm
       list<Variable> var_args;
       list<DAE.Type> tys;
       
-    case ((name, tty as (DAE.T_FUNCTION(funcArg = args, funcResultType = (DAE.T_TUPLE(tys),_)), _)))
+    case ((name, tty as (DAE.T_FUNCTION(funcArg = args, funcResultType = (DAE.T_TUPLE(tys),_)), _),_))
       equation
         var_args = Util.listMap(args, typesSimFunctionArg);
         etys = Util.listMap(tys, Types.elabType);
       then
         FUNCTION_PTR(name, etys, var_args);
         
-    case ((name, tty as (DAE.T_FUNCTION(funcArg = args, funcResultType = (DAE.T_NORETCALL(),_)), _)))
+    case ((name, tty as (DAE.T_FUNCTION(funcArg = args, funcResultType = (DAE.T_NORETCALL(),_)), _),_))
       equation
         var_args = Util.listMap(args, typesSimFunctionArg);
       then
         FUNCTION_PTR(name, {}, var_args);
         
-    case ((name, tty as (DAE.T_FUNCTION(funcArg = args, funcResultType = res_ty), _)))
+    case ((name, tty as (DAE.T_FUNCTION(funcArg = args, funcResultType = res_ty), _),_))
       equation
         expType = Types.elabType(res_ty);
         var_args = Util.listMap(args, typesSimFunctionArg);
       then
         FUNCTION_PTR(name, {expType}, var_args);
         
-    case ((name,tty))
+    case ((name,tty,_))
       equation
         expType = Types.elabType(tty);
         cref_  = ComponentReference.makeCrefIdent(name, expType, {});
@@ -1898,7 +1898,7 @@ algorithm
       Variable var;
     case (DAE.VAR(componentRef = DAE.CREF_IDENT(ident=name),ty = daeType as (DAE.T_FUNCTION(funcArg=_),_)))
       equation
-        var = typesSimFunctionArg((name,daeType));
+        var = typesSimFunctionArg((name,daeType,DAE.C_VAR()));
       then var;
         
     case (DAE.VAR(componentRef = id,

@@ -65,6 +65,18 @@ algorithm
   end match;
 end constStr;
 
+public function constStrFriendly "return the DAE.Const as a friendly string. Used for debugging."
+  input DAE.Const const;
+  output String str;
+algorithm
+  str := match(const)
+    case(DAE.C_VAR()) then "";
+    case(DAE.C_PARAM()) then "parameter ";
+    case(DAE.C_CONST()) then "constant ";
+      
+  end match;
+end constStrFriendly;
+
 public function expTypeSimple "returns true if type is simple type"
   input DAE.ExpType tp;
   output Boolean isSimple;

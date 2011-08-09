@@ -864,7 +864,7 @@ public uniontype DimensionBinding
 end DimensionBinding;
 
 public
-type FuncArg = tuple<Ident, Type> "- Function Argument" ;
+type FuncArg = tuple<Ident, Type, Const> "- Function Argument" ;
 
 public
 uniontype Const "The degree of constantness of an expression is determined by the Const

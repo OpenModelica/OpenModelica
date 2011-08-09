@@ -976,8 +976,8 @@ algorithm
         (falst1,_) = Util.listSplitOnBoolList(falst,blst);
         falst2 = listAppend(falst,falst1);
         // compare with derivative function inputs
-        tlst = Util.listMap(falst2,Util.tuple22);
-        dtlst = Util.listMap(dfalst,Util.tuple22);
+        tlst = Util.listMap(falst2,Util.tuple32);
+        dtlst = Util.listMap(dfalst,Util.tuple32);
         ret = Util.isListEqualWithCompareFunc(tlst,dtlst,Types.equivtypes);
       then 
         (ret,tlst);
@@ -1014,7 +1014,7 @@ algorithm
     case (inFuncName,DAE.FUNCTION_DER_MAPPER(derivativeFunction=inDFuncName,derivativeOrder=derivativeOrder,conditionRefs=cr),(DAE.T_FUNCTION(funcArg=funcArg),_),expl,(timevars,functions))
       equation
          true = intEq(1,derivativeOrder);
-         tplst = Util.listMap(funcArg,Util.tuple22);
+         tplst = Util.listMap(funcArg,Util.tuple32);
          bl = Util.listMap(tplst,Types.isRealOrSubTypeReal);
          bl1 = checkDerFunctionConds(bl,cr,expl,(timevars,functions));
       then
