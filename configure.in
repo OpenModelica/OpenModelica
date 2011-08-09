@@ -459,17 +459,22 @@ fi
 dnl Check for libCoin
 
 AC_MSG_CHECKING([for libCoin])
-AC_ARG_WITH(Coin, [  --with-Coin     Compile with support for plotting in 3D.],
+AC_ARG_WITH(Coin, [  --with-Coin=[yes|no|static]     Compile with support for plotting in 3D.],
 [
   if test -z "$QMAKE"; then
     AC_MSG_ERROR("Cannot compile with libCoin unless qmake is present.");
   fi
-  COIN_LIBS=`coin-config --ldflags --libs | tr \\\\n \\ `
+  #Would be duplicated by soqt-libs...
+  #COIN_LIBS=`coin-config --ldflags --libs | tr \\\\n \\ `
   SOQT_LIBS=`soqt-config --ldflags --libs | tr \\\\n \\ `
   COIN_INCLUDE=`coin-config --includedir | tr \\\\n \\ `
   SOQT_INCLUDE=`soqt-config --includedir | tr \\\\n \\ `
   HAVE_COIN="HAVE_COIN"
-  if test -z "$COIN_INCLUDE" || test -z "$SOQT_INCLUDE" || test -z "$COIN_LIBS" || test -z "$SOQT_LIBS"; then
+  if test "$withval" = "static" ; then
+    SOQT_LIBS=`echo $SOQT_LIBS | sed "s/-lCoin/-Wl,-Bstatic -lCoin -Wl,-Bdynamic/"`
+    SOQT_LIBS=`echo $SOQT_LIBS | sed "s/-lSoQt4/-Wl,-Bstatic -lSoQt4 -Wl,-Bdynamic/"`
+  fi
+  if test -z "$COIN_INCLUDE" || test -z "$SOQT_INCLUDE" || test -z "$SOQT_LIBS"; then
     AC_MSG_ERROR([failure]);
   fi
   AC_MSG_RESULT([ok])

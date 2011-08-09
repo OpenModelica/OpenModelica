@@ -1342,7 +1342,7 @@ Optional Packages:
   --with-qwt        Compile plotting libraries using qwt. Default searches PREFIX/include/{qwt,qwt-qt4}
   --with-paradiseo        Required for OMOptim. Default searches {PREFIX,/usr,/opt} for {include,lib}/paradiseo
   --with-sendData-Qt     Compile with support for plot().
-  --with-Coin     Compile with support for plotting in 3D.
+  --with-Coin=yes|no|static     Compile with support for plotting in 3D.
   --with-MODPAR        Compile with automatic parallelization, requires boost
   --with-BOOST=DIR        With BOOST library in DIR
 
@@ -5291,12 +5291,17 @@ if test "${with_Coin+set}" = set; then :
   if test -z "$QMAKE"; then
     as_fn_error $? "\"Cannot compile with libCoin unless qmake is present.\"" "$LINENO" 5 ;
   fi
-  COIN_LIBS=`coin-config --ldflags --libs | tr \\\\n \\ `
+  #Would be duplicated by soqt-libs...
+  #COIN_LIBS=`coin-config --ldflags --libs | tr \\\\n \\ `
   SOQT_LIBS=`soqt-config --ldflags --libs | tr \\\\n \\ `
   COIN_INCLUDE=`coin-config --includedir | tr \\\\n \\ `
   SOQT_INCLUDE=`soqt-config --includedir | tr \\\\n \\ `
   HAVE_COIN="HAVE_COIN"
-  if test -z "$COIN_INCLUDE" || test -z "$SOQT_INCLUDE" || test -z "$COIN_LIBS" || test -z "$SOQT_LIBS"; then
+  if test "$withval" = "static" ; then
+    SOQT_LIBS=`echo $SOQT_LIBS | sed "s/-lCoin/-Wl,-Bstatic -lCoin -Wl,-Bdynamic/"`
+    SOQT_LIBS=`echo $SOQT_LIBS | sed "s/-lSoQt4/-Wl,-Bstatic -lSoQt4 -Wl,-Bdynamic/"`
+  fi
+  if test -z "$COIN_INCLUDE" || test -z "$SOQT_INCLUDE" || test -z "$SOQT_LIBS"; then
     as_fn_error $? "failure" "$LINENO" 5 ;
   fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
