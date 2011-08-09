@@ -936,16 +936,17 @@ protected
   list<RecordDeclaration> recordDecls;
   BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1;
   Absyn.ComponentRef a_cref;
+  list<DAE.Exp> literals;
 algorithm
    timeBackend := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
    a_cref := Absyn.pathToCref(className);
    fileDir := CevalScript.getFileDir(a_cref, p);
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
-  (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _) :=
+  (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
   createFunctions(dae, inBackendDAE, functionTree, className);
   simCode := createSimCode(functionTree, outIndexedBackendDAE, equationIndices,
     variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents, 
-    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls);
+    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals);
   timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
   Debug.execStat("SimCode",CevalScript.RT_CLOCK_BUILD_MODEL);
   
@@ -1067,17 +1068,18 @@ protected
   BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1;
   Absyn.ComponentRef a_cref;
   BackendQSS.QSSinfo qssInfo;
+  list<DAE.Exp> literals;
   tuple<BackendDAE.BackendDAE, array<Integer>, array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, BackendDAE.StrongComponents> inQSSrequiredData;
 algorithm
    timeBackend := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
    a_cref := Absyn.pathToCref(className);
    fileDir := CevalScript.getFileDir(a_cref, p);
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
-  (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _) :=
+  (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
   createFunctions(dae, inBackendDAE, functionTree, className);
   simCode := createSimCode(functionTree, outIndexedBackendDAE, equationIndices, 
     variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents, 
-    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls);
+    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals);
 
   timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
   Debug.execStat("SimCode",CevalScript.RT_CLOCK_BUILD_MODEL);
@@ -1267,7 +1269,7 @@ algorithm
 end translateFunctions;
 
 protected function findLiterals
-  "Finds all literal expressions in the DAE"
+  "Finds all literal expressions in functions"
   input list<DAE.Function> fns;
   output list<DAE.Function> ofns;
   output list<DAE.Exp> literals;
@@ -1277,6 +1279,23 @@ algorithm
     (0,HashTableExpToIndex.emptyHashTableSized(BaseHashTable.bigBucketSize),{}));
   literals := listReverse(literals);
 end findLiterals;
+
+protected function simulationFindLiterals
+  "Finds all literal expressions in the DAE"
+  input BackendDAE.BackendDAE dae;
+  input list<DAE.Function> fns;
+  output list<DAE.Function> ofns;
+  output list<DAE.Exp> literals;
+protected
+  Integer i;
+  HashTableExpToIndex.HashTable ht;
+algorithm
+  (ofns,(i,ht,literals)) := DAEUtil.traverseDAEFunctions(
+    fns, findLiteralsHelper,
+    (0,HashTableExpToIndex.emptyHashTableSized(BaseHashTable.bigBucketSize),{}));
+  ((i,ht,literals)) := BackendDAEUtil.traverseBackendDAEExps(dae, findLiteralsHelper, (i,ht,literals));
+  literals := listReverse(literals);
+end simulationFindLiterals;
 
 protected function findLiteralsHelper
   input tuple<DAE.Exp,tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>>> inTpl;
@@ -1576,8 +1595,9 @@ public function createFunctions
   output list<Function> functions;
   output BackendDAE.BackendDAE outBackendDAE;
   output DAE.DAElist outDAE;
+  output list<DAE.Exp> literals;  
 algorithm
-  (libs, includes, includeDirs, recordDecls, functions, outBackendDAE, outDAE) :=
+  (libs, includes, includeDirs, recordDecls, functions, outBackendDAE, outDAE, literals) :=
   matchcontinue (inDAElist,inBackendDAE,functionTree,inPath)
     local
       list<String> libs1,libs2,includes1,includes2,includeDirs1,includeDirs2;
@@ -1599,9 +1619,11 @@ algorithm
         //funcelems = Util.listUnion(funcelems, part_func_elems);
         funcelems = Inline.inlineCallsInFunctions(funcelems,(NONE(),{DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}));
         //Debug.fprintln("info", "Generating functions, call Codegen.\n") "debug" ;
-        (fns, recordDecls, includes2, includeDirs2, libs2) = elaborateFunctions(funcelems, {}, {}, {}); // Do we need metarecords here as well?
+        (funcelems,literals) = simulationFindLiterals(dlow,funcelems);
+        
+        (fns, recordDecls, includes2, includeDirs2, libs2) = elaborateFunctions(funcelems, {}, literals, {}); // Do we need metarecords here as well?
       then
-        (libs2, includes2, includeDirs2, recordDecls, fns, dlow, dae);
+        (libs2, includes2, includeDirs2, recordDecls, fns, dlow, dae, literals);
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Creation of Modelica functions failed. "});
@@ -2054,10 +2076,11 @@ protected function createSimCode
   input list<String> libs;
   input Option<SimulationSettings> simSettingsOpt;
   input list<RecordDeclaration> recordDecls;
+  input list<DAE.Exp> literals;
   output SimCode simCode;
 algorithm
   simCode :=
-  matchcontinue (functionTree,inBackendDAE2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,strongComponents,inClassName,filenamePrefix,inString11,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls)
+  matchcontinue (functionTree,inBackendDAE2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,strongComponents,inClassName,filenamePrefix,inString11,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals)
     local
       String cname,   fileDir;
       BackendDAE.StrongComponents comps,blt_states,blt_no_states,contBlocks,contBlocks1,discBlocks,blt_states1,blt_no_states1;
@@ -2096,7 +2119,7 @@ algorithm
       HashTableCrefToSimVar crefToSimVarHT;
       Boolean ifcpp;
       
-    case (functionTree,dlow,ass1,ass2,m,mt,comps,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls)
+    case (functionTree,dlow,ass1,ass2,m,mt,comps,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals)
       equation
         ifcpp=Util.equal(RTOpts.simCodeTarget(),"Cpp");
          //Debug.fcall("cppvar",print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
@@ -2173,7 +2196,7 @@ algorithm
         Debug.fcall("execHash",print, "*** SimCode -> generate cref2simVar hastable done!: " +& realString(clock()) +& "\n" );        
        
         simCode = SIMCODE(modelInfo,
-          {},
+          literals,
           recordDecls,
           externalFunctionIncludes,
           allEquations,
