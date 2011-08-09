@@ -109,7 +109,6 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
     //! @todo Grid Lines changes when resize the window. Update it.
     if (mpParentProjectTab->mpParentProjectTabWidget->mShowLines)
     {
-        //painter->scale(1.0, -1.0);
         painter->setBrush(Qt::NoBrush);
         painter->setPen(Qt::gray);
 
@@ -2429,6 +2428,7 @@ QToolButton* ProjectTab::getModelicaTextToolButton()
 //! @see updateModel(QString name)
 bool ProjectTab::modelicaEditorTextChanged()
 {
+    this->mOpenMode = true;
     MainWindow *pMainWindow = mpParentProjectTabWidget->mpParentMainWindow;
     QStringList models = mpModelicaEditor->getModelsNames();
     // if there was some error in modelicatext then
@@ -2462,6 +2462,7 @@ bool ProjectTab::modelicaEditorTextChanged()
     getModelIconDiagram();
     // change the model type label in the status bar of projecttab
     mpModelicaTypeLabel->setText(StringHandler::getModelicaClassType(mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->getClassRestriction(mModelNameStructure)));
+    this->mOpenMode = false;
 
 /*
     if (!modelName.isEmpty())
@@ -2688,6 +2689,7 @@ ProjectTab* ProjectTabWidget::getRemovedTabByName(QString name)
 int ProjectTabWidget::addTab(ProjectTab *tab, QString tabName)
 {
     int position;
+    tabName = StringHandler::getLastWordAfterDot(tabName);
     // if tab is not saved then add the star with the name
     position = QTabWidget::addTab(tab, QString(tabName).append(tab->mIsSaved ? "" : "*"));
 //    if (!tab->mIsSaved)
@@ -2807,7 +2809,7 @@ void ProjectTabWidget::addDiagramViewTab(QTreeWidgetItem *item, int column)
                                         mpParentMainWindow->mpOMCProxy->getClassRestriction(treeNode->mNameStructure), StringHandler::DIAGRAM,
                                         true, false, false, this);
     newTab->mIsSaved = true;
-    newTab->mTabPosition = addTab(newTab, StringHandler::getLastWordAfterDot(treeNode->mNameStructure));
+    newTab->mTabPosition = addTab(newTab, treeNode->mName);
 
     Component *diagram;
     QString result = mpParentMainWindow->mpOMCProxy->getDiagramAnnotation(treeNode->mNameStructure);

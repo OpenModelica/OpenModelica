@@ -1110,6 +1110,14 @@ void Component::getClassComponents(QString className, int type, Component *pPare
         QString inheritedClass = mpOMCProxy->getNthInheritedClass(className, i);
         QString annotationString;
 
+        // If the inherited class is one of the builtin type such as Real we can
+        // stop here, because the class can not contain any components, etc.
+        if(this->mpOMCProxy->isBuiltinType(inheritedClass))
+        {
+            mpInheritanceList.append(new Component("", inheritedClass, mpOMCProxy->isWhat(StringHandler::CONNECTOR, inheritedClass), this));
+            return;
+        }
+
         if (type == StringHandler::ICON)
             annotationString = mpOMCProxy->getIconAnnotation(inheritedClass);
         else if (type == StringHandler::DIAGRAM)
