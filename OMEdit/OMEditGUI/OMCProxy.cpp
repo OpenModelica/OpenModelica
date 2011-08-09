@@ -1148,7 +1148,7 @@ bool OMCProxy::saveModifiedModel(QString modelText)
 QString OMCProxy::list(QString className)
 {
     sendCommand("list(" + className + ")");
-    return StringHandler::removeFirstLastQuotes(getResult()).trimmed().replace("\\\"", "\"");
+    return StringHandler::unparse(getResult());
 }
 
 bool OMCProxy::addClassAnnotation(QString className, QString annotation)
