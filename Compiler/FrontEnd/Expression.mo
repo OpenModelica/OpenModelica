@@ -2606,17 +2606,32 @@ algorithm outCrefExp := match(inVar,inCrefPrefix)
  end match;
 end generateCrefsExpFromExpVar;
 
-public function makeRealArray
+public function makeScalarArray
 "function: makeRealArray
   Construct an array node of an DAE.Exp list of type REAL."
   input list<DAE.Exp> inExpLst;
+  input DAE.ExpType et;
   output DAE.Exp outExp;
 algorithm
   outExp:=
-  match (inExpLst)
-    local list<DAE.Exp> expl;
-    case (expl) then DAE.ARRAY(DAE.ET_REAL(),false,expl);
+  match (inExpLst,et)
+    local
+      list<DAE.Exp> expl;
+      Integer i;
+    case (expl,et)
+      equation
+        i = listLength(expl);
+      then DAE.ARRAY(DAE.ET_ARRAY(et,{DAE.DIM_INTEGER(i)}),true,expl);
   end match;
+end makeScalarArray;
+
+public function makeRealArray
+"function: makeRealArray
+  Construct an array node of an DAE.Exp list of type REAL."
+  input list<DAE.Exp> expl;
+  output DAE.Exp outExp;
+algorithm
+  outExp := makeScalarArray(expl,DAE.ET_REAL());
 end makeRealArray;
 
 public function makeRealAdd

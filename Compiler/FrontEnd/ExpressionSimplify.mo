@@ -620,13 +620,31 @@ algorithm
       list<DAE.Exp> v1, v2;
       Boolean scalar;
       list<Values.Value> valueLst;
-      Integer i;
+      Integer i,i1,i2;
       String str;
       Real r;
     
     // min/max function on arrays of only 1 element
     case (DAE.CALL(path=Absyn.IDENT("min"),expLst={DAE.ARRAY(array={e})})) then e;
     case (DAE.CALL(path=Absyn.IDENT("max"),expLst={DAE.ARRAY(array={e})})) then e;
+    // Try to unify the expressions :)
+    case (DAE.CALL(path=Absyn.IDENT("min"),expLst={DAE.ARRAY(array=es)},attr=DAE.CALL_ATTR(ty=tp)))
+      equation
+        i1 = listLength(es);
+        es = Util.listUnion(es,es);
+        i2 = listLength(es);
+        false = i1 == i2;
+        e = Expression.makeScalarArray(es,tp);
+      then Expression.makeBuiltinCall("min",{e},tp);
+    case (DAE.CALL(path=Absyn.IDENT("max"),expLst={DAE.ARRAY(array=es)},attr=DAE.CALL_ATTR(ty=tp)))
+      equation
+        i1 = listLength(es);
+        es = Util.listUnion(es,es);
+        i2 = listLength(es);
+        false = i1 == i2;
+        e = Expression.makeScalarArray(es,tp);
+      then Expression.makeBuiltinCall("max",{e},tp);
+
     case (DAE.CALL(path=Absyn.IDENT("min"),attr=DAE.CALL_ATTR(ty=DAE.ET_ARRAY(tp,{_})),expLst={DAE.ARRAY(array={e1,e2})}))
       equation
         e = Expression.makeBuiltinCall("min",{e1,e2},tp);
