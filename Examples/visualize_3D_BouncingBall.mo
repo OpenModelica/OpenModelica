@@ -1,5 +1,5 @@
 model BouncingBall3D
-  import Modelica.SimpleVisual;
+  import SimpleVisual;
   parameter Real e=0.7 "coefficient of restitution";
   parameter Real g=9.81 "gravity acceleration";
   Real h(start=10) "height of ball";

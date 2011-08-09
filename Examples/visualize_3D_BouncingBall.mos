@@ -1,4 +1,4 @@
-loadModel(Modelica.SimpleVisual);
+loadModel(SimpleVisual);
 getErrorString();
 loadFile("visualize_3D_BouncingBall.mo");
 getErrorString();
