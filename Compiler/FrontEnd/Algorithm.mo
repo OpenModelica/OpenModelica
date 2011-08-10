@@ -481,6 +481,23 @@ algorithm
   end matchcontinue;
 end makeIf;
 
+public function optimizeIf
+  "Every time we re-create/walk an if-statement, we optimize a bit :)"
+  input DAE.Exp cond;
+  input list<Statement> stmts;
+  input DAE.Else _else;
+  input DAE.ElementSource source;
+  output list<Statement> ostmts "can be empty or selected branch";
+algorithm
+  ostmts := match (cond,stmts,_else,source)
+    case (DAE.BCONST(true),stmts,_else,source) then stmts;
+    case (DAE.BCONST(false),stmts,DAE.NOELSE(),source) then {};
+    case (DAE.BCONST(false),_,DAE.ELSE(stmts),source) then stmts;
+    case (DAE.BCONST(false),_,DAE.ELSEIF(cond,stmts,_else),source) then optimizeIf(cond,stmts,_else,source);
+    else DAE.STMT_IF(cond,stmts,_else,source)::{};
+  end match;
+end optimizeIf;
+
 protected function makeElse "function: makeElse
   This function creates the ELSE part of the DAE.STMT_IF and checks if is correct."
   input list<tuple<DAE.Exp, DAE.Properties, list<Statement>>> inTplExpExpTypesPropertiesStatementLstLst;

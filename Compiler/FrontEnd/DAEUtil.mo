@@ -3932,9 +3932,9 @@ algorithm
       DAE.Exp e_1,e_2,e,e2;
       list<DAE.Exp> expl1,expl2;
       DAE.ComponentRef cr_1,cr;
-      list<DAE.Statement> xs_1,xs,stmts,stmts2;
+      list<DAE.Statement> xs_1,xs,stmts,stmts1,stmts2;
       DAE.ExpType tp;
-      DAE.Statement x,ew,ew_1;
+      DAE.Statement x,ew,ew_1,res;
       Boolean b1;
       String id1,str;
       list<Integer> li;
@@ -3982,7 +3982,8 @@ algorithm
         (stmts2,extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
         ((e_1,extraArg)) = func((e, extraArg));
         (xs_1,extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-      then (DAE.STMT_IF(e_1,stmts2,algElse,source) :: xs_1,extraArg);
+        stmts1 = Algorithm.optimizeIf(e_1,stmts2,algElse,source);
+      then (listAppend(stmts1, xs_1),extraArg);
         
     case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,range=e,statementLst=stmts, source = source)) :: xs),func,extraArg)
       equation
