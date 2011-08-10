@@ -4932,6 +4932,20 @@ algorithm
   end match;
 end boolConstSize;
 
+public function constEqualOrHigher
+  input Const c1;
+  input Const c2;
+  output Boolean b;
+algorithm
+  b := match (c1, c2)
+    case (DAE.C_CONST(), _) then true;
+    case (_, DAE.C_CONST()) then false;
+    case (DAE.C_PARAM(), _) then true;
+    case (_, DAE.C_PARAM()) then false;
+    else true;
+  end match;
+end constEqualOrHigher;
+
 public function constEqual
   input Const c1;
   input Const c2;

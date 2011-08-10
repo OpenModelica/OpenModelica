@@ -303,6 +303,7 @@ public constant ErrorID EXTERNAL_NOT_SINGLE_RESULT=191;
 public constant ErrorID FUNCTION_UNUSED_INPUT=192;
 public constant ErrorID ARRAY_TYPE_MISMATCH=193;
 public constant ErrorID VECTORIZE_TWO_UNKNOWN=194;
+public constant ErrorID FUNCTION_SLOT_VARIABILITY=195;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -516,6 +517,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (LOAD_MODEL,SCRIPTING(),ERROR(),"Failed to load package %s (%s) using MODELICAPATH %s."),
           (INVALID_ARGUMENT_TYPE,TRANSLATION(),ERROR(),"Argument %s of %s must be %s"),
           (INVALID_SIZE_INDEX,TRANSLATION(),ERROR(),"Invalid index %s in call to size of %s, valid index interval is [1,%s]."),
+          (FUNCTION_SLOT_VARIABILITY,TRANSLATION(),ERROR(),"Function argument %s is not a %sexpression"),
           
            /*
           (CONNECT_STREAM_TO_NONSTREAM,TRANSLATION(),ERROR(),

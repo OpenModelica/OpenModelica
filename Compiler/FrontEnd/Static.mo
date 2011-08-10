@@ -9043,8 +9043,9 @@ algorithm
       list<Slot> ss;
       DAE.FuncArg fa;
       list<DAE.FuncArg> fs;
+      DAE.Const c;
     case ({}) then {};
-    case ((fa :: fs))
+    case (fa :: fs)
       equation
         ss = makeEmptySlots(fs);
       then
@@ -9205,7 +9206,7 @@ algorithm
       Absyn.Exp dexp;
       DAE.Exp exp,exp_1;
       DAE.Type t,tp;
-      DAE.Const c1;
+      DAE.Const c1,c2;
       list<DAE.Const> constLst;
       Ident id;
       Env.Cache cache;
@@ -9218,7 +9219,7 @@ algorithm
       then
         (cache, SLOT(fa,true,e,ds) :: res, constLst, polymorphicBindings);
     
-    case (cache,(SLOT(an = (id,tp,_),slotFilled = false,expExpOption = NONE(),typesArrayDimLst = ds) :: xs),class_,env,impl,polymorphicBindings,pre,info)
+    case (cache,(SLOT(an = (id,tp,c2),slotFilled = false,expExpOption = NONE(),typesArrayDimLst = ds) :: xs),class_,env,impl,polymorphicBindings,pre,info)
       equation
         (cache,res,constLst,polymorphicBindings) = fillDefaultSlots(cache, xs, class_, env, impl, polymorphicBindings, pre, info);
 
@@ -9227,8 +9228,9 @@ algorithm
         (cache,exp,DAE.PROP(t,c1),_) = elabExp(cache, env, dexp, impl, NONE(), true, pre, info);
         // print("Slot: " +& id +& " -> " +& Exp.printExpStr(exp) +& "\n");
         (exp_1,_,polymorphicBindings) = Types.matchTypePolymorphic(exp,t,tp,Env.getEnvPathNoImplicitScope(env),polymorphicBindings,false);
+        true = Types.constEqualOrHigher(c1,c2);
       then
-        (cache, SLOT((id,tp,c1),true,SOME(exp_1),ds) :: res, c1::constLst, polymorphicBindings);
+        (cache, SLOT((id,tp,c2),true,SOME(exp_1),ds) :: res, c1::constLst, polymorphicBindings);
 
     case (cache,(SLOT(an = fa,slotFilled = false,expExpOption = e,typesArrayDimLst = ds) :: xs),class_,env,impl,polymorphicBindings,pre,info)
       equation
@@ -9328,7 +9330,7 @@ algorithm
         (cache,newslots,(DAE.C_VAR() :: clist),polymorphicBindings);
 
     // exact match
-    case (cache, env, (e :: es), ((farg as (_,vt,c2)) :: vs), slots, checkTypes as true, impl, polymorphicBindings,pre,info)
+    case (cache, env, (e :: es), ((farg as (id,vt,c2)) :: vs), slots, checkTypes as true, impl, polymorphicBindings,pre,info)
       equation
         (cache,e_1,props,_) = elabExp(cache,env, e, impl,NONE(), true,pre,info);
         t = Types.getPropType(props);
@@ -9337,12 +9339,12 @@ algorithm
         // TODO: Check const
         (cache,slots_1,clist,polymorphicBindings) =
         elabPositionalInputArgs(cache, env, es, vs, slots, checkTypes, impl, polymorphicBindings,pre,info);
-        newslots = fillSlot(farg, e_2, {}, slots_1,checkTypes,pre,info) "no vectorized dim" ;
+        newslots = fillSlot((id,vt,c1), e_2, {}, slots_1,checkTypes,pre,info) "no vectorized dim" ;
       then
         (cache,newslots,(c1 :: clist),polymorphicBindings);
 
     // check if vectorized argument
-    case (cache, env, (e :: es), ((farg as (_,vt,c2)) :: vs), slots, checkTypes as true, impl, polymorphicBindings,pre,info)
+    case (cache, env, (e :: es), ((farg as (id,vt,c2)) :: vs), slots, checkTypes as true, impl, polymorphicBindings,pre,info)
       equation
         (cache,e_1,props,_) = elabExp(cache,env, e, impl,NONE(),true,pre,info);
         t = Types.getPropType(props);
@@ -9351,7 +9353,7 @@ algorithm
         // TODO: Check const...
         (cache,slots_1,clist,_) =
           elabPositionalInputArgs(cache, env, es, vs, slots, checkTypes, impl, polymorphicBindings,pre,info);
-        newslots = fillSlot(farg, e_2, ds, slots_1, checkTypes,pre,info);
+        newslots = fillSlot((id,vt,c1), e_2, ds, slots_1, checkTypes,pre,info);
       then
         (cache,newslots,(c1 :: clist),polymorphicBindings);
 
@@ -9537,25 +9539,29 @@ algorithm
       list<DAE.Dimension> ds;
       DAE.Type b;
       list<Slot> xs,newslots;
-      DAE.FuncArg farg;
+      DAE.FuncArg farg,farg1,farg2;
       Slot s1;
       Prefix.Prefix pre;
-      String ps;
-      DAE.Const c;
+      String ps,str1,str2;
+      DAE.Const c,c1,c2;
     
-    case ((fa1,_,_),exp,ds,(SLOT(an = (fa2,b,c),slotFilled = false) :: xs),checkTypes as true,pre,info)
+    case ((fa1,b,c1),exp,ds,(SLOT(an = (fa2,_,c2),slotFilled = false) :: xs),checkTypes,pre,info)
       equation
         true = stringEq(fa1, fa2);
+        true = Types.constEqualOrHigher(c1,c2);
       then
-        (SLOT((fa2,b,c),true,SOME(exp),ds) :: xs);
-    
-    // If not checking types, store actual type in slot so error message contains actual type 
-    case ((fa1,b,_),exp,ds,(SLOT(an = (fa2,_,c),slotFilled = false) :: xs),checkTypes as false,pre,info)
+        (SLOT((fa2,b,c2),true,SOME(exp),ds) :: xs);
+
+    // fail if variability is wrong
+    case (farg1 as (fa1,_,c1),exp,ds,(SLOT(an = farg2 as (fa2,b,c2),slotFilled = false) :: xs),checkTypes,pre,info)
       equation
         true = stringEq(fa1, fa2);
+        false = Types.constEqualOrHigher(c1,c2);
+        str2 = DAEUtil.constStrFriendly(c2);
+        Error.addSourceMessage(Error.FUNCTION_SLOT_VARIABILITY, {fa1,str2}, info);
       then
-        (SLOT((fa2,b,c),true,SOME(exp),ds) :: xs);
-    
+        fail();
+
     // fail if slot already filled
     case ((fa1,_,_),exp,ds,(SLOT(an = (fa2,b,_),slotFilled = true) :: xs),checkTypes ,pre,info)
       equation
@@ -9565,7 +9571,7 @@ algorithm
       then
         fail();
     
-    // no equal, fill slot
+    // no equal, try next
     case ((farg as (fa1,_,_)),exp,ds,((s1 as SLOT(an = (fa2,_,_))) :: xs),checkTypes,pre,info)
       equation
         false = stringEq(fa1, fa2);
@@ -9574,7 +9580,7 @@ algorithm
         (s1 :: newslots);
     
     // failure
-    case ((fa,_,_),_,_,_,_,pre,info)
+    case ((fa,_,_),_,_,{},_,pre,info)
       equation
         ps = PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.NO_SUCH_ARGUMENT, {fa,ps}, info);
