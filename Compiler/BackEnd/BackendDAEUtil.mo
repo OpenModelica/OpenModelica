@@ -3539,7 +3539,7 @@ algorithm
         ({v},_) = BackendVariable.getVar(cref,vars);
         true = BackendVariable.isVarDiscrete(v);
         xs = removediscreteAssingments(rest,vars);
-    then xs;
+      then xs;
         
     /*case ((DAE.STMT_TUPLE_ASSIGN(expExpLst = expl1) :: rest),vars)
       equation
@@ -3555,7 +3555,7 @@ algorithm
         ({v},_) = BackendVariable.getVar(cref,vars);
         true = BackendVariable.isVarDiscrete(v);
         xs = removediscreteAssingments(rest,vars);
-     then xs;
+      then xs;
         
     case (((DAE.STMT_IF(exp=e,statementLst=stmts,else_ = algElse, source = source)) :: rest),vars)
       equation
@@ -3574,7 +3574,7 @@ algorithm
       equation
         stmts = removediscreteAssingments(stmts,vars);
         xs = removediscreteAssingments(rest,vars);
-    then DAE.STMT_WHILE(e,stmts,source) :: xs;
+      then DAE.STMT_WHILE(e,stmts,source) :: xs;
     case (((DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=NONE(),helpVarIndices=li, source = source)) :: rest),vars)
         
       equation
