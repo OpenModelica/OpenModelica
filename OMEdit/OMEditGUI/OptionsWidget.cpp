@@ -146,6 +146,7 @@ OptionsWidget::OptionsWidget(MainWindow *pParent)
 {
     mpParentMainWindow = pParent;
     mpModelicaTextSettings = new ModelicaTextSettings();
+    readModelicaTextSettings();
 
     setWindowTitle(QString(Helper::applicationName).append(" - Options"));
     setModal(true);
