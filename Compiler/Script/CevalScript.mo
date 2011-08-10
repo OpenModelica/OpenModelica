@@ -731,7 +731,7 @@ algorithm
       Option<list<SCode.Element>> fp;
       list<Env.Frame> env;
       SCode.Element c;
-      String s1,str,str1,str2,str3,re,token,varid,cmd,executable,executable1,method_str,outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,errMsg,errorStr,uniqueStr,interpolation,title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix;
+      String s1,str,str1,str2,str3,re,token,varid,cmd,executable,executable1,method_str,outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,errMsg,errorStr,uniqueStr,interpolation,title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir;
       DAE.ComponentRef cr,cref,classname;
       Interactive.SymbolTable newst,st_1,st;
       Absyn.Program p,pnew,newp,ptot;
@@ -1056,16 +1056,18 @@ algorithm
 
     case (cache,env,"buildModel",vals,st,msg)
       equation
-        (cache,executable,method_str,outputFormat_str,st,initfilename,_) = buildModel(cache,env, vals, st, msg);
+        (cache,compileDir,executable,method_str,outputFormat_str,st,initfilename,_) = buildModel(cache,env, vals, st, msg);
+        executable = Util.if_(not RTOpts.getRunningTestsuite(),compileDir +& executable,executable);
       then
         (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
         
     case (cache,env,"buildModel",_,st,msg) /* failing build_model */
-    then (cache,ValuesUtil.makeArray({Values.STRING(""),Values.STRING("")}),st);
+      then (cache,ValuesUtil.makeArray({Values.STRING(""),Values.STRING("")}),st);
         
     case (cache,env,"buildModelBeast",vals,st,msg)
       equation
-        (cache,executable,method_str,st,initfilename) = buildModelBeast(cache,env,vals,st,msg);
+        (cache,compileDir,executable,method_str,st,initfilename) = buildModelBeast(cache,env,vals,st,msg);
+        executable = Util.if_(not RTOpts.getRunningTestsuite(),compileDir +& executable,executable);
       then
         (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
     
@@ -1090,21 +1092,19 @@ algorithm
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st_1,msg)
       equation
         System.realtimeTick(RT_CLOCK_SIMULATE_TOTAL);
-        (cache,executable,method_str,outputFormat_str,st,_,resultValues) = buildModel(cache,env,vals,st_1,msg);
+        (cache,compileDir,executable,method_str,outputFormat_str,st,_,resultValues) = buildModel(cache,env,vals,st_1,msg);
         
         cit = winCitation();
-        pwd = System.pwd();
-        pd = System.pathDelimiter();
         ifcpp=Util.equal(RTOpts.simCodeTarget(),"Cpp");
         executable1=Util.if_(ifcpp,"Simulation",executable);
         executableSuffixedExe = stringAppend(executable1, System.getExeExt());
         // sim_call = stringAppendList({"sh -c ",cit,"ulimit -t 60; ",cit,pwd,pd,executableSuffixedExe,cit," > output.log 2>&1",cit});
-        sim_call = stringAppendList({cit,pwd,pd,executableSuffixedExe,cit," > output.log 2>&1"});
+        sim_call = stringAppendList({cit,compileDir,executableSuffixedExe,cit," > output.log 2>&1"});
         System.realtimeTick(RT_CLOCK_SIMULATE_SIMULATION);
         SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
         0 = System.systemCall(sim_call);
         
-        result_file = stringAppendList({executable,"_res.",outputFormat_str});
+        result_file = stringAppendList(Util.listConsOnTrue(not RTOpts.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
         timeSimulation = System.realtimeTock(RT_CLOCK_SIMULATE_SIMULATION);
         timeTotal = System.realtimeTock(RT_CLOCK_SIMULATE_TOTAL);
         simValue = createSimulationResult(
@@ -2303,6 +2303,7 @@ protected function buildModel "function buildModel
   input Interactive.SymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
+  output String compileDir;
   output String outString1 "className";
   output String outString2 "method";
   output String outputFormat_str;
@@ -2310,7 +2311,7 @@ protected function buildModel "function buildModel
   output String outString4 "initFileName";
   output list<tuple<String,Values.Value>> resultValues;
 algorithm
-  (outCache,outString1,outString2,outputFormat_str,outInteractiveSymbolTable3,outString4,resultValues):=
+  (outCache,compileDir,outString1,outString2,outputFormat_str,outInteractiveSymbolTable3,outString4,resultValues):=
   matchcontinue (inCache,inEnv,vals,inInteractiveSymbolTable,inMsg)
     local
       Values.Value ret_val;
@@ -2346,14 +2347,14 @@ algorithm
         ( Absyn.CLASS(info = Absyn.INFO(buildTimes= Absyn.TIMESTAMP(build,_)))) = Interactive.getPathedClassInProgram(classname,p);
         true = (build >. edit);
         oldDir = System.pwd();
-        changeToTempDirectory(cdToTemp);
+        compileDir = changeToTempDirectory(cdToTemp);
         init_filename = stringAppendList({filenameprefix,"_init.xml"});
         exeFile = filenameprefix +& System.getExeExt();
         existFile = System.regularFileExists(exeFile);
         _ = System.cd(oldDir);
         true = existFile;
     then
-      (cache,filenameprefix,method_str,outputFormat_str,st,init_filename,zeroAdditionalSimulationResultValues);
+      (cache,compileDir,filenameprefix,method_str,outputFormat_str,st,init_filename,zeroAdditionalSimulationResultValues);
     
     // compile the model
     case (cache,env,vals as {Values.CODE(Absyn.C_TYPENAME(classname)),starttime,stoptime,interval,tolerance,method,Values.STRING(filenameprefix),Values.BOOL(cdToTemp),noClean,options,outputFormat,variableFilter,_,_},(st_1 as Interactive.SYMBOLTABLE(ast = p)),msg)
@@ -2363,7 +2364,7 @@ algorithm
 
        _ = Error.getMessagesStr() "Clear messages";
         oldDir = System.pwd();
-        changeToTempDirectory(cdToTemp);
+        compileDir = changeToTempDirectory(cdToTemp);
         (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st_1,msg);
         SimCode.SIMULATION_SETTINGS(method = method_str, outputFormat = outputFormat_str) 
            = simSettings;
@@ -2387,7 +2388,7 @@ algorithm
         timeCompile = System.realtimeTock(RT_CLOCK_BUILD_MODEL);
         resultValues = ("timeCompile",Values.REAL(timeCompile)) :: resultValues;
       then
-        (cache,filenameprefix,method_str,outputFormat_str,st2,init_filename,resultValues);
+        (cache,compileDir,filenameprefix,method_str,outputFormat_str,st2,init_filename,resultValues);
     
     // failure
     case (_,_,vals,_,_)
@@ -2402,14 +2403,15 @@ protected function changeToTempDirectory "function changeToTempDirectory
 changes to temp directory (set using the functions from Settings.mo)
 if the boolean flag given as input is true"
   input Boolean cdToTemp;
+  output String tempDir;
 algorithm
-  _ := matchcontinue(cdToTemp)
-  local String tempDir;
-    case(true) equation
+  tempDir := matchcontinue(cdToTemp)
+    case (true)
+      equation
         tempDir = Settings.getTempDirectoryPath();
         0 = System.cd(tempDir);
-        then ();
-    case(_) then ();
+      then tempDir +& System.pathDelimiter();
+    else stringAppend(System.pwd(),System.pathDelimiter());
   end matchcontinue;
 end changeToTempDirectory;
 
@@ -3351,7 +3353,7 @@ algorithm
   matchcontinue (inCache,inEnv,vals,inInteractiveSymbolTable,inMsg)
     local
       Boolean cdToTemp;
-      String cname_str,filenameprefix,oldDir,translationLevel;
+      String cname_str,filenameprefix,oldDir,translationLevel,compileDir;
       list<Interactive.InstantiatedClass> ic_1,ic;
       list<Interactive.Variable> iv;
       list<Interactive.CompiledCFunction> cf;
@@ -3377,7 +3379,7 @@ algorithm
         //translationLevel=DAE.SCONST(string="flat")
         _ = Error.getMessagesStr() "Clear messages";
         oldDir = System.pwd();
-        changeToTempDirectory(cdToTemp);
+        compileDir = changeToTempDirectory(cdToTemp);
         filenameprefix = Util.if_(filenameprefix ==& "<default>", Absyn.pathString(classname), filenameprefix);
         cname_str = Absyn.pathString(classname);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
@@ -3394,8 +3396,9 @@ algorithm
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);
+        compileDir = Util.if_(RTOpts.getRunningTestsuite(),"",compileDir);
       then
-        (cache,st,xml_contents,stringAppend("The model has been dumped to xml file: ",xml_filename));
+        (cache,st,xml_contents,stringAppendList({"The model has been dumped to xml file: ",compileDir,xml_filename}));
       
     case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="optimiser"),Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),Values.STRING(filenameprefix),Values.BOOL(cdToTemp)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
@@ -3403,7 +3406,7 @@ algorithm
         //asInSimulationCode==false => it's NOT necessary to do all the translation's steps before dumping with xml
         _ = Error.getMessagesStr() "Clear messages";
         oldDir = System.pwd();
-        changeToTempDirectory(cdToTemp);
+        compileDir = changeToTempDirectory(cdToTemp);
         cname_str = Absyn.pathString(classname);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
@@ -3420,8 +3423,9 @@ algorithm
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);
+        compileDir = Util.if_(RTOpts.getRunningTestsuite(),"",compileDir);
       then
-        (cache,st,xml_contents,stringAppend("The model has been dumped to xml file: ",xml_filename));
+        (cache,st,xml_contents,stringAppendList({"The model has been dumped to xml file: ",compileDir,xml_filename}));
       
     case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="backEnd"),Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),Values.STRING(filenameprefix),Values.BOOL(cdToTemp)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
@@ -3429,7 +3433,7 @@ algorithm
         //asInSimulationCode==true => it's necessary to do all the translation's steps before dumping with xml
         _ = Error.getMessagesStr() "Clear messages";
         oldDir = System.pwd();
-        changeToTempDirectory(cdToTemp);
+        compileDir = changeToTempDirectory(cdToTemp);
         cname_str = Absyn.pathString(classname);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
@@ -3445,8 +3449,9 @@ algorithm
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);
+        compileDir = Util.if_(RTOpts.getRunningTestsuite(),"",compileDir);
       then
-        (cache,st,xml_contents,stringAppend("The model has been dumped to xml file: ",xml_filename));
+        (cache,st,xml_contents,stringAppendList({"The model has been dumped to xml file: ",compileDir,xml_filename}));
     
   end matchcontinue;
 end dumpXMLDAE;
@@ -3698,12 +3703,13 @@ public function buildModelBeast "function buildModelBeast
   input Interactive.SymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
+  output String compileDir;
   output String outString1 "className";
   output String outString2 "method";
   output Interactive.SymbolTable outInteractiveSymbolTable3;
   output String outString4 "initFileName";
 algorithm
-  (outCache,outString1,outString2,outInteractiveSymbolTable3,outString4):=
+  (outCache,compileDir,outString1,outString2,outInteractiveSymbolTable3,outString4):=
   match (inCache,inEnv,vals,inInteractiveSymbolTable,inMsg)
     local
       Values.Value ret_val;
@@ -3733,7 +3739,7 @@ algorithm
         cdef = Interactive.getPathedClassInProgram(classname,p);
         _ = Error.getMessagesStr() "Clear messages";
         oldDir = System.pwd();
-        changeToTempDirectory(cdToTemp);
+        compileDir = changeToTempDirectory(cdToTemp);
         (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st,msg);
         (cache,ret_val,st,indexed_dlow_1,libs,file_dir,_) 
           = translateModel(cache,env, classname, st, filenameprefix,true,SOME(simSettings));
@@ -3754,7 +3760,7 @@ algorithm
         // (p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(r1,r2))) = Interactive.updateProgram2(p2,p,false);
         st2 = st; // Interactive.replaceSymbolTableProgram(st,p);
       then
-        (cache,filenameprefix,"",st2,"");
+        (cache,compileDir,filenameprefix,"",st2,"");
     
     // failure
     case (_,_,_,_,_)

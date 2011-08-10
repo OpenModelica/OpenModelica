@@ -1071,9 +1071,9 @@ protected
   list<DAE.Exp> literals;
   tuple<BackendDAE.BackendDAE, array<Integer>, array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, BackendDAE.StrongComponents> inQSSrequiredData;
 algorithm
-   timeBackend := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
-   a_cref := Absyn.pathToCref(className);
-   fileDir := CevalScript.getFileDir(a_cref, p);
+  timeBackend := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
+  a_cref := Absyn.pathToCref(className);
+  fileDir := CevalScript.getFileDir(a_cref, p);
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
   (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
   createFunctions(dae, inBackendDAE, functionTree, className);
