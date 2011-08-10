@@ -35,8 +35,12 @@
 
 ModelicaTextSettings::ModelicaTextSettings()
 {
+    // This is a very convoluted way of asking for the default monospace font in Qt
+    QFont font("I'm a font that does not exist, so that we will search for the style hint");
+    font.setStyleHint(QFont::TypeWriter);
+    QFontInfo info(font);
     // set default values, will be handy if we are unable to create the xml file
-    setFontFamily(qApp->font().family());             // get system font
+    setFontFamily(info.family());                     // get system font
     setFontSize(10);
     setTextRuleColor(QColor(0, 0, 0));                // black
     setKeywordRuleColor(QColor(139, 0, 0));           // dark red
