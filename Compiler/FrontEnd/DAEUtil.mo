@@ -4100,13 +4100,13 @@ algorithm
     DAE.Exp e,e_1;
     list<DAE.Statement> st,st_1;
     Algorithm.Else el,el_1;
-  case(DAE.NOELSE(),_,extraArg) then (DAE.NOELSE(),extraArg);
-  case(DAE.ELSEIF(e,st,el),func,extraArg)
+  case (DAE.NOELSE(),_,extraArg) then (DAE.NOELSE(),extraArg);
+  case (DAE.ELSEIF(e,st,el),func,extraArg)
     equation
       (el_1,extraArg) = traverseDAEEquationsStmtsElse(el,func,extraArg);
       (st_1,extraArg) = traverseDAEEquationsStmts(st,func,extraArg);
       ((e_1,extraArg)) = func((e, extraArg));
-    then (DAE.ELSEIF(e_1,st_1,el_1),extraArg);
+    then (Algorithm.optimizeElseIf(e_1,st_1,el_1),extraArg);
   case(DAE.ELSE(st),func,extraArg)
     equation
       (st_1,extraArg) = traverseDAEEquationsStmts(st,func,extraArg);

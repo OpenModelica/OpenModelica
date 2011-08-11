@@ -485,18 +485,32 @@ public function optimizeIf
   "Every time we re-create/walk an if-statement, we optimize a bit :)"
   input DAE.Exp cond;
   input list<Statement> stmts;
-  input DAE.Else _else;
+  input DAE.Else els;
   input DAE.ElementSource source;
   output list<Statement> ostmts "can be empty or selected branch";
 algorithm
-  ostmts := match (cond,stmts,_else,source)
-    case (DAE.BCONST(true),stmts,_else,source) then stmts;
+  ostmts := match (cond,stmts,els,source)
+    case (DAE.BCONST(true),stmts,_,source) then stmts;
     case (DAE.BCONST(false),stmts,DAE.NOELSE(),source) then {};
     case (DAE.BCONST(false),_,DAE.ELSE(stmts),source) then stmts;
-    case (DAE.BCONST(false),_,DAE.ELSEIF(cond,stmts,_else),source) then optimizeIf(cond,stmts,_else,source);
-    else DAE.STMT_IF(cond,stmts,_else,source)::{};
+    case (DAE.BCONST(false),_,DAE.ELSEIF(cond,stmts,els),source) then optimizeIf(cond,stmts,els,source);
+    else DAE.STMT_IF(cond,stmts,els,source)::{};
   end match;
 end optimizeIf;
+
+public function optimizeElseIf
+  "Every time we re-create/walk an if-statement, we optimize a bit :)"
+  input DAE.Exp cond;
+  input list<Statement> stmts;
+  input DAE.Else els;
+  output DAE.Else oelse;
+algorithm
+  oelse := match (cond,stmts,els)
+    case (DAE.BCONST(true),stmts,_) then DAE.ELSE(stmts);
+    case (DAE.BCONST(false),stmts,els) then els;
+    else DAE.ELSEIF(cond,stmts,els);
+  end match;
+end optimizeElseIf;
 
 protected function makeElse "function: makeElse
   This function creates the ELSE part of the DAE.STMT_IF and checks if is correct."
