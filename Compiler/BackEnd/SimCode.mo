@@ -1129,7 +1129,7 @@ algorithm
       equation
         Tpl.tplNoret(SimCodeC.translateModel, simCode);
       then ();
-    case (simCode,_,"SimCodeDump")
+    case (simCode,_,"Dump")
       equation
         // Yes, do this better later on...
         print(Tpl.tplString(SimCodeDump.dumpSimCode, simCode));
