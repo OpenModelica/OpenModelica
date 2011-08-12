@@ -731,10 +731,8 @@ ConnectorArrayMenu::ConnectorArrayMenu(Connector *pConnector,QWidget *pParent)
     mpStartIndexTextBox = new QLineEdit;
     mpEndIndexLabel = new QLabel;
     mpEndIndexTextBox = new QLineEdit;
-    mpStartMaxLabel= new QLabel;
-    mpEndMaxLabel= new QLabel;
-    mEndArrayExist=false;
-    mStartArrayExist=false;
+    mEndArrayExist = false;
+    mStartArrayExist = false;
 
     // Create the buttons
     mpOkButton = new QPushButton(tr("OK"));
@@ -753,12 +751,9 @@ ConnectorArrayMenu::ConnectorArrayMenu(Connector *pConnector,QWidget *pParent)
     mainLayout->addWidget(mpLabel, 0, 0);
     mainLayout->addWidget(mpStartIndexLabel, 1, 0);
     mainLayout->addWidget(mpStartIndexTextBox, 2, 0);
-    mainLayout->addWidget(mpStartMaxLabel, 2, 0);
     mainLayout->addWidget(mpEndIndexLabel, 3, 0);
     mainLayout->addWidget(mpEndIndexTextBox, 4, 0);
-    mainLayout->addWidget(mpEndMaxLabel, 4, 0);
-
-    mainLayout->addWidget(mpButtonBox, 6, 0);
+    mainLayout->addWidget(mpButtonBox, 5, 0);
 
     setLayout(mainLayout);
 }
@@ -800,42 +795,29 @@ void ConnectorArrayMenu::show(int startMaxIndex, int endMaxIndex)
     {
         mpStartIndexLabel->setText(" Enter Index in the Array For Start Component :");
         mpStartIndexTextBox->setText(tr(""));
-        if(startMaxIndex>0)
-            mpStartMaxLabel->setText("\t \t \tMaximum Index:     " + QString ::number(startMaxIndex));
-        else
-            mpStartMaxLabel->setText("\t \t \tMaximum Index:  No Bound");
         mpStartIndexTextBox->setFocus();
-        mpStartIndexTextBox->setMaximumSize(QSize(100,20));
-        mStartArrayExist=true;
+        mStartArrayExist = true;
         startIconCompName.append("[ i ]");
     }
     else
     {
         mpStartIndexLabel->hide();
         mpStartIndexTextBox->hide();
-        mpStartMaxLabel->hide();
         mpEndIndexTextBox->setFocus();
     }
     //if end port is a connector array
     if(this->mpConnector->getEndConnectorisArray())
     {
         mpEndIndexLabel->setText(" Enter Index in the Array For End Component :");
-        mpEndIndexTextBox->setMaximumSize(QSize(100,20));
         mpEndIndexTextBox->setText(tr(""));
-        if(endMaxIndex>0)
-            mpEndMaxLabel->setText("\t \t \tMaximum Index:     " + QString ::number(endMaxIndex));
-        else
-            mpEndMaxLabel->setText("\t \t \tMaximum Index:  No Bound");
-        mEndArrayExist=true;
+        mEndArrayExist = true;
         endIconCompName.append("[ j ]");
     }
     else
     {
         mpEndIndexLabel->hide();
         mpEndIndexTextBox->hide();
-        mpEndMaxLabel->hide();
     }
-
 
     mpLabel->setText("CONNECT  " + startIconName+startIconCompName + "   WITH   "+ endIconName + endIconCompName);
     mStartMaxIndex=startMaxIndex;

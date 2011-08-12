@@ -161,8 +161,6 @@ private:
     QLabel *mpLabel;
     QLabel *mpStartIndexLabel;
     QLabel *mpEndIndexLabel;
-    QLabel *mpStartMaxLabel;
-    QLabel *mpEndMaxLabel;
     QString mEndConnectorIndex;
     QString mStartConnectorIndex;
 

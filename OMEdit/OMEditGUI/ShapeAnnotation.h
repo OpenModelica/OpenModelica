@@ -106,6 +106,7 @@ public slots:
     QColor getLineColor();
     Qt::PenStyle getLinePattern();
     double getLineThickness();
+    double getRectCornerRadius();
     bool getLineSmooth();
     QColor getFillColor();
     Qt::BrushStyle getFillPattern();
@@ -175,6 +176,7 @@ private:
     QColor mPenColor;
     Qt::PenStyle mPenPattern;
     double mPenThickness;
+    double mRectCornerRadius;
     bool mPenSmooth;
     QLabel *mpSmoothLabel;
     QCheckBox *mpPenNoColorCheckBox;
@@ -182,6 +184,8 @@ private:
     QComboBox *mpPenPatternsComboBox;
     QLabel *mpPenThicknessLabel;
     QDoubleSpinBox *mpPenThicknessSpinBox;
+    QLabel *mpCornerRadiusLabel;
+    QDoubleSpinBox *mpCornerRadiusSpinBox;
     QCheckBox *mpSmoothCheckBox;
     // Brush style controls
     QGroupBox *mpBrushStyleGroup;
@@ -207,6 +211,7 @@ public:
     void setInitPenColor(QColor color);
     void setInitPenPattern(Qt::PenStyle pattern);
     void setInitPenThickness(double thickness);
+    void setInitCornerRadius(double radius);
     void setInitPenSmooth(bool smooth);
     QColor getPenColor();
     void setPenPattern();
@@ -214,6 +219,8 @@ public:
     Qt::PenStyle getPenPattern();
     void setPenThickness();
     double getPenThickness();
+    void setCornerRadius();
+    double getCornerRadius();
     void setPenSmooth();
     bool getPenSmooth();
     void setInitBrushColor(QColor color);
@@ -228,7 +235,7 @@ public:
 
     MainWindow *mpParentMainWindow;
     ShapeAnnotation *mpShape;
-    enum ShapeType {Line, Polygon, Rectangle, Ellipse, Text, Bitmap };
+    enum ShapeType {Line, Polygon, Rectangle, Ellipse, Text, Bitmap};
     int mShapeType;
 public slots:
     void pickPenColor();

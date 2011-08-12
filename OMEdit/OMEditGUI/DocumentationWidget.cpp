@@ -117,7 +117,10 @@ void DocumentationWidget::showDocumentationEditView(QString className)
     mpDocumentationViewer->hide();
     // get the already existing documentation text of the model
     mpDocumentationEditor->toPlainText();
-    mpDocumentationEditor->setPlainText(mpParentMainWindow->mpOMCProxy->getDocumentationAnnotation(className));
+    if (!mpParentMainWindow->mpOMCProxy->getDocumentationAnnotation(className).isEmpty())
+        mpDocumentationEditor->setPlainText(mpParentMainWindow->mpOMCProxy->getDocumentationAnnotation(className));
+    else
+        mpDocumentationEditor->setPlainText("<html>\n\n</html>");
     mpDocumentationEditor->setFocus();
     mpDocumentationEditor->show();
 }

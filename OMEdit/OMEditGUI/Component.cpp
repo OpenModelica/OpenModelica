@@ -564,25 +564,23 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         // if user changes the position with mouse we handle it in mouse events of graphicsview
         if (!isMousePressed)
         {
-            /*if(mIsConnector)
+            if (mIsConnector)
             {
                 Component *pComponent;
                 if (mpGraphicsView->mIconType == StringHandler::ICON)
                 {
-
-
-            pComponent = mpGraphicsView->mpParentProjectTab->mpDiagramGraphicsView->getComponentObject(getName());
-            pComponent->setPos(this->pos());
+                    pComponent = mpGraphicsView->mpParentProjectTab->mpDiagramGraphicsView->getComponentObject(getName());
+                    pComponent->setPos(this->pos());
                 }
-
                 else if(mpGraphicsView->mIconType == StringHandler::DIAGRAM)
                 {
                     //Component *pComponent;
                     pComponent = mpGraphicsView->mpParentProjectTab->mpIconGraphicsView->getComponentObject(getName());
                     pComponent->setPos(this->pos());
                 }
+                //if component is a connector, synchronize the position in its diagram view with the icon view
                 pComponent->updateAnnotationString();
-            }*/
+            }
             updateAnnotationString();
             // update connectors annotations that are associated to this component
             emit componentPositionChanged();
@@ -796,7 +794,7 @@ void Component::updateAnnotationString(bool updateBothViews)
                                 annotationString);
 
     // call the addclassannotation if the graphicsview is icon, so the icon in the tree is also updated
-    if (mpGraphicsView->mIconType == StringHandler::ICON)
+    if (mpGraphicsView->mIconType == StringHandler::ICON || mIsConnector)
         mpGraphicsView->addClassAnnotation();
 }
 
@@ -1004,8 +1002,8 @@ void Component::getClassComponents(QString className, int type)
         // stop here, because the class can not contain any components, etc.
         if(this->mpOMCProxy->isBuiltinType(inheritedClass))
         {
-          mpInheritanceList.append(new Component("", inheritedClass, mpOMCProxy->isWhat(StringHandler::CONNECTOR, inheritedClass), this));
-          return;
+            mpInheritanceList.append(new Component("", inheritedClass, mpOMCProxy->isWhat(StringHandler::CONNECTOR, inheritedClass), this));
+            return;
         }
 
         QString annotationString = mpOMCProxy->getIconAnnotation(inheritedClass);
@@ -1017,13 +1015,12 @@ void Component::getClassComponents(QString className, int type)
         }
         else
         {
-            inheritance = new Component(annotationString, inheritedClass, type,
-                                        mpOMCProxy->isWhat(StringHandler::CONNECTOR, inheritedClass), this);
+            inheritance = new Component(annotationString, inheritedClass, type, mpOMCProxy->isWhat(StringHandler::CONNECTOR, inheritedClass), this);
         }
         mpInheritanceList.append(inheritance);
         getClassComponents(inheritedClass, type);
     }
-        \
+
     QList<ComponentsProperties*> components = mpOMCProxy->getComponents(className);
     this->mpChildComponentProperties=components;
     QStringList componentsAnnotationsList = mpOMCProxy->getComponentAnnotations(className);

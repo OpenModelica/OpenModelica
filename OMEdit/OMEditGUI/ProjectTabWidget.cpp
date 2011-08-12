@@ -234,8 +234,9 @@ void GraphicsView::dropEvent(QDropEvent *event)
                     {
                         if (type == StringHandler::CONNECTOR)
                         {
-                            addComponentoView(name, classname, point, true, true, true);
                             mpParentProjectTab->mpIconGraphicsView->addComponentoView(name, classname, point, true, false);
+                            addComponentoView(name, classname, point, true, true, true);
+                            mpParentProjectTab->mpIconGraphicsView->addClassAnnotation();
                         }
                         else
                         {
@@ -259,8 +260,8 @@ void GraphicsView::dropEvent(QDropEvent *event)
                     if (type == StringHandler::CONNECTOR)
                     {
                         addComponentoView(name, classname, point, true, false);
-                        mpParentProjectTab->mpDiagramGraphicsView->addComponentoView(name, classname, point, true,
-                                                                                     true, true);
+                        mpParentProjectTab->mpDiagramGraphicsView->addComponentoView(name, classname, point, true, true, true);
+                        addClassAnnotation();
                         event->accept();
                         emit currentChange(1);
                     }
@@ -324,10 +325,12 @@ void GraphicsView::addComponentObject(Component *component)
 {
     MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
     // Add the component to model in OMC Global Scope.
-    pMainWindow->mpOMCProxy->addComponent(component->getName(), component->getClassName(),
-                                          mpParentProjectTab->mModelNameStructure);
+    pMainWindow->mpOMCProxy->addComponent(component->getName(), component->getClassName(), mpParentProjectTab->mModelNameStructure);
     // add the annotations of icon
-    component->updateAnnotationString(false);
+    if (component->getIsConnector())
+        component->updateAnnotationString(true);
+    else
+        component->updateAnnotationString(false);
     // only update the modelicatext of model if its a diagram view
     // for icon view the modeltext is updated in updateannotationstring->addclassannotation
     if (mIconType == StringHandler::DIAGRAM)
@@ -376,10 +379,11 @@ void GraphicsView::deleteComponentObject(Component *component, bool update)
 //! @see deleteComponentObject(Component *component, bool update)
 void GraphicsView::deleteAllComponentObjects()
 {
-    foreach (Component *component, mComponentsList)
-    {
-        component->deleteMe(false);
-    }
+    mComponentsList.clear();
+//    foreach (Component *component, mComponentsList)
+//    {
+//        component->deleteMe(false);
+//    }
 }
 
 Component* GraphicsView::getComponentObject(QString componentName)
@@ -433,20 +437,22 @@ void GraphicsView::deleteShapeObject(ShapeAnnotation *shape)
 
 void GraphicsView::deleteAllShapesObject()
 {
-    foreach (ShapeAnnotation *shape, mShapesList)
-    {
-        shape->deleteMe();
-    }
+    mShapesList.clear();
+//    foreach (ShapeAnnotation *shape, mShapesList)
+//    {
+//        shape->deleteMe();
+//    }
 }
 
 void GraphicsView::removeAllConnectors()
 {
-    int i = 0;
-    while(i != mConnectorsVector.size())
-    {
-        this->removeConnector(mConnectorsVector[i], false);
-        i = 0;   //Restart iteration if map has changed
-    }
+    mConnectorsVector.clear();
+//    int i = 0;
+//    while(i != mConnectorsVector.size())
+//    {
+//        this->removeConnector(mConnectorsVector[i], false);
+//        i = 0;   //Restart iteration if map has changed
+//    }
 }
 
 //! Defines what happens when the mouse is moving in a GraphicsView.
@@ -585,28 +591,23 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
         {
             if (component->mOldPosition != component->pos())
             {
-                /*if(component->getIsConnector())
+                if(component->getIsConnector())
                 {
                     Component *pComponent;
                     if (mIconType == StringHandler::ICON)
                     {
-
-
-                pComponent = mpParentProjectTab->mpDiagramGraphicsView->getComponentObject(component->getName());
-                pComponent->setPos(component->pos());
+                        pComponent = mpParentProjectTab->mpDiagramGraphicsView->getComponentObject(component->getName());
+                        pComponent->setPos(component->pos());
                     }
-
                     else if(mIconType == StringHandler::DIAGRAM)
                     {
-                     //   Component *pComponent;
                         pComponent = mpParentProjectTab->mpIconGraphicsView->getComponentObject(component->getName());
                         pComponent->setPos(component->pos());
                     }
                     pComponent->updateAnnotationString();
 
-                }*/
+                }
                 component->updateAnnotationString();
-
                 // if there are any connectors associated to component update their annotations as well.
                 foreach (Connector *connector, mConnectorsVector)
                 {
@@ -2444,7 +2445,7 @@ bool ProjectTab::modelicaEditorTextChanged()
     pTree->deleteNodeTriggered(pTree->getNode(modelNameStructure), false);
     // if the modelicatext is fine then do the processing on the list of models we get
     mpParentProjectTabWidget->mpParentMainWindow->mpLibrary->loadModel(mpModelicaEditor->toPlainText(), models);
-    QString modelsText = mpModelicaEditor->toPlainText();
+    //QString modelsText = mpModelicaEditor->toPlainText();
     // now update the current opened tab
     mModelNameStructure = models.first();
     updateTabName(StringHandler::getLastWordAfterDot(mModelNameStructure), mModelNameStructure);
@@ -2452,10 +2453,12 @@ bool ProjectTab::modelicaEditorTextChanged()
     mpIconGraphicsView->removeAllConnectors();
     mpIconGraphicsView->deleteAllComponentObjects();
     mpIconGraphicsView->deleteAllShapesObject();
+    mpIconGraphicsView->scene()->clear();
     mpDiagramGraphicsView->removeAllConnectors();
     mpDiagramGraphicsView->deleteAllComponentObjects();
     mpDiagramGraphicsView->deleteAllShapesObject();
-    mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->loadString(modelsText);
+    mpDiagramGraphicsView->scene()->clear();
+    //mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->loadString(modelsText);
     // get the model components and connectors now
     getModelComponents();
     getModelConnections();

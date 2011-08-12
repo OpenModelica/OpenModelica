@@ -405,9 +405,10 @@ void ShapeAnnotation::resetRotation()
 void ShapeAnnotation::changePenProperty()
 {
     this->mLineColor = mpShapeProperties->getPenColor().rgba();
-    this->mLinePattern= mpShapeProperties->getPenPattern();
-    this->mThickness =mpShapeProperties->getPenThickness();
-    this->mSmooth=mpShapeProperties->getPenSmooth();
+    this->mLinePattern = mpShapeProperties->getPenPattern();
+    this->mThickness = mpShapeProperties->getPenThickness();
+    this->mCornerRadius = mpShapeProperties->getCornerRadius();
+    this->mSmooth = mpShapeProperties->getPenSmooth();
 }
 
 //brush style changed for the selected shape
@@ -444,6 +445,11 @@ Qt::PenStyle ShapeAnnotation::getLinePattern()
 double ShapeAnnotation::getLineThickness()
 {
     return mThickness;
+}
+
+double ShapeAnnotation::getRectCornerRadius()
+{
+    return mCornerRadius;
 }
 
 bool ShapeAnnotation::getLineSmooth()
@@ -718,7 +724,7 @@ void ShapeProperties::setUpDialog()
 
 void ShapeProperties::setUpLineDialog()
 {
-    setWindowTitle(QString(Helper::applicationName).append(" - Line Properties"));
+    setWindowTitle(QString(Helper::applicationName).append(" - Shape Properties"));
 
     mpHeadingLabel = new QLabel(tr("Properties"));
     mpHeadingLabel->setFont(QFont("", Helper::headingFontSize));
@@ -788,6 +794,12 @@ QVBoxLayout* ShapeProperties::createPenControls()
     mpPenThicknessSpinBox->setLocale(QLocale("C"));
     mpPenThicknessSpinBox->setRange(0.25, 100.0);
     mpPenThicknessSpinBox->setSingleStep(0.5);
+    mpCornerRadiusLabel = new QLabel(tr("CornerRadius:"));
+    mpCornerRadiusSpinBox = new QDoubleSpinBox;
+    // change the locale to C so that decimal char is changed from ',' to '.'
+    mpCornerRadiusSpinBox->setLocale(QLocale("C"));
+    mpCornerRadiusSpinBox->setRange(0.0, 100.0);
+    mpCornerRadiusSpinBox->setSingleStep(0.25);
     mpSmoothLabel = new QLabel(tr("Smooth:"));
     mpSmoothCheckBox = new QCheckBox(tr("Bezier Curve"));
 
@@ -798,6 +810,7 @@ QVBoxLayout* ShapeProperties::createPenControls()
     mpPenColorViewerLabel->setPixmap(pixmap);
     setInitPenPattern(mpShape->getLinePattern());
     setInitPenThickness(mpShape->getLineThickness());
+    setInitCornerRadius(mpShape->getRectCornerRadius());
     setInitPenSmooth(mpShape->getLineSmooth());
 
     QGridLayout *mainLayout = new QGridLayout;
@@ -806,13 +819,23 @@ QVBoxLayout* ShapeProperties::createPenControls()
     mainLayout->addWidget(mpPenColorViewerLabel, 0, 1);
     mainLayout->addWidget(mpPenColorPickButton, 1, 0);
     mainLayout->addWidget(mpPenNoColorCheckBox, 1, 1);
-    mainLayout->addWidget(mpPenPatternLabel, 2, 0, 1, 2);
-    mainLayout->addWidget(mpPenPatternsComboBox, 3, 0);
-    mainLayout->addWidget(mpPenThicknessLabel, 4, 0, 1, 2);
-    mainLayout->addWidget(mpPenThicknessSpinBox, 5, 0);
-    mainLayout->addWidget(mpSmoothLabel, 6, 0, 1, 2);
-    mainLayout->addWidget(mpSmoothCheckBox, 7, 0);
-
+    if (mShapeType != Text)
+    {
+        mainLayout->addWidget(mpPenPatternLabel, 2, 0, 1, 2);
+        mainLayout->addWidget(mpPenPatternsComboBox, 3, 0);
+        mainLayout->addWidget(mpPenThicknessLabel, 4, 0, 1, 2);
+        mainLayout->addWidget(mpPenThicknessSpinBox, 5, 0);
+    }
+    if (qobject_cast<RectangleAnnotation*>(mpShape))
+    {
+        mainLayout->addWidget(mpCornerRadiusLabel, 6, 0, 1, 2);
+        mainLayout->addWidget(mpCornerRadiusSpinBox, 7, 0);
+    }
+    if (mShapeType == Line)
+    {
+        mainLayout->addWidget(mpSmoothLabel, 6, 0, 1, 2);
+        mainLayout->addWidget(mpSmoothCheckBox, 7, 0);
+    }
     mpPenStyleGroup->setLayout(mainLayout);
 
     QVBoxLayout *layout = new QVBoxLayout;
@@ -853,15 +876,17 @@ QVBoxLayout* ShapeProperties::createBrushControls()
     mpBrushColorViewerLabel->setPixmap(pixmap);
     setInitBrushPattern(mpShape->getFillPattern());
 
-
     QGridLayout *mainLayout = new QGridLayout;
     mainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     mainLayout->addWidget(mpBrushColorLabel, 0, 0);
     mainLayout->addWidget(mpBrushColorViewerLabel, 0, 1);
     mainLayout->addWidget(mpBrushColorPickButton, 1, 0);
     mainLayout->addWidget(mpBrushNoColorCheckBox, 1, 1);
-    mainLayout->addWidget(mpBrushPatternLabel, 2, 0, 1, 2);
-    mainLayout->addWidget(mpBrushPatternsComboBox, 3, 0);
+    if (mShapeType != Text)
+    {
+        mainLayout->addWidget(mpBrushPatternLabel, 2, 0, 1, 2);
+        mainLayout->addWidget(mpBrushPatternsComboBox, 3, 0);
+    }
     mpBrushStyleGroup->setLayout(mainLayout);
 
     QVBoxLayout *layout = new QVBoxLayout;
@@ -876,6 +901,11 @@ void ShapeProperties::setInitPenPattern(Qt::PenStyle pattern)
     int index = mpPenPatternsComboBox->findData(pattern);
     if (index != -1)
         mpPenPatternsComboBox->setCurrentIndex(index);
+}
+
+void ShapeProperties::setInitCornerRadius(double radius)
+{
+    mpCornerRadiusSpinBox->setValue(radius);
 }
 
 void ShapeProperties::setInitPenThickness(double thickness)
@@ -978,6 +1008,15 @@ void ShapeProperties::penNoColorChecked(int state)
     }
 }
 
+void ShapeProperties::setCornerRadius()
+{
+    mRectCornerRadius = mpCornerRadiusSpinBox->value();
+}
+
+double ShapeProperties::getCornerRadius()
+{
+    return mRectCornerRadius;
+}
 
 void ShapeProperties::setPenThickness()
 {
@@ -1082,17 +1121,17 @@ void ShapeProperties::brushNoColorChecked(int state)
     }
 }
 
-
 void ShapeProperties::applyChanges()
 {
     setPenPattern();
     setPenThickness();
+    setCornerRadius();
     setPenSmooth();
     mpShape->changePenProperty();
     if(mShapeType!=ShapeProperties::Line)
     {
-    setBrushPattern();
-    mpShape->changeBrushProperty();
+        setBrushPattern();
+        mpShape->changeBrushProperty();
     }
     accept();
 }
