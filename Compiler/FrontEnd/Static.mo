@@ -13334,7 +13334,7 @@ algorithm
         (cache, elab_dim) = elabArrayDim(inCache, inEnv, inCref, dim,
           inImplicit, inST, inDoVect, inPrefix, inInfo);
         elab_dims = elab_dim :: inElaboratedDims;
-        (cache, elab_dims) = elabArrayDims2(inCache, inEnv, inCref, rest_dims,
+        (cache, elab_dims) = elabArrayDims2(cache, inEnv, inCref, rest_dims,
           inImplicit, inST, inDoVect, inPrefix, inInfo, elab_dims);
       then
         (inCache, elab_dims);
