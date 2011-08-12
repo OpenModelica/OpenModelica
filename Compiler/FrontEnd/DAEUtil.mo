@@ -5350,16 +5350,48 @@ algorithm
 end simpleInlineDerEuler;
 
 public function transformationsBeforeBackend
+  input Env.Cache cache;
   input DAE.DAElist dae;
   output DAE.DAElist d;
+protected
+  list<DAE.Element> elts;
 algorithm
-  d := dae;
+  DAE.DAE(elts) := dae;
+  elts := Util.listMap1(elts,makeEvaluatedParamFinal,Env.getEvaluatedParams(cache));
+  d := DAE.DAE(elts);
   // Transform if equations to if expression before going into code generation.
   d := evaluateAnnotation(d);
   d := transformIfEqToExpr(d,false);
   // Don't even run the function to try and do this; it doesn't work very well
   // d := transformDerInline(d);
 end transformationsBeforeBackend;
+
+protected function makeEvaluatedParamFinal
+  input DAE.Element elt;
+  input HashTable.HashTable ht;
+  output DAE.Element oelt;
+algorithm
+  oelt := matchcontinue (elt,ht)
+    local
+      DAE.ComponentRef cr;
+      Option<DAE.VariableAttributes> varOpt;
+      String id;
+      list<DAE.Element> elts;
+      DAE.ElementSource source;
+      Option<SCode.Comment> cmt;
+    case (DAE.VAR(componentRef=cr,kind=DAE.PARAM(),variableAttributesOption=varOpt),ht)
+      equation
+        _ = BaseHashTable.get(cr,ht);
+        // print("Make cr final " +& ComponentReference.printComponentRefStr(cr) +& "\n");
+        elt = setVariableAttributes(elt,setFinalAttr(varOpt,true));
+      then elt;
+    case (DAE.COMP(id,elts,source,cmt),ht)
+      equation
+        elts = Util.listMap1(elts,makeEvaluatedParamFinal,ht);
+      then DAE.COMP(id,elts,source,cmt);
+    else elt;
+  end matchcontinue;
+end makeEvaluatedParamFinal;
 
 public function setBindingSource
 "@author: adrpo

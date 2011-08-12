@@ -374,7 +374,7 @@ algorithm
         msg = Util.if_(Types.constIsConst(c), Ceval.MSG(inInfo), Ceval.NO_MSG());
         (cache,v,_) = Ceval.ceval(inCache, inEnv, inExp, false,NONE(), msg);
       then
-        (cache,SOME(v));
+        (inCache /*Yeah; this makes sense :)*/,SOME(v));
     // Constant evaluation failed, return no value.
     else (inCache,NONE());
   end matchcontinue;

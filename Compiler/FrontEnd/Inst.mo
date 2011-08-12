@@ -5312,11 +5312,21 @@ public function instElementList
   output ConnectionGraph.ConnectionGraph outGraph;
 protected
   list<tuple<SCode.Element, DAE.Mod>> el;
+  Env.Cache cache;
+  Integer i1,i2;
 algorithm
+  // print("push " +& PrefixUtil.printPrefixStr(inPrefix) +& "\n");
+  cache := pushStructuralParameters(inCache);
+  // i1 := numStructuralParameterScopes(cache);
   el := sortElementList(inElements, inEnv);
-  (outCache, outEnv, outIH, outStore, outDae, outSets, outState, outTypesVarLst, outGraph) := 
-    instElementList2(inCache, inEnv, inIH, store, inMod, inPrefix, inSets,
+  (cache, outEnv, outIH, outStore, outDae, outSets, outState, outTypesVarLst, outGraph) := 
+    instElementList2(cache, inEnv, inIH, store, inMod, inPrefix, inSets,
       inState, el, inInstDims, inImplInst, inCallingScope, inGraph, inStopOnError);
+  // i2 := numStructuralParameterScopes(cache);
+  // assert(i1 == i2) ;)
+  // print("pop " +& PrefixUtil.printPrefixStr(inPrefix) +& "\n");
+  // print("numStructuralParameterScopes " +& PrefixUtil.printPrefixStr(inPrefix) +& " before/after " +& intString(i1) +& "/" +& intString(i2) +& "\n");
+  outCache := popStructuralParameters(cache,inPrefix);
 end instElementList;
 
 protected function sortElementList
@@ -6458,7 +6468,7 @@ algorithm
           info = info)), cmod),
         inst_dims, impl, callscope, graph)
       equation
-        // print("  instElement: A component: " +& n +& " " +& SCode.finalStr(finalPrefix) +& "\n");
+        // print("  instElement: A component: " +& name +& "\n");
         // Debug.fprintln("debug"," instElement " +& n +& " in s:" +& Env.printEnvPathStr(env) +& " m: " +& SCodeDump.printModStr(m) +& " cm : " +& Mod.printModStr(cmod));
         m = traverseModAddFinal(m, final_prefix);
         comp = SCode.COMPONENT(name, prefixes, attr, ts, m, comment, cond, info);
@@ -6558,11 +6568,10 @@ algorithm
         // print("After selectModifiers:\n\tmod: " +& Mod.printModStr(mod) +& "\n\t" +&"mod_1: " +& Mod.printModStr(mod_1) +& "\n");
         
         eq = Mod.modEquation(mod);
-        
         // The variable declaration and the (optional) equation modification are inspected for array dimensions.
         is_function_input = isFunctionInput(ci_state, dir);
         (cache, dims) = elabArraydim(cache, env2, own_cref, t, ad, eq, impl, 
-          NONE(), true, is_function_input, pre, info, inst_dims);        
+          NONE(), true, is_function_input, pre, info, inst_dims);
         
         // adrpo: 2010-09-28: check if the IDX mod doesn't overlap!
         Mod.checkIdxModsForNoOverlap(mod_1, PrefixUtil.prefixAdd(name, {}, pre, vt, ci_state), info);
@@ -6570,7 +6579,6 @@ algorithm
         (cache, comp_env, ih, store, dae, csets, ty, graph_new) = instVar(cache,
           cenv, ih, store, ci_state, mod_1, pre, csets, name, cls, attr,
           prefixes, dims, {}, inst_dims, impl, comment, info, graph, env2);
-        
         // print("instElement -> component: " +& name +& " ty: " +& Types.printTypeStr(ty) +& "\n");
         
         //The environment is extended (updated) with the new variable binding. 
@@ -7604,7 +7612,7 @@ algorithm
         // outer dae has no meaning!
         outerDAE = DAEUtil.emptyDae;
       then
-        (cache,compenv,ih,store,outerDAE,csets,ty,graph);
+        (inCache /* we don't want to return the old, crappy cache as ours was newer */,compenv,ih,store,outerDAE,csets,ty,graph);
 
     // is ONLY outer and the inner was not yet set in the IH or we have no inner declaration!
     case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,componentDefinitionParentEnv)
@@ -16686,5 +16694,68 @@ algorithm
       then optimizeStatementTailMatchCases(path,cases,changed,case_::acc,vars,source);
   end matchcontinue;
 end optimizeStatementTailMatchCases;
+
+public function pushStructuralParameters
+  "Cannot be part of Env due to RML issues"
+  input Env.Cache cache;
+  output Env.Cache ocache;
+protected
+  Option<array<Env.EnvCache>> ec;
+  Option<Env.Env> ie;
+  array<DAE.FunctionTree> f;
+  HashTable.HashTable ht;
+  list<list<DAE.ComponentRef>> crs;
+algorithm
+  Env.CACHE(ec,ie,f,(ht,crs)) := cache;
+  ocache := Env.CACHE(ec,ie,f,(ht,{}::crs));
+end pushStructuralParameters;
+
+public function popStructuralParameters
+  "Cannot be part of Env due to RML issues"
+  input Env.Cache cache;
+  input Prefix.Prefix pre;
+  output Env.Cache ocache;
+protected
+  Option<array<Env.EnvCache>> ec;
+  Option<Env.Env> ie;
+  array<DAE.FunctionTree> f;
+  HashTable.HashTable ht;
+  list<DAE.ComponentRef> crs;
+  list<list<DAE.ComponentRef>> crss;
+algorithm
+  Env.CACHE(ec,ie,f,(ht,crs::crss)) := cache;
+  ht := prefixAndAddCrefsToHt(cache,ht,pre,crs);
+  ocache := Env.CACHE(ec,ie,f,(ht,crss));
+end popStructuralParameters;
+
+protected function prefixAndAddCrefsToHt
+  "Cannot be part of Env due to RML issues"
+  input Env.Cache cache;
+  input HashTable.HashTable ht;
+  input Prefix.Prefix pre;
+  input list<DAE.ComponentRef> crs;
+  output HashTable.HashTable oht;
+algorithm
+  oht := match (cache,ht,pre,crs)
+    local
+      DAE.ComponentRef cr;
+    case (cache,ht,pre,{}) then ht;
+    case (cache,ht,pre,cr::crs)
+      equation
+        (_,cr) = PrefixUtil.prefixCref(cache, {}, InnerOuter.emptyInstHierarchy, pre, cr);
+        ht = BaseHashTable.add((cr,1),ht);
+      then ht;
+  end match;
+end prefixAndAddCrefsToHt;
+
+protected function numStructuralParameterScopes
+  input Env.Cache cache;
+  output Integer i;
+protected
+  list<list<DAE.ComponentRef>> lst;
+algorithm
+  Env.CACHE(evaluatedParams=(_,lst)) := cache;
+  i := listLength(lst);
+end numStructuralParameterScopes;
 
 end Inst;

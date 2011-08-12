@@ -5139,6 +5139,7 @@ algorithm
       Values.Value v;
       String str, scope_str, s1, s2, s3;
       Absyn.Info info;
+      SCode.Variability variability;
     
     // A variable with no binding and SOME for range constness -> a for iterator
     case (_, _, _, _, _, DAE.UNBOUND(), SOME(_), _, _, _, _, _, _) then fail();
@@ -5167,10 +5168,13 @@ algorithm
         (inCache, v);    
         
     // A variable with a binding -> constant evaluate the binding
-    case (_, _, _, _, _, _, _, _, _, _, _, _, _)
+    case (_, _, _, DAE.ATTR(variability=variability), _, _, _, _, _, _, _, _, _)
       equation
+        // Do not check this; it is needed for some reason :( 
+        // true = SCode.isParameterOrConst(variability);
         false = crefEqualValue(inCref, inBinding);
         (cache, v) = cevalCrefBinding(inCache, inEnv, inCref, inBinding, inImpl, inMsg);
+        cache = Env.addEvaluatedCref(cache,variability,ComponentReference.crefStripLastSubs(inCref));
       then
         (cache, v);
   end match;

@@ -11770,7 +11770,7 @@ algorithm
     case (cache,env,e1,e2,e3,DAE.C_PARAM(),impl,st,_) then (cache,DAE.IFEXP(e1,e2,e3));
     case (cache,env,e1,e2,e3,DAE.C_CONST(),impl,st,_)
       equation
-        msg = Util.if_(Env.inFunctionScope(env), Ceval.NO_MSG(), Ceval.MSG(inInfo));  
+        msg = Util.if_(Env.inFunctionScope(env), Ceval.NO_MSG(), Ceval.MSG(inInfo));
         (cache,Values.BOOL(cond),_) = Ceval.ceval(cache,env, e1, impl, st,msg);
         res = Util.if_(cond, e2, e3);
       then

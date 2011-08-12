@@ -85,16 +85,36 @@ encapsulated package Env
 public import Absyn;
 public import ClassInf;
 public import DAE;
+public import HashTable;
 public import SCode;
+// protected imports
+protected import BaseHashTable;
+protected import ComponentReference;
+protected import DAEDump;
+protected import DAEUtil;
+protected import Debug;
+protected import Dump;
+protected import Error;
+protected import Expression;
+protected import ExpressionDump;
+protected import Print;
+protected import Util;
+protected import Types;
+protected import OptManager;
+protected import RTOpts;
+protected import SCodeDump;
+protected import Mod;
 
 public type Ident = String " An identifier is just a string " ;
 public type Env = list<Frame> "an environment is a list of frames";
+public type StructuralParameters = tuple<HashTable.HashTable,list<list<DAE.ComponentRef>>>;
 
 public uniontype Cache
   record CACHE
     Option<array<EnvCache>> envCache "The cache contains of environments from which classes can be found";
     Option<Env> initialEnv "and the initial environment";
     array<DAE.FunctionTree> functions "set of Option<DAE.Function>; NONE() means instantiation started; SOME() means it's finished";
+    StructuralParameters evaluatedParams "ht of prefixed crefs and a stack of evaluated but not yet prefix crefs";
   end CACHE;
 end Cache;
 
@@ -175,23 +195,6 @@ uniontype Item
 
 end Item;
 
-// protected imports
-protected import ComponentReference;
-protected import DAEDump;
-protected import DAEUtil;
-protected import Debug;
-protected import Dump;
-protected import Error;
-protected import Expression;
-protected import ExpressionDump;
-protected import Print;
-protected import Util;
-protected import Types;
-protected import OptManager;
-protected import RTOpts;
-protected import SCodeDump;
-protected import Mod;
-
 public constant Env emptyEnv={} "- Values" ;
 
 public function emptyCache
@@ -201,12 +204,14 @@ public function emptyCache
   Option<array<EnvCache>> envCache;
   array<EnvCache> arr;
   array<DAE.FunctionTree> instFuncs;
+  StructuralParameters ht;
 algorithm
   //print("EMPTYCACHE\n");
   arr := arrayCreate(1, ENVCACHE(CACHETREE("$global",emptyEnv,{})));
   envCache := Util.if_(OptManager.getOption("envCache"),SOME(arr),NONE());
   instFuncs := arrayCreate(1, DAEUtil.emptyFuncTree);
-  cache := CACHE(envCache,NONE(),instFuncs);
+  ht := (HashTable.emptyHashTableSized(BaseHashTable.lowBucketSize),{});
+  cache := CACHE(envCache,NONE(),instFuncs,ht);
 end emptyCache;
 
 public constant String forScopeName="$for loop scope$" "a unique scope used in for equations";
@@ -1303,10 +1308,7 @@ public function getCachedInitialEnv "get the initial environment from the cache"
   output Env env;
 algorithm
   env := match(cache)
-    //case (_) then fail();
-    case (CACHE(_,SOME(env),_)) equation
-    //  print("getCachedInitialEnv\n");
-      then env;
+    case (CACHE(initialEnv=SOME(env))) then env;
   end match;
 end getCachedInitialEnv;
 
@@ -1316,13 +1318,13 @@ public function setCachedInitialEnv "set the initial environment in the cache"
   output Cache outCache;
 algorithm
   outCache := match(inCache,env)
-  local
+    local
       Option<array<EnvCache>> envCache;
       array<DAE.FunctionTree> ef;
+      StructuralParameters ht;
 
-    case (CACHE(envCache,_,ef),env) equation
- //      print("setCachedInitialEnv\n");
-      then CACHE(envCache,SOME(env),ef);
+    case (CACHE(envCache,_,ef,ht),env)
+      then CACHE(envCache,SOME(env),ef,ht);
   end match;
 end setCachedInitialEnv;
 
@@ -1336,8 +1338,7 @@ algorithm
     local
       CacheTree tree;
       array<EnvCache> arr;
-      array<DAE.FunctionTree> ef;
-   case (scope,path,CACHE(SOME(arr) ,_,ef))
+   case (scope,path,CACHE(envCache=SOME(arr)))
       equation
         ENVCACHE(tree) = arr[1];
         env = cacheGetEnv(scope,path,tree);
@@ -1360,7 +1361,7 @@ algorithm
     
     case (_,inCache as CACHE(envCache=NONE()),_) then inCache;
 
-    case (fullpath,CACHE(SOME(arr),ie,ef),env)
+    case (fullpath,CACHE(envCache=SOME(arr)),env)
       equation
         ENVCACHE(tree)=arr[1];
         // print(" about to Adding ");print(Absyn.pathString(fullpath));print(" to cache:\n");
@@ -1617,7 +1618,7 @@ algorithm
       String s,s2;
     
     // some cache present
-    case CACHE(SOME(arr),_,ef)
+    case CACHE(SOME(arr),_,ef,_)
       equation
         ENVCACHE(tree) = arr[1];
         s = printCacheTreeStr(tree,1);
@@ -1626,7 +1627,7 @@ algorithm
         str = str +& "\nInstantiated funcs: " +& s2 +&"\n";
       then str;
     // empty cache
-    case CACHE(_,_,_) then "EMPTY CACHE\n";
+    else "EMPTY CACHE\n";
   end matchcontinue;
 end printCacheStr;
 
@@ -2470,17 +2471,17 @@ algorithm
       Option<array<EnvCache>> envCache;
       array<DAE.FunctionTree> ef;
       Option<Env> ienv;
-
+      StructuralParameters ht;
       /* Don't overwrite SOME() with NONE() */
     case (cache, func)
       equation
         checkCachedInstFuncGuard(cache, func);
       then cache;
 
-    case (CACHE(envCache,ienv,ef),func as Absyn.FULLYQUALIFIED(_))
+    case (CACHE(envCache,ienv,ef,ht),func as Absyn.FULLYQUALIFIED(_))
       equation
         ef = arrayUpdate(ef,1,DAEUtil.avlTreeAdd(arrayGet(ef, 1),func,NONE()));
-      then CACHE(envCache,ienv,ef);
+      then CACHE(envCache,ienv,ef,ht);
     // Non-FQ paths mean aliased functions; do not add these to the cache
     case (cache,_) then (cache);
   end matchcontinue;
@@ -2497,10 +2498,11 @@ algorithm
       Option<array<EnvCache>> envCache;
       array<DAE.FunctionTree> ef;
       Option<Env> ienv;
-    case (CACHE(envCache,ienv,ef),funcs)
+      StructuralParameters ht;
+    case (CACHE(envCache,ienv,ef,ht),funcs)
       equation
         ef = arrayUpdate(ef,1,DAEUtil.addDaeFunction(funcs, arrayGet(ef, 1)));
-      then CACHE(envCache,ienv,ef);
+      then CACHE(envCache,ienv,ef,ht);
   end match;
 end addDaeFunction;
 
@@ -2515,10 +2517,11 @@ algorithm
       Option<array<EnvCache>> envCache;
       array<DAE.FunctionTree> ef;
       Option<Env> ienv;
-    case (CACHE(envCache,ienv,ef),funcs)
+      StructuralParameters ht;
+    case (CACHE(envCache,ienv,ef,ht),funcs)
       equation
         ef = arrayUpdate(ef,1,DAEUtil.addDaeExtFunction(funcs, arrayGet(ef,1)));
-      then CACHE(envCache,ienv,ef);
+      then CACHE(envCache,ienv,ef,ht);
   end match;
 end addDaeExtFunction;
 
@@ -2591,6 +2594,45 @@ algorithm
         res;
   end match;
 end printAvlTreeStrPP2;
+
+public function addEvaluatedCref
+  input Cache cache;
+  input SCode.Variability var;
+  input DAE.ComponentRef cr;
+  output Cache ocache;
+algorithm
+  ocache := match (cache,var,cr)
+    local
+      String str;
+      Option<array<EnvCache>> envCache;
+      Option<Env> initialEnv;
+      array<DAE.FunctionTree> functions;
+      HashTable.HashTable ht;
+      list<list<DAE.ComponentRef>> st;
+      list<DAE.ComponentRef> crs;
+    case (CACHE(envCache,initialEnv,functions,(ht,crs::st)),SCode.PARAM(),cr)
+      equation
+        str = ComponentReference.printComponentRefStr(cr);
+      then CACHE(envCache,initialEnv,functions,(ht,(cr::crs)::st));
+    else cache;
+  end match;
+end addEvaluatedCref;
+
+public function getEvaluatedParams
+  input Cache cache;
+  output HashTable.HashTable ht;
+algorithm
+  CACHE(evaluatedParams=(ht,_)) := cache;
+end getEvaluatedParams;
+
+public function printNumStructuralParameters
+  input Cache cache;
+protected
+  list<DAE.ComponentRef> crs;
+algorithm
+  CACHE(_,_,_,(_,crs::_)) := cache;
+  print("printNumStructuralParameters: " +& intString(listLength(crs)) +& "\n");
+end printNumStructuralParameters;
 
 end Env;
 
