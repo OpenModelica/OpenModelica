@@ -13337,7 +13337,7 @@ algorithm
         (cache, elab_dims) = elabArrayDims2(cache, inEnv, inCref, rest_dims,
           inImplicit, inST, inDoVect, inPrefix, inInfo, elab_dims);
       then
-        (inCache, elab_dims);
+        (cache, elab_dims);
   end match;
 end elabArrayDims2;
 
