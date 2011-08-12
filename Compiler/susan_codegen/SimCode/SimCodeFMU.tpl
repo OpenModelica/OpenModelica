@@ -99,7 +99,7 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
   let fmiVersion = '1.0' 
   let modelName = dotPath(modelInfo.name)
-  let modelIdentifier = fileNamePrefix
+  let modelIdentifier = System.stringReplace(fileNamePrefix,".", "_")
   let description = ''
   let author = ''
   let version= '' 
@@ -365,7 +365,7 @@ case SIMCODE(__) then
   <<
   
   // define class name and unique id
-  #define MODEL_IDENTIFIER <%fileNamePrefix%>
+  #define MODEL_IDENTIFIER <%System.stringReplace(fileNamePrefix,".", "_")%>
   #define MODEL_GUID "{<%guid%>}"
   
   // include fmu header files, typedefs and macros
