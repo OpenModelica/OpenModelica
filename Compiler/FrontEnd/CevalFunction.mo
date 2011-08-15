@@ -2492,7 +2492,7 @@ algorithm
     case ((exp as DAE.CREF(componentRef = DAE.CREF_IDENT(ident = iter)), 
         (all_el, accum_el, iters as _ :: _)))
       equation
-        true = Util.listContainsWithCompareFunc(iter, iters, stringEqual);
+        true = Util.listMemberWithCompareFunc(iter, iters, stringEqual);
       then
         ((exp, (all_el, accum_el, iters)));
 

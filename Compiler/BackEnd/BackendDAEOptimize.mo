@@ -3286,7 +3286,7 @@ algorithm
         Debug.fcall("tearingdump", print, str1);
          // get from mT variable with most equations
         vars = m[residualeqn];
-        vars_1 = Util.listSelect1(vars,tvars,Util.listContains);
+        vars_1 = Util.listSelect1(vars,tvars,listMember);
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem3(dlow,dlow1,m,mT,v1,v2,comp,vars_1,{},residualeqn,residualeqns,tearingvars,tearingeqns,crlst);
         // only succeed if tearing need less equations than system size is
 //        true = listLength(tearingvars_1) < systemsize;
@@ -3427,7 +3427,7 @@ algorithm
         onecomp_flat = Util.listFlatten(onecomp);
         // remove residual equations and tearing eqns
         resteareqns = listAppend(tearingeqnid::tearingeqns,residualeqn::residualeqns);
-        othereqns = Util.listSelect1(onecomp_flat,resteareqns,Util.listNotContains);
+        othereqns = Util.listSelect1(onecomp_flat,resteareqns,Util.notListMember);
         eqns1_2 = solveEquations(eqns1_1,othereqns,v2_1,vars_1,crlst);
          // if we have not make alle equations causal select next residual equation
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_3,dlow1_2,m_3,mT_3,v1_2,v2_2,comps_2,compcount) = tearingSystem4(dlow_2,dlow1_1,m_2,mT_2,v1_1,v2_1,comps_1,residualeqn::residualeqns,tearingvar::tearingvars,tearingeqnid::tearingeqns,comp,0,crlst);
@@ -3436,7 +3436,7 @@ algorithm
                 (listLength(tearingvars_1) > listLength(tearingvars)) ) or (compcount == 0);
         // get specifig comps
         cmops_flat = Util.listFlatten(comps_2);
-        comp_2 = Util.listSelect1(cmops_flat,comp,Util.listContains);
+        comp_2 = Util.listSelect1(cmops_flat,comp,listMember);
       then
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_3,dlow1_2,m_3,mT_3,v1_2,v2_2,comp_2);
     case (dlow as BackendDAE.DAE(orderedVars = BackendDAE.VARIABLES(varArr=varr)),dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns,crlst)
@@ -3514,8 +3514,8 @@ algorithm
         ll = listLength(comp);
         true = ll > 1;
         // check block
-        checklst = Util.listMap1(comp,Util.listContains,ccomp);
-        true = Util.listContains(true,checklst);
+        checklst = Util.listMap1(comp,listMember,ccomp);
+        true = listMember(true,checklst);
         // this is a block
         compcount_1 = compcount + 1;
         // get all interesting vars
@@ -3532,8 +3532,8 @@ algorithm
         ll = listLength(comp);
         true = ll > 1;
         // check block
-        checklst = Util.listMap1(comp,Util.listContains,ccomp);
-        true = Util.listContains(true,checklst);
+        checklst = Util.listMap1(comp,listMember,ccomp);
+        true = listMember(true,checklst);
         // this is a block
         compcount_1 = compcount + 1;
         // next Block
@@ -3576,12 +3576,12 @@ algorithm
       equation
         (en_1,max_1) = getMaxfromListList(m,rest,comp,max,en,exclude);
         true = v > 0;
-        false = Util.listContains(v,exclude);
+        false = listMember(v,exclude);
         eqn = m[v];
         // remove negative
         eqn_1 = BackendDAEUtil.removeNegative(eqn);
         // select entries
-        eqn_2 = Util.listSelect1(eqn_1,comp,Util.listContains);
+        eqn_2 = Util.listSelect1(eqn_1,comp,listMember);
         // remove multiple entries
         eqn_3 = removeMultiple(eqn_2);
         v1 = listLength(eqn_3);
@@ -3625,12 +3625,12 @@ algorithm
       equation
         (en_1,max_1) = getMaxfromListListVar(m,rest,comp,max,en,exclude,vars);
         true = v > 0;
-        false = Util.listContains(v,exclude);
+        false = listMember(v,exclude);
         eqn = m[v];
         // remove negative
         eqn_1 = BackendDAEUtil.removeNegative(eqn);
         // select entries
-        eqn_2 = Util.listSelect1(eqn_1,comp,Util.listContains);
+        eqn_2 = Util.listSelect1(eqn_1,comp,listMember);
         // remove multiple entries
         eqn_3 = removeMultiple(eqn_2);
         // check if state or state der and prefer them
@@ -3667,14 +3667,14 @@ algorithm
         {v};
     case (v::rest)
       equation
+        false = listMember(v,rest);
         lst = removeMultiple(rest);
-        false = Util.listContains(v,lst);
       then
         (v::lst);
     case (v::rest)
       equation
+        true = listMember(v,rest);
         lst = removeMultiple(rest);
-        true = Util.listContains(v,lst);
       then
         lst;
   end matchcontinue;
@@ -3755,7 +3755,7 @@ algorithm
         // changed during solving process inside
         crlstlst = Util.listMap(nonconstexplst,Expression.extractCrefsFromExp);
         // add explst with variables which will not be changed during solving prozess
-        blstlst = Util.listListMap2(crlstlst,Util.listContainsWithCompareFunc,crlst,ComponentReference.crefEqualNoStringCompare);
+        blstlst = Util.listListMap2(crlstlst,Util.listMemberWithCompareFunc,crlst,ComponentReference.crefEqualNoStringCompare);
         blst_1 = Util.listMap(blstlst,Util.boolOrList);
         (tnofixedexplst,tfixedexplst) = Util.listSplitOnBoolList(nonconstexplst,blst_1);
         true = listLength(tnofixedexplst) < 1;

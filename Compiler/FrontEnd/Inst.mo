@@ -4160,7 +4160,7 @@ algorithm outComps := matchcontinue(acrefs,remainingComps,className,existing)
       outComps;
   case(Absyn.CREF_IDENT(s1,_)::acrefs,remainingComps,className,existing) // modifer dep already added
     equation
-      true = Util.listContainsWithCompareFunc(s1,existing,stringEq);
+      true = Util.listMemberWithCompareFunc(s1,existing,stringEq);
     then
       extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
   case(Absyn.CREF_IDENT(s1,_)::acrefs,remainingComps,className,existing)
@@ -7388,7 +7388,7 @@ algorithm
     case((sub as DAE.NAMEMOD(ident=n,mod=mod))::subs,elems)
       equation
         osubs = keepConstrainingTypeModifersOnly2(subs,elems);
-        b = Util.listContainsWithCompareFunc(n,elems,stringEq);
+        b = Util.listMemberWithCompareFunc(n,elems,stringEq);
         osubs2 = Util.if_(b, {sub},{});
         osubs = listAppend(osubs2,osubs);
       then
@@ -11588,7 +11588,7 @@ protected function checkVarBindingsInputUsed
   input list<DAE.Element> els;
   output Boolean notfound;
 algorithm
-  notfound := not Util.listContainsWithCompareFunc(v,els,checkVarBindingInputUsed);
+  notfound := not Util.listMemberWithCompareFunc(v,els,checkVarBindingInputUsed);
 end checkVarBindingsInputUsed;
 
 protected function checkVarBindingInputUsed
@@ -11611,7 +11611,7 @@ protected function checkExternalDeclArgs
   input list<DAE.ExtArg> args;
   output Boolean notfound;
 algorithm
-  notfound := not Util.listContainsWithCompareFunc(v,args,extArgCrefEq);
+  notfound := not Util.listMemberWithCompareFunc(v,args,extArgCrefEq);
 end checkExternalDeclArgs;
 
 protected function checkExternalFunctionOutputAssigned
@@ -11634,7 +11634,7 @@ algorithm
       equation
         // Some weird functions pass the same output twice so we cannot check for exactly 1 occurance
         // Interfacing with LAPACK routines is fun, fun, fun :)
-        b = Util.listContainsWithCompareFunc(v,arg::args,extArgCrefEq) or Util.isSome(binding);
+        b = Util.listMemberWithCompareFunc(v,arg::args,extArgCrefEq) or Util.isSome(binding);
         str = Debug.bcallret1(not b,ComponentReference.printComponentRefStr,cr,"");
         Error.assertionOrAddSourceMessage(b,Error.EXTERNAL_NOT_SINGLE_RESULT,{str,name},DAEUtil.getElementSourceFileInfo(source));
       then ();

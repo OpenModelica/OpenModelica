@@ -984,7 +984,7 @@ algorithm
       Boolean b;
     case (it,(_,itlst))
       equation
-       b = Util.listContains(it,itlst);
+       b = listMember(it,itlst);
       then b;
     case (_,_) then false;
   end matchcontinue;

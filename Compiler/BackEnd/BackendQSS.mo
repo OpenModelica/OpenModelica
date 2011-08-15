@@ -1599,7 +1599,7 @@ algorithm
         (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars) = 
                    findWhereOutVarIsNeeded(curOutVar, discreteVarIndices, outBlockIndex, blocksToBeChecked, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars,{});
         true = Util.isListNotEmpty(curOutVarLinks) "If the current output var is needed somewhere";
-        false = Util.listContains(curOutVar, discreteVarIndices) "Check if the out variable is discrete";
+        false = listMember(curOutVar, discreteVarIndices) "Check if the out variable is discrete";
         // If it is not discrete proceed as normal
         curOutBlock_outVars = DEVS_struct_outVars[outBlockIndex];
         curOutBlock_outLinks = DEVS_struct_outLinks[outBlockIndex];
@@ -1620,7 +1620,7 @@ algorithm
         (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars) = 
                    findWhereOutVarIsNeeded(curOutVar, discreteVarIndices, outBlockIndex, blocksToBeChecked, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars,{});
         true = Util.isListNotEmpty(curOutVarLinks) "If the current output var is needed somewhere";
-        true = Util.listContains(curOutVar, discreteVarIndices) "Check if the out variable is discrete";
+        true = listMember(curOutVar, discreteVarIndices) "Check if the out variable is discrete";
         // If it is discrete add an event as output of the when-block and not the variable itself
         curOutBlock_outVars = DEVS_struct_outVars[outBlockIndex];
         curOutBlock_outLinks = DEVS_struct_outLinks[outBlockIndex];
@@ -1670,7 +1670,7 @@ algorithm
     // If CURRENT OUTPUT IS STATE    
     case (curOutVar, stateIndices,DEVS_blocks_inVars,outBlockIndex)
       equation
-        true = Util.listContains(-curOutVar, stateIndices);
+        true = listMember(-curOutVar, stateIndices);
         blocksToBeChecked = createListIncreasingIndices(1,listLength(DEVS_blocks_inVars),{});          
       then
         (blocksToBeChecked);
@@ -1679,7 +1679,7 @@ algorithm
     // back to the same block as inputs.
     case (curOutVar, stateIndices,DEVS_blocks_inVars,outBlockIndex) 
       equation
-        true = Util.listContains(curOutVar, stateIndices);
+        true = listMember(curOutVar, stateIndices);
         blocksToBeChecked = createListIncreasingIndices(1,listLength(DEVS_blocks_inVars),{});  
         blocksToBeChecked = Util.listRemoveNth(blocksToBeChecked, outBlockIndex); // If state derivative remove the current block from the input search.  
       then
@@ -1687,7 +1687,7 @@ algorithm
    // If CURRENT OUTPUT IS ALGEBRAIC
     case (curOutVar, stateIndices,DEVS_blocks_inVars,outBlockIndex) 
       equation
-        false = Util.listContains(curOutVar, stateIndices);
+        false = listMember(curOutVar, stateIndices);
         blocksToBeChecked = createListIncreasingIndices(1,listLength(DEVS_blocks_inVars),{});  
         blocksToBeChecked = Util.listRemoveNth(blocksToBeChecked, outBlockIndex); // If algebraic remove the current block from the input search.  
       then
@@ -1738,7 +1738,7 @@ algorithm
       equation
         // If the current outVariable is NOT needed in the current In block
         curBlock_inVars = listNth(DEVS_blocks_inVars, inBlockIndex-1);
-        false = Util.listContains(curOutVar, curBlock_inVars);
+        false = listMember(curOutVar, curBlock_inVars);
         
         (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars) = 
            findWhereOutVarIsNeeded(curOutVar, discreteVarIndices, outBlockIndex, restBlocksToBeChecked, DEVS_blocks_inVars,DEVS_struct_inLinks, DEVS_struct_inVars, curOutVarLinks);
@@ -1749,8 +1749,8 @@ algorithm
       equation
         // If the current outVariable is needed in the current In block
         curBlock_inVars = listNth(DEVS_blocks_inVars, inBlockIndex-1);
-        true = Util.listContains(curOutVar, curBlock_inVars);
-        false = Util.listContains(curOutVar, discreteVarIndices) "Check if the out variable is discrete";
+        true = listMember(curOutVar, curBlock_inVars);
+        false = listMember(curOutVar, discreteVarIndices) "Check if the out variable is discrete";
         // If it is not discrete proceed as normal
         curOutVarLinks = listAppend(curOutVarLinks, {inBlockIndex});
         
@@ -1770,8 +1770,8 @@ algorithm
       equation
         // If the current outVariable is needed in the current In block
         curBlock_inVars = listNth(DEVS_blocks_inVars, inBlockIndex-1);
-        true = Util.listContains(curOutVar, curBlock_inVars);
-        true = Util.listContains(curOutVar, discreteVarIndices) "Check if the out variable is discrete";
+        true = listMember(curOutVar, curBlock_inVars);
+        true = listMember(curOutVar, discreteVarIndices) "Check if the out variable is discrete";
         // If it is discrete add an event as output of the when-block and not the variable itself
         curOutVarLinks = listAppend(curOutVarLinks, {inBlockIndex});
         (DEVS_struct_inLinks, DEVS_struct_inVars) = updateEventsAsInputs2
@@ -1892,14 +1892,14 @@ algorithm
     
     case(head::rest_list, inList_temp)
       equation
-        true = Util.listContains(head, rest_list);
+        true = listMember(head, rest_list);
         inList_temp = findUniqueVars(rest_list, inList_temp);
       then
          (inList_temp);
          
      case(head::rest_list, inList_temp)
       equation
-        false = Util.listContains(head, rest_list);
+        false = listMember(head, rest_list);
         inList_temp = head::inList_temp;
         inList_temp = findUniqueVars(rest_list, inList_temp);
       then
@@ -3076,14 +3076,14 @@ algorithm
       
      case(head::rest_list, inList_temp)
       equation
-        true = Util.listContains(head, rest_list);
+        true = listMember(head, rest_list);
         inList_temp = removeRedundantElements(rest_list, inList_temp);
       then
          (inList_temp);
      
      case(head::rest_list, inList_temp)
       equation
-        false = Util.listContains(head, rest_list);
+        false = listMember(head, rest_list);
         inList_temp = listAppend(inList_temp, {head});
         inList_temp = removeRedundantElements(rest_list, inList_temp);
       then
@@ -3475,12 +3475,12 @@ algorithm
     
     case(loopIndex, cur_port_inputs::rest_inputs, inVar)
       equation
-       true = Util.listContains(inVar, cur_port_inputs); 
+       true = listMember(inVar, cur_port_inputs); 
       then (loopIndex);
     
     case(loopIndex, cur_port_inputs::rest_inputs, inVar)
       equation
-       false = Util.listContains(inVar, cur_port_inputs); 
+       false = listMember(inVar, cur_port_inputs); 
        portIn = findInputPort(loopIndex+1, rest_inputs, inVar);
       then (portIn);
     case (_,_,_)

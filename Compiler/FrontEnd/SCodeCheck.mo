@@ -442,10 +442,8 @@ algorithm
   _ := matchcontinue(inLiteral, inInfo)
     case (_, _)
       equation
-        true = Util.listNotContains(inLiteral, 
-          {"quantity", "min", "max", "start", "fixed"});
-      then
-        ();
+        false = listMember(inLiteral, {"quantity", "min", "max", "start", "fixed"});
+      then ();
 
     else
       equation

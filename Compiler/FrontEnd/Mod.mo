@@ -3187,7 +3187,7 @@ algorithm
     
     case(fullMod::rest,pre,elementName,info,addErrorMessage)
       equation
-        false = Util.listContainsWithCompareFunc(fullMod,rest,fullModCrefsEqual);
+        false = Util.listMemberWithCompareFunc(fullMod,rest,fullModCrefsEqual);
         checkDuplicatesInFullMods(rest,pre,elementName,info,addErrorMessage);
       then
         ();
@@ -3195,14 +3195,14 @@ algorithm
     // do not add a message
     case(fullMod::rest,pre,elementName,info,addErrorMessage as false)
       equation
-        true = Util.listContainsWithCompareFunc(fullMod,rest,fullModCrefsEqual);
+        true = Util.listMemberWithCompareFunc(fullMod,rest,fullModCrefsEqual);
       then
         fail();
     
     // add a message
     case(fullMod::rest,pre,elementName,info,addErrorMessage as true)
       equation
-        true = Util.listContainsWithCompareFunc(fullMod,rest,fullModCrefsEqual);
+        true = Util.listMemberWithCompareFunc(fullMod,rest,fullModCrefsEqual);
         duplicates = Util.listSelect1(rest, fullMod, fullModCrefsEqual);
         s1 = prettyPrintFullMod(fullMod, 1);
         s2 = PrefixUtil.makePrefixString(pre);

@@ -1171,7 +1171,7 @@ algorithm
     case ((inExp as DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),
           expLst={DAE.CREF(componentRef = cref)}), roots))
       equation
-        result = Util.listContainsWithCompareFunc(cref, roots, ComponentReference.crefEqual);
+        result = Util.listMemberWithCompareFunc(cref, roots, ComponentReference.crefEqual);
         Debug.fprintln("cgraph", "- ConnectionGraph.evalIsRootHelper: " +& 
            ExpressionDump.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
       then ((DAE.BCONST(result), roots));
@@ -1179,7 +1179,7 @@ algorithm
     case ((inExp as DAE.LUNARY(DAE.NOT(_), DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),
           expLst={DAE.CREF(componentRef = cref)})), roots))
       equation
-        result = Util.listContainsWithCompareFunc(cref, roots, ComponentReference.crefEqual);
+        result = Util.listMemberWithCompareFunc(cref, roots, ComponentReference.crefEqual);
         result = boolNot(result);
         Debug.fprintln("cgraph", "- ConnectionGraph.evalIsRootHelper: " +& 
            ExpressionDump.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));

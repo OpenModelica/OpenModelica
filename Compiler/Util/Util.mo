@@ -802,28 +802,18 @@ algorithm
   end matchcontinue;
 end listStripLast;
 
-public function listContains "function: listContains
-Checks wheter a list contains a value or not."
-  input Type_a ele;
-  input list<Type_a> elems;
-  output Boolean contains;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  contains := listMember(ele,elems);
-end listContains;
-
-public function listNotContains "function: listNotContains
-Checks wheter a list contains a value or not."
+public function notListMember
+  "Checks wheter a list contains a value or not."
   input Type_a ele;
   input list<Type_a> elems;
   output Boolean contains;
   replaceable type Type_a subtypeof Any;
 algorithm
   contains := not listMember(ele,elems);
-end listNotContains;
+end notListMember;
 
-public function listContainsWithCompareFunc "function: listContains
-  Checks whether a list contains a value or not."
+public function listMemberWithCompareFunc
+  "Checks whether a list contains a value or not."
   input Type_a ele;
   input list<Type_b> elems;
   input compareFunc f;
@@ -850,11 +840,11 @@ algorithm
         true;
     case (a,_::rest,f)
       equation
-        bool = listContainsWithCompareFunc(a,rest,f);
+        bool = listMemberWithCompareFunc(a,rest,f);
       then
         bool;
   end matchcontinue;
-end listContainsWithCompareFunc;
+end listMemberWithCompareFunc;
 
 public function listStripFirst "function: listStripLast
   Remove the last element of a list. If the list is the empty list, the function
@@ -4619,7 +4609,7 @@ public function listUnionEltComp
   end CompareFunc;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outList := listConsOnTrue(not listContainsWithCompareFunc(inElem,inList,inCompFunc),inElem,inList);
+  outList := listConsOnTrue(not listMemberWithCompareFunc(inElem,inList,inCompFunc),inElem,inList);
 end listUnionEltComp;
 
 public function listUnion "function listUnion

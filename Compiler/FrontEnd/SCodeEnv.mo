@@ -999,7 +999,7 @@ algorithm
 
     case (_, _, _)
       equation
-        false = Util.listContainsWithCompareFunc(inImport, inImports,
+        false = Util.listMemberWithCompareFunc(inImport, inImports,
           compareQualifiedImportNames);
       then
         ();

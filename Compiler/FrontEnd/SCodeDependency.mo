@@ -524,9 +524,9 @@ algorithm
     // Otherwise it's not valid, so print an error message.
     else
       equation
-        has_con = Util.listContainsWithCompareFunc(
+        has_con = Util.listMemberWithCompareFunc(
           "constructor", inElements, stringEqual);
-        has_des = Util.listContainsWithCompareFunc(
+        has_des = Util.listMemberWithCompareFunc(
           "destructor", inElements, stringEqual);
         env_str = SCodeEnv.getEnvName(inEnv);
         checkExternalObject2(inElements, has_con, has_des, env_str, inInfo);

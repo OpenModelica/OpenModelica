@@ -4375,7 +4375,7 @@ algorithm
         // get residual eqns and other eqns
         reqns = Util.listMap1r(r,listNth,eqn_lst1);
         // remove residual equation from list of other equtions
-        block_1 = Util.listSelect1(block_,r,Util.listNotContains);
+        block_1 = Util.listSelect1(block_,r,Util.notListMember);
         // replace tearing variables in other equations with x_loc[..]
         eqn_lst2 = generateTearingSystem1(eqn_lst,repl);
         eqn1 = BackendDAEUtil.listEquation(eqn_lst2);
@@ -4845,7 +4845,7 @@ algorithm
         eqn_lst = BackendDAEUtil.equationList(eqn);
         var_lst = BackendDAEUtil.varList(v);
         // get non relaxation equations
-        block_1 = Util.listSelect1(block_,r,Util.listNotContains);
+        block_1 = Util.listSelect1(block_,r,Util.notListMember);
         // get names from variables
         crefs = BackendVariable.getAllCrefFromVariables(v);
         crefs = listReverse(crefs);
@@ -8733,12 +8733,12 @@ algorithm
     case ((e as DAE.CALL(path = path, attr = DAE.CALL_ATTR(builtin = false)),(acc,filter)))
       equation
         path = Absyn.makeNotFullyQualified(path);
-        false = Util.listContainsWithCompareFunc(path,filter,Absyn.pathEqual);
+        false = Util.listMemberWithCompareFunc(path,filter,Absyn.pathEqual);
       then ((e,(path::acc,filter)));
     case ((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = false)),(acc,filter)))
       equation
         path = Absyn.crefToPath(getCrefFromExp(e));
-        false = Util.listContainsWithCompareFunc(path,filter,Absyn.pathEqual);
+        false = Util.listMemberWithCompareFunc(path,filter,Absyn.pathEqual);
       then ((e,(path::acc,filter)));
     case itpl then itpl;
   end matchcontinue;
@@ -11536,7 +11536,7 @@ algorithm
       equation
         fi = FILEINFO(f, ro);
         // add it only if is not already there!
-        files = Util.listConsOnTrue(Util.listNotContains(fi, files), fi, files);
+        files = Util.listConsOnTrue(not listMember(fi, files), fi, files);
       then 
         files;
   end match;

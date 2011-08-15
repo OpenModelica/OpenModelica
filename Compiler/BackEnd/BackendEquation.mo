@@ -1230,7 +1230,7 @@ algorithm
       Integer indx;
       case ((eqn as BackendDAE.ALGORITHM(index=indx),(indexes,algarr,algs)))
         equation
-          false = Util.listContainsWithCompareFunc(indx,indexes,intEq);
+          false = Util.listMemberWithCompareFunc(indx,indexes,intEq);
           alg = algarr[indx + 1];
         then
           ((eqn,(indx::indexes,algarr,alg::algs)));

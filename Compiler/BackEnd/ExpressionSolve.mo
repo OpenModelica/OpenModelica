@@ -389,7 +389,7 @@ algorithm
         true = solve4(op);
         false = Expression.isZero(e1);
         crefs = Expression.extractCrefsFromExp(e1);
-        false = Util.listContainsWithCompareFunc(cr,crefs,ComponentReference.crefEqualNoStringCompare);
+        false = Util.listMemberWithCompareFunc(cr,crefs,ComponentReference.crefEqualNoStringCompare);
       then
         (e2,e1);
     // swapped arguments   
@@ -398,7 +398,7 @@ algorithm
         true = solve4(op);
         false = Expression.isZero(e2);
         crefs = Expression.extractCrefsFromExp(e2);
-        false = Util.listContainsWithCompareFunc(cr,crefs,ComponentReference.crefEqualNoStringCompare);
+        false = Util.listMemberWithCompareFunc(cr,crefs,ComponentReference.crefEqualNoStringCompare);
       then
         (e1,e2);
 

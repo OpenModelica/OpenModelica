@@ -1446,7 +1446,7 @@ algorithm
 
     case (_, Absyn.STRING(s)) then stringEq(s, inLibrary);
     case (_, Absyn.ARRAY(exps))
-      then Util.listContainsWithCompareFunc(inLibrary, exps, checkLibraryUsage);
+      then Util.listMemberWithCompareFunc(inLibrary, exps, checkLibraryUsage);
   end match;
 end checkLibraryUsage;
         

@@ -299,8 +299,7 @@ algorithm
     case ((node, _), _, _ :: _, _)
       equation
         // Check if we have already visited this node.
-        true = Util.listContainsWithCompareFunc(node, inVisitedNodes,
-          inEqualFunc);
+        true = Util.listMemberWithCompareFunc(node, inVisitedNodes, inEqualFunc);
         // Check if the current node is the start node, in that case we're back
         // where we started and we have a cycle. Otherwise we just encountered a
         // cycle in the graph that the start node is not part of.
