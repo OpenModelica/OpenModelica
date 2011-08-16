@@ -126,6 +126,7 @@ modelica_metatype boxptr_listGet(modelica_metatype,modelica_metatype);
 modelica_metatype boxptr_listFirst(modelica_metatype);
 modelica_metatype boxptr_listRest(modelica_metatype);
 #define boxptr_listReverse listReverse
+#define boxptr_listMember listMember
 
 /* Option Operations */
 typedef modelica_boolean optionNone_rettype;
