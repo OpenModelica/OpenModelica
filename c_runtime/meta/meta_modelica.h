@@ -427,6 +427,8 @@ char* anyString(void*); /* For debugging in external functions */
 void* mmc_anyString(void*); /* For debugging */
 void printAny(void*); /* For debugging */
 void printTypeOfAny(void*); /* For debugging */
+char* getTypeOfAny(void*); /* For debugging */
+int listCount(void*); /* For debugging */
 
 /*
  * Generated (Meta)Records should access a static, constant value of 

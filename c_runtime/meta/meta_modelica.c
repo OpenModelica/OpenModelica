@@ -33,6 +33,7 @@
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 jmp_buf *mmc_jumper;
 
@@ -246,7 +247,7 @@ inline static int anyStringWork(void* any, int ix)
   if (MMC_HDRISSTRING(hdr)) {
     MMC_CHECK_STRING(any);
     checkAnyStringBufSize(ix,strlen(MMC_STRINGDATA(any))+4);
-    ix += sprintf(anyStringBuf+ix, "\"%s\"", MMC_STRINGDATA(any));
+    ix += sprintf(anyStringBuf+ix, "%s", MMC_STRINGDATA(any));
     return ix;
   }
 
@@ -471,6 +472,120 @@ void printTypeOfAny(void* any) /* for debugging */
 
   fprintf(stderr, "%s:%d: %d slots; ctor %d - FAILED to detect the type\n", __FILE__, __LINE__, numslots, ctor);
   EXIT(1);
+}
+
+char* getTypeOfAny(void* any) /* for debugging */
+{
+  mmc_uint_t hdr;
+  int numslots;
+  unsigned ctor;
+  int i;
+  void *data;
+  struct record_description *desc;
+
+  if (any == NULL) {
+    return "replaceable type Any";
+  }
+
+  if ((0 == ((mmc_sint_t)any & 1))) {
+    return "Integer";
+  }
+
+  hdr = MMC_GETHDR(any);
+
+  if (hdr == MMC_NILHDR) {
+    return "list<Any>";
+  }
+
+  if (hdr == MMC_REALHDR) {
+    return "Real";
+  }
+
+  if (MMC_HDRISSTRING(hdr)) {
+    return "String";
+  }
+
+  numslots = MMC_HDRSLOTS(hdr);
+  ctor = 255 & (hdr >> 2);
+
+  if (numslots>0 && ctor == MMC_ARRAY_TAG) {
+    char* s1 = "meta_array<";
+    char *s2 = getTypeOfAny(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1)));
+    char *s3 = ">";
+    char *result = (char*)malloc(strlen(s1) + strlen(s2) + strlen(s3) + 1);
+    strcpy(result, s1);
+    strcat(result, s2);
+    strcat(result, s3);
+    return result;
+  }
+//  if (numslots>0 && ctor > 1) { /* RECORD */
+//    desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1));
+//    fprintf(stderr, "%s(", desc->name);
+//    for (i=2; i<=numslots; i++) {
+//      data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
+//      fprintf(stderr, "%s = ", desc->fieldNames[i-2]);
+//      printTypeOfAny(data);
+//      if (i!=numslots)
+//        fprintf(stderr, ", ");
+//    }
+//    fprintf(stderr, ")");
+//    return;
+//  }
+
+  if (numslots>0 && ctor == 0) { /* TUPLE */
+    char* s1 = "tuple<";
+    char *s2 = getTypeOfAny(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1)));
+    char *s3 = ">";
+    char *result = (char*)malloc(strlen(s1) + strlen(s2) + strlen(s3) + 1);
+    strcpy(result, s1);
+    strcat(result, s2);
+    strcat(result, s3);
+    return result;
+  }
+
+  if (numslots==0 && ctor==1) /* NONE() */ {
+    return "Option<Any>";
+  }
+
+  if (numslots==1 && ctor==1) /* SOME(x) */ {
+    char* s1 = "Option<";
+    char *s2 = getTypeOfAny(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1)));
+    char *s3 = ">";
+    char *result = (char*)malloc(strlen(s1) + strlen(s2) + strlen(s3) + 1);
+    strcpy(result, s1);
+    strcat(result, s2);
+    strcat(result, s3);
+    return result;
+  }
+
+  if (numslots==2 && ctor==1) { /* CONS-PAIR */
+    char* s1 = "list<";
+    char *s2 = getTypeOfAny(MMC_CAR(any));
+    char *s3 = ">";
+    char *result = (char*)malloc(strlen(s1) + strlen(s2) + strlen(s3) + 1);
+    strcpy(result, s1);
+    strcat(result, s2);
+    strcat(result, s3);
+    return result;
+  }
+
+  fprintf(stderr, "%s:%d: %d slots; ctor %d - FAILED to detect the type\n", __FILE__, __LINE__, numslots, ctor);
+  EXIT(1);
+}
+
+int listCount(void* any)
+{
+  int count = 0;
+
+  if (any == NULL) {
+    return count;
+  }
+  //any = MMC_CDR(any);
+  while (!MMC_NILTEST(any)) {
+    count++;
+    any = MMC_CDR(any);
+  }
+  return count;
 }
 
 unsigned long mmc_prim_hash(void *p)
