@@ -5372,7 +5372,6 @@ algorithm
       knownVars=knvars,
       aliasVars=av,
       orderedEqs=eqns,
-      removedEqs=se,
       initialEqs=ie,
       arrayEqs=ae,
       algorithms=al,
