@@ -1223,6 +1223,40 @@ algorithm
   end matchcontinue;
 end arrayMapHelp1;
 
+public function arrayMap0 
+  input array<Type_a> array;
+  input FuncType func;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncType
+    input Type_a x;
+  end FuncType;
+algorithm    
+  arrayMap0work(arrayLength(array),array,func);
+end arrayMap0;
+
+public function arrayMap0work
+  ""
+  input Integer ix; 
+  input array<Type_a> array;
+  input FuncType func;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncType
+    input Type_a x;
+  end FuncType;
+algorithm    
+  _ := match (ix,array,func)
+    local
+      Integer i;
+    case (0,_,_) then ();
+    case (ix,array,func)
+      equation
+        i = arrayLength(array)-ix+1;
+        func(array[i]);
+        arrayMap0work(ix-1,array,func);
+      then ();
+  end match;
+end arrayMap0work;
+
 public function listMap "function: listMap
   Takes a list and a function over the elements of the lists, which is applied
   for each element, producing a new list.
@@ -2014,13 +2048,12 @@ algorithm
       list<Type_f> r_1;
       Type_a f;
       list<Type_a> r;
-      mapFunc fn;
       Type_b extraarg1;
       Type_c extraarg2;
       Type_d extraarg3;
       Type_e extraarg4;
     case ({},_,_,_,_,_) then {};
-    case ((f :: r),fn,extraarg1,extraarg2,extraarg3,extraarg4)
+    case ((f :: r),_,extraarg1,extraarg2,extraarg3,extraarg4)
       equation
         f_1 = fn(f, extraarg1, extraarg2, extraarg3,extraarg4);
         r_1 = listMap4(r, fn, extraarg1, extraarg2, extraarg3,extraarg4);
@@ -2668,6 +2701,77 @@ algorithm
         ();
   end match;
 end listMap02;
+
+public function listMap03
+  input list<Type_a> inList;
+  input FuncType inFunc;
+  input Type_b inArg1;
+  input Type_c inArg2;
+  input Type_d d;
+  
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+
+  partial function FuncType
+    input Type_a inElement;
+    input Type_b inArg1;
+    input Type_c inArg2;
+    input Type_d d;
+  end FuncType;
+algorithm
+  _ := match(inList, inFunc, inArg1, inArg2, d)
+    local
+      Type_a element;
+      list<Type_a> rest;
+      
+    case ({}, _, _, _, _) then ();
+    case (element :: rest, _, _, _, _)
+      equation
+        inFunc(element, inArg1, inArg2, d);
+        listMap03(rest, inFunc, inArg1, inArg2, d);
+      then
+        ();
+  end match;
+end listMap03;
+
+public function listMap04
+  input list<Type_a> inList;
+  input FuncType inFunc;
+  input Type_b inArg1;
+  input Type_c inArg2;
+  input Type_d d;
+  input Type_e e;
+  
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  replaceable type Type_e subtypeof Any;
+
+  partial function FuncType
+    input Type_a inElement;
+    input Type_b inArg1;
+    input Type_c inArg2;
+    input Type_d d;
+    input Type_e e;
+  end FuncType;
+algorithm
+  _ := match(inList, inFunc, inArg1, inArg2, d, e)
+    local
+      Type_a element;
+      list<Type_a> rest;
+      
+    case ({}, _, _, _, _, _) then ();
+    case (element :: rest, _, _, _, _, _)
+      equation
+        inFunc(element, inArg1, inArg2, d, e);
+        listMap04(rest, inFunc, inArg1, inArg2, d, e);
+      then
+        ();
+  end match;
+end listMap04;
 
 public function listMapFlat "function: listMapFlat
   Takes a list and a function over the elements of the lists, which is applied

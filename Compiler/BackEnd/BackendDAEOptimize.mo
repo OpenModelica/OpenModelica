@@ -5637,4 +5637,132 @@ algorithm
  end matchcontinue;
 end mergeRelation;
 
+/* Parallel backend stuff  */
+
+public function partitionIndependentBlocks
+  "Finds independent partitions of the equation system by "
+  input BackendDAE.BackendDAE dlow;
+  input DAE.FunctionTree ftree;
+  input Option<BackendDAE.IncidenceMatrix> inM;
+  input Option<BackendDAE.IncidenceMatrixT> inMT;
+  output BackendDAE.BackendDAE outDlow;
+  output Option<BackendDAE.IncidenceMatrix> outM;
+  output Option<BackendDAE.IncidenceMatrixT> outMT;
+algorithm
+  (outDlow,outM,outMT) := match (dlow,ftree,inM,inMT)
+    local
+      BackendDAE.IncidenceMatrix m,mT;
+      array<Integer> ixs,ixsT;
+      list<Integer> lst,lst2;
+      Boolean b;
+      String str;
+      list<String> strs;
+      Integer i,i2;
+    case (dlow,ftree,inM,inMT)
+      equation
+        // print("partitionIndependentBlocks: TODO: Implement me\n");
+        (m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(dlow,inM,inMT);
+        ixs = arrayCreate(arrayLength(m),0);
+        ixsT = arrayCreate(arrayLength(mT),0);
+        i = partitionIndependentBlocks0(arrayLength(m),0,m,mT,ixs);
+        i2 = partitionIndependentBlocks0(arrayLength(mT),0,mT,m,ixsT);
+        b = i > 1;
+        Debug.bcall(b,BackendDump.dump,dlow);
+        printPartition(b,ixs);
+        printPartition(b,ixsT);
+        // BackendDump.printEquations(lst,dlow);
+      then (dlow,SOME(m),SOME(mT));
+  end match;
+end partitionIndependentBlocks;
+
+protected function partitionIndependentBlocks0
+  input Integer n;
+  input Integer n2;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mT;
+  input array<Integer> ixs;
+  output Integer on;
+algorithm
+  on := match (n,n2,m,mT,ixs)
+    local
+      Boolean b;
+    case (0,n2,_,_,_) then n2;
+    case (n,n2,m,mT,ixs)
+      equation
+        b = partitionIndependentBlocks1(n,n2+1,m,mT,ixs);
+      then partitionIndependentBlocks0(n-1,Util.if_(b,n2+1,n2),m,mT,ixs);
+  end match;
+end partitionIndependentBlocks0;
+
+protected function partitionIndependentBlocks1
+  input Integer ix;
+  input Integer n;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mT;
+  input array<Integer> ixs;
+  output Boolean ochange;
+algorithm
+  ochange := partitionIndependentBlocks2(ixs[ix] == 0,ix,n,m,mT,ixs);
+end partitionIndependentBlocks1;
+
+protected function partitionIndependentBlocks2
+  input Boolean b;
+  input Integer ix;
+  input Integer n;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mT;
+  input array<Integer> ixs;
+  output Boolean change;
+algorithm
+  change := match (b,ix,n,m,mT,ixs)
+    local
+      Integer i;
+      list<Integer> lst;
+      list<list<Integer>> lsts;
+    case (false,ix,n,m,mT,ixs) then false;
+    case (true,ix,n,m,mT,ixs)
+      equation
+        // i = ixs[ix];
+        // print(intString(ix) +& "; update crap\n");
+        // print("mark\n");
+        ixs = arrayUpdate(ixs,ix,n);
+        // print("mark OK\n");
+        lst = Util.listMap(mT[ix],intAbs);
+        // print(Util.stringDelimitList(Util.listMap(lst,intString),",") +& "\n");
+        // print("len:" +& intString(arrayLength(m)) +& "\n");
+        lsts = Util.listMap1r(lst,arrayGet,m);
+        // print("arrayNth OK\n");
+        lst = Util.listMap(Util.listFlatten(lsts),intAbs);
+        // print(Util.stringDelimitList(Util.listMap(lst,intString),",") +& "\n");
+        // print("lst get\n");
+        _ = Util.listMap4(lst,partitionIndependentBlocks1,n,m,mT,ixs);
+      then true;
+  end match;
+end partitionIndependentBlocks2;
+
+protected function arrayUpdateForPartition
+  input Integer ix;
+  input array<Integer> ixs;
+  input Integer val;
+  output array<Integer> oixs;
+algorithm
+  // print("arrayUpdate("+&intString(ix+1)+&","+&intString(val)+&")\n");
+  oixs := arrayUpdate(ixs,ix+1,val);
+end arrayUpdateForPartition;
+
+protected function printPartition
+  input Boolean b;
+  input array<Integer> ixs;
+algorithm
+  _ := match (b,ixs)
+    case (true,ixs)
+      equation
+        print("Got partition!\n");
+        print(Util.stringDelimitList(Util.listMap(arrayList(ixs), intString), ","));
+        print("\n");
+      then ();
+    else ();
+  end match;
+end printPartition;
+
 end BackendDAEOptimize;

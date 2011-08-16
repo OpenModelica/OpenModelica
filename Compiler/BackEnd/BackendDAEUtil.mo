@@ -5990,6 +5990,7 @@ algorithm
         (dae2,m2,mT2);
     case (dae,funcs,(optModule,moduleStr)::rest,m,mT)
       equation
+        Debug.execStat("<failed> preOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         str = stringAppendList({"Optimisation Module ",moduleStr," failed."});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
         (dae1,m1,mT1) = preoptimiseDAE(dae,funcs,rest,m,mT);
@@ -6247,6 +6248,7 @@ algorithm
           (BackendDAEOptimize.removeProtectedParameters,"removeProtectedParameters"),
           (BackendDAEOptimize.removeUnusedParameter,"removeUnusedParameter"),
           (BackendDAEOptimize.removeUnusedVariables,"removeUnusedVariables"),
+          (BackendDAEOptimize.partitionIndependentBlocks,"partitionIndependentBlocks"),
           (BackendDAECreate.expandDerOperator,"expandDerOperator")};
  strPreOptModules := getPreOptModulesString();
  strPreOptModules := Util.getOptionOrDefault(ostrPreOptModules,strPreOptModules);
