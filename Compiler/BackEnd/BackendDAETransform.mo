@@ -4978,7 +4978,6 @@ algorithm
       equation
         ((_, _, av)) = BackendVariable.traverseBackendDAEVars(aliasVars,traverseReplaceAliasVarsBindExp,(stateexpcall, dummyderexp, av));
         (ie1,(al1,ae1,wclst1,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(ie,traversereplaceDummyDer,(al, ae, wclst, replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
-        (ie1,(al1,ae1,wclst1,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(ie,traversereplaceDummyDer,(al, ae, wclst, replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
         (seqns1,(al2,ae2,wclst2,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(seqns,traversereplaceDummyDer,(al1, ae1, wclst1, replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
        then (BackendDAE.DAE(v,kv,ev,av,eqns,seqns1,ie1,ae2,al2,BackendDAE.EVENT_INFO(wclst2,zeroCrossingLst),eoc),m,mt);
 
