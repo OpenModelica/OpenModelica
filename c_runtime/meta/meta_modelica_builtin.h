@@ -154,6 +154,7 @@ arrayAdd_rettype arrayAdd(modelica_metatype, modelica_metatype);
 #define boxptr_arrayList arrayList
 #define boxptr_arrayCopy arrayCopy
 modelica_metatype boxptr_arrayNth(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_arrayGet(modelica_metatype,modelica_metatype);
 
 /* Misc Operations */
 typedef modelica_integer tick_rettype;

@@ -517,6 +517,11 @@ arrayGet_rettype arrayGet(modelica_metatype arr, modelica_integer ix)
   return MMC_STRUCTDATA(arr)[ix-1];
 }
 
+modelica_metatype boxptr_arrayGet(modelica_metatype a, modelica_metatype i)
+{
+  return arrayGet(a,MMC_UNTAGFIXNUM(i));
+}
+
 arrayCreate_rettype arrayCreate(modelica_integer nelts, modelica_metatype val)
 {
   void* arr = (struct mmc_struct*)mmc_mk_box_no_assign(nelts, MMC_ARRAY_TAG);
