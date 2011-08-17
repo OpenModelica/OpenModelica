@@ -373,7 +373,7 @@ algorithm
       then (temp_output);
       
     case (BackendDAE.ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc)::restZeroCross, 
-             BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc1)), temp_output)
+             BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns), eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc1)), temp_output)
       equation
         lst1 = BackendDAEUtil.incidenceRowExp(e, vars, {});
         temp_output = listAppend(temp_output, {lst1});
@@ -506,7 +506,7 @@ algorithm
       list<BackendDAE.WhenClause> wc;
       BackendDAE.Variables vars;
       
-    case (BackendDAE.DAE(orderedVars = vars, orderedEqs=eqnArr, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc)))
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs=eqnArr), eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc)))
       equation
         (whenEqInd, whenEqClausesInd,whenEqIncidenceMatList) = getWhenEqClausesInfo2(eqnArr, vars);
       then (wc, whenEqClausesInd, whenEqInd, whenEqIncidenceMatList);
@@ -660,7 +660,7 @@ algorithm
     local
       list<BackendDAE.ZeroCrossing> zc;
       BackendDAE.Variables vars;
-    case (BackendDAE.DAE(orderedVars=vars, eventInfo = BackendDAE.EVENT_INFO(zeroCrossingLst = zc)))
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars), eventInfo = BackendDAE.EVENT_INFO(zeroCrossingLst = zc)))
       equation
         (zcOnly, zc_inVars, zcSamples, zcSamplesInd) = getListofZeroCrossings2(1, zc, vars, {}, {}, {}, {});
       then
@@ -2260,7 +2260,7 @@ algorithm
       BackendDAE.StrongComponents comps;
       list<list<Integer>> arrList;
       
-    case (comps,(dae as BackendDAE.DAE(orderedVars = v)),ass1,ass2,m,mt)
+    case (comps,(dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = v))),ass1,ass2,m,mt)
       equation
         size = arrayLength(ass1) "equation_size(e) => size &" ;
         arr = arrayCreate(size, 0);
@@ -2317,7 +2317,7 @@ algorithm
       array<DAE.Algorithm> alg;
       array<list<Integer>> arr_2;
     
-    case ((dae as BackendDAE.DAE(orderedVars = v,knownVars = kn,orderedEqs = e,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = alg)),arr_1,arr_2,m,mt,a1,a2)
+    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = v))),arr_1,arr_2,m,mt,a1,a2)
       equation
         statevar_lst = BackendVariable.getAllStateVarFromVariables(v);
         ((dae,arr_1,arr_2,m,mt,a1,a2)) = Util.listFold(statevar_lst, markStateEquation, (dae,arr_1,arr_2,m,mt,a1,a2));
@@ -2356,7 +2356,7 @@ algorithm
       array<list<Integer>> arr_2;
       Integer firstInd;
       
-    case (BackendDAE.VAR(varName = cr),((dae as BackendDAE.DAE(orderedVars = vars)),arr_1,arr_2,m,mt,a1,a2))
+    case (BackendDAE.VAR(varName = cr),((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars))),arr_1,arr_2,m,mt,a1,a2))
       equation
         (_,v_indxs) = BackendVariable.getVar(cr, vars);
         firstInd = Util.listFirst(v_indxs); //modification
@@ -2366,7 +2366,7 @@ algorithm
       then
         ((dae,arr_1,arr_2,m,mt,a1,a2));
     
-    case (BackendDAE.VAR(varName = cr),((dae as BackendDAE.DAE(orderedVars = vars)),arr,_,m,mt,a1,a2))
+    case (BackendDAE.VAR(varName = cr),((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars))),arr,_,m,mt,a1,a2))
       equation
         failure((_,_) = BackendVariable.getVar(cr, vars));
         print("- BackendQSS.markStateEquation var ");
@@ -2376,7 +2376,7 @@ algorithm
       then
         fail();
     
-    case (BackendDAE.VAR(varName = cr),((dae as BackendDAE.DAE(orderedVars = vars)),arr,_,m,mt,a1,a2))
+    case (BackendDAE.VAR(varName = cr),((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars)),arr,_,m,mt,a1,a2)))
       equation
         (_,{v_indx}) = BackendVariable.getVar(cr, vars);
         v_indx_1 = v_indx - 1;
@@ -2953,7 +2953,7 @@ algorithm
       BackendDAE.EquationArray e,se,ie;
       array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> alg;
-  case (dae as BackendDAE.DAE(orderedVars = v,knownVars = kn,orderedEqs = e,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = alg))
+  case (dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = v),knownVars = kn))
     equation
       orderedVarsList = BackendDAEUtil.varList(v);
       knownVarsList = BackendDAEUtil.varList(kn);

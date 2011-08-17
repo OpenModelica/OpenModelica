@@ -98,7 +98,7 @@ algorithm
       BackendDAE.EquationArray eqns;
       list<BackendDAE.WhenClause> wcLst;
     
-    case (BackendDAE.DAE(orderedEqs = eqns, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wcLst)))
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns), eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wcLst)))
       equation
         eqnsl = BackendDAEUtil.equationList(eqns);
         ls1 = Util.listMap1(eqnsl, equationStr, wcLst);
@@ -258,7 +258,7 @@ algorithm
       list<BackendDAE.Var> vars;
       String s;
       BackendDAE.Variables vars1;
-    case (BackendDAE.DAE(orderedVars = vars1))
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars1)))
       equation
         vars = BackendDAEUtil.varList(vars1);
         s = dumpVars(vars);
@@ -397,7 +397,7 @@ algorithm
       array<list<String>> arr;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
-    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns))
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)))
       equation
         eqnsl = BackendDAEUtil.equationList(eqns);
         lstlst = incidenceMatrix2(vars, eqnsl);

@@ -77,7 +77,7 @@ algorithm
       BackendDAE.StrongComponents comps;
       DAE.ComponentRef cref_;
 
-    case ((dae as BackendDAE.DAE(orderedVars = BackendDAE.VARIABLES(varArr = vararr),knownVars = BackendDAE.VARIABLES(varArr = knvararr))),comps)
+    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(varArr = vararr)),knownVars = BackendDAE.VARIABLES(varArr = knvararr))),comps)
       equation
         print("starting buildtaskgraph\n");
         starttask = TaskGraphExt.newTask("start");
@@ -118,7 +118,7 @@ algorithm
     local
       list<BackendDAE.Var> vars,kvars;
       BackendDAE.VariableArray vararr,kvararr;
-    case (BackendDAE.DAE(orderedVars = BackendDAE.VARIABLES(varArr = vararr),knownVars = BackendDAE.VARIABLES(varArr = kvararr)))
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(varArr = vararr)),knownVars = BackendDAE.VARIABLES(varArr = kvararr)))
       equation
         vars = BackendDAEUtil.vararrayList(vararr);
         kvars = BackendDAEUtil.vararrayList(kvararr);
@@ -309,7 +309,7 @@ algorithm
       String origname_str,indxs,name,c_name,id;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
-    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),BackendDAE.SINGLEEQUATION(eqn=e,var=v_1))
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)),BackendDAE.SINGLEEQUATION(eqn=e,var=v_1))
       equation
         e_1 = e - 1 "Solving for non-states" ;
         BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
@@ -326,7 +326,7 @@ algorithm
   Expression.print_exp_str expr => s2 & print s2 & print \"\\n\" &" ;
       then
         ();
-    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),BackendDAE.SINGLEEQUATION(eqn=e,var=v_1))
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)),BackendDAE.SINGLEEQUATION(eqn=e,var=v_1))
       equation
         e_1 = e - 1 "Solving the state s means solving for der(s)" ;
         BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
@@ -348,7 +348,7 @@ algorithm
   Expression.print_exp_str expr => s2 & print s2 & print \"\\n\" &" ;
       then
         ();
-    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),BackendDAE.SINGLEEQUATION(eqn=e,var=v_1)) /* rule  intSub(e,1) => e\' &
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)),BackendDAE.SINGLEEQUATION(eqn=e,var=v_1)) /* rule  intSub(e,1) => e\' &
   BackendDAE.equation_nth(eqns,e\') => BackendDAE.EQUATION(e1,e2,_) &
   vector_nth(ass2,e\') => v & ( v==variable no solved in this equation ))
   intSub(v,1) => v\' &
@@ -374,7 +374,7 @@ algorithm
         buildNonlinearEquations({varexp}, {DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2)});
       then
         ();
-    case (BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns),BackendDAE.SINGLEEQUATION(eqn=e,var=v_1))
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)),BackendDAE.SINGLEEQUATION(eqn=e,var=v_1))
       equation
         e_1 = e - 1 "Solving nonlinear for non-states" ;
         BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
@@ -690,7 +690,7 @@ algorithm
       BackendDAE.EquationArray eqns;
       list<Integer> reste,restv;
     case (dae,{},{},tid) then {};
-    case ((dae as BackendDAE.DAE(orderedVars = vars,orderedEqs = eqns)),(e :: reste),(v_1 :: restv),tid)
+    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns))),(e :: reste),(v_1 :: restv),tid)
       equation
         e_1 = e - 1;
         BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);

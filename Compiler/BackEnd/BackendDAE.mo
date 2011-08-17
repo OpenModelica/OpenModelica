@@ -226,13 +226,11 @@ uniontype BackendDAE "THE LOWERED DAE consist of variables and equations. The va
 
   - BackendDAE"
   record DAE
-    Variables orderedVars "orderedVars ; ordered Variables, only states and alg. vars" ;
+    EqSystems eqs;
     Variables knownVars "knownVars ; Known variables, i.e. constants and parameters" ;
     Variables externalObjects "External object variables";
     AliasVariables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
-    EquationArray orderedEqs "orderedEqs ; ordered Equations" ;
     EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
-    EquationArray initialEqs "initialEqs ; Initial equations" ;
     array<MultiDimEquation> arrayEqs "arrayEqs ; Array equations" ;
     array< .DAE.Algorithm> algorithms "algorithms ; Algorithms" ;
     EventInfo eventInfo "eventInfo" ;
@@ -240,6 +238,16 @@ uniontype BackendDAE "THE LOWERED DAE consist of variables and equations. The va
   end DAE;
 
 end BackendDAE;
+
+type EqSystems = EqSystem "TODO: Make this a list in the future";
+
+uniontype EqSystem "An independent system of equations (and their corresponding variables)"
+  record EQSYSTEM
+    Variables orderedVars "orderedVars ; ordered Variables, only states and alg. vars" ;
+    EquationArray orderedEqs "orderedEqs ; ordered Equations" ;
+    EquationArray initialEqs "initialEqs ; Initial equations" ;
+  end EQSYSTEM;
+end EqSystem;
 
 type ExternalObjectClasses = list<ExternalObjectClass> "classes of external objects stored in list";
 

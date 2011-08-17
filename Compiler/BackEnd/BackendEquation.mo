@@ -998,10 +998,10 @@ algorithm
       array<DAE.Algorithm> algorithms;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
-    case (inEquation,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc))
+    case (inEquation,BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns,inieqns),knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc))
       equation
         eqns1 = equationAdd(inEquation,eqns);
-      then BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
+      then BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns1,inieqns),knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc);
   end match;
 end equationAddDAE;
 
@@ -1023,10 +1023,10 @@ algorithm
       array<DAE.Algorithm> algorithms;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
-    case (inInteger,inEquation,BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc))
+    case (inInteger,inEquation,BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns,inieqns),knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc))
       equation
         eqns1 = equationSetnth(eqns,inInteger,inEquation);
-      then BackendDAE.DAE(ordvars,knvars,exobj,aliasVars,eqns1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
+      then BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns1,inieqns),knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc);
   end match;
 end equationSetnthDAE;
 
@@ -1245,7 +1245,7 @@ public function markedEquationSource
 protected
   BackendDAE.EquationArray eqns;
 algorithm
-  BackendDAE.DAE(orderedEqs = eqns) := dae;
+  BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns)) := dae;
   source := equationSource(BackendDAEUtil.equationNth(eqns,i-1));
 end markedEquationSource;
 
@@ -1313,7 +1313,7 @@ public function daeEqns
 algorithm
   outEqns := match (inBackendDAE)
     local BackendDAE.EquationArray eqnarr;
-    case (BackendDAE.DAE(orderedEqs = eqnarr))
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqnarr)))
       then eqnarr;
   end match;
 end daeEqns;

@@ -86,21 +86,22 @@ algorithm
       list<Algorithm.Algorithm> alglst;
       BackendDAE.EventInfo eventInfo;
       BackendDAE.ExternalObjectClasses extObjClasses;
-    case(ftree,itlst,BackendDAE.DAE(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
+      Functiontuple tpl;
+      BackendDAE.EqSystem eqs;
+    case(ftree,itlst,BackendDAE.DAE(eqs,knownVars,externalObjects,aliasVars,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
       equation
-        orderedVars = inlineVariables(orderedVars,(ftree,itlst));
-        knownVars = inlineVariables(knownVars,(ftree,itlst));
-        externalObjects = inlineVariables(externalObjects,(ftree,itlst));
-        orderedEqs = inlineEquationArray(orderedEqs,(ftree,itlst));
-        removedEqs = inlineEquationArray(removedEqs,(ftree,itlst));
-        initialEqs = inlineEquationArray(initialEqs,(ftree,itlst));
-        mdelst = Util.listMap1(arrayList(arrayEqs),inlineMultiDimEqs,(ftree,itlst));
+        tpl = (ftree,itlst);
+        eqs = inlineEquationSystem(eqs,tpl);
+        knownVars = inlineVariables(knownVars,tpl);
+        externalObjects = inlineVariables(externalObjects,tpl);
+        removedEqs = inlineEquationArray(removedEqs,tpl);
+        mdelst = Util.listMap1(arrayList(arrayEqs),inlineMultiDimEqs,tpl);
         arrayEqs = listArray(mdelst);
-        alglst = Util.listMap1(arrayList(algorithms),inlineAlgorithm,(ftree,itlst));
+        alglst = Util.listMap1(arrayList(algorithms),inlineAlgorithm,tpl);
         algorithms = listArray(alglst);
-        eventInfo = inlineEventInfo(eventInfo,(ftree,itlst));
+        eventInfo = inlineEventInfo(eventInfo,tpl);
       then
-        BackendDAE.DAE(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses);
+        BackendDAE.DAE(eqs,knownVars,externalObjects,aliasVars,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses);
     case(_,_,_)
       equation
         Debug.fprintln("failtrace","Inline.inlineCalls failed");
@@ -108,6 +109,25 @@ algorithm
         fail();
   end matchcontinue;
 end inlineCalls;
+
+protected function inlineEquationSystem
+  input BackendDAE.EqSystem eqs;
+  input Functiontuple tpl;
+  output BackendDAE.EqSystem oeqs;
+algorithm
+  oeqs := match (eqs,tpl)
+    local
+      BackendDAE.Variables orderedVars;
+      BackendDAE.EquationArray orderedEqs;
+      BackendDAE.EquationArray initialEqs;
+    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,initialEqs),tpl)
+      equation
+        orderedVars = inlineVariables(orderedVars,tpl);
+        orderedEqs = inlineEquationArray(orderedEqs,tpl);
+        initialEqs = inlineEquationArray(initialEqs,tpl);
+      then BackendDAE.EQSYSTEM(orderedVars,orderedEqs,initialEqs);
+  end match;
+end inlineEquationSystem;
 
 protected function inlineEquationArray "
 function: inlineEquationArray
