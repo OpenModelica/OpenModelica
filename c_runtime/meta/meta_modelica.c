@@ -471,13 +471,6 @@ void printTypeOfAny(void* any) /* for debugging */
   EXIT(1);
 }
 
-char* getTypeOfAny(void* any) /* for debugging */
-{
-  initializeStringBuffer();
-  getTypeOfAnyWork(any,0);
-  return strdup(anyStringBuf);
-}
-
 inline static int getTypeOfAnyWork(void* any, int ix)  /* for debugging */
 {
   mmc_uint_t hdr;
@@ -582,6 +575,14 @@ inline static int getTypeOfAnyWork(void* any, int ix)  /* for debugging */
   fprintf(stderr, "%s:%d: %d slots; ctor %d - FAILED to detect the type\n", __FILE__, __LINE__, numslots, ctor);
   EXIT(1);
 }
+
+char* getTypeOfAny(void* any) /* for debugging */
+{
+  initializeStringBuffer();
+  getTypeOfAnyWork(any,0);
+  return strdup(anyStringBuf);
+}
+
 /*
  * Returns the Nth item of the list.
  */
@@ -592,7 +593,6 @@ int getListCount(void* any)
   if (any == NULL) {
     return count;
   }
-  //any = MMC_CDR(any);
   while (!MMC_NILTEST(any)) {
     count++;
     any = MMC_CDR(any);
@@ -606,7 +606,7 @@ char* getNthListItem(void* any, int index)
 {
   int count = 0;
 
-  // validate the index
+  /* validate the index */
   if (index > getListCount(any)-1)
     return "Index out of Range";
 
