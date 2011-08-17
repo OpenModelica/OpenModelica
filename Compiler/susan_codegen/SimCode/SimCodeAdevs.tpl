@@ -130,6 +130,8 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
 
 		 /// These methods are for solving non-linear algebraic eqns
          <%declareExtraResiduals(allEquations)%>
+		 // Calculate the minimization function for initializing reals
+		 void initial_objective_func(double* w, double* f);
       private: 
          <%makeMemberVariables(simCode)%>
 
@@ -143,9 +145,14 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
          // Helping variables for when clauses
          bool helpVars[<%vi.numHelpVars%>], helpVars_saved[<%vi.numHelpVars%>];
          int numHelpVars() const { return <%vi.numHelpVars%>; }
+
          // Zero crossing variables
          int zc[<%vi.numZeroCrossings%>];
          int numZeroCrossings() const { return <%vi.numZeroCrossings%>; }
+
+		 // Initial unknowns via solution to least squares
+		 void solve_for_initial_unknowns();
+		 std::vector<double*> init_unknown_vars;
 
          void save_vars();
          void restore_vars();
@@ -294,6 +301,8 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
    }
 
    <%makeExtraResiduals(allEquations,lastIdentOfPath(modelInfo.name))%>
+
+   <%makeInitialResidueMethod(simCode)%>
 
    <%makeInit(simCode)%>
 
@@ -475,6 +484,8 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
        <%makeInitialEqns(initialEquations)%>
 	   // Calculate derived values
 	   calc_vars();
+	   // Solve for any remaining unknowns
+       solve_for_initial_unknowns();
        // Set initial state and helper variable values for the integrator
        for (int i = 0; i < numHelpVars(); i++)
           helpVars_saved[i] = helpVars[i];
@@ -574,6 +585,84 @@ template allEqns(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whe
   <%reinit%>
   >>
 end allEqns;
+
+template makeInitialResidueMethod(SimCode simCode)
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
+  <<
+  static void static_initial_objective_func(long*, double* w, double* f)
+  {
+      active_model->initial_objective_func(w,f);
+  }
+
+  void <%lastIdentOfPath(modelInfo.name)%>::initial_objective_func(double* w, double *f)
+  {
+	  // Get new values for the unknown variables
+	  for (unsigned i = 0; i < init_unknown_vars.size(); i++)
+		  *(init_unknown_vars[i]) = w[i];
+	  // Calculate new state variable derivatives and algebraic variables
+	  calc_vars(NULL,true);
+	  // Calculate the new value of the objective function
+	  <%initialResidualEqns(residualEquations)%>
+  }
+
+  void <%lastIdentOfPath(modelInfo.name)%>::solve_for_initial_unknowns()
+  {
+    <%(vars.stateVars |> SIMVAR(__) =>
+        'if (!<%globalDataFixedInt(isFixed)%>) init_unknown_vars.push_back(&<%cref(name)%>);')
+      ;separator="\n"%>
+    <%(vars.derivativeVars |> SIMVAR(__) =>
+        'if (!<%globalDataFixedInt(isFixed)%>) init_unknown_vars.push_back(&<%cref(name)%>);')
+      ;separator="\n"%>
+    <%(vars.algVars |> SIMVAR(__) =>
+        'if (!<%globalDataFixedInt(isFixed)%>) init_unknown_vars.push_back(&<%cref(name)%>);')
+      ;separator="\n"%>
+    <%(vars.paramVars |> SIMVAR(__) =>
+        'if (!<%globalDataFixedInt(isFixed)%>) init_unknown_vars.push_back(&<%cref(name)%>);')
+      ;separator="\n"%>
+    if (!init_unknown_vars.empty())
+	{
+		long N = init_unknown_vars.size();
+		long NPT = N+2;
+		double* w = new double[N];
+		for (unsigned i = 0; i < init_unknown_vars.size(); i++)
+			w[i] = *(init_unknown_vars[i]);
+		double RHOBEG = 10.0;
+		double RHOEND = 1.0E-6;
+		long IPRINT = 0;
+		long MAXFUN = 50000;
+		double* scratch = new double[(NPT+13)*(NPT+N)+3*N*(N+3)/2];
+		active_model = this;
+		newuoa_(&N,&NPT,w,&RHOBEG,&RHOEND,&IPRINT,&MAXFUN,scratch,
+				static_initial_objective_func);
+		delete [] w;
+		delete [] scratch;
+	}
+  }
+  >>
+end makeInitialResidueMethod;
+
+template initialResidualEqns(list<SimEqSystem> residualEquations)
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let body = (residualEquations |> SES_RESIDUAL(__) =>
+      match exp 
+      case DAE.SCONST(__) then
+        ''
+      else
+        let &preExp = buffer "" /*BUFD*/
+        let expPart = daeExp(exp, contextOther, &preExp /*BUFC*/,
+                           &varDecls /*BUFD*/)
+        '<%preExp%> r = <%expPart%>; *f += r*r;'
+    ;separator="\n")
+  <<
+  double r = 0.0;
+  *f = 0.0;
+  <%varDecls%>
+  <%body%>
+  >>
+end initialResidualEqns;
 
 // Below here is from the Cpp template and is unchanged
 
