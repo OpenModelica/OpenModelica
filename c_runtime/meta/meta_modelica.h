@@ -423,12 +423,14 @@ typedef modelica_boolean mmc__uniontype__metarecord__typedef__equal_rettype;
 typedef modelica_string anyString_rettype;
 
 void debug__print(void*,void*); /* For debugging */
+void initializeStringBuffer();
 char* anyString(void*); /* For debugging in external functions */
 void* mmc_anyString(void*); /* For debugging */
 void printAny(void*); /* For debugging */
 void printTypeOfAny(void*); /* For debugging */
 char* getTypeOfAny(void*); /* For debugging */
-int listCount(void*); /* For debugging */
+int getListCount(void*); /* For debugging */
+char* getNthListItem(void*, int); /* For debugging */
 
 /*
  * Generated (Meta)Records should access a static, constant value of 

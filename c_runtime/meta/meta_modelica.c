@@ -215,6 +215,15 @@ inline static void checkAnyStringBufSize(int ix, int szNewObject)
   }
 }
 
+void initializeStringBuffer()
+{
+  if (anyStringBufSize == 0) {
+    anyStringBuf = malloc(8192);
+    anyStringBufSize = 8192;
+  }
+  *anyStringBuf = '\0';
+}
+
 inline static int anyStringWork(void* any, int ix)
 {
   mmc_uint_t hdr;
@@ -358,33 +367,21 @@ inline static int anyStringWork(void* any, int ix)
 
 char* anyString(void* any)
 {
-  if (anyStringBufSize == 0) {
-    anyStringBuf = malloc(8192);
-    anyStringBufSize = 8192;
-  }
-  *anyStringBuf = '\0';
+  initializeStringBuffer();
   anyStringWork(any,0);
   return strdup(anyStringBuf);
 }
 
 void* mmc_anyString(void* any)
 {
-  if (anyStringBufSize == 0) {
-    anyStringBuf = malloc(8192);
-    anyStringBufSize = 8192;
-  }
-  *anyStringBuf = '\0';
+  initializeStringBuffer();
   anyStringWork(any,0);
   return mmc_mk_scon(anyStringBuf);
 }
 
 void printAny(void* any)
 {
-  if (anyStringBufSize == 0) {
-    anyStringBuf = malloc(8192);
-    anyStringBufSize = 8192;
-  }
-  *anyStringBuf = '\0';
+  initializeStringBuffer();
   anyStringWork(any,0);
   fputs(anyStringBuf, stderr);
 }
@@ -476,104 +473,119 @@ void printTypeOfAny(void* any) /* for debugging */
 
 char* getTypeOfAny(void* any) /* for debugging */
 {
+  initializeStringBuffer();
+  getTypeOfAnyWork(any,0);
+  return strdup(anyStringBuf);
+}
+
+inline static int getTypeOfAnyWork(void* any, int ix)  /* for debugging */
+{
   mmc_uint_t hdr;
   int numslots;
   unsigned ctor;
   int i;
-  void *data;
   struct record_description *desc;
 
   if (any == NULL) {
-    return "replaceable type Any";
+    checkAnyStringBufSize(ix,21);
+    ix += sprintf(anyStringBuf+ix, "%s", "replaceable type Any");
+    return ix;
   }
 
   if ((0 == ((mmc_sint_t)any & 1))) {
-    return "Integer";
+    checkAnyStringBufSize(ix,8);
+    ix += sprintf(anyStringBuf+ix, "%s", "Integer");
+    return ix;
   }
 
   hdr = MMC_GETHDR(any);
 
   if (hdr == MMC_NILHDR) {
-    return "list<Any>";
+    checkAnyStringBufSize(ix,10);
+    ix += sprintf(anyStringBuf+ix, "%s", "list<Any>");
+    return ix;
   }
 
   if (hdr == MMC_REALHDR) {
-    return "Real";
+    checkAnyStringBufSize(ix,5);
+    ix += sprintf(anyStringBuf+ix, "%s", "Real");
+    return ix;
   }
 
   if (MMC_HDRISSTRING(hdr)) {
-    return "String";
+    checkAnyStringBufSize(ix,7);
+    ix += sprintf(anyStringBuf+ix, "%s", "String");
+    return ix;
   }
 
   numslots = MMC_HDRSLOTS(hdr);
   ctor = 255 & (hdr >> 2);
 
   if (numslots>0 && ctor == MMC_ARRAY_TAG) {
-    char* s1 = "meta_array<";
-    char *s2 = getTypeOfAny(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1)));
-    char *s3 = ">";
-    char *result = (char*)malloc(strlen(s1) + strlen(s2) + strlen(s3) + 1);
-    strcpy(result, s1);
-    strcat(result, s2);
-    strcat(result, s3);
-    return result;
+    checkAnyStringBufSize(ix,12);
+    ix += sprintf(anyStringBuf+ix, "MetaArray(");
+    ix = getTypeOfAnyWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1)), ix);
+    checkAnyStringBufSize(ix,2);
+    ix += sprintf(anyStringBuf+ix, ">");
+    return ix;
   }
-//  if (numslots>0 && ctor > 1) { /* RECORD */
-//    desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1));
-//    fprintf(stderr, "%s(", desc->name);
-//    for (i=2; i<=numslots; i++) {
-//      data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
-//      fprintf(stderr, "%s = ", desc->fieldNames[i-2]);
-//      printTypeOfAny(data);
-//      if (i!=numslots)
-//        fprintf(stderr, ", ");
-//    }
-//    fprintf(stderr, ")");
-//    return;
-//  }
+
+  if (numslots>0 && ctor > 1) { /* RECORD */
+    desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1));
+    checkAnyStringBufSize(ix,strlen(desc->name)+2);
+    ix += sprintf(anyStringBuf+ix, "%s(", desc->name);
+    for (i=2; i<=numslots; i++) {
+      checkAnyStringBufSize(ix,strlen(desc->fieldNames[i-2])+4);
+      ix += sprintf(anyStringBuf+ix, "%s( = ", desc->fieldNames[i-2]);
+      ix = getTypeOfAnyWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i)), ix);
+      if (i!=numslots)
+        checkAnyStringBufSize(ix,3);
+        ix += sprintf(anyStringBuf+ix, ", ");
+    }
+    checkAnyStringBufSize(ix,2);
+    ix += sprintf(anyStringBuf+ix, ")");
+    return ix;
+  }
 
   if (numslots>0 && ctor == 0) { /* TUPLE */
-    char* s1 = "tuple<";
-    char *s2 = getTypeOfAny(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1)));
-    char *s3 = ">";
-    char *result = (char*)malloc(strlen(s1) + strlen(s2) + strlen(s3) + 1);
-    strcpy(result, s1);
-    strcat(result, s2);
-    strcat(result, s3);
-    return result;
+    checkAnyStringBufSize(ix,7);
+    ix += sprintf(anyStringBuf+ix, "tuple<");
+    ix = getTypeOfAnyWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1)), ix);
+    checkAnyStringBufSize(ix,2);
+    ix += sprintf(anyStringBuf+ix, ">");
+    return ix;
   }
 
   if (numslots==0 && ctor==1) /* NONE() */ {
-    return "Option<Any>";
+    checkAnyStringBufSize(ix,12);
+    ix += sprintf(anyStringBuf+ix, "Option<Any>");
   }
 
   if (numslots==1 && ctor==1) /* SOME(x) */ {
-    char* s1 = "Option<";
-    char *s2 = getTypeOfAny(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1)));
-    char *s3 = ">";
-    char *result = (char*)malloc(strlen(s1) + strlen(s2) + strlen(s3) + 1);
-    strcpy(result, s1);
-    strcat(result, s2);
-    strcat(result, s3);
-    return result;
+    checkAnyStringBufSize(ix,8);
+    ix += sprintf(anyStringBuf+ix, "Option<");
+    ix = getTypeOfAnyWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1)), ix);
+    checkAnyStringBufSize(ix,2);
+    ix += sprintf(anyStringBuf+ix, ">");
+    return ix;
   }
 
   if (numslots==2 && ctor==1) { /* CONS-PAIR */
-    char* s1 = "list<";
-    char *s2 = getTypeOfAny(MMC_CAR(any));
-    char *s3 = ">";
-    char *result = (char*)malloc(strlen(s1) + strlen(s2) + strlen(s3) + 1);
-    strcpy(result, s1);
-    strcat(result, s2);
-    strcat(result, s3);
-    return result;
+    checkAnyStringBufSize(ix,6);
+    ix += sprintf(anyStringBuf+ix, "list<");
+    ix = getTypeOfAnyWork(MMC_CAR(any), ix);
+    checkAnyStringBufSize(ix,2);
+    ix += sprintf(anyStringBuf+ix, ">");
+    return ix;
   }
 
   fprintf(stderr, "%s:%d: %d slots; ctor %d - FAILED to detect the type\n", __FILE__, __LINE__, numslots, ctor);
   EXIT(1);
 }
-
-int listCount(void* any)
+/*
+ * Returns the Nth item of the list.
+ */
+int getListCount(void* any)
 {
   int count = 0;
 
@@ -586,6 +598,27 @@ int listCount(void* any)
     any = MMC_CDR(any);
   }
   return count;
+}
+/*
+ * Returns the Nth item of the list.
+ */
+char* getNthListItem(void* any, int index)
+{
+  int count = 0;
+
+  // validate the index
+  if (index > getListCount(any)-1)
+    return "Index out of Range";
+
+  initializeStringBuffer();
+  while (count < index)
+  {
+    any = MMC_CDR(any);
+    count++;
+  }
+
+  anyStringWork(MMC_CAR(any), 0);
+  return strdup(anyStringBuf);
 }
 
 unsigned long mmc_prim_hash(void *p)
