@@ -231,7 +231,7 @@ uniontype BackendDAE "THE LOWERED DAE consist of variables and equations. The va
     Variables externalObjects "External object variables";
     AliasVariables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
     EquationArray orderedEqs "orderedEqs ; ordered Equations" ;
-    EquationArray removedEqs "removedEqs ; Removed equations a=b" ;
+    EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
     EquationArray initialEqs "initialEqs ; Initial equations" ;
     array<MultiDimEquation> arrayEqs "arrayEqs ; Array equations" ;
     array< .DAE.Algorithm> algorithms "algorithms ; Algorithms" ;
