@@ -226,10 +226,10 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
    <<
    <%(vars.stateVars |> SIMVAR(__) => 'double <%cref(name)%>, $P$old<%cref(name)%>;') ;separator="\n"%>
+   <%(vars.derivativeVars |> SIMVAR(__) => 'double <%cref(name)%>, $P$old<%cref(name)%>;') ;separator="\n"%>
    <%(vars.algVars |> SIMVAR(__) => 'double <%cref(name)%>, $P$old<%cref(name)%>;') ;separator="\n"%>
    <%(vars.intAlgVars |> SIMVAR(__) => 'int <%cref(name)%>, $P$old<%cref(name)%>;') ;separator="\n"%>
    <%(vars.boolAlgVars |> SIMVAR(__) => 'bool <%cref(name)%>, $P$old<%cref(name)%>;') ;separator="\n"%>
-   <%(vars.derivativeVars |> SIMVAR(__) => 'double <%cref(name)%>, $P$old<%cref(name)%>;') ;separator="\n"%>
    <%(vars.paramVars |> SIMVAR(__) => 'double <%cref(name)%>;') ;separator="\n"%>
    <%(vars.intParamVars |> SIMVAR(__) => 'int <%cref(name)%>;') ;separator="\n"%>
    <%(vars.boolParamVars |> SIMVAR(__) => 'bool <%cref(name)%>;') ;separator="\n"%>
@@ -369,6 +369,17 @@ template makeExtraResiduals(list<SimEqSystem> allEquations, String name)
    )
    ;separator="\n\n")
 end makeExtraResiduals;
+
+template makeExtraFunctionsAndRecords(SimCode simCode)
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
+  <<
+  <%recordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
+  <%functionHeaders(modelInfo.functions)%>
+  <%functionBodies(modelInfo.functions)%>
+  >>
+end makeExtraFunctionsAndRecords;
 
 template makeStateEventFunc(SimCode simCode)
 ::=
@@ -519,6 +530,18 @@ template initVals(list<SimVar> varsLst) ::=
   ;separator="\n"
 end initVals;
 
+template makeBoundParams(SimCode simCode)
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
+  <<
+  void <%lastIdentOfPath(modelInfo.name)%>::bound_params()
+  {
+	  <%functionBoundParameters(parameterEquations)%>
+  }
+  >>
+end makeBoundParams;
+
 template makeDerFunc(SimCode simCode)
 ::=
 match simCode
@@ -600,7 +623,10 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
   {
 	  // Get new values for the unknown variables
 	  for (unsigned i = 0; i < init_unknown_vars.size(); i++)
-		  *(init_unknown_vars[i]) = w[i];
+	  {
+		  if (!(w[i] != w[i]))
+		      *(init_unknown_vars[i]) = w[i];
+	  }
 	  // Calculate new state variable derivatives and algebraic variables
 	  calc_vars(NULL,true);
 	  // Calculate the new value of the objective function
@@ -1261,18 +1287,9 @@ template functionBoundParameters(list<SimEqSystem> parameterEquations)
       equation_(eq, contextOther, &varDecls /*BUFD*/)
     ;separator="\n")    
   <<
-  int bound_parameters()
-  {
-    state mem_state;
-    <%varDecls%>
-  
-    mem_state = get_memory_state();
-    <%body%>
-    <%divbody%>
-    restore_memory_state(mem_state);
-  
-    return 0;
-  }
+  <%varDecls%>
+  <%body%>
+  <%divbody%>
   >>
 end functionBoundParameters;
 
