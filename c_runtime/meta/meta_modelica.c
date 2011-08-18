@@ -583,44 +583,6 @@ char* getTypeOfAny(void* any) /* for debugging */
   return strdup(anyStringBuf);
 }
 
-/*
- * Returns the Nth item of the list.
- */
-int getListCount(void* any)
-{
-  int count = 0;
-
-  if (any == NULL) {
-    return count;
-  }
-  while (!MMC_NILTEST(any)) {
-    count++;
-    any = MMC_CDR(any);
-  }
-  return count;
-}
-/*
- * Returns the Nth item of the list.
- */
-char* getNthListItem(void* any, int index)
-{
-  int count = 0;
-
-  /* validate the index */
-  if (index > getListCount(any)-1)
-    return "Index out of Range";
-
-  initializeStringBuffer();
-  while (count < index)
-  {
-    any = MMC_CDR(any);
-    count++;
-  }
-
-  anyStringWork(MMC_CAR(any), 0);
-  return strdup(anyStringBuf);
-}
-
 unsigned long mmc_prim_hash(void *p)
 {
   unsigned long hash = 0;
