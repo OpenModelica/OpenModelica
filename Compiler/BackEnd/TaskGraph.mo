@@ -77,7 +77,7 @@ algorithm
       BackendDAE.StrongComponents comps;
       DAE.ComponentRef cref_;
 
-    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(varArr = vararr))::{},knownVars = BackendDAE.VARIABLES(varArr = knvararr))),comps)
+    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(varArr = vararr))::{},shared=BackendDAE.SHARED(knownVars = BackendDAE.VARIABLES(varArr = knvararr)))),comps)
       equation
         print("starting buildtaskgraph\n");
         starttask = TaskGraphExt.newTask("start");
@@ -118,7 +118,7 @@ algorithm
     local
       list<BackendDAE.Var> vars,kvars;
       BackendDAE.VariableArray vararr,kvararr;
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(varArr = vararr))::{},knownVars = BackendDAE.VARIABLES(varArr = kvararr)))
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(varArr = vararr))::{},shared=BackendDAE.SHARED(knownVars = BackendDAE.VARIABLES(varArr = kvararr))))
       equation
         vars = BackendDAEUtil.vararrayList(vararr);
         kvars = BackendDAEUtil.vararrayList(kvararr);

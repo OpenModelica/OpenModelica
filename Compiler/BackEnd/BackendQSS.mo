@@ -373,7 +373,7 @@ algorithm
       then (temp_output);
       
     case (BackendDAE.ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc)::restZeroCross, 
-             BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)::{}, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc1)), temp_output)
+             BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)::{}, shared = BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc1))), temp_output)
       equation
         lst1 = BackendDAEUtil.incidenceRowExp(e, vars, {});
         temp_output = listAppend(temp_output, {lst1});
@@ -506,7 +506,7 @@ algorithm
       list<BackendDAE.WhenClause> wc;
       BackendDAE.Variables vars;
       
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs=eqnArr)::{}, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc)))
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs=eqnArr)::{}, shared = BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc))))
       equation
         (whenEqInd, whenEqClausesInd,whenEqIncidenceMatList) = getWhenEqClausesInfo2(eqnArr, vars);
       then (wc, whenEqClausesInd, whenEqInd, whenEqIncidenceMatList);
@@ -660,7 +660,7 @@ algorithm
     local
       list<BackendDAE.ZeroCrossing> zc;
       BackendDAE.Variables vars;
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars)::{}, eventInfo = BackendDAE.EVENT_INFO(zeroCrossingLst = zc)))
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars)::{}, shared = BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(zeroCrossingLst = zc))))
       equation
         (zcOnly, zc_inVars, zcSamples, zcSamplesInd) = getListofZeroCrossings2(1, zc, vars, {}, {}, {}, {});
       then
@@ -2953,7 +2953,7 @@ algorithm
       BackendDAE.EquationArray e,se,ie;
       array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> alg;
-  case (dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = v)::{},knownVars = kn))
+  case (dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = v)::{},shared=BackendDAE.SHARED(knownVars = kn)))
     equation
       orderedVarsList = BackendDAEUtil.varList(v);
       knownVarsList = BackendDAEUtil.varList(kn);

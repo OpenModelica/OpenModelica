@@ -2730,7 +2730,7 @@ public function daeKnVars
 algorithm
   vars := match (inBackendDAE)
     local BackendDAE.Variables vars;
-    case (BackendDAE.DAE(knownVars = vars))
+    case (BackendDAE.DAE(shared=BackendDAE.SHARED(knownVars = vars)))
       then vars;
   end match;
 end daeKnVars;
@@ -2741,7 +2741,7 @@ public function daeAliasVars
 algorithm
   vars := match (inBackendDAE)
     local BackendDAE.Variables vars;
-    case (BackendDAE.DAE(aliasVars = BackendDAE.ALIASVARS(aliasVars = vars)))
+    case (BackendDAE.DAE(shared=BackendDAE.SHARED(aliasVars = BackendDAE.ALIASVARS(aliasVars = vars))))
       then vars;
   end match;
 end daeAliasVars;
@@ -3163,10 +3163,11 @@ algorithm
       array<DAE.Algorithm> algorithms;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
-    case (var,BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns,inieqns)::{},knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc))
+      BackendDAE.Shared shared;
+    case (var,BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns,inieqns)::{},shared))
       equation
         ordvars1 = addVar(var,ordvars);
-      then BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars1,eqns,inieqns)::{},knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc);
+      then BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars1,eqns,inieqns)::{},shared);
   end match;
 end addVarDAE;
 
@@ -3191,10 +3192,10 @@ algorithm
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.EqSystems eqs;
-    case (var,BackendDAE.DAE(eqs,knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc))
+    case (var,BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc)))
       equation
         knvars1 = addVar(var,knvars);
-      then BackendDAE.DAE(eqs,knvars1,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc);
+      then BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars1,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc));
   end match;
 end addKnVarDAE;
 

@@ -227,6 +227,13 @@ uniontype BackendDAE "THE LOWERED DAE consist of variables and equations. The va
   - BackendDAE"
   record DAE
     EqSystems eqs;
+    Shared shared;
+  end DAE;
+
+end BackendDAE;
+
+uniontype Shared "Data shared for all equation-systems"
+  record SHARED
     Variables knownVars "knownVars ; Known variables, i.e. constants and parameters" ;
     Variables externalObjects "External object variables";
     AliasVariables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
@@ -235,9 +242,8 @@ uniontype BackendDAE "THE LOWERED DAE consist of variables and equations. The va
     array< .DAE.Algorithm> algorithms "algorithms ; Algorithms" ;
     EventInfo eventInfo "eventInfo" ;
     ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
-  end DAE;
-
-end BackendDAE;
+  end SHARED;
+end Shared;
 
 type EqSystems = list<EqSystem> "NOTE: BackEnd does not yet support lists with different size than 1 everywhere (anywhere)";
 

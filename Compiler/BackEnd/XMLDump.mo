@@ -1090,9 +1090,9 @@ algorithm
 
 
     case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_orderedVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_orderedVars,varArr=varArr_orderedVars,bucketSize=bucketSize_orderedVars,numberOfVars=numberOfVars_orderedVars),eqns,ieqns)::{},
-                 vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
+                 BackendDAE.SHARED(vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
                  vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
-                 _,reqns,ae,algs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls),inFunctions,addOrInMatrix,addSolInfo,addMML,dumpRes)
+                 _,reqns,ae,algs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls)),inFunctions,addOrInMatrix,addSolInfo,addMML,dumpRes)
       equation
 
         vars    = BackendDAEUtil.varList(vars_orderedVars);

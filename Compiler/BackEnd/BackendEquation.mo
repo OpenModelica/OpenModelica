@@ -104,7 +104,7 @@ algorithm
       list<BackendDAE.Value> res;
       list<BackendDAE.ZeroCrossing> zcLst;
       BackendDAE.Value when_index;
-    case (BackendDAE.DAE(eventInfo = BackendDAE.EVENT_INFO(zeroCrossingLst = zcLst)),when_index)
+    case (BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(zeroCrossingLst = zcLst))),when_index)
       equation
         res = getZeroCrossingIndicesFromWhenClause2(zcLst, 0, when_index);
       then
@@ -998,10 +998,11 @@ algorithm
       array<DAE.Algorithm> algorithms;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
-    case (inEquation,BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns,inieqns)::{},knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc))
+      BackendDAE.Shared shared;
+    case (inEquation,BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns,inieqns)::{},shared))
       equation
         eqns1 = equationAdd(inEquation,eqns);
-      then BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns1,inieqns)::{},knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc);
+      then BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns1,inieqns)::{},shared);
   end match;
 end equationAddDAE;
 
@@ -1023,10 +1024,11 @@ algorithm
       array<DAE.Algorithm> algorithms;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
-    case (inInteger,inEquation,BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns,inieqns)::{},knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc))
+      BackendDAE.Shared shared;
+    case (inInteger,inEquation,BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns,inieqns)::{},shared))
       equation
         eqns1 = equationSetnth(eqns,inInteger,inEquation);
-      then BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns1,inieqns)::{},knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc);
+      then BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns1,inieqns)::{},shared);
   end match;
 end equationSetnthDAE;
 
@@ -1324,7 +1326,7 @@ public function daeArrayEqns
 algorithm
   outEqns := match (inBackendDAE)
     local array<BackendDAE.MultiDimEquation> eqnarr;
-    case (BackendDAE.DAE(arrayEqs = eqnarr))
+    case (BackendDAE.DAE(shared=BackendDAE.SHARED(arrayEqs = eqnarr)))
       then eqnarr;
   end match;
 end daeArrayEqns;

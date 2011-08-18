@@ -88,7 +88,7 @@ algorithm
       BackendDAE.ExternalObjectClasses extObjClasses;
       Functiontuple tpl;
       BackendDAE.EqSystems eqs;
-    case(ftree,itlst,BackendDAE.DAE(eqs,knownVars,externalObjects,aliasVars,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
+    case (ftree,itlst,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses)))
       equation
         tpl = (ftree,itlst);
         eqs = Util.listMap1(eqs,inlineEquationSystem,tpl);
@@ -101,7 +101,7 @@ algorithm
         algorithms = listArray(alglst);
         eventInfo = inlineEventInfo(eventInfo,tpl);
       then
-        BackendDAE.DAE(eqs,knownVars,externalObjects,aliasVars,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses);
+        BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses));
     case(_,_,_)
       equation
         Debug.fprintln("failtrace","Inline.inlineCalls failed");

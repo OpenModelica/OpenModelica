@@ -98,7 +98,7 @@ algorithm
       BackendDAE.EquationArray eqns;
       list<BackendDAE.WhenClause> wcLst;
     
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns)::{}, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wcLst)))
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns)::{}, shared=BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wcLst))))
       equation
         eqnsl = BackendDAEUtil.equationList(eqns);
         ls1 = Util.listMap1(eqnsl, equationStr, wcLst);
