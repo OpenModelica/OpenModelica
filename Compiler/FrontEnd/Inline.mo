@@ -87,11 +87,11 @@ algorithm
       BackendDAE.EventInfo eventInfo;
       BackendDAE.ExternalObjectClasses extObjClasses;
       Functiontuple tpl;
-      BackendDAE.EqSystem eqs;
+      BackendDAE.EqSystems eqs;
     case(ftree,itlst,BackendDAE.DAE(eqs,knownVars,externalObjects,aliasVars,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
       equation
         tpl = (ftree,itlst);
-        eqs = inlineEquationSystem(eqs,tpl);
+        eqs = Util.listMap1(eqs,inlineEquationSystem,tpl);
         knownVars = inlineVariables(knownVars,tpl);
         externalObjects = inlineVariables(externalObjects,tpl);
         removedEqs = inlineEquationArray(removedEqs,tpl);

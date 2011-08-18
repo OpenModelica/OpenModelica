@@ -216,7 +216,7 @@ algorithm
       list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expcrefs,expcrefs1,expcrefs2,expcrefs3,expcrefs4,expcrefs5,expcrefs7;
       list<BackendDAE.Equation> wrongEqns,wrongEqns1,wrongEqns2;
     
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars1,initialEqs = ieqns,orderedEqs = eqns),knownVars = vars2,removedEqs = reqns,
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars1,initialEqs = ieqns,orderedEqs = eqns)::{},knownVars = vars2,removedEqs = reqns,
           arrayEqs = ae,algorithms = algs, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst)))
       equation
         varlst1 = varList(vars1);
@@ -443,7 +443,7 @@ algorithm
       list<DAE.ComponentRef> vars,varsws,states,statesws;
       BackendDAE.AliasVariables av;
    
-    case (dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=variables,initialEqs=initialEqs,orderedEqs=orderedEqs),knownVars=knvars,externalObjects=exObj,aliasVars=av,removedEqs=removedEqs,
+    case (dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=variables,initialEqs=initialEqs,orderedEqs=orderedEqs)::{},knownVars=knvars,externalObjects=exObj,aliasVars=av,removedEqs=removedEqs,
            arrayEqs=arrayEqs,algorithms=algs,eventInfo=eventInfo,extObjClasses=extObjClasses),funcs)
       equation
         /* count the unfixed variables */
@@ -506,7 +506,7 @@ algorithm
         inDAE;
    
     // unfixed greater than equations
-    case (inUnfixed,inInitialEqns,inDAE as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars,initialEqs=initialEqs,orderedEqs=orderedEqs),knownVars=knvars,externalObjects=exObj,aliasVars=alisvars,removedEqs=removedEqs,
+    case (inUnfixed,inInitialEqns,inDAE as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars,initialEqs=initialEqs,orderedEqs=orderedEqs)::{},knownVars=knvars,externalObjects=exObj,aliasVars=alisvars,removedEqs=removedEqs,
            arrayEqs=arrayEqs,algorithms=algs,eventInfo=eventInfo,extObjClasses=extObjClasses),funcs,inVars,inVarsWS,inStates,inStatesWS)
       equation
         true = RTOpts.debugFlag("dumpInit");
@@ -516,18 +516,18 @@ algorithm
         true = intGt(inUnfixed,inInitialEqns);
         // change fixed to true until equal equations
         (vars1,knvars1) = fixInitalVars(inUnfixed,inInitialEqns,vars,knvars,inVars,inVarsWS,inStates,inStatesWS);
-        dae1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(vars1,orderedEqs,initialEqs),knvars1,exObj,alisvars,removedEqs,arrayEqs,algs,eventInfo,extObjClasses);
+        dae1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(vars1,orderedEqs,initialEqs)::{},knvars1,exObj,alisvars,removedEqs,arrayEqs,algs,eventInfo,extObjClasses);
       then 
         dae1;
    
     // unfixed greater than equations
-    case (inUnfixed,inInitialEqns,inDAE as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars,initialEqs=initialEqs,orderedEqs=orderedEqs),knownVars=knvars,externalObjects=exObj,aliasVars=alisvars,removedEqs=removedEqs,
+    case (inUnfixed,inInitialEqns,inDAE as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars,initialEqs=initialEqs,orderedEqs=orderedEqs)::{},knownVars=knvars,externalObjects=exObj,aliasVars=alisvars,removedEqs=removedEqs,
            arrayEqs=arrayEqs,algorithms=algs,eventInfo=eventInfo,extObjClasses=extObjClasses),funcs,inVars,inVarsWS,inStates,inStatesWS)
       equation
         true = intGt(inUnfixed,inInitialEqns);
         // change fixed to true until equal equations
         (vars1,knvars1) = fixInitalVars(inUnfixed,inInitialEqns,vars,knvars,inVars,inVarsWS,inStates,inStatesWS);
-        dae1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(vars1,orderedEqs,initialEqs),knvars1,exObj,alisvars,removedEqs,arrayEqs,algs,eventInfo,extObjClasses);
+        dae1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(vars1,orderedEqs,initialEqs)::{},knvars1,exObj,alisvars,removedEqs,arrayEqs,algs,eventInfo,extObjClasses);
       then 
         dae1;
 
@@ -878,7 +878,7 @@ algorithm
       BackendDAE.EquationArray eqns,seqns,ieqns;
       BackendDAE.BackendDAE trans_dae;
       BackendDAE.ExternalObjectClasses extObjCls;
-    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,ieqns),knvars,extVars,av,seqns,ae,al,BackendDAE.EVENT_INFO(whenClauseLst = wc,zeroCrossingLst = zc),extObjCls),_)
+    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,ieqns)::{},knvars,extVars,av,seqns,ae,al,BackendDAE.EVENT_INFO(whenClauseLst = wc,zeroCrossingLst = zc),extObjCls),_)
       equation
         varlst = varList(vars);
         knvarlst = varList(knvars);
@@ -890,7 +890,7 @@ algorithm
         vars = BackendVariable.addVars(varlst, vars);
         knvars = BackendVariable.addVars(knvarlst, knvars);
         extVars = BackendVariable.addVars(extvarlst, extVars);
-        trans_dae = BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,ieqns),knvars,extVars,av,seqns,ae,al,
+        trans_dae = BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,ieqns)::{},knvars,extVars,av,seqns,ae,al,
           BackendDAE.EVENT_INFO(wc,zc),extObjCls);
       then
         trans_dae;
@@ -933,7 +933,7 @@ algorithm
       list<BackendDAE.WhenClause> wc;
       list<BackendDAE.ZeroCrossing> zc;
     
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars),knownVars = knvars, externalObjects = extvars,
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars)::{},knownVars = knvars, externalObjects = extvars,
                  eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc,
                                         zeroCrossingLst = zc)))
       equation
@@ -1240,7 +1240,7 @@ algorithm
       list<DAE.ComponentRef> cr_lst;
       BackendDAE.BinTree bt;
       BackendDAE.Variables v;
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = v)))
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = v)::{}))
       equation
         cr_lst = BackendVariable.traverseBackendDAEVars(v,traversingisStateVarCrefFinder,{});
         bt = treeAddList(BackendDAE.emptyBintree,cr_lst);
@@ -2328,7 +2328,7 @@ public function systemSize
 algorithm
   n := match(dae)
     local BackendDAE.EquationArray eqns;
-    case(BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns)))
+    case(BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns)::{}))
       equation
         n = equationSize(eqns);
       then n;
@@ -2619,7 +2619,7 @@ algorithm
       array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> alg;
     
-    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = v))),arr,m,mt,a1,a2)
+    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = v)::{})),arr,m,mt,a1,a2)
       equation
         statevar_lst = BackendVariable.getAllStateVarFromVariables(v);
         ((dae,arr_1,m,mt,a1,a2)) = Util.listFold(statevar_lst, markStateEquation, (dae,arr,m,mt,a1,a2));
@@ -2657,7 +2657,7 @@ algorithm
       String s,str;
       BackendDAE.Value v_indx,v_indx_1;
     
-    case (BackendDAE.VAR(varName = cr),((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars))),arr,m,mt,a1,a2))
+    case (BackendDAE.VAR(varName = cr),((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars)::{})),arr,m,mt,a1,a2))
       equation
         (_,v_indxs) = BackendVariable.getVar(cr, vars);
         v_indxs_1 = Util.listMap1(v_indxs, intSub, 1);
@@ -2666,7 +2666,7 @@ algorithm
       then
         ((dae,arr_1,m,mt,a1,a2));
     
-    case (BackendDAE.VAR(varName = cr),((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars))),arr,m,mt,a1,a2))
+    case (BackendDAE.VAR(varName = cr),((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars)::{})),arr,m,mt,a1,a2))
       equation
         failure((_,_) = BackendVariable.getVar(cr, vars));
         print("- BackendDAEUtil.markStateEquation var ");
@@ -2676,7 +2676,7 @@ algorithm
       then
         fail();
     
-    case (BackendDAE.VAR(varName = cr),((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars))),arr,m,mt,a1,a2))
+    case (BackendDAE.VAR(varName = cr),((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars)::{})),arr,m,mt,a1,a2))
       equation
         (_,{v_indx}) = BackendVariable.getVar(cr, vars);
         v_indx_1 = v_indx - 1;
@@ -3875,7 +3875,7 @@ algorithm
       Integer numberOfEqs,numberofVars;
       list<BackendDAE.IncidenceMatrixElement> lstT;
     
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns), eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc)), inIndexType)
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)::{}, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc)), inIndexType)
       equation
         // get the size
         numberOfEqs = getNumberOfEquationArray(eqns);
@@ -4447,7 +4447,7 @@ algorithm
 
     case (dae,m,mt,{}) then (m,mt);
 
-    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = daeeqns),knownVars = knvars,removedEqs = daeseqns,eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc))),m,mt,(e :: eqns))
+    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = daeeqns)::{},knownVars = knvars,removedEqs = daeseqns,eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc))),m,mt,(e :: eqns))
       equation
         abse = intAbs(e);
         e_1 = abse - 1;
@@ -4928,7 +4928,7 @@ algorithm
         true = rhsConstant(daelow);
       then
         BackendDAE.JAC_CONSTANT();
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars)),SOME(jac))
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars)::{}),SOME(jac))
       equation
         true = jacobianNonlinear(vars, jac);
       then
@@ -4953,12 +4953,12 @@ algorithm
       Boolean res;
       BackendDAE.BackendDAE dae;
       BackendDAE.EquationArray eqns;
-    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns))))
+    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns)::{})))
       equation
         0 = equationSize(eqns);
       then
         true;
-    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns))))
+    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns)::{})))
       equation
         ((_,res)) = BackendEquation.traverseBackendDAEEqnsWithStop(eqns,rhsConstant2,(dae,true));
       then
@@ -4986,7 +4986,7 @@ algorithm
       array<BackendDAE.MultiDimEquation> arreqn;
 
     // check rhs for for EQUATION nodes.
-    case ((eqn as BackendDAE.EQUATION(exp = e1,scalar = e2),(dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars)),b)))
+    case ((eqn as BackendDAE.EQUATION(exp = e1,scalar = e2),(dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars)::{}),b)))
       equation
         tp = Expression.typeof(e1);
         new_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
@@ -4995,7 +4995,7 @@ algorithm
       then
         ((eqn,res,(dae,b and res)));
     // check rhs for for ARRAY_EQUATION nodes. check rhs for for RESIDUAL_EQUATION nodes.
-    case ((eqn as BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl),(dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars),arrayEqs = arreqn),b)))
+    case ((eqn as BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl),(dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars)::{},arrayEqs = arreqn),b)))
       equation
         indx_1 = indx - 1;
         BackendDAE.MULTIDIM_EQUATION(ds,e1,e2,_) = arreqn[indx + 1];
@@ -5006,7 +5006,7 @@ algorithm
       then
         ((eqn,res,(dae,b and res)));
 
-    case ((eqn as BackendDAE.RESIDUAL_EQUATION(exp = e),(dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars)),b))) /* check rhs for for RESIDUAL_EQUATION nodes. */
+    case ((eqn as BackendDAE.RESIDUAL_EQUATION(exp = e),(dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars)::{}),b))) /* check rhs for for RESIDUAL_EQUATION nodes. */
       equation
         rhs_exp = getEqnsysRhsExp(e, vars);
         res = Expression.isConst(rhs_exp);
@@ -5364,7 +5364,7 @@ algorithm
       array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> algs;
       Type_a ext_arg_1,ext_arg_2,ext_arg_3,ext_arg_4,ext_arg_5,ext_arg_6,ext_arg_7;
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars1,orderedEqs = eqns,initialEqs = ieqns),
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars1,orderedEqs = eqns,initialEqs = ieqns)::{},
       knownVars = vars2,removedEqs = reqns,arrayEqs = ae,algorithms = algs),func,inTypeA)
       equation
         ext_arg_1 = traverseBackendDAEExpsVars(vars1,func,inTypeA);

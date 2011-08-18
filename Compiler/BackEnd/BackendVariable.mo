@@ -2719,7 +2719,7 @@ public function daeVars
 algorithm
   vars := match (inBackendDAE)
     local BackendDAE.Variables vars;
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars)))
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars)::{}))
       then vars;
   end match;
 end daeVars;
@@ -3163,10 +3163,10 @@ algorithm
       array<DAE.Algorithm> algorithms;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
-    case (var,BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns,inieqns),knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc))
+    case (var,BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns,inieqns)::{},knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc))
       equation
         ordvars1 = addVar(var,ordvars);
-      then BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars1,eqns,inieqns),knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc);
+      then BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars1,eqns,inieqns)::{},knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc);
   end match;
 end addVarDAE;
 

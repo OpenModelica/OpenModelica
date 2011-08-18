@@ -239,7 +239,7 @@ uniontype BackendDAE "THE LOWERED DAE consist of variables and equations. The va
 
 end BackendDAE;
 
-type EqSystems = EqSystem "TODO: Make this a list in the future";
+type EqSystems = list<EqSystem> "NOTE: BackEnd does not yet support lists with different size than 1 everywhere (anywhere)";
 
 uniontype EqSystem "An independent system of equations (and their corresponding variables)"
   record EQSYSTEM

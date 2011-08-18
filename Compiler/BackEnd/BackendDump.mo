@@ -203,7 +203,7 @@ algorithm
       BackendDAE.Value eqno_1,eqno;
       BackendDAE.Equation eq;
       BackendDAE.EquationArray eqns;
-    case (eqno,BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns)))
+    case (eqno,BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns)::{}))
       equation
         eqno_1 = eqno - 1;
         eq = BackendDAEUtil.equationNth(eqns, eqno_1);
@@ -629,7 +629,7 @@ algorithm
       list<BackendDAE.ZeroCrossing> zc;
       list<BackendDAE.WhenClause> wc;
       BackendDAE.ExternalObjectClasses extObjCls;
-    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars1,eqns,ieqns),vars2,vars3,av,reqns,ae,algs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc,whenClauseLst=wc),extObjCls))
+    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars1,eqns,ieqns)::{},vars2,vars3,av,reqns,ae,algs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc,whenClauseLst=wc),extObjCls))
       equation
         print("Variables (");
         vars = BackendDAEUtil.varList(vars1);
@@ -1420,7 +1420,7 @@ algorithm
       BackendDAE.EquationArray eqns;
       list<BackendDAE.Value> es;
     case (_,{}) then "";
-    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns))),(e :: es))
+    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns)::{})),(e :: es))
       equation
         s1 = dumpMarkedEqns(dae, es);
         e_1 = e - 1;
@@ -1448,7 +1448,7 @@ algorithm
       BackendDAE.Variables vars;
       list<BackendDAE.Value> vs;
     case (_,{}) then "";
-    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars))),(v :: vs))
+    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars)::{})),(v :: vs))
       equation
         s1 = dumpMarkedVars(dae, vs);
         BackendDAE.VAR(varName = cr) = BackendVariable.getVarAt(vars, v);
