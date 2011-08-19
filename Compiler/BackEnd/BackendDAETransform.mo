@@ -2343,16 +2343,16 @@ algorithm
       BackendDAE.Shared shared;
     case ({},dae,m,mt,_)
        then (dae,m,mt);
-    case (inOrgEqns,dae as BackendDAE.DAE(shared=BackendDAE.SHARED(arrayEqs=ae)),m,mt,inFunctions)
+    case (inOrgEqns,dae as BackendDAE.DAE({syst},shared as BackendDAE.SHARED(arrayEqs=ae)),m,mt,inFunctions)
       equation
         arrayListeqns = arrayCreate(arrayLength(ae), {});
         arrayListeqns = getScalarArrayEqns(inOrgEqns,dae,arrayListeqns);
         // replace them
-        (dae1 as BackendDAE.DAE({syst},shared),updateeqns,_) = BackendDAEOptimize.doReplaceScalarArrayEqns(arrayListeqns,dae);
+        (syst,shared,updateeqns,_) = BackendDAEOptimize.doReplaceScalarArrayEqns(arrayListeqns,syst,shared);
         // update Incidence matrix
         (m1,mt1) = BackendDAEUtil.updateIncidenceMatrix(syst,shared,m,mt,updateeqns);
       then
-        (dae1,m1,mt1);
+        (BackendDAE.DAE({syst},shared),m1,mt1);
   end matchcontinue;
 end replaceScalarArrayEqns; 
 
