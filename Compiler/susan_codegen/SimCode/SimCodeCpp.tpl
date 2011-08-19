@@ -2339,6 +2339,24 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
     let var1 = tempDecl1(type,e1,&varDecls /*BUFD*/)
     let &preExp += '<%var1%>=multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>);<%\n%>'
     '<%var1%>'  
+  case MUL_MATRIX_PRODUCT(ty=ET_ARRAY(arrayDimensions=dims)) then
+    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then 'multi_array<int,<%listLength(dims)%>>'
+                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then 'multi_array<int,<%listLength(dims)%>>'
+                        else 'multi_array<double,<%listLength(dims)%>>'
+    let type1 = match ty case ET_ARRAY(ty=ET_INT(__)) then "int"
+                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then "int"
+                        else "double"
+    //let var = tempDecl(type,&varDecls /*BUFD*/)
+    let var1 = tempDecl1(type,e1,&varDecls /*BUFD*/)
+    let &preExp += '<%var1%>=multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>);<%\n%>'
+    '<%var1%>'  
+  case DIV_ARRAY_SCALAR(ty=ET_ARRAY(arrayDimensions=dims)) then
+  let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" 
+                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then "integer_array"
+                        else "real_array"
+    let var = tempDecl(type, &varDecls /*BUFD*/)
+    let &preExp += 'div_alloc_<%type%>_scalar(&<%e1%>, <%e2%>, &<%var%>);<%\n%>'
+    '<%var%>'
   case _   then "daeExpBinary:ERR"
 end daeExpBinary;
 
