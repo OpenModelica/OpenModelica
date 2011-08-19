@@ -2713,6 +2713,8 @@ algorithm
       array<list<Integer>> m,mT;
       array<Integer> v1,v2;
       BackendDAE.StrongComponents comps;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
   case (false,false,_) then ();
   case (true,true,dlow)
     equation
@@ -2727,9 +2729,9 @@ algorithm
       dumpStrCloseTag(SOLVING_INFO);
       dumpStrCloseTag(ADDITIONAL_INFO);
     then ();
-  case (true,false,dlow)
+  case (true,false,BackendDAE.DAE({syst},shared))
     equation
-      (m,mT) = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
+      (m,mT) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.NORMAL());
       //mT = BackendDAEUtil.transposeMatrix(m);
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(ORIGINAL_INCIDENCE_MATRIX);

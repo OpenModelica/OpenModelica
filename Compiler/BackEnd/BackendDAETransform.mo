@@ -945,6 +945,8 @@ algorithm
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       BackendDAE.JacobianType jac_tp;
       BackendDAE.StrongComponent sc;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
     case (comp,eqn_lst,var_varindx_lst,inDAE,m,mt,ass1,ass2)
       equation
         SOME(i) = singleAlgorithmEquation(eqn_lst,NONE());
@@ -984,8 +986,10 @@ algorithm
         av = BackendDAEUtil.emptyAliasVariables();
         eeqns = BackendDAEUtil.listEquation({});
         evars = BackendDAEUtil.listVar({});
-        subsystem_dae = BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,eqns_1,eeqns)::{},BackendDAE.SHARED(evars,evars,av,eeqns,ae1,al,BackendDAE.EVENT_INFO({},{}),{}));
-        (m,mt) = BackendDAEUtil.incidenceMatrix(subsystem_dae, BackendDAE.ABSOLUTE());
+        syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,eeqns);
+        shared = BackendDAE.SHARED(evars,evars,av,eeqns,ae1,al,BackendDAE.EVENT_INFO({},{}),{});
+        (m,mt) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.ABSOLUTE());
+        subsystem_dae = BackendDAE.DAE({syst},shared);
         //mt = BackendDAEUtil.transposeMatrix(m);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m, mt,true);

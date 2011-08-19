@@ -2764,7 +2764,9 @@ algorithm
       BackendDAE.StrongComponents comps,comps1;
       Boolean b;
       list<Integer> eqnlst;
-     BackendDAE.BinTree movedVars;
+      BackendDAE.BinTree movedVars;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
     case (inDAE,inFunctionTree,inM,inMT,inAss1,inAss2,inComps)
       equation
         (dae as BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,inieqns)::{},BackendDAE.SHARED(knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc)),b,eqnlst,movedVars) = constantLinearSystem1(inDAE,inFunctionTree,inComps,{},BackendDAE.emptyBintree);
@@ -2773,10 +2775,11 @@ algorithm
         // remove changed eqns
         eqnlst = Util.listMap1(eqnlst,intSub,1);
         eqns1 = BackendEquation.equationDelete(eqns,eqnlst);
-        dae1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(vars1,eqns1,inieqns)::{},BackendDAE.SHARED(knvars1,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc));
-        (m,mT) = BackendDAEUtil.incidenceMatrix(dae1, BackendDAE.NORMAL());
+        syst = BackendDAE.EQSYSTEM(vars1,eqns1,inieqns);
+        shared = BackendDAE.SHARED(knvars1,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc);
+        (m,mT) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.NORMAL());
       then
-        (dae1,m,mT,inAss1,inAss2,inComps,b);
+        (BackendDAE.DAE({syst},shared),m,mT,inAss1,inAss2,inComps,b);
   end matchcontinue;  
 end constantLinearSystem;
 
@@ -3155,6 +3158,8 @@ algorithm
       list<list<Integer>> r,t;
       Integer ll;
       list<DAE.ComponentRef> crlst;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
     case (dlow,dlow1,m,mT,v1,v2,{})
       then
         ({},{},dlow,dlow1,m,mT,v1,v2,{});
@@ -3172,7 +3177,8 @@ algorithm
         v2_2 = Util.arrayNCopy(v2_1, v2_2,ll);
         v1_2 = arrayCreate(ll, 0);
         v1_2 = Util.arrayNCopy(v1_1, v1_2,ll);
-        (m_3,mT_3) = BackendDAEUtil.incidenceMatrix(dlow1_1, BackendDAE.NORMAL());
+        BackendDAE.DAE({syst},shared) = dlow1_1;
+        (m_3,mT_3) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.NORMAL());
         //mT_3 = BackendDAEUtil.transposeMatrix(m_3);
         (v1_3,v2_3) = correctAssignments(v1_2,v2_2,residualeqns,tearingvars);
         // next Block

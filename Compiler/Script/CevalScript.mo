@@ -3077,6 +3077,8 @@ algorithm
       BackendDAE.Variables vars;
       BackendDAE.IncidenceMatrix m;
       Absyn.Class c;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
     
     // handle partial models
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
@@ -3127,14 +3129,14 @@ algorithm
         // adrpo: do not store instantiated class as we don't use it later!
         // ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         funcs = Env.getFunctionTree(cache);
-        dlow = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
+        (dlow as BackendDAE.DAE({syst},shared)) = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
         Debug.fcall("dumpdaelow", BackendDump.dump, dlow);
         eqns = BackendEquation.daeEqns(dlow);
         eqnSize = BackendDAEUtil.equationSize(eqns);
         vars = BackendVariable.daeVars(dlow);
         varSize = BackendVariable.varsSize(vars);
         (eqnSize,varSize) = subtractDummy(vars,eqnSize,varSize);
-        (m,_) = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
+        (m,_) = BackendDAEUtil.incidenceMatrix(syst,shared, BackendDAE.NORMAL());
         simpleEqnSize = BackendDAEOptimize.countSimpleEquations(dlow,m);
         eqnSizeStr = intString(eqnSize);
         varSizeStr = intString(varSize);
@@ -3168,14 +3170,14 @@ algorithm
         // adrpo: do not store instantiated class as we don't use it later!
         // ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         funcs = Env.getFunctionTree(cache);
-        dlow = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
+        (dlow as BackendDAE.DAE({syst},shared)) = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
         Debug.fcall("dumpdaelow", BackendDump.dump, dlow);
         eqns = BackendEquation.daeEqns(dlow);
         eqnSize = BackendDAEUtil.equationSize(eqns);
         vars = BackendVariable.daeVars(dlow);
         varSize = BackendVariable.varsSize(vars);
         (eqnSize,varSize) = subtractDummy(vars,eqnSize,varSize);
-        (m,_) = BackendDAEUtil.incidenceMatrix(dlow, BackendDAE.NORMAL());
+        (m,_) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.NORMAL());
         simpleEqnSize = BackendDAEOptimize.countSimpleEquations(dlow,m);
         eqnSizeStr = intString(eqnSize);
         varSizeStr = intString(varSize);

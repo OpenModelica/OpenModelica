@@ -3860,12 +3860,13 @@ public function incidenceMatrix
   author: PA, adrpo
   Calculates the incidence matrix, i.e. which variables are present in each equation.
   You can ask for absolute indexes or normal (negative for der) via the IndexType"
-  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
   input BackendDAE.IndexType inIndexType;
   output BackendDAE.IncidenceMatrix outIncidenceMatrix;
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
 algorithm
-  (outIncidenceMatrix,outIncidenceMatrixT) := matchcontinue (inBackendDAE, inIndexType)
+  (outIncidenceMatrix,outIncidenceMatrixT) := matchcontinue (syst, shared, inIndexType)
     local
       BackendDAE.IncidenceMatrix arr;
       BackendDAE.IncidenceMatrixT arrT;
@@ -3875,7 +3876,7 @@ algorithm
       Integer numberOfEqs,numberofVars;
       list<BackendDAE.IncidenceMatrixElement> lstT;
     
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)::{}, shared=BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc))), inIndexType)
+    case (BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns), BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc)), inIndexType)
       equation
         // get the size
         numberOfEqs = getNumberOfEquationArray(eqns);
@@ -3888,9 +3889,9 @@ algorithm
       then
         (arr,arrT);
     
-    case (_, inIndexType)
+    else
       equation
-        print("- BackendDAEUtil.incidenceMatrix failed\n");
+        Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.incidenceMatrix failed"});
       then
         fail();
   end matchcontinue;
@@ -4613,9 +4614,11 @@ algorithm
     local  
       BackendDAE.BackendDAE dae;
       BackendDAE.IncidenceMatrix m,mT;
-    case(dae,NONE(),_)
-      equation  
-        (m,mT) = incidenceMatrix(dae, BackendDAE.NORMAL());
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+    case(BackendDAE.DAE({syst},shared),NONE(),_)
+      equation
+        (m,mT) = incidenceMatrix(syst, shared, BackendDAE.NORMAL());
         //mT = transposeMatrix(m);
       then
         (m,mT);
