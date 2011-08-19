@@ -739,6 +739,7 @@ fmiStatus fmiGetNominalContinuousStates(fmiComponent c, fmiReal x_nominal[], siz
 
 fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx) {
   unsigned int i=0;
+  int needToIterate = 0;
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiGetDerivatives", not_modelError))
     return fmiError;
@@ -746,11 +747,10 @@ fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx) {
     return fmiError;
   if (nullPointer(comp, "fmiGetDerivatives", "derivatives[]", derivatives))
     return fmiError;
-#if NUMBER_OF_STATES>0
+#if (NUMBER_OF_STATES>0)
   //if (comp->eventInfo.stateValuesChanged == fmiTrue)
   //{
     // calculate new values
-    int needToIterate = 0;
     functionDAE(&needToIterate);
     for (i=0; i<nx; i++) {
       fmiValueReference vr = vrStatesDerivatives[i];
@@ -793,6 +793,7 @@ fmiStatus fmiGetEventIndicators(fmiComponent c, fmiReal eventIndicators[], size_
 fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal relativeTolerance,
             fmiEventInfo* eventInfo) {
               int sampleEvent_actived = 0;
+              std::string init_method = std::string("simplex");
               ModelInstance* comp = (ModelInstance *)c;
               if (invalidState(comp, "fmiInitialize", modelInstantiated))
                 return fmiError;
@@ -808,7 +809,7 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
               eventInfo->upcomingTimeEvent   = comp->eventInfo.upcomingTimeEvent;
               globalData->lastEmittedTime = *comp->time;
               globalData->forceEmit = 0;
-              initSample(*comp->time, 1e10);
+              initSample(*comp->time, 1);
               initDelay(*comp->time);
 
               if (initializeEventData()) {
@@ -826,7 +827,6 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
               // Evaluate all constant equations
               functionAliasEquations();
 
-              std::string init_method = std::string("simplex");
 
               /*try{
                 if (main_initialize(&init_method))

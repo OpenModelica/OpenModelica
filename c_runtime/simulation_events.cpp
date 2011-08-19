@@ -343,7 +343,7 @@ initSample(double start, double stop)
   int i;
   //double stop = 1.0;
   double d;
-  sample_time* Samples;
+  sample_time* Samples = NULL;
   int num_samples = globalData->nRawSamples;
   int max_events = 0;
   int ix = 0;
@@ -356,6 +356,8 @@ initSample(double start, double stop)
             / globalData->rawSampleExps[i].interval) + 1);
     }
   Samples = (sample_time*) calloc(max_events + 1, sizeof(sample_time));
+  if (Samples == NULL)
+    throw TerminateSimulationException("Could not allocate Memory for initSample!");
   for (i = 0; i < num_samples; i++)
     {
       if (sim_verbose  >= LOG_EVENTS)
