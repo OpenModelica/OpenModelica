@@ -2338,7 +2338,9 @@ algorithm
       BackendDAE.IncidenceMatrixT mt,mt1; 
       array<list<BackendDAE.Equation>> arrayListeqns;  
       array<BackendDAE.MultiDimEquation> ae; 
-      list<Integer> updateeqns;  
+      list<Integer> updateeqns;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
     case ({},dae,m,mt,_)
        then (dae,m,mt);
     case (inOrgEqns,dae as BackendDAE.DAE(shared=BackendDAE.SHARED(arrayEqs=ae)),m,mt,inFunctions)
@@ -2346,9 +2348,9 @@ algorithm
         arrayListeqns = arrayCreate(arrayLength(ae), {});
         arrayListeqns = getScalarArrayEqns(inOrgEqns,dae,arrayListeqns);
         // replace them
-        (dae1,updateeqns,_) = BackendDAEOptimize.doReplaceScalarArrayEqns(arrayListeqns,dae);
+        (dae1 as BackendDAE.DAE({syst},shared),updateeqns,_) = BackendDAEOptimize.doReplaceScalarArrayEqns(arrayListeqns,dae);
         // update Incidence matrix
-        (m1,mt1) = BackendDAEUtil.updateIncidenceMatrix(dae,m,mt,updateeqns);        
+        (m1,mt1) = BackendDAEUtil.updateIncidenceMatrix(syst,shared,m,mt,updateeqns);
       then
         (dae1,m1,mt1);
   end matchcontinue;
@@ -2497,6 +2499,8 @@ algorithm
       Boolean negate;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrix mt;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
     case (dae,{},_,inDerivedAlgs,inDerivedMultiEqn,inStateOrd,m,mt,inOrgEqnsLst) then (dae,m,mt,inDerivedAlgs,inDerivedMultiEqn,inStateOrd,inOrgEqnsLst);
     case ((dae as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqns,ie)::{},BackendDAE.SHARED(kv,ev,av,seqns,ae,al,BackendDAE.EVENT_INFO(wclst,zc),eoc))),(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn,inStateOrd,m,mt,inOrgEqnsLst)
       equation
@@ -2510,12 +2514,14 @@ algorithm
         eqnslst = Util.listIntRange2(eqnss,eqnss1);
         Debug.fcall("bltdump", debugdifferentiateEqns,(eqn,eqn_1)); 
         eqns_1 = BackendEquation.equationSetnth(eqns,e_1,eqn_1);
-        dae1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(v1,eqns_1,ie)::{},BackendDAE.SHARED(kv,ev,av,seqns,ae1,al1,BackendDAE.EVENT_INFO(wclst1,zc),eoc));
+        syst = BackendDAE.EQSYSTEM(v1,eqns_1,ie);
+        shared = BackendDAE.SHARED(kv,ev,av,seqns,ae1,al1,BackendDAE.EVENT_INFO(wclst1,zc),eoc);
+        dae1 = BackendDAE.DAE({syst},shared);
         eqnslst1 = collectVarEqns(ilst,e::eqnslst,mt,arrayLength(mt));
         Debug.fcall("bltdump", print, "Update Incidence Matrix: ");
         Debug.fcall("bltdump", BackendDump.debuglst,(eqnslst1,intString));
         Debug.fcall("bltdump", print, "\n");        
-        (m,mt) = BackendDAEUtil.updateIncidenceMatrix(dae1, m, mt, eqnslst1);
+        (m,mt) = BackendDAEUtil.updateIncidenceMatrix(syst, shared, m, mt, eqnslst1);
         orgEqnsLst = addOrgEqn(inOrgEqnsLst,e,eqn,false);
         (dae2,m,mt,derivedAlgs1,derivedMultiEqn1,so1,orgEqnsLst) = differentiateEqnsDynamicState(dae1, es, inFunctions,derivedAlgs,derivedMultiEqn,so,m,mt,orgEqnsLst);
       then
@@ -2765,7 +2771,9 @@ algorithm
       array<DAE.Algorithm> al;
       list<BackendDAE.WhenClause> wclst;
       list<BackendDAE.ZeroCrossing> zc;
-      BackendDAE.ExternalObjectClasses eoc;      
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
     case ({},inBackendDAE,m,mt,_,_,_) 
       then (inBackendDAE,m,mt,{});
     case ((orgeqn,false)::rest,dae as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqnsarr,ie)::{},BackendDAE.SHARED(kv,ev,av,seqns,ae,al,BackendDAE.EVENT_INFO(wclst,zc),eoc)),m,mt,so,inFunctions,e)
@@ -2774,8 +2782,10 @@ algorithm
         // add the equations     
         (eqnsarr,ae) = addOrgEqntoDAE2(orgeqn,eqnsarr,ae,inFunctions); 
         ep = arrayLength(m)+1;
-        dae1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqnsarr,ie)::{},BackendDAE.SHARED(kv,ev,av,seqns,ae,al,BackendDAE.EVENT_INFO(wclst,zc),eoc));
-        (m1,mt1) = BackendDAEUtil.updateIncidenceMatrix(dae1, m, mt, {ep});
+        syst = BackendDAE.EQSYSTEM(v,eqnsarr,ie);
+        shared = BackendDAE.SHARED(kv,ev,av,seqns,ae,al,BackendDAE.EVENT_INFO(wclst,zc),eoc);
+        (m1,mt1) = BackendDAEUtil.updateIncidenceMatrix(syst, shared, m, mt, {ep});
+        dae1 = BackendDAE.DAE({syst},shared);
         states = BackendEquation.equationsStates({orgeqn},BackendVariable.daeVars(dae));
         l = listLength(states);
         // next 
@@ -3122,6 +3132,8 @@ algorithm
       list<BackendDAE.Value> slst;
       BackendDAE.Assignments ass1,ass2;
       BackendVarTransform.VariableReplacements repl;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
     case ({},inBackendDAE,m,mt,ass1,ass2,so,cstates,orgEqnslst,inOrgEqnsLst) 
       then (inBackendDAE,m,mt,ass1,ass2,so,cstates,orgEqnslst,inOrgEqnsLst,0);
     case ((e,ep,l)::rest,dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eqns)::{}),m,mt,ass1,ass2,so,cstates,orgEqnslst,inOrgEqnsLst)
@@ -3154,9 +3166,9 @@ algorithm
         repl = BackendVarTransform.addReplacement(repl, dcr, exp);
         (dae1,rest) = replaceDummyStateInOrgEqns2(rest,repl,dae1);
         (dae1,orgEqnslst) = replaceDummyStateInOrgEqns2(orgEqnslst,repl,dae1);
-        (dae1,orgeqns) = replaceDummyStateInOrgEqns(inOrgEqnsLst,repl,dae1);
+        (dae1 as BackendDAE.DAE({syst},shared),orgeqns) = replaceDummyStateInOrgEqns(inOrgEqnsLst,repl,dae1);
         slst = mt[stateno];
-        (m,mt) = BackendDAEUtil.updateIncidenceMatrix(dae1, m, mt, slst);
+        (m,mt) = BackendDAEUtil.updateIncidenceMatrix(syst, shared, m, mt, slst);
         cstates1 = removeStatefromCandidates(stateno,cstates);
         // next  
         Debug.fcall("bltdump",print,"  Next\n");
@@ -4023,6 +4035,8 @@ algorithm
       BackendDAE.Assignments ass1,ass2; 
       BackendDAE.WhenClause wc,wc1;
       list<tuple<DAE.ComponentRef,Integer>> states,states1;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
 
     case ({},dae,m,mt,ass1,ass2,inStates) 
       then 
@@ -4073,13 +4087,13 @@ algorithm
         wc1 = BackendDAE.WHEN_CLAUSE(DAE.LUNARY(DAE.NOT(DAE.ET_BOOL()),dxdyecont),{BackendDAE.REINIT(dsxy,ds1,DAE.emptyElementSource)},NONE());
         dae = BackendDAEUtil.whenClauseAddDAE({wc,wc1},dae);
         eqcont = BackendDAE.EQUATION(dxdyecont,DAE.IFEXP(DAE.CALL(Absyn.IDENT("initial"),{},DAE.callAttrBuiltinBool),DAE.BCONST(true),cont1),DAE.emptyElementSource);
-        dae = BackendEquation.equationAddDAE(eqcont,dae);
+        (dae as BackendDAE.DAE({syst},shared)) = BackendEquation.equationAddDAE(eqcont,dae);
         ep2 = ep1+1;
         ep3 = ep1+2;
         Debug.fcall("bltdump", print, "Update Incidence Matrix: ");
         Debug.fcall("bltdump", BackendDump.debuglst,({ep1,ep2,ep3},intString));
         Debug.fcall("bltdump", print, "\n");
-        (m,mt) = BackendDAEUtil.updateIncidenceMatrix(dae, m, mt, {ep1,ep2,ep3});
+        (m,mt) = BackendDAEUtil.updateIncidenceMatrix(syst, shared, m, mt, {ep1,ep2,ep3});
         ast =  getAssigned(stateno,ass1,ass2);
         ast1 =  getAssigned(stateno1,ass1,ass2);
         Debug.fcall("bltdump", BackendDump.debugStrIntStrIntStr, ("Assign: ",stateno," ",ep,"\n"));
@@ -4223,7 +4237,7 @@ algorithm
         Debug.fcall("bltdump", print ,"Update Incidence Matrix: ");
         Debug.fcall("bltdump", BackendDump.debuglst, (changedeqns,intString));
         Debug.fcall("bltdump", print ,"\n");
-        (m,mt) = BackendDAEUtil.updateIncidenceMatrix(dae, m, mt, changedeqns);
+        (m,mt) = BackendDAEUtil.updateIncidenceMatrix(syst, shared, m, mt, changedeqns);
       then
         (dummy_der,dae,m,mt);
     else
@@ -4738,7 +4752,7 @@ algorithm
         "We need to change variables in the differentiated equations and in the equations having the dummy derivative" ;
         syst = makeAlgebraic(syst, state);
         dae = BackendDAE.DAE({syst},shared);
-        (m,mt) = BackendDAEUtil.updateIncidenceMatrix(dae, m, mt, changedeqns);
+        (m,mt) = BackendDAEUtil.updateIncidenceMatrix(syst, shared, m, mt, changedeqns);
         // print("new DAE:");
         // BackendDump.dump(dae);
         // print("new IM:");

@@ -149,15 +149,17 @@ algorithm
       list<Integer> updateeqns;
       BackendDAE.BackendDAE dae,dae1;
       Boolean b;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
       
     case (dae as BackendDAE.DAE(shared=BackendDAE.SHARED(arrayEqs = arreqns)),funcs,SOME(m),SOME(mT))
       equation      
         // get scalar array eqs list
         arraylisteqns = Util.arrayMap(arreqns,getScalarArrayEqns);
         // replace them
-        (dae1,updateeqns,b) = doReplaceScalarArrayEqns(arraylisteqns,dae);
+        (dae1 as BackendDAE.DAE({syst},shared),updateeqns,b) = doReplaceScalarArrayEqns(arraylisteqns,dae);
         // update Incidence matrix
-        (m1,mT1) = BackendDAEUtil.updateIncidenceMatrix(dae1,m,mT,updateeqns);
+        (m1,mT1) = BackendDAEUtil.updateIncidenceMatrix(syst,shared,m,mT,updateeqns);
       then
         (dae1,SOME(m1),SOME(mT1),b);
     case (dae as BackendDAE.DAE(shared=BackendDAE.SHARED(arrayEqs = arreqns)),funcs,_,_)
@@ -726,6 +728,8 @@ algorithm
       list<Integer> vareqns,vareqns1,vareqns2,meqns;
       BackendVarTransform.VariableReplacements repl_1;
       BackendDAE.Var v;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
     case (0,cr,i,exp,pos,repl,BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns,inieqns)::{},BackendDAE.SHARED(knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc)),m,mT,meqns,inFuncs)
       equation
         // equations of var
@@ -735,11 +739,13 @@ algorithm
         (ordvars1,v) = BackendVariable.removeVar(i,ordvars);
         knvars1 = BackendVariable.addVar(v,knvars);
         // update IncidenceMatrix
-        dae = BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars1,eqns,inieqns)::{},BackendDAE.SHARED(knvars1,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc));
-        (m1,mT1) = BackendDAEUtil.updateIncidenceMatrix(dae,m,mT,vareqns);
+        syst = BackendDAE.EQSYSTEM(ordvars1,eqns,inieqns);
+        shared = BackendDAE.SHARED(knvars1,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc);
+        dae = BackendDAE.DAE({syst},shared);
+        (m1,mT1) = BackendDAEUtil.updateIncidenceMatrix(syst,shared,m,mT,vareqns);
         pos_1 = pos - 1;
       then (vareqns1,dae,repl,m1,mT1,pos_1::meqns);
-    case (1,cr,i,exp,pos,repl,BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns,inieqns)::{},BackendDAE.SHARED(knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc)),m,mT,meqns,inFuncs)
+    case (1,cr,i,exp,pos,repl,BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns,inieqns)::{},shared),m,mT,meqns,inFuncs)
       equation
         // equations of var
         vareqns = mT[i];
@@ -752,8 +758,9 @@ algorithm
         pos_1 = pos-1;
         eqns2 =  BackendEquation.equationSetnth(eqns1,pos_1,BackendDAE.EQUATION(DAE.RCONST(0.0),DAE.RCONST(0.0),DAE.emptyElementSource));
         // update IncidenceMatrix
-        dae = BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns2,inieqns)::{},BackendDAE.SHARED(knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc));
-        (m1,mT1) = BackendDAEUtil.updateIncidenceMatrix(dae,m,mT,vareqns); 
+        syst = BackendDAE.EQSYSTEM(ordvars,eqns2,inieqns);
+        dae = BackendDAE.DAE({syst},shared);
+        (m1,mT1) = BackendDAEUtil.updateIncidenceMatrix(syst,shared,m,mT,vareqns); 
       then (vareqns1,dae,repl_1,m1,mT1,pos_1::meqns);
     case (2,cr,i,exp,pos,repl,BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns,inieqns)::{},BackendDAE.SHARED(knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc)),m,mT,meqns,inFuncs)
       equation
@@ -764,8 +771,10 @@ algorithm
         // replace der(a)=b in vareqns
         (eqns1,arreqns1,algorithms1,einfo1) = replacementsInEqns2(vareqns2,exp,cr,eqns,arreqns,algorithms,einfo);
         // update IncidenceMatrix
-        dae = BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns1,inieqns)::{},BackendDAE.SHARED(knvars,exobj,aliasVars,remeqns,arreqns1,algorithms1,einfo1,eoc));
-        (m1,mT1) = BackendDAEUtil.updateIncidenceMatrix(dae,m,mT,vareqns);
+        syst = BackendDAE.EQSYSTEM(ordvars,eqns1,inieqns);
+        shared = BackendDAE.SHARED(knvars,exobj,aliasVars,remeqns,arreqns1,algorithms1,einfo1,eoc);
+        dae = BackendDAE.DAE({syst},shared);
+        (m1,mT1) = BackendDAEUtil.updateIncidenceMatrix(syst,shared,m,mT,vareqns);
       then (vareqns2,dae,repl,m1,mT1,meqns);        
   end match;
 end replacementsInEqns;
@@ -2122,6 +2131,8 @@ algorithm
       BackendDAE.EventInfo einfo,einfo1;
       list<Integer> changed;
       Boolean b;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
     case (dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns)::{},shared=BackendDAE.SHARED(arrayEqs=arreqns,algorithms=algorithms,eventInfo=einfo)),funcs,inM,inMT)
       equation
         (m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(dae,inM,inMT);
@@ -2129,8 +2140,8 @@ algorithm
         (m_1,(mT_1,_,eqns1,arreqns1,algorithms1,einfo1,changed)) = traverseIncidenceMatrix(m,removeEqualFunctionCallFinder,(mT,vars,eqns,arreqns,algorithms,einfo,{}));
         b = intGt(listLength(changed),0);
         // update arrayeqns and algorithms, collect info for wrappers
-        dae1 = removeEqualFunctionCalls2(b,dae,eqns1,arreqns1,algorithms1,einfo1);
-        (m_2,mT_2) = BackendDAEUtil.updateIncidenceMatrix(dae1,m_1,mT_1,changed);
+        (dae1 as BackendDAE.DAE({syst},shared)) = removeEqualFunctionCalls2(b,dae,eqns1,arreqns1,algorithms1,einfo1);
+        (m_2,mT_2) = BackendDAEUtil.updateIncidenceMatrix(syst,shared,m_1,mT_1,changed);
       then (dae1,SOME(m_2),SOME(mT_2),b);
   end match;
 end removeEqualFunctionCalls1;

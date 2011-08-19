@@ -4424,7 +4424,8 @@ public function updateIncidenceMatrix
             IncidenceMatrixT,
             int list /* list of equations to update */)
   outputs: (IncidenceMatrix, IncidenceMatrixT)"
-  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
   input list<Integer> inIntegerLst;
@@ -4432,7 +4433,7 @@ public function updateIncidenceMatrix
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
 algorithm
   (outIncidenceMatrix,outIncidenceMatrixT):=
-  matchcontinue (inBackendDAE,inIncidenceMatrix,inIncidenceMatrixT,inIntegerLst)
+  matchcontinue (syst,shared,inIncidenceMatrix,inIncidenceMatrixT,inIntegerLst)
     local
       BackendDAE.BackendDAE dae;
       BackendDAE.IncidenceMatrix m,m_1,m_2;
@@ -4445,9 +4446,46 @@ algorithm
       BackendDAE.EquationArray daeeqns,daeseqns;
       list<BackendDAE.WhenClause> wc;
 
-    case (dae,m,mt,{}) then (m,mt);
+    case (BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = daeeqns),BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc)),m,mt,eqns)
+      equation
+        (m,mt) = updateIncidenceMatrix1(vars,daeeqns,wc,m,mt,eqns);
+      then
+        (m,mt);
 
-    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = daeeqns)::{},shared=BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc)))),m,mt,(e :: eqns))
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.updateIncididenceMatrix failed"});
+      then
+        fail();
+
+  end matchcontinue;
+end updateIncidenceMatrix;
+
+protected function updateIncidenceMatrix1
+  "Helper"
+  input BackendDAE.Variables vars;
+  input BackendDAE.EquationArray daeeqns;
+  input list<BackendDAE.WhenClause> wc;
+  input BackendDAE.IncidenceMatrix inIncidenceMatrix;
+  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
+  input list<Integer> inIntegerLst;
+  output BackendDAE.IncidenceMatrix outIncidenceMatrix;
+  output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
+algorithm
+  (outIncidenceMatrix,outIncidenceMatrixT):=
+  matchcontinue (vars,daeeqns,wc,inIncidenceMatrix,inIncidenceMatrixT,inIntegerLst)
+    local
+      BackendDAE.BackendDAE dae;
+      BackendDAE.IncidenceMatrix m,m_1,m_2;
+      BackendDAE.IncidenceMatrixT mt,mt_1,mt_2,mt_3;
+      BackendDAE.Value e_1,e,abse;
+      BackendDAE.Equation eqn;
+      list<BackendDAE.Value> row,invars,outvars,changedvars,eqns,oldvars,diffvars,allvars;
+      list<list<BackendDAE.Value>> changedvars2;
+
+    case (_,_,_,m,mt,{}) then (m,mt);
+
+    case (vars,daeeqns,wc,m,mt,(e :: eqns))
       equation
         abse = intAbs(e);
         e_1 = abse - 1;
@@ -4458,18 +4496,11 @@ algorithm
         (_,outvars,invars) = Util.listIntersectionOnTrue1(oldvars,row,intEq);
         mt_1 = removeValuefromMatrix(outvars,abse,mt);
         mt_2 = addValuetoMatrix(invars,abse,mt_1);
-        (m_2,mt_3) = updateIncidenceMatrix(dae, m_1, mt_2, eqns);
-      then
-        (m_2,mt_3);
-
-    case (_,_,_,_)
-      equation
-        print("- BackendDAEUtil.updateIncididenceMatrix failed\n");
-      then
-        fail();
+        (m_2,mt_3) = updateIncidenceMatrix1(vars,daeeqns,wc,m_1,mt_2,eqns);
+      then (m_2,mt_3);
 
   end matchcontinue;
-end updateIncidenceMatrix;
+end updateIncidenceMatrix1;
 
 protected function getOldVars
   input array<list<BackendDAE.Value>> m;
