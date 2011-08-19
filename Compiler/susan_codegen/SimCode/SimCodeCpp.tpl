@@ -244,8 +244,8 @@ match fn
 case FUNCTION(__) then 
   let fname = underscorePath(name)
   << 
-    typedef double   <%fname%>RetType;
-    typedef double&  <%fname%>RefRetType;
+    typedef <%functionArguments |> var => funArgDefinition2(var,simCode) ;separator=", "%>   <%fname%>RetType;
+    typedef <%functionArguments |> var => funArgDefinition1(var,simCode) ;separator=", "%>  <%fname%>RefRetType;
   >>
 end functionHeaderRegularFunction1;
 
@@ -360,7 +360,10 @@ case var as VARIABLE(__) then
       daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/,simCode)
     ;separator=", ")
   if instDims then
-    //let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%dest%>.targ<%ix%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
+    let &varInits += '_<%fname%>.resize((boost::extents[<%instDimsInit%>]));
+    _<%fname%>.reindex(1);<%\n%>'
+    let &varAssign += '_<%fname%>=<%contextCref(var.name,contextFunction,simCode)%>;<%\n%>'
+    //let &varAssign += '_<%fname%>.reindex(1);<%\n%>'
     //let &varAssign += 'copy_<%expTypeShort(var.ty)%>_array_data(&<%contextCref(var.name,contextFunction,simCode)%>, &<%dest%>.targ<%ix%>);<%\n%>'
     ""
   else
@@ -382,7 +385,7 @@ case var as VARIABLE(__) then
   let typ = '<%varType(var)%>'
   let initVar = match typ case "modelica_metatype" then ' = NULL' else ''
   let addRoot = match typ case "modelica_metatype" then ' mmc_GC_add_root(&<%varName%>, mmc_GC_local_state, "<%varName%>");' else ''  
-  let &varDecls += if not outStruct then '<%typ%> <%varName%><%initVar%>;<%addRoot%><%\n%>' //else ""
+  let &varDecls += if instDims then 'multi_array<<%expTypeShort(var.ty)%>,<%listLength(instDims)%>> <%varName%><%initVar%>;<%addRoot%><%\n%>' else '<%typ%> <%varName%><%initVar%>;<%addRoot%><%\n%>'
   let varName = if outStruct then '<%outStruct%>.targ<%i%>' else '<%contextCref(var.name,contextFunction,simCode)%>'
   let instDimsInit = (instDims |> exp =>
       daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/,simCode)
@@ -390,7 +393,8 @@ case var as VARIABLE(__) then
   if instDims then
     (match var.value
     case SOME(exp) then
-      let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
+      let &varInits += '<%varName%>.resize((boost::extents[<%instDimsInit%>]));
+      <%varName%>.reindex(1);<%\n%>'
       let defaultValue = varDefaultValue(var, outStruct, i, varName, &varDecls, &varInits,simCode)
       let &varInits += defaultValue
       let var_name = if outStruct then 
@@ -400,7 +404,8 @@ case var as VARIABLE(__) then
       let &varInits += defaultValue1
       " "
     else
-      let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
+      let &varInits += '<%varName%>.resize((boost::extents[<%instDimsInit%>]));
+      <%varName%>.reindex(1);<%\n%>'
       let defaultValue = varDefaultValue(var, outStruct, i, varName, &varDecls, &varInits,simCode)
      let &varInits += defaultValue
       "")
@@ -490,9 +495,23 @@ end varDefaultValue;
 template funArgDefinition(Variable var,SimCode simCode)
 ::=
   match var
-  case VARIABLE(__) then '<%varType(var)%> <%contextCref(name,contextFunction,simCode)%>'
+  case VARIABLE(__) then '<%varType1(var)%> <%contextCref(name,contextFunction,simCode)%>'
   case FUNCTION_PTR(__) then 'modelica_fnptr <%name%>'
 end funArgDefinition;
+
+template funArgDefinition1(Variable var,SimCode simCode)
+::=
+  match var
+  case VARIABLE(__) then '<%varType1(var)%>'
+  case FUNCTION_PTR(__) then 'modelica_fnptr <%name%>'
+end funArgDefinition1;
+
+template funArgDefinition2(Variable var,SimCode simCode)
+::=
+  match var
+  case VARIABLE(__) then '<%varType2(var)%>'
+  case FUNCTION_PTR(__) then 'modelica_fnptr <%name%>'
+end funArgDefinition2;
 
 template varType(Variable var)
  "Generates type for a variable."
@@ -504,6 +523,35 @@ case var as VARIABLE(__) then
   else
     expTypeArrayIf(var.ty)
 end varType;
+
+
+template varType1(Variable var)
+::=
+match var
+case var as VARIABLE(__) then
+    expTypeArrayFunArg(var.ty)
+end varType1;
+
+template varType2(Variable var)
+::=
+match var
+case var as VARIABLE(__) then
+    expTypeArrayFunArg1(var.ty)
+end varType2;
+
+
+template expTypeArrayFunArg(DAE.ExpType ty)
+ "Generate type helper."
+::=
+  expTypeFlag(ty, 5)
+end expTypeArrayFunArg;
+
+template expTypeArrayFunArg1(DAE.ExpType ty)
+ "Generate type helper."
+::=
+  expTypeFlag(ty, 6)
+end expTypeArrayFunArg1;
+
 
 template funStatement(Statement stmt, Text &varDecls /*BUFP*/,SimCode simCode)
  "Generates function statements."
@@ -904,6 +952,7 @@ match simVar
       <<
        multi_array<<%variableType(type_)%>,<%listLength(sub)%>> <%arraycref(name)%>;
        >>
+   
 end MemberVariableDefine;
 
 template arrayConstruct(ModelInfo modelInfo)
@@ -1414,14 +1463,27 @@ template expTypeFlag(DAE.ExpType ty, Integer flag)
     // we want the "array type"
     '<%expTypeShort(ty)%>'  
   case 4 then
-    // we want the "array type" only if type is array, otherwise "modelica type"
     match ty
     case ET_ARRAY(__) then '<%expTypeShort(ty)%>'
     else expTypeFlag(ty, 2)
     end match
-  case 5 then 
-     match ty 
-    case ET_ARRAY(ty=aty,arrayDimensions=dims) then '<%listLength(dims)%>'
+  case 5 then
+    match ty
+    case ET_ARRAY(arrayDimensions=dims) then 'multi_array_ref<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
+    else expTypeFlag(ty, 2)
+    end match
+  case 6 then
+    match ty
+    case ET_ARRAY(arrayDimensions=dims) then 'multi_array<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
+    else expTypeFlag(ty, 2)
+    end match
+  case 7 then
+     match ty
+    case ET_ARRAY(arrayDimensions=dims)
+    then
+     'multi_array<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
+    end match
+ 
 end expTypeFlag;
 
 template expTypeArray(DAE.ExpType ty)
@@ -1433,7 +1495,7 @@ end expTypeArray;
 template expTypeArrayforDim(DAE.ExpType ty)
 
 ::=
-  expTypeFlag(ty, 5)
+  expTypeFlag(ty, 6)
 end expTypeArrayforDim;
 
 template expTypeShort(DAE.ExpType type)
@@ -1587,12 +1649,45 @@ template equationArrayCallAssign(SimEqSystem eq, Context context,
 ::=
 match eq
 
-case eqn as SES_ARRAY_CALL_ASSIGN(__) 
-  then
+case eqn as SES_ARRAY_CALL_ASSIGN(__) then
+  let &preExp = buffer "" /*BUFD*/
+  let expPart = daeExp(exp, context, &preExp /*BUF  let &preExp = buffer "" /*BUFD*/
+  let &helpInits = buffer "" /*BUFD*/
+  let helpIf = (conditions |> (e, hidx) =>
+      let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+      let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
+      'localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>] /* edge */'
+    ;separator=" || ")C*/, &varDecls /*BUFD*/,simCode)
+  match expTypeFromExpShort(eqn.exp)
+  case "boolean" then
+    let tvar = tempDecl("boolean_array", &varDecls /*BUFD*/)
+    //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
     <<
-      //...
+    <%preExp%>
+    <%cref(eqn.componentRef)%>=<%expPart%>;
     >>
+  case "int" then
+    let tvar = tempDecl("integer_array", &varDecls /*BUFD*/)
+    //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
+    <<
+    <%preExp%>
+    <%cref(eqn.componentRef)%>=<%expPart%>;
+    >>
+  case "double" then
+    <<
+    <%preExp%>
+    <%cref(eqn.componentRef)%>=<%expPart%>;
+    >>
+ 
 end equationArrayCallAssign;
+
+template inlineArray(Context context, String arr, ComponentRef c)
+::= match context case INLINE_CONTEXT(__) then match c
+case CREF_QUAL(ident = "$DER") then <<
+
+inline_integrate_array(size_of_dimension_real_array(<%arr%>,1),<%cref(c)%>);
+>>
+end inlineArray;
  
 template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/,SimCode simCode)
  "Generates a when equation."
@@ -1735,8 +1830,24 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as CALL(__)            then daeExpCall(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as ASUB(__)            then daeExpAsub(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as ARRAY(__)           then daeExpArray(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+  case e as SIZE(__)            then daeExpSize(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   else ""
 end daeExp;
+
+template daeExpSize(Exp exp, Context context, Text &preExp /*BUFP*/,
+                    Text &varDecls /*BUFP*/,SimCode simCode)
+ "Generates code for a size expression."
+::=
+  match exp
+  case SIZE(exp=CREF(__), sz=SOME(dim)) then
+    let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    let dimPart = daeExp(dim, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    let resVar = tempDecl("size_t", &varDecls /*BUFD*/)
+    let typeStr = '<%expTypeArray(exp.ty)%>'
+    let &preExp += '<%resVar%> = <%expPart%>.shape()[<%dimPart%>-1];<%\n%>'
+    resVar
+  else "size(X) not implemented"
+end daeExpSize;
 
 template daeExpArray(Exp exp, Context context, Text &preExp /*BUFP*/,
                      Text &varDecls /*BUFP*/,SimCode simCode)
@@ -1754,7 +1865,10 @@ case ARRAY(__) then
       '<%daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>'
     ;separator=", ")
    let &preExp += '
-   short array_short[]={<%params%>};'
+   <%arrayDim%><%arrayVar%>(boost::extents[<%listLength(array)%>]);
+   <%arrayVar%>.reindex(1);
+   <%arrayTypeStr%> <%arrayVar%>_data[]={<%params%>};
+   <%arrayVar%>.assign(<%arrayVar%>_data,<%arrayVar%>_data+<%listLength(array)%>);<%\n%>'
   arrayVar
 end daeExpArray;
 
@@ -2101,13 +2215,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let retVar = match exp
       case CALL(attr=CALL_ATTR(ty=ET_NORETCALL(__))) then ""
       else tempDecl(retType, &varDecls)
-    let &preExp += if not attr.builtin then match context case SIMULATION(__) then
-      <<
-      #ifdef _OMC_MEASURE_TIME
-      SIM_PROF_TICK_FN(<%funName%>_index);
-      #endif<%\n%>
-      >>
-    let &preExp += '<%if retVar then '<%retVar%> = '%>_functions.<%funName%>(<%argStr%>);<%\n%>'
+    let &preExp += match context case FUNCTION_CONTEXT(__) then'<%if retVar then '<%retVar%> = '%><%funName%>(<%argStr%>);<%\n%>'
+    let &preExp += match context case OTHER(__) then'<%if retVar then '<%retType%> <%retVar%> = '%>_functions.<%funName%>(<%argStr%>);<%\n%>'
     let &preExp += if not attr.builtin then match context case SIMULATION(__) then
       <<
       #ifdef _OMC_MEASURE_TIME
@@ -2219,8 +2328,29 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
   case POW(__) then 'pow(<%e1%>, <%e2%>)'
   case AND(__) then '(<%e1%> && <%e2%>)'
   case OR(__)  then '(<%e1%> || <%e2%>)'
+  case MUL_ARRAY_SCALAR(ty=ET_ARRAY(arrayDimensions=dims)) then
+    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then 'multi_array<int,<%listLength(dims)%>>'
+                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then 'multi_array<int,<%listLength(dims)%>>'
+                        else 'multi_array<double,<%listLength(dims)%>>'
+    let type1 = match ty case ET_ARRAY(ty=ET_INT(__)) then "int"
+                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then "int"
+                        else "double"
+    //let var = tempDecl(type,&varDecls /*BUFD*/)
+    let var1 = tempDecl1(type,e1,&varDecls /*BUFD*/)
+    let &preExp += '<%var1%>=multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>);<%\n%>'
+    '<%var1%>'  
   case _   then "daeExpBinary:ERR"
 end daeExpBinary;
+
+template tempDecl1(String ty, String exp, Text &varDecls /*BUFP*/)
+ "Declares a temporary variable in varDecls and returns the name."
+::=
+  let newVar = 'tmp<%System.tmpTick()%>'
+  let newVar1 = '<%newVar%>(<%exp%>)'
+  let &varDecls += '<%ty%> <%newVar1%>;<%\n%>'
+  newVar
+end tempDecl1;
+
 
 template daeExpSconst(String string, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/,SimCode simCode)
  "Generates code for a string constant."
@@ -2638,7 +2768,7 @@ template algStatement(DAE.Statement it, Context context, Text &varDecls,SimCode 
      let expPart = daeExp(exp, context, &preExp, &varDecls,simCode)
      <<
      <%preExp%>
-     ArrayCopy(<%expPart%>.A, <%contextCref(componentRef, context,simCode)%>.A);
+     <%contextCref(componentRef, context,simCode)%>=<%expPart%>;
      >>  
   case STMT_IF(__) then
     let &preExp = buffer ""
@@ -2719,14 +2849,12 @@ template algStmtForGeneric_impl(Exp exp, Ident iterator, String type,
       '<%iterName%> = *(<%arrayType%>_element_addr1(&<%evar%>, 1, <%tvar%>));'
   <<
   <%preExp%>
-  
     <%type%> <%iterName%>;
-  
    BOOST_FOREACH( short & <%iterName%>, array_short ){ 
       <%body%> 
-    }
-  
+    }  
   >>
+
 end algStmtForGeneric_impl;
 
 template contextIteratorName(Ident name, Context context)
