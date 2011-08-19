@@ -4204,19 +4204,22 @@ algorithm
       DAE.ExpType tp;
       BackendDAE.BackendDAE dae,dae1,dae2;
       BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;      
+      BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
 
-    case (dummystate,stateindx,dae,m,mt)
+    case (dummystate,stateindx,BackendDAE.DAE({syst},shared),m,mt)
       equation
-        (dummy_der,dae) = newDummyVar(dummystate, dae, DAE.NEW_DUMMY_DER(dummystate,{}));
+        (dummy_der,syst) = newDummyVar(dummystate, syst, DAE.NEW_DUMMY_DER(dummystate,{}));
         Debug.fcall("bltdump", BackendDump.debugStrCrefStr, ("Chosen dummy: ",dummy_der," as dummy state\n"));
         changedeqns = BackendDAEUtil.eqnsForVarWithStates(mt, stateindx);
         stateexp = Expression.crefExp(dummystate);
         stateexpcall = DAE.CALL(Absyn.IDENT("der"),{stateexp},DAE.callAttrBuiltinReal);
         dummyderexp = Expression.crefExp(dummy_der);
-        (dae,m,mt) = replaceDummyDer(stateexpcall, dummyderexp, dae, m, mt, changedeqns)
+        (syst,shared,m,mt) = replaceDummyDer(stateexpcall, dummyderexp, syst, shared, m, mt, changedeqns)
         "We need to change variables in the differentiated equations and in the equations having the dummy derivative" ;
-        dae = makeAlgebraic(dae, dummystate);
+        syst = makeAlgebraic(syst, dummystate);
+        dae = BackendDAE.DAE({syst},shared);
         Debug.fcall("bltdump", print ,"Update Incidence Matrix: ");
         Debug.fcall("bltdump", BackendDump.debuglst, (changedeqns,intString));
         Debug.fcall("bltdump", print ,"\n");
@@ -4702,6 +4705,8 @@ algorithm
       DAE.Exp stateexp,stateexpcall,dummyderexp;
       DAE.ExpType tp;
       BackendDAE.Assignments ass1,ass2;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
 
     case (BackendDAE.REDUCE_INDEX(),dae,m,mt,inFunctions,ass1,ass2,derivedAlgs,derivedMultiEqn,inArg)
       equation
@@ -4717,21 +4722,22 @@ algorithm
         // Collect the states in the equations that are singular, i.e. composing a constraint between states.
         // Note that states are collected from -all- marked equations, not only the differentiated ones.
         (states,stateindx) = statesInEqns(eqns, dae, m, mt);
-        (dae,m,mt,deqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(dae, m, mt, eqns_1,inFunctions,derivedAlgs,derivedMultiEqn);
+        (BackendDAE.DAE({syst},shared),m,mt,deqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(dae, m, mt, eqns_1,inFunctions,derivedAlgs,derivedMultiEqn);
         (state,stateno) = selectDummyState(states, stateindx, dae, m, mt);
         // print("Selected ");print(ComponentReference.printComponentRefStr(state));print(" as dummy state\n");
         // print(" From candidates: ");print(Util.stringDelimitList(Util.listMap(states,ComponentReference.printComponentRefStr),", "));print("\n");
         // dae = propagateDummyFixedAttribute(dae, eqns_1, state, stateno);
-        (dummy_der,dae) = newDummyVar(state, dae, DAE.NEW_DUMMY_DER(state,states));
+        (dummy_der,syst) = newDummyVar(state, syst, DAE.NEW_DUMMY_DER(state,states));
         // print("Chosen dummy: ");print(ComponentReference.printComponentRefStr(dummy_der));print("\n");
         reqns = BackendDAEUtil.eqnsForVarWithStates(mt, stateno);
         changedeqns = Util.listUnionOnTrue(deqns, reqns, intEq);
         stateexp = Expression.crefExp(state);
         stateexpcall = DAE.CALL(Absyn.IDENT("der"),{stateexp},DAE.callAttrBuiltinReal);
         dummyderexp = Expression.crefExp(dummy_der);
-        (dae,m,mt) = replaceDummyDer(stateexpcall, dummyderexp, dae, m, mt, changedeqns)
+        (syst,shared,m,mt) = replaceDummyDer(stateexpcall, dummyderexp, syst, shared, m, mt, changedeqns)
         "We need to change variables in the differentiated equations and in the equations having the dummy derivative" ;
-        dae = makeAlgebraic(dae, state);
+        syst = makeAlgebraic(syst, state);
+        dae = BackendDAE.DAE({syst},shared);
         (m,mt) = BackendDAEUtil.updateIncidenceMatrix(dae, m, mt, changedeqns);
         // print("new DAE:");
         // BackendDump.dump(dae);
@@ -4782,12 +4788,11 @@ protected function makeAlgebraic
   change varkind from STATE to DUMMY_STATE.
   inputs:  (BackendDAE, DAE.ComponentRef /* state */)
   outputs: (BackendDAE) = "
-  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.EqSystem syst;
   input DAE.ComponentRef inComponentRef;
-  output BackendDAE.BackendDAE outBackendDAE;
+  output BackendDAE.EqSystem osyst;
 algorithm
-  outBackendDAE:=
-  matchcontinue (inBackendDAE,inComponentRef)
+  osyst := matchcontinue (syst,inComponentRef)
     local
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
@@ -4812,12 +4817,12 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.Shared shared;
 
-    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,e,ie)::{},shared),cr)
+    case (BackendDAE.EQSYSTEM(vars,e,ie),cr)
       equation
         ((BackendDAE.VAR(cr,kind,d,t,b,value,dim,idx,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),indx) = BackendVariable.getVar(cr, vars);
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.DUMMY_STATE(),d,t,b,value,dim,idx,source,dae_var_attr,comment,flowPrefix,streamPrefix), vars);
       then
-        BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,e,ie)::{},shared);
+        BackendDAE.EQSYSTEM(vars_1,e,ie);
 
     case (_,_)
       equation
@@ -4844,13 +4849,13 @@ protected function propagateDummyFixedAttribute
   i.e. fixed should be false for the state s2 (which is set by the user),
   this fixed value has to be propagated to s1 when s2 becomes a dummy
   state."
-  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.EqSystem syst;
   input list<Integer> inIntegerLst;
   input DAE.ComponentRef inComponentRef;
   input Integer inInteger;
-  output BackendDAE.BackendDAE outBackendDAE;
+  output BackendDAE.EqSystem osyst;
 algorithm
-  outBackendDAE := matchcontinue (inBackendDAE,inIntegerLst,inComponentRef,inInteger)
+  osyst := matchcontinue (syst,inIntegerLst,inComponentRef,inInteger)
     local
       list<BackendDAE.Value> eqns;
       list<BackendDAE.Equation> eqns_lst;
@@ -4867,10 +4872,9 @@ algorithm
       array<DAE.Algorithm> al;
       BackendDAE.EventInfo ei;
       BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.Shared shared;
 
    /* eqns dummy state */
-    case ((dae as BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,e,ie)::{},shared)),eqns,dummy,dummy_no)
+    case (BackendDAE.EQSYSTEM(vars,e,ie),eqns,dummy,dummy_no)
       equation
         eqns_lst = BackendEquation.getEqns(eqns,e);
         crefs = BackendEquation.equationsCrefs(eqns_lst);
@@ -4882,10 +4886,10 @@ algorithm
         v_2 = BackendVariable.setVarFixed(v_1, dummy_fixed);
         vars_1 = BackendVariable.addVar(v_2, vars);
       then
-        BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,e,ie)::{},shared);
+        BackendDAE.EQSYSTEM(vars_1,e,ie);
 
     // Never propagate fixed=true
-    case ((dae as BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,e,ie)::{},shared)),eqns,dummy,dummy_no)
+    case (syst as BackendDAE.EQSYSTEM(vars,e,ie),eqns,dummy,dummy_no)
       equation
         eqns_lst = BackendEquation.getEqns(eqns,e);
         crefs = BackendEquation.equationsCrefs(eqns_lst);
@@ -4893,13 +4897,12 @@ algorithm
         state = findState(vars, crefs);
         ({v},{indx}) = BackendVariable.getVar(dummy, vars);
         true = BackendVariable.varFixed(v);
-      then dae;
+      then syst;
 
     else
       equation
-        Debug.fprint("failtrace", "propagate_dummy_initial_equations failed!");
-      then
-        inBackendDAE;
+        Error.addMessage(Error.INTERNAL_ERROR,{"propagateDummyFixedAttribute"});
+      then fail();
 
   end matchcontinue;
 end propagateDummyFixedAttribute;
@@ -4952,16 +4955,18 @@ protected function replaceDummyDer
              IncidenceMatrixT)"
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
-  input BackendDAE.BackendDAE inBackendDAE3;
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix4;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT5;
   input list<Integer> inIntegerLst6;
-  output BackendDAE.BackendDAE outBackendDAE;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
   output BackendDAE.IncidenceMatrix outIncidenceMatrix;
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
 algorithm
-  (outBackendDAE,outIncidenceMatrix,outIncidenceMatrixT):=
-  matchcontinue (inExp1,inExp2,inBackendDAE3,inIncidenceMatrix4,inIncidenceMatrixT5,inIntegerLst6)
+  (osyst,oshared,outIncidenceMatrix,outIncidenceMatrixT):=
+  matchcontinue (inExp1,inExp2,syst,shared,inIncidenceMatrix4,inIncidenceMatrixT5,inIntegerLst6)
     local
       BackendDAE.BackendDAE dae;
       array<list<BackendDAE.Value>> m,mt;
@@ -4978,14 +4983,14 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
       DAE.Exp stateexpcall,dummyderexp;
 
-    case (stateexpcall,dummyderexp,BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqns,ie)::{},BackendDAE.SHARED(kv,ev,av as BackendDAE.ALIASVARS(aliasVars = aliasVars),seqns,ae,al,BackendDAE.EVENT_INFO(wclst,zeroCrossingLst),eoc)),m,mt,{})
+    case (stateexpcall,dummyderexp,BackendDAE.EQSYSTEM(v,eqns,ie),BackendDAE.SHARED(kv,ev,av as BackendDAE.ALIASVARS(aliasVars = aliasVars),seqns,ae,al,BackendDAE.EVENT_INFO(wclst,zeroCrossingLst),eoc),m,mt,{})
       equation
         ((_, _, av)) = BackendVariable.traverseBackendDAEVars(aliasVars,traverseReplaceAliasVarsBindExp,(stateexpcall, dummyderexp, av));
         (ie1,(al1,ae1,wclst1,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(ie,traversereplaceDummyDer,(al, ae, wclst, replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
         (seqns1,(al2,ae2,wclst2,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(seqns,traversereplaceDummyDer,(al1, ae1, wclst1, replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
-       then (BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqns,ie1)::{},BackendDAE.SHARED(kv,ev,av,seqns1,ae2,al2,BackendDAE.EVENT_INFO(wclst2,zeroCrossingLst),eoc)),m,mt);
+       then (BackendDAE.EQSYSTEM(v,eqns,ie1),BackendDAE.SHARED(kv,ev,av,seqns1,ae2,al2,BackendDAE.EVENT_INFO(wclst2,zeroCrossingLst),eoc),m,mt);
 
-    case (stateexpcall,dummyderexp,BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqns,ie)::{},BackendDAE.SHARED(kv,ev,av,seqns,ae,al,BackendDAE.EVENT_INFO(wclst,zeroCrossingLst),eoc)),m,mt,(e :: rest))
+    case (stateexpcall,dummyderexp,BackendDAE.EQSYSTEM(v,eqns,ie),BackendDAE.SHARED(kv,ev,av,seqns,ae,al,BackendDAE.EVENT_INFO(wclst,zeroCrossingLst),eoc),m,mt,(e :: rest))
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
@@ -4995,9 +5000,9 @@ algorithm
          "incidence_row(v\'\',eqn\') => row\' &
           Util.list_replaceat(row\',e\',m) => m\' &
           transpose_matrix(m\') => mt\' &" ;
-        (dae,m,mt) = replaceDummyDer(stateexpcall, dummyderexp, BackendDAE.DAE(BackendDAE.EQSYSTEM(v_1,eqns_1,ie)::{},BackendDAE.SHARED(kv,ev,av,seqns,ae2,al2,BackendDAE.EVENT_INFO(wclst2,zeroCrossingLst),eoc)), m, mt, rest);
+        (syst,shared,m,mt) = replaceDummyDer(stateexpcall, dummyderexp, BackendDAE.EQSYSTEM(v_1,eqns_1,ie),BackendDAE.SHARED(kv,ev,av,seqns,ae2,al2,BackendDAE.EVENT_INFO(wclst2,zeroCrossingLst),eoc), m, mt, rest);
       then
-        (dae,m,mt);
+        (syst,shared,m,mt);
 
     else
       equation
@@ -5527,13 +5532,12 @@ protected function newDummyVar
   This function creates a new variable named
   der+<varname> and adds it to the dae."
   input DAE.ComponentRef inComponentRef;
-  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.EqSystem syst;
   input DAE.SymbolicOperation op;
   output DAE.ComponentRef outComponentRef;
-  output BackendDAE.BackendDAE outBackendDAE;
+  output BackendDAE.EqSystem osyst;
 algorithm
-  (outComponentRef,outBackendDAE):=
-  matchcontinue (inComponentRef,inBackendDAE,op)
+  (outComponentRef,osyst) := matchcontinue (inComponentRef,syst,op)
     local
       BackendDAE.VarKind kind;
       DAE.VarDirection dir;
@@ -5558,7 +5562,7 @@ algorithm
       BackendDAE.Var dummyvar;
       BackendDAE.Shared shared;
 
-    case (var,BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,ie)::{}, shared),op)
+    case (var,BackendDAE.EQSYSTEM(vars,eqns,ie),op)
       equation
         ((BackendDAE.VAR(name,kind,dir,tp,bind,value,dim,idx,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(var, vars);
         dummyvar_cr = ComponentReference.crefPrefixDer(name);
@@ -5569,7 +5573,7 @@ algorithm
         dummyvar = BackendVariable.setVarFixed(dummyvar,false);
         vars_1 = BackendVariable.addVar(dummyvar, vars);
       then
-        (dummyvar_cr,BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,eqns,ie)::{},shared));
+        (dummyvar_cr,BackendDAE.EQSYSTEM(vars_1,eqns,ie));
 
     else
       equation
