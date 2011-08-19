@@ -153,7 +153,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
 		 // Initial unknowns via solution to least squares
 		 void solve_for_initial_unknowns();
 		 std::vector<double*> init_unknown_vars;
-
+		 void bound_params();
          void save_vars();
          void restore_vars();
 		 void clear_event_flags();
@@ -285,6 +285,10 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
 		  if (zc[index] == -1) zc[index]=((exp1) OpSym (exp2)); \
           var=zc[index]; \
 	  } else var=((exp1) OpSym (exp2))
+
+  <%makeExtraFunctionsAndRecords(simCode)%>
+
+  <%makeBoundParams(simCode)%>
 
   <%lastIdentOfPath(modelInfo.name)%>::<%lastIdentOfPath(modelInfo.name)%>(int extra_state_events): 
       ode_system<OMC_ADEVS_IO_TYPE>(
@@ -493,6 +497,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
            helpVars_saved[i] = false;
        // Calculate any equations that provide initial values
        <%makeInitialEqns(initialEquations)%>
+       bound_params();
 	   // Calculate derived values
 	   calc_vars();
 	   // Solve for any remaining unknowns
@@ -624,9 +629,10 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
 	  // Get new values for the unknown variables
 	  for (unsigned i = 0; i < init_unknown_vars.size(); i++)
 	  {
-		  if (!(w[i] != w[i]))
-		      *(init_unknown_vars[i]) = w[i];
+		  if (w[i] != w[i]) MODELICA_TERMINATE("could not initialize unknown reals");
+		  *(init_unknown_vars[i]) = w[i];
 	  }
+	  bound_params();
 	  // Calculate new state variable derivatives and algebraic variables
 	  calc_vars(NULL,true);
 	  // Calculate the new value of the objective function
