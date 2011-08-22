@@ -1347,11 +1347,10 @@ public function updateAliasVariablesDAE
   input DAE.ComponentRef inCref;
   input DAE.Exp inExp;
   input BackendDAE.Var inVar;
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
+  input BackendDAE.Shared shared;
+  output BackendDAE.Shared oshared;
 algorithm
-  outDAE:=
-  match (inCref,inExp,inVar,inDAE)
+  oshared := match (inCref,inExp,inVar,shared)
     local
       BackendDAE.Variables ordvars,knvars,exobj;
       BackendDAE.AliasVariables aliasVars,aliasVars1;
@@ -1361,10 +1360,10 @@ algorithm
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.EqSystems eqs;
-    case (inCref,inExp,inVar,BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc)))
+    case (inCref,inExp,inVar,BackendDAE.SHARED(knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc))
       equation
         aliasVars1 = updateAliasVariables(aliasVars,inCref,inExp,inVar);
-      then BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars1,remeqns,arreqns,algorithms,einfo,eoc));
+      then BackendDAE.SHARED(knvars,exobj,aliasVars1,remeqns,arreqns,algorithms,einfo,eoc);
   end match;
 end updateAliasVariablesDAE;
 
@@ -2323,12 +2322,13 @@ public function systemSize
   author: Frenkel TUD
   Returns the size of the dae system, which 
   corresponds to the number of equations in a system."
-  input BackendDAE.BackendDAE dae;
+  input BackendDAE.EqSystem dae;
   output Integer n;
 algorithm
   n := match(dae)
-    local BackendDAE.EquationArray eqns;
-    case(BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns)::{}))
+    local
+      BackendDAE.EquationArray eqns;
+    case BackendDAE.EQSYSTEM(orderedEqs = eqns)
       equation
         n = equationSize(eqns);
       then n;
@@ -2977,11 +2977,10 @@ public function whenClauseAddDAE
 "function: whenClauseAddDAE
   author: Frenkel TUD 2011-05"
   input list<BackendDAE.WhenClause> inWcLst;
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
+  input BackendDAE.Shared shared;
+  output BackendDAE.Shared oshared;
 algorithm
-  outDAE:=
-  match (inWcLst,inDAE)
+  oshared := match (inWcLst,shared)
     local
       BackendDAE.Variables ordvars,knvars,exobj;
       BackendDAE.AliasVariables aliasVars;
@@ -2993,10 +2992,10 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.EqSystems eqs;
       
-    case (inWcLst,BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,remeqns,arreqns,algorithms,BackendDAE.EVENT_INFO(wclst,zc),eoc)))
+    case (inWcLst,BackendDAE.SHARED(knvars,exobj,aliasVars,remeqns,arreqns,algorithms,BackendDAE.EVENT_INFO(wclst,zc),eoc))
       equation
         wclst1 = listAppend(wclst,inWcLst);  
-      then BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,remeqns,arreqns,algorithms,BackendDAE.EVENT_INFO(wclst1,zc),eoc));
+      then BackendDAE.SHARED(knvars,exobj,aliasVars,remeqns,arreqns,algorithms,BackendDAE.EVENT_INFO(wclst1,zc),eoc);
   end match;
 end whenClauseAddDAE;
 
@@ -4603,31 +4602,30 @@ algorithm
 end addValuetoMatrix;
 
 public function getIncidenceMatrixfromOption "function getIncidenceMatrixfromOption"
-  input BackendDAE.BackendDAE inDAE;
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
   input Option<BackendDAE.IncidenceMatrix> inM;
   input Option<BackendDAE.IncidenceMatrix> inMT;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrix outMT;
 algorithm
   (outM,outMT):=
-  matchcontinue (inDAE,inM,inMT)
+  matchcontinue (syst,shared,inM,inMT)
     local  
       BackendDAE.BackendDAE dae;
       BackendDAE.IncidenceMatrix m,mT;
-      BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;
-    case(BackendDAE.DAE({syst},shared),NONE(),_)
+    case(syst,shared,NONE(),_)
       equation
         (m,mT) = incidenceMatrix(syst, shared, BackendDAE.NORMAL());
         //mT = transposeMatrix(m);
       then
         (m,mT);
-    case(_,SOME(m),NONE())
+    case(_,_,SOME(m),NONE())
       equation  
         mT = transposeMatrix(m);
       then
         (m,mT);
-    case(_,SOME(m),SOME(mT))
+    case(_,_,SOME(m),SOME(mT))
       then
         (m,mT);
   end matchcontinue;
@@ -6088,9 +6086,11 @@ algorithm
       BackendDAE.StrongComponents comps;
       BackendDAE.MatchingOptions match_opts;
       daeHandlerFunc daeHandlerfunc;
-    case (dae,funcs,inMatchingOptions,(daeHandlerfunc,methodstr),om,omT)
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+    case (dae as BackendDAE.DAE({syst},shared),funcs,inMatchingOptions,(daeHandlerfunc,methodstr),om,omT)
       equation
-        (m,mT) = getIncidenceMatrixfromOption(dae,om,omT);
+        (m,mT) = getIncidenceMatrixfromOption(syst,shared,om,omT);
         match_opts = Util.getOptionOrDefault(inMatchingOptions,(BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT()));
         // matching algorithm
         (v1,v2,ode,m1,mT1) = BackendDAETransform.matchingAlgorithm(dae, m, mT, match_opts, daeHandlerfunc, funcs);

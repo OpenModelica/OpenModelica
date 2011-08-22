@@ -118,8 +118,9 @@ algorithm
        // structure variables
        DevsStruct DEVS_structure;
        array<list<list<Integer>>> DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars;
+       BackendDAE.EqSystem syst;
  
-    case (dlow, ass1, ass2, m, mt, comps)
+    case (dlow as BackendDAE.DAE(eqs={syst}), ass1, ass2, m, mt, comps)
       equation
         //BackendDump.bltdump(("BackendQss",dlow, m, mt, ass1, ass2, comps));
         
@@ -138,7 +139,7 @@ algorithm
         
         varsSolvedInEqsList = arrayList(ass2);
         
-        orderedVars = BackendVariable.daeVars(dlow);
+        orderedVars = BackendVariable.daeVars(syst);
         varlst = BackendDAEUtil.varList(orderedVars);
         
         // ZERO-CROSSES

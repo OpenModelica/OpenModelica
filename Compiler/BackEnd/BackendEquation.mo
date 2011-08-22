@@ -985,11 +985,10 @@ public function equationAddDAE
 "function: equationAddDAE
   author: Frenkel TUD 2011-05"
   input BackendDAE.Equation inEquation;
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
+  input BackendDAE.EqSystem syst;
+  output BackendDAE.EqSystem osyst;
 algorithm
-  outDAE:=
-  match (inEquation,inDAE)
+  osyst := match (inEquation,syst)
     local
       BackendDAE.Variables ordvars,knvars,exobj;
       BackendDAE.AliasVariables aliasVars;
@@ -999,10 +998,10 @@ algorithm
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.Shared shared;
-    case (inEquation,BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns,inieqns)::{},shared))
+    case (inEquation,BackendDAE.EQSYSTEM(ordvars,eqns,inieqns))
       equation
         eqns1 = equationAdd(inEquation,eqns);
-      then BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns1,inieqns)::{},shared);
+      then BackendDAE.EQSYSTEM(ordvars,eqns1,inieqns);
   end match;
 end equationAddDAE;
 
@@ -1310,14 +1309,10 @@ end equationAlgorithmEqnsNr;
 
 
 public function daeEqns
-  input BackendDAE.BackendDAE inBackendDAE;
-  output BackendDAE.EquationArray outEqns;
+  input BackendDAE.EqSystem syst;
+  output BackendDAE.EquationArray eqnarr;
 algorithm
-  outEqns := match (inBackendDAE)
-    local BackendDAE.EquationArray eqnarr;
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqnarr)::{}))
-      then eqnarr;
-  end match;
+  BackendDAE.EQSYSTEM(orderedEqs = eqnarr) := syst;
 end daeEqns;
 
 public function daeArrayEqns

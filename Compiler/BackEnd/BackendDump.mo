@@ -1481,8 +1481,10 @@ protected
   Integer n;
   list<String> lst;
   String s;
+  BackendDAE.EqSystem syst;
 algorithm
-  n :=  BackendDAEUtil.systemSize(inDAE);
+  BackendDAE.DAE(eqs={syst}) := inDAE;
+  n :=  BackendDAEUtil.systemSize(syst);
   lst := dumpComponentsGraphStr2(1,n,inM,inMT,inAss1,inAss2);
   s := Util.stringDelimitList(lst,",");
   s := stringAppendList({"{",s,"}"});
@@ -1708,13 +1710,13 @@ public function dumpComponentsAdvanced "function: dumpComponents
 "
   input list<list<Integer>> l;
   input array<Integer> v2;
-  input BackendDAE.BackendDAE ode;
+  input BackendDAE.EqSystem syst;
 protected
   BackendDAE.Variables vars;
 algorithm
   print("Blocks\n");
   print("=======\n");
-  vars := BackendVariable.daeVars(ode);
+  vars := BackendVariable.daeVars(syst);
   dumpComponentsAdvanced2(l, 1,v2,vars);
 end dumpComponentsAdvanced;
 

@@ -2714,25 +2714,17 @@ end calculateIndexes2;
 
 
 public function daeVars
-  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.EqSystem syst;
   output BackendDAE.Variables vars;
 algorithm
-  vars := match (inBackendDAE)
-    local BackendDAE.Variables vars;
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars)::{}))
-      then vars;
-  end match;
+  BackendDAE.EQSYSTEM(orderedVars = vars) := syst;
 end daeVars;
 
 public function daeKnVars
-  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.Shared shared;
   output BackendDAE.Variables vars;
 algorithm
-  vars := match (inBackendDAE)
-    local BackendDAE.Variables vars;
-    case (BackendDAE.DAE(shared=BackendDAE.SHARED(knownVars = vars)))
-      then vars;
-  end match;
+  BackendDAE.SHARED(knownVars = vars) := shared;
 end daeKnVars;
 
 public function daeAliasVars
@@ -3149,11 +3141,10 @@ public function addVarDAE
   Add a variable to Variables of a BackendDAE.
   If the variable already exists, the function updates the variable."
   input BackendDAE.Var inVar;
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
+  input BackendDAE.EqSystem syst;
+  output BackendDAE.EqSystem osyst;
 algorithm
-  outDAE:=
-  match (inVar,inDAE)
+  osyst := match (inVar,syst)
     local
       BackendDAE.Var var;
       BackendDAE.Variables ordvars,knvars,exobj,ordvars1;
@@ -3164,10 +3155,10 @@ algorithm
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.Shared shared;
-    case (var,BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns,inieqns)::{},shared))
+    case (var,BackendDAE.EQSYSTEM(ordvars,eqns,inieqns))
       equation
         ordvars1 = addVar(var,ordvars);
-      then BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars1,eqns,inieqns)::{},shared);
+      then BackendDAE.EQSYSTEM(ordvars1,eqns,inieqns);
   end match;
 end addVarDAE;
 
@@ -3177,11 +3168,10 @@ public function addKnVarDAE
   Add a variable to Variables of a BackendDAE.
   If the variable already exists, the function updates the variable."
   input BackendDAE.Var inVar;
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
+  input BackendDAE.Shared shared;
+  output BackendDAE.Shared oshared;
 algorithm
-  outDAE:=
-  match (inVar,inDAE)
+  oshared := match (inVar,shared)
     local
       BackendDAE.Var var;
       BackendDAE.Variables ordvars,knvars,exobj,knvars1;
@@ -3192,10 +3182,10 @@ algorithm
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.EqSystems eqs;
-    case (var,BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc)))
+    case (var,BackendDAE.SHARED(knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc))
       equation
         knvars1 = addVar(var,knvars);
-      then BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars1,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc));
+      then BackendDAE.SHARED(knvars1,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc);
   end match;
 end addKnVarDAE;
 

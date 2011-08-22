@@ -463,6 +463,7 @@ algorithm
       BackendDAE.DAEHandlerArg arg,arg1;
       DAE.ElementSource source;
       Absyn.Info info;
+      BackendDAE.EqSystem syst;
 
     case (dae,m,mt,nv,nf,i,ass1,ass2,_,_,inArg,_,derivedAlgs,derivedMultiEqn)
       equation
@@ -483,7 +484,7 @@ algorithm
 
     case (dae,m,mt,nv,nf,i,ass1,ass2,match_opts as (BackendDAE.INDEX_REDUCTION(),eq_cons),daeHandler,inArg,inFunctions,derivedAlgs,derivedMultiEqn)
       equation
-        (dae,m,mt,ass1,ass2,derivedAlgs1,derivedMultiEqn1,arg) = daeHandler(BackendDAE.REDUCE_INDEX(),dae,m,mt,inFunctions,ass1,ass2,derivedAlgs,derivedMultiEqn,inArg) 
+        (dae as BackendDAE.DAE(eqs={syst}),m,mt,ass1,ass2,derivedAlgs1,derivedMultiEqn1,arg) = daeHandler(BackendDAE.REDUCE_INDEX(),dae,m,mt,inFunctions,ass1,ass2,derivedAlgs,derivedMultiEqn,inArg) 
         "path_found failed, Try index reduction using dummy derivatives.
          When a constraint exist between states and index reduction is needed
          the dummy derivative will select one of the states as a dummy state
@@ -494,7 +495,7 @@ algorithm
          In the dummy derivative method this equation is added and the original equation
          u1=u2 is kept. This is not the case for the original pantilides algorithm, where
          the original equation is removed from the system." ;
-        eqns = BackendEquation.daeEqns(dae);
+        eqns = BackendEquation.daeEqns(syst);
         nf_1 = BackendDAEUtil.equationSize(eqns) "and try again, restarting. This could be optimized later. It should not
                                    be necessary to restart the matching, according to Bernard Bachmann. Instead one
                                    could continue the matching as usual. This was tested (2004-11-22) and it does not
@@ -504,7 +505,7 @@ algorithm
                                    2004-12-29 PA. This was a bug, assignment lists needed to be expanded with the size
                                    of the system in order to work. SO: Matching is not needed to be restarted from
                                    scratch." ;
-        nv_1 = BackendVariable.varsSize(BackendVariable.daeVars(dae));
+        nv_1 = BackendVariable.varsSize(BackendVariable.daeVars(syst));
         nvd = nv_1 - nv;
         ass1_1 = assignmentsExpand(ass1, nvd);
         ass2_1 = assignmentsExpand(ass2, nvd);
@@ -2041,14 +2042,15 @@ algorithm
       list<tuple<BackendDAE.Equation,Boolean>> orgeqntpl;
       BackendDAE.ConstraintEquations rest;
       BackendDAE.Variables vars,v,vars1;
+      BackendDAE.EqSystem syst;
     
     case ({},_) then BackendDAEUtil.emptyVars();
-    case (inOrgEqns,inDAE)
+    case (inOrgEqns,inDAE as BackendDAE.DAE(eqs={syst}))
       equation
         orgeqn_indxs = Util.listMap(inOrgEqns,Util.tuple32);
-        orgeqn = BackendEquation.getEqns(orgeqn_indxs,BackendEquation.daeEqns(inDAE));
+        orgeqn = BackendEquation.getEqns(orgeqn_indxs,BackendEquation.daeEqns(syst));
         vars = BackendDAEUtil.emptyVars();
-        vars1 = BackendEquation.equationsLstVars(orgeqn,BackendVariable.daeVars(inDAE),vars);
+        vars1 = BackendEquation.equationsLstVars(orgeqn,BackendVariable.daeVars(syst),vars);
       then
         vars1;
   end match;
@@ -2227,6 +2229,7 @@ algorithm
       BackendDAE.Assignments ass1,ass2; 
       array<BackendDAE.Value> vec1,vec2;
       String smeqs;
+      BackendDAE.EqSystem syst;
     case (BackendDAE.REDUCE_INDEX(),dae as BackendDAE.DAE(shared=BackendDAE.SHARED(arrayEqs=ae)),m,mt,inFunctions,ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst))
       equation
         eqns = BackendDAEEXT.getMarkedEqns();
@@ -2264,10 +2267,10 @@ algorithm
       then
         (dae,m,mt,ass1,ass2,derivedAlgs1,derivedMultiEqn1,(so1,orgEqnsLst2));
 
-    case (BackendDAE.STARTSTEP(),dae,m,mt,inFunctions,ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst))
+    case (BackendDAE.STARTSTEP(),dae as BackendDAE.DAE(eqs={syst}),m,mt,inFunctions,ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst))
       equation
         Debug.fcall("bltdump", print, "Reduce Index Startstep\n");
-        ((so,_)) = BackendEquation.traverseBackendDAEEqns(BackendEquation.daeEqns(dae),traverseStateOrderFinder,(so,BackendVariable.daeVars(dae)));
+        ((so,_)) = BackendEquation.traverseBackendDAEEqns(BackendEquation.daeEqns(syst),traverseStateOrderFinder,(so,BackendVariable.daeVars(syst)));
         Debug.fcall("bltdump", dumpStateOrder, so); 
       then (dae,m,mt,ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst));
 
@@ -2790,7 +2793,7 @@ algorithm
         shared = BackendDAE.SHARED(kv,ev,av,seqns,ae,al,BackendDAE.EVENT_INFO(wclst,zc),eoc);
         (m1,mt1) = BackendDAEUtil.updateIncidenceMatrix(syst, shared, m, mt, {ep});
         dae1 = BackendDAE.DAE({syst},shared);
-        states = BackendEquation.equationsStates({orgeqn},BackendVariable.daeVars(dae));
+        states = BackendEquation.equationsStates({orgeqn},v);
         l = listLength(states);
         // next 
         (dae2,m2,mt2,orgEqnslst) = addOrgEqntoDAE1(rest,dae1,m1,mt1,so,inFunctions,e);
@@ -3155,8 +3158,8 @@ algorithm
         vlst = Util.listMap1r(slst,BackendVariable.getVarAt,v);
         crlst = Util.listMap(vlst,BackendVariable.varCref);         
         (dcr,stateno) = selectDummyState(crlst, slst, dae, m, mt);
-        (_,dae1,m,mt) = makeDummyState(dcr,stateno,dae,m,mt);
-        ev = BackendVariable.varsSize(BackendVariable.daeVars(dae1));
+        (_,dae1 as BackendDAE.DAE(eqs={syst}),m,mt) = makeDummyState(dcr,stateno,dae,m,mt);
+        ev = BackendVariable.varsSize(BackendVariable.daeVars(syst));
         ast =  getAssigned(stateno,ass1,ass2);
         Debug.fcall("bltdump", BackendDump.debugStrIntStrIntStr, ("Assign: ",stateno," ",ep,"\n"));
         (ass1,ass2) = assignWithExpand(stateno, ep, ass1, ass2);         
@@ -3230,6 +3233,7 @@ algorithm
       list<Integer> rs;
       list<list<tuple<DAE.ComponentRef,DAE.Exp,Integer,Integer>>> dummystates;
       list<tuple<tuple<Integer,Integer,Integer>,list<tuple<Integer,Option<DAE.Exp>>>>> orgeqnssysjac;
+      BackendDAE.EqSystem syst;
     case ({},inSysjac,inStateOrd,inBackendDAE,inIncidenceMatrix,inIncidenceMatrixT,inAssignments1,inAssignments2,inFunctionTree,inStates)
       then (inBackendDAE,inIncidenceMatrix,inIncidenceMatrixT,inAssignments1,inAssignments2,inStates);
     case (inOrgEqns,inSysjac,inStateOrd,inBackendDAE,m,mt,ass1,ass2,inFunctionTree,inStates)
@@ -3240,7 +3244,7 @@ algorithm
         (dae1,m,mt,ass1,ass2,states2) = processEqnsLevel(orgeqns,sysjac1,inStateOrd,dae,m,mt,ass1,ass2,inFunctionTree,states1);
       then
         (dae1,m,mt,ass1,ass2,states2);   
-     case (inOrgEqns,inSysjac,inStateOrd,inBackendDAE,m,mt,ass1,ass2,inFunctionTree,inStates)
+     case (inOrgEqns,inSysjac,inStateOrd,inBackendDAE as BackendDAE.DAE(eqs={syst}),m,mt,ass1,ass2,inFunctionTree,inStates)
       equation
         Debug.fcall("bltdump", print, "Sort OrgEqn Level\n");
         orgeqnssysjac = Util.makeTuple(inOrgEqns,inSysjac);
@@ -3248,7 +3252,7 @@ algorithm
         orgeqns = Util.listMap(orgeqnssysjac,Util.tuple21);
         //dumpEqns2((orgeqns,inBackendDAE));
         Debug.fcall("bltdump", print, "\nCandidates:\n" +& Util.stringDelimitList(Util.listMap(inStates,dumpStates),"\n") +& "\n");
-        states = removeFixedfromStates(inStates,BackendVariable.daeVars(inBackendDAE));
+        states = removeFixedfromStates(inStates,BackendVariable.daeVars(syst));
         dummystates = selectDummyStates(orgeqns,inStateOrd,inBackendDAE,m,mt,inFunctionTree,states,{});
         Debug.fcall("bltdump", print, "add dummy derivatives\n");
         (dae1,m,mt,ass1,ass2,states2) = makeDummyStates(dummystates,inBackendDAE,m,mt,ass1,ass2,inStates);        
@@ -3342,6 +3346,7 @@ algorithm
       DAE.ComponentRef cr;
       list<Integer> rs;
       BackendDAE.Var var;
+      BackendDAE.EqSystem syst;
     case ({},inSysjac,inStateOrd,inBackendDAE,inIncidenceMatrix,inIncidenceMatrixT,inAssignments1,inAssignments2,inFunctionTree,inStates)
       then ({},inSysjac,inBackendDAE,inIncidenceMatrix,inIncidenceMatrixT,inAssignments1,inAssignments2,inStates,{});
     case ((e,ep,l)::rest,((stateno,_)::{})::sysjac,inStateOrd,dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=v)::{}),m,mt,ass1,ass2,inFunctionTree,inStates)
@@ -3349,8 +3354,8 @@ algorithm
         var = BackendVariable.getVarAt(v,stateno);
         cr = BackendVariable.varCref(var);
         Debug.fcall("bltdump", BackendDump.debugStrCrefStrIntStr, (("Remove State "),cr," from Eqn ",e,"\n"));
-        (_,dae1,m,mt) = makeDummyState(cr,stateno,dae,m,mt);
-        ev = BackendVariable.varsSize(BackendVariable.daeVars(dae1));
+        (_,dae1 as BackendDAE.DAE(eqs={syst}),m,mt) = makeDummyState(cr,stateno,dae,m,mt);
+        ev = BackendVariable.varsSize(BackendVariable.daeVars(syst));
         ast =  getAssigned(stateno,ass1,ass2);
         Debug.fcall("bltdump", BackendDump.debugStrIntStrIntStr, ("Assign: ",stateno," ",ep,"\n"));
         (ass1,ass2) = assignWithExpand(stateno, ep, ass1, ass2);         
@@ -4033,6 +4038,7 @@ algorithm
       Integer stateno,stateno1,ep,ep1,ep2,ep3,ev,ast,ast1;
       BackendDAE.Equation eq,deq,eqcont;
       BackendDAE.Var dsxyvar,dsxyvarcont,dummyvar;
+      BackendDAE.Variables vars;
       BackendDAE.BackendDAE dae,dae1,dae2;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;  
@@ -4047,8 +4053,8 @@ algorithm
        (dae,m,mt,ass1,ass2,inStates);
     case (((dummystate,dse1,stateno,ep)::{})::rest,dae,m,mt,ass1,ass2,inStates)
       equation
-        (_,dae1,m,mt) = makeDummyState(dummystate,stateno,dae,m,mt);
-        ev = BackendVariable.varsSize(BackendVariable.daeVars(dae1));
+        (_,dae1 as BackendDAE.DAE(eqs={syst}),m,mt) = makeDummyState(dummystate,stateno,dae,m,mt);
+        ev = BackendVariable.varsSize(BackendVariable.daeVars(syst));
         ast =  getAssigned(stateno,ass1,ass2);
         Debug.fcall("bltdump", BackendDump.debugStrIntStrIntStr, ("Assign: ",stateno," ",ep,"\n"));
         (ass1,ass2) = assignWithExpand(stateno, ep, ass1, ass2);         
@@ -4061,17 +4067,18 @@ algorithm
     case (((dummystate,dse1,stateno,ep)::((dummystate1,dse2,stateno1,_)::{}))::rest,dae,m,mt,ass1,ass2,inStates)
       equation
         (derdummystate,dae,m,mt) = makeDummyState(dummystate,stateno,dae,m,mt);
-        (derdummystate1,dae,m,mt) = makeDummyState(dummystate1,stateno1,dae,m,mt);
+        (derdummystate1,BackendDAE.DAE({syst},shared),m,mt) = makeDummyState(dummystate1,stateno1,dae,m,mt);
         dsxy = ComponentReference.joinCrefs(dummystate,dummystate1);
         dsxyvar = BackendDAE.VAR(dsxy,BackendDAE.STATE(),DAE.BIDIR(),BackendDAE.REAL(),NONE(),NONE(),{},0,DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM_CONNECTOR());
         dsxyvar = BackendVariable.setVarFixed(dsxyvar,false);
-        dummyvar = BackendVariable.getVarAt(BackendVariable.daeVars(dae),stateno1);
+        vars = BackendVariable.daeVars(syst);
+        dummyvar = BackendVariable.getVarAt(vars,stateno1);
         dsxyvar = BackendVariable.setVarStartValue(dsxyvar,BackendVariable.varStartValue(dummyvar));
         dsxycont = ComponentReference.joinCrefs(dsxy,ComponentReference.makeCrefIdent("cont",DAE.ET_BOOL(),{}));
         dsxyvarcont = BackendDAE.VAR(dsxycont,BackendDAE.DISCRETE(),DAE.BIDIR(),BackendDAE.BOOL(),NONE(),NONE(),{},0,DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM_CONNECTOR());
-        ev = BackendVariable.varsSize(BackendVariable.daeVars(dae))-1;
-        dae = BackendVariable.addVarDAE(dsxyvar,dae);
-        dae = BackendVariable.addVarDAE(dsxyvarcont,dae);
+        ev = BackendVariable.varsSize(vars)-1;
+        syst = BackendVariable.addVarDAE(dsxyvar,syst);
+        syst = BackendVariable.addVarDAE(dsxyvarcont,syst);
         dxdye = Expression.crefExp(dsxy);
         dxdyecont = Expression.crefExp(dsxycont);
         ds1 = Expression.crefExp(dummystate);
@@ -4082,16 +4089,16 @@ algorithm
         ((cont,_)) = Expression.traverseExp(dxdyecont, traversingComponentRefToPre, 0);
         icont = DAE.LBINARY(DAE.CALL(Absyn.IDENT("initial"),{},DAE.callAttrBuiltinBool),DAE.OR(DAE.ET_BOOL()),cont);
         eq = BackendDAE.EQUATION(dxdye,DAE.IFEXP(icont,ds2,ds1),DAE.emptyElementSource);
-        dae = BackendEquation.equationAddDAE(eq,dae); 
+        syst = BackendEquation.equationAddDAE(eq,syst); 
         deq = BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{dxdye},DAE.callAttrBuiltinReal),DAE.IFEXP(icont,dds2,dds1),DAE.emptyElementSource);
-        ep1 = BackendDAEUtil.systemSize(dae);
-        dae = BackendEquation.equationAddDAE(deq,dae); 
+        ep1 = BackendDAEUtil.systemSize(syst);
+        syst = BackendEquation.equationAddDAE(deq,syst);
         
         wc = BackendDAE.WHEN_CLAUSE(dxdyecont,{BackendDAE.REINIT(dsxy,ds2,DAE.emptyElementSource)},NONE());
         wc1 = BackendDAE.WHEN_CLAUSE(DAE.LUNARY(DAE.NOT(DAE.ET_BOOL()),dxdyecont),{BackendDAE.REINIT(dsxy,ds1,DAE.emptyElementSource)},NONE());
-        dae = BackendDAEUtil.whenClauseAddDAE({wc,wc1},dae);
+        shared = BackendDAEUtil.whenClauseAddDAE({wc,wc1},shared);
         eqcont = BackendDAE.EQUATION(dxdyecont,DAE.IFEXP(DAE.CALL(Absyn.IDENT("initial"),{},DAE.callAttrBuiltinBool),DAE.BCONST(true),cont1),DAE.emptyElementSource);
-        (dae as BackendDAE.DAE({syst},shared)) = BackendEquation.equationAddDAE(eqcont,dae);
+        syst = BackendEquation.equationAddDAE(eqcont,syst);
         ep2 = ep1+1;
         ep3 = ep1+2;
         Debug.fcall("bltdump", print, "Update Incidence Matrix: ");
@@ -4114,6 +4121,7 @@ algorithm
         (ass1,ass2) = assignWithExpand(ev+3, ep3, ass1, ass2);    
         states = removeStatefromCandidates(stateno,inStates);
         states = removeStatefromCandidates(stateno1,states);
+        dae = BackendDAE.DAE({syst},shared);
         (dae,m,mt,ass1,ass2,states1) =  makeDummyStates(rest,dae,m,mt,ass1,ass2,states);
       then
         (dae,m,mt,ass1,ass2,states1);

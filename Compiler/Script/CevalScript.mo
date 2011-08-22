@@ -771,6 +771,8 @@ algorithm
       list<Absyn.Path> paths;
       list<Absyn.Class> classes;
       Absyn.Within within_;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
     
     case (cache,env,"parseString",{Values.STRING(str1),Values.STRING(str2)},st,msg)
       equation
@@ -883,10 +885,10 @@ algorithm
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(path,dae,env));
         funcs = Env.getFunctionTree(cache);
         daelow = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
-        (optdae,om,omt) = BackendDAEUtil.preOptimiseBackendDAE(daelow,funcs,NONE(),NONE(),NONE());
-        (m,mt) = BackendDAEUtil.getIncidenceMatrixfromOption(optdae,om,omt);
-        vars = BackendVariable.daeVars(optdae);
-        eqnarr = BackendEquation.daeEqns(optdae);
+        (optdae as BackendDAE.DAE({syst},shared),om,omt) = BackendDAEUtil.preOptimiseBackendDAE(daelow,funcs,NONE(),NONE(),NONE());
+        (m,mt) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,om,omt);
+        vars = BackendVariable.daeVars(syst);
+        eqnarr = BackendEquation.daeEqns(syst);
         ae = BackendEquation.daeArrayEqns(optdae);
         jac = BackendDAEUtil.calculateJacobian(vars, eqnarr, ae, m, mt,false);
         res = BackendDump.dumpJacobianStr(jac);
@@ -3131,9 +3133,9 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         (dlow as BackendDAE.DAE({syst},shared)) = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
         Debug.fcall("dumpdaelow", BackendDump.dump, dlow);
-        eqns = BackendEquation.daeEqns(dlow);
+        eqns = BackendEquation.daeEqns(syst);
         eqnSize = BackendDAEUtil.equationSize(eqns);
-        vars = BackendVariable.daeVars(dlow);
+        vars = BackendVariable.daeVars(syst);
         varSize = BackendVariable.varsSize(vars);
         (eqnSize,varSize) = subtractDummy(vars,eqnSize,varSize);
         (m,_) = BackendDAEUtil.incidenceMatrix(syst,shared, BackendDAE.NORMAL());
@@ -3172,9 +3174,9 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         (dlow as BackendDAE.DAE({syst},shared)) = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
         Debug.fcall("dumpdaelow", BackendDump.dump, dlow);
-        eqns = BackendEquation.daeEqns(dlow);
+        eqns = BackendEquation.daeEqns(syst);
         eqnSize = BackendDAEUtil.equationSize(eqns);
-        vars = BackendVariable.daeVars(dlow);
+        vars = BackendVariable.daeVars(syst);
         varSize = BackendVariable.varsSize(vars);
         (eqnSize,varSize) = subtractDummy(vars,eqnSize,varSize);
         (m,_) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.NORMAL());

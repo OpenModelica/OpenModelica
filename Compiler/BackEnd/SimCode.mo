@@ -2118,8 +2118,10 @@ algorithm
       list<JacobianMatrix> LinearMats;
       HashTableCrefToSimVar crefToSimVarHT;
       Boolean ifcpp;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
       
-    case (functionTree,dlow,ass1,ass2,m,mt,comps,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals)
+    case (functionTree,dlow as BackendDAE.DAE({syst},shared),ass1,ass2,m,mt,comps,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals)
       equation
         ifcpp=Util.equal(RTOpts.simCodeTarget(),"Cpp");
          //Debug.fcall("cppvar",print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
@@ -2164,8 +2166,8 @@ algorithm
         (delayedExps,maxDelayedExpIndex) = extractDelayedExpressions(dlow2);
         
         // replace div operator with div operator with check of Division by zero
-        orderedVars = BackendVariable.daeVars(dlow);
-        knownVars = BackendVariable.daeKnVars(dlow);
+        orderedVars = BackendVariable.daeVars(syst);
+        knownVars = BackendVariable.daeKnVars(shared);
         varlst = BackendDAEUtil.varList(orderedVars);
         varlst1 = BackendDAEUtil.varList(knownVars);
         varlst2 = listAppend(varlst,varlst1);
@@ -2312,6 +2314,7 @@ algorithm
       list<JacobianMatrix> LinearMats;
       Integer nEqns;
       BackendDAE.Shared shared;
+      BackendDAE.EqSystem syst;
       
     case (functions,dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,ie)::{},shared as BackendDAE.SHARED(kv,exv,av,re,ae,al,ev,eoc)),ass1,ass2,comps,m,mt)
       equation
@@ -2351,10 +2354,10 @@ algorithm
         
         // create Matrix A and variables
         Debug.fcall("jacdump2", print, "Dump of daelow for Matrix A.\n");
-        (deriveddlow2, v1, v2, comps1) = BackendDAEOptimize.generateLinearMatrix(deriveddlow1,functions,comref_states,comref_states,varlst);
+        (deriveddlow2 as BackendDAE.DAE(eqs={syst}), v1, v2, comps1) = BackendDAEOptimize.generateLinearMatrix(deriveddlow1,functions,comref_states,comref_states,varlst);
         JacAEquations = createEquations(false, false, false, false, true, deriveddlow2, v1, v2, comps1, {});
         Debug.fcall("jacdump2", print, "Equations created for Matrix A!\n");
-        v = BackendVariable.daeVars(deriveddlow2);
+        v = BackendVariable.daeVars(syst);
         ((JacAVars,_)) =  BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
         JacAVars = listReverse(JacAVars);
         Debug.fcall("execJacstat",print, "*** analytical Jacobians -> created system A: " +& realString(clock()) +& "\n" );
@@ -2442,6 +2445,7 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
       
       list<JacobianMatrix> LinearMats;
+      BackendDAE.EqSystem syst;
       
     case (functions,dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,ie)::{},BackendDAE.SHARED(kv,exv,av,re,ae,al,ev,eoc)),ass1,ass2,_)
       equation
@@ -2474,19 +2478,19 @@ algorithm
         
         // create Matrix A and variables
         Debug.fcall("jacdump2", print, "Dump of daelow for Matrix A.\n");
-        (deriveddlow2, v1, v2, comps1) = BackendDAEOptimize.generateLinearMatrix(deriveddlow1,functions,comref_states,comref_states,varlst);
+        (deriveddlow2 as BackendDAE.DAE(eqs={syst}), v1, v2, comps1) = BackendDAEOptimize.generateLinearMatrix(deriveddlow1,functions,comref_states,comref_states,varlst);
         JacAEquations = createEquations(false, false, false, false, true, deriveddlow2, v1, v2, comps1, {});
         Debug.fcall("jacdump2", print, "Equations created for Matrix A!\n");
-        v = BackendVariable.daeVars(deriveddlow2);
+        v = BackendVariable.daeVars(syst);
         ((JacAVars,_)) =  BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
         JacAVars = listReverse(JacAVars);
         Debug.fcall("execJacstat",print, "*** analytical Jacobians -> created system A: " +& realString(clock()) +& "\n" );
         // create Matrix C and variables
         Debug.fcall("jacdump2", print, "Dump of daelow for Matrix C.\n");
-        (deriveddlow2, v1, v2, comps1) = BackendDAEOptimize.generateLinearMatrix(deriveddlow1,functions,comref_outputvars,comref_states,varlst);
+        (deriveddlow2 as BackendDAE.DAE(eqs={syst}), v1, v2, comps1) = BackendDAEOptimize.generateLinearMatrix(deriveddlow1,functions,comref_outputvars,comref_states,varlst);
         JacCEquations = createEquations(false, false, false, false, true, deriveddlow2, v1, v2, comps1, {});
         Debug.fcall("jacdump2", print, "Equations created for Matrix C!\n");
-        v = BackendVariable.daeVars(deriveddlow2);
+        v = BackendVariable.daeVars(syst);
         ((JacCVars,_)) =  BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
         JacAVars = listReverse(JacAVars);
         Debug.fcall("execJacstat",print, "*** analytical Jacobians -> created system C: " +& realString(clock()) +& "\n" );
@@ -2498,17 +2502,17 @@ algorithm
         
         // create Matrix B and variables
         Debug.fcall("jacdump2", print, "Dump of daelow for Matrix B.\n");
-        (deriveddlow2, v1, v2, comps1) = BackendDAEOptimize.generateLinearMatrix(deriveddlow1,functions,comref_states,comref_inputvars,varlst);
+        (deriveddlow2 as BackendDAE.DAE(eqs={syst}), v1, v2, comps1) = BackendDAEOptimize.generateLinearMatrix(deriveddlow1,functions,comref_states,comref_inputvars,varlst);
         JacBEquations = createEquations(false, false, false, false, true, deriveddlow2, v1, v2, comps1, {});
-        v = BackendVariable.daeVars(deriveddlow2);
+        v = BackendVariable.daeVars(syst);
         ((JacBVars,_)) =  BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
         JacBVars = listReverse(JacBVars);
         Debug.fcall("execJacstat",print, "*** analytical Jacobians -> created system B: " +& realString(clock()) +& "\n" );
         // create Matrix D and variables
         Debug.fcall("jacdump2", print, "Dump of daelow for Matrix D.\n");
-        (deriveddlow2, v1, v2, comps1) = BackendDAEOptimize.generateLinearMatrix(deriveddlow1,functions,comref_outputvars,comref_inputvars,varlst);
+        (deriveddlow2 as BackendDAE.DAE(eqs={syst}), v1, v2, comps1) = BackendDAEOptimize.generateLinearMatrix(deriveddlow1,functions,comref_outputvars,comref_inputvars,varlst);
         JacDEquations = createEquations(false, false, false, false, true, deriveddlow2, v1, v2, comps1, {});
-        v = BackendVariable.daeVars(deriveddlow2);
+        v = BackendVariable.daeVars(syst);
         ((JacDVars,_)) =  BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
         JacDVars = listReverse(JacDVars);
         Debug.fcall("execJacstat",print, "*** analytical Jacobians -> created system D: " +& realString(clock()) +& "\n" );
@@ -10221,11 +10225,12 @@ algorithm outOrder := matchcontinue(inDlow)
     list<list<DAE.ComponentRef>> firstOrderVars;
     list<DAE.ComponentRef> firstOrderVarsFiltered;
     String eq_str;
-  case(inDlow)
+    BackendDAE.EqSystem syst;
+  case(inDlow as BackendDAE.DAE(eqs={syst}))
     equation
       
-      dovars = BackendVariable.daeVars(inDlow);
-      deqns = BackendEquation.daeEqns(inDlow);
+      dovars = BackendVariable.daeVars(syst);
+      deqns = BackendEquation.daeEqns(syst);
       vars = BackendDAEUtil.varList(dovars);
       eqns = BackendDAEUtil.equationList(deqns);
       derExps = makeCallDerExp(vars);
