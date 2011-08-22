@@ -27,6 +27,11 @@ package builtin
     output Integer c;
   end intAdd;
 
+  function intMul
+    input Integer a;
+    input Integer b;
+    output Integer c;
+  end intMul;
 
   function intDiv
     input Integer a;

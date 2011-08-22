@@ -1653,8 +1653,9 @@ case SES_LINEAR(__) then
     SIM_PROF_TICK_EQ(SIM_PROF_EQ_<%index%>);<%\n%>
     #endif<%\n%>
     >> %>
-  declare_matrix(<%aname%>, <%size%>, <%size%>);
-  declare_vector(<%bname%>, <%size%>);
+  /* Linear equation system */
+  double <%aname%>[<%intMul(listLength(vars),listLength(vars))%>] = {0};
+  double <%bname%>[<%size%>] = {0};
   <%simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
      let &preExp = buffer "" /*BUFD*/
      let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/,  &varDecls /*BUFD*/)
@@ -4059,6 +4060,7 @@ case STMT_NORETCALL(__) then
   <%preExp%>
   <%expPart%>;
   >>
+
 
 
 
