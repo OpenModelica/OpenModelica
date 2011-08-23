@@ -885,8 +885,8 @@ algorithm
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(path,dae,env));
         funcs = Env.getFunctionTree(cache);
         daelow = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
-        (optdae as BackendDAE.DAE({syst},shared),om,omt) = BackendDAEUtil.preOptimiseBackendDAE(daelow,funcs,NONE(),NONE(),NONE());
-        (m,mt) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,om,omt);
+        (optdae as BackendDAE.DAE({syst},shared)) = BackendDAEUtil.preOptimiseBackendDAE(daelow,funcs,NONE());
+        (syst,m,mt) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
         vars = BackendVariable.daeVars(syst);
         eqnarr = BackendEquation.daeEqns(syst);
         ae = BackendEquation.daeArrayEqns(optdae);
@@ -3391,7 +3391,7 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(cache,dae_1);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, true); //Verificare cosa fa
-        (dlow_1,_,_) = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,NONE(),NONE(),NONE());
+        dlow_1 = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,NONE());
         dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
         funcelems = DAEUtil.getFunctionList(funcs);
@@ -3417,8 +3417,8 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(cache,dae_1);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, true); //Verificare cosa fa
-        (dlow_1,om,omT) = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,NONE(),NONE(),NONE());
-        (dlow_1,_,_,_,_,_) = BackendDAEUtil.transformBackendDAE(dlow_1,funcs,NONE(),NONE(),om,omT);
+        (dlow_1) = BackendDAEUtil.preOptimiseBackendDAE(dlow,funcs,NONE());
+        (dlow_1,_,_,_) = BackendDAEUtil.transformBackendDAE(dlow_1,funcs,NONE(),NONE());
         dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
         funcelems = DAEUtil.getFunctionList(Env.getFunctionTree(cache));
@@ -3444,8 +3444,7 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(cache,dae_1);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, true);
-        (indexed_dlow,_,_,_,_,_) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
-          NONE(), NONE(), NONE());
+        (indexed_dlow,_,_,_) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs, NONE(), NONE(), NONE());
         xml_filename = stringAppendList({filenameprefix,".xml"});
         funcelems = DAEUtil.getFunctionList(funcs);
         Print.clearBuf();

@@ -252,6 +252,8 @@ uniontype EqSystem "An independent system of equations (and their corresponding 
     Variables orderedVars "orderedVars ; ordered Variables, only states and alg. vars" ;
     EquationArray orderedEqs "orderedEqs ; ordered Equations" ;
     EquationArray initialEqs "initialEqs ; Initial equations" ;
+    Option<IncidenceMatrix> m;
+    Option<IncidenceMatrixT> mT;
   end EQSYSTEM;
 end EqSystem;
 

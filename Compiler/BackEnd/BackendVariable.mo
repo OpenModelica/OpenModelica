@@ -3155,10 +3155,11 @@ algorithm
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.Shared shared;
-    case (var,BackendDAE.EQSYSTEM(ordvars,eqns,inieqns))
+      Option<BackendDAE.IncidenceMatrix> m,mT;
+    case (var,BackendDAE.EQSYSTEM(ordvars,eqns,inieqns,m,mT))
       equation
         ordvars1 = addVar(var,ordvars);
-      then BackendDAE.EQSYSTEM(ordvars1,eqns,inieqns);
+      then BackendDAE.EQSYSTEM(ordvars1,eqns,inieqns,m,mT);
   end match;
 end addVarDAE;
 

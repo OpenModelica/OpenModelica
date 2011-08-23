@@ -120,12 +120,14 @@ algorithm
       BackendDAE.Variables orderedVars;
       BackendDAE.EquationArray orderedEqs;
       BackendDAE.EquationArray initialEqs;
-    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,initialEqs),tpl)
+      Option<BackendDAE.IncidenceMatrix> m,mT;
+    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,initialEqs,m,mT),tpl)
       equation
         orderedVars = inlineVariables(orderedVars,tpl);
         orderedEqs = inlineEquationArray(orderedEqs,tpl);
         initialEqs = inlineEquationArray(initialEqs,tpl);
-      then BackendDAE.EQSYSTEM(orderedVars,orderedEqs,initialEqs);
+        // TODO: Incidencematrix may change, but it's not updated here?! 
+      then BackendDAE.EQSYSTEM(orderedVars,orderedEqs,initialEqs,m,mT);
   end match;
 end inlineEquationSystem;
 

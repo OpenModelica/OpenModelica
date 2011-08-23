@@ -764,10 +764,10 @@ algorithm
         true = runBackendQ();
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
-        (dlow_1,m,mT,v1,v2,comps) = BackendDAEUtil.getSolvedSystem(cache,env,dlow,funcs,NONE(),NONE(),NONE());
+        (dlow_1,v1,v2,comps) = BackendDAEUtil.getSolvedSystem(cache,env,dlow,funcs,NONE(),NONE(),NONE());
         modpar(dlow_1,comps);
         Debug.execStat("Lowering Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
-        simcodegen(dlow_1,funcs,classname,ap,daeimpl,m,mT,v1,v2,comps);
+        simcodegen(dlow_1,funcs,classname,ap,daeimpl,v1,v2,comps);
       then
         ();
     case (_,_,_,_,_,_,_)
@@ -844,14 +844,12 @@ protected function simcodegen
   input Absyn.Path inPath;
   input Absyn.Program inProgram3;
   input DAE.DAElist inDAElist4;
-  input BackendDAE.IncidenceMatrix inIncidenceMatrix8;
-  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT9;
   input array<Integer> inIntegerArray6;
   input array<Integer> inIntegerArray7;
   input BackendDAE.StrongComponents inComps;
 algorithm
   _:=
-  matchcontinue (inBackendDAE5,inFunctionTree,inPath,inProgram3,inDAElist4,inIncidenceMatrix8,inIncidenceMatrixT9,inIntegerArray6,inIntegerArray7,inComps)
+  matchcontinue (inBackendDAE5,inFunctionTree,inPath,inProgram3,inDAElist4,inIntegerArray6,inIntegerArray7,inComps)
     local
       BackendDAE.BackendDAE dlow;
       DAE.FunctionTree functionTree;
@@ -868,14 +866,14 @@ algorithm
       String methodbyflag;
       Boolean methodflag;
 
-    case (dlow,functionTree,classname,ap,dae,m,mt,ass1,ass2,comps) /* classname ass1 ass2 blocks */
+    case (dlow,functionTree,classname,ap,dae,ass1,ass2,comps) /* classname ass1 ass2 blocks */
       equation
         true = RTOpts.simulationCg();
         Print.clearErrorBuf();
         Print.clearBuf();
         cname_str = Absyn.pathString(classname);
         simSettings = SimCode.createSimulationSettings(0.0, 1.0, 500, 1e-6,"dassl","","mat",".*",false,"");
-        (_,_,_,_,_,_) = SimCode.generateModelCode(dlow,functionTree,ap,dae,classname,cname_str,SOME(simSettings),m,mt,ass1,ass2,comps);
+        (_,_,_,_,_,_) = SimCode.generateModelCode(dlow,functionTree,ap,dae,classname,cname_str,SOME(simSettings),ass1,ass2,comps);
         Debug.execStat("Codegen Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
       then
         ();

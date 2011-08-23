@@ -155,7 +155,7 @@ algorithm
         // STEP 1      
         // EXTRACT THE INDICES OF NEEDED EQUATIONS FOR EACH STATE VARIABLE         
         
-        (blt_states, blt_no_states) = BackendDAEUtil.generateStatePartition(comps, dlow, ass1, ass2, m, mt);                 
+        (blt_states, blt_no_states) = BackendDAEUtil.generateStatePartition(comps, dlow, ass1, ass2);
         stateEq_flat = splitStateEqSet(comps, dlow, ass1, ass2, m, mt) "Extract equations for each state derivative";
         stateEq_flat = removeEmptyElements(stateEq_flat, {}) "extract possible empty elements in the list";
         

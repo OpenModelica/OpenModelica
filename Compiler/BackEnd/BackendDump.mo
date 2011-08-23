@@ -629,7 +629,7 @@ algorithm
       list<BackendDAE.ZeroCrossing> zc;
       list<BackendDAE.WhenClause> wc;
       BackendDAE.ExternalObjectClasses extObjCls;
-    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars1,eqns,ieqns)::{},BackendDAE.SHARED(vars2,vars3,av,reqns,ae,algs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc,whenClauseLst=wc),extObjCls)))
+    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars1,eqns,ieqns,_,_)::{},BackendDAE.SHARED(vars2,vars3,av,reqns,ae,algs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc,whenClauseLst=wc),extObjCls)))
       equation
         print("Variables (");
         vars = BackendDAEUtil.varList(vars1);
@@ -1465,14 +1465,10 @@ public function dumpComponentsGraphStr
  components to format suitable for Mathematica"
   input BackendDAE.BackendDAE inDAE;
   input DAE.FunctionTree inFunctionTree;
-  input BackendDAE.IncidenceMatrix inM;
-  input BackendDAE.IncidenceMatrix inMT;
   input array<Integer> inAss1;
   input array<Integer> inAss2;
   input BackendDAE.StrongComponents inComps;
   output BackendDAE.BackendDAE outDAE;
-  output BackendDAE.IncidenceMatrix outM;
-  output BackendDAE.IncidenceMatrix outMT;
   output array<Integer> outAss1;
   output array<Integer> outAss2;
   output BackendDAE.StrongComponents outComps;
@@ -1482,16 +1478,16 @@ protected
   list<String> lst;
   String s;
   BackendDAE.EqSystem syst;
+  BackendDAE.IncidenceMatrix m;
+  BackendDAE.IncidenceMatrix mT;
 algorithm
-  BackendDAE.DAE(eqs={syst}) := inDAE;
+  BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT))}) := inDAE;
   n :=  BackendDAEUtil.systemSize(syst);
-  lst := dumpComponentsGraphStr2(1,n,inM,inMT,inAss1,inAss2);
+  lst := dumpComponentsGraphStr2(1,n,m,mT,inAss1,inAss2);
   s := Util.stringDelimitList(lst,",");
   s := stringAppendList({"{",s,"}"});
   print(s);
   outDAE := inDAE;
-  outM := inM;
-  outMT := inMT;
   outAss1 := inAss1;
   outAss2 := inAss2;
   outComps := inComps;
@@ -1685,7 +1681,7 @@ end dumpStateVariable;
 
 public function bltdump
 "autor: Frenkel TUD 2011-03"
-  input tuple<String,BackendDAE.BackendDAE,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrix,array<Integer>,array<Integer>,BackendDAE.StrongComponents> inTpl;
+  input tuple<String,BackendDAE.BackendDAE,array<Integer>,array<Integer>,BackendDAE.StrongComponents> inTpl;
 protected
   String str;
   BackendDAE.BackendDAE ode;
@@ -1694,7 +1690,7 @@ protected
   array<Integer> v1,v2;
   BackendDAE.StrongComponents comps;
 algorithm
-  (str,ode,m,mT,v1,v2,comps) := inTpl;
+  (str,ode as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT))::{}),v1,v2,comps) := inTpl;
   print(str); print(":\n");
   dump(ode);
   dumpIncidenceMatrix(m);

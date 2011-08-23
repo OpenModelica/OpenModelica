@@ -983,7 +983,8 @@ end equationAdd;
 
 public function equationAddDAE
 "function: equationAddDAE
-  author: Frenkel TUD 2011-05"
+  author: Frenkel TUD 2011-05
+  Incidence Matrix is lost"
   input BackendDAE.Equation inEquation;
   input BackendDAE.EqSystem syst;
   output BackendDAE.EqSystem osyst;
@@ -998,16 +999,16 @@ algorithm
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.Shared shared;
-    case (inEquation,BackendDAE.EQSYSTEM(ordvars,eqns,inieqns))
+    case (inEquation,BackendDAE.EQSYSTEM(ordvars,eqns,inieqns,_,_))
       equation
         eqns1 = equationAdd(inEquation,eqns);
-      then BackendDAE.EQSYSTEM(ordvars,eqns1,inieqns);
+      then BackendDAE.EQSYSTEM(ordvars,eqns1,inieqns,NONE(),NONE());
   end match;
 end equationAddDAE;
 
 public function equationSetnthDAE
-"function: equationSetnthDAE
-  author: Frenkel TUD 2011-04"
+  "Note: Does not update the incidence matrix (just like equationSetnth).
+  Call BackendDAEUtil.updateIncidenceMatrix if the inc.matrix changes."
   input Integer inInteger;
   input BackendDAE.Equation inEquation;
   input BackendDAE.BackendDAE inDAE;
@@ -1024,16 +1025,16 @@ algorithm
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.Shared shared;
-    case (inInteger,inEquation,BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns,inieqns)::{},shared))
+      Option<BackendDAE.IncidenceMatrix> m,mT;
+    case (inInteger,inEquation,BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns,inieqns,m,mT)::{},shared))
       equation
         eqns1 = equationSetnth(eqns,inInteger,inEquation);
-      then BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns1,inieqns)::{},shared);
+      then BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns1,inieqns,m,mT)::{},shared);
   end match;
 end equationSetnthDAE;
 
-public function equationSetnth "function: equationSetnth
-  author: PA
-  Sets the nth array element of an EquationArray."
+public function equationSetnth
+  "Sets the nth array element of an EquationArray."
   input BackendDAE.EquationArray inEquationArray;
   input Integer inInteger;
   input BackendDAE.Equation inEquation;
