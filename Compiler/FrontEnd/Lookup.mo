@@ -1820,7 +1820,7 @@ algorithm
 
     case (cache,Env.CLASS((cdef as SCode.CLASS(name=n,restriction=SCode.R_METARECORD(_,_))),cenv),env,id)
       equation
-        (cache,env_3,ty) = buildMetaRecordType(cache,env,cdef);
+        (cache,env_3,ty) = buildMetaRecordType(cache,cenv,cdef);
       then
         (cache,ty,env_3);
 
@@ -2881,6 +2881,7 @@ protected
   list<SCode.Element> els;
 algorithm
   SCode.CLASS(name=id,restriction=SCode.R_METARECORD(utPath,index),classDef=SCode.PARTS(elementLst = els)) := cdef;
+  env := Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(id), SOME(Env.CLASS_SCOPE()));
   // print("buildMetaRecordType " +& id +& " in scope " +& Env.printEnvPathStr(env) +& "\n");
   (cache,utPath) := Inst.makeFullyQualified(cache,env,utPath);
   path := Absyn.joinPaths(utPath, Absyn.IDENT(id));
