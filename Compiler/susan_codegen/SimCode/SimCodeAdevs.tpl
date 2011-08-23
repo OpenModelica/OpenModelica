@@ -2075,8 +2075,8 @@ case SES_LINEAR(__) then
     SIM_PROF_TICK_EQ(SIM_PROF_EQ_<%index%>);<%\n%>
     #endif<%\n%>
     >> %>
-  static declare_matrix(<%aname%>, <%size%>, <%size%>);
-  static declare_vector(<%bname%>, <%size%>);
+  double <%aname%>[<%size%>*<%size%>];
+  double <%bname%> [<%size%>];
   <%simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
      let &preExp = buffer "" /*BUFD*/
      let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/,  &varDecls /*BUFD*/)
