@@ -54,10 +54,15 @@ template translateModel(SimCode simCode)
   Modelica model."
 ::=
 match simCode
-case SIMCODE(__) then
+case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let guid = getUUIDStr()
-  let()= textFile(fmuModelDescriptionFile(simCode,guid), 'modelDescription.xml')
+  let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls), '<%fileNamePrefix%>_functions.h')
+  let()= textFile(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, literals), '<%fileNamePrefix%>_functions.c')
+  let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')  
+  let()= textFile(simulationFile(simCode,guid), '<%fileNamePrefix%>.c')
   let()= textFile(fmumodel_identifierFile(simCode,guid), '<%fileNamePrefix%>_FMU.c')
+  let()= textFile(fmuModelDescriptionFile(simCode,guid), 'modelDescription.xml')
+  let()= textFile(fmudeffile(simCode), '<%fileNamePrefix%>.def')
   let()= textFile(fmuMakefile(simCode), '<%fileNamePrefix%>_FMU.makefile')
   "" // Return empty result since result written to files directly
 end translateModel;
@@ -544,7 +549,7 @@ template initVal(Exp initialValue)
   case ICONST(__) then integer
   case RCONST(__) then real
   case SCONST(__) then '"<%Util.escapeModelicaStringToXmlString(string)%>"'
-  case BCONST(__) then if bool then "true" else "false"
+  case BCONST(__) then if bool then "1" else "0"
   case ENUM_LITERAL(__) then '<%index%>/*ENUM:<%dotPath(name)%>*/'
   else "*ERROR* initial value of unknown type"
 end initVal;
@@ -848,7 +853,7 @@ template getPlatformString2(String platform, String fileNamePrefix, String dirEx
 match platform
   case "WIN32" then
   << 
-  <%fileNamePrefix%>_FMU: <%fileNamePrefix%>.def
+  <%fileNamePrefix%>_FMU: <%fileNamePrefix%>.def <%fileNamePrefix%>.dll
   <%\t%> dlltool -d <%fileNamePrefix%>.def --dllname <%fileNamePrefix%>.dll --output-lib <%fileNamePrefix%>.lib --kill-at
         
   <%\t%> mv <%fileNamePrefix%>.dll <%fileNamePrefix%>/binaries/<%platform%>/
@@ -861,14 +866,11 @@ match platform
   <%\t%> mv modelDescription.xml <%fileNamePrefix%>/modelDescription.xml
   <%\t%> cd <%fileNamePrefix%>; zip -r <%fileNamePrefix%>.fmu *
   
-  <%fileNamePrefix%>.def: <%fileNamePrefix%>.dll
-  <%\t%> $(CXX) -shared -I. -o <%fileNamePrefix%>.dll <%fileNamePrefix%>_FMU2.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -linteractive $(SENDDATALIBS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> -Wl,--output-def,<%fileNamePrefix%>.def
-  
   <%fileNamePrefix%>.dll: <%fileNamePrefix%>_FMU2.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o
   <%\t%> $(CXX) -shared -I. -o <%fileNamePrefix%>.dll <%fileNamePrefix%>_FMU2.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o  $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -linteractive $(SENDDATALIBS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> -Wl,--kill-at
   
   <%fileNamePrefix%>_FMU2.o: 
-  <%\t%> $(CXX) $(CPPFLAGS) $(CFLAGS) -c -o <%fileNamePrefix%>_FMU2.o <%fileNamePrefix%>_FMU.c
+  <%\t%> $(CC) $(CPPFLAGS) $(CFLAGS) -c -o <%fileNamePrefix%>_FMU2.o <%fileNamePrefix%>_FMU.c
   
   <%fileNamePrefix%>.o: 
   <%\t%> $(CC) $(CPPFLAGS) $(CFLAGS) -c -o <%fileNamePrefix%>.o <%fileNamePrefix%>.c
@@ -884,8 +886,8 @@ match platform
   case "LINUX"     
   case "Unix" then
   << 
-  <%fileNamePrefix%>: $(MAINFILE) <%fileNamePrefix%>_FMU.c <%fileNamePrefix%>_functions.c <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_records.c
-  <%\t%> $(CXX) -shared -I. -o <%fileNamePrefix%>$(DLLEXT) $(MAINFILE) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> <%fileNamePrefix%>_records.c
+  <%fileNamePrefix%>: clean $(MAINOBJ) <%fileNamePrefix%>_records.o
+  <%\t%> $(CXX) -shared -I. -o <%fileNamePrefix%>$(DLLEXT) $(MAINOBJ) <%fileNamePrefix%>_records.o $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(SENDDATALIBS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%>
 
   <%\t%> mkdir -p <%fileNamePrefix%>
   <%\t%> mkdir -p <%fileNamePrefix%>/binaries
@@ -934,17 +936,22 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   PLATLINUX = <%platfrom%>
   PLAT34 = <%makefileParams.platform%>
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
+  CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc" -I. <%dirExtra%> <%makefileParams.includes ; separator=" "%>
   LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -lSimulationRuntimeC <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   PERL=perl
   MAINFILE=<%fileNamePrefix%>_FMU<% if acceptMetaModelicaGrammar() then ".conv"%>.c
+  MAINOBJ=<%fileNamePrefix%>_FMU<% if acceptMetaModelicaGrammar() then ".conv"%>.o  
   
-  .PHONY: <%fileNamePrefix%>_FMU
+  PHONY: clean <%fileNamePrefix%>_FMU
   <%compilecmds%>
   
   <%fileNamePrefix%>.conv.c: <%fileNamePrefix%>.c
   <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
   <%\t%> @mv $@.tmp $@
+  $(MAINOBJ): $(MAINFILE) <%fileNamePrefix%>.c <%fileNamePrefix%>_functions.c <%fileNamePrefix%>_functions.h
+  clean:
+  <%\t%> @rm -f <%fileNamePrefix%>_records.o $(MAINOBJ) 
   >>
 end fmuMakefile;
 
@@ -957,6 +964,41 @@ match platform
   case "Unix" then "unix"
 end getPlatformString;
 
+template fmudeffile(SimCode simCode)
+ "Generates the def file of the fmu."
+::=
+match simCode
+case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
+  <<
+  EXPORTS
+    <%fileNamePrefix%>_fmiCompletedIntegratorStep @1
+    <%fileNamePrefix%>_fmiEventUpdate @2
+    <%fileNamePrefix%>_fmiFreeModelInstance @3
+    <%fileNamePrefix%>_fmiGetBoolean @4
+    <%fileNamePrefix%>_fmiGetContinuousStates @5
+    <%fileNamePrefix%>_fmiGetDerivatives @6
+    <%fileNamePrefix%>_fmiGetEventIndicators @7
+    <%fileNamePrefix%>_fmiGetInteger @8
+    <%fileNamePrefix%>_fmiGetModelTypesPlatform @9
+    <%fileNamePrefix%>_fmiGetNominalContinuousStates @10
+    <%fileNamePrefix%>_fmiGetReal @11
+    <%fileNamePrefix%>_fmiGetStateValueReferences @12
+    <%fileNamePrefix%>_fmiGetString @13
+    <%fileNamePrefix%>_fmiGetVersion @14
+    <%fileNamePrefix%>_fmiInitialize @15
+    <%fileNamePrefix%>_fmiInstantiateModel @16
+    <%fileNamePrefix%>_fmiSetBoolean @17
+    <%fileNamePrefix%>_fmiSetContinuousStates @18
+    <%fileNamePrefix%>_fmiSetDebugLogging @19
+    <%fileNamePrefix%>_fmiSetExternalFunction @20
+    <%fileNamePrefix%>_fmiSetInteger @21
+    <%fileNamePrefix%>_fmiSetReal @22
+    <%fileNamePrefix%>_fmiSetString @23
+    <%fileNamePrefix%>_fmiSetTime @24
+    <%fileNamePrefix%>_fmiTerminate @25
+  >>
+end fmudeffile;  
+  
 end SimCodeFMU;
 
 // vim: filetype=susan sw=2 sts=2

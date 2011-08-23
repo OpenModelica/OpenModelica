@@ -38,9 +38,13 @@
 
 #ifndef _SIMULATION_INIT_H
 #define _SIMULATION_INIT_H
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 int main_initialize(const std::string*method);
-
+#ifdef __cplusplus
+}
+#endif
 #ifndef NEWUOA
 #define NEWUOA newuoa_
 #endif

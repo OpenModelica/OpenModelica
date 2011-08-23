@@ -1110,6 +1110,7 @@ template functionDAE( list<SimEqSystem> allEquationsPlusWhen,
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
+  let jens = System.tmpTickReset(0)
   let eqs = (allEquationsPlusWhen |> eq =>
       equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/)
     ;separator="\n")
@@ -1533,6 +1534,64 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
     "NOT IMPLEMENTED EQUATION"
 end equation_;
 
+template myequation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
+ "Generates an equation.
+  This template should not be used for a SES_RESIDUAL.
+  Residual equations are handled differently."
+::=
+  match eq
+  case e as SES_SIMPLE_ASSIGN(__)
+    then 
+    <<
+    printf("Line <%System.tmpTick()%>\n");
+    <%equationSimpleAssign(e, context, &varDecls /*BUFD*/)%>
+    printf("OK\n");
+    >>
+  case e as SES_ARRAY_CALL_ASSIGN(__)
+    then
+    <<
+    printf("Line <%System.tmpTick()%>\n");
+    <%equationArrayCallAssign(e, context, &varDecls /*BUFD*/)%>
+    printf("OK\n");
+    >>
+  case e as SES_ALGORITHM(__)
+    then
+    <<
+    printf("Line <%System.tmpTick()%>\n");
+    <%equationAlgorithm(e, context, &varDecls /*BUFD*/)%>
+    printf("OK\n");
+    >>
+  case e as SES_LINEAR(__)
+    then
+    <<
+    printf("Line <%System.tmpTick()%>\n");
+    <%equationLinear(e, context, &varDecls /*BUFD*/)%>
+    printf("OK\n");
+    >>
+  case e as SES_MIXED(__)
+    then
+    <<
+    printf("Line <%System.tmpTick()%>\n");
+    <%equationMixed(e, context, &varDecls /*BUFD*/)%>
+    printf("OK\n");
+    >>
+  case e as SES_NONLINEAR(__)
+    then
+    <<
+    printf("Line <%System.tmpTick()%>\n");
+    <%equationNonlinear(e, context, &varDecls /*BUFD*/)%>
+    printf("OK\n");
+    >>
+  case e as SES_WHEN(__)
+    then
+    <<
+    printf("Line <%System.tmpTick()%>\n");
+    <%equationWhen(e, context, &varDecls /*BUFD*/)%>
+    printf("OK\n");
+    >>
+  else
+    "NOT IMPLEMENTED EQUATION"
+end myequation_;
 
 template inlineArray(Context context, String arr, ComponentRef c)
 ::= match context case INLINE_CONTEXT(__) then match c
@@ -1876,6 +1935,7 @@ template simulationFunctionsHeaderFile(String filePrefix, list<Function> functio
   #define <%stringReplace(filePrefix,".","_")%>__H
   <%commonHeader()%>
   #include "simulation_runtime.h"
+  #include <stdio.h>
   #ifdef __cplusplus
   extern "C" {
   #endif

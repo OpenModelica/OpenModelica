@@ -42,7 +42,7 @@
 #define DDASRT ddasrt_
 
 #include "fortran_types.h"
-
+#ifdef __cplusplus
 extern "C" {
   void  DDASRT(
       int (*res) (double *t, double *y, double *yprime, double *delta, fortran_integer *ires, double *rpar, fortran_integer* ipar),
@@ -72,7 +72,13 @@ extern "C" {
 
 int solver_main( int argc, char** argv,double &start,  double &stop, double &step, long &outputSteps,
     double &tolerance, int flag);
-
+#endif
+#ifdef __cplusplus
+extern "C" {
+#endif
 void update_DAEsystem();
+#ifdef __cplusplus
+}
+#endif
 
 #endif

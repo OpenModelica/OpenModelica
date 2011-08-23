@@ -949,7 +949,6 @@ algorithm
   Debug.execStat("SimCode",CevalScript.RT_CLOCK_BUILD_MODEL);
   
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
-  Tpl.tplNoret(SimCodeC.translateModel, simCode);
   Tpl.tplNoret(SimCodeFMU.translateModel, simCode);
   timeTemplates := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
 end generateModelCodeFMU;

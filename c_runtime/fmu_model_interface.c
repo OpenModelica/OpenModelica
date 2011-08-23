@@ -351,7 +351,7 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
                     }
                    comp->time = &globalData->timeValue;
                    setLocalData(globalData);
-                   sim_verbose = comp->loggingOn?1:0;
+                   sim_verbose = comp->loggingOn?64:0;
                    sim_noemit = 0;
                    jac_flag = 0;
                    num_jac_flag = 0;
@@ -793,7 +793,7 @@ fmiStatus fmiGetEventIndicators(fmiComponent c, fmiReal eventIndicators[], size_
 fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal relativeTolerance,
             fmiEventInfo* eventInfo) {
               int sampleEvent_actived = 0;
-              std::string init_method = std::string("simplex");
+              //std::string init_method = std::string("simplex");
               ModelInstance* comp = (ModelInstance *)c;
               if (invalidState(comp, "fmiInitialize", modelInstantiated))
                 return fmiError;
@@ -828,14 +828,19 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
               functionAliasEquations();
 
 
-              /*try{
-                if (main_initialize(&init_method))
+              /*try{*/
+                if (main_initialize(0))
                   {
                     comp->functions.logger(c, comp->instanceName, fmiError, "log",
                     "fmiInitialize: main_initialize failed");
                     return fmiError;
                   }
-				  */
+                else
+                {
+                     comp->functions.logger(c, comp->instanceName, fmiError, "log",
+                     "fmiInitialize: fmiInitialize failed!");
+                     return fmiError;
+                }
                 SaveZeroCrossings();
                 saveall();
 
@@ -846,6 +851,7 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
                     activateSampleEvents();
                   }
                 update_DAEsystem();
+			
                 SaveZeroCrossings();
                 if (sampleEvent_actived)
                   {
