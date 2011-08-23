@@ -268,7 +268,7 @@ inline static int anyStringWork(void* any, int ix)
     ix += sprintf(anyStringBuf+ix, "FREE(%u)", numslots);
     return ix;
   }
-  if (numslots>0 && ctor == MMC_ARRAY_TAG) { /* MetaModelica-style array */
+  if (numslots>=0 && ctor == MMC_ARRAY_TAG) { /* MetaModelica-style array */
     checkAnyStringBufSize(ix,40);
     ix += sprintf(anyStringBuf+ix, "MetaArray(");
     for (i=1; i<=numslots; i++) {
