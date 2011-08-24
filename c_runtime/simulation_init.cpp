@@ -272,7 +272,7 @@ int initialize(const std::string init_method)
 }
 
 int
-main_initialize(const std::string* method)
+main_initialize(const char* method)
 {
   std::string init_method = std::string("simplex");
 

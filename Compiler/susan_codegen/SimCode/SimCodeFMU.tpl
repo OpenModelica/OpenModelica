@@ -374,9 +374,18 @@ case SIMCODE(__) then
   #define MODEL_GUID "{<%guid%>}"
   
   // include fmu header files, typedefs and macros
+  #include <stdio.h>
+  #include <string.h>
+  #include <assert.h>  
+  #include "<%fileNamePrefix%>_functions.h"
+  #include "simulation_init.h"
   #include "fmiModelFunctions.h"
   #include "fmu_model_interface.h"
-  #include "<%fileNamePrefix%>_functions.h"
+  #include "solver_main.h"  
+
+  #ifdef __cplusplus
+  extern "C" {
+  #endif
 
   void setStartValues(ModelInstance *comp);
   fmiStatus getEventIndicator(ModelInstance* comp, fmiReal eventIndicators[]);
@@ -406,6 +415,10 @@ case SIMCODE(__) then
   <%setBooleanFunction(modelInfo)%>
   <%getStringFunction(modelInfo)%>
   <%setExternalFunction(modelInfo)%>  
+  
+  #ifdef __cplusplus
+  }
+  #endif  
   
   >>
 end fmumodel_identifierFile;
@@ -866,18 +879,9 @@ match platform
   <%\t%> mv modelDescription.xml <%fileNamePrefix%>/modelDescription.xml
   <%\t%> cd <%fileNamePrefix%>; zip -r <%fileNamePrefix%>.fmu *
   
-  <%fileNamePrefix%>.dll: <%fileNamePrefix%>_FMU2.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o
-  <%\t%> $(CXX) -shared -I. -o <%fileNamePrefix%>.dll <%fileNamePrefix%>_FMU2.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o  $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -linteractive $(SENDDATALIBS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> -Wl,--kill-at
+  <%fileNamePrefix%>.dll: <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o
+  <%\t%> $(CXX) -shared -I. -o <%fileNamePrefix%>.dll <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o  $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -linteractive $(SENDDATALIBS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> -Wl,--kill-at
   
-  <%fileNamePrefix%>_FMU2.o: 
-  <%\t%> $(CC) $(CPPFLAGS) $(CFLAGS) -c -o <%fileNamePrefix%>_FMU2.o <%fileNamePrefix%>_FMU.c
-  
-  <%fileNamePrefix%>.o: 
-  <%\t%> $(CC) $(CPPFLAGS) $(CFLAGS) -c -o <%fileNamePrefix%>.o <%fileNamePrefix%>.c
-  
-  <%fileNamePrefix%>_records.o: 
-  <%\t%> $(CC)  $(CPPFLAGS) $(CFLAGS) -c -o <%fileNamePrefix%>_records.o <%fileNamePrefix%>_records.c
-
   <%\t%> mkdir -p <%fileNamePrefix%>
   <%\t%> mkdir -p <%fileNamePrefix%>/binaries
   <%\t%> mkdir -p <%fileNamePrefix%>/binaries/<%platform%>

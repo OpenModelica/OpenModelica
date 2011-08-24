@@ -369,7 +369,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
       rt_tick(SIM_TIMER_INIT);
   }
   try{
-      if (main_initialize(init_method))
+      if (main_initialize(init_method!=0?init_method->c_str():0))
         {
           throw TerminateSimulationException(globalData->timeValue, string(
               "Error in initialization. Storing results and exiting.\n"));

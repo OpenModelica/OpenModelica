@@ -32,16 +32,16 @@
 /*
  * File: simulation_input.h
  */
+#ifndef _SIMULATION_INIT_H
+#define _SIMULATION_INIT_H
 
+#ifdef __cplusplus
 #include <string>
 #include <cstdlib>
 
-#ifndef _SIMULATION_INIT_H
-#define _SIMULATION_INIT_H
-#ifdef __cplusplus
 extern "C" {
 #endif
-int main_initialize(const std::string*method);
+int main_initialize(const char* method);
 #ifdef __cplusplus
 }
 #endif

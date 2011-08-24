@@ -758,8 +758,7 @@ callSolver(int argc, char**argv, string method, string outputFormat,
   return retVal;
 }
 
-
-static DATA *initializeDataStruc2(DATA *returnData)
+DATA *initializeDataStruc2(DATA *returnData)
 {
   if (returnData->nStates) {
     returnData->states = (double*) malloc(sizeof(double)*returnData->nStates);

@@ -3,12 +3,11 @@
 /******************************************************************************
  *fmuTemplate.h
  ******************************************************************************/
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
 #include "fmiModelFunctions.h"
-#include "simulation_runtime.h"
-//#include "simulation_init.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // macros used to define variables
 #define  r(vr) comp->r[vr]
@@ -59,5 +58,9 @@ FmiGreaterEq(fmiReal a, fmiReal b);
 #define FMIZEROCROSSING(ind,exp) { \
   eventIndicators[ind] = exp; \
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

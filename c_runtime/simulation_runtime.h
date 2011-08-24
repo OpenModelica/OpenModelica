@@ -312,6 +312,7 @@ extern modelica_boolean *backuprelations;
  * to avoid memory leak.
  */
 DATA* initializeDataStruc();
+DATA *initializeDataStruc2(DATA *returnData);
 
 /* this frees the memory that is allocated in the data-structure.
  * The second argument must have the same value as the argument in initializeDataStruc

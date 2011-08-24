@@ -55,8 +55,9 @@ typedef struct _ExpressionDelayBuffer
 // the delayStructure looks like a matrix (rows = expressionNumber+currentColumnIndex, columns={time, value})
 typedef ringbuffer<t_TimeAndValue> t_buffer;
 t_buffer **delayStructure;
+extern "C" {
 extern const int numDelayExpressionIndex;
-
+}
 void initDelay(double startTime)
 {
   // get the start time of the simulation: time.start.
