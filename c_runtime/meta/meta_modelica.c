@@ -476,7 +476,6 @@ inline static int getTypeOfAnyWork(void* any, int ix)  /* for debugging */
   mmc_uint_t hdr;
   int numslots;
   unsigned ctor;
-  int i;
   struct record_description *desc;
 
   if (any == NULL) {
@@ -524,19 +523,9 @@ inline static int getTypeOfAnyWork(void* any, int ix)  /* for debugging */
   }
 
   if (numslots>0 && ctor > 1) { /* RECORD */
-    desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1));
-    checkAnyStringBufSize(ix,strlen(desc->name)+2);
-    ix += sprintf(anyStringBuf+ix, "%s(", desc->name);
-    for (i=2; i<=numslots; i++) {
-      checkAnyStringBufSize(ix,strlen(desc->fieldNames[i-2])+4);
-      ix += sprintf(anyStringBuf+ix, "%s( = ", desc->fieldNames[i-2]);
-      ix = getTypeOfAnyWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i)), ix);
-      if (i!=numslots)
-        checkAnyStringBufSize(ix,3);
-        ix += sprintf(anyStringBuf+ix, ", ");
-    }
-    checkAnyStringBufSize(ix,2);
-    ix += sprintf(anyStringBuf+ix, ")");
+    desc = MMC_CAR(any);
+    checkAnyStringBufSize(ix,strlen(desc->name)+8);
+    ix += sprintf(anyStringBuf+ix, "record<%s>", desc->name);
     return ix;
   }
 
@@ -552,6 +541,7 @@ inline static int getTypeOfAnyWork(void* any, int ix)  /* for debugging */
   if (numslots==0 && ctor==1) /* NONE() */ {
     checkAnyStringBufSize(ix,12);
     ix += sprintf(anyStringBuf+ix, "Option<Any>");
+    return ix;
   }
 
   if (numslots==1 && ctor==1) /* SOME(x) */ {
@@ -572,14 +562,25 @@ inline static int getTypeOfAnyWork(void* any, int ix)  /* for debugging */
     return ix;
   }
 
-  fprintf(stderr, "%s:%d: %d slots; ctor %d - FAILED to detect the type\n", __FILE__, __LINE__, numslots, ctor);
-  EXIT(1);
+  ix = sprintf(anyStringBuf+ix, "%s:%d: %d slots; ctor %d - FAILED to detect the type\n", __FILE__, __LINE__, numslots, ctor);
+  return ix;
 }
 
 char* getTypeOfAny(void* any) /* for debugging */
 {
   initializeStringBuffer();
   getTypeOfAnyWork(any,0);
+  return strdup(anyStringBuf);
+}
+
+char* getRecordElementName(void* any, int element) {
+  struct record_description *desc;
+
+  initializeStringBuffer();
+
+  desc = MMC_CAR(any);
+  checkAnyStringBufSize(0,strlen(desc->fieldNames[element]));
+  sprintf(anyStringBuf, desc->fieldNames[element]);
   return strdup(anyStringBuf);
 }
 
@@ -590,7 +591,7 @@ unsigned long mmc_prim_hash(void *p)
   mmc_uint_t phdr = 0;
   mmc_uint_t slots = 0;
   
-mmc_prim_hash_tail_recur:
+  mmc_prim_hash_tail_recur:
   if ((0 == ((mmc_sint_t)p & 1)))
   {
     return hash + (unsigned long)MMC_UNTAGFIXNUM(p);
