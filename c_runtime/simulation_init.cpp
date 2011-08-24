@@ -287,7 +287,7 @@ main_initialize(const char* method)
 
   if (sim_verbose >= LOG_SOLVER)
   {
-    sim_result->emit();
+    if (sim_result) sim_result->emit();
   }
   /* call initialize function and save start values */
   saveall();
@@ -303,7 +303,7 @@ main_initialize(const char* method)
   saveall();
   if (sim_verbose >= LOG_SOLVER)
   {
-    sim_result->emit();
+    if (sim_result) sim_result->emit();
   }
   // start with the real initialization
   globalData->init = 1;
@@ -336,7 +336,7 @@ main_initialize(const char* method)
 
   if (sim_verbose >= LOG_SOLVER)
   {
-    sim_result->emit();
+    if (sim_result) sim_result->emit();
   }
 
   update_DAEsystem();
@@ -344,7 +344,7 @@ main_initialize(const char* method)
   saveall();
   if (sim_verbose >= LOG_SOLVER)
   {
-    sim_result->emit();
+    if (sim_result) sim_result->emit();
   }
   storeExtrapolationDataEvent();
   globalData->init = 0;

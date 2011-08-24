@@ -118,7 +118,7 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
                     }
                    comp->time = &globalData->timeValue;
                    setLocalData(globalData);
-                   sim_verbose = 0;//comp->loggingOn?64:0;
+                   sim_verbose = comp->loggingOn?64:0;
                    sim_noemit = 0;
                    jac_flag = 0;
                    num_jac_flag = 0;
@@ -602,12 +602,6 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
                     "fmiInitialize: main_initialize failed");
                     return fmiError;
                   }
-                else
-                {
-                     comp->functions.logger(c, comp->instanceName, fmiError, "log",
-                     "fmiInitialize: fmiInitialize failed!");
-                     return fmiError;
-                }
                 SaveZeroCrossings();
                 saveall();
 

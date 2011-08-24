@@ -716,7 +716,7 @@ EventHandle(int flag)
       functionAliasEquations();
       if (sim_verbose >= LOG_EVENTS)
         {
-          sim_result->emit();
+          if (sim_result) sim_result->emit();
         }
       while (needToIterate || checkForDiscreteChanges())
         {
@@ -735,7 +735,7 @@ EventHandle(int flag)
           functionAliasEquations();
           if (sim_verbose >= LOG_EVENTS)
             {
-              sim_result->emit();
+              if (sim_result) sim_result->emit();
             }
           IterationNum++;
           if (IterationNum > IterationMax)
@@ -763,7 +763,7 @@ EventHandle(int flag)
       functionDAE(&needToIterate);
       if (sim_verbose >= LOG_EVENTS)
         {
-          sim_result->emit();
+          if (sim_result) sim_result->emit();
         }
       while (needToIterate || checkForDiscreteChanges())
         {
@@ -781,7 +781,7 @@ EventHandle(int flag)
           functionDAE(&needToIterate);
           if (sim_verbose >= LOG_EVENTS)
             {
-              sim_result->emit();
+              if (sim_result) sim_result->emit();
             }
           IterationNum++;
           if (IterationNum > IterationMax)
@@ -792,7 +792,7 @@ EventHandle(int flag)
 
         }
       saveall();
-      sim_result->emit();
+      if (sim_result) sim_result->emit();
 
       //Activate sample and evaluate again
       activateSampleEvents();
@@ -800,7 +800,7 @@ EventHandle(int flag)
       functionDAE(&needToIterate);
       if (sim_verbose >= LOG_EVENTS)
         {
-          sim_result->emit();
+          if (sim_result) sim_result->emit();
         }
       while (needToIterate || checkForDiscreteChanges())
         {
@@ -818,7 +818,7 @@ EventHandle(int flag)
           functionDAE(&needToIterate);
           if (sim_verbose >= LOG_EVENTS)
             {
-              sim_result->emit();
+              if (sim_result) sim_result->emit();
             }
           IterationNum++;
           if (IterationNum > IterationMax)
@@ -955,7 +955,7 @@ FindRoot(double *EventTime)
   functionODE();
   functionAlgebraics();
   saveall();
-  sim_result->emit();
+  if (sim_result) sim_result->emit();
 
   //determined system at t_e + epsilon
   globalData->timeValue = time_right;
