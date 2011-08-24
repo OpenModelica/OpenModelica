@@ -1524,4 +1524,56 @@ algorithm
   end match;
 end derivativeEquation;
 
+public function addOperation
+  input BackendDAE.Equation eq;
+  input DAE.SymbolicOperation op;
+  output BackendDAE.Equation oeq;
+algorithm
+  oeq := match (eq,op)
+    local
+      Integer i1,i2;
+      DAE.Exp e1,e2;
+      list<DAE.Exp> es,es1,es2;
+      DAE.ElementSource source;
+      BackendDAE.WhenEquation whenEquation;
+      DAE.ComponentRef cr1;
+    case (BackendDAE.EQUATION(e1,e2,source),op)
+      equation
+        source = DAEUtil.addSymbolicTransformation(source,op);
+      then BackendDAE.EQUATION(e1,e2,source);
+    case (BackendDAE.ARRAY_EQUATION(i1,es1,source),op)
+      equation
+        source = DAEUtil.addSymbolicTransformation(source,op);
+      then BackendDAE.ARRAY_EQUATION(i1,es1,source);
+    case (BackendDAE.SOLVED_EQUATION(cr1,e1,source),op)
+      equation
+        source = DAEUtil.addSymbolicTransformation(source,op);
+      then BackendDAE.SOLVED_EQUATION(cr1,e1,source);
+    case (BackendDAE.RESIDUAL_EQUATION(e1,source),op)
+      equation
+        source = DAEUtil.addSymbolicTransformation(source,op);
+      then BackendDAE.RESIDUAL_EQUATION(e1,source);
+    case (BackendDAE.ALGORITHM(i1,es1,es2,source),op)
+      equation
+        source = DAEUtil.addSymbolicTransformation(source,op);
+      then BackendDAE.ALGORITHM(i1,es1,es2,source);
+    case (BackendDAE.WHEN_EQUATION(whenEquation,source),op)
+      equation
+        source = DAEUtil.addSymbolicTransformation(source,op);
+      then BackendDAE.WHEN_EQUATION(whenEquation,source);
+    case (BackendDAE.COMPLEX_EQUATION(i1,e1,e2,source),op)
+      equation
+        source = DAEUtil.addSymbolicTransformation(source,op);
+      then BackendDAE.COMPLEX_EQUATION(i1,e1,e2,source);
+    case (BackendDAE.IF_EQUATION(i1,i2,es,source),op)
+      equation
+        source = DAEUtil.addSymbolicTransformation(source,op);
+      then BackendDAE.IF_EQUATION(i1,i2,es,source);
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"BackendEquation.addOperation failed"});
+      then fail();
+  end match;
+end addOperation;
+
 end BackendEquation;

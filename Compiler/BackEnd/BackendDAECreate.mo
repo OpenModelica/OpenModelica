@@ -2590,97 +2590,12 @@ algorithm
       equation
         (eqns1,(vars1,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,traverserexpandDerEquation,(vars,funcs));
         (inieqns1,(vars2,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,traverserexpandDerEquation,(vars1,funcs));
-        (arreqns1,(vars3,_)) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(arreqns,traverserexpandDerExp,BackendEquation.traverseBackendDAEExpsArrayEqnWithUpdate,1,arrayLength(arreqns),(vars2,funcs));
-        (algorithms1,(vars4,_)) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(algorithms,traverserexpandDerExp,BackendEquation.traverseBackendDAEExpsAlgortihmWithUpdate,1,arrayLength(algorithms),(vars3,funcs));
+        (arreqns1,(vars3,_,_)) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(arreqns,traverserexpandDerExp,BackendEquation.traverseBackendDAEExpsArrayEqnWithUpdate,1,arrayLength(arreqns),(vars2,{},funcs));
+        (algorithms1,(vars4,_,_)) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(algorithms,traverserexpandDerExp,BackendEquation.traverseBackendDAEExpsAlgortihmWithUpdate,1,arrayLength(algorithms),(vars3,{},funcs));
       then
         (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars4,eqns1,inieqns1,m,mT)::{},BackendDAE.SHARED(knvars,exobj,av,remeqns,arreqns1,algorithms1,einfo,eoc)));
   end match;
 end expandDerOperator;
-
-protected function expandDerOperatorAlgs
-"Help function to expandDerOperator"
-  input list<DAE.Algorithm> algs;
-  input tuple<BackendDAE.Variables,DAE.FunctionTree> vars;
-  output list<DAE.Algorithm> outAlgs;
-  output tuple<BackendDAE.Variables,DAE.FunctionTree> outVars;
-algorithm
-  (outAlgs,outVars) := matchcontinue(algs,vars)
-    local
-      DAE.Algorithm a;
-    case({},vars) then ({},vars);
-    case(a::algs,vars)
-      equation
-        (a,vars) = expandDerOperatorAlg(a,vars);
-        (algs,vars)  = expandDerOperatorAlgs(algs,vars);
-      then (a::algs,vars);
-
-    case (_,_)
-      equation
-        Debug.fprint("failtrace", "-BackendDAECreate.expandDerOperatorAlgs failed\n");
-      then fail();
-
-  end matchcontinue;
-end expandDerOperatorAlgs;
-
-protected function expandDerOperatorAlg
-"Help function to to expandDerOperator, handles Algorithms"
-  input DAE.Algorithm alg;
-  input tuple<BackendDAE.Variables,DAE.FunctionTree> vars;
-  output DAE.Algorithm outAlg;
-  output tuple<BackendDAE.Variables,DAE.FunctionTree> outVars;
-algorithm
-  (outAlg,outVars) := match(alg,vars)
-    local
-      list<Algorithm.Statement> stmts;
-    case(DAE.ALGORITHM_STMTS(stmts),vars)
-      equation
-        (stmts,vars) = DAEUtil.traverseDAEEquationsStmts(stmts,traverserexpandDerExp,vars);
-      then (DAE.ALGORITHM_STMTS(stmts),vars);
-  end match;
-end expandDerOperatorAlg;
-
-protected function expandDerOperatorArrEqns
-"Help function to expandDerOperator"
-  input list<BackendDAE.MultiDimEquation> eqns;
-  input tuple<BackendDAE.Variables,DAE.FunctionTree> vars;
-  output list<BackendDAE.MultiDimEquation> outEqns;
-  output tuple<BackendDAE.Variables,DAE.FunctionTree> outVars;
-algorithm
-  (outEqns,outVars) := matchcontinue(eqns,vars)
-    local
-      BackendDAE.MultiDimEquation e;
-    case({},vars) then ({},vars);
-    case(e::eqns,vars)
-      equation
-        (e,vars) = expandDerOperatorArrEqn(e,vars);
-        (eqns,vars)  = expandDerOperatorArrEqns(eqns,vars);
-      then (e::eqns,vars);
-
-    else
-      equation
-        Debug.fprint("failtrace", "-BackendDAECreate.expandDerOperatorArrEqns failed\n");
-      then fail();
-  end matchcontinue;
-end expandDerOperatorArrEqns;
-
-protected function expandDerOperatorArrEqn
-"Help function to to expandDerOperator, handles Array equations"
-  input BackendDAE.MultiDimEquation arrEqn;
-  input tuple<BackendDAE.Variables,DAE.FunctionTree> vars;
-  output BackendDAE.MultiDimEquation outArrEqn;
-  output tuple<BackendDAE.Variables,DAE.FunctionTree> outVars;
-algorithm
-  (outArrEqn,outVars) := match (arrEqn,vars)
-    local
-      list<Integer> dims; DAE.Exp e1,e2;
-      DAE.ElementSource source "the element source";
-
-    case(BackendDAE.MULTIDIM_EQUATION(dims,e1,e2,source),vars) equation
-      ((e1,vars)) = traverserexpandDerExp((e1,vars));
-      ((e2,vars)) = traverserexpandDerExp((e2,vars));
-    then (BackendDAE.MULTIDIM_EQUATION(dims,e1,e2,source),vars);
-  end match;
-end expandDerOperatorArrEqn;
 
 protected function traverserexpandDerEquation
   "Help function to e.g. traverserexpandDerEquation"
@@ -2689,28 +2604,41 @@ protected function traverserexpandDerEquation
 protected
    BackendDAE.Equation e,e1;
    tuple<BackendDAE.Variables,DAE.FunctionTree> ext_arg, ext_art1;
+   BackendDAE.Variables vars;
+   DAE.FunctionTree funcs;
+   Boolean b;
+   list<DAE.SymbolicOperation> ops;
 algorithm
-  (e,ext_arg) := tpl;
-  (e1,ext_art1) := BackendEquation.traverseBackendDAEExpsEqn(e,traverserexpandDerExp,ext_arg);
-  outTpl := ((e1,ext_art1));
+  (e,(vars,funcs)) := tpl;
+  (e1,(vars,ops,funcs)) := BackendEquation.traverseBackendDAEExpsEqn(e,traverserexpandDerExp,(vars,{},funcs));
+  e1 := Util.listFoldR(ops,BackendEquation.addOperation,e1);
+  outTpl := ((e1,(vars,funcs)));
 end traverserexpandDerEquation;
 
 protected function traverserexpandDerExp
   "Help function to e.g. traverserexpandDerExp"
-  input tuple<DAE.Exp,tuple<BackendDAE.Variables,DAE.FunctionTree>> tpl;
-  output tuple<DAE.Exp,tuple<BackendDAE.Variables,DAE.FunctionTree>> outTpl;
+  input tuple<DAE.Exp,tuple<BackendDAE.Variables,list<DAE.SymbolicOperation>,DAE.FunctionTree>> tpl;
+  output tuple<DAE.Exp,tuple<BackendDAE.Variables,list<DAE.SymbolicOperation>,DAE.FunctionTree>> outTpl;
 protected
   DAE.Exp e,e1;
-  tuple<BackendDAE.Variables,DAE.FunctionTree> ext_arg, ext_art1;
+  tuple<BackendDAE.Variables,Boolean,DAE.FunctionTree> ext_arg;
+  BackendDAE.Variables vars;
+  list<DAE.SymbolicOperation> ops;
+  DAE.FunctionTree funcs;
+  Boolean b;
 algorithm
-  (e,ext_arg) := tpl;
-  outTpl := Expression.traverseExp(e,expandDerExp,ext_arg);
+  (e,(vars,ops,funcs)) := tpl;
+  ext_arg := (vars,false,funcs);
+  ((e1,ext_arg)) := Expression.traverseExp(e,expandDerExp,ext_arg);
+  (vars,b,funcs) := ext_arg;
+  ops := Util.listConsOnTrue(b,DAE.OP_DERIVE(DAE.crefTime,e,e1),ops);
+  outTpl := (e1,(vars,ops,funcs));
 end traverserexpandDerExp;
 
 protected function expandDerExp
 "Help function to e.g. expandDerOperatorEqn"
-  input tuple<DAE.Exp,tuple<BackendDAE.Variables,DAE.FunctionTree>> tpl;
-  output tuple<DAE.Exp,tuple<BackendDAE.Variables,DAE.FunctionTree>> outTpl;
+  input tuple<DAE.Exp,tuple<BackendDAE.Variables,Boolean,DAE.FunctionTree>> tpl;
+  output tuple<DAE.Exp,tuple<BackendDAE.Variables,Boolean,DAE.FunctionTree>> outTpl;
 algorithm
   outTpl := matchcontinue(tpl)
     local
@@ -2721,20 +2649,21 @@ algorithm
       list<DAE.ComponentRef> newStates;
       DAE.ComponentRef cr;
       String str;
-    case((DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={e1 as DAE.CREF(componentRef=cr)})}),(vars,funcs)))
+      list<DAE.SymbolicOperation> ops;
+    case((DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={e1 as DAE.CREF(componentRef=cr)})}),(vars,_,funcs)))
       equation
         str = ComponentReference.crefStr(cr);
         str = stringAppendList({"The model includes derivatives of order > 1 for: ",str,". That is not supported. Real d", str, " = der(", str, ") *might* result in a solvable model"});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();      
-    case((DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={e1}),(vars,funcs)))
+    case((DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={e1}),(vars,_,funcs)))
       equation
         e1 = Derive.differentiateExpTime(e1,(vars,funcs));
         (e1,_) = ExpressionSimplify.simplify(e1);
         ((_,bt)) = statesExp((e1,BackendDAE.emptyBintree));
         (newStates,_) = BackendDAEUtil.bintreeToList(bt);
         vars = updateStatesVars(vars,newStates);
-      then ((e1,(vars,funcs)));
+      then ((e1,(vars,true,funcs)));
     case tpl then tpl;
   end matchcontinue;
 end expandDerExp;
