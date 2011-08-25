@@ -656,12 +656,12 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
     if (!init_unknown_vars.empty())
 	{
 		long N = init_unknown_vars.size();
-		long NPT = N+2;
+		long NPT = 2*N+2;
 		double* w = new double[N];
 		for (unsigned i = 0; i < init_unknown_vars.size(); i++)
 			w[i] = *(init_unknown_vars[i]);
 		double RHOBEG = 10.0;
-		double RHOEND = 1.0E-6;
+		double RHOEND = 1.0E-7;
 		long IPRINT = 0;
 		long MAXFUN = 50000;
 		double* scratch = new double[(NPT+13)*(NPT+N)+3*N*(N+3)/2];
