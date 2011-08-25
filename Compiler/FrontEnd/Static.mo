@@ -10237,9 +10237,6 @@ algorithm
         true = Types.equivtypes(tt,idTp);
         (cache,v) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG(info));
         e = ValuesUtil.valueExp(v);
-        et = Types.typeOfValue(v);
-        Error.assertion(Types.equivtypes(tt,et),"Should not need to match types after ceval: " +& Types.unparseType(tt) +& Types.unparseType(et) +& Types.unparseType(idTp) +& "\n",info);
-        (e_1,_) = Types.matchType(e, et, tt, true);
       then
         (cache,e,DAE.C_CONST(),attr);
     
@@ -10263,11 +10260,8 @@ algorithm
         e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy,true);
         (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),Ceval.MSG(info));
         e = ValuesUtil.valueExp(v);
-        et = Types.typeOfValue(v);
-        Error.assertion(Types.equivtypes(tt,et),"Should not need to match types after ceval",info);
-        (e_1,_) = Types.matchType(e, et, tt, true);
       then
-        (cache,e_1,DAE.C_PARAM(),attr);
+        (cache,e,DAE.C_PARAM(),attr);
 
     // a binding equation and evalparam
     case (cache,env,cr,attr as DAE.ATTR(variability = var),_,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,info) 
@@ -10284,11 +10278,8 @@ algorithm
         e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy,true);
         (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),Ceval.MSG(info));
         e = ValuesUtil.valueExp(v);
-        et = Types.typeOfValue(v);
-        Error.assertion(Types.equivtypes(tt,et),"Should not need to match types after ceval",info);
-        (e_1,_) = Types.matchType(e, et, tt, true);
       then
-        (cache,e_1,DAE.C_PARAM(),attr);
+        (cache,e,DAE.C_PARAM(),attr);
 
     // vectorization of parameters with valuebound
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),_,tt,DAE.VALBOUND(valBound = v),doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,info)
