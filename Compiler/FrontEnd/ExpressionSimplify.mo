@@ -2673,7 +2673,7 @@ protected function simplifyAsubCref
   input Integer sub;
   output DAE.ComponentRef res;
 algorithm
-  res := match(cr,sub)
+  res := matchcontinue (cr,sub)
     local 
       Type t,t1,t2;
       Boolean b;
@@ -2701,6 +2701,14 @@ algorithm
         c_1;
 
     //  qualified name subscript
+    case (DAE.CREF_QUAL(idn,t2 as DAE.ET_ARRAY(arrayDimensions=dims),s,c),sub)
+      equation
+        true = listLength(dims) > listLength(s);
+        s_1 = Expression.subscriptsAppend(s, DAE.ICONST(sub));
+        c_1 = ComponentReference.makeCrefQual(idn,t2,s_1,c);
+      then 
+        c_1;
+
     case (DAE.CREF_QUAL(idn,t2,s,c),sub)
       equation
         c_1 = simplifyAsubCref(c,sub);
@@ -2708,7 +2716,7 @@ algorithm
       then 
         c_1;
 
-  end match;
+  end matchcontinue;
 end simplifyAsubCref;
 
 protected function simplifyAsub

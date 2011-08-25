@@ -10232,14 +10232,16 @@ algorithm
         (cache, DAE.ENUM_LITERAL(p, i), DAE.C_CONST(), attr);
                  
     // a constant -> evaluate binding
-    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,tt,binding,doVect,_,_,info)
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,tt,binding,doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,info)
       equation
+        true = Types.equivtypes(tt,idTp);
         (cache,v) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG(info));
         e = ValuesUtil.valueExp(v);
         et = Types.typeOfValue(v);
+        Error.assertion(Types.equivtypes(tt,et),"Should not need to match types after ceval: " +& Types.unparseType(tt) +& Types.unparseType(et) +& Types.unparseType(idTp) +& "\n",info);
         (e_1,_) = Types.matchType(e, et, tt, true);
       then
-        (cache,e_1,DAE.C_CONST(),attr);
+        (cache,e,DAE.C_CONST(),attr);
     
     // a constant with some for iterator constness -> don't constant evaluate
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),SOME(_),tt,_,doVect,_,_,info)
@@ -10262,6 +10264,7 @@ algorithm
         (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),Ceval.MSG(info));
         e = ValuesUtil.valueExp(v);
         et = Types.typeOfValue(v);
+        Error.assertion(Types.equivtypes(tt,et),"Should not need to match types after ceval",info);
         (e_1,_) = Types.matchType(e, et, tt, true);
       then
         (cache,e_1,DAE.C_PARAM(),attr);
@@ -10282,6 +10285,7 @@ algorithm
         (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),Ceval.MSG(info));
         e = ValuesUtil.valueExp(v);
         et = Types.typeOfValue(v);
+        Error.assertion(Types.equivtypes(tt,et),"Should not need to match types after ceval",info);
         (e_1,_) = Types.matchType(e, et, tt, true);
       then
         (cache,e_1,DAE.C_PARAM(),attr);
@@ -10297,16 +10301,19 @@ algorithm
         (cache,e_1,DAE.C_PARAM(),attr);
 
     // a constant with a binding
-    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,info)
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,tt,DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,info)
       equation 
         expTy = Types.elabType(tt) "Constants with equal bindings should be constant, i.e. true
                                     but const is passed on, allowing constants to have wrong bindings
                                     This must be caught later on." ;
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy,true);
+        e = Expression.makeCrefExp(cr_1,expTy);
+        e_1 = crefVectorize(doVect,e, tt,NONE(),expIdTy,true);
+        (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),Ceval.MSG(info));
+        e_1 = ValuesUtil.valueExp(v);
       then
-        (cache,e_1,const,attr);
+        (cache,e_1,DAE.C_CONST(),attr);
 
     // vectorization of parameters with binding equations
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),_,tt,DAE.EQBOUND(exp = exp ,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),_,info)
@@ -10319,14 +10326,15 @@ algorithm
         (cache,e_1,DAE.C_PARAM(),attr);
 
     // variables with constant binding
-    case (cache,env,cr,attr,_,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),_,info)
+    case (cache,env,cr,attr,_,tt,DAE.EQBOUND(exp = exp),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),_,info)
       equation
         expTy = Types.elabType(tt) "..the rest should be non constant, even if they have a constant binding." ;
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
         e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy,true);
+        const = Types.variabilityToConst(DAEUtil.getAttrVariability(attr));
       then
-        (cache,e_1,DAE.C_VAR(),attr);
+        (cache,e_1,const,attr);
 
     // if value not constant, but references another parameter, which has a value perform value propagation.
     case (cache,env,cr,attr1,forIteratorConstOpt,tp,DAE.EQBOUND(exp = DAE.CREF(componentRef = cref,ty = _),constant_ = DAE.C_VAR()),doVect,splicedExpData,pre,info)
@@ -10365,7 +10373,7 @@ algorithm
         // DAE if is send to simulation! Modelica requires that
         // all things have a binding IN A SIMULATION MODEL!        
         // e = DAE.EMPTY(scope, cr_1, expTy, tyStr);
-        e = Expression.makeCrefExp(cr_1,expTy); 
+        e = Expression.makeCrefExp(cr_1,expTy);
       then
         (cache,e,DAE.C_CONST(),attr);
 
@@ -10990,30 +10998,8 @@ algorithm
         (indx > ds) = true;
       then
         DAE.ARRAY(et,true,{});
-    // for crefs with wholedim
-    case (cr,indx,ds,et,t,crefIdType)  
-      equation 
-        indx_1 = indx + 1;
-        DAE.ARRAY(_,_,expl) = createCrefArray(cr, indx_1, ds, et, t,crefIdType);
-        DAE.WHOLEDIM()::ss = ComponentReference.crefLastSubs(cr);
-        cr_1 = ComponentReference.crefStripLastSubs(cr);
-        cr_1 = ComponentReference.subscriptCref(cr_1, DAE.INDEX(DAE.ICONST(indx))::ss);
-        elt_tp = Expression.unliftArray(et);
-        e_1 = crefVectorize(true,Expression.makeCrefExp(cr_1,elt_tp), t,NONE(),crefIdType,true);
-      then
-        DAE.ARRAY(et,true,(e_1 :: expl));
-    // no subscript
-    case (cr,indx,ds,et,t,crefIdType) 
-      equation 
-        indx_1 = indx + 1;
-        {} = ComponentReference.crefLastSubs(cr);
-        DAE.ARRAY(_,_,expl) = createCrefArray(cr, indx_1, ds, et, t,crefIdType);
-        cr_1 = ComponentReference.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(indx))});
-        elt_tp = Expression.unliftArray(et);
-        e_1 = crefVectorize(true,Expression.makeCrefExp(cr_1,elt_tp), t,NONE(),crefIdType,true);
-      then
-        DAE.ARRAY(et,true,(e_1 :: expl));
     // index
+    /*
     case (cr,indx,ds,et,t,crefIdType) 
       equation 
         (DAE.INDEX(e_1) :: ss) = ComponentReference.crefLastSubs(cr);
@@ -11023,6 +11009,28 @@ algorithm
         expl = Util.listMap1(expl,Expression.prependSubscriptExp,DAE.INDEX(e_1));
       then
         DAE.ARRAY(et,true,expl);
+    */
+    // for crefs with wholedim
+    case (cr,indx,ds,et,t,crefIdType)  
+      equation 
+        indx_1 = indx + 1;
+        DAE.ARRAY(_,_,expl) = createCrefArray(cr, indx_1, ds, et, t,crefIdType);
+        cr_1 = ComponentReference.replaceWholeDimSubscript(cr,indx);
+        elt_tp = Expression.unliftArray(et);
+        e_1 = crefVectorize(true,Expression.makeCrefExp(cr_1,elt_tp), t,NONE(),crefIdType,true);
+      then
+        DAE.ARRAY(et,true,(e_1 :: expl));
+    // no subscript
+    case (cr,indx,ds,et,t,crefIdType) 
+      equation 
+        indx_1 = indx + 1;
+        // {} = ComponentReference.crefLastSubs(cr);
+        DAE.ARRAY(_,_,expl) = createCrefArray(cr, indx_1, ds, et, t,crefIdType);
+        e_1 = Expression.makeASUB(Expression.makeCrefExp(cr,et),{DAE.ICONST(indx)});
+        (e_1,_) = ExpressionSimplify.simplify(e_1);
+        e_1 = crefVectorize(true,e_1, t,NONE(),crefIdType,true);
+      then
+        DAE.ARRAY(et,true,(e_1 :: expl));
     // failure
     case (cr,indx,ds,et,t,crefIdType)
       equation

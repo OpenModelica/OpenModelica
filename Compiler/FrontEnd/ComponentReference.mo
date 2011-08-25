@@ -2078,5 +2078,50 @@ algorithm
   res := "{" +& Util.stringDelimitList(Util.listMap(crs, printComponentRefStr), ",") +& "}";
 end printComponentRefListStr;
 
+public function replaceWholeDimSubscript
+  input DAE.ComponentRef cr;
+  input Integer index;
+  output DAE.ComponentRef ocr;
+algorithm
+  ocr := matchcontinue (cr,index)
+    local
+      String id;
+      DAE.ExpType et;
+      list<DAE.Subscript> ss;
+    case (DAE.CREF_QUAL(id,et,ss,cr),index)
+      equation
+        ss = replaceWholeDimSubscript2(ss,index);
+      then DAE.CREF_QUAL(id,et,ss,cr);
+    case (DAE.CREF_QUAL(id,et,ss,cr),index)
+      equation
+        cr = replaceWholeDimSubscript(cr,index);
+      then DAE.CREF_QUAL(id,et,ss,cr);
+    case (DAE.CREF_IDENT(id,et,ss),index)
+      equation
+        ss = replaceWholeDimSubscript2(ss,index);
+      then DAE.CREF_IDENT(id,et,ss);
+  end matchcontinue;
+end replaceWholeDimSubscript;
+
+public function replaceWholeDimSubscript2
+  input list<DAE.Subscript> subs;
+  input Integer index;
+  output list<DAE.Subscript> osubs;
+algorithm
+  osubs := match (subs,index)
+    local
+      DAE.Subscript sub;
+    case (DAE.WHOLEDIM()::subs,index)
+      equation
+        sub = DAE.INDEX(DAE.ICONST(index));
+      then sub::subs;
+    // TODO: SLICE, NONEXP
+    case (sub::subs,index)
+      equation
+        subs = replaceWholeDimSubscript2(subs,index);
+      then sub::subs;
+  end match;
+end replaceWholeDimSubscript2;
+
 end ComponentReference;
 
