@@ -2688,15 +2688,18 @@ algorithm
       list<Subscript> s,s_1;
       Integer n;
       String idn;
+      list<DAE.Dimension> dims;
+      Integer ndim,nsub;
     
     // simple name subscript
     case (DAE.CREF_IDENT(idn,t2,s),sub) 
       equation
+        /* TODO: Make sure that the IDENT has enough dimensions? */
         s_1 = Expression.subscriptsAppend(s, DAE.ICONST(sub));
         c_1 = ComponentReference.makeCrefIdent(idn,t2,s_1);
       then 
         c_1;
-    
+
     //  qualified name subscript
     case (DAE.CREF_QUAL(idn,t2,s,c),sub)
       equation
@@ -2961,12 +2964,6 @@ algorithm
         b = Util.boolAndList(bls);
       then
         DAE.ARRAY(t_1,b,expl_1);
-    
-    case ((e as DAE.CREF(componentRef = cr,ty = t)),sub)
-      equation
-        e_1 = Expression.makeASUB(e,{sub});
-      then
-        e_1;
     
     case(e as DAE.IFEXP(cond,e1,e2),sub) 
       equation
