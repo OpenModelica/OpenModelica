@@ -5382,16 +5382,6 @@ algorithm
     // we have no subscripts but we have a value, return it
     case (cache,env,{},v,_,_) then (cache,v);
     
-    // if we are in a for loop scope, the subs might be a for iterator, check
-    /*
-    case (cache,env,{DAE.INDEX(DAE.CREF(cr, _))},v,_,_)
-      equation
-        // we have a iterator, return the value as it is
-        (cache,_,_,_,SOME(_),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cr);
-      then 
-        (cache,v);
-    */
-
     /*// failtrace
     case (cache, env, subs, inValue, dims, _, _)
       equation
