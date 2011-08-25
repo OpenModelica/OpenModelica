@@ -4717,9 +4717,7 @@ algorithm
     // For other matrix expressions e.g. on array form: {{1,2},{3,4}}
     case (cache,env,exp,impl,st,msg)
       equation
-        (cache,v,st) = ceval(cache,env, exp, impl, st,msg);
-        tp = Types.typeOfValue(v);
-        sizelst = Types.getDimensionSizes(tp);
+        (cache,Values.ARRAY(dimLst=sizelst),st) = ceval(cache,env, exp, impl, st,msg);
         v = ValuesUtil.intlistToValue(sizelst);
       then
         (cache,v,st);
