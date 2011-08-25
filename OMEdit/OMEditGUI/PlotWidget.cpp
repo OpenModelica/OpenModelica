@@ -156,13 +156,16 @@ void PlotWidget::createActions()
 
 QList<QString> PlotWidget::readPlotVariables(QString fileName)
 {
+    QList<QString> plotVariablesList;
     // need to replace \\ to / so that QFile can close the file properly, otherwise we can't open it second time
     QString filePath = QString(Helper::tmpPath.replace("\\", "/")).append("/").append(fileName);
 
     QFile simulationResultFile(filePath);
-    simulationResultFile.open(QIODevice::ReadOnly);
+    if (!simulationResultFile.open(QIODevice::ReadOnly)) {
+      QMessageBox::critical(this,"Failed to read variables","Could not open file " + simulationResultFile.fileName());
+      throw 1;
+    }
 
-    QList<QString> plotVariablesList;
     QTextStream inStream(&simulationResultFile);
     QTextStream temp(&simulationResultFile);
 

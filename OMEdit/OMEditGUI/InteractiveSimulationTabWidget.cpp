@@ -732,10 +732,13 @@ void InteractiveSimulationTab::readParametersandVariables(QString filePath)
 //    }
 
 //    // read the variables to be plotted
-    QList<QString> variablesList = pMainWindow->mpPlotWidget->readPlotVariables(filePath);
-    //qSort(variablesList.begin(), variablesList.end());
-    foreach(QString variable, variablesList)
-        mpVariablesWidget->addVariable(variable);
+    try {
+      QList<QString> variablesList = pMainWindow->mpPlotWidget->readPlotVariables(filePath);
+      //qSort(variablesList.begin(), variablesList.end());
+      foreach(QString variable, variablesList)
+          mpVariablesWidget->addVariable(variable);
+    } catch (...) {
+    }
 }
 
 void InteractiveSimulationTab::readComponentsRecursive(QString modelName, QString className, QString namePrefixStr)
