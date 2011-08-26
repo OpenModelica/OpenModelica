@@ -476,6 +476,7 @@ inline static int getTypeOfAnyWork(void* any, int ix)  /* for debugging */
   mmc_uint_t hdr;
   int numslots;
   unsigned ctor;
+  int i;
   struct record_description *desc;
 
   if (any == NULL) {
@@ -532,7 +533,13 @@ inline static int getTypeOfAnyWork(void* any, int ix)  /* for debugging */
   if (numslots>0 && ctor == 0) { /* TUPLE */
     checkAnyStringBufSize(ix,7);
     ix += sprintf(anyStringBuf+ix, "tuple<");
-    ix = getTypeOfAnyWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1)), ix);
+    for (i=0; i<numslots; i++) {
+      ix = getTypeOfAnyWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i+1)), ix);
+      if (i!=numslots-1) {
+        checkAnyStringBufSize(ix,3);
+        ix += sprintf(anyStringBuf+ix, ", ");
+      }
+    }
     checkAnyStringBufSize(ix,2);
     ix += sprintf(anyStringBuf+ix, ">");
     return ix;
@@ -547,7 +554,13 @@ inline static int getTypeOfAnyWork(void* any, int ix)  /* for debugging */
   if (numslots==1 && ctor==1) /* SOME(x) */ {
     checkAnyStringBufSize(ix,8);
     ix += sprintf(anyStringBuf+ix, "Option<");
-    ix = getTypeOfAnyWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1)), ix);
+    for (i=0; i<numslots; i++) {
+      ix = getTypeOfAnyWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i+1)), ix);
+      if (i!=numslots-1) {
+        checkAnyStringBufSize(ix,3);
+        ix += sprintf(anyStringBuf+ix, ", ");
+      }
+    }
     checkAnyStringBufSize(ix,2);
     ix += sprintf(anyStringBuf+ix, ">");
     return ix;
@@ -573,6 +586,10 @@ char* getTypeOfAny(void* any) /* for debugging */
   return strdup(anyStringBuf);
 }
 
+/*
+ * Used by MDT for debugging.
+ * Returns the name of the particular field of the Record.
+ * */
 char* getRecordElementName(void* any, int element) {
   struct record_description *desc;
 
@@ -581,6 +598,32 @@ char* getRecordElementName(void* any, int element) {
   desc = MMC_CAR(any);
   checkAnyStringBufSize(0,strlen(desc->fieldNames[element]));
   sprintf(anyStringBuf, desc->fieldNames[element]);
+  return strdup(anyStringBuf);
+}
+
+/*
+ * Used by MDT for debugging just return whether Option type contain something or not.
+ * */
+char* getOptionValue(void* any)
+{
+  mmc_uint_t hdr;
+  int numslots;
+  unsigned ctor;
+
+  initializeStringBuffer();
+
+  hdr = MMC_HDR_UNMARK(MMC_GETHDR(any));
+  numslots = MMC_HDRSLOTS(hdr);
+  ctor = MMC_HDRCTOR(hdr);
+
+  if (numslots==0 && ctor==1) /* NONE() */ {
+    checkAnyStringBufSize(0,7);
+    sprintf(anyStringBuf, "NONE()");
+  }
+  else if (numslots==1 && ctor==1) /* SOME(x) */ {
+    checkAnyStringBufSize(0,7);
+    sprintf(anyStringBuf, "SOME()");
+  }
   return strdup(anyStringBuf);
 }
 
