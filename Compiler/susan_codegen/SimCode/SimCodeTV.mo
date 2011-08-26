@@ -843,6 +843,11 @@ package DAE
       Exp exp;
       list<Exp> sub;
     end ASUB;
+    record TSUB
+      Exp exp;
+      Integer index;
+      ExpType ty;
+    end TSUB;
     record SIZE
       Exp exp;
       Option<Exp> sz;

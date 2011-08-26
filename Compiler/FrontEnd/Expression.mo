@@ -1651,6 +1651,7 @@ algorithm
         tp = unliftArrayTypeWithSubs(Util.listMap(explist,makeIndexSubscript) ,typeof(e));
       then 
         tp;
+    case (DAE.TSUB(ty = tp)) then tp;
     case (DAE.CODE(ty = tp)) then tp;
     case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(exprType=ty,path = Absyn.IDENT("array"))))
       then liftArrayR(Types.elabType(ty),DAE.DIM_UNKNOWN());
@@ -3529,6 +3530,14 @@ algorithm
       then
         ((e,ext_arg_2));
     
+    case ((e as DAE.TSUB(e1,i,tp)),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
+        e = Util.if_(referenceEq(e1,e1_1),e,DAE.TSUB(e1_1,i,tp));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+    
     case ((e as DAE.SIZE(exp = e1,sz = NONE())),rel,ext_arg)
       equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
@@ -3962,7 +3971,13 @@ algorithm
         ((e1_1,ext_arg_1)) = traverseExpTopDown(e1, rel, ext_arg);
         ((expl_1,ext_arg_2)) = traverseExpListTopDown(expl_1, rel, ext_arg_1);
       then
-        ((makeASUB(e1_1,expl_1),ext_arg_1));
+        ((makeASUB(e1_1,expl_1),ext_arg_2));
+    
+    case ((e as DAE.TSUB(e1,i,tp)),rel,ext_arg)
+      equation
+        ((e1_1,ext_arg_1)) = traverseExpTopDown(e1, rel, ext_arg);
+      then
+        ((DAE.TSUB(e1_1,i,tp),ext_arg_1));
     
     case ((e as DAE.SIZE(exp = e1,sz = NONE())),rel,ext_arg)
       equation
@@ -4505,6 +4520,7 @@ protected function traverseExpBidirSubExps
 algorithm
   (outExp, outTuple) := match(inExp, inTuple)
     local
+      Integer i;
       DAE.Exp e1, e2, e3;
       Option<DAE.Exp> oe1,foldExp;
       tuple<FuncType, FuncType, Argument> tup;
@@ -4635,6 +4651,12 @@ algorithm
         (expl, tup) = traverseExpListBidir(expl, tup);
       then
         (DAE.ASUB(e1, expl), tup);
+
+    case (DAE.TSUB(e1,i,ty), tup)
+      equation
+        (e1, tup) = traverseExpBidir(e1, tup);
+      then
+        (DAE.TSUB(e1,i,ty), tup);
 
     case (DAE.SIZE(exp = e1, sz = oe1), tup)
       equation

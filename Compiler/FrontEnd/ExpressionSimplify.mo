@@ -645,11 +645,11 @@ algorithm
         e = Expression.makeScalarArray(es,tp);
       then Expression.makeBuiltinCall("max",{e},tp);
 
-    case (DAE.CALL(path=Absyn.IDENT("min"),attr=DAE.CALL_ATTR(ty=DAE.ET_ARRAY(tp,{_})),expLst={DAE.ARRAY(array={e1,e2})}))
+    case (DAE.CALL(path=Absyn.IDENT("min"),attr=DAE.CALL_ATTR(ty=tp),expLst={DAE.ARRAY(array={e1,e2})}))
       equation
         e = Expression.makeBuiltinCall("min",{e1,e2},tp);
       then e;
-    case (DAE.CALL(path=Absyn.IDENT("max"),attr=DAE.CALL_ATTR(ty=DAE.ET_ARRAY(tp,{_})),expLst={DAE.ARRAY(array={e1,e2})}))
+    case (DAE.CALL(path=Absyn.IDENT("max"),attr=DAE.CALL_ATTR(ty=tp),expLst={DAE.ARRAY(array={e1,e2})}))
       equation
         e = Expression.makeBuiltinCall("max",{e1,e2},tp);
       then e;
@@ -661,11 +661,11 @@ algorithm
       equation
         e = DAE.LBINARY(e1,DAE.OR(DAE.ET_BOOL()),e2);
       then e;
-    case (DAE.CALL(path=Absyn.IDENT("min"),attr=DAE.CALL_ATTR(ty=DAE.ET_ARRAY(DAE.ET_BOOL(),_)),expLst={DAE.ARRAY(array=expl)}))
+    case (DAE.CALL(path=Absyn.IDENT("min"),attr=DAE.CALL_ATTR(ty=DAE.ET_BOOL()),expLst={DAE.ARRAY(array=expl)}))
       equation
         e = Expression.makeLBinary(expl,DAE.AND(DAE.ET_BOOL()));
       then e;
-    case (DAE.CALL(path=Absyn.IDENT("max"),attr=DAE.CALL_ATTR(ty=DAE.ET_ARRAY(DAE.ET_BOOL(),_)),expLst={DAE.ARRAY(array=expl)}))
+    case (DAE.CALL(path=Absyn.IDENT("max"),attr=DAE.CALL_ATTR(ty=DAE.ET_BOOL()),expLst={DAE.ARRAY(array=expl)}))
       equation
         e = Expression.makeLBinary(expl,DAE.OR(DAE.ET_BOOL()));
       then e;

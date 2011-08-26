@@ -4353,6 +4353,7 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as RANGE(__)           then daeExpRange(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as CAST(__)            then daeExpCast(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as ASUB(__)            then daeExpAsub(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  case e as TSUB(__)            then '<%daeExp(exp, context, &preExp, &varDecls)%>.targ1'
   case e as SIZE(__)            then daeExpSize(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as REDUCTION(__)       then daeExpReduction(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as LIST(__)            then daeExpList(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -5149,17 +5150,17 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var2 = daeExp(e2, context, &preExp, &varDecls)
     'modelica_mod_<%expTypeShort(ty)%>(<%var1%>,<%var2%>)'
     
-  case CALL(path=IDENT(name="max"), expLst={array}) then
+  case CALL(path=IDENT(name="max"), attr=CALL_ATTR(ty = ty), expLst={array}) then
     let expVar = daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let arr_tp_str = '<%expTypeFromExpArray(array)%>'
-    let tvar = tempDecl(expTypeFromExpModelica(array), &varDecls /*BUFD*/)
+    let arr_tp_str = '<%expTypeArray(ty)%>'
+    let tvar = tempDecl(expTypeModelica(ty), &varDecls /*BUFD*/)
     let &preExp += '<%tvar%> = max_<%arr_tp_str%>(&<%expVar%>);<%\n%>'
     '<%tvar%>'
   
-  case CALL(path=IDENT(name="min"), expLst={array}) then
+  case CALL(path=IDENT(name="min"), attr=CALL_ATTR(ty = ty), expLst={array}) then
     let expVar = daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let arr_tp_str = '<%expTypeFromExpArray(array)%>'
-    let tvar = tempDecl(expTypeFromExpModelica(array), &varDecls /*BUFD*/)
+    let arr_tp_str = '<%expTypeArray(ty)%>'
+    let tvar = tempDecl(expTypeModelica(ty), &varDecls /*BUFD*/)
     let &preExp += '<%tvar%> = min_<%arr_tp_str%>(&<%expVar%>);<%\n%>'
     '<%tvar%>'
 
@@ -6073,14 +6074,14 @@ template expTypeShort(DAE.ExpType type)
   case ET_STRING(__)      then if acceptMetaModelicaGrammar() then "metatype" else "string"
   case ET_BOOL(__)        then "boolean"
   case ET_ENUMERATION(__) then "integer"  
-  case ET_OTHER(__)       then "complex"
   case ET_ARRAY(__)       then expTypeShort(ty)   
   case ET_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "complex"
   case ET_COMPLEX(__)     then 'struct <%underscorePath(name)%>'  
   case ET_METATYPE(__) case ET_BOXED(__)    then "metatype"
   case ET_FUNCTION_REFERENCE_VAR(__) then "fnptr"
-  else "expTypeShort:ERROR"
+  case ET_OTHER(__) then "complex" /* TODO: Don't do this to me! */
+  else error(sourceInfo(),'expTypeShort:<%typeString(type)%>')
 end expTypeShort;
 
 template mmcVarType(Variable var)

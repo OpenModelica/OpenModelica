@@ -4457,7 +4457,7 @@ algorithm
         (cache, arrexp_1, DAE.PROP(ty, c), _) = 
           elabExp(cache, env, arrexp, impl,NONE(), true, pre, info);
         elt_ty = Types.arrayElementType(ty);
-        tp = Types.elabType(ty);
+        tp = Types.elabType(elt_ty);
         call = Expression.makeBuiltinCall(inFnName, {arrexp_1}, tp);
       then
         (cache, call, DAE.PROP(elt_ty,c));
@@ -4473,9 +4473,10 @@ algorithm
 
         // Use the first of the returned values from the function.
         DAE.PROP(ty, c) :: _ = Types.propTuplePropList(p);
-        (arrexp_1,_) = ExpressionSimplify.simplify1(Expression.makeAsubAddIndex(arrexp_1, 1));
-        elt_ty = Types.arrayElementType(ty);
         tp = Types.elabType(ty);
+        arrexp_1 = DAE.TSUB(arrexp_1, 1, tp);
+        elt_ty = Types.arrayElementType(ty);
+        tp = Types.elabType(elt_ty);
         call = Expression.makeBuiltinCall(inFnName, {arrexp_1}, tp);
       then
         (cache, call, DAE.PROP(elt_ty,c));

@@ -1041,7 +1041,14 @@ uniontype Exp "Expressions
     includes explicit type promotions and typed (non-overloaded)
     operators. It also contains expression indexing with the `ASUB\'
     constructor.  Indexing arbitrary array expressions is currently
-    not supported in Modelica, but it is needed here."
+    not supported in Modelica, but it is needed here.
+    
+    When making additions, update at least the following functions:
+    * Expression.traverseExp
+    * Expression.traverseExpTopDown
+    * Expression.traverseExpBiDir
+    * ExpressionDump.printExpStr
+    "
   record ICONST
     Integer integer "Integer constants" ;
   end ICONST;
@@ -1152,6 +1159,12 @@ uniontype Exp "Expressions
     Exp exp;
     list<Exp> sub;
   end ASUB;
+
+  record TSUB "Tuple 'subscript' (accessing only single values in calls)"
+    Exp exp;
+    Integer ix;
+    ExpType ty;
+  end TSUB;
 
   record SIZE "The size operator"
     Exp exp;
