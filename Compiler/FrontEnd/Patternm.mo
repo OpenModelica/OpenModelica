@@ -266,7 +266,7 @@ algorithm
         (cache,pattern) = elabPatternCall(cache,env,Absyn.crefToPath(fcr),fargs,utPath,info,lhs);
       then (cache,pattern);
 
-    case (cache,env,lhs as Absyn.CALL(fcr,fargs),(DAE.T_UNIONTYPE(_),SOME(utPath)),info)
+    case (cache,env,lhs as Absyn.CALL(fcr,fargs),(DAE.T_UNIONTYPE(paths=_),SOME(utPath)),info)
       equation
         (cache,pattern) = elabPatternCall(cache,env,Absyn.crefToPath(fcr),fargs,utPath,info,lhs);
       then (cache,pattern);
@@ -351,9 +351,10 @@ algorithm
       list<DAE.Var> fieldVarList;
       list<DAE.Pattern> patterns;
       list<tuple<DAE.Pattern,String,DAE.ExpType>> namedPatterns;
+      Boolean knownSingleton;
     case (cache,env,callPath,Absyn.FUNCTIONARGS(funcArgs,namedArgList),utPath2,info,lhs)
       equation
-        (cache,t as (DAE.T_METARECORD(utPath=utPath1,index=index,fields=fieldVarList),SOME(fqPath)),_) = Lookup.lookupType(cache, env, callPath, NONE());
+        (cache,t as (DAE.T_METARECORD(utPath=utPath1,index=index,fields=fieldVarList,knownSingleton=knownSingleton),SOME(fqPath)),_) = Lookup.lookupType(cache, env, callPath, NONE());
         validUniontype(utPath1,utPath2,info,lhs);
 
         fieldTypeList = Util.listMap(fieldVarList, Types.getVarType);
@@ -368,7 +369,7 @@ algorithm
         funcArgs = listAppend(funcArgs,funcArgsNamedFixed);
         Util.SUCCESS() = checkInvalidPatternNamedArgs(invalidArgs,Util.SUCCESS(),info);
         (cache,patterns) = elabPatternTuple(cache,env,funcArgs,fieldTypeList,info,lhs);
-      then (cache,DAE.PAT_CALL(fqPath,index,patterns));
+      then (cache,DAE.PAT_CALL(fqPath,index,patterns,knownSingleton));
     case (cache,env,callPath,Absyn.FUNCTIONARGS(funcArgs,namedArgList),utPath2,info,lhs)
       equation
         (cache,t as (DAE.T_FUNCTION(funcResultType = (DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),complexVarLst=fieldVarList),_)),SOME(fqPath)),_) = Lookup.lookupType(cache, env, callPath, NONE());
@@ -1066,6 +1067,7 @@ algorithm
       Absyn.Path name;
       Integer index;
       list<tuple<DAE.Pattern,String,DAE.ExpType>> namedpats;
+      Boolean knownSingleton;
     case ((DAE.PAT_AS(id,ty,pat2),a),func)
       equation
         ((pat2,a)) = traversePattern((pat2,a),func);
@@ -1078,10 +1080,10 @@ algorithm
         pat = DAE.PAT_AS_FUNC_PTR(id,pat2);
         outTpl = func((pat,a));
       then outTpl;
-    case ((DAE.PAT_CALL(name,index,pats),a),func)
+    case ((DAE.PAT_CALL(name,index,pats,knownSingleton),a),func)
       equation
         (pats,a) = traversePatternList(pats, func, a);
-        pat = DAE.PAT_CALL(name,index,pats);
+        pat = DAE.PAT_CALL(name,index,pats,knownSingleton);
         outTpl = func((pat,a));
       then outTpl;
     case ((DAE.PAT_CALL_NAMED(name,namedpats),a),func)
@@ -1433,13 +1435,13 @@ algorithm
     case (DAE.PAT_CALL_TUPLE(ps1),DAE.PAT_CALL_TUPLE(ps2))
       then patternListsDoNotOverlap(ps1,ps2);
     
-    case (DAE.PAT_CALL(name1,ix1,{}),DAE.PAT_CALL(name2,ix2,{}))
+    case (DAE.PAT_CALL(name1,ix1,{},_),DAE.PAT_CALL(name2,ix2,{},_))
       equation
         res = ix1 == ix2;
         res = Debug.bcallret2(res, Absyn.pathEqual, name1, name2, res);
       then not res;
 
-    case (DAE.PAT_CALL(name1,ix1,ps1),DAE.PAT_CALL(name2,ix2,ps2))
+    case (DAE.PAT_CALL(name1,ix1,ps1,_),DAE.PAT_CALL(name2,ix2,ps2,_))
       equation
         res = ix1 == ix2;
         res = Debug.bcallret2(res, Absyn.pathEqual, name1, name2, res);

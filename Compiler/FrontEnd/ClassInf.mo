@@ -399,7 +399,7 @@ algorithm
     case (SCode.R_PREDEFINED_ENUMERATION(),p) then TYPE_ENUM(p);
      /* Meta Modelica extensions */
     case (SCode.R_UNIONTYPE(),p) then UNIONTYPE(p);
-    case (SCode.R_METARECORD(_, _),p) then META_RECORD(p);
+    case (SCode.R_METARECORD(index=_),p) then META_RECORD(p);
   end match;
 end start;
 

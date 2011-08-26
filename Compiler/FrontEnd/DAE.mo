@@ -748,7 +748,8 @@ public uniontype TType "-TType contains the actual type"
   end T_METAOPTION;
 
   record T_UNIONTYPE "MetaModelica Uniontype, added by simbj"
-    list <Absyn.Path> records;
+    list<Absyn.Path> paths;
+    Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
   end T_UNIONTYPE;
 
   record T_METARECORD "MetaModelica Record, used by Uniontypes. added by simbj"
@@ -757,6 +758,7 @@ public uniontype TType "-TType contains the actual type"
     // not be needed. They are used to create the datatype in the runtime...
     Integer index; //The index in the uniontype
     list<Var> fields;
+    Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
   end T_METARECORD;
 
   record T_COMPLEX
@@ -1333,6 +1335,7 @@ public uniontype Pattern "Patterns deconstruct expressions"
     Absyn.Path name;
     Integer index;
     list<Pattern> patterns;
+    Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
   end PAT_CALL;
   record PAT_CALL_NAMED "RECORD(pat1,...,patn); all patterns are named"
     Absyn.Path name;

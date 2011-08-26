@@ -969,6 +969,7 @@ package DAE
       Absyn.Path name;
       Integer index;
       list<Pattern> patterns;
+      Boolean knownSingleton;
     end PAT_CALL;
     record PAT_CALL_NAMED "RECORD(pat1,...,patn); all patterns are named"
       Absyn.Path name;

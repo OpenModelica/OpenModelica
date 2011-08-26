@@ -1155,7 +1155,7 @@ algorithm
         vars = valuesToVars(vl, ids);
         utPath = Absyn.stripLast(cname);
       then
-        ((DAE.T_METARECORD(utPath, index, vars),SOME(cname)));
+        ((DAE.T_METARECORD(utPath, index, vars, false /*We simply do not know...*/),SOME(cname)));
 
         // MetaModelica list type
     case Values.LIST(vl)
@@ -1494,18 +1494,18 @@ algorithm
     case((DAE.T_METARECORD(utPath=p1),_),(DAE.T_METARECORD(utPath=p2),_))
       then Absyn.pathEqual(p1,p2);
     
-    case ((DAE.T_UNIONTYPE(_),SOME(p1)),(DAE.T_METARECORD(utPath=p2),_))
+    case ((DAE.T_UNIONTYPE(paths=_),SOME(p1)),(DAE.T_METARECORD(utPath=p2),_))
       then Absyn.pathEqual(p1,p2);
 
-    case ((DAE.T_METARECORD(utPath=p1),_),(DAE.T_UNIONTYPE(_),SOME(p2)))
+    case ((DAE.T_METARECORD(utPath=p1),_),(DAE.T_UNIONTYPE(paths=_),SOME(p2)))
       then Absyn.pathEqual(p1,p2);
     
     // <uniontype> = <uniontype>
-    case((DAE.T_UNIONTYPE(_),SOME(p1)),(DAE.T_UNIONTYPE(_),SOME(p2)))
+    case((DAE.T_UNIONTYPE(paths=_),SOME(p1)),(DAE.T_UNIONTYPE(paths=_),SOME(p2)))
       then Absyn.pathEqual(p1,p2);
-    case((DAE.T_UNIONTYPE(_),SOME(p1)),(DAE.T_COMPLEX(complexClassType=ClassInf.UNIONTYPE(_)),SOME(p2)))
+    case((DAE.T_UNIONTYPE(paths=_),SOME(p1)),(DAE.T_COMPLEX(complexClassType=ClassInf.UNIONTYPE(_)),SOME(p2)))
       then Absyn.pathEqual(p1,p2);
-    case((DAE.T_UNIONTYPE(_),SOME(p1)),(DAE.T_COMPLEX(complexClassType=ClassInf.UNIONTYPE(_)),SOME(p2)))
+    case((DAE.T_UNIONTYPE(paths=_),SOME(p1)),(DAE.T_COMPLEX(complexClassType=ClassInf.UNIONTYPE(_)),SOME(p2)))
       then Absyn.pathEqual(p1,p2);
 
     case ((DAE.T_CODE(c1),_),(DAE.T_CODE(c2),_)) then valueEq(c1,c2);
@@ -2135,7 +2135,7 @@ algorithm
         res;
 
         /* MetaModelica uniontype */
-    case ((DAE.T_UNIONTYPE(_),SOME(p)))
+    case ((DAE.T_UNIONTYPE(paths=_),SOME(p)))
       equation
         res = Absyn.pathStringNoQual(p);
       then
@@ -3552,8 +3552,8 @@ algorithm
     case ((DAE.T_STRING(varLstString = _),_)) then etString;
     case ((DAE.T_NORETCALL(),_)) then etNoRetCall;
     case ((DAE.T_FUNCTION(_,_,_),_)) then etFuncRefVar;
-    case ((DAE.T_UNIONTYPE(_),_)) then etMetaType;
-    case ((DAE.T_METARECORD(_,_,_),_)) then etMetaType;
+    case ((DAE.T_UNIONTYPE(paths=_),_)) then etMetaType;
+    case ((DAE.T_METARECORD(index=_),_)) then etMetaType;
     case ((DAE.T_POLYMORPHIC(_),_)) then etMetaType;
     case ((DAE.T_LIST(_),_)) then etMetaType;
     case ((DAE.T_META_ARRAY(_),_)) then etMetaType;
@@ -5072,7 +5072,7 @@ algorithm
         exps = getAllExpsTt(DAE.T_TUPLE(tys));
       then
         exps;
-    case DAE.T_UNIONTYPE(_) then {};
+    case DAE.T_UNIONTYPE(paths=_) then {};
     case DAE.T_METAOPTION(ty)
       equation
         exps = getAllExps(ty);
@@ -5176,7 +5176,7 @@ algorithm
     case ((DAE.T_METAOPTION(_),_)) then true;
     case ((DAE.T_LIST(_),_)) then true;
     case ((DAE.T_METATUPLE(_),_)) then true;
-    case ((DAE.T_UNIONTYPE(_),_)) then true;
+    case ((DAE.T_UNIONTYPE(paths=_),_)) then true;
     case ((DAE.T_METARECORD(utPath=_),_)) then true;
     case ((DAE.T_POLYMORPHIC(_),_)) then true;
     case ((DAE.T_META_ARRAY(_),_)) then true;
@@ -5353,7 +5353,7 @@ algorithm
         tp = superType(t1,t2);
       then ((DAE.T_META_ARRAY(tp),NONE()));
 
-    case (t1 as (DAE.T_UNIONTYPE(_),SOME(path1)),(DAE.T_METARECORD(utPath=path2),_))
+    case (t1 as (DAE.T_UNIONTYPE(paths=_),SOME(path1)),(DAE.T_METARECORD(utPath=path2),_))
       equation
         true = Absyn.pathEqual(path1,path2);
       then t1;
@@ -5713,7 +5713,7 @@ public function uniontypeFilter
   input Type ty;
 algorithm
   _ := match ty
-    case ((DAE.T_UNIONTYPE(_),_)) then ();
+    case ((DAE.T_UNIONTYPE(paths=_),_)) then ();
   end match;
 end uniontypeFilter;
 
@@ -5732,7 +5732,7 @@ algorithm
   outPaths := match ty
     local
       list<Absyn.Path> paths;
-    case ((DAE.T_UNIONTYPE(paths),_)) then paths;
+    case ((DAE.T_UNIONTYPE(paths=paths),_)) then paths;
   end match;
 end getUniontypePaths;
 
@@ -6253,7 +6253,7 @@ algorithm
       then subtypePolymorphicList(tList1,tList2,envPath,bindings);
     case ((DAE.T_TUPLE(tList1),_),(DAE.T_TUPLE(tList2),_),envPath,bindings)
       then subtypePolymorphicList(tList1,tList2,envPath,bindings);
-    case ((DAE.T_UNIONTYPE(_),SOME(path1)),(DAE.T_UNIONTYPE(_),SOME(path2)),envPath,bindings)
+    case ((DAE.T_UNIONTYPE(paths=_),SOME(path1)),(DAE.T_UNIONTYPE(paths=_),SOME(path2)),envPath,bindings)
       equation
         true = Absyn.pathEqual(path1,path2);
       then bindings;
@@ -6472,6 +6472,7 @@ algorithm
       ClassInf.State state;
       list<DAE.FuncArg> farg;
       DAE.FunctionAttributes functionAttributes;
+      Boolean singleton;
     case (((DAE.T_INTEGER(_),_),_),_) equation tpl = fn(tpl); then tpl;
     case (((DAE.T_REAL(_),_),_),_) equation tpl = fn(tpl); then tpl;
     case (((DAE.T_STRING(_),_),_),_) equation tpl = fn(tpl); then tpl;
@@ -6480,7 +6481,7 @@ algorithm
     case (((DAE.T_NORETCALL(),_),_),_) equation tpl = fn(tpl); then tpl;
     case (((DAE.T_NOTYPE(),_),_),_) equation tpl = fn(tpl); then tpl;
     case (((DAE.T_ANYTYPE(_),_),_),_) equation tpl = fn(tpl); then tpl;
-    case (((DAE.T_UNIONTYPE(_),_),_),_) equation tpl = fn(tpl); then tpl;
+    case (((DAE.T_UNIONTYPE(paths=_),_),_),_) equation tpl = fn(tpl); then tpl;
     case (((DAE.T_BOXED(_),_),_),_) equation tpl = fn(tpl); then tpl;
     case (((DAE.T_POLYMORPHIC(_),_),_),_) equation tpl = fn(tpl); then tpl;
     case (((DAE.T_ARRAY(ad,ty),op),a),_)
@@ -6519,10 +6520,10 @@ algorithm
         ty = (DAE.T_TUPLE(tys),op);
         tpl = fn((ty,a));
       then tpl;
-    case (((DAE.T_METARECORD(path,index,vars),op),a),_)
+    case (((DAE.T_METARECORD(path,index,vars,singleton),op),a),_)
       equation
         (vars,a) = traverseVarTypes(vars,a,fn);
-        ty = (DAE.T_METARECORD(path,index,vars),op);
+        ty = (DAE.T_METARECORD(path,index,vars,singleton),op);
         tpl = fn((ty,a));
       then tpl;
     case (((DAE.T_COMPLEX(state,vars,NONE(),eq),op),a),_)

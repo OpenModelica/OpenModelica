@@ -1338,7 +1338,7 @@ algorithm
         dae = makeDaeEquation(e1, e2, source, initial_);
       then
         dae;
-    case (e1,e2,(DAE.T_UNIONTYPE(_),_),source,initial_)
+    case (e1,e2,(DAE.T_UNIONTYPE(paths=_),_),source,initial_)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         dae = makeDaeEquation(e1, e2, source, initial_);

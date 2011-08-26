@@ -218,7 +218,7 @@ algorithm
         (cache,t,env_3);
 
     // Metamodelica extension, Uniontypes
-    case (cache,env_1,path,c as SCode.CLASS(restriction=SCode.R_METARECORD(_,_)))
+    case (cache,env_1,path,c as SCode.CLASS(restriction=SCode.R_METARECORD(index=_)))
       equation
         (cache,env_2,t) = buildMetaRecordType(cache,env_1,c);
       then
@@ -1818,7 +1818,7 @@ algorithm
       then
         (cache,ty,env_3);
 
-    case (cache,Env.CLASS((cdef as SCode.CLASS(name=n,restriction=SCode.R_METARECORD(_,_))),cenv),env,id)
+    case (cache,Env.CLASS((cdef as SCode.CLASS(name=n,restriction=SCode.R_METARECORD(index=_))),cenv),env,id)
       equation
         (cache,env_3,ty) = buildMetaRecordType(cache,cenv,cdef);
       then
@@ -2879,8 +2879,9 @@ protected
   Integer index;
   list<DAE.Var> varlst;
   list<SCode.Element> els;
+  Boolean singleton;
 algorithm
-  SCode.CLASS(name=id,restriction=SCode.R_METARECORD(utPath,index),classDef=SCode.PARTS(elementLst = els)) := cdef;
+  SCode.CLASS(name=id,restriction=SCode.R_METARECORD(utPath,index,singleton),classDef=SCode.PARTS(elementLst = els)) := cdef;
   env := Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(id), SOME(Env.CLASS_SCOPE()));
   // print("buildMetaRecordType " +& id +& " in scope " +& Env.printEnvPathStr(env) +& "\n");
   (cache,utPath) := Inst.makeFullyQualified(cache,env,utPath);
@@ -2891,7 +2892,7 @@ algorithm
     ClassInf.FUNCTION(Absyn.IDENT("")), Util.listMap1(els,Util.makeTuple2,DAE.NOMOD()),
     {}, false, Inst.INNER_CALL(), ConnectionGraph.EMPTY, true);
   varlst := Types.boxVarLst(varlst);
-  ftype := (DAE.T_METARECORD(utPath,index,varlst),SOME(path));
+  ftype := (DAE.T_METARECORD(utPath,index,varlst,singleton),SOME(path));
   // print("buildMetaRecordType " +& id +& " in scope " +& Env.printEnvPathStr(env) +& " OK " +& Types.unparseType(ftype) +&"\n");
 end buildMetaRecordType;
 

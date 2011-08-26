@@ -92,7 +92,7 @@ algorithm
     case SCode.R_FUNCTION() then "FUNCTION";
     case SCode.R_EXT_FUNCTION() then "EXTFUNCTION";
     case SCode.R_ENUMERATION() then "ENUMERATION";
-    case SCode.R_METARECORD(_,_) then "METARECORD";
+    case SCode.R_METARECORD(index=_) then "METARECORD";
     case SCode.R_UNIONTYPE() then "UNIONTYPE";
     // predefined types
     case SCode.R_PREDEFINED_INTEGER() then "PREDEFINED_INT";

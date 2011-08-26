@@ -6360,8 +6360,8 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
       >>
   case PAT_CALL(__)
     then
-      <<if (mmc__uniontype__metarecord__typedef__equal(<%rhs%>,<%index%>,<%listLength(patterns)%>) == 0) <%onPatternFail%>;
-      <%(patterns |> p hasindex i2 fromindex 2 =>
+      <<<%if not knownSingleton then 'if (mmc__uniontype__metarecord__typedef__equal(<%rhs%>,<%index%>,<%listLength(patterns)%>) == 0) <%onPatternFail%>;<%\n%>'%><%
+      (patterns |> p hasindex i2 fromindex 2 =>
         let tvar = tempDecl("modelica_metatype", &varDecls)
         <<<%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%rhs%>), <%i2%>));
         <%patternMatch(p,tvar,onPatternFail,&varDecls,&assignments)%>

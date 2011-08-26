@@ -262,7 +262,7 @@ algorithm
   outBoolean := matchcontinue(cl)
     local
       SCode.Restriction re1,re2;
-    case(SCode.CLASS(restriction = SCode.R_METARECORD(_,_)))
+    case(SCode.CLASS(restriction = SCode.R_METARECORD(index=_)))
       then true;
     case(_) then false;
   end matchcontinue;
@@ -439,7 +439,7 @@ algorithm
       equation
         r_1 = SCodeUtil.translateRestriction(c, r); // uniontype will not get elaborated!
         SCode.R_UNIONTYPE() = r_1;
-        els = fixElementItems(els,n,0);
+        els = fixElementItems(els,n,0,listLength(els)==1);
         cllst = convertElementsToClasses(els);
       then cllst;
     case(_) then {};
@@ -503,22 +503,22 @@ algorithm
 end getRestriction;
 
 function fixRestriction
-    input Absyn.Restriction resin;
-    input String name;
-    input Integer index;
-    output Absyn.Restriction resout;
-
+  input Absyn.Restriction resin;
+  input String name;
+  input Integer index;
+  input Boolean singleton;
+  output Absyn.Restriction resout;
 algorithm
-  resout := matchcontinue(resin,name,index)
+  resout := matchcontinue(resin,name,index,singleton)
     local
       Absyn.Ident ident;
       Absyn.Path path;
-    case(Absyn.R_RECORD(),name,index)
+    case(Absyn.R_RECORD(),name,index,singleton)
       equation
         ident = name;
         path = Absyn.IDENT(ident);
-      then Absyn.R_METARECORD(path,index);
-    case(_,_,_) then resin;
+      then Absyn.R_METARECORD(path,index,singleton);
+    else resin;
   end matchcontinue;
 end fixRestriction;
 
@@ -527,9 +527,10 @@ function fixClass
   input Absyn.Class classin;
   input String name;
   input Integer index;
+  input Boolean singleton;
   output Absyn.Class classout;
 algorithm
-  classout := matchcontinue(classin,name,index)
+  classout := matchcontinue(classin,name,index,singleton)
     local
       Absyn.Ident n;
       Boolean p;
@@ -539,11 +540,11 @@ algorithm
       Absyn.ClassDef b;
       Absyn.Info i;
 
-    case(Absyn.CLASS(n,p,f,e,res,b,i),name,index)
+    case(Absyn.CLASS(n,p,f,e,res,b,i),name,index,singleton)
       equation
-        res = fixRestriction(res,name,index);
+        res = fixRestriction(res,name,index,singleton);
       then Absyn.CLASS(n,p,f,e,res,b,i);
-    case(_,_,_) then classin;
+    else classin;
   end matchcontinue;
 end fixClass;
 
@@ -552,18 +553,18 @@ function fixElementSpecification
   input Absyn.ElementSpec specin;
   input String name;
   input Integer index;
+  input Boolean singleton;
   output Absyn.ElementSpec specout;
 algorithm
-  specout := matchcontinue(specin,name,index)
+  specout := matchcontinue(specin,name,index,singleton)
     local
       Boolean rep;
       Absyn.Class c;
-    case(Absyn.CLASSDEF(rep,c),name,index)
+    case(Absyn.CLASSDEF(rep,c),name,index,singleton)
       equation
-        c = fixClass(c,name,index);
+        c = fixClass(c,name,index,singleton);
       then Absyn.CLASSDEF(rep,c);
-    case(_,_,_)
-    then specin;
+    else specin;
   end matchcontinue;
 end fixElementSpecification;
 
@@ -571,10 +572,11 @@ function fixElement
   input Absyn.Element elementin;
   input String name;
   input Integer index;
+  input Boolean singleton;
   output Absyn.Element elementout;
 
 algorithm
-  elementout := match(elementin,name,index)
+  elementout := match(elementin,name,index,singleton)
     local
       Boolean f;
       Option<Absyn.RedeclareKeywords> r;
@@ -583,9 +585,9 @@ algorithm
       Absyn.ElementSpec spec;
       Absyn.Info inf;
       Option<Absyn.ConstrainClass> con;
-    case(Absyn.ELEMENT(finalPrefix = f, redeclareKeywords = r, innerOuter=i, name=n, specification=spec, info=inf, constrainClass=con),name,index)
+    case(Absyn.ELEMENT(finalPrefix = f, redeclareKeywords = r, innerOuter=i, name=n, specification=spec, info=inf, constrainClass=con),name,index,singleton)
       equation
-        spec = fixElementSpecification(spec,name,index);
+        spec = fixElementSpecification(spec,name,index,singleton);
       then Absyn.ELEMENT(f,r,i,n,spec,inf,con);
   end match;
 end fixElement;
@@ -595,15 +597,16 @@ function fixElementItem
   input Absyn.ElementItem elementItemin;
   input String name;
   input Integer index;
+  input Boolean singleton;
   output Absyn.ElementItem elementItemout;
 
 algorithm
-  elementItemout := match(elementItemin,name,index)
+  elementItemout := match(elementItemin,name,index,singleton)
     local
       Absyn.Element element;
-    case(Absyn.ELEMENTITEM(element),name,index)
+    case(Absyn.ELEMENTITEM(element),name,index,singleton)
       equation
-        element = fixElement(element,name,index);
+        element = fixElement(element,name,index,singleton);
       then Absyn.ELEMENTITEM(element);
   end match;
 end fixElementItem;
@@ -613,20 +616,21 @@ function fixElementItems
   input list<Absyn.ElementItem> elementItemsin;
   input String name;
   input Integer index;
+  input Boolean singleton;
   output list<Absyn.ElementItem> elementItemsout;
 algorithm
-  elementItemsout := matchcontinue(elementItemsin,name,index)
+  elementItemsout := matchcontinue(elementItemsin,name,index,singleton)
     local
       Absyn.ElementItem element;
       list<Absyn.ElementItem> rest;
-    case(element::rest,name,index)
+    case(element::rest,name,index,singleton)
       equation
-        element = fixElementItem(element,name,index);
-        rest = fixElementItems(rest,name,index+1);
+        element = fixElementItem(element,name,index,singleton);
+        rest = fixElementItems(rest,name,index+1,singleton);
       then (element::rest);
-    case(element::{},name,index)
+    case(element::{},name,index,singleton)
       equation
-        element = fixElementItem(element,name,index);
+        element = fixElementItem(element,name,index,singleton);
       then (element::{});
   end matchcontinue;
 end fixElementItems;
@@ -670,12 +674,14 @@ algorithm
       list<String> slst;
       list<Absyn.Path> paths;
       Absyn.Path p;
+      Boolean b;
     case (ClassInf.UNIONTYPE(p),t,SCode.PARTS(elementLst = els))
       equation
         p = Absyn.FULLYQUALIFIED(p);
         slst = getListOfStrings(els);
         paths = Util.listMap1r(slst, Absyn.pathReplaceIdent, p);
-      then SOME((DAE.T_UNIONTYPE(paths),SOME(p)));
+        b = listLength(paths)==1;
+      then SOME((DAE.T_UNIONTYPE(paths,b),SOME(p)));
     case (_,t,_) then t;
   end matchcontinue;
 end fixUniontype;

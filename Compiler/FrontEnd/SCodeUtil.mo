@@ -194,6 +194,7 @@ algorithm
       Absyn.Class d;
       Absyn.Path name;
       Integer index;
+      Boolean singleton;
 
     case (d,Absyn.R_FUNCTION()) then Util.if_(containsExternalFuncDecl(d),SCode.R_EXT_FUNCTION(),SCode.R_FUNCTION());
     case (_,Absyn.R_CLASS()) then SCode.R_CLASS();
@@ -218,8 +219,8 @@ algorithm
     case (_,Absyn.R_PREDEFINED_BOOLEAN()) then SCode.R_PREDEFINED_BOOLEAN();
     case (_,Absyn.R_PREDEFINED_ENUMERATION()) then SCode.R_PREDEFINED_ENUMERATION();
 
-    case (_,Absyn.R_METARECORD(name,index)) //MetaModelica extension, added by x07simbj
-      then SCode.R_METARECORD(name,index);
+    case (_,Absyn.R_METARECORD(name,index,singleton)) //MetaModelica extension, added by x07simbj
+      then SCode.R_METARECORD(name,index,singleton);
     case (_,Absyn.R_UNIONTYPE()) then SCode.R_UNIONTYPE(); /*MetaModelica extension added by x07simbj */
 
   end match;

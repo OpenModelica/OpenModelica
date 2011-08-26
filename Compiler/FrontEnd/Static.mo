@@ -7826,6 +7826,7 @@ algorithm
       Integer index;
       list<String> fieldNames;
       list<DAE.Var> vars;
+      Boolean knownSingleton;
       
     case (cache,env,t as (DAE.T_METARECORD(fields=vars),SOME(fqPath)),args,nargs,impl,stopElab,st,pre,info)
       equation
@@ -7842,7 +7843,7 @@ algorithm
         Error.addSourceMessage(Error.WRONG_NO_OF_ARGS,{fn_str},info);
       then (cache,NONE());
 
-    case (cache,env,t as (DAE.T_METARECORD(index=index,utPath=utPath,fields=vars),SOME(fqPath)),args,nargs,impl,stopElab,st,pre,info)
+    case (cache,env,t as (DAE.T_METARECORD(index=index,utPath=utPath,fields=vars,knownSingleton=knownSingleton),SOME(fqPath)),args,nargs,impl,stopElab,st,pre,info)
       equation
         fieldNames = Util.listMap(vars, Types.getVarName);
         tys = Util.listMap(vars, Types.getVarType);
@@ -7851,7 +7852,7 @@ algorithm
         (cache,args_1,newslots,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, true ,impl, {}, pre, info);
         const = Util.listFold(constlist, Types.constAnd, DAE.C_CONST());
         tyconst = elabConsts(t, const);
-        t = (DAE.T_UNIONTYPE({}),SOME(utPath));
+        t = (DAE.T_UNIONTYPE({},knownSingleton),SOME(utPath));
         prop = getProperties(t, tyconst);
         true = Util.listFold(newslots, slotAnd, true);
         args_2 = expListFromSlots(newslots);
