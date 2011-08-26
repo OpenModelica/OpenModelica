@@ -5172,6 +5172,9 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += 'fill_alloc_<%ty_str%>(&<%tvar%>, <%valExp%>, <%listLength(dims)%>, <%dimsExp%>);<%\n%>'
     '<%tvar%>'
     
+  case call as CALL(path=IDENT(name="vector")) then
+    error(sourceInfo(),'vector() call does not have a C implementation <%printExpStr(call)%>')
+
   case CALL(path=IDENT(name="cat"), expLst=dim::arrays, attr=CALL_ATTR(ty = ty)) then
     let dim_exp = daeExp(dim, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let arrays_exp = (arrays |> array =>
