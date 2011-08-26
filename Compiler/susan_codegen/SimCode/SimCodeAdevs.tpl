@@ -498,6 +498,8 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
        // Calculate any equations that provide initial values
        <%makeInitialEqns(initialEquations)%>
        bound_params();
+	   // Save again after calculating initial equations and algorithms
+	   save_vars();
 	   // Calculate derived values
 	   calc_vars();
 	   // Solve for any remaining unknowns
