@@ -1461,3 +1461,10 @@ void fill_alloc_real_array(real_array_t* dest, modelica_real value, int ndims, .
         real_set(dest, i, value);
     }
 }
+
+void identity_alloc_real_array(int n,real_array_t* dest)
+{
+    alloc_real_array(dest,2,n,n);
+    identity_real_array(n,dest);
+}
+

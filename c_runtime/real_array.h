@@ -236,4 +236,6 @@ void cast_real_array_to_integer(real_array_t*, integer_array_t*);
 
 void fill_alloc_real_array(real_array_t* dest, modelica_real value, int ndims, ...);
 
+void identity_alloc_real_array(int n, real_array_t* dest);
+
 #endif
