@@ -3678,14 +3678,17 @@ algorithm
       DAE.Exp e;
       list<list<tuple<DAE.Exp, Boolean>>> mexpl;
       Integer dim;
-    case(DAE.CALL(expLst={DAE.ARRAY(ty,sc,expl)})) equation
-      e = Expression.makeSum(expl);
-    then e;
-    case(DAE.CALL(expLst={DAE.MATRIX(ty,dim,mexpl)})) equation
-      expl = Util.listMap(Util.listFlatten(mexpl), Util.tuple21);
-      e = Expression.makeSum(expl);
-    then e;
-
+      // TODO: Move this to simplify instead?
+      // 1 dimension? Easy case
+    case (DAE.CALL(expLst={DAE.ARRAY(DAE.ET_ARRAY(arrayDimensions=_::{}),sc,expl)}))
+      equation
+        e = Expression.makeSum(expl);
+      then e;
+    case (DAE.CALL(expLst={DAE.MATRIX(DAE.ET_ARRAY(arrayDimensions=_::_::{}),dim,mexpl)}))
+      equation
+        expl = Util.listMap(Util.listFlatten(mexpl), Util.tuple21);
+        e = Expression.makeSum(expl);
+      then e;
     case (e) then e;
   end matchcontinue;
 end elabBuiltinSum2;
