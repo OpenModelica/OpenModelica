@@ -2690,7 +2690,7 @@ template extTypeF77(ExpType type, Boolean isReference)
   let s = match type
   case ET_INT(__)         then "int"
   case ET_REAL(__)        then "double"
-  case ET_STRING(__)      then "char*"
+  case ET_STRING(__)      then "char"
   case ET_BOOL(__)        then "int"
   case ET_ENUMERATION(__) then "int"
   case ET_ARRAY(__)       then extTypeF77(ty, true)
@@ -6220,6 +6220,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case BOX(__)
   case CONS(__)
   case LIST(__)
+  case SIZE(__)          then expTypeFlag(typeof(exp), flag)
 
   case META_TUPLE(__)
   case META_OPTION(__)
