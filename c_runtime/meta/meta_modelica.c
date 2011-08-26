@@ -604,27 +604,9 @@ char* getRecordElementName(void* any, int element) {
 /*
  * Used by MDT for debugging just return whether Option type contain something or not.
  * */
-char* getOptionValue(void* any)
+int isOptionNone(void* any)
 {
-  mmc_uint_t hdr;
-  int numslots;
-  unsigned ctor;
-
-  initializeStringBuffer();
-
-  hdr = MMC_HDR_UNMARK(MMC_GETHDR(any));
-  numslots = MMC_HDRSLOTS(hdr);
-  ctor = MMC_HDRCTOR(hdr);
-
-  if (numslots==0 && ctor==1) /* NONE() */ {
-    checkAnyStringBufSize(0,7);
-    sprintf(anyStringBuf, "NONE()");
-  }
-  else if (numslots==1 && ctor==1) /* SOME(x) */ {
-    checkAnyStringBufSize(0,7);
-    sprintf(anyStringBuf, "SOME()");
-  }
-  return strdup(anyStringBuf);
+  return MMC_OPTIONNONE(any);
 }
 
 unsigned long mmc_prim_hash(void *p)

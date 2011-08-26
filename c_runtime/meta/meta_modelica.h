@@ -124,6 +124,7 @@ typedef int mmc_sint_t;
 #define MMC_STRUCTDATA(x) (((struct mmc_struct*)MMC_UNTAGPTR(x))->data)
 #define MMC_ARRAY_TAG 255
 #define MMC_STRLEN(x) (MMC_HDRSTRLEN(MMC_GETHDR(x)))
+#define MMC_OPTIONNONE(x) (0==MMC_HDRSLOTS(MMC_GETHDR(x)) ? 1 : 0)
 
 /*
  * adrpo: if a structure has pointers
@@ -430,7 +431,7 @@ void printAny(void*); /* For debugging */
 void printTypeOfAny(void*); /* For debugging */
 char* getTypeOfAny(void*); /* For debugging */
 char* getRecordElementName(void*, int); /* For debugging */
-char* getOptionValue(void*); /* For debugging */
+int isOptionNone(void*); /* For debugging */
 
 /*
  * Generated (Meta)Records should access a static, constant value of 
