@@ -272,8 +272,18 @@ algorithm
         s;
     
     case (DAE.POW(ty = t)) then " ^ ";
-    case (DAE.ADD_ARR(ty = _)) then " + ";
-    case (DAE.SUB_ARR(ty = _)) then " - ";
+    case (DAE.ADD_ARR(ty = t))
+      equation
+        ts = typeString(t);
+        s = stringAppendList({" +<ADD_ARR><", ts, "> "});
+      then
+        s;
+    case (DAE.SUB_ARR(ty = t))
+      equation
+        ts = typeString(t);
+        s = stringAppendList({" -<SUB_ARR><", ts, "> "});
+      then
+        s;
     case (DAE.MUL_ARR(ty = _)) then " *<MUL_ARRAY> ";
     case (DAE.DIV_ARR(ty = _)) then " / ";
     case (DAE.POW_ARR(ty = _)) then " ^ ";

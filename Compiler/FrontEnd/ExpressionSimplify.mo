@@ -1179,7 +1179,7 @@ algorithm
       DAE.Exp e_1,e1,e2,res,s1,a1;
       Type tp,atp,atp2;
       Boolean b;
-      Operator op2;
+      Operator op2,op;
     
     case (e1,DAE.MUL_MATRIX_PRODUCT(ty = tp),e2)
       equation
@@ -1187,17 +1187,15 @@ algorithm
       then
         e_1;
     
-    case(e1,DAE.ADD_ARR(ty = _),e2)
+    case(e1,op as DAE.ADD_ARR(ty = _),e2)
       equation
-        tp = Expression.typeof(e1);
-        a1 = simplifyVectorBinary0(e1,DAE.ADD(tp),e2);
+        a1 = simplifyVectorBinary0(e1,op,e2);
       then 
         a1;
     
-    case (e1,DAE.SUB_ARR(ty = _),e2)
+    case (e1,op as DAE.SUB_ARR(ty = _),e2)
       equation
-        tp = Expression.typeof(e1);
-        a1 = simplifyVectorBinary0(e1, DAE.SUB(tp), e2);
+        a1 = simplifyVectorBinary0(e1, op, e2);
       then
         a1;
     
@@ -1403,16 +1401,15 @@ algorithm
       then
         res;
 
-    case (e1,DAE.ADD_ARR(ty = _),e2)
+    case (e1,op as DAE.ADD_ARR(ty = _),e2)
       equation
-        tp = Expression.typeof(e1);
-        a1 = simplifyMatrixBinary(e1, DAE.ADD(tp), e2);
+        a1 = simplifyMatrixBinary(e1, op, e2);
       then a1;
 
-    case (e1,DAE.SUB_ARR(ty = _),e2)
+    case (e1,op as DAE.SUB_ARR(ty = _),e2)
       equation
-        tp = Expression.typeof(e1);
-        a1 = simplifyMatrixBinary(e1, DAE.SUB(tp), e2);
+        a1 = simplifyMatrixBinary(e1, op, e2);
+        // print("simplifyMatrixBinary: " +& ExpressionDump.printExpStr(e1) +& "=>" +& ExpressionDump.printExpStr(a1) +& "\n");
       then a1;
   end matchcontinue;
 end simplifyBinaryArray;
@@ -1644,6 +1641,18 @@ algorithm
       then 
         e2;
         
+    case(e1,DAE.ADD_ARR(ty=_),e2) 
+      equation
+        true = Expression.isZero(e1);
+      then 
+        e2;
+
+    case(e1,DAE.SUB_ARR(ty=_),e2) 
+      equation
+        true = Expression.isZero(e1);
+      then 
+        Expression.negate(e2);
+
     case(e1,DAE.SUB(ty=_),e2) 
       equation
         true = Expression.isZero(e1);
@@ -1797,6 +1806,7 @@ algorithm
     case ({(e1,b1)},op,{(e2,b2)})
       equation
         op2 = removeOperatorDimension(op);
+        // failure(_ = removeOperatorDimension(op2));
         b = b1 or b2;
         e = DAE.BINARY(e1,op2,e2);
       then {(e,b)};  // resulting operator 
@@ -4022,9 +4032,22 @@ Helper function for simplifyVectorBinary, removes an dimension from the operator
   input Operator inop;
   output Operator outop;
 algorithm outop := match(inop)
-  local Type ty1,ty2;
-  case( DAE.ADD(ty=ty1)) equation ty2 = Expression.unliftArray(ty1); then DAE.ADD(ty2);
-  case( DAE.SUB(ty=ty1)) equation ty2 = Expression.unliftArray(ty1); then DAE.SUB(ty2);
+  local
+    Type ty1,ty2;
+    Boolean b;
+    Operator op;
+  case DAE.ADD_ARR(ty=ty1)
+    equation
+      ty2 = Expression.unliftArray(ty1);
+      b = DAEUtil.expTypeArray(ty2);
+      op = Util.if_(b, DAE.ADD_ARR(ty2), DAE.ADD(ty2));
+    then op;
+  case DAE.SUB_ARR(ty=ty1)
+    equation
+      ty2 = Expression.unliftArray(ty1);
+      b = DAEUtil.expTypeArray(ty2);
+      op = Util.if_(b, DAE.SUB_ARR(ty2), DAE.SUB(ty2));
+    then op;
 end match;
 end removeOperatorDimension;
 
