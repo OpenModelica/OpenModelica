@@ -3221,12 +3221,10 @@ algorithm
     case (cache,env,{arraycr},_,impl,pre,info)
       equation
         (cache,arraycrefe,DAE.PROP(arrtp,_),_) = elabExp(cache,env, arraycr, impl,NONE(),true,pre,info);
-        c2 = Types.dimensionsKnown(arrtp);
-        c = Types.boolConst(c2);
         nd = Types.numberOfDimensions(arrtp);
         exp = DAE.ICONST(nd);
       then
-        (cache,exp,DAE.PROP(DAE.T_INTEGER_DEFAULT,c));
+        (cache,exp,DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_CONST()));
 
     case (cache,env,expl,_,impl,pre,info)
       equation
