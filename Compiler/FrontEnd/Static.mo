@@ -3658,40 +3658,10 @@ algorithm
         (tp,_) = Types.flattenArrayType(t);
         etp = Types.elabType(tp);
         exp_2 = Expression.makeBuiltinCall("sum", {exp_1}, etp);
-        exp_2 = elabBuiltinSum2(exp_2);
       then
         (cache,exp_2,DAE.PROP(tp,c));
   end matchcontinue;
 end elabBuiltinSum;
-
-protected function elabBuiltinSum2 " replaces sum({a1,a2,...an}) with a1+a2+...+an} and
-sum([a11,a12,...,a1n;...,am1,am2,..amn]) with a11+a12+...+amn
-"
-  input DAE.Exp inExp;
-  output DAE.Exp outExp;
-algorithm
-  outExp := matchcontinue(inExp)
-    local
-      DAE.ExpType ty;
-      Boolean sc;
-      list<DAE.Exp> expl;
-      DAE.Exp e;
-      list<list<tuple<DAE.Exp, Boolean>>> mexpl;
-      Integer dim;
-      // TODO: Move this to simplify instead?
-      // 1 dimension? Easy case
-    case (DAE.CALL(expLst={DAE.ARRAY(DAE.ET_ARRAY(arrayDimensions=_::{}),sc,expl)}))
-      equation
-        e = Expression.makeSum(expl);
-      then e;
-    case (DAE.CALL(expLst={DAE.MATRIX(DAE.ET_ARRAY(arrayDimensions=_::_::{}),dim,mexpl)}))
-      equation
-        expl = Util.listMap(Util.listFlatten(mexpl), Util.tuple21);
-        e = Expression.makeSum(expl);
-      then e;
-    case (e) then e;
-  end matchcontinue;
-end elabBuiltinSum2;
 
 protected function elabBuiltinProduct "function: elabBuiltinProduct
 

@@ -1135,7 +1135,8 @@ uniontype Exp "Expressions
   record MATRIX
     ExpType ty;
     Integer integer;
-    list<list<tuple<Exp, Boolean>>> scalar "scalar Matrix constructor. e.g. {1,0;0,1}" ;
+    list<list<tuple<Exp, Boolean>>> scalar "scalar Matrix constructor. e.g. {1,0;0,1}
+     - BUT WHY OH WHY IS IT A TUPLE? Are some elements scalar and others not? I hate this matrix representation // sjoelund.se " ;
   end MATRIX;
 
   record RANGE

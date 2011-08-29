@@ -613,14 +613,15 @@ protected function simplifyBuiltinCalls "simplifies some builtin calls (with no 
 algorithm
   outExp := matchcontinue (exp)
     local
+      list<list<tuple<DAE.Exp,Boolean>>> mexpl;
       list<DAE.Exp> es,expl;
       DAE.Exp e,len_exp,just_exp,e1,e2,e3,e4;
-      DAE.ExpType tp;
+      DAE.ExpType tp,tp1,tp2;
       DAE.Operator op;
       list<DAE.Exp> v1, v2;
-      Boolean scalar;
+      Boolean scalar,sc;
       list<Values.Value> valueLst;
-      Integer i,i1,i2;
+      Integer i,i1,i2,dim;
       String str;
       Real r;
     
@@ -724,6 +725,39 @@ algorithm
       equation
         e = Expression.makeBuiltinCall("delay",{e,e3,e4},tp);
       then DAE.UNARY(op,e);
+
+    // To calculate sums, first try matrix concatenation
+    case DAE.CALL(path=Absyn.IDENT("sum"),expLst={DAE.MATRIX(tp1,_,mexpl)},attr=DAE.CALL_ATTR(ty=tp2))
+      equation
+        es = Util.listMap(Util.listFlatten(mexpl), Util.tuple21);
+        tp1 = Expression.unliftArray(Expression.unliftArray(tp1)); 
+        sc = not Expression.isArrayType(tp1);
+        dim = listLength(es);
+        tp1 = Expression.liftArrayR(tp1,DAE.DIM_EXP(DAE.ICONST(dim)));
+        e = DAE.ARRAY(tp1,sc,es);
+        e = Expression.makeBuiltinCall("sum",{e},tp2);
+      then e;
+    // Then try array concatenation
+    case DAE.CALL(path=Absyn.IDENT("sum"),expLst={DAE.ARRAY(array=es,ty=tp1,scalar=false)},attr=DAE.CALL_ATTR(ty=tp2))
+      equation
+        es = simplifyCat(1,es,{},false);
+        tp1 = Expression.unliftArray(Expression.unliftArray(tp1));
+        sc = not Expression.isArrayType(tp1);
+        dim = listLength(es);
+        tp1 = Expression.liftArrayR(tp1,DAE.DIM_EXP(DAE.ICONST(dim)));
+        e = DAE.ARRAY(tp1,sc,es);
+        e = Expression.makeBuiltinCall("sum",{e},tp2);
+      then e;
+    // Try to reduce the number of dimensions
+    case DAE.CALL(path=Absyn.IDENT("sum"),expLst={DAE.ARRAY(array={e},scalar=false)},attr=DAE.CALL_ATTR(ty=tp2))
+      equation
+        e = Expression.makeBuiltinCall("sum",{e},tp2);
+      then e;
+    // The sum of a single array is simply the sum of its elements
+    case DAE.CALL(path=Absyn.IDENT("sum"),expLst={DAE.ARRAY(array=es,scalar=true)})
+      equation
+        e = Expression.makeSum(es);
+      then e;
 
     case DAE.CALL(path=Absyn.IDENT("cat"),expLst=_::{e1}) then e1;
 
