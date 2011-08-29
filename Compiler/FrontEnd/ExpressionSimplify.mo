@@ -735,7 +735,7 @@ algorithm
         tp1 = Debug.bcallret1(sc,Expression.unliftArray,tp1,tp1);
         tp1 = Debug.bcallret2(sc,Expression.liftArrayLeft,tp1,DAE.DIM_UNKNOWN(),tp1);
         dim = listLength(es);
-        tp1 = Expression.liftArrayLeft(tp1,DAE.DIM_EXP(DAE.ICONST(dim)));
+        tp1 = Expression.liftArrayLeft(tp1,DAE.DIM_INTEGER(dim));
         e = DAE.ARRAY(tp1,sc,es);
         e = Expression.makeBuiltinCall("sum",{e},tp2);
         // print("Matrix sum: " +& boolString(sc) +& ExpressionDump.typeString(tp1) +& " " +& ExpressionDump.printExpStr(e) +& "\n");
@@ -749,7 +749,7 @@ algorithm
         tp1 = Debug.bcallret1(sc,Expression.unliftArray,tp1,tp1);
         tp1 = Debug.bcallret2(sc,Expression.liftArrayLeft,tp1,DAE.DIM_UNKNOWN(),tp1);
         dim = listLength(es);
-        tp1 = Expression.liftArrayLeft(tp1,DAE.DIM_EXP(DAE.ICONST(dim)));
+        tp1 = Expression.liftArrayLeft(tp1,DAE.DIM_INTEGER(dim));
         e = DAE.ARRAY(tp1,sc,es);
         e = Expression.makeBuiltinCall("sum",{e},tp2);
         // print("Array sum: " +& boolString(sc) +& ExpressionDump.typeString(tp1) +& " " +& ExpressionDump.printExpStr(e) +& "\n");

@@ -3631,24 +3631,6 @@ algorithm
       DAE.ExpType etp;
       list<Absyn.Exp> aexps;
 
-    case (cache,env,{arrexp},_,impl,pre,info) /* impl */
-      equation
-        (cache,exp_1,DAE.PROP(ty,c),_) = elabExp(cache,env, arrexp, impl,NONE(),true,pre,info);
-        (exp_1,ty2) = Types.matchType(exp_1, ty, DAE.T_INTEGER_DEFAULT, true);
-        str_exp = "sum(" +& Dump.printExpStr(arrexp) +& ")";
-        str_pre = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER, {str_exp, str_pre}, info);
-      then
-         (cache,exp_1,DAE.PROP(DAE.T_INTEGER_DEFAULT,c));
-    case (cache,env,{arrexp},_,impl,pre,info) /* impl */
-      equation
-        (cache,exp_1,DAE.PROP(ty,c),_) = elabExp(cache,env, arrexp, impl,NONE(),true,pre,info);
-        (exp_1,ty2) = Types.matchType(exp_1, ty, DAE.T_REAL_DEFAULT, true);
-        str_exp = "sum(" +& Dump.printExpStr(arrexp) +& ")";
-        str_pre = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER, {str_exp, str_pre}, info);
-      then
-         (cache,exp_1,DAE.PROP(DAE.T_REAL_DEFAULT,c));
     case (cache,env,aexps,_,impl,pre,info)
       equation
         arrexp = Util.listFirst(aexps);
