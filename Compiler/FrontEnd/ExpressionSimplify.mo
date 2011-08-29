@@ -730,23 +730,29 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT("sum"),expLst={DAE.MATRIX(tp1,_,mexpl)},attr=DAE.CALL_ATTR(ty=tp2))
       equation
         es = Util.listMap(Util.listFlatten(mexpl), Util.tuple21);
-        tp1 = Expression.unliftArray(Expression.unliftArray(tp1)); 
+        tp1 = Expression.unliftArray(Expression.unliftArray(tp1));
         sc = not Expression.isArrayType(tp1);
+        tp1 = Debug.bcallret1(sc,Expression.unliftArray,tp1,tp1);
+        tp1 = Debug.bcallret2(sc,Expression.liftArrayLeft,tp1,DAE.DIM_UNKNOWN(),tp1);
         dim = listLength(es);
-        tp1 = Expression.liftArrayR(tp1,DAE.DIM_EXP(DAE.ICONST(dim)));
+        tp1 = Expression.liftArrayLeft(tp1,DAE.DIM_EXP(DAE.ICONST(dim)));
         e = DAE.ARRAY(tp1,sc,es);
         e = Expression.makeBuiltinCall("sum",{e},tp2);
+        // print("Matrix sum: " +& boolString(sc) +& ExpressionDump.typeString(tp1) +& " " +& ExpressionDump.printExpStr(e) +& "\n");
       then e;
     // Then try array concatenation
     case DAE.CALL(path=Absyn.IDENT("sum"),expLst={DAE.ARRAY(array=es,ty=tp1,scalar=false)},attr=DAE.CALL_ATTR(ty=tp2))
       equation
         es = simplifyCat(1,es,{},false);
-        tp1 = Expression.unliftArray(Expression.unliftArray(tp1));
+        tp1 = Expression.unliftArray(tp1);
         sc = not Expression.isArrayType(tp1);
+        tp1 = Debug.bcallret1(sc,Expression.unliftArray,tp1,tp1);
+        tp1 = Debug.bcallret2(sc,Expression.liftArrayLeft,tp1,DAE.DIM_UNKNOWN(),tp1);
         dim = listLength(es);
-        tp1 = Expression.liftArrayR(tp1,DAE.DIM_EXP(DAE.ICONST(dim)));
+        tp1 = Expression.liftArrayLeft(tp1,DAE.DIM_EXP(DAE.ICONST(dim)));
         e = DAE.ARRAY(tp1,sc,es);
         e = Expression.makeBuiltinCall("sum",{e},tp2);
+        // print("Array sum: " +& boolString(sc) +& ExpressionDump.typeString(tp1) +& " " +& ExpressionDump.printExpStr(e) +& "\n");
       then e;
     // Try to reduce the number of dimensions
     case DAE.CALL(path=Absyn.IDENT("sum"),expLst={DAE.ARRAY(array={e},scalar=false)},attr=DAE.CALL_ATTR(ty=tp2))
