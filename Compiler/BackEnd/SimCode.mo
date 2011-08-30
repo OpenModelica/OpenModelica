@@ -748,10 +748,10 @@ algorithm
     local
       DAE.ComponentRef cr;
       DAE.ExpType aty;
-      list<list<tuple<DAE.Exp, Boolean>>> rows;
+      list<list<DAE.Exp>> rows;
       DAE.Exp crefExp;
       
-    case(DAE.MATRIX(ty=aty, scalar = rows as (((DAE.CREF(componentRef=cr),true)::_)::_) ),context)
+    case(DAE.MATRIX(ty=aty, scalar = true, matrix = rows as (((DAE.CREF(componentRef=cr))::_)::_) ),context)
       equation
         failure(FUNCTION_CONTEXT()=context);
         { DAE.INDEX(DAE.ICONST(1)), DAE.INDEX(DAE.ICONST(1)) } = ComponentReference.crefLastSubs(cr);
@@ -792,7 +792,7 @@ end hackGetFirstExternalFunctionLib;
 
 protected function isMatrixExpansion
 "Helper funtion to hackMatrixReverseToCref."
-  input list<list<tuple<DAE.Exp, Boolean>>> rows;
+  input list<list<DAE.Exp>> rows;
   input DAE.ComponentRef inCref;
   input Integer rowIndex;
   input Integer colIndex;
@@ -800,20 +800,20 @@ protected function isMatrixExpansion
 algorithm
   isExpanded := matchcontinue(rows, inCref, rowIndex, colIndex)
     local
-      list<list<tuple<DAE.Exp, Boolean>>> restRows;
-      list<tuple<DAE.Exp, Boolean>> restElems;
+      list<list<DAE.Exp>> restRows;
+      list<DAE.Exp> restElems;
       Integer r,c;
       DAE.ComponentRef cr;
     case({}, _,_,_) then true;
     case({} :: restRows, inCref, rowIndex,_) then isMatrixExpansion(restRows, inCref, rowIndex+1, 1);
-    case ( ((DAE.CREF(componentRef=cr),true) :: restElems) :: restRows, inCref, rowIndex, colIndex) 
+    case ( (DAE.CREF(componentRef=cr) :: restElems) :: restRows, inCref, rowIndex, colIndex) 
       equation
         { DAE.INDEX(DAE.ICONST(r)), DAE.INDEX(DAE.ICONST(c)) } = ComponentReference.crefLastSubs(cr);
         true = (r == rowIndex) and (c == colIndex);
         cr = ComponentReference.crefStripLastSubs(cr);
         true = ComponentReference.crefEqualNoStringCompare(inCref,cr);
       then isMatrixExpansion(restElems :: restRows, inCref, rowIndex, colIndex+1);
-    case (_,_,_,_) then false;
+    else false;
   end matchcontinue;
 end isMatrixExpansion;
 
@@ -7827,7 +7827,7 @@ algorithm
       list<Expression.ComponentRef> crefs,crefs_1;
       Expression.ComponentRef cr;
       list<DAE.Exp> expl;
-      list<list<tuple<DAE.Exp, Boolean>>> column;
+      list<list<DAE.Exp>> column;
       
     case (DAE.ARRAY(array = expl))
       equation
@@ -7837,45 +7837,16 @@ algorithm
       then
         cr;
         
-    case (DAE.MATRIX(scalar = column))
+    case (DAE.MATRIX(matrix = column))
       equation
-        ((crefs as (cr :: _))) = Util.listMap(column, getVectorizedCrefFromExpMatrix);
-        crefs_1 = Util.listMap(crefs, ComponentReference.crefStripLastSubs);
-        _ = Util.listReduce(crefs_1, ComponentReference.crefEqualReturn);
-      then
-        cr;
-  end match;
-end getVectorizedCrefFromExp;
-
-protected function getVectorizedCrefFromExpMatrix
-"function: getVectorizedCrefFromExpMatrix
-  author: KN
-  Helper function for the 2D part of getVectorizedCrefFromExp
-  Returns the component ref v if list of expressions is on form
-   {v{1},v{2},...v{n}}  for some n."
-  input list<tuple<DAE.Exp, Boolean>> column; //One column in a matrix.
-  output Expression.ComponentRef outComponentRef; //The expanded column
-algorithm
-  outComponentRef := match (column)
-    local
-      list<tuple<DAE.Exp, Boolean>> col;
-      list<Expression.ComponentRef> crefs,crefs_1;
-      Expression.ComponentRef cr;
-      
-    case (col)
-      equation
-        ((crefs as (cr :: _))) = Util.listMap(col, Expression.expCrefTuple); //Get all CRefs from the list of tuples.
+        expl = Util.listFlatten(column);
+        ((crefs as (cr :: _))) = Util.listMap(expl, Expression.expCref); //Get all CRefs from exp1.
         crefs_1 = Util.listMap(crefs, ComponentReference.crefStripLastSubs); //Strip last subscripts
         _ = Util.listReduce(crefs_1, ComponentReference.crefEqualReturn); //Check if elements are equal, remove one
       then
         cr;
-        
-    case (_)
-      equation
-      then
-        fail();
   end match;
-end getVectorizedCrefFromExpMatrix;
+end getVectorizedCrefFromExp;
 
 protected function singleAlgorithmSection
 "function: singleAlgorithmSection

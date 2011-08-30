@@ -891,14 +891,14 @@ algorithm
       Values.Value v;
       list<Values.Value> xs,xs2,vallist;
       list<DAE.Type> typelist;
-      list<list<tuple<DAE.Exp, Boolean>>> mexpl;
-      list<tuple<DAE.Exp, Boolean>> mexpl2;
+      list<list<DAE.Exp>> mexpl;
+      list<DAE.Exp> mexpl2;
       list<Integer> int_dims;
       list<DAE.Dimension> dims;
       Integer i;
       Real r;
       String s, scope, name, tyStr;
-      Boolean b;
+      Boolean b,sc;
       list<DAE.Exp> expl;
       list<DAE.ExpType> tpl;
       list<String> namelst;
@@ -926,10 +926,9 @@ algorithm
       equation
         failure(Values.ARRAY(valueLst = _) = v);
         explist = Util.listMap((v :: xs), valueExp);
-        DAE.MATRIX(t,i,mexpl) = valueExp(Values.ARRAY(xs2,int_dims));
-        mexpl2 = Util.listThreadTuple(explist,Util.listFill(true,i));
+        DAE.MATRIX(t,i,sc,mexpl) = valueExp(Values.ARRAY(xs2,int_dims));
         t = Expression.arrayDimensionSetFirst(t, DAE.DIM_INTEGER(dim));
-      then DAE.MATRIX(t,dim,mexpl2::mexpl);
+      then DAE.MATRIX(t,dim,sc,explist::mexpl);
 
     /* Matrix last row*/
     case(Values.ARRAY(valueLst = {Values.ARRAY(valueLst=v::xs)}))
@@ -939,11 +938,11 @@ algorithm
         explist = Util.listMap((v :: xs), valueExp);
         vt = Types.typeOfValue(v);
         t = Types.elabType(vt);
+        sc = not Expression.isArrayType(t);
         dim = listLength(v::xs);
         t = Expression.liftArrayR(t,DAE.DIM_INTEGER(dim));
         t = Expression.liftArrayR(t,DAE.DIM_INTEGER(1));
-        mexpl2 = Util.listThreadTuple(explist,Util.listFill(true,dim));
-      then DAE.MATRIX(t,dim,{mexpl2});
+      then DAE.MATRIX(t,dim,sc,{explist});
 
     /* Generic array */
     case (Values.ARRAY(valueLst = (v :: xs)))

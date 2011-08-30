@@ -234,10 +234,10 @@ algorithm
       then
         Absyn.ARRAY(expl_1);
     
-    case(DAE.MATRIX(_,_,mexpl)) equation
-      mexpl2 = Util.listListMap(mexpl,Util.tuple21);
-      amexpl = Util.listListMap(mexpl2,unelabExp);
-    then (Absyn.MATRIX(amexpl));
+    case(DAE.MATRIX(_,_,_,mexpl2))
+      equation
+        amexpl = Util.listListMap(mexpl2,unelabExp);
+      then (Absyn.MATRIX(amexpl));
 
     case(DAE.RANGE(_,e1,SOME(e2),e3)) equation
       ae1 = unelabExp(e1);
@@ -861,10 +861,10 @@ algorithm
     local
       Type ty;
       DAE.ComponentRef cr;
-      Boolean s;
+      Boolean s,sc;
       list<DAE.Exp> a;
       Integer i;
-      list<list<tuple<DAE.Exp, Boolean>>> mat;
+      list<list<DAE.Exp>> mat;
       DAE.Exp expCref;
     
     case DAE.CREF(componentRef = cr, ty = ty)
@@ -880,11 +880,11 @@ algorithm
       then
         DAE.ARRAY(ty, s, a);
     
-    case DAE.MATRIX(ty = ty, integer = i, scalar = mat)
+    case DAE.MATRIX(ty = ty, integer = i, scalar = sc, matrix = mat)
       equation
         ty = unliftArray(ty);
       then
-        DAE.MATRIX(ty, i, mat);
+        DAE.MATRIX(ty, i, sc, mat);
     
     case (_) then inExp;
     
@@ -2291,152 +2291,33 @@ algorithm
   end matchcontinue;
 end getTermsContainingX;
 
-public function countBinary "counts the number of binary operations in an expression"
-  input DAE.Exp e;
-  output Integer count;
-algorithm
-  count := matchcontinue(e)
-    local DAE.Exp e1,e2,e3; list<DAE.Exp> expl; list<list<tuple<DAE.Exp,Boolean>>> mexpl;
-    case(DAE.BINARY(e1,_,e2)) 
-      equation
-        count = 1 + countBinary(e1) + countBinary(e2);
-      then count;
-    case(DAE.IFEXP(e1,e2,e3)) 
-      equation
-        count =  countBinary(e2) + countBinary(e3);
-      then count;
-    case(DAE.CALL(expLst = expl)) 
-      equation
-        count = Util.listReduce(Util.listMap(expl,countBinary),intAdd);
-      then count;
-    case(DAE.PARTEVALFUNCTION(expList = expl))
-      equation
-        count = Util.listReduce(Util.listMap(expl,countBinary),intAdd);
-      then count;
-    case(DAE.ARRAY(array = expl)) 
-      equation
-        count = Util.listReduce(Util.listMap(expl,countBinary),intAdd);
-      then count;
-    case(DAE.MATRIX(scalar=mexpl)) 
-      equation
-        expl = Util.listFlatten(Util.listListMap(mexpl,Util.tuple21));
-        count = Util.listReduce(Util.listMap(expl,countBinary),intAdd);
-      then count;
-    case(DAE.RANGE(_,e1,SOME(e2),e3)) 
-      equation
-        count = countBinary(e1) + countBinary(e2) + countBinary(e3);
-      then count;
-    case(DAE.RANGE(_,e1,NONE(),e3)) 
-      equation
-        count = countBinary(e1) + countBinary(e3);
-      then count;
-    case(DAE.TUPLE(expl)) 
-      equation
-        count = Util.listReduce(Util.listMap(expl,countBinary),intAdd);
-      then count;
-    case(DAE.CAST(_,e)) then countBinary(e);
-    case(DAE.ASUB(e,_)) then countBinary(e);
-    case(_) then 0;
-  end matchcontinue;
-end countBinary;
-
-public function countMulDiv "counts the number of multiplications and divisions in an expression"
-  input DAE.Exp e;
-  output Integer count;
-algorithm
-  count := matchcontinue(e)
-    local DAE.Exp e1,e2,e3; list<DAE.Exp> expl; list<list<tuple<DAE.Exp,Boolean>>> mexpl;
-    case(DAE.BINARY(e1,DAE.MUL(_),e2)) equation
-      count = 1 + countMulDiv(e1) + countMulDiv(e2);
-    then count;
-    case(DAE.BINARY(e1,DAE.DIV(_),e2)) equation
-      count = 1 + countMulDiv(e1) + countMulDiv(e2);
-    then count;
-    case(DAE.IFEXP(e1,e2,e3)) equation
-      count =  countMulDiv(e2) + countMulDiv(e3);
-    then count;
-    case(DAE.CALL(expLst = expl)) equation
-      count = Util.listReduce(Util.listMap(expl,countMulDiv),intAdd);
-    then count;
-    case(DAE.PARTEVALFUNCTION(expList = expl)) equation
-      count = Util.listReduce(Util.listMap(expl,countMulDiv),intAdd);
-    then count;
-    case(DAE.ARRAY(array = expl)) equation
-      count = Util.listReduce(Util.listMap(expl,countMulDiv),intAdd);
-    then count;
-    case(DAE.MATRIX(scalar=mexpl)) equation
-      expl = Util.listFlatten(Util.listListMap(mexpl,Util.tuple21));
-      count = Util.listReduce(Util.listMap(expl,countMulDiv),intAdd);
-    then count;
-    case(DAE.RANGE(_,e1,SOME(e2),e3)) equation
-      count = countMulDiv(e1) + countMulDiv(e2) + countMulDiv(e3);
-    then count;
-    case(DAE.RANGE(_,e1,NONE(),e3)) equation
-      count = countMulDiv(e1) + countMulDiv(e3);
-    then count;
-    case(DAE.TUPLE(expl)) equation
-      count = Util.listReduce(Util.listMap(expl,countMulDiv),intAdd);
-    then count;
-    case(DAE.CAST(_,e)) then countMulDiv(e);
-    case(DAE.ASUB(e,_)) then countMulDiv(e);
-    case(_) then 0;
-  end matchcontinue;
-end countMulDiv;
-
-public function realIfRealInArray "function: realIfRealInArray
-this function takes a list of numbers. If one of them is a real, type real is returned.
-Otherwise Inteteger. Fails on other types."
-  input list<DAE.Exp> inExps;
-  output Type otype;
-algorithm otype := matchcontinue(inExps)
-  local
-    DAE.Exp e1,e2;
-    list<DAE.Exp> expl;
-    Type ty,rty;
-    case({}) then DAE.ET_INT();
-  case( e1 :: expl)
-    equation
-      (ty as DAE.ET_INT()) = typeof(e1);
-      rty = realIfRealInArray(expl);
-      then
-        rty;
-  case(e1 :: expl)
-    equation
-    (ty as DAE.ET_REAL()) = typeof(e1);
-      rty = realIfRealInArray(expl);
-    then
-      ty;
-  case(_)
-    equation
-    Debug.fprint("failtrace"," realIfRealInArray got non array/real Expressions \n");
-    then
-      fail();
-  end matchcontinue;
-end realIfRealInArray;
-
 public function flattenArrayExpToList "returns all non-array expressions of an array expression as a long list
 E.g. {[1,2;3,4],[4,5;6,7]} => {1,2,3,4,4,5,6,7}"
   input DAE.Exp e;
   output list<DAE.Exp> expLst;
 algorithm
   expLst := matchcontinue(e)
-  local
-    list<DAE.Exp> expl;
-    list<list<tuple<DAE.Exp,Boolean>>> mexpl;
-    case(DAE.UNARY(operator=DAE.UMINUS_ARR(ty=_),exp=DAE.ARRAY(array=expl))) equation
-      expl = Util.listFlatten(Util.listMap(expl,flattenArrayExpToList));
-      expLst = Util.listMap(expl,negate);
-    then expLst;
-    case(DAE.ARRAY(array=expl)) equation
-      expLst = Util.listFlatten(Util.listMap(expl,flattenArrayExpToList));
-    then expLst;
-    case(DAE.UNARY(operator=DAE.UMINUS_ARR(ty=_),exp=DAE.MATRIX(scalar=mexpl))) equation
-      expl = Util.listFlatten(Util.listMap(Util.listFlatten(Util.listListMap(mexpl,Util.tuple21)),flattenArrayExpToList));
-      expLst = Util.listMap(expl,negate);
-    then expLst;
-    case(DAE.MATRIX(scalar=mexpl)) equation
-      expLst = Util.listFlatten(Util.listMap(Util.listFlatten(Util.listListMap(mexpl,Util.tuple21)),flattenArrayExpToList));
-    then expLst;
+    local
+      list<DAE.Exp> expl;
+      list<list<DAE.Exp>> mexpl;
+    case(DAE.UNARY(operator=DAE.UMINUS_ARR(ty=_),exp=DAE.ARRAY(array=expl)))
+      equation
+        expl = Util.listFlatten(Util.listMap(expl,flattenArrayExpToList));
+        expLst = Util.listMap(expl,negate);
+      then expLst;
+    case(DAE.ARRAY(array=expl))
+      equation
+        expLst = Util.listFlatten(Util.listMap(expl,flattenArrayExpToList));
+      then expLst;
+    case(DAE.UNARY(operator=DAE.UMINUS_ARR(ty=_),exp=DAE.MATRIX(matrix=mexpl)))
+      equation
+        expl = Util.listFlatten(Util.listMap(Util.listFlatten(mexpl),flattenArrayExpToList));
+        expLst = Util.listMap(expl,negate);
+      then expLst;
+    case(DAE.MATRIX(matrix=mexpl))
+      equation
+        expLst = Util.listFlatten(Util.listMap(Util.listFlatten(mexpl),flattenArrayExpToList));
+      then expLst;
     case(e) then {e};
   end matchcontinue;
 end flattenArrayExpToList;
@@ -3341,10 +3222,10 @@ algorithm
       FuncExpType rel;
       list<DAE.Exp> expl_1,expl;
       Absyn.Path fn,path;
-      Boolean t,scalar,built;
+      Boolean t,scalar,built,sc;
       Type tp;
       Integer i;
-      list<list<tuple<DAE.Exp, Boolean>>> lstexpl_1,lstexpl;
+      list<list<DAE.Exp>> lstexpl_1,lstexpl;
       Integer iscalar;
       Ident id,str;
       list<DAE.Element> localDecls;
@@ -3481,10 +3362,10 @@ algorithm
       then
         ((e,ext_arg_2));
     
-    case ((e as DAE.MATRIX(ty = tp,integer = iscalar,scalar = lstexpl)),rel,ext_arg)
+    case ((e as DAE.MATRIX(ty = tp,integer = iscalar,scalar = sc, matrix=lstexpl)),rel,ext_arg)
       equation
         (lstexpl_1,ext_arg_1) = traverseExpMatrix(lstexpl, rel, ext_arg);
-        e = Util.if_(referenceEq(lstexpl,lstexpl_1),e,DAE.MATRIX(tp,iscalar,lstexpl_1));
+        e = Util.if_(referenceEq(lstexpl,lstexpl_1),e,DAE.MATRIX(tp,iscalar,sc,lstexpl_1));
         ((e,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((e,ext_arg_2));
@@ -3691,10 +3572,10 @@ protected function traverseExpMatrix
   author: PA
    Helper function to traverseExp, traverses matrix expressions."
   replaceable type Type_a subtypeof Any;
-  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpBooleanLstLst;
+  input list<list<DAE.Exp>> inTplExpBooleanLstLst;
   input FuncExpType func;
   input Type_a inTypeA;
-  output list<list<tuple<DAE.Exp, Boolean>>> outTplExpBooleanLstLst;
+  output list<list<DAE.Exp>> outTplExpBooleanLstLst;
   output Type_a outTypeA;
   partial function FuncExpType
     input tuple<DAE.Exp, Type_a> inTplExpTypeA;
@@ -3706,54 +3587,19 @@ algorithm
     local
       FuncExpType rel;
       Type_a e_arg,e_arg_1,e_arg_2;
-      list<tuple<DAE.Exp, Boolean>> row_1,row;
-      list<list<tuple<DAE.Exp, Boolean>>> rows_1,rows;
+      list<DAE.Exp> row_1,row;
+      list<list<DAE.Exp>> rows_1,rows;
     
     case ({},_,e_arg) then ({},e_arg);
     
     case ((row :: rows),rel,e_arg)
       equation
-        (row_1,e_arg_1) = traverseExpMatrix2(row, rel, e_arg);
+        ((row_1,e_arg_1)) = traverseExpList(row, rel, e_arg);
         (rows_1,e_arg_2) = traverseExpMatrix(rows, rel, e_arg_1);
       then
         ((row_1 :: rows_1),e_arg_2);
   end match;
 end traverseExpMatrix;
-
-protected function traverseExpMatrix2
-"function: traverseExpMatrix2
-  author: PA
-  Helper function to traverseExpMatrix."
-  replaceable type Type_a subtypeof Any;
-  input list<tuple<DAE.Exp, Boolean>> inTplExpBooleanLst;
-  input FuncExpType func;
-  input Type_a inTypeA;
-  output list<tuple<DAE.Exp, Boolean>> outTplExpBooleanLst;
-  output Type_a outTypeA;
-  partial function FuncExpType
-    input tuple<DAE.Exp, Type_a> inTplExpTypeA;
-    output tuple<DAE.Exp, Type_a> outTplExpTypeA;
-    replaceable type Type_a subtypeof Any;
-  end FuncExpType;
-algorithm
-  (outTplExpBooleanLst,outTypeA) := match (inTplExpBooleanLst,func,inTypeA)
-    local
-      Type_a e_arg,e_arg_1,e_arg_2;
-      DAE.Exp e_1,e;
-      list<tuple<DAE.Exp, Boolean>> rest_1,rest;
-      Boolean b;
-      FuncExpType rel;
-    
-    case ({},_,e_arg) then ({},e_arg);
-    
-    case (((e,b) :: rest),rel,e_arg)
-      equation
-        ((e_1,e_arg_1)) = traverseExp(e, rel, e_arg);
-        (rest_1,e_arg_2) = traverseExpMatrix2(rest, rel, e_arg_1);
-      then
-        (((e_1,b) :: rest_1),e_arg_2);
-  end match;
-end traverseExpMatrix2;
 
 public function traverseExpList
 "function traverseExpList
@@ -3845,12 +3691,12 @@ algorithm
       FuncExpType rel;
       list<DAE.Exp> expl_1,expl;
       Absyn.Path fn,path;
-      Boolean t,scalar,built;
+      Boolean t,scalar,built,sc;
       Type tp,et;
       Integer i;
       String id,str;
       list<String> fieldNames;
-      list<list<tuple<DAE.Exp, Boolean>>> lstexpl_1,lstexpl;
+      list<list<DAE.Exp>> lstexpl_1,lstexpl;
       Integer iscalar;
       Integer index_;
       Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
@@ -3936,11 +3782,11 @@ algorithm
       then
         ((DAE.ARRAY(tp,scalar,expl_1),ext_arg_1));
     
-    case ((e as DAE.MATRIX(ty = tp,integer = iscalar,scalar = lstexpl)),rel,ext_arg)
+    case ((e as DAE.MATRIX(ty = tp,integer = iscalar,scalar=sc,matrix = lstexpl)),rel,ext_arg)
       equation
         (lstexpl_1,ext_arg_1) = traverseExpMatrixTopDown(lstexpl, rel, ext_arg);
       then
-        ((DAE.MATRIX(tp,iscalar,lstexpl_1),ext_arg_1));
+        ((DAE.MATRIX(tp,iscalar,sc,lstexpl_1),ext_arg_1));
     
     case ((e as DAE.RANGE(ty = tp,exp = e1,expOption = NONE(),range = e2)),rel,ext_arg)
       equation
@@ -4074,10 +3920,10 @@ protected function traverseExpMatrixTopDown
   author: PA
    Helper function to traverseExpTopDown, traverses matrix expressions."
   replaceable type Type_a subtypeof Any;
-  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpBooleanLstLst;
+  input list<list<DAE.Exp>> inTplExpBooleanLstLst;
   input FuncExpType func;
   input Type_a inTypeA;
-  output list<list<tuple<DAE.Exp, Boolean>>> outTplExpBooleanLstLst;
+  output list<list<DAE.Exp>> outTplExpBooleanLstLst;
   output Type_a outTypeA;
   partial function FuncExpType
     input tuple<DAE.Exp, Type_a> inTpl;
@@ -4088,53 +3934,19 @@ algorithm
     local
       FuncExpType rel;
       Type_a e_arg,e_arg_1,e_arg_2;
-      list<tuple<DAE.Exp, Boolean>> row_1,row;
-      list<list<tuple<DAE.Exp, Boolean>>> rows_1,rows;
+      list<DAE.Exp> row_1,row;
+      list<list<DAE.Exp>> rows_1,rows;
     
     case ({},_,e_arg) then ({},e_arg);
     
     case ((row :: rows),rel,e_arg)
       equation
-        (row_1,e_arg_1) = traverseExpMatrix2TopDown(row, rel, e_arg);
+        ((row_1,e_arg_1)) = traverseExpListTopDown(row, rel, e_arg);
         (rows_1,e_arg_2) = traverseExpMatrixTopDown(rows, rel, e_arg_1);
       then
         ((row_1 :: rows_1),e_arg_2);
   end match;
 end traverseExpMatrixTopDown;
-
-protected function traverseExpMatrix2TopDown
-"function: traverseExpMatrix2TopDown
-  author: PA
-  Helper function to traverseExpMatrixTopDown."
-  replaceable type Type_a subtypeof Any;
-  input list<tuple<DAE.Exp, Boolean>> inTplExpBooleanLst;
-  input FuncExpType func;
-  input Type_a inTypeA;
-  output list<tuple<DAE.Exp, Boolean>> outTplExpBooleanLst;
-  output Type_a outTypeA;
-  partial function FuncExpType
-    input tuple<DAE.Exp, Type_a> inTpl;
-    output tuple<DAE.Exp, Boolean, Type_a> outTpl;
-  end FuncExpType;
-algorithm
-  (outTplExpBooleanLst,outTypeA) := match (inTplExpBooleanLst,func,inTypeA)
-    local
-      Type_a e_arg,e_arg_1,e_arg_2;
-      DAE.Exp e_1,e;
-      list<tuple<DAE.Exp, Boolean>> rest_1,rest;
-      Boolean b;
-      FuncExpType rel;
-    
-    case ({},_,e_arg) then ({},e_arg);
-    
-    case (((e,b) :: rest),rel,e_arg)
-      equation
-        ((e_1,e_arg_1)) = traverseExpTopDown(e, rel, e_arg);
-        (rest_1,e_arg_2) = traverseExpMatrix2TopDown(rest, rel, e_arg_1);
-      then
-        (((e_1,b) :: rest_1),e_arg_2);
-  end match;
-end traverseExpMatrix2TopDown;
 
 public function traverseExpListTopDown
 "function traverseExpList
@@ -4530,7 +4342,7 @@ algorithm
       DAE.Operator op;
       ComponentRef cref;
       list<DAE.Exp> expl;
-      list<list<tuple<DAE.Exp, Boolean>>> mat_expl;
+      list<list<DAE.Exp>> mat_expl;
       String error_msg;
       Ident id;
       DAE.MatchType match_ty;
@@ -4540,7 +4352,7 @@ algorithm
       Integer index, dim;
       Option<tuple<DAE.Exp, Integer, Integer>> opt_exp_asub;
       Absyn.Path path;
-      Boolean b1, b2;
+      Boolean b1, b2, sc;
       Type ty;
       list<String> strl;
       Option<Values.Value> v;
@@ -4621,12 +4433,11 @@ algorithm
       then
         (DAE.ARRAY(ty, b1, expl), tup);
 
-    case (DAE.MATRIX(ty = ty, integer = dim, scalar = mat_expl), tup)
+    case (DAE.MATRIX(ty = ty, integer = dim, scalar = sc, matrix = mat_expl), tup)
       equation
-        (mat_expl, tup) = Util.listListMapAndFold(mat_expl,
-          traverseExpBidirMatrixElement, tup);
+        (mat_expl, tup) = Util.listListMapAndFold(mat_expl, traverseExpBidir, tup);
       then
-        (DAE.MATRIX(ty, dim, mat_expl), tup);
+        (DAE.MATRIX(ty, dim, sc, mat_expl), tup);
 
     case (DAE.RANGE(ty = ty, exp = e1, expOption = oe1, range = e2), tup)
       equation
@@ -4881,7 +4692,7 @@ algorithm
   end match;
 end traverseExpSubs;
 
-public function traverseExpTopDownCrefHelper
+protected function traverseExpTopDownCrefHelper
   input ComponentRef inCref;
   input FuncType rel;
   input Argument arg;
@@ -4919,7 +4730,7 @@ algorithm
   end match;
 end traverseExpTopDownCrefHelper;
 
-public function traverseExpBidirSubs
+protected function traverseExpBidirSubs
   "Helper function to traverseExpBidirCref. Traverses expressions in a
   subscript."
   input Subscript inSubscript;
@@ -4962,7 +4773,7 @@ algorithm
   end match;
 end traverseExpBidirSubs;
 
-public function traverseExpTopDownSubs
+protected function traverseExpTopDownSubs
   input list<Subscript> inSubscript;
   input FuncType rel;
   input Argument arg;
@@ -5010,28 +4821,6 @@ algorithm
 
   end match;
 end traverseExpTopDownSubs;
-
-public function traverseExpBidirMatrixElement
-  "Helper function to traverseExpBidir. Traverses a matrix element expression."
-  input tuple<DAE.Exp, Boolean> inMatrixElement;
-  input tuple<FuncType, FuncType, Argument> inTuple;
-  output tuple<DAE.Exp, Boolean> outMatrixElement;
-  output tuple<FuncType, FuncType, Argument> outTuple;
-
-  partial function FuncType
-    input tuple<DAE.Exp, Argument> inTuple;
-    output tuple<DAE.Exp, Argument> outTuple;
-  end FuncType;
-
-  replaceable type Argument subtypeof Any;
-protected
-  DAE.Exp el_exp;
-  Boolean b;
-algorithm
-  (el_exp, b) := inMatrixElement;
-  (el_exp, outTuple) := traverseExpBidir(el_exp, inTuple);
-  outMatrixElement := (el_exp, b);
-end traverseExpBidirMatrixElement;
 
 /***************************************************/
 /* Compare and Check DAE.Exp */
@@ -5111,7 +4900,7 @@ algorithm
       Type t;
       DAE.Exp e;
       list<DAE.Exp> ae;
-      list<list<tuple<DAE.Exp, Boolean>>> scalar;
+      list<list<DAE.Exp>> matrix;
     
     case (DAE.ICONST(integer = ival)) then intEq(ival,0);
     case (DAE.RCONST(real = rval)) then realEq(rval,0.0);
@@ -5120,8 +4909,8 @@ algorithm
     case(DAE.UNARY(DAE.UMINUS(_),e)) then isZero(e);
     case(DAE.ARRAY(array = ae)) then Util.listMapAllValue(ae,isZero,true);
     
-    case (DAE.MATRIX(scalar = scalar))
-      then Util.listMapAllValue(scalar,isZeroMatrixExpList,true);
+    case (DAE.MATRIX(matrix = matrix))
+      then Util.listMapAllValue(Util.listFlatten(matrix),isZero,true);
     
     case(DAE.UNARY(DAE.UMINUS_ARR(_),e)) then isZero(e);
     
@@ -5145,26 +4934,6 @@ algorithm
   end match;
 end isHalf;
 
-protected function isZeroMatrixExpList
-"Helper to isZero. The input is the same as a DAE.MATRIX stores."
-  input list<tuple<DAE.Exp,Boolean>> inLst;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := Util.listMapAllValue(inLst,isZeroMatrixExp,true);
-end isZeroMatrixExpList;
-
-protected function isZeroMatrixExp
-"Helper to isZero. The input is the same as a DAE.MATRIX stores."
-  input tuple<DAE.Exp,Boolean> inTpl;
-  output Boolean outBoolean;
-  replaceable type TypeA subtypeof Any;
-protected
-  DAE.Exp exp;
-algorithm
-  exp := Util.tuple21(inTpl);
-  outBoolean := isZero(exp);
-end isZeroMatrixExp;
-
 public function isConst
 "Returns true if an expression is constant"
   input DAE.Exp inExp;
@@ -5186,7 +4955,7 @@ algorithm
       DAE.Exp e,e1,e2;
       Type t;
       list<DAE.Exp> ae;
-      list<list<tuple<DAE.Exp, Boolean>>> scalar;
+      list<list<DAE.Exp>> matrix;
     
     case (_,false) then false;
     case (DAE.ICONST(integer = _),_) then true;
@@ -5211,8 +4980,10 @@ algorithm
     
     case (DAE.ARRAY(array = ae),_) then isConstWorkList(ae,true);
     
-    case (DAE.MATRIX(scalar = scalar),_)  
-      then Util.listMapAllValue(scalar,isConstMatrixExpList,true);
+    case (DAE.MATRIX(matrix = matrix),_)
+      equation
+        res = Util.listFold(matrix,isConstWorkList,true);
+      then res;
     
     case (DAE.RANGE(exp=e1,expOption=NONE(),range=e2),_) then isConstWork(e1,isConstWork(e2,true));
     
@@ -5572,9 +5343,8 @@ algorithm
       DAE.Exp e1,e2,e,e3;
       Boolean res;
       list<Boolean> blst;
-      list<DAE.Exp> elst;
-      list<tuple<DAE.Exp, Boolean>> flatexplst;
-      list<list<tuple<DAE.Exp, Boolean>>> explst;
+      list<DAE.Exp> elst,flatexplst;
+      list<list<DAE.Exp>> explst;
       Option<DAE.Exp> optexp;
     
     // der is not a vector function
@@ -5675,11 +5445,10 @@ algorithm
       then
         res;
     // matrixes
-    case (DAE.MATRIX(scalar = explst))
+    case (DAE.MATRIX(matrix = explst))
       equation
         flatexplst = Util.listFlatten(explst);
-        elst = Util.listMap(flatexplst, Util.tuple21);
-        blst = Util.listMap(elst, containVectorFunctioncall);
+        blst = Util.listMap(flatexplst, containVectorFunctioncall);
         res = Util.boolOrList(blst);
       then
         res;
@@ -5745,9 +5514,8 @@ algorithm
       DAE.Exp e1,e2,e,e3;
       Boolean res;
       list<Boolean> blst;
-      list<DAE.Exp> elst;
-      list<tuple<DAE.Exp, Boolean>> flatexplst;
-      list<list<tuple<DAE.Exp, Boolean>>> explst;
+      list<DAE.Exp> elst,flatexplst;
+      list<list<DAE.Exp>> explst;
       Option<DAE.Exp> optexp;
     
     // der(x) is not a function call
@@ -5848,11 +5616,10 @@ algorithm
         res;
     
     // matrix
-    case (DAE.MATRIX(scalar = explst))
+    case (DAE.MATRIX(matrix = explst))
       equation
         flatexplst = Util.listFlatten(explst);
-        elst = Util.listMap(flatexplst, Util.tuple21);
-        blst = Util.listMap(elst, containFunctioncall);
+        blst = Util.listMap(flatexplst, containFunctioncall);
         res = Util.boolOrList(blst);
       then
         res;
@@ -6430,7 +6197,7 @@ algorithm
       list<Boolean> reslist;
       list<DAE.Exp> explist,expl_2,args;
       list<tuple<DAE.Exp, Boolean>> expl_1;
-      list<list<tuple<DAE.Exp, Boolean>>> expl;
+      list<list<DAE.Exp>> expl;
       ComponentRef cr1,cr2;
       Operator op;
       Absyn.Path fcn;
@@ -6447,12 +6214,9 @@ algorithm
       then
         res;
     
-    case (DAE.MATRIX(scalar = expl),cr)
+    case (DAE.MATRIX(matrix = expl),cr)
       equation
-        expl_1 = Util.listFlatten(expl);
-        expl_2 = Util.listMap(expl_1, Util.tuple21);
-        reslist = Util.listMap1(expl_2, expContains, cr);
-        res = Util.boolOrList(reslist);
+        res = Util.boolOrList(Util.listMap(Util.listListMap1(expl, expContains, cr),Util.boolOrList));
       then
         res;
     

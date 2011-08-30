@@ -641,7 +641,7 @@ algorithm
       DAE.Exp e1,e2,e,e3,ee1,ee2;
       list<DAE.Exp> expl;
       DAE.Operator op1;
-      list<list<tuple<DAE.Exp, Boolean>>> explTpl;
+      list<list<DAE.Exp>> explTpl;
       DAE.ReductionIterators iters;
     
     case (DAE.CREF(componentRef = cr),vars)
@@ -841,7 +841,7 @@ algorithm
       then
         pStr;
 
-    case (DAE.MATRIX(scalar = explTpl),vars)
+    case (DAE.MATRIX(matrix = explTpl),vars)
       equation
         pStr = incidenceRowMatrixExp(explTpl, vars);
       then
@@ -898,7 +898,7 @@ end incidenceRowIter;
 protected function incidenceRowMatrixExp "function: incidenceRowMatrixExp
   author: PA
   Traverses matrix expressions for building incidence matrix."
-  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpExpBooleanLstLst;
+  input list<list<DAE.Exp>> inTplExpExpBooleanLstLst;
   input BackendDAE.Variables inVariables;
   output list<String> outStringLst;
 algorithm
@@ -906,14 +906,12 @@ algorithm
     local
       list<DAE.Exp> expl_1;
       list<list<String>> res1;
-      list<tuple<DAE.Exp, Boolean>> expl;
-      list<list<tuple<DAE.Exp, Boolean>>> es;
+      list<list<DAE.Exp>> es;
       list<String> pStr, res1_1, res2;
       BackendDAE.Variables vars;
     case ({},_) then {};
-    case ((expl :: es),vars)
+    case ((expl_1 :: es),vars)
       equation
-        expl_1 = Util.listMap(expl, Util.tuple21);
         res1 = Util.listMap1(expl_1, incidenceRowExp, vars);
         res2 = incidenceRowMatrixExp(es, vars);
         res1_1 = Util.listFlatten(res1);

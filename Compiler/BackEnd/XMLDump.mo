@@ -1588,7 +1588,7 @@ algorithm
       DAE.Operator op;
       Absyn.Path fcn;
       list<DAE.Exp> args,es;
-      list<list<tuple<DAE.Exp, Boolean>>> ebs;
+      list<list<DAE.Exp>> ebs;
     case (DAE.ICONST(integer = x))
       equation
         dumpStrMathMLNumberAttr(intString(x),MathMLType,MathMLInteger);
@@ -1774,7 +1774,7 @@ algorithm
         dumpStrCloseTag(MathMLApply);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.MATRIX(scalar = ebs,ty=tp))
+    case (DAE.MATRIX(matrix = ebs,ty=tp))
       equation
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLMatrix);
@@ -2671,10 +2671,9 @@ end dumpOptValue;
 public function dumpRow
 "function: printRow
   Prints a list of expressions to a string."
-  input list<tuple<DAE.Exp, Boolean>> es;
-  list<DAE.Exp> es_1;
+  input list<DAE.Exp> es_1;
+  annotation(__OpenModelica_EarlyInline=true);
 algorithm
-  es_1 := Util.listMap(es, Util.tuple21);
   dumpList(es_1, dumpExp2);
 end dumpRow;
 

@@ -120,8 +120,6 @@ algorithm
       Absyn.Path p;
       Boolean b,bi;
       DAE.InlineType inl;
-      list<list<Boolean>> bl;
-      list<list<tuple<DAE.Exp, Boolean>>> ell_1,ell;
       Integer i,a;
       list<list<DAE.Exp>> es,es_1;
       DAE.ExpType tp;
@@ -197,14 +195,11 @@ algorithm
       then
         DAE.ARRAY(t,b,el_1);
     
-    case (str,r,rarg,DAE.MATRIX(ty = t,integer = a,scalar = ell))
+    case (str,r,rarg,DAE.MATRIX(ty = t,integer = a,scalar = b,matrix = es))
       equation
-        es = Util.listListMap(ell, Util.tuple21);
-        bl = Util.listListMap(ell, Util.tuple22);
         es_1 = stringPrefixComponentRefsList(str, r, rarg, es);
-        ell_1 = Util.listListThreadTuple(es_1, bl);
       then
-        DAE.MATRIX(t,a,ell_1);
+        DAE.MATRIX(t,a,b,es_1);
     
     case (str,r,rarg,DAE.RANGE(ty = t,exp = e1,expOption = NONE(),range = e2))
       equation

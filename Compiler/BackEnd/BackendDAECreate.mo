@@ -1548,8 +1548,8 @@ algorithm
       DAE.Exp e1,e2;
       list<DAE.Exp> a1,a2,an;
       list<tuple<DAE.Exp,DAE.Exp>> ealst;
-      list<list<tuple<DAE.Exp, Boolean>>> al1,al2;
-      list<tuple<DAE.Exp, Boolean>> ebl1,ebl2;
+      list<list<DAE.Exp>> al1,al2;
+      list<DAE.Exp> ebl1,ebl2;
       DAE.ElementSource source;
     case (vars,{},aindx) then ({},aindx);
     case (vars,((a as BackendDAE.MULTIDIM_EQUATION(left=DAE.ARRAY(array=a1),right=DAE.ARRAY(array=a2),source=source)) :: algs),aindx)
@@ -1581,12 +1581,10 @@ algorithm
         res = listAppend(eqns, eqns2);
       then
         (res,aindx);
-    case (vars,((a as BackendDAE.MULTIDIM_EQUATION(left=DAE.MATRIX(scalar=al1),right=DAE.MATRIX(scalar=al2),source=source)) :: algs),aindx)
+    case (vars,((a as BackendDAE.MULTIDIM_EQUATION(left=DAE.MATRIX(matrix=al1),right=DAE.MATRIX(matrix=al2),source=source)) :: algs),aindx)
       equation
-        ebl1 = Util.listFlatten(al1);
-        ebl2 = Util.listFlatten(al2);
-        a1 = Util.listMap(ebl1,Util.tuple21);
-        a2 = Util.listMap(ebl2,Util.tuple21);
+        a1 = Util.listFlatten(al1);
+        a2 = Util.listFlatten(al2);
         ealst = Util.listThreadTuple(a1,a2);
         eqns = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
         aindx = aindx + 1;
@@ -1594,12 +1592,10 @@ algorithm
         res = listAppend(eqns, eqns2);
       then
         (res,aindx);
-    case (vars,((a as BackendDAE.MULTIDIM_EQUATION(left=DAE.UNARY(exp=DAE.MATRIX(scalar=al1)),right=DAE.MATRIX(scalar=al2),source=source)) :: algs),aindx)
+    case (vars,((a as BackendDAE.MULTIDIM_EQUATION(left=DAE.UNARY(exp=DAE.MATRIX(matrix=al1)),right=DAE.MATRIX(matrix=al2),source=source)) :: algs),aindx)
       equation
-        ebl1 = Util.listFlatten(al1);
-        ebl2 = Util.listFlatten(al2);
-        a1 = Util.listMap(ebl1,Util.tuple21);
-        a2 = Util.listMap(ebl2,Util.tuple21);
+        a1 = Util.listFlatten(al1);
+        a2 = Util.listFlatten(al2);
         an = Util.listMap(a1,Expression.negate);
         ealst = Util.listThreadTuple(an,a2);
         eqns = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
@@ -1608,12 +1604,10 @@ algorithm
         res = listAppend(eqns, eqns2);
       then
         (res,aindx);
-    case (vars,((a as BackendDAE.MULTIDIM_EQUATION(left=DAE.MATRIX(scalar=al1),right=DAE.UNARY(exp=DAE.MATRIX(scalar=al2)),source=source)) :: algs),aindx)
+    case (vars,((a as BackendDAE.MULTIDIM_EQUATION(left=DAE.MATRIX(matrix=al1),right=DAE.UNARY(exp=DAE.MATRIX(matrix=al2)),source=source)) :: algs),aindx)
       equation
-        ebl1 = Util.listFlatten(al1);
-        ebl2 = Util.listFlatten(al2);
-        a1 = Util.listMap(ebl1,Util.tuple21);
-        a2 = Util.listMap(ebl2,Util.tuple21);
+        a1 = Util.listFlatten(al1);
+        a2 = Util.listFlatten(al2);
         an = Util.listMap(a2,Expression.negate);
         ealst = Util.listThreadTuple(a1,an);
         eqns = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);

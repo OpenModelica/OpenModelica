@@ -4010,8 +4010,7 @@ algorithm
       Type ty1,ty2,t1,t2,t_1,t_2,ty0,ty;
       Option<Absyn.Path> p,p1,p2;
       DAE.Exp begin_1,step_1,stop_1,begin,step,stop,e_1,e,exp;
-      list<list<tuple<DAE.Exp, Boolean>>> ell_1,ell,melist;
-      list<list<DAE.Exp>> elist_big;
+      list<list<DAE.Exp>> ell_1,ell,melist,elist_big;
       list<Type> tys_1,tys1,tys2;
       list<Ident> l;
       list<Var> v;
@@ -4033,7 +4032,7 @@ algorithm
           printFailtrace)
       equation
         true = Expression.dimensionsKnownAndEqual(dim1, dim2);
-        elist_1 = typeConvertArray(elist, ty1, ty2,dim1,printFailtrace);
+        elist_1 = typeConvertArray(elist,ty1,ty2,printFailtrace);
         at = elabType(ty0);
         a = isArray(ty2);
         sc = boolNot(a);
@@ -4041,25 +4040,27 @@ algorithm
         (DAE.ARRAY(at,sc,elist_1),(DAE.T_ARRAY(dim1,ty2),p));
 
      /* Array expressions: expression dimension [:], expected dimension [dim2] */
+     /* ARRAYS HAVE KNOWN DIMENSIONS. WHO WROTE THIS :(
     case (DAE.ARRAY(array = elist),
           (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = ty1),_),
           ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p2),
           printFailtrace)
       equation
         true = Expression.dimensionKnown(dim2);
-        elist_1 = typeConvertArray(elist, ty1, ty2,dim2,printFailtrace);
+        elist_1 = typeConvertArray(elist,ty1,ty2,printFailtrace);
         at = elabType(ty0);
         a = isArray(ty2);
         sc = boolNot(a);
       then
         (DAE.ARRAY(at,sc,elist_1),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),ty2),p2));
+        */
 
         /* Array expressions: expression dimension [dim1], expected dimension [:] */
     case (DAE.ARRAY(array = elist),(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
         ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = ty2),p2),printFailtrace)
       equation
         true = Expression.dimensionKnown(dim1);
-        elist_1 = typeConvertArray(elist, ty1, ty2, dim1,printFailtrace);
+        elist_1 = typeConvertArray(elist,ty1,ty2,printFailtrace);
         ety1 = elabType(ty2);
         dims = Expression.arrayDimension(elabType(ty1));
         a = isArray(ty2);
@@ -4093,26 +4094,26 @@ algorithm
         (DAE.RANGE(at,begin_1,NONE(),stop_1),(DAE.T_ARRAY(dim1,ty2),p));
 
         /* Matrix expressions: expression dimension [dim1,dim11], expected dimension [dim2,dim22] */
-    case (DAE.MATRIX(integer = nmax,scalar = ell),(DAE.T_ARRAY(arrayDim = dim1,arrayType = (DAE.T_ARRAY(arrayDim = dim11,arrayType = t1),_)),_),
+    case (DAE.MATRIX(integer = nmax,scalar=sc,matrix = ell),(DAE.T_ARRAY(arrayDim = dim1,arrayType = (DAE.T_ARRAY(arrayDim = dim11,arrayType = t1),_)),_),
       ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = (DAE.T_ARRAY(arrayDim = dim22,arrayType = t2),p1)),p2),printFailtrace)
       equation
         true = Expression.dimensionsKnownAndEqual(dim1, dim2);
         true = Expression.dimensionsKnownAndEqual(dim11, dim22);
-        ell_1 = typeConvertMatrix(ell, t1, t2,dim1,dim2,printFailtrace);
+        ell_1 = typeConvertMatrix(ell,t1,t2,printFailtrace);
         at = elabType(ty0);
       then
-        (DAE.MATRIX(at,nmax,ell_1),(DAE.T_ARRAY(dim1,(DAE.T_ARRAY(dim11,t2),p1)),p2));
+        (DAE.MATRIX(at,nmax,sc,ell_1),(DAE.T_ARRAY(dim1,(DAE.T_ARRAY(dim11,t2),p1)),p2));
 
         /* Matrix expressions: expression dimension [dim1,dim11] expected dimension [:,dim22] */
-    case (DAE.MATRIX(integer = nmax,scalar = ell),(DAE.T_ARRAY(arrayDim = dim1,arrayType = (DAE.T_ARRAY(arrayDim = dim11,arrayType = t1),_)),_),
+    case (DAE.MATRIX(integer = nmax,scalar = sc,matrix = ell),(DAE.T_ARRAY(arrayDim = dim1,arrayType = (DAE.T_ARRAY(arrayDim = dim11,arrayType = t1),_)),_),
       ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = (DAE.T_ARRAY(arrayDim = dim22,arrayType = t2),p1)),p2),printFailtrace)
       equation
         true = Expression.dimensionsKnownAndEqual(dim11, dim22);
-        ell_1 = typeConvertMatrix(ell, t1, t2,dim1,dim11,printFailtrace);
+        ell_1 = typeConvertMatrix(ell,t1,t2,printFailtrace);
         ty = (DAE.T_ARRAY(dim1,(DAE.T_ARRAY(dim11,t2),p1)),p2);
         at = elabType(ty);
       then
-        (DAE.MATRIX(at,nmax,ell_1),ty);
+        (DAE.MATRIX(at,nmax,sc,ell_1),ty);
 
         /* Arbitrary expressions, expression dimension [dim1], expected dimension [dim2] */
     case (e,(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
@@ -4269,10 +4270,9 @@ algorithm
         e_1 = DAE.LIST(elist_1);
         t2 = (DAE.T_LIST(t2),NONE());
       then (e_1, t2);
-    case (e as DAE.MATRIX(DAE.ET_ARRAY(ty = t),_,melist),t1,t2,printFailtrace)
+    case (e as DAE.MATRIX(DAE.ET_ARRAY(ty = t),_,_,elist_big),t1,t2,printFailtrace)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        elist_big = Util.listListMap(melist, Util.tuple21);
         (elist,ty2) = typeConvertMatrixToList(elist_big,t1,t2,printFailtrace);
         e_1 = DAE.LIST(elist);
       then (e_1,ty2);
@@ -4432,20 +4432,19 @@ public function typeConvertArray "function: typeConvertArray
   input list<DAE.Exp> inExpExpLst1;
   input Type inType2;
   input Type inType3;
-  input DAE.Dimension dim;
   input Boolean printFailtrace;
   output list<DAE.Exp> outExpExpLst;
 algorithm
   (outExpExpLst) :=
-  match (inExpExpLst1,inType2,inType3,dim,printFailtrace)
+  match (inExpExpLst1,inType2,inType3,printFailtrace)
     local
       list<DAE.Exp> rest_1,rest;
       DAE.Exp first_1,first;
       Type ty1,ty2;
-    case ({},_,_,_,_) then {};
-    case ((first :: rest),ty1,ty2,dim,printFailtrace)
+    case ({},_,_,_) then {};
+    case ((first :: rest),ty1,ty2,printFailtrace)
       equation
-        rest_1 = typeConvertArray(rest,ty1,ty2,dim,printFailtrace);
+        rest_1 = typeConvertArray(rest,ty1,ty2,printFailtrace);
         (first_1,_) = typeConvert(first,ty1,ty2,printFailtrace);
       then
         ((first_1 :: rest_1));
@@ -4456,60 +4455,26 @@ protected function typeConvertMatrix "function: typeConvertMatrix
 
   Helper function to type_convert. Handles matrix expressions.
 "
-  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpExpBooleanLstLst1;
+  input list<list<DAE.Exp>> inTplExpExpBooleanLstLst1;
   input Type inType2;
   input Type inType3;
-  input DAE.Dimension dim1;
-  input DAE.Dimension dim2;
   input Boolean printFailtrace;
-  output list<list<tuple<DAE.Exp, Boolean>>> outTplExpExpBooleanLstLst;
+  output list<list<DAE.Exp>> outTplExpExpBooleanLstLst;
 algorithm
   outTplExpExpBooleanLstLst :=
-  match (inTplExpExpBooleanLstLst1,inType2,inType3,dim1,dim2,printFailtrace)
+  match (inTplExpExpBooleanLstLst1,inType2,inType3,printFailtrace)
     local
-      list<list<tuple<DAE.Exp, Boolean>>> rest_1,rest;
-      list<tuple<DAE.Exp, Boolean>> first_1,first;
+      list<list<DAE.Exp>> rest_1,rest;
+      list<DAE.Exp> first_1,first;
       Type ty1,ty2;
-    case ({},_,_,_,_,_) then {};
-    case ((first :: rest),ty1,ty2,dim1,dim2,printFailtrace)
+    case ({},_,_,_) then {};
+    case ((first :: rest),ty1,ty2,printFailtrace)
       equation
-        rest_1 = typeConvertMatrix(rest, ty1, ty2,dim1,dim2,printFailtrace);
-        first_1 = typeConvertMatrixRow(first, ty1, ty2,dim1,dim2,printFailtrace);
-      then
-        (first_1 :: rest_1);
+        rest_1 = typeConvertMatrix(rest,ty1,ty2,printFailtrace);
+        first_1 = typeConvertArray(first,ty1,ty2,printFailtrace);
+      then (first_1 :: rest_1);
   end match;
 end typeConvertMatrix;
-
-protected function typeConvertMatrixRow "function: typeConvertMatrixRow
-
-  Helper function to type_convert_matrix.
-"
-  input list<tuple<DAE.Exp, Boolean>> inTplExpExpBooleanLst1;
-  input Type inType2;
-  input Type inType3;
-  input DAE.Dimension dim1;
-  input DAE.Dimension dim2;
-  input Boolean printFailtrace;
-  output list<tuple<DAE.Exp, Boolean>> outTplExpExpBooleanLst;
-algorithm
-  outTplExpExpBooleanLst :=
-  match (inTplExpExpBooleanLst1,inType2,inType3,dim1,dim2,printFailtrace)
-    local
-      list<tuple<DAE.Exp, Boolean>> rest;
-      DAE.Exp exp_1,exp;
-      Type newt,t1,t2;
-      Boolean a,sc;
-    case ({},_,_,_,_,_) then {};
-    case (((exp,_) :: rest),t1,t2,dim1,dim2,printFailtrace)
-      equation
-        rest = typeConvertMatrixRow(rest, t1, t2,dim1,dim2,printFailtrace);
-        (exp_1,newt) = typeConvert(exp, t1, t2,printFailtrace);
-        a = isArray(t2);
-        sc = boolNot(a);
-      then
-        (((exp_1,sc) :: rest));
-  end match;
-end typeConvertMatrixRow;
 
 protected function typeConvertList "function: typeConvertList
 

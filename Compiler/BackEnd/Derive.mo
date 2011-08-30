@@ -342,12 +342,12 @@ algorithm
       DAE.Operator op;
       list<DAE.Exp> expl_1,expl,sub;
       Absyn.Path a;
-      Boolean b,c;
+      Boolean b,c,sc;
       DAE.InlineType inl;
       Integer i;
       Absyn.Path fname;
       DAE.FunctionTree functions;
-      list<list<tuple<DAE.Exp, Boolean>>> explstlst,explstlst1;
+      list<list<DAE.Exp>> explstlst,explstlst1;
       Option<DAE.Exp> guardExp,foldExp;
       Option<Values.Value> v;
       list<DAE.ExpVar> varLst;
@@ -694,11 +694,11 @@ algorithm
           DAE.BINARY(DAE.BINARY(e1_1,DAE.MUL_ARRAY_SCALAR(tp),e2),DAE.SUB_ARR(tp),
           DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(tp),e2_1)),DAE.DIV_ARRAY_SCALAR(tp),DAE.BINARY(e2,DAE.MUL(tp),e2));
     
-    case ((e as DAE.MATRIX(ty = tp,integer=i,scalar=explstlst)),(timevars,functions))
+    case ((e as DAE.MATRIX(ty = tp,integer=i,scalar=sc,matrix=explstlst)),(timevars,functions))
       equation
         explstlst1 = differentiateMatrixTime(explstlst,(timevars,functions));
       then
-        DAE.MATRIX(tp,i,explstlst1);
+        DAE.MATRIX(tp,i,sc,explstlst1);
     
     case (DAE.TUPLE(PR = expl),(timevars,functions))
       equation
@@ -739,50 +739,25 @@ protected function differentiateMatrixTime
 "function: differentiateMatrixTime
   author: Frenkel TUD
    Helper function to differentiateExpTime, differentiate matrix expressions."
-  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpBooleanLstLst;
+  input list<list<DAE.Exp>> inTplExpBooleanLstLst;
   input tuple<BackendDAE.Variables,DAE.FunctionTree> inVariables;
-  output list<list<tuple<DAE.Exp, Boolean>>> outTplExpBooleanLstLst;
+  output list<list<DAE.Exp>> outTplExpBooleanLstLst;
 algorithm
   outTplExpBooleanLstLst := match (inTplExpBooleanLstLst,inVariables)
     local
-      list<tuple<DAE.Exp, Boolean>> row_1,row;
-      list<list<tuple<DAE.Exp, Boolean>>> rows_1,rows;
+      list<DAE.Exp> row_1,row;
+      list<list<DAE.Exp>> rows_1,rows;
     
     case ({},_) then ({});
     
     case ((row :: rows),inVariables)
       equation
-        row_1 = differentiateMatrixTime1(row, inVariables);
+        row_1 = Util.listMap1(row, differentiateExpTime, inVariables);
         rows_1 = differentiateMatrixTime(rows, inVariables);
       then
         (row_1 :: rows_1);
   end match;
 end differentiateMatrixTime;
-
-protected function differentiateMatrixTime1
-"function: traverseExpMatrix2
-  author: Frenkel TUD
-  Helper function to differentiateMatrixTime."
-  input list<tuple<DAE.Exp, Boolean>> inTplExpBooleanLst;
-  input tuple<BackendDAE.Variables,DAE.FunctionTree> inVariables;
-  output list<tuple<DAE.Exp, Boolean>> outTplExpBooleanLst;
-algorithm
-  outTplExpBooleanLst := match (inTplExpBooleanLst,inVariables)
-    local
-      DAE.Exp e_1,e;
-      list<tuple<DAE.Exp, Boolean>> rest_1,rest;
-      Boolean b;
-    
-    case ({},_) then ({});
-    
-    case (((e,b) :: rest),inVariables)
-      equation
-        e_1 = differentiateExpTime(e, inVariables);
-        rest_1 = differentiateMatrixTime1(rest, inVariables);
-      then
-        ((e_1,b) :: rest_1);
-  end match;
-end differentiateMatrixTime1;
 
 protected function differentiateFunctionTimeOutputs"
 Author: Frenkel TUD"

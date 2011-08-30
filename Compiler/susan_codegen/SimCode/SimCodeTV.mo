@@ -824,7 +824,8 @@ package DAE
     record MATRIX
       ExpType ty;
       Integer integer;
-      list<list<tuple<Exp, Boolean>>> scalar;
+      Boolean scalar;
+      list<list<Exp>> matrix;
     end MATRIX;
     record RANGE
       ExpType ty;

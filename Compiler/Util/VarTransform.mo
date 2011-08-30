@@ -1409,7 +1409,7 @@ algorithm
       Integer b;
       Absyn.CodeNode a;
       String id;
-      list<list<tuple<DAE.Exp, Boolean>>> bexpl_1,bexpl;
+      list<list<DAE.Exp>> bexpl_1,bexpl;
       DAE.InlineType inlineType;
       Integer index_;
       Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
@@ -1492,12 +1492,12 @@ algorithm
         (expl_1,true) = replaceExpList(expl, repl, cond, {}, false);
       then
         (DAE.ARRAY(tp,c,expl_1),true);
-    case ((e as DAE.MATRIX(ty = t,integer = b,scalar = bexpl)),repl,cond)
+    case ((e as DAE.MATRIX(ty = t,integer = b,scalar = c,matrix = bexpl)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
         (bexpl_1,true) = replaceExpMatrix(bexpl, repl, cond, {}, false);
       then
-        (DAE.MATRIX(t,b,bexpl_1),true);
+        (DAE.MATRIX(t,b,c,bexpl_1),true);
     case ((e as DAE.RANGE(ty = tp,exp = e1,expOption = NONE(),range = e2)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
@@ -1662,12 +1662,12 @@ protected function replaceExpMatrix "function: replaceExpMatrix
 
   Helper function to replace_exp, traverses Matrix expression list.
 "
-  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpExpBooleanLstLst;
+  input list<list<DAE.Exp>> inTplExpExpBooleanLstLst;
   input VariableReplacements inVariableReplacements;
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
-  input list<list<tuple<DAE.Exp, Boolean>>> acc1;
+  input list<list<DAE.Exp>> acc1;
   input Boolean acc2;
-  output list<list<tuple<DAE.Exp, Boolean>>> outTplExpExpBooleanLstLst;
+  output list<list<DAE.Exp>> outTplExpExpBooleanLstLst;
   output Boolean replacementPerformed;
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
@@ -1679,53 +1679,18 @@ algorithm
     local
       VariableReplacements repl;
       Option<FuncTypeExp_ExpToBoolean> cond;
-      list<tuple<DAE.Exp, Boolean>> e_1,e;
-      list<list<tuple<DAE.Exp, Boolean>>> es_1,es;
+      list<DAE.Exp> e_1,e;
+      list<list<DAE.Exp>> es_1,es;
       Boolean c;
     case ({},repl,cond,acc1,acc2) then (listReverse(acc1),acc2);
     case ((e :: es),repl,cond,acc1,acc2)
       equation
-        (e_1,acc2) = replaceExpMatrix2(e, repl, cond, {}, acc2);
+        (e_1,acc2) = replaceExpList(e, repl, cond, {}, acc2);
         (acc1,acc2) = replaceExpMatrix(es, repl, cond, e_1::acc1, acc2);
       then
         (acc1,acc2);
   end match;
 end replaceExpMatrix;
-
-protected function replaceExpMatrix2 "function: replaceExpMatrix2
-  author: PA
-
-  Helper function to replace_exp_matrix
-"
-  input list<tuple<DAE.Exp, Boolean>> inTplExpExpBooleanLst;
-  input VariableReplacements inVariableReplacements;
-  input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
-  input list<tuple<DAE.Exp, Boolean>> acc1;
-  input Boolean acc2;
-  output list<tuple<DAE.Exp, Boolean>> outTplExpExpBooleanLst;
-  output Boolean replacementPerformed;
-  partial function FuncTypeExp_ExpToBoolean
-    input DAE.Exp inExp;
-    output Boolean outBoolean;
-  end FuncTypeExp_ExpToBoolean;
-algorithm
-  (outTplExpExpBooleanLst,replacementPerformed) :=
-  match (inTplExpExpBooleanLst,inVariableReplacements,inFuncTypeExpExpToBooleanOption,acc1,acc2)
-    local
-      list<tuple<DAE.Exp, Boolean>> es_1,es;
-      DAE.Exp e_1,e;
-      Boolean b,c;
-      VariableReplacements repl;
-      Option<FuncTypeExp_ExpToBoolean> cond;
-    case ({},_,_,acc1,acc2) then (listReverse(acc1),acc2);
-    case (((e,b) :: es),repl,cond,acc1,acc2)
-      equation
-        (e_1,c) = replaceExp(e, repl, cond);
-        (acc1,acc2) = replaceExpMatrix2(es, repl, cond, (e_1,b)::acc1, c or acc2);
-      then
-        (acc1,acc2);
-  end match;
-end replaceExpMatrix2;
 
 protected function bintreeToExplist "function: bintree_to_list
 

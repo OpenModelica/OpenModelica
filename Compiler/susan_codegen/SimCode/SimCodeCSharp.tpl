@@ -2084,24 +2084,24 @@ template daeExpMatrix(Exp mexp, Context context, Text &preExp, SimCode simCode)
 ::=
   match hackMatrixReverseToCref(mexp, context)  
   case cr as CREF(__) then daeExpCrefRhs(cr, context, &preExp, simCode)
-  case MATRIX(scalar={{}}) // special case for empty matrix: create dimensional array Real[0,1]
-  case MATRIX(scalar={})   // special case for empty array: create dimensional array Real[0,1] 
+  case MATRIX(matrix={{}}) // special case for empty matrix: create dimensional array Real[0,1]
+  case MATRIX(matrix={})   // special case for empty array: create dimensional array Real[0,1] 
     then
     let &tmp = buffer ""
     let &preExp += '<%tempDecl("var",&tmp)%> = new <%expTypeArray(ty,2)%>(0,1);<%\n%>'
     tmp
   //only scalar orthogonal matrix for now  
-  case m as MATRIX(scalar=(row1::_)) then
+  case m as MATRIX(matrix=(row1::_)) then
     let &tmp = buffer ""
-    let matArr = m.scalar |> row =>
-                       (row |> (elem,isScalar) =>
-                           if isScalar then daeExp(elem, context, &preExp, simCode)
+    let matArr = m.matrix |> row =>
+                       (row |> elem =>
+                           if m.scalar then daeExp(elem, context, &preExp, simCode)
                            else "MATRIX_NON_SCALAR_NYI"
                         ;separator=", ")
                  ;separator=",\n" 
     let &preExp += 
        <<
-       <%tempDecl("var",&tmp)%> = new <%expTypeArray(m.ty,2)%>(<%listLength(m.scalar)%>,<%listLength(row1)%>,-1, new[]{
+       <%tempDecl("var",&tmp)%> = new <%expTypeArray(m.ty,2)%>(<%listLength(m.matrix)%>,<%listLength(row1)%>,-1, new[]{
          <%matArr ;anchor%>
        });<%\n%>
        >>

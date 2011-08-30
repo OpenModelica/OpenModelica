@@ -401,11 +401,8 @@ end printList;
 protected function printRow
 "function: printRow
   Print a list of expressions to the Print buffer."
-  input list<tuple<DAE.Exp, Boolean>> es;
-protected
-  list<DAE.Exp> es_1;
+  input list<DAE.Exp> es_1;
 algorithm
-  es_1 := Util.listMap(es, Util.tuple21);
   printList(es_1, printExp, ",");
 end printRow;
 
@@ -587,7 +584,7 @@ algorithm
       printCallFunc pcallfunc;
       Boolean b;
       list<DAE.Exp> aexpl;
-      list<list<tuple<DAE.Exp,Boolean>>> lstes;
+      list<list<DAE.Exp>> lstes;
       DAE.MatchType matchTy;
       DAE.ExpType et;
       list<DAE.MatchCase> cases;
@@ -760,7 +757,7 @@ algorithm
       then
         s;
     
-    case (DAE.MATRIX(scalar = lstes,ty=tp), _, _, _)
+    case (DAE.MATRIX(matrix = lstes,ty=tp), _, _, _)
       equation
         // s3 = typeString(tp); // adrpo: not used!
         s = Util.stringDelimitList(Util.listMap1(lstes, printRowStr, stringDelimiter), "},{");
@@ -1065,13 +1062,10 @@ end expPriority;
 public function printRowStr
 "function: printRowStr
   Prints a list of expressions to a string."
-  input list<tuple<DAE.Exp, Boolean>> es;
+  input list<DAE.Exp> es_1;
   input String stringDelimiter;
   output String s;
-protected
-  list<DAE.Exp> es_1;
 algorithm
-  es_1 := Util.listMap(es, Util.tuple21);
   s := Util.stringDelimitList(Util.listMap3(es_1, printExp2Str, stringDelimiter, NONE(), NONE()), ",");
 end printRowStr;
 
@@ -1134,7 +1128,7 @@ algorithm
       Type ty;
       Real r;
       Boolean b;
-      list<list<tuple<DAE.Exp, Boolean>>> lstes;
+      list<list<DAE.Exp>> lstes;
     
     case (DAE.ICONST(integer = i))
       equation
@@ -1239,7 +1233,7 @@ algorithm
       then
         Graphviz.NODE("TUPLE",{},nodes);
     
-    case (DAE.MATRIX(scalar = lstes))
+    case (DAE.MATRIX(matrix = lstes))
       equation
         s = Util.stringDelimitList(Util.listMap1(lstes, printRowStr, "\""), "},{");
         s = stringAppendList({"{{", s, "}}"});
@@ -1321,7 +1315,7 @@ algorithm
       list<DAE.Exp> args,es;
       Type tp,ty;
       Real r;
-      list<list<tuple<DAE.Exp,Boolean>>> lstes;
+      list<list<DAE.Exp>> lstes;
       Boolean b;
     
     case (DAE.ICONST(integer = x),level) /* Graphviz.LNODE(\"ICONST\",{s},{},{}) */
@@ -1496,7 +1490,7 @@ algorithm
       then
         res_str;
     
-    case (DAE.MATRIX(scalar = lstes),level) /* Graphviz.LNODE(\"MATRIX\",{s\'\'},{},{}) */
+    case (DAE.MATRIX(matrix = lstes),level) /* Graphviz.LNODE(\"MATRIX\",{s\'\'},{},{}) */
       equation
         gen_str = genStringNTime("   |", level);
         s = Util.stringDelimitList(Util.listMap1(lstes, printRowStr, "\""), "},{");
@@ -1826,7 +1820,7 @@ algorithm
       Type ty,ty2,expTy;
       Absyn.Path fcn,enum_lit;
       list<DAE.Exp> args,es;
-      list<list<tuple<DAE.Exp, Boolean>>> lstes;
+      list<list<DAE.Exp>> lstes;
       DAE.Exp ae1;
       Boolean b;
       DAE.MatchType matchTy;
@@ -1994,7 +1988,7 @@ algorithm
       then
         ();
     
-    case (DAE.MATRIX(scalar = lstes),_)
+    case (DAE.MATRIX(matrix = lstes),_)
       equation
         Print.printBuf("<matrix>[");
         printList(lstes, printRow, ";");

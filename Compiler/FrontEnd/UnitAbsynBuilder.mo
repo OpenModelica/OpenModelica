@@ -976,7 +976,7 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Exp e,e1,e2;
       Absyn.Path path;
-      list<list<tuple<DAE.Exp, Boolean>>> mexpl;
+      list<list<DAE.Exp>> mexpl;
       list<UnitAbsyn.UnitTerm> terms1,terms2,terms,uts;
       list<DAE.Exp> expl;
       UnitAbsyn.Unit u;
@@ -1077,10 +1077,10 @@ algorithm
       terms = listAppend(terms,uts);
     then (ut,terms,store);
 
-    case(env,e as DAE.MATRIX(_,_,mexpl),divOrMul,ht,store)
+    case(env,e as DAE.MATRIX(matrix=mexpl),divOrMul,ht,store)
       equation
         print("Matrix ="+&ExpressionDump.printExpStr(e)+&"\n");
-        expl = Util.listFlatten(Util.listListMap(mexpl,Util.tuple21));
+        expl = Util.listFlatten(mexpl);
         (uts,terms,store) = buildTermExpList(env,expl,ht,store);
         ut::uts = buildArrayElementTerms(uts,expl);
         terms = listAppend(terms,uts);

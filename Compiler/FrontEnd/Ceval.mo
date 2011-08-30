@@ -140,7 +140,7 @@ algorithm
       Absyn.CodeNode c;
       list<Values.Value> es_1,elts,vallst,vlst1,vlst2,reslst,aval,rhvals,lhvals,arr,arr_1,ivals,rvals,vallst_1,vals;
       list<DAE.Exp> es,expl;
-      list<list<tuple<DAE.Exp, Boolean>>> expll;
+      list<list<DAE.Exp>> expll;
       Values.Value v,newval,value,sval,elt1,elt2,v_1,lhs_1,rhs_1,resVal,lhvVal,rhvVal,startValue;
       DAE.Exp lh,rh,e,lhs,rhs,start,stop,step,e1,e2,iterexp,cond;
       Absyn.Path funcpath,name;
@@ -209,7 +209,7 @@ algorithm
       then
         (cache,Values.ARRAY(es_1,dims),stOpt);
 
-    case (cache,env,DAE.MATRIX(scalar = expll, ty = DAE.ET_ARRAY(arrayDimensions = arrayDims)),impl,stOpt,msg)
+    case (cache,env,DAE.MATRIX(matrix = expll, ty = DAE.ET_ARRAY(arrayDimensions = arrayDims)),impl,stOpt,msg)
       equation
         dims = Util.listMap(arrayDims, Expression.dimensionSize);
         (cache,elts) = cevalMatrixElt(cache, env, expll, impl, msg);
@@ -1573,7 +1573,7 @@ protected function cevalMatrixElt "function: cevalMatrixElt
   Evaluates the expression of a matrix constructor, e.g. {1,2;3,4}"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpExpBooleanLstLst "matrix constr. elts";
+  input list<list<DAE.Exp>> inTplExpExpBooleanLstLst "matrix constr. elts";
   input Boolean inBoolean "impl";
   input Msg inMsg;
   output Env.Cache outCache;
@@ -1585,54 +1585,21 @@ algorithm
       Values.Value v;
       list<Values.Value> vl;
       list<Env.Frame> env;
-      list<tuple<DAE.Exp, Boolean>> expl;
-      list<list<tuple<DAE.Exp, Boolean>>> expll;
+      list<DAE.Exp> expl;
+      list<list<DAE.Exp>> expll;
       Boolean impl;
       Msg msg;
       Env.Cache cache;
     case (cache,env,(expl :: expll),impl,msg)
       equation
-        (cache,v) = cevalMatrixEltRow(cache,env, expl, impl, msg);
+        (cache,vl,_) = cevalList(cache,env,expl,impl,NONE(),msg);
+        v = ValuesUtil.makeArray(vl);
         (cache,vl)= cevalMatrixElt(cache,env, expll, impl, msg);
       then
         (cache,v :: vl);
     case (cache,_,{},_,msg) then (cache,{});
   end match;
 end cevalMatrixElt;
-
-protected function cevalMatrixEltRow "function: cevalMatrixEltRow
-  Helper function to cevalMatrixElt"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<tuple<DAE.Exp, Boolean>> inTplExpExpBooleanLst;
-  input Boolean inBoolean;
-  input Msg inMsg;
-  output Env.Cache outCache;
-  output Values.Value outValue;
-algorithm
-  (outCache,outValue) :=
-  match (inCache,inEnv,inTplExpExpBooleanLst,inBoolean,inMsg)
-    local
-      Values.Value res;
-      list<Values.Value> resl;
-      list<Env.Frame> env;
-      DAE.Exp e;
-      list<tuple<DAE.Exp, Boolean>> rest;
-      Boolean impl;
-      Msg msg;
-      Env.Cache cache;
-      Integer i;
-      list<Integer> dims;
-    case (cache,env,((e,_) :: rest),impl,msg)
-      equation
-        (cache,res,_) = ceval(cache,env, e, impl,NONE(), msg);
-        (cache,Values.ARRAY(resl,i::dims)) = cevalMatrixEltRow(cache,env, rest, impl, msg);
-        i = i+1;
-      then
-        (cache,Values.ARRAY(res :: resl,i::dims));
-    case (cache,env,{},_,msg) then (cache,Values.ARRAY({},{0}));
-  end match;
-end cevalMatrixEltRow;
 
 protected function cevalBuiltinSize "function: cevalBuiltinSize
   Evaluates the size operator."
@@ -1667,27 +1634,27 @@ algorithm
       String cr_str,dim_str,size_str,expstr;
       list<DAE.Exp> es;
       Env.Cache cache;
-      list<list<tuple<DAE.Exp, Boolean>>> mat;
+      list<list<DAE.Exp>> mat;
       Absyn.Info info;
     
-    case (cache,_,DAE.MATRIX(scalar=mat),DAE.ICONST(1),_,st,_)
+    case (cache,_,DAE.MATRIX(matrix=mat),DAE.ICONST(1),_,st,_)
       equation
         i = listLength(mat);
       then
         (cache,Values.INTEGER(i),st);
     
-    case (cache,_,DAE.MATRIX(scalar=mat),DAE.ICONST(2),_,st,_)
+    case (cache,_,DAE.MATRIX(matrix=mat),DAE.ICONST(2),_,st,_)
       equation
         i = listLength(Util.listFirst(mat));
       then
         (cache,Values.INTEGER(i),st);
     
-    case (cache,env,DAE.MATRIX(scalar=mat),DAE.ICONST(dim),impl,st,msg)
+    case (cache,env,DAE.MATRIX(matrix=mat),DAE.ICONST(dim),impl,st,msg)
       equation
         bl = (dim>2);
         true = bl;
         dim_1 = dim-2;
-        e = Util.tuple21(Util.listFirst(Util.listFirst(mat)));
+        e = Util.listFirst(Util.listFirst(mat));
         (cache,Values.INTEGER(i),st_1)=cevalBuiltinSize(cache,env,e,DAE.ICONST(dim_1),impl,st,msg);
       then
         (cache,Values.INTEGER(i),st);

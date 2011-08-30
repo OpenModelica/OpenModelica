@@ -5369,8 +5369,8 @@ template daeExpMatrix(Exp exp, Context context, Text &preExp /*BUFP*/,
  "Generates code for a matrix expression."
 ::=
   match exp
-  case MATRIX(scalar={{}})  // special case for empty matrix: create dimensional array Real[0,1]
-  case MATRIX(scalar={})    // special case for empty array: create dimensional array Real[0,1] 
+  case MATRIX(matrix={{}})  // special case for empty matrix: create dimensional array Real[0,1]
+  case MATRIX(matrix={})    // special case for empty array: create dimensional array Real[0,1] 
     then    
     let arrayTypeStr = expTypeArray(ty)
     let tmp = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
@@ -5380,9 +5380,9 @@ template daeExpMatrix(Exp exp, Context context, Text &preExp /*BUFP*/,
     let arrayTypeStr = expTypeArray(m.ty)
     let &vars2 = buffer "" /*BUFD*/
     let &promote = buffer "" /*BUFD*/
-    let catAlloc = (m.scalar |> row =>
+    let catAlloc = (m.matrix |> row =>
         let tmp = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
-        let vars = daeExpMatrixRow(row, arrayTypeStr, context,
+        let vars = daeExpMatrixRow(row, m.scalar, arrayTypeStr, context,
                                  &promote /*BUFC*/, &varDecls /*BUFD*/)
         let &vars2 += ', &<%tmp%>'
         'cat_alloc_<%arrayTypeStr%>(2, &<%tmp%>, <%listLength(row)%><%vars%>);'
@@ -5391,21 +5391,21 @@ template daeExpMatrix(Exp exp, Context context, Text &preExp /*BUFP*/,
     let &preExp += catAlloc
     let &preExp += "\n"
     let tmp = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
-    let &preExp += 'cat_alloc_<%arrayTypeStr%>(1, &<%tmp%>, <%listLength(m.scalar)%><%vars2%>);<%\n%>'
+    let &preExp += 'cat_alloc_<%arrayTypeStr%>(1, &<%tmp%>, <%listLength(m.matrix)%><%vars2%>);<%\n%>'
     tmp
 end daeExpMatrix;
 
 
-template daeExpMatrixRow(list<tuple<Exp,Boolean>> row, String arrayTypeStr,
+template daeExpMatrixRow(list<Exp> row, Boolean scalar, String arrayTypeStr,
                          Context context, Text &preExp /*BUFP*/,
                          Text &varDecls /*BUFP*/)
  "Helper to daeExpMatrix."
 ::=
   let &varLstStr = buffer "" /*BUFD*/
 
-  let preExp2 = (row |> col as (e, b) =>
-      let scalarStr = if b then "scalar_" else ""
-      let scalarRefStr = if b then "" else "&"
+  let preExp2 = (row |> e =>
+      let scalarStr = if scalar then "scalar_" else ""
+      let scalarRefStr = if scalar then "" else "&"
       let expVar = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let tmp = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
       let &varLstStr += ', &<%tmp%>'

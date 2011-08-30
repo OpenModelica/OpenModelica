@@ -2186,7 +2186,7 @@ algorithm
         //        shouldn't we change the type using the subs?
         Expression.makeASUB(e, subs);
     
-    case (DAE.ASUB(exp = DAE.MATRIX(scalar = (((DAE.CREF(componentRef = cr, ty = ty), _) :: _) :: _)), sub = subs))
+    case (DAE.ASUB(exp = DAE.MATRIX(matrix = (((DAE.CREF(componentRef = cr, ty = ty)) :: _) :: _)), sub = subs))
       equation
         cr = ComponentReference.crefStripLastSubs(cr);
         e = Expression.crefExp(cr);
@@ -3403,8 +3403,8 @@ algorithm outExp := matchcontinue(inExp)
     list<DAE.ExpVar> varLst;
     Absyn.Path name;
     tuple<DAE.Exp, tuple<Option<DAE.FunctionTree>,Boolean> > restpl;
-    list<list<tuple<DAE.Exp, Boolean>>> scalar;
-    Boolean b;
+    list<list<DAE.Exp>> mat;
+    Boolean b,sc;
     
   // CASE for Matrix    
   case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad as {id, jd})), (funcs,_)) )
@@ -3415,8 +3415,9 @@ algorithm outExp := matchcontinue(inExp)
         subslst1 = rangesToSubscripts(subslst);
         crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
         expl = Util.listMap1(crlst,Expression.makeCrefExp,ty);
-        scalar = makeMatrix(expl,j,j,{});
-        e_new = DAE.MATRIX(t,i,scalar);
+        mat = makeMatrix(expl,j,j,{});
+        sc = not Expression.isArrayType(Expression.unliftArray(Expression.unliftArray(ty)));
+        e_new = DAE.MATRIX(t,i,sc,mat);
         restpl = Expression.traverseExp(e_new, traversingextendArrExp, (funcs,true));
     then
       (restpl);
@@ -3432,8 +3433,9 @@ algorithm outExp := matchcontinue(inExp)
         subslst1 = rangesToSubscripts(subslst);
         crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
         expl = Util.listMap1(crlst,Expression.makeCrefExp,ty);
-        scalar = makeMatrix(expl,j,j,{});
-        e_new = DAE.MATRIX(t,i,scalar);
+        mat = makeMatrix(expl,j,j,{});
+        sc = not Expression.isArrayType(Expression.unliftArray(Expression.unliftArray(ty)));
+        e_new = DAE.MATRIX(t,i,sc,mat);
         restpl = Expression.traverseExp(e_new, traversingextendArrExp, (funcs,true));
     then
       (restpl);
@@ -3481,15 +3483,15 @@ protected function makeMatrix
   input list<DAE.Exp> expl;
   input Integer r;
   input Integer n;
-  input list<tuple<DAE.Exp, Boolean>> incol;
-  output list<list<tuple<DAE.Exp, Boolean>>> scalar;
+  input list<DAE.Exp> incol;
+  output list<list<DAE.Exp>> scalar;
 algorithm
   scalar := matchcontinue (expl, r, n, incol)
     local 
       DAE.Exp e;
       list<DAE.Exp> rest;
-      list<list<tuple<DAE.Exp, Boolean>>> res;
-      list<tuple<DAE.Exp, Boolean>> col;
+      list<list<DAE.Exp>> res;
+      list<DAE.Exp> col;
       Expression.Type tp;
       Boolean builtin;
   case({},r,n,incol)
@@ -3505,9 +3507,7 @@ algorithm
       (col::res);
   case(e::rest,r,n,incol)
     equation
-      tp = Expression.typeof(e);
-      builtin = Expression.typeBuiltin(tp);
-      res = makeMatrix(rest,r-1,n,(e,builtin)::incol);
+      res = makeMatrix(rest,r-1,n,e::incol);
     then      
       res;
   end matchcontinue;
@@ -3693,14 +3693,14 @@ algorithm outExp := matchcontinue(inExp)
     Integer i;
     DAE.Exp e,e1,e1_1,e1_2;
     Boolean b;
-    case ((e as DAE.MATRIX(ty=ty,integer=i,scalar=(((e1 as DAE.CREF(componentRef = cr)),_)::_)::_),funcs))
+    case ((e as DAE.MATRIX(ty=ty,integer=i,matrix=((e1 as DAE.CREF(componentRef = cr))::_)::_),funcs))
       equation
         e1_1 = Expression.expStripLastSubs(e1);
         ((e1_2,(_,true))) = extendArrExp((e1_1,(funcs,false)));
         true = Expression.expEqual(e,e1_2);
       then     
         ((e1_1,funcs));
-    case ((e as DAE.MATRIX(ty=ty,integer=i,scalar=(((e1 as DAE.UNARY(exp = DAE.CREF(componentRef = cr))),_)::_)::_),funcs))
+    case ((e as DAE.MATRIX(ty=ty,integer=i,matrix=(((e1 as DAE.UNARY(exp = DAE.CREF(componentRef = cr))))::_)::_),funcs))
       equation
         e1_1 = Expression.expStripLastSubs(e1);
         ((e1_2,(_,true))) = extendArrExp((e1_1,(funcs,false)));

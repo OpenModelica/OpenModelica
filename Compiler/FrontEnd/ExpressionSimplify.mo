@@ -491,7 +491,7 @@ algorithm
       list<DAE.Exp> exps,exps_1;
       Type t,tp_1,tp1,tp2,t1,t2;
       DAE.Exp res,e1,e2,cond,e1_1,e2_1,e;
-      list<list<tuple<DAE.Exp, Boolean>>> mexps,mexps_1;
+      list<list<DAE.Exp>> mexps,mexps_1;
     
     // Real -> Real
     case(DAE.RCONST(r),DAE.ET_REAL()) then DAE.RCONST(r);
@@ -512,19 +512,19 @@ algorithm
         DAE.ARRAY(tp,b,exps_1);
     
     // simplify cast in an if expression
-    case(DAE.IFEXP(cond,e1,e2),tp) 
+    case (DAE.IFEXP(cond,e1,e2),tp) 
       equation
         e1_1 = DAE.CAST(tp,e1);
         e2_1 = DAE.CAST(tp,e2);
       then DAE.IFEXP(cond,e1_1,e2_1);
     
     // simplify cast of matrix expressions
-    case(DAE.MATRIX(t,n,mexps),tp) 
+    case (DAE.MATRIX(t,n,b,mexps),tp) 
       equation
         tp1 = Expression.unliftArray(tp);
         tp2 = Expression.unliftArray(tp1);
-        mexps_1 = matrixExpMap1(mexps, addCast, tp2);
-      then DAE.MATRIX(tp,n,mexps_1);
+        mexps_1 = Util.listListMap1(mexps, addCast, tp2);
+      then DAE.MATRIX(tp,n,b,mexps_1);
     
     // fill(e, ...) can be simplified
     case(DAE.CALL(path=Absyn.IDENT("fill"),expLst=e::exps),tp) 
@@ -613,7 +613,7 @@ protected function simplifyBuiltinCalls "simplifies some builtin calls (with no 
 algorithm
   outExp := matchcontinue (exp)
     local
-      list<list<tuple<DAE.Exp,Boolean>>> mexpl;
+      list<list<DAE.Exp>> mexpl;
       list<DAE.Exp> es,expl;
       DAE.Exp e,len_exp,just_exp,e1,e2,e3,e4;
       DAE.ExpType tp,tp1,tp2;
@@ -727,9 +727,9 @@ algorithm
       then DAE.UNARY(op,e);
 
     // To calculate sums, first try matrix concatenation
-    case DAE.CALL(path=Absyn.IDENT("sum"),expLst={DAE.MATRIX(tp1,_,mexpl)},attr=DAE.CALL_ATTR(ty=tp2))
+    case DAE.CALL(path=Absyn.IDENT("sum"),expLst={DAE.MATRIX(ty=tp1,matrix=mexpl)},attr=DAE.CALL_ATTR(ty=tp2))
       equation
-        es = Util.listMap(Util.listFlatten(mexpl), Util.tuple21);
+        es = Util.listFlatten(mexpl);
         tp1 = Expression.unliftArray(Expression.unliftArray(tp1));
         sc = not Expression.isArrayType(tp1);
         tp1 = Debug.bcallret1(sc,Expression.unliftArray,tp1,tp1);
@@ -793,7 +793,7 @@ algorithm
       list<DAE.Dimension> dims;
       DAE.ExpType etp;
       Integer i1,i2,i;
-      list<list<tuple<DAE.Exp,Boolean>>> ms1,ms2,mss;
+      list<list<DAE.Exp>> ms1,ms2,mss;
     case (_,{},acc,true) then listReverse(acc);
     case (1,DAE.ARRAY(array=es1,scalar=sc,ty=DAE.ET_ARRAY(arrayDimensions=dim1::dims,ty=etp))::DAE.ARRAY(array=es2,ty=DAE.ET_ARRAY(arrayDimensions=dim2::_))::es,acc,_)
       equation
@@ -802,20 +802,20 @@ algorithm
         etp = DAE.ET_ARRAY(etp,ndim::dims);
         e = DAE.ARRAY(etp,sc,esn);
       then simplifyCat(dim,e::es,acc,true);
-    case (1,DAE.MATRIX(scalar=ms1,integer=i1,ty=DAE.ET_ARRAY(arrayDimensions=dim1::dims,ty=etp))::DAE.MATRIX(scalar=ms2,integer=i2,ty=DAE.ET_ARRAY(arrayDimensions=dim2::_))::es,acc,_)
+    case (1,DAE.MATRIX(matrix=ms1,integer=i1,scalar=sc,ty=DAE.ET_ARRAY(arrayDimensions=dim1::dims,ty=etp))::DAE.MATRIX(matrix=ms2,integer=i2,ty=DAE.ET_ARRAY(arrayDimensions=dim2::_))::es,acc,_)
       equation
         i = i1+i2;
         mss = listAppend(ms1,ms2);
         ndim = Expression.addDimensions(dim1,dim2);
         etp = DAE.ET_ARRAY(etp,ndim::dims);
-        e = DAE.MATRIX(etp,i,mss);
+        e = DAE.MATRIX(etp,i,sc,mss);
       then simplifyCat(dim,e::es,acc,true);
-    case (2,DAE.MATRIX(scalar=ms1,integer=i,ty=DAE.ET_ARRAY(arrayDimensions=dim11::dim1::dims,ty=etp))::DAE.MATRIX(scalar=ms2,ty=DAE.ET_ARRAY(arrayDimensions=_::dim2::_))::es,acc,_)
+    case (2,DAE.MATRIX(matrix=ms1,scalar=sc,integer=i,ty=DAE.ET_ARRAY(arrayDimensions=dim11::dim1::dims,ty=etp))::DAE.MATRIX(matrix=ms2,ty=DAE.ET_ARRAY(arrayDimensions=_::dim2::_))::es,acc,_)
       equation
         mss = Util.listThreadMap(ms1,ms2,listAppend);
         ndim = Expression.addDimensions(dim1,dim2);
         etp = DAE.ET_ARRAY(etp,dim11::ndim::dims);
-        e = DAE.MATRIX(etp,i,mss);
+        e = DAE.MATRIX(etp,i,sc,mss);
       then simplifyCat(dim,e::es,acc,true);
     case (dim,e::es,acc,changed) then simplifyCat(dim,es,e::acc,changed);
   end matchcontinue;
@@ -1471,7 +1471,7 @@ algorithm
       Type tp1,tp2,tp;
       Boolean sc1,sc2,sc;
       Integer size;
-      list<list<tuple<DAE.Exp, Boolean>>> lstexpl1,lstexpl2;
+      list<list<DAE.Exp>> lstexpl1,lstexpl2;
       DAE.Dimension d;
     
     case (DAE.ARRAY(ty = tp1,scalar = sc1,array = expl1),DAE.ARRAY(ty = tp2,scalar = sc2,array = expl2)) /* v1  v2 */
@@ -1482,7 +1482,7 @@ algorithm
         exp;
     
     // M * v1, use first dimension of M as the dimension of the result, in case the array has dimension 1, i.e. is a scalar.
-    case (DAE.MATRIX(ty = DAE.ET_ARRAY(ty = tp1, arrayDimensions = d :: _), scalar = lstexpl1),
+    case (DAE.MATRIX(ty = DAE.ET_ARRAY(ty = tp1, arrayDimensions = d :: _), matrix = lstexpl1),
           DAE.ARRAY(scalar = sc,array = expl2))
       equation
         expl_1 = simplifyScalarProductMatrixVector(lstexpl1, expl2);
@@ -1490,7 +1490,7 @@ algorithm
         DAE.ARRAY(DAE.ET_ARRAY(tp1, {d}),sc,expl_1);
     
     case (DAE.ARRAY(ty = tp1,scalar = sc,array = expl1),
-          DAE.MATRIX(ty = tp2,integer = size,scalar = lstexpl2))
+          DAE.MATRIX(ty = tp2,integer = size,matrix = lstexpl2))
       equation
         expl_1 = simplifyScalarProductVectorMatrix(expl1, lstexpl2);
       then
@@ -1508,7 +1508,7 @@ end simplifyScalarProduct;
 protected function simplifyScalarProductMatrixVector
 "function: simplifyScalarProductMatrixVector
   Simplifies scalar product of matrix  vector."
-  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpBooleanLstLst;
+  input list<list<DAE.Exp>> inTplExpBooleanLstLst;
   input list<DAE.Exp> inExpLst;
   output list<DAE.Exp> outExpLst;
 algorithm
@@ -1516,15 +1516,15 @@ algorithm
     local
       list<DAE.Exp> row_1,expl,res,v1;
       DAE.Exp exp;
-      list<tuple<DAE.Exp, Boolean>> row;
-      list<list<tuple<DAE.Exp, Boolean>>> rows;
+      list<DAE.Exp> row;
+      list<list<DAE.Exp>> rows;
       Integer x;
     
     case ({},_) then {};
     
     case ((row :: rows),v1)
       equation
-        row_1 = Util.listMap(row, Util.tuple21);
+        row_1 = row;
         x = listLength(row_1);
         true = (x<=0);
         res = simplifyScalarProductMatrixVector(rows, v1);
@@ -1533,7 +1533,7 @@ algorithm
     
     case ((row :: rows),v1)
       equation
-        row_1 = Util.listMap(row, Util.tuple21);
+        row_1 = row;
         expl = Util.listThreadMap(row_1, v1, Expression.expMul);
         exp = Util.listReduce(expl, Expression.expAdd);
         res = simplifyScalarProductMatrixVector(rows, v1);
@@ -1570,21 +1570,21 @@ protected function simplifyScalarProductVectorMatrix
 "function: simplifyScalarProductVectorMatrix
   Simplifies scalar product of vector  matrix"
   input list<DAE.Exp> inExpLst;
-  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpBooleanLstLst;
+  input list<list<DAE.Exp>> inTplExpBooleanLstLst;
   output list<DAE.Exp> outExpLst;
 algorithm
   outExpLst := matchcontinue (inExpLst,inTplExpBooleanLstLst) // non working
     local
       list<DAE.Exp> row_1,expl,res,v1;
       DAE.Exp exp;
-      tuple<DAE.Exp, Boolean> texp;
-      list<tuple<DAE.Exp, Boolean>> heads;
-      list<list<tuple<DAE.Exp, Boolean>>> rows,tails;
+      DAE.Exp texp;
+      list<DAE.Exp> heads;
+      list<list<DAE.Exp>> rows,tails;
     
     case (v1,  ((texp :: {}) :: rows)    )
       equation
         heads = Util.listMap(((texp :: {}) :: rows),Util.listFirst);
-        row_1 = Util.listMap(heads, Util.tuple21);
+        row_1 = heads;
         expl = Util.listThreadMap(v1, row_1, Expression.expMul);
         exp = Util.listReduce(expl, Expression.expAdd);
       then
@@ -1594,7 +1594,7 @@ algorithm
       equation
         heads = Util.listMap((rows),Util.listFirst);
         tails = Util.listMap((rows),Util.listRest);
-        row_1 = Util.listMap(heads, Util.tuple21);
+        row_1 = heads;
         expl = Util.listThreadMap(v1, row_1, Expression.expMul);
         exp = Util.listReduce(expl, Expression.expAdd);
         res = simplifyScalarProductVectorMatrix(v1, tails);
@@ -1618,7 +1618,7 @@ algorithm
       Type tp;
       Boolean sc;
       list<DAE.Exp> es_1,es;
-      list<list<tuple<DAE.Exp, Boolean>>> mexpl;
+      list<list<DAE.Exp>> mexpl;
       Integer dims;
     
     // scalar operator array
@@ -1631,11 +1631,11 @@ algorithm
       then
         DAE.ARRAY(tp,sc,(DAE.BINARY(s1,op,e1) :: es_1));
 
-    case (s1,op,DAE.MATRIX(tp,dims,mexpl)) 
+    case (s1,op,DAE.MATRIX(tp,dims,sc,mexpl)) 
       equation
         mexpl = simplifyVectorScalarMatrix(mexpl,op,s1,false /*scalar-array*/);
       then 
-        DAE.MATRIX(tp,dims,mexpl);
+        DAE.MATRIX(tp,dims,sc,mexpl);
 
     // array operator scalar
     case (DAE.ARRAY(ty = tp,scalar = sc,array = {}),op,s1) then DAE.ARRAY(tp,sc,{/*DAE.BINARY(DAE.ICONST(0),op,s1)*/});
@@ -1652,11 +1652,11 @@ algorithm
       then
         DAE.ARRAY(tp,sc,(e :: es_1));
 
-    case (DAE.MATRIX(tp,dims,mexpl),op,s1) 
+    case (DAE.MATRIX(tp,dims,sc,mexpl),op,s1) 
       equation
         mexpl = simplifyVectorScalarMatrix(mexpl,op,s1,true/*array-scalar*/);
       then 
-        DAE.MATRIX(tp,dims,mexpl);
+        DAE.MATRIX(tp,dims,sc,mexpl);
   end matchcontinue;
 end simplifyVectorScalar;
 
@@ -1756,73 +1756,74 @@ algorithm
     local
       Type tp1,tp2;
       Integer integer1,integer2,i1,i2;
-      list<tuple<DAE.Exp, Boolean>> e,e1,e2;
+      Boolean sc;
+      list<DAE.Exp> e,e1,e2;
       Operator op,op2;
-      list<list<tuple<DAE.Exp, Boolean>>> es_1,es1,es2;
+      list<list<DAE.Exp>> es_1,es1,es2;
       list<DAE.Exp> el1,el2;
       DAE.Exp exp1;
-    case (DAE.MATRIX(ty = tp1,integer=integer1,scalar = {e1}),
+    case (DAE.MATRIX(ty = tp1,integer=integer1,matrix = {e1}),
           op,
-         DAE.MATRIX(ty = tp2,integer=integer2,scalar = {e2}))
+         DAE.MATRIX(ty = tp2,integer=integer2,scalar=sc,matrix = {e2}))
       equation
         op2 = removeOperatorDimension(op);
         e = simplifyMatrixBinary1(e1,op2,e2);
-      then DAE.MATRIX(tp1,integer1,{e});  /* resulting operator */
+      then DAE.MATRIX(tp1,integer1,sc,{e});  /* resulting operator */
 
-    case (DAE.MATRIX(ty = tp1,integer=integer1,scalar = (e1 :: es1)),
+    case (DAE.MATRIX(ty = tp1,integer=integer1,scalar=sc,matrix = (e1 :: es1)),
           op,
-          DAE.MATRIX(ty = tp2,integer=integer2,scalar = (e2 :: es2)))
+          DAE.MATRIX(ty = tp2,integer=integer2,matrix = (e2 :: es2)))
       equation
         op2 = removeOperatorDimension(op);
         e = simplifyMatrixBinary1(e1,op2,e2);
         i1 = integer1-1;
         i2 = integer2-1;
-        DAE.MATRIX(_,_,es_1) = simplifyMatrixBinary(DAE.MATRIX(tp1,i1,es1), op, DAE.MATRIX(tp2,i2,es2));
+        DAE.MATRIX(_,_,_,es_1) = simplifyMatrixBinary(DAE.MATRIX(tp1,i1,sc,es1), op, DAE.MATRIX(tp2,i2,sc,es2));
       then
-        DAE.MATRIX(tp1,integer1,(e :: es_1));
+        DAE.MATRIX(tp1,integer1,sc,(e :: es_1));
         
     // because identity is array of array    
     case (DAE.ARRAY(ty=tp1,scalar=false,array={exp1 as DAE.ARRAY(array=el2)}),
           op,
-         DAE.MATRIX(ty = tp2,integer=integer2,scalar = {e2}))
+         DAE.MATRIX(ty = tp2,integer=integer2,scalar=sc,matrix = {e2}))
       equation
         op2 = removeOperatorDimension(op);
-        e1 = Util.listMap1(el2,Util.makeTuple2,false);
+        e1 = el2;
         e = simplifyMatrixBinary1(e1,op2,e2);
-      then DAE.MATRIX(tp2,integer2,{e});  /* resulting operator */        
+      then DAE.MATRIX(tp2,integer2,sc,{e});  /* resulting operator */        
         
     case (DAE.ARRAY(ty=tp1,scalar=false,array=((exp1 as DAE.ARRAY(array=el2))::el1)),
           op,     
-          DAE.MATRIX(ty = tp2,integer=integer2,scalar = (e2 :: es2)))
+          DAE.MATRIX(ty = tp2,integer=integer2,scalar=sc,matrix = (e2 :: es2)))
       equation
         op2 = removeOperatorDimension(op);
-        e1 = Util.listMap1(el2,Util.makeTuple2,false);
+        e1 = el2;
         e = simplifyMatrixBinary1(e1,op2,e2);
         i2 = integer2-1;
-        DAE.MATRIX(_,_,es_1) = simplifyMatrixBinary(DAE.ARRAY(tp1,false,el1), op, DAE.MATRIX(tp2,i2,es2));
+        DAE.MATRIX(_,_,_,es_1) = simplifyMatrixBinary(DAE.ARRAY(tp1,false,el1), op, DAE.MATRIX(tp2,i2,sc,es2));
       then
-        DAE.MATRIX(tp2,integer2,(e :: es_1));
+        DAE.MATRIX(tp2,integer2,sc,(e :: es_1));
      
-    case (DAE.MATRIX(ty = tp2,integer=integer2,scalar = {e2}),
+    case (DAE.MATRIX(ty = tp2,integer=integer2,scalar=sc,matrix = {e2}),
           op,
          DAE.ARRAY(ty=tp1,scalar=false,array={exp1 as DAE.ARRAY(array=el2)}))
       equation
         op2 = removeOperatorDimension(op);
-        e1 = Util.listMap1(el2,Util.makeTuple2,false);
+        e1 = el2;
         e = simplifyMatrixBinary1(e1,op2,e2);
-      then DAE.MATRIX(tp2,integer2,{e});  /* resulting operator */        
+      then DAE.MATRIX(tp2,integer2,sc,{e});  /* resulting operator */        
         
-    case (DAE.MATRIX(ty = tp2,integer=integer2,scalar = (e2 :: es2)),
+    case (DAE.MATRIX(ty = tp2,integer=integer2,scalar=sc,matrix = (e2 :: es2)),
           op,     
           DAE.ARRAY(ty=tp1,scalar=false,array=((exp1 as DAE.ARRAY(array=el2))::el1)))
       equation
         op2 = removeOperatorDimension(op);
-        e1 = Util.listMap1(el2,Util.makeTuple2,false);
+        e1 = el2;
         e = simplifyMatrixBinary1(e1,op2,e2);
         i2 = integer2-1;
-        DAE.MATRIX(_,_,es_1) = simplifyMatrixBinary(DAE.ARRAY(tp1,false,el1), op, DAE.MATRIX(tp2,i2,es2));
+        DAE.MATRIX(_,_,_,es_1) = simplifyMatrixBinary(DAE.ARRAY(tp1,false,el1), op, DAE.MATRIX(tp2,i2,sc,es2));
       then
-        DAE.MATRIX(tp2,integer2,(e :: es_1));
+        DAE.MATRIX(tp2,integer2,sc,(e :: es_1));
                   
   end matchcontinue;
 end simplifyMatrixBinary;
@@ -1831,10 +1832,10 @@ protected function simplifyMatrixBinary1
 "function: simlify_binary_matrix
   author: PA
   Simplifies matrix addition and subtraction"
-  input list<tuple<DAE.Exp, Boolean>> inExp1;
+  input list<DAE.Exp> inExp1;
   input Operator inOperator2;
-  input list<tuple<DAE.Exp, Boolean>> inExp3;
-  output list<tuple<DAE.Exp, Boolean>> outExp;
+  input list<DAE.Exp> inExp3;
+  output list<DAE.Exp> outExp;
 algorithm
   outExp:=
   matchcontinue (inExp1,inOperator2,inExp3)
@@ -1842,22 +1843,20 @@ algorithm
       DAE.Exp e1,e2,e;
       Boolean b1,b2,b;
       Operator op,op2;
-      list<tuple<DAE.Exp, Boolean>> es_1,es1,es2;
-    case ({(e1,b1)},op,{(e2,b2)})
+      list<DAE.Exp> es_1,es1,es2;
+    case ({e1},op,{e2})
       equation
         op2 = removeOperatorDimension(op);
         // failure(_ = removeOperatorDimension(op2));
-        b = b1 or b2;
         e = DAE.BINARY(e1,op2,e2);
-      then {(e,b)};  // resulting operator 
-    case ((e1,b1)::es1,op,(e2,b2)::es2)
+      then {e};  // resulting operator 
+    case (e1::es1,op,e2::es2)
       equation
         op2 = removeOperatorDimension(op);
-        b = b1 or b2;
         e = DAE.BINARY(e1,op2,e2);
         es_1 = simplifyMatrixBinary1(es1, op, es2);
       then
-        (e,b) :: es_1;
+        e :: es_1;
   end matchcontinue;
 end simplifyMatrixBinary1;
 
@@ -1873,32 +1872,32 @@ algorithm
   outExp:=
   matchcontinue (inExp1,inType,inExp2)
     local
-      list<list<tuple<DAE.Exp, Boolean>>> expl_1,expl1,expl2;
-      list<tuple<DAE.Exp, Boolean>> el;
+      list<list<DAE.Exp>> expl_1,expl1,expl2;
+      list<DAE.Exp> el;
       Type tp1,tp;
       Integer size1,i,i_1;
       list<Integer> range;
       DAE.Exp e,m,res;
     /* A^0=I */
-    case (m as DAE.MATRIX(ty = tp1,integer = size1,scalar = expl1),tp,
+    case (m as DAE.MATRIX(ty = tp1,integer = size1,scalar=true,matrix = expl1),tp,
           DAE.ICONST(integer = i))
       equation
         0=i;
-        el = Util.listFill((DAE.RCONST(0.0),true),size1);
+        el = Util.listFill(DAE.RCONST(0.0),size1);
         expl2 =  Util.listFill(el,size1);
         range = Util.listIntRange2(0,size1-1);
-        expl_1 = simplifyMatrixPow1(range,expl2,(DAE.RCONST(1.0),true));
+        expl_1 = simplifyMatrixPow1(range,expl2,DAE.RCONST(1.0));
       then
-        DAE.MATRIX(tp1,size1,expl_1);
+        DAE.MATRIX(tp1,size1,true,expl_1);
     /* A^1=A */
-    case (m as DAE.MATRIX(ty = tp1,integer = size1,scalar = expl1),tp,
+    case (m as DAE.MATRIX(ty = tp1,integer = size1,matrix = expl1),tp,
           DAE.ICONST(integer = i))
       equation
         1=i;
       then
         m;
     /* A^i */
-    case (m as DAE.MATRIX(ty = tp1,integer = size1,scalar = expl1),tp,
+    case (m as DAE.MATRIX(ty = tp1,integer = size1,matrix = expl1),tp,
           DAE.ICONST(integer = i))
       equation
         true = 1 < i;
@@ -1915,16 +1914,16 @@ protected function simplifyMatrixPow1
   author: Frenkel TUD
   Simplifies matrix powers."
   input list<Integer> inRange;
-  input list<list<tuple<DAE.Exp, Boolean>>> inMatrix;
-  input tuple<DAE.Exp, Boolean> inValue;
-  output list<list<tuple<DAE.Exp, Boolean>>> outMatrix;
+  input list<list<DAE.Exp>> inMatrix;
+  input DAE.Exp inValue;
+  output list<list<DAE.Exp>> outMatrix;
 algorithm
   outMatrix:=
   matchcontinue (inRange,inMatrix,inValue)
     local
-      list<list<tuple<DAE.Exp, Boolean>>> rm,rm1;
-      list<tuple<DAE.Exp, Boolean>> row,row1;
-      tuple<DAE.Exp, Boolean> e;
+      list<list<DAE.Exp>> rm,rm1;
+      list<DAE.Exp> row,row1;
+      DAE.Exp e;
       Integer i;
       list<Integer> rr;
     case ({},{},e)
@@ -1954,17 +1953,18 @@ protected function simplifyMatrixProduct
 algorithm
   outExp := match (inExp1,inExp2)
     local
-      list<list<tuple<DAE.Exp, Boolean>>> expl_1,expl1,expl2;
+      list<list<DAE.Exp>> expl_1,expl1,expl2;
       Type tp;
       Integer size1,size2;
       DAE.Dimension n, p;
+      Boolean sc;
     /* A[n, m] * B[m, p] = C[n, p] */
-    case (DAE.MATRIX(ty = DAE.ET_ARRAY(ty = tp, arrayDimensions = {n, _}),integer = size1,scalar = expl1),
-          DAE.MATRIX(ty = DAE.ET_ARRAY(arrayDimensions = {_, p}),integer = size2,scalar = expl2))
+    case (DAE.MATRIX(ty = DAE.ET_ARRAY(ty = tp, arrayDimensions = {n, _}),integer = size1,scalar=sc,matrix = expl1),
+          DAE.MATRIX(ty = DAE.ET_ARRAY(arrayDimensions = {_, p}),integer = size2,matrix = expl2))
       equation
         expl_1 = simplifyMatrixProduct2(expl1, expl2);
       then
-        DAE.MATRIX(DAE.ET_ARRAY(tp, {n, p}),size1,expl_1);
+        DAE.MATRIX(DAE.ET_ARRAY(tp, {n, p}),size1,sc,expl_1);
   end match;
 end simplifyMatrixProduct;
 
@@ -1972,15 +1972,15 @@ protected function simplifyMatrixProduct2
 "function: simplifyMatrixProduct2
   author: PA
   Helper function to simplifyMatrixProduct."
-  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpBooleanLstLst1;
-  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpBooleanLstLst2;
-  output list<list<tuple<DAE.Exp, Boolean>>> outTplExpBooleanLstLst;
+  input list<list<DAE.Exp>> inTplExpBooleanLstLst1;
+  input list<list<DAE.Exp>> inTplExpBooleanLstLst2;
+  output list<list<DAE.Exp>> outTplExpBooleanLstLst;
 algorithm
   outTplExpBooleanLstLst:=
   match (inTplExpBooleanLstLst1,inTplExpBooleanLstLst2)
     local
-      list<tuple<DAE.Exp, Boolean>> res1,e1lst;
-      list<list<tuple<DAE.Exp, Boolean>>> res2,rest1,m2;
+      list<DAE.Exp> res1,e1lst;
+      list<list<DAE.Exp>> res2,rest1,m2;
     case ((e1lst :: rest1),m2)
       equation
         res1 = simplifyMatrixProduct3(e1lst, m2);
@@ -1997,15 +1997,15 @@ protected function simplifyMatrixProduct3
   Helper function to simplifyMatrixProduct2. Extract each column at
   a time from the second matrix to calculate vector products with the
   first argument."
-  input list<tuple<DAE.Exp, Boolean>> inTplExpBooleanLst;
-  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpBooleanLstLst;
-  output list<tuple<DAE.Exp, Boolean>> outTplExpBooleanLst;
+  input list<DAE.Exp> inTplExpBooleanLst;
+  input list<list<DAE.Exp>> inTplExpBooleanLstLst;
+  output list<DAE.Exp> outTplExpBooleanLst;
 algorithm
   outTplExpBooleanLst:=
   matchcontinue (inTplExpBooleanLst,inTplExpBooleanLstLst)
     local
-      list<tuple<DAE.Exp, Boolean>> first_col,es,expl;
-      list<list<tuple<DAE.Exp, Boolean>>> mat_1,mat;
+      list<DAE.Exp> first_col,es,expl;
+      list<list<DAE.Exp>> mat_1,mat;
       DAE.Exp e_1;
       Type tp;
       Boolean builtin;
@@ -2015,11 +2015,11 @@ algorithm
         first_col = Util.listMap(mat, Util.listFirst);
         mat_1 = Util.listMap(mat, Util.listRest);
         e_1 = simplifyMatrixProduct4(expl, first_col);
-        tp = Expression.typeof(e_1);
-        builtin = Expression.typeBuiltin(tp);
+        //tp = Expression.typeof(e_1);
+        //builtin = Expression.typeBuiltin(tp);
         es = simplifyMatrixProduct3(expl, mat_1);
       then
-        ((e_1,builtin) :: es);
+        (e_1 :: es);
     case (_,_) then {};
   end matchcontinue;
 end simplifyMatrixProduct3;
@@ -2029,8 +2029,8 @@ protected function simplifyMatrixProduct4
   author: PA
   Helper function to simplifyMatrix3,
   performs a scalar mult of vectors"
-  input list<tuple<DAE.Exp, Boolean>> inTplExpBooleanLst1;
-  input list<tuple<DAE.Exp, Boolean>> inTplExpBooleanLst2;
+  input list<DAE.Exp> inTplExpBooleanLst1;
+  input list<DAE.Exp> inTplExpBooleanLst2;
   output DAE.Exp outExp;
 algorithm
   outExp:=
@@ -2038,14 +2038,14 @@ algorithm
     local
       Type tp,tp_1;
       DAE.Exp e1,e2,e,res;
-      list<tuple<DAE.Exp, Boolean>> es1,es2;
-    case ({(e1,_)},{(e2,_)})
+      list<DAE.Exp> es1,es2;
+    case ({e1},{e2})
       equation
         tp = Expression.typeof(e1);
         tp_1 = Expression.arrayEltType(tp);
       then
         DAE.BINARY(e1,DAE.MUL(tp_1),e2);
-    case (((e1,_) :: es1),((e2,_) :: es2))
+    case (e1 :: es1,e2 :: es2)
       equation
         e = simplifyMatrixProduct4(es1, es2);
         tp = Expression.typeof(e);
@@ -2643,11 +2643,11 @@ algorithm
   res := match(e,sub)
     local 
       Type t,t1,t2;
-      Boolean b;
+      Boolean b,sc;
       list<DAE.Exp> exps,expl_1;
       list<Boolean> bls;
-      list<list<tuple<DAE.Exp, Boolean>>> mexps;
-      list<tuple<DAE.Exp, Boolean>> mexpl;
+      list<list<DAE.Exp>> mexps;
+      list<DAE.Exp> mexpl;
       DAE.Exp e1,e2,cond,exp,start,stop,step;
       Integer istart,istop,istep,ival;
       Real rstart,rstop,rstep,rval;
@@ -2688,14 +2688,12 @@ algorithm
       then exp;
 
     // subscript of a matrix
-    case(DAE.MATRIX(t,n,mexps),sub) 
+    case(DAE.MATRIX(t,n,sc,mexps),sub) 
       equation
         t1 = Expression.unliftArray(t);
         (mexpl) = listNth(mexps, sub - 1);
-        (expl_1,bls) = Util.splitTuple2List(mexpl);
-        b = Util.boolAndList(bls);
       then 
-        DAE.ARRAY(t1,b,expl_1);
+        DAE.ARRAY(t1,sc,mexpl);
     
     // subscript of an if-expression
     case(DAE.IFEXP(cond,e1,e2),sub) 
@@ -2783,11 +2781,10 @@ algorithm
       Integer indx,i_1,n;
       Operator op,op2;
       Boolean b;
-      list<DAE.Exp> exps,expl_1;
-      list<tuple<DAE.Exp, Boolean>> expl;
+      list<DAE.Exp> exps,expl_1,expl;
       list<Boolean> bls;
       ComponentRef cr;
-      list<list<tuple<DAE.Exp, Boolean>>> lstexps;
+      list<list<DAE.Exp>> lstexps;
     
     case (e,sub) 
       equation
@@ -3012,23 +3009,19 @@ algorithm
       then
         exp;
     
-    case (DAE.MATRIX(ty = t,integer = n,scalar = lstexps),sub)
+    case (DAE.MATRIX(ty = t,integer = n,scalar=b,matrix = lstexps),sub)
       equation
         indx = Expression.expInt(sub);
         i_1 = indx - 1;
         (expl) = listNth(lstexps, i_1);
-        (expl_1,bls) = Util.splitTuple2List(expl);
         t_1 = Expression.unliftArray(t);
-        b = Util.boolAndList(bls);
-      then
-        DAE.ARRAY(t_1,b,expl_1);
+      then DAE.ARRAY(t_1,b,expl);
     
     case(e as DAE.IFEXP(cond,e1,e2),sub) 
       equation
         e1_1 = simplifyAsub(e1, sub);
         e2_1 = simplifyAsub(e2, sub);
-      then 
-        DAE.IFEXP(cond,e1_1,e2_1);
+      then DAE.IFEXP(cond,e1_1,e2_1);
     
   end matchcontinue;
 end simplifyAsub;
@@ -3919,42 +3912,46 @@ end simplifyUnary;
 
 protected function simplifyVectorScalarMatrix "Help function to simplifyVectorScalar,
 handles MATRIX expressions"
-  input list<list<tuple<DAE.Exp, Boolean>>> mexpl;
+  input list<list<DAE.Exp>> mexpl;
   input Operator op;
   input DAE.Exp s1;
   input Boolean arrayScalar "if true, array op scalar, otherwise scalar op array";
-  output list<list<tuple<DAE.Exp, Boolean>>> outExp;
+  output list<list<DAE.Exp>> outExp;
 algorithm
   outExp := match(mexpl,op,s1,arrayScalar)
-  local list<tuple<DAE.Exp, Boolean>> row;
-    case({},op,s1,arrayScalar) then {};
-    case(row::mexpl,op,s1,arrayScalar) equation
-      row = simplifyVectorScalarMatrixRow(row,op,s1,arrayScalar);
-      mexpl = simplifyVectorScalarMatrix(mexpl,op,s1,arrayScalar);
-    then row::mexpl;
+    local
+      list<DAE.Exp> row;
+    case ({},op,s1,arrayScalar) then {};
+    case (row::mexpl,op,s1,arrayScalar)
+      equation
+        row = simplifyVectorScalarMatrixRow(row,op,s1,arrayScalar);
+        mexpl = simplifyVectorScalarMatrix(mexpl,op,s1,arrayScalar);
+      then row::mexpl;
   end match;
 end simplifyVectorScalarMatrix;
 
 protected function simplifyVectorScalarMatrixRow "Help function to simplifyVectorScalarMatrix,
 handles MATRIX row"
-  input list<tuple<DAE.Exp, Boolean>> row;
+  input list<DAE.Exp> row;
   input Operator op;
   input DAE.Exp s1;
   input Boolean arrayScalar "if true, array op scalar, otherwise scalar op array";
-  output list<tuple<DAE.Exp, Boolean>> outExp;
+  output list<DAE.Exp> outExp;
 algorithm
   outExp := match(row,op,s1,arrayScalar)
   local DAE.Exp e; Boolean scalar;
     case({},op,s1,arrayScalar) then {};
       /* array op scalar */
-    case((e,scalar)::row,op,s1,true) equation
-      row = simplifyVectorScalarMatrixRow(row,op,s1,true);
-    then ((DAE.BINARY(e,op,s1),scalar)::row);
+    case(e::row,op,s1,true)
+      equation
+        row = simplifyVectorScalarMatrixRow(row,op,s1,true);
+      then (DAE.BINARY(e,op,s1)::row);
 
     /* scalar op array */
-    case((e,scalar)::row,op,s1,false) equation
-      row = simplifyVectorScalarMatrixRow(row,op,s1,false);
-    then ((DAE.BINARY(s1,op,e),scalar)::row);
+    case(e::row,op,s1,false)
+      equation
+        row = simplifyVectorScalarMatrixRow(row,op,s1,false);
+      then (DAE.BINARY(s1,op,e)::row);
   end match;
 end simplifyVectorScalarMatrixRow;
 
@@ -3998,73 +3995,6 @@ algorithm
         e;
   end match;
 end simplifyBuiltinConstantDer;
-
-protected function matrixExpMap1
-"function: matrixExpMap1
-  author: PA
-  Maps a function, taking one extra
-  argument over a MATRIX expression list."
-  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpBooleanLstLst;
-  input FuncTypeExpType_bToExp inFuncTypeExpTypeBToExp;
-  input Type_b inTypeB;
-  output list<list<tuple<DAE.Exp, Boolean>>> outTplExpBooleanLstLst;
-  partial function FuncTypeExpType_bToExp
-    input DAE.Exp inExp;
-    input Type_b inTypeB;
-    output DAE.Exp outExp;
-    replaceable type Type_b subtypeof Any;
-  end FuncTypeExpType_bToExp;
-  replaceable type Type_b subtypeof Any;
-algorithm
-  outTplExpBooleanLstLst:=
-  match (inTplExpBooleanLstLst,inFuncTypeExpTypeBToExp,inTypeB)
-    local
-      list<tuple<DAE.Exp, Boolean>> e_1,e;
-      list<list<tuple<DAE.Exp, Boolean>>> es_1,es;
-      FuncTypeExpType_bToExp rel;
-      Type_b arg;
-    case ({},_,_) then {};
-    case ((e :: es),rel,arg)
-      equation
-        e_1 = matrixExpMap1Help(e, rel, arg);
-        es_1 = matrixExpMap1(es, rel, arg);
-      then
-        (e_1 :: es_1);
-  end match;
-end matrixExpMap1;
-
-protected function matrixExpMap1Help
-"function: matrixExpMap1Help
-  Helper function to matrixExpMap1."
-  input list<tuple<DAE.Exp, Boolean>> inTplExpBooleanLst;
-  input FuncTypeExpType_bToExp inFuncTypeExpTypeBToExp;
-  input Type_b inTypeB;
-  output list<tuple<DAE.Exp, Boolean>> outTplExpBooleanLst;
-  partial function FuncTypeExpType_bToExp
-    input DAE.Exp inExp;
-    input Type_b inTypeB;
-    output DAE.Exp outExp;
-    replaceable type Type_b subtypeof Any;
-  end FuncTypeExpType_bToExp;
-  replaceable type Type_b subtypeof Any;
-algorithm
-  outTplExpBooleanLst:=
-  match (inTplExpBooleanLst,inFuncTypeExpTypeBToExp,inTypeB)
-    local
-      DAE.Exp e_1,e;
-      list<tuple<DAE.Exp, Boolean>> es_1,es;
-      Boolean b;
-      FuncTypeExpType_bToExp rel;
-      Type_b arg;
-    case ({},_,_) then {};
-    case (((e,b) :: es),rel,arg)
-      equation
-        e_1 = rel(e, arg);
-        es_1 = matrixExpMap1Help(es, rel, arg);
-      then
-        ((e_1,b) :: es_1);
-  end match;
-end matrixExpMap1Help;
 
 protected function removeOperatorDimension "Function: removeOperatorDimension
 Helper function for simplifyVectorBinary, removes an dimension from the operator.

@@ -652,8 +652,8 @@ algorithm
       Boolean sc,bi,tup;
       DAE.InlineType inl;
       list<Boolean> bl;
-      list<tuple<DAE.Exp, Boolean>> x_1,x;
-      list<list<tuple<DAE.Exp, Boolean>>> xs_1,xs;
+      list<DAE.Exp> x_1,x;
+      list<list<DAE.Exp>> xs_1,xs;
       String id,s;
       Env.Cache cache;
       list<DAE.Exp> expl;
@@ -797,19 +797,16 @@ algorithm
       then
         (cache,DAE.TUPLE(es_1));
 
-    case (cache,env,ih,DAE.MATRIX(ty = t,integer = a,scalar = {}),p)
+    case (cache,env,ih,DAE.MATRIX(ty = t,integer = a,scalar = sc,matrix = {}),p)
       then
-        (cache,DAE.MATRIX(t,a,{}));
+        (cache,DAE.MATRIX(t,a,sc,{}));
 
-    case (cache,env,ih,DAE.MATRIX(ty = t,integer = a,scalar = (x :: xs)),p)
+    case (cache,env,ih,DAE.MATRIX(ty = t,integer = a,scalar = sc,matrix = (x :: xs)),p)
       equation
-        el = Util.listMap(x, Util.tuple21);
-        bl = Util.listMap(x, Util.tuple22);
-        (cache,el_1) = prefixExpList(cache, env, ih, el, p);
-        x_1 = Util.listThreadTuple(el_1, bl);
-        (cache,DAE.MATRIX(t,b,xs_1)) = prefixExp(cache, env, ih, DAE.MATRIX(t,a,xs), p);
+        (cache,x_1) = prefixExpList(cache, env, ih, x, p);
+        (cache,DAE.MATRIX(t,b,sc,xs_1)) = prefixExp(cache, env, ih, DAE.MATRIX(t,a,sc,xs), p);
       then
-        (cache,DAE.MATRIX(t,a,(x_1 :: xs_1)));
+        (cache,DAE.MATRIX(t,a,sc,(x_1 :: xs_1)));
 
     case (cache,env,ih,DAE.RANGE(ty = t,exp = start,expOption = NONE(),range = stop),p)
       equation
