@@ -405,6 +405,41 @@ algorithm
   end match;
 end bcallret3;
 
+public function bcallret4
+"Boolean controlled calling of given function (2nd arg).
+  The passed function gets 3 arguments.
+  The last parameter is returned if the given flag is not set."
+  input Boolean flag;
+  input FuncAB_C func;
+  input Type_a arg1;
+  input Type_b arg2;
+  input Type_c arg3;
+  input Type_d arg4;
+  input Type_e default;
+  output Type_e res;
+  partial function FuncAB_C
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    input Type_c inTypeC;
+    input Type_d d;
+    output Type_e e;
+  end FuncAB_C;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  replaceable type Type_e subtypeof Any;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  res := match (flag,func,arg1,arg2,arg3,arg4,default)
+    case (true,_,_,_,_,_,_)
+      equation
+        res = func(arg1,arg2,arg3,arg4);
+      then res;
+    else default;
+  end match;
+end bcallret4;
+
 public function bcall
 "function: bcall
   bool controlled calling of function."

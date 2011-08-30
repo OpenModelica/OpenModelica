@@ -5642,6 +5642,57 @@ algorithm
   end match;
 end partitionIndependentBlocks;
 
+protected function partitionIndependentBlocksHelper
+  "Finds independent partitions of the equation system by "
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input DAE.FunctionTree ftree;
+  output list<BackendDAE.EqSystem> systs;
+  output BackendDAE.Shared oshared;
+algorithm
+  (systs,oshared) := match (syst,shared,ftree)
+    local
+      BackendDAE.IncidenceMatrix m,mT;
+      array<Integer> ixs,ixsT;
+      list<Integer> lst,lst2;
+      Boolean b;
+      String str;
+      list<String> strs;
+      Integer i,i2;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+    case (syst,shared,ftree)
+      equation
+        // print("partitionIndependentBlocks: TODO: Implement me\n");
+        (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
+        ixs = arrayCreate(arrayLength(m),0);
+        ixsT = arrayCreate(arrayLength(mT),0);
+        i = partitionIndependentBlocks0(arrayLength(m),0,m,mT,ixs);
+        i2 = partitionIndependentBlocks0(arrayLength(mT),0,mT,m,ixsT);
+        b = i > 1;
+        Debug.bcall(b,BackendDump.dump,BackendDAE.DAE({syst},shared));
+        printPartition(b,ixs);
+        printPartition(b,ixsT);
+        systs = Debug.bcallret4(b,partitionIndependentBlocksSplitBlocks,i,syst,ixs,ixsT,{syst});
+        // BackendDump.printEquations(lst,dlow);
+      then (systs,shared);
+  end match;
+end partitionIndependentBlocksHelper;
+
+protected function partitionIndependentBlocksSplitBlocks
+  input Integer n;
+  input BackendDAE.EqSystem syst;
+  input array<Integer> ixs;
+  input array<Integer> ixsT;
+  output list<BackendDAE.EqSystem> systs;
+algorithm
+  systs := match (n,syst,ixs,ixsT)
+    case (n,syst as BackendDAE.EQSYSTEM(_,_,_,_,_),ixs,ixsT)
+      equation
+      then {syst};
+  end match;
+end partitionIndependentBlocksSplitBlocks;
+
 protected function partitionIndependentBlocks0
   input Integer n;
   input Integer n2;
