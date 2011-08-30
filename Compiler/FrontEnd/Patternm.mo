@@ -41,7 +41,6 @@ encapsulated package Patternm
 
 public import Absyn;
 public import ClassInf;
-public import Connect;
 public import ConnectionGraph;
 public import DAE;
 public import Env;
@@ -56,6 +55,8 @@ public import UnitAbsyn;
 
 protected import BaseHashTable;
 protected import ComponentReference;
+protected import Connect;
+protected import ConnectUtil;
 protected import DAEUtil;
 protected import Debug;
 protected import Expression;
@@ -1790,11 +1791,11 @@ algorithm
         dummyFunc = ClassInf.FUNCTION(Absyn.IDENT("dummieFunc"));
         (cache,env2,_) = Inst.addComponentsToEnv(cache, env2,
           InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
-          Connect.emptySet, dummyFunc, ld_mod, {}, {}, {}, impl);
+          dummyFunc, ld_mod, {}, {}, {}, impl);
         (cache,env2,_,_,dae1,_,_,_,_) = Inst.instElementList(
           cache,env2, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
-          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, dummyFunc, ld_mod, {},
-          impl, Inst.INNER_CALL(), ConnectionGraph.EMPTY, true);
+          DAE.NOMOD(), Prefix.NOPRE(), dummyFunc, ld_mod, {},
+          impl, Inst.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, true);
       then (cache,SOME((env2,dae1)));
       
     case (cache,env,ld,scopeName,impl,info)

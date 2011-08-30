@@ -59,6 +59,7 @@ protected import BaseHashTable;
 protected import Builtin;
 protected import ComponentReference;
 protected import Connect;
+protected import ConnectUtil;
 protected import ConnectionGraph;
 protected import DAEUtil;
 protected import Debug;
@@ -207,8 +208,9 @@ algorithm
         (cache,env_3,_,_,_,_,_,types,_,_,_,_) =
         Inst.instClassIn(
           cache,env_2,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
-          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, SCode.PUBLIC(), {}, false, Inst.INNER_CALL(), ConnectionGraph.EMPTY,NONE());
+          DAE.NOMOD(), Prefix.NOPRE(),
+          ci_state, c, SCode.PUBLIC(), {}, false, Inst.INNER_CALL(),
+          ConnectionGraph.EMPTY, Connect.emptySet, NONE());
         // build names
         (_,names) = SCode.getClassComponents(c);
         // generate the enumeration type
@@ -231,8 +233,8 @@ algorithm
         true = Inst.classIsExternalObject(c);
         (cache,_::env_1,_,_,_,_,_,_,_,_) = Inst.instClass(
           cache,env_1,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
-          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c,
-          {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
+          DAE.NOMOD(), Prefix.NOPRE(), c,
+          {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
         SCode.CLASS(name=id) = c;
         (cache,t,env_2) = lookupTypeInEnv(cache,env_1,Absyn.IDENT(id));
       then
@@ -527,7 +529,7 @@ algorithm
         (cache,env,_,_) =
         Inst.partialInstClassIn(
           cache,env,InnerOuter.emptyInstHierarchy,
-          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
+          DAE.NOMOD(), Prefix.NOPRE(),
           ci_state, c, SCode.PUBLIC(), {});
         // Was 2 cases for package/non-package - all they did was fail or succeed on this
         // If we comment it out, we get faster code, and less of it to maintain
@@ -819,12 +821,10 @@ algorithm
         env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         // Debug.fprintln("instTrace", "LOOKUP MORE UNQUALIFIED IMPORTED ICD: " +& Env.printEnvPathStr(env) +& "." +& ident);
-       (cache,(f :: _),_,_) =
-       Inst.partialInstClassIn(
-          cache,env2,InnerOuter.emptyInstHierarchy,
-          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, SCode.PUBLIC(), {});
-        (cache,_,_) = lookupClass(cache,{f}, Absyn.IDENT(ident), false);
+       (cache,(f :: _),_,_) = Inst.partialInstClassIn(cache, env2,
+         InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), ci_state,
+         c, SCode.PUBLIC(), {}); (cache,_,_) = lookupClass(cache,{f},
+         Absyn.IDENT(ident), false);
       then
         (cache,true);
 
@@ -885,10 +885,8 @@ algorithm
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         // Debug.fprintln("instTrace", "LOOKUP UNQUALIFIED IMPORTED ICD: " +& Env.printEnvPathStr(env) +& "." +& ident);
         (cache,env2,_,cistate1) =
-        Inst.partialInstClassIn(
-          cache,env2,InnerOuter.emptyInstHierarchy,
-          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, SCode.PUBLIC(), {});
+        Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy,
+          DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {});
         // Restrict import to the imported scope only, not its parents, thus {f} below
         (cache,c_1,env2,prevFrames) = lookupClass2(cache,env2,Absyn.IDENT(ident),prevFrames,Util.makeStatefulBoolean(true),false) "Restrict import to the imported scope only, not its parents..." ;
         (cache,more) = moreLookupUnqualifiedImportedClassInFrame(cache,fs, env, ident);
@@ -1244,10 +1242,10 @@ algorithm
         ci_state = ClassInf.start(r, Env.getEnvName(env3));
         // Debug.fprintln("instTrace", "LOOKUP VAR IN PACKAGES ICD: " +& Env.printEnvPathStr(env3) +& " var: " +& ComponentReference.printComponentRefStr(cref));
         (cache,env5,_,_,_,_,_,_,_,_,_,_) =
-        Inst.instClassIn(
-          cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
-          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, SCode.PUBLIC(), {}, /*true*/false, Inst.INNER_CALL(), ConnectionGraph.EMPTY, NONE());
+        Inst.instClassIn(cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
+          DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {},
+          /*true*/false, Inst.INNER_CALL(), ConnectionGraph.EMPTY,
+          Connect.emptySet, NONE());
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,env5,cref,prevFrames,inState);
       then
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
@@ -1492,11 +1490,8 @@ algorithm
         // Debug.traceln("dmod: " +& Mod.printModStr(dmod));
         // Debug.fprintln("instTrace", "LOOKUP AND INST ICD: " +& Env.printEnvPathStr(cenv) +& "." +& cn2);
         (cache,classEnv,_,_) =
-        Inst.partialInstClassIn(
-          cache,cenv_2,InnerOuter.emptyInstHierarchy,
-          dmod, Prefix.NOPRE(), Connect.emptySet,
-          new_ci_state, c,
-          SCode.PUBLIC(), {});
+        Inst.partialInstClassIn(cache, cenv_2, InnerOuter.emptyInstHierarchy,
+          dmod, Prefix.NOPRE(), new_ci_state, c, SCode.PUBLIC(), {});
       then 
         (cache,classEnv);
     
@@ -1663,13 +1658,11 @@ algorithm
         env2 = Env.openScope(env_1, encflag, SOME(str), Env.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
 
-        //(cache,_,env_2,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-        //   ci_state, c, SCode.PUBLIC()/*FIXME:prot*/, {}, false, ConnectionGraph.EMPTY);
         // Debug.fprintln("instTrace", "LOOKUP FUNCTIONS IN ENV QUAL ICD: " +& Env.printEnvPathStr(env2) +& "." +& str);
         (cache,env_2,_,cistate1) =
         Inst.partialInstClassIn(
           cache, env2, InnerOuter.emptyInstHierarchy,
-          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
+          DAE.NOMOD(), Prefix.NOPRE(),
           ci_state, c, SCode.PUBLIC(), {});
         (cache,res) = lookupFunctionsInEnv2(cache, env_2, path, true, info);
       then
@@ -1831,7 +1824,7 @@ algorithm
         // Debug.fprintln("instTrace", "LOOKUP TYPE IN FRAME ICD: " +& Env.printEnvPathStr(env) +& " id:" +& id);
         (cache ,env_1,_) = Inst.implicitFunctionInstantiation(
           cache,cenv,InnerOuter.emptyInstHierarchy,
-          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {});
+          DAE.NOMOD(), Prefix.NOPRE(), cdef, {});
         (cache,ty,env_3) = lookupTypeInEnv(cache,env_1, Absyn.IDENT(id));
       then
         (cache,ty,env_3);
@@ -1914,10 +1907,9 @@ algorithm
           true = Inst.classIsExternalObject(cdef);
           // Debug.fprintln("instTrace", "LOOKUP FUNCTIONS IN FRAME ICD: " +& Env.printEnvPathStr(env) +& "." +& id);
           (cache,env_1,_,_,_,_,t,_,_,_) = 
-          Inst.instClass(
-            cache,cenv,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
-            DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, 
-              {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
+          Inst.instClass(cache,cenv,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
+            DAE.NOMOD(), Prefix.NOPRE(), cdef, {}, false, Inst.TOP_CALL(),
+            ConnectionGraph.EMPTY, Connect.emptySet);
           (cache,t,_) = lookupTypeInEnv(cache,env_1, Absyn.IDENT(id));
            //s = Types.unparseType(t);
             //print("type :");print(s);print("\n");
@@ -2017,7 +2009,7 @@ algorithm
         //         Util.tuple21),
         //       SCodeDump.printElementStr), "\n"));
         (env1,_) = Inst.addClassdefsToEnv(env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), cdefelts, false, NONE());
-        (_,env1,_) = Inst.addComponentsToEnv(Env.emptyCache(),env1,InnerOuter.emptyInstHierarchy,mods,Prefix.NOPRE(),Connect.emptySet,ClassInf.RECORD(fpath),eltsMods,eltsMods,{},{},true);
+        (_,env1,_) = Inst.addComponentsToEnv(Env.emptyCache(),env1,InnerOuter.emptyInstHierarchy,mods,Prefix.NOPRE(),ClassInf.RECORD(fpath),eltsMods,eltsMods,{},{},true);
         funcelts = buildRecordConstructorElts(eltsMods,mods,env1);
       then (cache,env1,funcelts,elts);
     
@@ -2888,9 +2880,9 @@ algorithm
   path := Absyn.joinPaths(utPath, Absyn.IDENT(id));
   (outCache,outEnv,_,_,_,_,_,varlst,_) := Inst.instElementList(
     cache,env,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
-    DAE.NOMOD(),Prefix.NOPRE(), Connect.emptySet,
+    DAE.NOMOD(),Prefix.NOPRE(),
     ClassInf.FUNCTION(Absyn.IDENT("")), Util.listMap1(els,Util.makeTuple2,DAE.NOMOD()),
-    {}, false, Inst.INNER_CALL(), ConnectionGraph.EMPTY, true);
+    {}, false, Inst.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, true);
   varlst := Types.boxVarLst(varlst);
   ftype := (DAE.T_METARECORD(utPath,index,varlst,singleton),SOME(path));
   // print("buildMetaRecordType " +& id +& " in scope " +& Env.printEnvPathStr(env) +& " OK " +& Types.unparseType(ftype) +&"\n");

@@ -75,7 +75,6 @@ protected import CevalFunction;
 protected import CevalScript;
 protected import ClassInf;
 protected import ComponentReference;
-protected import Connect;
 protected import Debug;
 protected import Derive;
 protected import Dump;
@@ -1209,7 +1208,6 @@ algorithm
           InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(),
           Prefix.NOPRE(),
-          Connect.emptySet,
           sc,
           {});
         func = Env.getCachedInstFunc(cache, funcpath);

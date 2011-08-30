@@ -565,6 +565,13 @@ algorithm
   end matchcontinue;
 end negate;
 
+public function negateReal
+  input DAE.Exp inReal;
+  output DAE.Exp outNegatedReal;
+algorithm
+  outNegatedReal := DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()), inReal);
+end negateReal;
+
 public function expand "expands products
 For example
 a *(b+c) => a*b + a*c" 
@@ -2642,11 +2649,7 @@ public function makeRealAdd
   input DAE.Exp inExp2;
   output DAE.Exp outExp;
 algorithm
-  outExp:=
-  matchcontinue (inExp1,inExp2)
-    local DAE.Exp e1,e2;
-    case (e1,e2) then DAE.BINARY(e1,DAE.ADD(DAE.ET_REAL()),e2);
-  end matchcontinue;
+  outExp := DAE.BINARY(inExp1, DAE.ADD(DAE.ET_REAL()), inExp2);
 end makeRealAdd;
 
 public function expAdd

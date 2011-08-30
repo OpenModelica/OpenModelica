@@ -36,81 +36,97 @@ encapsulated package Connect
 
   RCS: $Id$
 
-  Connections generate connection sets (datatype SET is described below)
-  which are constructed during instantiation.  When a connection
-  set is generated, it is used to create a number of equations.
-  The kind of equations created depends on the type of the set.
+  Connections generate connection sets which are stored in the Sets type, which
+  is then used to generate equations and evaluate stream operators during
+  instantiation.
 
-  Connect.mo is called from Inst.mo and is responsible for
-  creation of all connect-equations later passed to the DAE module
-  in DAE.mo."
+  Whenever a connection is instantiated by InstSection.connectComponents it is
+  added to the connection sets with addConnection or addArrayConnection. The
+  connector elements are stored in a trie, a.k.a. a prefix tree, where each node
+  represents a part of the elements component reference. The connection sets
+  are not stored explicitly, but each element keeps track of which set it
+  belongs to. Adding a new element to a set simply means assigning the element a
+  set index. Sets are not merged while connections are added either, instead a
+  list of set connections are kept.
+
+  The sets are collected and merged only when it's time to generate equations
+  from them in Inst.instClass. The elements are then bucket sorted into an
+  array, with pointers between buckets representing the set connections, and
+  then equations are generated for each resulting set. The stream operators
+  inStream and actualStream are also evaluated in the DAE at the same time,
+  since they need the same data as the equation generation.
+"
 
 public import DAE;
 public import Prefix;
 public import Absyn;
+public import ComponentReference;
 
-public
-uniontype Face"This type indicates whether a connector is an inside or an outside connector.
- Note: this is not the same as inner and outer references.
-       A connector is inside if it connects from the outside into a
-       component and it is outside if it connects out from the component.
-       This is important when generating equations for flow variables,
-       where outside connectors are multiplied with -1 (since flow is always into a component)."
+public constant Integer NEW_SET = -1 "The index used for new sets which have not
+  yet been assigned a set index.";
+
+public uniontype Face
+  "This type indicates whether a connector is an inside or an outside connector.
+   Note: this is not the same as inner and outer references.
+   A connector is inside if it connects from the outside into a component and it
+   is outside if it connects out from the component.  This is important when
+   generating equations for flow variables, where outside connectors are
+   multiplied with -1 (since flow is always into a component)."
   record INSIDE "This is an inside connection" end INSIDE;
   record OUTSIDE "This is an outside connection" end OUTSIDE;
 end Face;
 
-type EquSetElement    = tuple<DAE.ComponentRef, Face, DAE.ElementSource>;
-type FlowSetElement   = tuple<DAE.ComponentRef, Face, DAE.ElementSource>;
-type StreamSetElement = tuple<DAE.ComponentRef, DAE.ComponentRef, Face, DAE.ElementSource>;
-
-// FlowStreamConnect models an association between a stream variable and a flow
-// variable, which is needed to implement the stream operators. The Sets type
-// have a list of these associations that are added when a connector is
-// instantiated, and when two streams are connected their associated flow
-// variables are looked up in that list.
-type StreamFlowConnect = tuple<DAE.ComponentRef, DAE.ComponentRef>;
-
-public
-uniontype Set "A connection set is represented using the Set type."
-
-  record EQU "a list of component references"
-    list<EquSetElement> expComponentRefLst;
-  end EQU;
-
-  record FLOW "a list of component reference and a face"
-    list<FlowSetElement> tplExpComponentRefFaceLst;
-  end FLOW;
-
-  record STREAM "a list of component reference for stream, a component reference for corresponding flow and a face"
-    list<StreamSetElement> tplExpComponentRefFaceLst;
+public uniontype ConnectorType
+  "The type of a connector element."
+  record EQU end EQU;
+  record FLOW end FLOW;
+  record STREAM 
+    Option<DAE.ComponentRef> associatedFlow;
   end STREAM;
+  record NO_TYPE end NO_TYPE;
+end ConnectorType;
 
-end Set;
+public uniontype ConnectorElement
+  record CONNECTOR_ELEMENT
+    DAE.ComponentRef name;
+    Face face;
+    ConnectorType ty;
+    DAE.ElementSource source;
+    Integer set "Which set this element belongs to.";
+  end CONNECTOR_ELEMENT;
+end ConnectorElement;
 
-public
-uniontype Sets "The connection \'Sets\' contains
-   - the connection set
-   - a list of component references occuring in connect statemens
-   - a list of deleted components
-   - connect statements to propagate upwards in instance hierachy (inner/outer connectors)
+public uniontype SetTrieNode
+  record SET_TRIE_NODE
+    "A trie node has a name and contains a list of child nodes."
+    String name;
+    DAE.ComponentRef cref;
+    list<SetTrieNode> nodes;
+  end SET_TRIE_NODE;
 
-  The list of componentReferences are used only when evaluating the cardinality operator.
-  It is passed -into- classes to be instantiated, while the Set list is returned -from-
-  instantiated classes.
-  The list of deleted components is required to be able to remove connections to them."
-  record SETS
-    list<Set> setLst "the connection set";
-    list<DAE.ComponentRef> connection "connection_set connect_refs - list of
-                crefs in connect statements. This is used to be able to evaluate cardinality.
-                It is registered in env by Inst.addConnnectionSetToEnv.";
-    list<DAE.ComponentRef> deletedComponents "list of components with conditional declaration = false";
-    list<OuterConnect> outerConnects "connect statements to propagate upwards";
-    list<StreamFlowConnect> streamFlowConnects "list of stream-flow associations.";
-  end SETS;
-end Sets;
+  record SET_TRIE_LEAF
+    "A trie leaf contains information about a connector element. Each connector
+     might be connected as both inside and outside, and stream connector
+     elements have an associated flow element."
+    String name;
+    Option<ConnectorElement> insideElement "The inside element.";
+    Option<ConnectorElement> outsideElement "The outside element.";
+    Option<DAE.ComponentRef> flowAssociation "The name of the associated flow
+      variable, if the leaf represents a stream variable.";
+  end SET_TRIE_LEAF;
 
-uniontype OuterConnect
+  record SET_TRIE_DELETED
+    "Represents a connector which has been deleted, i.e. a conditional component
+     with condition = false."
+    String name;
+  end SET_TRIE_DELETED;
+end SetTrieNode;
+
+public type SetTrie = SetTrieNode "A trie, a.k.a. prefix tree, that maps crefs to sets.";
+
+public type SetConnection = tuple<Integer, Integer> "A connection between two sets.";
+
+public uniontype OuterConnect
   record OUTERCONNECT
     Prefix.Prefix scope "the scope where this connect was created";
     DAE.ComponentRef cr1 "the lhs component reference";
@@ -123,7 +139,34 @@ uniontype OuterConnect
   end OUTERCONNECT;
 end OuterConnect;
 
-public constant Sets emptySet=SETS({},{},{},{},{});
+public uniontype Sets
+  record SETS
+    SetTrie sets;
+    Integer setCount "How many sets the trie contains.";
+    list<SetConnection> connections;
+    list<DAE.ComponentRef> connectionCrefs "A list of crefs in connect statements,
+      used to evaluate the cardinality operator. It is registered in env by
+      Inst.addConnectionSetToEnv.";
+    list<OuterConnect> outerConnects "Connect statements to propagate upwards.";
+  end SETS;
+end Sets;
+
+public uniontype Set
+  "A set of connection elements."
+
+  record SET
+    "A set with a type and a list of elements."
+    ConnectorType ty;
+    list<ConnectorElement> elements;
+  end SET;
+
+  record SET_POINTER
+    "A pointer to another set."
+    Integer index;
+  end SET_POINTER;
+end Set;
+
+public constant Sets emptySet = SETS(SET_TRIE_NODE("", DAE.WILD(), {}), 0, {}, {}, {});
 
 end Connect;
 

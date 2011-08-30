@@ -321,6 +321,7 @@ end addConnection;
 
 protected import BaseHashTable;
 protected import ComponentReference;
+protected import ConnectUtil;
 protected import Debug;
 protected import DAEDump;
 protected import Expression;
@@ -1331,115 +1332,67 @@ protected function removeBrokenConnectionsFromSets
   input Connect.Sets inSets;
   input Edges inBrokenConnects;
   output Connect.Sets outSets;
+protected
+  list<Connect.OuterConnect> outer_connects;
+  Connect.Sets sets;
 algorithm
-  outSets := matchcontinue(inSets, inBrokenConnects)
-    local
-      list<Connect.Set> setLst "the connection set";
-      list<DAE.ComponentRef> connection "connection_set connect_refs";
-      list<DAE.ComponentRef> deletedComponents "list of components with conditional declaration = false";
-      list<Connect.OuterConnect> outerConnects "connect statements to propagate upwards";
-      list<Connect.StreamFlowConnect> sf;
-      list<tuple<DAE.ComponentRef, DAE.ComponentRef>> broken;
-      
-    case (Connect.SETS(setLst, connection, deletedComponents, outerConnects, sf), broken)
-      equation
-        setLst = removeBrokenConnectionsFromSetLst(setLst, broken);
-        outerConnects = Util.listSelect1(outerConnects, broken, outerConenctNOTFromConnect);
-      then 
-        Connect.SETS(setLst, connection, deletedComponents, outerConnects, sf);
-  end matchcontinue;
+  Connect.SETS(outerConnects = outer_connects) := inSets;
+  (sets, _) := ConnectUtil.traverseSets(inSets, inBrokenConnects,
+    removeBrokenConnectionsFromSet);
+  outer_connects := Util.listSelect1(outer_connects, inBrokenConnects,
+    outerConnectNOTFromConnect);
+  outSets := ConnectUtil.setOuterConnects(sets, outer_connects);
 end removeBrokenConnectionsFromSets;
 
-protected function removeBrokenConnectionsFromSetLst
-"@author: adrpo
- This function gets a list of connects and the connections sets
- and it will remove all component refences from the connection sets
- that have the origin in the given list of connects."
-  input list<Connect.Set> inSetLst;
+protected function removeBrokenConnectionsFromSet
+  "Used with ConnectUtil.traverseSets to remove connector elements from broken
+  connections."
+  input Connect.SetTrieNode inNode;
   input Edges inBrokenConnects;
-  output list<Connect.Set> outSetLst;
+  output Connect.SetTrieNode outNode;
+  output Edges outBrokenConnects;
 algorithm
-  outSetLst := matchcontinue(inSetLst, inBrokenConnects)
+  (outNode, outBrokenConnects) := match(inNode, inBrokenConnects)
     local
-      list<Connect.Set> rest, sets;
-      list<Connect.EquSetElement> expComponentRefLst;
-      list<Connect.FlowSetElement> tplExpComponentRefFaceLst;
-      Edges broken;
+      String name;
+      Option<Connect.ConnectorElement> ie, oe;
+      Option<DAE.ComponentRef> fa;
 
-    // handle empty case
-    case ({}, _) then {};
-
-    // handle potential equality
-    case (Connect.EQU(expComponentRefLst)::rest, broken)
+    case (Connect.SET_TRIE_LEAF(name, ie, oe, fa), _)
       equation
-        // keep all that did not came from broken connections!
-        expComponentRefLst = 
-          Util.listSelect1(expComponentRefLst, broken, equNOTFromConnect);
-         sets = removeBrokenConnectionsFromSetLst(rest, broken);
-      then Connect.EQU(expComponentRefLst)::sets;
+        ie = removeBrokenConnectorElement(ie, inBrokenConnects);
+        oe = removeBrokenConnectorElement(oe, inBrokenConnects);
+      then
+        (Connect.SET_TRIE_LEAF(name, ie, oe, fa), inBrokenConnects);
 
-    // handle flows
-    case (Connect.FLOW(tplExpComponentRefFaceLst)::rest, broken)
-      equation  
-        // keep all that did not came from broken connections!        
-        tplExpComponentRefFaceLst = 
-          Util.listSelect1(tplExpComponentRefFaceLst, broken, flowNOTFromConnect);
-        sets = removeBrokenConnectionsFromSetLst(rest, broken);
-      then Connect.FLOW(tplExpComponentRefFaceLst)::sets;
-  end matchcontinue;
-end removeBrokenConnectionsFromSetLst;
+    else (inNode, inBrokenConnects);
+  end match;
+end removeBrokenConnectionsFromSet;
 
-protected function equNOTFromConnect
-"@author: adrpo
-  This function returns true if the cref has an element source in the given broken connects"
-  input Connect.EquSetElement equConnect;
+protected function removeBrokenConnectorElement
+  "Given an optional connector elements this function returns NONE() if the
+  element has an element source in the given broken connects. Otherwise it
+  returns the given connector element."
+  input Option<Connect.ConnectorElement> inElement;
   input Edges inBrokenConnects;
-  output Boolean isNotPresent;
+  output Option<Connect.ConnectorElement> outElement;
 algorithm
-  isNotPresent := matchcontinue(equConnect, inBrokenConnects)
+  outElement := matchcontinue(inElement, inBrokenConnects)
     local
-      list<Option<Edge>> connectOptLst;
-    
-    // return true if the origin is not in the broken connects
-    case ((_, _, DAE.SOURCE(connectEquationOptLst = connectOptLst)), inBrokenConnects)
-      equation 
-        false = elementSourceInBrokenConnects(connectOptLst, inBrokenConnects);
-     then true;
-    
-    // return false if the origin is in the broken connects    
-    case ((_, _, DAE.SOURCE(connectEquationOptLst = connectOptLst)), inBrokenConnects)
-      equation 
-        true = elementSourceInBrokenConnects(connectOptLst, inBrokenConnects);
-     then false;
-  end matchcontinue;
-end equNOTFromConnect;
+      list<Option<Edge>> col;
 
-protected function flowNOTFromConnect
-"@author: adrpo
-  This function returns true if the cref has an element source in the given broken connects"
-  input Connect.FlowSetElement flowConnect;
-  input Edges inBrokenConnects;
-  output Boolean isNotPresent;
-algorithm
-  isNotPresent := matchcontinue(flowConnect, inBrokenConnects)
-    local
-      list<Option<Edge>> connectOptLst;
-    
-    // return true if the origin is not in the broken connects
-    case ((_, _, DAE.SOURCE(connectEquationOptLst = connectOptLst)), inBrokenConnects)
-      equation 
-        false = elementSourceInBrokenConnects(connectOptLst, inBrokenConnects);
-     then true;
-    
-    // return false if the origin is in the broken connects    
-    case ((_, _, DAE.SOURCE(connectEquationOptLst = connectOptLst)), inBrokenConnects)
-      equation 
-        true = elementSourceInBrokenConnects(connectOptLst, inBrokenConnects);
-     then false;
-  end matchcontinue;
-end flowNOTFromConnect;
+    case (SOME(Connect.CONNECTOR_ELEMENT(source =
+        DAE.SOURCE(connectEquationOptLst = col))), _)
+      equation
+        true = elementSourceInBrokenConnects(col, inBrokenConnects);
+      then
+        NONE();
 
-protected function outerConenctNOTFromConnect
+    else inElement;
+  end matchcontinue;
+end removeBrokenConnectorElement;
+
+protected function outerConnectNOTFromConnect
 "@author: adrpo
   This function returns true if the cref has an element source in the given broken connects"
   input Connect.OuterConnect outerConnects;
@@ -1462,7 +1415,7 @@ algorithm
         true = elementSourceInBrokenConnects(connectOptLst, inBrokenConnects);
      then false;
   end matchcontinue;
-end outerConenctNOTFromConnect;
+end outerConnectNOTFromConnect;
 
 protected function elementSourceInBrokenConnects
 "@author: adrpo 

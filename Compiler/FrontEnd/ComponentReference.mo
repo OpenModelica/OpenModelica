@@ -1395,8 +1395,8 @@ algorithm
       DAE.ComponentRef cr;
       DAE.ExpType t2;
     
-    case( DAE.CREF_QUAL(id,t2,subs,cr)) then makeCrefIdent(id,t2,{});
-    case( DAE.CREF_IDENT(id,t2,subs)) then makeCrefIdent(id,t2,{});
+    case( DAE.CREF_QUAL(id,t2,subs,cr)) then makeCrefIdent(id,t2,subs);
+    case( DAE.CREF_IDENT(id,t2,subs)) then inCr;
   end match;
 end crefFirstCref;
 

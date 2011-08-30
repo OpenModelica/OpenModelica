@@ -327,7 +327,7 @@ void LapackImpl__dgeev(const char *jobvl, const char *jobvr, int N, void *inA, i
   vl = alloc_zeroed_real_matrix(ldvl, n);
   vr = alloc_zeroed_real_matrix(ldvr, n);
 
-  dgeev_(&*jobvl, &*jobvr, &n, a, &lda, wr, wi, vl, &ldvl, vr, &ldvr, work,
+  dgeev_(jobvl, jobvr, &n, a, &lda, wr, wi, vl, &ldvl, vr, &ldvr, work,
     &lwork, &info);
 
   *outA = mk_rml_real_matrix(lda, n, a);

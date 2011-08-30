@@ -89,7 +89,7 @@ end Slot;
 protected import Ceval;
 protected import ClassInf;
 protected import ComponentReference;
-protected import Connect;
+protected import ConnectUtil;
 protected import Debug;
 protected import Dump;
 protected import Error;
@@ -7892,14 +7892,14 @@ algorithm
         (cache,cl,env) = Lookup.lookupClass(cache,env,name,false);
         (cache,name) = Inst.makeFullyQualified(cache,env,name);
         cache = Env.addCachedInstFuncGuard(cache,name);
-        (cache,env,_) = Inst.implicitFunctionInstantiation(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,cl,{});
+        (cache,env,_) = Inst.implicitFunctionInstantiation(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),cl,{});
       then (cache,Util.SUCCESS());
 
     /* class already available*/
     case(cache,env,name,_,SOME(cl),_,_)
       equation
         (cache,name) = Inst.makeFullyQualified(cache,env,name);
-        (cache,env,_) = Inst.implicitFunctionInstantiation(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,cl,{});
+        (cache,env,_) = Inst.implicitFunctionInstantiation(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),cl,{});
       then (cache,Util.SUCCESS());
 
     /* Call to function reference variable */

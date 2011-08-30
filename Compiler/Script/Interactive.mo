@@ -59,19 +59,41 @@ public import Settings;
 public import Values;
 
 // protected imports
+protected import Ceval;
+protected import ClassInf;
+protected import ClassLoader;
 protected import ComponentReference;
+protected import Connect;
+protected import ConnectUtil;
+protected import Constants;
 protected import DAEUtil;
+protected import Debug;
 protected import Dependency;
+protected import Dump;
+protected import Error;
 protected import ErrorExt;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import InnerOuter;
+protected import Inst;
+protected import Lookup;
 protected import MetaUtil;
+protected import Mod;
+protected import ModUtil;
+protected import Parser;
+protected import Prefix;
+protected import Print;
+protected import Refactor;
+protected import RTOpts;
 protected import SCodeFlatten;
+protected import Static;
+protected import System;
 protected import Types;
 protected import UnitAbsyn;
+protected import Util;
 protected import ValuesUtil;
+
 
 /*
 ** CompiledCFunction
@@ -212,27 +234,6 @@ protected uniontype AnnotationType
   record ICON_ANNOTATION end ICON_ANNOTATION;
   record DIAGRAM_ANNOTATION end DIAGRAM_ANNOTATION;
 end AnnotationType;
-
-protected import Connect;
-protected import Dump;
-protected import Debug;
-protected import Util;
-protected import Parser;
-protected import Prefix;
-protected import Mod;
-protected import Lookup;
-protected import ClassInf;
-protected import Inst;
-protected import Static;
-protected import ModUtil;
-protected import Print;
-protected import System;
-protected import ClassLoader;
-protected import Ceval;
-protected import Error;
-protected import Constants;
-protected import Refactor;
-protected import RTOpts;
 
 public constant SymbolTable emptySymboltable =
      SYMBOLTABLE(Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp),
@@ -423,9 +424,8 @@ algorithm
         scode_class = SCodeUtil.translateClass(absyn_class);
         scode_class = SCodeFlatten.flattenClass(scode_class);
 
-        (_,env_1,_) =
-          Inst.implicitFunctionInstantiation(Env.emptyCache(),env,InnerOuter.emptyInstHierarchy,
-                                             DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, scode_class, {});
+        (_,env_1,_) = Inst.implicitFunctionInstantiation(Env.emptyCache(),env,InnerOuter.emptyInstHierarchy,
+          DAE.NOMOD(), Prefix.NOPRE(), scode_class, {});
       then
         ();
     // Recursively go through all classes
@@ -4872,7 +4872,7 @@ algorithm
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (_,env_2,_,_) =
           Inst.partialInstClassIn(cache,env2,InnerOuter.emptyInstHierarchy,
-                                  DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, ci_state, cl, SCode.PUBLIC(), {});
+            DAE.NOMOD(), Prefix.NOPRE(), ci_state, cl, SCode.PUBLIC(), {});
       then env_2;
     case (p,p_class) then {};
   end matchcontinue;
@@ -10580,7 +10580,7 @@ algorithm
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (_,env_2,_,_) =
           Inst.partialInstClassIn(Env.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
-                                  DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, ci_state, c, SCode.PUBLIC(), {});
+            DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {});
         lst = getBaseClasses(cdef, env_2);
         n_1 = n - 1;
         cref = listNth(lst, n_1);
@@ -10775,8 +10775,7 @@ algorithm
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (_,env_2,_,_) =
           Inst.partialInstClassIn(Env.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
-                                  DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-                                  ci_state, c, SCode.PUBLIC(), {});
+            DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {});
         comp = getNthComponentInClass(cdef, n);
         {s1} = getComponentInfoOld(comp, env_2);
         str = stringAppendList({"{", s1, "}"});
@@ -10826,7 +10825,7 @@ algorithm
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (_,env_2,_,_) =
           Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(),
-                                  Prefix.NOPRE(), Connect.emptySet, ci_state, c, SCode.PUBLIC(), {});
+            Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {});
         comps1 = getPublicComponentsInClass(cdef);
         s1 = getComponentsInfo(comps1, "\"public\"", env_2);
         comps2 = getProtectedComponentsInClass(cdef);
@@ -14037,8 +14036,8 @@ algorithm
         c_1 = SCode.classSetPartial(c, SCode.NOT_PARTIAL());
         (_,_,_,_,dae,cs,t,state,_,_) =
           Inst.instClass(cache, env_1,InnerOuter.emptyInstHierarchy,
-                         UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), Connect.emptySet,
-                         c_1, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
+            UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), c_1, {}, false,
+            Inst.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
         gexpstr = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         
         gexpstr_1 = stringAppendList({annName,"(",gexpstr,")"});
@@ -14407,7 +14406,7 @@ algorithm
         (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Absyn.dummyInfo); // TODO: FIXME: Someone forgot to add Absyn.Info to this function's input
         (cache,_,_,_,dae,cs,t,state,_,_) =
           Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore, mod_2, Prefix.NOPRE(),
-            Connect.emptySet, placementclass, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
+            placementclass, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
         
         str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         
@@ -14442,9 +14441,8 @@ algorithm
         (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, true, Absyn.dummyInfo);
         (cache,_,_,_,dae,cs,t,state,_,_) =
           Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
-                         mod_2, Prefix.NOPRE(), Connect.emptySet,
-                         placementclass, {}, false, Inst.TOP_CALL(),
-                         ConnectionGraph.EMPTY);
+            mod_2, Prefix.NOPRE(), placementclass, {}, false, Inst.TOP_CALL(),
+            ConnectionGraph.EMPTY, Connect.emptySet); 
         str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
       then
@@ -14469,8 +14467,8 @@ algorithm
         (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Absyn.dummyInfo);
         (cache,_,_,_,dae,cs,t,state,_,_) =
           Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy,
-                         UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), Connect.emptySet,
-                         placementclass, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
+            UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), placementclass, {}, false,
+            Inst.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
         str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         
         // print("Env: " +& Env.printEnvStr(env) +& "\n");
@@ -14502,9 +14500,8 @@ algorithm
         (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, true, Absyn.dummyInfo);
         (cache,_,_,_,dae,cs,t,state,_,_) =
           Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
-                         mod_2, Prefix.NOPRE(), Connect.emptySet,
-                         placementclass, {}, false, Inst.TOP_CALL(),
-                         ConnectionGraph.EMPTY);
+            mod_2, Prefix.NOPRE(), placementclass, {}, false, Inst.TOP_CALL(),
+            ConnectionGraph.EMPTY, Connect.emptySet); 
         str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
       then
@@ -14529,9 +14526,8 @@ algorithm
         (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Absyn.dummyInfo);
         (cache,_,_,_,dae,cs,t,state,_,_) =
           Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
-                         mod_2, Prefix.NOPRE(), Connect.emptySet,
-                         placementclass, {}, false, Inst.TOP_CALL(),
-                         ConnectionGraph.EMPTY);
+            mod_2, Prefix.NOPRE(), placementclass, {},
+            false, Inst.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
         str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
       then

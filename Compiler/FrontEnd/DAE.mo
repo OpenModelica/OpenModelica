@@ -101,6 +101,8 @@ uniontype ElementSource "gives information about the origin of the element"
   end SOURCE;
 end ElementSource;
 
+public constant ElementSource emptyElementSource = SOURCE(Absyn.dummyInfo,{},{},{},{},{});
+
 public uniontype SymbolicOperation
   record SIMPLIFY
     Exp before;
@@ -141,8 +143,6 @@ public uniontype SymbolicOperation
     Exp after;
   end OP_DERIVE;
 end SymbolicOperation;
-
-public constant ElementSource emptyElementSource = SOURCE(Absyn.dummyInfo,{},{},{},{},{});
 
 public uniontype Element
   record VAR

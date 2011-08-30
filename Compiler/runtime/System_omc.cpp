@@ -213,6 +213,15 @@ extern void System_setHasStreamConnectors(int b)
   hasStreamConnectors = b;
 }
 
+extern int System_getUsesCardinality()
+{
+  return usesCardinality;
+}
+
+extern void System_setUsesCardinality(int b)
+{
+  usesCardinality = b;
+}
 
 extern void* System_strtok(const char *str0, const char *delimit)
 {

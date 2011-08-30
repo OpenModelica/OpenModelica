@@ -560,6 +560,18 @@ public function getHasStreamConnectors
   external "C" hasStream=System_getHasStreamConnectors() annotation(Library = "omcruntime");
 end getHasStreamConnectors;
 
+public function setUsesCardinality
+  "Sets the external flag that signals the use of the cardinality operator."
+  input Boolean inUses;
+  external "C" System_setUsesCardinality(inUses) annotation(Library = "omcruntime");
+end setUsesCardinality;
+
+public function getUsesCardinality
+  "Retrieves the external flag that signals the use of the cardinality operator."
+  output Boolean outUses;
+  external "C" System_getUsesCardinality(outUses) annotation(Library = "omcruntime");
+end getUsesCardinality;
+
 public function setHasInnerOuterDefinitions
 "@author: adrpo
  sets the external flag that signals the presence

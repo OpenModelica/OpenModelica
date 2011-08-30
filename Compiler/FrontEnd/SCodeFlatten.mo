@@ -122,6 +122,7 @@ algorithm
         env = SCodeEnv.updateExtendsInEnv(env);
         
         (prog, env) = SCodeDependency.analyse(inClassName, env, prog);
+        checkForCardinality(env);
         //print(SCodeDump.programStr(prog) +& "\n");
         (prog, env) = SCodeFlattenImports.flattenProgram(prog, env);
         prog = SCodeFlattenExtends.flattenProgram(inClassName, prog, env);
@@ -142,6 +143,29 @@ algorithm
 
   end matchcontinue;
 end flattenClassInProgram;
+
+protected function checkForCardinality
+  "Checks if the cardinality operator is used or not and sets the system flag,
+  so that some work can be avoided in Inst if cardinality isn't used."
+  input Env inEnv;
+algorithm
+  _ := matchcontinue(inEnv)
+    case _
+      equation
+        (_, _, _) = SCodeLookup.lookupName(Absyn.IDENT("cardinality"), inEnv,
+          Absyn.dummyInfo, NONE());
+        System.setUsesCardinality(true);
+      then
+        ();
+
+    else
+      equation
+        System.setUsesCardinality(false);
+      then
+        ();
+
+  end matchcontinue;
+end checkForCardinality;
 
 public function flattenCompleteProgram
   input SCode.Program inProgram;

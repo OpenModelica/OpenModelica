@@ -199,6 +199,18 @@ algorithm
   end match;
 end prefixFirst;
 
+public function prefixFirstCref
+  "Returns the first cref in the prefix."
+  input Prefix.Prefix inPrefix;
+  output DAE.ComponentRef outCref;
+protected
+  String name;
+  list<DAE.Subscript> subs;
+algorithm
+  Prefix.PREFIX(compPre = Prefix.PRE(prefix = name, subscripts = subs)) := inPrefix;
+  outCref := DAE.CREF_IDENT(name, DAE.ET_OTHER(), subs);
+end prefixFirstCref;
+
 public function prefixLast "function: prefixLast
   Returns the last NONPRE Prefix of a prefix"
   input Prefix.Prefix inPrefix;

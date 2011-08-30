@@ -773,6 +773,19 @@ RML_BEGIN_LABEL(System__setHasStreamConnectors)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__getUsesCardinality)
+{
+  rmlA0 = usesCardinality ? RML_TRUE : RML_FALSE;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__setUsesCardinality)
+{
+  usesCardinality = (RML_UNTAGFIXNUM(rmlA0)) ? 1 : 0;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 /*
  * @author ppriv

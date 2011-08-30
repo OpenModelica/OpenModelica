@@ -50,6 +50,7 @@ public import Interactive;
 protected import BaseHashTable;
 protected import HashTable2;
 protected import ComponentReference;
+protected import Connect;
 protected import Inst;
 protected import Util;
 protected import DAE;
@@ -58,7 +59,6 @@ protected import UnitAbsyn;
 protected import Prefix;
 protected import ClassInf;
 protected import Lookup;
-protected import Connect;
 protected import ConnectionGraph;
 protected import System;
 protected import SCodeUtil;
@@ -1340,8 +1340,7 @@ algorithm
         env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (cache,env_2,_,_) = Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy,
-                                                    DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-                                                    ci_state, cl, SCode.PUBLIC(), {});
+          DAE.NOMOD(), Prefix.NOPRE(), ci_state, cl, SCode.PUBLIC(), {});
       then 
         env_2;
     
@@ -1351,8 +1350,9 @@ algorithm
         env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (cache,env_2,_,_,_,_,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, InnerOuter.emptyInstHierarchy,
-          UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, cl, SCode.PUBLIC(), {},false, Inst.INNER_CALL(), ConnectionGraph.EMPTY,NONE());
+          UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(),
+          ci_state, cl, SCode.PUBLIC(), {},false, Inst.INNER_CALL(),
+          ConnectionGraph.EMPTY, Connect.emptySet, NONE());
     then 
       env_2;
   end matchcontinue;
