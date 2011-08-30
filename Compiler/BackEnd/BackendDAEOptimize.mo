@@ -1034,64 +1034,151 @@ protected function selectAlias
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output BackendDAE.BinTree newvars;
+protected
+  BackendDAE.Variables vars;
+  BackendDAE.Var var1,var2;
+  Integer ipos1,ipos2;
 algorithm
-  (cr,exp,k,osyst,oshared,newvars) := matchcontinue (cr1,cr2,e1,e2,syst,shared,mavars,negate,source)
-    local
-      DAE.ComponentRef cr;
-      BackendDAE.BinTree newvars;
-      BackendDAE.Var var,v,v1;
-      BackendDAE.VarKind kind;
-      BackendDAE.BackendDAE dae1,dae2;
-      BackendDAE.Variables vars;
-      Integer ipos;
-      list<DAE.SymbolicOperation> ops;
-    case (cr1,cr2,e1,e2,syst as BackendDAE.EQSYSTEM(orderedVars=vars),shared,mavars,negate,source)
-      equation
-        ((var::_),(ipos::_)) = BackendVariable.getVar(cr1,vars);
-        // no State
-        false = BackendVariable.isStateorStateDerVar(var) "cr1 not state";
-        kind = BackendVariable.varKind(var);
-        BackendVariable.isVarKindVariable(kind) "cr1 not constant";
-        false = BackendVariable.isVarOnTopLevelAndOutput(var);
-        false = BackendVariable.isVarOnTopLevelAndInput(var);
-        //failure( _ = BackendVariable.varStartValueFail(var));
-        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr1," = ",e2," found (2).\n"));
-        ((v::_),_) = BackendVariable.getVar(cr2,vars);
-        // merge fixed,start,nominal
-        v1 = mergeAliasVars(v,var,negate);
-        syst = BackendVariable.addVarDAE(v1,syst);
-        // store changed var
-        newvars = BackendDAEUtil.treeAdd(mavars, cr1, 0);
-        ops = DAEUtil.getSymbolicTransformations(source);
-        var = BackendVariable.mergeVariableOperations(var,DAE.SOLVED(cr1,e2)::ops);
-        shared = BackendDAEUtil.updateAliasVariablesDAE(cr1,e2,var,shared);
-      then
-        (cr1,e2,ipos,syst,shared,newvars);
-    case (cr1,cr2,e1,e2,syst as BackendDAE.EQSYSTEM(orderedVars=vars),shared,mavars,negate,source)
-      equation
-        ((var::_),(ipos::_)) = BackendVariable.getVar(cr2,vars);
-        // no State
-        false = BackendVariable.isStateorStateDerVar(var) "cr1 not state";
-        kind = BackendVariable.varKind(var);
-        BackendVariable.isVarKindVariable(kind) "cr1 not constant";
-        false = BackendVariable.isVarOnTopLevelAndOutput(var);
-        false = BackendVariable.isVarOnTopLevelAndInput(var);
-        //failure( _ = BackendVariable.varStartValueFail(var));
-        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr2," = ",e1," found (3).\n"));
-        // merge fixed,start,nominal
-        ((v::_),_) = BackendVariable.getVar(cr1,vars);
-        v1 = mergeAliasVars(v,var,negate);
-        ops = DAEUtil.getSymbolicTransformations(source);
-        syst = BackendVariable.addVarDAE(v1,syst);
-        // store changed var
-        newvars = BackendDAEUtil.treeAdd(mavars, cr2, 0);
-        ops = DAEUtil.getSymbolicTransformations(source);
-        var = BackendVariable.mergeVariableOperations(var,DAE.SOLVED(cr2,e1)::ops);
-        shared = BackendDAEUtil.updateAliasVariablesDAE(cr2,e1,var,shared);
-      then
-        (cr2,e1,ipos,syst,shared,newvars);        
-  end matchcontinue;
+  BackendDAE.EQSYSTEM(orderedVars=vars) := syst;
+  ((var1::_),(ipos1::_)) := BackendVariable.getVar(cr1,vars);
+  ((var2::_),(ipos2::_)) := BackendVariable.getVar(cr2,vars);
+  (cr,exp,k,osyst,oshared,newvars) := selectAlias1(cr1,cr2,var1,var2,ipos1,ipos2,e1,e2,syst,shared,mavars,negate,source);
 end selectAlias;
+
+protected function replaceableAlias
+"function replaceableAlias
+  autor Frenkel TUD 2011-08
+  check if the variable is a replaceable alias."
+  input BackendDAE.Var var;
+algorithm
+  _ := match (var)
+    local
+      BackendDAE.VarKind kind;
+    case (var)
+      equation
+        // no State
+        false = BackendVariable.isStateorStateDerVar(var) "cr1 not state";
+        kind = BackendVariable.varKind(var);
+        BackendVariable.isVarKindVariable(kind) "cr1 not constant";
+        false = BackendVariable.isVarOnTopLevelAndOutput(var);
+        false = BackendVariable.isVarOnTopLevelAndInput(var);
+      then
+        ();
+  end match;
+end replaceableAlias;
+
+protected function selectAlias1
+"function selectAlias1
+  autor Frenkel TUD 2011-04
+  helper for selectAlias."
+  input DAE.ComponentRef cr1;
+  input DAE.ComponentRef cr2;
+  input BackendDAE.Var var1;
+  input BackendDAE.Var var2;
+  input Integer ipos1;
+  input Integer ipos2;
+  input DAE.Exp e1;
+  input DAE.Exp e2;
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input BackendDAE.BinTree mavars;
+  input Boolean negate;
+  input DAE.ElementSource source;
+  output DAE.ComponentRef cr;
+  output DAE.Exp exp;
+  output Integer k;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+  output BackendDAE.BinTree newvars;
+algorithm
+  (cr,exp,k,osyst,oshared,newvars) := matchcontinue (cr1,cr2,var1,var2,ipos1,ipos2,e1,e2,syst,shared,mavars,negate,source)
+    local
+      DAE.ComponentRef acr,cr;
+      BackendDAE.BinTree newvars;
+      BackendDAE.Var avar,var;
+      DAE.Exp ae,e;
+      Integer aipos,i1,i2;
+      Boolean b;
+      
+    case (cr1,cr2,var1,var2,ipos1,ipos2,e1,e2,syst,shared,mavars,negate,source)
+      equation
+        replaceableAlias(var1);
+        replaceableAlias(var2);
+        i1 = calcAliasKey(cr1,var1);
+        i2 = calcAliasKey(cr2,var2);
+        b = intGt(i2,i1);
+        ((acr,avar,aipos,ae,cr,var,e)) = Util.if_(b,(cr2,var2,ipos2,e2,cr1,var1,e1),(cr1,var1,ipos1,e1,cr2,var2,e2));
+        (syst,shared,newvars) = selectAlias2(acr,cr,avar,var,ae,e,syst,shared,mavars,negate,source);
+      then
+        (acr,e,aipos,syst,shared,newvars);
+    case (cr1,cr2,var1,var2,ipos1,ipos2,e1,e2,syst,shared,mavars,negate,source)
+      equation
+        replaceableAlias(var1);
+        (syst,shared,newvars) = selectAlias2(cr1,cr2,var1,var2,e1,e2,syst,shared,mavars,negate,source);
+      then
+        (cr1,e2,ipos1,syst,shared,newvars);
+    case (cr1,cr2,var1,var2,ipos1,ipos2,e1,e2,syst,shared,mavars,negate,source)
+      equation
+        replaceableAlias(var2);
+        (syst,shared,newvars) = selectAlias2(cr2,cr1,var2,var1,e2,e1,syst,shared,mavars,negate,source);
+      then
+        (cr2,e1,ipos2,syst,shared,newvars);        
+  end matchcontinue;
+end selectAlias1;
+
+protected function calcAliasKey
+"function calcAliasKey
+  autor Frenkel TUD 2011-04
+  helper for selectAlias."
+  input DAE.ComponentRef cr;
+  input BackendDAE.Var var;
+  output Integer i;
+protected 
+  Boolean b;
+algorithm
+  // records
+  b := ComponentReference.isRecord(cr);
+  i := Util.if_(b,-1,0);
+  // array elements
+  b := ComponentReference.isArrayElement(cr);
+  i := intAdd(i,Util.if_(b,-1,0));
+  // connectors
+  b := BackendVariable.isVarConnector(var);
+  i := intAdd(i,Util.if_(b,1,0));
+end calcAliasKey;
+
+protected function selectAlias2
+"function selectAlias2
+  autor Frenkel TUD 2011-08
+  helper for selectAlias."
+  input DAE.ComponentRef acr;
+  input DAE.ComponentRef cr;
+  input BackendDAE.Var avar;
+  input BackendDAE.Var var;
+  input DAE.Exp ae;
+  input DAE.Exp e;
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input BackendDAE.BinTree mavars;
+  input Boolean negate;
+  input DAE.ElementSource source;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+  output BackendDAE.BinTree newvars;
+protected
+  BackendDAE.Var v1;
+  list<DAE.SymbolicOperation> ops;
+algorithm
+  Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Alias Equation ",acr," = ",e," found (2).\n"));
+  // merge fixed,start,nominal
+  v1 := mergeAliasVars(var,avar,negate);
+  osyst := BackendVariable.addVarDAE(v1,syst);
+  // store changed var
+  newvars := BackendDAEUtil.treeAdd(mavars, acr, 0);
+  ops := DAEUtil.getSymbolicTransformations(source);
+  var := BackendVariable.mergeVariableOperations(avar,DAE.SOLVED(acr,e)::ops);
+  oshared := BackendDAEUtil.updateAliasVariablesDAE(acr,e,var,shared);
+end selectAlias2;
 
 protected function mergeAliasVars
 "autor: Frenkel TUD 2011-04"

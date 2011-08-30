@@ -1065,6 +1065,22 @@ algorithm
   end matchcontinue;
 end isRecord;
 
+public function isArrayElement "
+function isArrayElement
+  returns true if cref is elemnt of an array"
+  input DAE.ComponentRef cr;
+  output Boolean b;
+algorithm
+  b := matchcontinue(cr)
+  local 
+    DAE.ComponentRef comp;
+    case(DAE.CREF_IDENT(identType = DAE.ET_ARRAY(ty=_))) then true;
+    case(DAE.CREF_QUAL(identType = DAE.ET_ARRAY(ty=_))) then true;
+    case(DAE.CREF_QUAL(componentRef=comp)) then isArrayElement(comp);
+    case(_) then false;
+  end matchcontinue;
+end isArrayElement;
+
 public function crefIsFirstArrayElt
 "function: crefIsFirstArrayElt
   This function returns true for component references that

@@ -1084,6 +1084,21 @@ algorithm
   end matchcontinue;
 end isVarBoolParam;
 
+public function isVarConnector
+  input BackendDAE.Var var;
+  output Boolean result;
+algorithm
+  result :=
+  match (var)
+    case (BackendDAE.VAR(flowPrefix = DAE.FLOW())) then true;
+    case (BackendDAE.VAR(flowPrefix = DAE.NON_FLOW())) then true;
+    case (BackendDAE.VAR(streamPrefix = DAE.STREAM())) then true;
+    case (BackendDAE.VAR(streamPrefix = DAE.NON_STREAM())) then true;
+    case (_)
+      then false;
+  end match;
+end isVarConnector;
+
 public function varIndexComparer
   input BackendDAE.Var lhs;
   input BackendDAE.Var rhs;
