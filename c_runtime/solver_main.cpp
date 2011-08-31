@@ -218,8 +218,6 @@ const double rungekutta_c[rungekutta_s] =
 // Used when calculating residual for its side effects. (alg. var calc)
 double *dummy_delta = NULL;
 
-int euler_in_use = 0;
-
 int
 solver_main_step(int flag, double &start, double &stop, bool &reset, int* stats)
 {
@@ -293,9 +291,6 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
       dasslStats[i] = 0;
       dasslStatsTmp[i] = 0;
   }
-
-  //Workaround for Relation in simulation_events
-  euler_in_use = 1;
 
   //Flags for event handling
   int dideventstep = 0;
@@ -389,7 +384,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
           activateSampleEvents();
         }
       update_DAEsystem();
-      SaveZeroCrossings();
+      initializeZeroCrossings();
       if (sampleEvent_actived)
         {
           deactivateSampleEventsandEquations();

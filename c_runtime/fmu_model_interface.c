@@ -319,17 +319,9 @@ fmiStatus fmiGetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, f
     return fmiError;
 #if NUMBER_OF_REALS>0
   // calculate new values
-  if (comp->eventInfo.stateValuesChanged == fmiTrue)
-  {
-    int needToIterate = 0;
-    functionDAE(&needToIterate);
-    comp->eventInfo.stateValuesChanged = fmiFalse;
-  }
-  if (comp->outputsvalid == fmiFalse)
-  {
-     functionAliasEquations();
-     comp->outputsvalid = fmiTrue;
-  }
+  functionODE();
+  functionAlgebraics();
+
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmiGetReal", vr[i], NUMBER_OF_REALS+NUMBER_OF_STATES))
       return fmiError;
@@ -354,17 +346,9 @@ fmiStatus fmiGetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr
     return fmiError;
 #if NUMBER_OF_INTEGERS>0
   // calculate new values
-  if (comp->eventInfo.stateValuesChanged == fmiTrue)
-  {
-    int needToIterate = 0;
-    functionDAE(&needToIterate);
-    comp->eventInfo.stateValuesChanged = fmiFalse;
-  }
-  if (comp->outputsvalid == fmiFalse)
-  {
-     functionAliasEquations();
-     comp->outputsvalid = fmiTrue;
-  }
+  functionODE();
+  functionAlgebraics();
+
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmiGetInteger", vr[i], NUMBER_OF_INTEGERS))
       return fmiError;
@@ -389,17 +373,9 @@ fmiStatus fmiGetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr
     return fmiError;
 #if NUMBER_OF_BOOLEANS>0
   // calculate new values
-  if (comp->eventInfo.stateValuesChanged == fmiTrue)
-  {
-    int needToIterate = 0;
-    functionDAE(&needToIterate);
-    comp->eventInfo.stateValuesChanged = fmiFalse;
-  }
-  if (comp->outputsvalid == fmiFalse)
-  {
-     functionAliasEquations();
-     comp->outputsvalid = fmiTrue;
-  }
+  functionODE();
+  functionAlgebraics();
+
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmiGetBoolean", vr[i], NUMBER_OF_BOOLEANS))
       return fmiError;
@@ -424,17 +400,9 @@ fmiStatus fmiGetString(fmiComponent c, const fmiValueReference vr[], size_t nvr,
     return fmiError;
 #if NUMBER_OF_STRINGS>0
   // calculate new values
-  if (comp->eventInfo.stateValuesChanged == fmiTrue)
-  {
-    functionODE();
-    comp->eventInfo.stateValuesChanged == fmiFalse;
-  }
-  if (comp->outputsvalid == fmiFalse)
-  {
-     functionAlgebraics();
-     functionAliasEquations();
-     comp->outputsvalid = fmiTrue;
-  }
+  functionODE();
+  functionAlgebraics();
+
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmiGetString", vr[i], NUMBER_OF_STRINGS))
       return fmiError;
@@ -518,7 +486,9 @@ fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx) {
   //if (comp->eventInfo.stateValuesChanged == fmiTrue)
   //{
     // calculate new values
-    functionDAE(&needToIterate);
+  	functionODE();
+    functionAlgebraics();
+
     for (i=0; i<nx; i++) {
       fmiValueReference vr = vrStatesDerivatives[i];
       derivatives[i] = getReal(comp, vr); // to be implemented by the includer of this file
@@ -648,6 +618,12 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
   eventInfo->stateValuesChanged  = fmiFalse;
   eventInfo->terminateSimulation = fmiFalse;
   eventInfo->upcomingTimeEvent   = fmiFalse;
+  /*functionODE();
+  functionAlgebraics();
+  fmiCompletedIntegratorStep(c,fmiFalse);
+  */
+  update_DAEsystem();
+  //fmiCompletedIntegratorStep(c,fmiFalse);
   eventUpdate(comp, eventInfo); // to be implemented by the includer of this file
   return fmiOK;
 }

@@ -188,29 +188,22 @@ sample(double start, double interval, int hindex)
   // adrpo: if we test for inSample == 0 no event is generated when start + 0*interval!
   // if (inSample == 0) return 0;
   double tmp = ((globalData->timeValue - start) / interval);
-  if (euler_in_use)
-    {
-      tmp = 1;
-      int tmpindex = globalData->curSampleTimeIx;
-      if (tmpindex < globalData->nSampleTimes)
-        {
-          while ((globalData->sampleTimes[tmpindex]).activated == 1)
-            {
-              if ((globalData->sampleTimes[tmpindex]).zc_index == hindex)
-                {
-                  tmp = 0;
-                }
-              tmpindex++;
-              if (tmpindex == globalData->nSampleTimes)
-                break;
-            }
-        }
-      //tmp = ((globalData->timeValue - start) / interval);
-    }
-  else
-    {
-      tmp -= floor(tmp);
-    }
+  tmp = 1;
+  int tmpindex = globalData->curSampleTimeIx;
+  if (tmpindex < globalData->nSampleTimes)
+	{
+	  while ((globalData->sampleTimes[tmpindex]).activated == 1)
+		{
+		  if ((globalData->sampleTimes[tmpindex]).zc_index == hindex)
+			{
+			  tmp = 0;
+			}
+		  tmpindex++;
+		  if (tmpindex == globalData->nSampleTimes)
+			break;
+		}
+	}
+
   /* adrpo - 2008-01-15
    * comparison was tmp >= 0 fails sometimes on x86 due to extended precision in registers
    * TODO - fix the simulation runtime so that the sample event is generated at EXACTLY that time.
@@ -596,8 +589,6 @@ deactivateSampleEventsandEquations()
 int
 CheckForNewEvent(int* sampleactived)
 {
-  //std::copy(gout, gout + globalData->nZeroCrossing, gout_old);
-  //function_onlyZeroCrossings(gout,&globalData->timeValue);
   initializeZeroCrossings();
   if (sim_verbose >= LOG_EVENTS)
     {
@@ -632,7 +623,8 @@ CheckForNewEvent(int* sampleactived)
               EventList.push_front(i);
             }
         }
-      if ((gout[i] < 0 && gout_old[i] > 0) || (gout[i] > 0 && gout_old[i] < 0))
+      if ((gout[i] < 0 && gout_old[i] > 0) ||
+          (gout[i] > 0 && gout_old[i] < 0))
         {
           if (sim_verbose >= LOG_EVENTS)
             {
@@ -879,7 +871,7 @@ FindRoot(double *EventTime)
 
   if (tmpEventList.empty())
     {
-      double value = fabs(gout[0]);
+      double value = fabs(gout[*(EventList.begin())]);;
       for ( it=EventList.begin() ; it != EventList.end(); it++ )
         {
           if (value > fabs(gout[*it]))

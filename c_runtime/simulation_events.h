@@ -88,16 +88,10 @@ int
 checkForSampleEvent();
 
 extern long inUpdate;
-extern int euler_in_use;
 static const int IterationMax = 200;
 
 #define ZEROCROSSING(ind,exp) { \
-    if (euler_in_use) { \
         gout[ind] = exp; \
-    } \
-    else {\
-        gout[ind] = (zeroCrossingEnabled[ind])?((double)zeroCrossingEnabled[ind])*exp:1.0; \
-    } \
 }
 
 #define RELATIONTOZC(res,exp1,exp2,index,op_w,op) { \

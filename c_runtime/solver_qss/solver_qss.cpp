@@ -73,9 +73,6 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
       dasslStatsTmp[i] = 0;
   }
 
-  //Workaround for Relation in simulation_events
-  euler_in_use = 1;
-
   //Flags for event handling
   int dideventstep = 0;
   bool reset = false;
