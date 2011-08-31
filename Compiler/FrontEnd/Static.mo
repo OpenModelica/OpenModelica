@@ -6066,6 +6066,162 @@ algorithm
   end matchcontinue;
 end elabBuiltinVector2;
 
+public function elabBuiltinMatrix
+  "Elaborates the builtin matrix function."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inArgs;
+  input list<Absyn.NamedArg> inNamedArgs;
+  input Boolean inImpl;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info inInfo;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+algorithm
+  (outCache, outExp, outProperties) := 
+  match(inCache, inEnv, inArgs, inNamedArgs, inImpl, inPrefix, inInfo)
+    local
+      Absyn.Exp arg;
+      Env.Cache cache;
+      DAE.Exp exp;
+      DAE.Properties props;
+      DAE.Type ty;
+
+    case (_, _, {arg}, _, _, _, _)
+      equation
+        (cache, exp, props, _) = 
+          elabExp(inCache, inEnv, arg, inImpl, NONE(), true, inPrefix, inInfo);
+        ty = Types.getPropType(props);
+        (exp, props) = elabBuiltinMatrix2(inCache, inEnv, exp, props, ty, inInfo);
+      then
+        (cache, exp, props);
+
+    else
+      equation
+        Error.addSourceMessage(Error.WRONG_NO_OF_ARGS, {"matrix"}, inInfo);
+      then
+        fail();
+
+  end match;
+end elabBuiltinMatrix;
+  
+protected function elabBuiltinMatrix2
+  "Helper function to elabBuiltinMatrix, evaluates the matrix function given the
+   elaborated argument."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input DAE.Exp inArg;
+  input DAE.Properties inProperties;
+  input DAE.Type inType;
+  input Absyn.Info inInfo;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+algorithm
+  (outExp, outProperties) := 
+  matchcontinue(inCache, inEnv, inArg, inProperties, inType, inInfo)
+    local
+      DAE.Type ty;
+      DAE.Exp exp;
+      DAE.Properties props;
+      DAE.ExpType etp;
+      list<DAE.Exp> expl;
+      DAE.ExpType ety;
+      DAE.Dimension dim1, dim2;
+      Boolean scalar;
+
+    // Scalar
+    case (_, _, _, _, _, _)
+      equation
+        Types.simpleType(inType);
+        (exp, props) = promoteExp(inArg, inProperties, 2);
+      then
+        (exp, props);
+
+    // 1-dimensional array
+    case (_, _, DAE.ARRAY(ty = _), _, _, _)
+      equation
+        1 = Types.numberOfDimensions(inType);
+        (exp, props) = promoteExp(inArg, inProperties, 1);
+      then
+        (exp, props);
+
+    // Matrix
+    case (_, _, DAE.MATRIX(ty = _), _, _, _)
+      then (inArg, inProperties);
+
+    // n-dimensional array
+    case (_, _, DAE.ARRAY(ty = DAE.ET_ARRAY(ety, dim1 :: dim2 :: _), 
+        scalar = scalar, array = expl), _, _, _)
+      equation
+        expl = Util.listMap1(expl, elabBuiltinMatrix3, inInfo);
+        ty = Types.arrayElementType(inType);
+        ty = Types.liftArrayListDims(ty, {dim1, dim2});
+        props = Types.setTypeInProps(ty, inProperties);
+      then
+        (DAE.ARRAY(DAE.ET_ARRAY(ety, {dim1, dim2}), scalar, expl), props);
+        
+  end matchcontinue;
+end elabBuiltinMatrix2;
+
+protected function elabBuiltinMatrix3
+  "Helper function to elabBuiltinMatrix2."
+  input DAE.Exp inExp;
+  input Absyn.Info inInfo;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match(inExp, inInfo)
+    local
+      DAE.ExpType ety;
+      Boolean scalar;
+      list<DAE.Exp> expl;
+      DAE.Dimension dim;
+
+    case (DAE.ARRAY(ty = DAE.ET_ARRAY(ety, dim :: _), 
+        scalar = scalar, array = expl), _)
+      equation
+        expl = Util.listMap3(expl, arrayScalar, 3, "matrix", inInfo);
+      then
+        DAE.ARRAY(DAE.ET_ARRAY(ety, {dim}), scalar, expl);
+
+  end match;
+end elabBuiltinMatrix3;
+
+protected function arrayScalar
+  "Returns the scalar value of an array, or prints an error message and fails if
+  any dimension of the array isn't of size 1."
+  input DAE.Exp inExp;
+  input Integer inDim "The current dimension, used for error message.";
+  input String inOperator "The current operator name, used for error message.";
+  input Absyn.Info inInfo;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match(inExp, inDim, inOperator, inInfo)
+    local
+      DAE.Exp exp;
+      list<DAE.Exp> expl;
+      String dim_str;
+      String size_str;
+
+    // An array with one element.
+    case (DAE.ARRAY(array = {exp}), _, _, _)
+      then arrayScalar(exp, inDim + 1, inOperator, inInfo);
+
+    // Any other array.
+    case (DAE.ARRAY(array = expl), _, _, _)
+      equation
+        dim_str = intString(inDim);
+        size_str = intString(listLength(expl));
+        Error.addSourceMessage(Error.INVALID_ARRAY_DIM_IN_CONVERSION_OP,
+          {dim_str, inOperator, "1", size_str}, inInfo);
+      then
+        fail(); 
+
+    // Anything else is assumed to be a scalar.
+    else inExp;
+  end match;
+end arrayScalar;
+
 public function elabBuiltinHandlerGeneric "function: elabBuiltinHandlerGeneric
 
   This function dispatches the elaboration of special builtin operators by
@@ -6146,6 +6302,7 @@ algorithm
     case "cat" then elabBuiltinCat;
     case "identity" then elabBuiltinIdentity;
     case "vector" then elabBuiltinVector;
+    case "matrix" then elabBuiltinMatrix;
     case "scalar" then elabBuiltinScalar;
     case "cross" then elabBuiltinCross;
     case "skew" then elabBuiltinSkew;
