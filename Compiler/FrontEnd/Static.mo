@@ -5508,42 +5508,34 @@ protected function elabBuiltinScalar "function: elab_builtin_
 "
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.Exp> inArgs;
   input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
+  input Boolean inImpl;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input Absyn.Info inInfo;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
   (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  matchcontinue (inCache,inEnv,inArgs,inNamedArg,inImpl,inPrefix,inInfo)
     local
       DAE.Exp e;
-      DAE.Type tp,scalar_tp,tp_1;
+      DAE.Type tp,scalar_tp;
       DAE.Const c;
-      list<Env.Frame> env;
-      Boolean impl;
+      Env.Env env;
       Env.Cache cache;
-      Prefix.Prefix pre;
       Absyn.Exp aexp;
-    case (cache,env,{aexp},_,impl,pre,info) /*  scalar({a}) => a */
-      equation
-        (cache,DAE.ARRAY(_,_,{e}),DAE.PROP(tp,c),_) = elabExp(cache,env,aexp,impl,NONE(),true,pre,info);
-        scalar_tp = Types.unliftArray(tp);
-        Types.simpleType(scalar_tp);
-      then
-        (cache,e,DAE.PROP(scalar_tp,c));
 
-    case (cache,env,{aexp},_,impl,pre,info) /* scalar([a]) => a */
+    case (cache, env, {aexp}, _, _, _, _)
       equation
-        (cache,DAE.MATRIX(matrix={{e}}),DAE.PROP(tp,c),_) = elabExp(cache,env,aexp,impl,NONE(),true,pre,info);
-        tp_1 = Types.unliftArray(tp);
-        scalar_tp = Types.unliftArray(tp_1);
-        Types.simpleType(scalar_tp);
+        (cache, e, DAE.PROP(tp, c), _) =
+          elabExp(cache, env, aexp, inImpl, NONE(), true, inPrefix, inInfo);
+        e = arrayScalar(e, 1, "scalar", inInfo);
+        scalar_tp = Types.arrayElementType(tp);
       then
-        (cache,e,DAE.PROP(scalar_tp,c));
+        (cache, e, DAE.PROP(scalar_tp, c));
+
   end matchcontinue;
 end elabBuiltinScalar;
 
@@ -6199,9 +6191,10 @@ algorithm
   outExp := match(inExp, inDim, inOperator, inInfo)
     local
       DAE.Exp exp;
+      DAE.ExpType ty;
       list<DAE.Exp> expl;
-      String dim_str;
-      String size_str;
+      list<list<DAE.Exp>> mexpl;
+      String dim_str, size_str;
 
     // An array with one element.
     case (DAE.ARRAY(array = {exp}), _, _, _)
@@ -6216,6 +6209,20 @@ algorithm
           {dim_str, inOperator, "1", size_str}, inInfo);
       then
         fail(); 
+
+    // A matrix where the first dimension is 1.
+    case (DAE.MATRIX(ty = ty, matrix = {expl}), _, _, _)
+      then arrayScalar(DAE.ARRAY(ty, true, expl), inDim + 1, inOperator, inInfo);        
+
+    // Any other matrix.
+    case (DAE.MATRIX(matrix = mexpl), _, _, _)
+      equation
+        dim_str = intString(inDim);
+        size_str = intString(listLength(mexpl));
+        Error.addSourceMessage(Error.INVALID_ARRAY_DIM_IN_CONVERSION_OP,
+          {dim_str, inOperator, "1", size_str}, inInfo);
+      then
+        fail();
 
     // Anything else is assumed to be a scalar.
     else inExp;
