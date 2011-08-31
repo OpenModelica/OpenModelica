@@ -183,7 +183,7 @@ algorithm
       BackendDAE.BackendDAE dae;
       Option<BackendDAE.IncidenceMatrix> m,mT;
       
-    case (arraylisteqns,BackendDAE.EQSYSTEM(vars,eqns,inieqns,m,mT),BackendDAE.SHARED(knvars,exobj,av,remeqns,arreqns,algorithms,einfo,eoc))
+    case (arraylisteqns,BackendDAE.EQSYSTEM(vars,eqns,m,mT),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,einfo,eoc))
       equation
         len = arrayLength(arraylisteqns);
         true = intGt(len,0);
@@ -191,8 +191,8 @@ algorithm
         (eqns1,(arraylisteqns,_,updateeqns)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,replaceScalarArrayEqns,(arraylisteqns,1,{}));
         (remeqns1,(arraylisteqns,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(remeqns,replaceScalarArrayEqns,(arraylisteqns,1,{}));
         (inieqns1,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,replaceScalarArrayEqns,(arraylisteqns,1,{}));
-        syst = BackendDAE.EQSYSTEM(vars,eqns1,inieqns1,m,mT);
-        shared = BackendDAE.SHARED(knvars,exobj,av,remeqns1,arreqns,algorithms,einfo,eoc);
+        syst = BackendDAE.EQSYSTEM(vars,eqns1,m,mT);
+        shared = BackendDAE.SHARED(knvars,exobj,av,inieqns1,remeqns1,arreqns,algorithms,einfo,eoc);
       then
         (syst,shared,updateeqns,true);
     case (arraylisteqns,syst,shared)
@@ -432,7 +432,7 @@ algorithm
       list<BackendDAE.ZeroCrossing> zeroCrossingLst;
       Boolean b;
     case (false,syst,shared,_,_,_,_) then (syst,shared);
-    case (true,BackendDAE.EQSYSTEM(ordvars,eqns,inieqns,_,_),BackendDAE.SHARED(knvars,exobj,aliasVars,remeqns,arreqns,algorithms,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst),eoc),repl,movedVars,movedAVars,meqns)
+    case (true,BackendDAE.EQSYSTEM(ordvars,eqns,_,_),BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst),eoc),repl,movedVars,movedAVars,meqns)
       equation
         Debug.fcall("dumprepl", BackendVarTransform.dumpReplacements, repl);
         // delete alias variables from orderedVars
@@ -454,7 +454,7 @@ algorithm
         (remeqns1,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(remeqns,replaceEquationTraverser,(repl,crefOrDerCrefarray,inouttplarray));
         (whenClauseLst1,_) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,replaceWhenClauseTraverser,repl);
         // update array eqn wrapper
-      then (BackendDAE.EQSYSTEM(ordvars3,eqns2,inieqns1,NONE(),NONE()),BackendDAE.SHARED(knvars2,exobj,aliasVars,remeqns1,arreqns1,algorithms1,BackendDAE.EVENT_INFO(whenClauseLst1,zeroCrossingLst),eoc));
+      then (BackendDAE.EQSYSTEM(ordvars3,eqns2,NONE(),NONE()),BackendDAE.SHARED(knvars2,exobj,aliasVars,inieqns1,remeqns1,arreqns1,algorithms1,BackendDAE.EVENT_INFO(whenClauseLst1,zeroCrossingLst),eoc));
   end match;
 end removeSimpleEquations2;
 
@@ -708,7 +708,7 @@ algorithm
       list<Integer> vareqns,vareqns1,vareqns2,meqns;
       BackendVarTransform.VariableReplacements repl_1;
       BackendDAE.Var v;
-    case (0,cr,i,exp,pos,repl,BackendDAE.EQSYSTEM(ordvars,eqns,inieqns,_,_),BackendDAE.SHARED(knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc),m,mT,meqns,inFuncs)
+    case (0,cr,i,exp,pos,repl,BackendDAE.EQSYSTEM(ordvars,eqns,_,_),BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc),m,mT,meqns,inFuncs)
       equation
         // equations of var
         vareqns = mT[i];
@@ -717,12 +717,12 @@ algorithm
         (ordvars1,v) = BackendVariable.removeVar(i,ordvars);
         knvars1 = BackendVariable.addVar(v,knvars);
         // update IncidenceMatrix
-        syst = BackendDAE.EQSYSTEM(ordvars1,eqns,inieqns,SOME(m),SOME(mT));
-        shared = BackendDAE.SHARED(knvars1,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc);
+        syst = BackendDAE.EQSYSTEM(ordvars1,eqns,SOME(m),SOME(mT));
+        shared = BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc);
         (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT))) = BackendDAEUtil.updateIncidenceMatrix(syst,shared,vareqns);
         pos_1 = pos - 1;
       then (vareqns1,syst,shared,m,mT,repl,pos_1::meqns);
-    case (1,cr,i,exp,pos,repl,BackendDAE.EQSYSTEM(ordvars,eqns,inieqns,_,_),shared,m,mT,meqns,inFuncs)
+    case (1,cr,i,exp,pos,repl,BackendDAE.EQSYSTEM(ordvars,eqns,_,_),shared,m,mT,meqns,inFuncs)
       equation
         // equations of var
         vareqns = mT[i];
@@ -735,10 +735,10 @@ algorithm
         pos_1 = pos-1;
         eqns2 =  BackendEquation.equationSetnth(eqns1,pos_1,BackendDAE.EQUATION(DAE.RCONST(0.0),DAE.RCONST(0.0),DAE.emptyElementSource));
         // update IncidenceMatrix
-        syst = BackendDAE.EQSYSTEM(ordvars,eqns2,inieqns,SOME(m),SOME(mT));
+        syst = BackendDAE.EQSYSTEM(ordvars,eqns2,SOME(m),SOME(mT));
         (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT))) = BackendDAEUtil.updateIncidenceMatrix(syst,shared,vareqns);
       then (vareqns1,syst,shared,m,mT,repl_1,pos_1::meqns);
-    case (2,cr,i,exp,pos,repl,BackendDAE.EQSYSTEM(ordvars,eqns,inieqns,_,_),BackendDAE.SHARED(knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc),m,mT,meqns,inFuncs)
+    case (2,cr,i,exp,pos,repl,BackendDAE.EQSYSTEM(ordvars,eqns,_,_),BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc),m,mT,meqns,inFuncs)
       equation
         // equations of var
         vareqns = mT[i];
@@ -747,8 +747,8 @@ algorithm
         // replace der(a)=b in vareqns
         (eqns1,arreqns1,algorithms1,einfo1) = replacementsInEqns2(vareqns2,exp,cr,eqns,arreqns,algorithms,einfo);
         // update IncidenceMatrix
-        syst = BackendDAE.EQSYSTEM(ordvars,eqns1,inieqns,SOME(m),SOME(mT));
-        shared = BackendDAE.SHARED(knvars,exobj,aliasVars,remeqns,arreqns1,algorithms1,einfo1,eoc);
+        syst = BackendDAE.EQSYSTEM(ordvars,eqns1,SOME(m),SOME(mT));
+        shared = BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns1,algorithms1,einfo1,eoc);
         (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT))) = BackendDAEUtil.updateIncidenceMatrix(syst,shared,vareqns);
       then (vareqns2,syst,shared,m,mT,repl,meqns);
   end match;
@@ -1925,7 +1925,7 @@ algorithm
       list<BackendDAE.MultiDimEquation> lstarreqns,lstarreqns1;
       list<DAE.Algorithm> algs,algs_1;
       
-    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,inieqns,m,mT)::{},BackendDAE.SHARED(knvars,exobj,av,remeqns,arreqns,algorithms,einfo,eoc)),funcs)
+    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,m,mT)::{},BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,einfo,eoc)),funcs)
       equation      
         repl = BackendVarTransform.emptyReplacements();
         lsteqns = BackendDAEUtil.equationList(eqns);
@@ -1941,7 +1941,7 @@ algorithm
         arreqns1 = listArray(lstarreqns1);
         algorithms1 = listArray(algs_1);
       then
-        (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns1,inieqns,NONE(),NONE())::{},BackendDAE.SHARED(knvars1,exobj,av,remeqns,arreqns1,algorithms1,einfo,eoc)));
+        (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE())::{},BackendDAE.SHARED(knvars1,exobj,av,inieqns,remeqns,arreqns1,algorithms1,einfo,eoc)));
   end match;
 end removeFinalParameters;
 
@@ -2060,7 +2060,7 @@ algorithm
       list<BackendDAE.MultiDimEquation> lstarreqns,lstarreqns1;
       list<DAE.Algorithm> algs,algs_1;
       
-    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,inieqns,m,mT)::{},BackendDAE.SHARED(knvars,exobj,av,remeqns,arreqns,algorithms,einfo,eoc)),funcs)
+    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,m,mT)::{},BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,einfo,eoc)),funcs)
       equation      
         repl = BackendVarTransform.emptyReplacements();
         lsteqns = BackendDAEUtil.equationList(eqns);
@@ -2075,7 +2075,7 @@ algorithm
         arreqns1 = listArray(lstarreqns1);
         algorithms1 = listArray(algs_1);
       then
-        (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns1,inieqns,NONE(),NONE())::{},BackendDAE.SHARED(knvars,exobj,av,remeqns,arreqns1,algorithms1,einfo,eoc)));
+        (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE())::{},BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns1,algorithms1,einfo,eoc)));
   end match;
 end removeProtectedParameters;
 
@@ -2183,14 +2183,14 @@ algorithm
       BackendDAE.EventInfo einfo,einfo1;
       list<Integer> changed;
       Boolean b;
-    case (syst as BackendDAE.EQSYSTEM(vars,eqns,ineq,_,_),shared as BackendDAE.SHARED(arrayEqs=arreqns,algorithms=algorithms,eventInfo=einfo),funcs)
+    case (syst as BackendDAE.EQSYSTEM(vars,eqns,_,_),shared as BackendDAE.SHARED(arrayEqs=arreqns,algorithms=algorithms,eventInfo=einfo),funcs)
       equation
         (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
         // check equations
         (m_1,(mT_1,_,eqns1,arreqns1,algorithms1,einfo1,changed)) = traverseIncidenceMatrix(m,removeEqualFunctionCallFinder,(mT,vars,eqns,arreqns,algorithms,einfo,{}));
         b = intGt(listLength(changed),0);
         // update arrayeqns and algorithms, collect info for wrappers
-        syst = BackendDAE.EQSYSTEM(vars,eqns,ineq,SOME(m_1),SOME(mT_1));
+        syst = BackendDAE.EQSYSTEM(vars,eqns,SOME(m_1),SOME(mT_1));
         (syst,shared) = removeEqualFunctionCalls2(b,syst,shared,eqns1,arreqns1,algorithms1,einfo1);
         syst = BackendDAEUtil.updateIncidenceMatrix(syst,shared,changed);
       then (syst,shared,b);
@@ -2226,7 +2226,7 @@ algorithm
       array<tuple<list<DAE.Exp>,list<DAE.Exp>>> inouttplarray;
       Option<BackendDAE.IncidenceMatrix> m,mT;
     case (false,syst,shared,_,_,_,_) then (syst,shared);
-    case (true,BackendDAE.EQSYSTEM(vars,_,inieqns,m,mT),BackendDAE.SHARED(knvars,exobj,aliasVars,remeqns,_,_,_,eoc),eqns,arreqns,algorithms,einfo)
+    case (true,BackendDAE.EQSYSTEM(vars,_,m,mT),BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,_,_,_,eoc),eqns,arreqns,algorithms,einfo)
       equation
         repl = BackendVarTransform.emptyReplacements();
         // update arrayeqns and algorithms, collect info for wrappers
@@ -2235,7 +2235,7 @@ algorithm
         (_,(_,_,inouttpllst)) = Util.arrayMapNoCopy_1(algorithms,replaceAlgorithmTraverser,(repl,vars,{}));
         inouttplarray = listArray(listReverse(inouttpllst));
         (eqns1,(_,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,replaceEquationTraverser,(repl,crefOrDerCrefarray,inouttplarray));
-      then (BackendDAE.EQSYSTEM(vars,eqns1,inieqns,m,mT),BackendDAE.SHARED(knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc));
+      then (BackendDAE.EQSYSTEM(vars,eqns1,m,mT),BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc));
   end match;
 end removeEqualFunctionCalls2;
 
@@ -2494,7 +2494,7 @@ algorithm
       list<BackendDAE.WhenClause> whenClauseLst;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.EqSystems eqs;
-    case (dae as BackendDAE.DAE(eqs as BackendDAE.EQSYSTEM(vars,eqns,inieqns,_,_)::{},BackendDAE.SHARED(knvars,exobj,aliasVars as BackendDAE.ALIASVARS(aliasVars=avars),remeqns,arreqns,algorithms,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc)),funcs)
+    case (dae as BackendDAE.DAE(eqs as BackendDAE.EQSYSTEM(vars,eqns,_,_)::{},BackendDAE.SHARED(knvars,exobj,aliasVars as BackendDAE.ALIASVARS(aliasVars=avars),inieqns,remeqns,arreqns,algorithms,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc)),funcs)
       equation
         knvars1 = BackendDAEUtil.emptyVars();
         ((knvars,knvars1)) = BackendVariable.traverseBackendDAEVars(knvars,copyNonParamVariables,(knvars,knvars1));
@@ -2507,7 +2507,7 @@ algorithm
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(arreqns,checkUnusedParameter,BackendDAEUtil.traverseBackendDAEExpsArrayEqn,1,arrayLength(arreqns),(knvars,knvars1));
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(algorithms,checkUnusedParameter,BackendDAEUtil.traverseAlgorithmExps,1,arrayLength(algorithms),(knvars,knvars1));
         (_,(_,knvars1)) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,checkUnusedParameter,(knvars,knvars1));
-        dae1 = BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars1,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc));
+        dae1 = BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc));
       then dae;
   end match;
 end removeUnusedParameter;
@@ -2663,7 +2663,7 @@ algorithm
       list<BackendDAE.WhenClause> whenClauseLst;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.EqSystems eqs;
-    case (dae as BackendDAE.DAE(eqs as BackendDAE.EQSYSTEM(vars,eqns,inieqns,_,_)::{},BackendDAE.SHARED(knvars,exobj,aliasVars as BackendDAE.ALIASVARS(aliasVars=avars),remeqns,arreqns,algorithms,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc)),funcs)
+    case (dae as BackendDAE.DAE(eqs as BackendDAE.EQSYSTEM(vars,eqns,_,_)::{},BackendDAE.SHARED(knvars,exobj,aliasVars as BackendDAE.ALIASVARS(aliasVars=avars),inieqns,remeqns,arreqns,algorithms,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc)),funcs)
       equation
         knvars1 = BackendDAEUtil.emptyVars();
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsVars(vars,checkUnusedVariables,(knvars,knvars1));
@@ -2675,7 +2675,7 @@ algorithm
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(arreqns,checkUnusedVariables,BackendDAEUtil.traverseBackendDAEExpsArrayEqn,1,arrayLength(arreqns),(knvars,knvars1));
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEArrayNoCopy(algorithms,checkUnusedVariables,BackendDAEUtil.traverseAlgorithmExps,1,arrayLength(algorithms),(knvars,knvars1));
         (_,(_,knvars1)) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,checkUnusedVariables,(knvars,knvars1));
-        dae1 = BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars1,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc));
+        dae1 = BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc));
       then dae1;
   end match;
 end removeUnusedVariables;
@@ -2800,16 +2800,16 @@ algorithm
       BackendDAE.Shared shared;
     case (inDAE,inFunctionTree,inAss1,inAss2,inComps)
       equation
-        (dae as BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,inieqns,_,_)::{},BackendDAE.SHARED(knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc)),b,eqnlst,movedVars) = constantLinearSystem1(inDAE,inFunctionTree,inComps,{},BackendDAE.emptyBintree);
+        (dae as BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,_,_)::{},BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc)),b,eqnlst,movedVars) = constantLinearSystem1(inDAE,inFunctionTree,inComps,{},BackendDAE.emptyBintree);
         // move changed variables
         (vars1,knvars1) = BackendVariable.moveVariables(vars,knvars,movedVars);
         // remove changed eqns
         eqnlst = Util.listMap1(eqnlst,intSub,1);
         eqns1 = BackendEquation.equationDelete(eqns,eqnlst);
-        syst = BackendDAE.EQSYSTEM(vars1,eqns1,inieqns,NONE(),NONE());
-        shared = BackendDAE.SHARED(knvars1,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc);
+        syst = BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE());
+        shared = BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc);
         (m,mT) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.NORMAL());
-        syst = BackendDAE.EQSYSTEM(vars1,eqns1,inieqns,SOME(m),SOME(mT));
+        syst = BackendDAE.EQSYSTEM(vars1,eqns1,SOME(m),SOME(mT));
       then
         (BackendDAE.DAE({syst},shared),inAss1,inAss2,inComps,b);
   end matchcontinue;  
@@ -2910,7 +2910,7 @@ algorithm
       list<DAE.ComponentRef> names;
       BackendDAE.BinTree movedVars;
       BackendDAE.Shared shared;
-    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,inieqns,_,_)::{},shared as BackendDAE.SHARED(arrayEqs=arreqns)),eqn_lst,var_lst,jac,inMovedVars)
+    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,_,_)::{},shared as BackendDAE.SHARED(arrayEqs=arreqns)),eqn_lst,var_lst,jac,inMovedVars)
       equation
         eqns1 = BackendDAEUtil.listEquation(eqn_lst);
         ((_,_,_,beqs,sources)) = BackendEquation.traverseBackendDAEEqns(eqns1,BackendEquation.equationToExp,(vars,arreqns,{},{},{}));
@@ -2924,7 +2924,7 @@ algorithm
         vars1 = changeconstantLinearSystemVars(var_lst,solvedVals,sources,vars);
         movedVars = BackendDAEUtil.treeAddList(inMovedVars, names);
       then
-        (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars1,eqns,inieqns,NONE(),NONE())::{},shared),movedVars);
+        (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars1,eqns,NONE(),NONE())::{},shared),movedVars);
   end match;  
 end solveLinearSystem;
 
@@ -3135,7 +3135,7 @@ algorithm
       array<Option<BackendDAE.Var>> varOptArr,varOptArr1;
       BackendDAE.Shared shared;
       Option<BackendDAE.IncidenceMatrix> m,mT;
-    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns,inieqns,m,mT)::{},shared))
+    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns,m,mT)::{},shared))
       equation
         BackendDAE.VARIABLES(crefIdxLstArr,varArr,bucketSize,numberOfVars) = ordvars;
         BackendDAE.VARIABLE_ARRAY(n1,size1,varOptArr) = varArr;
@@ -3149,7 +3149,7 @@ algorithm
         arr_1 = Util.arrayCopy(arr, arr_1);
         eqns1 = BackendDAE.EQUATION_ARRAY(n,size,arr_1);
       then
-        BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars1,eqns1,inieqns,m,mT)::{},shared);
+        BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars1,eqns1,m,mT)::{},shared);
   end match;
 end copyDaeLowforTearing;
 
@@ -3443,9 +3443,9 @@ algorithm
         Debug.fcall("tearingdump", print, str2);
         // copy dlow
         dlowc = copyDaeLowforTearing(dlow);
-        BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars as BackendDAE.VARIABLES(varArr=varr),eqns,inieqns,_,_)::{},shared) = dlowc;
+        BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars as BackendDAE.VARIABLES(varArr=varr),eqns,_,_)::{},shared) = dlowc;
         dlowc1 = copyDaeLowforTearing(dlow1);
-        BackendDAE.DAE(eqs = BackendDAE.EQSYSTEM(ordvars1,eqns1,_,_,_)::{}) = dlowc1;
+        BackendDAE.DAE(eqs = BackendDAE.EQSYSTEM(ordvars1,eqns1,_,_)::{}) = dlowc1;
         // add Tearing Var
         var = BackendVariable.vararrayNth(varr, tearingvar-1);
         cr = BackendVariable.varCref(var);
@@ -3471,8 +3471,8 @@ algorithm
                           expCref, DAE.emptyElementSource),eqns_1);
 
         tearingeqnid = BackendDAEUtil.equationSize(eqns_2);
-        dlow_1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,eqns_2,inieqns,NONE(),NONE())::{},shared);
-        dlow1_1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars1,eqns1_1,inieqns,NONE(),NONE())::{},shared);
+        dlow_1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,eqns_2,NONE(),NONE())::{},shared);
+        dlow1_1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars1,eqns1_1,NONE(),NONE())::{},shared);
         // try causalisation
         (dlow_2 as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(m=SOME(m_2),mT=SOME(mT_2))::{}),v1_1,v2_1,comps) = BackendDAEUtil.transformBackendDAE(dlow_1,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE());
         comps_1 = Util.listMap(comps,getEqnIndxFromComp);
@@ -3878,15 +3878,15 @@ algorithm
       String str;
       BackendDAE.Shared shared;
       
-      case(dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,ie,om,omT)::{},shared),_,{},_,_)
+      case(dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,om,omT)::{},shared),_,{},_,_)
         equation
           v = BackendDAEUtil.listVar({});
-        then (BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,ie,om,omT)::{},shared),listArray({}),listArray({}),{});
-      case(dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,ie,om,omT)::{},shared),_,_,{},_)
+        then (BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,om,omT)::{},shared),listArray({}),listArray({}),{});
+      case(dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,om,omT)::{},shared),_,_,{},_)
         equation
           v = BackendDAEUtil.listVar({});
-        then (BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,ie,om,omT)::{},shared),listArray({}),listArray({}),{});
-      case(dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,ie,_,_)::{},shared),functionTree,eqvars,diffvars,varlst)
+        then (BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,om,omT)::{},shared),listArray({}),listArray({}),{});
+      case(dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,_,_)::{},shared),functionTree,eqvars,diffvars,varlst)
         equation
         true = RTOpts.debugFlag("linearization");
         // prepare index for Matrix and variables for simpleEquations
@@ -3896,7 +3896,7 @@ algorithm
         jacElements = BackendDAE.emptyBintree;
         (derivedVariables,jacElements) = changeIndices(derivedVariables, varTuple, jacElements);
         v = BackendDAEUtil.listVar(derivedVariables);
-        dlow = BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,ie,NONE(),NONE())::{},shared);
+        dlow = BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,NONE(),NONE())::{},shared);
         
         // Remove simple Equtaion and
         dlow = removeSimpleEquations(dlow,functionTree);
@@ -3925,7 +3925,7 @@ algorithm
         //Debug.fcall("execJacstat",print, "*** analytical Jacobians -> performed splitig the system: " +& realString(clock()) +& "\n" );
         then (dlow,v1,v2,comps1);
           
-      case(dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,ie,_,_)::{},shared),functionTree,eqvars,diffvars,varlst)
+      case(dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,_,_)::{},shared),functionTree,eqvars,diffvars,varlst)
         equation
         true = RTOpts.debugFlag("jacobian");
         // prepare index for Matrix and variables for simpleEquations
@@ -3935,7 +3935,7 @@ algorithm
         jacElements = BackendDAE.emptyBintree;
         (derivedVariables,jacElements) = changeIndices(derivedVariables, varTuple, jacElements);
         v = BackendDAEUtil.listVar(derivedVariables);
-        dlow = BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,ie,NONE(),NONE())::{},shared);
+        dlow = BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,NONE(),NONE())::{},shared);
         
         // Remove simple Equtaion and
         dlow = removeSimpleEquations(dlow,functionTree);
@@ -4181,7 +4181,7 @@ algorithm
       jacEventInfo = BackendDAE.EVENT_INFO({},{});
       jacExtObjClasses = {};
       
-      jacobian = BackendDAE.DAE(BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, jacInitialEqs, NONE(), NONE())::{}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacRemovedEqs, jacArrayEqs, jacAlgorithms, jacEventInfo, jacExtObjClasses));
+      jacobian = BackendDAE.DAE(BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE())::{}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, jacArrayEqs, jacAlgorithms, jacEventInfo, jacExtObjClasses));
     then jacobian;
       
     case(bDAE as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs)::{}, BackendDAE.SHARED(knownVars=knownVars, removedEqs=removedEqs, algorithms=algorithms)), functions, vars, stateVars, inputVars, paramVars) equation
@@ -4208,7 +4208,7 @@ algorithm
       jacEventInfo = BackendDAE.EVENT_INFO({},{});
       jacExtObjClasses = {};
       
-      jacobian = BackendDAE.DAE(BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, jacInitialEqs, NONE(), NONE())::{}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacRemovedEqs, jacArrayEqs, jacAlgorithms, jacEventInfo, jacExtObjClasses));
+      jacobian = BackendDAE.DAE(BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE())::{}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, jacArrayEqs, jacAlgorithms, jacEventInfo, jacExtObjClasses));
       
       Debug.fcall("jacdump", print, "\n+++++++++++++++++++++ daeLow-dump: jacobian +++++++++++++++++++++\n");
       Debug.fcall("jacdump", BackendDump.dump, jacobian);
@@ -5774,7 +5774,7 @@ protected function partitionIndependentBlocksSplitBlocks
   output list<BackendDAE.EqSystem> systs;
 algorithm
   systs := match (n,syst,ixs,ixsT)
-    case (n,syst as BackendDAE.EQSYSTEM(_,_,_,_,_),ixs,ixsT)
+    case (n,syst as BackendDAE.EQSYSTEM(_,_,_,_),ixs,ixsT)
       equation
       then {syst};
   end match;

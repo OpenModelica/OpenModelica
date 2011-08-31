@@ -237,6 +237,7 @@ uniontype Shared "Data shared for all equation-systems"
     Variables knownVars "knownVars ; Known variables, i.e. constants and parameters" ;
     Variables externalObjects "External object variables";
     AliasVariables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
+    EquationArray initialEqs "initialEqs ; Initial equations" ;
     EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
     array<MultiDimEquation> arrayEqs "arrayEqs ; Array equations" ;
     array< .DAE.Algorithm> algorithms "algorithms ; Algorithms" ;
@@ -251,7 +252,6 @@ uniontype EqSystem "An independent system of equations (and their corresponding 
   record EQSYSTEM
     Variables orderedVars "orderedVars ; ordered Variables, only states and alg. vars" ;
     EquationArray orderedEqs "orderedEqs ; ordered Equations" ;
-    EquationArray initialEqs "initialEqs ; Initial equations" ;
     Option<IncidenceMatrix> m;
     Option<IncidenceMatrixT> mT;
   end EQSYSTEM;

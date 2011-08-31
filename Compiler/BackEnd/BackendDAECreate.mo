@@ -135,7 +135,7 @@ algorithm
   algarr := listArray(algs);
   einfo := Inline.inlineEventInfo(BackendDAE.EVENT_INFO(whenclauses_1,{}),(SOME(functionTree),{DAE.NORM_INLINE()}));
   aliasVars := BackendDAEUtil.emptyAliasVariables();
-  outBackendDAE := BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,eqnarr,ieqnarr,NONE(),NONE())::{},BackendDAE.SHARED(knvars,extVars,aliasVars,reqnarr,arr_md_eqns,algarr,einfo,extObjCls));
+  outBackendDAE := BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,eqnarr,NONE(),NONE())::{},BackendDAE.SHARED(knvars,extVars,aliasVars,ieqnarr,reqnarr,arr_md_eqns,algarr,einfo,extObjCls));
   BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
 end lower;
 
@@ -2580,14 +2580,14 @@ algorithm
       array<DAE.Algorithm> algorithms,algorithms1;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
-    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,inieqns,m,mT)::{},BackendDAE.SHARED(knvars,exobj,av,remeqns,arreqns,algorithms,einfo,eoc)),funcs)
+    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,m,mT)::{},BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,einfo,eoc)),funcs)
       equation
         (eqns1,(vars1,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,traverserexpandDerEquation,(vars,funcs));
         (inieqns1,(vars2,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,traverserexpandDerEquation,(vars1,funcs));
         (arreqns1,(vars3,_,_)) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(arreqns,traverserexpandDerExp,BackendEquation.traverseBackendDAEExpsArrayEqnWithUpdate,1,arrayLength(arreqns),(vars2,{},funcs));
         (algorithms1,(vars4,_,_)) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(algorithms,traverserexpandDerExp,BackendEquation.traverseBackendDAEExpsAlgortihmWithUpdate,1,arrayLength(algorithms),(vars3,{},funcs));
       then
-        (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars4,eqns1,inieqns1,m,mT)::{},BackendDAE.SHARED(knvars,exobj,av,remeqns,arreqns1,algorithms1,einfo,eoc)));
+        (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars4,eqns1,m,mT)::{},BackendDAE.SHARED(knvars,exobj,av,inieqns1,remeqns,arreqns1,algorithms1,einfo,eoc)));
   end match;
 end expandDerOperator;
 
@@ -2823,7 +2823,7 @@ algorithm
       list<BackendDAE.ZeroCrossing> zero_crossings;
       BackendDAE.EqSystems eqs;
       Option<BackendDAE.IncidenceMatrix> m,mT;
-    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,inieqns,m,mT)::{},BackendDAE.SHARED(knvars,exobj,av,remeqns,arreqns,algorithms,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenclauses),eoc)))
+    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,m,mT)::{},BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenclauses),eoc)))
       equation
         eqs_lst = BackendDAEUtil.equationList(eqns);
         arreqns_lst = arrayList(arreqns);
@@ -2834,7 +2834,7 @@ algorithm
         algorithms1 = listArray(algs_lst1);
         einfo1 = BackendDAE.EVENT_INFO(whenclauses1,zero_crossings);
       then
-        (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns1,inieqns,m,mT)::{},BackendDAE.SHARED(knvars,exobj,av,remeqns,arreqns1,algorithms1,einfo1,eoc)));
+        (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns1,m,mT)::{},BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns1,algorithms1,einfo1,eoc)));
   end match;
 end findZeroCrossings;
 

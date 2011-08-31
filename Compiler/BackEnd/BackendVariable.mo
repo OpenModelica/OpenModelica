@@ -3171,10 +3171,10 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.Shared shared;
       Option<BackendDAE.IncidenceMatrix> m,mT;
-    case (var,BackendDAE.EQSYSTEM(ordvars,eqns,inieqns,m,mT))
+    case (var,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT))
       equation
         ordvars1 = addVar(var,ordvars);
-      then BackendDAE.EQSYSTEM(ordvars1,eqns,inieqns,m,mT);
+      then BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT);
   end match;
 end addVarDAE;
 
@@ -3198,10 +3198,10 @@ algorithm
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.EqSystems eqs;
-    case (var,BackendDAE.SHARED(knvars,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc))
+    case (var,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc))
       equation
         knvars1 = addVar(var,knvars);
-      then BackendDAE.SHARED(knvars1,exobj,aliasVars,remeqns,arreqns,algorithms,einfo,eoc);
+      then BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc);
   end match;
 end addKnVarDAE;
 

@@ -2309,7 +2309,7 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
       
-    case (functions,dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,ie,_,_)::{},shared as BackendDAE.SHARED(kv,exv,av,re,ae,al,ev,eoc)),ass1,ass2,comps)
+    case (functions,dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,_,_)::{},shared as BackendDAE.SHARED(kv,exv,av,ie,re,ae,al,ev,eoc)),ass1,ass2,comps)
       equation
         true = RTOpts.debugFlag("jacobian");
         
@@ -2320,7 +2320,7 @@ algorithm
         NewVars = BackendDAEUtil.emptyVars();
         (NewEqns, NewVars) = splitoutEquationAndVars(blt_states,e,v,NewEqns,NewVars);
         BackendDAE.EQUATION_ARRAY(numberOfElement = nEqns) = NewEqns;
-        dlow = BackendDAE.DAE(BackendDAE.EQSYSTEM(NewVars,NewEqns,ie,NONE(),NONE())::{},shared);
+        dlow = BackendDAE.DAE(BackendDAE.EQSYSTEM(NewVars,NewEqns,NONE(),NONE())::{},shared);
          
         // Prepare all needed variables
         varlst = BackendDAEUtil.varList(NewVars);
@@ -2440,7 +2440,7 @@ algorithm
       list<JacobianMatrix> LinearMats;
       BackendDAE.EqSystem syst;
       
-    case (functions,dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,ie,_,_)::{},BackendDAE.SHARED(kv,exv,av,re,ae,al,ev,eoc)),ass1,ass2,_)
+    case (functions,dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,_,_)::{},BackendDAE.SHARED(kv,exv,av,ie,re,ae,al,ev,eoc)),ass1,ass2,_)
       equation
         true = RTOpts.debugFlag("linearization");
         Debug.fcall("linmodel",print,"Generate Linear Model Matrices\n");
@@ -2661,12 +2661,12 @@ algorithm
       list<BackendDAE.Equation> sampleEquations;
       BackendDAE.Shared shared;
       Option<BackendDAE.IncidenceMatrix> m,mT;
-    case  (helpvars,BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars,orderedEqs,initialEqs,m,mT)::{},shared))
+    case  (helpvars,BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT)::{},shared))
       equation
         eqnsList = BackendDAEUtil.equationList(orderedEqs);
         (eqnsList,sampleEquations,(_,helpvars)) = BackendEquation.traverseBackendDAEExpsEqnListOutEqn(eqnsList, {}, sampleFinder,  (listLength(helpvars)-1,helpvars));
         orderedEqs = BackendDAEUtil.listEquation(eqnsList);
-      then (helpvars,BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars,orderedEqs,initialEqs,m,mT)::{},shared),sampleEquations);
+      then (helpvars,BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT)::{},shared),sampleEquations);
     case (_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
@@ -4181,7 +4181,7 @@ algorithm
       BackendDAE.Shared shared;
       
       // create always a linear system of equations 
-    case (genDiscrete,skipDiscInAlgorithm,true,(daelow as BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,ie,_,_)::{},BackendDAE.SHARED(knvars,exvars,av,se,ae,al,ev,eoc))),ass1,ass2,comp as BackendDAE.EQUATIONSYSTEM(eqns=ieqns,vars=ivars,jac=jac,jacType=jac_tp),helpVarInfo)
+    case (genDiscrete,skipDiscInAlgorithm,true,(daelow as BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,_,_)::{},BackendDAE.SHARED(knvars,exvars,av,ie,se,ae,al,ev,eoc))),ass1,ass2,comp as BackendDAE.EQUATIONSYSTEM(eqns=ieqns,vars=ivars,jac=jac,jacType=jac_tp),helpVarInfo)
       equation
         //print("\ncreateOdeSystem -> Linear: ...\n");
         //BackendDump.printEquations(block_,daelow);
@@ -4204,7 +4204,7 @@ algorithm
         equations_ = createOdeSystem2(false, genDiscrete, skipDiscInAlgorithm, vars_1,knvars_1,eqns_1,ae1,al,jac, jac_tp, helpVarInfo,index);
       then
         equations_;
-    case (genDiscrete,skipDiscInAlgorithm,true,(daelow as BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,ie,_,_)::{},BackendDAE.SHARED(knvars,exvars,av,se,ae,al,ev,eoc))),ass1,ass2,comp as BackendDAE.MIXEDEQUATIONSYSTEM(disc_eqns=disc_eqns,disc_vars=disc_vars),helpVarInfo)
+    case (genDiscrete,skipDiscInAlgorithm,true,(daelow as BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,_,_)::{},BackendDAE.SHARED(knvars,exvars,av,ie,se,ae,al,ev,eoc))),ass1,ass2,comp as BackendDAE.MIXEDEQUATIONSYSTEM(disc_eqns=disc_eqns,disc_vars=disc_vars),helpVarInfo)
       equation
         //print("\ncreateOdeSystem -> Linear: ...\n");
         //BackendDump.printEquations(block_,daelow);
@@ -4221,8 +4221,8 @@ algorithm
         ave = BackendDAEUtil.emptyAliasVariables();
         eeqns = BackendDAEUtil.listEquation({});
         knvars_1 = BackendEquation.equationsVars(eqns_1,knvars);
-        syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,eeqns,NONE(),NONE());
-        shared = BackendDAE.SHARED(knvars_1,exvars,ave,eeqns,ae1,al,ev,eoc);
+        syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,NONE(),NONE());
+        shared = BackendDAE.SHARED(knvars_1,exvars,ave,eeqns,eeqns,ae1,al,ev,eoc);
         (m,mt) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.ABSOLUTE());
         subsystem_dae = BackendDAE.DAE({syst},shared);
         jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, ae1, m, mt,false) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
@@ -4240,7 +4240,7 @@ algorithm
         equations_;
         
         // mixed system of equations, both continous and discrete eqns
-    case (true, skipDiscInAlgorithm, false,(daelow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(vars,eqns,ie,_,_)::{},shared=BackendDAE.SHARED(knownVars=knvars))),ass1,ass2,BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1,disc_eqns=ieqns,disc_vars=ivars),helpVarInfo)
+    case (true, skipDiscInAlgorithm, false,(daelow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(vars,eqns,_,_)::{},shared=BackendDAE.SHARED(knownVars=knvars))),ass1,ass2,BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1,disc_eqns=ieqns,disc_vars=ivars),helpVarInfo)
       equation
         //print("\ncreateOdeSystem -> Mixed: cont. and discrete\n");
         //BackendDump.printEquations(block_,dlow);
@@ -4261,7 +4261,7 @@ algorithm
         {SES_MIXED(index, equation_, simVarsDisc, discEqs, values, value_dims)};
         
         // continuous system of equations try tearing algorithm
-    case (genDiscrete, skipDiscInAlgorithm, false,(daelow as BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,ie,_,_)::{},BackendDAE.SHARED(knvars,exvars,av,se,ae,al,ev,eoc))),ass1,ass2,comp,helpVarInfo)
+    case (genDiscrete, skipDiscInAlgorithm, false,(daelow as BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,_,_)::{},BackendDAE.SHARED(knvars,exvars,av,_,se,ae,al,ev,eoc))),ass1,ass2,comp,helpVarInfo)
       equation
         //print("\ncreateOdeSystem -> Tearing: ...\n");
         // check tearing
@@ -4278,10 +4278,10 @@ algorithm
         ave = BackendDAEUtil.emptyAliasVariables();
         eeqns = BackendDAEUtil.listEquation({});
         knvars_1 = BackendEquation.equationsVars(eqns_1,knvars);
-        syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,eeqns,NONE(),NONE());
-        shared = BackendDAE.SHARED(knvars_1,exvars,ave,eeqns,ae1,al,ev,eoc);
+        syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,NONE(),NONE());
+        shared = BackendDAE.SHARED(knvars_1,exvars,ave,eeqns,eeqns,ae1,al,ev,eoc);
         (m,mt) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.ABSOLUTE());
-        syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,eeqns,SOME(m),SOME(mt));
+        syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,SOME(m),SOME(mt));
         subsystem_dae = BackendDAE.DAE({syst},shared);
         (subsystem_dae_1,v1,v2,comps) = BackendDAEUtil.transformBackendDAE(subsystem_dae,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE());
         (subsystem_dae_2 as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(m=SOME(m_3),mT=SOME(mT_3))::{}),v1_1,v2_1,comps_1,r,t) = BackendDAEOptimize.tearingSystem(subsystem_dae_1,v1,v2,comps);
@@ -4296,7 +4296,7 @@ algorithm
       then
         {equation_};
         /* continuous system of equations */
-    case (genDiscrete, skipDiscInAlgorithm, false,(daelow as BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,ie,_,_)::{},BackendDAE.SHARED(knvars,exvars,av,se,ae,al,ev,eoc))),ass1,ass2,comp as BackendDAE.EQUATIONSYSTEM(jac=jac,jacType=jac_tp),helpVarInfo)
+    case (genDiscrete, skipDiscInAlgorithm, false,(daelow as BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,_,_)::{},BackendDAE.SHARED(knvars,exvars,av,_,se,ae,al,ev,eoc))),ass1,ass2,comp as BackendDAE.EQUATIONSYSTEM(jac=jac,jacType=jac_tp),helpVarInfo)
       equation
         //print("\ncreateOdeSystem -> Cont sys: ...\n");
         //BackendDump.printEquations(block_,daelow);
@@ -4364,7 +4364,7 @@ algorithm
       list<list<SimEqSystem>> simeqnsystemlst;
       BackendDAE.Shared shared;
     case (ass1,ass2,block_,r,t,mixedEvent,_,
-        daelow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eqn,initialEqs=ineq)::{},shared=shared as BackendDAE.SHARED(arrayEqs=ae,algorithms=algorithms)),jac,jac_tp,helpVarInfo)
+        daelow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eqn)::{},shared=shared as BackendDAE.SHARED(arrayEqs=ae,initialEqs=ineq,algorithms=algorithms)),jac,jac_tp,helpVarInfo)
       /* no analythic jacobian available. Generate non-linear system */
       equation
         // get equations and variables
@@ -4384,7 +4384,7 @@ algorithm
         // replace tearing variables in other equations with x_loc[..]
         eqn_lst2 = generateTearingSystem1(eqn_lst,repl);
         eqn1 = BackendDAEUtil.listEquation(eqn_lst2);
-        daelow1=BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqn1,ineq,NONE(),NONE())::{},shared);
+        daelow1=BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqn1,NONE(),NONE())::{},shared);
         // generade code for other equations
         simeqnsystemlst = Util.listMap3(block_1,generateTearingOtherEqns,daelow1, ass2, helpVarInfo);
         simeqnsystem = Util.listFlatten(simeqnsystemlst);
@@ -4588,7 +4588,7 @@ algorithm
         ave = BackendDAEUtil.emptyAliasVariables();
         evars = BackendDAEUtil.emptyVars();
         eeqns = BackendDAEUtil.listEquation({});
-        subsystem_dae = BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqn,eeqns,NONE(),NONE())::{},BackendDAE.SHARED(evars,evars,ave,eeqns,ae,algorithms,BackendDAE.EVENT_INFO({},{}),{}));
+        subsystem_dae = BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqn,NONE(),NONE())::{},BackendDAE.SHARED(evars,evars,ave,eeqns,eeqns,ae,algorithms,BackendDAE.EVENT_INFO({},{}),{}));
         (subsystem_dae_1,v1,v2,comps) = BackendDAEUtil.transformBackendDAE(subsystem_dae,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE());
         (subsystem_dae_2,v1_1,v2_1,comps_1,r,t) = BackendDAEOptimize.tearingSystem(subsystem_dae_1,v1,v2,comps);
         true = listLength(r) > 0;
@@ -4843,7 +4843,7 @@ algorithm
       BackendDAE.Shared shared;
       
     case (mixedEvent,ass1,ass2,block_,r,t,
-        daelow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eqn,initialEqs=ineq)::{},shared=shared),helpVarInfo) 
+        daelow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eqn)::{},shared=shared),helpVarInfo) 
       equation
         // get equations and variables
         eqn_lst = BackendDAEUtil.equationList(eqn);
@@ -4864,7 +4864,7 @@ algorithm
         block_2 = Util.listIntRange(size);
         ass1_1 = listArray(block_2);
         ass2_1 = listArray(block_2);
-        daelow1=BackendDAE.DAE(BackendDAE.EQSYSTEM(v1,eqn1,ineq,NONE(),NONE())::{},shared);
+        daelow1=BackendDAE.DAE(BackendDAE.EQSYSTEM(v1,eqn1,NONE(),NONE())::{},shared);
         // generate code for relaxation equations
         reqns = generateRelaxedResidualEqns(block_2,mixedEvent,daelow1, ass1_1, ass2_1, helpVarInfo);
         alleqns = listAppend(reqns,eqns);
@@ -5192,8 +5192,8 @@ algorithm
         evars = BackendDAEUtil.listVar({});
         al = listArray({});
         ae1 = listArray({});
-        syst = BackendDAE.EQSYSTEM(vars,eqns_1,eeqns,NONE(),NONE());
-        shared = BackendDAE.SHARED(evars,evars,av,eeqns,ae1,al,BackendDAE.EVENT_INFO({},{}),{});
+        syst = BackendDAE.EQSYSTEM(vars,eqns_1,NONE(),NONE());
+        shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,ae1,al,BackendDAE.EVENT_INFO({},{}),{});
         subsystem_dae = BackendDAE.DAE({syst},shared);
         (subsystem_dae,v1,v2,comps) = BackendDAEUtil.transformBackendDAE(subsystem_dae,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())),NONE());
         equations_ = createEquations(false, true, genDiscrete, false, false, subsystem_dae, v1, v2, comps, helpVarInfo);
@@ -5377,8 +5377,8 @@ algorithm
       list<SimEqSystem> resEqus1,resEqus2,resEqus3,resEqus4;
       BackendDAE.AliasVariables av;
       
-    case ((dlow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,initialEqs=ie)::{},
-      shared=BackendDAE.SHARED(knownVars=knvars,
+    case ((dlow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns)::{},
+      shared=BackendDAE.SHARED(knownVars=knvars,initialEqs=ie,
       aliasVars=av,
       algorithms=al))),
       ass1, ass2)
@@ -5537,7 +5537,7 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
       
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars,initialEqs=ie)::{},shared=BackendDAE.SHARED(knownVars=knvars,externalObjects=extobj,algorithms=algs,arrayEqs=arrayEqs,extObjClasses=extObjClasses)))
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars)::{},shared=BackendDAE.SHARED(knownVars=knvars,externalObjects=extobj,initialEqs=ie,algorithms=algs,arrayEqs=arrayEqs,extObjClasses=extObjClasses)))
       equation
         // kvars params
         ((parameterEquationsTmp,lv,lkn,lv1,lv2,_)) = BackendVariable.traverseBackendDAEVars(knvars,createInitialParamAssignments,({},{},{},{},{},1));
@@ -5548,8 +5548,8 @@ algorithm
         alisvars = BackendDAEUtil.emptyAliasVariables();
         v = BackendDAEUtil.listVar(lv);
         kn = BackendDAEUtil.listVar(lkn);
-        syst = BackendDAE.EQSYSTEM(v,pe,emptyeqns,NONE(),NONE());
-        shared = BackendDAE.SHARED(kn,extobj,alisvars,emptyeqns,arrayEqs,algs,BackendDAE.EVENT_INFO({},{}),extObjClasses);
+        syst = BackendDAE.EQSYSTEM(v,pe,NONE(),NONE());
+        shared = BackendDAE.SHARED(kn,extobj,alisvars,emptyeqns,emptyeqns,arrayEqs,algs,BackendDAE.EVENT_INFO({},{}),extObjClasses);
         (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
         paramdlow = BackendDAE.DAE({syst},shared);
         //mT = BackendDAEUtil.transposeMatrix(m);
@@ -5886,7 +5886,7 @@ algorithm
     case (_,_,_,{},_) then {};
       
       // zero crossing for mixed system
-    case ((dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=vars)::{}, BackendDAE.SHARED(knvars, exvars, av, se, ae, al, ev, eoc))),
+    case ((dlow as BackendDAE.DAE(eqs = BackendDAE.EQSYSTEM(orderedVars=vars)::{}, shared=BackendDAE.SHARED(knownVars = knvars))),
       ass1, ass2, (eqn :: rest), blocks)
       equation
         true = isPartOfMixedSystem(dlow, eqn, blocks, ass2);
@@ -6102,8 +6102,8 @@ algorithm
       BackendDAE.EquationArray ie;
       BackendDAE.AliasVariables aliasVars;
       list<DAE.ComponentRef> initCrefs;
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars, initialEqs=ie)::{},shared=BackendDAE.SHARED(
-      knownVars = knvars,
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars)::{},shared=BackendDAE.SHARED(
+      knownVars = knvars, initialEqs=ie,
       externalObjects = extvars,
       aliasVars = aliasVars as BackendDAE.ALIASVARS(aliasVars = removedvars))))
       equation
@@ -6874,11 +6874,11 @@ algorithm
       BackendDAE.EventInfo eventInfo;
       BackendDAE.ExternalObjectClasses extObjClasses;
       BackendDAE.EqSystems eqs;
-    case  (helpvars,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,
+    case  (helpvars,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,
       removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses)))
       equation
         (helpvars1,algorithms2,_) = generateHelpVarsInAlgorithms(listLength(helpvars),algorithms);
-      then (listAppend(helpvars,helpvars1),BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,
+      then (listAppend(helpvars,helpvars1),BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,
         removedEqs,arrayEqs,algorithms2,eventInfo,extObjClasses)));
     case (_,_)
       equation

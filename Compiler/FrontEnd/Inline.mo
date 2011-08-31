@@ -88,12 +88,13 @@ algorithm
       BackendDAE.ExternalObjectClasses extObjClasses;
       Functiontuple tpl;
       BackendDAE.EqSystems eqs;
-    case (ftree,itlst,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses)))
+    case (ftree,itlst,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses)))
       equation
         tpl = (ftree,itlst);
         eqs = Util.listMap1(eqs,inlineEquationSystem,tpl);
         knownVars = inlineVariables(knownVars,tpl);
         externalObjects = inlineVariables(externalObjects,tpl);
+        initialEqs = inlineEquationArray(initialEqs,tpl);
         removedEqs = inlineEquationArray(removedEqs,tpl);
         mdelst = Util.listMap1(arrayList(arrayEqs),inlineMultiDimEqs,tpl);
         arrayEqs = listArray(mdelst);
@@ -101,7 +102,7 @@ algorithm
         algorithms = listArray(alglst);
         eventInfo = inlineEventInfo(eventInfo,tpl);
       then
-        BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses));
+        BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses));
     case(_,_,_)
       equation
         Debug.fprintln("failtrace","Inline.inlineCalls failed");
@@ -121,13 +122,12 @@ algorithm
       BackendDAE.EquationArray orderedEqs;
       BackendDAE.EquationArray initialEqs;
       Option<BackendDAE.IncidenceMatrix> m,mT;
-    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,initialEqs,m,mT),tpl)
+    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT),tpl)
       equation
         orderedVars = inlineVariables(orderedVars,tpl);
         orderedEqs = inlineEquationArray(orderedEqs,tpl);
-        initialEqs = inlineEquationArray(initialEqs,tpl);
         // TODO: Incidencematrix may change, but it's not updated here?! 
-      then BackendDAE.EQSYSTEM(orderedVars,orderedEqs,initialEqs,m,mT);
+      then BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT);
   end match;
 end inlineEquationSystem;
 
