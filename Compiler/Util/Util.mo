@@ -430,8 +430,6 @@ algorithm isequal := matchcontinue(input1,input2,cmpFunc)
     Type_a a,b;
     list<Type_a> al,bl;
   case({},{},_) then true;
-  case({},_,_) then true;
-  case(_,{},_) then true;
   case(a::al,b::bl,cmpFunc)
     equation
       true = cmpFunc(a,b);
