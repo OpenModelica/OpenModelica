@@ -10470,7 +10470,7 @@ algorithm
         expTy = Types.elabType(tt);
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect, Expression.makeCrefExp(cr_1,expTy), tt,NONE(), expIdTy, true);
+        e_1 = crefVectorize(doVect, Expression.makeCrefExp(cr_1,expTy), tt, sexp, expIdTy, true);
       then
         (cache,e_1,DAE.C_PARAM(),attr);
       
