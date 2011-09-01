@@ -318,10 +318,6 @@ fmiStatus fmiGetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, f
   if (nvr>0 && nullPointer(comp, "fmiGetReal", "value[]", value))
     return fmiError;
 #if NUMBER_OF_REALS>0
-  // calculate new values
-  functionODE();
-  functionAlgebraics();
-
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmiGetReal", vr[i], NUMBER_OF_REALS+NUMBER_OF_STATES))
       return fmiError;
@@ -345,10 +341,6 @@ fmiStatus fmiGetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr
   if (nvr>0 && nullPointer(comp, "fmiGetInteger", "value[]", value))
     return fmiError;
 #if NUMBER_OF_INTEGERS>0
-  // calculate new values
-  functionODE();
-  functionAlgebraics();
-
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmiGetInteger", vr[i], NUMBER_OF_INTEGERS))
       return fmiError;
@@ -372,10 +364,6 @@ fmiStatus fmiGetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr
   if (nvr>0 && nullPointer(comp, "fmiGetBoolean", "value[]", value))
     return fmiError;
 #if NUMBER_OF_BOOLEANS>0
-  // calculate new values
-  functionODE();
-  functionAlgebraics();
-
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmiGetBoolean", vr[i], NUMBER_OF_BOOLEANS))
       return fmiError;
@@ -399,10 +387,6 @@ fmiStatus fmiGetString(fmiComponent c, const fmiValueReference vr[], size_t nvr,
   if (nvr>0 && nullPointer(comp, "fmiGetString", "value[]", value))
     return fmiError;
 #if NUMBER_OF_STRINGS>0
-  // calculate new values
-  functionODE();
-  functionAlgebraics();
-
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmiGetString", vr[i], NUMBER_OF_STRINGS))
       return fmiError;
@@ -483,8 +467,6 @@ fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx) {
   if (nullPointer(comp, "fmiGetDerivatives", "derivatives[]", derivatives))
     return fmiError;
 #if (NUMBER_OF_STATES>0)
-  //if (comp->eventInfo.stateValuesChanged == fmiTrue)
-  //{
     // calculate new values
   	functionODE();
     functionAlgebraics();
@@ -495,8 +477,6 @@ fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx) {
       if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
         "fmiGetDerivatives: #r%d# = %.16g", vr, derivatives[i]);
     }
-    comp->eventInfo.stateValuesChanged = fmiFalse;
-  //}
 #endif
   return fmiOK;
 }
@@ -606,26 +586,38 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
 }
 
 fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEventInfo* eventInfo) {
-  ModelInstance* comp = (ModelInstance *)c;
-  if (invalidState(comp, "fmiEventUpdate", modelInitialized))
-    return fmiError;
-  if (nullPointer(comp, "fmiEventUpdate", "eventInfo", eventInfo))
-    return fmiError;
-  if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
-    "fmiEventUpdate: intermediateResults = %d", intermediateResults);
-  eventInfo->iterationConverged  = fmiTrue;
-  eventInfo->stateValueReferencesChanged = fmiFalse;
-  eventInfo->stateValuesChanged  = fmiFalse;
-  eventInfo->terminateSimulation = fmiFalse;
-  eventInfo->upcomingTimeEvent   = fmiFalse;
-  /*functionODE();
-  functionAlgebraics();
-  fmiCompletedIntegratorStep(c,fmiFalse);
-  */
-  update_DAEsystem();
-  //fmiCompletedIntegratorStep(c,fmiFalse);
-  eventUpdate(comp, eventInfo); // to be implemented by the includer of this file
-  return fmiOK;
+	ModelInstance* comp = (ModelInstance *)c;
+	if (invalidState(comp, "fmiEventUpdate", modelInitialized))
+		return fmiError;
+	if (nullPointer(comp, "fmiEventUpdate", "eventInfo", eventInfo))
+		return fmiError;
+	int needtoiterate=0;
+    saveall();
+	functionDAE(&needtoiterate);
+
+	if(checkForDiscreteChanges() || needtoiterate){
+		intermediateResults = fmiTrue;
+		if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
+				"fmiEventUpdate: Need to iterate(discrete changes)!");
+		eventInfo->iterationConverged  = fmiFalse;
+		eventInfo->stateValueReferencesChanged = fmiFalse;
+		eventInfo->stateValuesChanged  = fmiTrue;
+		eventInfo->terminateSimulation = fmiFalse;
+		eventInfo->upcomingTimeEvent   = fmiFalse;
+	}else{
+		intermediateResults = fmiFalse;
+		eventInfo->iterationConverged  = fmiTrue;
+		eventInfo->stateValueReferencesChanged = fmiFalse;
+		eventInfo->stateValuesChanged  = fmiFalse;
+		eventInfo->terminateSimulation = fmiFalse;
+		eventInfo->upcomingTimeEvent   = fmiFalse;
+	}
+
+	if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
+			"fmiEventUpdate: intermediateResults = %d", intermediateResults);
+
+	eventUpdate(comp, eventInfo); // to be implemented by the includer of this file
+	return fmiOK;
 }
 
 fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean* callEventUpdate){
