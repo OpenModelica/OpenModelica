@@ -414,6 +414,7 @@ algorithm
       equation
         true = Absyn.pathEqual(inBaseClass, bc);
         redecl = SCodeEnv.PROCESSED_MODIFIER(inRedeclaredElement);
+        SCodeCheck.checkDuplicateRedeclarations(redecl, el);
         ex = SCodeEnv.EXTENDS(bc, redecl :: el, info);
       then
         ex :: exl;
@@ -423,6 +424,7 @@ algorithm
       equation
         true = Absyn.pathEqual(inBaseClass, bc);
         redecl = SCodeEnv.PROCESSED_MODIFIER(inRedeclaredElement);
+        SCodeCheck.checkDuplicateRedeclarations(redecl, el);
         ex = SCodeEnv.EXTENDS(bc, redecl :: el, info);
       then
         ex :: exl;
@@ -597,7 +599,7 @@ algorithm
       list<SCode.SubMod> sub_mods;
       list<SCodeEnv.Redeclaration> redeclares;
     
-    case (SCode.MOD(subModLst = sub_mods), inEnv)
+    case (SCode.MOD(subModLst = sub_mods), _)
       equation
         redeclares = Util.listFold1(sub_mods, extractRedeclareFromSubMod, inEnv, {});
       then
@@ -617,17 +619,26 @@ protected function extractRedeclareFromSubMod
 algorithm
   outRedeclares := match(inMod, inEnv, inRedeclares)
     local
-      SCode.Element redecl;
+      SCode.Element el;
+      SCodeEnv.Redeclaration redecl; 
 
     // Redeclaration of a class definition.
     case (SCode.NAMEMOD(A = SCode.REDECL(elementLst = 
-        {redecl as SCode.CLASS(name = _)})), _, _)
-      then SCodeEnv.RAW_MODIFIER(redecl) :: inRedeclares;
+        {el as SCode.CLASS(name = _)})), _, _)
+      equation
+        redecl = SCodeEnv.RAW_MODIFIER(el);
+        SCodeCheck.checkDuplicateRedeclarations(redecl, inRedeclares);
+      then 
+        redecl :: inRedeclares;
 
     // Redeclaration of a component.
     case (SCode.NAMEMOD(A = SCode.REDECL(elementLst =
-        {redecl as SCode.COMPONENT(name = _)})), _, _)
-      then SCodeEnv.RAW_MODIFIER(redecl) :: inRedeclares;
+        {el as SCode.COMPONENT(name = _)})), _, _)
+      equation
+        redecl = SCodeEnv.RAW_MODIFIER(el);
+        SCodeCheck.checkDuplicateRedeclarations(redecl, inRedeclares);
+      then 
+        redecl :: inRedeclares;
 
     // Not a redeclaration.
     else then inRedeclares;

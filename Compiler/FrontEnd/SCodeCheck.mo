@@ -453,4 +453,56 @@ algorithm
   end matchcontinue;
 end checkValidEnumLiteral;
 
+public function checkDuplicateRedeclarations
+  "Checks if a redeclaration already exists in a list of redeclarations."
+  input SCodeEnv.Redeclaration inRedeclare;
+  input list<SCodeEnv.Redeclaration> inRedeclarations;
+protected
+  SCode.Element el;
+  String el_name;
+  Absyn.Info el_info;
+algorithm
+  el := SCodeEnv.getRedeclarationElement(inRedeclare);
+  el_name := SCode.elementName(el);
+  el_info := SCode.elementInfo(el);
+  false := checkDuplicateRedeclarations2(el_name, el_info, inRedeclarations);
+end checkDuplicateRedeclarations;
+
+protected function checkDuplicateRedeclarations2
+  "Helper function to checkDuplicateRedeclarations."
+  input String inRedeclareName;
+  input Absyn.Info inRedeclareInfo;
+  input list<SCodeEnv.Redeclaration> inRedeclarations;
+  output Boolean outIsDuplicate;
+algorithm
+  outIsDuplicate := matchcontinue(inRedeclareName, inRedeclareInfo,
+      inRedeclarations)
+    local
+      SCodeEnv.Redeclaration redecl;
+      list<SCodeEnv.Redeclaration> rest_redecls;
+      SCode.Element el;
+      String el_name;
+      Absyn.Info el_info;
+
+    case (_, _, {}) then false;
+
+    case (_, _, redecl :: rest_redecls)
+      equation
+        el = SCodeEnv.getRedeclarationElement(redecl);
+        el_name = SCode.elementName(el);
+        true = stringEqual(inRedeclareName, el_name);
+        el_info = SCode.elementInfo(el);
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, el_info);
+        Error.addSourceMessage(Error.DUPLICATE_REDECLARATION,
+          {inRedeclareName}, inRedeclareInfo);
+      then
+        true;
+
+    case (_, _, redecl :: rest_redecls)
+      then checkDuplicateRedeclarations2(inRedeclareName, 
+        inRedeclareInfo, rest_redecls);
+        
+  end matchcontinue;
+end checkDuplicateRedeclarations2;
+        
 end SCodeCheck;
