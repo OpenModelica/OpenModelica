@@ -87,6 +87,9 @@ checkTermination();
 int
 checkForSampleEvent();
 
+double
+getNextSampleTimeFMU();
+
 extern long inUpdate;
 static const int IterationMax = 200;
 
@@ -134,7 +137,7 @@ SaveZeroCrossings();
 void
 initializeZeroCrossings();
 
-void
+int
 activateSampleEvents();
 
 int

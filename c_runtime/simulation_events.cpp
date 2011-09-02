@@ -481,6 +481,21 @@ debugPrintHelpVars()
  *
  */
 
+double
+getNextSampleTimeFMU()
+{
+    if (globalData->curSampleTimeIx < globalData->nSampleTimes)
+    {
+    	return((globalData->sampleTimes[globalData->curSampleTimeIx]).events);
+    }
+    else
+    {
+    	return -1;
+    }
+
+}
+
+
 int
 checkForSampleEvent()
 {
@@ -526,30 +541,41 @@ checkForSampleEvent()
     }
 }
 
-void
+int
 activateSampleEvents()
 {
-  if (sim_verbose >= LOG_EVENTS)
-    {
-      cout << "Activate Sample Events" << endl;
-      cout << "Current Index: " << globalData->curSampleTimeIx << endl;
-    }
-  double a = globalData->timeValue;
-  int b = 0;
-  int tmpindex = globalData->curSampleTimeIx;
-  b = compdbl(&a, &((globalData->sampleTimes[tmpindex]).events));
-  while (b >= 0)
-    {
-      (globalData->sampleTimes[tmpindex]).activated = 1;
-      if (sim_verbose >= LOG_EVENTS)
-        {
-          cout << "Activate Sample Events index: " << tmpindex << endl;
-        }
-      tmpindex++;
-      if (tmpindex >= globalData->nSampleTimes)
-        break;
-      b = compdbl(&a, &((globalData->sampleTimes[tmpindex]).events));
-    }
+	if (globalData->curSampleTimeIx < globalData->nSampleTimes)
+	{
+		int retVal = 0;
+		if (sim_verbose >= LOG_EVENTS)
+		{
+			cout << "Activate Sample Events" << endl;
+			cout << "Current Index: " << globalData->curSampleTimeIx << endl;
+		}
+		double a = globalData->timeValue;
+		int b = 0;
+		int tmpindex = globalData->curSampleTimeIx;
+		b = compdbl(&a, &((globalData->sampleTimes[tmpindex]).events));
+		while (b >= 0)
+		{
+			retVal = 1;
+			(globalData->sampleTimes[tmpindex]).activated = 1;
+			if (sim_verbose >= LOG_EVENTS)
+			{
+				cout << "Activate Sample Events index: " << tmpindex << endl;
+			}
+			tmpindex++;
+			if (tmpindex >= globalData->nSampleTimes)
+				break;
+			b = compdbl(&a, &((globalData->sampleTimes[tmpindex]).events));
+		}
+		return retVal;
+	}
+	else
+	{
+		return 0;
+	}
+
 }
 
 void

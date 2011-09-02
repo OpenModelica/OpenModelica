@@ -526,7 +526,8 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
               eventInfo->upcomingTimeEvent = comp->eventInfo.upcomingTimeEvent;
               globalData->lastEmittedTime = *comp->time;
               globalData->forceEmit = 0;
-              initSample(*comp->time, 1);
+              //TODO: Simulation stop time is need to  all sample events
+              initSample(*comp->time, 100 /*should be stopTime*/);
               initDelay(*comp->time);
 
               if (initializeEventData()) {
@@ -572,6 +573,16 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
                 saveall();
                 storeExtrapolationData();
                 storeExtrapolationData();
+
+                // Initialize Next Sample Event Time
+                double nextSampleEvent;
+              	nextSampleEvent = getNextSampleTimeFMU();
+              	if (nextSampleEvent == -1){
+              	  eventInfo->upcomingTimeEvent = fmiFalse;
+              	}else{
+              	  eventInfo->upcomingTimeEvent = fmiTrue;
+              	  eventInfo->nextEventTime = nextSampleEvent;
+              	}
               /*}
               catch (TerminateSimulationException &e)
               {
@@ -591,10 +602,23 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
 		return fmiError;
 	if (nullPointer(comp, "fmiEventUpdate", "eventInfo", eventInfo))
 		return fmiError;
+
+	if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
+			"fmiEventUpdate: Start Event Update! Next Sample Event %g",eventInfo->nextEventTime);
+
 	int needtoiterate=0;
-    saveall();
+
+	saveall();
 	functionDAE(&needtoiterate);
 
+	//Activate sample and evaluate again
+	if (activateSampleEvents()){
+		if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
+				"fmiEventUpdate: Sample Event!");
+		saveall();
+		functionDAE(&needtoiterate);
+		deactivateSampleEventsandEquations();
+	}
 	if(checkForDiscreteChanges() || needtoiterate){
 		intermediateResults = fmiTrue;
 		if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
@@ -603,20 +627,29 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
 		eventInfo->stateValueReferencesChanged = fmiFalse;
 		eventInfo->stateValuesChanged  = fmiTrue;
 		eventInfo->terminateSimulation = fmiFalse;
-		eventInfo->upcomingTimeEvent   = fmiFalse;
 	}else{
 		intermediateResults = fmiFalse;
 		eventInfo->iterationConverged  = fmiTrue;
 		eventInfo->stateValueReferencesChanged = fmiFalse;
 		eventInfo->stateValuesChanged  = fmiFalse;
 		eventInfo->terminateSimulation = fmiFalse;
-		eventInfo->upcomingTimeEvent   = fmiFalse;
 	}
 
 	if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
 			"fmiEventUpdate: intermediateResults = %d", intermediateResults);
 
-	eventUpdate(comp, eventInfo); // to be implemented by the includer of this file
+	//Get Next Event TIme
+	double nextSampleEvent=0;
+	nextSampleEvent = getNextSampleTimeFMU();
+	if (nextSampleEvent == -1){
+		eventInfo->upcomingTimeEvent = fmiFalse;
+	}else{
+		eventInfo->upcomingTimeEvent = fmiTrue;
+		eventInfo->nextEventTime = nextSampleEvent;
+	}
+	if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
+			"fmiEventUpdate: Checked for Sample Events! Next Sample Event %g",eventInfo->nextEventTime);
+
 	return fmiOK;
 }
 
