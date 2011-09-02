@@ -369,7 +369,7 @@ char* anyString(void* any)
 {
   initializeStringBuffer();
   anyStringWork(any,0);
-  return strdup(anyStringBuf);
+  return anyStringBuf;
 }
 
 void* mmc_anyString(void* any)
@@ -515,8 +515,8 @@ inline static int getTypeOfAnyWork(void* any, int ix)  /* for debugging */
   ctor = 255 & (hdr >> 2);
 
   if (numslots>0 && ctor == MMC_ARRAY_TAG) {
-    checkAnyStringBufSize(ix,12);
-    ix += sprintf(anyStringBuf+ix, "MetaArray(");
+    checkAnyStringBufSize(ix,7);
+    ix += sprintf(anyStringBuf+ix, "Array<");
     ix = getTypeOfAnyWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1)), ix);
     checkAnyStringBufSize(ix,2);
     ix += sprintf(anyStringBuf+ix, ">");
@@ -583,7 +583,7 @@ char* getTypeOfAny(void* any) /* for debugging */
 {
   initializeStringBuffer();
   getTypeOfAnyWork(any,0);
-  return strdup(anyStringBuf);
+  return anyStringBuf;
 }
 
 /*
@@ -598,7 +598,7 @@ char* getRecordElementName(void* any, int element) {
   desc = MMC_CAR(any);
   checkAnyStringBufSize(0,strlen(desc->fieldNames[element]));
   sprintf(anyStringBuf, desc->fieldNames[element]);
-  return strdup(anyStringBuf);
+  return anyStringBuf;
 }
 
 /*
@@ -607,6 +607,17 @@ char* getRecordElementName(void* any, int element) {
 int isOptionNone(void* any)
 {
   return MMC_OPTIONNONE(any);
+}
+
+/*
+ * On windows Mingw based gcc has a buffer based stdout.
+ * So printf does not print straight away on the console.
+ * changing it to NULL fix the problem.
+ * */
+void changeStdoutBuffer() {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  setbuf(stdout, NULL);
+#endif
 }
 
 unsigned long mmc_prim_hash(void *p)
