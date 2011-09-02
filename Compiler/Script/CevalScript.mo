@@ -1555,7 +1555,7 @@ algorithm
         vars_1 = Util.listMap(cvars, ValuesUtil.printCodeVariableName);
         pwd = System.pwd();
         pd = System.pathDelimiter();
-        filename_1 = stringAppendList({pwd,pd,filename});
+        filename_1 = Util.if_(System.strncmp("/",filename,1)==0,filename,stringAppendList({pwd,pd,filename}));
         value = ValuesUtil.readDataset(filename_1, vars_1, size);
       then
         (cache,value,st);
@@ -1569,7 +1569,7 @@ algorithm
       equation
         pwd = System.pwd();
         pd = System.pathDelimiter();
-        filename_1 = stringAppendList({pwd,pd,filename});
+        filename_1 = Util.if_(System.strncmp("/",filename,1)==0,filename,stringAppendList({pwd,pd,filename}));
         i = SimulationResults.readSimulationResultSize(filename_1);
       then
         (cache,Values.INTEGER(i),st);
@@ -1578,7 +1578,7 @@ algorithm
       equation
         pwd = System.pwd();
         pd = System.pathDelimiter();
-        filename_1 = stringAppendList({pwd,pd,filename});
+        filename_1 = Util.if_(System.strncmp("/",filename,1)==0,filename,stringAppendList({pwd,pd,filename}));
         args = SimulationResults.readVariables(filename_1);
         vals = Util.listMap(args, ValuesUtil.makeString);
         v = ValuesUtil.makeArray(vals);
