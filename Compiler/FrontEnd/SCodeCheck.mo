@@ -505,4 +505,58 @@ algorithm
   end matchcontinue;
 end checkDuplicateRedeclarations2;
         
+public function checkRecursiveComponentDeclaration
+  "Checks if a component is declared with a type that is one of the enclosing
+   classes, e.g:
+     class A
+       class B
+         A a;
+       end B;
+     end A;
+  "
+  input String inComponentName;
+  input Absyn.Info inComponentInfo;
+  input SCodeEnv.Env inTypeEnv;
+  input SCodeEnv.Item inTypeItem;
+  input SCodeEnv.Env inComponentEnv;
+algorithm
+  _ := matchcontinue(inComponentName, inComponentInfo, inTypeEnv, inTypeItem,
+      inComponentEnv)
+    local
+      String cls_name, ty_name;
+      SCodeEnv.AvlTree tree;
+      SCodeEnv.Item item;
+      SCode.Element el;
+    
+    // No environment means one of the basic types.
+    case (_, _, {}, _, _) then ();
+
+    // Check that the environment of the components type is not an enclosing
+    // scope of the component itself.
+    case (_, _, _, _, _)
+      equation
+        false = SCodeEnv.envPrefixOf(inTypeEnv, inComponentEnv);
+      then
+        ();
+
+    // Make an exception for components in functions.
+    case (_, _, _, _, SCodeEnv.FRAME(name = SOME(cls_name)) ::
+        SCodeEnv.FRAME(clsAndVars = tree) :: _)
+      equation
+        SCodeEnv.CLASS(cls = el) = SCodeEnv.avlTreeGet(tree, cls_name);
+        true = SCode.isFunction(el);
+      then
+        ();
+        
+    else
+      equation
+        ty_name = SCodeEnv.getItemName(inTypeItem);
+        Error.addSourceMessage(Error.RECURSIVE_DEFINITION,
+          {inComponentName, ty_name}, inComponentInfo);
+      then
+        fail();
+
+  end matchcontinue;
+end checkRecursiveComponentDeclaration;
+
 end SCodeCheck;

@@ -6565,8 +6565,6 @@ algorithm
 
         (cache, cls, cenv) = Lookup.lookupClass(cache, env, t, true);
         
-        checkRecursiveDefinition(env, cenv, ci_state, cls);
-        
         // If the element is protected, and an external modification 
         // is applied, it is an error. 
         checkProt(vis, mm, vn);
@@ -6832,51 +6830,6 @@ algorithm
     case((e,(id,cnt))) then ((e,(id,cnt)));
   end matchcontinue;
 end removeSelfModReferenceExp;
-
-protected function checkRecursiveDefinition
-"Checks that a class does not have a recursive definition,
- i.e. an instance of itself. This is not allowed in Modelica."
-  input Env.Env env;
-  input Env.Env cenv;
-  input ClassInf.State ci_state;
-  input SCode.Element cl;
-algorithm
-  _ := matchcontinue(env,cenv,ci_state,cl)
-    local
-      Absyn.Path envPath,cenvPath;
-      String name,s;
-    // No envpath, nothing to check.
-    case(env,cenv,ci_state,cl)
-      equation
-        NONE() = Env.getEnvPath(env);
-      then ();
-    // No recursive definition, succeed.
-    case(env,cenv,ci_state,SCode.CLASS(name=name))
-      equation
-        envPath = Env.getEnvName(env);
-        cenvPath = Env.getEnvName(Env.openScope(cenv,SCode.NOT_ENCAPSULATED(),SOME(name),NONE()));
-        false = Absyn.pathEqual(envPath,cenvPath);
-      then ();
-    // No recursive definition, succeed.
-    case(env,cenv,ci_state,cl)
-      equation
-        false = checkRecursiveDefinitionRecConst(ci_state,cl);
-      then ();
-    // report error: recursive definition
-    case(env,cenv,ci_state,SCode.CLASS(name=name))
-      equation
-        cenvPath = Env.getEnvName(Env.openScope(cenv,SCode.NOT_ENCAPSULATED(),SOME(name),NONE()));
-        s = Absyn.pathString(cenvPath);
-        Error.addMessage(Error.RECURSIVE_DEFINITION,{s});
-      then fail();
-    // failure
-    case(env,_,ci_state,cl)
-      equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace","-Inst.checkRecursiveDefinition failed, envpath="+&Env.printEnvPathStr(env)+&"\n");
-      then fail();
-  end matchcontinue;
-end checkRecursiveDefinition;
 
 protected function checkMultiplyDeclared
 "Check if variable is multiply declared and
@@ -15332,25 +15285,6 @@ algorithm
         fail();
   end matchcontinue;
 end instConditionalDeclaration;
-
-protected function checkRecursiveDefinitionRecConst
-"help function to checkRecursiveDefinition
- Makes exception for record constructor
- functions which have the output record
- name being the same as the function name.
-
- This function returns false if class
- restriction is record and ci_state
- is function"
-  input ClassInf.State ci_state;
-  input SCode.Element cl;
-  output Boolean res;
-algorithm
-  res := matchcontinue(ci_state,cl)
-    case(ClassInf.FUNCTION(_),SCode.CLASS(restriction=SCode.R_RECORD())) then false;
-    case(_,_) then true;
-  end matchcontinue;
-end checkRecursiveDefinitionRecConst;
 
 protected function propagateClassPrefix
 "Propagate ClassPrefix, i.e. variability to a component.

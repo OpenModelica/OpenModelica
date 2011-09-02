@@ -1255,6 +1255,40 @@ algorithm
   end match;
 end getEnvPath;
 
+public function envPrefixOf
+  input Env inPrefixEnv;
+  input Env inEnv;
+  output Boolean outIsPrefix;
+algorithm
+  outIsPrefix := envPrefixOf2(listReverse(inPrefixEnv), listReverse(inEnv));
+end envPrefixOf;
+
+public function envPrefixOf2
+  "Checks if one environment is a prefix of another."
+  input Env inPrefixEnv;
+  input Env inEnv;
+  output Boolean outIsPrefix;
+algorithm
+  outIsPrefix := matchcontinue(inPrefixEnv, inEnv)
+    local
+      String n1, n2;
+      Env rest1, rest2;
+
+    case ({}, _) then true;
+
+    case (FRAME(name = NONE()) :: rest1, FRAME(name = NONE()) :: rest2)
+      then envPrefixOf2(rest1, rest2);
+
+    case (FRAME(name = SOME(n1)) :: rest1, FRAME(name = SOME(n2)) :: rest2)
+      equation
+        true = stringEqual(n1, n2);
+      then
+        envPrefixOf2(rest1, rest2);
+   
+    else false;
+  end matchcontinue;
+end envPrefixOf2;
+
 public function getItemInfo
   "Returns the Absyn.Info of an environment item."
   input Item inItem;

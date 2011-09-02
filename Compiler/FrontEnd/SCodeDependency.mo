@@ -716,6 +716,8 @@ algorithm
         analyseTypeSpec(ty, inEnv, info);
         (ty_item, ty_env) = SCodeLookup.lookupTypeSpec(ty, inEnv, info);
         ty_env = SCodeEnv.mergeItemEnv(ty_item, ty_env);
+        SCodeCheck.checkRecursiveComponentDeclaration(name, info, ty_env,
+          ty_item, inEnv);
         analyseModifier(mods, inEnv, ty_env, info);
         analyseOptExp(cond_exp, inEnv, info);
         analyseConstrainClass(SCode.replaceableOptConstraint(SCode.prefixesReplaceable(prefixes)), inEnv, info);

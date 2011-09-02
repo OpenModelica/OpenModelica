@@ -623,7 +623,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (DUPLICATE_CLASSES_NOT_EQUIVALENT,TRANSLATION(),ERROR(),
           "Duplicate class definitions (due to inheritance) not equivalent, first definiton is: %s, second definition is: %s"),
           (PACKAGE_VARIABLE_NOT_CONSTANT, TRANSLATION(),ERROR(),"Variable %s in package %s is not constant"),
-          (RECURSIVE_DEFINITION,TRANSLATION(),ERROR(),"Class %s has a recursive definition, i.e. contains an instance of itself"),
+          (RECURSIVE_DEFINITION,TRANSLATION(),ERROR(),"Declaration of element %s causes recursive definition of class %s."),
           (NON_STREAM_OPERAND_IN_STREAM_OPERATOR, TRANSLATION(), ERROR(),
           "Operand %s to operator %s is not a stream variable."),
           (UNBALANCED_CONNECTOR, TRANSLATION(), WARNING(),
