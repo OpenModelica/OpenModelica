@@ -456,7 +456,7 @@ case MODELINFO(vars = SIMVARS(__)) then
    <<
    void <%lastIdentOfPath(name)%>::restore_vars()
    {
-	   $P$old$timeValue = timeValue;
+	   timeValue = $P$old$timeValue;
        <%(vars.stateVars |> SIMVAR(__) => '<%cref(name)%>=$P$old<%cref(name)%>;') ;separator="\n"%>
        <%(vars.derivativeVars |> SIMVAR(__) => '<%cref(name)%>=$P$old<%cref(name)%>;') ;separator="\n"%>
        <%(vars.algVars |> SIMVAR(__) => '<%cref(name)%>=$P$old<%cref(name)%>;') ;separator="\n"%>
