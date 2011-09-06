@@ -9765,6 +9765,15 @@ algorithm
       then
         (cache,SOME((crefExp,DAE.PROP(t, DAE.C_VAR()),DAE.dummyAttrVar)));
 
+    // Boolean => {false, true}
+    case (cache, env, Absyn.CREF_IDENT(name = "Boolean"), _, _, _, _, _)
+      equation
+        exp = Expression.makeScalarArray({DAE.BCONST(false), DAE.BCONST(true)},
+            DAE.ET_BOOL());
+        t = (DAE.T_ARRAY(DAE.DIM_INTEGER(2), DAE.T_BOOL_DEFAULT), NONE());
+      then
+        (cache, SOME((exp, DAE.PROP(t, DAE.C_CONST()), DAE.dummyAttrConst)));
+
     // MetaModelica arrays are only used in function context as IDENT, and at most one subscript
     // No vectorization is performed
     case (cache,env,c as Absyn.CREF_IDENT(name=id, subscripts={Absyn.SUBSCRIPT(e)}),impl,doVect,pre,evalCref,info)
@@ -13455,6 +13464,11 @@ algorithm
         dim = DAE.DIM_UNKNOWN();
       then
         (inCache, dim);
+
+    case (_, _, _, Absyn.SUBSCRIPT(subscript = Absyn.CREF(componentRef =
+        Absyn.CREF_IDENT(name = "Boolean"))), _, _, _, _, _)
+      then
+        (inCache, DAE.DIM_INTEGER(2));
 
     // Array dimension from an enumeration.
     case (_, _, _, Absyn.SUBSCRIPT(subscript = Absyn.CREF(cr)), _, _, _, _, _)
