@@ -1435,8 +1435,12 @@ algorithm
       then
         true;
         
+    // External objects use a nominal type system
+    case ((DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(p1)),_),(DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(p2)),_))
+      then Absyn.pathEqual(p1,p2);
+
     // Complex type
-    case ((DAE.T_COMPLEX(complexClassType = st1,complexVarLst = els1,complexTypeOption = bc1),_),(DAE.T_COMPLEX(complexClassType = st2,complexVarLst = els2,complexTypeOption = bc2),_))
+    case ((DAE.T_COMPLEX(complexClassType = st1,complexVarLst = els1,complexTypeOption = NONE()),_),(DAE.T_COMPLEX(complexClassType = st2,complexVarLst = els2,complexTypeOption = NONE()),_))
       equation
         true = subtypeVarlist(els1, els2);
       then
