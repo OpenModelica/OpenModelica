@@ -8832,4 +8832,51 @@ algorithm
   end matchcontinue;
 end arrayMemberEqualityFuncLoop;
 
+public function listString
+  "Creates a string from a list and a function that maps a list element to a
+   string. It also takes several parameters that determine the formatting of
+   the string. Ex:
+     listString({1, 2, 3}, intString, 'nums', '{', ';', '}, true) =>
+     'nums{1;2;3}'
+  "
+  input list<ElementType> inList;
+  input FuncType inPrintFunc;
+  input String inListNameStr "The name of the list.";
+  input String inBeginStr "The start of the list";
+  input String inDelimitStr "The delimiter between list elements.";
+  input String inEndStr "The end of the list.";
+  input Boolean inPrintEmpty "If false, don't output begin and end if the list is empty.";
+  output String outString;
+
+  replaceable type ElementType subtypeof Any;
+
+  partial function FuncType
+    input ElementType inElement;
+    output String outString;
+  end FuncType;
+algorithm
+  outString := match(inList, inPrintFunc, inListNameStr, inBeginStr,
+      inDelimitStr, inEndStr, inPrintEmpty)
+    local
+      String str;
+
+    // Empty list and inPrintEmpty true => concatenate the list name, begin
+    // string and end string.
+    case ({}, _, _, _, _, _, true)
+      then stringAppendList({inListNameStr, inBeginStr, inEndStr});
+
+    // Empty list and inPrintEmpty false => output only list name.
+    case ({}, _, _, _, _, _, false)
+      then inListNameStr;
+
+    else
+      equation
+        str = stringDelimitList(listMap(inList, inPrintFunc), inDelimitStr);
+        str = stringAppendList({inBeginStr, str, inEndStr});
+      then
+        str;
+
+  end match;
+end listString;
+
 end Util;

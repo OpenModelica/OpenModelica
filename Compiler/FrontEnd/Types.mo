@@ -2239,39 +2239,19 @@ algorithm
       Absyn.Path path;
     
     case ((DAE.T_INTEGER(varLstInt = vars),_))
-      equation
-        s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
-        str = stringAppendList({"Integer(",s1,")"});
-      then
-        str;
+      then Util.listString(vars, printVarStr, "Integer", "(", ", ", ")", false);
     
     case ((DAE.T_REAL(varLstReal = vars),_))
-      equation
-        s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
-        str = stringAppendList({"Real(",s1,")"});
-      then
-        str;
-    
+      then Util.listString(vars, printVarStr, "Real", "(", ", ", ")", false);
+
     case ((DAE.T_STRING(varLstString = vars),_))
-      equation
-      s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
-      str = stringAppendList({"String(",s1,")"});
-      then
-        str;
-    
+      then Util.listString(vars, printVarStr, "String", "(", ", ", ")", false);
+
     case ((DAE.T_BOOL(varLstBool = vars),_))
-      equation
-        s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
-        str = stringAppendList({"Boolean(",s1,")"});
-      then
-       str;
-    
+      then Util.listString(vars, printVarStr, "Boolean", "(", ", ", ")", false);
+      
     case ((DAE.T_ENUMERATION(names = l, literalVarLst = vars),_))
-      equation
-       s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
-       str = stringAppendList({"Enumeration(",s1,")"});
-      then
-        str;
+      then Util.listString(vars, printVarStr, "Enumeration", "(", ", ", ")", false);
     
     case ((DAE.T_COMPLEX(complexClassType = st,complexVarLst = vars,complexTypeOption = bc),_))
       equation
@@ -6902,4 +6882,38 @@ algorithm
   end match;
 end variabilityToConst;
   
+public function isValidFunctionVarType
+  input Type inType;
+  output Boolean outIsValid;
+algorithm
+  outIsValid := match(inType)
+    local
+      Type ty;
+      ClassInf.State state;
+
+    case ((DAE.T_COMPLEX(complexClassType = state), _))
+      then isValidFunctionVarState(state);
+
+    case ((DAE.T_COMPLEX(complexTypeOption = SOME(ty)), _))
+      then isValidFunctionVarType(ty);
+
+    else true;
+
+  end match;
+end isValidFunctionVarType;
+
+protected function isValidFunctionVarState
+  input ClassInf.State inState;
+  output Boolean outIsValid;
+algorithm
+  outIsValid := match(inState)
+    case ClassInf.MODEL(path = _) then false;
+    case ClassInf.BLOCK(path = _) then false;
+    case ClassInf.CONNECTOR(path = _) then false;
+    case ClassInf.OPTIMIZATION(path = _) then false;
+    case ClassInf.PACKAGE(path = _) then false;
+    else true;
+  end match;
+end isValidFunctionVarState;
+
 end Types;

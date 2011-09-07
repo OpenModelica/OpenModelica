@@ -7941,6 +7941,7 @@ algorithm
           instClass(cache, env, ih, store, /* mod */ DAE.NOMOD(), pre, cl, inst_dims, impl, INNER_CALL(), graph, csets);
         //Make it an array type since we are not flattening
         ty_1 = makeArrayType(dims, ty);
+        checkFunctionVarType(ty_1, ci_state, n, info);
 
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
         // Check binding type matches variable type
@@ -7967,6 +7968,8 @@ algorithm
          //Instantiate type of the component, skip dae/not flattening
         (cache,env_1,ih,store,dae1,csets,ty,st,_,_) = 
           instClass(cache, env, ih, store, mod, pre, cl, inst_dims, impl, INNER_CALL(), ConnectionGraph.EMPTY, csets);
+        arrty = makeArrayType(dims, ty);
+        checkFunctionVarType(arrty, ci_state, n, info);
         (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,DAE.ET_OTHER(),{}));
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
         //Do all dimensions...
@@ -7978,7 +7981,6 @@ algorithm
 
         SCode.PREFIXES(visibility = vis, finalPrefix = fin, innerOuter = io) = pf;
         dae = daeDeclare(cr, ci_state, ty, attr,vis,NONE(), {dims_1},NONE(), dae_var_attr, comment,io,fin,source,true);
-        arrty = makeArrayType(dims, ty);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
       then
         (cache,env_1,ih,store,dae,csets,arrty,graph);
@@ -7986,6 +7988,7 @@ algorithm
     // Scalar variables.
     case (_, _, _, _, _, _, _, _, _, _, _, {}, _, _, _, _, _, _, _)
       equation
+        failure(ClassInf.isFunction(inState));
         (cache, env, ih, store, dae, csets, ty, graph) = instScalar(
             inCache, inEnv, inIH, inStore, inState, inMod, inPrefix,
             inName, inClass, inAttributes, inPrefixes, inSubscripts,
@@ -7998,6 +8001,7 @@ algorithm
         ((dim as DAE.DIM_UNKNOWN()) :: dims),idxs,inst_dims,impl,comment,info,graph, csets)
       equation
         true = RTOpts.splitArrays();
+        failure(ClassInf.isFunction(ci_state));
         // Try to deduce the dimension from the modifier.
         (dime as DAE.INDEX(DAE.ICONST(integer = deduced_dim))) = 
           instWholeDimFromMod(dim, mod, n, info);
@@ -8014,6 +8018,7 @@ algorithm
       ((dim as DAE.DIM_UNKNOWN()) :: dims),idxs,inst_dims,impl,comment,info,graph, csets)
       equation
         false = RTOpts.splitArrays();
+        failure(ClassInf.isFunction(ci_state));
         // Try to deduce the dimension from the modifier.
         dime = instWholeDimFromMod(dim, mod, n, info);
         dime2 = makeNonExpSubscript(dime);
@@ -8029,6 +8034,7 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,(dim :: dims),idxs,inst_dims,impl,comment,info,graph,csets)
       equation
         true = RTOpts.splitArrays();
+        failure(ClassInf.isFunction(ci_state));
         dime = instDimExp(dim, impl);
         inst_dims_1 = Util.listListAppendLast(inst_dims, {dime});
         (cache,compenv,ih,store,dae,csets,ty,graph) =
@@ -8041,6 +8047,7 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,(dim :: dims),idxs,inst_dims,impl,comment,info,graph,csets)
       equation
         false = RTOpts.splitArrays();
+        failure(ClassInf.isFunction(ci_state));
         dime = instDimExpNonSplit(dim, impl);
         inst_dims_1 = Util.listListAppendLast(inst_dims, {dime});
         (cache,compenv,ih,store,dae,csets,ty,graph) =
@@ -8286,6 +8293,34 @@ algorithm
         ();
   end match;
 end checkModificationOnOuter;
+
+protected function checkFunctionVarType
+  input DAE.Type inType;
+  input ClassInf.State inState;
+  input String inVarName;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inType, inState, inVarName, inInfo)
+    local
+      String ty_str, fun_str;
+      Absyn.Path path, path2;
+
+    case (_, _, _, _)
+      equation
+        true = Types.isValidFunctionVarType(inType);
+      then
+        ();
+
+    else
+      equation
+        ty_str = Types.getTypeName(inType);
+        Error.addSourceMessage(Error.INVALID_FUNCTION_VAR_TYPE,
+          {ty_str, inVarName}, inInfo);
+      then
+        fail();
+        
+  end matchcontinue;
+end checkFunctionVarType;
 
 protected function liftNonBasicTypes
 "Helper functin to instVar2. All array variables should be
