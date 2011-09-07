@@ -54,6 +54,13 @@ EACH;
 ELSE;
 ELSEIF;
 ELSEWHEN;
+END_FOR;
+END_IDENT;
+END_IF;
+END_MATCH;
+END_MATCHCONTINUE;
+END_WHEN;
+END_WHILE;
 T_END;
 ENUMERATION;
 EQUATION;
@@ -178,7 +185,6 @@ EACH : 'each';
 ELSE : 'else';
 ELSEIF : 'elseif';
 ELSEWHEN : 'elsewhen';
-T_END : 'end';
 ENUMERATION : 'enumeration';
 EQUATION : 'equation';
 ENCAPSULATED : 'encapsulated';
@@ -301,6 +307,22 @@ SESCAPE : esc='\\' ('\\' | '"' | '\'' | '?' | 'a' | 'b' | 'f' | 'n' | 'r' | 't' 
           &str, 1, $line, $pos+1, $line, $pos+len+1,
           ModelicaParser_readonly, ModelicaParser_filename_C);
   });
+
+fragment
+EAT_WS_COMMENT : (WS)+ {$channel=ANTLR3_TOKEN_DEFAULT_CHANNEL;};
+
+END_IF : 'end' EAT_WS_COMMENT 'if';
+END_FOR : 'end' EAT_WS_COMMENT 'for';
+END_MATCH : 'end' EAT_WS_COMMENT 'match';
+END_MATCHCONTINUE : 'end' EAT_WS_COMMENT 'matchcontinue';
+END_WHEN : 'end' EAT_WS_COMMENT 'when';
+END_WHILE : 'end' EAT_WS_COMMENT 'while';
+END_IDENT : 'end' EAT_WS_COMMENT
+    ( IDENT2 {SETTEXT($IDENT2.text);}
+    | QIDENT {SETTEXT($QIDENT.text);}
+    )
+  ;
+T_END : 'end' EAT_WS_COMMENT?;
 
 IDENT : QIDENT | IDENT2;
 

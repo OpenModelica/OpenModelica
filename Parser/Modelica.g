@@ -53,7 +53,7 @@ import MetaModelica_Lexer; /* Makes all tokens defined, imported in OptiMo_Lexer
 fileinfo* __info = (fileinfo*)malloc(sizeof(fileinfo)); \
 CONSTRUCTEX(); \
 EXCEPTION->type = ModelicaParserException; \
-EXCEPTION->message = (void *) msg; \
+EXCEPTION->message = (void *) (msg); \
 __info->line1 = _line1; \
 __info->line2 = _line2; \
 __info->offset1 = _offset1; \
@@ -181,9 +181,9 @@ class_specifier returns [void* ast, void* name] :
         $ast = $spec.ast;
         $name = mk_scon(s1);
       }
-    | EXTENDS s1=identifier (mod=class_modification)? cmt=string_comment comp=composition T_END s2=identifier
+    | EXTENDS s1=identifier (mod=class_modification)? cmt=string_comment comp=composition s2=END_IDENT
       {
-        modelicaParserAssert(!strcmp(s1,s2), "The identifier at start and end are different", class_specifier, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
+        modelicaParserAssert(!strcmp(s1,(char*)$s2.text->chars), "The identifier at start and end are different", class_specifier, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
         $name = mk_scon(s1);
         $ast = Absyn__CLASS_5fEXTENDS($name, or_nil(mod), mk_some_or_none(cmt), comp);
       }
@@ -194,14 +194,13 @@ class_specifier2 returns [void* ast, const char *s2] @init {
   $s2 = 0;
 } :
 ( 
-  (lt=LESS ids=ident_list gt=GREATER)? cmt=string_comment c=composition T_END id=identifier
+  (lt=LESS ids=ident_list gt=GREATER)? cmt=string_comment c=composition id=END_IDENT
     {
-      $s2 = id;
+      $s2 = (char*)$id.text->chars;
       if (lt != NULL) {
         modelicaParserAssert(metamodelica_enabled(),"Polymorphic classes are only available in MetaModelica", class_specifier2, $start->line, $start->charPosition+1, $gt->line, $gt->charPosition+2);
         $ast = Absyn__PARTS(ids, c, mk_some_or_none(cmt));
       } else {
-        $s2 = id;
         $ast = Absyn__PARTS(mk_nil(), c, mk_some_or_none(cmt));
       }
     }
@@ -600,13 +599,13 @@ constraint_clause returns [void* ast] :
     ;
 
 equation_annotation_list returns [void* ast] :
-  { LA(1) == T_END || LA(1) == CONSTRAINT || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }? {ast = mk_nil();}
+  { LA(1) == END_IDENT || LA(1) == CONSTRAINT || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }? {ast = mk_nil();}
   |
   ( eq=equation SEMICOLON {e = eq.ast;} | e=annotation SEMICOLON {e = Absyn__EQUATIONITEMANN(e);}) es=equation_annotation_list {ast = mk_cons(e,es);}
   ;
 
 constraint_annotation_list returns [void* ast] :
-  { LA(1) == T_END || LA(1) == CONSTRAINT || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }? {ast = mk_nil();}
+  { LA(1) == END_IDENT || LA(1) == CONSTRAINT || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }? {ast = mk_nil();}
   |
   ( eq=equation SEMICOLON {e = eq.ast;} | e=annotation SEMICOLON {e = Absyn__EQUATIONITEMANN(e);}) es=constraint_annotation_list {ast = mk_cons(e,es);}
   ;
@@ -621,7 +620,7 @@ initial_algorithm_clause returns [void* ast] :
   ;
 
 algorithm_annotation_list returns [void* ast] :
-  { LA(1) == T_END || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }? {ast = mk_nil();}
+  { LA(1) == END_IDENT || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }? {ast = mk_nil();}
   |
   ( al=algorithm SEMICOLON {a = al.ast;} | a=annotation SEMICOLON {a = Absyn__ALGORITHMITEMANN(a);}) as=algorithm_annotation_list {ast = mk_cons(a,as);}
   ;
@@ -719,34 +718,39 @@ equality_or_noretcall_equation returns [void* ast] :
     )
   ;
 
-conditional_equation_e returns [void* ast] :
-  IF e=expression THEN then_b=equation_list else_if_b=equation_elseif_list? ( ELSE else_b=equation_list )? T_END IF
+conditional_equation_e returns [void* ast] @init {
+  i=0;
+} :
+  IF e=expression THEN then_b=equation_list else_if_b=equation_elseif_list? ( ELSE else_b=equation_list )? (i=END_IF|t=END_IDENT|t=END_FOR|t=END_WHEN)
     {
+      modelicaParserAssert(i,else_b ? "Expected 'end if'; did you use a nested 'else if' instead of 'elseif'?" : "Expected 'end if'",conditional_equation_e,t->line, t->charPosition+1, LT(1)->line, LT(1)->charPosition+1);
       ast = Absyn__EQ_5fIF(e, then_b, or_nil(else_if_b), or_nil(else_b));
     }
   ;
 
-conditional_equation_a returns [void* ast] :
-  IF e=expression THEN then_b=algorithm_list else_if_b=algorithm_elseif_list? ( ELSE else_b=algorithm_list )? T_END IF
+conditional_equation_a returns [void* ast] @init {
+  i=0;
+} : IF e=expression THEN then_b=algorithm_list else_if_b=algorithm_elseif_list? ( ELSE else_b=algorithm_list )? (i=END_IF|t=END_IDENT|t=END_FOR|t=END_WHEN|t=END_WHILE)
     {
+      modelicaParserAssert(i,else_b ? "Expected 'end if'; did you use a nested 'else if' instead of 'elseif'?" : "Expected 'end if'",conditional_equation_a,t->line, t->charPosition+1, LT(1)->line, LT(1)->charPosition+1);
       ast = Absyn__ALG_5fIF(e, then_b, or_nil(else_if_b), or_nil(else_b));
     }
   ;
 
 for_clause_e returns [void* ast] :
-  FOR is=for_indices LOOP es=equation_list T_END FOR {ast = Absyn__EQ_5fFOR(is,es);}
+  FOR is=for_indices LOOP es=equation_list END_FOR {ast = Absyn__EQ_5fFOR(is,es);}
   ;
 
 for_clause_a returns [void* ast] :
-  FOR is=for_indices LOOP as=algorithm_list T_END FOR {ast = Absyn__ALG_5fFOR(is,as);}
+  FOR is=for_indices LOOP as=algorithm_list END_FOR {ast = Absyn__ALG_5fFOR(is,as);}
   ;
 
 while_clause returns [void* ast] :
-  WHILE e=expression LOOP as=algorithm_list T_END WHILE { ast = Absyn__ALG_5fWHILE(e,as); }
+  WHILE e=expression LOOP as=algorithm_list END_WHILE { ast = Absyn__ALG_5fWHILE(e,as); }
   ;
 
 when_clause_e returns [void* ast] :
-  WHEN e=expression THEN body=equation_list es=else_when_e_list? T_END WHEN
+  WHEN e=expression THEN body=equation_list es=else_when_e_list? END_WHEN
     {
       ast = Absyn__EQ_5fWHEN_5fE(e,body,or_nil(es));
     }
@@ -761,7 +765,7 @@ else_when_e returns [void* ast] :
   ;
 
 when_clause_a returns [void* ast] :
-  WHEN e=expression THEN body=algorithm_list es=else_when_a_list? T_END WHEN
+  WHEN e=expression THEN body=algorithm_list es=else_when_a_list? END_WHEN
     {
       ast = Absyn__ALG_5fWHEN_5fA(e,body,or_nil(es));
     }
@@ -798,13 +802,13 @@ equation_list_then returns [void* ast] :
 
 
 equation_list returns [void* ast] :
-  {LA(1) != T_END || (LA(1) == T_END && LA(2) != IDENT)}? {ast = mk_nil();}
+  {LA(1) != END_IDENT || LA(1) != END_IF || LA(1) != END_WHEN || LA(1) != END_FOR}? {ast = mk_nil();}
   |
   ( e=equation SEMICOLON es=equation_list ) {ast = mk_cons(e.ast,es);}
   ;
 
 algorithm_list returns [void* ast] :
-  {LA(1) != T_END || (LA(1) == T_END && LA(2) != IDENT)}? {ast = mk_nil();}
+  {LA(1) != END_IDENT || LA(1) != END_IF || LA(1) != END_WHEN || LA(1) != END_FOR || LA(1) != END_WHILE}? {ast = mk_nil();}
   | a=algorithm SEMICOLON as=algorithm_list {ast = mk_cons(a.ast,as);}
   ;
 
@@ -1342,11 +1346,11 @@ match_expression returns [void* ast] :
   ( (ty=MATCHCONTINUE exp=expression cmt=string_comment
      es=local_clause
      cs=cases
-     T_END MATCHCONTINUE)
+     END_MATCHCONTINUE)
   | (ty=MATCH exp=expression cmt=string_comment
      es=local_clause
      cs=cases
-     T_END MATCH)
+     END_MATCH)
   )
      {
        ast = Absyn__MATCHEXP(ty->type==MATCHCONTINUE ? Absyn__MATCHCONTINUE : Absyn__MATCH, exp, or_nil(es), cs, mk_some_or_none(cmt));
