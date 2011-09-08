@@ -5897,8 +5897,8 @@ protected
   BackendDAE.IncidenceMatrix m,mT,m_1,mT_1;
   array<Integer> v1,v2,v1_1,v2_1;
   BackendDAE.StrongComponents comps;
-  list<tuple<preoptimiseDAEModule,String>> preOptModules;
-  list<tuple<pastoptimiseDAEModule,String>> pastOptModules;
+  list<tuple<preoptimiseDAEModule,String,Boolean>> preOptModules;
+  list<tuple<pastoptimiseDAEModule,String,Boolean>> pastOptModules;
   tuple<daeHandlerFunc,String> daeHandler;
 algorithm
   
@@ -5910,14 +5910,14 @@ algorithm
   Debug.fcall("dumpdaelow", BackendDump.dump, inDAE);
   System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   // pre optimisation phase
-  optdae := preoptimiseDAE(inDAE,functionTree,preOptModules);
+  (optdae,Util.SUCCESS()) := preoptimiseDAE(inDAE,functionTree,preOptModules);
 
   // transformation phase (matching and sorting using a index reduction method
   (sode,v1,v2,comps) := transformDAE(optdae,functionTree,NONE(),daeHandler);
   Debug.fcall("bltdump", BackendDump.bltdump, ("bltdump",sode,v1,v2,comps));
 
   // past optimisation phase
-  (sode,outAss1,outAss2,outComps) := pastoptimiseDAE(sode,functionTree,pastOptModules,v1,v2,comps,daeHandler);
+  (sode,outAss1,outAss2,outComps,Util.SUCCESS()) := pastoptimiseDAE(sode,functionTree,pastOptModules,v1,v2,comps,daeHandler);
   
   sode1 := BackendDAECreate.findZeroCrossings(sode);
   Debug.execStat("findZeroCrossings",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
@@ -5937,10 +5937,10 @@ public function preOptimiseBackendDAE
   input Option<list<String>> strPreOptModules;
   output BackendDAE.BackendDAE outDAE;
 protected
-  list<tuple<preoptimiseDAEModule,String>> preOptModules;
+  list<tuple<preoptimiseDAEModule,String,Boolean>> preOptModules;
 algorithm
   preOptModules := getPreOptModules(strPreOptModules);
-  outDAE := preoptimiseDAE(inDAE,functionTree,preOptModules);
+  (outDAE,Util.SUCCESS()) := preoptimiseDAE(inDAE,functionTree,preOptModules);
 end preOptimiseBackendDAE;
 
 protected function preoptimiseDAE
@@ -5948,35 +5948,35 @@ protected function preoptimiseDAE
   Run the optimisation modules"
   input BackendDAE.BackendDAE inDAE;
   input DAE.FunctionTree functionTree;
-  input list<tuple<preoptimiseDAEModule,String>> optModules;
+  input list<tuple<preoptimiseDAEModule,String,Boolean>> optModules;
   output BackendDAE.BackendDAE outDAE;
+  output Util.Status status;
 algorithm
-  outDAE := matchcontinue (inDAE,functionTree,optModules)
+  (outDAE,status) := matchcontinue (inDAE,functionTree,optModules)
     local 
       BackendDAE.BackendDAE dae,dae1,dae2;
       DAE.FunctionTree funcs;
       preoptimiseDAEModule optModule;
-      list<tuple<preoptimiseDAEModule,String>> rest;
+      list<tuple<preoptimiseDAEModule,String,Boolean>> rest;
       String str,moduleStr;
       Option<BackendDAE.IncidenceMatrix> m,mT,m1,mT1,m2,mT2;
-    case (dae,funcs,{}) then dae;
-    case (dae,funcs,(optModule,moduleStr)::rest)
+      Boolean b;
+    case (dae,funcs,{}) then (dae,Util.SUCCESS());
+    case (dae,funcs,(optModule,moduleStr,_)::rest)
       equation
         dae1 = optModule(dae,funcs);
         Debug.execStat("preOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         Debug.fcall("optdaedump", print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
         Debug.fcall("optdaedump", BackendDump.dump, dae1);
-        dae2 = preoptimiseDAE(dae1,funcs,rest);
-      then
-        dae2;
-    case (dae,funcs,(optModule,moduleStr)::rest)
+        (dae2,status) = preoptimiseDAE(dae1,funcs,rest);
+      then (dae2,status);
+    case (dae,funcs,(optModule,moduleStr,b)::rest)
       equation
         Debug.execStat("<failed> preOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         str = stringAppendList({"Optimisation Module ",moduleStr," failed."});
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
-        dae1 = preoptimiseDAE(dae,funcs,rest);
-      then
-        dae1;
+        Debug.bcall2(not b,Error.addMessage, Error.INTERNAL_ERROR, {str});
+        (dae,status) = preoptimiseDAE(dae,funcs,rest);
+      then (dae,Util.if_(b,Util.FAILURE(),status));
   end matchcontinue;
 end preoptimiseDAE;
 
@@ -6053,7 +6053,7 @@ protected function pastoptimiseDAE
   Run the optimisation modules"
   input BackendDAE.BackendDAE inDAE;
   input DAE.FunctionTree functionTree;
-  input list<tuple<pastoptimiseDAEModule,String>> optModules;
+  input list<tuple<pastoptimiseDAEModule,String,Boolean>> optModules;
   input array<Integer> inAss1;
   input array<Integer> inAss2;
   input BackendDAE.StrongComponents inComps;
@@ -6062,37 +6062,39 @@ protected function pastoptimiseDAE
   output array<Integer> outAss1;
   output array<Integer> outAss2;
   output BackendDAE.StrongComponents outComps;
+  output Util.Status status;
 algorithm
-  (outDAE,outAss1,outAss2,outComps):=
+  (outDAE,outAss1,outAss2,outComps,status):=
   matchcontinue (inDAE,functionTree,optModules,inAss1,inAss2,inComps,daeHandler)
     local 
       BackendDAE.BackendDAE dae,dae1,dae2;
       DAE.FunctionTree funcs;
       pastoptimiseDAEModule optModule;
-      list<tuple<pastoptimiseDAEModule,String>> rest;
+      list<tuple<pastoptimiseDAEModule,String,Boolean>> rest;
       String str,moduleStr;
       BackendDAE.IncidenceMatrix m,mT,m1,mT1,m2,mT2;
       array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2;
       BackendDAE.StrongComponents comps,comps1,comps2;
-      Boolean runMatching;
-    case (dae,funcs,{},v1,v2,comps,_) then (dae,v1,v2,comps);
-    case (dae,funcs,(optModule,moduleStr)::rest,v1,v2,comps,daeHandler)
+      Boolean runMatching,b;
+    case (dae,funcs,{},v1,v2,comps,_) then (dae,v1,v2,comps,Util.SUCCESS());
+    case (dae,funcs,(optModule,moduleStr,_)::rest,v1,v2,comps,daeHandler)
       equation
         (dae1,v1_1,v2_1,comps1,runMatching) = optModule(dae,funcs,v1,v2,comps);
         Debug.execStat("pastOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         Debug.fcall("optdaedump", print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
         Debug.fcall("optdaedump", BackendDump.dump, dae1);
         (dae1,v1_1,v2_1,comps1) = checktransformDAE(runMatching,dae1,funcs,v1_1,v2_1,comps1,daeHandler);
-        (dae2,v1_2,v2_2,comps2) = pastoptimiseDAE(dae1,funcs,rest,v1_1,v2_1,comps1,daeHandler);
+        (dae2,v1_2,v2_2,comps2,status) = pastoptimiseDAE(dae1,funcs,rest,v1_1,v2_1,comps1,daeHandler);
       then
-        (dae2,v1_2,v2_2,comps2);
-    case (dae,funcs,(optModule,moduleStr)::rest,v1,v2,comps,daeHandler)
+        (dae2,v1_2,v2_2,comps2,status);
+    case (dae,funcs,(optModule,moduleStr,b)::rest,v1,v2,comps,daeHandler)
       equation
+        Debug.execStat("pastOpt <failed> " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         str = stringAppendList({"Optimisation Module ",moduleStr," failed."});
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
-        (dae1,v1_1,v2_1,comps1) = pastoptimiseDAE(dae,funcs,rest,v1,v2,comps,daeHandler);
+        Debug.bcall2(not b,Error.addMessage, Error.INTERNAL_ERROR, {str});
+        (dae1,v1_1,v2_1,comps1,status) = pastoptimiseDAE(dae,funcs,rest,v1,v2,comps,daeHandler);
       then   
-        (dae1,v1_1,v2_1,comps1);
+        (dae1,v1_1,v2_1,comps1,Util.if_(b,Util.FAILURE(),status));
   end matchcontinue;
 end pastoptimiseDAE;
 
@@ -6198,30 +6200,32 @@ public function getPreOptModulesString
 " function: getPreOptModulesString"
   output list<String> strPreOptModules;
 algorithm
- strPreOptModules := RTOpts.getPreOptModules({"removeFinalParameters","removeEqualFunctionCalls","removeSimpleEquations","expandDerOperator"});
+ strPreOptModules := RTOpts.getPreOptModules({"removeFinalParameters","removeEqualFunctionCalls","removeSimpleEquations","expandDerOperator","partitionIndependentBlocks"});
 end getPreOptModulesString;
 
 protected function getPreOptModules
 " function: getPreOptModules"
   input Option<list<String>> ostrPreOptModules;
-  output list<tuple<preoptimiseDAEModule,String>> preOptModules;
-protected 
-  list<tuple<preoptimiseDAEModule,String>> allPreOptModules;
+  output list<tuple<preoptimiseDAEModule,String,Boolean>> preOptModules;
+protected
+  list<tuple<preoptimiseDAEModule,String,Boolean>> allPreOptModules;
   list<String> strPreOptModules;
 algorithm
-  allPreOptModules := {(BackendDAEOptimize.removeSimpleEquations,"removeSimpleEquations"),
-          (BackendDAEOptimize.inlineArrayEqn,"inlineArrayEqn"), 
-          (BackendDAEOptimize.removeFinalParameters,"removeFinalParameters"),
-          (BackendDAEOptimize.removeEqualFunctionCalls,"removeEqualFunctionCalls"),
-          (BackendDAEOptimize.removeProtectedParameters,"removeProtectedParameters"),
-          (BackendDAEOptimize.removeUnusedParameter,"removeUnusedParameter"),
-          (BackendDAEOptimize.removeUnusedVariables,"removeUnusedVariables"),
-          (BackendDAEOptimize.partitionIndependentBlocks,"partitionIndependentBlocks"),
-          (BackendDAECreate.expandDerOperator,"expandDerOperator")};
- strPreOptModules := getPreOptModulesString();
- strPreOptModules := Util.getOptionOrDefault(ostrPreOptModules,strPreOptModules);
- preOptModules := selectOptModules(strPreOptModules,allPreOptModules,{});
- preOptModules := listReverse(preOptModules);
+  allPreOptModules := {
+          (BackendDAEOptimize.removeSimpleEquations,"removeSimpleEquations",false),
+          (BackendDAEOptimize.inlineArrayEqn,"inlineArrayEqn",false),
+          (BackendDAEOptimize.removeFinalParameters,"removeFinalParameters",false),
+          (BackendDAEOptimize.removeEqualFunctionCalls,"removeEqualFunctionCalls",false),
+          (BackendDAEOptimize.removeProtectedParameters,"removeProtectedParameters",false),
+          (BackendDAEOptimize.removeUnusedParameter,"removeUnusedParameter",false),
+          (BackendDAEOptimize.removeUnusedVariables,"removeUnusedVariables",false),
+          (BackendDAEOptimize.partitionIndependentBlocks,"partitionIndependentBlocks",true),
+          (BackendDAECreate.expandDerOperator,"expandDerOperator",false)
+  };
+  strPreOptModules := getPreOptModulesString();
+  strPreOptModules := Util.getOptionOrDefault(ostrPreOptModules,strPreOptModules);
+  preOptModules := selectOptModules(strPreOptModules,allPreOptModules,{});
+  preOptModules := listReverse(preOptModules);
 end getPreOptModules;
 
 public function getPastOptModulesString
@@ -6234,19 +6238,19 @@ end getPastOptModulesString;
 protected function getPastOptModules
 " function: getPastOptModules"
   input Option<list<String>> ostrPastOptModules;
-  output list<tuple<pastoptimiseDAEModule,String>> pastOptModules;
+  output list<tuple<pastoptimiseDAEModule,String,Boolean>> pastOptModules;
 protected 
-  list<tuple<pastoptimiseDAEModule,String>> allPastOptModules;
+  list<tuple<pastoptimiseDAEModule,String,Boolean>> allPastOptModules;
   list<String> strPastOptModules;
 algorithm
-  allPastOptModules := {(BackendDAEOptimize.lateInline,"lateInline"),
-  (BackendDAEOptimize.removeSimpleEquationsPast,"removeSimpleEquations"),
-  (BackendDAEOptimize.removeEqualFunctionCallsPast,"removeEqualFunctionCalls"),
-  (BackendDAEOptimize.inlineArrayEqnPast,"inlineArrayEqn"),
-  (BackendDAEOptimize.removeUnusedParameterPast,"removeUnusedParameter"),
-  (BackendDAEOptimize.removeUnusedVariablesPast,"removeUnusedVariables"),
-  (BackendDAEOptimize.constantLinearSystem,"constantLinearSystem"),
-  (BackendDump.dumpComponentsGraphStr,"dumpComponentsGraphStr")};
+  allPastOptModules := {(BackendDAEOptimize.lateInline,"lateInline",false),
+  (BackendDAEOptimize.removeSimpleEquationsPast,"removeSimpleEquations",false),
+  (BackendDAEOptimize.removeEqualFunctionCallsPast,"removeEqualFunctionCalls",false),
+  (BackendDAEOptimize.inlineArrayEqnPast,"inlineArrayEqn",false),
+  (BackendDAEOptimize.removeUnusedParameterPast,"removeUnusedParameter",false),
+  (BackendDAEOptimize.removeUnusedVariablesPast,"removeUnusedVariables",false),
+  (BackendDAEOptimize.constantLinearSystem,"constantLinearSystem",false),
+  (BackendDump.dumpComponentsGraphStr,"dumpComponentsGraphStr",false)};
   strPastOptModules := getPastOptModulesString();
   strPastOptModules := Util.getOptionOrDefault(ostrPastOptModules,strPastOptModules);
   pastOptModules := selectOptModules(strPastOptModules,allPastOptModules,{});
@@ -6256,9 +6260,9 @@ end getPastOptModules;
 protected function selectOptModules
 " function: selectPreOptModules"
   input list<String> strOptModules;
-  input list<tuple<Type_a,String>> inOptModules;
-  input list<tuple<Type_a,String>> accumulator;
-  output list<tuple<Type_a,String>> outOptModules;
+  input list<tuple<Type_a,String,Boolean>> inOptModules;
+  input list<tuple<Type_a,String,Boolean>> accumulator;
+  output list<tuple<Type_a,String,Boolean>> outOptModules;
   replaceable type Type_a subtypeof Any;
 algorithm
   outOptModules:=
@@ -6266,8 +6270,8 @@ algorithm
     local 
       list<String> restStr;
       String strOptModul,optModulName,str;
-      tuple<Type_a,String> optModule;
-      list<tuple<Type_a,String>> optModules,optModules1;
+      tuple<Type_a,String,Boolean> optModule;
+      list<tuple<Type_a,String,Boolean>> optModules,optModules1;
     case ({},_,_) then {};
     case (_,{},_) then {};
     case (strOptModul::{},optModules,accumulator)
@@ -6295,22 +6299,22 @@ end selectOptModules;
 public function selectOptModules1 "
 Author Frenkel TUD 2011-02"
   input String strOptModule;
-  input list<tuple<Type_a,String>> inOptModules;
-  output tuple<Type_a,String> outOptModule;
+  input list<tuple<Type_a,String,Boolean>> inOptModules;
+  output tuple<Type_a,String,Boolean> outOptModule;
   replaceable type Type_a subtypeof Any;
 algorithm
   outOptModule := matchcontinue(strOptModule,inOptModules)
     local
       Type_a a;
       String name;
-      tuple<Type_a,String> module;
-      list<tuple<Type_a,String>> rest;
-    case(strOptModule,(module as (a,name))::rest)
+      tuple<Type_a,String,Boolean> module;
+      list<tuple<Type_a,String,Boolean>> rest;
+    case(strOptModule,(module as (a,name,_))::rest)
       equation
         true = stringEqual(name,strOptModule);
       then
         module;
-    case(strOptModule,(module as (a,name))::rest)
+    case(strOptModule,(module as (a,name,_))::rest)
       equation
         false = stringEqual(name,strOptModule);
       then

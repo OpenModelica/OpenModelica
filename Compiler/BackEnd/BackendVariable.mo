@@ -1594,7 +1594,7 @@ algorithm
   end match;
 end getVariableAttributes;
 
-protected function getVarSource
+public function getVarSource
 "function getVarSource
   author: Frenkel TUD 2011-04
   returns the DAE.ElementSource of a variable"
@@ -1709,6 +1709,13 @@ end getNominalAssert;
  *
  * =======================================================
  */
+
+public function numVariables
+  input BackendDAE.Variables vars;
+  output Integer n;
+algorithm
+  BackendDAE.VARIABLES(varArr=BackendDAE.VARIABLE_ARRAY(numberOfElements = n)) := vars;
+end numVariables;
 
 protected function vararrayLength
 "function: vararrayLength

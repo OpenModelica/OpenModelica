@@ -5711,21 +5711,12 @@ algorithm
       list<String> strs;
       Integer i,i2;
       BackendDAE.EqSystem syst;
+      list<BackendDAE.EqSystem> systs;
       BackendDAE.Shared shared;
-    case (dlow as BackendDAE.DAE({syst},shared),ftree)
+    case (BackendDAE.DAE({syst},shared),ftree)
       equation
-        // print("partitionIndependentBlocks: TODO: Implement me\n");
-        (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
-        ixs = arrayCreate(arrayLength(m),0);
-        ixsT = arrayCreate(arrayLength(mT),0);
-        i = partitionIndependentBlocks0(arrayLength(m),0,m,mT,ixs);
-        i2 = partitionIndependentBlocks0(arrayLength(mT),0,mT,m,ixsT);
-        b = i > 1;
-        Debug.bcall(b,BackendDump.dump,dlow);
-        printPartition(b,ixs);
-        printPartition(b,ixsT);
-        // BackendDump.printEquations(lst,dlow);
-      then dlow;
+        (systs,shared) = partitionIndependentBlocksHelper(syst,shared,ftree,Error.getNumErrorMessages());
+      then BackendDAE.DAE({syst},shared); // TODO: Add support for partitioned systems of equations
   end match;
 end partitionIndependentBlocks;
 
@@ -5734,10 +5725,11 @@ protected function partitionIndependentBlocksHelper
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
   input DAE.FunctionTree ftree;
+  input Integer i;
   output list<BackendDAE.EqSystem> systs;
   output BackendDAE.Shared oshared;
 algorithm
-  (systs,oshared) := match (syst,shared,ftree)
+  (systs,oshared) := matchcontinue (syst,shared,ftree,i)
     local
       BackendDAE.IncidenceMatrix m,mT;
       array<Integer> ixs,ixsT;
@@ -5746,39 +5738,152 @@ algorithm
       String str;
       list<String> strs;
       Integer i,i2;
-      BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-    case (syst,shared,ftree)
+    case (syst,shared,ftree,_)
       equation
         // print("partitionIndependentBlocks: TODO: Implement me\n");
         (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
         ixs = arrayCreate(arrayLength(m),0);
-        ixsT = arrayCreate(arrayLength(mT),0);
-        i = partitionIndependentBlocks0(arrayLength(m),0,m,mT,ixs);
-        i2 = partitionIndependentBlocks0(arrayLength(mT),0,mT,m,ixsT);
+        // ixsT = arrayCreate(arrayLength(mT),0);
+        i = partitionIndependentBlocks0(arrayLength(m),0,mT,m,ixs);
+        // i2 = partitionIndependentBlocks0(arrayLength(mT),0,mT,m,ixsT);
         b = i > 1;
-        Debug.bcall(b,BackendDump.dump,BackendDAE.DAE({syst},shared));
-        printPartition(b,ixs);
-        printPartition(b,ixsT);
-        systs = Debug.bcallret4(b,partitionIndependentBlocksSplitBlocks,i,syst,ixs,ixsT,{syst});
-        // BackendDump.printEquations(lst,dlow);
+        // Debug.bcall(b,BackendDump.dump,BackendDAE.DAE({syst},shared));
+        // printPartition(b,ixs);
+        systs = Debug.bcallret4(b,partitionIndependentBlocksSplitBlocks,i,syst,ixs,mT,{syst});
       then (systs,shared);
-  end match;
+    else
+      equation
+        Error.assertion(not (i==Error.getNumErrorMessages()),"BackendDAEOptimize.partitionIndependentBlocks failed without good error message",Absyn.dummyInfo);
+      then fail();
+  end matchcontinue;
 end partitionIndependentBlocksHelper;
 
 protected function partitionIndependentBlocksSplitBlocks
+  "Partitions the independent blocks into list<array<...>> by first constructing an array<list<...>> structure for the algorithm complexity"
   input Integer n;
   input BackendDAE.EqSystem syst;
   input array<Integer> ixs;
-  input array<Integer> ixsT;
+  input BackendDAE.IncidenceMatrix mT;
   output list<BackendDAE.EqSystem> systs;
 algorithm
-  systs := match (n,syst,ixs,ixsT)
-    case (n,syst as BackendDAE.EQSYSTEM(_,_,_,_),ixs,ixsT)
+  systs := match (n,syst,ixs,mT)
+    local
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray arr;
+      array<list<BackendDAE.Equation>> ea;
+      array<list<BackendDAE.Var>> va;
+      list<list<BackendDAE.Equation>> el;
+      list<list<BackendDAE.Var>> vl;
+      Integer i1,i2;
+      String s1,s2;
+    case (n,syst as BackendDAE.EQSYSTEM(vars,arr,_,_),ixs,mT)
       equation
-      then {syst};
+        ea = arrayCreate(n,{});
+        va = arrayCreate(n,{});
+        i1 = BackendDAEUtil.equationSize(arr);
+        i2 = BackendVariable.numVariables(vars);
+        s1 = intString(i1);
+        s2 = intString(i2);
+        Error.assertionOrAddSourceMessage(i1 == i2, Error.OVERDET_EQN_SYSTEM, {s1,s2}, Absyn.dummyInfo);
+        
+        partitionEquations(BackendDAEUtil.equationSize(arr),arr,ixs,ea);
+        partitionVars(BackendDAEUtil.equationSize(arr),arr,vars,ixs,mT,va);
+        el = arrayList(ea);
+        vl = arrayList(va);
+      then Util.listThreadMap(el,vl,createEqSystem);
   end match;
 end partitionIndependentBlocksSplitBlocks;
+
+protected function createEqSystem
+  input list<BackendDAE.Equation> el;
+  input list<BackendDAE.Var> vl;
+  output BackendDAE.EqSystem syst;
+protected
+  BackendDAE.EquationArray arr;
+  BackendDAE.Variables vars;
+  Integer i1,i2;
+  String s1,s2;
+algorithm
+  vars := BackendDAEUtil.listVar(vl);
+  arr := BackendDAEUtil.listEquation(el);
+  i1 := BackendDAEUtil.equationSize(arr);
+  i2 := BackendVariable.numVariables(vars);
+  s1 := intString(i1);
+  s2 := intString(i2);
+  // Can this even be triggered? We check that all variables are defined somewhere, so everything should be balanced already?
+  // print(Util.stringDelimitList(Util.listMapMap(vl,BackendVariable.varCref,ComponentReference.printComponentRefStr),","));
+  // BackendDump.dumpEqns(el);
+  Error.assertionOrAddSourceMessage(i1==i2,Error.IMBALANCED_EQUATIONS,{s1,s2},Absyn.dummyInfo);
+  syst := BackendDAE.EQSYSTEM(vars,arr,NONE(),NONE());
+end createEqSystem;
+
+protected function partitionEquations
+  input Integer n;
+  input BackendDAE.EquationArray arr;
+  input array<Integer> ixs;
+  input array<list<BackendDAE.Equation>> ea;
+algorithm
+  _ := match (n,arr,ixs,ea)
+    local
+      Integer ix;
+      list<BackendDAE.Equation> lst;
+      BackendDAE.Equation eq;
+    case (0,_,_,_) then ();
+    case (n,arr,ixs,ea)
+      equation
+        ix = ixs[n];
+        lst = ea[ix];
+        eq = BackendDAEUtil.equationNth(arr,n-1);
+        lst = eq::lst;
+        // print("adding eq " +& intString(n) +& " to group " +& intString(ix) +& "\n");
+        _ = arrayUpdate(ea,ix,lst);
+        partitionEquations(n-1,arr,ixs,ea);
+      then ();
+  end match;
+end partitionEquations;
+
+protected function partitionVars
+  input Integer n;
+  input BackendDAE.EquationArray arr;
+  input BackendDAE.Variables vars;
+  input array<Integer> ixs;
+  input BackendDAE.IncidenceMatrix mT;
+  input array<list<BackendDAE.Var>> va;
+algorithm
+  _ := match (n,arr,vars,ixs,mT,va)
+    local
+      Integer ix,eqix;
+      list<BackendDAE.Var> lst;
+      BackendDAE.Var v;
+      Boolean b;
+      DAE.ComponentRef cr;
+      String name;
+      Absyn.Info info;
+    case (0,_,_,_,_,_) then ();
+    case (n,arr,vars,ixs,mT,va)
+      equation
+        v = BackendVariable.getVarAt(vars,n);
+        cr = BackendVariable.varCref(v);
+        // Select any equation that could define this variable
+        b = not Util.isListEmpty(mT[n]);
+        name = Debug.bcallret1(not b,ComponentReference.printComponentRefStr,cr,"");
+        info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(v));
+        Error.assertionOrAddSourceMessage(b,Error.EQUATIONS_VAR_NOT_DEFINED,{name},info);
+        // print("adding var " +& intString(n) +& " to group ???\n");
+        eqix::_ = mT[n];
+        eqix = intAbs(eqix);
+        // print("var " +& intString(n) +& " has eq " +& intString(eqix) +& "\n");
+        // That's the index of the indep.system
+        ix = ixs[eqix];
+        lst = va[ix];
+        lst = v::lst;
+        // print("adding var " +& intString(n) +& " to group " +& intString(ix) +& " (comes from eq: "+& intString(eqix) +&")\n");
+        _ = arrayUpdate(va,ix,lst);
+        partitionVars(n-1,arr,vars,ixs,mT,va);
+      then ();
+  end match;
+end partitionVars;
 
 protected function partitionIndependentBlocks0
   input Integer n;
