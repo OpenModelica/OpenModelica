@@ -41,6 +41,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <cstdarg>
+#include <cfloat>
 #include <stdint.h>
 #include <errno.h>
 #include "rtclock.h"
@@ -248,12 +249,12 @@ void update_DAEsystem(){
       if (needToIterate)
         {
           if (sim_verbose >= LOG_EVENTS)
-            cout << "reinit call. Iteration needed!" << endl;
+            fprintf(stdout, "| info LOG_EVENTS | reinit call. Iteration needed!\n");
         }
       else
         {
           if (sim_verbose >= LOG_EVENTS)
-            cout << "discrete Var changed. Iteration needed!" << endl;
+        	fprintf(stdout, "| info LOG_EVENTS | discrete Var changed. Iteration needed!\n");
         }
       saveall();
       functionDAE(&needToIterate);
@@ -340,18 +341,18 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
 
   if (initializeEventData())
     {
-      cout << "Internal error, allocating event data structures" << endl;
+	  fprintf(stdout, "Internal error, allocating event data structures\n");
       return -1;
     }
 
   if (bound_parameters())
     {
-      printf("Error calculating bound parameters\n");
+      fprintf(stdout, "Error calculating bound parameters\n");
       return -1;
     }
   if (sim_verbose >= LOG_SOLVER)
     {
-      cout << "Calculated bound parameters" << endl;
+	  fprintf(stdout,"| info LOG_SOLVER | Calculated bound parameters\n");
     }
   // Evaluate all constant equations during initialization
   globalData->init = 1;
@@ -384,12 +385,15 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
           activateSampleEvents();
         }
       update_DAEsystem();
-      initializeZeroCrossings();
       if (sampleEvent_actived)
         {
           deactivateSampleEventsandEquations();
           sampleEvent_actived = 0;
         }
+      int tmp=0;
+      saveall();
+      CheckForNewEvent(&tmp);
+      SaveZeroCrossings();
       saveall();
       if (sim_result) sim_result->emit();
       storeExtrapolationDataEvent();
@@ -409,7 +413,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
     {
       if (sim_verbose >= LOG_SOLVER)
         {
-          cout << "Simulation done!" << endl;
+    	  fprintf(stdout,"| info LOG_SOLVER | Simulation done!\n");
         }
       globalData->terminal = 1;
       update_DAEsystem();
@@ -420,9 +424,8 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
 
   if (sim_verbose >= LOG_SOLVER)
     {
-      cout << "Performed initial value calculation." << endl;
-      cout << "Start numerical solver from " << globalData->timeValue << " to "
-          << stop << endl;
+	  fprintf(stdout,"| info LOG_SOLVER | Performed initial value calculation.\n");
+	  fprintf(stdout,"| info LOG_SOLVER | Start numerical solver from %f to %f\n",globalData->timeValue,stop);
     }
   FILE *fmt = NULL;
   uint32_t stepNo = 0;
@@ -456,8 +459,10 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
             {
               offset = globalData->timeValue - laststep;
               dideventstep = 0;
-              if (offset + 16 * uround > step)
+              if (offset + uround > step)
                 offset = 0;
+              if (sim_verbose >= LOG_SOLVER)
+            	  fprintf(stdout,"| info LOG_SOLVER | Offset value for the next step: %g\n",offset);
             }
           else
             {
@@ -475,9 +480,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
             }
           if (sim_verbose >= LOG_SOLVER)
             {
-              cout << "Call Solver from " << globalData->timeValue << " to "
-                  << globalData->timeValue + globalData->current_stepsize
-                  << endl;
+        	  fprintf(stdout,"| info LOG_SOLVER | Call Solver from %f to %f\n",globalData->timeValue,globalData->timeValue + globalData->current_stepsize);
             }
           /* do one integration step
            *
@@ -583,8 +586,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
             }
           if (sim_verbose >= LOG_SOLVER)
             {
-              cout << "** Step to " << globalData->timeValue << " Done!"
-                  << endl;
+        	  fprintf(stdout,"| info LOG_SOLVER |** Step to  %f Done!\n",globalData->timeValue);
             }
 
         }
@@ -605,8 +607,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
       cout << e.getMessage() << endl;
       if (modelTermination)
         { // terminated from assert, etc.
-          cout << "Simulation terminated at time " << globalData->timeValue
-              << endl;
+    	  fprintf(stdout, "| model terminate | Simulation terminated at time %f\n",globalData->timeValue);
           if (fmt) fclose(fmt);
           return -1;
         }
@@ -619,17 +620,17 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
         dasslStats[i] += dasslStatsTmp[i];
 
       rt_accumulate(SIM_TIMER_TOTAL);
-      fprintf(stdout, "##### Statistics #####\n");
-      fprintf(stdout, "Simulationtime : %f\n", rt_accumulated(SIM_TIMER_TOTAL));
-      fprintf(stdout, "Events: %d\n", stateEvents + sampleEvents);
-      fprintf(stdout, "State Events: %d\n", stateEvents);
-      fprintf(stdout, "Sample Events: %d\n", sampleEvents);
-      fprintf(stdout, "##### Solver Statistics #####\n");
-      fprintf(stdout, "The number of steps taken: %d\n", dasslStats[0]);
-      fprintf(stdout, "The number of calls to functionODE: %d\n", dasslStats[1]);
-      fprintf(stdout, "The evaluations of Jacobian: %d\n", dasslStats[2]);
-      fprintf(stdout, "The number of error test failures: %d\n", dasslStats[3]);
-      fprintf(stdout, "The number of convergence test failures: %d\n", dasslStats[4]);
+      fprintf(stdout, "| info LOG_STATS| ##### Statistics #####\n");
+      fprintf(stdout, "| info LOG_STATS| Simulationtime : %f\n", rt_accumulated(SIM_TIMER_TOTAL));
+      fprintf(stdout, "| info LOG_STATS| Events: %d\n", stateEvents + sampleEvents);
+      fprintf(stdout, "| info LOG_STATS| State Events: %d\n", stateEvents);
+      fprintf(stdout, "| info LOG_STATS| Sample Events: %d\n", sampleEvents);
+      fprintf(stdout, "| info LOG_STATS| ##### Solver Statistics #####\n");
+      fprintf(stdout, "| info LOG_STATS| The number of steps taken: %d\n", dasslStats[0]);
+      fprintf(stdout, "| info LOG_STATS| The number of calls to functionODE: %d\n", dasslStats[1]);
+      fprintf(stdout, "| info LOG_STATS| The evaluations of Jacobian: %d\n", dasslStats[2]);
+      fprintf(stdout, "| info LOG_STATS| The number of error test failures: %d\n", dasslStats[3]);
+      fprintf(stdout, "| info LOG_STATS| The number of convergence test failures: %d\n", dasslStats[4]);
     }
 
   deinitializeEventData();
@@ -721,7 +722,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1, int* tmpSt
     {
       if (sim_verbose >= LOG_SOLVER)
         {
-          cout << "**Calling DDASRT the first time..." << endl;
+    	  fprintf(stdout,"| info LOG_SOLVER | **Initial DDASSL.\n");
         }
       // work arrays for DASSL
       liw = 20 + globalData->nStates;
@@ -761,7 +762,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1, int* tmpSt
     {
       if (sim_verbose >= LOG_EVENTS)
         {
-          cout << "Event-management forced reset of DDASRT... " << endl;
+    	  fprintf(stdout,"| info LOG_EVENTS | Event-management forced reset of DDASRT.\n");
         }
       // obtain reset
       info[0] = 0;
@@ -780,7 +781,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1, int* tmpSt
             {
               if (sim_verbose >= LOG_SOLVER)
                 {
-                  cout << "**Desired step to small try next one. " << endl;
+            	  fprintf(stdout,"| info LOG_SOLVER | **Desired step to small try next one.\n");
                 }
               globalData->timeValue = tout;
               return 0;
@@ -788,8 +789,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1, int* tmpSt
 
           if (sim_verbose >= LOG_SOLVER)
             {
-              cout << "**Calling DDASRT from " << globalData->timeValue
-                  << " to " << tout << "..." << endl;
+        	  fprintf(stdout,"| info LOG_SOLVER | **Calling DDASRT from %f to %f .\n", globalData->timeValue,tout);
             }
 
           // Save all statesDerivatives due to avoid this in functionODE_residual
@@ -822,15 +822,16 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1, int* tmpSt
 
 
           if (sim_verbose >= LOG_SOLVER){
-              cout << " value of idid: " << idid << endl;
-              cout << " step size H to be attempted on next step: " << rwork[2] << endl;
-              cout << " current value of independent variable: " << rwork[3] << endl;
-              cout << " stepsize used on last successful step : " << rwork[6] << endl;
-              cout << " number of steps taken so far: " << iwork[10] << endl;
-              cout << " the number of calls to RES: " << iwork[11] << endl;
-              cout << " evaluations of the matrix of partial derivatives: " << iwork[12] << endl;
-              cout << " total number of error test failures: " << iwork[13] << endl;
-              cout << " total number of convergence test failures: " << iwork[14] << endl;
+        	  fprintf(stdout,"| info LOG_SOLVER | value of idid: %i\n",idid);
+        	  fprintf(stdout,"| info LOG_SOLVER | current time value: %0.4g\n", globalData->timeValue);
+        	  fprintf(stdout,"| info LOG_SOLVER | current integration time value: %0.4g\n", rwork[3]);
+        	  fprintf(stdout,"| info LOG_SOLVER | step size H to be attempted on next step: %0.4g\n", rwork[2]);
+        	  fprintf(stdout,"| info LOG_SOLVER | stepsize used on last successful step: %0.4g\n", rwork[6]);
+        	  fprintf(stdout,"| info LOG_SOLVER | number of steps taken so far: %i\n", iwork[10]);
+        	  fprintf(stdout,"| info LOG_SOLVER | number of calls of functionODE() : %i\n", iwork[11]);
+        	  fprintf(stdout,"| info LOG_SOLVER | number of calculation of Jacobian : %i\n", iwork[12]);
+        	  fprintf(stdout,"| info LOG_SOLVER | total number of convergence test failures: %i\n", iwork[13]);
+        	  fprintf(stdout,"| info LOG_SOLVER | total number of error test failures: %i\n", iwork[14]);
           }
 
           // save dassl stats
@@ -848,7 +849,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1, int* tmpSt
                 {
                   if (sim_verbose >= LOG_SOLVER)
                     {
-                      cout << "DDASRT will try again..." << endl;
+                	  fprintf(stdout,"| info LOG_SOLVER | DDASRT will try again...\n");
                     }
                   info[0] = 1; // try again
                 }
@@ -873,7 +874,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1, int* tmpSt
     {
       if (sim_verbose >= LOG_SOLVER)
         {
-          cout << "**Deleting work arrays after last DDASRT call..." << endl;
+    	  fprintf(stdout,"| info LOG_SOLVER | DDASRT finished.\n");
         }
 
     }
@@ -894,21 +895,17 @@ continue_MINE(fortran_integer* idid, double* atol, double *rtol)
     /* 1-4 means success */
     break;
   case -1:
-    std::cerr
-    << "DDASRT: A large amount of work has been expended.(About 500 steps). Trying to continue ..."
-    << std::endl;
+	fprintf(stderr, "| warning | DDASRT: A large amount of work has been expended.(About 500 steps). Trying to continue ...\n");
     retValue = true; /* adrpo: try to continue */
     break;
   case -2:
-    std::cerr << "DDASRT: The error tolerances are too stringent." << std::endl;
+	fprintf(stderr, "| error | DDASRT: The error tolerances are too stringent.\n");
     retValue = false;
     break;
   case -3:
     if (atolZeroIterations > 10)
       {
-        std::cerr
-        << "DDASRT: The local error test cannot be satisfied because you specified a zero component in ATOL and the corresponding computed solution component is zero. Thus, a pure relative error test is impossible for this component."
-        << std::endl;
+  	    fprintf(stderr, "| error | DDASRT: The local error test cannot be satisfied because you specified a zero component in ATOL and the corresponding computed solution component is zero. Thus, a pure relative error test is impossible for this component.\n");
         retValue = false;
         atolZeroIterations++;
       }
@@ -919,47 +916,35 @@ continue_MINE(fortran_integer* idid, double* atol, double *rtol)
       }
     break;
   case -6:
-    std::cerr
-    << "DDASRT: DDASSL had repeated error test failures on the last attempted step."
-    << std::endl;
+	fprintf(stderr, "| error | DDASRT: DDASSL had repeated error test failures on the last attempted step.\n");
     retValue = false;
     break;
   case -7:
-    std::cerr << "DDASRT: The corrector could not converge." << std::endl;
+	fprintf(stderr, "| error | DDASRT: The corrector could not converge.\n");
     retValue = false;
     break;
   case -8:
-    std::cerr << "DDASRT: The matrix of partial derivatives is singular."
-    << std::endl;
+	fprintf(stderr, "| error | DDASRT: The matrix of partial derivatives is singular.\n");
     retValue = false;
     break;
   case -9:
-    std::cerr
-    << "DDASRT: The corrector could not converge. There were repeated error test failures in this step."
-    << std::endl;
+	fprintf(stderr, "| error | DDASRT: The corrector could not converge. There were repeated error test failures in this step.\n");
     retValue = false;
     break;
   case -10:
-    std::cerr
-    << "DDASRT: The corrector could not converge because IRES was equal to minus one."
-    << std::endl;
+	fprintf(stderr,"| error | DDASRT: The corrector could not converge because IRES was equal to minus one.\n");
     retValue = false;
     break;
   case -11:
-    std::cerr
-    << "DDASRT: IRES equal to -2 was encountered and control is being returned to the calling program."
-    << std::endl;
+	fprintf(stderr,"| error | DDASRT: IRES equal to -2 was encountered and control is being returned to the calling program.\n");
     retValue = false;
     break;
   case -12:
-    std::cerr << "DDASRT: DDASSL failed to compute the initial YPRIME."
-    << std::endl;
+	fprintf(stderr,"| error | DDASRT: DDASSL failed to compute the initial YPRIME.\n");
     retValue = false;
     break;
   case -33:
-    std::cerr
-    << "DDASRT: The code has encountered trouble from which it cannot recover. "
-    << std::endl;
+	fprintf(stderr,"| error | DDASRT: The code has encountered trouble from which it cannot recover.\n");
     retValue = false;
     break;
   }

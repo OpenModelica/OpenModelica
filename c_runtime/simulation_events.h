@@ -99,7 +99,7 @@ static const int IterationMax = 200;
 
 #define RELATIONTOZC(res,exp1,exp2,index,op_w,op) { \
     if (index == -1){ \
-        res = (exp1) op (exp2); \
+        res = ((exp1) op (exp2)); \
     }else{ \
         res = backuprelations[index];} \
 }
@@ -136,6 +136,9 @@ SaveZeroCrossings();
 
 void
 initializeZeroCrossings();
+
+void
+correctDirectionZeroCrossings();
 
 int
 activateSampleEvents();
