@@ -1173,9 +1173,9 @@ algorithm
         (cache,newval,st);
 
     // This case prevents the constructor call of external objects of being evaluated
-    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,impl,st,msg)
+    case (cache,env as _ :: _,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,impl,st,msg)
       equation
-        cevalIsExternalObjectConstructor(cache,funcpath,env);
+        cevalIsExternalObjectConstructor(cache,funcpath,env,msg);
       then
         fail();
        
@@ -1193,7 +1193,7 @@ algorithm
     case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(builtin = false)), vallst, impl, st, msg)
       equation
         false = RTOpts.debugFlag("noevalfunc");
-        failure(cevalIsExternalObjectConstructor(cache, funcpath, env));
+        failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
         Debug.fprintln("dynload", "CALL: try constant evaluation: " +& Absyn.pathString(funcpath));
         (cache, 
          sc as SCode.CLASS(
@@ -1221,7 +1221,7 @@ algorithm
       (st as SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))),msg)
       equation
         false = RTOpts.debugFlag("nogen");
-        failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
+        failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
                 
         Debug.fprintln("dynload", "CALL: [func from file] check if is in CF list: " +& Absyn.pathString(funcpath));
         
@@ -1242,7 +1242,7 @@ algorithm
       (st as SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))),msg)
       equation
         false = RTOpts.debugFlag("nogen");
-        failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
+        failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
         
         Debug.fprintln("dynload", "CALL: [func from buffer] check if is in CF list: " +& Absyn.pathString(funcpath));
                 
@@ -1266,7 +1266,7 @@ algorithm
           SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,a,b,c,cf,lf)),msg) // yeha! we have a symboltable!
       equation
         false = RTOpts.debugFlag("nogen");
-        failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
+        failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
         
         Debug.fprintln("dynload", "CALL: [SOME SYMTAB] not in in CF list: " +& Absyn.pathString(funcpath));        
         
@@ -1308,7 +1308,7 @@ algorithm
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = false))),vallst,impl,NONE(),msg) // crap! we have no symboltable!
       equation
         false = RTOpts.debugFlag("nogen");
-        failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
+        failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
          
         Debug.fprintln("dynload", "CALL: [NO SYMTAB] not in in CF list: " +& Absyn.pathString(funcpath));         
          
@@ -1345,14 +1345,23 @@ protected function cevalIsExternalObjectConstructor
   input Env.Cache cache;
   input Absyn.Path funcpath;
   input Env.Env env;
+  input Msg msg;
 protected
   Absyn.Path funcpath2;
   DAE.Type tp;
+  Option<Absyn.Info> info;
 algorithm
-  "constructor" := Absyn.pathLastIdent(funcpath);
-  funcpath2:=Absyn.stripLast(funcpath);
-  (_,tp,_) := Lookup.lookupType(cache,env,funcpath2,SOME(Absyn.dummyInfo));
-  Types.externalObjectConstructorType(tp);
+  _ := match(cache, funcpath, env, msg)
+    case (_, _, {}, NO_MSG()) then fail();
+    case (_, _, _, NO_MSG())
+      equation
+        (funcpath2, Absyn.IDENT("constructor")) = Absyn.splitQualAndIdentPath(funcpath);
+        info = Util.if_(Util.isEqual(msg, NO_MSG()), NONE(), SOME(Absyn.dummyInfo));
+        (_, tp, _) = Lookup.lookupType(cache, env, funcpath2, info);
+        Types.externalObjectConstructorType(tp);
+      then
+        ();
+  end match;
 end cevalIsExternalObjectConstructor;
 
 protected function cevalKnownExternalFuncs "function: cevalKnownExternalFuncs

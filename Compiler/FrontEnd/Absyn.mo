@@ -3565,26 +3565,26 @@ qualified part, and ident part (all_but_last, last);
   input Path inPath;
   output Path outPath1;
   output Path outPath2;
-algorithm (outPath1,outPath2) := matchcontinue(inPath)
+algorithm (outPath1,outPath2) := match(inPath)
   local
     Path qPath,curPath,identPath;
     String s1,s2;
-  case (QUALIFIED(name = s1,path = IDENT(name = s2))) then(IDENT(s1),IDENT(s2));
-  case(QUALIFIED(name=s1, path=qPath)) equation
-    (curPath,identPath) = splitQualAndIdentPath(qPath);
-  then (QUALIFIED(s1,curPath),identPath);
-  case(FULLYQUALIFIED(qPath))
+
+  case (QUALIFIED(name = s1, path = IDENT(name = s2))) 
+    then (IDENT(s1), IDENT(s2));
+
+  case (QUALIFIED(name = s1, path = qPath)) 
     equation
-    (curPath,identPath) = splitQualAndIdentPath(qPath);
-    then
-       (curPath,identPath);
-  case(qPath)
+      (curPath, identPath) = splitQualAndIdentPath(qPath);
+    then 
+      (QUALIFIED(s1, curPath), identPath);
+
+  case (FULLYQUALIFIED(qPath))
     equation
-      print(" Failure in: " +& pathString(qPath) +& "\n");
+      (curPath, identPath) = splitQualAndIdentPath(qPath);
     then
-      fail();
-  case(_) equation print(" failure in splitQualAndIdentPath\n"); then fail();
-end matchcontinue;
+      (curPath, identPath);
+  end match;
 end splitQualAndIdentPath;
 
 public function stripFirst "function: stripFirst

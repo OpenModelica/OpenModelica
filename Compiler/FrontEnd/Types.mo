@@ -3339,7 +3339,7 @@ algorithm
   end matchcontinue;
 end propTupleAnyConst;
 
-protected function propTupleAllConst "function: propTupleAllConst
+public function propTupleAllConst "function: propTupleAllConst
   author: LS
 
   Helper function to prop_all_const.

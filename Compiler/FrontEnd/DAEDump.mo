@@ -469,11 +469,10 @@ algorithm
       DAE.ExtArg retty;
     case DAE.EXTERNALDECL(name = id,args = extargs,returnArg = retty,language = lang)
       equation
-        extargsstr = Dump.getStringList(extargs, dumpExtArgStr, ",");
+        extargsstr = Dump.getStringList(extargs, dumpExtArgStr, ", ");
         rettystr = dumpExtArgStr(retty);
-        str = stringAppendList(
-          {"EXTERNALDECL(",id,", (",extargsstr,"), ",rettystr,", \"",
-          lang,"\")"});
+        rettystr = Util.if_(stringEq(rettystr, ""), rettystr, rettystr +& " = ");
+        str = stringAppendList({"external \"", lang, "\" ", rettystr, id,"(",extargsstr,");"});
       then
         str;
   end matchcontinue;
@@ -496,27 +495,22 @@ algorithm
       DAE.Exp exp,dim;
       DAE.Attributes attr;
       
-    case DAE.NOEXTARG() then "void";
+    case DAE.NOEXTARG() then "";
     case DAE.EXTARG(componentRef = cr,attributes = DAE.ATTR(flowPrefix = fl,streamPrefix=st,variability = var,direction = dir),type_ = ty)
       equation
         crstr = ComponentReference.printComponentRefStr(cr);
-        dirstr = Dump.directionSymbol(dir);
-        tystr = Types.getTypeName(ty);
-        str = stringAppendList({dirstr," ",tystr," ",crstr});
       then
-        str;
+        crstr;
     case DAE.EXTARGEXP(exp = exp,type_ = ty)
       equation
         crstr = ExpressionDump.printExpStr(exp);
-        tystr = Types.getTypeName(ty);
-        str = stringAppendList({"(",tystr,") ",crstr});
       then
-        str;
+        crstr;
     case DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim)
       equation
         crstr = ComponentReference.printComponentRefStr(cr);
         dimstr = ExpressionDump.printExpStr(dim);
-        str = stringAppendList({"size(",crstr,",",dimstr,")"});
+        str = stringAppendList({"size(",crstr,", ",dimstr,")"});
       then
         str;
   end matchcontinue;
@@ -1319,13 +1313,13 @@ protected function dumpFunction
 algorithm
   _ := matchcontinue (inElement)
     local
-      String fstr,inlineTypeStr,daestr,str;
+      String fstr,inlineTypeStr,daestr,str, ext_decl_str;
       Absyn.Path fpath;
       list<DAE.Element> daeElts;
       DAE.Type t;
       DAE.InlineType inlineType;
-      String lang;
       Option<SCode.Comment> c;
+      DAE.ExternalDecl ext_decl;
     
     case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_DEF(body = daeElts)::_),type_ = t, comment = c)
       equation
@@ -1347,7 +1341,7 @@ algorithm
       then
         ();
 
-    case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = DAE.EXTERNALDECL(language=lang))::_),type_ = t, comment = c)
+    case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = ext_decl)::_),type_ = t, comment = c)
       equation
         Print.printBuf("function ");
         fstr = Absyn.pathStringNoQual(fpath);
@@ -1357,11 +1351,11 @@ algorithm
         Print.printBuf(dumpCommentOptionStr(c));
         Print.printBuf("\n");
         dumpFunctionElements(daeElts);
-        Print.printBuf("\n  external \"C\";\n");
+        ext_decl_str = dumpExtDeclStr(ext_decl);
+        Print.printBuf("\n  " +& ext_decl_str +& "\n");
         Print.printBuf("end ");
         Print.printBuf(fstr);
         Print.printBuf(";\n\n");
-
       then
         ();
     
@@ -2742,9 +2736,6 @@ algorithm
        // classify DAE 
        (v,ie,ia,e,a,o) = DAEUtil.splitElements(l);
 
-       // dump objects
-       str = IOStream.appendList(str, Util.listMap(o, dumpExtObjClassStr));
-
        // dump variables
        str = dumpVarsStream(v, false, str);
 
@@ -3299,14 +3290,20 @@ protected function dumpExtObjClassStr
 algorithm
   outString := matchcontinue (inElement)
     local
-      String fstr,str,c_str,d_str;
+      String s1, s2;
       Absyn.Path fpath;
-    case DAE.EXTOBJECTCLASS(path = fpath)
+
+    case DAE.EXTOBJECTCLASS(path = _)
       equation
-        fstr = Absyn.pathString(fpath);
-        str = stringAppendList({"class  ",fstr,"\n  extends ExternalObject;\nend ",fstr,";\n"});
+        s1 = Print.getString();
+        Print.clearBuf();
+        dumpExtObjectClass(inElement);
+        s2 = Print.getString();
+        Print.clearBuf();
+        Print.printBuf(s1);
       then
-        str;
+        s2;
+
     case _ then "";
   end matchcontinue;
 end dumpExtObjClassStr;
@@ -3320,7 +3317,7 @@ protected function dumpFunctionStream
 algorithm
   outStream := matchcontinue (inElement, inStream)
     local
-      String fstr, lang;
+      String fstr, ext_decl_str;
       Absyn.Path fpath;
       list<DAE.Element> daeElts;
       DAE.Type t;
@@ -3328,6 +3325,7 @@ algorithm
       DAE.InlineType inlineType;
       IOStream.IOStream str;
       Option<SCode.Comment> c;
+      DAE.ExternalDecl ext_decl;
       
     case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_DEF(body = daeElts)::_),type_ = t, comment = c), str)
       equation
@@ -3348,7 +3346,7 @@ algorithm
       then
         str;
 
-      case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = DAE.EXTERNALDECL(language=lang))::_),type_ = t, comment = c), str)
+      case (DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts, externalDecl = ext_decl)::_),type_ = t, comment = c), str)
       equation
         fstr = Absyn.pathStringNoQual(fpath);
         str = IOStream.append(str, "function ");
@@ -3357,7 +3355,8 @@ algorithm
         str = IOStream.append(str, dumpCommentOptionStr(c));
         str = IOStream.append(str, "\n");
         str = dumpFunctionElementsStream(daeElts, str);
-        str = IOStream.appendList(str, {"\n  external \"",lang,"\";\nend ",fstr,";\n\n"});
+        ext_decl_str = dumpExtDeclStr(ext_decl);
+        str = IOStream.appendList(str, {"\n  ", ext_decl_str, "\nend ", fstr, ";\n\n"});
       then
         str;
 

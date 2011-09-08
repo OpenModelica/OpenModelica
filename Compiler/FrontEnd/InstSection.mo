@@ -1194,7 +1194,11 @@ algorithm
       SCode.Initial initial_;
       Boolean impl;
       String e1_str,t1_str,e2_str,t2_str,s1,s2;
-    case (e1,(p1 as DAE.PROP(type_ = t1)),e2,(p2 as DAE.PROP(type_ = t2)),source,initial_,impl) /* impl PR. e1= lefthandside, e2=righthandside
+      DAE.Const c;
+      DAE.TupleConst tp;
+
+    case (e1, (p1 as DAE.PROP(type_ = t1)),
+          e2, (p2 as DAE.PROP(type_ = t2, constFlag = c)), source, initial_, impl) /* impl PR. e1= lefthandside, e2=righthandside
    This seem to be a strange function. 
    wich rule is matched? or is both rules matched?
    LS: Static.type_convert in Static.match_prop can probably fail,
@@ -1204,39 +1208,48 @@ algorithm
    If it fails then this rule is matched. 
    BZ(2007-05-30): Not so strange it checks for eihter exp1 or exp2 to be from expected type.*/ 
       equation 
-        (e1_1,DAE.PROP(t_1,_)) = Types.matchProp(e1, p1, p2, false);
-        dae = instEqEquation2(e1_1, e2, t_1, source, initial_);
+        (e1_1, DAE.PROP(t_1, _)) = Types.matchProp(e1, p1, p2, false);
+        dae = instEqEquation2(e1_1, e2, t_1, c, source, initial_);
       then
         dae;
-    case (e1,(p1 as DAE.PROP(type_ = t1)),e2,(p2 as DAE.PROP(type_ = t2)),source,initial_,impl) /* If it fails then this rule is matched. */ 
+
+    case (e1, (p1 as DAE.PROP(type_ = t1)),
+          e2, (p2 as DAE.PROP(type_ = t2, constFlag = c)), source, initial_, impl) /* If it fails then this rule is matched. */ 
       equation 
-        (e2_1,DAE.PROP(t_1,_)) = Types.matchProp(e2, p2, p1, true);
-        dae = instEqEquation2(e1, e2_1, t_1, source, initial_);
+        (e2_1, DAE.PROP(t_1, _)) = Types.matchProp(e2, p2, p1, true);
+        dae = instEqEquation2(e1, e2_1, t_1, c, source, initial_);
       then
         dae;
-    case (e1,(p1 as DAE.PROP_TUPLE(type_ = t1)),e2,(p2 as DAE.PROP_TUPLE(type_ = t2)),source,initial_,impl) /* PR. */ 
+
+    case (e1, (p1 as DAE.PROP_TUPLE(type_ = t1)),
+          e2, (p2 as DAE.PROP_TUPLE(type_ = t2, tupleConst = tp)), source, initial_, impl) /* PR. */ 
       equation 
-        (e1_1,DAE.PROP_TUPLE(t_1,_)) = Types.matchProp(e1, p1, p2, false);
-        dae = instEqEquation2(e1_1, e2, t_1, source, initial_);
+        (e1_1, DAE.PROP_TUPLE(t_1, _)) = Types.matchProp(e1, p1, p2, false);
+        c = Types.propTupleAllConst(tp);
+        dae = instEqEquation2(e1_1, e2, t_1, c, source, initial_);
       then
         dae;
-    case (e1,(p1 as DAE.PROP_TUPLE(type_ = t1)),e2,(p2 as DAE.PROP_TUPLE(type_ = t2)),source,initial_,impl) /* PR. 
-      An assignment to a varaible of T_ENUMERATION type is an explicit 
+
+    case (e1, (p1 as DAE.PROP_TUPLE(type_ = t1)), 
+          e2, (p2 as DAE.PROP_TUPLE(type_ = t2, tupleConst = tp)), source, initial_, impl) /* PR. 
+      An assignment to a variable of T_ENUMERATION type is an explicit 
       assignment to the value componnent of the enumeration, i.e. having 
       a type T_ENUM
    */ 
       equation 
-        (e2_1,DAE.PROP_TUPLE(t_1,_)) = Types.matchProp(e2, p2, p1, true);
-        dae = instEqEquation2(e1, e2_1, t_1, source, initial_);
+        (e2_1, DAE.PROP_TUPLE(t_1, _)) = Types.matchProp(e2, p2, p1, true);
+        c = Types.propTupleAllConst(tp);
+        dae = instEqEquation2(e1, e2_1, t_1, c, source, initial_);
       then
         dae;
 
-    case ((e1 as DAE.CREF(componentRef = _)),DAE.PROP(type_ = (DAE.T_ENUMERATION(names = _),_)),
-           e2,DAE.PROP(type_ = (t as (DAE.T_ENUMERATION(names = _),_))),source,initial_,impl)
+    case ((e1 as DAE.CREF(componentRef = _)), DAE.PROP(type_ = (DAE.T_ENUMERATION(names = _), _)),
+           e2, DAE.PROP(type_ = (t as (DAE.T_ENUMERATION(names = _), _)), constFlag = c), source, initial_, impl)
       equation 
-        dae = instEqEquation2(e1, e2, t, source, initial_);
+        dae = instEqEquation2(e1, e2, t, c, source, initial_);
       then
         dae;
+
     case (e1,DAE.PROP(type_ = t1),e2,DAE.PROP(type_ = t2),source,initial_,impl)
       equation
         e1_str = ExpressionDump.printExpStr(e1);
@@ -1259,11 +1272,12 @@ protected function instEqEquation2
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
   input DAE.Type inType3;
+  input DAE.Const inConst;
   input DAE.ElementSource source "the origin of the element";
   input SCode.Initial inInitial4;
   output DAE.DAElist outDae;
 algorithm 
-  outDae := matchcontinue (inExp1,inExp2,inType3,source,inInitial4)
+  outDae := matchcontinue (inExp1,inExp2,inType3, inConst, source,inInitial4)
     local
       DAE.DAElist dae; DAE.Exp e1,e2;
       SCode.Initial initial_;
@@ -1279,66 +1293,66 @@ algorithm
       Option<DAE.Type> bc;
       DAE.EqualityConstraint ec;
 
-    case (e1,e2,(DAE.T_INTEGER(varLstInt = _),_),source,initial_)
+    case (e1,e2,(DAE.T_INTEGER(varLstInt = _),_),_,source,initial_)
       equation 
         dae = makeDaeEquation(e1, e2, source, initial_);
       then
         dae;
-    case (e1,e2,(DAE.T_REAL(varLstReal = _),_),source,initial_)
+    case (e1,e2,(DAE.T_REAL(varLstReal = _),_),_,source,initial_)
       equation 
         dae = makeDaeEquation(e1, e2, source, initial_);
       then
         dae;
-    case (e1,e2,(DAE.T_STRING(varLstString = _),_),source,initial_)
+    case (e1,e2,(DAE.T_STRING(varLstString = _),_),_,source,initial_)
       equation 
         dae = makeDaeEquation(e1, e2, source, initial_);
       then
         dae;
-    case (e1,e2,(DAE.T_BOOL(varLstBool = _),_),source,initial_)
+    case (e1,e2,(DAE.T_BOOL(varLstBool = _),_),_,source,initial_)
       equation 
         dae = makeDaeEquation(e1, e2, source, initial_);
       then
         dae;
 
-    case (DAE.CREF(componentRef = cr,ty = t),e2,(DAE.T_ENUMERATION(names = _),_),source,initial_)
+    case (DAE.CREF(componentRef = cr,ty = t),e2,(DAE.T_ENUMERATION(names = _),_),_,source,initial_)
       equation 
         dae = makeDaeDefine(cr, e2, source, initial_);
       then
         dae;
 
     /* array equations */
-    case (e1,e2,(tt as (DAE.T_ARRAY(arrayDim = _),_)),source,initial_)
+    case (e1,e2,(tt as (DAE.T_ARRAY(arrayDim = _),_)),_,source,initial_)
       equation
-        dae = instArrayEquation(e1, e2, tt, source, initial_);
+        dae = instArrayEquation(e1, e2, tt, inConst, source, initial_);
       then dae;
 
     /* tuples */
-    case (e1,e2,(DAE.T_TUPLE(tupleType = _),_),source,initial_) 
+    case (e1,e2,(DAE.T_TUPLE(tupleType = _),_),_,source,initial_) 
       equation 
         dae = makeDaeEquation(e1, e2, source, initial_);
       then
         dae;
 
     /* MetaModelica types */
-    case (e1,e2,(DAE.T_LIST(_),_),source,initial_)
+    case (e1,e2,(DAE.T_LIST(_),_),_,source,initial_)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         dae = makeDaeEquation(e1, e2, source, initial_);
       then
         dae;
-    case (e1,e2,(DAE.T_METATUPLE(_),_),source,initial_)
+    case (e1,e2,(DAE.T_METATUPLE(_),_),_,source,initial_)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         dae = makeDaeEquation(e1, e2, source, initial_);
       then
         dae;
-    case (e1,e2,(DAE.T_METAOPTION(_),_),source,initial_)
+    case (e1,e2,(DAE.T_METAOPTION(_),_),_,source,initial_)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         dae = makeDaeEquation(e1, e2, source, initial_);
       then
         dae;
-    case (e1,e2,(DAE.T_UNIONTYPE(paths=_),_),source,initial_)
+    case (e1,e2,(DAE.T_UNIONTYPE(paths=_),_),_,source,initial_)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         dae = makeDaeEquation(e1, e2, source, initial_);
@@ -1346,19 +1360,20 @@ algorithm
         dae;
     /* -------------- */
     /* Complex types extending basic type */
-    case (e1,e2,(DAE.T_COMPLEX(complexTypeOption = SOME(tt)),_),source,initial_) 
+    case (e1,e2,(DAE.T_COMPLEX(complexTypeOption = SOME(tt)),_),_,source,initial_) 
       equation 
-        dae = instEqEquation2(e1, e2, tt, source, initial_);
+        dae = instEqEquation2(e1, e2, tt, inConst, source, initial_);
       then
         dae;
   
     // Complex equation for records on form e1 = e2, expand to equality over record elements 
-    case (DAE.CREF(componentRef=_),DAE.CREF(componentRef=_),(DAE.T_COMPLEX(complexVarLst = {}),_),source,initial_) 
+    case
+      (DAE.CREF(componentRef=_),DAE.CREF(componentRef=_),(DAE.T_COMPLEX(complexVarLst = {}),_), _,source,initial_) 
       then DAEUtil.emptyDae;
     
     case (DAE.CREF(componentRef = c1,ty = t1),DAE.CREF(componentRef = c2,ty = t2),
           (DAE.T_COMPLEX(complexClassType = cs,complexVarLst = (DAE.TYPES_VAR(name = n,ty = tt) :: vs),
-          complexTypeOption = bc, equalityConstraint = ec),p),source,initial_)
+          complexTypeOption = bc, equalityConstraint = ec),p), _, source,initial_)
       equation 
         ty2 = Types.elabType(tt);
         c1_1 = ComponentReference.crefPrependIdent(c1, n, {}, ty2);
@@ -1366,17 +1381,18 @@ algorithm
         
         e1 = Expression.makeCrefExp(c1_1,ty2);
         e2 = Expression.makeCrefExp(c2_1,ty2);
-        dae1 = instEqEquation2(e1, e2, tt, source, initial_);
+        dae1 = instEqEquation2(e1, e2, tt, inConst, source, initial_);
         e1 = Expression.makeCrefExp(c1,t1);
         e2 = Expression.makeCrefExp(c2,t2);
-        dae2 = instEqEquation2(e1, e2, (DAE.T_COMPLEX(cs,vs,bc,ec),p), source, initial_);
+        dae2 = instEqEquation2(e1, e2, (DAE.T_COMPLEX(cs,vs,bc,ec),p), inConst, source, initial_);
         
         dae = DAEUtil.joinDaes(dae1, dae2);
       then
         dae;
         
     // split a constant complex equation to its elements 
-    case ((e1 as DAE.CREF(assignedCr,_)),(e2 as DAE.CALL(attr=DAE.CALL_ATTR(ty=ty))),tt as (DAE.T_COMPLEX(complexVarLst = _),_),source,initial_)
+    case ((e1 as DAE.CREF(assignedCr,_)),(e2 as DAE.CALL(attr=DAE.CALL_ATTR(ty=ty))),
+        tt as (DAE.T_COMPLEX(complexVarLst = _),_), DAE.C_CONST(), source,initial_)
       equation
         elabedType = Types.elabType(tt);
         true = Expression.equalTypes(elabedType,ty);
@@ -1395,7 +1411,7 @@ algorithm
         DAE.DAE(dael);
         
    /* all other COMPLEX equations */
-   case (e1,e2, tt as (DAE.T_COMPLEX(complexVarLst = _),_),source,initial_)
+   case (e1,e2, tt as (DAE.T_COMPLEX(complexVarLst = _),_),_,source,initial_)
      equation        
        dae = instComplexEquation(e1,e2,tt,source,initial_);
      then dae;
@@ -1581,11 +1597,12 @@ protected function instArrayEquation
   input DAE.Exp lhs;
   input DAE.Exp rhs;
   input DAE.Type tp;
+  input DAE.Const inConst;
   input DAE.ElementSource source;
   input SCode.Initial initial_;
   output DAE.DAElist dae;
 algorithm 
-  dae := matchcontinue(lhs, rhs, tp, source, initial_)
+  dae := matchcontinue(lhs, rhs, tp, inConst, source, initial_)
     local
       Boolean b1, b2;
       list<DAE.Dimension> ds;
@@ -1595,7 +1612,7 @@ algorithm
       String lhs_str, rhs_str, eq_str;
       
     /* Initial array equations with function calls => initial array equations */
-    case (lhs, rhs, tp, source, SCode.INITIAL())
+    case (lhs, rhs, tp, _, source, SCode.INITIAL())
       equation
         b1 = Expression.containVectorFunctioncall(lhs);
         b2 = Expression.containVectorFunctioncall(rhs);
@@ -1605,7 +1622,7 @@ algorithm
         DAE.DAE({DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source)});
 
     /* Arrays with function calls => array equations */
-    case (lhs, rhs, tp, source, SCode.NON_INITIAL())
+    case (lhs, rhs, tp, _, source, SCode.NON_INITIAL())
       equation
         b1 = Expression.containVectorFunctioncall(lhs);
         b2 = Expression.containVectorFunctioncall(rhs);
@@ -1615,7 +1632,7 @@ algorithm
         DAE.DAE({DAE.ARRAY_EQUATION(ds, lhs, rhs, source)});
         
     // Array equation of any size, non-expanding case
-    case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), source, initial_)
+    case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), _, source, initial_)
       equation
         false = RTOpts.splitArrays();
         // Expand along the first dimensions of the expressions, and generate an
@@ -1624,12 +1641,12 @@ algorithm
         DAE.ET_ARRAY(arrayDimensions = rhs_dim :: _) = Expression.typeof(rhs);
         lhs_idxs = expandArrayDimension(lhs_dim, lhs);
         rhs_idxs = expandArrayDimension(rhs_dim, rhs);
-        dae = instArrayElEq(lhs, rhs, t, lhs_idxs, rhs_idxs, source, initial_);
+        dae = instArrayElEq(lhs, rhs, t, inConst, lhs_idxs, rhs_idxs, source, initial_);
       then
         dae;
         
     // Array dimension of known size, expanding case.
-    case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), source, initial_)
+    case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), _, source, initial_)
       equation
         true = RTOpts.splitArrays();
         true = Expression.dimensionKnown(dim);
@@ -1639,11 +1656,11 @@ algorithm
         DAE.ET_ARRAY(arrayDimensions = rhs_dim :: _) = Expression.typeof(rhs);
         lhs_idxs = expandArrayDimension(lhs_dim, lhs);
         rhs_idxs = expandArrayDimension(rhs_dim, rhs);
-        dae = instArrayElEq(lhs, rhs, t, lhs_idxs, rhs_idxs, source, initial_);
+        dae = instArrayElEq(lhs, rhs, t, inConst, lhs_idxs, rhs_idxs, source, initial_);
       then
         dae;
         
-    case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), source, initial_)
+    case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), _, source, initial_)
       equation
         true = RTOpts.splitArrays();
         true = Expression.dimensionKnown(dim);
@@ -1653,7 +1670,7 @@ algorithm
         DAE.DAE({DAE.ARRAY_EQUATION(ds, lhs, rhs, source)});
 
     // Array dimension of unknown size, expanding case.
-    case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), source, initial_)
+    case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), _, source, initial_)
       equation
         true = RTOpts.splitArrays();
         false = Expression.dimensionKnown(dim);
@@ -1665,12 +1682,12 @@ algorithm
         DAE.ET_ARRAY(arrayDimensions = rhs_dim :: _) = Expression.typeof(rhs);
         lhs_idxs = expandArrayDimension(lhs_dim, lhs);
         rhs_idxs = expandArrayDimension(rhs_dim, rhs);
-        dae = instArrayElEq(lhs, rhs, t, lhs_idxs, rhs_idxs, source, initial_);
+        dae = instArrayElEq(lhs, rhs, t, inConst, lhs_idxs, rhs_idxs, source, initial_);
       then
         dae;
         
     /* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; (expanding case)*/
-    case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), source, SCode.INITIAL())
+    case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), _, source, SCode.INITIAL())
       equation
         true = RTOpts.splitArrays();
         // It's ok with array equation of unknown size if checkModel is used.
@@ -1681,7 +1698,7 @@ algorithm
         DAE.DAE({DAE.INITIAL_ARRAY_EQUATION({DAE.DIM_INTEGER(1)}, lhs, rhs, source)});
 
     /* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; (expanding case)*/
-    case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), source, SCode.NON_INITIAL())
+    case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), _, source, SCode.NON_INITIAL())
       equation
          true = RTOpts.splitArrays();
         // It's ok with array equation of unknown size if checkModel is used.
@@ -1692,7 +1709,7 @@ algorithm
         DAE.DAE({DAE.ARRAY_EQUATION({DAE.DIM_INTEGER(1)}, lhs, rhs, source)});
         
     /* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; (expanding case)*/
-    case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), _, _)
+    case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), _, _, _)
       equation
         true = RTOpts.splitArrays();
         // It's ok with array equation of unknown size if checkModel is used.
@@ -1704,7 +1721,7 @@ algorithm
       then 
         fail();
 
-    case (_, _, _, _, _)
+    else
       equation
         Debug.fprintln("failtrace", "- InstSection.instArrayEquation failed");
       then
@@ -1718,24 +1735,25 @@ protected function instArrayElEq
   input DAE.Exp inLhsExp;
   input DAE.Exp inRhsExp;
   input DAE.Type inType;
+  input DAE.Const inConst;
   input list<DAE.Exp> inLhsIndices;
   input list<DAE.Exp> inRhsIndices;
   input DAE.ElementSource inSource;
   input SCode.Initial inInitial;
   output DAE.DAElist outDAE;
 algorithm
-  outDAE := match(inLhsExp, inRhsExp, inType, inLhsIndices,
+  outDAE := match(inLhsExp, inRhsExp, inType, inConst, inLhsIndices,
       inRhsIndices, inSource, inInitial)
     local
       DAE.Exp lhs, rhs, lhs_idx, rhs_idx;
       DAE.Type t;
       list<DAE.Exp> lhs_idxs, rhs_idxs;
       DAE.DAElist dae1, dae2;
-    case (_, _, _, {}, {}, _, _) then DAEUtil.emptyDae;
-    case (lhs, rhs, t, lhs_idx :: lhs_idxs, rhs_idx :: rhs_idxs, _, _)
+    case (_, _, _, _, {}, {}, _, _) then DAEUtil.emptyDae;
+    case (lhs, rhs, t, _, lhs_idx :: lhs_idxs, rhs_idx :: rhs_idxs, _, _)
       equation
-        dae1 = instEqEquation2(lhs_idx, rhs_idx, t, inSource, inInitial);
-        dae2 = instArrayElEq(lhs, rhs, t, lhs_idxs, rhs_idxs, inSource, inInitial);
+        dae1 = instEqEquation2(lhs_idx, rhs_idx, t, inConst, inSource, inInitial);
+        dae2 = instArrayElEq(lhs, rhs, t, inConst, lhs_idxs, rhs_idxs, inSource, inInitial);
         dae1 = DAEUtil.joinDaes(dae1, dae2);
       then
         dae1;
