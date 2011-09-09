@@ -1838,18 +1838,17 @@ algorithm
     // Known variables that are input are continous
     case (((e as DAE.CREF(componentRef = cr),(vars,knvars,blst))))
       equation
-        failure((_,_) = BackendVariable.getVar(cr, vars));
         (backendVar::_,_) = BackendVariable.getVar(cr,knvars);
         true = isInput(backendVar);
       then
         ((e,false,(vars,knvars,SOME(false))));
 
     // parameters & constants
+    // are always discrete
     case (((e as DAE.CREF(componentRef = cr),(vars,knvars,blst))))
       equation
-        failure((_,_) = BackendVariable.getVar(cr, vars));
         ((BackendDAE.VAR(varKind = kind) :: _),_) = BackendVariable.getVar(cr, knvars);
-        b = isKindDiscrete(kind);
+        b = Util.getOptionOrDefault(blst,true);
       then
         ((e,false,(vars,knvars,SOME(b))));
     
