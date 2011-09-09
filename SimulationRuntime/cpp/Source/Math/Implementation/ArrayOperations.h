@@ -1,6 +1,8 @@
 #pragma once
 #define BOOST_ENABLE_ASSERT_HANDLER
 #include <boost/assert.hpp>
+#include <boost/algorithm/minmax_element.hpp>
+
 /*****************************************************************************/
 /**
 
@@ -287,9 +289,43 @@ boost::multi_array< T1, dims > empty_clone
 }
 
 
+/**
+fills a array with an value val
+*/
+template < typename T, size_t NumDims >
+void
+ fill_array (boost::multi_array_ref< T, NumDims > x, T val )
+{
+  
+ // std::fill( x.shape(), x.shape() + NumDims, val );
+   std::fill( x.data(), x.data() + x.num_elements(), val); 
+}
 
 
 
+/**
+finds min/max elements of an array 
+template < typename T, size_t NumDims >
+std::pair <T,T>
+min_max (boost::multi_array_ref< T, NumDims > x, T val )
+{
+  
+  boost::minmax_element(x.data(), x.data() + x.num_elements());
+ 
+}
+*/
+
+
+/**
+finds min/max elements of an array */
+template < typename T, size_t NumDims >
+std::pair <T,T>
+min_max (boost::multi_array_ref< int, 1 > x)
+{
+  
+  boost::minmax_element(x.data(), x.data() + x.num_elements());
+ 
+}
 
 
 
