@@ -952,6 +952,7 @@ FindRoot(double *EventTime)
   //determined continuous system
   functionODE();
   functionAlgebraics();
+  function_storeDelayed();
   saveall();
   if (sim_result) sim_result->emit();
 
