@@ -1,3 +1,7 @@
+QMainWindow::separator {
+    width: 5px;
+    height: 5px;
+}
 /* Library Widget Styles */
 QTreeWidget::branch {
     border-image: url(:/Resources/icons/vline.png) 0;

@@ -35,16 +35,13 @@
 //! @author Sonia Tariq <sonta273@student.liu.se>
 //! @date   2010-07-09
 
-//! @brief Used to send the command to OpenModelica Compiler in a thread.
+//! @brief Used to create platform independent sleep for the application.
 
 #include "OMCThread.h"
 
 //! @class OMCThread
-//! @brief The OMCThread creats a thread for each request that is send to OMC.
 
 //! Constructor
-//! @param expression is the command that is needed to be send to OMC.
-//! @param parent.
 OMCThread::OMCThread()
 {
 

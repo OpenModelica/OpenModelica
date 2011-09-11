@@ -90,7 +90,7 @@ GraphicsView::GraphicsView(int iconType, ProjectTab *parent)
             this->setStyleSheet(QString("background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1")
                                          .append(", stop: 0 gray, stop: 1 lightGray);"));
         }
-    }    
+    }
     connect(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->gridLinesAction,
             SIGNAL(toggled(bool)), this, SLOT(showGridLines(bool)));
     connect(this, SIGNAL(currentChange(int)),mpParentProjectTab->mpParentProjectTabWidget, SLOT(tabChanged()));

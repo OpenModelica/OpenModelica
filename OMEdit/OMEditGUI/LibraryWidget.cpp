@@ -95,13 +95,10 @@ ModelicaTree::ModelicaTree(LibraryWidget *parent)
     setExpandsOnDoubleClick(false);
 
     createActions();
-    connect(this, SIGNAL(itemPressed(QTreeWidgetItem*,int)), SLOT(modelicaTreeItemPressed(QTreeWidgetItem*)));
-    connect(this, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(openProjectTab(QTreeWidgetItem*,int)));
+
     connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
     connect(this, SIGNAL(changeTab()), SLOT(tabChanged()));
-
-    connect(mpParentLibraryWidget, SIGNAL(addModelicaTreeNode(QString,int,QString,QString)),
-            SLOT(addNode(QString,int,QString,QString)));
+    connect(mpParentLibraryWidget, SIGNAL(addModelicaTreeNode(QString,int,QString,QString)), SLOT(addNode(QString,int,QString,QString)));
 }
 
 ModelicaTree::~ModelicaTree()
@@ -524,22 +521,15 @@ void ModelicaTree::tabChanged()
   mpParentLibraryWidget->mpParentMainWindow->mpModelBrowser->addModelBrowserNode();
 }
 
-
-//modelica tree item is pressed or drag
-void ModelicaTree::modelicaTreeItemPressed(QTreeWidgetItem *item)
+void ModelicaTree::mouseDoubleClickEvent(QMouseEvent *event)
 {
+    openProjectTab(itemAt(event->pos()), 0);
+    QTreeWidget::mouseDoubleClickEvent(event);
+}
 
-    if (qApp->mouseButtons() != Qt::LeftButton)
-        return;
-
-    if (!item)
-        return;
-
-//  if item is package then return
-//  if (mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->isWhat(StringHandler::PACKAGE, item->toolTip(0)))
-//      return;
-
-    ModelicaTreeNode *node = dynamic_cast<ModelicaTreeNode*>(item);
+void ModelicaTree::startDrag(Qt::DropActions supportedActions)
+{
+    ModelicaTreeNode *node = dynamic_cast<ModelicaTreeNode*>(currentItem());
     QByteArray itemData;
     QDataStream dataStream(&itemData, QIODevice::WriteOnly);
     dataStream << node->mName << node->mNameStructure << node->mType;
@@ -551,7 +541,7 @@ void ModelicaTree::modelicaTreeItemPressed(QTreeWidgetItem *item)
     QDrag *drag = new QDrag(this);
     drag->setMimeData(mimeData);
 
-    // get the component SVG to show on drag
+    // get the component pixmap to show on drag
     LibraryComponent *libraryComponent = mpParentLibraryWidget->getModelicaLibraryComponentObject(node->mNameStructure);
 
     if (libraryComponent)
@@ -560,7 +550,12 @@ void ModelicaTree::modelicaTreeItemPressed(QTreeWidgetItem *item)
         drag->setPixmap(pixmap);
         drag->setHotSpot(QPoint((drag->hotSpot().x() + adjust), (drag->hotSpot().y() + adjust)));
     }
-    drag->exec(Qt::CopyAction);
+    drag->exec(supportedActions);
+}
+
+Qt::DropActions ModelicaTree::supportedDropActions() const
+{
+    return Qt::CopyAction;
 }
 
 LibraryTreeNode::LibraryTreeNode(QString text, QString parentName, QString namestruc , QString tooltip, QTreeWidget *parent)
@@ -589,10 +584,8 @@ LibraryTree::LibraryTree(LibraryWidget *pParent)
     setContextMenuPolicy(Qt::CustomContextMenu);
     createActions();
 
-    connect(this, SIGNAL(itemPressed(QTreeWidgetItem*,int)), SLOT(treeItemPressed(QTreeWidgetItem*)));
     connect(this, SIGNAL(itemExpanded(QTreeWidgetItem*)), SLOT(expandLib(QTreeWidgetItem*)));
     connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
-    connect(this, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(showComponent(QTreeWidgetItem*,int)));
 }
 
 LibraryTree::~LibraryTree()
@@ -804,24 +797,6 @@ void LibraryTree::expandLib(QTreeWidgetItem *item)
         // Remove the wait cursor
         unsetCursor();
     }
-
-    /*
-        Open the Following code and comment the above if loading library once.
-    */
-
-    // disconnect the mpTree itemClicked and itemExpanded signals
-//    disconnect(mpTree, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(showLib(QTreeWidgetItem*)));
-//    disconnect(mpTree, SIGNAL(itemExpanded(QTreeWidgetItem*)), this, SLOT(showLib(QTreeWidgetItem*)));
-
-//    // Set the cursor to wait.
-//    setCursor(Qt::WaitCursor);
-//    // Delete the temp entry now
-//    item->removeChild(item->child(0));
-//    loadModelicaLibraryHierarchy(tr("Modelica"));
-//    this->mpParentMainWindow->statusBar->clearMessage();
-//    //mpTree->sortItems(0, Qt::AscendingOrder);
-//    // Remove the wait cursor
-//    unsetCursor();
 }
 
 void LibraryTree::showContextMenu(QPoint point)
@@ -946,24 +921,18 @@ void LibraryTree::loadingLibraryComponent(LibraryTreeNode *treeNode, QString cla
 
 void LibraryTree::tabChanged()
 {
-
-  mpParentLibraryWidget->mpParentMainWindow->mpModelBrowser->addModelBrowserNode();
+    mpParentLibraryWidget->mpParentMainWindow->mpModelBrowser->addModelBrowserNode();
 }
 
-void LibraryTree::treeItemPressed(QTreeWidgetItem *item)
+void LibraryTree::mouseDoubleClickEvent(QMouseEvent *event)
 {
+    showComponent(itemAt(event->pos()), 0);
+    QTreeWidget::mouseDoubleClickEvent(event);
+}
 
-    if (qApp->mouseButtons() != Qt::LeftButton)
-        return;
-
-    if (!item)
-        return;
-
-//  if item is package then return
-//  if (mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->isWhat(StringHandler::PACKAGE, item->toolTip(0)))
-//      return;
-
-    LibraryTreeNode *node = dynamic_cast<LibraryTreeNode*>(item);
+void LibraryTree::startDrag(Qt::DropActions supportedActions)
+{
+    LibraryTreeNode *node = dynamic_cast<LibraryTreeNode*>(currentItem());
     QByteArray itemData;
     QDataStream dataStream(&itemData, QIODevice::WriteOnly);
     dataStream << node->mName << node->mNameStructure << node->mType;
@@ -975,7 +944,7 @@ void LibraryTree::treeItemPressed(QTreeWidgetItem *item)
     QDrag *drag = new QDrag(this);
     drag->setMimeData(mimeData);
 
-    // get the component SVG to show on drag
+    // get the component pixmap to show on drag
     LibraryComponent *libraryComponent = mpParentLibraryWidget->getLibraryComponentObject(node->mNameStructure);
 
     if (libraryComponent)
@@ -984,7 +953,12 @@ void LibraryTree::treeItemPressed(QTreeWidgetItem *item)
         drag->setPixmap(pixmap);
         drag->setHotSpot(QPoint((drag->hotSpot().x() + adjust), (drag->hotSpot().y() + adjust)));
     }
-    drag->exec(Qt::CopyAction);
+    drag->exec(supportedActions);
+}
+
+Qt::DropActions LibraryTree::supportedDropActions() const
+{
+    return Qt::CopyAction;
 }
 
 MSLSearchBox::MSLSearchBox(SearchMSLWidget *pParent)

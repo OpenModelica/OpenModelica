@@ -71,12 +71,21 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
 
     //Create a grid on the centralwidget
     mpCentralgrid = new QGridLayout(mpCentralwidget);
-    mpCentralgrid->setContentsMargins(0, 1, 0, 0);
-
+    // since the Tabs are displaed differently on MAC so they occupy more space
+    #ifdef Q_OS_UNIX
+        mpCentralgrid->setContentsMargins(0, 7, 0, 0);
+    #else
+        mpCentralgrid->setContentsMargins(0, 1, 0, 0);
+    #endif
     //Create a dock for the MessageWidget
     messagedock = new QDockWidget(tr(" Messages"), this);
     messagedock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
-    messagedock->setContentsMargins(0, 0, 1, 0);
+    #ifdef Q_OS_UNIX
+        messagedock->setContentsMargins(0, 6, 1, 0);
+    #else
+        messagedock->setContentsMargins(0, 1, 1, 0);
+    #endif
+    messagedock->setContentsMargins(0, 1, 1, 0);
     messagedock->setFeatures(QDockWidget::DockWidgetVerticalTitleBar | QDockWidget::DockWidgetClosable
                              | QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
     mpMessageWidget = new MessageWidget(this);

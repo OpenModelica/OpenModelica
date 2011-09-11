@@ -97,8 +97,6 @@ private:
 signals:
     void nodeDeleted();
     void changeTab();
-private slots:
-    void modelicaTreeItemPressed(QTreeWidgetItem *item);
 public slots:
     void addNode(QString name, int type, QString parentName=QString(), QString parentStructure=QString());
     void openProjectTab(QTreeWidgetItem *item, int column);
@@ -112,6 +110,10 @@ public slots:
     void saveChildModels(QString modelName, QString filePath);
     void loadingLibraryComponent(ModelicaTreeNode *treeNode, QString className);
     void tabChanged();
+protected:
+    virtual void mouseDoubleClickEvent(QMouseEvent *event);
+    virtual void startDrag(Qt::DropActions supportedActions);
+    Qt::DropActions supportedDropActions() const;
 };
 
 class LibraryTreeNode : public QTreeWidgetItem
@@ -157,12 +159,15 @@ private slots:
     void viewDocumentation();
     void flatModel();
     void checkLibraryModel();
-    void treeItemPressed(QTreeWidgetItem *item);
 signals:
     void changeTab();
 public slots:
     void loadingLibraryComponent(LibraryTreeNode *treeNode, QString className);
     void tabChanged();
+protected:
+    virtual void mouseDoubleClickEvent(QMouseEvent *event);
+    virtual void startDrag(Qt::DropActions supportedActions);
+    Qt::DropActions supportedDropActions() const;
 };
 
 class MSLSuggestCompletion;

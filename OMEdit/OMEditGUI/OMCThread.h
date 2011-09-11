@@ -37,8 +37,6 @@
 #include <QMutex>
 #include <QThread>
 
-#include "OMCProxy.h"
-
 class OMCThread : public QThread
 {
     Q_OBJECT
