@@ -85,7 +85,6 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     #else
         messagedock->setContentsMargins(0, 1, 1, 0);
     #endif
-    messagedock->setContentsMargins(0, 1, 1, 0);
     messagedock->setFeatures(QDockWidget::DockWidgetVerticalTitleBar | QDockWidget::DockWidgetClosable
                              | QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
     mpMessageWidget = new MessageWidget(this);
