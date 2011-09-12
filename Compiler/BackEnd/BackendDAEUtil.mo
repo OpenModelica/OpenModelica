@@ -6274,7 +6274,14 @@ public function getPreOptModulesString
 " function: getPreOptModulesString"
   output list<String> strPreOptModules;
 algorithm
- strPreOptModules := RTOpts.getPreOptModules({"partitionIndependentBlocks","removeFinalParameters","removeEqualFunctionCalls","removeSimpleEquations","expandDerOperator","collapseIndependentBlocks"});
+  strPreOptModules := RTOpts.getPreOptModules({
+    "removeFinalParameters",
+    "removeEqualFunctionCalls",
+    "partitionIndependentBlocks",
+    "expandDerOperator",
+    "removeSimpleEquations",
+    "collapseIndependentBlocks"
+  });
 end getPreOptModulesString;
 
 protected function getPreOptModules
