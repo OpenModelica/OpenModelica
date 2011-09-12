@@ -1871,20 +1871,96 @@ case ARRAY(__) then
 end daeExpArray;
 
 
-template daeExpAsub(Exp exp, Context context, Text &preExp /*BUFP*/,
+//template daeExpAsub(Exp exp, Context context, Text &preExp /*BUFP*/,
+//                    Text &varDecls /*BUFP*/,SimCode simCode)
+// "Generates code for an asub expression."
+//::=
+// match exp
+//   case ASUB(exp=ecr as CREF(__), sub=subs) then
+//    let arrName = daeExpCrefRhs(buildCrefExpFromAsub(ecr, subs), context,
+//                              &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+//    match context case FUNCTION_CONTEXT(__)  then
+//      arrName
+//    else
+//      arrayScalarRhs(exp, subs, arrName, context, &preExp, &varDecls,simCode)
+
+//end daeExpAsub;
+
+
+template daeExpAsub(Exp inExp, Context context, Text &preExp /*BUFP*/,
                     Text &varDecls /*BUFP*/,SimCode simCode)
  "Generates code for an asub expression."
 ::=
- match exp
-   case ASUB(exp=ecr as CREF(__), sub=subs) then
+  match expTypeFromExpShort(inExp)
+  case "metatype" then
+  // MetaModelica Array
+    (match inExp case ASUB(exp=e, sub={idx}) then
+      let e1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+      let idx1 = daeExp(idx, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+      'arrayGet(<%e1%>,<%idx1%>) /* DAE.ASUB */')
+  // Modelica Array
+  else
+  match inExp
+  
+  case ASUB(exp=ASUB(__)) then
+    error(sourceInfo(),'Nested array subscripting *should* have been handled by the routine creating the asub, but for some reason it was not: <%printExpStr(exp)%>')
+
+  // Faster asub: Do not construct a whole new array just to access one subscript
+  case ASUB(exp=exp as ARRAY(scalar=true), sub={idx}) then
+    let res = tempDecl(expTypeFromExpModelica(exp),&varDecls)
+    let idx1 = daeExp(idx, context, &preExp, &varDecls,simCode)
+    let expl = (exp.array |> e hasindex i1 fromindex 1 =>
+      let &caseVarDecls = buffer ""
+      let &casePreExp = buffer ""
+      let v = daeExp(e, context, &casePreExp, &caseVarDecls,simCode)
+      <<
+      case <%i1%>: {
+        <%&caseVarDecls%>
+        <%&casePreExp%>
+        <%res%> = <%v%>;
+        break;
+      }
+      >> ; separator = "\n")
+    let &preExp +=
+    <<
+    switch (<%idx1%>) { /* ASUB */
+    <%expl%>
+    default:
+      assert(NULL == "index out of bounds");
+    }
+    >>
+    res
+  
+  case ASUB(exp=RANGE(ty=t), sub={idx}) then
+    error(sourceInfo(),'ASUB_EASY_CASE <%printExpStr(exp)%>')
+  
+ case ASUB(exp=ecr as CREF(__), sub=subs) then
     let arrName = daeExpCrefRhs(buildCrefExpFromAsub(ecr, subs), context,
                               &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     match context case FUNCTION_CONTEXT(__)  then
       arrName
     else
-      arrayScalarRhs(exp, subs, arrName, context, &preExp, &varDecls,simCode)
+      arrayScalarRhs(ecr, subs, arrName, context, &preExp, &varDecls,simCode)
 
+  
+  case ASUB(exp=e, sub=indexes) then
+  let exp = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+ // let typeShort = expTypeFromExpShort(e)
+  let expIndexes = (indexes |> index => '<%daeExpASubIndex(index, context, &preExp, &varDecls,simCode)%>' ;separator=", ")
+   //'<%typeShort%>_get<%match listLength(indexes) case 1 then "" case i then '_<%i%>D'%>(&<%exp%>, <%expIndexes%>)'
+  '(<%exp%>)[<%expIndexes%>+1]'
+  case exp then
+    error(sourceInfo(),'OTHER_ASUB <%printExpStr(exp)%>')
 end daeExpAsub;
+
+template daeExpASubIndex(Exp exp, Context context, Text &preExp, Text &varDecls,SimCode simCode)
+::=
+match exp
+  case ICONST(__) then incrementInt(integer,-1)
+  case ENUM_LITERAL(__) then incrementInt(index,-1)
+  else daeExp(exp,context,&preExp,&varDecls,simCode)
+end daeExpASubIndex;
+
 
 template arrayScalarRhs(Exp exp, list<Exp> subs, String arrName, Context context,
                Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/,SimCode simCode)
