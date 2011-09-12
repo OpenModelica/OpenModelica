@@ -913,7 +913,7 @@ match platform
 end getPlatformString2; 
 
 template fmuMakefile(SimCode simCode)
- "Generates the contents of the makefile for the simulation case."
+ "Generates the contents of the makefile for the simulation case. Copy libexpat & correct linux fmu"
 ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
