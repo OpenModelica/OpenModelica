@@ -6014,7 +6014,7 @@ algorithm
   (outDAE,outAss1,outAss2,outComps):=
   matchcontinue (inDAE,functionTree,inMatchingOptions,daeHandler)
     local 
-      BackendDAE.BackendDAE dae,ode;
+      BackendDAE.BackendDAE dae,ode,ode2;
       DAE.FunctionTree funcs;
       String str,methodstr;
       Option<BackendDAE.IncidenceMatrix> om,omT;
@@ -6035,13 +6035,36 @@ algorithm
         Debug.execStat("transformDAE -> index Reduction Method " +& methodstr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         // sorting algorithm
         comps = BackendDAETransform.strongComponents(ode, v1, v2);
+        // if comps vector does not match to matching size 
+        // restart the matching
+        true = checkCompsMatching(comps,arrayList(v1)); 
         Debug.execStat("transformDAE -> sort components",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then
         (ode,v1,v2,comps);
-    else
+        
+    case (dae as BackendDAE.DAE({syst},shared),funcs,inMatchingOptions,(daeHandlerfunc,methodstr))
       equation
-//        str = "Transformation Module failed!";
-//        Error.addMessage(Error.INTERNAL_ERROR, {str});
+        (syst,m,mT) = getIncidenceMatrixfromOption(syst,shared);
+        dae = BackendDAE.DAE({syst},shared);
+        match_opts = Util.getOptionOrDefault(inMatchingOptions,(BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT()));
+        // matching algorithm
+        (v1,v2,ode) = BackendDAETransform.matchingAlgorithm(dae, match_opts, daeHandlerfunc, funcs);
+        Debug.execStat("transformDAE -> index Reduction Method " +& methodstr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        // sorting algorithm
+        comps = BackendDAETransform.strongComponents(ode, v1, v2);
+        // if comps vector does not match to matching size 
+        // restart the matching
+        false = checkCompsMatching(comps,arrayList(v1)); 
+        (v1,v2,ode2) = BackendDAETransform.matchingAlgorithm(ode, match_opts, daeHandlerfunc, funcs);
+        // sorting algorithm
+        comps = BackendDAETransform.strongComponents(ode2, v1, v2);
+        Debug.execStat("transformDAE -> sort components",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+      then
+        (ode2,v1,v2,comps);      
+        else
+      equation
+        //str = "Transformation Module failed!";
+        //Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
   end matchcontinue;
@@ -6132,6 +6155,58 @@ algorithm
         (dae,v1,v2,comps);
   end match;
 end checktransformDAE;
+
+protected function checkCompsMatching
+"Function check if comps are complete, they are not complete 
+ if the matching is wrong due to dummyDer"
+  input BackendDAE.StrongComponents inComps;
+  input list<Integer> inAss;
+  output Boolean outCheck;
+algorithm
+  outCheck := countComponents(inComps,0) == listLength(inAss);
+end checkCompsMatching;
+
+protected function countComponents
+  input BackendDAE.StrongComponents inComps;
+  input Integer inInt;
+  output Integer outInt;
+algorithm
+  outInt :=
+  match (inComps,inInt)
+    local
+      list<BackendDAE.Value> ilst;
+      list<String> ls;
+      String s;
+      Integer i;
+      BackendDAE.JacobianType jacType;
+      BackendDAE.StrongComponents comps;
+    case ({},inInt) then inInt;
+    case (BackendDAE.SINGLEEQUATION(var=_)::comps,inInt)
+      equation
+        outInt = countComponents(comps,inInt+1);
+      then outInt;
+    case (BackendDAE.EQUATIONSYSTEM(eqns=ilst)::comps,inInt)
+      equation
+        i = listLength(ilst);
+        outInt = countComponents(comps,inInt+i);
+      then outInt;
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(disc_eqns=ilst)::comps,inInt)
+      equation
+        i = listLength(ilst);
+        outInt = countComponents(comps,inInt+i);
+      then outInt;
+    case (BackendDAE.SINGLEARRAY(vars=ilst)::comps,inInt)
+      equation
+        i = listLength(ilst);
+        outInt = countComponents(comps,inInt+i);
+      then outInt;
+    case (BackendDAE.SINGLEALGORITHM(vars=ilst)::comps,inInt)
+      equation
+        i = listLength(ilst);
+        outInt = countComponents(comps,inInt+i);
+      then outInt;
+  end match;
+end countComponents;
 
 /*************************************************
  * index reduction method Selection 
