@@ -29,8 +29,7 @@
  *
  */
 
-/*
- * File: simulation_input.h
+/*! \file simulation_init.h
  */
 #ifndef _SIMULATION_INIT_H
 #define _SIMULATION_INIT_H
@@ -39,12 +38,13 @@
 #include <string>
 #include <cstdlib>
 
-extern "C" {
+extern "C"{
 #endif
-int main_initialize(const char* method);
+int initialization(const char* pInitMethod, const char* pOptiMethod);
 #ifdef __cplusplus
 }
 #endif
+
 #ifndef NEWUOA
 #define NEWUOA newuoa_
 #endif
@@ -54,39 +54,36 @@ int main_initialize(const char* method);
 #endif
 
 #ifdef __cplusplus
+extern "C"
+{
+	extern void leastSquare(long *nz,
+							double *z,
+							double *funcValue);
 
-extern "C" {
+	void NEWUOA(long *nz,
+				long *NPT,
+				double *z,
+				double *RHOBEG,
+				double *RHOEND,
+				long *IPRINT,
+				long *MAXFUN,
+				double *W,
+				void (*leastSquare) (long *nz, double *z, double *funcValue));
 
-  extern void leastSquare(long *nz, double *z, double *funcValue);
-
-  void  NEWUOA(
-  long *nz,
-  long *NPT,
-  double *z,
-  double *RHOBEG,
-  double *RHOEND,
-  long *IPRINT,
-  long *MAXFUN,
-  double *W,
-  void (*leastSquare) (long *nz, double *z, double *funcValue)
-  );
-
-  void  NELMEAD(
-     double *z,
-     double *STEP,
-     long *nz,
-     double *funcValue,
-     long *MAXF,
-     long *IPRINT,
-     double *STOPCR,
-     long *NLOOP,
-     long *IQUAD,
-     double *SIMP,
-     double *VAR,
-     void (*leastSquare) (long *nz, double *z, double *funcValue),
-     long *IFAULT);
-
-} // extern "C"
+	void NELMEAD(double *z,
+				 double *STEP,
+				 long *nz,
+				 double *funcValue,
+				 long *MAXF,
+				 long *IPRINT,
+				 double *STOPCR,
+				 long *NLOOP,
+				 long *IQUAD,
+				 double *SIMP,
+				 double *VAR,
+				 void (*leastSquare) (long *nz, double *z, double *funcValue),
+				 long *IFAULT);
+}
 #endif
 
 #endif

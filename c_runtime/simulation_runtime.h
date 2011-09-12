@@ -29,12 +29,10 @@
  *
  */
 
-/*
- * File: simulation_runtime.h
+/*! \file simulation_runtime.h
  *
- * Description: This file is a C++ header file for the simulation runtime.
- * It contains solver functions and other simulation runtime specific functions
- *
+ *  This file is a C++ header file for the simulation runtime. It contains
+ *  solver functions and other simulation runtime specific functions
  */
 
 #ifndef _SIMULATION_RUNTIME_H
@@ -114,6 +112,8 @@ extern const int LOG_DEBUG;
 /* Flags for modelErrorCodes */
 extern const int ERROR_NONLINSYS;
 extern const int ERROR_LINSYS;
+
+int useVerboseOutput(int level);
 
 typedef struct sim_DATA_REAL_ALIAS {
   modelica_real* alias;
@@ -290,6 +290,9 @@ typedef struct sim_DATA {
 /* Global data */
 extern DATA *globalData;
 
+extern char hasNominalValue[];	/* for all variables and parameters */
+extern double nominalValue[];	/* for all variables and parameters */
+
 
 extern int modelErrorCode;
 
@@ -337,12 +340,9 @@ void restoreExtrapolationDataOld();
 
 /* function for calculating ouput values */
 /*used in DDASRT fortran function*/
-int
-functionODE();
-int
-functionAlgebraics();
-int
-functionAliasEquations();
+int functionODE();				/* functionODE with respect to start-values */
+int functionAlgebraics();		/* functionAlgebraics with respect to start-values */
+int functionAliasEquations();
 
 /* function for calculating state values on residual form */
 /*used in DDASRT fortran function*/
@@ -378,7 +378,7 @@ int bound_parameters();
 int checkForAsserts();
 
 /* function for calculate residual values for the initial equations and fixed start attibutes */
-int initial_residual();
+int initial_residual(double $P$_lambda);
 
 /* function for initializing time instants when sample() is activated */
 void function_sampleInit();

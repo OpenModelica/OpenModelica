@@ -50,12 +50,9 @@
 using namespace std;
 
 // Internal definitions; do not expose
-int
-euler_ex_step(double* step, int (*f)());
-int
-rungekutta_step(double* step, int (*f)());
-int
-dasrt_step(double* step, double &start, double &stop, bool &trigger, int* stats);
+int euler_ex_step(double* step, int (*f)());
+int rungekutta_step(double* step, int (*f)());
+int dasrt_step(double* step, double &start, double &stop, bool &trigger, int* stats);
 
 #define MAXORD 5
 #define DASSLSTATS 5
@@ -236,12 +233,15 @@ solver_main_step(int flag, double &start, double &stop, bool &reset, int* stats)
   }
 }
 
-/* ! Function to update the whole system with EventIteration.
- *	 Evaluate the functionDAE()
+/* function: update_DAEsystem
+ *
+ * function to update the whole system with EventIteration.
+ * Evaluate the functionDAE()
  */
-void update_DAEsystem(){
-  int needToIterate = 0;
-  int IterationNum = 0;
+void update_DAEsystem()
+{
+	int needToIterate = 0;
+	int IterationNum = 0;
 
   functionDAE(&needToIterate);
   while (checkForDiscreteChanges() || needToIterate)
@@ -319,7 +319,17 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
 
   double uround = dlamch_((char*) "P", 1);
 
-  const string *init_method = getFlagValue("im", argc, argv);
+  const std::string* init_method = getFlagValue("im", argc, argv);		/* get the old initialization-flag */
+  const std::string* init_initMethod = getFlagValue("iim", argc, argv);	/* get the initialization method */
+  const std::string* init_optiMethod = getFlagValue("iom", argc, argv);	/* get the optimization method for the initialization */
+
+  if(init_method)
+  {
+	  std::cout << "Error: old flag:      initialization-method [im] is rejected" << std::endl;
+	  std::cout << "       new flag: init-initialization-method [iim] current options are: state or old" << std::endl;
+	  std::cout << "       new flag:   init-optimization-method [iom] current options are: simplex or newuoa" << std::endl;
+	  return -1;
+  }
 
   int retValIntegrator = 0;
 
@@ -365,7 +375,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
       rt_tick(SIM_TIMER_INIT);
   }
   try{
-      if (main_initialize(init_method!=0?init_method->c_str():0))
+      if (initialization(init_initMethod?init_initMethod->c_str():NULL, init_optiMethod?init_optiMethod->c_str():NULL))
         {
           throw TerminateSimulationException(globalData->timeValue, string(
               "Error in initialization. Storing results and exiting.\n"));
@@ -401,7 +411,7 @@ solver_main(int argc, char** argv, double &start, double &stop, double &step,
   catch (TerminateSimulationException &e)
   {
       cout << e.getMessage() << endl;
-      printf("Simulation terminated while the initialization. Could not find suitable initial values.");
+      printf("Simulation terminated while the initialization. Could not find suitable initial values.\n");
       return -1;
   }
 

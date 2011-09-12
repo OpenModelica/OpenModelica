@@ -778,6 +778,17 @@ algorithm start:= match (inVariableAttributesOption)
   end match;
 end getStartAttrFail;
 
+public function getNominalAttrFail "
+  Return the nominal attribute. or fails"
+  input Option<DAE.VariableAttributes> inVariableAttributesOption;
+  output DAE.Exp nominal;
+algorithm nominal := match(inVariableAttributesOption)
+    local
+      DAE.Exp r;
+    case (SOME(DAE.VAR_ATTR_REAL(nominal = SOME(r)))) then r;
+  end match;
+end getNominalAttrFail;
+
 public function setVariableAttributes "sets the attributes of a DAE.Element that is VAR"
   input DAE.Element var;
   input Option<DAE.VariableAttributes> varOpt;

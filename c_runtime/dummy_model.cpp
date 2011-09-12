@@ -704,6 +704,9 @@ int functionODE()
   return 0;
 }
 
+/*
+ * calculate start-Values as expressions
+ */
 int initial_function()
 {
   return 0;

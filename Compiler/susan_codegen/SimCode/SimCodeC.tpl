@@ -349,6 +349,32 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
     ;separator=",\n"%>
   };
   
+  char hasNominalValue[NX+NY+NP] = {
+    <%{(vars.stateVars |> SIMVAR(__) =>
+        '<%globalDataHasNominalValue(nominalValue)%> /* <%crefStr(name)%> */'
+      ;separator=",\n"),
+      (vars.algVars |> SIMVAR(__) =>
+        '<%globalDataHasNominalValue(nominalValue)%> /* <%crefStr(name)%> */'
+      ;separator=",\n"),      
+      (vars.paramVars |> SIMVAR(__) =>
+        '<%globalDataHasNominalValue(nominalValue)%> /* <%crefStr(name)%> */'
+      ;separator=",\n")}
+    ;separator=",\n"%>
+  };
+  
+  double nominalValue[NX+NY+NP] = {
+    <%{(vars.stateVars |> SIMVAR(__) =>
+        '<%globalDataNominalValue(nominalValue)%> /* <%crefStr(name)%> */'
+      ;separator=",\n"),
+      (vars.algVars |> SIMVAR(__) =>
+        '<%globalDataNominalValue(nominalValue)%> /* <%crefStr(name)%> */'
+      ;separator=",\n"),      
+      (vars.paramVars |> SIMVAR(__) =>
+        '<%globalDataNominalValue(nominalValue)%> /* <%crefStr(name)%> */'
+      ;separator=",\n")}
+    ;separator=",\n"%>
+  };
+  
   char var_attr[NX+NY+NYINT+NYBOOL+NYSTR+NP+NPINT+NPBOOL+NPSTR] = {
     <%{(vars.stateVars |> SIMVAR(__) =>
         '<%globalDataAttrInt(type_)%>+<%globalDataDiscAttrInt(isDiscrete)%> /* <%crefStr(name)%> */'
@@ -489,6 +515,21 @@ template globalDataFixedInt(Boolean isFixed)
   case false then "0"
 end globalDataFixedInt;
 
+template globalDataNominalValue(Option<DAE.Exp> nominal)
+ "Generates integer for use in arrays in global data section."
+::=
+  match nominal
+  case NONE()  then "0 /* default */"
+  case SOME(v) then initVal(v)
+end globalDataNominalValue;
+
+template globalDataHasNominalValue(Option<DAE.Exp> nominal)
+ "Generates integer for use in arrays in global data section."
+::=
+  match nominal
+  case NONE()  then "0"
+  case SOME(v) then "1"
+end globalDataHasNominalValue;
 
 template globalDataAttrInt(DAE.ExpType type)
  "Generates integer for use in arrays in global data section."
@@ -762,7 +803,7 @@ template functionInitialResidual(list<SimEqSystem> residualEquations)
 if (sim_verbose == LOG_RES_INIT) { printf(" Residual[%d] : <%ExpressionDump.printExpStr(exp)%> = %f\n",i,localData->initialResiduals[i-1]); }'
     ;separator="\n")
   <<
-  int initial_residual()
+  int initial_residual(double $P$_lambda)
   {
     int i = 0;
     state mem_state;
@@ -1088,7 +1129,7 @@ template functionODE_residual()
 
     localData->timeValue = *t;
     localData->states = x;
-    functionODE();
+    functionODE(1.0);
   
     /* get the difference between the temp_xd(=localData->statesDerivatives)
        and xd(=statesDerivativesBackup) */

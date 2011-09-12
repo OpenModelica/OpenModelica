@@ -99,7 +99,17 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
 
   int sampleEvent_actived = 0;
 
-  const string *init_method = getFlagValue("im", argc, argv);
+  const std::string* init_method = getFlagValue("im", argc, argv);		/* get the old initialization-flag */
+  const std::string* init_initMethod = getFlagValue("iim", argc, argv);	/* get the initialization method */
+  const std::string* init_optiMethod = getFlagValue("iom", argc, argv);	/* get the optimization method for the initialization */
+
+  if(init_method)
+  { /* can be removed? */
+    std::cout << "Error: old flag:      initialization-method [im] is rejected" << std::endl;
+    std::cout << "       new flag: init-initialization-method [iim] current options are: simple or state" << std::endl;
+    std::cout << "       new flag:   init-optimization-method [iom] current options are: simplex or newuoa" << std::endl;
+    return -1;
+  }
 
   int retValIntegrator = 0;
 
@@ -128,7 +138,7 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
       rt_tick(SIM_TIMER_INIT);
   }
   try{
-      if (main_initialize(init_method!=0?init_method->c_str():0))
+      if (initialization(init_initMethod?init_initMethod->c_str():NULL, init_optiMethod?init_optiMethod->c_str():NULL))
         {
           throw TerminateSimulationException(globalData->timeValue, string(
               "Error in initialization. Storing results and exiting.\n"));
@@ -323,7 +333,17 @@ void init_ompd()
       *result_file_cstr = *result_file;
   }
 
-  const string *init_method = getFlagValue("im", argc, argv);
+  const std::string* init_method = getFlagValue("im", argc, argv);		/* get the old initialization-flag */
+  const std::string* init_initMethod = getFlagValue("iim", argc, argv);	/* get the initialization method */
+  const std::string* init_optiMethod = getFlagValue("iom", argc, argv);	/* get the optimization method for the initialization */
+
+  if(init_method)
+  { /* can be removed? */
+    std::cout << "Error: old flag:      initialization-method [im] is rejected" << std::endl;
+    std::cout << "       new flag: init-initialization-method [iim] current options are: simple or state" << std::endl;
+    std::cout << "       new flag:   init-optimization-method [iom] current options are: simplex or newuoa" << std::endl;
+  }
+
   if (initializeEventData())
     {
       cout << "Internal error, allocating event data structures" << endl;
@@ -375,7 +395,7 @@ void init_ompd()
           throw TerminateSimulationException(globalData->timeValue, string(
               "ERROR: Too many Iteration while the initialization. System is not consistent!\n"));
         }
-      if (main_initialize(init_method!=0?init_method->c_str():0))
+      if (initialization(init_initMethod?init_initMethod->c_str():NULL, init_optiMethod?init_optiMethod->c_str():NULL))
         {
           throw TerminateSimulationException(globalData->timeValue, string(
               "Error in initialization. Storing results and exiting.\n"));

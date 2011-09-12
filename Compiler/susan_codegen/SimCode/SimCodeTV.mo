@@ -316,6 +316,7 @@ package SimCode
       String displayUnit;
       Integer index;
       Option<DAE.Exp> initialValue;
+      Option<DAE.Exp> nominalValue;
       Boolean isFixed;
       DAE.ExpType type_;
       Boolean isDiscrete;

@@ -545,9 +545,8 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
               // Evaluate all constant equations
               functionAliasEquations();
 
-
-              /*try{*/
-                if (main_initialize(0))
+              /*try{
+                if (initialize(NULL, NULL))
                   {
                     comp->functions.logger(c, comp->instanceName, fmiError, "log",
                     "fmiInitialize: main_initialize failed");

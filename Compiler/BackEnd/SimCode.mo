@@ -271,6 +271,7 @@ uniontype SimVar
     String displayUnit;
     Integer index;
     Option<DAE.Exp> initialValue;
+    Option<DAE.Exp> nominalValue;
     Boolean isFixed;
     DAE.ExpType type_;
     Boolean isDiscrete;
@@ -661,7 +662,7 @@ algorithm
         //errstr = "Template did not find the simulation variable for "+& ComponentReference.printComponentRefStr(cref) +& ". ";
         //Error.addMessage(Error.INTERNAL_ERROR, {errstr});
       then
-        SIMVAR(badcref, BackendDAE.STATE(), "", "", "", -1, NONE(), false, DAE.ET_REAL(), false, NONE(), NOALIAS(), DAE.emptyElementSource, INTERNAL(),NONE(),{});
+        SIMVAR(badcref, BackendDAE.STATE(), "", "", "", -1, NONE(), NONE(), false, DAE.ET_REAL(), false, NONE(), NOALIAS(), DAE.emptyElementSource, INTERNAL(),NONE(),{});
   end matchcontinue;
 end cref2simvar;
 
@@ -2097,10 +2098,10 @@ algorithm
       // new variables
       ModelInfo modelInfo;
       list<SimEqSystem> allEquations;
-      list<SimEqSystem> odeEquations;
-      list<SimEqSystem> algebraicEquations;
-      list<SimEqSystem> residualEquations;
-      list<SimEqSystem> initialEquations;
+      list<SimEqSystem> odeEquations;         // --> functionODE
+      list<SimEqSystem> algebraicEquations;   // --> functionAlgebraics
+      list<SimEqSystem> residualEquations;    // --> initial_residual
+      list<SimEqSystem> initialEquations;     // --> initial_function
       list<SimEqSystem> parameterEquations;
       list<SimEqSystem> removedEquations;
       list<SimEqSystem> sampleEquations;
@@ -3555,7 +3556,81 @@ algorithm
         fail();
   end matchcontinue;
 end createEquations;
+/*
+protected function addStartValueHomotopy "function: addStartValueHomotopy
+  author: lochel
+  
+  returns /$_lambda * inExp + (1-$_lambda) * startValue/ if possible
+"
+  input DAE.Exp inExp;
+  input Option< .DAE.VariableAttributes> inVarAttr;
+  input Boolean includeStartValueHomotopy;
+  output DAE.Exp out;
+algorithm
+  out := matchcontinue(inExp, inVarAttr, includeStartValueHomotopy)
+    local
+      DAE.Exp lambda, startValue, e1, e2, e3, e4;
+      
+    case(inExp, SOME( .DAE.VAR_ATTR_REAL(initial_=SOME(startValue))), true) equation
+      false = Expression.expContainsAnyIfExp(inExp);
+      lambda = DAE.CREF(DAE.CREF_IDENT("$_lambda", DAE.ET_REAL, {}), DAE.ET_REAL);
+      e1 = DAE.BINARY(DAE.RCONST(1.0), DAE.SUB(DAE.ET_REAL), lambda);
+      e2 = DAE.BINARY(lambda, DAE.MUL(DAE.ET_REAL), inExp);
+      e3 = DAE.BINARY(e1, DAE.MUL(DAE.ET_REAL), startValue);
+      e4 = DAE.BINARY(e2, DAE.ADD(DAE.ET_REAL), e3);
+    then e4;
+    
+    case(inExp, _, _)
+    then inExp;
+    
+    case(_, _, _) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCode.mo: addStartValueHomotopy failed"});
+    then fail();
+  end matchcontinue;
+end addStartValueHomotopy;
 
+protected function addStartValueHomotopyToOdeSystem 
+  "author: lochel"
+  input list<BackendDAE.Equation> inEqns;
+  input list<BackendDAE.Var> inVars;
+  input Boolean includeStartValueHomotopy;
+  output list<BackendDAE.Equation> out;
+algorithm
+  out := matchcontinue(inEqns, inVars, includeStartValueHomotopy)
+    local
+      BackendDAE.Equation eqn;
+      BackendDAE.Var var;
+      list<BackendDAE.Equation> eqns;
+      list<BackendDAE.Var> vars;
+      
+      Option< .DAE.VariableAttributes> varAttr;
+      DAE.Exp exp, lambda, e1, startValue;
+      DAE.Exp scalar "scalar" ;
+      DAE.ElementSource source "origin of equation";
+    
+    case({}, {}, _)
+    then {};
+      
+    case(eqn::eqns, (var as BackendDAE.VAR(values=varAttr))::vars, true) equation
+      BackendDAE.EQUATION(exp, scalar, source) = eqn;
+      // lambda = DAE.CREF(DAE.CREF_IDENT("$_lambda", DAE.ET_REAL, {}), DAE.ET_REAL);
+      // e1 = DAE.BINARY(DAE.RCONST(1.0), DAE.SUB(DAE.ET_REAL), lambda);
+      // eqn = BackendDAE.EQUATION(DAE.BINARY(DAE.BINARY(lambda, DAE.MUL(DAE.ET_REAL), exp), DAE.ADD(DAE.ET_REAL), DAE.BINARY(e1, DAE.MUL(DAE.ET_REAL), startValue)), DAE.BINARY(lambda, DAE.MUL(DAE.ET_REAL), scalar), source);
+      scalar = addStartValueHomotopy(scalar, varAttr, true);
+      eqn = BackendDAE.EQUATION(exp, scalar, source);
+      eqns = addStartValueHomotopyToOdeSystem(eqns, vars, true);
+    then eqn::eqns;
+    
+    case(eqn::eqns, var::vars, includeStartValueHomotopy) equation
+      eqns = addStartValueHomotopyToOdeSystem(eqns, vars, includeStartValueHomotopy);
+    then eqn::eqns;
+    
+    case(_, _, _) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCode.mo: addStartValueHomotopyToOdeSystem failed"});
+    then fail();
+  end matchcontinue;
+end addStartValueHomotopyToOdeSystem;
+*/
 protected function createEquation
   input Integer eqNum;
   input Integer varNum;
@@ -3569,6 +3644,7 @@ algorithm
     local
       Expression.ComponentRef cr, cr_1;
       BackendDAE.VarKind kind;
+      Option< .DAE.VariableAttributes> values;
       BackendDAE.Var v;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
@@ -3635,7 +3711,7 @@ algorithm
         helpVarInfo, false, skipDiscInAlgorithm)
       equation
         BackendDAE.EQUATION(e1, e2, source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
-        (v as BackendDAE.VAR(varName = cr, varKind = kind)) = BackendVariable.getVarAt(vars,varNum);
+        (v as BackendDAE.VAR(varName = cr, varKind = kind, values=values)) = BackendVariable.getVarAt(vars,varNum);
         true = BackendVariable.isNonStateVar(v);
         varexp = Expression.crefExp(cr);
         (exp_,asserts) = solve(e1, e2, varexp);
@@ -3649,7 +3725,7 @@ algorithm
         helpVarInfo, false, skipDiscInAlgorithm)
       equation
         BackendDAE.EQUATION(e1, e2, source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
-        BackendDAE.VAR(varName = cr, varKind = BackendDAE.STATE()) = BackendVariable.getVarAt(vars,varNum);        
+        BackendDAE.VAR(varName = cr, varKind = BackendDAE.STATE(), values=values) = BackendVariable.getVarAt(vars,varNum);        
         cr = ComponentReference.crefPrefixDer(cr);
         (exp_,asserts) = solve(e1, e2, Expression.crefExp(cr));
         source = DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
@@ -4155,7 +4231,7 @@ protected function createOdeSystem
   output list<SimEqSystem> equations_;
 algorithm
   equations_ :=
-  matchcontinue (genDiscrete,skipDiscInAlgorithm,linearSystem,inBackendDAE1,inIntegerArray2,inIntegerArray3,inComp,helpVarInfo)
+  matchcontinue(genDiscrete, skipDiscInAlgorithm, linearSystem, inBackendDAE1, inIntegerArray2, inIntegerArray3, inComp, helpVarInfo)
     local
       list<BackendDAE.Equation> eqn_lst,cont_eqn,disc_eqn;
       list<BackendDAE.Var> var_lst,cont_var,disc_var,var_lst_1,cont_var1;
@@ -4308,9 +4384,10 @@ algorithm
     case (genDiscrete, skipDiscInAlgorithm, false,(daelow as BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,_,_)::{},BackendDAE.SHARED(knvars,exvars,av,_,se,ae,al,ev,eoc))),ass1,ass2,comp as BackendDAE.EQUATIONSYSTEM(jac=jac,jacType=jac_tp),helpVarInfo)
       equation
         //print("\ncreateOdeSystem -> Cont sys: ...\n");
-        //BackendDump.printEquations(block_,daelow);
         // extract the variables and equations of the block.
         (eqn_lst,var_lst,index) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
+        //BackendDump.dumpEqns(eqn_lst);
+        //BackendDump.dumpVars(var_lst);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
         ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);
         // States are solved for der(x) not x.
@@ -4420,7 +4497,7 @@ protected
   Integer i;  
 algorithm
   i := inAss2[inEq];
-  simeqnsystem := createEquation(inEq,i,inBackendDAE, helpVarInfo, true,false);
+  simeqnsystem := createEquation(inEq, i, inBackendDAE, helpVarInfo, true, false);
 end generateTearingOtherEqns;
 
 protected function generateTearingSystem1
@@ -5048,7 +5125,7 @@ algorithm
     case ({r},mixedEvent,daelow, Ass1, Ass2, helpVarInfo)
       equation
         i = Ass2[r];
-        reqns = createEquation(r,i,daelow, helpVarInfo, false,false);
+        reqns = createEquation(r, i, daelow, helpVarInfo, false, false);
       then 
         reqns;
         
@@ -5369,6 +5446,85 @@ algorithm
   end matchcontinue;
 end createSingleArrayEqnCode2;
 
+protected function addLambdaToEquationList
+  input list<BackendDAE.Equation> inEqns;
+  output list<BackendDAE.Equation> outEqns;
+algorithm
+  outEqns := matchcontinue(inEqns)
+  local
+    BackendDAE.Equation eqn;
+    list<BackendDAE.Equation> eqns;
+    DAE.Exp e1, e2, lambda;
+    DAE.ElementSource es;
+    
+    case({}) then {};
+      
+    case(BackendDAE.EQUATION(e1, e2, es)::eqns) equation
+      lambda = DAE.CREF(DAE.CREF_IDENT("$_lambda", DAE.ET_REAL, {}), DAE.ET_REAL);
+      e1 = DAE.BINARY(lambda, DAE.MUL(DAE.ET_REAL()), e1);
+      e2 = DAE.BINARY(lambda, DAE.MUL(DAE.ET_REAL()), e2);
+      eqn = BackendDAE.EQUATION(e1, e2, es);
+      eqns = addLambdaToEquationList(eqns);
+    then eqn::eqns;
+      
+    case(BackendDAE.RESIDUAL_EQUATION(e1, es)::eqns) equation
+      lambda = DAE.CREF(DAE.CREF_IDENT("$_lambda", DAE.ET_REAL, {}), DAE.ET_REAL);
+      e1 = DAE.BINARY(lambda, DAE.MUL(DAE.ET_REAL()), e1);
+      eqn = BackendDAE.RESIDUAL_EQUATION(e1, es);
+      eqns = addLambdaToEquationList(eqns);
+    then eqn::eqns;
+      
+    case(eqn::eqns) equation
+      BackendDump.dumpEquation(eqn);
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCode.mo: addLambdaToEquationList failed"});
+    then fail();
+  end matchcontinue;
+end addLambdaToEquationList;
+
+protected function generateStartValueResiduals
+"lochel"
+  input list<BackendDAE.Var> inVars;
+  output list<BackendDAE.Equation> outEqns;
+algorithm
+  outEqns := matchcontinue(inVars)
+  local
+    BackendDAE.Var var;
+    list<BackendDAE.Var> vars;
+    BackendDAE.Equation eqn;
+    list<BackendDAE.Equation> eqns;
+    DAE.Exp e, e1, e2, lambda, crefExp, startExp;
+    DAE.ComponentRef cref;
+    DAE.ExpType tp;
+    case({}) then {};
+      
+    case(var::vars) equation
+      SOME(startExp) = BackendVariable.varStartValueOption(var);
+      lambda = DAE.CREF(DAE.CREF_IDENT("$_lambda", DAE.ET_REAL, {}), DAE.ET_REAL);
+      cref = BackendVariable.varCref(var);
+      crefExp = DAE.CREF(cref, DAE.ET_REAL());
+      
+      e1 = DAE.BINARY(DAE.RCONST(1.0), DAE.SUB(DAE.ET_REAL()), lambda);
+      
+      e = Expression.crefExp(cref);
+      tp = Expression.typeof(e);
+      startExp = Expression.makeBuiltinCall("pre", {e}, tp);
+      e2 = DAE.BINARY(crefExp, DAE.SUB(DAE.ET_REAL()), startExp);
+      
+      e1 = DAE.BINARY(e1, DAE.MUL(DAE.ET_REAL()), e2);
+      eqn = BackendDAE.RESIDUAL_EQUATION(e1, DAE.emptyElementSource);
+      eqns = generateStartValueResiduals(vars);
+    then eqn::eqns;
+      
+    case(var::vars) equation
+      eqns = generateStartValueResiduals(vars);
+    then eqns;
+      
+    case(_) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCode.mo: generateStartValueResiduals failed"});
+    then fail();
+  end matchcontinue;
+end generateStartValueResiduals;
+
 protected function createResidualEquations
   input BackendDAE.BackendDAE dlow;
   input array<Integer> ass1;
@@ -5377,13 +5533,13 @@ protected function createResidualEquations
 algorithm
   residualEquations := matchcontinue (dlow, ass1, ass2)
     local
-      list<BackendDAE.Equation> eqns_lst, se_lst, ie_lst, ie2_lst;
+      list<BackendDAE.Equation> eqns_lst, se_lst, ie_lst, ie2_lst, ie3_lst;
       BackendDAE.Variables vars, knvars;
       BackendDAE.EquationArray eqns, se, ie;
       array<BackendDAE.MultiDimEquation> ae;
       array<Algorithm.Algorithm> al;
       BackendDAE.EventInfo ev;
-      list<SimEqSystem> resEqus1,resEqus2,resEqus3,resEqus4;
+      list<SimEqSystem> resEqus1,resEqus2,resEqus3;
       BackendDAE.AliasVariables av;
       
     case ((dlow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns)::{},
@@ -5395,6 +5551,7 @@ algorithm
         ((ie2_lst,_)) = BackendVariable.traverseBackendDAEVars(vars,generateInitialEquationsFromStart,({},av));
         ((ie2_lst,_)) = BackendVariable.traverseBackendDAEVars(knvars,generateInitialEquationsFromStart,(ie2_lst,av));
         ie2_lst = listReverse(ie2_lst);
+        
         /*
         ((_,_,_,eqns_lst)) = BackendEquation.traverseBackendDAEEqns(eqns,selectContinuousEquations,(1, ass2, vars,{}));
         eqns_lst = listReverse(eqns_lst);
@@ -5414,13 +5571,19 @@ algorithm
         ie_lst = replaceDerOpInEquationList(ie_lst);
         ie_lst = listReverse(ie_lst);
         ie_lst = Util.listFilter(ie_lst, failUnlessResidual);
+        ie_lst = addLambdaToEquationList(ie_lst);
         resEqus1 = Util.listMap1(ie_lst, dlowEqToSimEqSystem,al);
         
         ie2_lst = Util.listMap(ie2_lst, BackendEquation.equationToResidualForm);
         ie2_lst = Util.listFilter(ie2_lst, failUnlessResidual);
+        ie2_lst = addLambdaToEquationList(ie2_lst);
         resEqus2 = Util.listMap1(ie2_lst, dlowEqToSimEqSystem,al);
         
+        ie3_lst = generateStartValueResiduals(BackendDAEUtil.varList(vars));
+        resEqus3 = Util.listMap1(ie3_lst, dlowEqToSimEqSystem, al);
+        
         residualEquations = listAppend(resEqus1, resEqus2);
+        residualEquations = listAppend(residualEquations, resEqus3);
         //residualEquations = listAppend(resEqus1,resEqus3);
         //residualEquations = listAppend(residualEquations, resEqus4);
       then
@@ -6282,7 +6445,7 @@ algorithm
       BackendDAE.VarKind kind;
       String comment, unit, displayUnit;
       Integer index;
-      Option<DAE.Exp> initVal;
+      Option<DAE.Exp> initVal, nomVal;
       Boolean isFixed;
       DAE.ExpType type_;
       Boolean isDiscrete;
@@ -6290,17 +6453,17 @@ algorithm
       DAE.ElementSource source;
       Option<Integer> variable_index;
       list <String> numArrayElement;
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, NONE(),_, source,_,NONE(),numArrayElement))
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, nomVal, isFixed, type_, isDiscrete, NONE(),_, source,_,NONE(),numArrayElement))
       equation
         name = ComponentReference.crefPrefixDer(name);
       then
-        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_, isDiscrete, NONE(), NOALIAS(), source, INTERNAL(),NONE(),numArrayElement);
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, SOME(arrayCref),_, source,_,NONE(),numArrayElement))
+        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), nomVal, isFixed, type_, isDiscrete, NONE(), NOALIAS(), source, INTERNAL(),NONE(),numArrayElement);
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, nomVal, isFixed, type_, isDiscrete, SOME(arrayCref),_, source,_,NONE(),numArrayElement))
       equation
         name = ComponentReference.crefPrefixDer(name);
         arrayCref = ComponentReference.crefPrefixDer(arrayCref);
       then
-        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_, isDiscrete, SOME(arrayCref), NOALIAS(), source, INTERNAL(),NONE(),numArrayElement);
+        SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, NONE(), nomVal, isFixed, type_, isDiscrete, SOME(arrayCref), NOALIAS(), source, INTERNAL(),NONE(),numArrayElement);
   end match;
 end derVarFromStateVar;
 
@@ -6561,7 +6724,7 @@ algorithm
       DAE.ComponentRef name;
       BackendDAE.VarKind kind;
       String comment, unit, displayUnit;
-      Option<DAE.Exp> initVal;
+      Option<DAE.Exp> initVal, nomVal;
       Boolean isFixed;
       DAE.ExpType type_;
       Boolean isDiscrete;
@@ -6574,10 +6737,10 @@ algorithm
       Option<Integer> variable_index;
       list <String> numArrayElement;
     case ({},_) then {};
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality,NONE(),numArrayElement)::rest,index_)
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality,NONE(),numArrayElement)::rest,index_)
       equation
         rest2 = rewriteIndex(rest, index_ + 1);
-      then (SIMVAR(name, kind, comment, unit, displayUnit, index_, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality,NONE(),numArrayElement)::rest2);
+      then (SIMVAR(name, kind, comment, unit, displayUnit, index_, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality,NONE(),numArrayElement)::rest2);
   end match;
 end rewriteIndex;
 
@@ -6665,7 +6828,7 @@ algorithm
       BackendDAE.VarKind kind;
       String comment, unit, displayUnit;
       Integer index;
-      Option<DAE.Exp> initVal;
+      Option<DAE.Exp> initVal, nomVal;
       Boolean isFixed;
       DAE.ExpType type_;
       Boolean isDiscrete;
@@ -6677,13 +6840,13 @@ algorithm
       Causality causality;
       Option<Integer> variable_index;
       list <String> numArrayElement;
-    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality,NONE(),numArrayElement), initCrefs)
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality,NONE(),numArrayElement), initCrefs)
       equation
         (_ :: _) = Util.listSelect1(initCrefs, name, ComponentReference.crefEqualNoStringCompare);
         varNameStr = ComponentReference.printComponentRefStr(name);
         info = DAEUtil.getElementSourceFileInfo(source);
         Error.addSourceMessage(Error.SETTING_FIXED_ATTRIBUTE, {varNameStr}, info);
-      then SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, false, type_, isDiscrete, arrayCref, aliasvar, source, causality,NONE(),numArrayElement);
+      then SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, nomVal, false, type_, isDiscrete, arrayCref, aliasvar, source, causality,NONE(),numArrayElement);
     case (_, _) then simvarIn;
   end matchcontinue;
 end nonFixifyIfHasInit;
@@ -7165,7 +7328,6 @@ algorithm
     case (((v as BackendDAE.VAR(varName = cr,varKind = kind,values = attr,source=source)),(eqns,av))) /* add equations for variables with fixed = true */
       equation
         NOALIAS() = getAliasVar(v,SOME(av));
-        false = BackendVariable.isVarDiscrete(v);
         BackendVariable.isVarKindVariable(kind);
         true = BackendVariable.varFixed(v);
         true = DAEUtil.hasStartAttr(attr);
@@ -7178,21 +7340,8 @@ algorithm
     case (((v as BackendDAE.VAR(varName = cr,varKind = BackendDAE.STATE(),values = attr,source=source)),(eqns,av))) /* add equations for variables with fixed = true */
       equation
         NOALIAS() = getAliasVar(v,SOME(av));
-        false = BackendVariable.isVarDiscrete(v);
         true = BackendVariable.varFixed(v);
         false = DAEUtil.hasStartAttr(attr);
-        //startv = DAEUtil.getStartAttr(attr);
-        e = Expression.crefExp(cr);
-        tp = Expression.typeof(e);
-        startv = Expression.makeBuiltinCall("pre", {e}, tp);
-      then
-        ((v,(BackendDAE.EQUATION(e,startv,source)::eqns,av)));
-    case (((v as BackendDAE.VAR(varName = cr,varKind = BackendDAE.DUMMY_STATE(),values = attr,source=source)),(eqns,av))) /* add equations for variables with fixed = true */
-      equation
-        NOALIAS() = getAliasVar(v,SOME(av));
-        false = BackendVariable.isVarDiscrete(v);
-        true = BackendVariable.varFixed(v);
-        true = DAEUtil.hasStartAttr(attr);
         //startv = DAEUtil.getStartAttr(attr);
         e = Expression.crefExp(cr);
         tp = Expression.typeof(e);
@@ -8538,6 +8687,7 @@ algorithm
       BackendDAE.Type tp;
       String  commentStr,  unit, displayUnit,NumarrayElement,idxs_str1;
       Option<DAE.Exp> initVal;
+      Option<DAE.Exp> nomVal;
       Boolean isFixed;
       DAE.ExpType type_;
       Boolean isDiscrete;
@@ -8562,6 +8712,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         initVal = getInitialValue(dlowVar);
+        nomVal = getNominalValue(dlowVar);
         checkInitVal(initVal,source);
         isFixed = BackendVariable.varFixed(dlowVar);
         type_ = BackendDAEUtil.makeExpType(tp);
@@ -8571,7 +8722,7 @@ algorithm
         caus = getCausality(dlowVar,vars);
         numArrayElement=arraydim1(inst_dims);       
       then
-        SIMVAR(cr, kind, commentStr, unit, displayUnit, indx, initVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus,NONE(),numArrayElement);
+        SIMVAR(cr, kind, commentStr, unit, displayUnit, indx, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus,NONE(),numArrayElement);
   end match;
 end dlowvarToSimvar;
 
@@ -9548,6 +9699,27 @@ algorithm
     case (_) then NONE();
   end matchcontinue;
 end getInitialValue;
+
+protected function getNominalValue
+"Extract nominal value from BackendDAE.Variable, if it has any"
+  input BackendDAE.Var daelowVar;
+  output Option<DAE.Exp> nomVal;
+algorithm
+  nomVal := matchcontinue(daelowVar)
+    local
+      Option<DAE.VariableAttributes> dae_var_attr;
+      Values.Value value;
+      DAE.Exp e;
+
+    case (BackendDAE.VAR(varType = BackendDAE.REAL(), values = dae_var_attr)) equation
+      e = DAEUtil.getNominalAttrFail(dae_var_attr);
+      true = Expression.isConst(e);
+    then SOME(e);
+      
+    case (_) equation
+    then NONE();
+  end matchcontinue;
+end getNominalValue;
 
 
 /****** HashTable ComponentRef -> SimVar ******/
@@ -10591,6 +10763,7 @@ algorithm (outSimVar):= matchcontinue(stateVars,dae_low)
     String comment,unit,displayUnit;
     Integer index;
     Option<DAE.Exp> initialValue;
+    Option<DAE.Exp> nominalValue;
     Boolean isFixed,isDiscrete;
     DAE.ExpType type_;
     // arrayCref is the name of the array if this variable is the first in that
@@ -10601,14 +10774,14 @@ algorithm (outSimVar):= matchcontinue(stateVars,dae_low)
     Causality causality;
     Option<Integer> variable_index;
     list <String> numArrayElement;
-  case(SIMVAR(name=name,varKind=varKind,comment=comment,unit=unit,displayUnit=displayUnit,index=index,initialValue=initialValue,isFixed=isFixed,type_=type_,isDiscrete=isDiscrete,arrayCref=arrayCref,aliasvar=aliasvar,source=source,causality=causality,variable_index=variable_index,numArrayElement=numArrayElement),dae_low)
+  case(SIMVAR(name=name,varKind=varKind,comment=comment,unit=unit,displayUnit=displayUnit,index=index,initialValue=initialValue,nominalValue=nominalValue,isFixed=isFixed,type_=type_,isDiscrete=isDiscrete,arrayCref=arrayCref,aliasvar=aliasvar,source=source,causality=causality,variable_index=variable_index,numArrayElement=numArrayElement),dae_low)
      equation
       Debug.fcall("cppvarindex",BackendDump.debugStrCrefStr,(" search index for state variable ",name,"\n"));
       ordered_states=setVariableDerIndex(dae_low);
       new_index=stateindex(name,ordered_states);
            
     then 
-     SIMVAR(name,varKind,comment,unit,displayUnit,new_index,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement);
+     SIMVAR(name,varKind,comment,unit,displayUnit,new_index,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement);
 end matchcontinue;
 end stateindex2;
 
@@ -10653,6 +10826,7 @@ algorithm
       String unit;
       String displayUnit;
       Option<DAE.Exp> initialValue;
+      Option<DAE.Exp> nominalValue;
       Boolean isFixed;
       DAE.ExpType type_;
       Boolean isDiscrete;
@@ -10666,11 +10840,11 @@ algorithm
       list<SimVar> rest,indexed_vector;
       list <String> numArrayElement;
     case({},_) then {};
-    case(SIMVAR(name=name,varKind=varKind,comment=comment,unit=unit,displayUnit=displayUnit,initialValue=initialValue,isFixed=isFixed,type_=type_,isDiscrete=isDiscrete,arrayCref=arrayCref,aliasvar=aliasvar,source=source,causality=causality,variable_index=variable_index,numArrayElement=numArrayElement) :: rest,index)
+    case(SIMVAR(name=name,varKind=varKind,comment=comment,unit=unit,displayUnit=displayUnit,initialValue=initialValue,nominalValue=nominalValue,isFixed=isFixed,type_=type_,isDiscrete=isDiscrete,arrayCref=arrayCref,aliasvar=aliasvar,source=source,causality=causality,variable_index=variable_index,numArrayElement=numArrayElement) :: rest,index)
       equation
         indexed_vector = setStatesVectorIndex2(rest,index+1);
       then 
-        SIMVAR(name,varKind,comment,unit,displayUnit,index,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,SOME(index),numArrayElement)::indexed_vector;
+        SIMVAR(name,varKind,comment,unit,displayUnit,index,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,SOME(index),numArrayElement)::indexed_vector;
   end matchcontinue;
 end setStatesVectorIndex2;
 
@@ -10760,6 +10934,7 @@ algorithm
       String unit;
       String displayUnit;
       Option<DAE.Exp> initialValue;
+      Option<DAE.Exp> nominalValue;
       Boolean isFixed;
       DAE.ExpType type_;
       Boolean isDiscrete;
@@ -10773,28 +10948,28 @@ algorithm
       DAE.ComponentRef cr_1;
       String name_str,id_str;
       list <String> numArrayElement;
-    case(SIMVAR(name,varKind,comment,unit,displayUnit,0,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)) 
+    case(SIMVAR(name,varKind,comment,unit,displayUnit,0,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)) 
       equation
         name_str = ComponentReference.printComponentRefStr(name);
         id_str = stringAppendList({DAE.derivativeNamePrefix,"." ,name_str});
         cr_1 = ComponentReference.makeCrefIdent(id_str,DAE.ET_REAL(),{});
       then
-        SIMVAR(cr_1,varKind,comment,unit,displayUnit,0,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement);
-    case(SIMVAR(name,varKind,comment,unit,displayUnit,1,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)) 
+        SIMVAR(cr_1,varKind,comment,unit,displayUnit,0,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement);
+    case(SIMVAR(name,varKind,comment,unit,displayUnit,1,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)) 
       equation
         name_str = ComponentReference.printComponentRefStr(name);
         id_str = stringAppendList({DAE.derivativeNamePrefix,".",name_str});
         cr_1 = ComponentReference.makeCrefIdent(id_str,DAE.ET_REAL(),{});
       then
-        SIMVAR(cr_1,varKind,comment,unit,displayUnit,1,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement);
+        SIMVAR(cr_1,varKind,comment,unit,displayUnit,1,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement);
     
-    case(SIMVAR(name,varKind,comment,unit,displayUnit,2,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)) 
+    case(SIMVAR(name,varKind,comment,unit,displayUnit,2,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)) 
       equation
         name_str = ComponentReference.printComponentRefStr(name);
         id_str = stringAppendList({DAE.derivativeNamePrefix,".",name_str});
         cr_1 = ComponentReference.makeCrefIdent(id_str,DAE.ET_REAL(),{});
       then
-        SIMVAR(cr_1,varKind,comment,unit,displayUnit,2,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement);
+        SIMVAR(cr_1,varKind,comment,unit,displayUnit,2,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement);
   end matchcontinue;
 end generateDerStates2;
 
@@ -10815,6 +10990,7 @@ algorithm
       String displayUnit;
       Integer index,index1;
       Option<DAE.Exp> initialValue;
+      Option<DAE.Exp> nominalValue;
       Boolean isFixed;
       DAE.ExpType type_;
       Boolean isDiscrete;
@@ -10827,13 +11003,13 @@ algorithm
       SimVar v,newvar1;
       list <String> numArrayElement;
   
-  case((v as SIMVAR(name,varKind,comment,unit,displayUnit,index,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)),SIMVAR(name1,_,_,_,_,index1,_,_,_,_,_,_,_,_,SOME(variable_index1),_)::_)    
+  case((v as SIMVAR(name,varKind,comment,unit,displayUnit,index,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)),SIMVAR(name1,_,_,_,_,index1,_,_,_,_,_,_,_,_,_,SOME(variable_index1),_)::_)    
     equation
       Debug.fcall("cppvarindex",BackendDump.debugStrCrefStrCrefStr,(" compare variable ",name,"with ",name1,"\n"));
       true = ComponentReference.crefEqual(name,name1);
     then 
-      SIMVAR(name,varKind,comment,unit,displayUnit,variable_index1,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,SOME(index1),numArrayElement);
-  case((v as SIMVAR(name,varKind,comment,unit,displayUnit,index,initialValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)),_::rest1)
+      SIMVAR(name,varKind,comment,unit,displayUnit,variable_index1,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,SOME(index1),numArrayElement);
+  case((v as SIMVAR(name,varKind,comment,unit,displayUnit,index,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)),_::rest1)
     equation
        newvar1=replaceindex(v,rest1);
     then newvar1;

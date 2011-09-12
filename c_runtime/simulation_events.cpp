@@ -384,36 +384,80 @@ initSample(double start, double stop)
 
 }
 
-void
-saveall()
+/* function: saveall
+ *
+ * stores all the values for use with the pre-operator
+ */
+void saveall()
 {
-  long i;
-  for (i = 0; i < globalData->nStates; i++)
-    {
-      x_saved[i] = globalData->states[i];
-      xd_saved[i] = globalData->statesDerivatives[i];
-    }
-  for (i = 0; i < globalData->nAlgebraic; i++)
-    {
-      y_saved[i] = globalData->algebraics[i];
-    }
-  for (i = 0; i < globalData->intVariables.nAlgebraic; i++)
-    {
-      int_saved[i] = globalData->intVariables.algebraics[i];
-    }
-  for (i = 0; i < globalData->boolVariables.nAlgebraic; i++)
-    {
-      bool_saved[i] = globalData->boolVariables.algebraics[i];
-    }
-  for (i = 0; i < globalData->nHelpVars; i++)
-    {
-      h_saved[i] = globalData->helpVars[i];
-    }
-  for (i = 0; i < globalData->stringVariables.nAlgebraic; i++)
-    {
-      str_saved[i] = globalData->stringVariables.algebraics[i];
-    }
+	for(fortran_integer i=0; i<globalData->nStates; i++)
+	{
+		x_saved[i] = globalData->states[i];
+		xd_saved[i] = globalData->statesDerivatives[i];
+	}
+
+	for(fortran_integer i = 0; i < globalData->nAlgebraic; i++)
+	{
+		y_saved[i] = globalData->algebraics[i];
+	}
+	for(long i = 0; i < globalData->intVariables.nAlgebraic; i++)
+	{
+		int_saved[i] = globalData->intVariables.algebraics[i];
+	}
+
+	for(long i = 0; i < globalData->boolVariables.nAlgebraic; i++)
+	{
+		bool_saved[i] = globalData->boolVariables.algebraics[i];
+	}
+
+	for(long i = 0; i < globalData->nHelpVars; i++)
+	{
+		h_saved[i] = globalData->helpVars[i];
+	}
+
+	for(long i = 0; i < globalData->stringVariables.nAlgebraic; i++)
+	{
+		str_saved[i] = globalData->stringVariables.algebraics[i];
+	}
 }
+
+/** function printAllPreValues
+ *  author: lochel
+ */
+void printAllPreValues()
+{
+	for(fortran_integer i=0; i<globalData->nStates; i++)
+	{
+		cout << "info    | x_saved[" << i << "] = " << x_saved[i] << endl;
+		cout << "info    | xd_saved[" << i << "] = " << xd_saved[i] << endl;
+	}
+
+	for(fortran_integer i = 0; i < globalData->nAlgebraic; i++)
+	{
+		cout << "info    | y_saved[" << i << "] = " << y_saved[i] << endl;
+	}
+
+	for(long i = 0; i < globalData->intVariables.nAlgebraic; i++)
+	{
+		cout << "info    | int_saved[" << i << "] = " << int_saved[i] << endl;
+	}
+
+	for(long i = 0; i < globalData->boolVariables.nAlgebraic; i++)
+	{
+		cout << "info    | bool_saved[" << i << "] = " << (bool_saved[i] ? "true" : "false") << endl;
+	}
+
+	for(long i = 0; i < globalData->nHelpVars; i++)
+	{
+		cout << "info    | h_saved[" << i << "] = " << h_saved[i] << endl;
+	}
+
+	for(long i = 0; i < globalData->stringVariables.nAlgebraic; i++)
+	{
+		cout << "info    | str_saved[" << i << "] = " << str_saved[i] << endl;
+	}
+}
+
 /** function restoreHelpVars
  * author: wbraun
  *

@@ -98,14 +98,14 @@ DATA *globalData = 0;
 simulation_result *sim_result = NULL;
 
 /* Flags for controlling logging to stdout */
-const int LOG_STATS = 1;
-const int LOG_INIT = 2;
-const int LOG_RES_INIT = 3;
-const int LOG_SOLVER = 4;
-const int LOG_NONLIN_SYS = 8;
-const int LOG_EVENTS = 16;
-const int LOG_ZEROCROSSINGS = 32;
-const int LOG_DEBUG = 64;
+const int LOG_STATS				= (1<<0);
+const int LOG_INIT				= (1<<1);
+const int LOG_SOLVER			= (1<<2);
+const int LOG_NONLIN_SYS		= (1<<3);
+const int LOG_EVENTS			= (1<<4);
+const int LOG_ZEROCROSSINGS		= (1<<5);
+const int LOG_DEBUG				= (1<<6);
+const int LOG_RES_INIT			= LOG_STATS|LOG_INIT;
 
 /* Flags for modelErrorCodes */
 extern const int ERROR_NONLINSYS = -1;
@@ -471,6 +471,11 @@ verboseLevel(int argc, char**argv)
       res |= LOG_DEBUG;
     }
   return res;
+}
+
+int useVerboseOutput(int level)
+{
+	return (sim_verbose >= level);
 }
 
 /**
