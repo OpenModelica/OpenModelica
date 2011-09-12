@@ -6199,7 +6199,7 @@ public function getPreOptModulesString
 " function: getPreOptModulesString"
   output list<String> strPreOptModules;
 algorithm
- strPreOptModules := RTOpts.getPreOptModules({"removeFinalParameters","removeEqualFunctionCalls","removeSimpleEquations","expandDerOperator","partitionIndependentBlocks"});
+ strPreOptModules := RTOpts.getPreOptModules({"partitionIndependentBlocks","removeFinalParameters","removeEqualFunctionCalls","removeSimpleEquations","expandDerOperator","collapseIndependentBlocks"});
 end getPreOptModulesString;
 
 protected function getPreOptModules
@@ -6219,6 +6219,7 @@ algorithm
           (BackendDAEOptimize.removeUnusedParameter,"removeUnusedParameter",false),
           (BackendDAEOptimize.removeUnusedVariables,"removeUnusedVariables",false),
           (BackendDAEOptimize.partitionIndependentBlocks,"partitionIndependentBlocks",true),
+          (BackendDAEOptimize.collapseIndependentBlocks,"collapseIndependentBlocks",true),
           (BackendDAECreate.expandDerOperator,"expandDerOperator",false)
   };
   strPreOptModules := getPreOptModulesString();
@@ -6371,5 +6372,39 @@ algorithm
    t := System.realtimeTock(10);
    setGlobalRoot(6, realAdd(getGlobalRoot(6),t));
 end profilerstop2;
+
+public function mapPreOptModule
+  "Helper to map a preopt module over each equation system"
+  input PreOptModule module;
+  input BackendDAE.BackendDAE dae;
+  input DAE.FunctionTree funcs;
+  output BackendDAE.BackendDAE odae;
+  partial function PreOptModule
+    input BackendDAE.EqSystem syst;
+    input BackendDAE.Shared shared;
+    input DAE.FunctionTree funcs;
+    output BackendDAE.EqSystem osyst;
+    output BackendDAE.Shared oshared;
+  end PreOptModule;
+protected
+  list<BackendDAE.EqSystem> systs;
+  BackendDAE.Shared shared;
+algorithm
+  BackendDAE.DAE(systs,shared) := dae;
+  (systs,shared) := Util.listMapAndFold1(systs,module,shared,funcs);
+  // Filter out empty systems
+  systs := Util.listSelect(systs,nonEmptySystem);
+  odae := BackendDAE.DAE(systs,shared);
+end mapPreOptModule;
+
+protected function nonEmptySystem
+  input BackendDAE.EqSystem syst;
+  output Boolean nonEmpty;
+protected
+  Integer num;
+algorithm
+  BackendDAE.EQSYSTEM(orderedVars=BackendDAE.VARIABLES(numberOfVars=num)) := syst;
+  nonEmpty := num <> 0;
+end nonEmptySystem;
 
 end BackendDAEUtil;

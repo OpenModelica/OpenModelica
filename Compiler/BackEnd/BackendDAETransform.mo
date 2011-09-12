@@ -2480,11 +2480,11 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
     case (dae,{},_,inDerivedAlgs,inDerivedMultiEqn,inStateOrd,inOrgEqnsLst) then (dae,inDerivedAlgs,inDerivedMultiEqn,inStateOrd,inOrgEqnsLst);
-    case ((dae as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt))::{},BackendDAE.SHARED(kv,ev,av,ie,seqns,ae,al,BackendDAE.EVENT_INFO(wclst,zc),eoc))),(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn,inStateOrd,inOrgEqnsLst)
+    case ((dae as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt))::{},shared as BackendDAE.SHARED(kv,ev,av,ie,seqns,ae,al,BackendDAE.EVENT_INFO(wclst,zc),eoc))),(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn,inStateOrd,inOrgEqnsLst)
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
-        (eqn_1,al1,derivedAlgs,ae1,derivedMultiEqn,_) = Derive.differentiateEquationTime(eqn, v, inFunctions, al,inDerivedAlgs,ae,inDerivedMultiEqn);
+        (eqn_1,al1,derivedAlgs,ae1,derivedMultiEqn,_) = Derive.differentiateEquationTime(eqn, v, shared, inFunctions, al,inDerivedAlgs,ae,inDerivedMultiEqn);
         (eqn_1,al1,ae1,wclst,(so,_)) = traverseBackendDAEExpsEqn(eqn_1, al1, ae1, wclst, replaceStateOrderExp,(inStateOrd,v));
         eqnss = BackendDAEUtil.equationSize(eqns);
         (eqn_1,al1,ae1,wclst1,(v1,eqns,so,ilst)) = traverseBackendDAEExpsEqn(eqn_1,al1,ae1,wclst,changeDerVariablestoStates,(v,eqns,so,{}));
@@ -5570,8 +5570,8 @@ algorithm
 
     case ({},_,dae)
       equation
-        print("Error, no state to select\nDAE:");
-        //dump(dae);
+        Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAETransform.selectDummyState: no state to select"});
+        BackendDump.dump(dae);
       then
         fail();
 
@@ -6133,13 +6133,14 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
       list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedAlgs1;
       list<tuple<Integer,Integer,Integer>> derivedMultiEqn,derivedMultiEqn1;
+      BackendDAE.Shared shared;
     case (dae,{},_,inDerivedAlgs,inDerivedMultiEqn) then (dae,{},inDerivedAlgs,inDerivedMultiEqn);
-    case ((dae as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt))::{},BackendDAE.SHARED(kv,ev,av,ie,seqns,ae,al,wc,eoc))),(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn)
+    case ((dae as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt))::{},shared as BackendDAE.SHARED(kv,ev,av,ie,seqns,ae,al,wc,eoc))),(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn)
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
 
-        (eqn_1,al1,derivedAlgs,ae1,derivedMultiEqn,true) = Derive.differentiateEquationTime(eqn, v, inFunctions, al,inDerivedAlgs,ae,inDerivedMultiEqn);
+        (eqn_1,al1,derivedAlgs,ae1,derivedMultiEqn,true) = Derive.differentiateEquationTime(eqn, v, shared, inFunctions, al,inDerivedAlgs,ae,inDerivedMultiEqn);
         // str = BackendDump.equationStr(eqn);
         // print( "differentiated equation ") ;
         // print(str); print("\n");
@@ -6154,12 +6155,12 @@ algorithm
         (dae,reqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqns_1,SOME(m),SOME(mt))::{},BackendDAE.SHARED(kv,ev,av,ie,seqns,ae1,al1,wc,eoc)), es, inFunctions,derivedAlgs,derivedMultiEqn);
       then
         (dae,(leneqns :: (e :: reqns)),derivedAlgs1,derivedMultiEqn1);
-    case ((dae as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt))::{},BackendDAE.SHARED(kv,ev,av,ie,seqns,ae,al,wc,eoc))),(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn)
+    case ((dae as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt))::{},shared as BackendDAE.SHARED(kv,ev,av,ie,seqns,ae,al,wc,eoc))),(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn)
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
 
-        (eqn_1,al1,derivedAlgs,ae1,derivedMultiEqn,false) = Derive.differentiateEquationTime(eqn, v, inFunctions, al,inDerivedAlgs,ae,inDerivedMultiEqn);
+        (eqn_1,al1,derivedAlgs,ae1,derivedMultiEqn,false) = Derive.differentiateEquationTime(eqn,v,shared,inFunctions,al,inDerivedAlgs,ae,inDerivedMultiEqn);
         // str = BackendDump.equationStr(eqn);
         // print( "differentiated equation ") ;
         // print(str); print("\n");

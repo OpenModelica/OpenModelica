@@ -45,6 +45,7 @@ public import DAE;
 
 protected import Algorithm;
 protected import BackendDAEUtil;
+protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import BaseHashTable;
@@ -2042,14 +2043,12 @@ protected function statesExp
   Helper function to states."
   input tuple<DAE.Exp,BackendDAE.BinTree> itpl;
   output tuple<DAE.Exp,BackendDAE.BinTree> otpl;
+protected
+  DAE.Exp e;
+  BackendDAE.BinTree bt;
 algorithm
-  otpl := matchcontinue itpl
-    local
-      DAE.Exp e;
-      BackendDAE.BinTree bt;
-    case ((e,bt)) then Expression.traverseExp(e,traversingstatesExpFinder,bt);
-    case ((e,bt)) then ((e,bt));
-  end matchcontinue;
+  (e,bt) := itpl;
+  otpl := Expression.traverseExp(e,traversingstatesExpFinder,bt);
 end statesExp;
 
 public function traversingstatesExpFinder "
@@ -2565,13 +2564,26 @@ public function expandDerOperator
   expands der(expr) using Derive.differentiteExpTime.
   This can not be done in Static, since we need all time-
   dependent variables, which is only available in BackendDAE."
-  input BackendDAE.BackendDAE inDAE;
-  input DAE.FunctionTree inFunctionTree;
-  output BackendDAE.BackendDAE outDAE;
+  input BackendDAE.BackendDAE dae;
+  input DAE.FunctionTree funcs;
+  output BackendDAE.BackendDAE odae;
 algorithm
-  (outDAE) := match (inDAE,inFunctionTree)
+  odae := BackendDAEUtil.mapPreOptModule(expandDerOperatorWork,dae,funcs);
+end expandDerOperator;
+
+protected function expandDerOperatorWork
+"function expandDerOperator
+  expands der(expr) using Derive.differentiteExpTime.
+  This can not be done in Static, since we need all time-
+  dependent variables, which is only available in BackendDAE."
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input DAE.FunctionTree funcs;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+algorithm
+  (osyst,oshared) := match (syst,shared,funcs)
     local
-      DAE.FunctionTree funcs;
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.Variables vars,knvars,exobj,vars1,vars2,vars3,vars4;
       BackendDAE.AliasVariables av;
@@ -2580,21 +2592,21 @@ algorithm
       array<DAE.Algorithm> algorithms,algorithms1;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
-    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,m,mT)::{},BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,einfo,eoc)),funcs)
+    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT),shared as BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,einfo,eoc),funcs)
       equation
-        (eqns1,(vars1,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,traverserexpandDerEquation,(vars,funcs));
-        (inieqns1,(vars2,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,traverserexpandDerEquation,(vars1,funcs));
-        (arreqns1,(vars3,_,_)) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(arreqns,traverserexpandDerExp,BackendEquation.traverseBackendDAEExpsArrayEqnWithUpdate,1,arrayLength(arreqns),(vars2,{},funcs));
-        (algorithms1,(vars4,_,_)) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(algorithms,traverserexpandDerExp,BackendEquation.traverseBackendDAEExpsAlgortihmWithUpdate,1,arrayLength(algorithms),(vars3,{},funcs));
+        (eqns1,(vars1,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,traverserexpandDerEquation,(vars,shared,funcs));
+        (inieqns1,(vars2,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,traverserexpandDerEquation,(vars1,shared,funcs));
+        (arreqns1,(vars3,_,_,_)) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(arreqns,traverserexpandDerExp,BackendEquation.traverseBackendDAEExpsArrayEqnWithUpdate,1,arrayLength(arreqns),(vars2,shared,{},funcs));
+        (algorithms1,(vars4,_,_,_)) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(algorithms,traverserexpandDerExp,BackendEquation.traverseBackendDAEExpsAlgortihmWithUpdate,1,arrayLength(algorithms),(vars3,shared,{},funcs));
       then
-        (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars4,eqns1,m,mT)::{},BackendDAE.SHARED(knvars,exobj,av,inieqns1,remeqns,arreqns1,algorithms1,einfo,eoc)));
+        (BackendDAE.EQSYSTEM(vars4,eqns1,m,mT),BackendDAE.SHARED(knvars,exobj,av,inieqns1,remeqns,arreqns1,algorithms1,einfo,eoc));
   end match;
-end expandDerOperator;
+end expandDerOperatorWork;
 
 protected function traverserexpandDerEquation
   "Help function to e.g. traverserexpandDerEquation"
-  input tuple<BackendDAE.Equation,tuple<BackendDAE.Variables,DAE.FunctionTree>> tpl;
-  output tuple<BackendDAE.Equation,tuple<BackendDAE.Variables,DAE.FunctionTree>> outTpl;
+  input tuple<BackendDAE.Equation,tuple<BackendDAE.Variables,BackendDAE.Shared,DAE.FunctionTree>> tpl;
+  output tuple<BackendDAE.Equation,tuple<BackendDAE.Variables,BackendDAE.Shared,DAE.FunctionTree>> outTpl;
 protected
    BackendDAE.Equation e,e1;
    tuple<BackendDAE.Variables,DAE.FunctionTree> ext_arg, ext_art1;
@@ -2602,62 +2614,65 @@ protected
    DAE.FunctionTree funcs;
    Boolean b;
    list<DAE.SymbolicOperation> ops;
+   BackendDAE.Shared shared;
 algorithm
-  (e,(vars,funcs)) := tpl;
-  (e1,(vars,ops,funcs)) := BackendEquation.traverseBackendDAEExpsEqn(e,traverserexpandDerExp,(vars,{},funcs));
+  (e,(vars,shared,funcs)) := tpl;
+  (e1,(vars,shared,ops,funcs)) := BackendEquation.traverseBackendDAEExpsEqn(e,traverserexpandDerExp,(vars,shared,{},funcs));
   e1 := Util.listFoldR(ops,BackendEquation.addOperation,e1);
-  outTpl := ((e1,(vars,funcs)));
+  outTpl := ((e1,(vars,shared,funcs)));
 end traverserexpandDerEquation;
 
 protected function traverserexpandDerExp
   "Help function to e.g. traverserexpandDerExp"
-  input tuple<DAE.Exp,tuple<BackendDAE.Variables,list<DAE.SymbolicOperation>,DAE.FunctionTree>> tpl;
-  output tuple<DAE.Exp,tuple<BackendDAE.Variables,list<DAE.SymbolicOperation>,DAE.FunctionTree>> outTpl;
+  input tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.Shared,list<DAE.SymbolicOperation>,DAE.FunctionTree>> tpl;
+  output tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.Shared,list<DAE.SymbolicOperation>,DAE.FunctionTree>> outTpl;
 protected
   DAE.Exp e,e1;
-  tuple<BackendDAE.Variables,Boolean,DAE.FunctionTree> ext_arg;
+  tuple<BackendDAE.Variables,BackendDAE.Shared,Boolean,DAE.FunctionTree> ext_arg;
   BackendDAE.Variables vars;
   list<DAE.SymbolicOperation> ops;
   DAE.FunctionTree funcs;
   Boolean b;
+  BackendDAE.Shared shared;
 algorithm
-  (e,(vars,ops,funcs)) := tpl;
-  ext_arg := (vars,false,funcs);
+  (e,(vars,shared,ops,funcs)) := tpl;
+  ext_arg := (vars,shared,false,funcs);
   ((e1,ext_arg)) := Expression.traverseExp(e,expandDerExp,ext_arg);
-  (vars,b,funcs) := ext_arg;
+  (vars,shared,b,funcs) := ext_arg;
   ops := Util.listConsOnTrue(b,DAE.OP_DERIVE(DAE.crefTime,e,e1),ops);
-  outTpl := (e1,(vars,ops,funcs));
+  outTpl := (e1,(vars,shared,ops,funcs));
 end traverserexpandDerExp;
 
 protected function expandDerExp
 "Help function to e.g. expandDerOperatorEqn"
-  input tuple<DAE.Exp,tuple<BackendDAE.Variables,Boolean,DAE.FunctionTree>> tpl;
-  output tuple<DAE.Exp,tuple<BackendDAE.Variables,Boolean,DAE.FunctionTree>> outTpl;
+  input tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.Shared,Boolean,DAE.FunctionTree>> tpl;
+  output tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.Shared,Boolean,DAE.FunctionTree>> outTpl;
 algorithm
   outTpl := matchcontinue(tpl)
     local
       BackendDAE.Variables vars;
       BackendDAE.BinTree bt;
       DAE.FunctionTree funcs;
-      DAE.Exp e1;
+      DAE.Exp e1,e2;
       list<DAE.ComponentRef> newStates;
       DAE.ComponentRef cr;
       String str;
       list<DAE.SymbolicOperation> ops;
-    case((DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={e1 as DAE.CREF(componentRef=cr)})}),(vars,_,funcs)))
+      BackendDAE.Shared shared;
+    case((DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={e1 as DAE.CREF(componentRef=cr)})}),(vars,_,_,funcs)))
       equation
         str = ComponentReference.crefStr(cr);
         str = stringAppendList({"The model includes derivatives of order > 1 for: ",str,". That is not supported. Real d", str, " = der(", str, ") *might* result in a solvable model"});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();      
-    case((DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={e1}),(vars,_,funcs)))
+    case((DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={e1}),(vars,shared,_,funcs)))
       equation
-        e1 = Derive.differentiateExpTime(e1,(vars,funcs));
-        (e1,_) = ExpressionSimplify.simplify(e1);
-        ((_,bt)) = statesExp((e1,BackendDAE.emptyBintree));
+        e2 = Derive.differentiateExpTime(e1,(vars,shared,funcs));
+        (e2,_) = ExpressionSimplify.simplify(e2);
+        ((_,bt)) = statesExp((e2,BackendDAE.emptyBintree));
         (newStates,_) = BackendDAEUtil.bintreeToList(bt);
         vars = updateStatesVars(vars,newStates);
-      then ((e1,(vars,true,funcs)));
+      then ((e2,(vars,shared,true,funcs)));
     case tpl then tpl;
   end matchcontinue;
 end expandDerExp;
@@ -2672,6 +2687,7 @@ algorithm
     local
       DAE.ComponentRef cr;
       BackendDAE.Var var;
+      String str;
 
     case(vars,{}) then vars;
     case(vars,cr::newStates)
@@ -2683,7 +2699,10 @@ algorithm
       then vars;
     case(vars,cr::newStates)
       equation
-        print("Internal error, variable ");print(ComponentReference.printComponentRefStr(cr));print("not found in variables.\n");
+        /* Might be part of a different equation-system...
+        str = "BackendDAECreate.updateStatesVars failed for: " +& ComponentReference.printComponentRefStr(cr);
+        Error.addMessage(Error.INTERNAL_ERROR,{str});
+        */
         vars = updateStatesVars(vars,newStates);
       then vars;
   end matchcontinue;

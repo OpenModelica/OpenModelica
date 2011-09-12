@@ -353,17 +353,26 @@ public function removeSimpleEquations
   autor: Frenkel TUD 2011-04
   This function moves simple equations on the form a=b and a=const and a=f(not time)
   in BackendDAE.BackendDAE to get speed up"
-  input BackendDAE.BackendDAE inDlow;
-  input DAE.FunctionTree inFunctionTree;
-  output BackendDAE.BackendDAE outDlow;
-protected
-  BackendDAE.EqSystem syst;
-  BackendDAE.Shared shared;
+  input BackendDAE.BackendDAE dae;
+  input DAE.FunctionTree funcs;
+  output BackendDAE.BackendDAE odae;
 algorithm
-  BackendDAE.DAE({syst},shared) := inDlow;
-  (syst,shared,_):= removeSimpleEquations1(syst,shared,inFunctionTree);
-  outDlow := BackendDAE.DAE({syst},shared);
+  odae := BackendDAEUtil.mapPreOptModule(removeSimpleEquationsWork,dae,funcs);
 end removeSimpleEquations;
+
+protected function removeSimpleEquationsWork
+"function: removeSimpleEquations1
+  autor: Frenkel TUD 2011-05
+  This function moves simple equations on the form a=b and a=const and a=f(not time)
+  in BackendDAE.BackendDAE to get speed up"
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input DAE.FunctionTree funcs;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+algorithm
+  (osyst,oshared,_) := removeSimpleEquations1(syst,shared,funcs);
+end removeSimpleEquationsWork;
 
 protected function removeSimpleEquations1
 "function: removeSimpleEquations1
@@ -1905,11 +1914,23 @@ end countsimpleEquation;
 public function removeFinalParameters
 "function: removeFinalParameters
   autor Frenkel TUD"
-  input BackendDAE.BackendDAE inDAE;
-  input DAE.FunctionTree inFunctionTree;
-  output BackendDAE.BackendDAE outDAE;
+  input BackendDAE.BackendDAE dae;
+  input DAE.FunctionTree funcs;
+  output BackendDAE.BackendDAE odae;
 algorithm
-  outDAE := match (inDAE,inFunctionTree)
+  odae := BackendDAEUtil.mapPreOptModule(removeFinalParametersWork,dae,funcs);
+end removeFinalParameters;
+
+protected function removeFinalParametersWork
+"function: removeFinalParameters
+  autor Frenkel TUD"
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input DAE.FunctionTree funcs;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+algorithm
+  (osyst,oshared) := match (syst,shared,funcs)
     local
       DAE.FunctionTree funcs;
       Option<BackendDAE.IncidenceMatrix> m,mT;
@@ -1925,8 +1946,8 @@ algorithm
       list<BackendDAE.MultiDimEquation> lstarreqns,lstarreqns1;
       list<DAE.Algorithm> algs,algs_1;
       
-    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,m,mT)::{},BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,einfo,eoc)),funcs)
-      equation      
+    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,einfo,eoc),funcs)
+      equation
         repl = BackendVarTransform.emptyReplacements();
         lsteqns = BackendDAEUtil.equationList(eqns);
         lstarreqns = arrayList(arreqns);
@@ -1941,9 +1962,9 @@ algorithm
         arreqns1 = listArray(lstarreqns1);
         algorithms1 = listArray(algs_1);
       then
-        (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE())::{},BackendDAE.SHARED(knvars1,exobj,av,inieqns,remeqns,arreqns1,algorithms1,einfo,eoc)));
+        (BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE()),BackendDAE.SHARED(knvars1,exobj,av,inieqns,remeqns,arreqns1,algorithms1,einfo,eoc));
   end match;
-end removeFinalParameters;
+end removeFinalParametersWork;
 
 protected function removeFinalParametersFinder
 "autor: Frenkel TUD 2011-03"
@@ -2146,17 +2167,26 @@ public function removeEqualFunctionCalls
   autor: Frenkel TUD 2011-04
   This function detect equal function call on the form a=f(b) and c=f(b) 
   in BackendDAE.BackendDAE to get speed up"
-  input BackendDAE.BackendDAE dlow;
-  input DAE.FunctionTree inFunctionTree;
-  output BackendDAE.BackendDAE outDlow;
-protected
-  BackendDAE.EqSystem syst;
-  BackendDAE.Shared shared;
+  input BackendDAE.BackendDAE dae;
+  input DAE.FunctionTree funcs;
+  output BackendDAE.BackendDAE odae;
 algorithm
-  BackendDAE.DAE({syst},shared) := dlow;
-  (syst,shared,_) := removeEqualFunctionCalls1(syst,shared,inFunctionTree);
-  outDlow := BackendDAE.DAE({syst},shared);
+  odae := BackendDAEUtil.mapPreOptModule(removeEqualFunctionCallsWork,dae,funcs);
 end removeEqualFunctionCalls;
+
+protected function removeEqualFunctionCallsWork
+"function: removeEqualFunctionCalls
+  autor: Frenkel TUD 2011-04
+  This function detect equal function call on the form a=f(b) and c=f(b) 
+  in BackendDAE.BackendDAE to get speed up"
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input DAE.FunctionTree funcs;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+algorithm
+  (osyst,oshared,_) := removeEqualFunctionCalls1(syst,shared,funcs);
+end removeEqualFunctionCallsWork;
 
 protected function removeEqualFunctionCalls1
 "function: removeEqualFunctionCalls
@@ -5695,6 +5725,47 @@ end mergeRelation;
 
 /* Parallel backend stuff  */
 
+public function collapseIndependentBlocks
+  "Finds independent partitions of the equation system by "
+  input BackendDAE.BackendDAE dlow;
+  input DAE.FunctionTree ftree;
+  output BackendDAE.BackendDAE outDlow;
+algorithm
+  outDlow := match (dlow,ftree)
+    local
+      BackendDAE.IncidenceMatrix m,mT;
+      array<Integer> ixs,ixsT;
+      list<Integer> lst,lst2;
+      Boolean b;
+      String str;
+      list<String> strs;
+      Integer i,i2;
+      BackendDAE.EqSystem syst;
+      list<BackendDAE.EqSystem> systs;
+      BackendDAE.Shared shared;
+    case (BackendDAE.DAE(systs,shared),ftree)
+      equation
+        // We can use listReduce as if there is no eq-system something went terribly wrong
+        syst = Util.listReduce(systs,mergeIndependentBlocks);
+      then BackendDAE.DAE({syst},shared);
+  end match;
+end collapseIndependentBlocks;
+
+protected function mergeIndependentBlocks
+  input BackendDAE.EqSystem syst1;
+  input BackendDAE.EqSystem syst2;
+  output BackendDAE.EqSystem syst;
+protected
+  BackendDAE.Variables vars,vars1,vars2;
+  BackendDAE.EquationArray eqs,eqs1,eqs2;
+algorithm
+  BackendDAE.EQSYSTEM(vars1,eqs1,_,_) := syst1;
+  BackendDAE.EQSYSTEM(vars2,eqs2,_,_) := syst2;
+  vars := BackendVariable.addVars(BackendDAEUtil.varList(vars2),vars1);
+  eqs := BackendEquation.addEquations(BackendDAEUtil.equationList(eqs2),eqs1);
+  syst := BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE());
+end mergeIndependentBlocks;
+
 public function partitionIndependentBlocks
   "Finds independent partitions of the equation system by "
   input BackendDAE.BackendDAE dlow;
@@ -5716,7 +5787,7 @@ algorithm
     case (BackendDAE.DAE({syst},shared),ftree)
       equation
         (systs,shared) = partitionIndependentBlocksHelper(syst,shared,ftree,Error.getNumErrorMessages());
-      then BackendDAE.DAE({syst},shared); // TODO: Add support for partitioned systems of equations
+      then BackendDAE.DAE(systs,shared); // TODO: Add support for partitioned systems of equations
   end match;
 end partitionIndependentBlocks;
 
