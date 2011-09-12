@@ -1688,7 +1688,7 @@ protected function elaborateFunctions2
   output list<String> outLibs;
 algorithm
   (outFunctions, outRecordTypes, outDecls, outIncludes, outIncludeDirs, outLibs) :=
-  match (daeElements, inFunctions, inRecordTypes, inDecls, inIncludes, includeDirs, inLibs)
+  matchcontinue (daeElements, inFunctions, inRecordTypes, inDecls, inIncludes, includeDirs, inLibs)
     local
       list<Function> accfns, fns;
       Function fn;
@@ -1696,6 +1696,7 @@ algorithm
       DAE.Function fel;
       list<DAE.Function> rest;
       list<RecordDeclaration> decls;
+      String name;
     case ({}, accfns, rt, decls, includes, includeDirs, libs)
     then (listReverse(accfns), rt, decls, listReverse(includes), includeDirs, listReverse(libs));
     case ((DAE.FUNCTION(type_ = (DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN_PTR())),_)) :: rest), accfns, rt, decls, includes, includeDirs, libs)
@@ -1717,13 +1718,21 @@ algorithm
       then
         (fns, rt_2, decls, includes, includeDirs, libs);
         
+    case (DAE.FUNCTION(functions = DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(name=name,language="C"))::_)::rest,accfns,rt,decls,includes,includeDirs,libs)
+      equation
+        // skip over builtin functions
+        true = listMember(name,SCode.knownExternalCFunctions);
+        (fns, rt_2, decls, includes, includeDirs, libs) = elaborateFunctions2(rest, accfns, rt, decls, includes, includeDirs, libs);
+      then
+        (fns, rt_2, decls, includes, includeDirs, libs);
+
     case ((fel :: rest), accfns, rt, decls, includes, includeDirs, libs)
       equation
         (fn, rt_1, decls, includes, includeDirs, libs) = elaborateFunction(fel, rt, decls, includes, includeDirs, libs);
         (fns, rt_2, decls, includes, includeDirs, libs) = elaborateFunctions2(rest, (fn :: accfns), rt_1, decls, includes, includeDirs, libs);
       then
         (fns, rt_2, decls, includes, includeDirs, libs);
-  end match;
+  end matchcontinue;
 end elaborateFunctions2;
 
 /* Does the actual work of transforming a DAE.FUNCTION to a Function. */

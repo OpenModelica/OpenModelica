@@ -2889,7 +2889,7 @@ algorithm
   end matchcontinue;
 end getElementClass;
 
-protected constant list<String> knownExternalCFunctions = {"acos"};
+public constant list<String> knownExternalCFunctions = {"sin","cos","tan","asin","acos","atan","atan2","sinh","cosh","tanh","exp","log","log10","sqrt"};
 
 public function isBuiltinFunction
   input Element cl;
@@ -2909,7 +2909,7 @@ algorithm
       then name;
     case (CLASS(restriction=R_EXT_FUNCTION(), classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("C"),output_=SOME(Absyn.CREF_IDENT(outVar2,{})),args=args)))),inVars,{outVar1})
       equation
-        true = listMember(name,{"sin","cos","tan","asin","acos","atan","atan2","sinh","cosh","tanh","exp","log","log10","sqrt"});
+        true = listMember(name,knownExternalCFunctions);
         true = outVar2 ==& outVar1;
         argsStr = Util.listMapMap(args, Absyn.expCref, Absyn.crefIdent);
         equality(argsStr = inVars);
@@ -2918,7 +2918,7 @@ algorithm
       restriction=R_EXT_FUNCTION(),
       classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=NONE(),lang=SOME("C"))))),_,_)
       equation
-        true = listMember(name,{"sin","cos","tan","asin","acos","atan","atan","sinh","cosh","tanh","exp","log","log10","sqrt"});
+        true = listMember(name,knownExternalCFunctions);
       then name;
   end match;
 end isBuiltinFunction;
