@@ -336,6 +336,7 @@ public constant ErrorID INCOMPLETE_UNITS=519;
 public constant ErrorID INCOMPATIBLE_TYPES_FUNC=520;
 public constant ErrorID ASSIGN_RHS_ELABORATION=521;
 public constant ErrorID FAILED_TO_EVALUATE_EXPRESSION = 522;
+public constant ErrorID WARNING_JACOBIAN_EQUATION_SOLVE = 523;
 
 public constant ErrorID INDEX_REDUCTION_NOTIFICATION=1000;
 public constant ErrorID SELECTED_STATE_DUE_TO_START_NOTIFICATION = 1001;
@@ -710,6 +711,9 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Identificator %s of implicit for iterator must be present as array subscript in the loop body."),
           (HIGHER_VARIABILITY_BINDING,TRANSLATION(),ERROR(),
           "Component %s of variability %s has binding %s of higher variability %s."),
+          
+          (WARNING_JACOBIAN_EQUATION_SOLVE(),SYMBOLIC(),WARNING(),
+          "jacobian equation %s could not solve proper for %s. Assume %s=0."),
           
           (INCOMPATIBLE_TYPES_FUNC,SYMBOLIC(),ERROR(),
           "While deriving %s to %s, types of inputs: %s and type of %s: %s did not match"),

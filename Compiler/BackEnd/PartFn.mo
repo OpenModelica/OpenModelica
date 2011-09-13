@@ -79,12 +79,13 @@ algorithm
       BackendDAE.EventInfo eventInfo;
       BackendDAE.ExternalObjectClasses extObjClasses;
       Option<BackendDAE.IncidenceMatrix> m,mT;
+      BackendDAE.BackendDAEType btp;
     /*case(dae,dlow)
       equation
         false = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
       then
         (dae,dlow);*/
-    case(dae,BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT)::{},BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses)))
+    case(dae,BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT)::{},BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses,btp)))
       equation
         (orderedVars,dae) = partEvalVars(orderedVars,dae);
         (knownVars,dae) = partEvalVars(knownVars,dae);
@@ -95,7 +96,7 @@ algorithm
         (arrayEqs,dae) = partEvalArrEqs(arrayList(arrayEqs),dae);
         (algorithms,dae) = partEvalAlgs(algorithms,dae);
       then
-        (dae,BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT)::{},BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses)));
+        (dae,BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT)::{},BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses,btp)));
     else
       equation
         Debug.fprintln("failtrace","- PartFn.partEvalBackendDAE failed");

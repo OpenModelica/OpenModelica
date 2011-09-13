@@ -3742,6 +3742,36 @@ L100:
   wm[npdm1 + i__] = 0.;
     }
     (*jac)(x, &y[1], &yprime[1], &wm[1], cj, &rpar[1], &ipar[1]);
+
+
+    /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
+    if (ipar[1] == ipar[2] || ipar[1] == ipar[3]){
+       nrow = npdm1;
+		i__1 = *neq;
+		i__2 = *neq;
+		printf("cj: %g and the states\n", *cj);
+		for (k=0;k<*neq;k++) {
+			printf("%g ", y[k+1]);
+		}
+
+
+		printf("analytical jacobian\n");
+		printf("at point in time : ");
+		printf("%g \n", *x);
+		for (i__ = 1; i__ <= i__1; ++i__) {
+				 for (l = 1; l <= i__2; ++l) {
+					 printf("%g  ",wm[nrow + l]);
+				 }
+				 printf("\n");
+				 nrow += *neq;
+		}
+    }
+	if (ipar[1] == ipar[3])
+		exit(0);
+    /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
+
+
+
     goto L230;
 
 
@@ -3779,6 +3809,33 @@ L200:
   yprime[i__] = ypsave;
 /* L210: */
     }
+    /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
+    if (ipar[1] == ipar[2] || ipar[1] == ipar[3]){
+    		nrow = npdm1;
+			i__1 = *neq;
+			i__2 = *neq;
+			printf("cj: %g and the states\n", *cj);
+			for (k=0;k<*neq;k++) {
+				printf("%g ", y[k+1]);
+			}
+
+
+			printf("numerical jacobian\n");
+            printf("at point in time : ");
+            printf("%g \n",*x);
+            for (i__ = 1; i__ <= i__1; ++i__) {
+                    for (l = 1; l <= i__1; ++l) {
+                            printf("%g  ",wm[nrow + l]);
+                    }
+                     printf("\n");
+                    nrow += *neq;
+            }
+    }
+    if (ipar[1] == ipar[3])
+ 	   exit(0);
+   /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
+
+
 
 
 /*     DO DENSE-MATRIX LU DECOMPOSITION ON PD */

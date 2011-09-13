@@ -101,10 +101,12 @@ simulation_result *sim_result = NULL;
 const int LOG_STATS				= (1<<0);
 const int LOG_INIT				= (1<<1);
 const int LOG_SOLVER			= (1<<2);
-const int LOG_NONLIN_SYS		= (1<<3);
-const int LOG_EVENTS			= (1<<4);
-const int LOG_ZEROCROSSINGS		= (1<<5);
-const int LOG_DEBUG				= (1<<6);
+const int LOG_JAC               = (1<<3);
+const int LOG_ENDJAC            = (1<<4);
+const int LOG_NONLIN_SYS		= (1<<5);
+const int LOG_EVENTS			= (1<<6);
+const int LOG_ZEROCROSSINGS		= (1<<7);
+const int LOG_DEBUG				= (1<<8);
 const int LOG_RES_INIT			= LOG_STATS|LOG_INIT;
 
 /* Flags for modelErrorCodes */
@@ -441,6 +443,14 @@ verboseLevel(int argc, char**argv)
   if (flags->find("LOG_STATS", 0) != string::npos)
     {
       res |= LOG_STATS;
+    }
+  if (flags->find("LOG_JAC", 0) != string::npos)
+    {
+      res |= LOG_JAC;
+    }
+  if (flags->find("LOG_ENDJAC", 0) != string::npos)
+    {
+      res |= LOG_ENDJAC;
     }
   if (flags->find("LOG_INIT", 0) != string::npos)
     {

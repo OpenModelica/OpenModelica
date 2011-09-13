@@ -105,6 +105,8 @@ extern const int LOG_STATS;
 extern const int LOG_INIT;
 extern const int LOG_RES_INIT;
 extern const int LOG_SOLVER;
+extern const int LOG_JAC;
+extern const int LOG_ENDJAC;
 extern const int LOG_EVENTS;
 extern const int LOG_NONLIN_SYS;
 extern const int LOG_ZEROCROSSINGS;

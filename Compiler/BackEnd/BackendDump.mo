@@ -629,7 +629,8 @@ algorithm
       list<BackendDAE.ZeroCrossing> zc;
       list<BackendDAE.WhenClause> wc;
       BackendDAE.ExternalObjectClasses extObjCls;
-    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars1,eqns,_,_)::{},BackendDAE.SHARED(vars2,vars3,av,ieqns,reqns,ae,algs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc,whenClauseLst=wc),extObjCls)))
+      BackendDAE.BackendDAEType btp;
+    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars1,eqns,_,_)::{},BackendDAE.SHARED(vars2,vars3,av,ieqns,reqns,ae,algs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc,whenClauseLst=wc),extObjCls,btp)))
       equation
         print("Variables (");
         vars = BackendDAEUtil.varList(vars1);

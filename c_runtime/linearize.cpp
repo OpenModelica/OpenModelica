@@ -58,6 +58,7 @@ string array2string(double* array, int row, int col){
 
 int linearize()
 {
+
   // init Matrix A
   int size_A = globalData->nStates;
   int size_Inputs = globalData->nInputVars;
@@ -118,6 +119,8 @@ int linearize()
 
   FILE *fout = fopen(filename.c_str(),"wb");
   fprintf(fout, linear_model_frame, strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str());
+  if (sim_verbose>=LOG_STATS)
+	  printf(linear_model_frame, strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str());
   fflush(fout);
   fclose(fout);
 

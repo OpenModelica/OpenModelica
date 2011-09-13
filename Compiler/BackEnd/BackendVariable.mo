@@ -1213,6 +1213,21 @@ algorithm
   outBoolean := not isRealParam(inVar);
 end isNonRealParam;
 
+public function isInput
+"function: isInput
+  Returns true if variable is declared as input.
+  See also is_ouput above"
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean:=
+  matchcontinue (inVar)
+    case (BackendDAE.VAR(varDirection = DAE.INPUT())) then true;
+    case (_) then false;
+  end matchcontinue;
+end isInput;
+
+
 /* NOT USED */
 public function isOutputVar
 "function: isOutputVar
@@ -1449,6 +1464,19 @@ algorithm
       oVar; 
   end match;
 end setVarDirection;
+
+public function getVarDirection
+"function getVarDirection
+  author: wbraun
+  Get the DAE.VarDirection of a variable"
+  input BackendDAE.Var inVar;
+  output DAE.VarDirection varDirection;
+algorithm
+  varDirection := match (inVar)
+    case (BackendDAE.VAR(varDirection = varDirection)) then  varDirection; 
+  end match;
+end getVarDirection;
+
 
 public function isVarOnTopLevelAndOutput
 "function isVarOnTopLevelAndOutput
@@ -3205,10 +3233,11 @@ algorithm
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.EqSystems eqs;
-    case (var,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc))
+      BackendDAE.BackendDAEType btp;
+    case (var,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp))
       equation
         knvars1 = addVar(var,knvars);
-      then BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc);
+      then BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp);
   end match;
 end addKnVarDAE;
 

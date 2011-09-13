@@ -116,7 +116,7 @@ case simCode as SIMCODE(__) then
   #endif
   <%globalData(modelInfo,fileNamePrefix,guid)%>
   
-  <%equationInfo(appendLists(appendAllequation(JacobianMatrixes),allEquations))%>
+  <%equationInfo(appendLists(allEquations,appendAllequations(jacobianMatrixes)))%>
   
   <%functionSetLocalData()%>
   
@@ -160,7 +160,7 @@ case simCode as SIMCODE(__) then
   
   <%functionAssertsforCheck(algorithmAndEquationAsserts)%>
   
-  <%generateLinearMatrixes(JacobianMatrixes)%>
+  <%generateLinearMatrixes(jacobianMatrixes)%>
   
   <%functionlinearmodel(modelInfo)%>
   
@@ -1262,39 +1262,6 @@ template functionAssertsforCheck(list<DAE.Statement> algorithmAndEquationAsserts
   >>
 end functionAssertsforCheck;
 
-template functionJac(list<SimEqSystem> JacEquations, list<SimVar> JacVars, String MatrixName)
- "Generates function in simulation file."
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  let Equations_ = (JacEquations |> eq =>
-      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFD*/)
-    ;separator="\n")
-  let Vars_ = (JacVars |> var => 
-      defvars(var)
-      ;separator="\n")
-      
-  let writeJac_ = (JacVars |> var => 
-      writejac(var)
-    ;separator="\n")   
-  <<
-  int functionJac<%MatrixName%>( double *jac)
-  {
-    state mem_state;
-    
-
-    <%varDecls%>
-  
-    mem_state = get_memory_state();
-    <%Equations_%>
-    <%writeJac_%>
-    restore_memory_state(mem_state);
-    
-    return 0;
-  }
-  
-  >>
-end functionJac;
-
 template defvars(SimVar item)
 "Declare variables"
 ::=
@@ -1304,20 +1271,6 @@ case SIMVAR(__) then
   <%cref(name)%> = 0;
   >>
 end defvars;
-
-template writejac(SimVar item)
-"Declare variables"
-::=
-match item
-case SIMVAR(name=name, index=index) then
-  match index
-  case -1 then
-  <<>>
-  case _ then
-  <<
-  jac[<%index%>] = <%cref(name)%>;
-  >>
-end writejac;
 
 template functionlinearmodel(ModelInfo modelInfo)
  "Generates function in simulation file."
@@ -1428,16 +1381,94 @@ case 2 then
   end match                         
 end genVector;
 
+template functionJac(list<SimEqSystem> jacEquations, String columnName, String matrixName)
+ "Generates function in simulation file."
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let eqns_ = (jacEquations |> eq =>
+      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFD*/)
+    ;separator="\n") 
+  <<
+  int functionJac<%matrixName%>_<%columnName%>()
+  {
+    state mem_state;
+    <%varDecls%>
+    mem_state = get_memory_state();
+    <%eqns_%>
+    restore_memory_state(mem_state);
+    
+    return 0;
+  }
+  
+  >>
+end functionJac;
+
+
+template generateMatrix(list<JacobianColumn> jacobianMatrix, list<SimVar> jacVars,String matrixname)
+ "Generates Matrixes for Linear Model."
+::=
+  let jacMats = (jacobianMatrix |> (eqs,vars,name) =>
+    functionJac(eqs,name,matrixname)
+    ;separator="\n")
+  let writeJac_ = writejacvars(jacVars)  
+  let functioncalls = (jacobianMatrix |> (eqs,vars,name) =>
+    genfunctionName(name,matrixname)
+    ;separator="\n")
+ <<
+ <%jacMats%>
+ int functionJac<%matrixname%>(double* jac){
+ 	<%functioncalls%>
+ 	<%writeJac_%>
+ 	return 0;
+ }
+ >>
+end generateMatrix;
+
 template generateLinearMatrixes(list<JacobianMatrix> JacobianMatrixes)
  "Generates Matrixes for Linear Model."
 ::=
-  let jacMats = (JacobianMatrixes |> (eqs,vars,name) =>
-    functionJac(eqs,vars,name)
-    ;separator="\n")
+  let jacMats = (JacobianMatrixes |> (mat,vars,name) =>
+    generateMatrix(mat,vars,name)
+    ;separator="\n\n")
  <<
  <%jacMats%>
  >>
 end generateLinearMatrixes;
+
+
+template writejacvars(list<SimVar> items)
+"Declare variables"
+::=
+  let writeJac_ = (items |> var => 
+      writejac(var)
+    ;separator="\n")
+  <<
+   	<%writeJac_%>
+  >>
+end writejacvars;
+
+template writejac(SimVar item)
+"Declare variables"
+::=
+match item
+case SIMVAR(name=name, index=index) then
+  match index
+  case -1 then
+  <<>>
+  case _ then
+  <<
+  jac[<%index%>] = <%cref(name)%>;
+  >>
+end writejac;
+
+template genfunctionName(String columnName, String matrixName)
+ "Generates function Names for jacobian."
+::=
+  <<
+  functionJac<%matrixName%>_<%columnName%>();
+  >>
+end genfunctionName;
+
 
 template zeroCrossingsTpl2(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/)
  "Generates code for zero crossings."

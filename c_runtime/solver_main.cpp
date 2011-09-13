@@ -194,7 +194,7 @@ fortran_integer info[15] = {0};
 double reltol = 1.0e-5;
 double abstol = 1.0e-5;
 fortran_integer idid = 0;
-fortran_integer ipar = 0;
+fortran_integer* ipar = 0;
 
 // work arrays for DASSL
 fortran_integer liw = 0;
@@ -719,7 +719,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1, int* tmpSt
   extern double reltol;
   extern double abstol;
   extern fortran_integer idid;
-  extern fortran_integer ipar;
+  extern fortran_integer* ipar;
   extern fortran_integer liw;
   extern fortran_integer lrw;
   extern double *rwork;
@@ -744,6 +744,10 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1, int* tmpSt
       // Used when calculating residual for its side effects. (alg. var calc)
       dummy_delta = new double[globalData->nStates];
       rpar = new double;
+      ipar = new fortran_integer[3];
+      ipar[0] = sim_verbose;
+      ipar[1] = LOG_JAC;
+      ipar[2] = LOG_ENDJAC;
 
       for (i = 0; i < 15; i++)
         info[i] = 0;
@@ -811,7 +815,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1, int* tmpSt
                   &globalData->timeValue, globalData->states,
                   globalData->statesDerivativesBackup, &tout, info, &reltol, &abstol,
                   &idid, rwork, &lrw, iwork, &liw, globalData->algebraics,
-                  &ipar, Jacobian, dummy_zeroCrossing, &NG_var, jroot);
+                  ipar, Jacobian, dummy_zeroCrossing, &NG_var, jroot);
             }
           else if(num_jac_flag)
             {
@@ -819,7 +823,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1, int* tmpSt
                   &globalData->timeValue, globalData->states,
                   globalData->statesDerivativesBackup, &tout, info, &reltol, &abstol,
                   &idid, rwork, &lrw, iwork, &liw, globalData->algebraics,
-                  &ipar, Jacobian_num, dummy_zeroCrossing, &NG_var, jroot);
+                  ipar, Jacobian_num, dummy_zeroCrossing, &NG_var, jroot);
             }
           else
             {
@@ -827,7 +831,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1, int* tmpSt
                   &globalData->timeValue, globalData->states,
                   globalData->statesDerivativesBackup, &tout, info, &reltol, &abstol,
                   &idid, rwork, &lrw, iwork, &liw, globalData->algebraics,
-                  &ipar, dummy_Jacobian, dummy_zeroCrossing, &NG_var, jroot);
+                  ipar, dummy_Jacobian, dummy_zeroCrossing, &NG_var, jroot);
             }
 
 

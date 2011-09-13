@@ -94,7 +94,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
 
   <%SimCodeC.globalData(modelInfo,fileNamePrefix,guid)%>
 
-  <%SimCodeC.equationInfo(appendLists(appendAllequation(JacobianMatrixes),allEquations))%>
+  <%SimCodeC.equationInfo(appendLists(appendAllequations(jacobianMatrixes),allEquations))%>
 
   <%SimCodeC.functionInitialResidual(residualEquations)%>
 
@@ -310,7 +310,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
   
   <%SimCodeC.functionAssertsforCheck(algorithmAndEquationAsserts)%>
   
-  <%SimCodeC.generateLinearMatrixes(JacobianMatrixes)%>
+  <%SimCodeC.generateLinearMatrixes(jacobianMatrixes)%>
   
   <%SimCodeC.functionlinearmodel(modelInfo)%>
   

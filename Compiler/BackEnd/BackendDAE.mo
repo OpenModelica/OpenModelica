@@ -80,6 +80,22 @@ uniontype VarKind "- Variabile kind"
 end VarKind;
 
 public
+uniontype BackendDAEType 
+"- BackendDAEType to indicate different types of BackendDAEs.
+   For example for simulation, initialization, jacobian, algebraic loops etc. "
+  record SIMULATION  "Type for the normal BackendDAE.DAE for simulation" 
+  end SIMULATION;
+  record JACOBIAN  "Type for jacobian BackendDAE.DAE" 
+  end JACOBIAN;
+  record ALGEQSYSTEM "Type for algebraic loop BackendDAE.DAE" 
+  end ALGEQSYSTEM;
+  record ARRAYSYSTEM "Type for multidim equation arrays BackendDAE.DAE" 
+  end ARRAYSYSTEM;
+  record PARAMETERSYSTEM "Type for parameter system BackendDAE.DAE" 
+  end PARAMETERSYSTEM;    
+end BackendDAEType;
+
+public
 uniontype Var "- Variables"
   record VAR
     .DAE.ComponentRef varName "varName ; variable name" ;
@@ -243,6 +259,7 @@ uniontype Shared "Data shared for all equation-systems"
     array< .DAE.Algorithm> algorithms "algorithms ; Algorithms" ;
     EventInfo eventInfo "eventInfo" ;
     ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
+    BackendDAEType backendDAEType "indicate for what the BackendDAE is used";   
   end SHARED;
 end Shared;
 

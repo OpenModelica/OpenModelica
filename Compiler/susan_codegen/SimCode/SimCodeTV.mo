@@ -55,7 +55,8 @@ package SimCode
   type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
   type HelpVarInfo = tuple<Integer, DAE.Exp, Integer>;
   type SampleCondition = tuple<DAE.Exp,Integer>; // helpvarindex, expression,
-  type JacobianMatrix = tuple<list<SimEqSystem>, list<SimVar>, String>;
+  type JacobianColumn = tuple<list<SimEqSystem>, list<SimVar>, String>;
+  type JacobianMatrix = tuple<list<JacobianColumn>,list<SimVar>,String>;
   
   uniontype SimCode
     record SIMCODE
@@ -81,7 +82,7 @@ package SimCode
       ExtObjInfo extObjInfo;
       MakefileParams makefileParams;
       DelayedExpression delayedExps;
-      list<JacobianMatrix> JacobianMatrixes;  
+      list<JacobianMatrix> jacobianMatrixes;  
       Option<SimulationSettings> simulationSettingsOpt;
       String fileNamePrefix;
     end SIMCODE;
@@ -502,10 +503,10 @@ package SimCode
 	  output DAE.Exp outExp;
 	end createAssertforSqrt;
 
-    function appendAllequation
+    function appendAllequations
       input list<JacobianMatrix> inJacobianMatrix;
       output list<SimEqSystem> eqn;
-    end appendAllequation;
+    end appendAllequations;
  
     function appendLists
       input list<SimEqSystem> inEqn1;
