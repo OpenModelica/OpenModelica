@@ -5874,7 +5874,8 @@ protected
   BackendDAE.EquationArray arr;
   BackendDAE.Variables vars;
   Integer i1,i2;
-  String s1,s2;
+  String s1,s2,s3,s4;
+  list<String> crs;
 algorithm
   vars := BackendDAEUtil.listVar(vl);
   arr := BackendDAEUtil.listEquation(el);
@@ -5882,10 +5883,11 @@ algorithm
   i2 := BackendVariable.numVariables(vars);
   s1 := intString(i1);
   s2 := intString(i2);
+  crs := Debug.bcallret3(i1<>i2,Util.listMapMap,vl,BackendVariable.varCref,ComponentReference.printComponentRefStr,{});
+  s3 := Util.stringDelimitList(crs,"\n");
+  s4 := Debug.bcallret1(i1<>i2,BackendDump.dumpEqnsStr,el,"");
   // Can this even be triggered? We check that all variables are defined somewhere, so everything should be balanced already?
-  // print(Util.stringDelimitList(Util.listMapMap(vl,BackendVariable.varCref,ComponentReference.printComponentRefStr),","));
-  // BackendDump.dumpEqns(el);
-  Error.assertionOrAddSourceMessage(i1==i2,Error.IMBALANCED_EQUATIONS,{s1,s2},Absyn.dummyInfo);
+  Error.assertionOrAddSourceMessage(i1==i2,Error.IMBALANCED_EQUATIONS,{s1,s2,s3,s4},Absyn.dummyInfo);
   syst := BackendDAE.EQSYSTEM(vars,arr,NONE(),NONE());
 end createEqSystem;
 

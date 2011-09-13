@@ -850,6 +850,41 @@ algorithm
   end match;
 end dumpEqns2;
 
+public function dumpEqnsStr
+"function: dumpEqns
+  Helper function to dump."
+  input list<BackendDAE.Equation> eqns;
+  output String str;
+algorithm
+  str := Util.stringDelimitList(dumpEqnsStr2(eqns, 1, {}),"\n");
+end dumpEqnsStr;
+
+protected function dumpEqnsStr2
+"function: dumpEqns2
+  Helper function to dump_eqns"
+  input list<BackendDAE.Equation> inEquationLst;
+  input Integer inInteger;
+  input list<String> acc;
+  output list<String> strs;
+algorithm
+  strs := match (inEquationLst,inInteger,acc)
+    local
+      String es,is,str;
+      BackendDAE.Value index_1,index;
+      BackendDAE.Equation eqn;
+      list<BackendDAE.Equation> eqns;
+    case ({},_,acc) then listReverse(acc);
+    case ((eqn :: eqns),index,acc)
+      equation
+        es = equationStr(eqn);
+        is = intString(index);
+        str = (is +& " : ") +& es;
+        index_1 = index + 1;
+        acc = str::acc;
+      then dumpEqnsStr2(eqns, index_1, acc);
+  end match;
+end dumpEqnsStr2;
+
 protected function whenEquationStr
 "function: whenEquationStr
   Helper function to equationStr"

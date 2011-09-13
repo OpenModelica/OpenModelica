@@ -816,7 +816,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (LINEAR_SYSTEM_INVALID,SYMBOLIC(),ERROR(),"Linear solver (%s) returned invalid input for linear system %s."),
           (LINEAR_SYSTEM_SINGULAR,SYMBOLIC(),ERROR(),"When solving linear system %1\n  U(%2,%2) = 0.0, which means system is singular for variable %3."),
           (ARRAY_TYPE_MISMATCH,TRANSLATION(),ERROR(),"Array types mismatch: %s and %s."),
-          (IMBALANCED_EQUATIONS,SYMBOLIC(),ERROR(),"An independent subset of the model has imbalanced number of equations (%s) and variables (%s)."),
+          (IMBALANCED_EQUATIONS,SYMBOLIC(),ERROR(),"An independent subset of the model has imbalanced number of equations (%s) and variables (%s).\nvariables:\n%s\nequations:\n%s"),
           (EQUATIONS_VAR_NOT_DEFINED,SYMBOLIC(),ERROR(),"Variable %s is not referenced in any equation (possibly after symbolic manipulations)."),
           (FUNCTION_UNUSED_INPUT,SYMBOLIC(),WARNING(),"Unused input variable %s in function %s."),
           (FUNCTION_MULTIPLE_ALGORITHM,TRANSLATION(),WARNING(),
