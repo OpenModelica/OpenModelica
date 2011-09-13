@@ -1011,11 +1011,10 @@ public function equationSetnthDAE
   Call BackendDAEUtil.updateIncidenceMatrix if the inc.matrix changes."
   input Integer inInteger;
   input BackendDAE.Equation inEquation;
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
+  input BackendDAE.EqSystem syst;
+  output BackendDAE.EqSystem osyst;
 algorithm
-  outDAE:=
-  match (inInteger,inEquation,inDAE)
+  osyst := match (inInteger,inEquation,syst)
     local
       BackendDAE.Variables ordvars,knvars,exobj;
       BackendDAE.AliasVariables aliasVars;
@@ -1026,10 +1025,10 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.Shared shared;
       Option<BackendDAE.IncidenceMatrix> m,mT;
-    case (inInteger,inEquation,BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns,m,mT)::{},shared))
+    case (inInteger,inEquation,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT))
       equation
         eqns1 = equationSetnth(eqns,inInteger,inEquation);
-      then BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT)::{},shared);
+      then BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT);
   end match;
 end equationSetnthDAE;
 
@@ -1241,13 +1240,13 @@ algorithm
 end traverseAlgorithmFinder;
 
 public function markedEquationSource
-  input BackendDAE.BackendDAE dae;
+  input BackendDAE.EqSystem syst;
   input Integer i;
   output DAE.ElementSource source;
 protected
   BackendDAE.EquationArray eqns;
 algorithm
-  BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns)::{}) := dae;
+  BackendDAE.EQSYSTEM(orderedEqs = eqns) := syst;
   source := equationSource(BackendDAEUtil.equationNth(eqns,i-1));
 end markedEquationSource;
 

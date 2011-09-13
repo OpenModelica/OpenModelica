@@ -171,19 +171,19 @@ end printPrioTuplesStr;
 
 public function printEquations
   input list<Integer> inIntegerLst;
-  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.EqSystem syst;
 algorithm
   _:=
-  match (inIntegerLst,inBackendDAE)
+  match (inIntegerLst,syst)
     local
       BackendDAE.Value n;
       list<BackendDAE.Value> rest;
       BackendDAE.BackendDAE dae;
     case ({},_) then ();
-    case ((n :: rest),dae)
+    case ((n :: rest),syst)
       equation
-        printEquations(rest, dae);
-        printEquationNo(n, dae);
+        printEquations(rest, syst);
+        printEquationNo(n, syst);
       then
         ();
   end match;
@@ -195,15 +195,15 @@ protected function printEquationNo "function: printEquationNo
   Helper function to print_equations
 "
   input Integer inInteger;
-  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.EqSystem syst;
 algorithm
   _:=
-  match (inInteger,inBackendDAE)
+  match (inInteger,syst)
     local
       BackendDAE.Value eqno_1,eqno;
       BackendDAE.Equation eq;
       BackendDAE.EquationArray eqns;
-    case (eqno,BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns)::{}))
+    case (eqno,BackendDAE.EQSYSTEM(orderedEqs = eqns))
       equation
         eqno_1 = eqno - 1;
         eq = BackendDAEUtil.equationNth(eqns, eqno_1);
@@ -1442,11 +1442,11 @@ end dumpMatching2;
 
 public function dumpMarkedEqns
 "Dumps only the equations given as list of indexes to a string."
-  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.EqSystem syst;
   input list<Integer> inIntegerLst;
   output String outString;
 algorithm
-  outString := match (inBackendDAE,inIntegerLst)
+  outString := match (syst,inIntegerLst)
     local
       String s1,s2,res;
       BackendDAE.Value e_1,e;
@@ -1455,9 +1455,9 @@ algorithm
       BackendDAE.EquationArray eqns;
       list<BackendDAE.Value> es;
     case (_,{}) then "";
-    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns)::{})),(e :: es))
+    case (syst as BackendDAE.EQSYSTEM(orderedEqs = eqns),(e :: es))
       equation
-        s1 = dumpMarkedEqns(dae, es);
+        s1 = dumpMarkedEqns(syst, es);
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
         s2 = equationStr(eqn);
@@ -1469,12 +1469,12 @@ end dumpMarkedEqns;
 
 public function dumpMarkedVars
 "Dumps only the variable names given as list of indexes to a string."
-  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.EqSystem syst;
   input list<Integer> inIntegerLst;
   output String outString;
 algorithm
   outString:=
-  match (inBackendDAE,inIntegerLst)
+  match (syst,inIntegerLst)
     local
       String s1,s2,res,s3;
       BackendDAE.Value v;
@@ -1483,9 +1483,9 @@ algorithm
       BackendDAE.Variables vars;
       list<BackendDAE.Value> vs;
     case (_,{}) then "";
-    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars)::{})),(v :: vs))
+    case (syst as BackendDAE.EQSYSTEM(orderedVars = vars),(v :: vs))
       equation
-        s1 = dumpMarkedVars(dae, vs);
+        s1 = dumpMarkedVars(syst, vs);
         BackendDAE.VAR(varName = cr) = BackendVariable.getVarAt(vars, v);
         s2 = ComponentReference.printComponentRefStr(cr);
         s3 = intString(v);
@@ -1719,13 +1719,13 @@ public function bltdump
   input tuple<String,BackendDAE.BackendDAE,array<Integer>,array<Integer>,BackendDAE.StrongComponents> inTpl;
 protected
   String str;
-  BackendDAE.BackendDAE ode;
   BackendDAE.IncidenceMatrix m;
   BackendDAE.IncidenceMatrix mT;
   array<Integer> v1,v2;
   BackendDAE.StrongComponents comps;
+  BackendDAE.BackendDAE ode;
 algorithm
-  (str,ode as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT))::{}),v1,v2,comps) := inTpl;
+  (str,ode as BackendDAE.DAE(eqs = BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT))::{}),v1,v2,comps) := inTpl;
   print(str); print(":\n");
   dump(ode);
   dumpIncidenceMatrix(m);

@@ -3906,6 +3906,7 @@ algorithm
       
       list<String> s;
       String str;
+      BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       
       case(dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,om,omT)::{},shared),_,{},_,_)

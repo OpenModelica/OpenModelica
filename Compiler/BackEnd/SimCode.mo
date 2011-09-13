@@ -5732,7 +5732,7 @@ algorithm
         Debug.fcall("paramdlowdump", BackendDump.dumpIncidenceMatrix,m);
         Debug.fcall("paramdlowdump", BackendDump.dumpIncidenceMatrixT,mT);
         Debug.fcall("paramdlowdump", BackendDump.dumpMatching,v1);
-        comps = BackendDAETransform.strongComponents(paramdlow, v1, v2);
+        comps = BackendDAETransform.strongComponents(syst, shared, v1, v2);
         Debug.fcall("paramdlowdump", BackendDump.dumpComponents,comps);
         
         (helpVarInfo, paramdlow1,_) = generateHelpVarInfo(paramdlow, comps);
