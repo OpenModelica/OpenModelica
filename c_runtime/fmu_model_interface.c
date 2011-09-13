@@ -63,71 +63,71 @@ const char* fmiGetVersion() {
 }
 
 fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
-                 fmiCallbackFunctions functions, fmiBoolean loggingOn) {
-                   ModelInstance* comp;
-                   if (!functions.logger)
-                     return NULL;
-                   if (!functions.allocateMemory || !functions.freeMemory){
-                     functions.logger(NULL, instanceName, fmiError, "error",
-                       "fmiInstantiateModel: Missing callback function.");
-                     return NULL;
-                   }
-                   if (!instanceName || strlen(instanceName)==0) {
-                     functions.logger(NULL, instanceName, fmiError, "Warning",
-                       "fmiInstantiateModel: Missing instance name.");
-                     //return NULL;
-                   }
-                   if (strcmp(GUID, MODEL_GUID)) {
-                     functions.logger(NULL, instanceName, fmiError, "error",
-                       "fmiInstantiateModel: Wrong GUID %s. Expected %s.", GUID, MODEL_GUID);
-                     return NULL;
-                   }
-                   comp = (ModelInstance *)functions.allocateMemory(1, sizeof(ModelInstance));
-                   if (comp) {
-                     comp->r = (fmiReal*)functions.allocateMemory(NUMBER_OF_REALS,    sizeof(fmiReal));
-                     comp->i = (fmiInteger*)functions.allocateMemory(NUMBER_OF_INTEGERS, sizeof(fmiInteger));
-                     comp->b = (fmiBoolean*)functions.allocateMemory(NUMBER_OF_BOOLEANS, sizeof(fmiBoolean));
-                     comp->s = (fmiString*)functions.allocateMemory(NUMBER_OF_STRINGS,  sizeof(fmiString));
-                     comp->isPositive = (fmiBoolean*)calloc(NUMBER_OF_EVENT_INDICATORS, sizeof(fmiBoolean));
-                   }
-                   if (!comp || !comp->r || !comp->i || !comp->b || !comp->s || !comp->isPositive) {
-                     functions.logger(NULL, instanceName, fmiError, "error",
-                       "fmiInstantiateModel: Out of memory.");
-                     return NULL;
-                   }
-                   if (comp->loggingOn) comp->functions.logger(NULL, instanceName, fmiOK, "log",
-                     "fmiInstantiateModel: GUID=%s", GUID);
-                   comp->instanceName = instanceName;
-                   comp->GUID = GUID;
-                   comp->functions = functions;
-                   comp->loggingOn = loggingOn;
-                   comp->state = modelInstantiated;
-                   comp->eventInfo.iterationConverged = fmiTrue;
-                   comp->eventInfo.stateValueReferencesChanged = fmiTrue;
-                   comp->eventInfo.stateValuesChanged = fmiTrue;
-                   comp->eventInfo.terminateSimulation = fmiFalse;
-                   comp->eventInfo.upcomingTimeEvent = fmiFalse;
-                   comp->eventInfo.nextEventTime = 0;
+    fmiCallbackFunctions functions, fmiBoolean loggingOn) {
+  ModelInstance* comp;
+  if (!functions.logger)
+    return NULL;
+  if (!functions.allocateMemory || !functions.freeMemory){
+    functions.logger(NULL, instanceName, fmiError, "error",
+        "fmiInstantiateModel: Missing callback function.");
+    return NULL;
+  }
+  if (!instanceName || strlen(instanceName)==0) {
+    functions.logger(NULL, instanceName, fmiError, "Warning",
+        "fmiInstantiateModel: Missing instance name.");
+    //return NULL;
+  }
+  if (strcmp(GUID, MODEL_GUID)) {
+    functions.logger(NULL, instanceName, fmiError, "error",
+        "fmiInstantiateModel: Wrong GUID %s. Expected %s.", GUID, MODEL_GUID);
+    return NULL;
+  }
+  comp = (ModelInstance *)functions.allocateMemory(1, sizeof(ModelInstance));
+  if (comp) {
+    comp->r = (fmiReal*)functions.allocateMemory(NUMBER_OF_REALS,    sizeof(fmiReal));
+    comp->i = (fmiInteger*)functions.allocateMemory(NUMBER_OF_INTEGERS, sizeof(fmiInteger));
+    comp->b = (fmiBoolean*)functions.allocateMemory(NUMBER_OF_BOOLEANS, sizeof(fmiBoolean));
+    comp->s = (fmiString*)functions.allocateMemory(NUMBER_OF_STRINGS,  sizeof(fmiString));
+    comp->isPositive = (fmiBoolean*)calloc(NUMBER_OF_EVENT_INDICATORS, sizeof(fmiBoolean));
+  }
+  if (!comp || !comp->r || !comp->i || !comp->b || !comp->s || !comp->isPositive) {
+    functions.logger(NULL, instanceName, fmiError, "error",
+        "fmiInstantiateModel: Out of memory.");
+    return NULL;
+  }
+  if (comp->loggingOn) comp->functions.logger(NULL, instanceName, fmiOK, "log",
+      "fmiInstantiateModel: GUID=%s", GUID);
+  comp->instanceName = instanceName;
+  comp->GUID = GUID;
+  comp->functions = functions;
+  comp->loggingOn = loggingOn;
+  comp->state = modelInstantiated;
+  comp->eventInfo.iterationConverged = fmiTrue;
+  comp->eventInfo.stateValueReferencesChanged = fmiTrue;
+  comp->eventInfo.stateValuesChanged = fmiTrue;
+  comp->eventInfo.terminateSimulation = fmiFalse;
+  comp->eventInfo.upcomingTimeEvent = fmiFalse;
+  comp->eventInfo.nextEventTime = 0;
 
-                   globalData = NULL;
-                   globalData = initializeDataStruc2(initializeDataStruc());
-                   if (!globalData) {
-                       functions.logger(NULL, instanceName, fmiError, "error",
-                       "fmiInstantiateModel: Error: Could not initialize the global data structure file.");
-                       return NULL;
-                    }
-                   comp->time = &globalData->timeValue;
-                   setLocalData(globalData);
-                   sim_verbose = comp->loggingOn?64:0;
-                   sim_noemit = 0;
-                   jac_flag = 0;
-                   num_jac_flag = 0;
-                   warningLevelAssert = 1;
+  globalData = NULL;
+  globalData = initializeDataStruc2(initializeDataStruc());
+  if (!globalData) {
+    functions.logger(NULL, instanceName, fmiError, "error",
+        "fmiInstantiateModel: Error: Could not initialize the global data structure file.");
+    return NULL;
+  }
+  comp->time = &globalData->timeValue;
+  setLocalData(globalData);
+  sim_verbose = comp->loggingOn?64:0;
+  sim_noemit = 0;
+  jac_flag = 0;
+  num_jac_flag = 0;
+  warningLevelAssert = 1;
 
-                   setStartValues(comp); // to be implemented by the includer of this file
+  setStartValues(comp); // to be implemented by the includer of this file
 
-                   callExternalObjectConstructors(globalData);
-                   return comp;
+  callExternalObjectConstructors(globalData);
+  return comp;
 }
 
 fmiStatus fmiSetDebugLogging(fmiComponent c, fmiBoolean loggingOn) {
@@ -468,7 +468,7 @@ fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx) {
     return fmiError;
 #if (NUMBER_OF_STATES>0)
     // calculate new values
-  	functionODE();
+      functionODE();
     functionAlgebraics();
 
     for (i=0; i<nx; i++) {
@@ -508,44 +508,44 @@ fmiStatus fmiGetEventIndicators(fmiComponent c, fmiReal eventIndicators[], size_
 // ---------------------------------------------------------------------------
 
 fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal relativeTolerance,
-            fmiEventInfo* eventInfo) {
-              int sampleEvent_actived = 0;
-              //std::string init_method = std::string("simplex");
-              ModelInstance* comp = (ModelInstance *)c;
-              if (invalidState(comp, "fmiInitialize", modelInstantiated))
-                return fmiError;
-              if (nullPointer(comp, "fmiInitialize", "eventInfo", eventInfo))
-                return fmiError;
-              if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
-                "fmiInitialize: toleranceControlled=%d relativeTolerance=%g",
-                toleranceControlled, relativeTolerance);
-              eventInfo->iterationConverged  = comp->eventInfo.iterationConverged;
-              eventInfo->stateValueReferencesChanged = comp->eventInfo.stateValueReferencesChanged;
-              eventInfo->stateValuesChanged  = comp->eventInfo.stateValuesChanged;
-              eventInfo->terminateSimulation = comp->eventInfo.terminateSimulation;
-              eventInfo->upcomingTimeEvent = comp->eventInfo.upcomingTimeEvent;
-              globalData->lastEmittedTime = *comp->time;
-              globalData->forceEmit = 0;
-              //TODO: Simulation stop time is need to  all sample events
-              initSample(*comp->time, 100 /*should be stopTime*/);
-              initDelay(*comp->time);
+    fmiEventInfo* eventInfo) {
+  int sampleEvent_actived = 0;
+  //std::string init_method = std::string("simplex");
+  ModelInstance* comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmiInitialize", modelInstantiated))
+    return fmiError;
+  if (nullPointer(comp, "fmiInitialize", "eventInfo", eventInfo))
+    return fmiError;
+  if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
+      "fmiInitialize: toleranceControlled=%d relativeTolerance=%g",
+      toleranceControlled, relativeTolerance);
+  eventInfo->iterationConverged  = comp->eventInfo.iterationConverged;
+  eventInfo->stateValueReferencesChanged = comp->eventInfo.stateValueReferencesChanged;
+  eventInfo->stateValuesChanged  = comp->eventInfo.stateValuesChanged;
+  eventInfo->terminateSimulation = comp->eventInfo.terminateSimulation;
+  eventInfo->upcomingTimeEvent = comp->eventInfo.upcomingTimeEvent;
+  globalData->lastEmittedTime = *comp->time;
+  globalData->forceEmit = 0;
+  //TODO: Simulation stop time is need to  all sample events
+  initSample(*comp->time, 100 /*should be stopTime*/);
+  initDelay(*comp->time);
 
-              if (initializeEventData()) {
-                comp->functions.logger(c, comp->instanceName, fmiError, "log",
-                "fmiInitialize: initializeEventData failed");
-                return fmiError;
-              }
+  if (initializeEventData()) {
+    comp->functions.logger(c, comp->instanceName, fmiError, "log",
+        "fmiInitialize: initializeEventData failed");
+    return fmiError;
+  }
 
-              if(bound_parameters()) {
-                comp->functions.logger(c, comp->instanceName, fmiError, "log",
-                "fmiInitialize: bound_parameters failed");
-                return fmiError;
-              }
+  if(bound_parameters()) {
+    comp->functions.logger(c, comp->instanceName, fmiError, "log",
+        "fmiInitialize: bound_parameters failed");
+    return fmiError;
+  }
 
-              // Evaluate all constant equations
-              functionAliasEquations();
+  // Evaluate all constant equations
+  functionAliasEquations();
 
-              /*try{
+  /*try{
                 if (initialize(NULL, NULL))
                   {
                     comp->functions.logger(c, comp->instanceName, fmiError, "log",
@@ -562,7 +562,7 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
                     activateSampleEvents();
                   }
                 update_DAEsystem();
-			
+
                 SaveZeroCrossings();
                 if (sampleEvent_actived)
                   {
@@ -575,13 +575,13 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
 
                 // Initialize Next Sample Event Time
                 double nextSampleEvent;
-              	nextSampleEvent = getNextSampleTimeFMU();
-              	if (nextSampleEvent == -1){
-              	  eventInfo->upcomingTimeEvent = fmiFalse;
-              	}else{
-              	  eventInfo->upcomingTimeEvent = fmiTrue;
-              	  eventInfo->nextEventTime = nextSampleEvent;
-              	}
+                  nextSampleEvent = getNextSampleTimeFMU();
+                  if (nextSampleEvent == -1){
+                    eventInfo->upcomingTimeEvent = fmiFalse;
+                  }else{
+                    eventInfo->upcomingTimeEvent = fmiTrue;
+                    eventInfo->nextEventTime = nextSampleEvent;
+                  }
               /*}
               catch (TerminateSimulationException &e)
               {
@@ -589,67 +589,67 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
                 "fmiInitialize: fmiInitialize failed!");
                 return fmiError;
               }*/
-              // Initialization complete
+  // Initialization complete
 
-              comp->state = modelInitialized;
-              return fmiOK;
+  comp->state = modelInitialized;
+  return fmiOK;
 }
 
 fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEventInfo* eventInfo) {
-	ModelInstance* comp = (ModelInstance *)c;
-	if (invalidState(comp, "fmiEventUpdate", modelInitialized))
-		return fmiError;
-	if (nullPointer(comp, "fmiEventUpdate", "eventInfo", eventInfo))
-		return fmiError;
+  ModelInstance* comp = (ModelInstance *)c;
+  if (invalidState(comp, "fmiEventUpdate", modelInitialized))
+    return fmiError;
+  if (nullPointer(comp, "fmiEventUpdate", "eventInfo", eventInfo))
+    return fmiError;
 
-	if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
-			"fmiEventUpdate: Start Event Update! Next Sample Event %g",eventInfo->nextEventTime);
+  if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
+      "fmiEventUpdate: Start Event Update! Next Sample Event %g",eventInfo->nextEventTime);
 
-	int needtoiterate=0;
+  int needtoiterate=0;
 
-	saveall();
-	functionDAE(&needtoiterate);
+  saveall();
+  functionDAE(&needtoiterate);
 
-	//Activate sample and evaluate again
-	if (activateSampleEvents()){
-		if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
-				"fmiEventUpdate: Sample Event!");
-		saveall();
-		functionDAE(&needtoiterate);
-		deactivateSampleEventsandEquations();
-	}
-	if(checkForDiscreteChanges() || needtoiterate){
-		intermediateResults = fmiTrue;
-		if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
-				"fmiEventUpdate: Need to iterate(discrete changes)!");
-		eventInfo->iterationConverged  = fmiFalse;
-		eventInfo->stateValueReferencesChanged = fmiFalse;
-		eventInfo->stateValuesChanged  = fmiTrue;
-		eventInfo->terminateSimulation = fmiFalse;
-	}else{
-		intermediateResults = fmiFalse;
-		eventInfo->iterationConverged  = fmiTrue;
-		eventInfo->stateValueReferencesChanged = fmiFalse;
-		eventInfo->stateValuesChanged  = fmiFalse;
-		eventInfo->terminateSimulation = fmiFalse;
-	}
+  //Activate sample and evaluate again
+  if (activateSampleEvents()){
+    if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
+        "fmiEventUpdate: Sample Event!");
+    saveall();
+    functionDAE(&needtoiterate);
+    deactivateSampleEventsandEquations();
+  }
+  if(checkForDiscreteChanges() || needtoiterate){
+    intermediateResults = fmiTrue;
+    if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
+        "fmiEventUpdate: Need to iterate(discrete changes)!");
+    eventInfo->iterationConverged  = fmiFalse;
+    eventInfo->stateValueReferencesChanged = fmiFalse;
+    eventInfo->stateValuesChanged  = fmiTrue;
+    eventInfo->terminateSimulation = fmiFalse;
+  }else{
+    intermediateResults = fmiFalse;
+    eventInfo->iterationConverged  = fmiTrue;
+    eventInfo->stateValueReferencesChanged = fmiFalse;
+    eventInfo->stateValuesChanged  = fmiFalse;
+    eventInfo->terminateSimulation = fmiFalse;
+  }
 
-	if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
-			"fmiEventUpdate: intermediateResults = %d", intermediateResults);
+  if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
+      "fmiEventUpdate: intermediateResults = %d", intermediateResults);
 
-	//Get Next Event TIme
-	double nextSampleEvent=0;
-	nextSampleEvent = getNextSampleTimeFMU();
-	if (nextSampleEvent == -1){
-		eventInfo->upcomingTimeEvent = fmiFalse;
-	}else{
-		eventInfo->upcomingTimeEvent = fmiTrue;
-		eventInfo->nextEventTime = nextSampleEvent;
-	}
-	if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
-			"fmiEventUpdate: Checked for Sample Events! Next Sample Event %g",eventInfo->nextEventTime);
+  //Get Next Event TIme
+  double nextSampleEvent=0;
+  nextSampleEvent = getNextSampleTimeFMU();
+  if (nextSampleEvent == -1){
+    eventInfo->upcomingTimeEvent = fmiFalse;
+  }else{
+    eventInfo->upcomingTimeEvent = fmiTrue;
+    eventInfo->nextEventTime = nextSampleEvent;
+  }
+  if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
+      "fmiEventUpdate: Checked for Sample Events! Next Sample Event %g",eventInfo->nextEventTime);
 
-	return fmiOK;
+  return fmiOK;
 }
 
 fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean* callEventUpdate){

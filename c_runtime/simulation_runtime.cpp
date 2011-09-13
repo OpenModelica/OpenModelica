@@ -98,16 +98,16 @@ DATA *globalData = 0;
 simulation_result *sim_result = NULL;
 
 /* Flags for controlling logging to stdout */
-const int LOG_STATS				= (1<<0);
-const int LOG_INIT				= (1<<1);
-const int LOG_SOLVER			= (1<<2);
-const int LOG_JAC               = (1<<3);
-const int LOG_ENDJAC            = (1<<4);
-const int LOG_NONLIN_SYS		= (1<<5);
-const int LOG_EVENTS			= (1<<6);
-const int LOG_ZEROCROSSINGS		= (1<<7);
-const int LOG_DEBUG				= (1<<8);
-const int LOG_RES_INIT			= LOG_STATS|LOG_INIT;
+const int LOG_STATS         = (1<<0);
+const int LOG_INIT          = (1<<1);
+const int LOG_SOLVER        = (1<<2);
+const int LOG_JAC           = (1<<3);
+const int LOG_ENDJAC        = (1<<4);
+const int LOG_NONLIN_SYS    = (1<<5);
+const int LOG_EVENTS        = (1<<6);
+const int LOG_ZEROCROSSINGS = (1<<7);
+const int LOG_DEBUG         = (1<<8);
+const int LOG_RES_INIT      = LOG_STATS|LOG_INIT;
 
 /* Flags for modelErrorCodes */
 extern const int ERROR_NONLINSYS = -1;
@@ -132,27 +132,27 @@ newTime(double t, double step, double stop)
   const double maxSolverStep = 0.001;
   double newTime;
   if (step > maxSolverStep)
-    { /* Prevent solver from taking larger step than maxSolverStep
+  { /* Prevent solver from taking larger step than maxSolverStep
      NOTE: DASSL run into problems if the stepsize (TOUT-T) is too large, since it internally keeps track
      of number of iterations and explain if it goes over 500.
-     */
-      /* Take a max step size forward */
-      newTime = t + maxSolverStep;
+   */
+    /* Take a max step size forward */
+    newTime = t + maxSolverStep;
 
-      /* If output interval point reached, choose that time instead. */
-      if (newTime - (globalData->lastEmittedTime + step) >= -1e-10)
-        {
-          newTime = globalData->lastEmittedTime + step;
-          globalData->lastEmittedTime = newTime;
-          globalData->forceEmit = 1;
-        }
-    }
-  else
+    /* If output interval point reached, choose that time instead. */
+    if (newTime - (globalData->lastEmittedTime + step) >= -1e-10)
     {
-      newTime = (floor((t + 1e-10) / step) + 1.0) * step;
+      newTime = globalData->lastEmittedTime + step;
       globalData->lastEmittedTime = newTime;
       globalData->forceEmit = 1;
     }
+  }
+  else
+  {
+    newTime = (floor((t + 1e-10) / step) + 1.0) * step;
+    globalData->lastEmittedTime = newTime;
+    globalData->forceEmit = 1;
+  }
 
   // Small gain taking hints from the scheduled sample events. Needs to be done better.
   //while (globalData->curSampleTimeIx < globalData->nSampleTimes && globalData->sampleTimes[globalData->curSampleTimeIx] < t)
@@ -162,9 +162,9 @@ newTime(double t, double step, double stop)
   //}
   // Do not exceed the stop time.
   if (newTime > stop)
-    {
-      newTime = stop;
-    }
+  {
+    newTime = stop;
+  }
   globalData->current_stepsize = newTime - t;
   return newTime;
 }
@@ -239,7 +239,7 @@ static void deInitializeDataStruc2(DATA *data)
     free(data->outputVars);
     data->outputVars = 0;
   }
-  
+
   if (data->intVariables.algebraics) {
     free(data->intVariables.algebraics);
     data->intVariables.algebraics = 0;
@@ -294,7 +294,7 @@ static void deInitializeDataStruc2(DATA *data)
     free(data->jacobianVars);
     data->jacobianVars = 0;
   }
-  
+
   if (data->initialResiduals){
     free(data->initialResiduals);
     data->initialResiduals = 0;
@@ -323,32 +323,32 @@ storeExtrapolationData()
 
   int i;
   for (i = 0; i < globalData->nStates; i++)
-    {
-      globalData->states_old2[i] = globalData->states_old[i];
-      globalData->statesDerivatives_old2[i]
-                                         = globalData->statesDerivatives_old[i];
-      globalData->states_old[i] = globalData->states[i];
-      globalData->statesDerivatives_old[i] = globalData->statesDerivatives[i];
-    }
+  {
+    globalData->states_old2[i] = globalData->states_old[i];
+    globalData->statesDerivatives_old2[i]
+                                       = globalData->statesDerivatives_old[i];
+    globalData->states_old[i] = globalData->states[i];
+    globalData->statesDerivatives_old[i] = globalData->statesDerivatives[i];
+  }
   for (i = 0; i < globalData->nAlgebraic; i++)
-    {
-      globalData->algebraics_old2[i] = globalData->algebraics_old[i];
-      globalData->algebraics_old[i] = globalData->algebraics[i];
-    }
+  {
+    globalData->algebraics_old2[i] = globalData->algebraics_old[i];
+    globalData->algebraics_old[i] = globalData->algebraics[i];
+  }
   for (i = 0; i < globalData->intVariables.nAlgebraic; i++)
-    {
-      globalData->intVariables.algebraics_old2[i]
-                                               = globalData->intVariables.algebraics_old[i];
-      globalData->intVariables.algebraics_old[i]
-                                              = globalData->intVariables.algebraics[i];
-    }
+  {
+    globalData->intVariables.algebraics_old2[i]
+                                             = globalData->intVariables.algebraics_old[i];
+    globalData->intVariables.algebraics_old[i]
+                                            = globalData->intVariables.algebraics[i];
+  }
   for (i = 0; i < globalData->boolVariables.nAlgebraic; i++)
-    {
-      globalData->boolVariables.algebraics_old2[i]
-                                                = globalData->boolVariables.algebraics_old[i];
-      globalData->boolVariables.algebraics_old[i]
-                                               = globalData->boolVariables.algebraics[i];
-    }
+  {
+    globalData->boolVariables.algebraics_old2[i]
+                                              = globalData->boolVariables.algebraics_old[i];
+    globalData->boolVariables.algebraics_old[i]
+                                             = globalData->boolVariables.algebraics[i];
+  }
   globalData->oldTime2 = globalData->oldTime;
   globalData->oldTime = globalData->timeValue;
 }
@@ -367,27 +367,27 @@ storeExtrapolationDataEvent()
 {
   int i;
   for (i = 0; i < globalData->nStates; i++)
-    {
-      globalData->states_old2[i] = globalData->states[i];
-      globalData->statesDerivatives_old2[i] = globalData->statesDerivatives[i];
-      globalData->states_old[i] = globalData->states[i];
-      globalData->statesDerivatives_old[i] = globalData->statesDerivatives[i];
-    }
+  {
+    globalData->states_old2[i] = globalData->states[i];
+    globalData->statesDerivatives_old2[i] = globalData->statesDerivatives[i];
+    globalData->states_old[i] = globalData->states[i];
+    globalData->statesDerivatives_old[i] = globalData->statesDerivatives[i];
+  }
   for (i = 0; i < globalData->nAlgebraic; i++)
-    {
-      globalData->algebraics_old2[i] =  globalData->algebraics[i];
-      globalData->algebraics_old[i] = globalData->algebraics[i];
-    }
+  {
+    globalData->algebraics_old2[i] =  globalData->algebraics[i];
+    globalData->algebraics_old[i] = globalData->algebraics[i];
+  }
   for (i = 0; i < globalData->intVariables.nAlgebraic; i++)
-    {
-      globalData->intVariables.algebraics_old2[i] = globalData->intVariables.algebraics[i];
-      globalData->intVariables.algebraics_old[i] = globalData->intVariables.algebraics[i];
-    }
+  {
+    globalData->intVariables.algebraics_old2[i] = globalData->intVariables.algebraics[i];
+    globalData->intVariables.algebraics_old[i] = globalData->intVariables.algebraics[i];
+  }
   for (i = 0; i < globalData->boolVariables.nAlgebraic; i++)
-    {
-      globalData->boolVariables.algebraics_old2[i] = globalData->boolVariables.algebraics[i];
-      globalData->boolVariables.algebraics_old[i] = globalData->boolVariables.algebraics[i];
-    }
+  {
+    globalData->boolVariables.algebraics_old2[i] = globalData->boolVariables.algebraics[i];
+    globalData->boolVariables.algebraics_old[i] = globalData->boolVariables.algebraics[i];
+  }
   globalData->oldTime2 = globalData->timeValue;
   globalData->oldTime = globalData->timeValue;
 }
@@ -406,22 +406,22 @@ restoreExtrapolationDataOld()
 {
   int i;
   for (i = 0; i < globalData->nStates; i++)
-    {
-      globalData->states[i] = globalData->states_old[i];
-      globalData->statesDerivatives[i] = globalData->statesDerivatives_old[i];
-    }
+  {
+    globalData->states[i] = globalData->states_old[i];
+    globalData->statesDerivatives[i] = globalData->statesDerivatives_old[i];
+  }
   for (i = 0; i < globalData->nAlgebraic; i++)
-    {
-      globalData->algebraics[i] = globalData->algebraics_old[i];
-    }
+  {
+    globalData->algebraics[i] = globalData->algebraics_old[i];
+  }
   for (i = 0; i < globalData->intVariables.nAlgebraic; i++)
-    {
-      globalData->intVariables.algebraics[i] = globalData->intVariables.algebraics_old[i];
-    }
+  {
+    globalData->intVariables.algebraics[i] = globalData->intVariables.algebraics_old[i];
+  }
   for (i = 0; i < globalData->boolVariables.nAlgebraic; i++)
-    {
-      globalData->boolVariables.algebraics[i] = globalData->boolVariables.algebraics_old[i];
-    }
+  {
+    globalData->boolVariables.algebraics[i] = globalData->boolVariables.algebraics_old[i];
+  }
   globalData->timeValue = globalData->oldTime;
 }
 
@@ -431,61 +431,49 @@ restoreExtrapolationDataOld()
  * Flags are or'ed to a returnvalue.
  * Valid flags: LOG_EVENTS, LOG_NONLIN_SYS
  */
-int
-verboseLevel(int argc, char**argv)
-{
+int verboseLevel(int argc, char**argv) {
   int res = 0;
   const string * flags = getFlagValue("lv", argc, argv);
 
   if (!flags)
     return res; // no lv flag given.
 
-  if (flags->find("LOG_STATS", 0) != string::npos)
-    {
-      res |= LOG_STATS;
-    }
-  if (flags->find("LOG_JAC", 0) != string::npos)
-    {
-      res |= LOG_JAC;
-    }
-  if (flags->find("LOG_ENDJAC", 0) != string::npos)
-    {
-      res |= LOG_ENDJAC;
-    }
-  if (flags->find("LOG_INIT", 0) != string::npos)
-    {
-      res |= LOG_INIT;
-    }
-  if (flags->find("LOG_RES_INIT", 0) != string::npos)
-    {
-      res |= LOG_RES_INIT;
-    }
-  if (flags->find("LOG_SOLVER", 0) != string::npos)
-    {
-      res |= LOG_SOLVER;
-    }
-  if (flags->find("LOG_EVENTS", 0) != string::npos)
-    {
-      res |= LOG_EVENTS;
-    }
-  if (flags->find("LOG_NONLIN_SYS", 0) != string::npos)
-    {
-      res |= LOG_NONLIN_SYS;
-    }
-  if (flags->find("LOG_ZEROCROSSINGS", 0) != string::npos)
-    {
-      res |= LOG_ZEROCROSSINGS;
-    }
-  if (flags->find("LOG_DEBUG", 0) != string::npos)
-    {
-      res |= LOG_DEBUG;
-    }
+  if (flags->find("LOG_STATS", 0) != string::npos) {
+    res |= LOG_STATS;
+  }
+  if (flags->find("LOG_JAC", 0) != string::npos) {
+    res |= LOG_JAC;
+  }
+  if (flags->find("LOG_ENDJAC", 0) != string::npos) {
+    res |= LOG_ENDJAC;
+  }
+  if (flags->find("LOG_INIT", 0) != string::npos) {
+    res |= LOG_INIT;
+  }
+  if (flags->find("LOG_RES_INIT", 0) != string::npos) {
+    res |= LOG_RES_INIT;
+  }
+  if (flags->find("LOG_SOLVER", 0) != string::npos) {
+    res |= LOG_SOLVER;
+  }
+  if (flags->find("LOG_EVENTS", 0) != string::npos) {
+    res |= LOG_EVENTS;
+  }
+  if (flags->find("LOG_NONLIN_SYS", 0) != string::npos) {
+    res |= LOG_NONLIN_SYS;
+  }
+  if (flags->find("LOG_ZEROCROSSINGS", 0) != string::npos) {
+    res |= LOG_ZEROCROSSINGS;
+  }
+  if (flags->find("LOG_DEBUG", 0) != string::npos) {
+    res |= LOG_DEBUG;
+  }
   return res;
 }
 
 int useVerboseOutput(int level)
 {
-	return (sim_verbose >= level);
+  return (sim_verbose >= level);
 }
 
 /**
@@ -543,10 +531,10 @@ void initializeOutputFilter(DATA* data, string variableFilter)
 
   rc = regcomp(&myregex, filter, flags);
   if (rc) {
-      char err_buf[2048] = {0};
-      regerror(rc, &myregex, err_buf, 2048);
-      std::cerr << "Failed to compile regular expression: " << filter << " with error: " << err_buf << ". Defaulting to outputting all variables." << std::endl;
-      return;
+    char err_buf[2048] = {0};
+    regerror(rc, &myregex, err_buf, 2048);
+    std::cerr << "Failed to compile regular expression: " << filter << " with error: " << err_buf << ". Defaulting to outputting all variables." << std::endl;
+    return;
   }
   for (int i = 0; i < data->nStates; i++) if (!data->statesFilterOutput[i])
     data->statesFilterOutput[i] = regexec(&myregex, data->statesNames[i].name, 0, NULL, 0) != 0;
@@ -604,22 +592,22 @@ startNonInteractiveSimulation(int argc, char**argv)
   initDelay(start);
 
   if (measure_time_flag) {
-      rt_init(SIM_TIMER_FIRST_FUNCTION + globalData->nFunctions + globalData->nProfileBlocks + 4 /* sentinel */);
-      rt_tick( SIM_TIMER_TOTAL );
-      rt_tick( SIM_TIMER_PREINIT );
-      rt_clear( SIM_TIMER_OUTPUT );
-      rt_clear( SIM_TIMER_EVENT );
-      rt_clear( SIM_TIMER_INIT );
+    rt_init(SIM_TIMER_FIRST_FUNCTION + globalData->nFunctions + globalData->nProfileBlocks + 4 /* sentinel */);
+    rt_tick( SIM_TIMER_TOTAL );
+    rt_tick( SIM_TIMER_PREINIT );
+    rt_clear( SIM_TIMER_OUTPUT );
+    rt_clear( SIM_TIMER_EVENT );
+    rt_clear( SIM_TIMER_INIT );
   }
 
   if (create_linearmodel) {
-      if (lintime == NULL) {
-          stop = start;
-      } else {
-          stop = atof((*lintime).c_str());
-      }
-      cout << "Linearization will performed at point of time: " << stop << endl;
-      method = "dassl";
+    if (lintime == NULL) {
+      stop = start;
+    } else {
+      stop = atof((*lintime).c_str());
+    }
+    cout << "Linearization will performed at point of time: " << stop << endl;
+    method = "dassl";
   }
 
   int methodflag = flagSet("s", argc, argv);
@@ -628,34 +616,34 @@ startNonInteractiveSimulation(int argc, char**argv)
     if (!(solvermethod == NULL))
       method.assign(*solvermethod);
   }
-  
+
   // Create a result file
   string *result_file = (string*) getFlagValue("r", argc, argv);
   string result_file_cstr;
   if (!result_file) {
-      result_file_cstr = string(globalData->modelFilePrefix) + string("_res.") + outputFormat; /* TODO: Fix result file name based on mode */
+    result_file_cstr = string(globalData->modelFilePrefix) + string("_res.") + outputFormat; /* TODO: Fix result file name based on mode */
   } else {
-      result_file_cstr = *result_file;
+    result_file_cstr = *result_file;
   }
 
   retVal = callSolver(argc, argv, method, outputFormat, result_file_cstr, start, stop, stepSize,
       outputSteps, tolerance);
 
   if (retVal == 0 && create_linearmodel) {
-      rt_tick(SIM_TIMER_LINEARIZE);
-      retVal = linearize();
-      rt_accumulate(SIM_TIMER_LINEARIZE);
-      cout << "Linear model is created!" << endl;
+    rt_tick(SIM_TIMER_LINEARIZE);
+    retVal = linearize();
+    rt_accumulate(SIM_TIMER_LINEARIZE);
+    cout << "Linear model is created!" << endl;
   }
 
   if (retVal == 0 && measure_time_flag && ! sim_verbose) {
-      const string modelInfo = string(globalData->modelFilePrefix) + "_prof.xml";
-      const string plotFile = string(globalData->modelFilePrefix) + "_prof.plt";
-      rt_accumulate(SIM_TIMER_TOTAL);
-      string* plotFormat = (string*) getFlagValue("measureTimePlotFormat", argc, argv);
-      retVal = printModelInfo(globalData, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat->c_str() : "svg", method.c_str(), outputFormat.c_str(), result_file_cstr.c_str()) && retVal;
+    const string modelInfo = string(globalData->modelFilePrefix) + "_prof.xml";
+    const string plotFile = string(globalData->modelFilePrefix) + "_prof.plt";
+    rt_accumulate(SIM_TIMER_TOTAL);
+    string* plotFormat = (string*) getFlagValue("measureTimePlotFormat", argc, argv);
+    retVal = printModelInfo(globalData, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat->c_str() : "svg", method.c_str(), outputFormat.c_str(), result_file_cstr.c_str()) && retVal;
   }
-  
+
   deinitDelay();
   deInitializeDataStruc2(globalData);
 
@@ -681,91 +669,91 @@ callSolver(int argc, char**argv, string method, string outputFormat,
 
   long maxSteps = 2 * outputSteps + 2 * globalData->nSampleTimes;
   if (isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty", outputFormat.c_str())) {
-      sim_result = new simulation_result_empty(result_file_cstr.c_str(),maxSteps);
+    sim_result = new simulation_result_empty(result_file_cstr.c_str(),maxSteps);
   } else if (0 == strcmp("csv", outputFormat.c_str())) {
-      sim_result = new simulation_result_csv(result_file_cstr.c_str(), maxSteps);
+    sim_result = new simulation_result_csv(result_file_cstr.c_str(), maxSteps);
   } else if (0 == strcmp("mat", outputFormat.c_str())) {
-      sim_result = new simulation_result_mat(result_file_cstr.c_str(), start, stop);
+    sim_result = new simulation_result_mat(result_file_cstr.c_str(), start, stop);
   } else if (0 == strcmp("plt", outputFormat.c_str())) {
-      sim_result = new simulation_result_plt(result_file_cstr.c_str(), maxSteps);
+    sim_result = new simulation_result_plt(result_file_cstr.c_str(), maxSteps);
   } else {
-      cerr << "Unknown output format: " << outputFormat << endl;
-      return 1;
+    cerr << "Unknown output format: " << outputFormat << endl;
+    return 1;
   }
   if (sim_verbose >= LOG_SOLVER) {
-      cout << "Allocated simulation result data storage for method '"
-          << sim_result->result_type() << "' and file='" << result_file_cstr
-          << "'" << endl;
+    cout << "Allocated simulation result data storage for method '"
+        << sim_result->result_type() << "' and file='" << result_file_cstr
+        << "'" << endl;
   }
 
   if (method == std::string("")) {
-      if (sim_verbose >= LOG_SOLVER) {
-          cout << "No solver is set, using dassl." << endl;
-      }
-      retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,3);
+    if (sim_verbose >= LOG_SOLVER) {
+      cout << "No solver is set, using dassl." << endl;
+    }
+    retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,3);
   } else if (method == std::string("euler")) {
-      if (sim_verbose >= LOG_SOLVER) {
-          cout << "Recognized solver: " << method << "." << endl;
-      }
-      retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 1);
+    if (sim_verbose >= LOG_SOLVER) {
+      cout << "Recognized solver: " << method << "." << endl;
+    }
+    retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 1);
   } else if (method == std::string("rungekutta")) {
-      if (sim_verbose >= LOG_SOLVER) {
-          cout << "Recognized solver: " << method << "." << endl;
-      }
-      retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 2);
+    if (sim_verbose >= LOG_SOLVER) {
+      cout << "Recognized solver: " << method << "." << endl;
+    }
+    retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 2);
   } else if (method == std::string("dassl") || method == std::string("dassl2")) {
-      if (sim_verbose >= LOG_SOLVER) {
-          cout << "Recognized solver: " << method << "." << endl;
-      }
-      retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 3);
+    if (sim_verbose >= LOG_SOLVER) {
+      cout << "Recognized solver: " << method << "." << endl;
+    }
+    retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 3);
   } else if (method == std::string("dassljac")) {
-      if (sim_verbose >= LOG_SOLVER) {
-          cout << "Recognized solver: " << method << "." << endl;
-      }
-      jac_flag = 1;
-      retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 3);
+    if (sim_verbose >= LOG_SOLVER) {
+      cout << "Recognized solver: " << method << "." << endl;
+    }
+    jac_flag = 1;
+    retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 3);
   } else if (method == std::string("dasslnum")) {
-      if (sim_verbose >= LOG_SOLVER) {
-          cout << "Recognized solver: " << method << "." << endl;
-      }
-      num_jac_flag = 1;
-      retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 3);
+    if (sim_verbose >= LOG_SOLVER) {
+      cout << "Recognized solver: " << method << "." << endl;
+    }
+    num_jac_flag = 1;
+    retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 3);
   } else if (method == std::string("inline-euler")) {
-      if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-euler")) {
-          cout << "Recognized solver: " << method
-              << ", but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_EULER."
-              << endl;
-          retVal = 1;
-      } else {
-          if (sim_verbose >= LOG_SOLVER) {
-              cout << "Recognized solver: " << method << "." << endl;
-          }
-          retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 4);
-      }
-  } else if (method == std::string("inline-rungekutta")) {
-      if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-rungekutta")) {
-          cout << "Recognized solver: " << method
-              << ", but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_RK."
-              << endl;
-          retVal = 1;
-      } else {
-          if (sim_verbose >= LOG_SOLVER) {
-              cout << "Recognized solver: " << method << "." << endl;
-          }
-          retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 4);
-      }
-#ifdef _OMC_QSS_LIB
-      } else if (method == std::string("qss")) {
-        if (sim_verbose >= LOG_SOLVER) {
-          cout << "Recognized solver: " << method << "." << endl;
-        }
-        retVal = qss_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 3);
-#endif
-    } else {
-      cout << "Unrecognized solver: " << method
-          << "; valid solvers are dassl,euler,rungekutta,dassl2,inline-euler or inline-rungekutta."
+    if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-euler")) {
+      cout << "Recognized solver: " << method
+          << ", but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_EULER."
           << endl;
       retVal = 1;
+    } else {
+      if (sim_verbose >= LOG_SOLVER) {
+        cout << "Recognized solver: " << method << "." << endl;
+      }
+      retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 4);
+    }
+  } else if (method == std::string("inline-rungekutta")) {
+    if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-rungekutta")) {
+      cout << "Recognized solver: " << method
+          << ", but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_RK."
+          << endl;
+      retVal = 1;
+    } else {
+      if (sim_verbose >= LOG_SOLVER) {
+        cout << "Recognized solver: " << method << "." << endl;
+      }
+      retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 4);
+    }
+#ifdef _OMC_QSS_LIB
+  } else if (method == std::string("qss")) {
+    if (sim_verbose >= LOG_SOLVER) {
+      cout << "Recognized solver: " << method << "." << endl;
+    }
+    retVal = qss_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 3);
+#endif
+  } else {
+    cout << "Unrecognized solver: " << method
+        << "; valid solvers are dassl,euler,rungekutta,dassl2,inline-euler or inline-rungekutta."
+        << endl;
+    retVal = 1;
   }
 
   delete sim_result;
@@ -844,7 +832,7 @@ DATA *initializeDataStruc2(DATA *returnData)
   } else {
     returnData->stringVariables.algebraics=0;
   }
-  
+
   if (returnData->intVariables.nAlgebraic) {
     returnData->intVariables.algebraics = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
     returnData->intVariables.algebraicsFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->intVariables.nAlgebraic);
@@ -878,7 +866,7 @@ DATA *initializeDataStruc2(DATA *returnData)
     returnData->boolVariables.algebraics_old = 0;
     returnData->boolVariables.algebraics_old2 = 0;
   }
-  
+
   if (returnData->nParameters) {
     returnData->parameters = (double*) malloc(sizeof(double)*returnData->nParameters);
     assert(returnData->parameters);
@@ -889,28 +877,28 @@ DATA *initializeDataStruc2(DATA *returnData)
 
   if (returnData->stringVariables.nParameters) {
     returnData->stringVariables.parameters = (const char**)malloc(sizeof(char*)*returnData->stringVariables.nParameters);
-      assert(returnData->stringVariables.parameters);
-      memset(returnData->stringVariables.parameters,0,sizeof(char*)*returnData->stringVariables.nParameters);
+    assert(returnData->stringVariables.parameters);
+    memset(returnData->stringVariables.parameters,0,sizeof(char*)*returnData->stringVariables.nParameters);
   } else {
-      returnData->stringVariables.parameters=0;
+    returnData->stringVariables.parameters=0;
   }
-  
+
   if (returnData->intVariables.nParameters) {
     returnData->intVariables.parameters = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nParameters);
-      assert(returnData->intVariables.parameters);
-      memset(returnData->intVariables.parameters,0,sizeof(modelica_integer)*returnData->intVariables.nParameters);
+    assert(returnData->intVariables.parameters);
+    memset(returnData->intVariables.parameters,0,sizeof(modelica_integer)*returnData->intVariables.nParameters);
   } else {
-      returnData->intVariables.parameters=0;
+    returnData->intVariables.parameters=0;
   }
-  
+
   if (returnData->boolVariables.nParameters) {
     returnData->boolVariables.parameters = (modelica_boolean*)malloc(sizeof(modelica_boolean)*returnData->boolVariables.nParameters);
-      assert(returnData->boolVariables.parameters);
-      memset(returnData->boolVariables.parameters,0,sizeof(modelica_boolean)*returnData->boolVariables.nParameters);
+    assert(returnData->boolVariables.parameters);
+    memset(returnData->boolVariables.parameters,0,sizeof(modelica_boolean)*returnData->boolVariables.nParameters);
   } else {
-      returnData->boolVariables.parameters=0;
+    returnData->boolVariables.parameters=0;
   }
-  
+
   if (returnData->nOutputVars) {
     returnData->outputVars = (double*) malloc(sizeof(double)*returnData->nOutputVars);
     assert(returnData->outputVars);
@@ -970,7 +958,7 @@ DATA *initializeDataStruc2(DATA *returnData)
   } else {
     returnData->stringVariables.alias = 0;
   }
-    
+
   if (returnData->nJacobianvars) {
     returnData->jacobianVars = (double*) malloc(sizeof(double)*returnData->nJacobianvars);
     assert(returnData->jacobianVars);
@@ -1004,22 +992,22 @@ int
 initRuntimeAndSimulation(int argc, char**argv)
 {
   if (flagSet("?", argc, argv) || flagSet("help", argc, argv)) {
-      cout << "usage: " << argv[0]
-           << " <-f initfile> <-r result file> -m solver:{dassl, dassl2, rungekutta, euler} <-interactive> <-port value> "
-           << "-lv [LOG_STATS] [LOG_INIT] [LOG_RES_INIT] [LOG_SOLVER] [LOG_EVENTS] [LOG_NONLIN_SYS] [LOG_ZEROCROSSINGS] [LOG_DEBUG]"
-           << endl;
-      EXIT(0);
+    cout << "usage: " << argv[0]
+                              << " <-f initfile> <-r result file> -m solver:{dassl, dassl2, rungekutta, euler} <-interactive> <-port value> "
+                              << "-lv [LOG_STATS] [LOG_INIT] [LOG_RES_INIT] [LOG_SOLVER] [LOG_EVENTS] [LOG_NONLIN_SYS] [LOG_ZEROCROSSINGS] [LOG_DEBUG]"
+                              << endl;
+    EXIT(0);
   }
   globalData = initializeDataStruc2(initializeDataStruc());
- 
+
   if (!globalData) {
-      std::cerr << "Error: Could not initialize the global data structure file" << std::endl;
+    std::cerr << "Error: Could not initialize the global data structure file" << std::endl;
   }
   //this sets the static variable that is in the file with the generated-model functions
   setLocalData(globalData);
   if (globalData->nStates == 0 && globalData->nAlgebraic == 0) {
-      std::cerr << "No variables in the model." << std::endl;
-      return 1;
+    std::cerr << "No variables in the model." << std::endl;
+    return 1;
   }
   /* verbose flag is set : -v */
   sim_verbose = flagSet("v", argc, argv);
@@ -1033,12 +1021,12 @@ initRuntimeAndSimulation(int argc, char**argv)
   interactiveSimulation = flagSet("interactive", argc, argv);
 
   if (interactiveSimulation && flagSet("port", argc, argv)) {
-      cout << "userPort" << endl;
-      string *portvalue = (string*) getFlagValue("port", argc, argv);
-      std::istringstream stream(*portvalue);
-      int userPort;
-      stream >> userPort;
-      setPortOfControlServer(userPort);
+    cout << "userPort" << endl;
+    string *portvalue = (string*) getFlagValue("port", argc, argv);
+    std::istringstream stream(*portvalue);
+    int userPort;
+    stream >> userPort;
+    setPortOfControlServer(userPort);
   }
 #endif
   int verbose_flags = verboseLevel(argc, argv);
@@ -1061,7 +1049,7 @@ initRuntimeAndSimulation(int argc, char**argv)
 int _main_SimulationRuntime(int argc, char**argv)
 {
   int retVal = -1;
-  
+
   if (initRuntimeAndSimulation(argc, argv)) //initRuntimeAndSimulation returns 1 if an error occurs
     return 1;
 

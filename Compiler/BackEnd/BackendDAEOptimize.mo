@@ -4085,7 +4085,7 @@ algorithm
         dlow = removeProtectedParameters(dlow,functionTree);
         dlow = removeParameters(dlow,functionTree);
         dlow = removeSimpleEquations(dlow,functionTree);
-				
+
         Debug.fcall("execStat",print, "*** analytical Jacobians -> removed simply equations: " +& realString(clock()) +& "\n" );
         // figure out new matching and the strong components  
         (dlow,v1,v2,comps1) = BackendDAEUtil.transformBackendDAE(dlow,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE());        

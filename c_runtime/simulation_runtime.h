@@ -292,8 +292,8 @@ typedef struct sim_DATA {
 /* Global data */
 extern DATA *globalData;
 
-extern char hasNominalValue[];	/* for all variables and parameters */
-extern double nominalValue[];	/* for all variables and parameters */
+extern char hasNominalValue[];  /* for all variables and parameters */
+extern double nominalValue[];   /* for all variables and parameters */
 
 
 extern int modelErrorCode;
@@ -342,8 +342,8 @@ void restoreExtrapolationDataOld();
 
 /* function for calculating ouput values */
 /*used in DDASRT fortran function*/
-int functionODE();				/* functionODE with respect to start-values */
-int functionAlgebraics();		/* functionAlgebraics with respect to start-values */
+int functionODE();          /* functionODE with respect to start-values */
+int functionAlgebraics();   /* functionAlgebraics with respect to start-values */
 int functionAliasEquations();
 
 /* function for calculating state values on residual form */

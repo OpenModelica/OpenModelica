@@ -3747,27 +3747,27 @@ L100:
     /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
     if (ipar[1] == ipar[2] || ipar[1] == ipar[3]){
        nrow = npdm1;
-		i__1 = *neq;
-		i__2 = *neq;
-		printf("cj: %g and the states\n", *cj);
-		for (k=0;k<*neq;k++) {
-			printf("%g ", y[k+1]);
-		}
+        i__1 = *neq;
+        i__2 = *neq;
+        printf("cj: %g and the states\n", *cj);
+        for (k=0;k<*neq;k++) {
+            printf("%g ", y[k+1]);
+        }
 
 
-		printf("analytical jacobian\n");
-		printf("at point in time : ");
-		printf("%g \n", *x);
-		for (i__ = 1; i__ <= i__1; ++i__) {
-				 for (l = 1; l <= i__2; ++l) {
-					 printf("%g  ",wm[nrow + l]);
-				 }
-				 printf("\n");
-				 nrow += *neq;
-		}
+        printf("analytical jacobian\n");
+        printf("at point in time : ");
+        printf("%g \n", *x);
+        for (i__ = 1; i__ <= i__1; ++i__) {
+                 for (l = 1; l <= i__2; ++l) {
+                     printf("%g  ",wm[nrow + l]);
+                 }
+                 printf("\n");
+                 nrow += *neq;
+        }
     }
-	if (ipar[1] == ipar[3])
-		exit(0);
+    if (ipar[1] == ipar[3])
+        exit(0);
     /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
 
 
@@ -3811,16 +3811,16 @@ L200:
     }
     /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
     if (ipar[1] == ipar[2] || ipar[1] == ipar[3]){
-    		nrow = npdm1;
-			i__1 = *neq;
-			i__2 = *neq;
-			printf("cj: %g and the states\n", *cj);
-			for (k=0;k<*neq;k++) {
-				printf("%g ", y[k+1]);
-			}
+            nrow = npdm1;
+            i__1 = *neq;
+            i__2 = *neq;
+            printf("cj: %g and the states\n", *cj);
+            for (k=0;k<*neq;k++) {
+                printf("%g ", y[k+1]);
+            }
 
 
-			printf("numerical jacobian\n");
+            printf("numerical jacobian\n");
             printf("at point in time : ");
             printf("%g \n",*x);
             for (i__ = 1; i__ <= i__1; ++i__) {
@@ -3832,7 +3832,7 @@ L200:
             }
     }
     if (ipar[1] == ipar[3])
- 	   exit(0);
+        exit(0);
    /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
 
 

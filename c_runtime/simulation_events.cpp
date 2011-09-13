@@ -192,18 +192,18 @@ sample(double start, double interval, int hindex)
   tmp = 1;
   int tmpindex = globalData->curSampleTimeIx;
   if (tmpindex < globalData->nSampleTimes)
-	{
-	  while ((globalData->sampleTimes[tmpindex]).activated == 1)
-		{
-		  if ((globalData->sampleTimes[tmpindex]).zc_index == hindex)
-			{
-			  tmp = 0;
-			}
-		  tmpindex++;
-		  if (tmpindex == globalData->nSampleTimes)
-			break;
-		}
-	}
+    {
+      while ((globalData->sampleTimes[tmpindex]).activated == 1)
+        {
+          if ((globalData->sampleTimes[tmpindex]).zc_index == hindex)
+            {
+              tmp = 0;
+            }
+          tmpindex++;
+          if (tmpindex == globalData->nSampleTimes)
+            break;
+        }
+    }
 
   /* adrpo - 2008-01-15
    * comparison was tmp >= 0 fails sometimes on x86 due to extended precision in registers
@@ -226,8 +226,8 @@ sample(double start, double interval, int hindex)
   else
     {
       if (sim_verbose >= LOG_EVENTS){
-    	fprintf(stdout, "| info LOG_EVENTS | Calling sample(%f,%f)\n",start,interval);
-        fprintf(stdout, "| info LOG_EVENTS |	-NO event at time: %f \t tmp: %f\n",globalData->timeValue,tmp);
+        fprintf(stdout, "| info LOG_EVENTS | Calling sample(%f,%f)\n",start,interval);
+        fprintf(stdout, "| info LOG_EVENTS |    -NO event at time: %f \t tmp: %f\n",globalData->timeValue,tmp);
       }
       return 0;
     }
@@ -390,35 +390,35 @@ initSample(double start, double stop)
  */
 void saveall()
 {
-	for(fortran_integer i=0; i<globalData->nStates; i++)
-	{
-		x_saved[i] = globalData->states[i];
-		xd_saved[i] = globalData->statesDerivatives[i];
-	}
+    for(fortran_integer i=0; i<globalData->nStates; i++)
+    {
+        x_saved[i] = globalData->states[i];
+        xd_saved[i] = globalData->statesDerivatives[i];
+    }
 
-	for(fortran_integer i = 0; i < globalData->nAlgebraic; i++)
-	{
-		y_saved[i] = globalData->algebraics[i];
-	}
-	for(long i = 0; i < globalData->intVariables.nAlgebraic; i++)
-	{
-		int_saved[i] = globalData->intVariables.algebraics[i];
-	}
+    for(fortran_integer i = 0; i < globalData->nAlgebraic; i++)
+    {
+        y_saved[i] = globalData->algebraics[i];
+    }
+    for(long i = 0; i < globalData->intVariables.nAlgebraic; i++)
+    {
+        int_saved[i] = globalData->intVariables.algebraics[i];
+    }
 
-	for(long i = 0; i < globalData->boolVariables.nAlgebraic; i++)
-	{
-		bool_saved[i] = globalData->boolVariables.algebraics[i];
-	}
+    for(long i = 0; i < globalData->boolVariables.nAlgebraic; i++)
+    {
+        bool_saved[i] = globalData->boolVariables.algebraics[i];
+    }
 
-	for(long i = 0; i < globalData->nHelpVars; i++)
-	{
-		h_saved[i] = globalData->helpVars[i];
-	}
+    for(long i = 0; i < globalData->nHelpVars; i++)
+    {
+        h_saved[i] = globalData->helpVars[i];
+    }
 
-	for(long i = 0; i < globalData->stringVariables.nAlgebraic; i++)
-	{
-		str_saved[i] = globalData->stringVariables.algebraics[i];
-	}
+    for(long i = 0; i < globalData->stringVariables.nAlgebraic; i++)
+    {
+        str_saved[i] = globalData->stringVariables.algebraics[i];
+    }
 }
 
 /** function printAllPreValues
@@ -426,36 +426,36 @@ void saveall()
  */
 void printAllPreValues()
 {
-	for(fortran_integer i=0; i<globalData->nStates; i++)
-	{
-		cout << "info    | x_saved[" << i << "] = " << x_saved[i] << endl;
-		cout << "info    | xd_saved[" << i << "] = " << xd_saved[i] << endl;
-	}
+    for(fortran_integer i=0; i<globalData->nStates; i++)
+    {
+        cout << "info    | x_saved[" << i << "] = " << x_saved[i] << endl;
+        cout << "info    | xd_saved[" << i << "] = " << xd_saved[i] << endl;
+    }
 
-	for(fortran_integer i = 0; i < globalData->nAlgebraic; i++)
-	{
-		cout << "info    | y_saved[" << i << "] = " << y_saved[i] << endl;
-	}
+    for(fortran_integer i = 0; i < globalData->nAlgebraic; i++)
+    {
+        cout << "info    | y_saved[" << i << "] = " << y_saved[i] << endl;
+    }
 
-	for(long i = 0; i < globalData->intVariables.nAlgebraic; i++)
-	{
-		cout << "info    | int_saved[" << i << "] = " << int_saved[i] << endl;
-	}
+    for(long i = 0; i < globalData->intVariables.nAlgebraic; i++)
+    {
+        cout << "info    | int_saved[" << i << "] = " << int_saved[i] << endl;
+    }
 
-	for(long i = 0; i < globalData->boolVariables.nAlgebraic; i++)
-	{
-		cout << "info    | bool_saved[" << i << "] = " << (bool_saved[i] ? "true" : "false") << endl;
-	}
+    for(long i = 0; i < globalData->boolVariables.nAlgebraic; i++)
+    {
+        cout << "info    | bool_saved[" << i << "] = " << (bool_saved[i] ? "true" : "false") << endl;
+    }
 
-	for(long i = 0; i < globalData->nHelpVars; i++)
-	{
-		cout << "info    | h_saved[" << i << "] = " << h_saved[i] << endl;
-	}
+    for(long i = 0; i < globalData->nHelpVars; i++)
+    {
+        cout << "info    | h_saved[" << i << "] = " << h_saved[i] << endl;
+    }
 
-	for(long i = 0; i < globalData->stringVariables.nAlgebraic; i++)
-	{
-		cout << "info    | str_saved[" << i << "] = " << str_saved[i] << endl;
-	}
+    for(long i = 0; i < globalData->stringVariables.nAlgebraic; i++)
+    {
+        cout << "info    | str_saved[" << i << "] = " << str_saved[i] << endl;
+    }
 }
 
 /** function restoreHelpVars
@@ -485,17 +485,17 @@ checkTermination()
     {
       if (warningLevelAssert)
         { // terminated from assert, etc.
-    	  fprintf(stdout, "| model warning | Simulation call assert() at time %f\nLevel : warning\nMessage : %s",globalData->timeValue,TermMsg.c_str());
+          fprintf(stdout, "| model warning | Simulation call assert() at time %f\nLevel : warning\nMessage : %s",globalData->timeValue,TermMsg.c_str());
         }
       else
         {
-    	  fprintf(stdout, "| model error | Simulation call assert() at time %f\nLevel : error\nMessage : %s",globalData->timeValue,TermMsg.c_str());
+          fprintf(stdout, "| model error | Simulation call assert() at time %f\nLevel : error\nMessage : %s",globalData->timeValue,TermMsg.c_str());
           throw TerminateSimulationException(globalData->timeValue);
         }
     }
   if (terminationTerminate)
     {
-	  fprintf(stdout, "| model terminate | Simulation call terminate() at time %f\nMessage : %s",globalData->timeValue,TermMsg.c_str());
+      fprintf(stdout, "| model terminate | Simulation call terminate() at time %f\nMessage : %s",globalData->timeValue,TermMsg.c_str());
       throw TerminateSimulationException(globalData->timeValue);
     }
 }
@@ -504,11 +504,11 @@ void
 debugPrintHelpVars()
 {
   if (sim_verbose >= LOG_EVENTS)
-	fprintf(stdout, "| info LOG_EVENTS | *'*'*'*  HELP VARS  *'*'*'*\n");
+    fprintf(stdout, "| info LOG_EVENTS | *'*'*'*  HELP VARS  *'*'*'*\n");
   for (int i = 0; i < globalData->nHelpVars; i++)
     {
       if (sim_verbose >= LOG_EVENTS)
-    	fprintf(stdout, "| info LOG_EVENTS | HelpVar[%d] pre: %f, current: %f\n",i,globalData->helpVars_saved[i],globalData->helpVars[i]);
+        fprintf(stdout, "| info LOG_EVENTS | HelpVar[%d] pre: %f, current: %f\n",i,globalData->helpVars_saved[i],globalData->helpVars[i]);
     }
 }
 
@@ -522,11 +522,11 @@ getNextSampleTimeFMU()
 {
     if (globalData->curSampleTimeIx < globalData->nSampleTimes)
     {
-    	return((globalData->sampleTimes[globalData->curSampleTimeIx]).events);
+        return((globalData->sampleTimes[globalData->curSampleTimeIx]).events);
     }
     else
     {
-    	return -1;
+        return -1;
     }
 
 }
@@ -537,13 +537,13 @@ checkForSampleEvent()
 {
   if (sim_verbose >= LOG_EVENTS)
     {
-	  fprintf(stdout, "| info LOG_EVENTS | Check for Sample Events. Current Index: %li\n",globalData->curSampleTimeIx);
+      fprintf(stdout, "| info LOG_EVENTS | Check for Sample Events. Current Index: %li\n",globalData->curSampleTimeIx);
     }
   double a = globalData->timeValue + globalData->current_stepsize;
   if (sim_verbose >= LOG_EVENTS)
     {
-	  fprintf(stdout, "| info LOG_EVENTS | *** Next step : %f\n",a);
-	  fprintf(stdout, "| info LOG_EVENTS | *** Next sample Time : %f\n",((globalData->sampleTimes[globalData->curSampleTimeIx]).events));
+      fprintf(stdout, "| info LOG_EVENTS | *** Next step : %f\n",a);
+      fprintf(stdout, "| info LOG_EVENTS | *** Next sample Time : %f\n",((globalData->sampleTimes[globalData->curSampleTimeIx]).events));
     }
   int b = 0;
   int tmpindex = globalData->curSampleTimeIx;
@@ -553,19 +553,19 @@ checkForSampleEvent()
     {
       if (sim_verbose >= LOG_EVENTS)
         {
-    	  fprintf(stdout, "| info LOG_EVENTS | ** Sample Event ** \n");
+          fprintf(stdout, "| info LOG_EVENTS | ** Sample Event ** \n");
         }
       if (!(b == 0))
         {
-    	  if ((globalData->sampleTimes[tmpindex]).events - globalData->timeValue >= 0){
+          if ((globalData->sampleTimes[tmpindex]).events - globalData->timeValue >= 0){
              globalData->current_stepsize = (globalData->sampleTimes[tmpindex]).events - globalData->timeValue;
-    	  }else{
-    		  globalData->current_stepsize = 0;
-    	  }
+          }else{
+              globalData->current_stepsize = 0;
+          }
 
           if (sim_verbose >= LOG_EVENTS)
             {
-        	  fprintf(stdout, "| info LOG_EVENTS | ** Change Stepsize : %f\n",globalData->current_stepsize);
+              fprintf(stdout, "| info LOG_EVENTS | ** Change Stepsize : %f\n",globalData->current_stepsize);
             }
         }
       return 1;
@@ -579,37 +579,37 @@ checkForSampleEvent()
 int
 activateSampleEvents()
 {
-	if (globalData->curSampleTimeIx < globalData->nSampleTimes)
-	{
-		int retVal = 0;
-		if (sim_verbose >= LOG_EVENTS)
-		{
-			fprintf(stdout, "| info LOG_EVENTS | Activate Sample Events.\n");
-		    fprintf(stdout, "| info LOG_EVENTS | Current Index: %li\n",globalData->curSampleTimeIx);
-		}
-		double a = globalData->timeValue;
-		int b = 0;
-		long int tmpindex = globalData->curSampleTimeIx;
-		b = compdbl(&a, &((globalData->sampleTimes[tmpindex]).events));
-		while (b >= 0)
-		{
-			retVal = 1;
-			(globalData->sampleTimes[tmpindex]).activated = 1;
-			if (sim_verbose >= LOG_EVENTS)
-			{
-				fprintf(stdout, "| info LOG_EVENTS | Activate Sample Events index: %li\n",tmpindex);
-			}
-			tmpindex++;
-			if (tmpindex >= globalData->nSampleTimes)
-				break;
-			b = compdbl(&a, &((globalData->sampleTimes[tmpindex]).events));
-		}
-		return retVal;
-	}
-	else
-	{
-		return 0;
-	}
+    if (globalData->curSampleTimeIx < globalData->nSampleTimes)
+    {
+        int retVal = 0;
+        if (sim_verbose >= LOG_EVENTS)
+        {
+            fprintf(stdout, "| info LOG_EVENTS | Activate Sample Events.\n");
+            fprintf(stdout, "| info LOG_EVENTS | Current Index: %li\n",globalData->curSampleTimeIx);
+        }
+        double a = globalData->timeValue;
+        int b = 0;
+        long int tmpindex = globalData->curSampleTimeIx;
+        b = compdbl(&a, &((globalData->sampleTimes[tmpindex]).events));
+        while (b >= 0)
+        {
+            retVal = 1;
+            (globalData->sampleTimes[tmpindex]).activated = 1;
+            if (sim_verbose >= LOG_EVENTS)
+            {
+                fprintf(stdout, "| info LOG_EVENTS | Activate Sample Events index: %li\n",tmpindex);
+            }
+            tmpindex++;
+            if (tmpindex >= globalData->nSampleTimes)
+                break;
+            b = compdbl(&a, &((globalData->sampleTimes[tmpindex]).events));
+        }
+        return retVal;
+    }
+    else
+    {
+        return 0;
+    }
 
 }
 
@@ -631,7 +631,7 @@ deactivateSampleEventsandEquations()
     {
       if (sim_verbose >= LOG_EVENTS)
         {
-    	  fprintf(stdout, "| info LOG_EVENTS | Deactivate Sample Events index: %li\n",globalData->curSampleTimeIx);
+          fprintf(stdout, "| info LOG_EVENTS | Deactivate Sample Events index: %li\n",globalData->curSampleTimeIx);
         }
       (globalData->sampleTimes[globalData->curSampleTimeIx]).activated = 0;
       globalData->helpVars[((globalData->sampleTimes[globalData->curSampleTimeIx]).zc_index)]
@@ -658,8 +658,8 @@ CheckForNewEvent(int* sampleactived)
     {
       if (sim_verbose >= LOG_ZEROCROSSINGS)
         {
-    	  fprintf(stdout, "| info LOG_ZEROCROSSINGS | ZeroCrossing ID: %d \t old = %g \t current = %g \t Direction = %li\n",
-    			  i,gout_old[i], gout[i],zeroCrossingEnabled[i]);
+          fprintf(stdout, "| info LOG_ZEROCROSSINGS | ZeroCrossing ID: %d \t old = %g \t current = %g \t Direction = %li\n",
+                  i,gout_old[i], gout[i],zeroCrossingEnabled[i]);
         }
       if (gout_old[i] == 0)
         {
@@ -667,7 +667,7 @@ CheckForNewEvent(int* sampleactived)
             {
               if (sim_verbose >= LOG_EVENTS)
                 {
-            	  fprintf(stdout, "| info LOG_EVENTS | adding event %d at time: %f\n",i, globalData->timeValue);
+                  fprintf(stdout, "| info LOG_EVENTS | adding event %d at time: %f\n",i, globalData->timeValue);
                 }
               EventList.push_front(i);
             }
@@ -675,7 +675,7 @@ CheckForNewEvent(int* sampleactived)
             {
               if (sim_verbose >= LOG_EVENTS)
                 {
-            	  fprintf(stdout, "| info LOG_EVENTS | adding event %d at time: %f\n",i, globalData->timeValue);
+                  fprintf(stdout, "| info LOG_EVENTS | adding event %d at time: %f\n",i, globalData->timeValue);
                 }
               EventList.push_front(i);
             }
@@ -685,7 +685,7 @@ CheckForNewEvent(int* sampleactived)
         {
           if (sim_verbose >= LOG_EVENTS)
             {
-        	  fprintf(stdout, "| info LOG_EVENTS | adding event %d at time: %f\n",i, globalData->timeValue);
+              fprintf(stdout, "| info LOG_EVENTS | adding event %d at time: %f\n",i, globalData->timeValue);
             }
           EventList.push_front(i);
         }
@@ -706,7 +706,7 @@ CheckForNewEvent(int* sampleactived)
 
       if (sim_verbose >= LOG_EVENTS)
         {
-    	  fprintf(stdout, "| info LOG_EVENTS | Event Handling at EventTime: %f done!\n", EventTime);
+          fprintf(stdout, "| info LOG_EVENTS | Event Handling at EventTime: %f done!\n", EventTime);
         }
 
       return 1;
@@ -730,7 +730,7 @@ EventHandle(int flag)
 
       if (sim_verbose >= LOG_EVENTS)
         {
-    	  fprintf(stdout, "| info LOG_EVENTS | Handle Event caused by ZeroCrossings: ");
+          fprintf(stdout, "| info LOG_EVENTS | Handle Event caused by ZeroCrossings: ");
         }
       while (!EventList.empty())
         {
@@ -754,7 +754,7 @@ EventHandle(int flag)
             }
         }
       if (sim_verbose >= LOG_EVENTS)
-    	  fprintf(stdout, "\n");
+          fprintf(stdout, "\n");
 
       //debugPrintHelpVars();
       //determined complete system
@@ -771,12 +771,12 @@ EventHandle(int flag)
           if (needToIterate)
             {
               if (sim_verbose >= LOG_EVENTS)
-            	fprintf(stdout, "| info LOG_EVENTS | reinit call. Iteration needed!\n");
+                fprintf(stdout, "| info LOG_EVENTS | reinit call. Iteration needed!\n");
             }
           else
             {
               if (sim_verbose >= LOG_EVENTS)
-            	fprintf(stdout, "| info LOG_EVENTS | discrete Var changed. Iteration needed!\n");
+                fprintf(stdout, "| info LOG_EVENTS | discrete Var changed. Iteration needed!\n");
             }
           saveall();
           functionDAE(&needToIterate);
@@ -802,7 +802,7 @@ EventHandle(int flag)
     {
       if (sim_verbose >= LOG_EVENTS)
         {
-    	  fprintf(stdout, "| info LOG_EVENTS | Event Handling for Sample : %f!\n",globalData->timeValue);
+          fprintf(stdout, "| info LOG_EVENTS | Event Handling for Sample : %f!\n",globalData->timeValue);
         }
       if (sim_result) sim_result->emit();
       //evaluate and emit results before sample events are activated
@@ -814,12 +814,12 @@ EventHandle(int flag)
           if (needToIterate)
             {
               if (sim_verbose >= LOG_EVENTS)
-            	fprintf(stdout, "| info LOG_EVENTS | reinit call. Iteration needed!\n");
+                fprintf(stdout, "| info LOG_EVENTS | reinit call. Iteration needed!\n");
             }
           else
             {
               if (sim_verbose >= LOG_EVENTS)
-            	fprintf(stdout, "| info LOG_EVENTS | discrete Var changed. Iteration needed!\n");
+                fprintf(stdout, "| info LOG_EVENTS | discrete Var changed. Iteration needed!\n");
             }
           saveall();
           functionDAE(&needToIterate);
@@ -851,12 +851,12 @@ EventHandle(int flag)
           if (needToIterate)
             {
               if (sim_verbose >= LOG_EVENTS)
-            	fprintf(stdout, "| info LOG_EVENTS | reinit call. Iteration needed!\n");
+                fprintf(stdout, "| info LOG_EVENTS | reinit call. Iteration needed!\n");
             }
           else
             {
               if (sim_verbose >= LOG_EVENTS)
-            	fprintf(stdout, "| info LOG_EVENTS | discrete Var changed. Iteration needed!\n");
+                fprintf(stdout, "| info LOG_EVENTS | discrete Var changed. Iteration needed!\n");
             }
           saveall();
           functionDAE(&needToIterate);
@@ -875,7 +875,7 @@ EventHandle(int flag)
       deactivateSampleEventsandEquations();
       if (sim_verbose >= LOG_EVENTS)
         {
-    	  fprintf(stdout, "| info LOG_EVENTS | Event Handling for Sample : %f done!\n", globalData->timeValue);
+          fprintf(stdout, "| info LOG_EVENTS | Event Handling for Sample : %f done!\n", globalData->timeValue);
         }
     }
   SaveZeroCrossings();
@@ -898,7 +898,7 @@ FindRoot(double *EventTime)
     {
       if (sim_verbose >= LOG_ZEROCROSSINGS)
         {
-    	  fprintf(stdout, "| info LOG_ZEROCROSSINGS | Search for current event. Events in list: %d\n",*it);
+          fprintf(stdout, "| info LOG_ZEROCROSSINGS | Search for current event. Events in list: %d\n",*it);
         }
     }
 
@@ -931,7 +931,7 @@ FindRoot(double *EventTime)
         }
       if (sim_verbose >= LOG_ZEROCROSSINGS)
         {
-    	  fprintf(stdout, "| info LOG_ZEROCROSSINGS | Minimum value: %g\n",value);
+          fprintf(stdout, "| info LOG_ZEROCROSSINGS | Minimum value: %g\n",value);
         }
       for ( it=EventList.begin() ; it != EventList.end(); it++ )
         {
@@ -940,7 +940,7 @@ FindRoot(double *EventTime)
               tmpEventList.push_back(*it);
               if (sim_verbose >= LOG_ZEROCROSSINGS)
                 {
-            	  fprintf(stdout, "| info LOG_ZEROCROSSINGS | added tmp event : %d\n",*it);
+                  fprintf(stdout, "| info LOG_ZEROCROSSINGS | added tmp event : %d\n",*it);
                 }
             }
         }
@@ -952,14 +952,14 @@ FindRoot(double *EventTime)
     {
       if (sim_verbose >= LOG_EVENTS)
         {
-    	  fprintf(stdout, "| info LOG_EVENTS | Found events: ");
+          fprintf(stdout, "| info LOG_EVENTS | Found events: ");
         }
     }
   else
     {
       if (sim_verbose >= LOG_EVENTS)
         {
-    	  fprintf(stdout, "| info LOG_EVENTS | Found event: ");
+          fprintf(stdout, "| info LOG_EVENTS | Found event: ");
         }
     }
   while (!tmpEventList.empty())
@@ -968,23 +968,23 @@ FindRoot(double *EventTime)
       tmpEventList.pop_front();
       if (sim_verbose >= LOG_EVENTS)
         {
-    	  fprintf(stdout, "%d ", event_id);
+          fprintf(stdout, "%d ", event_id);
         }
       if (!tmpEventList.empty())
         {
           if (sim_verbose >= LOG_EVENTS)
             {
-        	  fprintf(stdout, ", ");
+              fprintf(stdout, ", ");
             }
         }
       EventList.push_front(event_id);
     }
   if (sim_verbose >= LOG_EVENTS)
-	  fprintf(stdout, "\n");
+      fprintf(stdout, "\n");
 
   if (sim_verbose >= LOG_EVENTS)
     {
-	  fprintf(stdout, "| info LOG_EVENTS | at time: %g \nTime at Point left: %g\nTime at Point right: %g\n",*EventTime,time_left,time_right);
+      fprintf(stdout, "| info LOG_EVENTS | at time: %g \nTime at Point left: %g\nTime at Point right: %g\n",*EventTime,time_left,time_right);
     }
 
   //determined system at t_e - epsilon
@@ -1032,8 +1032,8 @@ BiSection(double* a, double* b, double* states_a, double* states_b,
     }
   if (sim_verbose >= LOG_ZEROCROSSINGS)
     {
-	  fprintf(stdout, "| info LOG_ZEROCROSSINGS | Check interval [%g,%g]\n",*a,*b);
-	  fprintf(stdout, "| info LOG_ZEROCROSSINGS | TTOL is set to: %g\n",TTOL);
+      fprintf(stdout, "| info LOG_ZEROCROSSINGS | Check interval [%g,%g]\n",*a,*b);
+      fprintf(stdout, "| info LOG_ZEROCROSSINGS | TTOL is set to: %g\n",TTOL);
     }
 
   while (fabs(*b - *a) > TTOL)
@@ -1066,10 +1066,10 @@ BiSection(double* a, double* b, double* states_a, double* states_b,
             }
           *b = c;
           /*if (sim_verbose >= LOG_ZEROCROSSINGS){
-        	   cout << "Found ZeroCrossing in the left section. " << endl;
-           	   for(int i=0;i<globalData->nStates;i++){
-        	   	   cout << "states at b : " << states_b[i]  << endl;
-           	   }
+               cout << "Found ZeroCrossing in the left section. " << endl;
+                  for(int i=0;i<globalData->nStates;i++){
+                      cout << "states at b : " << states_b[i]  << endl;
+                  }
            }*/
           //for(int i=0;i<globalData->nZeroCrossing;i++){
           //  backup_gout[i] = gout_old[i];
@@ -1088,7 +1088,7 @@ BiSection(double* a, double* b, double* states_a, double* states_b,
           /*if (sim_verbose >= LOG_ZEROCROSSINGS){
              cout << "ZeroCrossing is in the right section. " << endl;
              for(int i=0;i<globalData->nStates;i++){
-            	 cout << "states at a : " << states_a[i]  << endl;
+                 cout << "states at a : " << states_a[i]  << endl;
              }
           }*/
           right = 1;
@@ -1116,11 +1116,11 @@ BiSection(double* a, double* b, double* states_a, double* states_b,
   //
   /*
   if (sim_verbose >= LOG_ZEROCROSSINGS){
-	  for (long i = 0; i < globalData->nZeroCrossing; i++) {
-		  cout << "check gout_old[" << i << "] = " << gout_old[i] << "\t" <<
-				  "check gout[" << i << "] = " << gout[i] <<
-				  "check gout_backup[" << i << "] = " << backup_gout[i] << endl;
-	  }
+      for (long i = 0; i < globalData->nZeroCrossing; i++) {
+          cout << "check gout_old[" << i << "] = " << gout_old[i] << "\t" <<
+                  "check gout[" << i << "] = " << gout[i] <<
+                  "check gout_backup[" << i << "] = " << backup_gout[i] << endl;
+      }
   }
   */
   delete[] backup_gout;
@@ -1142,8 +1142,8 @@ CheckZeroCrossings(list<int> *tmpEventList)
     {
       if (sim_verbose >= LOG_ZEROCROSSINGS)
         {
-    	  fprintf(stdout, "| info LOG_ZEROCROSSINGS | ZeroCrossing ID: %d \t old = %g \t current = %g \t Direction = %li\n",
-    			  *it,gout_old[*it], gout[*it],zeroCrossingEnabled[*it]);
+          fprintf(stdout, "| info LOG_ZEROCROSSINGS | ZeroCrossing ID: %d \t old = %g \t current = %g \t Direction = %li\n",
+                  *it,gout_old[*it], gout[*it],zeroCrossingEnabled[*it]);
         }
       //Found event in left section
       if ((gout[(*it)] <= 0 && gout_old[(*it)] > 0) || (gout[(*it)] >= 0 && gout_old[(*it)] < 0)
@@ -1171,7 +1171,7 @@ SaveZeroCrossings()
 
   if (sim_verbose >= LOG_ZEROCROSSINGS)
     {
-	  fprintf(stdout, "| info LOG_ZEROCROSSINGS | Save ZeroCrossings!\n");
+      fprintf(stdout, "| info LOG_ZEROCROSSINGS | Save ZeroCrossings!\n");
     }
   std::copy(gout, gout + globalData->nZeroCrossing, gout_old);
   function_onlyZeroCrossings(gout, &globalData->timeValue);
@@ -1200,7 +1200,7 @@ correctDirectionZeroCrossings()
   for (int i = 0; i < globalData->nZeroCrossing; i++)
     {
       if (zeroCrossingEnabled[i] == -1 && gout[i] > 0){
-    	  zeroCrossingEnabled[i] = 1;
+          zeroCrossingEnabled[i] = 1;
       }else if (zeroCrossingEnabled[i] == 1 && gout[i] < 0){
             zeroCrossingEnabled[i] = -1;
       }

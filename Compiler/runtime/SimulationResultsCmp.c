@@ -392,7 +392,7 @@ int writeLogFile(const char *filename,DiffDataField *ddf,const char *f,const cha
   fprintf(fout, "\"Name\";\"Time\";\"DataPoint\";\"RefTime\";\"RefDataPoint\";\"absolute error\";\"relative error\";\n");
   for (i=0;i<ddf->n;i++){
     fprintf(fout, "%s;%.6g;%.6g;%.6g;%.6g;%.6g;%.6g;\n",ddf->data[i].name,ddf->data[i].time,ddf->data[i].data,ddf->data[i].timeref,ddf->data[i].dataref,
-    		fabs(ddf->data[i].data-ddf->data[i].dataref),fabs((ddf->data[i].data-ddf->data[i].dataref)/ddf->data[i].dataref));
+        fabs(ddf->data[i].data-ddf->data[i].dataref),fabs((ddf->data[i].data-ddf->data[i].dataref)/ddf->data[i].dataref));
   }
   fclose(fout);
   //fprintf(stderr, "writeLogFile: %s finished\n",filename);
