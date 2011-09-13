@@ -82,19 +82,19 @@ end VarKind;
 public
 uniontype Var "- Variables"
   record VAR
-    DAE.ComponentRef varName "varName ; variable name" ;
+    .DAE.ComponentRef varName "varName ; variable name" ;
     VarKind varKind "varKind ; Kind of variable" ;
-    DAE.VarDirection varDirection "varDirection ; input, output or bidirectional" ;
+    .DAE.VarDirection varDirection "varDirection ; input, output or bidirectional" ;
     Type varType "varType ; builtin type or enumeration" ;
     Option< .DAE.Exp> bindExp "bindExp ; Binding expression e.g. for parameters" ;
     Option<Values.Value> bindValue "bindValue ; binding value for parameters" ;
-    DAE.InstDims arryDim "arryDim ; array dimensions on nonexpanded var" ;
+    .DAE.InstDims arryDim "arryDim ; array dimensions on nonexpanded var" ;
     Integer index "index ; index in impl. vector" ;
-    DAE.ElementSource source "origin of variable" ;
+    .DAE.ElementSource source "origin of variable" ;
     Option< .DAE.VariableAttributes> values "values ; values on builtin attributes" ;
     Option<SCode.Comment> comment "comment ; this contains the comment and annotation from Absyn" ;
-    DAE.Flow flowPrefix "flow ; if the variable is a flow" ;
-    DAE.Stream streamPrefix "stream ; if the variable is a stream variable. Modelica 3.1 specs" ;
+    .DAE.Flow flowPrefix "flow ; if the variable is a flow" ;
+    .DAE.Stream streamPrefix "stream ; if the variable is a stream variable. Modelica 3.1 specs" ;
   end VAR;
 end Var;
 

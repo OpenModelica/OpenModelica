@@ -5460,7 +5460,7 @@ algorithm
     case({}) then {};
       
     case(BackendDAE.EQUATION(e1, e2, es)::eqns) equation
-      lambda = DAE.CREF(DAE.CREF_IDENT("$_lambda", DAE.ET_REAL, {}), DAE.ET_REAL);
+      lambda = DAE.CREF(DAE.CREF_IDENT("$_lambda", DAE.ET_REAL(), {}), DAE.ET_REAL());
       e1 = DAE.BINARY(lambda, DAE.MUL(DAE.ET_REAL()), e1);
       e2 = DAE.BINARY(lambda, DAE.MUL(DAE.ET_REAL()), e2);
       eqn = BackendDAE.EQUATION(e1, e2, es);
@@ -5468,7 +5468,7 @@ algorithm
     then eqn::eqns;
       
     case(BackendDAE.RESIDUAL_EQUATION(e1, es)::eqns) equation
-      lambda = DAE.CREF(DAE.CREF_IDENT("$_lambda", DAE.ET_REAL, {}), DAE.ET_REAL);
+      lambda = DAE.CREF(DAE.CREF_IDENT("$_lambda", DAE.ET_REAL(), {}), DAE.ET_REAL());
       e1 = DAE.BINARY(lambda, DAE.MUL(DAE.ET_REAL()), e1);
       eqn = BackendDAE.RESIDUAL_EQUATION(e1, es);
       eqns = addLambdaToEquationList(eqns);
@@ -5499,7 +5499,7 @@ algorithm
       
     case(var::vars) equation
       SOME(startExp) = BackendVariable.varStartValueOption(var);
-      lambda = DAE.CREF(DAE.CREF_IDENT("$_lambda", DAE.ET_REAL, {}), DAE.ET_REAL);
+      lambda = DAE.CREF(DAE.CREF_IDENT("$_lambda", DAE.ET_REAL(), {}), DAE.ET_REAL());
       cref = BackendVariable.varCref(var);
       crefExp = DAE.CREF(cref, DAE.ET_REAL());
       
