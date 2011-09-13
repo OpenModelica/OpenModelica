@@ -1408,7 +1408,7 @@ algorithm
         _, Connect.SET_TRIE_NODE(name = name, cref = el_cr, nodes = nodes), _)
       equation
         id = ComponentReference.printComponentRef2Str(id, subs);
-        nodes = setTrieUpdateNode(id, rest_cref, inArg, nodes, inUpdateFunc);
+        nodes = setTrieUpdateNode(id, inCref, rest_cref, inArg, nodes, inUpdateFunc);
       then
         Connect.SET_TRIE_NODE(name, el_cr, nodes);
 
@@ -1426,6 +1426,7 @@ end setTrieUpdate;
 protected function setTrieUpdateNode
   "Helper function to setTrieUpdate, updates a node in the trie."
   input String inId;
+  input DAE.ComponentRef wholeCref;
   input DAE.ComponentRef inCref;
   input Arg inArg;
   input list<SetTrieNode> inNodes;
@@ -1440,30 +1441,29 @@ protected function setTrieUpdateNode
     output SetTrieNode outNode;
   end UpdateFunc;
 algorithm
-  outNodes := matchcontinue(inId, inCref, inArg, inNodes, inUpdateFunc)
+  outNodes := matchcontinue(inId, wholeCref, inCref, inArg, inNodes, inUpdateFunc)
     local
       SetTrieNode node;
       list<SetTrieNode> rest_nodes;
       String id;
       DAE.ComponentRef cr;
 
-    case (_, _, _, {}, _)
+    case (_, _, _, _, {}, _)
       equation
-        cr = ComponentReference.makeCrefQual(inId, DAE.ET_OTHER(), {}, inCref);
-        node = setTrieUpdateNode2(cr, inArg, inUpdateFunc);
+        node = setTrieUpdateNode2(wholeCref, inArg, inUpdateFunc);
       then
         {node};
          
-    case (_, _, _, (node as Connect.SET_TRIE_NODE(name = id)) :: rest_nodes, _)
+    case (_, _, _, _, (node as Connect.SET_TRIE_NODE(name = id)) :: rest_nodes, _)
       equation
         true = stringEqual(inId, id);
         node = setTrieUpdate(inCref, inArg, node, inUpdateFunc);
       then
         node :: rest_nodes;
 
-    case (_, _, _, node :: rest_nodes, _)
+    case (_, _, _, _, node :: rest_nodes, _)
       equation
-        rest_nodes = setTrieUpdateNode(inId, inCref, inArg, rest_nodes, inUpdateFunc);
+        rest_nodes = setTrieUpdateNode(inId, wholeCref, inCref, inArg, rest_nodes, inUpdateFunc);
       then
         node :: rest_nodes;
        
