@@ -2978,10 +2978,10 @@ algorithm
         // remove changed eqns
         eqnlst = Util.listMap1(eqnlst,intSub,1);
         eqns1 = BackendEquation.equationDelete(eqns,eqnlst);
-        syst = BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING());
+        syst = BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.MATCHING(inAss1,inAss2,inComps));
         shared = BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp);
         (m,mT) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.NORMAL());
-        syst = BackendDAE.EQSYSTEM(vars1,eqns1,SOME(m),SOME(mT),BackendDAE.NO_MATCHING());
+        syst = BackendDAE.EQSYSTEM(vars1,eqns1,SOME(m),SOME(mT),BackendDAE.MATCHING(inAss1,inAss2,inComps));
       then
         (BackendDAE.DAE({syst},shared),inAss1,inAss2,inComps,b);
   end matchcontinue;  
@@ -3647,7 +3647,7 @@ algorithm
         dlow_1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,eqns_2,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},shared);
         dlow1_1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars1,eqns1_1,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},shared);
         // try causalisation
-        (dlow_2 as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(m=SOME(m_2),mT=SOME(mT_2))::{}),v1_1,v2_1,comps) = BackendDAEUtil.transformBackendDAE(dlow_1,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE());
+        (dlow_2 as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(m=SOME(m_2),mT=SOME(mT_2),matching=BackendDAE.MATCHING(v1_1,v2_1,comps))::{})) = BackendDAEUtil.transformBackendDAE(dlow_1,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE());
         comps_1 = Util.listMap(comps,getEqnIndxFromComp);
         // check strongComponents and split it into two lists: len(comp)==1 and len(comp)>1
         (morecomps,onecomp) = splitComps(comps_1);
@@ -4016,11 +4016,8 @@ public function generateLinearMatrix
   input list<BackendDAE.Var> inAllVar;
   input Integer inNoColumn;
   output BackendDAE.BackendDAE outJacobian;
-  output array<Integer> outV1;
-  output array<Integer> outV2;
-  output BackendDAE.StrongComponents outComps1;
 algorithm 
-  (outJacobian,outV1,outV2,outComps1) :=
+  outJacobian :=
     matchcontinue (inBackendDAE,functionTree,inComRef1,inComRef2,inAllVar,inNoColumn)
     local
       BackendDAE.BackendDAE dlow;
@@ -4053,15 +4050,18 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       BackendDAE.Matching matching;
+      array<Integer> ea;
       
-      case (dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,om,omT,matching)::{},shared),_,{},_,_,_)
+      case (dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,om,omT,_)::{},shared),_,{},_,_,_)
         equation
           v = BackendDAEUtil.listVar({});
-        then (BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,om,omT,matching)::{},shared),listArray({}),listArray({}),{});
-      case (dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,om,omT,matching)::{},shared),_,_,{},_,_)
+          ea = listArray({});
+        then (BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,om,omT,BackendDAE.MATCHING(ea,ea,{}))::{},shared));
+      case (dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,om,omT,_)::{},shared),_,_,{},_,_)
         equation
           v = BackendDAEUtil.listVar({});
-        then (BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,om,omT,matching)::{},shared),listArray({}),listArray({}),{});
+          ea = listArray({});
+        then (BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,om,omT,BackendDAE.MATCHING(ea,ea,{}))::{},shared));
       case (dlow,functionTree,eqvars,diffvars,varlst,inNoColumn)
         equation
           true = RTOpts.debugFlag("linearization");
@@ -4074,13 +4074,13 @@ algorithm
 
           Debug.fcall("execStat",print, "*** analytical Jacobians -> removed simply equations: " +& realString(clock()) +& "\n" );
           // figure out new matching and the strong components  
-          (dlow,v1,v2,comps1) = BackendDAEUtil.transformBackendDAE(dlow,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE());
-          Debug.fcall("jacdump2", BackendDump.bltdump, ("jacdump2",dlow,v1,v2,comps1));
+          (dlow as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps1))})) = BackendDAEUtil.transformBackendDAE(dlow,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE());
+          Debug.fcall("jacdump2", BackendDump.bltdump, ("jacdump2",dlow));
           Debug.fcall("execStat",print, "*** analytical Jacobians -> performed matching and sorting: " +& realString(clock()) +& "\n" );
         
           Debug.fcall("jacdump2", BackendDump.dumpComponents, comps1);
           //Debug.fcall("execStat",print, "*** analytical Jacobians -> performed splitig the system: " +& realString(clock()) +& "\n" );
-        then (dlow,v1,v2,comps1);
+        then dlow;
           
       case (dlow,functionTree,eqvars,diffvars,varlst,inNoColumn)
         equation
@@ -4094,11 +4094,11 @@ algorithm
 
           Debug.fcall("execStat",print, "*** analytical Jacobians -> removed simply equations: " +& realString(clock()) +& "\n" );
           // figure out new matching and the strong components  
-          (dlow,v1,v2,comps1) = BackendDAEUtil.transformBackendDAE(dlow,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE());        
-          Debug.fcall("jacdump2", BackendDump.bltdump, ("jacdump2",dlow,v1,v2,comps1));
+          dlow = BackendDAEUtil.transformBackendDAE(dlow,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE());        
+          Debug.fcall("jacdump2", BackendDump.bltdump, ("jacdump2",dlow));
           Debug.fcall("execStat",print, "*** analytical Jacobians -> performed matching and sorting: " +& realString(clock()) +& "\n" );
        
-        then (dlow,v1,v2,comps1);
+        then dlow;
      else
        equation
          Error.addMessage(Error.INTERNAL_ERROR, {"Linearization.generateLinearMatrix failed"});

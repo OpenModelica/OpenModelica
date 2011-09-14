@@ -1717,7 +1717,7 @@ end dumpStateVariable;
 
 public function bltdump
 "autor: Frenkel TUD 2011-03"
-  input tuple<String,BackendDAE.BackendDAE,array<Integer>,array<Integer>,BackendDAE.StrongComponents> inTpl;
+  input tuple<String,BackendDAE.BackendDAE> inTpl;
 protected
   String str;
   BackendDAE.IncidenceMatrix m;
@@ -1726,7 +1726,7 @@ protected
   BackendDAE.StrongComponents comps;
   BackendDAE.BackendDAE ode;
 algorithm
-  (str,ode as BackendDAE.DAE(eqs = BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT))::{}),v1,v2,comps) := inTpl;
+  (str,ode as BackendDAE.DAE(eqs = BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT),matching=BackendDAE.MATCHING(v1,v2,comps))::{})) := inTpl;
   print(str); print(":\n");
   dump(ode);
   dumpIncidenceMatrix(m);

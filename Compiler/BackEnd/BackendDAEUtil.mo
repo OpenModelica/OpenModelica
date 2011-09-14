@@ -5889,8 +5889,8 @@ algorithm
   (optdae,Util.SUCCESS()) := preoptimiseDAE(inDAE,functionTree,preOptModules);
 
   // transformation phase (matching and sorting using a index reduction method
-  (sode,v1,v2,comps) := transformDAE(optdae,functionTree,NONE(),daeHandler);
-  Debug.fcall("bltdump", BackendDump.bltdump, ("bltdump",sode,v1,v2,comps));
+  (sode as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(v1,v2,comps))})) := transformDAE(optdae,functionTree,NONE(),daeHandler);
+  Debug.fcall("bltdump", BackendDump.bltdump, ("bltdump",sode));
 
   // past optimisation phase
   (sode,outAss1,outAss2,outComps,Util.SUCCESS()) := pastoptimiseDAE(sode,functionTree,pastOptModules,v1,v2,comps,daeHandler);
@@ -5964,14 +5964,11 @@ public function transformBackendDAE
   input Option<BackendDAE.MatchingOptions> inMatchingOptions;
   input Option<String> strindexReductionMethod;
   output BackendDAE.BackendDAE outDAE;
-  output array<Integer> outAss1;
-  output array<Integer> outAss2;
-  output BackendDAE.StrongComponents outComps; 
 protected
   tuple<daeHandlerFunc,String> indexReductionMethod;
 algorithm
   indexReductionMethod := getIndexReductionMethod(strindexReductionMethod);
-  (outDAE,outAss1,outAss2,outComps) := transformDAE(inDAE,functionTree,inMatchingOptions,indexReductionMethod);
+  outDAE := transformDAE(inDAE,functionTree,inMatchingOptions,indexReductionMethod);
 end transformBackendDAE;
 
 protected function transformDAE
@@ -5984,12 +5981,8 @@ protected function transformDAE
   input Option<BackendDAE.MatchingOptions> inMatchingOptions;
   input tuple<daeHandlerFunc,String> daeHandler;
   output BackendDAE.BackendDAE outDAE;
-  output array<Integer> outAss1;
-  output array<Integer> outAss2;
-  output BackendDAE.StrongComponents outComps;
 algorithm
-  (outDAE,outAss1,outAss2,outComps):=
-  matchcontinue (inDAE,functionTree,inMatchingOptions,daeHandler)
+  outDAE := matchcontinue (inDAE,functionTree,inMatchingOptions,daeHandler)
     local 
       BackendDAE.BackendDAE dae,ode,ode2;
       DAE.FunctionTree funcs;
@@ -6007,35 +6000,35 @@ algorithm
         (syst,m,mT) = getIncidenceMatrixfromOption(syst,shared);
         match_opts = Util.getOptionOrDefault(inMatchingOptions,(BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT()));
         // matching algorithm
-        (v1,v2,syst,shared) = BackendDAETransform.matchingAlgorithm(syst,shared, match_opts, daeHandlerfunc, funcs);
+        (syst,shared) = BackendDAETransform.matchingAlgorithm(syst,shared, match_opts, daeHandlerfunc, funcs);
         Debug.execStat("transformDAE -> index Reduction Method " +& methodstr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         // sorting algorithm
-        comps = BackendDAETransform.strongComponents(syst, shared, v1, v2);
+        (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=v1)),comps) = BackendDAETransform.strongComponents(syst, shared);
         // if comps vector does not match to matching size 
         // restart the matching
         true = checkCompsMatching(comps,arrayList(v1)); 
         Debug.execStat("transformDAE -> sort components",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then
-        (BackendDAE.DAE({syst},shared),v1,v2,comps);
+        BackendDAE.DAE({syst},shared);
         
     case (BackendDAE.DAE({syst},shared),funcs,inMatchingOptions,(daeHandlerfunc,methodstr))
       equation
         (syst,m,mT) = getIncidenceMatrixfromOption(syst,shared);
         match_opts = Util.getOptionOrDefault(inMatchingOptions,(BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT()));
         // matching algorithm
-        (v1,v2,syst,shared) = BackendDAETransform.matchingAlgorithm(syst, shared, match_opts, daeHandlerfunc, funcs);
+        (syst,shared) = BackendDAETransform.matchingAlgorithm(syst, shared, match_opts, daeHandlerfunc, funcs);
         Debug.execStat("transformDAE -> index Reduction Method " +& methodstr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         // sorting algorithm
-        comps = BackendDAETransform.strongComponents(syst, shared, v1, v2);
+        (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=v1)),comps) = BackendDAETransform.strongComponents(syst, shared);
         // if comps vector does not match to matching size 
         // restart the matching
         false = checkCompsMatching(comps,arrayList(v1)); 
-        (v1,v2,syst,shared) = BackendDAETransform.matchingAlgorithm(syst, shared, match_opts, daeHandlerfunc, funcs);
+        (syst,shared) = BackendDAETransform.matchingAlgorithm(syst, shared, match_opts, daeHandlerfunc, funcs);
         // sorting algorithm
-        comps = BackendDAETransform.strongComponents(syst,shared,v1,v2);
+        (syst,_) = BackendDAETransform.strongComponents(syst,shared);
         Debug.execStat("transformDAE -> sort components",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then
-        (BackendDAE.DAE({syst},shared),v1,v2,comps);      
+        BackendDAE.DAE({syst},shared);      
       else
         equation
           //str = "Transformation Module failed!";
@@ -6080,7 +6073,7 @@ algorithm
         Debug.execStat("pastOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         Debug.fcall("optdaedump", print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
         Debug.fcall("optdaedump", BackendDump.dump, dae1);
-        (dae1,v1_1,v2_1,comps1) = checktransformDAE(runMatching,dae1,funcs,v1_1,v2_1,comps1,daeHandler);
+        (dae1 as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(v1_1,v2_1,comps1))})) = checktransformDAE(runMatching,dae1,funcs,v1_1,v2_1,comps1,daeHandler);
         (dae2,v1_2,v2_2,comps2,status) = pastoptimiseDAE(dae1,funcs,rest,v1_1,v2_1,comps1,daeHandler);
       then
         (dae2,v1_2,v2_2,comps2,status);
@@ -6106,11 +6099,8 @@ protected function checktransformDAE
   input BackendDAE.StrongComponents inComps;
   input tuple<daeHandlerFunc,String> daeHandler;
   output BackendDAE.BackendDAE outDAE;
-  output array<Integer> outAss1;
-  output array<Integer> outAss2;
-  output BackendDAE.StrongComponents outComps;
 algorithm
-  (outDAE,outAss1,outAss2,outComps):=
+  outDAE :=
   match (inRunMatching,inDAE,functionTree,inAss1,inAss2,inComps,daeHandler)
     local 
       BackendDAE.BackendDAE dae,sode;
@@ -6121,13 +6111,11 @@ algorithm
       Boolean runMatching;
     case (true,dae,funcs,_,_,_,daeHandler)
       equation
-        (sode,v1,v2,comps) = transformDAE(dae,funcs,NONE(),daeHandler);
-        Debug.fcall("bltdump", BackendDump.bltdump, ("bltdump",sode,v1,v2,comps));
-      then
-        (sode,v1,v2,comps);
+        sode = transformDAE(dae,funcs,NONE(),daeHandler);
+        Debug.fcall("bltdump", BackendDump.bltdump, ("bltdump",sode));
+      then sode;
     case (false,dae,funcs,v1,v2,comps,_)
-      then   
-        (dae,v1,v2,comps);
+      then dae;
   end match;
 end checktransformDAE;
 
@@ -6463,5 +6451,19 @@ algorithm
   BackendDAE.EQSYSTEM(orderedVars=BackendDAE.VARIABLES(numberOfVars=num)) := syst;
   nonEmpty := num <> 0;
 end nonEmptySystem;
+
+public function setEqSystemMatching
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Matching matching;
+  output BackendDAE.EqSystem osyst;
+algorithm
+  osyst := match (syst,matching)
+    local
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqs;
+      Option<BackendDAE.IncidenceMatrix> m,mT;
+    case (BackendDAE.EQSYSTEM(vars,eqs,m,mT,_),matching) then BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching); 
+  end match;
+end setEqSystemMatching;
 
 end BackendDAEUtil;

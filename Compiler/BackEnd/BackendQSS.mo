@@ -3169,15 +3169,7 @@ protected function generateEqFromBlt
   input array<Integer> ass1, ass2;
   output list<SimCode.SimEqSystem> out;
 algorithm
-  out := 
-    match (comps,dlow,ass1,ass2)
-      local
-        list<SimCode.SimEqSystem> out2;
-      case (_,_,_,_)
-      equation
-        out2 = SimCode.createEquations(false, false, false, false, false, dlow, ass1, ass2, comps, {});
-        then out2;
-    end match;
+  out := SimCode.createEquations(false, false, false, false, false, dlow, comps, {});
 end generateEqFromBlt;
 
 protected function isPositive

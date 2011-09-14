@@ -103,8 +103,6 @@ public function matchingAlgorithm
   input BackendDAE.MatchingOptions inMatchingOptions;
   input daeHandlerFunc daeHandler;
   input DAE.FunctionTree inFunctions;
-  output array<Integer> outIntegerArray1;
-  output array<Integer> outIntegerArray2;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   partial function daeHandlerFunc
@@ -126,7 +124,7 @@ public function matchingAlgorithm
     output BackendDAE.DAEHandlerArg outArg;
   end daeHandlerFunc; 
 algorithm
-  (outIntegerArray1,outIntegerArray2,osyst,oshared) :=
+  (osyst,oshared) :=
   matchcontinue (syst,shared,inMatchingOptions,daeHandler,inFunctions)
     local
       BackendDAE.Value nvars,neqns,memsize;
@@ -138,9 +136,11 @@ algorithm
       array<BackendDAE.Value> vec1,vec2;
       BackendDAE.MatchingOptions match_opts;
       BackendDAE.DAEHandlerArg arg,arg1,arg2;
+      BackendDAE.EquationArray eqs;
+      BackendDAE.Variables vars;
 
     /* fail case if daelow is empty */
-    case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),shared,_,_,_)
+    case (syst as BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),_),shared,_,_,_)
       equation
         nvars = arrayLength(m);
         neqns = arrayLength(mt);
@@ -149,8 +149,8 @@ algorithm
         vec1 = listArray({});
         vec2 = listArray({});
       then
-        (vec1,vec2,syst,shared);
-    case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),shared,match_opts,daeHandler,inFunctions)
+        (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(vec1,vec2,{})),shared);
+    case (syst as BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),_),shared,match_opts,daeHandler,inFunctions)
       equation
         BackendDAEEXT.clearDifferentiated();
         checkMatching(syst, match_opts);
@@ -165,12 +165,12 @@ algorithm
         assign2 = assignmentsCreate(nvars, memsize, 0);
         arg = emptyDAEHandlerArg();
         (syst,shared,assign1, assign2,_,_,arg1) = daeHandler(BackendDAE.STARTSTEP(),syst,shared,inFunctions, assign1, assign2,{},{},arg);
-        (ass1,ass2,syst,shared,_,_,arg2) = matchingAlgorithm2(syst,shared,nvars, neqns, 1, assign1, assign2, match_opts, daeHandler, arg1, inFunctions, {}, {});
+        (ass1,ass2,syst as BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),_),shared,_,_,arg2) = matchingAlgorithm2(syst,shared,nvars, neqns, 1, assign1, assign2, match_opts, daeHandler, arg1, inFunctions, {}, {});
         (syst,shared,ass1,ass2,_,_,_) = daeHandler(BackendDAE.ENDSTEP(),syst,shared,inFunctions,ass1,ass2,{},{},arg2);
         vec1 = assignmentsVector(ass1);
         vec2 = assignmentsVector(ass2);
       then
-        (vec1,vec2,syst,shared);
+        (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(vec1,vec2,{})),shared);
 
     else
       equation
@@ -790,21 +790,22 @@ public function strongComponents "function: strongComponents
 "
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
-  input array<Integer> inIntegerArray3;
-  input array<Integer> inIntegerArray4;
+  output BackendDAE.EqSystem osyst;
   output BackendDAE.StrongComponents outComps;
 algorithm
-  (outComps) :=
-  matchcontinue (syst,shared,inIntegerArray3,inIntegerArray4)
+  (osyst,outComps) :=
+  matchcontinue (syst,shared)
     local
       BackendDAE.Value n,i;
       list<BackendDAE.Value> stack;
       list<list<BackendDAE.Value>> comps;
+      array<Integer> ass1,ass2;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
-      array<BackendDAE.Value> ass1,ass2;
       BackendDAE.StrongComponents comps1;
-    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),shared,ass1,ass2)
+      BackendDAE.EquationArray eqs;
+      BackendDAE.Variables vars;
+    case (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,_)),shared)
       equation
         n = arrayLength(m);
         BackendDAEEXT.initLowLink(n);
@@ -812,14 +813,11 @@ algorithm
         (i,stack,comps) = strongConnectMain(m, mt, ass1, ass2, n, 0, 1, {}, {});
         comps1 = analyseStrongComponents(comps,syst,shared,m,mt,ass1,ass2);
       then
-        (comps1);
+        (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,comps1)),comps1);
     else
       equation
-        Debug.fprint("failtrace", "strong_components failed\n");
-        Error.addMessage(Error.INTERNAL_ERROR,
-          {"sorting equations(strong components failed)"});
-      then
-        fail();
+        Error.addMessage(Error.INTERNAL_ERROR, {"sorting equations(strongComponents failed)"});
+      then fail();
   end matchcontinue;
 end strongComponents;
 
@@ -2272,18 +2270,21 @@ algorithm
          Debug.fcall("bltdump", BackendDump.dumpMatching, vec1);
          Debug.fcall("bltdump", BackendDump.dumpMatching, vec2);   
          Debug.fcall("bltdump", dumpEqnsX, (orgEqnsLst,ae));
-         Debug.fcall("bltdump", dumpStateOrder, so);        
-         Debug.fcall("bltdump", BackendDump.bltdump, ("reduced ODE",BackendDAE.DAE({syst},shared),vec1,vec2,{}));
+         Debug.fcall("bltdump", dumpStateOrder, so);
+         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec1,vec2,{}));
+         Debug.fcall("bltdump", BackendDump.bltdump, ("reduced ODE",BackendDAE.DAE({syst},shared)));
          (syst,shared,orgEqnsLst_1) = addOrgEqntoDAE(orgEqnsLst,syst,shared,so,inFunctions);
-         (syst,shared) = replaceScalarArrayEqns(orgEqnsLst_1,syst,shared,inFunctions); 
-         Debug.fcall("bltdump", BackendDump.bltdump, ("reduced full ODE",BackendDAE.DAE({syst},shared),vec1,vec2,{}));
+         (syst,shared) = replaceScalarArrayEqns(orgEqnsLst_1,syst,shared,inFunctions);
+         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec1,vec2,{})); 
+         Debug.fcall("bltdump", BackendDump.bltdump, ("reduced full ODE",BackendDAE.DAE({syst},shared)));
          Debug.fcall("bltdump", dumpEqns1X, (orgEqnsLst_1,syst,shared));
          Debug.fcall("bltdump", dumpStateOrder, so);        
          Debug.fcall("bltdump", print, "Select dummy States\n");
          (syst,shared,ass1,ass2) = processOrgEnqs(orgEqnsLst_1,so,syst,shared,inFunctions,ass1,ass2);  
          vec1 = assignmentsVector(ass1);
          vec2 = assignmentsVector(ass2);
-         Debug.fcall("bltdump", BackendDump.bltdump, ("new DAE",BackendDAE.DAE({syst},shared),vec1,vec2,{}));
+         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec1,vec2,{})); 
+         Debug.fcall("bltdump", BackendDump.bltdump, ("new DAE",BackendDAE.DAE({syst},shared)));
      then (syst,shared,ass1,ass2,derivedAlgs,derivedMultiEqn,(so,orgEqnsLst));
 
     case (BackendDAE.REDUCE_INDEX(),syst,shared,_,_,_,_,_,_)
