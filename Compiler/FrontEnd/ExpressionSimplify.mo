@@ -2641,7 +2641,7 @@ algorithm
   res := match(e,sub)
     local 
       Type t,t1,t2;
-      Boolean b,sc;
+      Boolean b,sc, bstart, bstop;
       list<DAE.Exp> exps,expl_1;
       list<Boolean> bls;
       list<list<DAE.Exp>> mexps;
@@ -2661,6 +2661,12 @@ algorithm
       then 
         exp;
     
+    case (DAE.RANGE(DAE.ET_BOOL(), DAE.BCONST(bstart), NONE(), DAE.BCONST(bstop)), _)
+      equation
+        b = listGet(simplifyRangeBool(bstart, bstop), sub);
+      then
+        DAE.BCONST(b);
+      
     case (DAE.RANGE(DAE.ET_INT(),DAE.ICONST(istart),NONE(),DAE.ICONST(istop)),sub) 
       equation
         ival = listGet(simplifyRange(istart,1,istop),sub);
@@ -4018,6 +4024,20 @@ algorithm outop := match(inop)
     then op;
 end match;
 end removeOperatorDimension;
+
+public function simplifyRangeBool
+  "This function evaluates a Boolean range expression."
+  input Boolean inStart;
+  input Boolean inStop;
+  output list<Boolean> outRange;
+algorithm
+  outRange := match(inStart, inStop)
+    case (false, true)  then {false, true};
+    case (false, false) then {false};
+    case (true,  true)  then {true};
+    case (true,  false) then {};
+  end match;
+end simplifyRangeBool;
 
 public function simplifyRange
   "This function evaluates an Integer range expression."

@@ -1925,6 +1925,13 @@ algorithm
   Values.ARRAY(valueLst = {outValue}) := inValue;
 end arrayScalar;
 
+public function makeBoolean
+  input Boolean b;
+  output Value v;
+algorithm
+  v := Values.BOOL(b);
+end makeBoolean;
+
 public function makeReal "Creates a real value "
   input Real r;
   output Value v;

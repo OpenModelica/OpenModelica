@@ -112,11 +112,11 @@ public function ceval "
   input Env.Env inEnv;
   input DAE.Exp inExp;
   input Boolean inBoolean "impl";
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inST;
   input Msg inMsg;
   output Env.Cache outCache;
   output Values.Value outValue;
-  output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
+  output Option<Interactive.SymbolTable> outST;
 
   partial function ReductionOperator
     input Values.Value v1;
@@ -124,15 +124,15 @@ public function ceval "
     output Values.Value res;
   end ReductionOperator;
 algorithm
-  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+  (outCache,outValue,outST):=
+  matchcontinue (inCache,inEnv,inExp,inBoolean,inST,inMsg)
     local
       Integer dim,start_1,stop_1,step_1,i,indx_1,indx,index;
       Option<Integer> dimOpt;
       Option<Interactive.SymbolTable> stOpt;
       Real lhvReal,rhvReal,sum,r,realStart1,realStop1,realStep1;
       String str,lhvStr,rhvStr,iter,s;
-      Boolean impl,builtin,b,b_1,lhvBool,rhvBool,resBool;
+      Boolean impl,builtin,b,b_1,lhvBool,rhvBool,resBool, bstart, bstop;
       Absyn.Exp exp_1,exp;
       list<Env.Frame> env;
       Msg msg;
@@ -668,6 +668,16 @@ algorithm
       then
         (cache,v,stOpt);
     
+    case (cache, env, DAE.RANGE(ty = DAE.ET_INT(), exp = start, expOption = NONE(), 
+      range = stop), impl, stOpt, msg)
+      equation
+        (cache, Values.BOOL(bstart), stOpt) = ceval(cache, env, start, impl, stOpt, msg);
+        (cache, Values.BOOL(bstop), stOpt) = ceval(cache, env, stop, impl, stOpt, msg);
+        arr = Util.listMap(ExpressionSimplify.simplifyRangeBool(bstart, bstop),
+          ValuesUtil.makeBoolean);
+      then
+        (cache, ValuesUtil.makeArray(arr), stOpt);
+
     // range first:last for integers
     case (cache,env,DAE.RANGE(ty = DAE.ET_INT(),exp = start,expOption = NONE(),range = stop),impl,stOpt,msg) 
       equation

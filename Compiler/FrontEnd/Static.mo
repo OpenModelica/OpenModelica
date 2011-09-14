@@ -1699,44 +1699,60 @@ protected function deoverloadRange "function: deoverloadRange
   Does deoverloading of range expressions. They can be both Integer ranges
   and Real ranges. This function determines which one to use.
 "
-  input tuple<DAE.Exp, DAE.Type> inTplExpExpTypesType1;
-  input Option<tuple<DAE.Exp, DAE.Type>> inTplExpExpTypesTypeOption2;
-  input tuple<DAE.Exp, DAE.Type> inTplExpExpTypesType3;
-  output DAE.Exp outExp1;
-  output Option<DAE.Exp> outExpExpOption2;
-  output DAE.Exp outExp3;
-  output DAE.ExpType outType4;
+  input tuple<DAE.Exp, DAE.Type> inStart;
+  input Option<tuple<DAE.Exp, DAE.Type>> inStep;
+  input tuple<DAE.Exp, DAE.Type> inStop;
+  output DAE.Exp outStart;
+  output Option<DAE.Exp> outStep;
+  output DAE.Exp outStop;
+  output DAE.ExpType outRangeType;
 algorithm
-  (outExp1,outExpExpOption2,outExp3,outType4):=
-  matchcontinue (inTplExpExpTypesType1,inTplExpExpTypesTypeOption2,inTplExpExpTypesType3)
+  (outStart, outStep, outStop, outRangeType) := matchcontinue (inStart, inStep, inStop)
     local
       DAE.Exp e1,e3,e2,e1_1,e3_1,e2_1;
       DAE.Type t1,t3,t2;
       DAE.ExpType et;
       list<String> ns,ne;
-    case ((e1,(DAE.T_INTEGER(varLstInt = _),_)),NONE(),(e3,(DAE.T_INTEGER(varLstInt = _),_))) then (e1,NONE(),e3,DAE.ET_INT());
-    case ((e1,(DAE.T_INTEGER(varLstInt = _),_)),SOME((e2,(DAE.T_INTEGER(_),_))),(e3,(DAE.T_INTEGER(varLstInt = _),_))) then (e1,SOME(e2),e3,DAE.ET_INT());
+
+    case ((e1, (DAE.T_BOOL(varLstBool = _), _)), NONE(),
+          (e3, (DAE.T_BOOL(varLstBool = _), _)))
+      then (e1, NONE(), e3, DAE.ET_BOOL());
+
+    case ((e1, (DAE.T_INTEGER(varLstInt = _), _)), NONE(),
+          (e3, (DAE.T_INTEGER(varLstInt = _), _))) 
+      then (e1, NONE(), e3, DAE.ET_INT());
+
+    case ((e1,(DAE.T_INTEGER(varLstInt = _),_)),
+        SOME((e2,(DAE.T_INTEGER(varLstInt = _),_))),
+          (e3,(DAE.T_INTEGER(varLstInt = _),_))) 
+      then (e1, SOME(e2), e3, DAE.ET_INT());
+
     // enumeration has no step value
-    case ((e1,t1 as (DAE.T_ENUMERATION(names = ns),_)),NONE(),(e3,(DAE.T_ENUMERATION(names = ne),_)))
+    case ((e1, t1 as (DAE.T_ENUMERATION(names = ns), _)), NONE(),
+          (e3, (DAE.T_ENUMERATION(names = ne), _)))
       equation
-        // check if enumtyp start and end are equal
+        // check if enumtype start and end are equal
         true = Util.isListEqual(ns,ne,true);
         // convert vars
-          et = Types.elabType(t1);
-         then (e1,NONE(),e3,et);
-    case ((e1,t1),NONE(),(e3,t3))
+        et = Types.elabType(t1);
+      then 
+        (e1,NONE(),e3,et);
+
+    case ((e1, t1), NONE(), (e3, t3))
       equation
-        ({e1_1,e3_1},_) = elabArglist({DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},
-          {(e1,t1),(e3,t3)});
+        ({e1_1, e3_1},_) = elabArglist({DAE.T_REAL_DEFAULT, DAE.T_REAL_DEFAULT},
+          {(e1, t1), (e3, t3)});
       then
-        (e1_1,NONE(),e3_1,DAE.ET_REAL());
-    case ((e1,t1),SOME((e2,t2)),(e3,t3))
+        (e1_1, NONE(), e3_1, DAE.ET_REAL());
+
+    case ((e1, t1), SOME((e2, t2)),(e3, t3))
       equation
-        ({e1_1,e2_1,e3_1},_) = elabArglist(
-          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT,
-          DAE.T_REAL_DEFAULT}, {(e1,t1),(e2,t2),(e3,t3)});
+        ({e1_1, e2_1, e3_1},_) = elabArglist(
+          {DAE.T_REAL_DEFAULT, DAE.T_REAL_DEFAULT, DAE.T_REAL_DEFAULT},
+          {(e1, t1), (e2, t2), (e3, t3)});
       then
-        (e1_1,SOME(e2_1),e3_1,DAE.ET_REAL());
+        (e1_1, SOME(e2_1), e3_1, DAE.ET_REAL());
+
   end matchcontinue;
 end deoverloadRange;
 
@@ -1925,6 +1941,10 @@ algorithm
         dim = int_stop - int_start + 1;
       then
         dim;
+
+    case (Values.BOOL(true), NONE(), Values.BOOL(false)) then 0;
+    case (Values.BOOL(false), NONE(), Values.BOOL(true)) then 2;
+    case (Values.BOOL(_), NONE(), Values.BOOL(_)) then 1;
   end matchcontinue;
 end elabRangeSize;
 
