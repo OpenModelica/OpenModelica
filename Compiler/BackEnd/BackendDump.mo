@@ -1501,13 +1501,7 @@ public function dumpComponentsGraphStr
  components to format suitable for Mathematica"
   input BackendDAE.BackendDAE inDAE;
   input DAE.FunctionTree inFunctionTree;
-  input array<Integer> inAss1;
-  input array<Integer> inAss2;
-  input BackendDAE.StrongComponents inComps;
   output BackendDAE.BackendDAE outDAE;
-  output array<Integer> outAss1;
-  output array<Integer> outAss2;
-  output BackendDAE.StrongComponents outComps;
   output Boolean outRunMatching;
 protected
   Integer n;
@@ -1516,17 +1510,15 @@ protected
   BackendDAE.EqSystem syst;
   BackendDAE.IncidenceMatrix m;
   BackendDAE.IncidenceMatrix mT;
+  array<Integer> ass1,ass2;
 algorithm
-  BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT))}) := inDAE;
+  BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT),matching=BackendDAE.MATCHING(ass1,ass2,_))}) := inDAE;
   n :=  BackendDAEUtil.systemSize(syst);
-  lst := dumpComponentsGraphStr2(1,n,m,mT,inAss1,inAss2);
+  lst := dumpComponentsGraphStr2(1,n,m,mT,ass1,ass2);
   s := Util.stringDelimitList(lst,",");
   s := stringAppendList({"{",s,"}"});
   print(s);
   outDAE := inDAE;
-  outAss1 := inAss1;
-  outAss2 := inAss2;
-  outComps := inComps;
   outRunMatching := false;
 end dumpComponentsGraphStr;
 

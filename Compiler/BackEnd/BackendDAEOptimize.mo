@@ -84,24 +84,14 @@ public function inlineArrayEqnPast
 autor: Frenkel TUD 2011-3"
   input BackendDAE.BackendDAE inDAE;
   input DAE.FunctionTree inFunctionTree;
-  input array<Integer> inAss1;
-  input array<Integer> inAss2;
-  input BackendDAE.StrongComponents inComps;
   output BackendDAE.BackendDAE outDAE;
-  output array<Integer> outAss1;
-  output array<Integer> outAss2;
-  output BackendDAE.StrongComponents outComps;
   output Boolean outRunMatching;
 protected
   Option<BackendDAE.IncidenceMatrix> om,omT;
   BackendDAE.EqSystem syst;
   BackendDAE.Shared shared;
 algorithm
-  (outDAE as BackendDAE.DAE({syst},shared),outRunMatching) := inlineArrayEqn1(inDAE,inFunctionTree);
-  (syst,_,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
-  outAss1 := inAss1;
-  outAss2 := inAss2;
-  outComps := inComps;
+  (outDAE,outRunMatching) := BackendDAEUtil.mapEqSystem1RetExtra(inDAE,inlineArrayEqn1,inFunctionTree,false);
 end inlineArrayEqnPast;
 
 public function inlineArrayEqn
@@ -111,18 +101,19 @@ autor: Frenkel TUD 2011-3"
   input DAE.FunctionTree inFunctionTree;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  (outDAE,_):= inlineArrayEqn1(inDAE,inFunctionTree);
+  (outDAE,_):= BackendDAEUtil.mapEqSystem1RetExtra(inDAE,inlineArrayEqn1,inFunctionTree,false);
 end inlineArrayEqn;
 
 protected function inlineArrayEqn1
 "function: inlineArrayEqn1
 autor: Frenkel TUD 2011-5"
-  input BackendDAE.BackendDAE inDAE;
+  input BackendDAE.EqSystem syst;
+  input tuple<BackendDAE.Shared,Boolean> sharedOptimized;
   input DAE.FunctionTree inFunctionTree;
-  output BackendDAE.BackendDAE outDAE;
-  output Boolean optimized;
+  output BackendDAE.EqSystem osyst;
+  output tuple<BackendDAE.Shared,Boolean> osharedOptimized;
 algorithm
-  (outDAE,optimized) := match (inDAE,inFunctionTree)
+  (osyst,osharedOptimized) := match (syst,sharedOptimized,inFunctionTree)
     local
       DAE.FunctionTree funcs;
       BackendDAE.IncidenceMatrix m,mT,m1,mT1;
@@ -137,21 +128,21 @@ algorithm
       array<list<BackendDAE.Equation>> arraylisteqns;
       list<Integer> updateeqns;
       BackendDAE.BackendDAE dae,dae1;
-      Boolean b;
-      BackendDAE.EqSystem syst;
+      Boolean b1,b2,b;
       BackendDAE.Shared shared;
       
-    case (dae as BackendDAE.DAE({syst},shared as BackendDAE.SHARED(arrayEqs = arreqns)),funcs)
+    case (syst,(shared as BackendDAE.SHARED(arrayEqs = arreqns),b1),funcs)
       equation
         (syst,_,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
         // get scalar array eqs list
         arraylisteqns = Util.arrayMap(arreqns,getScalarArrayEqns);
         // replace them
-        (syst,shared,updateeqns,b) = doReplaceScalarArrayEqns(arraylisteqns,syst,shared);
+        (syst,shared,updateeqns,b2) = doReplaceScalarArrayEqns(arraylisteqns,syst,shared);
+        b = b1 or b2;
         // update Incidence matrix
         syst = BackendDAEUtil.updateIncidenceMatrix(syst,shared,updateeqns);
       then
-        (BackendDAE.DAE({syst},shared),b);
+        (syst,(shared,b));
   end match;
 end inlineArrayEqn1;
 
@@ -302,19 +293,10 @@ public function lateInline
 "function lateInlineDAE"
     input BackendDAE.BackendDAE inDAE;
     input DAE.FunctionTree inFunctionTree;
-    input array<Integer> inAss1;
-    input array<Integer> inAss2;
-    input BackendDAE.StrongComponents inComps;
     output BackendDAE.BackendDAE outDAE;
-    output array<Integer> outAss1;
-    output array<Integer> outAss2;
-    output BackendDAE.StrongComponents outComps;
     output Boolean outRunMatching;
 algorithm
   outDAE := Inline.inlineCalls(SOME(inFunctionTree),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},inDAE);
-  outAss1 := inAss1;
-  outAss2 := inAss2;
-  outComps := inComps;
   outRunMatching := false;
 end lateInline;
 
@@ -324,29 +306,18 @@ end lateInline;
 
 public function removeSimpleEquationsPast
 "function lateInlineDAE"
-    input BackendDAE.BackendDAE inDAE;
-    input DAE.FunctionTree inFunctionTree;
-    input array<Integer> inAss1;  
-    input array<Integer> inAss2;  
-    input BackendDAE.StrongComponents inComps;  
-    output BackendDAE.BackendDAE outDAE;
-    output array<Integer> outAss1;  
-    output array<Integer> outAss2;  
-    output BackendDAE.StrongComponents outComps; 
-    output Boolean outRunMatching;
+  input BackendDAE.BackendDAE inDAE;
+  input DAE.FunctionTree inFunctionTree;
+  output BackendDAE.BackendDAE outDAE;
+  output Boolean outRunMatching;
 protected
   Boolean b;
   BackendDAE.EqSystem syst;
   BackendDAE.Shared shared;
 algorithm
-  BackendDAE.DAE({syst},shared) := inDAE;
-  (syst,shared,b) := removeSimpleEquations1(syst,shared,inFunctionTree);
-  (syst,_,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
-  outDAE := BackendDAE.DAE({syst},shared);
-  outAss1 := inAss1;
-  outAss2 := inAss2;
-  outComps := inComps;   
-  outRunMatching := b; // until remove simple equations does not update assignments and comps  
+  (outDAE,outRunMatching) := BackendDAEUtil.mapEqSystem1RetExtra(inDAE,removeSimpleEquations1,inFunctionTree,false);
+  outDAE := BackendDAEUtil.mapEqSystem(outDAE,BackendDAEUtil.getIncidenceMatrixfromOptionForMapEqSystem);
+  // until remove simple equations does not update assignments and comps  
 end removeSimpleEquationsPast;
 
 public function removeSimpleEquations
@@ -358,7 +329,7 @@ public function removeSimpleEquations
   input DAE.FunctionTree funcs;
   output BackendDAE.BackendDAE odae;
 algorithm
-  odae := BackendDAEUtil.mapPreOptModule(removeSimpleEquationsWork,dae,funcs);
+  odae := BackendDAEUtil.mapEqSystem1(dae,removeSimpleEquationsWork,funcs);
 end removeSimpleEquations;
 
 protected function removeSimpleEquationsWork
@@ -372,7 +343,7 @@ protected function removeSimpleEquationsWork
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 algorithm
-  (osyst,oshared,_) := removeSimpleEquations1(syst,shared,funcs);
+  (osyst,(oshared,_)) := removeSimpleEquations1(syst,(shared,false),funcs);
 end removeSimpleEquationsWork;
 
 protected function removeSimpleEquations1
@@ -381,14 +352,13 @@ protected function removeSimpleEquations1
   This function moves simple equations on the form a=b and a=const and a=f(not time)
   in BackendDAE.BackendDAE to get speed up"
   input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input tuple<BackendDAE.Shared,Boolean> sharedOptimized;
   input DAE.FunctionTree inFunctionTree;  
   output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared;
-  output Boolean optimized;
+  output tuple<BackendDAE.Shared,Boolean> osharedOptimized;
 algorithm
-  (osyst,oshared,optimized):=
-  match (syst,shared,inFunctionTree)
+  (osyst,osharedOptimized):=
+  match (syst,sharedOptimized,inFunctionTree)
     local
       BackendDAE.BackendDAE dlow,dlow1,dlow2;
       DAE.FunctionTree funcs;
@@ -399,8 +369,9 @@ algorithm
       BackendVarTransform.VariableReplacements repl,repl_1;
       BackendDAE.BinTree movedVars,movedAVars;
       list<Integer> meqns;
-      Boolean b;
-    case (syst,shared,funcs)
+      Boolean b,b1,b2;
+      BackendDAE.Shared shared;
+    case (syst,(shared,b1),funcs)
       equation
         (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
         repl = BackendVarTransform.emptyReplacements();
@@ -408,7 +379,7 @@ algorithm
         (m_1,(syst,shared,_,mT_1,repl_1,movedVars,movedAVars,meqns,b)) = traverseIncidenceMatrix(m,removeSimpleEquationsFinder,(syst,shared,funcs,mT,repl,BackendDAE.emptyBintree,BackendDAE.emptyBintree,{},false));
         // replace vars in arrayeqns and algorithms, move vars to knvars and aliasvars, remove eqns
         (syst,shared) = removeSimpleEquations2(b,syst,shared,repl_1,movedVars,movedAVars,meqns);
-      then (syst,shared,b);
+      then (syst,(shared,b or b1));
   end match;
 end removeSimpleEquations1;
 
@@ -1977,7 +1948,7 @@ public function removeFinalParameters
   input DAE.FunctionTree funcs;
   output BackendDAE.BackendDAE odae;
 algorithm
-  odae := BackendDAEUtil.mapPreOptModule(removeFinalParametersWork,dae,funcs);
+  odae := BackendDAEUtil.mapEqSystem1(dae,removeFinalParametersWork,funcs);
 end removeFinalParameters;
 
 protected function removeFinalParametersWork
@@ -2274,13 +2245,7 @@ public function removeEqualFunctionCallsPast
 "function removeEqualFunctionCallsPast"
     input BackendDAE.BackendDAE inDAE;
     input DAE.FunctionTree inFunctionTree;
-    input array<Integer> inAss1;  
-    input array<Integer> inAss2;  
-    input BackendDAE.StrongComponents inComps;  
     output BackendDAE.BackendDAE outDAE;
-    output array<Integer> outAss1;  
-    output array<Integer> outAss2;  
-    output BackendDAE.StrongComponents outComps; 
     output Boolean outRunMatching;
 protected
   Option<BackendDAE.IncidenceMatrix> om,omT;
@@ -2291,9 +2256,6 @@ algorithm
   BackendDAE.DAE({syst},shared) := inDAE;
   (syst,shared,b) := removeEqualFunctionCalls1(syst,shared,inFunctionTree);
   (syst,_,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
-  outAss1 := inAss1;
-  outAss2 := inAss2;
-  outComps := inComps;
   outRunMatching := b; // until does not update assignments and comps  
   outDAE := BackendDAE.DAE({syst},shared);
 end removeEqualFunctionCallsPast;
@@ -2307,7 +2269,7 @@ public function removeEqualFunctionCalls
   input DAE.FunctionTree funcs;
   output BackendDAE.BackendDAE odae;
 algorithm
-  odae := BackendDAEUtil.mapPreOptModule(removeEqualFunctionCallsWork,dae,funcs);
+  odae := BackendDAEUtil.mapEqSystem1(dae,removeEqualFunctionCallsWork,funcs);
 end removeEqualFunctionCalls;
 
 protected function removeEqualFunctionCallsWork
@@ -2617,13 +2579,7 @@ public function removeUnusedParameterPast
 "function removeUnusedParameterPast"
   input BackendDAE.BackendDAE inDAE;
   input DAE.FunctionTree inFunctionTree;
-  input array<Integer> inAss1;  
-  input array<Integer> inAss2;  
-  input BackendDAE.StrongComponents inComps;  
   output BackendDAE.BackendDAE outDAE;
-  output array<Integer> outAss1;  
-  output array<Integer> outAss2;  
-  output BackendDAE.StrongComponents outComps; 
   output Boolean outRunMatching;
 protected
   Option<BackendDAE.IncidenceMatrix> om,omT;
@@ -2632,9 +2588,6 @@ protected
 algorithm
   (outDAE as BackendDAE.DAE({syst},shared)) := removeUnusedParameter(inDAE,inFunctionTree);
   (syst,_,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
-  outAss1 := inAss1;
-  outAss2 := inAss2;
-  outComps := inComps;   
   outRunMatching := false;   
 end removeUnusedParameterPast;
 
@@ -2788,13 +2741,7 @@ public function removeUnusedVariablesPast
 "function removeUnusedVariablesPast"
     input BackendDAE.BackendDAE inDAE;
     input DAE.FunctionTree inFunctionTree;
-    input array<Integer> inAss1;  
-    input array<Integer> inAss2;  
-    input BackendDAE.StrongComponents inComps;  
     output BackendDAE.BackendDAE outDAE;
-    output array<Integer> outAss1;  
-    output array<Integer> outAss2;  
-    output BackendDAE.StrongComponents outComps; 
     output Boolean outRunMatching;
 protected
   BackendDAE.EqSystem syst;
@@ -2802,9 +2749,6 @@ protected
 algorithm
   (outDAE as BackendDAE.DAE({syst},shared)) := removeUnusedVariables(inDAE,inFunctionTree);
   (syst,_,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
-  outAss1 := inAss1;
-  outAss2 := inAss2;
-  outComps := inComps;   
   outRunMatching := false;   
 end removeUnusedVariablesPast;
 
@@ -2937,17 +2881,22 @@ public function constantLinearSystem
 "function constantLinearSystem"
   input BackendDAE.BackendDAE inDAE;
   input DAE.FunctionTree inFunctionTree;
-  input array<Integer> inAss1;  
-  input array<Integer> inAss2;  
-  input BackendDAE.StrongComponents inComps;  
   output BackendDAE.BackendDAE outDAE;
-  output array<Integer> outAss1;  
-  output array<Integer> outAss2;  
-  output BackendDAE.StrongComponents outComps; 
   output Boolean outRunMatching;
 algorithm
-  (outDAE,outAss1,outAss2,outComps,outRunMatching):= 
-    matchcontinue(inDAE,inFunctionTree,inAss1,inAss2,inComps)
+  (outDAE,outRunMatching) := BackendDAEUtil.mapEqSystem1RetExtra(inDAE,constantLinearSystem0,inFunctionTree,false);
+end constantLinearSystem;
+
+protected function constantLinearSystem0
+"function constantLinearSystem"
+  input BackendDAE.EqSystem syst;
+  input tuple<BackendDAE.Shared,Boolean> sharedChanged;
+  input DAE.FunctionTree inFunctionTree;
+  output BackendDAE.EqSystem osyst;
+  output tuple<BackendDAE.Shared,Boolean> osharedChanged;
+algorithm
+  (osyst,osharedChanged):= 
+    matchcontinue(syst,sharedChanged,inFunctionTree)
     local
       BackendDAE.BackendDAE dae,dae1;
       DAE.FunctionTree funcs;
@@ -2963,44 +2912,47 @@ algorithm
       BackendDAE.IncidenceMatrix mT;
       array<Integer> ass1,ass2;
       BackendDAE.StrongComponents comps,comps1;
-      Boolean b;
+      Boolean b,b1,b2;
       list<Integer> eqnlst;
       BackendDAE.BinTree movedVars;
-      BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-      BackendDAE.BackendDAEType btp;      
+      BackendDAE.BackendDAEType btp;
+      BackendDAE.Matching matching;
       
-    case (inDAE,inFunctionTree,inAss1,inAss2,inComps)
+    case (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)),(shared,b1),inFunctionTree)
       equation
-        (dae as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns)::{},BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp)),b,eqnlst,movedVars) = constantLinearSystem1(inDAE,inFunctionTree,inComps,{},BackendDAE.emptyBintree);
+        (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching),BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp),b2,eqnlst,movedVars) = constantLinearSystem1(syst,shared,inFunctionTree,comps,{},BackendDAE.emptyBintree);
+        b = b1 or b2;
         // move changed variables
         (vars1,knvars1) = BackendVariable.moveVariables(vars,knvars,movedVars);
         // remove changed eqns
         eqnlst = Util.listMap1(eqnlst,intSub,1);
         eqns1 = BackendEquation.equationDelete(eqns,eqnlst);
-        syst = BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.MATCHING(inAss1,inAss2,inComps));
+        syst = BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),matching);
         shared = BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp);
         (m,mT) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.NORMAL());
-        syst = BackendDAE.EQSYSTEM(vars1,eqns1,SOME(m),SOME(mT),BackendDAE.MATCHING(inAss1,inAss2,inComps));
+        syst = BackendDAE.EQSYSTEM(vars1,eqns1,SOME(m),SOME(mT),matching);
       then
-        (BackendDAE.DAE({syst},shared),inAss1,inAss2,inComps,b);
+        (syst,(shared,b));
   end matchcontinue;  
-end constantLinearSystem;
+end constantLinearSystem0;
 
 protected function constantLinearSystem1
 "function constantLinearSystem1"
-    input BackendDAE.BackendDAE inDAE;
-    input DAE.FunctionTree inFunctionTree;
-    input BackendDAE.StrongComponents inComps;  
-    input list<Integer> inEqnlst;
-    input BackendDAE.BinTree inMovedVars;
-    output BackendDAE.BackendDAE outDAE;
-    output Boolean outRunMatching;
-    output list<Integer> outEqnlst;
-    output BackendDAE.BinTree movedVars;
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input DAE.FunctionTree inFunctionTree;
+  input BackendDAE.StrongComponents inComps;  
+  input list<Integer> inEqnlst;
+  input BackendDAE.BinTree inMovedVars;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+  output Boolean outRunMatching;
+  output list<Integer> outEqnlst;
+  output BackendDAE.BinTree movedVars;
 algorithm
-  (outDAE,outRunMatching,outEqnlst,movedVars):=
-  matchcontinue (inDAE,inFunctionTree,inComps,inEqnlst,inMovedVars)
+  (osyst,oshared,outRunMatching,outEqnlst,movedVars):=
+  matchcontinue (syst,shared,inFunctionTree,inComps,inEqnlst,inMovedVars)
     local
       BackendDAE.BackendDAE dae,dae1,dae2;
       DAE.FunctionTree funcs;
@@ -3026,45 +2978,46 @@ algorithm
       Integer linInfo;
       list<DAE.ComponentRef> names;
       BackendDAE.BinTree movedVars,movedVars1;
-    case (dae,funcs,{},inEqnlst,inMovedVars)
-      then
-        (dae,false,inEqnlst,inMovedVars);
-    case (dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns)::{}),funcs,(comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=SOME(jac),jacType=BackendDAE.JAC_CONSTANT()))::comps,inEqnlst,inMovedVars)
+    case (syst,shared,funcs,{},inEqnlst,inMovedVars)
+      then (syst,shared,false,inEqnlst,inMovedVars);
+    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,funcs,(comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=SOME(jac),jacType=BackendDAE.JAC_CONSTANT()))::comps,inEqnlst,inMovedVars)
       equation
         eqn_lst = BackendEquation.getEqns(eindex,eqns);        
         var_lst = Util.listMap1r(vindx, BackendVariable.getVarAt, vars);
         var_lst = listReverse(var_lst);
-        (dae,movedVars) = solveLinearSystem(dae,eqn_lst,var_lst,jac,inMovedVars);
+        (syst,shared,movedVars) = solveLinearSystem(syst,shared,eqn_lst,var_lst,jac,inMovedVars);
         remeqnlst = listAppend(eindex,inEqnlst);
-        (dae1,b,remeqnlst1,movedVars1) = constantLinearSystem1(dae,funcs,comps,remeqnlst,movedVars);
+        (syst,shared,b,remeqnlst1,movedVars1) = constantLinearSystem1(syst,shared,funcs,comps,remeqnlst,movedVars);
       then
-        (dae1,true,remeqnlst1,movedVars1);
-    case (dae,funcs,(comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1))::comps,inEqnlst,inMovedVars)
+        (syst,shared,true,remeqnlst1,movedVars1);
+    case (syst,shared,funcs,(comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1))::comps,inEqnlst,inMovedVars)
       equation
-        (dae1,b,remeqnlst,movedVars) = constantLinearSystem1(dae,funcs,{comp1},inEqnlst,inMovedVars);
-        (dae2,b1,remeqnlst1,movedVars1) = constantLinearSystem1(dae1,funcs,comps,remeqnlst,movedVars);
+        (syst,shared,b,remeqnlst,movedVars) = constantLinearSystem1(syst,shared,funcs,{comp1},inEqnlst,inMovedVars);
+        (syst,shared,b1,remeqnlst1,movedVars1) = constantLinearSystem1(syst,shared,funcs,comps,remeqnlst,movedVars);
       then
-        (dae2,b1 or b,remeqnlst1,movedVars1);        
-    case (dae,funcs,comp::comps,inEqnlst,inMovedVars)
+        (syst,shared,b1 or b,remeqnlst1,movedVars1);
+    case (syst,shared,funcs,comp::comps,inEqnlst,inMovedVars)
       equation
-         (dae1,b,remeqnlst,movedVars) = constantLinearSystem1(dae,funcs,comps,inEqnlst,inMovedVars);
+        (syst,shared,b,remeqnlst,movedVars) = constantLinearSystem1(syst,shared,funcs,comps,inEqnlst,inMovedVars);
       then
-        (dae1,b,remeqnlst,movedVars);
+        (syst,shared,b,remeqnlst,movedVars);
   end matchcontinue;  
 end constantLinearSystem1;
 
 protected function solveLinearSystem
 "function constantLinearSystem1"
-  input BackendDAE.BackendDAE inDAE;
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
   input list<BackendDAE.Equation> eqn_lst; 
   input list<BackendDAE.Var> var_lst; 
   input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
   input BackendDAE.BinTree inMovedVars;
-  output BackendDAE.BackendDAE outDAE;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
   output BackendDAE.BinTree outMovedVars;
 algorithm
-  (outDAE,outMovedVars):=
-  match (inDAE,eqn_lst,var_lst,jac,inMovedVars)
+  (osyst,oshared,outMovedVars):=
+  match (syst,shared,eqn_lst,var_lst,jac,inMovedVars)
     local
       BackendDAE.Variables vars,knvars,exobj,avars,vars1,knvars1;
       BackendDAE.AliasVariables aliasVars;
@@ -3081,8 +3034,8 @@ algorithm
       Integer linInfo;
       list<DAE.ComponentRef> names;
       BackendDAE.BinTree movedVars;
-      BackendDAE.Shared shared;
-    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns)::{},shared as BackendDAE.SHARED(arrayEqs=arreqns)),eqn_lst,var_lst,jac,inMovedVars)
+      BackendDAE.Matching matching;
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching),shared as BackendDAE.SHARED(arrayEqs=arreqns),eqn_lst,var_lst,jac,inMovedVars)
       equation
         eqns1 = BackendDAEUtil.listEquation(eqn_lst);
         ((_,_,_,beqs,sources)) = BackendEquation.traverseBackendDAEEqns(eqns1,BackendEquation.equationToExp,(vars,arreqns,{},{},{}));
@@ -3096,7 +3049,7 @@ algorithm
         vars1 = changeconstantLinearSystemVars(var_lst,solvedVals,sources,vars);
         movedVars = BackendDAEUtil.treeAddList(inMovedVars, names);
       then
-        (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars1,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},shared),movedVars);
+        (BackendDAE.EQSYSTEM(vars1,eqns,NONE(),NONE(),matching),shared,movedVars);
   end match;  
 end solveLinearSystem;
 

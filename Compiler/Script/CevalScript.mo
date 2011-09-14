@@ -3444,7 +3444,7 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(cache,dae_1);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae, funcs, true);
-        (indexed_dlow,_,_,_) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs, NONE(), NONE(), NONE());
+        indexed_dlow = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs, NONE(), NONE(), NONE());
         xml_filename = stringAppendList({filenameprefix,".xml"});
         funcelems = DAEUtil.getFunctionList(funcs);
         Print.clearBuf();

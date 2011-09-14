@@ -2568,7 +2568,7 @@ public function expandDerOperator
   input DAE.FunctionTree funcs;
   output BackendDAE.BackendDAE odae;
 algorithm
-  odae := BackendDAEUtil.mapPreOptModule(expandDerOperatorWork,dae,funcs);
+  odae := BackendDAEUtil.mapEqSystem1(dae,expandDerOperatorWork,funcs);
 end expandDerOperator;
 
 protected function expandDerOperatorWork
@@ -2824,11 +2824,26 @@ public function findZeroCrossings "function: findZeroCrossings
   This function finds all zerocrossings in the list of equations and
   the list of when clauses.
 "
-    input BackendDAE.BackendDAE inDAE;
-    output BackendDAE.BackendDAE outDAE;
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  list<BackendDAE.EqSystem> systs;
+  BackendDAE.Shared shared;
 algorithm
-  outDAE:=
-  match (inDAE)
+  outDAE := BackendDAEUtil.mapEqSystem(inDAE,findZeroCrossings1);
+end findZeroCrossings;
+
+protected function findZeroCrossings1 "function: findZeroCrossings
+
+  This function finds all zerocrossings in the list of equations and
+  the list of when clauses.
+"
+    input BackendDAE.EqSystem syst;
+    input BackendDAE.Shared shared;
+    output BackendDAE.EqSystem osyst;
+    output BackendDAE.Shared oshared;
+algorithm
+  (osyst,oshared) := match (syst,shared)
     local
       BackendDAE.Variables vars,knvars,exobj;
       BackendDAE.AliasVariables av;
@@ -2846,7 +2861,7 @@ algorithm
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
-    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching)::{},BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenclauses),eoc,btp)))
+    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenclauses),eoc,btp))
       equation
         eqs_lst = BackendDAEUtil.equationList(eqns);
         arreqns_lst = arrayList(arreqns);
@@ -2857,9 +2872,9 @@ algorithm
         algorithms1 = listArray(algs_lst1);
         einfo1 = BackendDAE.EVENT_INFO(whenclauses1,zero_crossings);
       then
-        (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns1,m,mT,matching)::{},BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns1,algorithms1,einfo1,eoc,btp)));
+        (BackendDAE.EQSYSTEM(vars,eqns1,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns1,algorithms1,einfo1,eoc,btp));
   end match;
-end findZeroCrossings;
+end findZeroCrossings1;
 
 protected function findZeroCrossings2 "function: findZeroCrossings2
 

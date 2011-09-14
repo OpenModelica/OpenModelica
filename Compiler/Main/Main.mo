@@ -764,22 +764,16 @@ algorithm
         true = runBackendQ();
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
-        (dlow_1,v1,v2,comps) = BackendDAEUtil.getSolvedSystem(cache,env,dlow,funcs,NONE(),NONE(),NONE());
+        (dlow_1 as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(v1,v2,comps))})) = BackendDAEUtil.getSolvedSystem(cache,env,dlow,funcs,NONE(),NONE(),NONE());
         modpar(dlow_1,comps);
         Debug.execStat("Lowering Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
         simcodegen(dlow_1,funcs,classname,ap,daeimpl,v1,v2,comps);
       then
         ();
-    case (_,_,_,_,_,_,_)
+    else
       equation
-        true = runBackendQ() "so main can print error messages" ;
-      then
-        fail();
-    case (_,_,_,_,_,_,_) /* If not running backend. */
-      equation
-        false = runBackendQ();
-      then
-        ();
+        false = runBackendQ() "so main can print error messages" ;
+      then ();
   end matchcontinue;
 end optimizeDae;
 

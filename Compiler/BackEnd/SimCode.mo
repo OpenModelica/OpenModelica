@@ -1027,7 +1027,7 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(cache,dae);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
-        (dlow_1,ass1,ass2,comps) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
+        (dlow_1 as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1,ass2,comps))})) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
           NONE(), NONE(), NONE());
         Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
@@ -1213,7 +1213,7 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(cache,dae);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
-        (dlow_1,ass1,ass2,comps) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
+        (dlow_1 as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1,ass2,comps))})) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
           NONE(), NONE(), NONE());
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
           generateModelCode(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt,ass1,ass2,comps);
