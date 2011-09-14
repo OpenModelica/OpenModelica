@@ -719,7 +719,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "While deriving %s to %s, types of inputs: %s and type of %s: %s did not match"),
           
           (MULTIPLE_MODIFIER,TRANSLATION(),ERROR(),
-          "Multiple modifers in same scope for element %s, %s"),
+          "Multiple modifiers in same scope for element %s, %s"),
           
           (STRUCT_SINGULAR_SYSTEM_INITIALIZATION,TRANSLATION(),ERROR(),
           "The initialization problem of model is structurally singular, error found sorting equations %s for variables %s"),
