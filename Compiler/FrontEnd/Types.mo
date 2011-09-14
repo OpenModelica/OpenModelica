@@ -4045,14 +4045,17 @@ algorithm
       equation
         true = Expression.dimensionKnown(dim1);
         elist_1 = typeConvertArray(elist,ty1,ty2,printFailtrace);
-        ety1 = elabType(ty2);
         dims = Expression.arrayDimension(elabType(ty1));
         a = isArray(ty2);
         sc = boolNot(a);
+        dims = dim1 :: dims;
+        ty2 = arrayElementType(ty2);
+        ety1 = elabType(ty2);
+        ty2 = liftArrayListDims(ty2, dims);
+        exp = DAE.ARRAY(DAE.ET_ARRAY(ety1, dims), sc, elist_1);
         //TODO: Verify correctness of return value.
       then
-        (DAE.ARRAY(DAE.ET_ARRAY(ety1,dim1 :: dims),sc,elist_1),(DAE.T_ARRAY(dim1,ty2),p2));
-        //(DAE.ARRAY(at,sc,elist_1),(DAE.T_ARRAY(DAE.DIM(SOME(dim1)),ty2),p2));
+        (DAE.ARRAY(DAE.ET_ARRAY(ety1, dims),sc,elist_1), ty2);
 
         /* Range expressions, e.g. 1:2:10 */
     case (DAE.RANGE(ty = t,exp = begin,expOption = SOME(step),range = stop),(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
@@ -4409,29 +4412,35 @@ algorithm
   end matchcontinue;
 end liftExpType;
 
-public function typeConvertArray "function: typeConvertArray
-
-  Helper function to type_convert. Handles array expressions.
-"
-  input list<DAE.Exp> inExpExpLst1;
-  input Type inType2;
-  input Type inType3;
-  input Boolean printFailtrace;
-  output list<DAE.Exp> outExpExpLst;
+public function typeConvertArray
+  "Calls typeConvert on a list of expressions."
+  input list<DAE.Exp> inArray;
+  input Type inActualType;
+  input Type inExpectedType;
+  input Boolean inPrintFailtrace;
+  output list<DAE.Exp> outArray;
 algorithm
-  (outExpExpLst) :=
-  match (inExpExpLst1,inType2,inType3,printFailtrace)
+  outArray := match(inArray, inActualType, inExpectedType, inPrintFailtrace)
     local
-      list<DAE.Exp> rest_1,rest;
-      DAE.Exp first_1,first;
-      Type ty1,ty2;
-    case ({},_,_,_) then {};
-    case ((first :: rest),ty1,ty2,printFailtrace)
+      DAE.Exp e;
+      list<DAE.Exp> expl;
+
+    // Empty array. Create a dummy expression and try to type convert that, to
+    // make sure that empty arrays are type checked.
+    case ({}, _, _, _)
       equation
-        rest_1 = typeConvertArray(rest,ty1,ty2,printFailtrace);
-        (first_1,_) = typeConvert(first,ty1,ty2,printFailtrace);
+        e = makeDummyExpFromType(inActualType);
+        (_, _) = typeConvert(e, inActualType, inExpectedType, inPrintFailtrace);
       then
-        ((first_1 :: rest_1));
+        {};
+
+    else 
+      equation
+        (expl, _) = Util.listMap32(inArray, typeConvert, inActualType,
+          inExpectedType, inPrintFailtrace);
+      then
+        expl;
+
   end match;
 end typeConvertArray;
 
@@ -6920,4 +6929,256 @@ algorithm
   end match;
 end isValidFunctionVarState;
 
+protected function makeDummyExpFromType
+  "Creates a dummy expression from a type. Used by typeConvertArray to handle
+  empty arrays."
+  input Type inType;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match(inType)
+    local
+      Absyn.Path p;
+      Type ty;
+      DAE.Dimension dim;
+      Integer idim;
+      DAE.Exp exp;
+      list<DAE.Exp> expl;
+      DAE.ExpType ety;
+
+    case ((DAE.T_INTEGER(varLstInt = _), _)) then DAE.ICONST(0);
+    case ((DAE.T_REAL(varLstReal = _), _)) then DAE.RCONST(0.0);
+    case ((DAE.T_STRING(varLstString = _), _)) then DAE.SCONST("");
+    case ((DAE.T_BOOL(varLstBool = _), _)) then DAE.BCONST(false);
+    case ((DAE.T_ENUMERATION(path = p), _)) then DAE.ENUM_LITERAL(p, 1);
+    case ((DAE.T_ARRAY(arrayType = ty, arrayDim = dim), _))
+      equation
+        idim = Expression.dimensionSize(dim);
+        exp = makeDummyExpFromType(ty);
+        ety = Expression.typeof(exp);
+        ety = Expression.liftArrayLeft(ety, dim);
+        expl = Util.listFill(exp, idim);
+      then
+        DAE.ARRAY(ety, true, expl);
+        
+  end match;
+end makeDummyExpFromType;
+
+protected function verifyExpressionType
+  "Checks that the type of an expression and a given type matches. This function
+   is meant to be a debug function to make it more convenient to debug type errors."
+  input DAE.Exp inExp;
+  input Type inType;
+algorithm
+  _ := matchcontinue(inExp, inType)
+    local
+      Absyn.Path p1, p2;
+      DAE.ExpType ety1, ety2;
+      DAE.ComponentRef cr;
+      DAE.Exp e1, e2, e3;
+      DAE.Operator op;
+      list<DAE.Exp> expl;
+      Type ty;
+      String exp_str, ety_str, ty_str;
+
+    case (DAE.ICONST(integer = _), (DAE.T_INTEGER(varLstInt = _), _)) then ();
+    case (DAE.RCONST(real = _), (DAE.T_REAL(varLstReal = _), _)) then ();
+    case (DAE.SCONST(string = _), (DAE.T_STRING(varLstString = _), _)) then ();
+    case (DAE.BCONST(bool = _), (DAE.T_BOOL(varLstBool = _), _)) then ();
+    case (DAE.ENUM_LITERAL(name = p1), (DAE.T_ENUMERATION(path = p2), _))
+      equation
+        true = Absyn.pathEqual(p1, p2);
+      then
+        ();
+    case (DAE.CREF(ty = ety1, componentRef = cr), _)
+      equation
+        ety2 = ComponentReference.crefLastType(cr);
+        equality(ety1 = ety2);
+        verifyExpressionType2(ety1, inType);
+      then
+        ();
+    case (DAE.BINARY(exp1 = e1, operator = op, exp2 = e2), _)
+      equation
+        ety1 = Expression.typeofOp(op);
+        verifyExpressionType2(ety1, inType);
+        verifyExpressionType(e1, inType);
+        verifyExpressionType(e2, inType);
+      then
+        ();
+    case (DAE.UNARY(exp = e1, operator = op), _)
+      equation
+        ety1 = Expression.typeofOp(op);
+        verifyExpressionType2(ety1, inType);
+        verifyExpressionType(e1, inType);
+      then
+        ();
+    case (DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2), _)
+      equation
+        ety1 = Expression.typeofOp(op);
+        verifyExpressionType2(ety1, inType);
+        verifyExpressionType(e1, inType);
+        verifyExpressionType(e2, inType);
+      then
+        ();
+    case (DAE.LUNARY(exp = e1, operator = op), _)
+      equation
+        ety1 = Expression.typeofOp(op);
+        verifyExpressionType2(ety1, inType);
+        verifyExpressionType(e1, inType);
+      then
+        ();
+    case (DAE.RELATION(exp1 = e1, operator = op, exp2 = e2), _)
+      equation
+        ety1 = Expression.typeofOp(op);
+        verifyExpressionType2(ety1, inType);
+        verifyExpressionType(e1, inType);
+        verifyExpressionType(e2, inType);
+      then
+        ();
+    case (DAE.IFEXP(expCond = e1, expThen = e2, expElse = e3), _)
+      equation
+        verifyExpressionType(e1, DAE.T_BOOL_DEFAULT);
+        verifyExpressionType(e2, inType);
+        verifyExpressionType(e3, inType);
+      then
+        ();
+    case (DAE.CALL(path = _), _) then ();
+    case (DAE.PARTEVALFUNCTION(ty = ety1), _)
+      equation
+        verifyExpressionType2(ety1, inType);
+      then
+        ();
+    case (DAE.ARRAY(ty = ety1, array = expl), _)
+      equation
+        verifyExpressionType2(ety1, inType);
+        ty = unliftArray(inType);
+        Util.listMap01(expl, ty, verifyExpressionType);
+      then
+        ();
+    case (DAE.MATRIX(ty = ety1), _)
+      equation
+        verifyExpressionType2(ety1, inType);
+      then
+        ();
+    case (DAE.RANGE(ty = ety1, exp = e1, expOption = SOME(e2), range = e3), _)
+      equation
+        verifyExpressionType2(ety1, inType);
+        ty = unliftArray(inType);
+        verifyExpressionType(e1, ty);
+        verifyExpressionType(e2, ty);
+        verifyExpressionType(e3, ty);
+      then
+        ();
+    case (DAE.RANGE(ty = ety1, exp = e1, expOption = NONE(), range = e3), _)
+      equation
+        verifyExpressionType2(ety1, inType);
+        ty = unliftArray(inType);
+        verifyExpressionType(e1, ty);
+        verifyExpressionType(e3, ty);
+      then
+        ();
+    case (DAE.TUPLE(PR = expl), _)
+      equation
+        Util.listMap01(expl, inType, verifyExpressionType);
+      then
+        ();
+    case (DAE.CAST(ty = ety1), _)
+      equation
+        verifyExpressionType2(ety1, inType);
+      then
+        ();
+    case (DAE.ASUB(exp = e1), _)
+      equation
+        verifyExpressionType(e1, inType);
+      then
+        ();
+    case (DAE.TSUB(exp = _), _) then ();
+    case (DAE.SIZE(exp = e1), _)
+      equation
+        DAE.ET_ARRAY(ty = _) = Expression.typeof(e1);
+      then
+        ();
+    case (DAE.CODE(ty = ety1), _)
+      equation
+        verifyExpressionType2(ety1, inType);
+      then
+        ();
+    case (DAE.EMPTY(ty = ety1), _)
+      equation
+        verifyExpressionType2(ety1, inType);
+      then
+        ();
+    case (DAE.REDUCTION(expr = _), _) then ();
+    case (DAE.LIST(valList = _), _) then ();
+    case (DAE.CONS(car = _), _) then ();
+    case (DAE.META_TUPLE(listExp = _), _) then ();
+    case (DAE.META_OPTION(exp = _), _) then ();
+    case (DAE.METARECORDCALL(path = _), _) then ();
+    case (DAE.MATCHEXPRESSION(matchType = _), _) then ();
+    case (DAE.BOX(exp = _), _) then ();
+    case (DAE.UNBOX(ty = ety1), _)
+      equation
+        verifyExpressionType2(ety1, inType);
+      then
+        ();
+    case (DAE.SHARED_LITERAL(ty = ety1), _)
+      equation
+        verifyExpressionType2(ety1, inType);
+      then
+        ();
+    case (DAE.PATTERN(pattern = _), _) then ();
+
+    else
+      equation
+        exp_str = ExpressionDump.printExpStr(inExp);
+        ety_str = ExpressionDump.typeString(Expression.typeof(inExp));
+        ty_str = printTypeStr(inType);
+        //verifyExpressionType(inExp, inType);
+        Error.assertion(false, "verifyExpressionType: type of " +& exp_str +& 
+          " does not match!\n\tExpression has type " +& ety_str +& 
+          " but expected type was " +& ty_str +& "\n", Absyn.dummyInfo);
+      then
+        fail();
+
+  end matchcontinue;
+end verifyExpressionType;
+
+protected function verifyExpressionType2
+  "Helper function to verifyExpressionType, check if an ExpType and a Type
+   matches."
+  input DAE.ExpType inExpType;
+  input DAE.Type inType;
+algorithm
+  _ := match(inExpType, inType)
+    local
+      Absyn.Path p1, p2;
+      DAE.ExpType ety;
+      list<DAE.Dimension> dims1, dims2;
+      DAE.Type ty;
+
+    case (DAE.ET_INT(), (DAE.T_INTEGER(varLstInt = _), _)) then ();
+    case (DAE.ET_REAL(), (DAE.T_REAL(varLstReal = _), _)) then ();
+    case (DAE.ET_BOOL(), (DAE.T_BOOL(varLstBool = _), _)) then ();
+    case (DAE.ET_STRING(), (DAE.T_STRING(varLstString = _), _)) then ();
+    case (DAE.ET_ENUMERATION(path = p1), (DAE.T_ENUMERATION(path = p2), _))
+      equation
+        true = Absyn.pathEqual(p1, p2);
+      then
+        ();
+    case (DAE.ET_COMPLEX(name = _), _) then ();
+    case (DAE.ET_ARRAY(ty = ety, arrayDimensions = dims1), _)
+      equation
+        ty = arrayElementType(inType);
+        dims2 = getDimensions(inType);
+        verifyExpressionType2(ety, ty);
+        true = Util.listEqual(dims1, dims2, Expression.dimensionsEqual);
+      then
+        ();
+    case (DAE.ET_FUNCTION_REFERENCE_VAR(), _) then ();
+    case (DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = _), _) then ();
+    case (DAE.ET_METATYPE(), _) then ();
+    case (DAE.ET_BOXED(ty = _), _) then ();
+    case (DAE.ET_NORETCALL(), _) then ();
+  end match;
+end verifyExpressionType2;
+        
 end Types;

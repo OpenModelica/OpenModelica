@@ -1554,6 +1554,7 @@ algorithm
       Integer i;
     case DAE.DIM_INTEGER(integer = i) then i;
     case DAE.DIM_ENUM(size = i) then i;
+    case DAE.DIM_EXP(exp = DAE.ICONST(integer = i)) then i;
   end match;
 end dimensionSize;
 
@@ -2495,23 +2496,26 @@ algorithm outCrefExp := match(inVar,inCrefPrefix)
  end match;
 end generateCrefsExpFromExpVar;
 
+public function makeArray
+  input list<DAE.Exp> inElements;
+  input Type inType;
+  input Boolean inScalar;
+  output DAE.Exp outArray;
+algorithm
+  outArray := DAE.ARRAY(inType, inScalar, inElements);
+end makeArray;
+
 public function makeScalarArray
 "function: makeRealArray
   Construct an array node of an DAE.Exp list of type REAL."
   input list<DAE.Exp> inExpLst;
   input DAE.ExpType et;
   output DAE.Exp outExp;
+protected
+  Integer i;
 algorithm
-  outExp:=
-  match (inExpLst,et)
-    local
-      list<DAE.Exp> expl;
-      Integer i;
-    case (expl,et)
-      equation
-        i = listLength(expl);
-      then DAE.ARRAY(DAE.ET_ARRAY(et,{DAE.DIM_INTEGER(i)}),true,expl);
-  end match;
+  i := listLength(inExpLst);
+  outExp := DAE.ARRAY(DAE.ET_ARRAY(et, {DAE.DIM_INTEGER(i)}), true, inExpLst);
 end makeScalarArray;
 
 public function makeRealArray

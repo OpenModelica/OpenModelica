@@ -8879,4 +8879,41 @@ algorithm
   end match;
 end listString;
 
+public function listEqual
+  "Takes two lists and an equality function, and returns whether the lists are
+   equal or not."
+  input list<TypeA> inList1;
+  input list<TypeB> inList2;
+  input FuncType inEqualFunc;
+  output Boolean outIsEqual;
+
+  replaceable type TypeA subtypeof Any;
+  replaceable type TypeB subtypeof Any;
+
+  partial function FuncType
+    input TypeA inElementA;
+    input TypeB inElementB;
+    output Boolean outIsEqual;
+  end FuncType;
+algorithm
+  outIsEqual := matchcontinue(inList1, inList2, inEqualFunc)
+    local
+      TypeA a;
+      TypeB b;
+      list<TypeA> rest_a;
+      list<TypeB> rest_b;
+
+    case ({}, {}, _) then true;
+
+    case (a :: rest_a, b :: rest_b, _)
+      equation
+        true = inEqualFunc(a, b);
+      then
+        listEqual(rest_a, rest_b, inEqualFunc);
+
+    else false;
+
+  end matchcontinue;
+end listEqual;
+
 end Util;

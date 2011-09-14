@@ -538,7 +538,7 @@ algorithm
         a = boolNot(a); // scalar = !array
         arrexp =  DAE.ARRAY(at,a,es_1);
         (arrexp,arrtp) = MetaUtil.tryToConvertArrayToList(arrexp,arrtp) "converts types that cannot be arrays into lists";
-        arrexp = tryToConvertArrayToMatrix(arrexp);
+        arrexp = elabMatrixToMatrixExp(arrexp);
       then
         (cache,arrexp,DAE.PROP(arrtp,const),st);
 
@@ -936,11 +936,8 @@ algorithm
   end matchcontinue;
 end elabMatrixGetDimensions;
 
-protected function elabMatrixToMatrixExp "function: elabMatrixToMatrixExp
-
-  Convert an array expression (which is a matrix or higher dim.) to
-  a matrix expression (using MATRIX).
-"
+protected function elabMatrixToMatrixExp
+  "Convert an 2-dimensional array expression to a matrix expression."
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
@@ -949,32 +946,31 @@ algorithm
     local
       list<list<DAE.Exp>> mexpl;
       DAE.ExpType a;
-      Boolean at;
       Integer d1;
       list<DAE.Exp> expl;
-      DAE.Exp e;
-      list<DAE.Dimension> ad;
-    case (DAE.ARRAY(ty = a,array = expl))
+
+    // Convert a 2-dimensional array to a matrix.
+    case (DAE.ARRAY(ty = a as DAE.ET_ARRAY(arrayDimensions = _ :: _ :: {}), 
+        array = expl))
       equation
         mexpl = elabMatrixToMatrixExp2(expl);
         d1 = listLength(mexpl);
-        at = Expression.typeBuiltin(Expression.unliftArray(Expression.unliftArray(a)));
-      then DAE.MATRIX(a,d1,at,mexpl);
-    case (e) then e;  /* if fails, skip conversion, use generic array expression as is. */
+        true = Expression.typeBuiltin(Expression.unliftArray(Expression.unliftArray(a)));
+      then 
+        DAE.MATRIX(a,d1,true,mexpl);
+
+    // if fails, skip conversion, use generic array expression as is.
+    else inExp;
   end matchcontinue;
 end elabMatrixToMatrixExp;
 
-protected function elabMatrixToMatrixExp2 "function: elabMatrixToMatrixExp2
-
-  Helper function to elab_matrix_to_matrix_exp
-"
-  input list<DAE.Exp> inExpExpLst;
-  output list<list<DAE.Exp>> outTplExpExpBooleanLstLst;
+protected function elabMatrixToMatrixExp2 
+  "Helper function to elabMatrixToMatrixExp."
+  input list<DAE.Exp> inArrays;
+  output list<list<DAE.Exp>> outMatrix;
 algorithm
-  (outTplExpExpBooleanLstLst):=
-  match (inExpExpLst)
+  outMatrix := match (inArrays)
     local
-      list<DAE.Exp> expl_1;
       list<list<DAE.Exp>> es_1;
       DAE.ExpType a;
       Boolean at;
@@ -982,33 +978,11 @@ algorithm
     case ({}) then {};
     case ((DAE.ARRAY(ty = a,array = expl) :: es))
       equation
-        expl_1 = elabMatrixToMatrixExp3(expl);
         es_1 = elabMatrixToMatrixExp2(es);
       then
-        expl_1 :: es_1;
+        expl :: es_1;
   end match;
 end elabMatrixToMatrixExp2;
-
-protected function elabMatrixToMatrixExp3
-  input list<DAE.Exp> inExpExpLst;
-  output list<DAE.Exp> outTplExpExpBooleanLst;
-algorithm
-  outTplExpExpBooleanLst:=
-  match (inExpExpLst)
-    local
-      DAE.ExpType tp;
-      Boolean scalar;
-      Ident s;
-      list<DAE.Exp> es_1;
-      DAE.Exp e;
-      list<DAE.Exp> es;
-    case ({}) then {};
-    case ((e :: es))
-      equation
-        es_1 = elabMatrixToMatrixExp3(es);
-      then (e :: es_1);
-  end match;
-end elabMatrixToMatrixExp3;
 
 protected function matrixConstrMaxDim "function: matrixConstrMaxDim
 
@@ -6164,10 +6138,12 @@ protected function elabBuiltinMatrix3
 algorithm
   outExp := match(inExp, inInfo)
     local
-      DAE.ExpType ety;
+      DAE.ExpType ety, ety2;
       Boolean scalar;
       list<DAE.Exp> expl;
       DAE.Dimension dim;
+      list<DAE.Dimension> dims;
+      list<list<DAE.Exp>> matrix_expl;
 
     case (DAE.ARRAY(ty = DAE.ET_ARRAY(ety, dim :: _), 
         scalar = scalar, array = expl), _)
@@ -6176,6 +6152,15 @@ algorithm
       then
         DAE.ARRAY(DAE.ET_ARRAY(ety, {dim}), scalar, expl);
 
+    case (DAE.MATRIX(ty = DAE.ET_ARRAY(ety, dim :: dims), matrix = matrix_expl,
+        scalar = scalar), _)
+      equation
+        ety2 = DAE.ET_ARRAY(ety, dims);
+        expl = Util.listMap2(matrix_expl, Expression.makeArray, ety2, scalar);
+        expl = Util.listMap3(expl, arrayScalar, 3, "matrix", inInfo);
+      then
+        DAE.ARRAY(DAE.ET_ARRAY(ety, {dim}), scalar, expl);
+                
   end match;
 end elabBuiltinMatrix3;
 
@@ -10539,7 +10524,7 @@ algorithm
         b2 = (Expression.dimensionSize(d2) < RTOpts.vectorizationLimit());
         true = boolAnd(b1, b2) or not applyLimits;
         e = elabCrefSlice(cr,crefIdType);
-        e = tryToConvertArrayToMatrix(e);
+        e = elabMatrixToMatrixExp(e);
       then
         e;
 
@@ -10579,24 +10564,6 @@ algorithm
     case (_,e,_,_,_,_) then e;
   end matchcontinue;
 end crefVectorize;
-
-protected function tryToConvertArrayToMatrix
-"function trytoConvertToMatrix
-  A function that tries to convert an Exp to an Matrix,
-  if it fails it just returns the input Expression."
-  input DAE.Exp inExp;
-  output DAE.Exp outExp;
-algorithm
-  outExp := matchcontinue(inExp)
-    local
-      DAE.Exp exp;
-    case(exp)
-      equation
-        exp = elabMatrixToMatrixExp(exp);
-      then exp;
-    case(exp) then exp;
-  end matchcontinue;
-end tryToConvertArrayToMatrix;
 
 protected function extractDimensionOfChild
 "function extractDimensionOfChild
@@ -10638,7 +10605,7 @@ end extractDimensionOfChild;
 
 protected function elabCrefSlice
 "Bjozac, 2007-05-29  Main function from now for vectorizing output.
- the subscriptlist shold cotain eighter \"done slices\" or numbers representing
+  the subscriptlist should contain either 'done slices' or numbers representing
  dimension entries.
 Example:
 1) a is a real[2,3] with no subscripts, the input here should be
@@ -10822,7 +10789,7 @@ algorithm
         exp2 = flattenSubscript2(subs1,id,ety);
         expl2 = Util.listMap3(expl1,applySubscript,exp2,id,ety);
         exp3 = listNth(expl2,0);
-        exp3 = removeDoubleEmptyArrays(exp3);
+        //exp3 = removeDoubleEmptyArrays(exp3);
       then
         exp3;
     // normal case;
@@ -10834,7 +10801,7 @@ algorithm
         (iLst, scalar) = extractDimensionOfChild(exp3);
         ety = Expression.arrayEltType(ety);
         exp3 = DAE.ARRAY(DAE.ET_ARRAY( ety, iLst), scalar, expl2);
-        exp3 = removeDoubleEmptyArrays(exp3);
+        //exp3 = removeDoubleEmptyArrays(exp3);
       then
         exp3;
   end matchcontinue;
@@ -10899,11 +10866,13 @@ algorithm
         /* add dimensions */       
     case(exp1 as DAE.ICONST(integer=0),exp2 as DAE.ARRAY(DAE.ET_ARRAY(ty =_, arrayDimensions = arrDim) ,_,_),id ,ety) 
       equation
+        ety = Expression.arrayEltType(ety);
         exp1 = DAE.ARRAY(DAE.ET_ARRAY( ety,DAE.DIM_INTEGER(0)::arrDim),true,{});
       then exp1;
 
     case(exp1 as DAE.ICONST(integer=0),_,_ ,ety)
       equation
+        ety = Expression.arrayEltType(ety);
         exp1 = DAE.ARRAY(DAE.ET_ARRAY( ety,{DAE.DIM_INTEGER(0)}),true,{});
       then exp1;
 
