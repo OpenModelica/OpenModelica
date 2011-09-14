@@ -425,10 +425,10 @@ algorithm
         annotationLst = annl, comment = cmt), _, _, _, _)
       equation
         Util.listMap02(el, analyseElement, inEnv, inRestriction);
-        Util.listMap01(nel, inEnv, analyseEquation);
-        Util.listMap01(iel, inEnv, analyseEquation);
-        Util.listMap01(nal, inEnv, analyseAlgorithm);
-        Util.listMap01(ial, inEnv, analyseAlgorithm);
+        Util.listMap01(nel, analyseEquation, inEnv);
+        Util.listMap01(iel, analyseEquation, inEnv);
+        Util.listMap01(nal, analyseAlgorithm, inEnv);
+        Util.listMap01(ial, analyseAlgorithm, inEnv);
         analyseExternalDecl(ext_decl, inEnv, inInfo);
         Util.listMap02(annl, analyseAnnotation, inEnv, inInfo);
         analyseComment(cmt, inEnv, inInfo);
@@ -1445,7 +1445,7 @@ protected
   list<SCode.Statement> stmts;
 algorithm
   SCode.ALGORITHM(stmts) := inAlgorithm;
-  Util.listMap01(stmts, inEnv, analyseStatement);
+  Util.listMap01(stmts, analyseStatement, inEnv);
 end analyseAlgorithm;
 
 protected function analyseStatement

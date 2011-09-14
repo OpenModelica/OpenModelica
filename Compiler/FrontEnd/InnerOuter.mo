@@ -1028,7 +1028,7 @@ protected function checkMissingInnerDecl1
   input DAE.DAElist innerVarsDae;
   input DAE.DAElist outerVarsDae;
 algorithm
-  Util.listMap01(DAEUtil.daeElements(outerVarsDae),DAEUtil.daeElements(innerVarsDae),checkMissingInnerDecl2);
+  Util.listMap01(DAEUtil.daeElements(outerVarsDae),checkMissingInnerDecl2,DAEUtil.daeElements(innerVarsDae));
 end checkMissingInnerDecl1;
 
 protected function checkMissingInnerDecl2

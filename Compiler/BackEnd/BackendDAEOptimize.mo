@@ -3142,7 +3142,7 @@ algorithm
   tmp := listArray(rs);
   tmp2 := Util.listMap(Util.listFill(tmp,size),arrayCopy);
   valarr := listArray(tmp2);
-  Util.listMap01(jac,valarr,evaluateConstantJacobian2);
+  Util.listMap01(jac,evaluateConstantJacobian2,valarr);
   tmp2 := arrayList(valarr);
   vals := Util.listMap(tmp2,arrayList);
 end evaluateConstantJacobian;

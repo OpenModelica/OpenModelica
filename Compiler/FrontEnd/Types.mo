@@ -7051,7 +7051,7 @@ algorithm
       equation
         verifyExpressionType2(ety1, inType);
         ty = unliftArray(inType);
-        Util.listMap01(expl, ty, verifyExpressionType);
+        Util.listMap01(expl, verifyExpressionType, ty);
       then
         ();
     case (DAE.MATRIX(ty = ety1), _)
@@ -7078,7 +7078,7 @@ algorithm
         ();
     case (DAE.TUPLE(PR = expl), _)
       equation
-        Util.listMap01(expl, inType, verifyExpressionType);
+        Util.listMap01(expl, verifyExpressionType, inType);
       then
         ();
     case (DAE.CAST(ty = ety1), _)

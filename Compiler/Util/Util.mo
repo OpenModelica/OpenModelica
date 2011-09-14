@@ -2643,27 +2643,29 @@ end listMap0;
 public function listMap01 "
   See listMap0
 "
-  input list<Type_a> inTypeALst;
-  input Type_b b;
-  input FuncTypeType_aTo inFuncTypeTypeATo;
+  input list<Type_a> inList;
+  input FuncType inFunc;
+  input Type_b inArg;
+
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
-  partial function FuncTypeType_aTo
-    input Type_a inTypeA;
-    input Type_b b;
-  end FuncTypeType_aTo;
+
+  partial function FuncType
+    input Type_a inElement;
+    input Type_b inArg;
+  end FuncType;
 algorithm
   _:=
-  match (inTypeALst,b,inFuncTypeTypeATo)
+  match (inList, inFunc, inArg)
     local
-      Type_a f;
-      list<Type_a> r;
-      FuncTypeType_aTo fn;
+      Type_a e;
+      list<Type_a> rest_e;
+
     case ({},_,_) then ();
-    case ((f :: r),b,fn)
+    case ((e :: rest_e), _, _)
       equation
-        fn(f,b);
-        listMap01(r, b,fn);
+        inFunc(e, inArg);
+        listMap01(rest_e, inFunc, inArg);
       then
         ();
   end match;

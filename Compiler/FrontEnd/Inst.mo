@@ -11497,7 +11497,7 @@ algorithm
   invars := checkExternalDeclInputUsed(invars,decl);
   invars := Util.listSelect1(invars,vars,checkVarBindingsInputUsed);
   (_,invars) := DAEUtil.traverseDAE2(algs,checkExpInputUsed,invars);
-  Util.listMap01(invars,name,warnUnusedFunctionVar);
+  Util.listMap01(invars,warnUnusedFunctionVar,name);
 end checkFunctionInputUsed;
 
 protected function warnUnusedFunctionVar
