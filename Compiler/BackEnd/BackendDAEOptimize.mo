@@ -1796,7 +1796,7 @@ algorithm
     case((e as DAE.CREF(cr,_), (_,vars,knvars,true)))
       equation
         (var::_,_::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
-        DAE.INPUT = BackendVariable.getVarDirection(var);
+        DAE.INPUT() = BackendVariable.getVarDirection(var);
       then ((e,false,(true,vars,knvars,true)));   
     case((e,(b,vars,knvars,b1))) then ((e,not b,(b,vars,knvars,b1)));
     
@@ -4177,7 +4177,7 @@ algorithm
       jacKnownVars = BackendDAEUtil.emptyVars();
       jacKnownVars = BackendVariable.mergeVariables(jacKnownVars,orderedVars);
       jacKnownVars = BackendVariable.mergeVariables(jacKnownVars,knownVars);
-      (jacKnownVars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(jacKnownVars,setVarsDirection,(DAE.INPUT));
+      (jacKnownVars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(jacKnownVars,setVarsDirection,(DAE.INPUT()));
       jacExternalObjects = BackendDAEUtil.emptyVars();
       jacAliasVars =  BackendDAEUtil.emptyAliasVariables();
       jacOrderedEqs = BackendDAEUtil.listEquation(derivedEquations);

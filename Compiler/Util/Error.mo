@@ -712,7 +712,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (HIGHER_VARIABILITY_BINDING,TRANSLATION(),ERROR(),
           "Component %s of variability %s has binding %s of higher variability %s."),
           
-          (WARNING_JACOBIAN_EQUATION_SOLVE(),SYMBOLIC(),WARNING(),
+          (WARNING_JACOBIAN_EQUATION_SOLVE,SYMBOLIC(),WARNING(),
           "jacobian equation %s could not solve proper for %s. Assume %s=0."),
           
           (INCOMPATIBLE_TYPES_FUNC,SYMBOLIC(),ERROR(),
