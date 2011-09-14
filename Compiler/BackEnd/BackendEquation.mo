@@ -999,10 +999,10 @@ algorithm
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.Shared shared;
-    case (inEquation,BackendDAE.EQSYSTEM(ordvars,eqns,_,_))
+    case (inEquation,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns))
       equation
         eqns1 = equationAdd(inEquation,eqns);
-      then BackendDAE.EQSYSTEM(ordvars,eqns1,NONE(),NONE());
+      then BackendDAE.EQSYSTEM(ordvars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING());
   end match;
 end equationAddDAE;
 
@@ -1025,10 +1025,11 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.Shared shared;
       Option<BackendDAE.IncidenceMatrix> m,mT;
-    case (inInteger,inEquation,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT))
+      BackendDAE.Matching matching;
+    case (inInteger,inEquation,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching))
       equation
         eqns1 = equationSetnth(eqns,inInteger,inEquation);
-      then BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT);
+      then BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT,matching);
   end match;
 end equationSetnthDAE;
 

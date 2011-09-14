@@ -1089,7 +1089,7 @@ algorithm
       Boolean addOrInMatrix,addSolInfo,addMML,dumpRes;
       BackendDAE.BackendDAEType btp;      
 
-    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_orderedVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_orderedVars,varArr=varArr_orderedVars,bucketSize=bucketSize_orderedVars,numberOfVars=numberOfVars_orderedVars),eqns,_,_)::{},
+    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_orderedVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_orderedVars,varArr=varArr_orderedVars,bucketSize=bucketSize_orderedVars,numberOfVars=numberOfVars_orderedVars),eqns,_,_,_)::{},
                  BackendDAE.SHARED(vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
                  vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
                  _,ieqns,reqns,ae,algs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls,btp)),inFunctions,addOrInMatrix,addSolInfo,addMML,dumpRes)

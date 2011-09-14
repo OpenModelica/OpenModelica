@@ -123,12 +123,13 @@ algorithm
       BackendDAE.EquationArray orderedEqs;
       BackendDAE.EquationArray initialEqs;
       Option<BackendDAE.IncidenceMatrix> m,mT;
-    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT),tpl)
+      BackendDAE.Matching matching;
+    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),tpl)
       equation
         orderedVars = inlineVariables(orderedVars,tpl);
         orderedEqs = inlineEquationArray(orderedEqs,tpl);
         // TODO: Incidencematrix may change, but it's not updated here?! 
-      then BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT);
+      then BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching);
   end match;
 end inlineEquationSystem;
 

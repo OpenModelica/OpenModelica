@@ -492,6 +492,7 @@ algorithm
       BackendDAE.BackendDAE dae1;
       Option<BackendDAE.IncidenceMatrix> om,omT;
       BackendDAE.BackendDAEType btp;
+      BackendDAE.Matching matching;
    
     // unfixed equal equations
     case (inUnfixed,inInitialEqns,inDAE,_,_,_,_,_)
@@ -508,7 +509,7 @@ algorithm
         inDAE;
    
     // unfixed greater than equations
-    case (inUnfixed,inInitialEqns,inDAE as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(vars,orderedEqs,om,omT)::{},shared=BackendDAE.SHARED(knownVars=knvars,initialEqs=initialEqs,externalObjects=exObj,aliasVars=alisvars,removedEqs=removedEqs,
+    case (inUnfixed,inInitialEqns,inDAE as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(vars,orderedEqs,om,omT,matching)::{},shared=BackendDAE.SHARED(knownVars=knvars,initialEqs=initialEqs,externalObjects=exObj,aliasVars=alisvars,removedEqs=removedEqs,
            arrayEqs=arrayEqs,algorithms=algs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=btp)),funcs,inVars,inVarsWS,inStates,inStatesWS)
       equation
         true = RTOpts.debugFlag("dumpInit");
@@ -518,18 +519,18 @@ algorithm
         true = intGt(inUnfixed,inInitialEqns);
         // change fixed to true until equal equations
         (vars1,knvars1) = fixInitalVars(inUnfixed,inInitialEqns,vars,knvars,inVars,inVarsWS,inStates,inStatesWS);
-        dae1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(vars1,orderedEqs,om,omT)::{},BackendDAE.SHARED(knvars1,exObj,alisvars,initialEqs,removedEqs,arrayEqs,algs,eventInfo,extObjClasses,btp));
+        dae1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(vars1,orderedEqs,om,omT,matching)::{},BackendDAE.SHARED(knvars1,exObj,alisvars,initialEqs,removedEqs,arrayEqs,algs,eventInfo,extObjClasses,btp));
       then 
         dae1;
    
     // unfixed greater than equations
-    case (inUnfixed,inInitialEqns,inDAE as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(vars,orderedEqs,om,omT)::{},shared=BackendDAE.SHARED(knownVars=knvars,externalObjects=exObj,aliasVars=alisvars,initialEqs=initialEqs,removedEqs=removedEqs,
+    case (inUnfixed,inInitialEqns,inDAE as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(vars,orderedEqs,om,omT,matching)::{},shared=BackendDAE.SHARED(knownVars=knvars,externalObjects=exObj,aliasVars=alisvars,initialEqs=initialEqs,removedEqs=removedEqs,
            arrayEqs=arrayEqs,algorithms=algs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=btp)),funcs,inVars,inVarsWS,inStates,inStatesWS)
       equation
         true = intGt(inUnfixed,inInitialEqns);
         // change fixed to true until equal equations
         (vars1,knvars1) = fixInitalVars(inUnfixed,inInitialEqns,vars,knvars,inVars,inVarsWS,inStates,inStatesWS);
-        dae1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(vars1,orderedEqs,om,omT)::{},BackendDAE.SHARED(knvars1,exObj,alisvars,initialEqs,removedEqs,arrayEqs,algs,eventInfo,extObjClasses,btp));
+        dae1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(vars1,orderedEqs,om,omT,matching)::{},BackendDAE.SHARED(knvars1,exObj,alisvars,initialEqs,removedEqs,arrayEqs,algs,eventInfo,extObjClasses,btp));
       then 
         dae1;
 
@@ -882,7 +883,8 @@ algorithm
       BackendDAE.ExternalObjectClasses extObjCls;
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.BackendDAEType btp;
-    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,m,mT)::{},BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,ae,al,BackendDAE.EVENT_INFO(whenClauseLst = wc,zeroCrossingLst = zc),extObjCls,btp)),_)
+      BackendDAE.Matching matching;
+    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching)::{},BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,ae,al,BackendDAE.EVENT_INFO(whenClauseLst = wc,zeroCrossingLst = zc),extObjCls,btp)),_)
       equation
         varlst = varList(vars);
         knvarlst = varList(knvars);
@@ -894,7 +896,7 @@ algorithm
         vars = BackendVariable.addVars(varlst, vars);
         knvars = BackendVariable.addVars(knvarlst, knvars);
         extVars = BackendVariable.addVars(extvarlst, extVars);
-        trans_dae = BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,m,mT)::{},BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,ae,al,
+        trans_dae = BackendDAE.DAE(BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching)::{},BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,ae,al,
           BackendDAE.EVENT_INFO(wc,zc),extObjCls,btp));
       then
         trans_dae;
@@ -4430,12 +4432,13 @@ algorithm
       BackendDAE.Variables vars,knvars;
       BackendDAE.EquationArray daeeqns,daeseqns,inieq;
       list<BackendDAE.WhenClause> wc;
+      BackendDAE.Matching matching;
 
-    case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt)),BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc)),eqns)
+    case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching),BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc)),eqns)
       equation
         (m,mt) = updateIncidenceMatrix1(vars,daeeqns,wc,m,mt,eqns);
       then
-        BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt));
+        BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching);
 
     else
       equation
@@ -4600,17 +4603,18 @@ algorithm
       BackendDAE.IncidenceMatrix m,mT;
       BackendDAE.Variables v;
       BackendDAE.EquationArray eq,ieq;
-    case(syst as BackendDAE.EQSYSTEM(v,eq,NONE(),_),shared)
+      BackendDAE.Matching matching;
+    case(syst as BackendDAE.EQSYSTEM(v,eq,NONE(),_,matching),shared)
       equation
         (m,mT) = incidenceMatrix(syst, shared, BackendDAE.NORMAL());
       then
-        (BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT)),m,mT);
-    case(BackendDAE.EQSYSTEM(v,eq,SOME(m),NONE()),_)
+        (BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching),m,mT);
+    case(BackendDAE.EQSYSTEM(v,eq,SOME(m),NONE(),matching),_)
       equation  
         mT = transposeMatrix(m);
       then
-        (BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT)),m,mT);
-    case(syst as BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT)),_)
+        (BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching),m,mT);
+    case(syst as BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching),_)
       then
         (syst,m,mT);
   end matchcontinue;

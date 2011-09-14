@@ -271,8 +271,18 @@ uniontype EqSystem "An independent system of equations (and their corresponding 
     EquationArray orderedEqs "orderedEqs ; ordered Equations" ;
     Option<IncidenceMatrix> m;
     Option<IncidenceMatrixT> mT;
+    Matching matching;
   end EQSYSTEM;
 end EqSystem;
+
+uniontype Matching
+  record NO_MATCHING "matching has not yet been performed" end NO_MATCHING;
+  record MATCHING "not yet used"
+    array<Integer> ass1;
+    array<Integer> ass2;
+    StrongComponents comps;
+  end MATCHING;
+end Matching;
 
 type ExternalObjectClasses = list<ExternalObjectClass> "classes of external objects stored in list";
 
