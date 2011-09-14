@@ -753,7 +753,7 @@ algorithm
       list<list<DAE.Exp>> rows;
       DAE.Exp crefExp;
       
-    case(DAE.MATRIX(ty=aty, scalar = true, matrix = rows as (((DAE.CREF(componentRef=cr))::_)::_) ),context)
+    case(DAE.MATRIX(ty=aty, matrix = rows as (((DAE.CREF(componentRef=cr))::_)::_) ),context)
       equation
         failure(FUNCTION_CONTEXT()=context);
         { DAE.INDEX(DAE.ICONST(1)), DAE.INDEX(DAE.ICONST(1)) } = ComponentReference.crefLastSubs(cr);

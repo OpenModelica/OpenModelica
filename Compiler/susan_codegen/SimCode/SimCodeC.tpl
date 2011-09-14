@@ -5454,7 +5454,7 @@ template daeExpMatrix(Exp exp, Context context, Text &preExp /*BUFP*/,
     let &promote = buffer "" /*BUFD*/
     let catAlloc = (m.matrix |> row =>
         let tmp = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
-        let vars = daeExpMatrixRow(row, m.scalar, arrayTypeStr, context,
+        let vars = daeExpMatrixRow(row, arrayTypeStr, context,
                                  &promote /*BUFC*/, &varDecls /*BUFD*/)
         let &vars2 += ', &<%tmp%>'
         'cat_alloc_<%arrayTypeStr%>(2, &<%tmp%>, <%listLength(row)%><%vars%>);'
@@ -5468,7 +5468,7 @@ template daeExpMatrix(Exp exp, Context context, Text &preExp /*BUFP*/,
 end daeExpMatrix;
 
 
-template daeExpMatrixRow(list<Exp> row, Boolean scalar, String arrayTypeStr,
+template daeExpMatrixRow(list<Exp> row, String arrayTypeStr,
                          Context context, Text &preExp /*BUFP*/,
                          Text &varDecls /*BUFP*/)
  "Helper to daeExpMatrix."
@@ -5476,12 +5476,10 @@ template daeExpMatrixRow(list<Exp> row, Boolean scalar, String arrayTypeStr,
   let &varLstStr = buffer "" /*BUFD*/
 
   let preExp2 = (row |> e =>
-      let scalarStr = if scalar then "scalar_" else ""
-      let scalarRefStr = if scalar then "" else "&"
       let expVar = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let tmp = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
       let &varLstStr += ', &<%tmp%>'
-      'promote_<%scalarStr%><%arrayTypeStr%>(<%scalarRefStr%><%expVar%>, 2, &<%tmp%>);'
+      'promote_scalar_<%arrayTypeStr%>(<%expVar%>, 2, &<%tmp%>);'
     ;separator="\n")
   let &preExp2 += "\n"
   let &preExp += preExp2

@@ -797,16 +797,16 @@ algorithm
       then
         (cache,DAE.TUPLE(es_1));
 
-    case (cache,env,ih,DAE.MATRIX(ty = t,integer = a,scalar = sc,matrix = {}),p)
+    case (cache,env,ih,DAE.MATRIX(ty = t,integer = a,matrix = {}),p)
       then
-        (cache,DAE.MATRIX(t,a,sc,{}));
+        (cache,DAE.MATRIX(t,a,{}));
 
-    case (cache,env,ih,DAE.MATRIX(ty = t,integer = a,scalar = sc,matrix = (x :: xs)),p)
+    case (cache,env,ih,DAE.MATRIX(ty = t,integer = a,matrix = (x :: xs)),p)
       equation
         (cache,x_1) = prefixExpList(cache, env, ih, x, p);
-        (cache,DAE.MATRIX(t,b,sc,xs_1)) = prefixExp(cache, env, ih, DAE.MATRIX(t,a,sc,xs), p);
+        (cache,DAE.MATRIX(t,b,xs_1)) = prefixExp(cache, env, ih, DAE.MATRIX(t,a,xs), p);
       then
-        (cache,DAE.MATRIX(t,a,sc,(x_1 :: xs_1)));
+        (cache,DAE.MATRIX(t,a,(x_1 :: xs_1)));
 
     case (cache,env,ih,DAE.RANGE(ty = t,exp = start,expOption = NONE(),range = stop),p)
       equation

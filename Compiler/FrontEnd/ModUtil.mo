@@ -195,11 +195,11 @@ algorithm
       then
         DAE.ARRAY(t,b,el_1);
     
-    case (str,r,rarg,DAE.MATRIX(ty = t,integer = a,scalar = b,matrix = es))
+    case (str,r,rarg,DAE.MATRIX(ty = t,integer = a,matrix = es))
       equation
         es_1 = stringPrefixComponentRefsList(str, r, rarg, es);
       then
-        DAE.MATRIX(t,a,b,es_1);
+        DAE.MATRIX(t,a,es_1);
     
     case (str,r,rarg,DAE.RANGE(ty = t,exp = e1,expOption = NONE(),range = e2))
       equation

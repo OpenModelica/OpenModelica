@@ -706,11 +706,11 @@ algorithm
           DAE.BINARY(DAE.BINARY(e1_1,DAE.MUL_ARRAY_SCALAR(tp),e2),DAE.SUB_ARR(tp),
           DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(tp),e2_1)),DAE.DIV_ARRAY_SCALAR(tp),DAE.BINARY(e2,DAE.MUL(tp),e2));
     
-    case ((e as DAE.MATRIX(ty = tp,integer=i,scalar=sc,matrix=explstlst)),inVariables)
+    case ((e as DAE.MATRIX(ty = tp,integer=i,matrix=explstlst)),inVariables)
       equation
         explstlst1 = differentiateMatrixTime(explstlst,inVariables);
       then
-        DAE.MATRIX(tp,i,sc,explstlst1);
+        DAE.MATRIX(tp,i,explstlst1);
     
     case (DAE.TUPLE(PR = expl),inVariables)
       equation

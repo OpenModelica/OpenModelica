@@ -3405,8 +3405,7 @@ algorithm outExp := matchcontinue(inExp)
         crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
         expl = Util.listMap1(crlst,Expression.makeCrefExp,ty);
         mat = makeMatrix(expl,j,j,{});
-        sc = not Expression.isArrayType(Expression.unliftArray(Expression.unliftArray(ty)));
-        e_new = DAE.MATRIX(t,i,sc,mat);
+        e_new = DAE.MATRIX(t,i,mat);
         restpl = Expression.traverseExp(e_new, traversingextendArrExp, (funcs,true));
     then
       (restpl);
@@ -3423,8 +3422,7 @@ algorithm outExp := matchcontinue(inExp)
         crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
         expl = Util.listMap1(crlst,Expression.makeCrefExp,ty);
         mat = makeMatrix(expl,j,j,{});
-        sc = not Expression.isArrayType(Expression.unliftArray(Expression.unliftArray(ty)));
-        e_new = DAE.MATRIX(t,i,sc,mat);
+        e_new = DAE.MATRIX(t,i,mat);
         restpl = Expression.traverseExp(e_new, traversingextendArrExp, (funcs,true));
     then
       (restpl);

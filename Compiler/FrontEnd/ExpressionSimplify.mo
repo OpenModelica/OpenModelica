@@ -519,12 +519,12 @@ algorithm
       then DAE.IFEXP(cond,e1_1,e2_1);
     
     // simplify cast of matrix expressions
-    case (DAE.MATRIX(t,n,b,mexps),tp) 
+    case (DAE.MATRIX(t,n,mexps),tp) 
       equation
         tp1 = Expression.unliftArray(tp);
         tp2 = Expression.unliftArray(tp1);
         mexps_1 = Util.listListMap1(mexps, addCast, tp2);
-      then DAE.MATRIX(tp,n,b,mexps_1);
+      then DAE.MATRIX(tp,n,mexps_1);
     
     // fill(e, ...) can be simplified
     case(DAE.CALL(path=Absyn.IDENT("fill"),expLst=e::exps),tp) 
@@ -788,12 +788,12 @@ algorithm
     local
       list<DAE.Exp> es1,es2,esn;
       DAE.Exp e;
-      Boolean sc;
       DAE.Dimension ndim,dim1,dim2,dim11,dim21;
       list<DAE.Dimension> dims;
       DAE.ExpType etp;
       Integer i1,i2,i;
       list<list<DAE.Exp>> ms1,ms2,mss;
+      Boolean sc;
     case (_,{},acc,true) then listReverse(acc);
     case (1,DAE.ARRAY(array=es1,scalar=sc,ty=DAE.ET_ARRAY(arrayDimensions=dim1::dims,ty=etp))::DAE.ARRAY(array=es2,ty=DAE.ET_ARRAY(arrayDimensions=dim2::_))::es,acc,_)
       equation
@@ -802,20 +802,20 @@ algorithm
         etp = DAE.ET_ARRAY(etp,ndim::dims);
         e = DAE.ARRAY(etp,sc,esn);
       then simplifyCat(dim,e::es,acc,true);
-    case (1,DAE.MATRIX(matrix=ms1,integer=i1,scalar=sc,ty=DAE.ET_ARRAY(arrayDimensions=dim1::dims,ty=etp))::DAE.MATRIX(matrix=ms2,integer=i2,ty=DAE.ET_ARRAY(arrayDimensions=dim2::_))::es,acc,_)
+    case (1,DAE.MATRIX(matrix=ms1,integer=i1,ty=DAE.ET_ARRAY(arrayDimensions=dim1::dims,ty=etp))::DAE.MATRIX(matrix=ms2,integer=i2,ty=DAE.ET_ARRAY(arrayDimensions=dim2::_))::es,acc,_)
       equation
         i = i1+i2;
         mss = listAppend(ms1,ms2);
         ndim = Expression.addDimensions(dim1,dim2);
         etp = DAE.ET_ARRAY(etp,ndim::dims);
-        e = DAE.MATRIX(etp,i,sc,mss);
+        e = DAE.MATRIX(etp,i,mss);
       then simplifyCat(dim,e::es,acc,true);
-    case (2,DAE.MATRIX(matrix=ms1,scalar=sc,integer=i,ty=DAE.ET_ARRAY(arrayDimensions=dim11::dim1::dims,ty=etp))::DAE.MATRIX(matrix=ms2,ty=DAE.ET_ARRAY(arrayDimensions=_::dim2::_))::es,acc,_)
+    case (2,DAE.MATRIX(matrix=ms1,integer=i,ty=DAE.ET_ARRAY(arrayDimensions=dim11::dim1::dims,ty=etp))::DAE.MATRIX(matrix=ms2,ty=DAE.ET_ARRAY(arrayDimensions=_::dim2::_))::es,acc,_)
       equation
         mss = Util.listThreadMap(ms1,ms2,listAppend);
         ndim = Expression.addDimensions(dim1,dim2);
         etp = DAE.ET_ARRAY(etp,dim11::ndim::dims);
-        e = DAE.MATRIX(etp,i,sc,mss);
+        e = DAE.MATRIX(etp,i,mss);
       then simplifyCat(dim,e::es,acc,true);
     case (dim,e::es,acc,changed) then simplifyCat(dim,es,e::acc,changed);
   end matchcontinue;
@@ -1274,7 +1274,7 @@ algorithm
         DAE.BINARY(e1,DAE.SUB_ARR(tp),e2);
 
     // scalar * matrix
-    case (s1,DAE.MUL_SCALAR_ARRAY(ty = tp),a1 as DAE.MATRIX(scalar=_))
+    case (s1,DAE.MUL_SCALAR_ARRAY(ty = tp),a1 as DAE.MATRIX(ty=_))
       equation
         tp = Expression.typeof(s1);
         atp = Expression.typeof(a1);
@@ -1298,7 +1298,7 @@ algorithm
         res;
 
     // matrix * scalar
-    case (a1 as DAE.MATRIX(scalar =_),DAE.MUL_ARRAY_SCALAR(ty = tp),s1)
+    case (a1 as DAE.MATRIX(ty =_),DAE.MUL_ARRAY_SCALAR(ty = tp),s1)
       equation
         tp = Expression.typeof(s1);
         atp = Expression.typeof(a1);
@@ -1382,7 +1382,7 @@ algorithm
         res;
 
     // matrix / scalar
-    case (a1 as DAE.MATRIX(scalar =_),DAE.DIV_ARRAY_SCALAR(ty = tp),s1)
+    case (a1 as DAE.MATRIX(ty =_),DAE.DIV_ARRAY_SCALAR(ty = tp),s1)
       equation
         tp = Expression.typeof(s1);
         atp = Expression.typeof(a1);
@@ -1631,11 +1631,11 @@ algorithm
       then
         DAE.ARRAY(tp,sc,(DAE.BINARY(s1,op,e1) :: es_1));
 
-    case (s1,op,DAE.MATRIX(tp,dims,sc,mexpl)) 
+    case (s1,op,DAE.MATRIX(tp,dims,mexpl)) 
       equation
         mexpl = simplifyVectorScalarMatrix(mexpl,op,s1,false /*scalar-array*/);
       then 
-        DAE.MATRIX(tp,dims,sc,mexpl);
+        DAE.MATRIX(tp,dims,mexpl);
 
     // array operator scalar
     case (DAE.ARRAY(ty = tp,scalar = sc,array = {}),op,s1) then DAE.ARRAY(tp,sc,{/*DAE.BINARY(DAE.ICONST(0),op,s1)*/});
@@ -1652,11 +1652,11 @@ algorithm
       then
         DAE.ARRAY(tp,sc,(e :: es_1));
 
-    case (DAE.MATRIX(tp,dims,sc,mexpl),op,s1) 
+    case (DAE.MATRIX(tp,dims,mexpl),op,s1) 
       equation
         mexpl = simplifyVectorScalarMatrix(mexpl,op,s1,true/*array-scalar*/);
       then 
-        DAE.MATRIX(tp,dims,sc,mexpl);
+        DAE.MATRIX(tp,dims,mexpl);
   end matchcontinue;
 end simplifyVectorScalar;
 
@@ -1756,7 +1756,6 @@ algorithm
     local
       Type tp1,tp2;
       Integer integer1,integer2,i1,i2;
-      Boolean sc;
       list<DAE.Exp> e,e1,e2;
       Operator op,op2;
       list<list<DAE.Exp>> es_1,es1,es2;
@@ -1764,13 +1763,13 @@ algorithm
       DAE.Exp exp1;
     case (DAE.MATRIX(ty = tp1,integer=integer1,matrix = {e1}),
           op,
-         DAE.MATRIX(ty = tp2,integer=integer2,scalar=sc,matrix = {e2}))
+         DAE.MATRIX(ty = tp2,integer=integer2,matrix = {e2}))
       equation
         op2 = removeOperatorDimension(op);
         e = simplifyMatrixBinary1(e1,op2,e2);
-      then DAE.MATRIX(tp1,integer1,sc,{e});  /* resulting operator */
+      then DAE.MATRIX(tp1,integer1,{e});  /* resulting operator */
 
-    case (DAE.MATRIX(ty = tp1,integer=integer1,scalar=sc,matrix = (e1 :: es1)),
+    case (DAE.MATRIX(ty = tp1,integer=integer1,matrix = (e1 :: es1)),
           op,
           DAE.MATRIX(ty = tp2,integer=integer2,matrix = (e2 :: es2)))
       equation
@@ -1778,42 +1777,42 @@ algorithm
         e = simplifyMatrixBinary1(e1,op2,e2);
         i1 = integer1-1;
         i2 = integer2-1;
-        DAE.MATRIX(_,_,_,es_1) = simplifyMatrixBinary(DAE.MATRIX(tp1,i1,sc,es1), op, DAE.MATRIX(tp2,i2,sc,es2));
+        DAE.MATRIX(matrix = es_1) = simplifyMatrixBinary(DAE.MATRIX(tp1,i1,es1), op, DAE.MATRIX(tp2,i2,es2));
       then
-        DAE.MATRIX(tp1,integer1,sc,(e :: es_1));
+        DAE.MATRIX(tp1,integer1,(e :: es_1));
         
     // because identity is array of array    
     case (DAE.ARRAY(ty=tp1,scalar=false,array={exp1 as DAE.ARRAY(array=el2)}),
           op,
-         DAE.MATRIX(ty = tp2,integer=integer2,scalar=sc,matrix = {e2}))
+         DAE.MATRIX(ty = tp2,integer=integer2,matrix = {e2}))
       equation
         op2 = removeOperatorDimension(op);
         e1 = el2;
         e = simplifyMatrixBinary1(e1,op2,e2);
-      then DAE.MATRIX(tp2,integer2,sc,{e});  /* resulting operator */        
+      then DAE.MATRIX(tp2,integer2,{e});  /* resulting operator */        
         
     case (DAE.ARRAY(ty=tp1,scalar=false,array=((exp1 as DAE.ARRAY(array=el2))::el1)),
           op,     
-          DAE.MATRIX(ty = tp2,integer=integer2,scalar=sc,matrix = (e2 :: es2)))
+          DAE.MATRIX(ty = tp2,integer=integer2,matrix = (e2 :: es2)))
       equation
         op2 = removeOperatorDimension(op);
         e1 = el2;
         e = simplifyMatrixBinary1(e1,op2,e2);
         i2 = integer2-1;
-        DAE.MATRIX(_,_,_,es_1) = simplifyMatrixBinary(DAE.ARRAY(tp1,false,el1), op, DAE.MATRIX(tp2,i2,sc,es2));
+        DAE.MATRIX(_,_,es_1) = simplifyMatrixBinary(DAE.ARRAY(tp1,false,el1), op, DAE.MATRIX(tp2,i2,es2));
       then
-        DAE.MATRIX(tp2,integer2,sc,(e :: es_1));
+        DAE.MATRIX(tp2,integer2,(e :: es_1));
      
-    case (DAE.MATRIX(ty = tp2,integer=integer2,scalar=sc,matrix = {e2}),
+    case (DAE.MATRIX(ty = tp2,integer=integer2,matrix = {e2}),
           op,
          DAE.ARRAY(ty=tp1,scalar=false,array={exp1 as DAE.ARRAY(array=el2)}))
       equation
         op2 = removeOperatorDimension(op);
         e1 = el2;
         e = simplifyMatrixBinary1(e1,op2,e2);
-      then DAE.MATRIX(tp2,integer2,sc,{e});  /* resulting operator */        
+      then DAE.MATRIX(tp2,integer2,{e});  /* resulting operator */        
         
-    case (DAE.MATRIX(ty = tp2,integer=integer2,scalar=sc,matrix = (e2 :: es2)),
+    case (DAE.MATRIX(ty = tp2,integer=integer2,matrix = (e2 :: es2)),
           op,     
           DAE.ARRAY(ty=tp1,scalar=false,array=((exp1 as DAE.ARRAY(array=el2))::el1)))
       equation
@@ -1821,9 +1820,9 @@ algorithm
         e1 = el2;
         e = simplifyMatrixBinary1(e1,op2,e2);
         i2 = integer2-1;
-        DAE.MATRIX(_,_,_,es_1) = simplifyMatrixBinary(DAE.ARRAY(tp1,false,el1), op, DAE.MATRIX(tp2,i2,sc,es2));
+        DAE.MATRIX(matrix = es_1) = simplifyMatrixBinary(DAE.ARRAY(tp1,false,el1), op, DAE.MATRIX(tp2,i2,es2));
       then
-        DAE.MATRIX(tp2,integer2,sc,(e :: es_1));
+        DAE.MATRIX(tp2,integer2,(e :: es_1));
                   
   end matchcontinue;
 end simplifyMatrixBinary;
@@ -1879,7 +1878,7 @@ algorithm
       list<Integer> range;
       DAE.Exp e,m,res;
     /* A^0=I */
-    case (m as DAE.MATRIX(ty = tp1,integer = size1,scalar=true,matrix = expl1),tp,
+    case (m as DAE.MATRIX(ty = tp1,integer = size1,matrix = expl1),tp,
           DAE.ICONST(integer = i))
       equation
         0=i;
@@ -1888,7 +1887,7 @@ algorithm
         range = Util.listIntRange2(0,size1-1);
         expl_1 = simplifyMatrixPow1(range,expl2,DAE.RCONST(1.0));
       then
-        DAE.MATRIX(tp1,size1,true,expl_1);
+        DAE.MATRIX(tp1,size1,expl_1);
     /* A^1=A */
     case (m as DAE.MATRIX(ty = tp1,integer = size1,matrix = expl1),tp,
           DAE.ICONST(integer = i))
@@ -1957,14 +1956,13 @@ algorithm
       Type tp;
       Integer size1,size2;
       DAE.Dimension n, p;
-      Boolean sc;
     /* A[n, m] * B[m, p] = C[n, p] */
-    case (DAE.MATRIX(ty = DAE.ET_ARRAY(ty = tp, arrayDimensions = {n, _}),integer = size1,scalar=sc,matrix = expl1),
+    case (DAE.MATRIX(ty = DAE.ET_ARRAY(ty = tp, arrayDimensions = {n, _}),integer = size1,matrix = expl1),
           DAE.MATRIX(ty = DAE.ET_ARRAY(arrayDimensions = {_, p}),integer = size2,matrix = expl2))
       equation
         expl_1 = simplifyMatrixProduct2(expl1, expl2);
       then
-        DAE.MATRIX(DAE.ET_ARRAY(tp, {n, p}),size1,sc,expl_1);
+        DAE.MATRIX(DAE.ET_ARRAY(tp, {n, p}),size1,expl_1);
   end match;
 end simplifyMatrixProduct;
 
@@ -2688,12 +2686,12 @@ algorithm
       then exp;
 
     // subscript of a matrix
-    case(DAE.MATRIX(t,n,sc,mexps),sub) 
+    case(DAE.MATRIX(t,n,mexps),sub) 
       equation
         t1 = Expression.unliftArray(t);
         (mexpl) = listNth(mexps, sub - 1);
       then 
-        DAE.ARRAY(t1,sc,mexpl);
+        DAE.ARRAY(t1,true,mexpl);
     
     // subscript of an if-expression
     case(DAE.IFEXP(cond,e1,e2),sub) 
@@ -3009,13 +3007,13 @@ algorithm
       then
         exp;
     
-    case (DAE.MATRIX(ty = t,integer = n,scalar=b,matrix = lstexps),sub)
+    case (DAE.MATRIX(ty = t,integer = n,matrix = lstexps),sub)
       equation
         indx = Expression.expInt(sub);
         i_1 = indx - 1;
         (expl) = listNth(lstexps, i_1);
         t_1 = Expression.unliftArray(t);
-      then DAE.ARRAY(t_1,b,expl);
+      then DAE.ARRAY(t_1,true,expl);
     
     case(e as DAE.IFEXP(cond,e1,e2),sub) 
       equation

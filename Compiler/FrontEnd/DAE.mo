@@ -1135,7 +1135,6 @@ uniontype Exp "Expressions
   record MATRIX
     ExpType ty;
     Integer integer;
-    Boolean scalar "scalar Matrix constructor. e.g. {1,0;0,1}";
     list<list<Exp>> matrix;
   end MATRIX;
 

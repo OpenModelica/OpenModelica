@@ -228,13 +228,13 @@ algorithm
       then
         Absyn.PARTEVALFUNCTION(acref,Absyn.FUNCTIONARGS(aexpl,{}));
 
-    case (DAE.ARRAY(ty = tp,scalar = b,array = expl))
+    case (DAE.ARRAY(array = expl))
       equation
         expl_1 = Util.listMap(expl, unelabExp);
       then
         Absyn.ARRAY(expl_1);
     
-    case(DAE.MATRIX(_,_,_,mexpl2))
+    case(DAE.MATRIX(matrix = mexpl2))
       equation
         amexpl = Util.listListMap(mexpl2,unelabExp);
       then (Absyn.MATRIX(amexpl));
@@ -861,7 +861,7 @@ algorithm
     local
       Type ty;
       DAE.ComponentRef cr;
-      Boolean s,sc;
+      Boolean s;
       list<DAE.Exp> a;
       Integer i;
       list<list<DAE.Exp>> mat;
@@ -880,11 +880,11 @@ algorithm
       then
         DAE.ARRAY(ty, s, a);
     
-    case DAE.MATRIX(ty = ty, integer = i, scalar = sc, matrix = mat)
+    case DAE.MATRIX(ty = ty, integer = i, matrix = mat)
       equation
         ty = unliftArray(ty);
       then
-        DAE.MATRIX(ty, i, sc, mat);
+        DAE.MATRIX(ty, i, mat);
     
     case (_) then inExp;
     
@@ -3230,7 +3230,7 @@ algorithm
       Type tp;
       Integer i;
       list<list<DAE.Exp>> lstexpl_1,lstexpl;
-      Integer iscalar;
+      Integer dim;
       Ident id,str;
       list<DAE.Element> localDecls;
       tuple<DAE.Exp,Type_a> res;
@@ -3366,10 +3366,10 @@ algorithm
       then
         ((e,ext_arg_2));
     
-    case ((e as DAE.MATRIX(ty = tp,integer = iscalar,scalar = sc, matrix=lstexpl)),rel,ext_arg)
+    case ((e as DAE.MATRIX(ty = tp,integer = dim, matrix=lstexpl)),rel,ext_arg)
       equation
         (lstexpl_1,ext_arg_1) = traverseExpMatrix(lstexpl, rel, ext_arg);
-        e = Util.if_(referenceEq(lstexpl,lstexpl_1),e,DAE.MATRIX(tp,iscalar,sc,lstexpl_1));
+        e = Util.if_(referenceEq(lstexpl,lstexpl_1),e,DAE.MATRIX(tp,dim,lstexpl_1));
         ((e,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((e,ext_arg_2));
@@ -3701,7 +3701,7 @@ algorithm
       String id,str;
       list<String> fieldNames;
       list<list<DAE.Exp>> lstexpl_1,lstexpl;
-      Integer iscalar;
+      Integer dim;
       Integer index_;
       Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
       Option<DAE.Exp> oe1,foldExp;
@@ -3786,11 +3786,11 @@ algorithm
       then
         ((DAE.ARRAY(tp,scalar,expl_1),ext_arg_1));
     
-    case ((e as DAE.MATRIX(ty = tp,integer = iscalar,scalar=sc,matrix = lstexpl)),rel,ext_arg)
+    case ((e as DAE.MATRIX(ty = tp,integer = dim,matrix = lstexpl)),rel,ext_arg)
       equation
         (lstexpl_1,ext_arg_1) = traverseExpMatrixTopDown(lstexpl, rel, ext_arg);
       then
-        ((DAE.MATRIX(tp,iscalar,sc,lstexpl_1),ext_arg_1));
+        ((DAE.MATRIX(tp,dim,lstexpl_1),ext_arg_1));
     
     case ((e as DAE.RANGE(ty = tp,exp = e1,expOption = NONE(),range = e2)),rel,ext_arg)
       equation
@@ -4437,11 +4437,11 @@ algorithm
       then
         (DAE.ARRAY(ty, b1, expl), tup);
 
-    case (DAE.MATRIX(ty = ty, integer = dim, scalar = sc, matrix = mat_expl), tup)
+    case (DAE.MATRIX(ty = ty, integer = dim, matrix = mat_expl), tup)
       equation
         (mat_expl, tup) = Util.listListMapAndFold(mat_expl, traverseExpBidir, tup);
       then
-        (DAE.MATRIX(ty, dim, sc, mat_expl), tup);
+        (DAE.MATRIX(ty, dim, mat_expl), tup);
 
     case (DAE.RANGE(ty = ty, exp = e1, expOption = oe1, range = e2), tup)
       equation
@@ -5724,8 +5724,8 @@ returns true if expression is an matrix.
   output Boolean outB;
 algorithm
   outB := matchcontinue(inExp)
-    case(DAE.MATRIX(scalar = _ )) then true;
-    case(DAE.UNARY(operator=DAE.UMINUS_ARR(ty=_),exp=DAE.MATRIX(scalar=_))) then true;
+    case(DAE.MATRIX(ty = _ )) then true;
+    case(DAE.UNARY(operator=DAE.UMINUS_ARR(ty=_),exp=DAE.MATRIX(ty=_))) then true;
     case(_) then false;
   end matchcontinue;
 end isMatrix;

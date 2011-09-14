@@ -3987,7 +3987,7 @@ algorithm
     local
       list<DAE.Exp> elist_1,elist,inputs;
       DAE.ExpType at,t;
-      Boolean a,sc;
+      Boolean sc, a;
       Integer nmax,oi;
       DAE.Dimension dim1, dim2, dim11, dim22;
       list<DAE.Dimension> dims;
@@ -4081,7 +4081,7 @@ algorithm
         (DAE.RANGE(at,begin_1,NONE(),stop_1),(DAE.T_ARRAY(dim1,ty2),p));
 
         /* Matrix expressions: expression dimension [dim1,dim11], expected dimension [dim2,dim22] */
-    case (DAE.MATRIX(integer = nmax,scalar=sc,matrix = ell),(DAE.T_ARRAY(arrayDim = dim1,arrayType = (DAE.T_ARRAY(arrayDim = dim11,arrayType = t1),_)),_),
+    case (DAE.MATRIX(integer = nmax,matrix = ell),(DAE.T_ARRAY(arrayDim = dim1,arrayType = (DAE.T_ARRAY(arrayDim = dim11,arrayType = t1),_)),_),
       ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = (DAE.T_ARRAY(arrayDim = dim22,arrayType = t2),p1)),p2),printFailtrace)
       equation
         true = Expression.dimensionsKnownAndEqual(dim1, dim2);
@@ -4089,10 +4089,10 @@ algorithm
         ell_1 = typeConvertMatrix(ell,t1,t2,printFailtrace);
         at = elabType(ty0);
       then
-        (DAE.MATRIX(at,nmax,sc,ell_1),(DAE.T_ARRAY(dim1,(DAE.T_ARRAY(dim11,t2),p1)),p2));
+        (DAE.MATRIX(at,nmax,ell_1),(DAE.T_ARRAY(dim1,(DAE.T_ARRAY(dim11,t2),p1)),p2));
 
         /* Matrix expressions: expression dimension [dim1,dim11] expected dimension [:,dim22] */
-    case (DAE.MATRIX(integer = nmax,scalar = sc,matrix = ell),(DAE.T_ARRAY(arrayDim = dim1,arrayType = (DAE.T_ARRAY(arrayDim = dim11,arrayType = t1),_)),_),
+    case (DAE.MATRIX(integer = nmax,matrix = ell),(DAE.T_ARRAY(arrayDim = dim1,arrayType = (DAE.T_ARRAY(arrayDim = dim11,arrayType = t1),_)),_),
       ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = (DAE.T_ARRAY(arrayDim = dim22,arrayType = t2),p1)),p2),printFailtrace)
       equation
         true = Expression.dimensionsKnownAndEqual(dim11, dim22);
@@ -4100,7 +4100,7 @@ algorithm
         ty = (DAE.T_ARRAY(dim1,(DAE.T_ARRAY(dim11,t2),p1)),p2);
         at = elabType(ty);
       then
-        (DAE.MATRIX(at,nmax,sc,ell_1),ty);
+        (DAE.MATRIX(at,nmax,ell_1),ty);
 
         /* Arbitrary expressions, expression dimension [dim1], expected dimension [dim2] */
     case (e,(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
@@ -4257,7 +4257,7 @@ algorithm
         e_1 = DAE.LIST(elist_1);
         t2 = (DAE.T_LIST(t2),NONE());
       then (e_1, t2);
-    case (e as DAE.MATRIX(DAE.ET_ARRAY(ty = t),_,_,elist_big),t1,t2,printFailtrace)
+    case (e as DAE.MATRIX(DAE.ET_ARRAY(ty = t),_,elist_big),t1,t2,printFailtrace)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (elist,ty2) = typeConvertMatrixToList(elist_big,t1,t2,printFailtrace);

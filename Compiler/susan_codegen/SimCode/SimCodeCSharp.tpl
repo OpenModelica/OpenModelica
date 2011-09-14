@@ -2095,8 +2095,7 @@ template daeExpMatrix(Exp mexp, Context context, Text &preExp, SimCode simCode)
     let &tmp = buffer ""
     let matArr = m.matrix |> row =>
                        (row |> elem =>
-                           if m.scalar then daeExp(elem, context, &preExp, simCode)
-                           else "MATRIX_NON_SCALAR_NYI"
+                           daeExp(elem, context, &preExp, simCode)
                         ;separator=", ")
                  ;separator=",\n" 
     let &preExp += 

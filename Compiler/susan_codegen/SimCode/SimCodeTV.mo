@@ -826,7 +826,6 @@ package DAE
     record MATRIX
       ExpType ty;
       Integer integer;
-      Boolean scalar;
       list<list<Exp>> matrix;
     end MATRIX;
     record RANGE

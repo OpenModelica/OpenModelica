@@ -957,7 +957,7 @@ algorithm
         d1 = listLength(mexpl);
         true = Expression.typeBuiltin(Expression.unliftArray(Expression.unliftArray(a)));
       then 
-        DAE.MATRIX(a,d1,true,mexpl);
+        DAE.MATRIX(a,d1,mexpl);
 
     // if fails, skip conversion, use generic array expression as is.
     else inExp;
@@ -3409,7 +3409,7 @@ algorithm
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.ExpType tp;
-      Boolean sc,impl;
+      Boolean sc, impl;
       list<DAE.Exp> expl,exp_2;
       DAE.Dimension d1,d2;
       DAE.Type eltp,newtp;
@@ -3437,7 +3437,7 @@ algorithm
         (cache,DAE.ARRAY(tp,sc,exp_2),prop);
     case (cache,env,{matexp},_,impl,pre,info) /* try symbolically transpose the MATRIX expression */
       equation
-        (cache,DAE.MATRIX(tp,i,sc,mexpl),DAE.PROP((DAE.T_ARRAY(d1,(DAE.T_ARRAY(d2,eltp),_)),_),c),_)
+        (cache,DAE.MATRIX(tp,i,mexpl),DAE.PROP((DAE.T_ARRAY(d1,(DAE.T_ARRAY(d2,eltp),_)),_),c),_)
           = elabExp(cache,env, matexp, impl,NONE(),true,pre,info);
         dim1 = Expression.dimensionSize(d1);
         dim2 = Expression.dimensionSize(d2);
@@ -3447,7 +3447,7 @@ algorithm
         prop = DAE.PROP(newtp,c);
         tp = transposeExpType(tp);
       then
-        (cache,DAE.MATRIX(tp,i,sc,mexp_2),prop);
+        (cache,DAE.MATRIX(tp,i,mexp_2),prop);
     case (cache,env,{matexp},_,impl,pre,info) /* .. otherwise create transpose call */
       equation
         (cache,exp_1,DAE.PROP((DAE.T_ARRAY(d1,(DAE.T_ARRAY(d2,eltp),_)),_),c),_)
@@ -3686,23 +3686,18 @@ output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inExp)
     local
-      DAE.ExpType ty;
-      Boolean sc;
       list<DAE.Exp> expl;
-      DAE.Exp e;
       list<list<DAE.Exp>> mexpl;
-      Integer dim;
-    case (DAE.CALL(expLst={DAE.ARRAY(ty,sc,expl)}))
-      equation
-        e = Expression.makeProductLst(expl);
-      then e;
-    case (DAE.CALL(expLst={DAE.MATRIX(ty,dim,sc,mexpl)}))
+
+    case (DAE.CALL(expLst={DAE.ARRAY(array = expl)}))
+      then Expression.makeProductLst(expl);
+
+    case (DAE.CALL(expLst={DAE.MATRIX(matrix = mexpl)}))
       equation
         expl = Util.listFlatten(mexpl);
-        e = Expression.makeProductLst(expl);
-      then e;
+      then Expression.makeProductLst(expl);
 
-    case (e) then e;
+    else inExp;
   end matchcontinue;
 end elabBuiltinProduct2;
 
@@ -3816,16 +3811,15 @@ algorithm
       list<DAE.Exp> expl,e;
       DAE.Exp exp_1;
       list<list<DAE.Exp>> matrixExpl, matrixExplPre;
-      Boolean sc;
 
     case(DAE.CALL(expLst = {DAE.ARRAY(ty,sc,expl)}),t)
       equation
         (e) = makePreLst(expl, t);
       then (e,sc);
-    case(DAE.CALL(expLst = {DAE.MATRIX(ty,i,sc,matrixExpl)}),t)
+    case(DAE.CALL(expLst = {DAE.MATRIX(ty,i,matrixExpl)}),t)
       equation
         matrixExplPre = Util.listMap1(matrixExpl, makePreLst, t);
-      then ({DAE.MATRIX(ty,i,sc,matrixExplPre)},false);
+      then ({DAE.MATRIX(ty,i,matrixExplPre)},false);
     case (exp_1,t)
       equation
       then
@@ -3993,12 +3987,11 @@ algorithm
       Integer i;
       DAE.Exp exp_1;
       list<list<DAE.Exp>> matrixExpl, matrixExplPre;
-      Boolean sc;
 
-    case(DAE.CALL(expLst={DAE.MATRIX(ty,i,sc,matrixExpl)}),t)
+    case(DAE.CALL(expLst={DAE.MATRIX(ty,i,matrixExpl)}),t)
       equation
         matrixExplPre = Util.listMap1(matrixExpl, makePreLst, t);
-      then DAE.MATRIX(ty,i,sc,matrixExplPre);
+      then DAE.MATRIX(ty,i,matrixExplPre);
 
     case (exp_1,t) then exp_1;
   end matchcontinue;
@@ -4796,7 +4789,6 @@ algorithm
   matchcontinue (inExpExpLst1,inInteger2,inInteger3,inType)
     local
       DAE.ExpType tp,ty;
-      Boolean sc;
       list<DAE.Exp> expl,expl_1,es;
       list<DAE.Exp> row;
       DAE.Exp e;
@@ -4805,19 +4797,18 @@ algorithm
     case ({e},indx,dim,ty)
       equation
         tp = Expression.typeof(e);
-        sc = Expression.typeBuiltin(tp);
         expl = Util.listFill(Expression.makeConstZero(tp), dim);
         expl_1 = Util.listReplaceAt(e, indx, expl);
       then
-        DAE.MATRIX(ty,dim,sc,{expl_1});
+        DAE.MATRIX(ty,dim,{expl_1});
     case ((e :: es),indx,dim,ty)
       equation
         indx_1 = indx + 1;
-        DAE.MATRIX(tp,mdim,sc,rows) = elabBuiltinDiagonal3(es, indx_1, dim, ty);
+        DAE.MATRIX(tp,mdim,rows) = elabBuiltinDiagonal3(es, indx_1, dim, ty);
         expl = Util.listFill(Expression.makeConstZero(tp), dim);
         expl_1 = Util.listReplaceAt(e, indx, expl);
       then
-        DAE.MATRIX(ty,mdim,sc,(expl_1 :: rows));
+        DAE.MATRIX(ty,mdim,(expl_1 :: rows));
   end matchcontinue;
 end elabBuiltinDiagonal3;
 
@@ -5536,7 +5527,6 @@ algorithm
       DAE.Exp e1, call;
       DAE.Type tp1;
       DAE.Const c1;
-      Boolean scalar1;
       list<Env.Frame> env;
       Boolean impl;
       Env.Cache cache;
@@ -5550,13 +5540,13 @@ algorithm
       //First, try symbolic simplification
     case (cache,env,{v1},_,impl,pre,info)
       equation
-        (cache,DAE.ARRAY(etp1,scalar1,expl1),DAE.PROP(tp1,c1),_) = elabExp(cache,env, v1, impl,NONE(),true,pre,info);
+        (cache,DAE.ARRAY(etp1,true,expl1),DAE.PROP(tp1,c1),_) = elabExp(cache,env, v1, impl,NONE(),true,pre,info);
         {3} = Types.getDimensionSizes(tp1);
         mexpl = elabBuiltinSkew2(expl1);
         tp1 = Types.liftArray(tp1,DAE.DIM_INTEGER(3));
         etp3 = Types.elabType(tp1);
       then
-        (cache,DAE.MATRIX(etp3,3,scalar1,mexpl),DAE.PROP(tp1,c1));
+        (cache,DAE.MATRIX(etp3,3,mexpl),DAE.PROP(tp1,c1));
 
     //Fallback, use builtin function skew
     case (cache,env,{v1},_,impl,pre,info) equation
@@ -6152,14 +6142,13 @@ algorithm
       then
         DAE.ARRAY(DAE.ET_ARRAY(ety, {dim}), scalar, expl);
 
-    case (DAE.MATRIX(ty = DAE.ET_ARRAY(ety, dim :: dims), matrix = matrix_expl,
-        scalar = scalar), _)
+    case (DAE.MATRIX(ty = DAE.ET_ARRAY(ety, dim :: dims), matrix = matrix_expl), _)
       equation
         ety2 = DAE.ET_ARRAY(ety, dims);
-        expl = Util.listMap2(matrix_expl, Expression.makeArray, ety2, scalar);
+        expl = Util.listMap2(matrix_expl, Expression.makeArray, ety2, true);
         expl = Util.listMap3(expl, arrayScalar, 3, "matrix", inInfo);
       then
-        DAE.ARRAY(DAE.ET_ARRAY(ety, {dim}), scalar, expl);
+        DAE.ARRAY(DAE.ET_ARRAY(ety, {dim}), true, expl);
                 
   end match;
 end elabBuiltinMatrix3;
@@ -11098,7 +11087,6 @@ algorithm
       DAE.ExpType et,tp,elt_tp;
       DAE.Type t;
       list<list<DAE.Exp>> ms;
-      Boolean sc;
       list<DAE.Exp> expl;
       list<Boolean> scs;
       list<DAE.Exp> row;
@@ -11106,19 +11094,18 @@ algorithm
     case (cr,indx,ds,ds2,et,t,crefIdType) 
       equation 
         (indx > ds) = true;
-        sc = Expression.typeBuiltin(Expression.unliftArray(Expression.unliftArray(et)));
       then
-        DAE.MATRIX(et,0,sc,{});
+        DAE.MATRIX(et,0,{});
     // increase the index dimension
     case (cr,indx,ds,ds2,et,t,crefIdType)
       equation
         indx_1 = indx + 1;
-        DAE.MATRIX(_,_,_,ms) = createCrefArray2d(cr, indx_1, ds, ds2, et, t,crefIdType);
+        DAE.MATRIX(matrix = ms) = createCrefArray2d(cr, indx_1, ds, ds2, et, t,crefIdType);
         cr_1 = ComponentReference.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(indx))});
         elt_tp = Expression.unliftArray(et);
-        DAE.ARRAY(tp,sc,expl) = crefVectorize(true,Expression.makeCrefExp(cr_1,elt_tp), t,NONE(),crefIdType,true);
+        DAE.ARRAY(tp,true,expl) = crefVectorize(true,Expression.makeCrefExp(cr_1,elt_tp), t,NONE(),crefIdType,true);
       then
-        DAE.MATRIX(et,ds,sc,(expl :: ms));
+        DAE.MATRIX(et,ds,(expl :: ms));
     //
     case (cr,indx,ds,ds2,et,t,crefIdType)
       equation

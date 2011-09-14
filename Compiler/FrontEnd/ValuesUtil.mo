@@ -926,9 +926,9 @@ algorithm
       equation
         failure(Values.ARRAY(valueLst = _) = v);
         explist = Util.listMap((v :: xs), valueExp);
-        DAE.MATRIX(t,i,sc,mexpl) = valueExp(Values.ARRAY(xs2,int_dims));
+        DAE.MATRIX(t,i,mexpl) = valueExp(Values.ARRAY(xs2,int_dims));
         t = Expression.arrayDimensionSetFirst(t, DAE.DIM_INTEGER(dim));
-      then DAE.MATRIX(t,dim,sc,explist::mexpl);
+      then DAE.MATRIX(t,dim,explist::mexpl);
 
     /* Matrix last row*/
     case(Values.ARRAY(valueLst = {Values.ARRAY(valueLst=v::xs)}))
@@ -938,11 +938,10 @@ algorithm
         explist = Util.listMap((v :: xs), valueExp);
         vt = Types.typeOfValue(v);
         t = Types.elabType(vt);
-        sc = not Expression.isArrayType(t);
         dim = listLength(v::xs);
         t = Expression.liftArrayR(t,DAE.DIM_INTEGER(dim));
         t = Expression.liftArrayR(t,DAE.DIM_INTEGER(1));
-      then DAE.MATRIX(t,dim,sc,{explist});
+      then DAE.MATRIX(t,dim,{explist});
 
     /* Generic array */
     case (Values.ARRAY(valueLst = (v :: xs)))

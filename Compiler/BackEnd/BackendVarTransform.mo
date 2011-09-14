@@ -674,12 +674,12 @@ algorithm
         (expl_1,true) = replaceExpList(expl, repl, cond, {}, false);
       then
         (DAE.ARRAY(tp,c,expl_1),true);
-    case ((e as DAE.MATRIX(ty = t,integer = b,scalar=sc,matrix = bexpl)),repl,cond)
+    case ((e as DAE.MATRIX(ty = t,integer = b,matrix = bexpl)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
         (bexpl_1,true) = replaceExpMatrix(bexpl, repl, cond, {}, false);
       then
-        (DAE.MATRIX(t,b,sc,bexpl_1),true);
+        (DAE.MATRIX(t,b,bexpl_1),true);
     case ((e as DAE.RANGE(ty = tp,exp = e1,expOption = NONE(),range = e2)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
