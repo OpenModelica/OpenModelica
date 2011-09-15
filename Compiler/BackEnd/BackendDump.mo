@@ -1294,6 +1294,7 @@ public function dumpIncidenceMatrix
   author: PA
   Prints the incidence matrix on stdout."
   input BackendDAE.IncidenceMatrix m;
+protected
   BackendDAE.Value mlen;
   String mlen_str;
   list<list<BackendDAE.Value>> m_1;
@@ -1314,6 +1315,7 @@ public function dumpIncidenceMatrixT
   author: PA
   Prints the transposed incidence matrix on stdout."
   input BackendDAE.IncidenceMatrix m;
+protected
   BackendDAE.Value mlen;
   String mlen_str;
   list<list<BackendDAE.Value>> m_1;
@@ -1383,6 +1385,7 @@ public function dumpMatching
   author: PA
   prints the matching information on stdout."
   input array<Integer> v;
+protected
   BackendDAE.Value len;
   String len_str;
 algorithm

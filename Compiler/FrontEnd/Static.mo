@@ -2592,7 +2592,7 @@ protected function elabMatrixCatOne2
   input DAE.Exp inArray1;
   input DAE.Exp inArray2;
   output DAE.Exp outExp;
-
+protected
   DAE.ExpType ety;
   Boolean at;
   DAE.Dimension dim, dim1, dim2;
@@ -4176,6 +4176,7 @@ protected function sameDimensions
   input list<DAE.Properties> inProps;
   output Boolean res;
 
+protected
   list<DAE.Type> types;
   list<list<DAE.Dimension>> dims;
 algorithm
@@ -4191,6 +4192,7 @@ protected function sameDimensionsExceptionDimX
   input Integer dimException;
   output Boolean res;
 
+protected
   list<DAE.Type> types;
   list<list<DAE.Dimension>> dims;
 algorithm
@@ -4792,6 +4794,7 @@ protected function elabBuiltinDiagonal2 "function: elabBuiltinDiagonal2
   input list<DAE.Exp> expl;
   input Expression.Type inType;
   output DAE.Exp res;
+protected
   Integer dim;
 algorithm
   dim := listLength(expl);
@@ -9967,6 +9970,7 @@ public function makeEnumerationArray
   output DAE.Exp enumArray;
   output DAE.Type enumArrayType;
 
+protected
   list<Absyn.Path> enum_lit_names;
   list<DAE.Exp> enum_lit_expl;
   Integer sz;

@@ -5474,6 +5474,7 @@ end printFailure;
 protected function polymorphicBindingStr
   input tuple<String,list<Type>> binding;
   output String str;
+protected
   list<Type> tys;
 algorithm
   (str,tys) := binding;
@@ -5884,6 +5885,7 @@ possible)."
   input Absyn.Info info;
   input Option<Absyn.Path> path;
   output PolymorphicBindings solvedBindings;
+protected
   PolymorphicBindings unsolvedBindings;
 algorithm
   // print("solvePoly " +& Absyn.optPathString(path) +& " " +& polymorphicBindingsStr(bindings) +& "\n");

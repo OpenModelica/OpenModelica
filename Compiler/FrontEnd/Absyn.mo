@@ -1776,6 +1776,7 @@ public function traverseExpBidir
 
   replaceable type Argument subtypeof Any;
 
+protected
   FuncType enterFunc, exitFunc;
   Argument arg;
   Exp e;
@@ -2083,6 +2084,7 @@ public function traverseExpBidirElseIf
 
   replaceable type Argument subtypeof Any;
 
+protected
   Exp e1, e2;
   tuple<FuncType, FuncType, Argument> tup;
 algorithm
@@ -2148,6 +2150,7 @@ public function traverseExpBidirNamedArg
 
   replaceable type Argument subtypeof Any;
 
+protected
   Ident name;
   Exp value;
 algorithm
@@ -2171,6 +2174,7 @@ public function traverseExpBidirIterator
 
   replaceable type Argument subtypeof Any;
 
+protected
   Ident name;
   Option<Exp> guardExp,range;
 algorithm
@@ -2692,6 +2696,7 @@ public function stringPath
   input String str;
   output Path qualifiedPath;
 
+protected
   list<String> paths;
 algorithm
   paths := Util.stringSplitAtChar(str, ".");

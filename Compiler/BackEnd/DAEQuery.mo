@@ -178,6 +178,7 @@ protected function getIncidenceMatrix "function: getIncidenceMatrix
   gets the incidence matrix as a string"
   input array<list<String>> m;
   output String strIMatrix;
+protected
   Integer mlen;
   String mlen_str;
   list<list<String>> m_1;

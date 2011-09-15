@@ -262,7 +262,6 @@ public constant ErrorID UNBALANCED_CONNECTOR = 150;
 public constant ErrorID RESTRICTION_VIOLATION=151;
 public constant ErrorID ZERO_STEP_IN_ARRAY_CONSTRUCTOR=152;
 public constant ErrorID RECURSIVE_SHORT_CLASS_DEFINITION=153;
-public constant ErrorID FUNCTION_ELEMENT_WRONG_PROTECTION=154;
 public constant ErrorID FUNCTION_ELEMENT_WRONG_KIND=155;
 public constant ErrorID WITHOUT_SENDDATA=156 "Used in external C sources; do not use another index";
 public constant ErrorID DUPLICATE_CLASSES_TOP_LEVEL=157;
@@ -309,6 +308,8 @@ public constant ErrorID DUPLICATE_REDECLARATION=197;
 public constant ErrorID INVALID_FUNCTION_VAR_TYPE=198;
 public constant ErrorID IMBALANCED_EQUATIONS=199;
 public constant ErrorID EQUATIONS_VAR_NOT_DEFINED=200;
+public constant ErrorID NON_FORMAL_PUBLIC_FUNCTION_VAR=201;
+public constant ErrorID PROTECTED_FORMAL_FUNCTION_VAR=202;
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
@@ -768,7 +769,6 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_MATCHEXP_RESULT_TYPES,TRANSLATION(),ERROR(),"Match expression has mismatched result types:%s"),
           (EXTERNAL_NOT_SINGLE_RESULT,TRANSLATION(),ERROR(),"%s is an unbound output in external function %s. Either add it to the external declaration or add a default binding."),
           (RECURSIVE_SHORT_CLASS_DEFINITION,TRANSLATION(),ERROR(),"Recursive short class definition of %s in terms of %s"),
-          (FUNCTION_ELEMENT_WRONG_PROTECTION,TRANSLATION(),ERROR(),"%s was declared %s but should be %s."),
           (FUNCTION_ELEMENT_WRONG_KIND,TRANSLATION(),ERROR(),"Element is not allowed in function context: %s"),
           (WITHOUT_SENDDATA,SCRIPTING(),ERROR(),"%s failed because OpenModelica was configured without sendData support."),
           (WHEN_EQ_LHS,TRANSLATION(),ERROR(),"Invalid left-hand side of when-equation: %s."),
@@ -822,6 +822,10 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (ARRAY_TYPE_MISMATCH,TRANSLATION(),ERROR(),"Array types mismatch: %s and %s."),
           (IMBALANCED_EQUATIONS,SYMBOLIC(),ERROR(),"An independent subset of the model has imbalanced number of equations (%s) and variables (%s).\nvariables:\n%s\nequations:\n%s"),
           (EQUATIONS_VAR_NOT_DEFINED,SYMBOLIC(),ERROR(),"Variable %s is not referenced in any equation (possibly after symbolic manipulations)."),
+          (NON_FORMAL_PUBLIC_FUNCTION_VAR,TRANSLATION(),WARNING(),
+           "Invalid formal parameter %s, public components in functions must be either input or output."),
+          (PROTECTED_FORMAL_FUNCTION_VAR,TRANSLATION(),ERROR(),
+           "Invalid protected formal parameter %s, formal arguments must be public."),
           (FUNCTION_UNUSED_INPUT,SYMBOLIC(),WARNING(),"Unused input variable %s in function %s."),
           (FUNCTION_MULTIPLE_ALGORITHM,TRANSLATION(),WARNING(),
           "The behaviour of multiple algorithm sections in function %s is not standard Modelica. OpenModelica will execute the sections in the order in which they were declared or inherited (same ordering as inherited input/output arguments, which also are not standardized)."),

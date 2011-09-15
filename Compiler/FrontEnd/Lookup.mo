@@ -2096,6 +2096,7 @@ algorithm
         // adrpo: 2010-11-09 : TODO! FIXME! why is this?? keep the variability!
         // var = SCode.VAR();
         // dir = Absyn.INPUT();
+        vis = SCode.PROTECTED();
       then
         (SCode.COMPONENT(id,SCode.PREFIXES(vis,redecl,f,io,repl),SCode.ATTR(d,fl,st,var,dir),tp,umod,comment,cond,info) :: res);
     
@@ -2121,7 +2122,8 @@ algorithm
         // - Prefixes (constant, parameter, final, discrete, input, output, ...) of the remaining record components are removed.
         // adrpo: 2010-11-09 : TODO! FIXME! why is this?? keep the variability!
         // var = SCode.VAR();
-        dir = Absyn.INPUT();
+        //dir = Absyn.INPUT();
+        vis = SCode.PROTECTED();
       then
         (SCode.COMPONENT(id,SCode.PREFIXES(vis,redecl,f,io,repl),SCode.ATTR(d,fl,st,var,dir),tp,umod,comment,cond,info) :: res);
     
@@ -2881,7 +2883,7 @@ algorithm
   (outCache,outEnv,_,_,_,_,_,varlst,_) := Inst.instElementList(
     cache,env,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
     DAE.NOMOD(),Prefix.NOPRE(),
-    ClassInf.FUNCTION(Absyn.IDENT("")), Util.listMap1(els,Util.makeTuple2,DAE.NOMOD()),
+    ClassInf.META_RECORD(Absyn.IDENT("")), Util.listMap1(els,Util.makeTuple2,DAE.NOMOD()),
     {}, false, Inst.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, true);
   varlst := Types.boxVarLst(varlst);
   ftype := (DAE.T_METARECORD(utPath,index,varlst,singleton),SOME(path));

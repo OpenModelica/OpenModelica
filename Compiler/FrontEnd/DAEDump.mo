@@ -671,6 +671,7 @@ end dumpStateSelectStr;
 public function dumpVariableAttributes "function: dumpVariableAttributes
   Dump VariableAttributes option."
   input Option<DAE.VariableAttributes> attr;
+protected
   String res;
 algorithm
   res := dumpVariableAttributesStr(attr);
@@ -933,6 +934,7 @@ end dumpAnnotationStr;
 protected function dumpCommentOption "function: dumpCommentOption_str
   Dump Comment option."
   input Option<SCode.Comment> comment;
+protected
   String str;
 algorithm
   str := dumpCommentOptionStr(comment);
@@ -2313,6 +2315,7 @@ public function dumpGraphviz "
  the dae
 "
   input DAE.DAElist dae;
+protected
   Graphviz.Node r;
 algorithm
   r := buildGraphviz(dae);

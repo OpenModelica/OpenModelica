@@ -7287,6 +7287,7 @@ protected function replaceSlashWithPathDelimiter "function replaceSlashWithPathD
   On Windows must be \\ so that the function getAbsoluteDirectoryAndFile works"
   input String str;
   output String ret_string;
+protected
   String pd;
 algorithm
   pd := System.pathDelimiter();
@@ -7872,6 +7873,7 @@ end listMapMap_tail;
 
 public function getCurrentDateTime
   output DateTime dt;
+protected
   Integer sec;
   Integer min;
   Integer hour;

@@ -2624,6 +2624,7 @@ protected function findDelaySubExpressions
 "Return all subexpressions of inExp that are calls to delay()"
   input tuple<DAE.Exp,list<DAE.Exp>> itpl;
   output tuple<DAE.Exp,list<DAE.Exp>> otpl;
+protected
   DAE.Exp e;
   list<DAE.Exp> el;
 algorithm
@@ -7816,7 +7817,7 @@ protected function buildDiscreteVarChangesAddEvent
   input Integer indx;
   input Expression.ComponentRef cr;
   output String str;
-  protected
+protected
   String crStr,indxStr;
 algorithm
   crStr := ComponentReference.printComponentRefStr(cr);
@@ -7830,6 +7831,7 @@ protected function mixedCollectRelations "function: mixedCollectRelations
   input list<BackendDAE.Equation> c_eqn;
   input list<BackendDAE.Equation> d_eqn;
   output list<DAE.Exp> res;
+protected
   list<DAE.Exp> l1,l2;
 algorithm
   l1 := mixedCollectRelations2(c_eqn);
@@ -8201,6 +8203,7 @@ protected function makeResidualReplacements "function: makeResidualReplacements
 "
   input list<Expression.ComponentRef> crefs;
   output VarTransform.VariableReplacements repl_1;
+protected
   VarTransform.VariableReplacements repl;
 algorithm
   repl := VarTransform.emptyReplacements();
@@ -8674,6 +8677,7 @@ end filterNg;
 
 protected function useZerocrossing
   output Boolean res;
+protected
   Boolean flagSet;
 algorithm
   flagSet := RTOpts.debugFlag("noevents");
@@ -9822,6 +9826,7 @@ protected function hashFunc "
 "
   input Key cr;
   output Integer res;
+protected
   String crstr;
 algorithm
   crstr := ComponentReference.printComponentRefStr(cr);
@@ -9905,6 +9910,7 @@ public function emptyHashTable "
   Returns an empty HashTable.
   Using the bucketsize 100 and array size 10."
   output HashTableCrefToSimVar hashTable;
+protected
   array<list<tuple<Key,Integer>>> arr;
   list<Option<tuple<Key,Value>>> lst;
   array<Option<tuple<Key,Value>>> emptyarr;

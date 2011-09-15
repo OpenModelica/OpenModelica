@@ -2148,6 +2148,7 @@ This function dumps a matrix using an xml representation.
 </matrix>
 "
   input BackendDAE.IncidenceMatrix m;
+protected
   list<list<BackendDAE.Value>> m_1;
 algorithm
 /*  _:=
@@ -2517,6 +2518,7 @@ public function dumpMatching
   author: PA
   prints the matching information on stdout."
   input array<Integer> v;
+protected
   BackendDAE.Value len;
   String len_str;
 algorithm

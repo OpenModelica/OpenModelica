@@ -461,6 +461,7 @@ protected function makeResidualReplacements "function: makeResidualReplacements
 "
   input list<DAE.Exp> expl;
   output VarTransform.VariableReplacements repl_1;
+protected
   VarTransform.VariableReplacements repl;
 algorithm
   repl := VarTransform.emptyReplacements();
@@ -983,6 +984,7 @@ protected function buildCallStr
   input String str;
   input Integer n;
   output String res;
+protected
   list<String> ns;
   String ns_1;
 algorithm

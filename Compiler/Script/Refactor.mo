@@ -992,6 +992,7 @@ protected function getFlipAnn"function: getFlipAnn
   input Real val2;
   input Absyn.Ident name;
   output Absyn.ElementArg flip;
+protected
   Boolean value;
 
 algorithm

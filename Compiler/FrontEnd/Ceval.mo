@@ -4785,6 +4785,7 @@ protected function cevalRelation
   input Values.Value inValue2;
   output Values.Value outValue;
 
+protected
   Boolean result;
 algorithm
   result := cevalRelation_dispatch(inValue1, inOperator, inValue2);

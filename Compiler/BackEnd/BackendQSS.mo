@@ -2186,6 +2186,7 @@ protected function replaceExpOnEq
   input DAE.Exp zc;
   input Integer inp;
   output DAE.Exp eqout;
+protected
   DAE.Exp temp;
 algorithm
   /*
@@ -2210,6 +2211,7 @@ protected function replaceCrossingLstOnExp
   input list<DAE.Exp> zce1;
   input Integer index1;
   output DAE.Exp expOut;
+protected
   DAE.Exp e1,e2;
 algorithm
   expOut := matchcontinue (exp1,zce1,index1)
@@ -2801,6 +2803,7 @@ public function dumpDEVSstruct
 "
   input array<list<list<Integer>>> m;
   input String text;
+protected
   list<list<list<Integer>>> m_1;
 algorithm
   print("====================================\n");

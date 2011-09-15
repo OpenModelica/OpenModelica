@@ -945,6 +945,7 @@ protected function stringRepresOfExpr
   input Absyn.Exp exp;
   input SymbolTable st;
   output String estr;
+protected
   list<Env.Frame> env;
   DAE.Exp sexp;
   DAE.Properties prop;
@@ -1014,6 +1015,7 @@ protected function getVariableNames
   Return a string containing a comma separated list of variables."
   input list<Variable> vars;
   output String res;
+protected
   list<String> strlst;
   String str;
 algorithm
@@ -4842,6 +4844,7 @@ public function getClassEnv
   input Absyn.Program p;
   input Absyn.Path p_class;
   output Env.Env env_2;
+protected
   list<SCode.Element> p_1;
   list<Env.Frame> env,env_1,env2;
   SCode.Element cl;
@@ -8353,6 +8356,7 @@ protected function getClassInformation
   input Absyn.ComponentRef cr;
   input Absyn.Program p;
   output String res_1;
+protected
   Absyn.Path path;
   String name,file,strPartial,strFinal,strEncapsulated,res,cmt,str_readonly,str_sline,str_scol,str_eline,str_ecol;
   String dim_str;
@@ -8409,6 +8413,7 @@ protected function getClassAttributes
   input Absyn.ComponentRef cr;
   input Absyn.Program p;
   output String res_1;
+protected
   Absyn.Path path;
   String name,file,strPartial,strFinal,strEncapsulated,res,cmt,str_readonly,str_sline,str_scol,str_eline,str_ecol;
   Boolean partialPrefix,finalPrefix,encapsulatedPrefix,isReadOnly;
@@ -8442,6 +8447,7 @@ protected function getClassComment
   Returns the class comment of a Absyn.ClassDef"
   input Absyn.ClassDef cdef;
   output String res;
+protected
   String s;
 algorithm
   s := getClassComment2(cdef);
@@ -8493,6 +8499,7 @@ public function getClassRestriction
   input Absyn.ComponentRef cr;
   input Absyn.Program p;
   output String res_1;
+protected
   Absyn.Path path;
   Absyn.Restriction restr;
   String res;
@@ -10598,6 +10605,7 @@ public function getComponentCount
   input Absyn.ComponentRef model_;
   input Absyn.Program p;
   output Integer count;
+protected
   Absyn.Path modelpath;
   Absyn.Class cdef;
 algorithm
@@ -11012,6 +11020,7 @@ protected function getStringComment "function: getStringComment
 "
   input Option<Absyn.Comment> cmt;
   output String res;
+protected
   String s;
 algorithm
   s := getStringComment2(cmt);
@@ -18930,6 +18939,7 @@ end getSymbolTableAST;
 public function getFunctionsInProgram
   input Absyn.Program prog;
   output list<Absyn.Class> funcs;
+protected
   list<Absyn.Class> classes;
   list<list<Absyn.Class>> classesList;
 algorithm

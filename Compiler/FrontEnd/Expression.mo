@@ -4277,7 +4277,7 @@ public function traverseExpBidir
   end FuncType;
 
   replaceable type Argument subtypeof Any;
-
+protected
   FuncType enterFunc, exitFunc;
   Argument arg;
   DAE.Exp e;

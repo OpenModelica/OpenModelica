@@ -1049,6 +1049,7 @@ protected function makeNewFnPath
   input Absyn.Path inCaller;
   input Absyn.Path inCallee;
   output Absyn.Path newPath;
+protected
   String s1,s2,s;
 algorithm
   s1 := Absyn.pathStringNoQual(inCaller);

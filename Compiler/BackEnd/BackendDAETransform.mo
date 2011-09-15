@@ -271,6 +271,7 @@ public function assignmentsCreate
   input Integer memsize;
   input Integer v;
   output BackendDAE.Assignments outAssignments;
+protected
   list<BackendDAE.Value> lst;
   array<BackendDAE.Value> arr;
 algorithm

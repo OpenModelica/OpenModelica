@@ -977,6 +977,7 @@ public function makeSimpleEnvFromProgram
   input SCode.Path c;
   output Env.Cache outCache;
   output Env.Env env_1;
+protected
   list<Env.Frame> env;
 algorithm
   env := Builtin.simpleInitialEnv();
@@ -7926,6 +7927,7 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets)
       equation
         ClassInf.isFunction(ci_state);
+        checkFunctionVar(n, attr, pf, info);
 
         //Do not flatten because it is a function
         dims_1 = instDimExpLst(dims, impl);
@@ -7965,6 +7967,8 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,n,(cl as SCode.CLASS(name=n2)),attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets)
        equation
         ClassInf.isFunction(ci_state);
+        checkFunctionVar(n, attr, pf, info);
+
          //Instantiate type of the component, skip dae/not flattening
         (cache,env_1,ih,store,dae1,csets,ty,st,_,_) = 
           instClass(cache, env, ih, store, mod, pre, cl, inst_dims, impl, INNER_CALL(), ConnectionGraph.EMPTY, csets);
@@ -8293,6 +8297,43 @@ algorithm
         ();
   end match;
 end checkModificationOnOuter;
+
+protected function checkFunctionVar
+  "Checks that a function variable is valid."
+  input String inName;
+  input SCode.Attributes inAttributes;
+  input SCode.Prefixes inPrefixes;
+  input Absyn.Info inInfo;
+algorithm
+  _ := match(inName, inAttributes, inPrefixes, inInfo)
+    // Public non-formal parameters are not allowed, but since they're used in
+    // the MSL we just issue a warning for now.
+    case (_, SCode.ATTR(direction = Absyn.BIDIR()), 
+        SCode.PREFIXES(visibility = SCode.PUBLIC()), _)
+      equation
+        Error.addSourceMessage(Error.NON_FORMAL_PUBLIC_FUNCTION_VAR,
+          {inName}, inInfo);
+      then
+        ();
+
+    // Protected non-formal parameters are ok.
+    case (_, SCode.ATTR(direction = Absyn.BIDIR()),
+        SCode.PREFIXES(visibility = SCode.PROTECTED()), _)
+      then ();
+
+    // Protected formal parameters are not allowed.
+    case (_, SCode.ATTR(direction = _),
+        SCode.PREFIXES(visibility = SCode.PROTECTED()), _)
+      equation
+        Error.addSourceMessage(Error.PROTECTED_FORMAL_FUNCTION_VAR,
+          {inName}, inInfo);
+      then
+        fail();
+
+    // Everything else, i.e. public formal parameters, are ok.
+    else ();
+  end match;
+end checkFunctionVar;
 
 protected function checkFunctionVarType
   input DAE.Type inType;
@@ -16171,37 +16212,20 @@ public input/output, protected variable/parameter/constant or algorithm section"
 algorithm
   _ := match (elt,isExternal,info)
     local
-      DAE.ComponentRef cr;
-      String name,str;
-      DAE.ElementSource source;
-      // Until we fix warnings, we need to pass these through... Also, it's used in MSL
-    case (DAE.VAR(protection=DAE.PUBLIC()),_,_) then ();
-        /*
-    case (DAE.VAR(protection=DAE.PUBLIC(),direction=DAE.INPUT()),_) then ();
-    case (DAE.VAR(protection=DAE.PUBLIC(),direction=DAE.OUTPUT()),_) then ();
-    case (DAE.VAR(protection=DAE.PUBLIC(),direction=DAE.BIDIR(),kind=DAE.VARIABLE()),_)
-      equation
-        // TODO: Implement warnings for this case...
-      then ();
-    case (DAE.VAR(source=source,componentRef=cr,protection=DAE.PUBLIC()),_)
-      equation
-        name = ComponentReference.printComponentRefStr(cr);
-        Error.addSourceMessage(Error.FUNCTION_ELEMENT_WRONG_PROTECTION,{name,"public","protected"},DAEUtil.getElementSourceFileInfo(source));
-      then fail();
-      */
-    case (DAE.VAR(protection=DAE.PROTECTED(),direction=DAE.BIDIR()),_,_) then ();
-    case (DAE.VAR(source=source,componentRef=cr,protection=DAE.PROTECTED()),_,_)
-      equation
-        name = ComponentReference.printComponentRefStr(cr);
-        Error.addSourceMessage(Error.FUNCTION_ELEMENT_WRONG_PROTECTION,{name,"protected","public"},DAEUtil.getElementSourceFileInfo(source));
-      then fail();
+      String str;
+
+    // Variables have already been checked in checkFunctionVar.
+    case (DAE.VAR(componentRef = _), _, _) then ();
         
-    case (DAE.ALGORITHM(algorithm_=DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN(exp=DAE.METARECORDCALL(path=_))})),_,info)
+    case (DAE.ALGORITHM(algorithm_= DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN(
+        exp = DAE.METARECORDCALL(path = _))})), _, info)
       equation
         // We need to know the inlineType to make a good notification
         // Error.addSourceMessage(true,Error.COMPILER_NOTIFICATION, {"metarecordcall"}, info);
       then ();
-    case (DAE.ALGORITHM(algorithm_=_),false,_) then ();
+
+    case (DAE.ALGORITHM(algorithm_ = _), false, _) then ();
+
     else
       equation
         str = DAEDump.dumpElementsStr({elt});

@@ -1780,7 +1780,7 @@ algorithm
         env2 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(scopeName),NONE());
 
         // Tranform declarations such as Real x,y; to Real x; Real y;
-        ld2 = SCodeUtil.translateEitemlist(ld, SCode.PUBLIC());
+        ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());
 
         // Filter out the components (just to be sure)
         true = Util.listFold(Util.listMap1(ld2, SCode.isComponentWithDirection, Absyn.BIDIR()), boolAnd, true);
@@ -1800,7 +1800,7 @@ algorithm
       
     case (cache,env,ld,scopeName,impl,info)
       equation
-        ld2 = SCodeUtil.translateEitemlist(ld, SCode.PUBLIC());
+        ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());
         (ld2 as _::_) = Util.listFilterBoolean(ld2, SCode.isNotComponent);
         str = Util.stringDelimitList(Util.listMap(ld2, SCodeDump.unparseElementStr),", ");
         Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT,{str},info);
@@ -1811,7 +1811,7 @@ algorithm
         env2 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(scopeName),NONE());
 
         // Tranform declarations such as Real x,y; to Real x; Real y;
-        ld2 = SCodeUtil.translateEitemlist(ld, SCode.PUBLIC());
+        ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());
 
         // Filter out the components (just to be sure)
         ld3 = Util.listSelect1(ld2, Absyn.INPUT(), SCode.isComponentWithDirection);

@@ -102,6 +102,7 @@ protected
   partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
   partial function FuncKeyString input Key key; output String str; end FuncKeyString;
   partial function FuncValString input Value val; output String str; end FuncValString;
+protected
   Integer szArr;
 algorithm
   arr := arrayCreate(szBucket, {});
@@ -376,6 +377,7 @@ public function dumpHashTable ""
   partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
   partial function FuncKeyString input Key key; output String str; end FuncKeyString;
   partial function FuncValString input Value val; output String str; end FuncValString;
+protected
   FuncKeyString printKey;
   FuncValString printValue;
 algorithm

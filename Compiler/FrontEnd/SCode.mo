@@ -2203,6 +2203,7 @@ public function traverseEEquations
     output tuple<EEquation, Argument> outTuple;
   end TraverseFunc;
 
+protected
   TraverseFunc traverser;
   Argument arg;
   EEquation eq;
@@ -2284,6 +2285,7 @@ protected function traverseElseWhenEEquations
     output tuple<EEquation, Argument> outTuple;
   end TraverseFunc;
 
+protected
   Absyn.Exp exp;
   list<EEquation> eql;
 algorithm
@@ -2509,6 +2511,7 @@ protected function traverseElseWhenExps
     output tuple<Absyn.Exp, Argument> outTuple;
   end TraverseFunc;
 
+protected
   TraverseFunc traverser;
   Argument arg;
   Absyn.Exp exp;
@@ -2536,6 +2539,7 @@ protected function traverseNamedArgExps
     output tuple<Absyn.Exp, Argument> outTuple;
   end TraverseFunc;
 
+protected
   TraverseFunc traverser;
   Argument arg;
   Absyn.Ident name;
@@ -2629,6 +2633,7 @@ public function traverseStatements
     output tuple<Statement, Argument> outTuple;
   end TraverseFunc;
 
+protected
   TraverseFunc traverser;
   Argument arg;
   Statement stmt;
@@ -2731,6 +2736,7 @@ protected function traverseBranchStatements
     output tuple<Statement, Argument> outTuple;
   end TraverseFunc;
 
+protected
   Absyn.Exp exp;
   list<Statement> stmts;
 algorithm
@@ -2857,6 +2863,7 @@ protected function traverseBranchExps
     output tuple<Absyn.Exp, Argument> outTuple;
   end TraverseFunc;
 
+protected
   TraverseFunc traverser;
   Argument arg;
   Absyn.Exp exp;

@@ -1493,7 +1493,7 @@ public function buildInitialEnv
   "Build a new environment that contains some things that can't be represented
   in ModelicaBuiltin or MetaModelicaBuiltin."
   output Env outInitialEnv;
-public
+protected
   AvlTree tree;
   ExtendsTable exts;
   ImportTable imps;

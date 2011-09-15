@@ -323,6 +323,7 @@ protected function isFlatModelicaFile
 "function: isFlatModelicaFile
   Succeeds if filename ends with .mof"
   input String filename;
+protected
   list<String> lst;
   String last;
 algorithm
@@ -335,6 +336,7 @@ protected function isModelicaScriptFile
 "function: isModelicaScriptFile
   Succeeds if filname end with .mos"
   input String filename;
+protected
   list<String> lst;
   String last;
 algorithm
@@ -348,6 +350,7 @@ protected function isCodegenTemplateFile
 "function: isCodegenTemplateFile
   Succeeds if filname end with .tpl"
   input String filename;
+protected
   list<String> lst;
   String last;
 algorithm
@@ -721,6 +724,7 @@ protected function runBackendQ
   It should be run if either \"blt\" flag is set or if
   parallelization is enabled by giving flag -n=<no proc.>"
   output Boolean res_1;
+protected
   Boolean bltflag,sim_cg,par,res;
   Integer n;
 algorithm
