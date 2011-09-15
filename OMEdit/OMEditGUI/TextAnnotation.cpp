@@ -129,7 +129,7 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
         font.setUnderline(true);
     painter->setFont(font);
     // draw the font
-    painter->drawText(getDrawingRect(), mHorizontalAlignment, this->mTextString);
+    painter->drawText(getDrawingRect(), mHorizontalAlignment | Qt::TextDontClip, this->mTextString);
 }
 
 void TextAnnotation::checkNameString()
