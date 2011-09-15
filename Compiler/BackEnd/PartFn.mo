@@ -59,12 +59,13 @@ type Ident = String;
 public function partEvalBackendDAE
 "function: partEvalBackendDAE
   handles partially evaluated function in BackendDAE format"
-  input list<DAE.Function> inFunctions;
-  input BackendDAE.BackendDAE inBackendDAE;
-  output list<DAE.Function> outFunctions;
-  output BackendDAE.BackendDAE outBackendDAE;
+  input BackendDAE.EqSystem syst;
+  input tuple<BackendDAE.Shared,list<DAE.Function>> sharedAndFuncs;
+  input Boolean dummy;
+  output BackendDAE.EqSystem osyst;
+  output tuple<BackendDAE.Shared,list<DAE.Function>> osharedAndFuncs;
 algorithm
-  (outFunctions,outBackendDAE) := matchcontinue(inFunctions,inBackendDAE)
+  (osyst,osharedAndFuncs) := matchcontinue(syst,sharedAndFuncs,dummy)
     local
       list<DAE.Function> dae;
       BackendDAE.Variables orderedVars;
@@ -81,12 +82,13 @@ algorithm
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
+      BackendDAE.Shared shared;
     /*case(dae,dlow)
       equation
         false = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
       then
         (dae,dlow);*/
-    case(dae,BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching)::{},BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses,btp)))
+    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),(BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses,btp),dae),_)
       equation
         (orderedVars,dae) = partEvalVars(orderedVars,dae);
         (knownVars,dae) = partEvalVars(knownVars,dae);
@@ -97,10 +99,10 @@ algorithm
         (arrayEqs,dae) = partEvalArrEqs(arrayList(arrayEqs),dae);
         (algorithms,dae) = partEvalAlgs(algorithms,dae);
       then
-        (dae,BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching)::{},BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses,btp)));
+        (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),(BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses,btp),dae));
     else
       equation
-        Debug.fprintln("failtrace","- PartFn.partEvalBackendDAE failed");
+        Error.addMessage(Error.INTERNAL_ERROR,{"PartFn.partEvalBackendDAE failed"});
       then
         fail();
   end matchcontinue;

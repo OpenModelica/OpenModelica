@@ -1064,9 +1064,6 @@ public function generateModelCode
   input Absyn.Path className;
   input String filenamePrefix;
   input Option<SimulationSettings> simSettingsOpt;
-  input array<Integer> equationIndices;
-  input array<Integer> variableIndices;
-  input BackendDAE.StrongComponents strongComponents;
   output BackendDAE.BackendDAE outIndexedBackendDAE;
   output list<String> libs;
   output String fileDir;
@@ -1085,14 +1082,11 @@ protected
   Absyn.ComponentRef a_cref;
   BackendQSS.QSSinfo qssInfo;
   list<DAE.Exp> literals;
-  tuple<BackendDAE.BackendDAE, array<Integer>, array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, BackendDAE.StrongComponents> inQSSrequiredData;
-  BackendDAE.IncidenceMatrix m,mT;
 algorithm
   timeBackend := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
   a_cref := Absyn.pathToCref(className);
   fileDir := CevalScript.getFileDir(a_cref, p);
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
-  BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT))::{}) := inBackendDAE;
   (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
   createFunctions(dae, inBackendDAE, functionTree, className);
   simCode := createSimCode(functionTree, outIndexedBackendDAE, 
@@ -1102,8 +1096,7 @@ algorithm
   Debug.execStat("SimCode",CevalScript.RT_CLOCK_BUILD_MODEL);
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
   
-  inQSSrequiredData := (outIndexedBackendDAE, equationIndices, variableIndices, m, mT, strongComponents);
-  callTargetTemplates(simCode,inQSSrequiredData,RTOpts.simCodeTarget());
+  callTargetTemplates(simCode,inBackendDAE,RTOpts.simCodeTarget());
   timeTemplates := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
 end generateModelCode;
 
@@ -1112,7 +1105,7 @@ end generateModelCode;
 protected function callTargetTemplates
 "Generate target code by passing the SimCode data structure to templates."
   input SimCode simCode;
-  input tuple<BackendDAE.BackendDAE, array<Integer>, array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, BackendDAE.StrongComponents> inQSSrequiredData;
+  input BackendDAE.BackendDAE inQSSrequiredData;
   input String target;
 algorithm
   _ := match (simCode,inQSSrequiredData,target)
@@ -1136,7 +1129,9 @@ algorithm
       equation
         Tpl.tplNoret(SimCodeAdevs.translateModel, simCode);
       then ();
-    case (simCode,(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents),"QSS")
+    case (simCode,outIndexedBackendDAE as BackendDAE.DAE(eqs={
+        BackendDAE.EQSYSTEM(m=SOME(incidenceMatrix), mT=SOME(incidenceMatrixT), matching=BackendDAE.MATCHING(equationIndices, variableIndices,strongComponents))
+      }),"QSS")
       equation
         Debug.trace("Generating QSS solver code\n");
         qssInfo = BackendQSS.generateStructureCodeQSS(outIndexedBackendDAE, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents);
@@ -1213,10 +1208,10 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(cache,dae);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
-        (dlow_1 as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1,ass2,comps))})) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
+        dlow_1 = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
           NONE(), NONE(), NONE());
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
-          generateModelCode(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt,ass1,ass2,comps);
+          generateModelCode(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt);
         resultValues = 
         {("timeTemplates",Values.REAL(timeTemplates)),
           ("timeSimCode",  Values.REAL(timeSimCode)),
@@ -1631,7 +1626,7 @@ algorithm
         
         part_func_elems = PartFn.createPartEvalFunctions(funcelems);
         (dae, part_func_elems) = PartFn.partEvalDAE(dae, part_func_elems);
-        (part_func_elems, dlow) = PartFn.partEvalBackendDAE(part_func_elems, dlow);
+        (dlow, part_func_elems) = BackendDAEUtil.mapEqSystem1RetExtra(dlow, PartFn.partEvalBackendDAE, true /*dummy*/, part_func_elems);
         funcelems = Util.listUnion(part_func_elems, part_func_elems);
         //funcelems = Util.listUnion(funcelems, part_func_elems);
         funcelems = Inline.inlineCallsInFunctions(funcelems,(NONE(),{DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}));
@@ -2148,7 +2143,7 @@ algorithm
          //Debug.fcall("cppvar",print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
         cname = Absyn.pathStringNoQual(class_);
         
-        (blt_states,blt_no_states) = BackendDAEUtil.generateStatePartition(comps, dlow, ass1, ass2);
+        (blt_states,blt_no_states) = BackendDAEUtil.generateStatePartition(syst);
         
         (helpVarInfo, dlow2,sampleEqns) = generateHelpVarInfo(dlow, comps);
         dlow2 = BackendDAEUtil.checkInitialSystem(dlow2,functionTree);
@@ -2252,7 +2247,7 @@ algorithm
         simCode;
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Generation of simulation using code using templates failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"Transformation from optimised DAE to simulation code structure failed"});
       then
         fail();
   end matchcontinue;
@@ -2409,11 +2404,11 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
       
-    case (functions,dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars = v,orderedEqs = e)::{},shared as BackendDAE.SHARED(knownVars = kv)),ass1,ass2,comps)
+    case (functions,dlow as BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(orderedVars = v,orderedEqs = e)},shared as BackendDAE.SHARED(knownVars = kv)),ass1,ass2,comps)
       equation
         true = RTOpts.debugFlag("jacobian");
         
-        (blt_states, _) = BackendDAEUtil.generateStatePartition(comps, dlow, ass1, ass2);
+        (blt_states, _) = BackendDAEUtil.generateStatePartition(syst);
         
         newEqns = BackendDAEUtil.listEquation({});
         newVars = BackendDAEUtil.emptyVars();

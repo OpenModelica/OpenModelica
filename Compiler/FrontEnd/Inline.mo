@@ -57,6 +57,7 @@ public type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>
 protected import ComponentReference;
 protected import Debug;
 protected import DAEUtil;
+protected import Error;
 protected import Expression;
 protected import ExpressionSimplify;
 protected import Types;
@@ -521,6 +522,10 @@ algorithm
         cdr_1 = inlineCallsInFunctions(cdr,fns);
       then
         el :: cdr_1;
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"Inline.inlineCallsInFunctions failed"});
+      then fail();
   end matchcontinue;
 end inlineCallsInFunctions;
 

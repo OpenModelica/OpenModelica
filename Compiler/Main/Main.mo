@@ -768,10 +768,10 @@ algorithm
         true = runBackendQ();
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
-        (dlow_1 as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(v1,v2,comps))})) = BackendDAEUtil.getSolvedSystem(cache,env,dlow,funcs,NONE(),NONE(),NONE());
-        modpar(dlow_1,comps);
+        dlow_1 = BackendDAEUtil.getSolvedSystem(cache,env,dlow,funcs,NONE(),NONE(),NONE());
+        modpar(dlow_1);
         Debug.execStat("Lowering Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
-        simcodegen(dlow_1,funcs,classname,ap,daeimpl,v1,v2,comps);
+        simcodegen(dlow_1,funcs,classname,ap,daeimpl);
       then
         ();
     else
@@ -785,22 +785,21 @@ protected function modpar
 "function: modpar
   The automatic paralellzation module."
   input BackendDAE.BackendDAE inBackendDAE;
-  input BackendDAE.StrongComponents inComps;
 algorithm
-  _ := matchcontinue (inBackendDAE,inComps)
+  _ := matchcontinue inBackendDAE
     local
       Integer n,nx,ny,np;
       BackendDAE.BackendDAE dae;
       Real l,b,t1,t2,time;
       String timestr,nps;
       BackendDAE.StrongComponents comps;
-    case (_,_)
+    case _
       equation
         n = RTOpts.noProc() "If modpar not enabled, nproc = 0, return" ;
         (n == 0) = true;
       then
         ();
-    case (dae,comps)
+    case (dae as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}))
       equation
         TaskGraph.buildTaskgraph(dae, comps);
         TaskGraphExt.dumpGraph("model.viz");
@@ -842,12 +841,9 @@ protected function simcodegen
   input Absyn.Path inPath;
   input Absyn.Program inProgram3;
   input DAE.DAElist inDAElist4;
-  input array<Integer> inIntegerArray6;
-  input array<Integer> inIntegerArray7;
-  input BackendDAE.StrongComponents inComps;
 algorithm
   _:=
-  matchcontinue (inBackendDAE5,inFunctionTree,inPath,inProgram3,inDAElist4,inIntegerArray6,inIntegerArray7,inComps)
+  matchcontinue (inBackendDAE5,inFunctionTree,inPath,inProgram3,inDAElist4)
     local
       BackendDAE.BackendDAE dlow;
       DAE.FunctionTree functionTree;
@@ -864,14 +860,14 @@ algorithm
       String methodbyflag;
       Boolean methodflag;
 
-    case (dlow,functionTree,classname,ap,dae,ass1,ass2,comps) /* classname ass1 ass2 blocks */
+    case (dlow,functionTree,classname,ap,dae) /* classname ass1 ass2 blocks */
       equation
         true = RTOpts.simulationCg();
         Print.clearErrorBuf();
         Print.clearBuf();
         cname_str = Absyn.pathString(classname);
         simSettings = SimCode.createSimulationSettings(0.0, 1.0, 500, 1e-6,"dassl","","mat",".*",false,"");
-        (_,_,_,_,_,_) = SimCode.generateModelCode(dlow,functionTree,ap,dae,classname,cname_str,SOME(simSettings),ass1,ass2,comps);
+        (_,_,_,_,_,_) = SimCode.generateModelCode(dlow,functionTree,ap,dae,classname,cname_str,SOME(simSettings));
         Debug.execStat("Codegen Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
       then
         ();

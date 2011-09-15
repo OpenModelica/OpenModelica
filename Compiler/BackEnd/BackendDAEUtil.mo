@@ -2482,15 +2482,12 @@ public function generateStatePartition "function:generateStatePartition
              incidenceMatrixT: IncidenceMatrixT)
   outputs: (dynamicBlocks: int list list, outputBlocks: int list list)
 "
-  input BackendDAE.StrongComponents inComps;
-  input BackendDAE.BackendDAE inBackendDAE2;
-  input array<Integer> inIntegerArray3;
-  input array<Integer> inIntegerArray4;
+  input BackendDAE.EqSystem syst;
   output BackendDAE.StrongComponents outCompsStates;
   output BackendDAE.StrongComponents outCompsNoStates;  
 algorithm
   (outCompsStates,outCompsNoStates):=
-  matchcontinue (inComps,inBackendDAE2,inIntegerArray3,inIntegerArray4)
+  matchcontinue syst
     local
       BackendDAE.Value size;
       array<BackendDAE.Value> arr,arr_1;
@@ -2502,11 +2499,11 @@ algorithm
       array<DAE.Algorithm> al;
       array<BackendDAE.Value> ass1,ass2;
       array<list<BackendDAE.Value>> m,mt;
-    case (comps,dae,ass1,ass2)
+    case (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1,ass2,comps)))
       equation
         size = arrayLength(ass1) "equation_size(e) => size &" ;
         arr = arrayCreate(size, 0);
-        arr_1 = markStateEquations(dae, arr, ass1, ass2);
+        arr_1 = markStateEquations(syst, arr, ass1, ass2);
         (blt_states,blt_no_states) = splitBlocks(comps, arr_1);
       then
         (blt_states,blt_no_states);
@@ -2598,14 +2595,14 @@ public function markStateEquations "function: markStateEquations
     assignments1: int vector,
     assignments2: int vector)
   outputs: marks: int array"
-  input BackendDAE.BackendDAE inBackendDAE1;
+  input BackendDAE.EqSystem syst;
   input array<Integer> inIntegerArray2;
   input array<Integer> inIntegerArray5;
   input array<Integer> inIntegerArray6;
   output array<Integer> outIntegerArray;
 algorithm
   outIntegerArray:=
-  matchcontinue (inBackendDAE1,inIntegerArray2,inIntegerArray5,inIntegerArray6)
+  matchcontinue (syst,inIntegerArray2,inIntegerArray5,inIntegerArray6)
     local
       list<BackendDAE.Var> statevar_lst;
       BackendDAE.BackendDAE dae;
@@ -2617,10 +2614,10 @@ algorithm
       array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> alg;
     
-    case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = v,m=SOME(m),mT=SOME(mt))::{})),arr,a1,a2)
+    case (syst as BackendDAE.EQSYSTEM(orderedVars = v,m=SOME(m),mT=SOME(mt)),arr,a1,a2)
       equation
         statevar_lst = BackendVariable.getAllStateVarFromVariables(v);
-        ((dae,arr_1,m,mt,a1,a2)) = Util.listFold(statevar_lst, markStateEquation, (dae,arr,m,mt,a1,a2));
+        ((_,arr_1,_,_,_,_)) = Util.listFold(statevar_lst, markStateEquation, (syst,arr,m,mt,a1,a2));
       then
         arr_1;
     
@@ -2639,8 +2636,8 @@ protected function markStateEquation
   following edges in backward direction.
   inputs and outputs are tuples so we can use Util.list_fold"
   input BackendDAE.Var inVar;
-  input tuple<BackendDAE.BackendDAE, array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, array<Integer>, array<Integer>> inTplBackendDAEIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray;
-  output tuple<BackendDAE.BackendDAE, array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, array<Integer>, array<Integer>> outTplBackendDAEIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray;
+  input tuple<BackendDAE.EqSystem, array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, array<Integer>, array<Integer>> inTplBackendDAEIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray;
+  output tuple<BackendDAE.EqSystem, array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, array<Integer>, array<Integer>> outTplBackendDAEIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray;
 algorithm
   outTplBackendDAEIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray:=
   matchcontinue (inVar,inTplBackendDAEIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray)
@@ -2650,21 +2647,21 @@ algorithm
       array<list<BackendDAE.Value>> m,mt;
       array<BackendDAE.Value> a1,a2;
       DAE.ComponentRef cr;
-      BackendDAE.BackendDAE dae;
+      BackendDAE.EqSystem syst;
       BackendDAE.Variables vars;
       String s,str;
       BackendDAE.Value v_indx,v_indx_1;
     
-    case (BackendDAE.VAR(varName = cr),((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars)::{})),arr,m,mt,a1,a2))
+    case (BackendDAE.VAR(varName = cr),((syst as BackendDAE.EQSYSTEM(orderedVars = vars)),arr,m,mt,a1,a2))
       equation
         (_,v_indxs) = BackendVariable.getVar(cr, vars);
         v_indxs_1 = Util.listMap1(v_indxs, intSub, 1);
         eqns = Util.listMap1r(v_indxs_1, arrayNth, a1);
         ((arr_1,m,mt,a1,a2)) = markStateEquation2(eqns, (arr,m,mt,a1,a2));
       then
-        ((dae,arr_1,m,mt,a1,a2));
+        ((syst,arr_1,m,mt,a1,a2));
     
-    case (BackendDAE.VAR(varName = cr),((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars)::{})),arr,m,mt,a1,a2))
+    case (BackendDAE.VAR(varName = cr),((syst as BackendDAE.EQSYSTEM(orderedVars = vars)),arr,m,mt,a1,a2))
       equation
         failure((_,_) = BackendVariable.getVar(cr, vars));
         print("- BackendDAEUtil.markStateEquation var ");
@@ -2674,7 +2671,7 @@ algorithm
       then
         fail();
     
-    case (BackendDAE.VAR(varName = cr),((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars)::{})),arr,m,mt,a1,a2))
+    case (BackendDAE.VAR(varName = cr),((syst as BackendDAE.EQSYSTEM(orderedVars = vars)),arr,m,mt,a1,a2))
       equation
         (_,{v_indx}) = BackendVariable.getVar(cr, vars);
         v_indx_1 = v_indx - 1;
@@ -5400,25 +5397,49 @@ algorithm
       array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> algs;
       Type_a ext_arg_1,ext_arg_2,ext_arg_3,ext_arg_4,ext_arg_5,ext_arg_6,ext_arg_7;
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars1,orderedEqs = eqns)::{},
-      shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns,arrayEqs = ae,algorithms = algs)),func,inTypeA)
+      list<BackendDAE.EqSystem> systs;
+    case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns,arrayEqs = ae,algorithms = algs)),func,inTypeA)
       equation
-        ext_arg_1 = traverseBackendDAEExpsVars(vars1,func,inTypeA);
+        ext_arg_1 = Util.listFold1(systs,traverseBackendDAEExpsEqSystem,func,inTypeA);
         ext_arg_2 = traverseBackendDAEExpsVars(vars2,func,ext_arg_1);
-        ext_arg_3 = traverseBackendDAEExpsEqns(eqns,func,ext_arg_2);
-        ext_arg_4 = traverseBackendDAEExpsEqns(reqns,func,ext_arg_3);
+        ext_arg_4 = traverseBackendDAEExpsEqns(reqns,func,ext_arg_2);
         ext_arg_5 = traverseBackendDAEExpsEqns(ieqns,func,ext_arg_4);
         ext_arg_6 = traverseBackendDAEArrayNoCopy(ae,func,traverseBackendDAEExpsArrayEqn,1,arrayLength(ae),ext_arg_5);
         ext_arg_7 = traverseBackendDAEArrayNoCopy(algs,func,traverseAlgorithmExps,1,arrayLength(algs),ext_arg_6);
       then
         ext_arg_7;
-    case (_,_,_)
+    else
       equation
-        Debug.fprintln("failtrace", "- BackendDAE.traverseBackendDAEExps failed");
+        Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAE.traverseBackendDAEExps failed"});
       then
         fail();
   end matchcontinue;
 end traverseBackendDAEExps;
+
+public function traverseBackendDAEExpsEqSystem "function: traverseBackendDAEExps
+  author: Frenkel TUD
+
+  This function goes through the BackendDAE.BackendDAE structure and finds all the
+  expressions and performs the function on them in a list 
+  an extra argument passed through the function.
+"
+  replaceable type Type_a subtypeof Any;
+  input BackendDAE.EqSystem syst;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+protected
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqns;
+algorithm
+  BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns) := syst;
+  outTypeA := traverseBackendDAEExpsVars(vars,func,inTypeA);
+  outTypeA := traverseBackendDAEExpsEqns(eqns,func,outTypeA);
+end traverseBackendDAEExpsEqSystem;
 
 public function traverseBackendDAEExpsVars "function: traverseBackendDAEExpsVars
   author: Frenkel TUD
