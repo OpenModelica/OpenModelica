@@ -1626,7 +1626,7 @@ algorithm
         
         part_func_elems = PartFn.createPartEvalFunctions(funcelems);
         (dae, part_func_elems) = PartFn.partEvalDAE(dae, part_func_elems);
-        (dlow, part_func_elems) = BackendDAEUtil.mapEqSystem1RetExtra(dlow, PartFn.partEvalBackendDAE, true /*dummy*/, part_func_elems);
+        (dlow, part_func_elems) = BackendDAEUtil.mapEqSystemAndFold1(dlow, PartFn.partEvalBackendDAE, true /*dummy*/, part_func_elems);
         funcelems = Util.listUnion(part_func_elems, part_func_elems);
         //funcelems = Util.listUnion(funcelems, part_func_elems);
         funcelems = Inline.inlineCallsInFunctions(funcelems,(NONE(),{DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}));
@@ -2127,7 +2127,8 @@ algorithm
       list<tuple<Integer, DAE.Exp>> delayedExps;
       list<DAE.Exp> divLst;
       list<DAE.Statement> allDivStmts;
-      BackendDAE.Variables orderedVars,knownVars,vars;
+      list<BackendDAE.Variables> orderedVars;
+      BackendDAE.Variables knownVars,vars;
       list<BackendDAE.Var> varlst,varlst1,varlst2;
       list<RecordDeclaration> recordDecls;
       
@@ -2135,23 +2136,22 @@ algorithm
       HashTableCrefToSimVar crefToSimVarHT;
       Boolean ifcpp;
       BackendDAE.EqSystem syst;
+      BackendDAE.EqSystems systs;
       BackendDAE.Shared shared;
       
-    case (functionTree,dlow as BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1,ass2,comps))},shared),class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals)
+    case (functionTree,dlow as BackendDAE.DAE(systs,shared),class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals)
       equation
         ifcpp = stringEqual(RTOpts.simCodeTarget(),"Cpp");
          //Debug.fcall("cppvar",print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
         cname = Absyn.pathStringNoQual(class_);
-        
-        (blt_states,blt_no_states) = BackendDAEUtil.generateStatePartition(syst);
-        
-        (helpVarInfo, dlow2,sampleEqns) = generateHelpVarInfo(dlow, comps);
+               
+        (helpVarInfo, dlow2,sampleEqns) = generateHelpVarInfo(dlow);
         dlow2 = BackendDAEUtil.checkInitialSystem(dlow2,functionTree);
         
-        residualEquations = createResidualEquations(dlow2, ass1, ass2);
+        residualEquations = createResidualEquations(dlow2);
         nres = listLength(residualEquations);
         
-        extObjInfo = createExtObjInfo(dlow2);
+        extObjInfo = createExtObjInfo(shared);
         
         whenClauses = createSimWhenClauses(dlow2, helpVarInfo);
         zeroCrossings = createZeroCrossings(dlow2);
@@ -2163,6 +2163,8 @@ algorithm
         modelInfo = createModelInfo(class_, dlow2, functions, n_h, nres, fileDir,ifcpp);
         
         // equation generation for euler, dassl2, rungekutta
+        {syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1,ass2,comps))} = systs;
+        (blt_states,blt_no_states) = BackendDAEUtil.generateStatePartition(syst);
         blt_no_states1=Util.if_(ifcpp,comps,blt_no_states); 
         blt_states1=Util.if_(ifcpp,comps,blt_states);
 
@@ -2172,7 +2174,7 @@ algorithm
         algebraicEquations = createEquations(ifcpp, false, ifcpp, false, false, dlow2, contBlocks1, helpVarInfo);
         allEquations = createEquations(true, false, true, false, false, dlow2, comps, helpVarInfo);
 
-        
+        // Assertions and crap
         initialEquations = createInitialEquations(dlow2);
         parameterEquations = createParameterEquations(dlow2);
         removedEquations = createRemovedEquations(dlow2);
@@ -2182,9 +2184,9 @@ algorithm
         (delayedExps,maxDelayedExpIndex) = extractDelayedExpressions(dlow2);
         
         // replace div operator with div operator with check of Division by zero
-        orderedVars = BackendVariable.daeVars(syst);
+        orderedVars = Util.listMap(systs,BackendVariable.daeVars);
         knownVars = BackendVariable.daeKnVars(shared);
-        varlst = BackendDAEUtil.varList(orderedVars);
+        varlst = Util.listMapFlat(orderedVars,BackendDAEUtil.varList);
         varlst1 = BackendDAEUtil.varList(knownVars);
         varlst2 = listAppend(varlst,varlst1);
         vars = BackendDAEUtil.listVar(varlst2);
@@ -2688,12 +2690,11 @@ end createMakefileParams;
 
 protected function generateHelpVarInfo
   input BackendDAE.BackendDAE dlow;
-  input BackendDAE.StrongComponents comps;
   output list<HelpVarInfo> outHelpVarInfo;
   output BackendDAE.BackendDAE outBackendDAE;
   output list<BackendDAE.Equation> outSampleEqns;
 algorithm
-  outHelpVarInfo := helpVarInfoFromWhenConditionChecks(dlow, comps);
+  outHelpVarInfo := helpVarInfoFromWhenConditionChecks(dlow);
   (outHelpVarInfo, dlow) := generateHelpVarsForWhenStatements(outHelpVarInfo, dlow);
   // Generate HelpVars for sample call outside whenclause
   // additional collect all these equations
@@ -2797,11 +2798,10 @@ end findSampleInExps;
 protected function helpVarInfoFromWhenConditionChecks
 "Return a list of help variables that were introduced by when conditions?"
   input BackendDAE.BackendDAE inBackendDAE;
-  input BackendDAE.StrongComponents comps;
   output list<HelpVarInfo> helpVarList;
 algorithm
   helpVarList :=
-  matchcontinue (inBackendDAE, comps)
+  matchcontinue (inBackendDAE)
     local
       list<Integer> orderOfEquations,orderOfEquations_1;
       Integer n;
@@ -2809,7 +2809,8 @@ algorithm
       BackendDAE.BackendDAE dlow;
       BackendDAE.EquationArray eqns;
       list<BackendDAE.WhenClause> whenClauseList;
-    case ((dlow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns)::{},shared=BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = whenClauseList)))), comps)
+      BackendDAE.StrongComponents comps;
+    case ((dlow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns, matching = BackendDAE.MATCHING(comps=comps))::{},shared=BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = whenClauseList)))))
       equation
         orderOfEquations = generateEquationOrder(comps);
         n = BackendDAEUtil.equationSize(eqns);
@@ -2824,7 +2825,7 @@ algorithm
         (helpVarInfo);
     else
       equation
-        print("-build_when_condition_checks failed.\n");
+        Error.addMessage(Error.INTERNAL_ERROR,{"SimCode.helpVarInfoFromWhenConditionChecks failed"});
       then
         fail();
   end matchcontinue;
@@ -3115,21 +3116,16 @@ algorithm
 end elaborateRecordDeclarationsForMetarecords;
 
 protected function createExtObjInfo
-  input BackendDAE.BackendDAE dlow;
+  input BackendDAE.Shared shared;
   output ExtObjInfo extObjInfo;
 algorithm
-  extObjInfo :=
-  match (dlow)
+  extObjInfo := match shared
     local
       BackendDAE.Variables evars;
-      BackendDAE.ExternalObjectClasses eclasses;
       list<BackendDAE.Var> evarLst;
-      list<String> includes;
-      list<ExtConstructor> constructors;
-      list<ExtDestructor> destructors;
       list<ExtAlias> aliases;
       list<SimVar> simvars;
-    case (BackendDAE.DAE(shared=BackendDAE.SHARED(externalObjects=evars)))
+    case BackendDAE.SHARED(externalObjects=evars)
       equation
         evarLst = BackendDAEUtil.varList(evars);
         (simvars,aliases) = extractExtObjInfo2(evarLst,evars);
@@ -5603,12 +5599,10 @@ algorithm
 end generateStartValueResiduals;
 
 protected function createResidualEquations
-  input BackendDAE.BackendDAE dlow;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
+  input BackendDAE.BackendDAE dae;
   output list<SimEqSystem> residualEquations;
 algorithm
-  residualEquations := matchcontinue (dlow, ass1, ass2)
+  residualEquations := matchcontinue (dae)
     local
       list<BackendDAE.Equation> eqns_lst, se_lst, ie_lst, ie2_lst, ie3_lst;
       BackendDAE.Variables vars, knvars;
@@ -5618,14 +5612,11 @@ algorithm
       BackendDAE.EventInfo ev;
       list<SimEqSystem> resEqus1,resEqus2,resEqus3;
       BackendDAE.AliasVariables av;
+      BackendDAE.EqSystems systs;
       
-    case ((dlow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns)::{},
-      shared=BackendDAE.SHARED(knownVars=knvars,initialEqs=ie,
-      aliasVars=av,
-      algorithms=al))),
-      ass1, ass2)
+    case (dae as BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars=knvars,initialEqs=ie,aliasVars=av,algorithms=al)))
       equation
-        ((ie2_lst,_)) = BackendVariable.traverseBackendDAEVars(vars,generateInitialEquationsFromStart,({},av));
+        (_,ie2_lst) = BackendDAEUtil.mapEqSystemAndFold(dae,createResidualEquations1,{});
         ((ie2_lst,_)) = BackendVariable.traverseBackendDAEVars(knvars,generateInitialEquationsFromStart,(ie2_lst,av));
         ie2_lst = listReverse(ie2_lst);
         
@@ -5656,7 +5647,7 @@ algorithm
         ie2_lst = addLambdaToEquationList(ie2_lst);
         resEqus2 = Util.listMap1(ie2_lst, dlowEqToSimEqSystem,al);
         
-        ie3_lst = generateStartValueResiduals(BackendDAEUtil.varList(vars));
+        ie3_lst = generateStartValueResiduals(Util.listFlatten(Util.listMapMap(systs,BackendVariable.daeVars,BackendDAEUtil.varList)));
         resEqus3 = Util.listMap1(ie3_lst, dlowEqToSimEqSystem, al);
         
         residualEquations = listAppend(resEqus1, resEqus2);
@@ -5666,13 +5657,44 @@ algorithm
       then
         residualEquations;
         
-    case (_,_,_)
+    else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"createResidualEquations failed"});
       then
         fail();
   end matchcontinue;
 end createResidualEquations;
+
+protected function createResidualEquations1
+  input BackendDAE.EqSystem syst;
+  input tuple<BackendDAE.Shared,list<BackendDAE.Equation>> sharedExtra;
+  output BackendDAE.EqSystem osyst;
+  output tuple<BackendDAE.Shared,list<BackendDAE.Equation>> osharedExtra;
+algorithm
+  (osyst,osharedExtra) := matchcontinue (syst,sharedExtra)
+    local
+      list<BackendDAE.Equation> eqns_lst, se_lst, ie_lst, ie2_lst, ie3_lst;
+      BackendDAE.Variables vars, knvars;
+      BackendDAE.EquationArray eqns, se, ie;
+      array<BackendDAE.MultiDimEquation> ae;
+      array<Algorithm.Algorithm> al;
+      BackendDAE.EventInfo ev;
+      list<SimEqSystem> resEqus1,resEqus2,resEqus3;
+      BackendDAE.AliasVariables av;
+      BackendDAE.Shared shared;
+      
+    case (BackendDAE.EQSYSTEM(orderedVars=vars),(shared as BackendDAE.SHARED(aliasVars=av),ie2_lst))
+      equation
+        ((ie2_lst,_)) = BackendVariable.traverseBackendDAEVars(vars,generateInitialEquationsFromStart,(ie2_lst,av));
+      then (syst,(shared,ie2_lst));
+        
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"createResidualEquations failed"});
+      then
+        fail();
+  end matchcontinue;
+end createResidualEquations1;
 
 protected function dlowEqToSimEqSystem
   input BackendDAE.Equation inEquation;
@@ -5791,7 +5813,7 @@ algorithm
         // kvars params
         ((parameterEquationsTmp,lv,lkn,lv1,lv2,_)) = BackendVariable.traverseBackendDAEVars(knvars,createInitialParamAssignments,({},{},{},{},{},1));
         
-        // sort the equations         
+        // sort the equations
         emptyeqns = BackendDAEUtil.listEquation({});
         pe = BackendDAEUtil.listEquation(parameterEquationsTmp);
         alisvars = BackendDAEUtil.emptyAliasVariables();
@@ -5811,9 +5833,10 @@ algorithm
         Debug.fcall("paramdlowdump", BackendDump.dumpMatching,v1);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(v1,v2,{}));
         (syst,comps) = BackendDAETransform.strongComponents(syst, shared);
+        paramdlow = BackendDAE.DAE({syst},shared);
         Debug.fcall("paramdlowdump", BackendDump.dumpComponents,comps);
         
-        (helpVarInfo, paramdlow1,_) = generateHelpVarInfo(paramdlow, comps);
+        (helpVarInfo, paramdlow1,_) = generateHelpVarInfo(paramdlow);
         parameterEquations = createEquations(false, false, true, false, false, paramdlow1, comps, helpVarInfo);
         
         ialgs = BackendEquation.getUsedAlgorithmsfromEquations(ie,algs);

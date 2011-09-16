@@ -91,7 +91,7 @@ protected
   BackendDAE.EqSystem syst;
   BackendDAE.Shared shared;
 algorithm
-  (outDAE,outRunMatching) := BackendDAEUtil.mapEqSystem1RetExtra(inDAE,inlineArrayEqn1,inFunctionTree,false);
+  (outDAE,outRunMatching) := BackendDAEUtil.mapEqSystemAndFold1(inDAE,inlineArrayEqn1,inFunctionTree,false);
 end inlineArrayEqnPast;
 
 public function inlineArrayEqn
@@ -101,7 +101,7 @@ autor: Frenkel TUD 2011-3"
   input DAE.FunctionTree inFunctionTree;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  (outDAE,_):= BackendDAEUtil.mapEqSystem1RetExtra(inDAE,inlineArrayEqn1,inFunctionTree,false);
+  (outDAE,_):= BackendDAEUtil.mapEqSystemAndFold1(inDAE,inlineArrayEqn1,inFunctionTree,false);
 end inlineArrayEqn;
 
 protected function inlineArrayEqn1
@@ -315,7 +315,7 @@ protected
   BackendDAE.EqSystem syst;
   BackendDAE.Shared shared;
 algorithm
-  (outDAE,outRunMatching) := BackendDAEUtil.mapEqSystem1RetExtra(inDAE,removeSimpleEquations1,inFunctionTree,false);
+  (outDAE,outRunMatching) := BackendDAEUtil.mapEqSystemAndFold1(inDAE,removeSimpleEquations1,inFunctionTree,false);
   outDAE := BackendDAEUtil.mapEqSystem(outDAE,BackendDAEUtil.getIncidenceMatrixfromOptionForMapEqSystem);
   // until remove simple equations does not update assignments and comps  
 end removeSimpleEquationsPast;
@@ -2882,7 +2882,7 @@ public function constantLinearSystem
   output BackendDAE.BackendDAE outDAE;
   output Boolean outRunMatching;
 algorithm
-  (outDAE,outRunMatching) := BackendDAEUtil.mapEqSystem1RetExtra(inDAE,constantLinearSystem0,inFunctionTree,false);
+  (outDAE,outRunMatching) := BackendDAEUtil.mapEqSystemAndFold1(inDAE,constantLinearSystem0,inFunctionTree,false);
 end constantLinearSystem;
 
 protected function constantLinearSystem0

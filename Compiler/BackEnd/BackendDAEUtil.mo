@@ -6513,7 +6513,7 @@ algorithm
   odae := BackendDAE.DAE(systs,shared);
 end mapEqSystem1;
 
-public function mapEqSystem1RetExtra
+public function mapEqSystemAndFold1
   "Helper to map a preopt module over each equation system"
   input BackendDAE.BackendDAE dae;
   input Function func;
@@ -6539,7 +6539,32 @@ algorithm
   // Filter out empty systems
   systs := Util.listSelect(systs,nonEmptySystem);
   odae := BackendDAE.DAE(systs,shared);
-end mapEqSystem1RetExtra;
+end mapEqSystemAndFold1;
+
+public function mapEqSystemAndFold
+  "Helper to map a preopt module over each equation system"
+  input BackendDAE.BackendDAE dae;
+  input Function func;
+  input B initialExtra;
+  output BackendDAE.BackendDAE odae;
+  output B extra;
+  partial function Function
+    input BackendDAE.EqSystem syst;
+    input tuple<BackendDAE.Shared,B> sharedChanged;
+    output BackendDAE.EqSystem osyst;
+    output tuple<BackendDAE.Shared,B> osharedChanged;
+  end Function;
+  replaceable type B subtypeof Any;
+protected
+  list<BackendDAE.EqSystem> systs;
+  BackendDAE.Shared shared;
+algorithm
+  BackendDAE.DAE(systs,shared) := dae;
+  (systs,(shared,extra)) := Util.listMapAndFold(systs,func,(shared,initialExtra));
+  // Filter out empty systems
+  systs := Util.listSelect(systs,nonEmptySystem);
+  odae := BackendDAE.DAE(systs,shared);
+end mapEqSystemAndFold;
 
 public function mapEqSystem
   "Helper to map a preopt module over each equation system"
