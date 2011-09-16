@@ -18,6 +18,7 @@
 #include <winsock.h>
 #include <io.h>
 #include <iostream>
+#include <stdio.h>
 #include "socket.h"
 using namespace std;
 
