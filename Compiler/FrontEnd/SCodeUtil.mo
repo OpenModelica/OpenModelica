@@ -75,7 +75,7 @@ public function translateAbsyn2SCode
 algorithm
   outProgram := match(inProgram)
     local
-      SCode.Program sp;
+      SCode.Program spInitial, spAbsyn, sp;
       InstanceHierarchy.InstanceHierarchy ih;
       Boolean hasExpandableConnectors;
       list<Absyn.Class> inClasses,initialClasses;
@@ -96,18 +96,27 @@ algorithm
         System.setHasExpandableConnectors(false);
         // set the external flag that signals the presence of expandable connectors in the model
         System.setHasStreamConnectors(false);
-        sp = Util.listFold(initialClasses, translate2, {});
-        // call flatten program on the initial classes only    
-        sp = SCodeFlatten.flattenCompleteProgram(sp);
-        // translate given absyn to scode. 
-        sp = Util.listFold(inClasses, translate2, sp);
-        sp = listReverse(sp);
-        SCodeCheck.checkDuplicateClasses(sp);
         
-        //print(Util.stringDelimitList(Util.listMap(sp, SCodeDump.printClassStr), "\n"));
-        // retrieve the expandable connector presence external flag
-        // hasExpandableConnectors = System.getHasExpandableConnectors();
-        // (ih, sp) = ExpandableConnectors.elaborateExpandableConnectors(sp, hasExpandableConnectors);
+        // translate builtin functions
+        spInitial = Util.listFold(initialClasses, translate2, {});
+        // call flatten program on the initial classes only
+        spInitial = SCodeFlatten.flattenCompleteProgram(spInitial);
+        spInitial = listReverse(spInitial);
+        
+        // translate given absyn to scode.
+        spAbsyn = Util.listFold(inClasses, translate2, {});
+        spAbsyn = listReverse(spAbsyn);
+        
+        // NOTE: we check duplicates separately for builtin
+        //       and for absyn to allow duplicates of 
+        //       ModelicaBuiltin.mo and MetaModelicaBuiltin.mo
+        
+        // check duplicates in builtin (initial) functions
+        SCodeCheck.checkDuplicateClasses(spInitial);
+        // check duplicates in absyn
+        SCodeCheck.checkDuplicateClasses(spAbsyn);
+         
+        sp = listAppend(spInitial, spAbsyn);
       then
         sp;
   end match;

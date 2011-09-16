@@ -50,7 +50,7 @@
   #define CONFIGURE_COMMANDLINE "Manually created Makefiles for Visual Studio"
 #endif
 
-#define LDFLAGS_SENDDATA " -lsendData -lQtNetwork-mingw -lQtCore-mingw -lQtGui-mingw -luuid -lole32 -lws2_32"
+#define LDFLAGS_SENDDATA " -static-libgcc -lsendData -lQtNetwork-mingw -lQtCore-mingw -lQtGui-mingw -luuid -lole32 -lws2_32"
 #define CONFIG_WITH_SENDDATA 1
 #define CONFIG_EXE_EXT ".exe"
 #define CONFIG_DLL_EXT ".dll"
