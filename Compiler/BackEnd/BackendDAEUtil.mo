@@ -418,7 +418,7 @@ end checkAssertCondition;
  * Initialisation and stuff 
  ************************************************/
 
-public function checkInitialSystem"function: checkInitialSystem
+public function checkInitialSystem "function: checkInitialSystem
   author: Frenkel TUD 2010-12
 
   - check if the inital conditions full specified and fix it 
@@ -429,7 +429,23 @@ public function checkInitialSystem"function: checkInitialSystem
   input DAE.FunctionTree funcs;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  outDAE := matchcontinue (inDAE,funcs)
+  outDAE := mapEqSystem1(inDAE,checkInitialSystemWork,funcs);
+end checkInitialSystem;
+
+protected function checkInitialSystemWork "function: checkInitialSystem
+  author: Frenkel TUD 2010-12
+
+  - check if the inital conditions full specified and fix it 
+  if not.
+"
+
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input DAE.FunctionTree funcs;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+algorithm
+  (osyst,oshared) := matchcontinue (syst,shared,funcs)
     local
       BackendDAE.Variables variables,knvars,exObj,aliasVars;
       BackendDAE.EquationArray orderedEqs,removedEqs,initialEqs;
@@ -443,8 +459,8 @@ algorithm
       list<DAE.ComponentRef> vars,varsws,states,statesws;
       BackendDAE.AliasVariables av;
    
-    case (dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=variables,orderedEqs=orderedEqs)::{},shared=BackendDAE.SHARED(knownVars=knvars,initialEqs=initialEqs,externalObjects=exObj,aliasVars=av,removedEqs=removedEqs,
-           arrayEqs=arrayEqs,algorithms=algs,eventInfo=eventInfo,extObjClasses=extObjClasses)),funcs)
+    case (syst as BackendDAE.EQSYSTEM(orderedVars=variables,orderedEqs=orderedEqs),shared as BackendDAE.SHARED(knownVars=knvars,initialEqs=initialEqs,externalObjects=exObj,aliasVars=av,removedEqs=removedEqs,
+           arrayEqs=arrayEqs,algorithms=algs,eventInfo=eventInfo,extObjClasses=extObjClasses),funcs)
       equation
         /* count the unfixed variables */
         // vars
@@ -456,31 +472,31 @@ algorithm
         BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst) = eventInfo;
         ((nie1,_)) = BackendEquation.traverseBackendDAEEqns(orderedEqs,countInitialEqns,(nie,whenClauseLst));
         ((nie2,_)) = BackendEquation.traverseBackendDAEEqns(removedEqs,countInitialEqns,(nie1,whenClauseLst));
-        dae1 = checkInitialSystem1(unfixed1,nie2,dae,funcs,vars,varsws,states,statesws);
-      then
-        dae1;
+        (syst,shared) = checkInitialSystem1(unfixed1,nie2,syst,shared,funcs,vars,varsws,states,statesws);
+      then (syst,shared);
     
-    case (dae,_)
+    case (syst,shared,_)
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.checkInitialSystem failed"});
-      then
-        dae;
+        Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.checkInitialSystemWork failed"});
+      then (syst,shared);
   end matchcontinue;
-end checkInitialSystem;
+end checkInitialSystemWork;
 
 protected function checkInitialSystem1"function: checkInitialSystem
   author: Frenkel TUD 2010-12"
   input Integer inUnfixed;
   input Integer inInitialEqns;
-  input BackendDAE.BackendDAE inDAE;
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
   input DAE.FunctionTree funcs;
   input list<DAE.ComponentRef> inVars;
   input list<DAE.ComponentRef> inVarsWS;
   input list<DAE.ComponentRef> inStates;
   input list<DAE.ComponentRef> inStatesWS;
-  output BackendDAE.BackendDAE outDAE;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
 algorithm
-  outDAE := matchcontinue (inUnfixed,inInitialEqns,inDAE,funcs,inVars,inVarsWS,inStates,inStatesWS)
+  (osyst,oshared) := matchcontinue (inUnfixed,inInitialEqns,syst,shared,funcs,inVars,inVarsWS,inStates,inStatesWS)
     local
       BackendDAE.Variables vars,knvars,exObj,vars1,knvars1;
       BackendDAE.EquationArray orderedEqs,removedEqs,initialEqs;
@@ -495,22 +511,22 @@ algorithm
       BackendDAE.Matching matching;
    
     // unfixed equal equations
-    case (inUnfixed,inInitialEqns,inDAE,_,_,_,_,_)
+    case (inUnfixed,inInitialEqns,syst,shared,_,_,_,_,_)
       equation
         true = intEq(inUnfixed,inInitialEqns);
       then 
-        inDAE;
+        (syst,shared);
   
     // unfixed less than equations
-    case (inUnfixed,inInitialEqns,inDAE,_,_,_,_,_)
+    case (inUnfixed,inInitialEqns,syst,shared,_,_,_,_,_)
       equation
         true = intLt(inUnfixed,inInitialEqns);
       then 
-        inDAE;
+        (syst,shared);
    
     // unfixed greater than equations
-    case (inUnfixed,inInitialEqns,inDAE as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(vars,orderedEqs,om,omT,matching)::{},shared=BackendDAE.SHARED(knownVars=knvars,initialEqs=initialEqs,externalObjects=exObj,aliasVars=alisvars,removedEqs=removedEqs,
-           arrayEqs=arrayEqs,algorithms=algs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=btp)),funcs,inVars,inVarsWS,inStates,inStatesWS)
+    case (inUnfixed,inInitialEqns,BackendDAE.EQSYSTEM(vars,orderedEqs,om,omT,matching),BackendDAE.SHARED(knownVars=knvars,initialEqs=initialEqs,externalObjects=exObj,aliasVars=alisvars,removedEqs=removedEqs,
+           arrayEqs=arrayEqs,algorithms=algs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=btp),funcs,inVars,inVarsWS,inStates,inStatesWS)
       equation
         true = RTOpts.debugFlag("dumpInit");
         print("Warning initial conditions not fully specified.\n");
@@ -519,26 +535,28 @@ algorithm
         true = intGt(inUnfixed,inInitialEqns);
         // change fixed to true until equal equations
         (vars1,knvars1) = fixInitalVars(inUnfixed,inInitialEqns,vars,knvars,inVars,inVarsWS,inStates,inStatesWS);
-        dae1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(vars1,orderedEqs,om,omT,matching)::{},BackendDAE.SHARED(knvars1,exObj,alisvars,initialEqs,removedEqs,arrayEqs,algs,eventInfo,extObjClasses,btp));
+        syst = BackendDAE.EQSYSTEM(vars1,orderedEqs,om,omT,matching);
+        shared = BackendDAE.SHARED(knvars1,exObj,alisvars,initialEqs,removedEqs,arrayEqs,algs,eventInfo,extObjClasses,btp);
       then 
-        dae1;
+        (syst,shared);
    
     // unfixed greater than equations
-    case (inUnfixed,inInitialEqns,inDAE as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(vars,orderedEqs,om,omT,matching)::{},shared=BackendDAE.SHARED(knownVars=knvars,externalObjects=exObj,aliasVars=alisvars,initialEqs=initialEqs,removedEqs=removedEqs,
-           arrayEqs=arrayEqs,algorithms=algs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=btp)),funcs,inVars,inVarsWS,inStates,inStatesWS)
+    case (inUnfixed,inInitialEqns,BackendDAE.EQSYSTEM(vars,orderedEqs,om,omT,matching),BackendDAE.SHARED(knownVars=knvars,externalObjects=exObj,aliasVars=alisvars,initialEqs=initialEqs,removedEqs=removedEqs,
+           arrayEqs=arrayEqs,algorithms=algs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=btp),funcs,inVars,inVarsWS,inStates,inStatesWS)
       equation
         true = intGt(inUnfixed,inInitialEqns);
         // change fixed to true until equal equations
         (vars1,knvars1) = fixInitalVars(inUnfixed,inInitialEqns,vars,knvars,inVars,inVarsWS,inStates,inStatesWS);
-        dae1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(vars1,orderedEqs,om,omT,matching)::{},BackendDAE.SHARED(knvars1,exObj,alisvars,initialEqs,removedEqs,arrayEqs,algs,eventInfo,extObjClasses,btp));
+        syst = BackendDAE.EQSYSTEM(vars1,orderedEqs,om,omT,matching);
+        shared = BackendDAE.SHARED(knvars1,exObj,alisvars,initialEqs,removedEqs,arrayEqs,algs,eventInfo,extObjClasses,btp);
       then 
-        dae1;
+        (syst,shared);
 
-    else
+    case (_,_,syst,shared,_,_,_,_,_)
       equation
-        print("- BackendDAEUtil.checkInitialSystem1 failed\n");
+        Error.addMessage(Error.INTERNAL_ERROR,{"- BackendDAEUtil.checkInitialSystem1 failed"});
       then
-        inDAE;
+        (syst,shared);
   end matchcontinue;
 end checkInitialSystem1;
 
