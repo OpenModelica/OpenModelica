@@ -2163,12 +2163,12 @@ algorithm
         modelInfo = createModelInfo(class_, dlow2, functions, n_h, nres, fileDir,ifcpp);
         
         // equation generation for euler, dassl2, rungekutta
-        {syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1,ass2,comps))} = systs;
+        {syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))} = systs;
         (blt_states,blt_no_states) = BackendDAEUtil.generateStatePartition(syst);
         blt_no_states1=Util.if_(ifcpp,comps,blt_no_states); 
         blt_states1=Util.if_(ifcpp,comps,blt_states);
 
-        (contBlocks, discBlocks) = splitOutputBlocks(dlow2, ass1, ass2, blt_no_states1);
+        (contBlocks, discBlocks) = splitOutputBlocks(dlow2, blt_no_states1);
         contBlocks1=Util.if_(ifcpp,discBlocks,blt_no_states1); 
         odeEquations = createEquations(false, false, ifcpp, false, false, dlow2, blt_states1, helpVarInfo);
         algebraicEquations = createEquations(ifcpp, false, ifcpp, false, false, dlow2, contBlocks1, helpVarInfo);
@@ -2207,7 +2207,7 @@ algorithm
 
         // generate jacobian or linear model matrices
         // can be activeted by debug flag "+d=jacobian|linearization"        
-        LinearMatrices = createJacobianCC(functionTree,dlow,ass1,ass2,comps);
+        LinearMatrices = createJacobianCC(functionTree,dlow);
         LinearMatrices = createLinearModelMatrixes(functionTree,dlow,LinearMatrices);       
         modelInfo = expandModelInfoVars(LinearMatrices,modelInfo);
         
@@ -2383,13 +2383,10 @@ protected function createJacobianCC
  author: wbraun"
   input DAE.FunctionTree functions;
   input BackendDAE.BackendDAE inBackendDAE2;
-  input array<Integer> inIntegerArray3;
-  input array<Integer> inIntegerArray4;
-  input BackendDAE.StrongComponents inComps;
   output list<JacobianMatrix> outjacobianMatrixes;
 algorithm
   outjacobianMatrixes :=
-  matchcontinue (functions,inBackendDAE2,inIntegerArray3,inIntegerArray4,inComps)
+  matchcontinue (functions,inBackendDAE2)
     local
       BackendDAE.BackendDAE dlow;
       array<Integer> ass1,ass2;
@@ -2406,7 +2403,7 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
       
-    case (functions,dlow as BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(orderedVars = v,orderedEqs = e)},shared as BackendDAE.SHARED(knownVars = kv)),ass1,ass2,comps)
+    case (functions,dlow as BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(orderedVars = v,orderedEqs = e,matching=BackendDAE.MATCHING(ass1,ass2,comps))},shared as BackendDAE.SHARED(knownVars = kv)))
       equation
         true = RTOpts.debugFlag("jacobian");
         
@@ -2439,7 +2436,7 @@ algorithm
         linearModelMatrices = {linearModelMatrix,({},{},"B"),({},{},"C"),({},{},"D")};
       then
         linearModelMatrices;
-    case (_,dlow,ass1,ass2,_)
+    case (_,dlow)
       equation
         false = RTOpts.debugFlag("jacobian");
         linearModelMatrices = {({},{},"A"),({},{},"B"),({},{},"C"),({},{},"D")};
@@ -6402,13 +6399,14 @@ algorithm
       BackendDAE.EquationArray ie;
       BackendDAE.AliasVariables aliasVars;
       list<DAE.ComponentRef> initCrefs;
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars)::{},shared=BackendDAE.SHARED(
+      BackendDAE.EqSystems systs;
+    case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(
       knownVars = knvars, initialEqs=ie,
       externalObjects = extvars,
       aliasVars = aliasVars as BackendDAE.ALIASVARS(aliasVars = removedvars))))
       equation
         /* Extract from variable list */  
-        ((varsOut,_,_)) = BackendVariable.traverseBackendDAEVars(vars,extractVarsFromList,(SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{},{},{},{},{},{},{}),aliasVars,knvars));
+        ((varsOut,_,_)) = Util.listFold1(Util.listMap(systs,BackendVariable.daeVars),BackendVariable.traverseBackendDAEVars,extractVarsFromList,(SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{},{},{},{},{},{},{}),aliasVars,knvars));
         /* Extract from known variable list */
         ((varsOut,_,_)) = BackendVariable.traverseBackendDAEVars(knvars,extractVarsFromList,(varsOut,aliasVars,knvars));
         /* Extract from removed variable list */
@@ -8417,18 +8415,16 @@ protected function splitOutputBlocks
   This must be done to ensure that discrete variables are calculated before and
   after a discrete event."
   input BackendDAE.BackendDAE dlow;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
   input BackendDAE.StrongComponents inComps;
   output BackendDAE.StrongComponents contBlocks;
   output BackendDAE.StrongComponents discBlocks;
 algorithm
-  (contBlocks,discBlocks) := match(dlow,ass1,ass2,inComps)
+  (contBlocks,discBlocks) := match(dlow,inComps)
     local 
       BackendDAE.Variables vars,vars2,knvars;
       list<BackendDAE.Var>  varLstDiscrete;
       BackendDAE.EquationArray eqns;
-    case (dlow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns)::{},shared=BackendDAE.SHARED(knownVars = knvars)),ass1,ass2,inComps)
+    case (dlow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns)::{},shared=BackendDAE.SHARED(knownVars = knvars)),inComps)
       equation
         varLstDiscrete = BackendVariable.getAllDiscreteVarFromVariables(vars);
         vars2 = BackendDAEUtil.listVar(varLstDiscrete);
