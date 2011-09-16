@@ -2145,7 +2145,7 @@ algorithm
          //Debug.fcall("cppvar",print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
         cname = Absyn.pathStringNoQual(class_);
                
-        (helpVarInfo, dlow2,sampleEqns) = generateHelpVarInfo(dlow);
+        (helpVarInfo,dlow2,sampleEqns) = generateHelpVarInfo(dlow);
         dlow2 = BackendDAEUtil.checkInitialSystem(dlow2,functionTree);
         
         residualEquations = createResidualEquations(dlow2);
@@ -2698,18 +2698,16 @@ algorithm
   (outHelpVarInfo, dlow) := generateHelpVarsForWhenStatements(outHelpVarInfo, dlow);
   // Generate HelpVars for sample call outside whenclause
   // additional collect all these equations
-  (outHelpVarInfo, outBackendDAE,outSampleEqns) := searchForSampleOutsideWhen(outHelpVarInfo, dlow);
+  (outBackendDAE,(outHelpVarInfo,outSampleEqns)) := BackendDAEUtil.mapEqSystemAndFold(dlow,searchForSampleOutsideWhen,(outHelpVarInfo,{}));
 end generateHelpVarInfo;
 
 protected function searchForSampleOutsideWhen
-  input list<HelpVarInfo> inHelpVarInfo;
-  input BackendDAE.BackendDAE inBackendDAE;
-  output list<HelpVarInfo> outHelpVarInfo;
-  output BackendDAE.BackendDAE outBackendDAE;
-  output list<BackendDAE.Equation> outSampleEqn;
+  input BackendDAE.EqSystem syst;
+  input tuple<BackendDAE.Shared,tuple<list<HelpVarInfo>,list<BackendDAE.Equation>>> tpl;
+  output BackendDAE.EqSystem osyst;
+  output tuple<BackendDAE.Shared,tuple<list<HelpVarInfo>,list<BackendDAE.Equation>>> otpl;
 algorithm
-  (outHelpVarInfo,outBackendDAE,outSampleEqn) :=
-  matchcontinue (inHelpVarInfo,inBackendDAE)
+  (osyst,otpl) := matchcontinue (syst,tpl)
     local
       list<HelpVarInfo> helpvars;
       BackendDAE.Variables orderedVars;
@@ -2728,18 +2726,16 @@ algorithm
       BackendDAE.Shared shared;
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.Matching matching;
-    case  (helpvars,BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching)::{},shared))
+    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),(shared,(helpvars,sampleEquations)))
       equation
         eqnsList = BackendDAEUtil.equationList(orderedEqs);
-        (eqnsList,sampleEquations,(_,helpvars)) = BackendEquation.traverseBackendDAEExpsEqnListOutEqn(eqnsList, {}, sampleFinder,  (listLength(helpvars)-1,helpvars));
+        (eqnsList,sampleEquations,(_,helpvars)) = BackendEquation.traverseBackendDAEExpsEqnListOutEqn(eqnsList, sampleEquations, sampleFinder,  (listLength(helpvars)-1,helpvars));
         orderedEqs = BackendDAEUtil.listEquation(eqnsList);
-      then (helpvars,BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching)::{},shared),sampleEquations);
-    case (_,_)
+      then (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),(shared,(helpvars,sampleEquations)));
+    else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,
-          {"searchForSampleOutsideWhen failed"});
-      then
-        fail();
+        Error.addMessage(Error.INTERNAL_ERROR,{"searchForSampleOutsideWhen failed"});
+      then fail();
   end matchcontinue;
 end searchForSampleOutsideWhen;
 
@@ -2810,13 +2806,11 @@ algorithm
       BackendDAE.EquationArray eqns;
       list<BackendDAE.WhenClause> whenClauseList;
       BackendDAE.StrongComponents comps;
-    case ((dlow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns, matching = BackendDAE.MATCHING(comps=comps))::{},shared=BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = whenClauseList)))))
+      BackendDAE.EqSystems systs;
+      BackendDAE.Shared shared;
+    case (BackendDAE.DAE(eqs=systs,shared=shared as BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = whenClauseList))))
       equation
-        orderOfEquations = generateEquationOrder(comps);
-        n = BackendDAEUtil.equationSize(eqns);
-        orderOfEquations_1 = addMissingEquations(n, listReverse(orderOfEquations));
-        // First generate checks for all when equations, in the order of the sorted equations.
-        (_, helpVarInfo1) = buildWhenConditionChecks4(orderOfEquations_1, eqns, whenClauseList, 0);
+        helpVarInfo1 = Util.listFlatten(Util.listMap1(systs,helpVarInfoFromWhenConditionChecks1,shared));
         n = listLength(helpVarInfo1);
         // Generate checks also for when clauses without equations but containing reinit statements.
         (_, helpVarInfo2) = buildWhenConditionChecks2(whenClauseList, 0, n);
@@ -2830,6 +2824,39 @@ algorithm
         fail();
   end matchcontinue;
 end helpVarInfoFromWhenConditionChecks;
+
+protected function helpVarInfoFromWhenConditionChecks1
+"Return a list of help variables that were introduced by when conditions?"
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  output list<HelpVarInfo> helpVarList;
+algorithm
+  helpVarList :=
+  matchcontinue (syst,shared)
+    local
+      list<Integer> orderOfEquations,orderOfEquations_1;
+      Integer n;
+      list<HelpVarInfo> helpVarInfo1,helpVarInfo2,helpVarInfo;
+      BackendDAE.BackendDAE dlow;
+      BackendDAE.EquationArray eqns;
+      list<BackendDAE.WhenClause> whenClauseList;
+      BackendDAE.StrongComponents comps;
+    case (BackendDAE.EQSYSTEM(orderedEqs = eqns, matching = BackendDAE.MATCHING(comps=comps)),shared as BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = whenClauseList)))
+      equation
+        orderOfEquations = generateEquationOrder(comps);
+        n = BackendDAEUtil.equationSize(eqns);
+        orderOfEquations_1 = addMissingEquations(n, listReverse(orderOfEquations));
+        // First generate checks for all when equations, in the order of the sorted equations.
+        (_, helpVarInfo) = buildWhenConditionChecks4(orderOfEquations_1, eqns, whenClauseList, 0);
+      then
+        (helpVarInfo);
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"SimCode.helpVarInfoFromWhenConditionChecks1 failed"});
+      then
+        fail();
+  end matchcontinue;
+end helpVarInfoFromWhenConditionChecks1;
 
 protected function buildDiscreteVarChanges "
 For all discrete variables in the model, generate code that checks if they have changed and if so generate code

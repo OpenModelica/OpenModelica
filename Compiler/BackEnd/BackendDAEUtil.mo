@@ -462,7 +462,7 @@ algorithm
     
     case (dae,_)
       equation
-        print("- BackendDAEUtil.checkInitialSystem failed\n");
+        Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.checkInitialSystem failed"});
       then
         dae;
   end matchcontinue;
