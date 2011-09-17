@@ -432,7 +432,7 @@ void printTypeOfAny(void*); /* For debugging */
 char* getTypeOfAny(void*); /* For debugging */
 char* getRecordElementName(void*, int); /* For debugging */
 int isOptionNone(void*); /* For debugging */
-void changeStdoutBuffer(); /* For debugging */
+void changeStdStreamBuffer(); /* For debugging */
 
 /*
  * Generated (Meta)Records should access a static, constant value of 

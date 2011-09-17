@@ -610,12 +610,13 @@ int isOptionNone(void* any)
 }
 
 /*
- * On windows Mingw based gcc has a buffer based stdout.
+ * The gdb often use the buffer based stdout.
  * So printf does not print straight away on the console.
  * changing it to NULL fix the problem.
  * */
-void changeStdoutBuffer() {
+void changeStdStreamBuffer() {
   setbuf(stdout, NULL);
+  setbuf(stderr, NULL);
 }
 
 unsigned long mmc_prim_hash(void *p)
