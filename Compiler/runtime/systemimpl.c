@@ -1541,6 +1541,26 @@ extern void SystemImpl_tmpTickResetIndex(int start, int index)
   tmp_tick_no[index] = start;
 }
 
+extern int SystemImpl__reopenStandardStream(int id,const char *filename)
+{
+  FILE *file;
+  const char* mode;
+  const char* streamName;
+  switch (id) {
+  case 0: file=stdin;mode="r";streamName="stdin";break;
+  case 1: file=stdout;mode="w";streamName="stdout";break;
+  case 2: file=stderr;mode="w";streamName="stderr";break;
+  default: return 0;
+  }
+  file = freopen(filename,mode,file);
+  if (file==NULL) {
+    const char *tokens[4] = {strerror(errno),streamName,mode,filename};
+    c_add_message(-1,"SCRIPTING","ERROR","freopen(%s,%s,%s) failed: %s",tokens,4);
+    return 0;
+  }
+  return 1;
+}
+
 #ifdef __cplusplus
 }
 #endif

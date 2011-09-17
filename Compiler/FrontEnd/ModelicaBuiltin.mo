@@ -1335,5 +1335,13 @@ function solveLinearSystem
 external "builtin";
 end solveLinearSystem;
 
+type StandardStream = enumeration(stdin,stdout,stderr);
+function reopenStandardStream
+  input StandardStream _stream;
+  input String filename;
+  output Boolean success;
+external "builtin";
+end reopenStandardStream;
+
 end Scripting;
 end OpenModelica;

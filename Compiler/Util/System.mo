@@ -867,4 +867,11 @@ public function lpsolve55
   external "C" info=SystemImpl__lpsolve55(A,B,intIndices,X) annotation(Library = {"omcruntime"});
 end lpsolve55;
 
+public function reopenStandardStream
+  input Integer _stream "stdin,stdout,stderr";
+  input String filename;
+  output Boolean success;
+  external "C" success=SystemImpl__reopenStandardStream(_stream,filename) annotation(Library = {"omcruntime"});
+end reopenStandardStream;
+
 end System;

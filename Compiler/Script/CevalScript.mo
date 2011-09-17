@@ -1211,6 +1211,12 @@ algorithm
       then
         (cache,Values.STRING(str),st);
 
+    case (cache,env,"reopenStandardStream",{Values.ENUM_LITERAL(index=i),Values.STRING(filename)},st,msg)
+      equation
+        b = System.reopenStandardStream(i-1,filename);
+      then
+        (cache,Values.BOOL(b),st);
+
     case (cache,env,"setDataPort",{Values.INTEGER(i)},st,msg)
       equation
         System.setDataPort(i);

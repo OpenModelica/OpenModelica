@@ -2081,3 +2081,10 @@ RML_BEGIN_LABEL(System__getLoadModelPath)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__reopenStandardStream)
+{
+  rmlA0 = mk_icon(SystemImpl__reopenStandardStream(RML_UNTAGFIXNUM(rmlA0),RML_STRINGDATA(rmlA1)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
