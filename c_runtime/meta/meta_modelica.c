@@ -615,9 +615,7 @@ int isOptionNone(void* any)
  * changing it to NULL fix the problem.
  * */
 void changeStdoutBuffer() {
-#if defined(__MINGW32__) || defined(_MSC_VER)
   setbuf(stdout, NULL);
-#endif
 }
 
 unsigned long mmc_prim_hash(void *p)
