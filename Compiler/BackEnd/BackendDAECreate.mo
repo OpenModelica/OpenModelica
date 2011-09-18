@@ -3537,16 +3537,17 @@ end traverseStmtsForExps;
 public function zeroCrossingsEquations
 "Returns a list of all equations (by their index) that contain a zero crossing
  Used e.g. to find out which discrete equations are not part of a zero crossing"
-  input BackendDAE.BackendDAE dae;
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
   output list<Integer> eqns;
 algorithm
-  eqns := match (dae)
+  eqns := match (syst,shared)
     local
       list<BackendDAE.ZeroCrossing> zcLst;
       list<list<Integer>> zcEqns;
       list<Integer> wcEqns;
       BackendDAE.EquationArray eqnArr;
-    case (BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst = zcLst)),eqs=BackendDAE.EQSYSTEM(orderedEqs=eqnArr)::{})) 
+    case (BackendDAE.EQSYSTEM(orderedEqs=eqnArr),BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst = zcLst))) 
       equation
         zcEqns = Util.listMap(zcLst,zeroCrossingEquations);
         wcEqns = whenEquationsIndices(eqnArr);

@@ -3171,8 +3171,12 @@ protected function generateEqFromBlt
   input BackendDAE.BackendDAE dlow;
   input array<Integer> ass1, ass2;
   output list<SimCode.SimEqSystem> out;
+protected
+  BackendDAE.EqSystem syst;
+  BackendDAE.Shared shared;
 algorithm
-  out := SimCode.createEquations(false, false, false, false, false, dlow, comps, {});
+  BackendDAE.DAE({syst},shared) := dlow;
+  out := SimCode.createEquations(false, false, false, false, false, syst, shared, comps, {});
 end generateEqFromBlt;
 
 protected function isPositive
