@@ -59,6 +59,7 @@ public import Settings;
 public import Values;
 
 // protected imports
+protected import Builtin;
 protected import Ceval;
 protected import ClassInf;
 protected import ClassLoader;
@@ -16463,6 +16464,25 @@ public function getPathedClassInProgram
   input Absyn.Program inProgram;
   output Absyn.Class outClass;
 algorithm
+  outClass := matchcontinue (inPath,inProgram)
+    local
+      Absyn.Program p;
+      Absyn.Path path;
+
+    case (path,p) then getPathedClassInProgramWork(path, p);
+    case (path,p) then getPathedClassInProgramWork(path,Builtin.getInitialFunctions());
+
+  end matchcontinue;
+end getPathedClassInProgram;
+
+public function getPathedClassInProgramWork
+"function: getPathedClassInProgramWork
+  This function takes a Path and a Program and retrieves the
+  class definition referenced by the Path from the Program."
+  input Absyn.Path inPath;
+  input Absyn.Program inProgram;
+  output Absyn.Class outClass;
+algorithm
   outClass := match (inPath,inProgram)
     local
       Absyn.Class c1,c1def,res;
@@ -16487,11 +16507,11 @@ algorithm
       equation
         c1def = getClassInProgram(str, p);
         classes = getClassesInClass(Absyn.IDENT(str), p, c1def);
-        res = getPathedClassInProgram(prest, Absyn.PROGRAM(classes,w,ts));
+        res = getPathedClassInProgramWork(prest, Absyn.PROGRAM(classes,w,ts));
       then
         res;
   end match;
-end getPathedClassInProgram;
+end getPathedClassInProgramWork;
 
 protected function getClassesInClass
 "function: getClassesInClass
