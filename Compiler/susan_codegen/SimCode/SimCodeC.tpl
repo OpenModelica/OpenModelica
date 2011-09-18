@@ -5094,7 +5094,7 @@ case IFEXP(__) then
   let eThen = daeExp(expThen, context, &preExpThen /*BUFC*/, &varDecls /*BUFD*/)
   let &preExpElse = buffer "" /*BUFD*/
   let eElse = daeExp(expElse, context, &preExpElse /*BUFC*/, &varDecls /*BUFD*/)
-  let shortIfExp = if preExpThen then "" else if preExpElse then "" else "x"
+  let shortIfExp = if preExpThen then "" else if preExpElse then "" else if isArrayType(typeof(exp)) then "" else "x"
   (if shortIfExp
     then
       // Safe to do if eThen and eElse don't emit pre-expressions

@@ -1984,6 +1984,11 @@ package Expression
     output list<DAE.Exp> expLst;
   end flattenArrayExpToList;
 
+  function isArrayType
+    input DAE.ExpType e;
+    output Boolean b;
+  end isArrayType;
+
 end Expression;
 
 package ExpressionDump
