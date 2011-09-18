@@ -27,7 +27,7 @@ $inStmtLine = 0;
 while( $line = <INP> ){
   $trimmedLine = trim($line);
   # regex is fun
-  if ($trimmedLine =~ /^ *..#modelicaLine .([A-Za-z.\/]*):([0-9]*):[0-9]*-[0-9]*:[0-9]*...$/) {
+  if ($trimmedLine =~ /^ *..#modelicaLine .([A-Za-z0-9.\/]*):([0-9]*):[0-9]*-[0-9]*:[0-9]*...$/) {
     eval { 
 		if ($^O eq "msys") {
 			# split the file location
