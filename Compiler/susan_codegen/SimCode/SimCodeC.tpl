@@ -4492,7 +4492,7 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
 ::=
   match ecr
   case ecr as CREF(componentRef=cr, ty=ty) then
-    let &preExp += '/* daeExpCrefRhs2 begin preExp (<%ExpressionDump.printExpStr(ecr)%>) */<%\n%>'
+    // let &preExp += '/* daeExpCrefRhs2 begin preExp (<%ExpressionDump.printExpStr(ecr)%>) */<%\n%>'
     let box = daeExpCrefRhsArrayBox(ecr, context, &preExp, &varDecls)
     if box then
       box
@@ -4506,7 +4506,7 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
         if crefSubIsScalar(cr) 
         then
           // The array subscript results in a scalar
-          let &preExp += '/* daeExpCrefRhs2 SCALAR(<%ExpressionDump.printExpStr(ecr)%>) preExp  */<%\n%>'
+          // let &preExp += '/* daeExpCrefRhs2 SCALAR(<%ExpressionDump.printExpStr(ecr)%>) preExp  */<%\n%>'
           let arrName = contextCref(crefStripLastSubs(cr), context)
           let arrayType = expTypeArray(ty)
           let dimsLenStr = listLength(crefSubs(cr))
@@ -4534,7 +4534,7 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
                 else error(sourceInfo(),'Indexing non-array <%printExpStr(ecr)%>')
         else
           // The array subscript denotes a slice
-          let &preExp += '/* daeExpCrefRhs2 SLICE(<%ExpressionDump.printExpStr(ecr)%>) preExp  */<%\n%>'
+          // let &preExp += '/* daeExpCrefRhs2 SLICE(<%ExpressionDump.printExpStr(ecr)%>) preExp  */<%\n%>'
           let arrName = contextArrayCref(cr, context)
           let arrayType = expTypeArray(ty)
           let tmp = tempDecl(arrayType, &varDecls /*BUFD*/)
@@ -4543,12 +4543,8 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
           tmp
     
   case ecr then
-    let &preExp += '/* daeExpCrefRhs2 UNHANDLED(<%ExpressionDump.printExpStr(ecr)%>) preExp */<%\n%>'
-    <<
-    /* SimCodeC.tpl template: daeExpCrefRhs2: UNHANDLED EXPRESSION: 
-     * <%ExpressionDump.printExpStr(ecr)%>
-     */
-    >>
+    // let &preExp += '/* daeExpCrefRhs2 UNHANDLED(<%ExpressionDump.printExpStr(ecr)%>) preExp */<%\n%>'
+    error(sourceInfo(),'daeExpCrefRhs2: UNHANDLED EXPRESSION: <%ExpressionDump.printExpStr(ecr)%>')
 end daeExpCrefRhs2;
 
 template threadDimSubList(list<Dimension> dims, list<Subscript> subs, Context context, Text &preExp, Text &varDecls)
