@@ -5796,6 +5796,7 @@ case exp as MATCHEXPRESSION(__) then
   let onPatternFail = match exp.matchType case MATCHCONTINUE(__) then "MMC_THROW()" case MATCH(__) then "break"
   let &preExp +=
       <<
+      /*#endModelicaLine*/
       { /* <% match exp.matchType case MATCHCONTINUE(__) then "matchcontinue expression" case MATCH(__) then "match expression" %> */        
         <%varDeclsInput%>
         <%preExpInput%>
