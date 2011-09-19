@@ -50,7 +50,7 @@ extern "C" {
 #define GEN_META_MODELICA_BUILTIN_BOXPTR
 #include "meta_modelica_builtin_boxptr.h"
 
-intString_rettype intString(modelica_integer i)
+metamodelica_string intString(modelica_integer i)
 {
   /* 64-bit integer: 1+log_10(2**63)+1 = 20 digits max */
   static char buffer[32];
@@ -71,7 +71,7 @@ modelica_metatype boxptr_intMax(modelica_metatype a,modelica_metatype b)
 
 /* String Character Conversion */
 
-stringCharInt_rettype stringCharInt(metamodelica_string chr)
+modelica_integer stringCharInt(metamodelica_string chr)
 {
   unsigned char c;
   if (MMC_STRLEN(chr) != 1)
@@ -81,7 +81,7 @@ stringCharInt_rettype stringCharInt(metamodelica_string chr)
   return c;
 }
 
-intStringChar_rettype intStringChar(modelica_integer ix)
+metamodelica_string intStringChar(modelica_integer ix)
 {
   char chr[2];
   if (ix < 1 || ix > 255)
@@ -93,7 +93,7 @@ intStringChar_rettype intStringChar(modelica_integer ix)
 
 /* String Operations */
 
-stringInt_rettype stringInt(metamodelica_string s)
+modelica_integer stringInt(metamodelica_string s)
 {
   long res;
   char *endptr,*str=MMC_STRINGDATA(s);
@@ -110,7 +110,7 @@ stringInt_rettype stringInt(metamodelica_string s)
   return res;
 }
 
-stringReal_rettype stringReal(metamodelica_string s)
+modelica_real stringReal(metamodelica_string s)
 {
   double res;
   char *endptr,*str=MMC_STRINGDATA(s);
@@ -155,7 +155,7 @@ static inline unsigned long sdbm_hash(const unsigned char* str)
 }
 
 /* adrpo: really bad hash :) */
-stringHash_rettype stringHash(metamodelica_string_const s)
+modelica_integer stringHash(metamodelica_string_const s)
 {
   const char* str = MMC_STRINGDATA(s);
   long res = 0, i=0;
@@ -164,7 +164,7 @@ stringHash_rettype stringHash(metamodelica_string_const s)
 }
 
 /* adrpo: see the comment above about djb2 hash */
-stringHashDjb2_rettype stringHashDjb2(metamodelica_string_const s)
+modelica_integer stringHashDjb2(metamodelica_string_const s)
 {
   const char* str = MMC_STRINGDATA(s);
   long res = djb2_hash((const unsigned char*)str);
@@ -174,7 +174,7 @@ stringHashDjb2_rettype stringHashDjb2(metamodelica_string_const s)
 }
 
 /* adrpo: see the comment above about djb2 hash */
-stringHashDjb2Mod_rettype stringHashDjb2Mod(metamodelica_string_const s, modelica_integer mod)
+modelica_integer stringHashDjb2Mod(metamodelica_string_const s, modelica_integer mod)
 {
   const char* str = MMC_STRINGDATA(s);
   long res = djb2_hash((const unsigned char*)str) % (unsigned int) mod;
@@ -189,7 +189,7 @@ modelica_metatype boxptr_stringHashDjb2Mod(modelica_metatype v,modelica_metatype
 }
 
 /* adrpo: see the comment above about sdbm hash */
-stringHashSdbm_rettype stringHashSdbm(metamodelica_string_const s)
+modelica_integer stringHashSdbm(metamodelica_string_const s)
 {
   const char* str = MMC_STRINGDATA(s);
   long res = sdbm_hash((const unsigned char*)str);
@@ -215,7 +215,7 @@ modelica_metatype boxptr_stringHashSdbm(modelica_metatype str)
   return mmc_mk_icon(stringHashSdbm(str));
 }
 
-stringListStringChar_rettype stringListStringChar(metamodelica_string s)
+metamodelica_string stringListStringChar(metamodelica_string s)
 {
   const char *str = MMC_STRINGDATA(s);
   char chr[2] = {'\0', '\0'};
@@ -229,7 +229,7 @@ stringListStringChar_rettype stringListStringChar(metamodelica_string s)
   return res;
 }
 
-stringAppendList_rettype stringAppendList(modelica_metatype lst)
+metamodelica_string stringAppendList(modelica_metatype lst)
 {
   // fprintf(stderr, "stringAppendList(%s)\n", anyString(lst));
   modelica_integer lstLen, len;
@@ -276,11 +276,11 @@ stringAppendList_rettype stringAppendList(modelica_metatype lst)
   return p;
 }
 
-stringCompare_rettype mmc_stringCompare(const void *str1, const void *str2)
+modelica_integer mmc_stringCompare(const void *str1, const void *str2)
 {
   MMC_CHECK_STRING(str1);
   MMC_CHECK_STRING(str2);
-  stringCompare_rettype res = strcmp(MMC_STRINGDATA(str1),MMC_STRINGDATA(str2));
+  int res = strcmp(MMC_STRINGDATA(str1),MMC_STRINGDATA(str2));
   if (res < 0)
     return -1;
   if (res > 0)
@@ -288,7 +288,7 @@ stringCompare_rettype mmc_stringCompare(const void *str1, const void *str2)
   return 0;
 }
 
-stringGetStringChar_rettype stringGetStringChar(metamodelica_string str, modelica_integer ix)
+modelica_metatype stringGetStringChar(metamodelica_string str, modelica_integer ix)
 {
   char chr[2] = {'\0','\0'};
   void *res;
@@ -301,7 +301,7 @@ stringGetStringChar_rettype stringGetStringChar(metamodelica_string str, modelic
   return res;
 }
 
-stringUpdateStringChar_rettype stringUpdateStringChar(metamodelica_string str, metamodelica_string c, modelica_integer ix)
+modelica_metatype stringUpdateStringChar(metamodelica_string str, metamodelica_string c, modelica_integer ix)
 {
   int length;
   unsigned header = MMC_GETHDR(str);
@@ -351,7 +351,7 @@ metamodelica_string_const stringAppend(metamodelica_string_const s1, metamodelic
 
 /* List Operations */
 
-listReverse_rettype listReverse(modelica_metatype lst)
+modelica_metatype listReverse(modelica_metatype lst)
 {
   modelica_metatype res;
   res = mmc_mk_nil();
@@ -363,20 +363,7 @@ listReverse_rettype listReverse(modelica_metatype lst)
   return res;
 }
 
-/*listAppend_rettype listAppendOld(modelica_metatype lst1,modelica_metatype lst2)
-{
-  if (MMC_NILTEST(lst2))
-    return lst1;
-  lst1 = listReverse(lst1);
-  while (!MMC_NILTEST(lst1))
-  {
-    lst2 = mmc_mk_cons(MMC_CAR(lst1),lst2);
-    lst1 = MMC_CDR(lst1);
-  }
-  return lst2;
-}*/
-
-listAppend_rettype listAppend(modelica_metatype lst1,modelica_metatype lst2)
+modelica_metatype listAppend(modelica_metatype lst1,modelica_metatype lst2)
 {
   int length,i;
   mmc_cons_struct *res;
@@ -402,19 +389,7 @@ listAppend_rettype listAppend(modelica_metatype lst1,modelica_metatype lst2)
   return MMC_TAGPTR(res);
 }
 
-/*listAppend_rettype listAppend(modelica_metatype lst1,modelica_metatype lst2)
-{
-  void *p1,*p2;
-  p1 = listAppendOld(lst1,lst2);
-  p2 = listAppendNew(lst1,lst2);
-  if (valueEq(p1,p2)) return p1;
-  fprintf(stderr, "listAppend:\n  %s\n  %s\n", anyString(lst1), anyString(lst2));
-  fprintf(stderr, "res:\n  %s\n", anyString(p1));
-  fprintf(stderr, "  %s\n", anyString(p2));
-  EXIT(1);
-}*/
-
-listLength_rettype listLength(modelica_metatype lst)
+modelica_integer listLength(modelica_metatype lst)
 {
   modelica_integer res = 0;
   while (!MMC_NILTEST(lst))
@@ -425,7 +400,7 @@ listLength_rettype listLength(modelica_metatype lst)
   return res;
 }
 
-listMember_rettype listMember(modelica_metatype obj, modelica_metatype lst)
+modelica_boolean listMember(modelica_metatype obj, modelica_metatype lst)
 {
   while (!MMC_NILTEST(lst))
   {
@@ -436,7 +411,7 @@ listMember_rettype listMember(modelica_metatype obj, modelica_metatype lst)
   return 0;
 }
 
-listGet_rettype listGet(modelica_metatype lst, modelica_integer i)
+modelica_metatype listGet(modelica_metatype lst, modelica_integer i)
 {
   if (i < 1)
     MMC_THROW();
@@ -461,7 +436,7 @@ modelica_metatype boxptr_listNth(modelica_metatype lst, modelica_metatype i)
   return listGet(lst,mmc_unbox_integer(i)+1);
 }
 
-listDelete_rettype listDelete(modelica_metatype lst, modelica_integer ix)
+modelica_metatype listDelete(modelica_metatype lst, modelica_integer ix)
 {
   modelica_metatype *tmpArr;
   int i;
@@ -503,12 +478,12 @@ listDelete_rettype listDelete(modelica_metatype lst, modelica_integer ix)
 }
 
 /* Array Operations */
-arrayLength_rettype arrayLength(modelica_metatype arr)
+modelica_integer arrayLength(modelica_metatype arr)
 {
   return MMC_HDRSLOTS(MMC_GETHDR(arr));
 }
 
-arrayGet_rettype arrayGet(modelica_metatype arr, modelica_integer ix)
+modelica_metatype arrayGet(modelica_metatype arr, modelica_integer ix)
 {
   if (ix < 1)
     MMC_THROW();
@@ -522,7 +497,7 @@ modelica_metatype boxptr_arrayGet(modelica_metatype a, modelica_metatype i)
   return arrayGet(a,MMC_UNTAGFIXNUM(i));
 }
 
-arrayCreate_rettype arrayCreate(modelica_integer nelts, modelica_metatype val)
+modelica_metatype arrayCreate(modelica_integer nelts, modelica_metatype val)
 {
   void* arr = (struct mmc_struct*)mmc_mk_box_no_assign(nelts, MMC_ARRAY_TAG);
   void **arrp = MMC_STRUCTDATA(arr);
@@ -531,7 +506,7 @@ arrayCreate_rettype arrayCreate(modelica_integer nelts, modelica_metatype val)
   return arr;
 }
 
-arrayList_rettype arrayList(modelica_metatype arr)
+modelica_metatype arrayList(modelica_metatype arr)
 {
   int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr))-1;
   void **vecp = MMC_STRUCTDATA(arr);
@@ -541,7 +516,7 @@ arrayList_rettype arrayList(modelica_metatype arr)
   return res;
 }
 
-listArray_rettype listArray(modelica_metatype lst)
+modelica_metatype listArray(modelica_metatype lst)
 {
   int nelts = listLength(lst);
   void* arr = (struct mmc_struct*)mmc_mk_box_no_assign(nelts, MMC_ARRAY_TAG);
@@ -553,7 +528,7 @@ listArray_rettype listArray(modelica_metatype lst)
   return arr;
 }
 
-arrayUpdate_rettype arrayUpdate(modelica_metatype arr, modelica_integer ix, modelica_metatype val)
+modelica_metatype arrayUpdate(modelica_metatype arr, modelica_integer ix, modelica_metatype val)
 {
   int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr));
   if (ix < 1 || ix > nelts)
@@ -562,7 +537,7 @@ arrayUpdate_rettype arrayUpdate(modelica_metatype arr, modelica_integer ix, mode
   return arr;
 }
 
-arrayCopy_rettype arrayCopy(modelica_metatype arr)
+modelica_metatype arrayCopy(modelica_metatype arr)
 {
   int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr));
   void* res = (struct mmc_struct*)mmc_mk_box_no_assign(nelts, MMC_ARRAY_TAG);
@@ -574,7 +549,7 @@ arrayCopy_rettype arrayCopy(modelica_metatype arr)
   return res;
 }
 
-arrayAdd_rettype arrayAdd(modelica_metatype arr, modelica_metatype val)
+modelica_metatype arrayAdd(modelica_metatype arr, modelica_metatype val)
 {
   int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr));
   void* res = (struct mmc_struct*)mmc_mk_box_no_assign(nelts+1, MMC_ARRAY_TAG);
@@ -593,7 +568,7 @@ modelica_metatype boxptr_arrayNth(modelica_metatype arr,modelica_metatype ix)
 }
 
 /* Misc Operations */
-tick_rettype tick()
+modelica_integer tick()
 {
   static modelica_integer curTick = 0;
   return curTick++;
@@ -604,7 +579,7 @@ void print(modelica_metatype str)
   fprintf(stdout, "%s", MMC_STRINGDATA(str));
 }
 
-mmc_clock_rettype mmc_clock()
+modelica_real mmc_clock()
 {
   static double start_t;
   static int init = 1;
@@ -624,7 +599,7 @@ void equality(modelica_metatype in1, modelica_metatype in2)
   }
 }
 
-getGlobalRoot_rettype getGlobalRoot(int ix) {
+modelica_metatype getGlobalRoot(int ix) {
   if (!mmc_GC_state->global_roots[ix])
     MMC_THROW();
   return mmc_GC_state->global_roots[ix];
@@ -656,12 +631,12 @@ modelica_metatype boxptr_listRest(modelica_metatype lst)
   return MMC_CDR(lst);
 }
 
-realMaxLit_rettype realMaxLit()
+modelica_real realMaxLit()
 {
   return DBL_MAX / 2048; /* in case some non-linear or ODE solver tries to add eps to this value */
 }
 
-intMaxLit_rettype intMaxLit()
+modelica_integer intMaxLit()
 {
   return LONG_MAX / 2;
 }

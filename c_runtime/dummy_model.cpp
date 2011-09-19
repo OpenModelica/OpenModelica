@@ -534,7 +534,7 @@ int function_updateDepend()
   modelica_boolean tmp0;
   modelica_boolean tmp1;
   modelica_boolean tmp2;
-  edge_rettype tmp3;
+  modelica_boolean tmp3;
   modelica_boolean tmp4;
   modelica_real tmp5;
   modelica_real tmp6;
@@ -639,7 +639,7 @@ int function_storeDelayed()
 
 int function_when(int i)
 {
-  edge_rettype tmp0;
+  modelica_boolean tmp0;
   modelica_boolean tmp1;
   modelica_real tmp2;
   modelica_real tmp3;

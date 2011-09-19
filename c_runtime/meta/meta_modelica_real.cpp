@@ -51,7 +51,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_NEG_INF,4,"-inf");
 static const MMC_DEFSTRINGLIT(_OMC_LIT_POS_INF,3,"inf");
 static const MMC_DEFSTRINGLIT(_OMC_LIT_NAN,3,"NaN");
 
-realString_rettype realString(modelica_real r)
+modelica_string realString(modelica_real r)
 {
   /* NOTE: The RML runtime uses the same code as this function.
    * If you update one, you must update the other or the testsuite might break

@@ -408,20 +408,15 @@ static inline void *mmc_mk_some(const void *x)
 void *mmc_mk_box_arr(int slots, unsigned ctor, const void** args);
 void *mmc_mk_box_no_assign(int slots, unsigned ctor);
 
-typedef modelica_integer valueEq_rettype;
-valueEq_rettype valueEq(modelica_metatype,modelica_metatype);
+modelica_boolean valueEq(modelica_metatype,modelica_metatype);
 modelica_metatype boxptr_valueEq(modelica_metatype,modelica_metatype);
 
-typedef modelica_integer valueHashMod_rettype;
-valueHashMod_rettype valueHashMod(modelica_metatype,modelica_integer);
+modelica_integer valueHashMod(modelica_metatype,modelica_integer);
 void* boxptr_valueHashMod(void *p, void *mod);
 
 void mmc__unbox(modelica_metatype box, void* res);
 
-typedef modelica_boolean mmc__uniontype__metarecord__typedef__equal_rettype;
 #define mmc__uniontype__metarecord__typedef__equal(UT,CTOR,NFIELDS) (MMC_GETHDR(UT)==MMC_STRUCTHDR(NFIELDS+1,CTOR+3))
-/* mmc__uniontype__metarecord__typedef__equal_rettype mmc__uniontype__metarecord__typedef__equal(void*,int,int); */
-typedef modelica_string anyString_rettype;
 
 void debug__print(void*,void*); /* For debugging */
 void initializeStringBuffer();
@@ -449,11 +444,6 @@ struct record_description {
 };
 
 /* Unboxing */
-typedef modelica_integer  mmc__unbox__integer_rettype;
-typedef modelica_real     mmc__unbox__real_rettype;
-typedef modelica_string_t mmc__unbox__string_rettype;
-typedef base_array_t      mmc__unbox__array_rettype;
-
 #define mmc_mk_integer mmc_mk_icon
 #define mmc_mk_boolean mmc_mk_bcon
 #define mmc_mk_real mmc_mk_rcon

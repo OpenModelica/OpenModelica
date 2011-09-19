@@ -85,7 +85,7 @@ void *mmc_mk_box_no_assign(int slots, unsigned ctor)
     return MMC_TAGPTR(p);
 }
 
-valueEq_rettype valueEq(modelica_metatype lhs, modelica_metatype rhs)
+modelica_boolean valueEq(modelica_metatype lhs, modelica_metatype rhs)
 {
   mmc_uint_t h_lhs;
   mmc_uint_t h_rhs;
@@ -175,28 +175,6 @@ valueEq_rettype valueEq(modelica_metatype lhs, modelica_metatype rhs)
   fprintf(stderr, "%s:%d: %d slots; ctor %d - FAILED to detect the type\n", __FILE__, __LINE__, numslots, ctor);
   EXIT(1);
 }
-
-/*
-mmc__uniontype__metarecord__typedef__equal_rettype
-mmc__uniontype__metarecord__typedef__equal(void* ut,int ex_ctor,int fieldNums)
-{
-  mmc_uint_t hdr;
-  int numslots;
-  unsigned ctor;
-  struct record_description* desc;
-
-  hdr = MMC_GETHDR(ut);
-  numslots = MMC_HDRSLOTS(hdr);
-  ctor = 255 & (hdr >> 2);
-
-  if (numslots == fieldNums+1 && ctor == ex_ctor+3) { // RECORD
-    desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(ut),1));
-    return 1;
-  } else {
-    return 0;
-  }
-}
-*/
 
 void debug__print(void* prefix, void* any)
 {

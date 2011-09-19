@@ -155,7 +155,6 @@ static inline int ndims_string_array(string_array_t* a)
 { return ndims_base_array(a); }
 static inline int size_of_dimension_string_array(string_array_t a, int i)
 { return size_of_dimension_base_array(a, i); }
-typedef modelica_integer size_of_dimension_string_array_rettype;
 static inline modelica_string_t *data_of_string_array(string_array_t *a)
 { return (modelica_string_t *) a->data; }
 

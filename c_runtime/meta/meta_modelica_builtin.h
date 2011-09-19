@@ -48,46 +48,29 @@ extern "C" {
 typedef modelica_metatype metamodelica_string;
 typedef const modelica_metatype metamodelica_string_const;
 
-typedef metamodelica_string intString_rettype;
-intString_rettype intString(modelica_integer);
+metamodelica_string intString(modelica_integer);
 modelica_metatype boxptr_intMax(modelica_metatype,modelica_metatype);
 
 /* String Character Conversion */
-typedef modelica_integer stringCharInt_rettype;
-typedef metamodelica_string intStringChar_rettype;
 
-stringCharInt_rettype stringCharInt(metamodelica_string);
-intStringChar_rettype intStringChar(modelica_integer);
+modelica_integer stringCharInt(metamodelica_string);
+metamodelica_string intStringChar(modelica_integer);
 
 /* String Operations */
-typedef modelica_integer stringInt_rettype;
-typedef modelica_real stringReal_rettype;
-typedef modelica_integer stringHash_rettype;
-typedef modelica_integer stringHashDjb2_rettype;
-typedef modelica_integer stringHashDjb2Mod_rettype;
-typedef modelica_integer stringHashSdbm_rettype;
-typedef modelica_metatype stringListStringChar_rettype;
-typedef metamodelica_string stringAppendList_rettype;
-typedef modelica_integer stringLength_rettype;
-typedef modelica_integer stringCompare_rettype;
-typedef metamodelica_string stringGetStringChar_rettype;
-typedef metamodelica_string stringUpdateStringChar_rettype;
-
-stringInt_rettype stringInt(metamodelica_string);
-stringReal_rettype stringReal(metamodelica_string);
-stringListStringChar_rettype stringListStringChar(metamodelica_string);
-stringAppendList_rettype stringAppendList(modelica_metatype);
+modelica_integer stringInt(metamodelica_string);
+modelica_real stringReal(metamodelica_string);
+modelica_metatype stringListStringChar(metamodelica_string);
+metamodelica_string stringAppendList(modelica_metatype);
 metamodelica_string_const stringAppend(metamodelica_string_const,metamodelica_string_const);
 #define stringLength(x) MMC_STRLEN(x)
-stringCompare_rettype mmc_stringCompare(const void *,const void *);
-stringGetStringChar_rettype stringGetStringChar(metamodelica_string,modelica_integer);
-stringUpdateStringChar_rettype stringUpdateStringChar(metamodelica_string, metamodelica_string, modelica_integer);
-stringHash_rettype stringHash(metamodelica_string_const);
-stringHashDjb2_rettype stringHashDjb2(metamodelica_string_const);
-stringHashDjb2Mod_rettype stringHashDjb2Mod(metamodelica_string_const,modelica_integer);
-stringHashSdbm_rettype stringHashSdbm(metamodelica_string_const);
+modelica_integer mmc_stringCompare(const void *,const void *);
+metamodelica_string stringGetStringChar(metamodelica_string,modelica_integer);
+metamodelica_string stringUpdateStringChar(metamodelica_string, metamodelica_string, modelica_integer);
+modelica_integer stringHash(metamodelica_string_const);
+modelica_integer stringHashDjb2(metamodelica_string_const);
+modelica_integer stringHashDjb2Mod(metamodelica_string_const,modelica_integer);
+modelica_integer stringHashSdbm(metamodelica_string_const);
 
-#define System_stringHashDjb2Mod_rettype stringHashDjb2Mod_rettype
 #define System_stringHashDjb2Mod stringHashDjb2Mod
 #define boxptr_System_stringHashDjb2Mod boxptr_stringHashDjb2Mod
 
@@ -100,23 +83,13 @@ modelica_metatype boxptr_stringHashDjb2Mod(modelica_metatype,modelica_metatype);
 modelica_metatype boxptr_stringHashSdmb(modelica_metatype);
 
 /* List Operations */
-typedef modelica_metatype listReverse_rettype;
-typedef modelica_metatype listAppend_rettype;
-typedef modelica_integer listLength_rettype;
-typedef modelica_boolean listMember_rettype;
-typedef modelica_metatype listGet_rettype;
-typedef modelica_integer listEmpty_rettype;
-typedef modelica_metatype listDelete_rettype;
-typedef modelica_metatype listRest_rettype;
-typedef modelica_metatype listFirst_rettype;
-
-listReverse_rettype listReverse(modelica_metatype);
-listAppend_rettype listAppend(modelica_metatype,modelica_metatype);
-listLength_rettype listLength(modelica_metatype);
-listMember_rettype listMember(modelica_metatype, modelica_metatype);
-listGet_rettype listGet(modelica_metatype, modelica_integer);
+modelica_metatype listReverse(modelica_metatype);
+modelica_metatype listAppend(modelica_metatype,modelica_metatype);
+modelica_integer listLength(modelica_metatype);
+modelica_boolean listMember(modelica_metatype, modelica_metatype);
+modelica_metatype listGet(modelica_metatype, modelica_integer);
 #define listEmpty(LST) MMC_NILTEST(LST)
-listDelete_rettype listDelete(modelica_metatype, modelica_integer);
+modelica_metatype listDelete(modelica_metatype, modelica_integer);
 #define listRest(X) MMC_CDR(X)
 #define listFirst(X) MMC_CAR(X)
 
@@ -129,27 +102,17 @@ modelica_metatype boxptr_listRest(modelica_metatype);
 #define boxptr_listMember listMember
 
 /* Option Operations */
-typedef modelica_boolean optionNone_rettype;
 #define optionNone(x) (0==MMC_HDRSLOTS(MMC_GETHDR(x)) ? 1 : 0)
 
 /* Array Operations */
-typedef modelica_integer arrayLength_rettype;
-typedef modelica_metatype arrayGet_rettype;
-typedef modelica_metatype arrayCreate_rettype;
-typedef modelica_metatype arrayList_rettype;
-typedef modelica_metatype listArray_rettype;
-typedef modelica_metatype arrayUpdate_rettype;
-typedef modelica_metatype arrayCopy_rettype;
-typedef modelica_metatype arrayAdd_rettype;
-
-arrayLength_rettype arrayLength(modelica_metatype);
-arrayGet_rettype arrayGet(modelica_metatype, modelica_integer);
-arrayCreate_rettype arrayCreate(modelica_integer, modelica_metatype);
-arrayList_rettype arrayList(modelica_metatype);
-listArray_rettype listArray(modelica_metatype);
-arrayUpdate_rettype arrayUpdate(modelica_metatype, modelica_integer, modelica_metatype);
-arrayCopy_rettype arrayCopy(modelica_metatype);
-arrayAdd_rettype arrayAdd(modelica_metatype, modelica_metatype);
+modelica_integer arrayLength(modelica_metatype);
+modelica_metatype arrayGet(modelica_metatype, modelica_integer);
+modelica_metatype arrayCreate(modelica_integer, modelica_metatype);
+modelica_metatype arrayList(modelica_metatype);
+modelica_metatype listArray(modelica_metatype);
+modelica_metatype arrayUpdate(modelica_metatype, modelica_integer, modelica_metatype);
+modelica_metatype arrayCopy(modelica_metatype);
+modelica_metatype arrayAdd(modelica_metatype, modelica_metatype);
 
 #define boxptr_arrayList arrayList
 #define boxptr_arrayCopy arrayCopy
@@ -157,22 +120,15 @@ modelica_metatype boxptr_arrayNth(modelica_metatype,modelica_metatype);
 modelica_metatype boxptr_arrayGet(modelica_metatype,modelica_metatype);
 
 /* Misc Operations */
-typedef modelica_integer tick_rettype;
-typedef modelica_real mmc_clock_rettype;
-
 void print(modelica_metatype);
-tick_rettype tick();
-mmc_clock_rettype mmc_clock();
+modelica_integer tick();
+modelica_real mmc_clock();
 void equality(modelica_metatype, modelica_metatype);
 
 #define boxptr_print print
 
 /* Weird RML stuff */
-typedef modelica_metatype getGlobalRoot_rettype;
-typedef modelica_integer valueConstructor_rettype;
-typedef modelica_boolean referenceEq_rettype;
-
-getGlobalRoot_rettype getGlobalRoot(int ix);
+modelica_metatype getGlobalRoot(int ix);
 void setGlobalRoot(int ix, modelica_metatype val);
 #define valueConstructor(val) MMC_HDRCTOR(MMC_GETHDR(val))
 
@@ -181,10 +137,8 @@ void boxptr_setGlobalRoot(modelica_metatype, modelica_metatype);
 modelica_metatype boxptr_valueConstructor(modelica_metatype);
 #define referenceEq(X,Y) ((X) == (Y))
 
-typedef modelica_real realMaxLit_rettype;
-typedef modelica_integer intMaxLit_rettype;
-realMaxLit_rettype realMaxLit();
-intMaxLit_rettype intMaxLit();
+modelica_real realMaxLit();
+modelica_integer intMaxLit();
 
 #if defined(__cplusplus)
 }

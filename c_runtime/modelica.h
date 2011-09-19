@@ -97,9 +97,6 @@ typedef integer_array_t integer_array;
 typedef boolean_array_t boolean_array;
 typedef string_array_t string_array;
 
-typedef modelica_integer size_real_array_rettype;
-typedef modelica_integer size_integer_array_rettype;
-
 #include <assert.h>
 #include "read_write.h"
 #include "meta_modelica.h"
@@ -110,46 +107,10 @@ typedef modelica_integer size_integer_array_rettype;
 
 
 /* math functions (-lm)*/
-typedef modelica_real cos_rettype;
-typedef modelica_real cosh_rettype;
-typedef modelica_real acos_rettype;
-typedef modelica_real sin_rettype;
-typedef modelica_real sinh_rettype;
-typedef modelica_real asin_rettype;
-typedef modelica_real log_rettype;
-typedef modelica_real log10_rettype;
-typedef modelica_real tan_rettype;
-typedef modelica_real tanh_rettype;
-typedef modelica_real atan_rettype;
-typedef modelica_real exp_rettype;
-typedef modelica_real sqrt_rettype;
-typedef modelica_real atan2_rettype;
-typedef modelica_real div_rettype;
-typedef modelica_real mod_rettype;
-
-/* Not correct - min,max,abs,rem may return integers.
- *  So don't generate code containing these types!
- * bad typedef modelica_real abs_rettype;
- * bad typedef modelica_real max_rettype;
- * bad typedef modelica_real min_rettype;
- * bad typedef modelica_real rem_rettype;
- */
 
 /* Special Modelica builtin functions*/
-typedef modelica_real    pre_rettype;
-typedef modelica_real    edge_rettype;
-typedef modelica_real    floor_rettype;
-typedef modelica_real    ceil_rettype;
-typedef modelica_real    sample_rettype;
 #define smooth(P,EXP)    (EXP)
-typedef modelica_real    smooth_rettype;
-typedef modelica_boolean initial_rettype;
-typedef modelica_boolean terminal_rettype;
-typedef modelica_boolean change_rettype;
-typedef modelica_integer integer_rettype;
-typedef modelica_integer sign_rettype;
 #define semiLinear(x,positiveSlope,negativeSlope) (x>=0?positiveSlope*x:negativeSlope*x)
-typedef modelica_real    semiLinear_rettype;
 
 /* sign function */
 #define sign(v) (v>0?1:(v<0?-1:0))

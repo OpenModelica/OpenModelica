@@ -5366,7 +5366,9 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   case exp as CALL(attr=attr as CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>' ;separator=", ")
     let funName = '<%underscorePath(path)%>'
-    let retType = '<%funName%>_rettype'
+    let retType = if attr.builtin then (match attr.ty case ET_NORETCALL(__) then ""
+      else expTypeModelica(attr.ty))
+      else '<%funName%>_rettype'
     let retVar = match attr.ty
       case ET_NORETCALL(__) then ""
       else tempDecl(retType, &varDecls)
@@ -6062,24 +6064,6 @@ template tempDecl(String ty, Text &varDecls /*BUFP*/)
       case "modelica_metatype"
       case "metamodelica_string"
       case "metamodelica_string_const"
-      case "stringListStringChar_rettype"
-      case "stringAppendList_rettype"
-      case "stringGetStringChar_rettype"
-      case "stringUpdateStringChar_rettype"
-      case "listReverse_rettype"
-      case "listAppend_rettype"
-      case "listGet_rettype"
-      case "listDelete_rettype"
-      case "listRest_rettype"
-      case "listFirst_rettype"
-      case "arrayGet_rettype"
-      case "arrayCreate_rettype"
-      case "arrayList_rettype"
-      case "listArray_rettype"
-      case "arrayUpdate_rettype"
-      case "arrayCopy_rettype"
-      case "arrayAdd_rettype"
-      case "getGlobalRoot_rettype"
         then 'tmpMeta[<%System.tmpTickIndex(1)%>]'
       else
         let newVarIx = 'tmp<%System.tmpTick()%>'

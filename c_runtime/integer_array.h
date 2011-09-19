@@ -222,7 +222,6 @@ static inline int ndims_integer_array(integer_array_t* a)
 { return ndims_base_array(a); }
 static inline int size_of_dimension_integer_array(integer_array_t a, int i)
 { return size_of_dimension_base_array(a, i); }
-typedef modelica_integer size_of_dimension_integer_array_rettype;
 
 void size_integer_array(integer_array_t* a,integer_array_t* dest);
 modelica_integer scalar_integer_array(integer_array_t* a);

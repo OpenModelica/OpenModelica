@@ -159,7 +159,6 @@ static inline int ndims_boolean_array(boolean_array_t* a)
 { return ndims_base_array(a); }
 static inline int size_of_dimension_boolean_array(boolean_array_t a, int i)
 { return size_of_dimension_base_array(a, i); }
-typedef modelica_integer size_of_dimension_boolean_array_rettype;
 static inline modelica_boolean *data_of_boolean_array(boolean_array_t *a)
 { return (modelica_boolean *) a->data; }
 

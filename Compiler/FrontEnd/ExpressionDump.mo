@@ -57,6 +57,7 @@ public type Var = DAE.ExpVar;
 protected import ComponentReference;
 protected import DAEDump;
 protected import Dump;
+protected import Error;
 protected import Expression;
 protected import Patternm;
 protected import RTOpts;
@@ -131,9 +132,14 @@ algorithm
     
     case (DAE.ET_METATYPE()) then "METATYPE";
     case (DAE.ET_BOXED(_)) then "BOXED";
+    case (DAE.ET_NORETCALL()) then "ET_NORETCALL";
+    case (DAE.ET_FUNCTION_REFERENCE_VAR()) then "ET_FUNCTION_REFERENCE_VAR";
+    case (DAE.ET_FUNCTION_REFERENCE_FUNC(builtin=_)) then "ET_FUNCTION_REFERENCE_FUNC";
     
-    case(_) then "#ExpressionDump.typeString failed#";
-
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"ExpressionDump.typeString failed"});
+      then "#ExpressionDump.typeString failed#";
   end matchcontinue;
 end typeString;
 
