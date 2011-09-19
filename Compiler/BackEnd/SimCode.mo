@@ -2170,7 +2170,7 @@ algorithm
         parameterEquations = BackendDAEUtil.foldEqSystem(dlow2,createParameterEquations,{});
         removedEquations = BackendDAEUtil.foldEqSystem(dlow2,createRemovedEquations,{});
         algorithmAndEquationAsserts = BackendDAEUtil.foldEqSystem(dlow2,createAlgorithmAndEquationAsserts,{});
-        discreteModelVars = extractDiscreteModelVars(dlow2);
+        discreteModelVars = BackendDAEUtil.foldEqSystem(dlow2,extractDiscreteModelVars,{});
         makefileParams = createMakefileParams(externalFunctionIncludes,libs);
         (delayedExps,maxDelayedExpIndex) = extractDelayedExpressions(dlow2);
         
@@ -2670,9 +2670,9 @@ algorithm
         maxDelayedExpIndex = Util.listFold(Util.listMap(delayedExps, Util.tuple21), intMax, -1);
       then
         (delayedExps,maxDelayedExpIndex+1);
-    case (_)
+    else
       equation
-        Debug.fprintln("failtrace", "- SimCode.extractDelayedExpressions failed");
+        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.extractDelayedExpressions failed"});
       then
         fail();
   end matchcontinue;
@@ -3374,16 +3374,18 @@ algorithm
 end traversingisVarDiscreteCrefFinder;
 
 protected function extractDiscreteModelVars
-  input BackendDAE.BackendDAE dlow;
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input list<DAE.ComponentRef> acc;
   output list<DAE.ComponentRef> discreteModelVars;
 algorithm
-  discreteModelVars := match (dlow)
+  discreteModelVars := matchcontinue (syst,shared,acc)
     local
       BackendDAE.Variables v;
       BackendDAE.EquationArray e;
       list<DAE.ComponentRef> vLst1,vLst2;
       
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=e)::{}))
+    case (BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=e),_,acc)
       equation
         // select all discrete vars.
         // remove those vars that are solved in when equations
@@ -3391,9 +3393,14 @@ algorithm
         // replace var with cref
         vLst1 = BackendEquation.traverseBackendDAEEqns(e,traversingisVarDiscreteCrefFinder2,{});
         vLst2 = BackendVariable.traverseBackendDAEVars(v,traversingisVarDiscreteCrefFinder,{});
+        vLst2 = listAppend(vLst2,acc);
         vLst2 = Util.listUnionComp(vLst1, vLst2, ComponentReference.crefEqual);
       then vLst2;
-  end match;
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"SimCode.extractDiscreteModelVars failed"});
+      then fail();
+  end matchcontinue;
 end extractDiscreteModelVars;
 
 protected function traversingisVarDiscreteCrefFinder2
