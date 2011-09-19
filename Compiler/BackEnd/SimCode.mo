@@ -2163,22 +2163,13 @@ algorithm
         modelInfo = createModelInfo(class_, dlow2, functions, n_h, nres, fileDir,ifcpp);
         
         // equation generation for euler, dassl2, rungekutta
-        {syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))} = systs;
-        (blt_states,blt_no_states) = BackendDAEUtil.generateStatePartition(syst);
-        blt_no_states1=Util.if_(ifcpp,comps,blt_no_states); 
-        blt_states1=Util.if_(ifcpp,comps,blt_states);
-
-        (contBlocks, discBlocks) = splitOutputBlocks(syst, shared, blt_no_states1);
-        contBlocks1=Util.if_(ifcpp,discBlocks,blt_no_states1); 
-        odeEquations = createEquations(false, false, ifcpp, false, false, syst, shared, blt_states1, helpVarInfo);
-        algebraicEquations = createEquations(ifcpp, false, ifcpp, false, false, syst, shared, contBlocks1, helpVarInfo);
-        allEquations = createEquations(true, false, true, false, false, syst, shared, comps, helpVarInfo);
+        (odeEquations,algebraicEquations,allEquations) = createEquationsForSystems(ifcpp,systs,shared,helpVarInfo,{},{},{});
 
         // Assertions and crap
-        initialEquations = createInitialEquations(dlow2);
-        parameterEquations = createParameterEquations(dlow2);
-        removedEquations = createRemovedEquations(dlow2);
-        algorithmAndEquationAsserts = createAlgorithmAndEquationAsserts(dlow2);
+        initialEquations = BackendDAEUtil.foldEqSystem(dlow2,createInitialEquations,{});
+        parameterEquations = BackendDAEUtil.foldEqSystem(dlow2,createParameterEquations,{});
+        removedEquations = BackendDAEUtil.foldEqSystem(dlow2,createRemovedEquations,{});
+        algorithmAndEquationAsserts = BackendDAEUtil.foldEqSystem(dlow2,createAlgorithmAndEquationAsserts,{});
         discreteModelVars = extractDiscreteModelVars(dlow2);
         makefileParams = createMakefileParams(externalFunctionIncludes,libs);
         (delayedExps,maxDelayedExpIndex) = extractDelayedExpressions(dlow2);
@@ -2254,6 +2245,44 @@ algorithm
         fail();
   end matchcontinue;
 end createSimCode;
+
+protected function createEquationsForSystems
+  input Boolean ifcpp;
+  input BackendDAE.EqSystems systs;
+  input BackendDAE.Shared shared;
+  input list<HelpVarInfo> helpVarInfo;
+  input list<SimEqSystem> odeEquations;
+  input list<SimEqSystem> algebraicEquations;
+  input list<SimEqSystem> allEquations;
+  output list<SimEqSystem> oodeEquations;
+  output list<SimEqSystem> oalgebraicEquations;
+  output list<SimEqSystem> oallEquations;
+algorithm
+  (oodeEquations,oalgebraicEquations,oallEquations) := matchcontinue (ifcpp,systs,shared,helpVarInfo,odeEquations,algebraicEquations,allEquations)
+    local
+      list<SimEqSystem> odeEquations1,algebraicEquations1,allEquations1;
+      BackendDAE.Matching matching;
+      BackendDAE.StrongComponents comps,blt_states,blt_no_states,contBlocks,contBlocks1,discBlocks,blt_states1,blt_no_states1;
+      BackendDAE.EqSystem syst;
+    case (_,{},_,_,odeEquations,algebraicEquations,allEquations)
+      then (odeEquations,algebraicEquations,allEquations);
+    case (_,(syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)))::systs,_,_,odeEquations,algebraicEquations,allEquations)
+      equation
+        (blt_states,blt_no_states) = BackendDAEUtil.generateStatePartition(syst);
+        blt_no_states1=Util.if_(ifcpp,comps,blt_no_states); 
+        blt_states1=Util.if_(ifcpp,comps,blt_states);
+
+        (contBlocks, discBlocks) = splitOutputBlocks(syst, shared, blt_no_states1);
+        contBlocks1=Util.if_(ifcpp,discBlocks,blt_no_states1); 
+        odeEquations1 = createEquations(false, false, ifcpp, false, false, syst, shared, blt_states1, helpVarInfo);
+        algebraicEquations1 = createEquations(ifcpp, false, ifcpp, false, false, syst, shared, contBlocks1, helpVarInfo);
+        allEquations1 = createEquations(true, false, true, false, false, syst, shared, comps, helpVarInfo);
+        odeEquations = listAppend(odeEquations,odeEquations1);
+        algebraicEquations = listAppend(algebraicEquations,algebraicEquations1);
+        allEquations = listAppend(allEquations,allEquations1);
+     then (odeEquations,algebraicEquations,allEquations);
+  end matchcontinue;
+end createEquationsForSystems;
 
 protected function expandModelInfoVars
 "Expand Modelinfo with jacobain Vars"
@@ -3183,22 +3212,31 @@ algorithm
 end extractExtObjInfo2;
 
 protected function createAlgorithmAndEquationAsserts
-  input BackendDAE.BackendDAE dlow;
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input list<Algorithm.Statement> acc;
   output list<Algorithm.Statement> algorithmAndEquationAsserts;
 algorithm
-  algorithmAndEquationAsserts := match (dlow)
+  algorithmAndEquationAsserts := matchcontinue (syst,shared,acc)
     local
       array<Algorithm.Algorithm> algs;
       list<Algorithm.Statement> res,res1;
       BackendDAE.EquationArray eqns;
+      Boolean b;
       
-    case(BackendDAE.DAE(shared=BackendDAE.SHARED(algorithms=algs),eqs=BackendDAE.EQSYSTEM(orderedEqs=eqns)::{}))
+    case (BackendDAE.EQSYSTEM(orderedEqs=eqns),BackendDAE.SHARED(algorithms=algs),acc)
       equation
-        res = createAlgorithmAndEquationAssertsFromAlgs(arrayList(algs));
+        b = Util.isListEmpty(acc) "execute this part only once :D";
+        res = createAlgorithmAndEquationAssertsFromAlgs(Debug.bcallret1(b,arrayList,algs,{}));
         res1 = BackendDAEUtil.traverseBackendDAEExpsEqns(eqns,findSqrtCallsforAsserts,{});
         res = listAppend(res,res1);
+        res = listAppend(res,acc);
       then res;
-  end match;
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"createAlgorithmAndEquationAsserts failed"});
+      then fail();
+  end matchcontinue;
 end createAlgorithmAndEquationAsserts;
 
 protected function findSqrtCallsforAsserts
@@ -3267,10 +3305,12 @@ algorithm
 end createAlgorithmAndEquationAssertsFromAlgs;
 
 protected function createRemovedEquations
-  input BackendDAE.BackendDAE dlow;
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input list<SimEqSystem> acc;
   output list<SimEqSystem> removedEquations;
 algorithm
-  removedEquations := match (dlow)
+  removedEquations := matchcontinue (syst,shared,acc)
     local
       BackendDAE.EquationArray r;
       array<Algorithm.Algorithm> algs;
@@ -3278,7 +3318,7 @@ algorithm
       list<DAE.Algorithm> varasserts;
       list<SimEqSystem> simvarasserts;
       
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars)::{}, shared=BackendDAE.SHARED(removedEqs=r,algorithms=algs)))
+    case (BackendDAE.EQSYSTEM(orderedVars = vars), BackendDAE.SHARED(removedEqs=r,algorithms=algs), acc)
       equation
         ((removedEquations,_)) = BackendEquation.traverseBackendDAEEqns(r,traversedlowEqToSimEqSystem,({},algs));
         
@@ -3287,8 +3327,12 @@ algorithm
         simvarasserts = Util.listMap(varasserts,dlowAlgToSimEqSystem);
         removedEquations = listAppend(removedEquations, simvarasserts);
         
-      then removedEquations;
-  end match;
+      then listAppend(removedEquations,acc);
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"createRemovedEquations failed"});
+      then fail();
+  end matchcontinue;
 end createRemovedEquations;
 
 protected function traversedlowEqToSimEqSystem
@@ -3632,49 +3676,6 @@ algorithm
         fail();
   end matchcontinue;
 end createEquations;
-
-protected function createEquationsFromSystems
-  input Boolean includeWhen;
-  input Boolean skipDiscInZc;
-  input Boolean genDiscrete;
-  input Boolean skipDiscInAlgorithm;
-  input Boolean linearSystem "if true generate allway a linear system";
-  input BackendDAE.EqSystems systs;
-  input BackendDAE.Shared shared;
-  input BackendDAE.StrongComponents comps;
-  input list<HelpVarInfo> helpVarInfo;
-  input list<SimEqSystem> acc;
-  output list<SimEqSystem> equations;
-algorithm
-  equations := matchcontinue (includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, systs, shared, comps, helpVarInfo, acc)
-    local
-      BackendDAE.StrongComponent comp;
-      BackendDAE.StrongComponents restComps;
-      Integer index,vindex;
-      BackendDAE.Variables vars,vars1;
-      BackendDAE.EquationArray eqns,eqns1;
-      array<DAE.Algorithm> algs;
-      array<BackendDAE.MultiDimEquation> ae,ae1;
-      BackendDAE.Var v;
-      list<BackendDAE.Equation> eqnlst;
-      list<BackendDAE.Var> varlst;
-      list<Integer> zcEqns,eqnslst;
-      list<SimEqSystem> equations_,equations1;
-      list<String> str;
-      String s;
-      array<Integer> ass1,ass2;
-      BackendDAE.EqSystem syst;
-      
-      // handle empty
-    case (includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, {}, _, _, helpVarInfo, acc) then acc;
-      
-    case (includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst::systs, shared, comps, helpVarInfo, acc)
-      equation
-        equations_ = createEquations(includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, comps, helpVarInfo);
-      then createEquationsFromSystems(includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, systs, shared, comps, helpVarInfo, listAppend(equations_,acc));
-
-  end matchcontinue;
-end createEquationsFromSystems;
 
 /*
 protected function addStartValueHomotopy "function: addStartValueHomotopy
@@ -5818,10 +5819,12 @@ algorithm
 end failUnlessResidual;
 
 protected function createInitialEquations
-  input BackendDAE.BackendDAE dlow;
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input list<SimEqSystem> acc;
   output list<SimEqSystem> initialEquations;
 algorithm
-  initialEquations := matchcontinue (dlow)
+  initialEquations := matchcontinue (syst,shared,acc)
     local
       BackendDAE.Variables vars,knvars;
       array<DAE.Algorithm> algs;
@@ -5829,7 +5832,7 @@ algorithm
       BackendDAE.AliasVariables av;
       
       // this is the old version if the new fails 
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars)::{}, shared=BackendDAE.SHARED(aliasVars=av, algorithms=algs)))
+    case (BackendDAE.EQSYSTEM(orderedVars=vars), BackendDAE.SHARED(aliasVars=av, algorithms=algs), acc)
       equation
         // vars
         ((initialEquationsTmp2,_)) = BackendVariable.traverseBackendDAEVars(vars,createInitialAssignmentsFromStart,({},av));
@@ -5842,9 +5845,9 @@ algorithm
         initialEquations = Util.listMap1(initialEquationsTmp2,
           dlowEqToSimEqSystem,algs);
       then
-        initialEquations;
+        listAppend(initialEquations,acc);
         
-    case (_)
+    else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"createInitialEquations failed"});
       then
@@ -5853,10 +5856,12 @@ algorithm
 end createInitialEquations;
 
 protected function createParameterEquations
-  input BackendDAE.BackendDAE dlow;
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input list<SimEqSystem> acc;
   output list<SimEqSystem> parameterEquations;
 algorithm
-  parameterEquations := matchcontinue (dlow)
+  parameterEquations := matchcontinue (syst,shared,acc)
     local
       list<BackendDAE.Equation> parameterEquationsTmp;
       BackendDAE.Variables vars,knvars,extobj,v,kn;
@@ -5879,7 +5884,7 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.EqSystems systs;
       
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=vars)::{},shared=BackendDAE.SHARED(knownVars=knvars,externalObjects=extobj,initialEqs=ie,algorithms=algs,arrayEqs=arrayEqs,extObjClasses=extObjClasses)))
+    case (BackendDAE.EQSYSTEM(orderedVars=vars),BackendDAE.SHARED(knownVars=knvars,externalObjects=extobj,initialEqs=ie,algorithms=algs,arrayEqs=arrayEqs,extObjClasses=extObjClasses),acc)
       equation
         // kvars params
         ((parameterEquationsTmp,lv,lkn,lv1,lv2,_)) = BackendVariable.traverseBackendDAEVars(knvars,createInitialParamAssignments,({},{},{},{},{},1));
@@ -5907,8 +5912,8 @@ algorithm
         paramdlow = BackendDAE.DAE({syst},shared);
         Debug.fcall("paramdlowdump", BackendDump.dumpComponents,comps);
         
-        (helpVarInfo, BackendDAE.DAE(systs,shared),_) = generateHelpVarInfo(paramdlow);
-        parameterEquations = createEquationsFromSystems(false, false, true, false, false, systs, shared, comps, helpVarInfo, {});
+        (helpVarInfo, BackendDAE.DAE({syst},shared),_) = generateHelpVarInfo(paramdlow);
+        parameterEquations = createEquations(false, false, true, false, false, syst, shared, comps, helpVarInfo);
         
         ialgs = BackendEquation.getUsedAlgorithmsfromEquations(ie,algs);
         inalgs = Util.listMap(ialgs,dlowAlgToSimEqSystem);
@@ -5919,6 +5924,7 @@ algorithm
         
         parameterEquations = listAppend(parameterEquations, inalgs);
         parameterEquations = listAppend(parameterEquations, simvarasserts);
+        parameterEquations = listAppend(parameterEquations, acc);
       then
         parameterEquations;
         

@@ -6527,7 +6527,7 @@ algorithm
   BackendDAE.DAE(systs,shared) := dae;
   (systs,shared) := Util.listMapAndFold1(systs,func,shared,a);
   // Filter out empty systems
-  systs := Util.listSelect(systs,nonEmptySystem);
+  // systs := Util.listSelect(systs,nonEmptySystem);
   odae := BackendDAE.DAE(systs,shared);
 end mapEqSystem1;
 
@@ -6555,7 +6555,7 @@ algorithm
   BackendDAE.DAE(systs,shared) := dae;
   (systs,(shared,extra)) := Util.listMapAndFold1(systs,func,(shared,initialExtra),a);
   // Filter out empty systems
-  systs := Util.listSelect(systs,nonEmptySystem);
+  // systs := Util.listSelect(systs,nonEmptySystem);
   odae := BackendDAE.DAE(systs,shared);
 end mapEqSystemAndFold1;
 
@@ -6580,9 +6580,32 @@ algorithm
   BackendDAE.DAE(systs,shared) := dae;
   (systs,(shared,extra)) := Util.listMapAndFold(systs,func,(shared,initialExtra));
   // Filter out empty systems
-  systs := Util.listSelect(systs,nonEmptySystem);
+  // systs := Util.listSelect(systs,nonEmptySystem);
   odae := BackendDAE.DAE(systs,shared);
 end mapEqSystemAndFold;
+
+public function foldEqSystem
+  "Helper to map a preopt module over each equation system"
+  input BackendDAE.BackendDAE dae;
+  input Function func;
+  input B initialExtra;
+  output B extra;
+  partial function Function
+    input BackendDAE.EqSystem syst;
+    input BackendDAE.Shared shared;
+    input B fold;
+    output B ofold;
+  end Function;
+  replaceable type B subtypeof Any;
+protected
+  list<BackendDAE.EqSystem> systs;
+  BackendDAE.Shared shared;
+algorithm
+  BackendDAE.DAE(systs,shared) := dae;
+  extra := Util.listFold1(systs,func,shared,initialExtra);
+  // Filter out empty systems
+  // systs := Util.listSelect(systs,nonEmptySystem);
+end foldEqSystem;
 
 public function mapEqSystem
   "Helper to map a preopt module over each equation system"
@@ -6602,7 +6625,7 @@ algorithm
   BackendDAE.DAE(systs,shared) := dae;
   (systs,shared) := Util.listMapAndFold(systs,func,shared);
   // Filter out empty systems
-  systs := Util.listSelect(systs,nonEmptySystem);
+  // systs := Util.listSelect(systs,nonEmptySystem);
   odae := BackendDAE.DAE(systs,shared);
 end mapEqSystem;
 
