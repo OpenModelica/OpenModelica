@@ -2204,8 +2204,8 @@ algorithm
         
         Debug.fcall("execHash",print, "*** SimCode -> generate cref2simVar hastable: " +& realString(clock()) +& "\n" );
         crefToSimVarHT = createCrefToSimVarHT(modelInfo);
-        Debug.fcall("execHash",print, "*** SimCode -> generate cref2simVar hastable done!: " +& realString(clock()) +& "\n" );        
-       
+        Debug.fcall("execHash",print, "*** SimCode -> generate cref2simVar hastable done!: " +& realString(clock()) +& "\n" );
+        
         simCode = SIMCODE(modelInfo,
           literals,
           recordDecls,
@@ -2266,7 +2266,7 @@ algorithm
       BackendDAE.EqSystem syst;
     case (_,{},_,_,odeEquations,algebraicEquations,allEquations)
       then (odeEquations,algebraicEquations,allEquations);
-    case (_,(syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)))::systs,_,_,odeEquations,algebraicEquations,allEquations)
+    case (ifcpp,(syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)))::systs,_,_,odeEquations,algebraicEquations,allEquations)
       equation
         (blt_states,blt_no_states) = BackendDAEUtil.generateStatePartition(syst);
         blt_no_states1=Util.if_(ifcpp,comps,blt_no_states); 
@@ -2280,6 +2280,7 @@ algorithm
         odeEquations = listAppend(odeEquations,odeEquations1);
         algebraicEquations = listAppend(algebraicEquations,algebraicEquations1);
         allEquations = listAppend(allEquations,allEquations1);
+        (odeEquations,algebraicEquations,allEquations) = createEquationsForSystems(ifcpp,systs,shared,helpVarInfo,odeEquations,algebraicEquations,allEquations);
      then (odeEquations,algebraicEquations,allEquations);
   end matchcontinue;
 end createEquationsForSystems;
@@ -3452,28 +3453,34 @@ protected function createSimWhenClauses
   input list<HelpVarInfo> helpVarInfo;
   output list<SimWhenClause> simWhenClauses;
 algorithm
-  simWhenClauses := match (dlow,helpVarInfo)
+  simWhenClauses := matchcontinue (dlow,helpVarInfo)
     local
       list<BackendDAE.WhenClause> wc;
+      BackendDAE.EqSystems systs;
       
-    case (BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=wc))),helpVarInfo)
+    case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=wc))),helpVarInfo)
       equation
-        simWhenClauses = createSimWhenClausesWithEqs(wc, wc, helpVarInfo, dlow, 0);
+        simWhenClauses = createSimWhenClausesWithEqs(systs, wc, wc, helpVarInfo, 0);
       then
         simWhenClauses;
-  end match;
+    
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"SimCode.createSimWhenClauses failed"});
+      then fail();
+  end matchcontinue;
 end createSimWhenClauses;
 
 protected function createSimWhenClausesWithEqs
+  input BackendDAE.EqSystems systs;
   input list<BackendDAE.WhenClause> whenClauses;
   input list<BackendDAE.WhenClause> allwhenClauses;
   input list<HelpVarInfo> helpVarInfo;
-  input BackendDAE.BackendDAE dlow;
   input Integer currentWhenClauseIndex;
   output list<SimWhenClause> simWhenClauses;
 algorithm
   simWhenClauses :=
-  match (whenClauses, allwhenClauses, helpVarInfo, dlow, currentWhenClauseIndex)
+  match (systs, whenClauses, allwhenClauses, helpVarInfo, currentWhenClauseIndex)
     local
       BackendDAE.WhenClause whenClause;
       list<BackendDAE.WhenClause> wc,wc1;
@@ -3482,17 +3489,34 @@ algorithm
       SimWhenClause simWhenClause;
       Integer nextIndex;
       
-    case ({}, _, _, _, _) then {};
+    case (_, {}, _, _, _) then {};
       
-    case (whenClause :: wc, wc1, helpVarInfo, BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs=eqs)::{}), currentWhenClauseIndex)
+    case (systs, whenClause :: wc, wc1, helpVarInfo, currentWhenClauseIndex)
       equation
-        ((whenEq,_)) = BackendEquation.traverseBackendDAEEqnsWithStop(eqs,findWhenEquation,(NONE(),currentWhenClauseIndex));
+        whenEq = createSimWhenClausesWithEqsHelper(systs,currentWhenClauseIndex);
         simWhenClause = whenClauseToSimWhenClause(whenClause, whenEq, wc1, helpVarInfo, currentWhenClauseIndex);
         nextIndex = currentWhenClauseIndex + 1;
-        simWhenClauses = createSimWhenClausesWithEqs(wc, wc1, helpVarInfo, dlow, nextIndex);
+        simWhenClauses = createSimWhenClausesWithEqs(systs, wc, wc1, helpVarInfo, nextIndex);
       then simWhenClause :: simWhenClauses;
   end match;
 end createSimWhenClausesWithEqs;
+
+protected function createSimWhenClausesWithEqsHelper
+  input BackendDAE.EqSystems systs;
+  input Integer currentWhenClauseIndex;
+  output Option<BackendDAE.WhenEquation> whenEq;
+algorithm
+  whenEq := matchcontinue (systs,currentWhenClauseIndex)
+    local
+      BackendDAE.EquationArray eqs;
+    case ({},_) then NONE();
+    case (BackendDAE.EQSYSTEM(orderedEqs=eqs)::_,currentWhenClauseIndex)
+      equation
+        ((whenEq as SOME(_),_)) = BackendEquation.traverseBackendDAEEqnsWithStop(eqs,findWhenEquation,(NONE(),currentWhenClauseIndex));
+      then whenEq;
+    case (_::systs,currentWhenClauseIndex) then createSimWhenClausesWithEqsHelper(systs,currentWhenClauseIndex);
+  end matchcontinue;
+end createSimWhenClausesWithEqsHelper;
 
 protected function findWhenEquation
   input tuple<BackendDAE.Equation, tuple<Option<BackendDAE.WhenEquation>,Integer>> inTpl;
