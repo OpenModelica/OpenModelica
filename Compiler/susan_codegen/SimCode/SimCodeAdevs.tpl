@@ -45,6 +45,7 @@
 
 package SimCodeAdevs
 import interface SimCodeTV;
+import SimCodeC;
 
 template translateModel(SimCode simCode) 
  "Generates Cpp code and header file for an adevs model."
@@ -144,11 +145,11 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
 		 // Are we initializing the model?
 		 bool atInit;
          // Helping variables for when clauses
-         bool helpVars[<%vi.numHelpVars%>], helpVars_saved[<%vi.numHelpVars%>];
+         bool *helpVars, *helpVars_saved;
          int numHelpVars() const { return <%vi.numHelpVars%>; }
 
          // Zero crossing variables
-         int zc[<%vi.numZeroCrossings%>];
+         int *zc;
          int numZeroCrossings() const { return <%vi.numZeroCrossings%>; }
 
 		 // Initial unknowns via solution to least squares
@@ -296,13 +297,26 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
           <%vi.numStateVars%>+1, // Number of state variables plus one for the clock
           <%vi.numZeroCrossings%>+extra_state_events // Number of state event functions
       ),
-	  epsilon(1E-4)
+	  epsilon(1E-4),
+	  helpVars(NULL),
+	  helpVars_saved(NULL),
+	  zc(NULL)
    {
 	   timeValue = 0.0;
+	   if (numHelpVars() > 0)
+	   {
+		   helpVars = new bool[numHelpVars()];
+		   helpVars_saved = new bool[numHelpVars()];
+	   }
+	   if (numZeroCrossings() > 0)
+		   zc = new int[numZeroCrossings()];
    }
     
    <%lastIdentOfPath(modelInfo.name)%>::~<%lastIdentOfPath(modelInfo.name)%>() 
    {
+		if (helpVars != NULL) delete [] helpVars;
+		if (helpVars_saved != NULL) delete [] helpVars_saved;
+		if (zc != NULL) delete [] zc;
    }
 
    <%makeExtraResiduals(allEquations,lastIdentOfPath(modelInfo.name))%>
@@ -5125,7 +5139,9 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   case exp as CALL(attr=CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>' ;separator=", ")
     let funName = '<%underscorePath(path)%>'
-    let retType = '<%funName%>_rettype'
+    let retType = if attr.builtin then (match attr.ty case ET_NORETCALL(__) then ""
+      else expTypeModelica(attr.ty))
+      else '<%funName%>_rettype'
     let retVar = match attr.ty
       case ET_NORETCALL(__) then ""
       else tempDecl(retType, &varDecls)
