@@ -414,6 +414,17 @@ function stringAppendList "O(str)"
 external "builtin";
 end stringAppendList;
 
+function stringDelimitList
+  "O(str)
+  Takes a list of strings and a string delimiter and appends all
+  list elements with the string delimiter inserted between elements.
+  Example: stringDelimitList({\"x\",\"y\",\"z\"}, \", \") => \"x, y, z\""
+  input List<String> strs;
+  input String delimiter;
+  output String str;
+external "builtin";
+end stringDelimitList;
+
 function stringLength "O(1)"
   input String str;
   output Integer i;

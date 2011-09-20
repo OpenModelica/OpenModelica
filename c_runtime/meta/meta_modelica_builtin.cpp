@@ -276,6 +276,67 @@ metamodelica_string stringAppendList(modelica_metatype lst)
   return p;
 }
 
+metamodelica_string stringDelimitList(modelica_metatype lst, metamodelica_string_const delimiter)
+{
+  // fprintf(stderr, "stringDelimitList(%s)\n", anyString(lst));
+  modelica_integer lstLen, len, lenDelimiter;
+  unsigned nbytes,header,nwords;
+  modelica_metatype car, lstHead, lstTmp;
+  char *tmp,*delimiter_cstr;
+  struct mmc_string *res;
+  void *p;
+  lstLen = 0;
+  nbytes = 0;
+  lstHead = lst;
+  lstTmp = lst;
+  while (!listEmpty(lstTmp)) {
+    MMC_CHECK_STRING(MMC_CAR(lstTmp));
+    nbytes += MMC_STRLEN(MMC_CAR(lstTmp));
+    // fprintf(stderr, "stringDelimitList: Has success reading input %d: %s\n", lstLen, MMC_STRINGDATA(MMC_CAR(lst)));
+    lstTmp = MMC_CDR(lstTmp);
+    lstLen++;
+  }
+  if (nbytes == 0) return mmc_emptystring;
+  if (lstLen == 1) return MMC_CAR(lstHead);
+  lenDelimiter = MMC_STRLEN(delimiter);
+  nbytes += (lstLen-1)*lenDelimiter;
+  delimiter_cstr = MMC_STRINGDATA(delimiter);
+  MMC_DEBUG_ASSERT(lenDelimiter == strlen(delimiter_cstr));
+
+  header = MMC_STRINGHDR(nbytes);
+  nwords = MMC_HDRSLOTS(header) + 1;
+  res = (struct mmc_string *) mmc_alloc_words(nwords);
+  res->header = header;
+  tmp = (char*) res->data;
+  nbytes = 0;
+  lstTmp = lstHead;
+  { // Unrolled first element (not delimiter in front)
+    car = MMC_CAR(lstTmp);
+    len = MMC_STRLEN(car);
+    MMC_DEBUG_ASSERT(len == strlen(MMC_STRINGDATA(car)));
+    memcpy(tmp+nbytes,MMC_STRINGDATA(car),len);
+    nbytes += len;
+    lstTmp = MMC_CDR(lstTmp);
+  }
+  while (!listEmpty(lstTmp)) {
+    memcpy(tmp+nbytes,delimiter_cstr,lenDelimiter);
+    nbytes += lenDelimiter;
+    car = MMC_CAR(lstTmp);
+    len = MMC_STRLEN(car);
+    // fprintf(stderr, "stringDelimitList: %s %d %d\n", MMC_STRINGDATA(car), len, strlen(MMC_STRINGDATA(car)));
+    // Might be useful to check this when debugging. String literals are often done wrong :)
+    MMC_DEBUG_ASSERT(len == strlen(MMC_STRINGDATA(car)));
+    memcpy(tmp+nbytes,MMC_STRINGDATA(car),len);
+    nbytes += len;
+    lstTmp = MMC_CDR(lstTmp);
+  }
+  tmp[nbytes] = '\0';
+  // fprintf(stderr, "stringDelimitList(%s)=>%s\n", anyString(lstHead), anyString(MMC_TAGPTR(res)));
+  p = MMC_TAGPTR(res);
+  MMC_CHECK_STRING(p);
+  return p;
+}
+
 modelica_integer mmc_stringCompare(const void *str1, const void *str2)
 {
   MMC_CHECK_STRING(str1);
