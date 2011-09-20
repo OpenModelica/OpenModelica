@@ -135,6 +135,9 @@ void
 SaveZeroCrossings();
 
 void
+SaveZeroCrossingsAfterEvent();
+
+void
 initializeZeroCrossings();
 
 void

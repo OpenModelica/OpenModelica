@@ -44,10 +44,11 @@ string array2string(double* array, int row, int col){
     int k=0;
     for (int i=0;i<row;i++){
         for (int j=0;j<col;j++){
+            k = i + j * row;
             if (j+1==col)
-                retVal << array[k++];
+                retVal << array[k];
             else
-                retVal << array[k++] << ",";
+                retVal << array[k] << ",";
         }
         if (!((i+1) == row) && !(col == 0))
             retVal << ";";

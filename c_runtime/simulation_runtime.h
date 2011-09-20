@@ -380,7 +380,7 @@ int bound_parameters();
 int checkForAsserts();
 
 /* function for calculate residual values for the initial equations and fixed start attibutes */
-int initial_residual(double $P$_lambda);
+int initial_residual(double);
 
 /* function for initializing time instants when sample() is activated */
 void function_sampleInit();

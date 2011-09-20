@@ -1381,44 +1381,97 @@ case 2 then
   end match                         
 end genVector;
 
-template functionJac(list<SimEqSystem> jacEquations, String columnName, String matrixName)
+template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars,String columnName, String matrixName)
  "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let eqns_ = (jacEquations |> eq =>
       equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFD*/)
-    ;separator="\n") 
+      ;separator="\n")
+  let outvars_ = (tmpVars |> var => 
+      genoutVars(var)
+      ;separator="\n")
   <<
-  int functionJac<%matrixName%>_<%columnName%>()
+  int functionJac<%matrixName%>_0(double *seed, double *out_col)
   {
     state mem_state;
     <%varDecls%>
     mem_state = get_memory_state();
     <%eqns_%>
+    
+    // write column
+    <%outvars_%>
+    int i;
+    for(i=0;i<<%columnName%>;i++){
+        if (sim_verbose == LOG_JAC || sim_verbose == LOG_ENDJAC){
+          printf("col: col[%d] = %f \n",i,out_col[i]);
+        }
+    }
+    
     restore_memory_state(mem_state);
     
     return 0;
   }
-  
   >>
 end functionJac;
 
-
-template generateMatrix(list<JacobianColumn> jacobianMatrix, list<SimVar> jacVars,String matrixname)
+template genoutVars(SimVar var)
+ "Generates out variable "
+ ::=
+match var
+  case (SIMVAR(name=name,index=index))then
+    match index
+      case -1 then
+      <<>>
+      case _ then
+      <<
+        out_col[<%index%>] = <%cref(name)%>;
+      >>
+   end match
+end match
+end genoutVars;
+template generateMatrix(list<JacobianColumn> jacobianMatrix, list<SimVar> seedVars,String matrixname)
  "Generates Matrixes for Linear Model."
 ::=
+match seedVars
+case {} then
+<<
+ int functionJac<%matrixname%>(double* jac){
+    return 0;
+ }
+>>
+case _ then
   let jacMats = (jacobianMatrix |> (eqs,vars,name) =>
-    functionJac(eqs,name,matrixname)
+    functionJac(eqs,vars,name,matrixname)
     ;separator="\n")
-  let writeJac_ = writejacvars(jacVars)  
-  let functioncalls = (jacobianMatrix |> (eqs,vars,name) =>
-    genfunctionName(name,matrixname)
-    ;separator="\n")
+  let indexColumn = (jacobianMatrix |> (eqs,vars,name) =>
+    name
+    ;separator="\n")    
+  let writeJac_ = (seedVars |> var hasindex i0 => match var case(SIMVAR(name=name))then <<#define <%cref(name)%> seed[<%i0%>]>>
+    ;separator="\n") 
+  let index_ = listLength(seedVars)
  <<
+ <%writeJac_%>
  <%jacMats%>
  int functionJac<%matrixname%>(double* jac){
- 	<%functioncalls%>
- 	<%writeJac_%>
+    double seed[<%index_%>] = {0};
+    double localtmp[<%indexColumn%>] = {0};
+    int i,j,l,k;
+    for(i=0,k=0;  i < <%index_%>;i++){
+      seed[i] = 1;
+      
+      if (sim_verbose == LOG_JAC || sim_verbose == LOG_ENDJAC){
+        printf("Caluculate one row:\n");
+        for(l=0;  l < <%index_%>;l++){
+          printf("seed: seed[%d]= %f\n",l,seed[l]);
+        }
+      }
+
+      functionJac<%matrixname%>_0(seed,localtmp);
+      seed[i] = 0;
+      for(j=0; j < <%indexColumn%>;j++)
+        jac[k++] = localtmp[j];
+    }
  	return 0;
  }
  >>
@@ -1434,41 +1487,6 @@ template generateLinearMatrixes(list<JacobianMatrix> JacobianMatrixes)
  <%jacMats%>
  >>
 end generateLinearMatrixes;
-
-
-template writejacvars(list<SimVar> items)
-"Declare variables"
-::=
-  let writeJac_ = (items |> var => 
-      writejac(var)
-    ;separator="\n")
-  <<
-   	<%writeJac_%>
-  >>
-end writejacvars;
-
-template writejac(SimVar item)
-"Declare variables"
-::=
-match item
-case SIMVAR(name=name, index=index) then
-  match index
-  case -1 then
-  <<>>
-  case _ then
-  <<
-  jac[<%index%>] = <%cref(name)%>;
-  >>
-end writejac;
-
-template genfunctionName(String columnName, String matrixName)
- "Generates function Names for jacobian."
-::=
-  <<
-  functionJac<%matrixName%>_<%columnName%>();
-  >>
-end genfunctionName;
-
 
 template zeroCrossingsTpl2(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/)
  "Generates code for zero crossings."

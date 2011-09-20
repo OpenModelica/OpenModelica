@@ -77,20 +77,11 @@ int Jacobian(double *t, double *y, double *yprime, double *pd, double *cj,
   globalData->states = y;
   globalData->timeValue = *t;
   functionODE();
-  functionJacA(matrixA);
+  functionJacA(pd);
 
-  int k = 0;
-  int l;
-
-  // transpose matrix A, add cj to diagonal elements and store in pd
+  /* add cj to the diagonal elements of the matrix */
   for (int i = 0; i < globalData->nStates; i++) {
-    for (int j = 0; j < globalData->nStates; j++, k++) {
-      l = i + j * globalData->nStates;
-      pd[l] = matrixA[k];
-      if (i == j) {
-        pd[l] -= (double) *cj;
-      }
-    }
+    pd[i + i * globalData->nStates] -= (double) *cj;
   }
   globalData->states = backupStates;
   globalData->timeValue = backupTime;

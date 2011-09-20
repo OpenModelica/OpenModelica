@@ -878,7 +878,7 @@ EventHandle(int flag)
           fprintf(stdout, "| info LOG_EVENTS | Event Handling for Sample : %f done!\n", globalData->timeValue);
         }
     }
-  SaveZeroCrossings();
+  SaveZeroCrossingsAfterEvent();
   correctDirectionZeroCrossings();
   return 0;
 }
@@ -1175,6 +1175,18 @@ SaveZeroCrossings()
     }
   std::copy(gout, gout + globalData->nZeroCrossing, gout_old);
   function_onlyZeroCrossings(gout, &globalData->timeValue);
+}
+
+void
+SaveZeroCrossingsAfterEvent()
+{
+
+  if (sim_verbose >= LOG_ZEROCROSSINGS)
+    {
+      fprintf(stdout, "| info LOG_ZEROCROSSINGS | Save ZeroCrossings after an Event!\n");
+    }
+  function_onlyZeroCrossings(gout, &globalData->timeValue);
+  std::copy(gout, gout + globalData->nZeroCrossing, gout_old);
 }
 
 
