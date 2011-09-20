@@ -6487,7 +6487,7 @@ algorithm
       externalObjects = extvars,
       aliasVars = aliasVars as BackendDAE.ALIASVARS(aliasVars = removedvars))))
       equation
-        /* Extract from variable list */  
+        /* Extract from variable list */
         ((varsOut,_,_)) = Util.listFold1(Util.listMap(systs,BackendVariable.daeVars),BackendVariable.traverseBackendDAEVars,extractVarsFromList,(SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{},{},{},{},{},{},{}),aliasVars,knvars));
         /* Extract from known variable list */
         ((varsOut,_,_)) = BackendVariable.traverseBackendDAEVars(knvars,extractVarsFromList,(varsOut,aliasVars,knvars));
@@ -6496,7 +6496,7 @@ algorithm
         /* Extract from external object list */
         ((varsOut,_,_)) = BackendVariable.traverseBackendDAEVars(extvars,extractVarsFromList,(varsOut,aliasVars,knvars));
         /* sort variables on index */
-        varsOut = sortSimvarsOnIndex(varsOut);
+        varsOut = sortSimvars(varsOut,varIndexComparer);
         /* Index of algebraic and parameters need 
          to fix due to separation of int Vars*/
         varsOut = fixIndex(varsOut);
@@ -6802,12 +6802,18 @@ algorithm
   end matchcontinue;
 end mergeVars;
 
-protected function sortSimvarsOnIndex
+protected function sortSimvars
   input SimVars unsortedSimvars;
+  input Comparer comp;
   output SimVars sortedSimvars;
+  partial function Comparer
+    input SimVar a;
+    input SimVar b;
+    output Boolean res;
+  end Comparer;
 algorithm
   sortedSimvars :=
-  match (unsortedSimvars)
+  match (unsortedSimvars,comp)
     local
       list<SimVar> stateVars;
       list<SimVar> derivativeVars;
@@ -6833,36 +6839,36 @@ algorithm
       list<SimVar> stringConstVars;
     case (SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
       outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
-      stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars,constVars,intConstVars,boolConstVars,stringConstVars))
+      stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars,constVars,intConstVars,boolConstVars,stringConstVars),comp)
       equation
-        stateVars = Util.sort(stateVars, varIndexComparer);
-        derivativeVars = Util.sort(derivativeVars, varIndexComparer);
-        algVars = Util.sort(algVars, varIndexComparer);
-        intAlgVars = Util.sort(intAlgVars, varIndexComparer);
-        boolAlgVars = Util.sort(boolAlgVars, varIndexComparer);
-        inputVars = Util.sort(inputVars, varIndexComparer);
-        outputVars = Util.sort(outputVars, varIndexComparer);
-        aliasVars = Util.sort(aliasVars, varIndexComparer);
-        intAliasVars = Util.sort(intAliasVars, varIndexComparer);
-        boolAliasVars = Util.sort(boolAliasVars, varIndexComparer);
-        paramVars = Util.sort(paramVars, varIndexComparer);
-        intParamVars = Util.sort(intParamVars, varIndexComparer);
-        boolParamVars = Util.sort(boolParamVars, varIndexComparer);
-        stringAlgVars = Util.sort(stringAlgVars, varIndexComparer);
-        stringParamVars = Util.sort(stringParamVars, varIndexComparer);
-        stringAliasVars = Util.sort(stringAliasVars, varIndexComparer);
-        extObjVars = Util.sort(extObjVars, varIndexComparer);
-        jacVars = Util.sort(jacVars, varIndexComparer);
-        constVars = Util.sort(constVars, varIndexComparer);
-        intConstVars = Util.sort(intConstVars, varIndexComparer);
-        boolConstVars = Util.sort(boolConstVars, varIndexComparer);
-        stringConstVars = Util.sort(stringConstVars, varIndexComparer);
+        stateVars = Util.sort(stateVars, comp);
+        derivativeVars = Util.sort(derivativeVars, comp);
+        algVars = Util.sort(algVars, comp);
+        intAlgVars = Util.sort(intAlgVars, comp);
+        boolAlgVars = Util.sort(boolAlgVars, comp);
+        inputVars = Util.sort(inputVars, comp);
+        outputVars = Util.sort(outputVars, comp);
+        aliasVars = Util.sort(aliasVars, comp);
+        intAliasVars = Util.sort(intAliasVars, comp);
+        boolAliasVars = Util.sort(boolAliasVars, comp);
+        paramVars = Util.sort(paramVars, comp);
+        intParamVars = Util.sort(intParamVars, comp);
+        boolParamVars = Util.sort(boolParamVars, comp);
+        stringAlgVars = Util.sort(stringAlgVars, comp);
+        stringParamVars = Util.sort(stringParamVars, comp);
+        stringAliasVars = Util.sort(stringAliasVars, comp);
+        extObjVars = Util.sort(extObjVars, comp);
+        jacVars = Util.sort(jacVars, comp);
+        constVars = Util.sort(constVars, comp);
+        intConstVars = Util.sort(intConstVars, comp);
+        boolConstVars = Util.sort(boolConstVars, comp);
+        stringConstVars = Util.sort(stringConstVars, comp);
         
       then SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
         outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
         stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars,constVars,intConstVars,boolConstVars,stringConstVars);
   end match;
-end sortSimvarsOnIndex;
+end sortSimvars;
 
 protected function fixIndex
   input SimVars unfixedSimvars;
@@ -6962,8 +6968,11 @@ algorithm
     local
       Integer lhsIndex;
       Integer rhsIndex;
-    case (SIMVAR(index=lhsIndex), SIMVAR(index=rhsIndex))
-    then rhsIndex < lhsIndex;
+      DAE.ComponentRef cr1,cr2;
+    case (SIMVAR(name=cr1,index=lhsIndex), SIMVAR(name=cr2,index=rhsIndex))
+      equation
+        res = rhsIndex < lhsIndex;
+      then res;
   end match;
 end varIndexComparer;
 
@@ -8931,7 +8940,8 @@ algorithm
         arrayCref = getArrayCref(dlowVar);
         aliasvar = getAliasVar(dlowVar,optAliasVars);
         caus = getCausality(dlowVar,vars);
-        numArrayElement=arraydim1(inst_dims);       
+        numArrayElement=arraydim1(inst_dims);
+        // print("name: " +& ComponentReference.printComponentRefStr(cr) +& "indx: " +& intString(indx) +& "\n");
       then
         SIMVAR(cr, kind, commentStr, unit, displayUnit, indx, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus,NONE(),numArrayElement);
   end match;

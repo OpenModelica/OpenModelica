@@ -886,19 +886,10 @@ public function translateDae "function: translateDae
   input Option<String> dummy;
   output BackendDAE.BackendDAE outBackendDAE;
 algorithm
-  outBackendDAE := mapEqSystem1(inBackendDAE,translateDae1,dummy);
-end translateDae;
-
-protected function translateDae1
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
-  input Option<String> dummy;
-  output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared;
-algorithm
-  (osyst,oshared) := match (syst,shared,dummy)
+  outBackendDAE := match (inBackendDAE,dummy)
     local
-      list<BackendDAE.Var> varlst,knvarlst,extvarlst;
+      list<list<BackendDAE.Var>> varlst;
+      list<BackendDAE.Var> knvarlst,extvarlst;
       array<BackendDAE.MultiDimEquation> ae;
       array<DAE.Algorithm> al;
       list<BackendDAE.WhenClause> wc;
@@ -911,22 +902,41 @@ algorithm
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
-    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,ae,al,BackendDAE.EVENT_INFO(whenClauseLst = wc,zeroCrossingLst = zc),extObjCls,btp),_)
+      BackendDAE.EqSystems systs;
+    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,ae,al,BackendDAE.EVENT_INFO(whenClauseLst = wc,zeroCrossingLst = zc),extObjCls,btp)),_)
       equation
-        varlst = varList(vars);
+        varlst = Util.listMapMap(systs,BackendVariable.daeVars,varList);
         knvarlst = varList(knvars);
         extvarlst = varList(extVars);
-        varlst = listReverse(varlst);
-        knvarlst = listReverse(knvarlst);
-        extvarlst = listReverse(extvarlst);
+        // varlst = Util.listMap(varlst,listReverse);
+        // knvarlst = listReverse(knvarlst);
+        // extvarlst = listReverse(extvarlst);
         (varlst,knvarlst,extvarlst) = BackendVariable.calculateIndexes(varlst, knvarlst,extvarlst);
-        vars = BackendVariable.addVars(varlst, vars);
+        systs = Util.listThreadMap(systs,varlst,addVarsToEqSystem);
         knvars = BackendVariable.addVars(knvarlst, knvars);
         extVars = BackendVariable.addVars(extvarlst, extVars);
       then
-        (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,ae,al,BackendDAE.EVENT_INFO(wc,zc),extObjCls,btp));
+        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,ae,al,BackendDAE.EVENT_INFO(wc,zc),extObjCls,btp));
   end match;
-end translateDae1;
+end translateDae;
+
+protected function addVarsToEqSystem
+  input BackendDAE.EqSystem syst;
+  input list<BackendDAE.Var> varlst;
+  output BackendDAE.EqSystem osyst;
+algorithm
+  osyst := match (syst,varlst)
+    local
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqs;
+      Option<BackendDAE.IncidenceMatrix> m,mT;
+      BackendDAE.Matching matching;
+    case (BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching),varlst)
+      equation
+        vars = BackendVariable.addVars(varlst, vars);
+      then BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching);
+  end match;
+end addVarsToEqSystem;
 
 public function calculateSizes "function: calculateSizes
   author: PA

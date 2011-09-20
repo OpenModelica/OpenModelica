@@ -1883,26 +1883,28 @@ public function calculateIndexes "function: calculateIndexes
   To seperate them after that they are stored in a list with
   the information about the type(vars=0,knvars=1,extvars=2) and the place at the
   original list."
-  input list<BackendDAE.Var> inVarLst1;
+  input list<list<BackendDAE.Var>> inVarLst1;
   input list<BackendDAE.Var> inVarLst2;
   input list<BackendDAE.Var> inVarLst3;
 
-  output list<BackendDAE.Var> outVarLst1;
+  output list<list<BackendDAE.Var>> outVarLst1;
   output list<BackendDAE.Var> outVarLst2;
   output list<BackendDAE.Var> outVarLst3;
 algorithm
   (outVarLst1,outVarLst2,outVarLst3) := matchcontinue (inVarLst1,inVarLst2,inVarLst3)
     local
-      list<BackendDAE.Var> vars_2,knvars_2,extvars_2,extvars,vars,knvars;
-      list< tuple<BackendDAE.Var,Integer> > vars_1,knvars_1,extvars_1;
+      list<list<BackendDAE.Var>> varsLst,vars_2;
+      list<BackendDAE.Var> knvars_2,extvars_2,extvars,vars,knvars;
+      list< tuple<BackendDAE.Var,Integer> > knvars_1,extvars_1;
+      list<list< tuple<BackendDAE.Var,Integer> >> vars_1;
       list< tuple<BackendDAE.Var,Integer,Integer> > vars_map,knvars_map,extvars_map,all_map,all_map1,noScalar_map,noScalar_map1,scalar_map,all_map2,mergedvar_map,sort_map;
       BackendDAE.Value x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType;
-    case (vars,knvars,extvars)
+    case (varsLst,knvars,extvars)
       equation
         // store vars,knvars,extvars in the list
-        vars_map = fillListConst(vars,0,0);
-        knvars_map = fillListConst(knvars,1,0);
-        extvars_map = fillListConst(extvars,2,0);
+        vars_map = fillListListConst(varsLst,0,{});
+        knvars_map = fillListConst(knvars,-1,0,{});
+        extvars_map = fillListConst(extvars,-2,0,{});
         // connect the lists
         all_map = listAppend(vars_map,knvars_map);
         all_map1 = listAppend(all_map,extvars_map);
@@ -1918,11 +1920,11 @@ algorithm
         // calculate indexes
         (all_map2,x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType) = calculateIndexes2(mergedvar_map,0,0,0,0,0,0,0,0,0,0,0,{});
         // seperate vars,knvars,extvas
-        vars_1 = getListConst(all_map2,0);
-        knvars_1 = getListConst(all_map2,1);
-        extvars_1 =  getListConst(all_map2,2);
+        vars_1 = Util.listMap1r(Util.listIntRange2(0,listLength(varsLst)-1),getListConst,all_map2);
+        knvars_1 = getListConst(all_map2,-1);
+        extvars_1 =  getListConst(all_map2,-2);
         // arrange lists in original order
-        vars_2 = sortList(vars_1,0);
+        vars_2 = Util.listMap1(vars_1,sortList,0);
         knvars_2 = sortList(knvars_1,0);
         extvars_2 =  sortList(extvars_1,0);
       then
@@ -1944,26 +1946,52 @@ author: Frenkel TUD
   input list<Type_a> inTypeALst;
   input Integer inType;
   input Integer inPlace;
+  input list< tuple<Type_a,Integer,Integer> > acc;
   output list< tuple<Type_a,Integer,Integer> > outlist;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outlist := match (inTypeALst,inType,inPlace)
+  outlist := match (inTypeALst,inType,inPlace,acc)
     local
       list<Type_a> rest;
       Type_a item;
       Integer value,place;
       list< tuple<Type_a,Integer,Integer> > out_lst,val_lst;
-    case ({},value,place) then {};
-    case (item::rest,value,place)
+    case ({},value,place,acc) then acc;
+    case (item::rest,value,place,acc)
       equation
         /* recursive */
-        val_lst = fillListConst(rest,value,place+1);
-        /* fill  */
-        out_lst = listAppend({(item,value,place)},val_lst);
+        acc = fillListConst(rest,value,place+1,(item,value,place)::acc);
       then
-        out_lst;
+        acc;
   end match;
 end fillListConst;
+
+protected function fillListListConst
+"function: fillListConst
+author: Frenkel TUD
+  Helper function for calculateIndexes.
+  Get a list, a type value an a start place and store all elements
+  of the list in a list of tuples (element,type,place)"
+  input list<list<Type_a>> inTypeALst;
+  input Integer inType;
+  input list< tuple<Type_a,Integer,Integer> > acc;
+  output list< tuple<Type_a,Integer,Integer> > outlist;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outlist := match (inTypeALst,inType,acc)
+    local
+      list<list<Type_a>> rest;
+      list<Type_a> item;
+      Integer value,place;
+      list< tuple<Type_a,Integer,Integer> > out_lst,val_lst;
+    case ({},value,acc) then acc;
+    case (item::rest,value,acc)
+      equation
+        /* recursive */
+        acc = fillListConst(item,value,0,acc);
+      then fillListListConst(rest,value+1,acc);
+  end match;
+end fillListListConst;
 
 protected function getListConst
 "function: getListConst
@@ -3886,5 +3914,13 @@ algorithm
       then BackendDAE.VAR(a,b,c,d,e,f,g,i,source,oattr,s,t,streamPrefix);
   end match;
 end mergeVariableOperations;
+
+public function greater
+  input BackendDAE.Var lhs;
+  input BackendDAE.Var rhs;
+  output Boolean greater;
+algorithm
+  greater := stringCompare(ComponentReference.printComponentRefStr(varCref(lhs)),ComponentReference.printComponentRefStr(varCref(rhs))) > 0;
+end greater;
 
 end BackendVariable;
