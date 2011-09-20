@@ -131,7 +131,8 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
 		 /// These methods are for solving non-linear algebraic eqns
          <%declareExtraResiduals(allEquations)%>
 		 // Calculate the minimization function for initializing reals
-		 void initial_objective_func(double* w, double* f);
+		 void initial_objective_func(double* w, double* f, double lambda);
+
       private: 
          <%makeMemberVariables(simCode)%>
 
@@ -623,10 +624,10 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
   <<
   static void static_initial_objective_func(long*, double* w, double* f)
   {
-      active_model->initial_objective_func(w,f);
+      active_model->initial_objective_func(w,f,1.0);
   }
 
-  void <%lastIdentOfPath(modelInfo.name)%>::initial_objective_func(double* w, double *f)
+  void <%lastIdentOfPath(modelInfo.name)%>::initial_objective_func(double* w, double *f, double $P$_lambda)
   {
 	  // Get new values for the unknown variables
 	  for (unsigned i = 0; i < init_unknown_vars.size(); i++)
