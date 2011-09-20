@@ -35,9 +35,13 @@ while( $line = <INP> ){
 			# read the filename
 			$fileName = pop(@values);
 			# join the file location back
-			$fileLocation = join('/', @values);
-			$inStmtFile = abs_path($fileLocation); # Absolute paths makes GDB a _lot_ happier;
-			$inStmtFile = $inStmtFile.'/'.$fileName;
+			if (scalar(@values) > 0) {
+				$fileLocation = join('/', @values);
+				$inStmtFile = abs_path($fileLocation); # Absolute paths makes GDB a _lot_ happier;
+				$inStmtFile = $inStmtFile.'/'.$fileName;
+			} else {
+				$inStmtFile = abs_path($1);
+			}
 		} else {
 			$inStmtFile = abs_path($1); # Absolute paths makes GDB a _lot_ happier;
 		}
