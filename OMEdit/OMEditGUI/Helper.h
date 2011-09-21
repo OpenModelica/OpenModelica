@@ -137,6 +137,7 @@ public:
     static QString exportAsImage;
     static QString exportToOMNotebook;
     static QString importFromOMNotebook;
+    static QString fontSizes;
 };
 
 class GUIMessages

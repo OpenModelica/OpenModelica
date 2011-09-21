@@ -232,17 +232,14 @@ bool OMCProxy::startServer()
         mHasInitialized = false;
         return false;
     }
+    // set OpenModelicaHome variable
     sendCommand("getInstallationDirectoryPath()");
     Helper::OpenModelicaHome = StringHandler::removeFirstLastQuotes(getResult());
-    QDir dir;
-    if (!dir.exists(Helper::tmpPath)) {
-     if (!dir.mkdir(Helper::tmpPath)) {
-       QMessageBox::critical(mpParentMainWindow, Helper::applicationName + " - Error",
-                              QString("Failed to create temp dir ").append(Helper::tmpPath), "OK");
-       //return false;
-     }
-    }
-    // set the temp directory.
+    // set temp path variable
+    sendCommand("getTempDirectoryPath()");
+    Helper::tmpPath = getResult()+"/OpenModelica/OMEdit/";
+    Helper::tmpPath.remove("\"");
+    if (!QDir().exists(Helper::tmpPath)) QDir().mkdir(Helper::tmpPath);
     changeDirectory(Helper::tmpPath);
     // set the OpenModelicaLibrary variable.
     sendCommand("getModelicaPath()");

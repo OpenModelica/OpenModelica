@@ -43,13 +43,15 @@ QString Helper::omcServerName = "OMEdit";
 QString Helper::omFileTypes = "Modelica Files (*.mo)";
 QString Helper::omnotebookFileTypes = "OMNotebook Files (*.onb *.onbz *.nb)";
 QString Helper::imageFileTypes = "Image Files (*.png *.svg *.bmp *.jpg)";
-#ifdef WIN32
-QString Helper::tmpPath = QString(getenv("OPENMODELICAHOME")).replace("\\", "/").append(QString("/tmp/OMEdit"));
-#else
-// Linux users don't have write access to /usr/tmp/OMEdit
-// Don't randomize the path as then it becomes annoying to remove all dirs
-QString Helper::tmpPath = QString("/tmp/OMEdit");
-#endif
+// The temp path variable is initialized in OMCProxy::startserver
+QString Helper::tmpPath = QString("");
+//#ifdef WIN32
+//QString Helper::tmpPath = QString(getenv("OPENMODELICAHOME")).replace("\\", "/").append(QString("/tmp/OMEdit"));
+//#else
+//// Linux users don't have write access to /usr/tmp/OMEdit
+//// Don't randomize the path as then it becomes annoying to remove all dirs
+//QString Helper::tmpPath = QString("/tmp/OMEdit");
+//#endif
 QString Helper::readOnly = QString("Read-Only");
 QString Helper::writeAble = QString("Writeable");
 QString Helper::iconView = QString("Icon View");
@@ -137,6 +139,8 @@ QString Helper::importFromOMNotebook = QString("Importing model from OMNotebook"
 
 QString Helper::ModelicaSimulationMethods = "DASSL,DASSL2,Euler,RungeKutta";
 QString Helper::ModelicaSimulationOutputFormats = "mat,plt,csv,empty";
+
+QString Helper::fontSizes = QString("6,7,8,9,10,11,12,14,16,18,20,22,24,26,28,36,48,72");
 
 QString GUIMessages::getMessage(int type)
 {
