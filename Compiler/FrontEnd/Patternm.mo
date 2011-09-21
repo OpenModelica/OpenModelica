@@ -287,6 +287,18 @@ algorithm
         pattern = Util.if_(Types.isFunctionType(ty2), DAE.PAT_AS_FUNC_PTR(id,DAE.PAT_WILD()), DAE.PAT_AS(id,et,DAE.PAT_WILD()));
       then (cache,pattern);
 
+    case (cache,env,Absyn.AS(id,exp),ty2,info)
+      equation
+        failure((_,_,_,_) = Lookup.lookupIdent(cache,env,id));
+        Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,{id,""},info);
+      then fail();
+
+    case (cache,env,Absyn.CREF(Absyn.CREF_IDENT(id,{})),ty2,info)
+      equation
+        failure((_,_,_,_) = Lookup.lookupIdent(cache,env,id));
+        Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,{id,""},info);
+      then fail();
+
     case (cache,env,Absyn.CREF(Absyn.WILD()),_,info) then (cache,DAE.PAT_WILD());
 
     case (cache,env,lhs,ty,info)
