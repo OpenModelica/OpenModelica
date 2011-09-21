@@ -158,7 +158,7 @@ QList<QString> PlotWidget::readPlotVariables(QString fileName)
 {
     QList<QString> plotVariablesList;
     // need to replace \\ to / so that QFile can close the file properly, otherwise we can't open it second time
-    QString filePath = QString(Helper::tmpPath.replace("\\", "/")).append("/").append(fileName);
+    QString filePath = QString(mpParentMainWindow->mpOMCProxy->changeDirectory()).append("/").append(fileName);
 
     QFile simulationResultFile(filePath);
     if (!simulationResultFile.open(QIODevice::ReadOnly)) {
@@ -202,7 +202,7 @@ void PlotWidget::addPlotVariablestoTree(QString fileName, QList<QString> plotVar
     }
 
     // insert the top level item in tree
-    QString toolTip = QString("Simulation Result File: ").append(fileName).append("\nLocation: ").append(Helper::tmpPath).append("/").append(fileName);
+    QString toolTip = QString("Simulation Result File: ").append(fileName).append("\nLocation: ").append(mpParentMainWindow->mpOMCProxy->changeDirectory()).append("/").append(fileName);
     PlotTreeItem *newTreePost = new PlotTreeItem(fileName, tr(""), fileName, fileName, toolTip, (QTreeWidget*)0);
     mpPlotTree->insertTopLevelItem(0, newTreePost);
 
@@ -328,7 +328,7 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
             // check the item checkstate
             if (pItem->checkState(column) == Qt::Checked)
             {
-                pPlotWindow->openFile(QString(Helper::tmpPath).append("/").append(pItem->getFileName()));
+                pPlotWindow->openFile(QString(mpParentMainWindow->mpOMCProxy->changeDirectory()).append("/").append(pItem->getFileName()));
                 pPlotWindow->setVariablesList(QStringList(pItem->getPlotVariable()));
                 pPlotWindow->plot();
                 pPlotWindow->fitInView();
@@ -379,7 +379,7 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                             return;
                         }
                         mPlotParametricVariables.last().append(QStringList(pItem->getPlotVariable()));
-                        pPlotWindow->openFile(QString(Helper::tmpPath).append("/").append(pItem->getFileName()));
+                        pPlotWindow->openFile(QString(mpParentMainWindow->mpOMCProxy->changeDirectory()).append("/").append(pItem->getFileName()));
                         pPlotWindow->setVariablesList(mPlotParametricVariables.last());
                         pPlotWindow->plotParametric();
                         if (mPlotParametricVariables.size() > 1)

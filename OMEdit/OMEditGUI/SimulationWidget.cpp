@@ -400,11 +400,11 @@ void SimulationWidget::buildModel(QString simulationParameters)
         QString file;
         if (mpFileNameTextBox->text().isEmpty())
         {
-            file = QString(Helper::tmpPath.replace("\\", "/")).append("/").append(projectTab->mModelNameStructure);
+            file = QString(mpParentMainWindow->mpOMCProxy->changeDirectory()).append("/").append(projectTab->mModelNameStructure);
         }
         else
         {
-            file = QString(Helper::tmpPath.replace("\\", "/")).append("/").append(mpFileNameTextBox->text());
+            file = QString(mpParentMainWindow->mpOMCProxy->changeDirectory()).append("/").append(mpFileNameTextBox->text());
         }
 
         file = file.replace("//", "/");

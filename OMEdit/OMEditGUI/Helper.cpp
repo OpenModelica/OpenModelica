@@ -43,15 +43,6 @@ QString Helper::omcServerName = "OMEdit";
 QString Helper::omFileTypes = "Modelica Files (*.mo)";
 QString Helper::omnotebookFileTypes = "OMNotebook Files (*.onb *.onbz *.nb)";
 QString Helper::imageFileTypes = "Image Files (*.png *.svg *.bmp *.jpg)";
-// The temp path variable is initialized in OMCProxy::startserver
-QString Helper::tmpPath = QString("");
-//#ifdef WIN32
-//QString Helper::tmpPath = QString(getenv("OPENMODELICAHOME")).replace("\\", "/").append(QString("/tmp/OMEdit"));
-//#else
-//// Linux users don't have write access to /usr/tmp/OMEdit
-//// Don't randomize the path as then it becomes annoying to remove all dirs
-//QString Helper::tmpPath = QString("/tmp/OMEdit");
-//#endif
 QString Helper::readOnly = QString("Read-Only");
 QString Helper::writeAble = QString("Writeable");
 QString Helper::iconView = QString("Icon View");

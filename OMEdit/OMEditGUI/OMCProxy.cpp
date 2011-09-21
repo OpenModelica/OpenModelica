@@ -237,10 +237,11 @@ bool OMCProxy::startServer()
     Helper::OpenModelicaHome = StringHandler::removeFirstLastQuotes(getResult());
     // set temp path variable
     sendCommand("getTempDirectoryPath()");
-    Helper::tmpPath = getResult()+"/OpenModelica/OMEdit/";
-    Helper::tmpPath.remove("\"");
-    if (!QDir().exists(Helper::tmpPath)) QDir().mkdir(Helper::tmpPath);
-    changeDirectory(Helper::tmpPath);
+    QString tmpPath = getResult()+"/OpenModelica/OMEdit/";
+    tmpPath.remove("\"");
+    if (!QDir().exists(tmpPath))
+        if (QDir().mkpath(tmpPath))
+            changeDirectory(tmpPath);
     // set the OpenModelicaLibrary variable.
     sendCommand("getModelicaPath()");
     Helper::OpenModelicaLibrary = StringHandler::removeFirstLastQuotes(getResult());
@@ -981,7 +982,7 @@ QString OMCProxy::changeDirectory(QString directory)
         directory = directory.replace("\\", "/");
         sendCommand("cd(\"" + directory + "\")");
     }
-    return getResult();
+    return StringHandler::unparse(getResult());
 }
 
 bool OMCProxy::loadFile(QString fileName)
