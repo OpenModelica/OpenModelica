@@ -111,30 +111,25 @@ public:
     void show();    
 
 private:
-   QLabel *mpTextLabel;
-   QLineEdit *mpTextBox;
-   QLabel *mpFontLabel;   
-   QLabel *mpFontSizeLabel;
-   QPushButton *mpEditButton;
-   QPushButton *mpCancelButton;
-   QDialogButtonBox *mpButtonBox;
-   QGroupBox *mpTextGroup;
-   QGroupBox *mpFontGroup;
-   QGroupBox *mpFontSizeGroup;
+    QLabel *mpHeading;
+    QFrame *mHorizontalLine;
+    QLabel *mpTextLabel;
+    QLineEdit *mpTextBox;
+    QLabel *mpFontLabel;
+    QFontComboBox *mpFontFamilyComboBox;
+    QLabel *mpFontSizeLabel;
+    QComboBox *mpFontSizeComboBox;
+    QLabel *mpAlignmentLabel;
+    QComboBox *mpAlignmentComboBox;
+    QGroupBox *mpStylesGroup;
+    QCheckBox *mpCursive;
+    QCheckBox *mpBold;
+    QCheckBox *mpUnderline;
+    QPushButton *mpEditButton;
+    QPushButton *mpCancelButton;
+    QDialogButtonBox *mpButtonBox;
 
-   QCheckBox *mpCursive;
-   QCheckBox *mpBold;
-   QCheckBox *mpUnderline;
-   QGroupBox *mpStyleGroup;
-
-   QFontComboBox *mpFontFamilyComboBox;
-   QComboBox *mpFontSizeComboBox;
-
-   QComboBox *mpAlignmentComboBox;
-   QGroupBox *mpAlignmentGroup;
-   QLabel *mpAlignmentLabel;
-
-   TextAnnotation *mpTextAnnotation;
+    TextAnnotation *mpTextAnnotation;
 public slots:
     void edit();
 };

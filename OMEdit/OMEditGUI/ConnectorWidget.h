@@ -157,6 +157,8 @@ public:
     void show();
    // void setText(QString text);
 private:
+    QLabel *mpHeading;
+    QFrame *mHorizontalLine;
     QLabel *mpLabel;
     QLabel *mpStartIndexLabel;
     QLabel *mpEndIndexLabel;

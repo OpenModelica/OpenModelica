@@ -723,7 +723,19 @@ ConnectorArrayMenu::ConnectorArrayMenu(Connector *pConnector,QWidget *pParent)
 {
     mpConnector = pConnector;
     setMinimumSize(375, 140);
-    //setModal(true);
+    setModal(true);
+
+    // heading
+    mpHeading = new QLabel(tr("Connection"));
+    mpHeading->setFont(QFont("", Helper::headingFontSize));
+    mpHeading->setAlignment(Qt::AlignTop);
+
+    QHBoxLayout *horizontalLayout = new QHBoxLayout;
+    horizontalLayout->addWidget(mpHeading);
+
+    mHorizontalLine = new QFrame();
+    mHorizontalLine->setFrameShape(QFrame::HLine);
+    mHorizontalLine->setFrameShadow(QFrame::Sunken);
 
     // Create the Text Box, File Dialog and Labels
     mpLabel= new QLabel;
@@ -748,12 +760,14 @@ ConnectorArrayMenu::ConnectorArrayMenu(Connector *pConnector,QWidget *pParent)
 
     // Create a layout
     QGridLayout *mainLayout = new QGridLayout;
-    mainLayout->addWidget(mpLabel, 0, 0);
-    mainLayout->addWidget(mpStartIndexLabel, 1, 0);
-    mainLayout->addWidget(mpStartIndexTextBox, 2, 0);
-    mainLayout->addWidget(mpEndIndexLabel, 3, 0);
-    mainLayout->addWidget(mpEndIndexTextBox, 4, 0);
-    mainLayout->addWidget(mpButtonBox, 5, 0);
+    mainLayout->addLayout(horizontalLayout, 0, 0);
+    mainLayout->addWidget(mHorizontalLine, 1, 0);
+    mainLayout->addWidget(mpLabel, 2, 0);
+    mainLayout->addWidget(mpStartIndexLabel, 3, 0);
+    mainLayout->addWidget(mpStartIndexTextBox, 4, 0);
+    mainLayout->addWidget(mpEndIndexLabel, 5, 0);
+    mainLayout->addWidget(mpEndIndexTextBox, 6, 0);
+    mainLayout->addWidget(mpButtonBox, 7, 0);
 
     setLayout(mainLayout);
 }
@@ -765,7 +779,7 @@ ConnectorArrayMenu::~ConnectorArrayMenu()
 //displays the array menu for adding indices incase either one is a connector array.
 void ConnectorArrayMenu::show()
 {
-    setWindowTitle(QString(Helper::applicationName).append(" - Connector Array Menu "));
+    setWindowTitle(QString(Helper::applicationName).append(" - Connection"));
     Component *pEndComponent = this->mpConnector->getEndComponent();
     Component *pStartComponent = this->mpConnector->getStartComponent();
 
@@ -792,7 +806,7 @@ void ConnectorArrayMenu::show()
     //if start port is a connector array
     if(this->mpConnector->getStartConnectorisArray())
     {
-        mpStartIndexLabel->setText(" Enter Index in the Array For Start Component :");
+        mpStartIndexLabel->setText("Enter index in the array for Start Component:");
         mpStartIndexTextBox->setText(tr(""));
         mpStartIndexTextBox->setFocus();
         mStartArrayExist = true;
@@ -807,7 +821,7 @@ void ConnectorArrayMenu::show()
     //if end port is a connector array
     if(this->mpConnector->getEndConnectorisArray())
     {
-        mpEndIndexLabel->setText(" Enter Index in the Array For End Component :");
+        mpEndIndexLabel->setText("Enter index in the array for End Component:");
         mpEndIndexTextBox->setText(tr(""));
         mEndArrayExist = true;
         endIconCompName.append("[ j ]");

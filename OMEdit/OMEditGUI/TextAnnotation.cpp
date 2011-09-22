@@ -781,7 +781,8 @@ TextWidget::TextWidget(TextAnnotation *pTextShape, MainWindow *parent)
 {
     setWindowTitle(QString(Helper::applicationName).append(" - Text Properties"));
     setAttribute(Qt::WA_DeleteOnClose);
-    //setMaximumSize(300, 300);
+    setModal(true);
+    setMinimumSize(300, 300);
     mpParentMainWindow = parent;
     mpTextAnnotation = pTextShape;
     setUpForm();
@@ -789,28 +790,31 @@ TextWidget::TextWidget(TextAnnotation *pTextShape, MainWindow *parent)
 
 void TextWidget::setUpForm()
 {
+    // heading
+    mpHeading = new QLabel(tr("Text Properties"));
+    mpHeading->setFont(QFont("", Helper::headingFontSize));
+    mpHeading->setAlignment(Qt::AlignTop);
+
+    QHBoxLayout *horizontalLayout = new QHBoxLayout;
+    horizontalLayout->addWidget(mpHeading);
+
+    mHorizontalLine = new QFrame();
+    mHorizontalLine->setFrameShape(QFrame::HLine);
+    mHorizontalLine->setFrameShadow(QFrame::Sunken);
+
     //Text Label
-    QGridLayout *textLayout = new QGridLayout;
-    mpTextGroup = new QGroupBox();
     mpTextLabel = new QLabel(tr("Text of Label:"));
     mpTextBox = new QLineEdit(mpTextAnnotation->getTextString());
-    textLayout->addWidget(mpTextLabel, 0, 0);
-    textLayout->addWidget(mpTextBox, 0, 1);
-    mpTextGroup->setLayout(textLayout);
 
-    //Font Name    
-    QGridLayout *fontLayout = new QGridLayout;
-    mpFontGroup = new QGroupBox();
-    mpFontLabel = new QLabel(tr("Fontname:"));
+    //Font Name
+    mpFontLabel = new QLabel(tr("Font Name:"));
     mpFontFamilyComboBox = new QFontComboBox;
     int currentIndex;
     currentIndex = mpFontFamilyComboBox->findText(mpTextAnnotation->getFontName(), Qt::MatchExactly);
     mpFontFamilyComboBox->setCurrentIndex(currentIndex);
-    fontLayout->addWidget(mpFontLabel, 0, 0);
-    fontLayout->addWidget(mpFontFamilyComboBox, 0, 1);
-    mpFontGroup->setLayout(fontLayout);
 
     //Font Size
+    mpFontSizeLabel = new QLabel(tr("Font Size:"));
     mpFontSizeComboBox = new QComboBox;
     QStringList sizesList;
     sizesList << "0" << "2" << "4";
@@ -818,40 +822,29 @@ void TextWidget::setUpForm()
     mpFontSizeComboBox->addItems(Helper::fontSizes.split(","));
     currentIndex = mpFontSizeComboBox->findText(QString::number(mpTextAnnotation->getFontSize()), Qt::MatchExactly);
     mpFontSizeComboBox->setCurrentIndex(currentIndex);
-    QGridLayout *fontSizeLayout = new QGridLayout;
-    mpFontSizeGroup = new QGroupBox();
-    mpFontSizeLabel = new QLabel(tr("Fontsize:"));
-    fontSizeLayout->addWidget(mpFontSizeLabel, 0, 0);
-    fontSizeLayout->addWidget(mpFontSizeComboBox, 0, 1, Qt::AlignLeft);
-    mpFontSizeGroup->setLayout(fontSizeLayout);
 
     //Cursive Bold Underline Checkboxes
-    QGridLayout *styleLayout = new QGridLayout;
-    mpStyleGroup = new QGroupBox();
     mpCursive = new QCheckBox("Italic", this);
     mpCursive->setChecked(mpTextAnnotation->getItalic());
     mpBold = new QCheckBox("Bold", this);
     mpBold->setChecked(mpTextAnnotation->getWeight());
     mpUnderline = new QCheckBox("Underline", this);
     mpUnderline->setChecked(mpTextAnnotation->getUnderLine());
-    styleLayout->addWidget(mpCursive, 0, 1);
-    styleLayout->addWidget(mpBold, 0, 2);
-    styleLayout->addWidget(mpUnderline, 0, 3);
-    mpStyleGroup->setLayout(styleLayout);
+    mpStylesGroup = new QGroupBox(tr("Styles"));
+    QVBoxLayout *verticalPropertiesLayout = new QVBoxLayout;
+    verticalPropertiesLayout->addWidget(mpCursive);
+    verticalPropertiesLayout->addWidget(mpBold);
+    verticalPropertiesLayout->addWidget(mpUnderline);
+    mpStylesGroup->setLayout(verticalPropertiesLayout);
 
     //Alignment
+    mpAlignmentLabel = new QLabel(tr("Alignment:"));
     mpAlignmentComboBox = new QComboBox;
     QStringList alignmentList;
     alignmentList << Helper::left << Helper::center << Helper::right;
     mpAlignmentComboBox->addItems(alignmentList);
     currentIndex = mpAlignmentComboBox->findText(mpTextAnnotation->getAlignment(), Qt::MatchExactly);
     mpAlignmentComboBox->setCurrentIndex(currentIndex);
-    QGridLayout *alignmentLayout = new QGridLayout;
-    mpAlignmentGroup = new QGroupBox();
-    mpAlignmentLabel = new QLabel(tr("Alignment:"));
-    alignmentLayout->addWidget(mpAlignmentLabel, 0, 0);
-    alignmentLayout->addWidget(mpAlignmentComboBox, 0, 1, Qt::AlignLeft);
-    mpAlignmentGroup->setLayout(alignmentLayout);
 
     //Buttons
     mpEditButton = new QPushButton(tr("Ok"));
@@ -864,14 +857,20 @@ void TextWidget::setUpForm()
     mpButtonBox->addButton(mpEditButton, QDialogButtonBox::ActionRole);
     mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);   
 
-    //Main Layout
+    // Create a layout
     QGridLayout *mainLayout = new QGridLayout;
-    mainLayout->addWidget(mpTextGroup, 1, 0);
-    mainLayout->addWidget(mpFontGroup, 2, 0);
-    mainLayout->addWidget(mpFontSizeGroup, 3, 0);
-    mainLayout->addWidget(mpStyleGroup, 4, 0);
-    mainLayout->addWidget(mpAlignmentGroup, 5, 0);
-    mainLayout->addWidget(mpButtonBox, 6, 0);
+    mainLayout->addLayout(horizontalLayout, 0, 0, 1, 2);
+    mainLayout->addWidget(mHorizontalLine, 1, 0, 1, 2);
+    mainLayout->addWidget(mpTextLabel, 2, 0);
+    mainLayout->addWidget(mpTextBox, 2, 1);
+    mainLayout->addWidget(mpFontLabel, 3, 0);
+    mainLayout->addWidget(mpFontFamilyComboBox, 3, 1);
+    mainLayout->addWidget(mpFontSizeLabel, 4, 0);
+    mainLayout->addWidget(mpFontSizeComboBox, 4, 1);
+    mainLayout->addWidget(mpStylesGroup, 5, 0, 1, 2);
+    mainLayout->addWidget(mpAlignmentLabel, 6, 0);
+    mainLayout->addWidget(mpAlignmentComboBox, 6, 1);
+    mainLayout->addWidget(mpButtonBox, 7, 0, 1, 2);
 
     setLayout(mainLayout);
 }
