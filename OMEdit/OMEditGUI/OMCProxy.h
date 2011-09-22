@@ -62,6 +62,7 @@ private:
     QTextEdit *mpTextEdit;
     QString mObjectRefFile;
     QList<QString> mCommandsList;
+    int mCurrentCommandIndex;
     QMap<QString, QString> mCommandsMap;
 public:
     OMCProxy(MainWindow *pParent, bool displayErrors = true);

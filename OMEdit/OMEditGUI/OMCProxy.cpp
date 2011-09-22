@@ -60,6 +60,7 @@ OMCProxy::OMCProxy(MainWindow *pParent, bool displayErrors)
 {
     this->mpParentMainWindow = pParent;
     this->mAnnotationVersion = OMCProxy::ANNOTATION_VERSION3X;
+    this->mCurrentCommandIndex = -1;
     this->mpOMCLogger = new QDialog();
     this->mpOMCLogger->setWindowFlags(Qt::WindowTitleHint);
     this->mpOMCLogger->setMinimumSize(640, 480);
@@ -102,20 +103,40 @@ void OMCProxy::getPreviousCommand()
 {
     if (mCommandsList.isEmpty())
         return;
-    mpExpressionTextBox->setText(mCommandsList.at(mCommandsList.count() - 1));
-    QString tempCommand = mCommandsList.at(mCommandsList.count() - 1);
-    mCommandsList.insert(0, tempCommand);
-    mCommandsList.removeLast();
+
+    mCurrentCommandIndex -= 1;
+    if (mCurrentCommandIndex > -1)
+    {
+        mpExpressionTextBox->setText(mCommandsList.at(mCurrentCommandIndex));
+    }
+    else
+    {
+        mCurrentCommandIndex += 1;
+    }
+//    mpExpressionTextBox->setText(mCommandsList.at(mCommandsList.count() - 1));
+//    QString tempCommand = mCommandsList.at(mCommandsList.count() - 1);
+//    mCommandsList.insert(0, tempCommand);
+//    mCommandsList.removeLast();
 }
 
 void OMCProxy::getNextCommand()
 {
     if (mCommandsList.isEmpty())
         return;
-    mpExpressionTextBox->setText(mCommandsList.at(0));
-    QString tempCommand = mCommandsList.at(0);
-    mCommandsList.append(tempCommand);
-    mCommandsList.removeFirst();
+
+    mCurrentCommandIndex += 1;
+    if (mCurrentCommandIndex < mCommandsList.count())
+    {
+        mpExpressionTextBox->setText(mCommandsList.at(mCurrentCommandIndex));
+    }
+    else
+    {
+        mCurrentCommandIndex -= 1;
+    }
+//    mpExpressionTextBox->setText(mCommandsList.at(0));
+//    QString tempCommand = mCommandsList.at(0);
+//    mCommandsList.append(tempCommand);
+//    mCommandsList.removeFirst();
 }
 
 void OMCProxy::addExpressionInCommandMap(QString expression, QString result)
@@ -321,16 +342,24 @@ QString OMCProxy::getResult()
 
 void OMCProxy::logOMCMessages(QString expression)
 {
-    mCommandsList.append(expression);
-    mpTextEdit->setCurrentFont(QFont("Times New Roman", 10, QFont::Bold, false));
-    mpTextEdit->append(">>  " + expression);
-
-    mpTextEdit->setCurrentFont(QFont("Times New Roman", 10, QFont::Normal, false));
-    mpTextEdit->insertPlainText("\n>>  " + getResult() + "\n");
-    // scroll the text to end
+    // move the cursor down before adding to the logger.
     QTextCursor textCursor = mpTextEdit->textCursor();
     textCursor.movePosition(QTextCursor::End);
     mpTextEdit->setTextCursor(textCursor);
+    // add the expression to commands list
+    mCommandsList.append(expression);
+    // log expression
+    mpTextEdit->setCurrentFont(QFont("Times New Roman", 10, QFont::Bold, false));
+    mpTextEdit->insertPlainText("\n>>  " + expression + "\n");
+    // log result
+    mpTextEdit->setCurrentFont(QFont("Times New Roman", 10, QFont::Normal, false));
+    mpTextEdit->insertPlainText(">>  " + getResult() + "\n");
+    // move the cursor
+    textCursor.movePosition(QTextCursor::End);
+    mpTextEdit->setTextCursor(textCursor);
+    // set the current command index.
+    mCurrentCommandIndex = mCommandsList.count();
+    mpExpressionTextBox->setText(tr(""));
 }
 
 QStringList OMCProxy::createPackagesList()

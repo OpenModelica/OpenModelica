@@ -582,11 +582,7 @@ QString ModelicaTextEditorPage::getPreviewText()
 
 void ModelicaTextEditorPage::createFontSizeComboBox()
 {
-    QStringList sizesList;
-    sizesList << "6" << "7" << "8" << "9" << "10" << "11" << "12"
-              << "14" << "16" << "18" << "20" << "22" << "24" << "26" << "28"
-              << "36" << "48" << "72";
-    mpFontSizeComboBox->addItems(sizesList);
+    mpFontSizeComboBox->addItems(Helper::fontSizes.split(","));
 }
 
 void ModelicaTextEditorPage::initializeFields()

@@ -83,7 +83,6 @@ private:
     Component *mpEndComponent;
     QVector<QPointF> mPoints;
     QVector<geometryType> mGeometries;
-
     bool mEndComponentConnected;
     bool mIsActive;
 signals:
@@ -114,14 +113,14 @@ public:
     Connector *mpParentConnector;
     QPointF startPos;
     QPointF endPos;
+    bool isMousePressed;
+    QPointF mOldPosition;
 
     void paint(QPainter *p, const QStyleOptionGraphicsItem *o, QWidget *w);
     void setActive();
     void setPassive();
     void setHovered();
     void setLine(QPointF pos1, QPointF pos2);
-    bool isMousePressed;
-    QPointF mOldPosition;
     int getLineNumber();
 public slots:
     void setConnected();
@@ -154,8 +153,8 @@ class ConnectorArrayMenu : public QDialog
 public:
     ConnectorArrayMenu(Connector *pConnector, QWidget *pParent = 0);
     Connector *mpConnector;
-~ConnectorArrayMenu();
-void show(int startMaxIndex, int endMaxIndex);
+    ~ConnectorArrayMenu();
+    void show();
    // void setText(QString text);
 private:
     QLabel *mpLabel;
@@ -163,18 +162,14 @@ private:
     QLabel *mpEndIndexLabel;
     QString mEndConnectorIndex;
     QString mStartConnectorIndex;
-
     QLineEdit *mpStartIndexTextBox;
     QLineEdit *mpEndIndexTextBox;
     QPushButton *mpCancelButton;
     QPushButton *mpOkButton;
     QDialogButtonBox *mpButtonBox;
-    int mStartMaxIndex;
-    int mEndMaxIndex;
     bool mStartArrayExist;
     bool mEndArrayExist;
 public slots:
-
     QString getEndConnectorIndex();
     void setEndConnectorIndex(QString connectorIndex);
     QString getStartConnectorIndex();

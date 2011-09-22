@@ -123,6 +123,7 @@ QSize Messages::sizeHint() const
 void Messages::printGUIMessage(QString message)
 {
     append(message + tr("\n"));
+    ensureCursorVisible();
     mpMessageWidget->setCurrentWidget(this);
 }
 

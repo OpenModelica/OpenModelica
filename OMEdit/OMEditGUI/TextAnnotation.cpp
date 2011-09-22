@@ -40,10 +40,11 @@ TextAnnotation::TextAnnotation(QString shape, Component *pParent)
     this->mFontWeight = -1;
     this->mFontItalic = false;
     this->mFontName = qApp->font().family();
-    this->mHorizontalAlignment = Qt::AlignVCenter;
+    this->mHorizontalAlignment = Qt::AlignCenter;
     this->mFontUnderLine = false;
     this->mFontSize = 0;
-    mCalculatedFontSize = 5;
+    mCalculatedFontSize = 1;
+    setLetterSpacing(2);
 
     connect(this, SIGNAL(extentChanged()), SLOT(calculateFontSize()));
     parseShapeAnnotation(shape, mpComponent->mpOMCProxy);
@@ -58,12 +59,14 @@ TextAnnotation::TextAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParen
     this->mFontWeight = -1;
     this->mFontItalic = false;
     this->mFontName = qApp->font().family();
-    this->mHorizontalAlignment = Qt::AlignVCenter;
+    this->mHorizontalAlignment = Qt::AlignCenter;
     this->mFontUnderLine = false;
     this->mFontSize = 0;
-    mCalculatedFontSize = 5;
+    mCalculatedFontSize = 1;
+    setLetterSpacing(2);
     mTextString = QString("Text Here");
     mIsCustomShape = true;
+    mpComponent = 0;
     setAcceptHoverEvents(true);
 
     connect(this, SIGNAL(updateShapeAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
@@ -78,11 +81,13 @@ TextAnnotation::TextAnnotation(QString shape, GraphicsView *graphicsView, QGraph
     this->mFontWeight = -1;
     this->mFontItalic = false;
     this->mFontName = qApp->font().family();
-    this->mHorizontalAlignment = Qt::AlignVCenter;
+    this->mHorizontalAlignment = Qt::AlignCenter;
     this->mFontUnderLine = false;
     mIsCustomShape = true;
     this->mFontSize = 0;
-    mCalculatedFontSize = 5;
+    mCalculatedFontSize = 1;
+    setLetterSpacing(2);
+    mpComponent = 0;
 
     connect(this, SIGNAL(extentChanged()), SLOT(calculateFontSize()));
     parseShapeAnnotation(shape, mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy);    
@@ -113,7 +118,6 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
         setTransformOriginPoint(boundingRect().center());
     }
 
-    painter->scale(1.0, -1.0);
     QPen pen(this->mLineColor, this->mThickness, this->mLinePattern);
     pen.setCosmetic(true);
     painter->setPen(pen);
@@ -127,9 +131,38 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     // set font underline
     if(this->mFontUnderLine)
         font.setUnderline(true);
+    // set letter spacing for the font
+    setLetterSpacingOnFont(&font, getLetterSpacing());
     painter->setFont(font);
     // draw the font
-    painter->drawText(getDrawingRect(), mHorizontalAlignment | Qt::TextDontClip, this->mTextString);
+    if (mpComponent)
+    {
+        if (mpComponent->rotation() == -180 || mpComponent->rotation() == 180)
+        {
+            painter->scale(-1.0, 1.0);
+            painter->translate(((-boundingRect().left()) - boundingRect().right()), 0);
+        }
+        else
+        {
+            painter->scale(1.0, -1.0);
+            painter->translate(0, ((-boundingRect().top()) - boundingRect().bottom()));
+        }
+    }
+    else if (mIsCustomShape)
+    {
+        if (rotation() == -180 || rotation() == 180)
+        {
+            painter->scale(-1.0, 1.0);
+            painter->translate(((-boundingRect().left()) - boundingRect().right()), 0);
+        }
+        else
+        {
+            painter->scale(1.0, -1.0);
+            painter->translate(0, ((-boundingRect().top()) - boundingRect().bottom()));
+        }
+    }
+    if (boundingRect().width() > 0)
+        painter->drawText(boundingRect(), mHorizontalAlignment, this->mTextString);
 }
 
 void TextAnnotation::checkNameString()
@@ -203,9 +236,19 @@ void TextAnnotation::setFontName(QString fontName)
     mFontName = fontName;
 }
 
+QString TextAnnotation::getFontName()
+{
+    return mFontName;
+}
+
 void TextAnnotation::setFontSize(double fontSize)
 {
     mFontSize = fontSize;
+}
+
+double TextAnnotation::getFontSize()
+{
+    return mFontSize;
 }
 
 void TextAnnotation::setItalic(bool italic)
@@ -213,9 +256,22 @@ void TextAnnotation::setItalic(bool italic)
     mFontItalic = italic;
 }
 
+bool TextAnnotation::getItalic()
+{
+    return mFontItalic;
+}
+
 void TextAnnotation::setWeight(int bold)
 {
     mFontWeight = bold;
+}
+
+bool TextAnnotation::getWeight()
+{
+    if (mFontWeight == QFont::Bold)
+        return true;
+    else
+        return false;
 }
 
 void TextAnnotation::setUnderLine(bool underLine)
@@ -223,9 +279,29 @@ void TextAnnotation::setUnderLine(bool underLine)
     mFontUnderLine = underLine;
 }
 
+bool TextAnnotation::getUnderLine()
+{
+    return mFontUnderLine;
+}
+
 void TextAnnotation::setAlignment(Qt::Alignment alignment)
 {
     mHorizontalAlignment = alignment;
+}
+
+QString TextAnnotation::getAlignment()
+{
+    switch (mHorizontalAlignment)
+    {
+    case Qt::AlignLeft:
+        return Helper::left;
+    case Qt::AlignCenter:
+        return Helper::center;
+    case Qt::AlignRight:
+        return Helper::right;
+    default:
+        return Helper::left;
+    }
 }
 
 void TextAnnotation::drawRectangleCornerItems()
@@ -374,6 +450,36 @@ QRectF TextAnnotation::getDrawingRect()
     return mDrawingRect;
 }
 
+//! Sets the letter spacing for the Text Annotations.
+//! @param letterSpacing is the new letter spacing.
+//! @see setLetterSpacingOnFont(QFont *font, qreal letterSpacing)
+//! @see getLetterSpacing()
+void TextAnnotation::setLetterSpacing(qreal letterSpacing)
+{
+    mLetterSpacing = letterSpacing;
+}
+
+//! Sets the letter spacing of the Text Annotations for the given Font.
+//! @param font
+//! @param letterSpacing is the new letter spacing.
+//! @see setLetterSpacing(qreal letterSpacing)
+//! @see getLetterSpacing()
+void TextAnnotation::setLetterSpacingOnFont(QFont *font, qreal letterSpacing)
+{
+    if (font->letterSpacing() < letterSpacing)
+        font->setLetterSpacing(QFont::AbsoluteSpacing, letterSpacing);
+}
+
+//! Returns the letter spacing used by the Text Annotations.
+//! @param font
+//! @param letterSpacing is the new letter spacing.
+//! @see setLetterSpacing(qreal letterSpacing)
+//! @see setLetterSpacingOnFont(QFont *font, qreal letterSpacing)
+qreal TextAnnotation::getLetterSpacing()
+{
+    return mLetterSpacing;
+}
+
 void TextAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)
 {
     shape = shape.replace("{", "");
@@ -503,17 +609,17 @@ void TextAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)
         }
         else if(line == "TextAlignment.Center" )
         {
-            this-> mHorizontalAlignment = Qt::AlignCenter;
+            this->mHorizontalAlignment = Qt::AlignCenter;
             index++;
         }
         else if(line == "TextAlignment.Left" )
         {
-            this-> mHorizontalAlignment = Qt::AlignLeft;
+            this->mHorizontalAlignment = Qt::AlignLeft;
             index++;
         }
         else if(line == "TextAlignment.Right" )
         {
-            this-> mHorizontalAlignment = Qt::AlignRight;
+            this->mHorizontalAlignment = Qt::AlignRight;
             index++;
         }
         else if(line.length() > 3)
@@ -575,43 +681,94 @@ void TextAnnotation::calculateFontSize()
     QFont font(this->mFontName, mCalculatedFontSize, this->mFontWeight, this->mFontItalic);
     if(this->mFontUnderLine)
         font.setUnderline(true);
+    // set letter spacing for the font
+    setLetterSpacingOnFont(&font, getLetterSpacing());
     QFontMetricsF fontMetric (font);
-    QRectF fontBoundingRect (getDrawingRect().left(), getDrawingRect().top(),
+
+//    if ((boundingRect().width() > fontMetric.boundingRect(mTextString).width()) &&
+//        (boundingRect().height() > fontMetric.boundingRect(mTextString).height()))
+//    {
+//        while ((boundingRect().width() > fontMetric.boundingRect(mTextString).width()) &&
+//               (boundingRect().height() > fontMetric.boundingRect(mTextString).height()))
+//        {
+//            mCalculatedFontSize += 1;
+//            font = QFont(this->mFontName, mCalculatedFontSize, this->mFontWeight, this->mFontItalic);
+//            if(this->mFontUnderLine)
+//                font.setUnderline(true);
+//            // set letter spacing for the font
+//            setLetterSpacingOnFont(&font, getLetterSpacing());
+//            fontMetric = QFontMetricsF(font);
+//        }
+//        mCalculatedFontSize -= 1;
+//    }
+//    else if ((boundingRect().width() < fontMetric.boundingRect(mTextString).width()) &&
+//             (boundingRect().height() < fontMetric.boundingRect(mTextString).height()))
+//    {
+//        while ((boundingRect().width() < fontMetric.boundingRect(mTextString).width()) &&
+//               (boundingRect().height() < fontMetric.boundingRect(mTextString).height()))
+//        {
+//            mCalculatedFontSize -= 1;
+//            // make sure calculated font doesn't go in negative.
+//            /*
+//             * if calculated font size becomes zero then we have problems because Qt automatically assigns font size
+//             * if your given font size is zero.
+//             */
+//            if (mCalculatedFontSize <= 0)
+//                break;
+//            font = QFont(this->mFontName, mCalculatedFontSize, this->mFontWeight, this->mFontItalic);
+//            if(this->mFontUnderLine)
+//                font.setUnderline(true);
+//            // set letter spacing for the font
+//            setLetterSpacingOnFont(&font, getLetterSpacing());
+//            fontMetric = QFontMetricsF(font);
+//        }
+//        mCalculatedFontSize += 1;
+//    }
+
+    QRectF fontBoundingRect (boundingRect().left(), boundingRect().top(),
                              fontMetric.boundingRect(mTextString).width(),
-                             -fontMetric.boundingRect(mTextString).height());
+                             fontMetric.boundingRect(mTextString).height());
 
     // if font boundingrect is within original boundingrect
-    if (getDrawingRect().contains(fontBoundingRect))
+    if (boundingRect().contains(fontBoundingRect))
     {
-        while (getDrawingRect().contains(fontBoundingRect))
+        while (boundingRect().contains(fontBoundingRect))
         {
             mCalculatedFontSize += 1;
             font = QFont(this->mFontName, mCalculatedFontSize, this->mFontWeight, this->mFontItalic);
             if(this->mFontUnderLine)
                 font.setUnderline(true);
+            // set letter spacing for the font
+            setLetterSpacingOnFont(&font, getLetterSpacing());
             fontMetric = QFontMetricsF(font);
-            fontBoundingRect = QRectF(getDrawingRect().left(), getDrawingRect().top(),
+            fontBoundingRect = QRectF(boundingRect().left(), boundingRect().top(),
                                       fontMetric.boundingRect(mTextString).width(),
-                                      -fontMetric.boundingRect(mTextString).height());
+                                      fontMetric.boundingRect(mTextString).height());
         }
         mCalculatedFontSize -= 1;
     }
     // if font boundingrect is not within original boundingrect
     else
     {
-        while (!getDrawingRect().contains(fontBoundingRect))
+        while (!boundingRect().contains(fontBoundingRect))
         {
             mCalculatedFontSize -= 1;
             // make sure calculated font doesn't go in negative.
-            if (mCalculatedFontSize < 0)
+            /*
+             * if calculated font size becomes zero then we have problems because Qt automatically assigns font size
+             * if your given font size is zero.
+             */
+            if (mCalculatedFontSize <= 0)
                 break;
             font = QFont(this->mFontName, mCalculatedFontSize, this->mFontWeight, this->mFontItalic);
             if(this->mFontUnderLine)
                 font.setUnderline(true);
+            // set letter spacing for the font
+            setLetterSpacingOnFont(&font, getLetterSpacing());
             fontMetric = QFontMetricsF(font);
-            fontBoundingRect = QRectF(getDrawingRect().left(), getDrawingRect().top(),
+            fontBoundingRect = QRectF(boundingRect().left(), boundingRect().top(),
                                       fontMetric.boundingRect(mTextString).width(),
-                                      -fontMetric.boundingRect(mTextString).height());
+                                      fontMetric.boundingRect(mTextString).height());
         }
         mCalculatedFontSize += 1;
     }
@@ -622,7 +779,7 @@ void TextAnnotation::calculateFontSize()
 TextWidget::TextWidget(TextAnnotation *pTextShape, MainWindow *parent)
     : QDialog(parent, Qt::WindowTitleHint)
 {
-    setWindowTitle(QString(Helper::applicationName).append(" - Text"));
+    setWindowTitle(QString(Helper::applicationName).append(" - Text Properties"));
     setAttribute(Qt::WA_DeleteOnClose);
     //setMaximumSize(300, 300);
     mpParentMainWindow = parent;
@@ -646,6 +803,9 @@ void TextWidget::setUpForm()
     mpFontGroup = new QGroupBox();
     mpFontLabel = new QLabel(tr("Fontname:"));
     mpFontFamilyComboBox = new QFontComboBox;
+    int currentIndex;
+    currentIndex = mpFontFamilyComboBox->findText(mpTextAnnotation->getFontName(), Qt::MatchExactly);
+    mpFontFamilyComboBox->setCurrentIndex(currentIndex);
     fontLayout->addWidget(mpFontLabel, 0, 0);
     fontLayout->addWidget(mpFontFamilyComboBox, 0, 1);
     mpFontGroup->setLayout(fontLayout);
@@ -653,10 +813,11 @@ void TextWidget::setUpForm()
     //Font Size
     mpFontSizeComboBox = new QComboBox;
     QStringList sizesList;
-    sizesList << "0" << "2" << "4" << "6" << "7" << "8" << "9" << "10" << "11" << "12"
-              << "14" << "16" << "18" << "20" << "22" << "24" << "26" << "28"
-              << "36" << "48" << "72";
+    sizesList << "0" << "2" << "4";
     mpFontSizeComboBox->addItems(sizesList);
+    mpFontSizeComboBox->addItems(Helper::fontSizes.split(","));
+    currentIndex = mpFontSizeComboBox->findText(QString::number(mpTextAnnotation->getFontSize()), Qt::MatchExactly);
+    mpFontSizeComboBox->setCurrentIndex(currentIndex);
     QGridLayout *fontSizeLayout = new QGridLayout;
     mpFontSizeGroup = new QGroupBox();
     mpFontSizeLabel = new QLabel(tr("Fontsize:"));
@@ -668,8 +829,11 @@ void TextWidget::setUpForm()
     QGridLayout *styleLayout = new QGridLayout;
     mpStyleGroup = new QGroupBox();
     mpCursive = new QCheckBox("Italic", this);
+    mpCursive->setChecked(mpTextAnnotation->getItalic());
     mpBold = new QCheckBox("Bold", this);
+    mpBold->setChecked(mpTextAnnotation->getWeight());
     mpUnderline = new QCheckBox("Underline", this);
+    mpUnderline->setChecked(mpTextAnnotation->getUnderLine());
     styleLayout->addWidget(mpCursive, 0, 1);
     styleLayout->addWidget(mpBold, 0, 2);
     styleLayout->addWidget(mpUnderline, 0, 3);
@@ -678,8 +842,10 @@ void TextWidget::setUpForm()
     //Alignment
     mpAlignmentComboBox = new QComboBox;
     QStringList alignmentList;
-    alignmentList << "Center" << "Left" << "Right";
+    alignmentList << Helper::left << Helper::center << Helper::right;
     mpAlignmentComboBox->addItems(alignmentList);
+    currentIndex = mpAlignmentComboBox->findText(mpTextAnnotation->getAlignment(), Qt::MatchExactly);
+    mpAlignmentComboBox->setCurrentIndex(currentIndex);
     QGridLayout *alignmentLayout = new QGridLayout;
     mpAlignmentGroup = new QGroupBox();
     mpAlignmentLabel = new QLabel(tr("Alignment:"));
@@ -718,21 +884,16 @@ void TextWidget::edit()
     mpTextAnnotation->setTextString(mpTextBox->text());
     mpTextAnnotation->setFontName(mpFontFamilyComboBox->currentText());
     mpTextAnnotation->setFontSize(mpFontSizeComboBox->currentText().toDouble());
+    mpTextAnnotation->setItalic(mpCursive->isChecked());
+    mpTextAnnotation->setWeight(mpBold->isChecked());
+    mpTextAnnotation->setUnderLine(mpUnderline->isChecked());
 
-    if(mpCursive->isChecked())
-        mpTextAnnotation->setItalic(true);
-    if(mpBold->isChecked())
-        mpTextAnnotation->setWeight(QFont::Bold);    
-    if(mpUnderline->isChecked())
-        mpTextAnnotation->setUnderLine(true);
-
-    if(mpFontSizeComboBox->currentText().toDouble() != 0)
-    {
-        if(mpAlignmentComboBox->currentText() == "Left")
-            mpTextAnnotation->setAlignment(Qt::AlignLeft);
-        else if(mpAlignmentComboBox->currentText() == "Right")
-            mpTextAnnotation->setAlignment(Qt::AlignRight);
-    }
+    if (mpAlignmentComboBox->currentText() == "Left")
+        mpTextAnnotation->setAlignment(Qt::AlignLeft);
+    else if (mpAlignmentComboBox->currentText() == "Center")
+        mpTextAnnotation->setAlignment(Qt::AlignCenter);
+    else if (mpAlignmentComboBox->currentText() == "Right")
+        mpTextAnnotation->setAlignment(Qt::AlignRight);
 
     mpTextAnnotation->updateAnnotation();
     accept();

@@ -839,7 +839,9 @@ void MainWindow::openOMShell()
 //! @see importModelfromOMNotebook();
 void MainWindow::exportModelToOMNotebook()
 {
-    QString omnotebookFileName = StringHandler::getSaveFileName(this, tr("Export to OMNotebook"), NULL, Helper::omnotebookFileTypes, NULL, "onb");
+    // get the current tab
+    ProjectTab *pCurrentTab = mpProjectTabs->getCurrentTab();
+    QString omnotebookFileName = StringHandler::getSaveFileName(this, tr("Export to OMNotebook"), NULL, Helper::omnotebookFileTypes, NULL, "onb", &pCurrentTab->mModelName);
 
     // if user cancels the operation. or closes the export dialog box.
     if (omnotebookFileName.isEmpty())
@@ -1010,7 +1012,9 @@ void MainWindow::importModelfromOMNotebook()
 //! Exports the current model as image
 void MainWindow::exportModelAsImage()
 {
-    QString fileName = StringHandler::getSaveFileName(this, tr("Export as Image"), NULL, Helper::imageFileTypes, NULL, "png");
+    // get the current tab
+    ProjectTab *pCurrentTab = mpProjectTabs->getCurrentTab();
+    QString fileName = StringHandler::getSaveFileName(this, tr("Export as Image"), NULL, Helper::imageFileTypes, NULL, "png", &pCurrentTab->mModelName);
 
     // if user cancels the operation. or closes the export dialog box.
     if (fileName.isEmpty())
@@ -1020,8 +1024,6 @@ void MainWindow::exportModelAsImage()
     mpProgressBar->setRange(0, 0);
     showProgressBar();
     mpStatusBar->showMessage(Helper::exportAsImage);
-    // get the current tab
-    ProjectTab *pCurrentTab = mpProjectTabs->getCurrentTab();
     QPainter painter;
     QSvgGenerator svgGenerator;
     QPixmap modelImage(pCurrentTab->mpDiagramGraphicsView->viewport()->size());

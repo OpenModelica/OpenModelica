@@ -160,7 +160,7 @@ void ShapeAnnotation::createActions()
     mpShapePropertiesAction->setStatusTip(tr("Shows the shape properties"));
     connect(mpShapePropertiesAction, SIGNAL(triggered()), SLOT(openShapeProperties()));
     //for editing properties of text
-    mpTextPropertiesAction = new QAction(QIcon(":/Resources/icons/tool.png"), tr("TextProperties"), mpGraphicsView);
+    mpTextPropertiesAction = new QAction(QIcon(":/Resources/icons/tool.png"), tr("Text Properties"), mpGraphicsView);
     mpTextPropertiesAction->setStatusTip(tr("Shows the shape text properties"));
     connect(mpTextPropertiesAction, SIGNAL(triggered()), SLOT(openTextProperties()));
     //for arrow of line
@@ -422,13 +422,12 @@ void ShapeAnnotation::openShapeProperties()
 {
     mpShapeProperties = new ShapeProperties(this, mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
     mpShapeProperties->show();
-
 }
 
 void ShapeAnnotation::openTextProperties()
 {
-        mpGraphicsView->mpTextWidget = new TextWidget(mpGraphicsView->mpTextShape, mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
-        mpGraphicsView->mpTextWidget -> show();    
+    mpGraphicsView->mpTextWidget = new TextWidget(mpGraphicsView->mpTextShape, mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
+    mpGraphicsView->mpTextWidget->show();
 }
 
 

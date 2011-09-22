@@ -38,6 +38,7 @@
 //! @brief Contains functions used for parsing results obtained from OpenModelica Compiler.
 
 #include "StringHandler.h"
+#include "Helper.h"
 
 QString StringHandler::mLastOpenDir;
 
@@ -461,6 +462,11 @@ QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, 
 
     if (!fileName.isEmpty())
     {
+        // Qt is not reallllyyyy platform independent :(
+        // Kind of Qt bug QfileDioalog::getsavefilename return extension on windows but not on linux. So need to hard code it here
+        #ifdef Q_OS_LINUX
+            fileName.append(".").append(defaultSuffix);
+        #endif
         QFileInfo fileInfo(fileName);
         mLastOpenDir = fileInfo.absolutePath();
         return fileName;

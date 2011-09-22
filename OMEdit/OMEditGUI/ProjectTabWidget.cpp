@@ -222,7 +222,7 @@ void GraphicsView::dropEvent(QDropEvent *event)
 
             //item not to be dropped on itself
             name = StringHandler::getLastWordAfterDot(name);
-            if(name!=mpParentProjectTab->mModelName)
+            if (name != mpParentProjectTab->mModelName)
             {
                 name = getUniqueComponentName(name.toLower());
                 // if dropping an item on the diagram layer
@@ -911,9 +911,9 @@ void GraphicsView::createTextShape(QPointF point)
         mpTextShape->drawRectangleCornerItems();
         // make the toolbar button of line unchecked
         mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->textAction->setChecked(false);
-
+        // open the text properties dialog
         mpTextWidget = new TextWidget(mpTextShape, mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
-        mpTextWidget -> show();
+        mpTextWidget->show();
     }
 }
 
@@ -1060,52 +1060,53 @@ void GraphicsView::addConnector(Component *pComponent)
         {
             endIconCompName = pComponent->getName();
         }
+
         MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
         QList<ComponentsProperties*> startcomponents = pStartComponent->getParentComponent()->mpChildComponentProperties;
-        if(startcomponents.isEmpty())
-        startcomponents =pMainWindow->mpOMCProxy->getComponents(pStartComponent->getParentComponent()->getClassName());
-        int startMaxIndex=0;
+        if (startcomponents.isEmpty())
+        {
+            startcomponents = pMainWindow->mpOMCProxy->getComponents(pStartComponent->getParentComponent()->getClassName());
+        }
         //to check whether the component is an array of connectors
-        foreach(ComponentsProperties *abc , startcomponents)
-         {
+        foreach(ComponentsProperties *pComponentProperties , startcomponents)
+        {
             //to check whether the component is an array of connectors
-           if(abc->getName()==startIconCompName)
-           {
-               if(abc->getIndexValue()!=-1)
-               {
-                   this->mpConnector->setStartConnectorisArray(true);
-                   startMaxIndex=abc->getIndexValue();
+            if (pComponentProperties->getName() == startIconCompName)
+            {
+                if (pComponentProperties->getIndexValue() != -1)
+                {
+                    this->mpConnector->setStartConnectorisArray(true);
+                }
+            }
+        }
 
-               }
-           }
-         }
         QList<ComponentsProperties*> endcomponents = pComponent->getParentComponent()->mpChildComponentProperties;
         if(endcomponents.isEmpty())
-        endcomponents =pMainWindow->mpOMCProxy->getComponents(pComponent->getParentComponent()->getClassName());
-          int endMaxIndex=0;
-        //to check whether the component is an array of connectors
-        foreach(ComponentsProperties *abc , endcomponents)
-         {
-           if(abc->getName()==endIconCompName)
-           {
-               if(abc->getIndexValue()!=-1)
-               {
-                   this->mpConnector->setEndConnectorisArray(true);
-                   endMaxIndex=abc->getIndexValue();
-               }
-           }
-         }
-        //if atleast one of the port is an array of connectors
-        if(this->mpConnector->getEndConnectorisArray() || this->mpConnector->getStartConnectorisArray())
         {
-          this->mpConnector->setEndComponent(pComponent);
+            endcomponents = pMainWindow->mpOMCProxy->getComponents(pComponent->getParentComponent()->getClassName());
+        }
+        //to check whether the component is an array of connectors
+        foreach(ComponentsProperties *pComponentProperties , endcomponents)
+        {
+            if (pComponentProperties->getName() == endIconCompName)
+            {
+                if (pComponentProperties->getIndexValue() != -1)
+                {
+                    this->mpConnector->setEndConnectorisArray(true);
+                }
+            }
+        }
+        //if atleast one of the port is an array of connectors
+        if (this->mpConnector->getEndConnectorisArray() || this->mpConnector->getStartConnectorisArray())
+        {
+            this->mpConnector->setEndComponent(pComponent);
             //shows the connector array menu for adding the index for the array
-          mpConnector->mpConnectorArrayMenu->show(startMaxIndex,endMaxIndex);
+            mpConnector->mpConnectorArrayMenu->show();
         }
         else
         {
-        createConnection(pStartComponent, QString(startIconName).append(startIconCompName),
-                         pComponent, QString(endIconName).append(endIconCompName));
+            createConnection(pStartComponent, QString(startIconName).append(startIconCompName),
+                             pComponent, QString(endIconName).append(endIconCompName));
         }
     }
 }

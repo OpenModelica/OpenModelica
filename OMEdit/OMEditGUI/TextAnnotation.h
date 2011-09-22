@@ -55,6 +55,7 @@ private:
     //double mDefaultFontSize;
     Qt::Alignment mHorizontalAlignment;
     QRectF mDrawingRect;
+    qreal mLetterSpacing;
 public:
     TextAnnotation(QString shape, Component *pParent);
     TextAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParent = 0);
@@ -65,6 +66,9 @@ public:
     QPainterPath shape() const;
     QString getShapeAnnotation();
     QRectF getDrawingRect();
+    void setLetterSpacing(qreal letterSpacing);
+    void setLetterSpacingOnFont(QFont *font, qreal letterSpacing);
+    qreal getLetterSpacing();
 
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
     void checkNameString();
@@ -72,11 +76,17 @@ public:
     bool updateParameterString(IconParameters *pParamter);
     void setTextString(QString text);
     void setFontName(QString fontName);
+    QString getFontName();
     void setFontSize(double fontSize);
+    double getFontSize();
     void setItalic(bool italic);
+    bool getItalic();
     void setWeight(int bold);
+    bool getWeight();
     void setUnderLine(bool underLine);
+    bool getUnderLine();
     void setAlignment(Qt::Alignment alignment);
+    QString getAlignment();
     void drawRectangleCornerItems();
     void updateEndPoint(QPointF point);
     void addPoint(QPointF point);

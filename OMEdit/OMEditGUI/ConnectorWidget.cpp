@@ -763,12 +763,11 @@ ConnectorArrayMenu::~ConnectorArrayMenu()
 
 }
 //displays the array menu for adding indices incase either one is a connector array.
-void ConnectorArrayMenu::show(int startMaxIndex, int endMaxIndex)
+void ConnectorArrayMenu::show()
 {
     setWindowTitle(QString(Helper::applicationName).append(" - Connector Array Menu "));
     Component *pEndComponent = this->mpConnector->getEndComponent();
     Component *pStartComponent = this->mpConnector->getStartComponent();
-
 
     QString startIconName, startIconCompName, endIconName, endIconCompName;
     if (pStartComponent->mpParentComponent)
@@ -819,9 +818,7 @@ void ConnectorArrayMenu::show(int startMaxIndex, int endMaxIndex)
         mpEndIndexTextBox->hide();
     }
 
-    mpLabel->setText("CONNECT  " + startIconName+startIconCompName + "   WITH   "+ endIconName + endIconCompName);
-    mStartMaxIndex=startMaxIndex;
-    mEndMaxIndex=endMaxIndex;
+    mpLabel->setText("Connect " + startIconName + startIconCompName + " with " + endIconName + endIconCompName);
     setVisible(true);
 }
 
@@ -848,17 +845,16 @@ void ConnectorArrayMenu::setStartConnectorIndex(QString connectorIndex )
 //and sends command for creating connection
 void ConnectorArrayMenu::addIndex()
 {
-    bool ok1,ok2;
-    int startindex=0,endindex=0;
-    if(mStartArrayExist)
-        startindex= mpStartIndexTextBox->text().toInt(&ok1,10);
-    if(mEndArrayExist)
-        endindex= mpEndIndexTextBox->text().toInt(&ok2,10);
+    bool ok1, ok2;
+    int startindex = 0, endindex = 0;
+    if (mStartArrayExist)
+        startindex = mpStartIndexTextBox->text().toInt(&ok1,10);
+    if (mEndArrayExist)
+        endindex = mpEndIndexTextBox->text().toInt(&ok2,10);
 
-    if((ok1||!mStartArrayExist) && (ok2 || !mEndArrayExist))
+    if ((ok1||!mStartArrayExist) && (ok2 || !mEndArrayExist))
     {
-
-        if((startindex>=0 && (startindex<=mStartMaxIndex ||  mStartMaxIndex ==-2 || mStartMaxIndex==-1)) &&(endindex>=0 && (endindex<=mEndMaxIndex ||  mEndMaxIndex ==-2 || mEndMaxIndex==-1)))
+        if (startindex>=0 && endindex>=0)
         {
             Component *pEndComponent = this->mpConnector->getEndComponent();
             Component *pStartComponent = this->mpConnector->getStartComponent();
@@ -866,28 +862,23 @@ void ConnectorArrayMenu::addIndex()
             QString endIndexStr = QString::number(endindex);
             this->setEndConnectorIndex(endIndexStr);
             this->setStartConnectorIndex(startIndexStr);
-            if(pEndComponent && pStartComponent)
+            if (pEndComponent && pStartComponent)
             {
                 this->mpConnector->mpParentGraphicsView->addConnectorForArray(pStartComponent,pEndComponent,startindex , endindex);
                 accept();
             }
         }
         else
-        {   QMessageBox::critical(this, Helper::applicationName + " - Error",
-                                  GUIMessages::getMessage(GUIMessages::ENTER_VALID_INTEGER).
-                                  arg("less than equal to"+QString::number(mStartMaxIndex)), tr("OK"));
+        {
+            QMessageBox::critical(this, Helper::applicationName + " - Error", GUIMessages::getMessage(GUIMessages::ENTER_VALID_INTEGER), tr("OK"));
             return;
         }
     }
     else
     {
-        QMessageBox::critical(this, Helper::applicationName + " - Error",
-                              GUIMessages::getMessage(GUIMessages::ENTER_VALID_INTEGER).
-                              arg("less than equal to"+QString::number(mStartMaxIndex)), tr("OK"));
-
+        QMessageBox::critical(this, Helper::applicationName + " - Error", GUIMessages::getMessage(GUIMessages::ENTER_VALID_INTEGER), tr("OK"));
         return;
     }
-
 }
 //rejects and removes the connector
 void ConnectorArrayMenu::reject()
@@ -896,5 +887,4 @@ void ConnectorArrayMenu::reject()
     Component *pStartComponent = this->mpConnector->getStartComponent();
     this->mpConnector->mpParentGraphicsView->addConnectorForArray(pStartComponent,pEndComponent,-1,-1);
     QDialog::reject();
-
 }
