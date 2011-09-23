@@ -2,7 +2,7 @@
 rm -f *.bibinc *.html ../*.bibinc ../marsj_bib.html
 test -z "$1" && echo "You need to specify output directory (e.g. /media/ida-home/www-pub/ )" && exit
 
-for type in journals phd; do
+for type in msc journals phd; do
   ./bib2html.sh $type openmodelica utf8 bibliography\\/ || exit 1
 done
 
