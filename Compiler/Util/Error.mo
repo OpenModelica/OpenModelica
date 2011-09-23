@@ -823,7 +823,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (IMBALANCED_EQUATIONS,SYMBOLIC(),ERROR(),"An independent subset of the model has imbalanced number of equations (%s) and variables (%s).\nvariables:\n%s\nequations:\n%s"),
           (EQUATIONS_VAR_NOT_DEFINED,SYMBOLIC(),ERROR(),"Variable %s is not referenced in any equation (possibly after symbolic manipulations)."),
           (NON_FORMAL_PUBLIC_FUNCTION_VAR,TRANSLATION(),WARNING(),
-           "Invalid formal parameter %s, public components in functions must be either input or output."),
+           "Invalid public variable %s, function variables that are not input/output must be protected."),
           (PROTECTED_FORMAL_FUNCTION_VAR,TRANSLATION(),ERROR(),
            "Invalid protected formal parameter %s, formal arguments must be public."),
           (FUNCTION_UNUSED_INPUT,SYMBOLIC(),WARNING(),"Unused input variable %s in function %s."),
