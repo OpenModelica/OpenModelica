@@ -55,6 +55,7 @@ protected import Debug;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import List;
 protected import Util;
 
 public
@@ -216,7 +217,7 @@ algorithm
       list<DAE.ComponentRef> dests;
     case (invHt,src,dst) equation
       dests = Expression.extractCrefsFromExp(dst);
-      invHt_1 = Util.listFold_2(dests,addReplacementInv2,invHt,src);
+      invHt_1 = List.fold1r(dests,addReplacementInv2,src,invHt);
       then
         invHt_1;
   end match;
@@ -232,25 +233,25 @@ protected function addReplacementInv2 "function: addReplacementInv2
   will update the rule.
 "
   input HashTable3.HashTable invHt;
-  input DAE.ComponentRef src;
   input DAE.ComponentRef dst;
+  input DAE.ComponentRef src;
   output HashTable3.HashTable outInvHt;
 algorithm
   outInvHt:=
-  matchcontinue (invHt,src,dst)
+  matchcontinue (invHt,dst,src)
     local
       HashTable3.HashTable invHt_1;
       list<DAE.ComponentRef> srcs;
-    case (invHt,src,dst)
+    case (invHt,dst,src)
       equation
         failure(_ = BaseHashTable.get(dst,invHt)) "No previous elt for dst -> src" ;
         invHt_1 = BaseHashTable.add((dst, {src}),invHt);
       then
         invHt_1;
-    case (invHt,src,dst)
+    case (invHt,dst,src)
       equation
         srcs = BaseHashTable.get(dst,invHt) "previous elt for dst -> src, append.." ;
-        srcs = Util.listUnion({},src::srcs);
+        srcs = List.union({},src::srcs);
         invHt_1 = BaseHashTable.add((dst, srcs),invHt);
       then
         invHt_1;
@@ -1435,7 +1436,7 @@ algorithm
     case (REPLACEMENTS(hashTable= ht))
       equation
         (tplLst) = BaseHashTable.hashTableList(ht);
-        str = Util.stringDelimitList(Util.listMap(tplLst,printReplacementTupleStr),"\n");
+        str = Util.stringDelimitList(List.map(tplLst,printReplacementTupleStr),"\n");
         print("Replacements: (");
         len = listLength(tplLst);
         len_str = intString(len);

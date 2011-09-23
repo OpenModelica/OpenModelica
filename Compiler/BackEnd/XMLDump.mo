@@ -97,6 +97,7 @@ protected import Dump;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
+protected import List;
 protected import ModUtil;
 protected import Print;
 protected import Util;
@@ -1421,7 +1422,7 @@ algorithm
         dumpStrOpenTagAttr(ADDITIONAL_INFO, stringAppend(ARRAY_OF_EQUATIONS,ID_), intString(indx));
         dumpStrOpenTag(stringAppend(INVOLVED,VARIABLES_));
         dumpStrOpenTag(VARIABLE);
-        var_str=Util.stringDelimitList(Util.listMap(expl,printExpStr),stringAppendList({"</",VARIABLE,">\n<",VARIABLE,">"}));
+        var_str=Util.stringDelimitList(List.map(expl,printExpStr),stringAppendList({"</",VARIABLE,">\n<",VARIABLE,">"}));
         dumpStrCloseTag(VARIABLE);
         dumpStrCloseTag(stringAppend(INVOLVED,VARIABLES_));
         dumpStrCloseTag(ADDITIONAL_INFO);
@@ -3611,7 +3612,7 @@ algorithm
         dumpStrOpenTagAttr(ADDITIONAL_INFO, stringAppend(ARRAY_OF_EQUATIONS,ID_), intString(indx));
         dumpStrOpenTag(stringAppend(INVOLVED,VARIABLES_));
         dumpStrOpenTag(VARIABLE);
-        var_str=Util.stringDelimitList(Util.listMap(expl,ExpressionDump.printExpStr),stringAppendList({"</",VARIABLE,">\n<",VARIABLE,">"}));
+        var_str=Util.stringDelimitList(List.map(expl,ExpressionDump.printExpStr),stringAppendList({"</",VARIABLE,">\n<",VARIABLE,">"}));
         dumpStrCloseTag(VARIABLE);
         dumpStrCloseTag(stringAppend(INVOLVED,VARIABLES_));
         dumpStrCloseTag(ADDITIONAL_INFO);

@@ -52,6 +52,7 @@ protected import Debug;
 protected import Error;
 protected import Expression;
 protected import ExpressionSimplify;
+protected import List;
 protected import Util;
 
 public function getWhenEquationExpr
@@ -208,7 +209,7 @@ algorithm
     // Special Case for Records
     case ((e as DAE.CREF(componentRef = cr,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,vars1)))
       equation
-        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr);
+        expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         ((_,(vars,vars1))) = Expression.traverseExpList(expl,checkEquationsVarsExp,(vars,vars1));
       then
         ((e, (vars,vars1)));
@@ -290,7 +291,7 @@ algorithm
     case((e as DAE.CREF(componentRef=cr), (crefs,vars)))
       equation
         true = BackendVariable.isState(cr,vars);
-        crefs = Util.listUnionEltOnTrue(cr,crefs,ComponentReference.crefEqual);
+        crefs = List.unionEltOnTrue(cr,crefs,ComponentReference.crefEqual);
       then
         ((e, (crefs,vars) ));
     
@@ -934,7 +935,7 @@ public function addEquations "function: addEquations
   input BackendDAE.EquationArray eqns;
   output BackendDAE.EquationArray eqns_1;
 algorithm
-  eqns_1 := Util.listFold(eqnlst, equationAdd, eqns);
+  eqns_1 := List.fold(eqnlst, equationAdd, eqns);
 end addEquations;
 
 public function equationAdd "function: equationAdd
@@ -1062,8 +1063,8 @@ public function getEqns "function: getEqns
 protected
   list<BackendDAE.Value> indxs;
 algorithm
-  indxs := Util.listMap1(inIndxes, intSub, 1);
-  outEqns := Util.listMap1r(indxs, BackendDAEUtil.equationNth, inEquationArray);  
+  indxs := List.map1(inIndxes, intSub, 1);
+  outEqns := List.map1r(indxs, BackendDAEUtil.equationNth, inEquationArray);  
 end getEqns;
   
 public function equationDelete "function: equationDelete
@@ -1082,7 +1083,7 @@ algorithm
     case (inEquationArray,inIntLst)
       equation
         eqnlst = BackendDAEUtil.equationList(inEquationArray);
-        eqnlst1 = Util.listDeletePositions(eqnlst,inIntLst);
+        eqnlst1 = List.deletePositions(eqnlst,inIntLst);
         outEquationArray =  BackendDAEUtil.listEquation(eqnlst1);
       then
         outEquationArray;
@@ -1174,7 +1175,7 @@ algorithm
       equation
         BackendDAE.MULTIDIM_EQUATION(dimSize=ds,left=e1, right=e2) = arrayEqs[index+1];
         new_exp = Expression.expSub(e1,e2);
-        ad = Util.listMap(ds,Util.makeOption);
+        ad = List.map(ds,Util.makeOption);
         (subs,entrylst1) = BackendDAEUtil.getArrayEquationSub(index,ad,entrylst);
         new_exp1 = Expression.applyExpSubscripts(new_exp,subs);
         rhs_exp = BackendDAEUtil.getEqnsysRhsExp(new_exp1, v);
@@ -1232,7 +1233,7 @@ algorithm
       Integer indx;
       case ((eqn as BackendDAE.ALGORITHM(index=indx),(indexes,algarr,algs)))
         equation
-          false = Util.listMemberWithCompareFunc(indx,indexes,intEq);
+          false = List.isMemberOnTrue(indx,indexes,intEq);
           alg = algarr[indx + 1];
         then
           ((eqn,(indx::indexes,algarr,alg::algs)));

@@ -50,6 +50,7 @@ protected import Debug;
 protected import Dump;
 protected import Expression;
 protected import ExpressionDump;
+protected import List;
 protected import Print;
 protected import RTOpts;
 protected import System;
@@ -1098,9 +1099,9 @@ algorithm
     case (cr)
       equation
         ((subs as (_ :: _))) = crefLastSubs(cr);
-        exps = Util.listMap(subs, Expression.subscriptIndexExp);
+        exps = List.map(subs, Expression.subscriptIndexExp);
         // fails if any mapped functions returns false
-      then Util.listMapAllValue(exps, Expression.isOne, true);
+      then List.mapAllValueBool(exps, Expression.isOne, true);
     else false;
   end matchcontinue;
 end crefIsFirstArrayElt;
@@ -1218,7 +1219,7 @@ algorithm
     
     case(_::ssl,DAE.ET_ARRAY(tty,ad))
       equation
-        ad = Util.listStripFirst(ad);
+        ad = List.stripFirst(ad);
         b = containWholeDim2(ssl,DAE.ET_ARRAY(tty,ad));
       then 
         b;
@@ -1700,7 +1701,7 @@ algorithm
     // case(child,newSub)
     //  equation
     //    str1 = printComponentRefStr(child);
-    //    str2 = Util.stringDelimitList(Util.listMap(newSub, printSubscriptStr), ", ");
+    //    str2 = Util.stringDelimitList(List.map(newSub, printSubscriptStr), ", ");
     //    str  = "replaceCrefSliceSub(" +& str1 +& " subs: [" +& str2 +& "]\n";
     //    print(str);
     //  then
@@ -1972,7 +1973,7 @@ algorithm
       equation
         //print("\n +++++++++++++++++++++++++++++ ");print(id);print("\n");
         lst = Util.stringSplitAtChar(id, "[");
-        lst_1 = Util.listStripLast(lst);
+        lst_1 = List.stripLast(lst);
         id_1 = Util.stringDelimitList(lst_1, "[");
       then
         makeCrefIdent(id_1,t2,{});
@@ -2091,7 +2092,7 @@ public function printComponentRefListStr
   input list<DAE.ComponentRef> crs;
   output String res;
 algorithm
-  res := "{" +& Util.stringDelimitList(Util.listMap(crs, printComponentRefStr), ",") +& "}";
+  res := "{" +& Util.stringDelimitList(List.map(crs, printComponentRefStr), ",") +& "}";
 end printComponentRefListStr;
 
 public function replaceWholeDimSubscript

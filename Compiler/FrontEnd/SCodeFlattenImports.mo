@@ -48,6 +48,7 @@ public type Env = SCodeEnv.Env;
 
 protected import Debug;
 protected import Error;
+protected import List;
 protected import RTOpts;
 protected import SCodeLookup;
 protected import Util;
@@ -63,7 +64,7 @@ public function flattenProgram
   output SCode.Program outProgram;
   output Env outEnv;
 algorithm
-  (outProgram, outEnv) := Util.listMapAndFold(inProgram, flattenClass, inEnv);
+  (outProgram, outEnv) := List.mapFold(inProgram, flattenClass, inEnv);
 end flattenProgram;
 
 public function flattenClass
@@ -131,14 +132,14 @@ algorithm
     case (SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt), _, _)
       equation
         // Lookup elements.
-        el = Util.listFilter(el, isNotImport);
-        (el, env) = Util.listMapAndFold(el, flattenElement, inEnv);
+        el = List.filter(el, isNotImport);
+        (el, env) = List.mapFold(el, flattenElement, inEnv);
 
         // Lookup equations and algorithm names.
-        neql = Util.listMap1(neql, flattenEquation, env);
-        ieql = Util.listMap1(ieql, flattenEquation, env);
-        nal = Util.listMap1(nal, flattenAlgorithm, env);
-        ial = Util.listMap1(ial, flattenAlgorithm, env);
+        neql = List.map1(neql, flattenEquation, env);
+        ieql = List.map1(ieql, flattenEquation, env);
+        nal = List.map1(nal, flattenAlgorithm, env);
+        ial = List.map1(ial, flattenAlgorithm, env);
       then
         (SCode.PARTS(el, neql, ieql, nal, ial, extdecl, annl, cmt), env);
 
@@ -263,7 +264,7 @@ protected
   Absyn.Direction dir;
 algorithm
   SCode.ATTR(ad, fp, sp, var, dir) := inAttributes;
-  ad := Util.listMap2(ad, flattenSubscript, inEnv, inInfo);
+  ad := List.map2(ad, flattenSubscript, inEnv, inInfo);
   outAttributes := SCode.ATTR(ad, fp, sp, var, dir);
 end flattenAttributes;
 
@@ -293,7 +294,7 @@ algorithm
     // A MetaModelica type such as list or tuple.
     case (Absyn.TCOMPLEX(path = path, typeSpecs = tys, arrayDim = ad), _, _)
       equation
-        tys = Util.listMap2(tys, flattenTypeSpec, inEnv, inInfo);
+        tys = List.map2(tys, flattenTypeSpec, inEnv, inInfo);
       then
         Absyn.TCOMPLEX(path, tys, ad);
 
@@ -404,7 +405,7 @@ protected
   list<SCode.Statement> statements;
 algorithm
   SCode.ALGORITHM(statements) := inAlgorithm;
-  statements := Util.listMap1(statements, flattenStatement, inEnv);
+  statements := List.map1(statements, flattenStatement, inEnv);
   outAlgorithm := SCode.ALGORITHM(statements);
 end flattenAlgorithm;
 
@@ -473,13 +474,13 @@ algorithm
     case (SCode.MOD(fp, ep, sub_mods, opt_exp), _, inInfo)
       equation
         opt_exp = flattenModOptExp(opt_exp, inEnv, inInfo);
-        sub_mods = Util.listMap2(sub_mods, flattenSubMod, inEnv, inInfo);
+        sub_mods = List.map2(sub_mods, flattenSubMod, inEnv, inInfo);
       then
         SCode.MOD(fp, ep, sub_mods, opt_exp);
 
     case (SCode.REDECL(fp, ep, el), _, _)
       equation
-        el = Util.listMap1(el, flattenRedeclare, inEnv);
+        el = List.map1(el, flattenRedeclare, inEnv);
       then
         SCode.REDECL(fp, ep, el);
 
@@ -528,7 +529,7 @@ algorithm
 
     case (SCode.IDXMOD(subscriptLst = subs, an = mod), _, _)
       equation
-        subs = Util.listMap2(subs, flattenSubscript, inEnv, inInfo);
+        subs = List.map2(subs, flattenSubscript, inEnv, inInfo);
         mod = flattenModifier(mod, inEnv, inInfo);
       then
         SCode.IDXMOD(subs, mod);
@@ -722,13 +723,13 @@ algorithm
 
     case (Absyn.CREF_IDENT(name, subs), _, _)
       equation
-        subs = Util.listMap2(subs, flattenSubscript, inEnv, inInfo);
+        subs = List.map2(subs, flattenSubscript, inEnv, inInfo);
       then
         Absyn.CREF_IDENT(name, subs);
 
     case (Absyn.CREF_QUAL(name, subs, cref), _, _)
       equation
-        subs = Util.listMap2(subs, flattenSubscript, inEnv, inInfo);
+        subs = List.map2(subs, flattenSubscript, inEnv, inInfo);
         cref = flattenComponentRefSubs(cref, inEnv, inInfo);
       then
         Absyn.CREF_QUAL(name, subs, cref);

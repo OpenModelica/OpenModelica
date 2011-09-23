@@ -77,7 +77,7 @@ template dumpEqs(list<SimEqSystem> eqs)
       <<
       linear: <%e.vars |> var => "var" ; separator = "," %>
         <%beqs |> exp => printExpStr(exp) ; separator = "," %><%\n%>
-        <%simJac |> (i1,i2,eq) => '<%i1%>,<%i2%>: <%dumpEqs(listFill(eq,1))%>' ; separator = "\n" %><%\n%>
+        <%simJac |> (i1,i2,eq) => '<%i1%>,<%i2%>: <%dumpEqs(fill(eq,1))%>' ; separator = "\n" %><%\n%>
       >>
     case e as SES_NONLINEAR(__) then
       <<
@@ -88,7 +88,7 @@ template dumpEqs(list<SimEqSystem> eqs)
       <<
       mixed system:
         continuous part:
-          <%dumpEqs(listFill(e.cont,1))%>
+          <%dumpEqs(fill(e.cont,1))%>
         discrete vars:
           <%e.discVars |> var => "var" ; separator = ","%>
         discrete parts:

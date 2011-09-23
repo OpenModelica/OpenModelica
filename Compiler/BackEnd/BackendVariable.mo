@@ -51,6 +51,7 @@ protected import Debug;
 protected import Expression;
 protected import ExpressionSimplify;
 protected import HashTable2;
+protected import List;
 protected import SCode;
 protected import RTOpts;
 protected import Util;
@@ -1920,11 +1921,11 @@ algorithm
         // calculate indexes
         (all_map2,x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType) = calculateIndexes2(mergedvar_map,0,0,0,0,0,0,0,0,0,0,0,{});
         // seperate vars,knvars,extvas
-        vars_1 = Util.listMap1r(Util.listIntRange2(0,listLength(varsLst)-1),getListConst,all_map2);
+        vars_1 = List.map1r(List.intRange2(0,listLength(varsLst)-1),getListConst,all_map2);
         knvars_1 = getListConst(all_map2,-1);
         extvars_1 =  getListConst(all_map2,-2);
         // arrange lists in original order
-        vars_2 = Util.listMap1(vars_1,sortList,0);
+        vars_2 = List.map1(vars_1,sortList,0);
         knvars_2 = sortList(knvars_1,0);
         extvars_2 =  sortList(extvars_1,0);
       then
@@ -2380,8 +2381,8 @@ algorithm
         dim_lst1 = getArrayDim(arryDim1);
         index = getArrayDim(subscriptLst);
         index1 = getArrayDim(subscriptLst1);
-        dim_lst_1 = Util.listStripFirst(dim_lst);
-        dim_lst1_1 = Util.listStripFirst(dim_lst1);
+        dim_lst_1 = List.stripFirst(dim_lst);
+        dim_lst1_1 = List.stripFirst(dim_lst1);
         val1 = calcPlace(index,dim_lst_1);
         val2 = calcPlace(index1,dim_lst1_1);
         (val1 > val2) = true;
@@ -3112,7 +3113,7 @@ algorithm
         pos_1 = pos-1;
         hashindx = HashTable2.hashFunc(cr, bsize);
         indexes = hashvec[hashindx + 1];
-        (indexes1,_) = Util.listDeleteMemberOnTrue(BackendDAE.CREFINDEX(cr,pos_1),indexes,removeVar2);
+        (indexes1,_) = List.deleteMemberOnTrue(BackendDAE.CREFINDEX(cr,pos_1),indexes,removeVar2);
         hashvec_1 = arrayUpdate(hashvec, hashindx + 1, indexes1);
       then
         (BackendDAE.VARIABLES(hashvec_1,varr1,bsize,n),v);
@@ -3277,7 +3278,7 @@ public function addVars "function: addVars
   input BackendDAE.Variables vars;
   output BackendDAE.Variables vars_1;
 algorithm
-  vars_1 := Util.listFold(varlst, addVar, vars);
+  vars_1 := List.fold(varlst, addVar, vars);
 end addVars;
 
 public function addVar
@@ -3556,28 +3557,28 @@ algorithm
       BackendDAE.Variables vars;
     case ({DAE.INDEX(exp = DAE.ICONST(integer = i1))},arr_cr,vars)
       equation
-        indx_lst = Util.listIntRange(i1);
-        indx_lstlst = Util.listMap(indx_lst, Util.listCreate);
-        subscripts_lstlst = Util.listMap(indx_lstlst, Expression.intSubscripts);
-        scalar_crs = Util.listMap1r(subscripts_lstlst, ComponentReference.subscriptCref, arr_cr);
-        (vs,indxs) = Util.listMap12(scalar_crs, getVar, vars);
-        vs_1 = Util.listFlatten(vs);
-        indxs_1 = Util.listFlatten(indxs);
+        indx_lst = List.intRange(i1);
+        indx_lstlst = List.map(indx_lst, List.create);
+        subscripts_lstlst = List.map(indx_lstlst, Expression.intSubscripts);
+        scalar_crs = List.map1r(subscripts_lstlst, ComponentReference.subscriptCref, arr_cr);
+        (vs,indxs) = List.map1_2(scalar_crs, getVar, vars);
+        vs_1 = List.flatten(vs);
+        indxs_1 = List.flatten(indxs);
       then
         (vs_1,indxs_1);
     case ({DAE.INDEX(exp = DAE.ICONST(integer = i1)),DAE.INDEX(exp = DAE.ICONST(integer = i2))},arr_cr,vars)
       equation
-        indx_lst1 = Util.listIntRange(i1);
-        indx_lstlst1 = Util.listMap(indx_lst1, Util.listCreate);
-        subscripts_lstlst1 = Util.listMap(indx_lstlst1, Expression.intSubscripts);
-        indx_lst2 = Util.listIntRange(i2);
-        indx_lstlst2 = Util.listMap(indx_lst2, Util.listCreate);
-        subscripts_lstlst2 = Util.listMap(indx_lstlst2, Expression.intSubscripts);
+        indx_lst1 = List.intRange(i1);
+        indx_lstlst1 = List.map(indx_lst1, List.create);
+        subscripts_lstlst1 = List.map(indx_lstlst1, Expression.intSubscripts);
+        indx_lst2 = List.intRange(i2);
+        indx_lstlst2 = List.map(indx_lst2, List.create);
+        subscripts_lstlst2 = List.map(indx_lstlst2, Expression.intSubscripts);
         subscripts = BackendDAEUtil.subscript2dCombinations(subscripts_lstlst1, subscripts_lstlst2) "make all possbible combinations to get all 2d indexes" ;
-        scalar_crs = Util.listMap1r(subscripts, ComponentReference.subscriptCref, arr_cr);
-        (vs,indxs) = Util.listMap12(scalar_crs, getVar, vars);
-        vs_1 = Util.listFlatten(vs);
-        indxs_1 = Util.listFlatten(indxs);
+        scalar_crs = List.map1r(subscripts, ComponentReference.subscriptCref, arr_cr);
+        (vs,indxs) = List.map1_2(scalar_crs, getVar, vars);
+        vs_1 = List.flatten(vs);
+        indxs_1 = List.flatten(indxs);
       then
         (vs_1,indxs_1);
     // adrpo: cr can be of form cr.cr.cr[2].cr[3] which means that it has type dimension [2,3] but we only need to walk [3]
@@ -3585,13 +3586,13 @@ algorithm
       equation
         // see if cr contains ANY array dimensions. if it doesn't this case is not valid!
         true = ComponentReference.crefHaveSubs(arr_cr);
-        indx_lst = Util.listIntRange(i1);
-        indx_lstlst = Util.listMap(indx_lst, Util.listCreate);
-        subscripts_lstlst = Util.listMap(indx_lstlst, Expression.intSubscripts);
-        scalar_crs = Util.listMap1r(subscripts_lstlst, ComponentReference.subscriptCref, arr_cr);
-        (vs,indxs) = Util.listMap12(scalar_crs, getVar, vars);
-        vs_1 = Util.listFlatten(vs);
-        indxs_1 = Util.listFlatten(indxs);
+        indx_lst = List.intRange(i1);
+        indx_lstlst = List.map(indx_lst, List.create);
+        subscripts_lstlst = List.map(indx_lstlst, Expression.intSubscripts);
+        scalar_crs = List.map1r(subscripts_lstlst, ComponentReference.subscriptCref, arr_cr);
+        (vs,indxs) = List.map1_2(scalar_crs, getVar, vars);
+        vs_1 = List.flatten(vs);
+        indxs_1 = List.flatten(indxs);
       then
         (vs_1,indxs_1);
   end matchcontinue;
@@ -3620,11 +3621,11 @@ algorithm
     case (cr,inVariables)
       equation
         DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)) = ComponentReference.crefLastType(cr);
-        crefs =  Util.listMap(varLst,ComponentReference.creffromVar);
-        crefs1 = Util.listMap1r(crefs,ComponentReference.joinCrefs,cr);
-        (varslst,ilstlst) = Util.listMap1_2(crefs1,getVar,inVariables);
-        vars = Util.listFlatten(varslst);
-        ilst = Util.listFlatten(ilstlst);
+        crefs =  List.map(varLst,ComponentReference.creffromVar);
+        crefs1 = List.map1r(crefs,ComponentReference.joinCrefs,cr);
+        (varslst,ilstlst) = List.map1_2(crefs1,getVar,inVariables);
+        vars = List.flatten(varslst);
+        ilst = List.flatten(ilstlst);
       then
         (vars,ilst);
   end match;
@@ -3648,7 +3649,7 @@ algorithm
     case (vars1,vars2)
       equation
         varlst = BackendDAEUtil.varList(vars2);
-        vars1_1 = Util.listFold(varlst, addVar, vars1);
+        vars1_1 = List.fold(varlst, addVar, vars1);
       then
         vars1_1;
     case (_,_)
@@ -3910,7 +3911,7 @@ algorithm
               streamPrefix = streamPrefix),ops)
       equation
         ops = listReverse(ops);
-        source = Util.listFoldR(ops,DAEUtil.addSymbolicTransformation,source);
+        source = List.foldr(ops,DAEUtil.addSymbolicTransformation,source);
       then BackendDAE.VAR(a,b,c,d,e,f,g,i,source,oattr,s,t,streamPrefix);
   end match;
 end mergeVariableOperations;

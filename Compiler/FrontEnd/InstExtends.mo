@@ -59,6 +59,7 @@ protected import Debug;
 protected import Dump;
 protected import Error;
 protected import Inst;
+protected import List;
 protected import Lookup;
 protected import Mod;
 protected import RTOpts;
@@ -205,10 +206,10 @@ algorithm
         compelts = listAppend(compelts1, compelts2);
 
         (compelts3,mods_1) = updateComponentsAndClassdefs(compelts, mods_1, env2) "update components with new merged modifiers";
-        eq = Util.listlistFunc(eq1_1,{eq2,eq3},Util.listUnionOnTrue,Util.equal);
-        ieq = Util.listlistFunc(ieq1_1,{ieq2,ieq3},Util.listUnionOnTrue,Util.equal);
-        alg = Util.listlistFunc(alg1_1,{alg2,alg3},Util.listUnionOnTrue,Util.equal);
-        ialg = Util.listlistFunc(ialg1_1,{ialg2,ialg3},Util.listUnionOnTrue,Util.equal);
+        eq = List.unionOnTrueList({eq1_1,eq2,eq3},Util.equal);
+        ieq = List.unionOnTrueList({ieq1_1,ieq2,ieq3},Util.equal);
+        alg = List.unionOnTrueList({alg1_1,alg2,alg3},Util.equal);
+        ialg = List.unionOnTrueList({ialg1_1,ialg2,ialg3},Util.equal);
       then
         (cache,env2,ih,mods_1,compelts3,eq,ieq,alg,ialg);
 
@@ -263,7 +264,7 @@ algorithm
           "className: " +&  className +& "\n\t" +&
           "env:       " +&  Env.printEnvPathStr(env) +& "\n\t" +&
           "mods:      " +&  Mod.printModStr(mod) +& "\n\t" +&
-          "elems:     " +&  Util.stringDelimitList(Util.listMap(rest, SCodeDump.printElementStr), ", ")
+          "elems:     " +&  Util.stringDelimitList(List.map(rest, SCodeDump.printElementStr), ", ")
           );
       then
         fail();
@@ -303,9 +304,9 @@ algorithm
   (outCache,outEnv,outIH,outMod,outTplSCodeElementModLstTpl3,outSCodeNormalEquationLst,outSCodeInitialEquationLst,outSCodeNormalAlgorithmLst,outSCodeInitialAlgorithmLst):=
   instExtendsAndClassExtendsList2(inCache,inEnv,inIH,inMod,inPrefix,inExtendsElementLst,inClassExtendsElementLst,inState,inClassName,inImpl,isPartialInst);
   // Filter out the last boolean in the tuple
-  outTplSCodeElementModLst := Util.listMap(outTplSCodeElementModLstTpl3, Util.tuple312);
+  outTplSCodeElementModLst := List.map(outTplSCodeElementModLstTpl3, Util.tuple312);
   // Create a list of the class definitions, since these can't be properly added in the recursive call 
-  tmpelts := Util.listMap(outTplSCodeElementModLst,Util.tuple21);
+  tmpelts := List.map(outTplSCodeElementModLst,Util.tuple21);
   (_,cdefelts,_,_) := Inst.splitEltsNoComponents(tmpelts);
   // Add the class definitions to the environment
   (outEnv,outIH) := Inst.addClassdefsToEnv(outEnv,outIH,inPrefix,cdefelts,inImpl,SOME(outMod));
@@ -377,8 +378,8 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         Debug.traceln("- Inst.instClassExtendsList failed " +& name);
         Debug.traceln("  Candidate classes: ");
-        els = Util.listMap(compelts, Util.tuple31);
-        names = Util.listMap(els, SCode.elementName);
+        els = List.map(compelts, Util.tuple31);
+        names = List.map(els, SCode.elementName);
         Debug.traceln(Util.stringDelimitList(names, ","));
       then fail();
     
@@ -609,18 +610,18 @@ protected function updateComponentsAndClassdefs
   output list<tuple<SCode.Element, DAE.Mod, Boolean>> outComponents;
   output DAE.Mod outRestMod;
 algorithm
-  (outComponents, outRestMod) := Util.listMapAndFold1(inComponents, 
-    updateComponentsAndClassdefs2, inMod, inEnv);
+  (outComponents, outRestMod) := List.map1Fold(inComponents, 
+    updateComponentsAndClassdefs2, inEnv, inMod);
 end updateComponentsAndClassdefs;
 
 protected function updateComponentsAndClassdefs2
   input tuple<SCode.Element, DAE.Mod, Boolean> inComponent;
-  input DAE.Mod inMod;
   input Env.Env inEnv;
+  input DAE.Mod inMod;
   output tuple<SCode.Element, DAE.Mod, Boolean> outComponent;
   output DAE.Mod outRestMod;
 algorithm
-  (outComponent, outRestMod) := matchcontinue(inComponent, inMod, inEnv)
+  (outComponent, outRestMod) := matchcontinue(inComponent, inEnv, inMod)
     local
       SCode.Element comp;
       DAE.Mod cmod, cmod2, mod_rest;
@@ -677,7 +678,7 @@ algorithm
       then
         ((comp, cmod, b), inMod);
 
-    case ((comp,cmod,b),inMod,inEnv)
+    case ((comp,cmod,b),inEnv,inMod)
       equation
         Debug.fprintln(
           "failtrace", 

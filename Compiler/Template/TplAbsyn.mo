@@ -8,10 +8,11 @@ encapsulated package TplAbsyn
 "
 
 protected import Debug;
-protected import Util;
-protected import System;
-protected import RTOpts;
 protected import Error;
+protected import List;
+protected import RTOpts;
+protected import System;
+protected import Util;
 public import Absyn;
 
 public import Tpl;
@@ -657,7 +658,7 @@ algorithm
     case ( (tplname, TEMPLATE_DEF(args = targs, exp = texp)) :: restTDefs, tplPackage, accMMDecls )
       equation
         
-        encArgs = Util.listMap1(targs, encodeTypedIdent, funArgNamePrefix);
+        encArgs = List.map1(targs, encodeTypedIdent, funArgNamePrefix);
         
         //only out parameters (all are Texts only) in the assignments ':=' will have the "out_" prefix in the statements
         //the rest is tailored into templates
@@ -671,7 +672,7 @@ algorithm
         //TODO: should be done some checks for uniqueness / keywords collisions ...   
         //tplname = encodeIdent(tplname);
         iargs = imlicitTxtArg :: encArgs;
-        oargs = Util.listFilter(iargs, isText);
+        oargs = List.filter(iargs, isText);
         stmts = listReverse(stmts);
         stmts = addOutPrefixes(stmts, oargs, {});
         (stmts, locals, accMMDecls) = inlineLastFunIfSingleCall(iargs, oargs, stmts, locals, accMMDecls);
@@ -864,7 +865,7 @@ algorithm
     
     case ( MM_FN_CALL(fnName = fpath, args = fargs), trIdents)
       equation
-        fargs = Util.listMap1(fargs, addOutPrefixesRhs, trIdents);
+        fargs = List.map1(fargs, addOutPrefixesRhs, trIdents);
       then ( MM_FN_CALL(fpath, fargs) );
     
     case ( stmt, _)
@@ -2144,7 +2145,7 @@ algorithm
     case (argvals, fname, iargs,  oargs, tyVars, intxt, outtxt, locals, tplPackage)
       equation
 				true = RTOpts.debugFlag("failtrace");
-        errArgVals = Util.listMap(argvals, Util.tuple312);
+        errArgVals = List.map(argvals, Util.tuple312);
         str = "Error - cannot elaborate function\n  "
           +& Tpl.tplString3(TplCodegen.sFunSignature, fname, iargs, oargs)
           +& "\n  for actual parameters  "
@@ -2660,12 +2661,12 @@ algorithm
         fname = listMapFunPrefix +& intString(listLength(accMMDecls));
         iargs = imlicitTxtArg :: ("items",argtype) :: encodedExtargs;
         assignedIdents = getAssignedIdents(mapstmts, {});
-        //oargs = Util.listFilter(extargs, isText);
-        oargs = Util.listFilter1(encodedExtargs, isAssignedText, assignedIdents);
+        //oargs = List.filter(extargs, isText);
+        oargs = List.filter1(encodedExtargs, isAssignedText, assignedIdents);
         oargs = imlicitTxtArg :: oargs;
-        lhsArgs = Util.listMap(oargs, Util.tuple21);
-        inMapExtargvals =  Util.listMap(encodedExtargs, makeMMArgValue);
-        rhsMMArgs = Util.listMap(inMapExtargvals, Util.tuple31);
+        lhsArgs = List.map(oargs, Util.tuple21);
+        inMapExtargvals =  List.map(encodedExtargs, makeMMArgValue);
+        rhsMMArgs = List.map(inMapExtargvals, Util.tuple31);
         //recursive call
         mmRecCall = MM_ASSIGN(
             lhsArgs, 
@@ -2699,7 +2700,7 @@ algorithm
         
         //add pushIter() if it is the first element of MAP_ARG_LIST (like <[exp1,exp2,...] : mapexp> ) or a simple one (list)exp to be mapped (like <exp of mexp: mapexp>)
         (stmts, intxt) = addPushIter((isfirst and useiter), iopts, stmts, intxt, outtxt);
-        extargvals = Util.listMap(localArgs, makeMMArgValue);
+        extargvals = List.map(localArgs, makeMMArgValue);
         //call the elaborated function
         (_, stmt, _, _, locals, intxt) 
           = statementFromFun(argtomap :: extargvals, IDENT(fname), iargs, oargs, {}, intxt, outtxt, locals, tplPackage);
@@ -2760,8 +2761,8 @@ algorithm
         fname = scalarMapFunPrefix +& intString(listLength(accMMDecls));
         iargs = imlicitTxtArg :: ("it",argtype) :: encodedExtargs;
         assignedIdents = getAssignedIdents(mapstmts, {});
-        //oargs = Util.listFilter(extargs, isText); //it can be actually Text, but not to be as output stream
-        oargs = Util.listFilter1(encodedExtargs, isAssignedText, assignedIdents);
+        //oargs = List.filter(extargs, isText); //it can be actually Text, but not to be as output stream
+        oargs = List.filter1(encodedExtargs, isAssignedText, assignedIdents);
         oargs = imlicitTxtArg :: oargs;
         mapstmts = listReverse(mapstmts);
         //add indexed value if needed
@@ -2769,7 +2770,7 @@ algorithm
           = addGetIndex(isUsed, freshIdxName, mapstmts, imlicitTxt, maplocals);
         
         elabcases = addRestElabCase({(mexp, encodedExtargs, mapstmts)});
-        mmmcases = Util.listMap2(elabcases, makeMMMatchCase, encodedExtargs, oargs);
+        mmmcases = List.map2(elabcases, makeMMMatchCase, encodedExtargs, oargs);
         mapctx = MAP_CONTEXT(ofbind, mapexp, iopts, hasIndexIdentOpt, useiter);
         maplocals = listAppend(encodedExtargs, maplocals);
         maplocals = imlicitTxtArg :: maplocals;
@@ -2782,7 +2783,7 @@ algorithm
         
         //add pushIter() if it is the first element of MAP_ARG_LIST (like <[exp1,exp2,...] : mapexp> ) or a simple one (list)exp to be mapped (like <exp of mexp: mapexp>)
         (stmts, intxt) = addPushIter((isfirst and useiter), iopts, stmts, intxt, outtxt);
-        extargvals = Util.listMap(localArgs, makeMMArgValue);
+        extargvals = List.map(localArgs, makeMMArgValue);
         //call the elaborated function
         (_, stmt, _, _, locals, intxt) 
           = statementFromFun(argtomap :: extargvals, IDENT(fname), iargs, oargs, {}, intxt, outtxt, locals, tplPackage);
@@ -3091,23 +3092,23 @@ algorithm
         elabcases = addRestElabCase(elabcases);
         (extargs, localArgs) = alignExtArgsToScopeEnv(extargs, localArgs, scEnv); //order the args by the upper scope -> when the match function will be pulled to the top-level, the arguments must be ordered the same way ... MM stuff
         
-        encodedExtargs = Util.listMap1(extargs, encodeTypedIdent, funArgNamePrefix);
+        encodedExtargs = List.map1(extargs, encodeTypedIdent, funArgNamePrefix);
         
         iargs = imlicitTxtArg :: (matchArgName, exptype) :: encodedExtargs;
         
-        oargs = Util.listFilter1(encodedExtargs, isAssignedText, assignedIdents);
+        oargs = List.filter1(encodedExtargs, isAssignedText, assignedIdents);
         oargs = imlicitTxtArg :: oargs;
         
         funLocals = listAppend(encodedExtargs, funLocals);
         
-        mmmcases = Util.listMap2(elabcases, makeMMMatchCase, encodedExtargs, oargs);
+        mmmcases = List.map2(elabcases, makeMMMatchCase, encodedExtargs, oargs);
         fname = stringAppend(matchFunPrefix, intString(listLength(accMMDecls)));
         mmFun = MM_FUN(false, fname, iargs, oargs,
                   imlicitTxtArg :: funLocals,
                   { MM_MATCH(mmmcases) },
                   GI_MATCH_FUN()
                 );
-        argvals = Util.listMap(localArgs, makeMMArgValue);
+        argvals = List.map(localArgs, makeMMArgValue);
         argvals = argval :: argvals;
       then ( argvals, IDENT(fname), iargs, oargs, scEnv, (mmFun :: accMMDecls));
     
@@ -3305,7 +3306,7 @@ algorithm
         
     case ( MM_ASSIGN(lhsArgs = largs) :: stmts, assignedIdents)
       equation
-        assignedIdents = Util.listFold(largs, Util.listUnionElt, assignedIdents);
+        assignedIdents = List.fold(largs, List.unionElt, assignedIdents);
       then 
         getAssignedIdents(stmts, assignedIdents);
     
@@ -3452,7 +3453,7 @@ algorithm
            mtype, astDefs )
       equation
         LIST_TYPE(ofType = ot) = deAliasedType(mtype, astDefs);
-        otLst = Util.listFill(ot, listLength(mexpLst));
+        otLst = List.fill(ot, listLength(mexpLst));
         mexpLst = typeCheckMatchingExpList(mexpLst, otLst, astDefs);
       then 
         LIST_MATCH(mexpLst);
@@ -3737,7 +3738,7 @@ algorithm
            mtype, inLocalNames, usedLocals, astDefs )
       equation
         LIST_TYPE(ofType = ot) = deAliasedType(mtype, astDefs);
-        otLst = Util.listFill(ot, listLength(mexpLst));
+        otLst = List.fill(ot, listLength(mexpLst));
         (mexpLst, usedLocals) = rewriteMatchExpByLocalNamesList(mexpLst, otLst, inLocalNames, usedLocals, astDefs);
       then 
         (LIST_MATCH(mexpLst), usedLocals);
@@ -3924,7 +3925,7 @@ algorithm
       
     case ( (mexp, caseargs, stmts), extargs, oargs)
       equation
-        mexpLst = Util.listMap2(extargs, makeExtraArgBinding, caseargs, oargs);
+        mexpLst = List.map2(extargs, makeExtraArgBinding, caseargs, oargs);
         mmmcase = (imlicitTxtMExp :: mexp :: mexpLst,  stmts);
       then mmmcase;
     
@@ -4035,7 +4036,7 @@ algorithm
         
     case ( TUPLE_MATCH(tupleArgs = mexplst) )
       equation
-        Util.listMap0(mexplst, isAlwaysMatched);
+        List.map_0(mexplst, isAlwaysMatched);
       then ();
         
     case ( REST_MATCH() )
@@ -5026,7 +5027,7 @@ algorithm
              listElts = mexpLst ), mtype, astDefs )
       equation
         LIST_TYPE(ofType = mtype) = deAliasedType(mtype, astDefs);
-        mtypeLst = Util.listFill(mtype, listLength(mexpLst));
+        mtypeLst = List.fill(mtype, listLength(mexpLst));
         ( valtype, mexpLst ) = lookupUpdateMExpList(inid, path, mexpLst, mtypeLst, astDefs);
       then 
         ( valtype, LIST_MATCH(mexpLst) );
@@ -5834,7 +5835,7 @@ algorithm
     
     case ( TUPLE_TYPE(ofTypes = otaLst), tyVars, setTyVars)
       equation
-        otaLst = Util.listMap2(otaLst, specializeType, tyVars, setTyVars);
+        otaLst = List.map2(otaLst, specializeType, tyVars, setTyVars);
       then 
         TUPLE_TYPE(otaLst);
     
@@ -5901,7 +5902,7 @@ algorithm
       equation
         TEMPLATE_DEF(args = iargs)  =  lookupTupleList(templateDefs, templname);
         iargs = imlicitTxtArg :: iargs;
-        oargs = Util.listFilter(iargs, isText); //just for now, it is not inferred from the usage
+        oargs = List.filter(iargs, isText); //just for now, it is not inferred from the usage
         //not encoding templates now
         //templname = encodeIdent(templname);
         //fname = IDENT( templname );
@@ -6193,7 +6194,7 @@ algorithm
     
     case ( TUPLE_TYPE(ofTypes = typeLst), importpckg, tyVars )
       equation
-        typeLst = Util.listMap2(typeLst, fullyQualifyAstTypeSignature, importpckg, tyVars);
+        typeLst = List.map2(typeLst, fullyQualifyAstTypeSignature, importpckg, tyVars);
       then 
         TUPLE_TYPE(typeLst);
         
@@ -6346,7 +6347,7 @@ algorithm
     
     case ( TUPLE_TYPE(ofTypes = typeLst), astDefs )
       equation
-        typeLst = Util.listMap1(typeLst, fullyQualifyTemplateTypeSignature, astDefs);
+        typeLst = List.map1(typeLst, fullyQualifyTemplateTypeSignature, astDefs);
       then 
         TUPLE_TYPE(typeLst);
     

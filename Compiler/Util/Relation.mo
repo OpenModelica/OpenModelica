@@ -77,6 +77,7 @@ type IntLstIntRelation = Relation<Integer, list<Integer>> "Integer - list<Intege
 
 protected 
 import Util;
+protected import List;
 
 public
 function unidirectional
@@ -286,7 +287,7 @@ public function intListStr
   input list<Integer> l;
   output String str;
 algorithm
-  str := "{"+& Util.stringDelimitList(Util.listMap(l, intString), ",") +& "}"; 
+  str := "{"+& Util.stringDelimitList(List.map(l, intString), ",") +& "}"; 
 end intListStr;
 
 end Relation;

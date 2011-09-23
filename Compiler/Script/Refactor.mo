@@ -42,6 +42,7 @@ encapsulated package Refactor
 
 
 public import Absyn;
+protected import List;
 protected import Interactive;
 protected import Util;
 protected import Inst;
@@ -1445,13 +1446,13 @@ algorithm
     case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "points",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(Absyn.MATRIX(matrix = expMatrix),info)  )), comment = com) :: rest,context as ("Connect" :: c),res,p)
       equation
         context = addContext(context,"Line");
-        expLst = Util.listMap(expMatrix,matrixToArray);
+        expLst = List.map(expMatrix,matrixToArray);
         res = transformConnectAnnList(rest,context,res,p);
       then {Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("Line",s), SOME(Absyn.CLASSMOD(Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("points",{}),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.ARRAY(expLst),info))),NONE()) :: res,Absyn.NOMOD())),com)};//res;
 
     case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "points",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,eqMod = Absyn.EQMOD(Absyn.MATRIX(matrix = expMatrix),info)  )), comment = com) :: rest,context as ("Line" :: c),res,p)
       equation
-        expLst = Util.listMap(expMatrix,matrixToArray);
+        expLst = List.map(expMatrix,matrixToArray);
         res = transformConnectAnnList(rest,context,res,p);
       then Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("points",{}),SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.ARRAY(expLst),info))),com) :: res; //res;
 
@@ -1565,7 +1566,7 @@ algorithm
         true = isLayerAnnInList(listAppend(res,rest))/*Fails the case if we have a coordsys without a layer definition*/;
         res = Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Coordsys",s), SOME(Absyn.CLASSMOD(args, eqMod)),com) :: res;
         res = transformClassAnnList(rest,context,res,p);
-      then Util.listDeleteMember(res,Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Coordsys",s), SOME(Absyn.CLASSMOD(args, eqMod)),com));
+      then List.deleteMember(res,Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Coordsys",s), SOME(Absyn.CLASSMOD(args, eqMod)),com));
 
     case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "Coordsys", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = eqMod)), comment = com) :: rest,context,res,p)
       equation
@@ -1573,7 +1574,7 @@ algorithm
         coord = getCoordSysAnn(listAppend(res,rest),p);
         res = listAppend({Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("Diagram",{}), SOME(Absyn.CLASSMOD({coord},Absyn.NOMOD())),NONE()),Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.CREF_IDENT("Icon",{}), SOME(Absyn.CLASSMOD({coord},Absyn.NOMOD())),NONE())},res);
         res = transformClassAnnList(rest,context,res,p);
-      then Util.listDeleteMember(res,Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Coordsys",s), SOME(Absyn.CLASSMOD(args, eqMod)),com));
+      then List.deleteMember(res,Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Coordsys",s), SOME(Absyn.CLASSMOD(args, eqMod)),com));
 
     case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "extent",subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = Absyn.EQMOD(Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} ),info))), comment = com) :: rest,context as ("Coordsys" :: c),res,p)
       equation
@@ -1723,7 +1724,7 @@ algorithm
       equation
         c = addContext(context,"Line");
         argRes = transAnnLstToNamedArgs(args,c);
-        {} = Util.listSelect1(argRes, "color",nameArgWithName);
+        {} = List.select1(argRes,nameArgWithName, "color");
         restRes = transAnnLstToCalls(rest,context);
       then
         Absyn.CALL(Absyn.CREF_IDENT("Line",{}), Absyn.FUNCTIONARGS({},
@@ -1736,7 +1737,7 @@ algorithm
         c = addContext(context,n);
         true = isLinebasedGraphic(c);
         argRes = transAnnLstToNamedArgs(args,c);
-        {} = Util.listSelect1(argRes, "lineColor",nameArgWithName);
+        {} = List.select1(argRes,nameArgWithName, "lineColor");
         restRes = transAnnLstToCalls(rest,context);
       then
         Absyn.CALL(Absyn.CREF_IDENT(n,{}), Absyn.FUNCTIONARGS({},
@@ -1911,7 +1912,7 @@ algorithm
 
     case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "points"), modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=Absyn.MATRIX(matrix = expMatrix ))  ))) :: rest,context)
       equation
-        expLst = Util.listMap(expMatrix,matrixToArray);
+        expLst = List.map(expMatrix,matrixToArray);
         restRes = transAnnLstToNamedArgs(rest,context);
       then Absyn.NAMEDARG("points",Absyn.ARRAY(expLst)) :: restRes;
 
@@ -1942,7 +1943,7 @@ algorithm
     case(inArgs,resultList, context)
       equation
         true = isLinebasedGraphic(context);
-        {} = Util.listSelect(inArgs,isLineColorModifier);
+        {} = List.select(inArgs,isLineColorModifier);
         outArgs = cleanStyleAttrs2(Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("lineColor",{}),
         SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}),Absyn.dummyInfo))),NONE())::inArgs,resultList,context);
       then outArgs;
@@ -1951,7 +1952,7 @@ algorithm
     case(inArgs,resultList, context)
       equation
         true = isLineGraphic(context);
-        {} = Util.listSelect(inArgs,isLineColorModifier);
+        {} = List.select(inArgs,isLineColorModifier);
         outArgs = cleanStyleAttrs2(Absyn.MODIFICATION(false,Absyn.NON_EACH(),Absyn.CREF_IDENT("color",{}),
         SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}),Absyn.dummyInfo))),NONE())::inArgs,resultList,context);
       then outArgs;
@@ -2035,7 +2036,7 @@ algorithm
 
     case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "color", subscripts = s), modification = m, comment = com)) :: rest, resultList,context  )
       equation
-        resultList = Util.listAppendElt(arg,resultList);
+        resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
@@ -2045,7 +2046,7 @@ algorithm
         false = isGradientInList(listAppend(rest,resultList));
         false = isFillPatternInList(listAppend(rest,resultList));
         resultList = insertFillPatternInList(resultList);
-        resultList = Util.listAppendElt(arg,resultList);
+        resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
@@ -2055,7 +2056,7 @@ algorithm
         false = isGradientInList(listAppend(rest,resultList));
         false = isFillPatternInList(listAppend(rest,resultList));
         resultList = insertFillPatternInList(resultList);
-        resultList = Util.listAppendElt(arg,resultList);
+        resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
@@ -2066,73 +2067,73 @@ algorithm
         false = isGradientInList(listAppend(rest,resultList));
         false = isFillPatternInList(listAppend(rest,resultList));
         resultList = insertFillPatternInList(resultList);
-        resultList = Util.listAppendElt(arg,resultList);
+        resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
     case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "fillColor", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Rectangle"::c))
 
       equation
-        resultList = Util.listAppendElt(arg,resultList);
+        resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
     case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "fillColor", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Ellipse"::c))
 
       equation
-        resultList = Util.listAppendElt(arg,resultList);
+        resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
     case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "fillColor", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Polygon"::c))
 
       equation
-        resultList = Util.listAppendElt(arg,resultList);
+        resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
     case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "pattern", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Rectangle" :: c))
 
       equation
-        resultList = Util.listAppendElt(arg,resultList);
+        resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
     case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "pattern", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Ellipse" :: c))
       equation
-        resultList = Util.listAppendElt(arg,resultList);
+        resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
     case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "pattern", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Polygon" :: c))
 
       equation
-        resultList = Util.listAppendElt(arg,resultList);
+        resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
     case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "pattern", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Line" :: c))
       equation
-        resultList = Util.listAppendElt(arg,resultList);
+        resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
     case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "fillPattern", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Rectangle" :: c))
       equation
-        resultList = Util.listAppendElt(arg,resultList);
+        resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
     case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "fillPattern", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Ellipse" :: c))
       equation
-        resultList = Util.listAppendElt(arg,resultList);
+        resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
     case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "fillPattern", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Polygon" :: c))
 
       equation
-        resultList = Util.listAppendElt(arg,resultList);
+        resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
@@ -2144,7 +2145,7 @@ algorithm
 
     case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "thickness", subscripts = s), modification = m, comment = com)) :: rest, resultList,context)
       equation
-        resultList = Util.listAppendElt(arg,resultList);
+        resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
@@ -2161,7 +2162,7 @@ algorithm
         rest = setDefaultLineInList(rest) /*If Gradient is set the line around the figure should be default*/;
         resultList = setDefaultLineInList(resultList) /*If Gradient is set the line around the figure should be default*/;
         (rest,resultList) = setDefaultFillColor(rest,resultList) /*If gradient is specificed but no fillColor, fillColor needs to be set to it's default dymola value.*/;
-        resultList = Util.listAppendElt(arg,resultList);
+        resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
@@ -2172,43 +2173,43 @@ algorithm
         rest = setDefaultLineInList(rest) /*If Gradient is set the line around the figure should be default*/;
         resultList = setDefaultLineInList(resultList) /*If Gradient is set the line around the figure should be default*/;
         (rest,resultList) = setDefaultFillColor(rest,resultList) /*If gradient is specificed but no fillColor, fillColor needs to be set to it's default dymola value.*/;
-        resultList = Util.listAppendElt(arg,resultList);
+        resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
     case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "smooth", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Polygon" :: c))
       equation
-        resultList = Util.listAppendElt(arg,resultList);
+        resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
     case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "smooth", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Line" :: c))
       equation
-        resultList = Util.listAppendElt(arg,resultList);
+        resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
     case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "arrow", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Line" :: c))
       equation
-        resultList = Util.listAppendElt(arg,resultList);
+        resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
     case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "textStyle", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Text" :: c))
       equation
-        resultList = Util.listAppendElt(arg,resultList);
+        resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
     case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "font", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Text" :: c))
       equation
-        resultList = Util.listAppendElt(arg,resultList);
+        resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs2(rest,resultList,context);
       then outList;
 
  /*   case((arg as Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, componentRef = Absyn.CREF_IDENT(name = "string", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Text" :: c))
       equation
-        resultList = Util.listAppendElt(arg,resultList);
+        resultList = List.appendElt(arg,resultList);
         outList = cleanStyleAttrs(rest,resultList,context);
       then outList;
 

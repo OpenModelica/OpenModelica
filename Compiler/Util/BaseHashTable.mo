@@ -52,6 +52,7 @@ encapsulated package BaseHashTable
 // hashFunc - A function that maps a key to a positive integer.
 // keyEqual - A comparison function between two keys, returns true if equal.
 
+protected import List;
 protected import Util;
 
 // Generic hashtable code below
@@ -383,7 +384,7 @@ protected
 algorithm
   (_,_,_,_,(_,_,printKey,printValue)) := t;
   print("HashTable:\n");
-  print(Util.stringDelimitList(Util.listMap2(hashTableList(t),dumpTuple,printKey,printValue),"\n"));
+  print(Util.stringDelimitList(List.map2(hashTableList(t),dumpTuple,printKey,printValue),"\n"));
   print("\n");
 end dumpHashTable;
 
@@ -427,7 +428,7 @@ public function hashTableValueList "return the Value entries as a list of Values
   partial function FuncKeyString input Key key; output String str; end FuncKeyString;
   partial function FuncValString input Value val; output String str; end FuncValString;
 algorithm
-   valLst := Util.listMap(hashTableList(hashTable),Util.tuple22);
+   valLst := List.map(hashTableList(hashTable),Util.tuple22);
 end hashTableValueList;
 
 public function hashTableKeyList "return the Key entries as a list of Keys"
@@ -445,7 +446,7 @@ public function hashTableKeyList "return the Key entries as a list of Keys"
   partial function FuncKeyString input Key key; output String str; end FuncKeyString;
   partial function FuncValString input Value val; output String str; end FuncValString;
 algorithm
-   valLst := Util.listMap(hashTableList(hashTable),Util.tuple21);
+   valLst := List.map(hashTableList(hashTable),Util.tuple21);
 end hashTableKeyList;
 
 public function hashTableList "returns the entries in the hashTable as a list of tuple<Key,Value>"
@@ -524,13 +525,13 @@ algorithm
     
     case (arr,true,pos,lastpos,acc)
       equation
-        acc = Util.listConsOption(arr[pos + 1],acc);
+        acc = List.consOption(arr[pos + 1],acc);
       then listReverse(acc);
     
     case (arr,false,pos,lastpos,acc)
       equation
         pos_1 = pos + 1;
-        acc = Util.listConsOption(arr[pos + 1],acc);
+        acc = List.consOption(arr[pos + 1],acc);
       then valueArrayList2(arr, pos_1==lastpos, pos_1, lastpos, acc);
     
   end match;

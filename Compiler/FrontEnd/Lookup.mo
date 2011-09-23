@@ -69,6 +69,7 @@ protected import ExpressionDump;
 protected import Inst;
 protected import InstExtends;
 protected import InnerOuter;
+protected import List;
 protected import Mod;
 protected import Prefix;
 protected import Static;
@@ -327,7 +328,7 @@ algorithm
         (cache, ty, _) = lookupType(cache, env, path, SOME(Absyn.dummyInfo));
         acc = ty::acc;
         uniontypeTypes = Types.getAllInnerTypesOfType(ty, Types.uniontypeFilter);
-        uniontypePaths = Util.listFlatten(Util.listMap(uniontypeTypes, Types.getUniontypePaths));
+        uniontypePaths = List.flatten(List.map(uniontypeTypes, Types.getUniontypePaths));
         (cache, ht, acc) = lookupMetarecordsRecursive2(cache, env, uniontypePaths, ht, acc);
       then (cache,ht,acc);
   end matchcontinue;
@@ -2003,8 +2004,8 @@ algorithm
         eltsMods = listAppend(eltsMods,Inst.addNomod(compElts));
         // print("Record Elements: " +& 
         //   Util.stringDelimitList(
-        //     Util.listMap(
-        //       Util.listMap(
+        //     List.map(
+        //       List.map(
         //         eltsMods, 
         //         Util.tuple21),
         //       SCodeDump.printElementStr), "\n"));
@@ -2519,7 +2520,7 @@ algorithm
         Debug.fprint("failtrace", "- Lookup.checkSubscripts failed (tp: ");
         Debug.fprint("failtrace", Types.printTypeStr(t));
         Debug.fprint("failtrace", " subs:");
-        Debug.fprint("failtrace", Util.stringDelimitList(Util.listMap(s,ExpressionDump.printSubscriptStr),","));
+        Debug.fprint("failtrace", Util.stringDelimitList(List.map(s,ExpressionDump.printSubscriptStr),","));
         Debug.fprint("failtrace", ")\n");
       then
         fail();
@@ -2549,7 +2550,7 @@ algorithm
       equation
         str2 = intString(dims);
         exp = DAE.ARRAY(DAE.ET_INT(),false,expl);
-        str1 = Util.stringDelimitList(Util.listMap(expl,ExpressionDump.printExpStr)," and position " );
+        str1 = Util.stringDelimitList(List.map(expl,ExpressionDump.printExpStr)," and position " );
         Error.addMessage(Error.ARRAY_INDEX_OUT_OF_BOUNDS,{str1,str2});
       then
         false;
@@ -2715,7 +2716,7 @@ algorithm
       equation
         true = Types.isArray(tySub);
         dims = Types.getDimensions(tySub);
-        subs = Util.listMap(dims, makeDimensionSubscript);
+        subs = List.map(dims, makeDimensionSubscript);
         subs = expandWholeDimSubScript(ss,subs);
       then subs;
     case(_,_) // non array, return
@@ -2741,7 +2742,7 @@ algorithm
     // Array with integer dimension.
     case DAE.DIM_INTEGER(integer = sz)
       equation
-        expl = Util.listMap(Util.listIntRange(sz), Expression.makeIntegerExp);
+        expl = List.map(List.intRange(sz), Expression.makeIntegerExp);
       then
         DAE.SLICE(DAE.ARRAY(DAE.ET_INT(), true, expl));
     // Array with enumeration dimension.
@@ -2832,9 +2833,9 @@ algorithm
     case(t, tOrg)
       equation
         dimensions = Types.getDimensionSizes(t);
-        dim2 = Util.listMap(dimensions, Expression.intDimension);
+        dim2 = List.map(dimensions, Expression.intDimension);
         dim2 = listReverse(dim2);
-        t = ((Util.listFoldR(dim2,Types.liftArray, tOrg)));
+        t = ((List.foldr(dim2,Types.liftArray, tOrg)));
       then
         t;
   end match;
@@ -2883,7 +2884,7 @@ algorithm
   (outCache,outEnv,_,_,_,_,_,varlst,_) := Inst.instElementList(
     cache,env,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
     DAE.NOMOD(),Prefix.NOPRE(),
-    ClassInf.META_RECORD(Absyn.IDENT("")), Util.listMap1(els,Util.makeTuple2,DAE.NOMOD()),
+    ClassInf.META_RECORD(Absyn.IDENT("")), List.map1(els,Util.makeTuple,DAE.NOMOD()),
     {}, false, Inst.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, true);
   varlst := Types.boxVarLst(varlst);
   ftype := (DAE.T_METARECORD(utPath,index,varlst,singleton),SOME(path));

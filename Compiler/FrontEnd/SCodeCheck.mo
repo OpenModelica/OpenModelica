@@ -44,6 +44,7 @@ public import SCodeEnv;
 
 protected import Dump;
 protected import Error;
+protected import List;
 protected import Util;
 protected import SCodeDump;
 
@@ -58,8 +59,8 @@ algorithm
       
     case (sp)
       equation
-        names = Util.listMap(sp, SCode.className);
-        names = Util.sort(names,Util.strcmpBool);
+        names = List.map(sp, SCode.className);
+        names = List.sort(names,Util.strcmpBool);
         (_,names) = Util.splitUniqueOnBool(names,stringEqual);
         checkForDuplicateClassesInTopScope(names);
       then

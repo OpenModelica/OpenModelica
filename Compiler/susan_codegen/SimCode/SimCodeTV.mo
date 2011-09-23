@@ -1912,31 +1912,32 @@ package Util
 	function getCurrentDateTime
 	  output DateTime dt;
 	end getCurrentDateTime;
+end Util;
 
-	function listFill 
+package List
+	function fill 
   	input Type_a inTypeA;
 	  input Integer inInteger;
   	output list<Type_a> outTypeALst;
 	  replaceable type Type_a subtypeof Any;
-	end listFill;
-	
-	function listUnion 
+	end fill;
+
+	function union 
     input list<Type_a> inTypeALst1;
     input list<Type_a> inTypeALst2;
     output list<Type_a> outTypeALst;
     replaceable type Type_a subtypeof Any;
-  end listUnion;
 
-  function listThreadTuple
+  end union;
+
+  function threadTuple
     replaceable type Type_b subtypeof Any;
     input list<Type_a> inTypeALst;
     input list<Type_b> inTypeBLst;
     output list<tuple<Type_a, Type_b>> outTplTypeATypeBLst;
     replaceable type Type_a subtypeof Any;
-  end listThreadTuple;
-
-end Util;
-
+  end threadTuple;
+end List;
 
 package ComponentReference
 

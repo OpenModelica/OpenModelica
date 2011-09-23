@@ -65,6 +65,7 @@ protected import Expression;
 protected import ExpressionSimplify;
 protected import ExpressionDump;
 protected import Inline;
+protected import List;
 protected import Util;
 
 public function differentiateEquationTime "function: differentiateEquationTime
@@ -110,7 +111,7 @@ algorithm
         (e2_2,_) = ExpressionSimplify.simplify(e2_1);
         op1 = DAE.OP_DERIVE(DAE.crefTime,e1,e1_2);
         op2 = DAE.OP_DERIVE(DAE.crefTime,e2,e2_2);
-        source = Util.listFoldR({op1,op2},DAEUtil.addSymbolicTransformation,source);
+        source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
       then
         (BackendDAE.EQUATION(e1_2,e2_2,source),al,inDerivedAlgs,ae,inDerivedMultiEqn,true);
     
@@ -141,10 +142,10 @@ algorithm
         ((_,(crefOrDerCref2,derCref2,_))) = Expression.traverseExp(e2_2,traversingcrefOrDerCrefFinder,({},{},timevars));
         crefOrDerCref11 = removeCrefFromDerCref(crefOrDerCref1,derCref1);
         crefOrDerCref21 = removeCrefFromDerCref(crefOrDerCref2,derCref2);
-        crefOrDerCref3 = Util.listUnionOnTrue(crefOrDerCref11,crefOrDerCref21,Expression.expEqual);
+        crefOrDerCref3 = List.unionOnTrue(crefOrDerCref11,crefOrDerCref21,Expression.expEqual);
         op1 = DAE.OP_DERIVE(DAE.crefTime,e1,e1_2);
         op2 = DAE.OP_DERIVE(DAE.crefTime,e2,e2_2);
-        source = Util.listFoldR({op1,op2},DAEUtil.addSymbolicTransformation,source);
+        source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
         // only add algorithm if it is not already derived 
         (index1,ae1,derivedMultiEqn,add) = addArray(index,ae,BackendDAE.MULTIDIM_EQUATION(dimSize,e1_2,e2_2,source1),1,inDerivedMultiEqn);
       then
@@ -206,7 +207,7 @@ algorithm
     case (inCrefOrDerCref,e::rest)
       equation
         crefOrDerCref = removeCrefFromDerCref(inCrefOrDerCref,rest);
-        (crefOrDerCref1, _) = Util.listDeleteMemberOnTrue(e,crefOrDerCref,Expression.expEqual);
+        (crefOrDerCref1, _) = List.deleteMemberOnTrue(e,crefOrDerCref,Expression.expEqual);
       then
         crefOrDerCref1;
   end match;
@@ -373,7 +374,7 @@ algorithm
   // case for Records
     case ((e as DAE.CREF(componentRef = cr,ty = tp as DAE.ET_COMPLEX(name=a,varLst=varLst,complexClassType=ClassInf.RECORD(_)))),inVariables as (timevars,_,_))
       equation
-        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr);
+        expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         e1 = DAE.CALL(a,expl,DAE.CALL_ATTR(tp,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
       then
         differentiateExpTime(e1,inVariables);
@@ -475,13 +476,13 @@ algorithm
 
     case (DAE.CALL(path = fname as Absyn.IDENT("max"),expLst = expl,attr=DAE.CALL_ATTR(ty=tp)),inVariables)
       equation
-        expl_1 = Util.listMap1(expl, differentiateExpTime, inVariables);
+        expl_1 = List.map1(expl, differentiateExpTime, inVariables);
       then
         Expression.makeBuiltinCall("max",expl_1,tp);
 
     case (DAE.CALL(path = fname as Absyn.IDENT("min"),expLst = expl,attr=DAE.CALL_ATTR(ty=tp)),inVariables)
       equation
-        expl_1 = Util.listMap1(expl, differentiateExpTime, inVariables);
+        expl_1 = List.map1(expl, differentiateExpTime, inVariables);
       then
         Expression.makeBuiltinCall("min",expl_1,tp);
 
@@ -503,7 +504,7 @@ algorithm
 
     case (DAE.CALL(path = fname as Absyn.IDENT("transpose"),expLst=expl,attr=DAE.CALL_ATTR(ty=tp)),inVariables)
       equation
-        expl_1 = Util.listMap1(expl, differentiateExpTime, inVariables);
+        expl_1 = List.map1(expl, differentiateExpTime, inVariables);
       then
         Expression.makeBuiltinCall("transpose",expl_1,tp);
 
@@ -595,16 +596,16 @@ algorithm
     
     case (DAE.CALL(path = (a as Absyn.IDENT(name = "der")),expLst = expl,attr=attr),inVariables)
       equation
-        expl_1 = Util.listMap1(expl, differentiateExpTime, inVariables);
+        expl_1 = List.map1(expl, differentiateExpTime, inVariables);
       then
         DAE.CALL(a,expl_1,attr);
     
     case (e as DAE.CALL(path = a,expLst = expl,attr=DAE.CALL_ATTR(ty=tp)),inVariables as (timevars,_,_))
       equation
         // if only parameters no derivative needed
-        crefslstls = Util.listMap(expl,Expression.extractCrefsFromExp);
-        crefs = Util.listFlatten(crefslstls);
-        blst = Util.listMap1(crefs,BackendVariable.existsVar,timevars);
+        crefslstls = List.map(expl,Expression.extractCrefsFromExp);
+        crefs = List.flatten(crefslstls);
+        blst = List.map1(crefs,BackendVariable.existsVar,timevars);
         false = Util.boolOrList(blst);
         (e1,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
@@ -627,7 +628,7 @@ algorithm
     
     case (DAE.ARRAY(ty = tp,scalar = b,array = expl),inVariables)
       equation
-        expl_1 = Util.listMap1(expl, differentiateExpTime, inVariables);
+        expl_1 = List.map1(expl, differentiateExpTime, inVariables);
       then
         DAE.ARRAY(tp,b,expl_1);
     
@@ -714,7 +715,7 @@ algorithm
     
     case (DAE.TUPLE(PR = expl),inVariables)
       equation
-        expl_1 = Util.listMap1(expl, differentiateExpTime, inVariables);
+        expl_1 = List.map1(expl, differentiateExpTime, inVariables);
       then
         DAE.TUPLE(expl_1);
     
@@ -766,7 +767,7 @@ algorithm
     
     case ((row :: rows),inVariables)
       equation
-        row_1 = Util.listMap1(row, differentiateExpTime, inVariables);
+        row_1 = List.map1(row, differentiateExpTime, inVariables);
         rows_1 = differentiateMatrixTime(rows, inVariables);
       then
         (row_1 :: rows_1);
@@ -803,18 +804,18 @@ algorithm
         (DAE.FUNCTION_DER_MAPPER(derivativeOrder=1),tp) = getFunctionMapper(a,functions);
         tlst = getFunctionResultTypes(tp);
         // remove all outputs not subtyp of real
-        blst = Util.listMap(tlst,Types.isRealOrSubTypeReal);
+        blst = List.map(tlst,Types.isRealOrSubTypeReal);
         blst1 = listReverse(blst);
         SOME(DAE.FUNCTION(type_=dtp)) = DAEUtil.avlTreeGet(functions,da);
         // check if derivativ function has all expected outputs
         tlst2 = getFunctionResultTypes(dtp);
-        (tlst1,_) = Util.listSplitOnBoolList(tlst,blst);
-        true =  Util.isListEqualWithCompareFunc(tlst1,tlst2,Types.equivtypes);
+        (tlst1,_) = List.splitOnBoolList(tlst,blst);
+        true =  List.isEqualOnTrue(tlst1,tlst2,Types.equivtypes);
         // diff explst
-        (dexplst,_) = Util.listSplitOnBoolList(inExpLst,blst);
-        (dexplst1,_) = Util.listSplitOnBoolList(inExpLst1,blst1);
-        dexplst_1 = Util.listMap1(dexplst,differentiateExpTime,inVarsandFuncs);
-        dexplst1_1 = Util.listMap1(dexplst1,differentiateExpTime,inVarsandFuncs);
+        (dexplst,_) = List.splitOnBoolList(inExpLst,blst);
+        (dexplst1,_) = List.splitOnBoolList(inExpLst1,blst1);
+        dexplst_1 = List.map1(dexplst,differentiateExpTime,inVarsandFuncs);
+        dexplst1_1 = List.map1(dexplst1,differentiateExpTime,inVarsandFuncs);
       then
         (dexplst_1,dexplst1_1);
     
@@ -824,15 +825,15 @@ algorithm
         (DAE.FUNCTION_DER_MAPPER(derivativeOrder=1),tp) = getFunctionMapper(a,functions);
         tlst = getFunctionResultTypes(tp);
         // remove all outputs not subtyp of real
-        blst = Util.listMap(tlst,Types.isRealOrSubTypeReal);
+        blst = List.map(tlst,Types.isRealOrSubTypeReal);
         blst1 = listReverse(blst);
         SOME(DAE.FUNCTION(type_=dtp)) = DAEUtil.avlTreeGet(functions,da);
         // check if derivativ function has all expected outputs
         tlst2 = getFunctionResultTypes(dtp);
-        (tlst1,_) = Util.listSplitOnBoolList(tlst,blst);
-        false = Util.isListEqualWithCompareFunc(tlst1,tlst2,Types.equivtypes);
+        (tlst1,_) = List.splitOnBoolList(tlst,blst);
+        false = List.isEqualOnTrue(tlst1,tlst2,Types.equivtypes);
         // add Warning
-        typlststring = Util.listMap(tlst1,Types.unparseType);
+        typlststring = List.map(tlst1,Types.unparseType);
         typstring = Util.stringDelimitList(typlststring,";");
         dastring = Absyn.pathString(da);
         Error.addMessage(Error.UNEXCPECTED_FUNCTION_INPUTS_WARNING, {dastring,typstring});
@@ -849,10 +850,10 @@ algorithm
         SOME(DAE.FUNCTION(type_=dtp)) = DAEUtil.avlTreeGet(functions,da);
         // check if derivativ function has all expected outputs
         tlst2 = getFunctionResultTypes(dtp);
-        true = Util.isListEqualWithCompareFunc(tlst,tlst2,Types.equivtypes);
+        true = List.isEqualOnTrue(tlst,tlst2,Types.equivtypes);
         // diff explst
-        dexplst_1 = Util.listMap1(inExpLst,differentiateExpTime,inVarsandFuncs);
-        dexplst1_1 = Util.listMap1(inExpLst1,differentiateExpTime,inVarsandFuncs);
+        dexplst_1 = List.map1(inExpLst,differentiateExpTime,inVarsandFuncs);
+        dexplst1_1 = List.map1(inExpLst1,differentiateExpTime,inVarsandFuncs);
       then
         (dexplst_1,dexplst1_1);
     
@@ -865,9 +866,9 @@ algorithm
         SOME(DAE.FUNCTION(type_=dtp)) = DAEUtil.avlTreeGet(functions,da);
         // check if derivativ function has all expected outputs
         tlst2 = getFunctionResultTypes(dtp);
-        false = Util.isListEqualWithCompareFunc(tlst,tlst2,Types.equivtypes);
+        false = List.isEqualOnTrue(tlst,tlst2,Types.equivtypes);
         // add Warning
-        typlststring = Util.listMap(tlst,Types.unparseType);
+        typlststring = List.map(tlst,Types.unparseType);
         typstring = Util.stringDelimitList(typlststring,";");
         dastring = Absyn.pathString(da);
         Error.addMessage(Error.UNEXCPECTED_FUNCTION_INPUTS_WARNING, {dastring,typstring});
@@ -922,8 +923,8 @@ algorithm
         SOME(DAE.FUNCTION(type_=dtp,inlineType=dinl)) = DAEUtil.avlTreeGet(functions,da);
         // check if derivativ function has all expected inputs 
         (true,_) = checkDerivativeFunctionInputs(blst,tp,dtp);
-        (expl1,_) = Util.listSplitOnBoolList(expl,blst);
-        dexpl = Util.listMap1(expl1,differentiateExpTime,inVarsandFuncs);
+        (expl1,_) = List.splitOnBoolList(expl,blst);
+        dexpl = List.map1(expl1,differentiateExpTime,inVarsandFuncs);
         expl1 = listAppend(expl,dexpl);
       then
         DAE.CALL(da,expl1,DAE.CALL_ATTR(ty,b,c,dinl,tc));
@@ -937,7 +938,7 @@ algorithm
         // check if derivativ function has all expected inputs 
         (false,tlst) = checkDerivativeFunctionInputs(blst,tp,dtp);
         // add Warning
-        typlststring = Util.listMap(tlst,Types.unparseType);
+        typlststring = List.map(tlst,Types.unparseType);
         typstring = Util.stringDelimitList(typlststring,";");
         dastring = Absyn.pathString(da);
         Error.addMessage(Error.UNEXCPECTED_FUNCTION_INPUTS_WARNING, {dastring,typstring});
@@ -962,12 +963,12 @@ algorithm
       case (blst,(DAE.T_FUNCTION(funcArg=falst),_),(DAE.T_FUNCTION(funcArg=dfalst),_))
       equation
         // generate expected function inputs
-        (falst1,_) = Util.listSplitOnBoolList(falst,blst);
+        (falst1,_) = List.splitOnBoolList(falst,blst);
         falst2 = listAppend(falst,falst1);
         // compare with derivative function inputs
-        tlst = Util.listMap(falst2,Util.tuple32);
-        dtlst = Util.listMap(dfalst,Util.tuple32);
-        ret = Util.isListEqualWithCompareFunc(tlst,dtlst,Types.equivtypes);
+        tlst = List.map(falst2,Util.tuple32);
+        dtlst = List.map(dfalst,Util.tuple32);
+        ret = List.isEqualOnTrue(tlst,dtlst,Types.equivtypes);
       then 
         (ret,tlst);
     case (_,_,_)
@@ -1003,8 +1004,8 @@ algorithm
     case (inFuncName,DAE.FUNCTION_DER_MAPPER(derivativeFunction=inDFuncName,derivativeOrder=derivativeOrder,conditionRefs=cr),(DAE.T_FUNCTION(funcArg=funcArg),_),expl,inVarsandFuncs)
       equation
          true = intEq(1,derivativeOrder);
-         tplst = Util.listMap(funcArg,Util.tuple32);
-         bl = Util.listMap(tplst,Types.isRealOrSubTypeReal);
+         tplst = List.map(funcArg,Util.tuple32);
+         bl = List.map(tplst,Types.isRealOrSubTypeReal);
          bl1 = checkDerFunctionConds(bl,cr,expl,inVarsandFuncs);
       then
         (inDFuncName,bl1);
@@ -1019,8 +1020,8 @@ algorithm
          // get bool list
          (da,blst) = differentiateFunctionTime1(fname,mapper,tp,expl,inVarsandFuncs);
          // count true
-         (bl1,_) = Util.listSplitOnTrue1(blst,Util.isEqual,true);
-         bl2 = Util.listFill(false,listLength(blst));
+         (bl1,_) = List.split1OnTrue(blst,Util.isEqual,true);
+         bl2 = List.fill(false,listLength(blst));
          bl = listAppend(bl2,bl1);
          bl3 = checkDerFunctionConds(bl,cr,expl,inVarsandFuncs);
       then
@@ -1122,7 +1123,7 @@ algorithm
       equation
           SOME(DAE.FUNCTION(functions=flst)) = DAEUtil.avlTreeGet(functions,fname);
           DAE.FUNCTION_DER_MAPPER(lowerOrderDerivatives=lowerOrderDerivatives) = getFunctionMapper1(flst);
-          name = Util.listLast(lowerOrderDerivatives);
+          name = List.last(lowerOrderDerivatives);
       then name;
   end match;
 end getlowerOrderDerivative;
@@ -1398,13 +1399,13 @@ algorithm
     
     case (DAE.ARRAY(ty = tp,scalar = b,array = expl),tv,differentiateIfExp)
       equation
-        expl_1 = Util.listMap2(expl, differentiateExp, tv, differentiateIfExp);
+        expl_1 = List.map2(expl, differentiateExp, tv, differentiateIfExp);
       then
         DAE.ARRAY(tp,b,expl_1);
     
     case (DAE.TUPLE(PR = expl),tv,differentiateIfExp)
       equation
-        expl_1 = Util.listMap2(expl, differentiateExp, tv, differentiateIfExp);
+        expl_1 = List.map2(expl, differentiateExp, tv, differentiateIfExp);
       then
         DAE.TUPLE(expl_1);
     
@@ -1431,8 +1432,8 @@ algorithm
     /* Caught by rule below...
     case (DAE.CALL(fname,expl,b,c,tp,inl),tv,differentiateIfExp)
       equation
-        bLst = Util.listMap1(expl,Expression.expContains, Expression.crefExp(tv));
-        false = Util.listReduce(bLst,boolOr);
+        bLst = List.map1(expl,Expression.expContains, Expression.crefExp(tv));
+        false = List.reduce(bLst,boolOr);
         (e1,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
         e1;*/

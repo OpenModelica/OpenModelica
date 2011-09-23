@@ -58,6 +58,7 @@ protected import DAEUtil;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSolve;
+protected import List;
 protected import TaskGraphExt;
 protected import Util;
 protected import Values;
@@ -414,7 +415,7 @@ algorithm
         tid = TaskGraphExt.newTask(taskname);
         TaskGraphExt.setTaskType(tid, 3);
         buildNonlinearEquations2(tid, vars, residuals) "See TaskType in TaskGraph.hpp" ;
-        varnames = Util.listMap(vars, ExpressionDump.printExpStr);
+        varnames = List.map(vars, ExpressionDump.printExpStr);
         storeMultipleResults(varnames, tid);
       then
         ();
@@ -577,10 +578,10 @@ algorithm
       equation
         vars1 = Expression.extractCrefsFromExp(res) "Collect all variables and construct
    a string for the residual, that can be directly used in codegen." ;
-        vars_1 = Util.listMap(vars, Expression.extractCrefsFromExp);
-        vars2 = Util.listFlatten(vars_1);
-        vars1_1 = Util.listUnionOnTrue(vars1, vars2, ComponentReference.crefEqual) "No duplicate elements" ;
-        varslst = Util.listSetDifferenceOnTrue(vars1_1, vars2, ComponentReference.crefEqual);
+        vars_1 = List.map(vars, Expression.extractCrefsFromExp);
+        vars2 = List.flatten(vars_1);
+        vars1_1 = List.unionOnTrue(vars1, vars2, ComponentReference.crefEqual) "No duplicate elements" ;
+        varslst = List.setDifferenceOnTrue(vars1_1, vars2, ComponentReference.crefEqual);
         addEdgesFromVars(varslst, tid, 0);
       then
         ();
@@ -657,7 +658,7 @@ algorithm
         tid = TaskGraphExt.newTask("equation system");
         (eqns,vars) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
         predtasks = buildSystem2(dae, eqns, vars, tid);
-        predtaskids = Util.listMap(predtasks, TaskGraphExt.getTask);
+        predtaskids = List.map(predtasks, TaskGraphExt.getTask);
         addPredecessors(tid, predtaskids, predtasks, 0);
       then
         ();      
@@ -699,13 +700,13 @@ algorithm
         cr1 = Expression.extractCrefsFromExp(e1);
         cr2 = Expression.extractCrefsFromExp(e2);
         crs = listAppend(cr1, cr2);
-        crs_1 = Util.listDeleteMember(crs, cr);
-        crs_2 = Util.listMap(crs_1, ComponentReference.crefStr);
+        crs_1 = List.deleteMember(crs, cr);
+        crs_2 = List.map(crs_1, ComponentReference.crefStr);
         crstr = ComponentReference.crefStr(cr);
         origname_str = ComponentReference.printComponentRefStr(cr);
         TaskGraphExt.storeResult(crstr, tid, true, origname_str);
         crs2 = buildSystem2(dae, reste, restv, tid);
-        res = Util.listUnion(crs_2, crs2);
+        res = List.union(crs_2, crs2);
       then
         res;
     case (_,_,_,_)
@@ -918,7 +919,7 @@ algorithm
         funcstr = Absyn.pathString(func);
         numargs = listLength(expl);
         ts = buildCallStr(funcstr, numargs);
-        (tasks,strs) = Util.listMap_2(expl, buildExpression);
+        (tasks,strs) = List.map_2(expl, buildExpression);
         t = TaskGraphExt.newTask(ts);
         addPredecessors(t, tasks, strs, 0);
       then
@@ -988,7 +989,7 @@ protected
   list<String> ns;
   String ns_1;
 algorithm
-  ns := Util.listFill("%s", n);
+  ns := List.fill("%s", n);
   ns_1 := Util.stringDelimitList(ns, ", ");
   res := stringAppendList({str,"(",ns_1,")"});
 end buildCallStr;

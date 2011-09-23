@@ -62,6 +62,7 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Inst;
+protected import List;
 protected import Lookup;
 protected import MetaUtil;
 protected import ModUtil;
@@ -517,7 +518,7 @@ algorithm
         // check if valList contains Values.EMPTY()
         containsEmpty = ValuesUtil.containsEmpty(valList);
         generateNoConstantBindingError(containsEmpty, info);
-        blist = Util.listMap(valList,ValuesUtil.valueBool);
+        blist = List.map(valList,ValuesUtil.valueBool);
         b = Util.selectList(blist, tb, fb);
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache, env, ih, mod, pre, csets, ci_state, instEEquation, b, impl, Inst.alwaysUnroll, graph);
       then
@@ -545,7 +546,7 @@ algorithm
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
         (DAE.PROP((DAE.T_BOOL(_),_),_)) = Types.propsAnd(props);
         (cache,valList,_) = Ceval.cevalList(cache,env, expl1, impl,NONE(), Ceval.NO_MSG());
-        blist = Util.listMap(valList,ValuesUtil.valueBool);
+        blist = List.map(valList,ValuesUtil.valueBool);
         b = Util.selectList(blist, tb, fb);
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEInitialEquation, b, impl, Inst.alwaysUnroll, graph);
       then
@@ -603,7 +604,7 @@ algorithm
           SCode.EQ_WHEN(ee,eel,eex,NONE(),info), initial_, impl, graph);
         lhsCrefsRec = DAEUtil.verifyWhenEquation(daeElts3);
         i1 = listLength(lhsCrefs);
-        lhsCrefs = Util.listUnionOnTrue(lhsCrefs,lhsCrefsRec,ComponentReference.crefEqual);
+        lhsCrefs = List.unionOnTrue(lhsCrefs,lhsCrefsRec,ComponentReference.crefEqual);
         //TODO: fix error reporting print(" listLength pre:" +& intString(i1) +& " post: " +& intString(listLength(lhsCrefs)) +& "\n");
         true = intEq(listLength(lhsCrefs),i1);
         ci_state_2 = instEquationCommonCiTrans(ci_state_1, initial_);
@@ -623,7 +624,7 @@ algorithm
         
         (cache,env_1,ih,DAE.DAE(daeElts1),_,_,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, el, impl, Inst.alwaysUnroll, graph);
         lhsCrefs = DAEUtil.verifyWhenEquation(daeElts1);
-        // TODO: fix error reporting, print(" exps: " +& Util.stringDelimitList(Util.listMap(lhsCrefs,ComponentReference.printComponentRefStr),", ") +& "\n");
+        // TODO: fix error reporting, print(" exps: " +& Util.stringDelimitList(List.map(lhsCrefs,ComponentReference.printComponentRefStr),", ") +& "\n");
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
         dae = DAE.DAE({DAE.WHEN_EQUATION(e_2,daeElts1,NONE(),source)});
       then
@@ -652,7 +653,7 @@ algorithm
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = Absyn.END(),eEquationLst = el, info=info),initial_,impl,graph) 
       equation 
         (lst as _::_)=SCode.findIteratorInEEquationLst(i,el);
-        tpl=Util.listFirst(lst);
+        tpl=List.first(lst);
         e=rangeExpression(tpl);
         (cache,e_1,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = id_t),_), constFlag = cnst),_) = 
           Static.elabExp(cache,env, e, impl,NONE(),true, pre, info);
@@ -748,7 +749,7 @@ algorithm
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
         DAE.DAE(daeElts) = instEqEquation(e1_2, tprop1, e2_2, tprop2, source, initial_, impl);
-        daeElts = Util.listMap(daeElts,makeDAEArrayEqToReinitForm);
+        daeElts = List.map(daeElts,makeDAEArrayEqToReinitForm);
         dae = DAE.DAE(daeElts);
       then
         (cache,env,ih,dae,csets,ci_state,graph);
@@ -858,7 +859,7 @@ algorithm
       list<Absyn.Exp> crs;
     case (Absyn.TUPLE(crs),Absyn.CALL(functionArgs = _))
       equation
-        _ = Util.listMap(crs,Absyn.expCref);
+        _ = List.map(crs,Absyn.expCref);
       then ();
     case (left,_)
       equation
@@ -879,7 +880,7 @@ algorithm
       String s1,s2,s;
     case (Absyn.TUPLE(crs),Absyn.CALL(functionArgs = _),_)
       equation
-        _ = Util.listMap(crs,Absyn.expCref);
+        _ = List.map(crs,Absyn.expCref);
       then ();
     case (left,_,_)
       equation
@@ -1024,9 +1025,9 @@ algorithm
     )))
     equation
       fillValue = (listLength(typeList)-listLength(aexpl));
-      lst2 = Util.listFill((DAE.T_ANYTYPE(NONE()),NONE()),fillValue) "types";
-      aexpl2 = Util.listFill(Absyn.CREF(Absyn.WILD()),fillValue) "epxressions";
-      tupleConst2 = Util.listFill(DAE.SINGLE_CONST(DAE.C_VAR()),fillValue) "TupleConst's";
+      lst2 = List.fill((DAE.T_ANYTYPE(NONE()),NONE()),fillValue) "types";
+      aexpl2 = List.fill(Absyn.CREF(Absyn.WILD()),fillValue) "epxressions";
+      tupleConst2 = List.fill(DAE.SINGLE_CONST(DAE.C_VAR()),fillValue) "TupleConst's";
       aexpl = listAppend(aexpl,aexpl2);
       lst = listAppend(lst,lst2);
       tupleConst = listAppend(tupleConst,tupleConst2);
@@ -1035,9 +1036,9 @@ algorithm
   case(inExp, DAE.PROP_TUPLE(  (DAE.T_TUPLE(typeList),_) , _),DAE.PROP(propType,tconst))
     equation
       fillValue = (listLength(typeList)-1);
-      aexpl2 = Util.listFill(Absyn.CREF(Absyn.WILD()),fillValue) "epxressions";
-      lst2 = Util.listFill((DAE.T_ANYTYPE(NONE()),NONE()),fillValue) "types";
-      tupleConst2 = Util.listFill(DAE.SINGLE_CONST(DAE.C_VAR()),fillValue) "TupleConst's";
+      aexpl2 = List.fill(Absyn.CREF(Absyn.WILD()),fillValue) "epxressions";
+      lst2 = List.fill((DAE.T_ANYTYPE(NONE()),NONE()),fillValue) "types";
+      tupleConst2 = List.fill(DAE.SINGLE_CONST(DAE.C_VAR()),fillValue) "TupleConst's";
       aexpl = inExp::aexpl2;
       lst = propType::lst2;
       tupleConst = DAE.SINGLE_CONST(tconst)::tupleConst2;
@@ -1924,7 +1925,7 @@ algorithm
     case ((cr_exp as DAE.CREF(componentRef = cr), fi))
       equation
         cref_subs = ComponentReference.crefSubs(cr);
-        exp_subs = Util.listMap(cref_subs, Expression.subscriptIndexExp);
+        exp_subs = List.map(cref_subs, Expression.subscriptIndexExp);
         true = isSubsLoopDependent(exp_subs, fi);
         cr = ComponentReference.crefStripSubs(cr);
         cr_type = ComponentReference.crefLastType(cr);
@@ -2074,7 +2075,7 @@ algorithm
       equation
         // false = containsWhenStatements(sl);
         (lst as _::_) = SCode.findIteratorInStatements(i,sl);
-        tpl=Util.listFirst(lst);
+        tpl=List.first(lst);
         // e = Absyn.RANGE(1,NONE(),Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
         e=rangeExpression(tpl);
         (cache,e_1,(prop as DAE.PROP((DAE.T_ARRAY(_,t),_),cnst)),_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
@@ -2090,7 +2091,7 @@ algorithm
       equation
         // false = containsWhenStatements(sl);
         (lst as _::_) = SCode.findIteratorInStatements(i,sl);
-        tpl=Util.listFirst(lst);
+        tpl=List.first(lst);
         // e = Absyn.RANGE(1,NONE(),Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
         e=rangeExpression(tpl);
         (cache,e_1,(prop as DAE.PROP((DAE.T_ARRAY(_,t),_),cnst)),_) = Static.elabExp(cache,env, e, impl,NONE(), true,pre,info);
@@ -2639,8 +2640,8 @@ algorithm
         _ :: wild_props = Types.propTuplePropList(inRhsProps);
         wild_count = listLength(wild_props);
         wildCrefExp = Expression.makeCrefExp(DAE.WILD(), DAE.ET_OTHER());
-        wilds = Util.listFill(wildCrefExp, wild_count);
-        wild_props = Util.listFill(DAE.PROP((DAE.T_ANYTYPE(NONE()),NONE()), DAE.C_VAR()), wild_count);
+        wilds = List.fill(wildCrefExp, wild_count);
+        wild_props = List.fill(DAE.PROP((DAE.T_ANYTYPE(NONE()),NONE()), DAE.C_VAR()), wild_count);
       then 
         Algorithm.makeTupleAssignment(inLhs :: wilds, inLhsProps :: wild_props, inRhs, inRhsProps, inInitial, inSource);
     
@@ -2675,12 +2676,12 @@ algorithm
       equation
          b1 = containsWhenStatements(tb);
          b2 = containsWhenStatements(eb);
-         slst = Util.listMap(eib, Util.tuple22);
-         blst = Util.listMap(slst, containsWhenStatements);
+         slst = List.map(eib, Util.tuple22);
+         blst = List.map(slst, containsWhenStatements);
          // adrpo: add false to handle the case where list might be empty
-         b3 = Util.listReduce(false::blst, boolOr);
+         b3 = List.reduce(false::blst, boolOr);
          b4 = containsWhenStatements(rest);
-         b = Util.listReduce({b1, b2, b3, b4}, boolOr);
+         b = List.reduce({b1, b2, b3, b4}, boolOr);
       then b;
 
     // search deeper inside for
@@ -2863,7 +2864,7 @@ algorithm
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "InstSection.instIfTrueBranches failed on equations: " +&
-                       Util.stringDelimitList(Util.listMap(e, SCodeDump.equationStr), "\n"));
+                       Util.stringDelimitList(List.map(e, SCodeDump.equationStr), "\n"));
       then
         fail();
   end matchcontinue;
@@ -3021,8 +3022,8 @@ algorithm
         crefs1 = Absyn.getCrefsFromSubs(subs1);
         subs2 = Absyn.getSubsFromCref(c2);
         crefs2 = Absyn.getCrefsFromSubs(subs2);
-        //print("Crefs in " +& Dump.printComponentRefStr(c1) +& ": " +& Util.stringDelimitList(Util.listMap(crefs1,Dump.printComponentRefStr),", ") +& "\n");
-        //print("Crefs in " +& Dump.printComponentRefStr(c2) +& ": " +& Util.stringDelimitList(Util.listMap(crefs2,Dump.printComponentRefStr),", ") +& "\n");
+        //print("Crefs in " +& Dump.printComponentRefStr(c1) +& ": " +& Util.stringDelimitList(List.map(crefs1,Dump.printComponentRefStr),", ") +& "\n");
+        //print("Crefs in " +& Dump.printComponentRefStr(c2) +& ": " +& Util.stringDelimitList(List.map(crefs2,Dump.printComponentRefStr),", ") +& "\n");
         s1 = Dump.printComponentRefStr(c1);
         s2 = Dump.printComponentRefStr(c2);
         s1 = "connect("+&s1+&", "+&s2+&")";
@@ -3172,7 +3173,7 @@ algorithm
         // Debug.fprintln("expandable", "Variables1: " +& Util.stringDelimitList(variables1, ", "));
         variables2 = Env.getVariablesFromEnv(env2);
         // Debug.fprintln("expandable", "Variables2: " +& Util.stringDelimitList(variables2, ", "));
-        variablesUnion = Util.listUnion(variables1, variables2);
+        variablesUnion = List.union(variables1, variables2);
         // Debug.fprintln("expandable", "Union of expandable connector variables: " +& Util.stringDelimitList(variablesUnion, ", "));
         
         // Debug.fprintln("expandable", 
@@ -3823,7 +3824,7 @@ algorithm
       equation
         (t1,iLst1) = Types.flattenArrayType(t1);
         (t2,iLst2) = Types.flattenArrayType(t2);
-        false = Util.isListEqualWithCompareFunc(iLst1,iLst2,intEq);
+        false = List.isEqualOnTrue(iLst1,iLst2,intEq);
         false = (listLength(iLst1)+listLength(iLst2) ==0);
         s1 = ComponentReference.printComponentRefStr(c1);
         s2 = ComponentReference.printComponentRefStr(c2);
@@ -4012,7 +4013,7 @@ algorithm
       equation
         dims = Types.getDimensions(t1);
         dims2 = Types.getDimensions(t2);
-        true = Util.isListEqualWithCompareFunc(dims, dims2, Expression.dimensionsKnownAndEqual);
+        true = List.isEqualOnTrue(dims, dims2, Expression.dimensionsKnownAndEqual);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1,c2)), NONE());
@@ -4284,13 +4285,13 @@ algorithm
       Absyn.Path name;
       list<String> ls;
       
-    // Empty integer list. Util.listIntRange is not defined for size < 1, 
+    // Empty integer list. List.intRange is not defined for size < 1, 
     // so we need to handle empty lists here.
     case (DAE.DIM_INTEGER(integer = 0), _) then {};
     case (DAE.DIM_INTEGER(integer = sz), _)
       equation
-        ints = Util.listIntRange(sz);
-        expl = Util.listMap1(ints, makeAsubIndex, inArray);
+        ints = List.intRange(sz);
+        expl = List.map1(ints, makeAsubIndex, inArray);
       then
         expl;
     case (DAE.DIM_ENUM(enumTypeName = name, literals = ls), _)
@@ -4306,8 +4307,8 @@ algorithm
     case (DAE.DIM_UNKNOWN(), _)
       equation
         true = OptManager.getOption("checkModel");
-        ints = Util.listIntRange(1); // try to make an array index of 1 when we don't know the dimension
-        expl = Util.listMap1(ints, makeAsubIndex, inArray);
+        ints = List.intRange(1); // try to make an array index of 1 when we don't know the dimension
+        expl = List.map1(ints, makeAsubIndex, inArray);
       then
         expl;
   end matchcontinue;
@@ -4387,8 +4388,8 @@ algorithm
     case SCode.EQ_WHEN(eEquationLst = el, elseBranches = tpl_el)
       equation
         checkForNestedWhenInEqList(el);
-        el2 = Util.listMap(tpl_el, Util.tuple22);
-        Util.listMap0(el2, checkForNestedWhenInEqList);
+        el2 = List.map(tpl_el, Util.tuple22);
+        List.map_0(el2, checkForNestedWhenInEqList);
       then
         ();
     case _
@@ -4404,7 +4405,7 @@ protected function checkForNestedWhenInEqList
   a list of equations."
   input list<SCode.EEquation> inEqs;
 algorithm
-  Util.listMap0(inEqs, checkForNestedWhenInEq);
+  List.map_0(inEqs, checkForNestedWhenInEq);
 end checkForNestedWhenInEqList;
 
 protected function checkForNestedWhenInEq
@@ -4419,7 +4420,7 @@ algorithm
     case SCode.EQ_WHEN(info = _) then fail();
     case SCode.EQ_IF(thenBranch = eqs_lst, elseBranch = eqs)
       equation
-        Util.listMap0(eqs_lst, checkForNestedWhenInEqList);
+        List.map_0(eqs_lst, checkForNestedWhenInEqList);
         checkForNestedWhenInEqList(eqs);
       then
         ();
@@ -4619,7 +4620,7 @@ algorithm
     /* Tuple with lhs being a tuple NOT of crefs => Error */
     case (cache,env,ih,pre,e as Absyn.TUPLE(expressions = expl),_,_,info,source,initial_,impl,unrollForLoops)
       equation 
-        failure(_ = Util.listMap(expl,Absyn.expCref));
+        failure(_ = List.map(expl,Absyn.expCref));
         s = Dump.printExpStr(e);
         Error.addSourceMessage(Error.TUPLE_ASSIGN_CREFS_ONLY, {s}, info);
       then
@@ -4628,7 +4629,7 @@ algorithm
     case (cache,env,ih,pre,e1 as Absyn.TUPLE(expressions = expl),e_2,prop2,info,source,initial_,impl,unrollForLoops)
       equation
         DAE.CALL(path = _) = e_2;
-        _ = Util.listMap(expl,Absyn.expCref);
+        _ = List.map(expl,Absyn.expCref);
         (cache,e_1,prop1,_) = Static.elabExp(cache,env,e1,impl,NONE(),false,pre,info);
         lt = Types.getPropType(prop1);
         rt = Types.getPropType(prop2);
@@ -4645,7 +4646,7 @@ algorithm
     case (cache,env,ih,pre,Absyn.TUPLE(expressions = expl),e_1,_,info,source,initial_,impl,unrollForLoops)
       equation
         // failure(Absyn.CALL(functionArgs = _) = e);
-        _ = Util.listMap(expl,Absyn.expCref);
+        _ = List.map(expl,Absyn.expCref);
         s = ExpressionDump.printExpStr(e_1);
         Error.addSourceMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY, {s}, info);
       then

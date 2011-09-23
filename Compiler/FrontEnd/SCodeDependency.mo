@@ -47,6 +47,7 @@ public type Env = SCodeEnv.Env;
 
 protected import Debug;
 protected import Error;
+protected import List;
 protected import RTOpts;
 protected import SCodeCheck;
 protected import SCodeFlattenRedeclare;
@@ -424,13 +425,13 @@ algorithm
         initialAlgorithmLst = ial, externalDecl = ext_decl,
         annotationLst = annl, comment = cmt), _, _, _, _)
       equation
-        Util.listMap02(el, analyseElement, inEnv, inRestriction);
-        Util.listMap01(nel, analyseEquation, inEnv);
-        Util.listMap01(iel, analyseEquation, inEnv);
-        Util.listMap01(nal, analyseAlgorithm, inEnv);
-        Util.listMap01(ial, analyseAlgorithm, inEnv);
+        List.map2_0(el, analyseElement, inEnv, inRestriction);
+        List.map1_0(nel, analyseEquation, inEnv);
+        List.map1_0(iel, analyseEquation, inEnv);
+        List.map1_0(nal, analyseAlgorithm, inEnv);
+        List.map1_0(ial, analyseAlgorithm, inEnv);
         analyseExternalDecl(ext_decl, inEnv, inInfo);
-        Util.listMap02(annl, analyseAnnotation, inEnv, inInfo);
+        List.map2_0(annl, analyseAnnotation, inEnv, inInfo);
         analyseComment(cmt, inEnv, inInfo);
       then
         ();
@@ -486,12 +487,12 @@ protected
   list<String> el_names;
 algorithm
   // Remove all 'extends ExternalObject'.
-  el := Util.listFilter(inElements, isNotExternalObject);
+  el := List.filter(inElements, isNotExternalObject);
   // Check if length of the new list is different to the old, i.e. if we
   // actually found and removed any 'extends ExternalObject'.
   false := (listLength(el) == listLength(inElements));
   // Ok, we have an external object, check that it's valid.
-  el_names := Util.listMap(el, SCode.elementName);
+  el_names := List.map(el, SCode.elementName);
   checkExternalObject(el_names, inEnv, inInfo);
 end isExternalObject;
 
@@ -524,9 +525,9 @@ algorithm
     // Otherwise it's not valid, so print an error message.
     else
       equation
-        has_con = Util.listMemberWithCompareFunc(
+        has_con = List.isMemberOnTrue(
           "constructor", inElements, stringEqual);
-        has_des = Util.listMemberWithCompareFunc(
+        has_des = List.isMemberOnTrue(
           "destructor", inElements, stringEqual);
         env_str = SCodeEnv.getEnvName(inEnv);
         checkExternalObject2(inElements, has_con, has_des, env_str, inInfo);
@@ -555,8 +556,8 @@ algorithm
     case (el, true, true, _, _)
       equation
         // Remove the constructor and destructor from the list of elements.
-        el = Util.listRemoveFirstOnTrue("constructor", stringEqual, el);
-        el = Util.listRemoveFirstOnTrue("destructor", stringEqual, el);
+        (el, _) = List.deleteMemberOnTrue("constructor", el, stringEqual);
+        (el, _) = List.deleteMemberOnTrue("destructor", el, stringEqual);
         // Print an error message with the rest of the elements.
         el_str = Util.stringDelimitList(el, ", ");
         el_str = "contains invalid elements: " +& el_str;
@@ -844,7 +845,7 @@ protected
   Absyn.ArrayDim ad;
 algorithm
   SCode.ATTR(arrayDims = ad) := inAttributes;
-  Util.listMap02(ad, analyseSubscript, inEnv, inInfo);
+  List.map2_0(ad, analyseSubscript, inEnv, inInfo);
 end analyseAttributes;
 
 protected function analyseModifier
@@ -866,7 +867,7 @@ algorithm
     // A normal modifier, analyse it's submodifiers and optional binding.
     case (SCode.MOD(subModLst = sub_mods, binding = bind_exp), _, _, _)
       equation
-        Util.listMap02(sub_mods, analyseSubMod, (inEnv, inTypeEnv), inInfo);
+        List.map2_0(sub_mods, analyseSubMod, (inEnv, inTypeEnv), inInfo);
         analyseModBinding(bind_exp, inEnv, inInfo);
       then
         ();
@@ -874,7 +875,7 @@ algorithm
     // A redeclaration modifier, analyse the redeclarations.
     case (SCode.REDECL(elementLst = el), _, _, _)
       equation
-        Util.listMap02(el, analyseRedeclareModifier, inEnv, inTypeEnv);
+        List.map2_0(el, analyseRedeclareModifier, inEnv, inTypeEnv);
       then
         ();
   end match;
@@ -1099,7 +1100,7 @@ algorithm
     // A MetaModelica type such as list or tuple.
     case (Absyn.TCOMPLEX(typeSpecs = tys), _, _)
       equation
-        Util.listMap02(tys, analyseTypeSpec, inEnv, inInfo);
+        List.map2_0(tys, analyseTypeSpec, inEnv, inInfo);
       then
         ();
 
@@ -1120,7 +1121,7 @@ algorithm
     // An external declaration might have an annotation that we need to analyse.
     case (SOME(SCode.EXTERNALDECL(args = args, annotation_ = SOME(ann))), _, _)
       equation
-        Util.listMap02(args, analyseExp, inEnv, inInfo);
+        List.map2_0(args, analyseExp, inEnv, inInfo);
         analyseAnnotation(ann, inEnv, inInfo);
       then
         ();
@@ -1164,7 +1165,7 @@ algorithm
     case (SCode.ANNOTATION(modification = mods as SCode.MOD(subModLst = sub_mods)),
         _, _)
       equation
-        Util.listMap02(sub_mods, analyseAnnotationMod, inEnv, inInfo);
+        List.map2_0(sub_mods, analyseAnnotationMod, inEnv, inInfo);
       then
         ();
 
@@ -1445,7 +1446,7 @@ protected
   list<SCode.Statement> stmts;
 algorithm
   SCode.ALGORITHM(stmts) := inAlgorithm;
-  Util.listMap01(stmts, analyseStatement, inEnv);
+  List.map1_0(stmts, analyseStatement, inEnv);
 end analyseAlgorithm;
 
 protected function analyseStatement
@@ -1967,7 +1968,7 @@ protected
 algorithm
   {SCodeEnv.FRAME(name, ty, cls_and_vars, SCodeEnv.EXTENDS_TABLE(bcl, re, cei), 
     imps, is_used)} := inEnv;
-  bcl := Util.listMap1(bcl, removeUnusedRedeclares2, cls_and_vars);
+  bcl := List.map1(bcl, removeUnusedRedeclares2, cls_and_vars);
   outEnv := {SCodeEnv.FRAME(name, ty, cls_and_vars, 
     SCodeEnv.EXTENDS_TABLE(bcl, re, cei), imps, is_used)};
 end removeUnusedRedeclares;
@@ -1982,7 +1983,7 @@ protected
   Absyn.Info info;
 algorithm
   SCodeEnv.EXTENDS(bc, redeclares, info) := inExtends;
-  redeclares := Util.listFilter1(redeclares, removeUnusedRedeclares3, inClsAndVars);
+  redeclares := List.filter1(redeclares, removeUnusedRedeclares3, inClsAndVars);
   outExtends := SCodeEnv.EXTENDS(bc, redeclares, info);
 end removeUnusedRedeclares2;
 

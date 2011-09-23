@@ -45,6 +45,7 @@ import Pool;
 
 protected 
 import Util;
+import List;
 
 public
 type Names = Name.Names;
@@ -218,7 +219,7 @@ algorithm
     
     case (names, SOME(s)) 
       equation 
-        lst = Util.listMap1r(listReverse(s), segmentStr, names);
+        lst = List.map1r(listReverse(s), segmentStr, names);
         print(Util.stringDelimitList(lst, ".") +& "\n"); 
       then ();
     

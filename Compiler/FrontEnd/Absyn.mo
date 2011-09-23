@@ -1067,6 +1067,7 @@ end ExternalDecl;
 /* "From here down, only Absyn helper functions should be present.
  Thus, no actual absyn uniontype definitions." */
 
+protected import List;
 protected import Util;
 protected import Print;
 protected import ModUtil;
@@ -1554,7 +1555,7 @@ algorithm
 
     case ((e as TUPLE(expl)),rel,ext_arg)
       equation
-        (expl_1,ext_arg_1) = Util.listFoldMap(expl, rel, ext_arg);
+        (expl_1,ext_arg_1) = List.mapFoldTuple(expl, rel, ext_arg);
         ((e_1,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((TUPLE(expl_1),ext_arg_2));
@@ -1753,7 +1754,7 @@ public function traverseExpListBidir
   replaceable type Argument subtypeof Any;
 algorithm
   (outExpl, outTuple) :=
-    Util.listMapAndFold(inExpl, traverseExpBidir, inTuple);
+    List.mapFold(inExpl, traverseExpBidir, inTuple);
 end traverseExpListBidir;
 
 public function traverseExpBidir
@@ -1904,7 +1905,7 @@ algorithm
         (e1, tup) = traverseExpBidir(e1, tup);
         (e2, tup) = traverseExpBidir(e2, tup);
         (e3, tup) = traverseExpBidir(e3, tup);
-        (else_ifs, tup) = Util.listMapAndFold(else_ifs,
+        (else_ifs, tup) = List.mapFold(else_ifs,
           traverseExpBidirElseIf, tup);
       then
         (IFEXP(e1, e2, e3, else_ifs), tup);
@@ -1929,7 +1930,7 @@ algorithm
 
     case (MATRIX(matrix = mat_expl), tup)
       equation
-        (mat_expl, tup) = Util.listMapAndFold(mat_expl,
+        (mat_expl, tup) = List.mapFold(mat_expl,
           traverseExpListBidir, tup);
       then
         (MATRIX(mat_expl), tup);
@@ -1967,7 +1968,7 @@ algorithm
         cases = match_cases, comment = cmt), tup)
       equation
         (e1, tup) = traverseExpBidir(e1, tup);
-        (match_cases, tup) = Util.listMapAndFold(match_cases,
+        (match_cases, tup) = List.mapFold(match_cases,
           traverseMatchCase, tup);
       then
         (MATCHEXP(match_ty, e1, match_decls, match_cases, cmt), tup);
@@ -2022,14 +2023,14 @@ algorithm
 
     case (CREF_QUAL(name = name, subscripts = subs, componentRef = cr), _)
       equation
-        (subs, tup) = Util.listMapAndFold(subs, traverseExpBidirSubs, inTuple);
+        (subs, tup) = List.mapFold(subs, traverseExpBidirSubs, inTuple);
         (cr, tup) = traverseExpBidirCref(cr, tup);
       then
         (CREF_QUAL(name, subs, cr), tup);
 
     case (CREF_IDENT(name = name, subscripts = subs), _)
       equation
-        (subs, tup) = Util.listMapAndFold(subs, traverseExpBidirSubs, inTuple);
+        (subs, tup) = List.mapFold(subs, traverseExpBidirSubs, inTuple);
       then
         (CREF_IDENT(name, subs), tup);
 
@@ -2120,7 +2121,7 @@ algorithm
     case (FUNCTIONARGS(args = expl, argNames = named_args), tup)
       equation
         (expl, tup) = traverseExpListBidir(expl, tup);
-        (named_args, tup) = Util.listMapAndFold(named_args,
+        (named_args, tup) = List.mapFold(named_args,
           traverseExpBidirNamedArg, tup);
       then
         (FUNCTIONARGS(expl, named_args), tup);
@@ -2128,7 +2129,7 @@ algorithm
     case (FOR_ITER_FARG(exp = e, iterators = iters), tup)
       equation
         (e, tup) = traverseExpBidir(e, tup);
-        (iters, tup) = Util.listMapAndFold(iters,
+        (iters, tup) = List.mapFold(iters,
           traverseExpBidirIterator, tup);
       then
         (FOR_ITER_FARG(e, iters), tup);
@@ -2210,7 +2211,7 @@ algorithm
         equations = eql, result = result, resultInfo = resultInfo, comment = cmt, info = info), tup)
       equation
         (pattern, tup) = traverseExpBidir(pattern, tup);
-        (eql, tup) = Util.listMapAndFold(eql, traverseEquationItemBidir, tup);
+        (eql, tup) = List.mapFold(eql, traverseEquationItemBidir, tup);
         (result, tup) = traverseExpBidir(result, tup);
       then
         (CASE(pattern, pinfo, ldecls, eql, result, resultInfo, cmt, info), tup);
@@ -2218,7 +2219,7 @@ algorithm
     case (ELSE(localDecls = ldecls, equations = eql, result = result, resultInfo = resultInfo,
         comment = cmt, info = info), tup)
       equation
-        (eql, tup) = Util.listMapAndFold(eql, traverseEquationItemBidir, tup);
+        (eql, tup) = List.mapFold(eql, traverseEquationItemBidir, tup);
         (result, tup) = traverseExpBidir(result, tup);
       then
         (ELSE(ldecls, eql, result, resultInfo, cmt, info), tup);
@@ -2239,7 +2240,7 @@ protected function traverseEquationItemListBidir
 
   replaceable type Argument subtypeof Any;
 algorithm
-  (outEquationItems, outTuple) := Util.listMapAndFold(inEquationItems,
+  (outEquationItems, outTuple) := List.mapFold(inEquationItems,
     traverseEquationItemBidir, inTuple);
 end traverseEquationItemListBidir;
 
@@ -2304,7 +2305,7 @@ algorithm
       equation
         (e1, tup) = traverseExpBidir(e1, tup);
         (eqil1, tup) = traverseEquationItemListBidir(eqil1, tup);
-        (else_branch, tup) = Util.listMapAndFold(else_branch,
+        (else_branch, tup) = List.mapFold(else_branch,
           traverseEquationBidirElse, tup);
         (eqil2, tup) = traverseEquationItemListBidir(eqil2, tup);
       then
@@ -2326,7 +2327,7 @@ algorithm
 
     case (EQ_FOR(iterators = iters, forEquations = eqil1), tup)
       equation
-        (iters, tup) = Util.listMapAndFold(iters, 
+        (iters, tup) = List.mapFold(iters, 
           traverseExpBidirIterator, tup);
         (eqil1, tup) = traverseEquationItemListBidir(eqil1, tup);
       then
@@ -2337,7 +2338,7 @@ algorithm
       equation
         (e1, tup) = traverseExpBidir(e1, tup);
         (eqil1, tup) = traverseEquationItemListBidir(eqil1, tup);
-        (else_branch, tup) = Util.listMapAndFold(else_branch,
+        (else_branch, tup) = List.mapFold(else_branch,
           traverseEquationBidirElse, tup);
       then
         (EQ_WHEN_E(e1, eqil1, else_branch), tup);
@@ -2572,7 +2573,7 @@ algorithm
     case(TCOMPLEX(p1,lst1,oad1),TCOMPLEX(p2,lst2,oad2))
       equation
         true = ModUtil.pathEqual(p1,p2);
-        true = Util.isListEqualWithCompareFunc(lst1,lst2,typeSpecEqual);
+        true = List.isEqualOnTrue(lst1,lst2,typeSpecEqual);
         true = optArrayDimEqual(oad1,oad2);
       then
         true;
@@ -2591,7 +2592,7 @@ algorithm b:= matchcontinue(oad1,oad2)
     list<Subscript> ad1,ad2;
   case(SOME(ad1),SOME(ad2))
     equation
-    true = Util.isListEqualWithCompareFunc(ad1,ad2,subscriptEqual);
+    true = List.isEqualOnTrue(ad1,ad2,subscriptEqual);
     then true;
   case(NONE(),NONE()) then true;
   case(_,_) then false;
@@ -3186,7 +3187,7 @@ algorithm crefs := match(subs)
         crefs1 = getCrefsFromSubs(subs);
         crefs = getCrefFromExp(exp,true);
         crefs = listAppend(crefs,crefs1);
-        //crefs = Util.listUnionOnTrue(crefs,crefs1,crefEqual);
+        //crefs = List.unionOnTrue(crefs,crefs1,crefEqual);
         then
           crefs;
 end match;
@@ -3270,7 +3271,7 @@ algorithm
         res;
     case (CALL(functionArgs = farg),checkSubs)
       equation
-        res = getCrefFromFarg(farg,checkSubs) "res = Util.listMap(expl,get_cref_from_exp)" ;
+        res = getCrefFromFarg(farg,checkSubs) "res = List.map(expl,get_cref_from_exp)" ;
       then
         res;
     case (PARTEVALFUNCTION(functionArgs = farg),checkSubs)
@@ -3280,13 +3281,13 @@ algorithm
         res;
     case (ARRAY(arrayExp = expl),checkSubs)
       equation
-        lstres1 = Util.listMap1(expl, getCrefFromExp, checkSubs);
-        res = Util.listFlatten(lstres1);
+        lstres1 = List.map1(expl, getCrefFromExp, checkSubs);
+        res = List.flatten(lstres1);
       then
         res;
     case (MATRIX(matrix = expll),checkSubs)
       equation
-        res = Util.listFlatten(Util.listFlatten(Util.listListMap1(expll, getCrefFromExp,checkSubs)));
+        res = List.flatten(List.flatten(List.map1List(expll, getCrefFromExp,checkSubs)));
       then
         res;
     case (RANGE(start = e1,step = SOME(e3),stop = e2),checkSubs)
@@ -3309,8 +3310,8 @@ algorithm
 
     case (TUPLE(expressions = expl),checkSubs)
       equation
-        crefll = Util.listMap1(expl,getCrefFromExp,checkSubs);
-        res = Util.listFlatten(crefll);
+        crefll = List.map1(expl,getCrefFromExp,checkSubs);
+        res = List.flatten(crefll);
       then
         res;
 
@@ -3327,8 +3328,8 @@ algorithm
 
     case (LIST(expl),checkSubs)
       equation
-        crefll = Util.listMap1(expl,getCrefFromExp,checkSubs);
-        res = Util.listFlatten(crefll);
+        crefll = List.map1(expl,getCrefFromExp,checkSubs);
+        res = List.flatten(crefll);
       then
         res;
 
@@ -3357,19 +3358,19 @@ algorithm outComponentRefLst := match (inFunctionArgs,checkSubs)
       Exp exp;
     case (FUNCTIONARGS(args = expl,argNames = nargl),checkSubs)
       equation
-        l1 = Util.listMap1(expl, getCrefFromExp,checkSubs);
-        fl1 = Util.listFlatten(l1);
-        l2 = Util.listMap1(nargl, getCrefFromNarg,checkSubs);
-        fl2 = Util.listFlatten(l2);
+        l1 = List.map1(expl, getCrefFromExp,checkSubs);
+        fl1 = List.flatten(l1);
+        l2 = List.map1(nargl, getCrefFromNarg,checkSubs);
+        fl2 = List.flatten(l2);
         res = listAppend(fl1, fl2);
       then
         res;
     case (FOR_ITER_FARG(exp,iterators),checkSubs)
       equation
-        l1 = Util.listMapOption1(Util.listMap(iterators,iteratorRange),getCrefFromExp,checkSubs);
-        l2 = Util.listMapOption1(Util.listMap(iterators,iteratorGuard),getCrefFromExp,checkSubs);
-        fl1 = Util.listFlatten(l1);
-        fl2 = Util.listFlatten(l2);
+        l1 = List.map1Option(List.map(iterators,iteratorRange),getCrefFromExp,checkSubs);
+        l2 = List.map1Option(List.map(iterators,iteratorGuard),getCrefFromExp,checkSubs);
+        fl1 = List.flatten(l1);
+        fl2 = List.flatten(l2);
         fl3 = getCrefFromExp(exp,checkSubs);
         res = listAppend(fl1,listAppend(fl2, fl3));
       then
@@ -3821,7 +3822,7 @@ algorithm subscripts := match(cr)
   case(CREF_QUAL(_,subs2,child))
     equation
       subscripts = getSubsFromCref(child);
-      subscripts = Util.listUnionOnTrue(subscripts,subs2, subscriptEqual);
+      subscripts = List.unionOnTrue(subscripts,subs2, subscriptEqual);
     then
       subscripts;
   case(CREF_FULLYQUALIFIED(child))
@@ -4001,7 +4002,7 @@ algorithm
       list<Class> lst;
     case (PROGRAM(classes = lst))
       equation
-        CLASS(id,_,_,_,_,_,_) = Util.listLast(lst);
+        CLASS(id,_,_,_,_,_,_) = List.last(lst);
       then
         IDENT(id);
   end match;
@@ -4227,7 +4228,7 @@ algorithm
     case (FUNCTIONARGS(expl1,_),FUNCTIONARGS(expl2,_))
       equation
         // fails if not all are true
-        Util.listThreadMapAllValue(expl1,expl2,expEqual,true);
+        List.threadMapAllValue(expl1,expl2,expEqual,true);
       then 
         true;
     case(_,_) then false;
@@ -4328,7 +4329,7 @@ algorithm
           lst_1=findIteratorInExp(id,e_1);
           lst_2=findIteratorInExp(id,e_2);
           lst_3=findIteratorInElseIfExpBranch(id,rest);
-          lst=Util.listFlatten({lst_1,lst_2,lst_3});
+          lst=List.flatten({lst_1,lst_2,lst_3});
         then lst;
   end match;
 end findIteratorInElseIfExpBranch;
@@ -4574,7 +4575,7 @@ algorithm
           lst_2=findIteratorInExp(id,e_2);
           lst_3=findIteratorInExp(id,e_3);
           lst_4=findIteratorInElseIfExpBranch(id,elseIfBranch);
-          lst=Util.listFlatten({lst_1,lst_2,lst_3,lst_4});
+          lst=List.flatten({lst_1,lst_2,lst_3,lst_4});
         then lst;
       case (id,CALL(_,funcArgs))
         equation
@@ -4598,7 +4599,7 @@ algorithm
           lst_1=findIteratorInExp(id,e_1);
           lst_2=findIteratorInExpOpt(id,expOpt);
           lst_3=findIteratorInExp(id,e_2);
-          lst=Util.listFlatten({lst_1,lst_2,lst_3});
+          lst=List.flatten({lst_1,lst_2,lst_3});
         then lst;
       case (id, TUPLE(expLst))
         equation
@@ -4980,9 +4981,9 @@ algorithm
       equation
          ((_, lst)) = traverseExp(exp, onlyLiteralsInExp, {});
          // if list is empty (no crefs were added)
-         b = Util.isListEmpty(lst);
+         b = List.isEmpty(lst);
          // debugging:
-         // print("Crefs in annotations: (" +& Util.stringDelimitList(Util.listMap(inAnnotationMod, Dump.printExpStr), ", ") +& ")\n");
+         // print("Crefs in annotations: (" +& Util.stringDelimitList(List.map(inAnnotationMod, Dump.printExpStr), ", ") +& ")\n");
       then
         b;
   end match;
@@ -5055,7 +5056,7 @@ public function unqotePathIdents
   input Path inPath;
   output Path path;
 algorithm
-  path := stringListPath(Util.listMap(pathToStringList(inPath), System.unquoteIdentifier));
+  path := stringListPath(List.map(pathToStringList(inPath), System.unquoteIdentifier));
 end unqotePathIdents;
 
 public function unqualifyCref

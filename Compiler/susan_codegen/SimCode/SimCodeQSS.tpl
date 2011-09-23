@@ -692,7 +692,7 @@ end generateDiscUpdate;
 template generateIntegrators(Integer nStates)
 "Function to generate the integrator atomics for the DEVS structure"
 ::= 
-	(Util.listFill(0,nStates) |> i hasindex i0 =>
+	(fill(0,nStates) |> i hasindex i0 =>
   <<Simulator
     {
       Path = modelica/modelica_qss_integrator.h

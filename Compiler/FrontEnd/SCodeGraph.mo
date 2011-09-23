@@ -39,23 +39,22 @@ encapsulated package SCodeGraph
 
   The SCodeGraph representation is used to build a Modelica code graph."
 
-public 
-import Absyn;
-import SCode;
-import Pool;
-import Name;
-import Scope;
-import Reference;
-import Instance;
-import Element;
-import Visited;
-import Relation;
-import Edge;
-import Node;
+public import Absyn;
+public import SCode;
+public import Pool;
+public import Name;
+public import Scope;
+public import Reference;
+public import Instance;
+public import Element;
+public import Visited;
+public import Relation;
+public import Edge;
+public import Node;
 
-protected
-import SCodeDump;
-import System;
+protected import List;
+protected import SCodeDump;
+protected import System;
 
 public
 type Scope2Node  = .Relation.Relation<tuple<Integer,Integer>,Integer> "scopeId + valueConstructor(node) -> node";
@@ -1159,7 +1158,7 @@ algorithm
     case (g, iContext, inEls, o)
       equation
         print("Failed in SCodeGrap.analyzeElements for: " +&
-          Util.stringDelimitList(Util.listMap(inEls, SCodeDump.printElementStr), "\n") +& 
+          Util.stringDelimitList(List.map(inEls, SCodeDump.printElementStr), "\n") +& 
           "\n--------------------\n");
       then
         fail();

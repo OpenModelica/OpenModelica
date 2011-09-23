@@ -342,7 +342,7 @@ end simulationCppFile;
 template declareExtraResiduals(list<SimEqSystem> allEquations)
 ::=
   (allEquations |> eqn => (match eqn
-     case eq as SES_MIXED(__) then declareExtraResiduals(listFill(eq.cont,1))
+     case eq as SES_MIXED(__) then declareExtraResiduals(fill(eq.cont,1))
      case eq as SES_NONLINEAR(__) then
      <<
      void residualFunc<%index%>_cpp(int *n, double* xloc, double* res, int* iflag);
@@ -355,7 +355,7 @@ template makeExtraResiduals(list<SimEqSystem> allEquations, String name)
  "Generates functions in simulation file."
 ::=
   (allEquations |> eqn => (match eqn
-     case eq as SES_MIXED(__) then makeExtraResiduals(listFill(eq.cont,1),name)
+     case eq as SES_MIXED(__) then makeExtraResiduals(fill(eq.cont,1),name)
      case eq as SES_NONLINEAR(__) then
      let &varDecls = buffer "" /*BUFD*/
      let algs = (eq.eqs |> eq2 as SES_ALGORITHM(__) =>

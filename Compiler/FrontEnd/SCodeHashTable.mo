@@ -111,12 +111,13 @@ public import Absyn;
 public import SCode;
 public import SCodeEnv;
 
-protected import Dump;
-protected import Util;
-protected import System;
 protected import BaseHashTable;
-protected import SCodeLookup;
+protected import Dump;
+protected import List;
 protected import SCodeDump;
+protected import SCodeLookup;
+protected import System;
+protected import Util;
 
 public 
 uniontype Section
@@ -244,8 +245,8 @@ algorithm
     case (inHash)
       equation
         els = BaseHashTable.hashTableValueList(inHash);
-        els = Util.sort(els, compare);
-        program = Util.listMap(els, getHasValueElement);
+        els = List.sort(els, compare);
+        program = List.map(els, getHasValueElement);
       then
         program;
   end matchcontinue;
@@ -347,7 +348,7 @@ algorithm
     
     case (modifiers as _::_, parent, section)
       equation
-        element = Util.listLast(modifiers);
+        element = List.last(modifiers);
       then createSectionStructure({element}, parent, section);
   end matchcontinue; 
 end createSectionStructure;
@@ -388,7 +389,7 @@ algorithm
     case (modifiers, parentOpt, baseOpt, element)
       equation
         print("- SCodeHashTable.createElementStructure failed on: " +&
-          " modifiers:" +& Util.stringDelimitList(Util.listMap(modifiers, SCodeDump.shortElementStr), ", ") +&
+          " modifiers:" +& Util.stringDelimitList(List.map(modifiers, SCodeDump.shortElementStr), ", ") +&
           " element: " +& SCodeDump.shortElementStr(element) +& "\n"
         );
       then
@@ -836,7 +837,7 @@ algorithm
     case (inStructures)
       equation
         str = Util.stringDelimitList(
-                Util.listMap(inStructures, 
+                List.map(inStructures, 
                 printStructureStr), ", ");
       then
         str;
@@ -867,7 +868,7 @@ algorithm
         str = "extends[" +& SCodeDump.shortElementStr(el) +& 
                ", parent: " +& SCodeDump.shortElementStr(parent) +& 
                ", base: " +& SCodeDump.shortElementStr(base) +& 
-               ", modifiers:" +& Util.stringDelimitList(Util.listMap(modifiers, SCodeDump.shortElementStr), ", ") +&
+               ", modifiers:" +& Util.stringDelimitList(List.map(modifiers, SCodeDump.shortElementStr), ", ") +&
                "]";
       then
         str;
@@ -877,7 +878,7 @@ algorithm
         str = "derived[" +& SCodeDump.shortElementStr(el) +& 
                ", parent: " +& SCodeDump.shortElementStr(parent) +& 
                ", base: " +& SCodeDump.shortElementStr(base) +& 
-               ", modifiers:" +& Util.stringDelimitList(Util.listMap(modifiers, SCodeDump.shortElementStr), ", ") +&
+               ", modifiers:" +& Util.stringDelimitList(List.map(modifiers, SCodeDump.shortElementStr), ", ") +&
                "]";
       then
         str;
@@ -939,18 +940,18 @@ algorithm
       
     case (VALUE(seqNumbers = seqNumbers, structures = structures, optChildren = NONE()))
       equation
-        str = "[" +& Util.stringDelimitList(Util.listMap(seqNumbers, intString), ", ") +& 
+        str = "[" +& Util.stringDelimitList(List.map(seqNumbers, intString), ", ") +& 
               "], " +& printStructuresStr(structures) +& "\n";
       then
         str;
     
     case (VALUE(seqNumbers = seqNumbers,  structures = structures, optChildren = SOME(hashTable)))
       equation
-        str = "[" +& Util.stringDelimitList(Util.listMap(seqNumbers, intString), ", ") +&
+        str = "[" +& Util.stringDelimitList(List.map(seqNumbers, intString), ", ") +&
               "], " +& printStructuresStr(structures) +&
               ", \n\tKids: (\n\t" +& 
               Util.stringDelimitList(
-                Util.listMap(BaseHashTable.hashTableList(hashTable), 
+                List.map(BaseHashTable.hashTableList(hashTable), 
                 hashItemString), "\n\t") +& ")";
       then
         str;

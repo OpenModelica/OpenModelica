@@ -55,6 +55,7 @@ protected import VarTransform;
 protected import OptManager;
 protected import Dump;
 protected import Error;
+protected import List;
 protected import Lookup;
 protected import Inst;
 protected import InstSection;
@@ -403,7 +404,7 @@ protected
   list<Connect.OuterConnect> outerConnects;
 algorithm
   Connect.SETS(outerConnects = outerConnects) := inSets;
-  outerConnects := Util.listMap(outerConnects, changeInnerOuterInOuterConnect2);
+  outerConnects := List.map(outerConnects, changeInnerOuterInOuterConnect2);
   outSets := ConnectUtil.setOuterConnects(inSets, outerConnects);
 end changeInnerOuterInOuterConnect;
 
@@ -480,16 +481,16 @@ algorithm
       DAE.ComponentRef cr; VarTransform.VariableReplacements repl;
     case(DAE.VAR(componentRef = cr, innerOuter = Absyn.INNER_OUTER()),outerVars,repl)
       equation
-        outerCrs = Util.listMap(outerVars,DAEUtil.varCref);
-        ourOuterCrs = Util.listSelect1(outerCrs,cr,isInnerOuterMatch);
+        outerCrs = List.map(outerVars,DAEUtil.varCref);
+        ourOuterCrs = List.select1(outerCrs,isInnerOuterMatch,cr);
         cr = DAEUtil.nameInnerouterUniqueCref(cr);
-        repl = Util.listFold_2r(ourOuterCrs,VarTransform.addReplacement,repl,Expression.crefExp(cr));
+        repl = List.fold1r(ourOuterCrs,VarTransform.addReplacement,Expression.crefExp(cr),repl);
       then repl;
     case(DAE.VAR(componentRef = cr),outerVars,repl)
       equation
-        outerCrs = Util.listMap(outerVars,DAEUtil.varCref);
-        ourOuterCrs = Util.listSelect1(outerCrs,cr,isInnerOuterMatch);
-        repl = Util.listFold_2r(ourOuterCrs,VarTransform.addReplacement,repl,Expression.crefExp(cr));
+        outerCrs = List.map(outerVars,DAEUtil.varCref);
+        ourOuterCrs = List.select1(outerCrs,isInnerOuterMatch,cr);
+        repl = List.fold1r(ourOuterCrs,VarTransform.addReplacement,Expression.crefExp(cr),repl);
       then repl;
   end matchcontinue;
 end buildInnerOuterReplVar;
@@ -1028,7 +1029,7 @@ protected function checkMissingInnerDecl1
   input DAE.DAElist innerVarsDae;
   input DAE.DAElist outerVarsDae;
 algorithm
-  Util.listMap01(DAEUtil.daeElements(outerVarsDae),checkMissingInnerDecl2,DAEUtil.daeElements(innerVarsDae));
+  List.map1_0(DAEUtil.daeElements(outerVarsDae),checkMissingInnerDecl2,DAEUtil.daeElements(innerVarsDae));
 end checkMissingInnerDecl1;
 
 protected function checkMissingInnerDecl2
@@ -1044,21 +1045,21 @@ algorithm
 
     case(DAE.VAR(componentRef=cr),innerVars)
       equation
-        crs = Util.listMap(innerVars, DAEUtil.varCref);
-        {_} = Util.listSelect1(crs, cr, isInnerOuterMatch);
+        crs = List.map(innerVars, DAEUtil.varCref);
+        {_} = List.select1(crs, isInnerOuterMatch, cr);
       then ();
     case(DAE.VAR(componentRef=cr, innerOuter = io),innerVars)
       equation
         // ?? adrpo: NOT USED! TODO! FIXME! str2 = Dump.unparseInnerouterStr(io);
-        crs = Util.listMap(innerVars,DAEUtil.varCref);
-        {} = Util.listSelect1(crs, cr,isInnerOuterMatch);
+        crs = List.map(innerVars,DAEUtil.varCref);
+        {} = List.select1(crs,isInnerOuterMatch, cr);
         // ?? adrpo: NOT USED! TODO! FIXME! str = ComponentReference.printComponentRefStr(cr);
         failExceptForCheck();
       then ();
     case(DAE.VAR(componentRef=cr, innerOuter = io),innerVars)
       equation
-        crs = Util.listMap(innerVars,DAEUtil.varCref);
-        {} = Util.listSelect1(crs, cr, isInnerOuterMatch);
+        crs = List.map(innerVars,DAEUtil.varCref);
+        {} = List.select1(crs, isInnerOuterMatch, cr);
         str2 = Dump.unparseInnerouterStr(io);
         str = ComponentReference.printComponentRefStr(cr);
         Error.addMessage(Error.MISSING_INNER_PREFIX,{str,str2});
@@ -1722,7 +1723,7 @@ algorithm
         // Debug.fprintln("innerouter", "InnerOuter.addOuterPrefix adding: outer cref: " +& 
         //   ComponentReference.printComponentRefStr(inOuterComponentRef) +& " refers to inner cref: " +& 
         //   ComponentReference.printComponentRefStr(inInnerComponentRef) +& " to IH");
-        outerPrefixes = Util.listUnionElt(OUTER(inOuterComponentRef,inInnerComponentRef), outerPrefixes);
+        outerPrefixes = List.unionElt(OUTER(inOuterComponentRef,inInnerComponentRef), outerPrefixes);
       then
         TOP_INSTANCE(pathOpt, ht, outerPrefixes)::restIH;
 
@@ -1872,7 +1873,7 @@ algorithm
         strOuters = Util.if_(listLength(outers) == 0, 
                       "", 
                       " Referenced by 'outer' components: {" +&
-                      Util.stringDelimitList(Util.listMap(outers, ComponentReference.printComponentRefStr), ", ") +& "}");
+                      Util.stringDelimitList(List.map(outers, ComponentReference.printComponentRefStr), ", ") +& "}");
         str = Absyn.pathString(typePath) +& " " +& fullName +& "; defined in scope: " +& scope +& "." +& strOuters;
       then 
         str;
@@ -1905,7 +1906,7 @@ algorithm
     case((tih as TOP_INSTANCE(pathOpt, ht, outerPrefixes))::restIH, inEnv)
       equation
         inners = getInnersFromInstHierarchyHashTable(ht);
-        str = Util.stringDelimitList(Util.listMap(inners, printInnerDefStr), "\n    ");
+        str = Util.stringDelimitList(List.map(inners, printInnerDefStr), "\n    ");
       then
         str;
   end match;
@@ -1917,7 +1918,7 @@ public function getInnersFromInstHierarchyHashTable
   input InstHierarchyHashTable t;
   output list<InstInner> inners;
 algorithm
-  inners := Util.listMap(hashTableList(t),getValue);
+  inners := List.map(hashTableList(t),getValue);
 end getInnersFromInstHierarchyHashTable;
 
 public function getValue
@@ -1954,7 +1955,7 @@ public function dumpInstHierarchyHashTable ""
   input InstHierarchyHashTable t;
 algorithm
   print("InstHierarchyHashTable:\n");
-  print(Util.stringDelimitList(Util.listMap(hashTableList(t),dumpTuple),"\n"));
+  print(Util.stringDelimitList(List.map(hashTableList(t),dumpTuple),"\n"));
   print("\n");
 end dumpInstHierarchyHashTable;
 
@@ -2233,14 +2234,14 @@ public function hashTableValueList "return the Value entries as a list of Values
   input InstHierarchyHashTable hashTable;
   output list<Value> valLst;
 algorithm
-   valLst := Util.listMap(hashTableList(hashTable),Util.tuple22);
+   valLst := List.map(hashTableList(hashTable),Util.tuple22);
 end hashTableValueList;
 
 public function hashTableKeyList "return the Key entries as a list of Keys"
   input InstHierarchyHashTable hashTable;
   output list<Key> valLst;
 algorithm
-   valLst := Util.listMap(hashTableList(hashTable),Util.tuple21);
+   valLst := List.map(hashTableList(hashTable),Util.tuple21);
 end hashTableKeyList;
 
 public function hashTableList "returns the entries in the hashTable as a list of tuple<Key,Value>"

@@ -54,6 +54,7 @@ protected import Error;
 protected import Expression;
 protected import ExpressionDump;
 protected import IOStream;
+protected import List;
 protected import SCode;
 protected import Util;
 
@@ -121,7 +122,7 @@ algorithm
       equation
         fs = Absyn.pathString(fcn);
         argstr = Util.stringDelimitList(
-          Util.listMap3(args, ExpressionDump.printExp2Str, stringDelimiter,opcreffunc, SOME(printCallFunction2StrDIVISION)), ",");
+          List.map3(args, ExpressionDump.printExp2Str, stringDelimiter,opcreffunc, SOME(printCallFunction2StrDIVISION)), ",");
         s = stringAppend(fs, "(");
         s_1 = stringAppend(s, argstr);
         s_2 = stringAppend(s_1, ")");
@@ -355,11 +356,11 @@ algorithm
       String str_r_f,str_r_1,str_t_f,str_t_1,str,sr,st;
     case (residualeqns::r,tearingvars::t)
       equation
-        str_r = Util.listMap(residualeqns, intString);
+        str_r = List.map(residualeqns, intString);
         str_r_f = Util.stringDelimitList(str_r, ", ");
         str_r_1 = stringAppend(str_r_f, "\n");
         sr = stringAppend("ResidualEqns: ",str_r_1);
-        str_t = Util.listMap(tearingvars, intString);
+        str_t = List.map(tearingvars, intString);
         str_t_f = Util.stringDelimitList(str_t, ", ");
         str_t_1 = stringAppend(str_t_f, "\n");
         st = stringAppend("TearingVars: ",str_t_1);
@@ -453,7 +454,7 @@ algorithm
       equation
         dumpBackendDAEEqnList2(res,printExpTree);
         print("ARRAY_EQUATION: ");
-        strList = Util.listMap(expList,ExpressionDump.printExpStr);
+        strList = List.map(expList,ExpressionDump.printExpStr);
         str = Util.stringDelimitList(strList," | ");
         print(str);
         print("\n");
@@ -463,11 +464,11 @@ algorithm
       equation
         dumpBackendDAEEqnList2(res,printExpTree);
         print("ALGORITHM: ");
-        strList = Util.listMap(expList,ExpressionDump.printExpStr);
+        strList = List.map(expList,ExpressionDump.printExpStr);
         str = Util.stringDelimitList(strList," | ");
         print(str);
         print("\n");
-        strList = Util.listMap(expList2,ExpressionDump.printExpStr);
+        strList = List.map(expList2,ExpressionDump.printExpStr);
         str = Util.stringDelimitList(strList," | ");
         print(str);
         print("\n");
@@ -527,9 +528,9 @@ algorithm
   list<BackendDAE.Value> eq,wc;
   case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.RELATION(index=index_),occurEquLst = eq,occurWhenLst = wc)
   equation
-  eq_s_list = Util.listMap(eq, intString);
+  eq_s_list = List.map(eq, intString);
   eq_s = Util.stringDelimitList(eq_s_list, ",");
-  wc_s_list = Util.listMap(wc, intString);
+  wc_s_list = List.map(wc, intString);
   wc_s = Util.stringDelimitList(wc_s_list, ",");
   str = ExpressionDump.printExpStr(e);
   str_index=intString(index_);
@@ -556,7 +557,7 @@ algorithm
     case BackendDAE.WHEN_CLAUSE(condition = c,reinitStmtLst = reinitStmtLst,elseClause = SOME(i))
      equation
       sc = ExpressionDump.printExpStr(c);
-      s1 = Util.stringDelimitList(Util.listMap(reinitStmtLst,dumpWhenOperatorStr),"  ");              
+      s1 = Util.stringDelimitList(List.map(reinitStmtLst,dumpWhenOperatorStr),"  ");              
       si = intString(i);
       str = stringAppendList({" whenclause = ",sc," then ",s1," else whenclause",si});
      then
@@ -564,7 +565,7 @@ algorithm
     case BackendDAE.WHEN_CLAUSE(condition = c,reinitStmtLst = reinitStmtLst,elseClause = NONE())
      equation
       sc = ExpressionDump.printExpStr(c);
-      s1 = Util.stringDelimitList(Util.listMap(reinitStmtLst,dumpWhenOperatorStr),"  ");              
+      s1 = Util.stringDelimitList(List.map(reinitStmtLst,dumpWhenOperatorStr),"  ");              
       str = stringAppendList({" whenclause = ",sc," then ",s1});
      then
       str;
@@ -694,13 +695,13 @@ algorithm
         dumpEqns(ieqnsl);
         print("Zero Crossings :\n");
         print("===============\n");
-        ss = Util.listMap(zc, dumpZcStr);
+        ss = List.map(zc, dumpZcStr);
         s = Util.stringDelimitList(ss, ",\n");
         print(s);
         print("\n");
         print("When Clauses :\n");
         print("===============\n");
-        ss = Util.listMap(wc, dumpWcStr);
+        ss = List.map(wc, dumpWcStr);
         s = Util.stringDelimitList(ss, ",\n");
         print(s);
         print("\n");
@@ -948,7 +949,7 @@ algorithm
     case (BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl))
       equation
         indx_str = intString(indx);
-        var_str=Util.stringDelimitList(Util.listMap(expl,ExpressionDump.printExpStr),", ");
+        var_str=Util.stringDelimitList(List.map(expl,ExpressionDump.printExpStr),", ");
         res = stringAppendList({"Array eqn no: ",indx_str," for variables: ",var_str /*,"\n"*/});
       then
         res;
@@ -986,8 +987,8 @@ algorithm
     case (BackendDAE.ALGORITHM(index = i, in_ = inps, out = outs))
       equation
         is = intString(i);
-        intsStr = Util.stringDelimitList(Util.listMap(inps, ExpressionDump.printExpStr), ", ");
-        outsStr = Util.stringDelimitList(Util.listMap(outs, ExpressionDump.printExpStr), ", ");
+        intsStr = Util.stringDelimitList(List.map(inps, ExpressionDump.printExpStr), ", ");
+        outsStr = Util.stringDelimitList(List.map(outs, ExpressionDump.printExpStr), ", ");
         res = stringAppendList({"Algorithm no: ", is, " for inputs: (", 
                                       intsStr, ") => outputs: (", 
                                       outsStr, ")" /*,"\n"*/});
@@ -1017,7 +1018,7 @@ algorithm
         print("\n  extends ExternalObject;");
         print("\n origin: ");
         paths = DAEUtil.getElementSourceTypes(source);
-        paths_lst = Util.listMap(paths, Absyn.pathString);
+        paths_lst = List.map(paths, Absyn.pathString);
         path_str = Util.stringDelimitList(paths_lst, ", ");
         print(path_str +& "\n");
         print("end ");print(Absyn.pathString(path));
@@ -1087,7 +1088,7 @@ algorithm
         dumpKind(kind);
         dumpAttributes(dae_var_attr);
         paths = DAEUtil.getElementSourceTypes(source);
-        paths_lst = Util.listMap(paths, Absyn.pathString);
+        paths_lst = List.map(paths, Absyn.pathString);
         path_str = Util.stringDelimitList(paths_lst, ", ");
         comment_str = DAEDump.dumpCommentOptionStr(comment);
         print(" = ");
@@ -1128,7 +1129,7 @@ algorithm
         print(" ");
         str = ComponentReference.printComponentRefStr(cr);
         paths = DAEUtil.getElementSourceTypes(source);
-        path_strs = Util.listMap(paths, Absyn.pathString);
+        path_strs = List.map(paths, Absyn.pathString);
         path_str = Util.stringDelimitList(path_strs, ", ");
         comment_str = DAEDump.dumpCommentOptionStr(comment);
         print(str);
@@ -1546,9 +1547,9 @@ algorithm
     case(i,n,m,mT,ass1,ass2)
       equation
         eqns = BackendDAETransform.reachableNodes(i, m, mT, ass1, ass2);
-        llst = Util.listMap(eqns,Util.listCreate);
-        llst = Util.listMap1(llst,Util.listCons,i);
-        slst = Util.listMap(llst,intListStr);
+        llst = List.map(eqns,List.create);
+        llst = List.map1(llst, List.consr, i);
+        slst = List.map(llst,intListStr);
         str = Util.stringDelimitList(slst,",");
         str = stringAppendList({"{",str,"}"});
         strLst = dumpComponentsGraphStr2(i+1,n,m,mT,ass1,ass2);
@@ -1566,7 +1567,7 @@ public function dumpList "function: dumpList
   list<String> s;
   String sl;
 algorithm
-  s := Util.listMap(l, intString);
+  s := List.map(l, intString);
   sl := Util.stringDelimitList(s, ", ");
   print(str);
   print(sl);
@@ -1605,7 +1606,7 @@ algorithm
     case ((l :: lst),i)
       equation
         print("{");
-        ls = Util.listMap(l, intString);
+        ls = List.map(l, intString);
         s = Util.stringDelimitList(ls, ", ");
         print(s);
         print("}\n");
@@ -1620,7 +1621,7 @@ protected function intListStr "Takes a list of Integers and produces a string  o
   input list<Integer> lst;
   output String res;
 algorithm
-  res := Util.stringDelimitList(Util.listMap(lst,intString),",");
+  res := Util.stringDelimitList(List.map(lst,intString),",");
   res := stringAppendList({"{",res,"}"});
 end intListStr;
 
@@ -1769,7 +1770,7 @@ algorithm
     case ((l :: lst),i,v2,vars)
       equation
         print("{");
-        ls = Util.listMap(l, intString);
+        ls = List.map(l, intString);
         s = Util.stringDelimitList(ls, ", ");
         print(s);
         print("} ");
@@ -1839,7 +1840,7 @@ public function dumpComponents
 algorithm
   print("StrongComponents\n");
   print("=======\n");  
-  Util.listMap0(inComps,dumpComponent);
+  List.map_0(inComps,dumpComponent);
 end dumpComponents;
 
 public function dumpComponent
@@ -1865,11 +1866,11 @@ algorithm
     case BackendDAE.EQUATIONSYSTEM(eqns=ilst,vars=vlst,jacType=jacType)
       equation
         print("{");
-        ls = Util.listMap(ilst, intString);
+        ls = List.map(ilst, intString);
         s = Util.stringDelimitList(ls, ", ");
         print(s);
         print(":");
-        ls = Util.listMap(vlst, intString);
+        ls = List.map(vlst, intString);
         s = Util.stringDelimitList(ls, ", ");
         print(s);
         print("} Size: ");
@@ -1882,11 +1883,11 @@ algorithm
     case BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp,disc_eqns=ilst,disc_vars=vlst)
       equation
         print("{{");
-        ls = Util.listMap(ilst, intString);
+        ls = List.map(ilst, intString);
         s = Util.stringDelimitList(ls, ", ");
         print(s);
         print(":");
-        ls = Util.listMap(vlst, intString);
+        ls = List.map(vlst, intString);
         s = Util.stringDelimitList(ls, ", ");
         print(s);
         print("},\n");
@@ -1901,7 +1902,7 @@ algorithm
         print("Array ");
         print(intString(i));
         print(" {");
-        ls = Util.listMap(vlst, intString);
+        ls = List.map(vlst, intString);
         s = Util.stringDelimitList(ls, ", ");
         print(s);
         print("}\n");
@@ -1912,7 +1913,7 @@ algorithm
         print("Algorithm ");
         print(intString(i));
         print(" {");
-        ls = Util.listMap(vlst, intString);
+        ls = List.map(vlst, intString);
         s = Util.stringDelimitList(ls, ", ");
         print(s);
         print("}\n");

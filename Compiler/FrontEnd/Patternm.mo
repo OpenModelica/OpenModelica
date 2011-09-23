@@ -64,6 +64,7 @@ protected import ExpressionDump;
 protected import Error;
 protected import Inst;
 protected import InstSection;
+protected import List;
 protected import Lookup;
 protected import MetaUtil;
 protected import RTOpts;
@@ -230,7 +231,7 @@ algorithm
 
     case (cache,env,Absyn.ARRAY(exps),ty,info)
       equation
-        lhs = Util.listFold(listReverse(exps), Absyn.makeCons, Absyn.ARRAY({}));
+        lhs = List.fold(listReverse(exps), Absyn.makeCons, Absyn.ARRAY({}));
         (cache,pattern) = elabPattern(cache,env,lhs,ty,info);
       then (cache,pattern);
 
@@ -253,7 +254,7 @@ algorithm
 
     case (cache,env,Absyn.TUPLE(exps),(DAE.T_METATUPLE(tys),_),info)
       equation
-        tys = Util.listMap(tys, Types.boxIfUnboxedType);
+        tys = List.map(tys, Types.boxIfUnboxedType);
         (cache,patterns) = elabPatternTuple(cache,env,exps,tys,info,lhs);
       then (cache,DAE.PAT_META_TUPLE(patterns));
 
@@ -370,13 +371,13 @@ algorithm
         (cache,t as (DAE.T_METARECORD(utPath=utPath1,index=index,fields=fieldVarList,knownSingleton=knownSingleton),SOME(fqPath)),_) = Lookup.lookupType(cache, env, callPath, NONE());
         validUniontype(utPath1,utPath2,info,lhs);
 
-        fieldTypeList = Util.listMap(fieldVarList, Types.getVarType);
-        fieldNameList = Util.listMap(fieldVarList, Types.getVarName);
+        fieldTypeList = List.map(fieldVarList, Types.getVarType);
+        fieldNameList = List.map(fieldVarList, Types.getVarName);
         
         (funcArgs,namedArgList) = checkForAllWildCall(funcArgs,namedArgList,listLength(fieldNameList));
 
         numPosArgs = listLength(funcArgs);
-        (_,fieldNamesNamed) = Util.listSplit(fieldNameList, numPosArgs);
+        (_,fieldNamesNamed) = List.split(fieldNameList, numPosArgs);
         checkMissingArgs(fqPath,numPosArgs,fieldNamesNamed,listLength(namedArgList),info);
         (funcArgsNamedFixed,invalidArgs) = generatePositionalArgs(fieldNamesNamed,namedArgList,{});
         funcArgs = listAppend(funcArgs,funcArgsNamedFixed);
@@ -388,21 +389,21 @@ algorithm
         (cache,t as (DAE.T_FUNCTION(funcResultType = (DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),complexVarLst=fieldVarList),_)),SOME(fqPath)),_) = Lookup.lookupType(cache, env, callPath, NONE());
         true = Absyn.pathEqual(fqPath,utPath2);
 
-        fieldTypeList = Util.listMap(fieldVarList, Types.getVarType);
-        fieldNameList = Util.listMap(fieldVarList, Types.getVarName);
+        fieldTypeList = List.map(fieldVarList, Types.getVarType);
+        fieldNameList = List.map(fieldVarList, Types.getVarName);
         
         (funcArgs,namedArgList) = checkForAllWildCall(funcArgs,namedArgList,listLength(fieldNameList));
         
         numPosArgs = listLength(funcArgs);
-        (_,fieldNamesNamed) = Util.listSplit(fieldNameList, numPosArgs);
+        (_,fieldNamesNamed) = List.split(fieldNameList, numPosArgs);
         checkMissingArgs(fqPath,numPosArgs,fieldNamesNamed,listLength(namedArgList),info);
 
         (funcArgsNamedFixed,invalidArgs) = generatePositionalArgs(fieldNamesNamed,namedArgList,{});
         funcArgs = listAppend(funcArgs,funcArgsNamedFixed);
         Util.SUCCESS() = checkInvalidPatternNamedArgs(invalidArgs,Util.SUCCESS(),info);
         (cache,patterns) = elabPatternTuple(cache,env,funcArgs,fieldTypeList,info,lhs);
-        namedPatterns = Util.listThread3Tuple(patterns, fieldNameList, Util.listMap(fieldTypeList,Types.elabType));
-        namedPatterns = Util.listFilter(namedPatterns, filterEmptyPattern);
+        namedPatterns = List.thread3Tuple(patterns, fieldNameList, List.map(fieldTypeList,Types.elabType));
+        namedPatterns = List.filter(namedPatterns, filterEmptyPattern);
       then (cache,DAE.PAT_CALL_NAMED(fqPath,namedPatterns));
     case (cache,env,callPath,_,_,info,lhs)
       equation
@@ -451,7 +452,7 @@ protected function checkForAllWildCall "Converts a call REC(__) to REC(_,_,_,_)"
 algorithm
   (outArgs,outNamed) := match (args,named,numFields)
     case ({Absyn.CREF(Absyn.ALLWILD())},{},numFields)
-      then (Util.listFill(Absyn.CREF(Absyn.WILD()),numFields),{});
+      then (List.fill(Absyn.CREF(Absyn.WILD()),numFields),{});
     else (args,named);
   end match;
 end checkForAllWildCall;
@@ -540,26 +541,26 @@ algorithm
       then "SOME(" +& str +& ")";
     case DAE.PAT_META_TUPLE(pats)
       equation
-        str = Util.stringDelimitList(Util.listMap(pats,patternStr),",");
+        str = Util.stringDelimitList(List.map(pats,patternStr),",");
       then "(" +& str +& ")";
         
     case DAE.PAT_CALL_TUPLE(pats)
       equation
-        str = Util.stringDelimitList(Util.listMap(pats,patternStr),",");
+        str = Util.stringDelimitList(List.map(pats,patternStr),",");
       then "(" +& str +& ")";
     
     case DAE.PAT_CALL(name=name, patterns=pats)
       equation
         id = Absyn.pathString(name);
-        str = Util.stringDelimitList(Util.listMap(pats,patternStr),",");
+        str = Util.stringDelimitList(List.map(pats,patternStr),",");
       then stringAppendList({id,"(",str,")"});
 
     case DAE.PAT_CALL_NAMED(name=name, patterns=namedpats)
       equation
         id = Absyn.pathString(name);
-        fields = Util.listMap(namedpats, Util.tuple32);
-        patsStr = Util.listMap1r(Util.listMapMap(namedpats, Util.tuple31, patternStr), stringAppend, "=");
-        str = Util.stringDelimitList(Util.listThreadMap(fields, patsStr, stringAppend), ",");
+        fields = List.map(namedpats, Util.tuple32);
+        patsStr = List.map1r(List.mapMap(namedpats, Util.tuple31, patternStr), stringAppend, "=");
+        str = Util.stringDelimitList(List.threadMap(fields, patsStr, stringAppend), ",");
       then stringAppendList({id,"(",str,")"});
 
     case DAE.PAT_CONS(head,tail) then patternStr(head) +& "::" +& patternStr(tail);
@@ -616,7 +617,7 @@ algorithm
         (cache,SOME((env,DAE.DAE(matchDecls)))) = addLocalDecls(cache,env,decls,Env.matchScopeName,impl,info);
         inExps = MetaUtil.extractListFromTuple(inExp, 0);
         (cache,elabExps,elabProps,st) = Static.elabExpList(cache,env,inExps,impl,st,performVectorization,pre,info);
-        tys = Util.listMap(elabProps, Types.getPropType);
+        tys = List.map(elabProps, Types.getPropType);
         (cache,elabCases,resType,st) = elabMatchCases(cache,env,cases,tys,impl,st,performVectorization,pre,info);
         prop = DAE.PROP(resType,DAE.C_VAR());
         et = Types.elabType(resType);
@@ -667,7 +668,7 @@ algorithm
     case (_,cases,_)
       equation
         true = listLength(cases) > 2;
-        patternMatrix = Util.transposeList(Util.listMap(cases,getCasePatterns));
+        patternMatrix = List.transposeList(List.map(cases,getCasePatterns));
         (optPatternMatrix,numNonEmptyColumns) = removeWildPatternColumnsFromMatrix(patternMatrix,{},0);
         tpl = findPatternToConvertToSwitch(optPatternMatrix,0,numNonEmptyColumns,info);
         (_,ty,_) = tpl;
@@ -693,7 +694,7 @@ algorithm
     case ({},acc,numAcc) then (listReverse(acc),numAcc);
     case (pats::patternMatrix,acc,numAcc)
       equation
-        alwaysMatch = allPatternsAlwaysMatch(Util.listStripLast(pats));
+        alwaysMatch = allPatternsAlwaysMatch(List.stripLast(pats));
         optPats = Util.if_(alwaysMatch,NONE(),SOME(pats));
         numAcc = Util.if_(alwaysMatch,numAcc,numAcc+1);
         (acc,numAcc) = removeWildPatternColumnsFromMatrix(patternMatrix,optPats::acc,numAcc);
@@ -777,8 +778,8 @@ algorithm
   outMod := matchcontinue (ixs,mod)
     case (ixs,mod)
       equation
-        ixs = Util.listMap1(ixs, intMod, mod);
-        ixs = Util.sort(ixs, intLt);
+        ixs = List.map1(ixs, intMod, mod);
+        ixs = List.sort(ixs, intLt);
         (_,{}) = Util.splitUniqueOnBool(ixs, intEq);
         // This mod was high enough that all values were distinct
       then mod;
@@ -801,10 +802,10 @@ algorithm
       list<list<DAE.Pattern>> patternMatrix;
     case (inputs,cases)
       equation
-        patternMatrix = Util.transposeList(Util.listMap(cases,getCasePatterns));
+        patternMatrix = List.transposeList(List.map(cases,getCasePatterns));
         (true,outInputs,patternMatrix) = filterUnusedPatterns2(inputs,patternMatrix,false,{},{});
-        patternMatrix = Util.transposeList(patternMatrix);
-        cases = Util.listThreadMap(cases,patternMatrix,setCasePatterns);
+        patternMatrix = List.transposeList(patternMatrix);
+        cases = List.threadMap(cases,patternMatrix,setCasePatterns);
       then (outInputs,cases);
     else (inputs,cases);
   end matchcontinue;
@@ -997,8 +998,8 @@ algorithm
       list<DAE.Pattern> patterns;
     case ((DAE.PAT_CALL_NAMED(name, namedPatterns),a))
       equation
-        namedPatterns = Util.listFilter(namedPatterns, filterEmptyPattern);
-        pat = Util.if_(Util.isListEmpty(namedPatterns), DAE.PAT_WILD(), DAE.PAT_CALL_NAMED(name, namedPatterns));
+        namedPatterns = List.filter(namedPatterns, filterEmptyPattern);
+        pat = Util.if_(List.isEmpty(namedPatterns), DAE.PAT_WILD(), DAE.PAT_CALL_NAMED(name, namedPatterns));
       then ((pat,a));
     case ((pat as DAE.PAT_CALL_TUPLE(patterns),a))
       equation
@@ -1101,10 +1102,10 @@ algorithm
       then outTpl;
     case ((DAE.PAT_CALL_NAMED(name,namedpats),a),func)
       equation
-        pats = Util.listMap(namedpats,Util.tuple31);
-        fields = Util.listMap(namedpats,Util.tuple32);
-        types = Util.listMap(namedpats,Util.tuple33);
-        namedpats = Util.listThread3Tuple(pats, fields, types);
+        pats = List.map(namedpats,Util.tuple31);
+        fields = List.map(namedpats,Util.tuple32);
+        types = List.map(namedpats,Util.tuple33);
+        namedpats = List.thread3Tuple(pats, fields, types);
         pat = DAE.PAT_CALL_NAMED(name,namedpats);
         outTpl = func((pat,a));
       then outTpl;
@@ -1524,7 +1525,7 @@ algorithm
     case (cache,env,case_::rest,tys,impl,st,performVectorization,pre,accExps,accTypes)
       equation
         (cache,elabCase,optExp,optType,st) = elabMatchCase(cache,env,case_,tys,impl,st,performVectorization,pre);
-        (cache,elabCases,accExps,accTypes,st) = elabMatchCases2(cache,env,rest,tys,impl,st,performVectorization,pre,Util.listConsOption(optExp,accExps),Util.listConsOption(optType,accTypes));
+        (cache,elabCases,accExps,accTypes,st) = elabMatchCases2(cache,env,rest,tys,impl,st,performVectorization,pre,List.consOption(optExp,accExps),List.consOption(optType,accTypes));
       then (cache,elabCase::elabCases,accExps,accTypes,st);
   end match;
 end elabMatchCases2;
@@ -1575,7 +1576,7 @@ algorithm
       equation
         // Needs to be same length as any other pattern for the simplification algorithms, etc to work properly
         len = listLength(tys);
-        patterns = Util.listFill(Absyn.CREF(Absyn.WILD()),listLength(tys));
+        patterns = List.fill(Absyn.CREF(Absyn.WILD()),listLength(tys));
         pattern = Util.if_(len == 1, Absyn.CREF(Absyn.WILD()), Absyn.TUPLE(patterns));
         (cache,elabCase,elabResult,resType,st) = elabMatchCase(cache,env,Absyn.CASE(pattern,info,decls,eq1,result,resultInfo,NONE(),info),tys,impl,st,performVectorization,pre);
       then (cache,elabCase,elabResult,resType,st);
@@ -1648,14 +1649,14 @@ algorithm
     case (true,b,e,i) then (b,e,i);
     case (_,b,elabCr2 as DAE.CREF(ty=_),_)
       equation
-        (DAE.STMT_ASSIGN(exp1=elabCr1,exp=e,source=DAE.SOURCE(info=i)),b) = Util.listSplitLast(b);
+        (DAE.STMT_ASSIGN(exp1=elabCr1,exp=e,source=DAE.SOURCE(info=i)),b) = List.splitLast(b);
         true = Expression.expEqual(elabCr1,elabCr2);
         (b,e,i) = elabResultExp2(false,b,e,i);
       then (b,e,i);
     case (_,b,DAE.TUPLE(elabCrs2),_)
       equation
-        (DAE.STMT_TUPLE_ASSIGN(expExpLst=elabCrs1,exp=e,source=DAE.SOURCE(info=i)),b) = Util.listSplitLast(b);
-        Util.listThreadMapAllValue(elabCrs1, elabCrs2, Expression.expEqual, true);
+        (DAE.STMT_TUPLE_ASSIGN(expExpLst=elabCrs1,exp=e,source=DAE.SOURCE(info=i)),b) = List.splitLast(b);
+        List.threadMapAllValue(elabCrs1, elabCrs2, Expression.expEqual, true);
         (b,e,i) = elabResultExp2(false,b,e,i);
       then (b,e,i);
     else (body,elabExp,info);
@@ -1676,7 +1677,7 @@ algorithm
     case (cases,{},{},info) then (cases,(DAE.T_NORETCALL(),NONE()));
     case (cases,exps,tys,info)
       equation
-        ty = Util.listReduce(tys, Types.superType);
+        ty = List.reduce(tys, Types.superType);
         ty = Types.superType(ty, ty);
         ty = Types.unboxedType(ty);
         ty = Types.makeRegularTupleFromMetaTupleOnTrue(Types.allTuple(tys),ty);
@@ -1685,8 +1686,8 @@ algorithm
       then (cases,ty);
     else
       equation
-        tys = Util.listUnionOnTrue(tys, {}, Types.equivtypes);
-        str = stringAppendList(Util.listMap1r(Util.listMap(tys, Types.unparseType), stringAppend, "\n  "));
+        tys = List.unionOnTrue(tys, {}, Types.equivtypes);
+        str = stringAppendList(List.map1r(List.map(tys, Types.unparseType), stringAppend, "\n  "));
         Error.addSourceMessage(Error.META_MATCHEXP_RESULT_TYPES, {str}, info);
       then fail();
   end matchcontinue;
@@ -1795,7 +1796,7 @@ algorithm
         ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());
 
         // Filter out the components (just to be sure)
-        true = Util.listFold(Util.listMap1(ld2, SCode.isComponentWithDirection, Absyn.BIDIR()), boolAnd, true);
+        true = List.fold(List.map1(ld2, SCode.isComponentWithDirection, Absyn.BIDIR()), boolAnd, true);
 
         // Transform the element list into a list of element,NOMOD
         ld_mod = Inst.addNomod(ld2);
@@ -1813,8 +1814,8 @@ algorithm
     case (cache,env,ld,scopeName,impl,info)
       equation
         ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());
-        (ld2 as _::_) = Util.listFilterBoolean(ld2, SCode.isNotComponent);
-        str = Util.stringDelimitList(Util.listMap(ld2, SCodeDump.unparseElementStr),", ");
+        (ld2 as _::_) = List.filterOnTrue(ld2, SCode.isNotComponent);
+        str = Util.stringDelimitList(List.map(ld2, SCodeDump.unparseElementStr),", ");
         Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT,{str},info);
       then (cache,NONE());
       
@@ -1826,10 +1827,10 @@ algorithm
         ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());
 
         // Filter out the components (just to be sure)
-        ld3 = Util.listSelect1(ld2, Absyn.INPUT(), SCode.isComponentWithDirection);
-        ld4 = Util.listSelect1(ld2, Absyn.OUTPUT(), SCode.isComponentWithDirection);
+        ld3 = List.select1(ld2, SCode.isComponentWithDirection, Absyn.INPUT());
+        ld4 = List.select1(ld2, SCode.isComponentWithDirection, Absyn.OUTPUT());
         (ld2 as _::_) = listAppend(ld3,ld4); // I don't care that this is slow; it's just for error message generation
-        str = Util.stringDelimitList(Util.listMap(ld2, SCodeDump.unparseElementStr),", ");
+        str = Util.stringDelimitList(List.map(ld2, SCodeDump.unparseElementStr),", ");
         Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT,{str},info);
       then (cache,NONE());
       

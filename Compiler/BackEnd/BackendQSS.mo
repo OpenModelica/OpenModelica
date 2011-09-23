@@ -53,6 +53,7 @@ public import BackendDump;
 protected import BackendVariable;
 protected import BackendDAETransform;
 protected import ComponentReference;
+protected import List;
 
 public
 uniontype DevsStruct "DEVS structure"
@@ -164,18 +165,18 @@ algorithm
         
         // Provide the equations in the When-Blocks.
         // Note: Currently we are having one when-block for each when-clause. But in the future we "ll group them.
-        whenEq_flat = Util.listMap(whenEqInd, createListFromElement);
+        whenEq_flat = List.map(whenEqInd, createListFromElement);
         
         // -------------------------------------------------------------------------
         // STEP 2      
         // MAP STATE EQUATIONS BACK TO BLT BLOCKS        
         
-        stateEq_bltX = Util.listMap2(stateEq_flat, mapEquationsInBLTBlocks_tail, blt_states, {}) "Map state equations back in BLT blocks";
-        whenEq_bltX = Util.listMap2(whenEq_flat, mapEquationsInBLTBlocks_tail, blt_states, {}) "Map when equations back in BLT blocks";
-        stateEq_blt = Util.listListMap(stateEq_bltX,getEqnIndxFromComp);
+        stateEq_bltX = List.map2(stateEq_flat, mapEquationsInBLTBlocks_tail, blt_states, {}) "Map state equations back in BLT blocks";
+        whenEq_bltX = List.map2(whenEq_flat, mapEquationsInBLTBlocks_tail, blt_states, {}) "Map when equations back in BLT blocks";
+        stateEq_blt = List.mapList(stateEq_bltX,getEqnIndxFromComp);
         
         // More info, variables and parameters
-        eqs = Util.listMap3(stateEq_bltX, generateEqFromBlt,dlow,ass1,ass2);
+        eqs = List.map3(stateEq_bltX, generateEqFromBlt,dlow,ass1,ass2);
         nEquations = arrayLength(m);
         nStatic = listLength(stateEq_blt);
         nIntegr = listLength(stateVarIndices);
@@ -188,11 +189,11 @@ algorithm
  
         // Right now we generate a when DEVS block for each when-clause. The following list contains the indices of the
         // blocks where each clause is contained. - TO BE CHANGED IN THE FUTURE
-        whenEqInBlocks = Util.listMap(Util.listMap(whenEqInd, createListFromElement), createListFromElement);
+        whenEqInBlocks = List.map(List.map(whenEqInd, createListFromElement), createListFromElement);
         whenClausesInBlocks = whenEqClausesInd; 
         reinitsInBlocks = whenReinitClausesInd;
-        whenClausesInBlocks = Util.listMap1(whenClausesInBlocks, intAdd, nStatic+nIntegr+2*nZeroCross+1);
-        reinitsInBlocks = Util.listMap1(reinitsInBlocks, intAdd, nStatic+nIntegr+2*nZeroCross+1);
+        whenClausesInBlocks = List.map1(whenClausesInBlocks, intAdd, nStatic+nIntegr+2*nZeroCross+1);
+        reinitsInBlocks = List.map1(reinitsInBlocks, intAdd, nStatic+nIntegr+2*nZeroCross+1);
         
         nWhens = listLength(whenClausesInBlocks);
         nReinits = listLength(reinitsInBlocks);
@@ -250,7 +251,7 @@ algorithm
         reinit_blocks_inVars = reinitVarsIn;
         reinit_blocks_outVars = constructEmptyList(nReinits, {}); 
         tempIndList = createListIncreasingIndices(1,nWhens + nReinits,{});
-        tempIndList = Util.listMap1(tempIndList, intAdd, nStatic + nIntegr + nZeroCross + nCrossDetect);
+        tempIndList = List.map1(tempIndList, intAdd, nStatic + nIntegr + nZeroCross + nCrossDetect);
        
         (when_blocks_outVars) = mergeListsLists(tempIndList, whenClausesInBlocks, when_blocks_outVars, reinitsInBlocks, reinit_blocks_outVars,{});
         (when_blocks_inVars) = mergeListsLists(tempIndList, whenClausesInBlocks, when_blocks_inVars, reinitsInBlocks, reinit_blocks_inVars,{});
@@ -275,7 +276,7 @@ algorithm
         // PRINT VARIOUS INFO
         
         print("---------- When Equations in DEVS Blocks ----------\n");
-        Util.listMap0(whenEqInBlocks, printListOfLists);
+        List.map_0(whenEqInBlocks, printListOfLists);
         print("---------- When Equations in DEVS Blocks ----------\n");
         print("---------- When Clauses in DEVS Blocks ----------\n");
         printList(whenClausesInBlocks, "start"); print("\n");
@@ -307,12 +308,12 @@ algorithm
         
         
         print("---------- State equations BLT blocks ----------\n");
-        Util.listMap0(stateEq_blt, printListOfLists);
+        List.map_0(stateEq_blt, printListOfLists);
         print("---------- State equations BLT blocks ----------\n");
         
         print("Zero Crossings :\n");
         print("===============\n");
-        ss = Util.listMap(zeroCrossList, BackendDump.dumpZcStr);
+        ss = List.map(zeroCrossList, BackendDump.dumpZcStr);
         s = Util.stringDelimitList(ss, ",\n");
         print(s);
         print("\n");
@@ -419,7 +420,7 @@ algorithm
     // WHEN YOU FIND A REINIT  
     case (loopIndex, BackendDAE.WHEN_CLAUSE(reinitStmtLst=cur_list)::rest_clauses, vars, tempOutListWhens, tempOutIncidenceMat, tempOutVars) 
       equation
-        true = Util.isListNotEmpty(cur_list);
+        true = List.isNotEmpty(cur_list);
         tempOutListWhens = loopIndex::tempOutListWhens;
         (tempOutIncidenceMat, tempOutVars) = getReinitInfo2(cur_list, vars, tempOutIncidenceMat, tempOutVars);
         (tempOutListWhens, tempOutIncidenceMat, tempOutVars) = 
@@ -430,7 +431,7 @@ algorithm
    // WHEN YOU DONT FIND A REINIT
    case (loopIndex, BackendDAE.WHEN_CLAUSE(reinitStmtLst=cur_list)::rest_clauses, vars, tempOutListWhens, tempOutIncidenceMat, tempOutVars) 
       equation
-        false = Util.isListNotEmpty(cur_list);
+        false = List.isNotEmpty(cur_list);
         (tempOutListWhens, tempOutIncidenceMat, tempOutVars) = 
                 getReinitInfo(loopIndex+1, rest_clauses, vars, tempOutListWhens, tempOutIncidenceMat, tempOutVars);
       then
@@ -801,7 +802,7 @@ algorithm
         cur_eq = globalIncidenceMat_temp[curInd];
         tempInd = findElementInList(0, listLength(cur_eq), cur_eq, cur_var);
         cur_eq = makeListNegative(cur_eq, {});
-        cur_eq = Util.listReplaceAt(cur_var, tempInd, cur_eq);
+        cur_eq = List.replaceAt(cur_var, tempInd, cur_eq);
         globalIncidenceMat_temp = arrayUpdate(globalIncidenceMat_temp, curInd, cur_eq);
         globalIncidenceMat_temp = makeIncidenceRightHandNeg(globalIncidenceMat_temp, rest_vars, curInd+1);
       then
@@ -999,7 +1000,7 @@ algorithm
       equation
        curBlock_outVars = {{0}};  
        // TEMPORARY SOLUTION: IN THE FUTURE MAYBE WE DONT HAVE THE WHEN CLAUSES IN THE ORDER THEY ARE NOW AND ONE IN EACH BLOCK
-       wc = Util.listMap1(wc, intAdd, startWhenInd-1);
+       wc = List.map1(wc, intAdd, startWhenInd-1);
        curBlock_outLinks = {wc};  
        DEVS_struct_outLinks = arrayUpdate(DEVS_struct_outLinks, startBlockInd, curBlock_outLinks);
        DEVS_struct_outVars = arrayUpdate(DEVS_struct_outVars, startBlockInd, curBlock_outVars);
@@ -1123,10 +1124,10 @@ algorithm
        curIfDevsBlocksOut = findEqInBlocks(eq, mappedEquationsMat,{});
        curBlock_outVars = {{0}};
        // Connections for the when-part
-       wc = Util.listMap1(wc, intAdd, -1);
-       curWhenDevsBlocksOut = Util.listMap1r(wc, listNth, whenClausesInBlocks);  
-       true = Util.isListNotEmpty(curIfDevsBlocksOut);
-       true = Util.isListNotEmpty(curWhenDevsBlocksOut);
+       wc = List.map1(wc, intAdd, -1);
+       curWhenDevsBlocksOut = List.map1r(wc, listNth, whenClausesInBlocks);  
+       true = List.isNotEmpty(curIfDevsBlocksOut);
+       true = List.isNotEmpty(curWhenDevsBlocksOut);
        curIfDevsBlocksOut = listAppend(curIfDevsBlocksOut, curWhenDevsBlocksOut);
        curBlock_outLinks = {curIfDevsBlocksOut};
        printListOfLists(curBlock_outLinks);
@@ -1145,10 +1146,10 @@ algorithm
        curIfDevsBlocksOut = findEqInBlocks(eq, mappedEquationsMat,{});
        curBlock_outVars = {{0}};
        // Connections for the when-part
-       wc = Util.listMap1(wc, intAdd, -1);
-       curWhenDevsBlocksOut = Util.listMap1r(wc, listNth, whenClausesInBlocks);  
-       true = Util.isListNotEmpty(curIfDevsBlocksOut);
-       false = Util.isListNotEmpty(curWhenDevsBlocksOut);
+       wc = List.map1(wc, intAdd, -1);
+       curWhenDevsBlocksOut = List.map1r(wc, listNth, whenClausesInBlocks);  
+       true = List.isNotEmpty(curIfDevsBlocksOut);
+       false = List.isNotEmpty(curWhenDevsBlocksOut);
        curBlock_outLinks = {curIfDevsBlocksOut};
        DEVS_struct_outLinks = arrayUpdate(DEVS_struct_outLinks, startBlockInd, curBlock_outLinks);
        DEVS_struct_outVars = arrayUpdate(DEVS_struct_outVars, startBlockInd, curBlock_outVars);
@@ -1165,10 +1166,10 @@ algorithm
        curIfDevsBlocksOut = findEqInBlocks(eq, mappedEquationsMat,{});
        curBlock_outVars = {{0}};
        // Connections for the when-part
-       wc = Util.listMap1(wc, intAdd, -1);
-       curWhenDevsBlocksOut = Util.listMap1r(wc, listNth, whenClausesInBlocks);  
-       false = Util.isListNotEmpty(curIfDevsBlocksOut);
-       true = Util.isListNotEmpty(curWhenDevsBlocksOut);
+       wc = List.map1(wc, intAdd, -1);
+       curWhenDevsBlocksOut = List.map1r(wc, listNth, whenClausesInBlocks);  
+       false = List.isNotEmpty(curIfDevsBlocksOut);
+       true = List.isNotEmpty(curWhenDevsBlocksOut);
        curBlock_outLinks = {curWhenDevsBlocksOut};
        DEVS_struct_outLinks = arrayUpdate(DEVS_struct_outLinks, startBlockInd, curBlock_outLinks);
        DEVS_struct_outVars = arrayUpdate(DEVS_struct_outVars, startBlockInd, curBlock_outVars);
@@ -1317,10 +1318,10 @@ algorithm
        eventPortInVars = listNth(curBlock_inVars, eventPort);
        endPortInLinks = listNth(curBlock_inLinks, endPort);
        endPortInVars = listNth(curBlock_inVars, endPort);
-       curBlock_inLinks = Util.listReplaceAt(endPortInLinks, eventPort, curBlock_inLinks);
-       curBlock_inVars = Util.listReplaceAt(endPortInVars, eventPort, curBlock_inVars);
-       curBlock_inLinks = Util.listReplaceAt(eventPortInLinks, endPort, curBlock_inLinks);
-       curBlock_inVars = Util.listReplaceAt(eventPortInVars, endPort, curBlock_inVars);
+       curBlock_inLinks = List.replaceAt(endPortInLinks, eventPort, curBlock_inLinks);
+       curBlock_inVars = List.replaceAt(endPortInVars, eventPort, curBlock_inVars);
+       curBlock_inLinks = List.replaceAt(eventPortInLinks, endPort, curBlock_inLinks);
+       curBlock_inVars = List.replaceAt(eventPortInVars, endPort, curBlock_inVars);
        DEVS_struct_inLinks = arrayUpdate(DEVS_struct_inLinks, blockInd, curBlock_inLinks);
        DEVS_struct_inVars = arrayUpdate(DEVS_struct_inVars, blockInd, curBlock_inVars);
        (DEVS_struct_inLinks, DEVS_struct_inVars) = fixEventInputPort_helper(blockInd+1, nBlocks, DEVS_struct_inLinks, DEVS_struct_inVars);
@@ -1366,7 +1367,7 @@ algorithm
       equation
        // Find to which blocks the events go and add them as inputs to the last port
        curBlock_outLinks = DEVS_struct_outLinks[startBlockInd];
-       curBlock_outLinks_flat = Util.listFlatten(curBlock_outLinks);
+       curBlock_outLinks_flat = List.flatten(curBlock_outLinks);
        (DEVS_struct_inLinks, DEVS_struct_inVars) = updateEventsAsInputs2(startBlockInd, curBlock_outLinks_flat, DEVS_struct_inLinks, DEVS_struct_inVars);
        DEVS_structure_temp = DEVS_STRUCT(DEVS_struct_outLinks, DEVS_struct_outVars, DEVS_struct_inLinks, DEVS_struct_inVars);
        DEVS_structure_temp = updateEventsAsInputs(startBlockInd+1, endBlockInd, DEVS_structure_temp);
@@ -1438,7 +1439,7 @@ algorithm
        tempList = listNth(curBlock_inLinks, portIn);
        tempList = listAppend(tempList, {eventBlockInd});
        print("FALSE3\n");
-       curBlock_inLinks = Util.listReplaceAt(tempList, portIn, curBlock_inLinks);
+       curBlock_inLinks = List.replaceAt(tempList, portIn, curBlock_inLinks);
        DEVS_struct_inLinks = arrayUpdate(DEVS_struct_inLinks, curBlockIn, curBlock_inLinks);
        print("FALSE4\n");
        (DEVS_struct_inLinks, DEVS_struct_inVars) = updateEventsAsInputs2(eventBlockInd, restBlocks, DEVS_struct_inLinks, DEVS_struct_inVars);
@@ -1599,7 +1600,7 @@ algorithm
        
         (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars) = 
                    findWhereOutVarIsNeeded(curOutVar, discreteVarIndices, outBlockIndex, blocksToBeChecked, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars,{});
-        true = Util.isListNotEmpty(curOutVarLinks) "If the current output var is needed somewhere";
+        true = List.isNotEmpty(curOutVarLinks) "If the current output var is needed somewhere";
         false = listMember(curOutVar, discreteVarIndices) "Check if the out variable is discrete";
         // If it is not discrete proceed as normal
         curOutBlock_outVars = DEVS_struct_outVars[outBlockIndex];
@@ -1620,7 +1621,7 @@ algorithm
         blocksToBeChecked = findOutVarsInAllInputsHelper(curOutVar, stateIndices,DEVS_blocks_inVars,outBlockIndex);          
         (curOutVarLinks, DEVS_struct_inLinks, DEVS_struct_inVars) = 
                    findWhereOutVarIsNeeded(curOutVar, discreteVarIndices, outBlockIndex, blocksToBeChecked, DEVS_blocks_inVars, DEVS_struct_inLinks, DEVS_struct_inVars,{});
-        true = Util.isListNotEmpty(curOutVarLinks) "If the current output var is needed somewhere";
+        true = List.isNotEmpty(curOutVarLinks) "If the current output var is needed somewhere";
         true = listMember(curOutVar, discreteVarIndices) "Check if the out variable is discrete";
         // If it is discrete add an event as output of the when-block and not the variable itself
         curOutBlock_outVars = DEVS_struct_outVars[outBlockIndex];
@@ -1682,7 +1683,7 @@ algorithm
       equation
         true = listMember(curOutVar, stateIndices);
         blocksToBeChecked = createListIncreasingIndices(1,listLength(DEVS_blocks_inVars),{});  
-        blocksToBeChecked = Util.listRemoveNth(blocksToBeChecked, outBlockIndex); // If state derivative remove the current block from the input search.  
+        blocksToBeChecked = listDelete(blocksToBeChecked, outBlockIndex - 1); // If state derivative remove the current block from the input search.  
       then
         (blocksToBeChecked);
    // If CURRENT OUTPUT IS ALGEBRAIC
@@ -1690,7 +1691,7 @@ algorithm
       equation
         false = listMember(curOutVar, stateIndices);
         blocksToBeChecked = createListIncreasingIndices(1,listLength(DEVS_blocks_inVars),{});  
-        blocksToBeChecked = Util.listRemoveNth(blocksToBeChecked, outBlockIndex); // If algebraic remove the current block from the input search.  
+        blocksToBeChecked = listDelete(blocksToBeChecked, outBlockIndex - 1); // If algebraic remove the current block from the input search.  
       then
         (blocksToBeChecked);
     case (_,_,_,_)
@@ -1855,7 +1856,7 @@ algorithm
                   
     case (curBlock_eq::restBlocks_eq, incidenceMat, ass2, (DEVS_blocks_outVars, DEVS_blocks_inVars) )
       equation
-        curBlock_flatEq = Util.listFlatten(curBlock_eq);            
+        curBlock_flatEq = List.flatten(curBlock_eq);            
         (varIndicesIn_temp, varIndicesOut_temp) = selectVarsInOut(curBlock_flatEq, incidenceMat, ass2, {},{});
         varIndicesIn_temp = findUniqueVars(varIndicesIn_temp,{});        
         DEVS_blocks_outVars = varIndicesOut_temp::DEVS_blocks_outVars "select OUT variables";
@@ -2026,16 +2027,16 @@ algorithm
       DAE.CallAttributes attr;
     case ((e as (DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst=expLst, attr=attr)),i),_) 
     equation
-      zce = Util.listMap(zeroCrossings,extractExpresionFromZeroCrossing);
+      zce = List.map(zeroCrossings,extractExpresionFromZeroCrossing);
       // Remove extra argument to sample since in the zce list there is none
-      expLst2 = Util.listFirst(Util.listPartition(expLst,2));
+      expLst2 = List.first(List.partition(expLst,2));
       e = DAE.CALL(Absyn.IDENT("sample"),expLst2,attr);
       index = listExpPos(zce,e,0);
       result = ((DAE.CALL(Absyn.IDENT("samplecondition"), {DAE.ICONST(index)}, DAE.callAttrBuiltinBool),i));
       then result;
     case ((e as DAE.RELATION(_,_,_,_,_),i),_) 
     equation
-      zce = Util.listMap(zeroCrossings,extractExpresionFromZeroCrossing);
+      zce = List.map(zeroCrossings,extractExpresionFromZeroCrossing);
       index = listExpPos(zce,e,0);
       then ((DAE.CALL(Absyn.IDENT("condition"), {DAE.ICONST(index)}, DAE.callAttrBuiltinBool),i));
     case ((e as DAE.CREF(_,_),i),_)
@@ -2108,7 +2109,7 @@ algorithm
     case ((st as DAE.STMT_ASSIGN(type_=type_,exp1=exp1,exp=exp,source=source))::rest,zc)
     equation
       rest = replaceZCStatement(rest,zc);
-      zce = Util.listMap(zc,extractExpresionFromZeroCrossing);
+      zce = List.map(zc,extractExpresionFromZeroCrossing);
       exp = replaceCrossingLstOnExp(exp,zce,0);
       exp1 = replaceCrossingLstOnExp(exp1,zce,0);
       st = DAE.STMT_ASSIGN(type_,exp1,exp,source);
@@ -2141,7 +2142,7 @@ algorithm
     list<Integer> value_dims;
   case (SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp,source=source),_)
   equation
-    zce = Util.listMap(zc,extractExpresionFromZeroCrossing);
+    zce = List.map(zc,extractExpresionFromZeroCrossing);
     exp = replaceCrossingLstOnExp(exp,zce,0);
     then (SimCode.SES_SIMPLE_ASSIGN(cref,exp,source));
   case (SimCode.SES_ALGORITHM(statements=st),_)
@@ -2150,7 +2151,7 @@ algorithm
     then (SimCode.SES_ALGORITHM(st));
   case (SimCode.SES_MIXED(index=index,cont=cont,discVars=discVars,discEqs=discEqs,values=values,value_dims=value_dims),_)
   equation
-    discEqs = Util.listMap1(discEqs,replaceZC,zc);
+    discEqs = List.map1(discEqs,replaceZC,zc);
     then (SimCode.SES_MIXED(index,cont,discVars,discEqs,values,value_dims));
   case (_,_) 
     then i;
@@ -2323,7 +2324,7 @@ algorithm
     case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = v)::{})),arr_1,arr_2,m,mt,a1,a2)
       equation
         statevar_lst = BackendVariable.getAllStateVarFromVariables(v);
-        ((dae,arr_1,arr_2,m,mt,a1,a2)) = Util.listFold(statevar_lst, markStateEquation, (dae,arr_1,arr_2,m,mt,a1,a2));
+        ((dae,arr_1,arr_2,m,mt,a1,a2)) = List.fold(statevar_lst, markStateEquation, (dae,arr_1,arr_2,m,mt,a1,a2));
       then
         arr_2;
     case (_,_,_,_,_,_,_)
@@ -2362,9 +2363,9 @@ algorithm
     case (BackendDAE.VAR(varName = cr),((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars)::{})),arr_1,arr_2,m,mt,a1,a2))
       equation
         (_,v_indxs) = BackendVariable.getVar(cr, vars);
-        firstInd = Util.listFirst(v_indxs); //modification
-        v_indxs_1 = Util.listMap1(v_indxs, intSub, 1);
-        eqns = Util.listMap1r(v_indxs_1, arrayNth, a1);
+        firstInd = List.first(v_indxs); //modification
+        v_indxs_1 = List.map1(v_indxs, intSub, 1);
+        eqns = List.map1r(v_indxs_1, arrayNth, a1);
         ((arr_1,arr_2,m,mt,a1,a2,_)) = markStateEquation2(eqns, (arr_1,arr_2,m,mt,a1,a2,firstInd));
       then
         ((dae,arr_1,arr_2,m,mt,a1,a2));
@@ -2435,8 +2436,8 @@ algorithm
         
         inv_reachable = BackendDAEUtil.invReachableNodes(eqn, m, mt, a1, a2);
         inv_reachable_1 = BackendDAEUtil.removeNegative(inv_reachable);
-        inv_reachable_2 = Util.listMap(inv_reachable_1, Util.listCreate);
-        ((marks_2,marksEq_2,m,mt,a1,a2,stateVarIndex)) = Util.listFold(inv_reachable_2, markStateEquation2, (marks_1,marksEq_1,m,mt,a1,a2,stateVarIndex));
+        inv_reachable_2 = List.map(inv_reachable_1, List.create);
+        ((marks_2,marksEq_2,m,mt,a1,a2,stateVarIndex)) = List.fold(inv_reachable_2, markStateEquation2, (marks_1,marksEq_1,m,mt,a1,a2,stateVarIndex));
         ((marks_3,marksEq_3,m_1,mt_1,a1_1,a2_1,stateVarIndex)) = markStateEquation2(eqns, (marks_2,marksEq_2,m,mt,a1,a2,stateVarIndex));
       then
         ((marks_3,marksEq_3,m_1,mt_1,a1_1,a2_1,stateVarIndex));
@@ -2493,7 +2494,7 @@ algorithm
     case (firstList :: restList,comps,localAccList)      
       equation 
         comps2 = getStrongComponentsEqnFlat(comps,{});
-        elem = Util.listIntersectionOnTrue(comps2,firstList,intEq);
+        elem = List.intersectionOnTrue(comps2,firstList,intEq);
         localAccList = listAppend(localAccList,{elem});
         localAccList = sortEquationsBLT(restList,comps,localAccList);
       then localAccList;
@@ -2684,7 +2685,7 @@ algorithm
       
     case (head::rest_list, cur_list)
       equation
-        true = Util.isListNotEmpty(head);
+        true = List.isNotEmpty(head);
         cur_list = head::cur_list;
         reducedList = removeEmptyElements(rest_list, cur_list);
      then
@@ -2692,7 +2693,7 @@ algorithm
     
     case (head::rest_list, cur_list)      
       equation
-        false = Util.isListNotEmpty(head);
+        false = List.isNotEmpty(head);
         reducedList = removeEmptyElements(rest_list, cur_list);
      then
        (reducedList);
@@ -3206,8 +3207,8 @@ algorithm
         list<Integer> vars; 
       case (DEVS_STRUCT(inVars=inVars),_)
       equation
-        vars = Util.listMap(Util.listFlatten(inVars[index]),intAbs);
-        vars = Util.listFilter(vars,isPositive);
+        vars = List.map(List.flatten(inVars[index]),intAbs);
+        vars = List.filter(vars,isPositive);
         then vars;
     end match;
 end getInputs;
@@ -3224,7 +3225,7 @@ algorithm
        list<Integer> vars; 
      case (DEVS_STRUCT(outVars=outVars),_)
      equation
-        vars = Util.listMap(Util.listFlatten(outVars[index]),intAbs);
+        vars = List.map(List.flatten(outVars[index]),intAbs);
         then vars;
     end match;
 end getOutputs;
@@ -3256,12 +3257,12 @@ algorithm
       list<Integer> l;
     case (QSSINFO(DEVSstructure=DEVS_STRUCT(inLinks=inLinks)),_)
     equation 
-      l = (Util.listFlatten(inLinks[numBlock]));
-      _ = Util.listGetMember(0,l);
+      l = (List.flatten(inLinks[numBlock]));
+      _ = List.getMember(0,l);
       then listLength(l);
     case (QSSINFO(DEVSstructure=DEVS_STRUCT(inLinks=inLinks)),_)
     equation 
-      l = (Util.listFlatten(inLinks[numBlock]));
+      l = (List.flatten(inLinks[numBlock]));
       then listLength(l)+1;
     end matchcontinue;
 end numInputs;
@@ -3289,7 +3290,7 @@ algorithm
       local
         list<BackendDAE.Var> outVarLst;
       case QSSINFO(outVarLst=outVarLst)
-      then Util.listFilterBoolean(outVarLst,BackendVariable.isStateVar);
+      then List.filterOnTrue(outVarLst,BackendVariable.isStateVar);
     end match;
 end getStates;
 
@@ -3558,7 +3559,7 @@ algorithm
          equation
             temp_list = listNth(mappedEquations_intermed, cur_eq-1);
             temp_list = listAppend(temp_list,{blockIndex});
-            mappedEquations_intermed = Util.listReplaceAt(temp_list, cur_eq-1, mappedEquations_intermed); 
+            mappedEquations_intermed = List.replaceAt(temp_list, cur_eq-1, mappedEquations_intermed); 
             mappedEquations = mapEquationInDEVSblocks1(mappedEquations_intermed, rest_eq, blockIndex);
          then
             (mappedEquations);  
@@ -3659,7 +3660,7 @@ algorithm
 
     case (toRemove, head::rest, outListTemp)
       equation
-        temp = Util.listSetDifferenceOnTrue(head,toRemove,intEq);
+        temp = List.setDifferenceOnTrue(head,toRemove,intEq);
         outListTemp = temp::outListTemp;
         outListTemp = removeListFromListsOfLists(toRemove, rest, outListTemp);
       then outListTemp;
@@ -3761,9 +3762,9 @@ algorithm
       equation
         true = (index <= arrayLength(vars));
         v = vars[index];
-        vf = Util.listMap(Util.listFlatten(v),intAbs);
-        vf = Util.listFilter(vf,isPositive);
-        vf = Util.listMap1(vf,intSub,1);
+        vf = List.map(List.flatten(v),intAbs);
+        vf = List.filter(vf,isPositive);
+        vf = List.map1(vf,intSub,1);
         vf = listPair(vf,index-1);
         vf = listAppend(res,convertArrayToFlatList(vars,index+1,vf));
         then vf;

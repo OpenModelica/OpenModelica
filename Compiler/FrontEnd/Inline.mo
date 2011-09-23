@@ -60,6 +60,7 @@ protected import DAEUtil;
 protected import Error;
 protected import Expression;
 protected import ExpressionSimplify;
+protected import List;
 protected import Types;
 
 public function inlineCalls
@@ -93,14 +94,14 @@ algorithm
     case (ftree,itlst,BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses,btp)))
       equation
         tpl = (ftree,itlst);
-        eqs = Util.listMap1(eqs,inlineEquationSystem,tpl);
+        eqs = List.map1(eqs,inlineEquationSystem,tpl);
         knownVars = inlineVariables(knownVars,tpl);
         externalObjects = inlineVariables(externalObjects,tpl);
         initialEqs = inlineEquationArray(initialEqs,tpl);
         removedEqs = inlineEquationArray(removedEqs,tpl);
-        mdelst = Util.listMap1(arrayList(arrayEqs),inlineMultiDimEqs,tpl);
+        mdelst = List.map1(arrayList(arrayEqs),inlineMultiDimEqs,tpl);
         arrayEqs = listArray(mdelst);
-        alglst = Util.listMap1(arrayList(algorithms),inlineAlgorithm,tpl);
+        alglst = List.map1(arrayList(algorithms),inlineAlgorithm,tpl);
         algorithms = listArray(alglst);
         eventInfo = inlineEventInfo(eventInfo,tpl);
       then
@@ -150,7 +151,7 @@ algorithm
     case(BackendDAE.EQUATION_ARRAY(i1,i2,eqarr),fns)
       equation
         eqlst = arrayList(eqarr);
-        eqlst_1 = Util.listMap1(eqlst,inlineEqOpt,fns);
+        eqlst_1 = List.map1(eqlst,inlineEqOpt,fns);
         eqarr_1 = listArray(eqlst_1);
       then
         BackendDAE.EQUATION_ARRAY(i1,i2,eqarr_1);
@@ -284,7 +285,7 @@ algorithm
     case(BackendDAE.VARIABLES(crefind,BackendDAE.VARIABLE_ARRAY(i3,i4,vararr),i1,i2),fns)
       equation
         varlst = arrayList(vararr);
-        varlst_1 = Util.listMap1(varlst,inlineVarOpt,fns);
+        varlst_1 = List.map1(varlst,inlineVarOpt,fns);
         vararr_1 = listArray(varlst_1);
       then
         BackendDAE.VARIABLES(crefind,BackendDAE.VARIABLE_ARRAY(i3,i4,vararr_1),i1,i2);
@@ -388,8 +389,8 @@ algorithm
       list<BackendDAE.ZeroCrossing> zclst,zclst_1;
     case(BackendDAE.EVENT_INFO(wclst,zclst),fns)
       equation
-        wclst_1 = Util.listMap1(wclst,inlineWhenClause,fns);
-        zclst_1 = Util.listMap1(zclst,inlineZeroCrossing,fns);
+        wclst_1 = List.map1(wclst,inlineWhenClause,fns);
+        zclst_1 = List.map1(zclst,inlineZeroCrossing,fns);
       then
         BackendDAE.EVENT_INFO(wclst_1,zclst_1);
     case(_,_)
@@ -442,7 +443,7 @@ algorithm
     case(BackendDAE.WHEN_CLAUSE(e,rslst,io),fns)
       equation
         (e_1,_) = inlineExp(e,fns,DAE.emptyElementSource/*TODO: Propagate operation info*/);
-        rslst_1 = Util.listMap1(rslst,inlineReinitStmt,fns);
+        rslst_1 = List.map1(rslst,inlineReinitStmt,fns);
       then
         BackendDAE.WHEN_CLAUSE(e_1,rslst_1,io);
     case(_,_)
@@ -656,7 +657,7 @@ algorithm
     case(DAE.IF_EQUATION(explst,dlist,elist,source) :: cdr,fns)
       equation
         (explst_1,source) = inlineExps(explst,fns,source);
-        dlist_1 = Util.listMap1(dlist,inlineDAEElements,fns);
+        dlist_1 = List.map1(dlist,inlineDAEElements,fns);
         elist_1 = inlineDAEElements(elist,fns);
         res = DAE.IF_EQUATION(explst_1,dlist_1,elist_1,source);
         cdr_1 = inlineDAEElements(cdr,fns);
@@ -666,7 +667,7 @@ algorithm
     case(DAE.INITIAL_IF_EQUATION(explst,dlist,elist,source) :: cdr,fns)
       equation
         (explst_1,source) = inlineExps(explst,fns,source);
-        dlist_1 = Util.listMap1(dlist,inlineDAEElements,fns);
+        dlist_1 = List.map1(dlist,inlineDAEElements,fns);
         elist_1 = inlineDAEElements(elist,fns);
         res = DAE.INITIAL_IF_EQUATION(explst_1,dlist_1,elist_1,source);
         cdr_1 = inlineDAEElements(cdr,fns);
@@ -760,7 +761,7 @@ algorithm
       Functiontuple fns;
     case(DAE.ALGORITHM_STMTS(stmts),fns)
       equation
-        stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
+        stmts_1 = List.map1(stmts,inlineStatement,fns);
       then
         DAE.ALGORITHM_STMTS(stmts_1);
     case(_,_)
@@ -812,33 +813,33 @@ algorithm
     case(DAE.STMT_IF(e,stmts,a_else,source),fns)
       equation
         (e_1,source) = inlineExp(e,fns,source);
-        stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
+        stmts_1 = List.map1(stmts,inlineStatement,fns);
         (a_else_1,source) = inlineElse(a_else,fns,source);
       then
         DAE.STMT_IF(e_1,stmts_1,a_else_1,source);
     case(DAE.STMT_FOR(t,b,i,e,stmts,source),fns)
       equation
         (e_1,source) = inlineExp(e,fns,source);
-        stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
+        stmts_1 = List.map1(stmts,inlineStatement,fns);
       then
         DAE.STMT_FOR(t,b,i,e_1,stmts_1,source);
     case(DAE.STMT_WHILE(e,stmts,source),fns)
       equation
         (e_1,source) = inlineExp(e,fns,source);
-        stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
+        stmts_1 = List.map1(stmts,inlineStatement,fns);
       then
         DAE.STMT_WHILE(e_1,stmts_1,source);
     case(DAE.STMT_WHEN(e,stmts,SOME(stmt),ilst,source),fns)
       equation
         (e_1,source) = inlineExp(e,fns,source);
-        stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
+        stmts_1 = List.map1(stmts,inlineStatement,fns);
         stmt_1 = inlineStatement(stmt,fns);
       then
         DAE.STMT_WHEN(e_1,stmts_1,SOME(stmt_1),ilst,source);
     case(DAE.STMT_WHEN(e,stmts,NONE(),ilst,source),fns)
       equation
         (e_1,source) = inlineExp(e,fns,source);
-        stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
+        stmts_1 = List.map1(stmts,inlineStatement,fns);
       then
         DAE.STMT_WHEN(e_1,stmts_1,NONE(),ilst,source);
     case(DAE.STMT_ASSERT(e1,e2,source),fns)
@@ -865,17 +866,17 @@ algorithm
         DAE.STMT_NORETCALL(e_1,source);
     case(DAE.STMT_FAILURE(stmts,source),fns)
       equation
-        stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
+        stmts_1 = List.map1(stmts,inlineStatement,fns);
       then
         DAE.STMT_FAILURE(stmts_1,source);
     case(DAE.STMT_TRY(stmts,source),fns)
       equation
-        stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
+        stmts_1 = List.map1(stmts,inlineStatement,fns);
       then
         DAE.STMT_TRY(stmts_1,source);
     case(DAE.STMT_CATCH(stmts,source),fns)
       equation
-        stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
+        stmts_1 = List.map1(stmts,inlineStatement,fns);
       then
         DAE.STMT_CATCH(stmts_1,source);
     case(stmt,_) then stmt;
@@ -900,13 +901,13 @@ algorithm
     case (DAE.ELSEIF(e,stmts,a_else),fns,source)
       equation
         (e_1,source) = inlineExp(e,fns,source);
-        stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
+        stmts_1 = List.map1(stmts,inlineStatement,fns);
         (a_else_1,source) = inlineElse(a_else,fns,source);
       then
         (DAE.ELSEIF(e_1,stmts_1,a_else_1),source);
     case (DAE.ELSE(stmts),fns,source)
       equation
-        stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
+        stmts_1 = List.map1(stmts,inlineStatement,fns);
       then
         (DAE.ELSE(stmts_1),source);
     case (a_else,fns,source) then (a_else,source);
@@ -986,9 +987,9 @@ algorithm
         true = DAEUtil.convertInlineTypeToBool(inlineType);
         true = checkInlineType(inlineType,fns);
         fn = getFunctionBody(p,fns);
-        crefs = Util.listMap(fn,getInputCrefs);
-        crefs = Util.listSelect(crefs,removeWilds);
-        argmap = Util.listThreadTuple(crefs,args);
+        crefs = List.map(fn,getInputCrefs);
+        crefs = List.select(crefs,removeWilds);
+        argmap = List.threadTuple(crefs,args);
         argmap = extendCrefRecords(argmap);
         newExp = getRhsExp(fn);
         ((newExp,argmap)) = Expression.traverseExp(newExp,replaceArgs,argmap);
@@ -1037,7 +1038,7 @@ algorithm
     case((c,e as (DAE.CREF(componentRef = cref,ty=DAE.ET_COMPLEX(varLst=varLst))))::res)
       equation
         res1 = extendCrefRecords(res);
-        new = Util.listMap2(varLst,extendCrefRecords1,c,cref);
+        new = List.map2(varLst,extendCrefRecords1,c,cref);
         new1 = extendCrefRecords(new);
         res2 = listAppend(new1,res1);
       then ((c,e)::res2);
@@ -1047,15 +1048,15 @@ algorithm
       equation
         DAE.ET_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cref);
         res1 = extendCrefRecords(res);
-        new = Util.listMap2(varLst,extendCrefRecords1,c,cref);
+        new = List.map2(varLst,extendCrefRecords1,c,cref);
         new1 = extendCrefRecords(new);
         res2 = listAppend(new1,res1);
       then ((c,e)::res2);
     case((c,e as (DAE.CALL(expLst = expl,attr=DAE.CALL_ATTR(ty=DAE.ET_COMPLEX(varLst=varLst)))))::res)
       equation
         res1 = extendCrefRecords(res);
-        crlst = Util.listMap1(varLst,extendCrefRecords2,c);
-        new = Util.listThreadTuple(crlst,expl);
+        crlst = List.map1(varLst,extendCrefRecords2,c);
+        new = List.threadTuple(crlst,expl);
         new1 = extendCrefRecords(new);
         res2 = listAppend(new1,res1);
       then ((c,e)::res2);
@@ -1197,7 +1198,7 @@ algorithm
         cref = ComponentReference.pathToCref(path);
         (e as DAE.CREF(componentRef=cref)) = getExpFromArgMap(argmap,cref);
         path = ComponentReference.crefToPath(cref);
-        expLst = Util.listMap(expLst,Expression.unboxExp);
+        expLst = List.map(expLst,Expression.unboxExp);
         b = Expression.isBuiltinFunctionReference(e);
         e = DAE.CALL(path,expLst,DAE.CALL_ATTR(ty,tuple_,b,inlineType,tc));
         (e,_) = ExpressionSimplify.simplify(e);
@@ -1209,7 +1210,7 @@ algorithm
         cref = ComponentReference.pathToCref(path);
         (e as DAE.CREF(componentRef=cref,ty=ty)) = getExpFromArgMap(argmap,cref);
         path = ComponentReference.crefToPath(cref);
-        expLst = Util.listMap(expLst,Expression.unboxExp);
+        expLst = List.map(expLst,Expression.unboxExp);
         b = Expression.isBuiltinFunctionReference(e);
         (ty2,inlineType) = functionReferenceType(ty);
         e = DAE.CALL(path,expLst,DAE.CALL_ATTR(ty2,tuple_,b,inlineType,tc));

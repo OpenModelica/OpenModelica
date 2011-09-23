@@ -46,6 +46,7 @@ public import SCode;
 public import SCodeUtil;
 
 protected import Error;
+protected import List;
 protected import RTOpts;
 protected import Types;
 protected import Util;
@@ -214,7 +215,7 @@ algorithm
         t2 = typeConvert(t);
         varName = stringAppend("RES__",intString(n));
 
-        varList = Util.listCreate(Absyn.ELEMENTITEM(Absyn.ELEMENT(
+        varList = List.create(Absyn.ELEMENTITEM(Absyn.ELEMENT(
           false,NONE(),Absyn.NOT_INNER_OUTER(),"component",
           Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
             t2,
@@ -307,9 +308,9 @@ algorithm
     
     case (Absyn.PROGRAM(classes = classes,within_ = w,globalBuildTimes=ts))
       equation
-        metaClasses = Util.listMap(classes, createMetaClasses);
-        metaClassesFlat = Util.listFlatten(metaClasses);
-        classes = Util.listMap(classes, createMetaClassesFromPackage);
+        metaClasses = List.map(classes, createMetaClasses);
+        metaClassesFlat = List.flatten(metaClasses);
+        classes = List.map(classes, createMetaClassesFromPackage);
         classes = listAppend(classes, metaClassesFlat);
       then 
         Absyn.PROGRAM(classes,w,ts);
@@ -336,7 +337,7 @@ algorithm
     
     case (Absyn.CLASS(body=Absyn.PARTS(typeVars=typeVars,classParts=classParts,comment=comment),name=name,partialPrefix=partialPrefix,finalPrefix=finalPrefix,encapsulatedPrefix=encapsulatedPrefix,restriction=restriction,info=info))
       equation
-        classParts = Util.listMap(classParts,createMetaClassesFromClassParts);
+        classParts = List.map(classParts,createMetaClassesFromClassParts);
         body = Absyn.PARTS(typeVars,classParts,comment);
       then Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,body,info);
     
@@ -355,14 +356,14 @@ algorithm
     
     case (Absyn.PUBLIC(els))
       equation
-        lels = Util.listMap(els, createMetaClassesFromElementItem);
-        els = Util.listFlatten(lels);
+        lels = List.map(els, createMetaClassesFromElementItem);
+        els = List.flatten(lels);
       then Absyn.PUBLIC(els);
     
     case (Absyn.PROTECTED(els))
       equation
-        lels = Util.listMap(els, createMetaClassesFromElementItem);
-        els = Util.listFlatten(lels);
+        lels = List.map(els, createMetaClassesFromElementItem);
+        els = List.flatten(lels);
       then Absyn.PROTECTED(els);
     
     case (classPart) then classPart;
@@ -390,7 +391,7 @@ algorithm
         metaClasses = createMetaClasses(class_);
         cl2 = createMetaClassesFromPackage(class_);
         classes = cl2 :: metaClasses;
-        elementItems = Util.listMap1r(classes,setElementItemClass,elementItem);
+        elementItems = List.map1r(classes,setElementItemClass,elementItem);
       then elementItems;
     case (elementItem) then {elementItem};
   end matchcontinue;
@@ -651,13 +652,13 @@ algorithm
       list<DAE.Var> fields;
     case ((DAE.T_METARECORD(fields = fields),_))
       equation
-        names = Util.listMap(fields, Types.getVarName);
-        types = Util.listMap(fields, Types.getVarType);
+        names = List.map(fields, Types.getVarName);
+        types = List.map(fields, Types.getVarType);
       then (names,types);
     case ((DAE.T_FUNCTION(fargs,(DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_),_),_))
       equation
-        names = Util.listMap(fargs, Util.tuple31);
-        types = Util.listMap(fargs, Util.tuple32);
+        names = List.map(fargs, Util.tuple31);
+        types = List.map(fargs, Util.tuple32);
       then (names,types);
   end matchcontinue;
 end constructorCallTypeToNamesAndTypes;
@@ -679,7 +680,7 @@ algorithm
       equation
         p = Absyn.FULLYQUALIFIED(p);
         slst = getListOfStrings(els);
-        paths = Util.listMap1r(slst, Absyn.pathReplaceIdent, p);
+        paths = List.map1r(slst, Absyn.pathReplaceIdent, p);
         b = listLength(paths)==1;
       then SOME((DAE.T_UNIONTYPE(paths,b),SOME(p)));
     case (_,t,_) then t;
@@ -785,10 +786,10 @@ algorithm
       equation
         outcrefs = extractListFromTuple(comp,0);
         increfs = extractListFromTuple(inputs,0);
-        inelts = Util.listSelect1(elts, Absyn.INPUT(), SCode.isComponentWithDirection);
-        outelts = Util.listSelect1(elts, Absyn.OUTPUT(), SCode.isComponentWithDirection);
-        innames = Util.listMap(inelts, SCode.elementName);
-        outnames = Util.listMap(outelts, SCode.elementName);
+        inelts = List.select1(elts, SCode.isComponentWithDirection, Absyn.INPUT());
+        outelts = List.select1(elts, SCode.isComponentWithDirection, Absyn.OUTPUT());
+        innames = List.map(inelts, SCode.elementName);
+        outnames = List.map(outelts, SCode.elementName);
       then strictRMLCheck2(increfs,outcrefs,innames,outnames,info);
     case (_,_) then true;
   end matchcontinue;
@@ -821,29 +822,29 @@ algorithm
       then false;
     case (increfs,outcrefs,innames,outnames,info)
       equation
-        false = (listLength(outnames)+listLength(innames)) == listLength(Util.listUnion(innames,outnames));
+        false = (listLength(outnames)+listLength(innames)) == listLength(List.union(innames,outnames));
         Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"An argument in the output has the same name as one in the input"}, info);
       then false;
     case (increfs,outcrefs,innames,outnames,info)
       equation
-        failure(_ = Util.listMap(increfs, Absyn.expCref));
+        failure(_ = List.map(increfs, Absyn.expCref));
         Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"Input expression was not a tuple of component references"}, info);
       then false;
     case (increfs,outcrefs,innames,outnames,info)
       equation
-        failure(_ = Util.listMap(outcrefs, Absyn.expCref));
+        failure(_ = List.map(outcrefs, Absyn.expCref));
         Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"Output expression was not a tuple of component references"}, info);
       then false;
     case (increfs,outcrefs,innames,outnames,info)
       equation
-        names = Util.listMap(increfs, Absyn.expComponentRefStr);
+        names = List.map(increfs, Absyn.expComponentRefStr);
         failure(equality(names = innames));
         Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"The input does not match"}, info);
       then false;
     case (increfs,{Absyn.CREF(Absyn.WILD())},innames,{},info) then true;
     case (increfs,outcrefs,innames,outnames,info)
       equation
-        names = Util.listMap(outcrefs, Absyn.expComponentRefStr);
+        names = List.map(outcrefs, Absyn.expComponentRefStr);
         failure(equality(names = outnames));
         Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"The output does not match"}, info);
       then false;

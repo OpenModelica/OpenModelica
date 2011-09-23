@@ -85,6 +85,7 @@ protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import InnerOuter;
 protected import Inst;
+protected import List;
 protected import Mod;
 protected import ModUtil;
 protected import OptManager;
@@ -204,14 +205,14 @@ algorithm
     
     case (cache,env,DAE.ARRAY(array = es, ty = DAE.ET_ARRAY(arrayDimensions = arrayDims)),impl,stOpt,msg)
       equation
-        dims = Util.listMap(arrayDims, Expression.dimensionSize);
+        dims = List.map(arrayDims, Expression.dimensionSize);
         (cache,es_1, stOpt) = cevalList(cache,env, es, impl, stOpt, msg);
       then
         (cache,Values.ARRAY(es_1,dims),stOpt);
 
     case (cache,env,DAE.MATRIX(matrix = expll, ty = DAE.ET_ARRAY(arrayDimensions = arrayDims)),impl,stOpt,msg)
       equation
-        dims = Util.listMap(arrayDims, Expression.dimensionSize);
+        dims = List.map(arrayDims, Expression.dimensionSize);
         (cache,elts) = cevalMatrixElt(cache, env, expll, impl, msg);
       then
         (cache,Values.ARRAY(elts,dims),stOpt);
@@ -587,7 +588,7 @@ algorithm
     case (cache,env,DAE.UNARY(operator = DAE.UMINUS_ARR(ty = _),exp = daeExp),impl,stOpt,msg)
       equation
         (cache,Values.ARRAY(arr,dims),stOpt) = ceval(cache,env, daeExp, impl, stOpt, msg);
-        arr_1 = Util.listMap(arr, ValuesUtil.valueNeg);
+        arr_1 = List.map(arr, ValuesUtil.valueNeg);
       then
         (cache,Values.ARRAY(arr_1,dims),stOpt);
 
@@ -673,7 +674,7 @@ algorithm
       equation
         (cache, Values.BOOL(bstart), stOpt) = ceval(cache, env, start, impl, stOpt, msg);
         (cache, Values.BOOL(bstop), stOpt) = ceval(cache, env, stop, impl, stOpt, msg);
-        arr = Util.listMap(ExpressionSimplify.simplifyRangeBool(bstart, bstop),
+        arr = List.map(ExpressionSimplify.simplifyRangeBool(bstart, bstop),
           ValuesUtil.makeBoolean);
       then
         (cache, ValuesUtil.makeArray(arr), stOpt);
@@ -683,7 +684,7 @@ algorithm
       equation
         (cache,Values.INTEGER(start_1),stOpt) = ceval(cache,env, start, impl, stOpt, msg);
         (cache,Values.INTEGER(stop_1),stOpt) = ceval(cache,env, stop, impl, stOpt, msg);
-        arr = Util.listMap(ExpressionSimplify.simplifyRange(start_1, 1, stop_1), ValuesUtil.makeInteger);
+        arr = List.map(ExpressionSimplify.simplifyRange(start_1, 1, stop_1), ValuesUtil.makeInteger);
       then
         (cache,ValuesUtil.makeArray(arr),stOpt);
     
@@ -693,7 +694,7 @@ algorithm
         (cache,Values.INTEGER(start_1),stOpt) = ceval(cache,env, start, impl, stOpt, msg);
         (cache,Values.INTEGER(step_1),stOpt) = ceval(cache,env, step, impl, stOpt, msg);
         (cache,Values.INTEGER(stop_1),stOpt) = ceval(cache,env, stop, impl, stOpt, msg);
-        arr = Util.listMap(ExpressionSimplify.simplifyRange(start_1, step_1, stop_1), ValuesUtil.makeInteger);
+        arr = List.map(ExpressionSimplify.simplifyRange(start_1, step_1, stop_1), ValuesUtil.makeInteger);
       then
         (cache,ValuesUtil.makeArray(arr),stOpt);
     
@@ -713,7 +714,7 @@ algorithm
         (cache,Values.REAL(realStop1),stOpt) = ceval(cache,env, stop, impl, stOpt, msg);
         // diff = realStop1 -. realStart1;
         realStep1 = intReal(1);
-        arr = Util.listMap(ExpressionSimplify.simplifyRangeReal(realStart1, realStep1, realStop1), ValuesUtil.makeReal);
+        arr = List.map(ExpressionSimplify.simplifyRangeReal(realStart1, realStep1, realStop1), ValuesUtil.makeReal);
       then
         (cache,ValuesUtil.makeArray(arr),stOpt);
 
@@ -723,7 +724,7 @@ algorithm
         (cache,Values.REAL(realStart1),stOpt) = ceval(cache,env, start, impl, stOpt, msg);
         (cache,Values.REAL(realStep1),stOpt) = ceval(cache,env, step, impl, stOpt, msg);
         (cache,Values.REAL(realStop1),stOpt) = ceval(cache,env, stop, impl, stOpt, msg);
-        arr = Util.listMap(ExpressionSimplify.simplifyRangeReal(realStart1, realStep1, realStop1), ValuesUtil.makeReal);
+        arr = List.map(ExpressionSimplify.simplifyRangeReal(realStart1, realStep1, realStop1), ValuesUtil.makeReal);
       then
         (cache,ValuesUtil.makeArray(arr),stOpt);
 
@@ -790,7 +791,7 @@ algorithm
       equation
         (cache,Values.ARRAY(vals,dims),stOpt) = ceval(cache,env, e, impl, stOpt, msg);
         (cache,es_1,stOpt) = cevalList(cache,env, expl, impl, stOpt, msg);
-        v = Util.listFirst(es_1);
+        v = List.first(es_1);
         v = ValuesUtil.nthnthArrayelt(es_1,Values.ARRAY(vals,dims),v);
       then
         (cache,v,stOpt);
@@ -799,9 +800,9 @@ algorithm
       equation
         env = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(Env.forScopeName), NONE());
         (cache, valMatrix, names, dims, tys, stOpt) = cevalReductionIterators(cache, env, iterators, impl, stOpt, msg);
-        // print("Before:\n");print(Util.stringDelimitList(Util.listMap1(Util.listListMap(valMatrix, ValuesUtil.valString), Util.stringDelimitList, ","), "\n") +& "\n");
+        // print("Before:\n");print(Util.stringDelimitList(List.map1(List.mapList(valMatrix, ValuesUtil.valString), Util.stringDelimitList, ","), "\n") +& "\n");
         valMatrix = Util.allCombinations(valMatrix,SOME(10000),Absyn.dummyInfo);
-        // print("After:\n");print(Util.stringDelimitList(Util.listMap1(Util.listListMap(valMatrix, ValuesUtil.valString), Util.stringDelimitList, ","), "\n") +& "\n");
+        // print("After:\n");print(Util.stringDelimitList(List.map1(List.mapList(valMatrix, ValuesUtil.valString), Util.stringDelimitList, ","), "\n") +& "\n");
         // print("Start cevalReduction: " +& Absyn.pathString(path) +& " " +& ValuesUtil.valString(startValue) +& " " +& ValuesUtil.valString(Values.TUPLE(vals)) +& " " +& ExpressionDump.printExpStr(daeExp) +& "\n");
         (cache, ov, stOpt) = cevalReduction(cache, env, path, ov, daeExp, ty, foldExp, names, listReverse(valMatrix), tys, impl, stOpt, msg);
         value = Util.getOptionOrDefault(ov, Values.META_FAIL());
@@ -1194,7 +1195,7 @@ algorithm
       equation
         Debug.fprintln("dynload", "CALL: record constructor: func: " +& Absyn.pathString(funcpath) +& " type path: " +& Absyn.pathString(complexName));
         true = ModUtil.pathEqual(funcpath,complexName);
-        varNames = Util.listMap(varLst,Expression.varName);
+        varNames = List.map(varLst,Expression.varName);
         Debug.fprintln("dynload", "CALL: record constructor: [success] func: " +& Absyn.pathString(funcpath));        
       then 
         (cache,Values.RECORD(funcpath,vallst,varNames,-1),st);
@@ -1286,7 +1287,7 @@ algorithm
         newCF = Interactive.removeCfAndDependencies(cf, funcpath::functionDependencies);
         
         Debug.fprintln("dynload", "CALL: [SOME SYMTAB] not in in CF list: removed deps:" +& 
-          Util.stringDelimitList(Util.listMap(functionDependencies, Absyn.pathString) ,", "));        
+          Util.stringDelimitList(List.map(functionDependencies, Absyn.pathString) ,", "));        
         
         // now is safe to generate code 
         (cache, funcstr) = CevalScript.cevalGenerateFunction(cache, env, funcpath);
@@ -1463,7 +1464,7 @@ algorithm
 
     case (_, Absyn.STRING(s)) then stringEq(s, inLibrary);
     case (_, Absyn.ARRAY(exps))
-      then Util.listMemberWithCompareFunc(inLibrary, exps, checkLibraryUsage);
+      then List.isMemberOnTrue(inLibrary, exps, checkLibraryUsage);
   end match;
 end checkLibraryUsage;
         
@@ -1664,7 +1665,7 @@ algorithm
     
     case (cache,_,DAE.MATRIX(matrix=mat),DAE.ICONST(2),_,st,_)
       equation
-        i = listLength(Util.listFirst(mat));
+        i = listLength(List.first(mat));
       then
         (cache,Values.INTEGER(i),st);
     
@@ -1673,7 +1674,7 @@ algorithm
         bl = (dim>2);
         true = bl;
         dim_1 = dim-2;
-        e = Util.listFirst(Util.listFirst(mat));
+        e = List.first(List.first(mat));
         (cache,Values.INTEGER(i),st_1)=cevalBuiltinSize(cache,env,e,DAE.ICONST(dim_1),impl,st,msg);
       then
         (cache,Values.INTEGER(i),st);
@@ -1939,7 +1940,7 @@ algorithm
         b1 = (rv >. 0.0);
         b2 = (rv <. 0.0);
         b3 = (rv ==. 0.0);
-        {(_,iv_1)} = Util.listSelect({(b1,1),(b2,-1),(b3,0)}, Util.tuple21);
+        {(_,iv_1)} = List.select({(b1,1),(b2,-1),(b3,0)}, Util.tuple21);
       then
         (cache,Values.INTEGER(iv_1),st);
     case (cache,env,{exp},impl,st,msg)
@@ -1948,7 +1949,7 @@ algorithm
         b1 = (iv > 0);
         b2 = (iv < 0);
         b3 = (iv == 0);
-        {(_,iv_1)} = Util.listSelect({(b1,1),(b2,-1),(b3,0)}, Util.tuple21);
+        {(_,iv_1)} = List.select({(b1,1),(b2,-1),(b3,0)}, Util.tuple21);
       then
         (cache,Values.INTEGER(iv_1),st);
   end matchcontinue;
@@ -2075,23 +2076,23 @@ algorithm
     case (cache,env ,cr)
       equation
         (env as (Env.FRAME(connectionSet = (crs,prefix))::_)) = Env.stripForLoopScope(env);
-        cr_lst = Util.listSelect1(crs, cr, ComponentReference.crefContainedIn);
+        cr_lst = List.select1(crs, ComponentReference.crefContainedIn, cr);
         currentPrefixIdent= ComponentReference.crefLastIdent(prefix);
         currentPrefix = ComponentReference.makeCrefIdent(currentPrefixIdent,DAE.ET_OTHER(),{});
          //  Select connect references that has cr as suffix and correct Prefix.
-        cr_lst = Util.listSelect1R(cr_lst, currentPrefix, ComponentReference.crefPrefixOf);
+        cr_lst = List.select1r(cr_lst, ComponentReference.crefPrefixOf, currentPrefix);
 
         // Select connect references that are identifiers (inside connectors)
-        cr_lst2 = Util.listSelect(crs,ComponentReference.crefIsIdent);
-        cr_lst2 = Util.listSelect1(cr_lst2,cr,ComponentReference.crefEqual);
+        cr_lst2 = List.select(crs,ComponentReference.crefIsIdent);
+        cr_lst2 = List.select1(cr_lst2,ComponentReference.crefEqual,cr);
 
-        cr_totlst = Util.listUnionOnTrue(listAppend(cr_lst,cr_lst2),{},ComponentReference.crefEqual);
+        cr_totlst = List.unionOnTrue(listAppend(cr_lst,cr_lst2),{},ComponentReference.crefEqual);
         res = listLength(cr_totlst);
 
         /*print("inFrame :");print(Env.printEnvPathStr(env));print("\n");
         print("cardinality(");print(ComponentReference.printComponentRefStr(cr));print(")=");print(intString(res));
-        print("\nicrefs =");print(Util.stringDelimitList(Util.listMap(crs,ComponentReference.printComponentRefStr),","));
-        print("\ncrefs =");print(Util.stringDelimitList(Util.listMap(cr_totlst,ComponentReference.printComponentRefStr),","));
+        print("\nicrefs =");print(Util.stringDelimitList(List.map(crs,ComponentReference.printComponentRefStr),","));
+        print("\ncrefs =");print(Util.stringDelimitList(List.map(cr_totlst,ComponentReference.printComponentRefStr),","));
         print("\n");
          print("prefix =");print(ComponentReference.printComponentRefStr(prefix));print("\n");*/
        //  print("env:");print(Env.printEnvStr(env));
@@ -2167,7 +2168,7 @@ algorithm
       equation
         (cache,Values.INTEGER(dim_int),_) = ceval(cache,env,dim,impl,st,msg);
         dim_int_1 = dim_int + 1;
-        expl = Util.listFill(DAE.ICONST(1), dim_int);
+        expl = List.fill(DAE.ICONST(1), dim_int);
         (cache,retExp) = cevalBuiltinDiagonal2(cache,env, DAE.ARRAY(DAE.ET_INT(),true,expl), impl, st, dim_int_1,
           1, {}, msg);
       then
@@ -2227,7 +2228,7 @@ algorithm
     case (Values.ARRAY(valueLst = vs, dimLst = i::_),n)
       equation
         n_1 = n - 1;
-        (vs_1 as (Values.ARRAY(dimLst = il)::_)) = Util.listMap1(vs, cevalBuiltinPromote2, n_1);
+        (vs_1 as (Values.ARRAY(dimLst = il)::_)) = List.map1(vs, cevalBuiltinPromote2, n_1);
       then
         Values.ARRAY(vs_1,i::il);
     case (_,_)
@@ -2778,7 +2779,7 @@ algorithm
       equation
         (cache,Values.STRING(str),st) = ceval(cache,env, exp, impl, st,msg);
         chList = stringListStringChar(str);
-        valList = Util.listMap(chList, generateValueString);
+        valList = List.map(chList, generateValueString);
       then
         (cache,Values.LIST(valList),st);
   end match;
@@ -2822,7 +2823,7 @@ algorithm
         // The work-around is to check that each String has length 1 and append all the Strings together
         // WARNING: This can be very, very slow for long lists - it grows as O(n^2)
         // TODO: When implemented, use listStringCharString (OMC name) or stringCharListString (RML name) directly
-        chList = Util.listMap(valList, extractValueStringChar);
+        chList = List.map(valList, extractValueStringChar);
         str = stringAppendList(chList);
       then
         (cache,Values.STRING(str),st);
@@ -2855,7 +2856,7 @@ algorithm
     case (cache,env,{exp},impl,st,msg)
       equation
         (cache,Values.LIST(valList),st) = ceval(cache,env, exp, impl, st,msg);
-        chList = Util.listMap(valList, ValuesUtil.extractValueString);
+        chList = List.map(valList, ValuesUtil.extractValueString);
         str = stringAppendList(chList);
       then
         (cache,Values.STRING(str),st);
@@ -3081,16 +3082,16 @@ algorithm
       list<Integer> il;
     case (vlst,1) /* base case for first dimension */
       equation
-        vlst_lst = Util.listMap(vlst, ValuesUtil.arrayValues);
-        v_lst_1 = Util.listFlatten(vlst_lst);
+        vlst_lst = List.map(vlst, ValuesUtil.arrayValues);
+        v_lst_1 = List.flatten(vlst_lst);
       then
         v_lst_1;
     case (vlst,dim)
       equation
-        v_lst_lst = Util.listMap(vlst, ValuesUtil.arrayValues);
+        v_lst_lst = List.map(vlst, ValuesUtil.arrayValues);
         dim_1 = dim - 1;
         v_lst_lst_1 = catDimension2(v_lst_lst, dim_1);
-        v_lst_1 = Util.listMap(v_lst_lst_1, ValuesUtil.makeArray);
+        v_lst_1 = List.map(v_lst_lst_1, ValuesUtil.makeArray);
         (Values.ARRAY(valueLst = vlst2, dimLst = i2::il) :: _) = v_lst_1;
         i1 = listLength(v_lst_1);
         v_lst_1 = cevalBuiltinTranspose2(v_lst_1, 1, i2::i1::il);
@@ -3114,20 +3115,20 @@ algorithm
       Integer dim;
     case (lst,dim)
       equation
-        l_lst = Util.listFirst(lst);
+        l_lst = List.first(lst);
         1 = listLength(l_lst);
-        first_lst = Util.listMap(lst, Util.listFirst);
+        first_lst = List.map(lst, List.first);
         first_lst_1 = catDimension(first_lst, dim);
-        first_lst_2 = Util.listMap(first_lst_1, Util.listCreate);
+        first_lst_2 = List.map(first_lst_1, List.create);
       then
         first_lst_2;
     case (lst,dim)
       equation
-        first_lst = Util.listMap(lst, Util.listFirst);
-        rest = Util.listMap(lst, Util.listRest);
+        first_lst = List.map(lst, List.first);
+        rest = List.map(lst, List.rest);
         first_lst_1 = catDimension(first_lst, dim);
         rest_1 = catDimension2(rest, dim);
-        res = Util.listThreadMap(rest_1, first_lst_1, Util.listCons);
+        res = List.threadMap(rest_1, first_lst_1, List.consr);
       then
         res;
   end matchcontinue;
@@ -4469,9 +4470,9 @@ algorithm
         s2 = DAE.ICONST(row);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, Expression.makeASUB(s1,{s2}), impl, st,msg);
         correctDim = matrixDimension - 1;
-        zeroList = Util.listFill(Values.REAL(0.0), correctDim);
+        zeroList = List.fill(Values.REAL(0.0), correctDim);
         correctPlace = row - 1;
-        listWithElement = Util.listReplaceAt(Values.REAL(rv2), correctPlace, zeroList);
+        listWithElement = List.replaceAt(Values.REAL(rv2), correctPlace, zeroList);
         newRow = row + 1;
         v = ValuesUtil.makeArray(listWithElement);
         (cache,retExp) = cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, {v}, msg);
@@ -4486,9 +4487,9 @@ algorithm
         false = intEq(matrixDimension, row);
         
         correctDim = matrixDimension - 1;
-        zeroList = Util.listFill(Values.REAL(0.0), correctDim);
+        zeroList = List.fill(Values.REAL(0.0), correctDim);
         correctPlace = row - 1;
-        listWithElement = Util.listReplaceAt(Values.REAL(rv2), correctPlace, zeroList);
+        listWithElement = List.replaceAt(Values.REAL(rv2), correctPlace, zeroList);
         newRow = row + 1;
         v = ValuesUtil.makeArray(listWithElement);
         appendedList = listAppend(listIN, {v});
@@ -4501,9 +4502,9 @@ algorithm
         s2 = DAE.ICONST(row);
         (cache,Values.INTEGER(iv2),_) = ceval(cache,env, Expression.makeASUB(s1,{s2}), impl, st,msg);
         correctDim = matrixDimension - 1;
-        zeroList = Util.listFill(Values.INTEGER(0), correctDim);
+        zeroList = List.fill(Values.INTEGER(0), correctDim);
         correctPlace = row - 1;
-        listWithElement = Util.listReplaceAt(Values.INTEGER(iv2), correctPlace, zeroList);
+        listWithElement = List.replaceAt(Values.INTEGER(iv2), correctPlace, zeroList);
         newRow = row + 1;
         v = ValuesUtil.makeArray(listWithElement);
         (cache,retExp) = cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, {v}, msg);
@@ -4518,9 +4519,9 @@ algorithm
         false = intEq(matrixDimension, row);
 
         correctDim = matrixDimension - 1;
-        zeroList = Util.listFill(Values.INTEGER(0), correctDim);
+        zeroList = List.fill(Values.INTEGER(0), correctDim);
         correctPlace = row - 1;
-        listWithElement = Util.listReplaceAt(Values.INTEGER(iv2), correctPlace, zeroList);
+        listWithElement = List.replaceAt(Values.INTEGER(iv2), correctPlace, zeroList);
         newRow = row + 1;
         v = ValuesUtil.makeArray(listWithElement);
         appendedList = listAppend(listIN, {v});
@@ -4645,7 +4646,7 @@ algorithm
     case (vlst,indx,inDims as (dim1::_))
       equation
         (indx <= dim1) = true;
-        transposed_row = Util.listMap1(vlst, ValuesUtil.nthArrayelt, indx);
+        transposed_row = List.map1(vlst, ValuesUtil.nthArrayelt, indx);
         indx_1 = indx + 1;
         rest = cevalBuiltinTranspose2(vlst, indx_1, inDims);
       then
@@ -4693,7 +4694,7 @@ algorithm
     // For matrix expressions: [1,2;3,4]
     case (cache, env, DAE.MATRIX(ty = DAE.ET_ARRAY(arrayDimensions = dims)), impl, st, msg)
       equation
-        sizelst = Util.listMap(dims, Expression.dimensionSize);
+        sizelst = List.map(dims, Expression.dimensionSize);
         v = ValuesUtil.intlistToValue(sizelst);
       then
         (cache, v, st);
@@ -4770,7 +4771,7 @@ algorithm
           rest_dims, inImpl, inST, inMsg);
         (cache, Values.INTEGER(int_dim), st) = 
           ceval(cache, inEnv, dim, inImpl, st, inMsg);
-        fill_vals = Util.listFill(fill_value, int_dim);
+        fill_vals = List.fill(fill_value, int_dim);
         array_dims = ValuesUtil.valueDimensions(fill_value);
         array_dims = int_dim :: array_dims;
       then
@@ -4988,10 +4989,10 @@ algorithm
     case (_, _, DAE.ET_ENUMERATION(path = enum_type, names = enum_names))
       equation
         (startIndex <= stopIndex) = true;
-        enum_names = Util.listSub(enum_names, startIndex, (stopIndex - startIndex) + 1);
-        enum_paths = Util.listMap(enum_names, Absyn.makeIdentPathFromString);
-        enum_paths = Util.listMap1r(enum_paths, Absyn.joinPaths, enum_type);
-        (enum_values, _) = Util.listMapAndFold(enum_paths, makeEnumValue, startIndex);
+        enum_names = List.sublist(enum_names, startIndex, (stopIndex - startIndex) + 1);
+        enum_paths = List.map(enum_names, Absyn.makeIdentPathFromString);
+        enum_paths = List.map1r(enum_paths, Absyn.joinPaths, enum_type);
+        (enum_values, _) = List.mapFold(enum_paths, makeEnumValue, startIndex);
       then
         enum_values;
   end match;
@@ -5293,7 +5294,7 @@ output Boolean res;
 algorithm
   res := matchcontinue(cr,exp)
     case(cr,exp) equation
-      res = Util.boolOrList(Util.listMap1(Expression.extractCrefsFromExp(exp),ComponentReference.crefEqual,cr));
+      res = Util.boolOrList(List.map1(Expression.extractCrefsFromExp(exp),ComponentReference.crefEqual,cr));
     then res;
     case(_,_) then false;
   end matchcontinue;
@@ -5350,8 +5351,8 @@ algorithm
     case (cache,env,(DAE.SLICE(exp = exp) :: subs),Values.ARRAY(valueLst = lst),impl,msg)
       equation
         (cache,subval as Values.ARRAY(valueLst = sliceLst),_) = ceval(cache, env, exp, impl,NONE(), msg);
-        slice = Util.listMap(sliceLst, ValuesUtil.valueIntegerMinusOne);
-        subvals = Util.listMap1r(slice, listNth, lst);
+        slice = List.map(sliceLst, ValuesUtil.valueIntegerMinusOne);
+        subvals = List.map1r(slice, listNth, lst);
         (cache,lst) = cevalSubscriptValueList(cache,env, subs, subvals, impl, msg);
         res = ValuesUtil.makeArray(lst);
       then
@@ -5373,9 +5374,9 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "- Ceval.cevalSubscriptValue failed on:" +&
           "\n env: " +& Env.printEnvPathStr(env) +&
-          "\n subs: " +& Util.stringDelimitList(Util.listMap(subs, ExpressionDump.printSubscriptStr), ", ") +&
+          "\n subs: " +& Util.stringDelimitList(List.map(subs, ExpressionDump.printSubscriptStr), ", ") +&
           "\n value: " +& ValuesUtil.printValStr(inValue) +&
-          "\n dim sizes: " +& Util.stringDelimitList(Util.listMap(dims, intString), ", ") 
+          "\n dim sizes: " +& Util.stringDelimitList(List.map(dims, intString), ", ") 
         );
       then
         fail();*/
@@ -5824,7 +5825,7 @@ public function dumpCevalHashTable ""
   input CevalHashTable t;
 algorithm
   print("CevalHashTable:\n");
-  print(Util.stringDelimitList(Util.listMap(hashTableList(t),dumpTuple),"\n"));
+  print(Util.stringDelimitList(List.map(hashTableList(t),dumpTuple),"\n"));
   print("\n");
 end dumpCevalHashTable;
 
@@ -6096,14 +6097,14 @@ public function hashTableValueList "return the Value entries as a list of Values
   input CevalHashTable hashTable;
   output list<Value> valLst;
 algorithm
-   valLst := Util.listMap(hashTableList(hashTable),Util.tuple22);
+   valLst := List.map(hashTableList(hashTable),Util.tuple22);
 end hashTableValueList;
 
 public function hashTableKeyList "return the Key entries as a list of Keys"
   input CevalHashTable hashTable;
   output list<Key> valLst;
 algorithm
-   valLst := Util.listMap(hashTableList(hashTable),Util.tuple21);
+   valLst := List.map(hashTableList(hashTable),Util.tuple21);
 end hashTableKeyList;
 
 public function hashTableList "returns the entries in the hashTable as a list of tuple<Key,Value>"
@@ -6439,9 +6440,9 @@ algorithm
       equation
         // Split into the smallest of the arrays
         // print("into sublists of length: " +& intString(dim) +& " from length=" +& intString(listLength(vals)) +& "\n");
-        valMatrix = Util.listPartition(vals,dim);
+        valMatrix = List.partition(vals,dim);
         // print("output has length=" +& intString(listLength(valMatrix)) +& "\n");
-        vals = Util.listMap(valMatrix,ValuesUtil.makeArray);
+        vals = List.map(valMatrix,ValuesUtil.makeArray);
         value = backpatchArrayReduction3(vals,dims);
       then value;
   end match;

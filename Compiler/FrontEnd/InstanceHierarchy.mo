@@ -57,6 +57,7 @@ end Face;
 
 protected import Debug;
 protected import Dump;
+protected import List;
 protected import Util;
 protected import RTOpts;
 protected import SCodeDump;
@@ -374,7 +375,7 @@ algorithm
     case (scope, SCode.EQUATION(SCode.EQ_FOR(eEquationLst = eEquationLst))::rest, CONNECTS(eqs,act))
       equation
         eEquationLst = filterConnects(eEquationLst);
-        eEquationLst = Util.listMap1r(eEquationLst, addScopeToConnects, scope);
+        eEquationLst = List.map1r(eEquationLst, addScopeToConnects, scope);
         eqs = listAppend(eqs, eEquationLst);
         result = addConnects(scope, rest, CONNECTS(eqs,act));
       then
@@ -613,9 +614,9 @@ algorithm
     case (CONNECTS(connectEquations, actualConnects), l)
       equation
         indent = Dump.indentStr(l) +& "+";
-        str = Util.stringDelimitList(Util.listMap(connectEquations, SCodeDump.equationStr), "\n" +& indent);
+        str = Util.stringDelimitList(List.map(connectEquations, SCodeDump.equationStr), "\n" +& indent);
         print("\n" +& indent +& str);
-        str = Util.stringDelimitList(Util.listMap(actualConnects, Dump.printComponentRefStr), ", ");
+        str = Util.stringDelimitList(List.map(actualConnects, Dump.printComponentRefStr), ", ");
         print(str);
       then ();
   end matchcontinue;

@@ -51,6 +51,7 @@ protected import ComponentReference;
 protected import DAEUtil;
 protected import Error;
 protected import Expression;
+protected import List;
 protected import Types;
 protected import Util;
 
@@ -60,12 +61,12 @@ public function partEvalBackendDAE
 "function: partEvalBackendDAE
   handles partially evaluated function in BackendDAE format"
   input BackendDAE.EqSystem syst;
-  input tuple<BackendDAE.Shared,list<DAE.Function>> sharedAndFuncs;
   input Boolean dummy;
+  input tuple<BackendDAE.Shared,list<DAE.Function>> sharedAndFuncs;
   output BackendDAE.EqSystem osyst;
   output tuple<BackendDAE.Shared,list<DAE.Function>> osharedAndFuncs;
 algorithm
-  (osyst,osharedAndFuncs) := matchcontinue(syst,sharedAndFuncs,dummy)
+  (osyst,osharedAndFuncs) := matchcontinue(syst,dummy,sharedAndFuncs)
     local
       list<DAE.Function> dae;
       BackendDAE.Variables orderedVars;
@@ -88,7 +89,7 @@ algorithm
         false = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
       then
         (dae,dlow);*/
-    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),(BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses,btp),dae),_)
+    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),_,(BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses,btp),dae))
       equation
         (orderedVars,dae) = partEvalVars(orderedVars,dae);
         (knownVars,dae) = partEvalVars(knownVars,dae);
@@ -517,7 +518,7 @@ protected function elabElements
   output list<DAE.Element> oels;
   output list<DAE.Function> odae;
 algorithm
-  (oels,odae) := Util.listMapAndFold(els,elabElement,dae);
+  (oels,odae) := List.mapFold(els,elabElement,dae);
 end elabElements;
 
 protected function elabElement
@@ -627,7 +628,7 @@ algorithm
     case(DAE.IF_EQUATION(elst,elm,elts,source),dae)
       equation
         (elst_1,dae) = elabExpList(elst,dae);
-        (elm_1,{dae}) = Util.listMap1_2(elm,elabElements,dae);
+        (elm_1,{dae}) = List.map1_2(elm,elabElements,dae);
         (elts_1,dae) = elabElements(elts,dae);
       then
         (DAE.IF_EQUATION(elst_1,elm_1,elts_1,source),dae);
@@ -635,7 +636,7 @@ algorithm
     case(DAE.INITIAL_IF_EQUATION(elst,elm,elts,source),dae)
       equation
         (elst_1,dae) = elabExpList(elst,dae);
-        (elm_1,{dae}) = Util.listMap1_2(elm,elabElements,dae);
+        (elm_1,{dae}) = List.map1_2(elm,elabElements,dae);
         (elts_1,dae) = elabElements(elts,dae);
       then
         (DAE.INITIAL_IF_EQUATION(elst_1,elm_1,elts_1,source),dae);
@@ -1036,7 +1037,7 @@ algorithm
       equation
         (DAE.PARTEVALFUNCTION(p1,args1,_),i) = getPartEvalFunction(args,0);
         numArgs = listLength(args1);
-        args_1 = Util.listReplaceAtWithList(args1,i,args);
+        args_1 = List.replaceAtWithList(args1,i,args);
         p_1 = makeNewFnPath(p,p1);
         dae = buildNewFunction(dae,p,p1,numArgs);
       then
@@ -1147,7 +1148,7 @@ algorithm
     case((DAE.T_FUNCTION(args,retType,functionAttributes),po),vars)
       equation
         new_args = Types.makeFargsList(vars);
-        args_1 = Util.listSelect(args,isNotFunctionType);
+        args_1 = List.select(args,isNotFunctionType);
         args_2 = listAppend(args_1,new_args);
       then
         ((DAE.T_FUNCTION(args_2,retType,functionAttributes),po));
@@ -1195,14 +1196,14 @@ algorithm
          functions={DAE.FUNCTION_DEF(smallparts)}),
          dae,numArgs,current)
       equation
-        inputs = Util.listSelect(smallparts,isInput);
+        inputs = List.select(smallparts,isInput);
         s = Absyn.pathStringNoQual(p);
-        inputs = Util.listMap1(inputs,renameInput,s);
+        inputs = List.map1(inputs,renameInput,s);
         inputs = listReverse(getFirstNInputs(listReverse(inputs),numArgs));
         res = insertAfterInputs(parts,inputs);
         res = fixCalls(res,dae,p,inputs,current);
-        res = Util.listSelect(res,isNotFunctionInput);
-        vars = Util.listMap(inputs,buildTypeVar);
+        res = List.select(res,isNotFunctionInput);
+        vars = List.map(inputs,buildTypeVar);
       then
         (res,vars);
     case(_,_,_,_,_)
@@ -1293,7 +1294,7 @@ algorithm
         fail();
     case((e as DAE.VAR(direction = DAE.INPUT())) :: cdr,inputs)
       equation
-        DAE.VAR(direction = DAE.INPUT()) = Util.listFirst(cdr);
+        DAE.VAR(direction = DAE.INPUT()) = List.first(cdr);
         res = insertAfterInputs(cdr,inputs);
       then
         e :: res;
@@ -1520,7 +1521,7 @@ algorithm
         DAE.STMT_ASSIGN(ty,e1_1,e2_1,source) :: cdr_1;
     case(DAE.STMT_TUPLE_ASSIGN(ty,elst,e,source) :: cdr,dae,p,inputs,current)
       equation
-        elst_1 = Util.listMap1(elst,handleExpList2,(p,inputs,dae,current));
+        elst_1 = List.map1(elst,handleExpList2,(p,inputs,dae,current));
         ((e_1,_)) = Expression.traverseExp(e,fixCall,(p,inputs,dae,current));
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
@@ -1713,8 +1714,8 @@ algorithm
       equation
         true = Absyn.pathEqual(orig_p,current);
         new_p = makeNewFnPath(orig_p,p);
-        crefs = Util.listMap(inputs,DAEUtil.varCref);
-        args2 = Util.listMap(crefs,Expression.crefExp);
+        crefs = List.map(inputs,DAEUtil.varCref);
+        args2 = List.map(crefs,Expression.crefExp);
         args_1 = replaceFnRef(args,args2);
       then
         ((DAE.CALL(new_p,args_1,attr),(p,inputs,dae,current)));
@@ -1722,9 +1723,9 @@ algorithm
     case((DAE.CALL(orig_p,args,DAE.CALL_ATTR(ty,tup,false,inl,tc)),(p,inputs,dae,current)))
       equation
         failure(_ = DAEUtil.getNamedFunctionFromList(orig_p,dae)); // if function exists, do not replace call
-        crefs = Util.listMap(inputs,DAEUtil.varCref);
-        args2 = Util.listMap(crefs,Expression.crefExp);
-        args = Util.listMap(args,Expression.unboxExp); // Unbox args here
+        crefs = List.map(inputs,DAEUtil.varCref);
+        args2 = List.map(crefs,Expression.crefExp);
+        args = List.map(args,Expression.unboxExp); // Unbox args here
         args_1 = listAppend(args,args2);
         ty_1 = Expression.unboxExpType(ty);
       then

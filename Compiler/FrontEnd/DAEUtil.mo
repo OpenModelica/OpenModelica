@@ -131,7 +131,7 @@ algorithm
   dims := matchcontinue(tp)
     local list<DAE.Dimension> array_dims;
     case(DAE.ET_ARRAY(arrayDimensions=array_dims)) equation
-      dims = Util.listMap(array_dims, Expression.dimensionSize);
+      dims = List.map(array_dims, Expression.dimensionSize);
     then dims;
   end matchcontinue;
 end expTypeArrayDimensions;
@@ -164,14 +164,14 @@ algorithm
     case(DAE.FUNCTION_DER_MAPPER(derivativeFunction=p1,defaultDerivative=SOME(p2),lowerOrderDerivatives=pLst1)::funcDefs)
       equation
         pLst2 = getDerivativePaths(funcDefs);
-        paths = Util.listUnion(p1::p2::pLst1,pLst2);
+        paths = List.union(p1::p2::pLst1,pLst2);
       then 
         paths;
     
     case(DAE.FUNCTION_DER_MAPPER(derivativeFunction=p1,defaultDerivative=NONE(),lowerOrderDerivatives=pLst1)::funcDefs)
       equation
         pLst2 = getDerivativePaths(funcDefs);
-        paths = Util.listUnion(p1::pLst1,pLst2);
+        paths = List.union(p1::pLst1,pLst2);
       then 
         paths;
     
@@ -244,6 +244,7 @@ protected import Debug;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
+protected import List;
 protected import ModUtil;
 protected import RTOpts;
 protected import System;
@@ -396,7 +397,7 @@ algorithm
   // adrpo: TODO! FIXME! rather expensive function! 
   //        implement this by walking dae once and check element with each var in the list
   //        instead of walking the dae once for each var.
-  // outDae := Util.listFold(vars,removeVariable,dae);
+  // outDae := List.fold(vars,removeVariable,dae);
   outDae := matchcontinue(dae, vars)
     local
       list<DAE.Element> elements;
@@ -430,7 +431,7 @@ algorithm
     case(DAE.VAR(componentRef = cr)::rest, variableNames)
       equation
         // variable is in the list! jump over it
-        _::_ = Util.listSelect1(variableNames, cr, ComponentReference.crefEqual);
+        _::_ = List.select1(variableNames, ComponentReference.crefEqual, cr);
         els = removeVariablesFromElements(rest, variableNames);
       then 
         els;
@@ -439,7 +440,7 @@ algorithm
     case((v as DAE.VAR(componentRef = cr))::rest, variableNames)
       equation
         // variable NOT in the list! jump over it
-        {} = Util.listSelect1(variableNames, cr, ComponentReference.crefEqual);
+        {} = List.select1(variableNames, ComponentReference.crefEqual, cr);
         els = removeVariablesFromElements(rest, variableNames);
       then 
         v::els;
@@ -499,7 +500,7 @@ public function removeInnerAttrs "Remove the inner attribute of all vars in list
   input list<DAE.ComponentRef> vars;
   output DAE.DAElist outDae;
 algorithm
-  outDae := Util.listFold(vars,removeInnerAttr,dae);
+  outDae := List.fold(vars,removeInnerAttr,dae);
 end removeInnerAttrs;
 
 public function removeInnerAttr "Remove the inner attribute from variable in the DAE"
@@ -1090,7 +1091,7 @@ public function getMatchingElements "function getMatchingElements
     input DAE.Element inElement;
   end FuncTypeElementTo;
 algorithm
-  oelist := Util.listFilter(elist, cond);
+  oelist := List.filter(elist, cond);
 end getMatchingElements;
 
 public function getAllMatchingElements "function getAllMatchingElements
@@ -1917,8 +1918,8 @@ algorithm
 
     case ((DAE.IF_EQUATION(condition1 = conds,equations2 = trueBranches,equations3 = eelts,source = source) :: elts))
       equation
-        conds_1 = Util.listMap(conds,toModelicaFormExp);
-        trueBranches_1 = Util.listMap(trueBranches,toModelicaFormElts);
+        conds_1 = List.map(conds,toModelicaFormExp);
+        trueBranches_1 = List.map(trueBranches,toModelicaFormElts);
         eelts_1 = toModelicaFormElts(eelts);
         elts_1 = toModelicaFormElts(elts);
       then
@@ -1926,8 +1927,8 @@ algorithm
 
     case ((DAE.INITIAL_IF_EQUATION(condition1 = conds,equations2 = trueBranches,equations3 = eelts,source = source) :: elts))
       equation
-        conds_1 = Util.listMap(conds,toModelicaFormExp);
-        trueBranches_1 = Util.listMap(trueBranches,toModelicaFormElts);
+        conds_1 = List.map(conds,toModelicaFormExp);
+        trueBranches_1 = List.map(trueBranches,toModelicaFormElts);
         eelts_1 = toModelicaFormElts(eelts);
         elts_1 = toModelicaFormElts(elts);
       then
@@ -2086,17 +2087,17 @@ algorithm
         DAE.IFEXP(e1_1,e2_1,e3_1);
     case (DAE.CALL(path = f,expLst = expl,attr = attr))
       equation
-        expl_1 = Util.listMap(expl, toModelicaFormExp);
+        expl_1 = List.map(expl, toModelicaFormExp);
       then
         DAE.CALL(f,expl_1,attr);
     case (DAE.ARRAY(ty = t,scalar = b,array = expl))
       equation
-        expl_1 = Util.listMap(expl, toModelicaFormExp);
+        expl_1 = List.map(expl, toModelicaFormExp);
       then
         DAE.ARRAY(t,b,expl_1);
     case (DAE.TUPLE(PR = expl))
       equation
-        expl_1 = Util.listMap(expl, toModelicaFormExp);
+        expl_1 = List.map(expl, toModelicaFormExp);
       then
         DAE.TUPLE(expl_1);
     case (DAE.CAST(ty = t,exp = e))
@@ -2131,7 +2132,7 @@ algorithm
     case (path,functions) then Util.getOption(avlTreeGet(functions, path));
     case (path,functions)
       equation
-        msg = Util.stringDelimitList(Util.listMapMap(getFunctionList(functions), functionName, Absyn.pathString), "\n  ");
+        msg = Util.stringDelimitList(List.mapMap(getFunctionList(functions), functionName, Absyn.pathString), "\n  ");
         msg = "DAEUtil.getNamedFunction failed: " +& Absyn.pathString(path) +& "\nThe following functions were part of the cache:\n  ";
         // Error.addMessage(Error.INTERNAL_ERROR,{msg});
         Debug.fprintln("failtrace", msg);
@@ -2166,8 +2167,8 @@ protected function getFunctionsElements
 protected
   list<list<DAE.Element>> elsList;
 algorithm
-  elsList := Util.listMap(elements, getFunctionElements);
-  els := Util.listFlatten(elsList);
+  elsList := List.map(elements, getFunctionElements);
+  els := List.flatten(elsList);
 end getFunctionsElements;
 
 public function getFunctionElements
@@ -2280,7 +2281,7 @@ algorithm
 
     case(DAE.IF_EQUATION(condition1 = exps,equations2 = eqstrueb,equations3 = eqsfalseb,source = source)::rest,acc)
       equation
-        crefslist = Util.listMap1(eqstrueb,verifyWhenEquationStatements,{});
+        crefslist = List.map1(eqstrueb,verifyWhenEquationStatements,{});
         crefs2 = verifyWhenEquationStatements(eqsfalseb,{});
         crefslist = crefs2::crefslist;
         (crefs1,b) = compareCrefList(crefslist);
@@ -2338,7 +2339,7 @@ algorithm (outrefs,matching) := matchcontinue(inrefs)
       (recRefs,b3) = compareCrefList(inrefs);
       i = listLength(recRefs);
       b1 = (0 == intMod(listLength(crefs),listLength(recRefs)));
-      crefs = Util.listListUnionOnTrue({recRefs,crefs},ComponentReference.crefEqual);
+      crefs = List.unionOnTrueList({recRefs,crefs},ComponentReference.crefEqual);
       b2 = intEq(listLength(crefs),i);
       b1 = boolAnd(b1,boolAnd(b2,b3));
     then
@@ -2469,7 +2470,7 @@ protected
   list<DAE.Element> elts;
 algorithm
   DAE.DAE(elts) := dae;
-  oht := Util.listFold(elts,getParameterVars2,ht);
+  oht := List.fold(elts,getParameterVars2,ht);
 end getParameterVars;
 
 protected function getParameterVars2
@@ -2484,7 +2485,7 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       list<DAE.Element> elts;
 
-    case (DAE.COMP(dAElist = elts),ht) then Util.listFold(elts,getParameterVars2,ht);
+    case (DAE.COMP(dAElist = elts),ht) then List.fold(elts,getParameterVars2,ht);
 
     case (DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e)),ht)
       then BaseHashTable.add((cr,e),ht);
@@ -2510,18 +2511,18 @@ protected
   list<DAE.Element> elts;
 algorithm
   DAE.DAE(elts) := dae;
-  ((oht,hasEvaluate)) := Util.listFold_2(elts,evaluateAnnotation1Fold,(ht,false),pv);
+  ((oht,hasEvaluate)) := List.fold1r(elts,evaluateAnnotation1Fold,pv,(ht,false));
 end evaluateAnnotation1;
 
 protected function evaluateAnnotation1Fold
 "function: evaluateAnnotation1
   evaluates the annotation Evaluate"
   input tuple<HashTable2.HashTable,Boolean> tpl;
-  input HashTable2.HashTable inPV;
   input DAE.Element el;
+  input HashTable2.HashTable inPV;
   output tuple<HashTable2.HashTable,Boolean> otpl;
 algorithm
-  otpl := matchcontinue (tpl,inPV,el)
+  otpl := matchcontinue (tpl,el,inPV)
     local
       list<DAE.Element> rest,sublist;
       SCode.Comment comment;
@@ -2531,9 +2532,9 @@ algorithm
       list<SCode.Annotation> annos;
       DAE.Exp e,e1;
       Boolean b,b1;
-    case (tpl,pv,DAE.COMP(dAElist = sublist))
-      then Util.listFold_2(sublist,evaluateAnnotation1Fold,tpl,pv);
-    case ((ht,_),pv,DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),absynCommentOption=SOME(comment)))
+    case (tpl,DAE.COMP(dAElist = sublist),pv)
+      then List.fold1r(sublist,evaluateAnnotation1Fold,pv,tpl);
+    case ((ht,_),DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),absynCommentOption=SOME(comment)),pv)
       equation
         SCode.COMMENT(annotation_=SOME(anno)) = comment;
         true = hasBooleanNamedAnnotation1({anno},"Evaluate");
@@ -2541,7 +2542,7 @@ algorithm
         ht1 = BaseHashTable.add((cr,e1),ht);
       then
         ((ht1,true));
-    case ((ht,_),pv,DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),absynCommentOption=SOME(comment)))
+    case ((ht,_),DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),absynCommentOption=SOME(comment)),pv)
       equation
         SCode.CLASS_COMMENT(annotations=annos) = comment;
         true = hasBooleanNamedAnnotation1(annos,"Evaluate");
@@ -2597,7 +2598,7 @@ algorithm
     case (DAE.DAE({}),ht) then ({},ht);
     case (DAE.DAE(elementLst=elementLst),ht)
       equation
-        (elementLst1,ht1) = Util.listMapAndFold(elementLst,evaluateAnnotation3,ht);
+        (elementLst1,ht1) = List.mapFold(elementLst,evaluateAnnotation3,ht);
       then
         (elementLst1,ht1);
   end matchcontinue;
@@ -2637,7 +2638,7 @@ algorithm
       
     case (DAE.COMP(ident=ident,dAElist = sublist,source=source,comment=comment),ht)
       equation
-        (sublist1,ht1) = Util.listMapAndFold(sublist,evaluateAnnotation3,ht);
+        (sublist1,ht1) = List.mapFold(sublist,evaluateAnnotation3,ht);
       then
         (DAE.COMP(ident,sublist1,source,comment),ht1);
     case (DAE.VAR(componentRef = cr,kind=DAE.PARAM(),direction=direction,protection=protection,ty=ty,binding=SOME(e),dims=dims,flowPrefix=flowPrefix,streamPrefix=streamPrefix,
@@ -2896,7 +2897,7 @@ algorithm
       equation
         _ = countEquationsInBranches(true_branch, false_branch, source);
         fbsExp = makeEquationLstToResidualExpLst(false_branch);
-        tbsExp = Util.listMap(true_branch, makeEquationLstToResidualExpLst);
+        tbsExp = List.map(true_branch, makeEquationLstToResidualExpLst);
         equations = makeEquationsFromResiduals(cond, tbsExp, fbsExp, source);
       then
         equations;
@@ -2972,15 +2973,15 @@ algorithm
     case (trueBranches,falseBranch,source)
       equation
         nrOfEquations = countEquations(falseBranch);
-        nrOfEquationsBranches = Util.listMap(trueBranches, countEquations);
-        b = Util.listMap1(nrOfEquationsBranches, intEq, nrOfEquations);
-        true = Util.listReduce(b,boolAnd);
+        nrOfEquationsBranches = List.map(trueBranches, countEquations);
+        b = List.map1(nrOfEquationsBranches, intEq, nrOfEquations);
+        true = List.reduce(b,boolAnd);
       then (nrOfEquations);
     case (trueBranches,falseBranch,source)
       equation
         nrOfEquations = countEquations(falseBranch);
-        nrOfEquationsBranches = Util.listMap(trueBranches, countEquations);
-        strs = Util.listMap(nrOfEquationsBranches, intString);
+        nrOfEquationsBranches = List.map(trueBranches, countEquations);
+        strs = List.map(nrOfEquationsBranches, intString);
         str = Util.stringDelimitList(strs,",");
         str = "{" +& str +& "," +& intString(nrOfEquations) +& "}";
         Error.addSourceMessage(Error.IF_EQUATION_UNBALANCED_2,{str},getElementSourceFileInfo(source));
@@ -3006,7 +3007,7 @@ algorithm
 
     case (_,tbs,{},_)
       equation
-        Util.listMap0(tbs, Util.assertListEmpty);
+        List.map_0(tbs, List.assertIsEmpty);
       then {};
 
     // adrpo: not all equations can be transformed using makeEquationToResidualExp
@@ -3016,11 +3017,11 @@ algorithm
 
     case (conds,tbs,fb::fbs,source)
       equation
-        tbsRest = Util.listMap(tbs,Util.listRest);
+        tbsRest = List.map(tbs,List.rest);
         rest_res = makeEquationsFromIf(conds, tbsRest, fbs, source);
 
-        tbsFirst = Util.listMap(tbs,Util.listFirst);
-        tbsexp = Util.listMap(tbsFirst,makeEquationToResidualExp);
+        tbsFirst = List.map(tbs,List.first);
+        tbsexp = List.map(tbsFirst,makeEquationToResidualExp);
         fbexp = makeEquationToResidualExp(fb);
 
         ifexp = Expression.makeNestedIf(conds,tbsexp,fbexp);
@@ -3050,14 +3051,14 @@ algorithm
     case (DAE.IF_EQUATION(condition1=conds,equations2=tbs,equations3=fbs))
       equation
         fbsExp = makeEquationLstToResidualExpLst(fbs);
-        tbsExp = Util.listMap(tbs, makeEquationLstToResidualExpLst);
+        tbsExp = List.map(tbs, makeEquationLstToResidualExpLst);
         exps = makeResidualIfExpLst(conds,tbsExp,fbsExp);
       then
         exps;
     case (DAE.INITIAL_IF_EQUATION(condition1=conds,equations2=tbs,equations3=fbs))
       equation
         fbsExp = makeEquationLstToResidualExpLst(fbs);
-        tbsExp = Util.listMap(tbs, makeEquationLstToResidualExpLst);
+        tbsExp = List.map(tbs, makeEquationLstToResidualExpLst);
         exps = makeResidualIfExpLst(conds,tbsExp,fbsExp);
       then
         exps;
@@ -3214,15 +3215,15 @@ algorithm
 
     case (_,tbs,{})
       equation
-        Util.listMap0(tbs, Util.assertListEmpty);
+        List.map_0(tbs, List.assertIsEmpty);
       then {};
 
     case (conds,tbs,fb::fbs)
       equation
-        tbsRest = Util.listMap(tbs,Util.listRest);
+        tbsRest = List.map(tbs,List.rest);
         rest_res = makeResidualIfExpLst(conds, tbsRest, fbs);
 
-        tbsFirst = Util.listMap(tbs,Util.listFirst);
+        tbsFirst = List.map(tbs,List.first);
 
         ifexp = Expression.makeNestedIf(conds,tbsFirst,fb);
       then
@@ -3249,15 +3250,15 @@ algorithm
 
     case (_,tbs,{},_)
       equation
-        Util.listMap0(tbs, Util.assertListEmpty);
+        List.map_0(tbs, List.assertIsEmpty);
       then {};
 
     case (conds,tbs,fb::fbs,src)
       equation
-        tbsRest = Util.listMap(tbs,Util.listRest);
+        tbsRest = List.map(tbs,List.rest);
         rest_res = makeEquationsFromResiduals(conds, tbsRest,fbs,src);
 
-        tbsFirst = Util.listMap(tbs,Util.listFirst);
+        tbsFirst = List.map(tbs,List.first);
 
         ifexp = Expression.makeNestedIf(conds,tbsFirst,fb);
         eq = DAE.EQUATION(DAE.RCONST(0.0),ifexp,src);
@@ -3513,11 +3514,11 @@ algorithm
     case ft
       equation
         lst = avlTreeToList(ft);
-      then Util.listMapMap(lst, Util.tuple22, Util.getOption);
+      then List.mapMap(lst, Util.tuple22, Util.getOption);
     case ft
       equation
         lst = avlTreeToList(ft);
-        ((path,_)) = Util.listSelectFirst(lst, isInvalidFunctionEntry);
+        ((path,_)) = List.selectFirst(lst, isInvalidFunctionEntry);
         str = Absyn.pathString(path);
         Error.addMessage(Error.NON_INSTANTIATED_FUNCTION, {str});
       then fail();
@@ -4273,7 +4274,7 @@ algorithm
       list<DAE.Element> elts;
     case (DAE.DAE(elts),newtype)
       equation
-        elts = Util.listMap1(elts,addComponentType2,newtype);
+        elts = List.map1(elts,addComponentType2,newtype);
       then DAE.DAE(elts);
   end match;
 end addComponentType;
@@ -4559,7 +4560,7 @@ algorithm
          DAE.DAE(elts2)) 
       equation
         // t1 = clock();
-        elts = Util.listAppendNoCopy(elts1,elts2);
+        elts = List.appendNoCopy(elts1,elts2);
         // t2 = clock();
         // ti = t2 -. t1;
         // Debug.fprintln("innerouter", " joinDAEs: (" +& realString(ti) +& ") -> " +& intString(listLength(elts1)) +& " + " +&  intString(listLength(elts2)));
@@ -5288,7 +5289,7 @@ algorithm
       equation
         paths1 = getUniontypePathsElements(rest);
         tys = Types.getAllInnerTypesOfType(ft, Types.uniontypeFilter);
-      then Util.listApplyAndFold(tys, listAppend, Types.getUniontypePaths, paths1);
+      then List.applyAndFold(tys, listAppend, Types.getUniontypePaths, paths1);
     case _::rest then getUniontypePathsElements(rest);
   end match;
 end getUniontypePathsElements;
@@ -5368,7 +5369,7 @@ protected
   list<DAE.Element> elts;
 algorithm
   DAE.DAE(elts) := dae;
-  elts := Util.listMap1(elts,makeEvaluatedParamFinal,Env.getEvaluatedParams(cache));
+  elts := List.map1(elts,makeEvaluatedParamFinal,Env.getEvaluatedParams(cache));
   d := DAE.DAE(elts);
   // Transform if equations to if expression before going into code generation.
   d := evaluateAnnotation(d);
@@ -5398,7 +5399,7 @@ algorithm
       then elt;
     case (DAE.COMP(id,elts,source,cmt),ht)
       equation
-        elts = Util.listMap1(elts,makeEvaluatedParamFinal,ht);
+        elts = List.map1(elts,makeEvaluatedParamFinal,ht);
       then DAE.COMP(id,elts,source,cmt);
     else elt;
   end matchcontinue;
@@ -5468,7 +5469,7 @@ algorithm
       list<Absyn.Path> acc;
     case ((exp as DAE.MATCHEXPRESSION(localDecls = decls),acc))
       equation
-        acc = Util.listFold(decls, collectFunctionRefVarPaths, acc);
+        acc = List.fold(decls, collectFunctionRefVarPaths, acc);
       then ((exp,acc));
     case itpl then itpl;
   end matchcontinue;
@@ -5634,7 +5635,7 @@ public function addSymbolicTransformationSolve
 protected
   list<DAE.Exp> assertExps;
 algorithm
-  assertExps := Util.listMap(asserts,Algorithm.getAssertCond);
+  assertExps := List.map(asserts,Algorithm.getAssertCond);
   outSource := condAddSymbolicTransformation(add,source,DAE.SOLVE(cr,exp1,exp2,exp,assertExps));
 end addSymbolicTransformationSolve;
 

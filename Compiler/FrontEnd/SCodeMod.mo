@@ -57,6 +57,7 @@ public import SCodeEnv;
 
 protected import Dump;
 protected import Util;
+protected import List;
 protected import System;
 protected import BaseHashTable;
 protected import SCodeLookup;
@@ -138,7 +139,7 @@ algorithm
     case (inHashValue)
       equation
         str = "(" +& Util.stringDelimitList(
-                Util.listMap(inHashValue, modString),
+                List.map(inHashValue, modString),
                 ", ") +& ")";
       then
         str;    

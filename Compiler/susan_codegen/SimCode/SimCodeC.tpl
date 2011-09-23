@@ -823,7 +823,7 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
  "Generates functions in simulation file."
 ::=
   (allEquations |> eqn => (match eqn
-     case eq as SES_MIXED(__) then functionExtraResiduals(listFill(eq.cont,1))
+     case eq as SES_MIXED(__) then functionExtraResiduals(fill(eq.cont,1))
      case eq as SES_NONLINEAR(__) then
      let &varDecls = buffer "" /*BUFD*/
      let algs = (eq.eqs |> eq2 as SES_ALGORITHM(__) =>
@@ -3463,7 +3463,7 @@ template extFunCallC(Function fun, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*
 match fun
 case EXTERNAL_FUNCTION(__) then
   /* adpro: 2011-06-24 do vardecls -> extArgs as there might be some sets in there! */
-  let varDecs = (Util.listUnion(extArgs, extArgs) |> arg => extFunCallVardecl(arg, &varDecls /*BUFD*/) ;separator="\n")
+  let varDecs = (List.union(extArgs, extArgs) |> arg => extFunCallVardecl(arg, &varDecls /*BUFD*/) ;separator="\n")
   let fname = if dynamicLoad then 'ptr_<%extFunctionName(extName, language)%>' else '<%extName%>'
   let dynamicCheck = if dynamicLoad then 
   <<
@@ -3496,7 +3496,7 @@ match fun
 case EXTERNAL_FUNCTION(__) then
   /* adpro: 2011-06-24 do vardecls -> bivar -> extArgs as there might be some sets in there! */
   let &varDecls += '/* extFunCallF77: varDecs */<%\n%>'
-  let varDecs = (Util.listUnion(extArgs, extArgs) |> arg => extFunCallVardeclF77(arg, &varDecls) ;separator="\n")
+  let varDecs = (List.union(extArgs, extArgs) |> arg => extFunCallVardeclF77(arg, &varDecls) ;separator="\n")
   let &varDecls += '/* extFunCallF77: biVarDecs */<%\n%>'
   let &preExp += '/* extFunCallF77: biVarDecs */<%\n%>'
   let biVarDecs = (biVars |> arg => extFunCallBiVarF77(arg, &preExp, &varDecls) ;separator="\n")
@@ -3515,7 +3515,7 @@ case EXTERNAL_FUNCTION(__) then
   /* extFunCallF77: CALL */  
   <%returnAssign%><%extName%>_(<%args%>);
   /* extFunCallF77: copy args */
-  <%Util.listUnion(extArgs,extArgs) |> arg => extFunCallVarcopyF77(arg) ;separator="\n"%>
+  <%List.union(extArgs,extArgs) |> arg => extFunCallVarcopyF77(arg) ;separator="\n"%>
   /* extFunCallF77: copy return */
   <%match extReturn case SIMEXTARG(__) then extFunCallVarcopyF77(extReturn)%>
   >>

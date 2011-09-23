@@ -53,9 +53,10 @@ public import SCode;
 // protected imports
 protected import ClassInf;
 protected import Debug;
+protected import List;
 protected import Parser;
-protected import Settings;
 protected import SCodeUtil;
+protected import Settings;
 protected import System;
 protected import Util;
 
@@ -537,7 +538,7 @@ algorithm
       env = initialEnvMetaModelica(env);
       
       Absyn.PROGRAM(classes=initialClasses) = getInitialFunctions();
-      env = Env.extendFrameClasses(env, listReverse(Util.listFold(initialClasses, SCodeUtil.translate2, {}))) "Add classes in the initial env";
+      env = Env.extendFrameClasses(env, listReverse(List.fold(initialClasses, SCodeUtil.translate2, {}))) "Add classes in the initial env";
       cache = Env.setCachedInitialEnv(cache,env);
     then (cache,env);
   end matchcontinue;

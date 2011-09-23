@@ -82,7 +82,7 @@ constant Integer stdError = 2;
 constant IOStream emptyStreamOfTypeList = IOSTREAM("emptyStreamOfTypeList", LIST(), LIST_DATA({}));
 
 protected import IOStreamExt;
-protected import Util;
+protected import List;
 
 public
 function create
@@ -149,7 +149,7 @@ function appendList
   input list<String> inStringList;
   output IOStream outStream;
 algorithm
-  outStream := Util.listFoldR(inStringList, append, inStream);
+  outStream := List.foldr(inStringList, append, inStream);
 end appendList;
 
 function close

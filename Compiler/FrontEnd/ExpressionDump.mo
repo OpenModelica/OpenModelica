@@ -59,6 +59,7 @@ protected import DAEDump;
 protected import Dump;
 protected import Error;
 protected import Expression;
+protected import List;
 protected import Patternm;
 protected import RTOpts;
 protected import Util;
@@ -118,7 +119,7 @@ algorithm
     
     case (DAE.ET_ARRAY(ty = t,arrayDimensions = dims))
       equation
-        ss = Util.listMap(dims, dimensionString);
+        ss = List.map(dims, dimensionString);
         s1 = Util.stringDelimitListNonEmptyElts(ss, ", ");
         ts = typeString(t);
         res = stringAppendList({"/tp:",ts,"[",s1,"]/"});
@@ -514,7 +515,7 @@ public function printExpListStr
   input list<DAE.Exp> expl;
   output String res;
 algorithm
-  res := Util.stringDelimitList(Util.listMap(expl,printExpStr),", ");
+  res := Util.stringDelimitList(List.map(expl,printExpStr),", ");
 end printExpListStr;
 
 // stefan
@@ -524,7 +525,7 @@ public function printExpListStrNoSpace
   input list<DAE.Exp> expl;
   output String res;
 algorithm
-  res := stringAppendList(Util.listMap(expl,printExpStr));
+  res := stringAppendList(List.map(expl,printExpStr));
 end printExpListStrNoSpace;
 
 public function printOptExpStr "
@@ -732,7 +733,7 @@ algorithm
       equation
         fs = Absyn.pathString(Absyn.makeNotFullyQualified(fcn));
         argstr = Util.stringDelimitList(
-          Util.listMap3(args, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
+          List.map3(args, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
         s = stringAppendList({fs, "(", argstr, ")"});
       then
         s;
@@ -741,7 +742,7 @@ algorithm
       equation
         fs = Absyn.pathString(Absyn.makeNotFullyQualified(fcn));
         argstr = Util.stringDelimitList(
-          Util.listMap3(args, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
+          List.map3(args, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
         s = stringAppendList({"function ", fs, "(", argstr, ")"});
       then
         s;
@@ -750,7 +751,7 @@ algorithm
       equation
         // s3 = typeString(tp); // adrpo: not used!
         s = Util.stringDelimitList(
-          Util.listMap3(es, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
+          List.map3(es, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
         s = stringAppendList({"{", s, "}"});
       then
         s;
@@ -758,7 +759,7 @@ algorithm
     case (DAE.TUPLE(PR = es), _, _, _)
       equation
         s = Util.stringDelimitList(
-          Util.listMap3(es, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
+          List.map3(es, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
         s = stringAppendList({"(", s, ")"});
       then
         s;
@@ -766,7 +767,7 @@ algorithm
     case (DAE.MATRIX(matrix = lstes,ty=tp), _, _, _)
       equation
         // s3 = typeString(tp); // adrpo: not used!
-        s = Util.stringDelimitList(Util.listMap1(lstes, printRowStr, stringDelimiter), "},{");
+        s = Util.stringDelimitList(List.map1(lstes, printRowStr, stringDelimiter), "},{");
         s = stringAppendList({"{{",s,"}}"});
       then
         s;
@@ -822,7 +823,7 @@ algorithm
         s1 = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
         s1_1 = parenthesize(s1, pe1, p,false);
         s4 = Util.stringDelimitList(
-          Util.listMap3(aexpl,printExp2Str, stringDelimiter, opcreffunc, opcallfunc),",");
+          List.map3(aexpl,printExp2Str, stringDelimiter, opcreffunc, opcallfunc),",");
         s_4 = s1_1+& "["+& s4 +& "]";
       then
         s_4;
@@ -846,7 +847,7 @@ algorithm
       equation
         fs = Absyn.pathStringNoQual(fcn);
         expstr = printExp2Str(exp, stringDelimiter, opcreffunc, opcallfunc);
-        iterstr = Util.stringDelimitList(Util.listMap(riters, reductionIteratorStr),",");
+        iterstr = Util.stringDelimitList(List.map(riters, reductionIteratorStr),",");
         str = stringAppendList({"<reduction>",fs,"(",expstr," for ",iterstr,")"});
       then
         str;
@@ -861,7 +862,7 @@ algorithm
     // MetaModelica list
     case (DAE.LIST(valList=es), _, _, _)        
       equation
-        s = Util.stringDelimitList(Util.listMap3(es,printExp2Str, stringDelimiter, opcreffunc, opcallfunc),",");
+        s = Util.stringDelimitList(List.map3(es,printExp2Str, stringDelimiter, opcreffunc, opcallfunc),",");
         s = stringAppendList({"List(", s, ")"});
       then
         s;
@@ -903,7 +904,7 @@ algorithm
       equation
         fs = Absyn.pathString(fcn);
         argstr = Util.stringDelimitList(
-          Util.listMap3(args,printExp2Str, stringDelimiter, opcreffunc, opcallfunc),",");
+          List.map3(args,printExp2Str, stringDelimiter, opcreffunc, opcallfunc),",");
         s = stringAppendList({fs, "(", argstr, ")"});
       then
         s;
@@ -912,7 +913,7 @@ algorithm
       equation
         s1 = printMatchType(matchTy);
         s2 = printExp2Str(DAE.TUPLE(es), stringDelimiter, opcreffunc, opcallfunc);
-        s3 = stringAppendList(Util.listMap(cases,printCase2Str));
+        s3 = stringAppendList(List.map(cases,printCase2Str));
         s = stringAppendList({s1,s2,"\n",s3,"  end ",s1});
       then s;
     
@@ -990,12 +991,12 @@ algorithm
       equation
         patternsStr = Patternm.patternStr(DAE.PAT_META_TUPLE(patterns));
         resultStr = printExpStr(result);
-        bodyStr = stringAppendList(Util.listMap1(body, DAEDump.ppStmtStr, 8));
+        bodyStr = stringAppendList(List.map1(body, DAEDump.ppStmtStr, 8));
       then stringAppendList({"    case ",patternsStr,"\n      algorithm\n",bodyStr,"      then ",resultStr,";\n"});
     case DAE.CASE(patterns=patterns, body=body, result=NONE())
       equation
         patternsStr = Patternm.patternStr(DAE.PAT_META_TUPLE(patterns));
-        bodyStr = stringAppendList(Util.listMap1(body, DAEDump.ppStmtStr, 8));
+        bodyStr = stringAppendList(List.map1(body, DAEDump.ppStmtStr, 8));
       then stringAppendList({"    case ",patternsStr,"\n      algorithm\n",bodyStr,"      then fail();\n"});
   end match;
 end printCase2Str;
@@ -1072,7 +1073,7 @@ public function printRowStr
   input String stringDelimiter;
   output String s;
 algorithm
-  s := Util.stringDelimitList(Util.listMap3(es_1, printExp2Str, stringDelimiter, NONE(), NONE()), ",");
+  s := Util.stringDelimitList(List.map3(es_1, printExp2Str, stringDelimiter, NONE(), NONE()), ",");
 end printRowStr;
 
 public function printLeftparStr
@@ -1216,32 +1217,32 @@ algorithm
     case (DAE.CALL(path = fcn,expLst = args))
       equation
         fs = Absyn.pathString(fcn);
-        argnodes = Util.listMap(args, dumpExpGraphviz);
+        argnodes = List.map(args, dumpExpGraphviz);
       then
         Graphviz.LNODE("CALL",{fs},{},argnodes);
     
     case(DAE.PARTEVALFUNCTION(path = fcn,expList = args))
       equation
         fs = Absyn.pathString(fcn);
-        argnodes = Util.listMap(args, dumpExpGraphviz);
+        argnodes = List.map(args, dumpExpGraphviz);
       then
         Graphviz.NODE("PARTEVALFUNCTION",{},argnodes);
     
     case (DAE.ARRAY(array = es))
       equation
-        nodes = Util.listMap(es, dumpExpGraphviz);
+        nodes = List.map(es, dumpExpGraphviz);
       then
         Graphviz.NODE("ARRAY",{},nodes);
     
     case (DAE.TUPLE(PR = es))
       equation
-        nodes = Util.listMap(es, dumpExpGraphviz);
+        nodes = List.map(es, dumpExpGraphviz);
       then
         Graphviz.NODE("TUPLE",{},nodes);
     
     case (DAE.MATRIX(matrix = lstes))
       equation
-        s = Util.stringDelimitList(Util.listMap1(lstes, printRowStr, "\""), "},{");
+        s = Util.stringDelimitList(List.map1(lstes, printRowStr, "\""), "},{");
         s = stringAppendList({"{{", s, "}}"});
       then
         Graphviz.LNODE("MATRIX",{s},{},{});
@@ -1457,7 +1458,7 @@ algorithm
         gen_str = genStringNTime("   |", level);
         fs = Absyn.pathString(fcn);
         new_level1 = level + 1;
-        argnodes = Util.listMap1(args, dumpExpStr, new_level1);
+        argnodes = List.map1(args, dumpExpStr, new_level1);
         argnodes_1 = stringAppendList(argnodes);
         res_str = stringAppendList({gen_str,"CALL ",fs,"\n",argnodes_1,""});
       then
@@ -1468,7 +1469,7 @@ algorithm
         gen_str = genStringNTime("   |", level);
         fs = Absyn.pathString(fcn);
         new_level1 = level + 1;
-        argnodes = Util.listMap1(args, dumpExpStr, new_level1);
+        argnodes = List.map1(args, dumpExpStr, new_level1);
         argnodes_1 = stringAppendList(argnodes);
         res_str = stringAppendList({gen_str,"CALL ",fs,"\n",argnodes_1,""});
       then
@@ -1478,7 +1479,7 @@ algorithm
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
-        nodes = Util.listMap1(es, dumpExpStr, new_level1);
+        nodes = List.map1(es, dumpExpStr, new_level1);
         nodes_1 = stringAppendList(nodes);
         s = boolString(b);
         tpStr = typeString(tp);
@@ -1490,7 +1491,7 @@ algorithm
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
-        nodes = Util.listMap1(es, dumpExpStr, new_level1);
+        nodes = List.map1(es, dumpExpStr, new_level1);
         nodes_1 = stringAppendList(nodes);
         res_str = stringAppendList({gen_str,"TUPLE ",nodes_1,"\n"});
       then
@@ -1499,7 +1500,7 @@ algorithm
     case (DAE.MATRIX(matrix = lstes),level) /* Graphviz.LNODE(\"MATRIX\",{s\'\'},{},{}) */
       equation
         gen_str = genStringNTime("   |", level);
-        s = Util.stringDelimitList(Util.listMap1(lstes, printRowStr, "\""), "},{");
+        s = Util.stringDelimitList(List.map1(lstes, printRowStr, "\""), "},{");
         res_str = stringAppendList({gen_str,"MATRIX ","\n","{{",s,"}}","\n"});
       then
         res_str;
@@ -1676,7 +1677,7 @@ protected function typeVarsStr "help function to typeString"
   input list<Var> vars;
   output String s;
 algorithm
-  s := Util.stringDelimitList(Util.listMap(vars,typeVarString),",");
+  s := Util.stringDelimitList(List.map(vars,typeVarString),",");
 end typeVarsStr;
 
 protected function typeVarString "help function to typeVarsStr"
@@ -1709,7 +1710,7 @@ algorithm str := matchcontinue(inExp)
   case(DAE.CREF(cr,_)) then ComponentReference.debugPrintComponentRefTypeStr(cr);
   case(DAE.ARRAY(_,_,expl))
     equation
-      s1 = "{" +& stringAppendList(Util.listMap(expl,debugPrintComponentRefExp)) +& "}";
+      s1 = "{" +& stringAppendList(List.map(expl,debugPrintComponentRefExp)) +& "}";
     then
       s1;
   case(inExp) then printExpStr(inExp); // when not cref, print expression anyways since it is used for some debugging.
@@ -2063,7 +2064,7 @@ algorithm
         printExp2(e, pri3);
         printRightpar(pri1, pri2);
         Print.printBuf("[");
-        s = Util.stringDelimitList(Util.listMap(es,printExpStr),",");
+        s = Util.stringDelimitList(List.map(es,printExpStr),",");
         Print.printBuf(s);
         Print.printBuf("]");
       then
@@ -2149,7 +2150,7 @@ algorithm
         Print.printBuf(" (");
         printList(es, printExp, ",");
         Print.printBuf(") \n");
-        Print.printBuf(stringAppendList(Util.listMap(cases,printCase2Str)));
+        Print.printBuf(stringAppendList(List.map(cases,printCase2Str)));
         Print.printBuf("  end ");
         Print.printBuf(printMatchType(matchTy));
       then ();

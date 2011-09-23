@@ -46,6 +46,7 @@ public import Util;
 
 protected import SCodeDump;
 protected import Error;
+protected import List;
 protected import SCodeFlattenRedeclare;
 protected import SCodeLookup;
 protected import SCodeCheck;
@@ -296,7 +297,7 @@ public function extendEnvWithClasses
   input Env inEnv;
   output Env outEnv;
 algorithm
-  outEnv := Util.listFold(inClasses, extendEnvWithClass, inEnv);
+  outEnv := List.fold(inClasses, extendEnvWithClass, inEnv);
 end extendEnvWithClasses;
 
 protected function extendEnvWithClass
@@ -705,13 +706,13 @@ algorithm
     case (ext :: extl, CLASS_EXTENDS(), _)
       equation
         //ext = qualifyExtends(ext, inEnv, CLASS_EXTENDS());
-        extl = Util.listMap2(extl, qualifyExtends, inEnv, USERDEFINED());
+        extl = List.map2(extl, qualifyExtends, inEnv, USERDEFINED());
       then
         ext :: extl;
 
     else
       equation
-        extl = Util.listMap2(inExtends, qualifyExtends, inEnv, inClassType);
+        extl = List.map2(inExtends, qualifyExtends, inEnv, inClassType);
       then
         extl;
   end match;
@@ -830,8 +831,8 @@ algorithm
       equation
         SCodeCheck.checkExtendsReplaceability(item, obc, info);
         bc = Absyn.makeFullyQualified(bc);
-        rl = Util.listMap1(rl, SCodeFlattenRedeclare.qualifyRedeclare, inEnv);
-        Util.listMap02(rl, SCodeCheck.checkRedeclareModifier, bc, inEnv);
+        rl = List.map1(rl, SCodeFlattenRedeclare.qualifyRedeclare, inEnv);
+        List.map2_0(rl, SCodeCheck.checkRedeclareModifier, bc, inEnv);
       then
         EXTENDS(bc, rl, info);
 
@@ -888,7 +889,7 @@ algorithm
 
     case (_, SCode.PARTS(elementLst = el), _, _, _)
       equation
-        env = Util.listFold(el, extendEnvWithElement, inEnv);
+        env = List.fold(el, extendEnvWithElement, inEnv);
       then
         env;
 
@@ -905,7 +906,7 @@ algorithm
     case (_, SCode.ENUMERATION(enumLst = enums), _, _, _)
       equation
         enum_type = Absyn.TPATH(Absyn.IDENT(inClassName), NONE());
-        env = Util.listFold1(enums, extendEnvWithEnum, enum_type, inEnv);
+        env = List.fold1(enums, extendEnvWithEnum, enum_type, inEnv);
       then
         env;
 
@@ -999,7 +1000,7 @@ algorithm
 
     case (_, _, _)
       equation
-        false = Util.listMemberWithCompareFunc(inImport, inImports,
+        false = List.isMemberOnTrue(inImport, inImports,
           compareQualifiedImportNames);
       then
         ();
@@ -1063,7 +1064,7 @@ protected
   Frame frame;
 algorithm
   frame := newFrame(SOME("$for$"), IMPLICIT_SCOPE());
-  outEnv := Util.listFold(inIterators, extendEnvWithIterator, frame :: inEnv);
+  outEnv := List.fold(inIterators, extendEnvWithIterator, frame :: inEnv);
 end extendEnvWithIterators;
 
 protected function extendEnvWithIterator
@@ -1095,7 +1096,7 @@ protected
 algorithm
   frame := newFrame(SOME("$match$"), IMPLICIT_SCOPE());
   Absyn.MATCHEXP(localDecls = local_decls) := inMatchExp;
-  outEnv := Util.listFold(local_decls, extendEnvWithElementItem, 
+  outEnv := List.fold(local_decls, extendEnvWithElementItem, 
     frame :: inEnv);
 end extendEnvWithMatch;
 
@@ -1115,7 +1116,7 @@ algorithm
       equation
         // Translate the element item to a SCode element.
         el = SCodeUtil.translateElement(element, SCode.PROTECTED());
-        env = Util.listFold(el, extendEnvWithElement, inEnv);
+        env = List.fold(el, extendEnvWithElement, inEnv);
       then 
         env;
 
@@ -1561,7 +1562,7 @@ protected
   Env env;
 algorithm
   env := listReverse(inEnv);
-  outString := Util.stringDelimitList(Util.listMap(env, printFrameStr), "\n");
+  outString := Util.stringDelimitList(List.map(env, printFrameStr), "\n");
 end printEnvStr;
 
 protected function printFrameStr
@@ -1669,9 +1670,9 @@ protected
   Option<SCode.Element> cei;  
 algorithm
   EXTENDS_TABLE(baseClasses = bcl, redeclaredElements = re, classExtendsInfo = cei) := inExtendsTable;
-  outString := Util.stringDelimitList(Util.listMap(bcl, printExtendsStr), "\n") +& 
+  outString := Util.stringDelimitList(List.map(bcl, printExtendsStr), "\n") +& 
     "\n\t\tRedeclare elements:\n\t\t\t" +&
-    Util.stringDelimitList(Util.listMap(re, SCodeDump.printElementStr), "\n\t\t\t") +&
+    Util.stringDelimitList(List.map(re, SCodeDump.printElementStr), "\n\t\t\t") +&
     "\n\t\tClass extends:\n\t\t\t" +&
     Util.stringOption(Util.applyOption(cei, SCodeDump.printElementStr)); 
 end printExtendsTableStr;
@@ -1686,7 +1687,7 @@ protected
 algorithm
   EXTENDS(baseClass = bc, redeclareModifiers = mods) := inExtends;
   mods_str := Util.stringDelimitList(
-    Util.listMap(mods, printRedeclarationStr), "\n");
+    List.map(mods, printRedeclarationStr), "\n");
   outString := "\t\t" +& Absyn.pathString(bc) +& "(" +& mods_str +& ")";
 end printExtendsStr;
 
@@ -1707,9 +1708,9 @@ algorithm
   IMPORT_TABLE(qualifiedImports = qual_imps, unqualifiedImports = unqual_imps) 
     := inImports;
   qual_str := Util.stringDelimitList(
-    Util.listMap(qual_imps, Absyn.printImportString), "\n\t\t");
+    List.map(qual_imps, Absyn.printImportString), "\n\t\t");
   unqual_str := Util.stringDelimitList(
-    Util.listMap(unqual_imps, Absyn.printImportString), "\n\t\t");
+    List.map(unqual_imps, Absyn.printImportString), "\n\t\t");
   outString := "\t\t" +& qual_str +& unqual_str;
 end printImportTableStr;
 

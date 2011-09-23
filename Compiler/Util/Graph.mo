@@ -40,6 +40,7 @@ encapsulated package Graph
   should also contain a graph type, but such a type would need polymorphic
   records that we don't yet support in MetaModelica."
 
+protected import List;
 protected import Util;
 
 public function buildGraph
@@ -61,8 +62,8 @@ public function buildGraph
     output list<NodeType> outEdges;
   end EdgeFunc;
 algorithm
-  outGraph := Util.listThreadTuple(inNodes, 
-    Util.listMap1(inNodes, inEdgeFunc, inEdgeArg));
+  outGraph := List.threadTuple(inNodes, 
+    List.map1(inNodes, inEdgeFunc, inEdgeArg));
 end buildGraph;
   
 public function topologicalSort
@@ -91,7 +92,7 @@ public function topologicalSort
 protected
   list<tuple<NodeType, list<NodeType>>> start_nodes, rest_nodes;
 algorithm
-  (rest_nodes, start_nodes) := Util.listSplitOnTrue(inGraph, hasOutgoingEdges);
+  (rest_nodes, start_nodes) := List.splitOnTrue(inGraph, hasOutgoingEdges);
   (outNodes, outRemainingGraph) := 
     topologicalSort2(start_nodes, rest_nodes, {}, inEqualFunc);
 end topologicalSort;
@@ -140,12 +141,12 @@ algorithm
     case ((node1, {}) :: rest_start, rest_rest, _, _)
       equation
         // Remove the first start node from the graph.
-        rest_rest = Util.listMap2(rest_rest, removeEdge, node1, inEqualFunc);
+        rest_rest = List.map2(rest_rest, removeEdge, node1, inEqualFunc);
         // Fetch any new nodes that has no dependencies.
         (rest_rest, new_start) = 
-          Util.listSplitOnTrue(rest_rest, hasOutgoingEdges);
+          List.splitOnTrue(rest_rest, hasOutgoingEdges);
         // Append those nodes to the list of start nodes.
-        rest_start = Util.listAppendNoCopy(rest_start, new_start);
+        rest_start = List.appendNoCopy(rest_start, new_start);
         // Add the first node to the list of sorted nodes and continue with the
         // rest of the nodes.
         (result, rest_rest) = topologicalSort2(rest_start,  rest_rest,
@@ -191,7 +192,7 @@ protected
   list<NodeType> edges;
 algorithm
   (node, edges) := inNode;
-  edges := Util.listRemoveFirstOnTrue(inRemovedNode, inEqualFunc, edges);
+  (edges, _) := List.deleteMemberOnTrue(inRemovedNode, edges, inEqualFunc);
   outNode := (node, edges);
 end removeEdge;
 
@@ -299,11 +300,11 @@ algorithm
     case ((node, _), _, _ :: _, _)
       equation
         // Check if we have already visited this node.
-        true = Util.listMemberWithCompareFunc(node, inVisitedNodes, inEqualFunc);
+        true = List.isMemberOnTrue(node, inVisitedNodes, inEqualFunc);
         // Check if the current node is the start node, in that case we're back
         // where we started and we have a cycle. Otherwise we just encountered a
         // cycle in the graph that the start node is not part of.
-        start_node = Util.listLast(inVisitedNodes);
+        start_node = List.last(inVisitedNodes);
         is_start_node = inEqualFunc(node, start_node);
         opt_cycle = Util.if_(is_start_node, SOME(inVisitedNodes), NONE());
       then
@@ -429,7 +430,7 @@ algorithm
 
     case (_, (graph_node as (node, _)) :: rest_graph, _)
       equation
-        (rest_nodes, SOME(_)) = Util.listDeleteMemberOnTrue(node, inNodes,
+        (rest_nodes, SOME(_)) = List.deleteMemberOnTrue(node, inNodes,
           inEqualFunc);
       then
         removeNodesFromGraph(rest_nodes, rest_graph, inEqualFunc);

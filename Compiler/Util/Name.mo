@@ -59,7 +59,6 @@ uniontype Names "an dictionary of shared names"
 end Names;
 
 protected 
-import Util;
 import Relation; // for intCompare!
 
 public function new

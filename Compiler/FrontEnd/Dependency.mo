@@ -52,6 +52,7 @@ protected import HashTable2;
 protected import ComponentReference;
 protected import Connect;
 protected import Inst;
+protected import List;
 protected import Util;
 protected import DAE;
 protected import InnerOuter;
@@ -71,7 +72,7 @@ algorithm
   outP := match(p)
   local String id; list<Absyn.Class> cls;
     case(p as Absyn.PROGRAM(classes = cls)) equation
-      Absyn.CLASS(name=id) = Util.listLast(cls);
+      Absyn.CLASS(name=id) = List.last(cls);
       p = getTotalProgram(Absyn.IDENT(id),p);
     then p;
   end match;

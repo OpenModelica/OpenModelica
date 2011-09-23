@@ -143,6 +143,7 @@ protected import HashTable5;
 protected import InstSection;
 protected import InstExtends;
 protected import Interactive;
+protected import List;
 protected import Lookup;
 protected import MetaUtil;
 protected import ModUtil;
@@ -210,18 +211,18 @@ algorithm
       equation
         p = SCodeFlatten.flattenProgram(p);
         // Debug.fprintln("insttr", "instantiate");
-        pnofunc = Util.listSelect(p, isNotFunction);
-        pfunc = Util.listSelect(p, SCode.isFunction);
+        pnofunc = List.select(p, isNotFunction);
+        pfunc = List.select(p, SCode.isFunction);
         (cache,env) = Builtin.initialEnv(cache);
         // Debug.fprintln("insttr", "Instantiating functions");
-        // pfuncnames = Util.listMap(pfunc, SCode.className);
+        // pfuncnames = List.map(pfunc, SCode.className);
         // str1 = Util.stringDelimitList(pfuncnames, ", ");
         // Debug.fprint("insttr", "Instantiating functions: ");
         // Debug.fprintln("insttr", str1);
         envimpl = Env.extendFrameClasses(env, p) "pfunc" ;
         (cache,envimpl_1,oIH1,lfunc) = instProgramImplicit(cache, envimpl, iIH, pfunc);
         // Debug.fprint("insttr", "Instantiating other classes: ");
-        // pnofuncnames = Util.listMap(pnofunc, SCode.className);
+        // pnofuncnames = List.map(pnofunc, SCode.className);
         // str2 = Util.stringDelimitList(pnofuncnames, ", ");
         // Debug.fprintln("insttr", str2);
         (cache, oIH2, lnofunc) = instProgram(cache, envimpl_1, oIH1, pnofunc);
@@ -417,7 +418,7 @@ algorithm
     list<DAE.Element> elems;
   case(cache,env,DAE.DAE(elementLst = elems),true)
     equation
-      elems = listReverse(Util.listFold_3(elems,reEvaluateInitialIfEqns2,{},cache,env));
+      elems = listReverse(List.fold2r(elems,reEvaluateInitialIfEqns2,cache,env,{}));
     then
       DAE.DAE(elems);
   case(_,_,dae,false) then dae;
@@ -441,11 +442,11 @@ algorithm
       list<Boolean> blist;
     case (acc,DAE.INITIAL_IF_EQUATION(condition1 = conds, equations2=tbs, equations3=fb, source=source),cache,env)
       equation
-        //print(" (Initial if)To ceval: " +& Util.stringDelimitList(Util.listMap(conds,ExpressionDump.printExpStr),", ") +& "\n");
+        //print(" (Initial if)To ceval: " +& Util.stringDelimitList(List.map(conds,ExpressionDump.printExpStr),", ") +& "\n");
         (cache,valList,_) = Ceval.cevalList(cache,env, conds, true, NONE(), Ceval.NO_MSG());
-        //print(" Ceval res: ("+&Util.stringDelimitList(Util.listMap(valList,ValuesUtil.printValStr),",")+&")\n");
+        //print(" Ceval res: ("+&Util.stringDelimitList(List.map(valList,ValuesUtil.printValStr),",")+&")\n");
         
-        blist = Util.listMap(valList,ValuesUtil.valueBool);
+        blist = List.map(valList,ValuesUtil.valueBool);
         selectedBranch = Util.selectList(blist, tbs, fb);
         selectedBranch = makeDAEElementInitial(selectedBranch);
       then listAppend(selectedBranch,acc);
@@ -555,7 +556,7 @@ algorithm
       equation
         (cache,env) = Builtin.initialEnv(cache);
         (cache,env_1,ih,dae1) = instClassDecls(cache, env, ih, cdecls, path);
-        cdecls = Util.listMap1(cdecls,SCode.classSetPartial,SCode.NOT_PARTIAL());
+        cdecls = List.map1(cdecls,SCode.classSetPartial,SCode.NOT_PARTIAL());
         (cache,env_2,ih,dae) = instClassInProgram(cache, env_1, ih, cdecls, path);
 
         // set the source of this element
@@ -1387,7 +1388,7 @@ algorithm
       /* Only traverse on top scope */
     case (true,store as UnitAbsyn.INSTSTORE(UnitAbsyn.STORE(vec,_),ht,_),DAE.DAE(elts))
       equation
-        elts = Util.listMap2(elts,updateDeducedUnits2,vec,ht);
+        elts = List.map2(elts,updateDeducedUnits2,vec,ht);
       then DAE.DAE(elts);
         
     else dae;
@@ -1795,7 +1796,7 @@ algorithm
           "\n\tmods: " +& Mod.printModStr(mods) +& 
           "\n\tenv: " +& Env.printEnvPathStr(inEnv) +&
           "\n\tsingle cref: " +& Expression.printComponentRefOptStr(instSingleCref) +&
-          "\n\tdims: [" +& Util.stringDelimitList(Util.listMap1(inst_dims, DAEDump.unparseDimensions, true), ", ") +& "]" +& 
+          "\n\tdims: [" +& Util.stringDelimitList(List.map1(inst_dims, DAEDump.unparseDimensions, true), ", ") +& "]" +& 
           "\n\tdae:\n" +& DAEDump.dump2str(dae));
         */
       then
@@ -1829,7 +1830,7 @@ algorithm
           "\n\tmods: " +& Mod.printModStr(mods) +& 
           "\n\tenv: " +& Env.printEnvPathStr(inEnv) +&
           "\n\tsingle cref: " +& Expression.printComponentRefOptStr(instSingleCref) +&
-          "\n\tdims: [" +& Util.stringDelimitList(Util.listMap1(inst_dims, DAEDump.unparseDimensions, true), ", ") +& "]" +& 
+          "\n\tdims: [" +& Util.stringDelimitList(List.map1(inst_dims, DAEDump.unparseDimensions, true), ", ") +& "]" +& 
           "\n\tdae:\n" +& DAEDump.dump2str(dae));
         */
         //checkModelBalancingFilterByRestriction(r, envPathOpt, dae);
@@ -2037,7 +2038,7 @@ algorithm
         (c as SCode.CLASS(name = "Real",restriction = r,classDef = d)),vis,inst_dims,impl,_,graph,_,_)
       equation
         false = RTOpts.splitArrays();
-        typ = Types.liftArraySubscriptList(DAE.T_REAL_DEFAULT, Util.listFirst(inst_dims));
+        typ = Types.liftArraySubscriptList(DAE.T_REAL_DEFAULT, List.first(inst_dims));
         tys = instRealClass(cache,env,mods,pre,typ);
         bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_REAL(tys),NONE()));
       then
@@ -2089,7 +2090,7 @@ algorithm
           "\npre: " +& PrefixUtil.printPrefixStr(pre) +&
           "\nenv: " +& Env.printEnvPathStr(env) +&
           "\nmods: " +& Mod.printModStr(mods) +&
-          "\ninst_dims: [" +& Util.stringDelimitList(Util.listMap1(inst_dims, DAEDump.unparseDimensions, true), ", ") +& "]" +& "\n");
+          "\ninst_dims: [" +& Util.stringDelimitList(List.map1(inst_dims, DAEDump.unparseDimensions, true), ", ") +& "]" +& "\n");
         */
         ci_state_1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         comp = addNomod(els);
@@ -2627,14 +2628,14 @@ algorithm
     case ({},tp) then NONE();
     case (inst_dims,tp)
       equation
-        lst = instdimsIntOptList(Util.listLast(inst_dims));
+        lst = instdimsIntOptList(List.last(inst_dims));
         tp_1 = arrayBasictypeBaseclass2(lst, tp);
       then
         SOME(tp_1);
         /*
     case (inst_dims,tp)
       equation
-        str = Util.stringDelimitList(Util.listMap(Util.listFlatten(inst_dims),ExpressionDump.printSubscriptStr),",");
+        str = Util.stringDelimitList(List.map(List.flatten(inst_dims),ExpressionDump.printSubscriptStr),",");
         str = "Inst.arrayBasictypeBaseclass failed: " +& str;
         Error.addMessage(Error.INTERNAL_ERROR,{str});
       then fail();
@@ -3514,12 +3515,12 @@ algorithm
         cdefelts_1 = addNomod(cdefelts);
         
         // Add components from base classes to be instantiated in 3 as well.
-        compelts_1 = Util.listFlatten({extcomps,compelts_1,cdefelts_1});
+        compelts_1 = List.flatten({extcomps,compelts_1,cdefelts_1});
                 
         // Take the union of the equations in the current scope and equations
         // from extends, to filter out identical equations.
-        eqs_1 = Util.listUnionComp(eqs, eqs2, SCode.equationEqual);
-        initeqs_1 = Util.listUnionComp(initeqs, initeqs2, SCode.equationEqual);
+        eqs_1 = List.unionOnTrue(eqs, eqs2, SCode.equationEqual);
+        initeqs_1 = List.unionOnTrue(initeqs, initeqs2, SCode.equationEqual);
 
         alg_1 = listAppend(alg, alg2);
         initalg_1 = listAppend(initalg, initalg2);
@@ -3536,28 +3537,28 @@ algorithm
         (cache,env4,ih,compelts_2) = updateCompeltsMods(cache, env3, ih, pre, extcomps, ci_state, impl);
         compelts_1 = addNomod(compelts);
         cdefelts_1 = addNomod(cdefelts);
-        compelts_2 = Util.listFlatten({compelts_2, compelts_1, cdefelts_1});
+        compelts_2 = List.flatten({compelts_2, compelts_1, cdefelts_1});
  
         // adrpo: MAKE SURE inner objects ARE FIRST in the list for instantiation!
         // TODO! FIXME! CHECKME! join this function with splitElts to make it faster
         compelts_2 =  sortInnerFirstTplLstElementMod(compelts_2);
 
         //Instantiate components
-        compelts_2_elem = Util.listMap(compelts_2,Util.tuple21);
+        compelts_2_elem = List.map(compelts_2,Util.tuple21);
         
         // Debug.fprintln("innerouter", "Number of components: " +& intString(listLength(compelts_2_elem)));
-        // Debug.fprintln("innerouter", Util.stringDelimitList(Util.listMap(compelts_2_elem, SCodeDump.printElementStr), "\n"));
+        // Debug.fprintln("innerouter", Util.stringDelimitList(List.map(compelts_2_elem, SCodeDump.printElementStr), "\n"));
         
         checkMods = Mod.merge(mods,emods,env4,Prefix.NOPRE());
         mods = checkMods;
         
         //print("To match modifiers,\n" +& Mod.printModStr(checkMods) +& "\n on components: ");
-        //print(" (" +& Util.stringDelimitList(Util.listMap(compelts_2_elem,SCode.elementName),", ") +& ") \n");
+        //print(" (" +& Util.stringDelimitList(List.map(compelts_2_elem,SCode.elementName),", ") +& ") \n");
         matchModificationToComponents(compelts_2_elem,checkMods,className);
 
         // Move any conditional components to the end of the component list, to
         // make sure that any dependencies of the condition are instantiated first.
-        (comp_cond, compelts_2) = Util.listSplitOnTrue(compelts_2, componentHasCondition);
+        (comp_cond, compelts_2) = List.splitOnTrue(compelts_2, componentHasCondition);
         compelts_2 = listAppend(compelts_2, comp_cond);
 
         (cache,env5,ih,store,dae1,csets,ci_state2,vars,graph) = 
@@ -3649,7 +3650,7 @@ algorithm
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
         (cache,dims) = elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}),cn, ad, eq, impl,NONE(),true,pre,info,inst_dims) "owncref not valid here" ;
         inst_dims2 = instDimExpLst(dims, impl);
-        inst_dims_1 = Util.listListAppendLast(inst_dims, inst_dims2);
+        inst_dims_1 = List.appendLastList(inst_dims, inst_dims2);
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) = instClassIn(cache, cenv_2, ih, store, mods_1, pre, new_ci_state, c, vis,
           inst_dims_1, impl, callscope, graph, inSets, instSingleCref) "instantiate class in opened scope.";
         ClassInf.assertValid(ci_state_1, re, info) "Check for restriction violations";
@@ -3677,7 +3678,7 @@ algorithm
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
         (cache,dims) = elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}),cn, ad, eq, impl,NONE(),true,pre,info,inst_dims) "owncref not valid here" ;
         inst_dims2 = instDimExpLst(dims, impl);
-        inst_dims_1 = Util.listListAppendLast(inst_dims, inst_dims2);
+        inst_dims_1 = List.appendLastList(inst_dims, inst_dims2);
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) = instClassIn(cache, cenv_2, ih, store, mods_1, pre, new_ci_state, c, vis,
           inst_dims_1, impl, callscope, graph, inSets, instSingleCref) "instantiate class in opened scope. " ;
         ClassInf.assertValid(ci_state_1, re, info) "Check for restriction violations" ;
@@ -3749,7 +3750,7 @@ algorithm
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
         (cache,dims) = elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}), cn, ad, eq, impl,NONE(),true,pre,info,inst_dims) "owncref not valid here" ;
         inst_dims2 = instDimExpLst(dims, impl);
-        inst_dims_1 = Util.listListAppendLast(inst_dims, inst_dims2);
+        inst_dims_1 = List.appendLastList(inst_dims, inst_dims2);
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) = instClassIn(cache, cenv_2, ih, store, mods_1, pre, new_ci_state, c, vis,
           inst_dims_1, impl, callscope, graph, inSets, instSingleCref) "instantiate class in opened scope. " ;
         ClassInf.assertValid(ci_state_1, re, info) "Check for restriction violations" ;
@@ -3776,7 +3777,7 @@ algorithm
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         (cache,cenv,ih,tys,csets,oDA) =
         instClassDefHelper(cache,env,ih,{tSpec},pre,inst_dims,impl,{}, inSets);
-        ty = Util.listFirst(tys);
+        ty = List.first(tys);
         ty = Types.boxIfUnboxedType(ty);
         bc = SOME((DAE.T_LIST(ty),NONE()));
         oDA = SCode.mergeAttributes(DA,oDA);
@@ -3804,7 +3805,7 @@ algorithm
         false = Util.getStatefulBoolean(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         (cache,cenv,ih,tys,csets,oDA) = instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{}, inSets);
-        tys = Util.listMap(tys, Types.boxIfUnboxedType);
+        tys = List.map(tys, Types.boxIfUnboxedType);
         bc = SOME((DAE.T_METATUPLE(tys),NONE()));
         oDA = SCode.mergeAttributes(DA,oDA);
       then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_TUPLE(Absyn.IDENT("")),{},bc,oDA,NONE(),graph);
@@ -4138,7 +4139,7 @@ algorithm outComps := matchcontinue(acrefs,remainingComps,className,existing)
       outComps;
   case(Absyn.CREF_IDENT(s1,_)::acrefs,remainingComps,className,existing) // modifer dep already added
     equation
-      true = Util.listMemberWithCompareFunc(s1,existing,stringEq);
+      true = List.isMemberOnTrue(s1,existing,stringEq);
     then
       extractConstantPlusDeps3(acrefs,remainingComps,className,existing);
   case(Absyn.CREF_IDENT(s1,_)::acrefs,remainingComps,className,existing)
@@ -4787,7 +4788,7 @@ algorithm
       equation
         first_pre = PrefixUtil.prefixFirst(pre);
         cr = PrefixUtil.prefixToCref(first_pre);
-        crs = Util.listSelect1R(crs, cr, ComponentReference.crefPrefixOf);
+        crs = List.select1r(crs, ComponentReference.crefPrefixOf, cr);
         s = ConnectUtil.setConnectionCrefs(inSets, crs);
       then
         s;
@@ -5208,20 +5209,20 @@ algorithm
 
     case (cache,env,ih,pre,{},_,_) then (cache,env,ih,{});
       
-    // Special case for components beeing redeclared, we might instantiate partial classes when instantiating var(-> instVar2->instClass) to update component in env.
+    // Special case for components being redeclared, we might instantiate partial classes when instantiating var(-> instVar2->instClass) to update component in env.
     case (cache,env,ih,pre,((comp,(cmod as DAE.REDECL(_,_,{(redComp,redMod)}))) :: xs),ci_state,impl)
       equation
         info = SCode.elementInfo(redComp);
         umod = Mod.unelabMod(cmod);
         crefs = getCrefFromMod(umod);
         crefs_1 = getCrefFromCompDim(comp) "get crefs from dimension arguments";
-        crefs = Util.listUnionOnTrue(crefs,crefs_1,Absyn.crefEqual);
+        crefs = List.unionOnTrue(crefs,crefs_1,Absyn.crefEqual);
         name = SCode.elementName(comp);
         cref = Absyn.CREF_IDENT(name,{});
-        ltmod = Util.listMap1(crefs,getModsForDep,xs);
-        cmod2 = Util.listFold_3(cmod::ltmod,Mod.merge,DAE.NOMOD(),env,pre);
+        ltmod = List.map1(crefs,getModsForDep,xs);
+        cmod2 = List.fold2r(cmod::ltmod,Mod.merge,env,pre,DAE.NOMOD());
 
-        //print("("+&intString(listLength(ltmod))+&")UpdateCompeltsMods_(" +& Util.stringDelimitList(Util.listMap(crefs,Absyn.printComponentRefStr),",") +& ") subs: " +& Util.stringDelimitList(Util.listMap(crefs,Absyn.printComponentRefStr),",")+& "\n");
+        //print("("+&intString(listLength(ltmod))+&")UpdateCompeltsMods_(" +& Util.stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",") +& ") subs: " +& Util.stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",")+& "\n");
         //print("REDECL     acquired mods: " +& Mod.printModStr(cmod2) +& "\n");
         (cache,env2,ih) = updateComponentsInEnv(cache, env, ih, pre, cmod2, crefs, ci_state, impl);
         ErrorExt.setCheckpoint("updateCompeltsMods");
@@ -5247,14 +5248,14 @@ algorithm
         umod = Mod.unelabMod(cmod);
         crefs = getCrefFromMod(umod);
         crefs_1 = getCrefFromCompDim(comp);
-        crefs = Util.listUnionOnTrue(crefs,crefs_1,Absyn.crefEqual);
+        crefs = List.unionOnTrue(crefs,crefs_1,Absyn.crefEqual);
         name = SCode.elementName(comp);
         cref = Absyn.CREF_IDENT(name,{});
 
-        ltmod = Util.listMap1(crefs,getModsForDep,xs);
-        cmod2 = Util.listFold_3(ltmod,Mod.merge,DAE.NOMOD(),env,pre);
+        ltmod = List.map1(crefs,getModsForDep,xs);
+        cmod2 = List.fold2r(ltmod,Mod.merge,env,pre,DAE.NOMOD());
 
-        //print("("+&intString(listLength(ltmod))+&")UpdateCompeltsMods_(" +& Util.stringDelimitList(Util.listMap(crefs,Absyn.printComponentRefStr),",") +& ") subs: " +& Util.stringDelimitList(Util.listMap(crefs,Absyn.printComponentRefStr),",")+& "\n");
+        //print("("+&intString(listLength(ltmod))+&")UpdateCompeltsMods_(" +& Util.stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",") +& ") subs: " +& Util.stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",")+& "\n");
         //print("     acquired mods: " +& Mod.printModStr(cmod2) +& "\n");
 
         (cache,env2,ih) = updateComponentsInEnv(cache, env, ih, pre, cmod2, crefs, ci_state, impl);
@@ -5440,7 +5441,7 @@ algorithm
         // Try and delete the element with the given name from the list of all
         // elements. If this succeeds, add it to the list of elements. This
         // ensures that we don't add any dependency more than once.
-        (all_el, SOME(e)) = Util.listDeleteMemberOnTrue(id, all_el,
+        (all_el, SOME(e)) = List.deleteMemberOnTrue(id, all_el,
           isElementNamed);
       then
         ((exp, (all_el, e :: accum_el)));
@@ -5517,8 +5518,8 @@ algorithm
     else
       equation
         cycles = Graph.findCycles(inCycles, isElementEqual);
-        names = Util.listListMap(cycles, elementName);
-        cycles_strs = Util.listMap1(names, Util.stringDelimitList, ",");
+        names = List.mapList(cycles, elementName);
+        cycles_strs = List.map1(names, Util.stringDelimitList, ",");
         cycles_str = Util.stringDelimitList(cycles_strs, "}, {");
         cycles_str = "{" +& cycles_str +& "}";
         scope_str = Env.printEnvPathStr(inEnv);
@@ -6008,7 +6009,7 @@ algorithm
     case (_,{}) then false;
     case (compname,(SCode.EQUATION(eEquation = SCode.EQ_IF(condition = conds)) :: _))
       equation
-        crefs = Util.listFlatten(Util.listMap1(conds,Absyn.getCrefFromExp,false));
+        crefs = List.flatten(List.map1(conds,Absyn.getCrefFromExp,false));
         true = memberCrefs(compname, crefs);
       then
         true;
@@ -6515,7 +6516,7 @@ algorithm
         crefs1 = getCrefFromMod(m);
         crefs2 = getCrefFromDim(ad);
         crefs3 = getCrefFromCond(cond);
-        crefs = Util.listFlatten({crefs1, crefs2, crefs3});
+        crefs = List.flatten({crefs1, crefs2, crefs3});
 
         // can call instVar
         (cache, env, ih, store, crefs) = removeSelfReferenceAndUpdate(cache, 
@@ -7045,17 +7046,17 @@ algorithm
     //   Special cases for checking enumerations which can be represented differently
     case(oldCl as SCode.CLASS(classDef=SCode.ENUMERATION(enumLst=enumLst)), newCl as SCode.CLASS(restriction=SCode.R_ENUMERATION(),classDef=SCode.PARTS(elementLst=elementLst)))
       equation
-        sl1=Util.listMap(enumLst,SCode.enumName);
-        sl2=Util.listMap(elementLst,SCode.elementName);
-        Util.listThreadMapAllValue(sl1,sl2,stringEq,true);
+        sl1=List.map(enumLst,SCode.enumName);
+        sl2=List.map(elementLst,SCode.elementName);
+        List.threadMapAllValue(sl1,sl2,stringEq,true);
       then 
         ();
 
     case(oldCl as SCode.CLASS(restriction=SCode.R_ENUMERATION(),classDef=SCode.PARTS(elementLst=elementLst)), newCl as SCode.CLASS(classDef=SCode.ENUMERATION(enumLst=enumLst)))
       equation
-        sl1=Util.listMap(enumLst,SCode.enumName);
-        sl2=Util.listMap(elementLst,SCode.elementName);
-        Util.listThreadMapAllValue(sl1,sl2,stringEq,true);
+        sl1=List.map(enumLst,SCode.enumName);
+        sl2=List.map(elementLst,SCode.elementName);
+        List.threadMapAllValue(sl1,sl2,stringEq,true);
       then 
         ();
 
@@ -7326,7 +7327,7 @@ algorithm
     case(DAE.REDECL(_,_,_),_) then inMod;
     case(DAE.MOD(f,e,subs,oe),elems)
       equation
-        compNames = Util.listMap(elems,SCode.elementName);
+        compNames = List.map(elems,SCode.elementName);
         subs = keepConstrainingTypeModifersOnly2(subs,compNames);
       then
         DAE.MOD(f,e,subs,oe);
@@ -7353,7 +7354,7 @@ algorithm
     case((sub as DAE.NAMEMOD(ident=n,mod=mod))::subs,elems)
       equation
         osubs = keepConstrainingTypeModifersOnly2(subs,elems);
-        b = Util.listMemberWithCompareFunc(n,elems,stringEq);
+        b = List.isMemberOnTrue(n,elems,stringEq);
         osubs2 = Util.if_(b, {sub},{});
         osubs = listAppend(osubs2,osubs);
       then
@@ -7388,7 +7389,7 @@ algorithm
         (_,(cl as SCode.CLASS(name = name, classDef = SCode.PARTS(elementLst=selems))), _) = Lookup.lookupClass(Env.emptyCache(),env,path,false);
         (_,classextendselts,extendselts,compelts) = splitElts(selems);
         (_,_,_,_,extcomps,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(),  pre, extendselts, classextendselts, ClassInf.UNKNOWN(Absyn.IDENT("")), name, true, false);
-        extcompelts = Util.listMap(extcomps,Util.tuple21);
+        extcompelts = List.map(extcomps,Util.tuple21);
         compelts = listAppend(compelts,extcompelts);
       then
         compelts;
@@ -7977,7 +7978,7 @@ algorithm
         (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,DAE.ET_OTHER(),{}));
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
         //Do all dimensions...
-        // print("dims: " +& Util.stringDelimitList(Util.listMap(dims,ExpressionDump.dimensionString),",") +& "\n");
+        // print("dims: " +& Util.stringDelimitList(List.map(dims,ExpressionDump.dimensionString),",") +& "\n");
         dims_1 = instDimExpLst(dims, impl);
 
         // set the source of this element
@@ -8010,7 +8011,7 @@ algorithm
         (dime as DAE.INDEX(DAE.ICONST(integer = deduced_dim))) = 
           instWholeDimFromMod(dim, mod, n, info);
         dim = DAE.DIM_INTEGER(deduced_dim);
-        inst_dims_1 = Util.listListAppendLast(inst_dims, {dime});
+        inst_dims_1 = List.appendLastList(inst_dims, {dime});
         (cache,compenv,ih,store,dae,csets,ty,graph) =
           instArray(cache,env,ih,store, ci_state, mod, pre, n, (cl,attr), pf, 1, dim, dims, idxs, inst_dims_1, impl, comment,info,graph, csets);
         ty_1 = liftNonBasicTypes(ty,dim); // Do not lift types extending basic type, they are already array types.
@@ -8027,7 +8028,7 @@ algorithm
         dime = instWholeDimFromMod(dim, mod, n, info);
         dime2 = makeNonExpSubscript(dime);
         dim = Expression.subscriptDimension(dime);
-        inst_dims_1 = Util.listListAppendLast(inst_dims, {dime2});
+        inst_dims_1 = List.appendLastList(inst_dims, {dime2});
         (cache,compenv,ih,store,dae,csets,ty,graph) =
           instVar2(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,dime2::idxs,inst_dims_1,impl,comment,info,graph,csets);
         ty_1 = liftNonBasicTypes(ty,dim); // Do not lift types extending basic type, they are already array types.
@@ -8040,7 +8041,7 @@ algorithm
         true = RTOpts.splitArrays();
         failure(ClassInf.isFunction(ci_state));
         dime = instDimExp(dim, impl);
-        inst_dims_1 = Util.listListAppendLast(inst_dims, {dime});
+        inst_dims_1 = List.appendLastList(inst_dims, {dime});
         (cache,compenv,ih,store,dae,csets,ty,graph) =
           instArray(cache,env,ih,store, ci_state, mod, pre, n, (cl,attr), pf, 1, dim, dims, idxs, inst_dims_1, impl, comment,info,graph,csets);
         ty_1 = liftNonBasicTypes(ty,dim); // Do not lift types extending basic type, they are already array types.
@@ -8053,7 +8054,7 @@ algorithm
         false = RTOpts.splitArrays();
         failure(ClassInf.isFunction(ci_state));
         dime = instDimExpNonSplit(dim, impl);
-        inst_dims_1 = Util.listListAppendLast(inst_dims, {dime});
+        inst_dims_1 = List.appendLastList(inst_dims, {dime});
         (cache,compenv,ih,store,dae,csets,ty,graph) =
           instVar2(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,dime::idxs,inst_dims_1,impl,comment,info,graph,csets);
         // Type lifting is done in the "scalar" case  
@@ -8168,7 +8169,7 @@ algorithm
         // Attempt to set the correct type for array variable if splitArrays is
         // false. Does not work correctly yet.
         ty = Debug.bcallret2(not RTOpts.splitArrays(), Types.liftArraySubscriptList,
-          ty, Util.listFlatten(inInstDims), ty);
+          ty, List.flatten(inInstDims), ty);
 
         // Make a component reference for the component.
         ident_ty = makeCrefBaseType(ty, inInstDims);
@@ -8701,7 +8702,7 @@ algorithm
       Env.Env env;
     case (_, SCode.CLASS(restriction = SCode.R_ENUMERATION(), classDef = SCode.PARTS(elementLst = enums)))
       equation
-        env = Util.listFold(enums, addEnumerationLiteralToEnv, inEnv);
+        env = List.fold(enums, addEnumerationLiteralToEnv, inEnv);
       then env;
     case (_, _) then inEnv; // Not an enumeration, no need to do anything.
   end matchcontinue;
@@ -8882,7 +8883,7 @@ protected
   String myTick, crefsStr;
 algorithm
   //myTick := intString(tick());
-  //crefsStr := Util.stringDelimitList(Util.listMap(crefs, Dump.printComponentRefStr),",");
+  //crefsStr := Util.stringDelimitList(List.map(crefs, Dump.printComponentRefStr),",");
   //Debug.fprintln("debug","start update comps " +& myTick +& " # " +& crefsStr);
   (outCache,outEnv,outIH,_):=
   updateComponentsInEnv2(cache,env,inIH,pre,mod,crefs,ci_state,impl,HashTable5.emptyHashTable());
@@ -9406,7 +9407,7 @@ protected
   list<DAE.Element> elts;
 algorithm
   DAE.DAE(elementLst = elts) := inDae;
-  elts := Util.listMap3(elts, propagateAllAttributes, inAttributes, inPrefixes, inInfo);
+  elts := List.map3(elts, propagateAllAttributes, inAttributes, inPrefixes, inInfo);
   outDae := DAE.DAE(elts);
 end propagateAttributes;
 
@@ -9491,7 +9492,7 @@ algorithm
     // Structured component.
     case (DAE.COMP(ident = ident, dAElist = el, source = source, comment = cmt), _, _, _)
       equation
-        el = Util.listMap3(el, propagateAllAttributes, inAttributes, inPrefixes, inInfo);
+        el = List.map3(el, propagateAllAttributes, inAttributes, inPrefixes, inInfo);
       then
         DAE.COMP(ident, el, source, cmt);
 
@@ -9851,7 +9852,7 @@ algorithm
       equation
         failure(_ = Mod.lookupIdxModification(mod, i));
         str1 = PrefixUtil.printPrefixStrIgnoreNoPre(PrefixUtil.prefixAdd(n, {}, pre, SCode.VAR(), ci_state));
-        str2 = "[" +& Util.stringDelimitList(Util.listMap(idxs, ExpressionDump.printSubscriptStr), ", ") +& "]";
+        str2 = "[" +& Util.stringDelimitList(List.map(idxs, ExpressionDump.printSubscriptStr), ", ") +& "]";
         str3 = Mod.prettyPrintMod(mod, 1);
         str4 = PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "(" +& n +& str2 +& "=" +& str3 +& ")";
         str2 = str1 +& str2;
@@ -9959,7 +9960,7 @@ algorithm
     case (cache,DAE.TYPED(modifierAsExp = e,properties = DAE.PROP(type_ = t)),env)
       equation
         lst = Types.getDimensionSizes(t);
-        lst_1 = Util.listMap(lst, Expression.intDimension);
+        lst_1 = List.map(lst, Expression.intDimension);
       then
         (cache,lst_1);
   end match;
@@ -10078,7 +10079,7 @@ algorithm
         (cache,dim1) = Static.elabArrayDims(cache,env, cref, ad, impl, st,doVect,pre,info);
         dim2 = elabArraydimType(t, ad, e, path, pre, cref, info,inst_dims);
         //Debug.traceln("TYPED: " +& ExpressionDump.printExpStr(e) +& " s: " +& Env.printEnvPathStr(env));
-        dim3 = Util.listThreadMap(dim1, dim2, compatibleArraydim);
+        dim3 = List.threadMap(dim1, dim2, compatibleArraydim);
       then
         (cache,dim3);
     case (cache,env,cref,path,ad,SOME(DAE.UNTYPED(aexp)),impl,st,doVect, _,pre,info,inst_dims)
@@ -10089,7 +10090,7 @@ algorithm
         (cache,dim1) = Static.elabArrayDims(cache,env, cref, ad, impl, st,doVect,pre,info);
         dim2 = elabArraydimType(t, ad, e_1, path, pre, cref, info,inst_dims);
         //Debug.traceln("UNTYPED");
-        dim3 = Util.listThreadMap(dim1, dim2, compatibleArraydim);
+        dim3 = List.threadMap(dim1, dim2, compatibleArraydim);
       then
         (cache,dim3);
     case (cache,env,cref,path,ad,SOME(DAE.TYPED(e,_,DAE.PROP(t,_),_)),impl,st,doVect, _,pre,info,inst_dims)
@@ -10099,7 +10100,7 @@ algorithm
         false = OptManager.getOption("checkModel");
         (cache,dim1) = Static.elabArrayDims(cache,env, cref, ad, impl, st,doVect,pre,info);
         dim2 = elabArraydimType(t, ad, e, path, pre, cref, info,inst_dims);
-        failure(dim3 = Util.listThreadMap(dim1, dim2, compatibleArraydim));
+        failure(dim3 = List.threadMap(dim1, dim2, compatibleArraydim));
         e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
         dim_str = printDimStr(dim1);
@@ -10128,7 +10129,7 @@ protected function printDimStr
 protected
   list<String> dim_strings;
 algorithm
-  dim_strings := Util.listMap(inDimensionLst, ExpressionDump.dimensionString);
+  dim_strings := List.map(inDimensionLst, ExpressionDump.dimensionString);
   outString := Util.stringDelimitList(dim_strings, ",");
 end printDimStr;
 
@@ -10267,7 +10268,7 @@ algorithm
     case(t,ad,exp,path,_,_,_,id)
       equation
         false = RTOpts.splitArrays();
-        flat_id = Util.listFlatten(id);
+        flat_id = List.flatten(id);
         true = (Types.numberOfDimensions(t) >= listLength(ad) + listLength(flat_id));
         outDimensionLst = elabArraydimType2(t,ad,flat_id);
       then outDimensionLst;
@@ -10646,7 +10647,7 @@ algorithm
         (cache,cenv,ih,_,DAE.DAE(daeElts),_,ty,st,_,_) =
           instClass(cache, env, ih, UnitAbsynBuilder.emptyInstStore(), mod, pre,
             c, inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
-        Util.listMap02(daeElts,checkFunctionElement,false,info);
+        List.map2_0(daeElts,checkFunctionElement,false,info);
         env_1 = Env.extendFrameC(env,c);
         (cache,fpath) = makeFullyQualified(cache, env_1, Absyn.IDENT(n));
         derFuncs = getDeriveAnnotation(cd,fpath,cache,cenv,ih,pre,info);
@@ -10676,7 +10677,7 @@ algorithm
         (cache,cenv,ih,_,DAE.DAE(daeElts),_,ty,st,_,_) =
           instClass(cache,env,ih, UnitAbsynBuilder.emptyInstStore(),mod, pre,
             c, inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
-        Util.listMap02(daeElts,checkFunctionElement,true,info);
+        List.map2_0(daeElts,checkFunctionElement,true,info);
         //env_11 = Env.extendFrameC(cenv,c);
         // Only created to be able to get FQ path.
         (cache,fpath) = makeFullyQualified(cache,cenv, Absyn.IDENT(n));
@@ -10942,7 +10943,7 @@ algorithm element := matchcontinue(subs,elemDecl,baseFunc,inCache,inEnv,inIH,inP
       conditionRefs = getDeriveCondition(subs2,elemDecl,inCache,inEnv,inIH,inPrefix,info);
       ErrorExt.rollBack("getDeriveAnnotation3");
 
-      conditionRefs = Util.sort(conditionRefs,DAEUtil.derivativeOrder);
+      conditionRefs = List.sort(conditionRefs,DAEUtil.derivativeOrder);
       defaultDerivative = getDerivativeSubModsOptDefault(subs,inCache,inEnv,inPrefix);
 
 
@@ -11340,7 +11341,7 @@ algorithm
                                    encapsulatedPrefix = e,partialPrefix = p,restriction = r,
                                    classDef = SCode.PARTS(elementLst = elts,annotationLst=annotationLst,externalDecl=extDecl),info = info)) 
       equation
-        stripped_elts = Util.listMap(elts,stripFuncOutputsMod);
+        stripped_elts = List.map(elts,stripFuncOutputsMod);
         stripped_class = SCode.CLASS(id,prefixes,e,p,r,SCode.PARTS(elts,{},{},{},{},extDecl,annotationLst,NONE()),info);
         (cache,env_1,ih,funs) = implicitFunctionInstantiation2(cache,env,ih,DAE.NOMOD(), Prefix.NOPRE(), stripped_class, {},true);
         /* Only external functions are valid without an algorithm section... */
@@ -11522,7 +11523,7 @@ protected function checkExternalFunction "
 protected
   Integer i;
 algorithm
-  Util.listMap02(els,checkExternalFunctionOutputAssigned,decl,name);
+  List.map2_0(els,checkExternalFunctionOutputAssigned,decl,name);
   checkFunctionInputUsed(els,SOME(decl),name);
 end checkExternalFunction;
 
@@ -11534,11 +11535,11 @@ protected
   list<DAE.Element> invars,vars,algs;
 algorithm
   (vars,_,_,_,algs,_) := DAEUtil.splitElements(elts);
-  invars := Util.listFilter(vars,DAEUtil.isInputVar);
+  invars := List.filter(vars,DAEUtil.isInputVar);
   invars := checkExternalDeclInputUsed(invars,decl);
-  invars := Util.listSelect1(invars,vars,checkVarBindingsInputUsed);
+  invars := List.select1(invars,checkVarBindingsInputUsed,vars);
   (_,invars) := DAEUtil.traverseDAE2(algs,checkExpInputUsed,invars);
-  Util.listMap01(invars,warnUnusedFunctionVar,name);
+  List.map1_0(invars,warnUnusedFunctionVar,name);
 end checkFunctionInputUsed;
 
 protected function warnUnusedFunctionVar
@@ -11567,7 +11568,7 @@ algorithm
     case ({},_) then {};
     case (names,SOME(DAE.EXTERNALDECL(returnArg=arg,args=args)))
       equation
-        names = Util.listSelect1(names,arg::args,checkExternalDeclArgs);
+        names = List.select1(names,checkExternalDeclArgs,arg::args);
       then names;
   end match;
 end checkExternalDeclInputUsed;
@@ -11595,13 +11596,13 @@ algorithm
       Absyn.Path path;
     case ((exp as DAE.CREF(componentRef=cr),els))
       equation
-        els = Util.listSelect1(els,cr,checkExpInputUsed3);
+        els = List.select1(els,checkExpInputUsed3,cr);
       then ((exp,els));
     case ((exp as DAE.CALL(path=path),els))
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         cr = ComponentReference.pathToCref(path);
-        els = Util.listSelect1(els,cr,checkExpInputUsed3);
+        els = List.select1(els,checkExpInputUsed3,cr);
       then ((exp,els));
     else tpl;
   end matchcontinue;
@@ -11623,7 +11624,7 @@ protected function checkVarBindingsInputUsed
   input list<DAE.Element> els;
   output Boolean notfound;
 algorithm
-  notfound := not Util.listMemberWithCompareFunc(v,els,checkVarBindingInputUsed);
+  notfound := not List.isMemberOnTrue(v,els,checkVarBindingInputUsed);
 end checkVarBindingsInputUsed;
 
 protected function checkVarBindingInputUsed
@@ -11646,7 +11647,7 @@ protected function checkExternalDeclArgs
   input list<DAE.ExtArg> args;
   output Boolean notfound;
 algorithm
-  notfound := not Util.listMemberWithCompareFunc(v,args,extArgCrefEq);
+  notfound := not List.isMemberOnTrue(v,args,extArgCrefEq);
 end checkExternalDeclArgs;
 
 protected function checkExternalFunctionOutputAssigned
@@ -11669,7 +11670,7 @@ algorithm
       equation
         // Some weird functions pass the same output twice so we cannot check for exactly 1 occurance
         // Interfacing with LAPACK routines is fun, fun, fun :)
-        b = Util.listMemberWithCompareFunc(v,arg::args,extArgCrefEq) or Util.isSome(binding);
+        b = List.isMemberOnTrue(v,arg::args,extArgCrefEq) or Util.isSome(binding);
         str = Debug.bcallret1(not b,ComponentReference.printComponentRefStr,cr,"");
         Error.assertionOrAddSourceMessage(b,Error.EXTERNAL_NOT_SINGLE_RESULT,{str,name},DAEUtil.getElementSourceFileInfo(source));
       then ();
@@ -11742,19 +11743,19 @@ algorithm
      */      
     case (id,els,SCode.EXTERNALDECL(lang = lang))
       equation 
-        (outvar :: {}) = Util.listFilter(els, isOutputVar);
-        invars = Util.listFilter(els, isInputVar);
-        explists = Util.listMap(invars, instExtMakeCrefs);
-        exps = Util.listFlatten(explists);
+        (outvar :: {}) = List.filter(els, isOutputVar);
+        invars = List.filter(els, isInputVar);
+        explists = List.map(invars, instExtMakeCrefs);
+        exps = List.flatten(explists);
         {Absyn.CREF(retcref)} = instExtMakeCrefs(outvar);
         extdecl = SCode.EXTERNALDECL(SOME(id),lang,SOME(retcref),exps,NONE());
       then
         extdecl;
     case (id,els,SCode.EXTERNALDECL(lang = lang))
       equation 
-        inoutvars = Util.listFilter(els, isInoutVar);
-        explists = Util.listMap(inoutvars, instExtMakeCrefs);
-        exps = Util.listFlatten(explists);
+        inoutvars = List.filter(els, isInoutVar);
+        explists = List.map(inoutvars, instExtMakeCrefs);
+        exps = List.flatten(explists);
         extdecl = SCode.EXTERNALDECL(SOME(id),lang,NONE(),exps,NONE());
       then
         extdecl;
@@ -12241,7 +12242,7 @@ protected function makeEnumComponents
   input Absyn.Info info;
   output list<SCode.Element> outSCodeElementLst;
 algorithm
-  outSCodeElementLst := Util.listMap1(inEnumLst, SCode.makeEnumType, info);
+  outSCodeElementLst := List.map1(inEnumLst, SCode.makeEnumType, info);
 end makeEnumComponents;
 
 public function daeDeclare 
@@ -12500,25 +12501,25 @@ algorithm
 
     case (vn,ty as(DAE.T_INTEGER(varLstInt = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
       equation 
-        finst_dims = Util.listFlatten(inst_dims);
+        finst_dims = List.flatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
       then DAE.DAE({DAE.VAR(vn,kind,dir,prot,DAE.T_INTEGER_DEFAULT,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
          
     case (vn,ty as(DAE.T_REAL(varLstReal = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
-        finst_dims = Util.listFlatten(inst_dims);
+        finst_dims = List.flatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
       then DAE.DAE({DAE.VAR(vn,kind,dir,prot,DAE.T_REAL_DEFAULT,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
          
     case (vn,ty as(DAE.T_BOOL(varLstBool = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
       equation 
-        finst_dims = Util.listFlatten(inst_dims);
+        finst_dims = List.flatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
       then DAE.DAE({DAE.VAR(vn,kind,dir,prot,DAE.T_BOOL_DEFAULT,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
          
     case (vn,ty as(DAE.T_STRING(varLstString = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
       equation 
-        finst_dims = Util.listFlatten(inst_dims);
+        finst_dims = List.flatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
       then DAE.DAE({DAE.VAR(vn,kind,dir,prot,DAE.T_STRING_DEFAULT,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
          
@@ -12532,14 +12533,14 @@ algorithm
      */ 
     case (vn,ty as(DAE.T_ENUMERATION(names = l),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
-        finst_dims = Util.listFlatten(inst_dims);
+        finst_dims = List.flatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
       then DAE.DAE({DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
 
           /* Complex type that is ExternalObject*/
      case (vn, ty as (DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
        equation 
-         finst_dims = Util.listFlatten(inst_dims);
+         finst_dims = List.flatten(inst_dims);
          dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
        then DAE.DAE({DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
             
@@ -12576,13 +12577,13 @@ algorithm
         /* Complex/Record components, only if declareComplexVars is true */
     case(vn,ty as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,true)
       equation
-        finst_dims = Util.listFlatten(inst_dims);
+        finst_dims = List.flatten(inst_dims);
       then DAE.DAE({DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
      
     /* MetaModelica extensions */
     case (vn,(tty as DAE.T_FUNCTION(_,_,_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation
-        finst_dims = Util.listFlatten(inst_dims);
+        finst_dims = List.flatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
         path = ComponentReference.crefToPath(vn);
         ty = (tty,SOME(path));
@@ -12593,7 +12594,7 @@ algorithm
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         true = Types.isBoxedType(ty);
-        finst_dims = Util.listFlatten(inst_dims);
+        finst_dims = List.flatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
       then DAE.DAE({DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)});
     /*----------------------------*/
@@ -13623,7 +13624,7 @@ algorithm
   print("makeRecordBinding:\nname" +& Absyn.pathString(inRecordName) +&
     "\ntype:" +& Types.unparseType(inRecordType) +& 
     "\nmod:" +& Mod.printModStr(DAE.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), inMods, NONE())) +&
-    "\nvars:" +& Util.stringDelimitList(Util.listMap(inRecordVars, Types.getVarName), ", ") +& "\n");
+    "\nvars:" +& Util.stringDelimitList(List.map(inRecordVars, Types.getVarName), ", ") +& "\n");
   */ 
   outBinding := makeRecordBinding2(inCache, inEnv, inRecordName, inRecordType, inRecordVars, inMods, inInfo, {}, {}, {});
 end makeRecordBinding;
@@ -13675,7 +13676,7 @@ algorithm
     // Take the first component and look for a submod that gives it a binding.
     case (_, _, _, _, DAE.TYPES_VAR(name = name) :: rest_vars, sub_mods, _, _, _, _)
       equation
-        (sub_mods, opt_mod) = Util.listDeleteMemberOnTrue(name, sub_mods, isSubModNamed);
+        (sub_mods, opt_mod) = List.deleteMemberOnTrue(name, sub_mods, isSubModNamed);
         (exp, val) = makeRecordBinding3(opt_mod, inRecordType, inInfo);
         binding = makeRecordBinding2(inCache, inEnv, inRecordName, inRecordType, rest_vars, sub_mods, inInfo, exp :: inAccumExps, val :: inAccumVals, name :: inAccumNames);
       then
@@ -13801,8 +13802,8 @@ algorithm
         int_dim = Expression.dimensionSize(dim);
         (exp, val) = liftRecordBinding(ty, inExp, inValue);
         ety = Types.elabType(inType);
-        expl = Util.listFill(exp, int_dim);
-        vals = Util.listFill(val, int_dim);
+        expl = List.fill(exp, int_dim);
+        vals = List.fill(val, int_dim);
         exp = DAE.ARRAY(ety, true, expl);
         val = Values.ARRAY(vals, {int_dim});
       then
@@ -14743,19 +14744,19 @@ algorithm
       mod; 
 /*  case (_,_,_,mod,inst_dims,decDims)
     equation
-      subs = Util.listFlatten(inst_dims);
-      exps = Util.listMap(subs,Expression.subscriptNonExpandedExp);
-      aexps = Util.listMap(exps, Expression.unelabExp);
-      adims = Util.listMap(decDims, Absyn.subscriptExpOpt);
+      subs = List.flatten(inst_dims);
+      exps = List.map(subs,Expression.subscriptNonExpandedExp);
+      aexps = List.map(exps, Expression.unelabExp);
+      adims = List.map(decDims, Absyn.subscriptExpOpt);
       mod2 = traverseModAddDims2(mod, aexps, adims, true);
       
     then       
       mod2;*/
   case (cache,env,pre,mod,inst_dims,decDims)
     equation
-      exps = Util.listListMap(inst_dims,Expression.subscriptNonExpandedExp);
-      aexps = Util.listListMap(exps, Expression.unelabExp);
-      adims = Util.listMap(decDims, Absyn.subscriptExpOpt);
+      exps = List.mapList(inst_dims,Expression.subscriptNonExpandedExp);
+      aexps = List.mapList(exps, Expression.unelabExp);
+      adims = List.map(decDims, Absyn.subscriptExpOpt);
       mod2 = traverseModAddDims4(cache,env,pre,mod, aexps, adims, true);
       
     then       
@@ -14937,7 +14938,7 @@ algorithm
     case (SOME(tp as (e,b)), exps)
       equation
         vars = generateUnusedNamesLstCall(e,exps);
-        subs = Util.listListMap(vars,stringSub);
+        subs = List.mapList(vars,stringSub);
         ((e2,_)) = Absyn.traverseExp(e,Absyn.crefInsertSubscriptLstLst, subs);
         e2 = wrapIntoForLst(e2,vars,exps);
       then
@@ -15473,7 +15474,7 @@ algorithm ety := matchcontinue(baseType,dims)
            
    case(baseType, dims)
     equation
-      lst = instdimsIntOptList(Util.listLast(dims));
+      lst = instdimsIntOptList(List.last(dims));
       tp_1 = arrayBasictypeBaseclass2(lst, baseType);
       ty = Types.elabType(tp_1);
     then
@@ -15481,7 +15482,7 @@ algorithm ety := matchcontinue(baseType,dims)
      
   case(baseType, dims)
     equation
-      failure(_ = instdimsIntOptList(Util.listLast(dims)));
+      failure(_ = instdimsIntOptList(List.last(dims)));
       ty = Types.elabType(baseType);
     then
       ty;
@@ -16188,9 +16189,9 @@ algorithm
       list<DAE.Var> inVars,outVars;
     case (SCode.CLASS(restriction=SCode.R_EXT_FUNCTION()),vl)
       equation
-        inVars = Util.listFilter(vl,Types.isInputVar);
-        outVars = Util.listFilter(vl,Types.isOutputVar);
-        name = SCode.isBuiltinFunction(cl,Util.listMap(inVars,Types.varName),Util.listMap(outVars,Types.varName));
+        inVars = List.filter(vl,Types.isInputVar);
+        outVars = List.filter(vl,Types.isOutputVar);
+        name = SCode.isBuiltinFunction(cl,List.map(inVars,Types.varName),List.map(outVars,Types.varName));
         inlineType = isInlineFunc2(cl);
         purity = not DAEUtil.hasBooleanNamedAnnotation(cl,"__OpenModelica_Impure");
       then (DAE.FUNCTION_ATTRIBUTES(inlineType,purity,DAE.FUNCTION_BUILTIN(SOME(name))));
@@ -16425,7 +16426,7 @@ algorithm
       then stmt;
     case (path,DAE.STMT_TUPLE_ASSIGN(tp,lhsLst,rhs,source),invars,outvars)
       equation
-        lhsNames = Util.listMap(lhsLst,Expression.simpleCrefName);
+        lhsNames = List.map(lhsLst,Expression.simpleCrefName);
         rhs = optimizeStatementTail2(path,rhs,lhsNames,invars,outvars,source);
         stmt = Util.if_(Expression.isTailCall(rhs),DAE.STMT_NORETCALL(rhs,source),DAE.STMT_TUPLE_ASSIGN(tp,lhsLst,rhs,source));
       then stmt;

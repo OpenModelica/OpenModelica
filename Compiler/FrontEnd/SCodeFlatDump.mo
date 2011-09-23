@@ -44,6 +44,7 @@ public import SCodeEnv;
 public import IOStream;
 public import SCodeFlat;
 
+protected import List;
 protected import Util;
 protected import Dump;
 protected import SCodeDump;
@@ -117,8 +118,8 @@ algorithm
     
     case (inCompPath, oIOStream)
       equation
-        ty = getComponentTypePath(Util.listLast(inCompPath));
-        str = Util.stringDelimitList(Util.listMap(inCompPath, getComponentName), "/"); 
+        ty = getComponentTypePath(List.last(inCompPath));
+        str = Util.stringDelimitList(List.map(inCompPath, getComponentName), "/"); 
         oIOStream = IOStream.appendList(oIOStream, {str, "\n    "});
         oIOStream = printTypePathToStream(listReverse(ty), oIOStream);
         oIOStream = IOStream.append(oIOStream, "\n");        

@@ -61,6 +61,7 @@ protected import DAEUtil;
 protected import Debug;
 protected import Error;
 protected import Expression;
+protected import List;
 protected import Lookup;
 protected import PrefixUtil;
 protected import RTOpts;
@@ -248,8 +249,8 @@ public function addArrayConnection
 protected
   list<DAE.Dimension> dims1, dims2;
 algorithm
-  dims1 := Util.listMap(inDims1, reverseEnumType);
-  dims2 := Util.listMap(inDims2, reverseEnumType);
+  dims1 := List.map(inDims1, reverseEnumType);
+  dims2 := List.map(inDims2, reverseEnumType);
   outSets := addArrayConnection_impl(inSets, inCref1, inFace1, dims1, inCref2,
     inFace2, dims2, source, flowPrefix, streamPrefix);
 end addArrayConnection;
@@ -345,7 +346,7 @@ algorithm
       equation
         checkConnectorBalance(inVars, class_path, info);
         (flows, streams) = getStreamAndFlowVariables(inVars, {}, {});
-        cs = Util.listFold(flows, addFlowVariableFromDAE, cs);
+        cs = List.fold(flows, addFlowVariableFromDAE, cs);
         cs = addStreamFlowAssociations(cs, inPrefix, streams, flows);
       then
         cs;
@@ -363,8 +364,8 @@ protected
   list<DAE.ComponentRef> crefs;
 algorithm
   crefs := daeVarToCrefs(inVariable);
-  outConnectionSet := Util.listFold_2(crefs, addInsideFlowVariable,
-    inConnectionSet, DAE.emptyElementSource);
+  outConnectionSet := List.fold1r(crefs, addInsideFlowVariable,
+    DAE.emptyElementSource, inConnectionSet);
 end addFlowVariableFromDAE;
 
 protected function getStreamAndFlowVariables
@@ -433,8 +434,8 @@ algorithm
       equation
         {flow_cr} = daeVarToCrefs(flow_var);
         flow_cr = PrefixUtil.prefixCrefNoContext(inPrefix, flow_cr);
-        stream_crs = Util.listMapFlat(inStreamVars, daeVarToCrefs);
-        sets = Util.listFold1(stream_crs, addStreamFlowAssociation,
+        stream_crs = List.mapFlat(inStreamVars, daeVarToCrefs);
+        sets = List.fold1(stream_crs, addStreamFlowAssociation,
           flow_cr, inSets);
       then sets;
   end match;
@@ -462,9 +463,9 @@ algorithm
     case (DAE.TYPES_VAR(name = name, 
         ty = (DAE.T_COMPLEX(complexVarLst = vars), _)))
       equation
-        crefs = Util.listMapFlat(vars, daeVarToCrefs);
+        crefs = List.mapFlat(vars, daeVarToCrefs);
         cr = DAE.CREF_IDENT(name, DAE.ET_REAL(), {});
-        crefs = Util.listMap1r(crefs, ComponentReference.joinCrefs, cr);
+        crefs = List.map1r(crefs, ComponentReference.joinCrefs, cr);
       then
         crefs;
 
@@ -576,11 +577,11 @@ end getNextIndex;
 protected function addInsideFlowVariable
   "Adds a single inside flow variable to the connection sets."
   input Connect.Sets inSets;
-  input DAE.ElementSource inSource;
   input DAE.ComponentRef inCref;
+  input DAE.ElementSource inSource;
   output Connect.Sets outSets;
 algorithm
-  outSets := matchcontinue(inSets, inSource, inCref)
+  outSets := matchcontinue(inSets, inCref, inSource)
     local
       DAE.ComponentRef cr;
       ConnectorElement e;
@@ -599,7 +600,7 @@ algorithm
         inSets;
 
     // Otherwise, add a new set for it.
-    case (Connect.SETS(sets, sc, c, cc, o), DAE.SOURCE(info = info), _)
+    case (Connect.SETS(sets, sc, c, cc, o), _, DAE.SOURCE(info = info))
       equation
         sc = sc + 1;
         e = newElement(inCref, Connect.INSIDE(), Connect.FLOW(), inSource, sc);
@@ -705,7 +706,7 @@ algorithm
     // First check if already added
     case(scope, Connect.SETS(outerConnects = oc),cr1,cr2,io1,io2,f1,f2,_)
       equation
-        _::_ = Util.listSelect2(oc,cr1,cr2,outerConnectionMatches);
+        _::_ = List.select2(oc,outerConnectionMatches,cr1,cr2);
       then sets;
     // add the outerconnect
     case(scope,_,cr1,cr2,io1,io2,f1,f2,source)
@@ -905,10 +906,10 @@ algorithm
         // Collect all connector elements in the node.
         outer_els = collectOuterElements(node, inOuterFace);
         // Find or create inner elements corresponding to the outer elements.
-        inner_els = Util.listMap3(outer_els, findInnerElement, inInnerCref, 
+        inner_els = List.map3(outer_els, findInnerElement, inInnerCref, 
           inInnerFace, inSets);
         // Merge the inner and outer sets pairwise from the two lists.
-        (sets as Connect.SETS(setCount = sets_added)) = Util.listThreadFold(outer_els, inner_els, mergeSets, inSets);
+        (sets as Connect.SETS(setCount = sets_added)) = List.threadFold(outer_els, inner_els, mergeSets, inSets);
         // Check if the number of sets changed.
         added = not intEq(sc, sets_added);
       then
@@ -930,7 +931,7 @@ algorithm
       list<SetTrieNode> nodes;
 
     case (Connect.SET_TRIE_NODE(nodes = nodes), _)
-      then Util.listMapFlat2(nodes, collectOuterElements2, inFace, NONE());
+      then List.map2Flat(nodes, collectOuterElements2, inFace, NONE());
 
     else collectOuterElements2(inNode, inFace, NONE());
   end match;
@@ -953,7 +954,7 @@ algorithm
       equation
         cr = optPrefixCref(inPrefix, cr);
       then
-        Util.listMapFlat2(nodes, collectOuterElements2, inFace, SOME(cr));
+        List.map2Flat(nodes, collectOuterElements2, inFace, SOME(cr));
 
     case (Connect.SET_TRIE_LEAF(name = _), _, _)
       equation
@@ -1582,15 +1583,15 @@ protected
   list<OuterConnect> o;
 algorithm
   Connect.SETS(sets, sc, c, cc, o) := inSets;
-  (sets, outArg) := setTrieTraverseLeaves(sets, inArg, inUpdateFunc);
+  (sets, outArg) := setTrieTraverseLeaves(sets, inUpdateFunc, inArg);
   outSets := Connect.SETS(sets, sc, c, cc, o);
 end traverseSets;
 
 protected function setTrieTraverseLeaves
   "Traverses the leaves of a trie."
   input SetTrieNode inNode;
-  input Arg inArg;
   input UpdateFunc inUpdateFunc;
+  input Arg inArg;
   output SetTrieNode outNode;
   output Arg outArg;
 
@@ -1603,7 +1604,7 @@ protected function setTrieTraverseLeaves
     output Arg outArg;
   end UpdateFunc;
 algorithm
-  (outNode, outArg) := match(inNode, inArg, inUpdateFunc)
+  (outNode, outArg) := match(inNode, inUpdateFunc, inArg)
     local
       String name;
       DAE.ComponentRef cref;
@@ -1613,8 +1614,8 @@ algorithm
 
     case (Connect.SET_TRIE_NODE(name, cref, nodes), _, _)
       equation
-        (nodes, arg) = Util.listMapAndFold1(nodes, setTrieTraverseLeaves, 
-          inArg, inUpdateFunc);
+        (nodes, arg) = List.map1Fold(nodes, setTrieTraverseLeaves, 
+          inUpdateFunc, inArg);
       then
         (Connect.SET_TRIE_NODE(name, cref, nodes), arg);
 
@@ -1678,7 +1679,7 @@ protected function setTrieGetNode
   input list<SetTrieNode> inNodes;
   output SetTrieNode outNode;
 algorithm
-  outNode := Util.listGetMemberOnTrue(inId, inNodes, setTrieNodeNamed);
+  outNode := List.getMemberOnTrue(inId, inNodes, setTrieNodeNamed);
 end setTrieGetNode;
 
 protected function setTrieNodeNamed
@@ -1712,7 +1713,7 @@ protected function setTrieGetLeaf
   input list<SetTrieNode> inNodes;
   output SetTrieNode outNode;
 algorithm
-  outNode := Util.listGetMemberOnTrue(inId, inNodes, setTrieLeafNamed);
+  outNode := List.getMemberOnTrue(inId, inNodes, setTrieLeafNamed);
 end setTrieGetLeaf;
 
 protected function setTrieLeafNamed
@@ -1758,8 +1759,8 @@ algorithm
         set_array = generateSetArray(inSets);
         sets = arrayList(set_array);
         //print("Sets:\n");
-        //print(Util.stringDelimitList(Util.listMap(sets, printSetStr), "\n") +& "\n");
-        dae = Util.listFold(sets, equationsDispatch, DAEUtil.emptyDae);
+        //print(Util.stringDelimitList(List.map(sets, printSetStr), "\n") +& "\n");
+        dae = List.fold(sets, equationsDispatch, DAEUtil.emptyDae);
         dae = DAEUtil.joinDaes(inDae, dae);
         has_stream = System.getHasStreamConnectors();
         dae = evaluateStreamOperators(has_stream, inSets, set_array, dae);
@@ -1817,7 +1818,7 @@ algorithm
   // Create a new graph, represented as an adjacency list.
   graph := arrayCreate(inSetCount, {});
   // Add the connections to the graph.
-  graph := Util.listFold(inConnections, addConnectionToGraph, graph);
+  graph := List.fold(inConnections, addConnectionToGraph, graph);
   // Add the connections to the array with help from the graph.
   outSets := setArrayAddConnections2(1, graph, inSets);
 end setArrayAddConnections;
@@ -1961,12 +1962,12 @@ algorithm
 
     case (Connect.SET_TRIE_NODE(cref = DAE.WILD(), nodes = nodes), _, _)
       then 
-        Util.listFold1(nodes, generateSetArray2, inPrefix, inSetArray);
+        List.fold1(nodes, generateSetArray2, inPrefix, inSetArray);
 
     case (Connect.SET_TRIE_NODE(name = name, cref = node_cr, nodes = nodes),
         prefix, _)
       then
-        Util.listFold1(nodes, generateSetArray2, node_cr :: prefix, inSetArray);
+        List.fold1(nodes, generateSetArray2, node_cr :: prefix, inSetArray);
 
     case (Connect.SET_TRIE_LEAF(insideElement = ie, outsideElement = oe,
         flowAssociation = flow_cr), prefix, sets)
@@ -2123,7 +2124,7 @@ algorithm
         Connect.CONNECTOR_ELEMENT(ty = ty as Connect.EQU()))
       equation
         true = RTOpts.orderConnections();
-        el = Util.listMergeSorted({inElement}, el, equSetElementLess);
+        el = List.mergeSorted({inElement}, el, equSetElementLess);
       then
         arrayUpdate(inSets, inIndex, Connect.SET(ty, el));
 
@@ -2263,7 +2264,7 @@ algorithm
     else
       equation
         true = RTOpts.debugFlag("failtrace");
-        str = Util.stringDelimitList(Util.listMap(inElements, printElementStr), ", ");
+        str = Util.stringDelimitList(List.map(inElements, printElementStr), ", ");
         Debug.traceln("- ConnectUtil.generateEquEquations failed on {" +& str +& "}");
       then
         fail();
@@ -2285,10 +2286,10 @@ protected
   list<DAE.ElementSource> srcl;
   DAE.FunctionTree funcs;
 algorithm
-  sum := Util.listReduce(Util.listMap(inElements, makeFlowExp), 
+  sum := List.reduce(List.map(inElements, makeFlowExp), 
     Expression.makeRealAdd);
-  srcl := Util.listMap(inElements, getElementSource);
-  src := Util.listReduce(srcl, DAEUtil.mergeSources);
+  srcl := List.map(inElements, getElementSource);
+  src := List.reduce(srcl, DAEUtil.mergeSources);
   outDae := DAE.DAE({DAE.EQUATION(sum, DAE.RCONST(0.0), src)});
 end generateFlowEquations;
 
@@ -2366,9 +2367,9 @@ algorithm
     // The general case with N inside connectors and M outside:
     case (_)
       equation
-        (outside, inside) = Util.listSplitOnTrue(inElements, isOutsideStream);
-        dae = Util.listFold_3(outside, streamEquationGeneral, DAEUtil.emptyDae,
-          outside, inside);
+        (outside, inside) = List.splitOnTrue(inElements, isOutsideStream);
+        dae = List.fold2(outside, streamEquationGeneral,
+          outside, inside, DAEUtil.emptyDae);
       then
         dae;
 
@@ -2388,13 +2389,13 @@ end isOutsideStream;
 
 protected function streamEquationGeneral
   "Generates an equation for an outside stream connector element."
-  input DAE.DAElist inDae;
   input ConnectorElement inElement;
   input list<ConnectorElement> inOutsideElements;
   input list<ConnectorElement> inInsideElements;
+  input DAE.DAElist inDae;
   output DAE.DAElist outDae;
 protected
-    list<ConnectorElement> outside;
+  list<ConnectorElement> outside;
   DAE.ComponentRef stream_cr;
   DAE.Exp cref_exp, outside_sum1, outside_sum2, inside_sum1, inside_sum2, res;
   DAE.ElementSource src;
@@ -2777,7 +2778,7 @@ algorithm
     // The general case:
     else
       equation
-        (outside, inside) = Util.listSplitOnTrue(inStreams, isOutsideStream);
+        (outside, inside) = List.splitOnTrue(inStreams, isOutsideStream);
         inside = removeStreamSetElement(inStreamCref, inside);
         e = streamSumEquationExp(outside, inside);
       then
@@ -2821,8 +2822,7 @@ protected function removeStreamSetElement
   input list<ConnectorElement> inElements;
   output list<ConnectorElement> outElements;
 algorithm
-  outElements := Util.listRemoveFirstOnTrue(inCref, compareCrefStreamSet,
-    inElements);
+  (outElements, _) := List.deleteMemberOnTrue(inCref, inElements, compareCrefStreamSet);
 end removeStreamSetElement;
         
 protected function compareCrefStreamSet
@@ -3015,7 +3015,7 @@ algorithm
         ty2 = Types.arrayElementType(ty);
         true = Types.isComplexConnector(ty2);
         // If we have an array of connectors, count how many they are.
-        n = Util.listFold(Types.getDimensionSizes(ty), intMul, 1);
+        n = List.fold(Types.getDimensionSizes(ty), intMul, 1);
         // Count the number of different variables inside the connector, and
         // then multiply those numbers with the dimensions of the array.
         vars = Types.getConnectorVars(ty2);
@@ -3066,8 +3066,8 @@ protected function sizeOfVariableList
 protected
   list<Integer> sizes;
 algorithm
-  sizes := Util.listMap(inVar, sizeOfVariable);
-  outSize := Util.listFold(sizes, intAdd, 0);
+  sizes := List.map(inVar, sizeOfVariable);
+  outSize := List.fold(sizes, intAdd, 0);
 end sizeOfVariableList;
 
 protected function sizeOfVariable
@@ -3163,12 +3163,12 @@ algorithm
         res;
 
     case (Connect.SET_TRIE_NODE(name = "", nodes = nodes), _)
-      then stringAppendList(Util.listMap1(nodes, printSetTrieStr, inAccumName));
+      then stringAppendList(List.map1(nodes, printSetTrieStr, inAccumName));
 
     case (Connect.SET_TRIE_NODE(name = name, nodes = nodes), _)
       equation
         name = inAccumName +& "." +& name;
-        res = stringAppendList(Util.listMap1(nodes, printSetTrieStr, name));
+        res = stringAppendList(List.map1(nodes, printSetTrieStr, name));
       then
         res;
 
@@ -3268,7 +3268,7 @@ protected function printSetConnections
   input list<SetConnection> inConnections;
   output String outString;
 algorithm
-  outString := stringAppendList(Util.listMap(inConnections, printSetConnection));
+  outString := stringAppendList(List.map(inConnections, printSetConnection));
 end printSetConnections;
 
 protected function printSetConnection
@@ -3295,7 +3295,7 @@ algorithm
 
     case Connect.SET(elements = el)
       equation
-        str = Util.stringDelimitList(Util.listMap(el, printElementStr), ", ");
+        str = Util.stringDelimitList(List.map(el, printElementStr), ", ");
       then
         str;
         

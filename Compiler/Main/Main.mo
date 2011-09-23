@@ -47,35 +47,36 @@ protected import BackendDAE;
 protected import BackendDAECreate;
 protected import BackendDAEUtil;
 protected import CevalScript;
+protected import ClassLoader;
+protected import Corba;
+protected import DAE;
+protected import DAEDump;
+protected import DAEUtil;
+protected import Database;
+protected import Debug;
+protected import Dependency;
 protected import Dump;
 protected import DumpGraphviz;
-protected import SCode;
-protected import SCodeUtil;
-protected import DAE;
-protected import DAEUtil;
+protected import Env;
+protected import Error;
+protected import ErrorExt;
+protected import InnerOuter;
 protected import Inst;
 protected import Interactive;
-protected import Dependency;
-protected import RTOpts;
-protected import Debug;
-protected import Socket;
+protected import List;
+protected import Parser;
 protected import Print;
-protected import Corba;
+protected import RTOpts;
+protected import SCode;
+protected import SCodeUtil;
+protected import Settings;
+protected import SimCode;
+protected import Socket;
 protected import System;
-protected import Util;
 protected import TaskGraph;
 protected import TaskGraphExt;
-protected import SimCode;
-protected import ErrorExt;
-protected import Error;
-protected import Parser;
-protected import Env;
-protected import Settings;
-protected import InnerOuter;
-protected import ClassLoader;
 protected import TplMain;
-protected import DAEDump;
-protected import Database;
+protected import Util;
 
 protected function serverLoop
 "function: serverLoop
@@ -278,15 +279,15 @@ algorithm
     
     case(Absyn.PROGRAM(classes=cls,within_=Absyn.WITHIN(scope))) 
       equation
-        names = Util.listMap(cls,Absyn.className);
-        names = Util.listMap1(names,Absyn.joinPaths,scope);
-        res = "{" +& Util.stringDelimitList(Util.listMap(names,Absyn.pathString),",") +& "}";
+        names = List.map(cls,Absyn.className);
+        names = List.map1(names,Absyn.joinPaths,scope);
+        res = "{" +& Util.stringDelimitList(List.map(names,Absyn.pathString),",") +& "}";
       then res;
     
     case(Absyn.PROGRAM(classes=cls,within_=Absyn.TOP())) 
       equation
-        names = Util.listMap(cls,Absyn.className);
-        res = "{" +& Util.stringDelimitList(Util.listMap(names,Absyn.pathString),",") +& "}";
+        names = List.map(cls,Absyn.className);
+        res = "{" +& Util.stringDelimitList(List.map(names,Absyn.pathString),",") +& "}";
       then res;
   end match;
 end makeClassDefResult;

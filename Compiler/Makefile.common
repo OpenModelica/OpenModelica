@@ -101,7 +101,7 @@ Visited.mo \
 Element.mo \
 Node.mo \
 Edge.mo \
-SCodeGraph.mo 
+SCodeGraph.mo \
 
 BACKEND = \
 BackendDAE.mo \
@@ -157,6 +157,7 @@ HashTableStringToPath.mo \
 HashTableExpToIndex.mo \
 HashTableExpType.mo \
 IOStream.mo \
+List.mo \
 Util.mo \
 Pool.mo \
 Name.mo \

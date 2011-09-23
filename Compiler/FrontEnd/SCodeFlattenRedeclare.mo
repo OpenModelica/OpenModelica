@@ -102,6 +102,7 @@ public type Extends = SCodeEnv.Extends;
 
 protected import Debug;
 protected import Error;
+protected import List;
 protected import RTOpts;
 protected import SCodeCheck;
 protected import Util;
@@ -328,7 +329,7 @@ public function addElementRedeclarationsToEnv
   input Env inEnv;
   output Env outEnv;
 algorithm
-  outEnv := Util.listFold(inRedeclares, addElementRedeclarationsToEnv2, inEnv);
+  outEnv := List.fold(inRedeclares, addElementRedeclarationsToEnv2, inEnv);
 end addElementRedeclarationsToEnv;
 
 protected function addElementRedeclarationsToEnv2
@@ -571,7 +572,7 @@ algorithm
         // Merge the types environment with it's enclosing scopes to get the
         // enclosing scopes of the classes we need to replace.
         env = SCodeEnv.enterFrame(item_env, inTypeEnv);
-        env = Util.listFold(inRedeclares, replaceRedeclaredElementInEnv, env);
+        env = List.fold(inRedeclares, replaceRedeclaredElementInEnv, env);
         item_env :: env = env;
       then
         (SCodeEnv.CLASS(cls, {item_env}, cls_ty), env);
@@ -581,7 +582,7 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         Debug.trace("- SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv failed for: ");
         Debug.traceln("redeclares: " +& 
-          Util.stringDelimitList(Util.listMap(inRedeclares, SCodeEnv.printRedeclarationStr), "\n---------\n") +&  
+          Util.stringDelimitList(List.map(inRedeclares, SCodeEnv.printRedeclarationStr), "\n---------\n") +&  
           " item: " +& SCodeEnv.getItemName(inItem) +& " in scope:" +& SCodeEnv.getEnvName(inVarEnv));
       then
         fail();
@@ -601,7 +602,7 @@ algorithm
     
     case (SCode.MOD(subModLst = sub_mods), _)
       equation
-        redeclares = Util.listFold1(sub_mods, extractRedeclareFromSubMod, inEnv, {});
+        redeclares = List.fold1(sub_mods, extractRedeclareFromSubMod, inEnv, {});
       then
         redeclares;
 

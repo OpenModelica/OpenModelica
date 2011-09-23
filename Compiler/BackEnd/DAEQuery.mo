@@ -37,24 +37,23 @@ encapsulated package DAEQuery
   RCS: $Id$"
 
 // public imports
-public
-import BackendDAE;
-import SCode;
+public import BackendDAE;
+public import SCode;
 
 // protected imports
-protected
-import BackendDAEUtil;
-import BackendVariable;
-import BackendEquation;
-import ComponentReference;
-import System;
-import Util;
-import Expression;
-import ExpressionDump;
-import Absyn;
-import DAE;
-import Algorithm;
-import DAEDump;
+protected import Absyn;
+protected import Algorithm;
+protected import BackendDAEUtil;
+protected import BackendEquation;
+protected import BackendVariable;
+protected import ComponentReference;
+protected import DAE;
+protected import DAEDump;
+protected import Expression;
+protected import ExpressionDump;
+protected import List;
+protected import System;
+protected import Util;
 
 protected constant String matlabStringDelim = "'";
 
@@ -101,7 +100,7 @@ algorithm
     case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns)::{}, shared=BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wcLst))))
       equation
         eqnsl = BackendDAEUtil.equationList(eqns);
-        ls1 = Util.listMap1(eqnsl, equationStr, wcLst);
+        ls1 = List.map1(eqnsl, equationStr, wcLst);
         s1 = Util.stringDelimitList(ls1, ",");
         s = "EqStr = {" +& s1 +& "};";
       then
@@ -135,7 +134,7 @@ algorithm
     case (BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl), _)
       equation
         indx_str = intString(indx);
-        var_str=Util.stringDelimitList(Util.listMap(expl,ExpressionDump.printExpStr),", ");
+        var_str=Util.stringDelimitList(List.map(expl,ExpressionDump.printExpStr),", ");
         res = stringAppendList({"Array eqn no: ",indx_str," for variables: ",var_str,"\n"});
       then
         res;
@@ -320,7 +319,7 @@ algorithm
         dirstr = DAEDump.dumpDirectionStr(dir);
         str1 = ComponentReference.printComponentRefStr(cr);
         /*
-        paths_lst = Util.listMap(paths, Absyn.pathString);
+        paths_lst = List.map(paths, Absyn.pathString);
         path_str = Util.stringDelimitList(paths_lst, ", ");
         comment_str = Dump.unparseCommentOption(comment);
         print("= ");
@@ -357,7 +356,7 @@ algorithm
         dirstr = DAEDump.dumpDirectionStr(dir);
         str1 = ComponentReference.printComponentRefStr(cr);
         /*
-        paths_lst = Util.listMap(paths, Absyn.pathString);
+        paths_lst = List.map(paths, Absyn.pathString);
         path_str = Util.stringDelimitList(paths_lst, ", ");
         comment_str = Dump.unparseCommentOption(comment);
         print("= ");
@@ -478,8 +477,8 @@ algorithm
     // array equation
     case (vars,BackendDAE.ARRAY_EQUATION(crefOrDerCref = expl))
       equation
-        lst3 = Util.listMap1(expl, incidenceRowExp, vars);
-        res = Util.listFlatten(lst3);
+        lst3 = List.map1(expl, incidenceRowExp, vars);
+        res = List.flatten(lst3);
       then
         res;
     
@@ -526,10 +525,10 @@ algorithm
    // analysis of algorithm itself needs to be implemented.
     case (vars,BackendDAE.ALGORITHM(index = indx,in_ = inputs,out = outputs)) 
       equation
-        lstlst1 = Util.listMap1(inputs, incidenceRowExp, vars);
-        lstlst2 = Util.listMap1(outputs, incidenceRowExp, vars);
+        lstlst1 = List.map1(inputs, incidenceRowExp, vars);
+        lstlst2 = List.map1(outputs, incidenceRowExp, vars);
         lstres = listAppend(lstlst1, lstlst2);
-        res_1 = Util.listFlatten(lstres);
+        res_1 = List.flatten(lstres);
       then
         res_1;
     
@@ -568,7 +567,7 @@ algorithm
         lst1 = incidenceRowStmts(rest, vars);
         lst2 = incidenceRowExp(e, vars);
         lst3 = incidenceRowExp(e1, vars);
-        res = Util.listFlatten({lst1,lst2,lst3});
+        res = List.flatten({lst1,lst2,lst3});
       then
         res;
     
@@ -576,9 +575,9 @@ algorithm
       equation
         lst1 = incidenceRowStmts(rest, vars);
         lst2 = incidenceRowExp(e, vars);
-        lstlst = Util.listMap1(expl, incidenceRowExp, vars);
-        lst3_1 = Util.listFlatten(lstlst);
-        res = Util.listFlatten({lst1,lst2,lst3_1});
+        lstlst = List.map1(expl, incidenceRowExp, vars);
+        lst3_1 = List.flatten(lstlst);
+        res = List.flatten({lst1,lst2,lst3_1});
       then
         res;
     
@@ -587,7 +586,7 @@ algorithm
         lst1 = incidenceRowStmts(rest, vars);
         lst2 = incidenceRowExp(e, vars);
         lst3 = incidenceRowExp(Expression.crefExp(cr), vars);
-        res = Util.listFlatten({lst1,lst2,lst3});
+        res = List.flatten({lst1,lst2,lst3});
       then
         res;
     
@@ -651,36 +650,36 @@ algorithm
         BackendVariable.getVar(cr, vars) "If variable x is a state, der(x) is a variable in incidence matrix,
                                  x is inserted as negative value, since it is needed by debugging and index
                                  reduction using dummy derivatives" ;
-        p_1 = Util.listMap1r(p, intSub, 0);
-        pStr = Util.listMap(p_1, intString);
+        p_1 = List.map1r(p, intSub, 0);
+        pStr = List.map(p_1, intString);
       then
         pStr;
     
     case (DAE.CREF(componentRef = cr),vars)
       equation
         ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: _),p) = BackendVariable.getVar(cr, vars);
-        pStr = Util.listMap(p, intString);
+        pStr = List.map(p, intString);
       then
         pStr;
     
     case (DAE.CREF(componentRef = cr),vars)
       equation
         ((BackendDAE.VAR(varKind = BackendDAE.DISCRETE()) :: _),p) = BackendVariable.getVar(cr, vars);
-        pStr = Util.listMap(p, intString);
+        pStr = List.map(p, intString);
       then
         pStr;
     
     case (DAE.CREF(componentRef = cr),vars)
       equation
         ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: _),p) = BackendVariable.getVar(cr, vars);
-        pStr = Util.listMap(p, intString);
+        pStr = List.map(p, intString);
       then
         pStr;
     
     case (DAE.CREF(componentRef = cr),vars)
       equation
         ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: _),p) = BackendVariable.getVar(cr, vars);
-        pStr = Util.listMap(p, intString);
+        pStr = List.map(p, intString);
       then
         pStr;
     
@@ -808,21 +807,21 @@ algorithm
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
       equation
         ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),p) = BackendVariable.getVar(cr, vars);
-        pStr = Util.listMap(p, intString);
+        pStr = List.map(p, intString);
       then
         pStr;
     
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
       equation
         (_,p) = BackendVariable.getVar(cr, vars);
-        pStr = Util.listMap(p, intString);
+        pStr = List.map(p, intString);
       then
         {};
     
     case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF(componentRef = cr)}),vars) /* pre(v) is considered a known variable */ //IS IT????
       equation
         (_,p) = BackendVariable.getVar(cr, vars);
-        pStr = Util.listMap(p, intString);
+        pStr = List.map(p, intString);
         //ss = printExpStr(cr, vars);
         //pStr = ss;
       then
@@ -830,15 +829,15 @@ algorithm
 
     case (DAE.CALL(expLst = expl),vars)
       equation
-        lst = Util.listMap1(expl, incidenceRowExp, vars);
-        pStr = Util.listFlatten(lst);
+        lst = List.map1(expl, incidenceRowExp, vars);
+        pStr = List.flatten(lst);
       then
         pStr;
 
     case (DAE.ARRAY(array = expl),vars)
       equation
-        lst = Util.listMap1(expl, incidenceRowExp, vars);
-        pStr = Util.listFlatten(lst);
+        lst = List.map1(expl, incidenceRowExp, vars);
+        pStr = List.flatten(lst);
       then
         pStr;
 
@@ -869,8 +868,8 @@ algorithm
     case (DAE.REDUCTION(expr = e1,iterators = iters),vars)
       equation
         s1 = incidenceRowExp(e1, vars);
-        lst = Util.listMap1(iters, incidenceRowIter, vars);
-        pStr = Util.listFlatten(s1::lst);
+        lst = List.map1(iters, incidenceRowIter, vars);
+        pStr = List.flatten(s1::lst);
       then
         pStr;
     case (_,_) then {};
@@ -913,9 +912,9 @@ algorithm
     case ({},_) then {};
     case ((expl_1 :: es),vars)
       equation
-        res1 = Util.listMap1(expl_1, incidenceRowExp, vars);
+        res1 = List.map1(expl_1, incidenceRowExp, vars);
         res2 = incidenceRowMatrixExp(es, vars);
-        res1_1 = Util.listFlatten(res1);
+        res1_1 = List.flatten(res1);
         pStr = listAppend(res1_1, res2);
       then
         pStr;

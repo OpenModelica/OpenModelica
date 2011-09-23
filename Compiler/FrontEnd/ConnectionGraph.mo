@@ -126,8 +126,8 @@ algorithm
 
         (roots, elts, broken) = findResultGraph(graph, elts, modelNameQualified);
 
-        Debug.fprintln("cgraph", "Roots: " +& Util.stringDelimitList(Util.listMap(roots, ComponentReference.printComponentRefStr), ", "));
-        Debug.fprintln("cgraph", "Broken connections: " +& Util.stringDelimitList(Util.listMap(broken, printConnectionStr), ", "));
+        Debug.fprintln("cgraph", "Roots: " +& Util.stringDelimitList(List.map(roots, ComponentReference.printComponentRefStr), ", "));
+        Debug.fprintln("cgraph", "Broken connections: " +& Util.stringDelimitList(List.map(broken, printConnectionStr), ", "));
 
         elts = evalIsRoot(roots, elts);
       then
@@ -172,8 +172,8 @@ algorithm
       equation
         (roots, elts, broken) = findResultGraph(graph, {}, "");
        
-        Debug.fprintln("cgraph", "Roots: " +& Util.stringDelimitList(Util.listMap(roots, ComponentReference.printComponentRefStr), ", "));
-        Debug.fprintln("cgraph", "Broken connections: " +& Util.stringDelimitList(Util.listMap(broken, printConnectionStr), ", "));
+        Debug.fprintln("cgraph", "Roots: " +& Util.stringDelimitList(List.map(roots, ComponentReference.printComponentRefStr), ", "));
+        Debug.fprintln("cgraph", "Broken connections: " +& Util.stringDelimitList(List.map(broken, printConnectionStr), ", "));
         
         // remove the broken connects from connection set!
         sets = removeBrokenConnectionsFromSets(sets, broken);
@@ -326,6 +326,7 @@ protected import Debug;
 protected import DAEDump;
 protected import Expression;
 protected import ExpressionDump;
+protected import List;
 protected import Util;
 protected import System;
 protected import IOStream;
@@ -940,10 +941,10 @@ algorithm
         // add branches to the table
         table = addBranchesToTable(table, branches);
         // order potential roots in the order or priority
-        orderedPotentialRoots = Util.sort(potentialRoots, ord);
+        orderedPotentialRoots = List.sort(potentialRoots, ord);
         
         Debug.fprintln("cgraph", "Ordered Potential Roots: " +& 
-          Util.stringDelimitList(Util.listMap(orderedPotentialRoots, printPotentialRootTuple), ", "));
+          Util.stringDelimitList(List.map(orderedPotentialRoots, printPotentialRootTuple), ", "));
         
         // add connections to the table and return the broken connections
         (table, dae, broken) = addConnections(table, connections, inDAE);
@@ -976,10 +977,10 @@ algorithm
         // add branches to the table
         table = addBranchesToTable(table, branches);
         // order potential roots in the order or priority
-        orderedPotentialRoots = Util.sort(potentialRoots, ord);
+        orderedPotentialRoots = List.sort(potentialRoots, ord);
         
         Debug.fprintln("cgraph", "Ordered Potential Roots: " +& 
-          Util.stringDelimitList(Util.listMap(orderedPotentialRoots, printPotentialRootTuple), ", "));
+          Util.stringDelimitList(List.map(orderedPotentialRoots, printPotentialRootTuple), ", "));
         
         // add connections to the table and return the broken connections
         (table, dae, broken) = addConnections(table, connections, inDAE);
@@ -1000,10 +1001,10 @@ algorithm
               broken);
         // graphviz returns the broken connects as: cr1|cr2#cr3|cr4#
         userBrokenLst = Util.stringSplitAtChar(brokenConnectsViaGraphViz, "#");
-        userBrokenLstLst = Util.listMap1(userBrokenLst, Util.stringSplitAtChar, "|");
+        userBrokenLstLst = List.map1(userBrokenLst, Util.stringSplitAtChar, "|");
         userBrokenTplLst = makeTuple(userBrokenLstLst);
         Debug.traceln("User selected the following connect edges for breaking:\n\t" +& 
-           Util.stringDelimitList(Util.listMap(userBrokenTplLst, printTupleStr), "\n\t"));
+           Util.stringDelimitList(List.map(userBrokenTplLst, printTupleStr), "\n\t"));
         // print("\nBefore ordering:\n");
         printDaeEdges(connections);
         // order the connects with the input given by the user!
@@ -1172,7 +1173,7 @@ algorithm
     case ((inExp as DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),
           expLst={DAE.CREF(componentRef = cref)}), roots))
       equation
-        result = Util.listMemberWithCompareFunc(cref, roots, ComponentReference.crefEqual);
+        result = List.isMemberOnTrue(cref, roots, ComponentReference.crefEqual);
         Debug.fprintln("cgraph", "- ConnectionGraph.evalIsRootHelper: " +& 
            ExpressionDump.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
       then ((DAE.BCONST(result), roots));
@@ -1180,7 +1181,7 @@ algorithm
     case ((inExp as DAE.LUNARY(DAE.NOT(_), DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),
           expLst={DAE.CREF(componentRef = cref)})), roots))
       equation
-        result = Util.listMemberWithCompareFunc(cref, roots, ComponentReference.crefEqual);
+        result = List.isMemberOnTrue(cref, roots, ComponentReference.crefEqual);
         result = boolNot(result);
         Debug.fprintln("cgraph", "- ConnectionGraph.evalIsRootHelper: " +& 
            ExpressionDump.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
@@ -1339,8 +1340,8 @@ algorithm
   Connect.SETS(outerConnects = outer_connects) := inSets;
   (sets, _) := ConnectUtil.traverseSets(inSets, inBrokenConnects,
     removeBrokenConnectionsFromSet);
-  outer_connects := Util.listSelect1(outer_connects, inBrokenConnects,
-    outerConnectNOTFromConnect);
+  outer_connects := List.select1(outer_connects, outerConnectNOTFromConnect,
+    inBrokenConnects);
   outSets := ConnectUtil.setOuterConnects(sets, outer_connects);
 end removeBrokenConnectionsFromSets;
 
@@ -1486,10 +1487,10 @@ algorithm
       equation
         Debug.fprintln("cgraph", "- ConnectionGraph.merge()");
         updateGraph    = boolOr(updateGraph1, updateGraph2);
-        definiteRoots  = Util.listUnion(definiteRoots1, definiteRoots2);
-        potentialRoots = Util.listUnion(potentialRoots1, potentialRoots2);
-        branches       = Util.listUnion(branches1, branches2);
-        connections    = Util.listUnion(connections1, connections2);
+        definiteRoots  = List.union(definiteRoots1, definiteRoots2);
+        potentialRoots = List.union(potentialRoots1, potentialRoots2);
+        branches       = List.union(branches1, branches2);
+        connections    = List.union(connections1, connections2);
       then
         GRAPH(updateGraph,definiteRoots,potentialRoots,branches,connections);
   end matchcontinue;
@@ -1670,18 +1671,18 @@ algorithm
         
         // output definite roots
         graphVizStream = IOStream.appendList(graphVizStream, {"\n", i, "// Definite Roots (Connections.root)", "\n", i});
-        graphVizStream = IOStream.appendList(graphVizStream, Util.listMap1(definiteRoots, graphVizDefiniteRoot, finalRoots));
+        graphVizStream = IOStream.appendList(graphVizStream, List.map1(definiteRoots, graphVizDefiniteRoot, finalRoots));
         // output potential roots
         graphVizStream = IOStream.appendList(graphVizStream, {"\n", i, "// Potential Roots (Connections.potentialRoot)", "\n", i});
-        graphVizStream = IOStream.appendList(graphVizStream, Util.listMap1(potentialRoots, graphVizPotentialRoot, finalRoots));
+        graphVizStream = IOStream.appendList(graphVizStream, List.map1(potentialRoots, graphVizPotentialRoot, finalRoots));
 
         // output branches        
         graphVizStream = IOStream.appendList(graphVizStream, {"\n", i, "// Branches (Connections.branch)", "\n", i});
-        graphVizStream = IOStream.appendList(graphVizStream, Util.listMap(branches, graphVizEdge));
+        graphVizStream = IOStream.appendList(graphVizStream, List.map(branches, graphVizEdge));
         
         // output connections
         graphVizStream = IOStream.appendList(graphVizStream, {"\n", i, "// Connections (connect)", "\n", i});
-        graphVizStream = IOStream.appendList(graphVizStream, Util.listMap1(connections, graphVizDaeEdge, broken));
+        graphVizStream = IOStream.appendList(graphVizStream, List.map1(connections, graphVizDaeEdge, broken));
         
         // output graphviz footer
         graphVizStream = IOStream.appendList(graphVizStream, {"\n}\n"});

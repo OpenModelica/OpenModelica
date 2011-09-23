@@ -585,6 +585,7 @@ public constant Attributes defaultConstAttr =
 protected import Util;
 protected import Dump;
 protected import ModUtil;
+protected import List;
 protected import Print;
 protected import Error;
 protected import SCodeCheck;
@@ -1096,13 +1097,13 @@ protected function classDefEqual
      case(PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,_,anns1,_),
           PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,_,anns2,_))
        equation
-         Util.listThreadMapAllValue(elts1,elts2,elementEqual,true);
-         Util.listThreadMapAllValue(eqns1,eqns2,equationEqual,true);
-         Util.listThreadMapAllValue(ieqns1,ieqns2,equationEqual,true);
-         Util.listThreadMapAllValue(algs1,algs2,algorithmEqual,true);
-         Util.listThreadMapAllValue(ialgs1,ialgs2,algorithmEqual,true);
+         List.threadMapAllValue(elts1,elts2,elementEqual,true);
+         List.threadMapAllValue(eqns1,eqns2,equationEqual,true);
+         List.threadMapAllValue(ieqns1,ieqns2,equationEqual,true);
+         List.threadMapAllValue(algs1,algs2,algorithmEqual,true);
+         List.threadMapAllValue(ialgs1,ialgs2,algorithmEqual,true);
          // adrpo: ignore annotations!
-         // blst6 = Util.listThreadMap(anns1,anns2,annotationEqual);
+         // blst6 = List.threadMap(anns1,anns2,annotationEqual);
        then 
          true;
          
@@ -1117,28 +1118,28 @@ protected function classDefEqual
          
      case (ENUMERATION(elst1,_),ENUMERATION(elst2,_))
        equation
-         Util.listThreadMapAllValue(elst1,elst2,enumEqual,true);
+         List.threadMapAllValue(elst1,elst2,enumEqual,true);
        then 
          true;
          
      case (cdef1 as CLASS_EXTENDS(bcName1,mod1,PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,_,anns1,_)),
            cdef2 as CLASS_EXTENDS(bcName2,mod2,PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,_,anns2,_)))
        equation
-         Util.listThreadMapAllValue(elts1,elts2,elementEqual,true);
-         Util.listThreadMapAllValue(eqns1,eqns2,equationEqual,true);
-         Util.listThreadMapAllValue(ieqns1,ieqns2,equationEqual,true);
-         Util.listThreadMapAllValue(algs1,algs2,algorithmEqual,true);
-         Util.listThreadMapAllValue(ialgs1,ialgs2,algorithmEqual,true);
+         List.threadMapAllValue(elts1,elts2,elementEqual,true);
+         List.threadMapAllValue(eqns1,eqns2,equationEqual,true);
+         List.threadMapAllValue(ieqns1,ieqns2,equationEqual,true);
+         List.threadMapAllValue(algs1,algs2,algorithmEqual,true);
+         List.threadMapAllValue(ialgs1,ialgs2,algorithmEqual,true);
          true = stringEq(bcName1,bcName2);
          true = modEqual(mod1,mod2);
          // adrpo: ignore annotations!
-         // blst6 = Util.listThreadMap(anns1,anns2,annotationEqual);
+         // blst6 = List.threadMap(anns1,anns2,annotationEqual);
        then
          true;
          
      case (cdef1 as PDER(p1,ilst1,_),cdef2 as PDER(p2,ilst2,_))
        equation
-         Util.listThreadMapAllValue(ilst1,ilst2,stringEq,true);
+         List.threadMapAllValue(ilst1,ilst2,stringEq,true);
        then 
          true;
     
@@ -1172,7 +1173,7 @@ protected function arraydimOptEqual
     case(NONE(),NONE()) then true;
     case(SOME(lst1),SOME(lst2))
       equation
-        Util.listThreadMapAllValue(lst1,lst2,subscriptEqual,true);
+        List.threadMapAllValue(lst1,lst2,subscriptEqual,true);
       then 
         true;
     // oth. false
@@ -1212,7 +1213,7 @@ algorithm
     
     case(ALGORITHM(a1),ALGORITHM(a2))
       equation
-        Util.listThreadMapAllValue(a1,a2,algorithmEqual2,true);
+        List.threadMapAllValue(a1,a2,algorithmEqual2,true);
       then 
         true;
     
@@ -1304,8 +1305,8 @@ algorithm
     case (EQ_IF(condition = ifcond1, thenBranch = tb1, elseBranch = fb1),EQ_IF(condition = ifcond2, thenBranch = tb2, elseBranch = fb2))
       equation
         true = equationEqual22(tb1,tb2);
-        Util.listThreadMapAllValue(fb1,fb2,equationEqual2,true);
-        Util.listThreadMapAllValue(ifcond1,ifcond2,Absyn.expEqual,true);
+        List.threadMapAllValue(fb1,fb2,equationEqual2,true);
+        List.threadMapAllValue(ifcond1,ifcond2,Absyn.expEqual,true);
       then 
         true;
     
@@ -1325,7 +1326,7 @@ algorithm
     
     case (EQ_FOR(index = id1, range = exp1, eEquationLst = eql1),EQ_FOR(index = id2, range = exp2, eEquationLst = eql2))
       equation
-        Util.listThreadMapAllValue(eql1,eql2,equationEqual2,true);
+        List.threadMapAllValue(eql1,eql2,equationEqual2,true);
         true = Absyn.expEqual(exp1,exp2);
         true = stringEq(id1,id2);
       then 
@@ -1333,7 +1334,7 @@ algorithm
     
     case (EQ_WHEN(condition = cond1, eEquationLst = elst1),EQ_WHEN(condition = cond2, eEquationLst = elst2)) // TODO: elsewhen not checked yet.
       equation
-        Util.listThreadMapAllValue(elst1,elst2,equationEqual2,true);
+        List.threadMapAllValue(elst1,elst2,equationEqual2,true);
         true = Absyn.expEqual(cond1,cond2);
       then 
         true;
@@ -1373,7 +1374,7 @@ algorithm
     case({},_) then false;
     case(tb_1::tb1,tb_2::tb2)
       equation
-        Util.listThreadMapAllValue(tb_1,tb_2,equationEqual2,true);
+        List.threadMapAllValue(tb_1,tb_2,equationEqual2,true);
         true = equationEqual22(tb1,tb2);
       then
         true;
@@ -1419,7 +1420,7 @@ algorithm
       equation
         true = valueEq(f1,f2);
         true = eachEqual(each1,each2);
-        Util.listThreadMapAllValue(elts1,elts2,elementEqual,true);
+        List.threadMapAllValue(elts1,elts2,elementEqual,true);
       then 
         true;
     
@@ -1687,7 +1688,7 @@ algorithm
           lst_1=Absyn.findIteratorInExpLst(id,eLst);
           lst_2=findIteratorInEEquationLstLst(id,eeqLstLst);
           lst_3=findIteratorInEEquationLst(id,eeqLst);
-          lst=Util.listFlatten({lst_1,lst_2,lst_3});
+          lst=List.flatten({lst_1,lst_2,lst_3});
         then lst;
       case (id,EQ_EQUALS(expLeft = e_1, expRight = e_2))
         equation
@@ -1718,7 +1719,7 @@ algorithm
           lst_1=Absyn.findIteratorInExp(id,e_1);
           lst_2=findIteratorInEEquationLst(id,eeqLst);
           lst_3=findIteratorInElsewhen(id,ew);
-          lst=Util.listFlatten({lst_1,lst_2,lst_3});
+          lst=List.flatten({lst_1,lst_2,lst_3});
         then lst;
       case (id,EQ_ASSERT(condition = e_1, message = e_2))
         equation
@@ -1807,7 +1808,7 @@ algorithm
           lst_1 = Absyn.findIteratorInExp(id,e);
           lst_2 = findIteratorInEEquationLst(id,eeq);
           lst_3 = findIteratorInElsewhen(id,rest);
-          lst = Util.listFlatten({lst_1,lst_2,lst_3});
+          lst = List.flatten({lst_1,lst_2,lst_3});
         then lst;
   end match;
 end findIteratorInElsewhen;
@@ -1924,32 +1925,32 @@ algorithm
     
     case ALG_IF(boolExpr,trueBranch,branches,elseBranch,comment,info)
       equation
-        algs1 = Util.listMap(trueBranch,statementToAlgorithmItem);
+        algs1 = List.map(trueBranch,statementToAlgorithmItem);
 
-        conditions = Util.listMap(branches, Util.tuple21);
-        stmtsList = Util.listMap(branches, Util.tuple22);
-        algsLst = Util.listListMap(stmtsList, statementToAlgorithmItem);
-        abranches = Util.listThreadTuple(conditions,algsLst);
+        conditions = List.map(branches, Util.tuple21);
+        stmtsList = List.map(branches, Util.tuple22);
+        algsLst = List.mapList(stmtsList, statementToAlgorithmItem);
+        abranches = List.threadTuple(conditions,algsLst);
 
-        algs2 = Util.listMap(elseBranch,statementToAlgorithmItem);
+        algs2 = List.map(elseBranch,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_IF(boolExpr,algs1,abranches,algs2),NONE(),info);
     
     case ALG_FOR(iterators,body,comment,info)
       equation
-        algs1 = Util.listMap(body,statementToAlgorithmItem);
+        algs1 = List.map(body,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_FOR(iterators,algs1),NONE(),info);
   
     case ALG_WHILE(boolExpr,body,comment,info)
       equation
-        algs1 = Util.listMap(body,statementToAlgorithmItem);
+        algs1 = List.map(body,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_WHILE(boolExpr,algs1),NONE(),info);
         
     case ALG_WHEN_A(branches,comment,info)
       equation
-        (boolExpr::conditions) = Util.listMap(branches, Util.tuple21);
-        stmtsList = Util.listMap(branches, Util.tuple22);
-        (algs1::algsLst) = Util.listListMap(stmtsList, statementToAlgorithmItem);
-        abranches = Util.listThreadTuple(conditions,algsLst);
+        (boolExpr::conditions) = List.map(branches, Util.tuple21);
+        stmtsList = List.map(branches, Util.tuple22);
+        (algs1::algsLst) = List.mapList(stmtsList, statementToAlgorithmItem);
+        abranches = List.threadTuple(conditions,algsLst);
       then Absyn.ALGORITHMITEM(Absyn.ALG_WHEN_A(boolExpr,algs1,abranches),NONE(),info);
 
     case ALG_NORETCALL(functionCall,functionArgs,comment,info)
@@ -1963,12 +1964,12 @@ algorithm
     
     case ALG_TRY(body,comment,info)
       equation
-        algs1 = Util.listMap(body,statementToAlgorithmItem);
+        algs1 = List.map(body,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_TRY(algs1),NONE(),info);
         
     case ALG_CATCH(body,comment,info)
       equation
-        algs1 = Util.listMap(body,statementToAlgorithmItem);
+        algs1 = List.map(body,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_CATCH(algs1),NONE(),info);
     
     case ALG_THROW(comment,info)
@@ -1976,7 +1977,7 @@ algorithm
     
     case ALG_FAILURE(body,comment,info)
       equation
-        algs1 = Util.listMap(body,statementToAlgorithmItem);
+        algs1 = List.map(body,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_FAILURE(algs1),NONE(),info);
   end match;
 end statementToAlgorithmItem;
@@ -2010,7 +2011,7 @@ algorithm
           lst_2=findIteratorInStatements(id,algLst_1);
           lst_3=findIteratorInElseIfBranch(id,elseIfBranch);
           lst_4=findIteratorInStatements(id,algLst_2);
-          lst=Util.listFlatten({lst_1,lst_2,lst_3,lst_4});
+          lst=List.flatten({lst_1,lst_2,lst_3,lst_4});
         then lst;
 /*      case (id, ALG_FOR(forIterators,algLst_1))
         equation
@@ -2040,9 +2041,9 @@ algorithm
       case (id,ALG_WHEN_A(branches = {})) then {};
       case (id,ALG_WHEN_A(branches = (e_1,algLst_1)::branches))
         equation
-          lst_1=Absyn.findIteratorInExpLst(id,Util.listMap(branches,Util.tuple21));
-          lst_lst = Util.listMap1r(Util.listMap(branches,Util.tuple22),findIteratorInStatements,id);
-          lst=Util.listFlatten(lst_1::lst_lst);
+          lst_1=Absyn.findIteratorInExpLst(id,List.map(branches,Util.tuple21));
+          lst_lst = List.map1r(List.map(branches,Util.tuple22),findIteratorInStatements,id);
+          lst=List.flatten(lst_1::lst_lst);
         then lst;
       case (id,ALG_NORETCALL(functionArgs = funcArgs))
         equation
@@ -2102,7 +2103,7 @@ algorithm
           lst_1=Absyn.findIteratorInExp(id,exp);
           lst_2=findIteratorInStatements(id,algItemLst);
           lst_3=findIteratorInElseIfBranch(id,rest);
-          lst=Util.listFlatten({lst_1,lst_2,lst_3});
+          lst=List.flatten({lst_1,lst_2,lst_3});
         then lst;
   end match;
 end findIteratorInElseIfBranch;
@@ -2185,7 +2186,7 @@ public function traverseEEquationsList
   end TraverseFunc;
 algorithm
   (outEEquations, outTuple) := 
-    Util.listMapAndFold(inEEquations, traverseEEquations, inTuple);
+    List.mapFold(inEEquations, traverseEEquations, inTuple);
 end traverseEEquationsList;
 
 public function traverseEEquations
@@ -2246,7 +2247,7 @@ algorithm
 
     case (EQ_IF(expl1, then_branch, else_branch, comment, info), tup)
       equation
-        (then_branch, tup) = Util.listMapAndFold(then_branch,
+        (then_branch, tup) = List.mapFold(then_branch,
           traverseEEquationsList, tup);
         (else_branch, tup) = traverseEEquationsList(else_branch, tup);
       then
@@ -2261,7 +2262,7 @@ algorithm
     case (EQ_WHEN(e1, eql, else_when, comment, info), tup)
       equation
         (eql, tup) = traverseEEquationsList(eql, tup);
-        (else_when, tup) = Util.listMapAndFold(else_when,
+        (else_when, tup) = List.mapFold(else_when,
           traverseElseWhenEEquations, tup);
       then
         (EQ_WHEN(e1, eql, else_when, comment, info), tup);
@@ -2310,7 +2311,7 @@ public function traverseEEquationListExps
   end TraverseFunc;
 algorithm
   (outEEquations, outTuple) := 
-    Util.listMapAndFold(inEEquations, traverseEEquationExps, inTuple);
+    List.mapFold(inEEquations, traverseEEquationExps, inTuple);
 end traverseEEquationListExps;
 
 public function traverseEEquationExps
@@ -2375,7 +2376,7 @@ algorithm
     case (EQ_WHEN(e1, eql, else_when, comment, info), (traverser, arg))
       equation
         ((e1, arg)) = traverser((e1, arg));
-        (else_when, tup) = Util.listMapAndFold(else_when, traverseElseWhenExps, 
+        (else_when, tup) = List.mapFold(else_when, traverseElseWhenExps, 
           (traverser, arg));
       then
         (EQ_WHEN(e1, eql, else_when, comment, info), tup);
@@ -2404,7 +2405,7 @@ algorithm
       equation
         (cr1, (traverser, arg)) = traverseComponentRefExps(cr1, tup);
         ((expl1, arg)) = Absyn.traverseExpList(expl1, traverser, arg);
-        (args, tup) = Util.listMapAndFold(args, traverseNamedArgExps, (traverser, arg));
+        (args, tup) = List.mapFold(args, traverseNamedArgExps, (traverser, arg));
       then
         (EQ_NORETCALL(cr1, Absyn.FUNCTIONARGS(expl1, args), comment, info), tup);
 
@@ -2412,7 +2413,7 @@ algorithm
       equation
         (cr1, (traverser, arg)) = traverseComponentRefExps(cr1, tup);
         ((e1, arg)) = traverser((e1,  arg));
-        (iters, tup) = Util.listMapAndFold(iters, traverseForIteratorExps,
+        (iters, tup) = List.mapFold(iters, traverseForIteratorExps,
           (traverser, arg));
       then
         (EQ_NORETCALL(cr1, Absyn.FOR_ITER_FARG(e1, iters), comment, info), tup);
@@ -2452,13 +2453,13 @@ algorithm
     case (Absyn.CREF_QUAL(name = name, subscripts = subs, componentRef = cr), _)
       equation
         (cr, tup) = traverseComponentRefExps(cr, inTuple);
-        (subs, tup) = Util.listMapAndFold(subs, traverseSubscriptExps, tup);
+        (subs, tup) = List.mapFold(subs, traverseSubscriptExps, tup);
       then
         (Absyn.CREF_QUAL(name, subs, cr), tup);
 
     case (Absyn.CREF_IDENT(name = name, subscripts = subs), _)
       equation
-        (subs, tup) = Util.listMapAndFold(subs, traverseSubscriptExps, inTuple);
+        (subs, tup) = List.mapFold(subs, traverseSubscriptExps, inTuple);
       then
         (Absyn.CREF_IDENT(name, subs), tup);
 
@@ -2614,7 +2615,7 @@ public function traverseStatementsList
   end TraverseFunc;
 algorithm
   (outStatements, outTuple) :=
-    Util.listMapAndFold(inStatements, traverseStatements, inTuple);
+    List.mapFold(inStatements, traverseStatements, inTuple);
 end traverseStatementsList;
 
 public function traverseStatements
@@ -2674,7 +2675,7 @@ algorithm
     case (ALG_IF(e, stmts1, branches, stmts2, comment, info), (traverser, arg))
       equation
         (stmts1, tup) = traverseStatementsList(stmts1, (traverser, arg));
-        (branches, tup) = Util.listMapAndFold(branches, 
+        (branches, tup) = List.mapFold(branches, 
           traverseBranchStatements, tup);
         (stmts2, tup) = traverseStatementsList(stmts2, (traverser, arg));
       then
@@ -2694,7 +2695,7 @@ algorithm
 
     case (ALG_WHEN_A(branches, comment, info), tup)
       equation
-        (branches, tup) = Util.listMapAndFold(branches, 
+        (branches, tup) = List.mapFold(branches, 
           traverseBranchStatements, tup);
       then
         (ALG_WHEN_A(branches, comment, info), tup);
@@ -2761,7 +2762,7 @@ public function traverseStatementListExps
   end TraverseFunc;
 algorithm
   (outStatements, outTuple) :=
-    Util.listMapAndFold(inStatements, traverseStatementExps, inTuple);
+    List.mapFold(inStatements, traverseStatementExps, inTuple);
 end traverseStatementListExps;
 
 public function traverseStatementExps
@@ -2805,14 +2806,14 @@ algorithm
     case (ALG_IF(e1, stmts1, branches, stmts2, comment, info), (traverser, arg))
       equation
         ((e1, arg)) = traverser((e1, arg));
-        (branches, tup) = Util.listMapAndFold(branches, traverseBranchExps,
+        (branches, tup) = List.mapFold(branches, traverseBranchExps,
           (traverser, arg));
       then
         (ALG_IF(e1, stmts1, branches, stmts2, comment, info), tup);
 
     case (ALG_FOR(iters, stmts1, comment, info), tup)
       equation
-        (iters, tup) = Util.listMapAndFold(iters, traverseForIteratorExps, tup);
+        (iters, tup) = List.mapFold(iters, traverseForIteratorExps, tup);
       then
         (ALG_FOR(iters, stmts1, comment, info), tup);
 
@@ -2824,7 +2825,7 @@ algorithm
 
     case (ALG_WHEN_A(branches, comment, info), tup)
       equation
-        (branches, tup) = Util.listMapAndFold(branches, traverseBranchExps, tup);
+        (branches, tup) = List.mapFold(branches, traverseBranchExps, tup);
       then
         (ALG_WHEN_A(branches, comment, info), tup);
 
@@ -2832,7 +2833,7 @@ algorithm
       equation
         (cr1, (traverser, arg)) = traverseComponentRefExps(cr1, tup);
         ((expl1, arg)) = Absyn.traverseExpList(expl1, traverser, arg);
-        (args, tup) = Util.listMapAndFold(args, traverseNamedArgExps, (traverser, arg));
+        (args, tup) = List.mapFold(args, traverseNamedArgExps, (traverser, arg));
       then
         (ALG_NORETCALL(cr1, Absyn.FUNCTIONARGS(expl1, args), comment, info), tup);
 
@@ -2840,7 +2841,7 @@ algorithm
       equation
         (cr1, (traverser, arg)) = traverseComponentRefExps(cr1, tup);
         ((e1, arg)) = traverser((e1,  arg));
-        (iters, tup) = Util.listMapAndFold(iters, traverseForIteratorExps,
+        (iters, tup) = List.mapFold(iters, traverseForIteratorExps,
           (traverser, arg));
       then
         (ALG_NORETCALL(cr1, Absyn.FOR_ITER_FARG(e1, iters), comment, info), tup);
@@ -2918,7 +2919,7 @@ algorithm
       equation
         true = listMember(name,knownExternalCFunctions);
         true = outVar2 ==& outVar1;
-        argsStr = Util.listMapMap(args, Absyn.expCref, Absyn.crefIdent);
+        argsStr = List.mapMap(args, Absyn.expCref, Absyn.crefIdent);
         equality(argsStr = inVars);
       then name;
     case (CLASS(name=name,
@@ -3519,7 +3520,7 @@ public function removeBuiltinsFromTopScope
   input Program inProgram;
   output Program outProgram;
 algorithm
-  outProgram := Util.listFilter(inProgram, isNotBuiltinClass);
+  outProgram := List.filter(inProgram, isNotBuiltinClass);
 end removeBuiltinsFromTopScope;
 
 protected function isNotBuiltinClass

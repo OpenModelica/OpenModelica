@@ -72,6 +72,7 @@ protected import Expression;
 protected import ExpressionDump;
 protected import Graph;
 protected import Lapack;
+protected import List;
 protected import Lookup;
 protected import RTOpts;
 protected import System;
@@ -179,10 +180,10 @@ algorithm
     case (_, _, _, DAE.FUNCTION_DEF(body = body), _, _, st)
       equation
         // Split the definition into function variables and statements.
-        (vars, body) = Util.listSplitOnFirstMatch(body, DAEUtil.isNotVar);
+        (vars, body) = List.splitOnFirstMatch(body, DAEUtil.isNotVar);
         // Save the output variables, so that we can return their values when
         // we're done.
-        output_vars = Util.listFilter(vars, DAEUtil.isOutputVar);
+        output_vars = List.filter(vars, DAEUtil.isOutputVar);
 
         // Pair the input arguments to input parameters and sort the function
         // variables by dependencies.
@@ -195,7 +196,7 @@ algorithm
         // Evaluate the body of the function.
         (cache, env, _, st) = evaluateElements(body, cache, env, NEXT(), st);
         // Fetch the values of the output variables.
-        return_values = Util.listMap1(output_vars, getFunctionReturnValue, env);
+        return_values = List.map1(output_vars, getFunctionReturnValue, env);
         // If we have several output variables they should be boxed into a tuple.
         return_value = boxReturnValue(return_values);
       then
@@ -208,10 +209,10 @@ algorithm
       equation
         // Get all variables from the function. Ignore everything else, since
         // external functions shouldn't have statements.
-        (vars, _) = Util.listSplitOnFirstMatch(body, DAEUtil.isNotVar);
+        (vars, _) = List.splitOnFirstMatch(body, DAEUtil.isNotVar);
         // Save the output variables, so that we can return their values when
         // we're done.
-        output_vars = Util.listFilter(vars, DAEUtil.isOutputVar);
+        output_vars = List.filter(vars, DAEUtil.isOutputVar);
 
         // Pair the input arguments to input parameters and sort the function
         // variables by dependencies.
@@ -227,7 +228,7 @@ algorithm
           evaluateExternalFunc(ext_fun_name, ext_fun_args, cache, env, st);
 
         // Fetch the values of the output variables.
-        return_values = Util.listMap1(output_vars, getFunctionReturnValue, env);
+        return_values = List.map1(output_vars, getFunctionReturnValue, env);
         // If we have several output variables they should be boxed into a tuple.
         return_value = boxReturnValue(return_values);
       then
@@ -492,7 +493,7 @@ algorithm
         ((DAE.T_ARRAY(arrayType = ty), _), _) =
           getVariableTypeAndBinding(inCref, inEnv);
         false = Types.isArray(ty);
-        vals = Util.listMap(vals, ValuesUtil.arrayScalar);
+        vals = List.map(vals, ValuesUtil.arrayScalar);
       then
         Values.ARRAY(vals, {dim});
 
@@ -1142,7 +1143,7 @@ algorithm
       equation
         (cache, Values.TUPLE(valueLst = rhs_vals), st) = 
           cevalExp(rhs, inCache, env, st);
-        lhs_crefs = Util.listMap(lhs_expl, extractLhsComponentRef);
+        lhs_crefs = List.map(lhs_expl, extractLhsComponentRef);
         (cache, env, st) = assignTuple(lhs_crefs, rhs_vals, cache, env, st);
       then
       (cache, env, st);
@@ -1668,7 +1669,7 @@ algorithm
       equation
         env = Env.newEnvironment();
         vals = getRecordValues(inOptValue, inRecordType);
-        ((cache, env, st)) = Util.listThreadFold(var_lst, vals,
+        ((cache, env, st)) = List.threadFold(var_lst, vals,
           extendEnvWithRecordVar, (inCache, env, st));
       then
         (cache, env, st);
@@ -1692,13 +1693,13 @@ algorithm
       Integer n;
     case (SOME(Values.RECORD(orderd = vals)), _)
       equation
-        opt_vals = Util.listMap(vals, Util.makeOption);
+        opt_vals = List.map(vals, Util.makeOption);
       then
         opt_vals;
     case (NONE(), (DAE.T_COMPLEX(complexVarLst = vars), _))
       equation
         n = listLength(vars);
-        opt_vals = Util.listFill(NONE(), n);
+        opt_vals = List.fill(NONE(), n);
       then
         opt_vals;
   end match;
@@ -1811,7 +1812,7 @@ algorithm
         (cache, dim_val, st) = cevalExp(dim_exp, inCache, inEnv, st);
         dim_int = ValuesUtil.valueInteger(dim_val);
         dim = Expression.intDimension(dim_int);
-        bind_dims = Util.listRestOrEmpty(bind_dims);
+        bind_dims = List.stripFirst(bind_dims);
         (cache, ty, st) = 
           appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
       then
@@ -2046,7 +2047,7 @@ algorithm
         i = ValuesUtil.valueInteger(index) - 1;
         val = listNth(values, i);
         (cache, val, st) = assignVector(inNewValue, val, rest_subs, cache, inEnv, st);
-        values = Util.listReplaceAt(val, i, values);
+        values = List.replaceAt(val, i, values);
       then
         (cache, Values.ARRAY(values, dims), st);
 
@@ -2059,7 +2060,7 @@ algorithm
         (cache, Values.ARRAY(valueLst = (indices as (Values.INTEGER(integer = i) :: _))), st) =
         cevalExp(e, inCache, inEnv, st);
         // Split the list of old values at the first slice index.
-        (old_values, old_values2) = Util.listSplit(old_values, i - 1);
+        (old_values, old_values2) = List.split(old_values, i - 1);
         // Update the rest of the old value with assignSlice.
         (cache, values2, st) = 
           assignSlice(values, old_values2, indices, rest_subs, i, cache, inEnv, st);
@@ -2245,7 +2246,7 @@ algorithm
       equation
         int_dim = Expression.dimensionSize(dim);
         value = generateDefaultBinding(ty);
-        values = Util.listFill(value, int_dim);
+        values = List.fill(value, int_dim);
         dims = ValuesUtil.valueDimensions(value);
       then
         Values.ARRAY(values, int_dim :: dims);
@@ -2330,8 +2331,8 @@ algorithm
       equation
         (_, _, _, _, env) =
           Lookup.lookupIdentLocal(Env.emptyCache(), inEnv, id);
-        vals = Util.listMap1(vars, getRecordComponentValue, env);
-        var_names = Util.listMap(vars, Types.getVarName);
+        vals = List.map1(vars, getRecordComponentValue, env);
+        var_names = List.map(vars, Types.getVarName);
       then
         Values.RECORD(p, vals, var_names, -1);
   end match;
@@ -2424,14 +2425,14 @@ algorithm
           (getElementDependenciesTraverserEnter, 
            getElementDependenciesTraverserExit,
            (inAllElements, {}, {})));
-        (_, (_, deps, _)) = Util.listMapAndFold(dims,
+        (_, (_, deps, _)) = List.mapFold(dims,
           getElementDependenciesFromDims, arg);
       then
         deps;
 
     case ((DAE.VAR(dims = dims), _), _)
       equation
-        (_, (_, deps, _)) = Util.listMapAndFold(dims,
+        (_, (_, deps, _)) = List.mapFold(dims,
           getElementDependenciesFromDims, (inAllElements, {}, {}));
       then
         deps;
@@ -2492,7 +2493,7 @@ algorithm
     case ((exp as DAE.CREF(componentRef = DAE.CREF_IDENT(ident = iter)), 
         (all_el, accum_el, iters as _ :: _)))
       equation
-        true = Util.listMemberWithCompareFunc(iter, iters, stringEqual);
+        true = List.isMemberOnTrue(iter, iters, stringEqual);
       then
         ((exp, (all_el, accum_el, iters)));
 
@@ -2502,7 +2503,7 @@ algorithm
     // list only contains unique elements.
     case ((exp as DAE.CREF(componentRef = cref), (all_el, accum_el, iters)))
       equation
-        (all_el, SOME(e)) = Util.listDeleteMemberOnTrue(cref, all_el,
+        (all_el, SOME(e)) = List.deleteMemberOnTrue(cref, all_el,
           isElementNamed);
       then
         ((exp, (all_el, e :: accum_el, iters)));
@@ -2511,7 +2512,7 @@ algorithm
     // that we know which iterators shadow function variables.
     case ((exp as DAE.REDUCTION(iterators = riters), (all_el, accum_el, iters)))
       equation
-        iters = listAppend(Util.listMap(riters, Expression.reductionIterName), iters);
+        iters = listAppend(List.map(riters, Expression.reductionIterName), iters);
       then
         ((exp, (all_el, accum_el, iters)));
 
@@ -2610,11 +2611,11 @@ algorithm
     else
       equation
         cycles = Graph.findCycles(inCycles, isElementEqual);
-        elements = Util.listListMap(cycles, Util.tuple21);
-        crefs = Util.listListMap(elements, DAEUtil.varCref);
-        names = Util.listListMap(crefs,
+        elements = List.mapList(cycles, Util.tuple21);
+        crefs = List.mapList(elements, DAEUtil.varCref);
+        names = List.mapList(crefs,
           ComponentReference.printComponentRefStr);
-        cycles_strs = Util.listMap1(names, Util.stringDelimitList, ",");
+        cycles_strs = List.map1(names, Util.stringDelimitList, ",");
         cycles_str = Util.stringDelimitList(cycles_strs, "}, {");
         cycles_str = "{" +& cycles_str +& "}";
         scope_str = "";
@@ -2662,7 +2663,7 @@ algorithm
       
     case ((DAE.ASUB(exp = DAE.CREF(componentRef = cref, ty = ety), sub = sub_exps), env))
       equation
-        subs = Util.listMap(sub_exps, Expression.makeIndexSubscript);
+        subs = List.map(sub_exps, Expression.makeIndexSubscript);
         cref = ComponentReference.subscriptCref(cref, subs);
         exp = Expression.makeCrefExp(cref, ety);
       then

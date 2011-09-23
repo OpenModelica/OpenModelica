@@ -55,6 +55,7 @@ public import Name;
 protected import BaseHashTable;
 protected import Debug;
 protected import Dump;
+protected import List;
 protected import RTOpts;
 protected import SCodeLookup;
 protected import SCodeDump;
@@ -123,7 +124,7 @@ algorithm
         c = flattenClass(c, env);
         
         print("FinalSCodeProgram:\n-----------------------\n" +& 
-         Util.stringDelimitList(Util.listMap(inProgram, SCodeDump.unparseElementStr), "\n") +& 
+         Util.stringDelimitList(List.map(inProgram, SCodeDump.unparseElementStr), "\n") +& 
          "\n-----------------------------\n");
       then
         inProgram;

@@ -61,6 +61,7 @@ protected import ExpressionSimplify;
 protected import ExpressionDump;
 protected import HashTableExpToIndex;
 protected import Inline;
+protected import List;
 protected import OptManager;
 protected import RTOpts;
 protected import SCode;
@@ -114,8 +115,8 @@ algorithm
   (vars,eqns) := addDummyState(vars, eqns, shouldAddDummyDerivative);
        
   //(aeqns,vars) := addFunctionRetVar(aeqns,vars);
-  ((aeqns,eqns,_)) := Util.listFold(aeqns,splitArrayEqn,({},eqns,functionTree));
-  ((iaeqns,ieqns,_)) := Util.listFold(iaeqns,splitArrayEqn,({},ieqns,functionTree));
+  ((aeqns,eqns,_)) := List.fold(aeqns,splitArrayEqn,({},eqns,functionTree));
+  ((iaeqns,ieqns,_)) := List.fold(iaeqns,splitArrayEqn,({},ieqns,functionTree));
   whenclauses_1 := listReverse(whenclauses);
   (algeqns,algeqns1,ialgeqns) := lowerAlgorithms(vars, algs, ialgs);
   (multidimeqns,imultidimeqns) := lowerMultidimeqns(vars, aeqns, iaeqns);
@@ -412,9 +413,9 @@ algorithm
       equation
         count = listLength(whenclauses_1);
         (eqns2,count_1,whenclauses_2) = lowerWhenEqn(daeEl, count, whenclauses_1);
-        opteqlst = Util.listMap(eqns2,Util.makeOption);
-        opteqlst = Util.listMap1(opteqlst,Inline.inlineEqOpt,(SOME(functionTree),{DAE.NORM_INLINE()}));
-        eqns2 = Util.listMap(opteqlst,Util.getOption);
+        opteqlst = List.map(eqns2,Util.makeOption);
+        opteqlst = List.map1(opteqlst,Inline.inlineEqOpt,(SOME(functionTree),{DAE.NORM_INLINE()}));
+        eqns2 = List.map(opteqlst,Util.getOption);
         eqns = listAppend(eqns, eqns2);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_2,extObjCls,states);
@@ -1004,8 +1005,8 @@ algorithm
         true = Expression.isArray(e2) or Expression.isMatrix(e2);
         ea1 = Expression.flattenArrayExpToList(e1);
         ea2 = Expression.flattenArrayExpToList(e2);
-        ealst = Util.listThreadTuple(ea1,ea2);
-        re = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
+        ealst = List.threadTuple(ea1,ea2);
+        re = List.map1(ealst,BackendEquation.generateEQUATION,source);
         eqns1 = listAppend(eqns,re);
       then
         ((aeqs,eqns1,funcs));
@@ -1015,8 +1016,8 @@ algorithm
         ((e1_1,(_,true))) = BackendDAEUtil.extendArrExp((e1,(SOME(funcs),false)));
         ea1 = Expression.flattenArrayExpToList(e1_1);
         ea2 = Expression.flattenArrayExpToList(e2);
-        ealst = Util.listThreadTuple(ea1,ea2);
-        re = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
+        ealst = List.threadTuple(ea1,ea2);
+        re = List.map1(ealst,BackendEquation.generateEQUATION,source);
         eqns1 = listAppend(eqns,re);
       then
         ((aeqs,eqns1,funcs)); 
@@ -1026,8 +1027,8 @@ algorithm
         ((e2_1,(_,true))) = BackendDAEUtil.extendArrExp((e2,(SOME(funcs),false)));
         ea1 = Expression.flattenArrayExpToList(e1);
         ea2 = Expression.flattenArrayExpToList(e2_1);
-        ealst = Util.listThreadTuple(ea1,ea2);
-        re = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
+        ealst = List.threadTuple(ea1,ea2);
+        re = List.map1(ealst,BackendEquation.generateEQUATION,source);
         eqns1 = listAppend(eqns,re);
       then
         ((aeqs,eqns1,funcs));      
@@ -1037,8 +1038,8 @@ algorithm
         ((e2_1,(_,true))) = extendArrExp((e2,(SOME(funcs),false)));
         ea1 = Expression.flattenArrayExpToList(e1_1);
         ea2 = Expression.flattenArrayExpToList(e2_1);
-        ealst = Util.listThreadTuple(ea1,ea2);
-        re = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
+        ealst = List.threadTuple(ea1,ea2);
+        re = List.map1(ealst,BackendEquation.generateEQUATION,source);
         eqns1 = listAppend(eqns,re);
       then
         ((aeqs,eqns1,funcs)); 
@@ -1171,17 +1172,17 @@ algorithm
       BackendDAE.Type btp;
     case((e1 as DAE.CALL(path=path,attr = DAE.CALL_ATTR(ty=ty as DAE.ET_ARRAY(arrayDimensions=ad,ty=tp))),(vars,i,aeqs,source)))
      equation
-      dimSize = Util.listMap(ad, Expression.dimensionSize);
+      dimSize = List.map(ad, Expression.dimensionSize);
       cr = ComponentReference.pathToCref(path);
       id = ComponentReference.makeCrefIdent(intString(i),ty,{});
       cr = ComponentReference.joinCrefs(cr,id);
       left = Expression.makeCrefExp(cr,ty);
       subslst = BackendDAEUtil.dimensionsToRange(ad);
       subslst1 = BackendDAEUtil.rangesToSubscripts(subslst);
-      crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
+      crlst = List.map1r(subslst1,ComponentReference.subscriptCref,cr);
       tp1 = Expression.unliftArray(tp);
       btp = expTypeToBackendType(tp1);
-      varlst = Util.listMap1(crlst,makeVariable,btp);
+      varlst = List.map1(crlst,makeVariable,btp);
       vars_1 = BackendVariable.addVars(varlst, vars);
       ((left1,(_,_))) = BackendDAEUtil.extendArrExp((left,(NONE(),false)));
     then ((left1,(vars_1,i+1,BackendDAE.MULTIDIM_EQUATION(dimSize,left,e1,source)::aeqs,source)));
@@ -1264,7 +1265,7 @@ algorithm
         // create as many equations as the dimension of the record
         ty = Expression.typeof(e1_1);
         i = Expression.sizeOf(ty);
-        complexEqs = Util.listFill(BackendDAE.COMPLEX_EQUATION(-1,e1_1,e2_1,source), i);
+        complexEqs = List.fill(BackendDAE.COMPLEX_EQUATION(-1,e1_1,e2_1,source), i);
       then
         (complexEqs,{});
     // initial first try to inline function calls and extend the equations
@@ -1292,7 +1293,7 @@ algorithm
         // create as many equations as the dimension of the record
         ty = Expression.typeof(e1_1);
         i = Expression.sizeOf(ty);
-        complexEqs = Util.listFill(BackendDAE.COMPLEX_EQUATION(-1,e1_1,e2_1,source), i);
+        complexEqs = List.fill(BackendDAE.COMPLEX_EQUATION(-1,e1_1,e2_1,source), i);
       then
         (complexEqs,{});
     case (_,_)
@@ -1555,8 +1556,8 @@ algorithm
     case (vars,{},aindx) then ({},aindx);
     case (vars,((a as BackendDAE.MULTIDIM_EQUATION(left=DAE.ARRAY(array=a1),right=DAE.ARRAY(array=a2),source=source)) :: algs),aindx)
       equation
-        ealst = Util.listThreadTuple(a1,a2);
-        eqns = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
+        ealst = List.threadTuple(a1,a2);
+        eqns = List.map1(ealst,BackendEquation.generateEQUATION,source);
         aindx = aindx + 1;
         (eqns2,aindx) = lowerMultidimeqns2(vars, algs, aindx);
         res = listAppend(eqns, eqns2);
@@ -1564,9 +1565,9 @@ algorithm
         (res,aindx);
     case (vars,((a as BackendDAE.MULTIDIM_EQUATION(left=DAE.UNARY(exp=DAE.ARRAY(array=a1)),right=DAE.ARRAY(array=a2),source=source)) :: algs),aindx)
       equation
-        an = Util.listMap(a1,Expression.negate);
-        ealst = Util.listThreadTuple(an,a2);
-        eqns = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
+        an = List.map(a1,Expression.negate);
+        ealst = List.threadTuple(an,a2);
+        eqns = List.map1(ealst,BackendEquation.generateEQUATION,source);
         aindx = aindx + 1;
         (eqns2,aindx) = lowerMultidimeqns2(vars, algs, aindx);
         res = listAppend(eqns, eqns2);
@@ -1574,9 +1575,9 @@ algorithm
         (res,aindx);
     case (vars,((a as BackendDAE.MULTIDIM_EQUATION(left=DAE.ARRAY(array=a1),right=DAE.UNARY(exp=DAE.ARRAY(array=a2)),source=source)) :: algs),aindx)
       equation
-        an = Util.listMap(a2,Expression.negate);
-        ealst = Util.listThreadTuple(a1,an);
-        eqns = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
+        an = List.map(a2,Expression.negate);
+        ealst = List.threadTuple(a1,an);
+        eqns = List.map1(ealst,BackendEquation.generateEQUATION,source);
         aindx = aindx + 1;
         (eqns2,aindx) = lowerMultidimeqns2(vars, algs, aindx);
         res = listAppend(eqns, eqns2);
@@ -1584,10 +1585,10 @@ algorithm
         (res,aindx);
     case (vars,((a as BackendDAE.MULTIDIM_EQUATION(left=DAE.MATRIX(matrix=al1),right=DAE.MATRIX(matrix=al2),source=source)) :: algs),aindx)
       equation
-        a1 = Util.listFlatten(al1);
-        a2 = Util.listFlatten(al2);
-        ealst = Util.listThreadTuple(a1,a2);
-        eqns = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
+        a1 = List.flatten(al1);
+        a2 = List.flatten(al2);
+        ealst = List.threadTuple(a1,a2);
+        eqns = List.map1(ealst,BackendEquation.generateEQUATION,source);
         aindx = aindx + 1;
         (eqns2,aindx) = lowerMultidimeqns2(vars, algs, aindx);
         res = listAppend(eqns, eqns2);
@@ -1595,11 +1596,11 @@ algorithm
         (res,aindx);
     case (vars,((a as BackendDAE.MULTIDIM_EQUATION(left=DAE.UNARY(exp=DAE.MATRIX(matrix=al1)),right=DAE.MATRIX(matrix=al2),source=source)) :: algs),aindx)
       equation
-        a1 = Util.listFlatten(al1);
-        a2 = Util.listFlatten(al2);
-        an = Util.listMap(a1,Expression.negate);
-        ealst = Util.listThreadTuple(an,a2);
-        eqns = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
+        a1 = List.flatten(al1);
+        a2 = List.flatten(al2);
+        an = List.map(a1,Expression.negate);
+        ealst = List.threadTuple(an,a2);
+        eqns = List.map1(ealst,BackendEquation.generateEQUATION,source);
         aindx = aindx + 1;
         (eqns2,aindx) = lowerMultidimeqns2(vars, algs, aindx);
         res = listAppend(eqns, eqns2);
@@ -1607,11 +1608,11 @@ algorithm
         (res,aindx);
     case (vars,((a as BackendDAE.MULTIDIM_EQUATION(left=DAE.MATRIX(matrix=al1),right=DAE.UNARY(exp=DAE.MATRIX(matrix=al2)),source=source)) :: algs),aindx)
       equation
-        a1 = Util.listFlatten(al1);
-        a2 = Util.listFlatten(al2);
-        an = Util.listMap(a2,Expression.negate);
-        ealst = Util.listThreadTuple(a1,an);
-        eqns = Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
+        a1 = List.flatten(al1);
+        a2 = List.flatten(al2);
+        an = List.map(a2,Expression.negate);
+        ealst = List.threadTuple(a1,an);
+        eqns = List.map1(ealst,BackendEquation.generateEQUATION,source);
         aindx = aindx + 1;
         (eqns2,aindx) = lowerMultidimeqns2(vars, algs, aindx);
         res = listAppend(eqns, eqns2);
@@ -1656,7 +1657,7 @@ algorithm
         expl1 = BackendDAEUtil.statesAndVarsExp(e1, vars);
         expl2 = BackendDAEUtil.statesAndVarsExp(e2, vars);
         expl = listAppend(expl1, expl2);
-        numnodes = Util.listReduce(ds, intMul);
+        numnodes = List.reduce(ds, intMul);
         lst = lowerMultidimeqn2(expl, numnodes, aindx, source);
       then
         lst;
@@ -1828,9 +1829,9 @@ algorithm
       equation
         (inputs1,outputs1) = lowerStatementInputsOutputs(vars, s);
         ((inputs2,outputs2)) = lowerAlgorithmInputsOutputs(vars, DAE.ALGORITHM_STMTS(ss));
-        inputs = Util.listUnionOnTrue(inputs1, inputs2, Expression.expEqual);
-        outputs = Util.listUnionOnTrue(outputs1, outputs2, Expression.expEqual);
-        inputs = Util.listFold1(outputs,Util.listRemoveOnTrue,Expression.expEqual,inputs);
+        inputs = List.unionOnTrue(inputs1, inputs2, Expression.expEqual);
+        outputs = List.unionOnTrue(outputs1, outputs2, Expression.expEqual);
+        inputs = List.fold1(outputs,List.removeOnTrue,Expression.expEqual,inputs);
       then
         ((inputs,outputs));
   end match;
@@ -1880,7 +1881,7 @@ algorithm
     case (vars,DAE.STMT_TUPLE_ASSIGN(type_ = tp, expExpLst = expl, exp = e))
       equation
         inputs = BackendDAEUtil.statesAndVarsExp(e,vars);
-        outputs = Util.listFlatten(Util.listMap1(expl,BackendDAEUtil.statesAndVarsExp,vars));
+        outputs = List.flatten(List.map1(expl,BackendDAEUtil.statesAndVarsExp,vars));
       then
         (inputs,outputs);
     // v := expr   where v is array.
@@ -1894,8 +1895,8 @@ algorithm
         ((inputs1,outputs1)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(stmts));
         (inputs2,outputs2) = lowerElseAlgorithmInputsOutputs(vars,elsebranch);
         inputs3 = BackendDAEUtil.statesAndVarsExp(e,vars);
-        inputs = Util.listListUnionOnTrue({inputs1, inputs2,inputs3}, Expression.expEqual);
-        outputs = Util.listUnionOnTrue(outputs1, outputs2, Expression.expEqual);
+        inputs = List.unionOnTrueList({inputs1, inputs2,inputs3}, Expression.expEqual);
+        outputs = List.unionOnTrue(outputs1, outputs2, Expression.expEqual);
       then (inputs,outputs);
    case(vars, DAE.STMT_FOR(type_= tp, iter = iteratorName, range = e, statementLst = stmts))
       equation
@@ -1905,26 +1906,26 @@ algorithm
         // variable and variables that don't.
         cref_ = ComponentReference.makeCrefIdent(iteratorName, tp, {});
         iteratorExp = Expression.crefExp(cref_);
-        (arrayVars, nonArrayVars) = Util.listSplitOnTrue1(outputs1, BackendDAEUtil.isLoopDependent, iteratorExp);
-        arrayVars = Util.listMap(arrayVars, BackendDAEUtil.devectorizeArrayVar);
+        (arrayVars, nonArrayVars) = List.split1OnTrue(outputs1, BackendDAEUtil.isLoopDependent, iteratorExp);
+        arrayVars = List.map(arrayVars, BackendDAEUtil.devectorizeArrayVar);
         // Explode array variables into their array elements.
         // I.e. var[i] => var[1], var[2], var[3] etc.
-        arrayElements = Util.listMap3(arrayVars, BackendDAEUtil.explodeArrayVars, iteratorExp, e, vars);
-        flattenedElements = Util.listFlatten(arrayElements);
-        inputs = Util.listListUnionOnTrue({inputs1, inputs2}, Expression.expEqual);
-        outputs = Util.listListUnionOnTrue({nonArrayVars, flattenedElements}, Expression.expEqual);
+        arrayElements = List.map3(arrayVars, BackendDAEUtil.explodeArrayVars, iteratorExp, e, vars);
+        flattenedElements = List.flatten(arrayElements);
+        inputs = List.unionOnTrueList({inputs1, inputs2}, Expression.expEqual);
+        outputs = List.unionOnTrueList({nonArrayVars, flattenedElements}, Expression.expEqual);
       then (inputs, outputs);
     case(vars, DAE.STMT_WHILE(exp = e, statementLst = stmts))
       equation
         ((inputs1,outputs)) = lowerAlgorithmInputsOutputs(vars, DAE.ALGORITHM_STMTS(stmts));
         inputs2 = BackendDAEUtil.statesAndVarsExp(e, vars);
-        inputs =  Util.listListUnionOnTrue({inputs1, inputs2}, Expression.expEqual);
+        inputs =  List.unionOnTrueList({inputs1, inputs2}, Expression.expEqual);
       then (inputs, outputs);
     case (vars,DAE.STMT_WHEN(exp = e,statementLst = statements,elseWhen = NONE()))
       equation
         ((inputs1,outputs)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(statements));
         inputs2 = BackendDAEUtil.statesAndVarsExp(e, vars);
-        inputs =  Util.listListUnionOnTrue({inputs1, inputs2}, Expression.expEqual);
+        inputs =  List.unionOnTrueList({inputs1, inputs2}, Expression.expEqual);
       then
         (inputs,outputs);
     case (vars,DAE.STMT_WHEN(exp = e,statementLst = statements,elseWhen = SOME(stmt)))
@@ -1932,15 +1933,15 @@ algorithm
         (inputs1, outputs1) = lowerStatementInputsOutputs(vars,stmt);
         ((inputs2,outputs2)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(statements));
         inputs3 = BackendDAEUtil.statesAndVarsExp(e, vars);
-        inputs =  Util.listListUnionOnTrue({inputs1, inputs2, inputs3}, Expression.expEqual);
-        outputs = Util.listListUnionOnTrue({outputs1, outputs2}, Expression.expEqual);
+        inputs =  List.unionOnTrueList({inputs1, inputs2, inputs3}, Expression.expEqual);
+        outputs = List.unionOnTrueList({outputs1, outputs2}, Expression.expEqual);
       then
         (inputs,outputs);
     case(vars,DAE.STMT_ASSERT(cond = e1,msg=e2))
       equation
         inputs1 = BackendDAEUtil.statesAndVarsExp(e1,vars);
         inputs2 = BackendDAEUtil.statesAndVarsExp(e1,vars);
-        inputs = Util.listListUnionOnTrue({inputs1, inputs2}, Expression.expEqual);
+        inputs = List.unionOnTrueList({inputs1, inputs2}, Expression.expEqual);
      then (inputs,{});
     case(vars, DAE.STMT_TERMINATE(msg = _)) then ({}, {});
     case(vars, DAE.STMT_REINIT(var = e as DAE.CREF(componentRef = _), value = e2))
@@ -2000,8 +2001,8 @@ algorithm
         (inputs1, outputs1) = lowerElseAlgorithmInputsOutputs(vars,elseBranch);
         ((inputs2, outputs2)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(stmts));
         inputs3 = BackendDAEUtil.statesAndVarsExp(e,vars);
-        inputs = Util.listListUnionOnTrue({inputs1, inputs2, inputs3}, Expression.expEqual);
-        outputs = Util.listUnionOnTrue(outputs1, outputs2, Expression.expEqual);
+        inputs = List.unionOnTrueList({inputs1, inputs2, inputs3}, Expression.expEqual);
+        outputs = List.unionOnTrue(outputs1, outputs2, Expression.expEqual);
       then (inputs,outputs);
 
     case(vars,DAE.ELSE(stmts))
@@ -2193,7 +2194,7 @@ protected function detectImplicitDiscrete
   input list<BackendDAE.Equation> inEquationLst;
   output BackendDAE.Variables outVariables;
 algorithm
-  outVariables := Util.listFoldR(inEquationLst,detectImplicitDiscreteFold,inVariables);
+  outVariables := List.foldr(inEquationLst,detectImplicitDiscreteFold,inVariables);
 end detectImplicitDiscrete;
 
 protected function detectImplicitDiscreteFold
@@ -2283,7 +2284,7 @@ algorithm
     case (v,knv,(DAE.STMT_ASSIGN_ARR(componentRef = cr) :: xs),true)
       equation
         (vars,_) = BackendVariable.getVar(cr, v);
-        vars = Util.listMap1(vars,BackendVariable.setVarKind,BackendDAE.DISCRETE());
+        vars = List.map1(vars,BackendVariable.setVarKind,BackendDAE.DISCRETE());
         v_1 = BackendVariable.addVars(vars,v);
         v_2 = detectImplicitDiscreteAlgsStatemens(v_1,knv, xs,true);
       then
@@ -2397,8 +2398,8 @@ algorithm
         istart = expInt(startvalue,knv);
         istep = expInt(stepvalue,knv);
         istop = expInt(stopvalue,knv);
-        ilst = Util.listIntRange3(istart,istep,istop);
-        explst = Util.listMap(ilst,Expression.makeIntegerExp);
+        ilst = List.intRange3(istart,istep,istop);
+        explst = List.map(ilst,Expression.makeIntegerExp);
       then
         explst;
     case (_,_)
@@ -2456,7 +2457,7 @@ algorithm
     case (eqns)
       equation
         (algEqns,diffEqns,resArrayEqns) = extractAlgebraicAndDifferentialEqn(eqns,{},{},{});
-        res = Util.listFlatten({algEqns, diffEqns,resArrayEqns});
+        res = List.flatten({algEqns, diffEqns,resArrayEqns});
       then
         res;
     case (eqns)
@@ -2493,25 +2494,25 @@ algorithm
     case (((eqn as BackendDAE.EQUATION(exp = exp1,scalar = exp2)) :: rest),accAlg,accResDiff,accArr) /* scalar equation */
       equation
         isalg = isAlgebraic(exp1) and isAlgebraic(exp2);
-        accAlg = Util.listConsOnTrue(isalg, eqn, accAlg);
-        accResDiff = Util.listConsOnTrue(not isalg, eqn, accResDiff);
+        accAlg = List.consOnTrue(isalg, eqn, accAlg);
+        accResDiff = List.consOnTrue(not isalg, eqn, accResDiff);
         (accAlg,accResDiff,accArr) = extractAlgebraicAndDifferentialEqn(rest,accAlg,accResDiff,accArr);
       then
         (accAlg,accResDiff,accArr);
     case (((eqn as BackendDAE.COMPLEX_EQUATION(lhs = exp1,rhs = exp2)) :: rest),accAlg,accResDiff,accArr) /* complex equation */
       equation
         isalg = isAlgebraic(exp1) and isAlgebraic(exp2);
-        accAlg = Util.listConsOnTrue(isalg, eqn, accAlg);
-        accResDiff = Util.listConsOnTrue(not isalg, eqn, accResDiff);
+        accAlg = List.consOnTrue(isalg, eqn, accAlg);
+        accResDiff = List.consOnTrue(not isalg, eqn, accResDiff);
         (accAlg,accResDiff,accArr) = extractAlgebraicAndDifferentialEqn(rest,accAlg,accResDiff,accArr);
       then
         (accAlg,accResDiff,accArr);
     case (((eqn as BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl)) :: rest),accAlg,accResDiff,accArr) /* array equation */
       equation
         // fails if not all call results are true
-        isalg = Util.listMapAllValue(expl, isAlgebraic, true);
-        accArr = Util.listConsOnTrue(isalg, eqn, accArr);
-        accResDiff = Util.listConsOnTrue(not isalg, eqn, accResDiff);
+        isalg = List.mapAllValueBool(expl, isAlgebraic, true);
+        accArr = List.consOnTrue(isalg, eqn, accArr);
+        accResDiff = List.consOnTrue(not isalg, eqn, accResDiff);
         (accAlg,accResDiff,accArr) = extractAlgebraicAndDifferentialEqn(rest,accAlg,accResDiff,accArr);
       then
         (accAlg,accResDiff,accArr);
@@ -2577,12 +2578,12 @@ protected function expandDerOperatorWork
   This can not be done in Static, since we need all time-
   dependent variables, which is only available in BackendDAE."
   input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
   input DAE.FunctionTree funcs;
+  input BackendDAE.Shared shared;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 algorithm
-  (osyst,oshared) := match (syst,shared,funcs)
+  (osyst,oshared) := match (syst,funcs,shared)
     local
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.Variables vars,knvars,exobj,vars1,vars2,vars3,vars4;
@@ -2594,7 +2595,7 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
-    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),shared as BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp),funcs)
+    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),funcs,shared as BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp))
       equation
         (eqns1,(vars1,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,traverserexpandDerEquation,(vars,shared,funcs));
         (inieqns1,(vars2,_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,traverserexpandDerEquation,(vars1,shared,funcs));
@@ -2620,7 +2621,7 @@ protected
 algorithm
   (e,(vars,shared,funcs)) := tpl;
   (e1,(vars,shared,ops,funcs)) := BackendEquation.traverseBackendDAEExpsEqn(e,traverserexpandDerExp,(vars,shared,{},funcs));
-  e1 := Util.listFoldR(ops,BackendEquation.addOperation,e1);
+  e1 := List.foldr(ops,BackendEquation.addOperation,e1);
   outTpl := ((e1,(vars,shared,funcs)));
 end traverserexpandDerEquation;
 
@@ -2641,7 +2642,7 @@ algorithm
   ext_arg := (vars,shared,false,funcs);
   ((e1,ext_arg)) := Expression.traverseExp(e,expandDerExp,ext_arg);
   (vars,shared,b,funcs) := ext_arg;
-  ops := Util.listConsOnTrue(b,DAE.OP_DERIVE(DAE.crefTime,e,e1),ops);
+  ops := List.consOnTrue(b,DAE.OP_DERIVE(DAE.crefTime,e,e1),ops);
   outTpl := (e1,(vars,shared,ops,funcs));
 end traverserexpandDerExp;
 
@@ -2738,10 +2739,10 @@ algorithm
     case {zc} then {zc};
     case (zc :: xs)
       equation
-        samezc = Util.listSelect1(xs, zc, sameZeroCrossing);
-        diff = Util.listSelect1(xs, zc, differentZeroCrossing);
+        samezc = List.select1(xs, sameZeroCrossing, zc);
+        diff = List.select1(xs, differentZeroCrossing, zc);
         diff_1 = mergeZeroCrossings(diff);
-        same_1 = Util.listFold(samezc, mergeZeroCrossing, zc);
+        same_1 = List.fold(samezc, mergeZeroCrossing, zc);
       then
         (same_1 :: diff_1);
   end matchcontinue;
@@ -2768,14 +2769,14 @@ algorithm
     case (BackendDAE.ZERO_CROSSING(relation_ = e1 as DAE.RELATION(index=index1),occurEquLst = eq1,occurWhenLst = wc1),BackendDAE.ZERO_CROSSING(relation_ = e2 as DAE.RELATION(index=index2),occurEquLst = eq2,occurWhenLst = wc2))
       equation
         true = intLt(index1,index2);
-        eq = Util.listUnion(eq1, eq2);
-        wc = Util.listUnion(wc1, wc2);
+        eq = List.union(eq1, eq2);
+        wc = List.union(wc1, wc2);
       then
         BackendDAE.ZERO_CROSSING(e1,eq,wc);
     case (BackendDAE.ZERO_CROSSING(relation_ = e1 as DAE.RELATION(index=index1),occurEquLst = eq1,occurWhenLst = wc1),BackendDAE.ZERO_CROSSING(relation_ = e2 as DAE.RELATION(index=index2),occurEquLst = eq2,occurWhenLst = wc2))
       equation
-        eq = Util.listUnion(eq1, eq2);
-        wc = Util.listUnion(wc1, wc2);
+        eq = List.union(eq1, eq2);
+        wc = List.union(wc1, wc2);
       then BackendDAE.ZERO_CROSSING(e2,eq,wc);
     case (BackendDAE.ZERO_CROSSING(relation_ = e1 as DAE.RELATION(index=index1),occurEquLst = eq1,occurWhenLst = wc1),BackendDAE.ZERO_CROSSING(relation_ = e2 as DAE.RELATION(index=index2),occurEquLst = eq2,occurWhenLst = wc2))
       equation
@@ -2973,7 +2974,7 @@ algorithm
         (eres1,countZC,zcs1) = findZeroCrossings3(e1,zcs,countZC,eq_count,-1,v,knvars);
         (eres2,countZC,res) = findZeroCrossings3(e2,zcs1,countZC,eq_count,-1,v,knvars);
         mdeq = BackendDAE.MULTIDIM_EQUATION(dimsize,eres1,eres2,source);
-        mdeqs = Util.listReplaceAt(mdeq,ind,mdeqs);
+        mdeqs = List.replaceAt(mdeq,ind,mdeqs);
         (res1,eq_reslst,mdeqs_res1,wc_reslst,algs) = findZeroCrossings2(v, knvars,xs,mdeqs,eq_count, {}, 0,{},countZC,res,0);
       then
         (res1,e::eq_reslst,mdeqs_res1,wc_reslst,algs);
@@ -3148,16 +3149,16 @@ algorithm
       String str;
     case ((exp as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),index,zeroCrossings,z_c)
       equation
-        {} = Util.listSelect1(zeroCrossings,z_c/*zc1*/, sameZeroCrossing);
+        {} = List.select1(zeroCrossings, sameZeroCrossing,z_c/*zc1*/);
         zc_lst = listAppend(zeroCrossings, {z_c});
         //Debug.fcall("relidx",print, " zerocrossingindex 1 : "  +& ExpressionDump.printExpStr(exp) +& " index: " +& intString(index) +& "\n");
       then 
          ((exp,zc_lst,index));
     case ((exp as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),index,zeroCrossings,z_c)
       equation
-        newzero= Util.listSelect1(zeroCrossings,z_c, sameZeroCrossing);
+        newzero= List.select1(zeroCrossings, sameZeroCrossing,z_c);
         length=listLength(newzero);
-        BackendDAE.ZERO_CROSSING((e_1 as DAE.RELATION(_,_,_,indx,_)),_,_)=Util.listFirst(newzero);
+        BackendDAE.ZERO_CROSSING((e_1 as DAE.RELATION(_,_,_,indx,_)),_,_)=List.first(newzero);
         //Debug.fcall("relidx",print, " zerocrossingindex 2: results "  +& ExpressionDump.printExpStr(e_1)+& "index: " +& intString(indx) +& " lenght: " +& intString(length) +& "\n");
       then 
         ((e_1,zeroCrossings,indx));
@@ -3549,9 +3550,9 @@ algorithm
       BackendDAE.EquationArray eqnArr;
     case (BackendDAE.EQSYSTEM(orderedEqs=eqnArr),BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst = zcLst))) 
       equation
-        zcEqns = Util.listMap(zcLst,zeroCrossingEquations);
+        zcEqns = List.map(zcLst,zeroCrossingEquations);
         wcEqns = whenEquationsIndices(eqnArr);
-        eqns = Util.listListUnion(listAppend(zcEqns,{wcEqns}));
+        eqns = List.unionList(listAppend(zcEqns,{wcEqns}));
       then eqns;
   end match;
 end zeroCrossingsEquations;
@@ -3746,20 +3747,20 @@ algorithm
   case (BackendDAE.COMPLEX_EQUATION(index=i,lhs = DAE.CREF(componentRef=cr1,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))), rhs = DAE.CREF(componentRef=cr2),source = source),funcs)
     equation
       // create as many equations as the dimension of the record
-      e1lst = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr1);
-      e2lst = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr2);
-      exptpllst = Util.listThreadTuple(e1lst,e2lst);
-      compmultilistlst = Util.listMap2(exptpllst,generateextendedRecordEqn,source,funcs);
-      complexEqsLst = Util.listMap(compmultilistlst,Util.tuple21);
-      multiEqsLst = Util.listMap(compmultilistlst,Util.tuple22);
-      complexEqs = Util.listFlatten(complexEqsLst);
-      multiEqs = Util.listFlatten(multiEqsLst);
+      e1lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr1);
+      e2lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr2);
+      exptpllst = List.threadTuple(e1lst,e2lst);
+      compmultilistlst = List.map2(exptpllst,generateextendedRecordEqn,source,funcs);
+      complexEqsLst = List.map(compmultilistlst,Util.tuple21);
+      multiEqsLst = List.map(compmultilistlst,Util.tuple22);
+      complexEqs = List.flatten(complexEqsLst);
+      multiEqs = List.flatten(multiEqsLst);
       // nested Records
-      compmultilistlst1 = Util.listMap1(complexEqs,extendRecordEqns,funcs);
-      complexEqsLst1 = Util.listMap(compmultilistlst1,Util.tuple21);
-      multiEqsLst1 = Util.listMap(compmultilistlst1,Util.tuple22);
-      complexEqs1 = Util.listFlatten(complexEqsLst1);
-      multiEqs1 = Util.listFlatten(multiEqsLst1);
+      compmultilistlst1 = List.map1(complexEqs,extendRecordEqns,funcs);
+      complexEqsLst1 = List.map(compmultilistlst1,Util.tuple21);
+      multiEqsLst1 = List.map(compmultilistlst1,Util.tuple22);
+      complexEqs1 = List.flatten(complexEqsLst1);
+      multiEqs1 = List.flatten(multiEqsLst1);
       multiEqs2 = listAppend(multiEqs,multiEqs1);
     then
       ((complexEqs1,multiEqs2));
@@ -3768,19 +3769,19 @@ algorithm
     equation
       SOME(DAE.RECORD_CONSTRUCTOR(path=fname)) = DAEUtil.avlTreeGet(funcs,path);
       // create as many equations as the dimension of the record
-      e1lst = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr1);
-      exptpllst = Util.listThreadTuple(e1lst,expLst);
-      compmultilistlst = Util.listMap2(exptpllst,generateextendedRecordEqn,source,funcs);
-      complexEqsLst = Util.listMap(compmultilistlst,Util.tuple21);
-      multiEqsLst = Util.listMap(compmultilistlst,Util.tuple22);
-      complexEqs = Util.listFlatten(complexEqsLst);
-      multiEqs = Util.listFlatten(multiEqsLst);
+      e1lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr1);
+      exptpllst = List.threadTuple(e1lst,expLst);
+      compmultilistlst = List.map2(exptpllst,generateextendedRecordEqn,source,funcs);
+      complexEqsLst = List.map(compmultilistlst,Util.tuple21);
+      multiEqsLst = List.map(compmultilistlst,Util.tuple22);
+      complexEqs = List.flatten(complexEqsLst);
+      multiEqs = List.flatten(multiEqsLst);
       // nested Records
-      compmultilistlst1 = Util.listMap1(complexEqs,extendRecordEqns,funcs);
-      complexEqsLst1 = Util.listMap(compmultilistlst1,Util.tuple21);
-      multiEqsLst1 = Util.listMap(compmultilistlst1,Util.tuple22);
-      complexEqs1 = Util.listFlatten(complexEqsLst1);
-      multiEqs1 = Util.listFlatten(multiEqsLst1);
+      compmultilistlst1 = List.map1(complexEqs,extendRecordEqns,funcs);
+      complexEqsLst1 = List.map(compmultilistlst1,Util.tuple21);
+      multiEqsLst1 = List.map(compmultilistlst1,Util.tuple22);
+      complexEqs1 = List.flatten(complexEqsLst1);
+      multiEqs1 = List.flatten(multiEqsLst1);
       multiEqs2 = listAppend(multiEqs,multiEqs1);
     then
       ((complexEqs1,multiEqs2));
@@ -3809,7 +3810,7 @@ algorithm
       ((e1_1,(_,_))) = BackendDAEUtil.extendArrExp((e1,(SOME(inFuncs),false)));
       ((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(SOME(inFuncs),false)));
       (e2_2,_) = ExpressionSimplify.simplify(e2_1);
-      ds = Util.listMap(ad, Expression.dimensionSize);
+      ds = List.map(ad, Expression.dimensionSize);
     then
       (({},{BackendDAE.MULTIDIM_EQUATION(ds,e1_1,e2_2,source)}));
   // other types  

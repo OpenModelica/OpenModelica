@@ -15,6 +15,7 @@ public import Absyn;
 
 protected import System;
 protected import Debug;
+protected import List;
 //protected import Print;
 
 
@@ -695,7 +696,7 @@ algorithm
         (_, linfo) = interleaveExpectEndOfFile(chars, linfo);
         TplAbsyn.TEMPL_PACKAGE(templateDefs = templateDefs) 
           = TplAbsyn.fullyQualifyTemplatePackage(tplPackage);
-        astTypes = Util.listMap(templateDefs, templateDefToAstDefType);
+        astTypes = List.map(templateDefs, templateDefToAstDefType);
         astDefs = TplAbsyn.AST_DEF(packageName, isUnqualifiedImport, astTypes) :: astDefs;
       then (astDefs, linfo, errOpt);
     
@@ -727,7 +728,7 @@ algorithm
     case ( (id, TplAbsyn.TEMPLATE_DEF(args = iargs)) )
       equation
         iargs =  TplAbsyn.imlicitTxtArg :: iargs;
-        oargs = Util.listFilter(iargs, TplAbsyn.isText);
+        oargs = List.filter(iargs, TplAbsyn.isText);
       then ( (id, TplAbsyn.TI_FUN_TYPE(iargs,oargs,{})) );
     
     case (_) 
@@ -4951,7 +4952,7 @@ algorithm
    case (expLst, indStack, actInd, lineInd, accChars as (_::_) )
       equation
         true = ( lineInd >= actInd );
-        accChars = listAppend(accChars, Util.listFill(" ",lineInd - actInd));
+        accChars = listAppend(accChars, List.fill(" ",lineInd - actInd));
         ( (TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST(strLst, false)),_) :: expLst) 
          = addAccStringChars(expLst, accChars); //must create the ST becase of accChars as (_::_)
         //make the opened last ST be disposable new line
@@ -5020,7 +5021,7 @@ algorithm
    case (_, {}, {}, baseInd, lineInd, {})
       equation
         true = (lineInd >= baseInd);
-        expLst = addAccStringChars({}, Util.listFill(" ",lineInd-baseInd));
+        expLst = addAccStringChars({}, List.fill(" ",lineInd-baseInd));
         expLst = finalizeLastStringToken(expLst);
       then expLst;
    
@@ -5077,7 +5078,7 @@ algorithm
    case (_, expLst, indStack, actInd, lineInd, accChars)
       equation
         true = ( lineInd >= actInd );
-        accChars = listAppend(accChars, Util.listFill(" ",lineInd - actInd));
+        accChars = listAppend(accChars, List.fill(" ",lineInd - actInd));
         expLst = addAccStringChars(expLst, accChars);
         expLst = finalizeLastStringToken(expLst);
         (expLst, {}, _) = popIndentStack(expLst, indStack, actInd, 0);

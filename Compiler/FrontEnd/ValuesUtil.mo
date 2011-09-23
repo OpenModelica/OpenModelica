@@ -51,6 +51,7 @@ protected import Dump;
 protected import Error;
 protected import Expression;
 protected import ExpressionSimplify;
+protected import List;
 protected import Print;
 protected import System;
 protected import Util;
@@ -120,13 +121,13 @@ algorithm
         path = Absyn.pathPrefix(path);
       then DAE.ET_ENUMERATION(path,{},{});
     case(Values.ARRAY(valLst,int_dims)) equation
-      eltTp=valueExpType(Util.listFirst(valLst));
-      dims = Util.listMap(int_dims, Expression.intDimension);
+      eltTp=valueExpType(List.first(valLst));
+      dims = List.map(int_dims, Expression.intDimension);
     then DAE.ET_ARRAY(eltTp,dims);
     
     case(Values.RECORD(path,valLst,nameLst,indx)) equation
-      eltTps = Util.listMap(valLst,valueExpType);
-      varLst = Util.listThreadMap(eltTps,nameLst,valueExpTypeExpVar);
+      eltTps = List.map(valLst,valueExpType);
+      varLst = List.threadMap(eltTps,nameLst,valueExpTypeExpVar);
     then DAE.ET_COMPLEX(path,varLst,ClassInf.RECORD(path));
     
     case(inValue)
@@ -918,14 +919,14 @@ algorithm
     case (Values.ARRAY(valueLst = {}, dimLst = {})) then DAE.ARRAY(DAE.ET_OTHER(),false,{});
     case (Values.ARRAY(valueLst = {}, dimLst = int_dims))
       equation
-        dims = Util.listMap(int_dims, Expression.intDimension);
+        dims = List.map(int_dims, Expression.intDimension);
       then DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER(), dims),false,{});
 
     /* Matrix */
     case(Values.ARRAY(valueLst = Values.ARRAY(valueLst=v::xs)::xs2, dimLst = dim::int_dims))
       equation
         failure(Values.ARRAY(valueLst = _) = v);
-        explist = Util.listMap((v :: xs), valueExp);
+        explist = List.map((v :: xs), valueExp);
         DAE.MATRIX(t,i,mexpl) = valueExp(Values.ARRAY(xs2,int_dims));
         t = Expression.arrayDimensionSetFirst(t, DAE.DIM_INTEGER(dim));
       then DAE.MATRIX(t,dim,explist::mexpl);
@@ -935,7 +936,7 @@ algorithm
       equation
         failure(Values.ARRAY(valueLst = _) = v);
         dim = listLength(v::xs);
-        explist = Util.listMap((v :: xs), valueExp);
+        explist = List.map((v :: xs), valueExp);
         vt = Types.typeOfValue(v);
         t = Types.elabType(vt);
         dim = listLength(v::xs);
@@ -946,7 +947,7 @@ algorithm
     /* Generic array */
     case (Values.ARRAY(valueLst = (v :: xs)))
       equation
-        explist = Util.listMap((v :: xs), valueExp);
+        explist = List.map((v :: xs), valueExp);
         vt = Types.typeOfValue(v);
         t = Types.elabType(vt);
         dim = listLength(v::xs);
@@ -958,15 +959,15 @@ algorithm
 
     case (Values.TUPLE(valueLst = vallist))
       equation
-        explist = Util.listMap(vallist, valueExp);
+        explist = List.map(vallist, valueExp);
       then
         DAE.TUPLE(explist);
 
     case(Values.RECORD(path,vallist,namelst,-1))
       equation
-        expl = Util.listMap(vallist,valueExp);
-        tpl = Util.listMap(expl,Expression.typeof);
-        varlst = Util.listThreadMap(namelst,tpl,Expression.makeVar);
+        expl = List.map(vallist,valueExp);
+        tpl = List.map(expl,Expression.typeof);
+        varlst = List.threadMap(namelst,tpl,Expression.makeVar);
       then DAE.CALL(path,expl,DAE.CALL_ATTR(DAE.ET_COMPLEX(path,varlst,ClassInf.RECORD(path)),false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 
     case(Values.ENUM_LITERAL(name = path, index = ix))
@@ -974,7 +975,7 @@ algorithm
 
     case (Values.TUPLE(vallist))
       equation
-        explist = Util.listMap(vallist, valueExp);
+        explist = List.map(vallist, valueExp);
       then DAE.TUPLE(explist);
 
     /* MetaModelica types */
@@ -988,18 +989,18 @@ algorithm
 
     case (Values.META_TUPLE(vallist))
       equation
-        explist = Util.listMap(vallist, valueExp);
-        typelist = Util.listMap(vallist, Types.typeOfValue);
-        (explist,_) = Types.matchTypeTuple(explist, typelist, Util.listMap(typelist, Types.boxIfUnboxedType), true);
+        explist = List.map(vallist, valueExp);
+        typelist = List.map(vallist, Types.typeOfValue);
+        (explist,_) = Types.matchTypeTuple(explist, typelist, List.map(typelist, Types.boxIfUnboxedType), true);
       then DAE.META_TUPLE(explist);
 
     case (Values.LIST({})) then DAE.LIST({});
 
     case (Values.LIST(vallist))
       equation
-        explist = Util.listMap(vallist, valueExp);
-        typelist = Util.listMap(vallist, Types.typeOfValue);
-        vt = Types.boxIfUnboxedType(Util.listReduce(typelist,Types.superType));
+        explist = List.map(vallist, valueExp);
+        typelist = List.map(vallist, Types.typeOfValue);
+        vt = Types.boxIfUnboxedType(List.reduce(typelist,Types.superType));
         (explist,_) = Types.matchTypes(explist, typelist, vt, true);
       then DAE.LIST(explist);
 
@@ -1007,9 +1008,9 @@ algorithm
     case (Values.RECORD(path,vallist,namelst,ix))
       equation
         true = ix >= 0;
-        explist = Util.listMap(vallist, valueExp);
-        typelist = Util.listMap(vallist, Types.typeOfValue);
-        (explist,_) = Types.matchTypeTuple(explist, typelist, Util.listMap(typelist, Types.boxIfUnboxedType), true);
+        explist = List.map(vallist, valueExp);
+        typelist = List.map(vallist, Types.typeOfValue);
+        (explist,_) = Types.matchTypeTuple(explist, typelist, List.map(typelist, Types.boxIfUnboxedType), true);
       then DAE.METARECORDCALL(path,explist,namelst,ix);
 
     case (Values.META_FAIL())
@@ -1128,7 +1129,7 @@ protected
   list<Values.Value> vals;
 algorithm
   Values.ARRAY(valueLst=vals) := inValue;
-  outReal := Util.listMap(vals, valueInteger);
+  outReal := List.map(vals, valueInteger);
 end arrayValueInts;
 
 public function arrayValueReals "function: valueReals
@@ -1159,14 +1160,14 @@ algorithm
 
     // A matrix.
     case Values.ARRAY(valueLst = vals)
-      then Util.listMap(vals, arrayValueReals);
+      then List.map(vals, arrayValueReals);
 
     // A 1-dimensional array.
     case Values.ARRAY(valueLst = vals)
       equation
         reals = valueReals(vals); 
       then
-        Util.listMap(reals, Util.listCreate);
+        List.map(reals, List.create);
 
   end matchcontinue;
 end matrixValueReals;
@@ -1198,7 +1199,7 @@ algorithm
         Values.INTEGER(i_1);
     case Values.ARRAY(valueLst = vlst, dimLst = dims)
       equation
-        vlst_1 = Util.listMap(vlst, valueNeg);
+        vlst_1 = List.map(vlst, valueNeg);
       then
         Values.ARRAY(vlst_1,dims);
   end match;
@@ -1982,7 +1983,7 @@ public function makeIntArray
   input list<Integer> inInts;
   output Value outArray;
 algorithm
-  outArray := makeArray(Util.listMap(inInts, makeInteger));
+  outArray := makeArray(List.map(inInts, makeInteger));
 end makeIntArray;
 
 public function makeRealArray
@@ -1990,7 +1991,7 @@ public function makeRealArray
   input list<Real> inReals;
   output Value outArray;
 algorithm
-  outArray := makeArray(Util.listMap(inReals, makeReal));
+  outArray := makeArray(List.map(inReals, makeReal));
 end makeRealArray;
 
 public function makeRealMatrix
@@ -1998,7 +1999,7 @@ public function makeRealMatrix
   input list<list<Real>> inReals;
   output Value outArray;
 algorithm
-  outArray := makeArray(Util.listMap(inReals, makeRealArray));
+  outArray := makeArray(List.map(inReals, makeRealArray));
 end makeRealMatrix;
 
 public function valString "function: valString
@@ -2213,7 +2214,7 @@ algorithm
     case (xs,ids)
       equation
         print("ValuesUtil.valRecordString failed:\nids: "+& Util.stringDelimitList(ids, ", ") +&
-        "\nvals: " +& Util.stringDelimitList(Util.listMap(xs, valString), ", ") +& "\n");
+        "\nvals: " +& Util.stringDelimitList(List.map(xs, valString), ", ") +& "\n");
       then 
         fail();
   
@@ -2453,7 +2454,7 @@ algorithm
       list<Integer> dims;
     case (Values.ARRAY(valueLst = lst, dimLst = dims))
       equation
-        lst_1 = Util.listMap(lst, reverseMatrix);
+        lst_1 = List.map(lst, reverseMatrix);
         lst_2 = listReverse(lst_1);
       then
         Values.ARRAY(lst_2,dims);
@@ -2567,8 +2568,8 @@ protected
   list<Values.Value> rows;
 algorithm
   rvals := SimulationResults.readDataset(filename,vars,dimsize);
-  vals := Util.listListMap_reversed(rvals,makeReal);
-  rows := Util.listMap_reversed(vals,makeArray);
+  vals := List.mapListReverse(rvals,makeReal);
+  rows := List.mapReverse(vals,makeArray);
   val := makeArray(rows);
 end readDataset;
 
@@ -2617,7 +2618,7 @@ public function arrayOrListVals
 algorithm
   vals := match (v,boxIfUnboxed)
     case (Values.ARRAY(valueLst = vals),_) then vals;
-    case (Values.LIST(vals),true) then Util.listMap(vals,boxIfUnboxedVal);
+    case (Values.LIST(vals),true) then List.map(vals,boxIfUnboxedVal);
     case (Values.LIST(vals),_) then vals;
   end match;
 end arrayOrListVals;

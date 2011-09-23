@@ -97,6 +97,7 @@ protected import Dump;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
+protected import List;
 protected import Print;
 protected import Util;
 protected import Types;
@@ -226,7 +227,7 @@ public function newEnvironment
   "Creates a new empty environment."
   output Env newEnv;
 algorithm
-  newEnv := Util.listCreate(newFrame(SCode.NOT_ENCAPSULATED(),NONE(),NONE()));
+  newEnv := List.create(newFrame(SCode.NOT_ENCAPSULATED(),NONE(),NONE()));
 end newEnvironment;
 
 protected function newFrame "function: newFrame
@@ -1090,7 +1091,7 @@ algorithm
       Env env;
     case(env as (FRAME(connectionSet = (crs,_))::_)) equation
       print(printEnvPathStr(env));print(" :   ");
-      print(Util.stringDelimitList(Util.listMap(crs,ComponentReference.printComponentRefStr),", "));
+      print(Util.stringDelimitList(List.map(crs,ComponentReference.printComponentRefStr),", "));
       print("\n");
     then ();
   end matchcontinue;
@@ -1644,8 +1645,8 @@ algorithm
     
     case (CACHETREE(id,_,children),indent)
       equation
-        s = Util.stringDelimitList(Util.listMap1(children,printCacheTreeStr,indent+1),"\n");
-        s1 = stringAppendList(Util.listFill(" ",indent));
+        s = Util.stringDelimitList(List.map1(children,printCacheTreeStr,indent+1),"\n");
+        s1 = stringAppendList(List.fill(" ",indent));
         str = stringAppendList({s1,id,"\n",s});
       then str;
   end matchcontinue;
@@ -1661,7 +1662,7 @@ algorithm
     local DAE.Subscript s;
     case(subs)
       equation
-        str = " subs: " +& Util.stringDelimitList(Util.listMap(subs,ExpressionDump.printSubscriptStr),", ") +& "\n";
+        str = " subs: " +& Util.stringDelimitList(List.map(subs,ExpressionDump.printSubscriptStr),", ") +& "\n";
         print(str);
       then
         str;

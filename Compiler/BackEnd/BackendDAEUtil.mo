@@ -71,6 +71,7 @@ protected import ExpressionSimplify;
 protected import ExpressionDump;
 protected import HashTable2;
 protected import HashTable4;
+protected import List;
 protected import OptManager;
 protected import RTOpts;
 protected import SCode;
@@ -135,7 +136,7 @@ algorithm
     
     case (((e,crefs))::res,wrongEqns)
       equation
-        strcrefs = Util.listMap(crefs,ComponentReference.crefStr);
+        strcrefs = List.map(crefs,ComponentReference.crefStr);
         crefstring = Util.stringDelimitList(strcrefs,", ");
         expstr = ExpressionDump.printExpStr(e);
         scopestr = stringAppendList({crefstring," from Expression: ",expstr});
@@ -289,7 +290,7 @@ algorithm
     // Special Case for Records
     case ((e as DAE.CREF(componentRef = cr,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,crefs)))
       equation
-        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr);
+        expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         ((_,(vars1,crefs1))) = Expression.traverseExpList(expl,traversecheckBackendDAEExp,(vars,crefs));
       then
         ((e, (vars1,crefs1)));
@@ -306,7 +307,7 @@ algorithm
     case ((e as DAE.REDUCTION(iterators = riters),(vars,crefs)))
       equation
         // add idents to vars
-        backendVars = Util.listMap(riters,makeIterVariable);
+        backendVars = List.map(riters,makeIterVariable);
         vars = BackendVariable.addVars(backendVars,vars);
       then
         ((e, (vars,crefs)));
@@ -366,7 +367,7 @@ algorithm
         t1 = Expression.typeof(e1);
         t2 = Expression.typeof(e2);
         b = Expression.equalTypes(t1,t2);
-        wrongEqns1 = Util.listConsOnTrue(not b,e,wrongEqns);
+        wrongEqns1 = List.consOnTrue(not b,e,wrongEqns);
       then ((e,wrongEqns1));
 
     case ((e as BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e1),wrongEqns))
@@ -374,7 +375,7 @@ algorithm
         t1 = Expression.typeof(e1);
         t2 = ComponentReference.crefLastType(cr);
         b = Expression.equalTypes(t1,t2);
-        wrongEqns1 = Util.listConsOnTrue(not b,e,wrongEqns);
+        wrongEqns1 = List.consOnTrue(not b,e,wrongEqns);
       then ((e,wrongEqns1));
 
     case ((e as BackendDAE.COMPLEX_EQUATION(lhs=e1,rhs=e2),wrongEqns))
@@ -382,7 +383,7 @@ algorithm
         t1 = Expression.typeof(e1);
         t2 = Expression.typeof(e2);
         b = Expression.equalTypes(t1,t2);
-        wrongEqns1 = Util.listConsOnTrue(not b,e,wrongEqns);
+        wrongEqns1 = List.consOnTrue(not b,e,wrongEqns);
       then ((e,wrongEqns1));
         
       //
@@ -440,12 +441,12 @@ protected function checkInitialSystemWork "function: checkInitialSystem
 "
 
   input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
   input DAE.FunctionTree funcs;
+  input BackendDAE.Shared shared;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 algorithm
-  (osyst,oshared) := matchcontinue (syst,shared,funcs)
+  (osyst,oshared) := matchcontinue (syst,funcs,shared)
     local
       BackendDAE.Variables variables,knvars,exObj,aliasVars;
       BackendDAE.EquationArray orderedEqs,removedEqs,initialEqs;
@@ -459,8 +460,8 @@ algorithm
       list<DAE.ComponentRef> vars,varsws,states,statesws;
       BackendDAE.AliasVariables av;
    
-    case (syst as BackendDAE.EQSYSTEM(orderedVars=variables,orderedEqs=orderedEqs),shared as BackendDAE.SHARED(knownVars=knvars,initialEqs=initialEqs,externalObjects=exObj,aliasVars=av,removedEqs=removedEqs,
-           arrayEqs=arrayEqs,algorithms=algs,eventInfo=eventInfo,extObjClasses=extObjClasses),funcs)
+    case (syst as BackendDAE.EQSYSTEM(orderedVars=variables,orderedEqs=orderedEqs),funcs,shared as BackendDAE.SHARED(knownVars=knvars,initialEqs=initialEqs,externalObjects=exObj,aliasVars=av,removedEqs=removedEqs,
+           arrayEqs=arrayEqs,algorithms=algs,eventInfo=eventInfo,extObjClasses=extObjClasses))
       equation
         /* count the unfixed variables */
         // vars
@@ -475,7 +476,7 @@ algorithm
         (syst,shared) = checkInitialSystem1(unfixed1,nie2,syst,shared,funcs,vars,varsws,states,statesws);
       then (syst,shared);
     
-    case (syst,shared,_)
+    case (syst,_,shared)
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.checkInitialSystemWork failed"});
       then (syst,shared);
@@ -905,14 +906,14 @@ algorithm
       BackendDAE.EqSystems systs;
     case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,ae,al,BackendDAE.EVENT_INFO(whenClauseLst = wc,zeroCrossingLst = zc),extObjCls,btp)),_)
       equation
-        varlst = Util.listMapMap(systs,BackendVariable.daeVars,varList);
+        varlst = List.mapMap(systs,BackendVariable.daeVars,varList);
         knvarlst = varList(knvars);
         extvarlst = varList(extVars);
         // varlst = Util.listMap(varlst,listReverse);
         // knvarlst = listReverse(knvarlst);
         // extvarlst = listReverse(extvarlst);
         (varlst,knvarlst,extvarlst) = BackendVariable.calculateIndexes(varlst, knvarlst,extvarlst);
-        systs = Util.listThreadMap(systs,varlst,addVarsToEqSystem);
+        systs = List.threadMap(systs,varlst,addVarsToEqSystem);
         knvars = BackendVariable.addVars(knvarlst, knvars);
         extVars = BackendVariable.addVars(extvarlst, extVars);
       then
@@ -1189,9 +1190,9 @@ algorithm
                  initialEqs = ie,removedEqs = seqns,arrayEqs = ae,algorithms = al,eventInfo = wc,extObjClasses=extObjCls, backendDAEType=btp)))
       equation
         knvarlst = varList(knvars);
-        (varlst1,varlst2) = Util.listSplitOnTrue(knvarlst,BackendVariable.isParam);
+        (varlst1,varlst2) = List.splitOnTrue(knvarlst,BackendVariable.isParam);
         paramvars = listVar(varlst1);
-        knvarlst = Util.listMap3(varlst1, calculateValue, cache, env, paramvars);
+        knvarlst = List.map3(varlst1, calculateValue, cache, env, paramvars);
         knvars = listVar(listAppend(knvarlst,varlst2));
       then
         BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,extVars,av,ie,seqns,ae,al,wc,extObjCls,btp));
@@ -1492,7 +1493,7 @@ protected function updateAliasVars
   input BackendDAE.AliasVariables inAliases;
   output BackendDAE.AliasVariables outAliases;
 algorithm
-  (outAliases) := Util.listFold_3(inTableList1,updateAliasVarsFold,inAliases,inExp1,inExp2);
+  (outAliases) := List.fold2r(inTableList1,updateAliasVarsFold,inExp1,inExp2,inAliases);
 end updateAliasVars;
 
 protected function updateAliasVarsFold
@@ -1505,7 +1506,7 @@ protected function updateAliasVarsFold
   input DAE.Exp inExp2;
   output BackendDAE.AliasVariables outAliases;
 algorithm
-  (outAliases) := matchcontinue(inAliases,item,inExp1,inExp2)
+  (outAliases) := matchcontinue(inAliases, item, inExp1, inExp2)
     local
       list<tuple<HashTable4.Key,HashTable4.Value>> rest;
       DAE.Exp exp,exp2;
@@ -1655,7 +1656,7 @@ algorithm
   rlen_1 := rlen *. 1.4;
   size := realInt(rlen_1);
   optarr := arrayCreate(size, NONE());
-  eqn_optlst := Util.listMap(lst, Util.makeOption);
+  eqn_optlst := List.map(lst, Util.makeOption);
   eqnarr := listArray(eqn_optlst);
   newarr := Util.arrayCopy(eqnarr, optarr);
   outEquationArray := BackendDAE.EQUATION_ARRAY(len,size,newarr);
@@ -1786,7 +1787,7 @@ algorithm
     
     case(BackendDAE.ARRAY_EQUATION(crefOrDerCref = expl),vars,knvars) equation
       // fails if all mapped function calls doesn't return true 
-      Util.listMap2AllValue(expl,isDiscreteExp,vars,knvars,true);
+      List.map2AllValue(expl,isDiscreteExp,true,vars,knvars);
     then true;
     
     case(BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),vars,knvars) equation
@@ -1800,7 +1801,7 @@ algorithm
     
     case(BackendDAE.ALGORITHM(in_ = expl),vars,knvars) equation
       // fails if all mapped function calls doesn't return true
-      Util.listMap2AllValue(expl,isDiscreteExp,vars,knvars,true);
+      List.map2AllValue(expl,isDiscreteExp,true,vars,knvars);
     then true;
     
     case(BackendDAE.WHEN_EQUATION(whenEquation = _),vars,knvars) then true;
@@ -2120,9 +2121,9 @@ algorithm
     // Special Case for Records 
     case (((e as DAE.CREF(componentRef = cr,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)))),(vars,expl)))
       equation
-        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr);
-        lst = Util.listMap1(expl, statesAndVarsExp, vars);
-        res = Util.listListUnionOnTrue(lst, Expression.expEqual);
+        expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
+        lst = List.map1(expl, statesAndVarsExp, vars);
+        res = List.unionOnTrueList(lst, Expression.expEqual);
       then
         ((e,true,(vars,res)));
     // Special Case for unextended arrays
@@ -2170,7 +2171,7 @@ algorithm
     case (DAE.CREF(componentRef = cr), _)
       equation
         subscripts = ComponentReference.crefSubs(cr);
-        subscript_exprs = Util.listMap(subscripts, Expression.subscriptIndexExp);
+        subscript_exprs = List.map(subscripts, Expression.subscriptIndexExp);
         true = isLoopDependentHelper(subscript_exprs, iteratorExp);
       then true;
     case (DAE.ASUB(sub = subscript_exprs), _)
@@ -2262,7 +2263,7 @@ algorithm
     case (DAE.CREF(componentRef = _), _, _, _)
       equation
         indices = rangeIntExprs(rangeExpr);
-        clonedElements = Util.listFill(arrayVar, listLength(indices));
+        clonedElements = List.fill(arrayVar, listLength(indices));
         newElements = generateArrayElements(clonedElements, indices, iteratorExp);
       then newElements;
         
@@ -2271,15 +2272,15 @@ algorithm
         // If the range is constant, then we can use it to generate only those
         // array elements that are actually used.
         indices = rangeIntExprs(rangeExpr);
-        clonedElements = Util.listFill(arrayVar, listLength(indices));
+        clonedElements = List.fill(arrayVar, listLength(indices));
         newElements = generateArrayElements(clonedElements, indices, iteratorExp);
       then newElements;
         
     case (DAE.CREF(componentRef = cref), _, _, _)
       equation
         (bvars, _) = BackendVariable.getVar(cref, vars);
-        varCrefs = Util.listMap(bvars, BackendVariable.varCref);
-        varExprs = Util.listMap(varCrefs, Expression.crefExp);
+        varCrefs = List.map(bvars, BackendVariable.varCref);
+        varExprs = List.map(varCrefs, Expression.crefExp);
       then varExprs;
 
     case (DAE.ASUB(exp = DAE.CREF(componentRef = cref)), _, _, _)
@@ -2287,8 +2288,8 @@ algorithm
         // If the range is not constant, then we just extract all array elements
         // of the array.
         (bvars, _) = BackendVariable.getVar(cref, vars);
-        varCrefs = Util.listMap(bvars, BackendVariable.varCref);
-        varExprs = Util.listMap(varCrefs, Expression.crefExp);
+        varCrefs = List.map(bvars, BackendVariable.varCref);
+        varExprs = List.map(varCrefs, Expression.crefExp);
       then varExprs;
       
     case (DAE.ASUB(exp = daeExp), _, _, _)
@@ -2316,7 +2317,7 @@ algorithm
     case (DAE.RANGE(exp = DAE.ICONST(integer = start), range = DAE.ICONST(integer = stop), expOption = NONE()))
       equation
         vals = ExpressionSimplify.simplifyRange(start, 1, stop);
-        arrayElements = Util.listMap(vals, Expression.makeIntegerExp);
+        arrayElements = List.map(vals, Expression.makeIntegerExp);
       then
         arrayElements;
     
@@ -2443,7 +2444,7 @@ algorithm
     // A CREF => just simplify the subscripts.
     case (DAE.CREF(DAE.CREF_IDENT(varIdent, arrayType, subscripts), varType))
       equation
-        subscripts = Util.listMap(subscripts, simplifySubscript);
+        subscripts = List.map(subscripts, simplifySubscript);
         cref_ = ComponentReference.makeCrefIdent(varIdent, arrayType, subscripts);
         newCrefExp = Expression.makeCrefExp(cref_, varType);
       then 
@@ -2452,13 +2453,13 @@ algorithm
     // An ASUB => convert to CREF if only constant subscripts.
     case (DAE.ASUB(DAE.CREF(DAE.CREF_IDENT(varIdent, arrayType, _), varType), subExprs))
       equation
-        {} = Util.listSelect(subExprs, Expression.isNotConst);
+        {} = List.select(subExprs, Expression.isNotConst);
         // If a subscript is not a single constant value it needs to be
         // simplified, e.g. cref[3+4] => cref[7], otherwise some subscripts
         // might be counted twice, such as cref[3+4] and cref[2+5], even though
         // they reference the same element.
         subExprsSimplified = ExpressionSimplify.simplifyList(subExprs, {});
-        subscripts = Util.listMap(subExprsSimplified, Expression.makeIndexSubscript);
+        subscripts = List.map(subExprsSimplified, Expression.makeIndexSubscript);
         cref_ = ComponentReference.makeCrefIdent(varIdent, arrayType, subscripts);
         newCrefExp = Expression.makeCrefExp(cref_, varType);
       then 
@@ -2645,7 +2646,7 @@ algorithm
     case (syst as BackendDAE.EQSYSTEM(orderedVars = v,m=SOME(m),mT=SOME(mt)),arr,a1,a2)
       equation
         statevar_lst = BackendVariable.getAllStateVarFromVariables(v);
-        ((_,arr_1,_,_,_,_)) = Util.listFold(statevar_lst, markStateEquation, (syst,arr,m,mt,a1,a2));
+        ((_,arr_1,_,_,_,_)) = List.fold(statevar_lst, markStateEquation, (syst,arr,m,mt,a1,a2));
       then
         arr_1;
     
@@ -2683,8 +2684,8 @@ algorithm
     case (BackendDAE.VAR(varName = cr),((syst as BackendDAE.EQSYSTEM(orderedVars = vars)),arr,m,mt,a1,a2))
       equation
         (_,v_indxs) = BackendVariable.getVar(cr, vars);
-        v_indxs_1 = Util.listMap1(v_indxs, intSub, 1);
-        eqns = Util.listMap1r(v_indxs_1, arrayNth, a1);
+        v_indxs_1 = List.map1(v_indxs, intSub, 1);
+        eqns = List.map1r(v_indxs_1, arrayNth, a1);
         ((arr_1,m,mt,a1,a2)) = markStateEquation2(eqns, (arr,m,mt,a1,a2));
       then
         ((syst,arr_1,m,mt,a1,a2));
@@ -2745,8 +2746,8 @@ algorithm
         marks_1 = arrayUpdate(marks, eqn_1 + 1, 1);
         inv_reachable = invReachableNodes(eqn, m, mt, a1, a2);
         inv_reachable_1 = removeNegative(inv_reachable);
-        inv_reachable_2 = Util.listMap(inv_reachable_1, Util.listCreate);
-        ((marks_2,m,mt,a1,a2)) = Util.listFold(inv_reachable_2, markStateEquation2, (marks_1,m,mt,a1,a2));
+        inv_reachable_2 = List.map(inv_reachable_1, List.create);
+        ((marks_2,m,mt,a1,a2)) = List.fold(inv_reachable_2, markStateEquation2, (marks_1,m,mt,a1,a2));
         ((marks_3,m_1,mt_1,a1_1,a2_1)) = markStateEquation2(eqns, (marks_2,m,mt,a1,a2));
       then
         ((marks_3,m_1,mt_1,a1_1,a2_1));
@@ -2859,7 +2860,7 @@ public function removeNegative
   input list<Integer> lst;
   output list<Integer> lst_1;
 algorithm
-  lst_1 := Util.listSelect(lst, Util.intPositive);
+  lst_1 := List.select(lst, Util.intPositive);
 end removeNegative;
 
 public function eqnsForVarWithStates
@@ -2888,7 +2889,7 @@ algorithm
     case (mt,n)
       equation
         res = mt[n];
-        res_1 = Util.listMap(res, intAbs);
+        res_1 = List.map(res, intAbs);
       then
         res_1;
     
@@ -3434,8 +3435,8 @@ algorithm outExp := matchcontinue(inExp)
         j = Expression.dimensionSize(jd);
         subslst = dimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
-        crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
-        expl = Util.listMap1(crlst,Expression.makeCrefExp,ty);
+        crlst = List.map1r(subslst1,ComponentReference.subscriptCref,cr);
+        expl = List.map1(crlst,Expression.makeCrefExp,ty);
         mat = makeMatrix(expl,j,j,{});
         e_new = DAE.MATRIX(t,i,mat);
         restpl = Expression.traverseExp(e_new, traversingextendArrExp, (funcs,true));
@@ -3451,8 +3452,8 @@ algorithm outExp := matchcontinue(inExp)
         j = Expression.dimensionSize(DAE.DIM_INTEGER(1));
         subslst = dimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
-        crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
-        expl = Util.listMap1(crlst,Expression.makeCrefExp,ty);
+        crlst = List.map1r(subslst1,ComponentReference.subscriptCref,cr);
+        expl = List.map1(crlst,Expression.makeCrefExp,ty);
         mat = makeMatrix(expl,j,j,{});
         e_new = DAE.MATRIX(t,i,mat);
         restpl = Expression.traverseExp(e_new, traversingextendArrExp, (funcs,true));
@@ -3464,8 +3465,8 @@ algorithm outExp := matchcontinue(inExp)
     equation
         subslst = dimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
-        crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
-        expl = Util.listMap1(crlst,Expression.makeCrefExp,ty);
+        crlst = List.map1r(subslst1,ComponentReference.subscriptCref,cr);
+        expl = List.map1(crlst,Expression.makeCrefExp,ty);
         e_new = DAE.ARRAY(t,true,expl);
         restpl = Expression.traverseExp(e_new, traversingextendArrExp, (funcs,true));
     then
@@ -3478,8 +3479,8 @@ algorithm outExp := matchcontinue(inExp)
         // consider size 1      
         subslst = dimensionsToRange({DAE.DIM_INTEGER(1)});
         subslst1 = rangesToSubscripts(subslst);
-        crlst = Util.listMap1r(subslst1,ComponentReference.subscriptCref,cr);
-        expl = Util.listMap1(crlst,Expression.makeCrefExp,ty);
+        crlst = List.map1r(subslst1,ComponentReference.subscriptCref,cr);
+        expl = List.map1(crlst,Expression.makeCrefExp,ty);
         e_new = DAE.ARRAY(t,true,expl);
         restpl = Expression.traverseExp(e_new, traversingextendArrExp, (funcs,true));
     then
@@ -3487,7 +3488,7 @@ algorithm outExp := matchcontinue(inExp)
   // CASE for Records
   case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_))), (funcs,_)) )
     equation
-        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr);
+        expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         i = listLength(expl);
         true = intGt(i,0);
         e_new = DAE.CALL(name,expl,DAE.CALL_ATTR(t,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
@@ -3566,9 +3567,9 @@ algorithm
         
     /*case ((DAE.STMT_TUPLE_ASSIGN(expExpLst = expl1) :: rest),vars)
       equation
-        crefLst = Util.listMap(expl1,Expression.expCref);
-        (vlst,_) = Util.listMap12(crefLst,BackendVariable.getVar,vars);
-        //blst = Util.listMap(vlst,BackendVariable.isVarDiscrete);
+        crefLst = List.map(expl1,Expression.expCref);
+        (vlst,_) = List.map1_2(crefLst,BackendVariable.getVar,vars);
+        //blst = List.map(vlst,BackendVariable.isVarDiscrete);
         //true = boolOrList(blst);
         xs = removediscreteAssingments(rest,vars);
       then xs;
@@ -3763,7 +3764,7 @@ algorithm
       then {}::rangelist;
     case(d::dims) equation
       i = Expression.dimensionSize(d);
-      range = Util.listIntRange(i);
+      range = List.intRange(i);
       subs = rangesToSubscript(range);
       rangelist = dimensionsToRange(dims);
     then subs::rangelist;
@@ -3801,13 +3802,13 @@ algorithm
     case({}) then {};
     case(range::{})
       equation
-        rangelist = Util.listMap(range,Util.listCreate);
+        rangelist = List.map(range,List.create);
       then rangelist;
     case(range::rangelist)
       equation
       rangelist = rangesToSubscripts(rangelist);
-      rangelistlst = Util.listMap1(range,rangesToSubscripts1,rangelist);
-      rangelist1 = Util.listFlatten(rangelistlst);
+      rangelistlst = List.map1(range,rangesToSubscripts1,rangelist);
+      rangelist1 = List.flatten(rangelistlst);
     then rangelist1;
   end matchcontinue;
 end rangesToSubscripts;
@@ -3824,7 +3825,7 @@ algorithm
     DAE.Subscript sub;
     case(sub,rangelist)
       equation
-      rangelist1 = Util.listMap1r(rangelist,Util.listAddElementFirst,sub);
+        rangelist1 = List.map1(rangelist, List.consr, sub);
     then rangelist1;
   end match;
 end rangesToSubscripts1;
@@ -3903,7 +3904,7 @@ algorithm
         numberofVars = BackendVariable.varsSize(vars);
         // create the array to hold the incidence matrix
         arr = arrayCreate(numberOfEqs, {});
-        lstT = Util.listFill({},numberofVars);
+        lstT = List.fill({},numberofVars);
         arrT = listArray(lstT);
         (arr,arrT) = incidenceMatrixDispatch(vars, eqns, wc, arr,arrT, 0, numberOfEqs, intLt(0, numberOfEqs), inIndexType);
       then
@@ -4251,32 +4252,32 @@ algorithm
     case (BackendDAE.VAR(varKind = BackendDAE.STATE()) :: rest,i::irest,vars,b)
       equation
         i1 = Util.if_(b,-i,i);
-        failure(_ = Util.listGetMemberOnTrue(i1, vars, intEq));
+        failure(_ = List.getMemberOnTrue(i1, vars, intEq));
         res = incidenceRowExp1(rest,irest,i1::vars,b);
       then res;
     case (BackendDAE.VAR(varKind = BackendDAE.STATE_DER()) :: rest,i::irest,vars,b)
       equation
-        failure(_ = Util.listGetMemberOnTrue(i, vars, intEq));
+        failure(_ = List.getMemberOnTrue(i, vars, intEq));
         res = incidenceRowExp1(rest,irest,i::vars,b);
       then res;
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE()) :: rest,i::irest,vars,b)
       equation
-        failure(_ = Util.listGetMemberOnTrue(i, vars, intEq));
+        failure(_ = List.getMemberOnTrue(i, vars, intEq));
         res = incidenceRowExp1(rest,irest,i::vars,b);
       then res;
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE()) :: rest,i::irest,vars,b)
       equation
-        failure(_ = Util.listGetMemberOnTrue(i, vars, intEq));
+        failure(_ = List.getMemberOnTrue(i, vars, intEq));
         res = incidenceRowExp1(rest,irest,i::vars,b);
       then res;
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER()) :: rest,i::irest,vars,b)
       equation
-        failure(_ = Util.listGetMemberOnTrue(i, vars, intEq));
+        failure(_ = List.getMemberOnTrue(i, vars, intEq));
         res = incidenceRowExp1(rest,irest,i::vars,b);
       then res;
     case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()) :: rest,i::irest,vars,b)
       equation
-        failure(_ = Util.listGetMemberOnTrue(i, vars, intEq));
+        failure(_ = List.getMemberOnTrue(i, vars, intEq));
         res = incidenceRowExp1(rest,irest,i::vars,b);
       then res;
     case (_ :: rest,_::irest,vars,b)
@@ -4363,7 +4364,7 @@ public function absIncidenceMatrix
   list<list<BackendDAE.Value>> lst,lst_1;
 algorithm
   lst := arrayList(m);
-  lst_1 := Util.listListMap(lst, intAbs);
+  lst_1 := List.mapList(lst, intAbs);
   res := listArray(lst_1);
 end absIncidenceMatrix;
 
@@ -4377,7 +4378,7 @@ public function varsIncidenceMatrix
   list<list<BackendDAE.Value>> mlst;
 algorithm
   mlst := arrayList(m);
-  res := Util.listFlatten(mlst);
+  res := List.flatten(mlst);
 end varsIncidenceMatrix;
 
 protected function transposeRow
@@ -4511,7 +4512,7 @@ algorithm
         row = incidenceRow(vars, eqn,wc);
         oldvars = getOldVars(m,abse);
         m_1 = Util.arrayReplaceAtWithFill(row, abse, m, {});
-        (_,outvars,invars) = Util.listIntersectionOnTrue1(oldvars,row,intEq);
+        (_,outvars,invars) = List.intersection1OnTrue(oldvars,row,intEq);
         mt_1 = removeValuefromMatrix(outvars,abse,mt);
         mt_2 = addValuetoMatrix(invars,abse,mt_1);
         (m_2,mt_3) = updateIncidenceMatrix1(vars,daeeqns,wc,m_1,mt_2,eqns);
@@ -4561,7 +4562,7 @@ algorithm
         kabs = intAbs(k);
         mlst = mt[kabs];
         v_1 = Util.if_(intGt(k,0),v,-v);
-        mlst1 = Util.listRemoveOnTrue(v_1,intEq,mlst);
+        mlst1 = List.removeOnTrue(v_1,intEq,mlst);
         mt_1 = arrayUpdate(mt, kabs , mlst1);
         mt_2 = removeValuefromMatrix(keys,v,mt_1);
       then
@@ -4810,7 +4811,7 @@ algorithm
     case (BackendDAE.RESIDUAL_EQUATION(exp = e),vars,ae,m,mt,eqn_indx,differentiateIfExp,inEntrylst)
       equation
         var_indxs = varsInEqn(m, eqn_indx);
-        var_indxs_1 = Util.listUnionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: ascending index" ;
+        var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: ascending index" ;
         SOME(eqns) = calculateJacobianRow2(e, vars, eqn_indx, var_indxs_1,differentiateIfExp);
       then
         (SOME(eqns),inEntrylst);
@@ -4822,11 +4823,11 @@ algorithm
         BackendDAE.MULTIDIM_EQUATION(ds,e1,e2,_) = ae[indx + 1];
         t = Expression.typeof(e1);
         new_exp = DAE.BINARY(e1,DAE.SUB_ARR(t),e2);
-        ad = Util.listMap(ds,Util.makeOption);
+        ad = List.map(ds,Util.makeOption);
         (subs,entrylst1) = getArrayEquationSub(indx,ad,inEntrylst);
         new_exp = Expression.applyExpSubscripts(new_exp,subs);
         var_indxs = varsInEqn(m, eqn_indx);
-        var_indxs_1 = Util.listUnionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: acsending index";
+        var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: acsending index";
         SOME(eqns) = calculateJacobianRow2(new_exp, vars, eqn_indx, var_indxs_1,differentiateIfExp);
       then
         (SOME(eqns),entrylst1);
@@ -4906,7 +4907,7 @@ algorithm
       rangelist = arrayDimensionsToRange(dims);
     then {}::rangelist;
     case(SOME(i)::dims) equation
-      range = Util.listIntRange(i);
+      range = List.intRange(i);
       subs = rangesToSubscript(range);
       rangelist = arrayDimensionsToRange(dims);
     then subs::rangelist;
@@ -5102,7 +5103,7 @@ algorithm
     case (e,vars)
       equation
         crefs = Expression.extractCrefsFromExp(e);
-        b_lst = Util.listMap1(crefs, BackendVariable.existsVar, vars);
+        b_lst = List.map1(crefs, BackendVariable.existsVar, vars);
         res = Util.boolOrList(b_lst);
         res_1 = boolNot(res);
       then
@@ -5263,7 +5264,7 @@ algorithm
     case (exp,vars)
       equation
         term_lst = Expression.allTerms(exp);
-        rhs_lst = Util.listSelect1(term_lst, vars, freeFromAnyVar);
+        rhs_lst = List.select1(term_lst, freeFromAnyVar, vars);
         /* A term can contain if-expressions that has branches that are on rhs and other branches that
         are on lhs*/
         rhs_lst2 = ifBranchesFreeFromVar(term_lst,vars);
@@ -5428,7 +5429,7 @@ algorithm
       list<BackendDAE.EqSystem> systs;
     case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns,arrayEqs = ae,algorithms = algs)),func,inTypeA)
       equation
-        ext_arg_1 = Util.listFold1(systs,traverseBackendDAEExpsEqSystem,func,inTypeA);
+        ext_arg_1 = List.fold1(systs,traverseBackendDAEExpsEqSystem,func,inTypeA);
         ext_arg_2 = traverseBackendDAEExpsVars(vars2,func,ext_arg_1);
         ext_arg_4 = traverseBackendDAEExpsEqns(reqns,func,ext_arg_2);
         ext_arg_5 = traverseBackendDAEExpsEqns(ieqns,func,ext_arg_4);
@@ -5690,11 +5691,11 @@ algorithm
              values = attr)),func,inTypeA)
       equation
         ((_,ext_arg_1)) = func((e1,inTypeA));
-        ext_arg_2 = Util.listFold1(instdims,traverseBackendDAEExpsSubscript,func,ext_arg_1);
+        ext_arg_2 = List.fold1(instdims,traverseBackendDAEExpsSubscript,func,ext_arg_1);
         //expCref = Expression.crefExp(cref);
         //((_,ext_arg_3)) = func((expCref,ext_arg_2));
         ominmax = DAEUtil.getMinMax(attr);
-        minmax = Util.listMap1(ominmax,Util.getOptionOrDefault,DAE.RCONST(0.0));
+        minmax = List.map1(ominmax,Util.getOptionOrDefault,DAE.RCONST(0.0));
         ((_,ext_arg_4)) = Expression.traverseExpList(minmax,func,ext_arg_2);
         sv = DAEUtil.getStartAttr(attr);
         ((_,ext_arg_5)) = func((sv,ext_arg_4));
@@ -5708,11 +5709,11 @@ algorithm
              arryDim = instdims,
              values = attr)),func,inTypeA)
       equation
-        ext_arg_2 = Util.listFold1(instdims,traverseBackendDAEExpsSubscript,func,inTypeA);
+        ext_arg_2 = List.fold1(instdims,traverseBackendDAEExpsSubscript,func,inTypeA);
         //expCref = Expression.crefExp(cref);
         //((_,ext_arg_3)) = func((expCref,ext_arg_2));
         ominmax = DAEUtil.getMinMax(attr);
-        minmax = Util.listMap1(ominmax,Util.getOptionOrDefault,DAE.RCONST(0.0));
+        minmax = List.map1(ominmax,Util.getOptionOrDefault,DAE.RCONST(0.0));
         ((_,ext_arg_4)) = Expression.traverseExpList(minmax,func,ext_arg_2);
         sv = DAEUtil.getStartAttr(attr);
         ((_,ext_arg_5)) = func((sv,ext_arg_4));
@@ -6524,8 +6525,8 @@ public function mapEqSystem1
   output BackendDAE.BackendDAE odae;
   partial function Function
     input BackendDAE.EqSystem syst;
-    input BackendDAE.Shared shared;
     input A a;
+    input BackendDAE.Shared shared;
     output BackendDAE.EqSystem osyst;
     output BackendDAE.Shared oshared;
   end Function;
@@ -6535,9 +6536,9 @@ protected
   BackendDAE.Shared shared;
 algorithm
   BackendDAE.DAE(systs,shared) := dae;
-  (systs,shared) := Util.listMapAndFold1(systs,func,shared,a);
+  (systs,shared) := List.map1Fold(systs,func,a,shared);
   // Filter out empty systems
-  // systs := Util.listSelect(systs,nonEmptySystem);
+  // systs := List.select(systs,nonEmptySystem);
   odae := BackendDAE.DAE(systs,shared);
 end mapEqSystem1;
 
@@ -6551,8 +6552,8 @@ public function mapEqSystemAndFold1
   output B extra;
   partial function Function
     input BackendDAE.EqSystem syst;
-    input tuple<BackendDAE.Shared,B> sharedChanged;
     input A a;
+    input tuple<BackendDAE.Shared,B> sharedChanged;
     output BackendDAE.EqSystem osyst;
     output tuple<BackendDAE.Shared,B> osharedChanged;
   end Function;
@@ -6563,9 +6564,9 @@ protected
   BackendDAE.Shared shared;
 algorithm
   BackendDAE.DAE(systs,shared) := dae;
-  (systs,(shared,extra)) := Util.listMapAndFold1(systs,func,(shared,initialExtra),a);
+  (systs,(shared,extra)) := List.map1Fold(systs,func,a,(shared,initialExtra));
   // Filter out empty systems
-  // systs := Util.listSelect(systs,nonEmptySystem);
+  // systs := List.select(systs,nonEmptySystem);
   odae := BackendDAE.DAE(systs,shared);
 end mapEqSystemAndFold1;
 
@@ -6588,9 +6589,9 @@ protected
   BackendDAE.Shared shared;
 algorithm
   BackendDAE.DAE(systs,shared) := dae;
-  (systs,(shared,extra)) := Util.listMapAndFold(systs,func,(shared,initialExtra));
+  (systs,(shared,extra)) := List.mapFold(systs,func,(shared,initialExtra));
   // Filter out empty systems
-  // systs := Util.listSelect(systs,nonEmptySystem);
+  // systs := List.select(systs,nonEmptySystem);
   odae := BackendDAE.DAE(systs,shared);
 end mapEqSystemAndFold;
 
@@ -6612,9 +6613,9 @@ protected
   BackendDAE.Shared shared;
 algorithm
   BackendDAE.DAE(systs,shared) := dae;
-  extra := Util.listFold1(systs,func,shared,initialExtra);
+  extra := List.fold1(systs,func,shared,initialExtra);
   // Filter out empty systems
-  // systs := Util.listSelect(systs,nonEmptySystem);
+  // systs := List.select(systs,nonEmptySystem);
 end foldEqSystem;
 
 public function mapEqSystem
@@ -6633,9 +6634,9 @@ protected
   BackendDAE.Shared shared;
 algorithm
   BackendDAE.DAE(systs,shared) := dae;
-  (systs,shared) := Util.listMapAndFold(systs,func,shared);
+  (systs,shared) := List.mapFold(systs,func,shared);
   // Filter out empty systems
-  // systs := Util.listSelect(systs,nonEmptySystem);
+  // systs := List.select(systs,nonEmptySystem);
   odae := BackendDAE.DAE(systs,shared);
 end mapEqSystem;
 

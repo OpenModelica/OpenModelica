@@ -44,11 +44,12 @@ encapsulated package ClassLoader
 public import Absyn;
 public import Interactive;
 
-protected import System;
-protected import Util;
+protected import Debug;
+protected import List;
 protected import Parser;
 protected import Print;
-protected import Debug;
+protected import System;
+protected import Util;
 
 public function loadClass
 "function: loadClass
@@ -183,7 +184,7 @@ algorithm
         Print.printBuf("\n");
         p1_1 = Interactive.updateProgram(Absyn.PROGRAM(p1,w1,ts), Absyn.PROGRAM(oldc,Absyn.TOP(),ts));
         subdirs = System.subDirectories(mp_1);
-        subdirs = Util.sort(subdirs, Util.strcmpBool);
+        subdirs = List.sort(subdirs, Util.strcmpBool);
         subdirstr = Util.stringDelimitList(subdirs, ", ");
         p2 = loadCompleteSubdirs(subdirs, id, mp_1, within_, p1_1);
         p = loadCompleteSubfiles(id, mp_1, within_, p2);
@@ -202,7 +203,7 @@ algorithm
         Print.printBuf("\n");
         p1_1 = Interactive.updateProgram(Absyn.PROGRAM(p1,Absyn.WITHIN(wpath),ts),Absyn.PROGRAM(oldc,Absyn.TOP(),ts));
         subdirs = System.subDirectories(mp_1);
-        subdirs = Util.sort(subdirs, Util.strcmpBool);
+        subdirs = List.sort(subdirs, Util.strcmpBool);
         subdirstr = Util.stringDelimitList(subdirs, ", ");
         p2 = loadCompleteSubdirs(subdirs, id, mp_1, within_, p1_1);
         p = loadCompleteSubfiles(id, mp_1, within_, p2);
@@ -289,7 +290,7 @@ algorithm
     case (pack,mp,Absyn.WITHIN(path = within_),oldp)
       equation
         mofiles = System.moFiles(mp) "Here .mo files in same directory as package.mo should be loaded as sub-packages" ;
-        mofiles = Util.sort(mofiles, Util.strcmpBool);
+        mofiles = List.sort(mofiles, Util.strcmpBool);
         within_1 = Absyn.joinPaths(within_, Absyn.IDENT(pack));
         p = loadSubpackageFiles(mofiles, mp, Absyn.WITHIN(within_1), oldp);
       then
@@ -298,7 +299,7 @@ algorithm
     case (pack,mp,Absyn.TOP(),oldp)
       equation
         mofiles = System.moFiles(mp) "Here .mo files in same directory as package.mo should be loaded as sub-packages" ;
-        mofiles = Util.sort(mofiles, Util.strcmpBool);
+        mofiles = List.sort(mofiles, Util.strcmpBool);
         p = loadSubpackageFiles(mofiles, mp, Absyn.WITHIN(Absyn.IDENT(pack)), oldp);
       then
         p;

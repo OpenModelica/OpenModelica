@@ -78,6 +78,7 @@ protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import InnerOuter;
 protected import Inst;
+protected import List;
 protected import Lookup;
 protected import MetaUtil;
 protected import Mod;
@@ -617,7 +618,7 @@ algorithm
         env = buildEnvFromSymboltable(st);
         (cache,srexp,rprop,SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, rexp, true, SOME(st),true,Prefix.NOPRE(),info);
         ((DAE.T_TUPLE(types),_)) = Types.getPropType(rprop);
-        idents = Util.listMap(crefexps, getIdentFromTupleCrefexp);
+        idents = List.map(crefexps, getIdentFromTupleCrefexp);
         (_,Values.TUPLE(values),SOME(st_2)) = Ceval.ceval(cache, env, srexp, true, SOME(st_1), Ceval.MSG(info));
         newst = addVarsToSymboltable(idents, values, types, st_2);
       then
@@ -2655,7 +2656,7 @@ algorithm
         path_str = Absyn.pathString(path);
         res = restComponentReplacementRules(comp_reps);
         res_1 = extractRenamedClassesAsStringList(res);
-        res_2 = Util.listUnion({path_str}, res_1);
+        res_2 = List.union({path_str}, res_1);
       then
         res_2;
     case (_)
@@ -3894,7 +3895,7 @@ algorithm
       Integer len,len1,len2;
     case (COMPONENTREPLACEMENTRULES(componentReplacementLst = comps1,the = len1),COMPONENTREPLACEMENTRULES(componentReplacementLst = comps2,the = len2))
       equation
-        comps = Util.listUnion(comps1, comps2);
+        comps = List.union(comps1, comps2);
         len = listLength(comps);
       then
         COMPONENTREPLACEMENTRULES(comps,len);
@@ -4613,7 +4614,7 @@ algorithm
       Integer len,len1,len2;
     case (COMPONENTS(componentLst = comps1,the = len1),COMPONENTS(componentLst = comps2,the = len2))
       equation
-        comps = Util.listUnion(comps1, comps2);
+        comps = List.union(comps1, comps2);
         len = listLength(comps);
       then
         COMPONENTS(comps,len);
@@ -4825,10 +4826,10 @@ algorithm
         p_class = Absyn.crefToPath(class_);
         cdef = getPathedClassInProgram(p_class, p);
         comps = getComponentsInClass(cdef);
-        comps_1 = Util.listSelect(comps, isParameterElement);
-        compelts = Util.listMap(comps_1, getComponentitemsInElement);
-        compelts_1 = Util.listFlatten(compelts);
-        names = Util.listMap(compelts_1, getComponentitemName);
+        comps_1 = List.select(comps, isParameterElement);
+        compelts = List.map(comps_1, getComponentitemsInElement);
+        compelts_1 = List.flatten(compelts);
+        names = List.map(compelts_1, getComponentitemName);
         res = Util.stringDelimitList(names, ", ");
         res_1 = stringAppendList({"{",res,"}"});
       then
@@ -6048,8 +6049,8 @@ algorithm
         cdef = getPathedClassInProgram(p_class, p);
         env = getClassEnv(p, p_class);
         exts = getExtendsElementspecInClass(cdef);
-        exts_1 = Util.listMap1(exts, makeExtendsFullyQualified, env);
-        {Absyn.EXTENDS(extpath,extmod,_)} = Util.listSelect1(exts_1, name, extendsElementspecNamed);
+        exts_1 = List.map1(exts, makeExtendsFullyQualified, env);
+        {Absyn.EXTENDS(extpath,extmod,_)} = List.select1(exts_1, extendsElementspecNamed, name);
         mod = getModificationValue(extmod, subident);
         res = Dump.unparseModificationStr(mod);
       then
@@ -6117,8 +6118,8 @@ algorithm
         cdef = getPathedClassInProgram(p_class, p);
         exts = getExtendsElementspecInClass(cdef);
         env = getClassEnv(p, p_class);
-        exts_1 = Util.listMap1(exts, makeExtendsFullyQualified, env);
-        {Absyn.EXTENDS(extpath,extmod,_)} = Util.listSelect1(exts_1, name, extendsElementspecNamed);
+        exts_1 = List.map1(exts, makeExtendsFullyQualified, env);
+        {Absyn.EXTENDS(extpath,extmod,_)} = List.select1(exts_1, extendsElementspecNamed, name);
         res = getModificationNames(extmod);
         res_1 = Util.stringDelimitList(res, ", ");
         res_2 = stringAppendList({"{",res_1,"}"});
@@ -6765,9 +6766,9 @@ algorithm
         Absyn.IDENT(name) = Absyn.crefToPath(ident);
         cdef = getPathedClassInProgram(p_class, p);
         comps = getComponentsInClass(cdef);
-        compelts = Util.listMap(comps, getComponentitemsInElement);
-        compelts_1 = Util.listFlatten(compelts);
-        {Absyn.COMPONENTITEM(component=Absyn.COMPONENT(modification=SOME(Absyn.CLASSMOD(elementArgLst=elementArgLst))))} = Util.listSelect1(compelts_1, name, componentitemNamed);
+        compelts = List.map(comps, getComponentitemsInElement);
+        compelts_1 = List.flatten(compelts);
+        {Absyn.COMPONENTITEM(component=Absyn.COMPONENT(modification=SOME(Absyn.CLASSMOD(elementArgLst=elementArgLst))))} = List.select1(compelts_1, componentitemNamed, name);
         mod = getModificationValue(elementArgLst, subident);
         res = Dump.unparseModificationStr(mod);
       then
@@ -6845,9 +6846,9 @@ algorithm
         Absyn.IDENT(name) = Absyn.crefToPath(ident);
         cdef = getPathedClassInProgram(p_class, p);
         comps = getComponentsInClass(cdef);
-        compelts = Util.listMap(comps, getComponentitemsInElement);
-        compelts_1 = Util.listFlatten(compelts);
-        {Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,SOME(Absyn.CLASSMOD(mod,_))),_,_)} = Util.listSelect1(compelts_1, name, componentitemNamed);
+        compelts = List.map(comps, getComponentitemsInElement);
+        compelts_1 = List.flatten(compelts);
+        {Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,SOME(Absyn.CLASSMOD(mod,_))),_,_)} = List.select1(compelts_1, componentitemNamed, name);
         res = getModificationNames(mod);
         res_1 = Util.stringDelimitList(res, ", ");
         res_2 = stringAppendList({"{",res_1,"}"});
@@ -6890,8 +6891,8 @@ algorithm
       equation
         name = Dump.printComponentRefStr(cr);
         names2 = getModificationNames(args);
-        names2_1 = Util.listMap1r(names2, stringAppend, ".");
-        names2_2 = Util.listMap1r(names2_1, stringAppend, name);
+        names2_1 = List.map1r(names2, stringAppend, ".");
+        names2_2 = List.map1r(names2_1, stringAppend, name);
         names = getModificationNames(rest);
         res = listAppend(names2_2, names);
       then
@@ -6901,8 +6902,8 @@ algorithm
       equation
         name = Dump.printComponentRefStr(cr);
         names2 = getModificationNames(args);
-        names2_1 = Util.listMap1r(names2, stringAppend, ".");
-        names2_2 = Util.listMap1r(names2_1, stringAppend, name);
+        names2_1 = List.map1r(names2, stringAppend, ".");
+        names2_2 = List.map1r(names2_1, stringAppend, name);
         names = getModificationNames(rest);
         res = listAppend(names2_2, names);
       then
@@ -6950,9 +6951,9 @@ algorithm
         Absyn.IDENT(name) = Absyn.crefToPath(crname);
         cdef = getPathedClassInProgram(p_class, p);
         comps = getComponentsInClass(cdef);
-        compelts = Util.listMap(comps, getComponentitemsInElement);
-        compelts_1 = Util.listFlatten(compelts);
-        {compitem} = Util.listSelect1(compelts_1, name, componentitemNamed);
+        compelts = List.map(comps, getComponentitemsInElement);
+        compelts_1 = List.flatten(compelts);
+        {compitem} = List.select1(compelts_1, componentitemNamed, name);
         exp = getVariableBindingInComponentitem(compitem);
         res = Dump.printExpStr(exp);
       then
@@ -6964,9 +6965,9 @@ algorithm
         Absyn.IDENT(name) = Absyn.crefToPath(crname);
         cdef = getPathedClassInProgram(p_class, p);
         comps = getComponentsInClass(cdef);
-        compelts = Util.listMap(comps, getComponentitemsInElement);
-        compelts_1 = Util.listFlatten(compelts);
-        {compitem} = Util.listSelect1(compelts_1, name, componentitemNamed);
+        compelts = List.map(comps, getComponentitemsInElement);
+        compelts_1 = List.flatten(compelts);
+        {compitem} = List.select1(compelts_1, componentitemNamed, name);
         failure(_ = getVariableBindingInComponentitem(compitem));
       then 
         "";
@@ -8395,7 +8396,7 @@ algorithm
   str := matchcontinue(cdef)
   local Absyn.ArrayDim ad;
     case(Absyn.DERIVED(typeSpec=Absyn.TPATH(arrayDim=SOME(ad)))) equation
-      str = "{"+& Util.stringDelimitList(Util.listMap(ad,Dump.printSubscriptStr),",")
+      str = "{"+& Util.stringDelimitList(List.map(ad,Dump.printSubscriptStr),",")
       +& "}";
     then str;
     case(_) then "{}";
@@ -9466,7 +9467,7 @@ algorithm
     case (id1::id2::ids, (IVAR(varIdent = id3,value = Values.RECORD(orderd = vals, comp = comp),type_ = t) :: _))
       equation
         true = stringEq(id1, id3);
-        ix = Util.listFindWithCompareFunc(comp, id2, stringEq, false);
+        ix = List.positionOnTrue(id2, comp, stringEq);
         v = listNth(vals, ix);
         v = getVariableValueLst(id2::ids, {IVAR(id2,v,(DAE.T_NOTYPE(),NONE()))});
       then
@@ -14327,7 +14328,7 @@ algorithm
         
         // debugging
         // print("Get annotation via full instantiation of: " +& Absyn.pathString(inModelPath) +& "\n");
-        // print("Annotation to get: (" +& Util.stringDelimitList(Util.listMap(inAnnotationMod, Dump.unparseElementArgStr), ", ") +& ")\n");
+        // print("Annotation to get: (" +& Util.stringDelimitList(List.map(inAnnotationMod, Dump.unparseElementArgStr), ", ") +& ")\n");
         // print("Annotation class: " +& inAnnotationClass +& "\n");
         
         // fully instantiate the class that contains the annotation!
@@ -14349,7 +14350,7 @@ algorithm
 
         // debugging
         // print("Get annotation via small instantiation of: " +& Absyn.pathString(inModelPath) +& "\n");
-        // print("Annotation to get: (" +& Util.stringDelimitList(Util.listMap(inAnnotationMod, Dump.unparseElementArgStr), ", ") +& ")\n");
+        // print("Annotation to get: (" +& Util.stringDelimitList(List.map(inAnnotationMod, Dump.unparseElementArgStr), ", ") +& ")\n");
         // print("Annotation class: " +& inAnnotationClass +& "\n");
 
         graphicProgram = modelicaAnnotationProgram(RTOpts.getAnnotationVersion());
@@ -15202,7 +15203,7 @@ algorithm
   str:=matchcontinue(ad)
   local Absyn.ArrayDim adim;
     case(SOME(adim)) equation
-      str = Util.stringDelimitList(Util.listMap(adim,Dump.printSubscriptStr),",");
+      str = Util.stringDelimitList(List.map(adim,Dump.printSubscriptStr),",");
     then str;
     case(_) then "";
   end matchcontinue;
@@ -15468,7 +15469,7 @@ algorithm
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(arrayDim=ad))) :: (c2 :: rest))
       equation
         lst = getComponentitemsName((c2 :: rest));
-        str = Util.stringDelimitList(Util.listMap(ad,Dump.printSubscriptStr),",");
+        str = Util.stringDelimitList(List.map(ad,Dump.printSubscriptStr),",");
       then (str :: lst);
     case ((_ :: rest))
       equation
@@ -15477,7 +15478,7 @@ algorithm
         res;
     case ({Absyn.COMPONENTITEM(component = Absyn.COMPONENT(arrayDim = ad))})
       equation
-        str = Util.stringDelimitList(Util.listMap(ad,Dump.printSubscriptStr),",");
+        str = Util.stringDelimitList(List.map(ad,Dump.printSubscriptStr),",");
       then
         {str};
     case ({_}) then {};
@@ -16892,14 +16893,14 @@ algorithm
     /* Covers the case annotate=Diagram(x=1,y=2) */
     case (Absyn.CALL(function_ = cr,functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = nargs)))
       equation
-        eltarglst = Util.listMap(nargs, namedargToModification);
+        eltarglst = List.map(nargs, namedargToModification);
         res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),cr,SOME(Absyn.CLASSMOD(eltarglst,Absyn.NOMOD())),NONE());
       then
         res;
     /* Covers the case annotate=Diagram(SOMETHING(x=1,y=2)) */
     case (Absyn.CALL(function_ = cr,functionArgs = Absyn.FUNCTIONARGS(args = {(e as Absyn.CALL(function_ = _))},argNames = nargs)))
       equation
-        eltarglst = Util.listMap(nargs, namedargToModification);
+        eltarglst = List.map(nargs, namedargToModification);
         emod = recordConstructorToModification(e);
         res = Absyn.MODIFICATION(false,Absyn.NON_EACH(),cr,SOME(Absyn.CLASSMOD((emod :: eltarglst),Absyn.NOMOD())),NONE());
       then
@@ -17059,7 +17060,7 @@ algorithm
       Absyn.TimeStamp ts;
     case (Absyn.PROGRAM(classes = classlst,within_ = within_,globalBuildTimes=ts))
       equation
-        classlst_1 = Util.listMap(classlst, removeInnerDiffFiledClass);
+        classlst_1 = List.map(classlst, removeInnerDiffFiledClass);
       then
         Absyn.PROGRAM(classlst_1,within_,ts);
   end match;
@@ -17267,7 +17268,7 @@ algorithm
     case(cdef as Absyn.PDER(functionName=_)) then cdef;
     case(Absyn.PARTS(typeVars,parts,cmt))
       equation
-        partsTransformed = Util.listMap(parts,transformFlatPart);
+        partsTransformed = List.map(parts,transformFlatPart);
       then
         Absyn.PARTS(typeVars,partsTransformed,cmt);
     /*
@@ -17280,7 +17281,7 @@ algorithm
                                      comment = cmt,
                                      parts = parts))
       equation
-        partsTransformed = Util.listMap(parts,transformFlatPart);
+        partsTransformed = List.map(parts,transformFlatPart);
       then
         Absyn.CLASS_EXTENDS(baseClassName, modifications, cmt, partsTransformed);
     case(_) equation print("Interactive.transformFlatClassDef failed\n");
@@ -17301,27 +17302,27 @@ algorithm
       list<Absyn.AlgorithmItem> algitems,algitems1;
     case(Absyn.PUBLIC(eitems))
       equation
-        eitems1 = Util.listMap(eitems,transformFlatElementItem);
+        eitems1 = List.map(eitems,transformFlatElementItem);
       then Absyn.PUBLIC(eitems1);
     case(Absyn.PROTECTED(eitems))
       equation
-        eitems1 = Util.listMap(eitems,transformFlatElementItem);
+        eitems1 = List.map(eitems,transformFlatElementItem);
       then Absyn.PROTECTED(eitems1);
     case(Absyn.EQUATIONS(eqnitems))
       equation
-        eqnitems1 = Util.listMap(eqnitems,transformFlatEquationItem);
+        eqnitems1 = List.map(eqnitems,transformFlatEquationItem);
       then Absyn.EQUATIONS(eqnitems1);
     case(Absyn.INITIALEQUATIONS(eqnitems))
       equation
-        eqnitems1 = Util.listMap(eqnitems,transformFlatEquationItem);
+        eqnitems1 = List.map(eqnitems,transformFlatEquationItem);
       then Absyn.INITIALEQUATIONS(eqnitems1);
     case(Absyn.ALGORITHMS(algitems))
       equation
-        algitems1 = Util.listMap(algitems,transformFlatAlgorithmItem);
+        algitems1 = List.map(algitems,transformFlatAlgorithmItem);
       then Absyn.ALGORITHMS(algitems1);
     case(Absyn.INITIALALGORITHMS(algitems))
       equation
-        algitems1 = Util.listMap(algitems,transformFlatAlgorithmItem);
+        algitems1 = List.map(algitems,transformFlatAlgorithmItem);
       then Absyn.INITIALALGORITHMS(algitems1);
     case(part as Absyn.EXTERNAL(_,_)) then part;
     case(_)
@@ -17392,14 +17393,14 @@ algorithm
 
     case(Absyn.EXTENDS(path,eargs,annOpt))
       equation
-        eargs1 = Util.listMap(eargs,transformFlatElementArg);
+        eargs1 = List.map(eargs,transformFlatElementArg);
       then Absyn.EXTENDS(path,eargs1,annOpt);
 
     case(eltSpec as Absyn.IMPORT(import_ = _)) then eltSpec;
 
     case(Absyn.COMPONENTS(attr,tp,comps))
       equation
-        comps1 = Util.listMap(comps,transformFlatComponentItem);
+        comps1 = List.map(comps,transformFlatComponentItem);
       then Absyn.COMPONENTS(attr,tp,comps1);
 
   end match;
@@ -17454,7 +17455,7 @@ algorithm
     local Absyn.ArrayDim adTransformed;
     case(ad)
       equation
-        adTransformed = Util.listMap(ad,transformFlatSubscript);
+        adTransformed = List.map(ad,transformFlatSubscript);
       then adTransformed;
   end match;
 end transformFlatArrayDim;
@@ -17514,12 +17515,12 @@ algorithm
       list<Absyn.ElementArg> eltArgs,eltArgs1;
     case (SOME(Absyn.CLASSMOD(eltArgs,Absyn.EQMOD(e,info))))
       equation
-        eltArgs1=Util.listMap(eltArgs,transformFlatElementArg);
+        eltArgs1=List.map(eltArgs,transformFlatElementArg);
         ((e1,_)) = Absyn.traverseExp(e,transformFlatExp,0);
       then SOME(Absyn.CLASSMOD(eltArgs1,Absyn.EQMOD(e1,info)));
     case (SOME(Absyn.CLASSMOD(eltArgs,Absyn.NOMOD())))
       equation
-        eltArgs1=Util.listMap(eltArgs,transformFlatElementArg);
+        eltArgs1=List.map(eltArgs,transformFlatElementArg);
       then SOME(Absyn.CLASSMOD(eltArgs1,Absyn.NOMOD()));
     case(NONE()) then NONE();
   end match;
@@ -17582,9 +17583,9 @@ algorithm
     case(Absyn.EQ_IF(e1,thenpart,elseifpart,elsepart))
       equation
         ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
-        thenpart1 = Util.listMap(thenpart,transformFlatEquationItem);
-        elsepart1 = Util.listMap(elsepart,transformFlatEquationItem);
-        elseifpart1 = Util.listMap(elseifpart,transformFlatElseIfPart);
+        thenpart1 = List.map(thenpart,transformFlatEquationItem);
+        elsepart1 = List.map(elsepart,transformFlatEquationItem);
+        elseifpart1 = List.map(elseifpart,transformFlatElseIfPart);
       then
         Absyn.EQ_IF(e11,thenpart1,elseifpart1,elsepart1);
 
@@ -17605,15 +17606,15 @@ algorithm
     case(Absyn.EQ_FOR({Absyn.ITERATOR(id,NONE(),SOME(e1))},forEqns))
       equation
         ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
-        forEqns1 = Util.listMap(forEqns,transformFlatEquationItem);
+        forEqns1 = List.map(forEqns,transformFlatEquationItem);
       then
         Absyn.EQ_FOR({Absyn.ITERATOR(id,NONE(),SOME(e11))},forEqns1);
 
     case(Absyn.EQ_WHEN_E(e1,whenEqns,elseWhenEqns))
       equation
         ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
-        elseWhenEqns1 = Util.listMap(elseWhenEqns,transformFlatElseIfPart);
-        whenEqns1 = Util.listMap(whenEqns,transformFlatEquationItem);
+        elseWhenEqns1 = List.map(elseWhenEqns,transformFlatElseIfPart);
+        whenEqns1 = List.map(whenEqns,transformFlatEquationItem);
       then
         Absyn.EQ_WHEN_E(e11,whenEqns1,elseWhenEqns1);
 
@@ -17638,7 +17639,7 @@ algorithm
     case((e1,eqnitems))
       equation
         ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
-        eqnitems1 = Util.listMap(eqnitems,transformFlatEquationItem);
+        eqnitems1 = List.map(eqnitems,transformFlatEquationItem);
       then
         ((e11,eqnitems1));
   end match;
@@ -17656,8 +17657,8 @@ algorithm
       list<Absyn.NamedArg> namedArgs,namedArgs1;
     case( Absyn.FUNCTIONARGS(expl,namedArgs))
       equation
-        (expl1,_) = Util.listFoldMap(expl, transformFlatExpTrav, 0);
-        namedArgs1 = Util.listMap(namedArgs,transformFlatNamedArg);
+        (expl1,_) = List.mapFoldTuple(expl, transformFlatExpTrav, 0);
+        namedArgs1 = List.map(namedArgs,transformFlatNamedArg);
       then
         Absyn.FUNCTIONARGS(expl1,namedArgs1);
     case(fargs as Absyn.FOR_ITER_FARG(exp = _))
@@ -17757,29 +17758,29 @@ algorithm
         Absyn.ALG_ASSIGN(e11,e21);
     case (Absyn.ALG_IF(e1,thenPart,elseIfPart,elsePart))
       equation
-        thenPart1 = Util.listMap(thenPart,transformFlatAlgorithmItem);
-        elseIfPart1 =  Util.listMap(elseIfPart,transformFlatElseIfAlgorithm);
-        elsePart1 = Util.listMap(elsePart,transformFlatAlgorithmItem);
+        thenPart1 = List.map(thenPart,transformFlatAlgorithmItem);
+        elseIfPart1 =  List.map(elseIfPart,transformFlatElseIfAlgorithm);
+        elsePart1 = List.map(elsePart,transformFlatAlgorithmItem);
         ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
     then
       Absyn.ALG_IF(e11,thenPart1,elseIfPart1,elsePart1);
     case (Absyn.ALG_FOR({Absyn.ITERATOR(id,NONE(),SOME(e1))},body))
       equation
         ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
-        body1 = Util.listMap(body,transformFlatAlgorithmItem);
+        body1 = List.map(body,transformFlatAlgorithmItem);
       then
         Absyn.ALG_FOR({Absyn.ITERATOR(id,NONE(),SOME(e11))},body1);
     case(Absyn.ALG_WHILE(e1,body))
       equation
         ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
-        body1 = Util.listMap(body,transformFlatAlgorithmItem);
+        body1 = List.map(body,transformFlatAlgorithmItem);
     then
       Absyn.ALG_WHILE(e11,body1);
     case (Absyn.ALG_WHEN_A(e1,body,whenBranch))
       equation
        ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
-        body1 = Util.listMap(body,transformFlatAlgorithmItem);
-        whenBranch1 =  Util.listMap(whenBranch,transformFlatElseIfAlgorithm);
+        body1 = List.map(body,transformFlatAlgorithmItem);
+        whenBranch1 =  List.map(whenBranch,transformFlatElseIfAlgorithm);
     then
       Absyn.ALG_WHEN_A(e11,body1,whenBranch1);
     case (Absyn.ALG_NORETCALL(cr,fargs))
@@ -17805,7 +17806,7 @@ algorithm
     case((e1,algitems))
       equation
         ((e11,_)) = Absyn.traverseExp(e1,transformFlatExp,0);
-        algitems1 = Util.listMap(algitems,transformFlatAlgorithmItem);
+        algitems1 = List.map(algitems,transformFlatAlgorithmItem);
       then ((e11,algitems1));
   end match;
 end transformFlatElseIfAlgorithm;
@@ -17826,7 +17827,7 @@ algorithm
     case (Absyn.PROGRAM(classes = (c1 :: rest), within_ = w, globalBuildTimes=ts))
       equation
         c1_fixed = expandUnionTypesInClass(c1);
-        rest_fixed = Util.listMap(rest, expandUnionTypesInClass);
+        rest_fixed = List.map(rest, expandUnionTypesInClass);
       then Absyn.PROGRAM(c1_fixed::rest_fixed, w, ts);
     case (prog) then prog;
   end matchcontinue;
@@ -18167,7 +18168,7 @@ algorithm
         Print.clearBuf();
         Print.printBuf("\"(\n");
         toPrint = getDefinitions2(classes,addFunctions);
-        Util.listMap0(toPrint, printWithNewline);
+        List.map_0(toPrint, printWithNewline);
         Print.printBuf("\n)\"");
         res = Print.getString();
         Print.clearBuf();
@@ -18256,7 +18257,7 @@ algorithm
       then Util.stringDelimitList(strs, " ");
     // Do enumerations really work properly in OMC?
     //case Absyn.CLASS(name = ident, body = Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(el))) equation
-    //  enumList = Util.listMap(el, getEnumerationLiterals);
+    //  enumList = List.map(el, getEnumerationLiterals);
     //then "enumeration " +& ident +& "(" +& Util.stringDelimitList(enumList, ",") +& ")";
     case (_,_) then "";
   end matchcontinue;
@@ -18307,7 +18308,7 @@ algorithm s := matchcontinue(tp)
   case(Absyn.TCOMPLEX(path = p, typeSpecs = {})) equation
   then getDefinitionPathString(p);
   case(Absyn.TCOMPLEX(path = p, typeSpecs = tspecs)) equation
-    tspecsStr = Util.listMap(tspecs, getDefinitionTypeSpecPathString);
+    tspecsStr = List.map(tspecs, getDefinitionTypeSpecPathString);
   then getDefinitionPathString(p) +& "<" +& Util.stringDelimitList(tspecsStr,",") +& ">";
   case(Absyn.TPATH(path = p)) then getDefinitionPathString(p);
 end matchcontinue;
@@ -18656,7 +18657,7 @@ algorithm
         typename_str = getElementTypeName(elementSpec);
         varname_str = getElementName(elementSpec);
         tmp = Util.stringSplitAtChar(varname_str, ",");
-        varname_str = Util.listFirst(tmp);
+        varname_str = List.first(tmp);
         str = getDescIfVis(typename_str, inElementItem,prog);
       then
         str;
@@ -18681,21 +18682,21 @@ algorithm
     case ({}, p)
       equation
         s1 = "";
-        res_list = Util.listCreate(s1);
+        res_list = List.create(s1);
       then
         {};
     case ((current :: {}),p) /* deal with the last element */
       equation
         s1 = getNameFromElementIfVisType(current,p);
-        res_list = Util.listCreate(s1);//, res_list);
+        res_list = List.create(s1);//, res_list);
       then
         res_list;
     case ((current :: rest),p)
       equation
         s1 = getNameFromElementIfVisType(current,p);
-        res_list = Util.listCreate(s1);
+        res_list = List.create(s1);
         list2 = constructVisTypesList(rest,p);
-        res_list = Util.listUnion(list2, res_list);
+        res_list = List.union(list2, res_list);
       then
         res_list;
   end matchcontinue;
@@ -18730,8 +18731,8 @@ algorithm
         protected_elementitem_list = getProtectedList(parts);
         public_list = constructVisTypesList(public_elementitem_list, prog);
         protected_list = constructVisTypesList(protected_elementitem_list, prog);
-        all_list = Util.listUnion(listAppend(public_list, protected_list), {});
-      then (Util.listMap(all_list, getVisElementNameFromStr),Util.stringDelimitList(all_list,"\n"));
+        all_list = List.union(listAppend(public_list, protected_list), {});
+      then (List.map(all_list, getVisElementNameFromStr),Util.stringDelimitList(all_list,"\n"));
 
   end match;
 end getElementsOfVisType;
@@ -18776,9 +18777,9 @@ algorithm
         Absyn.IDENT(name) = Absyn.crefToPath(cr);
         cdef = getPathedClassInProgram(p_class, p);
         comps = getComponentsInClass(cdef);
-        compelts = Util.listMap(comps, getComponentitemsInElement);
-        compelts_1 = Util.listFlatten(compelts);
-        {compitem} = Util.listSelect1(compelts_1, name, componentitemNamed);
+        compelts = List.map(comps, getComponentitemsInElement);
+        compelts_1 = List.flatten(compelts);
+        {compitem} = List.select1(compelts_1, componentitemNamed, name);
         exp = getVariableBindingInComponentitem(compitem);
         res = Dump.printExpStr(exp);
       then
@@ -18789,9 +18790,9 @@ algorithm
         Absyn.IDENT(name) = Absyn.crefToPath(cr);
         cdef = getPathedClassInProgram(p_class, p);
         comps = getComponentsInClass(cdef);
-        compelts = Util.listMap(comps, getComponentitemsInElement);
-        compelts_1 = Util.listFlatten(compelts);
-        {compitem} = Util.listSelect1(compelts_1, name, componentitemNamed);
+        compelts = List.map(comps, getComponentitemsInElement);
+        compelts_1 = List.flatten(compelts);
+        {compitem} = List.select1(compelts_1, componentitemNamed, name);
         failure(_ = getVariableBindingInComponentitem(compitem));
       then "";
     case (_,_,_) then "Error";
@@ -18876,9 +18877,9 @@ algorithm
         cdef = getPathedClassInProgram(pp, p);
         strlst = getClassnamesInClassList(pp, p, cdef);
         parent_string = Absyn.pathString(pp);
-        result_path_lst = Util.listMap1(strlst, joinPaths, pp);
+        result_path_lst = List.map1(strlst, joinPaths, pp);
         indent = indent +& "  ";
-        result = stringAppendList(Util.listMap2(result_path_lst,
+        result = stringAppendList(List.map2(result_path_lst,
           getClassNamesRecursive, p, indent));
         res = stringAppendList({indent, parent_string,"\n",result});
       then
@@ -18964,8 +18965,8 @@ protected
   list<list<Absyn.Class>> classesList;
 algorithm
   Absyn.PROGRAM(classes = classes) := prog;
-  classesList := Util.listMap(classes, getAllClassesInClass);
-  funcs := Util.listFold(classes::classesList, getFunctionsInClasses, {});
+  classesList := List.map(classes, getAllClassesInClass);
+  funcs := List.fold(classes::classesList, getFunctionsInClasses, {});
 end getFunctionsInProgram;
 
 protected function getFunctionsInClasses
@@ -19039,7 +19040,7 @@ protected
   list<CompiledCFunction> compiledFunctions;
 algorithm
   compiledFunctions := getCompiledFunctions(inSymTab);
-  compiledFunctionsStr := "Functions:\n\t" +& Util.stringDelimitList(Util.listMap(compiledFunctions, dumpCompiledFunction), "\n\t");
+  compiledFunctionsStr := "Functions:\n\t" +& Util.stringDelimitList(List.map(compiledFunctions, dumpCompiledFunction), "\n\t");
 end dumpCompiledFunctions;
 
 public function dumpCompiledFunction

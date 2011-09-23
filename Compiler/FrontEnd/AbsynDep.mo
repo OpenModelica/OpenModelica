@@ -67,6 +67,7 @@ encapsulated package AbsynDep
 
 public import Absyn;
 
+protected import List;
 protected import Util;
 protected import ModUtil;
 
@@ -80,9 +81,9 @@ algorithm
       usedLst = avlTreeToList(used);
       usedByLst = avlTreeToList(usedBy);
       print("Used\n=====\n");
-      print(Util.stringDelimitList(Util.listMap(usedLst, printKeyValueTupleStr),"\n"));
+      print(Util.stringDelimitList(List.map(usedLst, printKeyValueTupleStr),"\n"));
       print("\n\nUsedBy=====\n");
-      print(Util.stringDelimitList(Util.listMap(usedByLst, printKeyValueTupleStr),"\n"));
+      print(Util.stringDelimitList(List.map(usedByLst, printKeyValueTupleStr),"\n"));
     then ();
    end matchcontinue;
 end dumpDepends;
@@ -95,7 +96,7 @@ algorithm
     list<tuple<AvlKey,AvlValue>> usedLst;
     case(used) equation
       usedLst = avlTreeToList(used);
-      print(Util.stringDelimitList(Util.listMap(usedLst, printKeyValueTupleStr),"\n"));
+      print(Util.stringDelimitList(List.map(usedLst, printKeyValueTupleStr),"\n"));
     then ();
    end matchcontinue;
 end dumpAvlTreeKeys;
@@ -285,7 +286,7 @@ algorithm
     local AvlValue v;
     case(DEPENDS(_,usedBy),cl) equation
       v = avlTreeGetSubs(usedBy,cl);
-      //print("included: " +& Util.stringDelimitList(Util.listMap(v,Absyn.pathString),", ") +& "\n");
+      //print("included: " +& Util.stringDelimitList(List.map(v,Absyn.pathString),", ") +& "\n");
       usedBy= avlAddUses(avlTreeNew(),v);
     then usedBy;
   end matchcontinue;
@@ -313,7 +314,7 @@ public function valueStr "prints a Value to a string"
 input AvlValue v;
 output String str;
 algorithm
-  str := "{" +& Util.stringDelimitList(Util.listMap(v,Absyn.pathString),",") +& "}";
+  str := "{" +& Util.stringDelimitList(List.map(v,Absyn.pathString),",") +& "}";
 end valueStr;
 
 /* Generic Code below */
@@ -392,7 +393,7 @@ algorithm
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left,right = right),key,value)
       equation
         true = ModUtil.pathEqual(rkey,key);
-        value = Util.listUnionOnTrue(value,rval,ModUtil.pathEqual);
+        value = List.unionOnTrue(value,rval,ModUtil.pathEqual);
         bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,value)),h,left,right));
       then
         bt;

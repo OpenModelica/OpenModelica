@@ -65,10 +65,11 @@ protected import Debug;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
+protected import List;
 protected import RTOpts;
+protected import SCodeDump;
 protected import Types;
 protected import Util;
-protected import SCodeDump;
 
 public function algorithmEmpty "Returns true if algorithm is empty, i.e. no statements"
   input Algorithm alg;
@@ -339,9 +340,9 @@ algorithm
       
     case (lhs,lprop,rhs,rprop,initial_,source)
       equation
-        bvals = Util.listMap(lprop, Types.propAnyConst);
-        DAE.C_CONST() = Util.listReduce(bvals, Types.constOr);
-        sl = Util.listMap(lhs, ExpressionDump.printExpStr);
+        bvals = List.map(lprop, Types.propAnyConst);
+        DAE.C_CONST() = List.reduce(bvals, Types.constOr);
+        sl = List.map(lhs, ExpressionDump.printExpStr);
         s = Util.stringDelimitList(sl, ", ");
         lhs_str = stringAppendList({"(",s,")"});
         rhs_str = ExpressionDump.printExpStr(rhs);
@@ -350,9 +351,9 @@ algorithm
         fail();
     case (lhs,lprop,rhs,rprop,SCode.NON_INITIAL(),source)
       equation
-        bvals = Util.listMap(lprop, Types.propAnyConst);
-        DAE.C_PARAM() = Util.listReduce(bvals, Types.constOr);
-        sl = Util.listMap(lhs, ExpressionDump.printExpStr);
+        bvals = List.map(lprop, Types.propAnyConst);
+        DAE.C_PARAM() = List.reduce(bvals, Types.constOr);
+        sl = List.map(lhs, ExpressionDump.printExpStr);
         s = Util.stringDelimitList(sl, ", ");
         lhs_str = stringAppendList({"(",s,")"});
         rhs_str = ExpressionDump.printExpStr(rhs);
@@ -362,9 +363,9 @@ algorithm
     // a normal prop in rhs that contains a T_TUPLE!
     case (expl,lhprops,rhs,DAE.PROP(type_ = (DAE.T_TUPLE(tupleType = tpl),_)),_,source)
       equation
-        bvals = Util.listMap(lhprops, Types.propAnyConst);
-        DAE.C_VAR() = Util.listReduce(bvals, Types.constOr);
-        lhrtypes = Util.listMap(lhprops, Types.getPropType);
+        bvals = List.map(lhprops, Types.propAnyConst);
+        DAE.C_VAR() = List.reduce(bvals, Types.constOr);
+        lhrtypes = List.map(lhprops, Types.getPropType);
         Types.matchTypeTupleCall(rhs, tpl, lhrtypes);
          /* Don\'t use new rhs\', since type conversions of 
             several output args are not clearly defined. */ 
@@ -373,9 +374,9 @@ algorithm
     // a tuple in rhs        
     case (expl,lhprops,rhs,DAE.PROP_TUPLE(type_ = (DAE.T_TUPLE(tupleType = tpl),_),tupleConst = DAE.TUPLE_CONST(tupleConstLst = clist)),_,source)
       equation
-        bvals = Util.listMap(lhprops, Types.propAnyConst);
-        DAE.C_VAR() = Util.listReduce(bvals, Types.constOr);
-        lhrtypes = Util.listMap(lhprops, Types.getPropType);
+        bvals = List.map(lhprops, Types.propAnyConst);
+        DAE.C_VAR() = List.reduce(bvals, Types.constOr);
+        lhrtypes = List.map(lhprops, Types.getPropType);
         Types.matchTypeTupleCall(rhs, tpl, lhrtypes);
          /* Don\'t use new rhs\', since type conversions of several output args are not clearly defined. */
       then
@@ -383,11 +384,11 @@ algorithm
     case (lhs,lprop,rhs,rprop,initial_,source)
       equation
         true = RTOpts.debugFlag("failtrace");
-        sl = Util.listMap(lhs, ExpressionDump.printExpStr);
+        sl = List.map(lhs, ExpressionDump.printExpStr);
         s = Util.stringDelimitList(sl, ", ");
         lhs_str = stringAppendList({"(",s,")"});
         rhs_str = ExpressionDump.printExpStr(rhs);
-        str1 = Util.stringDelimitList(Util.listMap(lprop, Types.printPropStr), ", ");
+        str1 = Util.stringDelimitList(List.map(lprop, Types.printPropStr), ", ");
         str2 = Types.printPropStr(rprop);
         strInitial = SCodeDump.printInitialStr(initial_);
         Debug.traceln("- Algorithm.makeTupleAssignment failed on: \n\t" +& 
@@ -715,7 +716,7 @@ public function getCrefFromAlg "Returns all crefs from an algorithm"
 input Algorithm alg;
 output list<DAE.ComponentRef> crs;
 algorithm
-  crs := Util.listListUnionOnTrue(Util.listMap(getAllExps(alg),Expression.extractCrefsFromExp),ComponentReference.crefEqual);
+  crs := List.unionOnTrueList(List.map(getAllExps(alg),Expression.extractCrefsFromExp),ComponentReference.crefEqual);
 end getCrefFromAlg;
 
 

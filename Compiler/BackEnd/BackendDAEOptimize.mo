@@ -68,6 +68,7 @@ protected import ExpressionSolve;
 protected import ExpressionSimplify;
 protected import Error;
 protected import Inline;
+protected import List;
 protected import RTOpts;
 protected import System;
 protected import Util;
@@ -108,12 +109,12 @@ protected function inlineArrayEqn1
 "function: inlineArrayEqn1
 autor: Frenkel TUD 2011-5"
   input BackendDAE.EqSystem syst;
-  input tuple<BackendDAE.Shared,Boolean> sharedOptimized;
   input DAE.FunctionTree inFunctionTree;
+  input tuple<BackendDAE.Shared,Boolean> sharedOptimized;
   output BackendDAE.EqSystem osyst;
   output tuple<BackendDAE.Shared,Boolean> osharedOptimized;
 algorithm
-  (osyst,osharedOptimized) := match (syst,sharedOptimized,inFunctionTree)
+  (osyst,osharedOptimized) := match (syst,inFunctionTree,sharedOptimized)
     local
       DAE.FunctionTree funcs;
       BackendDAE.IncidenceMatrix m,mT,m1,mT1;
@@ -131,7 +132,7 @@ algorithm
       Boolean b1,b2,b;
       BackendDAE.Shared shared;
       
-    case (syst,(shared as BackendDAE.SHARED(arrayEqs = arreqns),b1),funcs)
+    case (syst,funcs,(shared as BackendDAE.SHARED(arrayEqs = arreqns),b1))
       equation
         (syst,_,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
         // get scalar array eqs list
@@ -254,8 +255,8 @@ protected
 algorithm
   ea1 := Expression.flattenArrayExpToList(e1);
   ea2 := Expression.flattenArrayExpToList(e2);
-  ealst := Util.listThreadTuple(ea1,ea2);
-  eqns := Util.listMap1(ealst,BackendEquation.generateEQUATION,source);
+  ealst := List.threadTuple(ea1,ea2);
+  eqns := List.map1(ealst,BackendEquation.generateEQUATION,source);
 end generateScalarArrayEqns;
 
 protected function replaceScalarArrayEqns
@@ -338,12 +339,12 @@ protected function removeSimpleEquationsWork
   This function moves simple equations on the form a=b and a=const and a=f(not time)
   in BackendDAE.BackendDAE to get speed up"
   input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
   input DAE.FunctionTree funcs;
+  input BackendDAE.Shared shared;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 algorithm
-  (osyst,(oshared,_)) := removeSimpleEquations1(syst,(shared,false),funcs);
+  (osyst,(oshared,_)) := removeSimpleEquations1(syst,funcs,(shared,false));
 end removeSimpleEquationsWork;
 
 protected function removeSimpleEquations1
@@ -352,13 +353,13 @@ protected function removeSimpleEquations1
   This function moves simple equations on the form a=b and a=const and a=f(not time)
   in BackendDAE.BackendDAE to get speed up"
   input BackendDAE.EqSystem syst;
-  input tuple<BackendDAE.Shared,Boolean> sharedOptimized;
   input DAE.FunctionTree inFunctionTree;  
+  input tuple<BackendDAE.Shared,Boolean> sharedOptimized;
   output BackendDAE.EqSystem osyst;
   output tuple<BackendDAE.Shared,Boolean> osharedOptimized;
 algorithm
   (osyst,osharedOptimized):=
-  match (syst,sharedOptimized,inFunctionTree)
+  match (syst,inFunctionTree,sharedOptimized)
     local
       BackendDAE.BackendDAE dlow,dlow1,dlow2;
       DAE.FunctionTree funcs;
@@ -371,7 +372,7 @@ algorithm
       list<Integer> meqns;
       Boolean b,b1,b2;
       BackendDAE.Shared shared;
-    case (syst,(shared,b1),funcs)
+    case (syst,funcs,(shared,b1))
       equation
         (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared);
         repl = BackendVarTransform.emptyReplacements();
@@ -695,7 +696,7 @@ algorithm
       equation
         // equations of var
         vareqns = mT[i];
-        vareqns1 = Util.listRemoveOnTrue(pos,intEq,vareqns);
+        vareqns1 = List.removeOnTrue(pos,intEq,vareqns);
         // remove var from vars
         (ordvars1,v) = BackendVariable.removeVar(i,ordvars);
         knvars1 = BackendVariable.addVar(v,knvars);
@@ -709,7 +710,7 @@ algorithm
       equation
         // equations of var
         vareqns = mT[i];
-        vareqns1 = Util.listRemoveOnTrue(pos,intEq,vareqns);
+        vareqns1 = List.removeOnTrue(pos,intEq,vareqns);
         // update Replacements
         repl_1 = BackendVarTransform.addReplacement(repl, cr, exp);
         // replace var=exp in vareqns
@@ -725,8 +726,8 @@ algorithm
       equation
         // equations of var
         vareqns = mT[i];
-        vareqns1 = Util.listRemoveOnTrue(pos,intEq,vareqns);
-        vareqns2 = Util.listRemoveOnTrue(0,intGt,vareqns1);
+        vareqns1 = List.removeOnTrue(pos,intEq,vareqns);
+        vareqns2 = List.removeOnTrue(0,intGt,vareqns1);
         // replace der(a)=b in vareqns
         (eqns1,arreqns1,algorithms1,einfo1) = replacementsInEqns2(vareqns2,exp,cr,eqns,arreqns,algorithms,einfo);
         // update IncidenceMatrix
@@ -1681,7 +1682,7 @@ algorithm
     case(inM,func,pos,len,false,inTypeA)
       equation
         ((eqns,m,extArg)) = func((inM[pos],pos,inM,inTypeA));
-        eqns1 = Util.listRemoveOnTrue(pos,intLt,eqns);
+        eqns1 = List.removeOnTrue(pos,intLt,eqns);
         (m1,extArg1) = traverseIncidenceMatrixList(eqns1,m,func,arrayLength(m),pos,extArg);
         (m2,extArg2) = traverseIncidenceMatrix1(m1,func,pos+1,len,extArg1);
       then (m2,extArg2);
@@ -1721,8 +1722,8 @@ algorithm
       // do not more than necesary
       true = intLt(pos,maxpos);
       ((eqns,m,extArg)) = func((inM[pos],pos,inM,inTypeA));
-      eqns1 = Util.listRemoveOnTrue(maxpos,intLt,eqns);
-      alleqns = Util.listListUnionOnTrue({rest, eqns1},intEq);
+      eqns1 = List.removeOnTrue(maxpos,intLt,eqns);
+      alleqns = List.unionOnTrueList({rest, eqns1},intEq);
       (m1,extArg1) = traverseIncidenceMatrixList(alleqns,m,func,len,maxpos,extArg);
     then (m1,extArg1);
 
@@ -1955,12 +1956,12 @@ protected function removeFinalParametersWork
 "function: removeFinalParameters
   autor Frenkel TUD"
   input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
   input DAE.FunctionTree funcs;
+  input BackendDAE.Shared shared;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 algorithm
-  (osyst,oshared) := match (syst,shared,funcs)
+  (osyst,oshared) := match (syst,funcs,shared)
     local
       DAE.FunctionTree funcs;
       Option<BackendDAE.IncidenceMatrix> m,mT;
@@ -1977,7 +1978,7 @@ algorithm
       list<DAE.Algorithm> algs,algs_1;
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
-    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp),funcs)
+    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),funcs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp))
       equation
         repl = BackendVarTransform.emptyReplacements();
         lsteqns = BackendDAEUtil.equationList(eqns);
@@ -2278,8 +2279,8 @@ protected function removeEqualFunctionCallsWork
   This function detect equal function call on the form a=f(b) and c=f(b) 
   in BackendDAE.BackendDAE to get speed up"
   input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
   input DAE.FunctionTree funcs;
+  input BackendDAE.Shared shared;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 algorithm
@@ -2405,7 +2406,7 @@ algorithm
         // BackendDump.debugStrExpStrExpStr(("Found ",ecr," = ",exp,"\n"));
         expvars = BackendDAEUtil.incidenceRowExp(exp,vars, {});
         // print("expvars "); BackendDump.debuglst((expvars,intString)); print("\n");
-        (expvars1::expvarseqns) = Util.listMap1(expvars,varEqns,(pos,mT));
+        (expvars1::expvarseqns) = List.map1(expvars,varEqns,(pos,mT));
         // print("expvars1 "); BackendDump.debuglst((expvars1,intString)); print("\n");
         controleqns = getControlEqns(expvars1,expvarseqns);
         // print("controleqns "); BackendDump.debuglst((controleqns,intString)); print("\n");
@@ -2477,8 +2478,8 @@ algorithm
   pos := Util.tuple21(inTpl);
   mT := Util.tuple22(inTpl);
   vareqns := mT[intAbs(v)];
-  vareqns1 := Util.listMap(vareqns, intAbs);
-  outVarEqns := Util.listRemoveOnTrue(intAbs(pos),intEq,vareqns1);
+  vareqns1 := List.map(vareqns, intAbs);
+  outVarEqns := List.removeOnTrue(intAbs(pos),intEq,vareqns1);
 end varEqns;
 
 protected function getControlEqns
@@ -2495,7 +2496,7 @@ algorithm
     case (a,{}) then a;
     case (a,b::rest)
       equation 
-       c = Util.listIntersectionOnTrue(a,b,intEq);
+       c = List.intersectionOnTrue(a,b,intEq);
        d = getControlEqns(c,rest);
       then d;  
   end matchcontinue;  
@@ -2543,7 +2544,7 @@ algorithm
         //print("i="); print(intString(i)); print("\n");
         true = intGt(i,0);
         eqns1 =  BackendEquation.equationSetnth(eqns,pos_1,eqn1);
-        changed = Util.listConsOnTrue(not listMember(pos,changed),pos,changed);
+        changed = List.consOnTrue(not listMember(pos,changed),pos,changed);
         (eqns2,ae2,al2,einfo,changed) = removeEqualFunctionCall(rest,inExp,inECr,eqns1,ae1,al1,BackendDAE.EVENT_INFO(wclst1,zcl),changed);
       then (eqns2,ae2,al2,einfo,changed);
     case (pos::rest,inExp,inECr,eqns,inArreqns,inAlgs,eifo,changed)
@@ -2619,7 +2620,7 @@ algorithm
       equation
         knvars1 = BackendDAEUtil.emptyVars();
         ((knvars,knvars1)) = BackendVariable.traverseBackendDAEVars(knvars,copyNonParamVariables,(knvars,knvars1));
-        ((_,knvars1)) = Util.listFold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystem,checkUnusedVariables,(knvars,knvars1));
+        ((_,knvars1)) = List.fold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystem,checkUnusedVariables,(knvars,knvars1));
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsVars(knvars,checkUnusedParameter,(knvars,knvars1));
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsVars(avars,checkUnusedParameter,(knvars,knvars1));
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsEqns(remeqns,checkUnusedParameter,(knvars,knvars1));
@@ -2695,7 +2696,7 @@ algorithm
     // Special Case for Records
     case ((e as DAE.CREF(componentRef = cr,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,vars1)))
       equation
-        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr);
+        expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         ((_,(vars,vars1))) = Expression.traverseExpList(expl,checkUnusedParameterExp,(vars,vars1));
       then
         ((e, (vars,vars1)));
@@ -2779,7 +2780,7 @@ algorithm
     case (dae as BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars as BackendDAE.ALIASVARS(aliasVars=avars),inieqns,remeqns,arreqns,algorithms,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc,btp)),funcs)
       equation
         knvars1 = BackendDAEUtil.emptyVars();
-        ((_,knvars1)) = Util.listFold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystem,checkUnusedVariables,(knvars,knvars1));
+        ((_,knvars1)) = List.fold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystem,checkUnusedVariables,(knvars,knvars1));
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsVars(knvars,checkUnusedVariables,(knvars,knvars1));
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsVars(avars,checkUnusedVariables,(knvars,knvars1));
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsEqns(remeqns,checkUnusedVariables,(knvars,knvars1));
@@ -2833,7 +2834,7 @@ algorithm
     // Special Case for Records
     case ((e as DAE.CREF(componentRef = cr,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,vars1)))
       equation
-        expl = Util.listMap1(varLst,Expression.generateCrefsExpFromExpVar,cr);
+        expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         ((_,(vars,vars1))) = Expression.traverseExpList(expl,checkUnusedVariablesExp,(vars,vars1));
       then
         ((e, (vars,vars1)));
@@ -2888,13 +2889,13 @@ end constantLinearSystem;
 protected function constantLinearSystem0
 "function constantLinearSystem"
   input BackendDAE.EqSystem syst;
-  input tuple<BackendDAE.Shared,Boolean> sharedChanged;
   input DAE.FunctionTree inFunctionTree;
+  input tuple<BackendDAE.Shared,Boolean> sharedChanged;
   output BackendDAE.EqSystem osyst;
   output tuple<BackendDAE.Shared,Boolean> osharedChanged;
 algorithm
   (osyst,osharedChanged):= 
-    matchcontinue(syst,sharedChanged,inFunctionTree)
+    matchcontinue(syst,inFunctionTree,sharedChanged)
     local
       BackendDAE.BackendDAE dae,dae1;
       DAE.FunctionTree funcs;
@@ -2917,14 +2918,14 @@ algorithm
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
       
-    case (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)),(shared,b1),inFunctionTree)
+    case (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)),inFunctionTree,(shared,b1))
       equation
         (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching),BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp),b2,eqnlst,movedVars) = constantLinearSystem1(syst,shared,inFunctionTree,comps,{},BackendDAE.emptyBintree);
         b = b1 or b2;
         // move changed variables
         (vars1,knvars1) = BackendVariable.moveVariables(vars,knvars,movedVars);
         // remove changed eqns
-        eqnlst = Util.listMap1(eqnlst,intSub,1);
+        eqnlst = List.map1(eqnlst,intSub,1);
         eqns1 = BackendEquation.equationDelete(eqns,eqnlst);
         syst = BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),matching);
         shared = BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,einfo,eoc,btp);
@@ -2981,7 +2982,7 @@ algorithm
     case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,funcs,(comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=SOME(jac),jacType=BackendDAE.JAC_CONSTANT()))::comps,inEqnlst,inMovedVars)
       equation
         eqn_lst = BackendEquation.getEqns(eindex,eqns);        
-        var_lst = Util.listMap1r(vindx, BackendVariable.getVarAt, vars);
+        var_lst = List.map1r(vindx, BackendVariable.getVarAt, vars);
         var_lst = listReverse(var_lst);
         (syst,shared,movedVars) = solveLinearSystem(syst,shared,eqn_lst,var_lst,jac,inMovedVars);
         remeqnlst = listAppend(eindex,inEqnlst);
@@ -3038,12 +3039,12 @@ algorithm
         eqns1 = BackendDAEUtil.listEquation(eqn_lst);
         ((_,_,_,beqs,sources)) = BackendEquation.traverseBackendDAEEqns(eqns1,BackendEquation.equationToExp,(vars,arreqns,{},{},{}));
         //beqs = listReverse(beqs);
-        rhsVals = ValuesUtil.valueReals(Util.listMap(beqs,Ceval.cevalSimple));
+        rhsVals = ValuesUtil.valueReals(List.map(beqs,Ceval.cevalSimple));
         jacVals = evaluateConstantJacobian(listLength(var_lst),jac);
         (solvedVals,linInfo) = System.dgesv(jacVals,rhsVals);
-        names = Util.listMap(var_lst,BackendVariable.varCref);  
+        names = List.map(var_lst,BackendVariable.varCref);  
         checkLinearSystem(linInfo,names,jacVals,rhsVals);
-        sources = Util.listMap1(sources, DAEUtil.addSymbolicTransformation, DAE.LINEAR_SOLVED(names,jacVals,rhsVals,solvedVals));           
+        sources = List.map1(sources, DAEUtil.addSymbolicTransformation, DAE.LINEAR_SOLVED(names,jacVals,rhsVals,solvedVals));           
         vars1 = changeconstantLinearSystemVars(var_lst,solvedVals,sources,vars);
         movedVars = BackendDAEUtil.treeAddList(inMovedVars, names);
       then
@@ -3089,13 +3090,13 @@ protected
   list<array<Real>> tmp2;
   list<Real> rs;
 algorithm
-  rs := Util.listFill(0.0,size);
+  rs := List.fill(0.0,size);
   tmp := listArray(rs);
-  tmp2 := Util.listMap(Util.listFill(tmp,size),arrayCopy);
+  tmp2 := List.map(List.fill(tmp,size),arrayCopy);
   valarr := listArray(tmp2);
-  Util.listMap01(jac,evaluateConstantJacobian2,valarr);
+  List.map1_0(jac,evaluateConstantJacobian2,valarr);
   tmp2 := arrayList(valarr);
-  vals := Util.listMap(tmp2,arrayList);
+  vals := List.map(tmp2,arrayList);
 end evaluateConstantJacobian;
 
 protected function evaluateConstantJacobian2
@@ -3130,18 +3131,18 @@ algorithm
         true = info > 0;
         varname = ComponentReference.printComponentRefStr(listGet(vars,info));
         infoStr = intString(info);
-        varnames = Util.stringDelimitList(Util.listMap(vars,ComponentReference.printComponentRefStr)," ;\n  ");
-        rhsStr = Util.stringDelimitList(Util.listMap(rhs, realString)," ;\n  ");
-        jacStr = Util.stringDelimitList(Util.listMap1(Util.listListMap(jac,realString),Util.stringDelimitList," , ")," ;\n  ");
+        varnames = Util.stringDelimitList(List.map(vars,ComponentReference.printComponentRefStr)," ;\n  ");
+        rhsStr = Util.stringDelimitList(List.map(rhs, realString)," ;\n  ");
+        jacStr = Util.stringDelimitList(List.map1(List.mapList(jac,realString),Util.stringDelimitList," , ")," ;\n  ");
         syst = stringAppendList({"\n[\n  ", jacStr, "\n]\n  *\n[\n  ",varnames,"\n]\n  =\n[\n  ",rhsStr,"\n]"});
         Error.addMessage(Error.LINEAR_SYSTEM_SINGULAR, {syst,infoStr,varname});
       then fail();
     case (info,vars,jac,rhs)
       equation
         true = info < 0;
-        varnames = Util.stringDelimitList(Util.listMap(vars,ComponentReference.printComponentRefStr)," ;\n  ");
-        rhsStr = Util.stringDelimitList(Util.listMap(rhs, realString)," ; ");
-        jacStr = Util.stringDelimitList(Util.listMap1(Util.listListMap(jac,realString),Util.stringDelimitList," , ")," ; ");
+        varnames = Util.stringDelimitList(List.map(vars,ComponentReference.printComponentRefStr)," ;\n  ");
+        rhsStr = Util.stringDelimitList(List.map(rhs, realString)," ; ");
+        jacStr = Util.stringDelimitList(List.map1(List.mapList(jac,realString),Util.stringDelimitList," , ")," ; ");
         syst = stringAppendList({"[", jacStr, "] * [",varnames,"] = [",rhsStr,"]"});
         Error.addMessage(Error.LINEAR_SYSTEM_INVALID, {"LAPACK/dgesv",syst});
       then fail();
@@ -3184,7 +3185,7 @@ algorithm
         // get residual eqn and tearing var for each block
         // copy dlow
         dlow1 = copyDaeLowforTearing(dlow);
-        comps_1 = Util.listMap(comps,getEqnIndxFromComp);
+        comps_1 = List.map(comps,getEqnIndxFromComp);
         (r,t,_,dlow_1,m_1,mT_1,v1_1,v2_1,comps_2) = tearingSystem1(dlow,dlow1,m,mT,v1,v2,comps_1);
         Debug.fcall("tearingdump", BackendDump.dumpIncidenceMatrix, m_1);
         Debug.fcall("tearingdump", BackendDump.dumpIncidenceMatrixT, mT_1);
@@ -3463,7 +3464,7 @@ algorithm
         Debug.fcall("tearingdump", print, str1);
          // get from mT variable with most equations
         vars = m[residualeqn];
-        vars_1 = Util.listSelect1(vars,tvars,listMember);
+        vars_1 = List.select1(vars,listMember,tvars);
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem3(dlow,dlow1,m,mT,v1,v2,comp,vars_1,{},residualeqn,residualeqns,tearingvars,tearingeqns,crlst);
         // only succeed if tearing need less equations than system size is
 //        true = listLength(tearingvars_1) < systemsize;
@@ -3599,14 +3600,14 @@ algorithm
         dlow1_1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars1,eqns1_1,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},shared);
         // try causalisation
         (dlow_2 as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(m=SOME(m_2),mT=SOME(mT_2),matching=BackendDAE.MATCHING(v1_1,v2_1,comps))::{})) = BackendDAEUtil.transformBackendDAE(dlow_1,DAEUtil.avlTreeNew(),SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE());
-        comps_1 = Util.listMap(comps,getEqnIndxFromComp);
+        comps_1 = List.map(comps,getEqnIndxFromComp);
         // check strongComponents and split it into two lists: len(comp)==1 and len(comp)>1
         (morecomps,onecomp) = splitComps(comps_1);
         // try to solve the equations
-        onecomp_flat = Util.listFlatten(onecomp);
+        onecomp_flat = List.flatten(onecomp);
         // remove residual equations and tearing eqns
         resteareqns = listAppend(tearingeqnid::tearingeqns,residualeqn::residualeqns);
-        othereqns = Util.listSelect1(onecomp_flat,resteareqns,Util.notListMember);
+        othereqns = List.select1(onecomp_flat,List.notMember,resteareqns);
         eqns1_2 = solveEquations(eqns1_1,othereqns,v2_1,vars_1,crlst);
          // if we have not make alle equations causal select next residual equation
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_3,dlow1_2,m_3,mT_3,v1_2,v2_2,comps_2,compcount) = tearingSystem4(dlow_2,dlow1_1,m_2,mT_2,v1_1,v2_1,comps_1,residualeqn::residualeqns,tearingvar::tearingvars,tearingeqnid::tearingeqns,comp,0,crlst);
@@ -3614,8 +3615,8 @@ algorithm
         true = ((listLength(residualeqns_1) > listLength(residualeqns)) and
                 (listLength(tearingvars_1) > listLength(tearingvars)) ) or (compcount == 0);
         // get specifig comps
-        cmops_flat = Util.listFlatten(comps_2);
-        comp_2 = Util.listSelect1(cmops_flat,comp,listMember);
+        cmops_flat = List.flatten(comps_2);
+        comp_2 = List.select1(cmops_flat,listMember,comp);
       then
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_3,dlow1_2,m_3,mT_3,v1_2,v2_2,comp_2);
     case (dlow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(varArr=varr))::{}),dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns,crlst)
@@ -3693,7 +3694,7 @@ algorithm
         ll = listLength(comp);
         true = ll > 1;
         // check block
-        checklst = Util.listMap1(comp,listMember,ccomp);
+        checklst = List.map1(comp,listMember,ccomp);
         true = listMember(true,checklst);
         // this is a block
         compcount_1 = compcount + 1;
@@ -3711,7 +3712,7 @@ algorithm
         ll = listLength(comp);
         true = ll > 1;
         // check block
-        checklst = Util.listMap1(comp,listMember,ccomp);
+        checklst = List.map1(comp,listMember,ccomp);
         true = listMember(true,checklst);
         // this is a block
         compcount_1 = compcount + 1;
@@ -3760,7 +3761,7 @@ algorithm
         // remove negative
         eqn_1 = BackendDAEUtil.removeNegative(eqn);
         // select entries
-        eqn_2 = Util.listSelect1(eqn_1,comp,listMember);
+        eqn_2 = List.select1(eqn_1,listMember,comp);
         // remove multiple entries
         eqn_3 = removeMultiple(eqn_2);
         v1 = listLength(eqn_3);
@@ -3809,7 +3810,7 @@ algorithm
         // remove negative
         eqn_1 = BackendDAEUtil.removeNegative(eqn);
         // select entries
-        eqn_2 = Util.listSelect1(eqn_1,comp,listMember);
+        eqn_2 = List.select1(eqn_1,listMember,comp);
         // remove multiple entries
         eqn_3 = removeMultiple(eqn_2);
         // check if state or state der and prefer them
@@ -3926,25 +3927,25 @@ algorithm
         (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
         source = DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, expr, {});
         divexplst = Expression.extractDivExpFromExp(expr);
-        (constexplst,nonconstexplst) = Util.listSplitOnTrue(divexplst,Expression.isConst);
+        (constexplst,nonconstexplst) = List.splitOnTrue(divexplst,Expression.isConst);
         // check constexplst if equal 0
-        blst = Util.listMap(constexplst, Expression.isZero);
+        blst = List.map(constexplst, Expression.isZero);
         false = Util.boolOrList(blst);
         // check nonconstexplst if tearing variables or variables which will be
         // changed during solving process inside
-        crlstlst = Util.listMap(nonconstexplst,Expression.extractCrefsFromExp);
+        crlstlst = List.map(nonconstexplst,Expression.extractCrefsFromExp);
         // add explst with variables which will not be changed during solving prozess
-        blstlst = Util.listListMap2(crlstlst,Util.listMemberWithCompareFunc,crlst,ComponentReference.crefEqualNoStringCompare);
-        blst_1 = Util.listMap(blstlst,Util.boolOrList);
-        (tnofixedexplst,tfixedexplst) = Util.listSplitOnBoolList(nonconstexplst,blst_1);
+        blstlst = List.map2List(crlstlst,List.isMemberOnTrue,crlst,ComponentReference.crefEqualNoStringCompare);
+        blst_1 = List.map(blstlst,Util.boolOrList);
+        (tnofixedexplst,tfixedexplst) = List.splitOnBoolList(nonconstexplst,blst_1);
         true = listLength(tnofixedexplst) < 1;
 /*        print("\ntfixedexplst DivExpLst:\n");
-        s = Util.listMap(tfixedexplst, ExpressionDump.printExpStr);
-        Util.listMap0(s,print);
+        s = List.map(tfixedexplst, ExpressionDump.printExpStr);
+        List.map_0(s,print);
         print("\n===============================\n");
         print("\ntnofixedexplst DivExpLst:\n");
-        s = Util.listMap(tnofixedexplst, ExpressionDump.printExpStr);
-        Util.listMap0(s,print);
+        s = List.map(tnofixedexplst, ExpressionDump.printExpStr);
+        List.map_0(s,print);
         print("\n===============================\n");
 */        eqns_1 = BackendEquation.equationSetnth(eqns,e_1,BackendDAE.EQUATION(expr,varexp,source));
         eqns_2 = solveEquations(eqns_1,rest,ass,vars,crlst);
@@ -4143,7 +4144,7 @@ algorithm
       // all variables for new equation system
       // d(ordered vars)/d(dummyVar) 
       diffvars = BackendDAEUtil.varList(orderedVars);
-      diffvars = Util.sort(diffvars, BackendVariable.varIndexComparer);
+      diffvars = List.sort(diffvars, BackendVariable.varIndexComparer);
       x = DAE.CREF_IDENT("dummyVar",DAE.ET_REAL(),{});
       derivedVariables = creatallDiffedVars(diffvars,x,diffedVars,0);    
       jacOrderedVars = BackendDAEUtil.listVar(derivedVariables);
@@ -4593,7 +4594,7 @@ algorithm
     case(currEquation as BackendDAE.EQUATION(exp=lhs, scalar=rhs, source=source), vars, functions, inputVars, paramVars, stateVars, knownVars, _, inorderedVars, inDiffVars) equation
       lhs_ = differentiateWithRespectToXVec(lhs, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars);
       rhs_ = differentiateWithRespectToXVec(rhs, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars);
-      derivedEqns = Util.listThreadMap1(lhs_, rhs_, createEqn, source);
+      derivedEqns = List.threadMap1(lhs_, rhs_, createEqn, source);
     then derivedEqns;
       
     case(currEquation as BackendDAE.ARRAY_EQUATION(_, _, _), vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _) equation
@@ -4601,63 +4602,61 @@ algorithm
     then fail();
       
     case(currEquation as BackendDAE.SOLVED_EQUATION(componentRef=cref, exp=exp, source=source), vars, functions, inputVars, paramVars, stateVars, knownVars, _, inorderedVars, inDiffVars) equation
-      crefs = Util.listMap1(vars,differentiateVarWithRespectToXR,cref);
+      crefs = List.map1(vars,differentiateVarWithRespectToXR,cref);
       exps = differentiateWithRespectToXVec(exp, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars);
-      derivedEqns = Util.listThreadMap1(crefs, exps, createSolvedEqn, source);
+      derivedEqns = List.threadMap1(crefs, exps, createSolvedEqn, source);
     then derivedEqns;
       
     case(currEquation as BackendDAE.RESIDUAL_EQUATION(exp=exp, source=source), vars, functions, inputVars, paramVars, stateVars, knownVars, _, inorderedVars, inDiffVars) equation
       exps = differentiateWithRespectToXVec(exp, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars);
-      derivedEqns = Util.listMap1(exps, createResidualEqn, source);
+      derivedEqns = List.map1(exps, createResidualEqn, source);
     then derivedEqns;
       
     case(currEquation as BackendDAE.ALGORITHM(index=index, in_={}, out=out_, source=source), vars, functions, inputVars, paramVars, stateVars, knownVars, algorithmsLookUp, inorderedVars, inDiffVars)
     equation
-      //derivedIn = Util.listMap7list(in_, differentiateWithRespectToXVec, vars, functions, inputVars, paramVars, stateVars, knownVars,inDiffVars);
-      derivedOut = Util.listMap8list(out_, differentiateWithRespectToXVec, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars);
-      //derivedIn = Util.listlistTranspose(derivedIn);
-      //derivedIn = Util.listMap1(derivedIn,listAppend,in_);
-      derivedOut = Util.listlistTranspose(derivedOut);
+      derivedOut = List.map8(out_, differentiateWithRespectToXVec, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars);
+      //derivedIn = List.transposeList(derivedIn);
+      //derivedIn = List.map1(derivedIn,listAppend,in_);
+      derivedOut = List.transposeList(derivedOut);
       //s = ExpressionDump.printListStr(derivedIn, ExpressionDump.printExpListStr, " ");
       //s1 = intString(listLength(derivedIn));
       //print("#### DerivedIns (" +& s1 +& ") : " +& s +& "\n"); //stringCharListString(slst) +& "\n");
       //s = ExpressionDump.printListStr(derivedOut, ExpressionDump.printExpListStr, " ");
       //s1 = intString(listLength(derivedOut));
       //print("#### DerivedOuts (" +& s1 +& ") : " +& s +& "\n"); //stringCharListString(slst) +& "\n");
-      derivedEqns = Util.listThreadMap3(derivedOut, vars, createAlgorithmEqnEmptyIn,index,algorithmsLookUp, source);
+      derivedEqns = List.threadMap3(derivedOut, vars, createAlgorithmEqnEmptyIn,index,algorithmsLookUp, source);
     then derivedEqns;
 
     case(currEquation as BackendDAE.ALGORITHM(index=index, in_=in_, out={}, source=source), vars, functions, inputVars, paramVars, stateVars, knownVars, algorithmsLookUp, inorderedVars, inDiffVars)
     equation
-      derivedIn = Util.listMap8list(in_, differentiateWithRespectToXVec, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars);
-      //derivedOut = Util.listMap7list(out_, differentiateWithRespectToXVec, vars, functions, inputVars, paramVars, stateVars, knownVars,inDiffVars);
-      derivedIn = Util.listlistTranspose(derivedIn);
-      derivedIn = Util.listMap1(derivedIn,listAppend,in_);
-      //derivedOut = Util.listlistTranspose(derivedOut);
+      derivedIn = List.map8(in_, differentiateWithRespectToXVec, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars);
+      derivedIn = List.transposeList(derivedIn);
+      derivedIn = List.map1(derivedIn,listAppend,in_);
+      //derivedOut = List.transposeList(derivedOut);
       //s = ExpressionDump.printListStr(derivedIn, ExpressionDump.printExpListStr, " ");
       //s1 = intString(listLength(derivedIn));
       //print("#### DerivedIns (" +& s1 +& ") : " +& s +& "\n"); //stringCharListString(slst) +& "\n");
       //s = ExpressionDump.printListStr(derivedOut, ExpressionDump.printExpListStr, " ");
       //s1 = intString(listLength(derivedOut));
       //print("#### DerivedOuts (" +& s1 +& ") : " +& s +& "\n"); //stringCharListString(slst) +& "\n");
-      derivedEqns = Util.listThreadMap3(derivedIn, vars, createAlgorithmEqnEmptyOut,index,algorithmsLookUp, source);
+      derivedEqns = List.threadMap3(derivedIn, vars, createAlgorithmEqnEmptyOut,index,algorithmsLookUp, source);
     then derivedEqns;
 
 
     case(currEquation as BackendDAE.ALGORITHM(index=index, in_=in_, out=out_, source=source), vars, functions, inputVars, paramVars, stateVars, knownVars, algorithmsLookUp, inorderedVars, inDiffVars)
     equation
-      derivedIn = Util.listMap8list(in_, differentiateWithRespectToXVec, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars);
-      derivedOut = Util.listMap8list(out_, differentiateWithRespectToXVec, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars);
-      derivedIn = Util.transposeList(derivedIn);
-      derivedIn = Util.listMap1(derivedIn,listAppend,in_);
-      derivedOut = Util.transposeList(derivedOut);
+      derivedIn = List.map8(in_, differentiateWithRespectToXVec, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars);
+      derivedOut = List.map8(out_, differentiateWithRespectToXVec, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars);
+      derivedIn = List.transposeList(derivedIn);
+      derivedIn = List.map1(derivedIn,listAppend,in_);
+      derivedOut = List.transposeList(derivedOut);
       //s = ExpressionDump.printListStr(derivedIn, ExpressionDump.printExpListStr, " ");
       //s1 = intString(listLength(derivedIn));
       //print("#### DerivedIns (" +& s1 +& ") : " +& s +& "\n");
       //s = ExpressionDump.printListStr(derivedOut, ExpressionDump.printExpListStr, " ");
       //s1 = intString(listLength(derivedOut));
       //print("#### DerivedOuts (" +& s1 +& ") : " +& s +& "\n");
-      derivedEqns = Util.listThread3Map3(derivedIn, derivedOut, vars, createAlgorithmEqn,index,algorithmsLookUp, source);
+      derivedEqns = List.thread3Map3(derivedIn, derivedOut, vars, createAlgorithmEqn,index,algorithmsLookUp, source);
     then derivedEqns;
 
     case(currEquation as BackendDAE.COMPLEX_EQUATION(_, _, _, _), vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _) equation
@@ -4712,7 +4711,7 @@ algorithm outEqn := match(inOuts,inCref,inIndex,inAlgorithmsLookUp,Source)
     equation
       s1 = ExpressionDump.printExpListStr(inOuts);
       //print("### Create Algorithm eIn: (" +& s1 +& ") = f({}) \n");
-      newAlgIndex = Util.listPosition((inIndex, inCref), inAlgorithmsLookUp);
+      newAlgIndex = List.position((inIndex, inCref), inAlgorithmsLookUp);
    then BackendDAE.ALGORITHM(newAlgIndex, {}, inOuts, Source);
  end match;
 end createAlgorithmEqnEmptyIn;
@@ -4733,7 +4732,7 @@ algorithm outEqn := match(inIns,inCref,inIndex,inAlgorithmsLookUp,Source)
     equation
       s1 = ExpressionDump.printExpListStr(inIns);
       //print("### Create Algorithm eOut: ({}) = f(" +& s1 +& ") \n");
-      newAlgIndex = Util.listPosition((inIndex, inCref), inAlgorithmsLookUp);
+      newAlgIndex = List.position((inIndex, inCref), inAlgorithmsLookUp);
    then BackendDAE.ALGORITHM(newAlgIndex, inIns, {}, Source);
  end match;
 end createAlgorithmEqnEmptyOut;
@@ -4755,7 +4754,7 @@ algorithm outEqn := match(inIns,inOuts,inCref,inIndex,inAlgorithmsLookUp,Source)
       s1 = ExpressionDump.printExpListStr(inIns);
       s2 = ExpressionDump.printExpListStr(inOuts);
       //print("### Create Algorithm : (" +& s2 +& ") = f(" +& s1 +& ") \n");
-      newAlgIndex = Util.listPosition((inIndex, inCref), inAlgorithmsLookUp);
+      newAlgIndex = List.position((inIndex, inCref), inAlgorithmsLookUp);
    then BackendDAE.ALGORITHM(newAlgIndex, inIns, inOuts, Source);
  end match;
 end createAlgorithmEqn;
@@ -4924,8 +4923,8 @@ algorithm
         e = partialAnalyticalDifferentiation(restVar, restDerVar, functionCall, derFname, nDerArgs);
         nArgs1 = listLength(varExpListTotal);
         nArgs2 = listLength(restDerVar);
-        varExpList1Added = Util.listReplaceAtWithFill(DAE.RCONST(0.0),nArgs1 + nDerArgs - 1, varExpListTotal ,DAE.RCONST(0.0));
-        varExpList1Added = Util.listReplaceAtWithFill(DAE.RCONST(1.0),nArgs1 + nDerArgs - (nArgs2 + 1), varExpList1Added,DAE.RCONST(0.0));
+        varExpList1Added = List.replaceAtWithFill(DAE.RCONST(0.0),nArgs1 + nDerArgs - 1, varExpListTotal ,DAE.RCONST(0.0));
+        varExpList1Added = List.replaceAtWithFill(DAE.RCONST(1.0),nArgs1 + nDerArgs - (nArgs2 + 1), varExpList1Added,DAE.RCONST(0.0));
         derFun = DAE.CALL(derFname, varExpList1Added, attr);
       then DAE.BINARY(e, DAE.ADD(DAE.ET_REAL()), DAE.BINARY(derFun, DAE.MUL(DAE.ET_REAL()), currDerVar));
   end match;
@@ -4956,7 +4955,7 @@ algorithm
         delta = DAE.IFEXP( absCurr, DAE.BINARY(currVar,DAE.MUL(DAE.ET_REAL()),DAE.RCONST(1e-8)), DAE.RCONST(1e-8));
         nArgs1 = listLength(varExpListTotal);
         nArgs2 = listLength(restVar);
-        varExpListHAdded = Util.listReplaceAtWithFill(DAE.BINARY(currVar, DAE.ADD(DAE.ET_REAL()),delta),nArgs1-(nArgs2+1), varExpListTotal,DAE.RCONST(0.0));
+        varExpListHAdded = List.replaceAtWithFill(DAE.BINARY(currVar, DAE.ADD(DAE.ET_REAL()),delta),nArgs1-(nArgs2+1), varExpListTotal,DAE.RCONST(0.0));
         derFun = DAE.BINARY(DAE.BINARY(DAE.CALL(fname, varExpListHAdded, attr), DAE.SUB(DAE.ET_REAL()), DAE.CALL(fname, varExpListTotal, attr)), DAE.DIV(DAE.ET_REAL()), delta);
       then DAE.BINARY(e, DAE.ADD(DAE.ET_REAL()), DAE.BINARY(derFun, DAE.MUL(DAE.ET_REAL()), currDerVar));
   end match;
@@ -5102,7 +5101,7 @@ algorithm
       {derivedLHS} = differentiateWithRespectToXVec(lhs, {var}, functions, inputVars, controlparaVars, stateVars, knownVars, allVars, diffVars);
       {derivedRHS} = differentiateWithRespectToXVec(rhs, {var}, functions, inputVars, controlparaVars, stateVars, knownVars, allVars, diffVars);
       derivedStatements1 = {DAE.STMT_ASSIGN(type_, derivedLHS, derivedRHS, DAE.emptyElementSource), currStatement};
-      //derivedStatements1 = Util.listThreadMap3(derivedLHS, derivedRHS, createDiffStatements, type_, currStatement, source);
+      //derivedStatements1 = List.threadMap3(derivedLHS, derivedRHS, createDiffStatements, type_, currStatement, source);
       derivedStatements2 = differentiateAlgorithmStatements(restStatements, var, functions, inputVars, paramVars, stateVars, controlVars, knownVars, allVars, diffVars);
       derivedStatements1 = listAppend(derivedStatements1, derivedStatements2);
     then derivedStatements1;
@@ -5301,13 +5300,13 @@ algorithm
     case(DAE.BINARY(exp1=e1, operator=op, exp2=e2),xlist, functions, inputVars, paramVars, stateVars, knownVars, allVars,  diffVars) equation
       dxlist1 = differentiateWithRespectToXVec(e1, xlist, functions, inputVars, paramVars, stateVars, knownVars, allVars,  diffVars);
       dxlist2 = differentiateWithRespectToXVec(e2, xlist, functions, inputVars, paramVars, stateVars, knownVars, allVars,  diffVars);
-      dxlist = Util.listThreadMap3(dxlist1,dxlist2,mergeBin,op,e1,e2);
+      dxlist = List.threadMap3(dxlist1,dxlist2,mergeBin,op,e1,e2);
     then dxlist;
     
     // uniary
     case(DAE.UNARY(operator=op, exp=e1), xlist, functions, inputVars, paramVars, stateVars, knownVars,  allVars, diffVars) equation
       dxlist1 = differentiateWithRespectToXVec(e1, xlist, functions, inputVars, paramVars, stateVars, knownVars,  allVars, diffVars);
-      dxlist = Util.listMap1(dxlist1,mergeUn,op);
+      dxlist = List.map1(dxlist1,mergeUn,op);
     then dxlist;
 
     // der(x)
@@ -5321,7 +5320,7 @@ algorithm
     case (e as DAE.CALL(path=_, expLst={e1}), xlist, functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars)
       equation
         dxlist1 = differentiateWithRespectToXVec(e1, xlist, functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars);
-        dxlist = Util.listMap2(dxlist1,mergeCall,e1,e);
+        dxlist = List.map2(dxlist1,mergeCall,e1,e);
     then dxlist;
       
     // extern functions (analytical and numeric)
@@ -5333,7 +5332,7 @@ algorithm
     // cast
     case (DAE.CAST(ty=et, exp=e1), xlist, functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars) equation
       dxlist1 = differentiateWithRespectToXVec(e1, xlist, functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars);
-      dxlist = Util.listMap1(dxlist1,mergeCast,et);
+      dxlist = List.map1(dxlist1,mergeCast,et);
     then dxlist;
 
     // relations
@@ -5346,19 +5345,19 @@ algorithm
       equation
       dxlist1 = differentiateWithRespectToXVec(e1, xlist, functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars);
       dxlist2 = differentiateWithRespectToXVec(e2, xlist, functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars);
-      dxlist = Util.listThreadMap1(dxlist1,dxlist2,mergeIf,e);
+      dxlist = List.threadMap1(dxlist1,dxlist2,mergeIf,e);
     then dxlist;
 
     /*  
     case (DAE.ARRAY(ty = et,scalar = b,array = expList1), x, functions, inputVars, paramVars, stateVars, knownVars, diffVars)
       equation
-        expList2 = Util.listMap7(expList1, differentiateWithRespectToX, x, functions, inputVars, paramVars, stateVars, knownVars, diffVars);
+        expList2 = List.map7(expList1, differentiateWithRespectToX, x, functions, inputVars, paramVars, stateVars, knownVars, diffVars);
       then
         DAE.ARRAY(et,b,expList2);
     
     case (DAE.TUPLE(PR = expList1), x, functions, inputVars, paramVars, stateVars, knownVars, diffVars)
       equation
-        expList2 = Util.listMap7(expList1, differentiateWithRespectToX, x, functions, inputVars, paramVars, stateVars, knownVars, diffVars);
+        expList2 = List.map7(expList1, differentiateWithRespectToX, x, functions, inputVars, paramVars, stateVars, knownVars, diffVars);
       then
         DAE.TUPLE(expList2);
     
@@ -5486,7 +5485,7 @@ algorithm
     // d(x)/d(x)
     case((DAE.CREF(componentRef=cref, ty=et),x,SOME((functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars))))
       equation
-      b_lst = Util.listMap1(diffVars,ComponentReference.crefEqual,cref);
+      b_lst = List.map1(diffVars,ComponentReference.crefEqual,cref);
       true = Util.boolOrList(b_lst);
       cref_ = differentiateVarWithRespectToX(cref, cref);
     then DAE.CREF(cref_, et);
@@ -5775,7 +5774,7 @@ algorithm
     case (BackendDAE.DAE(systs,shared),ftree)
       equation
         // We can use listReduce as if there is no eq-system something went terribly wrong
-        syst = Util.listReduce(systs,mergeIndependentBlocks);
+        syst = List.reduce(systs,mergeIndependentBlocks);
       then BackendDAE.DAE({syst},shared);
   end match;
 end collapseIndependentBlocks;
@@ -5891,7 +5890,7 @@ algorithm
         partitionVars(BackendDAEUtil.equationSize(arr),arr,vars,ixs,mT,va);
         el = arrayList(ea);
         vl = arrayList(va);
-      then Util.listThreadMap(el,vl,createEqSystem);
+      then List.threadMap(el,vl,createEqSystem);
   end match;
 end partitionIndependentBlocksSplitBlocks;
 
@@ -5912,7 +5911,7 @@ algorithm
   i2 := BackendVariable.numVariables(vars);
   s1 := intString(i1);
   s2 := intString(i2);
-  crs := Debug.bcallret3(i1<>i2,Util.listMapMap,vl,BackendVariable.varCref,ComponentReference.printComponentRefStr,{});
+  crs := Debug.bcallret3(i1<>i2,List.mapMap,vl,BackendVariable.varCref,ComponentReference.printComponentRefStr,{});
   s3 := Util.stringDelimitList(crs,"\n");
   s4 := Debug.bcallret1(i1<>i2,BackendDump.dumpEqnsStr,el,"");
   // Can this even be triggered? We check that all variables are defined somewhere, so everything should be balanced already?
@@ -5968,7 +5967,7 @@ algorithm
         v = BackendVariable.getVarAt(vars,n);
         cr = BackendVariable.varCref(v);
         // Select any equation that could define this variable
-        b = not Util.isListEmpty(mT[n]);
+        b = not List.isEmpty(mT[n]);
         name = Debug.bcallret1(not b,ComponentReference.printComponentRefStr,cr,"");
         info = DAEUtil.getElementSourceFileInfo(BackendVariable.getVarSource(v));
         Error.assertionOrAddSourceMessage(b,Error.EQUATIONS_VAR_NOT_DEFINED,{name},info);
@@ -6039,15 +6038,15 @@ algorithm
         // print("mark\n");
         ixs = arrayUpdate(ixs,ix,n);
         // print("mark OK\n");
-        lst = Util.listMap(mT[ix],intAbs);
-        // print(Util.stringDelimitList(Util.listMap(lst,intString),",") +& "\n");
+        lst = List.map(mT[ix],intAbs);
+        // print(Util.stringDelimitList(List.map(lst,intString),",") +& "\n");
         // print("len:" +& intString(arrayLength(m)) +& "\n");
-        lsts = Util.listMap1r(lst,arrayGet,m);
+        lsts = List.map1r(lst,arrayGet,m);
         // print("arrayNth OK\n");
-        lst = Util.listMap(Util.listFlatten(lsts),intAbs);
-        // print(Util.stringDelimitList(Util.listMap(lst,intString),",") +& "\n");
+        lst = List.map(List.flatten(lsts),intAbs);
+        // print(Util.stringDelimitList(List.map(lst,intString),",") +& "\n");
         // print("lst get\n");
-        _ = Util.listMap4(lst,partitionIndependentBlocks1,n,m,mT,ixs);
+        _ = List.map4(lst,partitionIndependentBlocks1,n,m,mT,ixs);
       then true;
   end match;
 end partitionIndependentBlocks2;
@@ -6070,7 +6069,7 @@ algorithm
     case (true,ixs)
       equation
         print("Got partition!\n");
-        print(Util.stringDelimitList(Util.listMap(arrayList(ixs), intString), ","));
+        print(Util.stringDelimitList(List.map(arrayList(ixs), intString), ","));
         print("\n");
       then ();
     else ();

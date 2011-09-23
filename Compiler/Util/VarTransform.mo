@@ -115,6 +115,7 @@ protected import ComponentReference;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import List;
 protected import Util;
 
 public function applyReplacementsDAE "Apply a set of replacement rules on a DAE "
@@ -288,7 +289,7 @@ algorithm
       equation
         (conds_1,_) = replaceExpList(conds, repl, condExpFunc, {}, false);
         /* TODO: Add operation to source */
-        tbs_1 = Util.listMap2(tbs,applyReplacementsDAEElts,repl,condExpFunc);
+        tbs_1 = List.map2(tbs,applyReplacementsDAEElts,repl,condExpFunc);
         elist22 = applyReplacementsDAEElts(elist2,repl,condExpFunc);
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.IF_EQUATION(conds_1,tbs_1,elist22,source)::dae2;
@@ -297,7 +298,7 @@ algorithm
       equation
         (conds_1,_) = replaceExpList(conds, repl, condExpFunc, {}, false);
         /* TODO: Add operation to source */
-        tbs_1 = Util.listMap2(tbs,applyReplacementsDAEElts,repl,condExpFunc);
+        tbs_1 = List.map2(tbs,applyReplacementsDAEElts,repl,condExpFunc);
         elist22 = applyReplacementsDAEElts(elist2,repl,condExpFunc);
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.INITIAL_IF_EQUATION(conds_1,tbs_1,elist22,source)::dae2;
@@ -836,7 +837,7 @@ algorithm
     case (REPLACEMENTS(hashTable= ht))
       equation
         (tplLst) = BaseHashTable.hashTableList(ht);
-        str = Util.stringDelimitList(Util.listMap(tplLst,printReplacementTupleStr),"\n");
+        str = Util.stringDelimitList(List.map(tplLst,printReplacementTupleStr),"\n");
         print("Replacements: (");
         len = listLength(tplLst);
         len_str = intString(len);
@@ -867,7 +868,7 @@ algorithm ostr := matchcontinue (inVariableReplacements)
     case (REPLACEMENTS(hashTable = ht))
       equation
         (tplLst) = BaseHashTable.hashTableList(ht);
-        str = Util.stringDelimitList(Util.listMap(tplLst,printReplacementTupleStr),"\n");
+        str = Util.stringDelimitList(List.map(tplLst,printReplacementTupleStr),"\n");
         s1 = "Replacements: (" +& intString(listLength(tplLst)) +& ")\n=============\n" +& str +& "\n";
       then
         s1;
@@ -888,8 +889,8 @@ algorithm (crefs,dsts) := matchcontinue (inVariableReplacements)
     case (REPLACEMENTS(hashTable = ht))
       equation
         tplLst = BaseHashTable.hashTableList(ht);
-        crefs = Util.listMap(tplLst,Util.tuple21);
-        dsts = Util.listMap(tplLst,Util.tuple22);
+        crefs = List.map(tplLst,Util.tuple21);
+        dsts = List.map(tplLst,Util.tuple22);
       then
         (crefs,dsts);
   end matchcontinue;
@@ -932,7 +933,7 @@ algorithm
     case (REPLACEMENTS(ht,_))
       equation
         targets = BaseHashTable.hashTableValueList(ht);
-        targets2 = Util.listFlatten(Util.listMap(targets,Expression.extractCrefsFromExp));
+        targets2 = List.flatten(List.map(targets,Expression.extractCrefsFromExp));
       then 
         targets2;
   end matchcontinue;
@@ -1049,7 +1050,7 @@ algorithm
       list<DAE.ComponentRef> dests;
     case (invHt,src,dst) equation
       dests = Expression.extractCrefsFromExp(dst);
-      invHt_1 = Util.listFold_2(dests,addReplacementInv2,invHt,src);
+      invHt_1 = List.fold1r(dests,addReplacementInv2,src,invHt);
       then
         invHt_1;
   end match;
@@ -1083,7 +1084,7 @@ algorithm
     case (invHt,src,dst)
       equation
         srcs = BaseHashTable.get(dst,invHt) "previous elt for dst -> src, append.." ;
-        srcs = Util.listUnion({},src::srcs);
+        srcs = List.union({},src::srcs);
         invHt_1 = BaseHashTable.add((dst, srcs),invHt);
       then
         invHt_1;

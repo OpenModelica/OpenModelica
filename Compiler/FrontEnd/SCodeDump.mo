@@ -42,10 +42,11 @@ public import Absyn;
 public import SCode;
 
 protected import Dump;
-protected import Util;
+protected import List;
 protected import Print;
 protected import SCodeDumpTpl;
 protected import Tpl;
+protected import Util;
 
 public function programStr
   input SCode.Program inProgram;
@@ -373,7 +374,7 @@ algorithm
                 initialAlgorithmLst = ial,
                 externalDecl = ext))
       equation
-        elts_str = Util.listMap(elts, printElementStr);
+        elts_str = List.map(elts, printElementStr);
         s1 = Util.stringDelimitList(elts_str, ",\n");
         res = stringAppendList({"PARTS(\n",s1,",_,_,_,_,_)"});
       then
@@ -390,7 +391,7 @@ algorithm
               initialAlgorithmLst = ial,
               externalDecl = ext)))
       equation
-        elts_str = Util.listMap(elts, printElementStr);
+        elts_str = List.map(elts, printElementStr);
         s1 = Util.stringDelimitList(elts_str, ",\n");
         res = stringAppendList({"CLASS_EXTENDS(", baseClassName, " PARTS(\n",s1,",_,_,_,_,_)"});
       then
@@ -404,13 +405,13 @@ algorithm
         res;
     case (SCode.ENUMERATION(enumLst, _))
       equation
-        s1 = Util.stringDelimitList(Util.listMap(enumLst, printEnumStr), ", ");
+        s1 = Util.stringDelimitList(List.map(enumLst, printEnumStr), ", ");
         res = stringAppendList({"ENUMERATION(", s1, ")"});
       then
         res;
     case (SCode.OVERLOAD(plst, _))
       equation
-        s1 = Util.stringDelimitList(Util.listMap(plst, Absyn.pathString), ", ");
+        s1 = Util.stringDelimitList(List.map(plst, Absyn.pathString), ", ");
         res = stringAppendList({"OVERLOAD(", s1, ")"});
       then
         res;

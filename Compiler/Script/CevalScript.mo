@@ -78,6 +78,7 @@ protected import Error;
 protected import Expression;
 protected import Inst;
 protected import InnerOuter;
+protected import List;
 protected import Lookup;
 protected import MetaUtil;
 protected import ModUtil;
@@ -232,9 +233,9 @@ algorithm
   resultValues := listReverse(inAddResultValues);
   //TODO: maybe we should test if the fields are the ones in simulationResultType_full
   fields := Util.if_(RTOpts.getRunningTestsuite(), {},
-                     Util.listMap(resultValues, Util.tuple21));
+                     List.map(resultValues, Util.tuple21));
   vals := Util.if_(RTOpts.getRunningTestsuite(), {}, 
-                   Util.listMap(resultValues, Util.tuple22));
+                   List.map(resultValues, Util.tuple22));
   res := Values.RECORD(Absyn.IDENT("SimulationResult"),
     Values.STRING(resultFile)::Values.STRING(options)::Values.STRING(message)::vals,
     "resultFile"::"simulationOptions"::"messages"::fields,-1);
@@ -559,9 +560,9 @@ algorithm
     case _::lst
       equation
         // build a list with the values  
-        simOptsValues = Util.listMap(lst, ValuesUtil.valString);
+        simOptsValues = List.map(lst, ValuesUtil.valString);
         // trim " from strings!
-        simOptsValues = Util.listMap2(simOptsValues, System.stringReplace, "\"", "\'");
+        simOptsValues = List.map2(simOptsValues, System.stringReplace, "\"", "\'");
         
         str = Util.buildMapStr(simulationOptionsNames, simOptsValues, " = ", ", ");
       then
@@ -571,9 +572,9 @@ algorithm
     case (_::lst)
       equation
         // build a list with the values  
-        simOptsValues = Util.listMap(lst, ValuesUtil.valString);
+        simOptsValues = List.map(lst, ValuesUtil.valString);
         // trim " from strings!
-        simOptsValues = Util.listMap2(simOptsValues, System.stringReplace, "\"", "\'");
+        simOptsValues = List.map2(simOptsValues, System.stringReplace, "\"", "\'");
         
         str = Util.stringDelimitList(simOptsValues, ", ");
       then
@@ -777,9 +778,9 @@ algorithm
     case (cache,env,"parseString",{Values.STRING(str1),Values.STRING(str2)},st,msg)
       equation
         Absyn.PROGRAM(classes=classes,within_=within_) = Parser.parsestring(str1,str2);
-        paths = Util.listMap(classes,Absyn.className);
-        paths = Util.listMap1r(paths,Absyn.joinWithinPath,within_);
-        vals = Util.listMap(paths,ValuesUtil.makeCodeTypeName);
+        paths = List.map(classes,Absyn.className);
+        paths = List.map1r(paths,Absyn.joinWithinPath,within_);
+        vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then (cache,ValuesUtil.makeArray(vals),st);
 
     case (cache,env,"parseString",_,st,msg)
@@ -844,15 +845,15 @@ algorithm
     case (cache,env,"regex",{Values.STRING(str),Values.STRING(re),Values.INTEGER(i),Values.BOOL(extended),Values.BOOL(insensitive)},st,msg)
       equation
         (n,strs) = System.regex(str,re,i,extended,insensitive);
-        vals = Util.listMap(strs,ValuesUtil.makeString);
+        vals = List.map(strs,ValuesUtil.makeString);
         v = Values.ARRAY(vals,{i});
       then
         (cache,Values.TUPLE({Values.INTEGER(n),v}),st);
 
     case (cache,env,"regex",{Values.STRING(str),Values.STRING(re),Values.INTEGER(i),Values.BOOL(extended),Values.BOOL(insensitive)},st,msg)
       equation
-        strs = Util.listFill("",i);
-        vals = Util.listMap(strs,ValuesUtil.makeString);
+        strs = List.fill("",i);
+        vals = List.map(strs,ValuesUtil.makeString);
         v = Values.ARRAY(vals,{i});
       then
         (cache,Values.TUPLE({Values.INTEGER(-1),v}),st);
@@ -1106,7 +1107,7 @@ algorithm
         SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
         0 = System.systemCall(sim_call);
         
-        result_file = stringAppendList(Util.listConsOnTrue(not RTOpts.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
+        result_file = stringAppendList(List.consOnTrue(not RTOpts.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
         timeSimulation = System.realtimeTock(RT_CLOCK_SIMULATE_SIMULATION);
         timeTotal = System.realtimeTock(RT_CLOCK_SIMULATE_TOTAL);
         simValue = createSimulationResult(
@@ -1385,7 +1386,7 @@ algorithm
             but where to get t? */
       equation
         mp = Settings.getModelicaPath();
-        strings = Util.listMap(cvars, ValuesUtil.extractValueString);
+        strings = List.map(cvars, ValuesUtil.extractValueString);
         (p,b) = loadModel({(path,strings)},mp,p,true);
         str = Print.getString();
         newst = Interactive.SYMBOLTABLE(p,aDep,NONE(),{},iv,cf,lf);
@@ -1517,7 +1518,7 @@ algorithm
         
     case (cache,env,"strtok",{Values.STRING(str),Values.STRING(token)},st,msg)
       equation
-        vals = Util.listMap(System.strtok(str,token), ValuesUtil.makeString);
+        vals = List.map(System.strtok(str,token), ValuesUtil.makeString);
         i = listLength(vals);
       then (cache,Values.ARRAY(vals,{i}),st);
 
@@ -1558,7 +1559,7 @@ algorithm
         
     case (cache,env,"readSimulationResult",{Values.STRING(filename),Values.ARRAY(valueLst=cvars),Values.INTEGER(size)},st,msg)
       equation
-        vars_1 = Util.listMap(cvars, ValuesUtil.printCodeVariableName);
+        vars_1 = List.map(cvars, ValuesUtil.printCodeVariableName);
         pwd = System.pwd();
         pd = System.pathDelimiter();
         filename_1 = Util.if_(System.strncmp("/",filename,1)==0,filename,stringAppendList({pwd,pd,filename}));
@@ -1586,7 +1587,7 @@ algorithm
         pd = System.pathDelimiter();
         filename_1 = Util.if_(System.strncmp("/",filename,1)==0,filename,stringAppendList({pwd,pd,filename}));
         args = SimulationResults.readVariables(filename_1);
-        vals = Util.listMap(args, ValuesUtil.makeString);
+        vals = List.map(args, ValuesUtil.makeString);
         v = ValuesUtil.makeArray(vals);
       then
         (cache,v,st);
@@ -1598,7 +1599,7 @@ algorithm
         filename = stringAppendList({pwd,pd,filename});
         filename_1 = stringAppendList({pwd,pd,filename_1});
         filename2 = stringAppendList({pwd,pd,filename2});
-        vars_1 = Util.listMap(cvars, ValuesUtil.valString);
+        vars_1 = List.map(cvars, ValuesUtil.valString);
         {str} = SimulationResults.cmpSimulationResults(filename,filename_1,filename2,x1,x2,vars_1);
         v = Values.STRING(str);
       then
@@ -1609,8 +1610,8 @@ algorithm
 
     case (cache,env,"plot2",{Values.ARRAY(valueLst = cvars),Values.STRING(filename)},st,msg)
       equation
-        vars_1 = Util.listMap(cvars, ValuesUtil.printCodeVariableName);
-        vars_2 = Util.listUnionElt("time", vars_1);
+        vars_1 = List.map(cvars, ValuesUtil.printCodeVariableName);
+        vars_2 = List.unionElt("time", vars_1);
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
         value = ValuesUtil.readDataset(filename, vars_2, 0);
         pwd = System.pwd();
@@ -1651,7 +1652,7 @@ algorithm
       equation        
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
         
-        vars_2 = Util.listSetDifference(SimulationResults.readVariables(filename),{"time"});
+        vars_2 = List.setDifference(SimulationResults.readVariables(filename),{"time"});
         vars_2 = "time" :: vars_2;
         value = ValuesUtil.readDataset(filename, vars_2, 0);
         
@@ -1727,8 +1728,8 @@ algorithm
         },
         st,msg)
       equation
-        vars_1 = Util.listMap(cvars, ValuesUtil.printCodeVariableName);
-        vars_2 = Util.listUnionElt("time", vars_1);
+        vars_1 = List.map(cvars, ValuesUtil.printCodeVariableName);
+        vars_2 = List.unionElt("time", vars_1);
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
         
         value = ValuesUtil.readDataset(filename, vars_2, 0);
@@ -1760,7 +1761,7 @@ algorithm
         st,msg)
       equation
         // get the variables list
-        vars_1 = Util.listMap(cvars, ValuesUtil.printCodeVariableName);
+        vars_1 = List.map(cvars, ValuesUtil.printCodeVariableName);
         // seperate the variables
         str = Util.stringDelimitList(vars_1,"\" \"");
         // get OPENMODELICAHOME
@@ -1797,8 +1798,8 @@ algorithm
         filename = Absyn.pathString(className);
         filename = stringAppendList({filename, "_res.plt"});
         strVars = SimulationResults.readVariables(filename);
-        strVars = Util.listFilter1(strVars, visualizationVarShouldBeAdded, visvars);
-        vars_2 = Util.listUnionElt("time", strVars);
+        strVars = List.filter1(strVars, visualizationVarShouldBeAdded, visvars);
+        vars_2 = List.unionElt("time", strVars);
         value = ValuesUtil.readDataset(filename, vars_2, 0);
         resI = ValuesUtil.sendPtolemyplotDataset2(value, vars_2, visvar_str, "Plot by OpenModelica");
       then
@@ -1820,7 +1821,7 @@ algorithm
          */
     case (cache,env,"plotParametric2",{cvar,Values.ARRAY(valueLst=cvars),Values.STRING(filename)},st,msg)
       equation
-        vars_1 = Util.listMap(cvar::cvars, ValuesUtil.printCodeVariableName);
+        vars_1 = List.map(cvar::cvars, ValuesUtil.printCodeVariableName);
         length = listLength(vars_1);
         (length > 1) = true;
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
@@ -1860,7 +1861,7 @@ algorithm
         },
         st,msg)
       equation
-        vars_1 = Util.listMap(cvar::cvars, ValuesUtil.printCodeVariableName);
+        vars_1 = List.map(cvar::cvars, ValuesUtil.printCodeVariableName);
         length = listLength(vars_1);
         (length > 1) = true;
         (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
@@ -1937,7 +1938,7 @@ algorithm
         
     case (cache,env,"strictRMLCheck",_,st as Interactive.SYMBOLTABLE(ast = p),msg)
       equation
-        _ = Util.listMap1r(Util.listMap(Interactive.getFunctionsInProgram(p), SCodeUtil.translateClass), MetaUtil.strictRMLCheck, true);
+        _ = List.map1r(List.map(Interactive.getFunctionsInProgram(p), SCodeUtil.translateClass), MetaUtil.strictRMLCheck, true);
         str = Error.printMessagesStr();
         v = Values.STRING(str);
       then (cache,v,st);
@@ -1963,14 +1964,14 @@ algorithm
         
     case (cache,env,"solveLinearSystem",{Values.ARRAY(valueLst=vals),v,Values.ENUM_LITERAL(index=1 /*dgesv*/),Values.ARRAY(valueLst={Values.INTEGER(-1)})},st,msg)
       equation
-        (realVals,i) = System.dgesv(Util.listMap(vals,ValuesUtil.arrayValueReals),ValuesUtil.arrayValueReals(v));
-        v = ValuesUtil.makeArray(Util.listMap(realVals,ValuesUtil.makeReal));
+        (realVals,i) = System.dgesv(List.map(vals,ValuesUtil.arrayValueReals),ValuesUtil.arrayValueReals(v));
+        v = ValuesUtil.makeArray(List.map(realVals,ValuesUtil.makeReal));
       then (cache,Values.TUPLE({v,Values.INTEGER(i)}),st);
 
     case (cache,env,"solveLinearSystem",{Values.ARRAY(valueLst=vals),v,Values.ENUM_LITERAL(index=2 /*lpsolve55*/),Values.ARRAY(valueLst=vals2)},st,msg)
       equation
-        (realVals,i) = System.lpsolve55(Util.listMap(vals,ValuesUtil.arrayValueReals),ValuesUtil.arrayValueReals(v),Util.listMap(vals2,ValuesUtil.valueInteger));
-        v = ValuesUtil.makeArray(Util.listMap(realVals,ValuesUtil.makeReal));
+        (realVals,i) = System.lpsolve55(List.map(vals,ValuesUtil.arrayValueReals),ValuesUtil.arrayValueReals(v),List.map(vals2,ValuesUtil.valueInteger));
+        v = ValuesUtil.makeArray(List.map(realVals,ValuesUtil.makeReal));
       then (cache,Values.TUPLE({v,Values.INTEGER(i)}),st);
 
     case (cache,env,"solveLinearSystem",{_,v,_,_},st,msg)
@@ -2449,7 +2450,7 @@ algorithm
         pd = System.pathDelimiter();
         (pd_1 :: _) = stringListStringChar(pd);
         filename_1 = Util.stringSplitAtChar(filename, pd_1);
-        dir = Util.listStripLast(filename_1);
+        dir = List.stripLast(filename_1);
         dir_1 = Util.stringDelimitList(dir, pd);
       then
         dir_1;
@@ -3545,8 +3546,8 @@ algorithm
       equation
         cdef = Interactive.getPathedClassInProgram(inPath, p);
         strlst = getClassnamesInClassList(inPath, p, cdef);
-        result_path_lst = Util.listMap1(strlst, joinPaths, inPath);
-        result = Util.listFlatten(Util.listMap1(result_path_lst, getAllClassPathsRecursive, p));
+        result_path_lst = List.map1(strlst, joinPaths, inPath);
+        result = List.flatten(List.map1(result_path_lst, getAllClassPathsRecursive, p));
       then
         inPath::result;
     case (inPath, _)
@@ -3607,10 +3608,10 @@ algorithm
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         allClassPaths = getAllClassPathsRecursive(className, p);
-        // allClassPaths = Util.listSelect(allClassPaths, filterLib);
+        // allClassPaths = List.select(allClassPaths, filterLib);
         // allClassPaths = listReverse(allClassPaths);
         print("Number of classes to check: " +& intString(listLength(allClassPaths)) +& "\n");
-        // print ("All paths: \n" +& Util.stringDelimitList(Util.listMap(allClassPaths, Absyn.pathString), "\n") +& "\n");
+        // print ("All paths: \n" +& Util.stringDelimitList(List.map(allClassPaths, Absyn.pathString), "\n") +& "\n");
         checkAll(cache, env, allClassPaths, st, msg);
         ret = "Number of classes checked: " +& intString(listLength(allClassPaths));
       then
@@ -3816,8 +3817,8 @@ protected
 algorithm
   (mainFunction, paths, funcs) := getFunctionDependencies(inCache, functionName);
   // The list of functions is not ordered, so we need to filter out the main function...
-  dependencies := Util.listMap1(paths, DAEUtil.getNamedFunction, funcs);
-  dependencies := Util.listSetDifference(dependencies, {mainFunction});
+  dependencies := List.map1(paths, DAEUtil.getNamedFunction, funcs);
+  dependencies := List.setDifference(dependencies, {mainFunction});
   uniontypePaths := DAEUtil.getUniontypePaths(dependencies,{});
   (outCache,metarecordTypes) := Lookup.lookupMetarecordsRecursive(inCache, env, uniontypePaths);
 end collectDependencies;
@@ -3909,16 +3910,16 @@ algorithm
       then acc;
     case (cache,env,SCode.CLASS(name=name,encapsulatedPrefix=SCode.ENCAPSULATED(),restriction=SCode.R_PACKAGE(),classDef=SCode.PARTS(elementLst=elementLst))::sp,acc)
       equation
-        names = Util.listMap(Util.listFilterBoolean(Util.listMap(Util.listFilterBoolean(elementLst, SCode.elementIsClass), SCode.getElementClass), SCode.isFunction), SCode.className);
-        paths = Util.listMap1r(names,Absyn.makeQualifiedPathFromStrings,name);
+        names = List.map(List.filterOnTrue(List.map(List.filterOnTrue(elementLst, SCode.elementIsClass), SCode.getElementClass), SCode.isFunction), SCode.className);
+        paths = List.map1r(names,Absyn.makeQualifiedPathFromStrings,name);
         cache = instantiateDaeFunctions(cache, env, paths);
         funcs = Env.getFunctionTree(cache);
-        d = Util.listMap1(paths, DAEUtil.getNamedFunction, funcs);
+        d = List.map1(paths, DAEUtil.getNamedFunction, funcs);
         (_,(_,dependencies)) = DAEUtil.traverseDAEFunctions(d,Expression.traverseSubexpressionsHelper,(matchQualifiedCalls,{}));
         print(name +& " has dependencies: " +& Util.stringDelimitList(dependencies,",") +& "\n");
         acc = (name,dependencies)::acc;
-        dependencies = Util.listMap1(dependencies,stringAppend,".h\"");
-        dependencies = Util.listMap1r(dependencies,stringAppend,"#include \"");
+        dependencies = List.map1(dependencies,stringAppend,".h\"");
+        dependencies = List.map1r(dependencies,stringAppend,"#include \"");
         SimCode.translateFunctions(name, NONE(), d, {}, dependencies);
         acc = generateFunctions(cache,env,sp,acc);
       then acc;
@@ -3942,18 +3943,18 @@ algorithm
       DAE.ComponentRef cr;
     case ((e as DAE.CALL(path = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED(name,Absyn.IDENT(_))), attr = DAE.CALL_ATTR(builtin = false)),acc))
       equation
-        acc = Util.listConsOnTrue(not listMember(name,acc),name,acc);
+        acc = List.consOnTrue(not listMember(name,acc),name,acc);
       then ((e,acc));
         /*
     case ((e as DAE.METARECORDCALL(path = Absyn.QUALIFIED(name,Absyn.QUALIFIED(path=Absyn.IDENT(_)))),acc))
       equation
-        acc = Util.listConsOnTrue(not listMember(name,acc),name,acc);
+        acc = List.consOnTrue(not listMember(name,acc),name,acc);
       then ((e,acc));
       */
     case ((e as DAE.CREF(componentRef=cr,ty=DAE.ET_FUNCTION_REFERENCE_FUNC(builtin=false)),acc))
       equation
         Absyn.QUALIFIED(name,Absyn.IDENT(_)) = ComponentReference.crefToPath(cr);
-        acc = Util.listConsOnTrue(not listMember(name,acc),name,acc);
+        acc = List.consOnTrue(not listMember(name,acc),name,acc);
       then ((e,acc));
     case itpl then itpl;
   end match;

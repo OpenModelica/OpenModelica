@@ -50,6 +50,14 @@ encapsulated package ClassInf
 public import SCode;
 public import Absyn;
 
+protected import Debug;
+protected import Error;
+protected import List;
+protected import Print;
+protected import RTOpts;
+protected import SCodeDump;
+protected import Util;
+
 public
 uniontype State "- Machine states, the string contains the classname."
   record UNKNOWN
@@ -170,13 +178,6 @@ uniontype Event "- Events"
   end FOUND_COMPONENT;
 
 end Event;
-
-protected import Debug;
-protected import Print;
-protected import Error;
-protected import RTOpts;
-protected import Util;
-protected import SCodeDump;
 
 public function printStateStr "- Printing
 
@@ -449,7 +450,7 @@ algorithm
       equation
         b = isBasicTypeComponentName(s);
         s = Debug.bcallret1(not b, Absyn.pathString, p, "");
-        msg = Util.listConsOnTrue(not b, s, {});
+        msg = List.consOnTrue(not b, s, {});
         Error.assertionOrAddSourceMessage(b, Error.TYPE_NOT_FROM_PREDEFINED, msg, Absyn.dummyInfo);
       then TYPE(p);
     /* adrpo 2009-05-15: type Orientation can contain equalityConstraint function! */

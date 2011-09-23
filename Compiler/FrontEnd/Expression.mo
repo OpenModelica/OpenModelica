@@ -70,6 +70,7 @@ protected import Env;
 protected import Error;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import List;
 protected import ModUtil;
 protected import OptManager;
 protected import Patternm;
@@ -217,26 +218,26 @@ algorithm
 
     case (DAE.CALL(path,expl,_))
       equation
-        aexpl = Util.listMap(expl,unelabExp);
+        aexpl = List.map(expl,unelabExp);
         acref = Absyn.pathToCref(path);
       then Absyn.CALL(acref,Absyn.FUNCTIONARGS(aexpl,{}));
 
     case(DAE.PARTEVALFUNCTION(path,expl,_))
       equation
-        aexpl = Util.listMap(expl,unelabExp);
+        aexpl = List.map(expl,unelabExp);
         acref = Absyn.pathToCref(path);
       then
         Absyn.PARTEVALFUNCTION(acref,Absyn.FUNCTIONARGS(aexpl,{}));
 
     case (DAE.ARRAY(array = expl))
       equation
-        expl_1 = Util.listMap(expl, unelabExp);
+        expl_1 = List.map(expl, unelabExp);
       then
         Absyn.ARRAY(expl_1);
     
     case(DAE.MATRIX(matrix = mexpl2))
       equation
-        amexpl = Util.listListMap(mexpl2,unelabExp);
+        amexpl = List.mapList(mexpl2,unelabExp);
       then (Absyn.MATRIX(amexpl));
 
     case(DAE.RANGE(_,e1,SOME(e2),e3)) equation
@@ -252,7 +253,7 @@ algorithm
 
     case(DAE.TUPLE(expl))
       equation
-        expl_1 = Util.listMap(expl, unelabExp);
+        expl_1 = List.map(expl, unelabExp);
       then
         Absyn.TUPLE(expl_1);
     case(DAE.CAST(_,e1)) equation
@@ -280,7 +281,7 @@ algorithm
       //print("unelab of reduction not impl. yet");
       acref = Absyn.pathToCref(path);
       ae1 = unelabExp(e1);
-      aiters = Util.listMap(riters, unelabReductionIterator);
+      aiters = List.map(riters, unelabReductionIterator);
     then 
       Absyn.CALL(acref, Absyn.FOR_ITER_FARG(ae1, aiters));
 
@@ -1214,8 +1215,8 @@ algorithm
       list<ComponentRef> crefs;
     case (DAE.CREF(componentRef = cr)) then {cr};
     case(DAE.IFEXP(c,tb,fb)) equation
-      f = Util.listSelect(listAppend(factors(tb),factors(fb)),isCref);
-      crefs = Util.listMap(f,expCref);
+      f = List.select(listAppend(factors(tb),factors(fb)),isCref);
+      crefs = List.map(f,expCref);
     then crefs;
   end matchcontinue;
 end expCrefInclIfExpFactors;
@@ -1527,15 +1528,15 @@ algorithm
     // count the variables in array
     case DAE.ET_ARRAY(arrayDimensions = ad)
       equation
-        nr = dimensionSize(Util.listReduce(ad, dimensionsMult));
+        nr = dimensionSize(List.reduce(ad, dimensionsMult));
       then
         nr;
     
     // count the variables in record
     case DAE.ET_COMPLEX(varLst = varLst)
       equation
-        lstInt = Util.listMap(Util.listMap(varLst, varType), sizeOf);
-        nr = Util.listReduce(lstInt, intAdd);
+        lstInt = List.map(List.map(varLst, varType), sizeOf);
+        nr = List.reduce(lstInt, intAdd);
       then
         nr;
     
@@ -1617,7 +1618,7 @@ public function dimensionsSizes
   input list<DAE.Dimension> inDims;
   output list<Integer> outValues;
 algorithm
-  outValues := Util.listMap(inDims, dimensionSizeAll);
+  outValues := List.map(inDims, dimensionSizeAll);
 end dimensionsSizes;
 
 public function typeof "
@@ -1656,7 +1657,7 @@ algorithm
     case (DAE.CAST(ty = tp)) then tp;
     case (DAE.ASUB(exp = e,sub=explist)) 
       equation
-        tp = unliftArrayTypeWithSubs(Util.listMap(explist,makeIndexSubscript) ,typeof(e));
+        tp = unliftArrayTypeWithSubs(List.map(explist,makeIndexSubscript) ,typeof(e));
       then 
         tp;
     case (DAE.TSUB(ty = tp)) then tp;
@@ -1832,7 +1833,7 @@ algorithm
       equation
         f1 = allTerms(e1);
         f2 = allTerms(e2);
-        f2_1 = Util.listMap(f2, negate);
+        f2_1 = List.map(f2, negate);
         res = listAppend(f1, f2_1);
       then
         res;
@@ -1849,7 +1850,7 @@ algorithm
       equation
         f1 = allTerms(e1);
         f2 = allTerms(e2);
-        f2_1 = Util.listMap(f2, negate);
+        f2_1 = List.map(f2, negate);
         res = listAppend(f1, f2_1);
       then
         res;
@@ -1858,32 +1859,32 @@ algorithm
     case (e as DAE.BINARY(e1,DAE.MUL(tp),e2)) 
       equation
         (f1 as _::_::_) = allTerms(e2);
-        f1 = Util.listMap1(f1,makeProduct,e1);
-        f1 = Util.listFlatten(Util.listMap(f1,allTerms));
+        f1 = List.map1(f1,makeProduct,e1);
+        f1 = List.flatten(List.map(f1,allTerms));
       then 
         f1;
    
     case (e as DAE.BINARY(e1,DAE.MUL_ARR(tp),e2)) 
       equation
         (f1 as _::_::_) = allTerms(e2);
-        f1 = Util.listMap1(f1,makeProduct,e1);
-        f1 = Util.listFlatten(Util.listMap(f1,allTerms));
+        f1 = List.map1(f1,makeProduct,e1);
+        f1 = List.flatten(List.map(f1,allTerms));
       then 
         f1;
    
     case (e as DAE.BINARY(e1,DAE.MUL_SCALAR_ARRAY(tp),e2)) 
       equation
         (f1 as _::_::_) = allTerms(e2);
-        f1 = Util.listMap1(f1,makeProduct,e1);
-        f1 = Util.listFlatten(Util.listMap(f1,allTerms));
+        f1 = List.map1(f1,makeProduct,e1);
+        f1 = List.flatten(List.map(f1,allTerms));
       then 
         f1;
    
     case (e as DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(tp),e2)) 
       equation
         (f1 as _::_::_) = allTerms(e2);
-        f1 = Util.listMap1(f1,makeProduct,e1);
-        f1 = Util.listFlatten(Util.listMap(f1,allTerms));
+        f1 = List.map1(f1,makeProduct,e1);
+        f1 = List.flatten(List.map(f1,allTerms));
       then 
         f1;
    
@@ -1891,32 +1892,32 @@ algorithm
     case (e as DAE.BINARY(e1,DAE.MUL(tp),e2)) 
       equation
         (f1 as _::_::_) = allTerms(e1);
-        f1 = Util.listMap1(f1,makeProduct,e2);
-        f1 = Util.listFlatten(Util.listMap(f1,allTerms));
+        f1 = List.map1(f1,makeProduct,e2);
+        f1 = List.flatten(List.map(f1,allTerms));
       then 
         f1;
    
     case (e as DAE.BINARY(e1,DAE.MUL_ARR(tp),e2)) 
       equation
         (f1 as _::_::_) = allTerms(e1);
-        f1 = Util.listMap1(f1,makeProduct,e2);
-        f1 = Util.listFlatten(Util.listMap(f1,allTerms));
+        f1 = List.map1(f1,makeProduct,e2);
+        f1 = List.flatten(List.map(f1,allTerms));
       then 
         f1;
    
     case (e as DAE.BINARY(e1,DAE.MUL_SCALAR_ARRAY(tp),e2)) 
       equation
         (f1 as _::_::_) = allTerms(e1);
-        f1 = Util.listMap1(f1,makeProduct,e2);
-        f1 = Util.listFlatten(Util.listMap(f1,allTerms));
+        f1 = List.map1(f1,makeProduct,e2);
+        f1 = List.flatten(List.map(f1,allTerms));
       then 
         f1;
    
     case (e as DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(tp),e2)) 
       equation
         (f1 as _::_::_) = allTerms(e1);
-        f1 = Util.listMap1(f1,makeProduct,e2);
-        f1 = Util.listFlatten(Util.listMap(f1,allTerms));
+        f1 = List.map1(f1,makeProduct,e2);
+        f1 = List.flatten(List.map(f1,allTerms));
       then 
         f1;
    
@@ -1924,32 +1925,32 @@ algorithm
     case (e as DAE.BINARY(e1,DAE.DIV(tp),e2)) 
       equation
         (f1 as _::_::_) = allTerms(e1);
-        f1 = Util.listMap1(f1,expDiv,e2);
-        f1 = Util.listFlatten(Util.listMap(f1,allTerms));
+        f1 = List.map1(f1,expDiv,e2);
+        f1 = List.flatten(List.map(f1,allTerms));
       then 
         f1;
    
     case (e as DAE.BINARY(e1,DAE.DIV_ARR(tp),e2)) 
       equation
         (f1 as _::_::_) = allTerms(e1);
-        f1 = Util.listMap1(f1,expDiv,e2);
-        f1 = Util.listFlatten(Util.listMap(f1,allTerms));
+        f1 = List.map1(f1,expDiv,e2);
+        f1 = List.flatten(List.map(f1,allTerms));
       then 
         f1;
    
     case (e as DAE.BINARY(e1,DAE.DIV_ARRAY_SCALAR(tp),e2)) 
       equation
         (f1 as _::_::_) = allTerms(e1);
-        f1 = Util.listMap1(f1,expDiv,e2);
-        f1 = Util.listFlatten(Util.listMap(f1,allTerms));
+        f1 = List.map1(f1,expDiv,e2);
+        f1 = List.flatten(List.map(f1,allTerms));
       then 
         f1;
    
     case (e as DAE.BINARY(e1,DAE.DIV_SCALAR_ARRAY(tp),e2)) 
       equation
         (f1 as _::_::_) = allTerms(e1);
-        f1 = Util.listMap1(f1,expDiv,e2);
-        f1 = Util.listFlatten(Util.listMap(f1,allTerms));
+        f1 = List.map1(f1,expDiv,e2);
+        f1 = List.flatten(List.map(f1,allTerms));
       then 
         f1;
    
@@ -2303,21 +2304,21 @@ algorithm
       list<list<DAE.Exp>> mexpl;
     case(DAE.UNARY(operator=DAE.UMINUS_ARR(ty=_),exp=DAE.ARRAY(array=expl)))
       equation
-        expl = Util.listFlatten(Util.listMap(expl,flattenArrayExpToList));
-        expLst = Util.listMap(expl,negate);
+        expl = List.flatten(List.map(expl,flattenArrayExpToList));
+        expLst = List.map(expl,negate);
       then expLst;
     case(DAE.ARRAY(array=expl))
       equation
-        expLst = Util.listFlatten(Util.listMap(expl,flattenArrayExpToList));
+        expLst = List.flatten(List.map(expl,flattenArrayExpToList));
       then expLst;
     case(DAE.UNARY(operator=DAE.UMINUS_ARR(ty=_),exp=DAE.MATRIX(matrix=mexpl)))
       equation
-        expl = Util.listFlatten(Util.listMap(Util.listFlatten(mexpl),flattenArrayExpToList));
-        expLst = Util.listMap(expl,negate);
+        expl = List.flatten(List.map(List.flatten(mexpl),flattenArrayExpToList));
+        expLst = List.map(expl,negate);
       then expLst;
     case(DAE.MATRIX(matrix=mexpl))
       equation
-        expLst = Util.listFlatten(Util.listMap(Util.listFlatten(mexpl),flattenArrayExpToList));
+        expLst = List.flatten(List.map(List.flatten(mexpl),flattenArrayExpToList));
       then expLst;
     case(e) then {e};
   end matchcontinue;
@@ -2460,7 +2461,7 @@ algorithm
         Debug.traceln("Warning: makeASUB: given expression: " +& 
                       ExpressionDump.printExpStr(inExp) +&
                       " contains a component reference!\n" +&
-                      " Subscripts exps: [" +& Util.stringDelimitList(Util.listMap(inSubs, ExpressionDump.printExpStr), ",")+& "]\n" +&
+                      " Subscripts exps: [" +& Util.stringDelimitList(List.map(inSubs, ExpressionDump.printExpStr), ",")+& "]\n" +&
                       "DAE.ASUB should not be used for component references, instead the subscripts should be added directly to the component reference!");
         exp = DAE.ASUB(inExp,inSubs);
       then 
@@ -2682,7 +2683,7 @@ algorithm
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace","-Expression.makeSum failed, DAE.Exp lst:");
-        explst = Util.listMap(lst, ExpressionDump.printExpStr);
+        explst = List.map(lst, ExpressionDump.printExpStr);
         str = Util.stringDelimitList(explst, ", ");
         Debug.fprint("failtrace",str);
         Debug.fprint("failtrace","\n");
@@ -2744,7 +2745,7 @@ public function makeProductVector "takes and expression e1 and a list of express
   input list<DAE.Exp> v;
   output list<DAE.Exp> res;
 algorithm
-  res := Util.listMap1(v,makeProduct,e1);
+  res := List.map1(v,makeProduct,e1);
 end makeProductVector;
 
 public function makeProduct
@@ -2835,7 +2836,7 @@ algorithm
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace","-Expression.makeProductLst failed, DAE.Exp lst:");
-        explst = Util.listMap(lst, ExpressionDump.printExpStr);
+        explst = List.map(lst, ExpressionDump.printExpStr);
         str = Util.stringDelimitList(explst, ", ");
         Debug.fprint("failtrace",str);
         Debug.fprint("failtrace","\n");
@@ -2897,7 +2898,7 @@ public function makeDivVector "takes and expression e1 and a list of expressisio
   input DAE.Exp e1;
   output list<DAE.Exp> res;
 algorithm
-  res := Util.listMap1(v,makeDiv,e1);
+  res := List.map1(v,makeDiv,e1);
 end makeDivVector;
 
 public function makeAsubAddIndex "creates an ASUB given an expression and an index"
@@ -3001,8 +3002,8 @@ algorithm
       equation
         i = dimensionSize(d);
         (e, ty) = makeZeroExpression(dims);
-        eLst = Util.listFill(e,i);
-        scalar = Util.isListEmpty(dims);
+        eLst = List.fill(e,i);
+        scalar = List.isEmpty(dims);
       then
         (DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(),d::dims),scalar,eLst), 
          (DAE.T_ARRAY(d,ty),NONE()));
@@ -4091,7 +4092,7 @@ algorithm
     
     case((e as DAE.CREF(cr,ty), crefs))
       equation
-        crefs = Util.listUnionEltOnTrue(cr,crefs,ComponentReference.crefEqual);
+        crefs = List.unionEltOnTrue(cr,crefs,ComponentReference.crefEqual);
         // e = makeCrefExp(cr,ty);
       then
         ((e, crefs ));
@@ -4255,7 +4256,7 @@ public function traverseExpListBidir
   replaceable type Argument subtypeof Any;
 algorithm
   (outExpl, outTuple) :=
-    Util.listMapAndFold(inExpl, traverseExpBidir, inTuple);
+    List.mapFold(inExpl, traverseExpBidir, inTuple);
 end traverseExpListBidir;
 
 public function traverseExpBidir
@@ -4439,7 +4440,7 @@ algorithm
 
     case (DAE.MATRIX(ty = ty, integer = dim, matrix = mat_expl), tup)
       equation
-        (mat_expl, tup) = Util.listListMapAndFold(mat_expl, traverseExpBidir, tup);
+        (mat_expl, tup) = List.mapFoldList(mat_expl, traverseExpBidir, tup);
       then
         (DAE.MATRIX(ty, dim, mat_expl), tup);
 
@@ -4489,7 +4490,7 @@ algorithm
     case (DAE.REDUCTION(reductionInfo = reductionInfo, expr = e1, iterators = riters), tup)
       equation
         (e1, tup) = traverseExpBidir(e1, tup);
-        (riters, tup) = Util.listMapAndFold(riters, traverseReductionIteratorBidir, tup);
+        (riters, tup) = List.mapFold(riters, traverseReductionIteratorBidir, tup);
       then
         (DAE.REDUCTION(reductionInfo, e1, riters), tup);
 
@@ -4530,7 +4531,7 @@ algorithm
       equation
         (expl, tup) = traverseExpListBidir(expl, tup);
         /* TODO: Implement traverseMatchCase! */
-        //(cases, tup) = Util.listMapAndFold(cases, traverseMatchCase, tup);
+        //(cases, tup) = List.mapFold(cases, traverseMatchCase, tup);
       then
         (DAE.MATCHEXPRESSION(match_ty, expl, match_decls, match_cases, ty), tup);
 
@@ -4586,14 +4587,14 @@ algorithm
     case (DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs,
         componentRef = cr), tup)
       equation
-        (subs, tup) = Util.listMapAndFold(subs, traverseExpBidirSubs, tup);
+        (subs, tup) = List.mapFold(subs, traverseExpBidirSubs, tup);
         (cr, tup) = traverseExpBidirCref(cr, tup);
       then
         (DAE.CREF_QUAL(name, ty, subs, cr), tup);
 
     case (DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), tup)
       equation
-        (subs, tup) = Util.listMapAndFold(subs, traverseExpBidirSubs, tup);
+        (subs, tup) = List.mapFold(subs, traverseExpBidirSubs, tup);
       then
         (DAE.CREF_IDENT(name, ty, subs), tup);
 
@@ -4911,10 +4912,10 @@ algorithm
     case (DAE.CAST(ty = t,exp = e)) then isZero(e);
     
     case(DAE.UNARY(DAE.UMINUS(_),e)) then isZero(e);
-    case(DAE.ARRAY(array = ae)) then Util.listMapAllValue(ae,isZero,true);
+    case(DAE.ARRAY(array = ae)) then List.mapAllValueBool(ae,isZero,true);
     
     case (DAE.MATRIX(matrix = matrix))
-      then Util.listMapAllValue(Util.listFlatten(matrix),isZero,true);
+      then List.mapAllValueBool(List.flatten(matrix),isZero,true);
     
     case(DAE.UNARY(DAE.UMINUS_ARR(_),e)) then isZero(e);
     
@@ -4986,7 +4987,7 @@ algorithm
     
     case (DAE.MATRIX(matrix = matrix),_)
       equation
-        res = Util.listFold(matrix,isConstWorkList,true);
+        res = List.fold(matrix,isConstWorkList,true);
       then res;
     
     case (DAE.RANGE(exp=e1,expOption=NONE(),range=e2),_) then isConstWork(e1,isConstWork(e2,true));
@@ -5033,7 +5034,7 @@ protected function isConstMatrixExpList
   input list<tuple<DAE.Exp,Boolean>> inLst;
   output Boolean outBoolean;
 algorithm
-  outBoolean := Util.listMapAllValue(inLst,isConstMatrixExp,true);
+  outBoolean := List.mapAllValueBool(inLst,isConstMatrixExp,true);
 end isConstMatrixExpList;
 
 protected function isConstMatrixExp
@@ -5149,9 +5150,9 @@ algorithm b := matchcontinue(t1,t2)
        then equalTypesComplexVars(vars1,vars2);
   case(DAE.ET_ARRAY(ty1,ad1),DAE.ET_ARRAY(ty2,ad2))
     equation
-      li1 = Util.listMap(ad1, dimensionSize);
-      li2 = Util.listMap(ad2, dimensionSize);
-      true = Util.isListEqualWithCompareFunc(li1,li2,intEq);
+      li1 = List.map(ad1, dimensionSize);
+      li2 = List.map(ad2, dimensionSize);
+      true = List.isEqualOnTrue(li1,li2,intEq);
       true = equalTypes(ty1,ty2);
     then
       true;
@@ -5370,7 +5371,7 @@ algorithm
     // partial evaluation
     case (DAE.PARTEVALFUNCTION(path = _, expList = elst)) // stefan
       equation
-        blst = Util.listMap(elst,containVectorFunctioncall);
+        blst = List.map(elst,containVectorFunctioncall);
         res = Util.boolOrList(blst);
       then
         res;
@@ -5444,15 +5445,15 @@ algorithm
     // arrays 
     case (DAE.ARRAY(array = elst))
       equation
-        blst = Util.listMap(elst, containVectorFunctioncall);
+        blst = List.map(elst, containVectorFunctioncall);
         res = Util.boolOrList(blst);
       then
         res;
     // matrixes
     case (DAE.MATRIX(matrix = explst))
       equation
-        flatexplst = Util.listFlatten(explst);
-        blst = Util.listMap(flatexplst, containVectorFunctioncall);
+        flatexplst = List.flatten(explst);
+        blst = List.map(flatexplst, containVectorFunctioncall);
         res = Util.boolOrList(blst);
       then
         res;
@@ -5477,7 +5478,7 @@ algorithm
     // tuples return true all the time???!! adrpo: FIXME! TODO! is this really true?
     case (DAE.TUPLE(PR = elst))
       equation 
-        blst = Util.listMap(elst, containVectorFunctioncall);
+        blst = List.map(elst, containVectorFunctioncall);
         res = Util.boolOrList(blst);
       then
         res;
@@ -5534,7 +5535,7 @@ algorithm
     // partial evaluation functions
     case (DAE.PARTEVALFUNCTION(path = _, expList = elst)) // stefan
       equation
-        blst = Util.listMap(elst,containFunctioncall);
+        blst = List.map(elst,containFunctioncall);
         res = Util.boolOrList(blst);
       then
         res;
@@ -5614,7 +5615,7 @@ algorithm
     // arrays 
     case (DAE.ARRAY(array = elst))
       equation
-        blst = Util.listMap(elst, containFunctioncall);
+        blst = List.map(elst, containFunctioncall);
         res = Util.boolOrList(blst);
       then
         res;
@@ -5622,8 +5623,8 @@ algorithm
     // matrix
     case (DAE.MATRIX(matrix = explst))
       equation
-        flatexplst = Util.listFlatten(explst);
-        blst = Util.listMap(flatexplst, containFunctioncall);
+        flatexplst = List.flatten(explst);
+        blst = List.map(flatexplst, containFunctioncall);
         res = Util.boolOrList(blst);
       then
         res;
@@ -5650,7 +5651,7 @@ algorithm
     // tuples return true all the time???!! adrpo: FIXME! TODO! is this really true?
     case (DAE.TUPLE(PR = elst))
       equation 
-        blst = Util.listMap(elst, containVectorFunctioncall);
+        blst = List.map(elst, containVectorFunctioncall);
         res = Util.boolOrList(blst);
       then
         res;
@@ -5826,8 +5827,8 @@ algorithm
     case(e)
       equation
         (terms_ as _::_) = terms(e);
-        true = Util.listMapAllValue(terms_,expIsPositiveOrZero,true);
-        _::_ = Util.listSelect(terms_,expIsPositive);
+        true = List.mapAllValueBool(terms_,expIsPositiveOrZero,true);
+        _::_ = List.select(terms_,expIsPositive);
       then 
         false;
 
@@ -6213,14 +6214,14 @@ algorithm
     case (DAE.ENUM_LITERAL(name=_), cr) then false;
     case (DAE.ARRAY(array = explist),cr)
       equation
-        reslist = Util.listMap1(explist, expContains, cr);
+        reslist = List.map1(explist, expContains, cr);
         res = Util.boolOrList(reslist);
       then
         res;
     
     case (DAE.MATRIX(matrix = expl),cr)
       equation
-        res = Util.boolOrList(Util.listMap(Util.listListMap1(expl, expContains, cr),Util.boolOrList));
+        res = Util.boolOrList(List.map(List.map1List(expl, expContains, cr),Util.boolOrList));
       then
         res;
     
@@ -6292,14 +6293,14 @@ algorithm
     // general case for arguments
     case (DAE.CALL(path = fcn,expLst = args),(cr as DAE.CREF(componentRef = _)))
       equation
-        reslist = Util.listMap1(args, expContains, cr);
+        reslist = List.map1(args, expContains, cr);
         res = Util.boolOrList(reslist);
       then
         res;
     
     case (DAE.PARTEVALFUNCTION(path = fcn,expList = args),(cr as DAE.CREF(componentRef = _)))
       equation
-        reslist = Util.listMap1(args, expContains, cr);
+        reslist = List.map1(args, expContains, cr);
         res = Util.boolOrList(reslist);
       then
         res;
@@ -6314,7 +6315,7 @@ algorithm
     
     case (DAE.ASUB(exp = e,sub = explist),cr)
       equation
-        reslist = Util.listMap1(explist, expContains, cr);
+        reslist = List.map1(explist, expContains, cr);
         res1 = Util.boolOrList(reslist);
         res = expContains(e, cr);
         res = Util.boolOrList({res1,res});

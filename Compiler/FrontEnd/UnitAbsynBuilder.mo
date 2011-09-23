@@ -24,6 +24,7 @@ protected import DAEUtil;
 protected import Expression;
 protected import ExpressionDump;
 protected import Interactive;
+protected import List;
 protected import Lookup;
 protected import OptManager;
 protected import SCode;
@@ -50,8 +51,8 @@ algorithm
    case(cache,env,DAE.DAE(elementLst=elts)) equation
      /* TODO: This is very unefficient. It increases instantiationtime by factor 2 for
        instantiation of largeTests/TestNandTotal.mo */
-       paths = Util.listListUnion(Util.listMap(elts,DAEUtil.getClassList));
-       du = Util.listListUnion(Util.listMap1(paths,retrieveUnitsFromEnv,(cache,env)));
+       paths = List.unionList(List.map(elts,DAEUtil.getClassList));
+       du = List.unionList(List.map1(paths,retrieveUnitsFromEnv,(cache,env)));
        registerUnitWeightDefineunits(du);
    then ();
    end matchcontinue;
@@ -460,7 +461,7 @@ public function printTermsStr "print the terms to a string"
   input UnitAbsyn.UnitTerms terms;
   output String str;
 algorithm
-  str := "{" +& Util.stringDelimitList(Util.listMap(terms,printTermStr),",") +& "}";
+  str := "{" +& Util.stringDelimitList(List.map(terms,printTermStr),",") +& "}";
 end printTermsStr;
 
 public function printTermStr "print one term to a string"
@@ -562,7 +563,7 @@ algorithm
       print(" [");print(unit2str(unit)); print("]");
     then();
     case(unit as UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(typeparams,baseunits))) equation
-      print(Util.stringDelimitList(Util.listMap(typeparams,printTypeParameterStr),","));
+      print(Util.stringDelimitList(List.map(typeparams,printTypeParameterStr),","));
       print(printBaseUnitsStr(baseunits));
       print(" [");print(unit2str(unit)); print("]");
     then();
@@ -1080,7 +1081,7 @@ algorithm
     case(env,e as DAE.MATRIX(matrix=mexpl),divOrMul,ht,store)
       equation
         print("Matrix ="+&ExpressionDump.printExpStr(e)+&"\n");
-        expl = Util.listFlatten(mexpl);
+        expl = List.flatten(mexpl);
         (uts,terms,store) = buildTermExpList(env,expl,ht,store);
         ut::uts = buildArrayElementTerms(uts,expl);
         terms = listAppend(terms,uts);
@@ -1450,7 +1451,7 @@ algorithm
     list<MMath.Rational> units,units1,units2;
     case(UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(tparams1,units1)),UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(tparams2,units2))) equation
       tparams = listAppend(tparams1,tparams2);
-      units = Util.listThreadMap(units1,units2,MMath.addRational);
+      units = List.threadMap(units1,units2,MMath.addRational);
     then UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(tparams,units));
   end matchcontinue;
 end unitMultiply;

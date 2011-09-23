@@ -54,6 +54,7 @@ protected import Dump;
 protected import Error;
 protected import Inst;
 protected import InstanceHierarchy;
+protected import List;
 protected import MetaUtil;
 protected import System;
 protected import Types;
@@ -98,13 +99,13 @@ algorithm
         System.setHasStreamConnectors(false);
         
         // translate builtin functions
-        spInitial = Util.listFold(initialClasses, translate2, {});
+        spInitial = List.fold(initialClasses, translate2, {});
         // call flatten program on the initial classes only
         spInitial = SCodeFlatten.flattenCompleteProgram(spInitial);
         spInitial = listReverse(spInitial);
         
         // translate given absyn to scode.
-        spAbsyn = Util.listFold(inClasses, translate2, {});
+        spAbsyn = List.fold(inClasses, translate2, {});
         spAbsyn = listReverse(spAbsyn);
         
         // NOTE: we check duplicates separately for builtin
@@ -346,7 +347,7 @@ algorithm
     case (Absyn.PARTS(typeVars = typeVars, classParts = parts,comment = cmtString),_)
       equation
         // Debug.fprintln("translate", "translating class parts");
-        tvels = Util.listMap1(typeVars, makeTypeVarElement, info);
+        tvels = List.map1(typeVars, makeTypeVarElement, info);
         els = translateClassdefElements(parts);
         els = listAppend(tvels,els);
         anns = translateClassdefAnnotations(parts);
@@ -1240,7 +1241,7 @@ algorithm
       list<Absyn.GroupImport> groups;
     
     case (Absyn.GROUP_IMPORT(prefix=p,groups=groups),visibility,info)
-      then Util.listMap3(groups, translateGroupImport, p, visibility, info);
+      then List.map3(groups, translateGroupImport, p, visibility, info);
     else {SCode.IMPORT(imp, visibility, info)};
   end match;
 end translateImports;
@@ -1500,7 +1501,7 @@ algorithm
     case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = eis,equationElseItems = fb),com,info)
       equation
         (conditions,trueBranches) = Util.splitTuple2List((e,tb)::eis);
-        trueEEquations = Util.listMap(trueBranches,translateEEquations);
+        trueEEquations = List.map(trueBranches,translateEEquations);
         fb_1 = translateEEquations(fb);
       then
         SCode.EQ_IF(conditions,trueEEquations,fb_1,com,info);
@@ -1963,7 +1964,7 @@ algorithm
         cond = prefixUnqualifiedCrefsFromExp(cond, prefix);
         t = prefixUnqualifiedCrefsFromExp(t, prefix);
         f = prefixUnqualifiedCrefsFromExp(f, prefix);
-        lst = Util.listMap1(lst, prefixTuple, prefix); // TODO! fixme, prefix these also.
+        lst = List.map1(lst, prefixTuple, prefix); // TODO! fixme, prefix these also.
       then
         Absyn.IFEXP(cond, t, f, lst);
     // calls
@@ -1981,19 +1982,19 @@ algorithm
     // arrays
     case (Absyn.ARRAY(arrayExp = es), prefix)
       equation
-        es = Util.listMap1(es, prefixUnqualifiedCrefsFromExp, prefix);
+        es = List.map1(es, prefixUnqualifiedCrefsFromExp, prefix);
       then
         Absyn.ARRAY(es);
     // tuples
     case (Absyn.TUPLE(expressions = es), prefix)
       equation
-        es = Util.listMap1(es, prefixUnqualifiedCrefsFromExp, prefix);
+        es = List.map1(es, prefixUnqualifiedCrefsFromExp, prefix);
       then
         Absyn.TUPLE(es);
     // matrix
     case (Absyn.MATRIX(matrix = esLstLst), prefix)
       equation
-        esLstLst = Util.listMap1(esLstLst, prefixUnqualifiedCrefsFromExpLst, prefix);
+        esLstLst = List.map1(esLstLst, prefixUnqualifiedCrefsFromExpLst, prefix);
       then
         Absyn.MATRIX(esLstLst);
     // range
@@ -2009,7 +2010,7 @@ algorithm
     // MetaModelica expressions!
     case (Absyn.LIST(es), prefix)
       equation
-        es = Util.listMap1(es, prefixUnqualifiedCrefsFromExp, prefix);
+        es = List.map1(es, prefixUnqualifiedCrefsFromExp, prefix);
       then
         Absyn.LIST(es);
     // cons
@@ -2154,7 +2155,7 @@ algorithm
     case ((el as SCode.EXTENDS(baseClassPath = _))::rest, redecls)
       equation
         print("- SCodeUtil.addRedeclareAsElementsToExtends failed on:\nextends:\n\t" +& SCodeDump.shortElementStr(el) +& 
-                 "\nredeclares:\n" +& Util.stringDelimitList(Util.listMap(redecls, SCodeDump.unparseElementStr), "\n") +& "\n");
+                 "\nredeclares:\n" +& Util.stringDelimitList(List.map(redecls, SCodeDump.unparseElementStr), "\n") +& "\n");
       then
         fail();
         

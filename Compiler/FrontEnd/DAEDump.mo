@@ -60,6 +60,7 @@ protected import ClassInf;
 protected import Algorithm;
 protected import RTOpts;
 protected import SCodeDump;
+protected import List;
 
 public function printDAE "function: printDAE
   This function prints out a list of elements (i.e. a DAE)
@@ -94,9 +95,9 @@ algorithm
     
     case (DAE.DAE(daelist),functionTree)
       equation
-        Util.listMap0(sortFunctions(DAEUtil.getFunctionList(functionTree)),dumpFunction);
-        Util.listMap0(daelist, dumpExtObjectClass);
-        Util.listMap0(daelist, dumpCompElement);
+        List.map_0(sortFunctions(DAEUtil.getFunctionList(functionTree)),dumpFunction);
+        List.map_0(daelist, dumpExtObjectClass);
+        List.map_0(daelist, dumpCompElement);
       then
         ();
   end match;
@@ -109,7 +110,7 @@ algorithm
   str := matchcontinue(funcs)
     case funcs
       equation
-        str = Util.stringDelimitList(Util.listMap(sortFunctions(DAEUtil.getFunctionList(funcs)),functionNameStr),",");
+        str = Util.stringDelimitList(List.map(sortFunctions(DAEUtil.getFunctionList(funcs)),functionNameStr),",");
     then str;
   end matchcontinue;
 end dumpFunctionNamesStr;
@@ -139,7 +140,7 @@ protected function sortFunctions "sorts the functions and record constructors in
   input list<DAE.Function> funcs;
   output list<DAE.Function> sortedFuncs;
 algorithm
-  sortedFuncs := Util.sort(funcs,funcGreaterThan);
+  sortedFuncs := List.sort(funcs,funcGreaterThan);
 end sortFunctions;
 
 protected function funcGreaterThan "sorting function for two DAE.Element that are functions or record constuctors"
@@ -319,7 +320,7 @@ algorithm
       equation
         Print.printBuf("ARRAY_EQUATION(");
         Print.printBuf("dims = [");
-        Print.printBuf(Util.stringDelimitList(Util.listMap(dl, ExpressionDump.dimensionString), ", "));
+        Print.printBuf(Util.stringDelimitList(List.map(dl, ExpressionDump.dimensionString), ", "));
         Print.printBuf("]; ");
         ExpressionDump.printExp(e1);
         Print.printBuf(" = ");
@@ -332,7 +333,7 @@ algorithm
       equation
         Print.printBuf("INITIAL_ARRAY_EQUATION(");
         Print.printBuf("dims = [");
-        Print.printBuf(Util.stringDelimitList(Util.listMap(dl, ExpressionDump.dimensionString), ", "));
+        Print.printBuf(Util.stringDelimitList(List.map(dl, ExpressionDump.dimensionString), ", "));
         Print.printBuf("]; ");
         ExpressionDump.printExp(e1);
         Print.printBuf(" = ");
@@ -546,14 +547,14 @@ public function dumpElements "function: dumpElements
   input list<DAE.Element> l;
 algorithm
   dumpVars(l, false);
-  Util.listMap0(l, dumpExtObjectClass);
+  List.map_0(l, dumpExtObjectClass);
   Print.printBuf("initial equation\n");
-  Util.listMap0(l, dumpInitialEquation);
+  List.map_0(l, dumpInitialEquation);
   Print.printBuf("equation\n");
-  Util.listMap0(l, dumpEquation);
-  Util.listMap0(l, dumpInitialAlgorithm);
-  Util.listMap0(l, dumpAlgorithm);
-  Util.listMap0(l, dumpCompElement);
+  List.map_0(l, dumpEquation);
+  List.map_0(l, dumpInitialAlgorithm);
+  List.map_0(l, dumpAlgorithm);
+  List.map_0(l, dumpCompElement);
 end dumpElements;
 
 public function dumpFunctionElements "function: dumpElements
@@ -561,7 +562,7 @@ public function dumpFunctionElements "function: dumpElements
   input list<DAE.Element> l;
 algorithm
   dumpVars(l, true);
-  Util.listMap0(l, dumpAlgorithm);
+  List.map_0(l, dumpAlgorithm);
 end dumpFunctionElements;
 
 protected function dumpVars "function: dumpVars
@@ -880,7 +881,7 @@ algorithm
       equation
         true = RTOpts.showAnnotations();
         str = dumpCommentOptionStr(cmtopt);
-        ann_strl = Util.listMap1(Util.listMap(annl, dumpAnnotationStr), 
+        ann_strl = List.map1(List.map(annl, dumpAnnotationStr), 
           stringAppend, ";");
         // If there is only one annotations, print it immediately after the
         // class name, otherwise print them in a list below the class name.
@@ -1081,12 +1082,12 @@ algorithm
         Print.printBuf("  if ");
         ExpressionDump.printExp(e);
         Print.printBuf(" then\n");
-        Util.listMap0(xs1,dumpInitialEquation);
+        List.map_0(xs1,dumpInitialEquation);
         str = dumpIfEquationsStream(conds, trueBranches, IOStream.emptyStreamOfTypeList);
         s = IOStream.string(str);
         Print.printBuf(s);
         Print.printBuf("  else\n");
-        Util.listMap0(xs2,dumpInitialEquation);
+        List.map_0(xs2,dumpInitialEquation);
         Print.printBuf("end if;\n");
       then
         ();
@@ -1513,7 +1514,7 @@ algorithm
       equation
         s1 = indentStr(i);
         s2 = ExpressionDump.printExpStr(e);
-        es = Util.listMap(expl, ExpressionDump.printExpStr);
+        es = List.map(expl, ExpressionDump.printExpStr);
         s3 = Util.stringDelimitList(es, ", ");
         str = stringAppendList({s1,"(",s3,") := ",s2,";\n"});
         Print.printBuf(str);
@@ -1732,7 +1733,7 @@ algorithm
       equation
         s1 = indentStr(i);
         s2 = ExpressionDump.printExpStr(e);
-        es = Util.listMap(expl, ExpressionDump.printExpStr);
+        es = List.map(expl, ExpressionDump.printExpStr);
         s3 = Util.stringDelimitList(es, ", ");
         str = stringAppendList({s1,"(",s3,") := ",s2,";\n"});
       then
@@ -2595,7 +2596,7 @@ algorithm
     // dims give something
     case (dims, true)
      equation
-       str = "[" +& Util.stringDelimitList(Util.listMap(dims, ExpressionDump.printSubscriptStr), ", ") +& "]";
+       str = "[" +& Util.stringDelimitList(List.map(dims, ExpressionDump.printSubscriptStr), ", ") +& "]";
      then
        str;
   end matchcontinue;
@@ -2685,9 +2686,9 @@ algorithm
       equation
         funcs = DAEUtil.getFunctionList(functionTree);
         funcs = sortFunctions(funcs);
-        str = Util.listFold(funcs, dumpFunctionStream, str);
-        str = IOStream.appendList(str, Util.listMap(daelist, dumpExtObjClassStr));
-        str = Util.listFold(daelist, dumpCompElementStream, str);
+        str = List.fold(funcs, dumpFunctionStream, str);
+        str = IOStream.appendList(str, List.map(daelist, dumpExtObjClassStr));
+        str = List.fold(daelist, dumpCompElementStream, str);
       then
         str;
   end match;
@@ -2742,16 +2743,16 @@ algorithm
        // dump variables
        str = dumpVarsStream(v, false, str);
 
-       str = IOStream.append(str, Util.if_(Util.isListEmpty(ie), "", "initial equation\n"));
+       str = IOStream.append(str, Util.if_(List.isEmpty(ie), "", "initial equation\n"));
        str = dumpInitialEquationsStream(ie, str);
        
-       str = IOStream.append(str, Util.if_(Util.isListEmpty(ia), "", "initial algorithm\n"));
+       str = IOStream.append(str, Util.if_(List.isEmpty(ia), "", "initial algorithm\n"));
        str = dumpInitialAlgorithmsStream(ia, str);
 
-       str = IOStream.append(str, Util.if_(Util.isListEmpty(e), "", "equation\n"));
+       str = IOStream.append(str, Util.if_(List.isEmpty(e), "", "equation\n"));
        str = dumpEquationsStream(e, str);
 
-       str = IOStream.append(str, Util.if_(Util.isListEmpty(a), "", "algorithm\n"));
+       str = IOStream.append(str, Util.if_(List.isEmpty(a), "", "algorithm\n"));
        str = dumpAlgorithmsStream(a, str);
      then
        str;
@@ -2774,7 +2775,7 @@ algorithm
 
     case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts)) :: xs, str)
       equation
-        str = IOStream.appendList(str, Util.listMap(stmts, ppStatementStr));
+        str = IOStream.appendList(str, List.map(stmts, ppStatementStr));
         str = dumpAlgorithmsStream(xs, str);
       then
         str;
@@ -2803,7 +2804,7 @@ algorithm
 
     case (DAE.INITIALALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts)) :: xs, str)
       equation
-        str = IOStream.appendList(str, Util.listMap(stmts, ppStatementStr));
+        str = IOStream.appendList(str, List.map(stmts, ppStatementStr));
         str = dumpInitialAlgorithmsStream(xs, str);
       then
         str;
@@ -2960,7 +2961,7 @@ algorithm
     case ((DAE.NORETCALL(functionName=path,functionArgs=expl) :: xs), str)
       equation
         s = Absyn.pathString(path);
-        s1 = Util.stringDelimitList(Util.listMap(expl,ExpressionDump.printExpStr),",");
+        s1 = Util.stringDelimitList(List.map(expl,ExpressionDump.printExpStr),",");
         str = IOStream.appendList(str, {"  ",s,"(",s1,");\n"});
         str = dumpEquationsStream(xs, str);
       then
@@ -3215,7 +3216,7 @@ algorithm
     case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts)), str)
       equation
         str = IOStream.append(str, "algorithm\n");
-        str = Util.listFold(stmts, ppStatementStream, str);
+        str = List.fold(stmts, ppStatementStream, str);
       then
         str;
     case (_,str) then str;
@@ -3237,7 +3238,7 @@ algorithm
     case (DAE.INITIALALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts)), str)
       equation
         str = IOStream.append(str, "initial algorithm\n");
-        str = Util.listFold(stmts, ppStatementStream, str);
+        str = List.fold(stmts, ppStatementStream, str);
       then
         str;
     case (_,str) then str;
@@ -3388,7 +3389,7 @@ public function dumpFunctionElementsStream "function: dumpFunctionElementsStream
   output IOStream.IOStream outStream;
 algorithm
   outStream := dumpVarsStream(l, true, inStream);
-  outStream := Util.listFold(l, dumpAlgorithmStream, outStream);
+  outStream := List.fold(l, dumpAlgorithmStream, outStream);
 end dumpFunctionElementsStream;
 
 end DAEDump;

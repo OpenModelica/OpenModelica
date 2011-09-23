@@ -58,6 +58,7 @@ protected import Debug;
 protected import Env;
 protected import Expression;
 protected import ExpressionDump;
+protected import List;
 protected import Prefix;
 protected import RTOpts;
 protected import Static;
@@ -423,7 +424,7 @@ algorithm
 
     case DAE.CALL(path=Absyn.IDENT("listAppend"),expLst={DAE.LIST(el),e2})
       equation
-        e = Util.listFold(listReverse(el), Expression.makeCons, e2);
+        e = List.fold(listReverse(el), Expression.makeCons, e2);
       then e;
 
     case DAE.CALL(path=Absyn.IDENT("listAppend"),expLst={e1,DAE.LIST(valList={})})
@@ -507,7 +508,7 @@ algorithm
     case(DAE.ARRAY(t,b,exps),tp) 
       equation
         tp_1 = Expression.unliftArray(tp);
-        exps_1 = Util.listMap1(exps, addCast, tp_1);
+        exps_1 = List.map1(exps, addCast, tp_1);
       then
         DAE.ARRAY(tp,b,exps_1);
     
@@ -523,13 +524,13 @@ algorithm
       equation
         tp1 = Expression.unliftArray(tp);
         tp2 = Expression.unliftArray(tp1);
-        mexps_1 = Util.listListMap1(mexps, addCast, tp2);
+        mexps_1 = List.map1List(mexps, addCast, tp2);
       then DAE.MATRIX(tp,n,mexps_1);
     
     // fill(e, ...) can be simplified
     case(DAE.CALL(path=Absyn.IDENT("fill"),expLst=e::exps),tp) 
       equation
-        tp_1 = Util.listFold(exps,Expression.unliftArrayIgnoreFirst,tp);
+        tp_1 = List.fold(exps,Expression.unliftArrayIgnoreFirst,tp);
         e = DAE.CAST(tp_1,e);
         e = Expression.makeBuiltinCall("fill",e::exps,tp);
       then e;
@@ -632,7 +633,7 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT("min"),expLst={DAE.ARRAY(array=es)},attr=DAE.CALL_ATTR(ty=tp)))
       equation
         i1 = listLength(es);
-        es = Util.listUnion(es,es);
+        es = List.union(es,es);
         i2 = listLength(es);
         false = i1 == i2;
         e = Expression.makeScalarArray(es,tp);
@@ -640,7 +641,7 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT("max"),expLst={DAE.ARRAY(array=es)},attr=DAE.CALL_ATTR(ty=tp)))
       equation
         i1 = listLength(es);
-        es = Util.listUnion(es,es);
+        es = List.union(es,es);
         i2 = listLength(es);
         false = i1 == i2;
         e = Expression.makeScalarArray(es,tp);
@@ -685,7 +686,7 @@ algorithm
     // Simplify built-in function fill. MathCore depends on this being done here, do not remove!
     case (DAE.CALL(path = Absyn.IDENT("fill"), expLst = e::expl))
       equation
-        valueLst = Util.listMap(expl, ValuesUtil.expValue);
+        valueLst = List.map(expl, ValuesUtil.expValue);
         (_,outExp,_) = Static.elabBuiltinFill2(Env.emptyCache(), Env.emptyEnv, e, (DAE.T_NOTYPE(),NONE()), valueLst, DAE.C_CONST(),Prefix.NOPRE());
       then
         outExp;
@@ -729,7 +730,7 @@ algorithm
     // To calculate sums, first try matrix concatenation
     case DAE.CALL(path=Absyn.IDENT("sum"),expLst={DAE.MATRIX(ty=tp1,matrix=mexpl)},attr=DAE.CALL_ATTR(ty=tp2))
       equation
-        es = Util.listFlatten(mexpl);
+        es = List.flatten(mexpl);
         tp1 = Expression.unliftArray(Expression.unliftArray(tp1));
         sc = not Expression.isArrayType(tp1);
         tp1 = Debug.bcallret1(sc,Expression.unliftArray,tp1,tp1);
@@ -812,7 +813,7 @@ algorithm
       then simplifyCat(dim,e::es,acc,true);
     case (2,DAE.MATRIX(matrix=ms1,integer=i,ty=DAE.ET_ARRAY(arrayDimensions=dim11::dim1::dims,ty=etp))::DAE.MATRIX(matrix=ms2,ty=DAE.ET_ARRAY(arrayDimensions=_::dim2::_))::es,acc,_)
       equation
-        mss = Util.listThreadMap(ms1,ms2,listAppend);
+        mss = List.threadMap(ms1,ms2,listAppend);
         ndim = Expression.addDimensions(dim1,dim2);
         etp = DAE.ET_ARRAY(etp,dim11::ndim::dims);
         e = DAE.MATRIX(etp,i,mss);
@@ -879,14 +880,14 @@ algorithm
     case (_, _, _, false)
       equation
         fill_size = minLength - stringLength;
-        str = stringAppendList(Util.listFill(" ", fill_size)) +& inString;
+        str = stringAppendList(List.fill(" ", fill_size)) +& inString;
       then
         str;
     // leftJustified is true, append spaces at the end of the string.
     case (_, _, _, true)
       equation
         fill_size = minLength - stringLength;
-        str = inString +& stringAppendList(Util.listFill(" ", fill_size));
+        str = inString +& stringAppendList(List.fill(" ", fill_size));
       then
         str;
   end matchcontinue;
@@ -1155,9 +1156,9 @@ algorithm
     
     case(DAE.CREF(cr as DAE.CREF_IDENT(idn, _,ssl_2),t), ((ss as (DAE.SLICE(DAE.ARRAY(_,_,(expl_1))))) :: ssl))
       equation
-        subs = Util.listMap(expl_1,Expression.makeIndexSubscript);
-        crefs = Util.listMap1r(Util.listMap(subs,Util.listCreate),ComponentReference.subscriptCref,cr);
-        expl = Util.listMap1(crefs,Expression.makeCrefExp,t);
+        subs = List.map(expl_1,Expression.makeIndexSubscript);
+        crefs = List.map1r(List.map(subs,List.create),ComponentReference.subscriptCref,cr);
+        expl = List.map1(crefs,Expression.makeCrefExp,t);
         dim = listLength(expl);
         exp = simplifyCref2(DAE.ARRAY(DAE.ET_ARRAY(t,{DAE.DIM_INTEGER(dim)}),true,expl),ssl);
       then
@@ -1165,7 +1166,7 @@ algorithm
     
     case(crefExp as DAE.ARRAY(tp,sc,expl), ssl )
       equation
-        expl = Util.listMap1(expl,simplifyCref2,ssl);
+        expl = List.map1(expl,simplifyCref2,ssl);
       then
         DAE.ARRAY(tp,sc,expl);
     
@@ -1476,8 +1477,8 @@ algorithm
     
     case (DAE.ARRAY(ty = tp1,scalar = sc1,array = expl1),DAE.ARRAY(ty = tp2,scalar = sc2,array = expl2)) /* v1  v2 */
       equation
-        expl = Util.listThreadMap(expl1, expl2, Expression.expMul);
-        exp = Util.listReduce(expl, Expression.expAdd);
+        expl = List.threadMap(expl1, expl2, Expression.expMul);
+        exp = List.reduce(expl, Expression.expAdd);
       then
         exp;
     
@@ -1534,8 +1535,8 @@ algorithm
     case ((row :: rows),v1)
       equation
         row_1 = row;
-        expl = Util.listThreadMap(row_1, v1, Expression.expMul);
-        exp = Util.listReduce(expl, Expression.expAdd);
+        expl = List.threadMap(row_1, v1, Expression.expMul);
+        exp = List.reduce(expl, Expression.expAdd);
         res = simplifyScalarProductMatrixVector(rows, v1);
       then
         (exp :: res);
@@ -1558,8 +1559,8 @@ algorithm
     
     case ((DAE.ARRAY(array=row) :: rows),v1)
       equation
-        expl = Util.listThreadMap(row, v1, Expression.expMul);
-        exp = Util.listReduce(expl, Expression.expAdd);
+        expl = List.threadMap(row, v1, Expression.expMul);
+        exp = List.reduce(expl, Expression.expAdd);
         res = simplifyScalarProductMatrixVector1(rows, v1);
       then
         (exp :: res);
@@ -1583,20 +1584,20 @@ algorithm
     
     case (v1,  ((texp :: {}) :: rows)    )
       equation
-        heads = Util.listMap(((texp :: {}) :: rows),Util.listFirst);
+        heads = List.map(((texp :: {}) :: rows),List.first);
         row_1 = heads;
-        expl = Util.listThreadMap(v1, row_1, Expression.expMul);
-        exp = Util.listReduce(expl, Expression.expAdd);
+        expl = List.threadMap(v1, row_1, Expression.expMul);
+        exp = List.reduce(expl, Expression.expAdd);
       then
         (exp :: {});
     
     case (v1,(rows))
       equation
-        heads = Util.listMap((rows),Util.listFirst);
-        tails = Util.listMap((rows),Util.listRest);
+        heads = List.map((rows),List.first);
+        tails = List.map((rows),List.rest);
         row_1 = heads;
-        expl = Util.listThreadMap(v1, row_1, Expression.expMul);
-        exp = Util.listReduce(expl, Expression.expAdd);
+        expl = List.threadMap(v1, row_1, Expression.expMul);
+        exp = List.reduce(expl, Expression.expAdd);
         res = simplifyScalarProductVectorMatrix(v1, tails);
       then
         (exp :: res);
@@ -1882,9 +1883,9 @@ algorithm
           DAE.ICONST(integer = i))
       equation
         0=i;
-        el = Util.listFill(DAE.RCONST(0.0),size1);
-        expl2 =  Util.listFill(el,size1);
-        range = Util.listIntRange2(0,size1-1);
+        el = List.fill(DAE.RCONST(0.0),size1);
+        expl2 =  List.fill(el,size1);
+        range = List.intRange2(0,size1-1);
         expl_1 = simplifyMatrixPow1(range,expl2,DAE.RCONST(1.0));
       then
         DAE.MATRIX(tp1,size1,expl_1);
@@ -1930,12 +1931,12 @@ algorithm
         {};
     case (i::{},row::{},e)
       equation
-        row1 = Util.listReplaceAt(e,i,row);
+        row1 = List.replaceAt(e,i,row);
       then
         {row1};
     case (i::rr,row::rm,e)
       equation
-        row1 = Util.listReplaceAt(e,i,row);
+        row1 = List.replaceAt(e,i,row);
         rm1 = simplifyMatrixPow1(rr,rm,e);
       then
         row1::rm1;
@@ -2010,8 +2011,8 @@ algorithm
     case ({},_) then {};
     case (expl,mat)
       equation
-        first_col = Util.listMap(mat, Util.listFirst);
-        mat_1 = Util.listMap(mat, Util.listRest);
+        first_col = List.map(mat, List.first);
+        mat_1 = List.map(mat, List.rest);
         e_1 = simplifyMatrixProduct4(expl, first_col);
         //tp = Expression.typeof(e_1);
         //builtin = Expression.typeBuiltin(tp);
@@ -2088,9 +2089,9 @@ algorithm
     case ((e as DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = tp),exp2 = e2)))
       equation
         e_lst = Expression.terms(e);
-        //e_lst_1 = Util.listMap(e_lst,simplify2);
+        //e_lst_1 = List.map(e_lst,simplify2);
         (const_es1, notconst_es1) = 
-          Util.listSplitOnTrue(e_lst, Expression.isConst);
+          List.splitOnTrue(e_lst, Expression.isConst);
         const_es1_1 = simplifyBinaryAddConstants(const_es1);
         res1 = Expression.makeSum(const_es1_1);
         res2 = Expression.makeSum(notconst_es1); // Cannot simplify this, if const_es1_1 empty => infinite recursion.
@@ -2130,7 +2131,7 @@ algorithm
       equation
         e1_lst = Expression.factors(e1);
         e2_lst = Expression.factors(e2);
-        e2_lst_1 = Util.listMap(e2_lst, Expression.inverseFactors);
+        e2_lst_1 = List.map(e2_lst, Expression.inverseFactors);
         e_lst = listAppend(e1_lst, e2_lst_1);
         e_lst_1 = simplifyMul(e_lst);
         res = Expression.makeProductLst(e_lst_1);
@@ -2150,7 +2151,7 @@ algorithm
       equation
         e1_lst = Expression.terms(e1);
         e2_lst = Expression.terms(e2);
-        e2_lst = Util.listMap(e2_lst, Expression.negate);
+        e2_lst = List.map(e2_lst, Expression.negate);
         e_lst = listAppend(e1_lst, e2_lst);
         e_lst_1 = simplifyAdd(e_lst);
         res = Expression.makeSum(e_lst_1);
@@ -3967,9 +3968,9 @@ protected function simplifyBinarySortConstantsMul
   DAE.Exp res1,res2;
 algorithm
   e_lst  := Expression.factors(inExp);
-  //e_lst_1 := Util.listMap(e_lst,simplify2); // simplify2 for recursive
+  //e_lst_1 := List.map(e_lst,simplify2); // simplify2 for recursive
   (const_es1, notconst_es1) := 
-    Util.listSplitOnTrue(e_lst, Expression.isConst);
+    List.splitOnTrue(e_lst, Expression.isConst);
   const_es1_1 := simplifyBinaryMulConstants(const_es1);
   (res1,_) := simplify1(Expression.makeProductLst(const_es1_1)); // simplify1 for basic constant evaluation.
   res2 := Expression.makeProductLst(notconst_es1); // Cannot simplify this, if const_es1_1 empty => infinite recursion.
@@ -4046,7 +4047,7 @@ public function simplifyRange
   input Integer inStop;
   output list<Integer> outValues;
 algorithm
-  outValues := Util.listIntRange3(inStart, inStep, inStop);
+  outValues := List.intRange3(inStart, inStep, inStop);
 end simplifyRange;
 
 public function simplifyRangeReal
@@ -4065,7 +4066,7 @@ algorithm
       equation
         equality(inStep = 0.0);
         error_str = Util.stringDelimitList(
-          Util.listMap({inStart, inStep, inStop}, realString), ":");
+          List.map({inStart, inStep, inStop}, realString), ":");
         Error.addMessage(Error.ZERO_STEP_IN_ARRAY_CONSTRUCTOR, {error_str});
       then
         fail();
@@ -4163,7 +4164,7 @@ algorithm
         // TODO: Use foldExp
         ety = Types.elabType(ty);
         cref = DAE.CREF(DAE.CREF_IDENT(iter_name, ety, {}), ety);
-        values = Util.listMap(Util.listMap2r(values, Expression.replaceExp, expr, cref), Util.tuple21);
+        values = List.map(List.map2r(values, Expression.replaceExp, expr, cref), Util.tuple21);
         
         expr = simplifyReductionFoldPhase(str,ety,values,defaultValue);
       then expr;

@@ -48,10 +48,10 @@ public import SCodeFlattenExtends;
 public import SCodeFlattenRedeclare;
 
 protected import Debug;
+protected import List;
 protected import RTOpts;
 protected import SCodeEnv;
 protected import System;
-protected import Util;
 protected import SCodeLookup;
 protected import SCodeDump;
 
@@ -77,7 +77,7 @@ protected
   String name;
 algorithm
   prog := listReverse(inProgram);
-  SCode.CLASS(name = name) := Util.listSelectFirst(prog, isClass);
+  SCode.CLASS(name = name) := List.selectFirst(prog, isClass);
   outClassName := Absyn.IDENT(name);
 end getLastClassNameInProgram;
 

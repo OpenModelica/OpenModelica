@@ -65,6 +65,7 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Inline;
+protected import List;
 protected import RTOpts;
 protected import SCode;
 protected import Util;
@@ -715,7 +716,7 @@ algorithm
     case (m,mt,i,ass1,ass2)
       equation
         vars = BackendDAEUtil.varsInEqn(m, i);
-        vars_1 = Util.listFilter(vars, isNotVMarked);
+        vars_1 = List.filter(vars, isNotVMarked);
         (ass1_1,ass2_1) = forallUnmarkedVarsInEqnBody(m, mt, i, vars_1, ass1, ass2);
       then
         (ass1_1,ass2_1);
@@ -891,7 +892,7 @@ algorithm
       then BackendDAE.SINGLEEQUATION(compelem,v);
     case (comp,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,m,mt,ass1,ass2)
       equation
-        (eqn_lst,var_varindx_lst) = Util.listMap32(comp, getEquationAndSolvedVar_Internal, eqns, vars, ass2);
+        (eqn_lst,var_varindx_lst) = List.map3_2(comp, getEquationAndSolvedVar_Internal, eqns, vars, ass2);
         compX = analyseStrongComponentBlock(comp,eqn_lst,var_varindx_lst,syst,shared,m,mt,ass1,ass2);   
       then
         compX;
@@ -941,34 +942,34 @@ algorithm
     case (comp,eqn_lst,var_varindx_lst,_,_,m,mt,ass1,ass2)
       equation
         SOME(i) = singleAlgorithmEquation(eqn_lst,NONE());
-        varindxs = Util.listMap(var_varindx_lst,Util.tuple22);        
+        varindxs = List.map(var_varindx_lst,Util.tuple22);        
       then
         BackendDAE.SINGLEALGORITHM(i,comp,varindxs);
     case (comp,eqn_lst,var_varindx_lst,_,_,m,mt,ass1,ass2)
       equation
         SOME(i) = singleArrayEquation(eqn_lst,NONE());
-        varindxs = Util.listMap(var_varindx_lst,Util.tuple22);        
+        varindxs = List.map(var_varindx_lst,Util.tuple22);        
       then
         BackendDAE.SINGLEARRAY(i,comp,varindxs);
     case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared as BackendDAE.SHARED(arrayEqs=ae,algorithms=al),m,mt,ass1,ass2)
       equation
-        var_lst = Util.listMap(var_varindx_lst,Util.tuple21);
+        var_lst = List.map(var_varindx_lst,Util.tuple21);
         true = BackendVariable.hasDiscreteVar(var_lst);
         true = BackendVariable.hasContinousVar(var_lst);
-        varindxs = Util.listMap(var_varindx_lst,Util.tuple22);
+        varindxs = List.map(var_varindx_lst,Util.tuple22);
         (cont_eqn,cont_var,disc_eqn,disc_var,indxcont_eqn,indxcont_var,indxdisc_eqn,indxdisc_var) = splitMixedEquations(eqn_lst, comp, var_lst, varindxs);
-        var_varindx_lst_cond = Util.makeTupleList(cont_var,indxcont_var);
+        var_varindx_lst_cond = List.threadTuple(cont_var,indxcont_var);
         sc = analyseStrongComponentBlock(indxcont_eqn,cont_eqn,var_varindx_lst_cond,syst,shared,m,mt,ass1,ass2);
       then
         BackendDAE.MIXEDEQUATIONSYSTEM(sc,indxdisc_eqn,indxdisc_var);        
     case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared as BackendDAE.SHARED(arrayEqs=ae,algorithms=al),m,mt,ass1,ass2)
       equation
-        var_lst = Util.listMap(var_varindx_lst,Util.tuple21);
-        varindxs = Util.listMap(var_varindx_lst,Util.tuple22);
+        var_lst = List.map(var_varindx_lst,Util.tuple21);
+        varindxs = List.map(var_varindx_lst,Util.tuple22);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
         ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);
         // States are solved for der(x) not x.
-        var_lst_1 = Util.listMap(var_lst, transformXToXd);
+        var_lst_1 = List.map(var_lst, transformXToXd);
         vars_1 = BackendDAEUtil.listVar(var_lst_1);
         // because listVar orders the elements not like listEquation the pairs of (var is solved in equation)
         // is  twisted, simple reverse one list
@@ -1208,8 +1209,8 @@ algorithm
     case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp,disc_eqns=elst,disc_vars=vlst),eqns,vars) 
       equation
         eqnlst1 = BackendEquation.getEqns(elst,eqns);   
-        varlst1 = Util.listMap1r(vlst, BackendVariable.getVarAt, vars);
-        e = Util.listFirst(elst);        
+        varlst1 = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        e = List.first(elst);        
         (eqnlst,varlst,_) = getEquationAndSolvedVar(comp,eqns,vars);
         eqnlst = listAppend(eqnlst,eqnlst1);
         varlst = listAppend(varlst,varlst1);
@@ -1218,22 +1219,22 @@ algorithm
     case (BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst),eqns,vars) 
       equation
         eqnlst = BackendEquation.getEqns(elst,eqns);        
-        varlst = Util.listMap1r(vlst, BackendVariable.getVarAt, vars);
-        e = Util.listFirst(elst);        
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        e = List.first(elst);        
       then
         (eqnlst,varlst,e);        
     case (BackendDAE.SINGLEARRAY(eqns=elst,vars=vlst),eqns,vars) 
       equation
         eqnlst = BackendEquation.getEqns(elst,eqns);      
-        varlst = Util.listMap1r(vlst, BackendVariable.getVarAt, vars);        
-        e = Util.listFirst(elst);        
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);        
+        e = List.first(elst);        
       then
         (eqnlst,varlst,e);  
     case (BackendDAE.SINGLEALGORITHM(eqns=elst,vars=vlst),eqns,vars)
       equation
         eqnlst = BackendEquation.getEqns(elst,eqns);  
-        varlst = Util.listMap1r(vlst, BackendVariable.getVarAt, vars);        
-        e = Util.listFirst(elst);        
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);        
+        e = List.first(elst);        
       then
         (eqnlst,varlst,e);         
     case (inComp,eqns,vars)
@@ -1362,11 +1363,11 @@ algorithm
     local list<tuple<BackendDAE.Equation,Integer>> eqnindxlst;
     case (eqnLst,indxEqnLst,varLst,indxVarLst) equation
       (discVarLst,contVarLst,indxdiscVarLst,indxcontVarLst) = splitVars(varLst,indxVarLst,BackendDAEUtil.isVarDiscrete,{},{},{},{});
-      eqnindxlst = Util.listMap1(discVarLst,findDiscreteEquation,(eqnLst,indxEqnLst));
-      discEqnLst = Util.listMap(eqnindxlst,Util.tuple21);
-      indxdiscEqnLst = Util.listMap(eqnindxlst,Util.tuple22);
-      contEqnLst = Util.listSetDifferenceOnTrue(eqnLst,discEqnLst,BackendEquation.equationEqual);
-      indxcontEqnLst = Util.listSetDifferenceOnTrue(indxEqnLst,indxdiscEqnLst,intEq);
+      eqnindxlst = List.map1(discVarLst,findDiscreteEquation,(eqnLst,indxEqnLst));
+      discEqnLst = List.map(eqnindxlst,Util.tuple21);
+      indxdiscEqnLst = List.map(eqnindxlst,Util.tuple22);
+      contEqnLst = List.setDifferenceOnTrue(eqnLst,discEqnLst,BackendEquation.equationEqual);
+      indxcontEqnLst = List.setDifferenceOnTrue(indxEqnLst,indxdiscEqnLst,intEq);
     then (contEqnLst,contVarLst,discEqnLst,discVarLst,indxcontEqnLst,indxcontVarLst,indxdiscEqnLst,indxdiscVarLst);
   end match;
 end splitMixedEquations;
@@ -1661,7 +1662,7 @@ algorithm
         var = a2[eqn];
         reachable = mt[var] "Got the variable that is solved in the equation" ;
         reachable_1 = BackendDAEUtil.removeNegative(reachable) "in which other equations is this variable present ?" ;
-        pos = Util.listPosition(eqn, reachable_1) ".. except this one" ;
+        pos = List.position(eqn, reachable_1) ".. except this one" ;
         reachable_2 = listDelete(reachable_1, pos);
       then
         reachable_2;
@@ -2009,7 +2010,7 @@ algorithm
     case ((_,orgeqntpl)::rest,v)
       equation
         vars = getVarsOfOrgEqn(rest,v);
-        orgeqn = Util.listMap(orgeqntpl,Util.tuple21);
+        orgeqn = List.map(orgeqntpl,Util.tuple21);
         vars1 = BackendEquation.equationsLstVars(orgeqn,v,vars);
       then
         vars1;
@@ -2036,7 +2037,7 @@ algorithm
     case ({},_) then BackendDAEUtil.emptyVars();
     case (inOrgEqns,syst)
       equation
-        orgeqn_indxs = Util.listMap(inOrgEqns,Util.tuple32);
+        orgeqn_indxs = List.map(inOrgEqns,Util.tuple32);
         orgeqn = BackendEquation.getEqns(orgeqn_indxs,BackendEquation.daeEqns(syst));
         vars = BackendDAEUtil.emptyVars();
         vars1 = BackendEquation.equationsLstVars(orgeqn,BackendVariable.daeVars(syst),vars);
@@ -2063,7 +2064,7 @@ algorithm
       equation
         print("State Order: (");
         (tplLst) = BaseHashTable.hashTableList(ht);
-        str = Util.stringDelimitList(Util.listMap(tplLst,printStateOrderStr),"\n");
+        str = Util.stringDelimitList(List.map(tplLst,printStateOrderStr),"\n");
         len = listLength(tplLst);
         len_str = intString(len);
         print(len_str);
@@ -2223,7 +2224,7 @@ algorithm
       equation
         eqns = BackendDAEEXT.getMarkedEqns();
         diff_eqns = BackendDAEEXT.getDifferentiatedEqns();
-        eqns_1 = Util.listSetDifferenceOnTrue(eqns, diff_eqns, intEq);
+        eqns_1 = List.setDifferenceOnTrue(eqns, diff_eqns, intEq);
         true = intEq(listLength(eqns_1),0);
         Debug.fcall("bltdump", print, "Reduce Index\ndiff equations: ");
         Debug.fcall("bltdump", BackendDump.debuglst, (diff_eqns,intString));
@@ -2243,7 +2244,7 @@ algorithm
       equation
         eqns = BackendDAEEXT.getMarkedEqns();
         diff_eqns = BackendDAEEXT.getDifferentiatedEqns();
-        eqns_1 = Util.listSetDifferenceOnTrue(eqns, diff_eqns, intEq);
+        eqns_1 = List.setDifferenceOnTrue(eqns, diff_eqns, intEq);
         Debug.fcall("bltdump", print, "Reduce Index\nmarked equations: ");
         Debug.fcall("bltdump", BackendDump.debuglst, (eqns_1,intString));
         Debug.fcall("bltdump", print, "\ndiff equations: ");
@@ -2292,8 +2293,8 @@ algorithm
       equation
         eqns = BackendDAEEXT.getMarkedEqns();
         diff_eqns = BackendDAEEXT.getDifferentiatedEqns();
-        eqns_1 = Util.listSetDifferenceOnTrue(eqns, diff_eqns, intEq);
-        es = Util.listMap(eqns_1, intString);
+        eqns_1 = List.setDifferenceOnTrue(eqns, diff_eqns, intEq);
+        es = List.map(eqns_1, intString);
         es_1 = Util.stringDelimitList(es, ", ");
         print("eqns =");print(es_1);print("\n");
         ({},_) = statesInEqns(eqns_1, syst);
@@ -2302,7 +2303,7 @@ algorithm
         print("differentiated equations:");
         BackendDump.printEquations(diff_eqns,syst);
         print("Variables :");
-        print(Util.stringDelimitList(Util.listMap(BackendDAEEXT.getMarkedVariables(),intString),", "));
+        print(Util.stringDelimitList(List.map(BackendDAEEXT.getMarkedVariables(),intString),", "));
         print("\n");
       then
         fail();
@@ -2508,7 +2509,7 @@ algorithm
         eqnss = BackendDAEUtil.equationSize(eqns);
         (eqn_1,al1,ae1,wclst1,(v1,eqns,so,ilst)) = traverseBackendDAEExpsEqn(eqn_1,al1,ae1,wclst,changeDerVariablestoStates,(v,eqns,so,{}));
         eqnss1 = BackendDAEUtil.equationSize(eqns);
-        eqnslst = Util.listIntRange2(eqnss,eqnss1);
+        eqnslst = List.intRange2(eqnss,eqnss1);
         Debug.fcall("bltdump", debugdifferentiateEqns,(eqn,eqn_1)); 
         eqns_1 = BackendEquation.equationSetnth(eqns,e_1,eqn_1);
         eqnslst1 = collectVarEqns(ilst,e::eqnslst,mt,arrayLength(mt));
@@ -2678,7 +2679,7 @@ algorithm
       equation
         true = intLt(i,l);
         eqns = mt[i];
-        ilst = Util.listUnion(eqns,inIntegerLst2);
+        ilst = List.union(eqns,inIntegerLst2);
         ilst1 = collectVarEqns(rest,ilst,mt,l);  
       then 
         ilst1;
@@ -2927,7 +2928,7 @@ algorithm
         states = statesCandidates(syst,inStateOrd,orgEqnLevel);
         (syst,shared,ass1,ass2,so,states1,orgEqnLevel,orgEqns1,_) = processAlliasStates(orgEqnLevel,syst,shared,ass1,ass2,inStateOrd,states,{},orgEqns1);
         states1 = sortStateCandidates(states1,syst,shared);
-        Debug.fcall("bltdump", print, "\nCandidates (" +& intString(listLength(orgEqnLevel)) +& "," +& intString(listLength(states1)) +& "): " +& Util.stringDelimitList(Util.listMap(states1,dumpStates),"\n") +& "\nselect Dummy States for Level\n");
+        Debug.fcall("bltdump", print, "\nCandidates (" +& intString(listLength(orgEqnLevel)) +& "," +& intString(listLength(states1)) +& "): " +& Util.stringDelimitList(List.map(states1,dumpStates),"\n") +& "\nselect Dummy States for Level\n");
         (sysjac,orgEqnLevel) = calculateJacobianSystem(orgEqnLevel,syst,shared,states1);
         (syst,shared,ass1,ass2,states1) = processEqnsLevel(orgEqnLevel,sysjac,so,syst,shared,ass1,ass2,inFunctionTree,states1);
         Debug.fcall("bltdump", print, "processOrgEnqs next\n");
@@ -2963,11 +2964,11 @@ algorithm
 
     case (inStates,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs = eqns,m=SOME(m),mT=SOME(mt)),BackendDAE.SHARED(knownVars=knvars))
       equation
-        varCrefs = Util.listMap(inStates,Util.tuple21);
-        varIndices = Util.listMap(inStates,Util.tuple22);
+        varCrefs = List.map(inStates,Util.tuple21);
+        varIndices = List.map(inStates,Util.tuple22);
         prioTuples = calculateVarPriorities(varCrefs,varIndices,vars,knvars,eqns,m,mt);
-        prioTuples = Util.sort(prioTuples,sortprioTuples);
-        states = Util.listMap(prioTuples,Util.tuple312);
+        prioTuples = List.sort(prioTuples,sortprioTuples);
+        states = List.map(prioTuples,Util.tuple312);
       then states;
 
     case ({},_,_)
@@ -3127,12 +3128,12 @@ algorithm
         true = BackendVariable.isState(cr,v);
         true = BackendVariable.isState(cr1,v);
         Debug.fcall("bltdump", BackendDump.debugStrCrefStrCrefStr, (("Remove Alias State "),cr," or ",cr1,"\n"));
-        slst = Util.listSelect1(m[ep],0,intLt);
-        slst = Util.listMap(slst,intAbs);
-        blst = Util.listMap1(slst,isStateCandidate,cstates);
+        slst = List.select1(m[ep],intLt,0);
+        slst = List.map(slst,intAbs);
+        blst = List.map1(slst,isStateCandidate,cstates);
         true = Util.boolOrList(blst);
-        vlst = Util.listMap1r(slst,BackendVariable.getVarAt,v);
-        crlst = Util.listMap(vlst,BackendVariable.varCref);         
+        vlst = List.map1r(slst,BackendVariable.getVarAt,v);
+        crlst = List.map(vlst,BackendVariable.varCref);         
         (dcr,stateno) = selectDummyState(crlst, slst, syst, shared);
         (_,syst,shared) = makeDummyState(dcr,stateno,syst,shared);
         ev = BackendVariable.varsSize(BackendVariable.daeVars(syst));
@@ -3221,11 +3222,11 @@ algorithm
      case (inOrgEqns,inSysjac,inStateOrd,syst,shared,ass1,ass2,inFunctionTree,inStates)
       equation
         Debug.fcall("bltdump", print, "Sort OrgEqn Level\n");
-        orgeqnssysjac = Util.makeTuple(inOrgEqns,inSysjac);
-        orgeqnssysjac = Util.sort(orgeqnssysjac,sortOrgEqnLevel);
-        orgeqns = Util.listMap(orgeqnssysjac,Util.tuple21);
+        orgeqnssysjac = List.threadTuple(inOrgEqns,inSysjac);
+        orgeqnssysjac = List.sort(orgeqnssysjac,sortOrgEqnLevel);
+        orgeqns = List.map(orgeqnssysjac,Util.tuple21);
         //dumpEqns2((orgeqns,inBackendDAE));
-        Debug.fcall("bltdump", print, "\nCandidates:\n" +& Util.stringDelimitList(Util.listMap(inStates,dumpStates),"\n") +& "\n");
+        Debug.fcall("bltdump", print, "\nCandidates:\n" +& Util.stringDelimitList(List.map(inStates,dumpStates),"\n") +& "\n");
         states = removeFixedfromStates(inStates,BackendVariable.daeVars(syst));
         dummystates = selectDummyStates(orgeqns,inStateOrd,syst,shared,inFunctionTree,states,{});
         Debug.fcall("bltdump", print, "add dummy derivatives\n");
@@ -3235,9 +3236,9 @@ algorithm
      case (inOrgEqns,inSysjac,inStateOrd,syst,shared,ass1,ass2,inFunctionTree,inStates)
       equation
         Debug.fcall("bltdump", print, "Sort OrgEqn Level\n");
-        orgeqnssysjac = Util.makeTuple(inOrgEqns,inSysjac);
-        orgeqnssysjac = Util.sort(orgeqnssysjac,sortOrgEqnLevel);
-        orgeqns = Util.listMap(orgeqnssysjac,Util.tuple21);
+        orgeqnssysjac = List.threadTuple(inOrgEqns,inSysjac);
+        orgeqnssysjac = List.sort(orgeqnssysjac,sortOrgEqnLevel);
+        orgeqns = List.map(orgeqnssysjac,Util.tuple21);
         //dumpEqns2((orgeqns,inBackendDAE));
         dummystates = selectDummyStates(orgeqns,inStateOrd,syst,shared,inFunctionTree,inStates,{});
         Debug.fcall("bltdump", print, "add dummy derivatives\n");
@@ -3693,7 +3694,7 @@ algorithm
       list<list<tuple<DAE.ComponentRef,DAE.Exp,Integer,Integer>>> dummystates,dummystates1;
     case ({},inStateOrd,syst,shared,inFunctionTree,inStates,dummystates)
       equation
-        Debug.fcall("bltdump", print, "\nselected States (" +& intString(listLength(inStates)) +& "): " +& Util.stringDelimitList(Util.listMap(inStates,dumpStates),"\n") +& "\n"); 
+        Debug.fcall("bltdump", print, "\nselected States (" +& intString(listLength(inStates)) +& "): " +& Util.stringDelimitList(List.map(inStates,dumpStates),"\n") +& "\n"); 
       then dummystates;
     case ((e,ep,_)::rest,inStateOrd,syst as BackendDAE.EQSYSTEM(orderedEqs=eqns),shared as BackendDAE.SHARED(knownVars=knvars,arrayEqs=ae,algorithms=al),inFunctionTree,inStates,dummystates)
       equation
@@ -3703,13 +3704,13 @@ algorithm
         Debug.fcall("bltdump",  print ,BackendDump.equationStr(orgeqn));
         // get Jacobian
         jac = calculateJacobian(orgeqn,ae,al,inStates);
-        str = Util.stringDelimitList(Util.listMap(jac,ExpressionDump.printExpStr)," : "); 
+        str = Util.stringDelimitList(List.map(jac,ExpressionDump.printExpStr)," : "); 
         Debug.fcall("bltdump", print, "\nJac: " +& str +& "\n"); 
         // analyse jac -> get dummy derivative candidate
         (dummydercand,dyndummydercand) = analyseJac(jac,inStates,knvars);
-        str = Util.stringDelimitList(Util.listMap(dummydercand,dumpStates1)," : "); 
+        str = Util.stringDelimitList(List.map(dummydercand,dumpStates1)," : "); 
         Debug.fcall("bltdump", print, "Dummy DerCandidates: " +& str +& "\n");
-        str = Util.stringDelimitList(Util.listMap(dyndummydercand,dumpStates1)," : "); 
+        str = Util.stringDelimitList(List.map(dyndummydercand,dumpStates1)," : "); 
         Debug.fcall("bltdump", print, "Dynamic DummyDer Candidates: " +& str +& "\n");
         // select dummy derivatives 
         dummystates1 = selectDummyDerivatives(dummydercand,dyndummydercand,syst,shared,inFunctionTree,inStates,inStateOrd,rest,dummystates,ep);
@@ -3754,20 +3755,20 @@ algorithm
       list<list<tuple<DAE.ComponentRef,Integer,DAE.Exp>>> dummydercomps;
     case (dummyder as (_::_),dyndummyder,syst,shared,inFunctionTree,states,inStateOrd,inOrgEqns,inDummyStates,ep)
       equation
-        dummystates = Util.listMap(dummyder,Util.tuple31);
-        stateindx = Util.listMap(dummyder,Util.tuple32);
+        dummystates = List.map(dummyder,Util.tuple31);
+        stateindx = List.map(dummyder,Util.tuple32);
         (states,dummystate,stateno) = selectDummyDerivative(dummystates,stateindx,syst,shared,states,inStateOrd);
-        ((_,_,dse1)) = Util.listGetMemberOnTrue(stateno,dummyder,getDummyExp);
+        ((_,_,dse1)) = List.getMemberOnTrue(stateno,dummyder,getDummyExp);
         accdummystate = {(dummystate,dse1,stateno,ep)};
         accdummystates = selectDummyDerivatives2({(dummystate,stateno)},accdummystate,dummyder,dyndummyder,syst,shared,inFunctionTree,states,inStateOrd,inOrgEqns,inDummyStates,ep);
       then
         (accdummystates);
     case ({},dyndummyder as (_::{}),syst,shared,inFunctionTree,states,inStateOrd,inOrgEqns,inDummyStates,ep)
       equation
-        dummystates = Util.listMap(dyndummyder,Util.tuple31);
-        stateindx = Util.listMap(dyndummyder,Util.tuple32);
+        dummystates = List.map(dyndummyder,Util.tuple31);
+        stateindx = List.map(dyndummyder,Util.tuple32);
         (states,dummystate,stateno) = selectDummyDerivative(dummystates,stateindx,syst,shared,states,inStateOrd);
-        ((_,_,dse1)) = Util.listGetMemberOnTrue(stateno,dyndummyder,getDummyExp);
+        ((_,_,dse1)) = List.getMemberOnTrue(stateno,dyndummyder,getDummyExp);
         accdummystate = {(dummystate,dse1,stateno,ep)};
         accdummystates = selectDummyDerivatives2({(dummystate,stateno)},accdummystate,{},{},syst,shared,inFunctionTree,states,inStateOrd,inOrgEqns,inDummyStates,ep);
       then
@@ -3818,10 +3819,10 @@ algorithm
       list<list<tuple<DAE.ComponentRef,Integer,DAE.Exp>>> rest;
     case ((dyndummyder as (_::{}))::rest,syst,shared,inFunctionTree,states,inStateOrd,inOrgEqns,inDummyStates,ep)
       equation
-        dummystates = Util.listMap(dyndummyder,Util.tuple31);
-        stateindx = Util.listMap(dyndummyder,Util.tuple32);
+        dummystates = List.map(dyndummyder,Util.tuple31);
+        stateindx = List.map(dyndummyder,Util.tuple32);
         (states,dummystate,stateno) = selectDummyDerivative(dummystates,stateindx,syst,shared,states,inStateOrd);
-        ((_,_,dse1)) = Util.listGetMemberOnTrue(stateno,dyndummyder,getDummyExp);
+        ((_,_,dse1)) = List.getMemberOnTrue(stateno,dyndummyder,getDummyExp);
         accdummystate = {(dummystate,dse1,stateno,ep)};
         accdummystates = selectDummyStates(inOrgEqns,inStateOrd,syst,shared,inFunctionTree,states,inDummyStates);
       then
@@ -3829,14 +3830,14 @@ algorithm
     case ((dyndummyder as (_::_::_))::rest,syst,shared,inFunctionTree,states,inStateOrd,inOrgEqns,inDummyStates,ep)
       equation
         // select dummy
-        dummystates = Util.listMap(dyndummyder,Util.tuple31);
-        stateindx = Util.listMap(dyndummyder,Util.tuple32);
+        dummystates = List.map(dyndummyder,Util.tuple31);
+        stateindx = List.map(dyndummyder,Util.tuple32);
         (states,dummystate,stateno) = selectDummyDerivative(dummystates,stateindx,syst,shared,states,inStateOrd);
-        ((_,_,dse1)) = Util.listGetMemberOnTrue(stateno,dyndummyder,getDummyExp);
-        dummystates = Util.listRemoveOnTrue(dummystate,ComponentReference.crefEqualNoStringCompare,dummystates);
-        stateindx = Util.listRemoveOnTrue(stateno,intEq,stateindx);
+        ((_,_,dse1)) = List.getMemberOnTrue(stateno,dyndummyder,getDummyExp);
+        dummystates = List.removeOnTrue(dummystate,ComponentReference.crefEqualNoStringCompare,dummystates);
+        stateindx = List.removeOnTrue(stateno,intEq,stateindx);
         (states,dummystate1,stateno1) = selectDummyDerivative(dummystates,stateindx,syst,shared,states,inStateOrd);
-        ((_,_,dse2)) = Util.listGetMemberOnTrue(stateno1,dyndummyder,getDummyExp);
+        ((_,_,dse2)) = List.getMemberOnTrue(stateno1,dyndummyder,getDummyExp);
         accdummystate = {(dummystate,dse1,stateno,ep),(dummystate1,dse2,stateno1,ep)};
         accdummystates = selectDummyStates(inOrgEqns,inStateOrd,syst,shared,inFunctionTree,states,inDummyStates);
       then
@@ -3862,11 +3863,11 @@ algorithm
         list<list<tuple<DAE.ComponentRef,Integer,DAE.Exp>>> dummydercomps,dummydercomps1,dummydercomps2;
       case({},ddlst)
         equation
-          dummydercomps = Util.listMap(ddlst,listMake); 
+          dummydercomps = List.map(ddlst,listMake); 
         then dummydercomps;
       case (tpl::rest,ddlst)
         equation
-         dummydercomps = Util.listMap1r(rest,Util.listMake2,tpl);
+         dummydercomps = List.map1r(rest,List.create2,tpl);
          dummydercomps1 = alldummyCompinations(rest,ddlst);
          dummydercomps2 = listAppend(dummydercomps,dummydercomps1);
         then
@@ -3918,9 +3919,9 @@ algorithm
     case (stateNo,accdummystate,dummydercand,dyndummydercand,syst,shared,inFunctionTree,inStates,inStateOrd,inOrgEqns,inDummyStates,ep)
       equation
         Debug.fcall("bltdump", print, "removeDummyStateCandidate in eqn " +& intString(ep) +& " from list try next\n"); 
-        str = Util.stringDelimitList(Util.listMap(dummydercand,dumpStates1)," : "); 
+        str = Util.stringDelimitList(List.map(dummydercand,dumpStates1)," : "); 
         Debug.fcall("bltdump", print, "Dummy DerCandidates: " +& str +& "\n");        
-        str = Util.stringDelimitList(Util.listMap(dyndummydercand,dumpStates1)," : "); 
+        str = Util.stringDelimitList(List.map(dyndummydercand,dumpStates1)," : "); 
         Debug.fcall("bltdump", print, "Dummy Dynamic DerCandidates: " +& str +& "\n");        
         (dummydercand,dyndummydercand,states) = removeDummyStateCandidate(stateNo,dummydercand,dyndummydercand);
         states1 = listAppend(states,inStates);
@@ -3949,8 +3950,8 @@ algorithm
     case ((cr,n)::rest,inDummyDer,inDynDummyDer)
       equation
         Debug.fcall("bltdump", print, "removeDummyStateCandidate " +& intString(n) +& "\n");
-        dummydercand = Util.listRemoveOnTrue(n,getDummyExp,inDummyDer);
-        dyndummydercand = Util.listRemoveOnTrue(n,getDummyExp,inDynDummyDer); 
+        dummydercand = List.removeOnTrue(n,getDummyExp,inDummyDer);
+        dyndummydercand = List.removeOnTrue(n,getDummyExp,inDynDummyDer); 
         (dummydercand,dyndummydercand,so) = removeDummyStateCandidate({},dummydercand,dyndummydercand);       
       then
         (dummydercand,dyndummydercand,{(cr,n)}); 
@@ -4446,7 +4447,7 @@ algorithm
         (e_2::jac); 
     case (eqn as BackendDAE.ALGORITHM(index=i,out=elst),ae,al,(cr,_)::crlst)
       equation
-        blst = Util.listMap1(elst,Expression.expHasCref,cr);
+        blst = List.map1(elst,Expression.expHasCref,cr);
         b = Util.boolOrList(blst);
         e_1 = Util.if_(b,DAE.RCONST(1.0),DAE.RCONST(0.0));
         jac = calculateJacobian(eqn,ae,al,crlst);
@@ -4702,11 +4703,11 @@ algorithm
     case (BackendDAE.REDUCE_INDEX(),syst as BackendDAE.EQSYSTEM(mT=SOME(mt)),shared,inFunctions,ass1,ass2,derivedAlgs,derivedMultiEqn,inArg)
       equation
         eqns = BackendDAEEXT.getMarkedEqns();
-        // print("marked equations:");print(Util.stringDelimitList(Util.listMap(eqns,intString),","));
+        // print("marked equations:");print(Util.stringDelimitList(List.map(eqns,intString),","));
         // print("\n");
         diff_eqns = BackendDAEEXT.getDifferentiatedEqns();
-        eqns_1 = Util.listSetDifferenceOnTrue(eqns, diff_eqns, intEq);
-        // print("differentiating equations: ");print(Util.stringDelimitList(Util.listMap(eqns_1,intString),","));
+        eqns_1 = List.setDifferenceOnTrue(eqns, diff_eqns, intEq);
+        // print("differentiating equations: ");print(Util.stringDelimitList(List.map(eqns_1,intString),","));
         // print("\n");
         // print(BackendDump.dumpMarkedEqns(dae, eqns_1));
 
@@ -4716,12 +4717,12 @@ algorithm
         (syst,shared,deqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(syst,shared,eqns_1,inFunctions,derivedAlgs,derivedMultiEqn);
         (state,stateno) = selectDummyState(states, stateindx, syst, shared);
         // print("Selected ");print(ComponentReference.printComponentRefStr(state));print(" as dummy state\n");
-        // print(" From candidates: ");print(Util.stringDelimitList(Util.listMap(states,ComponentReference.printComponentRefStr),", "));print("\n");
+        // print(" From candidates: ");print(Util.stringDelimitList(List.map(states,ComponentReference.printComponentRefStr),", "));print("\n");
         // dae = propagateDummyFixedAttribute(dae, eqns_1, state, stateno);
         (dummy_der,syst) = newDummyVar(state, syst, DAE.NEW_DUMMY_DER(state,states));
         // print("Chosen dummy: ");print(ComponentReference.printComponentRefStr(dummy_der));print("\n");
         reqns = BackendDAEUtil.eqnsForVarWithStates(mt, stateno);
-        changedeqns = Util.listUnionOnTrue(deqns, reqns, intEq);
+        changedeqns = List.unionOnTrue(deqns, reqns, intEq);
         stateexp = Expression.crefExp(state);
         stateexpcall = DAE.CALL(Absyn.IDENT("der"),{stateexp},DAE.callAttrBuiltinReal);
         dummyderexp = Expression.crefExp(dummy_der);
@@ -4747,8 +4748,8 @@ algorithm
       equation
         eqns = BackendDAEEXT.getMarkedEqns();
         diff_eqns = BackendDAEEXT.getDifferentiatedEqns();
-        eqns_1 = Util.listSetDifferenceOnTrue(eqns, diff_eqns, intEq);
-        es = Util.listMap(eqns_1, intString);
+        eqns_1 = List.setDifferenceOnTrue(eqns, diff_eqns, intEq);
+        es = List.map(eqns_1, intString);
         es_1 = Util.stringDelimitList(es, ", ");
         print("eqns =");print(es_1);print("\n");
         ({},_) = statesInEqns(eqns_1, syst);
@@ -4757,7 +4758,7 @@ algorithm
         print("differentiated equations:");
         BackendDump.printEquations(diff_eqns,syst);
         print("Variables :");
-        print(Util.stringDelimitList(Util.listMap(BackendDAEEXT.getMarkedVariables(),intString),", "));
+        print(Util.stringDelimitList(List.map(BackendDAEEXT.getMarkedVariables(),intString),", "));
         print("\n");
       then
         fail();
@@ -4872,7 +4873,7 @@ algorithm
       equation
         eqns_lst = BackendEquation.getEqns(eqns,e);
         crefs = BackendEquation.equationsCrefs(eqns_lst);
-        (crefs, _) = Util.listDeleteMemberOnTrue(dummy, crefs, ComponentReference.crefEqualNoStringCompare);
+        (crefs, _) = List.deleteMemberOnTrue(dummy, crefs, ComponentReference.crefEqualNoStringCompare);
         state = findState(vars, crefs);
         ({v},{indx}) = BackendVariable.getVar(dummy, vars);
         (dummy_fixed as false) = BackendVariable.varFixed(v);
@@ -4887,7 +4888,7 @@ algorithm
       equation
         eqns_lst = BackendEquation.getEqns(eqns,e);
         crefs = BackendEquation.equationsCrefs(eqns_lst);
-        (crefs, _) = Util.listDeleteMemberOnTrue(dummy, crefs, ComponentReference.crefEqualNoStringCompare);
+        (crefs, _) = List.deleteMemberOnTrue(dummy, crefs, ComponentReference.crefEqualNoStringCompare);
         state = findState(vars, crefs);
         ({v},{indx}) = BackendVariable.getVar(dummy, vars);
         true = BackendVariable.varFixed(v);
@@ -5117,7 +5118,7 @@ algorithm
       equation
         ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
         ((e2_1,(ops,ext_arg_2))) = func((e2,(ops,ext_arg_1)));
-        source = Util.listFoldR(ops, DAEUtil.addSymbolicTransformation, source);
+        source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then
         (BackendDAE.EQUATION(e1_1,e2_1,source),inAlgs,ae,wclst,ext_arg_2);
     case (BackendDAE.ARRAY_EQUATION(index = ds,crefOrDerCref = expl,source = source),inAlgs,ae,wclst,func,inTypeA)
@@ -5127,7 +5128,7 @@ algorithm
         BackendDAE.MULTIDIM_EQUATION(dimSize=dimSize,left=e1,right = e2,source=source1) = ae[i];
         ((e1_1,(ops,ext_arg_2))) = func((e1,(ops,ext_arg_1)));
         ((e2_1,(ops,ext_arg_3))) = func((e2,(ops,ext_arg_2)));
-        source = Util.listFoldR(ops, DAEUtil.addSymbolicTransformation, source);
+        source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
         ae1 = arrayUpdate(ae,i,BackendDAE.MULTIDIM_EQUATION(dimSize,e1_1,e2_1,source1));
       then (BackendDAE.ARRAY_EQUATION(ds,expl1,source),inAlgs,ae1,wclst,ext_arg_3);  /* array equation */
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2,source=source),inAlgs,ae,wclst,func,inTypeA)
@@ -5135,13 +5136,13 @@ algorithm
         e1 = Expression.crefExp(cr);
         ((DAE.CREF(cr1,_),(ops,ext_arg_1))) = func((e1,({},inTypeA)));
         ((e2_1,(ops,ext_arg_2))) = func((e2,(ops,ext_arg_1)));
-        source = Util.listFoldR(ops, DAEUtil.addSymbolicTransformation, source);
+        source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then
         (BackendDAE.SOLVED_EQUATION(cr1,e2_1,source),inAlgs,ae,wclst,ext_arg_1);
     case (BackendDAE.RESIDUAL_EQUATION(exp = e1,source=source),inAlgs,ae,wclst,func,inTypeA)
       equation
         ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
-        source = Util.listFoldR(ops, DAEUtil.addSymbolicTransformation, source);
+        source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then
         (BackendDAE.RESIDUAL_EQUATION(e1_1,source),inAlgs,ae,wclst,ext_arg_1);
     case (BackendDAE.ALGORITHM(index = indx,in_ = in_,out = out,source = source),inAlgs,ae,wclst,func,inTypeA)
@@ -5149,7 +5150,7 @@ algorithm
         (in_1,(ops,ext_arg_1)) = BackendEquation.traverseBackendDAEExpList(in_,func,({},inTypeA));
         (out1,(ops,ext_arg_2)) = BackendEquation.traverseBackendDAEExpList(out,func,(ops,ext_arg_1));
         (algs,(ops,ext_arg_3)) = traverseBackendDAEExpsEqnAlgs(indx,inAlgs,func,(ops,ext_arg_2));
-        source = Util.listFoldR(ops, DAEUtil.addSymbolicTransformation, source);
+        source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then (BackendDAE.ALGORITHM(indx,in_1,out1,source),algs,ae,wclst,ext_arg_3);  /* Algorithms */
     case (BackendDAE.WHEN_EQUATION(whenEquation =
           BackendDAE.WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=NONE()),source = source),inAlgs,ae,wclst,func,inTypeA)
@@ -5157,7 +5158,7 @@ algorithm
         e2 = Expression.crefExp(cr);
         ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
         ((DAE.CREF(cr1,_),(ops,ext_arg_2))) = func((e2,(ops,ext_arg_1)));
-        source = Util.listFoldR(ops, DAEUtil.addSymbolicTransformation, source);
+        source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
         res = BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(i,cr1,e1_1,NONE()),source);
         (wclst1,(_,ext_arg_3)) = traverseBackendDAEExpsWhenClause(SOME(i),wclst,func,({} /*TODO: Save me?*/,ext_arg_2));
       then
@@ -5167,7 +5168,7 @@ algorithm
           BackendDAE.WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=SOME(elsepart)),source = source),inAlgs,ae,wclst,func,inTypeA)
       equation
         ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
-        source = Util.listFoldR(ops, DAEUtil.addSymbolicTransformation, source);
+        source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
         (BackendDAE.WHEN_EQUATION(elsepartRes,source),algs,ae1,wclst1,ext_arg_2) = traverseBackendDAEExpsEqnWithSymbolicOperation(BackendDAE.WHEN_EQUATION(elsepart,source),inAlgs,ae,wclst,func,ext_arg_1);
         res = BackendDAE.WHEN_EQUATION(BackendDAE.WHEN_EQ(i,cr,e1_1,SOME(elsepartRes)),source);
         (wclst2,(_,ext_arg_3)) = traverseBackendDAEExpsWhenClause(SOME(i),wclst1,func,({} /* TODO: Save me?*/,ext_arg_2));
@@ -5177,7 +5178,7 @@ algorithm
       equation
         ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
         ((e2_1,(ops,ext_arg_2))) = func((e2,(ops,ext_arg_1)));
-        source = Util.listFoldR(ops, DAEUtil.addSymbolicTransformation, source);
+        source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then
         (BackendDAE.COMPLEX_EQUATION(i,e1_1,e2_1,source),inAlgs,ae,wclst,ext_arg_2);
     else
@@ -5222,7 +5223,7 @@ algorithm
         (wclst1,ext_arg_1) =  traverseBackendDAEExpsWhenClause(elsindx,wclst,func,inTypeA);
         ((cond1,ext_arg_2)) = func((cond,ext_arg_1));
         (reinitStmtLst1,ext_arg_3) = traverseBackendDAEExpsWhenOperator(reinitStmtLst,func,ext_arg_2);
-        wclst2 = Util.listReplaceAt(BackendDAE.WHEN_CLAUSE(cond,reinitStmtLst1,elsindx),indx,wclst1);
+        wclst2 = List.replaceAt(BackendDAE.WHEN_CLAUSE(cond,reinitStmtLst1,elsindx),indx,wclst1);
       then
         (wclst2,ext_arg_3);
      case (_,_,_,_)
@@ -5610,7 +5611,7 @@ algorithm
     case (varCrefs,varIndices,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs = eqns,m=SOME(m),mT=SOME(mt)),BackendDAE.SHARED(knownVars=knvars))
       equation
         prioTuples = calculateVarPriorities(varCrefs,varIndices,vars,knvars,eqns,m,mt);
-        //print("priorities:");print(Util.stringDelimitList(Util.listMap(prioTuples,printPrioTuplesStr),","));print("\n");
+        //print("priorities:");print(Util.stringDelimitList(List.map(prioTuples,printPrioTuplesStr),","));print("\n");
         (s,sn) = selectMinPrio(prioTuples);
       then (s,sn);
 
@@ -5633,7 +5634,7 @@ algorithm
   (s,sn) := match(tuples)
     case(tuples)
       equation
-        ((s,sn,_)) = Util.listReduce(tuples,ssPrioTupleMin);
+        ((s,sn,_)) = List.reduce(tuples,ssPrioTupleMin);
       then (s,sn);
   end match;
 end selectMinPrio;
@@ -5906,18 +5907,18 @@ algorithm
         true = ComponentReference.crefEqualNoStringCompare(cr,cr2);
         _::_::_ = Expression.terms(e2);
         crs = Expression.extractCrefsFromExp(e2);
-        (crVars,_) = Util.listMap12(crs,BackendVariable.getVar,vars);
+        (crVars,_) = List.map1_2(crs,BackendVariable.getVar,vars);
         // fails if not all mapped calls return true
-      then Util.listMapAllValue(Util.listFlatten(crVars),BackendVariable.isStateVar,true);
+      then List.mapAllValueBool(List.flatten(crVars),BackendVariable.isStateVar,true);
 
     case(cr,BackendDAE.EQUATION(exp = e2, scalar = DAE.CREF(cr2,_)),vars)
       equation
         true = ComponentReference.crefEqualNoStringCompare(cr,cr2);
         _::_::_ = Expression.terms(e2);
         crs = Expression.extractCrefsFromExp(e2);
-        (crVars,_) = Util.listMap12(crs,BackendVariable.getVar,vars);
+        (crVars,_) = List.map1_2(crs,BackendVariable.getVar,vars);
         // fails if not all mapped calls return true
-      then Util.listMapAllValue(Util.listFlatten(crVars),BackendVariable.isStateVar,true);
+      then List.mapAllValueBool(List.flatten(crVars),BackendVariable.isStateVar,true);
 
     else false;
   end matchcontinue;
@@ -6075,8 +6076,8 @@ algorithm
     case ((e :: rest),syst as BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns,m=SOME(m)))
       equation
         (res1,res2) = statesInEqns(rest, syst);
-        vars2 = Util.listSelect(m[e], Util.intNegative);
-        vars2 = Util.listMap(vars2,intAbs);
+        vars2 = List.select(m[e], Util.intNegative);
+        vars2 = List.map(vars2,intAbs);
         (res11,res22) = statesInVars(vars, vars2);
         res1_1 = listAppend(res11, res1);
         res2_1 = listAppend(res22, res2);

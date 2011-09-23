@@ -52,10 +52,11 @@ public import Interactive;
 public type Ident = String;
 
 // protected imports
-protected import Print;
-protected import Util;
 protected import Debug;
 protected import Error;
+protected import List;
+protected import Print;
+protected import Util;
 
 public function dumpExpStr
   input Absyn.Exp exp;
@@ -240,7 +241,7 @@ algorithm
         s5 = unparseStringCommentOption(optcmt);
         // the prefix keywords MUST be in the order below given below! See the function comment.
         prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
-        tvs = Util.if_(Util.isListEmpty(typeVars),"","<"+&Util.stringDelimitList(typeVars,",")+&">");
+        tvs = Util.if_(List.isEmpty(typeVars),"","<"+&Util.stringDelimitList(typeVars,",")+&">");
         str = stringAppendList({is,prefixKeywords,restrictionStr," ",n,tvs,s5,"\n",s4,is,"end ",n});
       then
         str;
@@ -1968,7 +1969,7 @@ algorithm
       equation
         printPath(p);
         Print.printBuf(".{");
-        Print.printBuf(Util.stringDelimitList(Util.listMap(groups, unparseGroupImport), ","));
+        Print.printBuf(Util.stringDelimitList(List.map(groups, unparseGroupImport), ","));
         Print.printBuf("}");
       then
         ();
@@ -2029,7 +2030,7 @@ algorithm
     case (Absyn.GROUP_IMPORT(prefix = p, groups = groups))
       equation
         s1 = Absyn.pathString(p);
-        s2 = Util.stringDelimitList(Util.listMap(groups, unparseGroupImport), ",");
+        s2 = Util.stringDelimitList(List.map(groups, unparseGroupImport), ",");
         str = stringAppendList({s1,".{",s2,"}"});
       then
         str;
@@ -4282,7 +4283,7 @@ Prints a list of expressions to a string
   input list<Absyn.Exp> expl;
   output String outString;
 algorithm
-  outString := Util.stringDelimitList(Util.listMap(expl,printExpStr),", ");
+  outString := Util.stringDelimitList(List.map(expl,printExpStr),", ");
 end printExpLstStr;
 
 public function printExpStr "function: print_exp

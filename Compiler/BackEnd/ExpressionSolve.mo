@@ -46,12 +46,13 @@ public import DAE;
 
 // protected imports
 protected import ComponentReference;
+protected import Debug;
+protected import Derive;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import List;
 protected import Util;
-protected import Derive;
-protected import Debug;
 
 public function solve
 "function: solve
@@ -281,7 +282,7 @@ algorithm
       // a*(1/b)*c*...*n = rhs
     case(e1,e2,(crexp as DAE.CREF(componentRef = cr)),_)
       equation
-        ({invCr},factors) = Util.listSplitOnTrue1(Expression.factors(e1),isInverseCref,cr);
+        ({invCr},factors) = List.split1OnTrue(Expression.factors(e1),isInverseCref,cr);
         e2 = Expression.inverseFactors(e2);
         rhs_1 = Expression.makeProductLst(e2::factors);
         false = Expression.expContains(rhs_1, crexp);
@@ -290,7 +291,7 @@ algorithm
       // lhs = a*(1/b)*c*...*n
     case(e1,e2,(crexp as DAE.CREF(componentRef = cr)),_)
       equation
-        ({invCr},factors) = Util.listSplitOnTrue1(Expression.factors(e2),isInverseCref,cr);
+        ({invCr},factors) = List.split1OnTrue(Expression.factors(e2),isInverseCref,cr);
         e1 = Expression.inverseFactors(e1);
         rhs_1 = Expression.makeProductLst(e1::factors);
         false = Expression.expContains(rhs_1, crexp);
@@ -389,7 +390,7 @@ algorithm
         true = solve4(op);
         false = Expression.isZero(e1);
         crefs = Expression.extractCrefsFromExp(e1);
-        false = Util.listMemberWithCompareFunc(cr,crefs,ComponentReference.crefEqualNoStringCompare);
+        false = List.isMemberOnTrue(cr,crefs,ComponentReference.crefEqualNoStringCompare);
       then
         (e2,e1);
     // swapped arguments   
@@ -398,7 +399,7 @@ algorithm
         true = solve4(op);
         false = Expression.isZero(e2);
         crefs = Expression.extractCrefsFromExp(e2);
-        false = Util.listMemberWithCompareFunc(cr,crefs,ComponentReference.crefEqualNoStringCompare);
+        false = List.isMemberOnTrue(cr,crefs,ComponentReference.crefEqualNoStringCompare);
       then
         (e1,e2);
 
