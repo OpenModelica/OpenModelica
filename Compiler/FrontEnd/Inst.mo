@@ -5881,6 +5881,16 @@ algorithm
       SCode.Replaceable rpp;
 
     case (env,ih,pre,{},_,_) then (env,ih);
+
+    // we have a redeclaration of an enumeration.
+    case (env,ih,pre,( (sel1 as SCode.CLASS(name = s, classDef=SCode.ENUMERATION(enumLst,cmt),info=info)) :: xs),impl,redeclareMod as SOME(_))
+      equation
+        enumclass = instEnumeration(s, enumLst, cmt, info);
+        env_1 = Env.extendFrameC(env, enumclass);
+        (env_1,ih,cl2) = addClassdefsToEnv3(env_1, ih, pre, redeclareMod, sel1);
+        (env_2,ih) = addClassdefsToEnv2(env_1, ih, pre, xs, impl, redeclareMod);
+      then
+        (env_2,ih);
     
     // we do have a redeclaration of class.
     case (env,ih,pre,( (sel1 as SCode.CLASS(name = s)) :: xs),impl,redeclareMod as SOME(_))
