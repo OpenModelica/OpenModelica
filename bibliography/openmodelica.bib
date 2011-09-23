@@ -348,9 +348,76 @@ number = {45},
 %% [*5*] Peer-Review conference and workshop papers
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+@InProceedings{openmodelica.org:fritzson:aswec:2009,
+  crossref = {aswec2009},
+  author = {Peter Fritzson and Adrian Pop and David Broman and Peter Aronsson},
+  title = {Formal Semantics Based Translator Generation and Tool Development in Practice},
+  doi = {10.1109/ASWEC.2009.46},
+  pages = {256-266},
+  numpages = {11},
+  acmid = {1578581},
+  keywords = {Translator, Compiler, Generation, Semantics, Specification},
+}
+
+@InProceedings{openmodelica.org:stavaker:modelica:2008,
+  crossref = {modelica2008},
+  author = {Kristian Stavåker and Adrian Pop and Peter Fritzson},
+  title = {Compiling and Using Pattern Matching in {Modelica}},
+  pages = {637-646},
+}
+
+@InProceedings{openmodelica.org:pop:modelica:2008,
+  crossref = {modelica2008},
+  author = {Adrian Pop and Kristian Stavåker and Peter Fritzson},
+  title = {Exception Handling for {Modelica}},
+  pages = {409-418},
+}
+
+@InProceedings{openmodelica.org:pop:modelica:2006,
+  crossref = {modelica2006},
+  author = {Adrian Pop and Peter Fritzson and Andreas Remar and Elmir Jagudin and David Akhvlediani},
+  title = {{OpenModelica} Development Environment with {Eclipse} Integration for Browsing, Modeling, and Debugging},
+}
+
+@InProceedings{openmodelica.org:fritzson:modelica:2005,
+  crossref = {modelica2005},
+  author = {Peter Fritzson and Adrian Pop and Peter Aronsson},
+  title = {Comprehensive Meta-Modeling and Meta-Programming Capabilities in Modelica
+}
+}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% [*6*] Technical reports, etc
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+@MISC{openmodelica.org:fritzson:meta:2005:citerelated,
+   crossref = {openmodelica.org:fritzson:meta:2005},
+   note = "Later versions \cite{openmodelica.org:fritzson:meta:2007:citerelated,openmodelica.org:fritzson:meta1.0:citerelated}"
+ }
+
+@MISC{openmodelica.org:fritzson:meta:2007:citerelated,
+   crossref = {openmodelica.org:fritzson:meta:2005},
+   note = "Slightly updated version of \cite{openmodelica.org:fritzson:meta:2005:citerelated}; later update \cite{openmodelica.org:fritzson:meta1.0:citerelated}.",
+}
+
+@techreport{openmodelica.org:fritzson:meta1.0:citerelated,
+   crossref = {openmodelica.org:fritzson:meta1.0},
+   note = "Almost identical to \cite{openmodelica.org:fritzson:meta:2007:citerelated}, but tech. report."
+}
+
+@MISC{openmodelica.org:fritzson:meta:2005,
+   author = "Peter Fritzson",
+   title = "Language Modeling and Symbolic Transformations with Meta-Modelica",
+   year = "2005",
+   url = "http://openmodelica.org"
+ }
+
+@MISC{openmodelica.org:fritzson:meta:2007,
+   author = "Peter Fritzson",
+   title = "Language Modeling and Symbolic Transformations with Meta-Modelica",
+   year = "2007",
+   url = "http://openmodelica.org",
+ }
 
 @techreport{openmodelica.org:fritzson:meta2.0,
 author = {Fritzson, Peter and Pop, Adrian and Sj{\"o}lund, Martin},
@@ -395,7 +462,7 @@ url = {http://urn.kb.se/resolve?urn=urn:nbn:se:liu:diva-66440}
 
 @PROCEEDINGS{eoolt2010,
  key = {EOOLT 2010},
- editor? = {Peter Fritzon and Edward Lee and François Cellier and David Broman},
+ editor = {Peter Fritzon and Edward Lee and François Cellier and David Broman},
  title     = {Proceedings of the 3rd International Workshop on Equation-Based Object-Oriented Modeling Languages and Tools},
  booktitle = {Proceedings of the 3rd International Workshop on Equation-Based Object-Oriented Modeling Languages and Tools},
  year = {2010},
@@ -406,41 +473,61 @@ url = {http://urn.kb.se/resolve?urn=urn:nbn:se:liu:diva-66440}
  url = {http://www.ep.liu.se/ecp/047/}
 }
 
-@PROCEEDINGS{modelica4,
- key = {Modelica'2005},
- editor?    = {Gerhard Schmitz},
- title     = {Proceedings of the 4th International Modelica Conference},
- booktitle = {Proceedings of the 4th International Modelica Conference},
- year      = {2005},
- month     = {March},
-}
-
-@PROCEEDINGS{modelica5,
- key = {Modelica'2006},
- editor?    = {Christian Kral and Anton Haumer},
- title     = {Proceedings of the 5th International Modelica Conference},
- booktitle = {Proceedings of the 5th International Modelica Conference},
- year      = {2006},
- month     = {September},
-}
-
 @PROCEEDINGS{sims2007,
  key = {SIMS 2007},
- editor?   = {Peter Bunus and Dag Fritzson and Claus Führer},
+ editor   = {Peter Bunus and Dag Fritzson and Claus Führer},
  title     = {Proceedings of the 48th Scandinavian Conference on Simulation and Modeling (SIMS)},
  booktitle = {Proceedings of the 48th Scandinavian Conference on Simulation and Modeling (SIMS)},
  year      = {2007},
- month     = {October},
+ month     = oct,
+}
+
+@proceedings{aswec2009,
+ title = {ASWEC '09: Proceedings of the 2009 Australian Software Engineering Conference},
+ year = {2009},
+ isbn = {978-0-7695-3599-9},
+ issn = {1530-0803},
+ publisher = {IEEE Computer Society},
+ address = {Washington, DC, USA}
+} 
+
+@PROCEEDINGS{modelica2005,
+ key = {Modelica'2005},
+ editor    = {Gerhard Schmitz},
+ title     = {Proceedings of the 4th International Modelica Conference},
+ booktitle = {Proceedings of the 4th International Modelica Conference},
+ year      = {2005},
+ month     = mar,
+}
+
+@PROCEEDINGS{modelica2006,
+ key = {Modelica'2006},
+ editor    = {Christian Kral and Anton Haumer},
+ title     = {Proceedings of the 5th International Modelica Conference},
+ booktitle = {Proceedings of the 5th International Modelica Conference},
+ year      = {2006},
+ month     = sep,
+}
+
+@PROCEEDINGS{modelica2008,
+ key = {Modelica'2008},
+ editor = {Bernhard Bachmann},
+ title = {Proceedings of the 6th International Modelica Conference},
+ booktitle = {Proceedings of the 6th International Modelica Conference},
+ location = {Bielefeld, Germany},
+ publisher = {Modelica Association},
+ year = {2008},
+ month = mar,
 }
 
 @PROCEEDINGS{modelica2011,
  key = {Modelica'2011},
- editor? = {Christoph Clauß},
+ editor = {Christoph Clauß},
  title = {Proceedings of the 8th International Modelica Conference},
  booktitle = {Proceedings of the 8th International Modelica Conference},
  location = {Dresden, Germany},
  publisher = {Linköping University Electronic Press},
  year = {2011},
- month = {March},
+ month = mar,
 }
 
