@@ -113,10 +113,6 @@ void OMCProxy::getPreviousCommand()
     {
         mCurrentCommandIndex += 1;
     }
-//    mpExpressionTextBox->setText(mCommandsList.at(mCommandsList.count() - 1));
-//    QString tempCommand = mCommandsList.at(mCommandsList.count() - 1);
-//    mCommandsList.insert(0, tempCommand);
-//    mCommandsList.removeLast();
 }
 
 void OMCProxy::getNextCommand()
@@ -133,10 +129,6 @@ void OMCProxy::getNextCommand()
     {
         mCurrentCommandIndex -= 1;
     }
-//    mpExpressionTextBox->setText(mCommandsList.at(0));
-//    QString tempCommand = mCommandsList.at(0);
-//    mCommandsList.append(tempCommand);
-//    mCommandsList.removeFirst();
 }
 
 void OMCProxy::addExpressionInCommandMap(QString expression, QString result)
@@ -169,8 +161,8 @@ bool OMCProxy::startServer()
         const char *omhome = getenv("OPENMODELICAHOME");
         QString omcPath;
         #ifdef WIN32
-          //if (!omhome)
-            //throw std::runtime_error(GUIMessages::getMessage(GUIMessages::OPEN_MODELICA_HOME_NOT_FOUND).toLocal8Bit());
+          if (!omhome)
+            throw std::runtime_error(GUIMessages::getMessage(GUIMessages::OPEN_MODELICA_HOME_NOT_FOUND).toStdString());
           omcPath = QString( omhome ) + "/bin/omc.exe";
         #else /* unix */
           omcPath = (omhome ? QString(omhome)+"/bin/omc" : QString(CONFIG_DEFAULT_OPENMODELICAHOME) + "/bin/omc");
@@ -261,8 +253,12 @@ bool OMCProxy::startServer()
     QString tmpPath = getResult()+"/OpenModelica/OMEdit/";
     tmpPath.remove("\"");
     if (!QDir().exists(tmpPath))
+    {
         if (QDir().mkpath(tmpPath))
             changeDirectory(tmpPath);
+    }
+    else
+        changeDirectory(tmpPath);
     // set the OpenModelicaLibrary variable.
     sendCommand("getModelicaPath()");
     Helper::OpenModelicaLibrary = StringHandler::removeFirstLastQuotes(getResult());

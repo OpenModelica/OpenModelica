@@ -53,6 +53,8 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     // Create the OMCProxy object.
     splashScreen->showMessage("Connecting to " + Helper::applicationName +" Server", Qt::AlignRight, Qt::white);
     mpOMCProxy = new OMCProxy(this);
+    if (mExitApplication)
+        return;
     splashScreen->showMessage("Reading Settings", Qt::AlignRight, Qt::white);
     mpOptionsWidget = new OptionsWidget(this);
 
@@ -91,24 +93,12 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     messagedock->setWidget(mpMessageWidget);
     addDockWidget(Qt::BottomDockWidgetArea, messagedock);
     mpMessageWidget->printGUIMessage("OMEdit, " + Helper::applicationVersion);
-    // If there is some problem connecting to omc server then quit
-    if (!mExitApplication)
-        mpMessageWidget->printGUIMessage("OpenModelica, Version: " + mpOMCProxy->getVersion());
-
+    mpMessageWidget->printGUIMessage("OpenModelica, Version: " + mpOMCProxy->getVersion());
+    // load library
     mpLibrary = new LibraryWidget(this);
-    // Set the annotations version to 3.x
-    if (!mExitApplication)
-    {
-        //mpOMCProxy->setAnnotationVersion(OMCProxy::ANNOTATION_VERSION3X);
-    }
     // Loads and adds the OM Standard Library into the Library Widget.
     splashScreen->showMessage("Loading Modelica Standard Library", Qt::AlignRight, Qt::white);
-    // If there is an error while starting OMC then dont load the MSL
-    if (!mExitApplication)
-    {
-        mpLibrary->mpLibraryTree->addModelicaStandardLibrary();
-    }
-
+    mpLibrary->mpLibraryTree->addModelicaStandardLibrary();
     //Create a dock for the search MSL
     searchMSLdock = new QDockWidget(tr(" Search MSL"), this);
     searchMSLdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
@@ -117,32 +107,26 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     addDockWidget(Qt::LeftDockWidgetArea, searchMSLdock);
     connect(searchMSLdock, SIGNAL(visibilityChanged(bool)), SLOT(focusMSLSearch(bool)));
     searchMSLdock->hide();
-
     //Create a dock for the componentslibrary
     libdock = new QDockWidget(tr(" Components"), this);
     libdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     libdock->setWidget(mpLibrary);
     addDockWidget(Qt::LeftDockWidgetArea, libdock);
-
     //create a dock for the model browser
     modelBrowserdock = new QDockWidget(tr("Model Browser"), this);
     modelBrowserdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     mpModelBrowser = new ModelBrowserWidget(this);
     modelBrowserdock->setWidget(mpModelBrowser);
     addDockWidget(Qt::LeftDockWidgetArea, modelBrowserdock);
-
     //Set dock widget corner owner
     setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
-
     // Create simulation widget.
     mpSimulationWidget = new SimulationWidget(this);
-
     // create the plot container widget
     mpPlotWindowContainer = new PlotWindowContainer(this);
-
     // create the interactive simulation widget
     mpInteractiveSimualtionTabWidget = new InteractiveSimulationTabWidget(this);
-
+    // plot dock
     plotdock = new QDockWidget(tr(" Plot Variables"), this);
     plotdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     plotdock->setContentsMargins(0, 1, 1, 1);
@@ -150,7 +134,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     plotdock->setWidget(mpPlotWidget);
     addDockWidget(Qt::RightDockWidgetArea, plotdock);
     plotdock->hide();
-
+    // plot dock
     documentationdock = new QDockWidget(tr(" Documentation"), this);
     documentationdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     documentationdock->setContentsMargins(0, 1, 1, 1);
@@ -158,15 +142,12 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     documentationdock->setWidget(mpDocumentationWidget);
     addDockWidget(Qt::RightDockWidgetArea, documentationdock);
     documentationdock->hide();
-
     //Create Actions, Toolbar and Menus
     splashScreen->showMessage("Creating Components", Qt::AlignRight, Qt::white);
-//    this->setDragMode(QGraphicsView::RubberBandDrag);
     this->setAcceptDrops(true);
     this->createActions();
     this->createToolbars();
     this->createMenus();
-
     //Create the main tab container, need at least one tab
     mpProjectTabs = new ProjectTabWidget(this);
     mpProjectTabs->setObjectName("projectTabs");
@@ -179,10 +160,8 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     mpBackButton->hide();
 
     mpCentralwidget->setLayout(mpCentralgrid);
-
     //Set the centralwidget
     this->setCentralWidget(mpCentralwidget);
-
     //Create the Statusbar
     mpStatusBar = new QStatusBar();
     mpStatusBar->setObjectName("statusBar");
@@ -193,13 +172,10 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     mpProgressBar->setVisible(false);
     mpStatusBar->addPermanentWidget(mpProgressBar);
     this->setStatusBar(mpStatusBar);
-
-   // mpComponentBrowser = new ComponentBrowserWidget(this);
-
     // Create a New Project Widget
     mpModelCreator = new ModelCreator(this);
 
-        connect(this, SIGNAL(fileOpen(QString)), mpProjectTabs, SLOT(openFile(QString)));
+    connect(this, SIGNAL(fileOpen(QString)), mpProjectTabs, SLOT(openFile(QString)));
     QMetaObject::connectSlotsByName(this);
 }
 

@@ -53,6 +53,10 @@ int main(int argc, char *argv[])
     splashScreen.show();
 
     MainWindow mainwindow(&splashScreen);
+    if (mainwindow.mExitApplication) {        // if there is some issue in running the application.
+        a.quit();
+        exit(1);
+    }
     // if user has requested to open the file by passing it in argument then,
     if (a.arguments().size() > 1)
     {
@@ -75,8 +79,5 @@ int main(int argc, char *argv[])
     mainwindow.show();
     // hide the splash screen
     splashScreen.finish(&mainwindow);
-    if (mainwindow.mExitApplication)        // if there is some issue in running the application.
-        return 1;
-    else
-        return a.exec();
+    return a.exec();
 }
