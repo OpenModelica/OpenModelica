@@ -24,7 +24,7 @@ NOTE: for checkout of any of the SVN directories you will need this user/pass:
       \trunk\Compiler\OpenModelicaSetup
     IMPORTANT: OpenModelicaSetup HAS TO BE CHECKOUT into \trunk\Compiler\OpenModelicaSetup
                since the installer script uses the relative paths.
-	Copy the AccessControl.dll and AccessControlW.dll to the NSIS plgins directory.
+	Copy the AccessControl.dll and AccessControlW.dll to the NSIS plugins directory.
 
 01. Update the version number:
     in trunk/Compiler/runtime/config.h to "x.y.z"
