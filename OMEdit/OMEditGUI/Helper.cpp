@@ -34,7 +34,7 @@
 #include "Helper.h"
 
 QString Helper::applicationName = "OMEdit";
-QString Helper::applicationVersion = "Version: 1.7.0";
+QString Helper::applicationVersion = "Version: 1.8.0";
 QString Helper::applicationIntroText = "OpenModelica Connection Editor";
 // these two variables are set once we are connected to OMC......in OMCProxy::startServer().
 QString Helper::OpenModelicaHome = QString();
