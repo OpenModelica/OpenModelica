@@ -1699,7 +1699,7 @@ algorithm
       list<RecordDeclaration> decls;
       String name;
     case ({}, accfns, rt, decls, includes, includeDirs, libs)
-    then (listReverse(accfns), rt, decls, listReverse(includes), includeDirs, listReverse(libs));
+    then (listReverse(accfns), rt, decls, includes, includeDirs, libs);
     case ((DAE.FUNCTION(type_ = (DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN_PTR())),_)) :: rest), accfns, rt, decls, includes, includeDirs, libs)
       equation
         // skip over builtin functions
@@ -1808,7 +1808,7 @@ algorithm
         inVars = List.map(DAEUtil.getInputVars(daeElts), daeInOutSimVar);
         biVars = List.map(DAEUtil.getBidirVars(daeElts), daeInOutSimVar);
         (recordDecls,rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
-        (fn_includes, fn_includeDirs, fn_libs,dynamicLoad) = generateExtFunctionIncludes(fpath,ann);
+        (fn_includes, fn_includeDirs, fn_libs, dynamicLoad) = generateExtFunctionIncludes(fpath,ann);
         includes = List.union(fn_includes, includes);
         includeDirs = List.union(fn_includeDirs, includeDirs);
         libs = List.union(fn_libs, libs);
@@ -1821,7 +1821,7 @@ algorithm
       then
         (EXTERNAL_FUNCTION(fpath, extfnname, funArgs, simextargs, extReturn,
           inVars, outVars, biVars, fn_libs, lang, info, dynamicLoad),
-          rt_1,recordDecls,includes,includeDirs,libs);
+          rt_1, recordDecls, includes, includeDirs, libs);
         
         // Record constructor.
     case (DAE.RECORD_CONSTRUCTOR(path = fpath, source = source, type_ = tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_)),_)), rt,recordDecls,includes,includeDirs,libs)

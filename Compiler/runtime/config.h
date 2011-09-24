@@ -90,9 +90,9 @@
 #endif
 
 #ifdef CONFIG_REVISION
-#define CONFIG_VERSION "1.7.0 (r" CONFIG_REVISION ")"
+#define CONFIG_VERSION "1.8.0 (r" CONFIG_REVISION ")"
 #else
-#define CONFIG_VERSION "1.7.0"
+#define CONFIG_VERSION "1.8.0"
 #endif
 
 
