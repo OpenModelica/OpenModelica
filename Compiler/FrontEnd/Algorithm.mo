@@ -343,7 +343,7 @@ algorithm
         bvals = List.map(lprop, Types.propAnyConst);
         DAE.C_CONST() = List.reduce(bvals, Types.constOr);
         sl = List.map(lhs, ExpressionDump.printExpStr);
-        s = Util.stringDelimitList(sl, ", ");
+        s = stringDelimitList(sl, ", ");
         lhs_str = stringAppendList({"(",s,")"});
         rhs_str = ExpressionDump.printExpStr(rhs);
         Error.addSourceMessage(Error.ASSIGN_CONSTANT_ERROR, {lhs_str,rhs_str}, DAEUtil.getElementSourceFileInfo(source));
@@ -354,7 +354,7 @@ algorithm
         bvals = List.map(lprop, Types.propAnyConst);
         DAE.C_PARAM() = List.reduce(bvals, Types.constOr);
         sl = List.map(lhs, ExpressionDump.printExpStr);
-        s = Util.stringDelimitList(sl, ", ");
+        s = stringDelimitList(sl, ", ");
         lhs_str = stringAppendList({"(",s,")"});
         rhs_str = ExpressionDump.printExpStr(rhs);
         Error.addSourceMessage(Error.ASSIGN_PARAM_ERROR, {lhs_str,rhs_str}, DAEUtil.getElementSourceFileInfo(source));
@@ -385,10 +385,10 @@ algorithm
       equation
         true = RTOpts.debugFlag("failtrace");
         sl = List.map(lhs, ExpressionDump.printExpStr);
-        s = Util.stringDelimitList(sl, ", ");
+        s = stringDelimitList(sl, ", ");
         lhs_str = stringAppendList({"(",s,")"});
         rhs_str = ExpressionDump.printExpStr(rhs);
-        str1 = Util.stringDelimitList(List.map(lprop, Types.printPropStr), ", ");
+        str1 = stringDelimitList(List.map(lprop, Types.printPropStr), ", ");
         str2 = Types.printPropStr(rprop);
         strInitial = SCodeDump.printInitialStr(initial_);
         Debug.traceln("- Algorithm.makeTupleAssignment failed on: \n\t" +& 

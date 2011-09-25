@@ -384,7 +384,7 @@ protected
 algorithm
   (_,_,_,_,(_,_,printKey,printValue)) := t;
   print("HashTable:\n");
-  print(Util.stringDelimitList(List.map2(hashTableList(t),dumpTuple,printKey,printValue),"\n"));
+  print(stringDelimitList(List.map2(hashTableList(t),dumpTuple,printKey,printValue),"\n"));
   print("\n");
 end dumpHashTable;
 

@@ -124,7 +124,7 @@ algorithm
         c = flattenClass(c, env);
         
         print("FinalSCodeProgram:\n-----------------------\n" +& 
-         Util.stringDelimitList(List.map(inProgram, SCodeDump.unparseElementStr), "\n") +& 
+         stringDelimitList(List.map(inProgram, SCodeDump.unparseElementStr), "\n") +& 
          "\n-----------------------------\n");
       then
         inProgram;

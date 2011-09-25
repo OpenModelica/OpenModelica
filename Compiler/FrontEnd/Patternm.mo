@@ -147,7 +147,7 @@ algorithm
     case (args,status,info)
       equation
         (argsNames,_) = Absyn.getNamedFuncArgNamesAndValues(args);
-        str1 = Util.stringDelimitList(argsNames, ",");
+        str1 = stringDelimitList(argsNames, ",");
         Error.addSourceMessage(Error.META_INVALID_PATTERN_NAMED_FIELD, {str1}, info);
       then Util.FAILURE();
   end match;
@@ -428,7 +428,7 @@ algorithm
     case (_,_,{},0,_) then ();
     case (path,_,strs,0,info)
       equation
-        str = Util.stringDelimitList(strs,",");
+        str = stringDelimitList(strs,",");
         str = Absyn.pathString(path) +& " missing pattern for fields: " +& str;
         Error.addSourceMessage(Error.META_INVALID_PATTERN,{str},info);
       then fail();
@@ -541,18 +541,18 @@ algorithm
       then "SOME(" +& str +& ")";
     case DAE.PAT_META_TUPLE(pats)
       equation
-        str = Util.stringDelimitList(List.map(pats,patternStr),",");
+        str = stringDelimitList(List.map(pats,patternStr),",");
       then "(" +& str +& ")";
         
     case DAE.PAT_CALL_TUPLE(pats)
       equation
-        str = Util.stringDelimitList(List.map(pats,patternStr),",");
+        str = stringDelimitList(List.map(pats,patternStr),",");
       then "(" +& str +& ")";
     
     case DAE.PAT_CALL(name=name, patterns=pats)
       equation
         id = Absyn.pathString(name);
-        str = Util.stringDelimitList(List.map(pats,patternStr),",");
+        str = stringDelimitList(List.map(pats,patternStr),",");
       then stringAppendList({id,"(",str,")"});
 
     case DAE.PAT_CALL_NAMED(name=name, patterns=namedpats)
@@ -560,7 +560,7 @@ algorithm
         id = Absyn.pathString(name);
         fields = List.map(namedpats, Util.tuple32);
         patsStr = List.map1r(List.mapMap(namedpats, Util.tuple31, patternStr), stringAppend, "=");
-        str = Util.stringDelimitList(List.threadMap(fields, patsStr, stringAppend), ",");
+        str = stringDelimitList(List.threadMap(fields, patsStr, stringAppend), ",");
       then stringAppendList({id,"(",str,")"});
 
     case DAE.PAT_CONS(head,tail) then patternStr(head) +& "::" +& patternStr(tail);
@@ -1815,7 +1815,7 @@ algorithm
       equation
         ld2 = SCodeUtil.translateEitemlist(ld, SCode.PROTECTED());
         (ld2 as _::_) = List.filterOnTrue(ld2, SCode.isNotComponent);
-        str = Util.stringDelimitList(List.map(ld2, SCodeDump.unparseElementStr),", ");
+        str = stringDelimitList(List.map(ld2, SCodeDump.unparseElementStr),", ");
         Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT,{str},info);
       then (cache,NONE());
       
@@ -1830,7 +1830,7 @@ algorithm
         ld3 = List.select1(ld2, SCode.isComponentWithDirection, Absyn.INPUT());
         ld4 = List.select1(ld2, SCode.isComponentWithDirection, Absyn.OUTPUT());
         (ld2 as _::_) = listAppend(ld3,ld4); // I don't care that this is slow; it's just for error message generation
-        str = Util.stringDelimitList(List.map(ld2, SCodeDump.unparseElementStr),", ");
+        str = stringDelimitList(List.map(ld2, SCodeDump.unparseElementStr),", ");
         Error.addSourceMessage(Error.META_INVALID_LOCAL_ELEMENT,{str},info);
       then (cache,NONE());
       

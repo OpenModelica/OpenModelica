@@ -241,7 +241,7 @@ algorithm
         s5 = unparseStringCommentOption(optcmt);
         // the prefix keywords MUST be in the order below given below! See the function comment.
         prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
-        tvs = Util.if_(List.isEmpty(typeVars),"","<"+&Util.stringDelimitList(typeVars,",")+&">");
+        tvs = Util.if_(List.isEmpty(typeVars),"","<"+&stringDelimitList(typeVars,",")+&">");
         str = stringAppendList({is,prefixKeywords,restrictionStr," ",n,tvs,s5,"\n",s4,is,"end ",n});
       then
         str;
@@ -322,7 +322,7 @@ algorithm
         encapsulatedStr = selectString(e, "encapsulated ", "");
         restrictionStr = unparseRestrictionStr(r);
         s4 = Absyn.pathString(fname);
-        s5 = Util.stringDelimitList(vars, ", ");
+        s5 = stringDelimitList(vars, ", ");
         s6 = unparseCommentOption(cmt);
         prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
         str = stringAppendList({is,prefixKeywords,restrictionStr," ",n," = der(",s4,", ",s5,")", s6});
@@ -1969,7 +1969,7 @@ algorithm
       equation
         printPath(p);
         Print.printBuf(".{");
-        Print.printBuf(Util.stringDelimitList(List.map(groups, unparseGroupImport), ","));
+        Print.printBuf(stringDelimitList(List.map(groups, unparseGroupImport), ","));
         Print.printBuf("}");
       then
         ();
@@ -2030,7 +2030,7 @@ algorithm
     case (Absyn.GROUP_IMPORT(prefix = p, groups = groups))
       equation
         s1 = Absyn.pathString(p);
-        s2 = Util.stringDelimitList(List.map(groups, unparseGroupImport), ",");
+        s2 = stringDelimitList(List.map(groups, unparseGroupImport), ",");
         str = stringAppendList({s1,".{",s2,"}"});
       then
         str;
@@ -4283,7 +4283,7 @@ Prints a list of expressions to a string
   input list<Absyn.Exp> expl;
   output String outString;
 algorithm
-  outString := Util.stringDelimitList(List.map(expl,printExpStr),", ");
+  outString := stringDelimitList(List.map(expl,printExpStr),", ");
 end printExpLstStr;
 
 public function printExpStr "function: print_exp
@@ -5484,7 +5484,7 @@ algorithm
     case Absyn.PARTS(typeVars,classParts,optString)
       equation
         Print.printBuf("record Absyn.PARTS typeVars = {");
-        Print.printBuf(Util.stringDelimitList(typeVars, ","));
+        Print.printBuf(stringDelimitList(typeVars, ","));
         Print.printBuf("}, classParts = ");
         printListAsCorbaString(classParts, printClassPartAsCorbaString, ",");
         Print.printBuf(", comment = ");

@@ -461,7 +461,7 @@ public function printTermsStr "print the terms to a string"
   input UnitAbsyn.UnitTerms terms;
   output String str;
 algorithm
-  str := "{" +& Util.stringDelimitList(List.map(terms,printTermStr),",") +& "}";
+  str := "{" +& stringDelimitList(List.map(terms,printTermStr),",") +& "}";
 end printTermsStr;
 
 public function printTermStr "print one term to a string"
@@ -563,7 +563,7 @@ algorithm
       print(" [");print(unit2str(unit)); print("]");
     then();
     case(unit as UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(typeparams,baseunits))) equation
-      print(Util.stringDelimitList(List.map(typeparams,printTypeParameterStr),","));
+      print(stringDelimitList(List.map(typeparams,printTypeParameterStr),","));
       print(printBaseUnitsStr(baseunits));
       print(" [");print(unit2str(unit)); print("]");
     then();

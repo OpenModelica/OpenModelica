@@ -2155,7 +2155,7 @@ algorithm
     case ((el as SCode.EXTENDS(baseClassPath = _))::rest, redecls)
       equation
         print("- SCodeUtil.addRedeclareAsElementsToExtends failed on:\nextends:\n\t" +& SCodeDump.shortElementStr(el) +& 
-                 "\nredeclares:\n" +& Util.stringDelimitList(List.map(redecls, SCodeDump.unparseElementStr), "\n") +& "\n");
+                 "\nredeclares:\n" +& stringDelimitList(List.map(redecls, SCodeDump.unparseElementStr), "\n") +& "\n");
       then
         fail();
         

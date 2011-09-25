@@ -834,7 +834,7 @@ algorithm
         false = List.isEqualOnTrue(tlst1,tlst2,Types.equivtypes);
         // add Warning
         typlststring = List.map(tlst1,Types.unparseType);
-        typstring = Util.stringDelimitList(typlststring,";");
+        typstring = stringDelimitList(typlststring,";");
         dastring = Absyn.pathString(da);
         Error.addMessage(Error.UNEXCPECTED_FUNCTION_INPUTS_WARNING, {dastring,typstring});
       then
@@ -869,7 +869,7 @@ algorithm
         false = List.isEqualOnTrue(tlst,tlst2,Types.equivtypes);
         // add Warning
         typlststring = List.map(tlst,Types.unparseType);
-        typstring = Util.stringDelimitList(typlststring,";");
+        typstring = stringDelimitList(typlststring,";");
         dastring = Absyn.pathString(da);
         Error.addMessage(Error.UNEXCPECTED_FUNCTION_INPUTS_WARNING, {dastring,typstring});
       then
@@ -939,7 +939,7 @@ algorithm
         (false,tlst) = checkDerivativeFunctionInputs(blst,tp,dtp);
         // add Warning
         typlststring = List.map(tlst,Types.unparseType);
-        typstring = Util.stringDelimitList(typlststring,";");
+        typstring = stringDelimitList(typlststring,";");
         dastring = Absyn.pathString(da);
         Error.addMessage(Error.UNEXCPECTED_FUNCTION_INPUTS_WARNING, {dastring,typstring});
       then

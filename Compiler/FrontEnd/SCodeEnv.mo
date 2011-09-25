@@ -1562,7 +1562,7 @@ protected
   Env env;
 algorithm
   env := listReverse(inEnv);
-  outString := Util.stringDelimitList(List.map(env, printFrameStr), "\n");
+  outString := stringDelimitList(List.map(env, printFrameStr), "\n");
 end printEnvStr;
 
 protected function printFrameStr
@@ -1670,9 +1670,9 @@ protected
   Option<SCode.Element> cei;  
 algorithm
   EXTENDS_TABLE(baseClasses = bcl, redeclaredElements = re, classExtendsInfo = cei) := inExtendsTable;
-  outString := Util.stringDelimitList(List.map(bcl, printExtendsStr), "\n") +& 
+  outString := stringDelimitList(List.map(bcl, printExtendsStr), "\n") +& 
     "\n\t\tRedeclare elements:\n\t\t\t" +&
-    Util.stringDelimitList(List.map(re, SCodeDump.printElementStr), "\n\t\t\t") +&
+    stringDelimitList(List.map(re, SCodeDump.printElementStr), "\n\t\t\t") +&
     "\n\t\tClass extends:\n\t\t\t" +&
     Util.stringOption(Util.applyOption(cei, SCodeDump.printElementStr)); 
 end printExtendsTableStr;
@@ -1686,7 +1686,7 @@ protected
   String mods_str;
 algorithm
   EXTENDS(baseClass = bc, redeclareModifiers = mods) := inExtends;
-  mods_str := Util.stringDelimitList(
+  mods_str := stringDelimitList(
     List.map(mods, printRedeclarationStr), "\n");
   outString := "\t\t" +& Absyn.pathString(bc) +& "(" +& mods_str +& ")";
 end printExtendsStr;
@@ -1707,9 +1707,9 @@ protected
 algorithm
   IMPORT_TABLE(qualifiedImports = qual_imps, unqualifiedImports = unqual_imps) 
     := inImports;
-  qual_str := Util.stringDelimitList(
+  qual_str := stringDelimitList(
     List.map(qual_imps, Absyn.printImportString), "\n\t\t");
-  unqual_str := Util.stringDelimitList(
+  unqual_str := stringDelimitList(
     List.map(unqual_imps, Absyn.printImportString), "\n\t\t");
   outString := "\t\t" +& qual_str +& unqual_str;
 end printImportTableStr;

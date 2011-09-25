@@ -893,7 +893,7 @@ algorithm
         fail();
     case(xs,m) equation
       print("Mod.makeIdxmods failed for mod:");print(printModStr(m));print("\n");
-      print("subs =");print(Util.stringDelimitList(List.map(xs,ExpressionDump.printSubscriptStr),","));
+      print("subs =");print(stringDelimitList(List.map(xs,ExpressionDump.printSubscriptStr),","));
       print("\n");
     then fail();
 
@@ -1373,7 +1373,7 @@ public function printSubsStr
   input Boolean addParan;
   output String s;
 algorithm
-  s := Util.stringDelimitList(List.map(inSubMods, prettyPrintSubmod), ", ");
+  s := stringDelimitList(List.map(inSubMods, prettyPrintSubmod), ", ");
   s := Util.if_(addParan,"(","") +& s +& Util.if_(addParan,")","");
 end printSubsStr;
 
@@ -1399,7 +1399,7 @@ algorithm
       equation
         // make sure x is not present in the rest
         fullMods = getFullModsFromSubMods(ComponentReference.makeCrefIdent("", DAE.ET_OTHER(), {}), inSubModLst);
-        // print("FullModsTry: " +& Util.stringDelimitList(List.map1(fullMods, prettyPrintFullMod, 1), " ||| ") +& "\n");
+        // print("FullModsTry: " +& stringDelimitList(List.map1(fullMods, prettyPrintFullMod, 1), " ||| ") +& "\n");
         checkDuplicatesInFullMods(fullMods, Prefix.NOPRE(), "", Absyn.dummyInfo, false);
         mod2 = tryMergeSubMods(rest);
         mod = merge(mod1, mod2, {}, Prefix.NOPRE());
@@ -1409,7 +1409,7 @@ algorithm
       equation
         // make sure x is not present in the rest
         fullMods = getFullModsFromSubMods(ComponentReference.makeCrefIdent("", DAE.ET_OTHER(), {}), inSubModLst);
-        // print("FullModsTry: " +& Util.stringDelimitList(List.map1(fullMods, prettyPrintFullMod, 1), " ||| ") +& "\n");
+        // print("FullModsTry: " +& stringDelimitList(List.map1(fullMods, prettyPrintFullMod, 1), " ||| ") +& "\n");
         checkDuplicatesInFullMods(fullMods, Prefix.NOPRE(), "", Absyn.dummyInfo, false);
         mod2 = tryMergeSubMods(rest);
         mod = merge(mod1, mod2, {}, Prefix.NOPRE());
@@ -1695,7 +1695,7 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "- Mod.indexEqmod failed for mod:\n " +&
                Types.unparseEqMod(eq) +& "\n indexes:" +&
-               Util.stringDelimitList(List.map(inIntegerLst, intString), ", "));
+               stringDelimitList(List.map(inIntegerLst, intString), ", "));
       then fail();
   end matchcontinue;
 end indexEqmod;
@@ -2407,7 +2407,7 @@ algorithm
         elist_1 = List.map(elist, Util.tuple21);
         prefix =  SCodeDump.finalStr(finalPrefix) +& SCodeDump.eachStr(eachPrefix);
         str_lst = List.map(elist_1, SCodeDump.unparseElementStr);
-        str = Util.stringDelimitList(str_lst, ", ");
+        str = stringDelimitList(str_lst, ", ");
         res = stringAppendList({"(",prefix,str,")"});
       then
         res;
@@ -2416,7 +2416,7 @@ algorithm
       equation
         prefix =  SCodeDump.finalStr(finalPrefix) +& SCodeDump.eachStr(eachPrefix);
         s1 = printSubs1Str(subs);
-        s1_1 = Util.stringDelimitList(s1, ",");
+        s1_1 = stringDelimitList(s1, ",");
         s1_1 = Util.if_(listLength(subs)>=1," {" +& s1_1 +& "} ",s1_1);
         s2 = printEqmodStr(eq);
         str = stringAppendList({prefix,s1_1,s2});
@@ -2469,9 +2469,9 @@ algorithm
 
     case(DAE.REDECL(tplSCodeElementModLst = tup),depth)
       equation
-        s1 = Util.stringDelimitList(List.map(List.map(tup,Util.tuple21),SCode.elementName),", ");
-        //print(Util.stringDelimitList(List.map(List.map(tup,Util.tuple21),SCodeDump.printElementStr),",") +& "\n");
-        //s2 = Util.stringDelimitList(List.map1(List.map(tup,Util.tuple22),prettyPrintMod,0),", ");
+        s1 = stringDelimitList(List.map(List.map(tup,Util.tuple21),SCode.elementName),", ");
+        //print(stringDelimitList(List.map(List.map(tup,Util.tuple21),SCodeDump.printElementStr),",") +& "\n");
+        //s2 = stringDelimitList(List.map1(List.map(tup,Util.tuple22),prettyPrintMod,0),", ");
         //print(" (depth: " +& intString(depth) +& " (("+&s2+&")))Redeclaration of element(s): " +& s1 +& "\n");
         //print(" ok\n");
       then
@@ -2519,7 +2519,7 @@ algorithm str := matchcontinue(inSubs,depth)
     equation
       //s1 = prettyPrintSubs(inSubs);
       s2  = prettyPrintMod(m,depth+1);
-      s1 = "["+& Util.stringDelimitList(List.map(li,intString),",")+&"]" +& " = " +& s2;
+      s1 = "["+& stringDelimitList(List.map(li,intString),",")+&"]" +& " = " +& s2;
     then
       s1;
 end matchcontinue;
@@ -2541,7 +2541,7 @@ algorithm
     
     case(DAE.NAMEMOD(id,(m as DAE.REDECL(fp, ep, elist))))
       equation
-        s1 = Util.stringDelimitList(List.map(List.map(elist, Util.tuple21), SCodeDump.printElementStr), ", ");
+        s1 = stringDelimitList(List.map(List.map(elist, Util.tuple21), SCodeDump.printElementStr), ", ");
         s2 = id +& "(redeclare " +& 
              Util.if_(SCode.eachBool(ep),"each ","") +&
              Util.if_(SCode.finalBool(fp),"final ","") +& s1 +& ")";
@@ -2559,7 +2559,7 @@ algorithm
     case(DAE.IDXMOD(li,m))
       equation
         s2  = prettyPrintMod(m,0);
-        s1 = "["+& Util.stringDelimitList(List.map(li,intString),",")+&"]" +& " = " +& s2;
+        s1 = "["+& stringDelimitList(List.map(li,intString),",")+&"]" +& " = " +& s2;
       then
         s1;
     
@@ -2881,7 +2881,7 @@ algorithm
         (indexes as _::_) = getAllIndexesFromIdxMods(subModLst);
         str3 = PrefixUtil.printPrefixStrIgnoreNoPre(pre);
         // now try to read this very fast ;)        
-        str1 = Util.stringDelimitList(
+        str1 = stringDelimitList(
                  List.map1(
                    List.map(
                      List.map(
@@ -2917,7 +2917,7 @@ algorithm
         overlap = getOverlap(indexes);
         str2 = PrefixUtil.printPrefixStrIgnoreNoPre(pre);
         // now try to read this very fast ;)        
-        str1 = Util.stringDelimitList(
+        str1 = stringDelimitList(
                  List.map1(
                    List.map(
                      List.map(
@@ -3119,7 +3119,7 @@ algorithm
         // mod = lookupCompModification(mod, elementName);
         // print("Element Mod: " +& printModStr(mod) +& "\n");
         fullMods = getFullModsFromMod(cref, mod);
-        // print("FullMods: " +& Util.stringDelimitList(List.map1(fullMods, prettyPrintFullMod, 1), " ||| ") +& "\n");
+        // print("FullMods: " +& stringDelimitList(List.map1(fullMods, prettyPrintFullMod, 1), " ||| ") +& "\n");
         checkDuplicatesInFullMods(fullMods, pre, elementName, info, true);
       then
         ();
@@ -3207,7 +3207,7 @@ algorithm
         duplicates = List.select1(rest, fullModCrefsEqual, fullMod);
         s1 = prettyPrintFullMod(fullMod, 1);
         s2 = PrefixUtil.makePrefixString(pre);
-        s3 = Util.stringDelimitList(List.map1(duplicates, prettyPrintFullMod, 1), ", ");
+        s3 = stringDelimitList(List.map1(duplicates, prettyPrintFullMod, 1), ", ");
         s2 = s2 +& ", duplicates are: " +& s3;
         Error.addSourceMessage(Error.MULTIPLE_MODIFIER, {s1,s2}, info);
       then

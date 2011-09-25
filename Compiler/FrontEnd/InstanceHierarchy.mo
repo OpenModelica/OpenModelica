@@ -614,9 +614,9 @@ algorithm
     case (CONNECTS(connectEquations, actualConnects), l)
       equation
         indent = Dump.indentStr(l) +& "+";
-        str = Util.stringDelimitList(List.map(connectEquations, SCodeDump.equationStr), "\n" +& indent);
+        str = stringDelimitList(List.map(connectEquations, SCodeDump.equationStr), "\n" +& indent);
         print("\n" +& indent +& str);
-        str = Util.stringDelimitList(List.map(actualConnects, Dump.printComponentRefStr), ", ");
+        str = stringDelimitList(List.map(actualConnects, Dump.printComponentRefStr), ", ");
         print(str);
       then ();
   end matchcontinue;

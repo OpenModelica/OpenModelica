@@ -137,7 +137,7 @@ algorithm
     case (((e,crefs))::res,wrongEqns)
       equation
         strcrefs = List.map(crefs,ComponentReference.crefStr);
-        crefstring = Util.stringDelimitList(strcrefs,", ");
+        crefstring = stringDelimitList(strcrefs,", ");
         expstr = ExpressionDump.printExpStr(e);
         scopestr = stringAppendList({crefstring," from Expression: ",expstr});
         Error.addMessage(Error.LOOKUP_VARIABLE_ERROR, {scopestr,"BackendDAE object"});

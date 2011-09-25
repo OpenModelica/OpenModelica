@@ -800,9 +800,9 @@ algorithm
       equation
         env = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(Env.forScopeName), NONE());
         (cache, valMatrix, names, dims, tys, stOpt) = cevalReductionIterators(cache, env, iterators, impl, stOpt, msg);
-        // print("Before:\n");print(Util.stringDelimitList(List.map1(List.mapList(valMatrix, ValuesUtil.valString), Util.stringDelimitList, ","), "\n") +& "\n");
+        // print("Before:\n");print(stringDelimitList(List.map1(List.mapList(valMatrix, ValuesUtil.valString), stringDelimitList, ","), "\n") +& "\n");
         valMatrix = Util.allCombinations(valMatrix,SOME(10000),Absyn.dummyInfo);
-        // print("After:\n");print(Util.stringDelimitList(List.map1(List.mapList(valMatrix, ValuesUtil.valString), Util.stringDelimitList, ","), "\n") +& "\n");
+        // print("After:\n");print(stringDelimitList(List.map1(List.mapList(valMatrix, ValuesUtil.valString), stringDelimitList, ","), "\n") +& "\n");
         // print("Start cevalReduction: " +& Absyn.pathString(path) +& " " +& ValuesUtil.valString(startValue) +& " " +& ValuesUtil.valString(Values.TUPLE(vals)) +& " " +& ExpressionDump.printExpStr(daeExp) +& "\n");
         (cache, ov, stOpt) = cevalReduction(cache, env, path, ov, daeExp, ty, foldExp, names, listReverse(valMatrix), tys, impl, stOpt, msg);
         value = Util.getOptionOrDefault(ov, Values.META_FAIL());
@@ -1287,7 +1287,7 @@ algorithm
         newCF = Interactive.removeCfAndDependencies(cf, funcpath::functionDependencies);
         
         Debug.fprintln("dynload", "CALL: [SOME SYMTAB] not in in CF list: removed deps:" +& 
-          Util.stringDelimitList(List.map(functionDependencies, Absyn.pathString) ,", "));        
+          stringDelimitList(List.map(functionDependencies, Absyn.pathString) ,", "));        
         
         // now is safe to generate code 
         (cache, funcstr) = CevalScript.cevalGenerateFunction(cache, env, funcpath);
@@ -2091,8 +2091,8 @@ algorithm
 
         /*print("inFrame :");print(Env.printEnvPathStr(env));print("\n");
         print("cardinality(");print(ComponentReference.printComponentRefStr(cr));print(")=");print(intString(res));
-        print("\nicrefs =");print(Util.stringDelimitList(List.map(crs,ComponentReference.printComponentRefStr),","));
-        print("\ncrefs =");print(Util.stringDelimitList(List.map(cr_totlst,ComponentReference.printComponentRefStr),","));
+        print("\nicrefs =");print(stringDelimitList(List.map(crs,ComponentReference.printComponentRefStr),","));
+        print("\ncrefs =");print(stringDelimitList(List.map(cr_totlst,ComponentReference.printComponentRefStr),","));
         print("\n");
          print("prefix =");print(ComponentReference.printComponentRefStr(prefix));print("\n");*/
        //  print("env:");print(Env.printEnvStr(env));
@@ -5374,9 +5374,9 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "- Ceval.cevalSubscriptValue failed on:" +&
           "\n env: " +& Env.printEnvPathStr(env) +&
-          "\n subs: " +& Util.stringDelimitList(List.map(subs, ExpressionDump.printSubscriptStr), ", ") +&
+          "\n subs: " +& stringDelimitList(List.map(subs, ExpressionDump.printSubscriptStr), ", ") +&
           "\n value: " +& ValuesUtil.printValStr(inValue) +&
-          "\n dim sizes: " +& Util.stringDelimitList(List.map(dims, intString), ", ") 
+          "\n dim sizes: " +& stringDelimitList(List.map(dims, intString), ", ") 
         );
       then
         fail();*/
@@ -5825,7 +5825,7 @@ public function dumpCevalHashTable ""
   input CevalHashTable t;
 algorithm
   print("CevalHashTable:\n");
-  print(Util.stringDelimitList(List.map(hashTableList(t),dumpTuple),"\n"));
+  print(stringDelimitList(List.map(hashTableList(t),dumpTuple),"\n"));
   print("\n");
 end dumpCevalHashTable;
 

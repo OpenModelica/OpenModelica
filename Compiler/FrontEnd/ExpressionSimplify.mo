@@ -4065,7 +4065,7 @@ algorithm
     case (_, _, _)
       equation
         equality(inStep = 0.0);
-        error_str = Util.stringDelimitList(
+        error_str = stringDelimitList(
           List.map({inStart, inStep, inStop}, realString), ":");
         Error.addMessage(Error.ZERO_STEP_IN_ARRAY_CONSTRUCTOR, {error_str});
       then

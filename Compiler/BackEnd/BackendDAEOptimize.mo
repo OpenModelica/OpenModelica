@@ -3131,18 +3131,18 @@ algorithm
         true = info > 0;
         varname = ComponentReference.printComponentRefStr(listGet(vars,info));
         infoStr = intString(info);
-        varnames = Util.stringDelimitList(List.map(vars,ComponentReference.printComponentRefStr)," ;\n  ");
-        rhsStr = Util.stringDelimitList(List.map(rhs, realString)," ;\n  ");
-        jacStr = Util.stringDelimitList(List.map1(List.mapList(jac,realString),Util.stringDelimitList," , ")," ;\n  ");
+        varnames = stringDelimitList(List.map(vars,ComponentReference.printComponentRefStr)," ;\n  ");
+        rhsStr = stringDelimitList(List.map(rhs, realString)," ;\n  ");
+        jacStr = stringDelimitList(List.map1(List.mapList(jac,realString),stringDelimitList," , ")," ;\n  ");
         syst = stringAppendList({"\n[\n  ", jacStr, "\n]\n  *\n[\n  ",varnames,"\n]\n  =\n[\n  ",rhsStr,"\n]"});
         Error.addMessage(Error.LINEAR_SYSTEM_SINGULAR, {syst,infoStr,varname});
       then fail();
     case (info,vars,jac,rhs)
       equation
         true = info < 0;
-        varnames = Util.stringDelimitList(List.map(vars,ComponentReference.printComponentRefStr)," ;\n  ");
-        rhsStr = Util.stringDelimitList(List.map(rhs, realString)," ; ");
-        jacStr = Util.stringDelimitList(List.map1(List.mapList(jac,realString),Util.stringDelimitList," , ")," ; ");
+        varnames = stringDelimitList(List.map(vars,ComponentReference.printComponentRefStr)," ;\n  ");
+        rhsStr = stringDelimitList(List.map(rhs, realString)," ; ");
+        jacStr = stringDelimitList(List.map1(List.mapList(jac,realString),stringDelimitList," , ")," ; ");
         syst = stringAppendList({"[", jacStr, "] * [",varnames,"] = [",rhsStr,"]"});
         Error.addMessage(Error.LINEAR_SYSTEM_INVALID, {"LAPACK/dgesv",syst});
       then fail();
@@ -5912,7 +5912,7 @@ algorithm
   s1 := intString(i1);
   s2 := intString(i2);
   crs := Debug.bcallret3(i1<>i2,List.mapMap,vl,BackendVariable.varCref,ComponentReference.printComponentRefStr,{});
-  s3 := Util.stringDelimitList(crs,"\n");
+  s3 := stringDelimitList(crs,"\n");
   s4 := Debug.bcallret1(i1<>i2,BackendDump.dumpEqnsStr,el,"");
   // Can this even be triggered? We check that all variables are defined somewhere, so everything should be balanced already?
   Error.assertionOrAddSourceMessage(i1==i2,Error.IMBALANCED_EQUATIONS,{s1,s2,s3,s4},Absyn.dummyInfo);
@@ -6039,12 +6039,12 @@ algorithm
         ixs = arrayUpdate(ixs,ix,n);
         // print("mark OK\n");
         lst = List.map(mT[ix],intAbs);
-        // print(Util.stringDelimitList(List.map(lst,intString),",") +& "\n");
+        // print(stringDelimitList(List.map(lst,intString),",") +& "\n");
         // print("len:" +& intString(arrayLength(m)) +& "\n");
         lsts = List.map1r(lst,arrayGet,m);
         // print("arrayNth OK\n");
         lst = List.map(List.flatten(lsts),intAbs);
-        // print(Util.stringDelimitList(List.map(lst,intString),",") +& "\n");
+        // print(stringDelimitList(List.map(lst,intString),",") +& "\n");
         // print("lst get\n");
         _ = List.map4(lst,partitionIndependentBlocks1,n,m,mT,ixs);
       then true;
@@ -6069,7 +6069,7 @@ algorithm
     case (true,ixs)
       equation
         print("Got partition!\n");
-        print(Util.stringDelimitList(List.map(arrayList(ixs), intString), ","));
+        print(stringDelimitList(List.map(arrayList(ixs), intString), ","));
         print("\n");
       then ();
     else ();

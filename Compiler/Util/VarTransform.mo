@@ -837,7 +837,7 @@ algorithm
     case (REPLACEMENTS(hashTable= ht))
       equation
         (tplLst) = BaseHashTable.hashTableList(ht);
-        str = Util.stringDelimitList(List.map(tplLst,printReplacementTupleStr),"\n");
+        str = stringDelimitList(List.map(tplLst,printReplacementTupleStr),"\n");
         print("Replacements: (");
         len = listLength(tplLst);
         len_str = intString(len);
@@ -868,7 +868,7 @@ algorithm ostr := matchcontinue (inVariableReplacements)
     case (REPLACEMENTS(hashTable = ht))
       equation
         (tplLst) = BaseHashTable.hashTableList(ht);
-        str = Util.stringDelimitList(List.map(tplLst,printReplacementTupleStr),"\n");
+        str = stringDelimitList(List.map(tplLst,printReplacementTupleStr),"\n");
         s1 = "Replacements: (" +& intString(listLength(tplLst)) +& ")\n=============\n" +& str +& "\n";
       then
         s1;

@@ -2911,7 +2911,7 @@ algorithm
     case (daelow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = v)::{}),blocks,ass1,ass2,m,mT)
       equation
         vLst = BackendVariable.getAllDiscreteVarFromVariables(v); // select all discrete vars.
-        outString = Util.stringDelimitList(List.map2(vLst, buildDiscreteVarChangesVar,daelow,mT),"\n  ");
+        outString = stringDelimitList(List.map2(vLst, buildDiscreteVarChangesVar,daelow,mT),"\n  ");
       then outString;
     case(_,_,_,_,_,_) equation
       print("buildDiscreteVarChanges failed\n");
@@ -4923,18 +4923,18 @@ algorithm
         true = info > 0;
         varname = ComponentReference.printComponentRefStr(listGet(vars,info));
         infoStr = intString(info);
-        varnames = Util.stringDelimitList(List.map(vars,ComponentReference.printComponentRefStr)," ;\n  ");
-        rhsStr = Util.stringDelimitList(List.map(rhs, realString)," ;\n  ");
-        jacStr = Util.stringDelimitList(List.map1(List.mapList(jac,realString),Util.stringDelimitList," , ")," ;\n  ");
+        varnames = stringDelimitList(List.map(vars,ComponentReference.printComponentRefStr)," ;\n  ");
+        rhsStr = stringDelimitList(List.map(rhs, realString)," ;\n  ");
+        jacStr = stringDelimitList(List.map1(List.mapList(jac,realString),stringDelimitList," , ")," ;\n  ");
         syst = stringAppendList({"\n[\n  ", jacStr, "\n]\n  *\n[\n  ",varnames,"\n]\n  =\n[\n  ",rhsStr,"\n]"});
         Error.addMessage(Error.LINEAR_SYSTEM_SINGULAR, {syst,infoStr,varname});
       then fail();
     case (info,vars,jac,rhs)
       equation
         true = info < 0;
-        varnames = Util.stringDelimitList(List.map(vars,ComponentReference.printComponentRefStr)," ;\n  ");
-        rhsStr = Util.stringDelimitList(List.map(rhs, realString)," ; ");
-        jacStr = Util.stringDelimitList(List.map1(List.mapList(jac,realString),Util.stringDelimitList," , ")," ; ");
+        varnames = stringDelimitList(List.map(vars,ComponentReference.printComponentRefStr)," ;\n  ");
+        rhsStr = stringDelimitList(List.map(rhs, realString)," ; ");
+        jacStr = stringDelimitList(List.map1(List.mapList(jac,realString),stringDelimitList," , ")," ; ");
         syst = stringAppendList({"[", jacStr, "] * [",varnames,"] = [",rhsStr,"]"});
         Error.addMessage(Error.LINEAR_SYSTEM_INVALID, {"LAPACK/dgesv",syst});
       then fail();
@@ -7925,7 +7925,7 @@ algorithm
       equation
         zcIndxLst = zeroCrossingsContainIndex(eqn,0,zcLst);
         strLst = List.map1(zcIndxLst,buildDiscreteVarChangesAddEvent,cr);
-        outString = Util.stringDelimitList(strLst,"\n");
+        outString = stringDelimitList(strLst,"\n");
       then outString;
     case(_,_,_) equation
       print("buildDiscreteVarChangesVar2 failed\n");
@@ -10605,7 +10605,7 @@ algorithm outOrder := matchcontinue(inDlow)
       vars = BackendDAEUtil.varList(dovars);
       eqns = BackendDAEUtil.equationList(deqns);
       derExps = makeCallDerExp(vars);
-      Debug.fcall("cppvar",print, " possible der exp: " +& Util.stringDelimitList(List.map(derExps, ExpressionDump.printExpStr), ", ") +& "\n");
+      Debug.fcall("cppvar",print, " possible der exp: " +& stringDelimitList(List.map(derExps, ExpressionDump.printExpStr), ", ") +& "\n");
       eqns = flattenEqns(eqns,inDlow);
      // eq_str=dumpEqLst(eqns);
       // Debug.fcall("cppvar",print,"filtered eq's " +& eq_str +& "\n");

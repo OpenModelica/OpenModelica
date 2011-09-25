@@ -264,7 +264,7 @@ algorithm
           "className: " +&  className +& "\n\t" +&
           "env:       " +&  Env.printEnvPathStr(env) +& "\n\t" +&
           "mods:      " +&  Mod.printModStr(mod) +& "\n\t" +&
-          "elems:     " +&  Util.stringDelimitList(List.map(rest, SCodeDump.printElementStr), ", ")
+          "elems:     " +&  stringDelimitList(List.map(rest, SCodeDump.printElementStr), ", ")
           );
       then
         fail();
@@ -380,7 +380,7 @@ algorithm
         Debug.traceln("  Candidate classes: ");
         els = List.map(compelts, Util.tuple31);
         names = List.map(els, SCode.elementName);
-        Debug.traceln(Util.stringDelimitList(names, ","));
+        Debug.traceln(stringDelimitList(names, ","));
       then fail();
     
   end matchcontinue;

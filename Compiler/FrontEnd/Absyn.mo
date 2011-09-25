@@ -4983,7 +4983,7 @@ algorithm
          // if list is empty (no crefs were added)
          b = List.isEmpty(lst);
          // debugging:
-         // print("Crefs in annotations: (" +& Util.stringDelimitList(List.map(inAnnotationMod, Dump.printExpStr), ", ") +& ")\n");
+         // print("Crefs in annotations: (" +& stringDelimitList(List.map(inAnnotationMod, Dump.printExpStr), ", ") +& ")\n");
       then
         b;
   end match;

@@ -101,7 +101,7 @@ algorithm
       equation
         eqnsl = BackendDAEUtil.equationList(eqns);
         ls1 = List.map1(eqnsl, equationStr, wcLst);
-        s1 = Util.stringDelimitList(ls1, ",");
+        s1 = stringDelimitList(ls1, ",");
         s = "EqStr = {" +& s1 +& "};";
       then
         s;
@@ -134,7 +134,7 @@ algorithm
     case (BackendDAE.ARRAY_EQUATION(index = indx,crefOrDerCref = expl), _)
       equation
         indx_str = intString(indx);
-        var_str=Util.stringDelimitList(List.map(expl,ExpressionDump.printExpStr),", ");
+        var_str=stringDelimitList(List.map(expl,ExpressionDump.printExpStr),", ");
         res = stringAppendList({"Array eqn no: ",indx_str," for variables: ",var_str,"\n"});
       then
         res;
@@ -320,7 +320,7 @@ algorithm
         str1 = ComponentReference.printComponentRefStr(cr);
         /*
         paths_lst = List.map(paths, Absyn.pathString);
-        path_str = Util.stringDelimitList(paths_lst, ", ");
+        path_str = stringDelimitList(paths_lst, ", ");
         comment_str = Dump.unparseCommentOption(comment);
         print("= ");
         s = ExpressionDump.printExpStr(e);
@@ -357,7 +357,7 @@ algorithm
         str1 = ComponentReference.printComponentRefStr(cr);
         /*
         paths_lst = List.map(paths, Absyn.pathString);
-        path_str = Util.stringDelimitList(paths_lst, ", ");
+        path_str = stringDelimitList(paths_lst, ", ");
         comment_str = Dump.unparseCommentOption(comment);
         print("= ");
         s = ExpressionDump.printExpStr(e);

@@ -81,9 +81,9 @@ algorithm
       usedLst = avlTreeToList(used);
       usedByLst = avlTreeToList(usedBy);
       print("Used\n=====\n");
-      print(Util.stringDelimitList(List.map(usedLst, printKeyValueTupleStr),"\n"));
+      print(stringDelimitList(List.map(usedLst, printKeyValueTupleStr),"\n"));
       print("\n\nUsedBy=====\n");
-      print(Util.stringDelimitList(List.map(usedByLst, printKeyValueTupleStr),"\n"));
+      print(stringDelimitList(List.map(usedByLst, printKeyValueTupleStr),"\n"));
     then ();
    end matchcontinue;
 end dumpDepends;
@@ -96,7 +96,7 @@ algorithm
     list<tuple<AvlKey,AvlValue>> usedLst;
     case(used) equation
       usedLst = avlTreeToList(used);
-      print(Util.stringDelimitList(List.map(usedLst, printKeyValueTupleStr),"\n"));
+      print(stringDelimitList(List.map(usedLst, printKeyValueTupleStr),"\n"));
     then ();
    end matchcontinue;
 end dumpAvlTreeKeys;
@@ -286,7 +286,7 @@ algorithm
     local AvlValue v;
     case(DEPENDS(_,usedBy),cl) equation
       v = avlTreeGetSubs(usedBy,cl);
-      //print("included: " +& Util.stringDelimitList(List.map(v,Absyn.pathString),", ") +& "\n");
+      //print("included: " +& stringDelimitList(List.map(v,Absyn.pathString),", ") +& "\n");
       usedBy= avlAddUses(avlTreeNew(),v);
     then usedBy;
   end matchcontinue;
@@ -314,7 +314,7 @@ public function valueStr "prints a Value to a string"
 input AvlValue v;
 output String str;
 algorithm
-  str := "{" +& Util.stringDelimitList(List.map(v,Absyn.pathString),",") +& "}";
+  str := "{" +& stringDelimitList(List.map(v,Absyn.pathString),",") +& "}";
 end valueStr;
 
 /* Generic Code below */

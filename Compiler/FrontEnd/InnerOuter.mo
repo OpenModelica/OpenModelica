@@ -1873,7 +1873,7 @@ algorithm
         strOuters = Util.if_(listLength(outers) == 0, 
                       "", 
                       " Referenced by 'outer' components: {" +&
-                      Util.stringDelimitList(List.map(outers, ComponentReference.printComponentRefStr), ", ") +& "}");
+                      stringDelimitList(List.map(outers, ComponentReference.printComponentRefStr), ", ") +& "}");
         str = Absyn.pathString(typePath) +& " " +& fullName +& "; defined in scope: " +& scope +& "." +& strOuters;
       then 
         str;
@@ -1906,7 +1906,7 @@ algorithm
     case((tih as TOP_INSTANCE(pathOpt, ht, outerPrefixes))::restIH, inEnv)
       equation
         inners = getInnersFromInstHierarchyHashTable(ht);
-        str = Util.stringDelimitList(List.map(inners, printInnerDefStr), "\n    ");
+        str = stringDelimitList(List.map(inners, printInnerDefStr), "\n    ");
       then
         str;
   end match;
@@ -1955,7 +1955,7 @@ public function dumpInstHierarchyHashTable ""
   input InstHierarchyHashTable t;
 algorithm
   print("InstHierarchyHashTable:\n");
-  print(Util.stringDelimitList(List.map(hashTableList(t),dumpTuple),"\n"));
+  print(stringDelimitList(List.map(hashTableList(t),dumpTuple),"\n"));
   print("\n");
 end dumpInstHierarchyHashTable;
 

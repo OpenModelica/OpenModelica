@@ -547,7 +547,7 @@ algorithm
       Integer tid;
     case (varnames,tid) /* var names task id */
       equation
-        result_str = Util.stringDelimitList(varnames, ";");
+        result_str = stringDelimitList(varnames, ";");
         TaskGraphExt.storeResult(result_str, tid, true, result_str);
       then
         ();
@@ -990,7 +990,7 @@ protected
   String ns_1;
 algorithm
   ns := List.fill("%s", n);
-  ns_1 := Util.stringDelimitList(ns, ", ");
+  ns_1 := stringDelimitList(ns, ", ");
   res := stringAppendList({str,"(",ns_1,")"});
 end buildCallStr;
 

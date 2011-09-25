@@ -1422,7 +1422,7 @@ algorithm
         dumpStrOpenTagAttr(ADDITIONAL_INFO, stringAppend(ARRAY_OF_EQUATIONS,ID_), intString(indx));
         dumpStrOpenTag(stringAppend(INVOLVED,VARIABLES_));
         dumpStrOpenTag(VARIABLE);
-        var_str=Util.stringDelimitList(List.map(expl,printExpStr),stringAppendList({"</",VARIABLE,">\n<",VARIABLE,">"}));
+        var_str=stringDelimitList(List.map(expl,printExpStr),stringAppendList({"</",VARIABLE,">\n<",VARIABLE,">"}));
         dumpStrCloseTag(VARIABLE);
         dumpStrCloseTag(stringAppend(INVOLVED,VARIABLES_));
         dumpStrCloseTag(ADDITIONAL_INFO);
@@ -3045,7 +3045,7 @@ algorithm
     case BackendDAE.STRING() then VARTYPE_STRING;
     case BackendDAE.ENUMERATION(stringLst = l)
       equation
-        s1 = Util.stringDelimitList(l, ", ");
+        s1 = stringDelimitList(l, ", ");
         s2 = stringAppend(VARTYPE_ENUMERATION,stringAppend("(", s1));
         str = stringAppend(s2, ")");
       then
@@ -3612,7 +3612,7 @@ algorithm
         dumpStrOpenTagAttr(ADDITIONAL_INFO, stringAppend(ARRAY_OF_EQUATIONS,ID_), intString(indx));
         dumpStrOpenTag(stringAppend(INVOLVED,VARIABLES_));
         dumpStrOpenTag(VARIABLE);
-        var_str=Util.stringDelimitList(List.map(expl,ExpressionDump.printExpStr),stringAppendList({"</",VARIABLE,">\n<",VARIABLE,">"}));
+        var_str=stringDelimitList(List.map(expl,ExpressionDump.printExpStr),stringAppendList({"</",VARIABLE,">\n<",VARIABLE,">"}));
         dumpStrCloseTag(VARIABLE);
         dumpStrCloseTag(stringAppend(INVOLVED,VARIABLES_));
         dumpStrCloseTag(ADDITIONAL_INFO);

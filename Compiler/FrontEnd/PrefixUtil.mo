@@ -83,7 +83,7 @@ algorithm
     case Prefix.PREFIX(Prefix.PRE(str,{},Prefix.NOCOMPPRE(),_),_) then str;
     case Prefix.PREFIX(Prefix.PRE(str,ss,Prefix.NOCOMPPRE(),_),_)
       equation
-        s = stringAppend(str, "[" +& Util.stringDelimitList(
+        s = stringAppend(str, "[" +& stringDelimitList(
           List.map(ss, ExpressionDump.subscriptString), ", ") +& "]");
       then
         s;
@@ -99,7 +99,7 @@ algorithm
         rest_1 = printPrefixStr(Prefix.PREFIX(rest,cp));
         s = stringAppend(rest_1, ".");
         s_1 = stringAppend(s, str);
-        s_2 = stringAppend(s_1, "[" +& Util.stringDelimitList(
+        s_2 = stringAppend(s_1, "[" +& stringDelimitList(
           List.map(ss, ExpressionDump.subscriptString), ", ") +& "]");
       then
         s_2;

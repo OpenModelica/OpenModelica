@@ -1053,7 +1053,7 @@ public function printDimensionsStr "Prints dimensions to a string"
   input list<DAE.Dimension> dims;
   output String res;
 algorithm
-  res:=Util.stringDelimitList(List.map(dims,ExpressionDump.dimensionString),", ");
+  res:=stringDelimitList(List.map(dims,ExpressionDump.dimensionString),", ");
 end printDimensionsStr;
 
 public function valuesToVars "function valuesToVars
@@ -2034,27 +2034,27 @@ algorithm
 
     case ((DAE.T_INTEGER(varLstInt = vs),_)) 
       equation
-        s1 = Util.stringDelimitList(List.map(vs, unparseVarAttr),", ");
+        s1 = stringDelimitList(List.map(vs, unparseVarAttr),", ");
         s2 = "Integer(" +& s1 +& ")";
       then s2;
     case ((DAE.T_REAL(varLstReal = vs),_)) 
       equation
-        s1 = Util.stringDelimitList(List.map(vs, unparseVarAttr),", ");
+        s1 = stringDelimitList(List.map(vs, unparseVarAttr),", ");
         s2 = "Real(" +& s1 +& ")";
       then s2;
     case ((DAE.T_STRING(varLstString = vs),_)) 
       equation
-        s1 = Util.stringDelimitList(List.map(vs, unparseVarAttr),", ");
+        s1 = stringDelimitList(List.map(vs, unparseVarAttr),", ");
         s2 = "String(" +& s1 +& ")";
       then s2;
     case ((DAE.T_BOOL(varLstBool = vs),_)) 
       equation
-        s1 = Util.stringDelimitList(List.map(vs, unparseVarAttr),", ");
+        s1 = stringDelimitList(List.map(vs, unparseVarAttr),", ");
         s2 = "Boolean(" +& s1 +& ")";
       then s2;
     case ((DAE.T_ENUMERATION(names = l, literalVarLst=vs),_))
       equation
-        s1 = Util.stringDelimitList(l, ", ");
+        s1 = stringDelimitList(l, ", ");
         s2 = stringAppendList(List.map(vs, unparseVar));
         s2 = Util.if_(s2 ==& "", "", "(" +& s2 +& ")");
         str = stringAppendList({"enumeration(",s1,")"});
@@ -2095,7 +2095,7 @@ algorithm
       equation
         funcstr = Absyn.pathString(Util.getOptionOrDefault(op, Absyn.IDENT("")));
         paramstrs = List.map(params, unparseParam);
-        paramstr = Util.stringDelimitList(paramstrs, ", ");
+        paramstr = stringDelimitList(paramstrs, ", ");
         restypestr = unparseType(restype);
         res = stringAppendList({funcstr,"<function>(",paramstr,") => ",restypestr});
       then
@@ -2103,7 +2103,7 @@ algorithm
     case ((DAE.T_TUPLE(tupleType = tys),_))
       equation
         tystrs = List.map(tys, unparseType);
-        tystr = Util.stringDelimitList(tystrs, ", ");
+        tystr = stringDelimitList(tystrs, ", ");
         res = stringAppendList({"(",tystr,")"});
       then
         res;
@@ -2112,7 +2112,7 @@ algorithm
     case ((DAE.T_METATUPLE(types = tys),_))
       equation
         tystrs = List.map(tys, unparseType);
-        tystr = Util.stringDelimitList(tystrs, ", ");
+        tystr = stringDelimitList(tystrs, ", ");
         res = stringAppendList({"tuple<",tystr,">"});
       then
         res;
@@ -2217,7 +2217,7 @@ algorithm
     case DAE.TUPLE_CONST(tupleConstLst = constlist)
       equation
         strlist = List.map(constlist, unparseTupleconst);
-        res = Util.stringDelimitList(strlist, ", ");
+        res = stringDelimitList(strlist, ", ");
         res_1 = stringAppendList({"(",res,")"});
       then
         res_1;
@@ -2260,8 +2260,8 @@ algorithm
     
     case ((DAE.T_COMPLEX(complexClassType = st,complexVarLst = vars,complexTypeOption = bc),_))
       equation
-        compType = Util.stringDelimitList( List.map(Util.genericOption(bc),printTypeStr), ", ");
-        s1 = Util.stringDelimitList(List.map(vars, printVarStr),", ");
+        compType = stringDelimitList( List.map(Util.genericOption(bc),printTypeStr), ", ");
+        s1 = stringDelimitList(List.map(vars, printVarStr),", ");
         compType = Util.if_(stringLength(compType)>0, "::derived From::" +& compType,"");
         str = stringAppendList({"composite(",s1,") ", compType});
       then
@@ -2285,7 +2285,7 @@ algorithm
     
     case ((DAE.T_TUPLE(tupleType = tys),_))
       equation
-        s1 = Util.stringDelimitList(List.map(tys, printTypeStr),", ");
+        s1 = stringDelimitList(List.map(tys, printTypeStr),", ");
          str = stringAppendList({"(",s1,")"});
       then
         str;
@@ -2394,7 +2394,7 @@ algorithm (s,s2) := matchcontinue(t)
       varNames = List.map(vars,varName);
       isExpandableStr = Util.if_(isExpandable,"/* expandable */ ", "");
       s = isExpandableStr +& Absyn.pathString(connectorName);
-      s2 = "{" +& Util.stringDelimitList(varNames,", ") +& "}";
+      s2 = "{" +& stringDelimitList(varNames,", ") +& "}";
       then
         (s,s2);
   case(_) then ("","");
@@ -3205,7 +3205,7 @@ algorithm
       equation
         (ty,dims) = flattenArrayType(arrayty);
         dimstrs = List.map(dims, intString);
-        dimstr = Util.stringDelimitList(dimstrs, ", ");
+        dimstr = stringDelimitList(dimstrs, ", ");
         tystr = getTypeName(ty);
         str = stringAppendList({tystr,"[",dimstr,"]"});
       then
@@ -5480,14 +5480,14 @@ protected
 algorithm
   (str,tys) := binding;
   // Don't bother doing this fast; it's just for error messages
-  str := "    " +& str +& ":\n" +& Util.stringDelimitList(List.map1r(List.map(tys, unparseType), stringAppend, "      "), "\n");
+  str := "    " +& str +& ":\n" +& stringDelimitList(List.map1r(List.map(tys, unparseType), stringAppend, "      "), "\n");
 end polymorphicBindingStr;
 
 public function polymorphicBindingsStr
   input PolymorphicBindings bindings;
   output String str;
 algorithm
-  str := Util.stringDelimitList(List.map(bindings, polymorphicBindingStr), "\n");
+  str := stringDelimitList(List.map(bindings, polymorphicBindingStr), "\n");
 end polymorphicBindingsStr;
 
 public function fixPolymorphicRestype

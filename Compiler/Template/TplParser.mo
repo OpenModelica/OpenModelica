@@ -179,7 +179,7 @@ algorithm
     case (LINE_INFO(parseInfo = PARSE_INFO(errors = errLst as (_::_))))
         equation
           print("\nSusan parse error(s):\n");
-          print(Util.stringDelimitList(listReverse(errLst), "\n"));
+          print(stringDelimitList(listReverse(errLst), "\n"));
           print("\n");
         then fail();
                   

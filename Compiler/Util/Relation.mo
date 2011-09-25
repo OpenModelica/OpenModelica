@@ -287,7 +287,7 @@ public function intListStr
   input list<Integer> l;
   output String str;
 algorithm
-  str := "{"+& Util.stringDelimitList(List.map(l, intString), ",") +& "}"; 
+  str := "{"+& stringDelimitList(List.map(l, intString), ",") +& "}"; 
 end intListStr;
 
 end Relation;

@@ -126,8 +126,8 @@ algorithm
 
         (roots, elts, broken) = findResultGraph(graph, elts, modelNameQualified);
 
-        Debug.fprintln("cgraph", "Roots: " +& Util.stringDelimitList(List.map(roots, ComponentReference.printComponentRefStr), ", "));
-        Debug.fprintln("cgraph", "Broken connections: " +& Util.stringDelimitList(List.map(broken, printConnectionStr), ", "));
+        Debug.fprintln("cgraph", "Roots: " +& stringDelimitList(List.map(roots, ComponentReference.printComponentRefStr), ", "));
+        Debug.fprintln("cgraph", "Broken connections: " +& stringDelimitList(List.map(broken, printConnectionStr), ", "));
 
         elts = evalIsRoot(roots, elts);
       then
@@ -172,8 +172,8 @@ algorithm
       equation
         (roots, elts, broken) = findResultGraph(graph, {}, "");
        
-        Debug.fprintln("cgraph", "Roots: " +& Util.stringDelimitList(List.map(roots, ComponentReference.printComponentRefStr), ", "));
-        Debug.fprintln("cgraph", "Broken connections: " +& Util.stringDelimitList(List.map(broken, printConnectionStr), ", "));
+        Debug.fprintln("cgraph", "Roots: " +& stringDelimitList(List.map(roots, ComponentReference.printComponentRefStr), ", "));
+        Debug.fprintln("cgraph", "Broken connections: " +& stringDelimitList(List.map(broken, printConnectionStr), ", "));
         
         // remove the broken connects from connection set!
         sets = removeBrokenConnectionsFromSets(sets, broken);
@@ -944,7 +944,7 @@ algorithm
         orderedPotentialRoots = List.sort(potentialRoots, ord);
         
         Debug.fprintln("cgraph", "Ordered Potential Roots: " +& 
-          Util.stringDelimitList(List.map(orderedPotentialRoots, printPotentialRootTuple), ", "));
+          stringDelimitList(List.map(orderedPotentialRoots, printPotentialRootTuple), ", "));
         
         // add connections to the table and return the broken connections
         (table, dae, broken) = addConnections(table, connections, inDAE);
@@ -980,7 +980,7 @@ algorithm
         orderedPotentialRoots = List.sort(potentialRoots, ord);
         
         Debug.fprintln("cgraph", "Ordered Potential Roots: " +& 
-          Util.stringDelimitList(List.map(orderedPotentialRoots, printPotentialRootTuple), ", "));
+          stringDelimitList(List.map(orderedPotentialRoots, printPotentialRootTuple), ", "));
         
         // add connections to the table and return the broken connections
         (table, dae, broken) = addConnections(table, connections, inDAE);
@@ -1004,7 +1004,7 @@ algorithm
         userBrokenLstLst = List.map1(userBrokenLst, Util.stringSplitAtChar, "|");
         userBrokenTplLst = makeTuple(userBrokenLstLst);
         Debug.traceln("User selected the following connect edges for breaking:\n\t" +& 
-           Util.stringDelimitList(List.map(userBrokenTplLst, printTupleStr), "\n\t"));
+           stringDelimitList(List.map(userBrokenTplLst, printTupleStr), "\n\t"));
         // print("\nBefore ordering:\n");
         printDaeEdges(connections);
         // order the connects with the input given by the user!
@@ -1115,7 +1115,7 @@ algorithm
     case (bad::rest)
       equation
         Debug.traceln("The following output from GraphViz OpenModelica assistant cannot be parsed:" +&
-            Util.stringDelimitList(bad, ", ") +& 
+            stringDelimitList(bad, ", ") +& 
             "\nExpected format from GrapViz: cref1|cref2#cref3|cref4#. Ignoring malformed input.");
         lst = makeTuple(rest);
       then

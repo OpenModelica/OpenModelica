@@ -977,7 +977,7 @@ algorithm
         ();
     case (_,_,_,_,_)
       equation
-        print("- Util.stringDelimitListAndSeparate2 failed\n");
+        print("- stringDelimitListAndSeparate2 failed\n");
       then
         fail();
   end matchcontinue;

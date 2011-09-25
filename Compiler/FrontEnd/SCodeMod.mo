@@ -138,7 +138,7 @@ algorithm
     
     case (inHashValue)
       equation
-        str = "(" +& Util.stringDelimitList(
+        str = "(" +& stringDelimitList(
                 List.map(inHashValue, modString),
                 ", ") +& ")";
       then

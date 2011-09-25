@@ -2003,7 +2003,7 @@ algorithm
         (_,env,_,_,eltsMods,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), extendsElts, classExtendsElts, ClassInf.RECORD(fpath), name, true, false);
         eltsMods = listAppend(eltsMods,Inst.addNomod(compElts));
         // print("Record Elements: " +& 
-        //   Util.stringDelimitList(
+        //   stringDelimitList(
         //     List.map(
         //       List.map(
         //         eltsMods, 
@@ -2520,7 +2520,7 @@ algorithm
         Debug.fprint("failtrace", "- Lookup.checkSubscripts failed (tp: ");
         Debug.fprint("failtrace", Types.printTypeStr(t));
         Debug.fprint("failtrace", " subs:");
-        Debug.fprint("failtrace", Util.stringDelimitList(List.map(s,ExpressionDump.printSubscriptStr),","));
+        Debug.fprint("failtrace", stringDelimitList(List.map(s,ExpressionDump.printSubscriptStr),","));
         Debug.fprint("failtrace", ")\n");
       then
         fail();
@@ -2550,7 +2550,7 @@ algorithm
       equation
         str2 = intString(dims);
         exp = DAE.ARRAY(DAE.ET_INT(),false,expl);
-        str1 = Util.stringDelimitList(List.map(expl,ExpressionDump.printExpStr)," and position " );
+        str1 = stringDelimitList(List.map(expl,ExpressionDump.printExpStr)," and position " );
         Error.addMessage(Error.ARRAY_INDEX_OUT_OF_BOUNDS,{str1,str2});
       then
         false;

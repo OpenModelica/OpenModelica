@@ -185,7 +185,7 @@ algorithm
         p1_1 = Interactive.updateProgram(Absyn.PROGRAM(p1,w1,ts), Absyn.PROGRAM(oldc,Absyn.TOP(),ts));
         subdirs = System.subDirectories(mp_1);
         subdirs = List.sort(subdirs, Util.strcmpBool);
-        subdirstr = Util.stringDelimitList(subdirs, ", ");
+        subdirstr = stringDelimitList(subdirs, ", ");
         p2 = loadCompleteSubdirs(subdirs, id, mp_1, within_, p1_1);
         p = loadCompleteSubfiles(id, mp_1, within_, p2);
       then
@@ -204,7 +204,7 @@ algorithm
         p1_1 = Interactive.updateProgram(Absyn.PROGRAM(p1,Absyn.WITHIN(wpath),ts),Absyn.PROGRAM(oldc,Absyn.TOP(),ts));
         subdirs = System.subDirectories(mp_1);
         subdirs = List.sort(subdirs, Util.strcmpBool);
-        subdirstr = Util.stringDelimitList(subdirs, ", ");
+        subdirstr = stringDelimitList(subdirs, ", ");
         p2 = loadCompleteSubdirs(subdirs, id, mp_1, within_, p1_1);
         p = loadCompleteSubfiles(id, mp_1, within_, p2);
       then

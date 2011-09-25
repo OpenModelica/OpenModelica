@@ -2615,8 +2615,8 @@ algorithm
         crefs = List.mapList(elements, DAEUtil.varCref);
         names = List.mapList(crefs,
           ComponentReference.printComponentRefStr);
-        cycles_strs = List.map1(names, Util.stringDelimitList, ",");
-        cycles_str = Util.stringDelimitList(cycles_strs, "}, {");
+        cycles_strs = List.map1(names, stringDelimitList, ",");
+        cycles_str = stringDelimitList(cycles_strs, "}, {");
         cycles_str = "{" +& cycles_str +& "}";
         scope_str = "";
         Error.addMessage(Error.CIRCULAR_COMPONENTS, {scope_str, cycles_str});

@@ -119,7 +119,7 @@ algorithm
     case (inCompPath, oIOStream)
       equation
         ty = getComponentTypePath(List.last(inCompPath));
-        str = Util.stringDelimitList(List.map(inCompPath, getComponentName), "/"); 
+        str = stringDelimitList(List.map(inCompPath, getComponentName), "/"); 
         oIOStream = IOStream.appendList(oIOStream, {str, "\n    "});
         oIOStream = printTypePathToStream(listReverse(ty), oIOStream);
         oIOStream = IOStream.append(oIOStream, "\n");        

@@ -1022,7 +1022,7 @@ protected
   String str;
 algorithm
   strlst := getVariableListStr(vars);
-  str := Util.stringDelimitList(strlst, ", ");
+  str := stringDelimitList(strlst, ", ");
   res := stringAppendList({"{",str,"}"});
 end getVariableNames;
 
@@ -2568,7 +2568,7 @@ algorithm
         comp_reps = extractAllComponentreplacements(p, class_, old_comp, new_comp);
         p_1 = renameComponentFromComponentreplacements(p, comp_reps);
         paths = extractRenamedClassesAsStringList(comp_reps);
-        paths_1 = Util.stringDelimitList(paths, ",");
+        paths_1 = stringDelimitList(paths, ",");
         paths_2 = stringAppendList({"{",paths_1,"}"});
       then
         (paths_2,p_1);
@@ -4830,7 +4830,7 @@ algorithm
         compelts = List.map(comps_1, getComponentitemsInElement);
         compelts_1 = List.flatten(compelts);
         names = List.map(compelts_1, getComponentitemName);
-        res = Util.stringDelimitList(names, ", ");
+        res = stringDelimitList(names, ", ");
         res_1 = stringAppendList({"{",res,"}"});
       then
         res_1;
@@ -5503,7 +5503,7 @@ algorithm
         streamPrefixstr = attrStreamStr(attr);
         variability_str = attrVariabilityStr(attr);
         dir_str = attrDirectionStr(attr);
-        names_str = Util.stringDelimitList(names, ", ");
+        names_str = stringDelimitList(names, ", ");
         str = stringAppendList({"elementtype=component, typename=",typename,", names={", names_str,"}, flow=",flowPrefixstr,
         ", stream=",streamPrefixstr,", variability=",variability_str,", direction=", dir_str});
       then
@@ -6121,7 +6121,7 @@ algorithm
         exts_1 = List.map1(exts, makeExtendsFullyQualified, env);
         {Absyn.EXTENDS(extpath,extmod,_)} = List.select1(exts_1, extendsElementspecNamed, name);
         res = getModificationNames(extmod);
-        res_1 = Util.stringDelimitList(res, ", ");
+        res_1 = stringDelimitList(res, ", ");
         res_2 = stringAppendList({"{",res_1,"}"});
       then
         res_2;
@@ -6850,7 +6850,7 @@ algorithm
         compelts_1 = List.flatten(compelts);
         {Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,SOME(Absyn.CLASSMOD(mod,_))),_,_)} = List.select1(compelts_1, componentitemNamed, name);
         res = getModificationNames(mod);
-        res_1 = Util.stringDelimitList(res, ", ");
+        res_1 = stringDelimitList(res, ", ");
         res_2 = stringAppendList({"{",res_1,"}"});
       then
         res_2;
@@ -8396,7 +8396,7 @@ algorithm
   str := matchcontinue(cdef)
   local Absyn.ArrayDim ad;
     case(Absyn.DERIVED(typeSpec=Absyn.TPATH(arrayDim=SOME(ad)))) equation
-      str = "{"+& Util.stringDelimitList(List.map(ad,Dump.printSubscriptStr),",")
+      str = "{"+& stringDelimitList(List.map(ad,Dump.printSubscriptStr),",")
       +& "}";
     then str;
     case(_) then "{}";
@@ -11912,7 +11912,7 @@ algorithm
     case (p)
       equation
         strlist = getTopPackagesInProgram(p);
-        str = Util.stringDelimitList(strlist, ",");
+        str = stringDelimitList(strlist, ",");
         res = stringAppendList({"{", str, "}"});
       then
         res;
@@ -11972,14 +11972,14 @@ algorithm
     case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts,comment = cmt)))
       equation
         strlist = getPackagesInParts(parts);
-        res = Util.stringDelimitList(strlist, ",");
+        res = stringDelimitList(strlist, ",");
       then
         res;
     /* an extended class with parts: model extends M end M; */
     case (_,_,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)))
       equation
         strlist = getPackagesInParts(parts);
-        res = Util.stringDelimitList(strlist, ",");
+        res = stringDelimitList(strlist, ",");
       then
         res;
      /* a derived class */
@@ -12090,7 +12090,7 @@ algorithm
     case (p)
       equation
         strlist = getTopClassnamesInProgram(p);
-        str = Util.stringDelimitList(strlist, ",");
+        str = stringDelimitList(strlist, ",");
         res = stringAppendList({"{", str, "}"});
       then
         res;
@@ -12147,7 +12147,7 @@ algorithm
     case (p)
       equation
         strlist = getTopQualifiedClassnamesInProgram(p);
-        str = Util.stringDelimitList(strlist, ",");
+        str = stringDelimitList(strlist, ",");
         res = stringAppendList({"{", str, "}"});
       then
         res;
@@ -12230,14 +12230,14 @@ algorithm
     case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
       equation
         strlist = getClassnamesInParts(parts);
-        res = Util.stringDelimitList(strlist, ",");
+        res = stringDelimitList(strlist, ",");
       then
         res;
     /* an extended class with parts: model extends M end M; */
     case (_,_,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)))
       equation
         strlist = getClassnamesInParts(parts);
-        res = Util.stringDelimitList(strlist, ",");
+        res = stringDelimitList(strlist, ",");
       then
         res;
     /* a derived class */
@@ -13181,7 +13181,7 @@ algorithm
     case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
       equation
         strs = getExperimentAnnotationString2(arglst);
-        s = Util.stringDelimitList(strs,",");
+        s = stringDelimitList(strs,",");
         s = stringAppendList({"{", s, "}"});
       then 
         s;
@@ -13232,7 +13232,7 @@ algorithm
     case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
       equation
         strs = getDocumentationAnnotationString2(arglst);
-        s = Util.stringDelimitList(strs,",");
+        s = stringDelimitList(strs,",");
         s = stringAppendList({"{", s, "}"});
       then 
         s;
@@ -13690,7 +13690,7 @@ algorithm
       inClass, inFullProgram, inModelPath)
     equation
         res = getConnectionAnnotationStrElArgs(annotations, info, inClass, inFullProgram, inModelPath);
-        gexpstr = Util.stringDelimitList(res, ", ");
+        gexpstr = stringDelimitList(res, ", ");
     then
       gexpstr;
     case (Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = _),comment = NONE()),
@@ -13965,7 +13965,7 @@ algorithm
   graphicProgramSCode := SCodeUtil.translateAbsyn2SCode(placementProgram);
   (_,env) := Inst.makeEnvFromProgram(Env.emptyCache(), graphicProgramSCode, Absyn.IDENT(""));
   res := getComponentitemsAnnotations(comps, env, inClass, inFullProgram, inModelPath);
-  resStr := Util.stringDelimitList(res, ",");
+  resStr := stringDelimitList(res, ",");
 end getComponentAnnotationsFromElts;
 
 protected function getComponentitemsAnnotations
@@ -14102,7 +14102,7 @@ algorithm
       equation
         
         res = getComponentitemsAnnotationsElArgs(annotations,env,inClass,inFullProgram,inModelPath);
-        gexpstr = Util.stringDelimitList(res, ", ");
+        gexpstr = stringDelimitList(res, ", ");
         
         gexpstr_1 = stringAppendList({"{",gexpstr,"}"});
         res = getComponentitemsAnnotationsFromItems(rest, env, inClass,inFullProgram,inModelPath);
@@ -14328,7 +14328,7 @@ algorithm
         
         // debugging
         // print("Get annotation via full instantiation of: " +& Absyn.pathString(inModelPath) +& "\n");
-        // print("Annotation to get: (" +& Util.stringDelimitList(List.map(inAnnotationMod, Dump.unparseElementArgStr), ", ") +& ")\n");
+        // print("Annotation to get: (" +& stringDelimitList(List.map(inAnnotationMod, Dump.unparseElementArgStr), ", ") +& ")\n");
         // print("Annotation class: " +& inAnnotationClass +& "\n");
         
         // fully instantiate the class that contains the annotation!
@@ -14350,7 +14350,7 @@ algorithm
 
         // debugging
         // print("Get annotation via small instantiation of: " +& Absyn.pathString(inModelPath) +& "\n");
-        // print("Annotation to get: (" +& Util.stringDelimitList(List.map(inAnnotationMod, Dump.unparseElementArgStr), ", ") +& ")\n");
+        // print("Annotation to get: (" +& stringDelimitList(List.map(inAnnotationMod, Dump.unparseElementArgStr), ", ") +& ")\n");
         // print("Annotation class: " +& inAnnotationClass +& "\n");
 
         graphicProgram = modelicaAnnotationProgram(RTOpts.getAnnotationVersion());
@@ -15157,7 +15157,7 @@ algorithm
         dir_str = attrDirectionStr(attr);
         typeAdStr = arrayDimensionStr(typeAd);
         typeAdStr =  attrDimensionStr(attr);
-        str = Util.stringDelimitList({access,finalPrefix,flowPrefixstr,streamPrefixstr,repl,variability_str,inout_str,dir_str}, ", ");
+        str = stringDelimitList({access,finalPrefix,flowPrefixstr,streamPrefixstr,repl,variability_str,inout_str,dir_str}, ", ");
         lst_1 = suffixInfos(strLst,dims,typeAdStr,str);
       then
         lst_1;
@@ -15178,7 +15178,7 @@ algorithm
         streamPrefixstr = attrStreamStr(attr);
         variability_str = attrVariabilityStr(attr);
         dir_str = attrDirectionStr(attr);
-        str = Util.stringDelimitList({access,finalPrefix,flowPrefixstr,streamPrefixstr,repl,variability_str,inout_str,dir_str}, ", ");
+        str = stringDelimitList({access,finalPrefix,flowPrefixstr,streamPrefixstr,repl,variability_str,inout_str,dir_str}, ", ");
         typeAdStr =  attrDimensionStr(attr);
         lst_1 = suffixInfos(strLst,dims,typeAdStr,str);
       then
@@ -15203,7 +15203,7 @@ algorithm
   str:=matchcontinue(ad)
   local Absyn.ArrayDim adim;
     case(SOME(adim)) equation
-      str = Util.stringDelimitList(List.map(adim,Dump.printSubscriptStr),",");
+      str = stringDelimitList(List.map(adim,Dump.printSubscriptStr),",");
     then str;
     case(_) then "";
   end matchcontinue;
@@ -15241,7 +15241,7 @@ algorithm
     case (elts,access,env)
       equation
         ((lst as (_ :: _))) = getComponentsInfo2(elts, access, env);
-        lst_1 = Util.stringDelimitList(lst, "},{");
+        lst_1 = stringDelimitList(lst, "},{");
         res = stringAppendList({"{",lst_1,"}"});
       then
         res;
@@ -15469,7 +15469,7 @@ algorithm
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(arrayDim=ad))) :: (c2 :: rest))
       equation
         lst = getComponentitemsName((c2 :: rest));
-        str = Util.stringDelimitList(List.map(ad,Dump.printSubscriptStr),",");
+        str = stringDelimitList(List.map(ad,Dump.printSubscriptStr),",");
       then (str :: lst);
     case ((_ :: rest))
       equation
@@ -15478,7 +15478,7 @@ algorithm
         res;
     case ({Absyn.COMPONENTITEM(component = Absyn.COMPONENT(arrayDim = ad))})
       equation
-        str = Util.stringDelimitList(List.map(ad,Dump.printSubscriptStr),",");
+        str = stringDelimitList(List.map(ad,Dump.printSubscriptStr),",");
       then
         {str};
     case ({_}) then {};
@@ -18223,42 +18223,42 @@ algorithm
         ident = "(package " +& ident;
         strs = getDefinitionParts(parts, addFunctions);
         strs = ident :: strs;
-      then Util.stringDelimitList(strs, "\n");
+      then stringDelimitList(strs, "\n");
     case (Absyn.CLASS(partialPrefix = true, name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_FUNCTION()),_)
       equation
         strs = {"(partial function", ident, ")"};
-      then Util.stringDelimitList(strs, " ");
+      then stringDelimitList(strs, " ");
     case (Absyn.CLASS(partialPrefix = false, name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_FUNCTION()),true)
       equation
         strs = getDefinitionParts(parts, true);
         strs = "(function" :: ident :: strs;
-      then Util.stringDelimitList(strs, " ");
+      then stringDelimitList(strs, " ");
     case (Absyn.CLASS(name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_UNIONTYPE()),_)
       equation
         strs = {"(uniontype", ident, ")"};
-      then Util.stringDelimitList(strs, " ");
+      then stringDelimitList(strs, " ");
     case (Absyn.CLASS(name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_RECORD()),_)
       equation
         strs = getDefinitionParts(parts, false);
         strs = "(record" :: ident :: strs;
-      then Util.stringDelimitList(strs, " ");
+      then stringDelimitList(strs, " ");
     case (Absyn.CLASS(name = ident, body = Absyn.PARTS(classParts = parts), restriction = Absyn.R_METARECORD(name = path, index = index)),_)
       equation
         indexArg = intString(index);
         pathArg = Absyn.pathLastIdent(path);
         strs = getDefinitionParts(parts, false);
         strs = "(metarecord" :: ident :: indexArg :: pathArg :: strs;
-      then Util.stringDelimitList(strs, " ");
+      then stringDelimitList(strs, " ");
     case (Absyn.CLASS(name = ident, body = Absyn.DERIVED(typeSpec = ts, attributes = attr)),_)
       equation
         numDim = getDefinitionDimensions(ts,attr);
         tyStr = Util.if_(numDim == 0, "", "[" +& intString(numDim)) +& getDefinitionTypeSpecPathString(ts);
         strs = {"(type", ident, tyStr, ")"};
-      then Util.stringDelimitList(strs, " ");
+      then stringDelimitList(strs, " ");
     // Do enumerations really work properly in OMC?
     //case Absyn.CLASS(name = ident, body = Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(el))) equation
     //  enumList = List.map(el, getEnumerationLiterals);
-    //then "enumeration " +& ident +& "(" +& Util.stringDelimitList(enumList, ",") +& ")";
+    //then "enumeration " +& ident +& "(" +& stringDelimitList(enumList, ",") +& ")";
     case (_,_) then "";
   end matchcontinue;
 end getDefinitionsClass;
@@ -18309,7 +18309,7 @@ algorithm s := matchcontinue(tp)
   then getDefinitionPathString(p);
   case(Absyn.TCOMPLEX(path = p, typeSpecs = tspecs)) equation
     tspecsStr = List.map(tspecs, getDefinitionTypeSpecPathString);
-  then getDefinitionPathString(p) +& "<" +& Util.stringDelimitList(tspecsStr,",") +& ">";
+  then getDefinitionPathString(p) +& "<" +& stringDelimitList(tspecsStr,",") +& ">";
   case(Absyn.TPATH(path = p)) then getDefinitionPathString(p);
 end matchcontinue;
 end getDefinitionTypeSpecPathString;
@@ -18503,7 +18503,7 @@ algorithm
       equation
 //        str = Dump.unparseTypeSpec(typeSpec);
         names = getComponentitemsName(lst);
-        str = Util.stringDelimitList(names, ", ");
+        str = stringDelimitList(names, ", ");
         print("names: " +& str +& "\n");
       then
         str;
@@ -18732,7 +18732,7 @@ algorithm
         public_list = constructVisTypesList(public_elementitem_list, prog);
         protected_list = constructVisTypesList(protected_elementitem_list, prog);
         all_list = List.union(listAppend(public_list, protected_list), {});
-      then (List.map(all_list, getVisElementNameFromStr),Util.stringDelimitList(all_list,"\n"));
+      then (List.map(all_list, getVisElementNameFromStr),stringDelimitList(all_list,"\n"));
 
   end match;
 end getElementsOfVisType;
@@ -19040,7 +19040,7 @@ protected
   list<CompiledCFunction> compiledFunctions;
 algorithm
   compiledFunctions := getCompiledFunctions(inSymTab);
-  compiledFunctionsStr := "Functions:\n\t" +& Util.stringDelimitList(List.map(compiledFunctions, dumpCompiledFunction), "\n\t");
+  compiledFunctionsStr := "Functions:\n\t" +& stringDelimitList(List.map(compiledFunctions, dumpCompiledFunction), "\n\t");
 end dumpCompiledFunctions;
 
 public function dumpCompiledFunction

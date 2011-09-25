@@ -78,7 +78,7 @@ algorithm
     case {} then ();
     else
       equation
-        msg = Util.stringDelimitList(duplicateNames, ",");
+        msg = stringDelimitList(duplicateNames, ",");
         Error.addMessage(Error.DUPLICATE_CLASSES_TOP_LEVEL,{msg});
       then fail();
   end match;

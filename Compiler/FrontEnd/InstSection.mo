@@ -624,7 +624,7 @@ algorithm
         
         (cache,env_1,ih,DAE.DAE(daeElts1),_,_,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, el, impl, Inst.alwaysUnroll, graph);
         lhsCrefs = DAEUtil.verifyWhenEquation(daeElts1);
-        // TODO: fix error reporting, print(" exps: " +& Util.stringDelimitList(List.map(lhsCrefs,ComponentReference.printComponentRefStr),", ") +& "\n");
+        // TODO: fix error reporting, print(" exps: " +& stringDelimitList(List.map(lhsCrefs,ComponentReference.printComponentRefStr),", ") +& "\n");
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
         dae = DAE.DAE({DAE.WHEN_EQUATION(e_2,daeElts1,NONE(),source)});
       then
@@ -2864,7 +2864,7 @@ algorithm
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "InstSection.instIfTrueBranches failed on equations: " +&
-                       Util.stringDelimitList(List.map(e, SCodeDump.equationStr), "\n"));
+                       stringDelimitList(List.map(e, SCodeDump.equationStr), "\n"));
       then
         fail();
   end matchcontinue;
@@ -3022,8 +3022,8 @@ algorithm
         crefs1 = Absyn.getCrefsFromSubs(subs1);
         subs2 = Absyn.getSubsFromCref(c2);
         crefs2 = Absyn.getCrefsFromSubs(subs2);
-        //print("Crefs in " +& Dump.printComponentRefStr(c1) +& ": " +& Util.stringDelimitList(List.map(crefs1,Dump.printComponentRefStr),", ") +& "\n");
-        //print("Crefs in " +& Dump.printComponentRefStr(c2) +& ": " +& Util.stringDelimitList(List.map(crefs2,Dump.printComponentRefStr),", ") +& "\n");
+        //print("Crefs in " +& Dump.printComponentRefStr(c1) +& ": " +& stringDelimitList(List.map(crefs1,Dump.printComponentRefStr),", ") +& "\n");
+        //print("Crefs in " +& Dump.printComponentRefStr(c2) +& ": " +& stringDelimitList(List.map(crefs2,Dump.printComponentRefStr),", ") +& "\n");
         s1 = Dump.printComponentRefStr(c1);
         s2 = Dump.printComponentRefStr(c2);
         s1 = "connect("+&s1+&", "+&s2+&")";
@@ -3170,11 +3170,11 @@ algorithm
              
         // get the virtual components
         variables1 = Env.getVariablesFromEnv(env1);
-        // Debug.fprintln("expandable", "Variables1: " +& Util.stringDelimitList(variables1, ", "));
+        // Debug.fprintln("expandable", "Variables1: " +& stringDelimitList(variables1, ", "));
         variables2 = Env.getVariablesFromEnv(env2);
-        // Debug.fprintln("expandable", "Variables2: " +& Util.stringDelimitList(variables2, ", "));
+        // Debug.fprintln("expandable", "Variables2: " +& stringDelimitList(variables2, ", "));
         variablesUnion = List.union(variables1, variables2);
-        // Debug.fprintln("expandable", "Union of expandable connector variables: " +& Util.stringDelimitList(variablesUnion, ", "));
+        // Debug.fprintln("expandable", "Union of expandable connector variables: " +& stringDelimitList(variablesUnion, ", "));
         
         // Debug.fprintln("expandable", 
         //   "2 connect(expandable, expandable)(" +& 
@@ -3262,7 +3262,7 @@ algorithm
         // we have more than 1 variables in the envComponent, we need to add an empty environment for c1
         // and dive into!
         variablesUnion = Env.getVariablesFromEnv(envComponent);
-        // print("VARS MULTIPLE:" +& Util.stringDelimitList(variablesUnion, ", ") +& "\n");
+        // print("VARS MULTIPLE:" +& stringDelimitList(variablesUnion, ", ") +& "\n");
         // more than 1 variables
         true = listLength(variablesUnion) > 1;
         
@@ -3347,7 +3347,7 @@ algorithm
         // we have more than 1 variables in the envComponent, we need to add an empty environment for c1
         // and dive into!
         variablesUnion = Env.getVariablesFromEnv(envComponent);
-        // print("VARS SINGLE:" +& Util.stringDelimitList(variablesUnion, ", ") +& "\n");
+        // print("VARS SINGLE:" +& stringDelimitList(variablesUnion, ", ") +& "\n");
         // max 1 variable, should check for empty!
         false = listLength(variablesUnion) > 1;
         

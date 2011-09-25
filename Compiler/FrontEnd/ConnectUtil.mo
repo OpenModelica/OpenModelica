@@ -1759,7 +1759,7 @@ algorithm
         set_array = generateSetArray(inSets);
         sets = arrayList(set_array);
         //print("Sets:\n");
-        //print(Util.stringDelimitList(List.map(sets, printSetStr), "\n") +& "\n");
+        //print(stringDelimitList(List.map(sets, printSetStr), "\n") +& "\n");
         dae = List.fold(sets, equationsDispatch, DAEUtil.emptyDae);
         dae = DAEUtil.joinDaes(inDae, dae);
         has_stream = System.getHasStreamConnectors();
@@ -2264,7 +2264,7 @@ algorithm
     else
       equation
         true = RTOpts.debugFlag("failtrace");
-        str = Util.stringDelimitList(List.map(inElements, printElementStr), ", ");
+        str = stringDelimitList(List.map(inElements, printElementStr), ", ");
         Debug.traceln("- ConnectUtil.generateEquEquations failed on {" +& str +& "}");
       then
         fail();
@@ -3295,7 +3295,7 @@ algorithm
 
     case Connect.SET(elements = el)
       equation
-        str = Util.stringDelimitList(List.map(el, printElementStr), ", ");
+        str = stringDelimitList(List.map(el, printElementStr), ", ");
       then
         str;
         

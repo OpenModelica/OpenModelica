@@ -220,7 +220,7 @@ algorithm
     case (names, SOME(s)) 
       equation 
         lst = List.map1r(listReverse(s), segmentStr, names);
-        print(Util.stringDelimitList(lst, ".") +& "\n"); 
+        print(stringDelimitList(lst, ".") +& "\n"); 
       then ();
     
     case (_, _) 

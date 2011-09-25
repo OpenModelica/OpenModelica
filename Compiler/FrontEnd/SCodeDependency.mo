@@ -559,7 +559,7 @@ algorithm
         (el, _) = List.deleteMemberOnTrue("constructor", el, stringEqual);
         (el, _) = List.deleteMemberOnTrue("destructor", el, stringEqual);
         // Print an error message with the rest of the elements.
-        el_str = Util.stringDelimitList(el, ", ");
+        el_str = stringDelimitList(el, ", ");
         el_str = "contains invalid elements: " +& el_str;
         Error.addSourceMessage(Error.INVALID_EXTERNAL_OBJECT,
           {inObjectName, el_str}, inInfo);

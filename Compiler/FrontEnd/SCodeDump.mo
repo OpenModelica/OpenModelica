@@ -375,7 +375,7 @@ algorithm
                 externalDecl = ext))
       equation
         elts_str = List.map(elts, printElementStr);
-        s1 = Util.stringDelimitList(elts_str, ",\n");
+        s1 = stringDelimitList(elts_str, ",\n");
         res = stringAppendList({"PARTS(\n",s1,",_,_,_,_,_)"});
       then
         res;
@@ -392,7 +392,7 @@ algorithm
               externalDecl = ext)))
       equation
         elts_str = List.map(elts, printElementStr);
-        s1 = Util.stringDelimitList(elts_str, ",\n");
+        s1 = stringDelimitList(elts_str, ",\n");
         res = stringAppendList({"CLASS_EXTENDS(", baseClassName, " PARTS(\n",s1,",_,_,_,_,_)"});
       then
         res;
@@ -405,20 +405,20 @@ algorithm
         res;
     case (SCode.ENUMERATION(enumLst, _))
       equation
-        s1 = Util.stringDelimitList(List.map(enumLst, printEnumStr), ", ");
+        s1 = stringDelimitList(List.map(enumLst, printEnumStr), ", ");
         res = stringAppendList({"ENUMERATION(", s1, ")"});
       then
         res;
     case (SCode.OVERLOAD(plst, _))
       equation
-        s1 = Util.stringDelimitList(List.map(plst, Absyn.pathString), ", ");
+        s1 = stringDelimitList(List.map(plst, Absyn.pathString), ", ");
         res = stringAppendList({"OVERLOAD(", s1, ")"});
       then
         res;
     case (SCode.PDER(path, slst, _))
       equation
         s1 = Absyn.pathString(path);
-        s2 = Util.stringDelimitList(slst, ", ");
+        s2 = stringDelimitList(slst, ", ");
         res = stringAppendList({"PDER(", s1, ", ", s2, ")"});
       then
         res;

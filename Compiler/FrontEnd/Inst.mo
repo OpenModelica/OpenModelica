@@ -216,14 +216,14 @@ algorithm
         (cache,env) = Builtin.initialEnv(cache);
         // Debug.fprintln("insttr", "Instantiating functions");
         // pfuncnames = List.map(pfunc, SCode.className);
-        // str1 = Util.stringDelimitList(pfuncnames, ", ");
+        // str1 = stringDelimitList(pfuncnames, ", ");
         // Debug.fprint("insttr", "Instantiating functions: ");
         // Debug.fprintln("insttr", str1);
         envimpl = Env.extendFrameClasses(env, p) "pfunc" ;
         (cache,envimpl_1,oIH1,lfunc) = instProgramImplicit(cache, envimpl, iIH, pfunc);
         // Debug.fprint("insttr", "Instantiating other classes: ");
         // pnofuncnames = List.map(pnofunc, SCode.className);
-        // str2 = Util.stringDelimitList(pnofuncnames, ", ");
+        // str2 = stringDelimitList(pnofuncnames, ", ");
         // Debug.fprintln("insttr", str2);
         (cache, oIH2, lnofunc) = instProgram(cache, envimpl_1, oIH1, pnofunc);
         l = DAEUtil.joinDaes(lfunc, lnofunc);
@@ -442,9 +442,9 @@ algorithm
       list<Boolean> blist;
     case (acc,DAE.INITIAL_IF_EQUATION(condition1 = conds, equations2=tbs, equations3=fb, source=source),cache,env)
       equation
-        //print(" (Initial if)To ceval: " +& Util.stringDelimitList(List.map(conds,ExpressionDump.printExpStr),", ") +& "\n");
+        //print(" (Initial if)To ceval: " +& stringDelimitList(List.map(conds,ExpressionDump.printExpStr),", ") +& "\n");
         (cache,valList,_) = Ceval.cevalList(cache,env, conds, true, NONE(), Ceval.NO_MSG());
-        //print(" Ceval res: ("+&Util.stringDelimitList(List.map(valList,ValuesUtil.printValStr),",")+&")\n");
+        //print(" Ceval res: ("+&stringDelimitList(List.map(valList,ValuesUtil.printValStr),",")+&")\n");
         
         blist = List.map(valList,ValuesUtil.valueBool);
         selectedBranch = Util.selectList(blist, tbs, fb);
@@ -1796,7 +1796,7 @@ algorithm
           "\n\tmods: " +& Mod.printModStr(mods) +& 
           "\n\tenv: " +& Env.printEnvPathStr(inEnv) +&
           "\n\tsingle cref: " +& Expression.printComponentRefOptStr(instSingleCref) +&
-          "\n\tdims: [" +& Util.stringDelimitList(List.map1(inst_dims, DAEDump.unparseDimensions, true), ", ") +& "]" +& 
+          "\n\tdims: [" +& stringDelimitList(List.map1(inst_dims, DAEDump.unparseDimensions, true), ", ") +& "]" +& 
           "\n\tdae:\n" +& DAEDump.dump2str(dae));
         */
       then
@@ -1830,7 +1830,7 @@ algorithm
           "\n\tmods: " +& Mod.printModStr(mods) +& 
           "\n\tenv: " +& Env.printEnvPathStr(inEnv) +&
           "\n\tsingle cref: " +& Expression.printComponentRefOptStr(instSingleCref) +&
-          "\n\tdims: [" +& Util.stringDelimitList(List.map1(inst_dims, DAEDump.unparseDimensions, true), ", ") +& "]" +& 
+          "\n\tdims: [" +& stringDelimitList(List.map1(inst_dims, DAEDump.unparseDimensions, true), ", ") +& "]" +& 
           "\n\tdae:\n" +& DAEDump.dump2str(dae));
         */
         //checkModelBalancingFilterByRestriction(r, envPathOpt, dae);
@@ -2090,7 +2090,7 @@ algorithm
           "\npre: " +& PrefixUtil.printPrefixStr(pre) +&
           "\nenv: " +& Env.printEnvPathStr(env) +&
           "\nmods: " +& Mod.printModStr(mods) +&
-          "\ninst_dims: [" +& Util.stringDelimitList(List.map1(inst_dims, DAEDump.unparseDimensions, true), ", ") +& "]" +& "\n");
+          "\ninst_dims: [" +& stringDelimitList(List.map1(inst_dims, DAEDump.unparseDimensions, true), ", ") +& "]" +& "\n");
         */
         ci_state_1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         comp = addNomod(els);
@@ -2635,7 +2635,7 @@ algorithm
         /*
     case (inst_dims,tp)
       equation
-        str = Util.stringDelimitList(List.map(List.flatten(inst_dims),ExpressionDump.printSubscriptStr),",");
+        str = stringDelimitList(List.map(List.flatten(inst_dims),ExpressionDump.printSubscriptStr),",");
         str = "Inst.arrayBasictypeBaseclass failed: " +& str;
         Error.addMessage(Error.INTERNAL_ERROR,{str});
       then fail();
@@ -3547,13 +3547,13 @@ algorithm
         compelts_2_elem = List.map(compelts_2,Util.tuple21);
         
         // Debug.fprintln("innerouter", "Number of components: " +& intString(listLength(compelts_2_elem)));
-        // Debug.fprintln("innerouter", Util.stringDelimitList(List.map(compelts_2_elem, SCodeDump.printElementStr), "\n"));
+        // Debug.fprintln("innerouter", stringDelimitList(List.map(compelts_2_elem, SCodeDump.printElementStr), "\n"));
         
         checkMods = Mod.merge(mods,emods,env4,Prefix.NOPRE());
         mods = checkMods;
         
         //print("To match modifiers,\n" +& Mod.printModStr(checkMods) +& "\n on components: ");
-        //print(" (" +& Util.stringDelimitList(List.map(compelts_2_elem,SCode.elementName),", ") +& ") \n");
+        //print(" (" +& stringDelimitList(List.map(compelts_2_elem,SCode.elementName),", ") +& ") \n");
         matchModificationToComponents(compelts_2_elem,checkMods,className);
 
         // Move any conditional components to the end of the component list, to
@@ -5222,7 +5222,7 @@ algorithm
         ltmod = List.map1(crefs,getModsForDep,xs);
         cmod2 = List.fold2r(cmod::ltmod,Mod.merge,env,pre,DAE.NOMOD());
 
-        //print("("+&intString(listLength(ltmod))+&")UpdateCompeltsMods_(" +& Util.stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",") +& ") subs: " +& Util.stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",")+& "\n");
+        //print("("+&intString(listLength(ltmod))+&")UpdateCompeltsMods_(" +& stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",") +& ") subs: " +& stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",")+& "\n");
         //print("REDECL     acquired mods: " +& Mod.printModStr(cmod2) +& "\n");
         (cache,env2,ih) = updateComponentsInEnv(cache, env, ih, pre, cmod2, crefs, ci_state, impl);
         ErrorExt.setCheckpoint("updateCompeltsMods");
@@ -5255,7 +5255,7 @@ algorithm
         ltmod = List.map1(crefs,getModsForDep,xs);
         cmod2 = List.fold2r(ltmod,Mod.merge,env,pre,DAE.NOMOD());
 
-        //print("("+&intString(listLength(ltmod))+&")UpdateCompeltsMods_(" +& Util.stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",") +& ") subs: " +& Util.stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",")+& "\n");
+        //print("("+&intString(listLength(ltmod))+&")UpdateCompeltsMods_(" +& stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",") +& ") subs: " +& stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",")+& "\n");
         //print("     acquired mods: " +& Mod.printModStr(cmod2) +& "\n");
 
         (cache,env2,ih) = updateComponentsInEnv(cache, env, ih, pre, cmod2, crefs, ci_state, impl);
@@ -5519,8 +5519,8 @@ algorithm
       equation
         cycles = Graph.findCycles(inCycles, isElementEqual);
         names = List.mapList(cycles, elementName);
-        cycles_strs = List.map1(names, Util.stringDelimitList, ",");
-        cycles_str = Util.stringDelimitList(cycles_strs, "}, {");
+        cycles_strs = List.map1(names, stringDelimitList, ",");
+        cycles_str = stringDelimitList(cycles_strs, "}, {");
         cycles_str = "{" +& cycles_str +& "}";
         scope_str = Env.printEnvPathStr(inEnv);
         Error.addMessage(Error.CIRCULAR_COMPONENTS, {scope_str, cycles_str});
@@ -7988,7 +7988,7 @@ algorithm
         (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n,DAE.ET_OTHER(),{}));
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
         //Do all dimensions...
-        // print("dims: " +& Util.stringDelimitList(List.map(dims,ExpressionDump.dimensionString),",") +& "\n");
+        // print("dims: " +& stringDelimitList(List.map(dims,ExpressionDump.dimensionString),",") +& "\n");
         dims_1 = instDimExpLst(dims, impl);
 
         // set the source of this element
@@ -8893,7 +8893,7 @@ protected
   String myTick, crefsStr;
 algorithm
   //myTick := intString(tick());
-  //crefsStr := Util.stringDelimitList(List.map(crefs, Dump.printComponentRefStr),",");
+  //crefsStr := stringDelimitList(List.map(crefs, Dump.printComponentRefStr),",");
   //Debug.fprintln("debug","start update comps " +& myTick +& " # " +& crefsStr);
   (outCache,outEnv,outIH,_):=
   updateComponentsInEnv2(cache,env,inIH,pre,mod,crefs,ci_state,impl,HashTable5.emptyHashTable());
@@ -9862,7 +9862,7 @@ algorithm
       equation
         failure(_ = Mod.lookupIdxModification(mod, i));
         str1 = PrefixUtil.printPrefixStrIgnoreNoPre(PrefixUtil.prefixAdd(n, {}, pre, SCode.VAR(), ci_state));
-        str2 = "[" +& Util.stringDelimitList(List.map(idxs, ExpressionDump.printSubscriptStr), ", ") +& "]";
+        str2 = "[" +& stringDelimitList(List.map(idxs, ExpressionDump.printSubscriptStr), ", ") +& "]";
         str3 = Mod.prettyPrintMod(mod, 1);
         str4 = PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "(" +& n +& str2 +& "=" +& str3 +& ")";
         str2 = str1 +& str2;
@@ -10140,7 +10140,7 @@ protected
   list<String> dim_strings;
 algorithm
   dim_strings := List.map(inDimensionLst, ExpressionDump.dimensionString);
-  outString := Util.stringDelimitList(dim_strings, ",");
+  outString := stringDelimitList(dim_strings, ",");
 end printDimStr;
 
 protected function compatibleArraydim
@@ -10962,7 +10962,7 @@ algorithm element := matchcontinue(subs,elemDecl,baseFunc,inCache,inEnv,inIH,inP
       dbgString = Util.if_(stringEq(dbgString,""),"", "**** Default Derivative: " +& dbgString +& "\n");
       print("**** Function derived: " +& Absyn.pathString(baseFunc) +& " \n");
       print("**** Deriving function: " +& Absyn.pathString(deriveFunc) +& "\n");
-      print("**** Conditions: " +& Util.stringDelimitList(DAEDump.dumpDerivativeCond(conditionRefs),", ") +& "\n");
+      print("**** Conditions: " +& stringDelimitList(DAEDump.dumpDerivativeCond(conditionRefs),", ") +& "\n");
       print("**** Order: " +& intString(order) +& "\n");
       print(dbgString);*/
 
@@ -13634,7 +13634,7 @@ algorithm
   print("makeRecordBinding:\nname" +& Absyn.pathString(inRecordName) +&
     "\ntype:" +& Types.unparseType(inRecordType) +& 
     "\nmod:" +& Mod.printModStr(DAE.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), inMods, NONE())) +&
-    "\nvars:" +& Util.stringDelimitList(List.map(inRecordVars, Types.getVarName), ", ") +& "\n");
+    "\nvars:" +& stringDelimitList(List.map(inRecordVars, Types.getVarName), ", ") +& "\n");
   */ 
   outBinding := makeRecordBinding2(inCache, inEnv, inRecordName, inRecordType, inRecordVars, inMods, inInfo, {}, {}, {});
 end makeRecordBinding;
@@ -16480,7 +16480,7 @@ algorithm
     case (path1,DAE.CALL(path=path2,expLst=es,attr=DAE.CALL_ATTR(tp,b1,b2,i,DAE.NO_TAIL())),vars,source)
       equation
         true = Absyn.pathEqual(path1,path2);
-        str = "Tail recursion of: " +& ExpressionDump.printExpStr(rhs) +& " with input vars: " +& Util.stringDelimitList(vars,",");
+        str = "Tail recursion of: " +& ExpressionDump.printExpStr(rhs) +& " with input vars: " +& stringDelimitList(vars,",");
         Debug.bcall3(RTOpts.debugFlag("tail"),Error.addSourceMessage,Error.COMPILER_NOTIFICATION,{str},DAEUtil.getElementSourceFileInfo(source));
       then (DAE.CALL(path2,es,DAE.CALL_ATTR(tp,b1,b2,i,DAE.TAIL(vars))),true);
     case (path,DAE.IFEXP(e1,e2,e3),vars,source)

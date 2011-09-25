@@ -233,7 +233,7 @@ algorithm
 
     case (_, 0, _)
       equation
-        error_str = Util.stringDelimitList(
+        error_str = stringDelimitList(
           map({inStart, inStep, inStop}, intString), ":");
         Error.addMessage(Error.ZERO_STEP_IN_ARRAY_CONSTRUCTOR, {error_str});
       then
@@ -5988,7 +5988,7 @@ algorithm
 
     else
       equation
-        str = Util.stringDelimitList(map(inList, inPrintFunc), inDelimitStr);
+        str = stringDelimitList(map(inList, inPrintFunc), inDelimitStr);
         str = stringAppendList({inBeginStr, str, inEndStr});
       then
         str;

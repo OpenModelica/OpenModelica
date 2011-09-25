@@ -2064,7 +2064,7 @@ algorithm
       equation
         print("State Order: (");
         (tplLst) = BaseHashTable.hashTableList(ht);
-        str = Util.stringDelimitList(List.map(tplLst,printStateOrderStr),"\n");
+        str = stringDelimitList(List.map(tplLst,printStateOrderStr),"\n");
         len = listLength(tplLst);
         len_str = intString(len);
         print(len_str);
@@ -2295,7 +2295,7 @@ algorithm
         diff_eqns = BackendDAEEXT.getDifferentiatedEqns();
         eqns_1 = List.setDifferenceOnTrue(eqns, diff_eqns, intEq);
         es = List.map(eqns_1, intString);
-        es_1 = Util.stringDelimitList(es, ", ");
+        es_1 = stringDelimitList(es, ", ");
         print("eqns =");print(es_1);print("\n");
         ({},_) = statesInEqns(eqns_1, syst);
         print("no states found in equations:");
@@ -2303,7 +2303,7 @@ algorithm
         print("differentiated equations:");
         BackendDump.printEquations(diff_eqns,syst);
         print("Variables :");
-        print(Util.stringDelimitList(List.map(BackendDAEEXT.getMarkedVariables(),intString),", "));
+        print(stringDelimitList(List.map(BackendDAEEXT.getMarkedVariables(),intString),", "));
         print("\n");
       then
         fail();
@@ -2928,7 +2928,7 @@ algorithm
         states = statesCandidates(syst,inStateOrd,orgEqnLevel);
         (syst,shared,ass1,ass2,so,states1,orgEqnLevel,orgEqns1,_) = processAlliasStates(orgEqnLevel,syst,shared,ass1,ass2,inStateOrd,states,{},orgEqns1);
         states1 = sortStateCandidates(states1,syst,shared);
-        Debug.fcall("bltdump", print, "\nCandidates (" +& intString(listLength(orgEqnLevel)) +& "," +& intString(listLength(states1)) +& "): " +& Util.stringDelimitList(List.map(states1,dumpStates),"\n") +& "\nselect Dummy States for Level\n");
+        Debug.fcall("bltdump", print, "\nCandidates (" +& intString(listLength(orgEqnLevel)) +& "," +& intString(listLength(states1)) +& "): " +& stringDelimitList(List.map(states1,dumpStates),"\n") +& "\nselect Dummy States for Level\n");
         (sysjac,orgEqnLevel) = calculateJacobianSystem(orgEqnLevel,syst,shared,states1);
         (syst,shared,ass1,ass2,states1) = processEqnsLevel(orgEqnLevel,sysjac,so,syst,shared,ass1,ass2,inFunctionTree,states1);
         Debug.fcall("bltdump", print, "processOrgEnqs next\n");
@@ -3226,7 +3226,7 @@ algorithm
         orgeqnssysjac = List.sort(orgeqnssysjac,sortOrgEqnLevel);
         orgeqns = List.map(orgeqnssysjac,Util.tuple21);
         //dumpEqns2((orgeqns,inBackendDAE));
-        Debug.fcall("bltdump", print, "\nCandidates:\n" +& Util.stringDelimitList(List.map(inStates,dumpStates),"\n") +& "\n");
+        Debug.fcall("bltdump", print, "\nCandidates:\n" +& stringDelimitList(List.map(inStates,dumpStates),"\n") +& "\n");
         states = removeFixedfromStates(inStates,BackendVariable.daeVars(syst));
         dummystates = selectDummyStates(orgeqns,inStateOrd,syst,shared,inFunctionTree,states,{});
         Debug.fcall("bltdump", print, "add dummy derivatives\n");
@@ -3694,7 +3694,7 @@ algorithm
       list<list<tuple<DAE.ComponentRef,DAE.Exp,Integer,Integer>>> dummystates,dummystates1;
     case ({},inStateOrd,syst,shared,inFunctionTree,inStates,dummystates)
       equation
-        Debug.fcall("bltdump", print, "\nselected States (" +& intString(listLength(inStates)) +& "): " +& Util.stringDelimitList(List.map(inStates,dumpStates),"\n") +& "\n"); 
+        Debug.fcall("bltdump", print, "\nselected States (" +& intString(listLength(inStates)) +& "): " +& stringDelimitList(List.map(inStates,dumpStates),"\n") +& "\n"); 
       then dummystates;
     case ((e,ep,_)::rest,inStateOrd,syst as BackendDAE.EQSYSTEM(orderedEqs=eqns),shared as BackendDAE.SHARED(knownVars=knvars,arrayEqs=ae,algorithms=al),inFunctionTree,inStates,dummystates)
       equation
@@ -3704,13 +3704,13 @@ algorithm
         Debug.fcall("bltdump",  print ,BackendDump.equationStr(orgeqn));
         // get Jacobian
         jac = calculateJacobian(orgeqn,ae,al,inStates);
-        str = Util.stringDelimitList(List.map(jac,ExpressionDump.printExpStr)," : "); 
+        str = stringDelimitList(List.map(jac,ExpressionDump.printExpStr)," : "); 
         Debug.fcall("bltdump", print, "\nJac: " +& str +& "\n"); 
         // analyse jac -> get dummy derivative candidate
         (dummydercand,dyndummydercand) = analyseJac(jac,inStates,knvars);
-        str = Util.stringDelimitList(List.map(dummydercand,dumpStates1)," : "); 
+        str = stringDelimitList(List.map(dummydercand,dumpStates1)," : "); 
         Debug.fcall("bltdump", print, "Dummy DerCandidates: " +& str +& "\n");
-        str = Util.stringDelimitList(List.map(dyndummydercand,dumpStates1)," : "); 
+        str = stringDelimitList(List.map(dyndummydercand,dumpStates1)," : "); 
         Debug.fcall("bltdump", print, "Dynamic DummyDer Candidates: " +& str +& "\n");
         // select dummy derivatives 
         dummystates1 = selectDummyDerivatives(dummydercand,dyndummydercand,syst,shared,inFunctionTree,inStates,inStateOrd,rest,dummystates,ep);
@@ -3919,9 +3919,9 @@ algorithm
     case (stateNo,accdummystate,dummydercand,dyndummydercand,syst,shared,inFunctionTree,inStates,inStateOrd,inOrgEqns,inDummyStates,ep)
       equation
         Debug.fcall("bltdump", print, "removeDummyStateCandidate in eqn " +& intString(ep) +& " from list try next\n"); 
-        str = Util.stringDelimitList(List.map(dummydercand,dumpStates1)," : "); 
+        str = stringDelimitList(List.map(dummydercand,dumpStates1)," : "); 
         Debug.fcall("bltdump", print, "Dummy DerCandidates: " +& str +& "\n");        
-        str = Util.stringDelimitList(List.map(dyndummydercand,dumpStates1)," : "); 
+        str = stringDelimitList(List.map(dyndummydercand,dumpStates1)," : "); 
         Debug.fcall("bltdump", print, "Dummy Dynamic DerCandidates: " +& str +& "\n");        
         (dummydercand,dyndummydercand,states) = removeDummyStateCandidate(stateNo,dummydercand,dyndummydercand);
         states1 = listAppend(states,inStates);
@@ -4703,11 +4703,11 @@ algorithm
     case (BackendDAE.REDUCE_INDEX(),syst as BackendDAE.EQSYSTEM(mT=SOME(mt)),shared,inFunctions,ass1,ass2,derivedAlgs,derivedMultiEqn,inArg)
       equation
         eqns = BackendDAEEXT.getMarkedEqns();
-        // print("marked equations:");print(Util.stringDelimitList(List.map(eqns,intString),","));
+        // print("marked equations:");print(stringDelimitList(List.map(eqns,intString),","));
         // print("\n");
         diff_eqns = BackendDAEEXT.getDifferentiatedEqns();
         eqns_1 = List.setDifferenceOnTrue(eqns, diff_eqns, intEq);
-        // print("differentiating equations: ");print(Util.stringDelimitList(List.map(eqns_1,intString),","));
+        // print("differentiating equations: ");print(stringDelimitList(List.map(eqns_1,intString),","));
         // print("\n");
         // print(BackendDump.dumpMarkedEqns(dae, eqns_1));
 
@@ -4717,7 +4717,7 @@ algorithm
         (syst,shared,deqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(syst,shared,eqns_1,inFunctions,derivedAlgs,derivedMultiEqn);
         (state,stateno) = selectDummyState(states, stateindx, syst, shared);
         // print("Selected ");print(ComponentReference.printComponentRefStr(state));print(" as dummy state\n");
-        // print(" From candidates: ");print(Util.stringDelimitList(List.map(states,ComponentReference.printComponentRefStr),", "));print("\n");
+        // print(" From candidates: ");print(stringDelimitList(List.map(states,ComponentReference.printComponentRefStr),", "));print("\n");
         // dae = propagateDummyFixedAttribute(dae, eqns_1, state, stateno);
         (dummy_der,syst) = newDummyVar(state, syst, DAE.NEW_DUMMY_DER(state,states));
         // print("Chosen dummy: ");print(ComponentReference.printComponentRefStr(dummy_der));print("\n");
@@ -4750,7 +4750,7 @@ algorithm
         diff_eqns = BackendDAEEXT.getDifferentiatedEqns();
         eqns_1 = List.setDifferenceOnTrue(eqns, diff_eqns, intEq);
         es = List.map(eqns_1, intString);
-        es_1 = Util.stringDelimitList(es, ", ");
+        es_1 = stringDelimitList(es, ", ");
         print("eqns =");print(es_1);print("\n");
         ({},_) = statesInEqns(eqns_1, syst);
         print("no states found in equations:");
@@ -4758,7 +4758,7 @@ algorithm
         print("differentiated equations:");
         BackendDump.printEquations(diff_eqns,syst);
         print("Variables :");
-        print(Util.stringDelimitList(List.map(BackendDAEEXT.getMarkedVariables(),intString),", "));
+        print(stringDelimitList(List.map(BackendDAEEXT.getMarkedVariables(),intString),", "));
         print("\n");
       then
         fail();
@@ -5611,7 +5611,7 @@ algorithm
     case (varCrefs,varIndices,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs = eqns,m=SOME(m),mT=SOME(mt)),BackendDAE.SHARED(knownVars=knvars))
       equation
         prioTuples = calculateVarPriorities(varCrefs,varIndices,vars,knvars,eqns,m,mt);
-        //print("priorities:");print(Util.stringDelimitList(List.map(prioTuples,printPrioTuplesStr),","));print("\n");
+        //print("priorities:");print(stringDelimitList(List.map(prioTuples,printPrioTuplesStr),","));print("\n");
         (s,sn) = selectMinPrio(prioTuples);
       then (s,sn);
 

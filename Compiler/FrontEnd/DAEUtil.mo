@@ -2132,7 +2132,7 @@ algorithm
     case (path,functions) then Util.getOption(avlTreeGet(functions, path));
     case (path,functions)
       equation
-        msg = Util.stringDelimitList(List.mapMap(getFunctionList(functions), functionName, Absyn.pathString), "\n  ");
+        msg = stringDelimitList(List.mapMap(getFunctionList(functions), functionName, Absyn.pathString), "\n  ");
         msg = "DAEUtil.getNamedFunction failed: " +& Absyn.pathString(path) +& "\nThe following functions were part of the cache:\n  ";
         // Error.addMessage(Error.INTERNAL_ERROR,{msg});
         Debug.fprintln("failtrace", msg);
@@ -2982,7 +2982,7 @@ algorithm
         nrOfEquations = countEquations(falseBranch);
         nrOfEquationsBranches = List.map(trueBranches, countEquations);
         strs = List.map(nrOfEquationsBranches, intString);
-        str = Util.stringDelimitList(strs,",");
+        str = stringDelimitList(strs,",");
         str = "{" +& str +& "," +& intString(nrOfEquations) +& "}";
         Error.addSourceMessage(Error.IF_EQUATION_UNBALANCED_2,{str},getElementSourceFileInfo(source));
       then fail();

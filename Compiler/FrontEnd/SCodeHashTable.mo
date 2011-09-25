@@ -389,7 +389,7 @@ algorithm
     case (modifiers, parentOpt, baseOpt, element)
       equation
         print("- SCodeHashTable.createElementStructure failed on: " +&
-          " modifiers:" +& Util.stringDelimitList(List.map(modifiers, SCodeDump.shortElementStr), ", ") +&
+          " modifiers:" +& stringDelimitList(List.map(modifiers, SCodeDump.shortElementStr), ", ") +&
           " element: " +& SCodeDump.shortElementStr(element) +& "\n"
         );
       then
@@ -836,7 +836,7 @@ algorithm
     
     case (inStructures)
       equation
-        str = Util.stringDelimitList(
+        str = stringDelimitList(
                 List.map(inStructures, 
                 printStructureStr), ", ");
       then
@@ -868,7 +868,7 @@ algorithm
         str = "extends[" +& SCodeDump.shortElementStr(el) +& 
                ", parent: " +& SCodeDump.shortElementStr(parent) +& 
                ", base: " +& SCodeDump.shortElementStr(base) +& 
-               ", modifiers:" +& Util.stringDelimitList(List.map(modifiers, SCodeDump.shortElementStr), ", ") +&
+               ", modifiers:" +& stringDelimitList(List.map(modifiers, SCodeDump.shortElementStr), ", ") +&
                "]";
       then
         str;
@@ -878,7 +878,7 @@ algorithm
         str = "derived[" +& SCodeDump.shortElementStr(el) +& 
                ", parent: " +& SCodeDump.shortElementStr(parent) +& 
                ", base: " +& SCodeDump.shortElementStr(base) +& 
-               ", modifiers:" +& Util.stringDelimitList(List.map(modifiers, SCodeDump.shortElementStr), ", ") +&
+               ", modifiers:" +& stringDelimitList(List.map(modifiers, SCodeDump.shortElementStr), ", ") +&
                "]";
       then
         str;
@@ -940,17 +940,17 @@ algorithm
       
     case (VALUE(seqNumbers = seqNumbers, structures = structures, optChildren = NONE()))
       equation
-        str = "[" +& Util.stringDelimitList(List.map(seqNumbers, intString), ", ") +& 
+        str = "[" +& stringDelimitList(List.map(seqNumbers, intString), ", ") +& 
               "], " +& printStructuresStr(structures) +& "\n";
       then
         str;
     
     case (VALUE(seqNumbers = seqNumbers,  structures = structures, optChildren = SOME(hashTable)))
       equation
-        str = "[" +& Util.stringDelimitList(List.map(seqNumbers, intString), ", ") +&
+        str = "[" +& stringDelimitList(List.map(seqNumbers, intString), ", ") +&
               "], " +& printStructuresStr(structures) +&
               ", \n\tKids: (\n\t" +& 
-              Util.stringDelimitList(
+              stringDelimitList(
                 List.map(BaseHashTable.hashTableList(hashTable), 
                 hashItemString), "\n\t") +& ")";
       then

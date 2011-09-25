@@ -314,7 +314,7 @@ algorithm
         print("Zero Crossings :\n");
         print("===============\n");
         ss = List.map(zeroCrossList, BackendDump.dumpZcStr);
-        s = Util.stringDelimitList(ss, ",\n");
+        s = stringDelimitList(ss, ",\n");
         print(s);
         print("\n");
                       

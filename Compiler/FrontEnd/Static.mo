@@ -1360,7 +1360,7 @@ algorithm
       then (typeA,typeB,resType,path);
     case (env, path, fnTypes, info)
       equation
-        str1 = Util.stringDelimitList(List.map(fnTypes, Types.unparseType), ",");
+        str1 = stringDelimitList(List.map(fnTypes, Types.unparseType), ",");
         Error.addSourceMessage(Error.UNSUPPORTED_REDUCTION_TYPE, {str1}, info);
       then fail();
   end match;
@@ -1823,7 +1823,7 @@ algorithm
         error_strs = List.map(
         List.consr(List.consOption(opt_step, {stop}), start),
           Dump.dumpExpStr);
-        error_str = Util.stringDelimitList(error_strs, ":");
+        error_str = stringDelimitList(error_strs, ":");
         Debug.trace("- " +& Error.infoStr(info));
         Debug.traceln(" Static.elabRangeType failed on " +& error_str);
       then
@@ -2301,7 +2301,7 @@ algorithm
         sp = PrefixUtil.printPrefixStr3(pre);
         e_str = ExpressionDump.printExpStr(e_1);
         strs = List.map(es, ExpressionDump.printExpStr);
-        str = Util.stringDelimitList(strs, ",");
+        str = stringDelimitList(strs, ",");
         elt_str = stringAppendList({"[",str,"]"});
         t1_str = Types.unparseType(t1);
         t2_str = Types.unparseType(t2);
@@ -3317,7 +3317,7 @@ algorithm
           "- Static.elabBuiltinFill: Couldn't elaborate fill(): ");
         implstr = boolString(impl);
         expstrs = List.map(dims, Dump.printExpStr);
-        expstr = Util.stringDelimitList(expstrs, ", ");
+        expstr = stringDelimitList(expstrs, ", ");
         sp = PrefixUtil.printPrefixStr3(pre);
         str = stringAppendList({expstr," impl=",implstr,", in component: ",sp});
         Debug.fprintln("failtrace", str);
@@ -5144,7 +5144,7 @@ algorithm
     case (cache,env,expl,_,_,pre,info)
       equation
         lst = List.map(expl, Dump.printExpStr);
-        s = Util.stringDelimitList(lst, ", ");
+        s = stringDelimitList(lst, ", ");
         sp = PrefixUtil.printPrefixStr3(pre);
         s = stringAppendList({"der(",s,")"});
         Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,sp}, info);
@@ -5306,7 +5306,7 @@ algorithm
         (cache,matrices_1,props,_) = elabExpList(cache,env, matrices, impl,NONE(),true,pre,info);
         false = sameDimensionsExceptionDimX(props,dim);
         lst = List.map((dim_aexp :: matrices), Dump.printExpStr);
-        s = Util.stringDelimitList(lst, ", ");
+        s = stringDelimitList(lst, ", ");
         sp = PrefixUtil.printPrefixStr3(pre);
         str = stringAppendList({"cat(",s,")"});
         Error.addSourceMessage(Error.DIFFERENT_DIM_SIZE_IN_ARGUMENTS, {str,sp}, info);
@@ -5933,7 +5933,7 @@ algorithm
       equation
         scope_str = Env.printEnvPathStr(env);
         arg_str = "vector(" +& Dump.printExpStr(expr) +& ")";
-        dim_str = "[" +& Util.stringDelimitList(List.map(dimensions, intString), ", ") +& "]";
+        dim_str = "[" +& stringDelimitList(List.map(dimensions, intString), ", ") +& "]";
         pre_str = PrefixUtil.printPrefixStr3(pre);
         Error.addMessage(Error.BUILTIN_VECTOR_INVALID_DIMENSIONS, {scope_str, pre_str, dim_str, arg_str});
       then fail();
@@ -6531,7 +6531,7 @@ algorithm
         true = hasBuiltInHandler(fn);
         true = numErrorMessages == Error.getNumErrorMessages();
         name = Absyn.printComponentRefStr(fn);
-        s = Util.stringDelimitList(List.map(args, Dump.printExpStr), ", ");
+        s = stringDelimitList(List.map(args, Dump.printExpStr), ", ");
         s = stringAppendList({name,"(",s,")'.\n"});
         prestr = PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,prestr}, info);
@@ -6582,7 +6582,7 @@ algorithm
         Debug.fprint("failtrace", fnstr);
         Debug.fprint("failtrace", "   posargs: ");
         argstrs = List.map(args, Dump.printExpStr);
-        argstr = Util.stringDelimitList(argstrs, ", ");
+        argstr = stringDelimitList(argstrs, ", ");
         Debug.fprintln("failtrace", argstr);
         Debug.fprint("failtrace", " prefix: ");
         prestr = PrefixUtil.printPrefixStr(pre);
@@ -7382,7 +7382,7 @@ algorithm
         */
         nArgs = SCodeUtil.translateSCodeModToNArgs(prefix, mod);
         Debug.fprintln("static", "Translated mods to named arguments: " +&
-           Util.stringDelimitList(List.map(nArgs, Dump.printNamedArgStr), ", "));
+           stringDelimitList(List.map(nArgs, Dump.printNamedArgStr), ", "));
      then
        nArgs;
    // if there isn't a derived class, return nothing
@@ -7682,7 +7682,7 @@ algorithm
         slots = makeEmptySlots(fargs);
         // here we get the constantness of INPUT ARGUMENTS!
         (cache,args_1,newslots,constInputArgs,_) = elabInputArgs(cache,env, args, nargs, slots, true /*checkTypes*/ ,impl, {},pre,info);
-        //print(" args: " +& Util.stringDelimitList(List.map(args_1,ExpressionDump.printExpStr), ", ") +& "\n");
+        //print(" args: " +& stringDelimitList(List.map(args_1,ExpressionDump.printExpStr), ", ") +& "\n");
         (cache,env_2,cl) = Lookup.buildRecordConstructorClass(cache, recordEnv, recordCl);
         // here we get the constantness of DEFAULT ARGUMENTS!
         // print("Record env: " +& Env.printEnvStr(env_2) +& "\nclass: " +& SCodeDump.printClassStr(cl) +& "\n");
@@ -7814,7 +7814,7 @@ algorithm
         t_lst = List.map(typelist, Types.unparseType);
         fn_str = Absyn.pathString(fn);
         pre_str = PrefixUtil.printPrefixStr3(pre);
-        types_str = Util.stringDelimitList(t_lst, "\n -");
+        types_str = stringDelimitList(t_lst, "\n -");
         //fn_str = fn_str +& " in component " +& pre_str;
         Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND, {fn_str,pre_str,types_str}, info);
       then
@@ -9012,7 +9012,7 @@ algorithm
       equation
         // enabled only by +d=failtrace
         true = RTOpts.debugFlag("failtrace");
-        Debug.traceln("- Static.functionParams failed on: " +& Util.stringDelimitList(List.map(vs, Types.printVarStr), "; "));
+        Debug.traceln("- Static.functionParams failed on: " +& stringDelimitList(List.map(vs, Types.printVarStr), "; "));
       then
         fail();
   end match;
@@ -9331,7 +9331,7 @@ algorithm
         filledStr = Util.if_(filled, "filled", "not filled");
         str = Dump.getOptionStr(exp, ExpressionDump.printExpStr);
         str_lst = List.map(ds, ExpressionDump.dimensionString);
-        s = Util.stringDelimitList(str_lst, ", ");
+        s = stringDelimitList(str_lst, ", ");
         s1 = stringAppendList({"SLOT(",farg_str,", ",filledStr,", ",str,", [",s,"])\n"});
         s2 = printSlotsStr(xs);
         res = stringAppend(s1, s2);
@@ -9455,7 +9455,7 @@ algorithm
       equation
         /* FAILTRACE REMOVE
         Debug.fprint("failtrace", "elabPositionalInputArgs failed: expl:");
-        Debug.fprint("failtrace", Util.stringDelimitList(List.map(es,Dump.printExpStr),", "));
+        Debug.fprint("failtrace", stringDelimitList(List.map(es,Dump.printExpStr),", "));
         Debug.fprint("failtrace", "\n");
         */
       then
@@ -9549,7 +9549,7 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         pre_str = PrefixUtil.printPrefixStr3(pre);
         Debug.fprintln("failtrace", "Static.elabNamedInputArgs failed for first named argument in: (" +&
-           Util.stringDelimitList(List.map(narg, Dump.printNamedArgStr), ", ") +& "), in component: " +& pre_str);
+           stringDelimitList(List.map(narg, Dump.printNamedArgStr), ", ") +& "), in component: " +& pre_str);
       then
         fail();
   end matchcontinue;
@@ -12125,7 +12125,7 @@ algorithm
 
     case (((op,params,rtype) :: _),args,_,pre,info)
       equation
-        //Debug.fprint("dovl", Util.stringDelimitList(List.map(params, Types.printTypeStr),"\n"));
+        //Debug.fprint("dovl", stringDelimitList(List.map(params, Types.printTypeStr),"\n"));
         //Debug.fprint("dovl", "\n===\n");
         (args_1,types_1) = elabArglist(params, args);
         rtype_1 = computeReturnType(op, types_1, rtype,pre,info);
@@ -12146,9 +12146,9 @@ algorithm
         exps = List.map(args, Util.tuple21);
         tps = List.map(args, Util.tuple22);
         exps_str = List.map(exps, ExpressionDump.printExpStr);
-        estr = Util.stringDelimitList(exps_str, ", ");
+        estr = stringDelimitList(exps_str, ", ");
         tps_str = List.map(tps, Types.unparseType);
-        tpsstr = Util.stringDelimitList(tps_str, ", ");
+        tpsstr = stringDelimitList(tps_str, ", ");
         pre_str = PrefixUtil.printPrefixStr3(pre);
         s = stringAppendList({s," (expressions :",estr," types: ",tpsstr,")"});
         Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s,pre_str}, info);

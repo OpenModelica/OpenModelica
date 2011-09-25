@@ -281,13 +281,13 @@ algorithm
       equation
         names = List.map(cls,Absyn.className);
         names = List.map1(names,Absyn.joinPaths,scope);
-        res = "{" +& Util.stringDelimitList(List.map(names,Absyn.pathString),",") +& "}";
+        res = "{" +& stringDelimitList(List.map(names,Absyn.pathString),",") +& "}";
       then res;
     
     case(Absyn.PROGRAM(classes=cls,within_=Absyn.TOP())) 
       equation
         names = List.map(cls,Absyn.className);
-        res = "{" +& Util.stringDelimitList(List.map(names,Absyn.pathString),",") +& "}";
+        res = "{" +& stringDelimitList(List.map(names,Absyn.pathString),",") +& "}";
       then res;
   end match;
 end makeClassDefResult;

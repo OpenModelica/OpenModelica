@@ -110,7 +110,7 @@ algorithm
   str := matchcontinue(funcs)
     case funcs
       equation
-        str = Util.stringDelimitList(List.map(sortFunctions(DAEUtil.getFunctionList(funcs)),functionNameStr),",");
+        str = stringDelimitList(List.map(sortFunctions(DAEUtil.getFunctionList(funcs)),functionNameStr),",");
     then str;
   end matchcontinue;
 end dumpFunctionNamesStr;
@@ -320,7 +320,7 @@ algorithm
       equation
         Print.printBuf("ARRAY_EQUATION(");
         Print.printBuf("dims = [");
-        Print.printBuf(Util.stringDelimitList(List.map(dl, ExpressionDump.dimensionString), ", "));
+        Print.printBuf(stringDelimitList(List.map(dl, ExpressionDump.dimensionString), ", "));
         Print.printBuf("]; ");
         ExpressionDump.printExp(e1);
         Print.printBuf(" = ");
@@ -333,7 +333,7 @@ algorithm
       equation
         Print.printBuf("INITIAL_ARRAY_EQUATION(");
         Print.printBuf("dims = [");
-        Print.printBuf(Util.stringDelimitList(List.map(dl, ExpressionDump.dimensionString), ", "));
+        Print.printBuf(stringDelimitList(List.map(dl, ExpressionDump.dimensionString), ", "));
         Print.printBuf("]; ");
         ExpressionDump.printExp(e1);
         Print.printBuf(" = ");
@@ -886,7 +886,7 @@ algorithm
         // If there is only one annotations, print it immediately after the
         // class name, otherwise print them in a list below the class name.
         str = str +& Util.if_((listLength(ann_strl) > 1), "\n ", "");
-        str = str +& Util.stringDelimitList(ann_strl, "\n ");
+        str = str +& stringDelimitList(ann_strl, "\n ");
       then
         str;
     // Class comment, show annotations disabled.
@@ -1515,7 +1515,7 @@ algorithm
         s1 = indentStr(i);
         s2 = ExpressionDump.printExpStr(e);
         es = List.map(expl, ExpressionDump.printExpStr);
-        s3 = Util.stringDelimitList(es, ", ");
+        s3 = stringDelimitList(es, ", ");
         str = stringAppendList({s1,"(",s3,") := ",s2,";\n"});
         Print.printBuf(str);
       then
@@ -1734,7 +1734,7 @@ algorithm
         s1 = indentStr(i);
         s2 = ExpressionDump.printExpStr(e);
         es = List.map(expl, ExpressionDump.printExpStr);
-        s3 = Util.stringDelimitList(es, ", ");
+        s3 = stringDelimitList(es, ", ");
         str = stringAppendList({s1,"(",s3,") := ",s2,";\n"});
       then
         str;
@@ -2596,7 +2596,7 @@ algorithm
     // dims give something
     case (dims, true)
      equation
-       str = "[" +& Util.stringDelimitList(List.map(dims, ExpressionDump.printSubscriptStr), ", ") +& "]";
+       str = "[" +& stringDelimitList(List.map(dims, ExpressionDump.printSubscriptStr), ", ") +& "]";
      then
        str;
   end matchcontinue;
@@ -2961,7 +2961,7 @@ algorithm
     case ((DAE.NORETCALL(functionName=path,functionArgs=expl) :: xs), str)
       equation
         s = Absyn.pathString(path);
-        s1 = Util.stringDelimitList(List.map(expl,ExpressionDump.printExpStr),",");
+        s1 = stringDelimitList(List.map(expl,ExpressionDump.printExpStr),",");
         str = IOStream.appendList(str, {"  ",s,"(",s1,");\n"});
         str = dumpEquationsStream(xs, str);
       then

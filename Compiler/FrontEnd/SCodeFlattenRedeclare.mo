@@ -582,7 +582,7 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         Debug.trace("- SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv failed for: ");
         Debug.traceln("redeclares: " +& 
-          Util.stringDelimitList(List.map(inRedeclares, SCodeEnv.printRedeclarationStr), "\n---------\n") +&  
+          stringDelimitList(List.map(inRedeclares, SCodeEnv.printRedeclarationStr), "\n---------\n") +&  
           " item: " +& SCodeEnv.getItemName(inItem) +& " in scope:" +& SCodeEnv.getEnvName(inVarEnv));
       then
         fail();

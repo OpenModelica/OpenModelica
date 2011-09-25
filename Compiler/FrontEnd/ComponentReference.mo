@@ -1701,7 +1701,7 @@ algorithm
     // case(child,newSub)
     //  equation
     //    str1 = printComponentRefStr(child);
-    //    str2 = Util.stringDelimitList(List.map(newSub, printSubscriptStr), ", ");
+    //    str2 = stringDelimitList(List.map(newSub, printSubscriptStr), ", ");
     //    str  = "replaceCrefSliceSub(" +& str1 +& " subs: [" +& str2 +& "]\n";
     //    print(str);
     //  then
@@ -1974,7 +1974,7 @@ algorithm
         //print("\n +++++++++++++++++++++++++++++ ");print(id);print("\n");
         lst = Util.stringSplitAtChar(id, "[");
         lst_1 = List.stripLast(lst);
-        id_1 = Util.stringDelimitList(lst_1, "[");
+        id_1 = stringDelimitList(lst_1, "[");
       then
         makeCrefIdent(id_1,t2,{});
     
@@ -2092,7 +2092,7 @@ public function printComponentRefListStr
   input list<DAE.ComponentRef> crs;
   output String res;
 algorithm
-  res := "{" +& Util.stringDelimitList(List.map(crs, printComponentRefStr), ",") +& "}";
+  res := "{" +& stringDelimitList(List.map(crs, printComponentRefStr), ",") +& "}";
 end printComponentRefListStr;
 
 public function replaceWholeDimSubscript

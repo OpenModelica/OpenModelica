@@ -1091,7 +1091,7 @@ algorithm
       Env env;
     case(env as (FRAME(connectionSet = (crs,_))::_)) equation
       print(printEnvPathStr(env));print(" :   ");
-      print(Util.stringDelimitList(List.map(crs,ComponentReference.printComponentRefStr),", "));
+      print(stringDelimitList(List.map(crs,ComponentReference.printComponentRefStr),", "));
       print("\n");
     then ();
   end matchcontinue;
@@ -1645,7 +1645,7 @@ algorithm
     
     case (CACHETREE(id,_,children),indent)
       equation
-        s = Util.stringDelimitList(List.map1(children,printCacheTreeStr,indent+1),"\n");
+        s = stringDelimitList(List.map1(children,printCacheTreeStr,indent+1),"\n");
         s1 = stringAppendList(List.fill(" ",indent));
         str = stringAppendList({s1,id,"\n",s});
       then str;
@@ -1662,7 +1662,7 @@ algorithm
     local DAE.Subscript s;
     case(subs)
       equation
-        str = " subs: " +& Util.stringDelimitList(List.map(subs,ExpressionDump.printSubscriptStr),", ") +& "\n";
+        str = " subs: " +& stringDelimitList(List.map(subs,ExpressionDump.printSubscriptStr),", ") +& "\n";
         print(str);
       then
         str;

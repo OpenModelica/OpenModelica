@@ -2213,8 +2213,8 @@ algorithm
         
     case (xs,ids)
       equation
-        print("ValuesUtil.valRecordString failed:\nids: "+& Util.stringDelimitList(ids, ", ") +&
-        "\nvals: " +& Util.stringDelimitList(List.map(xs, valString), ", ") +& "\n");
+        print("ValuesUtil.valRecordString failed:\nids: "+& stringDelimitList(ids, ", ") +&
+        "\nvals: " +& stringDelimitList(List.map(xs, valString), ", ") +& "\n");
       then 
         fail();
   

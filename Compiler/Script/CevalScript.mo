@@ -576,7 +576,7 @@ algorithm
         // trim " from strings!
         simOptsValues = List.map2(simOptsValues, System.stringReplace, "\"", "\'");
         
-        str = Util.stringDelimitList(simOptsValues, ", ");
+        str = stringDelimitList(simOptsValues, ", ");
       then
         str;
   end matchcontinue;
@@ -608,7 +608,7 @@ algorithm
     case ((path,strings)::_,modelicaPath,p,_)
       equation
         pathStr = Absyn.pathString(path);
-        versions = Util.stringDelimitList(strings,",");
+        versions = stringDelimitList(strings,",");
         Error.addMessage(Error.LOAD_MODEL,{pathStr,versions,modelicaPath});
       then (p,false);
   end matchcontinue;
@@ -1763,7 +1763,7 @@ algorithm
         // get the variables list
         vars_1 = List.map(cvars, ValuesUtil.printCodeVariableName);
         // seperate the variables
-        str = Util.stringDelimitList(vars_1,"\" \"");
+        str = stringDelimitList(vars_1,"\" \"");
         // get OPENMODELICAHOME
         omhome = Settings.getInstallationDirectoryPath();
         // get the simulation filename
@@ -2451,7 +2451,7 @@ algorithm
         (pd_1 :: _) = stringListStringChar(pd);
         filename_1 = Util.stringSplitAtChar(filename, pd_1);
         dir = List.stripLast(filename_1);
-        dir_1 = Util.stringDelimitList(dir, pd);
+        dir_1 = stringDelimitList(dir, pd);
       then
         dir_1;
     case (class_,p)
@@ -2490,7 +2490,7 @@ algorithm
         omhome_1 = System.stringReplace(omhome, "\"", "");
         cd_path = System.pwd();
         libsfilename = stringAppend(fileprefix, ".libs");
-        libs_str = Util.stringDelimitList(libs, " ");
+        libs_str = stringDelimitList(libs, " ");
         
         System.writeFile(libsfilename, libs_str);
         // We only need to set OPENMODELICAHOME on Windows, and set doesn't work in bash shells anyway
@@ -3611,7 +3611,7 @@ algorithm
         // allClassPaths = List.select(allClassPaths, filterLib);
         // allClassPaths = listReverse(allClassPaths);
         print("Number of classes to check: " +& intString(listLength(allClassPaths)) +& "\n");
-        // print ("All paths: \n" +& Util.stringDelimitList(List.map(allClassPaths, Absyn.pathString), "\n") +& "\n");
+        // print ("All paths: \n" +& stringDelimitList(List.map(allClassPaths, Absyn.pathString), "\n") +& "\n");
         checkAll(cache, env, allClassPaths, st, msg);
         ret = "Number of classes checked: " +& intString(listLength(allClassPaths));
       then
@@ -3916,7 +3916,7 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         d = List.map1(paths, DAEUtil.getNamedFunction, funcs);
         (_,(_,dependencies)) = DAEUtil.traverseDAEFunctions(d,Expression.traverseSubexpressionsHelper,(matchQualifiedCalls,{}));
-        print(name +& " has dependencies: " +& Util.stringDelimitList(dependencies,",") +& "\n");
+        print(name +& " has dependencies: " +& stringDelimitList(dependencies,",") +& "\n");
         acc = (name,dependencies)::acc;
         dependencies = List.map1(dependencies,stringAppend,".h\"");
         dependencies = List.map1r(dependencies,stringAppend,"#include \"");

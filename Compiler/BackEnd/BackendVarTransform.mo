@@ -1436,7 +1436,7 @@ algorithm
     case (REPLACEMENTS(hashTable= ht))
       equation
         (tplLst) = BaseHashTable.hashTableList(ht);
-        str = Util.stringDelimitList(List.map(tplLst,printReplacementTupleStr),"\n");
+        str = stringDelimitList(List.map(tplLst,printReplacementTupleStr),"\n");
         print("Replacements: (");
         len = listLength(tplLst);
         len_str = intString(len);

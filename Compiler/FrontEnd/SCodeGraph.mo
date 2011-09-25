@@ -1158,7 +1158,7 @@ algorithm
     case (g, iContext, inEls, o)
       equation
         print("Failed in SCodeGrap.analyzeElements for: " +&
-          Util.stringDelimitList(List.map(inEls, SCodeDump.printElementStr), "\n") +& 
+          stringDelimitList(List.map(inEls, SCodeDump.printElementStr), "\n") +& 
           "\n--------------------\n");
       then
         fail();

@@ -2461,7 +2461,7 @@ algorithm
         Debug.traceln("Warning: makeASUB: given expression: " +& 
                       ExpressionDump.printExpStr(inExp) +&
                       " contains a component reference!\n" +&
-                      " Subscripts exps: [" +& Util.stringDelimitList(List.map(inSubs, ExpressionDump.printExpStr), ",")+& "]\n" +&
+                      " Subscripts exps: [" +& stringDelimitList(List.map(inSubs, ExpressionDump.printExpStr), ",")+& "]\n" +&
                       "DAE.ASUB should not be used for component references, instead the subscripts should be added directly to the component reference!");
         exp = DAE.ASUB(inExp,inSubs);
       then 
@@ -2684,7 +2684,7 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace","-Expression.makeSum failed, DAE.Exp lst:");
         explst = List.map(lst, ExpressionDump.printExpStr);
-        str = Util.stringDelimitList(explst, ", ");
+        str = stringDelimitList(explst, ", ");
         Debug.fprint("failtrace",str);
         Debug.fprint("failtrace","\n");
       then
@@ -2837,7 +2837,7 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace","-Expression.makeProductLst failed, DAE.Exp lst:");
         explst = List.map(lst, ExpressionDump.printExpStr);
-        str = Util.stringDelimitList(explst, ", ");
+        str = stringDelimitList(explst, ", ");
         Debug.fprint("failtrace",str);
         Debug.fprint("failtrace","\n");
       then
