@@ -109,11 +109,13 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     searchMSLdock->hide();
     //Create a dock for the componentslibrary
     libdock = new QDockWidget(tr(" Components"), this);
+    libdock->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
     libdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     libdock->setWidget(mpLibrary);
     addDockWidget(Qt::LeftDockWidgetArea, libdock);
     //create a dock for the model browser
     modelBrowserdock = new QDockWidget(tr("Model Browser"), this);
+    modelBrowserdock->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
     modelBrowserdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     mpModelBrowser = new ModelBrowserWidget(this);
     modelBrowserdock->setWidget(mpModelBrowser);

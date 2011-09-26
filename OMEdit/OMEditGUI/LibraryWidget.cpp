@@ -1151,26 +1151,20 @@ SearchMSLWidget::SearchMSLWidget(MainWindow *pParent)
     : QWidget(pParent)
 {
     mpParentMainWindow = pParent;
-
     // get MSL recursive
     mMSLItemsList = mpParentMainWindow->mpOMCProxy->getClassNamesRecursive(tr("Modelica"));
-
     // create search controls
     mpSearchTextBox = new MSLSearchBox(this);
     connect(mpSearchTextBox, SIGNAL(returnPressed()), SLOT(searchMSL()));
-
     mpSearchButton = new QPushButton(tr("Search"));
     connect(mpSearchButton, SIGNAL(pressed()), SLOT(searchMSL()));
-
     mpSearchedItemsTree = new LibraryTree(mpParentMainWindow->mpLibrary);
     mpSearchedItemsTree->setFrameShape(QFrame::StyledPanel);
     mpSearchedItemsTree->setHeaderLabel(tr("Searched Items"));
-
     // add the search controls to layout
     QHBoxLayout *horizontalLayout = new QHBoxLayout;
     horizontalLayout->addWidget(mpSearchTextBox);
     horizontalLayout->addWidget(mpSearchButton);
-
     QVBoxLayout *verticalLayout = new QVBoxLayout;
     verticalLayout->setContentsMargins(0, 0, 2, 0);
     verticalLayout->addLayout(horizontalLayout);
