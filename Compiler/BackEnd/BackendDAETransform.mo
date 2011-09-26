@@ -1594,12 +1594,12 @@ algorithm
     case (m,mt,a1,a2,i,v,stack,comps)
       equation
         i_1 = i + 1;
-        BackendDAEEXT.setNumber(v, i_1)  ;
+        BackendDAEEXT.setNumber(v, i_1);
         BackendDAEEXT.setLowLink(v, i_1);
         stack_1 = (v :: stack);
         eqns = reachableNodes(v, m, mt, a1, a2);
         (i_1,stack_2,comps_1) = iterateReachableNodes(eqns, m, mt, a1, a2, i_1, v, stack_1, comps);
-        (i_1,stack_3,comp) = checkRoot(m, mt, a1, a2, i_1, v, stack_2);
+        (stack_3,comp) = checkRoot(v, stack_2);
         comps_2 = consIfNonempty(comp, comps_1);
       then
         (i_1,stack_3,comps_2);
@@ -1757,33 +1757,25 @@ protected function checkRoot "function: checkRoot
               int /* i */, int /* v */, int list /* stack */)
   outputs: (int /* i */, int list /* stack */, int list /* comps */)
 "
-  input BackendDAE.IncidenceMatrix inIncidenceMatrix1;
-  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT2;
-  input array<Integer> inIntegerArray3;
-  input array<Integer> inIntegerArray4;
-  input Integer inInteger5;
   input Integer inInteger6;
   input list<Integer> inIntegerLst7;
-  output Integer outInteger1;
   output list<Integer> outIntegerLst2;
   output list<Integer> outIntegerLst3;
 algorithm
-  (outInteger1,outIntegerLst2,outIntegerLst3):=
-  matchcontinue (inIncidenceMatrix1,inIncidenceMatrixT2,inIntegerArray3,inIntegerArray4,inInteger5,inInteger6,inIntegerLst7)
+  (outIntegerLst2,outIntegerLst3):=
+  matchcontinue (inInteger6,inIntegerLst7)
     local
-      BackendDAE.Value lv,nv,i,v;
+      BackendDAE.Value lv,nv,v;
       list<BackendDAE.Value> stack_1,comps,stack;
-      array<list<BackendDAE.Value>> m,mt;
-      array<BackendDAE.Value> a1,a2;
-    case (m,mt,a1,a2,i,v,stack)
+    case (v,stack)
       equation
         lv = BackendDAEEXT.getLowLink(v);
         nv = BackendDAEEXT.getNumber(v);
         (lv == nv) = true;
-        (i,stack_1,comps) = checkStack(m, mt, a1, a2, i, v, stack, {});
+        (stack_1,comps) = checkStack(nv, stack, {});
       then
-        (i,stack_1,comps);
-    case (m,mt,a1,a2,i,v,stack) then (i,stack,{});
+        (stack_1,comps);
+    case (v,stack) then (stack,{});
   end matchcontinue;
 end checkRoot;
 
@@ -1796,34 +1788,25 @@ protected function checkStack "function: checkStack
               int /* i */, int /* v */, int list /* stack */, int list /* component list */)
   outputs: (int /* i */, int list /* stack */, int list /* comps */)
 "
-  input BackendDAE.IncidenceMatrix inIncidenceMatrix1;
-  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT2;
-  input array<Integer> inIntegerArray3;
-  input array<Integer> inIntegerArray4;
-  input Integer inInteger5;
   input Integer inInteger6;
   input list<Integer> inIntegerLst7;
   input list<Integer> inIntegerLst8;
-  output Integer outInteger1;
   output list<Integer> outIntegerLst2;
   output list<Integer> outIntegerLst3;
 algorithm
-  (outInteger1,outIntegerLst2,outIntegerLst3):=
-  matchcontinue (inIncidenceMatrix1,inIncidenceMatrixT2,inIntegerArray3,inIntegerArray4,inInteger5,inInteger6,inIntegerLst7,inIntegerLst8)
+  (outIntegerLst2,outIntegerLst3):=
+  matchcontinue (inInteger6,inIntegerLst7,inIntegerLst8)
     local
-      BackendDAE.Value topn,vn,i,v,top;
+      BackendDAE.Value topn,vn,top;
       list<BackendDAE.Value> stack_1,comp_1,rest,comp,stack;
-      array<list<BackendDAE.Value>> m,mt;
-      array<BackendDAE.Value> a1,a2;
-    case (m,mt,a1,a2,i,v,(top :: rest),comp)
+    case (vn,(top :: rest),comp)
       equation
         topn = BackendDAEEXT.getNumber(top);
-        vn = BackendDAEEXT.getNumber(v);
         (topn >= vn) = true;
-        (i,stack_1,comp_1) = checkStack(m, mt, a1, a2, i, v, rest, comp);
+        (stack_1,comp_1) = checkStack(vn, rest, comp);
       then
-        (i,stack_1,(top :: comp_1));
-    case (m,mt,a1,a2,i,v,stack,comp) then (i,stack,comp);
+        (stack_1,(top :: comp_1));
+    case (_,stack,comp) then (stack,comp);
   end matchcontinue;
 end checkStack;
 
