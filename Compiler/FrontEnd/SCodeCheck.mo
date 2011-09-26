@@ -560,4 +560,26 @@ algorithm
   end matchcontinue;
 end checkRecursiveComponentDeclaration;
 
+public function checkIdentNotEqTypeName
+  "Checks that a simple identifier is not the same as a type name."
+  input String inIdent;
+  input Absyn.TypeSpec inTypeName;
+  input Absyn.Info inInfo;
+  output Boolean outIsNotEq;
+algorithm
+  outIsNotEq := matchcontinue(inIdent, inTypeName, inInfo)
+    local
+      String id, ty;
+
+    case (id, Absyn.TPATH(path = Absyn.IDENT(ty)), _)
+      equation
+        true = stringEq(id, ty);
+        Error.addSourceMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id}, inInfo);
+      then
+        false;
+
+    else true;
+  end matchcontinue;
+end checkIdentNotEqTypeName;
+
 end SCodeCheck;

@@ -662,7 +662,6 @@ algorithm
     case ((Absyn.CALL(function_ = cref, functionArgs = args), 
         tup as (env, info)))
       equation
-        //cref = SCodeLookup.lookupComponentRefForceQualified(cref, env, info);
         cref = SCodeLookup.lookupComponentRef(cref, env, info);
         // TODO: handle function arguments
       then

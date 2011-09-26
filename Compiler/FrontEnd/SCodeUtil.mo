@@ -137,12 +137,19 @@ algorithm
 end translate2;
 
 public function translateClass
-"function: translateClass
-  This functions converts an Absyn.Class to a SCode.Class."
   input Absyn.Class inClass;
   output SCode.Element outClass;
 algorithm
-  outClass := matchcontinue (inClass)
+  outClass := translateClass2(inClass, Error.getNumMessages());
+end translateClass;
+
+protected function translateClass2
+  "This functions converts an Absyn.Class to a SCode.Class."
+  input Absyn.Class inClass;
+  input Integer inNumMessages;
+  output SCode.Element outClass;
+algorithm
+  outClass := matchcontinue (inClass, inNumMessages)
     local
       SCode.ClassDef d_1;
       SCode.Restriction r_1;
@@ -157,7 +164,7 @@ algorithm
       SCode.Encapsulated sEnc;
       SCode.Partial sPar;
 
-    case (c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = d,info = file_info))
+    case (c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = d,info = file_info), _)
       equation
         // Debug.fprint("translate", "Translating class:" +& n +& "\n");
         r_1 = translateRestriction(c, r); // uniontype will not get translated!
@@ -182,14 +189,17 @@ algorithm
       then
         scodeClass;
 
-    case (c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = d,info = file_info))
+    case (c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = d,info = file_info), _)
       equation
+        // Print out an internal error msg only if no other errors have already
+        // been printed.
+        true = intEq(Error.getNumMessages(), inNumMessages);
         n = "SCodeUtil.translateAbsyn2SCodeClass failed: " +& n;
         Error.addSourceMessage(Error.INTERNAL_ERROR,{n},file_info);
       then
         fail();
   end matchcontinue;
-end translateClass;
+end translateClass2;
 
 // Changed to public! krsta
 public function translateRestriction
@@ -1197,6 +1207,7 @@ algorithm
       (attr as Absyn.ATTR(flowPrefix = fl,streamPrefix=st,variability = variability,direction = di,arrayDim = ad)),typeSpec = t,
       components = (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment,condition=cond) :: xs)),info)
       equation
+        true = SCodeCheck.checkIdentNotEqTypeName(n, t, info);
         // Debug.fprintln("translate", "translating component: " +& n +& " final: " +& SCode.finalStr(SCode.boolFinal(finalPrefix)));
         setHasInnerOuterDefinitionsHandler(io); // signal the external flag that we have inner/outer definitions
         setHasStreamConnectorsHandler(st);      // signal the external flag that we have stream connectors
