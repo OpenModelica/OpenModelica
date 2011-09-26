@@ -62,6 +62,7 @@ modelica_real stringReal(metamodelica_string);
 modelica_metatype stringListStringChar(metamodelica_string);
 metamodelica_string stringAppendList(modelica_metatype);
 metamodelica_string stringDelimitList(modelica_metatype,metamodelica_string_const);
+#define boxptr_stringDelimitList stringDelimitList
 metamodelica_string_const stringAppend(metamodelica_string_const,metamodelica_string_const);
 #define stringLength(x) MMC_STRLEN(x)
 modelica_integer mmc_stringCompare(const void *,const void *);
