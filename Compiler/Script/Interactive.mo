@@ -18504,7 +18504,7 @@ algorithm
 //        str = Dump.unparseTypeSpec(typeSpec);
         names = getComponentitemsName(lst);
         str = stringDelimitList(names, ", ");
-        print("names: " +& str +& "\n");
+        //print("names: " +& str +& "\n");
       then
         str;
   end match;

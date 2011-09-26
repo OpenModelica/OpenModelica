@@ -1249,6 +1249,22 @@ function visualize "Uses the 3D visualization package, SimpleVisual.mo, to
   output Boolean success "Returns true on success";
 end visualize;
 
+function visualize2 "Uses the 3D visualization package, SimpleVisual.mo, to
+  visualize the model. See chapter 3.4 (3D Animation) of the OpenModelica
+  System Documentation for more details.
+  Writes the visulizations objects into the file \"model_name.visualize\"
+  Don't require sendData support.
+  
+  Example command sequence:
+  simulate(A,outputFormat=\"mat\");visualize2(A);visualize2(A,\"B.mat\");visualize2(A,\"B.mat\", true);
+  "
+  input TypeName className;
+  input Boolean externalWindow := false "Opens the visualize in a new window";
+  input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
+  output Boolean success "Returns true on success";
+  external "builtin";
+end visualize2;
+
 function plotParametric "Plots the y-variables as a function of the x-variable.
 
   Example command sequences:

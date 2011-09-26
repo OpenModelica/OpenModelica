@@ -1803,9 +1803,36 @@ algorithm
         value = ValuesUtil.readDataset(filename, vars_2, 0);
         resI = ValuesUtil.sendPtolemyplotDataset2(value, vars_2, visvar_str, "Plot by OpenModelica");
       then
-        (cache,Values.BOOL(true),st);
+        (cache,Values.BOOL(true),st);        
         
     case (cache,env,"visualize",_,st,msg)
+      then
+        (cache,Values.BOOL(false),st);
+        
+    // visualize2
+    case (cache,env,"visualize2",
+        {
+          Values.CODE(Absyn.C_TYPENAME(className)),
+          Values.BOOL(externalWindow),
+          Values.STRING(filename)
+        },(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+      equation
+        // get OPENMODELICAHOME
+        omhome = Settings.getInstallationDirectoryPath();
+        // get the simulation filename
+        (cache,filename) = cevalCurrentSimulationResultExp(cache,env,filename,st,msg);
+        pd = System.pathDelimiter();
+        // create absolute path of simulation result file
+        str1 = System.pwd() +& pd +& filename;
+        filename = Util.if_(System.regularFileExists(str1), str1, filename);
+        (visvars,visvar_str) = Interactive.getElementsOfVisType(className, p);
+        // write the visualizing objects to the file
+        str2 = System.pwd() +& pd +& Absyn.pathString(className) +& ".visualize";
+        System.writeFile(str2, visvar_str);
+      then
+        (cache,Values.BOOL(true),st);
+        
+    case (cache,env,"visualize2",_,st,msg)
       then
         (cache,Values.BOOL(false),st);
         
