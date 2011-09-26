@@ -497,6 +497,11 @@ modelica_metatype boxptr_listNth(modelica_metatype lst, modelica_metatype i)
   return listGet(lst,mmc_unbox_integer(i)+1);
 }
 
+modelica_metatype boxptr_listDelete(modelica_metatype lst, modelica_metatype i)
+{
+  return listDelete(lst,mmc_unbox_integer(i));
+}
+
 modelica_metatype listDelete(modelica_metatype lst, modelica_integer ix)
 {
   modelica_metatype *tmpArr;

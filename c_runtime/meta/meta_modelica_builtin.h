@@ -96,6 +96,7 @@ modelica_metatype listDelete(modelica_metatype, modelica_integer);
 
 modelica_metatype boxptr_listNth(modelica_metatype,modelica_metatype);
 modelica_metatype boxptr_listGet(modelica_metatype,modelica_metatype);
+modelica_metatype boxptr_listDelete(modelica_metatype,modelica_metatype);
 #define boxptr_listAppend listAppend
 modelica_metatype boxptr_listFirst(modelica_metatype);
 modelica_metatype boxptr_listRest(modelica_metatype);
