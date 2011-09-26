@@ -1183,6 +1183,24 @@ bool OMCProxy::addClassAnnotation(QString className, QString annotation)
         return false;
 }
 
+QString OMCProxy::getDefaultComponentName(QString className)
+{
+    sendCommand("getDefaultComponentName(" + className + ")");
+    if (getResult().compare("{}") == 0)
+        return QString();
+
+    return StringHandler::unparse(getResult());
+}
+
+QString OMCProxy::getDefaultComponentPrefixes(QString className)
+{
+    sendCommand("getDefaultComponentPrefixes(" + className + ")");
+    if (getResult().compare("{}") == 0)
+        return QString();
+
+    return StringHandler::unparse(getResult());
+}
+
 bool OMCProxy::addComponent(QString name, QString className, QString modelName)
 {
     sendCommand("addComponent(" + name + ", " + className + "," + modelName + ")");

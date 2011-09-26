@@ -219,12 +219,34 @@ void GraphicsView::dropEvent(QDropEvent *event)
             dataStream >> name >> classname >> type;
 
             MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
-
             //item not to be dropped on itself
             name = StringHandler::getLastWordAfterDot(name);
             if (name != mpParentProjectTab->mModelName)
             {
-                name = getUniqueComponentName(name.toLower());
+                // get the model defaultComponentPrefixes
+                QString defaultPrefix = pMainWindow->mpOMCProxy->getDefaultComponentPrefixes(classname);
+                // get the model defaultComponentName
+                QString defaultName = pMainWindow->mpOMCProxy->getDefaultComponentName(classname);
+                if (defaultName.isEmpty())
+                {
+                    name = getUniqueComponentName(name.toLower());
+                }
+                else
+                {
+                    if (checkComponentName(defaultName))
+                        name = defaultName;
+                    else
+                    {
+                        name = getUniqueComponentName(name.toLower());
+                        // show the information to the user if we have changed the name of some inner component.
+                        if (defaultPrefix.compare("inner") == 0)
+                        {
+                            pMainWindow->mpMessageWidget->printGUIWarningMessage(
+                                        GUIMessages::getMessage(GUIMessages::INNER_MODEL_NAME_CHANGED).arg(defaultName).arg(name)
+                                        .arg(defaultPrefix));
+                        }
+                    }
+                }
                 // if dropping an item on the diagram layer
                 if (mIconType == StringHandler::DIAGRAM)
                 {
@@ -399,11 +421,11 @@ Component* GraphicsView::getComponentObject(QString componentName)
 QString GraphicsView::getUniqueComponentName(QString iconName, int number)
 {
     QString name;
-    name = iconName + QString::number(number);
+    name = QString(iconName).append(QString::number(number));
 
     foreach (Component *icon, mComponentsList)
     {
-        if (icon->getName() == name)
+        if (icon->getName().compare(name, Qt::CaseSensitive) == 0)
         {
             name = getUniqueComponentName(iconName, ++number);
             break;
@@ -416,7 +438,7 @@ bool GraphicsView::checkComponentName(QString iconName)
 {
     foreach (Component *icon, mComponentsList)
     {
-        if (icon->getName() == iconName)
+        if (icon->getName().compare(iconName, Qt::CaseSensitive) == 0)
         {
             return false;
         }
@@ -755,41 +777,40 @@ void GraphicsView::createMenus()
 
 }
 
-
 //pasting the required copied component or a selection in the present view
 //non functional currently, only works for a single component
 void GraphicsView::pasteComponent()
 {
 
-     QClipboard *clipboard = QApplication::clipboard();
+    QClipboard *clipboard = QApplication::clipboard();
 
-     if(!clipboard->text().isEmpty())
-{
-    //GraphicsView *pGraphicsView = qobject_cast<GraphicsView*>(const_cast<QObject*>(sender()));
- Component *oldComponent = getComponentObject(clipboard->text());
- Component *newComponent;
- QString name = getUniqueComponentName(oldComponent->getName().toLower());
+    if(!clipboard->text().isEmpty())
+    {
+        //GraphicsView *pGraphicsView = qobject_cast<GraphicsView*>(const_cast<QObject*>(sender()));
+        Component *oldComponent = getComponentObject(clipboard->text());
+        Component *newComponent;
+        QString name = getUniqueComponentName(oldComponent->getName().toLower());
 
- //QPointF point;
- QPointF point (mapToScene(this->pos()));
+        //QPointF point;
+        QPointF point (mapToScene(this->pos()));
 
- //point= QPointF((this->pos().x()) +1.0 ,(this->pos().y()) +1.0);
- newComponent = new Component(oldComponent,name,point,oldComponent->mType,oldComponent->getIsConnector(),this);
-     // remove the component from the scene
-     //mpGraphicsView->scene()->removeItem(this);
-     // if the signal is not send by graphicsview then call addclassannotation
-     //if (!pGraphicsView)
-    // {
-      //   if (mpGraphicsView->mIconType == StringHandler::ICON)
+        //point= QPointF((this->pos().x()) +1.0 ,(this->pos().y()) +1.0);
+        newComponent = new Component(oldComponent,name,point,oldComponent->mType,oldComponent->getIsConnector(),this);
+        // remove the component from the scene
+        //mpGraphicsView->scene()->removeItem(this);
+        // if the signal is not send by graphicsview then call addclassannotation
+        //if (!pGraphicsView)
+        // {
+        //   if (mpGraphicsView->mIconType == StringHandler::ICON)
         //     mpGraphicsView->addClassAnnotation();
-    // }
-    // delete(this);
- this->addComponentObject(newComponent);
-}
-     else
-     {
-         return ;
-     }
+        // }
+        // delete(this);
+        this->addComponentObject(newComponent);
+    }
+    else
+    {
+        return ;
+    }
 }
 
 void GraphicsView::createLineShape(QPointF point)

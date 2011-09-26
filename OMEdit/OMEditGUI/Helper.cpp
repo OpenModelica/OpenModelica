@@ -227,6 +227,8 @@ QString GUIMessages::getMessage(int type)
         return "Are you sure you want to delete '%1'? Everything contained inside this Package will also be deleted.";
     case DELETE_MSG:
         return "Are you sure you want to delete '%1'?";
+    case INNER_MODEL_NAME_CHANGED:
+        return "A component with the name %1 already exists. The name is changed from %1 to %2.\nThis is probably wrong because the component is decalred as %3.";
     default:
         return "";
     }

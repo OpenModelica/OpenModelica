@@ -189,7 +189,8 @@ public:
         ENTER_VALID_INTEGER,
         ITEM_DROPPED_ON_ITSELF,
         DELETE_PACKAGE_MSG,
-        DELETE_MSG
+        DELETE_MSG,
+        INNER_MODEL_NAME_CHANGED
     };
 
     static QString getMessage(int type);

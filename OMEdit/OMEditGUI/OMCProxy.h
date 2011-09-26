@@ -144,6 +144,8 @@ public:
     QString list(QString className);
     QString instantiateModel(QString className);
     bool addClassAnnotation(QString className, QString annotation);
+    QString getDefaultComponentName(QString className);
+    QString getDefaultComponentPrefixes(QString className);
     bool addComponent(QString name, QString className, QString modelName);
     bool deleteComponent(QString name, QString modelName);
     bool renameComponent(QString modelName, QString oldName, QString newName);
