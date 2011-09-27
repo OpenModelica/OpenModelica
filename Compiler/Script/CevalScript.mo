@@ -81,7 +81,6 @@ protected import InnerOuter;
 protected import List;
 protected import Lookup;
 protected import MetaUtil;
-protected import ModUtil;
 protected import OptManager;
 protected import Prefix;
 protected import Parser;
@@ -794,7 +793,7 @@ algorithm
         (cache,env) = Inst.makeEnvFromProgram(cache, scodeP, Absyn.IDENT(""));
         (cache,c,env) = Lookup.lookupClass(cache,env, path, true);
         SOME(p1) = Env.getEnvPath(env);
-        s1 = ModUtil.pathString(p1);
+        s1 = Absyn.pathString(p1);
         Print.printBuf("Found class ");
         Print.printBuf(s1);
         Print.printBuf("\n\n");
@@ -1395,7 +1394,7 @@ algorithm
         
     case (cache,env,"loadModel",Values.CODE(Absyn.C_TYPENAME(path))::_,st,msg)
       equation
-        pathstr = ModUtil.pathString(path);
+        pathstr = Absyn.pathString(path);
         Error.addMessage(Error.LOAD_MODEL_ERROR, {pathstr});
       then
         (cache,Values.BOOL(false),st);
@@ -3306,14 +3305,14 @@ algorithm
 
     case((Absyn.CLASS(name,p,f,e,r,cdef,Absyn.INFO(fname,ro,i1,i2,i3,i4,ts)),SOME(path2),path))
       equation
-        true = ModUtil.pathEqual(Absyn.joinPaths(path2,Absyn.IDENT(name)),path);
+        true = Absyn.pathEqual(Absyn.joinPaths(path2,Absyn.IDENT(name)),path);
         ts =Absyn.setTimeStampBool(ts,false);
       then ((Absyn.CLASS(name,p,f,e,r,cdef,Absyn.INFO(fname,ro,i1,i2,i3,i4,ts)),SOME(path),path));
     case(inTpl) then inTpl;
 
     case((Absyn.CLASS(name,p,f,e,r,cdef,Absyn.INFO(fname,ro,i1,i2,i3,i4,ts)),NONE(),path))
       equation
-        true = ModUtil.pathEqual(Absyn.IDENT(name),path);
+        true = Absyn.pathEqual(Absyn.IDENT(name),path);
         ts =Absyn.setTimeStampBool(ts,false);
       then ((Absyn.CLASS(name,p,f,e,r,cdef,Absyn.INFO(fname,ro,i1,i2,i3,i4,ts)),NONE(),path));
     case(inTpl) then inTpl;
@@ -3812,7 +3811,7 @@ protected function generateFunctionName
   input Absyn.Path functionPath;
   output String functionName;
 algorithm
-  functionName := ModUtil.pathStringReplaceDot(functionPath, "_");
+  functionName := Absyn.pathStringReplaceDot(functionPath, "_");
 end generateFunctionName;
 
 public function getFunctionDependencies

@@ -69,7 +69,6 @@ public import Absyn;
 
 protected import List;
 protected import Util;
-protected import ModUtil;
 
 public function dumpDepends "prints dependency information to stdout"
   input Depends depends;
@@ -392,8 +391,8 @@ algorithm
     /* Replace this node. NOTE: different from generic impl. Joins the list. */
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left,right = right),key,value)
       equation
-        true = ModUtil.pathEqual(rkey,key);
-        value = List.unionOnTrue(value,rval,ModUtil.pathEqual);
+        true = Absyn.pathEqual(rkey,key);
+        value = List.unionOnTrue(value,rval,Absyn.pathEqual);
         bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,value)),h,left,right));
       then
         bt;
@@ -674,7 +673,7 @@ algorithm
       /* hash func Search to the right */
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval))),key)
       equation
-        true = ModUtil.pathEqual(rkey,key);
+        true = Absyn.pathEqual(rkey,key);
       then
         rval;
 

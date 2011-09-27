@@ -519,6 +519,7 @@ algorithm
 
    
     case (RECORD(path = p),SCode.R_RECORD()) then ();
+    case (RECORD(path = p),SCode.R_CONNECTOR(_)) then ();
     case (HAS_RESTRICTIONS(path = p,hasEquations=false,hasConstraints=false,hasAlgorithms=false),SCode.R_RECORD()) then ();
     
     case (BLOCK(path = p),SCode.R_BLOCK()) then ();

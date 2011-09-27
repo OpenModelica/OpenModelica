@@ -10,7 +10,7 @@ SET(SRCMO Absyn.mo AbsynDep.mo Algorithm.mo Builtin.mo
 		  HashTable2.mo HashTable3.mo HashTable4.mo HashTable5.mo 
 		  HashTable6.mo HashTableCG.mo HashTableStringToPath.mo 
 		  Inline.mo Inst.mo InstExtends.mo Interactive.mo 
-		  Lookup.mo Main.mo MMath.mo MetaUtil.mo Mod.mo ModUtil.mo 
+		  Lookup.mo Main.mo MMath.mo MetaUtil.mo Mod.mo
 		  PartFn.mo Patternm.mo Prefix.mo PrefixUtil.mo Static.mo 
 		  SimCode.mo SimCodeC.mo SimCodeCSharp.mo 
 		  Types.mo TaskGraph.mo Tpl.mo TplAbsyn.mo TplCodegen.mo 

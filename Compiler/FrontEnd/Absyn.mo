@@ -66,6 +66,7 @@ encapsulated package Absyn
 
   The following are the types and uniontypes that are used for the AST:"
 
+protected import Debug;
 protected import Dump;
 protected import System;
 
@@ -1070,7 +1071,6 @@ end ExternalDecl;
 protected import List;
 protected import Util;
 protected import Print;
-protected import ModUtil;
 protected import Error;
 
 public constant TimeStamp dummyTimeStamp = TIMESTAMP(0.0,0.0);
@@ -2551,7 +2551,26 @@ public function pathEqual "function: pathEqual
   input Path inPath2;
   output Boolean outBoolean;
 algorithm
-  outBoolean := ModUtil.pathEqual(inPath1, inPath2);
+  outBoolean := match (inPath1, inPath2)
+    local
+      String id1,id2;
+      Boolean res;
+      Path path1,path2;
+    // fully qual vs. path
+    case (FULLYQUALIFIED(path1),path2) then pathEqual(path1,path2);
+    // path vs. fully qual
+    case (path1,FULLYQUALIFIED(path2)) then pathEqual(path1,path2);
+    // ident vs. ident 
+    case (IDENT(id1),IDENT(id2))
+      then stringEq(id1, id2);
+    // qual ident vs. qual ident 
+    case (QUALIFIED(id1, path1),QUALIFIED(id2, path2))
+      equation
+        res = Debug.bcallret2(stringEq(id1, id2), pathEqual, path1, path2, false);
+      then res;
+    // other return false
+    else false;
+  end match;
 end pathEqual;
 
 public function typeSpecEqual "
@@ -2567,12 +2586,12 @@ algorithm
       list<TypeSpec> lst1,lst2;
     case(TPATH(p1,oad1), TPATH(p2,oad2))
       equation
-        true = ModUtil.pathEqual(p1,p2);
+        true = pathEqual(p1,p2);
         true = optArrayDimEqual(oad1,oad2);
       then true;
     case(TCOMPLEX(p1,lst1,oad1),TCOMPLEX(p2,lst2,oad2))
       equation
-        true = ModUtil.pathEqual(p1,p2);
+        true = pathEqual(p1,p2);
         true = List.isEqualOnTrue(lst1,lst2,typeSpecEqual);
         true = optArrayDimEqual(oad1,oad2);
       then
@@ -2691,6 +2710,36 @@ algorithm
       then ss;
   end match;
 end pathString2;
+
+public function pathStringReplaceDot "function: pathStringReplaceDot
+  Helper function to pathString."
+  input Path inPath;
+  input String inString;
+  output String outString;
+algorithm
+  outString:=
+  match (inPath,inString)
+    local
+      String s,ns,s1,ss,str,dstr,safe_s;
+      Path n;
+    case (IDENT(name = s),str)
+      equation
+        dstr = stringAppend(str, str);
+        safe_s = System.stringReplace(s, str, dstr);
+      then
+        safe_s;
+    case(FULLYQUALIFIED(n),str) then pathStringReplaceDot(n,str);
+    case (QUALIFIED(name = s,path = n),str)
+      equation
+        ns = pathStringReplaceDot(n, str);
+        dstr = stringAppend(str, str);
+        safe_s = System.stringReplace(s, str, dstr);
+        s1 = stringAppend(safe_s, str);
+        ss = stringAppend(s1, ns);
+      then
+        ss;
+  end match;
+end pathStringReplaceDot;
 
 public function stringPath
   "Converts a string into a qualified path."
@@ -2827,7 +2876,7 @@ algorithm
   local Path p;
     case(suffix_path,path)
       equation
-      true = ModUtil.pathEqual(suffix_path,path);
+      true = pathEqual(suffix_path,path);
       then true;
     case(suffix_path,FULLYQUALIFIED(path = p))
       then pathSuffixOf(suffix_path,p);
@@ -4847,6 +4896,20 @@ algorithm
   end match;
 end isNotInnerOuter;
 
+public function innerOuterEqual "Returns true if two InnerOuter's are equal"
+  input InnerOuter io1;
+  input InnerOuter io2;
+  output Boolean res;
+algorithm
+  res := match(io1,io2)
+    case(INNER(),INNER()) then true;
+    case(OUTER(),OUTER()) then true;
+    case(INNER_OUTER(),INNER_OUTER()) then true;
+    case(NOT_INNER_OUTER(),NOT_INNER_OUTER()) then true;
+    else false;
+  end match;
+end innerOuterEqual;
+
 public function makeFullyQualified
 "Makes a path fully qualified unless it already is."
   input Path inPath;
@@ -4882,17 +4945,17 @@ algorithm
     case (NAMED_IMPORT(name = id,path=p1),NAMED_IMPORT(name = id2,path=p2))
       equation
         true = stringEq(id, id2);
-        true = ModUtil.pathEqual(p1,p2);
+        true = pathEqual(p1,p2);
       then
         true;
     case (QUAL_IMPORT(path=p1),QUAL_IMPORT(path=p2))
       equation
-        true = ModUtil.pathEqual(p1,p2);
+        true = pathEqual(p1,p2);
       then
         true;
     case (UNQUAL_IMPORT(path=p1),UNQUAL_IMPORT(path=p2))
       equation
-        true = ModUtil.pathEqual(p1,p2);
+        true = pathEqual(p1,p2);
       then
         true;
     case (_,_) then false;

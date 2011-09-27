@@ -65,7 +65,6 @@ protected import Inst;
 protected import List;
 protected import Lookup;
 protected import MetaUtil;
-protected import ModUtil;
 protected import OptManager;
 protected import Patternm;
 protected import PrefixUtil;
@@ -3744,16 +3743,16 @@ algorithm
       equation
         equality(flow1 = flow2);
         true = Types.equivtypes(t1, t2) "we do not check arrays here";
-        outer1 = ModUtil.isPureOuter(io1);
-        outer2 = ModUtil.isPureOuter(io2);
+        outer1 = Absyn.isOnlyOuter(io1);
+        outer2 = Absyn.isOnlyOuter(io2);
         false = boolAnd(outer2,outer1) "outer to outer illegal";
       then
         ();
 
     case (_,_,c1,_,_,c2,_,_,io1,io2,info)
       equation
-        true = ModUtil.isPureOuter(io1);
-        true = ModUtil.isPureOuter(io2);
+        true = Absyn.isOnlyOuter(io1);
+        true = Absyn.isOnlyOuter(io2);
         c1_str = ComponentReference.printComponentRefStr(c1);
         c2_str = ComponentReference.printComponentRefStr(c2);
         Error.addSourceMessage(Error.CONNECT_OUTER_OUTER, {c1_str,c2_str}, info);

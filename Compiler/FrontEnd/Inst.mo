@@ -146,7 +146,6 @@ protected import Interactive;
 protected import List;
 protected import Lookup;
 protected import MetaUtil;
-protected import ModUtil;
 protected import OptManager;
 protected import PrefixUtil;
 protected import SCodeUtil;

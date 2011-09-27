@@ -245,7 +245,6 @@ protected import Error;
 protected import Expression;
 protected import ExpressionDump;
 protected import List;
-protected import ModUtil;
 protected import RTOpts;
 protected import System;
 protected import Types;
@@ -4678,7 +4677,7 @@ algorithm
       /* Replace this node.*/
     case (DAE.AVLTREENODE(value = SOME(DAE.AVLTREEVALUE(rkey,rval)),height=h,left = left,right = right),key,value)
       equation
-        true = ModUtil.pathEqual(rkey, key);
+        true = Absyn.pathEqual(rkey, key);
         bt = balance(DAE.AVLTREENODE(SOME(DAE.AVLTREEVALUE(rkey,value)),h,left,right));
       then
         bt;

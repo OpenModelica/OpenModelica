@@ -95,7 +95,6 @@ protected import InnerOuter;
 protected import Inst;
 protected import List;
 protected import Mod;
-protected import ModUtil;
 protected import PartFn;
 protected import RTOpts;
 protected import SCodeUtil;
@@ -3068,7 +3067,7 @@ algorithm
       
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name), complexVarLst = varlst),SOME(path)), accRecDecls, rt)
       equation
-        sname = ModUtil.pathStringReplaceDot(name, "_");
+        sname = Absyn.pathStringReplaceDot(name, "_");
         false = listMember(sname,rt);
         vars = List.map(varlst, typesVar);
         rt_1 = sname :: rt;
@@ -3082,7 +3081,7 @@ algorithm
         
     case ((DAE.T_METARECORD(index = index, fields = varlst), SOME(path)), accRecDecls, rt)
       equation
-        sname = ModUtil.pathStringReplaceDot(path, "_");
+        sname = Absyn.pathStringReplaceDot(path, "_");
         false = listMember(sname,rt);
         fieldNames = List.map(varlst, generateVarName);
         accRecDecls = RECORD_DECL_DEF(path, fieldNames) :: accRecDecls;
@@ -3160,7 +3159,7 @@ algorithm
     case ({},accRecDecls,rt) then (accRecDecls,rt);
     case (DAE.METARECORDCALL(path=path,fieldNames=fieldNames)::rest, accRecDecls, rt)
       equation
-        name = ModUtil.pathStringReplaceDot(path, "_");
+        name = Absyn.pathStringReplaceDot(path, "_");
         false = listMember(name,rt);
         accRecDecls = RECORD_DECL_DEF(path, fieldNames) :: accRecDecls;
         rt_1 = name::rt;
@@ -8731,13 +8730,13 @@ algorithm
     case ({},_) then {};
     case ((first :: rest),path)
       equation
-        true = ModUtil.pathEqual(first, path);
+        true = Absyn.pathEqual(first, path);
         res = removePathFromList(rest, path);
       then
         res;
     case ((first :: rest),path)
       equation
-        false = ModUtil.pathEqual(first, path);
+        false = Absyn.pathEqual(first, path);
         res = removePathFromList(rest, path);
       then
         (first :: res);
@@ -9057,14 +9056,14 @@ algorithm
       
     case ((path :: paths),allpaths,iterpaths)
       equation
-        _ = List.getMemberOnTrue(path, allpaths, ModUtil.pathEqual);
+        _ = List.getMemberOnTrue(path, allpaths, Absyn.pathEqual);
         (allpaths,iterpaths) = appendNonpresentPaths(paths, allpaths, iterpaths);
       then
         (allpaths,iterpaths);
         
     case ((path :: paths),allpaths,iterpaths)
       equation
-        failure(_ = List.getMemberOnTrue(path, allpaths, ModUtil.pathEqual));
+        failure(_ = List.getMemberOnTrue(path, allpaths, Absyn.pathEqual));
         allpaths_1 = listAppend(allpaths, {path});
         iterpaths_1 = listAppend(iterpaths, {path});
         (allpaths_2,iterpaths_2) = appendNonpresentPaths(paths, allpaths_1, iterpaths_1);

@@ -87,7 +87,6 @@ protected import InnerOuter;
 protected import Inst;
 protected import List;
 protected import Mod;
-protected import ModUtil;
 protected import OptManager;
 protected import Prefix;
 protected import Print;
@@ -1194,7 +1193,7 @@ algorithm
     case(cache,env,(e as DAE.CALL(path = funcpath,attr = DAE.CALL_ATTR(ty = DAE.ET_COMPLEX(complexClassType = ClassInf.RECORD(complexName), varLst=varLst)))),vallst,impl,st,msg)
       equation
         Debug.fprintln("dynload", "CALL: record constructor: func: " +& Absyn.pathString(funcpath) +& " type path: " +& Absyn.pathString(complexName));
-        true = ModUtil.pathEqual(funcpath,complexName);
+        true = Absyn.pathEqual(funcpath,complexName);
         varNames = List.map(varLst,Expression.varName);
         Debug.fprintln("dynload", "CALL: record constructor: [success] func: " +& Absyn.pathString(funcpath));        
       then 

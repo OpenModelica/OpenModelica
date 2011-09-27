@@ -102,7 +102,6 @@ protected import InnerOuter;
 protected import List;
 protected import Lookup;
 protected import Mod;
-protected import ModUtil;
 protected import OptManager;
 protected import Patternm;
 protected import Print;
@@ -7258,13 +7257,13 @@ algorithm
     
     case ((Interactive.CFunction(path1,ty,handle,buildTime,fileName) :: rest),path2)
       equation
-        true = ModUtil.pathEqual(path1, path2);
+        true = Absyn.pathEqual(path1, path2);
       then
         (true, handle, buildTime, fileName);
     
     case ((Interactive.CFunction(path1,ty,_,_,_) :: rest),path2)
       equation
-        false = ModUtil.pathEqual(path1, path2);
+        false = Absyn.pathEqual(path1, path2);
         (res,handle,buildTime,fileName) = isFunctionInCflist(rest, path2);
       then
         (res,handle,buildTime,fileName);

@@ -584,7 +584,6 @@ public constant Attributes defaultConstAttr =
 // .......... functionality .........
 protected import Util;
 protected import Dump;
-protected import ModUtil;
 protected import List;
 protected import Print;
 protected import Error;
@@ -978,7 +977,7 @@ public function elementEqual
      
      case (EXTENDS(path1,_,mod1,_,_), EXTENDS(path2,_,mod2,_,_))      
        equation
-         true = ModUtil.pathEqual(path1,path2);
+         true = Absyn.pathEqual(path1,path2);
          true = modEqual(mod1,mod2);
        then 
          true;
@@ -1110,7 +1109,7 @@ protected function classDefEqual
      case (DERIVED(tySpec1,mod1,attr1,_),
            DERIVED(tySpec2,mod2,attr2,_))
        equation
-         true = ModUtil.typeSpecEqual(tySpec1, tySpec2);
+         true = Absyn.typeSpecEqual(tySpec1, tySpec2);
          true = modEqual(mod1,mod2);
          true = attributesEqual(attr1, attr2);
        then 
@@ -3386,7 +3385,7 @@ algorithm
         true = valueEq(v1, v2);
         true = valueEq(rd1, rd2);
         true = valueEq(f1, f2);
-        true = ModUtil.innerOuterEqual(io1, io2);
+        true = Absyn.innerOuterEqual(io1, io2);
         true = replaceableEqual(rpl1, rpl2); 
       then 
         true;

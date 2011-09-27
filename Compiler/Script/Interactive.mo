@@ -82,7 +82,6 @@ protected import List;
 protected import Lookup;
 protected import MetaUtil;
 protected import Mod;
-protected import ModUtil;
 protected import Parser;
 protected import Prefix;
 protected import Print;
@@ -2737,7 +2736,7 @@ algorithm
     case (((class_ as Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info)),SOME(pa),COMPONENTREPLACEMENT(which1 = class_id,the2 = old_comp,the3 = new_comp)))
       equation
         path_1 = Absyn.joinPaths(pa, Absyn.IDENT(id));
-        true = ModUtil.pathEqual(class_id, path_1);
+        true = Absyn.pathEqual(class_id, path_1);
         class_1 = renameComponentInClass(class_, old_comp, new_comp);
       then
         ((class_1,SOME(pa),
@@ -2745,7 +2744,7 @@ algorithm
     case (((class_ as Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info)),NONE(),COMPONENTREPLACEMENT(which1 = class_id,the2 = old_comp,the3 = new_comp)))
       equation
         path_1 = Absyn.IDENT(id);
-        true = ModUtil.pathEqual(class_id, path_1);
+        true = Absyn.pathEqual(class_id, path_1);
         class_1 = renameComponentInClass(class_, old_comp, new_comp);
       then
         ((class_1,NONE(),
@@ -4157,7 +4156,7 @@ algorithm
     case (comps,path)
       equation
         ((comp as COMPONENTITEM(comp_path,_,_))) = firstComponent(comps);
-        true = ModUtil.pathEqual(comp_path, path);
+        true = Absyn.pathEqual(comp_path, path);
         res = restComponents(comps);
         comps_1 = getComponentsFromClass(res, path);
         comps_2 = addComponentToComponents(comp, comps_1);
@@ -4166,7 +4165,7 @@ algorithm
     case (comps,path)
       equation
         ((comp as EXTENDSITEM(comp_path,_))) = firstComponent(comps);
-        true = ModUtil.pathEqual(comp_path, path);
+        true = Absyn.pathEqual(comp_path, path);
         res = restComponents(comps);
         comps_1 = getComponentsFromClass(res, path);
         comps_2 = addComponentToComponents(comp, comps_1);
@@ -4207,7 +4206,7 @@ algorithm
     case (comps,path)
       equation
         ((comp as COMPONENTITEM(_,comp_path,_))) = firstComponent(comps);
-        true = ModUtil.pathEqual(comp_path, path);
+        true = Absyn.pathEqual(comp_path, path);
         res = restComponents(comps);
         comps_1 = getComponentsWithType(res, path);
         comps_2 = addComponentToComponents(comp, comps_1);
@@ -4216,7 +4215,7 @@ algorithm
     case (comps,path)
       equation
         ((comp as EXTENDSITEM(_,comp_path))) = firstComponent(comps);
-        true = ModUtil.pathEqual(comp_path, path);
+        true = Absyn.pathEqual(comp_path, path);
         res = restComponents(comps);
         comps_1 = getComponentsWithType(res, path);
         comps_2 = addComponentToComponents(comp, comps_1);
@@ -4651,16 +4650,16 @@ algorithm
     case (comps,COMPONENTITEM(the1 = ap,the2 = bp,the3 = cr))
       equation
         COMPONENTITEM(a,b,c) = firstComponent(comps);
-        true = ModUtil.pathEqual(a, ap);
-        true = ModUtil.pathEqual(b, bp);
+        true = Absyn.pathEqual(a, ap);
+        true = Absyn.pathEqual(b, bp);
         true = Absyn.crefEqual(c, cr);
       then
         true;
     case (comps,EXTENDSITEM(the1 = ap,the2 = bp))
       equation
         EXTENDSITEM(a,b) = firstComponent(comps);
-        true = ModUtil.pathEqual(a, ap);
-        true = ModUtil.pathEqual(b, bp);
+        true = Absyn.pathEqual(a, ap);
+        true = Absyn.pathEqual(b, bp);
       then
         true;
     case (comps,comp)
@@ -6016,7 +6015,7 @@ algorithm
       inherit,submod,mod,env)
       equation
         (_,path_1) = Inst.makeFullyQualified(Env.emptyCache(),env, path);
-        true = ModUtil.pathEqual(inherit, path_1);
+        true = Absyn.pathEqual(inherit, path_1);
         eargs_1 = setSubmodifierInElementargs(eargs, submod, mod);
       then
         Absyn.ELEMENT(f,r,i,n,Absyn.EXTENDS(path,eargs_1,annOpt),info,constr);
@@ -6155,7 +6154,7 @@ algorithm
       Absyn.Path extpath,path;
     case (Absyn.EXTENDS(path = extpath),path)
       equation
-        res = ModUtil.pathEqual(path, extpath);
+        res = Absyn.pathEqual(path, extpath);
       then
         res;
   end match;
@@ -7389,7 +7388,7 @@ algorithm
     case ((Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info),SOME(pa),(old_class_path,new_class_path,p,path_str_lst,env)))
       equation
         path_1 = Absyn.joinPaths(pa, Absyn.IDENT(id));
-        true = ModUtil.pathEqual(old_class_path, path_1);
+        true = Absyn.pathEqual(old_class_path, path_1);
         new_name = Absyn.pathLastIdent(new_class_path);
         path_str = Absyn.pathString(new_class_path);
       then
@@ -7399,7 +7398,7 @@ algorithm
     case ((Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info),NONE(),(old_class_path,new_class_path,p,path_str_lst,env)))
       equation
         path_1 = Absyn.IDENT(id);
-        true = ModUtil.pathEqual(old_class_path, path_1);
+        true = Absyn.pathEqual(old_class_path, path_1);
         new_name = Absyn.pathLastIdent(new_class_path);
         path_str = Absyn.pathString(new_class_path);
       then
@@ -7487,7 +7486,7 @@ algorithm
         (cache,SCode.CLASS(name=name),cenv) = Lookup.lookupClass(Env.emptyCache(), env, path_1, false);
         path_1 = Absyn.IDENT(name);
         (_,path) = Inst.makeFullyQualified(cache, cenv, path_1);
-        true = ModUtil.pathEqual(path, old_comp);
+        true = Absyn.pathEqual(path, old_comp);
         new_path = changeLastIdent(path_1, new_comp);
       then
         (Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,Absyn.DERIVED(Absyn.TPATH(new_path,subscripts),attrs,elementarg,co),file_info),true);
@@ -7616,7 +7615,7 @@ algorithm
         (cache,SCode.CLASS(name=id),cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false);
         path_1 = Absyn.IDENT(id);
         (_,path) = Inst.makeFullyQualified(cache, cenv, path_1);
-        true = ModUtil.pathEqual(path, old_comp);
+        true = Absyn.pathEqual(path, old_comp);
         new_path = changeLastIdent(path, new_comp);
       then
         (Absyn.COMPONENTS(a,Absyn.TPATH(new_path,x),comp_items),true);
@@ -7624,7 +7623,7 @@ algorithm
       equation
         (cache,_,cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false) "print \"rename_class_in_element_spec Absyn.EXTENDS(path,_) not implemented yet\"" ;
         (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
-        true = ModUtil.pathEqual(path, old_comp);
+        true = Absyn.pathEqual(path, old_comp);
         new_path = changeLastIdent(path_1, new_comp);
       then
         (Absyn.EXTENDS(new_path,elargs,annOpt),true);
@@ -7660,7 +7659,7 @@ algorithm
       equation
         (cache,_,cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false);
         (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
-        true = ModUtil.pathEqual(path, old_comp);
+        true = Absyn.pathEqual(path, old_comp);
         new_path = changeLastIdent(path_1, new_comp);
       then
         (Absyn.NAMED_IMPORT(id,new_path),true);
@@ -7668,7 +7667,7 @@ algorithm
       equation
         (cache,_,cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false);
         (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
-        true = ModUtil.pathEqual(path, old_comp);
+        true = Absyn.pathEqual(path, old_comp);
         new_path = changeLastIdent(path_1, new_comp);
       then
         (Absyn.QUAL_IMPORT(new_path),true);
@@ -7676,7 +7675,7 @@ algorithm
       equation
         (cache,_,cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false);
         (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
-        true = ModUtil.pathEqual(path, old_comp);
+        true = Absyn.pathEqual(path, old_comp);
         new_path = changeLastIdent(path_1, new_comp);
       then
         (Absyn.UNQUAL_IMPORT(new_path),true);
@@ -9217,8 +9216,8 @@ algorithm
     
     case ((CFunction(functionInCf,t,funcHandle,_,_) :: rest), _)
       equation
-        true = ModUtil.pathEqual(functionInCf, functionName);
-        tmp = ModUtil.pathStringReplaceDot(functionName, "_");
+        true = Absyn.pathEqual(functionInCf, functionName);
+        tmp = Absyn.pathStringReplaceDot(functionName, "_");
         System.freeFunction(funcHandle);
         res = removeCf(rest, functionName);
       then
@@ -16980,12 +16979,12 @@ algorithm
     case ({},cl) then {cl};
     case ((INSTCLASS(qualName = path,daeElementLst = dae,env = env) :: xs),(newc as INSTCLASS(qualName = path2,daeElementLst = dae_1,env = env_1)))
       equation
-        true = ModUtil.pathEqual(path, path2);
+        true = Absyn.pathEqual(path, path2);
       then
         (newc :: xs);
     case (((x as INSTCLASS(qualName = path)) :: xs),(newc as INSTCLASS(qualName = path2)))
       equation
-        false = ModUtil.pathEqual(path, path2);
+        false = Absyn.pathEqual(path, path2);
         res = addInstantiatedClass(xs, newc);
       then
         (x :: res);
@@ -17010,12 +17009,12 @@ algorithm
       list<InstantiatedClass> xs;
     case (((x as INSTCLASS(qualName = path,daeElementLst = dae,env = env)) :: xs),path2)
       equation
-        true = ModUtil.pathEqual(path, path2);
+        true = Absyn.pathEqual(path, path2);
       then
         x;
     case (((x as INSTCLASS(qualName = path)) :: xs),path2)
       equation
-        false = ModUtil.pathEqual(path, path2);
+        false = Absyn.pathEqual(path, path2);
         res = getInstantiatedClass(xs, path2);
       then
         res;

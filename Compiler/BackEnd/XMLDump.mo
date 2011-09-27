@@ -98,7 +98,6 @@ protected import Error;
 protected import Expression;
 protected import ExpressionDump;
 protected import List;
-protected import ModUtil;
 protected import Print;
 protected import Util;
 protected import DAEDump;
@@ -2103,7 +2102,7 @@ algorithm
   case (s :: remaining)
     equation
       s_path = Absyn.pathStringNoQual(s);
-      fn_name_str = ModUtil.pathStringReplaceDot(s, "_");
+      fn_name_str = Absyn.pathStringReplaceDot(s, "_");
       fn_name_str = stringAppend("_", fn_name_str);
       Print.printBuf("\n<");Print.printBuf(FUNCTION);
       Print.printBuf(" ");Print.printBuf(FUNCTION_ORIGNAME);Print.printBuf("=\"");Print.printBuf(s_path);Print.printBuf("\"");

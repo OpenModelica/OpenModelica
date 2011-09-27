@@ -71,7 +71,6 @@ protected import Error;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import List;
-protected import ModUtil;
 protected import OptManager;
 protected import Patternm;
 protected import Prefix;
@@ -6028,13 +6027,13 @@ algorithm
     // function calls
     case (DAE.CALL(path = path1,expLst = expl1),DAE.CALL(path = path2,expLst = expl2),_,_)
       equation
-        res = ModUtil.pathEqual(path1, path2);
+        res = Absyn.pathEqual(path1, path2);
       then expEqualWorkList(expl1, expl2, res);
     
     // partially evaluated functions
     case (DAE.PARTEVALFUNCTION(path = path1,expList = expl1),DAE.PARTEVALFUNCTION(path = path2,expList = expl2),_,_)
       equation
-        res = ModUtil.pathEqual(path1, path2);
+        res = Absyn.pathEqual(path1, path2);
       then expEqualWorkList(expl1, expl2, res);
     
     // arrays
@@ -6144,7 +6143,7 @@ algorithm
 
     case (DAE.METARECORDCALL(path = path1,args = expl1),DAE.METARECORDCALL(path = path2,args = expl2),_,_)
       equation
-        res = ModUtil.pathEqual(path1, path2);
+        res = Absyn.pathEqual(path1, path2);
       then expEqualWorkList(expl1, expl2, res);
 
     case (e1 as DAE.MATCHEXPRESSION(matchType = _),
@@ -6411,7 +6410,7 @@ algorithm
     case (DAE.NEQUAL(ty = _),DAE.NEQUAL(ty = _)) then true;
     case (DAE.USERDEFINED(fqName = p1),DAE.USERDEFINED(fqName = p2))
       equation
-        res = ModUtil.pathEqual(p1, p2);
+        res = Absyn.pathEqual(p1, p2);
       then
         res;
     case (_,_) then false;
