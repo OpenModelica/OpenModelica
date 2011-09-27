@@ -192,9 +192,9 @@ void free_type_description(type_description *desc)
     break;
   case TYPE_DESC_STRING:
     if (desc->retval)
-      free(desc->data.string);
+      free((char*)desc->data.string);
     else
-      free_modelica_string(&(desc->data.string));
+      free_modelica_string((char**)&(desc->data.string));
     break;
   case TYPE_DESC_REAL_ARRAY:
     if (desc->retval) {
@@ -546,7 +546,7 @@ int read_modelica_string(type_description **descptr, modelica_string_t *str)
   type_description *desc = (*descptr)++;
   switch (desc->type) {
   case TYPE_DESC_STRING:
-    *str = desc->data.string;
+    *str = (char*)desc->data.string;
     return 0;
   default:
     break;
@@ -566,9 +566,9 @@ void write_modelica_string(type_description *desc, modelica_string *str)
     /* Can't use memory pool */
     len = modelica_string_length(*str);
     desc->data.string = malloc(len + 1);
-    memcpy(desc->data.string, *str, len + 1);
+    memcpy((char*)desc->data.string, *str, len + 1);
   } else {
-    *str = copy_modelica_string(&desc->data.string);
+    *str = copy_modelica_string(desc->data.string);
   }
 }
 

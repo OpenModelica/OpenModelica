@@ -561,7 +561,7 @@ int initialize(const std::string init_method)
   if(sim_verbose >= LOG_INIT)
   {
     fprintf(stdout, "info    | initialize | initialization by method: %s\n", init_method.c_str());
-    fprintf(stdout, "info    | initialize | fixed attribute for states:\n", init_method.c_str());
+    fprintf(stdout, "info    | initialize | fixed attribute for states:\n");
     for(int i=0;i<globalData->nStates; i++)
       fprintf(stdout, "info    | initialize | %s(fixed=%s)\n", globalData->statesNames[i].name, (globalData->initFixed[i] ? "true" : "false"));
     fprintf(stdout, "info    | initialize | number of non-fixed variables: %d\n", (int) nz);

@@ -1107,7 +1107,7 @@ const char* __CheckForJavaException(JNIEnv* env)
       return "The exception handler triggered an exception.\nMake sure the java runtime is installed in $OPENMODELICAHOME/share/java/modelica_java.jar\n";
     }
     inside_exception = 1;
-    res = GetStackTrace(env, exc);
+    res = (char*)GetStackTrace(env, exc);
     inside_exception = 0;
 
     (*env)->DeleteLocalRef(env, exc);

@@ -168,7 +168,6 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
   else {
     // return expr(time-delayTime)
     assert(delayTime >= 0.0);
-    double skipToTimeStamp = time - delayMax;
     double timeStamp = time - delayTime;
     double time0, time1, value0, value1;
     

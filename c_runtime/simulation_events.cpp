@@ -299,31 +299,6 @@ unique(void *base, size_t nmemb, size_t size, int
   return nmemb - nuniq;
 }
 
-// Array does not need to be sorted
-static int
-filter_all_lesser(void *base, void *a, size_t nmemb, size_t size, int
-    (*compar)(const void *, const void *))
-{
-  size_t nuniq = 0;
-  size_t i;
-  void *b, *c;
-  for (i = 0; i < nmemb; i++)
-    {
-      b = ((char*) base) + i * size;
-      if (compar(a, b) >= 0)
-        {
-          nuniq++;
-        }
-      else
-        {
-          c = ((char*) base) + (i - nuniq) * size;
-          if (b != c)
-            memcpy(c, b, size); // Happens when nuniq==0
-        }
-    }
-  return nmemb - nuniq;
-}
-
 void
 initSample(double start, double stop)
 {

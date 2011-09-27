@@ -32,6 +32,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <string.h>
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
@@ -68,11 +69,6 @@ static int rtclock_compare(rtclock_t,rtclock_t);
 
 static rtclock_t max_rtclock(rtclock_t t1, rtclock_t t2) {
   if (rtclock_compare(t1,t2) < 0) return t2;
-  return t1;
-}
-
-static rtclock_t min_rtclock(rtclock_t t1, rtclock_t t2) {
-  if (rtclock_compare(t1,t2) > 0) return t2;
   return t1;
 }
 
