@@ -1881,9 +1881,10 @@ case SES_NONLINEAR(__) then
   #endif<%\n%>
   start_nonlinear_system(<%size%>);
   <%crefs |> name hasindex i0 =>
+    let namestr = cref(name)
     <<
-    nls_x[<%i0%>] = extraPolate(<%cref(name)%>);
-    nls_xold[<%i0%>] = $P$old<%cref(name)%>;
+    nls_x[<%i0%>] = extraPolate($P$old<%namestr%>,$P$old2<%namestr%>);
+    nls_xold[<%i0%>] = $P$old<%namestr%>;
     >>
   ;separator="\n"%>
   solve_nonlinear_system(residualFunc<%index%>, <%reverseLookupEquationNumber(index)%>);
