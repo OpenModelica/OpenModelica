@@ -296,7 +296,7 @@ int lr = (size*(size + 1)) / 2; \
 int ldfjac = size;
 #define end_nonlinear_system() } do {} while(0)
 
-#define extraPolate(old1,old2) (localData->oldTime == localData->oldTime2 ) ? v: \
+#define extraPolate(v,old1,old2) (localData->oldTime == localData->oldTime2 ) ? v: \
 (((old1)-(old2))/(localData->oldTime-localData->oldTime2)*localData->timeValue \
 +(localData->oldTime*(old2)-localData->oldTime2*(old1))/ \
 (localData->oldTime-localData->oldTime2))

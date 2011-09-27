@@ -1883,7 +1883,7 @@ case SES_NONLINEAR(__) then
   <%crefs |> name hasindex i0 =>
     let namestr = cref(name)
     <<
-    nls_x[<%i0%>] = extraPolate($P$old<%namestr%>,$P$old2<%namestr%>);
+    nls_x[<%i0%>] = extraPolate(<%namestr%>,$P$old<%namestr%>,$P$old2<%namestr%>);
     nls_xold[<%i0%>] = $P$old<%namestr%>;
     >>
   ;separator="\n"%>
