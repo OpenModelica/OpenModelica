@@ -9815,9 +9815,10 @@ algorithm
     // MetaModelica Partial Function
     case (cache,env,c,impl,doVect,pre,evalCref,info)
       equation
-        //true = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
+        // true = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
         path = Absyn.crefToPath(c);
-        (cache,{t}) = Lookup.lookupFunctionsInEnv(cache,env,path,info);
+        // call the lookup function that removes errors when it fails!
+        (cache, {t}) = lookupFunctionsInEnvNoError(cache, env, path, info);
         (isBuiltin,isBuiltinFn,path) = isBuiltinFunc(path,t);
         isBuiltinFnOrInlineBuiltin = not valueEq(DAE.FUNCTION_NOT_BUILTIN(),isBuiltin);
         (tt,optPath) = t;
@@ -9831,7 +9832,7 @@ algorithm
         (cache,Util.SUCCESS()) = instantiateDaeFunction(cache,env,path,isBuiltinFn,NONE(),true);
       then
         (cache,SOME((exp,DAE.PROP(t,DAE.C_CONST()),DAE.dummyAttrConst /* RO */)));
-    
+        
     // MetaModelica extension
     case (cache,env,Absyn.CREF_IDENT("NONE",{}),impl,doVect,_,_,info)
       equation
@@ -9876,6 +9877,35 @@ algorithm
         (cache,NONE());
   end matchcontinue;
 end elabCref1;
+
+protected function lookupFunctionsInEnvNoError
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Path inPath;
+  input Absyn.Info inInfo;
+  output Env.Cache outCache;
+  output list<DAE.Type> outTypesTypeLst;
+algorithm
+  (outCache, outTypesTypeLst) := matchcontinue(inCache, inEnv, inPath, inInfo)
+    
+    case (inCache, inEnv, inPath, inInfo)
+      equation
+        ErrorExt.setCheckpoint("Static.lookupFunctionsInEnvNoError");
+        (outCache, outTypesTypeLst) = Lookup.lookupFunctionsInEnv(inCache, inEnv, inPath, inInfo);
+        // rollback lookup errors!
+        ErrorExt.rollBack("Static.lookupFunctionsInEnvNoError");
+      then
+        (outCache, outTypesTypeLst);
+    
+    case (inCache, inEnv, inPath, inInfo)
+      equation
+        // rollback lookup errors!
+        ErrorExt.rollBack("Static.lookupFunctionsInEnvNoError");
+      then
+        fail();
+  end matchcontinue;
+end lookupFunctionsInEnvNoError;
+
 
 protected function evaluateEmptyVariable
   "A variable with a 0-length dimension can be evaluated.

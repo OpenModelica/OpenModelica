@@ -2501,20 +2501,31 @@ protected function extractAllComponentreplacements
   input Absyn.ComponentRef cref2;
   output ComponentReplacementRules comp_reps;
 algorithm
-  comp_reps := match(p,class_,cref1,cref2)
-  local
-    Components comps;
-    Absyn.Path class_path;
-    ComponentReplacementRules comp_repsrules;
+  comp_reps := matchcontinue(p,class_,cref1,cref2)
+    local
+      Components comps;
+      Absyn.Path class_path;
+      ComponentReplacementRules comp_repsrules;
+    
     case(p,class_,cref1,cref2)
       equation
+        ErrorExt.setCheckpoint("Interactive.extractAllComponentreplacements");
         comps = extractAllComponents(p, Absyn.crefToPath(class_)) "class in package" ;
+        // rollback errors if we succeed
+        ErrorExt.rollBack("Interactive.extractAllComponentreplacements");
         false = isClassReadOnly(getPathedClassInProgram(Absyn.crefToPath(class_),p));
         class_path = Absyn.crefToPath(class_);
         comp_repsrules = COMPONENTREPLACEMENTRULES({COMPONENTREPLACEMENT(class_path,cref1,cref2)},1);
         comp_reps = getComponentreplacementsrules(comps, comp_repsrules, 0);
       then comp_reps;
-  end match;
+    
+    case(p,class_,cref1,cref2)
+      equation
+        // keep errors if we fail!
+        ErrorExt.delCheckpoint("Interactive.extractAllComponentreplacements");
+      then
+        fail();        
+  end matchcontinue;
 end extractAllComponentreplacements;
 
 protected function isClassReadOnly

@@ -844,6 +844,9 @@ algorithm
       list<Env.Frame> env;
       Prefix.Prefix pre;
       list<Absyn.Subscript> subcr;
+      list<DAE.Subscript> sList;
+      list<DAE.SubMod> smods;
+      
     case (SCode.NAMEMOD(ident = i,A = m),env,pre)
       equation
         m_1 = elabUntypedMod(m, env, pre);
@@ -851,9 +854,11 @@ algorithm
         {DAE.NAMEMOD(i,m_1)};
     case (SCode.IDXMOD(subscriptLst = subcr,an = m),env,pre)
       equation
+        (_,sList,DAE.C_CONST()) = Static.elabSubscripts(Env.emptyCache(), env, subcr, true,  pre, Absyn.dummyInfo);
         m_1 = elabUntypedMod(m, env, pre);
+        smods = makeIdxmods(sList, m_1);     
       then
-        {DAE.IDXMOD({-1},m_1)};
+        smods;
   end match;
 end elabUntypedSubmod;
 

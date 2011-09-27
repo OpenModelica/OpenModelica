@@ -8073,14 +8073,12 @@ algorithm
         (cache,compenv,ih,store,dae,csets,ty,graph);
 
     // Array variable with unknown dimensions, but no binding
-    /*
-    case (cache,env,ih,store,ci_state,DAE.NOMOD(),pre,csets,n,cl,attr,pf,
-      ((dim as DAE.DIM_UNKNOWN()) :: dims),idxs,inst_dims,impl,comment,info,graph)
+    case (cache,env,ih,store,ci_state,DAE.NOMOD(),pre,n,cl,attr,pf,
+      ((dim as DAE.DIM_UNKNOWN()) :: dims),idxs,inst_dims,impl,comment,info,graph,csets)
       equation
         Error.addSourceMessage(Error.FAILURE_TO_DEDUCE_DIMS_NO_MOD,{n},info);
       then
         fail();
-    */
 
     // failtrace 
     case (_,env,ih,_,_,mod,pre,n,_,_,_,_,_,_,_,_,_,_,_)
@@ -9083,6 +9081,7 @@ algorithm
       then
         (cache,env_1,ih,updatedComps);
 
+    /*
     case (cache,env,ih,pre,mods,cref,ci_state,impl,updatedComps)
       equation
         id = Absyn.crefFirstIdent(cref);
@@ -9092,6 +9091,7 @@ algorithm
         Error.addSourceMessage(Error.COMPILER_WARNING, {str}, info);
       then
         (cache,env,ih,updatedComps);
+    */
 
     // report an error!
     case (cache,env,ih,pre,mod,cref,ci_state,impl,updatedComps)
@@ -9110,6 +9110,62 @@ algorithm
 end updateComponentInEnv;
 
 protected function updateComponentInEnv2
+" Helper function, checks if the component was already instantiated.
+  If it was, don't do it again."
+  input Env.Cache cache;
+  input Env.Env env;
+  input Env.Env cenv;
+  input InstanceHierarchy inIH;
+  input Prefix.Prefix pre;
+  input Absyn.Path path;
+  input String name;
+  input list<Absyn.Subscript> ad;
+  input SCode.Element cl;
+  input SCode.Attributes attr;
+  input SCode.Prefixes inPrefixes;
+  input DAE.Attributes dattr;
+  input Absyn.Info info;
+  input SCode.Mod m;
+  input DAE.Mod cmod;
+  input DAE.Mod mod;
+  input Absyn.ComponentRef cref;
+  input ClassInf.State ci_state;
+  input Boolean impl;
+  input HashTable5.HashTable updatedComps;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
+  output InstanceHierarchy outIH;
+  output HashTable5.HashTable outUpdatedComps;
+algorithm
+  (outCache,outEnv,outIH,outUpdatedComps) := matchcontinue (cache,env,cenv,inIH,pre,path,name,ad,cl,attr,inPrefixes,dattr,info,m,cmod,mod,cref,ci_state,impl,updatedComps)
+    local
+      DAE.Type ty;
+      DAE.Mod m_1,classmod,mm,mod_1,mod_2,mod_3;
+      list<Env.Frame> compenv;
+      Option<DAE.EqMod> eq;
+      list<DAE.Dimension> dims;
+      DAE.Binding binding;
+      Absyn.ComponentRef owncref;
+      InstanceHierarchy ih;
+      SCode.Visibility vis;
+
+    case (cache,env,cenv,ih,pre,path,name,ad,cl,attr,_,dattr,info,m,cmod,mod,cref,ci_state,impl,updatedComps)
+      equation
+        ErrorExt.setCheckpoint("Inst.updateComponentInEnv2");
+        (cache,env,ih,updatedComps) = updateComponentInEnv2_dispatch(cache,env,cenv,ih,pre,path,name,ad,cl,attr,inPrefixes,dattr,info,m,cmod,mod,cref,ci_state,impl,updatedComps);
+        ErrorExt.delCheckpoint("Inst.updateComponentInEnv2");
+      then 
+        (cache,env,ih,updatedComps);
+    
+    case (cache,env,cenv,ih,pre,path,name,ad,cl,attr,_,dattr,info,m,cmod,mod,cref,ci_state,impl,updatedComps)
+      equation
+        ErrorExt.rollBack("Inst.updateComponentInEnv2");
+      then
+        fail();
+  end matchcontinue;
+end updateComponentInEnv2;
+
+protected function updateComponentInEnv2_dispatch
 " Helper function, checks if the component was already instantiated.
   If it was, don't do it again."
   input Env.Cache cache;
@@ -9215,7 +9271,7 @@ algorithm
         eq = Mod.modEquation(m_1);
         
         owncref = Absyn.CREF_IDENT(name,{});
-        (cache,dims) = elabArraydim(cache,env,owncref,path,ad,eq,impl,NONE(),true, false,pre,info,{})
+        (cache,dims) = elabArraydim(cache,env,owncref,path,ad,eq,impl,NONE(),true,false,pre,info,{})
         "The variable declaration and the (optional) equation modification are inspected for array dimensions." ;
         
         /*
@@ -9231,7 +9287,7 @@ algorithm
         
         // Instantiate the component */
         (cache,compenv,ih,_,_,_,ty,_) = 
-          instVar(cache, cenv, ih, UnitAbsyn.noStore, ci_state, classmod, pre,
+          instVar(cache, cenv, ih, UnitAbsyn.noStore, ci_state, m_1 /* classmod */, pre,
           name, cl, attr, inPrefixes, dims, {}, {}, impl, NONE(), info, ConnectionGraph.EMPTY, Connect.emptySet, env);
         
         // print("updateComponentInEnv -> 1 component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
@@ -9253,7 +9309,7 @@ algorithm
         //Debug.traceln("- Inst.updateComponentInEnv2 failed");
       then fail();
   end matchcontinue;
-end updateComponentInEnv2;
+end updateComponentInEnv2_dispatch;
 
 protected function updateComponentInEnv3
   input Env.Cache inCache;
@@ -15237,12 +15293,14 @@ algorithm
          _,impl,inst_dims,pre,mods,info)
          // we have reference to ourself, try to instantiate type.
       equation
+        ErrorExt.setCheckpoint("Inst.removeSelfReferenceAndUpdate");
         cl2 = removeCrefFromCrefs(cl1, c1);
         (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, true);
-        (cache,dims) = elabArraydim(cache,cenv, c1, sty, ad,NONE(), impl,NONE(),true, false,pre,info,inst_dims);
+        (cache,dims) = elabArraydim(cache,cenv, c1, sty, ad, NONE(), impl, NONE(), true, false, pre, info, inst_dims);
+        
         (cache,compenv,ih,store,_,_,ty,_) = 
-          instVar(cache,cenv,ih, store,state, DAE.NOMOD(), pre, n, c, attr,
-            inPrefixes, dims, {}, inst_dims, true,NONE(),info,ConnectionGraph.EMPTY, Connect.emptySet, env);
+          instVar(cache, cenv, ih, store, state, DAE.NOMOD(), pre, n, c, attr,
+            inPrefixes, dims, {}, inst_dims, true, NONE(), info, ConnectionGraph.EMPTY, Connect.emptySet, env);
 
         // print("component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
 
@@ -15250,8 +15308,18 @@ algorithm
         vis = SCode.prefixesVisibility(inPrefixes);
         new_var = DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,param,dir,io),vis,ty,DAE.UNBOUND(),NONE());
         env = Env.updateFrameV(env, new_var, Env.VAR_TYPED(), compenv);
+        ErrorExt.delCheckpoint("Inst.removeSelfReferenceAndUpdate");
       then
         (cache,env,ih,store,cl2);
+        
+    case(cache,env,ih,store,cl1,c1 as Absyn.CREF_IDENT(name = n) ,sty,state,
+         (attr as SCode.ATTR(arrayDims = ad, flowPrefix = flowPrefix, streamPrefix = streamPrefix,
+                             variability = param, direction = dir)),
+         _,impl,inst_dims,pre,mods,info)
+      equation
+        ErrorExt.rollBack("Inst.removeSelfReferenceAndUpdate");
+      then
+        fail();
 
     case(cache,env,ih,store,cl1,c1,_,_,_,_,_,_,_,_,_)
       equation

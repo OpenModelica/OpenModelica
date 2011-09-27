@@ -180,11 +180,11 @@ algorithm
         ht = getLocalIdentList(importelts,ht,getLocalIdentElement);
         
         //tmp = tick(); Debug.traceln("try fix local idents " +& intString(tmp));
-        (cache,compelts1) = fixLocalIdents(cache, cenv1, compelts1, ht);
-        (cache,eq1_1) = fixList(cache, cenv1, eq1_1, ht,fixEquation);
-        (cache,ieq1_1) = fixList(cache, cenv1, ieq1_1, ht,fixEquation);
-        (cache,alg1_1) = fixList(cache, cenv1, alg1_1, ht,fixAlgorithm);
-        (cache,ialg1_1) = fixList(cache, cenv1, ialg1_1, ht,fixAlgorithm);
+        (cache,compelts1) = fixLocalIdents(cache, cenv3, compelts1, ht);
+        (cache,eq1_1) = fixList(cache, cenv3, eq1_1, ht,fixEquation);
+        (cache,ieq1_1) = fixList(cache, cenv3, ieq1_1, ht,fixEquation);
+        (cache,alg1_1) = fixList(cache, cenv3, alg1_1, ht,fixAlgorithm);
+        (cache,ialg1_1) = fixList(cache, cenv3, ialg1_1, ht,fixAlgorithm);
         //Debug.traceln("fixed local idents " +& intString(tmp));
 
         (cache,env2,ih,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = instExtendsList(cache,env,ih,mod,pre,rest,ci_state,className,impl,isPartialInst)
@@ -1285,9 +1285,10 @@ algorithm
     local
       String id;
       Absyn.Path path1,path2;
+    
     case (cache,env,path1 as Absyn.FULLYQUALIFIED(_),ht)
       equation
-        Debug.fprintln("debug", "Path FULLYQUAL: " +& Absyn.pathString(path)); 
+        //Debug.fprintln("debug", "Path FULLYQUAL: " +& Absyn.pathString(path)); 
       then 
         (cache,path1);
     
@@ -1296,7 +1297,7 @@ algorithm
         id = Absyn.pathFirstIdent(path1);
         path2 = BaseHashTable.get(id,ht);
         path2 = Absyn.pathReplaceFirstIdent(path1,path2);
-        Debug.fprintln("debug", "Replacing: " +& Absyn.pathString(path1) +& " with " +& Absyn.pathString(path2) +& " s:" +& Env.printEnvPathStr(env));
+        //Debug.fprintln("debug", "Replacing: " +& Absyn.pathString(path1) +& " with " +& Absyn.pathString(path2) +& " s:" +& Env.printEnvPathStr(env));
       then (cache,path2);
     /*
     // when a class is partial, do not fully qualify as it SHOULD POINT TO THE ONE IN THE DERIVED CLASS!
@@ -1317,18 +1318,41 @@ algorithm
 
     case (cache,env,path,ht)
       equation
-        Debug.fprintln("debug","Try makeFullyQualified " +& Absyn.pathString(path));
+        //Debug.fprintln("debug","Try makeFullyQualified " +& Absyn.pathString(path));
         (cache,path) = Inst.makeFullyQualified(cache,env,path);
-        Debug.fprintln("debug","FullyQual: " +& Absyn.pathString(path));
+        //Debug.fprintln("debug","FullyQual: " +& Absyn.pathString(path));
       then (cache,path);
     
     case (cache,env,path,_)
       equation
-        Debug.fprintln("debug", "Path not fixed: " +& Absyn.pathString(path) +& "\n"); 
+        //Debug.fprintln("debug", "Path not fixed: " +& Absyn.pathString(path) +& "\n"); 
       then 
         (cache,path);
   end matchcontinue;
 end fixPath;
+
+protected function lookupVarNoErrorMessage
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input DAE.ComponentRef inComponentRef;
+  output Env.Env outEnv;
+  output String id;
+algorithm
+  (outEnv, id) := matchcontinue(inCache, inEnv, inComponentRef)
+    case (inCache, inEnv, inComponentRef)
+      equation
+        ErrorExt.setCheckpoint("InstExtends.lookupVarNoErrorMessage");        
+        (_,_,_,_,_,_,outEnv,_,id) = Lookup.lookupVar(inCache, inEnv, inComponentRef);
+        ErrorExt.rollBack("InstExtends.lookupVarNoErrorMessage");        
+      then
+        (outEnv, id);
+    case (_, _, _)
+      equation
+        ErrorExt.rollBack("InstExtends.lookupVarNoErrorMessage");
+      then
+        fail();
+  end matchcontinue;
+end lookupVarNoErrorMessage;
 
 protected function fixCref
 " All of the fix functions do the following:
@@ -1350,24 +1374,24 @@ algorithm
     case (cache,env,cref,ht)
       equation
         id = Absyn.crefFirstIdent(cref);
-        Debug.fprintln("debug","Try ht lookup " +& id);
+        //Debug.fprintln("debug","Try ht lookup " +& id);
         path = BaseHashTable.get(id,ht);
-        Debug.fprintln("debug","Got path " +& Absyn.pathString(path));
+        //Debug.fprintln("debug","Got path " +& Absyn.pathString(path));
         cref = Absyn.crefReplaceFirstIdent(cref,path);
-        Debug.fprintln("debug", "Cref HT fixed: " +& Absyn.printComponentRefStr(cref));
+        //Debug.fprintln("debug", "Cref HT fixed: " +& Absyn.printComponentRefStr(cref));
       then (cache,cref);
 
-    // try lookup var 
+    // try lookup var (constant in a package?)
     case (cache,env,cref,ht)
       equation
         id = Absyn.crefFirstIdent(cref);
         cref_ = ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{});
-        Debug.fprintln("debug","Try lookupV " +& id);
-        (_,_,_,_,_,_,env,_,id) = Lookup.lookupVar(cache,env,cref_);
-        Debug.fprintln("debug","Got env " +& intString(listLength(env)));
+        //Debug.fprintln("debug","Try lookupV " +& id);
+        (env,id) = lookupVarNoErrorMessage(cache,env,cref_);
+        //Debug.fprintln("debug","Got env " +& intString(listLength(env)));
         env = Env.openScope(env,SCode.ENCAPSULATED(),SOME(id),NONE());
         cref = Absyn.crefReplaceFirstIdent(cref,Env.getEnvName(env));
-        Debug.fprintln("debug", "Cref VAR fixed: " +& Absyn.printComponentRefStr(cref));
+        //Debug.fprintln("debug", "Cref VAR fixed: " +& Absyn.printComponentRefStr(cref));
       then (cache,cref);    
 
     /*// when a class is partial, do not fully qualify as it SHOULD POINT TO THE ONE IN THE DERIVED CLASS!
@@ -1391,17 +1415,17 @@ algorithm
     case (cache,env,cref,ht)
       equation
         id = Absyn.crefFirstIdent(cref);
-        Debug.fprintln("debug","Try lookupC " +& id);
+        //Debug.fprintln("debug","Try lookupC " +& id);
         (_,_,env) = Lookup.lookupClass(cache,env,Absyn.IDENT(id),false);
-        Debug.fprintln("debug","Got env " +& intString(listLength(env)));
+        //Debug.fprintln("debug","Got env " +& intString(listLength(env)));
         env = Env.openScope(env,SCode.ENCAPSULATED(),SOME(id),NONE());
         cref = Absyn.crefReplaceFirstIdent(cref,Env.getEnvName(env));
-        Debug.fprintln("debug", "Cref CLASS fixed: " +& Absyn.printComponentRefStr(cref));
+        //Debug.fprintln("debug", "Cref CLASS fixed: " +& Absyn.printComponentRefStr(cref));
       then (cache,cref);
         
     case (cache,env,cref,_)
       equation
-        Debug.fprintln("debug", "Cref not fixed: " +& Absyn.printComponentRefStr(cref)); 
+        //Debug.fprintln("debug", "Cref not fixed: " +& Absyn.printComponentRefStr(cref)); 
       then 
         (cache,cref);
     

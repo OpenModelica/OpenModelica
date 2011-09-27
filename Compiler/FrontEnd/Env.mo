@@ -31,7 +31,7 @@
 
 encapsulated package Env
 "
-  file:         Env.mo
+  file:        Env.mo
   package:     Env
   description: Environmane management
 

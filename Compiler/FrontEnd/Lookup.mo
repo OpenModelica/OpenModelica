@@ -1239,6 +1239,7 @@ algorithm
             Util.makeStatefulBoolean(true) /* In order to use the prevFrames, we need to make sure we can't instantiate one of the classes too soon! */,
             false);
         Util.setStatefulBoolean(inState,true);
+                
         env3 = Env.openScope(env2, encflag, SOME(n), Env.restrictionToScopeType(r));
         ci_state = ClassInf.start(r, Env.getEnvName(env3));
         // Debug.fprintln("instTrace", "LOOKUP VAR IN PACKAGES ICD: " +& Env.printEnvPathStr(env3) +& " var: " +& ComponentReference.printComponentRefStr(cref));
