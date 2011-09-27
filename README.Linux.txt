@@ -8,7 +8,7 @@ $ sudo apt-get build-dep openmodelica
 $ ./configure --with-omniORB
 $ make # or make omc if you only want the omc core and not the qtclients
 
-How to compile on Linux (all from source)
+How to compile on Linux/BSD (all from source)
 ===================================================
 
 You need:
