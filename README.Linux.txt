@@ -37,7 +37,9 @@ The latest OpenModelica uses Qt for potting and 3D functionality. You will also 
     SoQt     (http://www.coin3d.org - tested with 1.4.1; deprecated)
 OMOptim uses some packages for its optimization algorithms
     paradisEO (http://paradiseo.gforge.inria.fr/ - tested with 1.3)
-
+Note:
+    FreeBSD versions of smlnj/mlton only compile using 32-bit versions of the OS.
+    The rml-mmc package needs some manual changes, too. It's not worth it ;)
 
 How to compile on Ubuntu Linux (using available binary packages for dependencies)
 =================================================================================
