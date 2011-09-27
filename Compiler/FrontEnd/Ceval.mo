@@ -1101,6 +1101,7 @@ algorithm
     case "stringListStringChar" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalStringListStringChar;
     case "listStringCharString" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListStringCharString;
     case "stringAppendList" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalStringAppendList;
+    case "stringDelimitList" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalStringDelimitList;
     case "listLength" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListLength;
     case "listAppend" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListAppend;
     case "listReverse" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListReverse;
@@ -2861,6 +2862,40 @@ algorithm
         (cache,Values.STRING(str),st);
   end match;
 end cevalStringAppendList;
+
+protected function cevalStringDelimitList
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<DAE.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      list<Env.Frame> env;
+      DAE.Exp exp1,exp2;
+      Boolean impl;
+      Option<Interactive.SymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+      String str;
+      list<String> chList;
+      list<Values.Value> valList;
+    case (cache,env,{exp1,exp2},impl,st,msg)
+      equation
+        (cache,Values.LIST(valList),st) = ceval(cache,env, exp1, impl, st,msg);
+        (cache,Values.STRING(str),st) = ceval(cache,env, exp2, impl, st,msg);
+        chList = List.map(valList, ValuesUtil.extractValueString);
+        str = stringDelimitList(chList,str);
+      then
+        (cache,Values.STRING(str),st);
+  end match;
+end cevalStringDelimitList;
 
 protected function cevalListLength
   input Env.Cache inCache;
