@@ -11297,7 +11297,7 @@ algorithm
         (cache,ss_1,const1) = elabSubscriptsDims(cache,env, ss, sl, impl,crefPrefix,info);
         //indexes = Expression.subscriptsInt(ss_1);
         //crefPrefix = Prefix.prefixAdd(id,indexes,crefPrefix,vt);
-        crefPrefix = PrefixUtil.prefixAdd(id, {}, crefPrefix, vt,ClassInf.UNKNOWN(Absyn.IDENT("")));
+        crefPrefix = PrefixUtil.prefixAdd(id, ss_1, crefPrefix, vt,ClassInf.UNKNOWN(Absyn.IDENT("")));
         (cache,cr,const2,hasZeroSizeDim) = elabCrefSubs(cache,env, subs,crefPrefix,impl,hasZeroSizeDim,info);
         const = Types.constAnd(const1, const2);
       then
