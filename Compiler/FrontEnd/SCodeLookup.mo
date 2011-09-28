@@ -789,7 +789,7 @@ public function lookupName
   input Absyn.Path inName;
   input Env inEnv;
   input Absyn.Info inInfo;
-  input Option<Error.ErrorID> inErrorType;
+  input Option<Error.Message> inErrorType;
   output Item outItem;
   output Absyn.Path outName;
   output Env outEnv;
@@ -802,7 +802,7 @@ algorithm
       Absyn.Path path, new_path;
       Env env;
       String name_str, env_str;
-      Error.ErrorID error_id;
+      Error.Message error_id;
 
     // A builtin type.
     case (Absyn.IDENT(name = id), _, _, _)
@@ -1298,7 +1298,7 @@ public function qualifyPath
   input Absyn.Path inPath;
   input Env inEnv;
   input Absyn.Info inInfo;
-  input Option<Error.ErrorID> inErrorType;
+  input Option<Error.Message> inErrorType;
   output Absyn.Path outPath;
 algorithm
   outPath := matchcontinue(inPath, inEnv, inInfo, inErrorType)
