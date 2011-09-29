@@ -137,6 +137,9 @@ QString Helper::left = QString("Left");
 QString Helper::center = QString("Center");
 QString Helper::right = QString("Right");
 
+/* FMI Messages */
+QString Helper::exportingModelFMU = QString("Exporting model as FMI");
+
 QString GUIMessages::getMessage(int type)
 {
     switch (type)
@@ -146,7 +149,7 @@ QString GUIMessages::getMessage(int type)
     case SAME_PORT_CONNECT:
         return "You cannot connect a port to itself.";
     case NO_OPEN_MODEL:
-        return "There is no open Model to simulate.";
+        return "There is no open Model to %1.";
     case NO_SIMULATION_STARTTIME:
         return "Simulation Start Time is not defined. Default value (0.0) will be used.";
     case NO_SIMULATION_STOPTIME:
@@ -229,6 +232,8 @@ QString GUIMessages::getMessage(int type)
         return "Are you sure you want to delete '%1'?";
     case INNER_MODEL_NAME_CHANGED:
         return "A component with the name %1 already exists. The name is changed from %1 to %2.\nThis is probably wrong because the component is decalred as %3.";
+    case FMI_GENERATED:
+        return "The FMI is generated at %1/%2.fmu";
     default:
         return "";
     }

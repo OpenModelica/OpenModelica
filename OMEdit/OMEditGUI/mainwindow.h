@@ -96,6 +96,7 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(SplashScreen *splashScreen, QWidget *parent = 0);
     ~MainWindow();
+    void setCurrentFile(const QString &fileName);
 
     QWidget *mpCentralwidget;
     QGridLayout *mpCentralgrid;
@@ -117,8 +118,9 @@ public:
     QMenu *menuNew;
     QMenu *menuEdit;
     QMenu *menuView;
-    QMenu *menuTools;
     QMenu *menuSimulation;
+    QMenu *menuFMI;
+    QMenu *menuTools;
     QMenu *menuHelp;
     MessageWidget *mpMessageWidget;
     QStatusBar *mpStatusBar;
@@ -141,6 +143,8 @@ public:
     QAction *cutAction;
     QAction *copyAction;
     QAction *pasteAction;
+    QAction *exportFMIAction;
+    QAction *importFMIAction;
     QAction *omcLoggerAction;
     QAction *openOMShellAction;
     QAction *exportToOMNotebookAction;
@@ -153,6 +157,9 @@ public:
     QAction *zoomOutAction;
     QAction *checkModelAction;
     QAction *flatModelAction;
+    enum { MaxRecentFiles = 5 };
+    QAction *recentFileActs[MaxRecentFiles];
+    QAction *separatorAct;
     QAction *closeAction;
     QAction *simulationAction;
     QAction *plotAction;
@@ -222,6 +229,9 @@ private slots:
     void switchToInteractiveSimulationView();
     void addNewPlotWindow();
     void addNewPlotParametricWindow();
+    void openRecentFile();
+    void exportModelFMI();
+    void importModelFMI();
 public slots:
     void showProgressBar();
     void hideProgressBar();
@@ -229,6 +239,8 @@ private:
     void createActions();
     void createMenus();
     void createToolbars();
+    void updateRecentFileActions();
+    QString strippedName(const QString &fullFileName);
     QDockWidget *messagedock;
     QDockWidget *libdock;
 protected:

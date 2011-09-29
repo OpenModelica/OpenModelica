@@ -34,7 +34,6 @@
 #ifndef OMCTHREAD_H
 #define OMCTHREAD_H
 
-#include <QMutex>
 #include <QThread>
 
 class OMCThread : public QThread

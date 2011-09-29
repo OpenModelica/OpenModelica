@@ -40,10 +40,15 @@ using namespace OMPlot;
 //! Constructor
 //! @param name is the parameter name string.
 //! @param value is the parameter value string.
-Parameter::Parameter(QString name, QString value)
+Parameter::Parameter(QString name, QString value, bool isProtected)
 {
     mpParameterLabel = new QLabel(name);
     mpParameterTextBox = new QLineEdit(value);
+    if (isProtected)
+    {
+        mpParameterLabel->setEnabled(false);
+        mpParameterTextBox->setEnabled(false);
+    }
 }
 
 //! Destructor
@@ -87,10 +92,10 @@ ParametersWidget::~ParametersWidget()
     delete mpGridLayout;
 }
 
-void ParametersWidget::addParameter(QString name, QString value)
+void ParametersWidget::addParameter(QString name, QString value, bool isProtected)
 {
     static int count = 2;
-    Parameter *pParameter = new Parameter(name, value);
+    Parameter *pParameter = new Parameter(name, value, isProtected);
     mParametersList.append(pParameter);
     mpGridLayout->addWidget(pParameter->getParameterLabel(), count, 0);
     mpGridLayout->addWidget(pParameter->getParameterTextBox(), count, 1);
@@ -282,7 +287,6 @@ void OMIProxy::startInteractiveSimulation(QString file)
     // start the process
     mpSimulationProcess = new QProcess();
     #ifdef WIN32
-        QStringList environmentVars;
         QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
         environment.insert("PATH", environment.value("Path") + ";" + QString(Helper::OpenModelicaHome).append("MinGW\\bin"));
         mpSimulationProcess->setProcessEnvironment(environment);
@@ -311,7 +315,7 @@ void OMIProxy::startInteractiveSimulation(QString file)
     connect(mpTransferServer, SIGNAL(recievedMessage(QString)), SLOT(readTransferServerMessage(QString)));
     // connect to omi control server
     mpControlClientSocket->connectToHost(QHostAddress(Helper::omi_network_address), Helper::omi_control_client_port);
-    emit interactiveSimulationStarted(init_file.append("_init.txt"));
+    emit interactiveSimulationStarted(init_file.append("_init.xml"));
 }
 
 bool OMIProxy::sendMessage(QString message)
@@ -723,15 +727,7 @@ void InteractiveSimulationTab::readParametersandVariables(QString filePath)
         return;
 
     readComponentsRecursive(pProjectTab->mModelNameStructure, pProjectTab->mModelNameStructure);
-//    QList<ComponentsProperties*> components = pMainWindow->mpOMCProxy->getComponents(pProjectTab->mModelNameStructure);
-
-//    foreach (ComponentsProperties *pComponent, components)
-//    {
-//        if (pComponent->getVariablity().compare("parameter") != 0)
-//            mpParametersWidget->addParameter(pComponent->getName(), pComponent->getName());
-//    }
-
-//    // read the variables to be plotted
+    // read the variables to be plotted
     try {
       QList<QString> variablesList = pMainWindow->mpPlotWidget->readPlotVariables(filePath);
       //qSort(variablesList.begin(), variablesList.end());
@@ -758,9 +754,8 @@ void InteractiveSimulationTab::readComponentsRecursive(QString modelName, QStrin
                                                                                   .append(pComponent->getName()));
                     if (parameterValue.isEmpty())
                         parameterValue = pOMCProxy->getParameterValue(className, pComponent->getName());
-                    mpParametersWidget->addParameter(namePrefixStr + pComponent->getName(), parameterValue);
+                    mpParametersWidget->addParameter(namePrefixStr + pComponent->getName(), parameterValue, pComponent->getProtected());
                 }
-                //mpVariablesWidget->addVariable(namePrefixStr + pComponent->getName());
             }
             else
             {
@@ -931,8 +926,7 @@ MainWindow* InteractiveSimulationTabWidget::getParentMainWindow()
 
 //! Adds a InteractiveSimulationTab object (a new tab) to itself.
 //! @see closeInetractiveSimulationTab(int index)
-void InteractiveSimulationTabWidget::addNewInteractiveSimulationTab(InteractiveSimulationTab *pInteractiveSimulationTab,
-                                                                    QString tabName)
+void InteractiveSimulationTabWidget::addNewInteractiveSimulationTab(InteractiveSimulationTab *pInteractiveSimulationTab, QString tabName)
 {
     pInteractiveSimulationTab->setName(tabName);
     pInteractiveSimulationTab->setTabPosition(addTab(pInteractiveSimulationTab, tabName));

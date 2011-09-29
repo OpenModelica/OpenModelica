@@ -162,22 +162,22 @@ QList<QString> PlotWidget::readPlotVariables(QString fileName)
 
     QFile simulationResultFile(filePath);
     if (!simulationResultFile.open(QIODevice::ReadOnly)) {
-      QMessageBox::critical(this,"Failed to read variables","Could not open file " + simulationResultFile.fileName());
-      throw 1;
+        QMessageBox::critical(this,"Failed to read variables","Could not open file " + simulationResultFile.fileName());
+        throw 1;
     }
-
-    QTextStream inStream(&simulationResultFile);
-    QTextStream temp(&simulationResultFile);
-
-    inStream.seek(temp.readAll().indexOf("n string variables"));
-    // read this line that says n string variables
-    inStream.readLine();
-    // now read the variables until the end
-    while (!inStream.atEnd())
+    // create the xml from the omnotebook file.
+    QDomDocument xmlDocument;
+    if (!xmlDocument.setContent(&simulationResultFile))
     {
-        QString line = inStream.readLine();
-        line = line.mid(line.lastIndexOf("//") + 2, (line.length() - 1)).trimmed();
-        plotVariablesList.append(line);
+        QMessageBox::critical(this,"Failed to read variables","Could not open file " + simulationResultFile.fileName());
+        throw 1;
+    }
+    // read the xml
+    QDomNodeList nodes = xmlDocument.elementsByTagName(tr("ScalarVariable"));
+
+    for (int i = 0; i < nodes.size(); i++)
+    {
+        plotVariablesList.append(nodes.at(i).toElement().attribute("name"));
     }
     simulationResultFile.close();
     return plotVariablesList;

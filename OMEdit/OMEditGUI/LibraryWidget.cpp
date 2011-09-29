@@ -523,6 +523,8 @@ void ModelicaTree::tabChanged()
 
 void ModelicaTree::mouseDoubleClickEvent(QMouseEvent *event)
 {
+    if (!itemAt(event->pos()))
+        return;
     openProjectTab(itemAt(event->pos()), 0);
     QTreeWidget::mouseDoubleClickEvent(event);
 }
@@ -926,6 +928,8 @@ void LibraryTree::tabChanged()
 
 void LibraryTree::mouseDoubleClickEvent(QMouseEvent *event)
 {
+    if (!itemAt(event->pos()))
+        return;
     showComponent(itemAt(event->pos()), 0);
     QTreeWidget::mouseDoubleClickEvent(event);
 }
@@ -1319,6 +1323,7 @@ void LibraryWidget::loadFile(QString path, QStringList modelsList)
         mpParentMainWindow->hideProgressBar();
         return;
     }
+    mpParentMainWindow->setCurrentFile(path);
     // if file loading is fine add the models
     foreach (QString model, modelsList)
     {

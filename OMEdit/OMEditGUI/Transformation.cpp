@@ -345,3 +345,14 @@ qreal Transformation::getPositionYIcon()
 {
     return mPositionYIcon;
 }
+
+bool Transformation::getFlipHorizontalIcon()
+{
+    return mFlipHorizontalIcon;
+}
+
+bool Transformation::getFlipVerticalIcon()
+{
+    return mFlipVerticalIcon;
+}
+

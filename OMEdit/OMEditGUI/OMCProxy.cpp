@@ -289,7 +289,7 @@ void OMCProxy::sendCommand(const QString expression)
     try
     {
         setExpression(expression);
-        if (expression.startsWith("simulate") or expression.startsWith("buildModel"))
+        if (expression.startsWith("simulate") or expression.startsWith("buildModel") or expression.startsWith("translateModelFMU"))
         {
             QFuture<void> future = QtConcurrent::run(this, &OMCProxy::sendCommand);
             while (future.isRunning())
@@ -1385,6 +1385,15 @@ QString OMCProxy::getSimulationOptions(QString modelName)
 {
     sendCommand("getSimulationOptions(" + modelName + ")");
     return getResult();
+}
+
+bool OMCProxy::translateModelFMU(QString modelName)
+{
+    sendCommand("translateModelFMU(" + modelName + ")");
+    if (StringHandler::unparse(getResult()).compare("SimCode: The model " + modelName + " has been translated to FMU") == 0)
+        return true;
+    else
+        return false;
 }
 
 CustomExpressionBox::CustomExpressionBox(OMCProxy *pParent)

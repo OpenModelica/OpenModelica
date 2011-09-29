@@ -2969,6 +2969,8 @@ bool ProjectTabWidget::saveModel(bool saveAs)
             {
                 pCurrentTab->mModelFileName = modelFileName;
                 pCurrentTab->setModelFilePathLabel(modelFileName);
+                // put the newly saved file in recent files list.
+                pMainWindow->setCurrentFile(modelFileName);
                 return true;
             }
             // if OMC is unable to save the file
@@ -3263,6 +3265,8 @@ void ProjectTabWidget::enableProjectToolbar()
         mpParentMainWindow->exportAsImageAction->setEnabled(true);
         // enable the export to omnotebook action
         mpParentMainWindow->exportToOMNotebookAction->setEnabled(true);
+        // enable the export FMI
+        mpParentMainWindow->exportFMIAction->setEnabled(true);
         mToolBarEnabled = true;
     }
 }
@@ -3281,8 +3285,10 @@ void ProjectTabWidget::disableProjectToolbar()
         mpParentMainWindow->shapesToolBar->setEnabled(false);
         // disable the export as image action
         mpParentMainWindow->exportAsImageAction->setEnabled(false);
-        // enable the export to omnotebook action
+        // disable the export to omnotebook action
         mpParentMainWindow->exportToOMNotebookAction->setEnabled(false);
+        // disable the export FMI
+        mpParentMainWindow->exportFMIAction->setEnabled(false);
         mToolBarEnabled = false;
     }
 }

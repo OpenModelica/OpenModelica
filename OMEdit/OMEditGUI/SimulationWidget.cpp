@@ -267,8 +267,7 @@ void SimulationWidget::simulate()
 
         if (!projectTab)
         {
-            mpParentMainWindow->mpMessageWidget->printGUIWarningMessage(GUIMessages::getMessage(
-                                                                        GUIMessages::NO_OPEN_MODEL));
+            mpParentMainWindow->mpMessageWidget->printGUIWarningMessage(GUIMessages::getMessage(GUIMessages::NO_OPEN_MODEL).arg("simulate"));
             accept();
             return;
         }
@@ -410,8 +409,7 @@ void SimulationWidget::buildModel(QString simulationParameters)
         file = file.replace("//", "/");
         // if built is successfull create a tab of interactive simulation
         InteractiveSimulationTab *pInteractiveSimulationTab;
-        pInteractiveSimulationTab = new InteractiveSimulationTab(file,
-                                                                 mpParentMainWindow->mpInteractiveSimualtionTabWidget);
+        pInteractiveSimulationTab = new InteractiveSimulationTab(file, mpParentMainWindow->mpInteractiveSimualtionTabWidget);
         if (mpFileNameTextBox->text().isEmpty())
             mpParentMainWindow->mpInteractiveSimualtionTabWidget->addNewInteractiveSimulationTab(pInteractiveSimulationTab,
                                                                                                  projectTab->mModelNameStructure);

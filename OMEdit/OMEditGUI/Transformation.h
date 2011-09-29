@@ -83,6 +83,8 @@ public:
     qreal getScaleIcon();
     qreal getPositionXIcon();
     qreal getPositionYIcon();
+    bool getFlipHorizontalIcon();
+    bool getFlipVerticalIcon();
 };
 
 #endif // TRANSFORMATION_H

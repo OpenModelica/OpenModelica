@@ -128,7 +128,7 @@ public:
     void updateParameterValue(QString oldValue, QString newValue);
     QString getClassName();
     Component* getParentComponent();
-    Component* getRootParentComponent();
+    Component* getRootParentComponent(bool secondLast = false);
     void getClassComponents(QString className, int type);
     void getClassComponents(QString className, int type, Component *pParent);
     void copyClassComponents(Component *pComponent);

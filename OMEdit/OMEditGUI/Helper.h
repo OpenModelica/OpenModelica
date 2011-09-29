@@ -140,6 +140,7 @@ public:
     static QString left;
     static QString center;
     static QString right;
+    static QString exportingModelFMU;
 };
 
 class GUIMessages
@@ -190,7 +191,8 @@ public:
         ITEM_DROPPED_ON_ITSELF,
         DELETE_PACKAGE_MSG,
         DELETE_MSG,
-        INNER_MODEL_NAME_CHANGED
+        INNER_MODEL_NAME_CHANGED,
+        FMI_GENERATED
     };
 
     static QString getMessage(int type);

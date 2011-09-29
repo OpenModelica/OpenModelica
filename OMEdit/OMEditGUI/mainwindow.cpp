@@ -115,7 +115,11 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     addDockWidget(Qt::LeftDockWidgetArea, libdock);
     //create a dock for the model browser
     modelBrowserdock = new QDockWidget(tr("Model Browser"), this);
-    modelBrowserdock->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    #ifdef Q_OS_UNIX
+        modelBrowserdock->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    #else
+        modelBrowserdock->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+    #endif
     modelBrowserdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     mpModelBrowser = new ModelBrowserWidget(this);
     modelBrowserdock->setWidget(mpModelBrowser);
@@ -150,6 +154,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     this->createActions();
     this->createToolbars();
     this->createMenus();
+    this->updateRecentFileActions();
     //Create the main tab container, need at least one tab
     mpProjectTabs = new ProjectTabWidget(this);
     mpProjectTabs->setObjectName("projectTabs");
@@ -371,6 +376,16 @@ void MainWindow::createActions()
     flatModelAction->setStatusTip(tr("Instantiates/Flatten the modelica model"));
     connect(flatModelAction, SIGNAL(triggered()), SLOT(flatModel()));
 
+    exportFMIAction = new QAction(tr("Export FMI"), this);
+    exportFMIAction->setStatusTip(tr("Exports the model as Functional Mockup Interface (FMI)"));
+    exportFMIAction->setEnabled(false);
+    connect(exportFMIAction, SIGNAL(triggered()), SLOT(exportModelFMI()));
+
+    importFMIAction = new QAction(tr("Import FMI"), this);
+    importFMIAction->setStatusTip(tr("Imports the model from Functional Mockup Interface (FMI)"));
+    importFMIAction->setEnabled(false);
+    connect(importFMIAction, SIGNAL(triggered()), SLOT(importModelFMI()));
+
     omcLoggerAction = new QAction(QIcon(":/Resources/icons/console.png"), tr("OMC Logger"), this);
     omcLoggerAction->setStatusTip(tr("Shows OMC Logger Window"));
     connect(omcLoggerAction, SIGNAL(triggered()), this->mpOMCProxy, SLOT(openOMCLogger()));
@@ -401,6 +416,13 @@ void MainWindow::createActions()
     closeAction->setStatusTip(tr("Exits the ").append(Helper::applicationIntroText));
     closeAction->setShortcut(QKeySequence("Ctrl+q"));
     connect(this->closeAction,SIGNAL(triggered()), SLOT(close()));
+
+    for (int i = 0; i < MaxRecentFiles; ++i)
+    {
+        recentFileActs[i] = new QAction(this);
+        recentFileActs[i]->setVisible(false);
+        connect(recentFileActs[i], SIGNAL(triggered()), this, SLOT(openRecentFile()));
+    }
 
     simulationAction = new QAction(QIcon(":/Resources/icons/simulate.png"), tr("Simulate"), this);
     simulationAction->setStatusTip(tr("Simulate the Model"));
@@ -527,6 +549,9 @@ void MainWindow::createMenus()
     menuSimulation = new QMenu(menubar);
     menuSimulation->setTitle("&Simulation");
 
+    menuFMI = new QMenu(menubar);
+    menuFMI->setTitle("&FMI");
+
     menuTools = new QMenu(menubar);
     menuTools->setTitle("&Tools");
 
@@ -549,6 +574,9 @@ void MainWindow::createMenus()
     menuFile->addAction(saveAction);
     menuFile->addAction(saveAsAction);
     //menuFile->addAction(saveAllAction);
+    separatorAct = menuFile->addSeparator();
+    for (int i = 0; i < MaxRecentFiles; ++i)
+        menuFile->addAction(recentFileActs[i]);
     menuFile->addSeparator();
     menuFile->addAction(closeAction);
 
@@ -594,6 +622,9 @@ void MainWindow::createMenus()
     menuSimulation->addAction(interactiveSimulationAction);
     menuSimulation->addAction(plotAction);
 
+    menuFMI->addAction(exportFMIAction);
+    menuFMI->addAction(importFMIAction);
+
     menuTools->addAction(omcLoggerAction);
     menuTools->addSeparator();
     menuTools->addAction(openOMShellAction);
@@ -610,6 +641,7 @@ void MainWindow::createMenus()
     menubar->addAction(menuEdit->menuAction());
     menubar->addAction(menuView->menuAction());
     menubar->addAction(menuSimulation->menuAction());
+    menubar->addAction(menuFMI->menuAction());
     menubar->addAction(menuTools->menuAction());
     menubar->addAction(menuHelp->menuAction());
 }
@@ -704,6 +736,45 @@ void MainWindow::createToolbars()
     perspectiveToolBar->addAction(modelingViewAction);
     perspectiveToolBar->addAction(plottingViewAction);
     perspectiveToolBar->addAction(interactiveSimulationViewAction);
+}
+
+//! Adds the currently opened file to the recentFileList settings.
+void MainWindow::setCurrentFile(const QString &fileName)
+{
+    QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
+    QStringList files = settings.value("recentFileList/files").toStringList();
+    files.removeAll(fileName);
+    files.prepend(fileName);
+    while (files.size() > MaxRecentFiles)
+        files.removeLast();
+
+    settings.setValue("recentFileList/files", files);
+    updateRecentFileActions();
+}
+
+//! Updates the actions of the recent files menu items.
+void MainWindow::updateRecentFileActions()
+{
+    QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
+    QStringList files = settings.value("recentFileList/files").toStringList();
+
+    int numRecentFiles = qMin(files.size(), (int)MaxRecentFiles);
+
+    for (int i = 0; i < numRecentFiles; ++i) {
+        QString text = tr("%1").arg(strippedName(files[i]));
+        recentFileActs[i]->setText(text);
+        recentFileActs[i]->setData(files[i]);
+        recentFileActs[i]->setVisible(true);
+    }
+    for (int j = numRecentFiles; j < MaxRecentFiles; ++j)
+        recentFileActs[j]->setVisible(false);
+
+    separatorAct->setVisible(numRecentFiles > 0);
+}
+
+QString MainWindow::strippedName(const QString &fullFileName)
+{
+    return QFileInfo(fullFileName).fileName();
 }
 
 //! Open Simulation Window
@@ -1170,6 +1241,50 @@ void MainWindow::addNewPlotWindow()
 void MainWindow::addNewPlotParametricWindow()
 {
     mpPlotWindowContainer->addPlotParametricWindow();
+}
+
+//! Opens the recent file.
+void MainWindow::openRecentFile()
+{
+    QAction *action = qobject_cast<QAction*>(sender());
+    if (action)
+    {
+        mpProjectTabs->openFile(action->data().toString());
+    }
+}
+
+//! Exports the current model to FMI
+void MainWindow::exportModelFMI()
+{
+    ProjectTab *pCurrentTab = mpProjectTabs->getCurrentTab();
+    if (!pCurrentTab)
+    {
+        mpMessageWidget->printGUIWarningMessage(GUIMessages::getMessage(GUIMessages::NO_OPEN_MODEL).arg("make FMU"));
+        return;
+    }
+    // set the status message.
+    mpStatusBar->showMessage(Helper::exportingModelFMU);
+    // show the progress bar
+    showProgressBar();
+    if (mpOMCProxy->translateModelFMU(pCurrentTab->mModelNameStructure))
+    {
+        mpMessageWidget->printGUIInfoMessage(GUIMessages::getMessage(GUIMessages::FMI_GENERATED).arg(mpOMCProxy->changeDirectory())
+                                             .arg(pCurrentTab->mModelNameStructure));
+    }
+    else
+    {
+        mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(mpOMCProxy->getErrorString()));
+    }
+    // hide progress bar
+    hideProgressBar();
+    // clear the status bar message
+    mpStatusBar->clearMessage();
+}
+
+//! Imports the model from FMI
+void MainWindow::importModelFMI()
+{
+
 }
 
 //! shows the progress bar contained inside the status bar

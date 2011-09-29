@@ -169,6 +169,7 @@ public:
     bool visualize(QString modelName);
     QString checkModel(QString modelName);
     QString getSimulationOptions(QString modelName);
+    bool translateModelFMU(QString modelName);
 public slots:
     void sendCommand();
     void openOMCLogger();

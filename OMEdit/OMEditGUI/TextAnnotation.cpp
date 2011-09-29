@@ -37,7 +37,7 @@ TextAnnotation::TextAnnotation(QString shape, Component *pParent)
     : ShapeAnnotation(pParent), mpComponent(pParent)
 {
     initializeFields();
-    this->mFontWeight = -1;
+    this->mFontWeight = QFont::Normal;
     this->mFontItalic = false;
     this->mFontName = qApp->font().family();
     this->mHorizontalAlignment = Qt::AlignCenter;
@@ -56,7 +56,7 @@ TextAnnotation::TextAnnotation(GraphicsView *graphicsView, QGraphicsItem *pParen
 {
     // initialize all fields with default values
     initializeFields();
-    this->mFontWeight = -1;
+    this->mFontWeight = QFont::Normal;
     this->mFontItalic = false;
     this->mFontName = qApp->font().family();
     this->mHorizontalAlignment = Qt::AlignCenter;
@@ -78,7 +78,7 @@ TextAnnotation::TextAnnotation(QString shape, GraphicsView *graphicsView, QGraph
 {    
     // initialize all fields with default values
     initializeFields();
-    this->mFontWeight = -1;
+    this->mFontWeight = QFont::Normal;
     this->mFontItalic = false;
     this->mFontName = qApp->font().family();
     this->mHorizontalAlignment = Qt::AlignCenter;
@@ -135,34 +135,53 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     setLetterSpacingOnFont(&font, getLetterSpacing());
     painter->setFont(font);
     // draw the font
+    // first we invert the painter since we have outr coordinate system inverted.
+    painter->scale(1.0, -1.0);
+    painter->translate(0, ((-boundingRect().top()) - boundingRect().bottom()));
+
     if (mpComponent)
     {
-        if (mpComponent->rotation() == -180 || mpComponent->rotation() == 180)
+        // get the root component to check the rotation and transformations.
+        Component *pComponent = mpComponent->getRootParentComponent();
+        pComponent = mpComponent->getRootParentComponent((pComponent->mType == StringHandler::DIAGRAM) ? true : false);
+        if (pComponent->rotation() == -180 || pComponent->rotation() == 180)
         {
-            painter->scale(-1.0, 1.0);
-            painter->translate(((-boundingRect().left()) - boundingRect().right()), 0);
+            painter->scale(-1.0, -1.0);
+            painter->translate(((-boundingRect().left()) - boundingRect().right()), ((-boundingRect().top()) - boundingRect().bottom()));
         }
-        else
+        // check transformations.
+        if (pComponent->mpTransformation)
         {
-            painter->scale(1.0, -1.0);
-            painter->translate(0, ((-boundingRect().top()) - boundingRect().bottom()));
+            // the item could be flipped horizontally
+            if (pComponent->mpTransformation->getFlipHorizontalIcon())
+            {
+                painter->scale(-1.0, 1.0);
+                painter->translate(((-boundingRect().left()) - boundingRect().right()), 0);
+            }
+            // the item could be flipped vertically
+            if (pComponent->mpTransformation->getFlipVerticalIcon())
+            {
+                painter->scale(1.0, -1.0);
+                painter->translate(0, ((-boundingRect().top()) - boundingRect().bottom()));
+            }
+            // the item could be rotated
+            if (pComponent->mpTransformation->getRotateAngleIcon() == -180 || pComponent->mpTransformation->getRotateAngleIcon() == 180)
+            {
+                painter->scale(-1.0, -1.0);
+                painter->translate(((-boundingRect().left()) - boundingRect().right()), ((-boundingRect().top()) - boundingRect().bottom()));
+            }
         }
     }
     else if (mIsCustomShape)
     {
         if (rotation() == -180 || rotation() == 180)
         {
-            painter->scale(-1.0, 1.0);
-            painter->translate(((-boundingRect().left()) - boundingRect().right()), 0);
-        }
-        else
-        {
-            painter->scale(1.0, -1.0);
-            painter->translate(0, ((-boundingRect().top()) - boundingRect().bottom()));
+            painter->scale(-1.0, -1.0);
+            painter->translate(((-boundingRect().left()) - boundingRect().right()), ((-boundingRect().top()) - boundingRect().bottom()));
         }
     }
     if (boundingRect().width() > 0)
-        painter->drawText(boundingRect(), mHorizontalAlignment, this->mTextString);
+        painter->drawText(boundingRect(), mHorizontalAlignment | Qt::AlignJustify | Qt::TextDontClip, this->mTextString);
 }
 
 void TextAnnotation::checkNameString()
@@ -466,8 +485,8 @@ void TextAnnotation::setLetterSpacing(qreal letterSpacing)
 //! @see getLetterSpacing()
 void TextAnnotation::setLetterSpacingOnFont(QFont *font, qreal letterSpacing)
 {
-    if (font->letterSpacing() < letterSpacing)
-        font->setLetterSpacing(QFont::AbsoluteSpacing, letterSpacing);
+//    if (font->letterSpacing() < letterSpacing)
+//        font->setLetterSpacing(QFont::AbsoluteSpacing, letterSpacing);
 }
 
 //! Returns the letter spacing used by the Text Annotations.
@@ -884,7 +903,10 @@ void TextWidget::edit()
     mpTextAnnotation->setFontName(mpFontFamilyComboBox->currentText());
     mpTextAnnotation->setFontSize(mpFontSizeComboBox->currentText().toDouble());
     mpTextAnnotation->setItalic(mpCursive->isChecked());
-    mpTextAnnotation->setWeight(mpBold->isChecked());
+    if (mpBold->isChecked())
+        mpTextAnnotation->setWeight(QFont::Bold);
+    else
+        mpTextAnnotation->setWeight(QFont::Normal);
     mpTextAnnotation->setUnderLine(mpUnderline->isChecked());
 
     if (mpAlignmentComboBox->currentText() == "Left")

@@ -49,7 +49,7 @@ private:
     QLabel *mpParameterLabel;
     QLineEdit *mpParameterTextBox;
 public:
-    Parameter(QString name, QString value);
+    Parameter(QString name, QString value, bool isProtected);
     ~Parameter();
     QLabel* getParameterLabel();
     QLineEdit* getParameterTextBox();
@@ -61,7 +61,7 @@ class ParametersWidget : public QWidget
 public:
     ParametersWidget(InteractiveSimulationTab *pParent);
     ~ParametersWidget();
-    void addParameter(QString name, QString value);
+    void addParameter(QString name, QString value, bool isProtected);
 
     InteractiveSimulationTab *mpInteractiveSimulationTab;
     QLabel *mpHeadingLabel;

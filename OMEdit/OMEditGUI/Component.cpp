@@ -45,10 +45,10 @@ Component::Component(QString value, QString name, QString className, QPointF pos
     mIconParametersList.append(mpOMCProxy->getParameters(mpGraphicsView->mpParentProjectTab->mModelNameStructure,
                                                          mClassName, mName));
 
+    mpTransformation = 0;
     parseAnnotationString(this, value);
     mpTransformation = new Transformation(this);
     setTransform(mpTransformation->getTransformationMatrix());
-
     // if component is an icon
     if ((mType == StringHandler::ICON))
     {
@@ -94,10 +94,9 @@ Component::Component(QString value, QString className, int type, bool connector,
     mpOMCProxy = pParent->mpOMCProxy;
     mpGraphicsView = pParent->mpGraphicsView;
     mpComponentProperties = 0;
+    mpTransformation = 0;
     parseAnnotationString(this, mAnnotationString);
-
     //this->mpChildComponentProperties = mpOMCProxy->getComponents(this->mClassName);
-
     //! @todo Since for some components we get empty annotations but its inherited componets does have annotations
     //! @todo so set the parent give the parent bounding box the value of inherited class boundingbox.
     if (mRectangle.width() > 1)
@@ -119,8 +118,8 @@ Component::Component(QString value, QString transformationString, ComponentsProp
     mpGraphicsView = pParent->mpGraphicsView;
     mIconParametersList.append(mpOMCProxy->getParameters(mpGraphicsView->mpParentProjectTab->mModelNameStructure,
                                                          mClassName, mName));
+    mpTransformation = 0;
     parseAnnotationString(this, mAnnotationString);
-
     mpTransformation = new Transformation(this);
     setTransform(mpTransformation->getTransformationMatrix());
     //this->mpChildComponentProperties = mpOMCProxy->getComponents(this->mClassName);
@@ -146,7 +145,6 @@ Component::Component(QString value, QString className, bool connector, OMCProxy 
 
     parseAnnotationString(this, value, true);
     getClassComponents(mClassName, mType);
-
 }
 
 /* Used for Library Component. Called for inheritance annotation instance */
@@ -182,6 +180,7 @@ Component::Component(QString value, QString transformationString, ComponentsProp
     mpOMCProxy = pParent->mpOMCProxy;
     mType = StringHandler::ICON;
 
+    mpTransformation = 0;
     parseAnnotationString(this, mAnnotationString, true);
     //this->mpChildComponentProperties = mpOMCProxy->getComponents(this->mClassName);
     mpTransformation = new Transformation(this);
@@ -208,9 +207,12 @@ Component::Component(Component *pComponent, QString name, QPointF position, int 
     // get the component parameters
     mIconParametersList.append(mpOMCProxy->getParameters(mpGraphicsView->mpParentProjectTab->mModelNameStructure,
                                                          mClassName, mName));
-    parseAnnotationString(this, mAnnotationString);
 
-    this->mpChildComponentProperties = mpOMCProxy->getComponents(this->mClassName);
+    mpTransformation = 0;
+    parseAnnotationString(this, mAnnotationString);
+    mpTransformation = new Transformation(this);
+    setTransform(mpTransformation->getTransformationMatrix());
+    this->mpChildComponentProperties = pComponent->mpChildComponentProperties;
     // if component is an icon
     if ((mType == StringHandler::ICON))
     {
@@ -971,22 +973,27 @@ QString Component::getClassName()
 
 Component* Component::getParentComponent()
 {
- if(!mpParentComponent)
-    return this;
- else
-    return mpParentComponent;
-
-
+    if (!mpParentComponent)
+        return this;
+    else
+        return mpParentComponent;
 }
 
-Component* Component::getRootParentComponent()
+Component* Component::getRootParentComponent(bool secondLast)
 {
-    Component *pComponent;
+    Component *pComponent, *pPreviousComponent;
     pComponent = this;
+    pPreviousComponent = this;
     while (pComponent->mpParentComponent)
+    {
+        pPreviousComponent = pComponent;
         pComponent = pComponent->mpParentComponent;
+    }
 
-    return pComponent;
+    if (secondLast)
+        return pPreviousComponent;
+    else
+        return pComponent;
 }
 
 //! this function is called for icon view
@@ -1022,7 +1029,7 @@ void Component::getClassComponents(QString className, int type)
     }
 
     QList<ComponentsProperties*> components = mpOMCProxy->getComponents(className);
-    this->mpChildComponentProperties=components;
+    this->mpChildComponentProperties = components;
     QStringList componentsAnnotationsList = mpOMCProxy->getComponentAnnotations(className);
     int i = 0;
     foreach (ComponentsProperties *componentProperties, components)
