@@ -321,8 +321,7 @@ public function getStateName "function: getStateName
   input State inState;
   output Absyn.Path outPath;
 algorithm
-  outPath :=
-  matchcontinue (inState)
+  outPath := match (inState)
     local
       Absyn.Path p;
     case UNKNOWN(path = p) then p;
@@ -353,7 +352,7 @@ algorithm
     case META_POLYMORPHIC(p) then p;
       
     case _ then Absyn.IDENT("#getStateName failed#");
-  end matchcontinue;
+  end match;
 end getStateName;
 
 protected function printEventStr

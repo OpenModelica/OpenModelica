@@ -409,9 +409,10 @@ protected
   DAE.Type ty;
 algorithm
   ty := Types.getPropType(p);
-  t := getTypeExpType(ty);
+  t := Types.elabType(ty);
 end getPropExpType;
 
+/*
 protected function getTypeExpType "function: getTypeExpType
   Returns the expression type for a given Type module type. Used only by
   getPropExpType."
@@ -434,9 +435,10 @@ algorithm
       // record assignments (which actually work just fine). // sjoelund // 2009-05-07
       //print("Warning complex_varList not implemented for Array_assign\n");
       then fail();
-    case ((_,_)) then DAE.ET_OTHER();  /* was fail but records must be handled somehow */
+    case ((_,_)) then DAE.ET_OTHER();  / was fail but records must be handled somehow
   end matchcontinue;
 end getTypeExpType;
+*/
 
 public function makeIf "function: makeIf
   This function creates an `DAE.STMT_IF\' construct, checking that the types
