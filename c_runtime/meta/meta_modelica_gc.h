@@ -89,12 +89,23 @@ struct mmc_GC_state_type /* the structure of GC state */
   mmc_GC_stats_type       stats; /* the statistics */
 };
 typedef struct mmc_GC_state_type mmc_GC_state_type;
-
 extern mmc_GC_state_type* mmc_GC_state;
 
+/* tag the free reqion as a free object with 250 ctor*/
+#define MMC_FREE_OBJECT_CTOR           200
+#define MMC_TAG_AS_FREE_OBJECT(p, sz)  (((struct mmc_header*)p)->header = MMC_STRUCTHDR(sz, MMC_FREE_OBJECT_CTOR))
+
+/* checks if the pointer is in range */
+int is_in_range(modelica_metatype p, modelica_metatype start, size_t bytes);
 /* primary allocation routines for MetaModelica */
 void *mmc_alloc_bytes(unsigned nbytes);
 void *mmc_alloc_words(unsigned nwords);
+
+/* define this to have GC!
+#define _MMC_GC_
+*/
+
+#if defined(_MMC_GC_)
 
 DLLExport void mmc_GC_set_state(mmc_GC_state_type* state);
 /* initialization of MetaModelica GC */
@@ -115,12 +126,21 @@ int mmc_GC_unwind_roots_state(mmc_GC_local_state_type local_GC_state);
 /* do garbage collection */
 int mmc_GC_collect(mmc_GC_local_state_type local_GC_state);
 
-/* checks if the pointer is in range */
-int is_in_range(modelica_metatype p, modelica_metatype start, size_t bytes);
+#else /* NO GC */
 
-/* tag the free reqion as a free object with 250 ctor*/
-#define MMC_FREE_OBJECT_CTOR           200
-#define MMC_TAG_AS_FREE_OBJECT(p, sz)  (((struct mmc_header*)p)->header = MMC_STRUCTHDR(sz, MMC_FREE_OBJECT_CTOR))
+extern mmc_GC_local_state_type dummy_local_GC_state;
+
+#define mmc_GC_init(settings)                          (0)
+#define mmc_GC_init_default(void)                      (0)
+#define mmc_GC_clear(void)                             (0)
+#define mmc_GC_add_root(A,B,C)                         (0)
+#define mmc_GC_add_roots(p, n, local_GC_state, name)   (0)
+#define mmc_GC_save_roots_state(name)                  (dummy_local_GC_state)
+#define mmc_GC_undo_roots_state(local_GC_state)        (0)
+#define mmc_GC_unwind_roots_state(local_GC_state)      (0)
+#define mmc_GC_collect(local_GC_state)                 (0)
+
+#endif /* defined(_MMC_GC_) */
 
 #if defined(__cplusplus)
 }

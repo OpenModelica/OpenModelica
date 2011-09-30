@@ -42,10 +42,6 @@
 
 #include "modelica.h"
 
-/*
-#define _MMC_GC_
-*/
-
 #if defined(_MMC_GC_)
 
 mmc_GC_state_type *mmc_GC_state = NULL;
@@ -905,52 +901,9 @@ void *mmc_alloc_bytes(unsigned nbytes)
 
 static mmc_GC_state_type x_mmc_GC_state;
 mmc_GC_state_type *mmc_GC_state = &x_mmc_GC_state;
+mmc_GC_local_state_type dummy_local_GC_state = {0,0};
 
-int mmc_GC_init(mmc_GC_settings_type settings)
-{
-  return 0;
-}
-
-int mmc_GC_init_default(void)
-{
-  return 0;
-}
-
-int mmc_GC_clear(void)
-{
-  return 0;
-}
-
-int mmc_GC_add_roots(modelica_metatype* p, int n, mmc_GC_local_state_type local_GC_state, const char* name)
-{
-  return 0;
-}
-
-mmc_GC_local_state_type mmc_GC_save_roots_state(const char* name)
-{
-  mmc_GC_local_state_type local_GC_state = {0, 0};
-  return local_GC_state;
-}
-
-int mmc_GC_undo_roots_state(mmc_GC_local_state_type local_GC_state)
-{
-  return 0;
-}
-
-int mmc_GC_unwind_roots_state(mmc_GC_local_state_type local_GC_state)
-{
-  return 0;
-}
-
-int mmc_GC_collect(mmc_GC_local_state_type local_GC_state)
-{
-  return 0;
-}
-
-
-#endif /* NORMAL GC */
-
-
+#endif /* defined(_MMC_GC_) */
 
 /* global functions, not ifdef dependent */
 /* primary allocation routine for MetaModelica */
