@@ -10,6 +10,7 @@ TARGET = OMPlot
 TEMPLATE = lib
 
 CONFIG += release staticlib
+QMAKE_LFLAGS += -enable-auto-import
 
 SOURCES += main.cpp \
     ../../c_runtime/read_matlab4.c \

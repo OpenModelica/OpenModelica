@@ -9,6 +9,8 @@ QT += core gui svg
 TARGET = OMPlot
 TEMPLATE = app
 
+QMAKE_LFLAGS += -enable-auto-import
+
 SOURCES += main.cpp \
     ../../c_runtime/read_matlab4.c \
     Plot.cpp \
