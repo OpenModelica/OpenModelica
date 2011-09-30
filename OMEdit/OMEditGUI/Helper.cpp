@@ -155,7 +155,7 @@ QString GUIMessages::getMessage(int type)
     case NO_SIMULATION_STOPTIME:
         return "Simulation Stop Time is not defined.";
     case SIMULATION_STARTTIME_LESSTHAN_STOPTIME:
-        return "Simulation Start Time should be less than Stop Time.";
+        return "Simulation Start Time should be less than or equal to Stop Time.";
     case ENTER_NAME:
         return "Please enter %1 Name.";
     case MODEL_ALREADY_EXISTS:

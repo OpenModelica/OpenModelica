@@ -305,7 +305,7 @@ bool SimulationWidget::validate()
         return false;
     }
 
-    if (mpStopTimeTextBox->text().toDouble() <= mpStartTimeTextBox->text().toDouble())
+    if (mpStartTimeTextBox->text().toDouble() > mpStopTimeTextBox->text().toDouble())
     {
         mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(
                                                                   GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME));
