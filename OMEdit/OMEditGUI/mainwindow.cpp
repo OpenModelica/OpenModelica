@@ -376,12 +376,12 @@ void MainWindow::createActions()
     flatModelAction->setStatusTip(tr("Instantiates/Flatten the modelica model"));
     connect(flatModelAction, SIGNAL(triggered()), SLOT(flatModel()));
 
-    exportFMIAction = new QAction(tr("Export FMI"), this);
+    exportFMIAction = new QAction(QIcon(":/Resources/icons/export-fmi.png"), tr("Export FMI"), this);
     exportFMIAction->setStatusTip(tr("Exports the model as Functional Mockup Interface (FMI)"));
     exportFMIAction->setEnabled(false);
     connect(exportFMIAction, SIGNAL(triggered()), SLOT(exportModelFMI()));
 
-    importFMIAction = new QAction(tr("Import FMI"), this);
+    importFMIAction = new QAction(QIcon(":/Resources/icons/import-fmi.png"), tr("Import FMI"), this);
     importFMIAction->setStatusTip(tr("Imports the model from Functional Mockup Interface (FMI)"));
     importFMIAction->setEnabled(false);
     connect(importFMIAction, SIGNAL(triggered()), SLOT(importModelFMI()));
