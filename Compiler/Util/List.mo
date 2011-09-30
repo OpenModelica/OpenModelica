@@ -5568,20 +5568,49 @@ public function selectFirst
     output Boolean outSelect;
   end SelectFunc;
 algorithm
-  outElement := matchcontinue(inList, inFunc)
+  outElement := match (inList, inFunc)
     local
       ElementType e;
       list<ElementType> rest;
+      Boolean b;
 
-    case (e :: _, _)
+    case (e :: rest, _)
       equation
-        true = inFunc(e);
-      then
-        e;
+        b = inFunc(e);
+        e = Debug.bcallret2(not b,selectFirst,rest,inFunc,e);
+      then e;
 
-    case (e :: rest, _) then selectFirst(rest, inFunc);
-  end matchcontinue;
+  end match;
 end selectFirst;
+
+public function selectFirst1
+  "This function retrieves the first element of a list for which the passed
+   function evaluates to true."
+  input list<ElementType> inList;
+  input SelectFunc inFunc;
+  input ArgType1 arg1;
+  output ElementType outElement;
+
+  partial function SelectFunc
+    input ElementType inElement;
+    input ArgType1 arg;
+    output Boolean outSelect;
+  end SelectFunc;
+algorithm
+  outElement := match (inList, inFunc, arg1)
+    local
+      ElementType e;
+      list<ElementType> rest;
+      Boolean b;
+
+    case (e :: rest, _, arg1)
+      equation
+        b = inFunc(e,arg1);
+        e = Debug.bcallret3(not b,selectFirst1,rest,inFunc,arg1,e);
+      then e;
+
+  end match;
+end selectFirst1;
 
 public function select1
   "This function retrieves all elements of a list for which the given function
