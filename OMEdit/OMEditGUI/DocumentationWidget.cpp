@@ -145,7 +145,7 @@ void DocumentationWidget::editDocumentation()
 void DocumentationWidget::saveChanges()
 {
     QString doc = mpDocumentationEditor->toPlainText();
-    if(doc.startsWith("<html>",Qt::CaseSensitive) && doc.endsWith("</html>",Qt::CaseSensitive))
+    if(doc.startsWith("<html>", Qt::CaseInsensitive) && doc.endsWith("</html>", Qt::CaseInsensitive))
     {
         mpParentMainWindow->mpOMCProxy->addClassAnnotation(mClassName,"annotate=Documentation(info = \""+doc+"\")");
         show(mClassName);

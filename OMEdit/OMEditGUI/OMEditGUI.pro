@@ -9,6 +9,8 @@ QT += network core gui webkit xml svg
 TARGET = OMEdit
 TEMPLATE = app
 
+QMAKE_LFLAGS += -enable-auto-import
+
 SOURCES += main.cpp\
     mainwindow.cpp \
     ProjectTabWidget.cpp \
