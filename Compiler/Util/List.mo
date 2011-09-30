@@ -4914,6 +4914,67 @@ algorithm
   end match;
 end threadFold;
 
+public function threadMapFold
+  "Takes a list, an extra argument and a function. The function will be applied
+  to each element in the list, and the extra argument will be passed to the
+  function and updated."
+  input list<ElementType1> inList1;
+  input list<ElementType2> inList2;
+  input FuncType inFunc;
+  input FoldType inArg;
+  output list<ElementOutType> outList;
+  output FoldType outArg;
+
+  partial function FuncType
+    input ElementType1 inElem1;
+    input ElementType2 inElem2;
+    input FoldType inArg;
+    output ElementOutType outResult;
+    output FoldType outArg;
+  end FuncType;
+algorithm
+  (outList, outArg) := threadMapFold_tail(inList1, inList2, inFunc, inArg, {});
+end threadMapFold;
+
+public function threadMapFold_tail
+  "Tail recursive implementation of mapFold."
+  input list<ElementType1> inList1;
+  input list<ElementType2> inList2;
+  input FuncType inFunc;
+  input FoldType inArg;
+  input list<ElementOutType> inAccumList;
+  output list<ElementOutType> outList;
+  output FoldType outArg;
+
+  partial function FuncType
+    input ElementType1 inElem1;
+    input ElementType2 inElem2;
+    input FoldType inArg;
+    output ElementOutType outResult;
+    output FoldType outArg;
+  end FuncType;
+algorithm
+  (outList, outArg) := match(inList1, inList2, inFunc, inArg, inAccumList)
+    local
+      ElementInType e1,e2;
+      list<ElementInType> rest_e1,rest_e2;
+      ElementOutType res;
+      list<ElementOutType> rest_res;
+      FoldType arg;
+
+    case ({}, {}, _, _, _) then (listReverse(inAccumList), inArg);
+
+    case (e1 :: rest_e1, e2 :: rest_e2, _, _, _)
+      equation
+        (res, arg) = inFunc(e1, e2, inArg);
+        inAccumList = res :: inAccumList;
+        (rest_res, arg) = threadMapFold_tail(rest_e1, rest_e2, inFunc, arg, inAccumList);
+      then
+        (rest_res, arg);
+
+  end match;
+end threadMapFold_tail;
+
 public function position
   "Takes a value and a list, and returns the position of the first list element
   that whose value is equal to the given value. The index starts at zero.

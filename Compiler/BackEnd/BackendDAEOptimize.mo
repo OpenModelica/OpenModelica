@@ -5890,14 +5890,17 @@ algorithm
         partitionVars(BackendDAEUtil.equationSize(arr),arr,vars,ixs,mT,va);
         el = arrayList(ea);
         vl = arrayList(va);
-      then List.threadMap(el,vl,createEqSystem);
+        (systs,true) = List.threadMapFold(el,vl,createEqSystem,true);
+      then systs;
   end match;
 end partitionIndependentBlocksSplitBlocks;
 
 protected function createEqSystem
   input list<BackendDAE.Equation> el;
   input list<BackendDAE.Var> vl;
+  input Boolean success;
   output BackendDAE.EqSystem syst;
+  output Boolean osuccess;
 protected
   BackendDAE.EquationArray arr;
   BackendDAE.Variables vars;
@@ -5915,8 +5918,9 @@ algorithm
   s3 := stringDelimitList(crs,"\n");
   s4 := Debug.bcallret1(i1<>i2,BackendDump.dumpEqnsStr,el,"");
   // Can this even be triggered? We check that all variables are defined somewhere, so everything should be balanced already?
-  Error.assertionOrAddSourceMessage(i1==i2,Error.IMBALANCED_EQUATIONS,{s1,s2,s3,s4},Absyn.dummyInfo);
+  Debug.bcall3(i1<>i2,Error.addSourceMessage,Error.IMBALANCED_EQUATIONS,{s1,s2,s3,s4},Absyn.dummyInfo);
   syst := BackendDAE.EQSYSTEM(vars,arr,NONE(),NONE(),BackendDAE.NO_MATCHING());
+  osuccess := success and i1==i2;
 end createEqSystem;
 
 protected function partitionEquations
