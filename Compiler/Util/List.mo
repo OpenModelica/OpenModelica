@@ -4956,8 +4956,10 @@ public function threadMapFold_tail
 algorithm
   (outList, outArg) := match(inList1, inList2, inFunc, inArg, inAccumList)
     local
-      ElementInType e1,e2;
-      list<ElementInType> rest_e1,rest_e2;
+      ElementType1 e1;
+      ElementType2 e2;
+      list<ElementType1> rest_e1;
+      list<ElementType2> rest_e2;
       ElementOutType res;
       list<ElementOutType> rest_res;
       FoldType arg;
