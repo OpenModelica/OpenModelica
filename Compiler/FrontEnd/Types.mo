@@ -4010,7 +4010,7 @@ algorithm
       DAE.MatchType matchTy;
       list<DAE.Element> localDecls;
 
-      /* Array expressions: expression dimension [dim1], expected dimension [dim2] */
+    /* Array expressions: expression dimension [dim1], expected dimension [dim2] */
     case (DAE.ARRAY(array = elist),
           (DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
           ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p),
@@ -4024,8 +4024,8 @@ algorithm
       then
         (DAE.ARRAY(at,sc,elist_1),(DAE.T_ARRAY(dim1,ty2),p));
 
-     /* Array expressions: expression dimension [:], expected dimension [dim2] */
-     /* ARRAYS HAVE KNOWN DIMENSIONS. WHO WROTE THIS :(
+    /* Array expressions: expression dimension [:], expected dimension [dim2] */
+    /* ARRAYS HAVE KNOWN DIMENSIONS. WHO WROTE THIS :(
     case (DAE.ARRAY(array = elist),
           (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = ty1),_),
           ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p2),
@@ -4040,7 +4040,7 @@ algorithm
         (DAE.ARRAY(at,sc,elist_1),(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),ty2),p2));
         */
 
-        /* Array expressions: expression dimension [dim1], expected dimension [:] */
+    /* Array expressions: expression dimension [dim1], expected dimension [:] */
     case (DAE.ARRAY(array = elist),(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
         ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = ty2),p2),printFailtrace)
       equation
@@ -4058,7 +4058,7 @@ algorithm
       then
         (DAE.ARRAY(DAE.ET_ARRAY(ety1, dims),sc,elist_1), ty2);
 
-        /* Range expressions, e.g. 1:2:10 */
+    /* Range expressions, e.g. 1:2:10 */
     case (DAE.RANGE(ty = t,exp = begin,expOption = SOME(step),range = stop),(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
       ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p),printFailtrace)
       equation
@@ -4070,7 +4070,7 @@ algorithm
       then
         (DAE.RANGE(at,begin_1,SOME(step_1),stop_1),(DAE.T_ARRAY(dim1,ty2),p));
 
-        /* Range expressions, e.g. 1:10 */
+    /* Range expressions, e.g. 1:10 */
     case (DAE.RANGE(ty = t,exp = begin,expOption = NONE(),range = stop),(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
       ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p),printFailtrace)
       equation
@@ -4081,7 +4081,7 @@ algorithm
       then
         (DAE.RANGE(at,begin_1,NONE(),stop_1),(DAE.T_ARRAY(dim1,ty2),p));
 
-        /* Matrix expressions: expression dimension [dim1,dim11], expected dimension [dim2,dim22] */
+    /* Matrix expressions: expression dimension [dim1,dim11], expected dimension [dim2,dim22] */
     case (DAE.MATRIX(integer = nmax,matrix = ell),(DAE.T_ARRAY(arrayDim = dim1,arrayType = (DAE.T_ARRAY(arrayDim = dim11,arrayType = t1),_)),_),
       ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = (DAE.T_ARRAY(arrayDim = dim22,arrayType = t2),p1)),p2),printFailtrace)
       equation
@@ -4092,7 +4092,7 @@ algorithm
       then
         (DAE.MATRIX(at,nmax,ell_1),(DAE.T_ARRAY(dim1,(DAE.T_ARRAY(dim11,t2),p1)),p2));
 
-        /* Matrix expressions: expression dimension [dim1,dim11] expected dimension [:,dim22] */
+    /* Matrix expressions: expression dimension [dim1,dim11] expected dimension [:,dim22] */
     case (DAE.MATRIX(integer = nmax,matrix = ell),(DAE.T_ARRAY(arrayDim = dim1,arrayType = (DAE.T_ARRAY(arrayDim = dim11,arrayType = t1),_)),_),
       ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = (DAE.T_ARRAY(arrayDim = dim22,arrayType = t2),p1)),p2),printFailtrace)
       equation
@@ -4103,7 +4103,7 @@ algorithm
       then
         (DAE.MATRIX(at,nmax,ell_1),ty);
 
-        /* Arbitrary expressions, expression dimension [dim1], expected dimension [dim2] */
+    /* Arbitrary expressions, expression dimension [dim1], expected dimension [dim2] */
     case (e,(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
         ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p2),printFailtrace)
       equation
@@ -4114,7 +4114,7 @@ algorithm
       then
         (e_1,t_2);
 
-        /* Arbitrary expressions,  expression dimension [:],  expected dimension [dim2]*/
+    /* Arbitrary expressions,  expression dimension [:],  expected dimension [dim2]*/
     case (e,(DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = ty1),_),
         (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p2),printFailtrace)
       equation
@@ -4123,7 +4123,7 @@ algorithm
       then
         (e_1,(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),t_1),p2));
 
-        /* Arbitrary expressions, expression dimension [:] expected dimension [:] */
+    /* Arbitrary expressions, expression dimension [:] expected dimension [:] */
     case (e,(DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = ty1),_),
       (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = ty2),p2),printFailtrace)
       equation
@@ -4132,7 +4132,7 @@ algorithm
       then
         (e_1,(DAE.T_ARRAY(DAE.DIM_UNKNOWN(),t_1),p2));
 
-        /* Arbitrary expression, expression dimension [dim1] expected dimension [:]*/
+    /* Arbitrary expression, expression dimension [dim1] expected dimension [:]*/
     case (e,(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
         (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = ty2),p2),printFailtrace)
       equation
@@ -4141,7 +4141,7 @@ algorithm
       then
         (e_1,(DAE.T_ARRAY(dim1,t_1),p2));
 
-        /* Tuple */
+    /* Tuple */
     case (DAE.TUPLE(PR = elist),(DAE.T_TUPLE(tupleType = tys1),_),(DAE.T_TUPLE(tupleType = tys2),p2),printFailtrace)
       equation
         (elist_1,tys_1) = typeConvertList(elist, tys1, tys2, printFailtrace);
@@ -4184,20 +4184,21 @@ algorithm
       (e_1,t_1) = typeConvert(e,t1,t2,printFailtrace);
     then (e_1,t_1);
 
-        /* MetaModelica Option */
+    /* MetaModelica Option */
     case (DAE.META_OPTION(SOME(e)),(DAE.T_METAOPTION(t1),_),(DAE.T_METAOPTION(t2),p2),printFailtrace)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (e_1, t_1) = matchType(e,t1,t2,printFailtrace);
       then
         (DAE.META_OPTION(SOME(e_1)),(DAE.T_METAOPTION(t_1),p2));
+    
     case (DAE.META_OPTION(NONE()),_,(DAE.T_METAOPTION(t2),p2),printFailtrace)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
       then
         (DAE.META_OPTION(NONE()),(DAE.T_METAOPTION(t2),p2));
 
-        /* MetaModelica Tuple */
+    /* MetaModelica Tuple */
     case (DAE.TUPLE(elist),(DAE.T_TUPLE(tupleType = tys1),_),(DAE.T_METATUPLE(tys2),p2),printFailtrace)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
@@ -4205,6 +4206,7 @@ algorithm
         (elist_1,tys_1) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
       then
         (DAE.META_TUPLE(elist_1),(DAE.T_METATUPLE(tys_1),p2));
+    
     case (DAE.MATCHEXPRESSION(matchTy,inputs,localDecls,cases,et),actual,expected,printFailtrace)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
@@ -4214,12 +4216,14 @@ algorithm
         et=elabType(expected);
       then
         (DAE.MATCHEXPRESSION(matchTy,inputs,localDecls,cases,et),expected);
+    
     case (DAE.META_TUPLE(elist),(DAE.T_METATUPLE(tys1),_),(DAE.T_METATUPLE(tys2),p2),printFailtrace)
       equation
         tys2 = List.map(tys2, boxIfUnboxedType);
         (elist_1,tys_1) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
       then
         (DAE.META_TUPLE(elist_1),(DAE.T_METATUPLE(tys_1),p2));
+    
     case (DAE.TUPLE(elist),(DAE.T_TUPLE(tupleType = tys1),_),ty2 as (DAE.T_BOXED((DAE.T_NOTYPE(),_)),p2),printFailtrace)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
@@ -4248,6 +4252,7 @@ algorithm
         e_1 = DAE.LIST(elist_1);
         t2 = (DAE.T_LIST(t2),NONE());
       then (e_1, t2);
+    
     case (e as DAE.ARRAY(DAE.ET_ARRAY(ty = t),_,elist),(DAE.T_ARRAY(arrayType=t1),_),(DAE.T_BOXED(t2),p2),printFailtrace)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
@@ -4258,12 +4263,14 @@ algorithm
         e_1 = DAE.LIST(elist_1);
         t2 = (DAE.T_LIST(t2),NONE());
       then (e_1, t2);
+    
     case (e as DAE.MATRIX(DAE.ET_ARRAY(ty = t),_,elist_big),t1,t2,printFailtrace)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (elist,ty2) = typeConvertMatrixToList(elist_big,t1,t2,printFailtrace);
         e_1 = DAE.LIST(elist);
       then (e_1,ty2);
+    
     case (e as DAE.LIST(elist),(DAE.T_LIST(t1),_),(DAE.T_LIST(t2),p2),printFailtrace)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
@@ -4299,7 +4306,7 @@ algorithm
 
     case (e, t1 as (DAE.T_ARRAY(arrayType = _),_), (DAE.T_BOXED(t2), _), _)
       equation
-        //true = RTOpts.acceptMetaModelicaGrammar();
+        // true = RTOpts.acceptMetaModelicaGrammar();
         (e, t1) = matchType(e, t1, unboxedType(t2), printFailtrace);
         t2 = (DAE.T_BOXED(t1), NONE());
         t = elabType(t2);
@@ -4375,7 +4382,7 @@ algorithm
       then
         (DAE.CALL(Absyn.IDENT("mmc_unbox_record"),{e_1},DAE.CALL_ATTR(t,false,true,DAE.NO_INLINE(),DAE.NO_TAIL())),t2);
 
-      /* See printFailure()
+    /* See printFailure()
     case (exp,t1,t2,printFailtrace)
       equation
         Debug.fprint("tcvt", "- type conversion failed: ");

@@ -140,7 +140,7 @@ algorithm
       equation
         (cache,subs_1) = elabSubmods(cache, env, ih, pre, subs, impl,info);
         // print("Mod.elabMod: calling elabExp on mod exp: " +& Dump.printExpStr(e) +& " in env: " +& Env.printEnvPathStr(env) +& "\n");
-        (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), RTOpts.splitArrays(),pre,info); // Vectorize only if arrays are expanded
+        (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl, NONE(), RTOpts.splitArrays(), pre, info); // Vectorize only if arrays are expanded
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_val) = elabModValue(cache, env, e_1, prop, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre)

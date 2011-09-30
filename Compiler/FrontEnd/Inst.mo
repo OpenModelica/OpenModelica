@@ -1263,9 +1263,10 @@ algorithm
       then
         fail();
 
-    case (_,_,ih,_,_,_,SCode.CLASS(name = n),_,impl,_,graph,_)
+    case (_,env,ih,_,_,_,SCode.CLASS(name = n),_,impl,_,graph,_)
       equation
-        Debug.fprintln("failtrace", "- Inst.instClass: " +& n +& " failed");
+        Debug.fprintln("failtrace", "- Inst.instClass: " +& n +& " in env: " +&
+        Env.printEnvPathStr(env) +& " failed");
       then
         fail();
   end matchcontinue;
@@ -3534,6 +3535,7 @@ algorithm
         //Update the modifiers of elements to typed ones, needed for modifiers
         //on components that are inherited.       
         (cache,env4,ih,compelts_2) = updateCompeltsMods(cache, env3, ih, pre, extcomps, ci_state, impl);
+
         compelts_1 = addNomod(compelts);
         cdefelts_1 = addNomod(cdefelts);
         compelts_2 = List.flatten({compelts_2, compelts_1, cdefelts_1});
@@ -4909,7 +4911,6 @@ algorithm
                                              lst_constantEls, lst_constantEls, {},
                                              inst_dims, false); // adrpo: here SHOULD BE IMPL=TRUE! not FALSE!
         (cache,env3,ih,lst_constantEls) = updateCompeltsMods(cache,env3,ih, pre, lst_constantEls, ci_state, true);
-
         //lst_constantEls = listAppend(extcomps,lst_constantEls);
         (cache,env3,ih,_,_,_,ci_state2,_,_) =
            instElementList(cache, env3, ih, UnitAbsyn.noStore, mods, pre, ci_state1, lst_constantEls,
@@ -10709,6 +10710,11 @@ algorithm
     /* normal functions */
     case (cache,env,ih,mod,pre,(c as SCode.CLASS(classDef=cd,partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(),info = info)),inst_dims,instFunctionTypeOnly)
       equation
+        // if we're not MetaModelica set it to non-partial
+        c = Util.if_(RTOpts.acceptMetaModelicaGrammar(),
+                     c,
+                     SCode.setClassPartialPrefix(SCode.NOT_PARTIAL(), c));
+        
         (cache,cenv,ih,_,DAE.DAE(daeElts),_,ty,st,_,_) =
           instClass(cache, env, ih, UnitAbsynBuilder.emptyInstStore(), mod, pre,
             c, inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);

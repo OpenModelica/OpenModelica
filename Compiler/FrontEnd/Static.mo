@@ -6585,7 +6585,7 @@ algorithm
         Debug.fprintln("failtrace", argstr);
         Debug.fprint("failtrace", " prefix: ");
         prestr = PrefixUtil.printPrefixStr(pre);
-        Debug.fprint("failtrace", prestr);
+        Debug.fprintln("failtrace", prestr);
       then
         fail();
   end matchcontinue;
@@ -7759,8 +7759,12 @@ algorithm
         tyconst = elabConsts(restype, const);
         prop = getProperties(restype, tyconst);
         tp = Types.elabType(restype);
+        
+        // adrpo: 2011-09-30 NOTE THAT THIS WILL NOT ADD DEFAULT ARGS
+        //                   FROM extends (THE BASE CLASS)
         (cache,args_2,slots2) = addDefaultArgs(cache,env,args_1,fn,slots,impl,pre,info);
-        true = List.fold(slots2, slotAnd, true);
+        // DO NOT CHECK IF ALL SLOTS ARE FILLED!
+        // true = List.fold(slots2, slotAnd, true);
         callExp = DAE.CALL(fn_1,args_2,DAE.CALL_ATTR(tp,tuple_,builtin,inlineType,DAE.NO_TAIL()));
         
         // create a replacement for input variables -> their binding
@@ -9286,17 +9290,43 @@ algorithm
     
     case (cache,(SLOT(an = (id,tp,c2),slotFilled = false,expExpOption = NONE(),typesArrayDimLst = ds) :: xs),class_,env,impl,polymorphicBindings,pre,info)
       equation
-        (cache,res,constLst,polymorphicBindings) = fillDefaultSlots(cache, xs, class_, env, impl, polymorphicBindings, pre, info);
-
         SCode.COMPONENT(modifications = SCode.MOD(_,_,_,SOME((dexp,_)))) = SCode.getElementNamed(id, class_);
-        
         (cache,exp,DAE.PROP(t,c1),_) = elabExp(cache, env, dexp, impl, NONE(), true, pre, info);
         // print("Slot: " +& id +& " -> " +& Exp.printExpStr(exp) +& "\n");
         (exp_1,_,polymorphicBindings) = Types.matchTypePolymorphic(exp,t,tp,Env.getEnvPathNoImplicitScope(env),polymorphicBindings,false);
         true = Types.constEqualOrHigher(c1,c2);
+        (cache,res,constLst,polymorphicBindings) = fillDefaultSlots(cache, xs, class_, env, impl, polymorphicBindings, pre, info);
+      then
+        (cache, SLOT((id,tp,c2),true,SOME(exp_1),ds) :: res, c1::constLst, polymorphicBindings);
+    
+    /*
+    case (cache,(SLOT(an = (id,tp,c2),slotFilled = false,expExpOption = NONE(),typesArrayDimLst = ds) :: xs),class_,env,impl,polymorphicBindings,pre,info)
+      equation
+        // adrpo 2011-09-30 -> SCode.getElementNamed above DOES NOT WORK ON EXTENDS, try lookup
+        (cache, _, SOME((SCode.COMPONENT(modifications = SCode.MOD(_,_,_,SOME((dexp,_)))), _)), _) = 
+          Lookup.lookupIdent(cache, env, id);
+        (cache,exp,DAE.PROP(t,c1),_) = elabExp(cache, env, dexp, impl, NONE(), true, pre, info);
+        // print("Slot: " +& id +& " -> " +& Exp.printExpStr(exp) +& "\n");
+        (exp_1,_,polymorphicBindings) = Types.matchTypePolymorphic(exp,t,tp,Env.getEnvPathNoImplicitScope(env),polymorphicBindings,false);
+        true = Types.constEqualOrHigher(c1,c2);
+        (cache,res,constLst,polymorphicBindings) = fillDefaultSlots(cache, xs, class_, env, impl, polymorphicBindings, pre, info);
       then
         (cache, SLOT((id,tp,c2),true,SOME(exp_1),ds) :: res, c1::constLst, polymorphicBindings);
 
+    case (cache,(SLOT(an = (id,tp,c2),slotFilled = false,expExpOption = NONE(),typesArrayDimLst = ds) :: xs),class_,env,impl,polymorphicBindings,pre,info)
+      equation
+        // adrpo 2011-09-30 -> SCode.getElementNamed above DOES NOT WORK ON EXTENDS, try lookup
+        (cache, DAE.TYPES_VAR(_, _, _, t, DAE.EQBOUND(exp, _, c1, _), _), _, _) = 
+          Lookup.lookupIdent(cache, env, id);
+        //(cache,exp,DAE.PROP(t,c1),_) = elabExp(cache, env, dexp, impl, NONE(), true, pre, info);
+        // print("Slot: " +& id +& " -> " +& Exp.printExpStr(exp) +& "\n");
+        (exp_1,_,polymorphicBindings) = Types.matchTypePolymorphic(exp,t,tp,Env.getEnvPathNoImplicitScope(env),polymorphicBindings,false);
+        true = Types.constEqualOrHigher(c1,c2);
+        (cache,res,constLst,polymorphicBindings) = fillDefaultSlots(cache, xs, class_, env, impl, polymorphicBindings, pre, info);
+      then
+        (cache, SLOT((id,tp,c2),true,SOME(exp_1),ds) :: res, c1::constLst, polymorphicBindings);
+    */
+    
     case (cache,(SLOT(an = fa,slotFilled = false,expExpOption = e,typesArrayDimLst = ds) :: xs),class_,env,impl,polymorphicBindings,pre,info)
       equation
         (cache, res, constLst, polymorphicBindings) = fillDefaultSlots(cache, xs, class_, env, impl, polymorphicBindings, pre, info);
