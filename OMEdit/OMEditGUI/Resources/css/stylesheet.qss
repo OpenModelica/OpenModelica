@@ -59,3 +59,9 @@ QPushButton#ModelicaEditorSearchButtons {
 QToolButton#InteractiveSimulationButtons {
     padding: 3px;
 }
+
+QListWidget::item:hover {
+    border: 1px solid gray;
+    color: blue;
+    cursor: hand;
+}

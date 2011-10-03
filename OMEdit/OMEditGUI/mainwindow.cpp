@@ -74,7 +74,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     //Create a grid on the centralwidget
     mpCentralgrid = new QGridLayout(mpCentralwidget);
     // since the Tabs are displaed differently on MAC so they occupy more space
-    #ifdef Q_OS_UNIX
+    #ifdef Q_OS_MAC
         mpCentralgrid->setContentsMargins(0, 7, 0, 0);
     #else
         mpCentralgrid->setContentsMargins(0, 1, 0, 0);
@@ -82,7 +82,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     //Create a dock for the MessageWidget
     messagedock = new QDockWidget(tr(" Messages"), this);
     messagedock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
-    #ifdef Q_OS_UNIX
+    #ifdef Q_OS_MAC
         messagedock->setContentsMargins(0, 6, 1, 0);
     #else
         messagedock->setContentsMargins(0, 1, 1, 0);
@@ -115,7 +115,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     addDockWidget(Qt::LeftDockWidgetArea, libdock);
     //create a dock for the model browser
     modelBrowserdock = new QDockWidget(tr("Model Browser"), this);
-    #ifdef Q_OS_UNIX
+    #ifdef Q_OS_MAC
         modelBrowserdock->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     #else
         modelBrowserdock->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
