@@ -908,31 +908,6 @@ algorithm
   end matchcontinue;
 end stringContainsChar;
 
-public function stringDelimitList "function stringDelimitList
-  Takes a list of strings and a string delimiter and appends all
-  list elements with the string delimiter inserted between elements.
-  Example: stringDelimitList({\"x\",\"y\",\"z\"}, \", \") => \"x, y, z\""
-  input list<String> inStringLst;
-  input String inString;
-  output String outString;
-algorithm
-  outString:=
-  matchcontinue (inStringLst,inString)
-    local
-      String f,delim,str1,str2,str;
-      list<String> r;
-    case ({},_) then "";
-    case ({f},delim) then f;
-    case ((f :: r),delim)
-      equation
-        str1 = stringDelimitList(r, delim);
-        str2 = stringAppend(f, delim);
-        str = stringAppend(str2, str1);
-      then
-        str;
-  end matchcontinue;
-end stringDelimitList;
-
 public function stringDelimitListPrintBuf "
 Author: BZ, 2009-11
 Same funcitonality as stringDelimitListPrint, but writes to print buffer instead of string variable.
