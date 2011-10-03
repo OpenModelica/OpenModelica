@@ -9,8 +9,6 @@ QT += network core gui webkit xml svg
 TARGET = OMEdit
 TEMPLATE = app
 
-QMAKE_LFLAGS += -enable-auto-import
-
 SOURCES += main.cpp\
     mainwindow.cpp \
     ProjectTabWidget.cpp \
@@ -80,6 +78,8 @@ HEADERS  += mainwindow.h \
 
 # -------For OMNIorb
 win32 {
+QMAKE_LFLAGS += -enable-auto-import
+
 DEFINES += __x86__ \
     __NT__ \
     __OSVERSION__=4 \
