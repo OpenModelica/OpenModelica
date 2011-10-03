@@ -108,6 +108,7 @@ replaceable type ElementType subtypeof Any;
 replaceable type ElementType1 subtypeof Any;
 replaceable type ElementType2 subtypeof Any;
 replaceable type ElementType3 subtypeof Any;
+replaceable type ElementType4 subtypeof Any;
 replaceable type ElementInType subtypeof Any;
 
 // partial function FuncType  "Do not remove, see package comment."
@@ -4395,6 +4396,45 @@ algorithm
 
   end match;
 end thread3Tuple_tail;
+
+public function thread4Tuple
+  "Takes three lists and threads (interleaves) the arguments into a list of tuples
+   consisting of the two element types."
+  input list<ElementType1> inList1;
+  input list<ElementType2> inList2;
+  input list<ElementType3> inList3;
+  input list<ElementType4> inList4;
+  output list<tuple<ElementType1, ElementType2, ElementType3, ElementType4>> outTuples;
+algorithm
+  outTuples := thread4Tuple_tail(inList1, inList2, inList3, inList4, {});
+end thread4Tuple;
+
+protected function thread4Tuple_tail
+  "Tail recursive implementation of thread3Tuple."
+  input list<ElementType1> inList1;
+  input list<ElementType2> inList2;
+  input list<ElementType3> inList3;
+  input list<ElementType4> inList4;
+  input list<tuple<ElementType1, ElementType2, ElementType3, ElementType4>> inAccum;
+  output list<tuple<ElementType1, ElementType2, ElementType3, ElementType4>> outTuples;
+algorithm
+  outTuples := match(inList1, inList2, inList3, inList4, inAccum)
+    local
+      ElementType1 e1;
+      list<ElementType1> rest1;
+      ElementType2 e2;
+      list<ElementType2> rest2;
+      ElementType3 e3;
+      list<ElementType3> rest3;
+      ElementType4 e4;
+      list<ElementType4> rest4;
+
+    case ({}, {}, {}, {}, _) then listReverse(inAccum);
+    case (e1 :: rest1, e2 :: rest2, e3 :: rest3, e4 :: rest4, _)
+      then thread4Tuple_tail(rest1, rest2, rest3, rest4, (e1, e2, e3, e4) :: inAccum);
+
+  end match;
+end thread4Tuple_tail;
 
 public function threadMap
   "Takes two lists and a function and threads (interleaves) and maps the

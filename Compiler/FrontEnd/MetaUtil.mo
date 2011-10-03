@@ -657,8 +657,8 @@ algorithm
       then (names,types);
     case ((DAE.T_FUNCTION(fargs,(DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_),_),_))
       equation
-        names = List.map(fargs, Util.tuple31);
-        types = List.map(fargs, Util.tuple32);
+        names = List.map(fargs, Util.tuple41);
+        types = List.map(fargs, Util.tuple42);
       then (names,types);
   end matchcontinue;
 end constructorCallTypeToNamesAndTypes;

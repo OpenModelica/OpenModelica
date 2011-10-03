@@ -1859,27 +1859,27 @@ algorithm
       list<Variable> var_args;
       list<DAE.Type> tys;
       
-    case ((name, tty as (DAE.T_FUNCTION(funcArg = args, funcResultType = (DAE.T_TUPLE(tys),_)), _),_))
+    case ((name, tty as (DAE.T_FUNCTION(funcArg = args, funcResultType = (DAE.T_TUPLE(tys),_)), _),_,_))
       equation
         var_args = List.map(args, typesSimFunctionArg);
         etys = List.map(tys, Types.elabType);
       then
         FUNCTION_PTR(name, etys, var_args);
         
-    case ((name, tty as (DAE.T_FUNCTION(funcArg = args, funcResultType = (DAE.T_NORETCALL(),_)), _),_))
+    case ((name, tty as (DAE.T_FUNCTION(funcArg = args, funcResultType = (DAE.T_NORETCALL(),_)), _),_,_))
       equation
         var_args = List.map(args, typesSimFunctionArg);
       then
         FUNCTION_PTR(name, {}, var_args);
         
-    case ((name, tty as (DAE.T_FUNCTION(funcArg = args, funcResultType = res_ty), _),_))
+    case ((name, tty as (DAE.T_FUNCTION(funcArg = args, funcResultType = res_ty), _),_,_))
       equation
         expType = Types.elabType(res_ty);
         var_args = List.map(args, typesSimFunctionArg);
       then
         FUNCTION_PTR(name, {expType}, var_args);
         
-    case ((name,tty,_))
+    case ((name,tty,_,_))
       equation
         expType = Types.elabType(tty);
         cref_  = ComponentReference.makeCrefIdent(name, expType, {});
@@ -1904,7 +1904,7 @@ algorithm
       Variable var;
     case (DAE.VAR(componentRef = DAE.CREF_IDENT(ident=name),ty = daeType as (DAE.T_FUNCTION(funcArg=_),_)))
       equation
-        var = typesSimFunctionArg((name,daeType,DAE.C_VAR()));
+        var = typesSimFunctionArg((name,daeType,DAE.C_VAR(),NONE()));
       then var;
         
     case (DAE.VAR(componentRef = id,

@@ -539,6 +539,8 @@ public constant Message NON_FORMAL_PUBLIC_FUNCTION_VAR = MESSAGE(201, TRANSLATIO
   "Invalid public variable %s, function variables that are not input/output must be protected.");
 public constant Message PROTECTED_FORMAL_FUNCTION_VAR = MESSAGE(202, TRANSLATION(), ERROR(),
   "Invalid protected formal parameter %s, formal arguments must be public.");
+public constant Message UNFILLED_SLOT = MESSAGE(203, TRANSLATION(), ERROR(),
+  "Function argument %s was not given by the function call, and does not have a default value.");
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   "Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value");
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),

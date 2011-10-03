@@ -1250,7 +1250,7 @@ algorithm
   (outStore,indxs) := match(fargs,funcInstId,store)
   local String unitStr; Integer indx; DAE.Type tp; UnitAbsyn.Unit unit;
     case({},funcInstId,store) then (store,{});
-    case((_,tp,_)::fargs,funcInstId,store) equation
+    case((_,tp,_,_)::fargs,funcInstId,store) equation
       unitStr = getUnitStr(tp);
 
       unit = str2unit(unitStr,SOME(funcInstId));

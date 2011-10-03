@@ -5668,4 +5668,19 @@ algorithm
   DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name)) := var;
 end varName;
 
+public function bindingExp
+"help function to instBinding, returns the expression of a binding"
+  input DAE.Binding bind;
+  output Option<DAE.Exp> exp;
+algorithm
+  exp := match(bind)
+  local DAE.Exp e; Values.Value v;
+    case(DAE.UNBOUND()) then NONE();
+    case(DAE.EQBOUND(exp=e)) then SOME(e);
+    case(DAE.VALBOUND(valBound=v)) equation
+      e = ValuesUtil.valueExp(v);
+    then SOME(e);
+  end match;
+end bindingExp;
+
 end DAEUtil;

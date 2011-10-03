@@ -1490,8 +1490,8 @@ algorithm
     // MM Function Reference. sjoelund
     case ((DAE.T_FUNCTION(farg1,t1,_),_),(DAE.T_FUNCTION(farg2,t2,_),_))
       equation
-        tList1 = List.map(farg1, Util.tuple32);
-        tList2 = List.map(farg2, Util.tuple32);
+        tList1 = List.map(farg1, Util.tuple42);
+        tList2 = List.map(farg2, Util.tuple42);
         true = subtypeTypelist(tList1,tList2);
         true = subtype(t1,t2);
       then true;
@@ -2416,13 +2416,13 @@ algorithm
       list<FuncArg> params;
       String s1,s2;
     case {} then "";
-    case {(n,t,_)}
+    case {(n,t,_,_)}
       equation
         s1 = printTypeStr(t);
         str = stringAppendList({n," :: ",s1});
       then
         str;
-    case (((n,t,_) :: params))
+    case (((n,t,_,_) :: params))
       equation
         s1 = printTypeStr(t);
         s2 = printParamsStr(params);
@@ -2495,7 +2495,7 @@ algorithm
       Ident tstr,res,id,cstr;
       Type ty;
       DAE.Const c;
-    case ((id,ty,c))
+    case ((id,ty,c,_))
       equation
         tstr = unparseType(ty);
         cstr = DAEUtil.constStrFriendly(c);
@@ -2682,7 +2682,7 @@ algorithm
     local
       Ident n;
       Type ty;
-    case ((n,ty,_))
+    case ((n,ty,_,_))
       equation
         Print.printErrorBuf(printTypeStr(ty));
         Print.printErrorBuf(" ");
@@ -2705,7 +2705,7 @@ algorithm
       Ident s,res,n,cs;
       Type ty;
       DAE.Const c;
-    case ((n,ty,c))
+    case ((n,ty,c,_))
       equation
         s = unparseType(ty);
         cs = DAEUtil.constStrFriendly(c);
@@ -2924,13 +2924,21 @@ algorithm
   end matchcontinue;
 end isBidirAttr;
 
-public function makeFargsList "function: makeFargsList
-  author: LS
-  Makes a function argument list from a list of variables."
-  input list<Var> inVarLst;
-  output list<FuncArg> outFuncArgLst;
+public function makeFargsList
+  "Makes a function argument list from a list of variables."
+  input list<Var> vars;
+  output list<FuncArg> fargs;
+annotation(__OpenModelica_EarlyInline=true);
 algorithm
-  outFuncArgLst := match (inVarLst)
+  fargs := List.map(vars,makeFarg);
+end makeFargsList;
+
+protected function makeFarg
+  "Makes a function argument list from a variable."
+  input Var variable;
+  output FuncArg farg;
+algorithm
+  farg := match (variable)
     local
       list<FuncArg> fargl;
       Ident n;
@@ -2941,16 +2949,15 @@ algorithm
       list<Var> vl;
       DAE.Const c;
       SCode.Variability var;
+      Option<DAE.Exp> oexp;
     
-    case {} then {};
-    case ((DAE.TYPES_VAR(name = n,attributes = attr as DAE.ATTR(variability = var),visibility = vis,ty = ty,binding = bnd) :: vl))
+    case DAE.TYPES_VAR(name = n,attributes = attr as DAE.ATTR(variability = var),ty = ty,binding = bnd)
       equation
         c = variabilityToConst(var);
-        fargl = makeFargsList(vl);
-      then
-        ((n,ty,c) :: fargl);
+        oexp = DAEUtil.bindingExp(bnd);
+      then ((n,ty,c,oexp));
   end match;
-end makeFargsList;
+end makeFarg;
 
 protected function makeReturnType "function: makeReturnType
   author: LS
@@ -5021,7 +5028,7 @@ algorithm
         exps;
     case DAE.T_FUNCTION(funcArg = fargs,funcResultType = ty)
       equation
-        tys = List.map(fargs, Util.tuple32);
+        tys = List.map(fargs, Util.tuple42);
         explists = List.map(tys, getAllExps);
         tyexps = getAllExps(ty);
         exps = List.flatten((tyexps :: explists));
@@ -5526,6 +5533,7 @@ algorithm
       DAE.FunctionAttributes functionAttributes;
       Option<Absyn.Path> op1;
       list<DAE.Const> cs;
+      list<Option<DAE.Exp>> oe;
 
     case ((DAE.T_POLYMORPHIC(id),_),prefix,bindings,info)
       equation
@@ -5558,12 +5566,13 @@ algorithm
       then ((DAE.T_TUPLE(tys),NONE()));
     case ((DAE.T_FUNCTION(args1,ty1,functionAttributes),op1),prefix,bindings,info)
       equation
-        names1 = List.map(args1, Util.tuple31);
-        tys1 = List.map(args1, Util.tuple32);
-        cs = List.map(args1, Util.tuple33);
+        names1 = List.map(args1, Util.tuple41);
+        tys1 = List.map(args1, Util.tuple42);
+        cs = List.map(args1, Util.tuple43);
+        oe = List.map(args1, Util.tuple44);
         tys1 = List.map3(tys1, fixPolymorphicRestype2, prefix, bindings, info);
         ty1 = fixPolymorphicRestype2(ty1,prefix,bindings,info);
-        args1 = List.thread3Tuple(names1,tys1,cs);
+        args1 = List.thread4Tuple(names1,tys1,cs,oe);
         ty1 = (DAE.T_FUNCTION(args1,ty1,functionAttributes),op1);
       then ty1;
  
@@ -5667,7 +5676,7 @@ algorithm
 
     case ((first as (DAE.T_FUNCTION(funcArgs,ty,_),_))::rest,acc,fn)
       equation
-        tys = List.map(funcArgs, Util.tuple32);
+        tys = List.map(funcArgs, Util.tuple42);
         acc = getAllInnerTypes(tys,List.consOnSuccess(first,acc,fn),fn);
       then getAllInnerTypes(ty::rest,acc,fn);
 
@@ -5717,18 +5726,20 @@ algorithm
       list<Type> funcArgTypes1, funcArgTypes2, dummyBoxedTypeList;
       list<DAE.Exp> dummyExpList;
       list<DAE.Const> cs;
+      list<Option<DAE.Exp>> oe;
       Type ty2,resType1,resType2;
       TType tty1,tty2;
       Absyn.Path path;
       DAE.FunctionAttributes functionAttributes;
     case (((tty1 as DAE.T_FUNCTION(funcArgs1,resType1,functionAttributes)),SOME(path)))
       equation
-        funcArgNames = List.map(funcArgs1, Util.tuple31);
-        funcArgTypes1 = List.map(funcArgs1, Util.tuple32);
-        cs = List.map(funcArgs1, Util.tuple33);
+        funcArgNames = List.map(funcArgs1, Util.tuple41);
+        funcArgTypes1 = List.map(funcArgs1, Util.tuple42);
+        cs = List.map(funcArgs1, Util.tuple43);
+        oe = List.map(funcArgs1, Util.tuple44);
         (dummyExpList,dummyBoxedTypeList) = makeDummyExpAndTypeLists(funcArgTypes1);
         (_,funcArgTypes2) = matchTypeTuple(dummyExpList, funcArgTypes1, dummyBoxedTypeList, false);
-        funcArgs2 = List.thread3Tuple(funcArgNames,funcArgTypes2,cs);
+        funcArgs2 = List.thread4Tuple(funcArgNames,funcArgTypes2,cs,oe);
         resType2 = makeFunctionPolymorphicReferenceResType(resType1);
         tty2 = DAE.T_FUNCTION(funcArgs2,resType2,functionAttributes);
         ty2 = (tty2,SOME(path));
@@ -6055,13 +6066,13 @@ algorithm
     
     case ((DAE.T_FUNCTION(args1,ty1,functionAttributes1),op1)::_,(DAE.T_FUNCTION(args2,ty2,functionAttributes2),_)::rest,solvedBindings)
       equation
-        names1 = List.map(args1, Util.tuple31);
-        cs1 = List.map(args1, Util.tuple33);
-        tys1 = List.map(args1, Util.tuple32);
-        tys2 = List.map(args2, Util.tuple32);
+        names1 = List.map(args1, Util.tuple41);
+        cs1 = List.map(args1, Util.tuple43);
+        tys1 = List.map(args1, Util.tuple42);
+        tys2 = List.map(args2, Util.tuple42);
         (ty1::tys1,solvedBindings) = solveBindingsThread(ty1::tys1,ty2::tys2,false,solvedBindings);
         tys1 = List.map(tys1, boxIfUnboxedType);
-        args1 = List.thread3Tuple(names1,tys1,cs1);
+        args1 = List.thread4Tuple(names1,tys1,cs1,List.fill(NONE(),listLength(names1)));
         ty1 = (DAE.T_FUNCTION(args1,ty1,functionAttributes1),op1);
       then (ty1::rest,solvedBindings);
     
@@ -6137,6 +6148,7 @@ algorithm
       list<String> names;
       list<DAE.Const> cs;
       Option<Absyn.Path> op;
+      list<Option<DAE.Exp>> oe;
       DAE.FunctionAttributes functionAttributes;
     case ((DAE.T_LIST(ty),_),_)
       equation
@@ -6160,13 +6172,14 @@ algorithm
       then ty;
     case ((DAE.T_FUNCTION(args,ty,functionAttributes),op),solvedBindings)
       equation
-        tys = List.map(args, Util.tuple32);
+        tys = List.map(args, Util.tuple42);
         tys = replaceSolvedBindings(ty::tys,solvedBindings,false);
         tys = List.map(tys, unboxedType);
         ty::tys = List.map(tys, boxIfUnboxedType);
-        names = List.map(args, Util.tuple31);
-        cs = List.map(args, Util.tuple33);
-        args = List.thread3Tuple(names,tys,cs);
+        names = List.map(args, Util.tuple41);
+        cs = List.map(args, Util.tuple43);
+        oe = List.map(args, Util.tuple44);
+        args = List.thread4Tuple(names,tys,cs,oe);
         ty = (DAE.T_FUNCTION(args,ty,functionAttributes),op);
       then ty;
     case ((DAE.T_POLYMORPHIC(id),_),_)
@@ -6229,8 +6242,8 @@ algorithm
     case ((DAE.T_FUNCTION(farg1,ty1,_),SOME(path1)),(DAE.T_FUNCTION(farg2,ty2,_),SOME(path2)),envPath,bindings)
       equation
         true = Absyn.pathPrefixOf(Util.getOptionOrDefault(envPath,Absyn.IDENT("$TOP$")),path1); // Don't rename the result type for recursive calls...
-        tList1 = List.map(farg1, Util.tuple32);
-        tList2 = List.map(farg2, Util.tuple32);
+        tList1 = List.map(farg1, Util.tuple42);
+        tList2 = List.map(farg2, Util.tuple42);
         bindings = subtypePolymorphicList(tList1,tList2,envPath,bindings);
         bindings = subtypePolymorphic(ty1,ty2,envPath,bindings);
       then bindings;
@@ -6240,8 +6253,8 @@ algorithm
         false = Absyn.pathPrefixOf(Util.getOptionOrDefault(envPath,Absyn.IDENT("$TOP$")),path1);
         prefix = "$" +& Absyn.pathString(path1) +& ".";
         ((ty as (DAE.T_FUNCTION(farg1,ty1,_),_),_)) = traverseType((actual,prefix),prefixTraversedPolymorphicType);
-        tList1 = List.map(farg1, Util.tuple32);
-        tList2 = List.map(farg2, Util.tuple32);
+        tList1 = List.map(farg1, Util.tuple42);
+        tList2 = List.map(farg2, Util.tuple42);
         bindings = subtypePolymorphicList(tList1,tList2,envPath,bindings);
         bindings = subtypePolymorphic(ty1,ty2,envPath,bindings);
       then bindings;
@@ -6578,10 +6591,10 @@ algorithm
 end traverseVarTypes;
 
 protected function traverseFuncArg
-  input list<tuple<String,Type,DAE.Const>> args;
+  input list<tuple<String,Type,DAE.Const,Option<DAE.Exp>>> args;
   input A a;
   input Func fn;
-  output list<tuple<String,Type,DAE.Const>> oargs;
+  output list<tuple<String,Type,DAE.Const,Option<DAE.Exp>>> oargs;
   output A oa;
   replaceable type A subtypeof Any;
   partial function Func
@@ -6594,12 +6607,13 @@ algorithm
       DAE.Type ty;
       String b;
       DAE.Const c;
+      Option<DAE.Exp> d;
     case ({},a,fn) then ({},a);
-    case ((b,ty,c)::args,a,fn)
+    case ((b,ty,c,d)::args,a,fn)
       equation
         ((ty,a)) = traverseType((ty,a),fn);
         (args,a) = traverseFuncArg(args,a,fn);
-      then ((b,ty,c)::args,a);
+      then ((b,ty,c,d)::args,a);
   end match;
 end traverseFuncArg;
 
@@ -6642,17 +6656,19 @@ algorithm
       list<Type> tys1;
       list<String> names1;
       list<DAE.Const> cs1;
+      list<Option<DAE.Exp>> oe1;
       Type ty1;
       DAE.FunctionAttributes functionAttributes;
       Option<Absyn.Path> op1;
     case ((DAE.T_FUNCTION(args1,ty1,functionAttributes),op1))
       equation
-        names1 = List.map(args1, Util.tuple31);
-        tys1 = List.map(args1, Util.tuple32);
-        cs1 = List.map(args1, Util.tuple33);
+        names1 = List.map(args1, Util.tuple41);
+        tys1 = List.map(args1, Util.tuple42);
+        cs1 = List.map(args1, Util.tuple43);
+        oe1 = List.map(args1, Util.tuple44);
         tys1 = List.map(tys1, unboxedType);
         ty1 = unboxedType(ty1);
-        args1 = List.thread3Tuple(names1,tys1,cs1);
+        args1 = List.thread4Tuple(names1,tys1,cs1,oe1);
       then ((DAE.T_FUNCTION(args1,ty1,functionAttributes),op1));
   end match;
 end unboxedFunctionType;

@@ -775,6 +775,50 @@ algorithm
   end match;
 end tuple33;
 
+public function tuple41
+  input tuple<Type_a,Type_b,Type_c,Type_d> tpl;
+  output Type_a out;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+algorithm
+  (out,_,_,_) := tpl;
+end tuple41;
+
+public function tuple42
+  input tuple<Type_a,Type_b,Type_c,Type_d> tpl;
+  output Type_b out;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+algorithm
+  (_,out,_,_) := tpl;
+end tuple42;
+
+public function tuple43
+  input tuple<Type_a,Type_b,Type_c,Type_d> tpl;
+  output Type_c out;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+algorithm
+  (_,_,out,_) := tpl;
+end tuple43;
+
+public function tuple44
+  input tuple<Type_a,Type_b,Type_c,Type_d> tpl;
+  output Type_d out;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+algorithm
+  (_,_,_,out) := tpl;
+end tuple44;
+
 public function splitTuple2List "function: splitTuple2List
   Takes a list of two-tuples and splits it into two lists.
   Example: splitTuple2List({(\"a\",1),(\"b\",2),(\"c\",3)}) => ({\"a\",\"b\",\"c\"}, {1,2,3})"
