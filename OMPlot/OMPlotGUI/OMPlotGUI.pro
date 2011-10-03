@@ -9,8 +9,6 @@ QT += core gui svg
 TARGET = OMPlot
 TEMPLATE = app
 
-QMAKE_LFLAGS += -enable-auto-import
-
 SOURCES += main.cpp \
     ../../c_runtime/read_matlab4.c \
     Plot.cpp \
@@ -37,6 +35,7 @@ HEADERS  += ../../c_runtime/read_matlab4.h \
     PlotMainWindow.h
 
 win32 {
+QMAKE_LFLAGS += -enable-auto-import
 CONFIG(debug, debug|release){
 LIBS += -L$$(OMDEV)/lib/qwt-5.2.1-mingw/lib -lqwtd5
 }
