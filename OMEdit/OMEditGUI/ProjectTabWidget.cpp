@@ -2657,6 +2657,7 @@ WelcomePageWidget::WelcomePageWidget(MainWindow *parent)
     mpRecentFilesLabel->setFont(QFont("", Helper::headingFontSize));
     mpNoRecentFileLabel = new QLabel(tr("No recent files found."));
     mpRecentItemsList = new QListWidget;
+    mpRecentItemsList->setObjectName(tr("RecentItemsList"));
     mpRecentItemsList->setContentsMargins(0, 0, 0, 0);
     mpRecentItemsList->setSpacing(5);
     mpRecentItemsList->setFrameStyle(QFrame::NoFrame);
