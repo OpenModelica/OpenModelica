@@ -2617,6 +2617,129 @@ bool ProjectTab::modelicaEditorTextChanged()
     */
 }
 
+WelcomePageWidget::WelcomePageWidget(MainWindow *parent)
+    : QWidget(parent)
+{
+    mpParentMainWindow = parent;
+    // main frame
+    mpMainFrame = new QFrame;
+    //mpMainFrame->setMaximumWidth(600);
+    mpMainFrame->setFrameShape(QFrame::Box);
+    mpMainFrame->setContentsMargins(0, 0, 0, 0);
+    mpMainFrame->setStyleSheet(tr("QFrame{color:gray;}"));
+    // top frame
+    mpTopFrame = new QFrame;
+    mpTopFrame->setFrameShape(QFrame::Box);
+    mpTopFrame->setMaximumHeight(95);
+    mpTopFrame->setStyleSheet(tr("QFrame{background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #828282, stop: 1 #5e5e5e);}"));
+    // top frame pixmap
+    mpPixmapLabel = new QLabel;
+    QPixmap pixmap(":/Resources/icons/omeditor.png");
+    mpPixmapLabel->setPixmap(pixmap.scaled(75, 72, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    mpPixmapLabel->setStyleSheet("background-color : transparent;");
+    // top frame heading
+    mpHeadingLabel = new QLabel(QString(Helper::applicationName).append(" - ").append(Helper::applicationIntroText));
+    mpHeadingLabel->setFont(QFont("Helvetica", 16));
+    mpHeadingLabel->setStyleSheet("background-color : transparent; color : white;");
+    mpHeadingLabel->setGraphicsEffect(new QGraphicsDropShadowEffect);
+    // top frame layout
+    QHBoxLayout *topFrameLayout = new QHBoxLayout;
+    topFrameLayout->setAlignment(Qt::AlignLeft);
+    topFrameLayout->addWidget(mpPixmapLabel);
+    topFrameLayout->addWidget(mpHeadingLabel);
+    mpTopFrame->setLayout(topFrameLayout);
+    // middle frame
+    mpMiddleFrame = new QFrame;
+    mpMiddleFrame->setFrameShape(QFrame::Box);
+    mpMiddleFrame->setStyleSheet(tr("QFrame{background-color: white;}"));
+    // recent items list
+    mpRecentFilesLabel = new QLabel(tr("Recent Files"));
+    mpRecentFilesLabel->setFont(QFont("", Helper::headingFontSize));
+    mpNoRecentFileLabel = new QLabel(tr("No recent files found."));
+    mpRecentItemsList = new QListWidget;
+    mpRecentItemsList->setContentsMargins(0, 0, 0, 0);
+    mpRecentItemsList->setSpacing(5);
+    mpRecentItemsList->setFrameStyle(QFrame::NoFrame);
+    mpRecentItemsList->setViewMode(QListView::ListMode);
+    mpRecentItemsList->setMovement(QListView::Static);
+    mpRecentItemsList->setIconSize(Helper::iconSize);
+    mpRecentItemsList->setCurrentRow(0, QItemSelectionModel::Select);
+    connect(mpRecentItemsList, SIGNAL(itemPressed(QListWidgetItem*)), SLOT(openRecentItem(QListWidgetItem*)));
+    // middle frame layout
+    QVBoxLayout *middleFrameLayout = new QVBoxLayout;
+    middleFrameLayout->addWidget(mpRecentFilesLabel);
+    middleFrameLayout->addWidget(mpNoRecentFileLabel);
+    middleFrameLayout->addWidget(mpRecentItemsList);
+    mpMiddleFrame->setLayout(middleFrameLayout);
+    // bottom frame
+    mpBottomFrame = new QFrame;
+    mpBottomFrame->setFrameShape(QFrame::Box);
+    mpBottomFrame->setMaximumHeight(50);
+    mpBottomFrame->setStyleSheet(tr("QFrame{background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #828282, stop: 1 #5e5e5e);}"));
+    // bottom frame create and open buttons buttons
+    mpCreateModelButton = new QPushButton(tr("Create Model"));
+    mpCreateModelButton->setStyleSheet(tr("QPushButton{padding: 5px 15px 5px 15px;}"));
+    connect(mpCreateModelButton, SIGNAL(pressed()), mpParentMainWindow, SLOT(openNewModel()));
+    mpOpenModelButton = new QPushButton(tr("Open Model"));
+    mpOpenModelButton->setStyleSheet(tr("QPushButton{padding: 5px 15px 5px 15px;}"));
+    connect(mpOpenModelButton, SIGNAL(pressed()), mpParentMainWindow->mpProjectTabs, SLOT(openFile()));
+    // bottom frame layout
+    QHBoxLayout *bottomFrameLayout = new QHBoxLayout;
+    bottomFrameLayout->addWidget(mpCreateModelButton, 0, Qt::AlignLeft);
+    bottomFrameLayout->addWidget(mpOpenModelButton, 0, Qt::AlignRight);
+    mpBottomFrame->setLayout(bottomFrameLayout);
+    // vertical layout for frames
+    QVBoxLayout *verticalLayout = new QVBoxLayout;
+    verticalLayout->setContentsMargins(0, 0, 0, 0);
+    verticalLayout->addWidget(mpTopFrame);
+    verticalLayout->addWidget(mpMiddleFrame);
+    verticalLayout->addWidget(mpBottomFrame);
+    // main frame layout
+    mpMainFrame->setLayout(verticalLayout);
+    QHBoxLayout *layout = new QHBoxLayout;
+    layout->addWidget(mpMainFrame);
+    layout->setContentsMargins(20, 20, 20, 20);
+    setLayout(layout);
+}
+
+void WelcomePageWidget::addListItems()
+{
+    QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
+    QStringList files = settings.value("recentFileList/files").toStringList();
+
+    int numRecentFiles = qMin(files.size(), (int)mpParentMainWindow->MaxRecentFiles);
+
+    // remove list items first
+    mpRecentItemsList->clear();
+    // add new items now
+    for (int i = 0; i < numRecentFiles; ++i) {
+        QListWidgetItem *listItem = new QListWidgetItem(mpRecentItemsList);
+        listItem->setIcon(QIcon(":/Resources/icons/next.png"));
+        listItem->setText(files[i]);
+    }
+
+    if (numRecentFiles > 0)
+        mpNoRecentFileLabel->setVisible(false);
+    else
+        mpNoRecentFileLabel->setVisible(true);
+}
+
+void WelcomePageWidget::paintEvent(QPaintEvent *event)
+{
+    Q_UNUSED(event);
+    QPainter painter (this);
+    painter.setPen(Qt::gray);
+    QRect rectangle = this->rect();
+    rectangle.setWidth(this->rect().width() - 2);
+    rectangle.setHeight(this->rect().height() - 2);
+    painter.drawRect(rectangle);
+}
+
+void WelcomePageWidget::openRecentItem(QListWidgetItem *item)
+{
+    mpParentMainWindow->mpProjectTabs->openFile(item->text());
+}
+
 //! @class ProjectTabWidget
 //! @brief The ProjectTabWidget class is a container class for ProjectTab class
 
@@ -2630,6 +2753,7 @@ ProjectTabWidget::ProjectTabWidget(MainWindow *parent)
     mpParentMainWindow = parent;
     setTabsClosable(true);
     setContentsMargins(0, 0, 0, 0);
+    setVisible(false);
     mShowLines = false;
     mToolBarEnabled = true;
 
@@ -2654,9 +2778,8 @@ ProjectTabWidget::~ProjectTabWidget()
     // delete all the tabs opened currently
     while(count() > 0)
     {
-        delete dynamic_cast<ProjectTab*>(this->widget(count() - 1));
+        delete this->widget(count() - 1);
     }
-
     // delete all the removed tabs as well.
     foreach (ProjectTab *pCurrentTab, mRemovedTabsList)
     {
@@ -2690,6 +2813,8 @@ ProjectTab* ProjectTabWidget::getTabByName(QString name)
     for (int i = 0; i < this->count() ; i++)
     {
         ProjectTab *pCurrentTab = dynamic_cast<ProjectTab*>(this->widget(i));
+        if (!pCurrentTab)
+            continue;
         if (pCurrentTab->mModelNameStructure == name)
         {
             return pCurrentTab;
@@ -2702,6 +2827,8 @@ ProjectTab* ProjectTabWidget::getRemovedTabByName(QString name)
 {
     foreach (ProjectTab *pCurrentTab, mRemovedTabsList)
     {
+        if (!pCurrentTab)
+            continue;
         if (pCurrentTab->mModelNameStructure == name)
         {
             return pCurrentTab;
@@ -2710,17 +2837,13 @@ ProjectTab* ProjectTabWidget::getRemovedTabByName(QString name)
     return 0;
 }
 
-//! Reimplemented function to add the Tab.
+//! Reimplemented function to add the Project Tab.
 int ProjectTabWidget::addTab(ProjectTab *tab, QString tabName)
 {
     int position;
     tabName = StringHandler::getLastWordAfterDot(tabName);
     // if tab is not saved then add the star with the name
     position = QTabWidget::addTab(tab, QString(tabName).append(tab->mIsSaved ? "" : "*"));
-//    if (!tab->mIsSaved)
-//        position = QTabWidget::addTab(tab, tabName);
-//    else
-//        position = QTabWidget::addTab(tab, tabName);
     emit tabAdded();
     return position;
 }
@@ -3067,27 +3190,31 @@ bool ProjectTabWidget::closeAllProjectTabs()
 {
     for (int i = 0 ; i < count() ; i++)
     {
-        if (!(dynamic_cast<ProjectTab*>(widget(i)))->mIsSaved)
+        ProjectTab *pProjectTab = dynamic_cast<ProjectTab*>(widget(i));
+        if (pProjectTab)
         {
-            QMessageBox *msgBox = new QMessageBox(mpParentMainWindow);
-            msgBox->setWindowTitle(QString(Helper::applicationName).append(" - Question"));
-            msgBox->setIcon(QMessageBox::Question);
-            msgBox->setText(QString("There are unsaved models opened. Do you still want to quit?"));
-            msgBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-            msgBox->setDefaultButton(QMessageBox::No);
-
-            int answer = msgBox->exec();
-            msgBox->raise();
-
-            switch (answer)
+            if (!pProjectTab->mIsSaved)
             {
-            case QMessageBox::Yes:
-                return true;
-            case QMessageBox::No:
-                return false;
-            default:
-                // should never be reached
-                return false;
+                QMessageBox *msgBox = new QMessageBox(mpParentMainWindow);
+                msgBox->setWindowTitle(QString(Helper::applicationName).append(" - Question"));
+                msgBox->setIcon(QMessageBox::Question);
+                msgBox->setText(QString("There are unsaved models opened. Do you still want to quit?"));
+                msgBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+                msgBox->setDefaultButton(QMessageBox::No);
+
+                int answer = msgBox->exec();
+                msgBox->raise();
+
+                switch (answer)
+                {
+                case QMessageBox::Yes:
+                    return true;
+                case QMessageBox::No:
+                    return false;
+                default:
+                    // should never be reached
+                    return false;
+                }
             }
         }
     }
@@ -3147,6 +3274,7 @@ void ProjectTabWidget::openFile(QString fileName)
     else
     {
         mpParentMainWindow->mpLibrary->loadFile(fileName, modelsList);
+        mpParentMainWindow->switchToModelingView();
     }
 }
 

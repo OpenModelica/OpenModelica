@@ -145,6 +145,7 @@ void ModelCreator::create()
     //open the new tab in central widget and add the model to tree.
     mpParentMainWindow->mpLibrary->addModelicaNode(mpNameTextBox->text(), mType, mpParentPackageCombo->currentText(), modelStructure);
     mpParentMainWindow->mpProjectTabs->addNewProjectTab(mpNameTextBox->text(), modelStructure, mType);
+    mpParentMainWindow->switchToModelingView();
     accept();
 }
 

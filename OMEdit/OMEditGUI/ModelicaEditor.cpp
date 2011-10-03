@@ -223,11 +223,11 @@ void ModelicaEditor::hasChanged()
     if (mpParentProjectTab->isReadOnly())
         return;
 
-    QString tabName = mpParentProjectTab->mpParentProjectTabWidget->tabText(mpParentProjectTab->mpParentProjectTabWidget->currentIndex());
+    QString tabName = mpParentProjectTab->mpParentProjectTabWidget->tabText(mpParentProjectTab->mTabPosition);
     if (!tabName.endsWith("*"))
     {
         tabName.append("*");
-        mpParentProjectTab->mpParentProjectTabWidget->setTabText(mpParentProjectTab->mpParentProjectTabWidget->currentIndex(), tabName);
+        mpParentProjectTab->mpParentProjectTabWidget->setTabText(mpParentProjectTab->mTabPosition, tabName);
     }
     mpParentProjectTab->mIsSaved = false;
     if (mpParentProjectTab->isChild())

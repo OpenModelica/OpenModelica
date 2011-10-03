@@ -154,13 +154,16 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     this->createActions();
     this->createToolbars();
     this->createMenus();
-    this->updateRecentFileActions();
     //Create the main tab container, need at least one tab
     mpProjectTabs = new ProjectTabWidget(this);
     mpProjectTabs->setObjectName("projectTabs");
+    // create the welcome page
+    mpWelcomePageWidget = new WelcomePageWidget(this);
+    this->updateRecentFileActions();
 
     mpBackButton = new QPushButton("Back");
     mpCentralgrid->addWidget(mpBackButton,0,0);
+    mpCentralgrid->addWidget(mpWelcomePageWidget,1,0);
     mpCentralgrid->addWidget(mpProjectTabs,1,0);
     mpCentralgrid->addWidget(mpPlotWindowContainer,1,0);
     mpCentralgrid->addWidget(mpInteractiveSimualtionTabWidget,1,0);
@@ -491,6 +494,12 @@ void MainWindow::createActions()
     connectAction->setChecked(true);
     connect(connectAction, SIGNAL(triggered()), SLOT(toggleShapesButton()));
 
+    welcomeViewAction = new QAction(tr("Welcome Page"), this);
+    welcomeViewAction->setStatusTip(tr("Shows Welcome Page"));
+    welcomeViewAction->setCheckable(true);
+    welcomeViewAction->setChecked(true);
+    connect(welcomeViewAction, SIGNAL(toggled(bool)), SLOT(switchToWelcomeView(bool)));
+
     viewActionGroup = new QActionGroup(this);
     viewActionGroup->setExclusive(true);
 
@@ -498,7 +507,6 @@ void MainWindow::createActions()
     modelingViewAction->setStatusTip(tr("Shows Modeling View"));
     modelingViewAction->setShortcut(QKeySequence("Ctrl+Shift+m"));
     modelingViewAction->setCheckable(true);
-    modelingViewAction->setChecked(true);
     connect(modelingViewAction, SIGNAL(triggered()), SLOT(switchToModelingView()));
 
     plottingViewAction = new QAction(QIcon(":/Resources/icons/omplot.png"), tr("Plotting"), viewActionGroup);
@@ -602,6 +610,7 @@ void MainWindow::createMenus()
     menuView->addAction(libAction);
     menuView->addAction(modelBrowserAction);
     menuView->addAction(messageAction);
+    menuView->addAction(welcomeViewAction);
     //menuView->addAction(fileToolBar->toggleViewAction());
     //menuView->addAction(editToolBar->toggleViewAction());
     //menuView->addAction(documentationAction);
@@ -761,7 +770,7 @@ void MainWindow::updateRecentFileActions()
     int numRecentFiles = qMin(files.size(), (int)MaxRecentFiles);
 
     for (int i = 0; i < numRecentFiles; ++i) {
-        QString text = tr("%1").arg(strippedName(files[i]));
+        QString text = tr("%1").arg(QFileInfo(files[i]).fileName());
         recentFileActs[i]->setText(text);
         recentFileActs[i]->setData(files[i]);
         recentFileActs[i]->setVisible(true);
@@ -770,11 +779,7 @@ void MainWindow::updateRecentFileActions()
         recentFileActs[j]->setVisible(false);
 
     separatorAct->setVisible(numRecentFiles > 0);
-}
-
-QString MainWindow::strippedName(const QString &fullFileName)
-{
-    return QFileInfo(fullFileName).fileName();
+    mpWelcomePageWidget->addListItems();
 }
 
 //! Open Simulation Window
@@ -1202,10 +1207,31 @@ void MainWindow::focusMSLSearch(bool visible)
         mpSearchMSLWidget->getMSLSearchTextBox()->setFocus();
 }
 
+void MainWindow::switchToWelcomeView(bool show)
+{
+    if (show)
+    {
+        modelingViewAction->setChecked(false);
+        plottingViewAction->setChecked(false);
+        interactiveSimulationViewAction->setChecked(false);
+        mpWelcomePageWidget->setVisible(true);
+        mpProjectTabs->setVisible(false);
+        mpInteractiveSimualtionTabWidget->setVisible(false);
+        mpPlotWindowContainer->setVisible(false);
+        plotToolBar->setVisible(false);
+    }
+    else
+    {
+        mpWelcomePageWidget->setVisible(false);
+    }
+}
+
 void MainWindow::switchToModelingView()
 {
     modelingViewAction->setChecked(true);
     mpProjectTabs->setVisible(true);
+    mpWelcomePageWidget->setVisible(false);
+    welcomeViewAction->setChecked(false);
     mpInteractiveSimualtionTabWidget->setVisible(false);
     mpPlotWindowContainer->setVisible(false);
     plotToolBar->setVisible(false);
@@ -1218,6 +1244,8 @@ void MainWindow::switchToPlottingView()
         mpPlotWindowContainer->addPlotWindow();
 
     plottingViewAction->setChecked(true);
+    mpWelcomePageWidget->setVisible(false);
+    welcomeViewAction->setChecked(false);
     mpProjectTabs->setVisible(false);
     mpInteractiveSimualtionTabWidget->setVisible(false);
     mpPlotWindowContainer->setVisible(true);
@@ -1227,6 +1255,8 @@ void MainWindow::switchToPlottingView()
 void MainWindow::switchToInteractiveSimulationView()
 {
     interactiveSimulationViewAction->setChecked(true);
+    mpWelcomePageWidget->setVisible(false);
+    welcomeViewAction->setChecked(false);
     mpProjectTabs->setVisible(false);
     mpInteractiveSimualtionTabWidget->setVisible(true);
     mpPlotWindowContainer->setVisible(false);

@@ -75,6 +75,7 @@ class QAction;
 class QString;
 class QPlainTextEdit;
 class OMCProxy;
+class WelcomePageWidget;
 class ProjectTabWidget;
 class GraphicsView;
 class GraphicsScene;
@@ -100,6 +101,7 @@ public:
 
     QWidget *mpCentralwidget;
     QGridLayout *mpCentralgrid;
+    WelcomePageWidget *mpWelcomePageWidget;
     ProjectTabWidget *mpProjectTabs;
     QGridLayout *mpTabgrid;
     SearchMSLWidget *mpSearchMSLWidget;
@@ -175,6 +177,7 @@ public:
     QAction *textAction;
     QAction *bitmapAction;
     QAction *connectAction;
+    QAction *welcomeViewAction;
     QActionGroup *viewActionGroup;
     QAction *modelingViewAction;
     QAction *plottingViewAction;
@@ -202,7 +205,6 @@ public:
 private slots:
     void openSimulation();
     void openInteractiveSimulation();
-    void openNewModel();
     void openNewClass();
     void openNewConnector();
     void openNewRecord();
@@ -224,7 +226,7 @@ private slots:
     void toggleShapesButton();
     void changeConnectMode();
     void focusMSLSearch(bool visible);
-    void switchToModelingView();
+    void switchToWelcomeView(bool show);
     void switchToPlottingView();
     void switchToInteractiveSimulationView();
     void addNewPlotWindow();
@@ -233,6 +235,8 @@ private slots:
     void exportModelFMI();
     void importModelFMI();
 public slots:
+    void openNewModel();
+    void switchToModelingView();
     void showProgressBar();
     void hideProgressBar();
 private:
@@ -240,7 +244,6 @@ private:
     void createMenus();
     void createToolbars();
     void updateRecentFileActions();
-    QString strippedName(const QString &fullFileName);
     QDockWidget *messagedock;
     QDockWidget *libdock;
 protected:

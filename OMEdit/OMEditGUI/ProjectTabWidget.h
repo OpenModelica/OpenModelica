@@ -231,6 +231,32 @@ public slots:
     bool modelicaEditorTextChanged();
 };
 
+class WelcomePageWidget : public QWidget
+{
+    Q_OBJECT
+public:
+    WelcomePageWidget(MainWindow *parent = 0);
+    void addListItems();
+
+    MainWindow *mpParentMainWindow;
+private:
+    QFrame *mpMainFrame;
+    QFrame *mpTopFrame;
+    QLabel *mpPixmapLabel;
+    QLabel *mpHeadingLabel;
+    QFrame *mpMiddleFrame;
+    QLabel *mpRecentFilesLabel;
+    QLabel *mpNoRecentFileLabel;
+    QListWidget *mpRecentItemsList;
+    QFrame *mpBottomFrame;
+    QPushButton *mpCreateModelButton;
+    QPushButton *mpOpenModelButton;
+protected:
+    virtual void paintEvent(QPaintEvent *event);
+private slots:
+    void openRecentItem(QListWidgetItem *item);
+};
+
 class MainWindow;
 class LibraryTreeNode;
 class ProjectTabWidget : public QTabWidget

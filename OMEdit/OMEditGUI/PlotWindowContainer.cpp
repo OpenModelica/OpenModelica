@@ -90,7 +90,7 @@ bool PlotWindowContainer::eventFilter(QObject *pObject, QEvent *event)
         QPainter painter (pPlotWindow);
         painter.setPen(Qt::gray);
         QRect rectangle = pPlotWindow->rect();
-        rectangle.setWidth(pPlotWindow->rect().width() - 1);
+        rectangle.setWidth(pPlotWindow->rect().width() - 2);
         rectangle.setHeight(pPlotWindow->rect().height() - 2);
         painter.drawRect(rectangle);
         return true;
