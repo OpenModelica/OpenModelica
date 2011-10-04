@@ -58,6 +58,7 @@ protected import Parser;
 protected import SCodeUtil;
 protected import Settings;
 protected import System;
+protected import Types;
 protected import Util;
 
 /* These imports were used in e.g. MSL 1.6. They should not be here anymore...

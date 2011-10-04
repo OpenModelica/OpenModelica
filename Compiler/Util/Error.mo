@@ -520,7 +520,7 @@ public constant Message ARRAY_TYPE_MISMATCH = MESSAGE(193, TRANSLATION(), ERROR(
 public constant Message VECTORIZE_TWO_UNKNOWN = MESSAGE(194, TRANSLATION(), ERROR(),
   "Could not vectorize call with unknown dimensions due to finding two foreach arguments: %s and %s.");
 public constant Message FUNCTION_SLOT_VARIABILITY = MESSAGE(195, TRANSLATION(), ERROR(),
-  "Function argument %s is not a %sexpression");
+  "Function argument %s=%s is not a %sexpression");
 public constant Message INVALID_ARRAY_DIM_IN_CONVERSION_OP = MESSAGE(196, TRANSLATION(), ERROR(),
   "Invalid dimension %s of argument to %s, expected dimension size %s but got %s.");
 public constant Message DUPLICATE_REDECLARATION = MESSAGE(197, TRANSLATION(), ERROR(),

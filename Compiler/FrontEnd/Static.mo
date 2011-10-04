@@ -4478,8 +4478,8 @@ fix types, so we can have integer as input
 verify that the input is correct."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
+  input list<Absyn.Exp> args;
+  input list<Absyn.NamedArg> nargs;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
@@ -4487,88 +4487,47 @@ verify that the input is correct."
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  (outCache,outExp,outProperties) := match (inCache,inEnv,args,nargs,inBoolean,inPrefix,info)
     local
       DAE.Exp s1_1,s2_1,s3_1,call;
       DAE.Const c1,c2,c3;
-      DAE.Type ty1,ty2,ty3;
+      DAE.Type ty1,ty2,ty3,ty;
       list<Env.Frame> env;
       Absyn.Exp s1,s2,s3;
       Boolean impl;
       Env.Cache cache;
       String errorString,sp;
-       Prefix.Prefix pre;
-    case (cache,env,{s1,s2},_,impl,pre,info)
+      Prefix.Prefix pre;
+      DAE.Properties prop;
+      Integer i;
+    case (cache,env,args,nargs,impl,pre,info)
       equation
-        (cache,s1_1,DAE.PROP(ty1,c1),_) = elabExp(cache,env, s1, impl,NONE(),true,pre,info);
-        (cache,s2_1,DAE.PROP(ty2,c2),_) = elabExp(cache,env, s2, impl,NONE(),true,pre,info);
-        (s1_1,_) = Types.matchType(s1_1,ty1,DAE.T_REAL_DEFAULT,true);
-        (s2_1,_) = Types.matchType(s2_1,ty2,DAE.T_REAL_DEFAULT,true);
-        true = Types.isParameterOrConstant(c2);
-        call = Expression.makeBuiltinCall("delay", {s1_1, s2_1, s2_1}, DAE.ET_REAL());
-      then
-        (cache, call, DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()));
-
-    // adrpo: allow delay(x, var) to be used but issue a warning. 
-    //        used in Modelica.Electrical.Analog.Lines.TLine*
-    case (cache,env,{s1,s2},_,impl,pre,info)
-      equation
-        (cache,s1_1,DAE.PROP(ty1,c1),_) = elabExp(cache,env, s1, impl,NONE(),true,pre,info);
-        (cache,s2_1,DAE.PROP(ty2,c2),_) = elabExp(cache,env, s2, impl,NONE(),true,pre,info);
-        (s1_1,_) = Types.matchType(s1_1,ty1,DAE.T_REAL_DEFAULT,true);
-        (s2_1,_) = Types.matchType(s2_1,ty2,DAE.T_REAL_DEFAULT,true);
-        // the value is not a parameter or constant but a variable 
-        // that has an equation involving ONLY params/consts. 
-        false = Types.isParameterOrConstant(c2);
-        sp = PrefixUtil.printPrefixStr3(pre);
-        errorString = "delay(" +& ExpressionDump.printExpStr(s1_1) +& ", " +& ExpressionDump.printExpStr(s2_1) +& 
-           ") where argument #2 has to be parameter or constant expression but is a variable";
-        Error.addSourceMessage(Error.WARNING_BUILTIN_DELAY, {sp,errorString}, info);
-        call = Expression.makeBuiltinCall("delay", {s1_1, s2_1, s2_1}, DAE.ET_REAL());
-      then
-        (cache, call, DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()));
-
-    case (cache,env,{s1,s2,s3},_,impl,pre,info)
-      equation
-        (cache,s1_1,DAE.PROP(ty1,c1),_) = elabExp(cache,env, s1, impl,NONE(),true,pre,info);
-        (cache,s2_1,DAE.PROP(ty2,c2),_) = elabExp(cache,env, s2, impl,NONE(),true,pre,info);
-        (cache,s3_1,DAE.PROP(ty3,c3),_) = elabExp(cache,env, s3, impl,NONE(),true,pre,info);
-        (s1_1,_) = Types.matchType(s1_1,ty1,DAE.T_REAL_DEFAULT,true);
-        (s2_1,_) = Types.matchType(s2_1,ty2,DAE.T_REAL_DEFAULT,true);
-        (s3_1,_) = Types.matchType(s3_1,ty3,DAE.T_REAL_DEFAULT,true);
-        true = Types.isParameterOrConstant(c3);
-        call = Expression.makeBuiltinCall("delay", {s1_1, s2_1, s3_1}, DAE.ET_REAL());
-      then
-        (cache, call, DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()));
-    
-    // adrpo: allow delay(x, var, var) to be used but issue a warning. 
-    //        used in Modelica.Electrical.Analog.Lines.TLine*
-    case (cache,env,{s1,s2,s3},_,impl,pre,info)
-      equation
-        (cache,s1_1,DAE.PROP(ty1,c1),_) = elabExp(cache,env, s1, impl,NONE(),true,pre,info);
-        (cache,s2_1,DAE.PROP(ty2,c2),_) = elabExp(cache,env, s2, impl,NONE(),true,pre,info);
-        (cache,s3_1,DAE.PROP(ty3,c3),_) = elabExp(cache,env, s3, impl,NONE(),true,pre,info);
-        (s1_1,_) = Types.matchType(s1_1,ty1,DAE.T_REAL_DEFAULT,true);
-        (s2_1,_) = Types.matchType(s2_1,ty2,DAE.T_REAL_DEFAULT,true);
-        (s3_1,_) = Types.matchType(s3_1,ty3,DAE.T_REAL_DEFAULT,true);
-        false = Types.isParameterOrConstant(c3);
-        sp = PrefixUtil.printPrefixStr3(pre);
-        errorString = "delay(" +& ExpressionDump.printExpStr(s1_1) +& ", " +& ExpressionDump.printExpStr(s2_1) +& 
-        ", " +& ExpressionDump.printExpStr(s3_1) +& ") where argument #3 has to be parameter or constant expression but is a variable";
-        Error.addSourceMessage(Error.WARNING_BUILTIN_DELAY, {sp,errorString}, info);
-        call = Expression.makeBuiltinCall("delay", {s1_1, s2_1, s3_1}, DAE.ET_REAL());
-      then
-        (cache, call, DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()));
-    
-    case(_,_,_,_,_,pre,info)
-      equation
-        errorString = " use of delay: \n delay(real, real, real as parameter/constant)\n or delay(real, real as parameter/constant).";
-        sp = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.WARNING_BUILTIN_DELAY, {sp,errorString}, info);
-      then fail();
-  end matchcontinue;
+        i = listLength(args);
+        ty1 = (DAE.T_FUNCTION({("expr",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),("delayTime",DAE.T_REAL_DEFAULT,DAE.C_PARAM(),NONE())},DAE.T_REAL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_BUILTIN),
+          NONE());
+        ty2 = (DAE.T_FUNCTION({("expr",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),("delayTime",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),("delayMax",DAE.T_REAL_DEFAULT,DAE.C_PARAM(),NONE())},DAE.T_REAL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_BUILTIN),
+          NONE());
+        ty = Util.if_(i==2,ty1,ty2);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("delay"), args, nargs, impl, NONE(), pre, info);
+        ((call,_)) = Expression.traverseExp(call,elabBuiltinDelay2,1);
+      then (cache, call, prop);
+  end match;
 end elabBuiltinDelay;
+
+protected function elabBuiltinDelay2
+  "Duplicate the 2nd argument of delay for no good reason"
+  input tuple<DAE.Exp,Integer> exp;
+  output tuple<DAE.Exp,Integer> oexp;
+algorithm
+  oexp := match exp
+    local
+      Absyn.Path path;
+      DAE.Exp e1,e2;
+      DAE.CallAttributes attr;
+    case ((DAE.CALL(path, {e1,e2}, attr),_)) then ((DAE.CALL(path, {e1,e2,e2}, attr),1)); // stupid, eh?
+    else exp;
+  end match;
+end elabBuiltinDelay2;
 
 protected function elabBuiltinMod
 "function: elabBuiltinMod
@@ -7747,43 +7706,7 @@ algorithm
          in the function type of the user function and check both the
          function name and the function\'s type." ;
         Util.setStatefulBoolean(stopElab,true);
-        (cache,args_1,constlist,restype,functype as (DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isPure = isPure, inline = inlineType)),_),vect_dims,slots) =
-          elabTypes(cache, env, args, nargs, typelist, true/* Check types*/, impl,pre,info)
-          "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
-        (fn_1,functype) = deoverloadFuncname(fn, functype);
-        tuple_ = isTuple(restype);
-        (isBuiltin,builtin,fn_1) = isBuiltinFunc(fn_1,functype);
-        const = List.fold(constlist, Types.constAnd, DAE.C_CONST());
-        const = Util.if_((RTOpts.debugFlag("rml") and not builtin) or (not isPure), DAE.C_VAR(), const) "in RML no function needs to be ceval'ed; this speeds up compilation significantly when bootstrapping";
-        (cache,const) = determineConstSpecialFunc(cache,env,const,fn);
-        tyconst = elabConsts(restype, const);
-        prop = getProperties(restype, tyconst);
-        tp = Types.elabType(restype);
-        
-        // adrpo: 2011-09-30 NOTE THAT THIS WILL NOT ADD DEFAULT ARGS
-        //                   FROM extends (THE BASE CLASS)
-        (cache,args_2,slots2) = addDefaultArgs(cache,env,args_1,fn,slots,impl,pre,info);
-        // DO NOT CHECK IF ALL SLOTS ARE FILLED!
-        true = List.fold(slots2, slotAnd, true);
-        callExp = DAE.CALL(fn_1,args_2,DAE.CALL_ATTR(tp,tuple_,builtin,inlineType,DAE.NO_TAIL()));
-        
-        // create a replacement for input variables -> their binding
-        //inputVarsRepl = createInputVariableReplacements(slots2, VarTransform.emptyReplacements());
-        //print("Repls: " +& VarTransform.dumpReplacementsStr(inputVarsRepl) +& "\n");
-        // replace references to inputs in the arguments  
-        //callExp = VarTransform.replaceExp(callExp, inputVarsRepl, NONE());
-
-        //debugPrintString = Util.if_(Util.isEqual(DAE.NORM_INLINE,inline)," Inline: " +& Absyn.pathString(fn_1) +& "\n", "");print(debugPrintString);
-        
-        (call_exp,prop_1) = vectorizeCall(callExp, vect_dims, slots2, prop, info);
-
-        /* Instantiate the function and add to dae function tree*/
-        (cache,status) = instantiateDaeFunction(cache,env,fn,builtin,NONE(),true);
-        /* Instantiate any implicit record constructors needed and add them to the dae function tree */
-        cache = instantiateImplicitRecordConstructors(cache, env, args_1, st);
-        functionTree = Env.getFunctionTree(cache);
-        ((call_exp,_)) = Inline.inlineCall((call_exp,((SOME(functionTree),{DAE.EARLY_INLINE()}),false)));
-        expProps = Util.if_(Util.isSuccess(status),SOME((call_exp,prop_1)),NONE());
+        (cache,expProps) = elabCallArgs3(cache,env,typelist,fn,args,nargs,impl,st,pre,info);
       then
         (cache,expProps);
 
@@ -7851,6 +7774,74 @@ algorithm
         fail();
   end matchcontinue;
 end elabCallArgs2;
+
+protected function elabCallArgs3
+  "Elaborates the input given a set of viable function candidates, and vectorizes the arguments+performs type checking"
+  input Env.Cache cache;
+  input Env.Env env;
+  input list<DAE.Type> typelist;
+  input Absyn.Path fn;
+  input list<Absyn.Exp> args;
+  input list<Absyn.NamedArg> nargs;
+  input Boolean impl;
+  input Option<Interactive.SymbolTable> st;
+  input Prefix.Prefix pre;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output Option<tuple<DAE.Exp,DAE.Properties>> expProps;
+protected
+  DAE.Exp callExp,call_exp;
+  list<DAE.Exp> args_1,args_2;
+  list<DAE.Const> constlist;
+  DAE.Const const;
+  DAE.Type restype,functype;
+  DAE.FunctionBuiltin isBuiltin;
+  Boolean isPure,tuple_,builtin;
+  DAE.InlineType inlineType;
+  Absyn.Path fn_1;
+  DAE.Properties prop,prop_1;
+  DAE.ExpType tp;
+  DAE.TupleConst tyconst;
+  list<DAE.Dimension> vect_dims;
+  list<Slot> slots,slots2;
+  DAE.FunctionTree functionTree;
+  Util.Status status;
+algorithm
+  (cache,args_1,constlist,restype,functype as (DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isPure = isPure, inline = inlineType)),_),vect_dims,slots) :=
+    elabTypes(cache, env, args, nargs, typelist, true/* Check types*/, impl,pre,info)
+    "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
+  (fn_1,functype) := deoverloadFuncname(fn, functype);
+  tuple_ := isTuple(restype);
+  (isBuiltin,builtin,fn_1) := isBuiltinFunc(fn_1,functype);
+  const := List.fold(constlist, Types.constAnd, DAE.C_CONST());
+  const := Util.if_((RTOpts.debugFlag("rml") and not builtin) or (not isPure), DAE.C_VAR(), const) "in RML no function needs to be ceval'ed; this speeds up compilation significantly when bootstrapping";
+  (cache,const) := determineConstSpecialFunc(cache,env,const,fn);
+  tyconst := elabConsts(restype, const);
+  prop := getProperties(restype, tyconst);
+  tp := Types.elabType(restype);
+  // adrpo: 2011-09-30 NOTE THAT THIS WILL NOT ADD DEFAULT ARGS
+  //                   FROM extends (THE BASE CLASS)
+  (cache,args_2,slots2) := addDefaultArgs(cache,env,args_1,fn,slots,impl,pre,info);
+  // DO NOT CHECK IF ALL SLOTS ARE FILLED!
+  true := List.fold(slots2, slotAnd, true);
+  callExp := DAE.CALL(fn_1,args_2,DAE.CALL_ATTR(tp,tuple_,builtin,inlineType,DAE.NO_TAIL()));
+  // create a replacement for input variables -> their binding
+  //inputVarsRepl = createInputVariableReplacements(slots2, VarTransform.emptyReplacements());
+  //print("Repls: " +& VarTransform.dumpReplacementsStr(inputVarsRepl) +& "\n");
+  // replace references to inputs in the arguments  
+  //callExp = VarTransform.replaceExp(callExp, inputVarsRepl, NONE());
+
+  //debugPrintString = Util.if_(Util.isEqual(DAE.NORM_INLINE,inline)," Inline: " +& Absyn.pathString(fn_1) +& "\n", "");print(debugPrintString);
+  (call_exp,prop_1) := vectorizeCall(callExp, vect_dims, slots2, prop, info);
+  /* Instantiate the function and add to dae function tree*/
+  (cache,status) := instantiateDaeFunction(cache,env,fn,builtin,NONE(),true);
+  /* Instantiate any implicit record constructors needed and add them to the dae function tree */
+  cache := instantiateImplicitRecordConstructors(cache, env, args_1, st);
+  functionTree := Env.getFunctionTree(cache);
+  ((call_exp,_)) := Inline.inlineCall((call_exp,((SOME(functionTree),{DAE.EARLY_INLINE()}),false)));
+  expProps := Util.if_(Util.isSuccess(status),SOME((call_exp,prop_1)),NONE());
+  outCache := cache;
+end elabCallArgs3;
 
 protected function elabCallArgsMetarecord
   input Env.Cache cache;
@@ -9668,8 +9659,9 @@ algorithm
       equation
         true = stringEq(fa1, fa2);
         false = Types.constEqualOrHigher(c1,c2);
+        str1 = ExpressionDump.printExpStr(exp);
         str2 = DAEUtil.constStrFriendly(c2);
-        Error.addSourceMessage(Error.FUNCTION_SLOT_VARIABILITY, {fa1,str2}, info);
+        Error.addSourceMessage(Error.FUNCTION_SLOT_VARIABILITY, {fa1,str1,str2}, info);
       then
         fail();
 
