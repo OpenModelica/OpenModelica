@@ -46,28 +46,28 @@ public function parse "Parse a mo-file"
   input String filename;
   output Absyn.Program outProgram;
 
-  external "C" outProgram=Parser_parse(filename) annotation(Library = {"omcruntime","omparse","antlr3"});
+  external "C" outProgram=Parser_parse(filename) annotation(Library = {"omparse","antlr3","omcruntime"});
 end parse;
 
 public function parseexp "Parse a mos-file"
   input String filename;
   output Interactive.Statements outStatements;
 
-  external "C" outStatements=Parser_parseexp(filename) annotation(Library = {"omcruntime","omparse","antlr3"});
+  external "C" outStatements=Parser_parseexp(filename) annotation(Library = {"omparse","antlr3","omcruntime"});
 end parseexp;
 
 public function parsestring "Parse a string as if it were a stored definition"
   input String str;
   input String infoFilename := "<interactive>";
   output Absyn.Program outProgram;
-  external "C" outProgram=Parser_parsestring(str,infoFilename) annotation(Library = {"omcruntime","omparse","antlr3"});
+  external "C" outProgram=Parser_parsestring(str,infoFilename) annotation(Library = {"omparse","antlr3","omcruntime"});
 end parsestring;
 
 public function parsestringexp "Parse a string as if it was a sequence of statements"
   input String str;
   input String infoFilename := "<interactive>";
   output Interactive.Statements outStatements;
-  external "C" outStatements=Parser_parsestringexp(str,infoFilename) annotation(Library = {"omcruntime","omparse","antlr3"});
+  external "C" outStatements=Parser_parsestringexp(str,infoFilename) annotation(Library = {"omparse","antlr3","omcruntime"});
 end parsestringexp;
 end Parser;
 
