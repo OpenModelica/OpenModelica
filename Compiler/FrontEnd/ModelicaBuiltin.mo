@@ -1359,5 +1359,13 @@ function reopenStandardStream
 external "builtin";
 end reopenStandardStream;
 
+function importFMU "Imports the Functional Mockup Unit
+  Example command:
+  importFMU(\"A.fmu\");"
+  input String filename;
+  output Boolean success;
+external "builtin";
+end importFMU;
+
 end Scripting;
 end OpenModelica;

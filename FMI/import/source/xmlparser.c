@@ -255,7 +255,6 @@ const char * getDescription(ModelDescription* md, ScalarVariable* sv) {
 const char * getVariableAttributeString(ModelDescription* md, 
         fmiValueReference vr, Elm type, Att a){
     const char* value;
-    const char* declaredType;
     Type* tp; 
     ScalarVariable* sv = getVariable(md, vr, type);
     if (!sv) return NULL;
@@ -547,7 +546,7 @@ static void XMLCALL endElement(void *context, const char *elm) {
                     case elm_BooleanType:
                     case elm_EnumerationType:
                         break;
-                    deaullt:
+                    default:
                          logFatalTypeError("RealType or similar", ts->type);
                          return;
                 }
@@ -597,7 +596,7 @@ static void XMLCALL endElement(void *context, const char *elm) {
                     case elm_Boolean:
                     case elm_Enumeration:
                         break;
-                    deault:
+                    default:
                          logFatalTypeError("Real or similar", child->type);
                          return;
                 }
@@ -704,6 +703,8 @@ void printElement(int indent, void* element){
             printList(indent, md->vendorAnnotations);
             printList(indent, md->modelVariables);
             break;
+        default:
+          break;
     }
 }
 
@@ -745,6 +746,8 @@ void freeElement(void* element){
             freeList(md->vendorAnnotations);
             freeList(md->modelVariables);
             break;
+        default:
+          break;
     }
     // free the struct
     free(e);

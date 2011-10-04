@@ -20,7 +20,7 @@ INSTALL_SHAREDIR   = ${DESTDIR}${datadir}/
 INSTALL_MANDIR     = ${DESTDIR}${datadir}/man/
 INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
 
-.PHONY : c_runtime omc omcd release debug qtclient mosh all mkbuilddirs test install-dirs susan susan_all susgen sustst
+.PHONY : c_runtime omc omcd release debug qtclient mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst
 
 mkbuilddirs:
 	if [ "$(EXE)" = ".app" ]; then mkdir -p $(builddir_app); fi
@@ -49,6 +49,12 @@ docs: mkbuilddirs omlibrary
 	# man pages
 	(cd doc/manpages/; for f in *.1; do gzip $$f -c > ../../$(builddir_man)/man1/$$f.gz && touch -r $$f ../../$(builddir_man)/man1/$$f.gz; done)
 
+fmi:
+	(cp -p FMI/import/source/fmuModelica.tmp $(builddir_inc))
+	(cp -p FMI/import/bin/7z.dll $(builddir_bin))
+	(cp -p FMI/import/bin/7z.exe $(builddir_bin))
+	(cd FMI/import/source; time $(MAKE) -f Makefile.omdev.mingw)
+	
 testfast: test
 
 test:

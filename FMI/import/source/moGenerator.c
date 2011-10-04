@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "moGenerator.h"
+
 
 #define QUOTEME_(x) #x
 #define QUOTEME(x) QUOTEME_(x)
@@ -13,7 +15,7 @@
 #define PATHSIZE 1024
 
 #define MODEL_DESCRIPTION "modelDescription.xml"
-#define FMU_TEMPLATE "..\\source\\fmuModelica.tmp"
+#define FMU_TEMPLATE "..\\include\\omc\\fmuModelica.tmp"
 #define FMU_PATH "..\\fmu"
 #define BIN_PATH "..\\bin"
 
@@ -498,15 +500,30 @@ void blockcodegen(ModelDescription* md,size_t nx, size_t nz, const char* mid, co
 	fclose(pfile);
 }
 
+void printUsage() {
+	printf("Usage: fmigenerator [--fmufile=NAME] [--outputdir=PATH]\n");
+	printf("--fmufile		The FMU file that contains the model description to be imported.\n");
+	printf("--outputdir		The output directory.");
+}
 
 int main(int argc, char *argv[])
 {
+	if (argc < 2) {
+		printUsage();
+		return EXIT_FAILURE;
+	} else if (strcasecmp(argv[1], "-h") == 0) {
+		printUsage();
+        return EXIT_FAILURE;
+	} else if (strcasecmp(argv[1], "--help") == 0) {
+		printUsage();
+        return EXIT_FAILURE;
+	}
+	
 	size_t nx;                          // number of state variables
     size_t nz;                          // number of state event indicators
 	size_t nsv;							// number of scalar variables
 	fmiScalarVariable* list = NULL;			// list of fmiScalarVariable;
 	char omPath[PATHSIZE]; // OpenModelica installation directory
-	
 	// Allocated memory needed to be freed
 	const char * fmuname;	// name of the fmu file <fmuname>.fmu
 	ModelDescription* md = NULL;            // handle to the parsed XML file
@@ -516,30 +533,31 @@ int main(int argc, char *argv[])
 	const char * xmlFile = NULL;
 	const char * fmuDllPath = NULL;
 	printf("\n\n");
-	//	printf("#### argc: %d\n",argc);
-	if (argc<=1) {
-		printf("#### Please give the fmu file...\n   generator.exe <fmupath>\n");
-		freeElement(md);
-		return EXIT_FAILURE;
+	if (strncmp(argv[1], "--fmufile=", 10) == 0) {
+		fmuname = getFMUname(argv[1]+10);
 	}
-	fmuname = getFMUname(argv[1]);	
-	decompPath = getDecompPath(omPath,fmuname);
+	if (argc > 2) {
+		if (strncmp(argv[2], "--outputdir=", 12) == 0) {
+			decompPath = argv[2]+12;
+			strcat(decompPath, "/");
+			if (access(decompPath, F_OK) == -1)
+				decompPath = getDecompPath(omPath,fmuname);
+		}
+	} else {
+		decompPath = getDecompPath(omPath,fmuname);
+	}
 	#ifdef _DEBUG_
 		printf("#### %s decompPath: %s\n",QUOTEME(__LINE__),decompPath);
 	#endif
-	decompress(argv[1],decompPath);
-	
+	decompress(argv[1]+10,decompPath);
 	xmlFile = getXMLfile(decompPath,MODEL_DESCRIPTION);
-	
 	md = parse(xmlFile);
-
 	mid = getModelIdentifier(md);
-    guid = getString(md, att_guid);
+	guid = getString(md, att_guid);
     nx = getNumberOfStates(md);
     nz = getNumberOfEventIndicators(md);
 	nsv = getNumberOfSV(md);
 	list = (fmiScalarVariable*)calloc(sizeof(fmiScalarVariable),nsv);
-	
 	instScalarVariable(md,list);
 	
 	# ifdef _DEBUG_
@@ -568,6 +586,5 @@ int main(int argc, char *argv[])
 	free(list);
 	freeScalarVariableLst(list,nsv);
 	freeElement((void*)md);
-  system("PAUSE");	
-  return EXIT_SUCCESS;
+	return EXIT_SUCCESS;
 }

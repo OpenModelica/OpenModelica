@@ -1,0 +1,14 @@
+2011-10-04 [adeel.asghar@liu.se]
+------------------------------
+
+- Removed the generator.mak and added the Makefile.omdev.mingw.
+- Removed the fmuwrapper.o (run the make file to create it).
+- The executable is renamed from generator to fmigenerator.
+- The executable takes two parameters --fmufile and --outputdir(optional). Run [fmigenerator -h] for usage help.
+- Some minor changes in the source code, check the svn.
+- Added a fmi section in the Makefile.common, so now one can compile FMI import from MDT using ctrl+B and then typing fmi.
+- The fmi section copies the 7z.exe and 7z.dll to build/bin. It also copies the fmiModelica.tmp to /build/include/omc. Runs the fmi makefile.
+
+------------------------------
+Adeel.
+adeel.asghar@liu.se

@@ -4,7 +4,7 @@
 
 #include <windows.h>
 #include "fmiModelFunctions.h"
-//#include "xmlparser.h"
+#include "xmlparser.h"
 #define COMBINENAME(a,b) a##_##b
 
 #ifdef __cplusplus
