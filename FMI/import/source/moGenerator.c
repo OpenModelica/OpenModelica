@@ -19,6 +19,7 @@
 #define FMU_PATH "..\\fmu"
 #define BIN_PATH "..\\bin"
 
+#define USE_UNZIP
 #define DECOMPRESS_CMD "7z x -aoa -o"
 // return codes of the 7z command line tool
 #define SEVEN_ZIP_NO_ERROR 0 // success
@@ -168,22 +169,30 @@ static int decompress(const char* fmuPath, const char* decompPath){
 	int n;
 	char * cmd; // needed to be freed
 	
-	n = strlen(DECOMPRESS_CMD) + strlen(fmuPath) +strlen(decompPath)+10;
-	cmd = (char*)calloc(sizeof(char),n);	
-	sprintf(cmd, "%s%s \"%s\" > NUL", DECOMPRESS_CMD, decompPath, fmuPath); 
-	err = system(cmd);
-	free(cmd); // free
-	if (err!=SEVEN_ZIP_NO_ERROR) {
-        switch (err) {
-            printf("#### 7z: ");
-            case SEVEN_ZIP_WARNING:            printf("warning\n"); break;
-            case SEVEN_ZIP_ERROR:              printf("error\n"); break;
-            case SEVEN_ZIP_COMMAND_LINE_ERROR: printf("command line error\n"); break;
-            case SEVEN_ZIP_OUT_OF_MEMORY:      printf("out of memory\n"); break;
-            case SEVEN_ZIP_STOPPED_BY_USER:    printf("stopped by user\n"); break;
-            default: printf("unknown problem\n");
-        }
-    }
+        #ifdef USE_UNZIP
+          n = strlen(fmuPath) +strlen(decompPath) + 17;
+          cmd = (char*)calloc(sizeof(char),n);
+          sprintf(cmd, "unzip -o \"%s\" -d \"%s\"", fmuPath, decompPath);
+          err = system(cmd);
+          free(cmd); // free
+        #else
+          n = strlen(DECOMPRESS_CMD) + strlen(fmuPath) +strlen(decompPath)+10;
+          cmd = (char*)calloc(sizeof(char),n);
+          sprintf(cmd, "%s%s \"%s\" > NUL", DECOMPRESS_CMD, decompPath, fmuPath);
+          err = system(cmd);
+          free(cmd); // free
+          if (err!=SEVEN_ZIP_NO_ERROR) {
+          switch (err) {
+              printf("#### 7z: ");
+              case SEVEN_ZIP_WARNING:            printf("warning\n"); break;
+              case SEVEN_ZIP_ERROR:              printf("error\n"); break;
+              case SEVEN_ZIP_COMMAND_LINE_ERROR: printf("command line error\n"); break;
+              case SEVEN_ZIP_OUT_OF_MEMORY:      printf("out of memory\n"); break;
+              case SEVEN_ZIP_STOPPED_BY_USER:    printf("stopped by user\n"); break;
+              default: printf("unknown problem\n");
+          }
+          }
+        #endif
 	return EXIT_SUCCESS;
 }
 
