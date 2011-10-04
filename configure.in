@@ -547,6 +547,7 @@ OMOptim/build/Makefile.unix \
 OMOptim/build/OMOptim.config \
 testsuite/bootstrapping/LinkMain.makefile \
 c_runtime/libf2c/makefile.u \
+FMI/import/source/Makefile \
 "
 
 AC_CONFIG_COMMANDS([config.unix.h.fix],[./configure-post.sh $ac_cs_config])

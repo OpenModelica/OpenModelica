@@ -1,0 +1,29 @@
+# Project: Code Generator for FMU Import to OpenModelica 1.7.0
+# Author: Wuzhu Chen, TU-Clausthal
+
+CC   = @CC@
+RES  = 
+OBJS  = xmlparser.o stack.o fmuWrapper.o moGenerator.o $(RES)
+LINKOBJS  = $(OBJS)
+LIBS =  -lexpat
+INCS =  
+CXXINCS =  -I"../include/"
+BIN  = ../../../build/bin/fmigenerator
+CXXFLAGS = $(CXXINCS)
+CFLAGS = @CFLAGS@
+CPPFLAGS = -I"../../../build/include/omc"	
+RM = rm -f
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before $(BIN) all-after
+
+clean: clean-custom
+	${RM} $(OBJS) $(BIN)
+
+$(BIN): $(OBJS)
+	$(CC) -Wall -o $(CPPFLAGS) $(BIN) $(LINKOBJS) $(LIBS)
+	
+Makefile: Makefile.in
+	(cd ../../../ ; ./config.status)
+

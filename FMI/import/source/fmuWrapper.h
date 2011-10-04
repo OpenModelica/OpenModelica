@@ -2,7 +2,6 @@
 #define FMUWRAPPER_H
 #endif
 
-#include <windows.h>
 #include "fmiModelFunctions.h"
 #include "xmlparser.h"
 #define COMBINENAME(a,b) a##_##b
