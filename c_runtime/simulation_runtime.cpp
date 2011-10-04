@@ -37,6 +37,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cassert>
+#include <signal.h>
 #ifndef _MSC_VER
 #include <regex.h>
 #endif
@@ -1037,6 +1038,19 @@ initRuntimeAndSimulation(int argc, char**argv)
   return 0;
 }
 
+void SimulationRuntime_printStatus(int sig) {
+  printf("<status>\n");
+  printf("<model>%s</model>\n", globalData->modelFilePrefix);
+  printf("<phase>UNKNOWN</phase>\n");
+  printf("<currentStepSize>%g</currentStepSize>\n",globalData->current_stepsize);
+  printf("<oldTime>%.12g</oldTime>\n",globalData->oldTime);
+  printf("<oldTime2>%.12g</oldTime2>\n",globalData->oldTime2);
+  printf("<diffOldTime>%g</diffOldTime>\n",globalData->oldTime-globalData->oldTime2);
+  printf("<currentTime>%g</currentTime>\n",globalData->timeValue);
+  printf("<diffCurrentTime>%g</diffCurrentTime>\n",globalData->timeValue-globalData->oldTime);
+  printf("</status>\n");
+}
+
 /* \brief main function for simulator
  *
  * The arguments for the main function are:
@@ -1049,9 +1063,9 @@ initRuntimeAndSimulation(int argc, char**argv)
 int _main_SimulationRuntime(int argc, char**argv)
 {
   int retVal = -1;
-
   if (initRuntimeAndSimulation(argc, argv)) //initRuntimeAndSimulation returns 1 if an error occurs
     return 1;
+  sighandler_t oldhandler = signal(SIGUSR1, SimulationRuntime_printStatus);
 
   if (interactiveSimulation) {
     cout << "startInteractiveSimulation: " << version << endl;
