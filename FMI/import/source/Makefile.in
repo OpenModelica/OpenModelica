@@ -18,6 +18,10 @@ RM = rm -f
 
 all: all-before $(BIN) all-after
 
+fmuModelica.h: fmuModelica.tmp
+	sed 's/"/\\"/g' $< | sed 's/^/"/' | sed 's/$$/\\n"/' > $@.tmp
+	mv $@.tmp $@
+
 xmlparser.o: xmlparser.c xmlparser.h stack.h
 
 clean: clean-custom
