@@ -720,7 +720,6 @@ static void printList(int indent, void** list){
 static void freeList(void** list);
 
 void freeElement(void* element){
-    int i;
     Element* e = (Element*)element;
     ModelDescription* md;
     if (!e) return;

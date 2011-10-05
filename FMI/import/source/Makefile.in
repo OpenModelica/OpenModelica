@@ -10,7 +10,7 @@ INCS =
 CXXINCS =  -I"../include/"
 BIN  = ../../../build/bin/fmigenerator
 CXXFLAGS = $(CXXINCS)
-CFLAGS = @CFLAGS@
+CFLAGS = @CFLAGS@ -Wall -Werror
 CPPFLAGS = -I"../../../build/include/omc"	
 RM = rm -f
 
