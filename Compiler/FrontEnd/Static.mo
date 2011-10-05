@@ -4524,7 +4524,7 @@ algorithm
       Absyn.Path path;
       DAE.Exp e1,e2;
       DAE.CallAttributes attr;
-    case ((DAE.CALL(path, {e1,e2}, attr),_)) then ((DAE.CALL(path, {e1,e2,e2}, attr),1)); // stupid, eh?
+    case ((DAE.CALL(path as Absyn.IDENT("delay"), {e1,e2}, attr),_)) then ((DAE.CALL(path, {e1,e2,e2}, attr),1)); // stupid, eh?
     else exp;
   end match;
 end elabBuiltinDelay2;
