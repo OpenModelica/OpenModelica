@@ -215,27 +215,21 @@ function homotopy
 external "builtin";
 end homotopy;
 
+function div = overload(OpenModelica.Internal.intDiv,OpenModelica.Internal.realDiv);
+
+function mod = overload(OpenModelica.Internal.intMod,OpenModelica.Internal.realMod);
+
+function rem = overload(OpenModelica.Internal.intRem,OpenModelica.Internal.realRem);
+
+function abs = overload(OpenModelica.Internal.intAbs,OpenModelica.Internal.realAbs);
+
 // Dummy functions that can't be properly defined in Modelica, but used by
 // SCodeFlatten to define which builtin functions exist (SCodeFlatten doesn't
 // care how the functions are defined, only if they exist or not).
 
-function div = overload(OpenModelica.Internal.intDiv,OpenModelica.Internal.realDiv);
-
-function mod
-/* Real or Integer in/output */
-external "builtin";
-end mod;
-
-function rem
-/* Real or Integer in/output */
-external "builtin";
-end rem;
-
 function delay
   external "builtin";
 end delay;
-
-function abs = overload(OpenModelica.Internal.intAbs,OpenModelica.Internal.realAbs);
 
 function min
   external "builtin";
@@ -446,6 +440,34 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     output Real z;
   external "builtin" z=div(x,y);
   end realDiv;
+
+  function intMod
+    input Integer x;
+    input Integer y;
+    output Integer z;
+  external "builtin" z=mod(x,y);
+  end intMod;
+
+  function realMod
+    input Real x;
+    input Real y;
+    output Real z;
+  external "builtin" z=mod(x,y);
+  end realMod;
+
+  function intRem
+    input Integer x;
+    input Integer y;
+    output Integer z;
+  external "builtin" z=rem(x,y);
+  end intRem;
+
+  function realRem
+    input Real x;
+    input Real y;
+    output Real z;
+  external "builtin" z=rem(x,y);
+  end realRem;
 
 end Internal;
 

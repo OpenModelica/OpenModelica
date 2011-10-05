@@ -513,16 +513,12 @@ algorithm
       env = Env.extendFrameT(env, "change", real2bool);
       env = Env.extendFrameT(env, "cardinality", anyNonExpandableConnector2int);
       env = Env.extendFrameT(env, "cardinality", anyExpandableConnector2int);
-      env = Env.extendFrameT(env, "rem", realReal2real);
-      env = Env.extendFrameT(env, "rem", intInt2int);
       env = Env.extendFrameT(env, "Integer", enumeration2int);
       env = Env.extendFrameT(env, "substring", stringIntInt2string);
       env = Env.extendFrameT(env, "outerproduct", vectorVector2int) "Only real and int makes sense here. And maybe bool." ;
       env = Env.extendFrameT(env, "outerproduct", vectorVector2real);
       env = Env.extendFrameT(env, "linspace", realRealInt2vectorreal);
       env = Env.extendFrameT(env, "noEvent", real2real);
-      env = Env.extendFrameT(env, "mod", realReal2real);
-      env = Env.extendFrameT(env, "mod", intInt2int);
       env = Env.extendFrameT(env, "constrain", realrealreal2real);
       env = Env.extendFrameT(env, "constrain", array1dimrealarray1dimrealarray1dimreal2array1dimreal);
       env = Env.extendFrameT(env, "actualStream", real2real);

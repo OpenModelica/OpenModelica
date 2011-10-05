@@ -4454,86 +4454,6 @@ algorithm
   end match;
 end elabBuiltinDelay2;
 
-protected function elabBuiltinMod
-"function: elabBuiltinMod
-  This function elaborates on the builtin operator mod."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties):=
-  match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      DAE.Exp s1_1,s2_1;
-      DAE.Const c1,c2;
-      list<Env.Frame> env;
-      Absyn.Exp s1,s2;
-      Boolean impl;
-      Env.Cache cache;
-      DAE.Type cty1,cty2;
-      DAE.Properties prop;
-      Prefix.Prefix pre;
-    case (cache,env,{s1,s2},_,impl,pre,info)
-      equation
-        (cache,s1_1,DAE.PROP(cty1,c1),_) = elabExp(cache,env, s1, impl,NONE(),true,pre,info);
-        (cache,s2_1,DAE.PROP(cty2,c2),_) = elabExp(cache,env, s2, impl,NONE(),true,pre,info);
-        cty1 = Types.arrayElementType(cty1);
-        Types.integerOrReal(cty1);
-        cty2 = Types.arrayElementType(cty2);
-        Types.integerOrReal(cty2);
-        (cache,s1_1,prop) = elabCallArgs(cache,env, Absyn.IDENT("mod"), {s1,s2}, {}, impl,NONE(),pre,info);
-      then
-        (cache,s1_1,prop);
-  end match;
-end elabBuiltinMod;
-
-protected function elabBuiltinRem "function: elabBuiltinRem
-  This function elaborates on the builtin operator rem."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties):=
-  match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      DAE.Exp s1_1,s2_1;
-      DAE.Const c1,c2;
-      list<Env.Frame> env;
-      Absyn.Exp s1,s2;
-      Boolean impl;
-      Env.Cache cache;
-      DAE.Type cty1,cty2;
-      DAE.Properties prop;
-      Prefix.Prefix pre;
-
-      case (cache,env,{s1,s2},_,impl,pre,info)
-      equation
-        (cache,s1_1,DAE.PROP(cty1,c1),_) = elabExp(cache,env, s1, impl,NONE(),true,pre,info);
-        (cache,s2_1,DAE.PROP(cty2,c2),_) = elabExp(cache,env, s2, impl,NONE(),true,pre,info);
-        cty1 = Types.arrayElementType(cty1);
-        Types.integerOrReal(cty1);
-        cty2 = Types.arrayElementType(cty2);
-        Types.integerOrReal(cty2);
-        (cache,s1_1,prop) = elabCallArgs(cache,env, Absyn.IDENT("rem"), {s1,s2}, {}, impl,NONE(),pre,info);
-      then
-        (cache,s1_1,prop);
-  end match;
-end elabBuiltinRem;
-
 protected function elabBuiltinBoolean
 "function: elabBuiltinBoolean
   This function elaborates on the builtin operator boolean, which extracts
@@ -6176,8 +6096,6 @@ algorithm
     case "product" then elabBuiltinProduct;
     case "pre" then elabBuiltinPre;
     case "boolean" then elabBuiltinBoolean;
-    case "mod" then elabBuiltinMod;
-    case "rem" then elabBuiltinRem;
     case "diagonal" then elabBuiltinDiagonal;
     case "differentiate" then elabBuiltinDifferentiate;
     case "noEvent" then elabBuiltinNoevent;
