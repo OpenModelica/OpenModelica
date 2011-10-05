@@ -4396,42 +4396,6 @@ algorithm
   end matchcontinue;
 end elabBuiltinMinMaxCommon;
 
-protected function elabBuiltinAbs "function: elabBuiltinAbs
-  This function elaborates on the builtin operator abs"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      DAE.Exp s1_1;
-      list<Env.Frame> env;
-      Absyn.Exp s1;
-      Boolean impl;
-      Env.Cache cache;
-      DAE.Properties prop;
-      Prefix.Prefix pre;
-
-    case (cache,env,{s1},_,impl,pre,info)
-      equation
-        (cache,s1_1,prop) = verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isRealOrSubTypeReal,"abs",pre,info);
-      then
-        (cache,s1_1,prop);
-    case (cache,env,{s1},_,impl,pre,info)
-      equation
-        (cache,s1_1,prop) = verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isIntegerOrSubTypeInteger,"abs",pre,info);
-      then
-        (cache,s1_1,prop);
-  end matchcontinue;
-end elabBuiltinAbs;
-
 protected function elabBuiltinDiv "function: elabBuiltinDiv
   This function elaborates on the builtin operator div."
   input Env.Cache inCache;
@@ -6250,7 +6214,6 @@ algorithm
     case "sum" then elabBuiltinSum;
     case "product" then elabBuiltinProduct;
     case "pre" then elabBuiltinPre;
-    case "abs" then elabBuiltinAbs;
     case "div" then elabBuiltinDiv;
     case "boolean" then elabBuiltinBoolean;
     case "mod" then elabBuiltinMod;

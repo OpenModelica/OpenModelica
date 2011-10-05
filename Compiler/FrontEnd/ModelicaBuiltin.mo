@@ -238,10 +238,7 @@ function delay
   external "builtin";
 end delay;
 
-function abs
-/* Real or Integer in/output */
-  external "builtin";
-end abs;
+function abs = overload(OpenModelica.Internal.intAbs,OpenModelica.Internal.realAbs);
 
 function min
   external "builtin";
@@ -425,6 +422,20 @@ type VariableName "A variable name, e.g. a.b or a[1].b[3].c" end VariableName;
 type VariableNames "An array of variable names, e.g. {a.b,a[1].b[3].c}, or a single VariableName" end VariableNames;
 
 end Code;
+
+package Internal "Contains internal implementations, e.g. overloaded builtin functions"
+  function intAbs
+    input Integer v;
+    output Integer o;
+  external "builtin" o=abs(v);
+  end intAbs;
+
+  function realAbs
+    input Real v;
+    output Real o;
+  external "builtin" o=abs(v);
+  end realAbs;
+end Internal;
 
 package Scripting
   
