@@ -526,6 +526,7 @@ void ModelicaTree::mouseDoubleClickEvent(QMouseEvent *event)
     if (!itemAt(event->pos()))
         return;
     openProjectTab(itemAt(event->pos()), 0);
+    mpParentLibraryWidget->mpParentMainWindow->switchToModelingView();
     QTreeWidget::mouseDoubleClickEvent(event);
 }
 
@@ -931,6 +932,7 @@ void LibraryTree::mouseDoubleClickEvent(QMouseEvent *event)
     if (!itemAt(event->pos()))
         return;
     showComponent(itemAt(event->pos()), 0);
+    mpParentLibraryWidget->mpParentMainWindow->switchToModelingView();
     QTreeWidget::mouseDoubleClickEvent(event);
 }
 

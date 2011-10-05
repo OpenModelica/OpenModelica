@@ -63,5 +63,4 @@ QToolButton#InteractiveSimulationButtons {
 QListWidget#RecentItemsList::item:hover {
     border: 1px solid gray;
     color: blue;
-    cursor: hand;
 }

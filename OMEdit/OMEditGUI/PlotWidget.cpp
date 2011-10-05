@@ -332,7 +332,6 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                 pPlotWindow->setVariablesList(QStringList(pItem->getPlotVariable()));
                 pPlotWindow->plot();
                 pPlotWindow->fitInView();
-                pPlotWindow->getPlot()->updateGeometry();
                 pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
             }
             // if user unchecks the variable then remove it from the plot
@@ -346,9 +345,8 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                         pPlotWindow->getPlot()->removeCurve(pPlotCurve);
                         pPlotCurve->detach();
                         pPlotWindow->fitInView();
-                        pPlotWindow->getPlot()->updateGeometry();
+                        pPlotWindow->getPlot()->updateLayout();
                         pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
-                        break;
                     }
                 }
             }
@@ -388,7 +386,6 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                             pPlotWindow->setYLabel(tr(""));
                         }
                         pPlotWindow->fitInView();
-                        pPlotWindow->getPlot()->updateGeometry();
                         pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
                     }
                     else
@@ -437,9 +434,8 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                                     pPlotWindow->getPlot()->removeCurve(pPlotCurve);
                                     pPlotCurve->detach();
                                     pPlotWindow->fitInView();
-                                    pPlotWindow->getPlot()->updateGeometry();
+                                    pPlotWindow->getPlot()->updateLayout();
                                     pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
-                                    break;
                                 }
                             }
                             mPlotParametricVariables.removeOne(list);
