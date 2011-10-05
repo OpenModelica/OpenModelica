@@ -686,22 +686,22 @@ void printElement(int indent, void* element){
     indent += 2;
     switch (getAstNodeType(e->type)) {
         case astListElement:
-            printList(indent, ((ListElement*)e)->list);
+            printList(indent, (void**) ((ListElement*)e)->list);
             break;
         case astScalarVariable:
             printElement(indent, ((Type*)e)->typeSpec);
-            printList(indent, ((ScalarVariable*)e)->directDependencies);
+            printList(indent, (void**) ((ScalarVariable*)e)->directDependencies);
             break;
         case astType:
             printElement(indent, ((Type*)e)->typeSpec);
             break;
         case astModelDescription:
             md = (ModelDescription*)e;
-            printList(indent, md->unitDefinitions);
-            printList(indent, md->typeDefinitions);
+            printList(indent, (void**) md->unitDefinitions);
+            printList(indent, (void**) md->typeDefinitions);
             printElement(indent, md->defaultExperiment);
-            printList(indent, md->vendorAnnotations);
-            printList(indent, md->modelVariables);
+            printList(indent, (void**) md->vendorAnnotations);
+            printList(indent, (void**) md->modelVariables);
             break;
         default:
           break;
@@ -725,26 +725,28 @@ void freeElement(void* element){
     ModelDescription* md;
     if (!e) return;
     // free attributes
+    /* Cannot free constants...
     for (i=0; i<e->n; i+=2) 
         free(e->attributes[i+1]);
+    */
     free(e->attributes);
     // free child nodes
     switch (getAstNodeType(e->type)) {
         case astListElement:
-            freeList(((ListElement*)e)->list);
+            freeList((void**) ((ListElement*)e)->list);
             break;
         case astScalarVariable:
-            freeList(((ScalarVariable*)e)->directDependencies);
+            freeList((void**) ((ScalarVariable*)e)->directDependencies);
         case astType:
             freeElement(((Type*)e)->typeSpec);
             break;
         case astModelDescription:
             md = (ModelDescription*)e;
-            freeList(md->unitDefinitions);
-            freeList(md->typeDefinitions);
+            freeList((void**) md->unitDefinitions);
+            freeList((void**) md->typeDefinitions);
             freeElement(md->defaultExperiment);
-            freeList(md->vendorAnnotations);
-            freeList(md->modelVariables);
+            freeList((void**) md->vendorAnnotations);
+            freeList((void**) md->modelVariables);
             break;
         default:
           break;
@@ -795,7 +797,7 @@ ModelDescription* parse(const char* xmlPath) {
         int n = fread(text, sizeof(char), XMLBUFSIZE, file);
 	    if (n != XMLBUFSIZE) done = 1;
         if (!XML_Parse(parser, text, n, done)){
-             printf("Parse error in file %s at line %d:\n%s\n", 
+             printf("Parse error in file %s at line %ld:\n%s\n", 
                      xmlPath,
 	                 XML_GetCurrentLineNumber(parser),
 	                 XML_ErrorString(XML_GetErrorCode(parser)));
