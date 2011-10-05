@@ -536,7 +536,6 @@ void printUsage() {
 }
 
 int main(int argc, char *argv[]) {
-  setbuf(stderr, NULL);
   if (argc < 2) {
     printUsage();
     return EXIT_FAILURE;
@@ -584,8 +583,6 @@ int main(int argc, char *argv[]) {
 #ifdef _DEBUG_
   printf("#### %s decompPath: %s\n",QUOTEME(__LINE__),decompPath);
 #endif
-  fprintf(stderr, argv[1] + 10);
-  fprintf(stderr, decompPath);
   decompress(argv[1] + 10, decompPath);
   xmlFile = getXMLfile(decompPath, MODEL_DESCRIPTION);
   md = parse(xmlFile);
