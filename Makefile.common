@@ -50,9 +50,6 @@ docs: mkbuilddirs omlibrary
 	(cd doc/manpages/; for f in *.1; do gzip $$f -c > ../../$(builddir_man)/man1/$$f.gz && touch -r $$f ../../$(builddir_man)/man1/$$f.gz; done)
 
 fmi:
-	(cp -p FMI/import/source/fmuModelica.tmp $(builddir_inc))
-	(cp -p FMI/import/bin/7z.dll $(builddir_bin))
-	(cp -p FMI/import/bin/7z.exe $(builddir_bin))
 	(cd FMI/import/source; time $(MAKE) -f Makefile.omdev.mingw)
 	
 testfast: test

@@ -1233,7 +1233,7 @@ algorithm
         str3 = "--fmufile=\"" +& filename +& "\" --outputdir=\"" +& str +& "\"";
         call = str2 +& " " +& str3;
         
-        0 = System.spawnCall(str2, call);
+        0 = System.systemCall(call);
       then
         (cache,Values.BOOL(true),st);
         
