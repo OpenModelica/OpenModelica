@@ -223,6 +223,7 @@ algorithm
       Absyn.Path fname;
       list<Ident> vars,typeVars;
       tuple<String,String> re;
+      list<Absyn.Path> paths;
       String   partialStr, encapsulatedStr, restrictionStr, prefixKeywords, tvs;
       
     // adrpo: BEWARE! the prefix keywords HAVE TO BE IN A SPECIFIC ORDER:
@@ -328,6 +329,22 @@ algorithm
         str = stringAppendList({is,prefixKeywords,restrictionStr," ",n," = der(",s4,", ",s5,")", s6});
       then
         str;
+
+    case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+          body = Absyn.OVERLOAD(functionNames=paths, comment=cmt)),fi,re,io)
+      equation
+        is = indentStr(i);
+        partialStr = selectString(p, "partial ", "");
+        finalStr = selectString(f, "final ", fi);
+        encapsulatedStr = selectString(e, "encapsulated ", "");
+        restrictionStr = unparseRestrictionStr(r);
+        s5 = stringDelimitList(List.map(paths,Absyn.pathString), ", ");
+        s6 = unparseCommentOption(cmt);
+        prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
+        str = stringAppendList({is,prefixKeywords,restrictionStr," ",n," = overload(",s5,")", s6});
+      then
+        str;
+
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Dump.unparseClassStr"});
