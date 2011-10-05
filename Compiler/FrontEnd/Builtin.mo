@@ -517,9 +517,6 @@ algorithm
       env = Env.extendFrameT(env, "div", intInt2int) "non-differentiable functions" ;
       env = Env.extendFrameT(env, "rem", realReal2real);
       env = Env.extendFrameT(env, "rem", intInt2int);
-      env = Env.extendFrameT(env, "boolean", bool2bool);
-      env = Env.extendFrameT(env, "boolean", real2bool);
-      env = Env.extendFrameT(env, "boolean", int2bool);
       env = Env.extendFrameT(env, "Integer", enumeration2int);
       env = Env.extendFrameT(env, "abs", real2real) "differentiable functions" ;
       env = Env.extendFrameT(env, "abs", int2int) "differentiable functions" ;
