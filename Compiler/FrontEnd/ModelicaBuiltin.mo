@@ -219,10 +219,7 @@ end homotopy;
 // SCodeFlatten to define which builtin functions exist (SCodeFlatten doesn't
 // care how the functions are defined, only if they exist or not).
 
-function div
-/* Real or Integer in/output */
-external "builtin";
-end div;
+function div = overload(OpenModelica.Internal.intDiv,OpenModelica.Internal.realDiv);
 
 function mod
 /* Real or Integer in/output */
@@ -435,6 +432,21 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     output Real o;
   external "builtin" o=abs(v);
   end realAbs;
+
+  function intDiv
+    input Integer x;
+    input Integer y;
+    output Integer z;
+  external "builtin" z=div(x,y);
+  end intDiv;
+
+  function realDiv
+    input Real x;
+    input Real y;
+    output Real z;
+  external "builtin" z=div(x,y);
+  end realDiv;
+
 end Internal;
 
 package Scripting

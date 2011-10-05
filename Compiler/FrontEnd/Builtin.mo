@@ -513,8 +513,6 @@ algorithm
       env = Env.extendFrameT(env, "change", real2bool);
       env = Env.extendFrameT(env, "cardinality", anyNonExpandableConnector2int);
       env = Env.extendFrameT(env, "cardinality", anyExpandableConnector2int);
-      env = Env.extendFrameT(env, "div", realReal2real) "non-differentiable functions" ;
-      env = Env.extendFrameT(env, "div", intInt2int) "non-differentiable functions" ;
       env = Env.extendFrameT(env, "rem", realReal2real);
       env = Env.extendFrameT(env, "rem", intInt2int);
       env = Env.extendFrameT(env, "Integer", enumeration2int);
