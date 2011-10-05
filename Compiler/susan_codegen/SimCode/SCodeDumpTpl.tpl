@@ -210,6 +210,9 @@ match classDef
     let func_str = dumpPath(functionPath)
     let cmt_str = dumpCommentOpt(comment)
     '= der(<%func_str%>, <%derivedVariables ;separator=", "%>)<%cmt_str%>'
+  case OVERLOAD(__) then
+    let cmt_str = dumpCommentOpt(comment)
+    '= overload(<%pathLst |> path => dumpPath(path); separator=", "%>)<%cmt_str%>'
   else errorMsg("SCodeDump.dumpClassDef: Unknown class definition.")
 end dumpClassDef;
 

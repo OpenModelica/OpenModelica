@@ -10778,11 +10778,13 @@ algorithm
 
     /* Instantiate overloaded functions */
     case (cache,env,ih,mod,pre,(c as SCode.CLASS(name = n,restriction = (restr as SCode.R_FUNCTION()),
-          classDef = SCode.OVERLOAD(pathLst = funcnames))),inst_dims,_)
+          classDef = SCode.OVERLOAD(pathLst = funcnames,comment=cmt))),inst_dims,_)
       equation
-        (cache,env_1,ih,resfns) = instOverloadedFunctions(cache,env,ih, n, funcnames) "Overloaded functions" ;
+        (cache,ih,resfns) = instOverloadedFunctions(cache,env,ih,pre,funcnames) "Overloaded functions" ;
+        (cache,fpath) = makeFullyQualified(cache,env,Absyn.IDENT(n));
+        resfns = DAE.FUNCTION(fpath,{DAE.FUNCTION_DEF({})},DAE.T_NOTYPE_DEFAULT,true,DAE.NO_INLINE(),DAE.emptyElementSource,cmt)::resfns;
       then
-        (cache,env_1,ih,resfns);
+        (cache,env,ih,resfns);
     
     // handle failure
     case (_,env,_,_,_,SCode.CLASS(name=n),_,_)
@@ -11437,9 +11439,14 @@ algorithm
       then
         (cache,env_1,ih);
 
-    case (_,_,_,_)
+    case (cache,env,ih,SCode.CLASS(name = id,partialPrefix = p,encapsulatedPrefix = e,restriction = r,
+                                   classDef = SCode.OVERLOAD(pathLst=_),info = info))  
+      then
+        (cache,env,ih);
+
+    case (_,_,_,SCode.CLASS(name=id))
       equation
-        Debug.fprintln("failtrace", "- Inst.implicitFunctionTypeInstantiation failed");
+        Debug.fprintln("failtrace", "- Inst.implicitFunctionTypeInstantiation failed " +& id);
       then fail();
   end matchcontinue;
 end implicitFunctionTypeInstantiation;
@@ -11452,14 +11459,13 @@ protected function instOverloadedFunctions
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input Absyn.Ident inIdent;
+  input Prefix.Prefix pre;
   input list<Absyn.Path> inAbsynPathLst;
   output Env.Cache outCache;
-  output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output list<DAE.Function> outFns;
 algorithm 
-  (outCache,outEnv,outIH,outFns) := matchcontinue (inCache,inEnv,inIH,inIdent,inAbsynPathLst)
+  (outCache,outIH,outFns) := matchcontinue (inCache,inEnv,inIH,pre,inAbsynPathLst)
     local
       list<Env.Frame> env,cenv,env_1,env_2;
       SCode.Element c;
@@ -11477,37 +11483,27 @@ algorithm
       DAE.FunctionAttributes functionAttributes;
       DAE.ElementSource source "the origin of the element";
       Absyn.Info info;
-      list<DAE.Function> resfns;
+      list<DAE.Function> resfns,resfns1,resfns2;
       DAE.Function resfn;
       Boolean partialPrefixBool;
+      SCode.Restriction rest;
       
-    case (cache,env,ih,_,{}) then (cache,env,ih,{});
+    case (cache,env,ih,pre,{}) then (cache,ih,{});
 
     // Instantiate each function, add its FQ name to the type, needed when deoverloading  
-    case (cache,env,ih,overloadname,(fn :: fns))
-      equation 
-        (cache,(c as SCode.CLASS(name=id,partialPrefix=partialPrefix,encapsulatedPrefix=encflag,restriction=SCode.R_FUNCTION(),info=info)),cenv) = Lookup.lookupClass(cache, env, fn, true);
-        (cache,_,ih,_,DAE.DAE(daeElts),_,(DAE.T_FUNCTION(args,tp,functionAttributes),_),st,_,_) = 
-           instClass(cache,cenv,ih,UnitAbsynBuilder.emptyInstStore(),
-             DAE.NOMOD(), Prefix.NOPRE(), c, {}, true, INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
-        (cache,fpath) = makeFullyQualified(cache,env, Absyn.IDENT(overloadname));
-        (cache,ovlfpath) = makeFullyQualified(cache,cenv, Absyn.IDENT(id));
-        ty = (DAE.T_FUNCTION(args,tp,functionAttributes),SOME(ovlfpath));
-        env_1 = Env.extendFrameT(env, overloadname, ty);
-        (cache,env_2,ih,resfns) = instOverloadedFunctions(cache,env_1,ih, overloadname, fns);
-        // TODO: Fix inline here 
-        print(" DAE.InlineType FIX HERE \n");
-        // set the  of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), NONE(), NONE(), NONE());
-        partialPrefixBool = SCode.partialBool(partialPrefix);
-        resfn = DAE.FUNCTION(fpath,{DAE.FUNCTION_DEF(daeElts)},ty,partialPrefixBool,DAE.NO_INLINE(),source,NONE());
-      then
-        (cache,env_2,ih,resfn::resfns);
+    case (cache,env,ih,pre,(fn :: fns))
+      equation
+        // print("instOvl: " +& Absyn.pathString(fn) +& "\n");
+        (cache,(c as SCode.CLASS(name=id,partialPrefix=partialPrefix,encapsulatedPrefix=encflag,restriction=rest,info=info)),cenv) = Lookup.lookupClass(cache, env, fn, true);
+        true = SCode.isFunctionOrExtFunction(rest);
+        (cache,_,ih,resfns1) = implicitFunctionInstantiation2(inCache, cenv, inIH, DAE.NOMOD(), pre, c, {}, false);
+        (cache,ih,resfns2) = instOverloadedFunctions(cache,env,ih,pre,fns);
+      then (cache,ih,listAppend(resfns1,resfns2));
     
     // failure
-    case (_,env,ih,_,_)
+    case (cache,env,ih,pre,(fn :: fns))
       equation 
-        Debug.fprint("failtrace", "- Inst.instOverloaded_functions failed\n");
+        Debug.fprint("failtrace", "- Inst.instOverloaded_functions failed " +& Absyn.pathString(fn) +& "\n");
       then
         fail();
   end matchcontinue;

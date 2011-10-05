@@ -418,6 +418,7 @@ algorithm
       Env ty_env, env;
       Item ty_item;
       SCode.Attributes attr;
+      list<Absyn.Path> paths;
 
     // A class made of parts, analyse elements, equation, algorithms, etc.
     case (SCode.PARTS(elementLst = el, normalEquationLst = nel, 
@@ -471,7 +472,10 @@ algorithm
 
     // Other cases which doesn't need to be analysed.
     case (SCode.ENUMERATION(enumLst = _), _, _, _, _) then ();
-    case (SCode.OVERLOAD(pathLst = _), _, _, _, _) then ();
+    case (SCode.OVERLOAD(pathLst = paths), _, _, _, _)
+      equation
+        List.map2_0(paths,analyseClass,inEnv,inInfo);
+      then ();
     case (SCode.PDER(functionPath = _), _, _, _, _) then ();
 
   end matchcontinue;

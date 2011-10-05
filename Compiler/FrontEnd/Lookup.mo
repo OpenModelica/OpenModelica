@@ -1555,8 +1555,10 @@ public function lookupFunctionsInEnv
 algorithm
   (outCache,outTypesTypeLst) := matchcontinue (cache,env,id,info)
     local
+      Env.Env env_1;
       Env.Frame f;
       list<DAE.Type> res;
+      list<Absyn.Path> names;
       Env.AvlTree httypes;
       Env.AvlTree ht;
       String str;
@@ -1591,6 +1593,13 @@ algorithm
         (cache,res) = lookupFunctionsInEnv2(cache,{f},id,true,info);
       then (cache,res);
 
+    case (cache,env,id,info)
+      equation
+        (cache,SCode.CLASS(classDef=SCode.OVERLOAD(pathLst=names),info=info),env_1) = lookupClass(cache,env,id,false);
+        (cache,res) = lookupFunctionsListInEnv(cache,env_1,names,info,{});
+        // print(stringDelimitList(List.map(res,Types.unparseType),"\n###\n"));
+      then (cache,res);
+
     case (cache,_,_,_) then (cache,{});
     case (_,_,id,_)
       equation
@@ -1600,6 +1609,35 @@ algorithm
         fail();
   end matchcontinue;
 end lookupFunctionsInEnv;
+
+protected function lookupFunctionsListInEnv
+  input Env.Cache cache;
+  input Env.Env env;
+  input list<Absyn.Path> ids;
+  input Absyn.Info info;
+  input list<DAE.Type> acc;
+  output Env.Cache outCache;
+  output list<DAE.Type> outTypesTypeLst;
+algorithm
+  (outCache,outTypesTypeLst) := matchcontinue (cache,env,ids,info,acc)
+    local
+      Absyn.Path id;
+      list<DAE.Type> res;
+      String str;
+    case (cache,_,{},_,acc) then (cache,listReverse(acc));
+    case (cache,env,id::ids,info,acc)
+      equation
+        (cache,res as _::_) = lookupFunctionsInEnv(cache,env,id,info);
+        
+        (cache,acc) = lookupFunctionsListInEnv(cache,env,ids,info,listAppend(res,acc));
+      then (cache,acc);
+    case (_,env,id::_,info,_)
+      equation
+        str = Absyn.pathString(id) +& " not found in scope: " +& Env.printEnvPathStr(env);
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
+      then fail();
+  end matchcontinue;
+end lookupFunctionsListInEnv;
 
 protected function lookupFunctionsInEnv2
 "function: lookupFunctionsInEnv
