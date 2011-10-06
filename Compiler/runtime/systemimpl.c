@@ -812,7 +812,7 @@ int SystemImpl__loadLibrary(const char *str)
   lib->data.lib = h;
   if (check_debug_flag("dynload"))
   {
-    fprintf(stderr, "LIB LOAD [%s].\n", libname, lib->cnt, libIndex, h); fflush(stderr);
+    fprintf(stderr, "LIB LOAD [%s].\n", libname); fflush(stderr);
   }
   return libIndex;
 }
@@ -1449,7 +1449,7 @@ int SystemImpl__getLoadModelPath(const char *name, void *prios, void *mps, const
     struct dirent *ent;
     mps = RML_CDR(mps);
     if (!dir) continue;
-    while (ent = readdir(dir)) {
+    while ((ent = readdir(dir))) {
       if (0 == strncmp(name, ent->d_name, nlen)) {
         const char *version;
         int prio = 0, cIsDir = 1;

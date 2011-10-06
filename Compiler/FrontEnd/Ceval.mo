@@ -1088,9 +1088,7 @@ algorithm
     case "Modelica.Utilities.Strings.substring" then cevalBuiltinSubstring;
     case "print" then cevalBuiltinPrint;
     // MetaModelica type conversions
-    case "intReal" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalIntReal;
     case "intString" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalIntString;
-    case "realInt" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalRealInt;
     case "realString" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalRealString;
     case "stringCharInt" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalStringCharInt;
     case "intStringChar" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalIntStringChar;
@@ -2400,37 +2398,6 @@ algorithm
   end match;
 end cevalBuiltinPrint;
 
-protected function cevalIntReal
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<DAE.Exp> inExpExpLst;
-  input Boolean inBoolean;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
-  output Env.Cache outCache;
-  output Values.Value outValue;
-  output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
-  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
-    local
-      list<Env.Frame> env;
-      DAE.Exp exp;
-      Boolean impl;
-      Option<Interactive.SymbolTable> st;
-      Msg msg;
-      Env.Cache cache;
-      Integer i;
-      Real r;
-    case (cache,env,{exp},impl,st,msg)
-      equation
-        (cache,Values.INTEGER(i),_) = ceval(cache,env, exp, impl, st,msg);
-        r = intReal(i);
-      then
-        (cache,Values.REAL(r),st);
-  end match;
-end cevalIntReal;
-
 protected function cevalIntString
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -2461,37 +2428,6 @@ algorithm
         (cache,Values.STRING(str),st);
   end match;
 end cevalIntString;
-
-protected function cevalRealInt
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<DAE.Exp> inExpExpLst;
-  input Boolean inBoolean;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
-  output Env.Cache outCache;
-  output Values.Value outValue;
-  output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
-  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
-    local
-      list<Env.Frame> env;
-      DAE.Exp exp;
-      Boolean impl;
-      Option<Interactive.SymbolTable> st;
-      Msg msg;
-      Env.Cache cache;
-      Integer i;
-      Real r;
-    case (cache,env,{exp},impl,st,msg)
-      equation
-        (cache,Values.REAL(r),st) = ceval(cache,env, exp, impl, st,msg);
-        i = realInt(r);
-      then
-        (cache,Values.INTEGER(i),st);
-  end match;
-end cevalRealInt;
 
 protected function cevalRealString
   input Env.Cache inCache;

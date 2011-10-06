@@ -235,7 +235,7 @@ extern void* System_strtok(const char *str0, const char *delimit)
     MMC_THROW();
   }
   res = mmc_mk_cons(mmc_mk_scon(s),res);
-  while (s=strtok(NULL,delimit))
+  while ((s=strtok(NULL,delimit)))
   {
     res = mmc_mk_cons(mmc_mk_scon(s),res);
   }

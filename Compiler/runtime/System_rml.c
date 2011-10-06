@@ -112,7 +112,7 @@ RML_BEGIN_LABEL(System__strtok)
     rmlA0=res; RML_TAILCALLK(rmlFC);
   }
   res = (void*)mk_cons(mk_scon(s),res);
-  while (s=strtok(NULL,delimit))
+  while ((s=strtok(NULL,delimit)))
   {
     res = (void*)mk_cons(mk_scon(s),res);
   }
