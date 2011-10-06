@@ -215,6 +215,16 @@ function homotopy
 external "builtin";
 end homotopy;
 
+function linspace
+  input Real x1 "start";
+  input Real x2 "end";
+  input Integer n "number";
+  output Real v[n];
+algorithm
+  assert(n >= 2, "linspace requires n>=2 but got " + String(n));
+  v := {x1 + (x2-x1)*(i-1)/(n-1) for i in 1:n};
+end linspace;
+
 function div = overload(OpenModelica.Internal.intDiv,OpenModelica.Internal.realDiv);
 
 function mod = overload(OpenModelica.Internal.intMod,OpenModelica.Internal.realMod);
@@ -292,10 +302,6 @@ end ones;
 function fill
   external "builtin";
 end fill;
-
-function linspace
-  external "builtin";
-end linspace;
 
 function noEvent
   external "builtin";

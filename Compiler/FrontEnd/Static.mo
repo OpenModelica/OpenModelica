@@ -5568,68 +5568,6 @@ algorithm
   end matchcontinue;
 end elabBuiltinString;
 
-protected function elabBuiltinLinspace "
-  author: PA
-
-  This function handles the built-in linspace function.
-  e.g. linspace(1,3,3) => {1,2,3}
-       linspace(0,1,5) => {0,0.25,0.5,0.75,1.0}
-"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> expl;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean impl;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,expl,inNamedArg,impl,inPrefix,info)
-    local 
-      Absyn.Exp x,y,n;
-      DAE.Exp x1,y1,n1,x2,y2, call;
-      DAE.Type tp1,tp2,tp3,tp11,tp22;
-      DAE.Const c1,c2,c3,c;
-      Integer size;
-      Env.Cache cache; Env.Env env;
-      Prefix.Prefix pre;
-      DAE.ExpType res_type;
-
-    /* linspace(x,y,n) where n is constant or parameter */
-    case (cache,env,{x,y,n},_,impl,pre,info) equation
-      (cache,x1,DAE.PROP(tp1,c1),_) = elabExp(cache,env, x, impl,NONE(),true,pre,info);
-      (cache,y1,DAE.PROP(tp2,c2),_) = elabExp(cache,env, y, impl,NONE(),true,pre,info);
-      (x2,tp11) = Types.matchType(x1,tp1,DAE.T_REAL_DEFAULT,true);
-      (y2,tp22) = Types.matchType(y1,tp2,DAE.T_REAL_DEFAULT,true);
-      (cache,n1,DAE.PROP(tp3 as (DAE.T_INTEGER(_),_),c3),_) = 
-        elabExp(cache,env, n, impl,NONE(),true,pre,info);
-      true = Types.isParameterOrConstant(c3);
-      (cache,Values.INTEGER(size),_) = 
-        Ceval.ceval(cache,env, n1, false,NONE(), Ceval.MSG(info));
-      c = Types.constAnd(c1,c2);
-      res_type = DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_INTEGER(size)});
-      call = Expression.makeBuiltinCall("linspace", {x2, y2, n1}, res_type);
-    then (cache, call, DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(size),tp11),NONE()),c));
-
-    /* linspace(x,y,n) where n is variable time expression */
-    case (cache,env,{x,y,n},_,impl,pre,info) equation
-      (cache,x1,DAE.PROP(tp1,c1),_) = elabExp(cache,env, x, impl,NONE(),true,pre,info);
-      (cache,y1,DAE.PROP(tp2,c2),_) = elabExp(cache,env, y, impl,NONE(),true,pre,info);
-      (x2,tp11) = Types.matchType(x1,tp1,DAE.T_REAL_DEFAULT,true);
-      (y2,tp22) = Types.matchType(y1,tp2,DAE.T_REAL_DEFAULT,true);
-      (cache,n1,DAE.PROP(tp3 as (DAE.T_INTEGER(_),_),c3),_) = 
-        elabExp(cache,env, n, impl,NONE(),true,pre,info);
-      false = Types.isParameterOrConstant(c3);
-      c = Types.constAnd(c1,Types.constAnd(c2,c3));
-      res_type = DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()});
-      call = Expression.makeBuiltinCall("linspace", {x2, y2, n1}, res_type);
-    then (cache, call, DAE.PROP((DAE.T_ARRAY(DAE.DIM_UNKNOWN(),tp11),NONE()),c));
-  end matchcontinue;
-end elabBuiltinLinspace;
-
 protected function elabBuiltinVector "function: elabBuiltinVector
   author: PA
 
@@ -6111,7 +6049,6 @@ algorithm
     case "skew" then elabBuiltinSkew;
     case "String" then elabBuiltinString;
     case "rooted" then elabBuiltinRooted;
-    case "linspace" then elabBuiltinLinspace;
     case "Integer" then elabBuiltinIntegerEnum;
     case "inStream" then elabBuiltinInStream;
     case "actualStream" then elabBuiltinActualStream;
