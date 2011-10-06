@@ -223,6 +223,8 @@ function rem = overload(OpenModelica.Internal.intRem,OpenModelica.Internal.realR
 
 function abs = overload(OpenModelica.Internal.intAbs,OpenModelica.Internal.realAbs);
 
+function outerProduct = overload(OpenModelica.Internal.outerProductInt,OpenModelica.Internal.outerProductReal);
+
 // Dummy functions that can't be properly defined in Modelica, but used by
 // SCodeFlatten to define which builtin functions exist (SCodeFlatten doesn't
 // care how the functions are defined, only if they exist or not).
@@ -250,10 +252,6 @@ end product;
 function transpose
   external "builtin";
 end transpose;
-
-function outerProduct
-  external "builtin";
-end outerProduct;
 
 function symmetric
   external "builtin";
@@ -468,6 +466,28 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     output Real z;
   external "builtin" z=rem(x,y);
   end realRem;
+
+  function outerProductInt
+    input Integer[:] v1;
+    input Integer[:] v2;
+    output Integer[size(v1,1),size(v2,1)] o;
+    external "builtin";
+  /* Not working due to problems with matrix and transpose :(
+  algorithm
+    o := matrix(v1) * transpose(matrix(v2));
+  */
+  end outerProductInt;
+
+  function outerProductReal
+    input Real[:] v1;
+    input Real[:] v2;
+    output Real[size(v1,1),size(v2,1)] o;
+    external "builtin";
+  /* Not working due to problems with matrix and transpose :(
+  algorithm
+    o := matrix(v1) * transpose(matrix(v2));
+  */
+  end outerProductReal;
 
 end Internal;
 
