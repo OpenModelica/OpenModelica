@@ -510,11 +510,9 @@ algorithm
       env = Env.extendFrameC(env, stateSelectType);
       env = Env.extendFrameV(env, timeVar, NONE(), Env.VAR_UNTYPED(), {}) "see also variableIsBuiltin";
 
-      env = Env.extendFrameT(env, "change", real2bool);
       env = Env.extendFrameT(env, "cardinality", anyNonExpandableConnector2int);
       env = Env.extendFrameT(env, "cardinality", anyExpandableConnector2int);
       env = Env.extendFrameT(env, "Integer", enumeration2int);
-      env = Env.extendFrameT(env, "linspace", realRealInt2vectorreal);
       env = Env.extendFrameT(env, "noEvent", real2real);
       env = Env.extendFrameT(env, "constrain", realrealreal2real);
       env = Env.extendFrameT(env, "constrain", array1dimrealarray1dimrealarray1dimreal2array1dimreal);
