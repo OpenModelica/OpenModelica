@@ -3852,38 +3852,32 @@ protected function elabBuiltinInStream "function: elabBuiltinInStream
   Input is the arguments to the inStream operator and the environment, Env.Env."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
+  input list<Absyn.Exp> inArgs;
+  input list<Absyn.NamedArg> inNamedArgs;
   input Boolean inImpl;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input Absyn.Info inInfo;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
-  (outCache,outExp,outProperties) := match (inCache,inEnv,inAbsynExpLst,inNamedArg,inImpl,inPrefix,info)
+  (outCache, outExp, outProperties) := 
+  match (inCache, inEnv, inArgs, inNamedArgs, inImpl, inPrefix, inInfo)
     local
-      DAE.Exp exp_1,exp_2;
+      DAE.Exp exp_1;
       DAE.Type tp;
       DAE.Const c;
-      DAE.ExpType t;
       Env.Env env;
       Absyn.Exp exp;
-      Boolean impl;
       Env.Cache cache;
-      Prefix.Prefix pre;
 
-    case (cache, env, {exp as Absyn.CREF(componentRef = _)}, _, impl, pre, info)
+    case (cache, env, {exp as Absyn.CREF(componentRef = _)}, _, _, _, _)
       equation
         (cache, exp_1, DAE.PROP(tp, c), _) =
-          elabExp(cache, env, exp, impl, NONE(), true, pre, info);
-        exp_2 :: _ = Expression.flattenArrayExpToList(exp_1);
-        (tp, _) = Types.flattenArrayType(tp);
-        validateBuiltinStreamOperator(cache, env, exp_2, tp, "inStream", info);
-        t = Types.elabType(tp);
-        exp_2 = Expression.makeBuiltinCall("inStream", {exp_1}, t);
+          elabExp(cache, env, exp, inImpl, NONE(), true, inPrefix, inInfo);
+        exp_1 = elabBuiltinStreamOperator(cache, env, "inStream", exp_1, tp, inInfo);
       then
-        (cache, exp_2, DAE.PROP(tp, c));
+        (cache, exp_1, DAE.PROP(tp, c));
   end match;
 end elabBuiltinInStream;
 
@@ -3892,39 +3886,63 @@ protected function elabBuiltinActualStream "function: elabBuiltinActualStream
   Input is the arguments to the actualStream operator and the environment, Env.Env."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
+  input list<Absyn.Exp> inArgs;
+  input list<Absyn.NamedArg> inNamedArgs;
   input Boolean inImpl;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input Absyn.Info inInfo;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
-  (outCache,outExp,outProperties) := match (inCache,inEnv,inAbsynExpLst,inNamedArg,inImpl,inPrefix,info)
+  (outCache, outExp, outProperties) := 
+  match(inCache, inEnv, inArgs, inNamedArgs, inImpl, inPrefix, inInfo)
     local
-      DAE.Exp exp_1,exp_2;
+      Absyn.Exp exp;
+      DAE.Exp exp_1;
       DAE.Type tp;
       DAE.Const c;
-      DAE.ExpType t;
       Env.Env env;
-      Absyn.Exp exp;
-      Boolean impl;
       Env.Cache cache;
-      Prefix.Prefix pre;
-    case (cache, env, {exp as Absyn.CREF(componentRef = _)}, _, impl, pre, info)
+
+    case (cache, env, {exp as Absyn.CREF(componentRef = _)}, _, _, _, _)
       equation
         (cache, exp_1, DAE.PROP(tp, c), _) =
-          elabExp(cache, env, exp, impl, NONE(), true, pre, info);
-        exp_2 :: _ = Expression.flattenArrayExpToList(exp_1);
-        (tp, _) = Types.flattenArrayType(tp);
-        validateBuiltinStreamOperator(cache, env, exp_2, tp, "actualStream", info);
-        t = Types.elabType(tp);
-        exp_2 = Expression.makeBuiltinCall("actualStream", {exp_1}, t);
+          elabExp(cache, env, exp, inImpl, NONE(), true, inPrefix, inInfo);
+        exp_1 = elabBuiltinStreamOperator(cache, env, "actualStream", exp_1, tp, inInfo);
       then
-        (cache, exp_2, DAE.PROP(tp, c));
+        (cache, exp_1, DAE.PROP(tp, c));
   end match;
 end elabBuiltinActualStream;
+
+protected function elabBuiltinStreamOperator
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input String inOperator;
+  input DAE.Exp inExp;
+  input DAE.Type inType;
+  input Absyn.Info inInfo;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match(inCache, inEnv, inOperator, inExp, inType, inInfo)
+    local
+      DAE.ExpType et;
+      DAE.Exp exp;
+      
+    case (_, _, _, DAE.ARRAY(array = {}), _, _)
+      then inExp;
+
+    else
+      equation
+        exp :: _ = Expression.flattenArrayExpToList(inExp);
+        validateBuiltinStreamOperator(inCache, inEnv, exp, inType, inOperator, inInfo);
+        et = Types.elabType(inType);
+        exp = Expression.makeBuiltinCall(inOperator, {exp}, et);
+      then
+        exp;
+
+  end match;
+end elabBuiltinStreamOperator;
 
 protected function validateBuiltinStreamOperator
   input Env.Cache inCache;
@@ -3956,7 +3974,7 @@ algorithm
       then
         fail();
     // Operand is not even a component reference, error!
-    case (_, _, _, _, _, _)
+    else
       equation
         false = Expression.isCref(inOperand);
         op_str = ExpressionDump.printExpStr(inOperand);
