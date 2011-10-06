@@ -5456,7 +5456,23 @@ protected function getElementDependenciesTraverserExit
   output tuple<Absyn.Exp, tuple<ElementList, ElementList>> outTuple;
   type ElementList = list<tuple<SCode.Element, DAE.Mod>>;
 algorithm
-  outTuple := inTuple;
+  outTuple := matchcontinue(inTuple)
+    local
+      ElementList all_el, accum_el;
+      Absyn.Exp exp;
+
+    // If a binding contains an if-equation we don't really have any idea which
+    // branch will be used, which causes some problems with Fluid. So we just
+    // reset everything up to this point and pray that we didn't miss anything
+    // important.
+    case ((exp as Absyn.IFEXP(ifExp = _), (all_el, accum_el)))
+      equation
+        all_el = listAppend(accum_el, all_el);
+      then
+        ((exp, (all_el, {})));
+
+    else inTuple;
+  end matchcontinue;
 end getElementDependenciesTraverserExit;
 
 protected function isElementNamed
