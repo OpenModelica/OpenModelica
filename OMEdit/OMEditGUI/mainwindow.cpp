@@ -386,7 +386,6 @@ void MainWindow::createActions()
 
     importFMIAction = new QAction(QIcon(":/Resources/icons/import-fmi.png"), tr("Import FMI"), this);
     importFMIAction->setStatusTip(tr("Imports the model from Functional Mockup Interface (FMI)"));
-    importFMIAction->setEnabled(false);
     connect(importFMIAction, SIGNAL(triggered()), SLOT(importModelFMI()));
 
     omcLoggerAction = new QAction(QIcon(":/Resources/icons/console.png"), tr("OMC Logger"), this);
@@ -1314,7 +1313,19 @@ void MainWindow::exportModelFMI()
 //! Imports the model from FMI
 void MainWindow::importModelFMI()
 {
+    QString fileName = StringHandler::getOpenFileName(this, tr("Choose File"), NULL, Helper::fmuFileTypes, NULL);
+    if (fileName.isEmpty())
+        return;
 
+    if (mpOMCProxy->importFMU(fileName))
+    {
+        mpProjectTabs->openFile();
+    }
+    else
+    {
+        mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
+                                              .arg("unknown error ").append("while importing " + fileName));
+    }
 }
 
 //! shows the progress bar contained inside the status bar

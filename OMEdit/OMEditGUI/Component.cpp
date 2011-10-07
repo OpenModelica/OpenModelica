@@ -1151,8 +1151,8 @@ void Component::getClassComponents(QString className, int type, Component *pPare
                 {
                     QString result = mpOMCProxy->getIconAnnotation(componentProperties->getClassName());
                     Component *component;
-                    component = new Component(result, componentsAnnotationsList.at(i), componentProperties,
-                                             StringHandler::ICON, true, pParent);
+                    component = new Component(result, componentsAnnotationsList.at(i), componentProperties, StringHandler::ICON, true,
+                                              pParent);
                     mpComponentsList.append(component);
                     getClassComponents(componentProperties->getClassName(), StringHandler::ICON, component);
                 }
@@ -1171,8 +1171,8 @@ void Component::getClassComponents(QString className, int type, Component *pPare
                 {
                     QString result = mpOMCProxy->getDiagramAnnotation(componentProperties->getClassName());
                     Component *component;
-                    component = new Component(result, componentsAnnotationsList.at(i), componentProperties,
-                                              StringHandler::DIAGRAM, true, pParent);
+                    component = new Component(result, componentsAnnotationsList.at(i), componentProperties, StringHandler::DIAGRAM, true,
+                                              pParent);
                     mpComponentsList.append(component);
                     getClassComponents(componentProperties->getClassName(), StringHandler::DIAGRAM, component);
                 }

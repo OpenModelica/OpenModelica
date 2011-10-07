@@ -189,14 +189,6 @@ OMIProxy::OMIProxy(InteractiveSimulationTab *pParent)
     mpControlClientTextEdit->setReadOnly(true);
     mpControlClientTextEdit->setLineWrapMode(QTextEdit::WidgetWidth);
     mpControlClientTextEdit->setAutoFormatting(QTextEdit::AutoNone);
-    // set the layout of OMI Logger dialog
-    QHBoxLayout *horizontallayout = new QHBoxLayout;
-    horizontallayout->setContentsMargins(0, 0, 0, 0);
-    mpExpressionTextBox = new OMICustomExpressionBox(this);
-    mpSendButton = new QPushButton("Send");
-    connect(mpSendButton, SIGNAL(pressed()), SLOT(sendCustomExpression()));
-    horizontallayout->addWidget(mpExpressionTextBox);
-    horizontallayout->addWidget(mpSendButton);
     QVBoxLayout *verticalallayout = new QVBoxLayout;
     verticalallayout->addWidget(mpOMIRuntiumeOutputLabel);
     verticalallayout->addWidget(mpOMIRuntiumeOutputTextEdit);
@@ -206,7 +198,6 @@ OMIProxy::OMIProxy(InteractiveSimulationTab *pParent)
     verticalallayout->addWidget(mpTransferServerTextEdit);
     verticalallayout->addWidget(mpControlClientLabel);
     verticalallayout->addWidget(mpControlClientTextEdit);
-    verticalallayout->addLayout(horizontallayout);
     mpOMILogger->setLayout(verticalallayout);
     // set isConnected to false
     setConnected(false);
@@ -294,24 +285,20 @@ void OMIProxy::startInteractiveSimulation(QString file)
     mpSimulationProcess->setWorkingDirectory(fileInfo.absolutePath());
     connect(mpSimulationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readProcessStandardOutput()));
     connect(mpSimulationProcess, SIGNAL(readyReadStandardError()), SLOT(readProcessStandardError()));
-//    mpSimulationProcess->setStandardOutputFile(QString(filePath).append("_output.txt"));
-//    mpSimulationProcess->setStandardErrorFile(QString(filePath).append("_error.txt"));
     mpSimulationProcess->start(file, parameters);
     mpSimulationProcess->waitForStarted();
     // start the client control server
-    mpControlServer = new OMIServer(this);
+    mpControlServer = new OMIServer(OMIServer::CONTROLSERVER, this);
     mpControlServer->listen(QHostAddress(Helper::omi_network_address), Helper::omi_control_server_port);
     connect(mpControlServer, SIGNAL(recievedMessage(QString)), SLOT(readControlServerMessage(QString)));
     // start the transfer control server
-    mpTransferServer = new OMIServer(this);
+    mpTransferServer = new OMIServer(OMIServer::TRANSFERSERVER, this);
     mpTransferServer->listen(QHostAddress(Helper::omi_network_address), Helper::omi_transfer_server_port);
     // create the control client socket and make signals slots connections
     mpControlClientSocket = new QTcpSocket(this);
     connect(mpControlClientSocket, SIGNAL(connected()), SLOT(controlClientConnected()));
     connect(mpControlClientSocket, SIGNAL(disconnected()), SLOT(controlClientDisConnected()));
-//    connect(mpControlClientSocket, SIGNAL(disconnected()), mpControlClientSocket, SLOT(deleteLater()));
-    connect(mpControlClientSocket, SIGNAL(error(QAbstractSocket::SocketError)),
-            SLOT(getSocketError(QAbstractSocket::SocketError)));
+    connect(mpControlClientSocket, SIGNAL(error(QAbstractSocket::SocketError)), SLOT(getSocketError(QAbstractSocket::SocketError)));
     connect(mpTransferServer, SIGNAL(recievedMessage(QString)), SLOT(readTransferServerMessage(QString)));
     // connect to omi control server
     mpControlClientSocket->connectToHost(QHostAddress(Helper::omi_network_address), Helper::omi_control_client_port);
@@ -349,37 +336,18 @@ QString OMIProxy::getResult()
 
 void OMIProxy::logOMIMessages(QString message)
 {
-    mCommandsList.append(message);
-    mpControlClientTextEdit->setCurrentFont(QFont("Times New Roman", 10, QFont::Bold, false));
-    mpControlClientTextEdit->append(QString(">>---- Message Send : ").append(QTime::currentTime().toString())
-                                    .append(" ----"));
-
-    mpControlClientTextEdit->setCurrentFont(QFont("Times New Roman", 10, QFont::Normal, false));
-    mpControlClientTextEdit->insertPlainText(QString("\n>>  ").append(message).append("\n"));
-    // scroll the text to end
+    // move the cursor down before adding to the logger.
     QTextCursor textCursor = mpControlClientTextEdit->textCursor();
     textCursor.movePosition(QTextCursor::End);
     mpControlClientTextEdit->setTextCursor(textCursor);
-}
-
-void OMIProxy::getPreviousCommand()
-{
-    if (mCommandsList.isEmpty())
-        return;
-    mpExpressionTextBox->setText(mCommandsList.at(mCommandsList.count() - 1));
-    QString tempCommand = mCommandsList.at(mCommandsList.count() - 1);
-    mCommandsList.insert(0, tempCommand);
-    mCommandsList.removeLast();
-}
-
-void OMIProxy::getNextCommand()
-{
-    if (mCommandsList.isEmpty())
-        return;
-    mpExpressionTextBox->setText(mCommandsList.at(0));
-    QString tempCommand = mCommandsList.at(0);
-    mCommandsList.append(tempCommand);
-    mCommandsList.removeFirst();
+    // log message
+    mpControlClientTextEdit->setCurrentFont(QFont("Times New Roman", 10, QFont::Bold, false));
+    mpControlClientTextEdit->insertPlainText(QString(">>---- Message Send : ").append(QTime::currentTime().toString()).append(" ----"));
+    mpControlClientTextEdit->setCurrentFont(QFont("Times New Roman", 10, QFont::Normal, false));
+    mpControlClientTextEdit->insertPlainText(QString("\n>>  ").append(message).append("\n"));
+    // move the cursor
+    textCursor.movePosition(QTextCursor::End);
+    mpControlClientTextEdit->setTextCursor(textCursor);
 }
 
 //! Opens the OMI Logger dialog.
@@ -403,14 +371,16 @@ void OMIProxy::controlClientDisConnected()
 
 void OMIProxy::readControlServerMessage(QString message)
 {
+    // move the cursor down before adding to the logger.
+    QTextCursor textCursor = mpControlServerTextEdit->textCursor();
+    textCursor.movePosition(QTextCursor::End);
+    mpControlServerTextEdit->setTextCursor(textCursor);
+    // log message
     mpControlServerTextEdit->setCurrentFont(QFont("Times New Roman", 10, QFont::Bold, false));
-    mpControlServerTextEdit->append(QString(">>---- Message Received : ").append(QTime::currentTime().toString())
-                                    .append(" ----"));
-
+    mpControlServerTextEdit->insertPlainText(QString(">>---- Message Received : ").append(QTime::currentTime().toString()).append(" ----"));
     mpControlServerTextEdit->setCurrentFont(QFont("Times New Roman", 10, QFont::Normal, false));
     mpControlServerTextEdit->insertPlainText(QString("\n>>  ").append(message).append("\n"));
-    // scroll the text to end
-    QTextCursor textCursor = mpControlServerTextEdit->textCursor();
+    // move the cursor
     textCursor.movePosition(QTextCursor::End);
     mpControlServerTextEdit->setTextCursor(textCursor);
 }
@@ -418,16 +388,25 @@ void OMIProxy::readControlServerMessage(QString message)
 void OMIProxy::readTransferServerMessage(QString message)
 {
     // send the message to interactive simulation widget
-    emit sendResult(message);
+    /* QTimer and QSignalMapper are the best :) */
+    QSignalMapper *pSingnalMapper = new QSignalMapper;
+    QTimer *pTimer = new QTimer;
+    pTimer->setSingleShot(true);
+    pTimer->setInterval(1000);          // 1 sec
+    connect(pTimer, SIGNAL(timeout()), pSingnalMapper, SLOT(map()));
+    pSingnalMapper->setMapping(pTimer, message);
+    connect(pSingnalMapper, SIGNAL(mapped(QString)), mpInteractiveSimulationTab, SLOT(recievedResult(QString)));
+    pTimer->start();
+    // move the cursor down before adding to the logger.
+    QTextCursor textCursor = mpTransferServerTextEdit->textCursor();
+    textCursor.movePosition(QTextCursor::End);
+    mpTransferServerTextEdit->setTextCursor(textCursor);
     // log the message
     mpTransferServerTextEdit->setCurrentFont(QFont("Times New Roman", 10, QFont::Bold, false));
-    mpTransferServerTextEdit->append(QString(">>---- Message Received : ").append(QTime::currentTime().toString())
-                                    .append(" ----"));
-
+    mpTransferServerTextEdit->insertPlainText(QString(">>---- Message Received : ").append(QTime::currentTime().toString()).append(" ----"));
     mpTransferServerTextEdit->setCurrentFont(QFont("Times New Roman", 10, QFont::Normal, false));
     mpTransferServerTextEdit->insertPlainText(QString("\n>>  ").append(message).append("\n"));
-    // scroll the text to end
-    QTextCursor textCursor = mpTransferServerTextEdit->textCursor();
+    // move the cursor
     textCursor.movePosition(QTextCursor::End);
     mpTransferServerTextEdit->setTextCursor(textCursor);
 }
@@ -472,39 +451,9 @@ void OMIProxy::getSocketError(QAbstractSocket::SocketError socketError)
     setErrorOccurred(true);
 }
 
-void OMIProxy::sendCustomExpression()
-{
-    if (mpExpressionTextBox->text().isEmpty())
-        return;
-
-    sendMessage(mpExpressionTextBox->text());
-    mpExpressionTextBox->setText(QString());
-}
-
-//! @class OMICustomExpressionBox
-OMICustomExpressionBox::OMICustomExpressionBox(OMIProxy *pParent)
-{
-    mpParentOMIProxy = pParent;
-}
-
-void OMICustomExpressionBox::keyPressEvent(QKeyEvent *event)
-{
-    switch (event->key())
-    {
-    case Qt::Key_Up:
-        mpParentOMIProxy->getPreviousCommand();
-        break;
-    case Qt::Key_Down:
-        mpParentOMIProxy->getNextCommand();
-        break;
-    default:
-        QLineEdit::keyPressEvent(event);
-    }
-}
-
 //! @class OMIServer
-OMIServer::OMIServer(OMIProxy *pParent)
-    : QTcpServer(pParent)
+OMIServer::OMIServer(int serverType, OMIProxy *pParent)
+    : mServerType(serverType), QTcpServer(pParent)
 {
     mpOMIProxy = pParent;
 }
@@ -514,9 +463,27 @@ OMIServer::~OMIServer()
 
 }
 
+int OMIServer::getServerType()
+{
+    return mServerType;
+}
+
 void OMIServer::readMessages()
 {
-    emit recievedMessage(QString(mTcpSocket.read(1024)));
+    if (getServerType() == OMIServer::CONTROLSERVER)
+    {
+        emit recievedMessage(QString(mTcpSocket.read(mTcpSocket.bytesAvailable())));
+    }
+    else if (getServerType() == OMIServer::TRANSFERSERVER)
+    {
+        QString message(mTcpSocket.read(mTcpSocket.bytesAvailable()));
+        QStringList messages = message.split("end", QString::SkipEmptyParts);
+
+        foreach (QString msg, messages)
+        {
+            emit recievedMessage(msg.append("end"));
+        }
+    }
 }
 
 void OMIServer::incomingConnection(int socketDescriptor)
@@ -527,7 +494,6 @@ void OMIServer::incomingConnection(int socketDescriptor)
         return;
     }
     connect(&mTcpSocket, SIGNAL(readyRead()), SLOT(readMessages()));
-//    connect(&mTcpSocket, SIGNAL(disconnected()), &mTcpSocket, SLOT(deleteLater()));
 }
 
 //! @class InteractiveSimulation
@@ -538,7 +504,6 @@ InteractiveSimulationTab::InteractiveSimulationTab(QString filePath, Interactive
     // create the OMIProxy instance
     mpOMIProxy = new OMIProxy(this);
     connect(mpOMIProxy, SIGNAL(interactiveSimulationStarted(QString)), SLOT(readParametersandVariables(QString)));
-    connect(mpOMIProxy, SIGNAL(sendResult(QString)), SLOT(recievedResult(QString)));
     // create the plot window
     mpPlotWindow = new PlotWindow();
     mpPlotWindow->setTitle(tr(""));
@@ -788,7 +753,6 @@ void InteractiveSimulationTab::initializeInteractivePlotting()
         {
             pPlotCurve->detach();
             mpPlotWindow->getPlot()->removeCurve(pPlotCurve);
-            mpPlotWindow->getPlot()->replot();
         }
     }
 
@@ -818,7 +782,6 @@ void InteractiveSimulationTab::initializeInteractivePlotting()
                 pPlotCurve->setTitle(variable->text());
                 pPlotCurve->attach(mpPlotWindow->getPlot());
                 mpPlotWindow->getPlot()->addPlotCurve(pPlotCurve);
-                mpPlotWindow->getPlot()->replot();
             }
         }
     }
@@ -873,6 +836,8 @@ void InteractiveSimulationTab::recievedResult(QString message)
     int count = 0;
     QStringList list = message.split("#", QString::SkipEmptyParts);
     // remove first and last from list, since first is "result" and last is "end" and we don't need them
+    if (list.size() < 4)
+        return;
     list.removeFirst();
     list.removeLast();
 
@@ -886,7 +851,6 @@ void InteractiveSimulationTab::recievedResult(QString message)
         pPlotCurve->addXAxisValue(time);
         pPlotCurve->addYAxisValue(element);
         pPlotCurve->setRawData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
-        mpPlotWindow->getPlot()->replot();
         count++;
     }
 }

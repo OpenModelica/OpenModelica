@@ -89,7 +89,6 @@ public slots:
 };
 
 class OMIServer;
-class OMICustomExpressionBox;
 
 class OMIProxy : public QObject
 {
@@ -100,13 +99,11 @@ private:
     OMIServer *mpTransferServer;
     QTcpSocket *mpControlClientSocket;
     QProcess *mpSimulationProcess;
-
     int mMessageCounter;
     bool mIsConnected;
     bool mErrorOccurred;
     QString mResult;
     QDialog *mpOMILogger;
-    OMICustomExpressionBox *mpExpressionTextBox;
     QPushButton *mpSendButton;
     QLabel *mpOMIRuntiumeOutputLabel;
     QTextEdit *mpOMIRuntiumeOutputTextEdit;
@@ -116,7 +113,6 @@ private:
     QTextEdit *mpTransferServerTextEdit;
     QLabel *mpControlClientLabel;
     QTextEdit *mpControlClientTextEdit;
-    QList<QString> mCommandsList;
 public:
     OMIProxy(InteractiveSimulationTab *pParent);
     ~OMIProxy();
@@ -132,12 +128,9 @@ public:
     void setResult(QString result);
     QString getResult();
     void logOMIMessages(QString message);
-    void getPreviousCommand();
-    void getNextCommand();
 signals:
     void interactiveSimulationStarted(QString filePath);
     void interactiveSimulationFinished();
-    void sendResult(QString);
 public slots:
     void openOMILogger();
     void controlClientConnected();
@@ -147,17 +140,6 @@ public slots:
     void readProcessStandardOutput();
     void readProcessStandardError();
     void getSocketError(QAbstractSocket::SocketError socketError);
-    void sendCustomExpression();
-};
-
-class OMICustomExpressionBox : public QLineEdit
-{
-public:
-    OMICustomExpressionBox(OMIProxy *pParent);
-
-    OMIProxy *mpParentOMIProxy;
-protected:
-    virtual void keyPressEvent(QKeyEvent *event);
 };
 
 class OMIServer : public QTcpServer
@@ -166,9 +148,12 @@ class OMIServer : public QTcpServer
 private:
     QTcpSocket mTcpSocket;
     OMIProxy *mpOMIProxy;
+    int mServerType;
 public:
-    OMIServer(OMIProxy *pParent);
+    OMIServer(int serverType, OMIProxy *pParent);
     ~OMIServer();
+    enum serverType {CONTROLSERVER, TRANSFERSERVER};
+    int getServerType();
 signals:
     void recievedMessage(QString message);
 public slots:

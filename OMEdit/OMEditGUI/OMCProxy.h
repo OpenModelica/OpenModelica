@@ -170,6 +170,7 @@ public:
     QString checkModel(QString modelName);
     QString getSimulationOptions(QString modelName);
     bool translateModelFMU(QString modelName);
+    bool importFMU(QString fmuName);
 public slots:
     void sendCommand();
     void openOMCLogger();

@@ -196,7 +196,7 @@ public:
     bool loadModelFromText(QString name);
     bool loadRootModel(QString model);
     bool loadSubModel(QString model);
-    void getModelComponents();
+    void getModelComponents(QString modelName);
     void getModelConnections();
     void getModelShapes(QString annotationString, int type);
     void getModelIconDiagram();

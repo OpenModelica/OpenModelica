@@ -1914,11 +1914,26 @@ bool ProjectTab::loadSubModel(QString model)
 }
 
 //! Gets the components of the model and place them in the GraphicsView.
-void ProjectTab::getModelComponents()
+void ProjectTab::getModelComponents(QString modelName)
 {
     MainWindow *pMainWindow = mpParentProjectTabWidget->mpParentMainWindow;
-    QList<ComponentsProperties*> components = pMainWindow->mpOMCProxy->getComponents(mModelNameStructure);
-    QStringList componentsAnnotationsList = pMainWindow->mpOMCProxy->getComponentAnnotations(mModelNameStructure);
+    // get the inherited components of the Model
+    int inheritanceCount = pMainWindow->mpOMCProxy->getInheritanceCount(modelName);
+
+    for(int i = 1 ; i <= inheritanceCount ; i++)
+    {
+        QString inheritedClass = pMainWindow->mpOMCProxy->getNthInheritedClass(modelName, i);
+        // If the inherited class is one of the builtin type such as Real we can
+        // stop here, because the class can not contain any components, etc.
+        if(pMainWindow->mpOMCProxy->isBuiltinType(inheritedClass))
+        {
+            return;
+        }
+        getModelComponents(inheritedClass);
+    }
+
+    QList<ComponentsProperties*> components = pMainWindow->mpOMCProxy->getComponents(modelName);
+    QStringList componentsAnnotationsList = pMainWindow->mpOMCProxy->getComponentAnnotations(modelName);
 
     int i = 0;
     foreach (ComponentsProperties *componentProperties, components)
@@ -2482,7 +2497,7 @@ bool ProjectTab::modelicaEditorTextChanged()
     mpDiagramGraphicsView->scene()->clear();
     //mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->loadString(modelsText);
     // get the model components and connectors now
-    getModelComponents();
+    getModelComponents(mModelNameStructure);
     getModelConnections();
     getModelIconDiagram();
     // change the model type label in the status bar of projecttab
@@ -2927,7 +2942,7 @@ void ProjectTabWidget::addProjectTab(ProjectTab *projectTab, QString modelName, 
     projectTab->mpIconGraphicsScene->blockSignals(true);
     projectTab->mTabPosition = addTab(projectTab, modelName);
     projectTab->mpModelicaEditor->blockSignals(true);
-    projectTab->getModelComponents();
+    projectTab->getModelComponents(projectTab->mModelNameStructure);
     projectTab->getModelConnections();
     projectTab->getModelIconDiagram();
     projectTab->mpModelicaEditor->blockSignals(false);
@@ -3036,13 +3051,15 @@ void ProjectTabWidget::saveProjectTab(int index, bool saveAs)
 
             setTabText(index, tabName);
             pCurrentTab->mIsSaved = true;
+            // since the saving of package is successfull so now we go through all the childs of package and make them saved.
+            saveChilds(pCurrentTab);
         }
     }
     // if not saveAs then
     else
     {
         // if user presses ctrl + s and model is already saved
-        if (!pCurrentTab->mIsSaved)
+        if (!pCurrentTab->mIsSaved || pCurrentTab->mModelicaType == StringHandler::PACKAGE)
         {
             if (saveModel(saveAs))
             {
@@ -3228,9 +3245,7 @@ void ProjectTabWidget::openFile(QString fileName)
 {
     if (fileName.isEmpty())
     {
-        QString name = StringHandler::getOpenFileName(this, tr("Choose File"),
-            NULL, Helper::omFileTypes, NULL);
-
+        QString name = StringHandler::getOpenFileName(this, tr("Choose File"), NULL, Helper::omFileTypes, NULL);
         if (name.isEmpty())
             return;
         else

@@ -43,6 +43,7 @@ QString Helper::omcServerName = "OMEdit";
 QString Helper::omFileTypes = "Modelica Files (*.mo)";
 QString Helper::omnotebookFileTypes = "OMNotebook Files (*.onb *.onbz *.nb)";
 QString Helper::imageFileTypes = "Image Files (*.png *.svg *.bmp *.jpg)";
+QString Helper::fmuFileTypes = "FMU Files (*.fmu)";
 QString Helper::readOnly = QString("Read-Only");
 QString Helper::writeAble = QString("Writeable");
 QString Helper::iconView = QString("Icon View");

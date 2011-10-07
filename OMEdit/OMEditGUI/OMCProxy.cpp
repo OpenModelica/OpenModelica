@@ -1396,6 +1396,12 @@ bool OMCProxy::translateModelFMU(QString modelName)
         return false;
 }
 
+bool OMCProxy::importFMU(QString fmuName)
+{
+    sendCommand("importFMU(\"" + fmuName + "\")");
+    return StringHandler::unparseBool(getResult());
+}
+
 CustomExpressionBox::CustomExpressionBox(OMCProxy *pParent)
 {
     mpParentOMCProxy = pParent;
