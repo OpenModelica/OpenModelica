@@ -2528,7 +2528,8 @@ protected function compileModel "function: compileModel
 algorithm
   _ := matchcontinue (inFilePrefix,inLibsList,inFileDir,noClean,solverMethod)
     local
-      String pd,omhome,omhome_1,cd_path,libsfilename,libs_str,s_call,fileprefix,file_dir,command,filename,str,extra_command;
+      String pd,omhome,omhome_1,cd_path,libsfilename,libs_str,s_call,fileprefix,file_dir,command,filename,str,extra_command, 
+             fileDLL, fileEXE, fileLOG;
       list<String> libs;
       Boolean isWindows;
 
@@ -2555,11 +2556,23 @@ algorithm
         s_call =
         stringAppendList({omhome,
           omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile"," ",fileprefix," ",noClean});
+        
         Debug.fprintln("dynload", "compileModel: running " +& s_call);
-        filename = Debug.bcallret2(isWindows,stringAppend,fileprefix,".exe",fileprefix);
-        0 = Debug.bcallret1(System.regularFileExists(filename),System.removeFile,filename,0);
+        
+        // remove .exe .dll .log!
+        fileEXE = Debug.bcallret2(isWindows,stringAppend,fileprefix,".exe",fileprefix);
+        fileDLL = Debug.bcallret2(isWindows,stringAppend,fileprefix,".dll",fileprefix);
+        fileLOG = Debug.bcallret2(isWindows,stringAppend,fileprefix,".log",fileprefix);
+        0 = Debug.bcallret1(System.regularFileExists(fileEXE),System.removeFile,fileEXE,0);        
+        0 = Debug.bcallret1(System.regularFileExists(fileDLL),System.removeFile,fileDLL,0);
+        0 = Debug.bcallret1(System.regularFileExists(fileLOG),System.removeFile,fileLOG,0);
+        
+        // call the system command to compile the model!
         0 = System.systemCall(s_call);
-        true = Debug.bcallret1(isWindows,System.regularFileExists,filename,true);
+        
+        // one of the dll or exe should be available!
+        true = Debug.bcallret1(isWindows,System.regularFileExists,fileEXE,true) or
+               Debug.bcallret1(isWindows,System.regularFileExists,fileDLL,true);
         Debug.fprintln("dynload", "compileModel: successful! ");
       then
         ();
