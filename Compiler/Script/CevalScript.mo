@@ -2560,8 +2560,8 @@ algorithm
         Debug.fprintln("dynload", "compileModel: running " +& s_call);
         
         // remove .exe .dll .log!
-        fileEXE = Debug.bcallret2(isWindows,stringAppend,fileprefix,".exe",fileprefix);
-        fileDLL = Debug.bcallret2(isWindows,stringAppend,fileprefix,".dll",fileprefix);
+        fileEXE = fileprefix +& System.getExeExt();
+        fileDLL = fileprefix +& System.getDllExt();
         fileLOG = Debug.bcallret2(isWindows,stringAppend,fileprefix,".log",fileprefix);
         0 = Debug.bcallret1(System.regularFileExists(fileEXE),System.removeFile,fileEXE,0);        
         0 = Debug.bcallret1(System.regularFileExists(fileDLL),System.removeFile,fileDLL,0);
