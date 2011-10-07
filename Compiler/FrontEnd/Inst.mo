@@ -7102,6 +7102,20 @@ algorithm
   end matchcontinue;
 end checkMultipleClassesEquivalent;
 
+protected function removeOptCrefFromCrefs
+  input list<Absyn.ComponentRef> inCrefs;
+  input Option<Absyn.ComponentRef> inCref;
+  output list<Absyn.ComponentRef> outCrefs;
+algorithm
+  outCrefs := match(inCrefs, inCref)
+    local
+      Absyn.ComponentRef cref;
+
+    case (_, SOME(cref)) then removeCrefFromCrefs(inCrefs, cref);
+    else inCrefs;
+  end match;
+end removeOptCrefFromCrefs;
+
 protected function removeCrefFromCrefs
 "function: removeCrefFromCrefs
   Removes a variable from a variable list"
@@ -8910,7 +8924,7 @@ algorithm
   //crefsStr := stringDelimitList(List.map(crefs, Dump.printComponentRefStr),",");
   //Debug.fprintln("debug","start update comps " +& myTick +& " # " +& crefsStr);
   (outCache,outEnv,outIH,_):=
-  updateComponentsInEnv2(cache,env,inIH,pre,mod,crefs,ci_state,impl,HashTable5.emptyHashTable());
+    updateComponentsInEnv2(cache,env,inIH,pre,mod,crefs,ci_state,impl,HashTable5.emptyHashTable(), NONE());
   //Debug.fprintln("debug","finished update comps" +& myTick);
   //print("outEnv:");print(Env.printEnvStr(outEnv));print("\n");
 end updateComponentsInEnv;
@@ -8929,13 +8943,14 @@ protected function updateComponentInEnv
   input ClassInf.State ci_state;
   input Boolean impl;
   input HashTable5.HashTable updatedComps;
+  input Option<Absyn.ComponentRef> currentCref "The cref that caused this call to updateComponentInEnv.";
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output HashTable5.HashTable outUpdatedComps;
 algorithm
   (outCache,outEnv,outIH,outUpdatedComps) :=
-  matchcontinue (cache,env,inIH,pre,mod,cref,ci_state,impl,updatedComps)
+  matchcontinue (cache,env,inIH,pre,mod,cref,ci_state,impl,updatedComps,currentCref)
     local
       String n,id,str, nn, name;
       SCode.Final finalPrefix;
@@ -8990,7 +9005,7 @@ algorithm
              prefixes = prefixes as SCode.PREFIXES(visibility = visibility),
              attributes = attributes, 
              modifications = smod, 
-             typeSpec=tsNew, info = info),_)}),cref,ci_state,impl,updatedComps)
+             typeSpec=tsNew, info = info),_)}),cref,ci_state,impl,updatedComps,_)
       equation
         id = Absyn.crefFirstIdent(cref);
         true = stringEq(id, name);
@@ -9029,7 +9044,7 @@ algorithm
         crefs_1 = listAppend(listAppend(crefs, crefs2),crefs3);
         crefs_2 = removeCrefFromCrefs(crefs_1, cref);
         updatedComps = BaseHashTable.add((cref,0),updatedComps);
-        (cache,env2,ih,updatedComps) = updateComponentsInEnv2(cache, env, ih, pre, DAE.NOMOD(), crefs_2, ci_state, impl, updatedComps);
+        (cache,env2,ih,updatedComps) = updateComponentsInEnv2(cache, env, ih, pre, DAE.NOMOD(), crefs_2, ci_state, impl, updatedComps, SOME(cref));
         (cache,env_1,ih,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(flowPrefix,streamPrefix,param,dir,io),info,m,cmod,mods,cref,ci_state,impl,updatedComps);
 
         //print("updateComponentInEnv: NEW ENV:\n" +& Env.printEnvStr(env_1) +& "\n");
@@ -9037,8 +9052,7 @@ algorithm
         (cache,env_1,ih,updatedComps);
       
     // redeclare class!
-    case (cache,env,ih,pre,mods as 
-        DAE.REDECL(_, _, {(compNew as SCode.CLASS(name = name),_)}),cref,ci_state,impl,updatedComps)
+    case (cache,env,ih,pre,mods as DAE.REDECL(_, _, {(compNew as SCode.CLASS(name = name),_)}),cref,ci_state,impl,updatedComps,_)
       equation
         // Debug.fprintln("instTrace", "REDECLARE CLASS 1" +& Mod.printModStr(mods) +& " cref: " +& Absyn.printComponentRefStr(cref));
         id = Absyn.crefFirstIdent(cref);
@@ -9060,7 +9074,7 @@ algorithm
         (cache,env,ih,updatedComps);
       
     // If first part of ident is a class, e.g StateSelect.None, nothing to update
-    case (cache,env,ih,pre,mods,(cref /*as Absyn.CREF_QUAL(name = id)*/),ci_state,impl,updatedComps)
+    case (cache,env,ih,pre,mods,(cref /*as Absyn.CREF_QUAL(name = id)*/),ci_state,impl,updatedComps,_)
       equation
         id = Absyn.crefFirstIdent(cref);
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, Absyn.IDENT(id), false);
@@ -9068,7 +9082,7 @@ algorithm
         (cache,env,ih,updatedComps);
 
     // Variable with NONE() element is already instantiated.
-    case (cache,env,ih,pre,mods,cref,ci_state,impl,updatedComps)
+    case (cache,env,ih,pre,mods,cref,ci_state,impl,updatedComps,_)
       equation
         id = Absyn.crefFirstIdent(cref);
         (cache,_,_,is) = Lookup.lookupIdent(cache,env,id);
@@ -9077,7 +9091,7 @@ algorithm
         (cache,env,ih,updatedComps);
 
     // the default case
-    case (cache,env,ih,pre,mods,cref,ci_state,impl,updatedComps)
+    case (cache,env,ih,pre,mods,cref,ci_state,impl,updatedComps,_)
       equation
         id = Absyn.crefFirstIdent(cref);
         (cache,tyVar,SOME((SCode.COMPONENT(n,pf as SCode.PREFIXES(innerOuter = io),(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,param,dir)),Absyn.TPATH(t, _),m,comment,cond,info),cmod)),_)
@@ -9091,8 +9105,11 @@ algorithm
         crefs3 = getCrefFromCond(cond);
         crefs_1 = listAppend(listAppend(crefs, crefs2),crefs3);
         crefs_2 = removeCrefFromCrefs(crefs_1, cref);
+        // Also remove the cref that caused this updateComponentInEnv call, to avoid
+        // infinite loops.
+        crefs_2 = removeOptCrefFromCrefs(crefs_2, currentCref);
         updatedComps = BaseHashTable.add((cref,0),updatedComps);
-        (cache,env2,ih,updatedComps) = updateComponentsInEnv2(cache, env, ih, pre, mods, crefs_2, ci_state, impl, updatedComps);
+        (cache,env2,ih,updatedComps) = updateComponentsInEnv2(cache, env, ih, pre, mods, crefs_2, ci_state, impl, updatedComps, SOME(cref));
         (cache,env_1,ih,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(flowPrefix,streamPrefix,param,dir,io),info,m,cmod,mods,cref,ci_state,impl,updatedComps);
       then
         (cache,env_1,ih,updatedComps);
@@ -9110,7 +9127,7 @@ algorithm
     */
 
     // report an error!
-    case (cache,env,ih,pre,mod,cref,ci_state,impl,updatedComps)
+    case (cache,env,ih,pre,mod,cref,ci_state,impl,updatedComps,_)
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.traceln("- Inst.updateComponentInEnv failed, cref = " +& Dump.printComponentRefStr(cref));
@@ -9121,7 +9138,7 @@ algorithm
       then 
         fail();
     
-    case (cache,env,ih,pre,mod,cref,ci_state,impl,updatedComps) then (cache,env,ih,updatedComps);
+    else (cache,env,inIH,updatedComps);
   end matchcontinue;
 end updateComponentInEnv;
 
@@ -15637,13 +15654,14 @@ protected function updateComponentsInEnv2
   input ClassInf.State ci_state;
   input Boolean impl;
   input HashTable5.HashTable updatedComps;
+  input Option<Absyn.ComponentRef> currentCref;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output HashTable5.HashTable outUpdatedComps;
 algorithm
   (outCache,outEnv,outIH,outUpdatedComps) :=
-  matchcontinue (cache,env,inIH,pre,mod,crefs,ci_state,impl,updatedComps)
+  matchcontinue (cache,env,inIH,pre,mod,crefs,ci_state,impl,updatedComps,currentCref)
     local
       list<Env.Frame> env_1,env_2;
       DAE.Mod mods;
@@ -15653,37 +15671,40 @@ algorithm
       String n;
 
       // two first cases catches when we want to update an already typed and bound var.
-    case (cache,env,ih,pre,mods,(cr :: rest),ci_state,impl,updatedComps)
+    case (cache,env,ih,pre,mods,(cr :: rest),ci_state,impl,updatedComps,_)
       equation
         n = Absyn.printComponentRefStr(cr);
         (_,DAE.TYPES_VAR(binding = DAE.VALBOUND(valBound=_)),SOME((_,_)),_,_) = Lookup.lookupIdentLocal(cache, env, n);
-        (cache,env_2,ih,updatedComps) = updateComponentsInEnv2(cache, env, ih, pre, mods, rest, ci_state, impl, updatedComps);
+        (cache,env_2,ih,updatedComps) = updateComponentsInEnv2(cache, env, ih,
+        pre, mods, rest, ci_state, impl, updatedComps, currentCref);
       then
         (cache,env_2,ih,updatedComps);
 
-    case (cache,env,ih,pre,mods,(cr :: rest),ci_state,impl,updatedComps)
+    case (cache,env,ih,pre,mods,(cr :: rest),ci_state,impl,updatedComps,_)
       equation
         n = Absyn.printComponentRefStr(cr);
         (_,DAE.TYPES_VAR(binding = DAE.EQBOUND(exp=_)),SOME((_,_)),_,_) = Lookup.lookupIdentLocal(cache, env, n);
-        (cache,env_2,ih,updatedComps) = updateComponentsInEnv2(cache, env, ih, pre, mods, rest, ci_state, impl, updatedComps);
+        (cache,env_2,ih,updatedComps) = updateComponentsInEnv2(cache, env, ih,
+        pre, mods, rest, ci_state, impl, updatedComps, currentCref);
       then
         (cache,env_2,ih,updatedComps);
 
-    case (cache,env,ih,pre,mods,(cr :: rest),ci_state,impl,updatedComps) /* Implicit instantiation */
+    case (cache,env,ih,pre,mods,(cr :: rest),ci_state,impl,updatedComps,_) /* Implicit instantiation */
       equation
         //ErrorExt.setCheckpoint();
         // this line below "updateComponentInEnv" can not fail so no need to catch that checkpoint(error).
         //print(" Updating component: " +& Absyn.printComponentRefStr(cr) +& " mods: " +& Mod.printModStr(mods)+& "\n");
-        (cache,env_1,ih,updatedComps) = updateComponentInEnv(cache, env, ih, pre, mods, cr, ci_state, impl, updatedComps);
+        (cache,env_1,ih,updatedComps) = updateComponentInEnv(cache, env, ih, pre, mods, cr, ci_state, impl, updatedComps, currentCref);
         //ErrorExt.rollBack();
-        (cache,env_2,ih,updatedComps) = updateComponentsInEnv2(cache, env_1, ih, pre, mods, rest, ci_state, impl, updatedComps);
+        (cache,env_2,ih,updatedComps) = updateComponentsInEnv2(cache, env_1, ih,
+        pre, mods, rest, ci_state, impl, updatedComps, currentCref);
       then
         (cache,env_2,ih,updatedComps);
 
-    case (cache,env,ih,pre,_,{},ci_state,impl,updatedComps)
+    case (cache,env,ih,pre,_,{},ci_state,impl,updatedComps,_)
       then (cache,env,ih,updatedComps);
 
-    case (cache,env,ih,pre,_,_,ci_state,impl,updatedComps) 
+    else 
       equation
         Debug.fprint("failtrace","-updateComponentsInEnv failed\n");
       then fail();
