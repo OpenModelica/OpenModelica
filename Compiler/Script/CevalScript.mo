@@ -2530,6 +2530,7 @@ algorithm
     local
       String pd,omhome,omhome_1,cd_path,libsfilename,libs_str,s_call,fileprefix,file_dir,command,filename,str,extra_command;
       list<String> libs;
+      Boolean isWindows;
 
     // If compileCommand not set, use $OPENMODELICAHOME\bin\Compile
     // adrpo 2009-11-29: use ALL THE TIME $OPENMODELICAHOME/bin/Compile
@@ -2549,12 +2550,16 @@ algorithm
         //        OPENMODELICAHOME that we set will contain a SPACE at the end!
         //        set OPENMODELICAHOME=DIR && actually adds the space between the DIR and &&
         //        to the environment variable! Don't ask me why, ask Microsoft.
+        isWindows = System.os() ==& "Windows_NT";
         omhome = Util.if_(System.os() ==& "Windows_NT", "set OPENMODELICAHOME=\"" +& omhome_1 +& "\"&& ", "");
         s_call =
         stringAppendList({omhome,
           omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile"," ",fileprefix," ",noClean});
         Debug.fprintln("dynload", "compileModel: running " +& s_call);
+        filename = Debug.bcallret2(isWindows,stringAppend,fileprefix,".exe",fileprefix);
+        0 = Debug.bcallret1(System.regularFileExists(filename),System.removeFile,filename,0);
         0 = System.systemCall(s_call);
+        true = Debug.bcallret1(isWindows,System.regularFileExists,filename,true);
         Debug.fprintln("dynload", "compileModel: successful! ");
       then
         ();
