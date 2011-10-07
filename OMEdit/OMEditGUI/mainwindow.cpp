@@ -1302,7 +1302,8 @@ void MainWindow::exportModelFMI()
     }
     else
     {
-        mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(mpOMCProxy->getErrorString()));
+        mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(mpOMCProxy->getErrorString())
+                                              .append("\nwhile exporting ").append(pCurrentTab->mModelNameStructure).append(" to FMU."));
     }
     // hide progress bar
     hideProgressBar();
@@ -1324,7 +1325,7 @@ void MainWindow::importModelFMI()
     else
     {
         mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
-                                              .arg("unknown error ").append("while importing " + fileName));
+                                              .arg("unknown error ").append("\nwhile importing " + fileName));
     }
 }
 
