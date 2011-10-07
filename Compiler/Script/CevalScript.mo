@@ -2562,17 +2562,14 @@ algorithm
         // remove .exe .dll .log!
         fileEXE = fileprefix +& System.getExeExt();
         fileDLL = fileprefix +& System.getDllExt();
-        fileLOG = Debug.bcallret2(isWindows,stringAppend,fileprefix,".log",fileprefix);
+        fileLOG = fileprefix +& ".log";
         0 = Debug.bcallret1(System.regularFileExists(fileEXE),System.removeFile,fileEXE,0);        
         0 = Debug.bcallret1(System.regularFileExists(fileDLL),System.removeFile,fileDLL,0);
         0 = Debug.bcallret1(System.regularFileExists(fileLOG),System.removeFile,fileLOG,0);
         
         // call the system command to compile the model!
         0 = System.systemCall(s_call);
-        
-        // one of the dll or exe should be available!
-        true = Debug.bcallret1(isWindows,System.regularFileExists,fileEXE,true) or
-               Debug.bcallret1(isWindows,System.regularFileExists,fileDLL,true);
+                
         Debug.fprintln("dynload", "compileModel: successful! ");
       then
         ();

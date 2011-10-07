@@ -16,4 +16,4 @@ popd
 set RESULT=%ERRORLEVEL%
 set PATH=%OLD_PATH%
 set OLD_PATH=
-exit /B %RESULT%
+exit %RESULT%
