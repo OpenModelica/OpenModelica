@@ -879,17 +879,17 @@ match platform
   <%\t%> mv <%fileNamePrefix%>_records.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_records.c
   <%\t%> mv modelDescription.xml <%fileNamePrefix%>/modelDescription.xml
   <%\t%> cp <%omhome%>/lib/omc/libexec/gnuplot/binary/libexpat-1.dll <%fileNamePrefix%>/binaries/<%platform%>/
-  <%\t%> cd <%fileNamePrefix%>; zip -r ../<%fileNamePrefix%>.fmu *
+  <%\t%> cd <%fileNamePrefix%>&& zip -r ../<%fileNamePrefix%>.fmu *
   <%\t%> rm -rf <%fileNamePrefix%>
   <%\t%> rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>_FMU.libs <%fileNamePrefix%>_FMU.makefile <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>_records.o
   
   <%fileNamePrefix%>.dll: clean <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o
   <%\t%> $(CXX) -shared -I. -o <%fileNamePrefix%>.dll <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o  $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -linteractive $(SENDDATALIBS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> -Wl,--kill-at
   
-  <%\t%> mkdir -p <%fileNamePrefix%>
-  <%\t%> mkdir -p <%fileNamePrefix%>/binaries
-  <%\t%> mkdir -p <%fileNamePrefix%>/binaries/<%platform%>
-  <%\t%> mkdir -p <%fileNamePrefix%>/sources
+  <%\t%> "mkdir.exe" -p <%fileNamePrefix%>
+  <%\t%> "mkdir.exe" -p <%fileNamePrefix%>/binaries
+  <%\t%> "mkdir.exe" -p <%fileNamePrefix%>/binaries/<%platform%>
+  <%\t%> "mkdir.exe" -p <%fileNamePrefix%>/sources
   >>    
   case "LINUX"     
   case "Unix" then
