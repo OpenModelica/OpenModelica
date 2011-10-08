@@ -3315,6 +3315,21 @@ algorithm
   b := boolOr(b1, boolOr(b2, boolOr(b3, boolAnd(boolOr(b1,b2), b4)))); 
 end checkDerivedRestriction;
 
+protected function addExpandable
+  input list<SCode.Equation> inEqs;
+  input list<SCode.Equation> inExpandable;
+  output list<SCode.Equation> outEqs; 
+algorithm
+  outEqs := matchcontinue(inEqs, inExpandable)
+    // nothing
+    case (inEqs, {}) then inEqs;
+    // if is only one, don't append!
+    case (inEqs, {_}) then inEqs;
+    // if is more than one, append
+    case (inEqs, inExpandable) then listAppend(inEqs, inExpandable);
+  end matchcontinue;
+end addExpandable;
+
 protected function instClassdef2 "
   There are two kinds of class definitions, either explicit
   definitions SCode.PARTS() or
@@ -3376,7 +3391,7 @@ algorithm
       Option<DAE.Type> bc;
       DAE.Mod mods,emods,mod_1,mods_1,checkMods;
       Prefix.Prefix pre;
-      list<SCode.Equation> eqs,initeqs,eqs2,initeqs2,eqs_1,initeqs_1;
+      list<SCode.Equation> eqs,initeqs,eqs2,initeqs2,eqs_1,initeqs_1,expandableEqs, expandableEqsInit;
       list<SCode.AlgorithmSection> alg,initalg,alg2,initalg2,alg_1,initalg_1;
       SCode.Restriction re,r;
       Boolean impl;
@@ -3428,6 +3443,14 @@ algorithm
           re,vis,_,_,inst_dims,impl,_,graph,_,instSingleCref,info,stopInst)
       equation
         false = Util.getStatefulBoolean(stopInst);
+        // adpro: if is a model, package, function, external function, record is not a basic type!
+        false = valueEq(SCode.R_MODEL(), re);
+        false = valueEq(SCode.R_PACKAGE(), re);
+        false = valueEq(SCode.R_FUNCTION(), re);
+        false = valueEq(SCode.R_EXT_FUNCTION(), re);
+        false = valueEq(SCode.R_RECORD(), re);
+        // no components and at least one extends!
+        (_, _, _::_, {}) = splitElts(els);
         (cache,env,ih,store,fdae,csets,ci_state,vars,bc,oDA,eqConstraint,graph) = 
           instClassdefBasicType(cache,env,ih,store,mods,pre,ci_state,className,inClassDef6,re,vis,inst_dims,impl,graph,
             inSets, instSingleCref,info,stopInst);
@@ -3576,7 +3599,11 @@ algorithm
         //   connect(expandable, non_expandable);
         //   connect(expandable, expandable);
         ErrorExt.setCheckpoint("expandableConnectorsOrder");
-        (cache, eqs_1) = orderConnectEquationsPutNonExpandableFirst(cache, env5, ih, pre, eqs_1, impl);
+        (cache, eqs_1, expandableEqs) = splitConnectEquationsExpandable(cache, env5, ih, pre, eqs_1, impl, {}, {});
+        // put expandable at the end
+        eqs_1 = List.appendNoCopy(eqs_1, expandableEqs);
+        // duplicate expandable to get the union
+        eqs_1 = addExpandable(eqs_1, expandableEqs); 
         ErrorExt.rollBack("expandableConnectorsOrder");
         
         //Instantiate equations (see function "instEquation")
@@ -14154,7 +14181,7 @@ algorithm
   end match;
 end extractCurrentName;
 
-protected function orderConnectEquationsPutNonExpandableFirst
+protected function splitConnectEquationsExpandable
 "@author: adrpo
   Reorder the connect equations to have non-expandable connect first:
     connect(non_expandable, non_expandable);
@@ -14167,50 +14194,67 @@ protected function orderConnectEquationsPutNonExpandableFirst
   input Prefix.Prefix inPre;
   input list<SCode.Equation> inEquations;
   input Boolean impl;
+  input list<SCode.Equation> inAccumulatorNonExpandable;
+  input list<SCode.Equation> inAccumulatorExpandable;
   output Env.Cache outCache;
   output list<SCode.Equation> outEquations;
+  output list<SCode.Equation> outExpandableEquations;
 algorithm
-  (outCache,outEquations) := matchcontinue(inCache, inEnv, inIH, inPre, inEquations, impl)
+  (outCache,outEquations,outExpandableEquations) := matchcontinue(inCache, inEnv, inIH, inPre, inEquations, impl, inAccumulatorNonExpandable, inAccumulatorExpandable)
     local 
-      list<SCode.Equation> equations, rest;
+      list<SCode.Equation> equations, rest, eEq, nEq;
       SCode.Equation eq;
       Absyn.ComponentRef crefLeft, crefRight;
       Env.Cache cache;
+      Env.Env env;
       Absyn.Info info;
+      DAE.Type ty1,ty2,ty;
+      DAE.ComponentRef c1_1,c2_1,c1_2,c2_2;
+      DAE.Attributes attr1,attr2,attr;
+      SCode.Flow flowPrefix1,flowPrefix2;
+      SCode.Stream streamPrefix1,streamPrefix2;
+      Absyn.InnerOuter io1,io2;
+      SCode.Variability vt1,vt2;
     
     // if we have no expandable connectors, return the same   
-    case (cache, inEnv, inIH, inPre, eq::rest, _)
+    case (cache, inEnv, inIH, inPre, eq::rest, _, eEq, nEq)
       equation
         false = System.getHasExpandableConnectors();
-        equations = inEquations;
       then 
-        (cache, equations);
+        (cache, inEquations, {});
     
     // handle empty case
-    case (cache, inEnv, inIH, inPre, {}, _) then (cache, {});
+    case (cache, inEnv, inIH, inPre, {}, _, eEq, nEq) then (cache, listReverse(eEq), listReverse(nEq));
     
     // connect, both expandable
-    case (cache, inEnv, inIH, inPre, (eq as SCode.EQUATION(SCode.EQ_CONNECT(crefLeft, crefRight, _, info)))::rest, impl)
+    case (cache, env, inIH, inPre, (eq as SCode.EQUATION(SCode.EQ_CONNECT(crefLeft, crefRight, _, info)))::rest, impl, eEq, nEq)
       equation
+        (cache,SOME((DAE.CREF(componentRef=c1_1),DAE.PROP(ty1,_),_))) = Static.elabCref(cache, env, crefLeft, impl, false, inPre, info);
+        (cache,SOME((DAE.CREF(componentRef=c2_1),DAE.PROP(ty2,_),_))) = Static.elabCref(cache, env, crefRight, impl, false, inPre, info);
+        /*
+        (cache,c1_2) = Static.canonCref(cache, env, c1_1, impl);
+        (cache,c2_2) = Static.canonCref(cache, env, c2_1, impl);
+        (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
+        (cache,attr2,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
+        DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),vt1,_,io1) = attr1;
+        DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),vt2,_,io2) = attr2;
+        */
         // type of left var is an expandable connector!
-        (cache,SOME((DAE.CREF(ty=DAE.ET_COMPLEX(complexClassType=ClassInf.CONNECTOR(_, true))),_,_))) = 
-            Static.elabCref(cache, inEnv, crefLeft, impl, false, inPre,info);
-        // type of right left var is an expandable connector!
-        (cache,SOME((DAE.CREF(ty=DAE.ET_COMPLEX(complexClassType=ClassInf.CONNECTOR(_, true))),_,_))) = 
-            Static.elabCref(cache, inEnv, crefRight, impl, false, inPre,info);
-        (cache, equations) = orderConnectEquationsPutNonExpandableFirst(cache, inEnv, inIH, inPre, rest, impl);
-        equations = listAppend(equations, {eq});
+        true = InstSection.isExpandableConnectorType(ty1);
+        // type of right left var is an expandable connector!        
+        true = InstSection.isExpandableConnectorType(ty2);            
+        (cache, eEq, nEq) = splitConnectEquationsExpandable(cache, env, inIH, inPre, rest, impl, eEq, eq::nEq);
       then
-        (cache, equations);
+        (cache, eEq, nEq);
     
     // anything else, put at the begining (keep the order)
-    case (cache, inEnv, inIH, inPre, eq::rest, impl)
+    case (cache, inEnv, inIH, inPre, eq::rest, impl, eEq, nEq)
       equation
-        (cache, equations) = orderConnectEquationsPutNonExpandableFirst(cache, inEnv, inIH, inPre, rest, impl);
+        (cache, eEq, nEq) = splitConnectEquationsExpandable(cache, inEnv, inIH, inPre, rest, impl, eq::eEq, nEq);
       then
-        (cache, eq::equations);
+        (cache, eEq, nEq);
   end matchcontinue;
-end orderConnectEquationsPutNonExpandableFirst;
+end splitConnectEquationsExpandable;
 
 protected function sortInnerFirstTplLstElementMod
 "@author: adrpo
