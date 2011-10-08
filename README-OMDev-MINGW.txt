@@ -92,6 +92,10 @@ Adrian Pop, adrpo@ida.liu.se, date above.
       >export OPENMODELICALIBRARY="c:\\path\\to\\your\\OpenModelica\\build\\lib\\omlibrary"
       >cd testsuite
       testsuite> make
+	  
+13. To create the fmigenerator.exe:
+	- Ctrl+B and type: fmi
+	  Will get you a trunk\build\bin\fmigenerator.exe
 
 
 ***NOTES*** ON PROBLEMS WITH THE ECLIPSE PROJECT/OMDev BUILDER:
