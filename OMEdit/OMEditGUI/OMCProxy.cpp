@@ -507,7 +507,6 @@ QStringList OMCProxy::loadStandardLibrary()
     res.append("ModelicaReference");
 
     if (version >= 3.0 && version < 4.0) {
-      deleteClass("Modelica.Media");
       deleteClass("Modelica.Fluid");
     } else {
       if (version < 2) sendCommand("setAnnotationVersion(\"1.x\")");
