@@ -2528,7 +2528,7 @@ protected function compileModel "function: compileModel
 algorithm
   _ := matchcontinue (inFilePrefix,inLibsList,inFileDir,noClean,solverMethod)
     local
-      String pd,omhome,omhome_1,cd_path,libsfilename,libs_str,s_call,fileprefix,file_dir,command,filename,str,extra_command, 
+      String pd,omhome,omhome_1,cd_path,libsfilename,libs_str,win_call,make_call,s_call,fileprefix,file_dir,command,filename,str,extra_command, 
              fileDLL, fileEXE, fileLOG;
       list<String> libs;
       Boolean isWindows;
@@ -2552,10 +2552,11 @@ algorithm
         //        set OPENMODELICAHOME=DIR && actually adds the space between the DIR and &&
         //        to the environment variable! Don't ask me why, ask Microsoft.
         isWindows = System.os() ==& "Windows_NT";
-        omhome = Util.if_(System.os() ==& "Windows_NT", "set OPENMODELICAHOME=\"" +& omhome_1 +& "\"&& ", "");
-        s_call =
-        stringAppendList({omhome,
+        omhome = Util.if_(isWindows, "set OPENMODELICAHOME=\"" +& omhome_1 +& "\"&& ", "");
+        win_call = stringAppendList({omhome,
           omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile"," ",fileprefix," ",noClean});
+        make_call = stringAppendList({"make -f ",fileprefix,".makefile >",fileprefix,".log 2>&1"});
+        s_call = Util.if_(isWindows, win_call, make_call);
         
         Debug.fprintln("dynload", "compileModel: running " +& s_call);
         
@@ -2586,11 +2587,11 @@ algorithm
 
     case (fileprefix,libs,file_dir,_,_) /* compilation failed\\n */
       equation
+        "Windows_NT" = System.os();
         omhome = Settings.getInstallationDirectoryPath();
         omhome_1 = System.stringReplace(omhome, "\"", "");
         pd = System.pathDelimiter();
-        command = Util.if_(System.os() ==& "Windows_NT", "Compile.bat", "Compile");
-        s_call = stringAppendList({omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,command});
+        s_call = stringAppendList({omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile.bat"});
         false = System.regularFileExists(s_call);
         str=stringAppendList({"command ",s_call," not found. Check $OPENMODELICAHOME"});
         Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
