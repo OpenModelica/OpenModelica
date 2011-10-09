@@ -1129,7 +1129,7 @@ template functionODE_residual()
 
     localData->timeValue = *t;
     localData->states = x;
-    functionODE(1.0);
+    functionODE();
   
     /* get the difference between the temp_xd(=localData->statesDerivatives)
        and xd(=statesDerivativesBackup) */
