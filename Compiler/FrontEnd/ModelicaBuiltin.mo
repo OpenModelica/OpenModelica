@@ -237,6 +237,8 @@ function outerProduct = overload(OpenModelica.Internal.outerProductInt,OpenModel
 
 function cross = overload(OpenModelica.Internal.crossInt,OpenModelica.Internal.crossReal);
 
+function skew = overload(OpenModelica.Internal.skewInt,OpenModelica.Internal.skewReal);
+
 // Dummy functions that can't be properly defined in Modelica, but used by
 // SCodeFlatten to define which builtin functions exist (SCodeFlatten doesn't
 // care how the functions are defined, only if they exist or not).
@@ -268,10 +270,6 @@ end transpose;
 function symmetric
   external "builtin";
 end symmetric;
-
-function skew
-  external "builtin";
-end skew;
 
 function smooth
   external "builtin";
@@ -516,6 +514,18 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     z := { x[2]*y[3]-x[3]*y[2] , x[3]*y[1]-x[1]*y[3] , x[1]*y[2]-x[2]*y[1] };
   */
   end crossReal;
+
+  function skewInt
+    input Integer[3] x;
+    output Integer[3,3] y;
+    external "builtin" skew(x,y);
+  end skewInt;
+
+  function skewReal
+    input Real[3] x;
+    output Real[3,3] y;
+    external "builtin" skew(x,y);
+  end skewReal;
 
 end Internal;
 

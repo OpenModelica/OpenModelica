@@ -683,6 +683,12 @@ algorithm
       then
         DAE.ARRAY(tp, scalar,expl);
     
+    case (e as DAE.CALL(path = Absyn.IDENT("skew"), expLst = {DAE.ARRAY(array = v1)}))
+      equation
+        mexpl = Static.elabBuiltinSkew2(v1);
+        tp = Expression.typeof(e);
+      then DAE.MATRIX(tp, 3, mexpl);
+
     // Simplify built-in function fill. MathCore depends on this being done here, do not remove!
     case (DAE.CALL(path = Absyn.IDENT("fill"), expLst = e::expl))
       equation

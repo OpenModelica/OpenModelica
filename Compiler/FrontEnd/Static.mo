@@ -5348,64 +5348,7 @@ algorithm
   end matchcontinue;
 end elabBuiltinScalar;
 
-protected function elabBuiltinSkew "
-  author: PA
-
-  This function handles the built in skew operator.
-
-"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      DAE.Exp e1, call;
-      DAE.Type tp1;
-      DAE.Const c1;
-      list<Env.Frame> env;
-      Boolean impl;
-      Env.Cache cache;
-      Absyn.Exp v1;
-      list<DAE.Exp> expl1;
-      list<list<DAE.Exp>> mexpl;
-      DAE.ExpType etp1,etp,etp3;
-      DAE.Type eltTp;
-      Prefix.Prefix pre;
-
-      //First, try symbolic simplification
-    case (cache,env,{v1},_,impl,pre,info)
-      equation
-        (cache,DAE.ARRAY(etp1,true,expl1),DAE.PROP(tp1,c1),_) = elabExp(cache,env, v1, impl,NONE(),true,pre,info);
-        {3} = Types.getDimensionSizes(tp1);
-        mexpl = elabBuiltinSkew2(expl1);
-        tp1 = Types.liftArray(tp1,DAE.DIM_INTEGER(3));
-        etp3 = Types.elabType(tp1);
-      then
-        (cache,DAE.MATRIX(etp3,3,mexpl),DAE.PROP(tp1,c1));
-
-    //Fallback, use builtin function skew
-    case (cache,env,{v1},_,impl,pre,info) equation
-      (cache,e1,DAE.PROP(tp1,c1),_) = elabExp(cache,env, v1, impl,NONE(),true,pre,info);
-      {3} = Types.getDimensionSizes(tp1);
-      etp = Expression.typeof(e1);
-      eltTp = Types.arrayElementType(tp1);
-      tp1 = Types.liftArrayListDims(eltTp, {DAE.DIM_INTEGER(3), DAE.DIM_INTEGER(3)});
-      etp = DAE.ET_ARRAY(etp, {DAE.DIM_INTEGER(3), DAE.DIM_INTEGER(3)});
-      call = Expression.makeBuiltinCall("skew", {e1}, etp);
-    then (cache, call, DAE.PROP(tp1,DAE.C_VAR()));
-  end matchcontinue;
-end elabBuiltinSkew;
-
-protected function elabBuiltinSkew2 "help function to elabBuiltinSkew"
+public function elabBuiltinSkew2 "help function to ExpressionSimplify"
   input list<DAE.Exp> v1;
   output list<list<DAE.Exp>> res;
 algorithm
@@ -5998,7 +5941,6 @@ algorithm
     case "vector" then elabBuiltinVector;
     case "matrix" then elabBuiltinMatrix;
     case "scalar" then elabBuiltinScalar;
-    case "skew" then elabBuiltinSkew;
     case "String" then elabBuiltinString;
     case "rooted" then elabBuiltinRooted;
     case "Integer" then elabBuiltinIntegerEnum;
