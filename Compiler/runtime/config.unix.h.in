@@ -17,9 +17,9 @@
   #define DEFAULT_LINKER "@CC@ -single_module -dynamiclib -flat_namespace"
 #elif defined(__x86_64__)
   /* -fPIC needed on x86_64! */
-  #define DEFAULT_LINKER "@CC@ -shared -export-dynamic"
+  #define DEFAULT_LINKER "@CC@ -shared"
 #else
-  #define DEFAULT_LINKER "@CC@ -shared -export-dynamic"
+  #define DEFAULT_LINKER "@CC@ -shared"
 #endif
 
 #ifdef __APPLE_CC__
