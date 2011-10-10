@@ -2295,7 +2295,7 @@ template contextCref(ComponentRef cr, Context context)
   "Generates code for a component reference depending on which context we're in."
 ::=
   match context
-  case FUNCTION_CONTEXT(__) then "_" + crefStr(cr)
+  case FUNCTION_CONTEXT(__) then "_" + System.unquoteIdentifier(crefStr(cr))
   else cref(cr)
 end contextCref;
 
@@ -2475,7 +2475,7 @@ template replaceDotAndUnderscore(String str)
   case name then
     let str_dots = System.stringReplace(name,".", "_")  
     let str_underscores = System.stringReplace(str_dots, "_", "__")
-    '<%str_underscores%>'
+    System.unquoteIdentifier(str_underscores)
 end replaceDotAndUnderscore;
 
 template underscorePath(Path path)

@@ -3851,7 +3851,7 @@ protected function generateFunctionName
   input Absyn.Path functionPath;
   output String functionName;
 algorithm
-  functionName := Absyn.pathStringReplaceDot(functionPath, "_");
+  functionName := System.unquoteIdentifier(Absyn.pathStringReplaceDot(functionPath, "_"));
 end generateFunctionName;
 
 public function getFunctionDependencies
