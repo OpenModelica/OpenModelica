@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "arrayoperations.h"
 #include <sstream>
-
+#include <stdio.h>
 using namespace std;
 void boost::assertion_failed(char const * expr, char const * function, 
                              char const * file, long line)

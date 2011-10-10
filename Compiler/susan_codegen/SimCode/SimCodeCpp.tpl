@@ -152,7 +152,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	  _event_handling.resetHelpVar =  boost::bind(&<%lastIdentOfPath(modelInfo.name)%>::resetHelpVar, this, _1);
 	  _historyImpl = new HistoryImplType(globalSettings);
 	  <%arrayReindex(modelInfo)%>
-	  <%arrayInit(simCode)%>
+	 // <%arrayInit(simCode)%>
+	  
     }
     
     <%lastIdentOfPath(modelInfo.name)%>::~<%lastIdentOfPath(modelInfo.name)%>() 
@@ -1109,14 +1110,16 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as S
   then
   <<
   <%arrayConstruct(modelInfo)%>
-  <%initVals(vars.paramVars)%>
-  <%initVals(vars.intParamVars)%>
-  <%initVals(vars.boolParamVars)%>
-  <%initVals(vars.stringParamVars)%>
+  <%initVals(vars.paramVars,simCode)%>
+  <%initVals(vars.intParamVars,simCode)%>
+  <%initVals(vars.boolParamVars,simCode)%>
+  <%initVals(vars.stringParamVars,simCode)%>
   >>
 end simulationInitFile;
 
-template initVals(list<SimVar> varsLst) ::=
+template initVals(list<SimVar> varsLst,SimCode simCode) ::=
+  
+  
   varsLst |> SIMVAR(numArrayElement={}) =>
   <<
     ,<%cref(name)%>(<%match initialValue 
@@ -1138,18 +1141,20 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as S
   <%initVals1(vars.intParamVars)%>
   <%initVals1(vars.boolParamVars)%>
   <%initVals1(vars.stringParamVars)%>
+ 
   >>
 end arrayInit;
 
 template initVals1(list<SimVar> varsLst) ::=
-  varsLst |> SIMVAR(name=CREF_IDENT(subscriptLst=_)) =>
+ varsLst |> SIMVAR(name=CREF_IDENT(subscriptLst=_)) =>
   <<
     <%cref(name)%>=<%match initialValue 
     case SOME(v) then initVal(v)
       else ""
     %>;
-    >> 
-  ;separator="\n"
+   >>
+ ;separator="\n"
+
 end initVals1;
 
 template arrayReindex(ModelInfo modelInfo)
@@ -1348,6 +1353,10 @@ case MODELINFO(vars=SIMVARS(__)) then
   <%initValst(vars.intConstVars, simCode)%>
   <%initValst(vars.boolConstVars, simCode)%>
   <%initValst(vars.stringConstVars, simCode)%>
+  <%initValst(vars.paramVars, simCode)%>
+  <%initValst(vars.intParamVars, simCode)%>
+  <%initValst(vars.boolParamVars, simCode)%>
+  <%initValst(vars.stringParamVars, simCode)%>
  >>
 end initvar;
 
@@ -1826,6 +1835,7 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as RELATION(__)        then daeExpRelation(operator, index,exp1, exp2, context, &preExp, &varDecls,simCode)
   case e as CALL(__)            then daeExpCall(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as ASUB(__)            then daeExpAsub(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+  case e as MATRIX(__)         then daeExpMatrix(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as ARRAY(__)           then daeExpArray(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as SIZE(__)            then daeExpSize(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   else ""
@@ -1845,6 +1855,56 @@ template daeExpSize(Exp exp, Context context, Text &preExp /*BUFP*/,
     resVar
   else "size(X) not implemented"
 end daeExpSize;
+
+
+template daeExpMatrix(Exp exp, Context context, Text &preExp /*BUFP*/,
+                      Text &varDecls /*BUFP*/,SimCode simCode)
+ "Generates code for a matrix expression."
+::=
+  match exp
+  case MATRIX(matrix={{}})  // special case for empty matrix: create dimensional array Real[0,1]
+  case MATRIX(matrix={})    // special case for empty array: create dimensional array Real[0,1] 
+    then    
+    let arrayTypeStr = expTypeArray(ty)
+    let tmp = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
+    let &preExp += 'alloc_<%arrayTypeStr%>(&<%tmp%>, 2, 0, 1);<%\n%>'
+    tmp
+   case m as MATRIX(matrix=(row1::_)) then
+     let arrayTypeStr = expTypeArray(ty)
+  	 let arrayDim = expTypeArrayforDim(ty)
+  	 let &tmp = buffer "" /*BUFD*/
+     let arrayVar = tempDecl(arrayTypeStr, &tmp /*BUFD*/)
+     let &vals = buffer "" /*BUFD*/
+   	let dim_cols = listLength(row1)
+   
+    let params = (m.matrix |> row =>
+    	let vars = daeExpMatrixRow(row, context, &varDecls,&preExp,simCode)
+        '<%vars%>'
+      ;separator=",")
+     
+     let &preExp += '
+     <%arrayDim%><%arrayVar%>(boost::extents[<%listLength(m.matrix)%>][<%dim_cols%>]);
+     <%arrayVar%>.reindex(1);
+     <%arrayTypeStr%> <%arrayVar%>_data[]={<%params%>};
+    <%arrayVar%>.assign(<%arrayVar%>_data,<%arrayVar%>_data+<%listLength(m.matrix)%> + <%dim_cols%>);<%\n%>'
+    
+     arrayVar
+end daeExpMatrix;
+
+
+template daeExpMatrixRow(list<Exp> row,
+                         Context context, 
+                         Text &varDecls /*BUFP*/,Text &preExp /*BUFP*/,SimCode simCode)
+ "Helper to daeExpMatrix."
+::=
+
+   let varLstStr = (row |> e =>
+      let expVar = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+      '<%expVar%>'
+    ;separator=",")
+  varLstStr
+end daeExpMatrixRow;
+
 
 template daeExpArray(Exp exp, Context context, Text &preExp /*BUFP*/,
                      Text &varDecls /*BUFP*/,SimCode simCode)

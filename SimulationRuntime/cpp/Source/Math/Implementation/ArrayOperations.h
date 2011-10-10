@@ -70,7 +70,8 @@ template < typename T, size_t NumDims, class F >
 boost::multi_array< T, NumDims > op_cp_array( boost::multi_array_ref< T, NumDims > a, F f )
 {
   boost::multi_array< T, NumDims > retVal(a); 
-  return array_operation( retVal, a, Operation< T, T, F >( f ) );
+  Operation< T, T, F > opis( f );
+  return array_operation( retVal, a, opis );
 }
 /**
 Helper function for subtract_array,add_array, copies array a used as return value and performs operation
@@ -133,7 +134,7 @@ template<
   template< typename, size_t > class Array1,
   template< typename, size_t > class Array2
 >
-boost::multi_array_ref< T1, dims >  array_operation( Array1< T1, dims > a, const Array2< T2, dims > b, F op ) 
+boost::multi_array_ref< T1, dims >  array_operation( Array1< T1, dims > a, const Array2< T2, dims >& b, F& op ) 
 {
   typename Array2< T2, dims >::const_iterator j = b.begin();
   for ( typename Array1< T1, dims >::iterator i = a.begin();
@@ -147,14 +148,12 @@ boost::multi_array_ref< T1, dims >  array_operation( Array1< T1, dims > a, const
 Applies array operation F  (*,/) on one dimensional array 
 */
 template<
-  typename T1, typename T2, class F,
-  template< typename, size_t > class Array1,
-  template< typename, size_t > class Array2
+  typename T1, typename T2, class F
 >
-boost::multi_array_ref< T1, 1 > array_operation( Array1< T1, 1 > &a, Array2< T2, 1 > b, F op ) 
+boost::multi_array_ref< T1, 1 > array_operation( boost::multi_array< T1, 1 > a, boost::multi_array_ref< T2, 1 > b, F& op ) 
 {
-  typename Array2< T2, 1 >::const_iterator j = b.begin();
-  for ( typename Array1< T1, 1 >::iterator i = a.begin();
+  typename boost::multi_array_ref< T2, 1 >::const_iterator j = b.begin();
+  for ( typename boost::multi_array< T1, 1 >::iterator i = a.begin();
         i != a.end(); i++, j++ )
     op( *i, *j );
   return a;

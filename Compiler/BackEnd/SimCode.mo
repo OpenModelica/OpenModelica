@@ -6373,14 +6373,20 @@ algorithm
         na_string = listLength(stringAliasVars);
         next = listLength(extObjVars);
         (dim_1,dim_2)= dimensions(dlow);
+        Debug.fcall("cpp",print,"create varinfo \n");
         varInfo = createVarInfo(dlow,nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numResiduals,
                  ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,dim_1,dim_2);
+         Debug.fcall("cpp",print,"create state index \n");
          states1 = stateindex1(stateVars,dlow);
+          Debug.fcall("cpp",print,"set state index \n");
          states_lst= setStatesVectorIndex(states1);
+         Debug.fcall("cpp",print,"gernerate der states  \n");
          der_states_lst = generateDerStates(states_lst);
          states_lst2 =listAppend(states_lst,der_states_lst);
+         Debug.fcall("cpp",print,"replace index in states \n");
          states_2 = replaceindex1(stateVars,states_lst);
           //Debug.fcall("cppvar",print," replace der varibales: \n " +&dumpVarinfoList(states_lst2));
+          Debug.fcall("cpp",print,"replace index in der states  \n");
          derivatives_2=replaceindex1(derivative,der_states_lst);
          //Debug.fcall("cppvar",print,"state varibales: \n " +&dumpVarinfoList(states_lst2));
       then
@@ -6512,6 +6518,7 @@ algorithm
         varsOut = fixInitialThing(varsOut, initCrefs);
       then
         varsOut;
+     
   end match;
 end createVars;
 
@@ -10922,6 +10929,8 @@ algorithm (OutInteger1,OutInteger2):= matchcontinue(dae_low)
       (nvar1,nvar2)=calculateVariableDimensions(ordered_states);
       then
         (nvar1,nvar2);
+  case(_)
+    equation print(" failure in dimensions  \n"); then fail();
 end matchcontinue;
 end dimensions;
 
@@ -10977,6 +10986,11 @@ algorithm (stateVars1):= matchcontinue(stateVars,dae_low)
     
      then
       (new_simvar::new_list);
+   case (_,_)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"stateindex1 failed"});
+      then
+        fail();
 end matchcontinue;
 end stateindex1;
 
@@ -11037,6 +11051,11 @@ algorithm out_vars := matchcontinue(in_vars)
        vars5=setStatesVectorIndex2(vars5,0);
     then 
        vars5;
+   case (_)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"setStatesVectorIndex failed"});
+      then
+        fail();
 end matchcontinue;
 end setStatesVectorIndex;
 
@@ -11146,6 +11165,11 @@ algorithm out_varinfo_lst := matchcontinue(in_varinfo_lst)
       dv_list = generateDerStates(rest);
      then
        dv::dv_list;
+   case (_)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"generateDerStates failed"});
+      then
+        fail();   
   end matchcontinue;
 end generateDerStates;
 
@@ -11178,7 +11202,8 @@ algorithm
       DAE.ComponentRef cr_1;
       String name_str,id_str;
       list <String> numArrayElement;
-    case(SIMVAR(name,varKind,comment,unit,displayUnit,0,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)) 
+      Integer i;
+    /*case(SIMVAR(name,varKind,comment,unit,displayUnit,0,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)) 
       equation
         name_str = ComponentReference.printComponentRefStr(name);
         id_str = stringAppendList({DAE.derivativeNamePrefix,"." ,name_str});
@@ -11200,6 +11225,23 @@ algorithm
         cr_1 = ComponentReference.makeCrefIdent(id_str,DAE.ET_REAL(),{});
       then
         SIMVAR(cr_1,varKind,comment,unit,displayUnit,2,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement);
+       */
+     case(SIMVAR(name,varKind,comment,unit,displayUnit,i,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)) 
+      equation
+        name_str = ComponentReference.printComponentRefStr(name);
+        id_str = stringAppendList({DAE.derivativeNamePrefix,".",name_str});
+        cr_1 = ComponentReference.makeCrefIdent(id_str,DAE.ET_REAL(),{});
+      then
+        SIMVAR(cr_1,varKind,comment,unit,displayUnit,i,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement);
+    /*case (SIMVAR(name,_,_,_,_,i,_,_,_,_,_,_,_,_,_,_,_))
+      equation
+        name_str = ComponentReference.printComponentRefStr(name);
+        id_str = intString(i);
+        Debug.fcall("cpp",print,"generateDerStates2 failed for " +& name_str +& "and index " +& id_str +& "\n" );
+        Error.addMessage(Error.INTERNAL_ERROR, {"generateDerStates2 failed " });
+      then
+        fail();
+        */   
   end matchcontinue;
 end generateDerStates2;
 
