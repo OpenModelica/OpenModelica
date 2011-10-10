@@ -1925,7 +1925,7 @@ void ProjectTab::getModelComponents(QString modelName)
         QString inheritedClass = pMainWindow->mpOMCProxy->getNthInheritedClass(modelName, i);
         // If the inherited class is one of the builtin type such as Real we can
         // stop here, because the class can not contain any components, etc.
-        if(pMainWindow->mpOMCProxy->isBuiltinType(inheritedClass))
+        if (pMainWindow->mpOMCProxy->isBuiltinType(inheritedClass) || inheritedClass.compare(modelName) == 0)
         {
             return;
         }

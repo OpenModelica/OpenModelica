@@ -1599,8 +1599,7 @@ void ModelBrowserTree::addBrowserChild(QString name, QString className,QString p
         QString inheritedClass = mpParentModelBrowserWidget->mpParentMainWindow->mpOMCProxy->getNthInheritedClass(className, i);
         componentType = mpParentModelBrowserWidget->mpParentMainWindow->mpOMCProxy->getClassRestriction(inheritedClass);
         //adding nodes to the tree
-        addBrowserNode(StringHandler::getLastWordAfterDot(inheritedClass), componentType,inheritedClass, name,
-                        QString(parentStructure));
+        addBrowserNode(StringHandler::getLastWordAfterDot(inheritedClass), componentType,inheritedClass, name, QString(parentStructure));
     }
 
     // look for components of a model

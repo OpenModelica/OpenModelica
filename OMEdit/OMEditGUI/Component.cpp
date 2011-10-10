@@ -1007,7 +1007,7 @@ void Component::getClassComponents(QString className, int type)
 
         // If the inherited class is one of the builtin type such as Real we can
         // stop here, because the class can not contain any components, etc.
-        if(this->mpOMCProxy->isBuiltinType(inheritedClass))
+        if (this->mpOMCProxy->isBuiltinType(inheritedClass))
         {
             mpInheritanceList.append(new Component("", inheritedClass, mpOMCProxy->isWhat(StringHandler::CONNECTOR, inheritedClass), this));
             return;
@@ -1025,6 +1025,11 @@ void Component::getClassComponents(QString className, int type)
             inheritance = new Component(annotationString, inheritedClass, type, mpOMCProxy->isWhat(StringHandler::CONNECTOR, inheritedClass), this);
         }
         mpInheritanceList.append(inheritance);
+        // avoid cycles
+        if (inheritedClass.compare(className) == 0)
+        {
+            return;
+        }
         getClassComponents(inheritedClass, type);
     }
 
@@ -1116,7 +1121,7 @@ void Component::getClassComponents(QString className, int type, Component *pPare
 
         // If the inherited class is one of the builtin type such as Real we can
         // stop here, because the class can not contain any components, etc.
-        if(this->mpOMCProxy->isBuiltinType(inheritedClass))
+        if (this->mpOMCProxy->isBuiltinType(inheritedClass))
         {
             mpInheritanceList.append(new Component("", inheritedClass, mpOMCProxy->isWhat(StringHandler::CONNECTOR, inheritedClass), this));
             return;
@@ -1130,6 +1135,11 @@ void Component::getClassComponents(QString className, int type, Component *pPare
         Component *inheritance = new Component(annotationString, inheritedClass, type,
                                                mpOMCProxy->isWhat(StringHandler::CONNECTOR, inheritedClass), pParent);
         mpInheritanceList.append(inheritance);
+        // avoid cycles
+        if (inheritedClass.compare(className) == 0)
+        {
+            return;
+        }
         getClassComponents(inheritedClass, type, inheritance);
     }
 
