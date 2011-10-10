@@ -135,8 +135,10 @@ Enu getEnumValue     (void* element, Att a, ValueStatus* vs);
 void freeElement     (void* element);
 
 // Convenience methods for AST access. To be used afer successful validation only.
+const char* getFmiVersion(ModelDescription* md);
+const char* getModelName(ModelDescription* md);
 const char* getModelIdentifier(ModelDescription* md);
-int getNumberOfStates(ModelDescription* md);
+int getNumberOfContStates(ModelDescription* md);
 int getNumberOfEventIndicators(ModelDescription* md);
 const char* getName(void* element);
 Enu getCausality(void* scalarVariable);

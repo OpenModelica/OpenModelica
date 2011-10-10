@@ -1,3 +1,10 @@
+2011-10-09 [wuzhu.chen@tu-clausthal.de]
+------------------------------
+- Handling of platform dependency
+- More functions for parsing the model description xml file
+- Generation of error and success log files
+------------------------------
+
 2011-10-04 [adeel.asghar@liu.se]
 ------------------------------
 

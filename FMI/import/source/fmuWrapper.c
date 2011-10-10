@@ -1,7 +1,7 @@
 #ifndef FMUWRAPPER_C
 #define FMUWRAPPER_C
 
-
+#include <windows.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -87,7 +87,7 @@ void* getProAdr(FMI* fmi, const char* mid, const char* funName){
     char name[BUFSIZE];
     void* funPointer;
     sprintf(name, "%s_%s", mid, funName);
-    funPointer = (void*) GetProcAddress(fmi->dllHandle, name);
+    funPointer = (void*) getFunctionPointerFromDLL(fmi->dllHandle, name);
     if (!funPointer) {
         printf("#### Error! Loading function %s_%s in dll failed!!!\n",mid,funName);
         exit(EXIT_FAILURE);
@@ -98,7 +98,19 @@ void* getProAdr(FMI* fmi, const char* mid, const char* funName){
 // Load the given dll and set function pointers in fmi
 void* loadFMUDll(void* in_fmi, const char* pathFMUDll,const char* mid){
     FMI* fmi = (FMI*) in_fmi;
-    fmi->dllHandle = LoadLibrary(pathFMUDll);
+	char* pathFMUSO;
+	int pathLen;
+	pathLen = strlen(pathFMUDll);
+	pathFMUSO = (char*)calloc(sizeof(char),pathLen+2);
+	strcat(pathFMUSO,"./");
+	strncat(pathFMUSO,pathFMUDll,pathLen-4);
+	strcat(pathFMUSO,".so");
+	pathFMUSO[pathLen+1] = '\0';
+	#if defined(__MINGW32__) || defined(_MSC_VER)
+		fmi->dllHandle = LoadLibrary(pathFMUDll);
+	#else
+		fmi->dllHandle = dlopen(pathFMUSO, RTLD_LOCAL | RTLD_NOW);
+	#endif
     if(!fmi->dllHandle){
 		#ifdef _DEBUG_
         printf("#### Loading dll library \"%s\" in fmiInstantiate failed!!!\n",pathFMUDll);
@@ -594,7 +606,7 @@ void* instantiateFMIFun(const char* mid, const char* pathFMUDll){
 
 void freeFMUFun(void* in_fmufun){
     FMI* fmi = (FMI*) in_fmufun;
-    FreeLibrary(fmi->dllHandle);
+    FreeLibraryFromHandle(fmi->dllHandle);
 	#ifdef _DEBUG_
 		printf("\n#### freeFMIFun has been called here ... \n\n");
 	#endif
@@ -645,8 +657,8 @@ void* fmuFreeAll(void* in_fmufun, void* in_inst, void* functions){
 // }
  
  void fmiFreeModelInst(void* in_fmu){
-    HINSTANCE dllHandle = LoadLibrary(FMU_BINARIES_Win32_DLL);
-	fFreeModelInstance freeModelInstance  = (fFreeModelInstance)   GetProcAddress(dllHandle, "bouncingBall_fmiFreeModelInstance");
+    void* dllHandle = LoadLibrary(FMU_BINARIES_Win32_DLL);
+	fFreeModelInstance freeModelInstance  = (fFreeModelInstance)   getFunctionPointerFromDLL(dllHandle, "bouncingBall_fmiFreeModelInstance");
     if(freeModelInstance){
           freeModelInstance(in_fmu);
           if(!in_fmu){

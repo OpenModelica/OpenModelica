@@ -2,10 +2,26 @@
 #define FMUWRAPPER_H
 #endif
 
-#include <windows.h>
 #include "fmiModelFunctions.h"
 #include "xmlparser.h"
 #define COMBINENAME(a,b) a##_##b
+
+// handling platform dependency
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#include <windows.h>
+#define getFunctionPointerFromDLL  GetProcAddress
+#define FreeLibraryFromHandle !FreeLibrary
+#define LoadLibraryFromDLL LoadLibrary
+
+#else
+#include <dlfcn.h>
+#define getFunctionPointerFromDLL dlsym
+#define FreeLibraryFromHandle dlclose
+#define GetLastError(X) 
+
+#endif
+// end
+
 
 #ifdef __cplusplus
 extern "C"{
@@ -42,7 +58,7 @@ typedef fmiStatus (*fTerminate)                 (fmiComponent c);
 // typedef of the data structure FMI containing loaded FMI functions
 typedef struct {
     ModelDescription* modelDescription;
-    HINSTANCE dllHandle;
+    void* dllHandle;
     fGetModelTypesPlatform getModelTypesPlatform;
     fGetVersion getVersion;
     fInstantiateModel instantiateModel;

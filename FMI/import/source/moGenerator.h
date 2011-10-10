@@ -1,4 +1,3 @@
-#include <windows.h>
 #include "xmlparser.h"
 #include "fmuWrapper.h"
 
@@ -8,6 +7,13 @@ typedef enum{input, output, internal, none} fmiCausality;
 typedef enum{noalias,alias,negatedAlias} fmiAlias;
 typedef enum{fmi_false, fmi_true} fmiBooleanXML;
 typedef enum{sv_real, sv_integer, sv_boolean, sv_string,sv_enum} fmiScalarVariableType;
+
+typedef struct {
+	const char* name;
+	fmiValueReference vr;
+	void* next;
+} fmuOutputVar;
+
 
 typedef struct{
 	const char* declType;
@@ -26,7 +32,7 @@ typedef struct{
 	const char* quantity;
 	double min;
 	double max;
-	double start;
+	int start;
 	fmiBooleanXML fixed;
 } fmiINTEGER;
 
@@ -45,6 +51,7 @@ typedef struct{
 
 typedef struct{
 	const char* name;
+	char* flatName;
 	fmiValueReference vr; // value reference;
 	const char* description;
 	Enu var;
@@ -54,30 +61,41 @@ typedef struct{
 	void* variable;	
 } fmiScalarVariable;
 
+typedef struct{
+	
+} fmiArrayVariable;
 
-// typedef struct{
-	// const char* fmiVersion;
-	// const char* modelName;
-	// const char* modelIdentifier;
-	// const char* guid;
-	// const char* description;
-	// const char* author;
-	// const char* version;
-	// const char* generationTool;
-	// const char* generationDateAndTime;
-	// NamingConvention variableNamingConvention;
-	// unsigned int numberOfContinuousStates;
-	// unsigned int numberOfEventIndicators;
-	// fmuModelVaraibles** modelVariables;
-// } fmuModelDescription;
+typedef struct{
+	int nsv; // number of scalar variables
+	fmiScalarVariable* list_sv;
+	int nav; // number of array variables
+	fmiArrayVariable* list_av;	
+} fmiModelVariable;
+
+typedef struct{
+	const char* fmiver; // fmi version number;
+	const char* mn; // fmi model name
+	const char* mid; // model identifier;
+	const char* guid; // fingerprint of xml-file content
+	const char* description; // string describing the model
+	const char* author;
+	const char* mver; // model version
+	const char* genTool;// generation tool;
+	const char* genTime; // generation date and time;
+	fmiNamingConvention nconv; // variable naming convention;
+	unsigned int ncs; // number of continuous states;
+	unsigned int nei; // number of event indicators;
+	fmiModelVariable* modelVariable;
+} fmuModelDescription;
 
 static char* getDecompPath(const char * omPath, const char* mid);
 static char* getDllPath(const char* decompPath,const char* mid);
-static char* getXMLfile(const char * decompPath, const char * modeldes);
+static char* getNameXMLfile(const char * decompPath, const char * modeldes);
 static int decompress(const char* fmuPath, const char* decompPath);
 static char* getFMUname(const char* fmupath);
 static int getNumberOfSV(ModelDescription* md);
 void* allocateElmSV(fmiScalarVariable sv);
 static void instScalarVariable(ModelDescription* md,fmiScalarVariable* list);
-void tmpcodegen(size_t , size_t , const char* , const char*, const char* );
-void blockcodegen(ModelDescription*, size_t , size_t , const char* , const char* , const char* , const char* );
+static void instFmuModelDescription(ModelDescription* md, fmuModelDescription* fmuMD, fmiModelVariable* fmuMV);
+void tmpcodegen(fmuModelDescription* /*fmuMD*/, const char* /*decompPath*/);
+void blockcodegen(fmuModelDescription* /*fmuMD*/, const char* /*decompPath*/, const char* /*fmudllpath*/);
