@@ -235,6 +235,8 @@ function abs = overload(OpenModelica.Internal.intAbs,OpenModelica.Internal.realA
 
 function outerProduct = overload(OpenModelica.Internal.outerProductInt,OpenModelica.Internal.outerProductReal);
 
+function cross = overload(OpenModelica.Internal.crossInt,OpenModelica.Internal.crossReal);
+
 // Dummy functions that can't be properly defined in Modelica, but used by
 // SCodeFlatten to define which builtin functions exist (SCodeFlatten doesn't
 // care how the functions are defined, only if they exist or not).
@@ -266,10 +268,6 @@ end transpose;
 function symmetric
   external "builtin";
 end symmetric;
-
-function cross
-  external "builtin";
-end cross;
 
 function skew
   external "builtin";
@@ -477,7 +475,7 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     input Integer[:] v1;
     input Integer[:] v2;
     output Integer[size(v1,1),size(v2,1)] o;
-    external "builtin";
+    external "builtin" o=outerProduct(v1,v2);
   /* Not working due to problems with matrix and transpose :(
   algorithm
     o := matrix(v1) * transpose(matrix(v2));
@@ -488,12 +486,36 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     input Real[:] v1;
     input Real[:] v2;
     output Real[size(v1,1),size(v2,1)] o;
-    external "builtin";
+    external "builtin" o=outerProduct(v1,v2);
   /* Not working due to problems with matrix and transpose :(
   algorithm
     o := matrix(v1) * transpose(matrix(v2));
   */
   end outerProductReal;
+
+  function crossInt
+    input Integer[3] x;
+    input Integer[3] y;
+    output Integer[3] z;
+    annotation(__OpenModelica_EarlyInline = true);
+    external "builtin" cross(x,y,z);
+  /* Not working due to problems with non-builtin overloaded functions
+  algorithm
+    z := { x[2]*y[3]-x[3]*y[2] , x[3]*y[1]-x[1]*y[3] , x[1]*y[2]-x[2]*y[1] };
+  */
+  end crossInt;
+
+  function crossReal
+    input Real[3] x;
+    input Real[3] y;
+    output Real[3] z;
+    annotation(__OpenModelica_EarlyInline = true);
+    external "builtin" cross(x,y,z);
+  /* Not working due to problems with non-builtin overloaded functions
+  algorithm
+    z := { x[2]*y[3]-x[3]*y[2] , x[3]*y[1]-x[1]*y[3] , x[1]*y[2]-x[2]*y[1] };
+  */
+  end crossReal;
 
 end Internal;
 

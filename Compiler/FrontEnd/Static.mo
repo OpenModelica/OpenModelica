@@ -5430,70 +5430,6 @@ algorithm
   end match;
 end elabBuiltinSkew2;
 
-
-protected function elabBuiltinCross "
-  author: PA
-
-  This function handles the built in cross operator.
-
-"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inNamedArg;
-  input Boolean inBoolean;
-  input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
-    local
-      DAE.Exp e1,e2,call;
-      DAE.Type tp1,tp2;
-      DAE.Const c1,c2,c;
-      Boolean scalar1,scalar2;
-      list<Env.Frame> env;
-      Boolean impl;
-      Env.Cache cache;
-      Absyn.Exp v1,v2;
-      list<DAE.Exp> expl1,expl2,expl3;
-      DAE.ExpType etp1,etp2,etp,etp3;
-      DAE.Type eltTp;
-      Prefix.Prefix pre;
-
-      //First, try symbolic simplification
-    case (cache,env,{v1,v2},_,impl,pre,info)
-      equation
-        (cache,DAE.ARRAY(etp1,scalar1,expl1),DAE.PROP(tp1,c1),_) = elabExp(cache,env, v1, impl,NONE(),true,pre,info);
-        (cache,DAE.ARRAY(etp2,scalar2,expl2),DAE.PROP(tp2,c2),_) = elabExp(cache,env, v2, impl,NONE(),true,pre,info);
-        // adrpo 2009-05-15: cross can fail if given a function with input Real[:]!
-        //{3} = Types.getDimensionSizes(tp1);
-        //{3} = Types.getDimensionSizes(tp2);
-        expl3 = elabBuiltinCross2(expl1,expl2);
-        c = Types.constAnd(c1,c2);
-        etp3 = Types.elabType(tp1);
-      then
-        (cache,DAE.ARRAY(etp3,scalar1,expl3),DAE.PROP(tp1,c));
-
-    //Fallback, use builtin function cross
-    case (cache,env,{v1,v2},_,impl,pre,info)
-      equation
-        (cache,e1,DAE.PROP(tp1,c1),_) = elabExp(cache,env, v1, impl,NONE(),true,pre,info);
-        (cache,e2,DAE.PROP(tp2,c2),_) = elabExp(cache,env, v2, impl,NONE(),true,pre,info);
-        // adrpo 2009-05-15: cross can fail if given a function with input Real[:]!
-        //{3} = Types.getDimensionSizes(tp1);
-        //{3} = Types.getDimensionSizes(tp2);
-        etp = Expression.typeof(e1);
-        eltTp = Types.arrayElementType(tp1);
-        call = Expression.makeBuiltinCall("cross", {e1, e2}, etp);
-      then 
-        (cache, call, DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(3),eltTp),NONE()), DAE.C_VAR()));
-  end matchcontinue;
-end elabBuiltinCross;
-
 public function elabBuiltinCross2 "help function to elabBuiltinCross. Public since it used by ExpressionSimplify.simplify1"
   input list<DAE.Exp> v1;
   input list<DAE.Exp> v2;
@@ -5511,7 +5447,6 @@ algorithm
       then {r1,r2,r3};
   end match;
 end elabBuiltinCross2;
-
 
 protected function elabBuiltinString "
   author: PA
@@ -6063,7 +5998,6 @@ algorithm
     case "vector" then elabBuiltinVector;
     case "matrix" then elabBuiltinMatrix;
     case "scalar" then elabBuiltinScalar;
-    case "cross" then elabBuiltinCross;
     case "skew" then elabBuiltinSkew;
     case "String" then elabBuiltinString;
     case "rooted" then elabBuiltinRooted;
