@@ -440,7 +440,7 @@ QString OMCProxy::getErrorString()
 QString OMCProxy::getVersion()
 {
     sendCommand("getVersion()");
-    return getResult();
+    return StringHandler::unparse(getResult());
 }
 
 bool OMCProxy::setAnnotationVersion(int version)
