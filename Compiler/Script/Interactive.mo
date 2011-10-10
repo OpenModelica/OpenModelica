@@ -10813,6 +10813,22 @@ public function getComponents
 "function: getComponents
    This function takes a `ComponentRef\', a `Program\' and an int and  returns
    a list of all components, as returned by get_nth_component."
+  input Absyn.ComponentRef cr;
+  input SymbolTable st;
+  output String outString;
+  output SymbolTable outSt;
+protected
+  Boolean nogen;
+algorithm
+  nogen := RTOpts.setDebugFlag("nogen",true);
+  (outString,outSt) := getComponents2(cr,st);
+  _ := RTOpts.setDebugFlag("nogen",nogen);
+end getComponents;
+
+protected function getComponents2
+"function: getComponents
+   This function takes a `ComponentRef\', a `Program\' and an int and  returns
+   a list of all components, as returned by get_nth_component."
   input Absyn.ComponentRef inComponentRef;
   input SymbolTable st;
   output String outString;
@@ -10856,7 +10872,7 @@ algorithm
         (res,st);
     case (_,_) then ("Error",st);
   end matchcontinue;
-end getComponents;
+end getComponents2;
 
 protected function getComponentAnnotations "function: getComponentAnnotations
    This function takes a `ComponentRef\', a `Program\' and

@@ -158,7 +158,7 @@ static int set_debug_flags(const char *flagstr)
     debug_all=1;
   }
   if (flag!=flagc) {
-    fprintf(stderr, "Error in setting flags.\n",flag,flagc);
+    fprintf(stderr, "Error in setting flags.\n");
     return -1;
   }
 
@@ -183,7 +183,7 @@ static int set_debug_flag(char const* strdata, long value)
       {
         debug_flags[i] = (char*) "";
         // TODO: realloc memory when count(empty_entries) > _const
-        return 0;
+        return 1;
       }
       return 1;
     }
@@ -194,7 +194,7 @@ static int set_debug_flag(char const* strdata, long value)
   debug_flagc+=1;
   debug_flags = (char**)realloc(debug_flags, debug_flagc * sizeof(char*));
   debug_flags[debug_flagc-1] = (char*)strdata;
-  return 1;
+  return 0;
 }
 
 int check_debug_flag(char const* strdata)
@@ -270,7 +270,7 @@ static int set_preOptModules(const char *flagstr)
     }
   }
   if (flag!=flagc) {
-    fprintf(stderr, "Error in setting preOptModule flags.\n",flag,flagc);
+    fprintf(stderr, "Error in setting preOptModule flags.\n");
     return -1;
   }
 
@@ -320,7 +320,7 @@ static int set_pastOptModules(const char *flagstr)
     }
   }
   if (flag!=flagc) {
-    fprintf(stderr, "Error in setting pastOptModule flags.\n",flag,flagc);
+    fprintf(stderr, "Error in setting pastOptModule flags.\n");
     return -1;
   }
 

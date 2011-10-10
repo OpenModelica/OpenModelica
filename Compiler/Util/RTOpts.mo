@@ -82,10 +82,10 @@ end debugFlag;
 
 public function setDebugFlag
   input String inString;
-  input Integer value;
-  output Boolean str;
+  input Boolean value;
+  output Boolean oldval;
 
-  external "C" str = RTOpts_setDebugFlag(inString,value) annotation(Library = "omcruntime");
+  external "C" oldval = RTOpts_setDebugFlag(inString,value) annotation(Library = "omcruntime");
 end setDebugFlag;
 
 public function noProc
