@@ -346,10 +346,10 @@ void OMCProxy::logOMCMessages(QString expression)
     mCommandsList.append(expression);
     // log expression
     mpTextEdit->setCurrentFont(QFont("Times New Roman", 10, QFont::Bold, false));
-    mpTextEdit->insertPlainText("\n>>  " + expression + "\n");
+    mpTextEdit->insertPlainText(expression + "\n");
     // log result
     mpTextEdit->setCurrentFont(QFont("Times New Roman", 10, QFont::Normal, false));
-    mpTextEdit->insertPlainText(">>  " + getResult() + "\n");
+    mpTextEdit->insertPlainText(getResult() + "\n\n");
     // move the cursor
     textCursor.movePosition(QTextCursor::End);
     mpTextEdit->setTextCursor(textCursor);
