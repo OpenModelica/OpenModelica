@@ -120,7 +120,7 @@ int mmc_GC_clear(void)
 }
 
 /* add pointers to roots */
-int mmc_GC_add_roots(modelica_metatype* p, int n, mmc_GC_local_state_type local_GC_state, const char* name)
+void mmc_GC_add_roots(modelica_metatype* p, int n, mmc_GC_local_state_type local_GC_state, const char* name)
 {
   int i;
   /* init GC if is not already done */
@@ -185,7 +185,6 @@ int mmc_GC_add_roots(modelica_metatype* p, int n, mmc_GC_local_state_type local_
 
   }
 
-  return 0;
 }
 
 /* save the current roots mark */
@@ -878,6 +877,7 @@ void *mmc_alloc_bytes(unsigned nbytes)
   static char *mmc_cur_malloc_buf = NULL;
   static long mmc_cur_malloc_buf_ix = 0;
   /* Until we have GC, we simply allocate in 256MB chunks... */
+
   const long mmc_cur_malloc_buf_sz = (MMC_GC_PAGE_SIZE<nbytes)?(nbytes+MMC_GC_PAGE_SIZE):(MMC_GC_PAGE_SIZE);
   void *p=0;
   /* fprintf(stderr, "1 mmc_alloc_bytes(%ld): %ld,%ld\n", nbytes, mmc_cur_malloc_buf, mmc_cur_malloc_buf_ix); */

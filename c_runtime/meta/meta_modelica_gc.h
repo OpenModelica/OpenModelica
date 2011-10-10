@@ -116,7 +116,7 @@ int mmc_GC_init_default(void);
 int mmc_GC_clear(void);
 /* add pointers to roots */
 #define mmc_GC_add_root(A,B,C) mmc_GC_add_roots(A,1,B,C)
-int mmc_GC_add_roots(modelica_metatype*, int, mmc_GC_local_state_type local_GC_state, const char*);
+void mmc_GC_add_roots(modelica_metatype*, int, mmc_GC_local_state_type local_GC_state, const char*);
 /* save the current roots mark */
 mmc_GC_local_state_type mmc_GC_save_roots_state(const char* name);
 /* remove the current roots mark */
@@ -130,15 +130,15 @@ int mmc_GC_collect(mmc_GC_local_state_type local_GC_state);
 
 extern mmc_GC_local_state_type dummy_local_GC_state;
 
-#define mmc_GC_init(settings)                          (0)
-#define mmc_GC_init_default(void)                      (0)
-#define mmc_GC_clear(void)                             (0)
-#define mmc_GC_add_root(A,B,C)                         (0)
-#define mmc_GC_add_roots(p, n, local_GC_state, name)   (0)
+#define mmc_GC_init(settings)                          
+#define mmc_GC_init_default(void)                      
+#define mmc_GC_clear(void)                             
+#define mmc_GC_add_root(A,B,C)                         
+#define mmc_GC_add_roots(p, n, local_GC_state, name)   
 #define mmc_GC_save_roots_state(name)                  (dummy_local_GC_state)
-#define mmc_GC_undo_roots_state(local_GC_state)        (0)
-#define mmc_GC_unwind_roots_state(local_GC_state)      (0)
-#define mmc_GC_collect(local_GC_state)                 (0)
+#define mmc_GC_undo_roots_state(local_GC_state)        
+#define mmc_GC_unwind_roots_state(local_GC_state)      
+#define mmc_GC_collect(local_GC_state)                 
 
 #endif /* defined(_MMC_GC_) */
 
