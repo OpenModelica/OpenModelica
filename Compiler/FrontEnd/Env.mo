@@ -2651,7 +2651,6 @@ algorithm
       Option<array<EnvCache>> envCache;
       array<DAE.FunctionTree> ef;
       StructuralParameters ht;
-      Absyn.Path p;
       Option<Env> ienv;
 
     case (CACHE(envCache,ienv,ef,ht,_),p)
