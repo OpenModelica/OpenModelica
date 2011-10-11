@@ -1996,6 +1996,9 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       SymbolTable st;
+     
+    case ({}, {}, _, _, _) then (inCache, inEnv, inST);
+      
     case (DAE.COMPLEX_VAR(name = name, tp = ety) :: rest_vars,
       val :: rest_vals, _ , _, st)
       equation
@@ -2236,6 +2239,10 @@ algorithm
       DAE.Type ty;
       list<Values.Value> values;
       Values.Value value;
+      Absyn.Path path;
+      list<DAE.Var> vars;
+      list<String> var_names;
+
     case ((DAE.T_INTEGER(varLstInt = _), _)) then Values.INTEGER(0);
     case ((DAE.T_REAL(varLstReal = _), _)) then Values.REAL(0.0);
     case ((DAE.T_STRING(varLstString = _), _)) then Values.STRING("");
@@ -2250,6 +2257,12 @@ algorithm
         dims = ValuesUtil.valueDimensions(value);
       then
         Values.ARRAY(values, int_dim :: dims);
+    case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = path),
+        complexVarLst = vars), _))
+      equation
+        (values, var_names) = List.map_2(vars, getRecordVarBindingAndName);
+      then
+        Values.RECORD(path, values, var_names, -1);
     case (_)
       equation
         Debug.fprintln("evalfunc", "- CevalFunction.generateDefaultBinding failed\n");
@@ -2258,6 +2271,34 @@ algorithm
   end matchcontinue;
 end generateDefaultBinding;
      
+protected function getRecordVarBindingAndName
+  input DAE.Var inVar;
+  output Values.Value outBinding;
+  output String outName;
+algorithm
+  (outBinding, outName) := matchcontinue(inVar)
+    local
+      String name;
+      DAE.Type ty;
+      DAE.Binding binding;
+      Values.Value val;
+
+    case (DAE.TYPES_VAR(name = name, ty = ty, binding = binding))
+      equation
+        val = getBindingOrDefault(binding, ty);
+      then
+        (val, name);
+
+    case (DAE.TYPES_VAR(name = name))
+      equation
+        true = RTOpts.debugFlag("evalfunc");
+        Debug.traceln("- CevalFunction.getRecordVarBindingAndName failed on variable "
+          +& name +& "\n");
+      then
+        fail();
+  end matchcontinue;
+end getRecordVarBindingAndName;
+
 protected function getFunctionReturnValue
   "This function fetches one return value for the function, given an output
   variable and an environment."

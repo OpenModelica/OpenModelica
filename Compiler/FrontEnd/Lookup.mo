@@ -2680,8 +2680,7 @@ algorithm
         ty_1 = checkSubscripts(ty, ss);
         ss = addArrayDimensions(ty,ss);
         tty = Types.elabType(ty);
-        ty2_2 = Types.elabType(ty);
-        cref_ = ComponentReference.makeCrefIdent(id,ty2_2, ss);
+        cref_ = ComponentReference.makeCrefIdent(id,tty, ss);
         splicedExp = Expression.makeCrefExp(cref_,tty);
         //print("splicedExp ="+&ExpressionDump.dumpExpStr(splicedExp,0)+&"\n");
       then

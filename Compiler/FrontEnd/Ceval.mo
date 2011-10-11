@@ -5081,7 +5081,7 @@ public function cevalCrefBinding "function: cevalCrefBinding
 algorithm
   (outCache,outValue) := matchcontinue (inCache,inEnv,inComponentRef,inBinding,inBoolean,inMsg)
     local
-      DAE.ComponentRef cr_1,cr,e1;
+      DAE.ComponentRef cr,e1;
       list<DAE.Subscript> subsc;
       DAE.Type tp;
       list<Integer> sizelst;
@@ -5096,7 +5096,6 @@ algorithm
     case (cache,env,cr,DAE.VALBOUND(valBound = v),impl,msg) 
       equation 
         Debug.fprint("tcvt", "+++++++ Ceval.cevalCrefBinding DAE.VALBOUND\n");
-        cr_1 = ComponentReference.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = ComponentReference.crefLastSubs(cr);
         (cache,res) = cevalSubscriptValue(cache, env, subsc, v, impl, msg);
       then
@@ -5114,7 +5113,6 @@ algorithm
     case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),impl,msg) 
       equation 
         DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = Absyn.IDENT(name = rfn)),expr = elexp, iterators = {DAE.REDUCTIONITER(id=iter,exp=iterexp)}) = exp;
-        cr_1 = ComponentReference.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         (cache,v,_) = ceval(cache, env, exp, impl,NONE(), msg);
         subsc = ComponentReference.crefLastSubs(cr);
         (cache,res) = cevalSubscriptValue(cache, env, subsc, v, impl, msg);
@@ -5124,7 +5122,6 @@ algorithm
     // arbitrary expressions, C_VAR, value exists. 
     case (cache,env,cr,DAE.EQBOUND(exp = exp,evaluatedExp = SOME(e_val),constant_ = DAE.C_VAR()),impl,msg) 
       equation 
-        cr_1 = ComponentReference.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = ComponentReference.crefLastSubs(cr);
         (cache,res) = cevalSubscriptValue(cache,env, subsc, e_val, impl, msg);
       then
@@ -5133,7 +5130,6 @@ algorithm
     // arbitrary expressions, C_PARAM, value exists.  
     case (cache,env,cr,DAE.EQBOUND(exp = exp,evaluatedExp = SOME(e_val),constant_ = DAE.C_PARAM()),impl,msg) 
       equation 
-        cr_1 = ComponentReference.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = ComponentReference.crefLastSubs(cr);
         (cache,res)= cevalSubscriptValue(cache,env, subsc, e_val, impl, msg);
       then
@@ -5142,7 +5138,6 @@ algorithm
     // arbitrary expressions. When binding has optional value. 
     case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),impl,msg)
       equation
-        cr_1 = ComponentReference.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         (cache,v,_) = ceval(cache, env, exp, impl, NONE(), msg);
         subsc = ComponentReference.crefLastSubs(cr);
         (cache,res) = cevalSubscriptValue(cache,env, subsc, v, impl, msg);
@@ -5152,8 +5147,6 @@ algorithm
     // arbitrary expressions. When binding has optional value.  
     case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_PARAM()),impl,msg) 
       equation 
-        cr_1 = ComponentReference.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
-                
         // TODO: Ugly hack to prevent infinite recursion. If we have a binding r = r that
         // can for instance come from a modifier, this can cause an infinite loop here if r has no value.
         false = isRecursiveBinding(cr,exp);
