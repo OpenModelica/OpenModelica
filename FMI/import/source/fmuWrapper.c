@@ -1,7 +1,6 @@
 #ifndef FMUWRAPPER_C
 #define FMUWRAPPER_C
 
-#include <windows.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -521,7 +520,7 @@ void fmuEventUpdate(void * in_fmufun, void * in_inst, void * in_evtInfo, void * 
 void fmuLogger(void* in_fmu, const char* instanceName, fmiStatus status,
                const char* category, const char* message, ...){
      printf("\n-----------------------------------------------------------\n");
-     printf("#### address of in_fmu: %x, instanceName: %s fmiStatus: %d, category: %s, message: %s\n",in_fmu,instanceName,status,category,message);
+     printf("#### address of in_fmu: %lx, instanceName: %s fmiStatus: %d, category: %s, message: %s\n",(long)in_fmu,instanceName,status,category,message);
      printf("-----------------------------------------------------------\n\n");
 }
 
@@ -657,7 +656,7 @@ void* fmuFreeAll(void* in_fmufun, void* in_inst, void* functions){
 // }
  
  void fmiFreeModelInst(void* in_fmu){
-    void* dllHandle = LoadLibrary(FMU_BINARIES_Win32_DLL);
+    void* dllHandle = LoadLibraryFromDLL(FMU_BINARIES_Win32_DLL);
 	fFreeModelInstance freeModelInstance  = (fFreeModelInstance)   getFunctionPointerFromDLL(dllHandle, "bouncingBall_fmiFreeModelInstance");
     if(freeModelInstance){
           freeModelInstance(in_fmu);

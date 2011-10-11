@@ -15,6 +15,7 @@
 
 #else
 #include <dlfcn.h>
+#define LoadLibraryFromDLL(X) dlopen(X, RTLD_LOCAL | RTLD_NOW)
 #define getFunctionPointerFromDLL dlsym
 #define FreeLibraryFromHandle dlclose
 #define GetLastError(X) 
