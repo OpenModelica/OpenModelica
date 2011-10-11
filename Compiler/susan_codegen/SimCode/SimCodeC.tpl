@@ -861,6 +861,7 @@ end functionExtraResiduals;
 template functionBoundParameters(list<SimEqSystem> parameterEquations)
  "Generates function in simulation file."
 ::=
+  let () = System.tmpTickReset(0)
   let &varDecls = buffer "" /*BUFD*/
   let body = (parameterEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
       equation_(eq, contextOther, &varDecls /*BUFD*/)
@@ -1012,6 +1013,7 @@ end functionWhenReinitStatementElse;
 template functionODE(list<SimEqSystem> derivativEquations, Text method)
  "Generates function in simulation file."
 ::=
+  let () = System.tmpTickReset(0)
   let &varDecls = buffer "" /*BUFD*/
   let odeEquations = (derivativEquations |> eq =>
       equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/)
@@ -1245,6 +1247,7 @@ end crefType;
 template functionAssertsforCheck(list<DAE.Statement> algorithmAndEquationAsserts)
  "Generates function in simulation file."
 ::=
+  let () = System.tmpTickReset(0)
   let &varDecls = buffer "" /*BUFD*/
   let algAndEqAssertsPart = (algorithmAndEquationAsserts |> stmt =>
       algStatement(stmt, contextSimulationDiscrete, &varDecls /*BUFD*/)
@@ -2828,6 +2831,7 @@ template extFunDefArgF77(SimExtArg extArg)
   
   /* adpro: 2011-06-23 
    * DO NOT USE CONST HERE as sometimes is used with size(A, 1) 
+
    * sometimes with n in Modelica.Math.Matrices.Lapack and you
    * get conflicting external definitions in the same Model_function.h 
    * file 
