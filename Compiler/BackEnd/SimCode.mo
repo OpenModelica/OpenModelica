@@ -2123,6 +2123,8 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.EqSystems systs;
       BackendDAE.Shared shared;
+      BackendDAE.EquationArray removedEqs;
+      array<DAE.Algorithm> algs;
       
     case (functionTree,dlow,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals)
       equation
@@ -2131,7 +2133,7 @@ algorithm
         cname = Absyn.pathStringNoQual(class_);
                
         (helpVarInfo,dlow2,sampleEqns) = generateHelpVarInfo(dlow);
-        (dlow2 as BackendDAE.DAE(systs,shared)) = BackendDAEUtil.checkInitialSystem(dlow2,functionTree);
+        (dlow2 as BackendDAE.DAE(systs,shared as BackendDAE.SHARED(removedEqs=removedEqs,algorithms=algs))) = BackendDAEUtil.checkInitialSystem(dlow2,functionTree);
         
         residualEquations = createResidualEquations(dlow2);
         nres = listLength(residualEquations);
@@ -2154,6 +2156,8 @@ algorithm
         initialEquations = BackendDAEUtil.foldEqSystem(dlow2,createInitialEquations,{});
         parameterEquations = BackendDAEUtil.foldEqSystem(dlow2,createParameterEquations,{});
         removedEquations = BackendDAEUtil.foldEqSystem(dlow2,createRemovedEquations,{});
+        ((removedEquations,_)) = BackendEquation.traverseBackendDAEEqns(removedEqs,traversedlowEqToSimEqSystem,(removedEquations,algs));
+        
         algorithmAndEquationAsserts = BackendDAEUtil.foldEqSystem(dlow2,createAlgorithmAndEquationAsserts,{});
         discreteModelVars = BackendDAEUtil.foldEqSystem(dlow2,extractDiscreteModelVars,{});
         makefileParams = createMakefileParams(externalFunctionIncludes,libs);
@@ -3324,14 +3328,12 @@ algorithm
       
     case (BackendDAE.EQSYSTEM(orderedVars = vars), BackendDAE.SHARED(removedEqs=r,algorithms=algs), acc)
       equation
-        ((removedEquations,_)) = BackendEquation.traverseBackendDAEEqns(r,traversedlowEqToSimEqSystem,({},algs));
-        
         // get minmax and nominal asserts
         varasserts = BackendVariable.traverseBackendDAEVars(vars,createVarMinMaxAssert,{});
         simvarasserts = List.map(varasserts,dlowAlgToSimEqSystem);
-        removedEquations = listAppend(removedEquations, simvarasserts);
+        removedEquations = listAppend(simvarasserts,acc);
         
-      then listAppend(removedEquations,acc);
+      then removedEquations;
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"createRemovedEquations failed"});

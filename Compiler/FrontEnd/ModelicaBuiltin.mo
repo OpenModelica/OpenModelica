@@ -438,8 +438,8 @@ OpenModelica specifics:
 
 <p>
 When OpenModelica does not have a prefix (e.g. in functions or packages),
-it returns is the name of the model that is simulated suffixed by
-<pre><Prefix.NOPRE()></pre>, i.e. <pre>Vehicle.<Prefix.NOPRE()></pre>.
+it returns the name of the model that is simulated suffixed by
+<pre><Prefix.NOPRE()></pre>, e.g. <pre>Vehicle.<Prefix.NOPRE()></pre>.
 </p>
 
 <p>
