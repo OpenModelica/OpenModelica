@@ -2154,7 +2154,8 @@ algorithm
 
         // Assertions and crap
         initialEquations = BackendDAEUtil.foldEqSystem(dlow2,createInitialEquations,{});
-        parameterEquations = BackendDAEUtil.foldEqSystem(dlow2,createParameterEquations,{});
+        parameterEquations = BackendDAEUtil.foldEqSystem(dlow2,createVarNominalAssertFromVars,{});
+        parameterEquations = createParameterEquations(shared,parameterEquations);
         removedEquations = BackendDAEUtil.foldEqSystem(dlow2,createRemovedEquations,{});
         ((removedEquations,_)) = BackendEquation.traverseBackendDAEEqns(removedEqs,traversedlowEqToSimEqSystem,(removedEquations,algs));
         
@@ -5858,6 +5859,25 @@ algorithm
   end match;
 end failUnlessResidual;
 
+protected function createVarNominalAssertFromVars
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input list<SimEqSystem> acc;
+  output list<SimEqSystem> nominalAsserts;
+algorithm
+  nominalAsserts := matchcontinue (syst,shared,acc)
+    local
+      list<DAE.Algorithm> asserts1;
+      list<SimEqSystem> asserts2;
+      BackendDAE.Variables vars;
+    case (BackendDAE.EQSYSTEM(orderedVars=vars),_,acc)
+      equation
+        asserts1 = BackendVariable.traverseBackendDAEVars(vars,createVarNominalAssert,{});
+        asserts2 = List.map(asserts1,dlowAlgToSimEqSystem);
+      then listAppend(asserts2,acc);
+  end matchcontinue;
+end createVarNominalAssertFromVars;
+
 protected function createInitialEquations
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
@@ -5896,12 +5916,11 @@ algorithm
 end createInitialEquations;
 
 protected function createParameterEquations
-  input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
   input list<SimEqSystem> acc;
   output list<SimEqSystem> parameterEquations;
 algorithm
-  parameterEquations := matchcontinue (syst,shared,acc)
+  parameterEquations := matchcontinue (shared,acc)
     local
       list<BackendDAE.Equation> parameterEquationsTmp;
       BackendDAE.Variables vars,knvars,extobj,v,kn;
@@ -5924,7 +5943,7 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.EqSystems systs;
       
-    case (BackendDAE.EQSYSTEM(orderedVars=vars),BackendDAE.SHARED(knownVars=knvars,externalObjects=extobj,initialEqs=ie,algorithms=algs,arrayEqs=arrayEqs,extObjClasses=extObjClasses),acc)
+    case (BackendDAE.SHARED(knownVars=knvars,externalObjects=extobj,initialEqs=ie,algorithms=algs,arrayEqs=arrayEqs,extObjClasses=extObjClasses),acc)
       equation
         // kvars params
         ((parameterEquationsTmp,lv,lkn,lv1,lv2,_)) = BackendVariable.traverseBackendDAEVars(knvars,createInitialParamAssignments,({},{},{},{},{},1));
@@ -5959,8 +5978,7 @@ algorithm
         inalgs = List.map(ialgs,dlowAlgToSimEqSystem);
         // get minmax and nominal asserts
         varasserts = BackendVariable.traverseBackendDAEVars(knvars,createVarAsserts,{});
-        varasserts1 = BackendVariable.traverseBackendDAEVars(vars,createVarNominalAssert,varasserts);
-        simvarasserts = List.map(varasserts1,dlowAlgToSimEqSystem);
+        simvarasserts = List.map(varasserts,dlowAlgToSimEqSystem);
         
         parameterEquations = listAppend(parameterEquations, inalgs);
         parameterEquations = listAppend(parameterEquations, simvarasserts);
