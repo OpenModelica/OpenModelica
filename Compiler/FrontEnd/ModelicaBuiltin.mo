@@ -77,24 +77,28 @@ function ceil
   input Real x;
   output Real y;
 external "builtin";
+annotation(Info="<html>the smallest integral value not less than <pre>x</pre>.</html>");
 end ceil;
 
 function floor
   input Real x;
   output Real y;
 external "builtin";
+annotation(Info="<html>the largest integral value not less than <pre>x</pre>.</html>");
 end floor;
 
 function integer
   input Real x;
   output Integer y;
 external "builtin";
+annotation(Info="<html>the largest integral value not less than <pre>x</pre>.</html>");
 end integer;
 
 function sqrt
   input Real x(unit="'p");
   output Real y(unit="'p(1/2)");
 external "builtin";
+annotation(Info="<html>the square root function is defined for <pre>x >= 0</pre></html>");
 end sqrt;
 
 function sign
@@ -184,25 +188,29 @@ external "builtin";
 end atan;
 
 function atan2
-  input Real x1;
-  input Real x2;
-  output Real y;
+  input Real y;
+  input Real x;
+  output Real z;
 external "builtin";
+annotation(Info="<html>
+calculates the principal value of the arc tangent of <pre>y/x</pre>, using
+the signs of the two arguments to determine the quadrant of the result.
+</html>");
 end atan2;
 
-function exp
+function exp "base-e exponential function"
   input Real x(unit="1");
   output Real y(unit="1");
 external "builtin";
 end exp;
 
-function log
+function log "natural logarithmic function (base-e)"
   input Real x(unit="1");
   output Real y(unit="1");
 external "builtin";
 end log;
 
-function log10
+function log10 "base-10 logarithmic function"
   input Real x(unit="1");
   output Real y(unit="1");
 external "builtin";
@@ -280,6 +288,12 @@ function diagonal
 end diagonal;
 
 function cardinality
+  annotation(Info="<html>
+  The cardinality operator is <b>deprecated</b>. It will be removed in a future Modelica release.
+  Returns the number of (inside and outside) occurrences of connector instance c in a connect-equation as an Integer number.
+  </html>");
+  input Real c;
+  output Integer numOccurances;
   external "builtin";
 end cardinality;
 
@@ -377,6 +391,7 @@ encapsulated package Subtask
   end decouple;
 
   function activated
+    output Boolean activated;
     external "builtin";
   end activated;
 
