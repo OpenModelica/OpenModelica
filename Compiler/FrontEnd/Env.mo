@@ -116,6 +116,7 @@ public uniontype Cache
     Option<Env> initialEnv "and the initial environment";
     array<DAE.FunctionTree> functions "set of Option<DAE.Function>; NONE() means instantiation started; SOME() means it's finished";
     StructuralParameters evaluatedParams "ht of prefixed crefs and a stack of evaluated but not yet prefix crefs";
+    Absyn.Path modelName "name of the model being instantiated";
   end CACHE;
 end Cache;
 
@@ -212,7 +213,7 @@ algorithm
   envCache := Util.if_(OptManager.getOption("envCache"),SOME(arr),NONE());
   instFuncs := arrayCreate(1, DAEUtil.emptyFuncTree);
   ht := (HashTable.emptyHashTableSized(BaseHashTable.lowBucketSize),{});
-  cache := CACHE(envCache,NONE(),instFuncs,ht);
+  cache := CACHE(envCache,NONE(),instFuncs,ht,Absyn.IDENT("##UNDEFINED##"));
 end emptyCache;
 
 public constant String forScopeName="$for loop scope$" "a unique scope used in for equations";
@@ -1323,9 +1324,10 @@ algorithm
       Option<array<EnvCache>> envCache;
       array<DAE.FunctionTree> ef;
       StructuralParameters ht;
+      Absyn.Path p;
 
-    case (CACHE(envCache,_,ef,ht),env)
-      then CACHE(envCache,SOME(env),ef,ht);
+    case (CACHE(envCache,_,ef,ht,p),env)
+      then CACHE(envCache,SOME(env),ef,ht,p);
   end match;
 end setCachedInitialEnv;
 
@@ -1619,7 +1621,7 @@ algorithm
       String s,s2;
     
     // some cache present
-    case CACHE(SOME(arr),_,ef,_)
+    case CACHE(envCache=SOME(arr),functions=ef)
       equation
         ENVCACHE(tree) = arr[1];
         s = printCacheTreeStr(tree,1);
@@ -2473,16 +2475,17 @@ algorithm
       array<DAE.FunctionTree> ef;
       Option<Env> ienv;
       StructuralParameters ht;
+      Absyn.Path p;
       /* Don't overwrite SOME() with NONE() */
     case (cache, func)
       equation
         checkCachedInstFuncGuard(cache, func);
       then cache;
 
-    case (CACHE(envCache,ienv,ef,ht),func as Absyn.FULLYQUALIFIED(_))
+    case (CACHE(envCache,ienv,ef,ht,p),func as Absyn.FULLYQUALIFIED(_))
       equation
         ef = arrayUpdate(ef,1,DAEUtil.avlTreeAdd(arrayGet(ef, 1),func,NONE()));
-      then CACHE(envCache,ienv,ef,ht);
+      then CACHE(envCache,ienv,ef,ht,p);
     // Non-FQ paths mean aliased functions; do not add these to the cache
     case (cache,_) then (cache);
   end matchcontinue;
@@ -2500,10 +2503,11 @@ algorithm
       array<DAE.FunctionTree> ef;
       Option<Env> ienv;
       StructuralParameters ht;
-    case (CACHE(envCache,ienv,ef,ht),funcs)
+      Absyn.Path p;
+    case (CACHE(envCache,ienv,ef,ht,p),funcs)
       equation
         ef = arrayUpdate(ef,1,DAEUtil.addDaeFunction(funcs, arrayGet(ef, 1)));
-      then CACHE(envCache,ienv,ef,ht);
+      then CACHE(envCache,ienv,ef,ht,p);
   end match;
 end addDaeFunction;
 
@@ -2519,10 +2523,11 @@ algorithm
       array<DAE.FunctionTree> ef;
       Option<Env> ienv;
       StructuralParameters ht;
-    case (CACHE(envCache,ienv,ef,ht),funcs)
+      Absyn.Path p;
+    case (CACHE(envCache,ienv,ef,ht,p),funcs)
       equation
         ef = arrayUpdate(ef,1,DAEUtil.addDaeExtFunction(funcs, arrayGet(ef,1)));
-      then CACHE(envCache,ienv,ef,ht);
+      then CACHE(envCache,ienv,ef,ht,p);
   end match;
 end addDaeExtFunction;
 
@@ -2611,10 +2616,11 @@ algorithm
       HashTable.HashTable ht;
       list<list<DAE.ComponentRef>> st;
       list<DAE.ComponentRef> crs;
-    case (CACHE(envCache,initialEnv,functions,(ht,crs::st)),SCode.PARAM(),cr)
+      Absyn.Path p;
+    case (CACHE(envCache,initialEnv,functions,(ht,crs::st),p),SCode.PARAM(),cr)
       equation
         str = ComponentReference.printComponentRefStr(cr);
-      then CACHE(envCache,initialEnv,functions,(ht,(cr::crs)::st));
+      then CACHE(envCache,initialEnv,functions,(ht,(cr::crs)::st),p);
     else cache;
   end match;
 end addEvaluatedCref;
@@ -2631,9 +2637,27 @@ public function printNumStructuralParameters
 protected
   list<DAE.ComponentRef> crs;
 algorithm
-  CACHE(_,_,_,(_,crs::_)) := cache;
+  CACHE(evaluatedParams=(_,crs::_)) := cache;
   print("printNumStructuralParameters: " +& intString(listLength(crs)) +& "\n");
 end printNumStructuralParameters;
+
+public function setCacheClassName
+  input Cache inCache;
+  input Absyn.Path p;
+  output Cache outCache;
+algorithm
+  outCache := match(inCache,p)
+    local
+      Option<array<EnvCache>> envCache;
+      array<DAE.FunctionTree> ef;
+      StructuralParameters ht;
+      Absyn.Path p;
+      Option<Env> ienv;
+
+    case (CACHE(envCache,ienv,ef,ht,_),p)
+      then CACHE(envCache,ienv,ef,ht,p);
+  end match;
+end setCacheClassName;
 
 end Env;
 

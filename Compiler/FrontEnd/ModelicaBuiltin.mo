@@ -411,6 +411,45 @@ function classDirectory "Not standard Modelica"
 external "builtin";
 end classDirectory;
 
+function getInstanceName
+  output String instanceName;
+external "builtin";
+  annotation(Info="<html>
+<h4>
+Modelica definition:
+</h4>
+<p>
+Returns a string with the name of the model/block that is simulated,
+appended with the fully qualified name of the instance in which this
+function is called.
+</p>
+
+<p>
+If MyLib.Vehicle is simulated, the call of <pre>getInstanceName()</pre> might return:
+  <pre>Vehicle.engine.controller</pre>
+</p>
+<p>
+Outside of a model or block, the return value is not specified.
+</p>
+
+<h4>
+OpenModelica specifics:
+</h4>
+
+<p>
+When OpenModelica does not have a prefix (e.g. in functions or packages),
+it returns is the name of the model that is simulated suffixed by
+<pre><Prefix.NOPRE()></pre>, i.e. <pre>Vehicle.<Prefix.NOPRE()></pre>.
+</p>
+
+<p>
+If no class was being simulated, the last simulated class or a default will be used
+(applicable for functions called from the scripting environment).
+</p>
+</html>
+");
+end getInstanceName;
+
 /* Actually contains more...
 record SimulationResult
   String resultFile;

@@ -5464,6 +5464,30 @@ algorithm
   end matchcontinue;
 end elabBuiltinString;
 
+protected function elabBuiltinGetInstanceName
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;
+  input Boolean inBoolean;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+protected
+  String str;
+  Absyn.Path name;
+algorithm
+  {} := inAbsynExpLst;
+  {} := inNamedArg;
+  Env.CACHE(modelName=name) := inCache;
+  outCache := inCache;
+  str := Absyn.pathLastIdent(name) +& "." +& PrefixUtil.printPrefixStr(inPrefix);
+  outExp := DAE.SCONST(str);
+  outProperties := DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_CONST());
+end elabBuiltinGetInstanceName;
+
 protected function elabBuiltinVector "function: elabBuiltinVector
   author: PA
 
@@ -5946,6 +5970,7 @@ algorithm
     case "Integer" then elabBuiltinIntegerEnum;
     case "inStream" then elabBuiltinInStream;
     case "actualStream" then elabBuiltinActualStream;
+    case "getInstanceName" then elabBuiltinGetInstanceName;
   end match;
 end elabBuiltinHandler;
 

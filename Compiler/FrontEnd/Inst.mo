@@ -311,6 +311,7 @@ algorithm
 
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.IDENT(name = name2))) /* top level class */
       equation
+        cache = Env.setCacheClassName(cache,path);
         cdecls = SCodeFlatten.flattenClassInProgram(inPath, cdecls);
         (cache,env) = Builtin.initialEnv(cache);
         (cache,env_1,ih,dae1) = instClassDecls(cache, env, ih, cdecls, path);
@@ -331,6 +332,7 @@ algorithm
 
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name))) /* class in package */
       equation
+        cache = Env.setCacheClassName(cache,path);
         cdecls = SCodeFlatten.flattenClassInProgram(inPath, cdecls);
         pathstr = Absyn.pathString(path);
                 
@@ -16696,9 +16698,10 @@ protected
   array<DAE.FunctionTree> f;
   HashTable.HashTable ht;
   list<list<DAE.ComponentRef>> crs;
+  Absyn.Path p;
 algorithm
-  Env.CACHE(ec,ie,f,(ht,crs)) := cache;
-  ocache := Env.CACHE(ec,ie,f,(ht,{}::crs));
+  Env.CACHE(ec,ie,f,(ht,crs),p) := cache;
+  ocache := Env.CACHE(ec,ie,f,(ht,{}::crs),p);
 end pushStructuralParameters;
 
 public function popStructuralParameters
@@ -16713,10 +16716,11 @@ protected
   HashTable.HashTable ht;
   list<DAE.ComponentRef> crs;
   list<list<DAE.ComponentRef>> crss;
+  Absyn.Path p;
 algorithm
-  Env.CACHE(ec,ie,f,(ht,crs::crss)) := cache;
+  Env.CACHE(ec,ie,f,(ht,crs::crss),p) := cache;
   ht := prefixAndAddCrefsToHt(cache,ht,pre,crs);
-  ocache := Env.CACHE(ec,ie,f,(ht,crss));
+  ocache := Env.CACHE(ec,ie,f,(ht,crss),p);
 end popStructuralParameters;
 
 protected function prefixAndAddCrefsToHt
