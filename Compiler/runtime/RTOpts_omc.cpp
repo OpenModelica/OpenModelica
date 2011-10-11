@@ -41,6 +41,10 @@ extern int RTOpts_debugFlag(const char* flag) {
   return check_debug_flag(flag)!=0;
 }
 
+extern int RTOpts_setDebugFlag(const char* flag, int value) {
+  return set_debug_flag(flag, value);
+}
+
 extern modelica_metatype RTOpts_args(modelica_metatype args) {
   modelica_metatype res = mmc_mk_nil();
 
