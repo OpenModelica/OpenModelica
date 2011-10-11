@@ -450,6 +450,17 @@ If no class was being simulated, the last simulated class or a default will be u
 ");
 end getInstanceName;
 
+function spatialDistribution "Modelica 3.3 operator; not yet implemented"
+  input Real in0;
+  input Real x;
+  input Real initialPoints[:];
+  input Real initialValues[size(initialPoints)];
+  input Real in1;
+  input Boolean positiveVelocity;
+  output Real val;
+external "builtin";
+end spatialDistribution;
+
 /* Actually contains more...
 record SimulationResult
   String resultFile;
