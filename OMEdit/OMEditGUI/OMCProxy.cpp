@@ -505,6 +505,10 @@ void OMCProxy::loadStandardLibrary(QStringList &succeeded, QStringList &failed)
       settings.setValue("ModelicaReference","default");
       libraries.prepend("ModelicaReference");
     }
+    if (!settings.contains("ModelicaServices")) {
+      settings.setValue("ModelicaServices","default");
+      libraries.prepend("ModelicaServices");
+    }
 
     foreach (QString lib, libraries) {
       QString version = settings.value(lib).toString();
