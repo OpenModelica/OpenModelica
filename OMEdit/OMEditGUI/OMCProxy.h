@@ -63,6 +63,8 @@ private:
     QList<QString> mCommandsList;
     int mCurrentCommandIndex;
     QMap<QString, QString> mCommandsMap;
+    QFile mCommandsLogFile;
+    QTextStream mCommandsLogFileTextStream;
 public:
     OMCProxy(MainWindow *pParent, bool displayErrors = true);
     ~OMCProxy();
@@ -72,6 +74,7 @@ public:
     QString getCommandFromMap(QString expression);
     void setExpression(QString expression);
     QString getExpression();
+    void writeCommandLog(QString expression);
 
     MainWindow *mpParentMainWindow;
     enum mModelicaAnnotationVersion {ANNOTATION_VERSION2X, ANNOTATION_VERSION3X};

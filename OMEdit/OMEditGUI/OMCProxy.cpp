@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linkoping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -55,8 +55,7 @@ using namespace OMPlot;
 //! @param pParent is the pointer to MainWindow.
 //! @param displayErrors is the boolean variable used for displaying errors.
 OMCProxy::OMCProxy(MainWindow *pParent, bool displayErrors)
-    : mOMC(0), mHasInitialized(false),
-      mName(Helper::omcServerName) ,mResult(""), mDisplayErrors(displayErrors)
+    : mOMC(0), mHasInitialized(false), mName(Helper::omcServerName) ,mResult(""), mDisplayErrors(displayErrors)
 {
     this->mpParentMainWindow = pParent;
     this->mAnnotationVersion = OMCProxy::ANNOTATION_VERSION3X;
@@ -152,6 +151,18 @@ QString OMCProxy::getExpression()
     return mExpression;
 }
 
+//! Writes the commands and their response to the omeditcommands.log file.
+void OMCProxy::writeCommandLog(QString expression)
+{
+    if (mCommandsLogFileTextStream.device())
+    {
+        mCommandsLogFileTextStream << expression;
+        mCommandsLogFileTextStream << "\n";
+        mCommandsLogFileTextStream << getResult();
+        mCommandsLogFileTextStream << "\n\n";
+    }
+}
+
 //! Starts the OpenModelica Compiler.
 bool OMCProxy::startServer()
 {
@@ -160,13 +171,13 @@ bool OMCProxy::startServer()
         QString msg;
         const char *omhome = getenv("OPENMODELICAHOME");
         QString omcPath;
-        #ifdef WIN32
-          if (!omhome)
+#ifdef WIN32
+        if (!omhome)
             throw std::runtime_error(GUIMessages::getMessage(GUIMessages::OPEN_MODELICA_HOME_NOT_FOUND).toStdString());
-          omcPath = QString( omhome ) + "/bin/omc.exe";
-        #else /* unix */
-          omcPath = (omhome ? QString(omhome)+"/bin/omc" : QString(CONFIG_DEFAULT_OPENMODELICAHOME) + "/bin/omc");
-        #endif
+        omcPath = QString( omhome ) + "/bin/omc.exe";
+#else /* unix */
+        omcPath = (omhome ? QString(omhome)+"/bin/omc" : QString(CONFIG_DEFAULT_OPENMODELICAHOME) + "/bin/omc");
+#endif
 
         // Check the IOR file created by omc.exe
         QFile objectRefFile;
@@ -176,13 +187,13 @@ bool OMCProxy::startServer()
         else
             fileIdentifier = QString("temp-").append(qApp->sessionId().append(QTime::currentTime().toString(tr("hh:mm:ss:zzz")).remove(":")));
 
-        #ifdef WIN32 // Win32
-            objectRefFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.objid.").append(this->mName).append(fileIdentifier));
-        #else // UNIX environment
-            char *user = getenv("USER");
-            if (!user) { user = "nobody"; }
-            objectRefFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.").append(*(new QString(user))).append(".objid.").append(this->mName).append(fileIdentifier));
-        #endif
+#ifdef WIN32 // Win32
+        objectRefFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.objid.").append(this->mName).append(fileIdentifier));
+#else // UNIX environment
+        char *user = getenv("USER");
+        if (!user) { user = "nobody"; }
+        objectRefFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.").append(*(new QString(user))).append(".objid.").append(this->mName).append(fileIdentifier));
+#endif
 
         if (objectRefFile.exists())
             objectRefFile.remove();
@@ -262,6 +273,12 @@ bool OMCProxy::startServer()
     // set the OpenModelicaLibrary variable.
     sendCommand("getModelicaPath()");
     Helper::OpenModelicaLibrary = StringHandler::removeFirstLastQuotes(getResult());
+    // create a file to write OMEdit commands log
+    mCommandsLogFile.setFileName(tmpPath + QDir::separator() + "omeditcommands.log");
+    if (mCommandsLogFile.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        mCommandsLogFileTextStream.setDevice(&mCommandsLogFile);
+    }
     return true;
 }
 
@@ -270,6 +287,7 @@ bool OMCProxy::startServer()
 void OMCProxy::stopServer()
 {
     sendCommand("quit()");
+    mCommandsLogFile.close();
 }
 
 //! Sends the user commands to OMC in a thread.
@@ -295,11 +313,13 @@ void OMCProxy::sendCommand(const QString expression)
             while (future.isRunning())
                 qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
             future.waitForFinished();
+            writeCommandLog(expression);
             logOMCMessages(expression);
         }
         else
         {
             mResult = QString::fromLocal8Bit(mOMC->sendExpression(getExpression().toLocal8Bit()));
+            writeCommandLog(expression);
             logOMCMessages(expression);
         }
     }
@@ -336,6 +356,7 @@ QString OMCProxy::getResult()
     return mResult.trimmed();
 }
 
+//! writes OMC messages in OMC Logger window.
 void OMCProxy::logOMCMessages(QString expression)
 {
     // move the cursor down before adding to the logger.
@@ -498,21 +519,21 @@ void OMCProxy::loadStandardLibrary(QStringList &failed)
     QStringList libraries = settings.childKeys();
 
     if (!settings.contains("Modelica")) {
-      settings.setValue("Modelica","default");
-      libraries.prepend("Modelica");
+        settings.setValue("Modelica","default");
+        libraries.prepend("Modelica");
     }
     if (!settings.contains("ModelicaReference")) {
-      settings.setValue("ModelicaReference","default");
-      libraries.prepend("ModelicaReference");
+        settings.setValue("ModelicaReference","default");
+        libraries.prepend("ModelicaReference");
     }
 
     foreach (QString lib, libraries) {
-      QString version = settings.value(lib).toString();
-      QString command = "loadModel(" + lib + ",{\"" + version + "\"})";
-      sendCommand(command);
-      if (!StringHandler::unparseBool(getResult())) {
-        failed.prepend(lib);
-      }
+        QString version = settings.value(lib).toString();
+        QString command = "loadModel(" + lib + ",{\"" + version + "\"})";
+        sendCommand(command);
+        if (!StringHandler::unparseBool(getResult())) {
+            failed.prepend(lib);
+        }
     }
 
     sendCommand("getNamedAnnotation(Modelica,version)");
@@ -520,12 +541,12 @@ void OMCProxy::loadStandardLibrary(QStringList &failed)
     double version = versionStr.toDouble();
 
     if (version >= 3.0 && version < 4.0) {
-      deleteClass("Modelica.Fluid");
+        deleteClass("Modelica.Fluid");
     } else {
-      if (version < 2) sendCommand("setAnnotationVersion(\"1.x\")");
-      else if (version < 3) sendCommand("setAnnotationVersion(\"2.x\")");
-      QMessageBox::warning(mpParentMainWindow, Helper::applicationName + " requires Modelica 3 annotations",
-                      "Modelica Standard Library version " + versionStr + " is unsupported", "OK");
+        if (version < 2) sendCommand("setAnnotationVersion(\"1.x\")");
+        else if (version < 3) sendCommand("setAnnotationVersion(\"2.x\")");
+        QMessageBox::warning(mpParentMainWindow, Helper::applicationName + " requires Modelica 3 annotations",
+                             "Modelica Standard Library version " + versionStr + " is unsupported", "OK");
     }
 }
 
@@ -584,39 +605,39 @@ bool OMCProxy::isPackage(QString className)
 //! Returns true if the given type is one of the predefined types in Modelica.
 bool OMCProxy::isBuiltinType(QString typeName)
 {
-  return (typeName == "Real" ||
-          typeName == "Integer" ||
-          typeName == "String" ||
-          typeName == "Boolean");
+    return (typeName == "Real" ||
+            typeName == "Integer" ||
+            typeName == "String" ||
+            typeName == "Boolean");
 }
 
 bool OMCProxy::isWhat(int type, QString className)
 {
     switch (type)
     {
-    case StringHandler::MODEL:
-        sendCommand("isModel(" + className + ")");
-        break;
-    case StringHandler::CLASS:
-        sendCommand("isClass(" + className + ")");
-        break;
-    case StringHandler::CONNECTOR:
-        sendCommand("isConnector(" + className + ")");
-        break;
-    case StringHandler::RECORD:
-        sendCommand("isRecord(" + className + ")");
-        break;
-    case StringHandler::BLOCK:
-        sendCommand("isBlock(" + className + ")");
-        break;
-    case StringHandler::FUNCTION:
-        sendCommand("isFunction(" + className + ")");
-        break;
-    case StringHandler::PACKAGE:
-        sendCommand("isPackage(" + className + ")");
-        break;
-    default:
-        return false;
+        case StringHandler::MODEL:
+            sendCommand("isModel(" + className + ")");
+            break;
+        case StringHandler::CLASS:
+            sendCommand("isClass(" + className + ")");
+            break;
+        case StringHandler::CONNECTOR:
+            sendCommand("isConnector(" + className + ")");
+            break;
+        case StringHandler::RECORD:
+            sendCommand("isRecord(" + className + ")");
+            break;
+        case StringHandler::BLOCK:
+            sendCommand("isBlock(" + className + ")");
+            break;
+        case StringHandler::FUNCTION:
+            sendCommand("isFunction(" + className + ")");
+            break;
+        case StringHandler::PACKAGE:
+            sendCommand("isPackage(" + className + ")");
+            break;
+        default:
+            return false;
     }
 
     if (getResult().contains("true"))
@@ -968,29 +989,29 @@ QString OMCProxy::getDocumentationAnnotation(QString className)
         QStringList lst = StringHandler::unparseStrings(expressionResult);
         QString doc;
         foreach (QString expressionResult, lst) {
-          expressionResult = expressionResult.replace("Modelica://", "Modelica:/");
-          int i,j;
-          /*
+            expressionResult = expressionResult.replace("Modelica://", "Modelica:/");
+            int i,j;
+            /*
            * Documentation may have the form
            * text <HTML>...</html> text <html>...</HTML> [...]
            * Nothing is standardized, but we will treat non-html tags as <pre>-formatted text
            */
-          while (1) {
-            expressionResult = expressionResult.trimmed();
-            i = expressionResult.indexOf("<html>", 0, Qt::CaseInsensitive);
-            if (i == -1) break;
-            if (i != 0) {
-              doc += "<pre>" + expressionResult.left(i).replace("<","&lt;").replace(">","&gt;") + "</pre>";
-              expressionResult = expressionResult.remove(i);
+            while (1) {
+                expressionResult = expressionResult.trimmed();
+                i = expressionResult.indexOf("<html>", 0, Qt::CaseInsensitive);
+                if (i == -1) break;
+                if (i != 0) {
+                    doc += "<pre>" + expressionResult.left(i).replace("<","&lt;").replace(">","&gt;") + "</pre>";
+                    expressionResult = expressionResult.remove(i);
+                }
+                j = expressionResult.indexOf("</html>", 0, Qt::CaseInsensitive);
+                if (j == -1) break;
+                doc += expressionResult.leftRef(j+7);
+                expressionResult = expressionResult.mid(j+7,-1);
             }
-            j = expressionResult.indexOf("</html>", 0, Qt::CaseInsensitive);
-            if (j == -1) break;
-            doc += expressionResult.leftRef(j+7);
-            expressionResult = expressionResult.mid(j+7,-1);
-          }
-          if (expressionResult.length()) {
-            doc += "<pre>" + expressionResult.replace("<","&lt;").replace(">","&gt;") + "</pre>";
-          }
+            if (expressionResult.length()) {
+                doc += "<pre>" + expressionResult.replace("<","&lt;").replace(">","&gt;") + "</pre>";
+            }
         }
         addExpressionInCommandMap(expression, doc);
         return doc;
@@ -1413,13 +1434,13 @@ void CustomExpressionBox::keyPressEvent(QKeyEvent *event)
 {
     switch (event->key())
     {
-    case Qt::Key_Up:
-        mpParentOMCProxy->getPreviousCommand();
-        break;
-    case Qt::Key_Down:
-        mpParentOMCProxy->getNextCommand();
-        break;
-    default:
-        QLineEdit::keyPressEvent(event);
+        case Qt::Key_Up:
+            mpParentOMCProxy->getPreviousCommand();
+            break;
+        case Qt::Key_Down:
+            mpParentOMCProxy->getNextCommand();
+            break;
+        default:
+            QLineEdit::keyPressEvent(event);
     }
 }
