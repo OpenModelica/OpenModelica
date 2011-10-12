@@ -6341,8 +6341,8 @@ algorithm
     "removeEqualFunctionCalls",
     "partitionIndependentBlocks",
     "expandDerOperator",
-    "removeSimpleEquations",
-    "collapseIndependentBlocks"
+    "removeSimpleEquations"
+    // "collapseIndependentBlocks"
   });
 end getPreOptModulesString;
 

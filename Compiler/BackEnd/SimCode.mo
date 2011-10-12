@@ -2188,8 +2188,7 @@ algorithm
 
         // generate jacobian or linear model matrices
         // can be activeted by debug flag "+d=jacobian|linearization"        
-        LinearMatrices = createJacobianCC(functionTree,dlow);
-        LinearMatrices = createLinearModelMatrixes(functionTree,dlow,LinearMatrices);       
+        LinearMatrices = createJacobianLinearCode(functionTree,dlow);
         modelInfo = expandModelInfoVars(LinearMatrices,modelInfo);
         
         Debug.fcall("execHash",print, "*** SimCode -> generate cref2simVar hastable: " +& realString(clock()) +& "\n" );
@@ -2362,6 +2361,28 @@ algorithm
 end matchcontinue;
 end appendAllVar;
 
+protected function createJacobianLinearCode
+  input DAE.FunctionTree functions;
+  input BackendDAE.BackendDAE dlow;
+  output list<JacobianMatrix> res;
+algorithm
+  res := matchcontinue (functions,dlow)
+    case (functions,dlow)
+      equation
+        true = RTOpts.debugFlag("jacobian") or RTOpts.debugFlag("linearization");
+        dlow = BackendDAEOptimize.collapseIndependentBlocks(dlow,functions);
+        // The jacobian code requires single systems; I did not rewrite it to take advantage of any parallelism in the code
+        res = createJacobianCC(functions,dlow);
+        res = createLinearModelMatrixes(functions,dlow,res);
+      then res;
+    else
+      equation
+        false = RTOpts.debugFlag("jacobian") or RTOpts.debugFlag("linearization");
+        res = {({},{},"A"),({},{},"B"),({},{},"C"),({},{},"D")};
+      then res;
+  end matchcontinue;
+end createJacobianLinearCode;
+
 protected function createLinearModelMatrixes
 "fuction creates the linear model matrices column-wise
  author: wbraun"
@@ -2446,7 +2467,7 @@ algorithm
         linearModelMatrices;
     case (_, _, _)
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Generation of LinearModel Matrixes code using templates failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"Generation of LinearModel Matrixes code (SimCode.createLinearModelMatrixes) failed"});
       then
         fail();
   end matchcontinue;
@@ -2520,7 +2541,7 @@ algorithm
         linearModelMatrices;
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Generation of Jacobian Matrix code using templates failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"Generation of Jacobian Matrix code (SimCode.createJacobianCC) failed"});
       then
         fail();
   end matchcontinue;
