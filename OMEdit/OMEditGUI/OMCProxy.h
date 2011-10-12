@@ -51,7 +51,6 @@ class OMCProxy : public QObject
 private:
     OmcCommunication_var mOMC;
     bool mHasInitialized;
-    bool mIsStandardLibraryLoaded;
     QString mName;
     QString mResult;
     QString mExpression;
@@ -94,8 +93,7 @@ public:
     QString getAnnotationVersion();
     bool setEnvironmentVar(QString name, QString value);
     QString getEnvironmentVar(QString name);
-    QStringList loadStandardLibrary();
-    bool isStandardLibraryLoaded();
+    void loadStandardLibrary(QStringList &libs,QStringList &failed);
     QStringList getClassNames(QString className = QString());
     QStringList getClassNamesRecursive(QString className);
     QStringList getClassInformation(QString modelName);

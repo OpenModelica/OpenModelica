@@ -55,7 +55,7 @@ using namespace OMPlot;
 //! @param pParent is the pointer to MainWindow.
 //! @param displayErrors is the boolean variable used for displaying errors.
 OMCProxy::OMCProxy(MainWindow *pParent, bool displayErrors)
-    : mOMC(0), mHasInitialized(false), mIsStandardLibraryLoaded(false),
+    : mOMC(0), mHasInitialized(false),
       mName(Helper::omcServerName) ,mResult(""), mDisplayErrors(displayErrors)
 {
     this->mpParentMainWindow = pParent;
@@ -490,21 +490,36 @@ QString OMCProxy::getEnvironmentVar(QString name)
 }
 
 //! Loads the OpenModelica Standard Library.
-QStringList OMCProxy::loadStandardLibrary()
+void OMCProxy::loadStandardLibrary(QStringList &succeeded, QStringList &failed)
 {
-    QStringList empty;
-    QStringList res;
-    sendCommand("loadModel(Modelica)");
-    if (!StringHandler::unparseBool(getResult())) return empty;
+    QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
+
+    settings.beginGroup("libraries");
+    QStringList libraries = settings.childKeys();
+
+    if (!settings.contains("Modelica")) {
+      settings.setValue("Modelica","default");
+      libraries.prepend("Modelica");
+    }
+    if (!settings.contains("ModelicaReference")) {
+      settings.setValue("ModelicaReference","default");
+      libraries.prepend("ModelicaReference");
+    }
+
+    foreach (QString lib, libraries) {
+      QString version = settings.value(lib).toString();
+      QString command = "loadModel(" + lib + ",{\"" + version + "\"})";
+      sendCommand(command);
+      if (StringHandler::unparseBool(getResult())) {
+        succeeded.prepend(lib);
+      } else {
+        failed.prepend(lib);
+      }
+    }
+
     sendCommand("getNamedAnnotation(Modelica,version)");
     QString versionStr = StringHandler::unparseStrings(getResult()).at(0);
     double version = versionStr.toDouble();
-    res = getClassNames();
-    sendCommand("loadModel(ModelicaReference)");
-    if (!StringHandler::unparseBool(getResult())) {
-      return empty;
-    }
-    res.append("ModelicaReference");
 
     if (version >= 3.0 && version < 4.0) {
       deleteClass("Modelica.Fluid");
@@ -515,15 +530,7 @@ QStringList OMCProxy::loadStandardLibrary()
                       "Modelica Standard Library version " + versionStr + " is unsupported", "OK");
     }
  
-    mIsStandardLibraryLoaded = true;
-    res.sort();
-    return res;
-}
-
-//! Checks whether the OpenModelica Standard Library is loaded or not.
-bool OMCProxy::isStandardLibraryLoaded()
-{
-    return mIsStandardLibraryLoaded;
+    succeeded.sort();
 }
 
 //! Gets the list of classes from OMC.

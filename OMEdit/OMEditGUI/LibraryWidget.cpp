@@ -621,24 +621,26 @@ void LibraryTree::createActions()
 void LibraryTree::addModelicaStandardLibrary()
 {
     // load Modelica Standard Library.
-    QStringList libs = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->loadStandardLibrary();
+    QStringList libs;
+    QStringList failed;
+    mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->loadStandardLibrary(libs,failed);
 
-    if (mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->isStandardLibraryLoaded())
-    {
-        foreach (QString lib, libs) {
-            QStringList info = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(lib);
-            LibraryTreeNode *newTreePost = new LibraryTreeNode(lib, QString(""),lib , StringHandler::createTooltip(info, lib, lib), this);
-            int classType = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassRestriction(lib);
-            newTreePost->mType = classType;
-            newTreePost->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
-            insertTopLevelItem(0, newTreePost);
+    foreach (QString lib, failed) {
+        mpParentLibraryWidget->mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(QString("Failed to load library " + lib));
+    }
+    foreach (QString lib, libs) {
+        QStringList info = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(lib);
+        LibraryTreeNode *newTreePost = new LibraryTreeNode(lib, QString(""),lib , StringHandler::createTooltip(info, lib, lib), this);
+        int classType = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassRestriction(lib);
+        newTreePost->mType = classType;
+        newTreePost->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+        insertTopLevelItem(0, newTreePost);
 
-            // get the Icon for Modelica tree node
-            LibraryLoader *libraryLoader = new LibraryLoader(newTreePost, lib, this);
-            libraryLoader->start(QThread::HighestPriority);
-            while (libraryLoader->isRunning())
-                qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-        }
+        // get the Icon for Modelica tree node
+        LibraryLoader *libraryLoader = new LibraryLoader(newTreePost, lib, this);
+        libraryLoader->start(QThread::HighestPriority);
+        while (libraryLoader->isRunning())
+            qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
     }
 }
 
