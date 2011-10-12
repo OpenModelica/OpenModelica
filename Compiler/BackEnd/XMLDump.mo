@@ -1046,7 +1046,7 @@ the relative tag is not printed.
   input Boolean addMathMLCode;
   input Boolean dumpResiduals;
 algorithm
-  _ := match (inBackendDAE,functions,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals)
+  _ := matchcontinue (inBackendDAE,functions,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals)
     local
       list<BackendDAE.Var> vars,knvars,extvars;
 
@@ -1087,29 +1087,29 @@ algorithm
       list<DAE.Function> inFunctions;
 
       Boolean addOrInMatrix,addSolInfo,addMML,dumpRes;
-      BackendDAE.BackendDAEType btp;      
+      BackendDAE.BackendDAEType btp;
+      list<BackendDAE.EqSystem> systs;
 
-    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_orderedVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_orderedVars,varArr=varArr_orderedVars,bucketSize=bucketSize_orderedVars,numberOfVars=numberOfVars_orderedVars),eqns,_,_,_)::{},
+    case (BackendDAE.DAE(systs,
                  BackendDAE.SHARED(vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
                  vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
                  _,ieqns,reqns,ae,algs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls,btp)),inFunctions,addOrInMatrix,addSolInfo,addMML,dumpRes)
       equation
 
-        vars    = BackendDAEUtil.varList(vars_orderedVars);
         knvars  = BackendDAEUtil.varList(vars_knownVars);
         extvars = BackendDAEUtil.varList(vars_externalObject);
 
         Print.printBuf(HEADER);
         dumpStrOpenTag(DAE_OPEN);
-        dumpStrOpenTagAttr(VARIABLES, DIMENSION, intString(listLength(vars)+listLength(knvars)+listLength(extvars)));
+        dumpStrOpenTagAttr(VARIABLES, DIMENSION, intString(List.fold(List.map(systs,BackendDAEUtil.systemSize),intAdd,0)+listLength(knvars)+listLength(extvars)));
         //Bucket size info is no longer present.
-        dumpVars(vars,crefIdxLstArr_orderedVars,stringAppend(ORDERED,VARIABLES_),addMML);
+        
+        List.map1_0(systs,dumpOrderedVars,addMML);
         dumpVars(knvars,crefIdxLstArr_knownVars,stringAppend(KNOWN,VARIABLES_),addMML);
         dumpVars(extvars,crefIdxLstArr_externalObject,stringAppend(EXTERNAL,VARIABLES_),addMML);
         dumpExtObjCls(extObjCls,stringAppend(EXTERNAL,CLASSES_));
         dumpStrCloseTag(VARIABLES);
-        eqnsl  = BackendDAEUtil.equationList(eqns);
-        dumpEqns(eqnsl,EQUATIONS,addMML,dumpRes);
+        List.map2_0(systs,dumpOrderedEqs,addMML,dumpRes);
         reqnsl = BackendDAEUtil.equationList(reqns);
         dumpEqns(reqnsl,stringAppend(SIMPLE,EQUATIONS_),addMML,dumpRes);
         ieqnsl = BackendDAEUtil.equationList(ieqns);
@@ -1122,14 +1122,39 @@ algorithm
         dumpSolvingInfo(addOrInMatrix,addSolInfo,inBackendDAE);
         dumpStrCloseTag(DAE_CLOSE);
       then ();
-    case (_,_,_,_,_,_)
+    else
       equation
-        Debug.fprint("failtrace", "XMLDump.dumpBackendDAE failed\n");
+        Error.addMessage(Error.INTERNAL_ERROR, {"XMLDump.dumpBackendDAE failed"});
       then
         fail();
-  end match;
+  end matchcontinue;
 end dumpBackendDAE;
 
+protected function dumpOrderedVars
+  input BackendDAE.EqSystem syst;
+  input Boolean addMML;
+protected
+  BackendDAE.Variables vars_orderedVars;
+  list<BackendDAE.Var> vars;
+  array<list<BackendDAE.CrefIndex>> crefIdxLstArr_orderedVars;
+algorithm
+  BackendDAE.EQSYSTEM(orderedVars=vars_orderedVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_orderedVars)) := syst;
+  vars := BackendDAEUtil.varList(vars_orderedVars);
+  dumpVars(vars,crefIdxLstArr_orderedVars,stringAppend(ORDERED,VARIABLES_),addMML);
+end dumpOrderedVars;
+
+protected function dumpOrderedEqs
+  input BackendDAE.EqSystem syst;
+  input Boolean addMML;
+  input Boolean dumpRes;
+protected
+  BackendDAE.EquationArray eqns;
+  list<BackendDAE.Equation> eqnsl;
+algorithm
+  BackendDAE.EQSYSTEM(orderedEqs=eqns) := syst;
+  eqnsl := BackendDAEUtil.equationList(eqns);
+  dumpEqns(eqnsl,EQUATIONS,addMML,dumpRes);
+end dumpOrderedEqs;
 
 public function dumpDAEVariableAttributes "
 This function dump the attributes a variable could have,
