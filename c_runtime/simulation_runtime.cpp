@@ -659,6 +659,7 @@ startNonInteractiveSimulation(int argc, char**argv)
  * "euler" calls an Euler solver
  * "rungekutta" calls a fourth-order Runge-Kutta Solver
  * "dassl" & "dassl2" calls the same DASSL Solver with synchronous event handling
+ * "dopri5" calls an embedded DOPRI5(4)-solver with stepsize control
  */
 int
 callSolver(int argc, char**argv, string method, string outputFormat,
@@ -719,6 +720,11 @@ callSolver(int argc, char**argv, string method, string outputFormat,
     }
     num_jac_flag = 1;
     retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 3);
+  } else if (method == std::string("dopri5")) {
+       if (sim_verbose >= LOG_SOLVER) {
+       cout << "Recognized solver: " << method << "." << endl;
+       }
+       retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 6);
   } else if (method == std::string("inline-euler")) {
     if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-euler")) {
       cout << "Recognized solver: " << method
@@ -752,7 +758,7 @@ callSolver(int argc, char**argv, string method, string outputFormat,
 #endif
   } else {
     cout << "Unrecognized solver: " << method
-        << "; valid solvers are dassl,euler,rungekutta,dassl2,inline-euler or inline-rungekutta."
+        << "; valid solvers are dassl,euler,rungekutta,dopri5,inline-euler or inline-rungekutta."
         << endl;
     retVal = 1;
   }
@@ -994,7 +1000,7 @@ initRuntimeAndSimulation(int argc, char**argv)
 {
   if (flagSet("?", argc, argv) || flagSet("help", argc, argv)) {
     cout << "usage: " << argv[0]
-                              << " <-f initfile> <-r result file> -m solver:{dassl, dassl2, rungekutta, euler} <-interactive> <-port value> "
+                              << " <-f initfile> <-r result file> -m solver:{dassl,euler,rungekutta,dopri5,inline-euler or inline-rungekutta} <-interactive> <-port value> "
                               << "-lv [LOG_STATS] [LOG_INIT] [LOG_RES_INIT] [LOG_SOLVER] [LOG_EVENTS] [LOG_NONLIN_SYS] [LOG_ZEROCROSSINGS] [LOG_DEBUG]"
                               << endl;
     EXIT(0);
