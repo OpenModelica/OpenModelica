@@ -561,6 +561,7 @@ algorithm
       Env env;
       SCodeEnv.Frame item_env;
       SCodeEnv.ClassType cls_ty;
+      list<SCodeEnv.Redeclaration> redecls;
 
     // no redeclares!
     case ({}, _, _, _) then (inItem, inTypeEnv);
@@ -572,7 +573,9 @@ algorithm
         // Merge the types environment with it's enclosing scopes to get the
         // enclosing scopes of the classes we need to replace.
         env = SCodeEnv.enterFrame(item_env, inTypeEnv);
-        env = List.fold(inRedeclares, replaceRedeclaredElementInEnv, env);
+        // Fully qualify the redeclares to make sure they can be found.
+        redecls = List.map1(inRedeclares, qualifyRedeclare, inVarEnv);
+        env = List.fold(redecls, replaceRedeclaredElementInEnv, env);
         item_env :: env = env;
       then
         (SCodeEnv.CLASS(cls, {item_env}, cls_ty), env);
