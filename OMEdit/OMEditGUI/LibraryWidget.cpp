@@ -621,13 +621,14 @@ void LibraryTree::createActions()
 void LibraryTree::addModelicaStandardLibrary()
 {
     // load Modelica Standard Library.
-    QStringList libs;
     QStringList failed;
-    mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->loadStandardLibrary(libs,failed);
+    mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->loadStandardLibrary(failed);
 
     foreach (QString lib, failed) {
         mpParentLibraryWidget->mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(QString("Failed to load library " + lib));
     }
+    QStringList libs = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassNames("");
+    libs.sort();
     foreach (QString lib, libs) {
         QStringList info = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(lib);
         LibraryTreeNode *newTreePost = new LibraryTreeNode(lib, QString(""),lib , StringHandler::createTooltip(info, lib, lib), this);

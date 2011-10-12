@@ -490,7 +490,7 @@ QString OMCProxy::getEnvironmentVar(QString name)
 }
 
 //! Loads the OpenModelica Standard Library.
-void OMCProxy::loadStandardLibrary(QStringList &succeeded, QStringList &failed)
+void OMCProxy::loadStandardLibrary(QStringList &failed)
 {
     QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
 
@@ -505,18 +505,12 @@ void OMCProxy::loadStandardLibrary(QStringList &succeeded, QStringList &failed)
       settings.setValue("ModelicaReference","default");
       libraries.prepend("ModelicaReference");
     }
-    if (!settings.contains("ModelicaServices")) {
-      settings.setValue("ModelicaServices","default");
-      libraries.prepend("ModelicaServices");
-    }
 
     foreach (QString lib, libraries) {
       QString version = settings.value(lib).toString();
       QString command = "loadModel(" + lib + ",{\"" + version + "\"})";
       sendCommand(command);
-      if (StringHandler::unparseBool(getResult())) {
-        succeeded.prepend(lib);
-      } else {
+      if (!StringHandler::unparseBool(getResult())) {
         failed.prepend(lib);
       }
     }
@@ -533,8 +527,6 @@ void OMCProxy::loadStandardLibrary(QStringList &succeeded, QStringList &failed)
       QMessageBox::warning(mpParentMainWindow, Helper::applicationName + " requires Modelica 3 annotations",
                       "Modelica Standard Library version " + versionStr + " is unsupported", "OK");
     }
- 
-    succeeded.sort();
 }
 
 //! Gets the list of classes from OMC.
