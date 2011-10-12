@@ -2862,12 +2862,12 @@ algorithm
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
-    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenclauses),eoc,btp))
+    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,arreqns,algorithms,einfo as BackendDAE.EVENT_INFO(zeroCrossingLst=zero_crossings,whenClauseLst=whenclauses),eoc,btp))
       equation
         eqs_lst = BackendDAEUtil.equationList(eqns);
         arreqns_lst = arrayList(arreqns);
         algs_lst = arrayList(algorithms);
-        (zero_crossings,eqs_lst1,arreqns_lst1,whenclauses1,algs_lst1) = findZeroCrossings2(vars, knvars,eqs_lst,arreqns_lst,0, whenclauses, 0, algs_lst,0,{},0);
+        (zero_crossings,eqs_lst1,arreqns_lst1,whenclauses1,algs_lst1) = findZeroCrossings2(vars, knvars,eqs_lst,arreqns_lst,0, whenclauses, 0, algs_lst,0,zero_crossings,0);
         eqns1 = BackendDAEUtil.listEquation(eqs_lst1);
         arreqns1 = listArray(arreqns_lst);
         algorithms1 = listArray(algs_lst1);
