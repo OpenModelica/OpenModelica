@@ -96,7 +96,10 @@ Adrian Pop, adrpo@ida.liu.se, date above.
 13. To create the fmigenerator.exe:
 	- Ctrl+B and type: fmi
 	  Will get you a trunk\build\bin\fmigenerator.exe
-
+	  
+14. To create the BreakProcess.exe:
+	- Ctrl+B and type: breakprocess
+	  Will get you a trunk\build\bin\BreakProcess.exe
 
 ***NOTES*** ON PROBLEMS WITH THE ECLIPSE PROJECT/OMDev BUILDER:
 ---------------------------------------------------------------

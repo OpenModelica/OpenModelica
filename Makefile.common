@@ -51,6 +51,10 @@ docs: mkbuilddirs omlibrary
 
 fmi:
 	(cd FMI/import/source; time $(MAKE) -f Makefile.omdev.mingw)
+
+breakprocess:
+	(cd testsuite/bootstrapping; time g++ BreakProcess.cpp -o BreakProcess -static-libgcc)
+	(cd testsuite/bootstrapping; cp BreakProcess.exe ../../$(builddir_bin)/)
 	
 testfast: test
 
