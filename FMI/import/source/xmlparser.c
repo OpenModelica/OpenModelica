@@ -274,7 +274,6 @@ const char * getDescription(ModelDescription* md, ScalarVariable* sv) {
 const char * getVariableAttributeString(ModelDescription* md, 
         fmiValueReference vr, Elm type, Att a){
     const char* value;
-    const char* declaredType;
     Type* tp; 
     ScalarVariable* sv = getVariable(md, vr, type);
     if (!sv) return NULL;
