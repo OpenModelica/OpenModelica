@@ -132,7 +132,7 @@ uniontype SimCode
     list<RecordDeclaration> recordDecls;
     list<String> externalFunctionIncludes;
     list<SimEqSystem> allEquations;
-    list<SimEqSystem> odeEquations;
+    list<list<SimEqSystem>> odeEquations;
     list<SimEqSystem> algebraicEquations;
     list<SimEqSystem> residualEquations;
     list<SimEqSystem> initialEquations;
@@ -2200,7 +2200,7 @@ algorithm
           recordDecls,
           externalFunctionIncludes,
           allEquations,
-          odeEquations,
+          {odeEquations},
           algebraicEquations,
           residualEquations,
           initialEquations,
@@ -11949,7 +11949,8 @@ algorithm
       list<DAE.Exp> literals "shared literals";
       list<RecordDeclaration> recordDecls;
       list<String> externalFunctionIncludes;
-      list<SimEqSystem> allEquations,odeEquations,algebraicEquations,residualEquations,initialEquations,parameterEquations,removedEquations,sampleEquations;
+      list<list<SimEqSystem>> odeEquations;
+      list<SimEqSystem> allEquations,algebraicEquations,residualEquations,initialEquations,parameterEquations,removedEquations,sampleEquations;
       list<DAE.Statement> algorithmAndEquationAsserts;
       list<BackendDAE.ZeroCrossing> zeroCrossings;
       list<SampleCondition> sampleConditions;
@@ -11984,8 +11985,8 @@ algorithm
         files = {};
         files = getFilesFromSimVars(vars, files);
         files = getFilesFromFunctions(functions, files);
-        files = getFilesFromSimEqSystems({allEquations,odeEquations,algebraicEquations,residualEquations,
-                                          initialEquations,parameterEquations,removedEquations,sampleEquations}, files);
+        files = getFilesFromSimEqSystems(allEquations::algebraicEquations::residualEquations::
+                                         initialEquations::parameterEquations::removedEquations::sampleEquations::odeEquations, files);
         files = getFilesFromStatements(algorithmAndEquationAsserts, files);
         files = getFilesFromWhenClauses(whenClauses, files);   
         files = getFilesFromExtObjInfo(extObjInfo, files);

@@ -1010,18 +1010,18 @@ template functionWhenReinitStatementElse(list<WhenOperator> reinits, Text &preEx
   >>
 end functionWhenReinitStatementElse;
 
-template functionODE(list<SimEqSystem> derivativEquations, Text method)
+template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
  "Generates function in simulation file."
 ::=
   let () = System.tmpTickReset(0)
   let &varDecls = buffer "" /*BUFD*/
-  let odeEquations = (derivativEquations |> eq =>
-      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/)
+  let odeEquations = (derivativEquations |> eqs => (eqs |> eq =>
+      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/); separator="\n")
     ;separator="\n")
   let &varDecls2 = buffer "" /*BUFD*/
-  let stateContPartInline = (derivativEquations |> eq =>
-      equation_(eq, contextInlineSolver, &varDecls2 /*BUFC*/)
-    ;separator="\n")    
+  let stateContPartInline = (derivativEquations |> eqs => (eqs |> eq =>
+      equation_(eq, contextInlineSolver, &varDecls2 /*BUFC*/); separator="\n")
+    ;separator="\n")
   <<
   int functionODE()
   {

@@ -65,7 +65,7 @@ package SimCode
       list<RecordDeclaration> recordDecls;
       list<String> externalFunctionIncludes;
       list<SimEqSystem> allEquations;
-      list<SimEqSystem> odeEquations;
+      list<list<SimEqSystem>> odeEquations;
       list<SimEqSystem> algebraicEquations;
       list<SimEqSystem> residualEquations;
       list<SimEqSystem> initialEquations;

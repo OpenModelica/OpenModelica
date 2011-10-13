@@ -3659,11 +3659,11 @@ template checkForDiscreteEvents(list<ComponentRef> discreteModelVars,SimCode sim
   >>
 end checkForDiscreteEvents;
 
-template update(list<SimEqSystem> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
+template update(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let continous = (continousEquations |> eq =>
-      equation_(eq, contextOther, &varDecls /*BUFC*/,simCode)
+  let continous = (continousEquations |> eqs => (eqs |> eq =>
+      equation_(eq, contextOther, &varDecls /*BUFC*/,simCode))
     ;separator="\n")
   let paraEquations = (parameterEquations |> eq =>
       equation_(eq, contextOther, &varDecls /*BUFD*/,simCode)

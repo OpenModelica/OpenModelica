@@ -492,7 +492,7 @@ template functionPreWhenCondition (list<tuple<DAE.Exp, Integer>> conditions, Tex
 	;separator=" || ")
 end functionPreWhenCondition;
 
-template functionQssStaticBlocks(list<SimEqSystem> derivativEquations,list<ZeroCrossing> zeroCrossings, QSSinfo qssInfo, Integer nStates)
+template functionQssStaticBlocks(list<list<SimEqSystem>> derivativEquations,list<ZeroCrossing> zeroCrossings, QSSinfo qssInfo, Integer nStates)
   "Generates function in simulation file."
 ::=
 	match qssInfo
@@ -550,7 +550,7 @@ template generateInputs(BackendQSS.DevsStruct devsst, Integer index, list<Backen
 	; separator="\n")
 end generateInputs;
 
-template generateStaticFunc(list<SimEqSystem> odeEq,list<ZeroCrossing> zeroCrossings, 
+template generateStaticFunc(list<list<SimEqSystem>> odeEq,list<ZeroCrossing> zeroCrossings, 
 	Text &varDecls /*BUFP*/, BackendQSS.DevsStruct devsst,list<list<SimCode.SimEqSystem>> BLTblocks, list<BackendDAE.Var> varLst, Integer nStates)
 "Generate the cases for the static function "
 ::= 

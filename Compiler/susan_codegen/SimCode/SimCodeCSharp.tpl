@@ -806,13 +806,13 @@ public override void FunStoreDelayed()
 >>
 end functionStoreDelayed;
     
-template functionODE(list<SimEqSystem> stateContEquations, SimCode simCode) ::=
+template functionODE(list<list<SimEqSystem>> stateContEquations, SimCode simCode) ::=
 let()= System.tmpTickReset(1)
 <<
 public override void FunODE()
 {
   <% localRepresentationArrayDefines %>
-  <%stateContEquations |> it => equation_(it, contextOther, simCode) ;separator="\n"%>
+  <%stateContEquations |> eqs => (eqs |> it => equation_(it, contextOther, simCode)) ;separator="\n"%>
 }
 >>
 end functionODE;
