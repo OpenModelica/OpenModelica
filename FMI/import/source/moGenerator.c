@@ -34,13 +34,9 @@
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
 #define ERROR_ENVVAR_NOT_FOUND           203L
-#define getLastErrorSystem GetLastError
-#define getEnvVariable GetEnvironmentVariable
 #else
 #include <errno.h>
 #define ERROR_ENVVAR_NOT_FOUND           NULL
-#define getLastErrorSystem errno
-#define getEnvVariable getenv
 #endif
 // end
 
@@ -172,19 +168,25 @@ static char* getNameXMLfile(const char * decompPath, const char * modeldes){
 }
 
 // function that returns the name of the decompression path
-static char* getDecompPath(const char * omPath, const char* mid){
+static char* getDecompPath(char * omPath, const char* mid){
 	int n;
 	char * decompPath;
+  char * omhome = getenv("OPENMODELICAHOME");
 	
-	if (!getEnvVariable("OPENMODELICAHOME", omPath, PATHSIZE)) {
-        if (getLastErrorSystem() == ERROR_ENVVAR_NOT_FOUND) {
+	if (!omhome || strlen(omhome) >= PATHSIZE) {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+        if (getLastError() == ERROR_ENVVAR_NOT_FOUND) {
             ERRORPRINT("#### Error: Environment variable \"%s\" not defined\n","OPENMODELICAHOME");
         }
         else {
             ERRORPRINT("#### Error: Could not get value of \"%s\"\n","OPENMODELICAHOME");
         }
+#else
+  ERRORPRINT("#### Error: Could not get value of getenv(OPENMODELICAHOME): %s\n", strerror(errno));
+#endif
         exit(EXIT_FAILURE); // error       
-    }
+  }
+  strcpy(omPath,omhome);
 	#ifdef _DEBUG_
 		printf("#### %s Enviroment: %s\n",QUOTEME(__LINE__),omPath);
 	#endif
@@ -359,17 +361,6 @@ static void charReplace(char* intStr, char old, char new){
 	while(pntCh!=NULL){
 		*pntCh = new;
 		pntCh = strchr(intStr,old);
-	}
-	intStr[len] = '\0';
-}
-
-static void strReplace(char* intStr, char* old, char* new){
-	char* pntCh;
-	unsigned int len = strlen(intStr);
-	pntCh = strstr(intStr,old);
-	while(pntCh!=NULL){
-		strncpy(pntCh,new,strlen(new));
-		pntCh = strstr(intStr,old);
 	}
 	intStr[len] = '\0';
 }
