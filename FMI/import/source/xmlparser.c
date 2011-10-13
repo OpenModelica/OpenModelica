@@ -23,6 +23,14 @@
 #include <string.h>
 #include "xmlparser.h"
 
+// mocro for error message print
+#define _IMPORT_ERROR_LOG_
+#define WHERESTR  "[date %s, time %s, file %s, line %d]: "
+#define WHEREARG  __DATE__, __TIME__, __FILE__, __LINE__
+#define ERRORPRINT2(...)       fprintf(stderr, __VA_ARGS__)
+#define ERRORPRINT(_fmt, ...)  ERRORPRINT2(WHERESTR _fmt, WHEREARG, __VA_ARGS__)
+// end
+
 const char *elmNames[SIZEOF_ELM] = { 
     "fmiModelDescription","UnitDefinitions","BaseUnit","DisplayUnitDefinition","TypeDefinitions",
     "Type","RealType","IntegerType","BooleanType","StringType",
@@ -302,7 +310,7 @@ double getNominal(ModelDescription* md, fmiValueReference vr){
 // Returns 0 to indicate error
 static int checkPointer(const void* ptr){
     if (! ptr) {
-        printf("Out of memory\n");
+        ERRORPRINT(" Out of memory%s\n","");
         if (parser) XML_StopParser(parser, XML_FALSE);
         return 0; // error 
     }
@@ -314,7 +322,7 @@ static int checkName(const char* name, const char* kind, const char* array[], in
     for (i=0; i<n; i++) {
         if (!strcmp(name, array[i])) return i;
     }
-    printf("Illegal %s %s\n", kind, name);
+    ERRORPRINT(" Illegal %s %s\n", kind, name);
     XML_StopParser(parser, XML_FALSE);
     return -1;
 }
@@ -335,7 +343,7 @@ static int checkEnumValue(const char* enu){
 }
 
 static void logFatalTypeError(const char* expected, Elm found) {
-    printf("Wrong element type, expected %s, found %s\n", 
+    ERRORPRINT(" Wrong element type, expected %s, found %s\n", 
             expected, elmNames[found]);
     XML_StopParser(parser, XML_FALSE);
 }
@@ -359,7 +367,7 @@ static int checkElementType(void* element, Elm e) {
 // If e==ANY_TYPE, the type check is ommited 
 static int checkPeek(Elm e) {
     if (stackIsEmpty(stack)){
-        printf("Illegal document structure, expected %s\n", elmNames[e]);
+        ERRORPRINT(" Illegal document structure, expected %s\n", elmNames[e]);
         XML_StopParser(parser, XML_FALSE);
         return 0; // error
     }
@@ -558,7 +566,7 @@ static void XMLCALL endElement(void *context, const char *elm) {
                     case elm_BooleanType:
                     case elm_EnumerationType:
                         break;
-                    deaullt:
+                    default:
                          logFatalTypeError("RealType or similar", ts->type);
                          return;
                 }
@@ -608,7 +616,7 @@ static void XMLCALL endElement(void *context, const char *elm) {
                     case elm_Boolean:
                     case elm_Enumeration:
                         break;
-                    deault:
+                    default:
                          logFatalTypeError("Real or similar", child->type);
                          return;
                 }
@@ -639,7 +647,6 @@ static void XMLCALL endElement(void *context, const char *elm) {
                  stackPush(stack, name);
                  break;
             }
-        case -1: {printf("#### illegal element error\n");return;} // illegal element error
         default: // must be a leaf Element
                  assert(getAstNodeType(el)==astElement);
                  break;
@@ -698,23 +705,27 @@ void printElement(int indent, void* element){
     indent += 2;
     switch (getAstNodeType(e->type)) {
         case astListElement:
-            printList(indent, ((ListElement*)e)->list);
+            printList(indent, (void** )((ListElement*)e)->list);
             break;
         case astScalarVariable:
             printElement(indent, ((Type*)e)->typeSpec);
-            printList(indent, ((ScalarVariable*)e)->directDependencies);
+            printList(indent, (void** )((ScalarVariable*)e)->directDependencies);
             break;
         case astType:
             printElement(indent, ((Type*)e)->typeSpec);
             break;
         case astModelDescription:
             md = (ModelDescription*)e;
-            printList(indent, md->unitDefinitions);
-            printList(indent, md->typeDefinitions);
+            printList(indent, (void** )md->unitDefinitions);
+            printList(indent, (void** )md->typeDefinitions);
             printElement(indent, md->defaultExperiment);
-            printList(indent, md->vendorAnnotations);
-            printList(indent, md->modelVariables);
+            printList(indent, (void** )md->vendorAnnotations);
+            printList(indent, (void** )md->modelVariables);
             break;
+		default:
+			ERRORPRINT(" unknown AST node type of the Element in function: %s\n",__func__);
+			exit(EXIT_FAILURE);
+		
     }
 }
 
@@ -736,26 +747,29 @@ void freeElement(void* element){
     if (!e) return;
     // free attributes
     for (i=0; i<e->n; i+=2) 
-        free(e->attributes[i+1]);
+        free((void*)e->attributes[i+1]);
     free(e->attributes);
     // free child nodes
     switch (getAstNodeType(e->type)) {
         case astListElement:
-            freeList(((ListElement*)e)->list);
+            freeList((void **)((ListElement*)e)->list);
             break;
         case astScalarVariable:
-            freeList(((ScalarVariable*)e)->directDependencies);
+            freeList((void **)((ScalarVariable*)e)->directDependencies);
         case astType:
             freeElement(((Type*)e)->typeSpec);
             break;
         case astModelDescription:
             md = (ModelDescription*)e;
-            freeList(md->unitDefinitions);
-            freeList(md->typeDefinitions);
-            freeElement(md->defaultExperiment);
-            freeList(md->vendorAnnotations);
-            freeList(md->modelVariables);
+            freeList((void **)md->unitDefinitions);
+            freeList((void **)md->typeDefinitions);
+            freeElement((void *)md->defaultExperiment);
+            freeList((void **)md->vendorAnnotations);
+            freeList((void **)md->modelVariables);
             break;
+		default:
+			ERRORPRINT(" unknown AST node type of the Element in function: %s\n",__func__);
+			exit(EXIT_FAILURE);
     }
     // free the struct
     free(e);
@@ -795,7 +809,7 @@ ModelDescription* parse(const char* xmlPath) {
     XML_SetCharacterDataHandler(parser, handleData);
   	file = fopen(xmlPath, "rb");
 	if (file == NULL) {
-        printf("Cannot open file '%s'\n", xmlPath);
+        ERRORPRINT(" Cannot open file '%s'\n", xmlPath);
      	XML_ParserFree(parser);
         return NULL; // failure
     }
@@ -803,7 +817,7 @@ ModelDescription* parse(const char* xmlPath) {
         int n = fread(text, sizeof(char), XMLBUFSIZE, file);
 	    if (n != XMLBUFSIZE) done = 1;
         if (!XML_Parse(parser, text, n, done)){
-             printf("Parse error in file %s at line %d:\n%s\n", 
+             ERRORPRINT(" Parse error in file %s at line %lu:\n%s\n", 
                      xmlPath,
 	                 XML_GetCurrentLineNumber(parser),
 	                 XML_ErrorString(XML_GetErrorCode(parser)));

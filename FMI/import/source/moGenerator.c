@@ -2,14 +2,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "moGenerator.h"
 // end
-
+#define ABS_VALUE(a,b) (((a)-(b))<0?-((a)-(b)):((a)-(b)))
 // macro for screen printing
 #define QUOTEME_(x) #x
 #define QUOTEME(x) QUOTEME_(x)
-//s#define _DEBUG_ 1
-#define PRINT_INFORMATION
+//#define _DEBUG_ 1
+//#define PRINT_INFORMATION
 //#define _DEBUG_MODELICA 1
 // end
 
@@ -54,11 +55,19 @@
 #define BIN_PATH "..\\bin"
 //end
 
+// macros for unzip command
 //#define USE_UNZIP
+// return codes of the unzip tool
+#define UNZIP_NO_ERROR 0 // sucess
+#define UNZIP_WARNINGS 1 // one or more warning errors, but successfully completed anyway
+#define UNZIP_NOZIP 9 // no zip files found
+#define UNZIP_METHOD_DECRYPTION_ERROR 81 // unsupported compression methods or unsupported decryption
+#define UNZIP_WRONG_PASS 82 // no files were found due to bad decryption password
+// end
 
 // macro for the 7z tool
 #define DECOMPRESS_CMD "7z x -aoa -o"
-// return codes of the 7z command line tool
+// return codes of the 7z tool
 #define SEVEN_ZIP_NO_ERROR 0 // success
 #define SEVEN_ZIP_WARNING 1  // e.g., one or more files were locked during zip
 #define SEVEN_ZIP_ERROR 2
@@ -196,17 +205,38 @@ static int decompress(const char* fmuPath, const char* decompPath) {
   char * cmd; // needed to be freed
 
 #ifdef USE_UNZIP
-  n = strlen(fmuPath) + strlen(decompPath) + 17;
-  cmd = (char*) calloc(sizeof(char), n);
-  sprintf(cmd, "unzip -o \"%s\" -d \"%s\"", fmuPath, decompPath);
+  n = strlen(fmuPath) + strlen(decompPath) + 13;
+  cmd = (char*) calloc(sizeof(char), n);  
+  sprintf(cmd, "unzip -o %s -d %s", fmuPath, decompPath);
   err = system(cmd);
   free(cmd); // free
+  if(err!=UNZIP_NO_ERROR){
+	switch(err){
+		case UNZIP_WARNINGS:
+				printf("some warnings occurred during decompression, success anyway...\n");
+				break;
+		case UNZIP_NOZIP:
+				printf("no zip files found...\n");
+				break;
+		case UNZIP_METHOD_DECRYPTION_ERROR:
+				printf("unsupported compression methods or unsupported decryption...\n");
+				break;
+		case UNZIP_WRONG_PASS:
+				printf(" no files were found due to bad decryption password...\n");
+				break;
+		default:
+				printf(" unknown errors..\n");
+				break;
+	}
+  }
+
 #else
   n = strlen(DECOMPRESS_CMD) + strlen(fmuPath) +strlen(decompPath)+10;
   cmd = (char*)calloc(sizeof(char),n);
   sprintf(cmd, "%s%s \"%s\" > NUL", DECOMPRESS_CMD, decompPath, fmuPath);
   err = system(cmd);
   free(cmd); // free
+ 
   if (err!=SEVEN_ZIP_NO_ERROR) {
     switch (err) {
       ERRORPRINT("#### 7z: %s","");
@@ -322,18 +352,30 @@ void instElmSV(ScalarVariable* sv, fmiScalarVariable fmisv){
 }
 
 // functions that replaces the given character old with the character new in a string
-static void charReplace(char* flatName, unsigned int len, char old, char new){
+static void charReplace(char* intStr, char old, char new){
 	char* pntCh;
-	pntCh = strchr(flatName,old);
+	unsigned int len = strlen(intStr);
+	pntCh = strchr(intStr,old);
 	while(pntCh!=NULL){
 		*pntCh = new;
-		pntCh = strchr(flatName,old);
+		pntCh = strchr(intStr,old);
 	}
-	flatName[len] = '\0';
+	intStr[len] = '\0';
+}
+
+static void strReplace(char* intStr, char* old, char* new){
+	char* pntCh;
+	unsigned int len = strlen(intStr);
+	pntCh = strstr(intStr,old);
+	while(pntCh!=NULL){
+		strncpy(pntCh,new,strlen(new));
+		pntCh = strstr(intStr,old);
+	}
+	intStr[len] = '\0';
 }
 
 // function that instantiates the fmiScalarVariable list
-static void instScalarVariable(ModelDescription* md,fmiScalarVariable* list){
+void instScalarVariable(ModelDescription* md,fmiScalarVariable* list){
 	int i;
 	unsigned int len;
 	if(md->modelVariables){
@@ -342,7 +384,7 @@ static void instScalarVariable(ModelDescription* md,fmiScalarVariable* list){
 			len = strlen(list[i].name);
 			list[i].flatName = (char*)calloc(sizeof(char),len+1);
 			strcpy(list[i].flatName,list[i].name);
-			charReplace(list[i].flatName,len,'.','_');
+			charReplace(list[i].flatName,'.','_');
 			list[i].vr = getValueReference(md->modelVariables[i]);
 			list[i].description = getDescription(md,md->modelVariables[i]);
 			
@@ -394,7 +436,7 @@ fmiNamingConvention getNamingConvention(ModelDescription* md, Att att){
 }
 
 // function that instantiates the tree-like structure of fmu model description
-static void instFmuModelDescription(ModelDescription* md, fmuModelDescription* fmuMD, fmiModelVariable* fmuMV){	
+void instFmuModelDescription(ModelDescription* md, fmuModelDescription* fmuMD, fmiModelVariable* fmuMV){	
 	fmuMD->fmiver = getFmiVersion(md);
 	fmuMD->mn = getModelName(md);
 	fmuMD->mid = getModelIdentifier(md);
@@ -421,11 +463,11 @@ void freeScalarVariableLst(fmiScalarVariable* list,int nsv){
 
 // Modelica code generation for the external interface functions
 void tmpcodegen(fmuModelDescription* fmuMD, const char* decompPath){
-	char tmpstr[BUFFERSIZE];
+	//char tmpstr[BUFFERSIZE];
 	
 	// Allocated memory needed to be freed and file needed to be closed
 	FILE * pfile;
-	FILE * pf;
+	//FILE * pf;
 	char * id;
 
 	size_t len = strlen(fmuMD->mid)+strlen(decompPath);
@@ -445,28 +487,36 @@ void tmpcodegen(fmuModelDescription* fmuMD, const char* decompPath){
 	}
 	else{
 		fprintf(pfile,"\npackage FMUImport_%s\n",fmuMD->mid);
-		pf = fopen(FMU_TEMPLATE,"r");
-		if(!pf){
-			ERRORPRINT("#### Opening %s failed...\n",FMU_TEMPLATE);
-			exit(EXIT_FAILURE);
-		}		
-		while(!feof(pf)){
-			fgets(tmpstr,BUFFERSIZE,pf);
-			if(ferror(pf)){
-				ERRORPRINT("#### Reading lines from %s failed...\n",FMU_TEMPLATE);
-				exit(EXIT_FAILURE);
-			}
-			fputs(tmpstr,pfile);
-		}
+		/*
+     * No need of fmuModelica.tmp
+     * since the makefile create the header file from it and then we assign that header FMU_TEMPLATE_STR
+     */
+    const char *FMU_TEMPLATE_STR =
+    #include "fmuModelica.h"
+    ;
+    fputs(FMU_TEMPLATE_STR, pfile);
+		// pf = fopen(FMU_TEMPLATE,"r");
+		// if(!pf){
+			// ERRORPRINT("#### Opening %s failed...\n",FMU_TEMPLATE);
+			// exit(EXIT_FAILURE);
+		// }		
+		// while(!feof(pf)){
+			// fgets(tmpstr,BUFFERSIZE,pf);
+			// if(ferror(pf)){
+				// ERRORPRINT("#### Reading lines from %s failed...\n",FMU_TEMPLATE);
+				// exit(EXIT_FAILURE);
+			// }
+			// fputs(tmpstr,pfile);
+		// }
 	}
 	// Free memory
-	fclose(pf);
+	//fclose(pf);
 	fclose(pfile);
 	free(id);
 }
 
 // function that adds an element to an fmuOutputVar list;
-static void addOutputVariable(fmiScalarVariable* sv, fmuOutputVar** root, fmuOutputVar** nextVar, unsigned int* counter){
+void addOutputVariable(fmiScalarVariable* sv, fmuOutputVar** root, fmuOutputVar** nextVar, unsigned int* counter){
 	if(*root == NULL){
 		*root = (fmuOutputVar*)calloc(sizeof(fmuOutputVar),1);
 		(*root)->name = sv->flatName;
@@ -853,9 +903,55 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath, const char
 	fclose(pfile);
 }
 
+// static void createDirectory(char* decompPath){
+    // char * mkdirCMD = NULL;			// command making directory
+	// char * pntCh1;
+	// char * pntCh2;
+	// char tmpStr[3];
+	// int err;
 
-int main(int argc, char *argv[])
-{
+	// tmpStr[2] = '\0'; // terminator of the character array	
+	// mkdirCMD = (char *) calloc(sizeof(char),strlen(decompPath)+6);
+	// strcat(mkdirCMD,"mkdir ");
+	// pntCh1 = decompPath;
+	// pntCh2 = strchr(pntCh1,'/');
+	// strncpy(tmpStr,pntCh1,2);
+	// while(pntCh2!=NULL){
+		// printf("#### tmpStr: %s\n",tmpStr);
+		// //printf("#### pntCh1-pntCh2: %d\n",ABS_VALUE(pntCh1,pntCh2));		
+		// if(strcmp(tmpStr,"..")!=0){
+			// strncat(mkdirCMD,pntCh1,ABS_VALUE(pntCh1,pntCh2));
+			// pntCh1 = pntCh2;
+			// err=system(mkdirCMD);
+		// }
+		// printf("#### mkdirCMD: %s\n",mkdirCMD);
+		// strncpy(tmpStr,pntCh2+1,2);
+		// pntCh2 = strchr(pntCh2+1,'/');
+	// }
+	// sprintf(mkdirCMD,"mkdir %s",decompPath);
+	// err=system(mkdirCMD);
+// }
+
+void printUsage() {
+  printf("Usage: fmigenerator [--fmufile=NAME] [--outputdir=PATH]\n");
+  printf("--fmufile	The FMU file that contains the model description to be imported.\n");
+  printf("--outputdir	The output directory.");
+}
+
+int main(int argc, char *argv[]){
+	if (argc < 2) {
+		printUsage();
+		ERRORPRINT("#### Wrong arguments passed to main entry...%s\n","");
+		exit(EXIT_FAILURE);
+	}
+	else if (strcasecmp(argv[1], "-h") == 0) {
+		printUsage();
+		exit(EXIT_FAILURE);
+	}
+	else if (strcasecmp(argv[1], "--help") == 0) {
+		printUsage();
+		exit(EXIT_FAILURE);
+	}
 	// Declaration of variables
 	size_t nsv;							// number of scalar variables
 	fmiScalarVariable* list = NULL;		// list of fmiScalarVariable;
@@ -868,7 +964,7 @@ int main(int argc, char *argv[])
 	fmuMD = (fmuModelDescription*)calloc(sizeof(fmuModelDescription),1);
 	const char * fmuname;	// name of the fmu file <fmuname>.fmu
 	ModelDescription* md = NULL;            // handle to the parsed XML file
-	const char * decompPath = NULL;			// name of the decompression path
+	char * decompPath = NULL;			// name of the decompression path
 	const char * xmlFile = NULL;			// model description xml file name
 	const char * fmuDllPath = NULL;			// dll path
 	// end
@@ -882,29 +978,57 @@ int main(int argc, char *argv[])
 	printf("\n\n");
 	// end
 	
-	//	The path of FMU as an argument
-	if (argc<=1) {
-		printf("#### Please give the fmu file...\ngenerator.exe <fmupath>\n");
-		ERRORPRINT("#### Please give the fmu file like: generator.exe <fmupath>%s\n","");
-		freeElement(md);
-		return EXIT_FAILURE;
-	}
-	// end
-	
 	// Attaining the name of the FMU from the argument 
 	// Decompressing the archive into an appropriate directory
 	// Get the model description xml file name
-	fmuname = getFMUname(argv[1]);	
-	decompPath = getDecompPath(omPath,fmuname);
+	if (strncmp(argv[1], "--fmufile=", 10) == 0) {
+		fmuname = getFMUname(argv[1] + 10);
+	}
+	printf("#### fmuname: %s\n",fmuname);
+	if (argc > 2) {
+		if (strncmp(argv[2], "--outputdir=", 12) == 0) {
+		  decompPath = (char*) calloc(sizeof(char),strlen(argv[2]) - 11);
+		  strcpy((char*)decompPath, argv[2] + 12);
+		  //createDirectory(decompPath);
+		  strcat((char*)decompPath, "/");
+		  if (access(decompPath, F_OK) == -1) {
+		    free((void*) decompPath);
+			decompPath = getDecompPath(omPath, fmuname);
+		  }
+		}
+		else{
+			printUsage();
+			ERRORPRINT("#### Wrong argument for decompression path...%s\n","");
+			exit(EXIT_FAILURE);
+		}
+	}
+	else {
+		decompPath = getDecompPath(omPath, fmuname);
+	}
+	if(decompPath==NULL){
+		printf("#### path for decompression is not available: decompPath = %s\n","NULL");
+		ERRORPRINT("#### path for decompression is not available: decompPath = %s\n","NULL");
+		exit(EXIT_FAILURE);
+	}
 	#ifdef _DEBUG_
 		printf("#### %s decompPath: %s\n",QUOTEME(__LINE__),decompPath);
 	#endif
-	decompress(argv[1],decompPath);
+	decompress(argv[1] + 10,decompPath);
 	xmlFile = getNameXMLfile(decompPath,MODEL_DESCRIPTION);
+	if(xmlFile == NULL){
+		printf("#### model description xml file is not available: xmlFile = %s\n","NULL");
+		ERRORPRINT("#### model description xml file is not available: xmlFile = %s\n","NULL");
+		exit(EXIT_FAILURE);
+	}
 	// end
 	
 	// Parsing the model description file as a tree-like structure
 	md = parse(xmlFile);
+	if(md == NULL){
+		printf("#### parsing model description xml file occurred error: md = %s","NULL");
+		ERRORPRINT("#### parsing model description xml file occurred error: md = %s","NULL");
+		exit(EXIT_FAILURE);
+	}
 	//end
 	
 	// Creating the tree-like data structure for code generation
@@ -912,6 +1036,11 @@ int main(int argc, char *argv[])
 	if(nsv>0){
 	list = (fmiScalarVariable*)calloc(sizeof(fmiScalarVariable),nsv);	
 	instScalarVariable(md,list);
+	}
+	else{
+		printf("#### There is no scalar variable in the model %s\n",fmuname);
+		ERRORPRINT("#### There is no scalar variable in the model %s\n",fmuname);
+		exit(EXIT_FAILURE);
 	}
 	fmuMV = (fmiModelVariable*)calloc(sizeof(fmiModelVariable),1);
 	fmuMV->list_sv = list;
