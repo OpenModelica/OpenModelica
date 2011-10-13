@@ -36,7 +36,6 @@
 #define ERROR_ENVVAR_NOT_FOUND           203L
 #else
 #include <errno.h>
-#define ERROR_ENVVAR_NOT_FOUND           NULL
 #endif
 // end
 

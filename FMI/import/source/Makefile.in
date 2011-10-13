@@ -5,7 +5,7 @@ CC   = @CC@
 RES  = 
 OBJS  = xmlparser.o stack.o fmuWrapper.o moGenerator.o $(RES)
 LINKOBJS  = $(OBJS)
-LIBS =  -lexpat
+LIBS =  -lexpat -ldl
 INCS =  
 CXXINCS =  -I"../include/"
 BIN  = ../../../build/bin/fmigenerator
@@ -28,7 +28,7 @@ clean: clean-custom
 	${RM} $(OBJS) $(BIN)
 
 $(BIN): $(OBJS)
-	$(CC) -Wall -o $(CPPFLAGS) $(BIN) $(LINKOBJS) $(LIBS)
+	$(CC) -Wall -o $@ $(CPPFLAGS) $(LINKOBJS) $(LIBS)
 	
 Makefile: Makefile.in
 	(cd ../../../ ; ./config.status)
