@@ -141,6 +141,8 @@ QString Helper::right = QString("Right");
 /* FMI Messages */
 QString Helper::exportingModelFMU = QString("Exporting model as FMI");
 
+QString Helper::librariesAddNote = QString("* The libraries changes will take effect after restart.");
+
 QString GUIMessages::getMessage(int type)
 {
     switch (type)

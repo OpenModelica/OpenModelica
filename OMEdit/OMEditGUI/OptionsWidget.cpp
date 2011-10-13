@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linkoping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -33,6 +33,10 @@
 
 #include "OptionsWidget.h"
 
+//! @class ModelicaTextSettings
+//! @brief Defines the settings like font, style, keywords colors etc. for the Modelica Text.
+
+//! Constructor
 ModelicaTextSettings::ModelicaTextSettings()
 {
     // This is a very convoluted way of asking for the default monospace font in Qt
@@ -51,96 +55,137 @@ ModelicaTextSettings::ModelicaTextSettings()
     setNumberRuleColor(QColor(139, 0, 139));          // purple
 }
 
+//! Sets the font for the Modelica Text.
+//! @param fontFamily is the font to set.
 void ModelicaTextSettings::setFontFamily(QString fontFamily)
 {
     mFontFamily = fontFamily;
 }
 
+//! Returns the Modelica Text font.
+//! @return mFontFamily the font family.
 QString ModelicaTextSettings::getFontFamily()
 {
     return mFontFamily;
 }
 
+//! Sets the font size for the Modelica Text.
+//! @param fontSize is the font size to set.
 void ModelicaTextSettings::setFontSize(int fontSize)
 {
     mFontSize = fontSize;
 }
 
+//! Returns the Modelica Text font size.
+//! @return mFontSize the font size.
 int ModelicaTextSettings::getFontSize()
 {
     return mFontSize;
 }
 
+//! Sets the color for the Modelica Text.
+//! @param color is the color to set.
 void ModelicaTextSettings::setTextRuleColor(QColor color)
 {
     mTextRuleColor = color;
 }
 
+//! Returns the Modelica Text color.
+//! @return mTextRuleColor the color.
 QColor ModelicaTextSettings::getTextRuleColor()
 {
     return mTextRuleColor;
 }
 
-void ModelicaTextSettings::setKeywordRuleColor(QColor color)
-{
-    mKeyWordRuleColor = color;
-}
-
-QColor ModelicaTextSettings::getNumberRuleColor()
-{
-    return mNumberRuleColor;
-}
-
+//! Sets the color for the Modelica Text numbers.
+//! @param color is the color to set.
 void ModelicaTextSettings::setNumberRuleColor(QColor color)
 {
     mNumberRuleColor = color;
 }
 
+//! Returns the Modelica Text numbers color.
+//! @return mNumberRuleColor the color.
+QColor ModelicaTextSettings::getNumberRuleColor()
+{
+    return mNumberRuleColor;
+}
+
+//! Sets the color for the Modelica Text keywords.
+//! @param color is the color to set.
+void ModelicaTextSettings::setKeywordRuleColor(QColor color)
+{
+    mKeyWordRuleColor = color;
+}
+
+//! Returns the Modelica Text keyword color.
+//! @return mKeyWordRuleColor the color.
 QColor ModelicaTextSettings::getKeywordRuleColor()
 {
     return mKeyWordRuleColor;
 }
 
+//! Sets the color for the Modelica Text types.
+//! @param color is the color to set.
 void ModelicaTextSettings::setTypeRuleColor(QColor color)
 {
     mTypeRuleColor = color;
 }
 
+//! Returns the Modelica Text types color.
+//! @return mTypeRuleColor the color.
 QColor ModelicaTextSettings::getTypeRuleColor()
 {
     return mTypeRuleColor;
 }
 
+//! Sets the color for the Modelica Text functions.
+//! @param color is the color to set.
 void ModelicaTextSettings::setFunctionRuleColor(QColor color)
 {
     mFunctionRuleColor = color;
 }
 
+//! Returns the Modelica Text functions color.
+//! @return mFunctionRuleColor the color.
 QColor ModelicaTextSettings::getFunctionRuleColor()
 {
     return mFunctionRuleColor;
 }
 
+//! Sets the color for the Modelica Text quotes.
+//! @param color is the color to set.
 void ModelicaTextSettings::setQuotesRuleColor(QColor color)
 {
     mQuotesRuleColor = color;
 }
 
+//! Returns the Modelica Text quotes color.
+//! @return mQuotesRuleColor the color.
 QColor ModelicaTextSettings::getQuotesRuleColor()
 {
     return mQuotesRuleColor;
 }
 
+//! Sets the color for the Modelica Text comments.
+//! @param color is the color to set.
 void ModelicaTextSettings::setCommentRuleColor(QColor color)
 {
     mCommentRuleColor = color;
 }
 
+//! Returns the Modelica Text comments color.
+//! @return mCommentRuleColor the color.
 QColor ModelicaTextSettings::getCommentRuleColor()
 {
     return mCommentRuleColor;
 }
 
+//! @class OptionsWidget
+//! @brief Creats an interface with options like Modelica Text, Pen Styles, Libraries etc.
+
+//! Constructor
+//! @param pParent is the pointer to MainWindow
 OptionsWidget::OptionsWidget(MainWindow *pParent)
     : QDialog(pParent, Qt::WindowTitleHint), mSettings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit")
 {
@@ -155,12 +200,14 @@ OptionsWidget::OptionsWidget(MainWindow *pParent)
     mpModelicaTextEditorPage = new ModelicaTextEditorPage(this);
     mpPenStylePage = new PenStylePage(this);
     mpBrushStylePage = new BrushStylePage(this);
+    mpLibrariesPage = new LibrariesPage(this);
     // get the settings
     readSettings();
     // set up the Options Dialog
     setUpDialog();
 }
 
+//! Reads the settings from omedit.ini file.
 void OptionsWidget::readSettings()
 {
     mSettings.sync();
@@ -168,14 +215,17 @@ void OptionsWidget::readSettings()
     readModelicaTextSettings();
     readPenStyleSettings();
     readBrushStyleSettings();
+    readLibrariesSettings();
 }
 
+//! Reads the General section settings from omedit.ini
 void OptionsWidget::readGeneralSettings()
 {
     if (mSettings.contains("plotting/viewmode"))
         mpGeneralSettingsPage->setViewMode(mSettings.value("plotting/viewmode").toString());
 }
 
+//! Reads the ModelicaText settings from omedit.ini
 void OptionsWidget::readModelicaTextSettings()
 {
     if (mSettings.contains("fontFamily"))
@@ -196,26 +246,24 @@ void OptionsWidget::readModelicaTextSettings()
         mpModelicaTextSettings->setCommentRuleColor(QColor(mSettings.value("commentRule/color").toUInt()));
     if (mSettings.contains("numberRule/color"))
         mpModelicaTextSettings->setNumberRuleColor(QColor(mSettings.value("numberRule/color").toUInt()));
-
-
 }
 
+//! Reads the PenStyle section settings from omedit.ini
 void OptionsWidget::readPenStyleSettings()
 {
     if (mSettings.contains("penstyle/color"))
     {
         if (mSettings.value("penstyle/color").toString().isEmpty())
-           {
+        {
             mpPenStylePage->setPenColor(Qt::transparent);
-           mpPenStylePage->setColorViewerPixmap(Qt::transparent);
-           }
+            mpPenStylePage->setColorViewerPixmap(Qt::transparent);
+        }
         else
         {
             mpPenStylePage->setPenColor(QColor(mSettings.value("penstyle/color").toUInt()));
             mpPenStylePage->setColorViewerPixmap(QColor(mSettings.value("penstyle/color").toUInt()));
         }
     }
-
 
     if (mSettings.contains("penstyle/pattern"))
         mpPenStylePage->setPenPattern(mSettings.value("penstyle/pattern").toString());
@@ -225,6 +273,7 @@ void OptionsWidget::readPenStyleSettings()
         mpPenStylePage->setPenSmooth(mSettings.value("penstyle/smooth").toBool());
 }
 
+//! Reads the BrushStyle section settings from omedit.ini
 void OptionsWidget::readBrushStyleSettings()
 {
     if (mSettings.contains("brushstyle/color"))
@@ -239,7 +288,6 @@ void OptionsWidget::readBrushStyleSettings()
             mpBrushStylePage->setBrushColor(mSettings.value("brushstyle/color").toUInt());
             mpBrushStylePage->setColorViewerPixmap(QColor(mSettings.value("brushstyle/color").toUInt()));
         }
-
     }
     if (mSettings.contains("brushstyle/pattern"))
     {
@@ -249,21 +297,41 @@ void OptionsWidget::readBrushStyleSettings()
             mpBrushStylePage->setBrushColor(Qt::transparent);
             mpBrushStylePage->setColorViewerPixmap(Qt::transparent);
             mpBrushStylePage->setNoColorCheckBox(true);
-
         }
-
     }
 
     if (mSettings.contains("brushstyle/color"))
     {
         if (mSettings.value("brushstyle/color").toString().isEmpty())
         {
-        mpBrushStylePage->setBrushPattern("NoBrush");
+            mpBrushStylePage->setBrushPattern("NoBrush");
         }
     }
-
 }
 
+//! Reads the Libraries section settings from omedit.ini
+void OptionsWidget::readLibrariesSettings()
+{
+    int i = 0;
+    while(i < mpLibrariesPage->getLibrariesTree()->topLevelItemCount())
+    {
+        qDeleteAll(mpLibrariesPage->getLibrariesTree()->topLevelItem(i)->takeChildren());
+        delete mpLibrariesPage->getLibrariesTree()->topLevelItem(i);
+        i = 0;   //Restart iteration
+    }
+    // read the settings and add libraries
+    mSettings.beginGroup("libraries");
+    QStringList libraries = mSettings.childKeys();
+    foreach (QString lib, libraries)
+    {
+        QStringList values;
+        values << lib << mSettings.value(lib).toString();
+        mpLibrariesPage->getLibrariesTree()->addTopLevelItem(new QTreeWidgetItem(values));
+    }
+    mSettings.endGroup();
+}
+
+//! Saves the General section settings to omedit.ini
 void OptionsWidget::saveGeneralSettings()
 {
     mSettings.setValue("plotting/viewmode", mpGeneralSettingsPage->getViewMode());
@@ -272,9 +340,9 @@ void OptionsWidget::saveGeneralSettings()
         mpParentMainWindow->mpPlotWindowContainer->setViewMode(QMdiArea::SubWindowView);
     else
         mpParentMainWindow->mpPlotWindowContainer->setViewMode(QMdiArea::TabbedView);
-
 }
 
+//! Saves the ModelicaText settings to omedit.ini
 void OptionsWidget::saveModelicaTextSettings()
 {
     mSettings.setValue("fontFamily", mpModelicaTextSettings->getFontFamily());
@@ -288,6 +356,7 @@ void OptionsWidget::saveModelicaTextSettings()
     mSettings.setValue("numberRule/color", mpModelicaTextSettings->getNumberRuleColor().rgba());
 }
 
+//! Saves the PenStyle section settings to omedit.ini
 void OptionsWidget::savePenStyleSettings()
 {
     if (mpPenStylePage->getPenColor() == Qt::transparent)
@@ -299,6 +368,7 @@ void OptionsWidget::savePenStyleSettings()
     mSettings.setValue("penstyle/smooth", mpPenStylePage->getPenSmooth());
 }
 
+//! Saves the BrushStyle section settings to omedit.ini
 void OptionsWidget::saveBrushStyleSettings()
 {
     if (mpBrushStylePage->getBrushColor() == Qt::transparent)
@@ -306,17 +376,33 @@ void OptionsWidget::saveBrushStyleSettings()
         mSettings.setValue("brushstyle/color", tr(""));
         mSettings.setValue("brushstyle/pattern", tr("NoBrush"));
     }
-
     else
-     {   mSettings.setValue("brushstyle/color", mpBrushStylePage->getBrushColor().rgba());
-    mSettings.setValue("brushstyle/pattern", mpBrushStylePage->getBrushPatternString());
-     }
-
-
-
-
+    {   mSettings.setValue("brushstyle/color", mpBrushStylePage->getBrushColor().rgba());
+        mSettings.setValue("brushstyle/pattern", mpBrushStylePage->getBrushPatternString());
+    }
 }
 
+//! Saves the Libraries section settings to omedit.ini
+void OptionsWidget::saveLibrariesSettings()
+{
+    // read the settings and add libraries
+    mSettings.beginGroup("libraries");
+    foreach (QString lib, mSettings.childKeys())
+    {
+        mSettings.remove(lib);
+    }
+
+    QTreeWidgetItemIterator it(mpLibrariesPage->getLibrariesTree());
+    while (*it)
+    {
+        QTreeWidgetItem *pItem = dynamic_cast<QTreeWidgetItem*>(*it);
+        mSettings.setValue(pItem->text(0), pItem->text(1));
+        ++it;
+    }
+    mSettings.endGroup();
+}
+
+//! Sets up the Options Widget dialog
 void OptionsWidget::setUpDialog()
 {
     mpOptionsList = new QListWidget;
@@ -325,22 +411,18 @@ void OptionsWidget::setUpDialog()
     mpOptionsList->setIconSize(Helper::iconSize);
     mpOptionsList->setMaximumWidth(175);
     mpOptionsList->setCurrentRow(0, QItemSelectionModel::Select);
-    connect(mpOptionsList, SIGNAL(currentItemChanged(QListWidgetItem*,QListWidgetItem*)),
-            SLOT(changePage(QListWidgetItem*,QListWidgetItem*)));
-
+    connect(mpOptionsList, SIGNAL(currentItemChanged(QListWidgetItem*,QListWidgetItem*)), SLOT(changePage(QListWidgetItem*,QListWidgetItem*)));
     // add items to options list
     addListItems();
-
     // create pages
     createPages();
-
     // Create the buttons
     mpOkButton = new QPushButton(tr("OK"));
     mpOkButton->setAutoDefault(true);
-    connect(mpOkButton, SIGNAL(pressed()), SLOT(saveSettings()));
+    connect(mpOkButton, SIGNAL(clicked()), SLOT(saveSettings()));
     mpCancelButton = new QPushButton(tr("Cancel"));
     mpCancelButton->setAutoDefault(false);
-    connect(mpCancelButton, SIGNAL(pressed()), SLOT(reject()));
+    connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
 
     mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
     mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
@@ -349,7 +431,6 @@ void OptionsWidget::setUpDialog()
     QHBoxLayout *horizontalLayout = new QHBoxLayout;
     horizontalLayout->addWidget(mpOptionsList);
     horizontalLayout->addWidget(mpPagesWidget, 1);
-
     // Create a layout
     QGridLayout *mainLayout = new QGridLayout;
     mainLayout->addLayout(horizontalLayout, 0, 0);
@@ -358,6 +439,7 @@ void OptionsWidget::setUpDialog()
     setLayout(mainLayout);
 }
 
+//! Adds items to the list view of Options Widget
 void OptionsWidget::addListItems()
 {
     // General Settings Item
@@ -377,8 +459,13 @@ void OptionsWidget::addListItems()
     QListWidgetItem *brushStyleItem = new QListWidgetItem(mpOptionsList);
     brushStyleItem->setIcon(QIcon(":/Resources/icons/brushstyle.png"));
     brushStyleItem->setText(tr("Brush Style"));
+    // Libraries Item
+    QListWidgetItem *librariesItem = new QListWidgetItem(mpOptionsList);
+    librariesItem->setIcon(QIcon(":/Resources/icons/libraries.png"));
+    librariesItem->setText(tr("Libraries"));
 }
 
+//! Creates pages for the Options Widget. The pages are created as stacked widget and are mapped with mpOptionsList.
 void OptionsWidget::createPages()
 {
     mpPagesWidget = new QStackedWidget;
@@ -386,8 +473,10 @@ void OptionsWidget::createPages()
     mpPagesWidget->addWidget(mpModelicaTextEditorPage);
     mpPagesWidget->addWidget(mpPenStylePage);
     mpPagesWidget->addWidget(mpBrushStylePage);
+    mpPagesWidget->addWidget(mpLibrariesPage);
 }
 
+//! Change the page in Options Widget when the mpOptionsList currentItemChanged Signal is raised.
 void OptionsWidget::changePage(QListWidgetItem *current, QListWidgetItem *previous)
 {
     if (!current)
@@ -396,6 +485,7 @@ void OptionsWidget::changePage(QListWidgetItem *current, QListWidgetItem *previo
     mpPagesWidget->setCurrentIndex(mpOptionsList->row(current));
 }
 
+//! Reimplementation of QWidget's reject function. If user reject the settings then set them back to original.
 void OptionsWidget::reject()
 {
     // read the old settings from the file
@@ -405,6 +495,7 @@ void OptionsWidget::reject()
     QDialog::reject();
 }
 
+//! Saves the settings to omedit.ini file.
 void OptionsWidget::saveSettings()
 {
     saveGeneralSettings();
@@ -413,10 +504,16 @@ void OptionsWidget::saveSettings()
     emit modelicaTextSettingsChanged();
     savePenStyleSettings();
     saveBrushStyleSettings();
+    saveLibrariesSettings();
     mSettings.sync();
     accept();
 }
 
+//! @class GeneralSettingsPage
+//! @brief Creats an interface for genaral settings.
+
+//! Constructor
+//! @param pParent is the pointer to OptionsWidget
 GeneralSettingsPage::GeneralSettingsPage(OptionsWidget *pParent)
     : QWidget(pParent)
 {
@@ -446,6 +543,9 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsWidget *pParent)
     setLayout(layout);
 }
 
+//! Returns the view mode for plotting view.
+//! @return view mode as string
+//! @see setViewMode(QString value);
 QString GeneralSettingsPage::getViewMode()
 {
     if (mpSubWindowViewRadioButton->isChecked())
@@ -454,6 +554,9 @@ QString GeneralSettingsPage::getViewMode()
         return "Tabbed";
 }
 
+//! Sets the view mode for plotting view.
+//! @param value the view mode to set.
+//! @see getViewMode();
 void GeneralSettingsPage::setViewMode(QString value)
 {
     if (value.compare("SubWindow") == 0)
@@ -462,6 +565,11 @@ void GeneralSettingsPage::setViewMode(QString value)
         mpTabbedViewRadioButton->setChecked(true);
 }
 
+//! @class ModelicaTextEditorPage
+//! @brief Creats an interface for Modelica Text settings.
+
+//! Constructor
+//! @param pParent is the pointer to OptionsWidget
 ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsWidget *pParent)
     : QWidget(pParent)
 {
@@ -486,7 +594,7 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsWidget *pParent)
 
     mpItemColorLabel = new QLabel(tr("Item Color:"));
     mpItemColorPickButton = new QPushButton(tr("Pick Color"));
-    connect(mpItemColorPickButton, SIGNAL(pressed()), SLOT(pickColor()));
+    connect(mpItemColorPickButton, SIGNAL(clicked()), SLOT(pickColor()));
 
     mpItemsLabel = new QLabel(tr("Items:"));
     mpItemsList = new QListWidget;
@@ -507,8 +615,7 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsWidget *pParent)
     mpPreviewTextBox->setText(getPreviewText());
 
     ModelicaTextHighlighter *highlighter;
-    highlighter = new ModelicaTextHighlighter(mpParentOptionsWidget->mpModelicaTextSettings,
-                                              mpPreviewTextBox->document());
+    highlighter = new ModelicaTextHighlighter(mpParentOptionsWidget->mpModelicaTextSettings, mpPreviewTextBox->document());
     connect(this, SIGNAL(updatePreview()), highlighter, SLOT(settingsChanged()));
     connect(mpParentOptionsWidget, SIGNAL(modelicaTextSettingsChanged()), highlighter, SLOT(settingsChanged()));
 
@@ -532,6 +639,7 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsWidget *pParent)
     setLayout(layout);
 }
 
+//! Adds the Modelica Text settings rules to the mpItemsList.
 void ModelicaTextEditorPage::addListItems()
 {
     // don't change the text of items as it is being used in pickColor slot to identify the items
@@ -564,6 +672,7 @@ void ModelicaTextEditorPage::addListItems()
     mpCommentItem->setForeground(mpParentOptionsWidget->mpModelicaTextSettings->getCommentRuleColor());
 }
 
+//! Returns the preview text.
 QString ModelicaTextEditorPage::getPreviewText()
 {
     QString previewText;
@@ -580,21 +689,21 @@ QString ModelicaTextEditorPage::getPreviewText()
     return previewText;
 }
 
+//! Creates the font size combo box.
 void ModelicaTextEditorPage::createFontSizeComboBox()
 {
     mpFontSizeComboBox->addItems(Helper::fontSizes.split(","));
 }
 
+//! Initialize all fields with default values.
 void ModelicaTextEditorPage::initializeFields()
 {
     int currentIndex;
     // select font family item
-    currentIndex = mpFontFamilyComboBox->findText(mpParentOptionsWidget->mpModelicaTextSettings->getFontFamily(),
-                                                  Qt::MatchExactly);
+    currentIndex = mpFontFamilyComboBox->findText(mpParentOptionsWidget->mpModelicaTextSettings->getFontFamily(), Qt::MatchExactly);
     mpFontFamilyComboBox->setCurrentIndex(currentIndex);
     // select font size item
-    currentIndex = mpFontSizeComboBox->findText(QString::number(mpParentOptionsWidget->mpModelicaTextSettings->getFontSize()),
-                                                Qt::MatchExactly);
+    currentIndex = mpFontSizeComboBox->findText(QString::number(mpParentOptionsWidget->mpModelicaTextSettings->getFontSize()), Qt::MatchExactly);
     mpFontSizeComboBox->setCurrentIndex(currentIndex);
     // make first item in the list selected
     mpItemsList->setCurrentRow(0, QItemSelectionModel::Select);
@@ -610,18 +719,22 @@ void ModelicaTextEditorPage::initializeFields()
     mpCommentItem->setForeground(mpParentOptionsWidget->mpModelicaTextSettings->getCommentRuleColor());
 }
 
+//! Changes the font family when mpFontFamilyComboBox currentFontChanged signal is raised.
 void ModelicaTextEditorPage::fontFamilyChanged(QFont font)
 {
     mpParentOptionsWidget->mpModelicaTextSettings->setFontFamily(font.family());
     emit updatePreview();
 }
 
+//! Changes the font size when mpFontSizeComboBox currentIndexChanged signal is raised.
 void ModelicaTextEditorPage::fontSizeChanged(int index)
 {
     mpParentOptionsWidget->mpModelicaTextSettings->setFontSize(mpFontSizeComboBox->itemText(index).toInt());
     emit updatePreview();
 }
 
+//! Picks a color for one of the Modelica Text Settings rules.
+//! This method is called when mpColorPickButton clicked signal raised.
 void ModelicaTextEditorPage::pickColor()
 {
     QColor color = QColorDialog::getColor();
@@ -660,6 +773,11 @@ void ModelicaTextEditorPage::pickColor()
     emit updatePreview();
 }
 
+//! @class PenStylePage
+//! @brief Creats an interface for PenStyle settings.
+
+//! Constructor
+//! @param pParent is the pointer to OptionsWidget
 PenStylePage::PenStylePage(OptionsWidget *pParent)
     : QWidget(pParent)
 {
@@ -670,7 +788,7 @@ PenStylePage::PenStylePage(OptionsWidget *pParent)
     mpColorLabel = new QLabel(tr("Color:"));
     mpColorViewerLabel = new QLabel(tr(""));
     mpColorPickButton = new QPushButton(tr("Pick Color"));
-    connect(mpColorPickButton, SIGNAL(pressed()), SLOT(pickColor()));
+    connect(mpColorPickButton, SIGNAL(clicked()), SLOT(pickColor()));
     mpNoColorCheckBox = new QCheckBox(tr("No Color"));
     connect(mpNoColorCheckBox, SIGNAL(stateChanged(int)), SLOT(noColorChecked(int)));
 
@@ -721,11 +839,14 @@ PenStylePage::PenStylePage(OptionsWidget *pParent)
     setLayout(layout);
 }
 
+//! Sets the pen color
+//! @param color to set.
 void PenStylePage::setPenColor(QColor color)
 {
     mPenColor = color;
 }
 
+//! Returns the pen color
 QColor PenStylePage::getPenColor()
 {
     // if user selects no pen color and selects a brush color then return pen color as transparent
@@ -740,6 +861,8 @@ QColor PenStylePage::getPenColor()
         return mPenColor;
 }
 
+//! Sets the pen pattern
+//! @param pattern to set.
 void PenStylePage::setPenPattern(QString pattern)
 {
     int index = mpPatternsComboBox->findText(pattern, Qt::MatchExactly);
@@ -747,41 +870,54 @@ void PenStylePage::setPenPattern(QString pattern)
         mpPatternsComboBox->setCurrentIndex(index);
 }
 
+//! Returns the pen pattern as string
+//! @see getPenPattern();
 QString PenStylePage::getPenPatternString()
 {
     return mpPatternsComboBox->currentText();
 }
 
+//! Returns the pen pattern Qt pattern style
+//! @see getPenPatternString();
 Qt::PenStyle PenStylePage::getPenPattern()
 {
     return Qt::PenStyle(mpPatternsComboBox->itemData(mpPatternsComboBox->currentIndex()).toInt());
 }
 
+//! Sets the pen thickness
+//! @param thickness to set.
 void PenStylePage::setPenThickness(double thickness)
 {
     mpThicknessSpinBox->setValue(thickness);
 }
 
+//! Returns the pen thickness
 double PenStylePage::getPenThickness()
 {
     return mpThicknessSpinBox->value();
 }
 
+//! Sets whether the pen used will be smooth (for splines) or not.
+//! @param smooth
 void PenStylePage::setPenSmooth(bool smooth)
 {
     mpSmoothCheckBox->setChecked(smooth);
 }
 
+//! Returns the pen smooth
 bool PenStylePage::getPenSmooth()
 {
     return mpSmoothCheckBox->isChecked();
 }
 
+//! Updates the state of the mpNoColorCheckBox
+//! @param state to set
 void PenStylePage::setNoColorCheckBox(bool state)
 {
     mpNoColorCheckBox->setChecked(state);
 }
 
+//! Returns state of mpNoColorCheckBox
 bool PenStylePage::getNoColorCheckBox()
 {
     if (mpNoColorCheckBox->checkState() == Qt::Checked)
@@ -790,6 +926,8 @@ bool PenStylePage::getNoColorCheckBox()
         return false;
 }
 
+//! Sets the colot for the color viewer box.
+//! @param color to set
 void PenStylePage::setColorViewerPixmap(QColor color)
 {
     QPixmap pixmap(Helper::iconSize);
@@ -797,6 +935,7 @@ void PenStylePage::setColorViewerPixmap(QColor color)
     mpColorViewerLabel->setPixmap(pixmap);
 }
 
+//! Opens the color picker dialog. The user selects the color and the color saved as a pen color.
 void PenStylePage::pickColor()
 {
     QColor color = QColorDialog::getColor();
@@ -809,6 +948,7 @@ void PenStylePage::pickColor()
     mpNoColorCheckBox->setChecked(false);
 }
 
+//! Sets the color viewer box to black if the selected color is invalid or sets it to transparent if no color selected.
 void PenStylePage::noColorChecked(int state)
 {
     if (state == Qt::Checked)
@@ -833,6 +973,11 @@ void PenStylePage::noColorChecked(int state)
     }
 }
 
+//! @class BrushStylePage
+//! @brief Creats an interface for BrushStyle settings.
+
+//! Constructor
+//! @param pParent is the pointer to OptionsWidget
 BrushStylePage::BrushStylePage(OptionsWidget *pParent)
     : QWidget(pParent)
 {
@@ -843,7 +988,7 @@ BrushStylePage::BrushStylePage(OptionsWidget *pParent)
     mpColorLabel = new QLabel(tr("Color:"));
     mpColorViewerLabel = new QLabel(tr(""));
     mpColorPickButton = new QPushButton(tr("Pick Color"));
-    connect(mpColorPickButton, SIGNAL(pressed()), SLOT(pickColor()));
+    connect(mpColorPickButton, SIGNAL(clicked()), SLOT(pickColor()));
     mpNoColorCheckBox = new QCheckBox(tr("No Color"));
     connect(mpNoColorCheckBox, SIGNAL(stateChanged(int)), SLOT(noColorChecked(int)));
 
@@ -884,6 +1029,7 @@ BrushStylePage::BrushStylePage(OptionsWidget *pParent)
     setLayout(layout);
 }
 
+//! Opens the color picker dialog. The user selects the color and the color saved as a brush color.
 void BrushStylePage::pickColor()
 {
     QColor color = QColorDialog::getColor();
@@ -900,6 +1046,7 @@ void BrushStylePage::pickColor()
         setColorViewerPixmap(Qt::transparent);
 }
 
+//! Sets the color viewer box to transparent if no color selected.
 void BrushStylePage::noColorChecked(int state)
 {
     if (state == Qt::Checked)
@@ -912,11 +1059,15 @@ void BrushStylePage::noColorChecked(int state)
     }
 }
 
+//! Sets the brush color
+//! @param color to set
 void BrushStylePage::setBrushColor(QColor color)
 {
     mBrushColor = color;
 }
 
+//! Returns the brush color
+//! @param brush color
 QColor BrushStylePage::getBrushColor()
 {
     if (mpNoColorCheckBox->checkState() == Qt::Checked)
@@ -925,6 +1076,8 @@ QColor BrushStylePage::getBrushColor()
         return mBrushColor;
 }
 
+//! Sets the brush pattern
+//! @param pattern to set
 void BrushStylePage::setBrushPattern(QString pattern)
 {
     int index = mpPatternsComboBox->findText(pattern, Qt::MatchExactly);
@@ -932,21 +1085,28 @@ void BrushStylePage::setBrushPattern(QString pattern)
         mpPatternsComboBox->setCurrentIndex(index);
 }
 
+//! Returns the brush pattern as string
+//! @see getBrushPattern();
 QString BrushStylePage::getBrushPatternString()
 {
     return mpPatternsComboBox->currentText();
 }
 
+//! Returns the brush pattern as Qt brush style
+//! @see getBrushPatternString();
 Qt::BrushStyle BrushStylePage::getBrushPattern()
 {
     return Qt::BrushStyle(mpPatternsComboBox->itemData(mpPatternsComboBox->currentIndex()).toInt());
 }
 
+//! Sets the state of mpNoColorCheckBox
+//! @param state to set
 void BrushStylePage::setNoColorCheckBox(bool state)
 {
     mpNoColorCheckBox->setChecked(state);
 }
 
+//! Returns the state of the mpNoColorCheckBox
 bool BrushStylePage::getNoColorCheckBox()
 {
     if (mpNoColorCheckBox->checkState() == Qt::Checked)
@@ -955,9 +1115,209 @@ bool BrushStylePage::getNoColorCheckBox()
         return false;
 }
 
+//! Sets the color viewer box color
+//! @param color to set
 void BrushStylePage::setColorViewerPixmap(QColor color)
 {
     QPixmap pixmap(Helper::iconSize);
     pixmap.fill(color);
     mpColorViewerLabel->setPixmap(pixmap);
+}
+
+//! @class LibrariesPage
+//! @brief Creats an interface for Libraries settings.
+
+//! Constructor
+//! @param pParent is the pointer to OptionsWidget
+LibrariesPage::LibrariesPage(OptionsWidget *pParent)
+    : QWidget(pParent)
+{
+    mpParentOptionsWidget = pParent;
+    // libraries groupbox
+    mpLibrariesGroup = new QGroupBox(tr("Libraries"));
+    // libraries table
+    mpLibrariesTree = new QTreeWidget;
+    mpLibrariesTree->setObjectName(tr("LibrariesTree"));
+    mpLibrariesTree->setIndentation(0);
+    mpLibrariesTree->setColumnCount(2);
+    QStringList labels;
+    labels << "Name" << "Value";
+    mpLibrariesTree->setHeaderLabels(labels);
+
+    mpAddButton = new QPushButton(tr("Add"));
+    connect(mpAddButton, SIGNAL(clicked()), SLOT(openAddLibrary()));
+    mpRemoveButton = new QPushButton(tr("Remove"));
+    connect(mpRemoveButton, SIGNAL(clicked()), SLOT(removeLibrary()));
+    mpEditButton = new QPushButton(tr("Edit"));
+    connect(mpEditButton, SIGNAL(clicked()), SLOT(openEditLibrary()));
+
+    mpButtonBox = new QDialogButtonBox(Qt::Vertical);
+    mpButtonBox->addButton(mpAddButton, QDialogButtonBox::ActionRole);
+    mpButtonBox->addButton(mpRemoveButton, QDialogButtonBox::ActionRole);
+    mpButtonBox->addButton(mpEditButton, QDialogButtonBox::ActionRole);
+
+    mpLibrariesAddLabel = new QLabel(Helper::librariesAddNote);
+
+    QGridLayout *mainLayout = new QGridLayout;
+    mainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    mainLayout->addWidget(mpLibrariesTree, 0, 0);
+    mainLayout->addWidget(mpButtonBox, 0, 1);
+    mainLayout->addWidget(mpLibrariesAddLabel, 1, 0, 1, 2);
+    mpLibrariesGroup->setLayout(mainLayout);
+
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->addWidget(mpLibrariesGroup);
+
+    setLayout(layout);
+}
+
+//! Returns the Libraries Tree instance.
+QTreeWidget* LibrariesPage::getLibrariesTree()
+{
+    return mpLibrariesTree;
+}
+
+//! Slot activated when mpAddButton clicked signal is raised.
+//! Creates an instance of AddLibraryWidget and show it.
+void LibrariesPage::openAddLibrary()
+{
+    AddLibraryWidget *pAddLibraryWidget = new AddLibraryWidget(this);
+    pAddLibraryWidget->show();
+}
+
+//! Slot activated when mpRemoveButton clicked signal is raised.
+//! Removes the selected tree item
+void LibrariesPage::removeLibrary()
+{
+    if (mpLibrariesTree->selectedItems().size() > 0)
+    {
+        mpLibrariesTree->removeItemWidget(mpLibrariesTree->selectedItems().at(0), 0);
+        delete mpLibrariesTree->selectedItems().at(0);
+    }
+}
+
+//! Slot activated when mpEditButton clicked signal is raised.
+//! Opens the AddLibraryWidget in edit mode and pass it the selected tree item.
+void LibrariesPage::openEditLibrary()
+{
+    if (mpLibrariesTree->selectedItems().size() > 0)
+    {
+        AddLibraryWidget *pAddLibraryWidget = new AddLibraryWidget(this);
+        pAddLibraryWidget->setWindowTitle(QString(Helper::applicationName).append(" - Edit Library"));
+        pAddLibraryWidget->mEditFlag = true;
+        pAddLibraryWidget->mpNameTextBox->setText(mpLibrariesTree->selectedItems().at(0)->text(0));
+        pAddLibraryWidget->mpValueTextBox->setText(mpLibrariesTree->selectedItems().at(0)->text(1));
+        pAddLibraryWidget->show();
+    }
+}
+
+//! @class AddLibraryWidget
+//! @brief Creats an interface for Adding new Libraries.
+
+//! Constructor
+//! @param pParent is the pointer to LibrariesPage
+AddLibraryWidget::AddLibraryWidget(LibrariesPage *pParent)
+    : QDialog(pParent, Qt::WindowTitleHint), mEditFlag(false)
+{
+    setWindowTitle(QString(Helper::applicationName).append(" - Add Library"));
+    setAttribute(Qt::WA_DeleteOnClose);
+    setModal(true);
+
+    mpParentLibrariesPage = pParent;
+
+    mpNameLabel = new QLabel(tr("Name:"));
+    mpNameTextBox = new QLineEdit;
+    mpValueLabel = new QLabel(tr("Value:"));
+    mpValueTextBox = new QLineEdit;
+    mpOkButton = new QPushButton(tr("OK"));
+    connect(mpOkButton, SIGNAL(clicked()), SLOT(addLibrary()));
+
+    QGridLayout *mainLayout = new QGridLayout;
+    mainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    mainLayout->addWidget(mpNameLabel, 0, 0);
+    mainLayout->addWidget(mpNameTextBox, 0, 1);
+    mainLayout->addWidget(mpValueLabel, 1, 0);
+    mainLayout->addWidget(mpValueTextBox, 1, 1);
+    mainLayout->addWidget(mpOkButton, 2, 0, 1, 2, Qt::AlignRight);
+
+    setLayout(mainLayout);
+}
+
+//! Returns tree if the name exists in the tree's first column.
+bool AddLibraryWidget::nameExists(QTreeWidgetItem *pItem)
+{
+    QTreeWidgetItemIterator it(mpParentLibrariesPage->getLibrariesTree());
+    while (*it)
+    {
+        QTreeWidgetItem *pChildItem = dynamic_cast<QTreeWidgetItem*>(*it);
+        // edit case
+        if (pItem)
+        {
+            if (pChildItem != pItem)
+            {
+                if (pChildItem->text(0).compare(mpNameTextBox->text()) == 0)
+                {
+                    return true;
+                }
+            }
+        }
+        // add case
+        else
+        {
+            if (pChildItem->text(0).compare(mpNameTextBox->text()) == 0)
+            {
+                return true;
+            }
+        }
+        ++it;
+    }
+    return false;
+}
+
+//! Slot activated when mpOkButton clicked signal is raised.
+//! Add/Edit the library in the tree.
+void AddLibraryWidget::addLibrary()
+{
+    // if name text box is empty show error and return
+    if (mpNameTextBox->text().isEmpty())
+    {
+        QMessageBox::critical(this, Helper::applicationName + " - Error", GUIMessages::getMessage(GUIMessages::ENTER_NAME).
+                              arg("a"), tr("OK"));
+        return;
+    }
+    // if value text box is empty show error and return
+    if (mpValueTextBox->text().isEmpty())
+    {
+        QMessageBox::critical(this, Helper::applicationName + " - Error", GUIMessages::getMessage(GUIMessages::ENTER_NAME).
+                              arg("the value for a"), tr("OK"));
+        return;
+    }
+    // if user is adding a new library
+    if (!mEditFlag)
+    {
+        if (nameExists())
+        {
+            QMessageBox::critical(this, Helper::applicationName + " - Error", GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS),
+                                  tr("OK"));
+            return;
+        }
+        QStringList values;
+        values << mpNameTextBox->text() << mpValueTextBox->text();
+        mpParentLibrariesPage->getLibrariesTree()->addTopLevelItem(new QTreeWidgetItem(values));
+    }
+    // if user is editing old library
+    else if (mEditFlag)
+    {
+        QTreeWidgetItem *pItem = mpParentLibrariesPage->getLibrariesTree()->selectedItems().at(0);
+        if (nameExists(pItem))
+        {
+            QMessageBox::critical(this, Helper::applicationName + " - Error", GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS),
+                                  tr("OK"));
+            return;
+        }
+        pItem->setText(0, mpNameTextBox->text());
+        pItem->setText(1, mpValueTextBox->text());
+    }
+    accept();
 }

@@ -749,10 +749,10 @@ ConnectorArrayMenu::ConnectorArrayMenu(Connector *pConnector,QWidget *pParent)
     // Create the buttons
     mpOkButton = new QPushButton(tr("OK"));
     mpOkButton->setAutoDefault(true);
-    connect(mpOkButton, SIGNAL(pressed()), SLOT(addIndex()));
+    connect(mpOkButton, SIGNAL(clicked()), SLOT(addIndex()));
     mpCancelButton = new QPushButton(tr("Cancel"));
     mpCancelButton->setAutoDefault(false);
-    connect(mpCancelButton, SIGNAL(pressed()), SLOT(reject()));
+    connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
 
     mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
     mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);

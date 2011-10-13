@@ -77,7 +77,7 @@ OMCProxy::OMCProxy(MainWindow *pParent, bool displayErrors)
     horizontallayout->setContentsMargins(0, 0, 0, 0);
     mpExpressionTextBox = new CustomExpressionBox(this);
     mpSendButton = new QPushButton("Send");
-    connect(mpSendButton, SIGNAL(pressed()), SLOT(sendCustomExpression()));
+    connect(mpSendButton, SIGNAL(clicked()), SLOT(sendCustomExpression()));
     horizontallayout->addWidget(mpExpressionTextBox);
     horizontallayout->addWidget(mpSendButton);
     QVBoxLayout *verticalallayout = new QVBoxLayout;
@@ -545,7 +545,7 @@ void OMCProxy::loadStandardLibrary(QStringList &failed)
     } else {
         if (version < 2) sendCommand("setAnnotationVersion(\"1.x\")");
         else if (version < 3) sendCommand("setAnnotationVersion(\"2.x\")");
-        QMessageBox::warning(mpParentMainWindow, Helper::applicationName + " requires Modelica 3 annotations",
+            QMessageBox::warning(mpParentMainWindow, Helper::applicationName + " requires Modelica 3 annotations",
                              "Modelica Standard Library version " + versionStr + " is unsupported", "OK");
     }
 }

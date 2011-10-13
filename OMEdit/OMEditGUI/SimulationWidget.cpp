@@ -138,10 +138,10 @@ void SimulationWidget::setUpForm()
     // Create the buttons
     mpSimulateButton = new QPushButton(tr("Simulate!"));
     mpSimulateButton->setAutoDefault(true);
-    connect(mpSimulateButton, SIGNAL(pressed()), this, SLOT(simulate()));
+    connect(mpSimulateButton, SIGNAL(clicked()), this, SLOT(simulate()));
     mpCancelButton = new QPushButton(tr("Cancel"));
     mpCancelButton->setAutoDefault(false);
-    connect(mpCancelButton, SIGNAL(pressed()), this, SLOT(reject()));
+    connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
 
     mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
     mpButtonBox->addButton(mpSimulateButton, QDialogButtonBox::ActionRole);

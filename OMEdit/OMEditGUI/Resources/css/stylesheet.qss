@@ -26,6 +26,10 @@ QTreeWidget::item {
     height: 22px;
 }
 /* End of Library Widget Styles */
+QTreeWidget#LibrariesTree::branch {
+    border-image: none;
+    image : none;
+}
 
 QTextEdit, QLineEdit {
     border: 1px solid gray;

@@ -142,6 +142,7 @@ public:
     static QString center;
     static QString right;
     static QString exportingModelFMU;
+    static QString librariesAddNote;
 };
 
 class GUIMessages

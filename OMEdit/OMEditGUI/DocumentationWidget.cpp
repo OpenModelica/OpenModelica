@@ -53,11 +53,11 @@ DocumentationWidget::DocumentationWidget(MainWindow *pParent)
     mpEditButton = new QPushButton(tr("Edit"));
     mpEditButton->setAutoDefault(true);
     mpEditButton->setMaximumSize(QSize(100,20));
-    connect(mpEditButton, SIGNAL(pressed()), SLOT(editDocumentation()));
+    connect(mpEditButton, SIGNAL(clicked()), SLOT(editDocumentation()));
     mpSaveButton = new QPushButton(tr("Save"));
     mpSaveButton->setAutoDefault(false);
     mpSaveButton->setMaximumSize(QSize(100,20));
-    connect(mpSaveButton, SIGNAL(pressed()), SLOT(saveChanges()));
+    connect(mpSaveButton, SIGNAL(clicked()), SLOT(saveChanges()));
     QHBoxLayout *horizontalLayout = new QHBoxLayout;
     horizontalLayout->addWidget(mpPixmapLabel);
     horizontalLayout->addWidget(mpHeadingLabel);

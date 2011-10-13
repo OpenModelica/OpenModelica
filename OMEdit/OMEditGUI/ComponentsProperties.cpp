@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linkoping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -59,8 +59,8 @@ ComponentsProperties::ComponentsProperties(QString value)
     this->mCasualityMap.insert("unspecified", "none");
     this->mCasuality.clear();
 
-    this->mIndex="";
-    this->mIndexValue=0;
+    this->mIndex = "";
+    this->mIndexValue = 0;
     parseString(value);
 }
 
@@ -68,21 +68,18 @@ void ComponentsProperties::parseString(QString value)
 {
     if (value.isEmpty())
         return;
-// retrieving the index value in case the connecting port is an array type
+    // retrieving the index value in case the connecting port is an array type
     int index = 0;
     QStringList list = StringHandler::getStrings(value);
-     mIndex = StringHandler::removeFirstLastCurlBrackets(list.at(list.size()-1));
+    mIndex = StringHandler::removeFirstLastCurlBrackets(list.at(list.size()-1));
 
-
-            bool ok;
-            if(mIndex.isEmpty())
-            mIndexValue=-1;
-            else if(mIndex=="n")
-                mIndexValue=-2;
-            else
-                mIndexValue=mIndex.toInt(&ok,10);
-
-
+    bool ok;
+    if (mIndex.isEmpty())
+        mIndexValue = -1;
+    else if (mIndex == "n")
+        mIndexValue = -2;
+    else
+        mIndexValue = mIndex.toInt(&ok,10);
 
     if (list.size() > 0)
         this->mClassName = list.at(0);

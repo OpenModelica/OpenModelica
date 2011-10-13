@@ -287,17 +287,17 @@ void BitmapWidget::setUpForm()
 
     mpBrowseButton = new QPushButton(tr("Browse"));
     mpBrowseButton->setAutoDefault(true);
-    connect(mpBrowseButton, SIGNAL(pressed()), this, SLOT(browse()));
+    connect(mpBrowseButton, SIGNAL(clicked()), this, SLOT(browse()));
 
     mpCheckBox = new QCheckBox("Store picture in model", this);        
 
     mpOkButton = new QPushButton(tr("OK"));
     mpOkButton->setAutoDefault(false);
-    connect(mpOkButton, SIGNAL(pressed()), this, SLOT(edit()));
+    connect(mpOkButton, SIGNAL(clicked()), this, SLOT(edit()));
 
     mpCancelButton = new QPushButton(tr("Cancel"));
     mpCancelButton->setAutoDefault(false);
-    connect(mpCancelButton, SIGNAL(pressed()), this, SLOT(reject()));
+    connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
 
     mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
     mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);

@@ -868,10 +868,10 @@ void TextWidget::setUpForm()
     //Buttons
     mpEditButton = new QPushButton(tr("Ok"));
     mpEditButton->setAutoDefault(true);
-    connect(mpEditButton, SIGNAL(pressed()), this, SLOT(edit()));
+    connect(mpEditButton, SIGNAL(clicked()), this, SLOT(edit()));
     mpCancelButton = new QPushButton(tr("Cancel"));
     mpCancelButton->setAutoDefault(false);
-    connect(mpCancelButton, SIGNAL(pressed()), this, SLOT(reject()));
+    connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
     mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
     mpButtonBox->addButton(mpEditButton, QDialogButtonBox::ActionRole);
     mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);   

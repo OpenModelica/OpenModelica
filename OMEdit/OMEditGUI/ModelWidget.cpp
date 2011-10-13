@@ -53,10 +53,10 @@ ModelCreator::ModelCreator(MainWindow *parent)
     // Create the buttons
     mpOkButton = new QPushButton(tr("OK"));
     mpOkButton->setAutoDefault(true);
-    connect(mpOkButton, SIGNAL(pressed()), SLOT(create()));
+    connect(mpOkButton, SIGNAL(clicked()), SLOT(create()));
     mpCancelButton = new QPushButton(tr("Cancel"));
     mpCancelButton->setAutoDefault(false);
-    connect(mpCancelButton, SIGNAL(pressed()), SLOT(reject()));
+    connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
 
     mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
     mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
@@ -194,10 +194,10 @@ RenameClassWidget::RenameClassWidget(QString name, QString nameStructure, MainWi
     // Create the buttons
     this->mpOkButton = new QPushButton(tr("Rename"));
     this->mpOkButton->setAutoDefault(true);
-    connect(this->mpOkButton, SIGNAL(pressed()), this, SLOT(renameClass()));
+    connect(this->mpOkButton, SIGNAL(clicked()), this, SLOT(renameClass()));
     this->mpCancelButton = new QPushButton(tr("&Cancel"));
     this->mpCancelButton->setAutoDefault(false);
-    connect(this->mpCancelButton, SIGNAL(pressed()), this, SLOT(reject()));
+    connect(this->mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
 
     this->mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
     this->mpButtonBox->addButton(this->mpOkButton, QDialogButtonBox::ActionRole);
@@ -277,7 +277,7 @@ CheckModelWidget::CheckModelWidget(QString name, QString nameStructure, MainWind
                                 mpParentMainWindow->mpOMCProxy->checkModel(mNameStructure)));
     // Create the button
     mpOkButton = new QPushButton(tr("OK"));
-    connect(mpOkButton, SIGNAL(pressed()), SLOT(close()));
+    connect(mpOkButton, SIGNAL(clicked()), SLOT(close()));
 
     // Create a layout
     QHBoxLayout *buttonLayout = new QHBoxLayout;
@@ -313,7 +313,7 @@ FlatModelWidget::FlatModelWidget(QString name, QString nameStructure, MainWindow
 
     // Create the button
     mpOkButton = new QPushButton(tr("OK"));
-    connect(mpOkButton, SIGNAL(pressed()), SLOT(close()));
+    connect(mpOkButton, SIGNAL(clicked()), SLOT(close()));
 
     // Create a layout
     QHBoxLayout *buttonLayout = new QHBoxLayout;

@@ -76,6 +76,7 @@ class GeneralSettingsPage;
 class ModelicaTextEditorPage;
 class PenStylePage;
 class BrushStylePage;
+class LibrariesPage;
 
 class OptionsWidget : public QDialog
 {
@@ -87,10 +88,12 @@ public:
     void readModelicaTextSettings();
     void readPenStyleSettings();
     void readBrushStyleSettings();
+    void readLibrariesSettings();
     void saveGeneralSettings();
     void saveModelicaTextSettings();
     void savePenStyleSettings();
     void saveBrushStyleSettings();
+    void saveLibrariesSettings();
     void setUpDialog();
     void addListItems();
     void createPages();
@@ -101,6 +104,7 @@ public:
     ModelicaTextEditorPage *mpModelicaTextEditorPage;
     PenStylePage *mpPenStylePage;
     BrushStylePage *mpBrushStylePage;
+    LibrariesPage *mpLibrariesPage;
 signals:
     void modelicaTextSettingsChanged();
 public slots:
@@ -239,6 +243,46 @@ private:
 public slots:
     void pickColor();
     void noColorChecked(int state);
+};
+
+class LibrariesPage : public QWidget
+{
+    Q_OBJECT
+public:
+    LibrariesPage(OptionsWidget *pParent);
+    QTreeWidget* getLibrariesTree();
+
+    OptionsWidget *mpParentOptionsWidget;
+private:
+    QGroupBox *mpLibrariesGroup;
+    QTreeWidget *mpLibrariesTree;
+    QPushButton *mpAddButton;
+    QPushButton *mpRemoveButton;
+    QPushButton *mpEditButton;
+    QDialogButtonBox *mpButtonBox;
+    QLabel *mpLibrariesAddLabel;
+private slots:
+    void openAddLibrary();
+    void removeLibrary();
+    void openEditLibrary();
+};
+
+class AddLibraryWidget : public QDialog
+{
+    Q_OBJECT
+public:
+    AddLibraryWidget(LibrariesPage *pParent);
+    bool nameExists(QTreeWidgetItem *pItem = 0);
+
+    LibrariesPage *mpParentLibrariesPage;
+    QLabel *mpNameLabel;
+    QLineEdit *mpNameTextBox;
+    QLabel *mpValueLabel;
+    QLineEdit *mpValueTextBox;
+    QPushButton *mpOkButton;
+    bool mEditFlag;
+private slots:
+    void addLibrary();
 };
 
 #endif // OPTIONSWIDGET_H

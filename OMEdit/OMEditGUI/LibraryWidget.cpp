@@ -1166,7 +1166,7 @@ SearchMSLWidget::SearchMSLWidget(MainWindow *pParent)
     mpSearchTextBox = new MSLSearchBox(this);
     connect(mpSearchTextBox, SIGNAL(returnPressed()), SLOT(searchMSL()));
     mpSearchButton = new QPushButton(tr("Search"));
-    connect(mpSearchButton, SIGNAL(pressed()), SLOT(searchMSL()));
+    connect(mpSearchButton, SIGNAL(clicked()), SLOT(searchMSL()));
     mpSearchedItemsTree = new LibraryTree(mpParentMainWindow->mpLibrary);
     mpSearchedItemsTree->setFrameShape(QFrame::StyledPanel);
     mpSearchedItemsTree->setHeaderLabel(tr("Searched Items"));

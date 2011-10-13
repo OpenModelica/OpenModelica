@@ -88,5 +88,6 @@
         <file>Resources/icons/preferences.png</file>
         <file>Resources/icons/export-fmi.png</file>
         <file>Resources/icons/import-fmi.png</file>
+        <file>Resources/icons/libraries.png</file>
     </qresource>
 </RCC>

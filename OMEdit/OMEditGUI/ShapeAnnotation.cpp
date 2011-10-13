@@ -739,10 +739,10 @@ void ShapeProperties::setUpLineDialog()
     }
     mpOkButton = new QPushButton(tr("OK"));
     mpOkButton->setAutoDefault(true);
-    connect(mpOkButton, SIGNAL(pressed()), SLOT(applyChanges()));
+    connect(mpOkButton, SIGNAL(clicked()), SLOT(applyChanges()));
     mpCancelButton = new QPushButton(tr("Cancel"));
     mpCancelButton->setAutoDefault(false);
-    connect(mpCancelButton, SIGNAL(pressed()), SLOT(reject()));
+    connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
 
     mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
     mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
@@ -774,7 +774,7 @@ QVBoxLayout* ShapeProperties::createPenControls()
     mpPenColorLabel = new QLabel(tr("Color:"));
     mpPenColorViewerLabel = new QLabel(tr(""));
     mpPenColorPickButton = new QPushButton(tr("Pick Color"));
-    connect(mpPenColorPickButton, SIGNAL(pressed()), SLOT(pickPenColor()));
+    connect(mpPenColorPickButton, SIGNAL(clicked()), SLOT(pickPenColor()));
     mpPenNoColorCheckBox = new QCheckBox(tr("No Color"));
     connect(mpPenNoColorCheckBox, SIGNAL(stateChanged(int)), SLOT(penNoColorChecked(int)));
 
@@ -850,7 +850,7 @@ QVBoxLayout* ShapeProperties::createBrushControls()
     mpBrushColorLabel = new QLabel(tr("Color:"));
     mpBrushColorViewerLabel = new QLabel(tr(""));
     mpBrushColorPickButton = new QPushButton(tr("Pick Color"));
-    connect(mpBrushColorPickButton, SIGNAL(pressed()), SLOT(pickBrushColor()));
+    connect(mpBrushColorPickButton, SIGNAL(clicked()), SLOT(pickBrushColor()));
     mpBrushNoColorCheckBox = new QCheckBox(tr("No Color"));
     connect(mpBrushNoColorCheckBox, SIGNAL(stateChanged(int)), SLOT(brushNoColorChecked(int)));
 

@@ -1692,7 +1692,7 @@ ProjectTab::ProjectTab(QString name, QString nameStructure, int modelicaType, in
     mpDocumentationViewToolButton->setIconSize(Helper::buttonIconSize);
     mpDocumentationViewToolButton->setToolTip(Helper::documentationView);
     mpDocumentationViewToolButton->setAutoRaise(true);
-    connect(mpDocumentationViewToolButton, SIGNAL(pressed()), SLOT(showDocumentationView()));
+    connect(mpDocumentationViewToolButton, SIGNAL(clicked()), SLOT(showDocumentationView()));
     viewsButtonsHorizontalLayout->addWidget(mpDocumentationViewToolButton);
 
     viewsButtonsFrame->setLayout(viewsButtonsHorizontalLayout);
@@ -2695,10 +2695,10 @@ WelcomePageWidget::WelcomePageWidget(MainWindow *parent)
     // bottom frame create and open buttons buttons
     mpCreateModelButton = new QPushButton(tr("Create Model"));
     mpCreateModelButton->setStyleSheet(tr("QPushButton{padding: 5px 15px 5px 15px;}"));
-    connect(mpCreateModelButton, SIGNAL(pressed()), mpParentMainWindow, SLOT(openNewModel()));
+    connect(mpCreateModelButton, SIGNAL(clicked()), mpParentMainWindow, SLOT(openNewModel()));
     mpOpenModelButton = new QPushButton(tr("Open Model"));
     mpOpenModelButton->setStyleSheet(tr("QPushButton{padding: 5px 15px 5px 15px;}"));
-    connect(mpOpenModelButton, SIGNAL(pressed()), mpParentMainWindow->mpProjectTabs, SLOT(openFile()));
+    connect(mpOpenModelButton, SIGNAL(clicked()), mpParentMainWindow->mpProjectTabs, SLOT(openFile()));
     // bottom frame layout
     QHBoxLayout *bottomFrameLayout = new QHBoxLayout;
     bottomFrameLayout->addWidget(mpCreateModelButton, 0, Qt::AlignLeft);
