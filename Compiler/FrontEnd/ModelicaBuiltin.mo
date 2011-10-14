@@ -1536,8 +1536,9 @@ end reopenStandardStream;
 function importFMU "Imports the Functional Mockup Unit
   Example command:
   importFMU(\"A.fmu\");"
-  input String filename;
-  output Boolean success;
+  input String filename "the fmu file name";
+  input String outputDir := "<default>" "The output directory for imported FMU files. <default> will put the files to current working directory.";
+  output Boolean success "Returns true on success";
 external "builtin";
 end importFMU;
 

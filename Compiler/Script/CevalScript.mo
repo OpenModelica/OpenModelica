@@ -1217,7 +1217,7 @@ algorithm
       then
         (cache,Values.BOOL(b),st);
         
-    case (cache,env,"importFMU",{Values.STRING(filename)},st,msg)
+    case (cache,env,"importFMU",{Values.STRING(filename), Values.STRING(workdir)},st,msg)
       equation
         // get OPENMODELICAHOME
         omhome = Settings.getInstallationDirectoryPath();
@@ -1225,12 +1225,13 @@ algorithm
         // current directory 
         str = System.pwd() +& pd;
         str1 = str +& filename;
-        filename = Util.if_(System.regularFileExists(str1), str1, filename);
+        filename = Util.if_(System.regularFileExists(filename), filename, str1);
+        workdir = Util.if_(System.directoryExists(workdir), workdir, str);
         // create the path till fmigenerator
         s1 = Util.if_(System.os() ==& "Windows_NT", ".exe", "");
         str2 = stringAppendList({omhome,pd,"bin",pd,"fmigenerator",s1});
         // create the list of arguments for fmigenerator
-        str3 = "--fmufile=\"" +& filename +& "\" --outputdir=\"" +& str +& "\"";
+        str3 = "--fmufile=\"" +& filename +& "\" --outputdir=\"" +& workdir +& "\"";
         call = str2 +& " " +& str3;
         
         0 = System.systemCall(call);
