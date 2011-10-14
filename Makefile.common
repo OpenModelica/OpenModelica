@@ -50,7 +50,7 @@ docs: mkbuilddirs omlibrary
 	(cd doc/manpages/; for f in *.1; do gzip $$f -c > ../../$(builddir_man)/man1/$$f.gz && touch -r $$f ../../$(builddir_man)/man1/$$f.gz; done)
 
 fmi:
-	(cd FMI/import/source; time $(MAKE) -f Makefile.omdev.mingw)
+	$(MAKE) -C FMI/import/source -f $(defaultMakefileTarget)
 
 breakprocess:
 	(cd testsuite/bootstrapping; time g++ BreakProcess.cpp -o BreakProcess -static-libgcc)

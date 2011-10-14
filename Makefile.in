@@ -24,10 +24,10 @@ settings:
 
 difftool: mkbuilddirs
 	$(MAKE) -C testsuite/difftool
-omc: difftool c_runtime docs
+omc: difftool c_runtime docs fmi
 	(cd Compiler && $(MAKE) -f Makefile release)
 
-omcd: difftool c_runtime docs
+omcd: difftool c_runtime docs fmi
 	(cd Compiler && $(MAKE) -f Makefile debug)
 
 qtclean-common:
