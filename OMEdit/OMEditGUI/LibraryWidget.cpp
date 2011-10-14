@@ -621,12 +621,8 @@ void LibraryTree::createActions()
 void LibraryTree::addModelicaStandardLibrary()
 {
     // load Modelica Standard Library.
-    QStringList failed;
-    mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->loadStandardLibrary(failed);
+    mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->loadStandardLibrary();
 
-    foreach (QString lib, failed) {
-        mpParentLibraryWidget->mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(QString("Failed to load library " + lib));
-    }
     QStringList libs = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassNames("");
     libs.sort();
     foreach (QString lib, libs) {

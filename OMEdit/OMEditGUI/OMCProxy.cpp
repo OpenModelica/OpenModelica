@@ -449,13 +449,7 @@ void OMCProxy::restartApplication()
 QString OMCProxy::getErrorString()
 {
     sendCommand("getErrorString()");
-    if (getResult().size() > 3)
-        return getResult();
-    else
-    {
-        setResult(tr(""));
-        return getResult();
-    }
+    return StringHandler::unparse(getResult());
 }
 
 QString OMCProxy::getVersion()
@@ -511,7 +505,7 @@ QString OMCProxy::getEnvironmentVar(QString name)
 }
 
 //! Loads the OpenModelica Standard Library.
-void OMCProxy::loadStandardLibrary(QStringList &failed)
+void OMCProxy::loadStandardLibrary()
 {
     QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
 
@@ -532,7 +526,12 @@ void OMCProxy::loadStandardLibrary(QStringList &failed)
         QString command = "loadModel(" + lib + ",{\"" + version + "\"})";
         sendCommand(command);
         if (!StringHandler::unparseBool(getResult())) {
-            failed.prepend(lib);
+          mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(getErrorString());
+        } else {
+          QString str = getErrorString();
+          if (str.size()) {
+            mpParentMainWindow->mpMessageWidget->printGUIWarningMessage(str);
+          }
         }
     }
 
