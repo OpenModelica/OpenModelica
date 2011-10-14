@@ -2094,7 +2094,7 @@ algorithm
       // new variables
       ModelInfo modelInfo;
       list<SimEqSystem> allEquations;
-      list<SimEqSystem> odeEquations;         // --> functionODE
+      list<list<SimEqSystem>> odeEquations;         // --> functionODE
       list<SimEqSystem> algebraicEquations;   // --> functionAlgebraics
       list<SimEqSystem> residualEquations;    // --> initial_residual
       list<SimEqSystem> initialEquations;     // --> initial_function
@@ -2151,6 +2151,8 @@ algorithm
         
         // equation generation for euler, dassl2, rungekutta
         (odeEquations,algebraicEquations,allEquations) = createEquationsForSystems(ifcpp,systs,shared,helpVarInfo,{},{},{});
+        
+        odeEquations = makeEqualLengthLists(odeEquations,RTOpts.noProc());
 
         // Assertions and crap
         initialEquations = BackendDAEUtil.foldEqSystem(dlow2,createInitialEquations,{});
@@ -2172,7 +2174,7 @@ algorithm
         varlst2 = listAppend(varlst,varlst1);
         vars = BackendDAEUtil.listVar(varlst2);
         (allEquations,divLst) = listMap1_2(allEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
-        (odeEquations,_) = listMap1_2(odeEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
+        (odeEquations,_) = listListMap1_2(odeEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
         (algebraicEquations,_) = listMap1_2(algebraicEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
         (residualEquations,_) = listMap1_2(residualEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));
         (initialEquations,_) = listMap1_2(initialEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ALL()));
@@ -2200,7 +2202,7 @@ algorithm
           recordDecls,
           externalFunctionIncludes,
           allEquations,
-          {odeEquations},
+          odeEquations,
           algebraicEquations,
           residualEquations,
           initialEquations,
@@ -2240,10 +2242,10 @@ protected function createEquationsForSystems
   input BackendDAE.EqSystems systs;
   input BackendDAE.Shared shared;
   input list<HelpVarInfo> helpVarInfo;
-  input list<SimEqSystem> odeEquations;
+  input list<list<SimEqSystem>> odeEquations;
   input list<SimEqSystem> algebraicEquations;
   input list<SimEqSystem> allEquations;
-  output list<SimEqSystem> oodeEquations;
+  output list<list<SimEqSystem>> oodeEquations;
   output list<SimEqSystem> oalgebraicEquations;
   output list<SimEqSystem> oallEquations;
 algorithm
@@ -2266,7 +2268,7 @@ algorithm
         odeEquations1 = createEquations(false, false, ifcpp, false, false, syst, shared, blt_states1, helpVarInfo);
         algebraicEquations1 = createEquations(ifcpp, false, ifcpp, false, false, syst, shared, contBlocks1, helpVarInfo);
         allEquations1 = createEquations(true, false, true, false, false, syst, shared, comps, helpVarInfo);
-        odeEquations = listAppend(odeEquations,odeEquations1);
+        odeEquations = odeEquations1::odeEquations;
         algebraicEquations = listAppend(algebraicEquations,algebraicEquations1);
         allEquations = listAppend(allEquations,allEquations1);
         (odeEquations,algebraicEquations,allEquations) = createEquationsForSystems(ifcpp,systs,shared,helpVarInfo,odeEquations,algebraicEquations,allEquations);
@@ -2737,6 +2739,7 @@ algorithm
   omhome := Settings.getInstallationDirectoryPath();
   omhome := System.trim(omhome, "\""); // Remove any quotation marks from omhome.
   cflags := System.getCFlags();
+  cflags := Debug.bcallret2(RTOpts.debugFlag("openmp"),stringAppend,cflags," -fopenmp",cflags);
   ldflags := System.getLDFlags();
   senddatalibs := System.getSendDataLibs();
   platform := System.platform();
@@ -9792,6 +9795,49 @@ algorithm
   end match;
 end listMap1_2;
 
+public function listListMap1_2 "
+  Takes a list and a function over the elements and an additional argument returning a tuple of
+  two types, which is applied for each element producing two new lists.
+  See also listMap_2."
+  input list<list<Type_a>> inTypeALst;
+  input FuncTypeType_aToType_bType_c inFuncTypeTypeAToTypeBTypeC;
+  input Type_d extraArg;
+  output list<list<Type_b>> outTypeBLst;
+  output list<Type_c> outTypeCLst;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  partial function FuncTypeType_aToType_bType_c
+    input Type_a inTypeA;
+    input Type_d extraArg;
+    output Type_b outTypeB;
+    output list<Type_c> outTypeC;
+    replaceable type Type_b subtypeof Any;
+    replaceable type Type_c subtypeof Any;
+  end FuncTypeType_aToType_bType_c;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+algorithm
+  (outTypeBLst,outTypeCLst):=
+  match (inTypeALst,inFuncTypeTypeAToTypeBTypeC,extraArg)
+    local
+      list<Type_b> f1_1;
+      list<Type_c> f2_1;
+      list<list<Type_b>> r1_1;
+      list<Type_c> r2_1,r2_2;
+      list<Type_a> f;
+      list<list<Type_a>> r;
+      FuncTypeType_aToType_bType_c fn;
+    case ({},_,_) then ({},{});
+    case ((f :: r),fn,extraArg)
+      equation
+        (f1_1,f2_1) = listMap1_2(f,fn,extraArg);
+        (r1_1,r2_1) = listListMap1_2(r,fn,extraArg);
+        r2_2 = listAppend(f2_1,r2_1);
+      then
+        ((f1_1 :: r1_1),r2_2);
+  end match;
+end listListMap1_2;
+
 protected function solve
   input DAE.Exp lhs;
   input DAE.Exp rhs;
@@ -12119,5 +12165,53 @@ algorithm
         -1;
   end matchcontinue;
 end fileName2fileIndex;
+
+protected function makeEqualLengthLists
+  input list<list<A>> lst;
+  input Integer i;
+  output list<list<A>> olst;
+  replaceable type A subtypeof Any;
+algorithm
+  olst := matchcontinue (lst,i)
+    local
+      Integer n;
+      list<A> l;
+    case (lst,_)
+      equation
+        false = RTOpts.debugFlag("openmp") or RTOpts.debugFlag("pthreads");
+        l = List.flatten(lst);
+      then l::{};
+    case (lst,0) then lst;
+    case (lst,1)
+      equation
+        l = List.flatten(lst);
+      then l::{};
+    case (lst,i)
+      equation
+        n = listLength(lst);
+        n = intDiv(n,i) + Util.if_(intMod(n,i)>0,1,0);
+      then makeEqualLengthLists2(lst,n,n,{},{});
+  end matchcontinue;
+end makeEqualLengthLists;
+
+protected function makeEqualLengthLists2
+  input list<list<A>> lst;
+  input Integer i;
+  input Integer n;
+  input list<A> acc1;
+  input list<list<A>> acc2;
+  output list<list<A>> olst;
+  replaceable type A subtypeof Any;
+algorithm
+  olst := match (lst,i,n,acc1,acc2)
+    local
+      list<A> l;
+    case ({},i,n,{},acc2) then acc2;
+    case ({},i,n,acc1,acc2) then acc1::acc2;
+    case (lst,0,n,{},acc2) then makeEqualLengthLists2(lst,n,n,{},acc2);
+    case (lst,0,n,acc1,acc2) then makeEqualLengthLists2(lst,n,n,{},acc1::acc2);
+    case (l::lst,i,n,acc1,acc2) then makeEqualLengthLists2(lst,i-1,n,listAppend(l,acc1),acc2);
+  end match;
+end makeEqualLengthLists2;
 
 end SimCode;

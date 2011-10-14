@@ -705,6 +705,12 @@ function setCompiler
 external "builtin";
 end setCompiler;
 
+function setCXXCompiler
+  input String compiler;
+  output Boolean success;
+external "builtin";
+end setCXXCompiler;
+
 function verifyCompiler
   output Boolean compilerWorks;
 external "builtin";

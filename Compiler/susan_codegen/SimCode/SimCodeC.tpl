@@ -1010,26 +1010,46 @@ template functionWhenReinitStatementElse(list<WhenOperator> reinits, Text &preEx
   >>
 end functionWhenReinitStatementElse;
 
+template functionODE_system(list<SimEqSystem> derivativEquations, Integer n)
+::=
+  let &varDecls = buffer ""
+  let odeEqs = derivativEquations |> eq => equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/); separator="\n"
+  <<
+  static void functionODE_system<%n%>(int omc_thread_number)
+  {
+    <%varDecls%>
+    <%odeEqs%>
+  }
+  >>
+end functionODE_system;
+
 template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
  "Generates function in simulation file."
 ::=
   let () = System.tmpTickReset(0)
-  let &varDecls = buffer "" /*BUFD*/
-  let odeEquations = (derivativEquations |> eqs => (eqs |> eq =>
-      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/); separator="\n")
-    ;separator="\n")
+  let funcs = derivativEquations |> eqs hasindex i1 fromindex 0 => functionODE_system(eqs,i1) ; separator="\n"
+  let nFuncs = listLength(derivativEquations)
+  let funcNames = derivativEquations |> eqs hasindex i1 fromindex 0 => 'functionODE_system<%i1%>' ; separator=",\n"
   let &varDecls2 = buffer "" /*BUFD*/
   let stateContPartInline = (derivativEquations |> eqs => (eqs |> eq =>
       equation_(eq, contextInlineSolver, &varDecls2 /*BUFC*/); separator="\n")
     ;separator="\n")
   <<
+  <%funcs%>
+  static void (*functionODE_systems[<%nFuncs%>])(int) = {
+    <%funcNames%>
+  };
+  
   int functionODE()
   {
-    state mem_state;
-    <%varDecls%>
-  
+    int id,th_id;
+    state mem_state; /* We need to have separate memory pools for separate systems... */
     mem_state = get_memory_state();
-    <%odeEquations%>
+    <% if RTOpts.debugFlag("openmp") then '#pragma omp parallel for private(id,th_id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)' %>
+    for (id=0; id<<%nFuncs%>; id++) {
+      th_id = omp_get_thread_num();
+      functionODE_systems[id](th_id);
+    }
     restore_memory_state(mem_state);
   
     return 0;
@@ -2206,11 +2226,12 @@ end initValXml;
 template commonHeader()
 ::=
   <<
-  <% if acceptMetaModelicaGrammar() then '#define __OPENMODELICA__METAMODELICA'%>
+  <% if acceptMetaModelicaGrammar() then "#define __OPENMODELICA__METAMODELICA"%>
+  <% if RTOpts.debugFlag("openmp") then "#include <omp.h>" else "#define omp_get_thread_num() 0" %>
   #include "modelica.h"
   #include <stdio.h>
   #include <stdlib.h>
-  #include <errno.h>  
+  #include <errno.h>
   >>
 end commonHeader;
 

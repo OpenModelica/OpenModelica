@@ -2007,6 +2007,13 @@ package RTOpts
   function acceptMetaModelicaGrammar
     output Boolean outBoolean;
   end acceptMetaModelicaGrammar;
+  function debugFlag
+    input String flag;
+    output Boolean outBoolean;
+  end debugFlag;
+  function noProc
+    output Integer n;
+  end noProc;
 end RTOpts;
 
 package Settings

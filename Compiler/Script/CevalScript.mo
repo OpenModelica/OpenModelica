@@ -1253,6 +1253,12 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
+    case (cache,env,"setCXXCompiler",{Values.STRING(str)},st,msg)
+      equation
+        System.setCXXCompiler(str);
+      then
+        (cache,Values.BOOL(true),st);
+
     case (cache,env,"setCompilerFlags",{Values.STRING(str)},st,msg)
       equation
         System.setCFlags(str);
