@@ -1,14 +1,16 @@
 # Project: Code Generator for FMU Import to OpenModelica 1.7.0
 # Author: Wuzhu Chen, TU-Clausthal
 
+AR = ar -ru
 CC   = @CC@
 RES  = 
-OBJS  = xmlparser.o stack.o fmuWrapper.o moGenerator.o $(RES)
+OBJS  = xmlparser.o stack.o moGenerator.o $(RES)
 LINKOBJS  = $(OBJS)
 LIBS =  -lexpat -ldl
 INCS =  
 CXXINCS =  -I"../include/"
 BIN  = ../../../build/bin/fmigenerator
+LIB  = ../../../build/lib/omc/fmuWrapper.a
 CXXFLAGS = $(CXXINCS)
 CFLAGS = @CFLAGS@ -Wall -Werror
 CPPFLAGS = -I"../../../build/include/omc"	
@@ -16,7 +18,10 @@ RM = rm -f
 
 .PHONY: all all-before all-after clean clean-custom
 
-all: all-before $(BIN) all-after
+all: all-before $(BIN) all-after $(LIB)
+
+$(LIB): fmuWrapper.o
+	$(AR) $@ $<
 
 fmuModelica.h: fmuModelica.tmp
 	sed 's/"/\\"/g' $< | sed 's/^/"/' | sed 's/$$/\\n"/' > $@.tmp
