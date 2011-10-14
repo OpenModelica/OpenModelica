@@ -174,7 +174,7 @@ static char* getDecompPath(char * omPath, const char* mid){
 	
 	if (!omhome || strlen(omhome) >= PATHSIZE) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
-        if (getLastError() == ERROR_ENVVAR_NOT_FOUND) {
+        if (GetLastError() == ERROR_ENVVAR_NOT_FOUND) {
             ERRORPRINT("#### Error: Environment variable \"%s\" not defined\n","OPENMODELICAHOME");
         }
         else {
