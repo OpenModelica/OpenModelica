@@ -40,14 +40,14 @@
 // end
 
 // macro for some global variables
-#define FMU_BINARIES_Win32 "binaries\\win32\\"
+#define FMU_BINARIES_Win32 "binaries/win32/"
 #define BUFFERSIZE 4096
 #define PATHSIZE 1024
 
 #define MODEL_DESCRIPTION "modelDescription.xml"
-#define FMU_TEMPLATE "..\\source\\fmuModelica.tmp"
-#define FMU_PATH "..\\fmu"
-#define BIN_PATH "..\\bin"
+#define FMU_TEMPLATE "../source/fmuModelica.tmp"
+#define FMU_PATH "../fmu"
+#define BIN_PATH "../bin"
 //end
 
 // macros for unzip command
@@ -126,19 +126,19 @@ static char* getDllPath(const char* decompPath, const char* mid){
 	strcat(fmudllpath,".dll");
 	strcpy(tmpStr,fmudllpath);
 	
-	pch = strtok(fmudllpath,"\\");	
+	pch = strtok(fmudllpath,"/");	
 	while(pch!=NULL){
 		 lenStr2 += strlen(pch);
 		 strcount++;
-		 pch = strtok(NULL,"\\");
+		 pch = strtok(NULL,"/");
 	}
 	ret_fmudllpath = (char*)calloc(sizeof(char),lenStr2+(strcount-1)*2);
-	pch = strtok(tmpStr,"\\");
+	pch = strtok(tmpStr,"/");
 	
 	for(i=1;i<strcount;i++){
 		strcat(ret_fmudllpath,pch);
-		strcat(ret_fmudllpath,"\\\\");
-		pch = strtok(NULL,"\\");
+		strcat(ret_fmudllpath,"/");
+		pch = strtok(NULL,"/");
 		
 		#ifdef _DEBUG_
 		// printf("#### ret_fmudllpath = %s\n",ret_fmudllpath);
