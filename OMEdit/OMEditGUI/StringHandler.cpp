@@ -497,6 +497,28 @@ QString StringHandler::getOpenFileName(QWidget* parent, const QString &caption, 
     return QString();
 }
 
+QString StringHandler::getExistingDirectory(QWidget *parent, const QString &caption, QString *dir)
+{
+    QString dir_str;
+
+    if (dir)
+    {
+        dir_str = *dir;
+    }
+    else
+    {
+        dir_str = mLastOpenDir.isEmpty() ? QDir::homePath() : mLastOpenDir;
+    }
+
+    QString dirName = QFileDialog::getExistingDirectory(parent, caption, dir_str, QFileDialog::ShowDirsOnly);
+    if (!dirName.isEmpty())
+    {
+        mLastOpenDir = dirName;
+        return dirName;
+    }
+    return QString();
+}
+
 QString StringHandler::createTooltip(QStringList info, QString name, QString path)
 {
     if (info.size() < 3)

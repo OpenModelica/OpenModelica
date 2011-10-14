@@ -1314,19 +1314,8 @@ void MainWindow::exportModelFMI()
 //! Imports the model from FMI
 void MainWindow::importModelFMI()
 {
-    QString fileName = StringHandler::getOpenFileName(this, tr("Choose File"), NULL, Helper::fmuFileTypes, NULL);
-    if (fileName.isEmpty())
-        return;
-
-    if (mpOMCProxy->importFMU(fileName))
-    {
-        mpProjectTabs->openFile();
-    }
-    else
-    {
-        mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
-                                              .arg("unknown error ").append("\nwhile importing " + fileName));
-    }
+    ImportFMIWidget *pImportFMIWidget = new ImportFMIWidget(this);
+    pImportFMIWidget->show();
 }
 
 //! shows the progress bar contained inside the status bar

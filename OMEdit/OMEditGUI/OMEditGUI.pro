@@ -41,7 +41,8 @@ SOURCES += main.cpp\
     OptionsWidget.cpp \
     BitmapAnnotation.cpp \
     InteractiveSimulationTabWidget.cpp \
-    PlotWindowContainer.cpp
+    PlotWindowContainer.cpp \
+    FMIWidget.cpp
 
 HEADERS  += mainwindow.h \
     ProjectTabWidget.h \
@@ -74,7 +75,8 @@ HEADERS  += mainwindow.h \
     OptionsWidget.h \
     BitmapAnnotation.h \
     InteractiveSimulationTabWidget.h \
-    PlotWindowContainer.h
+    PlotWindowContainer.h \
+    FMIWidget.h
 
 # -------For OMNIorb
 win32 {
@@ -129,3 +131,5 @@ MOC_DIR = ../generatedfiles/moc
 RCC_DIR = ../generatedfiles/rcc
 
 ICON = Resources/icons/omedit.icns
+
+

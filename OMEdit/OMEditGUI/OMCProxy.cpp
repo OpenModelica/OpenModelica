@@ -307,7 +307,8 @@ void OMCProxy::sendCommand(const QString expression)
     try
     {
         setExpression(expression);
-        if (expression.startsWith("simulate") or expression.startsWith("buildModel") or expression.startsWith("translateModelFMU"))
+        if (expression.startsWith("OMEdit_simulate_result:=simulate") or expression.startsWith("buildModel")
+            or expression.startsWith("translateModelFMU") or expression.startsWith("importFMU"))
         {
             QFuture<void> future = QtConcurrent::run(this, &OMCProxy::sendCommand);
             while (future.isRunning())
@@ -441,8 +442,6 @@ void OMCProxy::removeObjectRefFile()
 
 void OMCProxy::restartApplication()
 {
-    //QProcess *applicationProcess = new QProcess();
-    //applicationProcess->start(qApp->applicationFilePath());
     qApp->exit();
 }
 
@@ -1330,12 +1329,12 @@ bool OMCProxy::instantiateModelSucceeds(QString modelName)
 
 bool OMCProxy::simulate(QString modelName, QString simualtionParameters)
 {
-    sendCommand("simulate(" + modelName + "," + simualtionParameters + ")");
-    //! @todo Make it more stable. Checking res. as a string is not good here.
-    if (getResult().contains("res."))
-        return true;
-    else
+    sendCommand("OMEdit_simulate_result:=simulate(" + modelName + "," + simualtionParameters + ")");
+    sendCommand("OMEdit_simulate_result.resultFile");
+    if (getResult().isEmpty())
         return false;
+    else
+        return true;
 }
 
 bool OMCProxy::buildModel(QString modelName, QString simualtionParameters)
@@ -1419,9 +1418,14 @@ bool OMCProxy::translateModelFMU(QString modelName)
         return false;
 }
 
-bool OMCProxy::importFMU(QString fmuName)
+bool OMCProxy::importFMU(QString fmuName, QString outputDirectory)
 {
-    sendCommand("importFMU(\"" + fmuName + "\")");
+    if (outputDirectory.isEmpty())
+        sendCommand("importFMU(\"" + fmuName + "\")");
+    else
+    {
+        sendCommand("importFMU(\"" + fmuName + "\", \"" + outputDirectory.replace("\\", "/") + "\")");
+    }
     return StringHandler::unparseBool(getResult());
 }
 

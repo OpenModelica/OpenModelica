@@ -142,6 +142,12 @@ public:
     static QString center;
     static QString right;
     static QString exportingModelFMU;
+    static QString import;
+    static QString importFMI;
+    static QString fmuFileName;
+    static QString browse;
+    static QString outputDirectory;
+    static QString outputDirectoryNote;
     static QString librariesAddNote;
 };
 

@@ -140,6 +140,12 @@ QString Helper::right = QString("Right");
 
 /* FMI Messages */
 QString Helper::exportingModelFMU = QString("Exporting model as FMI");
+QString Helper::import = QString("Import");
+QString Helper::importFMI = QString("Import FMI");
+QString Helper::fmuFileName = QString("FMU File:");
+QString Helper::browse = QString("Browse...");
+QString Helper::outputDirectory = QString("Output Directory (Optional):");
+QString Helper::outputDirectoryNote = QString("* If no Output Directory specified then the FMU files are generated in the current working directory.");
 
 QString Helper::librariesAddNote = QString("* The libraries changes will take effect after restart.");
 

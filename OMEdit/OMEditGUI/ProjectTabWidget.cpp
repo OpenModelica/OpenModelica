@@ -2714,7 +2714,7 @@ WelcomePageWidget::WelcomePageWidget(MainWindow *parent)
     mpMainFrame->setLayout(verticalLayout);
     QHBoxLayout *layout = new QHBoxLayout;
     layout->addWidget(mpMainFrame);
-    layout->setContentsMargins(20, 20, 20, 20);
+    layout->setContentsMargins(15, 15, 15, 15);
     setLayout(layout);
 }
 

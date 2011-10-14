@@ -65,6 +65,7 @@
 #include "SplashScreen.h"
 #include "DocumentationWidget.h"
 #include "OptionsWidget.h"
+#include "FMIWidget.h"
 
 class QGridLayout;
 class QHBoxLayout;
@@ -89,6 +90,7 @@ class InteractiveSimulationTabWidget;
 class PlotWidget;
 class DocumentationWidget;
 class OptionsWidget;
+class ImportFMIWidget;
 
 class MainWindow : public QMainWindow
 {

@@ -362,12 +362,12 @@ void SimulationWidget::simulateModel(QString simulationParameters)
                                                 .append(mpOutputFormatComboBox->currentText()),list);
             mpParentMainWindow->plotdock->show();
             mpParentMainWindow->mpMessageWidget->printGUIInfoMessage(QString("Simulated '").append(projectTab->mModelNameStructure)
-                                                                     .append("' successfully!").append(message));
+                                                                     .append(message));
         }
         else
         {
             mpParentMainWindow->mpMessageWidget->printGUIInfoMessage(QString("Simulated '").append(projectTab->mModelNameStructure)
-                                                                     .append("' successfully!").append(message));
+                                                                     .append(message));
         }
     }
 }

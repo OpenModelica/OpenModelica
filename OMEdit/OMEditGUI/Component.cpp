@@ -42,9 +42,7 @@ Component::Component(QString value, QString name, QString className, QPointF pos
     mpComponentProperties=0;
     //QList<ComponentsProperties*> components = mpOMCProxy->getComponents(className);
     mpParentComponent = pParent;
-    mIconParametersList.append(mpOMCProxy->getParameters(mpGraphicsView->mpParentProjectTab->mModelNameStructure,
-                                                         mClassName, mName));
-
+    mIconParametersList.append(mpOMCProxy->getParameters(mpGraphicsView->mpParentProjectTab->mModelNameStructure, mClassName, mName));
     mpTransformation = 0;
     parseAnnotationString(this, value);
     mpTransformation = new Transformation(this);
@@ -116,8 +114,7 @@ Component::Component(QString value, QString transformationString, ComponentsProp
     mpParentComponent = pParent;
     mpOMCProxy = pParent->mpOMCProxy;
     mpGraphicsView = pParent->mpGraphicsView;
-    mIconParametersList.append(mpOMCProxy->getParameters(mpGraphicsView->mpParentProjectTab->mModelNameStructure,
-                                                         mClassName, mName));
+    mIconParametersList.append(mpOMCProxy->getParameters(mpGraphicsView->mpParentProjectTab->mModelNameStructure, mClassName, mName));
     mpTransformation = 0;
     parseAnnotationString(this, mAnnotationString);
     mpTransformation = new Transformation(this);
@@ -205,9 +202,7 @@ Component::Component(Component *pComponent, QString name, QPointF position, int 
     // Assing the Graphics View of this component to passed component. In order to avoid exceptions
     pComponent->mpGraphicsView = mpGraphicsView;
     // get the component parameters
-    mIconParametersList.append(mpOMCProxy->getParameters(mpGraphicsView->mpParentProjectTab->mModelNameStructure,
-                                                         mClassName, mName));
-
+    mIconParametersList.append(mpOMCProxy->getParameters(mpGraphicsView->mpParentProjectTab->mModelNameStructure, mClassName, mName));
     mpTransformation = 0;
     parseAnnotationString(this, mAnnotationString);
     mpTransformation = new Transformation(this);
