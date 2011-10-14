@@ -6538,7 +6538,7 @@ algorithm
   BackendDAE.DAE(systs,shared) := dae;
   (systs,shared) := List.map1Fold(systs,func,a,shared);
   // Filter out empty systems
-  // systs := List.select(systs,nonEmptySystem);
+  systs := filterEmptySystems(systs);
   odae := BackendDAE.DAE(systs,shared);
 end mapEqSystem1;
 
@@ -6566,7 +6566,7 @@ algorithm
   BackendDAE.DAE(systs,shared) := dae;
   (systs,(shared,extra)) := List.map1Fold(systs,func,a,(shared,initialExtra));
   // Filter out empty systems
-  // systs := List.select(systs,nonEmptySystem);
+  systs := filterEmptySystems(systs);
   odae := BackendDAE.DAE(systs,shared);
 end mapEqSystemAndFold1;
 
@@ -6591,7 +6591,7 @@ algorithm
   BackendDAE.DAE(systs,shared) := dae;
   (systs,(shared,extra)) := List.mapFold(systs,func,(shared,initialExtra));
   // Filter out empty systems
-  // systs := List.select(systs,nonEmptySystem);
+  systs := filterEmptySystems(systs);
   odae := BackendDAE.DAE(systs,shared);
 end mapEqSystemAndFold;
 
@@ -6615,7 +6615,7 @@ algorithm
   BackendDAE.DAE(systs,shared) := dae;
   extra := List.fold1(systs,func,shared,initialExtra);
   // Filter out empty systems
-  // systs := List.select(systs,nonEmptySystem);
+  systs := filterEmptySystems(systs);
 end foldEqSystem;
 
 public function mapEqSystem
@@ -6636,7 +6636,7 @@ algorithm
   BackendDAE.DAE(systs,shared) := dae;
   (systs,shared) := List.mapFold(systs,func,shared);
   // Filter out empty systems
-  // systs := List.select(systs,nonEmptySystem);
+  systs := filterEmptySystems(systs);
   odae := BackendDAE.DAE(systs,shared);
 end mapEqSystem;
 
@@ -6663,5 +6663,27 @@ algorithm
     case (BackendDAE.EQSYSTEM(vars,eqs,m,mT,_),matching) then BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching); 
   end match;
 end setEqSystemMatching;
+
+public function filterEmptySystems
+  "Filter out equation systems leaving at least one behind"
+  input BackendDAE.EqSystems systs;
+  output BackendDAE.EqSystems osysts;
+algorithm
+  osysts := filterEmptySystems2(List.select(systs,nonEmptySystem),systs);
+end filterEmptySystems;
+
+protected function filterEmptySystems2
+  "Filter out equation systems leaving at least one behind"
+  input BackendDAE.EqSystems systs;
+  input BackendDAE.EqSystems full;
+  output BackendDAE.EqSystems olst;
+algorithm
+  olst := match (systs,full)
+    local
+      BackendDAE.EqSystem syst;
+    case ({},syst::_) then {syst};
+    else systs;
+  end match;
+end filterEmptySystems2;
 
 end BackendDAEUtil;

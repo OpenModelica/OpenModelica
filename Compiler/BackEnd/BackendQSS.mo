@@ -3177,7 +3177,7 @@ protected
   BackendDAE.Shared shared;
 algorithm
   BackendDAE.DAE({syst},shared) := dlow;
-  out := SimCode.createEquations(false, false, false, false, false, syst, shared, comps, {});
+  out := SimCode.createEquations(false, false, false, false, false, syst, shared, 0, comps, {});
 end generateEqFromBlt;
 
 protected function isPositive
