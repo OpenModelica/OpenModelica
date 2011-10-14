@@ -646,6 +646,10 @@ void TextAnnotation::parseShapeAnnotation(QString shape, OMCProxy *omc)
             this->mFontName = line;
             index++;
         }
+        else
+        {
+            index++;
+        }
     }
 
     // 16 item of the list contains the font size.
