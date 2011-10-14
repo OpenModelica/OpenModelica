@@ -177,7 +177,8 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pParent)
     mpParentDocumentationWidget = pParent;
     // set the base url for documentation.
     mpParentDocumentationWidget->mpParentMainWindow->mpOMCProxy->sendCommand("getNamedAnnotation(Modelica,version)");
-    QString versionStr = StringHandler::unparseStrings(mpParentDocumentationWidget->mpParentMainWindow->mpOMCProxy->getResult()).at(0);
+    QStringList lst = StringHandler::unparseStrings(mpParentDocumentationWidget->mpParentMainWindow->mpOMCProxy->getResult());
+    QString versionStr = lst.empty() ? "" : lst.at(0);
     // We need to replace the back slashes(\) with forward slash(/), since QWebView baseurl doesn't handle it.
     QString baseUrl = QString(Helper::OpenModelicaLibrary).replace("\\", "/").append("/Modelica ").append(versionStr).append("/Images/");
     setBaseUrl(baseUrl);

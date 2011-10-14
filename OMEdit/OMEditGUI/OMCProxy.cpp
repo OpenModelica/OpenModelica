@@ -537,16 +537,17 @@ void OMCProxy::loadStandardLibrary(QStringList &failed)
     }
 
     sendCommand("getNamedAnnotation(Modelica,version)");
-    QString versionStr = StringHandler::unparseStrings(getResult()).at(0);
+    QStringList versionLst = StringHandler::unparseStrings(getResult());
+    QString versionStr = versionLst.empty() ? "" : versionLst.at(0);
     double version = versionStr.toDouble();
 
     if (version >= 3.0 && version < 4.0) {
         deleteClass("Modelica.Fluid");
-    } else {
+    } else if (!versionLst.empty()) {
         if (version < 2) sendCommand("setAnnotationVersion(\"1.x\")");
         else if (version < 3) sendCommand("setAnnotationVersion(\"2.x\")");
             QMessageBox::warning(mpParentMainWindow, Helper::applicationName + " requires Modelica 3 annotations",
-                             "Modelica Standard Library version " + versionStr + " is unsupported", "OK");
+                             "Modelica Standard Library version " + versionStr + " is unsupported.", "OK");
     }
 }
 
