@@ -768,7 +768,7 @@ void freeElement(void* element){
             break;
 		default:
 			ERRORPRINT(" unknown AST node type of the Element in function: %s\n",__func__);
-			exit(EXIT_FAILURE);
+			//exit(EXIT_FAILURE);
     }
     // free the struct
     free(e);
