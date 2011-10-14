@@ -51,7 +51,7 @@
 //end
 
 // macros for unzip command
-//#define USE_UNZIP
+#define USE_UNZIP
 // return codes of the unzip tool
 #define UNZIP_NO_ERROR 0 // sucess
 #define UNZIP_WARNINGS 1 // one or more warning errors, but successfully completed anyway
