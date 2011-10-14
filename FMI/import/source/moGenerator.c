@@ -960,7 +960,7 @@ int main(int argc, char *argv[]){
 	// end
 	
 	// Creating log file
-	errLogFile = fopen("fmuImportError.log","a+");
+	errLogFile = fopen("fmuImportError.log","w");
 	if(!errLogFile){
 		printf("#### %s, %s, %d, : Error: Creating file fmuImportError.log failed...\n",__DATE__,__TIME__,__LINE__);
 		exit(EXIT_FAILURE);
