@@ -280,7 +280,7 @@ void ModelicaTree::openProjectTab(QTreeWidgetItem *item, int column)
                                     pMainWindow->mpProjectTabs);
         }
         newTab->mpModelicaEditor->blockSignals(true);
-        newTab->mpModelicaEditor->setText(pMainWindow->mpOMCProxy->list(treeNode->mNameStructure));
+        newTab->mpModelicaEditor->setPlainText(pMainWindow->mpOMCProxy->list(treeNode->mNameStructure));
         newTab->mpModelicaEditor->blockSignals(false);
         pMainWindow->mpProjectTabs->addProjectTab(newTab, treeNode->mName, treeNode->mNameStructure);
         newTab->mOpenMode = false;

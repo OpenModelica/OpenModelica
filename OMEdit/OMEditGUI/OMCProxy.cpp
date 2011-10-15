@@ -66,12 +66,12 @@ OMCProxy::OMCProxy(MainWindow *pParent, bool displayErrors)
     this->mpOMCLogger->setWindowIcon(QIcon(":/Resources/icons/console.png"));
     this->mpOMCLogger->setWindowTitle(QString(Helper::applicationName).append(" - OMC Messages Log"));
     // Set the QTextEdit Box
-    this->mpTextEdit = new QTextEdit();
-    this->mpTextEdit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-    this->mpTextEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-    this->mpTextEdit->setReadOnly(true);
-    this->mpTextEdit->setLineWrapMode(QTextEdit::WidgetWidth);
-    this->mpTextEdit->setAutoFormatting(QTextEdit::AutoNone);
+    this->mpPlainTextEdit = new QPlainTextEdit();
+    this->mpPlainTextEdit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    this->mpPlainTextEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    this->mpPlainTextEdit->setReadOnly(true);
+    this->mpPlainTextEdit->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+    //this->mpPlainTextEdit->setAutoFormatting(QTextEdit::AutoNone);
     // Set the Layout
     QHBoxLayout *horizontallayout = new QHBoxLayout;
     horizontallayout->setContentsMargins(0, 0, 0, 0);
@@ -81,7 +81,7 @@ OMCProxy::OMCProxy(MainWindow *pParent, bool displayErrors)
     horizontallayout->addWidget(mpExpressionTextBox);
     horizontallayout->addWidget(mpSendButton);
     QVBoxLayout *verticalallayout = new QVBoxLayout;
-    verticalallayout->addWidget(this->mpTextEdit);
+    verticalallayout->addWidget(this->mpPlainTextEdit);
     verticalallayout->addLayout(horizontallayout);
     mpOMCLogger->setLayout(verticalallayout);
     //start the server
@@ -361,20 +361,25 @@ QString OMCProxy::getResult()
 void OMCProxy::logOMCMessages(QString expression)
 {
     // move the cursor down before adding to the logger.
-    QTextCursor textCursor = mpTextEdit->textCursor();
+    QTextCursor textCursor = mpPlainTextEdit->textCursor();
     textCursor.movePosition(QTextCursor::End);
-    mpTextEdit->setTextCursor(textCursor);
+    mpPlainTextEdit->setTextCursor(textCursor);
     // add the expression to commands list
     mCommandsList.append(expression);
     // log expression
-    mpTextEdit->setCurrentFont(QFont("Times New Roman", 10, QFont::Bold, false));
-    mpTextEdit->insertPlainText(expression + "\n");
+    QFont font("Times New Roman", 10, QFont::Bold, false);
+    QTextCharFormat *pCharFormat = new QTextCharFormat;
+    pCharFormat->setFont(font);
+    mpPlainTextEdit->setCurrentCharFormat(*pCharFormat);
+    mpPlainTextEdit->insertPlainText(expression + "\n");
     // log result
-    mpTextEdit->setCurrentFont(QFont("Times New Roman", 10, QFont::Normal, false));
-    mpTextEdit->insertPlainText(getResult() + "\n\n");
+    font = QFont("Times New Roman", 10, QFont::Normal, false);
+    pCharFormat->setFont(font);
+    mpPlainTextEdit->setCurrentCharFormat(*pCharFormat);
+    mpPlainTextEdit->insertPlainText(getResult() + "\n\n");
     // move the cursor
     textCursor.movePosition(QTextCursor::End);
-    mpTextEdit->setTextCursor(textCursor);
+    mpPlainTextEdit->setTextCursor(textCursor);
     // set the current command index.
     mCurrentCommandIndex = mCommandsList.count();
     mpExpressionTextBox->setText(tr(""));

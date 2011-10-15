@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linkoping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -33,16 +33,19 @@
 
 #include "ModelicaEditor.h"
 
+//! @class ModelicaEditor
+//! @brief An editor for Modelica Text. Subclass QPlainTextEdit
+
+//! Constructor
 ModelicaEditor::ModelicaEditor(ProjectTab *pParent)
-    : QTextEdit(pParent)
+    : QPlainTextEdit(pParent)
 {
     mpParentProjectTab = pParent;
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     setTabStopWidth(Helper::tabWidth);
     setObjectName(tr("ModelicaEditor"));
-    setAutoFormatting(QTextEdit::AutoNone);
-    setAcceptRichText(false);
+    document()->setDocumentMargin(2);
     // depending on the project tab readonly state set the text view readonly state
     setReadOnly(mpParentProjectTab->isReadOnly());
     connect(this, SIGNAL(focusOut()), mpParentProjectTab, SLOT(modelicaEditorTextChanged()));
@@ -81,10 +84,19 @@ ModelicaEditor::ModelicaEditor(ProjectTab *pParent)
     mpCloseButton->setIcon(QIcon(":/Resources/icons/exit.png"));
     connect(mpCloseButton, SIGNAL(clicked()), SLOT(hideFindWidget()));
 
+    mpLineNumberArea = new LineNumberArea(this);
+    connect(this, SIGNAL(blockCountChanged(int)), this, SLOT(updateLineNumberAreaWidth(int)));
+    connect(this, SIGNAL(updateRequest(QRect,int)), this, SLOT(updateLineNumberArea(QRect,int)));
+    connect(this, SIGNAL(cursorPositionChanged()), this, SLOT(highlightCurrentLine()));
+
+    updateLineNumberAreaWidth(0);
+    highlightCurrentLine();
     // make previous and next buttons disabled for first time
     updateButtons();
 }
 
+//! Uses the OMC parseString API to check the model names inside the Modelica Text
+//! @return QStringList a list of model names
 QStringList ModelicaEditor::getModelsNames()
 {
     OMCProxy *pOMCProxy = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy;
@@ -123,6 +135,11 @@ QStringList ModelicaEditor::getModelsNames()
     return models;
 }
 
+//! Finds the text in the ModelicaEditor and highlights it. Used by Find Widget.
+//! @param text the string to find
+//! @param forward true=>finds next item, false=>finds previous item
+//! @see findNextText();
+//! @see findPreviuosText();
 void ModelicaEditor::findText(const QString &text, bool forward)
 {
     QTextCursor currentTextCursor = textCursor();
@@ -130,8 +147,7 @@ void ModelicaEditor::findText(const QString &text, bool forward)
 
     if (currentTextCursor.hasSelection())
     {
-        currentTextCursor.setPosition(forward ? currentTextCursor.position() : currentTextCursor.anchor(),
-                                      QTextCursor::MoveAnchor);
+        currentTextCursor.setPosition(forward ? currentTextCursor.position() : currentTextCursor.anchor(), QTextCursor::MoveAnchor);
     }
 
     if (!forward)
@@ -163,12 +179,12 @@ void ModelicaEditor::findText(const QString &text, bool forward)
 
     if (!found)
     {
-        QMessageBox::information(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow,
-                                 Helper::applicationName + " - Information",
+        QMessageBox::information(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow, Helper::applicationName + " - Information",
                                  GUIMessages::getMessage(GUIMessages::SEARCH_STRING_NOT_FOUND).arg(text), "OK");
     }
 }
 
+//! When user make some changes in the ModelicaEditor text then this method validates the text and show text correct options.
 bool ModelicaEditor::validateText()
 {
     if (document()->isModified())
@@ -190,18 +206,18 @@ bool ModelicaEditor::validateText()
 
             switch (answer)
             {
-            case QMessageBox::AcceptRole:
-                document()->setModified(false);
-                // revert back to last valid block
-                setText(mLastValidText);
-                return true;
-            case QMessageBox::RejectRole:
-                document()->setModified(true);
-                return false;
-            default:
-                // should never be reached
-                document()->setModified(true);
-                return false;
+                case QMessageBox::AcceptRole:
+                    document()->setModified(false);
+                    // revert back to last valid block
+                    setPlainText(mLastValidText);
+                    return true;
+                case QMessageBox::RejectRole:
+                    document()->setModified(true);
+                    return false;
+                default:
+                    // should never be reached
+                    document()->setModified(true);
+                    return false;
             }
         }
         else
@@ -212,12 +228,106 @@ bool ModelicaEditor::validateText()
     return true;
 }
 
-void ModelicaEditor::setText(const QString &text)
+//! Reimplementation of resize event.
+//! Resets the size of LineNumberArea.
+void ModelicaEditor::resizeEvent(QResizeEvent *event)
 {
-    if (text != toPlainText())
-        QTextEdit::setText(text);
+    QPlainTextEdit::resizeEvent(event);
+
+    QRect cr = contentsRect();
+    mpLineNumberArea->setGeometry(QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
 }
 
+//! Calculate appropriate width for LineNumberArea.
+//! @return int width of LineNumberArea.
+int ModelicaEditor::lineNumberAreaWidth()
+{
+    int digits = 1;
+    int max = qMax(1, document()->blockCount());
+    while (max >= 10)
+    {
+        max /= 10;
+        ++digits;
+    }
+    int space = 20 + fontMetrics().width(QLatin1Char('9')) * digits;
+    return space;
+}
+
+//! Updates the width of LineNumberArea.
+void ModelicaEditor::updateLineNumberAreaWidth(int newBlockCount)
+{
+    Q_UNUSED(newBlockCount);
+    setViewportMargins(lineNumberAreaWidth(), 0, 0, 0);
+}
+
+//! Slot activated when ModelicaEditor cursorPositionChanged signal is raised.
+//! Hightlights the current line.
+void ModelicaEditor::highlightCurrentLine()
+{
+    QList<QTextEdit::ExtraSelection> extraSelections;
+    QTextEdit::ExtraSelection selection;
+    QColor lineColor = QColor(232, 242, 254);
+    selection.format.setBackground(lineColor);
+    selection.format.setProperty(QTextFormat::FullWidthSelection, true);
+    selection.cursor = textCursor();
+    selection.cursor.clearSelection();
+    extraSelections.append(selection);
+    setExtraSelections(extraSelections);
+}
+
+//! Slot activated when ModelicaEditor updateRequest signal is raised.
+//! Scrolls the LineNumberArea Widget and also updates its width if required.
+void ModelicaEditor::updateLineNumberArea(const QRect &rect, int dy)
+{
+    if (dy)
+        mpLineNumberArea->scroll(0, dy);
+    else
+        mpLineNumberArea->update(0, rect.y(), mpLineNumberArea->width(), rect.height());
+
+    if (rect.contains(viewport()->rect()))
+        updateLineNumberAreaWidth(0);
+}
+
+//! Activated whenever LineNumberArea Widget paint event is raised.
+//! Writes the line numbers for the visible blocks.
+void ModelicaEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
+{
+    QPainter painter(mpLineNumberArea);
+    painter.fillRect(event->rect(), QColor(240, 240, 240));
+
+    QTextBlock block = firstVisibleBlock();
+    int blockNumber = block.blockNumber();
+    int top = (int) blockBoundingGeometry(block).translated(contentOffset()).top();
+    int bottom = top + (int) blockBoundingRect(block).height();
+
+    while (block.isValid() && top <= event->rect().bottom())
+    {
+        if (block.isVisible() && bottom >= event->rect().top())
+        {
+            QString number = QString::number(blockNumber + 1);
+            painter.setPen(Qt::gray);
+            painter.setFont(document()->defaultFont());
+            QFontMetrics fontMetrics (document()->defaultFont());
+            painter.drawText(0, top, mpLineNumberArea->width() - 5, fontMetrics.height(), Qt::AlignRight, number);
+        }
+        block = block.next();
+        top = bottom;
+        bottom = top + (int) blockBoundingRect(block).height();
+        ++blockNumber;
+    }
+}
+
+//! Reimplementation of QPlainTextEdit::setPlainText method.
+//! Makes sure we dont update if the passed text is same.
+//! @param text the string to set.
+void ModelicaEditor::setPlainText(const QString &text)
+{
+    if (text != toPlainText())
+        QPlainTextEdit::setPlainText(text);
+}
+
+//! Slot activated when ModelicaEditor textChanged signal is raised.
+//! Checks if model text has changed and then add a * to the model name so that user knows that his current model is not saved.
 void ModelicaEditor::hasChanged()
 {
     if (mpParentProjectTab->isReadOnly())
@@ -255,11 +365,15 @@ void ModelicaEditor::hasChanged()
     }
 }
 
+//! Slot activated when mpCloseButton clicked signal is raised or when user press Esc key.
+//! Hides the Find Widget.
 void ModelicaEditor::hideFindWidget()
 {
     mpFindWidget->hide();
 }
 
+//! Slot activated when ModelicaEditor textChanged signal is raised.
+//! Makes the Find Widget next and previous buttons enable/disable.
 void ModelicaEditor::updateButtons()
 {
     const bool enable = !mpSearchTextBox->text().isEmpty();
@@ -267,16 +381,24 @@ void ModelicaEditor::updateButtons()
     mpNextButton->setEnabled(enable);
 }
 
+//! Slot activated when mpNextButton clicked signal is raised or when user pressed Enter key.
+//! Finds the text in forward direction.
 void ModelicaEditor::findNextText()
 {
     findText(mpSearchTextBox->text(), true);
 }
 
+//! Slot activated when mpPreviousButton clicked signal is raised.
+//! Finds the text in backward direction.
 void ModelicaEditor::findPreviuosText()
 {
     findText(mpSearchTextBox->text(), false);
 }
 
+//! @class ModelicaTextHighlighter
+//! @brief A syntax highlighter for ModelicaEditor.
+
+//! Constructor
 ModelicaTextHighlighter::ModelicaTextHighlighter(ModelicaTextSettings *pSettings, QTextDocument *pParent)
     : QSyntaxHighlighter(pParent)
 {
@@ -284,21 +406,21 @@ ModelicaTextHighlighter::ModelicaTextHighlighter(ModelicaTextSettings *pSettings
     initializeSettings();
 }
 
+//! Initialized the syntax highlighter with default values.
 void ModelicaTextHighlighter::initializeSettings()
 {
-    QTextDocument *textDocument = dynamic_cast<QTextDocument*>(this->parent());
-    textDocument->setDefaultFont(QFont(mpModelicaTextSettings->getFontFamily(),
-                                       mpModelicaTextSettings->getFontSize()));
+    QTextDocument *textDocument = qobject_cast<QTextDocument*>(this->parent());
+    textDocument->setDefaultFont(QFont(mpModelicaTextSettings->getFontFamily(), mpModelicaTextSettings->getFontSize()));
 
     mHighlightingRules.clear();
     HighlightingRule rule;
-            mTextFormat.setForeground(mpModelicaTextSettings->getTextRuleColor());
+    mTextFormat.setForeground(mpModelicaTextSettings->getTextRuleColor());
     mKeywordFormat.setForeground(mpModelicaTextSettings->getKeywordRuleColor());
     mTypeFormat.setForeground(mpModelicaTextSettings->getTypeRuleColor());
     mSingleLineCommentFormat.setForeground(mpModelicaTextSettings->getCommentRuleColor());
     mMultiLineCommentFormat.setForeground(mpModelicaTextSettings->getCommentRuleColor());
-    mFunctionFormat.setForeground(mpModelicaTextSettings->getFunctionRuleColor());    mQuotationFormat.setForeground(QColor(mpModelicaTextSettings->getQuotesRuleColor()));
-
+    mFunctionFormat.setForeground(mpModelicaTextSettings->getFunctionRuleColor());
+    mQuotationFormat.setForeground(QColor(mpModelicaTextSettings->getQuotesRuleColor()));
     // Priority: keyword > func() > ident > number. Yes, the order matters :)
     mNumberFormat.setForeground(mpModelicaTextSettings->getNumberRuleColor());
     rule.mPattern = QRegExp("[0-9][0-9]*([.][0-9]*)?([eE][+-]?[0-9]*)?");
@@ -382,7 +504,7 @@ void ModelicaTextHighlighter::initializeSettings()
                  << "\\bInteger\\b"
                  << "\\bBoolean\\b"
                  << "\\bReal\\b"
-                 ;
+                    ;
     foreach (const QString &pattern, typePatterns)
     {
         rule.mPattern = QRegExp(pattern);
@@ -402,6 +524,8 @@ void ModelicaTextHighlighter::initializeSettings()
     mCommentEndExpression = QRegExp("\\*/");
 }
 
+//! Highlights the multilines text.
+//! Quoted text or multiline comments.
 void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
 {
     /* Hand-written recognizer beats the crap known as QRegEx ;) */
@@ -412,44 +536,45 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
     while (index < text.length())
     {
         switch (blockState) {
-        case 1:
-          if (text[index] == '*' && index+1<text.length() && text[index+1] == '/') {
-            index++;
-            setFormat(startIndex, index-startIndex+1, mMultiLineCommentFormat);
-            blockState = 0;
-          }
-          break;
-        case 2:
-          if (text[index] == '\\') {
-            index++;
-          } else if (text[index] == '"') {
-            setFormat(startIndex, index-startIndex+1, mQuotationFormat);
-            blockState = 0;
-          }
-          break;            
-        default:
-          if (text[index] == '/' && index+1<text.length() && text[index+1] == '*') {
-            startIndex = index++;
-            blockState = 1;
-          } else if (text[index] == '"') {
-            startIndex = index;
-            blockState = 2;
-          }
+            case 1:
+                if (text[index] == '*' && index+1<text.length() && text[index+1] == '/') {
+                    index++;
+                    setFormat(startIndex, index-startIndex+1, mMultiLineCommentFormat);
+                    blockState = 0;
+                }
+                break;
+            case 2:
+                if (text[index] == '\\') {
+                    index++;
+                } else if (text[index] == '"') {
+                    setFormat(startIndex, index-startIndex+1, mQuotationFormat);
+                    blockState = 0;
+                }
+                break;
+            default:
+                if (text[index] == '/' && index+1<text.length() && text[index+1] == '*') {
+                    startIndex = index++;
+                    blockState = 1;
+                } else if (text[index] == '"') {
+                    startIndex = index;
+                    blockState = 2;
+                }
         }
         index++;
     }
     switch (blockState) {
-    case 1:
-      setFormat(startIndex, text.length()-startIndex, mMultiLineCommentFormat);
-      setCurrentBlockState(1);
-      break;
-    case 2:
-      setFormat(startIndex, text.length()-startIndex, mQuotationFormat);
-      setCurrentBlockState(2);
-      break;
+        case 1:
+            setFormat(startIndex, text.length()-startIndex, mMultiLineCommentFormat);
+            setCurrentBlockState(1);
+            break;
+        case 2:
+            setFormat(startIndex, text.length()-startIndex, mQuotationFormat);
+            setCurrentBlockState(2);
+            break;
     }
 }
 
+//! Reimplementation of QSyntaxHighlighter::highlightBlock
 void ModelicaTextHighlighter::highlightBlock(const QString &text)
 {
     setCurrentBlockState(0);
@@ -468,8 +593,58 @@ void ModelicaTextHighlighter::highlightBlock(const QString &text)
     highlightMultiLine(text);
 }
 
+//! Slot activated whenever ModelicaEditor text changes.
 void ModelicaTextHighlighter::settingsChanged()
 {
     initializeSettings();
     rehighlight();
+}
+
+//! @class GotoLineWidget
+//! @brief An interface to goto a specific line in ModelicaEditor.
+
+//! Constructor
+GotoLineWidget::GotoLineWidget(ModelicaEditor *pModelicaEditor)
+    : QDialog(pModelicaEditor, Qt::WindowTitleHint)
+{
+    setWindowTitle(QString(Helper::applicationName).append(" - Go to Line"));
+    setAttribute(Qt::WA_DeleteOnClose);
+    setModal(true);
+
+    mpModelicaEditor = pModelicaEditor;
+    mpLineNumberLabel = new QLabel;
+    mpLineNumberTextBox = new QLineEdit;
+    mpOkButton = new QPushButton(tr("OK"));
+    connect(mpOkButton, SIGNAL(clicked()), SLOT(goToLineNumber()));
+
+    QGridLayout *mainLayout = new QGridLayout;
+    mainLayout->addWidget(mpLineNumberLabel, 0, 0);
+    mainLayout->addWidget(mpLineNumberTextBox, 1, 0);
+    mainLayout->addWidget(mpOkButton, 2, 0, 1, 0, Qt::AlignRight);
+
+    setLayout(mainLayout);
+}
+
+//! Reimplementation of QDialog::show
+void GotoLineWidget::show()
+{
+    mpLineNumberLabel->setText(QString("Enter line number (1 to ").append(QString::number(mpModelicaEditor->blockCount())).append("):"));
+    QIntValidator *intValidator = new QIntValidator(this);
+    intValidator->setRange(1, mpModelicaEditor->blockCount());
+    mpLineNumberTextBox->setValidator(intValidator);
+    setVisible(true);
+}
+
+//! Slot activated when mpOkButton clicked signal raised.
+void GotoLineWidget::goToLineNumber()
+{
+    const QTextBlock &block = mpModelicaEditor->document()->findBlockByNumber(mpLineNumberTextBox->text().toInt() - 1); // -1 since text index start from 0
+    if (block.isValid())
+    {
+        QTextCursor cursor(block);
+        cursor.movePosition(QTextCursor::Right, QTextCursor::MoveAnchor, 0);
+        mpModelicaEditor->setTextCursor(cursor);
+        mpModelicaEditor->centerCursor();
+    }
+    accept();
 }

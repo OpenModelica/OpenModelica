@@ -37,8 +37,9 @@
 #include "ProjectTabWidget.h"
 
 class ProjectTab;
+class LineNumberArea;
 
-class ModelicaEditor : public QTextEdit
+class ModelicaEditor : public QPlainTextEdit
 {
     Q_OBJECT
 public:
@@ -46,6 +47,8 @@ public:
     QStringList getModelsNames();
     void findText(const QString &text, bool forward);
     bool validateText();
+    void lineNumberAreaPaintEvent(QPaintEvent *event);
+    int lineNumberAreaWidth();
 
     ProjectTab *mpParentProjectTab;
     QString mLastValidText;
@@ -59,10 +62,17 @@ public:
     QCheckBox *mpMatchCaseCheckBox;
     QCheckBox *mpMatchWholeWordCheckBox;
     QToolButton *mpCloseButton;
+    LineNumberArea *mpLineNumberArea;
+protected:
+    virtual void resizeEvent(QResizeEvent *event);
 signals:
     bool focusOut();
+private slots:
+    void updateLineNumberAreaWidth(int newBlockCount);
+    void highlightCurrentLine();
+    void updateLineNumberArea(const QRect &, int);
 public slots:
-    void setText(const QString &text);
+    void setPlainText(const QString &text);
     void hasChanged();
     void hideFindWidget();
     void updateButtons();
@@ -106,6 +116,43 @@ private:
     QTextCharFormat mNumberFormat;
 public slots:
     void settingsChanged();
+};
+
+class LineNumberArea : public QWidget
+{
+public:
+    LineNumberArea(ModelicaEditor *pModelicaEditor)
+        : QWidget(pModelicaEditor)
+    {
+        mpModelicaEditor = pModelicaEditor;
+    }
+    QSize sizeHint() const
+    {
+        return QSize(mpModelicaEditor->lineNumberAreaWidth(), 0);
+    }
+protected:
+    virtual void paintEvent(QPaintEvent *event)
+    {
+        mpModelicaEditor->lineNumberAreaPaintEvent(event);
+    }
+private:
+    ModelicaEditor *mpModelicaEditor;
+};
+
+class GotoLineWidget : public QDialog
+{
+    Q_OBJECT
+public:
+    GotoLineWidget(ModelicaEditor *pModelicaEditor);
+    void show();
+
+    ModelicaEditor *mpModelicaEditor;
+private:
+    QLabel *mpLineNumberLabel;
+    QLineEdit *mpLineNumberTextBox;
+    QPushButton *mpOkButton;
+private slots:
+    void goToLineNumber();
 };
 
 #endif // MODELICAEDITOR_H

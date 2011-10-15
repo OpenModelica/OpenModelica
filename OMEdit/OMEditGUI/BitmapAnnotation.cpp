@@ -273,7 +273,7 @@ BitmapWidget::BitmapWidget(BitmapAnnotation *pBitmapShape, MainWindow *parent)
 {
     setWindowTitle(QString(Helper::applicationName).append(" - Open bitmap"));
     setAttribute(Qt::WA_DeleteOnClose);
-    setMaximumSize(175, 150);    
+    setMaximumSize(175, 150);
     mpParentMainWindow = parent;
 
     mpBitmapAnnotation = pBitmapShape;                
@@ -366,7 +366,7 @@ void BitmapWidget::edit()
 
 void BitmapWidget::show()
 {
-    setVisible(true);    
+    setVisible(true);
 }
 
 void BitmapWidget::browse()

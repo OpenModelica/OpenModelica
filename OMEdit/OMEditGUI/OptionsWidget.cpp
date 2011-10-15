@@ -579,16 +579,14 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsWidget *pParent)
     mpFontFamilyLabel = new QLabel(tr("Font Family:"));
     mpFontFamilyComboBox = new QFontComboBox;
     int currentIndex;
-    currentIndex = mpFontFamilyComboBox->findText(mpParentOptionsWidget->mpModelicaTextSettings->getFontFamily(),
-                                                  Qt::MatchExactly);
+    currentIndex = mpFontFamilyComboBox->findText(mpParentOptionsWidget->mpModelicaTextSettings->getFontFamily(), Qt::MatchExactly);
     mpFontFamilyComboBox->setCurrentIndex(currentIndex);
     connect(mpFontFamilyComboBox, SIGNAL(currentFontChanged(QFont)), SLOT(fontFamilyChanged(QFont)));
 
     mpFontSizeLabel = new QLabel(tr("Font Size:"));
     mpFontSizeComboBox = new QComboBox;
     createFontSizeComboBox();
-    currentIndex = mpFontSizeComboBox->findText(QString::number(mpParentOptionsWidget->mpModelicaTextSettings->getFontSize()),
-                                                Qt::MatchExactly);
+    currentIndex = mpFontSizeComboBox->findText(QString::number(mpParentOptionsWidget->mpModelicaTextSettings->getFontSize()),Qt::MatchExactly);
     mpFontSizeComboBox->setCurrentIndex(currentIndex);
     connect(mpFontSizeComboBox, SIGNAL(currentIndexChanged(int)), SLOT(fontSizeChanged(int)));
 
@@ -607,15 +605,15 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsWidget *pParent)
     mpItemsList->setCurrentRow(0, QItemSelectionModel::Select);
 
     mpPreviewLabel = new QLabel(tr("Preview:"));
-    mpPreviewTextBox = new QTextEdit;
-    mpPreviewTextBox->setReadOnly(false);
-    mpPreviewTextBox->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-    mpPreviewTextBox->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-    mpPreviewTextBox->setTabStopWidth(Helper::tabWidth);
-    mpPreviewTextBox->setText(getPreviewText());
+    mpPreviewPlainTextBox = new QPlainTextEdit;
+    mpPreviewPlainTextBox->setReadOnly(false);
+    mpPreviewPlainTextBox->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    mpPreviewPlainTextBox->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    mpPreviewPlainTextBox->setTabStopWidth(Helper::tabWidth);
+    mpPreviewPlainTextBox->setPlainText(getPreviewText());
 
     ModelicaTextHighlighter *highlighter;
-    highlighter = new ModelicaTextHighlighter(mpParentOptionsWidget->mpModelicaTextSettings, mpPreviewTextBox->document());
+    highlighter = new ModelicaTextHighlighter(mpParentOptionsWidget->mpModelicaTextSettings, mpPreviewPlainTextBox->document());
     connect(this, SIGNAL(updatePreview()), highlighter, SLOT(settingsChanged()));
     connect(mpParentOptionsWidget, SIGNAL(modelicaTextSettingsChanged()), highlighter, SLOT(settingsChanged()));
 
@@ -629,7 +627,7 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsWidget *pParent)
     mainLayout->addWidget(mpItemsList, 3, 0);
     mainLayout->addWidget(mpItemColorPickButton, 3, 1, Qt::AlignTop);
     mainLayout->addWidget(mpPreviewLabel, 4, 0, 1, 2);
-    mainLayout->addWidget(mpPreviewTextBox, 5, 0, 1, 2);
+    mainLayout->addWidget(mpPreviewPlainTextBox, 5, 0, 1, 2);
     mpFontColorsGroup->setLayout(mainLayout);
 
     QVBoxLayout *layout = new QVBoxLayout;
@@ -708,7 +706,7 @@ void ModelicaTextEditorPage::initializeFields()
     // make first item in the list selected
     mpItemsList->setCurrentRow(0, QItemSelectionModel::Select);
     // refresh the preview textbox
-    mpPreviewTextBox->setText(getPreviewText());
+    mpPreviewPlainTextBox->setPlainText(getPreviewText());
     // update list items
     mpTextItem->setForeground(mpParentOptionsWidget->mpModelicaTextSettings->getTextRuleColor());
     mpNumberItem->setForeground(mpParentOptionsWidget->mpModelicaTextSettings->getNumberRuleColor());
@@ -1143,6 +1141,7 @@ LibrariesPage::LibrariesPage(OptionsWidget *pParent)
     QStringList labels;
     labels << "Name" << "Value";
     mpLibrariesTree->setHeaderLabels(labels);
+    connect(mpLibrariesTree, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(openEditLibrary()));
 
     mpAddButton = new QPushButton(tr("Add"));
     connect(mpAddButton, SIGNAL(clicked()), SLOT(openAddLibrary()));

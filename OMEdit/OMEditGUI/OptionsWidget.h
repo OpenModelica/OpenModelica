@@ -158,7 +158,7 @@ private:
     QLabel *mpItemColorLabel;
     QPushButton *mpItemColorPickButton;
     QLabel *mpPreviewLabel;
-    QTextEdit *mpPreviewTextBox;
+    QPlainTextEdit *mpPreviewPlainTextBox;
 
     QListWidgetItem *mpTextItem;
     QListWidgetItem *mpNumberItem;

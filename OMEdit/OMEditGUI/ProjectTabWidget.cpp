@@ -356,7 +356,7 @@ void GraphicsView::addComponentObject(Component *component)
     // only update the modelicatext of model if its a diagram view
     // for icon view the modeltext is updated in updateannotationstring->addclassannotation
     if (mIconType == StringHandler::DIAGRAM)
-        mpParentProjectTab->mpModelicaEditor->setText(pMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
+        mpParentProjectTab->mpModelicaEditor->setPlainText(pMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
     // add the component to the local list
     mComponentsList.append(component);
     // emit currentchange signal so that componentbrowsertree is updated
@@ -391,7 +391,7 @@ void GraphicsView::deleteComponentObject(Component *component, bool update)
     pOMCProxy->deleteComponent(component->getName(), mpParentProjectTab->mModelNameStructure);
     if (update)
     {
-        mpParentProjectTab->mpModelicaEditor->setText(pOMCProxy->list(mpParentProjectTab->mModelNameStructure));
+        mpParentProjectTab->mpModelicaEditor->setPlainText(pOMCProxy->list(mpParentProjectTab->mModelNameStructure));
         // emit currentchange signal so that componentbrowsertree is updated
         emit currentChange(1);
     }
@@ -641,7 +641,7 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
                     }
 
                 }
-                mpParentProjectTab->mpModelicaEditor->setText(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
+                mpParentProjectTab->mpModelicaEditor->setPlainText(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
             }
             component->isMousePressed = false;
         }
@@ -1162,7 +1162,7 @@ void GraphicsView::createConnection(Component *pStartComponent, QString startIco
                 this->mConnectorsVector.append(mpConnector);
                 // add the connection annotation to OMC
                 mpConnector->updateConnectionAnnotationString();
-                mpParentProjectTab->mpModelicaEditor->setText(pMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
+                mpParentProjectTab->mpModelicaEditor->setPlainText(pMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
                 pMainWindow->mpMessageWidget->printGUIInfoMessage("Connected: (" + startIconCompName + ", " + endIconCompName + ")");
             }
             else
@@ -1340,7 +1340,7 @@ void GraphicsView::deleteConnection(QString startIconCompName, QString endIconCo
     if (pMainWindow->mpOMCProxy->deleteConnection(startIconCompName, endIconCompName, mpParentProjectTab->mModelNameStructure))
     {
         if (update)
-            mpParentProjectTab->mpModelicaEditor->setText(pMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
+            mpParentProjectTab->mpModelicaEditor->setPlainText(pMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
     }
     else
         pMainWindow->mpMessageWidget->printGUIErrorMessage(pMainWindow->mpOMCProxy->getErrorString());
@@ -1456,7 +1456,7 @@ void GraphicsView::addClassAnnotation(bool update)
     {
         // update modelicatext of model
         if (update)
-            mpParentProjectTab->mpModelicaEditor->setText(pMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
+            mpParentProjectTab->mpModelicaEditor->setPlainText(pMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
     }
     else
     {
@@ -1826,7 +1826,7 @@ void ProjectTab::showModelicaTextView(bool checked)
     mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::MODELICATEXT));
     // get the modelica text of the model
     mpModelicaEditor->blockSignals(true);
-    mpModelicaEditor->setText(mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->list(mModelNameStructure));
+    mpModelicaEditor->setPlainText(mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->list(mModelNameStructure));
     mpModelicaEditor->blockSignals(false);
     mpModelicaEditor->mLastValidText = mpModelicaEditor->toPlainText();
     mpModelicaEditor->setFocus();
@@ -2957,7 +2957,7 @@ void ProjectTabWidget::addNewProjectTab(QString modelName, QString modelStructur
 {
     ProjectTab *newTab = new ProjectTab(modelName, modelStructure + modelName, modelicaType, StringHandler::ICON, false,
                                         modelStructure.isEmpty() ? false : true, false, this);
-    newTab->mpModelicaEditor->setText(mpParentMainWindow->mpOMCProxy->list(newTab->mModelNameStructure));
+    newTab->mpModelicaEditor->setPlainText(mpParentMainWindow->mpOMCProxy->list(newTab->mModelNameStructure));
     newTab->mTabPosition = addTab(newTab, modelName);
     setCurrentWidget(newTab);
     // make the icon view visible and focused for key press events
@@ -2996,7 +2996,7 @@ void ProjectTabWidget::addDiagramViewTab(QTreeWidgetItem *item, int column)
         newIconComponent = new Component(oldIconComponent, newTab->mModelName, QPointF (0,0), StringHandler::ICON,
                                         false, newTab->mpIconGraphicsView);
     }
-    newTab->mpModelicaEditor->setText(mpParentMainWindow->mpOMCProxy->list(newTab->mModelNameStructure));
+    newTab->mpModelicaEditor->setPlainText(mpParentMainWindow->mpOMCProxy->list(newTab->mModelNameStructure));
     setCurrentWidget(newTab);
     // make the icon view visible and focused for key press events
     newTab->showDiagramView(true);
@@ -3458,6 +3458,11 @@ void ProjectTabWidget::keyPressEvent(QKeyEvent *event)
         else if (event->key() == Qt::Key_Escape)
         {
             pCurrentTab->mpModelicaEditor->mpFindWidget->hide();
+        }
+        else if (event->modifiers().testFlag(Qt::ControlModifier) and event->key() == Qt::Key_L)
+        {
+            GotoLineWidget *pGotoLineWidget = new GotoLineWidget(pCurrentTab->mpModelicaEditor);
+            pGotoLineWidget->show();
         }
     }
 

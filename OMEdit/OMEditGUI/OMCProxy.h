@@ -58,7 +58,7 @@ private:
     QDialog *mpOMCLogger;
     CustomExpressionBox *mpExpressionTextBox;
     QPushButton *mpSendButton;
-    QTextEdit *mpTextEdit;
+    QPlainTextEdit *mpPlainTextEdit;
     QString mObjectRefFile;
     QList<QString> mCommandsList;
     int mCurrentCommandIndex;

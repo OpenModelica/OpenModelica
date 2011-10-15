@@ -265,8 +265,6 @@ bool Component::getIsConnector()
 //! @param value is the result of getIconAnnotation command obtained from OMC.
 bool Component::parseAnnotationString(Component *item, QString value, bool libraryIcon)
 {
-    int i =0;
-
     foreach(ShapeAnnotation *shape, mpShapesList)
     {
         mpShapesList.removeOne(shape);
@@ -582,7 +580,7 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
             // update connectors annotations that are associated to this component
             emit componentPositionChanged();
             ProjectTab *pProjectTab = mpGraphicsView->mpParentProjectTab;
-            pProjectTab->mpModelicaEditor->setText(mpOMCProxy->list(pProjectTab->mModelNameStructure));
+            pProjectTab->mpModelicaEditor->setPlainText(mpOMCProxy->list(pProjectTab->mModelNameStructure));
         }
     }
 #if (QT_VERSION >= QT_VERSION_CHECK(4, 7, 0))
@@ -592,7 +590,7 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         updateAnnotationString();
         updateSelectionBox();
         ProjectTab *pProjectTab = mpGraphicsView->mpParentProjectTab;
-        pProjectTab->mpModelicaEditor->setText(mpOMCProxy->list(pProjectTab->mModelNameStructure));
+        pProjectTab->mpModelicaEditor->setPlainText(mpOMCProxy->list(pProjectTab->mModelNameStructure));
     }
 #endif
     return value;
@@ -803,7 +801,7 @@ void Component::resizeComponent(qreal resizeFactorX, qreal resizeFactorY)
         emit componentScaled();
         updateAnnotationString();
         ProjectTab *pProjectTab = mpGraphicsView->mpParentProjectTab;
-        pProjectTab->mpModelicaEditor->setText(mpOMCProxy->list(pProjectTab->mModelNameStructure));
+        pProjectTab->mpModelicaEditor->setPlainText(mpOMCProxy->list(pProjectTab->mModelNameStructure));
     }
 }
 

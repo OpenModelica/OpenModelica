@@ -614,7 +614,7 @@ void ConnectorLine::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
         // update connectors annotations that are associated to this component
         ProjectTab *pProjectTab = mpParentConnector->mpParentGraphicsView->mpParentProjectTab;
         OMCProxy *pOMCProxy = mpParentConnector->mpParentGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy;
-        pProjectTab->mpModelicaEditor->setText(pOMCProxy->list(pProjectTab->mModelNameStructure));
+        pProjectTab->mpModelicaEditor->setPlainText(pOMCProxy->list(pProjectTab->mModelNameStructure));
     }
 
 
@@ -691,7 +691,7 @@ QVariant ConnectorLine::itemChange(GraphicsItemChange change, const QVariant &va
             // update connectors annotations that are associated to this component
             ProjectTab *pProjectTab = mpParentConnector->mpParentGraphicsView->mpParentProjectTab;
             OMCProxy *pOMCProxy = mpParentConnector->mpParentGraphicsView->mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy;
-            pProjectTab->mpModelicaEditor->setText(pOMCProxy->list(pProjectTab->mModelNameStructure));
+            pProjectTab->mpModelicaEditor->setPlainText(pOMCProxy->list(pProjectTab->mModelNameStructure));
         }
     }
     return value;

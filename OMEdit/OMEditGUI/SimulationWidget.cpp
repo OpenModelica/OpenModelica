@@ -435,7 +435,7 @@ void SimulationWidget::saveSimulationOptions()
     annotationString.append(")");
     // send the simulations options annotation to OMC
     mpParentMainWindow->mpOMCProxy->addClassAnnotation(projectTab->mModelNameStructure, annotationString);
-    projectTab->mpModelicaEditor->setText(mpParentMainWindow->mpOMCProxy->list(projectTab->mModelNameStructure));
+    projectTab->mpModelicaEditor->setPlainText(mpParentMainWindow->mpOMCProxy->list(projectTab->mModelNameStructure));
 }
 
 ProgressDialog::ProgressDialog(SimulationWidget *pParent)

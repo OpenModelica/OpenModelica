@@ -223,7 +223,7 @@ void IconProperties::updateIconProperties()
     {
         ProjectTab *pProjectTab = mpComponent->mpGraphicsView->mpParentProjectTab;
         ProjectTabWidget *pProjectTabs = mpComponent->mpGraphicsView->mpParentProjectTab->mpParentProjectTabWidget;
-        pProjectTab->mpModelicaEditor->setText(pProjectTabs->mpParentMainWindow->mpOMCProxy->list(pProjectTab->mModelNameStructure));
+        pProjectTab->mpModelicaEditor->setPlainText(pProjectTabs->mpParentMainWindow->mpOMCProxy->list(pProjectTab->mModelNameStructure));
     }
     accept();
 }

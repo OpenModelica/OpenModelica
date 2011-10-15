@@ -34,7 +34,7 @@ QTreeWidget#LibrariesTree::branch {
 QTextEdit, QLineEdit {
     border: 1px solid gray;
 }
-QTextEdit#ModelicaEditor {
+QPlainTextEdit#ModelicaEditor {
     selection-background-color: #3399FF;
     selection-color: white;
 }
