@@ -87,7 +87,7 @@ public:
 // ******************************************************
 
 MyTextEdit::MyTextEdit( QWidget* parent )
-  : QTextEdit( parent )
+  : QPlainTextEdit( parent )
 {
   sameTab_ = false;
 }
@@ -110,7 +110,7 @@ void MyTextEdit::keyPressEvent(QKeyEvent *event)
     case Qt::Key_Backspace:
     case Qt::Key_Left:
       if( !startOfCommandSign() )
-        QTextEdit::keyPressEvent( event );
+        QPlainTextEdit::keyPressEvent( event );
       sameTab_ = false;
       break;
     case Qt::Key_Enter:
@@ -151,7 +151,7 @@ void MyTextEdit::keyPressEvent(QKeyEvent *event)
       }
       break;
     default:
-      QTextEdit::keyPressEvent( event );
+      QPlainTextEdit::keyPressEvent( event );
       sameTab_ = false;
       break;
     }
@@ -212,11 +212,11 @@ void MyTextEdit::insertFromMimeData(const QMimeData *source)
   {
     QMimeData *newSource = new QMimeData();
     newSource->setText( source->text() );
-    QTextEdit::insertFromMimeData( newSource );
+    QPlainTextEdit::insertFromMimeData( newSource );
     delete newSource;
   }
   else
-    QTextEdit::insertFromMimeData( source );
+    QPlainTextEdit::insertFromMimeData( source );
 }
 
 
@@ -372,7 +372,6 @@ void OMS::createMoshEdit()
   moshEdit_->setReadOnly( false );
   moshEdit_->setFrameShadow( QFrame::Plain );
   moshEdit_->setFrameShape( QFrame::Panel );
-  moshEdit_->setAutoFormatting( QTextEdit::AutoNone );
 
   moshEdit_->setSizePolicy( QSizePolicy(
     QSizePolicy::Expanding, QSizePolicy::Expanding ));
@@ -381,9 +380,7 @@ void OMS::createMoshEdit()
   moshEdit_->setContextMenuPolicy( Qt::NoContextMenu );
 
   // text settings
-  moshEdit_->setFontFamily( "Courier New" );
-  moshEdit_->setFontWeight( QFont::Normal );
-  moshEdit_->setFontPointSize( fontSize_ );
+  moshEdit_->document()->setDefaultFont(QFont("Courier New", fontSize_, QFont::Normal));
 
   textFormat_ = moshEdit_->currentCharFormat();
 
@@ -593,11 +590,9 @@ void OMS::addCommandLine()
   moshEdit_->setTextCursor( cursor_ );
 
   // sett original text settings
-  moshEdit_->setFontFamily( "Courier New" );
+  moshEdit_->document()->setDefaultFont(QFont("Courier New", fontSize_, QFont::Normal));
   textFormat_.setFontFamily( "Courier New" );
-  moshEdit_->setFontWeight( QFont::Normal );
   textFormat_.setFontWeight( QFont::Normal );
-  moshEdit_->setFontPointSize( fontSize_ );
   textFormat_.setFontPointSize( fontSize_ );
 
   // set correct scrollview
@@ -1049,7 +1044,9 @@ void OMS::fontSize()
     fontSize_ = dlg.value();
 
     moshEdit_->selectAll();
-    moshEdit_->setFontPointSize( fontSize_ );
+    QFont font = moshEdit_->document()->defaultFont();
+    font.setPointSize(fontSize_);
+    moshEdit_->document()->setDefaultFont(font);
     textFormat_.setFontPointSize( fontSize_ );
 
     //cursor_ = moshEdit_->textCursor();
@@ -1178,9 +1175,7 @@ void OMS::clear()
   moshEdit_->clear();
 
   // sett original text settings
-  moshEdit_->setFontFamily( "Courier New" );
-  moshEdit_->setFontWeight( QFont::Normal );
-  moshEdit_->setFontPointSize( fontSize_ );
+  moshEdit_->document()->setDefaultFont(QFont("Courier New", fontSize_, QFont::Normal));
 
   cursor_ = moshEdit_->textCursor();
   cursor_.insertText( QString("OpenModelica ") + omc_version_ + "\n" );

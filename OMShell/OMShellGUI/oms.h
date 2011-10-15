@@ -49,7 +49,7 @@ using namespace std;
 #include <QtGui/QMainWindow>
 #include <QtGui/QTextCharFormat>
 #include <QtGui/QTextCursor>
-#include <QtGui/QTextEdit>
+#include <QtGui/QPlainTextEdit>
 
 //IAEX Headers
 #include "inputcelldelegate.h"
@@ -113,7 +113,7 @@ private:
 
   QFrame* mainFrame_;
   QTextCursor cursor_;
-  QTextEdit* moshEdit_;
+  QPlainTextEdit* moshEdit_;
   //QTextEdit* moshError_;
   QVBoxLayout* layout_;
   QString clipboard_;
@@ -158,7 +158,7 @@ private:
 };
 
 //********************************
-class MyTextEdit : public QTextEdit
+class MyTextEdit : public QPlainTextEdit
 {
   Q_OBJECT
 
