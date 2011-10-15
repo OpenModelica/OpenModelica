@@ -11505,6 +11505,7 @@ algorithm
       Env.Cache cache;
       Prefix.Prefix pre;
 
+    /*
     case (cache,env,e1,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_),constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,_, _)
       equation
         true = Types.semiEquivTypes(t2, t3);
@@ -11512,7 +11513,8 @@ algorithm
         (cache,exp) = cevalIfexpIfConstant(cache,env, e1, e2, e3, c1, impl, st, inInfo);
       then
         (cache,exp,DAE.PROP(t2,c));
-
+    */
+    
     case (cache,env,e1,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_),constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,_, _)
       equation
         (e2_1,t2_1) = Types.matchType(e2, t2, t3, true);
