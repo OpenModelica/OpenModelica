@@ -12,7 +12,7 @@ CXXINCS =  -I"../include/"
 BIN  = ../../../build/bin/fmigenerator
 LIB  = ../../../build/lib/omc/libfmuWrapper.a
 CXXFLAGS = $(CXXINCS)
-CFLAGS = @CFLAGS@ -Wall -Werror
+CFLAGS = @CFLAGS@ -Wall
 CPPFLAGS = -I"../../../build/include/omc"	
 RM = rm -f
 
