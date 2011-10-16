@@ -49,7 +49,7 @@ docs: mkbuilddirs omlibrary
 	# man pages
 	(cd doc/manpages/; for f in *.1; do gzip $$f -c > ../../$(builddir_man)/man1/$$f.gz && touch -r $$f ../../$(builddir_man)/man1/$$f.gz; done)
 
-fmi:
+fmi: c_runtime
 	$(MAKE) -C FMI/import/source -f $(defaultMakefileTarget)
 
 breakprocess:
