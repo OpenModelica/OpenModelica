@@ -273,6 +273,7 @@ void ModelicaEditor::highlightCurrentLine()
     selection.cursor.clearSelection();
     extraSelections.append(selection);
     setExtraSelections(extraSelections);
+    setTextCursor(textCursor());
 }
 
 //! Slot activated when ModelicaEditor updateRequest signal is raised.
@@ -305,7 +306,15 @@ void ModelicaEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
         if (block.isVisible() && bottom >= event->rect().top())
         {
             QString number = QString::number(blockNumber + 1);
-            painter.setPen(Qt::gray);
+            // make the current highlighted line number darker
+            if (blockNumber == textCursor().blockNumber())
+            {
+                painter.setPen(QColor(64, 64, 64));
+            }
+            else
+            {
+                painter.setPen(Qt::gray);
+            }
             painter.setFont(document()->defaultFont());
             QFontMetrics fontMetrics (document()->defaultFont());
             painter.drawText(0, top, mpLineNumberArea->width() - 5, fontMetrics.height(), Qt::AlignRight, number);
