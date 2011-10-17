@@ -65,7 +65,9 @@ private:
     QLabel *mpIconModelCommentLabel;
     QLabel *mpIconModelCommentTextBox;
     QWidget *mpParametersTab;
-    QWidget *mpModeifiersTab;
+    QWidget *mpModifiersTab;
+    QLabel *mpModifiersLabel;
+    QLineEdit *mpModifiersTextBox;
     QPushButton *mpCancelButton;
     QPushButton *mpOkButton;
     QDialogButtonBox *mpButtonBox;

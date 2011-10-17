@@ -33,6 +33,10 @@
 
 #include "IconProperties.h"
 
+//! @class IconProperties
+//! @brief A dialog for displaying components properties like name, comment, paramters, modifers etc.
+
+//! Constructor
 IconProperties::IconProperties(Component *pComponent, QWidget *pParent)
     : QDialog(pParent, Qt::WindowTitleHint)
 {
@@ -45,11 +49,13 @@ IconProperties::IconProperties(Component *pComponent, QWidget *pParent)
     setUpDialog();
 }
 
+//! Destructor
 IconProperties::~IconProperties()
 {
 
 }
 
+//! Creates the Dialog and set up all the controls with default values.
 void IconProperties::setUpDialog()
 {
     mpPropertiesHeading = new QLabel(tr("Properties"));
@@ -86,8 +92,8 @@ void IconProperties::setUpDialog()
     mpPropertiesTabWidget->addTab(mpGeneralTab, tr("General"));
     mpParametersTab = new QWidget(mpPropertiesTabWidget);
     mpPropertiesTabWidget->addTab(mpParametersTab, tr("Parameters"));
-    mpModeifiersTab = new QWidget(mpPropertiesTabWidget);
-    mpPropertiesTabWidget->addTab(mpModeifiersTab, tr("Modifiers"));
+    mpModifiersTab = new QWidget(mpPropertiesTabWidget);
+    mpPropertiesTabWidget->addTab(mpModifiersTab, tr("Modifiers"));
 
     // add group boxes to General Tab
     QVBoxLayout *vGeneralTabLayout = new QVBoxLayout;
@@ -108,34 +114,32 @@ void IconProperties::setUpDialog()
     // set General Tab layout
     vGeneralTabLayout->addWidget(mpComponentGroup);
     mpGeneralTab->setLayout(vGeneralTabLayout);
-
     // add items to parameters tab
     QVBoxLayout *vParametersLayout = new QVBoxLayout;
     vParametersLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     QGridLayout *gridParametersLayout = new QGridLayout;
     gridParametersLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
 
+    mpComponent->mIconParametersList.clear();
+    mpComponent->mIconParametersList.append(mpComponent->mpOMCProxy->getParameters(
+                                                mpComponent->mpGraphicsView->mpParentProjectTab->mModelNameStructure,
+                                                mpComponent->getClassName(), mpComponent->getName()));
+
     for (int i = 0 ; i < mpComponent->mIconParametersList.size() ; i++)
     {
         IconParameters *iconParameter = mpComponent->mIconParametersList.at(i);
-
         QLabel *parameterLabel = new QLabel;
         parameterLabel->setText(iconParameter->getName());
-
         QLineEdit *parameterTextBox = new QLineEdit;
-        parameterTextBox->setText(iconParameter->getValue().isEmpty() ?
-                                  iconParameter->getDefaultValue() : iconParameter->getValue());
+        parameterTextBox->setText(iconParameter->getValue().isEmpty() ? iconParameter->getDefaultValue() : iconParameter->getValue());
         mParameterTextBoxesList.append(parameterTextBox);
-
         if (mpComponent->mpOMCProxy->isProtected(iconParameter->getName(), mpComponent->getClassName()))
         {
             parameterLabel->setEnabled(false);
             parameterTextBox->setEnabled(false);
         }
-
         QLabel *parameterComment = new QLabel;
         parameterComment->setText(iconParameter->getComment());
-
         gridParametersLayout->addWidget(parameterLabel, i, 0);
         gridParametersLayout->addWidget(parameterTextBox, i, 1);
         gridParametersLayout->addWidget(parameterComment, i, 2);
@@ -143,7 +147,13 @@ void IconProperties::setUpDialog()
     vParametersLayout->addLayout(gridParametersLayout);
     mpParametersTab->setLayout(vParametersLayout);
     // add items to modifiers tab
-
+    mpModifiersLabel = new QLabel(Helper::modifiersLabelText);
+    mpModifiersTextBox = new QLineEdit;
+    QVBoxLayout *vModifiersLayout = new QVBoxLayout;
+    vModifiersLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+    vModifiersLayout->addWidget(mpModifiersLabel);
+    vModifiersLayout->addWidget(mpModifiersTextBox);
+    mpModifiersTab->setLayout(vModifiersLayout);
     // Create the buttons
     mpOkButton = new QPushButton(tr("OK"));
     mpOkButton->setAutoDefault(true);
@@ -151,11 +161,10 @@ void IconProperties::setUpDialog()
     mpCancelButton = new QPushButton(tr("Cancel"));
     mpCancelButton->setAutoDefault(false);
     connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
-
+    // Add buttons
     mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
     mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
     mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
-
     // Create a layout
     QGridLayout *mainLayout = new QGridLayout;
     mainLayout->addLayout(horizontalLayout, 0, 0);
@@ -166,13 +175,14 @@ void IconProperties::setUpDialog()
     setLayout(mainLayout);
 }
 
+//! Slot activated when mpOkButton clicked signal is raised.
+//! Updates the component name, paramters values and add modifiers.
 void IconProperties::updateIconProperties()
 {
     QString iconName = mpIconNameTextBox->text().trimmed();
     ProjectTab *pProjectTab = mpComponent->mpGraphicsView->mpParentProjectTab;
     MainWindow *pMainWindow = pProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
     bool valueChanged = false;
-
     // update the component name if it is changed
     if (mpComponent->getName() != iconName)
     {
@@ -196,11 +206,9 @@ void IconProperties::updateIconProperties()
             }
         }
     }
-
+    // update the parameter if it is changed
     QString parameterOldValueString;
     QString parameterNewValueString;
-
-    // update the parameter if it is changed
     for (int i = 0 ; i < mpComponent->mIconParametersList.size() ; i++)
     {
         // if the paramter value has changed only then update it
@@ -209,14 +217,40 @@ void IconProperties::updateIconProperties()
             IconParameters *iconParameter = mpComponent->mIconParametersList.at(i);
             mpComponent->mpOMCProxy->setComponentModifierValue(pProjectTab->mModelNameStructure, QString(mpComponent->getName()).append(".")
                                                                .append(iconParameter->getName()),
-                                                               mParameterTextBoxesList.at(i)->text().trimmed());
-
+                                                               mParameterTextBoxesList.at(i)->text().trimmed().prepend("="));
             valueChanged = true;
             // update the gui text now
             parameterOldValueString = QString(iconParameter->getName()).append("=").append(iconParameter->getValue());
             parameterNewValueString = QString(iconParameter->getName()).append("=").append(mParameterTextBoxesList.at(i)->text().trimmed());
             mpComponent->updateParameterValue(parameterOldValueString, parameterNewValueString);
             iconParameter->setValue(mParameterTextBoxesList.at(i)->text().trimmed());
+        }
+    }
+    // add modifiers
+    if (!mpModifiersTextBox->text().isEmpty())
+    {
+        QString regexp ("([A-Za-z0-9]+)\\(([A-Za-z0-9]+)=([A-Za-z0-9]+)\\)$");
+        QRegExp modifierRegExp (regexp);
+        QStringList modifiers = mpModifiersTextBox->text().split(",", QString::SkipEmptyParts);
+        foreach (QString modifier, modifiers)
+        {
+            modifier = modifier.trimmed();
+            if (modifierRegExp.exactMatch(modifier.trimmed()))
+            {
+                QString paramter = modifier.mid(0, modifier.indexOf("("));
+                QString value = modifier.mid(modifier.indexOf("("));
+                if (!mpComponent->mpOMCProxy->setComponentModifierValue(pProjectTab->mModelNameStructure, QString(mpComponent->getName())
+                                                                       .append(".").append(paramter), value))
+                {
+                    pMainWindow->mpMessageWidget->printGUIErrorMessage(QString(GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED))
+                                                                       .arg(mpComponent->mpOMCProxy->getErrorString()));
+                }
+                valueChanged = true;
+            }
+            else
+            {
+                pMainWindow->mpMessageWidget->printGUIErrorMessage(QString(GUIMessages::getMessage(GUIMessages::WRONG_MODIFIER)).arg(modifier));
+            }
         }
     }
     if (valueChanged)
@@ -228,6 +262,10 @@ void IconProperties::updateIconProperties()
     accept();
 }
 
+//! @class IconAttributes
+//! @brief A dialog for displaying components attributes like visibility, stream, casuality etc.
+
+//! Constructor
 IconAttributes::IconAttributes(Component *pComponent, QWidget *pParent)
     : QDialog(pParent, Qt::WindowTitleHint)
 {
@@ -241,6 +279,7 @@ IconAttributes::IconAttributes(Component *pComponent, QWidget *pParent)
     initializeDialog();
 }
 
+//! Creates the Dialog and set up all the controls with default values.
 void IconAttributes::setUpDialog()
 {
     mpPropertiesHeading = new QLabel(tr("Attributes"));
@@ -362,6 +401,7 @@ void IconAttributes::setUpDialog()
     setLayout(mainLayout);
 }
 
+//! Initialize the fields with default values.
 void IconAttributes::initializeDialog()
 {
     QList<ComponentsProperties*> components = mpComponent->mpOMCProxy->getComponents(mpComponent->mpGraphicsView->mpParentProjectTab->mModelNameStructure);
@@ -407,6 +447,8 @@ void IconAttributes::initializeDialog()
     }
 }
 
+//! Slot activated when mpOkButton clicked signal is raised.
+//! Updates the component attributes.
 void IconAttributes::updateIconAttributes()
 {
     ProjectTab *pCurrentTab = mpComponent->mpGraphicsView->mpParentProjectTab;

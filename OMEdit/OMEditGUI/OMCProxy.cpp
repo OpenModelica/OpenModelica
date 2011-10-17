@@ -687,8 +687,7 @@ QList<IconParameters*> OMCProxy::getParameters(QString modelName, QString classN
     QStringList modifiersList = getComponentModifierNames(modelName, name);
     for (int i = 0 ; i < modifiersList.size() ; i++)
     {
-        QString value = getComponentModifierValue(modelName, QString(name).append(".")
-                                                  .append(modifiersList.at(i)).trimmed());
+        QString value = getComponentModifierValue(modelName, QString(name).append(".").append(modifiersList.at(i)).trimmed());
         IconParameters *iconParameter = new IconParameters(QString(modifiersList.at(i)).trimmed(), value);
         iconParametersList.append(iconParameter);
     }
@@ -777,10 +776,7 @@ QString OMCProxy::getComponentModifierValue(QString modelName, QString name)
 
 bool OMCProxy::setComponentModifierValue(QString modelName, QString name, QString value)
 {
-    if (value.isEmpty())
-        sendCommand("setComponentModifierValue(" + modelName + "," + name + ", Code((" + value + ")))");
-    else
-        sendCommand("setComponentModifierValue(" + modelName + "," + name + ", Code(=" + value + "))");
+    sendCommand("setComponentModifierValue(" + modelName + "," + name + ", Code(" + value + "))");
     if (getResult().toLower().contains("ok"))
         return true;
     else

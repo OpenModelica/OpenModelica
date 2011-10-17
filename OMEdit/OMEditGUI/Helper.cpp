@@ -149,6 +149,8 @@ QString Helper::outputDirectoryNote = QString("* If no Output Directory specifie
 
 QString Helper::librariesAddNote = QString("* The libraries changes will take effect after restart.");
 
+QString Helper::modifiersLabelText = QString("Add new modifiers, e.g phi(start=1),w(start=2)");
+
 QString GUIMessages::getMessage(int type)
 {
     switch (type)
@@ -243,6 +245,8 @@ QString GUIMessages::getMessage(int type)
         return "A component with the name %1 already exists. The name is changed from %1 to %2.\nThis is probably wrong because the component is decalred as %3.";
     case FMI_GENERATED:
         return "The FMI is generated at %1/%2.fmu";
+    case WRONG_MODIFIER:
+        return "The Modifier '%1' format is invalid. The correct format is 'phi(start=1)'";
     default:
         return "";
     }

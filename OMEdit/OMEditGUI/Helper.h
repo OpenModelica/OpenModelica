@@ -149,6 +149,7 @@ public:
     static QString outputDirectory;
     static QString outputDirectoryNote;
     static QString librariesAddNote;
+    static QString modifiersLabelText;
 };
 
 class GUIMessages
@@ -200,7 +201,8 @@ public:
         DELETE_PACKAGE_MSG,
         DELETE_MSG,
         INNER_MODEL_NAME_CHANGED,
-        FMI_GENERATED
+        FMI_GENERATED,
+        WRONG_MODIFIER
     };
 
     static QString getMessage(int type);
