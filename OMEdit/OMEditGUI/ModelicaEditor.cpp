@@ -46,6 +46,7 @@ ModelicaEditor::ModelicaEditor(ProjectTab *pParent)
     setTabStopWidth(Helper::tabWidth);
     setObjectName(tr("ModelicaEditor"));
     document()->setDocumentMargin(2);
+    setLineWrapMode(QPlainTextEdit::NoWrap);
     // depending on the project tab readonly state set the text view readonly state
     setReadOnly(mpParentProjectTab->isReadOnly());
     connect(this, SIGNAL(focusOut()), mpParentProjectTab, SLOT(modelicaEditorTextChanged()));
@@ -273,7 +274,6 @@ void ModelicaEditor::highlightCurrentLine()
     selection.cursor.clearSelection();
     extraSelections.append(selection);
     setExtraSelections(extraSelections);
-    setTextCursor(textCursor());
 }
 
 //! Slot activated when ModelicaEditor updateRequest signal is raised.
@@ -332,7 +332,10 @@ void ModelicaEditor::lineNumberAreaPaintEvent(QPaintEvent *event)
 void ModelicaEditor::setPlainText(const QString &text)
 {
     if (text != toPlainText())
+    {
         QPlainTextEdit::setPlainText(text);
+        updateLineNumberAreaWidth(0);
+    }
 }
 
 //! Slot activated when ModelicaEditor textChanged signal is raised.

@@ -70,7 +70,7 @@ signals:
 private slots:
     void updateLineNumberAreaWidth(int newBlockCount);
     void highlightCurrentLine();
-    void updateLineNumberArea(const QRect &, int);
+    void updateLineNumberArea(const QRect &rect, int dy);
 public slots:
     void setPlainText(const QString &text);
     void hasChanged();
