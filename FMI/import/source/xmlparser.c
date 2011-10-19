@@ -27,8 +27,9 @@
 #define _IMPORT_ERROR_LOG_
 #define WHERESTR  "[date %s, time %s, file %s, line %d]: "
 #define WHEREARG  __DATE__, __TIME__, __FILE__, __LINE__
-#define ERRORPRINT2(...)       fprintf(stderr, __VA_ARGS__)
-#define ERRORPRINT(_fmt, ...)  ERRORPRINT2(WHERESTR _fmt, WHEREARG, __VA_ARGS__)
+// #define ERRORPRINT2(...)       fprintf(stderr, __VA_ARGS__)
+// #define ERRORPRINT; fprintf(stderr,_fmt, ...)  ERRORPRINT2(WHERESTR _fmt, WHEREARG, __VA_ARGS__)
+#define ERRORPRINT       fprintf(stderr, WHERESTR, WHEREARG)
 // end
 
 const char *elmNames[SIZEOF_ELM] = { 
@@ -309,7 +310,7 @@ double getNominal(ModelDescription* md, fmiValueReference vr){
 // Returns 0 to indicate error
 static int checkPointer(const void* ptr){
     if (! ptr) {
-        ERRORPRINT(" Out of memory%s\n","");
+        ERRORPRINT; fprintf(stderr," Out of memory%s\n","");
         if (parser) XML_StopParser(parser, XML_FALSE);
         return 0; // error 
     }
@@ -321,7 +322,7 @@ static int checkName(const char* name, const char* kind, const char* array[], in
     for (i=0; i<n; i++) {
         if (!strcmp(name, array[i])) return i;
     }
-    ERRORPRINT(" Illegal %s %s\n", kind, name);
+    ERRORPRINT; fprintf(stderr," Illegal %s %s\n", kind, name);
     XML_StopParser(parser, XML_FALSE);
     return -1;
 }
@@ -342,7 +343,7 @@ static int checkEnumValue(const char* enu){
 }
 
 static void logFatalTypeError(const char* expected, Elm found) {
-    ERRORPRINT(" Wrong element type, expected %s, found %s\n", 
+    ERRORPRINT; fprintf(stderr," Wrong element type, expected %s, found %s\n", 
             expected, elmNames[found]);
     XML_StopParser(parser, XML_FALSE);
 }
@@ -366,7 +367,7 @@ static int checkElementType(void* element, Elm e) {
 // If e==ANY_TYPE, the type check is ommited 
 static int checkPeek(Elm e) {
     if (stackIsEmpty(stack)){
-        ERRORPRINT(" Illegal document structure, expected %s\n", elmNames[e]);
+        ERRORPRINT; fprintf(stderr," Illegal document structure, expected %s\n", elmNames[e]);
         XML_StopParser(parser, XML_FALSE);
         return 0; // error
     }
@@ -722,7 +723,7 @@ void printElement(int indent, void* element){
             printList(indent, (void** )md->modelVariables);
             break;
 		default:
-			ERRORPRINT(" unknown AST node type of the Element in function: %s\n",__func__);
+			ERRORPRINT; fprintf(stderr," unknown AST node type of the Element in function: %s\n",__func__);
 			exit(EXIT_FAILURE);
 		
     }
@@ -767,7 +768,7 @@ void freeElement(void* element){
             freeList((void **)md->modelVariables);
             break;
 		default:
-			ERRORPRINT(" unknown AST node type of the Element in function: %s\n",__func__);
+			ERRORPRINT; fprintf(stderr," unknown AST node type of the Element in function: %s\n",__func__);
 			//exit(EXIT_FAILURE);
     }
     // free the struct
@@ -808,7 +809,7 @@ ModelDescription* parse(const char* xmlPath) {
     XML_SetCharacterDataHandler(parser, handleData);
   	file = fopen(xmlPath, "rb");
 	if (file == NULL) {
-        ERRORPRINT(" Cannot open file '%s'\n", xmlPath);
+        ERRORPRINT; fprintf(stderr," Cannot open file '%s'\n", xmlPath);
      	XML_ParserFree(parser);
         return NULL; // failure
     }
@@ -816,7 +817,7 @@ ModelDescription* parse(const char* xmlPath) {
         int n = fread(text, sizeof(char), XMLBUFSIZE, file);
 	    if (n != XMLBUFSIZE) done = 1;
         if (!XML_Parse(parser, text, n, done)){
-             ERRORPRINT(" Parse error in file %s at line %lu:\n%s\n", 
+             ERRORPRINT; fprintf(stderr," Parse error in file %s at line %lu:\n%s\n", 
                      xmlPath,
 	                 XML_GetCurrentLineNumber(parser),
 	                 XML_ErrorString(XML_GetErrorCode(parser)));

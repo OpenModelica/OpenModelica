@@ -18,8 +18,9 @@
 #define _IMPORT_ERROR_LOG_
 #define WHERESTR  "[date %s, time %s, file %s, line %d]: "
 #define WHEREARG  __DATE__, __TIME__, __FILE__, __LINE__
-#define ERRORPRINT2(...)       fprintf(errLogFile, __VA_ARGS__)
-#define ERRORPRINT(_fmt, ...)  ERRORPRINT2(WHERESTR _fmt, WHEREARG, __VA_ARGS__)
+// #define ERRORPRINT2(...)       fprintf(errLogFile, __VA_ARGS__)
+// #define ERRORPRINT(_fmt, ...)  ERRORPRINT2(WHERESTR _fmt, WHEREARG, __VA_ARGS__)
+#define ERRORPRINT       fprintf(errLogFile, WHERESTR, WHEREARG)
 // end
 
 // mocro for log message print
@@ -175,13 +176,13 @@ static char* getDecompPath(char * omPath, const char* mid){
 	if (!omhome || strlen(omhome) >= PATHSIZE) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
         if (GetLastError() == ERROR_ENVVAR_NOT_FOUND) {
-            ERRORPRINT("#### Error: Environment variable \"%s\" not defined\n","OPENMODELICAHOME");
+            ERRORPRINT; fprintf(errLogFile,"#### Error: Environment variable \"%s\" not defined\n","OPENMODELICAHOME");
         }
         else {
-            ERRORPRINT("#### Error: Could not get value of \"%s\"\n","OPENMODELICAHOME");
+            ERRORPRINT; fprintf(errLogFile,"#### Error: Could not get value of \"%s\"\n","OPENMODELICAHOME");
         }
 #else
-  ERRORPRINT("#### Error: Could not get value of getenv(OPENMODELICAHOME): %s\n", strerror(errno));
+  ERRORPRINT; fprintf(errLogFile,"#### Error: Could not get value of getenv(OPENMODELICAHOME): %s\n", strerror(errno));
 #endif
         exit(EXIT_FAILURE); // error       
   }
@@ -240,13 +241,13 @@ static int decompress(const char* fmuPath, const char* decompPath) {
  
   if (err!=SEVEN_ZIP_NO_ERROR) {
     switch (err) {
-      ERRORPRINT("#### 7z: %s","");
+      ERRORPRINT; fprintf(errLogFile,"#### 7z: %s","");
       case SEVEN_ZIP_WARNING: printf("warning\n"); break;
       case SEVEN_ZIP_ERROR: printf("error\n"); break;
       case SEVEN_ZIP_COMMAND_LINE_ERROR: printf("command line error\n"); break;
       case SEVEN_ZIP_OUT_OF_MEMORY: printf("out of memory\n"); break;
       case SEVEN_ZIP_STOPPED_BY_USER: printf("stopped by user\n"); break;
-      default: ERRORPRINT("#### Unknown problem %s\n","");
+      default: ERRORPRINT; fprintf(errLogFile,"#### Unknown problem %s\n","");
     }
   }
 #endif
@@ -283,7 +284,7 @@ fmiScalarVariableType getElementType(ScalarVariable* sv){
 							return sv_type;
 		case elm_Enumeration:sv_type = sv_enum;
 							 return sv_type;
-		default: ERRORPRINT("#### Unknown element type in ScalarVaraible %s...\n",""); exit(EXIT_FAILURE);
+		default: ERRORPRINT; fprintf(errLogFile,"#### Unknown element type in ScalarVaraible %s...\n",""); exit(EXIT_FAILURE);
 	}
 }
 
@@ -295,7 +296,7 @@ void* allocateElmSV(fmiScalarVariable fmisv){
 		case sv_boolean: return calloc(sizeof(fmiBOOLEAN),1);
 		case sv_string: return calloc(sizeof(fmiSTRING),1);
 		case sv_enum: return NULL;
-		default: ERRORPRINT("#### Unknown element type in allocateElmSV() for fmiScalarVariable: %s ...\n",fmisv.name); exit(EXIT_FAILURE);
+		default: ERRORPRINT; fprintf(errLogFile,"#### Unknown element type in allocateElmSV() for fmiScalarVariable: %s ...\n",fmisv.name); exit(EXIT_FAILURE);
 	}
 }
 
@@ -348,7 +349,7 @@ void instElmSV(ScalarVariable* sv, fmiScalarVariable fmisv){
 			((fmiSTRING*) fmisv.variable)->fixed = (vs==valueDefined ? tmp_bl : 0);
 			break;
 		}
-		default: ERRORPRINT("#### Unknown error in instElmSV() for fmiScalarVariable: %s...\n",fmisv.name); exit(EXIT_FAILURE);
+		default: ERRORPRINT; fprintf(errLogFile,"#### Unknown error in instElmSV() for fmiScalarVariable: %s...\n",fmisv.name); exit(EXIT_FAILURE);
 	}
 }
 
@@ -405,7 +406,7 @@ void instScalarVariable(ModelDescription* md,fmiScalarVariable* list){
 		return;
 	}
 	else{
-		ERRORPRINT("#### instScalarVariable() failed: no modelVariable defined or memory error...%s\n","");
+		ERRORPRINT; fprintf(errLogFile,"#### instScalarVariable() failed: no modelVariable defined or memory error...%s\n","");
 		exit(EXIT_FAILURE);
 	}
 }
@@ -417,7 +418,7 @@ fmiNamingConvention getNamingConvention(ModelDescription* md, Att att){
 	fmiNamingConvention nconv;
 	enu = getEnumValue(md,att_variableNamingConvention,&vs);
 	if (vs == valueIllegal){
-		ERRORPRINT("#### Return value of getNamingConvention is illegal...%s\n","");
+		ERRORPRINT; fprintf(errLogFile,"#### Return value of getNamingConvention is illegal...%s\n","");
 		exit(EXIT_FAILURE);
 	}
 	if(enu==enu_flat) nconv = flat;
@@ -472,7 +473,7 @@ void tmpcodegen(fmuModelDescription* fmuMD, const char* decompPath){
 	
 	pfile = fopen(id,"w");	
 	if(!pfile){
-		ERRORPRINT("#### Creating %s failed...\n",id);
+		ERRORPRINT; fprintf(errLogFile,"#### Creating %s failed...\n",id);
 		exit(EXIT_FAILURE);
 	}
 	else{
@@ -487,13 +488,13 @@ void tmpcodegen(fmuModelDescription* fmuMD, const char* decompPath){
     fputs(FMU_TEMPLATE_STR, pfile);
 		// pf = fopen(FMU_TEMPLATE,"r");
 		// if(!pf){
-			// ERRORPRINT("#### Opening %s failed...\n",FMU_TEMPLATE);
+			// ERRORPRINT; fprintf(errLogFile,"#### Opening %s failed...\n",FMU_TEMPLATE);
 			// exit(EXIT_FAILURE);
 		// }		
 		// while(!feof(pf)){
 			// fgets(tmpstr,BUFFERSIZE,pf);
 			// if(ferror(pf)){
-				// ERRORPRINT("#### Reading lines from %s failed...\n",FMU_TEMPLATE);
+				// ERRORPRINT; fprintf(errLogFile,"#### Reading lines from %s failed...\n",FMU_TEMPLATE);
 				// exit(EXIT_FAILURE);
 			// }
 			// fputs(tmpstr,pfile);
@@ -587,7 +588,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath, const char
 	pfile = fopen(id,"a+");
 	
 	if(!pfile){
-		ERRORPRINT("#### Creating %s failed...\n",id);
+		ERRORPRINT; fprintf(errLogFile,"#### Creating %s failed...\n",id);
 		exit(EXIT_FAILURE);
 	}
 	else{
@@ -661,7 +662,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath, const char
 			
 		}		
 		else{
-			ERRORPRINT("#### Memory error: %s is empty...\n","tmpSV");
+			ERRORPRINT; fprintf(errLogFile,"#### Memory error: %s is empty...\n","tmpSV");
 			exit(EXIT_FAILURE);
 		}
 		#ifdef _DEBUG_
@@ -931,7 +932,7 @@ void printUsage() {
 int main(int argc, char *argv[]){
 	if (argc < 2) {
 		printUsage();
-		ERRORPRINT("#### Wrong arguments passed to main entry...%s\n","");
+		ERRORPRINT; fprintf(errLogFile,"#### Wrong arguments passed to main entry...%s\n","");
 		exit(EXIT_FAILURE);
 	}
 	else if (strcasecmp(argv[1], "-h") == 0) {
@@ -988,7 +989,7 @@ int main(int argc, char *argv[]){
 		}
 		else{
 			printUsage();
-			ERRORPRINT("#### Wrong argument for decompression path...%s\n","");
+			ERRORPRINT; fprintf(errLogFile,"#### Wrong argument for decompression path...%s\n","");
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -997,7 +998,7 @@ int main(int argc, char *argv[]){
 	}
 	if(decompPath==NULL){
 		printf("#### path for decompression is not available: decompPath = %s\n","NULL");
-		ERRORPRINT("#### path for decompression is not available: decompPath = %s\n","NULL");
+		ERRORPRINT; fprintf(errLogFile,"#### path for decompression is not available: decompPath = %s\n","NULL");
 		exit(EXIT_FAILURE);
 	}
 	#ifdef _DEBUG_
@@ -1007,7 +1008,7 @@ int main(int argc, char *argv[]){
 	xmlFile = getNameXMLfile(decompPath,MODEL_DESCRIPTION);
 	if(xmlFile == NULL){
 		printf("#### model description xml file is not available: xmlFile = %s\n","NULL");
-		ERRORPRINT("#### model description xml file is not available: xmlFile = %s\n","NULL");
+		ERRORPRINT; fprintf(errLogFile,"#### model description xml file is not available: xmlFile = %s\n","NULL");
 		exit(EXIT_FAILURE);
 	}
 	// end
@@ -1015,8 +1016,8 @@ int main(int argc, char *argv[]){
 	// Parsing the model description file as a tree-like structure
 	md = parse(xmlFile);
 	if(md == NULL){
-		printf("#### parsing model description xml file occurred error: md = %s","NULL");
-		ERRORPRINT("#### parsing model description xml file occurred error: md = %s","NULL");
+		printf("#### parsing model description xml file occurred error: md = %s\n","NULL");
+		ERRORPRINT; fprintf(errLogFile,"#### parsing model description xml file occurred error: md = %s\n","NULL");
 		exit(EXIT_FAILURE);
 	}
 	//end
@@ -1029,7 +1030,7 @@ int main(int argc, char *argv[]){
 	}
 	else{
 		printf("#### There is no scalar variable in the model %s\n",fmuname);
-		ERRORPRINT("#### There is no scalar variable in the model %s\n",fmuname);
+		ERRORPRINT; fprintf(errLogFile,"#### There is no scalar variable in the model %s\n",fmuname);
 		exit(EXIT_FAILURE);
 	}
 	fmuMV = (fmiModelVariable*)calloc(sizeof(fmiModelVariable),1);
