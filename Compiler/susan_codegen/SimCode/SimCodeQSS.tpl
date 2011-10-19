@@ -102,8 +102,6 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
 
   <%SimCodeC.externalFunctionIncludes(externalFunctionIncludes)%>
 
-  <%SimCodeC.functionODE_residual()%>
-
   #ifdef _OMC_MEASURE_TIME
   int measure_time_flag = 1;
   #else

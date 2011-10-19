@@ -146,8 +146,6 @@ case simCode as SIMCODE(__) then
   
   <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""))%>
   
-  <%functionODE_residual()%>
-  
   <%functionAlgebraic(algebraicEquations)%>
     
   <%functionAliasEquation(removedEquations)%>
@@ -1134,38 +1132,6 @@ template functionAliasEquation(list<SimEqSystem> removedEquations)
   >>
 end functionAliasEquation;
 
-
-template functionODE_residual()
-  "Generates residual function for dassl in simulation file."
-::=
-  <<
-  int functionODE_residual(double *t, double *x, double *xd, double *delta,
-                      fortran_integer *ires, double *rpar, fortran_integer *ipar)
-  {
-    double timeBackup;
-    double* statesBackup;
-    int i;
-
-    timeBackup = localData->timeValue;
-    statesBackup = localData->states;
-
-    localData->timeValue = *t;
-    localData->states = x;
-    functionODE();
-  
-    /* get the difference between the temp_xd(=localData->statesDerivatives)
-       and xd(=statesDerivativesBackup) */
-    for (i=0; i < localData->nStates; i++) {
-      delta[i] = localData->statesDerivatives[i] - xd[i];
-    }
-    
-    localData->states = statesBackup;
-    localData->timeValue = timeBackup;
-
-    return 0;
-  }
-  >>
-end functionODE_residual;
 
 template functionDAE( list<SimEqSystem> allEquationsPlusWhen, 
                 list<SimWhenClause> whenClauses,

@@ -1331,3 +1331,29 @@ interpolation_control(const int &dideventstep, double &interpolationStep,
   }
   return 0;
 }
+
+int functionODE_residual(double *t, double *x, double *xd, double *delta,
+                    fortran_integer *ires, double *rpar, fortran_integer *ipar)
+{
+  double timeBackup;
+  double* statesBackup;
+  int i;
+
+  timeBackup = globalData->timeValue;
+  statesBackup = globalData->states;
+
+  globalData->timeValue = *t;
+  globalData->states = x;
+  functionODE();
+
+  /* get the difference between the temp_xd(=localData->statesDerivatives)
+     and xd(=statesDerivativesBackup) */
+  for (i=0; i < globalData->nStates; i++) {
+    delta[i] = globalData->statesDerivatives[i] - xd[i];
+  }
+  
+  globalData->states = statesBackup;
+  globalData->timeValue = timeBackup;
+
+  return 0;
+}
