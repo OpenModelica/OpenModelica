@@ -484,8 +484,7 @@ RML_BEGIN_LABEL(System__appendFile)
   if (file == NULL) {
     const char *c_tokens[1]={filename};
     c_add_message(21, /* WRITING_FILE_ERROR */
-      "SCRIPTING",
-      "ERROR",
+      ErrorType_scripting, ErrorLevel_error,
       "Error appending to file %s.",
       c_tokens,
       1);
