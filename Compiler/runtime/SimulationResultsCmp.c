@@ -491,7 +491,7 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
       dataref = getData(var2,reffilename,size_ref,&simresglob_ref);
       if (dataref.n==0) {
         fprintf(stderr, "Get Data of Var %s from file %s failed\n",var,reffilename);
-        c_add_message(-1, "SCRIPT", "Warning", "Get Data of Var failed!\n", msg, 0);
+        c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, "Get Data of Var failed!\n", msg, 0);
         continue;
       }
     }
@@ -504,7 +504,7 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
       if (data.n==0)  {
         if (data.data) free(data.data);
         fprintf(stderr, "Get Data of Var %s from file %s failed\n",var,filename);
-        c_add_message(-1, "SCRIPT", "Warning", "Get Data of Var failed!\n", msg, 0);
+        c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, "Get Data of Var failed!\n", msg, 0);
         continue;
       }
     }
@@ -517,13 +517,13 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
 
   if (writeLogFile(resultfilename,&ddf,filename,reffilename,reltol,abstol))
   {
-     c_add_message(-1, "SCRIPT", "Warning", "Cannot write result file!\n", msg, 0);
+     c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, "Cannot write result file!\n", msg, 0);
   }
 
   if (ddf.n > 0){
     //fprintf(stderr, "diff: %d\n",ddf.n);
     res = mk_cons(mk_scon("Files not Equal!"),mk_nil());
-    c_add_message(-1, "SCRIPT", "Warning", "Files not Equal\n", msg, 0);
+    c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, "Files not Equal\n", msg, 0);
   }
   else
     res = mk_cons(mk_scon("Files Equal!"),mk_nil());

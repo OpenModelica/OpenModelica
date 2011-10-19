@@ -32,12 +32,12 @@ OBJS = \
 MetaModelica_Lexer_BaseModelica_Lexer.o MetaModelica_Lexer.o \
 Modelica_3_Lexer_BaseModelica_Lexer.o Modelica_3_Lexer.o
 
-MetaModelica_Lexer.o: MetaModelica_Lexer.h MetaModelica_Lexer_BaseModelica_Lexer.h
-Modelica_3_Lexer.o: Modelica_3_Lexer.h Modelica_3_Lexer_BaseModelica_Lexer.h
-MetaModelica_Lexer_BaseModelica_Lexer.o: MetaModelica_Lexer_BaseModelica_Lexer.h
-Modelica_3_Lexer_BaseModelica_Lexer.o: Modelica_3_Lexer_BaseModelica_Lexer.h
-ModelicaParser_rml.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h ../Compiler/Absyn.h ../Compiler/Interactive.h
-ModelicaParser_omc.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h ../Compiler/OpenModelicaBootstrappingHeader.h
+MetaModelica_Lexer.o: MetaModelica_Lexer.h MetaModelica_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h
+Modelica_3_Lexer.o: Modelica_3_Lexer.h Modelica_3_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h
+MetaModelica_Lexer_BaseModelica_Lexer.o: MetaModelica_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h
+Modelica_3_Lexer_BaseModelica_Lexer.o: Modelica_3_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h
+ModelicaParser_rml.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h ../Compiler/Absyn.h ../Compiler/Interactive.h ../Compiler/runtime/errorext.h
+ModelicaParser_omc.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h ../Compiler/OpenModelicaBootstrappingHeader.h ../Compiler/runtime/errorext.h
 
 Parser_rml.o: $(HFILES) parse.c
 Parser_omc.o: $(HFILES) parse.c ../c_runtime/meta/rml_compatibility.h

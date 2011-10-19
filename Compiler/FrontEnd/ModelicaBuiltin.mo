@@ -1008,7 +1008,7 @@ type ErrorKind = enumeration(
   grammar "grammatical errors",
   translation "instantiation errors: up to flat modelica",
   symbolic "symbolic manipulation error, simcodegen, up to executable file",
-  simulation "simulation runtime error",
+  runtime "simulation/function runtime error",
   scripting "runtime scripting /interpretation error"
 };
 type ErrorLevel = enumeration(notification,warning,error);

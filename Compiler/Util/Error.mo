@@ -721,9 +721,7 @@ algorithm
     case (MESSAGE(error_id, msg_type, severity, msg), tokens)
       equation
         //print(" adding message: " +& intString(error_id) +& "\n");
-        msg_type_str = messageTypeStr(msg_type);
-        severity_string = severityStr(severity);
-        ErrorExt.addMessage(error_id, msg_type_str, severity_string, msg, tokens);
+        ErrorExt.addMessage(error_id, msg_type, severity, msg, tokens);
         //print(" succ add " +& msg_type_str +& " " +& severity_string +& ",  " +& msg +& "\n");
       then
         ();
@@ -750,12 +748,9 @@ algorithm
           lineNumberStart = sline, columnNumberStart = scol,
           lineNumberEnd = eline,columnNumberEnd = ecol))
       equation
-        msg_type_str = messageTypeStr(msg_type);
-        severity_string = severityStr(severity);
-        ErrorExt.addSourceMessage(error_id, msg_type_str, severity_string, sline, scol,
+        ErrorExt.addSourceMessage(error_id, msg_type, severity, sline, scol,
           eline, ecol, isReadOnly, file, msg, tokens);
-      then
-        ();
+      then ();
   end match;
 end addSourceMessage;
 

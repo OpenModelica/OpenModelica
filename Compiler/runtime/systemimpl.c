@@ -298,8 +298,8 @@ static char* SystemImpl__readFile(const char* filename)
   {
     const char *c_tokens[1]={filename};
     c_add_message(85, /* ERROR_OPENING_FILE */
-      "SCRIPTING",
-      "ERROR",
+      ErrorType_scripting,
+      ErrorLevel_error,
       "Error opening file: %s.",
       c_tokens,
       1);
@@ -312,8 +312,8 @@ static char* SystemImpl__readFile(const char* filename)
   {
     const char *c_tokens[1]={filename};
     c_add_message(85, /* ERROR_OPENING_FILE */
-      "SCRIPTING",
-      "ERROR",
+      ErrorType_scripting,
+      ErrorLevel_error,
       "File too large to fit into a MetaModelica string: %s.",
       c_tokens,
       1);
@@ -361,8 +361,8 @@ int SystemImpl__writeFile(const char* filename, const char* data)
   if (file == NULL) {
     const char *c_tokens[1]={filename};
     c_add_message(21, /* WRITING_FILE_ERROR */
-      "SCRIPTING",
-      "ERROR",
+      ErrorType_scripting,
+      ErrorLevel_error,
       "Error writing to file %s.",
       c_tokens,
       1);
@@ -379,8 +379,8 @@ int SystemImpl__writeFile(const char* filename, const char* data)
   {
     const char *c_tokens[1]={filename};
     c_add_message(21, /* WRITING_FILE_ERROR */
-      "SCRIPTING",
-      "ERROR",
+      ErrorType_scripting,
+      ErrorLevel_error,
       "Error writing to file %s.",
       c_tokens,
       1);
@@ -502,13 +502,13 @@ int SystemImpl__systemCall(const char* str)
     _exit(1);
   } else if (pID < 0) {
     const char *tokens[2] = {strerror(errno),str};
-    c_add_message(-1,"SCRIPTING","ERROR","system(%s) failed: %s",tokens,2);
+    c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"system(%s) failed: %s",tokens,2);
     return -1;
   } else {
     
     if (waitpid(pID, &status, 0) == -1) {
       const char *tokens[2] = {strerror(errno),str};
-      c_add_message(-1,"SCRIPTING","ERROR","system(%s) failed: %s",tokens,2);
+      c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"system(%s) failed: %s",tokens,2);
     }
   }
 #endif
@@ -556,7 +556,7 @@ int SystemImpl__spawnCall(const char* path, const char* str)
     _exit(1);
   } else if (pID < 0) {
     const char *tokens[2] = {strerror(errno),str};
-    c_add_message(-1,"SCRIPTING","ERROR","system(%s) failed: %s",tokens,2);
+    c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"system(%s) failed: %s",tokens,2);
     return -1;
   }
 #endif
@@ -634,8 +634,8 @@ char* SystemImpl__readFileNoNumeric(const char* filename)
   if(res!=0) {
     const char *c_tokens[1]={filename};
     c_add_message(85, /* ERROR_OPENING_FILE */
-      "SCRIPTING",
-      "ERROR",
+      ErrorType_scripting,
+      ErrorLevel_error,
       "Error opening file %s.",
       c_tokens,
       1);
@@ -788,7 +788,7 @@ int SystemImpl__loadLibrary(const char *str)
   if (h == NULL) {
     ctokens[0] = dlerror();
     ctokens[1] = libname;
-    c_add_message(-1, "RUNTIME", "ERROR", "OMC unable to load `%s': %s.\n", ctokens, 2);
+    c_add_message(-1, ErrorType_runtime,ErrorLevel_error, "OMC unable to load `%s': %s.\n", ctokens, 2);
     return -1;
   }
 
@@ -1016,8 +1016,8 @@ static int SystemImpl__getVariableValue(double timeStamp, void* timeValues, void
 static void addSendDataError(const char* functionName)
 {
     c_add_message(156, /* WITHOUT_SENDDATA */
-      "SCRIPTING",
-      "ERROR",
+      ErrorType_scripting,
+      ErrorLevel_error,
       "%s failed because OpenModelica was configured without sendData support.",
       &functionName,
       1);
@@ -1157,7 +1157,7 @@ extern void* SystemImpl__regex(const char* str, const char* re, int maxn, int ex
     len += regerror(rc, &myregex, err_buf+len, 2048-len);
     len += snprintf(err_buf+len,2040-len,".");
     len += snprintf(err_buf+len,2040-len,".");
-    c_add_message(-1, "SCRIPTING", "Error", err_buf, NULL, 0);
+    c_add_message(-1, ErrorType_scripting,ErrorLevel_error, err_buf, NULL, 0);
     regfree(&myregex);
     return NULL;
   }
@@ -1304,7 +1304,7 @@ static int SystemImpl__uriToClassAndPath(const char *uri, const char **scheme, c
     decodeUri(uri+strlen(modelicaUri),name,path);
     if (!**name) {
       msg[0] = uri;
-      c_add_message(-1,"SCRIPTING","Error","Modelica URI lacks classname: %s",msg,1);
+      c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"Modelica URI lacks classname: %s",msg,1);
       return 1;
     }
     return 0;
@@ -1313,16 +1313,16 @@ static int SystemImpl__uriToClassAndPath(const char *uri, const char **scheme, c
     decodeUri(uri+strlen(fileUri),name,path);
     if (!**path) {
       msg[0] = uri;
-      c_add_message(-1,"SCRIPTING","Error","File URI has no path: %s",msg,1);
+      c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"File URI has no path: %s",msg,1);
       return 1;
     } else if (**name) {
       msg[0] = uri;
-      c_add_message(-1,"SCRIPTING","Error","File URI using hostnames is not supported: %s",msg,1);
+      c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"File URI using hostnames is not supported: %s",msg,1);
       return 1;
     }
     return 0;
   }
-  c_add_message(-1,"SCRIPTING","Error","Unknown uri: %s",&uri,1);
+  c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"Unknown uri: %s",&uri,1);
   return 1;
 }
 
@@ -1555,7 +1555,7 @@ extern int SystemImpl__reopenStandardStream(int id,const char *filename)
   file = freopen(filename,mode,file);
   if (file==NULL) {
     const char *tokens[4] = {strerror(errno),streamName,mode,filename};
-    c_add_message(-1,"SCRIPTING","ERROR","freopen(%s,%s,%s) failed: %s",tokens,4);
+    c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"freopen(%s,%s,%s) failed: %s",tokens,4);
     return 0;
   }
   return 1;

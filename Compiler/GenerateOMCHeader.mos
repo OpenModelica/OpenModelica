@@ -1,6 +1,7 @@
 loadFile("FrontEnd/Absyn.mo");
 loadFile("Script/Interactive.mo");
 loadFile("FrontEnd/Values.mo");
+loadFile("Util/Error.mo");
 
 if getErrorString() == "" then loadOK := true; end if;
 a:=loadOK; // Will cause exit(1) if loadOK is undefined

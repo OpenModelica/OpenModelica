@@ -3,6 +3,165 @@
 extern "C" {
 #endif
 #ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Error_Severity_ERROR__desc_added
+#define Error_Severity_ERROR__desc_added
+const char* Error_Severity_ERROR__desc__fields[1] = {"no fileds"};
+struct record_description Error_Severity_ERROR__desc = {
+  "Error_Severity_ERROR",
+  "Error.Severity.ERROR",
+  Error_Severity_ERROR__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Error_Severity_ERROR__desc;
+#endif
+#define Error__ERROR_3dBOX0 3
+static const MMC_DEFSTRUCTLIT(Error__ERROR__struct,1,3) {&Error_Severity_ERROR__desc}};
+static void *Error__ERROR = MMC_REFSTRUCTLIT(Error__ERROR__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Error_Severity_WARNING__desc_added
+#define Error_Severity_WARNING__desc_added
+const char* Error_Severity_WARNING__desc__fields[1] = {"no fileds"};
+struct record_description Error_Severity_WARNING__desc = {
+  "Error_Severity_WARNING",
+  "Error.Severity.WARNING",
+  Error_Severity_WARNING__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Error_Severity_WARNING__desc;
+#endif
+#define Error__WARNING_3dBOX0 4
+static const MMC_DEFSTRUCTLIT(Error__WARNING__struct,1,4) {&Error_Severity_WARNING__desc}};
+static void *Error__WARNING = MMC_REFSTRUCTLIT(Error__WARNING__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Error_Severity_NOTIFICATION__desc_added
+#define Error_Severity_NOTIFICATION__desc_added
+const char* Error_Severity_NOTIFICATION__desc__fields[1] = {"no fileds"};
+struct record_description Error_Severity_NOTIFICATION__desc = {
+  "Error_Severity_NOTIFICATION",
+  "Error.Severity.NOTIFICATION",
+  Error_Severity_NOTIFICATION__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Error_Severity_NOTIFICATION__desc;
+#endif
+#define Error__NOTIFICATION_3dBOX0 5
+static const MMC_DEFSTRUCTLIT(Error__NOTIFICATION__struct,1,5) {&Error_Severity_NOTIFICATION__desc}};
+static void *Error__NOTIFICATION = MMC_REFSTRUCTLIT(Error__NOTIFICATION__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Error_MessageType_SYNTAX__desc_added
+#define Error_MessageType_SYNTAX__desc_added
+const char* Error_MessageType_SYNTAX__desc__fields[1] = {"no fileds"};
+struct record_description Error_MessageType_SYNTAX__desc = {
+  "Error_MessageType_SYNTAX",
+  "Error.MessageType.SYNTAX",
+  Error_MessageType_SYNTAX__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Error_MessageType_SYNTAX__desc;
+#endif
+#define Error__SYNTAX_3dBOX0 3
+static const MMC_DEFSTRUCTLIT(Error__SYNTAX__struct,1,3) {&Error_MessageType_SYNTAX__desc}};
+static void *Error__SYNTAX = MMC_REFSTRUCTLIT(Error__SYNTAX__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Error_MessageType_GRAMMAR__desc_added
+#define Error_MessageType_GRAMMAR__desc_added
+const char* Error_MessageType_GRAMMAR__desc__fields[1] = {"no fileds"};
+struct record_description Error_MessageType_GRAMMAR__desc = {
+  "Error_MessageType_GRAMMAR",
+  "Error.MessageType.GRAMMAR",
+  Error_MessageType_GRAMMAR__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Error_MessageType_GRAMMAR__desc;
+#endif
+#define Error__GRAMMAR_3dBOX0 4
+static const MMC_DEFSTRUCTLIT(Error__GRAMMAR__struct,1,4) {&Error_MessageType_GRAMMAR__desc}};
+static void *Error__GRAMMAR = MMC_REFSTRUCTLIT(Error__GRAMMAR__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Error_MessageType_TRANSLATION__desc_added
+#define Error_MessageType_TRANSLATION__desc_added
+const char* Error_MessageType_TRANSLATION__desc__fields[1] = {"no fileds"};
+struct record_description Error_MessageType_TRANSLATION__desc = {
+  "Error_MessageType_TRANSLATION",
+  "Error.MessageType.TRANSLATION",
+  Error_MessageType_TRANSLATION__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Error_MessageType_TRANSLATION__desc;
+#endif
+#define Error__TRANSLATION_3dBOX0 5
+static const MMC_DEFSTRUCTLIT(Error__TRANSLATION__struct,1,5) {&Error_MessageType_TRANSLATION__desc}};
+static void *Error__TRANSLATION = MMC_REFSTRUCTLIT(Error__TRANSLATION__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Error_MessageType_SYMBOLIC__desc_added
+#define Error_MessageType_SYMBOLIC__desc_added
+const char* Error_MessageType_SYMBOLIC__desc__fields[1] = {"no fileds"};
+struct record_description Error_MessageType_SYMBOLIC__desc = {
+  "Error_MessageType_SYMBOLIC",
+  "Error.MessageType.SYMBOLIC",
+  Error_MessageType_SYMBOLIC__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Error_MessageType_SYMBOLIC__desc;
+#endif
+#define Error__SYMBOLIC_3dBOX0 6
+static const MMC_DEFSTRUCTLIT(Error__SYMBOLIC__struct,1,6) {&Error_MessageType_SYMBOLIC__desc}};
+static void *Error__SYMBOLIC = MMC_REFSTRUCTLIT(Error__SYMBOLIC__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Error_MessageType_SIMULATION__desc_added
+#define Error_MessageType_SIMULATION__desc_added
+const char* Error_MessageType_SIMULATION__desc__fields[1] = {"no fileds"};
+struct record_description Error_MessageType_SIMULATION__desc = {
+  "Error_MessageType_SIMULATION",
+  "Error.MessageType.SIMULATION",
+  Error_MessageType_SIMULATION__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Error_MessageType_SIMULATION__desc;
+#endif
+#define Error__SIMULATION_3dBOX0 7
+static const MMC_DEFSTRUCTLIT(Error__SIMULATION__struct,1,7) {&Error_MessageType_SIMULATION__desc}};
+static void *Error__SIMULATION = MMC_REFSTRUCTLIT(Error__SIMULATION__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Error_MessageType_SCRIPTING__desc_added
+#define Error_MessageType_SCRIPTING__desc_added
+const char* Error_MessageType_SCRIPTING__desc__fields[1] = {"no fileds"};
+struct record_description Error_MessageType_SCRIPTING__desc = {
+  "Error_MessageType_SCRIPTING",
+  "Error.MessageType.SCRIPTING",
+  Error_MessageType_SCRIPTING__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Error_MessageType_SCRIPTING__desc;
+#endif
+#define Error__SCRIPTING_3dBOX0 8
+static const MMC_DEFSTRUCTLIT(Error__SCRIPTING__struct,1,8) {&Error_MessageType_SCRIPTING__desc}};
+static void *Error__SCRIPTING = MMC_REFSTRUCTLIT(Error__SCRIPTING__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Error_Message_MESSAGE__desc_added
+#define Error_Message_MESSAGE__desc_added
+const char* Error_Message_MESSAGE__desc__fields[4] = {"id","ty","severity","message"};
+struct record_description Error_Message_MESSAGE__desc = {
+  "Error_Message_MESSAGE",
+  "Error.Message.MESSAGE",
+  Error_Message_MESSAGE__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Error_Message_MESSAGE__desc;
+#endif
+#define Error__MESSAGE_3dBOX4 3
+#define Error__MESSAGE(id,ty,severity,message) (mmc_mk_box5(3,&Error_Message_MESSAGE__desc,id,ty,severity,message))
+#ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_Value_INTEGER__desc_added
 #define Values_Value_INTEGER__desc_added
 const char* Values_Value_INTEGER__desc__fields[1] = {"integer"};

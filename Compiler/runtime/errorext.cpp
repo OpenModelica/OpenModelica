@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <utility>
 #include "rtopts.h"
+#include "errorext.h"
 
 using namespace std;
 
@@ -53,6 +54,8 @@ struct absyn_info{
 static bool error_on=true;
 static bool pop_more_on_rollback=false;
 static int numErrorMessages=0;
+const char* ErrorLevel_toStr[3] = {"Error","Warning","Notification"};
+const char* ErrorType_toStr[6] = {"SYNTAX","GRAMMAR","TRANSLATION","SYMBOLIC","RUNTIME","SCRIPTING"};
 
 #include "ErrorMessage.hpp"
 static std::string currVariable("");
@@ -68,14 +71,14 @@ static void push_message(ErrorMessage *msg)
     std::cerr << msg->getFullMessage() << std::endl;
   else
     errorMessageQueue.push(msg);
-  if (msg->getSeverity().compare(std::string("Error")) == 0) numErrorMessages++;
+  if (msg->getSeverity() == ErrorLevel_error) numErrorMessages++;
 }
 
 /* pop the top of the message stack (and any duplicate messages that have also been added) */
 static void pop_message(bool rollback)
 {
   ErrorMessage *msg = errorMessageQueue.top();
-  if (msg->getSeverity().compare(std::string("Error")) == 0) numErrorMessages--;
+  if (msg->getSeverity() == ErrorLevel_error) numErrorMessages--;
   errorMessageQueue.pop();
   bool pop_more = (errorMessageQueue.size() > 0 && !(rollback && errorMessageQueue.size() <= checkPoints.back().first) && msg->getFullMessage() == errorMessageQueue.top()->getFullMessage());
   delete msg;
@@ -85,8 +88,8 @@ static void pop_message(bool rollback)
 
 /* Adds a message without file info. */
 extern void add_message(int errorID,
-     const char* type,
-     const char* severity,
+     ErrorType type,
+     ErrorLevel severity,
      const char* message,
      ErrorMessage::TokenList tokens)
 {
@@ -98,15 +101,15 @@ extern void add_message(int errorID,
     tmp=message;
   }
   ErrorMessage *msg = haveInfo ?
-    new ErrorMessage((long)errorID, std::string(type ), std::string(severity), tmp, tokens, finfo.rs,finfo.cs,finfo.re,finfo.ce,finfo.wr,finfo.fn) :
-    new ErrorMessage((long)errorID, std::string(type ), std::string(severity), tmp, tokens);
+    new ErrorMessage((long)errorID, type, severity, tmp, tokens, finfo.rs,finfo.cs,finfo.re,finfo.ce,finfo.wr,finfo.fn) :
+    new ErrorMessage((long)errorID, type, severity, tmp, tokens);
   push_message(msg);
 }
 
 /* Adds a message with file information */
 void add_source_message(int errorID,
-      const char* type,
-      const char* severity,
+      ErrorType type,
+      ErrorLevel severity,
       const char* message,
       ErrorMessage::TokenList tokens,
       int startLine,
@@ -117,8 +120,8 @@ void add_source_message(int errorID,
       const char* filename)
 {
   ErrorMessage* msg = new ErrorMessage((long)errorID,
-       std::string(type),
-       std::string(severity),
+       type,
+       severity,
        std::string(message),
        tokens,
        (long)startLine,
@@ -297,7 +300,7 @@ static const char* ErrorImpl__getLastDeletedCheckpoint()
   return lastDeletedCheckpoint.c_str();
 }
 
-extern void c_add_message(int errorID, const char* type, const char* severity, const char* message, const char** ctokens, int nTokens)
+extern void c_add_message(int errorID, ErrorType type, ErrorLevel severity, const char* message, const char** ctokens, int nTokens)
 {
   ErrorMessage::TokenList tokens;
   for (int i=nTokens-1; i>=0; i--) {
@@ -306,7 +309,7 @@ extern void c_add_message(int errorID, const char* type, const char* severity, c
   add_message(errorID,type,severity,message,tokens);
 }
 
-extern void c_add_source_message(int errorID, const char* type, const char* severity, const char* message, const char** ctokens, int nTokens, int startLine, int startCol, int endLine, int endCol, int isReadOnly, const char* filename)
+extern void c_add_source_message(int errorID, ErrorType type, ErrorLevel severity, const char* message, const char** ctokens, int nTokens, int startLine, int startCol, int endLine, int endCol, int isReadOnly, const char* filename)
 {
   ErrorMessage::TokenList tokens;
   for (int i=nTokens-1; i>=0; i--) {

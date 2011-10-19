@@ -33,6 +33,7 @@ extern "C" {
 }
 #include "errorext.cpp"
 extern "C" {
+#include "Error.h"
 
 void ErrorExt_5finit(void)
 {
@@ -110,8 +111,8 @@ RML_END_LABEL
 RML_BEGIN_LABEL(ErrorExt__addMessage)
 {
   int errorID = RML_UNTAGFIXNUM(rmlA0);
-  char* tp = RML_STRINGDATA(rmlA1);
-  char* severity = RML_STRINGDATA(rmlA2);
+  ErrorType tp = (ErrorType) (RML_UNTAGFIXNUM(rmlA1));
+  ErrorLevel severity = (ErrorLevel) (RML_UNTAGFIXNUM(rmlA2));
   char* message = RML_STRINGDATA(rmlA3);
   void* tokenlst = rmlA4;
   ErrorMessage::TokenList tokens;
@@ -130,8 +131,8 @@ RML_END_LABEL
 RML_BEGIN_LABEL(ErrorExt__addSourceMessage)
 {
   int errorID = RML_UNTAGFIXNUM(rmlA0);
-  char* tp = RML_STRINGDATA(rmlA1);
-  char* severity = RML_STRINGDATA(rmlA2);
+  ErrorType tp = (ErrorType) (RML_UNTAGFIXNUM(rmlA1));
+  ErrorLevel severity = (ErrorLevel) (RML_UNTAGFIXNUM(rmlA2));
   int sline = RML_UNTAGFIXNUM(rmlA3);
   int scol = RML_UNTAGFIXNUM(rmlA4);
   int eline = RML_UNTAGFIXNUM(rmlA5);
@@ -173,8 +174,7 @@ RML_BEGIN_LABEL(ErrorExt__printErrorsNoWarning)
   std::string res("");
   while(!errorMessageQueue.empty()) {
     //if(strncmp(errorMessageQueue.top()->getSeverity(),"Error")==0){
-    if(errorMessageQueue.top()->getSeverity().compare(std::string("Error"))==0){
-
+    if(errorMessageQueue.top()->getSeverity() == ErrorLevel_error) {
       res = errorMessageQueue.top()->getMessage()+string("\n")+res;
     }
     delete errorMessageQueue.top();

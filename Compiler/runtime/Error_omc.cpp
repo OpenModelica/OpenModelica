@@ -33,8 +33,9 @@
 extern "C" {
 
 #include "modelica.h"
+#include "OpenModelicaBootstrappingHeader.h"
 
-void Error_addMessage(int errorID, const char* msg_type, const char* severity, const char* message, modelica_metatype tokenlst)
+void Error_addMessage(int errorID, void *msg_type, void *severity, const char* message, modelica_metatype tokenlst)
 {
   ErrorMessage::TokenList tokens;
   if (error_on) {
@@ -43,7 +44,10 @@ void Error_addMessage(int errorID, const char* msg_type, const char* severity, c
       tokens.push_back(string(token));
       tokenlst=MMC_CDR(tokenlst);
     }
-    add_message(errorID,msg_type,severity,message,tokens);
+    add_message(errorID,
+                (ErrorType) (MMC_HDRCTOR(MMC_GETHDR(msg_type))-Error__SYNTAX_3dBOX0),
+                (ErrorLevel) (MMC_HDRCTOR(MMC_GETHDR(severity))-Error__ERROR_3dBOX0),
+                message,tokens);
   }
 }
 
@@ -57,7 +61,7 @@ extern const char* Error_printMessagesStr()
   return strdup(ErrorImpl__printMessagesStr().c_str());
 }
 
-extern void Error_addSourceMessage(int _id, const char* _msg_type, const char* _msg_severity, int _sline, int _scol, int _eline, int _ecol, int _read_only, const char* _filename, const char* _msg, void* tokenlst)
+extern void Error_addSourceMessage(int _id, void *msg_type, void *severity, int _sline, int _scol, int _eline, int _ecol, int _read_only, const char* _filename, const char* _msg, void* tokenlst)
 {
   ErrorMessage::TokenList tokens;
   if (error_on) {
@@ -65,7 +69,10 @@ extern void Error_addSourceMessage(int _id, const char* _msg_type, const char* _
       tokens.push_back(string(MMC_STRINGDATA(MMC_CAR(tokenlst))));
       tokenlst=MMC_CDR(tokenlst);
     }
-    add_source_message(_id,_msg_type,_msg_severity,_msg,tokens,_sline,_scol,_eline,_ecol,_read_only,_filename);
+    add_source_message(_id,
+                       (ErrorType) (MMC_HDRCTOR(MMC_GETHDR(msg_type))-Error__SYNTAX_3dBOX0),
+                       (ErrorLevel) (MMC_HDRCTOR(MMC_GETHDR(severity))-Error__ERROR_3dBOX0),
+                       _msg,tokens,_sline,_scol,_eline,_ecol,_read_only,_filename);
   }
 }
 

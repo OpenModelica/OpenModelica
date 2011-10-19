@@ -137,19 +137,19 @@ static int value_to_type_desc(void *value, type_description *desc)
     desc->type = TYPE_DESC_MMC;
     desc->data.mmc = value_to_mmc(value);
     if (desc->data.mmc == 0) {
-      c_add_message(-1, "RUNTIME", "ERROR", "systemimpl.c:value_to_type_desc failed\n", NULL, 0);
+      c_add_message(-1, ErrorType_runtime, ErrorLevel_error, "systemimpl.c:value_to_type_desc failed\n", NULL, 0);
       return -1;
     }
     break;
     /* unsupported */
   case Values__META_5fARRAY_3dBOX1:
-    c_add_message(-1, "RUNTIME", "ERROR", "systemimpl.c:value_to_type_desc failed: Values.META_ARRAY\n", NULL, 0);
+    c_add_message(-1, ErrorType_runtime, ErrorLevel_error, "systemimpl.c:value_to_type_desc failed: Values.META_ARRAY\n", NULL, 0);
     return -1;
   case Values__CODE_3dBOX1:
-    c_add_message(-1, "RUNTIME", "ERROR", "systemimpl.c:value_to_type_desc failed: Values.CODE\n", NULL, 0);
+    c_add_message(-1, ErrorType_runtime, ErrorLevel_error, "systemimpl.c:value_to_type_desc failed: Values.CODE\n", NULL, 0);
     return -1;
   default:
-    c_add_message(-1, "RUNTIME", "ERROR", "systemimpl.c:value_to_type_desc failed\n", NULL, 0);
+    c_add_message(-1, ErrorType_runtime, ErrorLevel_error, "systemimpl.c:value_to_type_desc failed\n", NULL, 0);
     return -1;
   }
 
@@ -628,6 +628,7 @@ void *type_desc_to_value(type_description *desc)
   case TYPE_DESC_COMPLEX: {
     return NULL;
   };
+  default: break;
   }
 
   assert(0);

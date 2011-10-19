@@ -33,6 +33,7 @@
 
 #include <vector>
 #include <string>
+#include "errorext.h"
 
 class ErrorMessage {
 
@@ -40,14 +41,14 @@ public:
   typedef std::vector<std::string> TokenList;
 
   ErrorMessage(long errorID,
-         const std::string &type,
-         const std::string &severity,
+         ErrorType type,
+         ErrorLevel severity,
          const std::string &message,
          const TokenList &tokens);
 
   ErrorMessage(long errorID,
-         const std::string &type,
-         const std::string &severity, 
+         ErrorType type,
+         ErrorLevel severity,
          const std::string &message,
          const TokenList &tokens,
          long startLineNo,
@@ -59,9 +60,9 @@ public:
 
   long getID() const { return errorID_; };
   
-  std::string getType() const { return messageType_; };
+  ErrorType getType() const { return messageType_; };
   
-  std::string getSeverity() const { return severity_; };
+  ErrorLevel getSeverity() const { return severity_; };
 
   // Returns the expanded message with inserted tokens.
   std::string getMessage() const {return shortMessage;};
@@ -81,8 +82,8 @@ public:
   TokenList getTokens() const { return tokens_; };
 private:
   long errorID_;
-  std::string messageType_;
-  std::string severity_;
+  ErrorType messageType_;
+  ErrorLevel severity_;
   std::string message_;
   TokenList tokens_;
   std::string shortMessage;

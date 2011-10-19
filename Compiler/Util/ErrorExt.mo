@@ -56,8 +56,8 @@ end updateCurrentComponent;
 
 public function addMessage
   input Error.ErrorID id;
-  input String msg_type;
-  input String msg_severity;
+  input Error.MessageType msg_type;
+  input Error.Severity msg_severity;
   input String msg;
   input list<String> msg_tokens;
 
@@ -66,8 +66,8 @@ end addMessage;
 
 public function addSourceMessage
   input Error.ErrorID id;
-  input String msg_type;
-  input String msg_severity;
+  input Error.MessageType msg_type;
+  input Error.Severity msg_severity;
   input Integer sline;
   input Integer scol;
   input Integer eline;

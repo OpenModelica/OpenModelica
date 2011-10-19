@@ -35,15 +35,22 @@
   extern "C" {
 #endif
 
+enum enumErrorType {ErrorType_syntax=0,ErrorType_grammar,ErrorType_translation,ErrorType_symbolic,ErrorType_runtime,ErrorType_scripting};
+enum enumErrorLevel {ErrorLevel_error=0,ErrorLevel_warning,ErrorLevel_notification};
+typedef enum enumErrorType ErrorType;
+typedef enum enumErrorLevel ErrorLevel;
+extern const char* ErrorLevel_toStr[3];
+extern const char* ErrorType_toStr[6];
+
 void c_add_message(int errorID,
-       const char* type,
-       const char* severity,
+       ErrorType type,
+       ErrorLevel severity,
        const char* message,
        const char** ctokens,
        int nTokens);
 void c_add_source_message(int errorID,
-       const char* type,
-       const char* severity,
+       ErrorType type,
+       ErrorLevel severity,
        const char* message,
        const char** ctokens,
        int nTokens,
