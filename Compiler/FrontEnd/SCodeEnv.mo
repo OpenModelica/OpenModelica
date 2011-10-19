@@ -355,6 +355,39 @@ algorithm
   outEnv := FRAME(name, ty, tree, exts, imps, is_used) :: rest;
 end removeExtendsFromLocalScope;
   
+public function removeRedeclaresFromLocalScope
+  input Env inEnv;
+  output Env outEnv;
+protected
+  Option<String> name;
+  FrameType ty;
+  AvlTree tree;
+  ImportTable imps;
+  ExtendsTable exts;
+  Env rest;
+  Util.StatefulBoolean is_used;
+  list<Extends> bc;
+  Option<SCode.Element> cei;
+algorithm
+  FRAME(name = name, frameType = ty, clsAndVars = tree, extendsTable =
+    EXTENDS_TABLE(baseClasses = bc, classExtendsInfo = cei), importTable = imps,
+    isUsed = is_used) :: rest := inEnv;
+  bc := List.map(bc, removeRedeclaresFromExtend);
+  exts := EXTENDS_TABLE(bc, {}, cei);
+  outEnv := FRAME(name, ty, tree, exts, imps, is_used) :: rest;
+end removeRedeclaresFromLocalScope;
+
+protected function removeRedeclaresFromExtend
+  input Extends inExtend;
+  output Extends outExtend;
+protected
+  Absyn.Path bc;
+  Absyn.Info info;
+algorithm
+  EXTENDS(baseClass = bc, info = info) := inExtend;
+  outExtend := EXTENDS(bc, {}, info);
+end removeRedeclaresFromExtend;
+
 public function removeClsAndVarsFromFrame
   "Removes the classes variables from a frame."
   input Frame inFrame;
