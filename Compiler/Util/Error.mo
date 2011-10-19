@@ -111,6 +111,14 @@ uniontype Message
 end Message;
 
 public
+uniontype TotalMessage
+  record TOTALMESSAGE
+    Message msg;
+    Absyn.Info info;
+  end TOTALMESSAGE;
+end TotalMessage;
+
+public
 type MessageTokens = list<String>   "\"Tokens\" to insert into message at
             positions identified by
             - %s for string
@@ -846,7 +854,7 @@ algorithm
   num := ErrorExt.getNumErrorMessages();
 end getNumErrorMessages;
 
-public function getMessagesStr "Relations for interactive comm. These returns the messages as an array
+public function getMessages "Relations for interactive comm. These returns the messages as an array
   of strings, suitable for sending to clients like model editor, MDT, etc.
 
   function getMessagesStr
@@ -854,10 +862,10 @@ public function getMessagesStr "Relations for interactive comm. These returns th
   Return all messages in a matrix format, vector of strings for each
   message, written out as a string.
 "
-  output String res;
+  output list<TotalMessage> res;
 algorithm
-  res := ErrorExt.getMessagesStr();
-end getMessagesStr;
+  res := ErrorExt.getMessages();
+end getMessages;
 
 public function getMessagesStrType "function getMessagesStrType
 

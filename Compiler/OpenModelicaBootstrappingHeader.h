@@ -162,6 +162,21 @@ extern struct record_description Error_Message_MESSAGE__desc;
 #define Error__MESSAGE_3dBOX4 3
 #define Error__MESSAGE(id,ty,severity,message) (mmc_mk_box5(3,&Error_Message_MESSAGE__desc,id,ty,severity,message))
 #ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Error_TotalMessage_TOTALMESSAGE__desc_added
+#define Error_TotalMessage_TOTALMESSAGE__desc_added
+const char* Error_TotalMessage_TOTALMESSAGE__desc__fields[2] = {"msg","info"};
+struct record_description Error_TotalMessage_TOTALMESSAGE__desc = {
+  "Error_TotalMessage_TOTALMESSAGE",
+  "Error.TotalMessage.TOTALMESSAGE",
+  Error_TotalMessage_TOTALMESSAGE__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Error_TotalMessage_TOTALMESSAGE__desc;
+#endif
+#define Error__TOTALMESSAGE_3dBOX2 3
+#define Error__TOTALMESSAGE(msg,info) (mmc_mk_box3(3,&Error_TotalMessage_TOTALMESSAGE__desc,msg,info))
+#ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_Value_INTEGER__desc_added
 #define Values_Value_INTEGER__desc_added
 const char* Values_Value_INTEGER__desc__fields[1] = {"integer"};

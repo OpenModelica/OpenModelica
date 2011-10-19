@@ -31,9 +31,12 @@
 extern "C" {
 #include "rml.h"
 }
+#include "Absyn.h"
+#include "Error.h"
+#include "rml.h"
+#define UNBOX_OFFSET 0
 #include "errorext.cpp"
 extern "C" {
-#include "Error.h"
 
 void ErrorExt_5finit(void)
 {
@@ -193,11 +196,10 @@ RML_BEGIN_LABEL(ErrorExt__printMessagesStr)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(ErrorExt__getMessagesStr)
+RML_BEGIN_LABEL(ErrorExt__getMessages)
 {
-  std::string res = ErrorImpl__getMessagesStr();
-  rmlA0 = mk_scon(res.c_str());
-  RML_TAILCALLK(rmlSC);
+  rmlA0 = ErrorImpl__getMessages();
+  RML_TAILCALLQ(RML__list_5freverse,1);
 }
 RML_END_LABEL
 

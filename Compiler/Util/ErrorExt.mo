@@ -98,11 +98,11 @@ public function getNumErrorMessages
   external "C" num=ErrorImpl__getNumErrorMessages() annotation(Library = "omcruntime");
 end getNumErrorMessages;
 
-public function getMessagesStr
-  output String outString;
+public function getMessages
+  output list<Error.TotalMessage> res;
 
-  external "C" outString=Error_getMessagesStr() annotation(Library = "omcruntime");
-end getMessagesStr;
+  external "C" res=Error_getMessagesStr() annotation(Library = "omcruntime");
+end getMessages;
 
 public function clearMessages
   external "C" ErrorImpl__clearMessages() annotation(Library = "omcruntime");

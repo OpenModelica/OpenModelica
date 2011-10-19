@@ -55,6 +55,7 @@ public import BackendDAE;
 public import Ceval;
 public import DAE;
 public import Env;
+public import Error;
 public import Interactive;
 public import Dependency;
 public import Values;
@@ -74,7 +75,6 @@ protected import DAEUtil;
 protected import DAEDump;
 protected import Debug;
 protected import Dump;
-protected import Error;
 protected import Expression;
 protected import Inst;
 protected import InnerOuter;
@@ -1362,9 +1362,9 @@ algorithm
         
     case (cache,env,"getMessagesStringInternal",{},st,msg)
       equation
-        str = Error.getMessagesStr();
+        v = ValuesUtil.makeArray(List.map(Error.getMessages(),errorToValue));
       then
-        (cache,Values.STRING(str),st);
+        (cache,v,st);
         
     case (cache,env,"runScript",{Values.STRING(str)},st,msg)
       equation
@@ -2408,7 +2408,7 @@ algorithm
       // If we already have an up-to-date version of the binary file, we don't need to recompile.
       equation
         //cdef = Interactive.getPathedClassInProgram(classname,p);
-       _ = Error.getMessagesStr() "Clear messages";
+       Error.clearMessages() "Clear messages";
         // Only compile if change occured after last build.
         ( Absyn.CLASS(info = Absyn.INFO(buildTimes= Absyn.TIMESTAMP(build,_)))) = Interactive.getPathedClassInProgram(classname,p);
         true = (build >. edit);
@@ -2428,7 +2428,7 @@ algorithm
         (cdef as Absyn.CLASS(info = Absyn.INFO(buildTimes=ts as Absyn.TIMESTAMP(_,globalEdit)))) = Interactive.getPathedClassInProgram(classname,p);
         Absyn.PROGRAM(_,_,Absyn.TIMESTAMP(globalBuild,_)) = p;
 
-       _ = Error.getMessagesStr() "Clear messages";
+       Error.clearMessages() "Clear messages";
         oldDir = System.pwd();
         compileDir = changeToTempDirectory(cdToTemp);
         (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st_1,msg);
@@ -3171,7 +3171,7 @@ algorithm
           Interactive.getPathedClassInProgram(className, p);
         // this case should not handle functions so here we check anything but functions!
         false = listMember(restriction, {Absyn.R_FUNCTION()});
-        _ = Error.getMessagesStr() "Clear messages";
+        Error.clearMessages() "Clear messages";
         Print.clearErrorBuf() "Clear error buffer";
         classNameStr = Absyn.pathString(className);
         /* this part is not needed anymore as when checkModel is active you can normally instantiate partial classes
@@ -3238,7 +3238,7 @@ algorithm
         Absyn.CLASS(partialPrefix = false, restriction = restriction) = Interactive.getPathedClassInProgram(className, p);
         // this case should not handle functions so here we check anything but functions!
         false = listMember(restriction, {Absyn.R_FUNCTION()});
-        _ = Error.getMessagesStr() "Clear messages";
+        Error.clearMessages() "Clear messages";
         Print.clearErrorBuf() "Clear error buffer";
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
 
@@ -3278,7 +3278,7 @@ algorithm
         ptot = Dependency.getTotalProgram(className,p);
         
         (c as Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,_)) = Interactive.getPathedClassInProgram(className, p);
-        _ = Error.getMessagesStr() "Clear messages";
+        Error.clearMessages() "Clear messages";
         Print.clearErrorBuf() "Clear error buffer";
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
 
@@ -3461,7 +3461,7 @@ algorithm
     case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="flat"),Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),Values.STRING(filenameprefix),Values.BOOL(cdToTemp)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         //translationLevel=DAE.SCONST(string="flat")
-        _ = Error.getMessagesStr() "Clear messages";
+        Error.clearMessages() "Clear messages";
         oldDir = System.pwd();
         compileDir = changeToTempDirectory(cdToTemp);
         filenameprefix = Util.if_(filenameprefix ==& "<default>", Absyn.pathString(classname), filenameprefix);
@@ -3488,7 +3488,7 @@ algorithm
       equation
         //translationLevel=DAE.SCONST(string="optimiser")
         //asInSimulationCode==false => it's NOT necessary to do all the translation's steps before dumping with xml
-        _ = Error.getMessagesStr() "Clear messages";
+        Error.clearMessages() "Clear messages";
         oldDir = System.pwd();
         compileDir = changeToTempDirectory(cdToTemp);
         cname_str = Absyn.pathString(classname);
@@ -3515,7 +3515,7 @@ algorithm
       equation
         //translationLevel=DAE.SCONST(string="backEnd")
         //asInSimulationCode==true => it's necessary to do all the translation's steps before dumping with xml
-        _ = Error.getMessagesStr() "Clear messages";
+        Error.clearMessages() "Clear messages";
         oldDir = System.pwd();
         compileDir = changeToTempDirectory(cdToTemp);
         cname_str = Absyn.pathString(classname);
@@ -3820,7 +3820,7 @@ algorithm
     case (cache,env,vals as {Values.CODE(Absyn.C_TYPENAME(classname)),starttime,stoptime,interval,tolerance, method,Values.STRING(filenameprefix),Values.BOOL(cdToTemp),noClean,options},(st as Interactive.SYMBOLTABLE(ast = p  as Absyn.PROGRAM(globalBuildTimes=ts))),msg)
       equation
         cdef = Interactive.getPathedClassInProgram(classname,p);
-        _ = Error.getMessagesStr() "Clear messages";
+        Error.clearMessages() "Clear messages";
         oldDir = System.pwd();
         compileDir = changeToTempDirectory(cdToTemp);
         (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st,msg);
@@ -4128,5 +4128,92 @@ algorithm
   (str1,str2,str3) := System.uriToClassAndPath(uri);
   path := getBasePathFromUri(str1,str2,Settings.getModelicaPath(),printError) +& str3;
 end getFullPathFromUri;
+
+protected function errorToValue
+  input Error.TotalMessage err;
+  output Values.Value val;
+algorithm
+  val := match err
+    local
+      Absyn.Path msgpath;
+      Values.Value tyVal,severityVal,infoVal;
+      list<Values.Value> values;
+      String message;
+      Integer id;
+      Error.Severity severity;
+      Error.MessageType ty;
+      Absyn.Info info;
+    case Error.TOTALMESSAGE(Error.MESSAGE(id,ty,severity,message),info)
+      equation
+        msgpath = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("Scripting",Absyn.IDENT("ErrorMessage"))));
+        tyVal = errorTypeToValue(ty);
+        severityVal = errorLevelToValue(severity);
+        infoVal = infoToValue(info);
+        values = {infoVal,Values.STRING(message),tyVal,severityVal,Values.INTEGER(id)};
+      then Values.RECORD(msgpath,values,{"info","message","kind","level","id"},-1);
+  end match;
+end errorToValue;
+
+protected function infoToValue
+  input Absyn.Info info;
+  output Values.Value val;
+algorithm
+  val := match info
+    local
+      list<Values.Value> values;
+      Absyn.Path infopath;
+      Integer ls,cs,le,ce;
+      String filename;
+      Boolean readonly;
+    case Absyn.INFO(filename,readonly,ls,cs,le,ce,_)
+      equation
+        infopath = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("Scripting",Absyn.IDENT("SourceInfo"))));
+        values = {Values.STRING(filename),Values.BOOL(readonly),Values.INTEGER(ls),Values.INTEGER(cs),Values.INTEGER(le),Values.INTEGER(ce)};
+      then Values.RECORD(infopath,values,{"filename","readonly","lineStart","columnStart","lineEnd","columnEnd"},-1);
+  end match;
+end infoToValue;
+
+protected function makeErrorEnumLiteral
+  input String enumName;
+  input String enumField;
+  input Integer index;
+  output Values.Value val;
+  annotation(__OpenModelica_EarlyInline=true);
+algorithm
+  val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("Scripting",Absyn.QUALIFIED(enumName,Absyn.IDENT(enumField))))),index);
+end makeErrorEnumLiteral;
+
+protected function errorTypeToValue
+  input Error.MessageType ty;
+  output Values.Value val;
+algorithm
+  val := match ty
+    case Error.SYNTAX() then makeErrorEnumLiteral("ErrorKind","syntax",1);
+    case Error.GRAMMAR() then makeErrorEnumLiteral("ErrorKind","grammar",2);
+    case Error.TRANSLATION() then makeErrorEnumLiteral("ErrorKind","translation",3);
+    case Error.SYMBOLIC() then makeErrorEnumLiteral("ErrorKind","symbolic",4);
+    case Error.SIMULATION() then makeErrorEnumLiteral("ErrorKind","runtime",5);
+    case Error.SCRIPTING() then makeErrorEnumLiteral("ErrorKind","scripting",6);
+    else
+      equation
+        print("errorTypeToValue failed\n");
+      then fail();
+  end match;
+end errorTypeToValue;
+
+protected function errorLevelToValue
+  input Error.Severity severity;
+  output Values.Value val;
+algorithm
+  val := match severity
+    case Error.ERROR() then makeErrorEnumLiteral("ErrorLevel","syntax",1);
+    case Error.WARNING() then makeErrorEnumLiteral("ErrorLevel","grammar",2);
+    case Error.NOTIFICATION() then makeErrorEnumLiteral("ErrorLevel","translation",3);
+    else
+      equation
+        print("errorLevelToValue failed\n");
+      then fail();
+  end match;
+end errorLevelToValue;
 
 end CevalScript;

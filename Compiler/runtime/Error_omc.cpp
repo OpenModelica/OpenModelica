@@ -28,12 +28,17 @@
  *
  */
 
-#include "errorext.cpp"
-
 extern "C" {
 
 #include "modelica.h"
+#include "rml_compatibility.h"
 #include "OpenModelicaBootstrappingHeader.h"
+
+}
+
+#include "errorext.cpp"
+
+extern "C" {
 
 void Error_addMessage(int errorID, void *msg_type, void *severity, const char* message, modelica_metatype tokenlst)
 {
@@ -51,9 +56,9 @@ void Error_addMessage(int errorID, void *msg_type, void *severity, const char* m
   }
 }
 
-extern const char* Error_getMessagesStr()
+extern void* Error_getMessages()
 {
-  return strdup(ErrorImpl__getMessagesStr().c_str());
+  return listReverse(ErrorImpl__getMessages());
 }
 
 extern const char* Error_printMessagesStr()

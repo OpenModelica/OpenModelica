@@ -330,15 +330,38 @@ extern void ErrorImpl__clearMessages()
 }
 
 // TODO: Use a string builder instead of creating intermediate results all the time?
-extern std::string ErrorImpl__getMessagesStr()
+extern void* ErrorImpl__getMessages()
 {
-  std::string res("}");
+  void *res = mk_nil();
   while(!errorMessageQueue.empty()) {
-    res = errorMessageQueue.top()->getFullMessage() + res;
+    void *id = mk_icon(errorMessageQueue.top()->getID());
+    void *ty,*severity;
+    switch (errorMessageQueue.top()->getSeverity()) {
+    case ErrorLevel_error: ty=Error__ERROR; break;
+    case ErrorLevel_warning: ty=Error__WARNING; break;
+    case ErrorLevel_notification: ty=Error__NOTIFICATION; break;
+    }
+    switch (errorMessageQueue.top()->getType()) {
+    case ErrorType_syntax: severity=Error__SYNTAX; break;
+    case ErrorType_grammar: severity=Error__GRAMMAR; break;
+    case ErrorType_translation: severity=Error__TRANSLATION; break;
+    case ErrorType_symbolic: severity=Error__SYMBOLIC; break;
+    case ErrorType_runtime: severity=Error__SIMULATION; break;
+    case ErrorType_scripting: severity=Error__SCRIPTING; break;
+    }
+    void *message = mk_scon(errorMessageQueue.top()->getMessage().c_str());
+    void *msg = Error__MESSAGE(id,ty,severity,message);
+    void *sl = mk_icon(errorMessageQueue.top()->getStartLineNo());
+    void *sc = mk_icon(errorMessageQueue.top()->getStartColumnNo());
+    void *el = mk_icon(errorMessageQueue.top()->getEndLineNo());
+    void *ec = mk_icon(errorMessageQueue.top()->getEndColumnNo());
+    void *filename = mk_scon(errorMessageQueue.top()->getFileName().c_str());
+    void *readonly = mk_icon(errorMessageQueue.top()->getIsFileReadOnly());
+    void *info = Absyn__INFO(filename,readonly,sl,sc,el,ec,Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0)));
+    void *totmsg = Error__TOTALMESSAGE(msg,info);
+    res = mk_cons(totmsg,res);
     pop_message(false);
-    if (!errorMessageQueue.empty()) { res = string(",") + res; }
   }
-  res = string("{") + res;
   return res;
 }
 
