@@ -993,6 +993,41 @@ function getMessagesStringInternal
 external "builtin";
 end getMessagesStringInternal;
 
+/*
+TODO: Implement getMessagesStringInternal better:
+
+record SourceInfo
+  String filename;
+  Integer rowStart,columnStart,rowEnd,columnEnd;
+  Boolean writable;
+end SourceInfo;
+
+type ErrorKind = enumeration(
+  unknown "unknown error code; possibly from C runtime",
+  syntax "syntax errors",
+  grammar "grammatical errors",
+  translation "instantiation errors: up to flat modelica",
+  symbolic "symbolic manipulation error, simcodegen, up to executable file",
+  simulation "simulation runtime error",
+  scripting "runtime scripting /interpretation error"
+};
+type ErrorLevel = enumeration(notification,warning,error);
+
+record ErrorString
+  SourceInfo info;
+  String message "After applying the individual arguments";
+  ErrorKind kind;
+  ErrorLevel level;
+  Integer id "Internal ID of the error (just ignore this)";
+end ErrorString;
+
+function getMessagesStringInternal
+  "{{[file.mo:n:n-n:n:b] Error: message, TRANSLATION, Error, code}}"
+  output ErrorString[:] messagesString;
+external "builtin";
+end getMessagesStringInternal;
+*/
+
 function clearMessages "Clears the error buffer"
   output Boolean success;
 external "builtin";
