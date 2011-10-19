@@ -32,6 +32,9 @@
 extern "C" {
 #endif
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#define NOMINMAX
+#endif
 #include "systemimpl.h"
 
 /*

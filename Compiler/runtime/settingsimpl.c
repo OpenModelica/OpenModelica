@@ -220,8 +220,8 @@ extern const char* SettingsImpl__getTempDirectoryPath()
       exit(1);
     } else {
       // Must do replacement in two steps, since the _replace function can not have similar source as target.
-      str = _replace(tempDirectory,"\\","/");
-      tempDirectoryPath= _replace(str,"/","\\\\");
+      str = _replace(tempDirectory, (char*)"\\", (char*)"/");
+      tempDirectoryPath= _replace(str, (char*)"/", (char*)"\\\\");
       free(str);
     }
   #else

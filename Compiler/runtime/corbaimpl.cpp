@@ -135,15 +135,25 @@ int CorbaImpl__initialize()
 #ifndef NOMICO
 #if defined(USE_OMNIORB)
   int argc=6;
-  char *dummyArgv[] = { "omc", "-NoResolve", "-IIOPAddr", "inet:127.0.0.1:0", "-ORBgiopMaxMsgSize", "10485760" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
+  char *dummyArgv[] =
+         { (char*)"omc",
+            (char*)"-NoResolve",
+            (char*)"-IIOPAddr",
+            (char*)"inet:127.0.0.1:0",
+            (char*)"-ORBgiopMaxMsgSize",
+            (char*)"10485760" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
 #else
   int argc=4;
-  char *dummyArgv[] = { "omc", "-ORBNoResolve", "-ORBIIOPAddr", "inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
+  char *dummyArgv[] =
+      { (char*)"omc",
+        (char*)"-ORBNoResolve",
+        (char*)"-ORBIIOPAddr",
+        (char*)"inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
 #endif
   string omc_client_request_event_name   = "omc_client_request_event";
   string omc_return_value_ready_name     = "omc_return_value_ready";
   DWORD lastError = 0;
-  char* errorMessage = "OpenModelica OMC could not be started.\nAnother OMC is already running.\n\n\
+  char* errorMessage = (char*)"OpenModelica OMC could not be started.\nAnother OMC is already running.\n\n\
 Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit.\n\nCorba.initialize()";
 
   /* create the events and locks with different names if we have a corba session */

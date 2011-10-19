@@ -58,7 +58,7 @@ OmcCommunication_impl::OmcCommunication_impl()
 char* OmcCommunication_impl::sendExpression( const char* expr )
 {
   EnterCriticalSection(&clientlock); // Lock so no other tread can talk to omc.
-  char* retval = "";
+  char* retval;
 
   // Signal to omc that message has arrived. 
 
@@ -75,7 +75,7 @@ char* OmcCommunication_impl::sendExpression( const char* expr )
 char* OmcCommunication_impl::sendClass( const char* expr )
 {
   EnterCriticalSection(&clientlock);// Lock so no other tread can talk to omc.
-  char* retval = "";
+  char* retval;
 
   // Signal to omc that message has arrived. 
   omc_cmd_message = (char*)expr;
@@ -123,7 +123,7 @@ char* OmcCommunication_impl::sendExpression( const char* expr )
   char* result;
   // Signal to omc that message has arrived. 
   pthread_mutex_lock(&omc_waitlock);
-  omc_waiting=true;
+  omc_waiting = true;
   omc_cmd_message = (char*)expr;
   pthread_cond_signal(&omc_waitformsg);
   pthread_mutex_unlock(&omc_waitlock);
@@ -144,7 +144,7 @@ char* OmcCommunication_impl::sendClass( const char* expr )
 {
   // Signal to omc that message has arrived. 
   pthread_mutex_lock(&omc_waitlock);
-  omc_waiting=true;
+  omc_waiting = true;
   omc_cmd_message = (char*)expr;
   pthread_cond_signal(&omc_waitformsg);
   pthread_mutex_unlock(&omc_waitlock);
