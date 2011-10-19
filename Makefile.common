@@ -51,6 +51,7 @@ docs: mkbuilddirs omlibrary
 
 fmi: c_runtime
 	$(MAKE) -C FMI/import/source -f $(defaultMakefileTarget)
+	(cp -p FMI/import/source/fmuWrapper.h FMI/import/source/stack.h FMI/import/source/xmlparser.h $(builddir_inc))
 
 breakprocess:
 	(cd testsuite/bootstrapping; time g++ BreakProcess.cpp -o BreakProcess -static-libgcc)
