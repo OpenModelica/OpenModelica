@@ -321,27 +321,17 @@ void SimulationWidget::simulateModel(QString simulationParameters)
 
     if (!mpParentMainWindow->mpOMCProxy->simulate(projectTab->mModelNameStructure, simulationParameters))
     {
-        QString result = mpParentMainWindow->mpOMCProxy->getResult();
-        int startPos = result.indexOf("messages");
-        int endPos = result.indexOf("timeFrontend");
-        // add 10 to startPos to remove 'messages = ' word and remove -16 to remove timeFrontend from the end
-        QString message = result.mid(startPos + 10, (endPos - startPos) - 16);
-        message = StringHandler::removeFirstLastQuotes(message).trimmed();
+        mpParentMainWindow->mpOMCProxy->sendCommand("OMEdit_simulate_result.messages");
+        QString message = StringHandler::unparse(mpParentMainWindow->mpOMCProxy->getResult());
         mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(QString("Unable to simulate the Model '")
-                                                                  .append(projectTab->mModelNameStructure)
-                                                                  .append("'\n")
-                                                                  .append(QString(GUIMessages::getMessage(
-                                                                  GUIMessages::ERROR_OCCURRED))
+                                                                  .append(projectTab->mModelNameStructure).append("'\n")
+                                                                  .append(QString(GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED))
                                                                   .arg(message)));
     }
     else
     {
-        QString result = mpParentMainWindow->mpOMCProxy->getResult();
-        int startPos = result.indexOf("messages");
-        int endPos = result.indexOf("timeFrontend");
-        // add 10 to startPos to remove 'messages = ' word and remove -16 to remove timeFrontend from the end
-        QString message = result.mid(startPos + 10, (endPos - startPos) - 16);
-        message = StringHandler::removeFirstLastQuotes(message).trimmed();
+        mpParentMainWindow->mpOMCProxy->sendCommand("OMEdit_simulate_result.messages");
+        QString message = StringHandler::unparse(mpParentMainWindow->mpOMCProxy->getResult());
         if (!message.isEmpty())
             message = QString(" with message:\n").append(message);
 

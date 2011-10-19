@@ -1332,7 +1332,7 @@ bool OMCProxy::simulate(QString modelName, QString simualtionParameters)
 {
     sendCommand("OMEdit_simulate_result:=simulate(" + modelName + "," + simualtionParameters + ")");
     sendCommand("OMEdit_simulate_result.resultFile");
-    if (getResult().isEmpty())
+    if (StringHandler::unparse(getResult()).isEmpty())
         return false;
     else
         return true;

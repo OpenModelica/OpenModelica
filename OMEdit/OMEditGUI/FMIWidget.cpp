@@ -152,11 +152,11 @@ void ImportFMIWidget::importFMU()
         QFile fmuImportErrorLogfile;
         if (mpOutputDirectoryTextBox->text().isEmpty())
         {
-            fmuImportErrorLogfile.setFileName(QString(mpOutputDirectoryTextBox->text()).append(QDir::separator()).append("fmuImportError.log"));
+            fmuImportErrorLogfile.setFileName(mpParentMainWindow->mpOMCProxy->changeDirectory().append(QDir::separator()).append("fmuImportError.log"));
         }
         else
         {
-            fmuImportErrorLogfile.setFileName(mpParentMainWindow->mpOMCProxy->changeDirectory().append(QDir::separator()).append("fmuImportError.log"));
+            fmuImportErrorLogfile.setFileName(QString(mpOutputDirectoryTextBox->text()).append(QDir::separator()).append("fmuImportError.log"));
         }
 
         if (fmuImportErrorLogfile.open(QIODevice::ReadOnly))
