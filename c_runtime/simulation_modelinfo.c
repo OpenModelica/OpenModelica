@@ -63,7 +63,9 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
   fprintf(plt, "set title\n");
   fprintf(plt, "set xlabel\n");
   fprintf(plt, "set ylabel\n");
+  fprintf(plt, "set log y\n");
   fprintf(plt, format, prefix, numFnsAndBlocks, numFnsAndBlocks, 3+i);
+  fprintf(plt, "set nolog xy\n");
   if (i >= 0) {
     nmin = rt_ncall_min(SIM_TIMER_FIRST_FUNCTION + i);
     nmax = rt_ncall_max(SIM_TIMER_FIRST_FUNCTION + i);
@@ -87,7 +89,9 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
   fprintf(plt, "set xlabel \"Global step at time\"\n");
   fprintf(plt, "set ylabel \"Execution time [s]\"\n");
   fprintf(plt, "set output \"%s_prof.%d.%s\"\n", prefix, id, plotFormat);
+  fprintf(plt, "set log y\n");
   fprintf(plt, format, prefix, numFnsAndBlocks, numFnsAndBlocks, 3+i);
+  fprintf(plt, "set nolog xy\n");
   if (i >= 0) {
     fprintf(plt, "set yrange [%f:%f]\n", ymin, ymax);
     fprintf(plt, "set xlabel \"Global step number\"\n");
