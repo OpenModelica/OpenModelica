@@ -4181,9 +4181,9 @@ protected function errorLevelToValue
   output Values.Value val;
 algorithm
   val := match severity
-    case Error.ERROR() then makeErrorEnumLiteral("ErrorLevel","syntax",1);
-    case Error.WARNING() then makeErrorEnumLiteral("ErrorLevel","grammar",2);
-    case Error.NOTIFICATION() then makeErrorEnumLiteral("ErrorLevel","translation",3);
+    case Error.ERROR() then makeErrorEnumLiteral("ErrorLevel","error",1);
+    case Error.WARNING() then makeErrorEnumLiteral("ErrorLevel","warning",2);
+    case Error.NOTIFICATION() then makeErrorEnumLiteral("ErrorLevel","notification",3);
     else
       equation
         print("errorLevelToValue failed\n");
