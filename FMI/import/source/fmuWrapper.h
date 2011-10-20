@@ -21,7 +21,6 @@
 #define GetLastError(X) 
 
 #endif
-// end
 
 
 #ifdef __cplusplus

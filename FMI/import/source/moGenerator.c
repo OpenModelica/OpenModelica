@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h> /* strcasecmp */
 #include <unistd.h>
 #include "moGenerator.h"
 // end
@@ -116,7 +117,7 @@ static char* getDllPath(const char* decompPath, const char* mid){
 	char * ret_fmudllpath;
 	int i;
 	
-	int lenStr1 = strlen(FMU_BINARIES_Win32)+strlen(decompPath)+strlen(mid)+4+1;
+	const int lenStr1 = strlen(FMU_BINARIES_Win32)+strlen(decompPath)+strlen(mid)+4+1;
 	char tmpStr[lenStr1];
 	int lenStr2 = 0;
 	int strcount = 0;
@@ -477,7 +478,6 @@ void tmpcodegen(fmuModelDescription* fmuMD, const char* decompPath){
 		exit(EXIT_FAILURE);
 	}
 	else{
-		fprintf(pfile,"\npackage FMUImport_%s\n",fmuMD->mid);
 		/*
      * No need of fmuModelica.tmp
      * since the makefile create the header file from it and then we assign that header FMU_TEMPLATE_STR
@@ -485,6 +485,7 @@ void tmpcodegen(fmuModelDescription* fmuMD, const char* decompPath){
     const char *FMU_TEMPLATE_STR =
     #include "fmuModelica.h"
     ;
+		fprintf(pfile,"\npackage FMUImport_%s\n",fmuMD->mid);
     fputs(FMU_TEMPLATE_STR, pfile);
 		// pf = fopen(FMU_TEMPLATE,"r");
 		// if(!pf){
@@ -610,7 +611,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath, const char
 		noInteger = 0;
 		noString = 0;
 		noBoolean = 0;
-		if(tmpSV>0){
+		if (1 /* tmpSV>0 - handled by nsv... */) {
 			for(j = 0; j<fmuMD->modelVariable->nsv; j++){
 				
 				if(tmpSV[j].description) varDesc = tmpSV[j].description;
@@ -930,12 +931,26 @@ void printUsage() {
 }
 
 int main(int argc, char *argv[]){
+	// Declaration of variables
+	size_t nsv;							// number of scalar variables
+	fmiScalarVariable* list = NULL;		// list of fmiScalarVariable;
+	fmiModelVariable* fmuMV = NULL; // pointer to model variables
+	fmuModelDescription* fmuMD = (fmuModelDescription*)calloc(sizeof(fmuModelDescription),1);  // pointer to the tree-like structure of paresed xml	
+	char omPath[PATHSIZE]; // OpenModelica installation directory
+	// Allocated memory needed to be freed or file needed to be closed
+	FILE* logFile;
+	const char * fmuname;	// name of the fmu file <fmuname>.fmu
+	ModelDescription* md = NULL;            // handle to the parsed XML file
+	char * decompPath = NULL;			// name of the decompression path
+	const char * xmlFile = NULL;			// model description xml file name
+	const char * fmuDllPath = NULL;			// dll path
+	// end
+
 	if (argc < 2) {
 		printUsage();
 		ERRORPRINT; fprintf(errLogFile,"#### Wrong arguments passed to main entry...%s\n","");
 		exit(EXIT_FAILURE);
-	}
-	else if (strcasecmp(argv[1], "-h") == 0) {
+	} else if (strcasecmp(argv[1], "-h") == 0) {
 		printUsage();
 		exit(EXIT_FAILURE);
 	}
@@ -943,23 +958,7 @@ int main(int argc, char *argv[]){
 		printUsage();
 		exit(EXIT_FAILURE);
 	}
-	// Declaration of variables
-	size_t nsv;							// number of scalar variables
-	fmiScalarVariable* list = NULL;		// list of fmiScalarVariable;
-	fmiModelVariable* fmuMV = NULL; // pointer to model variables
-	fmuModelDescription* fmuMD = NULL;  // pointer to the tree-like structure of paresed xml	
-	char omPath[PATHSIZE]; // OpenModelica installation directory
-	
-	// Allocated memory needed to be freed or file needed to be closed
-	FILE* logFile;
-	fmuMD = (fmuModelDescription*)calloc(sizeof(fmuModelDescription),1);
-	const char * fmuname;	// name of the fmu file <fmuname>.fmu
-	ModelDescription* md = NULL;            // handle to the parsed XML file
-	char * decompPath = NULL;			// name of the decompression path
-	const char * xmlFile = NULL;			// model description xml file name
-	const char * fmuDllPath = NULL;			// dll path
-	// end
-	
+		
 	// Creating log file
 	errLogFile = fopen("fmuImportError.log","w");
 	if(!errLogFile){

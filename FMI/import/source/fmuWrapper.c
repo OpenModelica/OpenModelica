@@ -5,15 +5,15 @@
 #include <stdio.h>
 #include <string.h>
 
-//#define _PRINT_OUT__
+/* #define _PRINT_OUT__ */
 #include "fmuWrapper.h"
-//#define _TEST_FMI
+/* #define _TEST_FMI */
 
 #define FMU_BINARIES_Win32_DLL "C:\\OpenModelica1.7.0\\fmu\\fmusdk_bouncingBall\\binaries\\win32\\bouncingBall.dll"
 #ifdef _TEST_FMI
 #define FMU_BINARIES_Win32_DLL "C:\\OpenModelica1.7.0\\fmu\\fmusdk_bouncingBall\\binaries\\win32\\bouncingBall.dll"
-//#define FMU_BINARIES_Win32_DLL "..\\openmodelica1.7.0\\bouncingBall\\binaries\\win32\\bouncingBall.dll"
-//#define FMU_BINARIES_Win32_DLL "..\\dymola\\bouncingBall\\binaries\\win32\\bouncingBall.dll"
+/* #define FMU_BINARIES_Win32_DLL "..\\openmodelica1.7.0\\bouncingBall\\binaries\\win32\\bouncingBall.dll" */
+/* #define FMU_BINARIES_Win32_DLL "..\\dymola\\bouncingBall\\binaries\\win32\\bouncingBall.dll" */
 
 #define FMU_XML_PATH "..\\..\\fmusdk\\bouncingBall\\modelDescription.xml"
 #endif
@@ -57,7 +57,7 @@ void PrintModelStates(void* in_fmu, double in_time){
 #ifdef __cplusplus
 extern "C"{
 #endif
-// get model type platform
+/* get model type platform */
 const char* fmiGetModelTypesPF(void* in_fmi){
 	FMI* fmi = (FMI*) in_fmi;
     if(fmi->getModelTypesPlatform){
@@ -69,7 +69,7 @@ const char* fmiGetModelTypesPF(void* in_fmi){
 	}
 }
 
-// get applied FMI version
+/* get applied FMI version */
 const char* fmiGetVer(void* in_fmi){
 	FMI* fmi = (FMI*) in_fmi;
     if(fmi->getVersion){
@@ -81,7 +81,7 @@ const char* fmiGetVer(void* in_fmi){
 	}
 }
 
-// get process address from the dll
+/* get process address from the dll */
 void* getProAdr(FMI* fmi, const char* mid, const char* funName){
     char name[BUFSIZE];
     void* funPointer;
@@ -94,7 +94,7 @@ void* getProAdr(FMI* fmi, const char* mid, const char* funName){
     else  return funPointer;
 }
 
-// Load the given dll and set function pointers in fmi
+/* Load the given dll and set function pointers in fmi */
 void* loadFMUDll(void* in_fmi, const char* pathFMUDll,const char* mid){
     FMI* fmi = (FMI*) in_fmi;
 	char* pathFMUSO;
@@ -141,18 +141,18 @@ void* loadFMUDll(void* in_fmi, const char* pathFMUDll,const char* mid){
         fmi->getStateValueReferences = (fGetStateValueReferences) getProAdr(fmi, mid, "fmiGetStateValueReferences");
         fmi->terminate               = (fTerminate)               getProAdr(fmi, mid, "fmiTerminate");
         printf("\n\n#### Loading dll library in instantiateFMIFun succeeded!!!\n");
-        //void *dummy = NULL; // only for return void pointer required in OpenModelica
-        return NULL;// dummy;
+        /* void *dummy = NULL; // only for return void pointer required in OpenModelica */
+        return NULL; /* dummy; */
 }
 void freeFMUDll(void* dummy){
 	return;
-} // dummy for Modelica
+} /* dummy for Modelica */
 
-// --------------------------------------------------------------
-// setters of specified FMI functions
-// --------------------------------------------------------------
-// set flag for debugging
-// FMI stardard interface
+/* --------------------------------------------------------------
+ * setters of specified FMI functions
+ * --------------------------------------------------------------
+ * set flag for debugging
+ * FMI stardard interface */
 void fmiSetDebugLog(void* in_fmi, void* in_fmu, char log){
 	FMI* fmi = (FMI*) in_fmi;
     fmiStatus status;
@@ -166,8 +166,9 @@ void fmiSetDebugLog(void* in_fmi, void* in_fmu, char log){
     return;
 }
 
-// set simulation time
-// FMI standard interface
+/* set simulation time
+ * FMI standard interface
+ */
 void fmiSetT(void* in_fmi, void* in_fmu, double in_t){
     FMI* fmi = (FMI*) in_fmi;
     fmiStatus status;
@@ -184,8 +185,9 @@ void fmiSetT(void* in_fmi, void* in_fmu, double in_t){
     return;
 }
 
-// set new continuous states of the model
-// FMI standard interface
+/* set new continuous states of the model
+ * FMI standard interface
+ */
 void fmiSetContStates(void* in_fmi, void* in_fmu, const double* in_x, int nx){
     FMI* fmi = (FMI*) in_fmi;
     fmiStatus status;
@@ -202,8 +204,9 @@ void fmiSetContStates(void* in_fmi, void* in_fmu, const double* in_x, int nx){
      return;
 }
 
-// set real variable values via an array of value references
-// FMI standard interface
+/* set real variable values via an array of value references
+ * FMI standard interface
+ */
 void fmiSetRealVR(void* in_fmi, void* in_fmu, const int* in_vr, const double* rv, int nvr){
 	FMI* fmi = (FMI*) in_fmi;
 	fmiStatus status;
@@ -221,8 +224,9 @@ void fmiSetRealVR(void* in_fmi, void* in_fmu, const int* in_vr, const double* rv
      return;
 }
 
-// set integer variable values via an array of value references
-// FMI standard interface
+/* set integer variable values via an array of value references
+ * FMI standard interface
+ */
 void fmiSetIntegerVR(void* in_fmi, void* in_fmu, const int* in_vr, const int* iv, int nvr){
 	FMI* fmi = (FMI*) in_fmi;
 	fmiStatus status;
@@ -238,8 +242,9 @@ void fmiSetIntegerVR(void* in_fmi, void* in_fmu, const int* in_vr, const int* iv
 }
 
 	 
-// set string variable values via an array of the the value refercences
-// FMI standard interface
+/* set string variable values via an array of the the value refercences
+ * FMI standard interface
+ */
 void fmiSetStringVR(void* in_fmi, void* in_fmu, const int* in_vr, const char** sv, int nvr){
 	FMI* fmi = (FMI*) in_fmi;
 	fmiStatus status;
@@ -254,8 +259,9 @@ void fmiSetStringVR(void* in_fmi, void* in_fmu, const int* in_vr, const char** s
      return;
 }
 
-// set boolean variable values via an array of the the value refercences
-// FMI standard interface
+/* set boolean variable values via an array of the the value refercences
+ * FMI standard interface
+ */
 void fmiSetBooleanVR(void* in_fmi, void* in_fmu, const int* in_vr, const char* in_bv, int nvr){
 	FMI* fmi = (FMI*) in_fmi;
 	fmiStatus status;
@@ -271,9 +277,10 @@ void fmiSetBooleanVR(void* in_fmi, void* in_fmu, const int* in_vr, const char* i
      return;
 }
 
-// fmiCompletedIntegratorStep(...) for step event
-// FMI standard interface
-void fmiCompIntStep(void* in_fmi, void* in_fmu, void* in_stepEvt){ // in_events is an array of modelica boolean array
+/* fmiCompletedIntegratorStep(...) for step event
+ * FMI standard interface
+ */
+void fmiCompIntStep(void* in_fmi, void* in_fmu, void* in_stepEvt){ /* in_events is an array of modelica boolean array */
      FMI* fmi = (FMI*) in_fmi;
      fmiStatus status;
 	 fmiBoolean* stepEvt = (fmiBoolean*) in_stepEvt;
@@ -290,11 +297,12 @@ void fmiCompIntStep(void* in_fmi, void* in_fmu, void* in_stepEvt){ // in_events 
      return;
 }
 
-// --------------------------------------------------------------
-// getters of specified FMI functions
-// --------------------------------------------------------------
-// get values of the continuous states
-// FMI standard interface
+/* --------------------------------------------------------------
+ * getters of specified FMI functions
+ * --------------------------------------------------------------
+ * get values of the continuous states
+ * FMI standard interface
+ */
 void fmiGetContStates(void* in_fmi, void* in_fmu, double* out_x, int nx){
      FMI* fmi = (FMI*) in_fmi;
      fmiStatus status;
@@ -308,8 +316,9 @@ void fmiGetContStates(void* in_fmi, void* in_fmu, double* out_x, int nx){
      return;
 }
 
-// get nonminal values of the continuous states
-// FMI standard interface
+/* get nonminal values of the continuous states
+ * FMI standard interface
+ */
 void fmiGetNomContStates(void* in_fmi, void* in_fmu, double* x_nom, int nx){
     FMI* fmi = (FMI*) in_fmi;
     fmiStatus status;
@@ -322,8 +331,9 @@ void fmiGetNomContStates(void* in_fmi, void* in_fmu, double* x_nom, int nx){
     }
     return;
 }
-// get state value refercences
-// FMI standard interface
+/* get state value refercences
+ * FMI standard interface
+ */
 void fmiGetStateVR(void* in_fmi, void* in_fmu, int* in_vrx, int nx){
     FMI* fmi = (FMI*) in_fmi;
     fmiStatus status;
@@ -338,8 +348,9 @@ void fmiGetStateVR(void* in_fmi, void* in_fmu, int* in_vrx, int nx){
     return;
 }
 
-// get the value of the derivaties of all continous states
-// FMI standard interface
+/* get the value of the derivaties of all continous states
+ * FMI standard interface
+ */
 void fmiGetDer(void* in_fmi, void* in_fmu, double* der_x, int nx, const double* x){
        FMI* fmi = (FMI*) in_fmi;
        fmiStatus status;
@@ -357,8 +368,9 @@ void fmiGetDer(void* in_fmi, void* in_fmu, double* der_x, int nx, const double* 
        return;
 }
 
-// get real variable values via an array of the the value refercences
-// FMI standard interface
+/* get real variable values via an array of the the value refercences
+ * FMI standard interface
+ */
 void fmiGetRealVR(void* in_fmi, void* in_fmu, const int* in_vr, double* rv, int nvr){
 	FMI* fmi = (FMI*) in_fmi;
 	fmiStatus status;
@@ -376,8 +388,9 @@ void fmiGetRealVR(void* in_fmi, void* in_fmu, const int* in_vr, double* rv, int 
      return;
 }
 
-// get integer variable values via an array of the the value refercences
-// FMI standard interface
+/* get integer variable values via an array of the the value refercences
+ * FMI standard interface
+ */
 void fmiGetIntegerVR(void* in_fmi, void* in_fmu, const int* in_vr, int* iv, int nvr){
 	FMI* fmi = (FMI*) in_fmi;
 	fmiStatus status;
@@ -392,8 +405,9 @@ void fmiGetIntegerVR(void* in_fmi, void* in_fmu, const int* in_vr, int* iv, int 
      return;
 }
 
-// get integer variable values via an array of the the value refercences
-// FMI standard interface
+/* get integer variable values via an array of the the value refercences
+ * FMI standard interface
+ */
 void fmiGetStringVR(void* in_fmi, void* in_fmu, const int* in_vr, const char** sv, int nvr){
 	FMI* fmi = (FMI*) in_fmi;
 	fmiStatus status;
@@ -408,8 +422,9 @@ void fmiGetStringVR(void* in_fmi, void* in_fmu, const int* in_vr, const char** s
      return;
 }
 
-// get boolean variable values via an array of the the value refercences
-// FMI standard interface
+/* get boolean variable values via an array of the the value refercences
+ * FMI standard interface
+ */
 void fmiGetBooleanVR(void* in_fmi, void* in_fmu, const int* in_vr, char* bv, int nvr){
 	FMI* fmi = (FMI*) in_fmi;
 	fmiStatus status;
@@ -424,20 +439,21 @@ void fmiGetBooleanVR(void* in_fmi, void* in_fmu, const int* in_vr, char* bv, int
      return;
 }
 
-// get time event during the simulation
+/* get time event during the simulation */
 void fmiGetTimeEvent(void * in_evtInfo, double in_time, double in_pretime, void * in_timeEvt, double* out_nextTime){
 	fmiEventInfo * evtInfo = (fmiEventInfo*) in_evtInfo;
 	fmiBoolean * timeEvt = (fmiBoolean*) in_timeEvt;
 	double dt = in_time - in_pretime;
 	double nextTime = in_time + dt;
-	// printf("#### dt = %f, in_time = %f, in_pretime = %f, nextTime = %f\n",dt,in_time,in_pretime, nextTime);
+	/* printf("#### dt = %f, in_time = %f, in_pretime = %f, nextTime = %f\n",dt,in_time,in_pretime, nextTime); */
 	*timeEvt = (evtInfo->upcomingTimeEvent)&&(evtInfo->nextEventTime < nextTime);
-	if(*timeEvt) *out_nextTime = 2.5;//evtInfo->nextEventTime;
+	if(*timeEvt) *out_nextTime = 2.5; /* evtInfo->nextEventTime; */
     return;	
 }
 
-// get event indicators of the model
-// FMI standard interface
+/* get event indicators of the model
+ * FMI standard interface
+ */
 void fmiGetEventInd(void* in_fmi, void* in_fmu, double* z, int ni){
       FMI* fmi = (FMI*) in_fmi;
       fmiStatus status;	  	 
@@ -455,11 +471,12 @@ void fmiGetEventInd(void* in_fmi, void* in_fmu, double* z, int ni){
        return;
 }
 
-// check state event
-// helper function to check the occurance of a state event
+/* check state event
+ * helper function to check the occurance of a state event
+ */
 void fmuStateEventCheck(void* stateEvt, int ni, const double* z, const double* prez){
 	int i;
-	// signed char retv;
+	/* signed char retv; */
 	*((fmiBoolean*) stateEvt) = fmiFalse;
 	for(i = 0; i < ni; i++) *((fmiBoolean*) stateEvt) = *((fmiBoolean*) stateEvt)||(prez[i]*z[i] < 0);
 	
@@ -467,21 +484,22 @@ void fmuStateEventCheck(void* stateEvt, int ni, const double* z, const double* p
 	printf("#### fmuStateEventCheck z[0] = %f, prez[0] = %f, stateEvt = %d \n", z[0], prez[0], *((fmiBoolean*) stateEvt));
 	#endif
 	if(*((fmiBoolean*) stateEvt)==fmiTrue){
-		//*flag = -0.5;
-		//printf("#### flag = %f\n",*flag);
+		/* *flag = -0.5;
+		 * printf("#### flag = %f\n",*flag); */
 	}
 	else{
-		//*flag = 0.5;
-		//printf("#### flag = %f\n",*flag);
+		/* *flag = 0.5;
+		 * printf("#### flag = %f\n",*flag); */
 	}
-	return;// retv;
+	return;/* retv; */
 }
 
-// --------------------------------------------------------------
-// other specified FMI functions
-// --------------------------------------------------------------
-// event update at time, step or state event
-// FMI standard interface
+/* --------------------------------------------------------------
+ * other specified FMI functions
+ * --------------------------------------------------------------
+ * event update at time, step or state event
+ * FMI standard interface
+ */
 void fmiEvtUpdate(void* in_fmi, void* in_fmu,fmiBoolean inter_res, fmiEventInfo* in_evtInfo){
     FMI* fmi = (FMI*) in_fmi;
     fmiStatus status;
@@ -491,7 +509,7 @@ void fmiEvtUpdate(void* in_fmi, void* in_fmu,fmiBoolean inter_res, fmiEventInfo*
 		  #ifdef _PRINT_OUT__
 		  printf("\n#### fmiEventUpdate h = %f, v = %f \n",((ModelInstance*)in_fmu)->r[0],((ModelInstance*) in_fmu)->r[2]);
 		  #endif
-		  //((ModelInstance*) in_fmu)->r[2] = 3;
+		  /* ((ModelInstance*) in_fmu)->r[2] = 3; */
           if(status>fmiWarning){
             printf("#### fmiEventUpdate(...) failed...\n");
             exit(EXIT_FAILURE);
@@ -500,9 +518,9 @@ void fmiEvtUpdate(void* in_fmi, void* in_fmu,fmiBoolean inter_res, fmiEventInfo*
     return;
 }
 
-// wrapper for fmiEventUpdate, update the event if any
+/* wrapper for fmiEventUpdate, update the event if any */
 void fmuEventUpdate(void * in_fmufun, void * in_inst, void * in_evtInfo, void * timeEvt, void * stepEvt, void * stateEvt, void * interMediateRes){
-	//printf("#### ----- timeEvt %d, stepEvt %d, stateEvt %d\n",*((fmiBoolean*)timeEvt),*((fmiBoolean*)stepEvt),*((fmiBoolean*)stateEvt));
+	/* printf("#### ----- timeEvt %d, stepEvt %d, stateEvt %d\n",*((fmiBoolean*)timeEvt),*((fmiBoolean*)stepEvt),*((fmiBoolean*)stateEvt)); */
 	#ifdef _PRINT_OUT__
 	printf("#### eventInfo->stateValuesChanged = %d\n",((fmiEventInfo*) in_evtInfo)->stateValuesChanged);
 	#endif
@@ -515,8 +533,8 @@ void fmuEventUpdate(void * in_fmufun, void * in_inst, void * in_evtInfo, void * 
 	return;
 }
 
-// logger function for printing screen message
-//logger(c, comp->instanceName, fmiOK, "log", "fmiSetTime: time=%.16g", time);
+/* logger function for printing screen message
+ * logger(c, comp->instanceName, fmiOK, "log", "fmiSetTime: time=%.16g", time); */
 void fmuLogger(void* in_fmu, const char* instanceName, fmiStatus status,
                const char* category, const char* message, ...){
      printf("\n-----------------------------------------------------------\n");
@@ -524,8 +542,8 @@ void fmuLogger(void* in_fmu, const char* instanceName, fmiStatus status,
      printf("-----------------------------------------------------------\n\n");
 }
 
-// instantiation of an fmiComponent instance, i.e. an FMU
-// FMI standard interface
+/* instantiation of an fmiComponent instance, i.e. an FMU
+ * FMI standard interface */
 void* fmiInstantiate(void* in_fmi, const char* instanceName,  const char* GUID, void* in_functions, int logFlag){
        FMI* fmi = (FMI*) in_fmi;
        fmiComponent fmu;
@@ -538,7 +556,7 @@ void* fmiInstantiate(void* in_fmi, const char* instanceName,  const char* GUID, 
        if(fmi->instantiateModel)
        {
         #ifdef _DEBUG_
-           //printf("#### the address of fmi->instantiateModel is %x ...\n",fmi->instantiateModel);
+           /* printf("#### the address of fmi->instantiateModel is %x ...\n",fmi->instantiateModel); */s
         #endif
            fmu = fmi->instantiateModel(instanceName,GUID,*functions,loggingon);
         #ifdef _DEBUG_
@@ -553,8 +571,9 @@ void* fmiInstantiate(void* in_fmi, const char* instanceName,  const char* GUID, 
        return (fmu);
 }
 
-// initialization of the instantiated FMU
-// FMI standard interface
+/* initialization of the instantiated FMU
+ * FMI standard interface
+ */
 void fmiInit(void* in_fmi, void* in_fmu, int tolCont, double rTol, void* in_evtInfo){
     FMI* fmi = (FMI*) in_fmi;
     fmiStatus status;
@@ -577,8 +596,9 @@ void fmiInit(void* in_fmi, void* in_fmu, int tolCont, double rTol, void* in_evtI
 	return;
 }
 
-// terminate a FMU and release all resources
-// FMI stardard interface
+/* terminate a FMU and release all resources
+ * FMI stardard interface
+ */
 void fmiTerminator(void* in_fmi, void* in_fmu){
 	FMI* fmi = (FMI*) in_fmi;
     fmiStatus status;
@@ -592,7 +612,7 @@ void fmiTerminator(void* in_fmi, void* in_fmu){
     return;
 }
 
-// constructor and destructor of FMI structure containing loaded interface functions
+/* constructor and destructor of FMI structure containing loaded interface functions */
 void* instantiateFMIFun(const char* mid, const char* pathFMUDll){
     void* fmi = malloc(sizeof(FMI));
 	((FMI*) fmi)->flagInit = 0;
@@ -612,7 +632,7 @@ void freeFMUFun(void* in_fmufun){
     free(fmi);
 }
 
-// constructor and destructor of helper structure fmuBoolean containing event information
+/* constructor and destructor of helper structure fmuBoolean containing event information */
 void* fmuBooleanInst(int def_bool){
    void* fmubool = malloc(sizeof(fmiBoolean));
    if(def_bool) *((fmiBoolean*) fmubool) = fmiTrue;
@@ -638,6 +658,7 @@ void* fmuFreeAll(void* in_fmufun, void* in_inst, void* functions){
 	return NULL;   
 }
 
+/*
 // free the allocated memory for FMU
 // FMI standard interface
 // void fmiFreeModelInst(void* in_fmufun, void* in_fmu){
@@ -654,6 +675,7 @@ void* fmuFreeAll(void* in_fmufun, void* in_inst, void* functions){
 	// #endif
     // return;
 // }
+*/
  
  void fmiFreeModelInst(void* in_fmu){
     void* dllHandle = LoadLibraryFromDLL(FMU_BINARIES_Win32_DLL);
@@ -671,7 +693,7 @@ void* fmuFreeAll(void* in_fmufun, void* in_inst, void* functions){
     return;
 }
  
-// constructor and destructor of structure for fmiCallbackFunctions
+/* constructor and destructor of structure for fmiCallbackFunctions */
 void* fmiCallbackFuns(){
     void* functions = malloc(sizeof(fmiCallbackFunctions));
     ((fmiCallbackFunctions*) functions)->logger = fmuLogger;
@@ -686,7 +708,7 @@ void fmiFreeCallbackFuns(void * functions){
     free(functions);
 }
 
-// constructor and destructor of structure for fmiCallbackFunctions
+/* constructor and destructor of structure for fmiCallbackFunctions */
 void* fmiEvtInfo(){
     void* evtInfo = malloc(sizeof(fmiEventInfo));
 	#ifdef _DEBUG_
@@ -707,7 +729,7 @@ void fmiFreeDummy(void * dummy){
  return;
 }
 
-// print variables from simulation environment
+/* print variables from simulation environment */
 void printVariables(const double * var, int n, const char* varName){
 	int i;
 	printf("\n\n#### ------------------------------------- (%s)\n",varName);
@@ -727,7 +749,7 @@ void printIntVariables(const int * var, int n, const char* varName){
 	return;
 }
 #ifdef __cplusplus
-} //extern "C"
+} /* extern "C" */
 #endif
 /* ------------------------------------------------------------------------
  * main test block
@@ -739,7 +761,7 @@ int main(int argc, char *argv[])
     void* fmi = instantiateFMIFun(FMU_BINARIES_Win32_DLL);
     double dt = 0.02;
     double preTimer, endTime = 0.08;
-    // test block of fmiGetDer(...)
+    /* test block of fmiGetDer(...) */
    double * x = (double*)malloc(sizeof(double)*NUMBER_OF_STATES);
    x[0] = 1;
    x[1] = 0;
@@ -747,13 +769,13 @@ int main(int argc, char *argv[])
    int nx = NUMBER_OF_STATES;
    double timer;
    timer = 0;
-    // test block of fmiGetEventInd(...)
+    /* test block of fmiGetEventInd(...) */
    double * z = (double*)malloc(sizeof(double)*NUMBER_OF_EVENT_INDICATORS);
    double * prez = (double*)malloc(sizeof(double)*NUMBER_OF_EVENT_INDICATORS);
    int ni = NUMBER_OF_EVENT_INDICATORS;
-   // variables for event handling
+   /* variables for event handling */
    fmiBoolean timeEvent, stepEvent, stateEvent;
-// --------------------------------------------------------------
+/* -------------------------------------------------------------- */
        loadFMUDll(fmi,FMU_BINARIES_Win32_DLL);
        #ifdef _DEBUG_
        printf("#### the address of fmi->dllHandle is %d ...\n",((FMI*)fmi)->dllHandle);
@@ -762,12 +784,12 @@ int main(int argc, char *argv[])
        printf("-----------------------------------------------------------\n\n");
        #endif
        
-// --------------------------------------------------------------
-// Instantiation of FMU
+/* -------------------------------------------------------------- */
+/* Instantiation of FMU */
        fmiString instanceName="bouncingBall";
-       fmiString GUID="{8c4e810f-3df3-4a00-8276-176fa3c9f003}"; // fmusdk
-       // fmiString GUID = "{9d95f943-e636-4f71-8d7d-6f54c4128f13}"; // dymola 7.4
-       //fmiString GUID = "{4e78de7b-7813-41d4-a68b-110ca1e861d0}"; // openmodelica 1.7.0
+       fmiString GUID="{8c4e810f-3df3-4a00-8276-176fa3c9f003}"; /* fmusdk */
+       /* fmiString GUID = "{9d95f943-e636-4f71-8d7d-6f54c4128f13}"; // dymola 7.4 */
+       /* fmiString GUID = "{4e78de7b-7813-41d4-a68b-110ca1e861d0}"; // openmodelica 1.7.0 */
        void* functions = fmiCallbackFuns();
        fmiBoolean loggingon;
        loggingon=fmiFalse;
@@ -785,15 +807,17 @@ int main(int argc, char *argv[])
             printf("#### fmiInstantiate failed....\n");
             exit(EXIT_FAILURE);
         }
-// --------------------------------------------------------------
-// test block of void fmiSetT(void* in_fmi, void* in_fmu, double in_t)
+/* --------------------------------------------------------------
+ * test block of void fmiSetT(void* in_fmi, void* in_fmu, double in_t)
+ */
    fmiSetT(fmi,c1,timer);
    #ifdef _DEBUG_
    printf("#### c1->time: %f\n",((ModelInstance*)c1)->time);
    printf("-----------------------------------------------------------\n\n");
    #endif
-// --------------------------------------------------------------
-// Initialization of FMU
+/* --------------------------------------------------------------
+ * Initialization of FMU
+ */
       fmiEventInfo* eventInfo = (fmiEventInfo*)fmiEvtInfo();
       fmiInit(fmi,c1,fmiTrue,0.0001,eventInfo);
       if(eventInfo->terminateSimulation){
@@ -801,7 +825,7 @@ int main(int argc, char *argv[])
           endTime = timer;
       }
 
-// --------------------------------------------------------------
+/* -------------------------------------------------------------- */
 
    int i;
    while(timer<endTime){
@@ -809,7 +833,7 @@ int main(int argc, char *argv[])
    printf("-----------------------------------------------------------\n\n");
    printf("#### Simulation results at time t = %f\n",((ModelInstance*)c1)->time);
    #endif
-   // test block of void fmiGetContStates(void* in_fmi, void* in_fmu, double* in_x, int nx)
+   /* test block of void fmiGetContStates(void* in_fmi, void* in_fmu, double* in_x, int nx) */
    fmiGetContStates(fmi,c1,x,NUMBER_OF_STATES);
    #ifdef _DEBUG_
    for(i = 0; i < NUMBER_OF_STATES; i++){
@@ -818,32 +842,32 @@ int main(int argc, char *argv[])
    }
    #endif
    
-   // test block of fmiGetDer(...)
+   /* test block of fmiGetDer(...) */
    fmiGetDer(fmi,c1,der_x,nx,x); 
 
-   preTimer = timer; // record of previous time
-   timer = min(timer+dt,endTime); // calculate next time
-   timeEvent = (eventInfo->upcomingTimeEvent)&&(eventInfo->nextEventTime<timer); // check for time event
-   if(timeEvent) timer = eventInfo->nextEventTime; // set the timer to next event time if time event triggered
-   dt = timer-preTimer; // calculate the new time step
-   fmiSetT(fmi,c1,timer); // set new time
+   preTimer = timer; /* record of previous time */
+   timer = min(timer+dt,endTime); /* calculate next time */
+   timeEvent = (eventInfo->upcomingTimeEvent)&&(eventInfo->nextEventTime<timer); /* check for time event */
+   if(timeEvent) timer = eventInfo->nextEventTime; /* set the timer to next event time if time event triggered */
+   dt = timer-preTimer; /* calculate the new time step */
+   fmiSetT(fmi,c1,timer); /* set new time */
    
-   // perform the time integration
+   /* perform the time integration */
    for(i = 0; i < NUMBER_OF_STATES; i++){
-  // printf("#### valude of der_x[%d]: %f\n",i,der_x[i]);
+   /* printf("#### valude of der_x[%d]: %f\n",i,der_x[i]); */
    x[i] += der_x[i]*dt;
    #ifdef _DEBUG_
    printf("#### valude of x[%d]: %f\n",i,x[i]);
    #endif
    }
    
-   // test block of fmiSetContStates
+   /* test block of fmiSetContStates */
    fmiSetContStates(fmi,c1,x,NUMBER_OF_STATES);
    
-   // test block of fmiCompletedIntegratorStep(...)
+   /* test block of fmiCompletedIntegratorStep(...) */
    fmiCompIntStep(fmi,c1, &stepEvent);
    
-   // test block of fmiGetEventInd(...)   
+   /* test block of fmiGetEventInd(...)   */
    for(i = 0; i < NUMBER_OF_EVENT_INDICATORS; i++){
        prez[i] = z[i];
        #ifdef _DEBUG_
@@ -857,9 +881,9 @@ int main(int argc, char *argv[])
    stateEvent = fmiFalse;
    for(i = 0; i < NUMBER_OF_EVENT_INDICATORS; i++) stateEvent = stateEvent||(prez[i]*z[i]<0);
    
-   // event handling
+   /* event handling */
    if(timeEvent||stepEvent||stateEvent){
-   // test block of fmiEventUpdate(...)
+   /* test block of fmiEventUpdate(...) */
    
    fmiEvtUpdate(fmi,c1,fmiFalse, eventInfo);
    
@@ -876,11 +900,11 @@ int main(int argc, char *argv[])
        printf("#### State value references of model(%s) changed at time t = .16g\n",((ModelInstance*)c1)->instanceName,((ModelInstance*)c1)->time);
    }
    
-   }// if(timeEvent||stepEvent||stateEvent)
+   }/* if(timeEvent||stepEvent||stateEvent) */
    
-   // test of voiod 
-   // fmiGetRealVR(void* in_fmi, void* in_fmu, const int* in_vr, double* rv, int nvr)
-   // fmiSetRealVr(void* in_fmi, void* in_fmu, const int* in_vr, const double* rv, int nvr)
+   /* test of voiod 
+    * fmiGetRealVR(void* in_fmi, void* in_fmu, const int* in_vr, double* rv, int nvr)
+    * fmiSetRealVr(void* in_fmi, void* in_fmu, const int* in_vr, const double* rv, int nvr) */
    int nv = 5;
    const int vr[5] = {0,1,2,3,4};
    double* rv = (double*)malloc(sizeof(double)*nv);
@@ -897,10 +921,10 @@ int main(int argc, char *argv[])
      printf("#### fmiSetRealVR rv[%d] : %f\n",i,rv[i]);          
    }
    
-  } // while(...)
+  } /* while(...) */
 
 
-// free pre-allocated memory
+/* free pre-allocated memory */
    free(x);
    free(der_x);
    free(z);
@@ -913,5 +937,5 @@ int main(int argc, char *argv[])
    system("PAUSE");
    return EXIT_SUCCESS;
 }
-#endif // _TEST_FMI
+#endif /* _TEST_FMI */
 #endif
