@@ -15715,21 +15715,13 @@ algorithm
       list<Absyn.ComponentRef> rest;
       InstanceHierarchy ih;
       String n;
+      DAE.Binding binding;
 
-      // two first cases catches when we want to update an already typed and bound var.
-    case (cache,env,ih,pre,mods,(cr :: rest),ci_state,impl,updatedComps,_)
+    // This case catches when we want to update an already typed and bound var.
+    case (cache,env,ih,pre,mods,(Absyn.CREF_IDENT(name = n, subscripts = {}) :: rest),ci_state,impl,updatedComps,_)
       equation
-        n = Absyn.printComponentRefStr(cr);
-        (_,DAE.TYPES_VAR(binding = DAE.VALBOUND(valBound=_)),SOME((_,_)),_,_) = Lookup.lookupIdentLocal(cache, env, n);
-        (cache,env_2,ih,updatedComps) = updateComponentsInEnv2(cache, env, ih,
-        pre, mods, rest, ci_state, impl, updatedComps, currentCref);
-      then
-        (cache,env_2,ih,updatedComps);
-
-    case (cache,env,ih,pre,mods,(cr :: rest),ci_state,impl,updatedComps,_)
-      equation
-        n = Absyn.printComponentRefStr(cr);
-        (_,DAE.TYPES_VAR(binding = DAE.EQBOUND(exp=_)),SOME((_,_)),_,_) = Lookup.lookupIdentLocal(cache, env, n);
+        (_,DAE.TYPES_VAR(binding = binding),SOME((_,_)),_,_) = Lookup.lookupIdentLocal(cache, env, n);
+        true = DAEUtil.isBound(binding);
         (cache,env_2,ih,updatedComps) = updateComponentsInEnv2(cache, env, ih,
         pre, mods, rest, ci_state, impl, updatedComps, currentCref);
       then

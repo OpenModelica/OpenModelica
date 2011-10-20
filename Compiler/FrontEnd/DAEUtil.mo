@@ -5683,4 +5683,14 @@ algorithm
   end match;
 end bindingExp;
 
+public function isBound
+  input DAE.Binding inBinding;
+  output Boolean outIsBound;
+algorithm
+  outIsBound := match(inBinding)
+    case DAE.UNBOUND() then false;
+    else true;
+  end match;
+end isBound;
+
 end DAEUtil;
