@@ -2644,7 +2644,7 @@ algorithm
       */
   end matchcontinue;
 end arrayBasictypeBaseclass;
-
+      
 protected function instdimsIntOptList
 "function: instdimsIntOptList
   author: PA"
@@ -2665,7 +2665,6 @@ algorithm
         (DAE.DIM_INTEGER(i) :: res);
     case (DAE.WHOLEDIM() :: ss)
       equation
-        true = OptManager.getOption("checkModel");
         res = instdimsIntOptList(ss);
       then
         DAE.DIM_UNKNOWN() :: res;
