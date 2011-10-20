@@ -448,7 +448,7 @@ void instFmuModelDescription(ModelDescription* md, fmuModelDescription* fmuMD, f
 void freeScalarVariableLst(fmiScalarVariable* list,int nsv){
 	int i;
 	for(i=0;i<nsv;i++){
-		free(list[i].variable);
+		/* free(list[i].variable); */
 	}
 	/* free(list); */
 }
@@ -869,6 +869,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath, const char
 	}
 	
 	// Free memory
+  /*
 	free(id);
 	free((void*)x);
 	free((void*)nx);
@@ -885,13 +886,14 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath, const char
 	free((void*)defaultVar);
 	
 	free(pntReal);
-	/* free(tmpReal); */
+	free(tmpReal);
 	free(pntInteger);
 	free(tmpInteger);
 	free(pntBoolean);
 	free(tmpBoolean);
 	free(pntString);
 	free(tmpString);
+  */
 	fclose(pfile);
 }
 
