@@ -118,15 +118,14 @@ static char* getDllPath(const char* decompPath, const char* mid){
 	int i;
 	
 	const int lenStr1 = strlen(FMU_BINARIES_Win32)+strlen(decompPath)+strlen(mid)+4+1;
-	char tmpStr[lenStr1];
+	/*char tmpStr[lenStr1];
 	int lenStr2 = 0;
-	int strcount = 0;
+	int strcount = 0;*/
 	fmudllpath = (char*)calloc(sizeof(char),lenStr1);
-	strcpy(fmudllpath,decompPath);
-	strcat(fmudllpath,FMU_BINARIES_Win32);
-	strcat(fmudllpath,mid);
-	strcat(fmudllpath,".dll");
-	strcpy(tmpStr,fmudllpath);
+  sprintf(fmudllpath, "%s%s%s%s", decompPath, FMU_BINARIES_Win32, mid, ".dll");
+  return fmudllpath;
+#if 0
+  fprintf(stderr, "fmudllpath=%s\n", fmudllpath);
 	
 	pch = strtok(fmudllpath,"/");	
 	while(pch!=NULL){
@@ -143,20 +142,21 @@ static char* getDllPath(const char* decompPath, const char* mid){
 		pch = strtok(NULL,"/");
 		
 		#ifdef _DEBUG_
-		// printf("#### ret_fmudllpath = %s\n",ret_fmudllpath);
+		/* printf("#### ret_fmudllpath = %s\n",ret_fmudllpath); */
 		#endif
 	}
 	strcat(ret_fmudllpath,pch);
 	
 	#ifdef _DEBUG_
-	// printf("#### ret_fmudllpath = %s\n",ret_fmudllpath);
-	// printf("#### strlen(ret_fmudllpath) = %d\n",strlen(ret_fmudllpath));
+	/* printf("#### ret_fmudllpath = %s\n",ret_fmudllpath); */
+	/* printf("#### strlen(ret_fmudllpath) = %d\n",strlen(ret_fmudllpath)); */
 	#endif
 	
-	free(pch);
+	/* free(pch); DO NOT FREE pch - strtok() modifies the first argument, it does not return a new string!!! */
 	free(fmudllpath);
 	
-	return ret_fmudllpath;	
+	return ret_fmudllpath;
+#endif
 }
 
 // function that returns the name of the model description xml file
@@ -450,7 +450,7 @@ void freeScalarVariableLst(fmiScalarVariable* list,int nsv){
 	for(i=0;i<nsv;i++){
 		free(list[i].variable);
 	}
-	free(list);
+	/* free(list); */
 }
 
 // Modelica code generation for the external interface functions
@@ -885,7 +885,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath, const char
 	free((void*)defaultVar);
 	
 	free(pntReal);
-	free(tmpReal);
+	/* free(tmpReal); */
 	free(pntInteger);
 	free(tmpInteger);
 	free(pntBoolean);
