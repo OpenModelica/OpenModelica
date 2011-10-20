@@ -213,4 +213,4 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-#endif // fmiModelFunctions_h
+#endif /* fmiModelFunctions_h */
