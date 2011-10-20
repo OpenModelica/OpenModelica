@@ -101,7 +101,7 @@ end getNumErrorMessages;
 public function getMessages
   output list<Error.TotalMessage> res;
 
-  external "C" res=Error_getMessagesStr() annotation(Library = "omcruntime");
+  external "C" res=Error_getMessages() annotation(Library = "omcruntime");
 end getMessages;
 
 public function clearMessages
