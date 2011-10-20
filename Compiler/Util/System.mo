@@ -828,7 +828,7 @@ public function modelicaPlatform "Returns the standardized platform name accordi
   win64 [Microsoft Windows 64 bit]
   linux32 [Linux Intel 32 bit]
   linux64 [Linux Intel 64 bit]
-  Else, the empty string is returned 
+  Else, the openModelicaPlatform() is returned 
   "
   output String platform;
   external "C" platform=System_modelicaPlatform() annotation(Library = "omcruntime");

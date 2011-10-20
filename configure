@@ -5383,7 +5383,11 @@ OPENMODELICA_SPEC_PLATFORM=`uname -sm | tr "[:upper:] " "[:lower:]-"`
 $as_echo "$OPENMODELICA_SPEC_PLATFORM" >&6; }
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Modelica platform name" >&5
 $as_echo_n "checking for Modelica platform name... " >&6; }
-if test "$OPENMODELICA_SPEC_PLATFORM" = "linux-x86_64" -o "$OPENMODELICA_SPEC_PLATFORM" = "linux-i.86"; then MODELICA_SPEC_PLATFORM=`echo $OPENMODELICA_SPEC_PLATFORM | sed "s/linux-x86_64/linux64/" | sed "s/linux-i.86/linux32/"`; fi
+if test "$OPENMODELICA_SPEC_PLATFORM" = "linux-x86_64" -o "$OPENMODELICA_SPEC_PLATFORM" = "linux-i.86"; then
+  MODELICA_SPEC_PLATFORM=`echo $OPENMODELICA_SPEC_PLATFORM | sed "s/linux-x86_64/linux64/" | sed "s/linux-i.86/linux32/"`
+else
+  MODELICA_SPEC_PLATFORM=$OPENMODELICA_SPEC_PLATFORM
+fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MODELICA_SPEC_PLATFORM" >&5
 $as_echo "$MODELICA_SPEC_PLATFORM" >&6; }
 

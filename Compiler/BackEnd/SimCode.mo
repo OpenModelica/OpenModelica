@@ -2744,7 +2744,7 @@ algorithm
   cflags := Debug.bcallret2(RTOpts.debugFlag("openmp"),stringAppend,cflags," -fopenmp",cflags);
   ldflags := System.getLDFlags();
   senddatalibs := System.getSendDataLibs();
-  platform := System.platform();
+  platform := System.modelicaPlatform();
   makefileParams := MAKEFILE_PARAMS(ccompiler, cxxcompiler, linker, exeext, dllext,
         omhome, cflags, ldflags, senddatalibs, includes, libs, platform);
 end createMakefileParams;
