@@ -9,12 +9,7 @@
 #ifndef xmlparser_h
 #define xmlparser_h
 
-// define XML_STATIC before including expat.h
-// to prevent error when linking with libexpatMT.lib
-#define XML_STATIC 
-#include <expat.h>
 #include <fmiModelTypes.h>
-#include "stack.h"
 
 #define SIZEOF_ELM 26
 extern const char *elmNames[SIZEOF_ELM];

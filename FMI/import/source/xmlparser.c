@@ -22,6 +22,11 @@
 #include <assert.h>
 #include <string.h>
 #include "xmlparser.h"
+// define XML_STATIC before including expat.h
+// to prevent error when linking with libexpatMT.lib
+#define XML_STATIC 
+#include <expat.h>
+#include "stack.h"
 
 // mocro for error message print
 #define _IMPORT_ERROR_LOG_
