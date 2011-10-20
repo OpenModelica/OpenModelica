@@ -555,13 +555,14 @@ algorithm
         (cache,resVal,stOpt);
 
     //DIV (handle div by zero)
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV(ty =_),exp2 = rh),impl,stOpt,msg)
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV(ty =_), exp2 = rh),
+        impl, stOpt, msg as MSG(info = info))
       equation
         (cache,lhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
         true = ValuesUtil.isZero(lhvVal);
         lhvStr = ExpressionDump.printExpStr(lh);
         rhvStr = ExpressionDump.printExpStr(rh);
-        Error.addMessage(Error.DIVISION_BY_ZERO, {lhvStr,rhvStr});
+        Error.addSourceMessage(Error.DIVISION_BY_ZERO, {lhvStr,rhvStr}, info);
       then
         fail();
 
@@ -3137,11 +3138,13 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,{exp},impl,st,msg)
+      Absyn.Info info;
+
+    case (cache,env,{exp},impl,st, msg as MSG(info = info))
       equation
-        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg);
+        (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, msg);
         (rv <. 0.0) = true;
-        Error.addMessage(Error.NEGATIVE_SQRT, {});
+        Error.addSourceMessage(Error.NEGATIVE_SQRT, {}, info);
       then
         fail();
     case (cache,env,{exp},impl,st,msg)
@@ -3620,7 +3623,7 @@ algorithm
         (ri2 == 0) = true;
         lh_str = ExpressionDump.printExpStr(exp1);
         rh_str = ExpressionDump.printExpStr(exp2);
-        Error.addMessage(Error.DIVISION_BY_ZERO, {lh_str,rh_str});
+        Error.addSourceMessage(Error.DIVISION_BY_ZERO, {lh_str,rh_str}, info);
       then
         fail();
     case (cache,env,{exp1,exp2},impl,st,NO_MSG())
@@ -3885,7 +3888,7 @@ algorithm
       equation
         (cache,v1,_) = ceval(cache,env, s1, impl, st,msg);
         (cache,v2,_) = ceval(cache,env, s2, impl, st,msg);
-        v = cevalBuiltinMin2(v1,v2);
+        v = cevalBuiltinMin2(v1, v2, msg);
       then
         (cache,v,st);
   end matchcontinue;
@@ -3894,32 +3897,35 @@ end cevalBuiltinMin;
 protected function cevalBuiltinMin2
   input Values.Value v1;
   input Values.Value v2;
+  input Msg inMsg;
   output Values.Value outValue;
 algorithm
-  outValue := match (v1,v2)
+  outValue := match (v1, v2, inMsg)
     local
       Integer i1,i2,i;
       Real r1,r2,r;
       Boolean b1,b2,b;
       String s1,s2,s;
-    case (Values.INTEGER(i1),Values.INTEGER(i2))
+      Absyn.Info info;
+
+    case (Values.INTEGER(i1), Values.INTEGER(i2), _)
       equation
         i = intMin(i1, i2);
       then Values.INTEGER(i);
-    case (Values.REAL(r1),Values.REAL(r2))
+    case (Values.REAL(r1), Values.REAL(r2), _)
       equation
         r = realMin(r1, r2);
       then Values.REAL(r);
-    case (Values.BOOL(b1),Values.BOOL(b2))
+    case (Values.BOOL(b1), Values.BOOL(b2), _)
       equation
         b = boolAnd(b1, b2);
       then Values.BOOL(b);
-    else
+    case (_, _, MSG(info = info))
       equation
         s1 = ValuesUtil.valString(v1);
         s2 = ValuesUtil.valString(v2);
         s = stringAppendList({"cevalBuiltinMin2 failed: min(", s1, ", ", s2, ")"});
-        Error.addMessage(Error.INTERNAL_ERROR, {s});
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {s}, info);
       then fail();
   end match;
 end cevalBuiltinMin2;
