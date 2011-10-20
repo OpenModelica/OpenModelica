@@ -1561,9 +1561,18 @@ function importFMU "Imports the Functional Mockup Unit
   Example command:
   importFMU(\"A.fmu\");"
   input String filename "the fmu file name";
-  input String outputDir := "<default>" "The output directory for imported FMU files. <default> will put the files to current working directory.";
+  input String workdir := "./" "The output directory for imported FMU files. <default> will put the files to current working directory.";
   output Boolean success "Returns true on success";
-external "builtin";
+protected
+  String omhome,exe,call;
+algorithm
+  // get OPENMODELICAHOME
+  omhome := getInstallationDirectoryPath();
+  // create the path till fmigenerator
+  exe := omhome + "/bin/fmigenerator";
+  // create the list of arguments for fmigenerator
+  call := exe + " " + "--fmufile=\"" + filename + "\" --outputdir=\"" + workdir + "\"";
+  success := 0 == system(call);
 end importFMU;
 
 end Scripting;
