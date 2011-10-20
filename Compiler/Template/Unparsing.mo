@@ -289,7 +289,7 @@ algorithm
            _,
            a_omcname )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("const char* "));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("ADD_METARECORD_DEFINTIONS const char* "));
         txt = Tpl.writeText(txt, a_omcname);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("__desc__fields[1] = {\"no fileds\"};"));
       then txt;
@@ -300,7 +300,7 @@ algorithm
            a_nElts,
            a_omcname )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("const char* "));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("ADD_METARECORD_DEFINTIONS const char* "));
         txt = Tpl.writeText(txt, a_omcname);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("__desc__fields["));
         txt = Tpl.writeText(txt, a_nElts);
@@ -453,7 +453,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_LINE("__desc_added\n"));
         txt = Tpl.writeText(txt, l_fieldsDescription);
         txt = Tpl.softNewLine(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("struct record_description "));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("ADD_METARECORD_DEFINTIONS struct record_description "));
         txt = Tpl.writeText(txt, l_omcname);
         txt = Tpl.writeTok(txt, Tpl.ST_LINE("__desc = {\n"));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));

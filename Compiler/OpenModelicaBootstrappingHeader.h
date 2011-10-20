@@ -5,8 +5,8 @@ extern "C" {
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Error_Severity_ERROR__desc_added
 #define Error_Severity_ERROR__desc_added
-const char* Error_Severity_ERROR__desc__fields[1] = {"no fileds"};
-struct record_description Error_Severity_ERROR__desc = {
+ADD_METARECORD_DEFINTIONS const char* Error_Severity_ERROR__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Error_Severity_ERROR__desc = {
   "Error_Severity_ERROR",
   "Error.Severity.ERROR",
   Error_Severity_ERROR__desc__fields
@@ -21,8 +21,8 @@ static void *Error__ERROR = MMC_REFSTRUCTLIT(Error__ERROR__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Error_Severity_WARNING__desc_added
 #define Error_Severity_WARNING__desc_added
-const char* Error_Severity_WARNING__desc__fields[1] = {"no fileds"};
-struct record_description Error_Severity_WARNING__desc = {
+ADD_METARECORD_DEFINTIONS const char* Error_Severity_WARNING__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Error_Severity_WARNING__desc = {
   "Error_Severity_WARNING",
   "Error.Severity.WARNING",
   Error_Severity_WARNING__desc__fields
@@ -37,8 +37,8 @@ static void *Error__WARNING = MMC_REFSTRUCTLIT(Error__WARNING__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Error_Severity_NOTIFICATION__desc_added
 #define Error_Severity_NOTIFICATION__desc_added
-const char* Error_Severity_NOTIFICATION__desc__fields[1] = {"no fileds"};
-struct record_description Error_Severity_NOTIFICATION__desc = {
+ADD_METARECORD_DEFINTIONS const char* Error_Severity_NOTIFICATION__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Error_Severity_NOTIFICATION__desc = {
   "Error_Severity_NOTIFICATION",
   "Error.Severity.NOTIFICATION",
   Error_Severity_NOTIFICATION__desc__fields
@@ -53,8 +53,8 @@ static void *Error__NOTIFICATION = MMC_REFSTRUCTLIT(Error__NOTIFICATION__struct)
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Error_MessageType_SYNTAX__desc_added
 #define Error_MessageType_SYNTAX__desc_added
-const char* Error_MessageType_SYNTAX__desc__fields[1] = {"no fileds"};
-struct record_description Error_MessageType_SYNTAX__desc = {
+ADD_METARECORD_DEFINTIONS const char* Error_MessageType_SYNTAX__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Error_MessageType_SYNTAX__desc = {
   "Error_MessageType_SYNTAX",
   "Error.MessageType.SYNTAX",
   Error_MessageType_SYNTAX__desc__fields
@@ -69,8 +69,8 @@ static void *Error__SYNTAX = MMC_REFSTRUCTLIT(Error__SYNTAX__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Error_MessageType_GRAMMAR__desc_added
 #define Error_MessageType_GRAMMAR__desc_added
-const char* Error_MessageType_GRAMMAR__desc__fields[1] = {"no fileds"};
-struct record_description Error_MessageType_GRAMMAR__desc = {
+ADD_METARECORD_DEFINTIONS const char* Error_MessageType_GRAMMAR__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Error_MessageType_GRAMMAR__desc = {
   "Error_MessageType_GRAMMAR",
   "Error.MessageType.GRAMMAR",
   Error_MessageType_GRAMMAR__desc__fields
@@ -85,8 +85,8 @@ static void *Error__GRAMMAR = MMC_REFSTRUCTLIT(Error__GRAMMAR__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Error_MessageType_TRANSLATION__desc_added
 #define Error_MessageType_TRANSLATION__desc_added
-const char* Error_MessageType_TRANSLATION__desc__fields[1] = {"no fileds"};
-struct record_description Error_MessageType_TRANSLATION__desc = {
+ADD_METARECORD_DEFINTIONS const char* Error_MessageType_TRANSLATION__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Error_MessageType_TRANSLATION__desc = {
   "Error_MessageType_TRANSLATION",
   "Error.MessageType.TRANSLATION",
   Error_MessageType_TRANSLATION__desc__fields
@@ -101,8 +101,8 @@ static void *Error__TRANSLATION = MMC_REFSTRUCTLIT(Error__TRANSLATION__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Error_MessageType_SYMBOLIC__desc_added
 #define Error_MessageType_SYMBOLIC__desc_added
-const char* Error_MessageType_SYMBOLIC__desc__fields[1] = {"no fileds"};
-struct record_description Error_MessageType_SYMBOLIC__desc = {
+ADD_METARECORD_DEFINTIONS const char* Error_MessageType_SYMBOLIC__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Error_MessageType_SYMBOLIC__desc = {
   "Error_MessageType_SYMBOLIC",
   "Error.MessageType.SYMBOLIC",
   Error_MessageType_SYMBOLIC__desc__fields
@@ -117,8 +117,8 @@ static void *Error__SYMBOLIC = MMC_REFSTRUCTLIT(Error__SYMBOLIC__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Error_MessageType_SIMULATION__desc_added
 #define Error_MessageType_SIMULATION__desc_added
-const char* Error_MessageType_SIMULATION__desc__fields[1] = {"no fileds"};
-struct record_description Error_MessageType_SIMULATION__desc = {
+ADD_METARECORD_DEFINTIONS const char* Error_MessageType_SIMULATION__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Error_MessageType_SIMULATION__desc = {
   "Error_MessageType_SIMULATION",
   "Error.MessageType.SIMULATION",
   Error_MessageType_SIMULATION__desc__fields
@@ -133,8 +133,8 @@ static void *Error__SIMULATION = MMC_REFSTRUCTLIT(Error__SIMULATION__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Error_MessageType_SCRIPTING__desc_added
 #define Error_MessageType_SCRIPTING__desc_added
-const char* Error_MessageType_SCRIPTING__desc__fields[1] = {"no fileds"};
-struct record_description Error_MessageType_SCRIPTING__desc = {
+ADD_METARECORD_DEFINTIONS const char* Error_MessageType_SCRIPTING__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Error_MessageType_SCRIPTING__desc = {
   "Error_MessageType_SCRIPTING",
   "Error.MessageType.SCRIPTING",
   Error_MessageType_SCRIPTING__desc__fields
@@ -149,8 +149,8 @@ static void *Error__SCRIPTING = MMC_REFSTRUCTLIT(Error__SCRIPTING__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Error_Message_MESSAGE__desc_added
 #define Error_Message_MESSAGE__desc_added
-const char* Error_Message_MESSAGE__desc__fields[4] = {"id","ty","severity","message"};
-struct record_description Error_Message_MESSAGE__desc = {
+ADD_METARECORD_DEFINTIONS const char* Error_Message_MESSAGE__desc__fields[4] = {"id","ty","severity","message"};
+ADD_METARECORD_DEFINTIONS struct record_description Error_Message_MESSAGE__desc = {
   "Error_Message_MESSAGE",
   "Error.Message.MESSAGE",
   Error_Message_MESSAGE__desc__fields
@@ -164,8 +164,8 @@ extern struct record_description Error_Message_MESSAGE__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Error_TotalMessage_TOTALMESSAGE__desc_added
 #define Error_TotalMessage_TOTALMESSAGE__desc_added
-const char* Error_TotalMessage_TOTALMESSAGE__desc__fields[2] = {"msg","info"};
-struct record_description Error_TotalMessage_TOTALMESSAGE__desc = {
+ADD_METARECORD_DEFINTIONS const char* Error_TotalMessage_TOTALMESSAGE__desc__fields[2] = {"msg","info"};
+ADD_METARECORD_DEFINTIONS struct record_description Error_TotalMessage_TOTALMESSAGE__desc = {
   "Error_TotalMessage_TOTALMESSAGE",
   "Error.TotalMessage.TOTALMESSAGE",
   Error_TotalMessage_TOTALMESSAGE__desc__fields
@@ -179,8 +179,8 @@ extern struct record_description Error_TotalMessage_TOTALMESSAGE__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_Value_INTEGER__desc_added
 #define Values_Value_INTEGER__desc_added
-const char* Values_Value_INTEGER__desc__fields[1] = {"integer"};
-struct record_description Values_Value_INTEGER__desc = {
+ADD_METARECORD_DEFINTIONS const char* Values_Value_INTEGER__desc__fields[1] = {"integer"};
+ADD_METARECORD_DEFINTIONS struct record_description Values_Value_INTEGER__desc = {
   "Values_Value_INTEGER",
   "Values.Value.INTEGER",
   Values_Value_INTEGER__desc__fields
@@ -194,8 +194,8 @@ extern struct record_description Values_Value_INTEGER__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_Value_REAL__desc_added
 #define Values_Value_REAL__desc_added
-const char* Values_Value_REAL__desc__fields[1] = {"real"};
-struct record_description Values_Value_REAL__desc = {
+ADD_METARECORD_DEFINTIONS const char* Values_Value_REAL__desc__fields[1] = {"real"};
+ADD_METARECORD_DEFINTIONS struct record_description Values_Value_REAL__desc = {
   "Values_Value_REAL",
   "Values.Value.REAL",
   Values_Value_REAL__desc__fields
@@ -209,8 +209,8 @@ extern struct record_description Values_Value_REAL__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_Value_STRING__desc_added
 #define Values_Value_STRING__desc_added
-const char* Values_Value_STRING__desc__fields[1] = {"string"};
-struct record_description Values_Value_STRING__desc = {
+ADD_METARECORD_DEFINTIONS const char* Values_Value_STRING__desc__fields[1] = {"string"};
+ADD_METARECORD_DEFINTIONS struct record_description Values_Value_STRING__desc = {
   "Values_Value_STRING",
   "Values.Value.STRING",
   Values_Value_STRING__desc__fields
@@ -224,8 +224,8 @@ extern struct record_description Values_Value_STRING__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_Value_BOOL__desc_added
 #define Values_Value_BOOL__desc_added
-const char* Values_Value_BOOL__desc__fields[1] = {"boolean"};
-struct record_description Values_Value_BOOL__desc = {
+ADD_METARECORD_DEFINTIONS const char* Values_Value_BOOL__desc__fields[1] = {"boolean"};
+ADD_METARECORD_DEFINTIONS struct record_description Values_Value_BOOL__desc = {
   "Values_Value_BOOL",
   "Values.Value.BOOL",
   Values_Value_BOOL__desc__fields
@@ -239,8 +239,8 @@ extern struct record_description Values_Value_BOOL__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_Value_ENUM__LITERAL__desc_added
 #define Values_Value_ENUM__LITERAL__desc_added
-const char* Values_Value_ENUM__LITERAL__desc__fields[2] = {"name","index"};
-struct record_description Values_Value_ENUM__LITERAL__desc = {
+ADD_METARECORD_DEFINTIONS const char* Values_Value_ENUM__LITERAL__desc__fields[2] = {"name","index"};
+ADD_METARECORD_DEFINTIONS struct record_description Values_Value_ENUM__LITERAL__desc = {
   "Values_Value_ENUM__LITERAL",
   "Values.Value.ENUM_LITERAL",
   Values_Value_ENUM__LITERAL__desc__fields
@@ -254,8 +254,8 @@ extern struct record_description Values_Value_ENUM__LITERAL__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_Value_ARRAY__desc_added
 #define Values_Value_ARRAY__desc_added
-const char* Values_Value_ARRAY__desc__fields[2] = {"valueLst","dimLst"};
-struct record_description Values_Value_ARRAY__desc = {
+ADD_METARECORD_DEFINTIONS const char* Values_Value_ARRAY__desc__fields[2] = {"valueLst","dimLst"};
+ADD_METARECORD_DEFINTIONS struct record_description Values_Value_ARRAY__desc = {
   "Values_Value_ARRAY",
   "Values.Value.ARRAY",
   Values_Value_ARRAY__desc__fields
@@ -269,8 +269,8 @@ extern struct record_description Values_Value_ARRAY__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_Value_LIST__desc_added
 #define Values_Value_LIST__desc_added
-const char* Values_Value_LIST__desc__fields[1] = {"valueLst"};
-struct record_description Values_Value_LIST__desc = {
+ADD_METARECORD_DEFINTIONS const char* Values_Value_LIST__desc__fields[1] = {"valueLst"};
+ADD_METARECORD_DEFINTIONS struct record_description Values_Value_LIST__desc = {
   "Values_Value_LIST",
   "Values.Value.LIST",
   Values_Value_LIST__desc__fields
@@ -284,8 +284,8 @@ extern struct record_description Values_Value_LIST__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_Value_META__ARRAY__desc_added
 #define Values_Value_META__ARRAY__desc_added
-const char* Values_Value_META__ARRAY__desc__fields[1] = {"valueLst"};
-struct record_description Values_Value_META__ARRAY__desc = {
+ADD_METARECORD_DEFINTIONS const char* Values_Value_META__ARRAY__desc__fields[1] = {"valueLst"};
+ADD_METARECORD_DEFINTIONS struct record_description Values_Value_META__ARRAY__desc = {
   "Values_Value_META__ARRAY",
   "Values.Value.META_ARRAY",
   Values_Value_META__ARRAY__desc__fields
@@ -299,8 +299,8 @@ extern struct record_description Values_Value_META__ARRAY__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_Value_TUPLE__desc_added
 #define Values_Value_TUPLE__desc_added
-const char* Values_Value_TUPLE__desc__fields[1] = {"valueLst"};
-struct record_description Values_Value_TUPLE__desc = {
+ADD_METARECORD_DEFINTIONS const char* Values_Value_TUPLE__desc__fields[1] = {"valueLst"};
+ADD_METARECORD_DEFINTIONS struct record_description Values_Value_TUPLE__desc = {
   "Values_Value_TUPLE",
   "Values.Value.TUPLE",
   Values_Value_TUPLE__desc__fields
@@ -314,8 +314,8 @@ extern struct record_description Values_Value_TUPLE__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_Value_META__TUPLE__desc_added
 #define Values_Value_META__TUPLE__desc_added
-const char* Values_Value_META__TUPLE__desc__fields[1] = {"valueLst"};
-struct record_description Values_Value_META__TUPLE__desc = {
+ADD_METARECORD_DEFINTIONS const char* Values_Value_META__TUPLE__desc__fields[1] = {"valueLst"};
+ADD_METARECORD_DEFINTIONS struct record_description Values_Value_META__TUPLE__desc = {
   "Values_Value_META__TUPLE",
   "Values.Value.META_TUPLE",
   Values_Value_META__TUPLE__desc__fields
@@ -329,8 +329,8 @@ extern struct record_description Values_Value_META__TUPLE__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_Value_RECORD__desc_added
 #define Values_Value_RECORD__desc_added
-const char* Values_Value_RECORD__desc__fields[4] = {"record_","orderd","comp","index"};
-struct record_description Values_Value_RECORD__desc = {
+ADD_METARECORD_DEFINTIONS const char* Values_Value_RECORD__desc__fields[4] = {"record_","orderd","comp","index"};
+ADD_METARECORD_DEFINTIONS struct record_description Values_Value_RECORD__desc = {
   "Values_Value_RECORD",
   "Values.Value.RECORD",
   Values_Value_RECORD__desc__fields
@@ -344,8 +344,8 @@ extern struct record_description Values_Value_RECORD__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_Value_OPTION__desc_added
 #define Values_Value_OPTION__desc_added
-const char* Values_Value_OPTION__desc__fields[1] = {"some"};
-struct record_description Values_Value_OPTION__desc = {
+ADD_METARECORD_DEFINTIONS const char* Values_Value_OPTION__desc__fields[1] = {"some"};
+ADD_METARECORD_DEFINTIONS struct record_description Values_Value_OPTION__desc = {
   "Values_Value_OPTION",
   "Values.Value.OPTION",
   Values_Value_OPTION__desc__fields
@@ -359,8 +359,8 @@ extern struct record_description Values_Value_OPTION__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_Value_CODE__desc_added
 #define Values_Value_CODE__desc_added
-const char* Values_Value_CODE__desc__fields[1] = {"A"};
-struct record_description Values_Value_CODE__desc = {
+ADD_METARECORD_DEFINTIONS const char* Values_Value_CODE__desc__fields[1] = {"A"};
+ADD_METARECORD_DEFINTIONS struct record_description Values_Value_CODE__desc = {
   "Values_Value_CODE",
   "Values.Value.CODE",
   Values_Value_CODE__desc__fields
@@ -374,8 +374,8 @@ extern struct record_description Values_Value_CODE__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_Value_NORETCALL__desc_added
 #define Values_Value_NORETCALL__desc_added
-const char* Values_Value_NORETCALL__desc__fields[1] = {"no fileds"};
-struct record_description Values_Value_NORETCALL__desc = {
+ADD_METARECORD_DEFINTIONS const char* Values_Value_NORETCALL__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Values_Value_NORETCALL__desc = {
   "Values_Value_NORETCALL",
   "Values.Value.NORETCALL",
   Values_Value_NORETCALL__desc__fields
@@ -390,8 +390,8 @@ static void *Values__NORETCALL = MMC_REFSTRUCTLIT(Values__NORETCALL__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_Value_META__BOX__desc_added
 #define Values_Value_META__BOX__desc_added
-const char* Values_Value_META__BOX__desc__fields[1] = {"value"};
-struct record_description Values_Value_META__BOX__desc = {
+ADD_METARECORD_DEFINTIONS const char* Values_Value_META__BOX__desc__fields[1] = {"value"};
+ADD_METARECORD_DEFINTIONS struct record_description Values_Value_META__BOX__desc = {
   "Values_Value_META__BOX",
   "Values.Value.META_BOX",
   Values_Value_META__BOX__desc__fields
@@ -405,8 +405,8 @@ extern struct record_description Values_Value_META__BOX__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_Value_META__FAIL__desc_added
 #define Values_Value_META__FAIL__desc_added
-const char* Values_Value_META__FAIL__desc__fields[1] = {"no fileds"};
-struct record_description Values_Value_META__FAIL__desc = {
+ADD_METARECORD_DEFINTIONS const char* Values_Value_META__FAIL__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Values_Value_META__FAIL__desc = {
   "Values_Value_META__FAIL",
   "Values.Value.META_FAIL",
   Values_Value_META__FAIL__desc__fields
@@ -421,8 +421,8 @@ static void *Values__META_5fFAIL = MMC_REFSTRUCTLIT(Values__META_5fFAIL__struct)
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_Value_EMPTY__desc_added
 #define Values_Value_EMPTY__desc_added
-const char* Values_Value_EMPTY__desc__fields[4] = {"scope","name","ty","tyStr"};
-struct record_description Values_Value_EMPTY__desc = {
+ADD_METARECORD_DEFINTIONS const char* Values_Value_EMPTY__desc__fields[4] = {"scope","name","ty","tyStr"};
+ADD_METARECORD_DEFINTIONS struct record_description Values_Value_EMPTY__desc = {
   "Values_Value_EMPTY",
   "Values.Value.EMPTY",
   Values_Value_EMPTY__desc__fields
@@ -436,8 +436,8 @@ extern struct record_description Values_Value_EMPTY__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_IntRealOp_MULOP__desc_added
 #define Values_IntRealOp_MULOP__desc_added
-const char* Values_IntRealOp_MULOP__desc__fields[1] = {"no fileds"};
-struct record_description Values_IntRealOp_MULOP__desc = {
+ADD_METARECORD_DEFINTIONS const char* Values_IntRealOp_MULOP__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Values_IntRealOp_MULOP__desc = {
   "Values_IntRealOp_MULOP",
   "Values.IntRealOp.MULOP",
   Values_IntRealOp_MULOP__desc__fields
@@ -452,8 +452,8 @@ static void *Values__MULOP = MMC_REFSTRUCTLIT(Values__MULOP__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_IntRealOp_DIVOP__desc_added
 #define Values_IntRealOp_DIVOP__desc_added
-const char* Values_IntRealOp_DIVOP__desc__fields[1] = {"no fileds"};
-struct record_description Values_IntRealOp_DIVOP__desc = {
+ADD_METARECORD_DEFINTIONS const char* Values_IntRealOp_DIVOP__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Values_IntRealOp_DIVOP__desc = {
   "Values_IntRealOp_DIVOP",
   "Values.IntRealOp.DIVOP",
   Values_IntRealOp_DIVOP__desc__fields
@@ -468,8 +468,8 @@ static void *Values__DIVOP = MMC_REFSTRUCTLIT(Values__DIVOP__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_IntRealOp_ADDOP__desc_added
 #define Values_IntRealOp_ADDOP__desc_added
-const char* Values_IntRealOp_ADDOP__desc__fields[1] = {"no fileds"};
-struct record_description Values_IntRealOp_ADDOP__desc = {
+ADD_METARECORD_DEFINTIONS const char* Values_IntRealOp_ADDOP__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Values_IntRealOp_ADDOP__desc = {
   "Values_IntRealOp_ADDOP",
   "Values.IntRealOp.ADDOP",
   Values_IntRealOp_ADDOP__desc__fields
@@ -484,8 +484,8 @@ static void *Values__ADDOP = MMC_REFSTRUCTLIT(Values__ADDOP__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_IntRealOp_SUBOP__desc_added
 #define Values_IntRealOp_SUBOP__desc_added
-const char* Values_IntRealOp_SUBOP__desc__fields[1] = {"no fileds"};
-struct record_description Values_IntRealOp_SUBOP__desc = {
+ADD_METARECORD_DEFINTIONS const char* Values_IntRealOp_SUBOP__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Values_IntRealOp_SUBOP__desc = {
   "Values_IntRealOp_SUBOP",
   "Values.IntRealOp.SUBOP",
   Values_IntRealOp_SUBOP__desc__fields
@@ -500,8 +500,8 @@ static void *Values__SUBOP = MMC_REFSTRUCTLIT(Values__SUBOP__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_IntRealOp_POWOP__desc_added
 #define Values_IntRealOp_POWOP__desc_added
-const char* Values_IntRealOp_POWOP__desc__fields[1] = {"no fileds"};
-struct record_description Values_IntRealOp_POWOP__desc = {
+ADD_METARECORD_DEFINTIONS const char* Values_IntRealOp_POWOP__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Values_IntRealOp_POWOP__desc = {
   "Values_IntRealOp_POWOP",
   "Values.IntRealOp.POWOP",
   Values_IntRealOp_POWOP__desc__fields
@@ -516,8 +516,8 @@ static void *Values__POWOP = MMC_REFSTRUCTLIT(Values__POWOP__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Values_IntRealOp_LESSEQOP__desc_added
 #define Values_IntRealOp_LESSEQOP__desc_added
-const char* Values_IntRealOp_LESSEQOP__desc__fields[1] = {"no fileds"};
-struct record_description Values_IntRealOp_LESSEQOP__desc = {
+ADD_METARECORD_DEFINTIONS const char* Values_IntRealOp_LESSEQOP__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Values_IntRealOp_LESSEQOP__desc = {
   "Values_IntRealOp_LESSEQOP",
   "Values.IntRealOp.LESSEQOP",
   Values_IntRealOp_LESSEQOP__desc__fields
@@ -532,8 +532,8 @@ static void *Values__LESSEQOP = MMC_REFSTRUCTLIT(Values__LESSEQOP__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Interactive_CompiledCFunction_CFunction__desc_added
 #define Interactive_CompiledCFunction_CFunction__desc_added
-const char* Interactive_CompiledCFunction_CFunction__desc__fields[5] = {"path","retType","funcHandle","buildTime","loadedFromFile"};
-struct record_description Interactive_CompiledCFunction_CFunction__desc = {
+ADD_METARECORD_DEFINTIONS const char* Interactive_CompiledCFunction_CFunction__desc__fields[5] = {"path","retType","funcHandle","buildTime","loadedFromFile"};
+ADD_METARECORD_DEFINTIONS struct record_description Interactive_CompiledCFunction_CFunction__desc = {
   "Interactive_CompiledCFunction_CFunction",
   "Interactive.CompiledCFunction.CFunction",
   Interactive_CompiledCFunction_CFunction__desc__fields
@@ -547,8 +547,8 @@ extern struct record_description Interactive_CompiledCFunction_CFunction__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Interactive_Statement_IALG__desc_added
 #define Interactive_Statement_IALG__desc_added
-const char* Interactive_Statement_IALG__desc__fields[1] = {"algItem"};
-struct record_description Interactive_Statement_IALG__desc = {
+ADD_METARECORD_DEFINTIONS const char* Interactive_Statement_IALG__desc__fields[1] = {"algItem"};
+ADD_METARECORD_DEFINTIONS struct record_description Interactive_Statement_IALG__desc = {
   "Interactive_Statement_IALG",
   "Interactive.Statement.IALG",
   Interactive_Statement_IALG__desc__fields
@@ -562,8 +562,8 @@ extern struct record_description Interactive_Statement_IALG__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Interactive_Statement_IEXP__desc_added
 #define Interactive_Statement_IEXP__desc_added
-const char* Interactive_Statement_IEXP__desc__fields[1] = {"exp"};
-struct record_description Interactive_Statement_IEXP__desc = {
+ADD_METARECORD_DEFINTIONS const char* Interactive_Statement_IEXP__desc__fields[1] = {"exp"};
+ADD_METARECORD_DEFINTIONS struct record_description Interactive_Statement_IEXP__desc = {
   "Interactive_Statement_IEXP",
   "Interactive.Statement.IEXP",
   Interactive_Statement_IEXP__desc__fields
@@ -577,8 +577,8 @@ extern struct record_description Interactive_Statement_IEXP__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Interactive_Statements_ISTMTS__desc_added
 #define Interactive_Statements_ISTMTS__desc_added
-const char* Interactive_Statements_ISTMTS__desc__fields[2] = {"interactiveStmtLst","semicolon"};
-struct record_description Interactive_Statements_ISTMTS__desc = {
+ADD_METARECORD_DEFINTIONS const char* Interactive_Statements_ISTMTS__desc__fields[2] = {"interactiveStmtLst","semicolon"};
+ADD_METARECORD_DEFINTIONS struct record_description Interactive_Statements_ISTMTS__desc = {
   "Interactive_Statements_ISTMTS",
   "Interactive.Statements.ISTMTS",
   Interactive_Statements_ISTMTS__desc__fields
@@ -592,8 +592,8 @@ extern struct record_description Interactive_Statements_ISTMTS__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Interactive_InstantiatedClass_INSTCLASS__desc_added
 #define Interactive_InstantiatedClass_INSTCLASS__desc_added
-const char* Interactive_InstantiatedClass_INSTCLASS__desc__fields[3] = {"qualName","daeElementLst","env"};
-struct record_description Interactive_InstantiatedClass_INSTCLASS__desc = {
+ADD_METARECORD_DEFINTIONS const char* Interactive_InstantiatedClass_INSTCLASS__desc__fields[3] = {"qualName","daeElementLst","env"};
+ADD_METARECORD_DEFINTIONS struct record_description Interactive_InstantiatedClass_INSTCLASS__desc = {
   "Interactive_InstantiatedClass_INSTCLASS",
   "Interactive.InstantiatedClass.INSTCLASS",
   Interactive_InstantiatedClass_INSTCLASS__desc__fields
@@ -607,8 +607,8 @@ extern struct record_description Interactive_InstantiatedClass_INSTCLASS__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Interactive_Variable_IVAR__desc_added
 #define Interactive_Variable_IVAR__desc_added
-const char* Interactive_Variable_IVAR__desc__fields[3] = {"varIdent","value","type_"};
-struct record_description Interactive_Variable_IVAR__desc = {
+ADD_METARECORD_DEFINTIONS const char* Interactive_Variable_IVAR__desc__fields[3] = {"varIdent","value","type_"};
+ADD_METARECORD_DEFINTIONS struct record_description Interactive_Variable_IVAR__desc = {
   "Interactive_Variable_IVAR",
   "Interactive.Variable.IVAR",
   Interactive_Variable_IVAR__desc__fields
@@ -622,8 +622,8 @@ extern struct record_description Interactive_Variable_IVAR__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Interactive_LoadedFile_FILE__desc_added
 #define Interactive_LoadedFile_FILE__desc_added
-const char* Interactive_LoadedFile_FILE__desc__fields[3] = {"fileName","loadTime","classNamesQualified"};
-struct record_description Interactive_LoadedFile_FILE__desc = {
+ADD_METARECORD_DEFINTIONS const char* Interactive_LoadedFile_FILE__desc__fields[3] = {"fileName","loadTime","classNamesQualified"};
+ADD_METARECORD_DEFINTIONS struct record_description Interactive_LoadedFile_FILE__desc = {
   "Interactive_LoadedFile_FILE",
   "Interactive.LoadedFile.FILE",
   Interactive_LoadedFile_FILE__desc__fields
@@ -637,8 +637,8 @@ extern struct record_description Interactive_LoadedFile_FILE__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Interactive_SymbolTable_SYMBOLTABLE__desc_added
 #define Interactive_SymbolTable_SYMBOLTABLE__desc_added
-const char* Interactive_SymbolTable_SYMBOLTABLE__desc__fields[7] = {"ast","depends","explodedAst","instClsLst","lstVarVal","compiledFunctions","loadedFiles"};
-struct record_description Interactive_SymbolTable_SYMBOLTABLE__desc = {
+ADD_METARECORD_DEFINTIONS const char* Interactive_SymbolTable_SYMBOLTABLE__desc__fields[7] = {"ast","depends","explodedAst","instClsLst","lstVarVal","compiledFunctions","loadedFiles"};
+ADD_METARECORD_DEFINTIONS struct record_description Interactive_SymbolTable_SYMBOLTABLE__desc = {
   "Interactive_SymbolTable_SYMBOLTABLE",
   "Interactive.SymbolTable.SYMBOLTABLE",
   Interactive_SymbolTable_SYMBOLTABLE__desc__fields
@@ -652,8 +652,8 @@ extern struct record_description Interactive_SymbolTable_SYMBOLTABLE__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Interactive_Component_COMPONENTITEM__desc_added
 #define Interactive_Component_COMPONENTITEM__desc_added
-const char* Interactive_Component_COMPONENTITEM__desc__fields[3] = {"the1","the2","the3"};
-struct record_description Interactive_Component_COMPONENTITEM__desc = {
+ADD_METARECORD_DEFINTIONS const char* Interactive_Component_COMPONENTITEM__desc__fields[3] = {"the1","the2","the3"};
+ADD_METARECORD_DEFINTIONS struct record_description Interactive_Component_COMPONENTITEM__desc = {
   "Interactive_Component_COMPONENTITEM",
   "Interactive.Component.COMPONENTITEM",
   Interactive_Component_COMPONENTITEM__desc__fields
@@ -667,8 +667,8 @@ extern struct record_description Interactive_Component_COMPONENTITEM__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Interactive_Component_EXTENDSITEM__desc_added
 #define Interactive_Component_EXTENDSITEM__desc_added
-const char* Interactive_Component_EXTENDSITEM__desc__fields[2] = {"the1","the2"};
-struct record_description Interactive_Component_EXTENDSITEM__desc = {
+ADD_METARECORD_DEFINTIONS const char* Interactive_Component_EXTENDSITEM__desc__fields[2] = {"the1","the2"};
+ADD_METARECORD_DEFINTIONS struct record_description Interactive_Component_EXTENDSITEM__desc = {
   "Interactive_Component_EXTENDSITEM",
   "Interactive.Component.EXTENDSITEM",
   Interactive_Component_EXTENDSITEM__desc__fields
@@ -682,8 +682,8 @@ extern struct record_description Interactive_Component_EXTENDSITEM__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Interactive_Components_COMPONENTS__desc_added
 #define Interactive_Components_COMPONENTS__desc_added
-const char* Interactive_Components_COMPONENTS__desc__fields[2] = {"componentLst","the"};
-struct record_description Interactive_Components_COMPONENTS__desc = {
+ADD_METARECORD_DEFINTIONS const char* Interactive_Components_COMPONENTS__desc__fields[2] = {"componentLst","the"};
+ADD_METARECORD_DEFINTIONS struct record_description Interactive_Components_COMPONENTS__desc = {
   "Interactive_Components_COMPONENTS",
   "Interactive.Components.COMPONENTS",
   Interactive_Components_COMPONENTS__desc__fields
@@ -697,8 +697,8 @@ extern struct record_description Interactive_Components_COMPONENTS__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Interactive_ComponentReplacement_COMPONENTREPLACEMENT__desc_added
 #define Interactive_ComponentReplacement_COMPONENTREPLACEMENT__desc_added
-const char* Interactive_ComponentReplacement_COMPONENTREPLACEMENT__desc__fields[3] = {"which1","the2","the3"};
-struct record_description Interactive_ComponentReplacement_COMPONENTREPLACEMENT__desc = {
+ADD_METARECORD_DEFINTIONS const char* Interactive_ComponentReplacement_COMPONENTREPLACEMENT__desc__fields[3] = {"which1","the2","the3"};
+ADD_METARECORD_DEFINTIONS struct record_description Interactive_ComponentReplacement_COMPONENTREPLACEMENT__desc = {
   "Interactive_ComponentReplacement_COMPONENTREPLACEMENT",
   "Interactive.ComponentReplacement.COMPONENTREPLACEMENT",
   Interactive_ComponentReplacement_COMPONENTREPLACEMENT__desc__fields
@@ -712,8 +712,8 @@ extern struct record_description Interactive_ComponentReplacement_COMPONENTREPLA
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Interactive_ComponentReplacementRules_COMPONENTREPLACEMENTRULES__desc_added
 #define Interactive_ComponentReplacementRules_COMPONENTREPLACEMENTRULES__desc_added
-const char* Interactive_ComponentReplacementRules_COMPONENTREPLACEMENTRULES__desc__fields[2] = {"componentReplacementLst","the"};
-struct record_description Interactive_ComponentReplacementRules_COMPONENTREPLACEMENTRULES__desc = {
+ADD_METARECORD_DEFINTIONS const char* Interactive_ComponentReplacementRules_COMPONENTREPLACEMENTRULES__desc__fields[2] = {"componentReplacementLst","the"};
+ADD_METARECORD_DEFINTIONS struct record_description Interactive_ComponentReplacementRules_COMPONENTREPLACEMENTRULES__desc = {
   "Interactive_ComponentReplacementRules_COMPONENTREPLACEMENTRULES",
   "Interactive.ComponentReplacementRules.COMPONENTREPLACEMENTRULES",
   Interactive_ComponentReplacementRules_COMPONENTREPLACEMENTRULES__desc__fields
@@ -727,8 +727,8 @@ extern struct record_description Interactive_ComponentReplacementRules_COMPONENT
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Interactive_AnnotationType_ICON__ANNOTATION__desc_added
 #define Interactive_AnnotationType_ICON__ANNOTATION__desc_added
-const char* Interactive_AnnotationType_ICON__ANNOTATION__desc__fields[1] = {"no fileds"};
-struct record_description Interactive_AnnotationType_ICON__ANNOTATION__desc = {
+ADD_METARECORD_DEFINTIONS const char* Interactive_AnnotationType_ICON__ANNOTATION__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Interactive_AnnotationType_ICON__ANNOTATION__desc = {
   "Interactive_AnnotationType_ICON__ANNOTATION",
   "Interactive.AnnotationType.ICON_ANNOTATION",
   Interactive_AnnotationType_ICON__ANNOTATION__desc__fields
@@ -743,8 +743,8 @@ static void *Interactive__ICON_5fANNOTATION = MMC_REFSTRUCTLIT(Interactive__ICON
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc_added
 #define Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc_added
-const char* Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc__fields[1] = {"no fileds"};
-struct record_description Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc = {
+ADD_METARECORD_DEFINTIONS const char* Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc = {
   "Interactive_AnnotationType_DIAGRAM__ANNOTATION",
   "Interactive.AnnotationType.DIAGRAM_ANNOTATION",
   Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc__fields
@@ -759,8 +759,8 @@ static void *Interactive__DIAGRAM_5fANNOTATION = MMC_REFSTRUCTLIT(Interactive__D
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ForIterator_ITERATOR__desc_added
 #define Absyn_ForIterator_ITERATOR__desc_added
-const char* Absyn_ForIterator_ITERATOR__desc__fields[3] = {"name","guardExp","range"};
-struct record_description Absyn_ForIterator_ITERATOR__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ForIterator_ITERATOR__desc__fields[3] = {"name","guardExp","range"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ForIterator_ITERATOR__desc = {
   "Absyn_ForIterator_ITERATOR",
   "Absyn.ForIterator.ITERATOR",
   Absyn_ForIterator_ITERATOR__desc__fields
@@ -774,8 +774,8 @@ extern struct record_description Absyn_ForIterator_ITERATOR__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Program_PROGRAM__desc_added
 #define Absyn_Program_PROGRAM__desc_added
-const char* Absyn_Program_PROGRAM__desc__fields[3] = {"classes","within_","globalBuildTimes"};
-struct record_description Absyn_Program_PROGRAM__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Program_PROGRAM__desc__fields[3] = {"classes","within_","globalBuildTimes"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Program_PROGRAM__desc = {
   "Absyn_Program_PROGRAM",
   "Absyn.Program.PROGRAM",
   Absyn_Program_PROGRAM__desc__fields
@@ -789,8 +789,8 @@ extern struct record_description Absyn_Program_PROGRAM__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Within_WITHIN__desc_added
 #define Absyn_Within_WITHIN__desc_added
-const char* Absyn_Within_WITHIN__desc__fields[1] = {"path"};
-struct record_description Absyn_Within_WITHIN__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Within_WITHIN__desc__fields[1] = {"path"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Within_WITHIN__desc = {
   "Absyn_Within_WITHIN",
   "Absyn.Within.WITHIN",
   Absyn_Within_WITHIN__desc__fields
@@ -804,8 +804,8 @@ extern struct record_description Absyn_Within_WITHIN__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Within_TOP__desc_added
 #define Absyn_Within_TOP__desc_added
-const char* Absyn_Within_TOP__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Within_TOP__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Within_TOP__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Within_TOP__desc = {
   "Absyn_Within_TOP",
   "Absyn.Within.TOP",
   Absyn_Within_TOP__desc__fields
@@ -820,8 +820,8 @@ static void *Absyn__TOP = MMC_REFSTRUCTLIT(Absyn__TOP__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Info_INFO__desc_added
 #define Absyn_Info_INFO__desc_added
-const char* Absyn_Info_INFO__desc__fields[7] = {"fileName","isReadOnly","lineNumberStart","columnNumberStart","lineNumberEnd","columnNumberEnd","buildTimes"};
-struct record_description Absyn_Info_INFO__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Info_INFO__desc__fields[7] = {"fileName","isReadOnly","lineNumberStart","columnNumberStart","lineNumberEnd","columnNumberEnd","buildTimes"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Info_INFO__desc = {
   "Absyn_Info_INFO",
   "Absyn.Info.INFO",
   Absyn_Info_INFO__desc__fields
@@ -835,8 +835,8 @@ extern struct record_description Absyn_Info_INFO__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_TimeStamp_TIMESTAMP__desc_added
 #define Absyn_TimeStamp_TIMESTAMP__desc_added
-const char* Absyn_TimeStamp_TIMESTAMP__desc__fields[2] = {"lastBuildTime","lastEditTime"};
-struct record_description Absyn_TimeStamp_TIMESTAMP__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_TimeStamp_TIMESTAMP__desc__fields[2] = {"lastBuildTime","lastEditTime"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_TimeStamp_TIMESTAMP__desc = {
   "Absyn_TimeStamp_TIMESTAMP",
   "Absyn.TimeStamp.TIMESTAMP",
   Absyn_TimeStamp_TIMESTAMP__desc__fields
@@ -850,8 +850,8 @@ extern struct record_description Absyn_TimeStamp_TIMESTAMP__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Class_CLASS__desc_added
 #define Absyn_Class_CLASS__desc_added
-const char* Absyn_Class_CLASS__desc__fields[7] = {"name","partialPrefix","finalPrefix","encapsulatedPrefix","restriction","body","info"};
-struct record_description Absyn_Class_CLASS__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Class_CLASS__desc__fields[7] = {"name","partialPrefix","finalPrefix","encapsulatedPrefix","restriction","body","info"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Class_CLASS__desc = {
   "Absyn_Class_CLASS",
   "Absyn.Class.CLASS",
   Absyn_Class_CLASS__desc__fields
@@ -865,8 +865,8 @@ extern struct record_description Absyn_Class_CLASS__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ClassDef_PARTS__desc_added
 #define Absyn_ClassDef_PARTS__desc_added
-const char* Absyn_ClassDef_PARTS__desc__fields[3] = {"typeVars","classParts","comment"};
-struct record_description Absyn_ClassDef_PARTS__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ClassDef_PARTS__desc__fields[3] = {"typeVars","classParts","comment"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ClassDef_PARTS__desc = {
   "Absyn_ClassDef_PARTS",
   "Absyn.ClassDef.PARTS",
   Absyn_ClassDef_PARTS__desc__fields
@@ -880,8 +880,8 @@ extern struct record_description Absyn_ClassDef_PARTS__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ClassDef_DERIVED__desc_added
 #define Absyn_ClassDef_DERIVED__desc_added
-const char* Absyn_ClassDef_DERIVED__desc__fields[4] = {"typeSpec","attributes","arguments","comment"};
-struct record_description Absyn_ClassDef_DERIVED__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ClassDef_DERIVED__desc__fields[4] = {"typeSpec","attributes","arguments","comment"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ClassDef_DERIVED__desc = {
   "Absyn_ClassDef_DERIVED",
   "Absyn.ClassDef.DERIVED",
   Absyn_ClassDef_DERIVED__desc__fields
@@ -895,8 +895,8 @@ extern struct record_description Absyn_ClassDef_DERIVED__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ClassDef_ENUMERATION__desc_added
 #define Absyn_ClassDef_ENUMERATION__desc_added
-const char* Absyn_ClassDef_ENUMERATION__desc__fields[2] = {"enumLiterals","comment"};
-struct record_description Absyn_ClassDef_ENUMERATION__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ClassDef_ENUMERATION__desc__fields[2] = {"enumLiterals","comment"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ClassDef_ENUMERATION__desc = {
   "Absyn_ClassDef_ENUMERATION",
   "Absyn.ClassDef.ENUMERATION",
   Absyn_ClassDef_ENUMERATION__desc__fields
@@ -910,8 +910,8 @@ extern struct record_description Absyn_ClassDef_ENUMERATION__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ClassDef_OVERLOAD__desc_added
 #define Absyn_ClassDef_OVERLOAD__desc_added
-const char* Absyn_ClassDef_OVERLOAD__desc__fields[2] = {"functionNames","comment"};
-struct record_description Absyn_ClassDef_OVERLOAD__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ClassDef_OVERLOAD__desc__fields[2] = {"functionNames","comment"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ClassDef_OVERLOAD__desc = {
   "Absyn_ClassDef_OVERLOAD",
   "Absyn.ClassDef.OVERLOAD",
   Absyn_ClassDef_OVERLOAD__desc__fields
@@ -925,8 +925,8 @@ extern struct record_description Absyn_ClassDef_OVERLOAD__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ClassDef_CLASS__EXTENDS__desc_added
 #define Absyn_ClassDef_CLASS__EXTENDS__desc_added
-const char* Absyn_ClassDef_CLASS__EXTENDS__desc__fields[4] = {"baseClassName","modifications","comment","parts"};
-struct record_description Absyn_ClassDef_CLASS__EXTENDS__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ClassDef_CLASS__EXTENDS__desc__fields[4] = {"baseClassName","modifications","comment","parts"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ClassDef_CLASS__EXTENDS__desc = {
   "Absyn_ClassDef_CLASS__EXTENDS",
   "Absyn.ClassDef.CLASS_EXTENDS",
   Absyn_ClassDef_CLASS__EXTENDS__desc__fields
@@ -940,8 +940,8 @@ extern struct record_description Absyn_ClassDef_CLASS__EXTENDS__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ClassDef_PDER__desc_added
 #define Absyn_ClassDef_PDER__desc_added
-const char* Absyn_ClassDef_PDER__desc__fields[3] = {"functionName","vars","comment"};
-struct record_description Absyn_ClassDef_PDER__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ClassDef_PDER__desc__fields[3] = {"functionName","vars","comment"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ClassDef_PDER__desc = {
   "Absyn_ClassDef_PDER",
   "Absyn.ClassDef.PDER",
   Absyn_ClassDef_PDER__desc__fields
@@ -955,8 +955,8 @@ extern struct record_description Absyn_ClassDef_PDER__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_TypeSpec_TPATH__desc_added
 #define Absyn_TypeSpec_TPATH__desc_added
-const char* Absyn_TypeSpec_TPATH__desc__fields[2] = {"path","arrayDim"};
-struct record_description Absyn_TypeSpec_TPATH__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_TypeSpec_TPATH__desc__fields[2] = {"path","arrayDim"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_TypeSpec_TPATH__desc = {
   "Absyn_TypeSpec_TPATH",
   "Absyn.TypeSpec.TPATH",
   Absyn_TypeSpec_TPATH__desc__fields
@@ -970,8 +970,8 @@ extern struct record_description Absyn_TypeSpec_TPATH__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_TypeSpec_TCOMPLEX__desc_added
 #define Absyn_TypeSpec_TCOMPLEX__desc_added
-const char* Absyn_TypeSpec_TCOMPLEX__desc__fields[3] = {"path","typeSpecs","arrayDim"};
-struct record_description Absyn_TypeSpec_TCOMPLEX__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_TypeSpec_TCOMPLEX__desc__fields[3] = {"path","typeSpecs","arrayDim"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_TypeSpec_TCOMPLEX__desc = {
   "Absyn_TypeSpec_TCOMPLEX",
   "Absyn.TypeSpec.TCOMPLEX",
   Absyn_TypeSpec_TCOMPLEX__desc__fields
@@ -985,8 +985,8 @@ extern struct record_description Absyn_TypeSpec_TCOMPLEX__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_EnumDef_ENUMLITERALS__desc_added
 #define Absyn_EnumDef_ENUMLITERALS__desc_added
-const char* Absyn_EnumDef_ENUMLITERALS__desc__fields[1] = {"enumLiterals"};
-struct record_description Absyn_EnumDef_ENUMLITERALS__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_EnumDef_ENUMLITERALS__desc__fields[1] = {"enumLiterals"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_EnumDef_ENUMLITERALS__desc = {
   "Absyn_EnumDef_ENUMLITERALS",
   "Absyn.EnumDef.ENUMLITERALS",
   Absyn_EnumDef_ENUMLITERALS__desc__fields
@@ -1000,8 +1000,8 @@ extern struct record_description Absyn_EnumDef_ENUMLITERALS__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_EnumDef_ENUM__COLON__desc_added
 #define Absyn_EnumDef_ENUM__COLON__desc_added
-const char* Absyn_EnumDef_ENUM__COLON__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_EnumDef_ENUM__COLON__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_EnumDef_ENUM__COLON__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_EnumDef_ENUM__COLON__desc = {
   "Absyn_EnumDef_ENUM__COLON",
   "Absyn.EnumDef.ENUM_COLON",
   Absyn_EnumDef_ENUM__COLON__desc__fields
@@ -1016,8 +1016,8 @@ static void *Absyn__ENUM_5fCOLON = MMC_REFSTRUCTLIT(Absyn__ENUM_5fCOLON__struct)
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_EnumLiteral_ENUMLITERAL__desc_added
 #define Absyn_EnumLiteral_ENUMLITERAL__desc_added
-const char* Absyn_EnumLiteral_ENUMLITERAL__desc__fields[2] = {"literal","comment"};
-struct record_description Absyn_EnumLiteral_ENUMLITERAL__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_EnumLiteral_ENUMLITERAL__desc__fields[2] = {"literal","comment"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_EnumLiteral_ENUMLITERAL__desc = {
   "Absyn_EnumLiteral_ENUMLITERAL",
   "Absyn.EnumLiteral.ENUMLITERAL",
   Absyn_EnumLiteral_ENUMLITERAL__desc__fields
@@ -1031,8 +1031,8 @@ extern struct record_description Absyn_EnumLiteral_ENUMLITERAL__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ClassPart_PUBLIC__desc_added
 #define Absyn_ClassPart_PUBLIC__desc_added
-const char* Absyn_ClassPart_PUBLIC__desc__fields[1] = {"contents"};
-struct record_description Absyn_ClassPart_PUBLIC__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ClassPart_PUBLIC__desc__fields[1] = {"contents"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ClassPart_PUBLIC__desc = {
   "Absyn_ClassPart_PUBLIC",
   "Absyn.ClassPart.PUBLIC",
   Absyn_ClassPart_PUBLIC__desc__fields
@@ -1046,8 +1046,8 @@ extern struct record_description Absyn_ClassPart_PUBLIC__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ClassPart_PROTECTED__desc_added
 #define Absyn_ClassPart_PROTECTED__desc_added
-const char* Absyn_ClassPart_PROTECTED__desc__fields[1] = {"contents"};
-struct record_description Absyn_ClassPart_PROTECTED__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ClassPart_PROTECTED__desc__fields[1] = {"contents"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ClassPart_PROTECTED__desc = {
   "Absyn_ClassPart_PROTECTED",
   "Absyn.ClassPart.PROTECTED",
   Absyn_ClassPart_PROTECTED__desc__fields
@@ -1061,8 +1061,8 @@ extern struct record_description Absyn_ClassPart_PROTECTED__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ClassPart_CONSTRAINTS__desc_added
 #define Absyn_ClassPart_CONSTRAINTS__desc_added
-const char* Absyn_ClassPart_CONSTRAINTS__desc__fields[1] = {"contents"};
-struct record_description Absyn_ClassPart_CONSTRAINTS__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ClassPart_CONSTRAINTS__desc__fields[1] = {"contents"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ClassPart_CONSTRAINTS__desc = {
   "Absyn_ClassPart_CONSTRAINTS",
   "Absyn.ClassPart.CONSTRAINTS",
   Absyn_ClassPart_CONSTRAINTS__desc__fields
@@ -1076,8 +1076,8 @@ extern struct record_description Absyn_ClassPart_CONSTRAINTS__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ClassPart_EQUATIONS__desc_added
 #define Absyn_ClassPart_EQUATIONS__desc_added
-const char* Absyn_ClassPart_EQUATIONS__desc__fields[1] = {"contents"};
-struct record_description Absyn_ClassPart_EQUATIONS__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ClassPart_EQUATIONS__desc__fields[1] = {"contents"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ClassPart_EQUATIONS__desc = {
   "Absyn_ClassPart_EQUATIONS",
   "Absyn.ClassPart.EQUATIONS",
   Absyn_ClassPart_EQUATIONS__desc__fields
@@ -1091,8 +1091,8 @@ extern struct record_description Absyn_ClassPart_EQUATIONS__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ClassPart_INITIALEQUATIONS__desc_added
 #define Absyn_ClassPart_INITIALEQUATIONS__desc_added
-const char* Absyn_ClassPart_INITIALEQUATIONS__desc__fields[1] = {"contents"};
-struct record_description Absyn_ClassPart_INITIALEQUATIONS__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ClassPart_INITIALEQUATIONS__desc__fields[1] = {"contents"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ClassPart_INITIALEQUATIONS__desc = {
   "Absyn_ClassPart_INITIALEQUATIONS",
   "Absyn.ClassPart.INITIALEQUATIONS",
   Absyn_ClassPart_INITIALEQUATIONS__desc__fields
@@ -1106,8 +1106,8 @@ extern struct record_description Absyn_ClassPart_INITIALEQUATIONS__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ClassPart_ALGORITHMS__desc_added
 #define Absyn_ClassPart_ALGORITHMS__desc_added
-const char* Absyn_ClassPart_ALGORITHMS__desc__fields[1] = {"contents"};
-struct record_description Absyn_ClassPart_ALGORITHMS__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ClassPart_ALGORITHMS__desc__fields[1] = {"contents"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ClassPart_ALGORITHMS__desc = {
   "Absyn_ClassPart_ALGORITHMS",
   "Absyn.ClassPart.ALGORITHMS",
   Absyn_ClassPart_ALGORITHMS__desc__fields
@@ -1121,8 +1121,8 @@ extern struct record_description Absyn_ClassPart_ALGORITHMS__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ClassPart_INITIALALGORITHMS__desc_added
 #define Absyn_ClassPart_INITIALALGORITHMS__desc_added
-const char* Absyn_ClassPart_INITIALALGORITHMS__desc__fields[1] = {"contents"};
-struct record_description Absyn_ClassPart_INITIALALGORITHMS__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ClassPart_INITIALALGORITHMS__desc__fields[1] = {"contents"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ClassPart_INITIALALGORITHMS__desc = {
   "Absyn_ClassPart_INITIALALGORITHMS",
   "Absyn.ClassPart.INITIALALGORITHMS",
   Absyn_ClassPart_INITIALALGORITHMS__desc__fields
@@ -1136,8 +1136,8 @@ extern struct record_description Absyn_ClassPart_INITIALALGORITHMS__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ClassPart_EXTERNAL__desc_added
 #define Absyn_ClassPart_EXTERNAL__desc_added
-const char* Absyn_ClassPart_EXTERNAL__desc__fields[2] = {"externalDecl","annotation_"};
-struct record_description Absyn_ClassPart_EXTERNAL__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ClassPart_EXTERNAL__desc__fields[2] = {"externalDecl","annotation_"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ClassPart_EXTERNAL__desc = {
   "Absyn_ClassPart_EXTERNAL",
   "Absyn.ClassPart.EXTERNAL",
   Absyn_ClassPart_EXTERNAL__desc__fields
@@ -1151,8 +1151,8 @@ extern struct record_description Absyn_ClassPart_EXTERNAL__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ElementItem_ELEMENTITEM__desc_added
 #define Absyn_ElementItem_ELEMENTITEM__desc_added
-const char* Absyn_ElementItem_ELEMENTITEM__desc__fields[1] = {"element"};
-struct record_description Absyn_ElementItem_ELEMENTITEM__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ElementItem_ELEMENTITEM__desc__fields[1] = {"element"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ElementItem_ELEMENTITEM__desc = {
   "Absyn_ElementItem_ELEMENTITEM",
   "Absyn.ElementItem.ELEMENTITEM",
   Absyn_ElementItem_ELEMENTITEM__desc__fields
@@ -1166,8 +1166,8 @@ extern struct record_description Absyn_ElementItem_ELEMENTITEM__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ElementItem_ANNOTATIONITEM__desc_added
 #define Absyn_ElementItem_ANNOTATIONITEM__desc_added
-const char* Absyn_ElementItem_ANNOTATIONITEM__desc__fields[1] = {"annotation_"};
-struct record_description Absyn_ElementItem_ANNOTATIONITEM__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ElementItem_ANNOTATIONITEM__desc__fields[1] = {"annotation_"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ElementItem_ANNOTATIONITEM__desc = {
   "Absyn_ElementItem_ANNOTATIONITEM",
   "Absyn.ElementItem.ANNOTATIONITEM",
   Absyn_ElementItem_ANNOTATIONITEM__desc__fields
@@ -1181,8 +1181,8 @@ extern struct record_description Absyn_ElementItem_ANNOTATIONITEM__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Element_ELEMENT__desc_added
 #define Absyn_Element_ELEMENT__desc_added
-const char* Absyn_Element_ELEMENT__desc__fields[7] = {"finalPrefix","redeclareKeywords","innerOuter","name","specification","info","constrainClass"};
-struct record_description Absyn_Element_ELEMENT__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Element_ELEMENT__desc__fields[7] = {"finalPrefix","redeclareKeywords","innerOuter","name","specification","info","constrainClass"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Element_ELEMENT__desc = {
   "Absyn_Element_ELEMENT",
   "Absyn.Element.ELEMENT",
   Absyn_Element_ELEMENT__desc__fields
@@ -1196,8 +1196,8 @@ extern struct record_description Absyn_Element_ELEMENT__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Element_DEFINEUNIT__desc_added
 #define Absyn_Element_DEFINEUNIT__desc_added
-const char* Absyn_Element_DEFINEUNIT__desc__fields[2] = {"name","args"};
-struct record_description Absyn_Element_DEFINEUNIT__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Element_DEFINEUNIT__desc__fields[2] = {"name","args"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Element_DEFINEUNIT__desc = {
   "Absyn_Element_DEFINEUNIT",
   "Absyn.Element.DEFINEUNIT",
   Absyn_Element_DEFINEUNIT__desc__fields
@@ -1211,8 +1211,8 @@ extern struct record_description Absyn_Element_DEFINEUNIT__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Element_TEXT__desc_added
 #define Absyn_Element_TEXT__desc_added
-const char* Absyn_Element_TEXT__desc__fields[3] = {"optName","string","info"};
-struct record_description Absyn_Element_TEXT__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Element_TEXT__desc__fields[3] = {"optName","string","info"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Element_TEXT__desc = {
   "Absyn_Element_TEXT",
   "Absyn.Element.TEXT",
   Absyn_Element_TEXT__desc__fields
@@ -1226,8 +1226,8 @@ extern struct record_description Absyn_Element_TEXT__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ConstrainClass_CONSTRAINCLASS__desc_added
 #define Absyn_ConstrainClass_CONSTRAINCLASS__desc_added
-const char* Absyn_ConstrainClass_CONSTRAINCLASS__desc__fields[2] = {"elementSpec","comment"};
-struct record_description Absyn_ConstrainClass_CONSTRAINCLASS__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ConstrainClass_CONSTRAINCLASS__desc__fields[2] = {"elementSpec","comment"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ConstrainClass_CONSTRAINCLASS__desc = {
   "Absyn_ConstrainClass_CONSTRAINCLASS",
   "Absyn.ConstrainClass.CONSTRAINCLASS",
   Absyn_ConstrainClass_CONSTRAINCLASS__desc__fields
@@ -1241,8 +1241,8 @@ extern struct record_description Absyn_ConstrainClass_CONSTRAINCLASS__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ElementSpec_CLASSDEF__desc_added
 #define Absyn_ElementSpec_CLASSDEF__desc_added
-const char* Absyn_ElementSpec_CLASSDEF__desc__fields[2] = {"replaceable_","class_"};
-struct record_description Absyn_ElementSpec_CLASSDEF__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ElementSpec_CLASSDEF__desc__fields[2] = {"replaceable_","class_"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ElementSpec_CLASSDEF__desc = {
   "Absyn_ElementSpec_CLASSDEF",
   "Absyn.ElementSpec.CLASSDEF",
   Absyn_ElementSpec_CLASSDEF__desc__fields
@@ -1256,8 +1256,8 @@ extern struct record_description Absyn_ElementSpec_CLASSDEF__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ElementSpec_EXTENDS__desc_added
 #define Absyn_ElementSpec_EXTENDS__desc_added
-const char* Absyn_ElementSpec_EXTENDS__desc__fields[3] = {"path","elementArg","annotationOpt"};
-struct record_description Absyn_ElementSpec_EXTENDS__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ElementSpec_EXTENDS__desc__fields[3] = {"path","elementArg","annotationOpt"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ElementSpec_EXTENDS__desc = {
   "Absyn_ElementSpec_EXTENDS",
   "Absyn.ElementSpec.EXTENDS",
   Absyn_ElementSpec_EXTENDS__desc__fields
@@ -1271,8 +1271,8 @@ extern struct record_description Absyn_ElementSpec_EXTENDS__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ElementSpec_IMPORT__desc_added
 #define Absyn_ElementSpec_IMPORT__desc_added
-const char* Absyn_ElementSpec_IMPORT__desc__fields[3] = {"import_","comment","info"};
-struct record_description Absyn_ElementSpec_IMPORT__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ElementSpec_IMPORT__desc__fields[3] = {"import_","comment","info"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ElementSpec_IMPORT__desc = {
   "Absyn_ElementSpec_IMPORT",
   "Absyn.ElementSpec.IMPORT",
   Absyn_ElementSpec_IMPORT__desc__fields
@@ -1286,8 +1286,8 @@ extern struct record_description Absyn_ElementSpec_IMPORT__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ElementSpec_COMPONENTS__desc_added
 #define Absyn_ElementSpec_COMPONENTS__desc_added
-const char* Absyn_ElementSpec_COMPONENTS__desc__fields[3] = {"attributes","typeSpec","components"};
-struct record_description Absyn_ElementSpec_COMPONENTS__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ElementSpec_COMPONENTS__desc__fields[3] = {"attributes","typeSpec","components"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ElementSpec_COMPONENTS__desc = {
   "Absyn_ElementSpec_COMPONENTS",
   "Absyn.ElementSpec.COMPONENTS",
   Absyn_ElementSpec_COMPONENTS__desc__fields
@@ -1301,8 +1301,8 @@ extern struct record_description Absyn_ElementSpec_COMPONENTS__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_InnerOuter_INNER__desc_added
 #define Absyn_InnerOuter_INNER__desc_added
-const char* Absyn_InnerOuter_INNER__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_InnerOuter_INNER__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_InnerOuter_INNER__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_InnerOuter_INNER__desc = {
   "Absyn_InnerOuter_INNER",
   "Absyn.InnerOuter.INNER",
   Absyn_InnerOuter_INNER__desc__fields
@@ -1317,8 +1317,8 @@ static void *Absyn__INNER = MMC_REFSTRUCTLIT(Absyn__INNER__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_InnerOuter_OUTER__desc_added
 #define Absyn_InnerOuter_OUTER__desc_added
-const char* Absyn_InnerOuter_OUTER__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_InnerOuter_OUTER__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_InnerOuter_OUTER__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_InnerOuter_OUTER__desc = {
   "Absyn_InnerOuter_OUTER",
   "Absyn.InnerOuter.OUTER",
   Absyn_InnerOuter_OUTER__desc__fields
@@ -1333,8 +1333,8 @@ static void *Absyn__OUTER = MMC_REFSTRUCTLIT(Absyn__OUTER__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_InnerOuter_INNER__OUTER__desc_added
 #define Absyn_InnerOuter_INNER__OUTER__desc_added
-const char* Absyn_InnerOuter_INNER__OUTER__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_InnerOuter_INNER__OUTER__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_InnerOuter_INNER__OUTER__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_InnerOuter_INNER__OUTER__desc = {
   "Absyn_InnerOuter_INNER__OUTER",
   "Absyn.InnerOuter.INNER_OUTER",
   Absyn_InnerOuter_INNER__OUTER__desc__fields
@@ -1349,8 +1349,8 @@ static void *Absyn__INNER_5fOUTER = MMC_REFSTRUCTLIT(Absyn__INNER_5fOUTER__struc
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_InnerOuter_NOT__INNER__OUTER__desc_added
 #define Absyn_InnerOuter_NOT__INNER__OUTER__desc_added
-const char* Absyn_InnerOuter_NOT__INNER__OUTER__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_InnerOuter_NOT__INNER__OUTER__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_InnerOuter_NOT__INNER__OUTER__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_InnerOuter_NOT__INNER__OUTER__desc = {
   "Absyn_InnerOuter_NOT__INNER__OUTER",
   "Absyn.InnerOuter.NOT_INNER_OUTER",
   Absyn_InnerOuter_NOT__INNER__OUTER__desc__fields
@@ -1365,8 +1365,8 @@ static void *Absyn__NOT_5fINNER_5fOUTER = MMC_REFSTRUCTLIT(Absyn__NOT_5fINNER_5f
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Import_NAMED__IMPORT__desc_added
 #define Absyn_Import_NAMED__IMPORT__desc_added
-const char* Absyn_Import_NAMED__IMPORT__desc__fields[2] = {"name","path"};
-struct record_description Absyn_Import_NAMED__IMPORT__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Import_NAMED__IMPORT__desc__fields[2] = {"name","path"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Import_NAMED__IMPORT__desc = {
   "Absyn_Import_NAMED__IMPORT",
   "Absyn.Import.NAMED_IMPORT",
   Absyn_Import_NAMED__IMPORT__desc__fields
@@ -1380,8 +1380,8 @@ extern struct record_description Absyn_Import_NAMED__IMPORT__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Import_QUAL__IMPORT__desc_added
 #define Absyn_Import_QUAL__IMPORT__desc_added
-const char* Absyn_Import_QUAL__IMPORT__desc__fields[1] = {"path"};
-struct record_description Absyn_Import_QUAL__IMPORT__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Import_QUAL__IMPORT__desc__fields[1] = {"path"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Import_QUAL__IMPORT__desc = {
   "Absyn_Import_QUAL__IMPORT",
   "Absyn.Import.QUAL_IMPORT",
   Absyn_Import_QUAL__IMPORT__desc__fields
@@ -1395,8 +1395,8 @@ extern struct record_description Absyn_Import_QUAL__IMPORT__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Import_UNQUAL__IMPORT__desc_added
 #define Absyn_Import_UNQUAL__IMPORT__desc_added
-const char* Absyn_Import_UNQUAL__IMPORT__desc__fields[1] = {"path"};
-struct record_description Absyn_Import_UNQUAL__IMPORT__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Import_UNQUAL__IMPORT__desc__fields[1] = {"path"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Import_UNQUAL__IMPORT__desc = {
   "Absyn_Import_UNQUAL__IMPORT",
   "Absyn.Import.UNQUAL_IMPORT",
   Absyn_Import_UNQUAL__IMPORT__desc__fields
@@ -1410,8 +1410,8 @@ extern struct record_description Absyn_Import_UNQUAL__IMPORT__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Import_GROUP__IMPORT__desc_added
 #define Absyn_Import_GROUP__IMPORT__desc_added
-const char* Absyn_Import_GROUP__IMPORT__desc__fields[2] = {"prefix","groups"};
-struct record_description Absyn_Import_GROUP__IMPORT__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Import_GROUP__IMPORT__desc__fields[2] = {"prefix","groups"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Import_GROUP__IMPORT__desc = {
   "Absyn_Import_GROUP__IMPORT",
   "Absyn.Import.GROUP_IMPORT",
   Absyn_Import_GROUP__IMPORT__desc__fields
@@ -1425,8 +1425,8 @@ extern struct record_description Absyn_Import_GROUP__IMPORT__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_GroupImport_GROUP__IMPORT__NAME__desc_added
 #define Absyn_GroupImport_GROUP__IMPORT__NAME__desc_added
-const char* Absyn_GroupImport_GROUP__IMPORT__NAME__desc__fields[1] = {"name"};
-struct record_description Absyn_GroupImport_GROUP__IMPORT__NAME__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_GroupImport_GROUP__IMPORT__NAME__desc__fields[1] = {"name"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_GroupImport_GROUP__IMPORT__NAME__desc = {
   "Absyn_GroupImport_GROUP__IMPORT__NAME",
   "Absyn.GroupImport.GROUP_IMPORT_NAME",
   Absyn_GroupImport_GROUP__IMPORT__NAME__desc__fields
@@ -1440,8 +1440,8 @@ extern struct record_description Absyn_GroupImport_GROUP__IMPORT__NAME__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_GroupImport_GROUP__IMPORT__RENAME__desc_added
 #define Absyn_GroupImport_GROUP__IMPORT__RENAME__desc_added
-const char* Absyn_GroupImport_GROUP__IMPORT__RENAME__desc__fields[2] = {"rename","name"};
-struct record_description Absyn_GroupImport_GROUP__IMPORT__RENAME__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_GroupImport_GROUP__IMPORT__RENAME__desc__fields[2] = {"rename","name"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_GroupImport_GROUP__IMPORT__RENAME__desc = {
   "Absyn_GroupImport_GROUP__IMPORT__RENAME",
   "Absyn.GroupImport.GROUP_IMPORT_RENAME",
   Absyn_GroupImport_GROUP__IMPORT__RENAME__desc__fields
@@ -1455,8 +1455,8 @@ extern struct record_description Absyn_GroupImport_GROUP__IMPORT__RENAME__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ComponentItem_COMPONENTITEM__desc_added
 #define Absyn_ComponentItem_COMPONENTITEM__desc_added
-const char* Absyn_ComponentItem_COMPONENTITEM__desc__fields[3] = {"component","condition","comment"};
-struct record_description Absyn_ComponentItem_COMPONENTITEM__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ComponentItem_COMPONENTITEM__desc__fields[3] = {"component","condition","comment"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ComponentItem_COMPONENTITEM__desc = {
   "Absyn_ComponentItem_COMPONENTITEM",
   "Absyn.ComponentItem.COMPONENTITEM",
   Absyn_ComponentItem_COMPONENTITEM__desc__fields
@@ -1470,8 +1470,8 @@ extern struct record_description Absyn_ComponentItem_COMPONENTITEM__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Component_COMPONENT__desc_added
 #define Absyn_Component_COMPONENT__desc_added
-const char* Absyn_Component_COMPONENT__desc__fields[3] = {"name","arrayDim","modification"};
-struct record_description Absyn_Component_COMPONENT__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Component_COMPONENT__desc__fields[3] = {"name","arrayDim","modification"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Component_COMPONENT__desc = {
   "Absyn_Component_COMPONENT",
   "Absyn.Component.COMPONENT",
   Absyn_Component_COMPONENT__desc__fields
@@ -1485,8 +1485,8 @@ extern struct record_description Absyn_Component_COMPONENT__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_EquationItem_EQUATIONITEM__desc_added
 #define Absyn_EquationItem_EQUATIONITEM__desc_added
-const char* Absyn_EquationItem_EQUATIONITEM__desc__fields[3] = {"equation_","comment","info"};
-struct record_description Absyn_EquationItem_EQUATIONITEM__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_EquationItem_EQUATIONITEM__desc__fields[3] = {"equation_","comment","info"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_EquationItem_EQUATIONITEM__desc = {
   "Absyn_EquationItem_EQUATIONITEM",
   "Absyn.EquationItem.EQUATIONITEM",
   Absyn_EquationItem_EQUATIONITEM__desc__fields
@@ -1500,8 +1500,8 @@ extern struct record_description Absyn_EquationItem_EQUATIONITEM__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_EquationItem_EQUATIONITEMANN__desc_added
 #define Absyn_EquationItem_EQUATIONITEMANN__desc_added
-const char* Absyn_EquationItem_EQUATIONITEMANN__desc__fields[1] = {"annotation_"};
-struct record_description Absyn_EquationItem_EQUATIONITEMANN__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_EquationItem_EQUATIONITEMANN__desc__fields[1] = {"annotation_"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_EquationItem_EQUATIONITEMANN__desc = {
   "Absyn_EquationItem_EQUATIONITEMANN",
   "Absyn.EquationItem.EQUATIONITEMANN",
   Absyn_EquationItem_EQUATIONITEMANN__desc__fields
@@ -1515,8 +1515,8 @@ extern struct record_description Absyn_EquationItem_EQUATIONITEMANN__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_AlgorithmItem_ALGORITHMITEM__desc_added
 #define Absyn_AlgorithmItem_ALGORITHMITEM__desc_added
-const char* Absyn_AlgorithmItem_ALGORITHMITEM__desc__fields[3] = {"algorithm_","comment","info"};
-struct record_description Absyn_AlgorithmItem_ALGORITHMITEM__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_AlgorithmItem_ALGORITHMITEM__desc__fields[3] = {"algorithm_","comment","info"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_AlgorithmItem_ALGORITHMITEM__desc = {
   "Absyn_AlgorithmItem_ALGORITHMITEM",
   "Absyn.AlgorithmItem.ALGORITHMITEM",
   Absyn_AlgorithmItem_ALGORITHMITEM__desc__fields
@@ -1530,8 +1530,8 @@ extern struct record_description Absyn_AlgorithmItem_ALGORITHMITEM__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_AlgorithmItem_ALGORITHMITEMANN__desc_added
 #define Absyn_AlgorithmItem_ALGORITHMITEMANN__desc_added
-const char* Absyn_AlgorithmItem_ALGORITHMITEMANN__desc__fields[1] = {"annotation_"};
-struct record_description Absyn_AlgorithmItem_ALGORITHMITEMANN__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_AlgorithmItem_ALGORITHMITEMANN__desc__fields[1] = {"annotation_"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_AlgorithmItem_ALGORITHMITEMANN__desc = {
   "Absyn_AlgorithmItem_ALGORITHMITEMANN",
   "Absyn.AlgorithmItem.ALGORITHMITEMANN",
   Absyn_AlgorithmItem_ALGORITHMITEMANN__desc__fields
@@ -1545,8 +1545,8 @@ extern struct record_description Absyn_AlgorithmItem_ALGORITHMITEMANN__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Equation_EQ__IF__desc_added
 #define Absyn_Equation_EQ__IF__desc_added
-const char* Absyn_Equation_EQ__IF__desc__fields[4] = {"ifExp","equationTrueItems","elseIfBranches","equationElseItems"};
-struct record_description Absyn_Equation_EQ__IF__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Equation_EQ__IF__desc__fields[4] = {"ifExp","equationTrueItems","elseIfBranches","equationElseItems"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Equation_EQ__IF__desc = {
   "Absyn_Equation_EQ__IF",
   "Absyn.Equation.EQ_IF",
   Absyn_Equation_EQ__IF__desc__fields
@@ -1560,8 +1560,8 @@ extern struct record_description Absyn_Equation_EQ__IF__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Equation_EQ__EQUALS__desc_added
 #define Absyn_Equation_EQ__EQUALS__desc_added
-const char* Absyn_Equation_EQ__EQUALS__desc__fields[2] = {"leftSide","rightSide"};
-struct record_description Absyn_Equation_EQ__EQUALS__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Equation_EQ__EQUALS__desc__fields[2] = {"leftSide","rightSide"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Equation_EQ__EQUALS__desc = {
   "Absyn_Equation_EQ__EQUALS",
   "Absyn.Equation.EQ_EQUALS",
   Absyn_Equation_EQ__EQUALS__desc__fields
@@ -1575,8 +1575,8 @@ extern struct record_description Absyn_Equation_EQ__EQUALS__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Equation_EQ__CONNECT__desc_added
 #define Absyn_Equation_EQ__CONNECT__desc_added
-const char* Absyn_Equation_EQ__CONNECT__desc__fields[2] = {"connector1","connector2"};
-struct record_description Absyn_Equation_EQ__CONNECT__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Equation_EQ__CONNECT__desc__fields[2] = {"connector1","connector2"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Equation_EQ__CONNECT__desc = {
   "Absyn_Equation_EQ__CONNECT",
   "Absyn.Equation.EQ_CONNECT",
   Absyn_Equation_EQ__CONNECT__desc__fields
@@ -1590,8 +1590,8 @@ extern struct record_description Absyn_Equation_EQ__CONNECT__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Equation_EQ__FOR__desc_added
 #define Absyn_Equation_EQ__FOR__desc_added
-const char* Absyn_Equation_EQ__FOR__desc__fields[2] = {"iterators","forEquations"};
-struct record_description Absyn_Equation_EQ__FOR__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Equation_EQ__FOR__desc__fields[2] = {"iterators","forEquations"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Equation_EQ__FOR__desc = {
   "Absyn_Equation_EQ__FOR",
   "Absyn.Equation.EQ_FOR",
   Absyn_Equation_EQ__FOR__desc__fields
@@ -1605,8 +1605,8 @@ extern struct record_description Absyn_Equation_EQ__FOR__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Equation_EQ__WHEN__E__desc_added
 #define Absyn_Equation_EQ__WHEN__E__desc_added
-const char* Absyn_Equation_EQ__WHEN__E__desc__fields[3] = {"whenExp","whenEquations","elseWhenEquations"};
-struct record_description Absyn_Equation_EQ__WHEN__E__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Equation_EQ__WHEN__E__desc__fields[3] = {"whenExp","whenEquations","elseWhenEquations"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Equation_EQ__WHEN__E__desc = {
   "Absyn_Equation_EQ__WHEN__E",
   "Absyn.Equation.EQ_WHEN_E",
   Absyn_Equation_EQ__WHEN__E__desc__fields
@@ -1620,8 +1620,8 @@ extern struct record_description Absyn_Equation_EQ__WHEN__E__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Equation_EQ__NORETCALL__desc_added
 #define Absyn_Equation_EQ__NORETCALL__desc_added
-const char* Absyn_Equation_EQ__NORETCALL__desc__fields[2] = {"functionName","functionArgs"};
-struct record_description Absyn_Equation_EQ__NORETCALL__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Equation_EQ__NORETCALL__desc__fields[2] = {"functionName","functionArgs"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Equation_EQ__NORETCALL__desc = {
   "Absyn_Equation_EQ__NORETCALL",
   "Absyn.Equation.EQ_NORETCALL",
   Absyn_Equation_EQ__NORETCALL__desc__fields
@@ -1635,8 +1635,8 @@ extern struct record_description Absyn_Equation_EQ__NORETCALL__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Equation_EQ__FAILURE__desc_added
 #define Absyn_Equation_EQ__FAILURE__desc_added
-const char* Absyn_Equation_EQ__FAILURE__desc__fields[1] = {"equ"};
-struct record_description Absyn_Equation_EQ__FAILURE__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Equation_EQ__FAILURE__desc__fields[1] = {"equ"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Equation_EQ__FAILURE__desc = {
   "Absyn_Equation_EQ__FAILURE",
   "Absyn.Equation.EQ_FAILURE",
   Absyn_Equation_EQ__FAILURE__desc__fields
@@ -1650,8 +1650,8 @@ extern struct record_description Absyn_Equation_EQ__FAILURE__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__ASSIGN__desc_added
 #define Absyn_Algorithm_ALG__ASSIGN__desc_added
-const char* Absyn_Algorithm_ALG__ASSIGN__desc__fields[2] = {"assignComponent","value"};
-struct record_description Absyn_Algorithm_ALG__ASSIGN__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Algorithm_ALG__ASSIGN__desc__fields[2] = {"assignComponent","value"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__ASSIGN__desc = {
   "Absyn_Algorithm_ALG__ASSIGN",
   "Absyn.Algorithm.ALG_ASSIGN",
   Absyn_Algorithm_ALG__ASSIGN__desc__fields
@@ -1665,8 +1665,8 @@ extern struct record_description Absyn_Algorithm_ALG__ASSIGN__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__IF__desc_added
 #define Absyn_Algorithm_ALG__IF__desc_added
-const char* Absyn_Algorithm_ALG__IF__desc__fields[4] = {"ifExp","trueBranch","elseIfAlgorithmBranch","elseBranch"};
-struct record_description Absyn_Algorithm_ALG__IF__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Algorithm_ALG__IF__desc__fields[4] = {"ifExp","trueBranch","elseIfAlgorithmBranch","elseBranch"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__IF__desc = {
   "Absyn_Algorithm_ALG__IF",
   "Absyn.Algorithm.ALG_IF",
   Absyn_Algorithm_ALG__IF__desc__fields
@@ -1680,8 +1680,8 @@ extern struct record_description Absyn_Algorithm_ALG__IF__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__FOR__desc_added
 #define Absyn_Algorithm_ALG__FOR__desc_added
-const char* Absyn_Algorithm_ALG__FOR__desc__fields[2] = {"iterators","forBody"};
-struct record_description Absyn_Algorithm_ALG__FOR__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Algorithm_ALG__FOR__desc__fields[2] = {"iterators","forBody"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__FOR__desc = {
   "Absyn_Algorithm_ALG__FOR",
   "Absyn.Algorithm.ALG_FOR",
   Absyn_Algorithm_ALG__FOR__desc__fields
@@ -1695,8 +1695,8 @@ extern struct record_description Absyn_Algorithm_ALG__FOR__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__WHILE__desc_added
 #define Absyn_Algorithm_ALG__WHILE__desc_added
-const char* Absyn_Algorithm_ALG__WHILE__desc__fields[2] = {"boolExpr","whileBody"};
-struct record_description Absyn_Algorithm_ALG__WHILE__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Algorithm_ALG__WHILE__desc__fields[2] = {"boolExpr","whileBody"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__WHILE__desc = {
   "Absyn_Algorithm_ALG__WHILE",
   "Absyn.Algorithm.ALG_WHILE",
   Absyn_Algorithm_ALG__WHILE__desc__fields
@@ -1710,8 +1710,8 @@ extern struct record_description Absyn_Algorithm_ALG__WHILE__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__WHEN__A__desc_added
 #define Absyn_Algorithm_ALG__WHEN__A__desc_added
-const char* Absyn_Algorithm_ALG__WHEN__A__desc__fields[3] = {"boolExpr","whenBody","elseWhenAlgorithmBranch"};
-struct record_description Absyn_Algorithm_ALG__WHEN__A__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Algorithm_ALG__WHEN__A__desc__fields[3] = {"boolExpr","whenBody","elseWhenAlgorithmBranch"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__WHEN__A__desc = {
   "Absyn_Algorithm_ALG__WHEN__A",
   "Absyn.Algorithm.ALG_WHEN_A",
   Absyn_Algorithm_ALG__WHEN__A__desc__fields
@@ -1725,8 +1725,8 @@ extern struct record_description Absyn_Algorithm_ALG__WHEN__A__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__NORETCALL__desc_added
 #define Absyn_Algorithm_ALG__NORETCALL__desc_added
-const char* Absyn_Algorithm_ALG__NORETCALL__desc__fields[2] = {"functionCall","functionArgs"};
-struct record_description Absyn_Algorithm_ALG__NORETCALL__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Algorithm_ALG__NORETCALL__desc__fields[2] = {"functionCall","functionArgs"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__NORETCALL__desc = {
   "Absyn_Algorithm_ALG__NORETCALL",
   "Absyn.Algorithm.ALG_NORETCALL",
   Absyn_Algorithm_ALG__NORETCALL__desc__fields
@@ -1740,8 +1740,8 @@ extern struct record_description Absyn_Algorithm_ALG__NORETCALL__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__RETURN__desc_added
 #define Absyn_Algorithm_ALG__RETURN__desc_added
-const char* Absyn_Algorithm_ALG__RETURN__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Algorithm_ALG__RETURN__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Algorithm_ALG__RETURN__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__RETURN__desc = {
   "Absyn_Algorithm_ALG__RETURN",
   "Absyn.Algorithm.ALG_RETURN",
   Absyn_Algorithm_ALG__RETURN__desc__fields
@@ -1756,8 +1756,8 @@ static void *Absyn__ALG_5fRETURN = MMC_REFSTRUCTLIT(Absyn__ALG_5fRETURN__struct)
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__BREAK__desc_added
 #define Absyn_Algorithm_ALG__BREAK__desc_added
-const char* Absyn_Algorithm_ALG__BREAK__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Algorithm_ALG__BREAK__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Algorithm_ALG__BREAK__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__BREAK__desc = {
   "Absyn_Algorithm_ALG__BREAK",
   "Absyn.Algorithm.ALG_BREAK",
   Absyn_Algorithm_ALG__BREAK__desc__fields
@@ -1772,8 +1772,8 @@ static void *Absyn__ALG_5fBREAK = MMC_REFSTRUCTLIT(Absyn__ALG_5fBREAK__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__TRY__desc_added
 #define Absyn_Algorithm_ALG__TRY__desc_added
-const char* Absyn_Algorithm_ALG__TRY__desc__fields[1] = {"tryBody"};
-struct record_description Absyn_Algorithm_ALG__TRY__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Algorithm_ALG__TRY__desc__fields[1] = {"tryBody"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__TRY__desc = {
   "Absyn_Algorithm_ALG__TRY",
   "Absyn.Algorithm.ALG_TRY",
   Absyn_Algorithm_ALG__TRY__desc__fields
@@ -1787,8 +1787,8 @@ extern struct record_description Absyn_Algorithm_ALG__TRY__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__CATCH__desc_added
 #define Absyn_Algorithm_ALG__CATCH__desc_added
-const char* Absyn_Algorithm_ALG__CATCH__desc__fields[1] = {"catchBody"};
-struct record_description Absyn_Algorithm_ALG__CATCH__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Algorithm_ALG__CATCH__desc__fields[1] = {"catchBody"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__CATCH__desc = {
   "Absyn_Algorithm_ALG__CATCH",
   "Absyn.Algorithm.ALG_CATCH",
   Absyn_Algorithm_ALG__CATCH__desc__fields
@@ -1802,8 +1802,8 @@ extern struct record_description Absyn_Algorithm_ALG__CATCH__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__THROW__desc_added
 #define Absyn_Algorithm_ALG__THROW__desc_added
-const char* Absyn_Algorithm_ALG__THROW__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Algorithm_ALG__THROW__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Algorithm_ALG__THROW__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__THROW__desc = {
   "Absyn_Algorithm_ALG__THROW",
   "Absyn.Algorithm.ALG_THROW",
   Absyn_Algorithm_ALG__THROW__desc__fields
@@ -1818,8 +1818,8 @@ static void *Absyn__ALG_5fTHROW = MMC_REFSTRUCTLIT(Absyn__ALG_5fTHROW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__FAILURE__desc_added
 #define Absyn_Algorithm_ALG__FAILURE__desc_added
-const char* Absyn_Algorithm_ALG__FAILURE__desc__fields[1] = {"equ"};
-struct record_description Absyn_Algorithm_ALG__FAILURE__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Algorithm_ALG__FAILURE__desc__fields[1] = {"equ"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__FAILURE__desc = {
   "Absyn_Algorithm_ALG__FAILURE",
   "Absyn.Algorithm.ALG_FAILURE",
   Absyn_Algorithm_ALG__FAILURE__desc__fields
@@ -1833,8 +1833,8 @@ extern struct record_description Absyn_Algorithm_ALG__FAILURE__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Modification_CLASSMOD__desc_added
 #define Absyn_Modification_CLASSMOD__desc_added
-const char* Absyn_Modification_CLASSMOD__desc__fields[2] = {"elementArgLst","eqMod"};
-struct record_description Absyn_Modification_CLASSMOD__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Modification_CLASSMOD__desc__fields[2] = {"elementArgLst","eqMod"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Modification_CLASSMOD__desc = {
   "Absyn_Modification_CLASSMOD",
   "Absyn.Modification.CLASSMOD",
   Absyn_Modification_CLASSMOD__desc__fields
@@ -1848,8 +1848,8 @@ extern struct record_description Absyn_Modification_CLASSMOD__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_EqMod_NOMOD__desc_added
 #define Absyn_EqMod_NOMOD__desc_added
-const char* Absyn_EqMod_NOMOD__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_EqMod_NOMOD__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_EqMod_NOMOD__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_EqMod_NOMOD__desc = {
   "Absyn_EqMod_NOMOD",
   "Absyn.EqMod.NOMOD",
   Absyn_EqMod_NOMOD__desc__fields
@@ -1864,8 +1864,8 @@ static void *Absyn__NOMOD = MMC_REFSTRUCTLIT(Absyn__NOMOD__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_EqMod_EQMOD__desc_added
 #define Absyn_EqMod_EQMOD__desc_added
-const char* Absyn_EqMod_EQMOD__desc__fields[2] = {"exp","info"};
-struct record_description Absyn_EqMod_EQMOD__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_EqMod_EQMOD__desc__fields[2] = {"exp","info"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_EqMod_EQMOD__desc = {
   "Absyn_EqMod_EQMOD",
   "Absyn.EqMod.EQMOD",
   Absyn_EqMod_EQMOD__desc__fields
@@ -1879,8 +1879,8 @@ extern struct record_description Absyn_EqMod_EQMOD__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ElementArg_MODIFICATION__desc_added
 #define Absyn_ElementArg_MODIFICATION__desc_added
-const char* Absyn_ElementArg_MODIFICATION__desc__fields[5] = {"finalPrefix","eachPrefix","componentRef","modification","comment"};
-struct record_description Absyn_ElementArg_MODIFICATION__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ElementArg_MODIFICATION__desc__fields[5] = {"finalPrefix","eachPrefix","componentRef","modification","comment"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ElementArg_MODIFICATION__desc = {
   "Absyn_ElementArg_MODIFICATION",
   "Absyn.ElementArg.MODIFICATION",
   Absyn_ElementArg_MODIFICATION__desc__fields
@@ -1894,8 +1894,8 @@ extern struct record_description Absyn_ElementArg_MODIFICATION__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ElementArg_REDECLARATION__desc_added
 #define Absyn_ElementArg_REDECLARATION__desc_added
-const char* Absyn_ElementArg_REDECLARATION__desc__fields[6] = {"finalPrefix","redeclareKeywords","eachPrefix","elementSpec","constrainClass","info"};
-struct record_description Absyn_ElementArg_REDECLARATION__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ElementArg_REDECLARATION__desc__fields[6] = {"finalPrefix","redeclareKeywords","eachPrefix","elementSpec","constrainClass","info"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ElementArg_REDECLARATION__desc = {
   "Absyn_ElementArg_REDECLARATION",
   "Absyn.ElementArg.REDECLARATION",
   Absyn_ElementArg_REDECLARATION__desc__fields
@@ -1909,8 +1909,8 @@ extern struct record_description Absyn_ElementArg_REDECLARATION__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_RedeclareKeywords_REDECLARE__desc_added
 #define Absyn_RedeclareKeywords_REDECLARE__desc_added
-const char* Absyn_RedeclareKeywords_REDECLARE__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_RedeclareKeywords_REDECLARE__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_RedeclareKeywords_REDECLARE__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_RedeclareKeywords_REDECLARE__desc = {
   "Absyn_RedeclareKeywords_REDECLARE",
   "Absyn.RedeclareKeywords.REDECLARE",
   Absyn_RedeclareKeywords_REDECLARE__desc__fields
@@ -1925,8 +1925,8 @@ static void *Absyn__REDECLARE = MMC_REFSTRUCTLIT(Absyn__REDECLARE__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_RedeclareKeywords_REPLACEABLE__desc_added
 #define Absyn_RedeclareKeywords_REPLACEABLE__desc_added
-const char* Absyn_RedeclareKeywords_REPLACEABLE__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_RedeclareKeywords_REPLACEABLE__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_RedeclareKeywords_REPLACEABLE__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_RedeclareKeywords_REPLACEABLE__desc = {
   "Absyn_RedeclareKeywords_REPLACEABLE",
   "Absyn.RedeclareKeywords.REPLACEABLE",
   Absyn_RedeclareKeywords_REPLACEABLE__desc__fields
@@ -1941,8 +1941,8 @@ static void *Absyn__REPLACEABLE = MMC_REFSTRUCTLIT(Absyn__REPLACEABLE__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE__desc_added
 #define Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE__desc_added
-const char* Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE__desc = {
   "Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE",
   "Absyn.RedeclareKeywords.REDECLARE_REPLACEABLE",
   Absyn_RedeclareKeywords_REDECLARE__REPLACEABLE__desc__fields
@@ -1957,8 +1957,8 @@ static void *Absyn__REDECLARE_5fREPLACEABLE = MMC_REFSTRUCTLIT(Absyn__REDECLARE_
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Each_EACH__desc_added
 #define Absyn_Each_EACH__desc_added
-const char* Absyn_Each_EACH__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Each_EACH__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Each_EACH__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Each_EACH__desc = {
   "Absyn_Each_EACH",
   "Absyn.Each.EACH",
   Absyn_Each_EACH__desc__fields
@@ -1973,8 +1973,8 @@ static void *Absyn__EACH = MMC_REFSTRUCTLIT(Absyn__EACH__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Each_NON__EACH__desc_added
 #define Absyn_Each_NON__EACH__desc_added
-const char* Absyn_Each_NON__EACH__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Each_NON__EACH__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Each_NON__EACH__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Each_NON__EACH__desc = {
   "Absyn_Each_NON__EACH",
   "Absyn.Each.NON_EACH",
   Absyn_Each_NON__EACH__desc__fields
@@ -1989,8 +1989,8 @@ static void *Absyn__NON_5fEACH = MMC_REFSTRUCTLIT(Absyn__NON_5fEACH__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ElementAttributes_ATTR__desc_added
 #define Absyn_ElementAttributes_ATTR__desc_added
-const char* Absyn_ElementAttributes_ATTR__desc__fields[5] = {"flowPrefix","streamPrefix","variability","direction","arrayDim"};
-struct record_description Absyn_ElementAttributes_ATTR__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ElementAttributes_ATTR__desc__fields[5] = {"flowPrefix","streamPrefix","variability","direction","arrayDim"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ElementAttributes_ATTR__desc = {
   "Absyn_ElementAttributes_ATTR",
   "Absyn.ElementAttributes.ATTR",
   Absyn_ElementAttributes_ATTR__desc__fields
@@ -2004,8 +2004,8 @@ extern struct record_description Absyn_ElementAttributes_ATTR__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Variability_VAR__desc_added
 #define Absyn_Variability_VAR__desc_added
-const char* Absyn_Variability_VAR__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Variability_VAR__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Variability_VAR__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Variability_VAR__desc = {
   "Absyn_Variability_VAR",
   "Absyn.Variability.VAR",
   Absyn_Variability_VAR__desc__fields
@@ -2020,8 +2020,8 @@ static void *Absyn__VAR = MMC_REFSTRUCTLIT(Absyn__VAR__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Variability_DISCRETE__desc_added
 #define Absyn_Variability_DISCRETE__desc_added
-const char* Absyn_Variability_DISCRETE__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Variability_DISCRETE__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Variability_DISCRETE__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Variability_DISCRETE__desc = {
   "Absyn_Variability_DISCRETE",
   "Absyn.Variability.DISCRETE",
   Absyn_Variability_DISCRETE__desc__fields
@@ -2036,8 +2036,8 @@ static void *Absyn__DISCRETE = MMC_REFSTRUCTLIT(Absyn__DISCRETE__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Variability_PARAM__desc_added
 #define Absyn_Variability_PARAM__desc_added
-const char* Absyn_Variability_PARAM__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Variability_PARAM__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Variability_PARAM__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Variability_PARAM__desc = {
   "Absyn_Variability_PARAM",
   "Absyn.Variability.PARAM",
   Absyn_Variability_PARAM__desc__fields
@@ -2052,8 +2052,8 @@ static void *Absyn__PARAM = MMC_REFSTRUCTLIT(Absyn__PARAM__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Variability_CONST__desc_added
 #define Absyn_Variability_CONST__desc_added
-const char* Absyn_Variability_CONST__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Variability_CONST__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Variability_CONST__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Variability_CONST__desc = {
   "Absyn_Variability_CONST",
   "Absyn.Variability.CONST",
   Absyn_Variability_CONST__desc__fields
@@ -2068,8 +2068,8 @@ static void *Absyn__CONST = MMC_REFSTRUCTLIT(Absyn__CONST__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Direction_INPUT__desc_added
 #define Absyn_Direction_INPUT__desc_added
-const char* Absyn_Direction_INPUT__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Direction_INPUT__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Direction_INPUT__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Direction_INPUT__desc = {
   "Absyn_Direction_INPUT",
   "Absyn.Direction.INPUT",
   Absyn_Direction_INPUT__desc__fields
@@ -2084,8 +2084,8 @@ static void *Absyn__INPUT = MMC_REFSTRUCTLIT(Absyn__INPUT__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Direction_OUTPUT__desc_added
 #define Absyn_Direction_OUTPUT__desc_added
-const char* Absyn_Direction_OUTPUT__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Direction_OUTPUT__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Direction_OUTPUT__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Direction_OUTPUT__desc = {
   "Absyn_Direction_OUTPUT",
   "Absyn.Direction.OUTPUT",
   Absyn_Direction_OUTPUT__desc__fields
@@ -2100,8 +2100,8 @@ static void *Absyn__OUTPUT = MMC_REFSTRUCTLIT(Absyn__OUTPUT__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Direction_BIDIR__desc_added
 #define Absyn_Direction_BIDIR__desc_added
-const char* Absyn_Direction_BIDIR__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Direction_BIDIR__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Direction_BIDIR__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Direction_BIDIR__desc = {
   "Absyn_Direction_BIDIR",
   "Absyn.Direction.BIDIR",
   Absyn_Direction_BIDIR__desc__fields
@@ -2116,8 +2116,8 @@ static void *Absyn__BIDIR = MMC_REFSTRUCTLIT(Absyn__BIDIR__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_INTEGER__desc_added
 #define Absyn_Exp_INTEGER__desc_added
-const char* Absyn_Exp_INTEGER__desc__fields[1] = {"value"};
-struct record_description Absyn_Exp_INTEGER__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Exp_INTEGER__desc__fields[1] = {"value"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_INTEGER__desc = {
   "Absyn_Exp_INTEGER",
   "Absyn.Exp.INTEGER",
   Absyn_Exp_INTEGER__desc__fields
@@ -2131,8 +2131,8 @@ extern struct record_description Absyn_Exp_INTEGER__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_REAL__desc_added
 #define Absyn_Exp_REAL__desc_added
-const char* Absyn_Exp_REAL__desc__fields[1] = {"value"};
-struct record_description Absyn_Exp_REAL__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Exp_REAL__desc__fields[1] = {"value"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_REAL__desc = {
   "Absyn_Exp_REAL",
   "Absyn.Exp.REAL",
   Absyn_Exp_REAL__desc__fields
@@ -2146,8 +2146,8 @@ extern struct record_description Absyn_Exp_REAL__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_CREF__desc_added
 #define Absyn_Exp_CREF__desc_added
-const char* Absyn_Exp_CREF__desc__fields[1] = {"componentRef"};
-struct record_description Absyn_Exp_CREF__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Exp_CREF__desc__fields[1] = {"componentRef"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_CREF__desc = {
   "Absyn_Exp_CREF",
   "Absyn.Exp.CREF",
   Absyn_Exp_CREF__desc__fields
@@ -2161,8 +2161,8 @@ extern struct record_description Absyn_Exp_CREF__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_STRING__desc_added
 #define Absyn_Exp_STRING__desc_added
-const char* Absyn_Exp_STRING__desc__fields[1] = {"value"};
-struct record_description Absyn_Exp_STRING__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Exp_STRING__desc__fields[1] = {"value"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_STRING__desc = {
   "Absyn_Exp_STRING",
   "Absyn.Exp.STRING",
   Absyn_Exp_STRING__desc__fields
@@ -2176,8 +2176,8 @@ extern struct record_description Absyn_Exp_STRING__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_BOOL__desc_added
 #define Absyn_Exp_BOOL__desc_added
-const char* Absyn_Exp_BOOL__desc__fields[1] = {"value"};
-struct record_description Absyn_Exp_BOOL__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Exp_BOOL__desc__fields[1] = {"value"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_BOOL__desc = {
   "Absyn_Exp_BOOL",
   "Absyn.Exp.BOOL",
   Absyn_Exp_BOOL__desc__fields
@@ -2191,8 +2191,8 @@ extern struct record_description Absyn_Exp_BOOL__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_BINARY__desc_added
 #define Absyn_Exp_BINARY__desc_added
-const char* Absyn_Exp_BINARY__desc__fields[3] = {"exp1","op","exp2"};
-struct record_description Absyn_Exp_BINARY__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Exp_BINARY__desc__fields[3] = {"exp1","op","exp2"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_BINARY__desc = {
   "Absyn_Exp_BINARY",
   "Absyn.Exp.BINARY",
   Absyn_Exp_BINARY__desc__fields
@@ -2206,8 +2206,8 @@ extern struct record_description Absyn_Exp_BINARY__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_UNARY__desc_added
 #define Absyn_Exp_UNARY__desc_added
-const char* Absyn_Exp_UNARY__desc__fields[2] = {"op","exp"};
-struct record_description Absyn_Exp_UNARY__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Exp_UNARY__desc__fields[2] = {"op","exp"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_UNARY__desc = {
   "Absyn_Exp_UNARY",
   "Absyn.Exp.UNARY",
   Absyn_Exp_UNARY__desc__fields
@@ -2221,8 +2221,8 @@ extern struct record_description Absyn_Exp_UNARY__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_LBINARY__desc_added
 #define Absyn_Exp_LBINARY__desc_added
-const char* Absyn_Exp_LBINARY__desc__fields[3] = {"exp1","op","exp2"};
-struct record_description Absyn_Exp_LBINARY__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Exp_LBINARY__desc__fields[3] = {"exp1","op","exp2"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_LBINARY__desc = {
   "Absyn_Exp_LBINARY",
   "Absyn.Exp.LBINARY",
   Absyn_Exp_LBINARY__desc__fields
@@ -2236,8 +2236,8 @@ extern struct record_description Absyn_Exp_LBINARY__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_LUNARY__desc_added
 #define Absyn_Exp_LUNARY__desc_added
-const char* Absyn_Exp_LUNARY__desc__fields[2] = {"op","exp"};
-struct record_description Absyn_Exp_LUNARY__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Exp_LUNARY__desc__fields[2] = {"op","exp"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_LUNARY__desc = {
   "Absyn_Exp_LUNARY",
   "Absyn.Exp.LUNARY",
   Absyn_Exp_LUNARY__desc__fields
@@ -2251,8 +2251,8 @@ extern struct record_description Absyn_Exp_LUNARY__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_RELATION__desc_added
 #define Absyn_Exp_RELATION__desc_added
-const char* Absyn_Exp_RELATION__desc__fields[3] = {"exp1","op","exp2"};
-struct record_description Absyn_Exp_RELATION__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Exp_RELATION__desc__fields[3] = {"exp1","op","exp2"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_RELATION__desc = {
   "Absyn_Exp_RELATION",
   "Absyn.Exp.RELATION",
   Absyn_Exp_RELATION__desc__fields
@@ -2266,8 +2266,8 @@ extern struct record_description Absyn_Exp_RELATION__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_IFEXP__desc_added
 #define Absyn_Exp_IFEXP__desc_added
-const char* Absyn_Exp_IFEXP__desc__fields[4] = {"ifExp","trueBranch","elseBranch","elseIfBranch"};
-struct record_description Absyn_Exp_IFEXP__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Exp_IFEXP__desc__fields[4] = {"ifExp","trueBranch","elseBranch","elseIfBranch"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_IFEXP__desc = {
   "Absyn_Exp_IFEXP",
   "Absyn.Exp.IFEXP",
   Absyn_Exp_IFEXP__desc__fields
@@ -2281,8 +2281,8 @@ extern struct record_description Absyn_Exp_IFEXP__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_CALL__desc_added
 #define Absyn_Exp_CALL__desc_added
-const char* Absyn_Exp_CALL__desc__fields[2] = {"function_","functionArgs"};
-struct record_description Absyn_Exp_CALL__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Exp_CALL__desc__fields[2] = {"function_","functionArgs"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_CALL__desc = {
   "Absyn_Exp_CALL",
   "Absyn.Exp.CALL",
   Absyn_Exp_CALL__desc__fields
@@ -2296,8 +2296,8 @@ extern struct record_description Absyn_Exp_CALL__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_PARTEVALFUNCTION__desc_added
 #define Absyn_Exp_PARTEVALFUNCTION__desc_added
-const char* Absyn_Exp_PARTEVALFUNCTION__desc__fields[2] = {"function_","functionArgs"};
-struct record_description Absyn_Exp_PARTEVALFUNCTION__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Exp_PARTEVALFUNCTION__desc__fields[2] = {"function_","functionArgs"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_PARTEVALFUNCTION__desc = {
   "Absyn_Exp_PARTEVALFUNCTION",
   "Absyn.Exp.PARTEVALFUNCTION",
   Absyn_Exp_PARTEVALFUNCTION__desc__fields
@@ -2311,8 +2311,8 @@ extern struct record_description Absyn_Exp_PARTEVALFUNCTION__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_ARRAY__desc_added
 #define Absyn_Exp_ARRAY__desc_added
-const char* Absyn_Exp_ARRAY__desc__fields[1] = {"arrayExp"};
-struct record_description Absyn_Exp_ARRAY__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Exp_ARRAY__desc__fields[1] = {"arrayExp"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_ARRAY__desc = {
   "Absyn_Exp_ARRAY",
   "Absyn.Exp.ARRAY",
   Absyn_Exp_ARRAY__desc__fields
@@ -2326,8 +2326,8 @@ extern struct record_description Absyn_Exp_ARRAY__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_MATRIX__desc_added
 #define Absyn_Exp_MATRIX__desc_added
-const char* Absyn_Exp_MATRIX__desc__fields[1] = {"matrix"};
-struct record_description Absyn_Exp_MATRIX__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Exp_MATRIX__desc__fields[1] = {"matrix"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_MATRIX__desc = {
   "Absyn_Exp_MATRIX",
   "Absyn.Exp.MATRIX",
   Absyn_Exp_MATRIX__desc__fields
@@ -2341,8 +2341,8 @@ extern struct record_description Absyn_Exp_MATRIX__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_RANGE__desc_added
 #define Absyn_Exp_RANGE__desc_added
-const char* Absyn_Exp_RANGE__desc__fields[3] = {"start","step","stop"};
-struct record_description Absyn_Exp_RANGE__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Exp_RANGE__desc__fields[3] = {"start","step","stop"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_RANGE__desc = {
   "Absyn_Exp_RANGE",
   "Absyn.Exp.RANGE",
   Absyn_Exp_RANGE__desc__fields
@@ -2356,8 +2356,8 @@ extern struct record_description Absyn_Exp_RANGE__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_TUPLE__desc_added
 #define Absyn_Exp_TUPLE__desc_added
-const char* Absyn_Exp_TUPLE__desc__fields[1] = {"expressions"};
-struct record_description Absyn_Exp_TUPLE__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Exp_TUPLE__desc__fields[1] = {"expressions"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_TUPLE__desc = {
   "Absyn_Exp_TUPLE",
   "Absyn.Exp.TUPLE",
   Absyn_Exp_TUPLE__desc__fields
@@ -2371,8 +2371,8 @@ extern struct record_description Absyn_Exp_TUPLE__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_END__desc_added
 #define Absyn_Exp_END__desc_added
-const char* Absyn_Exp_END__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Exp_END__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Exp_END__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_END__desc = {
   "Absyn_Exp_END",
   "Absyn.Exp.END",
   Absyn_Exp_END__desc__fields
@@ -2387,8 +2387,8 @@ static void *Absyn__END = MMC_REFSTRUCTLIT(Absyn__END__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_CODE__desc_added
 #define Absyn_Exp_CODE__desc_added
-const char* Absyn_Exp_CODE__desc__fields[1] = {"code"};
-struct record_description Absyn_Exp_CODE__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Exp_CODE__desc__fields[1] = {"code"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_CODE__desc = {
   "Absyn_Exp_CODE",
   "Absyn.Exp.CODE",
   Absyn_Exp_CODE__desc__fields
@@ -2402,8 +2402,8 @@ extern struct record_description Absyn_Exp_CODE__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_AS__desc_added
 #define Absyn_Exp_AS__desc_added
-const char* Absyn_Exp_AS__desc__fields[2] = {"id","exp"};
-struct record_description Absyn_Exp_AS__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Exp_AS__desc__fields[2] = {"id","exp"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_AS__desc = {
   "Absyn_Exp_AS",
   "Absyn.Exp.AS",
   Absyn_Exp_AS__desc__fields
@@ -2417,8 +2417,8 @@ extern struct record_description Absyn_Exp_AS__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_CONS__desc_added
 #define Absyn_Exp_CONS__desc_added
-const char* Absyn_Exp_CONS__desc__fields[2] = {"head","rest"};
-struct record_description Absyn_Exp_CONS__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Exp_CONS__desc__fields[2] = {"head","rest"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_CONS__desc = {
   "Absyn_Exp_CONS",
   "Absyn.Exp.CONS",
   Absyn_Exp_CONS__desc__fields
@@ -2432,8 +2432,8 @@ extern struct record_description Absyn_Exp_CONS__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_MATCHEXP__desc_added
 #define Absyn_Exp_MATCHEXP__desc_added
-const char* Absyn_Exp_MATCHEXP__desc__fields[5] = {"matchTy","inputExp","localDecls","cases","comment"};
-struct record_description Absyn_Exp_MATCHEXP__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Exp_MATCHEXP__desc__fields[5] = {"matchTy","inputExp","localDecls","cases","comment"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_MATCHEXP__desc = {
   "Absyn_Exp_MATCHEXP",
   "Absyn.Exp.MATCHEXP",
   Absyn_Exp_MATCHEXP__desc__fields
@@ -2447,8 +2447,8 @@ extern struct record_description Absyn_Exp_MATCHEXP__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_LIST__desc_added
 #define Absyn_Exp_LIST__desc_added
-const char* Absyn_Exp_LIST__desc__fields[1] = {"exps"};
-struct record_description Absyn_Exp_LIST__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Exp_LIST__desc__fields[1] = {"exps"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_LIST__desc = {
   "Absyn_Exp_LIST",
   "Absyn.Exp.LIST",
   Absyn_Exp_LIST__desc__fields
@@ -2462,8 +2462,8 @@ extern struct record_description Absyn_Exp_LIST__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Case_CASE__desc_added
 #define Absyn_Case_CASE__desc_added
-const char* Absyn_Case_CASE__desc__fields[8] = {"pattern","patternInfo","localDecls","equations","result","resultInfo","comment","info"};
-struct record_description Absyn_Case_CASE__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Case_CASE__desc__fields[8] = {"pattern","patternInfo","localDecls","equations","result","resultInfo","comment","info"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Case_CASE__desc = {
   "Absyn_Case_CASE",
   "Absyn.Case.CASE",
   Absyn_Case_CASE__desc__fields
@@ -2477,8 +2477,8 @@ extern struct record_description Absyn_Case_CASE__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Case_ELSE__desc_added
 #define Absyn_Case_ELSE__desc_added
-const char* Absyn_Case_ELSE__desc__fields[6] = {"localDecls","equations","result","resultInfo","comment","info"};
-struct record_description Absyn_Case_ELSE__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Case_ELSE__desc__fields[6] = {"localDecls","equations","result","resultInfo","comment","info"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Case_ELSE__desc = {
   "Absyn_Case_ELSE",
   "Absyn.Case.ELSE",
   Absyn_Case_ELSE__desc__fields
@@ -2492,8 +2492,8 @@ extern struct record_description Absyn_Case_ELSE__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_MatchType_MATCH__desc_added
 #define Absyn_MatchType_MATCH__desc_added
-const char* Absyn_MatchType_MATCH__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_MatchType_MATCH__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_MatchType_MATCH__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_MatchType_MATCH__desc = {
   "Absyn_MatchType_MATCH",
   "Absyn.MatchType.MATCH",
   Absyn_MatchType_MATCH__desc__fields
@@ -2508,8 +2508,8 @@ static void *Absyn__MATCH = MMC_REFSTRUCTLIT(Absyn__MATCH__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_MatchType_MATCHCONTINUE__desc_added
 #define Absyn_MatchType_MATCHCONTINUE__desc_added
-const char* Absyn_MatchType_MATCHCONTINUE__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_MatchType_MATCHCONTINUE__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_MatchType_MATCHCONTINUE__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_MatchType_MATCHCONTINUE__desc = {
   "Absyn_MatchType_MATCHCONTINUE",
   "Absyn.MatchType.MATCHCONTINUE",
   Absyn_MatchType_MATCHCONTINUE__desc__fields
@@ -2524,8 +2524,8 @@ static void *Absyn__MATCHCONTINUE = MMC_REFSTRUCTLIT(Absyn__MATCHCONTINUE__struc
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_CodeNode_C__TYPENAME__desc_added
 #define Absyn_CodeNode_C__TYPENAME__desc_added
-const char* Absyn_CodeNode_C__TYPENAME__desc__fields[1] = {"path"};
-struct record_description Absyn_CodeNode_C__TYPENAME__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_CodeNode_C__TYPENAME__desc__fields[1] = {"path"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_CodeNode_C__TYPENAME__desc = {
   "Absyn_CodeNode_C__TYPENAME",
   "Absyn.CodeNode.C_TYPENAME",
   Absyn_CodeNode_C__TYPENAME__desc__fields
@@ -2539,8 +2539,8 @@ extern struct record_description Absyn_CodeNode_C__TYPENAME__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_CodeNode_C__VARIABLENAME__desc_added
 #define Absyn_CodeNode_C__VARIABLENAME__desc_added
-const char* Absyn_CodeNode_C__VARIABLENAME__desc__fields[1] = {"componentRef"};
-struct record_description Absyn_CodeNode_C__VARIABLENAME__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_CodeNode_C__VARIABLENAME__desc__fields[1] = {"componentRef"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_CodeNode_C__VARIABLENAME__desc = {
   "Absyn_CodeNode_C__VARIABLENAME",
   "Absyn.CodeNode.C_VARIABLENAME",
   Absyn_CodeNode_C__VARIABLENAME__desc__fields
@@ -2554,8 +2554,8 @@ extern struct record_description Absyn_CodeNode_C__VARIABLENAME__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_CodeNode_C__CONSTRAINTSECTION__desc_added
 #define Absyn_CodeNode_C__CONSTRAINTSECTION__desc_added
-const char* Absyn_CodeNode_C__CONSTRAINTSECTION__desc__fields[2] = {"boolean","equationItemLst"};
-struct record_description Absyn_CodeNode_C__CONSTRAINTSECTION__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_CodeNode_C__CONSTRAINTSECTION__desc__fields[2] = {"boolean","equationItemLst"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_CodeNode_C__CONSTRAINTSECTION__desc = {
   "Absyn_CodeNode_C__CONSTRAINTSECTION",
   "Absyn.CodeNode.C_CONSTRAINTSECTION",
   Absyn_CodeNode_C__CONSTRAINTSECTION__desc__fields
@@ -2569,8 +2569,8 @@ extern struct record_description Absyn_CodeNode_C__CONSTRAINTSECTION__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_CodeNode_C__EQUATIONSECTION__desc_added
 #define Absyn_CodeNode_C__EQUATIONSECTION__desc_added
-const char* Absyn_CodeNode_C__EQUATIONSECTION__desc__fields[2] = {"boolean","equationItemLst"};
-struct record_description Absyn_CodeNode_C__EQUATIONSECTION__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_CodeNode_C__EQUATIONSECTION__desc__fields[2] = {"boolean","equationItemLst"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_CodeNode_C__EQUATIONSECTION__desc = {
   "Absyn_CodeNode_C__EQUATIONSECTION",
   "Absyn.CodeNode.C_EQUATIONSECTION",
   Absyn_CodeNode_C__EQUATIONSECTION__desc__fields
@@ -2584,8 +2584,8 @@ extern struct record_description Absyn_CodeNode_C__EQUATIONSECTION__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_CodeNode_C__ALGORITHMSECTION__desc_added
 #define Absyn_CodeNode_C__ALGORITHMSECTION__desc_added
-const char* Absyn_CodeNode_C__ALGORITHMSECTION__desc__fields[2] = {"boolean","algorithmItemLst"};
-struct record_description Absyn_CodeNode_C__ALGORITHMSECTION__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_CodeNode_C__ALGORITHMSECTION__desc__fields[2] = {"boolean","algorithmItemLst"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_CodeNode_C__ALGORITHMSECTION__desc = {
   "Absyn_CodeNode_C__ALGORITHMSECTION",
   "Absyn.CodeNode.C_ALGORITHMSECTION",
   Absyn_CodeNode_C__ALGORITHMSECTION__desc__fields
@@ -2599,8 +2599,8 @@ extern struct record_description Absyn_CodeNode_C__ALGORITHMSECTION__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_CodeNode_C__ELEMENT__desc_added
 #define Absyn_CodeNode_C__ELEMENT__desc_added
-const char* Absyn_CodeNode_C__ELEMENT__desc__fields[1] = {"element"};
-struct record_description Absyn_CodeNode_C__ELEMENT__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_CodeNode_C__ELEMENT__desc__fields[1] = {"element"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_CodeNode_C__ELEMENT__desc = {
   "Absyn_CodeNode_C__ELEMENT",
   "Absyn.CodeNode.C_ELEMENT",
   Absyn_CodeNode_C__ELEMENT__desc__fields
@@ -2614,8 +2614,8 @@ extern struct record_description Absyn_CodeNode_C__ELEMENT__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_CodeNode_C__EXPRESSION__desc_added
 #define Absyn_CodeNode_C__EXPRESSION__desc_added
-const char* Absyn_CodeNode_C__EXPRESSION__desc__fields[1] = {"exp"};
-struct record_description Absyn_CodeNode_C__EXPRESSION__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_CodeNode_C__EXPRESSION__desc__fields[1] = {"exp"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_CodeNode_C__EXPRESSION__desc = {
   "Absyn_CodeNode_C__EXPRESSION",
   "Absyn.CodeNode.C_EXPRESSION",
   Absyn_CodeNode_C__EXPRESSION__desc__fields
@@ -2629,8 +2629,8 @@ extern struct record_description Absyn_CodeNode_C__EXPRESSION__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_CodeNode_C__MODIFICATION__desc_added
 #define Absyn_CodeNode_C__MODIFICATION__desc_added
-const char* Absyn_CodeNode_C__MODIFICATION__desc__fields[1] = {"modification"};
-struct record_description Absyn_CodeNode_C__MODIFICATION__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_CodeNode_C__MODIFICATION__desc__fields[1] = {"modification"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_CodeNode_C__MODIFICATION__desc = {
   "Absyn_CodeNode_C__MODIFICATION",
   "Absyn.CodeNode.C_MODIFICATION",
   Absyn_CodeNode_C__MODIFICATION__desc__fields
@@ -2644,8 +2644,8 @@ extern struct record_description Absyn_CodeNode_C__MODIFICATION__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_FunctionArgs_FUNCTIONARGS__desc_added
 #define Absyn_FunctionArgs_FUNCTIONARGS__desc_added
-const char* Absyn_FunctionArgs_FUNCTIONARGS__desc__fields[2] = {"args","argNames"};
-struct record_description Absyn_FunctionArgs_FUNCTIONARGS__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_FunctionArgs_FUNCTIONARGS__desc__fields[2] = {"args","argNames"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_FunctionArgs_FUNCTIONARGS__desc = {
   "Absyn_FunctionArgs_FUNCTIONARGS",
   "Absyn.FunctionArgs.FUNCTIONARGS",
   Absyn_FunctionArgs_FUNCTIONARGS__desc__fields
@@ -2659,8 +2659,8 @@ extern struct record_description Absyn_FunctionArgs_FUNCTIONARGS__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_FunctionArgs_FOR__ITER__FARG__desc_added
 #define Absyn_FunctionArgs_FOR__ITER__FARG__desc_added
-const char* Absyn_FunctionArgs_FOR__ITER__FARG__desc__fields[2] = {"exp","iterators"};
-struct record_description Absyn_FunctionArgs_FOR__ITER__FARG__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_FunctionArgs_FOR__ITER__FARG__desc__fields[2] = {"exp","iterators"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_FunctionArgs_FOR__ITER__FARG__desc = {
   "Absyn_FunctionArgs_FOR__ITER__FARG",
   "Absyn.FunctionArgs.FOR_ITER_FARG",
   Absyn_FunctionArgs_FOR__ITER__FARG__desc__fields
@@ -2674,8 +2674,8 @@ extern struct record_description Absyn_FunctionArgs_FOR__ITER__FARG__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_NamedArg_NAMEDARG__desc_added
 #define Absyn_NamedArg_NAMEDARG__desc_added
-const char* Absyn_NamedArg_NAMEDARG__desc__fields[2] = {"argName","argValue"};
-struct record_description Absyn_NamedArg_NAMEDARG__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_NamedArg_NAMEDARG__desc__fields[2] = {"argName","argValue"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_NamedArg_NAMEDARG__desc = {
   "Absyn_NamedArg_NAMEDARG",
   "Absyn.NamedArg.NAMEDARG",
   Absyn_NamedArg_NAMEDARG__desc__fields
@@ -2689,8 +2689,8 @@ extern struct record_description Absyn_NamedArg_NAMEDARG__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_ADD__desc_added
 #define Absyn_Operator_ADD__desc_added
-const char* Absyn_Operator_ADD__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Operator_ADD__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Operator_ADD__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_ADD__desc = {
   "Absyn_Operator_ADD",
   "Absyn.Operator.ADD",
   Absyn_Operator_ADD__desc__fields
@@ -2705,8 +2705,8 @@ static void *Absyn__ADD = MMC_REFSTRUCTLIT(Absyn__ADD__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_SUB__desc_added
 #define Absyn_Operator_SUB__desc_added
-const char* Absyn_Operator_SUB__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Operator_SUB__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Operator_SUB__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_SUB__desc = {
   "Absyn_Operator_SUB",
   "Absyn.Operator.SUB",
   Absyn_Operator_SUB__desc__fields
@@ -2721,8 +2721,8 @@ static void *Absyn__SUB = MMC_REFSTRUCTLIT(Absyn__SUB__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_MUL__desc_added
 #define Absyn_Operator_MUL__desc_added
-const char* Absyn_Operator_MUL__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Operator_MUL__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Operator_MUL__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_MUL__desc = {
   "Absyn_Operator_MUL",
   "Absyn.Operator.MUL",
   Absyn_Operator_MUL__desc__fields
@@ -2737,8 +2737,8 @@ static void *Absyn__MUL = MMC_REFSTRUCTLIT(Absyn__MUL__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_DIV__desc_added
 #define Absyn_Operator_DIV__desc_added
-const char* Absyn_Operator_DIV__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Operator_DIV__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Operator_DIV__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_DIV__desc = {
   "Absyn_Operator_DIV",
   "Absyn.Operator.DIV",
   Absyn_Operator_DIV__desc__fields
@@ -2753,8 +2753,8 @@ static void *Absyn__DIV = MMC_REFSTRUCTLIT(Absyn__DIV__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_POW__desc_added
 #define Absyn_Operator_POW__desc_added
-const char* Absyn_Operator_POW__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Operator_POW__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Operator_POW__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_POW__desc = {
   "Absyn_Operator_POW",
   "Absyn.Operator.POW",
   Absyn_Operator_POW__desc__fields
@@ -2769,8 +2769,8 @@ static void *Absyn__POW = MMC_REFSTRUCTLIT(Absyn__POW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_UPLUS__desc_added
 #define Absyn_Operator_UPLUS__desc_added
-const char* Absyn_Operator_UPLUS__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Operator_UPLUS__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Operator_UPLUS__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_UPLUS__desc = {
   "Absyn_Operator_UPLUS",
   "Absyn.Operator.UPLUS",
   Absyn_Operator_UPLUS__desc__fields
@@ -2785,8 +2785,8 @@ static void *Absyn__UPLUS = MMC_REFSTRUCTLIT(Absyn__UPLUS__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_UMINUS__desc_added
 #define Absyn_Operator_UMINUS__desc_added
-const char* Absyn_Operator_UMINUS__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Operator_UMINUS__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Operator_UMINUS__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_UMINUS__desc = {
   "Absyn_Operator_UMINUS",
   "Absyn.Operator.UMINUS",
   Absyn_Operator_UMINUS__desc__fields
@@ -2801,8 +2801,8 @@ static void *Absyn__UMINUS = MMC_REFSTRUCTLIT(Absyn__UMINUS__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_ADD__EW__desc_added
 #define Absyn_Operator_ADD__EW__desc_added
-const char* Absyn_Operator_ADD__EW__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Operator_ADD__EW__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Operator_ADD__EW__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_ADD__EW__desc = {
   "Absyn_Operator_ADD__EW",
   "Absyn.Operator.ADD_EW",
   Absyn_Operator_ADD__EW__desc__fields
@@ -2817,8 +2817,8 @@ static void *Absyn__ADD_5fEW = MMC_REFSTRUCTLIT(Absyn__ADD_5fEW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_SUB__EW__desc_added
 #define Absyn_Operator_SUB__EW__desc_added
-const char* Absyn_Operator_SUB__EW__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Operator_SUB__EW__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Operator_SUB__EW__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_SUB__EW__desc = {
   "Absyn_Operator_SUB__EW",
   "Absyn.Operator.SUB_EW",
   Absyn_Operator_SUB__EW__desc__fields
@@ -2833,8 +2833,8 @@ static void *Absyn__SUB_5fEW = MMC_REFSTRUCTLIT(Absyn__SUB_5fEW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_MUL__EW__desc_added
 #define Absyn_Operator_MUL__EW__desc_added
-const char* Absyn_Operator_MUL__EW__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Operator_MUL__EW__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Operator_MUL__EW__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_MUL__EW__desc = {
   "Absyn_Operator_MUL__EW",
   "Absyn.Operator.MUL_EW",
   Absyn_Operator_MUL__EW__desc__fields
@@ -2849,8 +2849,8 @@ static void *Absyn__MUL_5fEW = MMC_REFSTRUCTLIT(Absyn__MUL_5fEW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_DIV__EW__desc_added
 #define Absyn_Operator_DIV__EW__desc_added
-const char* Absyn_Operator_DIV__EW__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Operator_DIV__EW__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Operator_DIV__EW__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_DIV__EW__desc = {
   "Absyn_Operator_DIV__EW",
   "Absyn.Operator.DIV_EW",
   Absyn_Operator_DIV__EW__desc__fields
@@ -2865,8 +2865,8 @@ static void *Absyn__DIV_5fEW = MMC_REFSTRUCTLIT(Absyn__DIV_5fEW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_POW__EW__desc_added
 #define Absyn_Operator_POW__EW__desc_added
-const char* Absyn_Operator_POW__EW__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Operator_POW__EW__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Operator_POW__EW__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_POW__EW__desc = {
   "Absyn_Operator_POW__EW",
   "Absyn.Operator.POW_EW",
   Absyn_Operator_POW__EW__desc__fields
@@ -2881,8 +2881,8 @@ static void *Absyn__POW_5fEW = MMC_REFSTRUCTLIT(Absyn__POW_5fEW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_UPLUS__EW__desc_added
 #define Absyn_Operator_UPLUS__EW__desc_added
-const char* Absyn_Operator_UPLUS__EW__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Operator_UPLUS__EW__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Operator_UPLUS__EW__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_UPLUS__EW__desc = {
   "Absyn_Operator_UPLUS__EW",
   "Absyn.Operator.UPLUS_EW",
   Absyn_Operator_UPLUS__EW__desc__fields
@@ -2897,8 +2897,8 @@ static void *Absyn__UPLUS_5fEW = MMC_REFSTRUCTLIT(Absyn__UPLUS_5fEW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_UMINUS__EW__desc_added
 #define Absyn_Operator_UMINUS__EW__desc_added
-const char* Absyn_Operator_UMINUS__EW__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Operator_UMINUS__EW__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Operator_UMINUS__EW__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_UMINUS__EW__desc = {
   "Absyn_Operator_UMINUS__EW",
   "Absyn.Operator.UMINUS_EW",
   Absyn_Operator_UMINUS__EW__desc__fields
@@ -2913,8 +2913,8 @@ static void *Absyn__UMINUS_5fEW = MMC_REFSTRUCTLIT(Absyn__UMINUS_5fEW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_AND__desc_added
 #define Absyn_Operator_AND__desc_added
-const char* Absyn_Operator_AND__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Operator_AND__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Operator_AND__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_AND__desc = {
   "Absyn_Operator_AND",
   "Absyn.Operator.AND",
   Absyn_Operator_AND__desc__fields
@@ -2929,8 +2929,8 @@ static void *Absyn__AND = MMC_REFSTRUCTLIT(Absyn__AND__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_OR__desc_added
 #define Absyn_Operator_OR__desc_added
-const char* Absyn_Operator_OR__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Operator_OR__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Operator_OR__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_OR__desc = {
   "Absyn_Operator_OR",
   "Absyn.Operator.OR",
   Absyn_Operator_OR__desc__fields
@@ -2945,8 +2945,8 @@ static void *Absyn__OR = MMC_REFSTRUCTLIT(Absyn__OR__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_NOT__desc_added
 #define Absyn_Operator_NOT__desc_added
-const char* Absyn_Operator_NOT__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Operator_NOT__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Operator_NOT__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_NOT__desc = {
   "Absyn_Operator_NOT",
   "Absyn.Operator.NOT",
   Absyn_Operator_NOT__desc__fields
@@ -2961,8 +2961,8 @@ static void *Absyn__NOT = MMC_REFSTRUCTLIT(Absyn__NOT__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_LESS__desc_added
 #define Absyn_Operator_LESS__desc_added
-const char* Absyn_Operator_LESS__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Operator_LESS__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Operator_LESS__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_LESS__desc = {
   "Absyn_Operator_LESS",
   "Absyn.Operator.LESS",
   Absyn_Operator_LESS__desc__fields
@@ -2977,8 +2977,8 @@ static void *Absyn__LESS = MMC_REFSTRUCTLIT(Absyn__LESS__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_LESSEQ__desc_added
 #define Absyn_Operator_LESSEQ__desc_added
-const char* Absyn_Operator_LESSEQ__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Operator_LESSEQ__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Operator_LESSEQ__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_LESSEQ__desc = {
   "Absyn_Operator_LESSEQ",
   "Absyn.Operator.LESSEQ",
   Absyn_Operator_LESSEQ__desc__fields
@@ -2993,8 +2993,8 @@ static void *Absyn__LESSEQ = MMC_REFSTRUCTLIT(Absyn__LESSEQ__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_GREATER__desc_added
 #define Absyn_Operator_GREATER__desc_added
-const char* Absyn_Operator_GREATER__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Operator_GREATER__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Operator_GREATER__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_GREATER__desc = {
   "Absyn_Operator_GREATER",
   "Absyn.Operator.GREATER",
   Absyn_Operator_GREATER__desc__fields
@@ -3009,8 +3009,8 @@ static void *Absyn__GREATER = MMC_REFSTRUCTLIT(Absyn__GREATER__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_GREATEREQ__desc_added
 #define Absyn_Operator_GREATEREQ__desc_added
-const char* Absyn_Operator_GREATEREQ__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Operator_GREATEREQ__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Operator_GREATEREQ__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_GREATEREQ__desc = {
   "Absyn_Operator_GREATEREQ",
   "Absyn.Operator.GREATEREQ",
   Absyn_Operator_GREATEREQ__desc__fields
@@ -3025,8 +3025,8 @@ static void *Absyn__GREATEREQ = MMC_REFSTRUCTLIT(Absyn__GREATEREQ__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_EQUAL__desc_added
 #define Absyn_Operator_EQUAL__desc_added
-const char* Absyn_Operator_EQUAL__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Operator_EQUAL__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Operator_EQUAL__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_EQUAL__desc = {
   "Absyn_Operator_EQUAL",
   "Absyn.Operator.EQUAL",
   Absyn_Operator_EQUAL__desc__fields
@@ -3041,8 +3041,8 @@ static void *Absyn__EQUAL = MMC_REFSTRUCTLIT(Absyn__EQUAL__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_NEQUAL__desc_added
 #define Absyn_Operator_NEQUAL__desc_added
-const char* Absyn_Operator_NEQUAL__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Operator_NEQUAL__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Operator_NEQUAL__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_NEQUAL__desc = {
   "Absyn_Operator_NEQUAL",
   "Absyn.Operator.NEQUAL",
   Absyn_Operator_NEQUAL__desc__fields
@@ -3057,8 +3057,8 @@ static void *Absyn__NEQUAL = MMC_REFSTRUCTLIT(Absyn__NEQUAL__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Subscript_NOSUB__desc_added
 #define Absyn_Subscript_NOSUB__desc_added
-const char* Absyn_Subscript_NOSUB__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Subscript_NOSUB__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Subscript_NOSUB__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Subscript_NOSUB__desc = {
   "Absyn_Subscript_NOSUB",
   "Absyn.Subscript.NOSUB",
   Absyn_Subscript_NOSUB__desc__fields
@@ -3073,8 +3073,8 @@ static void *Absyn__NOSUB = MMC_REFSTRUCTLIT(Absyn__NOSUB__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Subscript_SUBSCRIPT__desc_added
 #define Absyn_Subscript_SUBSCRIPT__desc_added
-const char* Absyn_Subscript_SUBSCRIPT__desc__fields[1] = {"subscript"};
-struct record_description Absyn_Subscript_SUBSCRIPT__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Subscript_SUBSCRIPT__desc__fields[1] = {"subscript"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Subscript_SUBSCRIPT__desc = {
   "Absyn_Subscript_SUBSCRIPT",
   "Absyn.Subscript.SUBSCRIPT",
   Absyn_Subscript_SUBSCRIPT__desc__fields
@@ -3088,8 +3088,8 @@ extern struct record_description Absyn_Subscript_SUBSCRIPT__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ComponentRef_CREF__FULLYQUALIFIED__desc_added
 #define Absyn_ComponentRef_CREF__FULLYQUALIFIED__desc_added
-const char* Absyn_ComponentRef_CREF__FULLYQUALIFIED__desc__fields[1] = {"componentRef"};
-struct record_description Absyn_ComponentRef_CREF__FULLYQUALIFIED__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ComponentRef_CREF__FULLYQUALIFIED__desc__fields[1] = {"componentRef"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ComponentRef_CREF__FULLYQUALIFIED__desc = {
   "Absyn_ComponentRef_CREF__FULLYQUALIFIED",
   "Absyn.ComponentRef.CREF_FULLYQUALIFIED",
   Absyn_ComponentRef_CREF__FULLYQUALIFIED__desc__fields
@@ -3103,8 +3103,8 @@ extern struct record_description Absyn_ComponentRef_CREF__FULLYQUALIFIED__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ComponentRef_CREF__QUAL__desc_added
 #define Absyn_ComponentRef_CREF__QUAL__desc_added
-const char* Absyn_ComponentRef_CREF__QUAL__desc__fields[3] = {"name","subscripts","componentRef"};
-struct record_description Absyn_ComponentRef_CREF__QUAL__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ComponentRef_CREF__QUAL__desc__fields[3] = {"name","subscripts","componentRef"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ComponentRef_CREF__QUAL__desc = {
   "Absyn_ComponentRef_CREF__QUAL",
   "Absyn.ComponentRef.CREF_QUAL",
   Absyn_ComponentRef_CREF__QUAL__desc__fields
@@ -3118,8 +3118,8 @@ extern struct record_description Absyn_ComponentRef_CREF__QUAL__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ComponentRef_CREF__IDENT__desc_added
 #define Absyn_ComponentRef_CREF__IDENT__desc_added
-const char* Absyn_ComponentRef_CREF__IDENT__desc__fields[2] = {"name","subscripts"};
-struct record_description Absyn_ComponentRef_CREF__IDENT__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ComponentRef_CREF__IDENT__desc__fields[2] = {"name","subscripts"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ComponentRef_CREF__IDENT__desc = {
   "Absyn_ComponentRef_CREF__IDENT",
   "Absyn.ComponentRef.CREF_IDENT",
   Absyn_ComponentRef_CREF__IDENT__desc__fields
@@ -3133,8 +3133,8 @@ extern struct record_description Absyn_ComponentRef_CREF__IDENT__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ComponentRef_WILD__desc_added
 #define Absyn_ComponentRef_WILD__desc_added
-const char* Absyn_ComponentRef_WILD__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_ComponentRef_WILD__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ComponentRef_WILD__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ComponentRef_WILD__desc = {
   "Absyn_ComponentRef_WILD",
   "Absyn.ComponentRef.WILD",
   Absyn_ComponentRef_WILD__desc__fields
@@ -3149,8 +3149,8 @@ static void *Absyn__WILD = MMC_REFSTRUCTLIT(Absyn__WILD__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ComponentRef_ALLWILD__desc_added
 #define Absyn_ComponentRef_ALLWILD__desc_added
-const char* Absyn_ComponentRef_ALLWILD__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_ComponentRef_ALLWILD__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ComponentRef_ALLWILD__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ComponentRef_ALLWILD__desc = {
   "Absyn_ComponentRef_ALLWILD",
   "Absyn.ComponentRef.ALLWILD",
   Absyn_ComponentRef_ALLWILD__desc__fields
@@ -3165,8 +3165,8 @@ static void *Absyn__ALLWILD = MMC_REFSTRUCTLIT(Absyn__ALLWILD__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ComponentRef_CREF__INVALID__desc_added
 #define Absyn_ComponentRef_CREF__INVALID__desc_added
-const char* Absyn_ComponentRef_CREF__INVALID__desc__fields[1] = {"componentRef"};
-struct record_description Absyn_ComponentRef_CREF__INVALID__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ComponentRef_CREF__INVALID__desc__fields[1] = {"componentRef"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ComponentRef_CREF__INVALID__desc = {
   "Absyn_ComponentRef_CREF__INVALID",
   "Absyn.ComponentRef.CREF_INVALID",
   Absyn_ComponentRef_CREF__INVALID__desc__fields
@@ -3180,8 +3180,8 @@ extern struct record_description Absyn_ComponentRef_CREF__INVALID__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Path_QUALIFIED__desc_added
 #define Absyn_Path_QUALIFIED__desc_added
-const char* Absyn_Path_QUALIFIED__desc__fields[2] = {"name","path"};
-struct record_description Absyn_Path_QUALIFIED__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Path_QUALIFIED__desc__fields[2] = {"name","path"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Path_QUALIFIED__desc = {
   "Absyn_Path_QUALIFIED",
   "Absyn.Path.QUALIFIED",
   Absyn_Path_QUALIFIED__desc__fields
@@ -3195,8 +3195,8 @@ extern struct record_description Absyn_Path_QUALIFIED__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Path_IDENT__desc_added
 #define Absyn_Path_IDENT__desc_added
-const char* Absyn_Path_IDENT__desc__fields[1] = {"name"};
-struct record_description Absyn_Path_IDENT__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Path_IDENT__desc__fields[1] = {"name"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Path_IDENT__desc = {
   "Absyn_Path_IDENT",
   "Absyn.Path.IDENT",
   Absyn_Path_IDENT__desc__fields
@@ -3210,8 +3210,8 @@ extern struct record_description Absyn_Path_IDENT__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Path_FULLYQUALIFIED__desc_added
 #define Absyn_Path_FULLYQUALIFIED__desc_added
-const char* Absyn_Path_FULLYQUALIFIED__desc__fields[1] = {"path"};
-struct record_description Absyn_Path_FULLYQUALIFIED__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Path_FULLYQUALIFIED__desc__fields[1] = {"path"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Path_FULLYQUALIFIED__desc = {
   "Absyn_Path_FULLYQUALIFIED",
   "Absyn.Path.FULLYQUALIFIED",
   Absyn_Path_FULLYQUALIFIED__desc__fields
@@ -3225,8 +3225,8 @@ extern struct record_description Absyn_Path_FULLYQUALIFIED__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__CLASS__desc_added
 #define Absyn_Restriction_R__CLASS__desc_added
-const char* Absyn_Restriction_R__CLASS__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Restriction_R__CLASS__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__CLASS__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__CLASS__desc = {
   "Absyn_Restriction_R__CLASS",
   "Absyn.Restriction.R_CLASS",
   Absyn_Restriction_R__CLASS__desc__fields
@@ -3241,8 +3241,8 @@ static void *Absyn__R_5fCLASS = MMC_REFSTRUCTLIT(Absyn__R_5fCLASS__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__OPTIMIZATION__desc_added
 #define Absyn_Restriction_R__OPTIMIZATION__desc_added
-const char* Absyn_Restriction_R__OPTIMIZATION__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Restriction_R__OPTIMIZATION__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__OPTIMIZATION__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__OPTIMIZATION__desc = {
   "Absyn_Restriction_R__OPTIMIZATION",
   "Absyn.Restriction.R_OPTIMIZATION",
   Absyn_Restriction_R__OPTIMIZATION__desc__fields
@@ -3257,8 +3257,8 @@ static void *Absyn__R_5fOPTIMIZATION = MMC_REFSTRUCTLIT(Absyn__R_5fOPTIMIZATION_
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__MODEL__desc_added
 #define Absyn_Restriction_R__MODEL__desc_added
-const char* Absyn_Restriction_R__MODEL__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Restriction_R__MODEL__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__MODEL__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__MODEL__desc = {
   "Absyn_Restriction_R__MODEL",
   "Absyn.Restriction.R_MODEL",
   Absyn_Restriction_R__MODEL__desc__fields
@@ -3273,8 +3273,8 @@ static void *Absyn__R_5fMODEL = MMC_REFSTRUCTLIT(Absyn__R_5fMODEL__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__RECORD__desc_added
 #define Absyn_Restriction_R__RECORD__desc_added
-const char* Absyn_Restriction_R__RECORD__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Restriction_R__RECORD__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__RECORD__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__RECORD__desc = {
   "Absyn_Restriction_R__RECORD",
   "Absyn.Restriction.R_RECORD",
   Absyn_Restriction_R__RECORD__desc__fields
@@ -3289,8 +3289,8 @@ static void *Absyn__R_5fRECORD = MMC_REFSTRUCTLIT(Absyn__R_5fRECORD__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__BLOCK__desc_added
 #define Absyn_Restriction_R__BLOCK__desc_added
-const char* Absyn_Restriction_R__BLOCK__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Restriction_R__BLOCK__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__BLOCK__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__BLOCK__desc = {
   "Absyn_Restriction_R__BLOCK",
   "Absyn.Restriction.R_BLOCK",
   Absyn_Restriction_R__BLOCK__desc__fields
@@ -3305,8 +3305,8 @@ static void *Absyn__R_5fBLOCK = MMC_REFSTRUCTLIT(Absyn__R_5fBLOCK__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__CONNECTOR__desc_added
 #define Absyn_Restriction_R__CONNECTOR__desc_added
-const char* Absyn_Restriction_R__CONNECTOR__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Restriction_R__CONNECTOR__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__CONNECTOR__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__CONNECTOR__desc = {
   "Absyn_Restriction_R__CONNECTOR",
   "Absyn.Restriction.R_CONNECTOR",
   Absyn_Restriction_R__CONNECTOR__desc__fields
@@ -3321,8 +3321,8 @@ static void *Absyn__R_5fCONNECTOR = MMC_REFSTRUCTLIT(Absyn__R_5fCONNECTOR__struc
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__EXP__CONNECTOR__desc_added
 #define Absyn_Restriction_R__EXP__CONNECTOR__desc_added
-const char* Absyn_Restriction_R__EXP__CONNECTOR__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Restriction_R__EXP__CONNECTOR__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__EXP__CONNECTOR__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__EXP__CONNECTOR__desc = {
   "Absyn_Restriction_R__EXP__CONNECTOR",
   "Absyn.Restriction.R_EXP_CONNECTOR",
   Absyn_Restriction_R__EXP__CONNECTOR__desc__fields
@@ -3337,8 +3337,8 @@ static void *Absyn__R_5fEXP_5fCONNECTOR = MMC_REFSTRUCTLIT(Absyn__R_5fEXP_5fCONN
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__TYPE__desc_added
 #define Absyn_Restriction_R__TYPE__desc_added
-const char* Absyn_Restriction_R__TYPE__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Restriction_R__TYPE__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__TYPE__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__TYPE__desc = {
   "Absyn_Restriction_R__TYPE",
   "Absyn.Restriction.R_TYPE",
   Absyn_Restriction_R__TYPE__desc__fields
@@ -3353,8 +3353,8 @@ static void *Absyn__R_5fTYPE = MMC_REFSTRUCTLIT(Absyn__R_5fTYPE__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__PACKAGE__desc_added
 #define Absyn_Restriction_R__PACKAGE__desc_added
-const char* Absyn_Restriction_R__PACKAGE__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Restriction_R__PACKAGE__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__PACKAGE__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__PACKAGE__desc = {
   "Absyn_Restriction_R__PACKAGE",
   "Absyn.Restriction.R_PACKAGE",
   Absyn_Restriction_R__PACKAGE__desc__fields
@@ -3369,8 +3369,8 @@ static void *Absyn__R_5fPACKAGE = MMC_REFSTRUCTLIT(Absyn__R_5fPACKAGE__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__FUNCTION__desc_added
 #define Absyn_Restriction_R__FUNCTION__desc_added
-const char* Absyn_Restriction_R__FUNCTION__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Restriction_R__FUNCTION__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__FUNCTION__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__FUNCTION__desc = {
   "Absyn_Restriction_R__FUNCTION",
   "Absyn.Restriction.R_FUNCTION",
   Absyn_Restriction_R__FUNCTION__desc__fields
@@ -3385,8 +3385,8 @@ static void *Absyn__R_5fFUNCTION = MMC_REFSTRUCTLIT(Absyn__R_5fFUNCTION__struct)
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__OPERATOR__desc_added
 #define Absyn_Restriction_R__OPERATOR__desc_added
-const char* Absyn_Restriction_R__OPERATOR__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Restriction_R__OPERATOR__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__OPERATOR__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__OPERATOR__desc = {
   "Absyn_Restriction_R__OPERATOR",
   "Absyn.Restriction.R_OPERATOR",
   Absyn_Restriction_R__OPERATOR__desc__fields
@@ -3401,8 +3401,8 @@ static void *Absyn__R_5fOPERATOR = MMC_REFSTRUCTLIT(Absyn__R_5fOPERATOR__struct)
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__OPERATOR__FUNCTION__desc_added
 #define Absyn_Restriction_R__OPERATOR__FUNCTION__desc_added
-const char* Absyn_Restriction_R__OPERATOR__FUNCTION__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Restriction_R__OPERATOR__FUNCTION__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__OPERATOR__FUNCTION__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__OPERATOR__FUNCTION__desc = {
   "Absyn_Restriction_R__OPERATOR__FUNCTION",
   "Absyn.Restriction.R_OPERATOR_FUNCTION",
   Absyn_Restriction_R__OPERATOR__FUNCTION__desc__fields
@@ -3417,8 +3417,8 @@ static void *Absyn__R_5fOPERATOR_5fFUNCTION = MMC_REFSTRUCTLIT(Absyn__R_5fOPERAT
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__OPERATOR__RECORD__desc_added
 #define Absyn_Restriction_R__OPERATOR__RECORD__desc_added
-const char* Absyn_Restriction_R__OPERATOR__RECORD__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Restriction_R__OPERATOR__RECORD__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__OPERATOR__RECORD__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__OPERATOR__RECORD__desc = {
   "Absyn_Restriction_R__OPERATOR__RECORD",
   "Absyn.Restriction.R_OPERATOR_RECORD",
   Absyn_Restriction_R__OPERATOR__RECORD__desc__fields
@@ -3433,8 +3433,8 @@ static void *Absyn__R_5fOPERATOR_5fRECORD = MMC_REFSTRUCTLIT(Absyn__R_5fOPERATOR
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__ENUMERATION__desc_added
 #define Absyn_Restriction_R__ENUMERATION__desc_added
-const char* Absyn_Restriction_R__ENUMERATION__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Restriction_R__ENUMERATION__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__ENUMERATION__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__ENUMERATION__desc = {
   "Absyn_Restriction_R__ENUMERATION",
   "Absyn.Restriction.R_ENUMERATION",
   Absyn_Restriction_R__ENUMERATION__desc__fields
@@ -3449,8 +3449,8 @@ static void *Absyn__R_5fENUMERATION = MMC_REFSTRUCTLIT(Absyn__R_5fENUMERATION__s
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__PREDEFINED__INTEGER__desc_added
 #define Absyn_Restriction_R__PREDEFINED__INTEGER__desc_added
-const char* Absyn_Restriction_R__PREDEFINED__INTEGER__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Restriction_R__PREDEFINED__INTEGER__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__PREDEFINED__INTEGER__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__PREDEFINED__INTEGER__desc = {
   "Absyn_Restriction_R__PREDEFINED__INTEGER",
   "Absyn.Restriction.R_PREDEFINED_INTEGER",
   Absyn_Restriction_R__PREDEFINED__INTEGER__desc__fields
@@ -3465,8 +3465,8 @@ static void *Absyn__R_5fPREDEFINED_5fINTEGER = MMC_REFSTRUCTLIT(Absyn__R_5fPREDE
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__PREDEFINED__REAL__desc_added
 #define Absyn_Restriction_R__PREDEFINED__REAL__desc_added
-const char* Absyn_Restriction_R__PREDEFINED__REAL__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Restriction_R__PREDEFINED__REAL__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__PREDEFINED__REAL__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__PREDEFINED__REAL__desc = {
   "Absyn_Restriction_R__PREDEFINED__REAL",
   "Absyn.Restriction.R_PREDEFINED_REAL",
   Absyn_Restriction_R__PREDEFINED__REAL__desc__fields
@@ -3481,8 +3481,8 @@ static void *Absyn__R_5fPREDEFINED_5fREAL = MMC_REFSTRUCTLIT(Absyn__R_5fPREDEFIN
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__PREDEFINED__STRING__desc_added
 #define Absyn_Restriction_R__PREDEFINED__STRING__desc_added
-const char* Absyn_Restriction_R__PREDEFINED__STRING__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Restriction_R__PREDEFINED__STRING__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__PREDEFINED__STRING__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__PREDEFINED__STRING__desc = {
   "Absyn_Restriction_R__PREDEFINED__STRING",
   "Absyn.Restriction.R_PREDEFINED_STRING",
   Absyn_Restriction_R__PREDEFINED__STRING__desc__fields
@@ -3497,8 +3497,8 @@ static void *Absyn__R_5fPREDEFINED_5fSTRING = MMC_REFSTRUCTLIT(Absyn__R_5fPREDEF
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__PREDEFINED__BOOLEAN__desc_added
 #define Absyn_Restriction_R__PREDEFINED__BOOLEAN__desc_added
-const char* Absyn_Restriction_R__PREDEFINED__BOOLEAN__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Restriction_R__PREDEFINED__BOOLEAN__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__PREDEFINED__BOOLEAN__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__PREDEFINED__BOOLEAN__desc = {
   "Absyn_Restriction_R__PREDEFINED__BOOLEAN",
   "Absyn.Restriction.R_PREDEFINED_BOOLEAN",
   Absyn_Restriction_R__PREDEFINED__BOOLEAN__desc__fields
@@ -3513,8 +3513,8 @@ static void *Absyn__R_5fPREDEFINED_5fBOOLEAN = MMC_REFSTRUCTLIT(Absyn__R_5fPREDE
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__PREDEFINED__ENUMERATION__desc_added
 #define Absyn_Restriction_R__PREDEFINED__ENUMERATION__desc_added
-const char* Absyn_Restriction_R__PREDEFINED__ENUMERATION__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Restriction_R__PREDEFINED__ENUMERATION__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__PREDEFINED__ENUMERATION__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__PREDEFINED__ENUMERATION__desc = {
   "Absyn_Restriction_R__PREDEFINED__ENUMERATION",
   "Absyn.Restriction.R_PREDEFINED_ENUMERATION",
   Absyn_Restriction_R__PREDEFINED__ENUMERATION__desc__fields
@@ -3529,8 +3529,8 @@ static void *Absyn__R_5fPREDEFINED_5fENUMERATION = MMC_REFSTRUCTLIT(Absyn__R_5fP
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__UNIONTYPE__desc_added
 #define Absyn_Restriction_R__UNIONTYPE__desc_added
-const char* Absyn_Restriction_R__UNIONTYPE__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Restriction_R__UNIONTYPE__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__UNIONTYPE__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__UNIONTYPE__desc = {
   "Absyn_Restriction_R__UNIONTYPE",
   "Absyn.Restriction.R_UNIONTYPE",
   Absyn_Restriction_R__UNIONTYPE__desc__fields
@@ -3545,8 +3545,8 @@ static void *Absyn__R_5fUNIONTYPE = MMC_REFSTRUCTLIT(Absyn__R_5fUNIONTYPE__struc
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__METARECORD__desc_added
 #define Absyn_Restriction_R__METARECORD__desc_added
-const char* Absyn_Restriction_R__METARECORD__desc__fields[3] = {"name","index","singleton"};
-struct record_description Absyn_Restriction_R__METARECORD__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__METARECORD__desc__fields[3] = {"name","index","singleton"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__METARECORD__desc = {
   "Absyn_Restriction_R__METARECORD",
   "Absyn.Restriction.R_METARECORD",
   Absyn_Restriction_R__METARECORD__desc__fields
@@ -3560,8 +3560,8 @@ extern struct record_description Absyn_Restriction_R__METARECORD__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__UNKNOWN__desc_added
 #define Absyn_Restriction_R__UNKNOWN__desc_added
-const char* Absyn_Restriction_R__UNKNOWN__desc__fields[1] = {"no fileds"};
-struct record_description Absyn_Restriction_R__UNKNOWN__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Restriction_R__UNKNOWN__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__UNKNOWN__desc = {
   "Absyn_Restriction_R__UNKNOWN",
   "Absyn.Restriction.R_UNKNOWN",
   Absyn_Restriction_R__UNKNOWN__desc__fields
@@ -3576,8 +3576,8 @@ static void *Absyn__R_5fUNKNOWN = MMC_REFSTRUCTLIT(Absyn__R_5fUNKNOWN__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Annotation_ANNOTATION__desc_added
 #define Absyn_Annotation_ANNOTATION__desc_added
-const char* Absyn_Annotation_ANNOTATION__desc__fields[1] = {"elementArgs"};
-struct record_description Absyn_Annotation_ANNOTATION__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Annotation_ANNOTATION__desc__fields[1] = {"elementArgs"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Annotation_ANNOTATION__desc = {
   "Absyn_Annotation_ANNOTATION",
   "Absyn.Annotation.ANNOTATION",
   Absyn_Annotation_ANNOTATION__desc__fields
@@ -3591,8 +3591,8 @@ extern struct record_description Absyn_Annotation_ANNOTATION__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Comment_COMMENT__desc_added
 #define Absyn_Comment_COMMENT__desc_added
-const char* Absyn_Comment_COMMENT__desc__fields[2] = {"annotation_","comment"};
-struct record_description Absyn_Comment_COMMENT__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_Comment_COMMENT__desc__fields[2] = {"annotation_","comment"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Comment_COMMENT__desc = {
   "Absyn_Comment_COMMENT",
   "Absyn.Comment.COMMENT",
   Absyn_Comment_COMMENT__desc__fields
@@ -3606,8 +3606,8 @@ extern struct record_description Absyn_Comment_COMMENT__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ExternalDecl_EXTERNALDECL__desc_added
 #define Absyn_ExternalDecl_EXTERNALDECL__desc_added
-const char* Absyn_ExternalDecl_EXTERNALDECL__desc__fields[5] = {"funcName","lang","output_","args","annotation_"};
-struct record_description Absyn_ExternalDecl_EXTERNALDECL__desc = {
+ADD_METARECORD_DEFINTIONS const char* Absyn_ExternalDecl_EXTERNALDECL__desc__fields[5] = {"funcName","lang","output_","args","annotation_"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_ExternalDecl_EXTERNALDECL__desc = {
   "Absyn_ExternalDecl_EXTERNALDECL",
   "Absyn.ExternalDecl.EXTERNALDECL",
   Absyn_ExternalDecl_EXTERNALDECL__desc__fields

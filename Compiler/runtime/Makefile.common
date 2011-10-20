@@ -58,7 +58,7 @@ Database_omc.o: Database.c Database_omc.c
 Print_rml.o : printimpl.c
 Print_omc.o : printimpl.c
 Error_rml.o : errorext.cpp ErrorMessage.hpp
-Error_omc.o : errorext.cpp ErrorMessage.hpp
+Error_omc.o : errorext.cpp ErrorMessage.hpp ../OpenModelicaBootstrappingHeader.h
 System_rml.o : systemimpl.c config.h errorext.h $(configUnix)
 System_omc.o : systemimpl.c config.h errorext.h $(configUnix) $(RML_COMPAT)
 Lapack_rml.o : lapackimpl.c config.h $(configUnix)
