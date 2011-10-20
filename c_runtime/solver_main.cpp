@@ -110,10 +110,9 @@ dummy_Jacobian(double *t, double *y, double *yprime, double *pd,
 int
 Jacobian(double *t, double *y, double *yprime, double *pd, double *cj,
          double *rpar, fortran_integer* ipar) {
-  int size_A = globalData->nStates;
-  double* matrixA = new double[size_A * size_A];
   double* backupStates;
   double backupTime;
+  backupStates = globalData->states;
   backupTime = globalData->timeValue;
 
   globalData->states = y;
@@ -127,7 +126,6 @@ Jacobian(double *t, double *y, double *yprime, double *pd, double *cj,
   }
   globalData->states = backupStates;
   globalData->timeValue = backupTime;
-  delete[] matrixA;
 
   return 0;
 }
