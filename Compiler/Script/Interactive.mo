@@ -1682,7 +1682,7 @@ algorithm
         {Absyn.STRING(value = name)} = getApiFunctionArgs(istmts);
         p1 = ClassLoader.loadFile(name) "System.regularFileExists(name) => 0 &    Parser.parse(name) => p1 &" ;
         newp = updateProgram(p1, p);
-        top_names_str = getTopClassnames(p1);
+        top_names_str = "{" +& stringDelimitList(List.map(getTopClassnames(p1),Absyn.pathString),",") +& "}";
         st = setSymbolTableAST(st, newp);
       then
         (top_names_str,st);
@@ -1703,6 +1703,7 @@ algorithm
       then
         ("error",st);
 
+    // Not moving this yet as it could break things...
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "deleteClass");
@@ -2072,15 +2073,6 @@ algorithm
 
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation
-        matchApiFunction(istmts, "getClassNames");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        path = Absyn.crefToPath(cr);
-        resstr = getClassnamesInPath(path, p);
-      then
-        (resstr,st);
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
         matchApiFunction(istmts, "getClassNamesRecursive");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         path = Absyn.crefToPath(cr);
@@ -2139,19 +2131,6 @@ algorithm
         st = setSymbolTableAST(st, p);
       then
         (resstr, st);
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getClassNames");
-        {} = getApiFunctionArgs(istmts);
-        resstr = getTopClassnames(p);
-      then
-        (resstr,st);
-
-    case (istmts, st)
-      equation
-        matchApiFunction(istmts, "getClassNames");
-      then ("{}",st);
 
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation
@@ -11985,14 +11964,14 @@ algorithm
   end matchcontinue;
 end getPackagesInElts;
 
-protected function getClassnamesInPath
+public function getClassnamesInPath
 "function: getClassnamesInPath
   Return a comma separated list of classes in a given Path."
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
-  output String outString;
+  output list<Absyn.Path> paths;
 algorithm
-  outString:=
+  paths :=
   matchcontinue (inPath,inProgram)
     local
       Absyn.Class cdef;
@@ -12002,11 +11981,8 @@ algorithm
     case (modelpath,p)
       equation
         cdef = getPathedClassInProgram(modelpath, p);
-        str = getClassnamesInClass(modelpath, p, cdef);
-        res = stringAppendList({"{", str, "}"});
-      then
-        res;
-    case (_,_) then "Error";
+      then getClassnamesInClass(modelpath, p, cdef);
+    else {};
   end matchcontinue;
 end getClassnamesInPath;
 
@@ -12014,24 +11990,10 @@ public function getTopClassnames
 "function: getTopClassnames
    This function takes a Path and a Program and returns a list of
    the names of the packages found at the top scope."
-  input Absyn.Program inProgram;
-  output String outString;
+  input Absyn.Program p;
+  output list<Absyn.Path> paths;
 algorithm
-  outString:=
-  matchcontinue (inProgram)
-    local
-      list<String> strlist;
-      String str,res;
-      Absyn.Program p;
-    case (p)
-      equation
-        strlist = getTopClassnamesInProgram(p);
-        str = stringDelimitList(strlist, ",");
-        res = stringAppendList({"{", str, "}"});
-      then
-        res;
-    case (_) then "Error";
-  end matchcontinue;
+  paths := List.map(getTopClassnamesInProgram(p),Absyn.makeIdentPathFromString);
 end getTopClassnames;
 
 public function getTopClassnamesInProgram
@@ -12103,9 +12065,9 @@ protected function getClassnamesInClass
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
   input Absyn.Class inClass;
-  output String outString;
+  output list<Absyn.Path> paths;
 algorithm
-  outString := match (inPath,inProgram,inClass)
+  paths := match (inPath,inProgram,inClass)
     local
       list<String> strlist;
       String res;
@@ -12116,16 +12078,12 @@ algorithm
     case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
       equation
         strlist = getClassnamesInParts(parts);
-        res = stringDelimitList(strlist, ",");
-      then
-        res;
+      then List.map(strlist,Absyn.makeIdentPathFromString);
     /* an extended class with parts: model extends M end M; */
     case (_,_,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)))
       equation
         strlist = getClassnamesInParts(parts);
-        res = stringDelimitList(strlist, ",");
-      then
-        res;
+      then List.map(strlist,Absyn.makeIdentPathFromString);
     /* a derived class */
     case (inmodel,p,Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(path, _))))
       equation
@@ -12133,9 +12091,7 @@ algorithm
         (cdef,newpath) = lookupClassdef(path, inmodel, p);
         res = getClassnamesInClass(newpath, p, cdef);
         */
-        res = "";
-      then
-        res;
+      then {};
   end match;
 end getClassnamesInClass;
 

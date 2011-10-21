@@ -804,6 +804,21 @@ algorithm
       then
         (cache,Values.BOOL(b),st);
 
+    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses")))},st as Interactive.SYMBOLTABLE(ast = p),msg)
+      equation
+        paths = Interactive.getTopClassnames(p);
+        vals = List.map(paths,ValuesUtil.makeCodeTypeName);
+      then
+        (cache,ValuesUtil.makeArray(vals),st);
+
+
+    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast = p),msg)
+      equation
+        paths = Interactive.getClassnamesInPath(path, p);
+        vals = List.map(paths,ValuesUtil.makeCodeTypeName);
+      then
+        (cache,ValuesUtil.makeArray(vals),st);
+
     /* Does not exist in the env...
     case (cache,env,"lookupClass",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
