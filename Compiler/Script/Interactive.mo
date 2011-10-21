@@ -1434,24 +1434,6 @@ algorithm
 
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation
-        matchApiFunction(istmts, "getSourceFile");
-        {Absyn.CREF(componentRef = class_)} = getApiFunctionArgs(istmts);
-        resstr = getSourceFile(class_, p);
-      then
-        (resstr,st);
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "setSourceFile");
-        {Absyn.CREF(componentRef = class_), Absyn.STRING(value = filename)} =
-          getApiFunctionArgs(istmts);
-        (resstr,newp) = setSourceFile(class_, filename, p);
-        st = setSymbolTableAST(st, newp);
-      then
-        (resstr, st);
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
         matchApiFunction(istmts, "setComponentComment");
         {Absyn.CREF(componentRef = class_), 
          Absyn.CREF(componentRef = comp_ref), 
@@ -5642,7 +5624,7 @@ algorithm
   end matchcontinue;
 end getElementsInfo;
 
-protected function getSourceFile
+public function getSourceFile
 "function: getSourceFile
    author: PA
    Retrieves the Source file attribute of a Class.
@@ -5652,30 +5634,27 @@ protected function getSourceFile
    inputs:  (Absyn.ComponentRef, /* class */
                Absyn.Program)
    outputs: string"
-  input Absyn.ComponentRef inComponentRef;
+  input Absyn.Path p_class;
   input Absyn.Program inProgram;
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inComponentRef,inProgram)
+  matchcontinue (p_class,inProgram)
     local
-      Absyn.Path p_class;
       Absyn.Class cdef;
       String filename;
       Absyn.ComponentRef class_;
       Absyn.Program p;
-    case (class_,p) /* class */
+    case (p_class,p) /* class */
       equation
-        p_class = Absyn.crefToPath(class_);
         cdef = getPathedClassInProgram(p_class, p);
         filename = Absyn.classFilename(cdef);
-      then
-        filename;
-    case (_,_) then "Error";
+      then filename;
+    else "";
   end matchcontinue;
 end getSourceFile;
 
-protected function setSourceFile
+public function setSourceFile
 "function: setSourceFile
    author: PA
    Sets the source file of a Class. Is for instance used
@@ -5685,14 +5664,14 @@ protected function setSourceFile
                 string, /* filename */
                 Absyn.Program)
    outputs: (string, Absyn.Program)"
-  input Absyn.ComponentRef inComponentRef;
+  input Absyn.Path path;
   input String inString;
   input Absyn.Program inProgram;
-  output String outString;
+  output Boolean success;
   output Absyn.Program outProgram;
 algorithm
-  (outString,outProgram):=
-  matchcontinue (inComponentRef,inString,inProgram)
+  (success,outProgram):=
+  matchcontinue (path,inString,inProgram)
     local
       Absyn.Path p_class;
       Absyn.Class cdef,cdef_1;
@@ -5702,16 +5681,15 @@ algorithm
       String filename;
       Absyn.TimeStamp ts;
 
-    case (class_,filename,p as Absyn.PROGRAM(globalBuildTimes=ts))
+    case (path,filename,p as Absyn.PROGRAM(globalBuildTimes=ts))
       equation
-        p_class = Absyn.crefToPath(class_);
-        cdef = getPathedClassInProgram(p_class, p);
-        within_ = buildWithin(p_class);
+        cdef = getPathedClassInProgram(path, p);
+        within_ = buildWithin(path);
         cdef_1 = Absyn.setClassFilename(cdef, filename, ts);
         newp = updateProgram(Absyn.PROGRAM({cdef_1},within_,ts), p);
       then
-        ("Ok",newp);
-    case (_,_,p) then ("Error",p);
+        (true,newp);
+    case (_,_,p) then (false,p);
   end matchcontinue;
 end setSourceFile;
 

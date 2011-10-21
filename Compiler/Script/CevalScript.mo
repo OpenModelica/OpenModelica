@@ -791,6 +791,19 @@ algorithm
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then (cache,ValuesUtil.makeArray(vals),st);
 
+    case (cache,env,"getSourceFile",{Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast=p),msg)
+      equation
+        str = Interactive.getSourceFile(path, p);
+      then
+        (cache,Values.STRING(str),st);
+
+    case (cache,env,"setSourceFile",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str)},st as Interactive.SYMBOLTABLE(ast=p),msg)
+      equation
+        (b,p) = Interactive.setSourceFile(path, str, p);
+        st = Interactive.setSymbolTableAST(st,p);
+      then
+        (cache,Values.BOOL(b),st);
+
     /* Does not exist in the env...
     case (cache,env,"lookupClass",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation

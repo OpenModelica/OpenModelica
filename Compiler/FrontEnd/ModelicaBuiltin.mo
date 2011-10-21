@@ -1581,6 +1581,19 @@ algorithm
   success := 0 == system(call);
 end importFMU;
 
+function getSourceFile
+  input TypeName class_;
+  output String filename "empty on failure";
+external "builtin";
+end getSourceFile;
+
+function setSourceFile
+  input TypeName class_;
+  input String filename;
+  output Boolean success;
+external "builtin";
+end setSourceFile;
+
 end Scripting;
 
 annotation(Documentation(info="<html>OpenModelica internal defintions and scripting functions are defined here.</html>", __Dymola_DocumentationClass = true));
