@@ -818,6 +818,13 @@ algorithm
       then
         (cache,Values.BOOL(b),st);
 
+    case (cache,env,"setClassComment",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str)},st as Interactive.SYMBOLTABLE(ast=p),msg)
+      equation
+        (p,b) = Interactive.setClassComment(path, str, p);
+        st = Interactive.setSymbolTableAST(st, p);
+      then
+        (cache,Values.BOOL(b),st);
+
     case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses")))},st as Interactive.SYMBOLTABLE(ast = p),msg)
       equation
         paths = Interactive.getTopClassnames(p);

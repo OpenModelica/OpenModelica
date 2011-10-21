@@ -1335,6 +1335,13 @@ function setSourceFile
 external "builtin";
 end setSourceFile;
 
+function setClassComment
+  input TypeName class_;
+  input String filename;
+  output Boolean success;
+external "builtin";
+end setClassComment;
+
 function getClassNames
   input TypeName class_ := $TypeName(AllLoadedClasses);
   output TypeName classNames[:]; 

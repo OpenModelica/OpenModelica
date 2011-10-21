@@ -2096,16 +2096,6 @@ algorithm
 
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation
-        matchApiFunction(istmts, "setClassComment");
-        {Absyn.CREF(componentRef = class_),Absyn.STRING(value = str)} =
-          getApiFunctionArgs(istmts);
-        (p_1,resstr) = setClassComment(class_, str, p);
-        st = setSymbolTableAST(st, p_1);
-      then
-        (resstr, st);
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
         matchApiFunction(istmts, "getClassRestriction");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         resstr = getClassRestriction(cr, p);
@@ -8070,17 +8060,17 @@ algorithm
   end matchcontinue;
 end deleteClassFromList;
 
-protected function setClassComment
+public function setClassComment
 "function: setClassComment
   author: PA
   Sets the class comment."
-  input Absyn.ComponentRef inComponentRef;
+  input Absyn.Path path;
   input String inString;
   input Absyn.Program inProgram;
   output Absyn.Program outProgram;
-  output String outString;
+  output Boolean success;
 algorithm
-  (outProgram,outString) := matchcontinue (inComponentRef,inString,inProgram)
+  (outProgram,success) := matchcontinue (path,inString,inProgram)
     local
       Absyn.Path p_class;
       Absyn.Within within_;
@@ -8090,17 +8080,16 @@ algorithm
       String str;
       Absyn.TimeStamp ts;
 
-    case (class_,str,p as Absyn.PROGRAM(globalBuildTimes=ts))
+    case (p_class,str,p as Absyn.PROGRAM(globalBuildTimes=ts))
       equation
-        p_class = Absyn.crefToPath(class_);
         within_ = buildWithin(p_class);
         cdef = getPathedClassInProgram(p_class, p);
         cdef_1 = setClassCommentInClass(cdef, str);
         newp = updateProgram(Absyn.PROGRAM({cdef_1},within_,ts), p);
       then
-        (newp,"Ok");
+        (newp,true);
     
-    case (_,_,p) then (p,"Error");
+    case (_,_,p) then (p,false);
   end matchcontinue;
 end setClassComment;
 
