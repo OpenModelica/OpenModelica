@@ -1056,7 +1056,7 @@ bool OMCProxy::parseFile(QString fileName)
 {
     fileName = fileName.replace('\\', '/');
     sendCommand("parseFile(\"" + fileName + "\")");
-    return !StringHandler::unparseStrings(getResult()).empty();
+    return getResult() != "{}";
 }
 
 QStringList OMCProxy::parseString(QString value)
