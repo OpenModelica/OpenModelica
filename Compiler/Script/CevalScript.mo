@@ -785,6 +785,12 @@ algorithm
     case (cache,env,"parseString",_,st,msg)
       then (cache,ValuesUtil.makeArray({}),st);
 
+    case (cache,env,"parseFile",{Values.STRING(str1)},st,msg)
+      equation
+        (paths, st) = Interactive.parseFile(str1, st);
+        vals = List.map(paths,ValuesUtil.makeCodeTypeName);
+      then (cache,ValuesUtil.makeArray(vals),st);
+
     /* Does not exist in the env...
     case (cache,env,"lookupClass",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation

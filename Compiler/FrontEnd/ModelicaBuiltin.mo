@@ -77,28 +77,28 @@ function ceil
   input Real x;
   output Real y;
 external "builtin";
-annotation(Info="<html>the smallest integral value not less than <pre>x</pre>.</html>");
+annotation(Documentation(info="<html>the smallest integral value not less than <pre>x</pre>.</html>"));
 end ceil;
 
 function floor
   input Real x;
   output Real y;
 external "builtin";
-annotation(Info="<html>the largest integral value not less than <pre>x</pre>.</html>");
+annotation(Documentation(info="<html>the largest integral value not less than <pre>x</pre>.</html>"));
 end floor;
 
 function integer
   input Real x;
   output Integer y;
 external "builtin";
-annotation(Info="<html>the largest integral value not less than <pre>x</pre>.</html>");
+annotation(Documentation(info="<html>the largest integral value not less than <pre>x</pre>.</html>"));
 end integer;
 
 function sqrt
   input Real x(unit="'p");
   output Real y(unit="'p(1/2)");
 external "builtin";
-annotation(Info="<html>the square root function is defined for <pre>x >= 0</pre></html>");
+annotation(Documentation(info="<html>the square root function is defined for <pre>x >= 0</pre></html>"));
 end sqrt;
 
 function sign
@@ -192,10 +192,10 @@ function atan2
   input Real x;
   output Real z;
 external "builtin";
-annotation(Info="<html>
+annotation(Documentation(info="<html>
 calculates the principal value of the arc tangent of <pre>y/x</pre>, using
 the signs of the two arguments to determine the quadrant of the result.
-</html>");
+</html>"));
 end atan2;
 
 function exp "base-e exponential function"
@@ -288,10 +288,10 @@ function diagonal
 end diagonal;
 
 function cardinality
-  annotation(Info="<html>
+  annotation(Documentation(info="<html>
   The cardinality operator is <b>deprecated</b>. It will be removed in a future Modelica release.
   Returns the number of (inside and outside) occurrences of connector instance c in a connect-equation as an Integer number.
-  </html>");
+  </html>"));
   input Real c;
   output Integer numOccurances;
   external "builtin";
@@ -414,7 +414,7 @@ end classDirectory;
 function getInstanceName
   output String instanceName;
 external "builtin";
-  annotation(Info="<html>
+  annotation(Documentation(info="<html>
 <h4>
 Modelica definition:
 </h4>
@@ -447,7 +447,7 @@ If no class was being simulated, the last simulated class or a default will be u
 (applicable for functions called from the scripting environment).
 </p>
 </html>
-");
+"));
 end getInstanceName;
 
 function spatialDistribution "Modelica 3.3 operator; not yet implemented"
@@ -634,6 +634,12 @@ function parseString
   output TypeName names[:];
 external "builtin";
 end parseString;
+
+function parseFile
+  input String filename;
+  output TypeName names[:];
+external "builtin";
+end parseFile;
 
 function system "Similar to system(3). Executes the given command in the system shell."
   input String callStr "String to call: bash -c $callStr";
@@ -1576,4 +1582,6 @@ algorithm
 end importFMU;
 
 end Scripting;
+
+annotation(Documentation(info="<html>OpenModelica internal defintions and scripting functions are defined here.</html>", __Dymola_DocumentationClass = true));
 end OpenModelica;

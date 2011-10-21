@@ -169,7 +169,7 @@ uniontype LoadedFile
   record FILE
     String                  fileName            "The path of the file";
     Real                    loadTime            "The time the file was loaded";
-    String                  classNamesQualified "The names of the classes from the file";
+    list<Absyn.Path>        classNamesQualified "The names of the classes from the file";
   end FILE;
 end LoadedFile;
 
@@ -1353,6 +1353,7 @@ algorithm
       Boolean finalPrefix,flowPrefix,streamPrefix,protected_,repl,dref1,dref2,addFunctions,noSimplify,show;
       Integer rest,limit;
       Statements istmts;
+      list<Absyn.Path> paths;
 
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation
@@ -1522,7 +1523,8 @@ algorithm
       equation
         matchApiFunction(istmts, "loadFileInteractiveQualified");
         {Absyn.STRING(value = name)} = getApiFunctionArgs(istmts);
-        (top_names_str, newst) = loadFileInteractiveQualified(name, st);
+        (paths, newst) = loadFileInteractiveQualified(name, st);
+        top_names_str = "{"+&stringDelimitList(List.map(paths,Absyn.pathString),",")+&"}";
       then
         (top_names_str,newst);
 
@@ -1545,14 +1547,6 @@ algorithm
         resstr = stringAppendList({"\"", resstr, "\""});
       then
         (resstr,st);
-
-    case (istmts, st)
-      equation
-        matchApiFunction(istmts, "parseFile");
-        {Absyn.STRING(value = name)} = getApiFunctionArgs(istmts);
-        (top_names_str, newst) = parseFile(name, st);
-      then
-        (top_names_str,newst);
 
   end matchcontinue;
 end evaluateGraphicalApi2;
@@ -12092,85 +12086,35 @@ algorithm
 end getTopClassnamesInProgram;
 
 protected function getTopQualifiedClassnames
-"function: getTopQualifiedClassnames
- @author adrpo 2005-12-16
- This function takes a Program and returns a list of
- the fully top_qualified names of the packages found at
- the top scope.
+ "Takes a Program and returns a list of the fully top_qualified
+ names of the packages found at the top scope.
  Example:
   within X.Y class Z -> X.Y.Z;"
   input Absyn.Program inProgram;
-  output String outString;
-algorithm
-  outString:=
-  matchcontinue (inProgram)
-    local
-      list<String> strlist;
-      String str,res;
-      Absyn.Program p;
-    case (p)
-      equation
-        strlist = getTopQualifiedClassnamesInProgram(p);
-        str = stringDelimitList(strlist, ",");
-        res = stringAppendList({"{", str, "}"});
-      then
-        res;
-    case (_) then "Error";
-  end matchcontinue;
-end getTopQualifiedClassnames;
-
-protected function getTopQualifiedClassnamesInProgram
-"function: getTopQualifiedClassnamesInProgram
-  @author adrpo 2005-12-16
-  Helper function to get_top_qualified_classnames."
-  input Absyn.Program inProgram;
-  output list<String> outStringLst;
+  output list<Absyn.Path> outStringLst;
 algorithm
   outStringLst := matchcontinue (inProgram)
     local
       String str_path,id;
-      list<String> res,result;
+      list<Absyn.Path> res,result;
       list<Absyn.Class> rest;
       Absyn.Within w;
       Absyn.TimeStamp ts;
+      Absyn.Path p;
 
     case Absyn.PROGRAM(classes = {}) then {};
     case (Absyn.PROGRAM(classes = (Absyn.CLASS(name = id) :: rest),within_ = w, globalBuildTimes=ts))
       equation
-        str_path = getQualified(id, w);
-        res = getTopQualifiedClassnamesInProgram(Absyn.PROGRAM(rest,w,ts));
-        result = str_path::res;
-      then
-        result;
+        p = Absyn.joinWithinPath(w, Absyn.IDENT(id));
+        res = getTopQualifiedClassnames(Absyn.PROGRAM(rest,w,ts));
+      then p::res;
     case (Absyn.PROGRAM(classes = (_ :: rest),within_ = w, globalBuildTimes=ts))
       equation
-        res = getTopQualifiedClassnamesInProgram(Absyn.PROGRAM(rest,w,ts));
+        res = getTopQualifiedClassnames(Absyn.PROGRAM(rest,w,ts));
       then
         res;
   end matchcontinue;
-end getTopQualifiedClassnamesInProgram;
-
-protected function getQualified
-"function: getQualified
- @author adrpo 2005-12-16
-  Helper function to getTopQualifiedClassnamesInProgram."
-  input String inString;
-  input Absyn.Within inWithin;
-  output String outString;
-algorithm
-  outString := match (inString,inWithin)
-    local
-      String id,str_path,result;
-      Absyn.Path path;
-    case (id,Absyn.TOP()) then id;
-    case (id,Absyn.WITHIN(path = path))
-      equation
-        str_path = Absyn.pathString(path);
-        result = stringAppendList({str_path, ".", id});
-      then
-        result;
-  end match;
-end getQualified;
+end getTopQualifiedClassnames;
 
 protected function getClassnamesInClass
 "function: getClassnamesInClass
@@ -17941,7 +17885,7 @@ protected function updateLoadedFiles
  in front of the tempList and return the list"
   input String fileName                      "Filename to load";
   input list<LoadedFile> loadedFiles         "The already loaded files";
-  input String qualifiedClasses              "The qualified classes";
+  input list<Absyn.Path> qualifiedClasses              "The qualified classes";
   input list<LoadedFile> tempList            "A temp list to build the new one";
   output list<LoadedFile> updatedLoadedFiles "Update file info cache";
 algorithm
@@ -17949,7 +17893,7 @@ algorithm
     local
       String f,f1;
       list<LoadedFile> rest, tmp, newTemp;
-      String qc;
+      list<Absyn.Path> qc;
       LoadedFile x;
       Real now;
     case (f, {}, qc, tmp) // we reached the end, put the updated element in front.
@@ -17979,15 +17923,15 @@ protected function getLoadedFileInfo
  - if NOT report that as NONE"
   input String fileName                   "Filename to load";
   input list<LoadedFile> loadedFiles      "The already loaded files";
-  output Option<String> qualifiedClasses  "The qualified classes";
+  output Option<list<Absyn.Path>> qualifiedClasses  "The qualified classes";
 algorithm
   (qualifiedClasses) := matchcontinue (fileName, loadedFiles)
     local
       String f,f1;
       list<LoadedFile> rest;
-      String info;
+      list<Absyn.Path> info;
       Real loadTime, modificationTime;
-      Option<String> optInfo;
+      Option<list<Absyn.Path>> optInfo;
     case (f, {}) // we did not find it
       then
         NONE();
@@ -18023,7 +17967,7 @@ protected function checkLoadedFiles
   input list<LoadedFile> loadedFiles      "The already loaded files";
   input Absyn.Program ast                 "The program from the symboltable";
   input Boolean shouldUpdateProgram       "Should the program be pushed into the AST?";
-  output String topClassNamesQualified    "The names of the classes from file, qualified!";
+  output list<Absyn.Path> topClassNamesQualified    "The names of the classes from file, qualified!";
   output list<LoadedFile> newLoadedFiles  "The new loaded files";
   output Absyn.Program newAst             "The new program to put it in the symboltable";
 algorithm
@@ -18031,7 +17975,7 @@ algorithm
   matchcontinue (fileName, loadedFiles, ast, shouldUpdateProgram)
     local
       String f;
-      String topNamesStr;
+      list<Absyn.Path> topNamesStr;
       Absyn.Program pAst,newP,parsed;
       list<LoadedFile> lf, newLF;
     case (f, lf, pAst, _)
@@ -18068,8 +18012,7 @@ algorithm
     case (f, lf, pAst, _)
       equation
         failure(_ = Parser.parse(f)); // failed to parse!
-      then
-        ("error",lf,pAst); // return error
+      then ({},lf,pAst); // return error
   end matchcontinue;
 end checkLoadedFiles;
 
@@ -18079,14 +18022,14 @@ protected function loadFileInteractiveQualified
  file is newer than the one already loaded."
   input  String fileName               "Filename to load";
   input  SymbolTable st     "The symboltable where to load the file";
-  output String topClassNamesQualified "The names of the classes from file, qualified!";
+  output list<Absyn.Path> topClassNamesQualified "The names of the classes from file, qualified!";
   output SymbolTable newst  "The new interactive symboltable";
 algorithm
   (topClassNamesQualified, newst) := matchcontinue (fileName, st)
     local
       String file               "Filename to load";
       SymbolTable s  "The symboltable where to load the file";
-      String topNamesStr;
+      list<Absyn.Path> topNamesStr;
       Absyn.Program pAst,newP;
       list<SCode.Element> eAst;
       list<InstantiatedClass> ic;
@@ -18099,8 +18042,7 @@ algorithm
     case (file, s as SYMBOLTABLE(ast = _))
       equation
         false = System.regularFileExists(file);
-      then
-        ("error",s);
+      then ({},s);
     // check if we have the stuff in the loadedFiles!
     case (file, s as SYMBOLTABLE(pAst,aDep,_,ic,iv,cf,lf))
       equation
@@ -18402,20 +18344,20 @@ end getDefinitionComponents;
 
 /* End getDefinitions */
 
-protected function parseFile
+public function parseFile
 "@author adrpo
  This function just parses a file and report contents ONLY if the
  file is newer than the one already loaded."
   input  String fileName               "Filename to load";
   input  SymbolTable st     "The symboltable where to load the file";
-  output String topClassNamesQualified "The names of the classes from file, qualified!";
+  output list<Absyn.Path> topClassNamesQualified "The names of the classes from file, qualified!";
   output SymbolTable newst  "The new interactive symboltable";
 algorithm
   (topClassNamesQualified, newst) := matchcontinue (fileName, st)
     local
       String file               "Filename to load";
       SymbolTable s  "The symboltable where to load the file";
-      String topNamesStr;
+      list<Absyn.Path> topNamesStr;
       Absyn.Program pAst,newP;
       list<InstantiatedClass> ic;
       list<Variable> iv;
@@ -18426,14 +18368,13 @@ algorithm
     case (file, s as SYMBOLTABLE(ast = _))
       equation
         false = System.regularFileExists(file);
-      then
-        ("error",s);
+      then ({},s);
     // check if we have the stuff in the loadedFiles!
     case (file, s as SYMBOLTABLE(pAst,aDep,_,ic,iv,cf,lf))
       equation
         (topNamesStr,newLF,newP) = checkLoadedFiles(file, lf, pAst, false);
       then
-        /* shouldn't newLF be used here? */
+        /* shouldn't newLF be used here? no; we only parse the files; not loading them */
         (topNamesStr, SYMBOLTABLE(newP,aDep,NONE(),ic,iv,cf,lf));
   end matchcontinue;
 end parseFile;
