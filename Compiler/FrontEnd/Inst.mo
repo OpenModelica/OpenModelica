@@ -3702,6 +3702,8 @@ algorithm
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2), Env.classInfToScopeType(ci_state));
         new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
         
+        mod = chainRedeclares(mods, mod);
+        
         (cache,mod_1) = Mod.elabMod(cache, env, ih, pre, mod, impl, info);
         mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
@@ -3738,6 +3740,8 @@ algorithm
         
         false = checkDerivedRestriction(re, r, cn2);
         
+        mod = chainRedeclares(mods, mod);
+        
         // use instExtends for derived with no array dimensions
         (cache, env, ih, store, dae, csets, ci_state, vars, bc, oDA, eqConstraint, graph) = 
         instClassdef2(cache, env, ih, store, mods, pre, ci_state, className, 
@@ -3773,6 +3777,8 @@ algorithm
         new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
         
         //print("Derived Env: " +& Env.printEnvPathStr(cenv_2) +& "\n");
+        
+        mod = chainRedeclares(mods, mod);
         
         (cache,mod_1) = Mod.elabMod(cache, env, ih, pre, mod, impl, info);
         mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
@@ -4913,7 +4919,7 @@ algorithm
         partialPrefix = isPartial(partialPrefix, mods);
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         (cdefelts,classextendselts,extendselts,_) = splitElts(els);
-        (env1,ih) = addClassdefsToEnv(env, ih, pre, cdefelts, true, NONE()) " CLASS & IMPORT nodes are added to env" ;
+        (env1,ih) = addClassdefsToEnv(env, ih, pre, cdefelts, true, SOME(mods)) " CLASS & IMPORT nodes are added to env" ;
         (cache,env2,ih,emods,extcomps,_,_,_,_) =
         InstExtends.instExtendsAndClassExtendsList(cache, env1, ih, mods, pre, extendselts, classextendselts, ci_state, className, true, true)
         "2. EXTENDS Nodes inst_Extends_List only flatten inhteritance structure. It does not perform component instantiations." ;
@@ -4960,6 +4966,8 @@ algorithm
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2), Env.restrictionToScopeType(r));
         new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
 
+        mod = chainRedeclares(mods, mod); 
+
         (cache,mod_1) = Mod.elabMod(cache, env, ih, pre, mod, false, info);
 
         mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
@@ -4988,6 +4996,8 @@ algorithm
         (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = Lookup.lookupClass(cache, env, cn, true);
         
         false = checkDerivedRestriction(re, r, cn2);
+        
+        mod = chainRedeclares(mods, mod);
         
         // use instExtends for derived with no array dimensions
         (cache, env, ih, ci_state) = 
@@ -5021,6 +5031,8 @@ algorithm
         new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
         
         //print("Partial Derived Env: " +& Env.printEnvPathStr(cenv_2) +& "\n");
+
+        mod = chainRedeclares(mods, mod);
 
         (cache,mod_1) = Mod.elabMod(cache, env, ih, pre, mod, false, info);
 
@@ -6415,6 +6427,45 @@ algorithm
   end matchcontinue;
 end memberCrefs;
 
+public function chainRedeclares "
+ if we have an outer modification: redeclare X = Y
+ and a component modification redeclare X = Z
+ update the component modification to redeclare X = Y"
+  input DAE.Mod inModOuter "the outer mod which should overwrite the inner mod";
+  input SCode.Mod inModInner "the inner mod";
+  output SCode.Mod outMod;
+algorithm 
+  outMod := matchcontinue (inModOuter,inModInner)
+    local
+      DAE.Mod m;
+      SCode.Final f;
+      SCode.Each  e;
+      SCode.Element cls;
+      String name;
+      list<SCode.SubMod> rest;
+      Option<tuple<Absyn.Exp, Boolean>> b;
+      SCode.Mod sm;
+      list<SCode.Element> els;
+      
+    case (inModOuter,SCode.REDECL(f, e, SCode.CLASS(name = _, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = Absyn.IDENT(name))))::els))
+      equation
+        // lookup the class mod in the outer
+        (DAE.REDECL(tplSCodeElementModLst = (cls,_)::_)) = Mod.lookupModificationP(inModOuter, Absyn.IDENT(name));         
+      then 
+        SCode.REDECL(f, e, cls::els);
+    
+    case (inModOuter,SCode.MOD(f, e, SCode.NAMEMOD(name, sm as SCode.REDECL(finalPrefix = _))::rest, b))
+      equation
+        // lookup the class mod in the outer
+        sm = chainRedeclares(inModOuter, sm);
+      then 
+        SCode.MOD(f, e, SCode.NAMEMOD(name, sm)::rest, b);
+    
+    case (_, inModInner) then inModInner;
+    
+  end matchcontinue;
+end chainRedeclares;
+
 public function instElement "
   This monster function instantiates an element of a class definition.  An
   element is either a class definition, a variable, or an import clause."
@@ -6498,7 +6549,7 @@ algorithm
         _, _, _, _, _)
       equation
         //Redeclare of class definition, replaceable is true
-        (class_mod as DAE.REDECL(tplSCodeElementModLst = {(cls,_)})) =
+        (class_mod as DAE.REDECL(tplSCodeElementModLst = (cls,_)::_)) =
           Mod.lookupModificationP(inMod, Absyn.IDENT(name));
         class_mod = Types.removeMod(class_mod, name);
         (cache, env, ih, dae) = 
@@ -6540,13 +6591,21 @@ algorithm
         inst_dims, impl, callscope, graph, csets)
       equation
         // print("  instElement: A component: " +& name +& "\n");
-        // Debug.fprintln("debug"," instElement " +& n +& " in s:" +& Env.printEnvPathStr(env) +& " m: " +& SCodeDump.printModStr(m) +& " cm : " +& Mod.printModStr(cmod));
+        //print("instElement: " +& name +& " in s:" +& Env.printEnvPathStr(env) +& " m: " +& SCodeDump.printModStr(m) +& " cm: " +& Mod.printModStr(cmod) +& " mods:" +& Mod.printModStr(mods) +& "\n");
+        //print("Env:\n" +& Env.printEnvStr(env) +& "\n");
+                
         m = traverseModAddFinal(m, final_prefix);
         comp = SCode.COMPONENT(name, prefixes, attr, ts, m, comment, cond, info);
 
         // Fails if multiple decls not identical
-        already_declared = checkMultiplyDeclared(cache, env, mods, pre,
-            ci_state, (comp, cmod), inst_dims, impl);
+        already_declared = checkMultiplyDeclared(cache, env, mods, pre, ci_state, (comp, cmod), inst_dims, impl);
+        
+        // chain the redeclares AFTER checking of elements identical
+        // if we have an outer modification: redeclare X = Y
+        // and a component modification redeclare X = Z
+        // update the component modification to redeclare X = Y 
+        m = chainRedeclares(mods, m);        
+        
         m = traverseModAddDims(cache, env, pre, m, inst_dims, ad);
         comp = SCode.COMPONENT(name, prefixes, attr, ts, m, comment, cond, info);
         ci_state = ClassInf.trans(ci_state, ClassInf.FOUND_COMPONENT(name));
@@ -6596,11 +6655,10 @@ algorithm
         // "." +& n +& " component mod: " +& SCodeDump.printModStr(m) +& " in env: " +& 
         // Env.printEnvPathStr(env2) +& "\n");
         (cache, m_1) = Mod.elabMod(cache, env2, ih, pre, m, impl, info);
-        // print("Inst.instElement: after elabMod " +& PrefixUtil.printPrefixStr(pre) +& 
-        // "." +& n +& " component mod: " +& Mod.printModStr(m_1) +& " in env: " +& 
-        // Env.printEnvPathStr(env2) +& "\n");
+                
+        // print("Inst.instElement: after elabMod " +& PrefixUtil.printPrefixStr(pre) +& "." +& name +& " component mod: " +& Mod.printModStr(m_1) +& " in env: " +& Env.printEnvPathStr(env2) +& "\n");
 
-        mod = Mod.merge(mm, class_mod,  env2, pre);
+        mod = Mod.merge(mm, class_mod, env2, pre);
         mod = Mod.merge(mod, m_1, env2, pre);
         mod = Mod.merge(cmod, mod, env2, pre);
 
@@ -8708,6 +8766,9 @@ algorithm
         owncref = Absyn.CREF_IDENT(id,{});
         ad_1 = getOptionArraydim(ad);
         env = addEnumerationLiteralsToEnv(env, cl);
+        
+        mod = chainRedeclares(mods, mod);
+        
         (cache,mod_1) = Mod.elabMod(cache, env, ih, pre, mod, impl, info);
         mods_2 = Mod.merge(mods, mod_1, env, pre);
         eq = Mod.modEquation(mods_2);
@@ -9920,6 +9981,9 @@ algorithm
            A x; <-- input discrete flow IS NOT propagated even if it should. FIXME!
          */
         //SOME(attr3) = SCode.mergeAttributes(attr,SOME(absynAttr));
+        
+        scodeMod = chainRedeclares(mod, scodeMod);
+        
         (_,mod2) = Mod.elabMod(cache, env, ih, pre, scodeMod, impl,info);
         mod3 = Mod.merge(mod, mod2, env, pre);
         mod_1 = Mod.lookupIdxModification(mod3, i);

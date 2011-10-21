@@ -144,7 +144,9 @@ algorithm
         tp = Inst.removeSelfReference(className, tp);
         //print(className +& "\n");
         //print("Type: " +& Absyn.pathString(tp) +& "(" +& SCodeDump.printModStr(emod) +& ")\n");
-                
+        
+        emod = Inst.chainRedeclares(mod, emod);
+        
         // fully qualify modifiers in extends in this environment!
         (cache, emod) = fixModifications(cache, env, emod, HashTableStringToPath.emptyHashTable());
         

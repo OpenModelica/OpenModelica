@@ -364,7 +364,9 @@ public function lookupClass "Tries to find a specified class in an environment"
   output SCode.Element outClass;
   output Env.Env outEnv;
 algorithm
+  //print("Lookup C1: " +& Absyn.pathString(inPath) +& " env: " +& Env.printEnvPathStr(inEnv) +& "\n"); 
   (outCache,outClass,outEnv,_) := lookupClass2(inCache,inEnv, inPath, {}, Util.makeStatefulBoolean(false), msg);
+  //print("Lookup C2: " +& " outenv: " +& Env.printEnvPathStr(outEnv) +& "\n");
 end lookupClass;
 
 protected function lookupClass2 "help function to lookupClass, does all the work."
@@ -822,10 +824,10 @@ algorithm
         env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         // Debug.fprintln("instTrace", "LOOKUP MORE UNQUALIFIED IMPORTED ICD: " +& Env.printEnvPathStr(env) +& "." +& ident);
-       (cache,(f :: _),_,_) = Inst.partialInstClassIn(cache, env2,
-         InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), ci_state,
-         c, SCode.PUBLIC(), {}); (cache,_,_) = lookupClass(cache,{f},
-         Absyn.IDENT(ident), false);
+        (cache,(f :: _),_,_) = Inst.partialInstClassIn(cache, env2,
+          InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), ci_state,
+          c, SCode.PUBLIC(), {}); (cache,_,_) = lookupClass(cache,{f},
+          Absyn.IDENT(ident), false);
       then
         (cache,true);
 

@@ -1863,7 +1863,7 @@ algorithm
     
     case ((icm as DAE.MOD(subModLst = subs)),DAE.REDECL(finalPrefix = f1, eachPrefix = each1, tplSCodeElementModLst = (els as {( (celm as SCode.COMPONENT(name = id1)),cm)})),env,pre)
       equation
-        cm = merge(cm,icm,env,pre);
+        cm = merge(icm,cm,env,pre);
       then
         DAE.REDECL(f1,each1,{(celm,cm)});
 
