@@ -1501,15 +1501,6 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st)
-      equation
-        matchApiFunction(istmts, "loadFileInteractiveQualified");
-        {Absyn.STRING(value = name)} = getApiFunctionArgs(istmts);
-        (paths, newst) = loadFileInteractiveQualified(name, st);
-        top_names_str = "{"+&stringDelimitList(List.map(paths,Absyn.pathString),",")+&"}";
-      then
-        (top_names_str,newst);
-
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getDefinitions");
@@ -1675,33 +1666,6 @@ algorithm
         resstr = stringAppend(name, "\n");
       then
         ("true",newst);
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "loadFileInteractive");
-        {Absyn.STRING(value = name)} = getApiFunctionArgs(istmts);
-        p1 = ClassLoader.loadFile(name) "System.regularFileExists(name) => 0 &    Parser.parse(name) => p1 &" ;
-        newp = updateProgram(p1, p);
-        top_names_str = "{" +& stringDelimitList(List.map(getTopClassnames(p1),Absyn.pathString),",") +& "}";
-        st = setSymbolTableAST(st, newp);
-      then
-        (top_names_str,st);
-
-    case (istmts, st)
-      equation
-        matchApiFunction(istmts, "loadFileInteractive");
-        {Absyn.STRING(value = name)} = getApiFunctionArgs(istmts);
-        false = System.regularFileExists(name);
-      then
-        ("error",st);
-
-    case (istmts, st)
-      equation
-        matchApiFunction(istmts, "loadFileInteractive");
-        {Absyn.STRING(value = name)} = getApiFunctionArgs(istmts);
-        failure(p1 = Parser.parse(name));
-      then
-        ("error",st);
 
     // Not moving this yet as it could break things...
     case (istmts, st as SYMBOLTABLE(ast = p))
@@ -17910,7 +17874,7 @@ algorithm
   end matchcontinue;
 end checkLoadedFiles;
 
-protected function loadFileInteractiveQualified
+public function loadFileInteractiveQualified
 "@author adrpo
  This function loads a file ONLY if the
  file is newer than the one already loaded."

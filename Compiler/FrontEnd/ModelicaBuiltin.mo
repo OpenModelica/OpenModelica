@@ -641,6 +641,14 @@ function parseFile
 external "builtin";
 end parseFile;
 
+function loadFileInteractiveQualified
+  extends parseFile;
+end loadFileInteractiveQualified;
+
+function loadFileInteractive
+  extends parseFile;
+end loadFileInteractive;
+
 function system "Similar to system(3). Executes the given command in the system shell."
   input String callStr "String to call: bash -c $callStr";
   output Integer retval "Return value of the system call; usually 0 on success";
