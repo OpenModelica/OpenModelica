@@ -642,11 +642,15 @@ external "builtin";
 end parseFile;
 
 function loadFileInteractiveQualified
-  extends parseFile;
+  input String filename;
+  output TypeName names[:];
+external "builtin";
 end loadFileInteractiveQualified;
 
 function loadFileInteractive
-  extends parseFile;
+  input String filename;
+  output TypeName names[:];
+external "builtin";
 end loadFileInteractive;
 
 function system "Similar to system(3). Executes the given command in the system shell."

@@ -797,11 +797,11 @@ algorithm
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then (cache,ValuesUtil.makeArray(vals),st);
 
-    case (cache,env,"loadFileInteractive",{Values.STRING(str1)},st,msg)
+    case (cache,env,"loadFileInteractive",{Values.STRING(str1)},st as Interactive.SYMBOLTABLE(ast=p),msg)
       equation
-        p1 = ClassLoader.loadFile(str1) "System.regularFileExists(name) => 0 &    Parser.parse(name) => p1 &" ;
-        vals = List.map(Interactive.getTopClassnames(p1),ValuesUtil.makeCodeTypeName);
-        p = Interactive.updateProgram(p1, p);
+        pnew = ClassLoader.loadFile(str1) "System.regularFileExists(name) => 0 &    Parser.parse(name) => p1 &" ;
+        vals = List.map(Interactive.getTopClassnames(pnew),ValuesUtil.makeCodeTypeName);
+        p = Interactive.updateProgram(pnew, p);
         st = Interactive.setSymbolTableAST(st, p);
       then (cache,ValuesUtil.makeArray(vals),st);
 
