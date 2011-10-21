@@ -1225,38 +1225,6 @@ function translateGraphics
 external "builtin";
 end translateGraphics;
 
-function readSimulationResult "Reads a result file, returning a matrix corresponding to the variables and size given."
-  input String filename;
-  input VariableNames variables;
-  input Integer size := 0 "0=read any size... If the size is not the same as the result-file, this function fails";
-  output Real result[:,:];
-external "builtin";
-end readSimulationResult;
-
-function readSimulationResultSize "The number of intervals that are present in the output file"
-  input String fileName;
-  output Integer sz;
-external "builtin";
-end readSimulationResultSize;
-
-function readSimulationResultVars "Returns the variables in the simulation file; you can use val() and plot() commands using these names"
-  input String fileName;
-  output String[:] vars;
-external "builtin";
-end readSimulationResultVars;
-
-
-public function compareSimulationResults "compare simulation results"
-  input String filename;
-  input String reffilename;
-  input String logfilename;
-  input Real refTol;
-  input Real absTol;
-  input String[:] vars;
-  output String result;
-external "builtin";
-end compareSimulationResults;
-
 function codeToString
   input Code className;
   output String string;
@@ -1281,16 +1249,6 @@ function listVariables "Lists the names of the active variables in the scripting
 external "builtin";
 end listVariables;
 
-function val "Works on the filename pointed to by the scripting variable currentSimulationResult.
-  The result is the value of the variable at a certain time point.
-  For parameters, any time may be given. For variables the startTime<=time<=stopTime needs to hold.
-  On error, nan (Not a Number) is returned and the error buffer contains the message."
-  input VariableName var;
-  input Real time;
-  output Real valAtTime;
-external "builtin";
-end val;
-
 function strtok "Splits the strings at the places given by the token, for example:
   strtok(\"abcbdef\",\"b\") => {\"a\",\"c\",\"def\"}"
   input String string;
@@ -1304,6 +1262,78 @@ function list "Lists the contents of the given class, or all loaded classes"
   output String contents;
 external "builtin";
 end list;
+
+function uriToFilename "Handles modelica:// and file:// URI's. The result is an absolute path on the local system.
+  The result depends on the current MODELICAPATH. Returns the empty string on failure."
+  input String uri;
+  output String filename;
+external "builtin";
+end uriToFilename;
+
+type LinearSystemSolver = enumeration(dgesv,lpsolve55);
+function solveLinearSystem
+  "Solve A*X = B, using dgesv or lp_solve (if any variable in X is integer)
+  Returns for solver dgesv: info>0: Singular for element i. info<0: Bad input.
+  For solver lp_solve: ???"
+  input Real[size(B,1),size(B,1)] A;
+  input Real[:] B;
+  input LinearSystemSolver solver := LinearSystemSolver.dgesv;
+  input Integer[:] isInt := {-1} "list of indices that are integers";
+  output Real[size(B,1)] X;
+  output Integer info;
+external "builtin";
+end solveLinearSystem;
+
+type StandardStream = enumeration(stdin,stdout,stderr);
+function reopenStandardStream
+  input StandardStream _stream;
+  input String filename;
+  output Boolean success;
+external "builtin";
+end reopenStandardStream;
+
+function importFMU "Imports the Functional Mockup Unit
+  Example command:
+  importFMU(\"A.fmu\");"
+  input String filename "the fmu file name";
+  input String workdir := "./" "The output directory for imported FMU files. <default> will put the files to current working directory.";
+  output Boolean success "Returns true on success";
+protected
+  String omhome,exe,call;
+algorithm
+  // get OPENMODELICAHOME
+  omhome := getInstallationDirectoryPath();
+  // create the path till fmigenerator
+  exe := omhome + "/bin/fmigenerator";
+  // create the list of arguments for fmigenerator
+  call := exe + " " + "--fmufile=\"" + filename + "\" --outputdir=\"" + workdir + "\"";
+  success := 0 == system(call);
+end importFMU;
+
+function getSourceFile
+  input TypeName class_;
+  output String filename "empty on failure";
+external "builtin";
+end getSourceFile;
+
+function setSourceFile
+  input TypeName class_;
+  input String filename;
+  output Boolean success;
+external "builtin";
+end setSourceFile;
+
+function getClassNames
+  input TypeName class_ := $TypeName(AllLoadedClasses);
+  output TypeName classNames[:]; 
+external "builtin";
+end getClassNames;
+
+function getPackages
+  input TypeName class_ := $TypeName(AllLoadedClasses);
+  output TypeName classNames[:]; 
+external "builtin";
+end getPackages;
 
 partial function basePlotFunction "Extending this does not seem to work at the moment. A real shame; functions below are copy-paste and all need to be updated if the interface changes."
   input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
@@ -1534,77 +1564,46 @@ function plotParametric3 "Launches a plotParametric window using OMPlot. Returns
 external "builtin";
 end plotParametric3;
 
-function uriToFilename "Handles modelica:// and file:// URI's. The result is an absolute path on the local system.
-  The result depends on the current MODELICAPATH. Returns the empty string on failure."
-  input String uri;
-  output String filename;
-external "builtin";
-end uriToFilename;
-
-type LinearSystemSolver = enumeration(dgesv,lpsolve55);
-function solveLinearSystem
-  "Solve A*X = B, using dgesv or lp_solve (if any variable in X is integer)
-  Returns for solver dgesv: info>0: Singular for element i. info<0: Bad input.
-  For solver lp_solve: ???"
-  input Real[size(B,1),size(B,1)] A;
-  input Real[:] B;
-  input LinearSystemSolver solver := LinearSystemSolver.dgesv;
-  input Integer[:] isInt := {-1} "list of indices that are integers";
-  output Real[size(B,1)] X;
-  output Integer info;
-external "builtin";
-end solveLinearSystem;
-
-type StandardStream = enumeration(stdin,stdout,stderr);
-function reopenStandardStream
-  input StandardStream _stream;
+function readSimulationResult "Reads a result file, returning a matrix corresponding to the variables and size given."
   input String filename;
-  output Boolean success;
+  input VariableNames variables;
+  input Integer size := 0 "0=read any size... If the size is not the same as the result-file, this function fails";
+  output Real result[:,:];
 external "builtin";
-end reopenStandardStream;
+end readSimulationResult;
 
-function importFMU "Imports the Functional Mockup Unit
-  Example command:
-  importFMU(\"A.fmu\");"
-  input String filename "the fmu file name";
-  input String workdir := "./" "The output directory for imported FMU files. <default> will put the files to current working directory.";
-  output Boolean success "Returns true on success";
-protected
-  String omhome,exe,call;
-algorithm
-  // get OPENMODELICAHOME
-  omhome := getInstallationDirectoryPath();
-  // create the path till fmigenerator
-  exe := omhome + "/bin/fmigenerator";
-  // create the list of arguments for fmigenerator
-  call := exe + " " + "--fmufile=\"" + filename + "\" --outputdir=\"" + workdir + "\"";
-  success := 0 == system(call);
-end importFMU;
-
-function getSourceFile
-  input TypeName class_;
-  output String filename "empty on failure";
+function readSimulationResultSize "The number of intervals that are present in the output file"
+  input String fileName;
+  output Integer sz;
 external "builtin";
-end getSourceFile;
+end readSimulationResultSize;
 
-function setSourceFile
-  input TypeName class_;
+function readSimulationResultVars "Returns the variables in the simulation file; you can use val() and plot() commands using these names"
+  input String fileName;
+  output String[:] vars;
+external "builtin";
+end readSimulationResultVars;
+
+public function compareSimulationResults "compare simulation results"
   input String filename;
-  output Boolean success;
+  input String reffilename;
+  input String logfilename;
+  input Real refTol;
+  input Real absTol;
+  input String[:] vars;
+  output String result;
 external "builtin";
-end setSourceFile;
+end compareSimulationResults;
 
-function getClassNames
-  input TypeName class_ := $TypeName(AllLoadedClasses);
-  output TypeName classNames[:]; 
+function val "Works on the filename pointed to by the scripting variable currentSimulationResult.
+  The result is the value of the variable at a certain time point.
+  For parameters, any time may be given. For variables the startTime<=time<=stopTime needs to hold.
+  On error, nan (Not a Number) is returned and the error buffer contains the message."
+  input VariableName var;
+  input Real time;
+  output Real valAtTime;
 external "builtin";
-end getClassNames;
-
-function getPackages
-  input TypeName class_ := $TypeName(AllLoadedClasses);
-  output TypeName classNames[:]; 
-external "builtin";
-end getPackages;
+end val;
 
 end Scripting;
 
