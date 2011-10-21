@@ -1156,19 +1156,17 @@ bool OMCProxy::deleteClass(QString className)
 QString OMCProxy::getSourceFile(QString modelName)
 {
     sendCommand("getSourceFile(" + modelName + ")");
-    if (getResult().contains("<interactive>"))
-        return "";
+    QString file = StringHandler::unparse(getResult());
+    if (file == "<interactive>")
+      return "";
     else
-        return getResult();
+      return file;
 }
 
 bool OMCProxy::setSourceFile(QString modelName, QString path)
 {
     sendCommand("setSourceFile(" + modelName + ", \"" + path + "\")");
-    if (getResult().toLower().contains("ok"))
-        return true;
-    else
-        return false;
+    return StringHandler::unparseBool(getResult());
 }
 
 bool OMCProxy::save(QString modelName)
