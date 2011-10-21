@@ -624,6 +624,7 @@ void LibraryTree::addModelicaStandardLibrary()
     mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->loadStandardLibrary();
 
     QStringList libs = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassNames("");
+    libs.prepend("OpenModelica");
     libs.sort();
     foreach (QString lib, libs) {
         QStringList info = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(lib);
