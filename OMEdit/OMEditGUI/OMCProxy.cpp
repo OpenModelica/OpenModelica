@@ -1068,8 +1068,9 @@ QStringList OMCProxy::parseString(QString value)
     QString result = StringHandler::removeFirstLastCurlBrackets(getResult());
     QStringList list = result.split(",", QString::SkipEmptyParts);
 
+    /* Extract cr from Code(cr); no longer needed
     for (int i = 0 ; i < list.size(); i++)
-        list[i] = list[i].mid(5, list[i].length() - 6);
+      list[i] = list[i].mid(5, list[i].length() - 6);*/
 
     return list;
 }
