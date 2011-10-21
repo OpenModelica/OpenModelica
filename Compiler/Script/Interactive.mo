@@ -458,29 +458,7 @@ algorithm
       Boolean outres;
       Absyn.Exp exp;
       list<Variable> vars;
-    /* intercept getVersion() */
-    case
-      (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getVersion"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = {})))}),
-      (st as SYMBOLTABLE(lstVarVal = vars)))
-      equation
-        str = Settings.getVersionNr();
-        str = "\"" +& str +& "\"";
-      then
-        (str,st);
 
-    case
-      (ISTMTS(
-      interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "listVariables"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = {})))}),
-      (st as SYMBOLTABLE(lstVarVal = vars)))
-      equation
-        varsStr = getVariableNames(vars);
-        str = stringAppend(varsStr, "\n");
-      then
-        (str,st);
     case ((stmts as ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = _))})),st)
       equation
         (str,newst) = evaluateGraphicalApi(stmts, st);
@@ -1010,46 +988,6 @@ algorithm
         fail();
   end matchcontinue;
 end getIdentFromTupleCrefexp;
-
-protected function getVariableNames
-"function: getVariableNames
-  Return a string containing a comma separated list of variables."
-  input list<Variable> vars;
-  output String res;
-protected
-  list<String> strlst;
-  String str;
-algorithm
-  strlst := getVariableListStr(vars);
-  str := stringDelimitList(strlst, ", ");
-  res := stringAppendList({"{",str,"}"});
-end getVariableNames;
-
-protected function getVariableListStr
-"function: getVariableListStr
-  Helper function to getVariableNames"
-  input list<Variable> inVariableLst;
-  output list<String> outStringLst;
-algorithm
-  outStringLst:=
-  matchcontinue (inVariableLst)
-    local
-      list<String> res;
-      list<Variable> vs;
-      String p;
-    case ({}) then {};
-    case ((IVAR(varIdent = "$echo") :: vs))
-      equation
-        res = getVariableListStr(vs);
-      then
-        res;
-    case ((IVAR(varIdent = p) :: vs))
-      equation
-        res = getVariableListStr(vs);
-      then
-        (p :: res);
-  end matchcontinue;
-end getVariableListStr;
 
 public function getTypeOfVariable
 "function: getTypeOfVariables

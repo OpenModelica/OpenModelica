@@ -2032,6 +2032,8 @@ algorithm
       Absyn.CodeNode c;
       Absyn.Path p, recordPath;
       list<String> ids;
+      Absyn.ComponentRef cr;
+      Absyn.Path path;
 
     case Values.INTEGER(integer = n)
       equation
@@ -2118,6 +2120,18 @@ algorithm
         Print.printBuf("#(");
         valString2(r);
         Print.printBuf(")");
+      then
+        ();
+
+    case (Values.CODE(A = Absyn.C_TYPENAME(path)))
+      equation
+        Print.printBuf(Absyn.pathString(path));
+      then
+        ();
+
+    case (Values.CODE(A = Absyn.C_VARIABLENAME(cr)))
+      equation
+        Print.printBuf(Absyn.printComponentRefStr(cr));
       then
         ();
 

@@ -872,6 +872,12 @@ algorithm
     
     case (cache,env,"list",_,st,msg) then (cache,Values.STRING(""),st);
     
+    case (cache,env,"listVariables",{},st as Interactive.SYMBOLTABLE(lstVarVal = iv),msg)
+      equation
+        v = ValuesUtil.makeArray(getVariableNames(iv,{}));
+      then
+        (cache,v,st);
+
     case (cache,env,"jacobian",{Values.CODE(Absyn.C_TYPENAME(path))},
           (st as Interactive.SYMBOLTABLE(
             ast = p,depends=aDep,explodedAst = fp,instClsLst = ic,
@@ -4190,5 +4196,23 @@ algorithm
       then fail();
   end match;
 end errorLevelToValue;
+
+protected function getVariableNames
+  input list<Interactive.Variable> vars;
+  input list<Values.Value> acc;
+  output list<Values.Value> ovars;
+algorithm
+  ovars := match (vars,acc)
+    local
+      list<Values.Value> res;
+      list<Interactive.Variable> vs;
+      String p;
+    case ({},acc) then listReverse(acc);
+    case (Interactive.IVAR(varIdent = "$echo") :: vs,acc)
+      then getVariableNames(vs,acc);
+    case (Interactive.IVAR(varIdent = p) :: vs,acc)
+      then getVariableNames(vs,Values.CODE(Absyn.C_VARIABLENAME(Absyn.CREF_IDENT(p,{})))::acc);
+  end match;
+end getVariableNames;
 
 end CevalScript;
