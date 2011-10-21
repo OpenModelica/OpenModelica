@@ -1489,7 +1489,7 @@ int SystemImpl__getLoadModelPath(const char *name, void *prios, void *mps, const
             if (prio == 1 && 0 == strcmp("Modelica",name) && 0 == strcmp(version,"3.1")) prio = -1;
             if (prio == 1 && 0 == strcmp("ModelicaServices",name) && 0 == strcmp(version,"1.0")) prio = -1;
             /* TODO: Use something better than strcmp. We need natural sort for all cases... */
-            if (prio < defaultPrio || (prio == defaultPrio && strcmp(version, defaultVersion) > 0)) {
+            if (prio < defaultPrio || (prio == defaultPrio && version && defaultVersion && (strcmp(version, defaultVersion) > 0))) {
               defaultPrio = prio;
               *outDir = mp;
               if (*outName) free(*outName);
