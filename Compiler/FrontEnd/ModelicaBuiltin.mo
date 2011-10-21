@@ -1600,6 +1600,12 @@ function getClassNames
 external "builtin";
 end getClassNames;
 
+function getPackages
+  input TypeName class_ := $TypeName(AllLoadedClasses);
+  output TypeName classNames[:]; 
+external "builtin";
+end getPackages;
+
 end Scripting;
 
 annotation(Documentation(info="<html>OpenModelica internal defintions and scripting functions are defined here.</html>", __Dymola_DocumentationClass = true));
