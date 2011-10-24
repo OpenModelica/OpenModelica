@@ -47,6 +47,7 @@ int main(int argc, char *argv[])
     argv[(argc - 1)] = "-stylesheet=:/Resources/css/stylesheet.qss";
 
     QApplication a(argc, argv);
+    a.setAttribute(Qt::AA_DontShowIconsInMenus, false);
     QPixmap pixmap(":/Resources/icons/omeditor_splash.png");
     SplashScreen splashScreen(pixmap);
     splashScreen.setMessage();
