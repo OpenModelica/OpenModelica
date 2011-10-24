@@ -337,19 +337,19 @@ extern void* ErrorImpl__getMessages()
     void *id = mk_icon(errorMessageQueue.top()->getID());
     void *ty,*severity;
     switch (errorMessageQueue.top()->getSeverity()) {
-    case ErrorLevel_error: ty=Error__ERROR; break;
-    case ErrorLevel_warning: ty=Error__WARNING; break;
-    case ErrorLevel_notification: ty=Error__NOTIFICATION; break;
+    case ErrorLevel_error: severity=Error__ERROR; break;
+    case ErrorLevel_warning: severity=Error__WARNING; break;
+    case ErrorLevel_notification: severity=Error__NOTIFICATION; break;
     }
     switch (errorMessageQueue.top()->getType()) {
-    case ErrorType_syntax: severity=Error__SYNTAX; break;
-    case ErrorType_grammar: severity=Error__GRAMMAR; break;
-    case ErrorType_translation: severity=Error__TRANSLATION; break;
-    case ErrorType_symbolic: severity=Error__SYMBOLIC; break;
-    case ErrorType_runtime: severity=Error__SIMULATION; break;
-    case ErrorType_scripting: severity=Error__SCRIPTING; break;
+    case ErrorType_syntax: ty=Error__SYNTAX; break;
+    case ErrorType_grammar: ty=Error__GRAMMAR; break;
+    case ErrorType_translation: ty=Error__TRANSLATION; break;
+    case ErrorType_symbolic: ty=Error__SYMBOLIC; break;
+    case ErrorType_runtime: ty=Error__SIMULATION; break;
+    case ErrorType_scripting: ty=Error__SCRIPTING; break;
     }
-    void *message = mk_scon(errorMessageQueue.top()->getMessage().c_str());
+    void *message = mk_scon(errorMessageQueue.top()->getShortMessage().c_str());
     void *msg = Error__MESSAGE(id,ty,severity,message);
     void *sl = mk_icon(errorMessageQueue.top()->getStartLineNo());
     void *sc = mk_icon(errorMessageQueue.top()->getStartColumnNo());

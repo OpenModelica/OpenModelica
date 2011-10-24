@@ -127,6 +127,7 @@ std::string ErrorMessage::getMessage_()
       str_pos += tokens_[index].size() + 1;
     }
   }
+  veryshort_msg = message_;
 
   std::string ret_msg;
 

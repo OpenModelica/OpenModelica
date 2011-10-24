@@ -65,6 +65,9 @@ public:
   ErrorLevel getSeverity() const { return severity_; };
 
   // Returns the expanded message with inserted tokens.
+  std::string getShortMessage() const {return veryshort_msg;};
+
+  // Returns the expanded message with inserted tokens.
   std::string getMessage() const {return shortMessage;};
 
   // Returns the complete message in string format corresponding to a Modeica vector.
@@ -87,6 +90,7 @@ private:
   std::string message_;
   TokenList tokens_;
   std::string shortMessage;
+  std::string veryshort_msg;
   std::string fullMessage;
   
   /* adrpo 2006-02-05 changed the ones below */
@@ -97,6 +101,7 @@ private:
   bool isReadOnly_;
   std::string filename_;
 
+  std::string getShortMessage_();
   std::string getMessage_();
   std::string getFullMessage_();
 
