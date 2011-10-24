@@ -20,7 +20,7 @@
 <xsl:template match="/simulation">
 <html>
 <head>
-  <title>TITLE</title>
+  <title>Profiling information for <xsl:value-of select="modelinfo/name"/></title>
   <style type="text/css">
     table {border-style: solid;border-spacing: 0;}
     th {
