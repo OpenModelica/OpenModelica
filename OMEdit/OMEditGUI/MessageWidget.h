@@ -41,14 +41,18 @@
 #ifndef MESSAGEWIDGET_H
 #define MESSAGEWIDGET_H
 
-#include <QTabWidget>
-#include <QPlainTextEdit>
+#include <QtCore>
+#include <QtGui>
+#include "mainwindow.h"
 
 class MainWindow;
 class GeneralMessages;
 class InfoMessages;
 class WarningMessages;
 class ErrorMessages;
+class Problem;
+class ProblemItem;
+class StringHandler;
 
 class MessageWidget : public QTabWidget
 {
@@ -59,13 +63,33 @@ public:
     MainWindow *mpParentMainWindow;
     GeneralMessages *mpGeneralMessages;
     InfoMessages *mpInfoMessages;
-    WarningMessages *mpWarningMessages;
-    ErrorMessages *mpErrorMessages;
+    Problem *mpProblem;
+    QToolButton *mpClearProblemsToolButton;
+    QToolButton *mpClearInfoMessagesToolButton;
+    QToolButton *mpClearGeneralMessagesToolButton;
+    QToolButton *mpShowNotificationsToolButton;
+    QToolButton *mpShowWarningsToolButton;
+    QToolButton *mpShowErrorsToolButton;
+    QToolButton *mpShowAllProblemsToolButton;
+    QButtonGroup *mpProblemsButtonGroup;
+    QTimer *mpGeneralTabTimer;
+    QTimer *mpInfoTabTimer;
+    QTimer *mpProblemsTabTimer;
 
+    QSize sizeHint() const;
     void printGUIMessage(QString message);
     void printGUIInfoMessage(QString message);
-    void printGUIWarningMessage(QString message);
-    void printGUIErrorMessage(QString message);
+    void addGUIProblem(ProblemItem *pProblemItem);
+private slots:
+    void clearProblems();
+    void clearInfoMessages();
+    void clearGeneralMessages();
+    void showNotifications();
+    void showWarnings();
+    void showErrors();
+    void showAllProblems();
+    void startTitleBlink(QWidget *pWidget);
+    void stopTitleBlink(int element);
 };
 
 class Messages : public QTextEdit
@@ -73,7 +97,6 @@ class Messages : public QTextEdit
     Q_OBJECT
 public:
     Messages(MessageWidget *pParent);
-    QSize sizeHint() const;
     void printGUIMessage(QString message);
 
     MessageWidget *mpMessageWidget;
@@ -97,20 +120,74 @@ public:
     void printGUIMessage(QString message);
 };
 
-class WarningMessages : public Messages
+class Problem : public QTreeWidget
 {
     Q_OBJECT
+private:
+    ProblemItem *mpSelectedProblemItem;
+    QAction *mpCopyAction;
+    QAction *mpCopyAllAction;
+    QAction *mpRemoveAction;
 public:
-    WarningMessages(MessageWidget *pParent);
-    void printGUIMessage(QString message);
+    Problem(MessageWidget *pParent);
+
+    MessageWidget *mpMessageWidget;
+private slots:
+    void openEditor(QTreeWidgetItem *item, int column);
+    void closeEditor(QTreeWidgetItem *current, QTreeWidgetItem *previous);
+    void showContextMenu(QPoint point);
+    void copyProblem();
+    void copyAllProblems();
+    void removeProblem();
 };
 
-class ErrorMessages : public Messages
+class ProblemItem : public QTreeWidgetItem
 {
-    Q_OBJECT
 public:
-    ErrorMessages(MessageWidget *pParent);
-    void printGUIMessage(QString message);
+    ProblemItem(Problem *pParent = 0);
+    ProblemItem(QString filename, bool readOnly, int lineStart, int columnStart, int lineEnd, int columnEnd, QString message, QString kind,
+                QString level, int id, Problem *pParent = 0);
+    void initialize();
+    void setFileName(QString fileName);
+    QString getFileName();
+    void setReadOnly(bool readOnly);
+    bool getReadOnly();
+    void setLineStart(int lineStart);
+    int getLineStart();
+    void setColumnStart(int columnStart);
+    int getColumnStart();
+    void setLineEnd(int lineEnd);
+    int getLineEnd();
+    void setColumnEnd(int columnEnd);
+    int getColumnEnd();
+    void setMessage(QString message);
+    QString getMessage();
+    void setKind(QString kind);
+    QString getKind();
+    void setLevel(QString level);
+    QString getLevel();
+    void setId(int id);
+    int getId();
+    int getType();
+    int getErrorKind();
+    void setColumnsText();
+
+    Problem *mpParentProblem;
+private:
+    QString mFileName;
+    bool mReadOnly;
+    int mLineStart;
+    int mColumnStart;
+    int mLineEnd;
+    int mColumnEnd;
+    QString mMessage;
+    QString mKind;
+    QString mLevel;
+    int mId;
+    QMap<QString, StringHandler::ModelicaErrors> mErrorsMap;
+    int mType;
+    QMap<QString, StringHandler::ModelicaErrorKinds> mErrorKindsMap;
+    int mErrorKind;
 };
 
 #endif // MESSAGEWIDGET_H

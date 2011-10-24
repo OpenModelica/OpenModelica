@@ -47,7 +47,6 @@ class ModelCreator : public QDialog
     Q_OBJECT
 public:
     ModelCreator(MainWindow *parent);
-    ~ModelCreator();
     void show(int type);
     void createCopy(QString modelname);
 
@@ -58,6 +57,7 @@ private:
     QLineEdit *mpNameTextBox;
     QLabel *mpParentPackageLabel;
     QComboBox *mpParentPackageCombo;
+    QCheckBox *mpSaveOneFileCheckBox;
     QPushButton *mpCancelButton;
     QPushButton *mpOkButton;
     QDialogButtonBox *mpButtonBox;

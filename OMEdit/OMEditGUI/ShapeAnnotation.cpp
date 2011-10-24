@@ -67,7 +67,6 @@ void ShapeAnnotation::initializeFields()
     this->mLinePatternsMap.insert("Dot", Qt::DotLine);
     this->mLinePatternsMap.insert("DashDot", Qt::DashDotLine);
     this->mLinePatternsMap.insert("DashDotDot", Qt::DashDotDotLine);
-
     // initialize the Fill Patterns map.
     this->mFillPatternsMap.insert("None", Qt::NoBrush);
     this->mFillPatternsMap.insert("Solid", Qt::SolidPattern);

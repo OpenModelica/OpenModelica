@@ -43,13 +43,11 @@ ModelCreator::ModelCreator(MainWindow *parent)
     mpParentMainWindow = parent;
     setMinimumSize(375, 140);
     setModal(true);
-
     // Create the Text Box, File Dialog and Labels
     mpNameLabel = new QLabel;
     mpNameTextBox = new QLineEdit;
     mpParentPackageLabel = new QLabel(tr("Insert in Package (optional):"));
     mpParentPackageCombo = new QComboBox();
-
     // Create the buttons
     mpOkButton = new QPushButton(tr("OK"));
     mpOkButton->setAutoDefault(true);
@@ -57,25 +55,21 @@ ModelCreator::ModelCreator(MainWindow *parent)
     mpCancelButton = new QPushButton(tr("Cancel"));
     mpCancelButton->setAutoDefault(false);
     connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
-
+    // create save contents of package in one file
+    mpSaveOneFileCheckBox = new QCheckBox(Helper::saveContentsOneFile);
+    // create buttons
     mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
     mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
     mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
-
     // Create a layout
     QGridLayout *mainLayout = new QGridLayout;
     mainLayout->addWidget(mpNameLabel, 0, 0);
     mainLayout->addWidget(mpNameTextBox, 1, 0);
     mainLayout->addWidget(mpParentPackageLabel, 2, 0);
     mainLayout->addWidget(mpParentPackageCombo, 3, 0);
-    mainLayout->addWidget(mpButtonBox, 4, 0);
-
+    mainLayout->addWidget(mpSaveOneFileCheckBox, 4, 0);
+    mainLayout->addWidget(mpButtonBox, 5, 0);
     setLayout(mainLayout);
-}
-
-ModelCreator::~ModelCreator()
-{
-
 }
 
 void ModelCreator::show(int type)
@@ -88,6 +82,10 @@ void ModelCreator::show(int type)
     mpParentPackageCombo->clear();
     mpParentPackageCombo->addItem(tr(""));
     mpParentPackageCombo->addItems(mpParentMainWindow->mpOMCProxy->createPackagesList());
+    if (StringHandler::PACKAGE == mType)
+        mpSaveOneFileCheckBox->setVisible(true);
+    else
+        mpSaveOneFileCheckBox->setVisible(false);
     setVisible(true);
 }
 
@@ -241,20 +239,16 @@ void RenameClassWidget::renameClass()
         }
         else
         {
-            QMessageBox::critical(this, Helper::applicationName + " - Error",
-                                 GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).
+            QMessageBox::critical(this, Helper::applicationName + " - Error", GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).
                                  arg(mpParentMainWindow->mpOMCProxy->getResult()).append("\n\n").
-                                 append(GUIMessages::getMessage(GUIMessages::NO_OPEN_MODELICA_KEYWORDS)),
-                                 tr("OK"));
+                                 append(GUIMessages::getMessage(GUIMessages::NO_OPEN_MODELICA_KEYWORDS)), tr("OK"));
             return;
         }
     }
     else
     {
-        QMessageBox::critical(this, Helper::applicationName + " - Error",
-                             GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS).append("\n\n").
-                             append(GUIMessages::getMessage(GUIMessages::NO_OPEN_MODELICA_KEYWORDS)),
-                             tr("OK"));
+        QMessageBox::critical(this, Helper::applicationName + " - Error", GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS).
+                              append("\n\n").append(GUIMessages::getMessage(GUIMessages::NO_OPEN_MODELICA_KEYWORDS)), tr("OK"));
         return;
     }
 }
@@ -307,19 +301,13 @@ FlatModelWidget::FlatModelWidget(QString name, QString nameStructure, MainWindow
     QString str = mpParentMainWindow->mpOMCProxy->instantiateModel(mNameStructure);
     ModelicaTextHighlighter *highlighter = new ModelicaTextHighlighter(pParent->mpOptionsWidget->mpModelicaTextSettings,mpText->document());
     mpText->setPlainText(str.length() ? str : "Instantiation of " + name + " failed");
-    QString err = mpParentMainWindow->mpOMCProxy->getErrorString();
-    if (err.length())
-      mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(err);
-
     // Create the button
     mpOkButton = new QPushButton(tr("OK"));
     connect(mpOkButton, SIGNAL(clicked()), SLOT(close()));
-
     // Create a layout
     QHBoxLayout *buttonLayout = new QHBoxLayout;
     buttonLayout->setAlignment(Qt::AlignCenter);
     buttonLayout->addWidget(mpOkButton);
-
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addWidget(mpText);
     mainLayout->addLayout(buttonLayout);

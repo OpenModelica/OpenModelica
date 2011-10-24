@@ -188,7 +188,10 @@ void IconProperties::updateIconProperties()
     {
         if (!mpComponent->mpGraphicsView->checkComponentName(iconName))
         {
-            pMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_NAME));
+            pMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
+                                                                        GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_NAME),
+                                                                        Helper::scriptingKind, Helper::errorLevel,
+                                                                        0, pMainWindow->mpMessageWidget->mpProblem));
         }
         else
         {
@@ -202,7 +205,9 @@ void IconProperties::updateIconProperties()
             else
             {
                 // if renameComponent command is unsuccessful print the error message
-                pMainWindow->mpMessageWidget->printGUIErrorMessage(mpComponent->mpOMCProxy->getResult());
+                pMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
+                                                                            mpComponent->mpOMCProxy->getResult(), Helper::scriptingKind,
+                                                                            Helper::errorLevel, 0, pMainWindow->mpMessageWidget->mpProblem));
             }
         }
     }
@@ -239,17 +244,16 @@ void IconProperties::updateIconProperties()
             {
                 QString paramter = modifier.mid(0, modifier.indexOf("("));
                 QString value = modifier.mid(modifier.indexOf("("));
-                if (!mpComponent->mpOMCProxy->setComponentModifierValue(pProjectTab->mModelNameStructure, QString(mpComponent->getName())
-                                                                       .append(".").append(paramter), value))
-                {
-                    pMainWindow->mpMessageWidget->printGUIErrorMessage(QString(GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED))
-                                                                       .arg(mpComponent->mpOMCProxy->getErrorString()));
-                }
+                mpComponent->mpOMCProxy->setComponentModifierValue(pProjectTab->mModelNameStructure, QString(mpComponent->getName()).append(".")
+                                                                   .append(paramter), value);
                 valueChanged = true;
             }
             else
             {
-                pMainWindow->mpMessageWidget->printGUIErrorMessage(QString(GUIMessages::getMessage(GUIMessages::WRONG_MODIFIER)).arg(modifier));
+                pMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
+                                                                            GUIMessages::getMessage(GUIMessages::WRONG_MODIFIER).arg(modifier),
+                                                                            Helper::scriptingKind, Helper::errorLevel, 0,
+                                                                            pMainWindow->mpMessageWidget->mpProblem));
             }
         }
     }
@@ -477,19 +481,10 @@ void IconAttributes::updateIconAttributes()
         causality = tr("");
 
     OMCProxy *pOMCProxy = pCurrentTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy;
-    MessageWidget *pMessageWidget = pCurrentTab->mpParentProjectTabWidget->mpParentMainWindow->mpMessageWidget;
     // update component attributes
-    if (!pOMCProxy->setComponentProperties(modelName, componentName, isFinal, mIsFlow, isProtected, isReplaceAble,
-                                           variability, isInner, isOuter, causality))
-    {
-        pMessageWidget->printGUIErrorMessage(QString(GUIMessages::getMessage(GUIMessages::ATTRIBUTES_SAVE_ERROR))
-                                             .arg(pOMCProxy->getErrorString()));
-    }
+    pOMCProxy->setComponentProperties(modelName, componentName, isFinal, mIsFlow, isProtected, isReplaceAble, variability, isInner, isOuter,
+                                      causality);
     // update the component comment
-    if (!pOMCProxy->setComponentComment(modelName, componentName, mpCommentTextBox->text().trimmed()))
-    {
-        pMessageWidget->printGUIErrorMessage(QString(GUIMessages::getMessage(GUIMessages::COMMENT_SAVE_ERROR))
-                                             .arg(pOMCProxy->getErrorString()));
-    }
+    pOMCProxy->setComponentComment(modelName, componentName, mpCommentTextBox->text().trimmed());
     accept();
 }

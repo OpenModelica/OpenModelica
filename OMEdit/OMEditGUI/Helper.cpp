@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linkoping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -64,6 +64,7 @@ int Helper::tabWidth = 20;
 qreal Helper::shapesStrokeWidth = 5.0;
 QString Helper::modelicaLibrarySearchText = QString("Search Modelica Standard Library");
 QString Helper::noItemFound = QString("Sorry, no items found");
+/* Interactuve Simulation Messages */
 QString Helper::running_Simulation = QString("Running Simulation");
 QString Helper::running_Simulation_text = QString("Running Simulation.\nPlease wait for a while.");
 QString Helper::starting_interactive_simulation_server = QString("Starting Interactive Simulation Server");
@@ -124,11 +125,11 @@ Qt::BrushStyle Helper::verticalCylinderBrushStyle = Qt::Dense1Pattern;
 QString Helper::sphereBrushIcon = QString(":/Resources/icons/sphere.png");
 QString Helper::sphereBrush = QString("Sphere");
 Qt::BrushStyle Helper::sphereBrushStyle = Qt::RadialGradientPattern;
-
+/* Export Image and Notebook Messages */
 QString Helper::exportAsImage = QString("Exporting model as an Image");
 QString Helper::exportToOMNotebook = QString("Exporting model to OMNotebook");
 QString Helper::importFromOMNotebook = QString("Importing model from OMNotebook");
-
+/* Simulation Messages */
 QString Helper::ModelicaSimulationMethods = "DASSL,DASSL2,Euler,RungeKutta";
 QString Helper::ModelicaSimulationOutputFormats = "mat,plt,csv,empty";
 
@@ -137,7 +138,6 @@ QString Helper::fontSizes = QString("6,7,8,9,10,11,12,14,16,18,20,22,24,26,28,36
 QString Helper::left = QString("Left");
 QString Helper::center = QString("Center");
 QString Helper::right = QString("Right");
-
 /* FMI Messages */
 QString Helper::exportingModelFMU = QString("Exporting model as FMI");
 QString Helper::import = QString("Import");
@@ -151,103 +151,125 @@ QString Helper::librariesAddNote = QString("* The libraries changes will take ef
 
 QString Helper::modifiersLabelText = QString("Add new modifiers, e.g phi(start=1),w(start=2)");
 
+QString Helper::saveContentsOneFile = QString("Save contents of package in one file");
+/* OpenModelica Error types and kinds */
+QString Helper::notificationLevel = QString(".OpenModelica.Scripting.ErrorLevel.notification");
+QString Helper::warningLevel = QString(".OpenModelica.Scripting.ErrorLevel.warning");
+QString Helper::errorLevel = QString(".OpenModelica.Scripting.ErrorLevel.error");
+QString Helper::syntaxKind = QString(".OpenModelica.Scripting.ErrorKind.syntax");
+QString Helper::grammarKind = QString(".OpenModelica.Scripting.ErrorKind.grammar");
+QString Helper::translationKind = QString(".OpenModelica.Scripting.ErrorKind.translation");
+QString Helper::symbolicKind = QString(".OpenModelica.Scripting.ErrorKind.symbolic");
+QString Helper::simulationKind = QString(".OpenModelica.Scripting.ErrorKind.simulation");
+QString Helper::scriptingKind = QString(".OpenModelica.Scripting.ErrorKind.scripting");
+/* MessageCornerWidget Messages */
+QString Helper::clearProblems = QString("Clear All Problems");
+QString Helper::clearInfoMessages = QString("Clear All Info Messages");
+QString Helper::clearGeneralMessages = QString("Clear All General Messages");
+QString Helper::showNotifications = QString("Only Show Notifications");
+QString Helper::showWarnings = QString("Only Show Warnings");
+QString Helper::showErrors = QString("Only Show Errors");
+QString Helper::showAllProblems = QString("Show All Problems");
+
 QString GUIMessages::getMessage(int type)
 {
     switch (type)
     {
-    case SAME_COMPONENT_NAME:
-        return "A Component with the same name already exists. Please choose another Name.";
-    case SAME_PORT_CONNECT:
-        return "You cannot connect a port to itself.";
-    case NO_OPEN_MODEL:
-        return "There is no open Model to %1.";
-    case NO_SIMULATION_STARTTIME:
-        return "Simulation Start Time is not defined. Default value (0.0) will be used.";
-    case NO_SIMULATION_STOPTIME:
-        return "Simulation Stop Time is not defined.";
-    case SIMULATION_STARTTIME_LESSTHAN_STOPTIME:
-        return "Simulation Start Time should be less than or equal to Stop Time.";
-    case ENTER_NAME:
-        return "Please enter %1 Name.";
-    case MODEL_ALREADY_EXISTS:
-        return "%1 %2 already exits %3.";
-    case ITEM_ALREADY_EXISTS:
-        return "An item with the same name already exists. Please try some other name.";
-    case OPEN_MODELICA_HOME_NOT_FOUND:
-        return "Could not find environment variable OPENMODELICAHOME. Please make sure OpenModelica is installed properly.";
-    case ERROR_OCCURRED:
-        return "Following Error has occurred. \n\n%1";
-    case ERROR_IN_MODELICA_TEXT:
-        return "Following Errors are found in Modelica Text. \n\n%1";
-    case UNDO_OR_FIX_ERRORS:
-        return "\n\nFor normal users it is recommended to choose 'Undo changes'. You can also choose 'Let me fix errors' if you want to fix them by your own.";
-    case NO_OPEN_MODELICA_KEYWORDS:
-        return "Please make sure you are not using any OpenModelica Keywords like (model, package, record, class etc.)";
-    case INCOMPATIBLE_CONNECTORS:
-        return "Incompatible types for the connectors.";
-    case SAVE_CHANGES:
-        return "Do you want to save your changes before closing?";
-    case DELETE_FAIL:
-        return "Unable to delete. Server error has occurred while trying to delete.";
-    case ONLY_MODEL_ALLOWED:
-        return "This item is not a model.";
-    case UNABLE_TO_LOAD_FILE:
-        return "Error has occurred while loading the file '%1'. Unable to load the file.";
-    case UNABLE_TO_LOAD_MODEL:
-        return "Error has occurred while loading the model : \n%1.";
-    case DELETE_AND_LOAD:
-        return "Delete the existing models before loading the file.";
-    case REDEFING_EXISTING_MODELS:
-        return "Redefing models '%1' which already exists.";
-    case INVALID_COMPONENT_ANNOTATIONS:
-        return "The Annotations for the component %1 (%2) are not correct. Unable to add component.";
-    case SAVED_MODEL:
-        return "The %1 '%2' is not saved.";
-    case COMMENT_SAVE_ERROR:
-        return "Following Error has occurred while saving component comment. \n\n %1.";
-    case ATTRIBUTES_SAVE_ERROR:
-        return "Following Error has occurred while saving component attributes. \n\n %1.";
-    case CHILD_MODEL_SAVE:
-        return "The %1 '%2' is contained inside a package. It is automatically saved when you save the package.";
-    case SEARCH_STRING_NOT_FOUND:
-        return "The search string '%1' is not found.";
-    case FILE_REMOVED_MSG:
-        return "The file '%1' has been removed outside %2. Do you want to keep it?";
-    case FILE_MODIFIED_MSG:
-        return "The file '%1' has been modified outside %2. Do you want to reload it?";
-    case CLOSE_INTERACTIVE_SIMULATION_TAB:
-        return "Are you sure you want to close '%1' interactive simulation?";
-    case INFO_CLOSE_INTERACTIVE_SIMULATION_TAB:
-        return "You cannot recover this window once its closed.";
-    case INTERACTIVE_SIMULATION_RUNNIG:
-        return "You already have one interactive simulation running. Only one interactive simulaiton session is allowed at a time. \n\n Please shutdown the interactive simulation or close the interactive simulation tab before launching the new one.";
-    case SELECT_VARIABLE_FOR_OMI:
-        return "Please select a variable to plot before starting.";
-    case DIAGRAM_VIEW_DROP_MSG:
-        return "You cannot insert %1, it is a %2. Only model, class, connector, record or block are allowed on diagram layer.";
-    case ICON_VIEW_DROP_MSG:
-        return "You cannot insert %1, it is a %2. Only connector is allowed on the icon layer.";
-    case PLOT_PARAMETRIC_DIFF_FILES:
-        return "You cannot do a plot parametric between two different simulation result files. Make sure you select two variables from the same simulation result file.";
-    case FILE_FORMAT_NOT_SUPPORTED:
-        return "The file '%1' is not a valid Modelica file. The file format is not supported. You can only open .mo files here.";
-    case INCORRECT_HTML_TAGS:
-        return "The html tags in the documentation are incorrect. Give correct starting and ending html tags and save it again.";
-    case ENTER_VALID_INTEGER:
-        return "Enter a valid Positive Integer";
-    case ITEM_DROPPED_ON_ITSELF:
-        return "You cannot drop an item on itself.";
-    case DELETE_PACKAGE_MSG:
-        return "Are you sure you want to delete '%1'? Everything contained inside this Package will also be deleted.";
-    case DELETE_MSG:
-        return "Are you sure you want to delete '%1'?";
-    case INNER_MODEL_NAME_CHANGED:
-        return "A component with the name %1 already exists. The name is changed from %1 to %2.\nThis is probably wrong because the component is decalred as %3.";
-    case FMI_GENERATED:
-        return "The FMI is generated at %1/%2.fmu";
-    case WRONG_MODIFIER:
-        return "The Modifier '%1' format is invalid. The correct format is 'phi(start=1)'";
-    default:
-        return "";
+        case CHECK_PROBLEMS_TAB:
+            return "Please check the Problems Tab below for more error specific details.";
+        case SAME_COMPONENT_NAME:
+            return "A Component with the same name already exists. Please choose another Name.";
+        case SAME_PORT_CONNECT:
+            return "You cannot connect a port to itself.";
+        case NO_OPEN_MODEL:
+            return "There is no open Model to %1.";
+        case NO_SIMULATION_STARTTIME:
+            return "Simulation Start Time is not defined. Default value (0.0) will be used.";
+        case NO_SIMULATION_STOPTIME:
+            return "Simulation Stop Time is not defined.";
+        case SIMULATION_STARTTIME_LESSTHAN_STOPTIME:
+            return "Simulation Start Time should be less than or equal to Stop Time.";
+        case ENTER_NAME:
+            return "Please enter %1 Name.";
+        case MODEL_ALREADY_EXISTS:
+            return "%1 %2 already exits %3.";
+        case ITEM_ALREADY_EXISTS:
+            return "An item with the same name already exists. Please try some other name.";
+        case OPEN_MODELICA_HOME_NOT_FOUND:
+            return "Could not find environment variable OPENMODELICAHOME. Please make sure OpenModelica is installed properly.";
+        case ERROR_OCCURRED:
+            return "Following Error has occurred. \n\n%1";
+        case ERROR_IN_MODELICA_TEXT:
+            return "Problems are found in Modelica Text. \n";
+        case UNDO_OR_FIX_ERRORS:
+            return "\n\nFor normal users it is recommended to choose 'Undo changes'. You can also choose 'Let me fix errors' if you want to fix them by your own.";
+        case NO_OPEN_MODELICA_KEYWORDS:
+            return "Please make sure you are not using any OpenModelica Keywords like (model, package, record, class etc.)";
+        case INCOMPATIBLE_CONNECTORS:
+            return "Incompatible types for the connectors.";
+        case SAVE_CHANGES:
+            return "Do you want to save your changes before closing?";
+        case DELETE_FAIL:
+            return "Unable to delete. Server error has occurred while trying to delete.";
+        case ONLY_MODEL_ALLOWED:
+            return "This item is not a model.";
+        case UNABLE_TO_LOAD_FILE:
+            return "Error has occurred while loading the file '%1'. Unable to load the file.";
+        case UNABLE_TO_LOAD_MODEL:
+            return "Error has occurred while loading the model : \n%1.";
+        case DELETE_AND_LOAD:
+            return "Delete the existing models before loading the file.";
+        case REDEFING_EXISTING_MODELS:
+            return "Redefing models '%1' which already exists.";
+        case INVALID_COMPONENT_ANNOTATIONS:
+            return "The Annotations for the component %1 (%2) are not correct. Unable to add component.";
+        case SAVED_MODEL:
+            return "The %1 '%2' is not saved.";
+        case COMMENT_SAVE_ERROR:
+            return "Following Error has occurred while saving component comment. \n\n %1.";
+        case ATTRIBUTES_SAVE_ERROR:
+            return "Following Error has occurred while saving component attributes. \n\n %1.";
+        case CHILD_MODEL_SAVE:
+            return "The %1 '%2' is contained inside a package. It is automatically saved when you save the package.";
+        case SEARCH_STRING_NOT_FOUND:
+            return "The search string '%1' is not found.";
+        case FILE_REMOVED_MSG:
+            return "The file '%1' has been removed outside %2. Do you want to keep it?";
+        case FILE_MODIFIED_MSG:
+            return "The file '%1' has been modified outside %2. Do you want to reload it?";
+        case CLOSE_INTERACTIVE_SIMULATION_TAB:
+            return "Are you sure you want to close '%1' interactive simulation?";
+        case INFO_CLOSE_INTERACTIVE_SIMULATION_TAB:
+            return "You cannot recover this window once its closed.";
+        case INTERACTIVE_SIMULATION_RUNNIG:
+            return "You already have one interactive simulation running. Only one interactive simulaiton session is allowed at a time. \n\n Please shutdown the interactive simulation or close the interactive simulation tab before launching the new one.";
+        case SELECT_VARIABLE_FOR_OMI:
+            return "Please select a variable to plot before starting.";
+        case DIAGRAM_VIEW_DROP_MSG:
+            return "You cannot insert %1, it is a %2. Only model, class, connector, record or block are allowed on diagram layer.";
+        case ICON_VIEW_DROP_MSG:
+            return "You cannot insert %1, it is a %2. Only connector is allowed on the icon layer.";
+        case PLOT_PARAMETRIC_DIFF_FILES:
+            return "You cannot do a plot parametric between two different simulation result files. Make sure you select two variables from the same simulation result file.";
+        case FILE_FORMAT_NOT_SUPPORTED:
+            return "The file '%1' is not a valid Modelica file. The file format is not supported. You can only open .mo files here.";
+        case INCORRECT_HTML_TAGS:
+            return "The html tags in the documentation are incorrect. Give correct starting and ending html tags and save it again.";
+        case ENTER_VALID_INTEGER:
+            return "Enter a valid Positive Integer";
+        case ITEM_DROPPED_ON_ITSELF:
+            return "You cannot drop an item on itself.";
+        case DELETE_PACKAGE_MSG:
+            return "Are you sure you want to delete '%1'? Everything contained inside this Package will also be deleted.";
+        case DELETE_MSG:
+            return "Are you sure you want to delete '%1'?";
+        case INNER_MODEL_NAME_CHANGED:
+            return "A component with the name %1 already exists. The name is changed from %1 to %2.\nThis is probably wrong because the component is decalred as %3.";
+        case FMI_GENERATED:
+            return "The FMI is generated at %1/%2.fmu";
+        case WRONG_MODIFIER:
+            return "The Modifier '%1' format is invalid. The correct format is 'phi(start=1)'";
+        default:
+            return "";
     }
 }

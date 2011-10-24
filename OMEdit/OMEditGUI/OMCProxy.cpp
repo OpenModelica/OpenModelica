@@ -46,10 +46,10 @@
 #include "StringHandler.h"
 #include "../../Compiler/runtime/config.h"
 
+using namespace OMPlot;
+
 //! @class OMCProxy
 //! @brief It contains the reference of the CORBA object used to communicate with the OpenModelica Compiler.
-
-using namespace OMPlot;
 
 //! Constructor
 //! @param pParent is the pointer to MainWindow.
@@ -98,6 +98,8 @@ OMCProxy::~OMCProxy()
     delete mpOMCLogger;
 }
 
+//! Puts the previous send OMC command in the send command text box.
+//! Invoked by the up arrow key.
 void OMCProxy::getPreviousCommand()
 {
     if (mCommandsList.isEmpty())
@@ -114,6 +116,8 @@ void OMCProxy::getPreviousCommand()
     }
 }
 
+//! Puts the most recently send OMC command in the send command text box.
+//! Invoked by the down arrow key.
 void OMCProxy::getNextCommand()
 {
     if (mCommandsList.isEmpty())
@@ -130,22 +134,29 @@ void OMCProxy::getNextCommand()
     }
 }
 
+//! Adds the OMC command to mCommandsMap, command as key and result as value.
 void OMCProxy::addExpressionInCommandMap(QString expression, QString result)
 {
     if (expression.contains("Modelica."))
         mCommandsMap.insert(expression, result);
 }
 
+//! Returns the command result by looking it into the mCommandsMap.
+//! @return QString the command result
 QString OMCProxy::getCommandFromMap(QString expression)
 {
     return mCommandsMap.value(expression, QString());
 }
 
+//! Returns the command result by looking it into the mCommandsMap.
+//! @return QString the command result
 void OMCProxy::setExpression(QString expression)
 {
     mExpression = expression;
 }
 
+//! Returns the most recent OMC command.
+//! @return QString the command.
 QString OMCProxy::getExpression()
 {
     return mExpression;
@@ -164,6 +175,10 @@ void OMCProxy::writeCommandLog(QString expression)
 }
 
 //! Starts the OpenModelica Compiler.
+//! On Windows look for OPENMODELICAHOME environment variable. On Linux read the installation directory from config.h file.
+//! Runs the omc with +c and +d=interactiveCorba flags.
+//! +c flag creates a CORBA IOR file with name e.g openmodelica.objid.OMEdit{1ABB3DAA-C925-47E8-85F9-3DE6F3F7E79C}154302842
+//! For each instance of OMEdit a new omc is run.
 bool OMCProxy::startServer()
 {
     try
@@ -290,10 +305,9 @@ void OMCProxy::stopServer()
     mCommandsLogFile.close();
 }
 
-//! Sends the user commands to OMC in a thread.
+//! Sends the user commands to OMC.
 //! @param expression is used to send command as a string.
-//! @see evalCommand(QString expression)
-//! @see OMCThread
+//! @see sendCommand()
 void OMCProxy::sendCommand(const QString expression)
 {
     if (!mHasInitialized)
@@ -302,7 +316,6 @@ void OMCProxy::sendCommand(const QString expression)
             mpParentMainWindow->mExitApplication = true;
             return;
         }
-
     // Send command to server
     try
     {
@@ -341,17 +354,22 @@ void OMCProxy::sendCommand(const QString expression)
     }
 }
 
+//! Sends the user commands to OMC by using the Qt::concurrent feature.
+//! @see sendCommand(const QString expression)
 void OMCProxy::sendCommand()
 {
     mResult = QString::fromLocal8Bit(mOMC->sendExpression(getExpression().toLocal8Bit()));
 }
 
+//! Sets the command result.
+//! @param value the command result.
 void OMCProxy::setResult(QString value)
 {
     mResult = value;
 }
 
 //! Returns the result obtained from OMC.
+//! @return QString the command result.
 QString OMCProxy::getResult()
 {
     return mResult.trimmed();
@@ -385,6 +403,8 @@ void OMCProxy::logOMCMessages(QString expression)
     mpExpressionTextBox->setText(tr(""));
 }
 
+//! Uses the OMC getPackages API to built a list of packages.
+//! @return QStringList the list of packages.
 QStringList OMCProxy::createPackagesList()
 {
     QStringList packagesList;
@@ -399,6 +419,10 @@ QStringList OMCProxy::createPackagesList()
     return packagesList;
 }
 
+//! A helper function for OMCProxy::createPackagesList
+//! @param list the list top append package.
+//! @param package the package name
+//! @param parentPackage the package parent name
 void OMCProxy::addPackage(QStringList *list, QString package, QString parentPackage)
 {
     if (!parentPackage.isEmpty())
@@ -418,19 +442,7 @@ void OMCProxy::openOMCLogger()
     this->mpOMCLogger->show();
 }
 
-void OMCProxy::catchException()
-{
-    removeObjectRefFile();
-    if (mDisplayErrors)
-    {
-        QMessageBox::critical(mpParentMainWindow, Helper::applicationName + " - Error",
-                              QString("Communication with the ").append(Helper::applicationName).append(" server has been lost.")
-                              .append("\n\n").append(Helper::applicationName).append(" will restart."), "OK");
-
-        restartApplication();
-    }
-}
-
+//! Sends the command written in the OMC Logger textbox.
 void OMCProxy::sendCustomExpression()
 {
     if (mpExpressionTextBox->text().isEmpty())
@@ -440,6 +452,8 @@ void OMCProxy::sendCustomExpression()
     mpExpressionTextBox->setText(QString());
 }
 
+//! Removes the CORBA IOR file. We only call this method when we are unable to connect to OMC.
+//! In normal case OMCProxy::stopServer will delete that file.
 void OMCProxy::removeObjectRefFile()
 {
     QFile::remove(mObjectRefFile);
@@ -450,18 +464,155 @@ void OMCProxy::restartApplication()
     qApp->exit();
 }
 
+//! Returns the OMC error string.
+//! @return QString the error string.
+//! @deprecated Use printMessagesStringInternal()
 QString OMCProxy::getErrorString()
 {
     sendCommand("getErrorString()");
     return StringHandler::unparse(getResult());
 }
 
+//! Gets the errors by using the getMessagesStringInternal API.
+//! Reads all the errors and add them to the Problems Tab.
+//! @see MessageWidget::addGUIProblem
+//! @see Problem
+//! @return bool true if there are any errors otherwise false.
+bool OMCProxy::printMessagesStringInternal()
+{
+    int errorsSize = getMessagesStringInternal();
+    bool returnValue = errorsSize > 0 ? true : false;
+
+    for (int i = 1; i <= errorsSize ; i++)
+    {
+        setCurrentError(i);
+        ProblemItem *pProblemItem = new ProblemItem(mpParentMainWindow->mpMessageWidget->mpProblem);
+        pProblemItem->setFileName(getErrorFileName());
+        pProblemItem->setReadOnly(getErrorReadOnly());
+        pProblemItem->setLineStart(getErrorLineStart());
+        pProblemItem->setColumnStart(getErrorColumnStart());
+        pProblemItem->setLineEnd(getErrorLineEnd());
+        pProblemItem->setColumnEnd(getErrorColumnEnd());
+        pProblemItem->setMessage(getErrorMessage());
+        pProblemItem->setKind(getErrorKind());
+        pProblemItem->setLevel(getErrorLevel());
+        pProblemItem->setId(getErrorId());
+        pProblemItem->setColumnsText();
+        mpParentMainWindow->mpMessageWidget->addGUIProblem(pProblemItem);
+    }
+    return returnValue;
+}
+
+//! Retrieves the list of errors from OMC
+//! @return int size of errors
+int OMCProxy::getMessagesStringInternal()
+{
+    sendCommand("errors:=getMessagesStringInternal()");
+    sendCommand("size(errors,1)");
+    return getResult().toInt();
+}
+
+//! Sets the current error.
+//! @param int the error index
+void OMCProxy::setCurrentError(int errorIndex)
+{
+    sendCommand("currentError:=errors[" + QString::number(errorIndex) + "]");
+}
+
+//! Gets the error file name from current error.
+//! @return QString the error file name
+QString OMCProxy::getErrorFileName()
+{
+    sendCommand("currentError.info.filename");
+    QString file = StringHandler::unparse(getResult());
+    if (file.compare("<interactive>") == 0)
+      return "";
+    else
+      return file;
+}
+
+//! Gets the error read only state from current error.
+//! @return bool the error read only state
+bool OMCProxy::getErrorReadOnly()
+{
+    sendCommand("currentError.info.readonly");
+    return StringHandler::unparseBool(StringHandler::unparse(getResult()));
+}
+
+//! Gets the error line start index from current error.
+//! @return int the error line start index
+int OMCProxy::getErrorLineStart()
+{
+    sendCommand("currentError.info.lineStart");
+    return getResult().toInt();
+}
+
+//! Gets the error column start index from current error.
+//! @return int the error column start index
+int OMCProxy::getErrorColumnStart()
+{
+    sendCommand("currentError.info.columnStart");
+    return getResult().toInt();
+}
+
+//! Gets the error line end index from current error.
+//! @return int the error line end index
+int OMCProxy::getErrorLineEnd()
+{
+    sendCommand("currentError.info.lineEnd");
+    return getResult().toInt();
+}
+
+//! Gets the error column end index from current error.
+//! @return int the error column end index
+int OMCProxy::getErrorColumnEnd()
+{
+    sendCommand("currentError.info.columnEnd");
+    return getResult().toInt();
+}
+
+//! Gets the error message from current error.
+//! @return QString the error message
+QString OMCProxy::getErrorMessage()
+{
+    sendCommand("currentError.message");
+    return StringHandler::unparse(getResult());
+}
+
+//! Gets the error kind from current error.
+//! @return QString the error kind
+QString OMCProxy::getErrorKind()
+{
+    sendCommand("currentError.kind");
+    return getResult();
+}
+
+//! Gets the error level from current error.
+//! @return QString the error level
+QString OMCProxy::getErrorLevel()
+{
+    sendCommand("currentError.level");
+    return getResult();
+}
+
+//! Gets the error id from current error.
+//! @return QString the error id
+int OMCProxy::getErrorId()
+{
+    sendCommand("currentError.id");
+    return getResult().toInt();
+}
+
+//! Gets the OMC version. On Linux it also return the revision number as well.
+//! @return QString the version
 QString OMCProxy::getVersion()
 {
     sendCommand("getVersion()");
     return StringHandler::unparse(getResult());
 }
 
+//! Sets the OMC annotation version
+//! @return bool true if successful.
 bool OMCProxy::setAnnotationVersion(int version)
 {
     if (version == OMCProxy::ANNOTATION_VERSION2X)
@@ -487,12 +638,18 @@ bool OMCProxy::setAnnotationVersion(int version)
     }
 }
 
+//! Gets the OMC annotation version
+//! @return QString the annotation version
 QString OMCProxy::getAnnotationVersion()
 {
     sendCommand("getAnnotationVersion()");
     return getResult();
 }
 
+//! Sends OMC setEnvironmentVar command.
+//! @param name the variable name
+//! @param value the variable value
+//! @return true on success
 bool OMCProxy::setEnvironmentVar(QString name, QString value)
 {
     sendCommand("setEnvironmentVar(\"" + name + "\", \"" + value + "\")");
@@ -502,6 +659,9 @@ bool OMCProxy::setEnvironmentVar(QString name, QString value)
         return false;
 }
 
+//! Gets OMC getEnvironmentVar command.
+//! @param name the variable name
+//! @return QString the variable value.
 QString OMCProxy::getEnvironmentVar(QString name)
 {
     sendCommand("getEnvironmentVar(\"" + name + "\")");
@@ -509,6 +669,8 @@ QString OMCProxy::getEnvironmentVar(QString name)
 }
 
 //! Loads the OpenModelica Standard Library.
+//! Reads the omedit.ini file to get the libraries to load.
+//! Deletes the Fluid library as is not supported fully by OpenModelica.
 void OMCProxy::loadStandardLibrary()
 {
     QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
@@ -529,14 +691,7 @@ void OMCProxy::loadStandardLibrary()
         QString version = settings.value(lib).toString();
         QString command = "loadModel(" + lib + ",{\"" + version + "\"})";
         sendCommand(command);
-        if (!StringHandler::unparseBool(getResult())) {
-          mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(getErrorString());
-        } else {
-          QString str = getErrorString();
-          if (str.size()) {
-            mpParentMainWindow->mpMessageWidget->printGUIWarningMessage(str);
-          }
-        }
+        printMessagesStringInternal();
     }
 
     sendCommand("getNamedAnnotation(Modelica,version)");
@@ -556,6 +711,7 @@ void OMCProxy::loadStandardLibrary()
 
 //! Gets the list of classes from OMC.
 //! @param className is the name of the class whose sub classes are retrieved.
+//! @return QStringList the list of classes
 QStringList OMCProxy::getClassNames(QString className)
 {
     sendCommand("getClassNames(" + className + ")");
@@ -564,6 +720,9 @@ QStringList OMCProxy::getClassNames(QString className)
     return list;
 }
 
+//! Gets the information about the class.
+//! @param modelName is the name of the class whose information is retrieved.
+//! @return QStringList the information
 QStringList OMCProxy::getClassInformation(QString modelName)
 {
     sendCommand("getClassInformation(" + modelName + ")");
@@ -574,6 +733,7 @@ QStringList OMCProxy::getClassInformation(QString modelName)
 
 //! Gets the list of classes from OMC recursively.
 //! @param className is the name of the class whose sub classes are retrieved.
+//! @return QStringList the list of classes
 QStringList OMCProxy::getClassNamesRecursive(QString className)
 {
     sendCommand("getClassNamesRecursive(" + className + ")");
@@ -583,6 +743,7 @@ QStringList OMCProxy::getClassNamesRecursive(QString className)
 
 //! Gets the list of packages from OMC.
 //! @param packageName is the name of the package whose sub packages are retrieved.
+//! @return QStringList the list of packages
 QStringList OMCProxy::getPackages(QString packageName)
 {
     sendCommand("getPackages(" + packageName + ")");
@@ -593,6 +754,7 @@ QStringList OMCProxy::getPackages(QString packageName)
 
 //! Checks whether the class is a package or not.
 //! @param className is the name of the class which is checked.
+//! @return bool true if the class is a pacakge otherwise false
 bool OMCProxy::isPackage(QString className)
 {
     sendCommand("isPackage(" + className + ")");
@@ -615,6 +777,10 @@ bool OMCProxy::isBuiltinType(QString typeName)
             typeName == "Boolean");
 }
 
+//! Checks the class type.
+//! @param type the type to check.
+//! @param className the class to check.
+//! @return bool true if the class is a specified type
 bool OMCProxy::isWhat(int type, QString className)
 {
     switch (type)
@@ -643,19 +809,22 @@ bool OMCProxy::isWhat(int type, QString className)
         default:
             return false;
     }
-
-    if (getResult().contains("true"))
-        return true;
-    else
-        return false;
+    return StringHandler::unparseBool(getResult());
 }
 
+//! Checks whether the class parameter is protected or not.
+//! @param className is the name of the class.
+//! @param paramter is the paramter to check.
+//! @return bool true if the paramter is protected otherwise false
 bool OMCProxy::isProtected(QString parameter, QString className)
 {
     sendCommand("isProtected(" + parameter + "," + className + ")");
     return StringHandler::unparseBool(getResult());
 }
 
+//! Gets the class type.
+//! @param modelName is the name of the class to check.
+//! @return int the class type.
 int OMCProxy::getClassRestriction(QString modelName)
 {
     sendCommand("getClassRestriction(" + modelName + ")");
@@ -680,6 +849,12 @@ int OMCProxy::getClassRestriction(QString modelName)
         return StringHandler::MODEL;
 }
 
+//! Gets the list of paramters.
+//! Create an object of IconParameters for each parameter and puts it into the list.
+//! @param modelName is the name of the model. Fully qualified name.
+//! @param className is the name of the class.
+//! @param name is the name component.
+//! @return QList<IconParameters*> the list of parameters
 QList<IconParameters*> OMCProxy::getParameters(QString modelName, QString className, QString name)
 {
     QList<IconParameters*> iconParametersList;
@@ -705,6 +880,10 @@ QList<IconParameters*> OMCProxy::getParameters(QString modelName, QString classN
     return iconParametersList;
 }
 
+//! Gets the parameters from a list of paramters.
+//! @param list is the parameters list to search in.
+//! @param value is the value to search for.
+//! @return IconParameters* the searched parameter
 IconParameters* OMCProxy::getIconParameter(QList<IconParameters *> list, QString value)
 {
     IconParameters *pIconParameter = 0;
@@ -719,6 +898,9 @@ IconParameters* OMCProxy::getIconParameter(QList<IconParameters *> list, QString
     return pIconParameter;
 }
 
+//! Gets the parameter names.
+//! @param className is the name of the class whose parameter names are retrieved.
+//! @return QStringList the list of paramter names.
 QStringList OMCProxy::getParameterNames(QString className)
 {
     QString result;
@@ -745,12 +927,20 @@ QStringList OMCProxy::getParameterNames(QString className)
     }
 }
 
+//! Gets the parameter value.
+//! @param className is the name of the class whose parameter value is retrieved.
+//! @return QString the paramter value.
 QString OMCProxy::getParameterValue(QString className, QString parameter)
 {
     sendCommand("getParameterValue(" + className + "," + parameter + ")");
     return getResult();
 }
 
+//! Sets the parameter value.
+//! @param className is the name of the class whose parameter value is set.
+//! @param parameter is the name of the parameter whose value is set.
+//! @param value is the value to set.
+//! @return bool true on success
 bool OMCProxy::setParameterValue(QString className, QString parameter, QString value)
 {
     sendCommand("setParameterValue(" + className + "," + parameter + "," + value + ")");
@@ -760,6 +950,10 @@ bool OMCProxy::setParameterValue(QString className, QString parameter, QString v
         return false;
 }
 
+//! Gets the list of component modifier names.
+//! @param modelName is the name of the class whose modifier names are retrieved.
+//! @param name is the name of the component.
+//! @return QStringList the list of modifier names
 QStringList OMCProxy::getComponentModifierNames(QString modelName, QString name)
 {
     sendCommand("getComponentModifierNames(" + modelName + "," + name + ")");
@@ -768,23 +962,36 @@ QStringList OMCProxy::getComponentModifierNames(QString modelName, QString name)
     return list;
 }
 
+//! Gets the list of component modifier value.
+//! @param modelName is the name of the class whose modifier value is retrieved.
+//! @param name is the name of the component.
+//! @return QString the value of modifier.
 QString OMCProxy::getComponentModifierValue(QString modelName, QString name)
 {
     sendCommand("getComponentModifierValue(" + modelName + "," + name + ")");
     return StringHandler::getModifierValue(getResult());
 }
 
+//! Gets the list of component modifier value.
+//! @param modelName is the name of the class whose modifier value is set.
+//! @param name is the name of the modifier whose value is set.
+//! @param value is the value to set.
+//! @return bool true on success.
 bool OMCProxy::setComponentModifierValue(QString modelName, QString name, QString value)
 {
     sendCommand("setComponentModifierValue(" + modelName + "," + name + ", Code(" + value + "))");
     if (getResult().toLower().contains("ok"))
         return true;
     else
+    {
+        printMessagesStringInternal();
         return false;
+    }
 }
 
 //! Gets the Icon Annotation of a specified class from OMC.
 //! @param className is the name of the class.
+//! @return QString the icon annotation.
 QString OMCProxy::getIconAnnotation(QString className)
 {
     QString expression = "getIconAnnotation(" + className + ")";
@@ -802,6 +1009,9 @@ QString OMCProxy::getIconAnnotation(QString className)
     }
 }
 
+//! Gets the Diagram Annotation of a specified class from OMC.
+//! @param className is the name of the class.
+//! @return QString the diagram annotation.
 QString OMCProxy::getDiagramAnnotation(QString className)
 {
     QString expression = "getDiagramAnnotation(" + className + ")";
@@ -819,6 +1029,9 @@ QString OMCProxy::getDiagramAnnotation(QString className)
     }
 }
 
+//! Gets the number of connection from a model.
+//! @param className is the name of the model.
+//! @return int the number of connections.
 int OMCProxy::getConnectionCount(QString className)
 {
     QString result;
@@ -849,6 +1062,10 @@ int OMCProxy::getConnectionCount(QString className)
         return 0;
 }
 
+//! Returns the connection at a specific index from a model.
+//! @param className is the name of the model.
+//! @param num is the index of connection.
+//! @return QString the connection
 QString OMCProxy::getNthConnection(QString className, int num)
 {
     QString expression = "getNthConnection(" + className + ", " + QString::number(num) + ")";
@@ -866,6 +1083,10 @@ QString OMCProxy::getNthConnection(QString className, int num)
     }
 }
 
+//! Returns the connection annotation at a specific index from a model.
+//! @param className is the name of the model.
+//! @param num is the index of connection annotation.
+//! @return QString the connection annotation
 QString OMCProxy::getNthConnectionAnnotation(QString className, int num)
 {
     QString expression = "getNthConnectionAnnotation(" + className + ", " + QString::number(num) + ")";
@@ -883,6 +1104,9 @@ QString OMCProxy::getNthConnectionAnnotation(QString className, int num)
     }
 }
 
+//! Returns the inheritance count of a model.
+//! @param className is the name of the model.
+//! @return int the inheritance count
 int OMCProxy::getInheritanceCount(QString className)
 {
     QString result;
@@ -913,6 +1137,10 @@ int OMCProxy::getInheritanceCount(QString className)
         return 0;
 }
 
+//! Returns the inherited class at a specific index from a model.
+//! @param className is the name of the model.
+//! @param num is the index of inherited class.
+//! @return QString the inherited class.
 QString OMCProxy::getNthInheritedClass(QString className, int num)
 {
     QString expression = "getNthInheritedClass(" + className + ", " + QString::number(num) + ")";
@@ -930,6 +1158,10 @@ QString OMCProxy::getNthInheritedClass(QString className, int num)
     }
 }
 
+//! Returns the components of a model with their attributes.
+//! Creates an object of ComponentsProperties for each component.
+//! @param className is the name of the model.
+//! @return QList<ComponentsProperties*> the list of components
 QList<ComponentsProperties*> OMCProxy::getComponents(QString className)
 {
     QString result;
@@ -960,6 +1192,9 @@ QList<ComponentsProperties*> OMCProxy::getComponents(QString className)
     return components;
 }
 
+//! Returns the component annotations of a model.
+//! @param className is the name of the model.
+//! @return QStringList the list of component annotations.
 QStringList OMCProxy::getComponentAnnotations(QString className)
 {
     QString expression = "getComponentAnnotations(" + className + ")";
@@ -977,6 +1212,10 @@ QStringList OMCProxy::getComponentAnnotations(QString className)
     }
 }
 
+//! Returns the documentation annotation of a model.
+//! The documenation is not standardized, so for any not standard html documentation add <pre></pre> tags.
+//! @param className is the name of the model.
+//! @return QString the documentation annotation.
 QString OMCProxy::getDocumentationAnnotation(QString className)
 {
     QString expression = "getDocumentationAnnotation(" + className + ")";
@@ -1019,6 +1258,9 @@ QString OMCProxy::getDocumentationAnnotation(QString className)
     return expressionResult;
 }
 
+//! Change the current working directory of OMC. Also retunrs the current working directory.
+//! @param directory the new working directory location.
+//! @return QString the current working directory
 QString OMCProxy::changeDirectory(QString directory)
 {
     if (directory.isEmpty())
@@ -1033,45 +1275,66 @@ QString OMCProxy::changeDirectory(QString directory)
     return StringHandler::unparse(getResult());
 }
 
+//! Loads a file in OMC
+//! @param fileName the file to load.
+//! @return bool true on success
 bool OMCProxy::loadFile(QString fileName)
 {
     fileName = fileName.replace('\\', '/');
     sendCommand("loadFile(\"" + fileName + "\")");
-    if (getResult().toLower().contains("true"))
+    if (StringHandler::unparseBool(getResult()))
         return true;
     else
+    {
+        printMessagesStringInternal();
         return false;
+    }
 }
 
+//! Loads a string in OMC
+//! @param value the string to load.
+//! @return bool true on success
 bool OMCProxy::loadString(QString value)
 {
     sendCommand("loadString(\"" + value.replace("\"", "\\\"") + "\")");
-    if (getResult().toLower().contains("true"))
+    if (StringHandler::unparseBool(getResult()))
         return true;
     else
         return false;
 }
 
+//! Parse the file. Doesn't load it into OMC.
+//! @param fileName the file to parse.
+//! @return bool true on success
 bool OMCProxy::parseFile(QString fileName)
 {
     fileName = fileName.replace('\\', '/');
     sendCommand("parseFile(\"" + fileName + "\")");
-    return getResult() != "{}";
+    if (getResult() == "{}")
+    {
+        printMessagesStringInternal();
+        return false;
+    }
+    else
+        return true;
 }
 
+//! Parse the string. Doesn't load it into OMC.
+//! @param value the string to parse.
+//! @return QStringList the list of models inside the string.
 QStringList OMCProxy::parseString(QString value)
 {
     sendCommand("parseString(\"" + value.replace("\"", "\\\"") + "\")");
     QString result = StringHandler::removeFirstLastCurlBrackets(getResult());
     QStringList list = result.split(",", QString::SkipEmptyParts);
-
-    /* Extract cr from Code(cr); no longer needed
-    for (int i = 0 ; i < list.size(); i++)
-      list[i] = list[i].mid(5, list[i].length() - 6);*/
-
+    printMessagesStringInternal();
     return list;
 }
 
+//! Creates a new class in OMC.
+//! @param type the class type.
+//! @param className the class name.
+//! @return bool true on successs.
 bool OMCProxy::createClass(QString type, QString className)
 {
     sendCommand(type + " " + className + " end " + className + ";");
@@ -1081,15 +1344,11 @@ bool OMCProxy::createClass(QString type, QString className)
         return true;
 }
 
-bool OMCProxy::copyClass(QString copyText)
-{
-    sendCommand(copyText);
-    if (getResult().toLower().contains("error"))
-        return false;
-    else
-        return true;
-}
-
+//! Creates a new sub class in OMC.
+//! @param type the class type.
+//! @param className the class name.
+//! @param parentClassName the parent class name.
+//! @return bool true on successs.
 bool OMCProxy::createSubClass(QString type, QString className, QString parentClassName)
 {
     sendCommand("within " + parentClassName + "; " + type + " " + className + " end " + className + ";");
@@ -1099,6 +1358,10 @@ bool OMCProxy::createSubClass(QString type, QString className, QString parentCla
         return true;
 }
 
+//! Updates the sub class in OMC.
+//! @param parentClassName the parent class name.
+//! @param modelText
+//! @return bool true on successs.
 bool OMCProxy::updateSubClass(QString parentClassName, QString modelText)
 {
     sendCommand("within " + parentClassName + "; " + modelText);
@@ -1108,71 +1371,98 @@ bool OMCProxy::updateSubClass(QString parentClassName, QString modelText)
         return true;
 }
 
+//! Creates a new class in OMC.
+//! @param modelName the name for a new class.
+//! @return bool true on successs.
 bool OMCProxy::createModel(QString modelName)
 {
     sendCommand("createModel(" + modelName + ")");
-    if (getResult().toLower().contains("true"))
+    if (StringHandler::unparseBool(getResult()))
         return true;
     else
         return false;
 }
 
+//! Creates a new class in OMC.
+//! @param modelName the name for a new class.
+//! @param parentModelName the parent model name.
+//! @return bool true on successs.
 bool OMCProxy::newModel(QString modelName, QString parentModelName)
 {
     sendCommand("newModel(" + modelName + ", " + parentModelName + ")");
-    if (getResult().toLower().contains("true"))
+    if (StringHandler::unparseBool(getResult()))
         return true;
     else
         return false;
 }
 
+//! Checks whether the class already exists in OMC or not.
+//! @param className the name for the class to check.
+//! @return bool true on successs.
 bool OMCProxy::existClass(QString className)
 {
     sendCommand("existClass(" + className + ")");
-    if (getResult().toLower().contains("true"))
+    if (StringHandler::unparseBool(getResult()))
         return true;
     else
         return false;
 }
 
+//! Renames a class.
+//! @param oldName.
+//! @param newName.
+//! @return bool true on successs.
 bool OMCProxy::renameClass(QString oldName, QString newName)
 {
     sendCommand("renameClass(" + oldName + ", " + newName + ")");
-    if (getResult().toLower().contains("error"))
+    if (StringHandler::unparseBool(getResult()))
         return false;
     else
         return true;
 }
 
+//! Deletes a class.
+//! @param className.
+//! @return bool true on successs.
 bool OMCProxy::deleteClass(QString className)
 {
     sendCommand("deleteClass(" + className + ")");
-    if (getResult().contains("true"))
+    if (StringHandler::unparseBool(getResult()))
         return true;
     else
         return false;
 }
 
+//! Returns the file name of a model.
+//! @param modelName
+//! @return QString the file name.
 QString OMCProxy::getSourceFile(QString modelName)
 {
     sendCommand("getSourceFile(" + modelName + ")");
     QString file = StringHandler::unparse(getResult());
-    if (file == "<interactive>")
+    if (file.compare("<interactive>") == 0)
       return "";
     else
       return file;
 }
 
+//! Sets a file name of a model.
+//! @param modelName
+//! @param path the full location
+//! @return bool true on successs.
 bool OMCProxy::setSourceFile(QString modelName, QString path)
 {
     sendCommand("setSourceFile(" + modelName + ", \"" + path + "\")");
     return StringHandler::unparseBool(getResult());
 }
 
+//! Saves a model.
+//! @param modelName
+//! @return bool true on successs.
 bool OMCProxy::save(QString modelName)
 {
     sendCommand("save(" + modelName + ")");
-    if (getResult().toLower().contains("true"))
+    if (StringHandler::unparseBool(getResult()))
         return true;
     else
         return false;
@@ -1187,21 +1477,31 @@ bool OMCProxy::saveModifiedModel(QString modelText)
         return true;
 }
 
+//! Retruns the modelica text of a class.
+//! @param className
+//! @return QString the modelica text.
 QString OMCProxy::list(QString className)
 {
     sendCommand("list(" + className + ")");
     return StringHandler::unparse(getResult());
 }
 
+//! Adds annotation to the class.
+//! @param className
+//! @param annotation
+//! @return bool true in success the modelica text.
 bool OMCProxy::addClassAnnotation(QString className, QString annotation)
 {
     sendCommand("addClassAnnotation(" + className + ", " + annotation + ")");
-    if (getResult().toLower().contains("true"))
+    if (StringHandler::unparseBool(getResult()))
         return true;
     else
         return false;
 }
 
+//! Retunrs the default componet name of a class.
+//! @param className.
+//! @return QString the default component name.
 QString OMCProxy::getDefaultComponentName(QString className)
 {
     sendCommand("getDefaultComponentName(" + className + ")");
@@ -1211,6 +1511,9 @@ QString OMCProxy::getDefaultComponentName(QString className)
     return StringHandler::unparse(getResult());
 }
 
+//! Retunrs the default component prefixes of a class.
+//! @param className.
+//! @return QString the default component prefixes.
 QString OMCProxy::getDefaultComponentPrefixes(QString className)
 {
     sendCommand("getDefaultComponentPrefixes(" + className + ")");
@@ -1220,24 +1523,39 @@ QString OMCProxy::getDefaultComponentPrefixes(QString className)
     return StringHandler::unparse(getResult());
 }
 
+//! Adds a component to the model.
+//! @param name the component name
+//! @param className the component fully qualified name.
+//! @param modelName
+//! @return bool true on success.
 bool OMCProxy::addComponent(QString name, QString className, QString modelName)
 {
     sendCommand("addComponent(" + name + ", " + className + "," + modelName + ")");
-    if (getResult().toLower().contains("true"))
+    if (StringHandler::unparseBool(getResult()))
         return true;
     else
         return false;
 }
 
+//! Deletes a component from the model.
+//! @param name the component name
+//! @param modelName
+//! @return bool true on success.
 bool OMCProxy::deleteComponent(QString name, QString modelName)
 {
     sendCommand("deleteComponent(" + name + "," + modelName + ")");
-    if (getResult().toLower().contains("true"))
+    if (StringHandler::unparseBool(getResult()))
         return true;
     else
         return false;
 }
 
+//! Renames a component
+//! @param modelName
+//! @param oldName
+//! @param newName
+//! @return bool true on success.
+//! @see OMCProxy::renameComponentInClass(QString modelName, QString oldName, QString newName)
 bool OMCProxy::renameComponent(QString modelName, QString oldName, QString newName)
 {
     sendCommand("renameComponent(" + modelName + "," + oldName + "," + newName + ")");
@@ -1247,15 +1565,27 @@ bool OMCProxy::renameComponent(QString modelName, QString oldName, QString newNa
         return true;
 }
 
+//! Updates the component annotations.
+//! @param name the component name
+//! @param className the component fully qualified name.
+//! @param modelName
+//! @param annotation
+//! @return bool true on success.
 bool OMCProxy::updateComponent(QString name, QString className, QString modelName, QString annotation)
 {
     sendCommand("updateComponent(" + name + "," + className + "," + modelName + "," + annotation + ")");
-    if (getResult().toLower().contains("true"))
+    if (StringHandler::unparseBool(getResult()))
         return true;
     else
         return false;
 }
 
+//! Renames a component in a class.
+//! @param modelName
+//! @param oldName
+//! @param newName
+//! @return bool true on success.
+//! @see OMCProxy::renameComponent(QString modelName, QString oldName, QString newName)
 bool OMCProxy::renameComponentInClass(QString modelName, QString oldName, QString newName)
 {
     sendCommand("renameComponentInClass(" + modelName + "," + oldName + "," + newName + ")");
@@ -1265,6 +1595,12 @@ bool OMCProxy::renameComponentInClass(QString modelName, QString oldName, QStrin
         return true;
 }
 
+//! Updates the connection annotation
+//! @param from the connection start component name
+//! @param to the connection end component name
+//! @param modelName
+//! @param annotation
+//! @return bool true on success.
 bool OMCProxy::updateConnection(QString from, QString to, QString modelName, QString annotation)
 {
     sendCommand("updateConnection(" + from + "," + to + "," + modelName + "," + annotation + ")");
@@ -1274,29 +1610,55 @@ bool OMCProxy::updateConnection(QString from, QString to, QString modelName, QSt
         return false;
 }
 
-bool OMCProxy::setComponentProperties(QString modelName, QString componentName, QString isFinal, QString isFlow,
-                                      QString isProtected, QString isReplaceAble, QString variability, QString isInner,
-                                      QString isOuter, QString causality)
+//! Sets the component properties
+//! @param modelName
+//! @param componentName
+//! @param isFinal
+//! @param isFlow
+//! @param isProtected
+//! @param isReplaceAble
+//! @param variability
+//! @param isInner
+//! @param isOuter
+//! @param causality
+//! @return bool true on success.
+bool OMCProxy::setComponentProperties(QString modelName, QString componentName, QString isFinal, QString isFlow, QString isProtected,
+                                      QString isReplaceAble, QString variability, QString isInner, QString isOuter, QString causality)
 {
-    sendCommand("setComponentProperties(" + modelName + "," + componentName + ",{" + isFinal + "," + isFlow +
-                "," + isProtected + "," + isReplaceAble + "}, {\"" + variability + "\"}, {" + isInner +
+    sendCommand("setComponentProperties(" + modelName + "," + componentName + ",{" + isFinal + "," + isFlow + "," + isProtected + "," + isReplaceAble + "}, {\"" + variability + "\"}, {" + isInner +
                 "," + isOuter + "}, {\"" + causality + "\"})");
 
     if (getResult().toLower().contains("error"))
+    {
+        printMessagesStringInternal();
         return false;
+    }
     else
         return true;
 }
 
+//! Sets the component comment
+//! @param modelName
+//! @param componentName
+//! @param comment
+//! @return bool true on success.
 bool OMCProxy::setComponentComment(QString modelName, QString componentName, QString comment)
 {
     sendCommand("setComponentComment(" + modelName + "," + componentName + ",\"" + comment + "\")");
     if (getResult().toLower().contains("error"))
+    {
+        printMessagesStringInternal();
         return false;
+    }
     else
         return true;
 }
 
+//! Adds a connection
+//! @param from the connection start component name.
+//! @param to the connection end component name.
+//! @param className
+//! @return bool true on success.
 bool OMCProxy::addConnection(QString from, QString to, QString className)
 {
     sendCommand("addConnection(" + from + "," + to + "," + className + ")");
@@ -1306,24 +1668,43 @@ bool OMCProxy::addConnection(QString from, QString to, QString className)
         return false;
 }
 
+//! Deletes a connection
+//! @param from the connection start component name.
+//! @param to the connection end component name.
+//! @param className
+//! @return bool true on success.
 bool OMCProxy::deleteConnection(QString from, QString to, QString className)
 {
     sendCommand("deleteConnection(" + from + "," + to + "," + className + ")");
     if (getResult().contains("Ok"))
         return true;
     else
+    {
+        printMessagesStringInternal();
         return false;
+    }
 }
 
+//! Check if Instantiating the model is successful or not.
+//! @param modelName
+//! @return bool true on success.
 bool OMCProxy::instantiateModelSucceeds(QString modelName)
 {
     sendCommand("instantiateModel(" + modelName + ")");
     if (getResult().size() < 3)
+    {
+        printMessagesStringInternal();
         return false;
+    }
     else
         return true;
 }
 
+//! Simulate the model. Creates an execuatble and runs it.
+//! @param modelName
+//! @param simualtionParameters
+//! @return bool true on success.
+//! @deprecated OMEdit only use OMCProxy::buildModel(QString modelName, QString simualtionParameters)
 bool OMCProxy::simulate(QString modelName, QString simualtionParameters)
 {
     sendCommand("OMEdit_simulate_result:=simulate(" + modelName + "," + simualtionParameters + ")");
@@ -1334,13 +1715,21 @@ bool OMCProxy::simulate(QString modelName, QString simualtionParameters)
         return true;
 }
 
+//! Builds the model. Creates an executable only doesn't run it.
+//! @param modelName
+//! @param simualtionParameters
+//! @return bool true on success.
 bool OMCProxy::buildModel(QString modelName, QString simualtionParameters)
 {
     sendCommand("buildModel(" + modelName + "," + simualtionParameters + ")");
     bool res = getResult() != "{\"\",\"\"}";
+    printMessagesStringInternal();
     return res;
 }
 
+//! Reads the simulation result variables from the result file.
+//! @param fileName the result file name
+//! @return QList<QString> the list of variables.
 QList<QString> OMCProxy::readSimulationResultVars(QString fileName)
 {
     sendCommand("readSimulationResultVars(\"" + fileName + "\")");
@@ -1350,16 +1739,11 @@ QList<QString> OMCProxy::readSimulationResultVars(QString fileName)
     return variablesList;
 }
 
-//bool OMCProxy::plot(QString modelName, QString plotVariables)
-//{
-//    sendCommand("plot(" + modelName + ",{" + plotVariables + "})");
-//    if (getResult().contains("true"))
-//        return true;
-//    else
-//        return false;
-//}
-
-// modified plot API call
+//! Plot the variables
+//! @param plotVariables
+//! @param fileName the result file name
+//! @return bool true on success.
+//! @deprecated OMEdit uses the OMPlot for plotting.
 bool OMCProxy::plot(QString plotVariables, QString fileName)
 {
     sendCommand("plot({" + plotVariables + "}, \"" + fileName + "\")");
@@ -1369,6 +1753,11 @@ bool OMCProxy::plot(QString plotVariables, QString fileName)
         return false;
 }
 
+//! PlotParametric the variables
+//! @param plotVariables
+//! @param modelName
+//! @return bool true on success.
+//! @deprecated OMEdit uses the OMPlot for plotting.
 bool OMCProxy::plotParametric(QString modelName, QString plotVariables)
 {
     sendCommand("plotParametric(" + modelName + "," + plotVariables + ")");
@@ -1387,34 +1776,54 @@ bool OMCProxy::visualize(QString modelName)
         return false;
 }
 
+//! Checks the model. Checks model balance in terms of number of variables and equations.
+//! @param modelName
+//! @return QString the model check result
 QString OMCProxy::checkModel(QString modelName)
 {
     sendCommand("checkModel(" + modelName + ")");
     return getResult();
 }
 
-
+//! Instantiates the model.
+//! @param modelName
+//! @return QString the instantiated model
 QString OMCProxy::instantiateModel(QString modelName)
 {
     sendCommand("instantiateModel(" + modelName + ")");
-    return StringHandler::unparse(getResult());
+    QString result = StringHandler::unparse(getResult());
+    printMessagesStringInternal();
+    return result;
 }
 
+//! Returns the simulation options stored in the model.
+//! @param modelName
+//! @return QString the simulation options
 QString OMCProxy::getSimulationOptions(QString modelName)
 {
     sendCommand("getSimulationOptions(" + modelName + ")");
     return getResult();
 }
 
+//! Creates the FMU of the model.
+//! @param modelName
+//! @return QString the created FMU location
 bool OMCProxy::translateModelFMU(QString modelName)
 {
     sendCommand("translateModelFMU(" + modelName + ")");
     if (StringHandler::unparse(getResult()).compare("SimCode: The model " + modelName + " has been translated to FMU") == 0)
         return true;
     else
+    {
+        printMessagesStringInternal();
         return false;
+    }
 }
 
+//! Imports the FMU
+//! @param fmuName the FMU location
+//! @param outputDirectory the output location
+//! @return bool true on success
 bool OMCProxy::importFMU(QString fmuName, QString outputDirectory)
 {
     if (outputDirectory.isEmpty())
@@ -1426,11 +1835,17 @@ bool OMCProxy::importFMU(QString fmuName, QString outputDirectory)
     return StringHandler::unparseBool(getResult());
 }
 
+//! @class CustomExpressionBox
+//! @brief A text box for executing OMC commands.
+
+//! Constructor
+//! @param pParent is the pointer to OMCProxy.
 CustomExpressionBox::CustomExpressionBox(OMCProxy *pParent)
 {
     mpParentOMCProxy = pParent;
 }
 
+//! Reimplementation of keyPressEvent.
 void CustomExpressionBox::keyPressEvent(QKeyEvent *event)
 {
     switch (event->key())

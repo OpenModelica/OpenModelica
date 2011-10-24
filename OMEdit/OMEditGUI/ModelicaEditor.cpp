@@ -105,13 +105,7 @@ QStringList ModelicaEditor::getModelsNames()
     if (toPlainText().isEmpty())
         mErrorString = tr("Start and End modifiers are different");
     else
-    {
         models = pOMCProxy->parseString(toPlainText());
-        if (models.size() == 0)
-        {
-            mErrorString = pOMCProxy->getErrorString();
-        }
-    }
     bool existModel = false;
     QStringList existingmodelsList;
     // check if the model already exists
@@ -198,8 +192,8 @@ bool ModelicaEditor::validateText()
             msgBox->setWindowTitle(QString(Helper::applicationName).append(" - Error"));
             msgBox->setIcon(QMessageBox::Critical);
             msgBox->setText(GUIMessages::getMessage(GUIMessages::ERROR_IN_MODELICA_TEXT)
-                            .arg(pMainWindow->mpOMCProxy->getResult()));
-            msgBox->setText(msgBox->text().append(GUIMessages::getMessage(GUIMessages::UNDO_OR_FIX_ERRORS)));
+                            .append(GUIMessages::getMessage(GUIMessages::CHECK_PROBLEMS_TAB))
+                            .append(GUIMessages::getMessage(GUIMessages::UNDO_OR_FIX_ERRORS)));
             msgBox->addButton(tr("Undo changes"), QMessageBox::AcceptRole);
             msgBox->addButton(tr("Let me fix errors"), QMessageBox::RejectRole);
 

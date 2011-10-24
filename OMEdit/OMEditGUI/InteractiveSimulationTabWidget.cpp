@@ -425,7 +425,8 @@ void OMIProxy::readProcessStandardError()
 {
     MessageWidget *pMessageWidget;
     pMessageWidget = mpInteractiveSimulationTab->getParentTabWidget()->getParentMainWindow()->mpMessageWidget;
-    pMessageWidget->printGUIErrorMessage(QString(mpSimulationProcess->readAllStandardError()));
+    pMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, QString(mpSimulationProcess->readAllStandardError()),
+                                                  Helper::scriptingKind, Helper::errorLevel, 0, pMessageWidget->mpProblem));
     mpInteractiveSimulationTab->getParentTabWidget()->closeInetractiveSimulationTab(mpInteractiveSimulationTab->getTabPosition(), false);
 }
 
@@ -436,16 +437,19 @@ void OMIProxy::getSocketError(QAbstractSocket::SocketError socketError)
     switch (socketError)
     {
         case QAbstractSocket::HostNotFoundError:
-            pMessageWidget->printGUIErrorMessage(tr("The OMI control server was not found."));
+            pMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, tr("The OMI control server was not found."),
+                                                          Helper::scriptingKind, Helper::errorLevel, 0, pMessageWidget->mpProblem));
             mpInteractiveSimulationTab->getParentTabWidget()->closeInetractiveSimulationTab(mpInteractiveSimulationTab->getTabPosition(), false);
             break;
         case QAbstractSocket::ConnectionRefusedError:
-            pMessageWidget->printGUIErrorMessage(tr("The OMI control server refuse the connection."));
+            pMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, tr("The OMI control server refuse the connection."),
+                                                          Helper::scriptingKind, Helper::errorLevel, 0, pMessageWidget->mpProblem));
             mpInteractiveSimulationTab->getParentTabWidget()->closeInetractiveSimulationTab(mpInteractiveSimulationTab->getTabPosition(), false);
             break;
         default:
-            pMessageWidget->printGUIErrorMessage(tr("The following error occurred while communicating with OMI control server: %1.")
-                                                 .arg(mpControlClientSocket->errorString()));
+            pMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, tr("The following error occurred while communicating with OMI control server: %1.")
+                                                          .arg(mpControlClientSocket->errorString()), Helper::scriptingKind,
+                                                          Helper::errorLevel, 0, pMessageWidget->mpProblem));
             mpInteractiveSimulationTab->getParentTabWidget()->closeInetractiveSimulationTab(mpInteractiveSimulationTab->getTabPosition(), false);
     }
     setErrorOccurred(true);

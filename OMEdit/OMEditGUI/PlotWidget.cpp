@@ -465,7 +465,8 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
     }
     catch (PlotException &e)
     {
-        mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(e.what());
+        mpParentMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind,
+                                                                    Helper::errorLevel, 0, mpParentMainWindow->mpMessageWidget->mpProblem));
     }
 }
 

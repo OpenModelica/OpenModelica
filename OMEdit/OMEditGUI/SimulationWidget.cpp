@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linkoping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -195,7 +195,7 @@ void SimulationWidget::initializeFields()
     mpNumberofIntervalsTextBox->setText(simulationOptionsList.at(2));
     mpToleranceTextBox->setText(QString::number(simulationOptionsList.at(3).toFloat(), 'f'));
     mpMethodComboBox->setCurrentIndex(mpMethodComboBox->findText(StringHandler::removeFirstLastQuotes(
-                                                                 simulationOptionsList.at(4))));
+                                                                     simulationOptionsList.at(4))));
     mpFileNameTextBox->setText(tr(""));
     mpCflagsTextBox->setText(tr(""));
 }
@@ -252,22 +252,25 @@ void SimulationWidget::simulate()
         if (!mpToleranceTextBox->text().isEmpty())
             simualtionParameters.append(tr(", tolerance=")).append(mpToleranceTextBox->text());
         simualtionParameters.append(tr(", outputFormat=")).append("\"")
-                            .append(mpOutputFormatComboBox->currentText()).append("\"");
+                .append(mpOutputFormatComboBox->currentText()).append("\"");
         if (!mpFileNameTextBox->text().isEmpty())
             simualtionParameters.append(tr(", fileNamePrefix=")).append("\"")
-                            .append(mpFileNameTextBox->text()).append("\"");
+                    .append(mpFileNameTextBox->text()).append("\"");
         if (!mpVariableFilterTextBox->text().isEmpty())
             simualtionParameters.append(tr(", variableFilter=")).append("\"")
-                            .append(mpVariableFilterTextBox->text()).append("\"");
+                    .append(mpVariableFilterTextBox->text()).append("\"");
         if (!mpCflagsTextBox->text().isEmpty())
             simualtionParameters.append(tr(", cflags=")).append("\"")
-                            .append(mpCflagsTextBox->text()).append("\"");
+                    .append(mpCflagsTextBox->text()).append("\"");
 
         ProjectTab *projectTab = mpParentMainWindow->mpProjectTabs->getCurrentTab();
 
         if (!projectTab)
         {
-            mpParentMainWindow->mpMessageWidget->printGUIWarningMessage(GUIMessages::getMessage(GUIMessages::NO_OPEN_MODEL).arg("simulate"));
+            mpParentMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
+                                                                               GUIMessages::getMessage(GUIMessages::NO_OPEN_MODEL)
+                                                                               .arg("simulate"), Helper::simulationKind, Helper::warningLevel,
+                                                                               0, mpParentMainWindow->mpMessageWidget->mpProblem));
             accept();
             return;
         }
@@ -275,6 +278,7 @@ void SimulationWidget::simulate()
         saveSimulationOptions();
         // show the progress bar
         mpProgressDialog->setText(Helper::running_Simulation_text);
+        mpProgressDialog->mpCancelSimulationButton->setEnabled(false);
         mpProgressDialog->show();
         mpParentMainWindow->mpProgressBar->setRange(0, 0);
         mpParentMainWindow->showProgressBar();
@@ -292,23 +296,34 @@ void SimulationWidget::simulate()
     }
 }
 
+void SimulationWidget::cancelSimulation()
+{
+    mpSimulationProcess->kill();
+    mpProgressDialog->hide();
+}
+
 bool SimulationWidget::validate()
 {
     if (mpStartTimeTextBox->text().isEmpty())
-        mpParentMainWindow->mpMessageWidget->printGUIWarningMessage(GUIMessages::getMessage(
-                                                                    GUIMessages::NO_SIMULATION_STARTTIME));
-
+        mpParentMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
+                                                                           GUIMessages::getMessage(GUIMessages::NO_SIMULATION_STARTTIME),
+                                                                           Helper::simulationKind, Helper::warningLevel, 0,
+                                                                           mpParentMainWindow->mpMessageWidget->mpProblem));
     if (mpStopTimeTextBox->text().isEmpty())
     {
-        mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(
-                                                                  GUIMessages::NO_SIMULATION_STOPTIME));
+        mpParentMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
+                                                                           GUIMessages::getMessage(GUIMessages::NO_SIMULATION_STOPTIME),
+                                                                           Helper::simulationKind, Helper::warningLevel, 0,
+                                                                           mpParentMainWindow->mpMessageWidget->mpProblem));
         return false;
     }
 
     if (mpStartTimeTextBox->text().toDouble() > mpStopTimeTextBox->text().toDouble())
     {
-        mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(
-                                                                  GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME));
+        mpParentMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
+                                                                           GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME),
+                                                                           Helper::simulationKind, Helper::warningLevel, 0,
+                                                                           mpParentMainWindow->mpMessageWidget->mpProblem));
         return false;
     }
 
@@ -318,46 +333,53 @@ bool SimulationWidget::validate()
 void SimulationWidget::simulateModel(QString simulationParameters)
 {
     ProjectTab *projectTab = mpParentMainWindow->mpProjectTabs->getCurrentTab();
-
-    if (!mpParentMainWindow->mpOMCProxy->simulate(projectTab->mModelNameStructure, simulationParameters))
+    if (mpParentMainWindow->mpOMCProxy->buildModel(projectTab->mModelNameStructure, simulationParameters))
     {
-        mpParentMainWindow->mpOMCProxy->sendCommand("OMEdit_simulate_result.messages");
-        QString message = StringHandler::unparse(mpParentMainWindow->mpOMCProxy->getResult());
-        mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(QString("Unable to simulate the Model '")
-                                                                  .append(projectTab->mModelNameStructure).append("'\n")
-                                                                  .append(QString(GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED))
-                                                                  .arg(message)));
-    }
-    else
-    {
-        mpParentMainWindow->mpOMCProxy->sendCommand("OMEdit_simulate_result.messages");
-        QString message = StringHandler::unparse(mpParentMainWindow->mpOMCProxy->getResult());
-        if (!message.isEmpty())
-            message = QString(" with message:\n").append(message);
+        // read the file path according to the file prefix variable
+        QString file;
+        if (mpFileNameTextBox->text().isEmpty())
+            file = QString(mpParentMainWindow->mpOMCProxy->changeDirectory()).append("/").append(projectTab->mModelNameStructure);
+        else
+            file = QString(mpParentMainWindow->mpOMCProxy->changeDirectory()).append("/").append(mpFileNameTextBox->text());
 
+        file = file.replace("//", "/");
+        // run the simulation executable to create the result file
+#ifdef WIN32
+        file = file.append(".exe");
+#endif
+        QFileInfo fileInfo(file);
+        // start the process
+        mpSimulationProcess = new QProcess();
+#ifdef WIN32
+        QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
+        environment.insert("PATH", environment.value("Path") + ";" + QString(Helper::OpenModelicaHome).append("MinGW\\bin"));
+        mpSimulationProcess->setProcessEnvironment(environment);
+#endif
+        mpSimulationProcess->setWorkingDirectory(fileInfo.absolutePath());
+        mpProgressDialog->mpCancelSimulationButton->setEnabled(true);
+        mpSimulationProcess->start(file);
+        while (mpSimulationProcess->state() == QProcess::Running)
+        {
+            qApp->processEvents();
+        }
+        // we set the Progress Dialog box to hide when we cancel the simulation, so don't show user the plottin view just return.
+        if (mpProgressDialog->isHidden())
+            return;
+        // read the output file
         QString output_file = projectTab->mModelNameStructure;
         if (!mpFileNameTextBox->text().isEmpty())
             output_file = mpFileNameTextBox->text().trimmed();
-        // if simualtion output format is not plt and mat then dont show plot window.
-        // only show user the message that result file is created.
+        // if simualtion output format is not plt, csv and mat then dont show plot window.
         QRegExp regExp("\\b(mat|plt|csv)\\b");
         if (regExp.indexIn(mpOutputFormatComboBox->currentText()) != -1)
         {
             PlotWidget *pPlotWidget = mpParentMainWindow->mpPlotWidget;
             OMCProxy *pOMCProxy = mpParentMainWindow->mpOMCProxy;
-            QList<QString> list = pOMCProxy->readSimulationResultVars(QString(output_file).append("_res.")
-                                                                     .append(mpOutputFormatComboBox->currentText()));
+            QList<QString> list;
+            list = pOMCProxy->readSimulationResultVars(QString(output_file).append("_res.").append(mpOutputFormatComboBox->currentText()));
             emit showPlottingView();
-            pPlotWidget->addPlotVariablestoTree(QString(output_file).append("_res.")
-                                                .append(mpOutputFormatComboBox->currentText()),list);
+            pPlotWidget->addPlotVariablestoTree(QString(output_file).append("_res.").append(mpOutputFormatComboBox->currentText()),list);
             mpParentMainWindow->plotdock->show();
-            mpParentMainWindow->mpMessageWidget->printGUIInfoMessage(QString("Simulated '").append(projectTab->mModelNameStructure)
-                                                                     .append(message));
-        }
-        else
-        {
-            mpParentMainWindow->mpMessageWidget->printGUIInfoMessage(QString("Simulated '").append(projectTab->mModelNameStructure)
-                                                                     .append(message));
         }
     }
 }
@@ -365,22 +387,7 @@ void SimulationWidget::simulateModel(QString simulationParameters)
 void SimulationWidget::buildModel(QString simulationParameters)
 {
     ProjectTab *projectTab = mpParentMainWindow->mpProjectTabs->getCurrentTab();
-
-    if (!mpParentMainWindow->mpOMCProxy->buildModel(projectTab->mModelNameStructure, simulationParameters))
-    {
-        QString result = StringHandler::removeFirstLastQuotes(mpParentMainWindow->mpOMCProxy->getResult());
-        int startPos = result.indexOf("Error:");
-        // add 7 to startPos to remove 'Error: ' word
-        QString message = result.mid(startPos + 7);
-        message = StringHandler::removeFirstLastQuotes(message).trimmed();
-        mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(QString("Unable to simulate the Model '")
-                                                                  .append(projectTab->mModelNameStructure)
-                                                                  .append("'\n")
-                                                                  .append(QString(GUIMessages::getMessage(
-                                                                  GUIMessages::ERROR_OCCURRED))
-                                                                  .arg(message)));
-    }
-    else
+    if (mpParentMainWindow->mpOMCProxy->buildModel(projectTab->mModelNameStructure, simulationParameters))
     {
         mpProgressDialog->setText(Helper::starting_interactive_simulation_server);
         mpParentMainWindow->mpStatusBar->showMessage(Helper::starting_interactive_simulation_server);
@@ -436,6 +443,8 @@ ProgressDialog::ProgressDialog(SimulationWidget *pParent)
     // create heading label
     mpText = new QLabel;
     mpText->setAlignment((Qt::AlignHCenter));
+    mpCancelSimulationButton = new QPushButton(tr("Cancel Simulation"));
+    connect(mpCancelSimulationButton, SIGNAL(clicked()), pParent, SLOT(cancelSimulation()));
     QProgressBar *progressBar = new QProgressBar;
     progressBar->setRange(0, 0);
     progressBar->setTextVisible(false);
@@ -444,6 +453,7 @@ ProgressDialog::ProgressDialog(SimulationWidget *pParent)
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addWidget(mpText);
     mainLayout->addWidget(progressBar);
+    mainLayout->addWidget(mpCancelSimulationButton, 0, Qt::AlignRight);
     setLayout(mainLayout);
 }
 

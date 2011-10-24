@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linkoping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -82,13 +82,13 @@ GraphicsView::GraphicsView(int iconType, ProjectTab *parent)
         if (mIconType == StringHandler::DIAGRAM)
         {
             this->setStyleSheet(QString("background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1")
-                                         .append(", stop: 0 lightGray, stop: 1 gray);"));
+                                .append(", stop: 0 lightGray, stop: 1 gray);"));
         }
         // change the background shade if user is in Icon View
         else if (mIconType == StringHandler::ICON)
         {
             this->setStyleSheet(QString("background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1")
-                                         .append(", stop: 0 gray, stop: 1 lightGray);"));
+                                .append(", stop: 0 gray, stop: 1 lightGray);"));
         }
     }
     connect(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->gridLinesAction,
@@ -163,7 +163,7 @@ void GraphicsView::dragMoveEvent(QDragMoveEvent *event)
 void GraphicsView::dropEvent(QDropEvent *event)
 {
     this->setFocus();
-
+    MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
     // check if the view is readonly or not
     if (mpParentProjectTab->isReadOnly())
     {
@@ -192,7 +192,8 @@ void GraphicsView::dropEvent(QDropEvent *event)
                 else
                 {
                     QString message = QString(GUIMessages::getMessage(GUIMessages::FILE_FORMAT_NOT_SUPPORTED).arg(fileInfo.fileName()));
-                    mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(message);
+                    pMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, message, Helper::scriptingKind,
+                                                                                Helper::errorLevel, 0, pMainWindow->mpMessageWidget->mpProblem));
                 }
             }
             // if one file is valid and opened then accept the event
@@ -218,7 +219,6 @@ void GraphicsView::dropEvent(QDropEvent *event)
             QPointF point (mapToScene(event->pos()));
             dataStream >> name >> classname >> type;
 
-            MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
             //item not to be dropped on itself
             name = StringHandler::getLastWordAfterDot(name);
             if (name != mpParentProjectTab->mModelName)
@@ -241,9 +241,10 @@ void GraphicsView::dropEvent(QDropEvent *event)
                         // show the information to the user if we have changed the name of some inner component.
                         if (defaultPrefix.compare("inner") == 0)
                         {
-                            pMainWindow->mpMessageWidget->printGUIWarningMessage(
-                                        GUIMessages::getMessage(GUIMessages::INNER_MODEL_NAME_CHANGED).arg(defaultName).arg(name)
-                                        .arg(defaultPrefix));
+                            pMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
+                                                                                        GUIMessages::getMessage(GUIMessages::INNER_MODEL_NAME_CHANGED)
+                                                                                        .arg(defaultName).arg(name).arg(defaultPrefix), Helper::scriptingKind,
+                                                                                        Helper::errorLevel, 0, pMainWindow->mpMessageWidget->mpProblem));
                         }
                     }
                 }
@@ -402,10 +403,10 @@ void GraphicsView::deleteComponentObject(Component *component, bool update)
 void GraphicsView::deleteAllComponentObjects()
 {
     mComponentsList.clear();
-//    foreach (Component *component, mComponentsList)
-//    {
-//        component->deleteMe(false);
-//    }
+    //    foreach (Component *component, mComponentsList)
+    //    {
+    //        component->deleteMe(false);
+    //    }
 }
 
 Component* GraphicsView::getComponentObject(QString componentName)
@@ -460,21 +461,21 @@ void GraphicsView::deleteShapeObject(ShapeAnnotation *shape)
 void GraphicsView::deleteAllShapesObject()
 {
     mShapesList.clear();
-//    foreach (ShapeAnnotation *shape, mShapesList)
-//    {
-//        shape->deleteMe();
-//    }
+    //    foreach (ShapeAnnotation *shape, mShapesList)
+    //    {
+    //        shape->deleteMe();
+    //    }
 }
 
 void GraphicsView::removeAllConnectors()
 {
     mConnectorsVector.clear();
-//    int i = 0;
-//    while(i != mConnectorsVector.size())
-//    {
-//        this->removeConnector(mConnectorsVector[i], false);
-//        i = 0;   //Restart iteration if map has changed
-//    }
+    //    int i = 0;
+    //    while(i != mConnectorsVector.size())
+    //    {
+    //        this->removeConnector(mConnectorsVector[i], false);
+    //        i = 0;   //Restart iteration if map has changed
+    //    }
 }
 
 //! Defines what happens when the mouse is moving in a GraphicsView.
@@ -730,12 +731,12 @@ void GraphicsView::createActions()
 {
     // Connection Delete Action
     mpCancelConnectionAction = new QAction(QIcon(":/Resources/icons/delete.png"),
-                                          tr("Cancel Connection"), this);
+                                           tr("Cancel Connection"), this);
     mpCancelConnectionAction->setStatusTip(tr("Cancels the current connection"));
-    connect(mpCancelConnectionAction, SIGNAL(triggered()), SLOT(removeConnector()));    
+    connect(mpCancelConnectionAction, SIGNAL(triggered()), SLOT(removeConnector()));
     // Icon Rotate ClockWise Action
     mpRotateIconAction = new QAction(QIcon(":/Resources/icons/rotateclockwise.png"),
-                                    tr("Rotate Clockwise"), this);
+                                     tr("Rotate Clockwise"), this);
     mpRotateIconAction->setStatusTip(tr("Rotate the item clockwise"));
     mpRotateIconAction->setShortcut(QKeySequence("Ctrl+r"));
 
@@ -750,7 +751,7 @@ void GraphicsView::createActions()
 
     // Icon Rotate Anti-ClockWise Action
     mpRotateAntiIconAction = new QAction(QIcon(":/Resources/icons/rotateanticlockwise.png"),
-                                        tr("Rotate Anticlockwise"), this);
+                                         tr("Rotate Anticlockwise"), this);
     mpRotateAntiIconAction->setStatusTip(tr("Rotate the item anticlockwise"));
     mpRotateAntiIconAction->setShortcut(QKeySequence("Ctrl+Shift+r"));
     // Icon Reset Rotation Action
@@ -943,7 +944,7 @@ void GraphicsView::createBitmapShape(QPointF point)
     if (mpParentProjectTab->isReadOnly())
         return;
 
-    if (!this->mIsCreatingBitmap)        
+    if (!this->mIsCreatingBitmap)
     {
         //If  model doesnt exist, then alert the user...
         if(mpParentProjectTab->mModelFileName.isEmpty())
@@ -1139,7 +1140,9 @@ void GraphicsView::createConnection(Component *pStartComponent, QString startIco
     if (pStartComponent == pComponent)
     {
         removeConnector();
-        pMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::SAME_PORT_CONNECT));
+        pMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
+                                                                    GUIMessages::getMessage(GUIMessages::SAME_PORT_CONNECT), Helper::scriptingKind,
+                                                                    Helper::errorLevel, 0, pMainWindow->mpMessageWidget->mpProblem));
     }
     else
     {
@@ -1174,9 +1177,6 @@ void GraphicsView::createConnection(Component *pStartComponent, QString startIco
                 // remove the connection from model
                 pMainWindow->mpOMCProxy->deleteConnection(startIconCompName, endIconCompName, mpParentProjectTab->mModelNameStructure);
                 mpParentProjectTab->mpModelicaEditor->blockSignals(false);
-                //! @todo make the error message better
-                pMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::INCOMPATIBLE_CONNECTORS));
-                pMainWindow->mpMessageWidget->printGUIErrorMessage(pMainWindow->mpOMCProxy->getErrorString());
             }
         }
     }
@@ -1198,44 +1198,44 @@ void GraphicsView::addConnectorForArray(Component *pStartComponent,Component *pE
         this->mpConnector->mpConnectorArrayMenu->setStartConnectorIndex(startIndexStr);
         this->mpConnector->mpConnectorArrayMenu->setEndConnectorIndex(endIndexStr);
         QString startIconName, startIconCompName, endIconName, endIconCompName;
-       // appending the indices if it is an array of connectors;
+        // appending the indices if it is an array of connectors;
         if (pStartComponent->mpParentComponent)
         {
             startIconName = QString(pStartComponent->mpParentComponent->getName()).append(".");
             if(!this->mpConnector->getStartConnectorisArray())
-            startIconCompName = pStartComponent->mpComponentProperties->getName();
+                startIconCompName = pStartComponent->mpComponentProperties->getName();
             else
-            startIconCompName = pStartComponent->mpComponentProperties->getName() + "[" + this->mpConnector->mpConnectorArrayMenu->getStartConnectorIndex() + "]";
+                startIconCompName = pStartComponent->mpComponentProperties->getName() + "[" + this->mpConnector->mpConnectorArrayMenu->getStartConnectorIndex() + "]";
         }
         else
         {
             if(!this->mpConnector->getStartConnectorisArray())
-            startIconCompName = pStartComponent->getName();
+                startIconCompName = pStartComponent->getName();
             else
-            startIconCompName = pStartComponent->getName() + "[" + startIndexStr + "]";
+                startIconCompName = pStartComponent->getName() + "[" + startIndexStr + "]";
         }
 
         if (pEndComponent->mpParentComponent)
         {
             endIconName = QString(pEndComponent->mpParentComponent->getName()).append(".");
             if(!this->mpConnector->getEndConnectorisArray())
-            endIconCompName = pEndComponent->mpComponentProperties->getName();
+                endIconCompName = pEndComponent->mpComponentProperties->getName();
             else
-            endIconCompName = pEndComponent->mpComponentProperties->getName() + "[" + this->mpConnector->mpConnectorArrayMenu->getEndConnectorIndex() + "]";
+                endIconCompName = pEndComponent->mpComponentProperties->getName() + "[" + this->mpConnector->mpConnectorArrayMenu->getEndConnectorIndex() + "]";
         }
         else
         {
 
             if(!this->mpConnector->getEndConnectorisArray())
-            endIconCompName = pEndComponent->getName();
+                endIconCompName = pEndComponent->getName();
             else
-            endIconCompName = pEndComponent->getName() + "[" + endIndexStr + "]";
+                endIconCompName = pEndComponent->getName() + "[" + endIndexStr + "]";
         }
 
         createConnection(pStartComponent, QString(startIconName).append(startIconCompName),
                          pEndComponent, QString(endIconName).append(endIconCompName));
 
-}
+    }
 }
 
 //! Removes the current connecting connector from the model.
@@ -1291,32 +1291,32 @@ void GraphicsView::removeConnector(Connector *pConnector, bool update)
         {
             startIconName = QString(pConnector->getStartComponent()->mpParentComponent->getName()).append(".");
             if(!pConnector->getStartConnectorisArray())
-            startIconCompName =pConnector->getStartComponent()->mpComponentProperties->getName();
+                startIconCompName =pConnector->getStartComponent()->mpComponentProperties->getName();
             else
-            startIconCompName = pConnector->getStartComponent()->mpComponentProperties->getName() + "[" + pConnector->mpConnectorArrayMenu->getStartConnectorIndex() + "]";
+                startIconCompName = pConnector->getStartComponent()->mpComponentProperties->getName() + "[" + pConnector->mpConnectorArrayMenu->getStartConnectorIndex() + "]";
         }
         else
         {
             startIconCompName = pConnector->getStartComponent()->getName();
             if(!pConnector->getStartConnectorisArray())
-            startIconCompName =pConnector->getStartComponent()->getName();
+                startIconCompName =pConnector->getStartComponent()->getName();
             else
-            startIconCompName = pConnector->getStartComponent()->getName() + "[" + pConnector->mpConnectorArrayMenu->getStartConnectorIndex() + "]";
+                startIconCompName = pConnector->getStartComponent()->getName() + "[" + pConnector->mpConnectorArrayMenu->getStartConnectorIndex() + "]";
         }
         if (pConnector->getEndComponent()->mpParentComponent)
         {
             endIconName = QString(pConnector->getEndComponent()->mpParentComponent->getName()).append(".");
             if(!pConnector->getEndConnectorisArray())
-            endIconCompName = pConnector->getEndComponent()->mpComponentProperties->getName();
+                endIconCompName = pConnector->getEndComponent()->mpComponentProperties->getName();
             else
-            endIconCompName = pConnector->getEndComponent()->mpComponentProperties->getName() + "[" + pConnector->mpConnectorArrayMenu->getEndConnectorIndex() + "]";
+                endIconCompName = pConnector->getEndComponent()->mpComponentProperties->getName() + "[" + pConnector->mpConnectorArrayMenu->getEndConnectorIndex() + "]";
         }
         else
         {
             if(!pConnector->getEndConnectorisArray())
-            endIconCompName = pConnector->getEndComponent()->getName();
+                endIconCompName = pConnector->getEndComponent()->getName();
             else
-            endIconCompName = pConnector->getEndComponent()->getName() + "[" + pConnector->mpConnectorArrayMenu->getEndConnectorIndex() + "]";
+                endIconCompName = pConnector->getEndComponent()->getName() + "[" + pConnector->mpConnectorArrayMenu->getEndConnectorIndex() + "]";
         }
         // delete Connection
         deleteConnection(QString(startIconName).append(startIconCompName), QString(endIconName).append(endIconCompName), update);
@@ -1342,8 +1342,6 @@ void GraphicsView::deleteConnection(QString startIconCompName, QString endIconCo
         if (update)
             mpParentProjectTab->mpModelicaEditor->setPlainText(pMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
     }
-    else
-        pMainWindow->mpMessageWidget->printGUIErrorMessage(pMainWindow->mpOMCProxy->getErrorString());
 }
 
 //! Resets zoom factor to 100%.
@@ -1425,29 +1423,29 @@ void GraphicsView::addClassAnnotation(bool update)
     annotationString.append("annotate=");
     if (mIconType == StringHandler::ICON)
     {
-       annotationString.append("Icon(");
+        annotationString.append("Icon(");
     }
     else if (mIconType == StringHandler::DIAGRAM)
     {
-       annotationString.append("Diagram(");
+        annotationString.append("Diagram(");
     }
     // add the coordinate system first
-//    annotationString.append("coordinateSystem=CoordinateSystem(extent={");
-//    annotationString.append("{").append(QString::number(sceneRect().x())).append(", ").append(QString::number(sceneRect().y())).append("}, ");
-//    annotationString.append("{").append(QString::number(sceneRect().width() - fabs(sceneRect().x()))).append(", ")
-//            .append(QString::number(sceneRect().height() - fabs(sceneRect().y()))).append("}})");
+    //    annotationString.append("coordinateSystem=CoordinateSystem(extent={");
+    //    annotationString.append("{").append(QString::number(sceneRect().x())).append(", ").append(QString::number(sceneRect().y())).append("}, ");
+    //    annotationString.append("{").append(QString::number(sceneRect().width() - fabs(sceneRect().x()))).append(", ")
+    //            .append(QString::number(sceneRect().height() - fabs(sceneRect().y()))).append("}})");
     // add the graphics annotations
     if (mShapesList.size() > 0)
     {
-       annotationString.append("graphics={");
-       foreach (ShapeAnnotation *shape, mShapesList)
-       {
-           annotationString.append(shape->getShapeAnnotation());
-           if (counter < mShapesList.size() - 1)
-               annotationString.append(",");
-           counter++;
-       }
-       annotationString.append("}");
+        annotationString.append("graphics={");
+        foreach (ShapeAnnotation *shape, mShapesList)
+        {
+            annotationString.append(shape->getShapeAnnotation());
+            if (counter < mShapesList.size() - 1)
+                annotationString.append(",");
+            counter++;
+        }
+        annotationString.append("}");
     }
     annotationString.append(")");
 
@@ -1460,7 +1458,9 @@ void GraphicsView::addClassAnnotation(bool update)
     }
     else
     {
-       pMainWindow->mpMessageWidget->printGUIErrorMessage("Error in class annotation " + pMainWindow->mpOMCProxy->getResult());
+        pMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
+                                                                    "Error in class annotation " + pMainWindow->mpOMCProxy->getResult(),
+                                                                    Helper::scriptingKind, Helper::errorLevel, 0, pMainWindow->mpMessageWidget->mpProblem));
     }
     // update model icon if something is changed in icon view
     ModelicaTree *pModelicaTree = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpLibrary->mpModelicaTree;
@@ -1474,14 +1474,14 @@ void GraphicsView::addClassAnnotation(bool update)
         LibraryLoader *libraryLoader = new LibraryLoader(pModelicaTreeNode, mpParentProjectTab->mModelNameStructure, pModelicaTree);
         libraryLoader->start(QThread::HighestPriority);
         while (libraryLoader->isRunning())
-            qApp->processEvents();
+            qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
     }
 
     /* since the icon of this model has changed in some way so it might be possible that this model is being used in some other models,
        so we look through the modelica files tree and check the components of all models against our current model.
        If a match is found we get the icon annotation of the model and update it.
        */
-      /*  QList<ModelicaTreeNode*> pModelicaTreeNodes = pModelicaTree->getModelicaTreeNodes();
+    /*  QList<ModelicaTreeNode*> pModelicaTreeNodes = pModelicaTree->getModelicaTreeNodes();
         QList<Component*> componentslist;
         QString result;
         result= pMainWindow->mpOMCProxy->getIconAnnotation(mpParentProjectTab->mModelNameStructure);
@@ -1886,14 +1886,14 @@ bool ProjectTab::loadRootModel(QString model)
 {
     MainWindow *pMainWindow = mpParentProjectTabWidget->mpParentMainWindow;
     // if model text is fine then
-//    if (pMainWindow->mpOMCProxy->saveModifiedModel(model))
-//    {
-        updateModel(model);
-        return true;
-//    }
-//    // if there is some error in model then dont accept it
-//    else
-//        return false;
+    //    if (pMainWindow->mpOMCProxy->saveModifiedModel(model))
+    //    {
+    updateModel(model);
+    return true;
+    //    }
+    //    // if there is some error in model then dont accept it
+    //    else
+    //        return false;
 }
 
 bool ProjectTab::loadSubModel(QString model)
@@ -2060,8 +2060,8 @@ void ProjectTab::getModelConnections()
                 int startbrac = startComponentList.at(1).indexOf("[");
                 if(startbrac == -1)
                 {
-                if (component->mpComponentProperties->getName() == startComponentList.at(1))
-                    pStartPort = component;
+                    if (component->mpComponentProperties->getName() == startComponentList.at(1))
+                        pStartPort = component;
                 }
                 //if the start port is a connector array
                 else
@@ -2089,8 +2089,8 @@ void ProjectTab::getModelConnections()
                 int startbrac = endComponentList.at(1).indexOf("[");
                 if(startbrac == -1)
                 {
-                if (component->mpComponentProperties->getName() == endComponentList.at(1))
-                    pEndPort = component;
+                    if (component->mpComponentProperties->getName() == endComponentList.at(1))
+                        pEndPort = component;
                 }
                 //if the end port is a connector array
                 else
@@ -2176,39 +2176,39 @@ void ProjectTab::getModelShapes(QString annotationString, int type)
 
     if (pMainWindow->mpOMCProxy->mAnnotationVersion == OMCProxy::ANNOTATION_VERSION3X)
     {
-//        if (list.size() < 8)
-//            return;
-//        // read the coordinate system values
-//        x1 = static_cast<QString>(list.at(0)).toFloat();
-//        y1 = static_cast<QString>(list.at(1)).toFloat();
-//        x2 = static_cast<QString>(list.at(2)).toFloat();
-//        y2 = static_cast<QString>(list.at(3)).toFloat();
-//        // according to modelica annotation standard, the first point of coordinate system should always be less than the second one.
-//        if (x1 > x2)
-//        {
-//            qSwap(x1, x2);
-//            valuesSwaped = true;
-//        }
-//        if (y1 > y2)
-//        {
-//            qSwap(y1, y2);
-//            valuesSwaped = true;
-//        }
-//        width = x2 - x1;
-//        height = y2 - y1;
+        //        if (list.size() < 8)
+        //            return;
+        //        // read the coordinate system values
+        //        x1 = static_cast<QString>(list.at(0)).toFloat();
+        //        y1 = static_cast<QString>(list.at(1)).toFloat();
+        //        x2 = static_cast<QString>(list.at(2)).toFloat();
+        //        y2 = static_cast<QString>(list.at(3)).toFloat();
+        //        // according to modelica annotation standard, the first point of coordinate system should always be less than the second one.
+        //        if (x1 > x2)
+        //        {
+        //            qSwap(x1, x2);
+        //            valuesSwaped = true;
+        //        }
+        //        if (y1 > y2)
+        //        {
+        //            qSwap(y1, y2);
+        //            valuesSwaped = true;
+        //        }
+        //        width = x2 - x1;
+        //        height = y2 - y1;
 
-//        if (type == StringHandler::ICON)
-//        {
-//            mpIconGraphicsView->setSceneRect(x1, y1, width, height);
-//            if (valuesSwaped)
-//                mpIconGraphicsView->addClassAnnotation();
-//        }
-//        else if (type == StringHandler::DIAGRAM)
-//        {
-//            mpDiagramGraphicsView->setSceneRect(x1, y1, width, height);
-//            if (valuesSwaped)
-//                mpIconGraphicsView->addClassAnnotation();
-//        }
+        //        if (type == StringHandler::ICON)
+        //        {
+        //            mpIconGraphicsView->setSceneRect(x1, y1, width, height);
+        //            if (valuesSwaped)
+        //                mpIconGraphicsView->addClassAnnotation();
+        //        }
+        //        else if (type == StringHandler::DIAGRAM)
+        //        {
+        //            mpDiagramGraphicsView->setSceneRect(x1, y1, width, height);
+        //            if (valuesSwaped)
+        //                mpIconGraphicsView->addClassAnnotation();
+        //        }
 
         if (list.size() < 9)
             return;
@@ -2221,36 +2221,36 @@ void ProjectTab::getModelShapes(QString annotationString, int type)
             return;
 
         // read the coordinate system values
-//        x1 = static_cast<QString>(list.at(0)).toFloat();
-//        y1 = static_cast<QString>(list.at(1)).toFloat();
-//        x2 = static_cast<QString>(list.at(2)).toFloat();
-//        y2 = static_cast<QString>(list.at(3)).toFloat();
-//        // according to modelica annotation standard, the first point of coordinate system should always be less than the second one.
-//        if (x1 > x2)
-//        {
-//            qSwap(x1, x2);
-//            valuesSwaped = true;
-//        }
-//        if (y1 > y2)
-//        {
-//            qSwap(y1, y2);
-//            valuesSwaped = true;
-//        }
-//        width = x2 - x1;
-//        height = y2 - y1;
+        //        x1 = static_cast<QString>(list.at(0)).toFloat();
+        //        y1 = static_cast<QString>(list.at(1)).toFloat();
+        //        x2 = static_cast<QString>(list.at(2)).toFloat();
+        //        y2 = static_cast<QString>(list.at(3)).toFloat();
+        //        // according to modelica annotation standard, the first point of coordinate system should always be less than the second one.
+        //        if (x1 > x2)
+        //        {
+        //            qSwap(x1, x2);
+        //            valuesSwaped = true;
+        //        }
+        //        if (y1 > y2)
+        //        {
+        //            qSwap(y1, y2);
+        //            valuesSwaped = true;
+        //        }
+        //        width = x2 - x1;
+        //        height = y2 - y1;
 
-//        if (type == StringHandler::ICON)
-//        {
-//            mpIconGraphicsView->setSceneRect(x1, y1, width, height);
-//            if (valuesSwaped)
-//                mpIconGraphicsView->addClassAnnotation();
-//        }
-//        else if (type == StringHandler::DIAGRAM)
-//        {
-//            mpDiagramGraphicsView->setSceneRect(x1, y1, width, height);
-//            if (valuesSwaped)
-//                mpIconGraphicsView->addClassAnnotation();
-//        }
+        //        if (type == StringHandler::ICON)
+        //        {
+        //            mpIconGraphicsView->setSceneRect(x1, y1, width, height);
+        //            if (valuesSwaped)
+        //                mpIconGraphicsView->addClassAnnotation();
+        //        }
+        //        else if (type == StringHandler::DIAGRAM)
+        //        {
+        //            mpDiagramGraphicsView->setSceneRect(x1, y1, width, height);
+        //            if (valuesSwaped)
+        //                mpIconGraphicsView->addClassAnnotation();
+        //        }
 
         if (list.size() < 5)
             return;
@@ -2367,7 +2367,7 @@ void ProjectTab::getModelShapes(QString annotationString, int type)
             ellipseAnnotation->setSelectionBoxPassive();
         }
         if (shape.startsWith("Text"))
-        {            
+        {
             shape = shape.mid(QString("Text").length());
             shape = StringHandler::removeFirstLastBrackets(shape);
             TextAnnotation *textAnnotation;
@@ -2390,7 +2390,7 @@ void ProjectTab::getModelShapes(QString annotationString, int type)
             textAnnotation->setSelectionBoxPassive();
         }
         if (shape.startsWith("Bitmap"))
-        {            
+        {
             shape = shape.mid(QString("Bitmap").length());
             shape = StringHandler::removeFirstLastBrackets(shape);
             BitmapAnnotation *bitmapAnnotation;
@@ -2504,7 +2504,7 @@ bool ProjectTab::modelicaEditorTextChanged()
     mpModelicaTypeLabel->setText(StringHandler::getModelicaClassType(mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->getClassRestriction(mModelNameStructure)));
     this->mOpenMode = false;
 
-/*
+    /*
     if (!modelName.isEmpty())
     {
         QString modelNameStructure;
@@ -2994,9 +2994,11 @@ void ProjectTabWidget::addDiagramViewTab(QTreeWidgetItem *item, int column)
     else
     {
         newIconComponent = new Component(oldIconComponent, newTab->mModelName, QPointF (0,0), StringHandler::ICON,
-                                        false, newTab->mpIconGraphicsView);
+                                         false, newTab->mpIconGraphicsView);
     }
     newTab->mpModelicaEditor->setPlainText(mpParentMainWindow->mpOMCProxy->list(newTab->mModelNameStructure));
+    // set document modified state to false for empty models otherwise Start and End modifiers are different error is raised.
+    newTab->mpModelicaEditor->document()->setModified(false);
     setCurrentWidget(newTab);
     // make the icon view visible and focused for key press events
     newTab->showDiagramView(true);
@@ -3117,9 +3119,7 @@ bool ProjectTabWidget::saveModel(bool saveAs)
             // if OMC is unable to save the file
             else
             {
-                QMessageBox::critical(this, Helper::applicationName + " - Error",
-                                     GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).
-                                     arg(pMainWindow->mpOMCProxy->getErrorString()), tr("OK"));
+                pMainWindow->mpOMCProxy->printMessagesStringInternal();
                 return false;
             }
         }
@@ -3140,9 +3140,7 @@ bool ProjectTabWidget::saveModel(bool saveAs)
         // if OMC is unable to save the file
         else
         {
-            QMessageBox::critical(this, Helper::applicationName + " - Error",
-                                 GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).
-                                 arg(pMainWindow->mpOMCProxy->getErrorString()), tr("OK"));
+            pMainWindow->mpOMCProxy->printMessagesStringInternal();
             return false;
         }
     }
@@ -3154,50 +3152,50 @@ bool ProjectTabWidget::saveModel(bool saveAs)
 //! @see closeAllProjectTabs()
 bool ProjectTabWidget::closeProjectTab(int index)
 {
-//    ModelicaTree *pTree = mpParentMainWindow->mpLibrary->mpModelicaTree;
-//    ProjectTab *pCurrentTab = dynamic_cast<ProjectTab*>(widget(index));
-//    if (!(pCurrentTab->mIsSaved))
-//    {
-//        QString modelName;
-//        modelName = tabText(index);
-//        modelName.chop(1);
-//        QMessageBox *msgBox = new QMessageBox(mpParentMainWindow);
-//        msgBox->setWindowTitle(QString(Helper::applicationName).append(" - Question"));
-//        msgBox->setIcon(QMessageBox::Question);
-//        msgBox->setText(QString(GUIMessages::getMessage(GUIMessages::SAVED_MODEL))
-//                        .arg(pCurrentTab->getModelicaTypeLabel()).arg(pCurrentTab->mModelName));
-//        msgBox->setInformativeText(GUIMessages::getMessage(GUIMessages::SAVE_CHANGES));
-//        msgBox->setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
-//        msgBox->setDefaultButton(QMessageBox::Save);
+    //    ModelicaTree *pTree = mpParentMainWindow->mpLibrary->mpModelicaTree;
+    //    ProjectTab *pCurrentTab = dynamic_cast<ProjectTab*>(widget(index));
+    //    if (!(pCurrentTab->mIsSaved))
+    //    {
+    //        QString modelName;
+    //        modelName = tabText(index);
+    //        modelName.chop(1);
+    //        QMessageBox *msgBox = new QMessageBox(mpParentMainWindow);
+    //        msgBox->setWindowTitle(QString(Helper::applicationName).append(" - Question"));
+    //        msgBox->setIcon(QMessageBox::Question);
+    //        msgBox->setText(QString(GUIMessages::getMessage(GUIMessages::SAVED_MODEL))
+    //                        .arg(pCurrentTab->getModelicaTypeLabel()).arg(pCurrentTab->mModelName));
+    //        msgBox->setInformativeText(GUIMessages::getMessage(GUIMessages::SAVE_CHANGES));
+    //        msgBox->setStandardButtons(QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+    //        msgBox->setDefaultButton(QMessageBox::Save);
 
-//        int answer = msgBox->exec();
+    //        int answer = msgBox->exec();
 
-//        switch (answer)
-//        {
-//        case QMessageBox::Save:
-//            // Save was clicked
-//            saveProjectTab(index, false);
-//            removeTab(index);
-//            return true;
-//        case QMessageBox::Discard:
-//            // Don't Save was clicked
-//            //if (pTree->deleteNodeTriggered(pTree->getNode(pCurrentTab->mModelNameStructure)))
-//                //removeTab(index);
-//            pTree->deleteNodeTriggered(pTree->getNode(pCurrentTab->mModelNameStructure), false);
-//            return true;
-//        case QMessageBox::Cancel:
-//            // Cancel was clicked
-//            return false;
-//        default:
-//            // should never be reached
-//            return false;
-//        }
-//    }
-//    else
-//    {
-        removeTab(index);
-        return true;
-//    }
+    //        switch (answer)
+    //        {
+    //        case QMessageBox::Save:
+    //            // Save was clicked
+    //            saveProjectTab(index, false);
+    //            removeTab(index);
+    //            return true;
+    //        case QMessageBox::Discard:
+    //            // Don't Save was clicked
+    //            //if (pTree->deleteNodeTriggered(pTree->getNode(pCurrentTab->mModelNameStructure)))
+    //                //removeTab(index);
+    //            pTree->deleteNodeTriggered(pTree->getNode(pCurrentTab->mModelNameStructure), false);
+    //            return true;
+    //        case QMessageBox::Cancel:
+    //            // Cancel was clicked
+    //            return false;
+    //        default:
+    //            // should never be reached
+    //            return false;
+    //        }
+    //    }
+    //    else
+    //    {
+    removeTab(index);
+    return true;
+    //    }
 }
 
 //! Closes all opened projects.
@@ -3225,13 +3223,13 @@ bool ProjectTabWidget::closeAllProjectTabs()
 
                 switch (answer)
                 {
-                case QMessageBox::Yes:
-                    return true;
-                case QMessageBox::No:
-                    return false;
-                default:
-                    // should never be reached
-                    return false;
+                    case QMessageBox::Yes:
+                        return true;
+                    case QMessageBox::No:
+                        return false;
+                    default:
+                        // should never be reached
+                        return false;
                 }
             }
         }
@@ -3255,9 +3253,6 @@ void ProjectTabWidget::openFile(QString fileName)
     QStringList existingmodelsList;
     if (!mpParentMainWindow->mpOMCProxy->parseFile(fileName))
     {
-        QString message = QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).append(" ").arg(fileName))
-                          .append("\n").append(mpParentMainWindow->mpOMCProxy->getErrorString());
-        mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(message);
         return;
     }
     QString result = StringHandler::removeFirstLastCurlBrackets(mpParentMainWindow->mpOMCProxy->getResult());
@@ -3300,12 +3295,7 @@ void ProjectTabWidget::openModel(QString modelText)
 {
     QStringList modelsList = mpParentMainWindow->mpOMCProxy->parseString(modelText);
     if (modelsList.size() == 0)
-    {
-        QString message = QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_MODEL).append(" ").arg(modelText))
-                          .append("\n").append(mpParentMainWindow->mpOMCProxy->getErrorString());
-        mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(message);
         return;
-    }
 
     QStringList existingmodelsList;
     bool existModel = false;

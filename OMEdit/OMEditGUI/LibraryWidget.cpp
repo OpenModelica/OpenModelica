@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linkoping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -61,22 +61,22 @@ QIcon ModelicaTreeNode::getModelicaNodeIcon(int type)
 {
     switch (type)
     {
-    case StringHandler::MODEL:
-        return QIcon(":/Resources/icons/model-icon.png");
-    case StringHandler::CLASS:
-        return QIcon(":/Resources/icons/class-icon.png");
-    case StringHandler::CONNECTOR:
-        return QIcon(":/Resources/icons/connector-icon.png");
-    case StringHandler::RECORD:
-        return QIcon(":/Resources/icons/record-icon.png");
-    case StringHandler::BLOCK:
-        return QIcon(":/Resources/icons/block-icon.png");
-    case StringHandler::FUNCTION:
-        return QIcon(":/Resources/icons/function-icon.png");
-    case StringHandler::PACKAGE:
-        return QIcon(":/Resources/icons/package-icon.png");
-    case StringHandler::TYPE:
-        return QIcon(":/Resources/icons/type-icon.png");
+        case StringHandler::MODEL:
+            return QIcon(":/Resources/icons/model-icon.png");
+        case StringHandler::CLASS:
+            return QIcon(":/Resources/icons/class-icon.png");
+        case StringHandler::CONNECTOR:
+            return QIcon(":/Resources/icons/connector-icon.png");
+        case StringHandler::RECORD:
+            return QIcon(":/Resources/icons/record-icon.png");
+        case StringHandler::BLOCK:
+            return QIcon(":/Resources/icons/block-icon.png");
+        case StringHandler::FUNCTION:
+            return QIcon(":/Resources/icons/function-icon.png");
+        case StringHandler::PACKAGE:
+            return QIcon(":/Resources/icons/package-icon.png");
+        case StringHandler::TYPE:
+            return QIcon(":/Resources/icons/type-icon.png");
     }
 }
 
@@ -309,7 +309,6 @@ void ModelicaTree::showContextMenu(QPoint point)
         point.setY(point.y() + adjust);
         menu.exec(mapToGlobal(point));
     }
-
     else
     {
         QMenu menu(mpParentLibraryWidget);
@@ -371,12 +370,12 @@ bool ModelicaTree::deleteNodeTriggered(ModelicaTreeNode *node, bool askQuestion)
 
     switch (treeNode->mType)
     {
-    case StringHandler::PACKAGE:
-        msg = GUIMessages::getMessage(GUIMessages::DELETE_PACKAGE_MSG).arg(treeNode->mName);
-        break;
-    default:
-        msg = GUIMessages::getMessage(GUIMessages::DELETE_MSG).arg(treeNode->mName);
-        break;
+        case StringHandler::PACKAGE:
+            msg = GUIMessages::getMessage(GUIMessages::DELETE_PACKAGE_MSG).arg(treeNode->mName);
+            break;
+        default:
+            msg = GUIMessages::getMessage(GUIMessages::DELETE_MSG).arg(treeNode->mName);
+            break;
     }
 
     if (askQuestion)
@@ -392,15 +391,15 @@ bool ModelicaTree::deleteNodeTriggered(ModelicaTreeNode *node, bool askQuestion)
 
         switch (answer)
         {
-        case QMessageBox::Yes:
-            // Yes was clicked. Don't return.
-            break;
-        case QMessageBox::No:
-            // No was clicked
-            return false;
-        default:
-            // should never be reached
-            return false;
+            case QMessageBox::Yes:
+                // Yes was clicked. Don't return.
+                break;
+            case QMessageBox::No:
+                // No was clicked
+                return false;
+            default:
+                // should never be reached
+                return false;
         }
     }
 
@@ -420,9 +419,11 @@ bool ModelicaTree::deleteNodeTriggered(ModelicaTreeNode *node, bool askQuestion)
     }
     else
     {
-        pMainWindow->mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
-                                                          .arg(pMainWindow->mpOMCProxy->getResult())
-                                                          .append("while deleting " + treeNode->mName));
+        pMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
+                                                                    GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
+                                                                    .arg(pMainWindow->mpOMCProxy->getResult())
+                                                                    .append("while deleting " + treeNode->mName),
+                                                                    Helper::scriptingKind, Helper::errorLevel, 0, pMainWindow->mpMessageWidget->mpProblem));
         return false;
     }
 }
@@ -442,8 +443,8 @@ void ModelicaTree::copyModel(ModelicaTreeNode *node)
     QClipboard *clipboard = QApplication::clipboard();
     clipboard->setText(treeNode->mNameStructure);
     //copied text saved in a clipboard
-     if(!clipboard->text().isEmpty())
-         mpPasteModelAction->setDisabled(false);
+    if(!clipboard->text().isEmpty())
+        mpPasteModelAction->setDisabled(false);
 }
 
 //pasting the copied model
@@ -453,7 +454,7 @@ void ModelicaTree::pasteModel()
     QClipboard *clipboard = QApplication::clipboard();
     MainWindow *pMainWindow = mpParentLibraryWidget->mpParentMainWindow;
     if(!clipboard->text().isEmpty())
-    pMainWindow->mpModelCreator->createCopy(clipboard->text());
+        pMainWindow->mpModelCreator->createCopy(clipboard->text());
 }
 
 
@@ -518,7 +519,7 @@ void ModelicaTree::loadingLibraryComponent(ModelicaTreeNode *treeNode, QString c
 
 void ModelicaTree::tabChanged()
 {
-  mpParentLibraryWidget->mpParentMainWindow->mpModelBrowser->addModelBrowserNode();
+    mpParentLibraryWidget->mpParentMainWindow->mpModelBrowser->addModelBrowserNode();
 }
 
 void ModelicaTree::mouseDoubleClickEvent(QMouseEvent *event)
@@ -704,7 +705,7 @@ void LibraryTree::addClass(QList<LibraryTreeNode *> *tempPackageNodesList,
                            QString parentClassName, QString parentStructure, bool hasIcon)
 {
     mpParentLibraryWidget->mpParentMainWindow->mpStatusBar->showMessage(QString("Loading: ")
-                                                                      .append(parentStructure + className));
+                                                                        .append(parentStructure + className));
     QString lib = QString(parentStructure + className);
     QStringList info = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(lib);
     LibraryTreeNode *newTreePost = new LibraryTreeNode(className, parentClassName, lib, StringHandler::createTooltip(info, className, lib),
@@ -755,7 +756,7 @@ void LibraryTree::addNodes(QList<LibraryTreeNode *> nodes)
                 }
                 //if (StringHandler::getSubStringAfterPath((*it)->toolTip(0)) == StringHandler::removeLastWordAfterDot(node->mNameStructure))
                 //{
-                 //   (*it)->addChild(node);
+                //   (*it)->addChild(node);
                 //}
                 ++it;
             }
@@ -769,12 +770,12 @@ bool LibraryTree::isTreeItemLoaded(QTreeWidgetItem *item)
     {
         LibraryTreeNode *pItem = dynamic_cast<LibraryTreeNode*>(item);
         if (pItem->mNameStructure.compare(str) == 0)
-        return false;
+            return false;
 
         //if (str == StringHandler::getSubStringAfterPath(item->toolTip(0)))
-         //  return false;
+        //  return false;
     }
-        return true;
+    return true;
 
 
 }
@@ -900,7 +901,7 @@ void LibraryTree::loadingLibraryComponent(LibraryTreeNode *treeNode, QString cla
     {
         pOMCProxy->sendCommand("getNamedAnnotation(" + className + ", __Dymola_DocumentationClass)");
         if (StringHandler::unparseBool(pOMCProxy->getResult()) || QString(className).startsWith("Modelica.UsersGuide", Qt::CaseInsensitive)
-                || QString(className).startsWith("ModelicaServices.UsersGuide", Qt::CaseInsensitive))
+            || QString(className).startsWith("ModelicaServices.UsersGuide", Qt::CaseInsensitive))
         {
             result = pOMCProxy->getIconAnnotation("ModelicaReference.Icons.Information");
             libComponent = new LibraryComponent(result, className, pOMCProxy);
@@ -1047,24 +1048,24 @@ bool MSLSuggestCompletion::eventFilter(QObject *pObject, QEvent *event)
         bool consumed = false;
         int key = static_cast<QKeyEvent*>(event)->key();
         switch (key) {
-        case Qt::Key_Enter:
-        case Qt::Key_Return:
-            doneCompletion();
-            consumed = true;
-        case Qt::Key_Escape:
-            mpMSLSearchBox->setFocus();
-            mpPopup->hide();
-            consumed = true;
-        case Qt::Key_Up:
-        case Qt::Key_Down:
-        case Qt::Key_PageUp:
-        case Qt::Key_PageDown:
-            break;
-        default:
-            mpMSLSearchBox->setFocus();
-            mpMSLSearchBox->event(event);
-            //mpPopup->hide();
-            break;
+            case Qt::Key_Enter:
+            case Qt::Key_Return:
+                doneCompletion();
+                consumed = true;
+            case Qt::Key_Escape:
+                mpMSLSearchBox->setFocus();
+                mpPopup->hide();
+                consumed = true;
+            case Qt::Key_Up:
+            case Qt::Key_Down:
+            case Qt::Key_PageUp:
+            case Qt::Key_PageDown:
+                break;
+            default:
+                mpMSLSearchBox->setFocus();
+                mpMSLSearchBox->event(event);
+                //mpPopup->hide();
+                break;
         }
         return consumed;
     }
@@ -1181,7 +1182,7 @@ SearchMSLWidget::SearchMSLWidget(MainWindow *pParent)
 
 QStringList SearchMSLWidget::getMSLItemsList()
 {
-   return mMSLItemsList;
+    return mMSLItemsList;
 }
 
 MSLSearchBox* SearchMSLWidget::getMSLSearchTextBox()
@@ -1319,9 +1320,6 @@ void LibraryWidget::loadFile(QString path, QStringList modelsList)
 
     if (!mpParentMainWindow->mpOMCProxy->loadFile(path))
     {
-        QString message = QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).append(" ").arg(path))
-                          .append("\n").append(mpParentMainWindow->mpOMCProxy->getErrorString());
-        mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(message);
         mpParentMainWindow->hideProgressBar();
         return;
     }
@@ -1344,7 +1342,8 @@ void LibraryWidget::loadModel(QString modelText, QStringList modelsList)
     {
         QString message = QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_MODEL).append(" ").arg(modelText))
                           .append("\n").append(mpParentMainWindow->mpOMCProxy->getResult());
-        mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(message);
+        mpParentMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, message, Helper::scriptingKind,
+                                                                    Helper::errorLevel, 0, mpParentMainWindow->mpMessageWidget->mpProblem));
         return;
     }
 
@@ -1667,7 +1666,7 @@ ModelBrowserWidget::ModelBrowserWidget(MainWindow *parent)
 
 ModelBrowserWidget::~ModelBrowserWidget()
 {
-    delete mpModelBrowserTree;   
+    delete mpModelBrowserTree;
 }
 
 void ModelBrowserWidget::addModelBrowserNode()

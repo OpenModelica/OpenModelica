@@ -269,7 +269,8 @@ void MainWindow::dropEvent(QDropEvent *event)
             else
             {
                 QString message = QString(GUIMessages::getMessage(GUIMessages::FILE_FORMAT_NOT_SUPPORTED).arg(fileInfo.fileName()));
-                mpMessageWidget->printGUIErrorMessage(message);
+                mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, message, Helper::scriptingKind, Helper::errorLevel, 0,
+                                                               mpMessageWidget->mpProblem));
             }
         }
         // if one file is valid and opened then accept the event
@@ -557,7 +558,7 @@ void MainWindow::createMenus()
     menuSimulation->setTitle("&Simulation");
 
     menuFMI = new QMenu(menubar);
-    menuFMI->setTitle("&FMI");
+    menuFMI->setTitle("F&MI");
 
     menuTools = new QMenu(menubar);
     menuTools->setTitle("&Tools");
@@ -1030,7 +1031,8 @@ void MainWindow::importModelfromOMNotebook()
     QFile file(fileName);
     if (!file.open(QIODevice::ReadOnly))
     {
-        mpMessageWidget->printGUIErrorMessage(tr("Error opening the file"));
+        mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, tr("Error opening the file"), Helper::scriptingKind,
+                                                       Helper::errorLevel, 0, mpMessageWidget->mpProblem));
         hideProgressBar();
         return;
     }
@@ -1040,7 +1042,8 @@ void MainWindow::importModelfromOMNotebook()
     QDomDocument xmlDocument;
     if (!xmlDocument.setContent(&file))
     {
-        mpMessageWidget->printGUIErrorMessage(tr("Error reading the xml file."));
+        mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, tr("Error reading the xml file"), Helper::scriptingKind,
+                                                       Helper::errorLevel, 0, mpMessageWidget->mpProblem));
         hideProgressBar();
         return;
     }
@@ -1115,7 +1118,8 @@ void MainWindow::exportModelAsImage()
     if (!fileName.endsWith(".svg"))
     {
         if (!modelImage.save(fileName))
-            mpMessageWidget->printGUIErrorMessage("Error saving the image file.");
+            mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, tr("Error saving the image file"), Helper::scriptingKind,
+                                                           Helper::errorLevel, 0, mpMessageWidget->mpProblem));
     }
     // hide the progressbar and clear the message in status bar
     mpStatusBar->clearMessage();
@@ -1288,7 +1292,9 @@ void MainWindow::exportModelFMI()
     ProjectTab *pCurrentTab = mpProjectTabs->getCurrentTab();
     if (!pCurrentTab)
     {
-        mpMessageWidget->printGUIWarningMessage(GUIMessages::getMessage(GUIMessages::NO_OPEN_MODEL).arg("make FMU"));
+        mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
+                                                       GUIMessages::getMessage(GUIMessages::NO_OPEN_MODEL).arg("make FMU"),
+                                                       Helper::scriptingKind, Helper::warningLevel, 0, mpMessageWidget->mpProblem));
         return;
     }
     // set the status message.
@@ -1299,11 +1305,6 @@ void MainWindow::exportModelFMI()
     {
         mpMessageWidget->printGUIInfoMessage(GUIMessages::getMessage(GUIMessages::FMI_GENERATED).arg(mpOMCProxy->changeDirectory())
                                              .arg(pCurrentTab->mModelNameStructure));
-    }
-    else
-    {
-        mpMessageWidget->printGUIErrorMessage(GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(mpOMCProxy->getErrorString())
-                                              .append("\nwhile exporting ").append(pCurrentTab->mModelNameStructure).append(" to FMU."));
     }
     // hide progress bar
     hideProgressBar();

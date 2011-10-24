@@ -150,6 +150,23 @@ public:
     static QString outputDirectoryNote;
     static QString librariesAddNote;
     static QString modifiersLabelText;
+    static QString saveContentsOneFile;
+    static QString notificationLevel;
+    static QString warningLevel;
+    static QString errorLevel;
+    static QString syntaxKind;
+    static QString grammarKind;
+    static QString translationKind;
+    static QString symbolicKind;
+    static QString simulationKind;
+    static QString scriptingKind;
+    static QString clearProblems;
+    static QString clearInfoMessages;
+    static QString clearGeneralMessages;
+    static QString showNotifications;
+    static QString showWarnings;
+    static QString showAllProblems;
+    static QString showErrors;
 };
 
 class GUIMessages
@@ -157,6 +174,7 @@ class GUIMessages
 public:
     enum MessagesTypes
     {
+        CHECK_PROBLEMS_TAB,
         SAME_COMPONENT_NAME,
         SAME_PORT_CONNECT,
         NO_OPEN_MODEL,

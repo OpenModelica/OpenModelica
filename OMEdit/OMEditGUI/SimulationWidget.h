@@ -84,17 +84,20 @@ private:
     QPushButton *mpSimulateButton;
     QDialogButtonBox *mpButtonBox;
     ProgressDialog *mpProgressDialog;
+    QProcess *mpSimulationProcess;
     bool mIsInteractive;
 signals:
     void showPlottingView();
 public slots:
     void simulate();
+    void cancelSimulation();
 };
 
 class ProgressDialog : public QDialog
 {
 public:
     ProgressDialog(SimulationWidget *pParent = 0);
+    QPushButton *mpCancelSimulationButton;
     void setText(QString text);
 private:
     QLabel *mpText;

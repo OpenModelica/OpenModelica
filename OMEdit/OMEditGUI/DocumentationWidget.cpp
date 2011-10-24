@@ -153,7 +153,8 @@ void DocumentationWidget::saveChanges()
     else
     {
         QString message = QString(GUIMessages::getMessage(GUIMessages::INCORRECT_HTML_TAGS));
-        mpParentMainWindow->mpMessageWidget->printGUIErrorMessage(message);
+        mpParentMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, message, Helper::scriptingKind,
+                                                                           Helper::errorLevel, 0, mpParentMainWindow->mpMessageWidget->mpProblem));
     }
 }
 

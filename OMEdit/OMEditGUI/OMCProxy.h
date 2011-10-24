@@ -91,6 +91,19 @@ public:
     void restartApplication();
     void removeObjectRefFile();
     QString getErrorString();
+    bool printMessagesStringInternal();
+    int getMessagesStringInternal();
+    void setCurrentError(int errorIndex);
+    QString getErrorFileName();
+    bool getErrorReadOnly();
+    int getErrorLineStart();
+    int getErrorColumnStart();
+    int getErrorLineEnd();
+    int getErrorColumnEnd();
+    QString getErrorMessage();
+    QString getErrorKind();
+    QString getErrorLevel();
+    int getErrorId();
     QString getVersion();
     bool setAnnotationVersion(int version);
     QString getAnnotationVersion();
@@ -130,7 +143,6 @@ public:
     bool parseFile(QString fileName);
     QStringList parseString(QString value);
     bool createClass(QString type, QString className);
-    bool copyClass(QString copyText);
     bool createSubClass(QString type, QString className, QString parentClassName);
     bool updateSubClass(QString parentClassName, QString modelText);
     bool createModel(QString modelName);
@@ -175,7 +187,6 @@ public:
 public slots:
     void sendCommand();
     void openOMCLogger();
-    void catchException();
     void sendCustomExpression();
 };
 

@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linkoping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -61,51 +61,71 @@ QString StringHandler::getModelicaClassType(int type)
 {
     switch (type)
     {
-    case StringHandler::MODEL:
-        return "Model";
-    case StringHandler::CLASS:
-        return "Class";
-    case StringHandler::CONNECTOR:
-        return "Connector";
-    case StringHandler::RECORD:
-        return "Record";
-    case StringHandler::BLOCK:
-        return "Block";
-    case StringHandler::FUNCTION:
-        return "Function";
-    case StringHandler::PACKAGE:
-        return "Package";
-    case StringHandler::PRIMITIVE:
-        return "Primitive";
-    case StringHandler::TYPE:
-        return "Type";
-    case StringHandler::PARAMETER:
-        return "Parameter";
-    case StringHandler::CONSTANT:
-        return "Constant";
-    case StringHandler::PROTECTED:
-        return "Protected";
-    default:
-        // should never be reached
-        return "";
+        case StringHandler::MODEL:
+            return "Model";
+        case StringHandler::CLASS:
+            return "Class";
+        case StringHandler::CONNECTOR:
+            return "Connector";
+        case StringHandler::RECORD:
+            return "Record";
+        case StringHandler::BLOCK:
+            return "Block";
+        case StringHandler::FUNCTION:
+            return "Function";
+        case StringHandler::PACKAGE:
+            return "Package";
+        case StringHandler::PRIMITIVE:
+            return "Primitive";
+        case StringHandler::TYPE:
+            return "Type";
+        case StringHandler::PARAMETER:
+            return "Parameter";
+        case StringHandler::CONSTANT:
+            return "Constant";
+        case StringHandler::PROTECTED:
+            return "Protected";
+        default:
+            // should never be reached
+            return "";
     }
 }
 
 QString StringHandler::getViewType(int type)
 {
-    /* swaped icon and diagram to show the user the right text, since in application we call diagram as icon and icon
-        as diagram.......... */
     switch (type)
     {
-    case StringHandler::ICON:
-        return "Icon View";
-    case StringHandler::DIAGRAM:
-        return "Diagram View";
-    case StringHandler::MODELICATEXT:
-        return "Modelica Text View";
-    default:
-        // should never be reached
-        return "";
+        case StringHandler::ICON:
+            return "Icon View";
+        case StringHandler::DIAGRAM:
+            return "Diagram View";
+        case StringHandler::MODELICATEXT:
+            return "Modelica Text View";
+        default:
+            // should never be reached
+            return "";
+    }
+}
+
+QString StringHandler::getErrorKind(int kind)
+{
+    switch (kind)
+    {
+        case StringHandler::SYNTAX:
+            return "Syntax";
+        case StringHandler::GRAMMAR:
+            return "Grammar";
+        case StringHandler::TRANSLATION:
+            return "Transalation";
+        case StringHandler::SYMBOLIC:
+            return "Symbolic";
+        case StringHandler::SIMULATION:
+            return "Simulation";
+        case StringHandler::SCRIPTING:
+            return "Scripting";
+        default:
+            // should never be reached
+            return "";
     }
 }
 
@@ -357,7 +377,7 @@ QString StringHandler::getModifierValue(QString value)
 }
 
 #define CONSUME_CHAR(value,res,i) \
-  if (value.at(i) == '\\') { \
+    if (value.at(i) == '\\') { \
     i++; \
     switch (value[i].toAscii()) { \
     case '\'': res.append('\''); break; \
@@ -372,73 +392,73 @@ QString StringHandler::getModifierValue(QString value)
     case 't':  res.append('\t'); break; \
     case 'v':  res.append('\v'); break; \
     } \
-  } else { \
+    } else { \
     res.append(value[i]); \
-  }
+    }
 
 
 QString StringHandler::unparse(QString value)
 {
-  QString res;
-  value = value.trimmed();
-  if (value.length() > 1 && value.at(0) == '\"' && value.at(value.length() - 1) == '\"') {
-    value = value.mid(1, (value.length() - 2));
-    for (int i=0; i < value.length(); i++) {
-      CONSUME_CHAR(value,res,i);
+    QString res;
+    value = value.trimmed();
+    if (value.length() > 1 && value.at(0) == '\"' && value.at(value.length() - 1) == '\"') {
+        value = value.mid(1, (value.length() - 2));
+        for (int i=0; i < value.length(); i++) {
+            CONSUME_CHAR(value,res,i);
+        }
+        return res;
+    } else {
+        return "";
     }
-    return res;
-  } else {
-    return "";
-  }
 }
 
 
 QStringList StringHandler::unparseStrings(QString value)
 {
-  QStringList lst;
-  value = value.trimmed();
-  if (value[0] != '{') return lst; // ERROR?
-  int i=1;
-  QString res;
-  while (value[i] == '"') {
-    i++;
-    while (value.at(i) != '"') {
-      CONSUME_CHAR(value,res,i);
-      i++;
-      /* if we have unexpected double quotes then, however omc should return \" */
-      /* remove this block once fixed in omc */
-      if (value[i] == '"' && value[i+1] != ',') {
-          if (value[i+1] != '}') {
-              CONSUME_CHAR(value,res,i);
-              i++;
-          }
-      }
-      /* remove this block once fixed in omc */
+    QStringList lst;
+    value = value.trimmed();
+    if (value[0] != '{') return lst; // ERROR?
+    int i=1;
+    QString res;
+    while (value[i] == '"') {
+        i++;
+        while (value.at(i) != '"') {
+            CONSUME_CHAR(value,res,i);
+            i++;
+            /* if we have unexpected double quotes then, however omc should return \" */
+            /* remove this block once fixed in omc */
+            if (value[i] == '"' && value[i+1] != ',') {
+                if (value[i+1] != '}') {
+                    CONSUME_CHAR(value,res,i);
+                    i++;
+                }
+            }
+            /* remove this block once fixed in omc */
+        }
+        i++;
+        if (value[i] == '}') {
+            lst.append(res);
+            return lst;
+        }
+        if (value[i] == ',') {
+            lst.append(res);
+            i++;
+            res = "";
+            continue;
+        }
+        while (value[i] != '"' && value[i] != '\0') {
+            i++;
+            fprintf(stderr, "error? malformed string-list. skipping: %c\n", value[i].toAscii());
+        }
     }
-    i++;
-    if (value[i] == '}') {
-      lst.append(res);
-      return lst;
-    }
-    if (value[i] == ',') {
-      lst.append(res);
-      i++;
-      res = "";
-      continue;
-    }
-    while (value[i] != '"' && value[i] != '\0') {
-      i++;
-      fprintf(stderr, "error? malformed string-list. skipping: %c\n", value[i].toAscii());
-    }
-  }
-  return lst; // ERROR?
+    return lst; // ERROR?
 }
 
 
 bool StringHandler::unparseBool(QString value)
 {
-  value = value.trimmed();
-  return value == "true";
+    value = value.trimmed();
+    return value == "true";
 }
 
 QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, QString * dir, const QString &filter, QString * selectedFilter, const QString &defaultSuffix, const QString *purposedName)
@@ -464,9 +484,9 @@ QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, 
     {
         // Qt is not reallllyyyy platform independent :(
         // Kind of Qt bug QfileDioalog::getsavefilename return extension on windows but not on linux. So need to hard code it here
-        #ifdef Q_OS_LINUX
-            fileName.append(".").append(defaultSuffix);
-        #endif
+#ifdef Q_OS_LINUX
+        fileName.append(".").append(defaultSuffix);
+#endif
         QFileInfo fileInfo(fileName);
         mLastOpenDir = fileInfo.absolutePath();
         return fileName;
@@ -526,8 +546,8 @@ QString StringHandler::createTooltip(QStringList info, QString name, QString pat
     else
     {
         QString tooltip = QString("Type: ").append(info[0]).append("\n")
-                            .append("Name: ").append(name).append("\n")
-                            .append("Description: ").append(info[1]).append("\n");
+                          .append("Name: ").append(name).append("\n")
+                          .append("Description: ").append(info[1]).append("\n");
         if (QString(info[2]).compare("<interactive>") == 0)
             tooltip.append("Location: ").append("\n");
         else

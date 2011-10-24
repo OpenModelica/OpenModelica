@@ -45,8 +45,11 @@ public:
     enum IconType {ICON, DIAGRAM, MODELICATEXT};
     enum ModelicaClasses {MODEL, CLASS, CONNECTOR, RECORD, BLOCK, FUNCTION, PACKAGE, PRIMITIVE, TYPE, PARAMETER,
                           CONSTANT, PROTECTED};
+    enum ModelicaErrors {NOTIFICATION, WARNING, OMERROR, NOOMERROR};
+    enum ModelicaErrorKinds {SYNTAX, GRAMMAR, TRANSLATION, SYMBOLIC, SIMULATION, SCRIPTING, NOOMERRORKIND};
     static QString getModelicaClassType(int type);
     static QString getViewType(int type);
+    static QString getErrorKind(int kind);
     static QString removeFirstLastCurlBrackets(QString value);
     static QString removeFirstLastBrackets(QString value);
     static QString removeFirstLastQuotes(QString value);

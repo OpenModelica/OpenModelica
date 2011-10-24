@@ -119,7 +119,8 @@ PlotWindow* PlotWindowContainer::addPlotWindow()
     }
     catch (PlotException &e)
     {
-        getMainWindow()->mpMessageWidget->printGUIErrorMessage(e.what());
+        getMainWindow()->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind,
+                                                                        Helper::errorLevel, 0, getMainWindow()->mpMessageWidget->mpProblem));
     }
 }
 
@@ -143,7 +144,8 @@ PlotWindow* PlotWindowContainer::addPlotParametricWindow()
     }
     catch (PlotException &e)
     {
-        getMainWindow()->mpMessageWidget->printGUIErrorMessage(e.what());
+        getMainWindow()->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind,
+                                                                        Helper::errorLevel, 0, getMainWindow()->mpMessageWidget->mpProblem));
     }
 }
 
