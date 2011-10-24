@@ -948,6 +948,15 @@ int main(int argc, char *argv[]){
 	const char * fmuDllPath = NULL;			// dll path
 	// end
 
+	// Creating log file
+	errLogFile = fopen("fmuImportError.log","w");
+	if(!errLogFile){
+		printf("#### %s, %s, %d, : Error: Creating file fmuImportError.log failed...\n",__DATE__,__TIME__,__LINE__);
+		exit(EXIT_FAILURE);
+	}
+	printf("\n\n");
+	// end
+
 	if (argc < 2) {
 		printUsage();
 		ERRORPRINT; fprintf(errLogFile,"#### Wrong arguments passed to main entry...%s\n","");
@@ -960,16 +969,7 @@ int main(int argc, char *argv[]){
 		printUsage();
 		exit(EXIT_FAILURE);
 	}
-		
-	// Creating log file
-	errLogFile = fopen("fmuImportError.log","w");
-	if(!errLogFile){
-		printf("#### %s, %s, %d, : Error: Creating file fmuImportError.log failed...\n",__DATE__,__TIME__,__LINE__);
-		exit(EXIT_FAILURE);
-	}
-	printf("\n\n");
-	// end
-	
+
 	// Attaining the name of the FMU from the argument 
 	// Decompressing the archive into an appropriate directory
 	// Get the model description xml file name
