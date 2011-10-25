@@ -162,7 +162,7 @@ public:
     static QString scriptingKind;
     static QString clearProblems;
     static QString clearInfoMessages;
-    static QString clearGeneralMessages;
+    static QString clearMessages;
     static QString showNotifications;
     static QString showWarnings;
     static QString showAllProblems;

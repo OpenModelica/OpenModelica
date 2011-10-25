@@ -96,7 +96,7 @@ PlotTree::PlotTree(PlotWidget *pParent)
     : QTreeWidget(pParent)
 {
     mpParentPlotWidget = pParent;
-
+    setItemDelegate(new ItemDelegate(this));
     setContextMenuPolicy(Qt::DefaultContextMenu);
     setHeaderHidden(true);
     setColumnCount(1);
@@ -319,7 +319,9 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
             mpPlotTree->blockSignals(true);
             pItem->setCheckState(column, Qt::Unchecked);
             mpPlotTree->blockSignals(false);
-            mpParentMainWindow->mpMessageWidget->printGUIInfoMessage(tr("No plot window is active for plotting. Please select a plot window or open a new."));
+            mpParentMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, tr("No plot window is active for plotting. Please select a plot window or open a new."),
+                                                                               Helper::scriptingKind, Helper::notificationLevel, 0,
+                                                                               mpParentMainWindow->mpMessageWidget->mpProblem));
             return;
         }
         // if plottype is PLOT then
@@ -372,7 +374,10 @@ void PlotWidget::plotVariables(QTreeWidgetItem *item, int column)
                         {
                             mpPlotTree->blockSignals(true);
                             pItem->setCheckState(0, Qt::Unchecked);
-                            mpParentMainWindow->mpMessageWidget->printGUIInfoMessage(GUIMessages::getMessage(GUIMessages::PLOT_PARAMETRIC_DIFF_FILES));
+                            mpParentMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::PLOT_PARAMETRIC_DIFF_FILES),
+                                                                                               Helper::scriptingKind,
+                                                                                               Helper::notificationLevel, 0,
+                                                                                               mpParentMainWindow->mpMessageWidget->mpProblem));
                             mpPlotTree->blockSignals(false);
                             return;
                         }

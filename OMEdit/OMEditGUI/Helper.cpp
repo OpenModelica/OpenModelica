@@ -164,8 +164,7 @@ QString Helper::simulationKind = QString(".OpenModelica.Scripting.ErrorKind.simu
 QString Helper::scriptingKind = QString(".OpenModelica.Scripting.ErrorKind.scripting");
 /* MessageCornerWidget Messages */
 QString Helper::clearProblems = QString("Clear All Problems");
-QString Helper::clearInfoMessages = QString("Clear All Info Messages");
-QString Helper::clearGeneralMessages = QString("Clear All General Messages");
+QString Helper::clearMessages = QString("Clear All General Messages");
 QString Helper::showNotifications = QString("Only Show Notifications");
 QString Helper::showWarnings = QString("Only Show Warnings");
 QString Helper::showErrors = QString("Only Show Errors");

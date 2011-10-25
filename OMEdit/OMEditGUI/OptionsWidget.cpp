@@ -406,6 +406,7 @@ void OptionsWidget::saveLibrariesSettings()
 void OptionsWidget::setUpDialog()
 {
     mpOptionsList = new QListWidget;
+    mpOptionsList->setItemDelegate(new ItemDelegate(mpOptionsList));
     mpOptionsList->setViewMode(QListView::ListMode);
     mpOptionsList->setMovement(QListView::Static);
     mpOptionsList->setIconSize(Helper::iconSize);
@@ -596,6 +597,7 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsWidget *pParent)
 
     mpItemsLabel = new QLabel(tr("Items:"));
     mpItemsList = new QListWidget;
+    mpItemsList->setItemDelegate(new ItemDelegate(mpItemsList));
     mpItemsList->setMaximumHeight(90);
 
     // Add items to list
@@ -1135,6 +1137,7 @@ LibrariesPage::LibrariesPage(OptionsWidget *pParent)
     mpLibrariesGroup = new QGroupBox(tr("Libraries"));
     // libraries table
     mpLibrariesTree = new QTreeWidget;
+    mpLibrariesTree->setItemDelegate(new ItemDelegate(this));
     mpLibrariesTree->setObjectName(tr("LibrariesTree"));
     mpLibrariesTree->setIndentation(0);
     mpLibrariesTree->setColumnCount(2);

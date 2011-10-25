@@ -234,7 +234,10 @@ void RenameClassWidget::renameClass()
             newNameStructure = StringHandler::removeFirstLastCurlBrackets(mpParentMainWindow->mpOMCProxy->getResult());
             // Change the name in tree
             mpParentMainWindow->mpLibrary->updateNodeText(newName, newNameStructure);
-            mpParentMainWindow->mpMessageWidget->printGUIInfoMessage("Renamed '"+mName+"' to '"+mpModelNameTextBox->text().trimmed()+"'");
+            mpParentMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, tr("Renamed '").append(mName).append("' to '")
+                                                                               .append(mpModelNameTextBox->text().trimmed()).append("'"),
+                                                                               Helper::scriptingKind, Helper::notificationLevel, 0,
+                                                                               mpParentMainWindow->mpMessageWidget->mpProblem));
             accept();
         }
         else

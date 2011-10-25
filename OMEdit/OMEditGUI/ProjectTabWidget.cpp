@@ -164,6 +164,7 @@ void GraphicsView::dropEvent(QDropEvent *event)
 {
     this->setFocus();
     MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+    MessageWidget *pMessageWidget = pMainWindow->mpMessageWidget;
     // check if the view is readonly or not
     if (mpParentProjectTab->isReadOnly())
     {
@@ -192,8 +193,8 @@ void GraphicsView::dropEvent(QDropEvent *event)
                 else
                 {
                     QString message = QString(GUIMessages::getMessage(GUIMessages::FILE_FORMAT_NOT_SUPPORTED).arg(fileInfo.fileName()));
-                    pMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, message, Helper::scriptingKind,
-                                                                                Helper::errorLevel, 0, pMainWindow->mpMessageWidget->mpProblem));
+                    pMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, message, Helper::scriptingKind, Helper::errorLevel,
+                                                                  0, pMessageWidget->mpProblem));
                 }
             }
             // if one file is valid and opened then accept the event
@@ -241,10 +242,11 @@ void GraphicsView::dropEvent(QDropEvent *event)
                         // show the information to the user if we have changed the name of some inner component.
                         if (defaultPrefix.compare("inner") == 0)
                         {
-                            pMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
-                                                                                        GUIMessages::getMessage(GUIMessages::INNER_MODEL_NAME_CHANGED)
-                                                                                        .arg(defaultName).arg(name).arg(defaultPrefix), Helper::scriptingKind,
-                                                                                        Helper::errorLevel, 0, pMainWindow->mpMessageWidget->mpProblem));
+                            pMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
+                                                                          GUIMessages::getMessage(GUIMessages::INNER_MODEL_NAME_CHANGED)
+                                                                          .arg(defaultName).arg(name).arg(defaultPrefix),
+                                                                          Helper::scriptingKind, Helper::errorLevel, 0,
+                                                                          pMessageWidget->mpProblem));
                         }
                     }
                 }
@@ -270,9 +272,11 @@ void GraphicsView::dropEvent(QDropEvent *event)
                     }
                     else
                     {
-                        pMainWindow->mpMessageWidget->printGUIInfoMessage(GUIMessages::getMessage(GUIMessages::DIAGRAM_VIEW_DROP_MSG)
-                                                                          .arg(classname)
-                                                                          .arg(StringHandler::getModelicaClassType(type)));
+                        pMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
+                                                                      GUIMessages::getMessage(GUIMessages::DIAGRAM_VIEW_DROP_MSG)
+                                                                      .arg(classname).arg(StringHandler::getModelicaClassType(type)),
+                                                                      Helper::scriptingKind, Helper::notificationLevel, 0,
+                                                                      pMessageWidget->mpProblem));
                         event->ignore();
                     }
                 }
@@ -290,9 +294,10 @@ void GraphicsView::dropEvent(QDropEvent *event)
                     }
                     else
                     {
-                        pMainWindow->mpMessageWidget->printGUIInfoMessage(GUIMessages::getMessage(GUIMessages::ICON_VIEW_DROP_MSG)
-                                                                          .arg(classname)
-                                                                          .arg(StringHandler::getModelicaClassType(type)));
+                        pMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
+                                                                      GUIMessages::getMessage(GUIMessages::ICON_VIEW_DROP_MSG).arg(classname)
+                                                                      .arg(StringHandler::getModelicaClassType(type)),Helper::scriptingKind,
+                                                                      Helper::notificationLevel, 0, pMessageWidget->mpProblem));
                         event->ignore();
                     }
                 }
@@ -300,7 +305,10 @@ void GraphicsView::dropEvent(QDropEvent *event)
             //if dropping an item on itself
             else
             {
-                pMainWindow->mpMessageWidget->printGUIInfoMessage(GUIMessages::getMessage(GUIMessages::ITEM_DROPPED_ON_ITSELF));
+                pMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
+                                                              GUIMessages::getMessage(GUIMessages::ITEM_DROPPED_ON_ITSELF),
+                                                              Helper::scriptingKind, Helper::notificationLevel, 0,
+                                                              pMessageWidget->mpProblem));
                 event->ignore();
             }
         }
@@ -1166,7 +1174,10 @@ void GraphicsView::createConnection(Component *pStartComponent, QString startIco
                 // add the connection annotation to OMC
                 mpConnector->updateConnectionAnnotationString();
                 mpParentProjectTab->mpModelicaEditor->setPlainText(pMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
-                pMainWindow->mpMessageWidget->printGUIInfoMessage("Connected: (" + startIconCompName + ", " + endIconCompName + ")");
+                pMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, tr("Connected: (")
+                                                                            .append(startIconCompName).append(", ").append(endIconCompName)
+                                                                            .append(")"), Helper::scriptingKind, Helper::notificationLevel, 0,
+                                                                            pMainWindow->mpMessageWidget->mpProblem));
             }
             else
             {
@@ -1774,7 +1785,9 @@ void ProjectTab::updateModel(QString name)
         // Change the name in tree
         ModelicaTreeNode *node = pMainWindow->mpLibrary->mpModelicaTree->getNode(mModelNameStructure);
         pMainWindow->mpLibrary->updateNodeText(name, newNameStructure, node);
-        pMainWindow->mpMessageWidget->printGUIInfoMessage("Renamed '"+oldModelName+"' to '"+name+"'");
+        pMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, tr("Renamed '").append(oldModelName).append("' to '")
+                                                                    .append(name).append("'"), Helper::scriptingKind,
+                                                                    Helper::notificationLevel, 0, pMainWindow->mpMessageWidget->mpProblem));
     }
 }
 
@@ -3036,8 +3049,9 @@ void ProjectTabWidget::saveProjectTab(int index, bool saveAs)
     if (pCurrentTab->isChild())
     {
         MessageWidget *pMessageWidget = pCurrentTab->mpParentProjectTabWidget->mpParentMainWindow->mpMessageWidget;
-        pMessageWidget->printGUIInfoMessage(QString(GUIMessages::getMessage(GUIMessages::CHILD_MODEL_SAVE))
-                                            .arg(pCurrentTab->getModelicaTypeLabel()).arg(pCurrentTab->mModelName));
+        pMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::CHILD_MODEL_SAVE)
+                                                      .arg(pCurrentTab->getModelicaTypeLabel()).arg(pCurrentTab->mModelName),
+                                                      Helper::scriptingKind, Helper::notificationLevel, 0, pMessageWidget->mpProblem));
         return;
     }
 

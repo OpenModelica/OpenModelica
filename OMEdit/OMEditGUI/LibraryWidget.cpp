@@ -84,7 +84,7 @@ ModelicaTree::ModelicaTree(LibraryWidget *parent)
     : QTreeWidget(parent)
 {
     mpParentLibraryWidget = parent;
-
+    setItemDelegate(new ItemDelegate(this));
     setFrameShape(QFrame::NoFrame);
     setHeaderLabel(tr("Modelica Files"));
     setIconSize(Helper::iconSize);
@@ -409,7 +409,9 @@ bool ModelicaTree::deleteNodeTriggered(ModelicaTreeNode *node, bool askQuestion)
         // because after delete treenode is not available to print message :)
         if (askQuestion)
         {
-            pMainWindow->mpMessageWidget->printGUIInfoMessage("'" + treeNode->mName + "' deleted successfully.");
+            pMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, tr("'").append(treeNode->mName)
+                                                                        .append("' deleted successfully."), Helper::scriptingKind,
+                                                                        Helper::notificationLevel, 0, pMainWindow->mpMessageWidget->mpProblem));
         }
         deleteNode(treeNode);
         if (treeNode->childCount())
@@ -577,7 +579,7 @@ LibraryTree::LibraryTree(LibraryWidget *pParent)
     : QTreeWidget(pParent)
 {
     mpParentLibraryWidget = pParent;
-
+    setItemDelegate(new ItemDelegate(this));
     setFrameShape(QFrame::NoFrame);
     setHeaderLabel(tr("Modelica Standard Library"));
     setIndentation(Helper::treeIndentation);
@@ -968,11 +970,92 @@ Qt::DropActions LibraryTree::supportedDropActions() const
     return Qt::CopyAction;
 }
 
+ItemDelegate::ItemDelegate(QObject *pParent)
+    : QItemDelegate(pParent)
+{
+
+}
+
+void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    QStyleOptionViewItemV2 opt = setOptions(index, option);
+    const QStyleOptionViewItemV2 *v2 = qstyleoption_cast<const QStyleOptionViewItemV2 *>(&option);
+    opt.features = v2 ? v2->features : QStyleOptionViewItemV2::ViewItemFeatures(QStyleOptionViewItemV2::None);
+    // prepare
+    painter->save();
+    // get the data and the rectangles
+    QVariant value;
+    QIcon icon;
+    QIcon::Mode iconMode = QIcon::Normal;
+    QIcon::State iconState = QIcon::On;
+    QPixmap pixmap;
+    QRect decorationRect;
+    value = index.data(Qt::DecorationRole);
+    if (value.isValid())
+    {
+        if (value.type() == QVariant::Icon)
+        {
+            icon = qvariant_cast<QIcon>(value);
+            decorationRect = QRect(QPoint(0, 0), icon.actualSize(option.decorationSize, iconMode, iconState));
+        }
+        else
+        {
+            pixmap = decoration(opt, value);
+            decorationRect = QRect(QPoint(0, 0), option.decorationSize).intersected(pixmap.rect());
+        }
+    }
+    QString text;
+    QRect displayRect;
+    value = index.data(Qt::DisplayRole);
+    if (value.isValid())
+    {
+        if (value.type() == QVariant::Double)
+            text = QLocale().toString(value.toDouble());
+        else
+        {
+            text = value.toString();
+            const QChar nl = QLatin1Char('\n');
+            for (int i = 0; i < text.count(); ++i)
+                if (text.at(i) == nl)
+                    text[i] = QChar::LineSeparator;
+        }
+        displayRect = textRectangle(painter, option.rect, opt.font, text);
+    }
+    QRect checkRect;
+    Qt::CheckState checkState = Qt::Unchecked;
+    value = index.data(Qt::CheckStateRole);
+    if (value.isValid())
+    {
+        checkState = static_cast<Qt::CheckState>(value.toInt());
+        checkRect = check(opt, opt.rect, value);
+    }
+    // do the layout
+    doLayout(opt, &checkRect, &decorationRect, &displayRect, false);
+    // draw the item
+    drawBackground(painter, opt, index);
+    drawCheck(painter, opt, checkRect, checkState);
+    drawDisplay(painter, opt, displayRect, text);
+    if (!icon.isNull())
+        icon.paint(painter, decorationRect, option.decorationAlignment, QIcon::Normal, QIcon::Off);
+    else
+        drawDecoration(painter, opt, decorationRect, pixmap);
+    // done
+    painter->restore();
+}
+
+//! Reimplementation of sizeHint function. Defines the minimum height.
+QSize ItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    QSize size = QItemDelegate::sizeHint(option, index);
+    //Set very small height. A minimum apperantly stops at resonable size.
+    size.rheight() = 22; //pixels
+    return size;
+}
+
 MSLSearchBox::MSLSearchBox(SearchMSLWidget *pParent)
     : mDefaultText(Helper::modelicaLibrarySearchText)
 {
     setText(mDefaultText);
-
     mpSearchMSLWidget = pParent;
     // create msl suggestion completion object
     mpMSLSuggestionCompletion = new MSLSuggestCompletion(this);
@@ -1004,6 +1087,7 @@ MSLSuggestCompletion::MSLSuggestCompletion(MSLSearchBox *pParent)
 {
     // set up the popup tree that will show up for suggestion
     mpPopup = new QTreeWidget;
+    mpPopup->setItemDelegate(new ItemDelegate(this));
     mpPopup->setWindowFlags(Qt::Popup);
     mpPopup->setFocusPolicy(Qt::NoFocus);
     mpPopup->setFocusProxy(pParent);
@@ -1526,6 +1610,7 @@ ModelBrowserTree::ModelBrowserTree(ModelBrowserWidget *parent)
     : QTreeWidget(parent)
 {
     mpParentModelBrowserWidget = parent;
+    setItemDelegate(new ItemDelegate(this));
     setFrameShape(QFrame::StyledPanel);
     setHeaderLabel(tr("Outline"));
     setIconSize(Helper::iconSize);

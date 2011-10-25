@@ -170,6 +170,15 @@ protected:
     Qt::DropActions supportedDropActions() const;
 };
 
+class ItemDelegate : public QItemDelegate
+{
+    Q_OBJECT
+public:
+    ItemDelegate(QObject *pParent = 0);
+    virtual void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+    virtual QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
+};
+
 class MSLSuggestCompletion;
 class SearchMSLWidget;
 

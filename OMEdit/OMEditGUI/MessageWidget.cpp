@@ -43,7 +43,7 @@
 
 //! @class MessageWidget
 //! @brief It creates a tab based messages window.
-//! It contains three tabs General, Info, Problems.
+//! It contains two tabs General, Problems.
 
 //! Constructor
 //! @param pParent defines a parent to the new instanced object. pParent is the MainWindow object.
@@ -53,11 +53,8 @@ MessageWidget::MessageWidget(MainWindow *pParent)
     setObjectName(tr("MessagesTab"));
     mpParentMainWindow = pParent;
     // creates general messages window
-    mpGeneralMessages = new GeneralMessages(this);
-    addTab(mpGeneralMessages, QString("General"));
-    // creates info messages window
-    mpInfoMessages = new InfoMessages(this);
-    addTab(mpInfoMessages, QString("Info"));
+    mpMessages = new Messages(this);
+    addTab(mpMessages, QString("General"));
     // creates Problems window
     mpProblem = new Problem(this);
     addTab(mpProblem, QString("Problems"));
@@ -69,22 +66,14 @@ MessageWidget::MessageWidget(MainWindow *pParent)
     mpClearProblemsToolButton->setToolTip(Helper::clearProblems);
     mpClearProblemsToolButton->setAutoRaise(true);
     connect(mpClearProblemsToolButton, SIGNAL(clicked()), SLOT(clearProblems()));
-    // create button for clearing info messages
-    mpClearInfoMessagesToolButton = new QToolButton;
-    mpClearInfoMessagesToolButton->setContentsMargins(0, 0, 0, 0);
-    mpClearInfoMessagesToolButton->setText(Helper::clearInfoMessages);
-    mpClearInfoMessagesToolButton->setIcon(QIcon(":/Resources/icons/clearinfo.png"));
-    mpClearInfoMessagesToolButton->setToolTip(Helper::clearInfoMessages);
-    mpClearInfoMessagesToolButton->setAutoRaise(true);
-    connect(mpClearInfoMessagesToolButton, SIGNAL(clicked()), SLOT(clearInfoMessages()));
     // create button for clearing problems
-    mpClearGeneralMessagesToolButton = new QToolButton;
-    mpClearGeneralMessagesToolButton->setContentsMargins(0, 0, 0, 0);
-    mpClearGeneralMessagesToolButton->setText(Helper::clearGeneralMessages);
-    mpClearGeneralMessagesToolButton->setIcon(QIcon(":/Resources/icons/cleargeneral.png"));
-    mpClearGeneralMessagesToolButton->setToolTip(Helper::clearGeneralMessages);
-    mpClearGeneralMessagesToolButton->setAutoRaise(true);
-    connect(mpClearGeneralMessagesToolButton, SIGNAL(clicked()), SLOT(clearGeneralMessages()));
+    mpClearMessagesToolButton = new QToolButton;
+    mpClearMessagesToolButton->setContentsMargins(0, 0, 0, 0);
+    mpClearMessagesToolButton->setText(Helper::clearMessages);
+    mpClearMessagesToolButton->setIcon(QIcon(":/Resources/icons/cleargeneral.png"));
+    mpClearMessagesToolButton->setToolTip(Helper::clearMessages);
+    mpClearMessagesToolButton->setAutoRaise(true);
+    connect(mpClearMessagesToolButton, SIGNAL(clicked()), SLOT(clearMessages()));
     // create button for only showing notifications
     mpShowNotificationsToolButton = new QToolButton;
     mpShowNotificationsToolButton->setText(Helper::showNotifications);
@@ -139,27 +128,10 @@ MessageWidget::MessageWidget(MainWindow *pParent)
     verticalLine->setFrameShape(QFrame::VLine);
     verticalLine->setFrameShadow(QFrame::Sunken);
     pCornerWidgetLayout->addWidget(verticalLine);
-    pCornerWidgetLayout->addWidget(mpClearGeneralMessagesToolButton);
-    pCornerWidgetLayout->addWidget(mpClearInfoMessagesToolButton);
+    pCornerWidgetLayout->addWidget(mpClearMessagesToolButton);
     pCornerWidgetLayout->addWidget(mpClearProblemsToolButton);
     pCornerWidget->setLayout(pCornerWidgetLayout);
     setCornerWidget(pCornerWidget);
-    // set timers for blinking tabs
-    QSignalMapper *pSingnalMapper = new QSignalMapper;
-    mpGeneralTabTimer = new QTimer;
-    mpGeneralTabTimer->setInterval(1000);
-    pSingnalMapper->setMapping(mpGeneralTabTimer, mpGeneralMessages);
-    mpInfoTabTimer = new QTimer;
-    mpInfoTabTimer->setInterval(1000);
-    pSingnalMapper->setMapping(mpInfoTabTimer, mpInfoMessages);
-    mpProblemsTabTimer = new QTimer;
-    mpProblemsTabTimer->setInterval(1000);
-    pSingnalMapper->setMapping(mpProblemsTabTimer, mpProblem);
-    connect(mpGeneralTabTimer, SIGNAL(timeout()), pSingnalMapper, SLOT(map()));
-    connect(mpInfoTabTimer, SIGNAL(timeout()), pSingnalMapper, SLOT(map()));
-    connect(mpProblemsTabTimer, SIGNAL(timeout()), pSingnalMapper, SLOT(map()));
-    connect(pSingnalMapper, SIGNAL(mapped(QWidget*)), SLOT(startTitleBlink(QWidget*)));
-    connect(this, SIGNAL(currentChanged(int)), SLOT(stopTitleBlink(int)));
 }
 
 //! Reimplementation of sizeHint function. Defines the minimum height.
@@ -175,22 +147,7 @@ QSize MessageWidget::sizeHint() const
 //! @param message is the string that is passed.
 void MessageWidget::printGUIMessage(QString message)
 {
-    mpGeneralMessages->printGUIMessage(message);
-    if (!dynamic_cast<GeneralMessages*>(currentWidget()))
-    {
-        mpGeneralTabTimer->start();
-    }
-}
-
-//! Calls the InfoMessage::printGUIMessage
-//! @param message is the string that is passed.
-void MessageWidget::printGUIInfoMessage(QString message)
-{
-    mpInfoMessages->printGUIMessage(message);
-    if (!dynamic_cast<InfoMessages*>(currentWidget()))
-    {
-        mpInfoTabTimer->start();
-    }
+    mpMessages->printGUIMessage(message);
 }
 
 //! Adds the problem to the Problems tree.
@@ -201,11 +158,7 @@ void MessageWidget::addGUIProblem(ProblemItem *pProblemItem)
     mpProblem->addTopLevelItem(pProblemItem);
     mpProblem->scrollToBottom();
     mpShowAllProblemsToolButton->setChecked(true);
-    // if the Problems tab is not selected then start blinking it.
-    if (!dynamic_cast<Problem*>(currentWidget()))
-    {
-        mpProblemsTabTimer->start();
-    }
+    setCurrentWidget(mpProblem);
 }
 
 //! Clears all the problems.
@@ -221,18 +174,11 @@ void MessageWidget::clearProblems()
     }
 }
 
-//! Clears all the general messages.
-//! Slot activated when mpClearGeneralMessagesToolButton clicked signal is raised.
-void MessageWidget::clearGeneralMessages()
+//! Clears all the messages.
+//! Slot activated when mpClearMessagesToolButton clicked signal is raised.
+void MessageWidget::clearMessages()
 {
-    mpGeneralMessages->clear();
-}
-
-//! Clears all the info messages.
-//! Slot activated when mpClearInfoMessagesToolButton clicked signal is raised.
-void MessageWidget::clearInfoMessages()
-{
-    mpInfoMessages->clear();
+    mpMessages->clear();
 }
 
 //! Filter the Problems tree and only show the notification type problems.
@@ -296,42 +242,6 @@ void MessageWidget::showAllProblems()
     }
 }
 
-//! Starts blinking the tab text so that the user knows that some new message has been added.
-//! Slot activated when the timer for any tab is timed out.
-void MessageWidget::startTitleBlink(QWidget *pWidget)
-{
-    for (int i = 0; i < count() ; i++)
-    {
-        if (widget(i) == pWidget)
-        {
-            if (tabBar()->tabTextColor(i) == Qt::transparent)
-                tabBar()->setTabTextColor(i, Qt::black);
-            else
-                tabBar()->setTabTextColor(i, Qt::transparent);
-        }
-    }
-}
-
-//! Stop blinking the tab text.
-//! When the user selects the blinking tab we should stop blinking.
-//! Slot activated when the MessageWidget::currentChanged() signal is raised.
-void MessageWidget::stopTitleBlink(int element)
-{
-    if (dynamic_cast<Problem*>(widget(element)))
-    {
-        mpProblemsTabTimer->stop();
-    }
-    else if (dynamic_cast<GeneralMessages*>(widget(element)))
-    {
-        mpGeneralTabTimer->stop();
-    }
-    else if (dynamic_cast<InfoMessages*>(widget(element)))
-    {
-        mpInfoTabTimer->stop();
-    }
-    tabBar()->setTabTextColor(element, Qt::black);
-}
-
 //! @class Messages
 //! @brief It is the base class for all types of messages.
 
@@ -342,7 +252,6 @@ Messages::Messages(MessageWidget *pParent)
 {
     setReadOnly(true);
     setObjectName(tr("MessagesTextBox"));
-
     mpMessageWidget = pParent;
 }
 
@@ -350,47 +259,9 @@ Messages::Messages(MessageWidget *pParent)
 //! @param message is the string that is displayed.
 void Messages::printGUIMessage(QString message)
 {
-    append(message + tr("\n"));
-    ensureCursorVisible();
-    //mpMessageWidget->setCurrentWidget(this);
-}
-
-//! @class GeneralMessages
-//! @brief This class is inherited from Messages. It is used to display general messages.
-
-//! Constructor
-//! @param pParent defines a parent to the new instanced object. pParent is the MessageWidget object.
-GeneralMessages::GeneralMessages(MessageWidget *pParent)
-    : Messages(pParent)
-{
-    setTextColor("BLACK");
-}
-
-//! Reimplementation of Messages::printGUIMessage function.
-void GeneralMessages::printGUIMessage(QString message)
-{
     append(message);
-}
-
-//! @class InfoMessages
-//! @brief This class is inherited from Messages. It is used to display info messages.
-
-//! Constructor
-//! @param pParent defines a parent to the new instanced object. pParent is the MessageWidget object.
-InfoMessages::InfoMessages(MessageWidget *pParent)
-    : Messages(pParent)
-{
-    setTextColor("GREEN");
-}
-
-//! Reimplementation of Messages::printGUIMessage function.
-void InfoMessages::printGUIMessage(QString message)
-{
-    mMessageCounter++;
-    append(QString("---- Info ").append(QString::number(mMessageCounter)).append(" : ")
-           .append(QTime::currentTime().toString()).append(" ----"));
-
-    Messages::printGUIMessage(message);
+    ensureCursorVisible();
+    mpMessageWidget->setCurrentWidget(this);
 }
 
 //! @class Problem
@@ -403,6 +274,7 @@ Problem::Problem(MessageWidget *pParent)
 {
     mpMessageWidget = pParent;
     // set tree settings
+    setItemDelegate(new ItemDelegate(this));
     setObjectName(tr("ProblemsTree"));
     setIndentation(0);
     setColumnCount(4);

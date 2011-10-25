@@ -46,10 +46,7 @@
 #include "mainwindow.h"
 
 class MainWindow;
-class GeneralMessages;
-class InfoMessages;
-class WarningMessages;
-class ErrorMessages;
+class Messages;
 class Problem;
 class ProblemItem;
 class StringHandler;
@@ -61,35 +58,26 @@ public:
     MessageWidget(MainWindow *pParent);
 
     MainWindow *mpParentMainWindow;
-    GeneralMessages *mpGeneralMessages;
-    InfoMessages *mpInfoMessages;
+    Messages *mpMessages;
     Problem *mpProblem;
     QToolButton *mpClearProblemsToolButton;
-    QToolButton *mpClearInfoMessagesToolButton;
-    QToolButton *mpClearGeneralMessagesToolButton;
+    QToolButton *mpClearMessagesToolButton;
     QToolButton *mpShowNotificationsToolButton;
     QToolButton *mpShowWarningsToolButton;
     QToolButton *mpShowErrorsToolButton;
     QToolButton *mpShowAllProblemsToolButton;
     QButtonGroup *mpProblemsButtonGroup;
-    QTimer *mpGeneralTabTimer;
-    QTimer *mpInfoTabTimer;
-    QTimer *mpProblemsTabTimer;
 
     QSize sizeHint() const;
     void printGUIMessage(QString message);
-    void printGUIInfoMessage(QString message);
     void addGUIProblem(ProblemItem *pProblemItem);
 private slots:
     void clearProblems();
-    void clearInfoMessages();
-    void clearGeneralMessages();
+    void clearMessages();
     void showNotifications();
     void showWarnings();
     void showErrors();
     void showAllProblems();
-    void startTitleBlink(QWidget *pWidget);
-    void stopTitleBlink(int element);
 };
 
 class Messages : public QTextEdit
@@ -102,22 +90,6 @@ public:
     MessageWidget *mpMessageWidget;
 protected:
     int mMessageCounter;
-};
-
-class GeneralMessages : public Messages
-{
-    Q_OBJECT
-public:
-    GeneralMessages(MessageWidget *pParent);
-    void printGUIMessage(QString message);
-};
-
-class InfoMessages : public Messages
-{
-    Q_OBJECT
-public:
-    InfoMessages(MessageWidget *pParent);
-    void printGUIMessage(QString message);
 };
 
 class Problem : public QTreeWidget

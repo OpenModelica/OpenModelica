@@ -1303,8 +1303,9 @@ void MainWindow::exportModelFMI()
     showProgressBar();
     if (mpOMCProxy->translateModelFMU(pCurrentTab->mModelNameStructure))
     {
-        mpMessageWidget->printGUIInfoMessage(GUIMessages::getMessage(GUIMessages::FMI_GENERATED).arg(mpOMCProxy->changeDirectory())
-                                             .arg(pCurrentTab->mModelNameStructure));
+        mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::FMI_GENERATED)
+                                                       .arg(mpOMCProxy->changeDirectory()).arg(pCurrentTab->mModelNameStructure),
+                                                       Helper::scriptingKind, Helper::notificationLevel, 0, mpMessageWidget->mpProblem));
     }
     // hide progress bar
     hideProgressBar();
