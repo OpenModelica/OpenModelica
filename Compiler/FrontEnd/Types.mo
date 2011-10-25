@@ -3554,7 +3554,7 @@ algorithm
     case ((DAE.T_NOTYPE(), _)) then etOther;
     case ((DAE.T_ANYTYPE(_), _)) then etOther;
       
-    case ((DAE.T_COMPLEX(complexVarLst={},complexTypeOption=SOME(t)),_)) then elabType(t);
+    case ((DAE.T_COMPLEX(complexTypeOption=SOME(t)),_)) then elabType(t);
 
     // see if we have it in memory
     case (inType as (tt, _))

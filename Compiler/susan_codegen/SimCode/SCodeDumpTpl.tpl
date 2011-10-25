@@ -258,7 +258,16 @@ match component
 end dumpComponent;
 
 template dumpDefineUnit(SCode.Element defineUnit)
-::= errorMsg("SCodeDump.dumpDefineUnit not implemented.")
+::=
+match defineUnit
+  case DEFINEUNIT(__) then
+    let vis_str = dumpVisibility(visibility)
+    let exp_str = match exp case SOME(e) then 'exp = "<%e%>"'
+    let weight_str = match weight case SOME(w) then 'weight = <%w%>'
+    let args_str = {exp_str, weight_str} ;separator=", "
+    let pb = if args_str then '('
+    let pe = if args_str then ')'
+    'defineunit <%name%><%pb%><%args_str%><%pe%>'
 end dumpDefineUnit;
 
 template dumpEnumLiteral(SCode.Enum enum)

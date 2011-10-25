@@ -1616,7 +1616,7 @@ algorithm
       Integer idx;
     
     case (DAE.NOMOD(),_) then DAE.NOMOD();  /* indx */
-    case (DAE.REDECL(finalPrefix = _),_) then DAE.NOMOD();
+    case (DAE.REDECL(finalPrefix = _),_) then inMod;
     case (DAE.MOD(finalPrefix = f,eachPrefix = SCode.NOT_EACH(),subModLst = subs,eqModOption = eq),idx)
       equation
         (_,subs_1) = lookupIdxModification2(subs,idx);
