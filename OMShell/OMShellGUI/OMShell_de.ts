@@ -4,253 +4,174 @@
 <context>
     <name>OMS</name>
     <message>
-        <location filename="oms.cpp" line="265"/>
+        <location filename="oms.cpp" line="268"/>
         <source>OMShell - OpenModelica Shell</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="267"/>
-        <source>Ready</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="oms.cpp" line="435"/>
-        <source>&amp;Load Model...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="oms.cpp" line="436"/>
+        <location filename="oms.cpp" line="368"/>
         <source>Ctrl+L</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="437"/>
+        <location filename="oms.cpp" line="369"/>
         <source>Load mo-file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="441"/>
+        <location filename="oms.cpp" line="373"/>
         <source>Load &amp;Modelica Library</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="442"/>
+        <location filename="oms.cpp" line="374"/>
         <source>Ctrl+Shift+L</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="443"/>
-        <source>Load the modelica standard llibrary</source>
+        <location filename="oms.cpp" line="367"/>
+        <source>&amp;Load</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="447"/>
+        <location filename="oms.cpp" line="375"/>
+        <source>Load the Modelica Standard Library</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="oms.cpp" line="379"/>
         <source>&amp;Exit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="448"/>
+        <location filename="oms.cpp" line="380"/>
         <source>Ctrl+D</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="449"/>
+        <location filename="oms.cpp" line="381"/>
         <source>Quit the application</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="453"/>
+        <location filename="oms.cpp" line="385"/>
         <source>Cu&amp;t</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="454"/>
+        <location filename="oms.cpp" line="386"/>
         <source>Ctrl+X</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="455"/>
-        <source>Cut the selection and put it on the Clipboard</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="oms.cpp" line="459"/>
+        <location filename="oms.cpp" line="391"/>
         <source>&amp;Copy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="460"/>
+        <location filename="oms.cpp" line="392"/>
         <source>Ctrl+C</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="461"/>
-        <source>Copy the selection and put it on the Clipboard</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="oms.cpp" line="465"/>
+        <location filename="oms.cpp" line="397"/>
         <source>&amp;Paste</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="466"/>
+        <location filename="oms.cpp" line="398"/>
         <source>Ctrl+V</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="467"/>
-        <source>Insert Clipboard contents</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="oms.cpp" line="471"/>
+        <location filename="oms.cpp" line="404"/>
         <source>&amp;FontSize</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="476"/>
-        <source>View &amp;Toolbar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="oms.cpp" line="477"/>
-        <source>Ctrl+Shift+T</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="oms.cpp" line="480"/>
-        <source>Show or hide the toolbar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="oms.cpp" line="484"/>
-        <source>View &amp;Statusbar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="oms.cpp" line="485"/>
-        <source>Ctrl+Shift+S</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="oms.cpp" line="488"/>
-        <source>Show or hide the status bar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="oms.cpp" line="492"/>
+        <location filename="oms.cpp" line="409"/>
         <source>&amp;About OMShell</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="493"/>
-        <source>Display program information, version number and copyright</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="oms.cpp" line="498"/>
+        <location filename="oms.cpp" line="415"/>
         <source>About &amp;Qt</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="499"/>
-        <source>Display information about Qt</source>
+        <location filename="oms.cpp" line="387"/>
+        <source>Cut the selection</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="503"/>
-        <source>&amp;Print</source>
+        <location filename="oms.cpp" line="393"/>
+        <source>Copy the selection</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="504"/>
-        <source>Ctrl+P</source>
+        <location filename="oms.cpp" line="399"/>
+        <source>Insert from clipboard</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="505"/>
-        <source>Print the contents in the input window</source>
+        <location filename="oms.cpp" line="410"/>
+        <source>About this application</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="510"/>
-        <source>&amp;Start Server</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="oms.cpp" line="511"/>
-        <source>Alt+S</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="oms.cpp" line="516"/>
-        <source>S&amp;top Server</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="oms.cpp" line="517"/>
-        <source>Alt+Shift+S</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="oms.cpp" line="523"/>
+        <location filename="oms.cpp" line="420"/>
         <source>Cl&amp;ear</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="524"/>
+        <location filename="oms.cpp" line="421"/>
         <source>Ctrl+Shift+C</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="525"/>
+        <location filename="oms.cpp" line="422"/>
         <source>Clear the input window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="533"/>
+        <location filename="oms.cpp" line="430"/>
         <source>&amp;File</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="534"/>
+        <location filename="oms.cpp" line="431"/>
         <source>&amp;Edit</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="535"/>
-        <source>&amp;View</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="oms.cpp" line="536"/>
+        <location filename="oms.cpp" line="432"/>
         <source>&amp;Help</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="561"/>
-        <source>Toolbar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="oms.cpp" line="716"/>
+        <location filename="oms.cpp" line="589"/>
         <source>Communication Error with OMC</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="738"/>
+        <location filename="oms.cpp" line="611"/>
         <source>Communication Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="739"/>
+        <location filename="oms.cpp" line="612"/>
         <source>&lt;B&gt;Unable to communication correctlly with OMC. OMShell will therefore close.&lt;/B&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="978"/>
+        <location filename="oms.cpp" line="816"/>
         <source>Close OMC</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="oms.cpp" line="865"/>
+        <source>[ERROR] Selected fontsize not between 8 and 120.
+</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

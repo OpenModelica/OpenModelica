@@ -59,7 +59,6 @@
 #include <QtGui/QMenuBar>
 #include <QtGui/QMessageBox>
 #include <QtGui/QTextBlock>
-#include <QtGui/QToolBar>
 #include <QtGui/QScrollBar>
 #include <QtGui/QStatusBar>
 #include <QtGui/QVBoxLayout>
@@ -234,6 +233,7 @@ OMS::OMS( QWidget* parent )
 {
   delegate_ = 0;
   omc_version_ = "(version)";
+  statusBar();
 
   mainFrame_ = new QFrame();
   mainFrame_->setFrameShadow( QFrame::Sunken );
@@ -256,7 +256,6 @@ OMS::OMS( QWidget* parent )
   //createMoshError();
   createAction();
   createMenu();
-  createToolbar();
 
 //  connect( this, SIGNAL( emitQuit() ),
 //    qApp, SLOT( quit() ));
@@ -268,7 +267,6 @@ OMS::OMS( QWidget* parent )
   resize( 800, 600 );
   setWindowTitle( tr("OMShell - OpenModelica Shell") );
   setWindowIcon( QIcon(":/Resources/omshell-large.svg") );
-  statusBar()->showMessage( tr("Ready") );
 
   // sett start message
   const char* dateStr = __DATE__; // "Mmm dd yyyy", so dateStr+7 = "yyyy"
@@ -299,32 +297,6 @@ OMS::OMS( QWidget* parent )
     QMessageBox::warning( 0, "Error", msg, "OK" );
   }
 
-  // add function names for code completion
-  /*currentFunction_ = -1;
-  currentFunctionName_ = "";
-  functionList_ = new QStringList();
-  functionList_->push_back( "cd()" );
-  functionList_->push_back( "cd(dir)" );
-  functionList_->push_back( "clear()" );
-  functionList_->push_back( "clearVariables()" );
-  functionList_->push_back( "help()" );
-  functionList_->push_back( "instantiateModel(modelname)" );
-  functionList_->push_back( "list()" );
-  functionList_->push_back( "list(modelname)" );
-  functionList_->push_back( "loadFile(strFile)" );
-  functionList_->push_back( "loadModel(name)" );
-  functionList_->push_back( "listVariables()" );
-  functionList_->push_back( "plot(vars)" );
-  functionList_->push_back( "readFile(str)" );
-  functionList_->push_back( "readSimulationResultSize(strFile)" );
-  functionList_->push_back( "readSimulationResult(strFile, variables, size)" );
-  functionList_->push_back( "runScript(strFile)" );
-  functionList_->push_back( "saveModel(strFile, modelname)" );
-  functionList_->push_back( "simulate(modelname, startTime=0, stopTime=1)" );
-  functionList_->push_back( "system(str)" );
-  functionList_->push_back( "timing(expr)" );
-  functionList_->push_back( "typeOf(variable)" );*/
-
   // command stuff
   commandSignFormat_.setFontFamily( "Arial" );
   commandSignFormat_.setFontWeight( QFont::Bold );
@@ -341,30 +313,16 @@ OMS::~OMS()
   delete delegate_;
   delete commandcompletion_;
 
-  //delete commands_;
-  //delete functionList_;
-
   delete fileMenu_;
   delete editMenu_;
-  delete viewMenu_;
   delete helpMenu_;
   delete loadModel_;
   delete loadModelicaLibrary_;
   delete exit_;
-  delete cut_;
-  delete copy_;
-  delete paste_;
   delete font_;
-  delete viewToolbar_;
-  delete viewStatusbar_;
   delete aboutOMS_;
   delete aboutQT_;
-  delete print_;
-  delete startServer_;
-  delete stopServer_;
   delete clearWindow_;
-
-  delete toolbar_;
 }
 
 void OMS::createMoshEdit()
@@ -404,39 +362,9 @@ void OMS::createMoshEdit()
     this, SLOT( codeNextField() ));
 }
 
-/*
-void OMS::createMoshError()
-{
-  moshError_ = new QTextEdit( mainFrame_ );
-  layout_->addWidget( moshError_ );
-
-  moshError_->setReadOnly( true );
-  moshError_->setFrameShadow( QFrame::Plain );
-  moshError_->setFrameShape( QFrame::Panel );
-  moshError_->setAutoFormatting( QTextEdit::AutoNone );
-  moshError_->setFixedHeight( 80 );
-
-  moshError_->setSizePolicy( QSizePolicy(
-    QSizePolicy::Expanding, QSizePolicy::Fixed ));
-  moshError_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
-  moshError_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOn );
-  moshError_->setContextMenuPolicy( Qt::NoContextMenu );
-
-  // set backgroundcolor
-  QPalette palette;
-  palette.setColor( QPalette::Base, QColor(200,200,200) );
-  moshError_->setPalette( palette );
-
-  // text settings
-  moshError_->setFontFamily( "Courier New" );
-  moshError_->setFontWeight( QFont::Normal );
-  moshError_->setFontPointSize( fontSize_ );
-}
-*/
-
 void OMS::createAction()
 {
-  loadModel_ = new QAction( tr("&Load Model..."), this );
+  loadModel_ = new QAction( tr("&Load"), this );
   loadModel_->setShortcut( tr("Ctrl+L") );
   loadModel_->setStatusTip( tr("Load mo-file") );
   connect( loadModel_, SIGNAL( triggered() ),
@@ -444,7 +372,7 @@ void OMS::createAction()
 
   loadModelicaLibrary_ = new QAction( tr("Load &Modelica Library"), this );
   loadModelicaLibrary_->setShortcut( tr("Ctrl+Shift+L") );
-  loadModelicaLibrary_->setStatusTip( tr("Load the modelica standard llibrary") );
+  loadModelicaLibrary_->setStatusTip( tr("Load the Modelica Standard Library") );
   connect( loadModelicaLibrary_, SIGNAL( triggered() ),
     this, SLOT( loadModelicaLibrary() ));
 
@@ -454,77 +382,42 @@ void OMS::createAction()
   connect( exit_, SIGNAL( triggered() ),
     this, SLOT( close() ));
 
-  cut_ = new QAction( QIcon(":/Resources/cut.bmp"), tr("Cu&t"), this );
+  cut_ = new QAction( tr("Cu&t"), this );
   cut_->setShortcut( tr("Ctrl+X") );
-  cut_->setStatusTip( tr("Cut the selection and put it on the Clipboard") );
+  cut_->setStatusTip( tr("Cut the selection") );
   connect( cut_, SIGNAL( triggered() ),
     this, SLOT( cut() ));
 
-  copy_ = new QAction( QIcon(":/Resources/copy.bmp"), tr("&Copy"), this );
+  copy_ = new QAction( tr("&Copy"), this );
   copy_->setShortcut( tr("Ctrl+C") );
-  copy_->setStatusTip( tr("Copy the selection and put it on the Clipboard") );
+  copy_->setStatusTip( tr("Copy the selection") );
   connect( copy_, SIGNAL( triggered() ),
     this, SLOT( copy() ));
 
-  paste_ = new QAction( QIcon(":/Resources/paste.bmp"), tr("&Paste"), this );
+  paste_ = new QAction( tr("&Paste"), this );
   paste_->setShortcut( tr("Ctrl+V") );
-  paste_->setStatusTip( tr("Insert Clipboard contents") );
+  paste_->setStatusTip( tr("Insert from clipboard") );
   connect( paste_, SIGNAL( triggered() ),
     this, SLOT( paste() ));
+
 
   font_ = new QAction( tr("&FontSize"), this );
   font_->setStatusTip( "Select font size" );
   connect( font_, SIGNAL( triggered() ),
     this, SLOT( fontSize() ));
 
-  viewToolbar_ = new QAction( tr("View &Toolbar"), this );
-  viewToolbar_->setShortcut( tr("Ctrl+Shift+T") );
-  viewToolbar_->setCheckable( true );
-  viewToolbar_->setChecked( true );
-  viewToolbar_->setStatusTip( tr("Show or hide the toolbar") );
-  connect( viewToolbar_, SIGNAL( triggered() ),
-    this, SLOT( viewToolbar() ));
-
-  viewStatusbar_ = new QAction( tr("View &Statusbar"), this );
-  viewStatusbar_->setShortcut( tr("Ctrl+Shift+S") );
-  viewStatusbar_->setCheckable( true );
-  viewStatusbar_->setChecked( true );
-  viewStatusbar_->setStatusTip( tr("Show or hide the status bar") );
-  connect( viewStatusbar_, SIGNAL( triggered() ),
-    this, SLOT( viewStatusbar() ));
-
-  aboutOMS_ = new QAction( QIcon(":/Resources/help.bmp"), tr("&About OMShell"), this );
-  aboutOMS_->setStatusTip( tr("Display program information, version number and copyright") );
+  aboutOMS_ = new QAction( tr("&About OMShell"), this );
+  aboutOMS_->setStatusTip( tr("About this application") );
   connect( aboutOMS_, SIGNAL( triggered() ),
     this, SLOT( aboutOMS() ));
 
   // Added 2006-02-21 AF
   aboutQT_ = new QAction( tr("About &Qt"), this );
-  aboutQT_->setStatusTip( tr("Display information about Qt") );
+  aboutQT_->setStatusTip( tr("About Qt") );
   connect( aboutQT_, SIGNAL( triggered() ),
     this, SLOT( aboutQT() ));
 
-  print_ = new QAction( QIcon(":/Resources/print.bmp"), tr("&Print"), this );
-  print_->setShortcut( tr("Ctrl+P") );
-  print_->setStatusTip( tr("Print the contents in the input window") );
-  print_->setEnabled( false );
-  connect( print_, SIGNAL( triggered() ),
-    this, SLOT( print() ));
-
-  startServer_ = new QAction( QIcon(":/Resources/start.bmp"), tr("&Start Server"), this );
-  startServer_->setShortcut( tr("Alt+S") );
-  startServer_->setStatusTip( tr("") );
-  startServer_->setEnabled( false );
-  connect( startServer_, SIGNAL( triggered() ), this, SLOT( startServer() ));
-
-  stopServer_ = new QAction( QIcon(":/Resources/stop.bmp"), tr("S&top Server"), this );
-  stopServer_->setShortcut( tr("Alt+Shift+S") );
-  stopServer_->setStatusTip( tr("") );
-  stopServer_->setEnabled( false );
-  connect( stopServer_, SIGNAL( triggered() ),
-    this, SLOT( stopServer() ));
-
-  clearWindow_ = new QAction( QIcon(":/Resources/clear.bmp"), tr("Cl&ear"), this );
+  clearWindow_ = new QAction( tr("Cl&ear"), this );
   clearWindow_->setShortcut( tr("Ctrl+Shift+C") );
   clearWindow_->setStatusTip( tr("Clear the input window") );
   connect( clearWindow_, SIGNAL( triggered() ),
@@ -536,7 +429,6 @@ void OMS::createMenu()
   // create menus
   fileMenu_ = menuBar()->addMenu( tr("&File") );
   editMenu_ = menuBar()->addMenu( tr("&Edit") );
-  viewMenu_ = menuBar()->addMenu( tr("&View") );
   helpMenu_ = menuBar()->addMenu( tr("&Help") );
 
 
@@ -550,35 +442,12 @@ void OMS::createMenu()
   editMenu_->addAction( copy_ );
   editMenu_->addAction( paste_ );
   editMenu_->addSeparator();
+  editMenu_->addAction( clearWindow_ );
+  editMenu_->addSeparator();
   editMenu_->addAction( font_ );
-
-  viewMenu_->addAction( viewToolbar_ );
-  viewMenu_->addAction( viewStatusbar_ );
 
   helpMenu_->addAction( aboutOMS_ );
   helpMenu_->addAction( aboutQT_ );
-}
-
-void OMS::createToolbar()
-{
-  // create toolbars
-  toolbar_ = addToolBar( tr("Toolbar") );
-  toolbar_->setMovable( false );
-
-
-  // add actions to toolbars
-  toolbar_->addAction( cut_ );
-  toolbar_->addAction( copy_ );
-  toolbar_->addAction( paste_ );
-  toolbar_->addSeparator();
-  toolbar_->addAction( print_ );
-  toolbar_->addSeparator();
-  toolbar_->addAction( aboutOMS_ );
-  toolbar_->addSeparator();
-  //toolbar_->addAction( startServer_ );
-  //toolbar_->addAction( stopServer_ );
-  toolbar_->addAction( clearWindow_ );
-  toolbar_->addSeparator();
 }
 
 void OMS::addCommandLine()
@@ -849,41 +718,6 @@ void OMS::codeCompletion( bool same )
     moshEdit_->setTextCursor( cursor_ );
   }
 
-  /*
-  cursor_ = moshEdit_->textCursor();
-
-  if( !same )
-  {
-    //find last word
-    cursor_.movePosition( QTextCursor::PreviousWord, QTextCursor::KeepAnchor );
-    currentFunctionName_ = cursor_.selectedText();
-    currentFunction_ = 0;
-  }
-
-
-  QStringList list = getFunctionNames( currentFunctionName_ );
-  if( list.isEmpty() )
-  {
-    if( currentFunctionName_ == "> " )
-      list = *functionList_;
-  }
-
-  if( !list.isEmpty() )
-  {
-    if( same )
-    {
-      if( currentFunction_ == list.size() - 1 )
-        currentFunction_ = 0;
-      else
-        currentFunction_++;
-    }
-
-    selectCommandLine();
-    cursor_.insertText( list.at( currentFunction_ ));
-    moshEdit_->setTextCursor( cursor_ );
-  }
-*/
-
 }
 
 void OMS::codeNextField()
@@ -1006,38 +840,6 @@ bool OMS::exit()
   {}
 }
 
-void OMS::cut()
-{
-/*  if( moshEdit_->hasFocus() )
-  {*/
-    QKeyEvent* key = new QKeyEvent( QEvent::KeyPress, Qt::Key_X, Qt::ControlModifier, "x" );
-    ((MyTextEdit*)moshEdit_)->sendKey( key );
-/*  }
-  else if( moshError_->hasFocus() )
-  {
-    moshError_->copy();
-  }*/
-}
-
-void OMS::copy()
-{
-/*  if( moshEdit_->hasFocus() )
-  {*/
-    QKeyEvent* key = new QKeyEvent( QEvent::KeyPress, Qt::Key_C, Qt::ControlModifier, "c" );
-    ((MyTextEdit*)moshEdit_)->sendKey( key );
-/*  }
-  else if( moshError_->hasFocus() )
-  {
-    moshError_->copy();
-  }*/
-}
-
-void OMS::paste()
-{
-  QKeyEvent* key = new QKeyEvent( QEvent::KeyPress, Qt::Key_V, Qt::ControlModifier, "v" );
-  ((MyTextEdit*)moshEdit_)->sendKey( key );
-}
-
 void OMS::fontSize()
 {
   IAEX::OtherDlg dlg(this, 8, 120);
@@ -1060,28 +862,8 @@ void OMS::fontSize()
   else
   {
     cursor_.movePosition( QTextCursor::End );
-    cursor_.insertText( "[ERROR] Selected fontsize not between 8 and 120.\n" );
-    /*
-    QTextCursor cursor = moshError_->textCursor();
-    cursor.insertText( "[ERROR] Selected fontsize not between 8 and 120.\n" );
-    */
+    cursor_.insertText( tr("[ERROR] Selected fontsize not between 8 and 120.\n") );
   }
-}
-
-void OMS::viewToolbar()
-{
-  if( viewToolbar_->isChecked() )
-    toolbar_->show();
-  else
-    toolbar_->hide();
-}
-
-void OMS::viewStatusbar()
-{
-  if( viewStatusbar_->isChecked() )
-    statusBar()->show();
-  else
-    statusBar()->hide();
 }
 
 void OMS::aboutOMS()
@@ -1181,27 +963,7 @@ void OMS::clear()
   // sett original text settings
   moshEdit_->document()->setDefaultFont(QFont("Courier New", fontSize_, QFont::Normal));
 
-  cursor_ = moshEdit_->textCursor();
-  cursor_.insertText( QString("OpenModelica ") + omc_version_ + "\n" );
-  cursor_.insertText( "Copyright (c) OSMC 2002-2008\n\n" );
-  cursor_.insertText( "To get help on using OMShell and OpenModelica, type \"help()\" and press enter.\n" );
-
   addCommandLine();
-
-
-  /*
-  moshError_->clear();
-
-  // set backgroundcolor
-  QPalette palette;
-  palette.setColor( QPalette::Base, QColor(200,200,200) );
-  moshError_->setPalette( palette );
-
-  // text settings
-  moshError_->setFontFamily( "Courier New" );
-  moshError_->setFontWeight( QFont::Normal );
-  moshError_->setFontPointSize( fontSize_ );
-  */
 }
 
 void OMS::closeEvent( QCloseEvent *event )
@@ -1210,5 +972,23 @@ void OMS::closeEvent( QCloseEvent *event )
       event->accept();
   else
       event->ignore();
+}
+
+void OMS::cut()
+{
+  QKeyEvent* key = new QKeyEvent( QEvent::KeyPress, Qt::Key_X, Qt::ControlModifier, "x" );
+  ((MyTextEdit*)moshEdit_)->sendKey( key );
+}
+
+void OMS::copy()
+{
+  QKeyEvent* key = new QKeyEvent( QEvent::KeyPress, Qt::Key_C, Qt::ControlModifier, "c" );
+  ((MyTextEdit*)moshEdit_)->sendKey( key );
+}
+
+void OMS::paste()
+{
+  QKeyEvent* key = new QKeyEvent( QEvent::KeyPress, Qt::Key_V, Qt::ControlModifier, "v" );
+  ((MyTextEdit*)moshEdit_)->sendKey( key );
 }
 

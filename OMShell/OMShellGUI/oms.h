@@ -89,8 +89,6 @@ public slots:
   void copy();
   void paste();
   void fontSize();
-  void viewToolbar();
-  void viewStatusbar();
   void aboutOMS();
   void aboutQT();          // Added 2006-02-21 AF
   void print();
@@ -134,25 +132,17 @@ private:
 
   QMenu* fileMenu_;
   QMenu* editMenu_;
-  QMenu* viewMenu_;
   QMenu* helpMenu_;
   QAction* loadModel_;
   QAction* loadModelicaLibrary_;
-  QAction* exit_;
   QAction* cut_;
   QAction* copy_;
   QAction* paste_;
+  QAction* exit_;
   QAction* font_;
-  QAction* viewToolbar_;
-  QAction* viewStatusbar_;
   QAction* aboutOMS_;
   QAction* aboutQT_;        // Added 2006-02-21 AF
-  QAction* print_;
-  QAction* startServer_;
-  QAction* stopServer_;
   QAction* clearWindow_;
-
-  QToolBar* toolbar_;
 };
 
 //********************************
