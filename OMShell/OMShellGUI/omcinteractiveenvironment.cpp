@@ -68,7 +68,7 @@ namespace IAEX
     return result_;
   }
 
-  void OmcInteractiveEnvironment::evalExpression(QString& expr)
+  void OmcInteractiveEnvironment::evalExpression(QString expr)
   {
     // 2006-02-02 AF, Added try-catch
     try

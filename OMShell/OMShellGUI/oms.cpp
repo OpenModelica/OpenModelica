@@ -74,6 +74,10 @@
 
 using namespace std;
 
+static QString omc_version_;
+static QString omhome;
+static IAEX::InputCellDelegate* delegate_;
+
 //A small trick to get access to protected function in QThread.
 class SleeperThread : public QThread
 {

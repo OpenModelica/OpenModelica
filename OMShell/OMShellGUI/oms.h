@@ -72,6 +72,7 @@ class OMS : public QMainWindow
 public:
   OMS( QWidget* parent = 0 );
   ~OMS();
+
 public slots:
   void returnPressed();
   void insertNewline();
@@ -93,8 +94,8 @@ public slots:
   void aboutOMS();
   void aboutQT();          // Added 2006-02-21 AF
   void print();
-  bool startServer();
-  void stopServer();
+  static bool startServer();
+  static void stopServer();
   void clear();
 
 private slots:
@@ -117,11 +118,8 @@ private:
   //QTextEdit* moshError_;
   QVBoxLayout* layout_;
   QString clipboard_;
-  QString omc_version_;
-  QString omhome;
   QString copyright_info_;
 
-  IAEX::InputCellDelegate* delegate_;
   IAEX::CommandCompletion* commandcompletion_;
   int fontSize_;
 

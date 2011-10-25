@@ -47,7 +47,7 @@ namespace IAEX
     virtual ~OmcInteractiveEnvironment();
 
     virtual QString getResult();
-    virtual void evalExpression(QString& expr);
+    virtual void evalExpression(QString expr);
     virtual void closeConnection();        // Added 2006-02-02 AF
     virtual void reconnect();          // Added 2006-02-09 AF
     virtual bool startDelegate();        // Added 2006-02-09 AF

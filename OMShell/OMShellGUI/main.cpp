@@ -37,15 +37,65 @@
  */
 
 #include <QtGui/QApplication>
+#include <QTranslator>
+#include <QLocale>
 
 #include "oms.h"
+#include "omcinteractiveenvironment.h"
+#include <stdio.h>
+
+#define CONSUME_CHAR(value,res,i) \
+    if (value.at(i) == '\\') { \
+    i++; \
+    switch (value[i].toAscii()) { \
+    case '\'': res.append('\''); break; \
+    case '"':  res.append('\"'); break; \
+    case '?':  res.append('\?'); break; \
+    case '\\': res.append('\\'); break; \
+    case 'a':  res.append('\a'); break; \
+    case 'b':  res.append('\b'); break; \
+    case 'f':  res.append('\f'); break; \
+    case 'n':  res.append('\n'); break; \
+    case 'r':  res.append('\r'); break; \
+    case 't':  res.append('\t'); break; \
+    case 'v':  res.append('\v'); break; \
+    } \
+    } else { \
+    res.append(value[i]); \
+    }
+
+QString unparse(QString value)
+{
+    QString res;
+    value = value.trimmed();
+    if (value.length() > 1 && value.at(0) == '\"' && value.at(value.length() - 1) == '\"') {
+        value = value.mid(1, (value.length() - 2));
+        for (int i=0; i < value.length(); i++) {
+            CONSUME_CHAR(value,res,i);
+        }
+        return res;
+    } else {
+        return "";
+    }
+}
 
 int main(int argc, char *argv[])
 {
-    QApplication app(argc, argv);
+  QApplication app(argc, argv);
+
+  OMS::startServer();
+  
+  IAEX::OmcInteractiveEnvironment env;
+  env.evalExpression("getInstallationDirectoryPath()");
+  QString dir = unparse(env.getResult()) + "/share/omshell/nls";
+  QString locale = QString("OMShell_") + QLocale::system().name();
+
+  QTranslator translator;
+  translator.load(locale, dir);
+  app.installTranslator(&translator);
 
   OMS oms;
   oms.show();
 
-    return app.exec();
+  return app.exec();
 }
