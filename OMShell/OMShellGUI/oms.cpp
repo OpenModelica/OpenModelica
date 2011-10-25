@@ -364,14 +364,14 @@ void OMS::createMoshEdit()
 
 void OMS::createAction()
 {
-  loadModel_ = new QAction( tr("&Load"), this );
-  loadModel_->setShortcut( tr("Ctrl+L") );
-  loadModel_->setStatusTip( tr("Load mo-file") );
+  loadModel_ = new QAction( tr("&Open"), this );
+  loadModel_->setShortcut( tr("Ctrl+O") );
+  loadModel_->setStatusTip( tr("Open mo-file") );
   connect( loadModel_, SIGNAL( triggered() ),
     this, SLOT( loadModel() ));
 
   loadModelicaLibrary_ = new QAction( tr("Load &Modelica Library"), this );
-  loadModelicaLibrary_->setShortcut( tr("Ctrl+Shift+L") );
+  loadModelicaLibrary_->setShortcut( tr("Ctrl+L") );
   loadModelicaLibrary_->setStatusTip( tr("Load the Modelica Standard Library") );
   connect( loadModelicaLibrary_, SIGNAL( triggered() ),
     this, SLOT( loadModelicaLibrary() ));

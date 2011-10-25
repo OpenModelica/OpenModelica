@@ -13,13 +13,14 @@
         <translation type="obsolete">&amp;Öppna</translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="368"/>
+        <location filename="oms.cpp" line="374"/>
         <source>Ctrl+L</source>
         <translation></translation>
     </message>
     <message>
         <location filename="oms.cpp" line="369"/>
-        <source>Load mo-file</source>
+        <source>Open mo-file</source>
+        <oldsource>Load mo-file</oldsource>
         <translation>Öppna mo-fil</translation>
     </message>
     <message>
@@ -28,13 +29,9 @@
         <translation>Öppna &amp;Modelica Bibliotek</translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="374"/>
-        <source>Ctrl+Shift+L</source>
-        <translation></translation>
-    </message>
-    <message>
         <location filename="oms.cpp" line="367"/>
-        <source>&amp;Load</source>
+        <source>&amp;Open</source>
+        <oldsource>&amp;Load</oldsource>
         <translation>&amp;Öppna</translation>
     </message>
     <message>
@@ -86,6 +83,11 @@
         <location filename="oms.cpp" line="410"/>
         <source>About this application</source>
         <translation>Om detta program</translation>
+    </message>
+    <message>
+        <location filename="oms.cpp" line="416"/>
+        <source>About Qt</source>
+        <translation>Om Qt</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="865"/>

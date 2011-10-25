@@ -9,13 +9,14 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="oms.cpp" line="368"/>
+        <location filename="oms.cpp" line="374"/>
         <source>Ctrl+L</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="oms.cpp" line="369"/>
-        <source>Load mo-file</source>
+        <source>Open mo-file</source>
+        <oldsource>Load mo-file</oldsource>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -25,12 +26,14 @@
     </message>
     <message>
         <location filename="oms.cpp" line="374"/>
-        <source>Ctrl+Shift+L</source>
+        <source>Ctrl+L</source>
+        <oldsource>Ctrl+Shift+L</oldsource>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="oms.cpp" line="367"/>
-        <source>&amp;Load</source>
+        <source>&amp;Open</source>
+        <oldsource>&amp;Load</oldsource>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -116,6 +119,11 @@
     <message>
         <location filename="oms.cpp" line="410"/>
         <source>About this application</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="oms.cpp" line="416"/>
+        <source>About Qt</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
