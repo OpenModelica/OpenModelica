@@ -56,7 +56,7 @@
 #include "LibraryWidget.h"
 #include "ProjectTabWidget.h"
 #include "StringHandler.h"
-#include "MessageWidget.h"
+#include "ProblemsWidget.h"
 #include "Helper.h"
 #include "SimulationWidget.h"
 #include "PlotWindowContainer.h"
@@ -91,7 +91,7 @@ class PlotWidget;
 class DocumentationWidget;
 class OptionsWidget;
 class ImportFMIWidget;
-class MessageWidget;
+class ProblemsWidget;
 
 class MainWindow : public QMainWindow
 {
@@ -127,7 +127,7 @@ public:
     QMenu *menuFMI;
     QMenu *menuTools;
     QMenu *menuHelp;
-    MessageWidget *mpMessageWidget;
+    ProblemsWidget *mpMessageWidget;
     QStatusBar *mpStatusBar;
     QProgressBar *mpProgressBar;
     QPushButton *mpBackButton;

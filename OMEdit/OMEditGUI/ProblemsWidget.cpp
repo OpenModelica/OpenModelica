@@ -31,38 +31,21 @@
  *
  */
 
-/*
- * HopsanGUI
- * Fluid and Mechatronic Systems, Department of Management and Engineering, Linkoping University
- * Main Authors 2009-2010:  Robert Braun, Bjorn Eriksson, Peter Nordin
- * Contributors 2009-2010:  Mikael Axin, Alessandro Dell'Amico, Karl Pettersson, Ingo Staack
- */
-
-#include "MessageWidget.h"
+#include "ProblemsWidget.h"
 #include "mainwindow.h"
 
-//! @class MessageWidget
-//! @brief It creates a tab based messages window.
+//! @class ProblemsWidget
+//! @brief Shows problems in the form of tree.
 //! It contains two tabs General, Problems.
 
 //! Constructor
 //! @param pParent defines a parent to the new instanced object. pParent is the MainWindow object.
-MessageWidget::MessageWidget(MainWindow *pParent)
-    : QTabWidget(pParent)
+ProblemsWidget::ProblemsWidget(MainWindow *pParent)
+    : QWidget(pParent)
 {
-    setObjectName(tr("MessagesTab"));
     mpParentMainWindow = pParent;
     // creates Problems window
     mpProblem = new Problem(this);
-    addTab(mpProblem, QString("Problems"));
-    // create button for clearing problems
-    mpClearProblemsToolButton = new QToolButton;
-    mpClearProblemsToolButton->setContentsMargins(0, 0, 0, 0);
-    mpClearProblemsToolButton->setText(Helper::clearProblems);
-    mpClearProblemsToolButton->setIcon(QIcon(":/Resources/icons/clearproblems.png"));
-    mpClearProblemsToolButton->setToolTip(Helper::clearProblems);
-    mpClearProblemsToolButton->setAutoRaise(true);
-    connect(mpClearProblemsToolButton, SIGNAL(clicked()), SLOT(clearProblems()));
     // create button for only showing notifications
     mpShowNotificationsToolButton = new QToolButton;
     mpShowNotificationsToolButton->setText(Helper::showNotifications);
@@ -103,29 +86,41 @@ MessageWidget::MessageWidget(MainWindow *pParent)
     mpProblemsButtonGroup->addButton(mpShowWarningsToolButton);
     mpProblemsButtonGroup->addButton(mpShowErrorsToolButton);
     mpProblemsButtonGroup->addButton(mpShowAllProblemsToolButton);
-    // create corner widget
-    QFrame *pCornerWidget = new QFrame(this);
-    pCornerWidget->resize(tabBar()->width(), tabBar()->height());
-    QHBoxLayout *pCornerWidgetLayout = new QHBoxLayout;
-    pCornerWidgetLayout->setContentsMargins(0, 0, 2, 1);
-    pCornerWidgetLayout->setSpacing(2);
-    pCornerWidgetLayout->addWidget(mpShowNotificationsToolButton);
-    pCornerWidgetLayout->addWidget(mpShowWarningsToolButton);
-    pCornerWidgetLayout->addWidget(mpShowErrorsToolButton);
-    pCornerWidgetLayout->addWidget(mpShowAllProblemsToolButton);
-    QFrame *verticalLine = new QFrame;
-    verticalLine->setFrameShape(QFrame::VLine);
-    verticalLine->setFrameShadow(QFrame::Sunken);
-    pCornerWidgetLayout->addWidget(verticalLine);
-    pCornerWidgetLayout->addWidget(mpClearProblemsToolButton);
-    pCornerWidget->setLayout(pCornerWidgetLayout);
-    setCornerWidget(pCornerWidget);
+    // horizontal line
+    QFrame *horizontalLine = new QFrame;
+    horizontalLine->setFrameShape(QFrame::HLine);
+    horizontalLine->setFrameShadow(QFrame::Sunken);
+    // create button for clearing problems
+    mpClearProblemsToolButton = new QToolButton;
+    mpClearProblemsToolButton->setContentsMargins(0, 0, 0, 0);
+    mpClearProblemsToolButton->setText(Helper::clearProblems);
+    mpClearProblemsToolButton->setIcon(QIcon(":/Resources/icons/clearproblems.png"));
+    mpClearProblemsToolButton->setToolTip(Helper::clearProblems);
+    mpClearProblemsToolButton->setAutoRaise(true);
+    connect(mpClearProblemsToolButton, SIGNAL(clicked()), SLOT(clearProblems()));
+    // layout for buttons
+    QVBoxLayout *buttonsLayout = new QVBoxLayout;
+    buttonsLayout->setContentsMargins(0, 0, 0, 0);
+    buttonsLayout->setSpacing(0);
+    buttonsLayout->addWidget(mpShowNotificationsToolButton);
+    buttonsLayout->addWidget(mpShowWarningsToolButton);
+    buttonsLayout->addWidget(mpShowErrorsToolButton);
+    buttonsLayout->addWidget(mpShowAllProblemsToolButton);
+    buttonsLayout->addWidget(horizontalLine);
+    buttonsLayout->addWidget(mpClearProblemsToolButton);
+    // layout
+    QHBoxLayout *layout = new QHBoxLayout;
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(1);
+    layout->addWidget(mpProblem);
+    layout->addLayout(buttonsLayout);
+    setLayout(layout);
 }
 
 //! Reimplementation of sizeHint function. Defines the minimum height.
-QSize MessageWidget::sizeHint() const
+QSize ProblemsWidget::sizeHint() const
 {
-    QSize size = QTabWidget::sizeHint();
+    QSize size = QWidget::sizeHint();
     //Set very small height. A minimum apperantly stops at resonable size.
     size.rheight() = 125; //pixels
     return size;
@@ -134,17 +129,16 @@ QSize MessageWidget::sizeHint() const
 //! Adds the problem to the Problems tree.
 //! If Problems tab is not selected then start blinking the tab.
 //! @param pProblemItem is the Problem to add.
-void MessageWidget::addGUIProblem(ProblemItem *pProblemItem)
+void ProblemsWidget::addGUIProblem(ProblemItem *pProblemItem)
 {
     mpProblem->addTopLevelItem(pProblemItem);
     mpProblem->scrollToBottom();
     mpShowAllProblemsToolButton->setChecked(true);
-    setCurrentWidget(mpProblem);
 }
 
 //! Clears all the problems.
 //! Slot activated when mpClearProblemsToolButton clicked signal is raised.
-void MessageWidget::clearProblems()
+void ProblemsWidget::clearProblems()
 {
     int i = 0;
     while(i < mpProblem->topLevelItemCount())
@@ -157,7 +151,7 @@ void MessageWidget::clearProblems()
 
 //! Filter the Problems tree and only show the notification type problems.
 //! Slot activated when mpShowNotificationsToolButton clicked signal is raised.
-void MessageWidget::showNotifications()
+void ProblemsWidget::showNotifications()
 {
     QTreeWidgetItemIterator it(mpProblem);
     while (*it)
@@ -173,7 +167,7 @@ void MessageWidget::showNotifications()
 
 //! Filter the Problems tree and only show the warning type problems.
 //! Slot activated when mpShowWarningsToolButton clicked signal is raised.
-void MessageWidget::showWarnings()
+void ProblemsWidget::showWarnings()
 {
     QTreeWidgetItemIterator it(mpProblem);
     while (*it)
@@ -189,7 +183,7 @@ void MessageWidget::showWarnings()
 
 //! Filter the Problems tree and only show the error type problems.
 //! Slot activated when mpShowErrorsToolButton clicked signal is raised.
-void MessageWidget::showErrors()
+void ProblemsWidget::showErrors()
 {
     QTreeWidgetItemIterator it(mpProblem);
     while (*it)
@@ -205,7 +199,7 @@ void MessageWidget::showErrors()
 
 //! Shows all type of problems.
 //! Slot activated when mpShowAllProblemsToolButton clicked signal is raised.
-void MessageWidget::showAllProblems()
+void ProblemsWidget::showAllProblems()
 {
     QTreeWidgetItemIterator it(mpProblem);
     while (*it)
@@ -221,7 +215,7 @@ void MessageWidget::showAllProblems()
 
 //! Constructor
 //! @param pParent defines a parent to the new instanced object. pParent is the MessageWidget object.
-Problem::Problem(MessageWidget *pParent)
+Problem::Problem(ProblemsWidget *pParent)
     : QTreeWidget(pParent), mpSelectedProblemItem(0)
 {
     mpMessageWidget = pParent;
@@ -232,7 +226,6 @@ Problem::Problem(MessageWidget *pParent)
     setColumnCount(4);
     setIconSize(QSize(12, 12));
     setContentsMargins(0, 0, 0, 0);
-    setFrameStyle(QFrame::NoFrame);
     QStringList labels;
     labels << "Kind" << "Time" << "Resource" << "Location" << "Message";
     setHeaderLabels(labels);

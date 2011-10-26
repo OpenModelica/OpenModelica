@@ -13,7 +13,7 @@ SOURCES += main.cpp\
     mainwindow.cpp \
     ProjectTabWidget.cpp \
     LibraryWidget.cpp \
-    MessageWidget.cpp \
+    ProblemsWidget.cpp \
     omc_communication.cc \
     OMCProxy.cpp \
     OMCThread.cpp \
@@ -47,7 +47,7 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     ProjectTabWidget.h \
     LibraryWidget.h \
-    MessageWidget.h \
+    ProblemsWidget.h \
     omc_communication.h \
     OMCProxy.h \
     OMCThread.h \

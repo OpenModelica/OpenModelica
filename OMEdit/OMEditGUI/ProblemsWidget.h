@@ -50,11 +50,11 @@ class Problem;
 class ProblemItem;
 class StringHandler;
 
-class MessageWidget : public QTabWidget
+class ProblemsWidget : public QWidget
 {
     Q_OBJECT
 public:
-    MessageWidget(MainWindow *pParent);
+    ProblemsWidget(MainWindow *pParent);
 
     MainWindow *mpParentMainWindow;
     Problem *mpProblem;
@@ -84,9 +84,9 @@ private:
     QAction *mpCopyAllAction;
     QAction *mpRemoveAction;
 public:
-    Problem(MessageWidget *pParent);
+    Problem(ProblemsWidget *pParent);
 
-    MessageWidget *mpMessageWidget;
+    ProblemsWidget *mpMessageWidget;
 private slots:
     void openEditor(QTreeWidgetItem *item, int column);
     void closeEditor(QTreeWidgetItem *current, QTreeWidgetItem *previous);

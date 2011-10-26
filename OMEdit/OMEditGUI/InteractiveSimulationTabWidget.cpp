@@ -423,7 +423,7 @@ void OMIProxy::readProcessStandardOutput()
 
 void OMIProxy::readProcessStandardError()
 {
-    MessageWidget *pMessageWidget;
+    ProblemsWidget *pMessageWidget;
     pMessageWidget = mpInteractiveSimulationTab->getParentTabWidget()->getParentMainWindow()->mpMessageWidget;
     pMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, QString(mpSimulationProcess->readAllStandardError()),
                                                   Helper::scriptingKind, Helper::errorLevel, 0, pMessageWidget->mpProblem));
@@ -432,7 +432,7 @@ void OMIProxy::readProcessStandardError()
 
 void OMIProxy::getSocketError(QAbstractSocket::SocketError socketError)
 {
-    MessageWidget *pMessageWidget;
+    ProblemsWidget *pMessageWidget;
     pMessageWidget = mpInteractiveSimulationTab->getParentTabWidget()->getParentMainWindow()->mpMessageWidget;
     switch (socketError)
     {
@@ -865,7 +865,6 @@ void InteractiveSimulationTab::paintEvent(QPaintEvent *event)
     painter.setPen(Qt::NoPen);
     painter.setBrush(QBrush(mpParentInteractiveSimulationTabWidget->palette().color(QPalette::Window)));
     painter.drawRect(rect());
-
     QWidget::paintEvent(event);
 }
 

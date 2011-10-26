@@ -36,6 +36,7 @@
 DocumentationWidget::DocumentationWidget(MainWindow *pParent)
     : QWidget(pParent)
 {
+    setObjectName(tr("DocumentationWidget"));
     mpParentMainWindow = pParent;
     mpDocumentationViewer = new DocumentationViewer(this);
     mpDocumentationEditor = new DocumentationEditor(this);
@@ -156,6 +157,18 @@ void DocumentationWidget::saveChanges()
         mpParentMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, message, Helper::scriptingKind,
                                                                            Helper::errorLevel, 0, mpParentMainWindow->mpMessageWidget->mpProblem));
     }
+}
+
+void DocumentationWidget::paintEvent(QPaintEvent *event)
+{
+    Q_UNUSED(event);
+    QPainter painter (this);
+    painter.setPen(Qt::gray);
+    QRect rectangle = this->rect();
+    rectangle.setWidth(this->rect().width() - 2);
+    rectangle.setHeight(this->rect().height() - 2);
+    painter.drawRect(rectangle);
+    QWidget::paintEvent(event);
 }
 
 DocumentationEditor::DocumentationEditor(DocumentationWidget *pParent)

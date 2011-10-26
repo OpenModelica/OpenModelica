@@ -164,7 +164,7 @@ void GraphicsView::dropEvent(QDropEvent *event)
 {
     this->setFocus();
     MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
-    MessageWidget *pMessageWidget = pMainWindow->mpMessageWidget;
+    ProblemsWidget *pMessageWidget = pMainWindow->mpMessageWidget;
     // check if the view is readonly or not
     if (mpParentProjectTab->isReadOnly())
     {
@@ -3048,7 +3048,7 @@ void ProjectTabWidget::saveProjectTab(int index, bool saveAs)
     // if model is a child model then give user a message and return
     if (pCurrentTab->isChild())
     {
-        MessageWidget *pMessageWidget = pCurrentTab->mpParentProjectTabWidget->mpParentMainWindow->mpMessageWidget;
+        ProblemsWidget *pMessageWidget = pCurrentTab->mpParentProjectTabWidget->mpParentMainWindow->mpMessageWidget;
         pMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::CHILD_MODEL_SAVE)
                                                       .arg(pCurrentTab->getModelicaTypeLabel()).arg(pCurrentTab->mModelName),
                                                       Helper::scriptingKind, Helper::notificationLevel, 0, pMessageWidget->mpProblem));

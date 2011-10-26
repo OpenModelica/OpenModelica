@@ -89,7 +89,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     #endif
     messagedock->setFeatures(QDockWidget::DockWidgetVerticalTitleBar | QDockWidget::DockWidgetClosable
                              | QDockWidget::DockWidgetMovable | QDockWidget::DockWidgetFloatable);
-    mpMessageWidget = new MessageWidget(this);
+    mpMessageWidget = new ProblemsWidget(this);
     messagedock->setWidget(mpMessageWidget);
     addDockWidget(Qt::BottomDockWidgetArea, messagedock);
     // load library

@@ -38,9 +38,6 @@ QPlainTextEdit#ModelicaEditor {
     selection-background-color: #3399FF;
     selection-color: white;
 }
-QTextEdit#MessagesTextBox {
-    border: none;
-}
 
 QStatusBar#ProjectStatusBar {
     background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #d2d2d2, stop: 1 lightGray);
@@ -67,4 +64,8 @@ QToolButton#InteractiveSimulationButtons {
 QListWidget#RecentItemsList::item:hover {
     border: 1px solid gray;
     color: blue;
+}
+
+QWidget#DocumentationWidget {
+    border: 1px solid gray;
 }

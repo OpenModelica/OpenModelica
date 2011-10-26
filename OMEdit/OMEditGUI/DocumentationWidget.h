@@ -67,6 +67,8 @@ public:
     QPushButton *mpSaveButton;
     QDialogButtonBox *mpButtonBox;
     QString mClassName;
+protected:
+    virtual void paintEvent(QPaintEvent *event);
 };
 class ModelicaTextSettings;
 
