@@ -52,9 +52,6 @@ MessageWidget::MessageWidget(MainWindow *pParent)
 {
     setObjectName(tr("MessagesTab"));
     mpParentMainWindow = pParent;
-    // creates general messages window
-    mpMessages = new Messages(this);
-    addTab(mpMessages, QString("General"));
     // creates Problems window
     mpProblem = new Problem(this);
     addTab(mpProblem, QString("Problems"));
@@ -66,14 +63,6 @@ MessageWidget::MessageWidget(MainWindow *pParent)
     mpClearProblemsToolButton->setToolTip(Helper::clearProblems);
     mpClearProblemsToolButton->setAutoRaise(true);
     connect(mpClearProblemsToolButton, SIGNAL(clicked()), SLOT(clearProblems()));
-    // create button for clearing problems
-    mpClearMessagesToolButton = new QToolButton;
-    mpClearMessagesToolButton->setContentsMargins(0, 0, 0, 0);
-    mpClearMessagesToolButton->setText(Helper::clearMessages);
-    mpClearMessagesToolButton->setIcon(QIcon(":/Resources/icons/cleargeneral.png"));
-    mpClearMessagesToolButton->setToolTip(Helper::clearMessages);
-    mpClearMessagesToolButton->setAutoRaise(true);
-    connect(mpClearMessagesToolButton, SIGNAL(clicked()), SLOT(clearMessages()));
     // create button for only showing notifications
     mpShowNotificationsToolButton = new QToolButton;
     mpShowNotificationsToolButton->setText(Helper::showNotifications);
@@ -128,7 +117,6 @@ MessageWidget::MessageWidget(MainWindow *pParent)
     verticalLine->setFrameShape(QFrame::VLine);
     verticalLine->setFrameShadow(QFrame::Sunken);
     pCornerWidgetLayout->addWidget(verticalLine);
-    pCornerWidgetLayout->addWidget(mpClearMessagesToolButton);
     pCornerWidgetLayout->addWidget(mpClearProblemsToolButton);
     pCornerWidget->setLayout(pCornerWidgetLayout);
     setCornerWidget(pCornerWidget);
@@ -141,13 +129,6 @@ QSize MessageWidget::sizeHint() const
     //Set very small height. A minimum apperantly stops at resonable size.
     size.rheight() = 125; //pixels
     return size;
-}
-
-//! Calls the GeneralMessage::printGUIMessage
-//! @param message is the string that is passed.
-void MessageWidget::printGUIMessage(QString message)
-{
-    mpMessages->printGUIMessage(message);
 }
 
 //! Adds the problem to the Problems tree.
@@ -172,13 +153,6 @@ void MessageWidget::clearProblems()
         delete mpProblem->topLevelItem(i);
         i = 0;   //Restart iteration
     }
-}
-
-//! Clears all the messages.
-//! Slot activated when mpClearMessagesToolButton clicked signal is raised.
-void MessageWidget::clearMessages()
-{
-    mpMessages->clear();
 }
 
 //! Filter the Problems tree and only show the notification type problems.
@@ -240,28 +214,6 @@ void MessageWidget::showAllProblems()
         pProblemItem->setHidden(false);
         ++it;
     }
-}
-
-//! @class Messages
-//! @brief It is the base class for all types of messages.
-
-//! Constructor
-//! @param pParent defines a parent to the new instanced object. pParent is the MessageWidget object.
-Messages::Messages(MessageWidget *pParent)
-    : QTextEdit(pParent), mMessageCounter(0)
-{
-    setReadOnly(true);
-    setObjectName(tr("MessagesTextBox"));
-    mpMessageWidget = pParent;
-}
-
-//! Displays the message.
-//! @param message is the string that is displayed.
-void Messages::printGUIMessage(QString message)
-{
-    append(message);
-    ensureCursorVisible();
-    mpMessageWidget->setCurrentWidget(this);
 }
 
 //! @class Problem

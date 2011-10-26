@@ -46,7 +46,6 @@
 #include "mainwindow.h"
 
 class MainWindow;
-class Messages;
 class Problem;
 class ProblemItem;
 class StringHandler;
@@ -58,10 +57,8 @@ public:
     MessageWidget(MainWindow *pParent);
 
     MainWindow *mpParentMainWindow;
-    Messages *mpMessages;
     Problem *mpProblem;
     QToolButton *mpClearProblemsToolButton;
-    QToolButton *mpClearMessagesToolButton;
     QToolButton *mpShowNotificationsToolButton;
     QToolButton *mpShowWarningsToolButton;
     QToolButton *mpShowErrorsToolButton;
@@ -69,27 +66,13 @@ public:
     QButtonGroup *mpProblemsButtonGroup;
 
     QSize sizeHint() const;
-    void printGUIMessage(QString message);
     void addGUIProblem(ProblemItem *pProblemItem);
 private slots:
     void clearProblems();
-    void clearMessages();
     void showNotifications();
     void showWarnings();
     void showErrors();
     void showAllProblems();
-};
-
-class Messages : public QTextEdit
-{
-    Q_OBJECT
-public:
-    Messages(MessageWidget *pParent);
-    void printGUIMessage(QString message);
-
-    MessageWidget *mpMessageWidget;
-protected:
-    int mMessageCounter;
 };
 
 class Problem : public QTreeWidget

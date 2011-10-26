@@ -92,8 +92,6 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     mpMessageWidget = new MessageWidget(this);
     messagedock->setWidget(mpMessageWidget);
     addDockWidget(Qt::BottomDockWidgetArea, messagedock);
-    mpMessageWidget->printGUIMessage("OMEdit, " + Helper::applicationVersion);
-    mpMessageWidget->printGUIMessage("OpenModelica, Version: " + mpOMCProxy->getVersion());
     // load library
     mpLibrary = new LibraryWidget(this);
     // Loads and adds the OM Standard Library into the Library Widget.
