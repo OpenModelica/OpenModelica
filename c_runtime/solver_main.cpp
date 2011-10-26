@@ -314,7 +314,7 @@ update_DAEsystem() {
     IterationNum++;
     if (IterationNum > IterationMax) {
       throw TerminateSimulationException(globalData->timeValue, string(
-          "ERROR: Too many Iteration. System is not consistent!\n"));
+          "ERROR: Too many event iterations. System is inconsistent!\n"));
     }
   }
 }
