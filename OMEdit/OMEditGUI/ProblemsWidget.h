@@ -79,7 +79,6 @@ class Problem : public QTreeWidget
 {
     Q_OBJECT
 private:
-    ProblemItem *mpSelectedProblemItem;
     QAction *mpCopyAction;
     QAction *mpCopyAllAction;
     QAction *mpRemoveAction;
@@ -88,12 +87,12 @@ public:
 
     ProblemsWidget *mpMessageWidget;
 private slots:
-    void openEditor(QTreeWidgetItem *item, int column);
-    void closeEditor(QTreeWidgetItem *current, QTreeWidgetItem *previous);
     void showContextMenu(QPoint point);
-    void copyProblem();
+    void copyProblems();
     void copyAllProblems();
-    void removeProblem();
+    void removeProblems();
+protected:
+    virtual void keyPressEvent(QKeyEvent *event);
 };
 
 class ProblemItem : public QTreeWidgetItem

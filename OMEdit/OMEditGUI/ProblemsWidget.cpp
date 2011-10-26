@@ -217,11 +217,12 @@ void ProblemsWidget::showAllProblems()
 //! Constructor
 //! @param pParent defines a parent to the new instanced object. pParent is the MessageWidget object.
 Problem::Problem(ProblemsWidget *pParent)
-    : QTreeWidget(pParent), mpSelectedProblemItem(0)
+    : QTreeWidget(pParent)
 {
     mpMessageWidget = pParent;
     // set tree settings
     setItemDelegate(new ItemDelegate(this));
+    setSelectionMode(QAbstractItemView::ExtendedSelection);
     setObjectName(tr("ProblemsTree"));
     setIndentation(0);
     setColumnCount(4);
@@ -234,34 +235,15 @@ Problem::Problem(ProblemsWidget *pParent)
     // create actions
     mpCopyAction = new QAction(QIcon(":/Resources/icons/copy.png"), tr("Copy"), this);
     mpCopyAction->setStatusTip(tr("Copy the Problem"));
-    connect(mpCopyAction, SIGNAL(triggered()), SLOT(copyProblem()));
+    connect(mpCopyAction, SIGNAL(triggered()), SLOT(copyProblems()));
     mpCopyAllAction = new QAction(tr("Copy All"), this);
     mpCopyAllAction->setStatusTip(tr("Copy All the Problems"));
     connect(mpCopyAllAction, SIGNAL(triggered()), SLOT(copyAllProblems()));
     mpRemoveAction = new QAction(QIcon(":/Resources/icons/delete.png"), tr("Remove"), this);
     mpRemoveAction->setStatusTip(tr("Remove the Problem"));
-    connect(mpRemoveAction, SIGNAL(triggered()), SLOT(removeProblem()));
+    connect(mpRemoveAction, SIGNAL(triggered()), SLOT(removeProblems()));
     // make Problems Tree connections
-    connect(this, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(openEditor(QTreeWidgetItem*,int)));
-    connect(this, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)), SLOT(closeEditor(QTreeWidgetItem*,QTreeWidgetItem*)));
     connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
-}
-
-//! Opens the text box for the user so that he can selelect the specific text.
-//! Slot activated when Problem::itemDoubleClicked() signal is raised.
-void Problem::openEditor(QTreeWidgetItem *item, int column)
-{
-    openPersistentEditor(item, column);
-}
-
-//! Closes the open text box.
-//! Slot activated when Problem::currentItemChanged() signal is raised.
-void Problem::closeEditor(QTreeWidgetItem *current, QTreeWidgetItem *previous)
-{
-    Q_UNUSED(current);
-    if (previous)
-        for (int i = 0 ; i < columnCount() ; i++)
-            closePersistentEditor(previous, i);
 }
 
 //! Shows a context menu when user right click on the Problems tree.
@@ -274,7 +256,7 @@ void Problem::showContextMenu(QPoint point)
 
     if (item)
     {
-        mpSelectedProblemItem = dynamic_cast<ProblemItem*>(item);
+        item->setSelected(true);
         QMenu menu(this);
         menu.addAction(mpCopyAction);
         menu.addAction(mpCopyAllAction);
@@ -285,20 +267,20 @@ void Problem::showContextMenu(QPoint point)
     }
 }
 
-//! Copy the selected problem to the clipboard.
+//! Copy the selected problems to the clipboard.
 //! Slot activated when mpCopyAction triggered signal is raised.
-void Problem::copyProblem()
+void Problem::copyProblems()
 {
-    if (mpSelectedProblemItem)
+    QString textToCopy;
+    foreach (QTreeWidgetItem *pItem, selectedItems())
     {
-        QString textToCopy;
-        textToCopy.append(mpSelectedProblemItem->text(0)).append("\t");
-        textToCopy.append(mpSelectedProblemItem->text(1)).append("\t");
-        textToCopy.append(mpSelectedProblemItem->text(2)).append("\t");
-        textToCopy.append(mpSelectedProblemItem->text(3)).append("\t");
-        textToCopy.append(mpSelectedProblemItem->text(4));
-        QApplication::clipboard()->setText(textToCopy);
+        textToCopy.append(pItem->text(0)).append("\t");
+        textToCopy.append(pItem->text(1)).append("\t");
+        textToCopy.append(pItem->text(2)).append("\t");
+        textToCopy.append(pItem->text(3)).append("\t");
+        textToCopy.append(pItem->text(4)).append("\n");
     }
+    QApplication::clipboard()->setText(textToCopy);
 }
 
 //! Copy all the problems to the clipboard.
@@ -320,12 +302,37 @@ void Problem::copyAllProblems()
     QApplication::clipboard()->setText(textToCopy);
 }
 
-//! Removes the selected problem.
+//! Removes the selected problems.
 //! Slot activated when mpRemoveAction triggered signal is raised.
-void Problem::removeProblem()
+void Problem::removeProblems()
 {
-    qDeleteAll(mpSelectedProblemItem->takeChildren());
-    delete mpSelectedProblemItem;
+    foreach (QTreeWidgetItem *pItem, selectedItems())
+    {
+        qDeleteAll(pItem->takeChildren());
+        delete pItem;
+    }
+}
+
+//! Reimplementation of keypressevent.
+//! Defines what to do for Ctrl+A, Ctrl+C and Del buttons.
+void Problem::keyPressEvent(QKeyEvent *event)
+{
+    if (event->modifiers().testFlag(Qt::ControlModifier) and event->key() == Qt::Key_A)
+    {
+        selectAll();
+    }
+    else if (event->modifiers().testFlag(Qt::ControlModifier) and event->key() == Qt::Key_C)
+    {
+        copyProblems();
+    }
+    else if (event->key() == Qt::Key_Delete)
+    {
+        removeProblems();
+    }
+    else
+    {
+        QTreeWidget::keyPressEvent(event);
+    }
 }
 
 //! @class ProblemItem
@@ -586,10 +593,15 @@ void ProblemItem::setColumnsText()
         }
     }
     setText(0, StringHandler::getErrorKind(getErrorKind()));
+    setToolTip(0, StringHandler::getErrorKind(getErrorKind()));
     setText(1, QTime::currentTime().toString());
+    setToolTip(1, QTime::currentTime().toString());
     setText(2, getFileName());
+    setToolTip(2, getFileName());
     QString line = "line " + QString::number(getLineStart()) + ":" + QString::number(getColumnStart()) + "-" + QString::number(getLineEnd())
                    + ":" + QString::number(getColumnEnd());
     setText(3, line);
+    setToolTip(3, line);
     setText(4, getMessage());
+    setToolTip(4, getMessage());
 }
