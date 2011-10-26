@@ -1048,7 +1048,7 @@ QSize ItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelInd
 {
     QSize size = QItemDelegate::sizeHint(option, index);
     //Set very small height. A minimum apperantly stops at resonable size.
-    size.rheight() = 22; //pixels
+    size.rheight() = qMax(22, size.rheight()); //pixels
     return size;
 }
 

@@ -100,6 +100,7 @@ ProblemsWidget::ProblemsWidget(MainWindow *pParent)
     connect(mpClearProblemsToolButton, SIGNAL(clicked()), SLOT(clearProblems()));
     // layout for buttons
     QVBoxLayout *buttonsLayout = new QVBoxLayout;
+    buttonsLayout->setAlignment(Qt::AlignBottom | Qt::AlignRight);
     buttonsLayout->setContentsMargins(0, 0, 0, 0);
     buttonsLayout->setSpacing(0);
     buttonsLayout->addWidget(mpShowNotificationsToolButton);
