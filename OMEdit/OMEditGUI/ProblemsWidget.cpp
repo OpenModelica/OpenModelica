@@ -233,12 +233,12 @@ Problem::Problem(ProblemsWidget *pParent)
     setHeaderLabels(labels);
     setContextMenuPolicy(Qt::CustomContextMenu);
     // create actions
+    mpSelectAllAction = new QAction(tr("Select All"), this);
+    mpSelectAllAction->setStatusTip(tr("Selects all the Problems"));
+    connect(mpSelectAllAction, SIGNAL(triggered()), SLOT(selectAllProblems()));
     mpCopyAction = new QAction(QIcon(":/Resources/icons/copy.png"), tr("Copy"), this);
     mpCopyAction->setStatusTip(tr("Copy the Problem"));
     connect(mpCopyAction, SIGNAL(triggered()), SLOT(copyProblems()));
-    mpCopyAllAction = new QAction(tr("Copy All"), this);
-    mpCopyAllAction->setStatusTip(tr("Copy All the Problems"));
-    connect(mpCopyAllAction, SIGNAL(triggered()), SLOT(copyAllProblems()));
     mpRemoveAction = new QAction(QIcon(":/Resources/icons/delete.png"), tr("Remove"), this);
     mpRemoveAction->setStatusTip(tr("Remove the Problem"));
     connect(mpRemoveAction, SIGNAL(triggered()), SLOT(removeProblems()));
@@ -258,13 +258,19 @@ void Problem::showContextMenu(QPoint point)
     {
         item->setSelected(true);
         QMenu menu(this);
+        menu.addAction(mpSelectAllAction);
         menu.addAction(mpCopyAction);
-        menu.addAction(mpCopyAllAction);
-        menu.addSeparator();
         menu.addAction(mpRemoveAction);
         point.setY(point.y() + adjust);
         menu.exec(mapToGlobal(point));
     }
+}
+
+//! Selects all the problems.
+//! Slot activated when mpSelectAllAction triggered signal is raised.
+void Problem::selectAllProblems()
+{
+    selectAll();
 }
 
 //! Copy the selected problems to the clipboard.
@@ -279,25 +285,6 @@ void Problem::copyProblems()
         textToCopy.append(pItem->text(2)).append("\t");
         textToCopy.append(pItem->text(3)).append("\t");
         textToCopy.append(pItem->text(4)).append("\n");
-    }
-    QApplication::clipboard()->setText(textToCopy);
-}
-
-//! Copy all the problems to the clipboard.
-//! Slot activated when mpCopyAllAction triggered signal is raised.
-void Problem::copyAllProblems()
-{
-    QString textToCopy;
-    QTreeWidgetItemIterator it(this);
-    while (*it)
-    {
-        ProblemItem *pProblemItem = dynamic_cast<ProblemItem*>(*it);
-        textToCopy.append(pProblemItem->text(0)).append("\t");
-        textToCopy.append(pProblemItem->text(1)).append("\t");
-        textToCopy.append(pProblemItem->text(2)).append("\t");
-        textToCopy.append(pProblemItem->text(3)).append("\t");
-        textToCopy.append(pProblemItem->text(4)).append("\n");
-        ++it;
     }
     QApplication::clipboard()->setText(textToCopy);
 }

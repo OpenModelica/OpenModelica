@@ -1017,7 +1017,7 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
             const QChar nl = QLatin1Char('\n');
             for (int i = 0; i < text.count(); ++i)
                 if (text.at(i) == nl)
-                    text[i] = QChar::LineSeparator;
+                    text[i] = QChar::Nbsp;
         }
         displayRect = textRectangle(painter, option.rect, opt.font, text);
     }
@@ -1048,7 +1048,7 @@ QSize ItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelInd
 {
     QSize size = QItemDelegate::sizeHint(option, index);
     //Set very small height. A minimum apperantly stops at resonable size.
-    size.rheight() = qMax(22, size.rheight()); //pixels
+    size.rheight() = 22; //pixels
     return size;
 }
 
