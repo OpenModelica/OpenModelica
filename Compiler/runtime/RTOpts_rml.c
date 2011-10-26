@@ -28,8 +28,9 @@
  *
  */
 
-#include "rtoptsimpl.c"
 #include "rml.h"
+#include "RTOptsData.h"
+#include "rtoptsimpl.c"
 
 void RTOpts_5finit(void)
 {
@@ -417,3 +418,16 @@ RML_BEGIN_LABEL(RTOpts__simCodeTarget)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__getLanguageStandard)
+{
+  rmlA0 = language_standard;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__setLanguageStandard)
+{
+  language_standard = rmlA0;
+  RML_TAILCALLK(rmlSC);
+}

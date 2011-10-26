@@ -77,6 +77,7 @@ protected import TaskGraph;
 protected import TaskGraphExt;
 protected import TplMain;
 protected import Util;
+protected import RTOptsData;
 
 protected function serverLoop
 "function: serverLoop
@@ -1076,6 +1077,8 @@ algorithm
   print("\t                           this way multiple omc compilers can be started\n");
   print("\t+annotationVersion=1.x     what annotation version should be used\n");
   print("\t                           accept 1.x or 2.x (default) or 3.x\n");
+  print("\t+std=version               the language standard that should be used.\n");
+  print("\t                           accepts 1.x, 2.x, 3.1, 3.2 or 3.3; default to latest version.\n");
   print("\t+noSimplify                do not simplify expressions (default is to simplify)\n");
   print("\t+preOptModules=module1,..  pre optimisation modules (default is removeFinalParameters,removeEqualFunctionCalls,removeSimpleEquations,expandDerOperator)\n");
   print("\t+pastOptModules=module1,.. past optimisation modules (default is lateInline,inlineArrayEqn,removeSimpleEquations)\n");
@@ -1151,7 +1154,7 @@ algorithm
     case args as _::_
       equation
         args_1 = RTOpts.args(args);
-        
+       
         false = System.userIsRoot();
         _ = Settings.getInstallationDirectoryPath();
         

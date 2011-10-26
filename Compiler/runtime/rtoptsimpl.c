@@ -103,6 +103,8 @@ char* corbaSessionName = 0;
  */
 static const char* annotation_version = "3.x";
 
+void* language_standard = RTOptsData__MODELICA_5fLATEST;
+
 /*
  * adrpo 2008-12-15
  * flag +showErrorMessages for printing all messages comming to the error buffer
@@ -409,6 +411,7 @@ int setSimCodeTarget(const char* arg) {
 #define VERSION_OPT1        "++v"
 #define VERSION_OPT2        "+version"
 #define ANNOTATION_VERSION  "+annotationVersion"
+#define LANGUAGE_STANDARD   "+std"
 #define TARGET              "+target"
 #define METAMODELICA        "+g"
 #define SHOW_ERROR_MESSAGES "+showErrorMessages"
@@ -435,6 +438,7 @@ static enum RTOpts__arg__result RTOptsImpl__arg(const char* arg)
   int strLen_TARGET = strlen(TARGET);
   int strLen_METAMODELICA = strlen(METAMODELICA);
   int strLen_ANNNOTATION_VERSION = strlen(ANNOTATION_VERSION);
+  int strLen_LANGUAGE_STANDARD = strlen(LANGUAGE_STANDARD);
   int strLen_SHOW_ERROR_MESSAGES = strlen(SHOW_ERROR_MESSAGES);
   int strLen_SHOW_ANNOTATIONS = strlen(SHOW_ANNOTATIONS);
   int strLen_NO_SIMPLIFY = strlen(NO_SIMPLIFY);
@@ -445,6 +449,7 @@ static enum RTOpts__arg__result RTOptsImpl__arg(const char* arg)
   int strLen_SIMCODE_TARGET = strlen(SIMCODE_TARGET);
 
   char *tmp;
+  const char *val;
   debug_none = 1;
 
   if (strcmp(arg,"--") == 0) {
@@ -480,6 +485,29 @@ static enum RTOpts__arg__result RTOptsImpl__arg(const char* arg)
       annotation_version = "3.x";
     else {
       fprintf(stderr, "# Wrong option: usage: omc [+annotationVersion=1.x|2.x|3.x], default to '3.x'.\n");
+      return ARG_FAILURE;
+    }
+  } else if(strncmp(arg,LANGUAGE_STANDARD,strLen_LANGUAGE_STANDARD) == 0) {
+    if (strlen(arg) >= strLen_LANGUAGE_STANDARD) {
+      val = &arg[strLen_LANGUAGE_STANDARD];
+
+      if (strcmp(val, "=1.x") == 0) {
+        language_standard = RTOptsData__MODELICA_5f1_5fX;
+      } else if (strcmp(val, "=2.x") == 0) {
+        language_standard = RTOptsData__MODELICA_5f2_5fX;
+      } else if (strcmp(val, "=3.0") == 0) {
+        language_standard = RTOptsData__MODELICA_5f3_5f0;
+      } else if (strcmp(val, "=3.1") == 0) {
+        language_standard = RTOptsData__MODELICA_5f3_5f1;
+      } else if (strcmp(val, "=3.2") == 0) {
+        language_standard = RTOptsData__MODELICA_5f3_5f2;
+      } else if (strcmp(val, "=3.3") == 0) {
+        language_standard = RTOptsData__MODELICA_5f3_5f3;
+      }
+    }
+
+    if (language_standard == RTOptsData__MODELICA_5fLATEST) {
+      fprintf(stderr, "# Invalid language standard given. Valid options are 1.x, 2.x, 3.0, 3.1, 3.2 or 3.3\n");
       return ARG_FAILURE;
     }
   } else if(strncmp(arg,SHOW_ERROR_MESSAGES,strLen_SHOW_ERROR_MESSAGES) == 0) {

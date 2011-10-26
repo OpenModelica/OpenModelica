@@ -40,6 +40,7 @@ int RTOptsImpl__acceptMetaModelicaGrammar(void);
 static int set_indexReductionMethod(const char *flagstr);
 extern int running_testsuite;
 extern int showErrorMessages;
+extern void* language_standard;
 
 #if defined(__cplusplus)
 }

@@ -41,6 +41,7 @@ encapsulated package RTOpts
 
   This module is used pretty much everywhere where debug calls are made."
 
+public import RTOptsData;
 
 public function args
   input list<String> inStringLst;
@@ -277,6 +278,16 @@ public function simCodeTarget "Default is set by +simCodeTarget=C"
   output String target;
   external "C" target=RTOpts_simCodeTarget() annotation(Library = "omcruntime");
 end simCodeTarget;
+
+public function getLanguageStandard
+  output RTOptsData.LanguageStandard outStandard;
+  external "C" outStandard = RTOpts_getLanguageStandard();
+end getLanguageStandard;
+
+public function setLanguageStandard
+  input RTOptsData.LanguageStandard inStandard;
+  external "C" RTOpts_setLanguageStandard(inStandard);
+end setLanguageStandard;
 
 end RTOpts;
 

@@ -47,6 +47,7 @@ protected import Error;
 protected import List;
 protected import Util;
 protected import SCodeDump;
+protected import RTOptsData;
 
 public function checkDuplicateClasses
   input SCode.Program inProgram;
@@ -170,29 +171,49 @@ algorithm
 end isSelfReference;
 
 public function checkExtendsReplaceability
+  "Checks that a base class in an extends clause is not replaceable. If it is,
+   this function will print an error and fail, except for some special cases."
   input SCodeEnv.Item inBaseClass;
   input Absyn.Path inPath;
+  input SCodeEnv.Env inEnv;
   input Absyn.Info inOriginInfo;
 algorithm
-  _ := match(inBaseClass, inPath, inOriginInfo)
+  _ := matchcontinue(inBaseClass, inPath, inEnv, inOriginInfo)
     local
       Absyn.Info info;
       String err_str;
+      SCode.ClassDef cdef;
 
+    // The base class is not replaceable, ok.
     case (SCodeEnv.CLASS(cls = SCode.CLASS(prefixes = SCode.PREFIXES(
-        replaceablePrefix = SCode.NOT_REPLACEABLE()))), _, _)
+        replaceablePrefix = SCode.NOT_REPLACEABLE()))), _, _, _)
       then ();
 
-    case (SCodeEnv.CLASS(cls = SCode.CLASS(prefixes = SCode.PREFIXES(
-        replaceablePrefix = SCode.REPLACEABLE(cc = _)), info = info)), _, _)
+    // If the parent class contains no elements it might be a short class
+    // definition, which is allowed to have a replaceable base class.
+    case (_, _, SCodeEnv.FRAME(clsAndVars = SCodeEnv.AVLTREENODE(value = NONE(),
+        left = NONE(), right = NONE())) :: _, _)
+      then ();
+
+    // If we're using Modelica 2.x or earlier we don't care, since replaceable
+    // baseclasses weren't explicitly forbidden in older versions.
+    case (_, _, _, _)
       equation
-        // Disabled until it's decided whether this is an error or not.
-        //err_str = Absyn.pathString(inPath);
-        //Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
-        //Error.addSourceMessage(Error.REPLACEABLE_BASE_CLASS, {err_str}, info);
+        true = RTOptsData.languageStandardAtMost(RTOptsData.MODELICA_2_X());
       then
         ();
-  end match;
+
+    // A replaceable baseclass will produce an error.
+    case (SCodeEnv.CLASS(cls = SCode.CLASS(prefixes = SCode.PREFIXES(
+        replaceablePrefix = SCode.REPLACEABLE(cc = _)), 
+        classDef = cdef, info = info)), _, _, _)
+      equation
+        err_str = Absyn.pathString(inPath);
+        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
+        Error.addSourceMessage(Error.REPLACEABLE_BASE_CLASS, {err_str}, info);
+      then
+        fail();
+  end matchcontinue;
 end checkExtendsReplaceability;
 
 public function checkClassExtendsReplaceability

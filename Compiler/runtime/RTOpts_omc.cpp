@@ -33,6 +33,9 @@ extern "C" {
 #endif
 
 #include "modelica.h"
+#include "rml_compatibility.h"
+#define ADD_METARECORD_DEFINTIONS static
+#include "OpenModelicaBootstrappingHeader.h"
 #include "rtoptsimpl.c"
 
 extern int showErrorMessages;

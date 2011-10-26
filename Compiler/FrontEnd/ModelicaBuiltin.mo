@@ -1136,6 +1136,19 @@ function getOrderConnections
 external "builtin";
 end getOrderConnections;
 
+function setLanguageStandard
+  input String inVersion;
+  output Boolean success;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  success := setCommandLineOptions("+std=" + inVersion);
+end setLanguageStandard;
+
+function getLanguageStandard
+  output String outVersion;
+external "builtin";
+end getLanguageStandard;
+
 function getAstAsCorbaString "Print the whole AST on the CORBA format for records, e.g.
   record Absyn.PROGRAM
     classes = ...,

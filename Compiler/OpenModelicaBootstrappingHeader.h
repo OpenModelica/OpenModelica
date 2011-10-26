@@ -3,6 +3,118 @@
 extern "C" {
 #endif
 #ifdef ADD_METARECORD_DEFINTIONS
+#ifndef RTOptsData_LanguageStandard_MODELICA__1__X__desc_added
+#define RTOptsData_LanguageStandard_MODELICA__1__X__desc_added
+ADD_METARECORD_DEFINTIONS const char* RTOptsData_LanguageStandard_MODELICA__1__X__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description RTOptsData_LanguageStandard_MODELICA__1__X__desc = {
+  "RTOptsData_LanguageStandard_MODELICA__1__X",
+  "RTOptsData.LanguageStandard.MODELICA_1_X",
+  RTOptsData_LanguageStandard_MODELICA__1__X__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description RTOptsData_LanguageStandard_MODELICA__1__X__desc;
+#endif
+#define RTOptsData__MODELICA_5f1_5fX_3dBOX0 3
+static const MMC_DEFSTRUCTLIT(RTOptsData__MODELICA_5f1_5fX__struct,1,3) {&RTOptsData_LanguageStandard_MODELICA__1__X__desc}};
+static void *RTOptsData__MODELICA_5f1_5fX = MMC_REFSTRUCTLIT(RTOptsData__MODELICA_5f1_5fX__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef RTOptsData_LanguageStandard_MODELICA__2__X__desc_added
+#define RTOptsData_LanguageStandard_MODELICA__2__X__desc_added
+ADD_METARECORD_DEFINTIONS const char* RTOptsData_LanguageStandard_MODELICA__2__X__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description RTOptsData_LanguageStandard_MODELICA__2__X__desc = {
+  "RTOptsData_LanguageStandard_MODELICA__2__X",
+  "RTOptsData.LanguageStandard.MODELICA_2_X",
+  RTOptsData_LanguageStandard_MODELICA__2__X__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description RTOptsData_LanguageStandard_MODELICA__2__X__desc;
+#endif
+#define RTOptsData__MODELICA_5f2_5fX_3dBOX0 4
+static const MMC_DEFSTRUCTLIT(RTOptsData__MODELICA_5f2_5fX__struct,1,4) {&RTOptsData_LanguageStandard_MODELICA__2__X__desc}};
+static void *RTOptsData__MODELICA_5f2_5fX = MMC_REFSTRUCTLIT(RTOptsData__MODELICA_5f2_5fX__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef RTOptsData_LanguageStandard_MODELICA__3__0__desc_added
+#define RTOptsData_LanguageStandard_MODELICA__3__0__desc_added
+ADD_METARECORD_DEFINTIONS const char* RTOptsData_LanguageStandard_MODELICA__3__0__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description RTOptsData_LanguageStandard_MODELICA__3__0__desc = {
+  "RTOptsData_LanguageStandard_MODELICA__3__0",
+  "RTOptsData.LanguageStandard.MODELICA_3_0",
+  RTOptsData_LanguageStandard_MODELICA__3__0__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description RTOptsData_LanguageStandard_MODELICA__3__0__desc;
+#endif
+#define RTOptsData__MODELICA_5f3_5f0_3dBOX0 5
+static const MMC_DEFSTRUCTLIT(RTOptsData__MODELICA_5f3_5f0__struct,1,5) {&RTOptsData_LanguageStandard_MODELICA__3__0__desc}};
+static void *RTOptsData__MODELICA_5f3_5f0 = MMC_REFSTRUCTLIT(RTOptsData__MODELICA_5f3_5f0__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef RTOptsData_LanguageStandard_MODELICA__3__1__desc_added
+#define RTOptsData_LanguageStandard_MODELICA__3__1__desc_added
+ADD_METARECORD_DEFINTIONS const char* RTOptsData_LanguageStandard_MODELICA__3__1__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description RTOptsData_LanguageStandard_MODELICA__3__1__desc = {
+  "RTOptsData_LanguageStandard_MODELICA__3__1",
+  "RTOptsData.LanguageStandard.MODELICA_3_1",
+  RTOptsData_LanguageStandard_MODELICA__3__1__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description RTOptsData_LanguageStandard_MODELICA__3__1__desc;
+#endif
+#define RTOptsData__MODELICA_5f3_5f1_3dBOX0 6
+static const MMC_DEFSTRUCTLIT(RTOptsData__MODELICA_5f3_5f1__struct,1,6) {&RTOptsData_LanguageStandard_MODELICA__3__1__desc}};
+static void *RTOptsData__MODELICA_5f3_5f1 = MMC_REFSTRUCTLIT(RTOptsData__MODELICA_5f3_5f1__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef RTOptsData_LanguageStandard_MODELICA__3__2__desc_added
+#define RTOptsData_LanguageStandard_MODELICA__3__2__desc_added
+ADD_METARECORD_DEFINTIONS const char* RTOptsData_LanguageStandard_MODELICA__3__2__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description RTOptsData_LanguageStandard_MODELICA__3__2__desc = {
+  "RTOptsData_LanguageStandard_MODELICA__3__2",
+  "RTOptsData.LanguageStandard.MODELICA_3_2",
+  RTOptsData_LanguageStandard_MODELICA__3__2__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description RTOptsData_LanguageStandard_MODELICA__3__2__desc;
+#endif
+#define RTOptsData__MODELICA_5f3_5f2_3dBOX0 7
+static const MMC_DEFSTRUCTLIT(RTOptsData__MODELICA_5f3_5f2__struct,1,7) {&RTOptsData_LanguageStandard_MODELICA__3__2__desc}};
+static void *RTOptsData__MODELICA_5f3_5f2 = MMC_REFSTRUCTLIT(RTOptsData__MODELICA_5f3_5f2__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef RTOptsData_LanguageStandard_MODELICA__3__3__desc_added
+#define RTOptsData_LanguageStandard_MODELICA__3__3__desc_added
+ADD_METARECORD_DEFINTIONS const char* RTOptsData_LanguageStandard_MODELICA__3__3__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description RTOptsData_LanguageStandard_MODELICA__3__3__desc = {
+  "RTOptsData_LanguageStandard_MODELICA__3__3",
+  "RTOptsData.LanguageStandard.MODELICA_3_3",
+  RTOptsData_LanguageStandard_MODELICA__3__3__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description RTOptsData_LanguageStandard_MODELICA__3__3__desc;
+#endif
+#define RTOptsData__MODELICA_5f3_5f3_3dBOX0 8
+static const MMC_DEFSTRUCTLIT(RTOptsData__MODELICA_5f3_5f3__struct,1,8) {&RTOptsData_LanguageStandard_MODELICA__3__3__desc}};
+static void *RTOptsData__MODELICA_5f3_5f3 = MMC_REFSTRUCTLIT(RTOptsData__MODELICA_5f3_5f3__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef RTOptsData_LanguageStandard_MODELICA__LATEST__desc_added
+#define RTOptsData_LanguageStandard_MODELICA__LATEST__desc_added
+ADD_METARECORD_DEFINTIONS const char* RTOptsData_LanguageStandard_MODELICA__LATEST__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description RTOptsData_LanguageStandard_MODELICA__LATEST__desc = {
+  "RTOptsData_LanguageStandard_MODELICA__LATEST",
+  "RTOptsData.LanguageStandard.MODELICA_LATEST",
+  RTOptsData_LanguageStandard_MODELICA__LATEST__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description RTOptsData_LanguageStandard_MODELICA__LATEST__desc;
+#endif
+#define RTOptsData__MODELICA_5fLATEST_3dBOX0 9
+static const MMC_DEFSTRUCTLIT(RTOptsData__MODELICA_5fLATEST__struct,1,9) {&RTOptsData_LanguageStandard_MODELICA__LATEST__desc}};
+static void *RTOptsData__MODELICA_5fLATEST = MMC_REFSTRUCTLIT(RTOptsData__MODELICA_5fLATEST__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Error_Severity_ERROR__desc_added
 #define Error_Severity_ERROR__desc_added
 ADD_METARECORD_DEFINTIONS const char* Error_Severity_ERROR__desc__fields[1] = {"no fileds"};

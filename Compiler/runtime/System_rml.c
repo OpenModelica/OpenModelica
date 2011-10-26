@@ -43,6 +43,7 @@
 #endif
 
 #include "rml.h"
+#include "RTOptsData.h"
 #include "systemimpl.c"
 
 /* use this one to output messages depending on flags! */

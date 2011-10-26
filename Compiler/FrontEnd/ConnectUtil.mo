@@ -65,6 +65,7 @@ protected import List;
 protected import Lookup;
 protected import PrefixUtil;
 protected import RTOpts;
+protected import RTOptsData;
 protected import System;
 protected import Types;
 protected import Util;
@@ -2947,7 +2948,8 @@ algorithm
     // The connector is balanced.
     case (_, _, _, _, _)
       equation
-        true = intEq(inPotentialVars, inFlowVars) or not RTOpts.debugFlag("checkconnect");
+        true = intEq(inPotentialVars, inFlowVars) or
+          RTOptsData.languageStandardAtMost(RTOptsData.MODELICA_2_X());
         true = Util.if_(intEq(inStreamVars, 0), true, intEq(inFlowVars, 1));
       then
         ();

@@ -87,6 +87,7 @@ protected import Parser;
 protected import Print;
 protected import Refactor;
 protected import RTOpts;
+protected import RTOptsData;
 protected import SCodeDump;
 protected import SCodeFlatten;
 protected import SimCode;
@@ -1131,6 +1132,12 @@ algorithm
         b = RTOpts.orderConnections();
       then
         (cache,Values.BOOL(b),st);
+
+    case (cache,env,"getLanguageStandard",{},st,msg)
+      equation
+        res = RTOptsData.languageStandardString(RTOpts.getLanguageStandard());
+      then
+        (cache,Values.STRING(res),st);
 
     case (cache,env,"buildModel",vals,st,msg)
       equation

@@ -162,6 +162,7 @@ Pool.mo \
 Name.mo \
 Scope.mo \
 Relation.mo \
+RTOptsData.mo \
 VarTransform.mo \
 # Not used by OpenModelica!
 # HashTable4.mo \

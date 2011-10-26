@@ -862,7 +862,7 @@ algorithm
 
     case (SOME(bc), SOME(item), EXTENDS(obc, rl, info), _, _)
       equation
-        SCodeCheck.checkExtendsReplaceability(item, obc, info);
+        SCodeCheck.checkExtendsReplaceability(item, obc, inEnv, info);
         bc = Absyn.makeFullyQualified(bc);
         rl = List.map1(rl, SCodeFlattenRedeclare.qualifyRedeclare, inEnv);
         List.map2_0(rl, SCodeCheck.checkRedeclareModifier, bc, inEnv);
