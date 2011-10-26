@@ -93,8 +93,6 @@
         <file>Resources/icons/notificationicon.png</file>
         <file>Resources/icons/warningicon.png</file>
         <file>Resources/icons/problems.png</file>
-        <file>Resources/icons/cleargeneral.png</file>
-        <file>Resources/icons/clearinfo.png</file>
         <file>Resources/icons/clearproblems.png</file>
     </qresource>
 </RCC>
