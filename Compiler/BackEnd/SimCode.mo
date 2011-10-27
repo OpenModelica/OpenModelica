@@ -2164,7 +2164,7 @@ algorithm
         
         algorithmAndEquationAsserts = BackendDAEUtil.foldEqSystem(dlow2,createAlgorithmAndEquationAsserts,{});
         discreteModelVars = BackendDAEUtil.foldEqSystem(dlow2,extractDiscreteModelVars,{});
-        makefileParams = createMakefileParams(externalFunctionIncludes,libs);
+        makefileParams = createMakefileParams(includeDirs,libs);
         (delayedExps,maxDelayedExpIndex) = extractDelayedExpressions(dlow2);
         
         // replace div operator with div operator with check of Division by zero
