@@ -2990,16 +2990,14 @@ case efn as EXTERNAL_FUNCTION(__) then
   {
     /* functionBodyExternalFunction: varDecls */
     <%varDecls%>
-    /* functionBodyExternalFunction: state in */
-    <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
+    <%if false /* disabled due to problem with outputAlloc being discarded not acceptMetaModelicaGrammar() */ then '<%stateVar%> = get_memory_state();'%>
     /* functionBodyExternalFunction: preExp */
     <%preExp%>
     /* functionBodyExternalFunction: outputAlloc */
     <%outputAlloc%>
     /* functionBodyExternalFunction: callPart */
     <%callPart%>
-    /* functionBodyExternalFunction: state out */
-    <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
+    <%if false /* disabled due to problem with outputAlloc being discarded not acceptMetaModelicaGrammar() */ then 'restore_memory_state(<%stateVar%>);'%>
     /* functionBodyExternalFunction: return */
     return <%if outVars then retVar%>;
   }
