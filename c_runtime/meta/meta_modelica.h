@@ -167,12 +167,12 @@ struct mmc_header {
 
 struct mmc_struct {
     mmc_uint_t header;  /* MMC_STRUCTHDR(slots,ctor) */
-    void *data[];  /* `slots' elements */
+    void *data[1];  /* `slots' elements */
 };
 
 struct mmc_cons_struct {
     mmc_uint_t header;  /* MMC_STRUCTHDR(slots,ctor) */
-    void *data[];  /* `slots' elements */
+    void *data[2];  /* `slots' elements */
 };
 
 struct mmc_real {
