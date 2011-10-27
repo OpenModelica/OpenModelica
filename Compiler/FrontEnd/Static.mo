@@ -3361,7 +3361,7 @@ algorithm
       String str;
     case (cache,env,s,sty,{Values.INTEGER(integer = v)},c1,_)
       equation
-        arraylist = buildExpList(s, v);
+        arraylist = List.fill(s, v);
         sty2 = (DAE.T_ARRAY(DAE.DIM_INTEGER(v),sty),NONE());
         at = Types.elabType(sty2);
         a = Types.isArray(sty2);
@@ -3370,7 +3370,7 @@ algorithm
     case (cache,env,s,sty,(Values.INTEGER(integer = v) :: rest),c1,pre)
       equation
         (cache,exp,DAE.PROP(ty,con)) = elabBuiltinFill2(cache,env, s, sty, rest,c1,pre);
-        arraylist = buildExpList(exp, v);
+        arraylist = List.fill(exp, v);
         sty2 = (DAE.T_ARRAY(DAE.DIM_INTEGER(v),ty),NONE());
         at = Types.elabType(sty2);
         a = Types.isArray(sty2);
@@ -3563,32 +3563,6 @@ algorithm
     case (_,_,_) then {};
   end matchcontinue;
 end elabBuiltinTranspose3;
-
-protected function buildExpList "function: buildExpList
-
-  Helper function to e.g. elab_builtin_fill_2. Creates n copies of the same
-  expression given as input.
-"
-  input DAE.Exp inExp;
-  input Integer inInteger;
-  output list<DAE.Exp> outExpExpLst;
-algorithm
-  outExpExpLst:=
-  matchcontinue (inExp,inInteger)
-    local
-      DAE.Exp e;
-      Integer c_1,c;
-      list<DAE.Exp> rest;
-    case (e,0) then {};  /* n */
-    case (e,1) then {e};
-    case (e,c)
-      equation
-        c_1 = c - 1;
-        rest = buildExpList(e, c_1);
-      then
-        (e :: rest);
-  end matchcontinue;
-end buildExpList;
 
 protected function elabBuiltinSum "function: elabBuiltinSum
 

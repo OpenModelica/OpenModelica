@@ -158,7 +158,21 @@ public function fill
   input Integer inCount;
   output list<ElementType> outList;
 algorithm
-  outList := fill_tail(inElement, inCount, {});
+  outList := matchcontinue(inElement, inCount)
+    case (_, _)
+      equation
+        true = inCount >= 0;
+      then
+        fill_tail(inElement, inCount, {});
+
+    else
+      equation
+        Debug.fprintln("failtrace", "- List.fill failed with negative value " 
+          +& intString(inCount));
+      then
+        fail();
+
+  end matchcontinue;
 end fill;
 
 protected function fill_tail
@@ -168,23 +182,11 @@ protected function fill_tail
   input list<ElementType> inAccumList;
   output list<ElementType> outList;
 algorithm
-  outList := matchcontinue(inElement, inCount, inAccumList)
+  outList := match(inElement, inCount, inAccumList)
     case (_, 0, _) then inAccumList;
 
-    case (_, _, _)
-      equation
-        true = inCount > 0;
-      then
-        fill_tail(inElement, inCount - 1, inElement :: inAccumList);
-
-    case (_, _, _)
-      equation
-        true = inCount < 0;
-        print("Internal error, negative value to List.fill_tail\n");
-      then
-        fail();
-
-  end matchcontinue;
+    else fill_tail(inElement, inCount - 1, inElement :: inAccumList);
+  end match;
 end fill_tail;
 
 public function intRange
