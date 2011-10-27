@@ -8749,7 +8749,6 @@ algorithm
       Boolean impl;
       Env.Cache cache;
       Prefix.Prefix pre;
-      String s;
 
     // impl const Fill slots with positional arguments
     case (cache,env,(exp as (_ :: _)),narg,slots,checkTypes,impl,polymorphicBindings,pre,info)
@@ -8769,7 +8768,6 @@ algorithm
     case (cache,env,{},narg as _::_,slots,checkTypes,impl,polymorphicBindings,pre,info)
       equation
         farg = funcargLstFromSlots(slots);
-        s = printSlotsStr(slots);
         (cache,newslots,clist,polymorphicBindings) =
           elabNamedInputArgs(cache, env, narg, farg, slots, checkTypes, impl, polymorphicBindings,pre,info);
         newexp = expListFromSlots(newslots);
@@ -10041,7 +10039,7 @@ algorithm
         pre_str = PrefixUtil.printPrefixStr2(inPrefix);
         s = pre_str +& s;
         str = DAEUtil.printBindingExpStr(inBinding);
-        Error.addMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING, {s,str}); // Don't add source info here... Many models give multiple errors that are not filtered out
+        Error.addSourceMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING, {s,str}, info); // Don't add source info here... Many models give multiple errors that are not filtered out
         bind = DAEUtil.setBindingSource(bind, DAE.BINDING_FROM_DEFAULT_VALUE());
         (cache, e_1, const, attr) = elabCref2(cache,env,cr,attr,forIteratorConstOpt,tt,bind,doVect,splicedExpData,inPrefix,info);
       then
@@ -10263,7 +10261,7 @@ algorithm
         pre_str = PrefixUtil.printPrefixStr2(pre);
         // Don't generate warning if variable is for iterator, since it doesn't have a value (it's iterated over separately)
         s = pre_str +& s;
-        Debug.bcall2(genWarning,Error.addMessage,Error.UNBOUND_PARAMETER_WARNING,{s}); // Don't add source info here... Many models give multiple errors that are not filtered out
+        Debug.bcall2(genWarning,Error.addMessage,Error.UNBOUND_PARAMETER_WARNING,{s});
         expTy = Types.elabType(tt);
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);

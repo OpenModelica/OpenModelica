@@ -5675,11 +5675,18 @@ public function bindingExp
 algorithm
   exp := match(bind)
   local DAE.Exp e; Values.Value v;
-    case(DAE.UNBOUND()) then NONE();
-    case(DAE.EQBOUND(exp=e)) then SOME(e);
-    case(DAE.VALBOUND(valBound=v)) equation
-      e = ValuesUtil.valueExp(v);
-    then SOME(e);
+    case DAE.UNBOUND() then NONE();
+    case DAE.EQBOUND(evaluatedExp = SOME(v))
+      equation
+        e = ValuesUtil.valueExp(v);
+      then
+        SOME(e);
+    case DAE.EQBOUND(exp = e) then SOME(e);
+    case DAE.VALBOUND(valBound=v) 
+      equation
+        e = ValuesUtil.valueExp(v);
+      then 
+        SOME(e);
   end match;
 end bindingExp;
 

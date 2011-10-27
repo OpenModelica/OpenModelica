@@ -3407,7 +3407,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,store,inMod2,inPrefix3,inState5,className,inClassDef6,inRestriction7,inVisibility,inPartialPrefix,inEncapsulatedPrefix,inInstDims9,inBoolean10,inCallingScope,inGraph,inSets,instSingleCref,info,stopInst)
     local
       list<SCode.Element> cdefelts,compelts,extendselts,els,extendsclasselts;
-      list<Env.Frame> env1,env2,env3,env,env4,env5,cenv,cenv_2,env_2;
+      Env.Env env1,env2,env3,env,env4,env5,cenv,cenv_2,env_2;
       list<tuple<SCode.Element, DAE.Mod>> cdefelts_1,extcomps,compelts_1,compelts_2, comp_cond;
       list<SCode.Element> compelts_2_elem;
       Connect.Sets csets,csets1,csets_filtered,csets2,csets3,csets4,csets5,csets_1;
@@ -3743,39 +3743,39 @@ algorithm
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph);
 
     // This rule describes how to instantiate a derived class definition without array dims
-    case (cache,env,ih,store,mods,pre,ci_state,className,
-          SCode.DERIVED(typeSpec = Absyn.TPATH(path = cn,arrayDim = ad), modifications = mod, attributes=DA, comment = cmt),
-          re,vis,partialPrefix,encapsulatedPrefix,inst_dims,impl,callscope,graph,_,instSingleCref,info,stopInst)
-      equation
-        // don't enter here
-        //true = intEq(1, 2);
-        false = Util.getStatefulBoolean(stopInst);
+    //case (cache,env,ih,store,mods,pre,ci_state,className,
+    //      SCode.DERIVED(typeSpec = Absyn.TPATH(path = cn,arrayDim = ad), modifications = mod, attributes=DA, comment = cmt),
+    //      re,vis,partialPrefix,encapsulatedPrefix,inst_dims,impl,callscope,graph,_,instSingleCref,info,stopInst)
+    //  equation
+    //    // don't enter here
+    //    //true = intEq(1, 2);
+    //    false = Util.getStatefulBoolean(stopInst);
 
-        // no meta-modelica
-        false = RTOpts.acceptMetaModelicaGrammar();        
-        // no types, enums or connectors please!
-        false = valueEq(re, SCode.R_TYPE());
-        false = valueEq(re, SCode.R_ENUMERATION());
-        false = valueEq(re, SCode.R_PREDEFINED_ENUMERATION());
-        false = SCode.isConnector(re);
-        // check empty array dimensions
-        true = boolOr(valueEq(ad, NONE()), valueEq(ad, SOME({})));
-        
-        (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = Lookup.lookupClass(cache, env, cn, true);
-        
-        false = checkDerivedRestriction(re, r, cn2);
-        
-        mod = chainRedeclares(mods, mod);
-        
-        // use instExtends for derived with no array dimensions
-        (cache, env, ih, store, dae, csets, ci_state, vars, bc, oDA, eqConstraint, graph) = 
-        instClassdef2(cache, env, ih, store, mods, pre, ci_state, className, 
-           SCode.PARTS({SCode.EXTENDS(cn, vis, mod, NONE(), info)},{},{},{},{},NONE(),{},cmt), 
-           re, vis, partialPrefix, encapsulatedPrefix, inst_dims, impl,
-           callscope, graph, inSets, instSingleCref,info,stopInst);
-        oDA = SCode.mergeAttributes(DA,oDA);
-      then
-        (cache,env,ih,store,dae,csets,ci_state,vars,bc,oDA,eqConstraint,graph);
+    //    // no meta-modelica
+    //    false = RTOpts.acceptMetaModelicaGrammar();        
+    //    // no types, enums or connectors please!
+    //    false = valueEq(re, SCode.R_TYPE());
+    //    false = valueEq(re, SCode.R_ENUMERATION());
+    //    false = valueEq(re, SCode.R_PREDEFINED_ENUMERATION());
+    //    false = SCode.isConnector(re);
+    //    // check empty array dimensions
+    //    true = boolOr(valueEq(ad, NONE()), valueEq(ad, SOME({})));
+    //    
+    //    (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = Lookup.lookupClass(cache, env, cn, true);
+    //    
+    //    false = checkDerivedRestriction(re, r, cn2);
+    //    
+    //    mod = chainRedeclares(mods, mod);
+    //    
+    //    // use instExtends for derived with no array dimensions
+    //    (cache, env, ih, store, dae, csets, ci_state, vars, bc, oDA, eqConstraint, graph) = 
+    //    instClassdef2(cache, env, ih, store, mods, pre, ci_state, className, 
+    //       SCode.PARTS({SCode.EXTENDS(cn, vis, mod, NONE(), info)},{},{},{},{},NONE(),{},cmt), 
+    //       re, vis, partialPrefix, encapsulatedPrefix, inst_dims, impl,
+    //       callscope, graph, inSets, instSingleCref,info,stopInst);
+    //    oDA = SCode.mergeAttributes(DA,oDA);
+    //  then
+    //    (cache,env,ih,store,dae,csets,ci_state,vars,bc,oDA,eqConstraint,graph);
 
 
     // This rule describes how to instantiate a derived class definition with array dims 
@@ -3805,7 +3805,7 @@ algorithm
         
         mod = chainRedeclares(mods, mod);
         
-        (cache,mod_1) = Mod.elabMod(cache, env, ih, pre, mod, impl, info);
+        (cache,mod_1) = Mod.elabMod(cache, List.stripFirst(env), ih, pre, mod, impl, info);
         mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
         (cache,dims) = elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}), cn, ad, eq, impl,NONE(),true,pre,info,inst_dims) "owncref not valid here" ;
