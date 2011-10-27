@@ -266,6 +266,14 @@ extern char* RTOpts_simCodeTarget() {
   return simCodeTarget ? simCodeTarget : (char*) "C";
 }
 
+void* RTOpts_getLanguageStandard() {
+  return language_standard;
+}
+
+void RTOpts_setLanguageStandard(void* standard) {
+  language_standard = standard;
+}
+
 #if defined(__cplusplus)
 }
 #endif
