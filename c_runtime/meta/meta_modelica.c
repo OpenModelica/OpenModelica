@@ -575,7 +575,7 @@ char* getRecordElementName(void* any, int element) {
 
   desc = MMC_CAR(any);
   checkAnyStringBufSize(0,strlen(desc->fieldNames[element]));
-  sprintf(anyStringBuf, desc->fieldNames[element]);
+  sprintf(anyStringBuf, "%s", desc->fieldNames[element]);
   return anyStringBuf;
 }
 

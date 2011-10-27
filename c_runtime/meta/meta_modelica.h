@@ -245,9 +245,10 @@ void printAny(void* any);
 static inline void *mmc_mk_box2(unsigned ctor, const void *x0, const void *x1)
 {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(3);
+    void **data = p->data;
     p->header = MMC_STRUCTHDR(2, ctor);
-    p->data[0] = (void*) x0;
-    p->data[1] = (void*) x1;
+    data[0] = (void*) x0;
+    data[1] = (void*) x1;
 #ifdef MMC_MK_DEBUG
     fprintf(stderr, "BOX2 %u\n", ctor); fflush(NULL);
     /* printAny(MMC_TAGPTR(p)); fprintf(stderr, "\n"); fflush(NULL); */
@@ -258,10 +259,11 @@ static inline void *mmc_mk_box2(unsigned ctor, const void *x0, const void *x1)
 static inline void *mmc_mk_box3(unsigned ctor, const void *x0, const void *x1, const void *x2)
 {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(4);
+    void **data = p->data;
     p->header = MMC_STRUCTHDR(3, ctor);
-    p->data[0] = (void*) x0;
-    p->data[1] = (void*) x1;
-    p->data[2] = (void*) x2;
+    data[0] = (void*) x0;
+    data[1] = (void*) x1;
+    data[2] = (void*) x2;
 #ifdef MMC_MK_DEBUG
     fprintf(stderr, "BOX3 %u\n", ctor); fflush(NULL);
 #endif
@@ -271,11 +273,12 @@ static inline void *mmc_mk_box3(unsigned ctor, const void *x0, const void *x1, c
 static inline void *mmc_mk_box4(unsigned ctor, const void *x0, const void *x1, const void *x2, const void *x3)
 {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(5);
+    void **data = p->data;
     p->header = MMC_STRUCTHDR(4, ctor);
-    p->data[0] = (void*) x0;
-    p->data[1] = (void*) x1;
-    p->data[2] = (void*) x2;
-    p->data[3] = (void*) x3;
+    data[0] = (void*) x0;
+    data[1] = (void*) x1;
+    data[2] = (void*) x2;
+    data[3] = (void*) x3;
 #ifdef MMC_MK_DEBUG
     fprintf(stderr, "BOX4 %u\n", ctor); fflush(NULL);
 #endif
@@ -285,12 +288,13 @@ static inline void *mmc_mk_box4(unsigned ctor, const void *x0, const void *x1, c
 static inline void *mmc_mk_box5(unsigned ctor, const void *x0, const void *x1, const void *x2, const void *x3, const void *x4)
 {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(6);
+    void **data = p->data;
     p->header = MMC_STRUCTHDR(5, ctor);
-    p->data[0] = (void*) x0;
-    p->data[1] = (void*) x1;
-    p->data[2] = (void*) x2;
-    p->data[3] = (void*) x3;
-    p->data[4] = (void*) x4;
+    data[0] = (void*) x0;
+    data[1] = (void*) x1;
+    data[2] = (void*) x2;
+    data[3] = (void*) x3;
+    data[4] = (void*) x4;
 #ifdef MMC_MK_DEBUG
     fprintf(stderr, "BOX5 %u\n", ctor); fflush(NULL);
 #endif
@@ -300,13 +304,14 @@ static inline void *mmc_mk_box5(unsigned ctor, const void *x0, const void *x1, c
 static inline void *mmc_mk_box6(unsigned ctor, const void *x0, const void *x1, const void *x2, const void *x3, const void *x4, const void *x5)
 {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(7);
+    void **data = p->data;
     p->header = MMC_STRUCTHDR(6, ctor);
-    p->data[0] = (void*) x0;
-    p->data[1] = (void*) x1;
-    p->data[2] = (void*) x2;
-    p->data[3] = (void*) x3;
-    p->data[4] = (void*) x4;
-    p->data[5] = (void*) x5;
+    data[0] = (void*) x0;
+    data[1] = (void*) x1;
+    data[2] = (void*) x2;
+    data[3] = (void*) x3;
+    data[4] = (void*) x4;
+    data[5] = (void*) x5;
 #ifdef MMC_MK_DEBUG
     fprintf(stderr, "BOX6 %u\n", ctor); fflush(NULL);
 #endif
@@ -317,14 +322,15 @@ static inline void *mmc_mk_box7(unsigned ctor, const void *x0, const void *x1, c
         const void *x3, const void *x4, const void *x5, const void *x6)
 {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(8);
+    void **data = p->data;
     p->header = MMC_STRUCTHDR(7, ctor);
-    p->data[0] = (void*) x0;
-    p->data[1] = (void*) x1;
-    p->data[2] = (void*) x2;
-    p->data[3] = (void*) x3;
-    p->data[4] = (void*) x4;
-    p->data[5] = (void*) x5;
-    p->data[6] = (void*) x6;
+    data[0] = (void*) x0;
+    data[1] = (void*) x1;
+    data[2] = (void*) x2;
+    data[3] = (void*) x3;
+    data[4] = (void*) x4;
+    data[5] = (void*) x5;
+    data[6] = (void*) x6;
 #ifdef MMC_MK_DEBUG
     fprintf(stderr, "BOX7 %u\n", ctor); fflush(NULL);
 #endif
@@ -335,15 +341,16 @@ static inline void *mmc_mk_box8(unsigned ctor, const void *x0, const void *x1, c
         const void *x3, const void *x4, const void *x5, const void *x6, const void *x7)
 {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(9);
+    void **data = p->data;
     p->header = MMC_STRUCTHDR(8, ctor);
-    p->data[0] = (void*) x0;
-    p->data[1] = (void*) x1;
-    p->data[2] = (void*) x2;
-    p->data[3] = (void*) x3;
-    p->data[4] = (void*) x4;
-    p->data[5] = (void*) x5;
-    p->data[6] = (void*) x6;
-    p->data[7] = (void*) x7;
+    data[0] = (void*) x0;
+    data[1] = (void*) x1;
+    data[2] = (void*) x2;
+    data[3] = (void*) x3;
+    data[4] = (void*) x4;
+    data[5] = (void*) x5;
+    data[6] = (void*) x6;
+    data[7] = (void*) x7;
 #ifdef MMC_MK_DEBUG
     fprintf(stderr, "BOX8 %u\n", ctor); fflush(NULL);
 #endif
@@ -354,16 +361,17 @@ static inline void *mmc_mk_box9(unsigned ctor, const void *x0, const void *x1, c
         const void *x3, const void *x4, const void *x5, const void *x6, const void *x7, const void *x8)
 {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(10);
+    void **data = p->data;
     p->header = MMC_STRUCTHDR(9, ctor);
-    p->data[0] = (void*) x0;
-    p->data[1] = (void*) x1;
-    p->data[2] = (void*) x2;
-    p->data[3] = (void*) x3;
-    p->data[4] = (void*) x4;
-    p->data[5] = (void*) x5;
-    p->data[6] = (void*) x6;
-    p->data[7] = (void*) x7;
-    p->data[8] = (void*) x8;
+    data[0] = (void*) x0;
+    data[1] = (void*) x1;
+    data[2] = (void*) x2;
+    data[3] = (void*) x3;
+    data[4] = (void*) x4;
+    data[5] = (void*) x5;
+    data[6] = (void*) x6;
+    data[7] = (void*) x7;
+    data[8] = (void*) x8;
 #ifdef MMC_MK_DEBUG
     fprintf(stderr, "BOX9 %u\n", ctor); fflush(NULL);
 #endif
