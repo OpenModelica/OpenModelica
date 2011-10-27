@@ -8852,6 +8852,7 @@ algorithm
   _ := match (inVarKind)
     case DAE.VARIABLE() then ();
     case DAE.PARAM() then ();
+    case DAE.CONST() then ();
   end match;
 end isVarVarOrConstant;
 
