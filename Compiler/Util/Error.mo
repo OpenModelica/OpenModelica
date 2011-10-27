@@ -402,7 +402,7 @@ public constant Message INST_PARTIAL_CLASS_CHECK_MODEL_WARNING = MESSAGE(134, TR
   "Forcing full instantiation of partial class %s during checkModel.");
 public constant Message VARIABLE_BINDING_TYPE_MISMATCH = MESSAGE(135, TRANSLATION(), ERROR(),
   "Type mismatch in binding %s = %s, expected subtype of %s, got type %s.");
-public constant Message COMPONENT_NAME_SAME_AS_TYPE_NAME = MESSAGE(136, GRAMMAR(), WARNING(),
+public constant Message COMPONENT_NAME_SAME_AS_TYPE_NAME = MESSAGE(136, TRANSLATION(), WARNING(),
   "Component %s has the same name as its type %s.
 	This is forbidden by Modelica specification and may lead to lookup errors.");
 public constant Message MODIFICATION_INDEX_OVERLAP = MESSAGE(137, TRANSLATION(), WARNING(),
