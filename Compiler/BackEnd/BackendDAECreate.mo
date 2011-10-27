@@ -1239,6 +1239,30 @@ algorithm
       list<BackendDAE.MultiDimEquation> arreqns;
       DAE.ElementSource source;
       Boolean b1,b2;
+      Absyn.Path fpath;
+      list<DAE.Exp> exps;
+      Boolean tuple_;
+      Boolean builtin;
+      DAE.InlineType inlineType;
+      DAE.TailCall tailCall;
+
+    // normal first try to force the inline of function calls and extend the equations
+    case (DAE.COMPLEX_EQUATION(lhs = e1, rhs = e2,source = source),funcs)
+      equation
+        // no MetaModelica
+        false = RTOpts.acceptMetaModelicaGrammar();
+        (e1_1,b1) = ExpressionSimplify.simplify(e1);
+        (e2_1,b2) = ExpressionSimplify.simplify(e2);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_1);
+        source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2,e2_1);
+        ty = Expression.typeof(e1_1);
+        i = Expression.sizeOf(ty);
+        (e1_1,source) = Inline.forceInlineExp(e1_1,(SOME(funcs),{DAE.NORM_INLINE()}),source);
+        (e2_1,source) = Inline.forceInlineExp(e2_1,(SOME(funcs),{DAE.NORM_INLINE()}),source);
+        // extend      
+        ((complexEqs,arreqns)) = extendRecordEqns(BackendDAE.COMPLEX_EQUATION(-1,e1_1,e2_1,source),funcs);
+      then
+        (complexEqs,arreqns);
 
     // normal first try to inline function calls and extend the equations
     case (DAE.COMPLEX_EQUATION(lhs = e1, rhs = e2,source = source),funcs)
@@ -1256,6 +1280,7 @@ algorithm
         ((complexEqs,arreqns)) = extendRecordEqns(BackendDAE.COMPLEX_EQUATION(-1,e1_1,e2_1,source),funcs);
       then
         (complexEqs,arreqns);
+    
     case (DAE.COMPLEX_EQUATION(lhs = e1, rhs = e2,source = source),funcs)
       equation
         (e1_1,b1) = ExpressionSimplify.simplify(e1);
@@ -1268,6 +1293,7 @@ algorithm
         complexEqs = List.fill(BackendDAE.COMPLEX_EQUATION(-1,e1_1,e2_1,source), i);
       then
         (complexEqs,{});
+    
     // initial first try to inline function calls and extend the equations
     case (DAE.INITIAL_COMPLEX_EQUATION(lhs = e1, rhs = e2,source = source),funcs)
       equation
@@ -1284,6 +1310,7 @@ algorithm
         ((complexEqs,arreqns)) = extendRecordEqns(BackendDAE.COMPLEX_EQUATION(-1,e1_1,e2_1,source),funcs);
       then
         (complexEqs,arreqns);
+    
     case (DAE.INITIAL_COMPLEX_EQUATION(lhs = e1, rhs = e2,source = source),funcs)
       equation
         (e1_1,b1) = ExpressionSimplify.simplify(e1);
@@ -1296,6 +1323,7 @@ algorithm
         complexEqs = List.fill(BackendDAE.COMPLEX_EQUATION(-1,e1_1,e2_1,source), i);
       then
         (complexEqs,{});
+    
     case (_,_)
       equation
         print("- BackendDAECreate.lowerComplexEqn failed!\n");
@@ -3785,6 +3813,12 @@ algorithm
       multiEqs2 = listAppend(multiEqs,multiEqs1);
     then
       ((complexEqs1,multiEqs2));
+  
+  // due to recursive call above we might get normal equations here!
+  case (inEqn,funcs)
+    then
+      (({inEqn}, {}));
+      
 end match;
 end extendRecordEqns;
 

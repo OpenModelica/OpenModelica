@@ -734,6 +734,27 @@ RML_END_LABEL
 
 /*
  * @author: adrpo
+ * side effect to set if we do partial instantiation
+ */
+RML_BEGIN_LABEL(System__getPartialInstantiation)
+{
+  rmlA0 = isPartialInstantiation ? RML_TRUE : RML_FALSE;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+/*
+ * @author: adrpo
+ * side effect to get if we do partial instantiation
+ */
+RML_BEGIN_LABEL(System__setPartialInstantiation)
+{
+  isPartialInstantiation = (RML_UNTAGFIXNUM(rmlA0)) ? 1 : 0;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+/*
+ * @author: adrpo
  * side effect to set if we have expandable connectors in a program
  */
 RML_BEGIN_LABEL(System__getHasInnerOuterDefinitions)

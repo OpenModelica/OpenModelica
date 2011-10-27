@@ -395,7 +395,7 @@ algorithm
         (cache,e2_1,DAE.PROP(t2,c2),st_2) = elabExp(cache,env, e2, impl, st_1,doVect,pre,info);
         c = Types.constAnd(c1, c2);
 
-        (cache,ops) = operators(cache,op, env, t1, t2);
+        (cache,ops) = operators(cache, op, env, t1, t2);
         (op_1,{e1_2,e2_2},rtype) = deoverload(ops,{(e1_1,t1),(e2_1,t2)},e,pre,info);
         exp_1 = replaceOperatorWithFcall(DAE.BINARY(e1_2,op_1,e2_2), c);
         (exp_1,_) = ExpressionSimplify.simplify(exp_1);
@@ -9444,7 +9444,7 @@ algorithm
   (outCache,res) := matchcontinue (inCache,inEnv,inComponentRef,inImplict,performVectorization,inPrefix,evalCref,info)
     local
       DAE.ComponentRef c_1;
-      DAE.Const const,const1,const2;
+      DAE.Const const,const1,const2,constCref,constSubs;
       SCode.Variability variability;
       Option<Absyn.Path> optPath;
       DAE.Type t,origt;
@@ -9521,11 +9521,13 @@ algorithm
     case (cache,env,c,impl,doVect,pre,evalCref,info) /* impl */
       equation
         c = replaceEnd(c);
-        (cache,c_1,const,hasZeroSizeDim) = elabCrefSubs(cache, env, c, Prefix.NOPRE(), impl, false, info);
+        (cache,c_1,constSubs,hasZeroSizeDim) = elabCrefSubs(cache, env, c, Prefix.NOPRE(), impl, false, info);
         (cache,attr,t,binding,forIteratorConstOpt,splicedExpData,_,_,_) = Lookup.lookupVar(cache, env, c_1);
-        variability = applySubscriptsVariability(DAEUtil.getAttrVariability(attr), const);
-        attr = DAEUtil.setAttrVariability(attr, variability);
-        (cache,exp,const,attr) = elabCref2(cache, env, c_1, attr, forIteratorConstOpt, t, binding, doVect, splicedExpData, pre, info);
+        variability = applySubscriptsVariability(DAEUtil.getAttrVariability(attr), constSubs);
+        attr = DAEUtil.setAttrVariability(attr, variability);        
+        // get the binding if is a constant
+        (cache,exp,constCref,attr) = elabCref2(cache, env, c_1, attr, forIteratorConstOpt, t, binding, doVect, splicedExpData, pre, info);
+        const = constCref;
         exp = makeASUBArrayAdressing(c,cache,env,impl,exp,splicedExpData,doVect,pre,info);
         t = fixEnumerationType(t);
         (exp,const) = evaluateEmptyVariable(hasZeroSizeDim and evalCref,exp,t,const);
@@ -10017,6 +10019,7 @@ algorithm
       Absyn.Path p;
       DAE.Attributes attr, attr1, attr2;
       Absyn.InnerOuter io;
+      list<DAE.Subscript> subsc;
 
     // If type not yet determined, component must be referencing itself.
     // The constantness is undecidable since binding is not available. return C_VAR
@@ -10076,6 +10079,29 @@ algorithm
       equation
         true = Types.equivtypes(tt,idTp);
         (cache,v) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG(info));
+        e = ValuesUtil.valueExp(v);
+      then
+        (cache,e,DAE.C_CONST(),attr);
+    
+    // a constant, couldn't evaluate binding, replace with it!
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,tt,binding,doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,info)
+      equation
+        true = Types.equivtypes(tt,idTp);
+        failure((_,_) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG(info)));
+        // constant binding
+        DAE.EQBOUND(exp = e, constant_ = DAE.C_CONST()) = binding;
+        // adrpo: todo -> subscript the binding expression
+        // subsc = ComponentReference.crefLastSubs(cr);
+      then
+        (cache,e,DAE.C_CONST(),attr);
+        
+    // a constant, couldn't evaluate binding, replace with it!
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,tt,binding,doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,info)
+      equation
+        true = Types.equivtypes(tt,idTp);
+        failure((_,_) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG(info)));
+        // constant binding
+        DAE.VALBOUND(valBound = v) = binding;
         e = ValuesUtil.valueExp(v);
       then
         (cache,e,DAE.C_CONST(),attr);

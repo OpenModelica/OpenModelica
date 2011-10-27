@@ -501,6 +501,12 @@ algorithm
         call2 = Expression.makeBuiltinCall("cross",{e1_1,e2},tp);
       then
         DAE.BINARY(call1,DAE.ADD_ARR(tp),call2);
+        
+    case (DAE.CALL(path = fname as Absyn.IDENT("smooth"),expLst = {e1,e2},attr=DAE.CALL_ATTR(ty=tp)),inVariables)
+      equation
+        e2_1 = differentiateExpTime(e2, inVariables);
+      then
+        e2_1;
 
     case (DAE.CALL(path = fname as Absyn.IDENT("transpose"),expLst=expl,attr=DAE.CALL_ATTR(ty=tp)),inVariables)
       equation

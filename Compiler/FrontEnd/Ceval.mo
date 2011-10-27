@@ -1173,6 +1173,10 @@ algorithm
       String error_Str;
       DAE.Function func;
       SCode.Restriction res;
+      SCode.Redeclare prefixRedeclare;
+      SCode.Replaceable prefixReplaceable;
+      SCode.Partial prefixPartial;
+      Boolean isReplaceable;
     
     // External functions that are "known" should be evaluated without compilation, e.g. all math functions
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,impl,st,msg)
@@ -1197,6 +1201,144 @@ algorithm
         Debug.fprintln("dynload", "CALL: record constructor: [success] func: " +& Absyn.pathString(funcpath));        
       then 
         (cache,Values.RECORD(funcpath,vallst,varNames,-1),st);
+
+    // evaluate or generate non-partial and non-replaceable functions
+    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(builtin = false)), vallst, impl, st, msg)
+      equation
+        failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
+        Debug.fprintln("dynload", "CALL: try to evaluate or generate function: " +& Absyn.pathString(funcpath));
+
+        true = isCompleteFunction(cache, env, funcpath);
+        
+        (cache, newval, st) = cevalCallFunctionEvaluateOrGenerate(inCache,inEnv,inExp,inValuesValueLst,impl,inSymTab,inMsg);
+        
+        Debug.fprintln("dynload", "CALL: constant evaluation success: " +& Absyn.pathString(funcpath));
+      then
+        (cache, newval, st);
+
+    // partial and replaceable functions should not be evaluated!
+    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(builtin = false)), vallst, impl, st, msg)
+      equation
+        failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
+        Debug.fprintln("dynload", "CALL: try to evaluate or generate function: " +& Absyn.pathString(funcpath));
+        
+        false = isCompleteFunction(cache, env, funcpath);
+        
+        Debug.fprintln("dynload", "CALL: constant evaluation failed: " +& Absyn.pathString(funcpath));
+      then
+        fail();
+
+  end matchcontinue;
+end cevalCallFunction;
+
+protected function isCompleteFunction
+"a function is complete if is:
+ - not partial
+ - not replaceable (without redeclare)
+ - replaceable and called functions are not partial or not replaceable (without redeclare)"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Path inFuncPath;
+  output Boolean isComplete;
+algorithm
+ isComplete := matchcontinue(inCache, inEnv, inFuncPath)
+   local
+     Env.Cache cache;
+     Env.Env env;
+     SCode.Element c;
+     String name;
+     Absyn.Path fpath;
+     list<Absyn.Path> functionDependencies;
+     list<Boolean> bLst;
+     list<SCode.AlgorithmSection> algs;
+     list<SCode.Element> els;
+     Option<SCode.ExternalDecl> extDeclOpt; 
+   
+   // if is partial instantiation no function evaluation/generation
+   case (cache, env, fpath)
+     equation
+       true = System.getPartialInstantiation();
+     then
+       false;   
+   
+   // partial functions are not complete!
+   case (cache, env, fpath)
+     equation
+       (_, SCode.CLASS(partialPrefix = SCode.PARTIAL()), _) = Lookup.lookupClass(cache, env, fpath, true); 
+     then 
+       false;
+
+   // replaceable functions are not fine if they don't have an algorithm section!
+   case (cache, env, fpath)
+     equation
+       (_, 
+        c as SCode.CLASS(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.NOT_REDECLARE(), replaceablePrefix = SCode.REPLACEABLE(_))), 
+       _) = 
+       Lookup.lookupClass(cache, env, fpath, true);
+     then 
+       false;
+   
+   case (cache, env, fpath) 
+     then true;
+   
+  end matchcontinue;
+end isCompleteFunction;
+
+protected function cevalCallFunctionEvaluateOrGenerate
+"This function evaluates CALL expressions, i.e. function calls.
+  They are currently evaluated by generating code for the function and
+  then dynamicly load the function and call it."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input DAE.Exp inExp;
+  input list<Values.Value> inValuesValueLst;
+  input Boolean impl;
+  input Option<Interactive.SymbolTable> inSymTab;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.SymbolTable> outSymTab;
+algorithm
+  (outCache,outValue,outSymTab) := matchcontinue (inCache,inEnv,inExp,inValuesValueLst,impl,inSymTab,inMsg)
+    local
+      Values.Value newval;
+      list<Env.Frame> env;
+      DAE.Exp e;
+      Absyn.Path funcpath;
+      list<DAE.Exp> expl;
+      Boolean builtin;
+      list<Values.Value> vallst;
+      Msg msg;
+      Env.Cache cache;
+      list<Interactive.CompiledCFunction> cflist;
+      Option<Interactive.SymbolTable> st;
+      Absyn.Program p;
+      Integer libHandle, funcHandle;
+      String fNew,fOld;
+      Real buildTime, edit, build;
+      AbsynDep.Depends aDep;
+      Option<list<SCode.Element>> a;
+      list<Interactive.InstantiatedClass> b;
+      list<Interactive.Variable> c;
+      list<Interactive.CompiledCFunction> cf;
+      list<Interactive.LoadedFile> lf;
+      Absyn.TimeStamp ts;
+      String funcstr,f;
+      list<Interactive.CompiledCFunction> newCF;
+      String name;
+      Boolean ppref, fpref, epref;
+      Absyn.ClassDef    body;
+      Absyn.Info        info;
+      Absyn.Within      w;
+      Absyn.Path complexName;
+      list<Absyn.Path> functionDependencies;
+      list<Expression.Var> varLst;
+      list<String> varNames;
+      SCode.Element sc;
+      SCode.ClassDef cdef;
+      String error_Str;
+      DAE.Function func;
+      SCode.Restriction res;
 
     // try function interpretation
     case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(builtin = false)), vallst, impl, st, msg)
@@ -1347,8 +1489,9 @@ algorithm
         Debug.fprint("failtrace", "- codegeneration is turned off. switch \"nogen\" flag off\n");
       then
         fail();
+  
   end matchcontinue;
-end cevalCallFunction;
+end cevalCallFunctionEvaluateOrGenerate;
 
 protected function cevalIsExternalObjectConstructor
   input Env.Cache cache;

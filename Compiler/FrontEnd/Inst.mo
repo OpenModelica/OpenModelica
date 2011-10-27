@@ -2753,6 +2753,7 @@ algorithm
       SCode.Element aa_5;
       InstDims aa_7;
       tuple<InstDims,DAE.Mod,ClassInf.State,SCode.Element> bbx,bby;
+      Boolean partialInst;
 
     // see if we find a partial class inst
     case (cache,env,ih,mods,pre,ci_state,c as SCode.CLASS(name = className, restriction=r),vis,inst_dims)
@@ -2807,8 +2808,12 @@ algorithm
     /* call the function and then add it in the cache */
     case (cache,env,ih,mods,pre,ci_state,c,vis,inst_dims)
       equation
+        
+        partialInst = System.getPartialInstantiation();
+        System.setPartialInstantiation(true);
+        
         (cache,env,ih,ci_state) =
-           partialInstClassIn_dispatch(inCache,inEnv,inIH,inMod,inPrefix,inState,inClass,vis,inInstDims);
+           partialInstClassIn_dispatch(inCache,inEnv,inIH,inMod,inPrefix,inState,inClass,vis,inInstDims,partialInst);
 
         envPathOpt = Env.getEnvPath(inEnv);
         className = SCode.className(c);
@@ -2822,6 +2827,8 @@ algorithm
            SOME(FUNC_partialInstClassIn( // result for partial instantiation
              inputs,outputs)));
         //Debug.fprintln("cache", "IIIIPARTIAL->added to instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
+        
+        System.setPartialInstantiation(false);
       then
         (cache,env,ih,ci_state);
 
@@ -2835,7 +2842,7 @@ algorithm
   end matchcontinue;
 end partialInstClassIn;
 
-public function partialInstClassIn_dispatch
+protected function partialInstClassIn_dispatch
 "function: partialInstClassIn
   This function is used when instantiating classes in lookup of other classes.
   The only work performed by this function is to instantiate local classes and
@@ -2849,12 +2856,13 @@ public function partialInstClassIn_dispatch
   input SCode.Element inClass;
   input SCode.Visibility inVisibility;
   input InstDims inInstDims;
+  input Boolean partialInst;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output ClassInf.State outState;
 algorithm
-  (outCache,outEnv,outIH,outState) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inState,inClass,inVisibility,inInstDims)
+  (outCache,outEnv,outIH,outState) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inState,inClass,inVisibility,inInstDims,partialInst)
     local
       list<Env.Frame> env,env_1;
       DAE.Mod mods;
@@ -2871,22 +2879,33 @@ algorithm
       InstanceHierarchy ih;
       Absyn.Info info;
 
-    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = "Real")),_,_)
+    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = "Real")),_,_,partialInst)
+      equation
+        System.setPartialInstantiation(partialInst);
       then (cache,env,ih,ci_state);
 
-    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = "Integer")),_,_)
+    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = "Integer")),_,_,partialInst)
+      equation
+        System.setPartialInstantiation(partialInst);
       then (cache,env,ih,ci_state);
 
-    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = "String")),_,_)
+    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = "String")),_,_,partialInst)
+      equation
+        System.setPartialInstantiation(partialInst);      
       then (cache,env,ih,ci_state);
 
-    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = "Boolean")),_,_)
+    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = "Boolean")),_,_,partialInst)
+      equation
+        System.setPartialInstantiation(partialInst);      
       then (cache,env,ih,ci_state);
 
-    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = n,restriction = r,partialPrefix=partialPrefix,classDef = d, info = info)),vis,inst_dims)
+    case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = n,restriction = r,partialPrefix=partialPrefix,classDef = d, info = info)),vis,inst_dims,partialInst)
       equation
         // t1 = clock();
         (cache,env_1,ih,ci_state_1) = partialInstClassdef(cache,env,ih, mods, pre, ci_state, d, r, partialPrefix, vis, inst_dims, n, info);
+        
+        System.setPartialInstantiation(partialInst);
+        
         // t2 = clock();
         // time = t2 -. t1;
         //b=realGt(time,0.05);
@@ -2901,6 +2920,12 @@ algorithm
         // print("partialInstClassDef, outenv:");print(Env.printEnvStr(env_1));
       then
         (cache,env_1,ih,ci_state_1);
+        
+    case (cache,env,ih,mods,pre,ci_state,c,vis,inst_dims,partialInst)
+      equation
+        System.setPartialInstantiation(partialInst);
+      then
+        fail();
   end matchcontinue;
 end partialInstClassIn_dispatch;
 
@@ -10831,6 +10856,8 @@ algorithm
       SCode.ClassDef cd;
       Boolean partialPrefixBool;
       Option<SCode.Comment> cmt;
+      SCode.Restriction r;
+      SCode.Encapsulated encflag;
     
     /* normal functions */
     case (cache,env,ih,mod,pre,(c as SCode.CLASS(classDef=cd,partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(),info = info)),inst_dims,instFunctionTypeOnly)

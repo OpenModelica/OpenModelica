@@ -940,6 +940,32 @@ algorithm
   end matchcontinue;
 end inlineExp;
 
+public function forceInlineExp "
+function: inlineExp
+  inlines calls in an DAE.Exp"
+  input DAE.Exp inExp;
+  input Functiontuple inElementList;
+  input DAE.ElementSource source;
+  output DAE.Exp outExp;
+  output DAE.ElementSource outSource;
+algorithm
+  (outExp,outSource) := matchcontinue (inExp,inElementList,source)
+    local
+      Functiontuple fns;
+      DAE.Exp e,e_1,e_2;
+      Boolean b;
+    case (e,fns,source)
+      equation
+        ((e_1,(fns,b))) = Expression.traverseExp(e,forceInlineCall,(fns,false));
+        source = DAEUtil.condAddSymbolicTransformation(b,source,DAE.OP_INLINE(e,e_1));
+        (e_2,b) = ExpressionSimplify.simplify(e_1);
+        source = DAEUtil.addSymbolicTransformationSimplify(b,source,e_1,e_2);
+      then
+        (e_2,source);
+    else (inExp,source);
+  end matchcontinue;
+end forceInlineExp;
+
 protected function inlineExps "
 function: inlineExp
   inlines calls in an DAE.Exp"
@@ -1000,6 +1026,41 @@ algorithm
     else inTuple;
   end matchcontinue;
 end inlineCall;
+
+public function forceInlineCall
+"function: inlineCall
+  replaces an inline call with the expression from the function"
+  input tuple<DAE.Exp, tuple<Functiontuple,Boolean>> inTuple;
+  output tuple<DAE.Exp, tuple<Functiontuple,Boolean>> outTuple;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      Functiontuple fns,fns1;
+      list<DAE.Element> fn;
+      Absyn.Path p;
+      list<DAE.Exp> args;
+      Boolean tup,built;
+      DAE.ExpType t;
+      list<DAE.ComponentRef> crefs;
+      list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
+      DAE.Exp newExp,newExp1, e1;
+      DAE.InlineType inlineType;
+    case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
+      equation
+        fn = getFunctionBody(p,fns);
+        crefs = List.map(fn,getInputCrefs);
+        crefs = List.select(crefs,removeWilds);
+        argmap = List.threadTuple(crefs,args);
+        argmap = extendCrefRecords(argmap);
+        newExp = getRhsExp(fn);
+        ((newExp,argmap)) = Expression.traverseExp(newExp,replaceArgs,argmap);
+        // for inlinecalls in functions
+        ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,forceInlineCall,(fns,true));
+      then
+        ((newExp1,(fns,true)));
+    else inTuple;
+  end matchcontinue;
+end forceInlineCall;
 
 protected function checkInlineType "
 Author: Frenkel TUD, 2010-05"

@@ -195,6 +195,16 @@ extern void System_setHasExpandableConnectors(int b)
   hasExpandableConnectors = b;
 }
 
+extern int System_getPartialInstantiation()
+{
+  return isPartialInstantiation;
+}
+
+extern void System_setPartialInstantiation(int b)
+{
+  isPartialInstantiation = b;
+}
+
 extern int System_getHasInnerOuterDefinitions()
 {
   return hasInnerOuterDefinitions;
