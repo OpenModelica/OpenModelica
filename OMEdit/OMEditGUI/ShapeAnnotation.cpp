@@ -38,15 +38,13 @@ ShapeAnnotation::ShapeAnnotation(QGraphicsItem *parent)
     : QGraphicsItem(parent), mSettings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit")
 {
     mpGraphicsView = 0;
-
 }
 
 ShapeAnnotation::ShapeAnnotation(GraphicsView *graphicsView, QGraphicsItem *parent)
-    : QGraphicsItem(parent),mSettings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit")
+    : QGraphicsItem(parent), mSettings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit")
 {
     mpGraphicsView = graphicsView;
     createActions();
-
 }
 
 ShapeAnnotation::~ShapeAnnotation()
@@ -242,6 +240,21 @@ QPainterPath ShapeAnnotation::addPathStroker(QPainterPath &path) const
 //! Tells the component to ask its parent to delete it.
 void ShapeAnnotation::deleteMe()
 {
+    // make sure you disconnect all signals before deleting the object
+    disconnect(mpGraphicsView->mpHorizontalFlipAction, SIGNAL(triggered()), this, SLOT(flipHorizontal()));
+    disconnect(mpGraphicsView->mpVerticalFlipAction, SIGNAL(triggered()), this, SLOT(flipVertical()));
+    disconnect(mpGraphicsView->mpRotateIconAction, SIGNAL(triggered()), this, SLOT(rotateClockwise()));
+    disconnect(mpGraphicsView->mpRotateAntiIconAction, SIGNAL(triggered()), this, SLOT(rotateAntiClockwise()));
+    disconnect(mpGraphicsView->mpResetRotation, SIGNAL(triggered()), this, SLOT(resetRotation()));
+    disconnect(mpGraphicsView->mpDeleteIconAction, SIGNAL(triggered()), this, SLOT(deleteMe()));
+    disconnect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()));
+    disconnect(mpGraphicsView, SIGNAL(keyPressUp()), this, SLOT(moveUp()));
+    disconnect(mpGraphicsView, SIGNAL(keyPressDown()), this, SLOT(moveDown()));
+    disconnect(mpGraphicsView, SIGNAL(keyPressLeft()), this, SLOT(moveLeft()));
+    disconnect(mpGraphicsView, SIGNAL(keyPressRight()), this, SLOT(moveRight()));
+    disconnect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwise()));
+    disconnect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()));
+    // delete the object
     GraphicsView *pGraphicsView = qobject_cast<GraphicsView*>(const_cast<QObject*>(sender()));
     mpGraphicsView->deleteShapeObject(this);
     mpGraphicsView->scene()->removeItem(this);
@@ -250,7 +263,7 @@ void ShapeAnnotation::deleteMe()
     {
         emit updateShapeAnnotation();
     }
-    delete this;
+    deleteLater();
 }
 
 void ShapeAnnotation::doSelect()
@@ -575,7 +588,6 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
         if (this->isSelected())
         {
             setSelectionBoxActive();
-
             // make the connections now
             connect(mpGraphicsView->mpHorizontalFlipAction, SIGNAL(triggered()), SLOT(flipHorizontal()), Qt::UniqueConnection);
             connect(mpGraphicsView->mpVerticalFlipAction, SIGNAL(triggered()), SLOT(flipVertical()), Qt::UniqueConnection);
@@ -590,15 +602,13 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
             connect(mpGraphicsView, SIGNAL(keyPressRight()), SLOT(moveRight()), Qt::UniqueConnection);
             connect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), SLOT(rotateClockwise()), Qt::UniqueConnection);
             connect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), SLOT(rotateAntiClockwise()), Qt::UniqueConnection);
-            //connect(mpShapeProperties, SIGNAL(colourChanged()),this, SLOT(changeProperty()));
-
         }
         // if use has clicked on corner item then dont make it passive
         else if (!mIsRectangleCorneItemClicked)
         {
             setSelectionBoxPassive();
-            disconnect(mpGraphicsView->mpHorizontalFlipAction, SIGNAL(triggered()), this,SLOT(flipHorizontal()));
-            disconnect(mpGraphicsView->mpVerticalFlipAction, SIGNAL(triggered()), this,SLOT(flipVertical()));
+            disconnect(mpGraphicsView->mpHorizontalFlipAction, SIGNAL(triggered()), this, SLOT(flipHorizontal()));
+            disconnect(mpGraphicsView->mpVerticalFlipAction, SIGNAL(triggered()), this, SLOT(flipVertical()));
             disconnect(mpGraphicsView->mpRotateIconAction, SIGNAL(triggered()), this, SLOT(rotateClockwise()));
             disconnect(mpGraphicsView->mpRotateAntiIconAction, SIGNAL(triggered()), this, SLOT(rotateAntiClockwise()));
             disconnect(mpGraphicsView->mpResetRotation, SIGNAL(triggered()), this, SLOT(resetRotation()));
@@ -610,7 +620,6 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
             disconnect(mpGraphicsView, SIGNAL(keyPressRight()), this, SLOT(moveRight()));
             disconnect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwise()));
             disconnect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()));
-           // disconnect(mpShapeProperties, SIGNAL(colourChanged()),this, SLOT(changeProperty()));
         }
     }
     return value;

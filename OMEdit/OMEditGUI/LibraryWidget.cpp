@@ -973,7 +973,8 @@ Qt::DropActions LibraryTree::supportedDropActions() const
 ItemDelegate::ItemDelegate(QObject *pParent)
     : QItemDelegate(pParent)
 {
-
+    mpParent = pParent;
+    mStyleState = QStyle::State_Enabled;
 }
 
 void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
@@ -1039,7 +1040,6 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
         icon.paint(painter, decorationRect, option.decorationAlignment, QIcon::Normal, QIcon::Off);
     else
         drawDecoration(painter, opt, decorationRect, pixmap);
-    // done
     painter->restore();
 }
 

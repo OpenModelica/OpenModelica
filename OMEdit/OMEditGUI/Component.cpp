@@ -536,8 +536,8 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
         {
             setSelectionBoxPassive();
             unsetCursor();
-            disconnect(mpGraphicsView->mpHorizontalFlipAction, SIGNAL(triggered()),this, SLOT(flipHorizontal()));
-            disconnect(mpGraphicsView->mpVerticalFlipAction, SIGNAL(triggered()),this, SLOT(flipVertical()));
+            disconnect(mpGraphicsView->mpHorizontalFlipAction, SIGNAL(triggered()), this, SLOT(flipHorizontal()));
+            disconnect(mpGraphicsView->mpVerticalFlipAction, SIGNAL(triggered()), this, SLOT(flipVertical()));
             disconnect(mpGraphicsView->mpRotateIconAction, SIGNAL(triggered()), this, SLOT(rotateClockwise()));
             disconnect(mpGraphicsView->mpRotateAntiIconAction, SIGNAL(triggered()), this, SLOT(rotateAntiClockwise()));
             disconnect(mpGraphicsView->mpResetRotation, SIGNAL(triggered()), this, SLOT(resetRotation()));
@@ -808,6 +808,22 @@ void Component::resizeComponent(qreal resizeFactorX, qreal resizeFactorY)
 //! Tells the component to ask its parent to delete it.
 void Component::deleteMe(bool update)
 {
+    // make sure you disconnect all signals before deleting the object
+    disconnect(mpGraphicsView->mpHorizontalFlipAction, SIGNAL(triggered()), this, SLOT(flipHorizontal()));
+    disconnect(mpGraphicsView->mpVerticalFlipAction, SIGNAL(triggered()), this, SLOT(flipVertical()));
+    disconnect(mpGraphicsView->mpRotateIconAction, SIGNAL(triggered()), this, SLOT(rotateClockwise()));
+    disconnect(mpGraphicsView->mpRotateAntiIconAction, SIGNAL(triggered()), this, SLOT(rotateAntiClockwise()));
+    disconnect(mpGraphicsView->mpResetRotation, SIGNAL(triggered()), this, SLOT(resetRotation()));
+    disconnect(mpGraphicsView->mpDeleteIconAction, SIGNAL(triggered()), this, SLOT(deleteMe()));
+    disconnect(mpGraphicsView->mpCopyComponentAction, SIGNAL(triggered()), this, SLOT(copyComponent()));
+    disconnect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()));
+    disconnect(mpGraphicsView, SIGNAL(keyPressUp()), this, SLOT(moveUp()));
+    disconnect(mpGraphicsView, SIGNAL(keyPressDown()), this, SLOT(moveDown()));
+    disconnect(mpGraphicsView, SIGNAL(keyPressLeft()), this, SLOT(moveLeft()));
+    disconnect(mpGraphicsView, SIGNAL(keyPressRight()), this, SLOT(moveRight()));
+    disconnect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwise()));
+    disconnect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwise()));
+    // delete the object
     GraphicsView *pGraphicsView = qobject_cast<GraphicsView*>(const_cast<QObject*>(sender()));
     // delete the component from model
     mpGraphicsView->deleteComponentObject(this, update);
@@ -819,7 +835,7 @@ void Component::deleteMe(bool update)
         if (mpGraphicsView->mIconType == StringHandler::ICON)
             mpGraphicsView->addClassAnnotation(update);
     }
-    delete(this);
+    deleteLater();
 }
 
 

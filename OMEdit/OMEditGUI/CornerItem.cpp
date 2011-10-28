@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linkoping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -56,7 +56,7 @@ void CornerItem::updateCornerItem(qreal x, qreal y, Qt::Corner corner)
 
     switch (corner)
     {
-    case Qt::TopLeftCorner:
+        case Qt::TopLeftCorner:
         {
             setCursor(Qt::SizeFDiagCursor);
             point1 = QPointF(startx, starty);
@@ -65,7 +65,7 @@ void CornerItem::updateCornerItem(qreal x, qreal y, Qt::Corner corner)
             starty = starty - height;
             break;
         }
-    case Qt::TopRightCorner:
+        case Qt::TopRightCorner:
         {
             setCursor(Qt::SizeBDiagCursor);
             point1 = QPointF(startx, starty);
@@ -75,7 +75,7 @@ void CornerItem::updateCornerItem(qreal x, qreal y, Qt::Corner corner)
             starty = starty - height;
             break;
         }
-    case Qt::BottomLeftCorner:
+        case Qt::BottomLeftCorner:
         {
             setCursor(Qt::SizeBDiagCursor);
             point1 = QPointF(startx, starty);
@@ -83,7 +83,7 @@ void CornerItem::updateCornerItem(qreal x, qreal y, Qt::Corner corner)
             point3 = QPointF(startx + width, starty);
             break;
         }
-    case Qt::BottomRightCorner:
+        case Qt::BottomRightCorner:
         {
             setCursor(Qt::SizeFDiagCursor);
             point1 = QPointF(startx, starty);
@@ -134,7 +134,6 @@ void CornerItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
 {
     Q_UNUSED(option);
     Q_UNUSED(widget);
-
     painter->setPen(mPen);
     painter->drawLine(mLines.at(0), mLines.at(1));
     painter->drawLine(mLines.at(0), mLines.at(2));
@@ -158,7 +157,7 @@ void CornerItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         qreal resizeFactorY = 1.0;
         switch (this->mCorner)
         {
-        case Qt::TopLeftCorner:
+            case Qt::TopLeftCorner:
             {
                 if ((this->mClickPos.x() < event->pos().x()) and (this->mClickPos.y() > event->pos().y()))
                 {
@@ -172,7 +171,7 @@ void CornerItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
                 }
                 break;
             }
-        case Qt::TopRightCorner:
+            case Qt::TopRightCorner:
             {
                 if ((this->mClickPos.x() > event->pos().x()) and (this->mClickPos.y() > event->pos().y()))
                 {
@@ -186,7 +185,7 @@ void CornerItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
                 }
                 break;
             }
-        case Qt::BottomLeftCorner:
+            case Qt::BottomLeftCorner:
             {
                 if ((this->mClickPos.x() < event->pos().x()) and (this->mClickPos.y() < event->pos().y()))
                 {
@@ -200,7 +199,7 @@ void CornerItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
                 }
                 break;
             }
-        case Qt::BottomRightCorner:
+            case Qt::BottomRightCorner:
             {
                 if ((this->mClickPos.x() > event->pos().x()) and (this->mClickPos.y() < event->pos().y()))
                 {
@@ -282,7 +281,6 @@ void RectangleCornerItem::paint(QPainter *painter, const QStyleOptionGraphicsIte
 {
     Q_UNUSED(option);
     Q_UNUSED(widget);
-
     painter->setPen(mPen);
     painter->setBrush(mPen.color());
     painter->drawRect(mRectangle);
@@ -292,7 +290,6 @@ void RectangleCornerItem::paint(QPainter *painter, const QStyleOptionGraphicsIte
 void RectangleCornerItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
 {
     Q_UNUSED(event);
-
     setCursor(Qt::ArrowCursor);
 }
 
@@ -300,7 +297,6 @@ void RectangleCornerItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
 void RectangleCornerItem::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
 {
     Q_UNUSED(event);
-
     unsetCursor();
 }
 
@@ -325,12 +321,8 @@ void RectangleCornerItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 QVariant RectangleCornerItem::itemChange(GraphicsItemChange change, const QVariant &value)
 {
     QGraphicsItem::itemChange(change, value);
-
-
-
     if (change == QGraphicsItem::ItemPositionHasChanged)
     {
-
         emit itemMoved(mConnectedPointIndex, value.toPointF());
     }
     return value;

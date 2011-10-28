@@ -692,7 +692,7 @@ void GraphicsView::keyPressEvent(QKeyEvent *event)
     {
         emit keyPressDelete();
         // once all selected items are deleted simply update the icon/diagram annotations.
-        addClassAnnotation();
+        //addClassAnnotation();
     }
     else if(event->key() == Qt::Key_Up)
     {
@@ -958,12 +958,12 @@ void GraphicsView::createBitmapShape(QPointF point)
         if(mpParentProjectTab->mModelFileName.isEmpty())
         {
             QMessageBox *msgBox = new QMessageBox(mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow);
-            msgBox->setWindowTitle(QString(Helper::applicationName));
+            msgBox->setWindowTitle(QString(Helper::applicationName).append(" - Information"));
             msgBox->setIcon(QMessageBox::Warning);
-            msgBox->setText(QString("The class needs to be saved before you can insert a bitmap"));
+            msgBox->setText(QString("The class needs to be saved before you can insert a bitmap."));
             msgBox->setStandardButtons(QMessageBox::Ok);
             msgBox->setDefaultButton(QMessageBox::Ok);
-            int answer = msgBox->exec();
+            msgBox->exec();
             mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->bitmapAction->setChecked(false);
             return;
         }
