@@ -2,7 +2,7 @@
 #include "AlgLoopSolverFactory.h"
 #include <boost/extension/shared_library.hpp>
 #include <boost/extension/convenience.hpp>
-
+#include "LibrariesConfig.h"
 AlgLoopSolverFactory::AlgLoopSolverFactory()
 {
 }
@@ -17,8 +17,9 @@ IAlgLoopSolver* AlgLoopSolverFactory::createAlgLoopSolver(IAlgLoop* algLoop)
 {
 	if(algLoop->getDimVars(IAlgLoop::REAL) > 0)
 	{
+		std::string newton_name(NEWTON_LIB );
 		type_map types;
-		if(!load_single_library(types, "Newton.dll"))
+		if(!load_single_library(types, newton_name))
 			throw std::invalid_argument(" Newton library could not be loaded");
 		std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, INewtonSettings*> >::iterator iter;
 		std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, INewtonSettings*> >& Newtonfactory(types.get());

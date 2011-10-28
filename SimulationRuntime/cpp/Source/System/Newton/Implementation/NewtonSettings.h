@@ -1,6 +1,6 @@
 #pragma once
 
-#include "System/Interfaces/INewtonSettings.h"
+#include "System/Newton/Interfaces/INewtonSettings.h"
 
 class NewtonSettings :public INewtonSettings
 {

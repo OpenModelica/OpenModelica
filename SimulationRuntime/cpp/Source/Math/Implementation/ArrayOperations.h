@@ -1,5 +1,5 @@
 #pragma once
-#define BOOST_ENABLE_ASSERT_HANDLER
+//#define BOOST_ENABLE_ASSERT_HANDLER
 #include <boost/assert.hpp>
 #include <boost/algorithm/minmax_element.hpp>
 
@@ -21,8 +21,8 @@ Copyright (c) 2010, OSMC
 /**
 Assertion function 
 */
-void boost::assertion_failed(char const * expr, char const * function, 
-                             char const * file, long line);
+//void boost::assertion_failed(char const * expr, char const * function, 
+//                             char const * file, long line);
 #include <boost/multi_array.hpp>
 #include <functional>
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR

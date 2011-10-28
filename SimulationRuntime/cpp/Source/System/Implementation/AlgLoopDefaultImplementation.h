@@ -87,24 +87,24 @@ protected:
 		*_dimOutputs;				///< Number (dimension) of outputs
 
 	double 
-		*_doubleUnknownsInit,		///< Double values before update of loop
-		*_doubleUnknowns,			///< Double values after update of loop
+		*_xd_init,		///< Double values before update of loop
+		*_xd,			///< Double values after update of loop
 		*_doubleOutputs;			///< Double outputs of loop 
 
 	const double
 		*_doubleInputs;				///< Double inputs of loop 
 
 	int 
-		*_intUnknownsInit,			///< Integer values before update of loop
-		*_intUnknowns,				///< Integer values after update of loop
+		*_xi_init,			///< Integer values before update of loop
+		*_xi,				///< Integer values after update of loop
 		*_intOutputs;				///< Integer outputs of loop 
 									
 	const int						
 		*_intInputs;				///< Integer inputs of loop 
 
 	bool 
-		*_boolUnknownsInit,			///< Boolean values before update of loop
-		*_boolUnknowns,				///< Boolean values after update of loop
+		*_xb_init,			///< Boolean values before update of loop
+		*_xb,				///< Boolean values after update of loop
 		*_boolOutputs;				///< Boolean outputs of loop 
 									
 	const bool						

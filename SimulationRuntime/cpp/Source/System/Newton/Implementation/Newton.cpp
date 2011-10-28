@@ -120,7 +120,7 @@ void Newton::solve(const IContinous::UPDATE command)
 				calcJacobian();
 
 				// Solve linear System
-				DGESV(&_dimSys,&dimRHS,_jac,&_dimSys,_fHelp,_f,&_dimSys,&irtrn);
+				dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_fHelp,_f,&_dimSys,&irtrn);
 
 				if(irtrn!=0)
 				{

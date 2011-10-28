@@ -2,11 +2,8 @@
 
 #include "System/Interfaces/IAlgLoop.h"				// Interface for algebraic loops
 #include "System/Interfaces/IAlgLoopSolver.h"		// Interface for algebraic loops
-
-
-
 #include "System/Newton/Interfaces/INewtonSettings.h"
-
+#include "System/Interfaces/IAlgLoopSolverFactory.h"	
 /*****************************************************************************/
 /**
 
@@ -20,7 +17,7 @@ non-linear) system of the Form F(x)=0.
 /*****************************************************************************
 Copyright (c) 2008, OSMC
 *****************************************************************************/
-class AlgLoopSolverFactory
+class AlgLoopSolverFactory : public IAlgLoopSolverFactory
 {
 public:
 	AlgLoopSolverFactory();
@@ -28,7 +25,7 @@ public:
 	 ~AlgLoopSolverFactory();
 
 	/// Creates a solver according to given system of equations of type algebraic loop
-	 IAlgLoopSolver* createAlgLoopSolver(IAlgLoop* algLoop);
+	virtual IAlgLoopSolver* createAlgLoopSolver(IAlgLoop* algLoop);
 
 private:
 	boost::shared_ptr<INewtonSettings>_algsolversettings;

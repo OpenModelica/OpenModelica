@@ -229,12 +229,13 @@ using boost::extensions::factory;
 
 BOOST_EXTENSION_TYPE_MAP_FUNCTION {
   /*types.get<std::map<std::string, factory<SystemDefaultImplementation> > >()
-    ["SystemDefaultImplementation"].set<SystemDefaultImplementation>();*/
+    ["SystemDefaultImplementation"].set<SystemDefaultImplementation>();
   types.get<std::map<std::string, factory<AlgLoopDefaultImplementation> > >()
     ["AlgLoopDefaultImplementation"].set<AlgLoopDefaultImplementation>();
-  types.get<std::map<std::string, factory<AlgLoopSolverFactory> > >()
-    ["AlgLoopSolverFactory"].set<AlgLoopSolverFactory>();
-  /* types.get<std::map<std::string, factory<EventHandling> > >()
+*/
+   types.get<std::map<std::string, factory<IAlgLoopSolverFactory> > >()
+    ["AlgLoopSolverFactory"].set<AlgLoopSolverFactory>();   /* 
+ types.get<std::map<std::string, factory<EventHandling> > >()
     ["EventHandling"].set<EventHandling>();*/
 
 }

@@ -63,6 +63,4 @@ public:
 	/// Provide the right hand side (according to the index)
 	virtual void giveRHS(double* doubleFuncs, int* intFuncs, bool* boolFuncs) = 0;
 
-	/// Output routine (to be called by the solver after every successful integration step)
-	virtual void writeOutput(const IDAESystem::OUTPUT command = IDAESystem::UNDEF_OUTPUT) = 0;
 };

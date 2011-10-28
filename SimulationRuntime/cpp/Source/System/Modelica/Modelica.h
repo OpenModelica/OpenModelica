@@ -17,9 +17,11 @@ using namespace std;
 #include "boost/tuple/tuple.hpp"
 #include <boost/circular_buffer.hpp>
 #include <boost/foreach.hpp>
+#include <boost/extension/shared_library.hpp>
 #include <boost/extension/extension.hpp>
 #include <boost/extension/factory.hpp>
 #include <boost/extension/type_map.hpp>
+#include <boost/extension/convenience.hpp>
 #include <boost/numeric/ublas/storage.hpp> 
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/io.hpp>
