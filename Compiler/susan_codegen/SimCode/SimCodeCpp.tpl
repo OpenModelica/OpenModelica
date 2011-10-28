@@ -791,11 +791,11 @@ end giveAlgloopvars;
 
 
 
-template writeAlgloopvars(list<SimEqSystem> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
+template writeAlgloopvars(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let algloopsolver = (continousEquations |> eq =>
-      writeAlgloopvars2(eq, contextOther, &varDecls /*BUFC*/,simCode)
+  let algloopsolver = (continousEquations |> eqs => (eqs |> eq =>
+      writeAlgloopvars2(eq, contextOther, &varDecls /*BUFC*/,simCode))
     ;separator=" ")
   
   <<
@@ -2115,11 +2115,11 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
     "NOT IMPLEMENTED EQUATION"
 end equation_;
 
-template generateAlgloopsolvers(list<SimEqSystem> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
+template generateAlgloopsolvers(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let algloopsolver = (continousEquations |> eq =>
-      generateAlgloopsolvers2(eq, contextOther, &varDecls /*BUFC*/,simCode)
+  let algloopsolver = (continousEquations |> eqs => (eqs |> eq =>
+      generateAlgloopsolvers2(eq, contextOther, &varDecls /*BUFC*/,simCode))
     ;separator="\n")
   
   <<
@@ -2151,11 +2151,11 @@ template generateAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls
 
 
 
-template generateAlgloopsolverVariables(list<SimEqSystem> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
+template generateAlgloopsolverVariables(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let algloopsolver = (continousEquations |> eq =>
-      generateAlgloopsolverVariables2(eq, contextOther, &varDecls /*BUFC*/,simCode)
+  let algloopsolver = (continousEquations |> eqs => (eqs |> eq =>
+      generateAlgloopsolverVariables2(eq, contextOther, &varDecls /*BUFC*/,simCode))
     ;separator="\n")
   
   <<
@@ -2186,11 +2186,11 @@ template generateAlgloopsolverVariables2(SimEqSystem eq, Context context, Text &
  end generateAlgloopsolverVariables2;
 
 
-template initAlgloopsolvers(list<SimEqSystem> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
+template initAlgloopsolvers(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let algloopsolver = (continousEquations |> eq =>
-      initAlgloopsolvers2(eq, contextOther, &varDecls /*BUFC*/,simCode)
+  let algloopsolver = (continousEquations |> eqs => (eqs |> eq =>
+      initAlgloopsolvers2(eq, contextOther, &varDecls /*BUFC*/,simCode))
     ;separator="\n")
   
   <<
@@ -2219,11 +2219,11 @@ template initAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls, Si
     " "
  end initAlgloopsolvers2;
 
-template algloopfilesInclude(list<SimEqSystem> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
+template algloopfilesInclude(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let algloopsolver = (continousEquations |> eq =>
-      algloopfilesInclude2(eq, contextOther, &varDecls /*BUFC*/,simCode)
+  let algloopsolver = (continousEquations |> eqs => (eqs |> eq =>
+      algloopfilesInclude2(eq, contextOther, &varDecls /*BUFC*/,simCode))
     ;separator="\n")
   
   <<
@@ -2250,11 +2250,11 @@ template algloopfilesInclude2(SimEqSystem eq, Context context, Text &varDecls, S
     " "
  end algloopfilesInclude2;
  
-template algloopfiles(list<SimEqSystem> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
+template algloopfiles(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let algloopsolver = (continousEquations |> eq =>
-      algloopfiles2(eq, contextOther, &varDecls /*BUFC*/,simCode)
+  let algloopsolver = (continousEquations |> eqs => (eqs |> eq =>
+      algloopfiles2(eq, contextOther, &varDecls /*BUFC*/,simCode))
     ;separator="\n")
   
   <<
@@ -2283,11 +2283,11 @@ template algloopfiles2(SimEqSystem eq, Context context, Text &varDecls, SimCode 
 
 
 
-template algloopcppfilenames(list<SimEqSystem> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
+template algloopcppfilenames(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> discreteEquations,list<SimWhenClause> whenClauses,list<SimEqSystem> parameterEquations,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let algloopsolver = (continousEquations |> eq =>
-      algloopcppfilenames2(eq, contextOther, &varDecls /*BUFC*/,simCode)
+  let algloopsolver = (continousEquations |> eqs => (eqs |> eq =>
+      algloopcppfilenames2(eq, contextOther, &varDecls /*BUFC*/,simCode))
     ;separator=" ")
   
   <<
