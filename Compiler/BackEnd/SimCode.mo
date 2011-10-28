@@ -3386,6 +3386,36 @@ algorithm
   end matchcontinue;
 end traversedlowEqToSimEqSystem;
 
+protected function extractDiscreteModelVars
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input list<DAE.ComponentRef> acc;
+  output list<DAE.ComponentRef> discreteModelVars;
+algorithm
+  discreteModelVars := matchcontinue (syst,shared,acc)
+    local
+      BackendDAE.Variables v;
+      BackendDAE.EquationArray e;
+      list<DAE.ComponentRef> vLst1,vLst2;
+      
+    case (BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=e),_,acc)
+      equation
+        // select all discrete vars.
+        // remove those vars that are solved in when equations
+        //vLst = List.select2(vLst, varNotSolvedInWhen, dlow, mT);
+        // replace var with cref
+        //vLst1 = BackendEquation.traverseBackendDAEEqns(e,traversingisVarDiscreteCrefFinder2,{});
+        vLst2 = BackendVariable.traverseBackendDAEVars(v,traversingisVarDiscreteCrefFinder,{});
+        vLst2 = listAppend(vLst2,acc);
+        //vLst2 = List.unionOnTrue(vLst2, vLst1, ComponentReference.crefEqual);
+      then vLst2;
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"SimCode.extractDiscreteModelVars failed"});
+      then fail();
+  end matchcontinue;
+end extractDiscreteModelVars;
+
 protected function traversingisVarDiscreteCrefFinder
 "autor: Frenkel TUD 2010-11"
   input tuple<BackendDAE.Var, list<DAE.ComponentRef>> inTpl;
@@ -3406,36 +3436,6 @@ algorithm
   end matchcontinue;
 end traversingisVarDiscreteCrefFinder;
 
-protected function extractDiscreteModelVars
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
-  input list<DAE.ComponentRef> acc;
-  output list<DAE.ComponentRef> discreteModelVars;
-algorithm
-  discreteModelVars := matchcontinue (syst,shared,acc)
-    local
-      BackendDAE.Variables v;
-      BackendDAE.EquationArray e;
-      list<DAE.ComponentRef> vLst1,vLst2;
-      
-    case (BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=e),_,acc)
-      equation
-        // select all discrete vars.
-        // remove those vars that are solved in when equations
-        //vLst = List.select2(vLst, varNotSolvedInWhen, dlow, mT);
-        // replace var with cref
-        vLst1 = BackendEquation.traverseBackendDAEEqns(e,traversingisVarDiscreteCrefFinder2,{});
-        vLst2 = BackendVariable.traverseBackendDAEVars(v,traversingisVarDiscreteCrefFinder,{});
-        vLst2 = listAppend(vLst2,acc);
-        vLst2 = List.unionOnTrue(vLst2, vLst1, ComponentReference.crefEqual);
-      then vLst2;
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"SimCode.extractDiscreteModelVars failed"});
-      then fail();
-  end matchcontinue;
-end extractDiscreteModelVars;
-
 protected function traversingisVarDiscreteCrefFinder2
 "autor: Frenkel TUD 2010-11"
   input tuple<BackendDAE.Equation, list<DAE.ComponentRef>> inTpl;
@@ -3449,7 +3449,8 @@ algorithm
       list<DAE.ComponentRef> cr_lst,cr_lst1;
     case ((e as BackendDAE.ALGORITHM(out=expl1) ,cr_lst))
       equation
-        true = BackendEquation.equationAlgorithm(e);
+        // why?
+        //true = BackendEquation.equationAlgorithm(e);
         cr_lst1 = List.map(expl1,Expression.expCref);
         cr_lst1 = listAppend(cr_lst,cr_lst1);
       then ((e,cr_lst1));
