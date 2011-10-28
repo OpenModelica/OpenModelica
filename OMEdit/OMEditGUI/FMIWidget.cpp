@@ -68,6 +68,7 @@ ImportFMIWidget::ImportFMIWidget(MainWindow *pParent)
     mpImportButton = new QPushButton(Helper::import);
     connect(mpImportButton, SIGNAL(clicked()), SLOT(importFMU()));
     // set grid layout
+    QLabel *pNoteLabel = new QLabel(tr("* This feature is experimental. Most models are not yet handled by it."));
     QGridLayout *mainLayout = new QGridLayout;
     mainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     mainLayout->addWidget(mpImportFMIHeading, 0, 0, 1, 3);
@@ -80,7 +81,7 @@ ImportFMIWidget::ImportFMIWidget(MainWindow *pParent)
     mainLayout->addWidget(mpBrowseDirectoryButton, 3, 2);
     mainLayout->addWidget(mpOutputDirectoryNoteLabel, 4, 0, 1, 3, Qt::AlignLeft);
     mainLayout->addWidget(mpImportButton, 5, 0, 1, 3, Qt::AlignRight);
-
+    mainLayout->addWidget(pNoteLabel, 6, 0, 1, 3, Qt::AlignLeft);
     setLayout(mainLayout);
 }
 
