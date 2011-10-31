@@ -3121,6 +3121,49 @@ algorithm
   end matchcontinue;
 end sizeOfVariable2;
 
+public function checkShortConnectorDef
+  "Checks a short connector definition that has extended a basic type, i.e.
+   connector C = Real;."
+  input ClassInf.State inState;
+  input SCode.Attributes inAttributes;
+  input Absyn.Info inInfo;
+  output Boolean isValid;
+algorithm
+  isValid := matchcontinue(inState, inAttributes, inInfo)
+    local
+      Absyn.Path class_path;
+      Integer pv, fv, sv;
+      SCode.Flow f;
+      SCode.Stream s;
+      Boolean bf, bs;
+
+    // Extended from bidirectional basic type, which means that it can't be
+    // balanced.
+    case (ClassInf.CONNECTOR(path = class_path),
+        SCode.ATTR(flowPrefix = f, streamPrefix = s, direction = Absyn.BIDIR()), _)
+      equation
+        // The connector might be either flow, stream or neither. 
+        // This will set either fv, sv, or pv to 1, and the rest to 0, and
+        // checkConnectorBalance2 will then be called to provide the appropriate
+        // error message (or might actually succeed if +std=2.x or 1.x).
+        bf = SCode.flowBool(f);
+        bs = SCode.streamBool(s);
+        fv = Util.if_(bf, 1, 0);
+        sv = Util.if_(bs, 1, 0);
+        pv = Util.if_(bf or bs, 0, 1);
+        checkConnectorBalance2(pv, fv, sv, class_path, inInfo);
+      then
+        true;
+
+    // Previous case failed, not a valid connector.
+    case (ClassInf.CONNECTOR(path = _), 
+      SCode.ATTR(direction = Absyn.BIDIR()), _) then false;
+
+    // All other cases are ok.
+    else true;
+  end matchcontinue;
+end checkShortConnectorDef;
+
 public function printSetsStr
   "Prints a Sets to a String."
   input Sets inSets;

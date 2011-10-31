@@ -3420,7 +3420,7 @@ algorithm
       list<SCode.Equation> eqs,initeqs,eqs2,initeqs2,eqs_1,initeqs_1,expandableEqs, expandableEqsInit;
       list<SCode.AlgorithmSection> alg,initalg,alg2,initalg2,alg_1,initalg_1;
       SCode.Restriction re,r;
-      Boolean impl;
+      Boolean impl, valid_connector;
       SCode.Visibility vis;
       SCode.Encapsulated enc2;
       SCode.Partial partialPrefix;
@@ -3723,6 +3723,11 @@ algorithm
 
         // if is a basic type or derived from it, follow the normal path
         true = checkDerivedRestriction(re, r, cn2);
+
+        // If it's a connector, check that it's valid.
+        valid_connector = ConnectUtil.checkShortConnectorDef(ci_state, DA, info);
+        Util.setStatefulBoolean(stopInst, not valid_connector);
+        true = valid_connector;
 
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2), Env.classInfToScopeType(ci_state));
         new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
