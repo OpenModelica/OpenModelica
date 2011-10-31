@@ -3407,7 +3407,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,store,inMod2,inPrefix3,inState5,className,inClassDef6,inRestriction7,inVisibility,inPartialPrefix,inEncapsulatedPrefix,inInstDims9,inBoolean10,inCallingScope,inGraph,inSets,instSingleCref,info,stopInst)
     local
       list<SCode.Element> cdefelts,compelts,extendselts,els,extendsclasselts;
-      Env.Env env1,env2,env3,env,env4,env5,cenv,cenv_2,env_2;
+      Env.Env env1,env2,env3,env,env4,env5,cenv,cenv_2,env_2,parentEnv;
       list<tuple<SCode.Element, DAE.Mod>> cdefelts_1,extcomps,compelts_1,compelts_2, comp_cond;
       list<SCode.Element> compelts_2_elem;
       Connect.Sets csets,csets1,csets_filtered,csets2,csets3,csets4,csets5,csets_1;
@@ -3427,7 +3427,7 @@ algorithm
       SCode.Encapsulated encapsulatedPrefix;
       InstDims inst_dims,inst_dims_1;
       list<DAE.Subscript> inst_dims2;
-      String id,cn2,cns,scope_str,s,str;
+      String id,cn2,cns,scope_str,s,str,fullClassName;
       SCode.Element c;
       SCode.ClassDef classDef;
       Option<DAE.EqMod> eq;
@@ -3451,6 +3451,7 @@ algorithm
       Absyn.TypeSpec tSpec;
       Option<SCode.Comment> cmt;
       list<DAE.ComponentRef> connect_crefs;
+      Absyn.Path fullEnvPath;
       
     /*// uncomment for debugging
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,inClassDef6,
@@ -3604,7 +3605,7 @@ algorithm
         
         //print("To match modifiers,\n" +& Mod.printModStr(checkMods) +& "\n on components: ");
         //print(" (" +& stringDelimitList(List.map(compelts_2_elem,SCode.elementName),", ") +& ") \n");
-        matchModificationToComponents(compelts_2_elem,checkMods,className);
+        matchModificationToComponents(compelts_2_elem,checkMods,Env.printEnvPathStr(env4));
 
         // Move any conditional components to the end of the component list, to
         // make sure that any dependencies of the condition are instantiated first.
@@ -3697,7 +3698,6 @@ algorithm
           DAE.NOMOD(), Prefix.NOPRE(), ci_state2, c, SCode.PUBLIC(), {}, false,
           callscope, ConnectionGraph.EMPTY, Connect.emptySet, NONE());
 
-
         (cache,mod_1) = Mod.elabMod(cache, cenv_2, ih, pre, mod, impl, info);
         
         mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
@@ -3727,57 +3727,71 @@ algorithm
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2), Env.classInfToScopeType(ci_state));
         new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
         
+        // chain the redeclares
         mod = chainRedeclares(mods, mod);
         
-        (cache,mod_1) = Mod.elabMod(cache, env, ih, pre, mod, impl, info);
-        mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
+        // elab the modifiers in the parent environment!
+        parentEnv = List.stripFirst(env);
+        (cache,mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, impl, info);
+        mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
+        
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
-        (cache,dims) = elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}),cn, ad, eq, impl,NONE(),true,pre,info,inst_dims) "owncref not valid here" ;
+        (cache,dims) = elabArraydimOpt(cache, parentEnv, Absyn.CREF_IDENT("",{}), cn, ad, eq, impl, NONE(), true, pre, info, inst_dims) "owncref not valid here" ;
         inst_dims2 = instDimExpLst(dims, impl);
         inst_dims_1 = List.appendLastList(inst_dims, inst_dims2);
+        
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) = instClassIn(cache, cenv_2, ih, store, mods_1, pre, new_ci_state, c, vis,
           inst_dims_1, impl, callscope, graph, inSets, instSingleCref) "instantiate class in opened scope. " ;
+        
         ClassInf.assertValid(ci_state_1, re, info) "Check for restriction violations" ;
         oDA = SCode.mergeAttributes(DA,oDA);
       then
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph);
 
     // This rule describes how to instantiate a derived class definition without array dims
-    //case (cache,env,ih,store,mods,pre,ci_state,className,
-    //      SCode.DERIVED(typeSpec = Absyn.TPATH(path = cn,arrayDim = ad), modifications = mod, attributes=DA, comment = cmt),
-    //      re,vis,partialPrefix,encapsulatedPrefix,inst_dims,impl,callscope,graph,_,instSingleCref,info,stopInst)
-    //  equation
-    //    // don't enter here
-    //    //true = intEq(1, 2);
-    //    false = Util.getStatefulBoolean(stopInst);
+    case (cache,env,ih,store,mods,pre,ci_state,className,
+          SCode.DERIVED(typeSpec = Absyn.TPATH(path = cn,arrayDim = ad), modifications = mod, attributes=DA, comment = cmt),
+          re,vis,partialPrefix,encapsulatedPrefix,inst_dims,impl,callscope,graph,_,instSingleCref,info,stopInst)
+      equation
+        // don't enter here
+        // true = intEq(1, 2);
+        false = Util.getStatefulBoolean(stopInst);
 
-    //    // no meta-modelica
-    //    false = RTOpts.acceptMetaModelicaGrammar();        
-    //    // no types, enums or connectors please!
-    //    false = valueEq(re, SCode.R_TYPE());
-    //    false = valueEq(re, SCode.R_ENUMERATION());
-    //    false = valueEq(re, SCode.R_PREDEFINED_ENUMERATION());
-    //    false = SCode.isConnector(re);
-    //    // check empty array dimensions
-    //    true = boolOr(valueEq(ad, NONE()), valueEq(ad, SOME({})));
-    //    
-    //    (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = Lookup.lookupClass(cache, env, cn, true);
-    //    
-    //    false = checkDerivedRestriction(re, r, cn2);
-    //    
-    //    mod = chainRedeclares(mods, mod);
-    //    
-    //    // use instExtends for derived with no array dimensions
-    //    (cache, env, ih, store, dae, csets, ci_state, vars, bc, oDA, eqConstraint, graph) = 
-    //    instClassdef2(cache, env, ih, store, mods, pre, ci_state, className, 
-    //       SCode.PARTS({SCode.EXTENDS(cn, vis, mod, NONE(), info)},{},{},{},{},NONE(),{},cmt), 
-    //       re, vis, partialPrefix, encapsulatedPrefix, inst_dims, impl,
-    //       callscope, graph, inSets, instSingleCref,info,stopInst);
-    //    oDA = SCode.mergeAttributes(DA,oDA);
-    //  then
-    //    (cache,env,ih,store,dae,csets,ci_state,vars,bc,oDA,eqConstraint,graph);
-
-
+        // no meta-modelica
+        false = RTOpts.acceptMetaModelicaGrammar();        
+        // no types, enums or connectors please!
+        false = valueEq(re, SCode.R_TYPE());
+        // false = valueEq(re, SCode.R_FUNCTION());
+        false = valueEq(re, SCode.R_ENUMERATION());
+        false = valueEq(re, SCode.R_PREDEFINED_ENUMERATION());
+        false = SCode.isConnector(re);
+        // check empty array dimensions
+        true = boolOr(valueEq(ad, NONE()), valueEq(ad, SOME({})));
+        
+        (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = Lookup.lookupClass(cache, env, cn, true);
+        
+        false = checkDerivedRestriction(re, r, cn2);
+                
+        // chain the redeclares
+        mod = chainRedeclares(mods, mod);
+        
+        // elab the modifiers in the parent environment!!
+        parentEnv = List.stripFirst(env);
+        (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, info);
+        // mods_1 = Mod.merge(mods, buildDerivedModifier(mod_1, cn2), parentEnv, pre);
+        // print("mods: " +& Absyn.pathString(cn) +& " " +& Mod.printModStr(mods_1) +& "\n");
+        mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
+        
+        // use instExtends for derived with no array dimensions and no modification (given via the mods_1)
+        (cache, env, ih, store, dae, csets, ci_state, vars, bc, oDA, eqConstraint, graph) = 
+        instClassdef2(cache, env, ih, store, mods_1, pre, ci_state, className, 
+           SCode.PARTS({SCode.EXTENDS(cn, vis, SCode.NOMOD(), NONE(), info)},{},{},{},{},NONE(),{},cmt), 
+           re, vis, partialPrefix, encapsulatedPrefix, inst_dims, impl,
+           callscope, graph, inSets, instSingleCref,info,stopInst);
+        oDA = SCode.mergeAttributes(DA,oDA);
+      then
+        (cache,env,ih,store,dae,csets,ci_state,vars,bc,oDA,eqConstraint,graph);
+    
     // This rule describes how to instantiate a derived class definition with array dims 
     case (cache,env,ih,store,mods,pre,ci_state,className,
           SCode.DERIVED(Absyn.TPATH(path = cn,arrayDim = ad),modifications = mod,attributes=DA),
@@ -3793,26 +3807,40 @@ algorithm
         // package A2=A
         // package A3=A(mods)
         // will get you different function implementations for the different packages!
-        c = SCode.setClassName(className, c);
+        /*
+        fullEnvPath = Absyn.selectPathsOpt(Env.getEnvPath(env), Absyn.IDENT(""));
+        fullClassName = "DE_" +& Absyn.pathStringReplaceDot(fullEnvPath, "_") +& "_D_" +& 
+                        Absyn.pathStringReplaceDot(Absyn.selectPathsOpt(Env.getEnvPath(cenv), Absyn.IDENT("")), "_" ) +& "." +& cn2 +& "_ED";
+        fullClassName = System.stringReplace(fullClassName, ".", "_");
 
-        // do not open a new env!
-        //cenv_2 = env;
-        //new_ci_state = ci_state;
+        // open a scope with a unique name in the base class environment so there is no collision 
+        cenv_2 = Env.openScope(cenv, enc2, SOME(fullClassName), Env.classInfToScopeType(ci_state));
+        new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
+        */
+        // open a scope with the correct name
         cenv_2 = Env.openScope(cenv, enc2, SOME(className), Env.classInfToScopeType(ci_state));
         new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
         
+        c = SCode.setClassName(className, c);
+        
         //print("Derived Env: " +& Env.printEnvPathStr(cenv_2) +& "\n");
         
+        // chain the redeclares
         mod = chainRedeclares(mods, mod);
         
-        (cache,mod_1) = Mod.elabMod(cache, List.stripFirst(env), ih, pre, mod, impl, info);
-        mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
+        // elab the modifiers in the parent environment!
+        parentEnv = List.stripFirst(env);
+        (cache,mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, impl, info);
+        mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
+        
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
-        (cache,dims) = elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}), cn, ad, eq, impl,NONE(),true,pre,info,inst_dims) "owncref not valid here" ;
+        (cache,dims) = elabArraydimOpt(cache, parentEnv, Absyn.CREF_IDENT("",{}), cn, ad, eq, impl, NONE(), true, pre, info, inst_dims) "owncref not valid here" ;
         inst_dims2 = instDimExpLst(dims, impl);
         inst_dims_1 = List.appendLastList(inst_dims, inst_dims2);
+        
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) = instClassIn(cache, cenv_2, ih, store, mods_1, pre, new_ci_state, c, vis,
           inst_dims_1, impl, callscope, graph, inSets, instSingleCref) "instantiate class in opened scope. " ;
+        
         ClassInf.assertValid(ci_state_1, re, info) "Check for restriction violations" ;
         oDA = SCode.mergeAttributes(DA,oDA);
       then
@@ -3995,7 +4023,8 @@ algorithm
         // Line below can be used for testing test-suite for dangeling modifiers when getErrorString() is not called.
         //print(" *** ERROR Unused modifer...: " +& s2 +& "\n");
         Error.addMessage(Error.UNUSED_MODIFIER,{s2});
-      then fail();
+      then 
+        fail();
     
     case((elem as SCode.COMPONENT(name=cn))::elems,inmod,callingScope)
       equation
@@ -4855,6 +4884,18 @@ algorithm
   end matchcontinue;
 end filterConnectionSetCrefs;
 
+protected function buildDerivedModifier
+  input DAE.Mod inMod;
+  input String className;
+  output DAE.Mod outMod;
+algorithm
+  outMod := match(inMod, className)
+    case (DAE.NOMOD(), _) then DAE.NOMOD();
+    case (DAE.MOD(_,_,{},NONE()), _) then DAE.NOMOD();
+    case (inMod, className) then DAE.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {DAE.NAMEMOD(className, inMod)}, NONE());
+  end match;
+end buildDerivedModifier;
+
 protected function partialInstClassdef
 "function: partialInstClassdef
   This function is used by partialInstClassIn for instantiating local
@@ -4882,7 +4923,7 @@ algorithm
     local
       ClassInf.State ci_state1,ci_state,new_ci_state,new_ci_state_1,ci_state2;
       list<SCode.Element> cdefelts,extendselts,els,cdefelts2,classextendselts,compelts;
-      list<Env.Frame> env1,env2,env,cenv,cenv_2,env_2,env3;
+      Env.Env env1,env2,env,cenv,cenv_2,env_2,env3,parentEnv;
       DAE.Mod emods,mods,mod_1,mods_1;
       list<tuple<SCode.Element, DAE.Mod>> extcomps,lst_constantEls,compelts_1;
       list<SCode.Equation> eqs,initeqs;
@@ -4893,46 +4934,20 @@ algorithm
       SCode.Visibility vis;
       SCode.Encapsulated enc2;
       SCode.Partial partialPrefix;
-      InstDims inst_dims;
+      InstDims inst_dims,inst_dims_1;
       SCode.Element c;
-      String cn2,cns,scope_str,className;
-      Absyn.Path cn;
+      String cn2,cns,scope_str,className,fullClassName;
+      Absyn.Path cn,fullEnvPath;
       Option<list<Absyn.Subscript>> ad;
       SCode.Mod mod;
       Env.Cache cache;
       InstanceHierarchy ih;
       Option<SCode.Comment> cmt;
+      list<DAE.Subscript> inst_dims2;
+      list<DAE.Dimension> dims;
+      Option<DAE.EqMod> eq;
 
-      /* long class definition */  /* the normal case, a class with parts */
-      /*
-    case (cache,env,ih,mods,pre,csets,ci_state,
-          SCode.PARTS(elementLst = els,
-                      normalEquationLst = eqs, initialEquationLst = initeqs,
-                      normalAlgorithmLst = alg, initialAlgorithmLst = initalg),
-          re,vis,inst_dims,className)
-      equation
-        ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
-        (cdefelts,classextendselts,extendselts,_) = splitElts(els);
-        (env1,ih) = addClassdefsToEnv(env, ih, pre, cdefelts, true,NONE()) " CLASS & IMPORT nodes are added to env" ;
-        (cache,env2,ih,emods,extcomps,eqs2,initeqs2,alg2,initalg2) =
-        partialInstExtendsAndClassExtendsList(cache,env1,ih, mods, extendselts, classextendselts, ci_state, className, true)
-        "2. EXTENDS Nodes inst_Extends_List only flatten inhteritance structure. It does not perform component instantiations." ;
-        lst_constantEls = addNomod(constantEls(els)) " Retrieve all constants";
-        *//*
-         Since partial instantiation is done in lookup, we need to add inherited classes here.
-         Otherwise when looking up e.g. A.B where A inherits the definition of B, and without having a
-         base class context (since we do not have any element to find it in), the class must be added
-         to the environment here.
-        *//*
-        cdefelts2 = classdefElts2(extcomps);
-        (env2,ih) = addClassdefsToEnv(env2, ih, pre, cdefelts2,true,NONE()); // Add inherited classes to env
-        (cache,env3,ih) = addComponentsToEnv(cache, env2, ih, mods, pre, csets, ci_state,
-                                             lst_constantEls, lst_constantEls, {},
-                                             inst_dims, false);
-      then
-        (cache,env3,ih,ci_state1);
-    */
-
+      // long class definition, the normal case, a class with parts
       case (cache,env,ih,mods,pre,ci_state,
           SCode.PARTS(elementLst = els,
             normalEquationLst = eqs, initialEquationLst = initeqs,
@@ -4991,11 +5006,14 @@ algorithm
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2), Env.restrictionToScopeType(r));
         new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
 
+        // chain the redeclares
         mod = chainRedeclares(mods, mod); 
-
-        (cache,mod_1) = Mod.elabMod(cache, env, ih, pre, mod, false, info);
-
-        mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
+        
+        // the mod is elabed in the parent of this class
+        parentEnv = List.stripFirst(env);
+        (cache,mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, info);
+        mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
+        
         (cache,env_2,ih,new_ci_state_1) = partialInstClassIn(cache, cenv_2, ih, mods_1, pre, new_ci_state, c, vis, inst_dims);
       then
         (cache,env_2,ih,new_ci_state_1);
@@ -5005,13 +5023,11 @@ algorithm
           SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod,comment = cmt),
           re,partialPrefix,vis,inst_dims,className,info)
       equation
-        // don't enter here!
-        //true = intEq(1, 2);
-
         // no meta-modelica
         false = RTOpts.acceptMetaModelicaGrammar();        
         // no types, enums or connectors please!
         false = valueEq(re, SCode.R_TYPE());
+        // false = valueEq(re, SCode.R_FUNCTION());
         false = valueEq(re, SCode.R_ENUMERATION());
         false = valueEq(re, SCode.R_PREDEFINED_ENUMERATION());
         false = SCode.isConnector(re);
@@ -5019,16 +5035,24 @@ algorithm
         true = boolOr(valueEq(ad, NONE()), valueEq(ad, SOME({})));
         
         (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = Lookup.lookupClass(cache, env, cn, true);
-        
+
         false = checkDerivedRestriction(re, r, cn2);
-        
+
+        // chain the redeclares
         mod = chainRedeclares(mods, mod);
         
-        // use instExtends for derived with no array dimensions
+        // elab the modifiers in the parent environment!!
+        parentEnv = List.stripFirst(env);
+        (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, info);
+        // mods_1 = Mod.merge(mods, buildDerivedModifier(mod_1, cn2), parentEnv, pre);
+        // print("mods: " +& Absyn.pathString(cn) +& " " +& Mod.printModStr(mods_1) +& "\n");
+        mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
+        
+        // use instExtends for derived with no array dimensions and no modification (given via the mods_1)
         (cache, env, ih, ci_state) = 
-        partialInstClassdef(cache, env, ih, mods, pre, ci_state,  
-           SCode.PARTS({SCode.EXTENDS(cn, vis, mod, NONE(), info)},{},{},{},{},NONE(),{},cmt), 
-           re,partialPrefix, vis, inst_dims, className, info);
+        partialInstClassdef(cache, env, ih, mods_1, pre, ci_state,  
+           SCode.PARTS({SCode.EXTENDS(cn, vis, SCode.NOMOD(), NONE(), info)},{},{},{},{},NONE(),{}, cmt), 
+           re, partialPrefix, vis, inst_dims, className, info);
       then
         (cache, env, ih, ci_state);
 
@@ -5046,23 +5070,37 @@ algorithm
         // package A2=A
         // package A3=A(mods)
         // will get you different function implementations for the different packages!
-        c = SCode.setClassName(className, c);
+        /*
+        fullEnvPath = Absyn.selectPathsOpt(Env.getEnvPath(env), Absyn.IDENT(""));
+        fullClassName = "DE_" +& Absyn.pathStringReplaceDot(fullEnvPath, "_") +& "_D_" +& 
+                        Absyn.pathStringReplaceDot(Absyn.selectPathsOpt(Env.getEnvPath(cenv), Absyn.IDENT("")), "_" ) +& "." +& cn2 +& "_ED";
 
-        // do not open a new env!
-        //cenv_2 = env;
-        //ci_state2 = ci_state;
-        //new_ci_state = ci_state;
-        cenv_2 = Env.openScope(cenv, enc2, SOME(className), Env.restrictionToScopeType(r));
+        // open a scope with a unique name in the base class environment so there is no collision
+        cenv_2 = Env.openScope(cenv, enc2, SOME(fullClassName), Env.classInfToScopeType(ci_state));
+        new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
+        */
+        // open a scope with the correct name
+        cenv_2 = Env.openScope(cenv, enc2, SOME(className), Env.classInfToScopeType(ci_state));
         new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
         
+        c = SCode.setClassName(className, c);
+                
         //print("Partial Derived Env: " +& Env.printEnvPathStr(cenv_2) +& "\n");
 
+        // chain the redeclares
         mod = chainRedeclares(mods, mod);
-
-        (cache,mod_1) = Mod.elabMod(cache, env, ih, pre, mod, false, info);
-
-        mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
-        (cache,env_2,ih,new_ci_state_1) = partialInstClassIn(cache, cenv_2, ih, mods_1, pre, new_ci_state, c, vis, inst_dims);
+        
+        // elab the modifiers in the parent environment!
+        parentEnv = List.stripFirst(env);
+        (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, info);        
+        mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
+        
+        eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
+        (cache,dims) = elabArraydimOpt(cache, parentEnv, Absyn.CREF_IDENT("",{}), cn, ad, eq, false, NONE(), true, pre, info, inst_dims) "owncref not valid here" ;
+        inst_dims2 = instDimExpLst(dims, false);
+        inst_dims_1 = List.appendLastList(inst_dims, inst_dims2);        
+        
+        (cache,env_2,ih,new_ci_state_1) = partialInstClassIn(cache, cenv_2, ih, mods_1, pre, new_ci_state, c, vis, inst_dims_1);
       then
         (cache,env_2,ih,new_ci_state_1);
 

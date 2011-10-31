@@ -1072,7 +1072,7 @@ algorithm
     // fail if is not a constant
     case (env,attr,tp,cref)
       equation
-        s1=ComponentReference.printComponentRefStr(cref);
+        s1 = ComponentReference.printComponentRefStr(cref);
         s2 = Env.printEnvPathStr(env);
         Error.addMessage(Error.PACKAGE_VARIABLE_NOT_CONSTANT,{s1,s2});
         Debug.fprintln("failtrace", "- Lookup.checkPackageVariableConstant failed: " +& s1 +& " in " +& s2);
