@@ -1049,6 +1049,32 @@ algorithm
   end matchcontinue;
 end getDimensionNth;
 
+public function setDimensionNth
+  "Sets the nth dimension of an array type to the given dimension."
+  input Type inType;
+  input DAE.Dimension inDim;
+  input Integer inDimNth;
+  output Type outType;
+algorithm
+  outType := match(inType, inDim, inDimNth)
+    local
+      DAE.Dimension dim;
+      DAE.Type ty;
+      Option<Absyn.Path> path;
+
+    case ((DAE.T_ARRAY(arrayType = ty), path), _, 1)
+      then ((DAE.T_ARRAY(inDim, ty), path));
+
+    case ((DAE.T_ARRAY(arrayDim = dim, arrayType = ty), path), _, _)
+      equation
+        true = inDimNth > 1;
+        ty = setDimensionNth(ty, inDim, inDimNth - 1);
+      then
+        ((DAE.T_ARRAY(dim, ty), path));
+
+  end match;
+end setDimensionNth;
+
 public function printDimensionsStr "Prints dimensions to a string"
   input list<DAE.Dimension> dims;
   output String res;

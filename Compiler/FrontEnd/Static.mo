@@ -5052,7 +5052,7 @@ algorithm
     local
       DAE.Exp exp,dim_exp;
       DAE.Const const1,const2,const;
-      Integer dim,num_matrices;
+      Integer dim_int,num_matrices;
       list<DAE.Exp> matrices_1;
       list<DAE.Properties> props;
       DAE.Type result_type,result_type_1,ty;
@@ -5068,20 +5068,32 @@ algorithm
       Prefix.Prefix pre;
       String sp;
       Absyn.Exp dim_aexp;
+      list<DAE.Dimension> dims;
+      DAE.Dimension dim;
+
     case (cache,env,(dim_aexp :: matrices),_,impl,pre,info) /* impl */
       equation
+        // Evaluate the dimension expression and elaborate the rest of the arguments.
         (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),const1),_) = elabExp(cache,env, dim_aexp, impl,NONE(),true,pre,info);
-        (cache,Values.INTEGER(dim),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), Ceval.MSG(info));
+        (cache,Values.INTEGER(dim_int),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), Ceval.MSG(info));
         (cache,matrices_1,props,_) = elabExpList(cache,env, matrices, impl,NONE(),true,pre,info);
+
+        // Type check the arguments and check that all dimensions except the one
+        // we will concatenate along is equal.
         tys = List.map(props,Types.getPropType);
-        ty::tys2 = List.map1(tys,Types.makeNthDimUnknown,dim);
+        ty::tys2 = List.map1(tys,Types.makeNthDimUnknown,dim_int);
         result_type = List.fold1(tys2,Types.arraySuperType,info,ty);
         (matrices_1,tys) = Types.matchTypes(matrices_1,tys,result_type,false);
-        // true = sameDimensionsExceptionDimX(props,dim);
+
+        // Calculate the size of the concatenated dimension, and insert it in
+        // the result type.
+        dims = List.map1(tys, Types.getDimensionNth, dim_int);
+        dim = List.reduce(dims, Expression.dimensionsAdd);
+        result_type_1 = Types.setDimensionNth(result_type, dim, dim_int);
+
+        // Construct a call to cat.
         const2 = elabArrayConst(props);
         const = Types.constAnd(const1, const2);
-        num_matrices = listLength(matrices_1);
-        result_type_1 = elabBuiltinCat2(result_type, dim, num_matrices);
         etp = Types.elabType(result_type_1);
         exp = Expression.makeBuiltinCall("cat", dim_exp :: matrices_1, etp);
       then
@@ -5097,9 +5109,9 @@ algorithm
     case (cache,env,(dim_aexp :: matrices),_,impl,pre,info)
       equation
         (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),const1),_) = elabExp(cache,env, dim_aexp, impl,NONE(),true,pre,info);
-        (cache,Values.INTEGER(dim),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), Ceval.MSG(info));
+        (cache,Values.INTEGER(dim_int),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), Ceval.MSG(info));
         (cache,matrices_1,props,_) = elabExpList(cache,env, matrices, impl,NONE(),true,pre,info);
-        false = sameDimensionsExceptionDimX(props,dim);
+        false = sameDimensionsExceptionDimX(props,dim_int);
         lst = List.map((dim_aexp :: matrices), Dump.printExpStr);
         s = stringDelimitList(lst, ", ");
         sp = PrefixUtil.printPrefixStr3(pre);
