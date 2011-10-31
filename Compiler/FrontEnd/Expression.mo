@@ -5749,36 +5749,28 @@ algorithm
   end matchcontinue;
 end isUnary;
 
-public function isCref "
-Author: BZ 2008-06, checks wheter an DAE.Exp is cref or not.
-
-alternative name: isExpCref
-"
+public function isCref 
+  "Returns true if the given expression is a component reference, 
+   otherwise false."
   input DAE.Exp inExp;
-  output Boolean outB;
-algorithm outB:= matchcontinue(inExp)
-    case(DAE.CREF(_,_)) then true;
-    case(_) then false;
-  end matchcontinue;
+  output Boolean outIsCref;
+algorithm 
+  outIsCref := match(inExp)
+    case DAE.CREF(componentRef = _) then true;
+    else false;
+  end match;
 end isCref;
 
-public function isCrefArray "Function isCrefArray
-Checks wheter a cref is an array or not.
+public function isCrefArray 
+  "Checks whether a cref is an array or not.
 "
   input DAE.Exp inExp;
-  output Boolean outB;
+  output Boolean outIsArray;
 algorithm
-  outB:=
-  matchcontinue(inExp)
-    local
-      DAE.Exp exp1;
-    case(exp1 as DAE.CREF(_,DAE.ET_ARRAY(_,_)))
-    then
-      true;
-    case(_)
-    then
-      false;
-  end matchcontinue;
+  outIsArray := match(inExp)
+    case(DAE.CREF(ty = DAE.ET_ARRAY(_,_))) then true;
+    else false;
+  end match;
 end isCrefArray;
 
 public function isCrefScalar

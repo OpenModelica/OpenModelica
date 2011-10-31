@@ -2446,19 +2446,39 @@ algorithm
       DAE.Exp exp,e1;
       Integer i,j;
     
-    case((exp as DAE.CREF(componentRef=cr),(ht,i,j)))
+    case((exp as DAE.CREF(componentRef = _),(ht,i,j)))
       equation
-        e1 = BaseHashTable.get(cr,ht);
+        e1 = replaceCrefInAnnotation(exp, ht);
+        true = Expression.isConst(e1);
       then 
         ((e1,(ht,i,j+1)));
-    case((exp as DAE.CREF(componentRef=cr),(ht,i,j)))
-      equation
-        failure(_ = BaseHashTable.get(cr,ht));
-      then 
-        ((exp,(ht,i+1,j)));
+
+    case((exp as DAE.CREF(componentRef = _),(ht,i,j)))
+      then ((exp,(ht,i+1,j)));
+
     case(itpl) then itpl;
   end matchcontinue;
 end evaluateAnnotationTraverse;
+
+protected function replaceCrefInAnnotation
+  input DAE.Exp inExp;
+  input HashTable2.HashTable inTable;
+  output DAE.Exp outExp;
+algorithm
+  outExp := matchcontinue(inExp, inTable)
+    local
+      DAE.ComponentRef cr;
+      DAE.Exp exp;
+
+    case (DAE.CREF(componentRef = cr), _)
+      equation
+        exp = BaseHashTable.get(cr, inTable);
+      then
+        replaceCrefInAnnotation(exp, inTable);
+
+    else inExp;
+  end matchcontinue;
+end replaceCrefInAnnotation;
 
 public function getParameterVars
 "function: getParameterVars"
@@ -5097,7 +5117,7 @@ algorithm
   (v,ie,ia,e,a,o) := match(inElements,v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc)
     local
       DAE.Element el;
-      list<DAE.Element> rest;
+      list<DAE.Element> rest, ell;
       
     // handle empty case
     case ({}, v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) 
@@ -5209,6 +5229,14 @@ algorithm
         (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc) = splitElements_dispatch(rest, v_acc,ie_acc,ia_acc,e_acc,a_acc,el::o_acc);
       then
         (v_acc,ie_acc,ia_acc,e_acc,a_acc,o_acc);
+
+    case ((el as DAE.COMP(dAElist = ell)) :: rest, _, _, _, _, _, _)
+      equation
+        v_acc = listAppend(ell, v_acc);
+        (v_acc, ie_acc, ia_acc, e_acc, a_acc, o_acc) =
+          splitElements_dispatch(rest, v_acc, ie_acc, ia_acc, e_acc, a_acc, o_acc);
+      then
+        (v_acc, ie_acc, ia_acc, e_acc, a_acc, o_acc);
   end match;
 end splitElements_dispatch;
 
