@@ -78,6 +78,11 @@ int warningLevelAssert = 0;
 string TermMsg = string("");
 omc_fileInfo TermInfo = omc_dummyFileInfo;
 
+#ifndef NO_INTERACTIVE_DEPENDENCY
+Socket sim_communication_port;
+static int sim_communication_port_open = 1;
+#endif
+
 int sim_verbose = 0; // Flag for logging
 int sim_verboseLevel = 0; // Flag for logging level
 int sim_noemit = 0; // Flag for not emitting data
@@ -1034,6 +1039,15 @@ initRuntimeAndSimulation(int argc, char**argv)
     int userPort;
     stream >> userPort;
     setPortOfControlServer(userPort);
+  } else if (!interactiveSimulation && flagSet("port", argc, argv)) {
+    string *portvalue = (string*) getFlagValue("port", argc, argv);
+    std::istringstream stream(*portvalue);
+    int port;
+    stream >> port;
+    sim_communication_port_open = 1;
+    sim_communication_port_open &= sim_communication_port.create();
+    sim_communication_port_open &= sim_communication_port.connect("127.0.0.1",port);
+    communicateStatus("Starting",0.0);
   }
 #endif
   int verbose_flags = verboseLevel(argc, argv);
@@ -1055,6 +1069,19 @@ void SimulationRuntime_printStatus(int sig) {
   printf("<currentTime>%g</currentTime>\n",globalData->timeValue);
   printf("<diffCurrentTime>%g</diffCurrentTime>\n",globalData->timeValue-globalData->oldTime);
   printf("</status>\n");
+}
+
+void communicateStatus(const char *phase, double completionPercent /*0.0 to 1.0*/)
+{
+#ifndef NO_INTERACTIVE_DEPENDENCY
+  if (sim_communication_port_open) {
+    std::stringstream s;
+    s << (int)(completionPercent*10000) << " " << phase << endl;
+    std::string str(s.str());
+    sim_communication_port.send(str);
+    cout << str;
+  }
+#endif
 }
 
 /* \brief main function for simulator
@@ -1087,5 +1114,10 @@ int _main_SimulationRuntime(int argc, char**argv)
   deInitializeDataStruc2(globalData);
   free(globalData);
   fflush(NULL);
+#ifndef NO_INTERACTIVE_DEPENDENCY
+  if (sim_communication_port_open) {
+    sim_communication_port.close();
+  }
+#endif
   EXIT(retVal);
 }

@@ -87,6 +87,11 @@ extern simulation_result *sim_result;
 /* function with template for linear model */
 int callSolver(int, char**, string, string, string, double, double, double, long, double);
 
+#ifndef NO_INTERACTIVE_DEPENDENCY
+#include "interactive/socket.h"
+extern Socket sim_communication_port;
+#endif
+
 #endif /* cplusplus */
 
 extern int measure_time_flag;
@@ -410,6 +415,7 @@ void setTermMsg(const char*);
  * simulation runtime no longer has main, is defined by the generated model code which calls this function.
  */
 extern int _main_SimulationRuntime(int argc, char**argv);
+void communicateStatus(const char *phase, double completionPercent);
 
 #ifdef __cplusplus
 }

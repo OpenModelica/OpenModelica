@@ -554,6 +554,7 @@ solver_main(int argc, char** argv, double &start, double &stop,
        * update continuous part with
        * functionODE() and functionAlgebraics(); */
 
+      communicateStatus("Running", (globalData->timeValue-start)/(stop-start));
       retValIntegrator = solver_main_step(flag, start, stop, reset,
                                           reinit_step, useInterpolation, step, dasslStatsTmp);
 
@@ -677,6 +678,8 @@ solver_main(int argc, char** argv, double &start, double &stop,
       return -1;
     }
   }
+
+  communicateStatus("Finished", 1);
 
   if (sim_verbose >= LOG_STATS) {
     /* save dassl stats before print */
