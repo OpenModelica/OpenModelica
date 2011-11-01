@@ -1072,7 +1072,7 @@ int _main_SimulationRuntime(int argc, char**argv)
   if (initRuntimeAndSimulation(argc, argv)) //initRuntimeAndSimulation returns 1 if an error occurs
     return 1;
   /* sighandler_t oldhandler = different type on all platforms... */
-#ifdef SIGUUSR1
+#ifdef SIGUSR1
   signal(SIGUSR1, SimulationRuntime_printStatus);
 #endif
 
