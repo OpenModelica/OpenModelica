@@ -33,6 +33,11 @@
 
 #include "DocumentationWidget.h"
 
+//! @class DocumentationWidget
+//! @brief Displays the model documentation.
+
+//! Constructor
+//! @param pParent is the pointer to MainWindow.
 DocumentationWidget::DocumentationWidget(MainWindow *pParent)
     : QWidget(pParent)
 {
@@ -60,25 +65,29 @@ DocumentationWidget::DocumentationWidget(MainWindow *pParent)
     mpSaveButton->setMaximumSize(QSize(100,20));
     connect(mpSaveButton, SIGNAL(clicked()), SLOT(saveChanges()));
     QHBoxLayout *horizontalLayout = new QHBoxLayout;
+    horizontalLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     horizontalLayout->addWidget(mpPixmapLabel);
     horizontalLayout->addWidget(mpHeadingLabel);
     horizontalLayout->addWidget(mpSaveButton);
     horizontalLayout->addWidget(mpEditButton);
-
+    // set layout
     QVBoxLayout *verticalLayout = new QVBoxLayout;
+    verticalLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     verticalLayout->addLayout(horizontalLayout);
     verticalLayout->addWidget(mpDocumentationViewer);
     verticalLayout->addWidget(mpDocumentationEditor);
-
     setLayout(verticalLayout);
 }
 
+//! Destructor
 DocumentationWidget::~DocumentationWidget()
 {
     delete mpDocumentationViewer;
     delete mpDocumentationEditor;
 }
 
+//! Shows the documentation of a model
+//! @param className the model name
 void DocumentationWidget::show(QString className)
 {
     mClassName=className;
@@ -113,6 +122,8 @@ void DocumentationWidget::show(QString className)
     mpDocumentationEditor->setVisible(false);
 }
 
+//! Shows the documenation editing view.
+//! @param className the model name
 void DocumentationWidget::showDocumentationEditView(QString className)
 {
     mpDocumentationViewer->hide();
@@ -126,11 +137,15 @@ void DocumentationWidget::showDocumentationEditView(QString className)
     mpDocumentationEditor->show();
 }
 
+//! Sets the model as custom model.
+//! @param isCustomModel
 void DocumentationWidget::setIsCustomModel(bool isCustomModel)
 {
     mIsCustomModel = isCustomModel;
 }
 
+//! Returns true if the model is a custom model.
+//! @return bool true if model is a custom model
 bool DocumentationWidget::isCustomModel()
 {
     return mIsCustomModel;
@@ -143,6 +158,7 @@ void DocumentationWidget::editDocumentation()
     mpSaveButton->setDisabled(false);
 }
 
+//! Save the changes made to the documentation of the model.
 void DocumentationWidget::saveChanges()
 {
     QString doc = mpDocumentationEditor->toPlainText();
@@ -159,18 +175,11 @@ void DocumentationWidget::saveChanges()
     }
 }
 
-void DocumentationWidget::paintEvent(QPaintEvent *event)
-{
-    Q_UNUSED(event);
-    QPainter painter (this);
-    painter.setPen(Qt::gray);
-    QRect rectangle = this->rect();
-    rectangle.setWidth(this->rect().width() - 2);
-    rectangle.setHeight(this->rect().height() - 2);
-    painter.drawRect(rectangle);
-    QWidget::paintEvent(event);
-}
+//! @class DocumentationEditor
+//! @brief An editor for editing the documentation of the model.
 
+//! Constructor
+//! @param pParent is the pointer to DocumentationWidget.
 DocumentationEditor::DocumentationEditor(DocumentationWidget *pParent)
     : QTextEdit(pParent)
 {
@@ -185,6 +194,11 @@ DocumentationEditor::DocumentationEditor(DocumentationWidget *pParent)
     this->setFontPointSize(10.0);
 }
 
+//! @class DocumentationViewer
+//! @brief A webview for displaying the html documentation.
+
+//! Constructor
+//! @param pParent is the pointer to DocumentationWidget.
 DocumentationViewer::DocumentationViewer(DocumentationWidget *pParent)
     : QWebView(pParent)
 {
@@ -197,8 +211,8 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pParent)
     QString baseUrl = QString(Helper::OpenModelicaLibrary).replace("\\", "/").append("/Modelica ").append(versionStr).append("/Images/");
     setBaseUrl(baseUrl);
     // set page font settings
-    settings()->setFontFamily(QWebSettings::StandardFont, "Verdana");
-    settings()->setFontSize(QWebSettings::DefaultFontSize, 10);
+    //settings()->setFontFamily(QWebSettings::StandardFont, "Verdana");
+    //settings()->setFontSize(QWebSettings::DefaultFontSize, 10);
     // set page links settings
     page()->setLinkDelegationPolicy(QWebPage::DelegateAllLinks);
 
@@ -206,16 +220,22 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pParent)
     connect(this->page(), SIGNAL(linkHovered(QString,QString,QString)), SLOT(processLinkHover(QString,QString,QString)));
 }
 
+//! Sets a base url for the webview.
+//! @param url the base url
 void DocumentationViewer::setBaseUrl(QString url)
 {
     mBaseUrl.setUrl(url);
 }
 
+//! Returns the base url.
+//! @return QUrl the base url.
 QUrl DocumentationViewer::getBaseUrl()
 {
     return mBaseUrl;
 }
 
+//! Slot activated when linkClicked signal of webview is raised.
+//! Handles the link processing. Sends all the http starting links to the QDesktopServices and process all Modelica starting links.
 void DocumentationViewer::processLinkClick(QUrl url)
 {
     //! @todo
@@ -247,6 +267,8 @@ void DocumentationViewer::processLinkClick(QUrl url)
     }
 }
 
+//! Slot activated when QNetworkReply finished signal is raised.
+//! Handles the link redirected to https.
 void DocumentationViewer::requestFinished()
 {
     QNetworkReply *reply = qobject_cast<QNetworkReply*>(const_cast<QObject*>(sender()));
@@ -261,6 +283,8 @@ void DocumentationViewer::requestFinished()
     reply->deleteLater();
 }
 
+//! Slot activated when linkHovered signal of web view is raised.
+//! Writes the url to the status bar.
 void DocumentationViewer::processLinkHover(QString link, QString title, QString textContent)
 {
     Q_UNUSED(title);
@@ -272,6 +296,8 @@ void DocumentationViewer::processLinkHover(QString link, QString title, QString 
         mpParentDocumentationWidget->mpParentMainWindow->mpStatusBar->showMessage(link);
 }
 
+//! Reimplementation of mousePressEvent.
+//! Disables the webview rightclick.
 void DocumentationViewer::mousePressEvent(QMouseEvent *event)
 {
     // dont allow right click on Documentation Viewer

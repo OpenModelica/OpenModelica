@@ -143,7 +143,9 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     documentationdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     documentationdock->setContentsMargins(0, 1, 1, 1);
     mpDocumentationWidget = new DocumentationWidget(this);
-    documentationdock->setWidget(mpDocumentationWidget);
+    QScrollArea *documentationScrollArea = new QScrollArea;
+    documentationScrollArea->setWidget(mpDocumentationWidget);
+    documentationdock->setWidget(documentationScrollArea);
     addDockWidget(Qt::RightDockWidgetArea, documentationdock);
     documentationdock->hide();
     //Create Actions, Toolbar and Menus
