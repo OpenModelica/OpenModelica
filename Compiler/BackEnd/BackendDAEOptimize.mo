@@ -958,7 +958,7 @@ algorithm
       DAE.ComponentRef cr,cra;
       BackendDAE.BinTree newvars;
       BackendDAE.VarKind kind;
-      BackendDAE.Var var,var2,var3,v,v1;
+      BackendDAE.Var var,var2,var3,var4,v,v1;
       BackendDAE.BackendDAE dae1,dae2;
       Boolean constExp,negate;
       BackendDAE.Variables knvars;
@@ -1793,6 +1793,7 @@ algorithm
         true = Expression.isConst(inExp);
         value = ValuesUtil.expValue(inExp);
         var = BackendVariable.setBindValue(inVar,value);
+        var = BackendVariable.setVarStartValue(var,inExp);
       then (var,true);
     case(_,inVar) then (inVar,false);        
   end matchcontinue;
@@ -3071,7 +3072,8 @@ algorithm
     case ({},{},{},vars) then vars;      
     case (v::varlst,r::rlst,s::slst,vars)
       equation
-        v1 = BackendVariable.setBindExp(v,DAE.RCONST(r));  
+        v1 = BackendVariable.setBindExp(v,DAE.RCONST(r));
+        v1 = BackendVariable.setVarStartValue(v1,DAE.RCONST(r));
         // ToDo: merge source of var and equation
         vars1 = BackendVariable.addVar(v1,vars);
         vars2 = changeconstantLinearSystemVars(varlst,rlst,slst,vars1);
