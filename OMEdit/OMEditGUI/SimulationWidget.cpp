@@ -354,11 +354,38 @@ void SimulationWidget::simulateModel(QString simulationParameters)
         mpProgressDialog->mpCancelSimulationButton->setEnabled(true);
         mpProgressDialog->setText(Helper::running_Simulation_text);
         mpParentMainWindow->mpStatusBar->showMessage(Helper::running_Simulation);
-        mpSimulationProcess->start(file);
+
+        QTcpSocket *sock = 0;
+        QTcpServer server;
+        const int SOCKMAXLEN = 4096;
+        char buf[SOCKMAXLEN];
+        server.listen(QHostAddress("127.0.0.1"));
+        QStringList args("-port");
+        args << QString::number(server.serverPort());
+
+        mpSimulationProcess->start(file,args);
         while (mpSimulationProcess->state() == QProcess::Starting || mpSimulationProcess->state() == QProcess::Running)
         {
+            if (!sock && server.hasPendingConnections()) {
+              sock = server.nextPendingConnection();
+            } else if (!sock) {
+              server.waitForNewConnection(100,0);
+            } else {
+              while (sock->readLine(buf,SOCKMAXLEN) > 0) {
+                char *msg = 0;
+                double d = strtod(buf, &msg);
+                if (msg == buf || *msg != ' ') {
+                  fprintf(stderr, "TODO: OMEdit GUI: COMM ERROR '%s'", msg);
+                } else {
+                  fprintf(stderr, "TODO: OMEdit GUI: Display progress (%g%%) and message: %s", d/100.0, msg+1);
+                }
+              }
+            }
             qApp->processEvents();
         }
+        if (sock) delete sock;
+        server.close();
+        
         // we set the Progress Dialog box to hide when we cancel the simulation, so don't show user the plottin view just return.
         if (mpProgressDialog->isHidden())
             return;
