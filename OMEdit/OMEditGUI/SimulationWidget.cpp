@@ -247,21 +247,16 @@ void SimulationWidget::simulate()
         if (mpMethodComboBox->currentText().isEmpty())
             simualtionParameters.append(tr(", method=\"dassl\""));
         else
-            simualtionParameters.append(tr(", method=")).append("\"")
-                    .append(mpMethodComboBox->currentText()).append("\"");
+            simualtionParameters.append(tr(", method=")).append("\"").append(mpMethodComboBox->currentText()).append("\"");
         if (!mpToleranceTextBox->text().isEmpty())
             simualtionParameters.append(tr(", tolerance=")).append(mpToleranceTextBox->text());
-        simualtionParameters.append(tr(", outputFormat=")).append("\"")
-                .append(mpOutputFormatComboBox->currentText()).append("\"");
+        simualtionParameters.append(tr(", outputFormat=")).append("\"").append(mpOutputFormatComboBox->currentText()).append("\"");
         if (!mpFileNameTextBox->text().isEmpty())
-            simualtionParameters.append(tr(", fileNamePrefix=")).append("\"")
-                    .append(mpFileNameTextBox->text()).append("\"");
+            simualtionParameters.append(tr(", fileNamePrefix=")).append("\"").append(mpFileNameTextBox->text()).append("\"");
         if (!mpVariableFilterTextBox->text().isEmpty())
-            simualtionParameters.append(tr(", variableFilter=")).append("\"")
-                    .append(mpVariableFilterTextBox->text()).append("\"");
+            simualtionParameters.append(tr(", variableFilter=")).append("\"").append(mpVariableFilterTextBox->text()).append("\"");
         if (!mpCflagsTextBox->text().isEmpty())
-            simualtionParameters.append(tr(", cflags=")).append("\"")
-                    .append(mpCflagsTextBox->text()).append("\"");
+            simualtionParameters.append(tr(", cflags=")).append("\"").append(mpCflagsTextBox->text()).append("\"");
 
         ProjectTab *projectTab = mpParentMainWindow->mpProjectTabs->getCurrentTab();
 
@@ -277,12 +272,12 @@ void SimulationWidget::simulate()
         // before simulating save the simulation options
         saveSimulationOptions();
         // show the progress bar
-        mpProgressDialog->setText(Helper::running_Simulation_text);
+        mpProgressDialog->setText(Helper::compiling_Model_text);
         mpProgressDialog->mpCancelSimulationButton->setEnabled(false);
         mpProgressDialog->show();
         mpParentMainWindow->mpProgressBar->setRange(0, 0);
         mpParentMainWindow->showProgressBar();
-        mpParentMainWindow->mpStatusBar->showMessage(Helper::running_Simulation);
+        mpParentMainWindow->mpStatusBar->showMessage(Helper::compiling_Model);
 
         if (mIsInteractive)
             buildModel(simualtionParameters);
@@ -357,8 +352,10 @@ void SimulationWidget::simulateModel(QString simulationParameters)
 #endif
         mpSimulationProcess->setWorkingDirectory(fileInfo.absolutePath());
         mpProgressDialog->mpCancelSimulationButton->setEnabled(true);
+        mpProgressDialog->setText(Helper::running_Simulation_text);
+        mpParentMainWindow->mpStatusBar->showMessage(Helper::running_Simulation);
         mpSimulationProcess->start(file);
-        while (mpSimulationProcess->state() == QProcess::Running)
+        while (mpSimulationProcess->state() == QProcess::Starting || mpSimulationProcess->state() == QProcess::Running)
         {
             qApp->processEvents();
         }

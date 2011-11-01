@@ -2516,7 +2516,7 @@ bool ProjectTab::modelicaEditorTextChanged()
     // change the model type label in the status bar of projecttab
     mpModelicaTypeLabel->setText(StringHandler::getModelicaClassType(mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->getClassRestriction(mModelNameStructure)));
     this->mOpenMode = false;
-
+    return true;
     /*
     if (!modelName.isEmpty())
     {

@@ -64,7 +64,9 @@ int Helper::tabWidth = 20;
 qreal Helper::shapesStrokeWidth = 5.0;
 QString Helper::modelicaLibrarySearchText = QString("Search Modelica Standard Library");
 QString Helper::noItemFound = QString("Sorry, no items found");
-/* Interactuve Simulation Messages */
+/* Interactive Simulation Messages */
+QString Helper::compiling_Model = QString("Compiling Model");
+QString Helper::compiling_Model_text = QString("Compiling Model.\nPlease wait for a while.");
 QString Helper::running_Simulation = QString("Running Simulation");
 QString Helper::running_Simulation_text = QString("Running Simulation.\nPlease wait for a while.");
 QString Helper::starting_interactive_simulation_server = QString("Starting Interactive Simulation Server");

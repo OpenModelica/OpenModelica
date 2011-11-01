@@ -73,6 +73,8 @@ public:
     static qreal shapesStrokeWidth;
     static QString modelicaLibrarySearchText;
     static QString noItemFound;
+    static QString compiling_Model;
+    static QString compiling_Model_text;
     static QString running_Simulation;
     static QString running_Simulation_text;
     static QString starting_interactive_simulation_server;
