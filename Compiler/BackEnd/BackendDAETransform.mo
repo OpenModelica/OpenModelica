@@ -876,7 +876,6 @@ algorithm
   outComp:=
   match (inComp,syst,shared,inIncidenceMatrix,inIncidenceMatrixT,inAss1,inAss2)
     local
-      BackendDAE.Value compelem,v;
       list<BackendDAE.Value> comp;
       list<tuple<BackendDAE.Var,BackendDAE.Value>> var_varindx_lst;
       array<Integer> ass1,ass2;
@@ -886,14 +885,10 @@ algorithm
       list<BackendDAE.Equation> eqn_lst;
       BackendDAE.EquationArray eqns;
       BackendDAE.StrongComponent compX;
-    case (compelem::{},_,_,_,_,_,ass2)
-      equation
-        v = ass2[compelem];  
-      then BackendDAE.SINGLEEQUATION(compelem,v);
     case (comp,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,m,mt,ass1,ass2)
       equation
         (eqn_lst,var_varindx_lst) = List.map3_2(comp, getEquationAndSolvedVar_Internal, eqns, vars, ass2);
-        compX = analyseStrongComponentBlock(comp,eqn_lst,var_varindx_lst,syst,shared,m,mt,ass1,ass2);   
+        compX = analyseStrongComponentBlock(comp,eqn_lst,var_varindx_lst,syst,shared,m,mt,ass1,ass2,false);   
       then
         compX;
     else
@@ -915,13 +910,15 @@ protected function analyseStrongComponentBlock"function: analyseStrongComponentB
   input BackendDAE.IncidenceMatrix inIncidenceMatrix;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;   
   input array<Integer> inAss1;
-  input array<Integer> inAss2;  
+  input array<Integer> inAss2; 
+  input Boolean inLoop; //true if the function call itself
   output BackendDAE.StrongComponent outComp;
 algorithm
   outComp:=
-  matchcontinue (inComp,inEqnLst,inVarVarindxLst,syst,shared,inIncidenceMatrix,inIncidenceMatrixT,inAss1,inAss2)
+  matchcontinue (inComp,inEqnLst,inVarVarindxLst,syst,shared,inIncidenceMatrix,inIncidenceMatrixT,inAss1,inAss2,inLoop)
     local
       Integer i;
+      BackendDAE.Value compelem,v;
       list<BackendDAE.Value> comp,varindxs;
       list<tuple<BackendDAE.Var,BackendDAE.Value>> var_varindx_lst,var_varindx_lst_cond;
       array<Integer> ass1,ass2;
@@ -938,20 +935,24 @@ algorithm
       array<DAE.Algorithm> al;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       BackendDAE.JacobianType jac_tp;
-      BackendDAE.StrongComponent sc;
-    case (comp,eqn_lst,var_varindx_lst,_,_,m,mt,ass1,ass2)
+      BackendDAE.StrongComponent sc;      
+    case (comp,eqn_lst,var_varindx_lst,_,_,m,mt,ass1,ass2,false)
       equation
         SOME(i) = singleAlgorithmEquation(eqn_lst,NONE());
         varindxs = List.map(var_varindx_lst,Util.tuple22);        
       then
         BackendDAE.SINGLEALGORITHM(i,comp,varindxs);
-    case (comp,eqn_lst,var_varindx_lst,_,_,m,mt,ass1,ass2)
+    case (comp,eqn_lst,var_varindx_lst,_,_,m,mt,ass1,ass2,false)
       equation
         SOME(i) = singleArrayEquation(eqn_lst,NONE());
         varindxs = List.map(var_varindx_lst,Util.tuple22);        
       then
         BackendDAE.SINGLEARRAY(i,comp,varindxs);
-    case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared as BackendDAE.SHARED(arrayEqs=ae,algorithms=al),m,mt,ass1,ass2)
+    case (compelem::{},_,_,_,_,_,_,_,ass2,false)
+      equation
+        v = ass2[compelem];  
+      then BackendDAE.SINGLEEQUATION(compelem,v);        
+    case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared as BackendDAE.SHARED(arrayEqs=ae,algorithms=al),m,mt,ass1,ass2,_)
       equation
         var_lst = List.map(var_varindx_lst,Util.tuple21);
         true = BackendVariable.hasDiscreteVar(var_lst);
@@ -959,10 +960,10 @@ algorithm
         varindxs = List.map(var_varindx_lst,Util.tuple22);
         (cont_eqn,cont_var,disc_eqn,disc_var,indxcont_eqn,indxcont_var,indxdisc_eqn,indxdisc_var) = splitMixedEquations(eqn_lst, comp, var_lst, varindxs);
         var_varindx_lst_cond = List.threadTuple(cont_var,indxcont_var);
-        sc = analyseStrongComponentBlock(indxcont_eqn,cont_eqn,var_varindx_lst_cond,syst,shared,m,mt,ass1,ass2);
+        sc = analyseStrongComponentBlock(indxcont_eqn,cont_eqn,var_varindx_lst_cond,syst,shared,m,mt,ass1,ass2,true);
       then
         BackendDAE.MIXEDEQUATIONSYSTEM(sc,indxdisc_eqn,indxdisc_var);        
-    case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared as BackendDAE.SHARED(arrayEqs=ae,algorithms=al),m,mt,ass1,ass2)
+    case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared as BackendDAE.SHARED(arrayEqs=ae,algorithms=al),m,mt,ass1,ass2,_)
       equation
         var_lst = List.map(var_varindx_lst,Util.tuple21);
         varindxs = List.map(var_varindx_lst,Util.tuple22);

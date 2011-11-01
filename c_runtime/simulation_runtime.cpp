@@ -1079,7 +1079,7 @@ void communicateStatus(const char *phase, double completionPercent /*0.0 to 1.0*
     s << (int)(completionPercent*10000) << " " << phase << endl;
     std::string str(s.str());
     sim_communication_port.send(str);
-    cout << str;
+    //cout << str;
   }
 #endif
 }
