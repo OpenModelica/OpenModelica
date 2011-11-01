@@ -142,6 +142,11 @@ public uniontype SymbolicOperation
     Exp before;
     Exp after;
   end OP_DERIVE;
+  record OP_RESIDUAL "e1=e2 => 0=e"
+    Exp e1;
+    Exp e2;
+    Exp e;
+  end OP_RESIDUAL;
 end SymbolicOperation;
 
 public uniontype Element

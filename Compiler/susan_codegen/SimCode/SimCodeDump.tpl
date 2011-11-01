@@ -180,6 +180,13 @@ template dumpOperation(SymbolicOperation op, Info info)
           =>
           <%printExpStr(op.after)%>
       >>
+    case OP_RESIDUAL(__) then
+      <<<%\n%>
+        residual:
+          <%printExpStr(e1)%> = <%printExpStr(e2)%>
+          =>
+          0.0 = <%printExpStr(e)%>
+      >>
     case op as NEW_DUMMY_DER(__) then '<%\n%>  dummy derivative: <%crefStr(op.chosen)%> from candidates: <%op.candidates |> cr => crefStr(cr) ; separator = ","%>'
     else Tpl.addSourceTemplateError("Unknown operation",info)
 end dumpOperation;

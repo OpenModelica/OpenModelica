@@ -6342,6 +6342,7 @@ algorithm
     "partitionIndependentBlocks",
     "expandDerOperator",
     "removeSimpleEquations"
+    // "residualForm"
     // "collapseIndependentBlocks"
   });
 end getPreOptModulesString;
@@ -6364,7 +6365,8 @@ algorithm
           (BackendDAEOptimize.removeUnusedVariables,"removeUnusedVariables",false),
           (BackendDAEOptimize.partitionIndependentBlocks,"partitionIndependentBlocks",true),
           (BackendDAEOptimize.collapseIndependentBlocks,"collapseIndependentBlocks",true),
-          (BackendDAECreate.expandDerOperator,"expandDerOperator",false)
+          (BackendDAECreate.expandDerOperator,"expandDerOperator",false),
+          (BackendDAEOptimize.residualForm,"residualForm",false)
   };
   strPreOptModules := getPreOptModulesString();
   strPreOptModules := Util.getOptionOrDefault(ostrPreOptModules,strPreOptModules);

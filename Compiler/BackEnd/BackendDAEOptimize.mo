@@ -6082,4 +6082,55 @@ algorithm
   end match;
 end printPartition;
 
+public function residualForm
+  "Puts equations like x=y in the form of 0=x-y"
+  input BackendDAE.BackendDAE dlow;
+  input DAE.FunctionTree funcs;
+  output BackendDAE.BackendDAE odlow;
+algorithm
+  odlow := BackendDAEUtil.mapEqSystem1(dlow,residualForm1,1);
+end residualForm;
+
+protected function residualForm1
+  "Puts equations like x=y in the form of 0=x-y"
+  input BackendDAE.EqSystem syst;
+  input Integer i;
+  input BackendDAE.Shared shared;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+protected
+  BackendDAE.EquationArray eqs;
+algorithm
+  BackendDAE.EQSYSTEM(orderedEqs=eqs) := syst;
+  (_,_) := BackendEquation.traverseBackendDAEEqnsWithUpdate(eqs, residualForm2, 1);
+  osyst := syst;
+  oshared := shared;
+end residualForm1;
+
+protected function residualForm2
+  input tuple<BackendDAE.Equation,Integer> tpl;
+  output tuple<BackendDAE.Equation,Integer> otpl;
+algorithm
+  otpl := matchcontinue tpl
+    local
+      tuple<BackendDAE.Equation,Integer> ntpl;
+      Boolean keep;
+      DAE.Exp e1,e2,e;
+      DAE.ElementSource source;
+      DAE.ExpType et;
+      Integer i;
+    case ((BackendDAE.EQUATION(e1,e2,source),i))
+      equation
+        // This is ok, because EQUATION is not an array equation :D
+        DAE.ET_REAL() = Expression.typeof(e1);
+        false = Expression.isZero(e1) or Expression.isZero(e2);
+        e = DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2);
+        (e,_) = ExpressionSimplify.simplify(e);
+        source = DAEUtil.addSymbolicTransformation(source, DAE.OP_RESIDUAL(e1,e2,e));
+        ntpl = (BackendDAE.EQUATION(DAE.RCONST(0.0),e,source),i);
+      then ntpl;
+    else tpl;
+  end matchcontinue;
+end residualForm2;
+
 end BackendDAEOptimize;
