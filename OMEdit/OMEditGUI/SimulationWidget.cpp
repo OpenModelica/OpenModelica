@@ -34,30 +34,33 @@
 #include "SimulationWidget.h"
 #include "OMCThread.h"
 
+//! @class SimulationWidget
+//! @brief Displays a dialog with simulation options for the current model.
+
+//! Constructor
+//! @param pParent is the pointer to MainWindow.
 SimulationWidget::SimulationWidget(MainWindow *pParent)
     : QDialog(pParent, Qt::WindowTitleHint)
 {
     setWindowTitle(QString(Helper::applicationName).append(" - Simulation"));
     setMinimumSize(375, 440);
     mpParentMainWindow = pParent;
-
     setUpForm();
-
     mpProgressDialog = new ProgressDialog(this);
-
     connect(this, SIGNAL(showPlottingView()), mpParentMainWindow, SLOT(switchToPlottingView()));
 }
 
+//! Destructor
 SimulationWidget::~SimulationWidget()
 {
     delete mpProgressDialog;
 }
 
+//! Creates all the controls and set their layout.
 void SimulationWidget::setUpForm()
 {
     mpSimulationHeading = new QLabel(tr("Simulation"));
     mpSimulationHeading->setFont(QFont("", Helper::headingFontSize));
-
     line = new QFrame();
     line->setFrameShape(QFrame::HLine);
     line->setFrameShadow(QFrame::Sunken);
@@ -68,7 +71,7 @@ void SimulationWidget::setUpForm()
     mpStartTimeTextBox = new QLineEdit(tr("0"));
     mpStopTimeLabel = new QLabel(tr("Stop Time:"));
     mpStopTimeTextBox = new QLineEdit(tr("1"));
-
+    // set the layout for simulation interval groupbox
     gridSimulationIntervalLayout->addWidget(mpStartTimeLabel, 0, 0);
     gridSimulationIntervalLayout->addWidget(mpStartTimeTextBox, 0, 1);
     gridSimulationIntervalLayout->addWidget(mpStopTimeLabel, 1, 0);
@@ -79,11 +82,10 @@ void SimulationWidget::setUpForm()
     mpOutputIntervalGroup = new QGroupBox(tr("Output Interval"));
     mpNumberofIntervalLabel = new QLabel(tr("Number of Intervals:"));
     mpNumberofIntervalsTextBox = new QLineEdit(tr("500"));
-
+    // set the layout for output interval groupbox
     gridOutputIntervalLayout->addWidget(mpNumberofIntervalLabel, 0, 0);
     gridOutputIntervalLayout->addWidget(mpNumberofIntervalsTextBox, 0, 1);
     mpOutputIntervalGroup->setLayout(gridOutputIntervalLayout);
-
     // Integration
     QGridLayout *gridIntegrationLayout = new QGridLayout;
     mpIntegrationGroup = new QGroupBox(tr("Integration"));
@@ -101,7 +103,7 @@ void SimulationWidget::setUpForm()
     mpVariableFilterTextBox = new QLineEdit(tr(""));
     mpCflagsLabel = new QLabel(tr("Compiler Flags (Optional):"));
     mpCflagsTextBox = new QLineEdit(tr(""));
-
+    // set the layout for integration groupbox
     gridIntegrationLayout->addWidget(mpMethodLabel, 0, 0);
     gridIntegrationLayout->addWidget(mpMethodComboBox, 0, 1);
     gridIntegrationLayout->addWidget(mpToleranceLabel, 1, 0);
@@ -115,26 +117,22 @@ void SimulationWidget::setUpForm()
     gridIntegrationLayout->addWidget(mpCflagsLabel, 5, 0);
     gridIntegrationLayout->addWidget(mpCflagsTextBox, 5, 1);
     mpIntegrationGroup->setLayout(gridIntegrationLayout);
-
     // save simulations options
     QGridLayout *gridSaveSimulationLayout = new QGridLayout;
     mpSaveSimulationGroup = new QGroupBox(tr("Save Simulation"));
     mpSaveSimulationCheckbox = new QCheckBox(tr("Save simulation settings inside model"));
-
+    // set the layout for save simulation groupbox
     gridSaveSimulationLayout->addWidget(mpSaveSimulationCheckbox, 0, 0);
     mpSaveSimulationGroup->setLayout(gridSaveSimulationLayout);
-
     // Add the validators
     QDoubleValidator *doubleValidator = new QDoubleValidator(this);
     doubleValidator->setBottom(0);
     mpStartTimeTextBox->setValidator(doubleValidator);
     mpStopTimeTextBox->setValidator(doubleValidator);
     mpToleranceTextBox->setValidator(doubleValidator);
-
     QIntValidator *intValidator = new QIntValidator(this);
     intValidator->setBottom(1);
     mpNumberofIntervalsTextBox->setValidator(intValidator);
-
     // Create the buttons
     mpSimulateButton = new QPushButton(tr("Simulate!"));
     mpSimulateButton->setAutoDefault(true);
@@ -142,11 +140,10 @@ void SimulationWidget::setUpForm()
     mpCancelButton = new QPushButton(tr("Cancel"));
     mpCancelButton->setAutoDefault(false);
     connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
-
+    // adds buttons to the button box
     mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
     mpButtonBox->addButton(mpSimulateButton, QDialogButtonBox::ActionRole);
     mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
-
     // Create a layout
     QGridLayout *mainLayout = new QGridLayout;
     mainLayout->addWidget(mpSimulationHeading, 0, 0);
@@ -156,10 +153,10 @@ void SimulationWidget::setUpForm()
     mainLayout->addWidget(mpIntegrationGroup, 4, 0);
     mainLayout->addWidget(mpSaveSimulationGroup, 5, 0);
     mainLayout->addWidget(mpButtonBox, 6, 0);
-
     setLayout(mainLayout);
 }
 
+//! Initializes the simulation dialog with the default values.
 void SimulationWidget::initializeFields()
 {
     // depending on the mIsInteractive flag change the heading and disable start and stop times
@@ -176,9 +173,7 @@ void SimulationWidget::initializeFields()
         mpSimulationHeading->setText(tr("Simulation"));
         mpSimulationIntervalGroup->setDisabled(false);
     }
-
     ProjectTab *projectTab = mpParentMainWindow->mpProjectTabs->getCurrentTab();
-
     if (!projectTab)
     {
         return;
@@ -188,18 +183,18 @@ void SimulationWidget::initializeFields()
     QString result = mpParentMainWindow->mpOMCProxy->getSimulationOptions(projectTab->mModelNameStructure);
     result = StringHandler::removeFirstLastCurlBrackets(StringHandler::removeComment(result));
     QStringList simulationOptionsList = StringHandler::getStrings(result);
-
     // since we always get simulationOptions so just get the values from array
     mpStartTimeTextBox->setText(simulationOptionsList.at(0));
     mpStopTimeTextBox->setText(simulationOptionsList.at(1));
     mpNumberofIntervalsTextBox->setText(simulationOptionsList.at(2));
     mpToleranceTextBox->setText(QString::number(simulationOptionsList.at(3).toFloat(), 'f'));
-    mpMethodComboBox->setCurrentIndex(mpMethodComboBox->findText(StringHandler::removeFirstLastQuotes(
-                                                                     simulationOptionsList.at(4))));
+    mpMethodComboBox->setCurrentIndex(mpMethodComboBox->findText(StringHandler::removeFirstLastQuotes(simulationOptionsList.at(4))));
     mpFileNameTextBox->setText(tr(""));
     mpCflagsTextBox->setText(tr(""));
 }
 
+//! Reimplementation of QDialog::show method.
+//! @param isInteractive decides whether the dialog is used for interactive simulation or normal simulation.
 void SimulationWidget::show(bool isInteractive)
 {
     mIsInteractive = isInteractive;
@@ -214,6 +209,8 @@ void SimulationWidget::show(bool isInteractive)
     setVisible(true);
 }
 
+//! Slot activated when mpSimulateButton clicked signal is raised.
+//! Reads the simulation options set by the user and sends them to OMC by calling buildModel.
 void SimulationWidget::simulate()
 {
     // check if user is already running one interactive simultation or not
@@ -259,7 +256,6 @@ void SimulationWidget::simulate()
             simualtionParameters.append(tr(", cflags=")).append("\"").append(mpCflagsTextBox->text()).append("\"");
 
         ProjectTab *projectTab = mpParentMainWindow->mpProjectTabs->getCurrentTab();
-
         if (!projectTab)
         {
             mpParentMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
@@ -273,17 +269,19 @@ void SimulationWidget::simulate()
         saveSimulationOptions();
         // show the progress bar
         mpProgressDialog->setText(Helper::compiling_Model_text);
-        mpProgressDialog->mpCancelSimulationButton->setEnabled(false);
+        mpProgressDialog->getCancelSimulationButton()->setEnabled(false);
+        mpProgressDialog->getProgressBar()->setRange(0, 0);
+        mpProgressDialog->getProgressBar()->setTextVisible(false);
         mpProgressDialog->show();
         mpParentMainWindow->mpProgressBar->setRange(0, 0);
         mpParentMainWindow->showProgressBar();
         mpParentMainWindow->mpStatusBar->showMessage(Helper::compiling_Model);
-
+        // interactive or non interactive
         if (mIsInteractive)
             buildModel(simualtionParameters);
         else
             simulateModel(simualtionParameters);
-
+        // hide the progress bar
         mpParentMainWindow->mpStatusBar->clearMessage();
         mpParentMainWindow->hideProgressBar();
         mpProgressDialog->hide();
@@ -291,12 +289,15 @@ void SimulationWidget::simulate()
     }
 }
 
+//! Slot activated when mpCancelSimulationButton clicked signal is raised.
+//! Cancels a running simulation by killing the simulation executable.
 void SimulationWidget::cancelSimulation()
 {
     mpSimulationProcess->kill();
     mpProgressDialog->hide();
 }
 
+//! Validates the simulation values entered by the user.
 bool SimulationWidget::validate()
 {
     if (mpStartTimeTextBox->text().isEmpty())
@@ -312,7 +313,6 @@ bool SimulationWidget::validate()
                                                                            mpParentMainWindow->mpMessageWidget->mpProblem));
         return false;
     }
-
     if (mpStartTimeTextBox->text().toDouble() > mpStopTimeTextBox->text().toDouble())
     {
         mpParentMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
@@ -321,10 +321,14 @@ bool SimulationWidget::validate()
                                                                            mpParentMainWindow->mpMessageWidget->mpProblem));
         return false;
     }
-
     return true;
 }
 
+//! Used for non-interactive simulation
+//! Sends the buildModel command to OMC.
+//! Starts the simulation executable with -port argument.
+//! Creates a TCP server and starts listening for the simulation runtime progress messages.
+//! @param simulationParameters a comma seperated list of simulation parameters.
 void SimulationWidget::simulateModel(QString simulationParameters)
 {
     ProjectTab *projectTab = mpParentMainWindow->mpProjectTabs->getCurrentTab();
@@ -351,10 +355,13 @@ void SimulationWidget::simulateModel(QString simulationParameters)
         mpSimulationProcess->setProcessEnvironment(environment);
 #endif
         mpSimulationProcess->setWorkingDirectory(fileInfo.absolutePath());
-        mpProgressDialog->mpCancelSimulationButton->setEnabled(true);
+        mpProgressDialog->getCancelSimulationButton()->setEnabled(true);
         mpProgressDialog->setText(Helper::running_Simulation_text);
+        // set progress bar range
+        mpProgressDialog->getProgressBar()->setRange(0, 100);       // the simulation runtime sends double value until 100.
+        mpProgressDialog->getProgressBar()->setTextVisible(true);
         mpParentMainWindow->mpStatusBar->showMessage(Helper::running_Simulation);
-
+        // start the executable with the tcp server so it can listen to the simulation progress messages
         QTcpSocket *sock = 0;
         QTcpServer server;
         const int SOCKMAXLEN = 4096;
@@ -362,24 +369,26 @@ void SimulationWidget::simulateModel(QString simulationParameters)
         server.listen(QHostAddress("127.0.0.1"));
         QStringList args("-port");
         args << QString::number(server.serverPort());
-
+        // start the executable
         mpSimulationProcess->start(file,args);
         while (mpSimulationProcess->state() == QProcess::Starting || mpSimulationProcess->state() == QProcess::Running)
         {
             if (!sock && server.hasPendingConnections()) {
-              sock = server.nextPendingConnection();
+                sock = server.nextPendingConnection();
             } else if (!sock) {
-              server.waitForNewConnection(100,0);
+                server.waitForNewConnection(100,0);
             } else {
-              while (sock->readLine(buf,SOCKMAXLEN) > 0) {
-                char *msg = 0;
-                double d = strtod(buf, &msg);
-                if (msg == buf || *msg != ' ') {
-                  fprintf(stderr, "TODO: OMEdit GUI: COMM ERROR '%s'", msg);
-                } else {
-                  fprintf(stderr, "TODO: OMEdit GUI: Display progress (%g%%) and message: %s", d/100.0, msg+1);
+                while (sock->readLine(buf,SOCKMAXLEN) > 0) {
+                    char *msg = 0;
+                    double d = strtod(buf, &msg);
+                    if (msg == buf || *msg != ' ') {
+                        // do we really need to take care of this communication error?????
+                        //fprintf(stderr, "TODO: OMEdit GUI: COMM ERROR '%s'", sg);
+                    } else {
+                        mpProgressDialog->getProgressBar()->setValue(d/100.0);
+                        //fprintf(stderr, "TODO: OMEdit GUI: Display progress (%g%%) and message: %s", d/100.0, msg+1);
+                    }
                 }
-              }
             }
             qApp->processEvents();
         }
@@ -408,6 +417,9 @@ void SimulationWidget::simulateModel(QString simulationParameters)
     }
 }
 
+//! Used for interactive simulation
+//! Sends the buildModel command to OMC.
+//! @param simulationParameters a comma seperated list of simulation parameters.
 void SimulationWidget::buildModel(QString simulationParameters)
 {
     ProjectTab *projectTab = mpParentMainWindow->mpProjectTabs->getCurrentTab();
@@ -440,6 +452,7 @@ void SimulationWidget::buildModel(QString simulationParameters)
     }
 }
 
+//! Saves the simulation options in the model.
 void SimulationWidget::saveSimulationOptions()
 {
     if (!mpSaveSimulationCheckbox->isChecked())
@@ -459,6 +472,11 @@ void SimulationWidget::saveSimulationOptions()
     projectTab->mpModelicaEditor->setPlainText(mpParentMainWindow->mpOMCProxy->list(projectTab->mModelNameStructure));
 }
 
+//! @class ProgressDialog
+//! @brief Shows a progress dialog while compiling and running a simulation.
+
+//! Constructor
+//! @param pParent is the pointer to SimulationWidget.
 ProgressDialog::ProgressDialog(SimulationWidget *pParent)
     : QDialog(pParent, Qt::FramelessWindowHint | Qt::WindowTitleHint)
 {
@@ -469,18 +487,32 @@ ProgressDialog::ProgressDialog(SimulationWidget *pParent)
     mpText->setAlignment((Qt::AlignHCenter));
     mpCancelSimulationButton = new QPushButton(tr("Cancel Simulation"));
     connect(mpCancelSimulationButton, SIGNAL(clicked()), pParent, SLOT(cancelSimulation()));
-    QProgressBar *progressBar = new QProgressBar;
-    progressBar->setRange(0, 0);
-    progressBar->setTextVisible(false);
-    progressBar->setAlignment(Qt::AlignHCenter);
+    mpProgressBar = new QProgressBar;
+    mpProgressBar->setRange(0, 0);
+    mpProgressBar->setTextVisible(false);
+    mpProgressBar->setAlignment(Qt::AlignHCenter);
     // layout the items
     QVBoxLayout *mainLayout = new QVBoxLayout;
     mainLayout->addWidget(mpText);
-    mainLayout->addWidget(progressBar);
+    mainLayout->addWidget(mpProgressBar);
     mainLayout->addWidget(mpCancelSimulationButton, 0, Qt::AlignRight);
     setLayout(mainLayout);
 }
 
+//! @return the pointer to mpProgressBar
+QProgressBar* ProgressDialog::getProgressBar()
+{
+    return mpProgressBar;
+}
+
+//! @return the pointer to mpCancelSimulationButton
+QPushButton* ProgressDialog::getCancelSimulationButton()
+{
+    return mpCancelSimulationButton;
+}
+
+//! Sets the text message for progress dialog
+//! @param text the message to set.
 void ProgressDialog::setText(QString text)
 {
     mpText->setText(text);

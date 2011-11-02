@@ -327,7 +327,7 @@ public:
     ModelBrowserTreeNode* getBrowserNode(QString name);
     void addBrowserNode(QString name, int type, QString className, QString parentName=QString(), QString parentStructure=QString());
     void deleteBrowserNode(ModelBrowserTreeNode *item);
-    void addBrowserChild(QString name,QString className,QString parentStructure=QString());
+    void addBrowserChild(QString name,QString className,QString parentStructure=QString(), ModelBrowserTreeNode *pItem = 0);
     ModelBrowserWidget *mpParentModelBrowserWidget;
 private:
     QList<ModelBrowserTreeNode*> mModelBrowserTreeNodeList;

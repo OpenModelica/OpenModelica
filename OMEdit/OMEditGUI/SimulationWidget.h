@@ -97,10 +97,13 @@ class ProgressDialog : public QDialog
 {
 public:
     ProgressDialog(SimulationWidget *pParent = 0);
-    QPushButton *mpCancelSimulationButton;
+    QProgressBar* getProgressBar();
+    QPushButton* getCancelSimulationButton();
     void setText(QString text);
 private:
+    QProgressBar *mpProgressBar;
     QLabel *mpText;
+    QPushButton *mpCancelSimulationButton;
 };
 
 #endif // SIMULATIONWIDGET_H

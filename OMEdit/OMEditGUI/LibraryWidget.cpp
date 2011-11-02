@@ -1666,14 +1666,13 @@ void ModelBrowserTree::addBrowserNode(QString name, int type, QString className,
         QStringList info = mpParentModelBrowserWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(className);
         newTreePost = new ModelBrowserTreeNode(name, parentName,className, parentStructure + name , StringHandler::createTooltip(info, name, parentStructure + name), type);
         ModelBrowserTreeNode *treeNode = getBrowserNode(StringHandler::removeLastDot(parentStructure));
-
         treeNode->addChild(newTreePost);
     }
     newTreePost->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
     mModelBrowserTreeNodeList.append(newTreePost);
 }
 
-void ModelBrowserTree::addBrowserChild(QString name, QString className,QString parentStructure)
+void ModelBrowserTree::addBrowserChild(QString name, QString className, QString parentStructure, ModelBrowserTreeNode *pItem)
 {
     int componentType;
     // look for inherited components of a model
@@ -1694,6 +1693,9 @@ void ModelBrowserTree::addBrowserChild(QString name, QString className,QString p
         //adding nodes to the tree
         addBrowserNode(componentProperties->getName(), componentType,componentProperties->getClassName(),  name, QString(parentStructure));
     }
+    // if item does not have any childs then don't show expand indicator
+    if (inheritanceCount == 0 && components.isEmpty())
+        pItem->setChildIndicatorPolicy(QTreeWidgetItem::DontShowIndicator);
 }
 
 void ModelBrowserTree::editModelBrowser()
@@ -1725,10 +1727,10 @@ void ModelBrowserTree::editModelBrowser()
 void ModelBrowserTree::expandTree(QTreeWidgetItem *item)
 {
     //load the components(child) only if they have not been loaded once.
-    if(item->childCount()==0)
+    if (item->childCount() == 0)
     {
         ModelBrowserTreeNode *pItem = dynamic_cast<ModelBrowserTreeNode*>(item);
-        addBrowserChild(pItem->mName, pItem->mClassName,pItem->mNameStructure + ".");
+        addBrowserChild(pItem->mName, pItem->mClassName,pItem->mNameStructure + ".", pItem);
     }
     else
     {

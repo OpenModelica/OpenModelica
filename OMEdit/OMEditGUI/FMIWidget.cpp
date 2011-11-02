@@ -37,6 +37,7 @@
 //! @brief Creates an interface for importing FMU package.
 
 //! Constructor
+//! @param pParent is the pointer to MainWindow.
 ImportFMIWidget::ImportFMIWidget(MainWindow *pParent)
     : QDialog(pParent, Qt::WindowTitleHint)
 {
