@@ -9,7 +9,7 @@
 #include "fmuWrapper.h"
 /* #define _TEST_FMI */
 
-#define FMU_BINARIES_Win32_DLL "C:\\OpenModelica1.7.0\\fmu\\fmusdk_bouncingBall\\binaries\\win32\\bouncingBall.dll"
+//#define FMU_BINARIES_Win32_DLL "C:\\OpenModelica1.7.0\\fmu\\fmusdk_bouncingBall\\binaries\\win32\\bouncingBall.dll"
 #ifdef _TEST_FMI
 #define FMU_BINARIES_Win32_DLL "C:\\OpenModelica1.7.0\\fmu\\fmusdk_bouncingBall\\binaries\\win32\\bouncingBall.dll"
 /* #define FMU_BINARIES_Win32_DLL "..\\openmodelica1.7.0\\bouncingBall\\binaries\\win32\\bouncingBall.dll" */
@@ -652,46 +652,45 @@ void freefmuBooleanInst(void* in_bool){
 }
 
 void* fmuFreeAll(void* in_fmufun, void* in_inst, void* functions){
-	fmiFreeModelInst(in_inst);
+	fmiFreeModelInst(in_fmufun, in_inst);
 	freeFMUFun(in_fmufun);
 	fmiFreeCallbackFuns(functions);
 	return NULL;   
 }
 
-/*
 // free the allocated memory for FMU
 // FMI standard interface
-// void fmiFreeModelInst(void* in_fmufun, void* in_fmu){
-    // FMI* fmi = (FMI*) in_fmufun;
-    // if(fmi->freeModelInstance){
-          // fmi->freeModelInstance(in_fmu);
-          // if(!in_fmu){
-            // printf("#### fmiFreeModelInstance(...) failed...\n");
-            // exit(EXIT_FAILURE);
-          // }
-    // }
-	// #ifdef _DEBUG_
-	// printf("\n#### fmiFreeModelInst has been called here ... \n\n");
-	// #endif
-    // return;
-// }
-*/
- 
- void fmiFreeModelInst(void* in_fmu){
-    void* dllHandle = LoadLibraryFromDLL(FMU_BINARIES_Win32_DLL);
-	fFreeModelInstance freeModelInstance  = (fFreeModelInstance)   getFunctionPointerFromDLL(dllHandle, "bouncingBall_fmiFreeModelInstance");
-    if(freeModelInstance){
-          freeModelInstance(in_fmu);
-          if(!in_fmu){
-            printf("#### fmiFreeModelInstance(...) failed...\n");
-            exit(EXIT_FAILURE);
-          }
-    }
-	#ifdef _DEBUG_
+void fmiFreeModelInst(void* in_fmufun, void* in_fmu){
+	FMI* fmi = (FMI*) in_fmufun;
+	if(fmi->freeModelInstance){
+		fmi->freeModelInstance(in_fmu);
+		if(!in_fmu){
+			printf("#### fmiFreeModelInstance(...) failed...\n");
+			exit(EXIT_FAILURE);
+		}
+	}
+#ifdef _DEBUG_
 	printf("\n#### fmiFreeModelInst has been called here ... \n\n");
-	#endif
-    return;
+#endif
+	return;
 }
+
+ 
+// void fmiFreeModelInst(void* in_fmu){
+//    void* dllHandle = LoadLibraryFromDLL(FMU_BINARIES_Win32_DLL);
+//	fFreeModelInstance freeModelInstance  = (fFreeModelInstance)   getFunctionPointerFromDLL(dllHandle, "bouncingBall_fmiFreeModelInstance");
+//    if(freeModelInstance){
+//          freeModelInstance(in_fmu);
+//          if(!in_fmu){
+//            printf("#### fmiFreeModelInstance(...) failed...\n");
+//            exit(EXIT_FAILURE);
+//          }
+//    }
+//	#ifdef _DEBUG_
+//	printf("\n#### fmiFreeModelInst has been called here ... \n\n");
+//	#endif
+//    return;
+//}
  
 /* constructor and destructor of structure for fmiCallbackFunctions */
 void* fmiCallbackFuns(){

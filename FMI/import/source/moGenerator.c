@@ -10,9 +10,9 @@
 // macro for screen printing
 #define QUOTEME_(x) #x
 #define QUOTEME(x) QUOTEME_(x)
-//#define _DEBUG_ 1
-//#define PRINT_INFORMATION
-//#define _DEBUG_MODELICA 1
+#define _DEBUG_ 1
+#define PRINT_INFORMATION
+#define _DEBUG_MODELICA 1
 // end
 
 // mocro for error message print
@@ -99,7 +99,7 @@ static char* getFMUname(const char* fmupath){
 	printf("#### Result: fmupath[%d]: %c\n",i,fmupath[i]);
 	#endif
 	
-	fmuname = (char*)calloc(sizeof(char),tmp-i+1);
+	fmuname = (char*)calloc(tmp-i+1, sizeof(char));
 	strncpy(fmuname,&fmupath[i+1],tmp-i);
 	
 	#ifdef _DEBUG_
@@ -121,7 +121,7 @@ static char* getDllPath(const char* decompPath, const char* mid){
 	/*char tmpStr[lenStr1];
 	int lenStr2 = 0;
 	int strcount = 0;*/
-	fmudllpath = (char*)calloc(sizeof(char),lenStr1);
+	fmudllpath = (char*)calloc(lenStr1, sizeof(char));
   sprintf(fmudllpath, "%s%s%s%s", decompPath, FMU_BINARIES_Win32, mid, ".dll");
   return fmudllpath;
 #if 0
@@ -133,7 +133,7 @@ static char* getDllPath(const char* decompPath, const char* mid){
 		 strcount++;
 		 pch = strtok(NULL,"/");
 	}
-	ret_fmudllpath = (char*)calloc(sizeof(char),lenStr2+(strcount-1)*2);
+	ret_fmudllpath = (char*)calloc(lenStr2+(strcount-1)*2, sizeof(char));
 	pch = strtok(tmpStr,"/");
 	
 	for(i=1;i<strcount;i++){
@@ -142,14 +142,14 @@ static char* getDllPath(const char* decompPath, const char* mid){
 		pch = strtok(NULL,"/");
 		
 		#ifdef _DEBUG_
-		/* printf("#### ret_fmudllpath = %s\n",ret_fmudllpath); */
+		  printf("#### ret_fmudllpath = %s\n",ret_fmudllpath);
 		#endif
 	}
 	strcat(ret_fmudllpath,pch);
 	
 	#ifdef _DEBUG_
-	/* printf("#### ret_fmudllpath = %s\n",ret_fmudllpath); */
-	/* printf("#### strlen(ret_fmudllpath) = %d\n",strlen(ret_fmudllpath)); */
+	  printf("#### ret_fmudllpath = %s\n",ret_fmudllpath);
+	  printf("#### strlen(ret_fmudllpath) = %d\n",strlen(ret_fmudllpath));
 	#endif
 	
 	/* free(pch); DO NOT FREE pch - strtok() modifies the first argument, it does not return a new string!!! */
@@ -162,9 +162,21 @@ static char* getDllPath(const char* decompPath, const char* mid){
 // function that returns the name of the model description xml file
 static char* getNameXMLfile(const char * decompPath, const char * modeldes){
 	char * xmlfile;
-	xmlfile = (char*)calloc(sizeof(char),strlen(decompPath)+strlen(modeldes)+1);
-	strcpy(xmlfile,decompPath);
+#ifdef _DEBUG_
+	printf("####  start xmlfile size of path length= %d.\n",strlen(decompPath)+strlen(modeldes)+1);
+#endif
+	xmlfile = (char*)calloc(strlen(decompPath)+strlen(modeldes)+10, sizeof(char));
+#ifdef _DEBUG_
+	printf("####  xmlfile: %s\n",xmlfile);
+#endif
+	strncpy(xmlfile,decompPath,strlen(decompPath)+1);
+#ifdef _DEBUG_
+	printf("####  xmlfile: %s\n",xmlfile);
+#endif
 	strcat(xmlfile,modeldes);
+#ifdef _DEBUG_
+	printf("####  xmlfile: %s\n",xmlfile);
+#endif
 	return xmlfile;
 }
 
@@ -192,10 +204,10 @@ static char* getDecompPath(char * omPath, const char* mid){
 		printf("#### %s Enviroment: %s\n",QUOTEME(__LINE__),omPath);
 	#endif
 	n= strlen(omPath)+strlen(mid)+6;
-	decompPath = (char*)calloc(sizeof(char),n);
+	decompPath = (char*)calloc(n, sizeof(char));
 	sprintf(decompPath,"%sfmu\\%s\\",omPath,mid);
 	#ifdef _DEBUG_
-		// printf("#### %s decompPath: %s\n",QUOTEME(__LINE__),decompPath);
+		printf("#### %s decompPath: %s\n",QUOTEME(__LINE__),decompPath);
 	#endif
 	return decompPath;
 }
@@ -209,10 +221,22 @@ static int decompress(const char* fmuPath, const char* decompPath) {
 
 #ifdef USE_UNZIP
   n = strlen(fmuPath) + strlen(decompPath) + 13;
-  cmd = (char*) calloc(sizeof(char), n);  
+  cmd = (char*) calloc(n, sizeof(char));
+#ifdef _DEBUG_
+	printf("####  run unzip command: %s\n",fmuPath);
+#endif
+#ifdef _DEBUG_
+	printf("####  run unzip command: %s\n",decompPath);
+#endif
   sprintf(cmd, "unzip -o %s -d %s", fmuPath, decompPath);
+#ifdef _DEBUG_
+	printf("####  run unzip command: %s\n",cmd);
+#endif
   err = system(cmd);
   free(cmd); // free
+#ifdef _DEBUG_
+	printf("####  finished unzip command: %s\n",cmd);
+#endif
   if(err!=UNZIP_NO_ERROR){
 	switch(err){
 		case UNZIP_WARNINGS:
@@ -232,10 +256,9 @@ static int decompress(const char* fmuPath, const char* decompPath) {
 				break;
 	}
   }
-
 #else
   n = strlen(DECOMPRESS_CMD) + strlen(fmuPath) +strlen(decompPath)+10;
-  cmd = (char*)calloc(sizeof(char),n);
+  cmd = (char*)calloc(n, sizeof(char));
   sprintf(cmd, "%s%s \"%s\" > NUL", DECOMPRESS_CMD, decompPath, fmuPath);
   err = system(cmd);
   free(cmd); // free
@@ -292,10 +315,10 @@ fmiScalarVariableType getElementType(ScalarVariable* sv){
 // function that allocates memory for element contained in scalar variables
 void* allocateElmSV(fmiScalarVariable fmisv){
 	switch(fmisv.type){
-		case sv_real: return calloc(sizeof(fmiREAL),1);
-		case sv_integer: return calloc(sizeof(fmiINTEGER),1);
-		case sv_boolean: return calloc(sizeof(fmiBOOLEAN),1);
-		case sv_string: return calloc(sizeof(fmiSTRING),1);
+		case sv_real: return calloc(1, sizeof(fmiREAL));
+		case sv_integer: return calloc(1, sizeof(fmiINTEGER));
+		case sv_boolean: return calloc(1, sizeof(fmiBOOLEAN));
+		case sv_string: return calloc(1, sizeof(fmiSTRING));
 		case sv_enum: return NULL;
 		default: ERRORPRINT; fprintf(errLogFile,"#### Unknown element type in allocateElmSV() for fmiScalarVariable: %s ...\n",fmisv.name); exit(EXIT_FAILURE);
 	}
@@ -374,7 +397,7 @@ void instScalarVariable(ModelDescription* md,fmiScalarVariable* list){
 		for (i=0;md->modelVariables[i];i++){
 			list[i].name = getName(md->modelVariables[i]);
 			len = strlen(list[i].name);
-			list[i].flatName = (char*)calloc(sizeof(char),len+1);
+			list[i].flatName = (char*)calloc(len+1, sizeof(char));
 			strcpy(list[i].flatName,list[i].name);
 			charReplace(list[i].flatName,'.','_');
 			list[i].vr = getValueReference(md->modelVariables[i]);
@@ -510,14 +533,14 @@ void tmpcodegen(fmuModelDescription* fmuMD, const char* decompPath){
 // function that adds an element to an fmuOutputVar list;
 void addOutputVariable(fmiScalarVariable* sv, fmuOutputVar** root, fmuOutputVar** nextVar, unsigned int* counter){
 	if(*root == NULL){
-		*root = (fmuOutputVar*)calloc(sizeof(fmuOutputVar),1);
+		*root = (fmuOutputVar*)calloc(1, sizeof(fmuOutputVar));
 		(*root)->name = sv->flatName;
 		(*root)->vr = sv->vr;
 		(*root)->next = NULL;
 		*nextVar = *root;
 	}
 	else{
-		(*nextVar)->next = (fmuOutputVar*)calloc(sizeof(fmuOutputVar),1);
+		(*nextVar)->next = (fmuOutputVar*)calloc(1, sizeof(fmuOutputVar));
 		(*nextVar) = (*nextVar)->next;
 		(*nextVar)->name = sv->flatName;
 		(*nextVar)->vr = sv->vr;
@@ -531,7 +554,7 @@ static const char* appendString(char const* head, char const* tail){
 	int len;
 	char* res;
 	len = strlen(head)+strlen(tail)+1;
-	res = (char*)calloc(sizeof(char),len);
+	res = (char*)calloc(len, sizeof(char));
 	strcat(res,head);
 	strcat(res,tail);
 	res[len-1] = '\0';
@@ -905,7 +928,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath, const char
 	// int err;
 
 	// tmpStr[2] = '\0'; // terminator of the character array	
-	// mkdirCMD = (char *) calloc(sizeof(char),strlen(decompPath)+6);
+	// mkdirCMD = (char *) calloc(strlen(decompPath)+6, sizeof(char));
 	// strcat(mkdirCMD,"mkdir ");
 	// pntCh1 = decompPath;
 	// pntCh2 = strchr(pntCh1,'/');
@@ -937,7 +960,7 @@ int main(int argc, char *argv[]){
 	size_t nsv;							// number of scalar variables
 	fmiScalarVariable* list = NULL;		// list of fmiScalarVariable;
 	fmiModelVariable* fmuMV = NULL; // pointer to model variables
-	fmuModelDescription* fmuMD = (fmuModelDescription*)calloc(sizeof(fmuModelDescription),1);  // pointer to the tree-like structure of paresed xml	
+	fmuModelDescription* fmuMD = (fmuModelDescription*)calloc(1, sizeof(fmuModelDescription));  // pointer to the tree-like structure of paresed xml
 	char omPath[PATHSIZE]; // OpenModelica installation directory
 	// Allocated memory needed to be freed or file needed to be closed
 	FILE* logFile;
@@ -979,7 +1002,7 @@ int main(int argc, char *argv[]){
 	printf("#### fmuname: %s\n",fmuname);
 	if (argc > 2) {
 		if (strncmp(argv[2], "--outputdir=", 12) == 0) {
-		  decompPath = (char*) calloc(sizeof(char),strlen(argv[2]) - 11);
+		  decompPath = (char*) calloc(strlen(argv[2]) - 11, sizeof(char));
 		  strcpy((char*)decompPath, argv[2] + 12);
 		  //createDirectory(decompPath);
 		  strcat((char*)decompPath, "/");
@@ -1026,7 +1049,7 @@ int main(int argc, char *argv[]){
 	// Creating the tree-like data structure for code generation
 	nsv = getNumberOfSV(md);
 	if(nsv>0){
-	list = (fmiScalarVariable*)calloc(sizeof(fmiScalarVariable),nsv);	
+	list = (fmiScalarVariable*)calloc(nsv, sizeof(fmiScalarVariable));
 	instScalarVariable(md,list);
 	}
 	else{
@@ -1034,7 +1057,7 @@ int main(int argc, char *argv[]){
 		ERRORPRINT; fprintf(errLogFile,"#### There is no scalar variable in the model %s\n",fmuname);
 		exit(EXIT_FAILURE);
 	}
-	fmuMV = (fmiModelVariable*)calloc(sizeof(fmiModelVariable),1);
+	fmuMV = (fmiModelVariable*)calloc(1, sizeof(fmiModelVariable));
 	fmuMV->list_sv = list;
 	fmuMV->nsv = nsv;
 	instFmuModelDescription(md,fmuMD,fmuMV);

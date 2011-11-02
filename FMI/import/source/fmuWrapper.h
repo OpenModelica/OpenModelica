@@ -148,8 +148,8 @@ void freeFMUFun(void* in_fmi);
 void* fmuBooleanInst(int def_bool);
 void freefmuBooleanInst(void* in_bool);
 
-/* void fmiFreeModelInst(void* in_fmufun, void* in_fmu); */
-void fmiFreeModelInst(void* in_fmu);
+void fmiFreeModelInst(void* in_fmufun, void* in_fmu);
+//void fmiFreeModelInst(void* in_fmu);
  
 void* fmiCallbackFuns();
 void fmiFreeCallbackFuns(void * functions);
