@@ -5,17 +5,19 @@
 #include <stdio.h>
 #include <string.h>
 
-/* #define _PRINT_OUT__ */
+#define _PRINT_OUT__
+#define _DEBUG_
+extern int smi_verbose;
 #include "fmuWrapper.h"
 /* #define _TEST_FMI */
 
 //#define FMU_BINARIES_Win32_DLL "C:\\OpenModelica1.7.0\\fmu\\fmusdk_bouncingBall\\binaries\\win32\\bouncingBall.dll"
 #ifdef _TEST_FMI
-#define FMU_BINARIES_Win32_DLL "C:\\OpenModelica1.7.0\\fmu\\fmusdk_bouncingBall\\binaries\\win32\\bouncingBall.dll"
+//#define FMU_BINARIES_Win32_DLL "C:\\OpenModelica1.7.0\\fmu\\fmusdk_bouncingBall\\binaries\\win32\\bouncingBall.dll"
 /* #define FMU_BINARIES_Win32_DLL "..\\openmodelica1.7.0\\bouncingBall\\binaries\\win32\\bouncingBall.dll" */
 /* #define FMU_BINARIES_Win32_DLL "..\\dymola\\bouncingBall\\binaries\\win32\\bouncingBall.dll" */
 
-#define FMU_XML_PATH "..\\..\\fmusdk\\bouncingBall\\modelDescription.xml"
+//#define FMU_XML_PATH "..\\..\\fmusdk\\bouncingBall\\modelDescription.xml"
 #endif
 
 #define BUFSIZE 4096
@@ -98,11 +100,12 @@ void* getProAdr(FMI* fmi, const char* mid, const char* funName){
 void* loadFMUDll(void* in_fmi, const char* pathFMUDll,const char* mid){
     FMI* fmi = (FMI*) in_fmi;
 	char* pathFMUSO;
+	char* err_dlopen;
 	int pathLen;
 	pathLen = strlen(pathFMUDll);
-	pathFMUSO = (char*)calloc(sizeof(char),pathLen+2);
-	strcat(pathFMUSO,"./");
-	strncat(pathFMUSO,pathFMUDll,pathLen-4);
+	pathFMUSO = (char*)calloc(pathLen+2, sizeof(char));
+	//strcat(pathFMUSO,"./");
+	strncat(pathFMUSO,pathFMUDll,pathLen-3);
 	strcat(pathFMUSO,".so");
 	pathFMUSO[pathLen+1] = '\0';
 	#if defined(__MINGW32__) || defined(_MSC_VER)
@@ -112,7 +115,15 @@ void* loadFMUDll(void* in_fmi, const char* pathFMUDll,const char* mid){
 	#endif
     if(!fmi->dllHandle){
 		#ifdef _DEBUG_
-        printf("#### Loading dll library \"%s\" in fmiInstantiate failed!!!\n",pathFMUDll);
+
+
+        #if defined(__MINGW32__) || defined(_MSC_VER)
+          printf("#### Loading dll library \"%s\" in fmiInstantiate failed!!!\n",pathFMUDll);
+        #else
+          err_dlopen = dlerror();
+          printf("#### Error message: \"%s\"!!!\n",err_dlopen);
+          printf("#### Loading dll library \"%s\" in fmiInstantiate failed!!!\n",pathFMUSO);
+        #endif
 		#endif
         exit(EXIT_FAILURE);
     }
@@ -140,7 +151,9 @@ void* loadFMUDll(void* in_fmi, const char* pathFMUDll,const char* mid){
         fmi->getNominalContinuousStates = (fGetNominalContinuousStates) getProAdr(fmi, mid, "fmiGetNominalContinuousStates");
         fmi->getStateValueReferences = (fGetStateValueReferences) getProAdr(fmi, mid, "fmiGetStateValueReferences");
         fmi->terminate               = (fTerminate)               getProAdr(fmi, mid, "fmiTerminate");
+      #ifdef _DEBUG_
         printf("\n\n#### Loading dll library in instantiateFMIFun succeeded!!!\n");
+      #endif
         /* void *dummy = NULL; // only for return void pointer required in OpenModelica */
         return NULL; /* dummy; */
 }
@@ -308,6 +321,12 @@ void fmiGetContStates(void* in_fmi, void* in_fmu, double* out_x, int nx){
      fmiStatus status;
      if(fmi->getContinuousStates){
         status = fmi->getContinuousStates(in_fmu,out_x,nx);
+#ifdef _PRINT_OUT__
+        int i;
+        for(i=0;i<nx;i++){
+          printf("\n#### fmiGetContStates[%d] = %f\n",i,out_x[i]);
+        }
+#endif
         if(status>fmiWarning){
             printf("#### fmiGetContStates(...) failed...\n");
             exit(EXIT_FAILURE);
@@ -378,7 +397,10 @@ void fmiGetRealVR(void* in_fmi, void* in_fmu, const int* in_vr, double* rv, int 
 	if(fmi->getReal){
         status = fmi->getReal(in_fmu,vr,nvr,rv);
 		#ifdef _PRINT_OUT__
-		printf("\n#### fmiGetReal der(h) = %f, der(v) = %f \n",((ModelInstance*)in_fmu)->r[in_vr[0]],((ModelInstance*) in_fmu)->r[in_vr[1]]);
+        int i;
+        for(i=0;i<nvr;i++){
+          printf("\n#### fmiGetReal[%d] = %f\n",i,((ModelInstance*)in_fmu)->r[in_vr[i]]);
+        }
 		#endif
         if(status>fmiWarning){
             printf("#### fmiGetReal(...) failed...\n");
@@ -556,7 +578,7 @@ void* fmiInstantiate(void* in_fmi, const char* instanceName,  const char* GUID, 
        if(fmi->instantiateModel)
        {
         #ifdef _DEBUG_
-           /* printf("#### the address of fmi->instantiateModel is %x ...\n",fmi->instantiateModel); */s
+           printf("#### the address of fmi->instantiateModel is %x ...\n",fmi->instantiateModel); 
         #endif
            fmu = fmi->instantiateModel(instanceName,GUID,*functions,loggingon);
         #ifdef _DEBUG_
@@ -575,25 +597,28 @@ void* fmiInstantiate(void* in_fmi, const char* instanceName,  const char* GUID, 
  * FMI standard interface
  */
 void fmiInit(void* in_fmi, void* in_fmu, int tolCont, double rTol, void* in_evtInfo){
-    FMI* fmi = (FMI*) in_fmi;
-    fmiStatus status;
-    #ifdef _DEBUG_
-		printf("\n#### fmiInit has been called here ... \n\n");
-	#endif
-	if (fmi->flagInit ==0){
-		fmiEventInfo* eventInfo = (fmiEventInfo*) in_evtInfo;
-		fmiBoolean tolControl = fmiFalse;
-		if(tolCont) tolControl = fmiTrue;
-		if(fmi->initialize){
-			status = fmi->initialize(in_fmu,tolControl,rTol,eventInfo);
-			fmi->flagInit = 1;
-			if(status>fmiWarning){
-				printf("#### fmiInitialize(...) failed...\n");
-				exit(EXIT_FAILURE);
-			 }
-		}
-	}
-	return;
+  FMI* fmi = (FMI*) in_fmi;
+  fmiStatus status;
+#ifdef _DEBUG_
+  printf("\n#### fmiInit has been called here ... \n\n");
+#endif
+  if (fmi->flagInit ==0){
+    fmiEventInfo* eventInfo = (fmiEventInfo*) in_evtInfo;
+    fmiBoolean tolControl = fmiFalse;
+    if(tolCont) tolControl = fmiTrue;
+    if(fmi->initialize){
+      status = fmi->initialize(in_fmu,tolControl,rTol,eventInfo);
+      fmi->flagInit = 1;
+      if(status>fmiWarning){
+        printf("#### fmiInitialize(...) failed...\n");
+        exit(EXIT_FAILURE);
+      }
+    }
+  }
+#ifdef _DEBUG_
+  printf("\n#### fmiInit has been called ... \n\n");
+#endif
+  return;
 }
 
 /* terminate a FMU and release all resources
@@ -661,20 +686,19 @@ void* fmuFreeAll(void* in_fmufun, void* in_inst, void* functions){
 // free the allocated memory for FMU
 // FMI standard interface
 void fmiFreeModelInst(void* in_fmufun, void* in_fmu){
-	FMI* fmi = (FMI*) in_fmufun;
-	if(fmi->freeModelInstance){
-		fmi->freeModelInstance(in_fmu);
-		if(!in_fmu){
-			printf("#### fmiFreeModelInstance(...) failed...\n");
-			exit(EXIT_FAILURE);
-		}
-	}
-#ifdef _DEBUG_
-	printf("\n#### fmiFreeModelInst has been called here ... \n\n");
-#endif
-	return;
+     FMI* fmi = (FMI*) in_fmufun;
+     if(fmi->freeModelInstance){
+           fmi->freeModelInstance(in_fmu);
+           if(!in_fmu){
+             printf("#### fmiFreeModelInstance(...) failed...\n");
+            exit(EXIT_FAILURE);
+           }
+     }
+	 #ifdef _DEBUG_
+	 printf("\n#### fmiFreeModelInst has been called here ... \n\n");
+	 #endif
+   return;
 }
-
  
 // void fmiFreeModelInst(void* in_fmu){
 //    void* dllHandle = LoadLibraryFromDLL(FMU_BINARIES_Win32_DLL);

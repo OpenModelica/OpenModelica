@@ -212,69 +212,58 @@ static char* getDecompPath(char * omPath, const char* mid){
 	return decompPath;
 }
 
-// function that decompresses the given FMU archive either via OMDev
-// inherent unzip command or attached 7z tool
+/* function that decompresses the given FMU archive either via OMDev
+ * inherent unzip command or attached 7z tool
+ */
 static int decompress(const char* fmuPath, const char* decompPath) {
   int err;
   int n;
-  char * cmd; // needed to be freed
+  char * cmd; /* needed to be free*/
 
 #ifdef USE_UNZIP
-  n = strlen(fmuPath) + strlen(decompPath) + 13;
+  n = (strlen(fmuPath)+1) + (strlen(decompPath)+1) + 13;
   cmd = (char*) calloc(n, sizeof(char));
-#ifdef _DEBUG_
-	printf("####  run unzip command: %s\n",fmuPath);
-#endif
-#ifdef _DEBUG_
-	printf("####  run unzip command: %s\n",decompPath);
-#endif
   sprintf(cmd, "unzip -o %s -d %s", fmuPath, decompPath);
-#ifdef _DEBUG_
-	printf("####  run unzip command: %s\n",cmd);
-#endif
   err = system(cmd);
-  free(cmd); // free
-#ifdef _DEBUG_
-	printf("####  finished unzip command: %s\n",cmd);
-#endif
   if(err!=UNZIP_NO_ERROR){
-	switch(err){
-		case UNZIP_WARNINGS:
-				printf("some warnings occurred during decompression, success anyway...\n");
-				break;
-		case UNZIP_NOZIP:
-				printf("no zip files found...\n");
-				break;
-		case UNZIP_METHOD_DECRYPTION_ERROR:
-				printf("unsupported compression methods or unsupported decryption...\n");
-				break;
-		case UNZIP_WRONG_PASS:
-				printf(" no files were found due to bad decryption password...\n");
-				break;
-		default:
-				printf(" unknown errors..\n");
-				break;
-	}
+    switch(err){
+    case UNZIP_WARNINGS:
+      printf("some warnings occurred during decompression, success anyway...\n");
+      break;
+    case UNZIP_NOZIP:
+      printf("no zip files found...\n");
+      break;
+    case UNZIP_METHOD_DECRYPTION_ERROR:
+      printf("unsupported compression methods or unsupported decryption...\n");
+      break;
+    case UNZIP_WRONG_PASS:
+      printf(" no files were found due to bad decryption password...\n");
+      break;
+    default:
+      printf(" unknown errors..\n");
+      break;
+    }
   }
+
 #else
-  n = strlen(DECOMPRESS_CMD) + strlen(fmuPath) +strlen(decompPath)+10;
+  n = (strlen(DECOMPRESS_CMD)+1) + (strlen(fmuPath)+1) + (strlen(decompPath)+1) + 10;
   cmd = (char*)calloc(n, sizeof(char));
   sprintf(cmd, "%s%s \"%s\" > NUL", DECOMPRESS_CMD, decompPath, fmuPath);
   err = system(cmd);
-  free(cmd); // free
- 
+
   if (err!=SEVEN_ZIP_NO_ERROR) {
     switch (err) {
-      ERRORPRINT; fprintf(errLogFile,"#### 7z: %s","");
-      case SEVEN_ZIP_WARNING: printf("warning\n"); break;
-      case SEVEN_ZIP_ERROR: printf("error\n"); break;
-      case SEVEN_ZIP_COMMAND_LINE_ERROR: printf("command line error\n"); break;
-      case SEVEN_ZIP_OUT_OF_MEMORY: printf("out of memory\n"); break;
-      case SEVEN_ZIP_STOPPED_BY_USER: printf("stopped by user\n"); break;
-      default: ERRORPRINT; fprintf(errLogFile,"#### Unknown problem %s\n","");
+    ERRORPRINT; fprintf(errLogFile,"#### 7z: %s","");
+    case SEVEN_ZIP_WARNING: printf("warning\n"); break;
+    case SEVEN_ZIP_ERROR: printf("error\n"); break;
+    case SEVEN_ZIP_COMMAND_LINE_ERROR: printf("command line error\n"); break;
+    case SEVEN_ZIP_OUT_OF_MEMORY: printf("out of memory\n"); break;
+    case SEVEN_ZIP_STOPPED_BY_USER: printf("stopped by user\n"); break;
+    default: ERRORPRINT; fprintf(errLogFile,"#### Unknown problem %s\n","");
     }
   }
 #endif
+  free(cmd);
   return EXIT_SUCCESS;
 }
 
@@ -1002,13 +991,12 @@ int main(int argc, char *argv[]){
 	printf("#### fmuname: %s\n",fmuname);
 	if (argc > 2) {
 		if (strncmp(argv[2], "--outputdir=", 12) == 0) {
-		  decompPath = (char*) calloc(strlen(argv[2]) - 11, sizeof(char));
-		  strcpy((char*)decompPath, argv[2] + 12);
-		  //createDirectory(decompPath);
+		  decompPath = (char*) calloc((strlen(argv[2])-10), sizeof(char));
+		  strncpy((char*)decompPath, argv[2] + 12,strlen(argv[2])-11);
 		  strcat((char*)decompPath, "/");
 		  if (access(decompPath, F_OK) == -1) {
 		    free((void*) decompPath);
-			decompPath = getDecompPath(omPath, fmuname);
+		    decompPath = getDecompPath(omPath, fmuname);
 		  }
 		}
 		else{
