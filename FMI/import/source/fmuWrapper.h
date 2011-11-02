@@ -131,7 +131,7 @@ void fmiGetDer(void* in_fmi, void* in_fmu, double* der_x, int nx, const double* 
 void fmiGetRealVR(void* in_fmi, void* in_fmu, const int* in_vr, double* rv, int nvr);
 void fmiGetIntegerVR(void* in_fmi, void* in_fmu, const int* in_vr, int* iv, int nvr);
 void fmiGetStringVR(void* in_fmi, void* in_fmu, const int* in_vr, const char** sv, int nvr);
-void fmiGetBooleanVR(void* in_fmi, void* in_fmu, const int* in_vr, char* bv, int nvr);
+void fmiGetBooleanVR(void* in_fmi, void* in_fmu, const int* in_vr, int* bv, int nvr);
 void fmiGetTimeEvent(void * in_evtInfo, double in_time, double in_pretime, void * in_timeEvt, double* out_nextTime);
 void fmiGetEventInd(void* in_fmi, void* in_fmu, double* z, int ni);
 void fmuStateEventCheck(void* stateEvt, int ni, const double* z, const double* prez);

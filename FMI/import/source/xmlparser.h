@@ -2,7 +2,7 @@
  * xmlparser.h
  * A parser for file modelVariables.xml of an FMU.
  * Copyright 2010 QTronic GmbH. All rights reserved. 
- * Modeified for OpenModelica Project.
+ * Modified for OpenModelica Project.
  * -------------------------------------------------------------------------*/
  
 

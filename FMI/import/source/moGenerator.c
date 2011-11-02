@@ -42,7 +42,13 @@
 // end
 
 // macro for some global variables
-#define FMU_BINARIES_Win32 "binaries/win32/"
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#define FMU_BINARIES_PATH "binaries/win32/"
+#define FMU_BINARIES_END ".dll"
+#else
+#define FMU_BINARIES_PATH "binaries/linux64/"
+#define FMU_BINARIES_END ".so"
+#endif
 #define BUFFERSIZE 4096
 #define PATHSIZE 1024
 
@@ -111,52 +117,44 @@ static char* getFMUname(const char* fmupath){
 
 // functions that returns the dll path from decompression path
 // and model identifier
-static char* getDllPath(const char* decompPath, const char* mid){
-	char * fmudllpath;
-	char * pch;
-	char * ret_fmudllpath;
-	int i;
-	
-	const int lenStr1 = strlen(FMU_BINARIES_Win32)+strlen(decompPath)+strlen(mid)+4+1;
-	/*char tmpStr[lenStr1];
-	int lenStr2 = 0;
-	int strcount = 0;*/
-	fmudllpath = (char*)calloc(lenStr1, sizeof(char));
-  sprintf(fmudllpath, "%s%s%s%s", decompPath, FMU_BINARIES_Win32, mid, ".dll");
-  return fmudllpath;
+char* getDllPath(const char* decompPath, const char* mid){
+  char *fmudllpath;
+
+  const int lenStr1 = (strlen(FMU_BINARIES_PATH)+1)+(strlen(decompPath)+1)+(strlen(mid)+1)+4;
+  fmudllpath = (char*)calloc(lenStr1, sizeof(char));
+  sprintf(fmudllpath, "%s%s%s%s", decompPath, FMU_BINARIES_PATH, mid, FMU_BINARIES_END);
+/*
+ * What's done here?
 #if 0
   fprintf(stderr, "fmudllpath=%s\n", fmudllpath);
-	
-	pch = strtok(fmudllpath,"/");	
-	while(pch!=NULL){
-		 lenStr2 += strlen(pch);
-		 strcount++;
-		 pch = strtok(NULL,"/");
-	}
-	ret_fmudllpath = (char*)calloc(lenStr2+(strcount-1)*2, sizeof(char));
-	pch = strtok(tmpStr,"/");
-	
-	for(i=1;i<strcount;i++){
-		strcat(ret_fmudllpath,pch);
-		strcat(ret_fmudllpath,"/");
-		pch = strtok(NULL,"/");
-		
-		#ifdef _DEBUG_
-		  printf("#### ret_fmudllpath = %s\n",ret_fmudllpath);
-		#endif
-	}
-	strcat(ret_fmudllpath,pch);
-	
-	#ifdef _DEBUG_
-	  printf("#### ret_fmudllpath = %s\n",ret_fmudllpath);
-	  printf("#### strlen(ret_fmudllpath) = %d\n",strlen(ret_fmudllpath));
-	#endif
-	
-	/* free(pch); DO NOT FREE pch - strtok() modifies the first argument, it does not return a new string!!! */
-	free(fmudllpath);
-	
-	return ret_fmudllpath;
+
+  pch = strtok(fmudllpath,"/");
+  while(pch!=NULL){
+    lenStr2 += strlen(pch);
+    strcount++;
+    pch = strtok(NULL,"/");
+  }
+  ret_fmudllpath = (char*)calloc(lenStr2+(strcount-1)*2, sizeof(char));
+  pch = strtok(tmpStr,"/");
+
+  for(i=1;i<strcount;i++){
+    strcat(ret_fmudllpath,pch);
+    strcat(ret_fmudllpath,"/");
+    pch = strtok(NULL,"/");
+#ifdef _DEBUG_
+    printf("#### ret_fmudllpath = %s\n",ret_fmudllpath);
 #endif
+  }
+  strcat(ret_fmudllpath,pch);
+
+#ifdef _DEBUG_
+  printf("#### ret_fmudllpath = %s\n",ret_fmudllpath);
+  printf("#### strlen(ret_fmudllpath) = %d\n",strlen(ret_fmudllpath));
+#endif
+#endif
+*/
+
+  return fmudllpath;
 }
 
 // function that returns the name of the model description xml file
@@ -424,9 +422,11 @@ void instScalarVariable(ModelDescription* md,fmiScalarVariable* list){
 	}
 }
 
-// functions that returns the variable naming convention
+/*
+ * functions that returns the variable naming convention
+ */
 fmiNamingConvention getNamingConvention(ModelDescription* md, Att att){
-	ValueStatus vs;
+	ValueStatus vs = valueIllegal;
 	Enu enu;
 	fmiNamingConvention nconv;
 	enu = getEnumValue(md,att_variableNamingConvention,&vs);
@@ -800,7 +800,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath, const char
 				fprintf(pfile,"\tintegerV = fmuGetIntegerVR(fmufun, inst, %d, integerVR);\n",noInteger);
 				tmpInteger = pntInteger;
 				fprintf(pfile,"\t{");
-				if(noInteger==1) fprintf(pfile,"%s};\n",tmpInteger->name);				
+				if(noInteger==1) fprintf(pfile,"%s} = integerV;\n",tmpInteger->name);
 				else if(noInteger>1){					
 					for(j = 0; j<noReal-1; j++){
 						fprintf(pfile,"%s, ",tmpInteger->name);						
@@ -813,7 +813,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath, const char
 				fprintf(pfile,"\tbooleanV = fmuGetBooleanVR(fmufun, inst, %d, booleanVR);\n",noBoolean);
 				tmpBoolean = pntBoolean;
 				fprintf(pfile,"\t{");
-				if(noBoolean==1) fprintf(pfile,"%s};\n",tmpBoolean->name);				
+				if(noBoolean==1) fprintf(pfile,"%s} = booleanV;\n",tmpBoolean->name);
 				else if(noBoolean>1){					
 					for(j = 0; j<noBoolean-1; j++){
 						fprintf(pfile,"%s, ",tmpBoolean->name);						
@@ -1089,3 +1089,4 @@ int main(int argc, char *argv[]){
   //system("PAUSE");	
   return EXIT_SUCCESS;
 }
+

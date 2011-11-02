@@ -15,7 +15,7 @@
  * - check that dependencies are only declared for outputs and
  *   refer only to inputs
  * Copyright 2010 QTronic GmbH. All rights reserved. 
- * Modeified for OpenModelica Project.
+ * Modified for OpenModelica Project.
  * -------------------------------------------------------------------------*/
 
 #include <string.h>
