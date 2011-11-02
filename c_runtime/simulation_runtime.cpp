@@ -80,7 +80,7 @@ omc_fileInfo TermInfo = omc_dummyFileInfo;
 
 #ifndef NO_INTERACTIVE_DEPENDENCY
 Socket sim_communication_port;
-static int sim_communication_port_open = 1;
+static int sim_communication_port_open = 0;
 #endif
 
 int sim_verbose = 0; // Flag for logging
@@ -1079,7 +1079,7 @@ void communicateStatus(const char *phase, double completionPercent /*0.0 to 1.0*
     s << (int)(completionPercent*10000) << " " << phase << endl;
     std::string str(s.str());
     sim_communication_port.send(str);
-    //cout << str;
+    // cout << str;
   }
 #endif
 }
