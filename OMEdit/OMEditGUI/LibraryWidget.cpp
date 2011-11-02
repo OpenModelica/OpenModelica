@@ -591,6 +591,7 @@ LibraryTree::LibraryTree(LibraryWidget *pParent)
     createActions();
 
     connect(this, SIGNAL(itemExpanded(QTreeWidgetItem*)), SLOT(expandLib(QTreeWidgetItem*)));
+    connect(this, SIGNAL(itemCollapsed(QTreeWidgetItem*)), SLOT(collapseLib(QTreeWidgetItem*)));
     connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
 }
 
@@ -803,6 +804,15 @@ void LibraryTree::expandLib(QTreeWidgetItem *item)
         // Remove the wait cursor
         unsetCursor();
     }
+    resizeColumnToContents(0);
+}
+
+//! Makes a library collapse.
+//! @param item is the library to collapse.
+void LibraryTree::collapseLib(QTreeWidgetItem *item)
+{
+    Q_UNUSED(item);
+    resizeColumnToContents(0);
 }
 
 void LibraryTree::showContextMenu(QPoint point)
@@ -1334,20 +1344,19 @@ LibraryWidget::LibraryWidget(MainWindow *parent)
     : QWidget(parent)
 {
     mpParentMainWindow = parent;
-
+    // create tab widget for libraries
     mpLibraryTabs = new QTabWidget;
     mpLibraryTabs->setTabPosition(QTabWidget::South);
-
+    // create libraries
     mpLibraryTree = new LibraryTree(this);
     mpModelicaTree = new ModelicaTree(this);
-
+    // Add libraries to tabs
     mpLibraryTabs->addTab(mpLibraryTree, "Modelica Library");
     mpLibraryTabs->addTab(mpModelicaTree, "Modelica Files");
-
+    // set the layout
     mpGrid = new QVBoxLayout(this);
     mpGrid->setContentsMargins(0, 0, 0, 0);
     mpGrid->addWidget(mpLibraryTabs);
-
     setLayout(mpGrid);
 }
 
@@ -1621,6 +1630,7 @@ ModelBrowserTree::ModelBrowserTree(ModelBrowserWidget *parent)
 
     connect(mpParentModelBrowserWidget, SIGNAL(addModelBrowserTreeNode()), SLOT(editModelBrowser()));
     connect(this, SIGNAL(itemExpanded(QTreeWidgetItem*)), SLOT(expandTree(QTreeWidgetItem*)));
+    connect(this, SIGNAL(itemExpanded(QTreeWidgetItem*)), SLOT(collapseTree(QTreeWidgetItem*)));
 }
 ModelBrowserTree::~ModelBrowserTree()
 {
@@ -1736,6 +1746,13 @@ void ModelBrowserTree::expandTree(QTreeWidgetItem *item)
     {
         item->setExpanded(true);
     }
+    resizeColumnToContents(0);
+}
+
+void ModelBrowserTree::collapseTree(QTreeWidgetItem *item)
+{
+    Q_UNUSED(item);
+    resizeColumnToContents(0);
 }
 
 ModelBrowserWidget::ModelBrowserWidget(MainWindow *parent)

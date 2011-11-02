@@ -273,8 +273,6 @@ void SimulationWidget::simulate()
         mpProgressDialog->getProgressBar()->setRange(0, 0);
         mpProgressDialog->getProgressBar()->setTextVisible(false);
         mpProgressDialog->show();
-        mpParentMainWindow->mpProgressBar->setRange(0, 0);
-        mpParentMainWindow->showProgressBar();
         mpParentMainWindow->mpStatusBar->showMessage(Helper::compiling_Model);
         // interactive or non interactive
         if (mIsInteractive)
@@ -283,7 +281,6 @@ void SimulationWidget::simulate()
             simulateModel(simualtionParameters);
         // hide the progress bar
         mpParentMainWindow->mpStatusBar->clearMessage();
-        mpParentMainWindow->hideProgressBar();
         mpProgressDialog->hide();
         accept();
     }

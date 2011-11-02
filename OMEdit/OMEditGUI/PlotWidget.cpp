@@ -103,6 +103,9 @@ PlotTree::PlotTree(PlotWidget *pParent)
     setIndentation(Helper::treeIndentation);
     setContextMenuPolicy(Qt::CustomContextMenu);
     setExpandsOnDoubleClick(false);
+
+    connect(this, SIGNAL(itemExpanded(QTreeWidgetItem*)), SLOT(expandNode(QTreeWidgetItem*)));
+    connect(this, SIGNAL(itemCollapsed(QTreeWidgetItem*)), SLOT(collapseNode(QTreeWidgetItem*)));
 }
 
 PlotTreeItem* PlotTree::getTreeItem(QString name)
@@ -123,6 +126,18 @@ PlotTreeItem* PlotTree::getTreeItem(QString name)
 PlotWidget* PlotTree::getPlotWidget()
 {
     return mpParentPlotWidget;
+}
+
+void PlotTree::expandNode(QTreeWidgetItem *item)
+{
+    Q_UNUSED(item);
+    resizeColumnToContents(0);
+}
+
+void PlotTree::collapseNode(QTreeWidgetItem *item)
+{
+    Q_UNUSED(item);
+    resizeColumnToContents(0);
 }
 
 PlotWidget::PlotWidget(MainWindow *pParent)
@@ -293,7 +308,7 @@ void PlotWidget::addPlotVariableToTree(QString fileName, QString parentStructure
     PlotTreeItem *parentItem = mpPlotTree->getTreeItem(parentStructure);
     QString toolTip = QString("File: ").append(fileName).append("\nVariable: ").append(childName);
     PlotTreeItem *newTreePost = new PlotTreeItem(childName, parentItem->getName(), nameStructure, fileName, toolTip, (QTreeWidget*)0);
-    newTreePost->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
+    newTreePost->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled | Qt::ItemIsSelectable);
     newTreePost->setCheckState(0, Qt::Unchecked);
     if (parentItem)
     {

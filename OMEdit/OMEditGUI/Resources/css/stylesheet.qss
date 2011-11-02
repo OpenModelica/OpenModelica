@@ -53,10 +53,6 @@ QStatusBar#ProjectStatusBar QLabel {
     padding: 0px 0px 0px 1px;
 }
 
-QPushButton#ModelicaEditorSearchButtons {
-
-}
-
 QToolButton#InteractiveSimulationButtons {
     padding: 3px;
 }
@@ -68,4 +64,11 @@ QListWidget#RecentItemsList::item:hover {
 
 QWidget#DocumentationWidget {
     border: 1px solid gray;
+}
+
+QTabBar::scroller { /* the width of the scroll buttons */
+    width: 15px;
+}
+QTabBar QToolButton { /* the scroll buttons are tool buttons */
+    background-color: palette(window);
 }

@@ -153,6 +153,7 @@ public:
     LibraryWidget *mpParentLibraryWidget;
 private slots:
     void expandLib(QTreeWidgetItem *item);
+    void collapseLib(QTreeWidgetItem *item);
     void showContextMenu(QPoint point);
     void showComponent(QTreeWidgetItem *item, int column);
     void showComponent();
@@ -333,7 +334,7 @@ private:
     QList<ModelBrowserTreeNode*> mModelBrowserTreeNodeList;
 private slots:
     void expandTree(QTreeWidgetItem *item);
-
+    void collapseTree(QTreeWidgetItem *item);
 public slots:
     void editModelBrowser();
 };

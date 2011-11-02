@@ -62,12 +62,16 @@ class PlotWidget;
 
 class PlotTree : public QTreeWidget
 {
+    Q_OBJECT
 public:
     PlotTree(PlotWidget *pParent);
     PlotTreeItem* getTreeItem(QString name);
     PlotWidget* getPlotWidget();
 private:
     PlotWidget *mpParentPlotWidget;
+private slots:
+    void expandNode(QTreeWidgetItem *item);
+    void collapseNode(QTreeWidgetItem *item);
 };
 
 class PlotWidget : public QWidget
