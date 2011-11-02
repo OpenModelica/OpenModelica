@@ -690,55 +690,55 @@ callSolver(int argc, char**argv, string method, string outputFormat,
   if (sim_verbose >= LOG_SOLVER) {
     cout << "Allocated simulation result data storage for method '"
         << sim_result->result_type() << "' and file='" << result_file_cstr
-        << "'" << endl;
+        << "'" << endl; fflush(NULL);
   }
 
   if (method == std::string("")) {
     if (sim_verbose >= LOG_SOLVER) {
-      cout << "No solver is set, using dassl." << endl;
+      cout << "No solver is set, using dassl." << endl; fflush(NULL);
     }
     retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,3);
   } else if (method == std::string("euler")) {
     if (sim_verbose >= LOG_SOLVER) {
-      cout << "Recognized solver: " << method << "." << endl;
+      cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
     retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 1);
   } else if (method == std::string("rungekutta")) {
     if (sim_verbose >= LOG_SOLVER) {
-      cout << "Recognized solver: " << method << "." << endl;
+      cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
     retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 2);
   } else if (method == std::string("dassl") || method == std::string("dassl2")) {
     if (sim_verbose >= LOG_SOLVER) {
-      cout << "Recognized solver: " << method << "." << endl;
+      cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
     retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 3);
   } else if (method == std::string("dassljac")) {
     if (sim_verbose >= LOG_SOLVER) {
-      cout << "Recognized solver: " << method << "." << endl;
+      cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
     jac_flag = 1;
     retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 3);
   } else if (method == std::string("dasslnum")) {
     if (sim_verbose >= LOG_SOLVER) {
-      cout << "Recognized solver: " << method << "." << endl;
+      cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
     num_jac_flag = 1;
     retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 3);
   } else if (method == std::string("dopri5")) {
        if (sim_verbose >= LOG_SOLVER) {
-       cout << "Recognized solver: " << method << "." << endl;
+       cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
        }
        retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 6);
   } else if (method == std::string("inline-euler")) {
     if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-euler")) {
       cout << "Recognized solver: " << method
           << ", but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_EULER."
-          << endl;
+          << endl; fflush(NULL);
       retVal = 1;
     } else {
       if (sim_verbose >= LOG_SOLVER) {
-        cout << "Recognized solver: " << method << "." << endl;
+        cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
       }
       retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 4);
     }
@@ -746,25 +746,25 @@ callSolver(int argc, char**argv, string method, string outputFormat,
     if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-rungekutta")) {
       cout << "Recognized solver: " << method
           << ", but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_RK."
-          << endl;
+          << endl; fflush(NULL);
       retVal = 1;
     } else {
       if (sim_verbose >= LOG_SOLVER) {
-        cout << "Recognized solver: " << method << "." << endl;
+        cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
       }
       retVal = solver_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 4);
     }
 #ifdef _OMC_QSS_LIB
   } else if (method == std::string("qss")) {
     if (sim_verbose >= LOG_SOLVER) {
-      cout << "Recognized solver: " << method << "." << endl;
+      cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
     retVal = qss_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 3);
 #endif
   } else {
     cout << "Unrecognized solver: " << method
         << "; valid solvers are dassl,euler,rungekutta,dopri5,inline-euler or inline-rungekutta."
-        << endl;
+        << endl; fflush(NULL);
     retVal = 1;
   }
 

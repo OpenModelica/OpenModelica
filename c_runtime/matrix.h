@@ -99,20 +99,20 @@ void * _omc_hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
         nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4); \
       if (info == 0) { \
           if (sim_verbose >= LOG_NONLIN_SYS) { \
-            printf("improper input parameters to nonlinear eq. syst %s:%d.\n", __FILE__, __LINE__); \
+            printf("improper input parameters to nonlinear eq. syst %s:%d.\n", __FILE__, __LINE__); fflush(NULL); \
           } \
       } \
       if ((info == 4 || info == 5) && retries < 3) { /* first try to decrease factor*/ \
       retries++; giveUp = 0; \
       factor = factor / 10.0; \
       if (sim_verbose >= LOG_NONLIN_SYS) { \
-          printf("Solving nonlinear system: iteration not making progress, trying to decrease factor to %f\n",factor); \
+          printf("Solving nonlinear system: iteration not making progress, trying to decrease factor to %f\n",factor); fflush(NULL); \
       } else if ((info == 4 || info == 5) && retries < 5) { /* Then, try with different starting point*/  \
         int i = 0; \
         for (i = 0; i < n; i++) { nls_x[i]+=0.1; }; \
           retries++; giveUp = 0; \
           if (sim_verbose >= LOG_NONLIN_SYS) { \
-            printf("Solving nonlinear system: iteration not making progress, trying with different starting points (+1e-6)\n"); \
+            printf("Solving nonlinear system: iteration not making progress, trying with different starting points (+1e-6)\n"); fflush(NULL); \
           } else if ((info == 4 || info == 5) && retries2 < 1) { /*Then try with old values (instead of extrapolating )*/ \
             retries = 0; retries2++; giveUp = 0; \
             int i = 0; \
@@ -121,13 +121,14 @@ void * _omc_hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
               int i = 0; \
               modelErrorCode=ERROR_NONLINSYS; \
               if (sim_verbose >= LOG_NONLIN_SYS) { \
-                  printf("error solving nonlinear system nr. %d at time %f\n",no,time); \
+                  printf("error solving nonlinear system nr. %d at time %f\n",no,time); fflush(NULL); \
               } \
               if (sim_verbose >= LOG_NONLIN_SYS) { \
                   for (i = 0; i < n; i++) { \
                      printf(" residual[%d] = %f\n",i,nls_fvec[i]); \
                      printf(" x[%d] = %f\n",i,nls_x[i]); \
                   } \
+                  fflush(NULL); \
               } \
           } \
       }\
@@ -170,6 +171,7 @@ void * _omc_hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
             printf(" residual[%d] = %f\n",i,nls_fvec[i]); \
             printf(" x[%d] = %f\n",i,nls_x[i]); \
             } \
+            fflush(NULL); \
           } \
       } \
    }\
@@ -222,11 +224,11 @@ integer info = 0; /* output */ \
 _omc_dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
  if (info < 0) { \
    if (sim_verbose >= LOG_NONLIN_SYS) \
-     printf("Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,localData->timeValue,info); \
+     printf("Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,localData->timeValue,info); fflush(NULL); \
  } \
  else if (info > 0) { \
    if (sim_verbose >= LOG_NONLIN_SYS) \
-     printf("Error solving linear system of equations (no. %d) at time %f, system is singular.\n",id,localData->timeValue); \
+     printf("Error solving linear system of equations (no. %d) at time %f, system is singular.\n",id,localData->timeValue); fflush(NULL); \
  } \
 free(ipiv); \
 } while (0) /* (no trailing ; ) */
@@ -240,7 +242,7 @@ integer info = 0; /* output */ \
 _omc_dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
  if (info < 0) { \
    if (sim_verbose >= LOG_NONLIN_SYS) \
-     printf("Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,localData->timeValue,info); \
+     printf("Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,localData->timeValue,info); fflush(NULL); \
  } \
  else if (info > 0) { \
      found_solution = -1; \
@@ -345,6 +347,7 @@ do { \
         const char *__name = localData->bool_alg_names[ix].name; \
         printf("%s = %d  pre(%s)= %d\n",__name, *loc_ptrs[i], __name, localData->boolVariables.algebraics_saved[ix]); \
       } \
+      fflush(NULL); \
   } \
 } while(0)
 

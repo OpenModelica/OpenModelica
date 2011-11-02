@@ -71,7 +71,9 @@ void leastSquare(long *nz, double *z, double *funcValue)
     *funcValue += globalData->initialResiduals[i] * globalData->initialResiduals[i];
 
   if(useVerboseOutput(LOG_INIT))
-    fprintf(stdout, "info    | leastSquare | leastSquare-Value: %g\n", *funcValue);
+  {
+    fprintf(stdout, "info    | leastSquare | leastSquare-Value: %g\n", *funcValue); fflush(NULL);
+  }
 }
 
 /*! \fn double leastSquareWithLambda(long nz, double *z, double lambda)
@@ -194,7 +196,9 @@ void NelderMeadOptimization(long N,
       if(lambda > 1.0)
         lambda = 1.0;
       if(useVerboseOutput(LOG_INIT))
-        fprintf(stdout, "info    | NelderMeadOptimization | increasing lambda to %g in step %d at f=%g\n", lambda, (int)iteration, leastSquareWithLambda(N, simplex, scale, lambda));
+      {
+        fprintf(stdout, "info    | NelderMeadOptimization | increasing lambda to %g in step %d at f=%g\n", lambda, (int)iteration, leastSquareWithLambda(N, simplex, scale, lambda)); fflush(NULL);
+      }
       continue;
     }
 
@@ -432,28 +436,30 @@ int simplex_initialization(long& nz,double *z)
   {
     if (sim_verbose >= LOG_INIT)
     {
-      fprintf(stderr, "info    | simplex_initialization | Result of leastSquare method = %g. The initial guess fits to the system\n", funcValue);
+      fprintf(stderr, "info    | simplex_initialization | Result of leastSquare method = %g. The initial guess fits to the system\n", funcValue); fflush(NULL);
     }
   }
 
   leastSquare(&nz,z,&funcValue);
   if(useVerboseOutput(LOG_INIT))
-    printf("info    | leastSquare=%g\n", funcValue);
+  {
+    printf("info    | leastSquare=%g\n", funcValue); fflush(NULL);
+  }
 
   if (IFAULT == 1)
   {
     if (funcValue > SIMP) {
-      printf("Error in initialization. Solver iterated %d times without finding a solution\n",(int)MAXF);
+      printf("Error in initialization. Solver iterated %d times without finding a solution\n",(int)MAXF); fflush(NULL);
       return -1;
     }
   } else if(IFAULT == 2 ) {
-    printf("Error in initialization. Inconsistent initial conditions.\n");
+    printf("Error in initialization. Inconsistent initial conditions.\n"); fflush(NULL);
     return -1;
   } else if (IFAULT == 3) {
-    printf("Error in initialization. Number of initial values to calculate < 1\n");
+    printf("Error in initialization. Number of initial values to calculate < 1\n"); fflush(NULL);
     return -1;
   } else if (IFAULT == 4) {
-    printf("Error in initialization. Internal error, NLOOP < 1.\n");
+    printf("Error in initialization. Internal error, NLOOP < 1.\n"); fflush(NULL);
     return -1;
   }
   return reportResidualValue(funcValue);
@@ -478,7 +484,9 @@ int nelderMeadEx_initialization(long& nz, double *z, double *scale)
   for(long l=0; l<100 && funcValue > STOPCR; l++)
   {
     if(useVerboseOutput(LOG_INIT))
-      printf("info    | nelderMeadEx_initialization | initialization-nr. %d\n", (int) l);
+    {
+      printf("info    | nelderMeadEx_initialization | initialization-nr. %d\n", (int) l); fflush(NULL);
+    }
 
     /*down-scale*/
     for(int i=0; i<nz; i++)
@@ -493,7 +501,7 @@ int nelderMeadEx_initialization(long& nz, double *z, double *scale)
       printf("info    | nelderMeadEx_initialization | iteration=%d / lambda=%g / f=%g\n", (int) iteration, lambda, leastSquareWithLambda(nz, z, NULL, lambda));
       for(long i=0; i<nz; i++)
         printf("info    | nelderMeadEx_initialization | states | %d: %g\n", (int) i, z[i]);
-
+      fflush(NULL);
     }
 
     saveall();                        /* save pre-values */
@@ -511,12 +519,16 @@ int nelderMeadEx_initialization(long& nz, double *z, double *scale)
   }
 
   if(useVerboseOutput(LOG_INIT))
-    printf("info    | nelderMeadEx_initialization | leastSquare=%g\n", funcValue);
+  {
+    printf("info    | nelderMeadEx_initialization | leastSquare=%g\n", funcValue); fflush(NULL);
+  }
 
   if(lambda < 1.0)
   {
     if(useVerboseOutput(LOG_INIT))
-      printf("error   | nelderMeadEx_initialization | lambda = %g\n", lambda);
+    {
+      printf("error   | nelderMeadEx_initialization | lambda = %g\n", lambda); fflush(NULL);
+    }
     return -1;
   }
 
@@ -541,7 +553,9 @@ int initialize(const std::string init_method)
     if(globalData->initFixed[ind]==0)
     {
       if(sim_verbose >= LOG_INIT)
-        fprintf(stdout, "info    | state %s is unfixed.\n", globalData->statesNames[ind].name);
+      {
+        fprintf(stdout, "info    | state %s is unfixed.\n", globalData->statesNames[ind].name); fflush(NULL);
+      }
       nz++;
     }
   }
@@ -553,7 +567,9 @@ int initialize(const std::string init_method)
     if(globalData->initFixed[ind]==0 && globalData->var_attr[ind-globalData->nStates]==1)
     {
       if(sim_verbose >= LOG_INIT)
-        fprintf(stdout, "info    | parameter %s is unfixed.\n", globalData->parametersNames[ind-startIndPar].name);
+      {
+          fprintf(stdout, "info    | parameter %s is unfixed.\n", globalData->parametersNames[ind-startIndPar].name); fflush(NULL);
+      }
       nz++;
     }
   }
@@ -565,13 +581,16 @@ int initialize(const std::string init_method)
     for(int i=0;i<globalData->nStates; i++)
       fprintf(stdout, "info    | initialize | %s(fixed=%s)\n", globalData->statesNames[i].name, (globalData->initFixed[i] ? "true" : "false"));
     fprintf(stdout, "info    | initialize | number of non-fixed variables: %d\n", (int) nz);
+    fflush(NULL);
   }
 
   // No initial values to calculate.
   if(nz ==  0)
   {
     if(sim_verbose >= LOG_INIT)
-      fprintf(stdout, "info    | no initial values to calculate\n");
+    {
+        fprintf(stdout, "info    | no initial values to calculate\n"); fflush(NULL);
+    }
     return 0;
   }
 
@@ -615,7 +634,7 @@ int initialize(const std::string init_method)
   else
   {
     fprintf(stderr, "error   | unrecognized option -im %s\n", init_method.c_str());
-    fprintf(stderr, "        | current options are: simplex or newuoa\n");
+    fprintf(stderr, "        | current options are: simplex or newuoa\n"); fflush(NULL);
     retVal= -1;
   }
   delete [] z;
@@ -658,7 +677,7 @@ int old_initialization(const std::string optiMethod)
     if(retVal != 0)
     {
       fprintf(stdout, "info    | Initialization of the current initial set of equations and initial guesses fails!\n");
-      fprintf(stdout, "        | Try with better Initial guesses for the states.\n");
+      fprintf(stdout, "        | Try with better Initial guesses for the states.\n"); fflush(NULL);
     }
   }
 
@@ -679,7 +698,7 @@ int old_initialization(const std::string optiMethod)
   /* if(useVerboseOutput(LOG_INIT))
     {
         fprintf(stdout, "info    | dump all pre-values\n");
-        printAllPreValues();
+        printAllPreValues(); fflush(NULL);
     } */
   return retVal;
 }
@@ -723,14 +742,16 @@ int state_initialization(const std::string optiMethod)
   if(retVal)
   {
     if(useVerboseOutput(LOG_INIT))
-      fprintf(stdout, "warning | state_initialization | init. failed! use old initialization method\n");
+    {
+        fprintf(stdout, "warning | state_initialization | init. failed! use old initialization method\n"); fflush(NULL);
+    }
     return old_initialization(optiMethod);
   }
 
   /* if(useVerboseOutput(LOG_INIT))
     {
         fprintf(stdout, "info    | dump all pre-values\n");
-        printAllPreValues();
+        printAllPreValues(); fflush(NULL);
     } */
   return retVal;
 }
@@ -750,6 +771,7 @@ int initialization(const char* pInitMethod, const char* pOptiMethod)
   {
     fprintf(stdout, "info    | initialization | initialization method: %s\n", initMethod.c_str());
     fprintf(stdout, "info    | initialization | optimization method:   %s\n", optiMethod.c_str());
+    fflush(NULL);
   }
 
   /* select the right initialization-method */
@@ -767,5 +789,6 @@ int initialization(const char* pInitMethod, const char* pOptiMethod)
   /* unrecognized initialization-method */
   fprintf(stderr, "error   | unrecognized option -iim %s\n", initMethod.c_str());
   fprintf(stderr, "        | current options are: state or old\n");
+  fflush(NULL);
   return -1;
 }

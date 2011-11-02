@@ -303,11 +303,14 @@ update_DAEsystem() {
   while (checkForDiscreteChanges() || needToIterate) {
     if (needToIterate) {
       if (sim_verbose >= LOG_EVENTS)
-        fprintf(stdout, "| info LOG_EVENTS | reinit call. Iteration needed!\n");
+      {
+        fprintf(stdout, "| info LOG_EVENTS | reinit call. Iteration needed!\n"); fflush(NULL);
+      }
     } else {
       if (sim_verbose >= LOG_EVENTS)
-        fprintf(stdout,
-            "| info LOG_EVENTS | discrete Var changed. Iteration needed!\n");
+      {
+        fprintf(stdout, "| info LOG_EVENTS | discrete Var changed. Iteration needed!\n"); fflush(NULL);
+      }
     }
     saveall();
     functionDAE(&needToIterate);
@@ -412,16 +415,16 @@ solver_main(int argc, char** argv, double &start, double &stop,
   }
 
   if (initializeEventData()) {
-    fprintf(stdout, "Internal error, allocating event data structures\n");
+    fprintf(stdout, "Internal error, allocating event data structures\n"); fflush(NULL);
     return -1;
   }
 
   if (bound_parameters()) {
-    fprintf(stdout, "Error calculating bound parameters\n");
+    fprintf(stdout, "Error calculating bound parameters\n"); fflush(NULL);
     return -1;
   }
   if (sim_verbose >= LOG_SOLVER) {
-    fprintf(stdout, "| info LOG_SOLVER | Calculated bound parameters\n");
+    fprintf(stdout, "| info LOG_SOLVER | Calculated bound parameters\n"); fflush(NULL);
   }
   /* Evaluate all constant equations during initialization */
   globalData->init = 1;
@@ -467,7 +470,7 @@ solver_main(int argc, char** argv, double &start, double &stop,
     storeExtrapolationDataEvent();
   } catch (TerminateSimulationException &e) {
     cout << e.getMessage() << endl;
-    printf("Simulation terminated while the initialization. Could not find suitable initial values.");
+    printf("Simulation terminated while the initialization. Could not find suitable initial values."); fflush(NULL);
     return -1;
   }
 
@@ -477,7 +480,7 @@ solver_main(int argc, char** argv, double &start, double &stop,
 
   if (globalData->timeValue >= stop) {
     if (sim_verbose >= LOG_SOLVER) {
-      fprintf(stdout, "| info LOG_SOLVER | Simulation done!\n");
+      fprintf(stdout, "| info LOG_SOLVER | Simulation done!\n"); fflush(NULL);
     }
     globalData->terminal = 1;
     update_DAEsystem();
@@ -492,7 +495,7 @@ solver_main(int argc, char** argv, double &start, double &stop,
   if (sim_verbose >= LOG_SOLVER) {
     fprintf(stdout, "| info LOG_SOLVER | Performed initial value calculation.\n");
     fprintf(stdout, "| info LOG_SOLVER | Start numerical solver from %g to %g\n",
-            globalData->timeValue, stop);
+            globalData->timeValue, stop); fflush(NULL);
   }
   FILE *fmt = NULL;
   uint32_t stepNo = 0;
@@ -501,7 +504,7 @@ solver_main(int argc, char** argv, double &start, double &stop,
     fmt = fopen(filename.c_str(), "wb");
     if (!fmt) {
       fprintf(stderr, "Warning: Time measurements output file %s could not be opened: %s\n",
-              filename.c_str(), strerror(errno));
+              filename.c_str(), strerror(errno)); fflush(NULL);
       fclose(fmt);
       fmt = NULL;
     }
@@ -523,8 +526,10 @@ solver_main(int argc, char** argv, double &start, double &stop,
         if (offset + uround > step)
           offset = 0;
         if (sim_verbose >= LOG_SOLVER)
+        {
           fprintf(stdout, "| info LOG_SOLVER | Offset value for the next step: %g\n",
-                  offset);
+                  offset); fflush(NULL);
+        }
       } else {
         offset = 0;
       }
@@ -545,7 +550,7 @@ solver_main(int argc, char** argv, double &start, double &stop,
       if (sim_verbose >= LOG_SOLVER) {
         fprintf(stdout, "| info LOG_SOLVER | Call Solver from %g to %g\n",
                 globalData->timeValue, globalData->timeValue
-                + globalData->current_stepsize);
+                + globalData->current_stepsize); fflush(NULL);
       }
       /* do one integration step
        *
@@ -620,7 +625,7 @@ solver_main(int argc, char** argv, double &start, double &stop,
         rt_accumulate(SIM_TIMER_OVERHEAD);
         if (!flag) {
           fprintf(stderr, "Warning: Disabled time measurements because the output file could not be generated: %s\n",
-                  strerror(errno));
+                  strerror(errno)); fflush(NULL);
           fclose(fmt);
           fmt = NULL;
         }
@@ -653,7 +658,7 @@ solver_main(int argc, char** argv, double &start, double &stop,
 
       if (sim_verbose >= LOG_SOLVER) {
         fprintf(stdout, "| info LOG_SOLVER |** Step to  %g Done!\n",
-                globalData->timeValue);
+                globalData->timeValue); fflush(NULL);
       }
 
     }
@@ -672,7 +677,7 @@ solver_main(int argc, char** argv, double &start, double &stop,
     cout << e.getMessage() << endl;
     if (modelTermination) { /* terminated from assert, etc. */
       fprintf(stdout, "| model terminate | Simulation terminated at time %g\n",
-              globalData->timeValue);
+              globalData->timeValue); fflush(NULL);
       if (fmt)
         fclose(fmt);
       return -1;
@@ -687,19 +692,21 @@ solver_main(int argc, char** argv, double &start, double &stop,
       dasslStats[i] += dasslStatsTmp[i];
 
     rt_accumulate(SIM_TIMER_TOTAL);
-    fprintf(stdout, "| info LOG_STATS| ##### Statistics #####\n");
-    fprintf(stdout, "| info LOG_STATS| simulation time: %g\n", rt_accumulated(SIM_TIMER_TOTAL));
-    fprintf(stdout, "| info LOG_STATS| Events: %d\n", stateEvents + sampleEvents);
-    fprintf(stdout, "| info LOG_STATS| State Events: %d\n", stateEvents);
-    fprintf(stdout, "| info LOG_STATS| Sample Events: %d\n", sampleEvents);
-    fprintf(stdout, "| info LOG_STATS| ##### Solver Statistics #####\n");
-    fprintf(stdout, "| info LOG_STATS| The number of steps taken: %d\n", dasslStats[0]);
-    fprintf(stdout, "| info LOG_STATS| The number of calls to functionODE: %d\n", dasslStats[1]);
-    fprintf(stdout, "| info LOG_STATS| The evaluations of Jacobian: %d\n", dasslStats[2]);
-    fprintf(stdout, "| info LOG_STATS| The number of error test failures: %d\n", dasslStats[3]);
-    fprintf(stdout, "| info LOG_STATS| The number of convergence test failures: %d\n", dasslStats[4]);
+    fprintf(stdout, "| info LOG_STATS| ##### Statistics #####\n"); fflush(NULL);
+    fprintf(stdout, "| info LOG_STATS| simulation time: %g\n", rt_accumulated(SIM_TIMER_TOTAL)); fflush(NULL);
+    fprintf(stdout, "| info LOG_STATS| Events: %d\n", stateEvents + sampleEvents); fflush(NULL);
+    fprintf(stdout, "| info LOG_STATS| State Events: %d\n", stateEvents); fflush(NULL);
+    fprintf(stdout, "| info LOG_STATS| Sample Events: %d\n", sampleEvents); fflush(NULL);
+    fprintf(stdout, "| info LOG_STATS| ##### Solver Statistics #####\n"); fflush(NULL);
+    fprintf(stdout, "| info LOG_STATS| The number of steps taken: %d\n", dasslStats[0]); fflush(NULL);
+    fprintf(stdout, "| info LOG_STATS| The number of calls to functionODE: %d\n", dasslStats[1]); fflush(NULL);
+    fprintf(stdout, "| info LOG_STATS| The evaluations of Jacobian: %d\n", dasslStats[2]); fflush(NULL);
+    fprintf(stdout, "| info LOG_STATS| The number of error test failures: %d\n", dasslStats[3]); fflush(NULL);
+    fprintf(stdout, "| info LOG_STATS| The number of convergence test failures: %d\n", dasslStats[4]); fflush(NULL);
     if (flag == 6)
-            fprintf(stdout, "| info LOG_STATS| DOPRI5: total number of steps rejected: %d\n", reject);
+    {
+        fprintf(stdout, "| info LOG_STATS| DOPRI5: total number of steps rejected: %d\n", reject); fflush(NULL);
+    }
   }
 
   deinitializeEventData();
@@ -733,12 +740,14 @@ init_stepsize(int(*f)()) {
   double* y = new double[globalData->nStates];
 
   if (sim_verbose >= LOG_SOLVER)
-    fprintf(stdout, "Initializing stepsize...\n");
+  {
+     fprintf(stdout, "Initializing stepsize...\n"); fflush(NULL);
+  }
 
   if (abstol <= 1e-6) {
     abstol = 1e-5;
     reltol = abstol;
-    fprintf(stdout, "| warning | DOPRI5: error tolerance too stringent *setting tolerance to 1e-5*\n");
+    fprintf(stdout, "| warning | DOPRI5: error tolerance too stringent *setting tolerance to 1e-5*\n"); fflush(NULL);
   }
 
   backupTime = globalData->timeValue;
@@ -746,7 +755,7 @@ init_stepsize(int(*f)()) {
   for (int i = 0; i < globalData->nStates; i++) {
     x0[i] = globalData->states[i]; /* initial values for solver (used as backup too) */
     y[i] = globalData->statesDerivatives[i]; /* initial values for solver (used as backup too) */
-    /* if (sim_verbose >= LOG_SOLVER){ cout << "x0[" << i << "]: " << x0[i] << endl; } for debugging */
+    /* if (sim_verbose >= LOG_SOLVER){ cout << "x0[" << i << "]: " << x0[i] << endl;  fflush(NULL); } for debugging */
   }
 
   for (int i = 0; i < globalData->nStates; i++) {
@@ -790,8 +799,10 @@ init_stepsize(int(*f)()) {
   globalData->current_stepsize = min(abstol * 100 * h0, abstol * h1);
 
   if (sim_verbose >= LOG_SOLVER)
-    fprintf(stdout, "stepsize initialized: step = %g\n",
-            globalData->current_stepsize);
+  {
+      fprintf(stdout, "stepsize initialized: step = %g\n",
+            globalData->current_stepsize); fflush(NULL);
+  }
 
   for (int i = 0; i < globalData->nStates; i++) {
     globalData->states[i] = x0[i]; /* reset states */
@@ -851,6 +862,7 @@ stepsize_control(double &start, double &stop, double &fixStep, int(*f)(),
        *				cout << "x5[" << i << "]: " << x5[i] << endl; for debugging */
       fprintf(stdout, "delta: %g\n", delta);
       fprintf(stdout, "alpha: %g\n", alpha);
+      fflush(NULL);
     }
 
     if (delta < abstol) {
@@ -866,13 +878,15 @@ stepsize_control(double &start, double &stop, double &fixStep, int(*f)(),
       globalData->current_stepsize = globalData->current_stepsize / min(alpha, 10.0);
 
       if (sim_verbose >= LOG_SOLVER)
-        fprintf(stdout, "| info | DOPRI5: ***!! step rejected !!***\n");
+      {
+        fprintf(stdout, "| info | DOPRI5: ***!! step rejected !!***\n"); fflush(NULL);
+      }
 
       globalData->timeValue = backupTime; /* reset time */
 
       if ((reject > 10e+4) || (globalData->current_stepsize < 1e-10)) /* to avoid infinite loops */
       {
-        fprintf(stdout, "| error | DOPRI5: Too many steps rejected (>10e+4) or desired stepsize too small (< 1e-10)!.\n");
+        fprintf(stdout, "| error | DOPRI5: Too many steps rejected (>10e+4) or desired stepsize too small (< 1e-10)!.\n"); fflush(NULL);
         delete[] x4;
         delete[] x5;
 
@@ -887,8 +901,10 @@ stepsize_control(double &start, double &stop, double &fixStep, int(*f)(),
     }
 
     if (sim_verbose >= LOG_SOLVER)
+    {
       fprintf(stdout, "| info | DOPRI5: stepsize on next step: %g\n",
-              globalData->current_stepsize);
+              globalData->current_stepsize); fflush(NULL);
+    }
   } while (retry);
 
   delete[] x4;
@@ -981,7 +997,7 @@ dopri54(int(*f)(), double* x4, double* x5) {
       sum = sum + dop_b5[l] * k[l][i];
     }
     x5[i] = sum;
-    /* if(sim_verbose >= LOG_SOLVER){ cout << "dx5[" << i << "]: " << x5[i] << endl; }; for debugging */
+    /* if(sim_verbose >= LOG_SOLVER){ cout << "dx5[" << i << "]: " << x5[i] << endl; fflush(NULL); }; for debugging */
   }
 
   for (i = 0; i < globalData->nStates; i++) {
@@ -990,7 +1006,7 @@ dopri54(int(*f)(), double* x4, double* x5) {
       sum = sum + dop_b4[l] * k[l][i];
     }
     x4[i] = sum;
-    /* if(sim_verbose >= LOG_SOLVER){ cout << "dx4[" << i << "]: " << x4[i] << endl; }; for debugging */
+    /* if(sim_verbose >= LOG_SOLVER){ cout << "dx4[" << i << "]: " << x4[i] << endl; fflush(NULL); }; for debugging */
   }
 
   memcpy(globalData->states, backupstats, globalData->nStates * sizeof(double));
@@ -1017,7 +1033,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1,
 
   if (globalData->timeValue == start) {
     if (sim_verbose >= LOG_SOLVER) {
-      fprintf(stdout, "| info LOG_SOLVER | **Initializing DASSL.\n");
+      fprintf(stdout, "| info LOG_SOLVER | **Initializing DASSL.\n"); fflush(NULL);
     }
 
     /* work arrays for DASSL */
@@ -1058,8 +1074,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1,
   /* If an event is triggered and processed restart dassl. */
   if (trigger1) {
     if (sim_verbose >= LOG_EVENTS) {
-      fprintf(stdout,
-          "| info LOG_EVENTS | Event-management forced reset of DDASRT.\n");
+      fprintf(stdout, "| info LOG_EVENTS | Event-management forced reset of DDASRT.\n"); fflush(NULL);
     }
     // obtain reset
     info[0] = 0;
@@ -1076,7 +1091,9 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1,
 
       if (globalData->timeValue - tout >= -1e-13) {
         if (sim_verbose >= LOG_SOLVER)
-          fprintf(stdout, "| info LOG_SOLVER | **Desired step to small try next one.\n");
+        {
+          fprintf(stdout, "| info LOG_SOLVER | **Desired step to small try next one.\n"); fflush(NULL);
+        }
 
         globalData->timeValue = tout;
         return 0;
@@ -1084,7 +1101,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1,
 
       if (sim_verbose >= LOG_SOLVER) {
         fprintf(stdout, "| info LOG_SOLVER | **Calling DDASRT from %g to %g .\n",
-                globalData->timeValue, tout);
+                globalData->timeValue, tout); fflush(NULL);
       }
 
       /* Save all statesDerivatives due to avoid this in functionODE_residual */
@@ -1113,25 +1130,25 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1,
 
       if (sim_verbose >= LOG_SOLVER) {
         fprintf(stdout, "| info LOG_SOLVER | value of idid: %i\n",
-                idid);
+                idid); fflush(NULL);
         fprintf(stdout, "| info LOG_SOLVER | current time value: %0.4g\n",
-                globalData->timeValue);
+                globalData->timeValue); fflush(NULL);
         fprintf(stdout, "| info LOG_SOLVER | current integration time value: %0.4g\n",
-                rwork[3]);
+                rwork[3]); fflush(NULL);
         fprintf(stdout, "| info LOG_SOLVER | step size H to be attempted on next step: %0.4g\n",
-                rwork[2]);
+                rwork[2]); fflush(NULL);
         fprintf(stdout, "| info LOG_SOLVER | stepsize used on last successful step: %0.4g\n",
-                rwork[6]);
+                rwork[6]); fflush(NULL);
         fprintf(stdout, "| info LOG_SOLVER | number of steps taken so far: %i\n",
-                iwork[10]);
+                iwork[10]); fflush(NULL);
         fprintf(stdout, "| info LOG_SOLVER | number of calls of functionODE() : %i\n",
-                iwork[11]);
+                iwork[11]); fflush(NULL);
         fprintf(stdout, "| info LOG_SOLVER | number of calculation of Jacobian : %i\n",
-                iwork[12]);
+                iwork[12]); fflush(NULL);
         fprintf(stdout, "| info LOG_SOLVER | total number of convergence test failures: %i\n",
-                iwork[13]);
+                iwork[13]); fflush(NULL);
         fprintf(stdout, "| info LOG_SOLVER | total number of error test failures: %i\n",
-                iwork[14]);
+                iwork[14]); fflush(NULL);
       }
 
       /* save dassl stats */
@@ -1145,7 +1162,9 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1,
         fflush( stdout);
         if (idid == -1) {
           if (sim_verbose >= LOG_SOLVER)
-            fprintf(stdout, "| info LOG_SOLVER | DDASRT will try again...\n");
+          {
+            fprintf(stdout, "| info LOG_SOLVER | DDASRT will try again...\n"); fflush(NULL);
+          }
 
           info[0] = 1; /* try again */
         }
@@ -1164,7 +1183,9 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1,
 
   if (tout > stop) {
     if (sim_verbose >= LOG_SOLVER)
-      fprintf(stdout, "| info LOG_SOLVER | DDASRT finished.\n");
+    {
+      fprintf(stdout, "| info LOG_SOLVER | DDASRT finished.\n"); fflush(NULL);
+    }
   }
   return 0;
 }
@@ -1181,7 +1202,7 @@ continue_DASRT(fortran_integer* idid, double* atol, double *rtol) {
     /* 1-4 means success */
     break;
   case -1:
-    fprintf(stderr, "| warning | DDASRT: A large amount of work has been expended.(About 500 steps). Trying to continue ...\n");
+    fprintf(stderr, "| warning | DDASRT: A large amount of work has been expended.(About 500 steps). Trying to continue ...\n"); fflush(NULL);
     retValue = true; /* adrpo: try to continue */
     break;
   case -2:
@@ -1190,7 +1211,7 @@ continue_DASRT(fortran_integer* idid, double* atol, double *rtol) {
     break;
   case -3:
     if (atolZeroIterations > 10) {
-      fprintf(stderr, "| error | DDASRT: The local error test cannot be satisfied because you specified a zero component in ATOL and the corresponding computed solution component is zero. Thus, a pure relative error test is impossible for this component.\n");
+      fprintf(stderr, "| error | DDASRT: The local error test cannot be satisfied because you specified a zero component in ATOL and the corresponding computed solution component is zero. Thus, a pure relative error test is impossible for this component.\n"); fflush(NULL);
       retValue = false;
       atolZeroIterations++;
     } else {
@@ -1199,35 +1220,35 @@ continue_DASRT(fortran_integer* idid, double* atol, double *rtol) {
     }
     break;
   case -6:
-    fprintf(stderr, "| error | DDASRT: DDASSL had repeated error test failures on the last attempted step.\n");
+    fprintf(stderr, "| error | DDASRT: DDASSL had repeated error test failures on the last attempted step.\n"); fflush(NULL);
     retValue = false;
     break;
   case -7:
-    fprintf(stderr, "| error | DDASRT: The corrector could not converge.\n");
+    fprintf(stderr, "| error | DDASRT: The corrector could not converge.\n"); fflush(NULL);
     retValue = false;
     break;
   case -8:
-    fprintf(stderr, "| error | DDASRT: The matrix of partial derivatives is singular.\n");
+    fprintf(stderr, "| error | DDASRT: The matrix of partial derivatives is singular.\n"); fflush(NULL);
     retValue = false;
     break;
   case -9:
-    fprintf(stderr, "| error | DDASRT: The corrector could not converge. There were repeated error test failures in this step.\n");
+    fprintf(stderr, "| error | DDASRT: The corrector could not converge. There were repeated error test failures in this step.\n"); fflush(NULL);
     retValue = false;
     break;
   case -10:
-    fprintf(stderr, "| error | DDASRT: The corrector could not converge because IRES was equal to minus one.\n");
+    fprintf(stderr, "| error | DDASRT: The corrector could not converge because IRES was equal to minus one.\n"); fflush(NULL);
     retValue = false;
     break;
   case -11:
-    fprintf(stderr, "| error | DDASRT: IRES equal to -2 was encountered and control is being returned to the calling program.\n");
+    fprintf(stderr, "| error | DDASRT: IRES equal to -2 was encountered and control is being returned to the calling program.\n"); fflush(NULL);
     retValue = false;
     break;
   case -12:
-    fprintf(stderr, "| error | DDASRT: DDASSL failed to compute the initial YPRIME.\n");
+    fprintf(stderr, "| error | DDASRT: DDASSL failed to compute the initial YPRIME.\n"); fflush(NULL);
     retValue = false;
     break;
   case -33:
-    fprintf(stderr, "| error | DDASRT: The code has encountered trouble from which it cannot recover.\n");
+    fprintf(stderr, "| error | DDASRT: The code has encountered trouble from which it cannot recover.\n"); fflush(NULL);
     retValue = false;
     break;
   }
@@ -1240,11 +1261,11 @@ interpolation_control(const int &dideventstep, double &interpolationStep,
                       double &fixStep, double &stop) {
 
   if (sim_verbose >= LOG_SOLVER){
-    fprintf(stdout, "| info | dense output: $$$$$\t interpolate data at %g\n", interpolationStep);
+    fprintf(stdout, "| info | dense output: $$$$$\t interpolate data at %g\n", interpolationStep); fflush(NULL);
   }
   /* if (sim_verbose >= LOG_SOLVER) {
    * cout << "oldTime,Time,interpolate data at " << globalData->oldTime << ", "
-   *     << globalData->timeValue << ", " << interpolationStep << endl;
+   *     << globalData->timeValue << ", " << interpolationStep << endl; fflush(NULL);
   } for debugging */
 
   functionAliasEquations();
