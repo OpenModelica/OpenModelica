@@ -35,6 +35,9 @@ extern "C" {
 #include "rml_compatibility.h"
 #include "OpenModelicaBootstrappingHeader.h"
 
+int _Absyn_isDerCref(void*);
+#define call_looks_like_der_cr(X) _Absyn_isDerCref(X)
+
 #include "ModelicaParser.c"
 
 #ifdef __cplusplus

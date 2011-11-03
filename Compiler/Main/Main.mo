@@ -1232,6 +1232,9 @@ algorithm
         print("Error: OPENMODELICAHOME was not set.\n");
         print("  Read the documentation for instructions on how to set it properly.\n");
         print("  Most OpenModelica release distributions have scripts that set OPENMODELICAHOME for you.\n\n");
+        
+        // Functions used by external code that needs to be included for linking
+        _ = Absyn.isDerCref;
       then fail();
   end matchcontinue;
 end main;

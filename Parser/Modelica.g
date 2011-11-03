@@ -684,10 +684,19 @@ assign_clause_a returns [void* ast] @declarations {
     ( (ASSIGN|eq=EQUALS) e2=expression
       {
         modelicaParserAssert(eq==0,"Algorithms can not contain equations ('='), use assignments (':=') instead", assign_clause_a, $eq->line, $eq->charPosition+1, $eq->line, $eq->charPosition+2);
-        modelicaParserAssert(eq!=0 || metamodelica_enabled() || (RML_GETHDR(e1) == RML_STRUCTHDR(1, Absyn__CREF_3dBOX1))
-            || ((RML_GETHDR(e1) == RML_STRUCTHDR(1, Absyn__TUPLE_3dBOX1)) && (RML_GETHDR(e2) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2))),
-            "Modelica assignment statements are either on the form 'component_reference := expression' or '( output_expression_list ) := function_call'",
-            assign_clause_a, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
+        {
+          int looks_like_cref = (RML_GETHDR(e1) == RML_STRUCTHDR(1, Absyn__CREF_3dBOX1));
+          int looks_like_call = ((RML_GETHDR(e1) == RML_STRUCTHDR(1, Absyn__TUPLE_3dBOX1)) && (RML_GETHDR(e2) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2)));
+          int looks_like_der_cr = !looks_like_cref && !looks_like_call && call_looks_like_der_cr(e1);
+          modelicaParserAssert(eq!=0 || metamodelica_enabled() || looks_like_cref || looks_like_call || looks_like_der_cr,
+              "Modelica assignment statements are either on the form 'component_reference := expression' or '( output_expression_list ) := function_call'",
+              assign_clause_a, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
+          if (looks_like_der_cr) {
+            c_add_source_message(2, ErrorType_syntax, ErrorLevel_warning, "der(cr) := exp is not legal Modelica code. OpenModelica accepts it for interoperability with non-standards-compliant Modelica tools. There is no way to suppress this warning.",
+              NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
+              ModelicaParser_readonly, ModelicaParser_filename_C);
+          }
+        }
         $ast = Absyn__ALG_5fASSIGN(e1,e2);
       }
     | 

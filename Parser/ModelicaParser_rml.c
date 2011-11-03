@@ -40,4 +40,6 @@ extern "C" {
 
 #define UNBOX_OFFSET 0
 #define optionNone(X) (RML_GETHDR(X) == RML_STRUCTHDR(0,0))
+#define call_looks_like_der_cr(X) rml_prim_once(RML_LABPTR(Absyn__isDerCref))
+
 #include "ModelicaParser.c"

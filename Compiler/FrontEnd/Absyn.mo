@@ -5248,4 +5248,14 @@ algorithm
   end match;
 end isCref;
           
+public function isDerCref
+  input Exp exp;
+  output Boolean b;
+algorithm
+  b := match exp
+    case CALL(CREF_IDENT("der",{}),FUNCTIONARGS({CREF(_)},{})) then true;
+    else false;
+  end match;
+end isDerCref;
+
 end Absyn;
