@@ -9273,6 +9273,8 @@ algorithm
         crefs2 = getCrefFromDim(ad);
         crefs3 = getCrefFromCond(cond);
         crefs_1 = listAppend(listAppend(crefs, crefs2),crefs3);
+        crefs = Mod.getUntypedCrefs(cmod);
+        crefs_1 = listAppend(crefs_1, crefs);
         crefs_2 = removeCrefFromCrefs(crefs_1, cref);
         // Also remove the cref that caused this updateComponentInEnv call, to avoid
         // infinite loops.

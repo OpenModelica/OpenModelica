@@ -3289,5 +3289,56 @@ algorithm
   end match;
 end isUntypedSubMod;
 
+public function getUntypedCrefs
+  input DAE.Mod inMod;
+  output list<Absyn.ComponentRef> outCrefs;
+algorithm
+  outCrefs := matchcontinue(inMod)
+    local
+      Absyn.Exp exp;
+      list<Absyn.ComponentRef> crefs;
+      list<DAE.SubMod> submods;
+
+    case DAE.MOD(eqModOption = SOME(DAE.UNTYPED(exp = exp)))
+      equation
+        crefs = Absyn.getCrefFromExp(exp, true);
+      then
+        crefs;
+
+    case DAE.MOD(subModLst = submods)
+      equation
+        crefs = List.fold(submods, getUntypedCrefFromSubMod, {});
+      then
+        crefs;
+
+    else {};
+  end matchcontinue;
+end getUntypedCrefs;
+
+protected function getUntypedCrefFromSubMod
+  input DAE.SubMod inSubMod;
+  input list<Absyn.ComponentRef> inCrefs;
+  output list<Absyn.ComponentRef> outCrefs;
+algorithm
+  outCrefs := match(inSubMod, inCrefs)
+    local
+      DAE.Mod mod;
+      list<Absyn.ComponentRef> crefs;
+
+    case (DAE.NAMEMOD(mod = mod), _)
+      equation
+        crefs = getUntypedCrefs(mod);
+      then
+        listAppend(crefs, inCrefs);
+
+    case (DAE.IDXMOD(mod = mod), _)
+      equation
+        crefs = getUntypedCrefs(mod);
+      then
+        listAppend(crefs, inCrefs);
+
+  end match;
+end getUntypedCrefFromSubMod;
+
 end Mod;
 
