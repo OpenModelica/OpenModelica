@@ -32,7 +32,7 @@ moGenerator.o: fmuModelica.h
 xmlparser.o: xmlparser.c xmlparser.h stack.h
 
 clean: clean-custom
-	${RM} $(OBJS) $(BIN)
+	${RM} $(OBJS) $(BIN) fmuWrapper.o
 
 $(BIN): $(OBJS)
 	$(CC) -Wall -o $@ $(CPPFLAGS) $(LINKOBJS) $(LIBS)
