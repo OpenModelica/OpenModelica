@@ -163,7 +163,7 @@ protected function loadCompletePackageFromMp
   input Absyn.Program inProgram;
   output Absyn.Program outProgram;
 algorithm
-  outProgram := match (id,inIdent,inString,inWithin,inProgram)
+  outProgram := matchcontinue (id,inIdent,inString,inWithin,inProgram)
     local
       String pd,mp_1,packagefile,subdirstr,pack,mp;
       list<Absyn.Class> p1,oldc;
@@ -210,13 +210,15 @@ algorithm
       then
         p;
 
-    else
+    case (id,pack,mp,within_,p) // No package.mo file is different from a parse error
       equation
-        // adrpo: not needed as it might fail due to no package file!
-        // print("ClassLoader.loadCompletePackageFromMp failed\n");
-      then fail();
+        pd = System.pathDelimiter();
+        mp_1 = stringAppendList({mp,pd,pack});
+        packagefile = stringAppendList({mp_1,pd,"package.mo"});
+        failure(existRegularFile(packagefile));
+      then p;
 
-  end match;
+  end matchcontinue;
 end loadCompletePackageFromMp;
 
 protected function loadCompleteSubdirs
@@ -257,15 +259,17 @@ algorithm
       then
         p_1;
 
+    /* Do not silently accept broken libraries...
     case ((pack :: packs),pack1,mp,within_,p)
       equation
         p_1 = loadCompleteSubdirs(packs, pack1, mp, within_, p);
       then
         p_1;
+    */
 
-    case (_,_,_,_,_)
+    case (pack::_,_,_,_,_)
       equation
-        print("ClassLoader.loadCompleteSubdirs failed\n");
+        Debug.fprintln("failtrace","ClassLoader.loadCompleteSubdirs failed: " +& pack);
       then
         fail();
   end matchcontinue;
@@ -306,7 +310,7 @@ algorithm
 
     case (_,_,_,_)
       equation
-        print("ClassLoader.loadCompleteSubfiles failed\n");
+        Debug.fprintln("failtrace","ClassLoader.loadCompleteSubfiles failed");
       then
         fail();
   end matchcontinue;
@@ -345,9 +349,8 @@ algorithm
 
     case (_,_,_,_)
       equation
-        print("ClassLoader.loadSubpackageFiles failed\n");
-      then
-        fail();
+        Debug.fprintln("failtrace","ClassLoader.loadSubpackageFiles failed");
+      then fail();
   end matchcontinue;
 end loadSubpackageFiles;
 
