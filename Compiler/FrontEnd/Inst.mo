@@ -5350,6 +5350,18 @@ algorithm
       then
         (cache,env,ih,elMod::res);
 
+    // If the modifier has already been updated, just update the environment with it.
+    case (cache,env,ih,pre,((comp, cmod as DAE.MOD(subModLst = _)) :: xs),ci_state,impl)
+      equation
+        false = Mod.isUntypedMod(cmod);
+        name = SCode.elementName(comp);
+        cref = Absyn.CREF_IDENT(name,{});
+
+        (cache,env2,ih) = updateComponentsInEnv(cache, env, ih, pre, DAE.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{DAE.NAMEMOD(name, cmod)},NONE()), {cref}, ci_state, impl);
+        (cache,env3,ih,res) = updateCompeltsMods(cache, env2, ih, pre, xs, ci_state, impl);
+      then
+        (cache,env3,ih,((comp,cmod) :: res));
+
     case (cache,env,ih,pre,((comp, cmod as DAE.MOD(subModLst = _)) :: xs),ci_state,impl)
       equation
         info = SCode.elementInfo(comp);

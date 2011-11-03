@@ -810,6 +810,32 @@ algorithm
   end matchcontinue;
 end mergeSorted;
 
+public function unique
+  "Takes a list of elements and returns a list with duplicates removed, so that
+   each element in the new list is unique."
+  input list<ElementType> inList;
+  output list<ElementType> outList;
+algorithm
+  outList := union_tail({}, inList, {});
+end unique;
+
+public function uniqueOnTrue
+  "Takes a list of elements and a comparison function over two elements of the
+   list and returns a list with duplicates removed, so that each element in the
+   new list is unique."
+  input list<ElementType> inList;
+  input CompFunc inCompFunc;
+  output list<ElementType> outList;
+
+  partial function CompFunc
+    input ElementType inElement1;
+    input ElementType inElement2;
+    output Boolean outIsEqual;
+  end CompFunc;
+algorithm
+  outList := unionOnTrue_tail({}, inList, inCompFunc, {});
+end uniqueOnTrue;
+
 public function reverseList
   "Takes a list of lists and reverses it at both levels, i.e. both the list
    itself and each sublist.

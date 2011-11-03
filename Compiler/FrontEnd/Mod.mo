@@ -38,11 +38,10 @@ encapsulated package Mod
 
   Modifications are simply the same kind of modifications used in the Absyn module.
 
-  This type is very similar to SCode.Mod.
-  The main difference is that it uses DAE.Exp for the expressions.
+  This module contains functions for handling DAE.Mod, which is very similar to
+  SCode.Mod. The main difference is that it uses DAE.Exp for the expressions.
   Expressions stored here are prefixed and typechecked.
-
-  The datatype itself is moved to the Types module, in Types.mo, to prevent circular dependencies."
+"
 
 
 public import Absyn;
@@ -3254,5 +3253,41 @@ algorithm
   end matchcontinue;
 end getUnelabedSubMod2;
       
+public function isUntypedMod
+  "Returns true if a modifier contains any untyped parts, otherwise false."
+  input DAE.Mod inMod;
+  output Boolean outIsUntyped;
+algorithm
+  outIsUntyped := matchcontinue(inMod)
+    local
+      list<DAE.SubMod> submods;
+
+    case DAE.MOD(eqModOption = SOME(DAE.UNTYPED(exp = _))) then true;
+
+    case DAE.MOD(subModLst = submods)
+      equation
+        _ = List.selectFirst(submods, isUntypedSubMod);
+      then
+        true;
+
+    else false;
+  end matchcontinue;
+end isUntypedMod;
+
+protected function isUntypedSubMod
+  "Returns true if a submodifier contains any untyped parts, otherwise false."
+  input DAE.SubMod inSubMod;
+  output Boolean outIsUntyped;
+algorithm
+  outIsUntyped := match(inSubMod)
+    local
+      DAE.Mod mod;
+
+    case DAE.NAMEMOD(mod = mod) then isUntypedMod(mod);
+    case DAE.IDXMOD(mod = mod) then isUntypedMod(mod);
+
+  end match;
+end isUntypedSubMod;
+
 end Mod;
 

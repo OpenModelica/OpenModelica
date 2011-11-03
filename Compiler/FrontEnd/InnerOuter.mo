@@ -1870,6 +1870,7 @@ algorithm
 
     case(INST_INNER(innerPrefix, name, io, fullName, typePath, scope, instResult, outers))
       equation
+        outers = List.uniqueOnTrue(outers, ComponentReference.crefEqualNoStringCompare);
         strOuters = Util.if_(listLength(outers) == 0, 
                       "", 
                       " Referenced by 'outer' components: {" +&
