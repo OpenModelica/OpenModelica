@@ -25,7 +25,7 @@ public:
 	 ~AlgLoopSolverFactory();
 
 	/// Creates a solver according to given system of equations of type algebraic loop
-	virtual IAlgLoopSolver* createAlgLoopSolver(IAlgLoop* algLoop);
+	virtual boost::shared_ptr<IAlgLoopSolver> createAlgLoopSolver(IAlgLoop* algLoop);
 
 private:
 	boost::shared_ptr<INewtonSettings>_algsolversettings;

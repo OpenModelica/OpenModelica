@@ -6436,7 +6436,7 @@ algorithm
          states_lst2 =listAppend(states_lst,der_states_lst);
          Debug.fcall("cpp",print,"replace index in states \n");
          states_2 = replaceindex1(stateVars,states_lst);
-          //Debug.fcall("cppvar",print," replace der varibales: \n " +&dumpVarinfoList(states_lst2));
+         // Debug.fcall("cppvar",print," replace der varibales: \n " +&dumpVarinfoList(states_lst2));
           Debug.fcall("cpp",print,"replace index in der states  \n");
          derivatives_2=replaceindex1(derivative,der_states_lst);
          //Debug.fcall("cppvar",print,"state varibales: \n " +&dumpVarinfoList(states_lst2));
@@ -10685,9 +10685,52 @@ Author bz 2008-06
 This function investigates the system of equations finding an order for derivative variables.
 It only selects variables that have an derivative order, order=0 (no derivative) will not be included.
 "
-  input BackendDAE.BackendDAE inDlow;
+  input BackendDAE.BackendDAE inDlow;    
+  input BackendDAE.EqSystems inEqSystems;
   output list<tuple<DAE.ComponentRef, Integer>> outOrder;
-algorithm outOrder := matchcontinue(inDlow)
+algorithm outOrder := matchcontinue(inDlow,inEqSystems)
+  local
+    BackendDAE.Variables dovars;
+    BackendDAE.EquationArray deqns;
+    list<BackendDAE.Equation> eqns;
+    list<BackendDAE.Var> vars;
+    list<Expression.Exp> derExps;
+    list<tuple<DAE.ComponentRef, Integer>> variableIndex;
+     list<tuple<DAE.ComponentRef, Integer>> variableIndex2;
+      list<tuple<DAE.ComponentRef, Integer>> variableIndex3;
+    list<list<DAE.ComponentRef>> firstOrderVars;
+    list<DAE.ComponentRef> firstOrderVarsFiltered;
+    String eq_str;
+    BackendDAE.EqSystem syst;
+    BackendDAE.EqSystems systs;
+ case(inDlow,{})
+     then
+     {};
+ case(inDlow,syst::systs)
+    equation
+      Debug.fcall("cppvar",print, " set  variabale der index for eqsystem"+& "\n");
+     variableIndex =  setVariableDerIndex2(inDlow,syst);
+      variableIndex2 = setVariableDerIndex(inDlow,systs);
+    variableIndex3 = listAppend(variableIndex,variableIndex2);
+      then
+         variableIndex3; 
+  case(_,_)
+      equation
+         print(" Failure in setVariableDerIndex \n");
+         then fail();
+ end matchcontinue;
+end setVariableDerIndex;
+
+
+protected function setVariableDerIndex2 "
+Author bz 2008-06
+This function investigates the system of equations finding an order for derivative variables.
+It only selects variables that have an derivative order, order=0 (no derivative) will not be included.
+" 
+  input BackendDAE.BackendDAE inDlow;      
+  input BackendDAE.EqSystem syst;
+  output list<tuple<DAE.ComponentRef, Integer>> outOrder;
+algorithm outOrder := matchcontinue(inDlow,syst)
   local
     BackendDAE.Variables dovars;
     BackendDAE.EquationArray deqns;
@@ -10699,9 +10742,10 @@ algorithm outOrder := matchcontinue(inDlow)
     list<DAE.ComponentRef> firstOrderVarsFiltered;
     String eq_str;
     BackendDAE.EqSystem syst;
-  case(inDlow as BackendDAE.DAE(eqs={syst}))
+    BackendDAE.EqSystems systs;
+  case(inDlow,syst)
     equation
-      
+      Debug.fcall("cppvar",print, " set variabale der index"+& "\n");
       dovars = BackendVariable.daeVars(syst);
       deqns = BackendEquation.daeEqns(syst);
       vars = BackendDAEUtil.varList(dovars);
@@ -10719,12 +10763,15 @@ algorithm outOrder := matchcontinue(inDlow)
      // Debug.fcall("cppvar",print,"Deriving Variable indexis:\n" +& dumpVariableindex(variableIndex) +& "\n");
      then
       variableIndex;
-  case(_)
+  case(_,_)
       equation
-         print(" Failure in setVariableDerIndex \n");
+         print(" Failure in setVariableDerIndex2 \n");
          then fail();
  end matchcontinue;
-end setVariableDerIndex;
+end setVariableDerIndex2;
+
+
+
 
 protected function flattenEqns "
 This function flattens all equations
@@ -11019,9 +11066,10 @@ algorithm (OutInteger1,OutInteger2):= matchcontinue(dae_low)
   local 
     Integer nvar1,nvar2;
     list<tuple<DAE.ComponentRef, Integer>> ordered_states;
-  case(dae_low)
+    BackendDAE.EqSystems eqsystems;
+  case(dae_low as BackendDAE.DAE(eqs=eqsystems))
     equation
-       ordered_states=setVariableDerIndex(dae_low);
+       ordered_states=setVariableDerIndex(dae_low,eqsystems);
       (nvar1,nvar2)=calculateVariableDimensions(ordered_states);
       then
         (nvar1,nvar2);
@@ -11114,10 +11162,11 @@ algorithm (outSimVar):= matchcontinue(stateVars,dae_low)
     Causality causality;
     Option<Integer> variable_index;
     list <String> numArrayElement;
-  case(SIMVAR(name=name,varKind=varKind,comment=comment,unit=unit,displayUnit=displayUnit,index=index,initialValue=initialValue,nominalValue=nominalValue,isFixed=isFixed,type_=type_,isDiscrete=isDiscrete,arrayCref=arrayCref,aliasvar=aliasvar,source=source,causality=causality,variable_index=variable_index,numArrayElement=numArrayElement),dae_low)
+    BackendDAE.EqSystems eqsystems;
+  case(SIMVAR(name=name,varKind=varKind,comment=comment,unit=unit,displayUnit=displayUnit,index=index,initialValue=initialValue,nominalValue=nominalValue,isFixed=isFixed,type_=type_,isDiscrete=isDiscrete,arrayCref=arrayCref,aliasvar=aliasvar,source=source,causality=causality,variable_index=variable_index,numArrayElement=numArrayElement),dae_low as BackendDAE.DAE(eqs=eqsystems))
      equation
       Debug.fcall("cppvarindex",BackendDump.debugStrCrefStr,(" search index for state variable ",name,"\n"));
-      ordered_states=setVariableDerIndex(dae_low);
+      ordered_states=setVariableDerIndex(dae_low,eqsystems);
       new_index=stateindex(name,ordered_states);
            
     then 

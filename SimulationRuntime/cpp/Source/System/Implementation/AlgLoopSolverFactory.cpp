@@ -13,7 +13,7 @@ AlgLoopSolverFactory::~AlgLoopSolverFactory()
 }
 
 /// Creates a solver according to given system of equations of type algebraic loop
-IAlgLoopSolver* AlgLoopSolverFactory::createAlgLoopSolver(IAlgLoop* algLoop)
+ boost::shared_ptr<IAlgLoopSolver> AlgLoopSolverFactory::createAlgLoopSolver(IAlgLoop* algLoop)
 {
 	if(algLoop->getDimVars(IAlgLoop::REAL) > 0)
 	{
@@ -40,11 +40,11 @@ IAlgLoopSolver* AlgLoopSolverFactory::createAlgLoopSolver(IAlgLoop* algLoop)
 		}
 
 		_algsolver= boost::shared_ptr<IAlgLoopSolver>(iter->second.create(algLoop,_algsolversettings.get()));
-		return _algsolver.get();
+		return _algsolver;
 	}
 	else
 	{
 		// TODO: Throw an error message here.
-		return 0;
+		throw   std::invalid_argument("No Newton solver found");
 	}
 }

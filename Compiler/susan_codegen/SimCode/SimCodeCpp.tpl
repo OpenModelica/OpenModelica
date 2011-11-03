@@ -266,6 +266,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
          let expPart = daeExp(eq2.exp, contextSimulationDiscrete,
                             &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
          '<%preExp%>_residuals[<%i0%>] = <%expPart%>;'
+         
        ;separator="\n")
   
   <<
@@ -274,7 +275,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 	    <%varDecls%>
 	   if(command & IContinous::CONTINOUS)
 	  {
-	      <%varDecls%>
+	      
 	       <%algs%>
 	       <%prebody%>
 	       <%body%>
@@ -958,6 +959,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   #define BOOST_EXTENSION_ALGLOOPDEFAULTIMPL_DECL BOOST_EXTENSION_IMPORT_DECL
   #include "System/Interfaces/IDAESystem.h"
   #include "System/Implementation/AlgLoopDefaultImplementation.h"
+  #include "Functions.h"
   >>
 end generateAlgloopHeaderInlcudeString;
 
@@ -1015,6 +1017,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        <%generateAlgloopMethodDeclarationCode(simCode)%>
   
   private:    
+    Functions _functions;
     double 		*_residuals;		///< Auxillary variables
      <%algvars%>
    };
@@ -3027,13 +3030,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
       case CALL(attr=CALL_ATTR(ty=ET_NORETCALL(__))) then ""
       else tempDecl(retType, &varDecls)
     let &preExp += match context case FUNCTION_CONTEXT(__) then'<%if retVar then '<%retVar%> = '%><%funName%>(<%argStr%>);<%\n%>'
-    let &preExp += match context case OTHER(__) then'<%if retVar then '<%retType%> <%retVar%> = '%>_functions.<%funName%>(<%argStr%>);<%\n%>'
-    let &preExp += if not attr.builtin then match context case SIMULATION(__) then
-      <<
-      #ifdef _OMC_MEASURE_TIME
-      SIM_PROF_ACC_FN(<%funName%>_index);
-      #endif<%\n%>
-      >>
+    /*let &preExp += match context case OTHER(__) then*/ else '<%if retVar then '<%retType%> <%retVar%> = '%>_functions.<%funName%>(<%argStr%>);<%\n%>'
+    
     match exp
       // no return calls
       case CALL(attr=CALL_ATTR(ty=ET_NORETCALL(__))) then '/* NORETCALL */'
