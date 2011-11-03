@@ -1,0 +1,65 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{listings}
+\usepackage{lmodern}
+\usepackage{color}
+\usepackage{glossaries}
+\usepackage{hyperref}
+\usepackage{graphicx}
+
+%\newcommand{\package}[1]{\hyperref[pkg:#1]{#1}}
+%\newcommand{\function}[2]{\hyperref[fun:#1.#2]{#1.#2}}
+%\newcommand{\type}[2]{\hyperref[typ:#1.#2]{#1.#2}}
+\newcommand{\package}[1]{\textcolor{blue}{#1}}
+\newcommand{\function}[2]{\textcolor{blue}{#1.#2}}
+\newcommand{\type}[2]{\textcolor{blue}{#1.#2}}
+\newcommand{\record}[3]{\textcolor{blue}{#1.#3}}
+\newcommand{\inlinecode}{\texttt}
+\newcommand{\termcmd}{\texttt}
+
+\makeglossaries
+
+\begin{document}
+\input{codesettings.tex}
+\input{glossary.tex}
+
+\title{OpenModelica System Guide}
+%\author{
+%Peter Fritzson \and Adrian Pop \and Martin Sjölund \and Per Östlund \and 
+%Peter Aronsson \and Adeel Asghar \and Mikael Axin \and Bernhard Bachmann \and
+%Vasile Baluta \and Robert Braun \and Willi Braun \and David Broman \and 
+%Stefan Brus \and Francesco Casella \and Filippo Donida \and Jens Frenkel \and
+%Pavel Grozman \and Daniel Hedberg \and Michael Hanke \and Alf Isaksson \and
+%Kim Jansson \and Daniel Kanth \and Tommi Karhela \and Juha Kortelainen \and 
+%Petter Krus \and Alexey Lebedev \and Oliver Lenord \and Ariel Liebman \and 
+%Rickard Lindberg \and Håkan Lundvall \and Abhi Raj Metkar \and Eric Meyers \and 
+%Tuomas Miettinen \and Maroun Nemer \and Hannu Niemistö \and Peter Nordin \and 
+%Kristoffer Norling \and Lennart Ochel \and Karl Pettersson \and Pavol Privitzer \and 
+%Reino Ruusu \and Per Sahlin \and Wladimir Schamai \and Gerhard Schmitz \and 
+%Anton Sodja \and Ingo Staack \and Kristian Stavåker \and Sonia Tariq \and
+%Mohsen Torabzadeh-Tari \and Parham Vasaiely \and Niklas Worschech \and 
+%Robert Wotzlaw \and Björn Zackrisson \and Azam Zia
+%}
+\maketitle
+
+\section{Getting Started}
+\section{The MetaModelica Language}
+\label{sec:metamodelica}
+\section{OpenModelica Compiler Design}
+\input{compilerdesign.tex}
+\section{Compiler API}
+\section{Debugging MetaModelica}
+\section{Client API}
+\section{Run-time System}
+\section{Interactive Simulation}
+\section{Testcases}
+\input{testsuite.tex}
+
+\printglossary[title=Acronyms]
+
+\label{pkg:Absyn}
+\label{pkg:Parser}
+\label{pkg:Main}
+\label{fun:Parser.parse}
+\end{document}
