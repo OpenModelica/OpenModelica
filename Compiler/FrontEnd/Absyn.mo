@@ -5258,4 +5258,10 @@ algorithm
   end match;
 end isDerCref;
 
+public function isDerCrefFail
+  input Exp exp;
+algorithm
+  CALL(CREF_IDENT("der",{}),FUNCTIONARGS({CREF(_)},{})) := exp;
+end isDerCrefFail;
+
 end Absyn;

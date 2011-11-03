@@ -691,7 +691,7 @@ assign_clause_a returns [void* ast] @declarations {
           modelicaParserAssert(eq!=0 || metamodelica_enabled() || looks_like_cref || looks_like_call || looks_like_der_cr,
               "Modelica assignment statements are either on the form 'component_reference := expression' or '( output_expression_list ) := function_call'",
               assign_clause_a, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
-          if (looks_like_der_cr) {
+          if (looks_like_der_cr && !metamodelica_enabled()) {
             c_add_source_message(2, ErrorType_syntax, ErrorLevel_warning, "der(cr) := exp is not legal Modelica code. OpenModelica accepts it for interoperability with non-standards-compliant Modelica tools. There is no way to suppress this warning.",
               NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
               ModelicaParser_readonly, ModelicaParser_filename_C);
