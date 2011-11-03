@@ -747,7 +747,7 @@ void printElement(int indent, void* element){
             printList(indent, (void** )md->modelVariables);
             break;
 		default:
-			ERRORPRINT; fprintf(stderr," unknown AST node type of the Element in function: %s\n",__func__);
+			/* ERRORPRINT; fprintf(stderr," unknown AST node type of the Element in function: %s\n",__func__); */
 			exit(EXIT_FAILURE);
 		
     }
@@ -793,8 +793,8 @@ void freeElement(void* element){
             freeList((void **)md->modelVariables);
             break;
 		default:
-			ERRORPRINT; fprintf(stderr," unknown AST node type of the Element in function: %s\n",__func__);
-			/* exit(EXIT_FAILURE); */
+			/* ERRORPRINT; fprintf(stderr," unknown AST node type of the Element in function: %s\n",__func__); */
+			exit(EXIT_FAILURE);
     }
     /* free the struct */
     free(e);

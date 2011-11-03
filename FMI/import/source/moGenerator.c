@@ -10,8 +10,8 @@
 // macro for screen printing
 #define QUOTEME_(x) #x
 #define QUOTEME(x) QUOTEME_(x)
-#define _DEBUG_ 1
-#define PRINT_INFORMATION
+// #define _DEBUG_ 1
+// #define PRINT_INFORMATION
 // #define _DEBUG_MODELICA 1
 // end
 
@@ -990,7 +990,9 @@ int main(int argc, char *argv[]){
 	if (strncmp(argv[1], "--fmufile=", 10) == 0) {
 		fmuname = getFMUname(argv[1] + 10);
 	}
+#ifdef _DEBUG_
 	printf("#### fmuname: %s\n",fmuname);
+#endif
 	if (argc > 2) {
 		if (strncmp(argv[2], "--outputdir=", 12) == 0) {
 		  decompPath = (char*) calloc((strlen(argv[2])-10), sizeof(char));
@@ -1057,8 +1059,9 @@ int main(int argc, char *argv[]){
 	printf("#### sizeof(fmiScalarVariable): %d, sizeof(list): %d\n",sizeof(fmiScalarVariable),sizeof(list));
 	#endif
 	fmuDllPath = getDllPath(decompPath,fmuMD->mid);
+# ifdef _DEBUG_
 	printf("#### fmuDllPath is: %s\n",fmuDllPath);
-	
+#endif
 	// Code generation
 	tmpcodegen(fmuMD,decompPath);
 	blockcodegen(fmuMD,decompPath,fmuDllPath);
