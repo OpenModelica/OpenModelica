@@ -5,56 +5,16 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "fmuWrapper.h"
+
+/* Defines for Debuging
 #define _PRINT_OUT__
 #define _DEBUG_
+ */
+
 extern int smi_verbose;
-#include "fmuWrapper.h"
-/* #define _TEST_FMI */
-
-//#define FMU_BINARIES_Win32_DLL "C:\\OpenModelica1.7.0\\fmu\\fmusdk_bouncingBall\\binaries\\win32\\bouncingBall.dll"
-#ifdef _TEST_FMI
-//#define FMU_BINARIES_Win32_DLL "C:\\OpenModelica1.7.0\\fmu\\fmusdk_bouncingBall\\binaries\\win32\\bouncingBall.dll"
-/* #define FMU_BINARIES_Win32_DLL "..\\openmodelica1.7.0\\bouncingBall\\binaries\\win32\\bouncingBall.dll" */
-/* #define FMU_BINARIES_Win32_DLL "..\\dymola\\bouncingBall\\binaries\\win32\\bouncingBall.dll" */
-
-//#define FMU_XML_PATH "..\\..\\fmusdk\\bouncingBall\\modelDescription.xml"
-#endif
 
 #define BUFSIZE 4096
-
-
-#ifdef _DEBUG_
-
-#define NUMBER_OF_REALS 5
-#define NUMBER_OF_INTEGERS 0
-#define NUMBER_OF_BOOLEANS 0
-#define NUMBER_OF_STRINGS 0
-#define NUMBER_OF_STATES 2
-#define NUMBER_OF_EVENT_INDICATORS 1
-
-
-void PrintModelStates(void* in_fmu, double in_time){
-	ModelInstance* fmu = (ModelInstance*) in_fmu;
-	switch(fmu->state){
-	case 1<<0:
-		printf("#### At time [%f]: fmu(%x)->state: %s\n",in_time,fmu,"modelInstantiated");
-		break;
-	case 1<<1:
-		printf("#### At time [%f]: fmu(%x)->state: %s\n",in_time,fmu,"modelInitialized");
-		break;
-	case 1<<2:
-		printf("#### At time [%f]: fmu(%x)->state: %s\n",in_time,fmu,"modelTerminated");
-		break;
-	case 1<<3:
-		printf("#### At time [%f]: fmu(%x)->state: %s\n",in_time,fmu,"modelError");
-		break;
-	default:
-	    printf("#### At time [%f]: fmu(%x)->state: %s\n",in_time,fmu,"unknown state");
-		break;
-	}
-	
-}
-#endif //_DEBUG_
 
 #ifdef __cplusplus
 extern "C"{
@@ -111,12 +71,10 @@ void* loadFMUDll(void* in_fmi, const char* pathFMUDll,const char* mid){
 	#if defined(__MINGW32__) || defined(_MSC_VER)
 		fmi->dllHandle = LoadLibrary(pathFMUDll);
 	#else
-		fmi->dllHandle = dlopen(pathFMUSO, RTLD_LOCAL | RTLD_NOW);
+		fmi->dllHandle = dlopen(pathFMUSO, RTLD_LAZY); //RTLD_LOCAL | RTLD_NOW);
 	#endif
     if(!fmi->dllHandle){
 		#ifdef _DEBUG_
-
-
         #if defined(__MINGW32__) || defined(_MSC_VER)
           printf("#### Loading dll library \"%s\" in fmiInstantiate failed!!!\n",pathFMUDll);
         #else
@@ -447,18 +405,26 @@ void fmiGetStringVR(void* in_fmi, void* in_fmu, const int* in_vr, const char** s
 /* get boolean variable values via an array of the the value refercences
  * FMI standard interface
  */
-void fmiGetBooleanVR(void* in_fmi, void* in_fmu, const int* in_vr, char* bv, int nvr){
-	FMI* fmi = (FMI*) in_fmi;
-	fmiStatus status;
-	const unsigned int* vr = (const unsigned int*) in_vr;
-	if(fmi->getBoolean){
-        status = fmi->getBoolean(in_fmu,vr,nvr,bv);
-        if(status>fmiWarning){
-            printf("#### fmiGetBoolean(...) failed...\n");
-            exit(EXIT_FAILURE);
-          }
-     }
-     return;
+void fmiGetBooleanVR(void* in_fmi, void* in_fmu, const int* in_vr, int* bv, int nvr){
+  FMI* fmi = (FMI*) in_fmi;
+  fmiStatus status;
+  const unsigned int* vr = (const unsigned int*) in_vr;
+  char* cbv = (char*) malloc(sizeof(char)*nvr);
+  if(fmi->getBoolean){
+    status = fmi->getBoolean(in_fmu,vr,nvr,cbv);
+    if(status>fmiWarning){
+      printf("#### fmiGetBoolean(...) failed...\n");
+      exit(EXIT_FAILURE);
+    }
+  }
+  /*
+   * convert fmuBoolean (char)
+   * to Modelica Boolean (int)
+   */
+  int i;
+  for(i=0;i<nvr;i++)
+    bv[i] = cbv[i] ? 1 : 0;
+  return;
 }
 
 /* get time event during the simulation */
