@@ -94,7 +94,7 @@ goto rule ## func ## Ex; }}
 #endif
   #define token_to_scon(tok) mk_scon((char*)tok->getText(tok)->chars)
   #define NYI(void) fprintf(stderr, "NYI \%s \%s:\%d\n", __FUNCTION__, __FILE__, __LINE__); exit(1);
-  #define INFO(start) Absyn__INFO(ModelicaParser_filename_RML, mk_bcon(isReadOnly), mk_icon(start->line), mk_icon(start->charPosition+1), mk_icon(LT(1)->line), mk_icon(LT(1)->charPosition+1), Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0)))
+  #define INFO(start) Absyn__INFO(ModelicaParser_filename_RML, mk_bcon(isReadOnly), mk_icon(start->line), mk_icon(start->charPosition == -1 ? 1 : start->charPosition+1), mk_icon(LT(1)->line), mk_icon(LT(1)->charPosition+1), Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0)))
   typedef struct fileinfo_struct {
     int line1;
     int line2;
