@@ -123,9 +123,19 @@ bool PlotCurve::hasCustomColor()
     return mCustomColor;
 }
 
+void PlotCurve::setData(const double* xData, const double* yData, int size)
+{
+#if QWT_VERSION >= 0x060000
+  setRawSamples(xData, yData, size);
+#else
+  setRawData(xData, yData, size);
+#endif
+}
+
 void PlotCurve::updateLegend(QwtLegend *legend) const
 {
     QwtPlotCurve::updateLegend(legend);
+#if QWT_VERSION < 0x060000
     QwtLegendItem *lgdItem = dynamic_cast<QwtLegendItem*>(legend->find(this));
     if (lgdItem)
     {
@@ -134,4 +144,5 @@ void PlotCurve::updateLegend(QwtLegend *legend) const
     }
 
     QwtPlotItem::updateLegend(legend);
+#endif
 }

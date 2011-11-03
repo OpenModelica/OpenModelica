@@ -68,6 +68,7 @@ public:
     QString getYVariable();
     void setCustomColor(bool value);
     bool hasCustomColor();
+    void setData(const double* xData, const double* yData, int size);
     virtual void updateLegend(QwtLegend *legend) const;
 };
 }

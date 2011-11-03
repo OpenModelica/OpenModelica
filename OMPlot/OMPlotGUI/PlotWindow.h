@@ -36,6 +36,9 @@
 #include <qwt_plot_zoomer.h>
 #include <qwt_plot_panner.h>
 #include <qwt_scale_engine.h>
+#if QWT_VERSION >= 0x060000
+#include <qwt_compat.h>
+#endif
 #include <stdexcept>
 #include "../../c_runtime/read_matlab4.h"
 #include "Plot.h"

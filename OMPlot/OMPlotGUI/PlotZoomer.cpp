@@ -38,7 +38,9 @@ using namespace OMPlot;
 PlotZoomer::PlotZoomer(int xAxis, int yAxis, QwtPlotCanvas *pParent)
     : QwtPlotZoomer(xAxis, yAxis, pParent)
 {
+#if QWT_VERSION < 0x060000
     setSelectionFlags(QwtPicker::DragSelection | QwtPicker::CornerToCorner);    
+#endif
     setTrackerMode(QwtPicker::AlwaysOff);
     setRubberBand(QwtPicker::RectRubberBand);
     setRubberBandPen(QPen(Qt::black, 1.0, Qt::DashLine));
