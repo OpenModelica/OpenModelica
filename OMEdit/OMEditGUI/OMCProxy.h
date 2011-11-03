@@ -75,6 +75,7 @@ public:
     void setExpression(QString expression);
     QString getExpression();
     void writeCommandLog(QString expression);
+    void writeCommandResponseLog();
 
     MainWindow *mpParentMainWindow;
     enum mModelicaAnnotationVersion {ANNOTATION_VERSION2X, ANNOTATION_VERSION3X};

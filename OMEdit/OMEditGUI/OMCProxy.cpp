@@ -162,15 +162,25 @@ QString OMCProxy::getExpression()
     return mExpression;
 }
 
-//! Writes the commands and their response to the omeditcommands.log file.
+//! Writes the commands to the omeditcommands.log file.
 void OMCProxy::writeCommandLog(QString expression)
 {
     if (mCommandsLogFileTextStream.device())
     {
         mCommandsLogFileTextStream << expression;
         mCommandsLogFileTextStream << "\n";
+        mCommandsLogFileTextStream.flush();
+    }
+}
+
+//! Writes the command response to the omeditcommands.log file.
+void OMCProxy::writeCommandResponseLog()
+{
+    if (mCommandsLogFileTextStream.device())
+    {
         mCommandsLogFileTextStream << getResult();
         mCommandsLogFileTextStream << "\n\n";
+        mCommandsLogFileTextStream.flush();
     }
 }
 
@@ -316,6 +326,8 @@ void OMCProxy::sendCommand(const QString expression)
             mpParentMainWindow->mExitApplication = true;
             return;
         }
+    // write command to the commands log.
+    writeCommandLog(expression);
     // Send command to server
     try
     {
@@ -327,13 +339,13 @@ void OMCProxy::sendCommand(const QString expression)
             while (future.isRunning())
                 qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
             future.waitForFinished();
-            writeCommandLog(expression);
+            writeCommandResponseLog();
             logOMCMessages(expression);
         }
         else
         {
             mResult = QString::fromLocal8Bit(mOMC->sendExpression(getExpression().toLocal8Bit()));
-            writeCommandLog(expression);
+            writeCommandResponseLog();
             logOMCMessages(expression);
         }
     }
