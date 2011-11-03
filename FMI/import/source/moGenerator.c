@@ -12,7 +12,7 @@
 #define QUOTEME(x) QUOTEME_(x)
 #define _DEBUG_ 1
 #define PRINT_INFORMATION
-#define _DEBUG_MODELICA 1
+// #define _DEBUG_MODELICA 1
 // end
 
 // mocro for error message print
@@ -426,7 +426,7 @@ void instScalarVariable(ModelDescription* md,fmiScalarVariable* list){
  * functions that returns the variable naming convention
  */
 fmiNamingConvention getNamingConvention(ModelDescription* md, Att att){
-	ValueStatus vs = valueIllegal;
+	ValueStatus vs;
 	Enu enu;
 	fmiNamingConvention nconv;
 	enu = getEnumValue(md,att_variableNamingConvention,&vs);
@@ -475,9 +475,10 @@ void tmpcodegen(fmuModelDescription* fmuMD, const char* decompPath){
 	char * id;
 
 	size_t len = strlen(fmuMD->mid)+strlen(decompPath);
-	id = (char*) malloc(len+4);
+	id = (char*) malloc(len+14);
 	strcpy(id,decompPath);
 	strcat(id,fmuMD->mid);
+	strcat(id,"FMUImport");
 	strcat(id,".mo");
 	
 	#ifdef _DEBUG_
@@ -593,9 +594,10 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath, const char
 	// double Tolerance = 0.0001;
 	
 	size_t len = strlen(fmuMD->mid)+strlen(decompPath);
-	id = (char*) malloc(len+4);
+	id = (char*) malloc(len+14);
 	strcpy(id,decompPath);
 	strcat(id,fmuMD->mid);
+	strcat(id,"FMUImport");
 	strcat(id,".mo");
 	
 	pfile = fopen(id,"a+");
