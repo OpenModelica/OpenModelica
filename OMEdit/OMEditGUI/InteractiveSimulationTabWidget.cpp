@@ -854,7 +854,7 @@ void InteractiveSimulationTab::recievedResult(QString message)
         double element = variable.mid(variable.lastIndexOf("=") + 1, (variable.length() - 1)).trimmed().toDouble();
         pPlotCurve->addXAxisValue(time);
         pPlotCurve->addYAxisValue(element);
-        pPlotCurve->setRawData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+        pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
         count++;
     }
 }
