@@ -213,7 +213,7 @@ void fmiSetIntegerVR(void* in_fmi, void* in_fmu, const int* in_vr, const int* iv
 #ifdef _PRINT_OUT__
     int i;
     for(i=0;i<nvr;i++){
-      printf("\n#### fmiSetInteger[%d] = %f\n",i,((ModelInstance*)in_fmu)->i[in_vr[i]]);
+      printf("\n#### fmiSetInteger[%d] = %d\n",i,((ModelInstance*)in_fmu)->i[in_vr[i]]);
     }
 #endif
     if(status>fmiWarning){
@@ -237,7 +237,7 @@ void fmiSetStringVR(void* in_fmi, void* in_fmu, const int* in_vr, const char** s
 #ifdef _PRINT_OUT__
     int i;
     for(i=0;i<nvr;i++){
-      printf("\n#### fmiSetString[%d] = %f\n",i,((ModelInstance*)in_fmu)->s[in_vr[i]]);
+      printf("\n#### fmiSetString[%d] = %s\n",i,((ModelInstance*)in_fmu)->s[in_vr[i]]);
     }
 #endif
     if(status>fmiWarning){
@@ -261,7 +261,7 @@ void fmiSetBooleanVR(void* in_fmi, void* in_fmu, const int* in_vr, const char* i
 #ifdef _PRINT_OUT__
     int i;
     for(i=0;i<nvr;i++){
-      printf("\n#### fmiSetString[%d] = %f\n",i,((ModelInstance*)in_fmu)->b[in_vr[i]]);
+      printf("\n#### fmiSetString[%d] = %c\n",i,((ModelInstance*)in_fmu)->b[in_vr[i]]);
     }
 #endif
     if(status>fmiWarning){
@@ -407,7 +407,7 @@ void fmiGetIntegerVR(void* in_fmi, void* in_fmu, const int* in_vr, int* iv, int 
 #ifdef _PRINT_OUT__
     int i;
     for(i=0;i<nvr;i++){
-      printf("\n#### fmiGetInteger[%d] = %f\n",i,((ModelInstance*)in_fmu)->i[in_vr[i]]);
+      printf("\n#### fmiGetInteger[%d] = %d\n",i,((ModelInstance*)in_fmu)->i[in_vr[i]]);
     }
 #endif
     if(status>fmiWarning){
@@ -430,7 +430,7 @@ void fmiGetStringVR(void* in_fmi, void* in_fmu, const int* in_vr, const char** s
 #ifdef _PRINT_OUT__
     int i;
     for(i=0;i<nvr;i++){
-      printf("\n#### fmiGetString[%d] = %f\n",i,((ModelInstance*)in_fmu)->s[in_vr[i]]);
+      printf("\n#### fmiGetString[%d] = %s\n",i,((ModelInstance*)in_fmu)->s[in_vr[i]]);
     }
 #endif
     if(status>fmiWarning){
@@ -454,7 +454,7 @@ void fmiGetBooleanVR(void* in_fmi, void* in_fmu, const int* in_vr, int* bv, int 
 #ifdef _PRINT_OUT__
     int i;
     for(i=0;i<nvr;i++){
-      printf("\n#### fmiGetBoolean[%d] = %f\n",i,((ModelInstance*)in_fmu)->b[in_vr[i]]);
+      printf("\n#### fmiGetBoolean[%d] = %c\n",i,((ModelInstance*)in_fmu)->b[in_vr[i]]);
     }
 #endif
     if(status>fmiWarning){
@@ -577,7 +577,7 @@ void fmuLogger(void* in_fmu, const char* instanceName, fmiStatus status,
  * FMI standard interface */
 void* fmiInstantiate(void* in_fmi, const char* instanceName,  const char* GUID, void* in_functions, int logFlag){
   FMI* fmi = (FMI*) in_fmi;
-  fmiComponent fmu;
+  fmiComponent fmu = NULL;
   fmiCallbackFunctions* functions = (fmiCallbackFunctions*) in_functions;
   fmiBoolean loggingon = fmiFalse;
   if(logFlag) loggingon = fmiTrue;
