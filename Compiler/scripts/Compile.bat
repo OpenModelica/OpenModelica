@@ -10,7 +10,7 @@ REM If OMDEV is set, use MinGW from there instead of OPENMODELICAHOME
 REM It is not certain that release OMC is installed
 if not %OMDEV%a==a set MINGW=%OMDEV%\tools\MinGW
 pushd "%MINGW%\bin" >%1.log 2<&1
-set PATH=%CD%;%MinGW%\libexec\gcc\mingw32\3.4.5\;%PATH%
+set PATH=%CD%;%MinGW%\libexec\gcc\mingw32\4.4.0\;%PATH%
 popd
 %MinGW%\bin\mingw32-make -f %1.makefile >>%1.log 2<&1
 set RESULT=%ERRORLEVEL%
