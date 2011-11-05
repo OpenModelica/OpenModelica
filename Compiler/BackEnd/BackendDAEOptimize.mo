@@ -4026,14 +4026,14 @@ algorithm
           dlow = removeParameters(dlow,functionTree);
           dlow = removeSimpleEquations(dlow,functionTree);
 
-          Debug.fcall("execStat",print, "*** analytical Jacobians -> removed simply equations: " +& realString(clock()) +& "\n" );
+          Debug.fcall("execstat",print, "*** analytical Jacobians -> removed simply equations: " +& realString(clock()) +& "\n" );
           // figure out new matching and the strong components  
           (dlow as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps1))})) = BackendDAEUtil.transformBackendDAE(dlow,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE());
           Debug.fcall("jacdump2", BackendDump.bltdump, ("jacdump2",dlow));
-          Debug.fcall("execStat",print, "*** analytical Jacobians -> performed matching and sorting: " +& realString(clock()) +& "\n" );
+          Debug.fcall("execstat",print, "*** analytical Jacobians -> performed matching and sorting: " +& realString(clock()) +& "\n" );
         
           Debug.fcall("jacdump2", BackendDump.dumpComponents, comps1);
-          //Debug.fcall("execStat",print, "*** analytical Jacobians -> performed splitig the system: " +& realString(clock()) +& "\n" );
+          //Debug.fcall("execstat",print, "*** analytical Jacobians -> performed splitig the system: " +& realString(clock()) +& "\n" );
         then dlow;
 
           
@@ -4047,11 +4047,11 @@ algorithm
           dlow = removeParameters(dlow,functionTree);
           dlow = removeSimpleEquations(dlow,functionTree);
 
-          Debug.fcall("execStat",print, "*** analytical Jacobians -> removed simply equations: " +& realString(clock()) +& "\n" );
+          Debug.fcall("execstat",print, "*** analytical Jacobians -> removed simply equations: " +& realString(clock()) +& "\n" );
           // figure out new matching and the strong components  
           dlow = BackendDAEUtil.transformBackendDAE(dlow,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE());        
           Debug.fcall("jacdump2", BackendDump.bltdump, ("jacdump2",dlow));
-          Debug.fcall("execStat",print, "*** analytical Jacobians -> performed matching and sorting: " +& realString(clock()) +& "\n" );
+          Debug.fcall("execstat",print, "*** analytical Jacobians -> performed matching and sorting: " +& realString(clock()) +& "\n" );
        
         then dlow;
      else
