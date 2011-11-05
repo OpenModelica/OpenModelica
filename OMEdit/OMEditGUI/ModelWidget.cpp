@@ -139,7 +139,6 @@ void ModelCreator::create()
             return;
         }
     }
-
     //open the new tab in central widget and add the model to tree.
     mpParentMainWindow->mpLibrary->addModelicaNode(mpNameTextBox->text(), mType, mpParentPackageCombo->currentText(), modelStructure);
     mpParentMainWindow->mpProjectTabs->addNewProjectTab(mpNameTextBox->text(), modelStructure, mType);
@@ -226,18 +225,13 @@ void RenameClassWidget::renameClass()
         return;
     }
 
-    if (!mpParentMainWindow->mpOMCProxy->existClass(QString(StringHandler::removeLastWordAfterDot(mNameStructure))
-                                                    .append(".").append(newName)))
+    if (!mpParentMainWindow->mpOMCProxy->existClass(QString(StringHandler::removeLastWordAfterDot(mNameStructure)).append(".").append(newName)))
     {
         if (mpParentMainWindow->mpOMCProxy->renameClass(mNameStructure, newName))
         {
             newNameStructure = StringHandler::removeFirstLastCurlBrackets(mpParentMainWindow->mpOMCProxy->getResult());
             // Change the name in tree
             mpParentMainWindow->mpLibrary->updateNodeText(newName, newNameStructure);
-            mpParentMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, tr("Renamed '").append(mName).append("' to '")
-                                                                               .append(mpModelNameTextBox->text().trimmed()).append("'"),
-                                                                               Helper::scriptingKind, Helper::notificationLevel, 0,
-                                                                               mpParentMainWindow->mpMessageWidget->mpProblem));
             accept();
         }
         else

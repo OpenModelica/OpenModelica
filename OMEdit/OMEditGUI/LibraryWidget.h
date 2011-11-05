@@ -81,8 +81,9 @@ public:
     ~ModelicaTree();
     void createActions();
     ModelicaTreeNode* getNode(QString name);
+    QModelIndex getNodeModelIndex(ModelicaTreeNode *pNode);
     QList<ModelicaTreeNode*> getModelicaTreeNodes();
-    void deleteNode(ModelicaTreeNode *item);
+    void deleteNode(ModelicaTreeNode *item, bool removeTab = true);
     void removeChildNodes(ModelicaTreeNode *item);
 
     LibraryWidget *mpParentLibraryWidget;
@@ -98,13 +99,13 @@ signals:
     void nodeDeleted();
     void changeTab();
 public slots:
-    void addNode(QString name, int type, QString parentName=QString(), QString parentStructure=QString());
+    void addNode(QString name, int type, QString parentName=QString(), QString parentStructure=QString(), int insertIndex = 0);
     void openProjectTab(QTreeWidgetItem *item, int column);
     void showContextMenu(QPoint point);
     void renameClass();
     void checkModelicaModel();
     void flatModel();
-    bool deleteNodeTriggered(ModelicaTreeNode *node = 0, bool askQuestion = true);
+    bool deleteNodeTriggered(ModelicaTreeNode *node = 0, bool askQuestion = true, bool removeTab = true);
     void copyModel(ModelicaTreeNode *node = 0);
     void pasteModel();
     void saveChildModels(QString modelName, QString filePath);
@@ -247,8 +248,8 @@ public:
     //Member functions
     LibraryWidget(MainWindow *parent);
     ~LibraryWidget();
-    void addModelicaNode(QString name, int type, QString parentName=QString(), QString parentStructure=QString());
-    void addModelFiles(QString fileName, QString parentFileName=QString(), QString parentStructure=QString());
+    void addModelicaNode(QString name, int type, QString parentName=QString(), QString parentStructure=QString(), int insertIndex = 0);
+    void addModelFiles(QString fileName, QString parentFileName=QString(), QString parentStructure=QString(), int insertIndex = 0);
     void loadFile(QString path, QStringList modelsList);
     void loadModel(QString modelText, QStringList modelsList);
     void addComponentObject(LibraryComponent *libraryComponent);
@@ -263,7 +264,7 @@ public:
     ModelicaTreeNode *mSelectedModelicaNode;
     QTreeWidgetItem *mSelectedLibraryNode;
 signals:
-    void addModelicaTreeNode(QString name, int type, QString parentName=QString(), QString parentStructure=QString());
+    void addModelicaTreeNode(QString name, int type, QString parentName=QString(), QString parentStructure=QString(), int insertIndex = 0);
 private:
     //Member variables
     QVBoxLayout *mpGrid;

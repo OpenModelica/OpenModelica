@@ -1174,10 +1174,6 @@ void GraphicsView::createConnection(Component *pStartComponent, QString startIco
                 // add the connection annotation to OMC
                 mpConnector->updateConnectionAnnotationString();
                 mpParentProjectTab->mpModelicaEditor->setPlainText(pMainWindow->mpOMCProxy->list(mpParentProjectTab->mModelNameStructure));
-                pMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, tr("Connected: (")
-                                                                            .append(startIconCompName).append(", ").append(endIconCompName)
-                                                                            .append(")"), Helper::scriptingKind, Helper::notificationLevel, 0,
-                                                                            pMainWindow->mpMessageWidget->mpProblem));
             }
             else
             {
@@ -1630,23 +1626,19 @@ ProjectTab::ProjectTab(QString name, QString nameStructure, int modelicaType, in
     mOpenMode = openMode;
     setReadOnly(readOnly);
     setIsChild(isChild);
-
     // create a modelica text editor for modelica text
     mpModelicaEditor = new ModelicaEditor(this);
     MainWindow *pMainWindow = mpParentProjectTabWidget->mpParentMainWindow;
     mpModelicaTextHighlighter = new ModelicaTextHighlighter(pMainWindow->mpOptionsWidget->mpModelicaTextSettings, mpModelicaEditor->document());
     connect(pMainWindow->mpOptionsWidget, SIGNAL(modelicaTextSettingsChanged()), mpModelicaTextHighlighter, SLOT(settingsChanged()));
-
     // icon graphics framework
     mpDiagramGraphicsScene = new GraphicsScene(StringHandler::DIAGRAM, this);
     mpDiagramGraphicsView = new GraphicsView(StringHandler::DIAGRAM, this);
     mpDiagramGraphicsView->setScene(mpDiagramGraphicsScene);
-
     // diagram graphics framework
     mpIconGraphicsScene = new GraphicsScene(StringHandler::ICON, this);
     mpIconGraphicsView = new GraphicsView(StringHandler::ICON, this);
     mpIconGraphicsView->setScene(mpIconGraphicsScene);
-
     // set Project Status Bar lables
     mpReadOnlyLabel = isReadOnly() ? new QLabel(Helper::readOnly) : new QLabel(Helper::writeAble);
     mpReadOnlyLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
@@ -1657,12 +1649,10 @@ ProjectTab::ProjectTab(QString name, QString nameStructure, int modelicaType, in
     mpModelFilePathLabel = new QLabel(tr(""));
     mpModelFilePathLabel->setWordWrap(true);
     mpModelFilePathLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
-
     // frame to contain view buttons
     QFrame *viewsButtonsFrame = new QFrame;
     QHBoxLayout *viewsButtonsHorizontalLayout = new QHBoxLayout;
     viewsButtonsHorizontalLayout->setContentsMargins(0, 0, 0, 0);
-
     // icon view tool button
     mpDiagramToolButton = new QToolButton;
     mpDiagramToolButton->setText(Helper::iconView);
@@ -1673,7 +1663,6 @@ ProjectTab::ProjectTab(QString name, QString nameStructure, int modelicaType, in
     mpDiagramToolButton->setCheckable(true);
     connect(mpDiagramToolButton, SIGNAL(clicked(bool)), SLOT(showIconView(bool)));
     viewsButtonsHorizontalLayout->addWidget(mpDiagramToolButton);
-
     // diagram view tool button
     mpIconToolButton = new QToolButton;
     mpIconToolButton->setText(Helper::diagramView);
@@ -1684,7 +1673,6 @@ ProjectTab::ProjectTab(QString name, QString nameStructure, int modelicaType, in
     mpIconToolButton->setCheckable(true);
     connect(mpIconToolButton, SIGNAL(clicked(bool)), SLOT(showDiagramView(bool)));
     viewsButtonsHorizontalLayout->addWidget(mpIconToolButton);
-
     // modelica text view tool button
     mpModelicaTextToolButton = new QToolButton;
     mpModelicaTextToolButton->setText(Helper::modelicaTextView);
@@ -1695,7 +1683,6 @@ ProjectTab::ProjectTab(QString name, QString nameStructure, int modelicaType, in
     mpModelicaTextToolButton->setCheckable(true);
     connect(mpModelicaTextToolButton, SIGNAL(clicked(bool)), SLOT(showModelicaTextView(bool)));
     viewsButtonsHorizontalLayout->addWidget(mpModelicaTextToolButton);
-
     // documentation view tool button
     mpDocumentationViewToolButton = new QToolButton;
     mpDocumentationViewToolButton->setText(Helper::documentationView);
@@ -1705,16 +1692,13 @@ ProjectTab::ProjectTab(QString name, QString nameStructure, int modelicaType, in
     mpDocumentationViewToolButton->setAutoRaise(true);
     connect(mpDocumentationViewToolButton, SIGNAL(clicked()), SLOT(showDocumentationView()));
     viewsButtonsHorizontalLayout->addWidget(mpDocumentationViewToolButton);
-
     viewsButtonsFrame->setLayout(viewsButtonsHorizontalLayout);
-
     // view buttons box
     mpViewsButtonGroup = new QButtonGroup;
     mpViewsButtonGroup->setExclusive(true);
     mpViewsButtonGroup->addButton(mpIconToolButton);
     mpViewsButtonGroup->addButton(mpDiagramToolButton);
     mpViewsButtonGroup->addButton(mpModelicaTextToolButton);
-
     // create project status bar
     mpProjectStatusBar = new QStatusBar;
     mpProjectStatusBar->setObjectName(tr("ProjectStatusBar"));
@@ -1724,7 +1708,6 @@ ProjectTab::ProjectTab(QString name, QString nameStructure, int modelicaType, in
     mpProjectStatusBar->addPermanentWidget(mpModelicaTypeLabel, 6);
     mpProjectStatusBar->addPermanentWidget(mpViewTypeLabel, 10);
     mpProjectStatusBar->addPermanentWidget(mpModelFilePathLabel, 73);
-
     // create the layout for Modelica Editor
     QHBoxLayout *modelicaEditorHorizontalLayout = new QHBoxLayout;
     modelicaEditorHorizontalLayout->setContentsMargins(0, 0, 0, 0);
@@ -1743,7 +1726,7 @@ ProjectTab::ProjectTab(QString name, QString nameStructure, int modelicaType, in
     modelicaEditorVerticalLayout->addWidget(mpModelicaEditor->mpFindWidget);
     mpModelicaEditorWidget = new QWidget;
     mpModelicaEditorWidget->setLayout(modelicaEditorVerticalLayout);
-
+    // set layout
     QVBoxLayout *tabLayout = new QVBoxLayout;
     tabLayout->setContentsMargins(2, 2, 2, 2);
     tabLayout->addWidget(mpProjectStatusBar);
@@ -1785,9 +1768,6 @@ void ProjectTab::updateModel(QString name)
         // Change the name in tree
         ModelicaTreeNode *node = pMainWindow->mpLibrary->mpModelicaTree->getNode(mModelNameStructure);
         pMainWindow->mpLibrary->updateNodeText(name, newNameStructure, node);
-        pMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, tr("Renamed '").append(oldModelName).append("' to '")
-                                                                    .append(name).append("'"), Helper::scriptingKind,
-                                                                    Helper::notificationLevel, 0, pMainWindow->mpMessageWidget->mpProblem));
     }
 }
 
@@ -2488,17 +2468,40 @@ bool ProjectTab::modelicaEditorTextChanged()
         pMainWindow->mpOMCProxy->setResult(mpModelicaEditor->mErrorString);
         return false;
     }
-    // first delete the node from tree and delete the model from omc
     QString modelNameStructure = mModelNameStructure;
-    mModelNameStructure = tr("");
-    ModelicaTree *pTree = mpParentProjectTabWidget->mpParentMainWindow->mpLibrary->mpModelicaTree;
-    pTree->deleteNodeTriggered(pTree->getNode(modelNameStructure), false);
-    // if the modelicatext is fine then do the processing on the list of models we get
-    mpParentProjectTabWidget->mpParentMainWindow->mpLibrary->loadModel(mpModelicaEditor->toPlainText(), models);
-    //QString modelsText = mpModelicaEditor->toPlainText();
-    // now update the current opened tab
     mModelNameStructure = models.first();
-    updateTabName(StringHandler::getLastWordAfterDot(mModelNameStructure), mModelNameStructure);
+    if (mModelNameStructure.compare(modelNameStructure) != 0) {
+        updateTabName(StringHandler::getLastWordAfterDot(mModelNameStructure), mModelNameStructure);
+    }
+    // remove the tree node
+    ModelicaTree *pTree = pMainWindow->mpLibrary->mpModelicaTree;
+    ModelicaTreeNode *pTreeNode = pTree->getNode(modelNameStructure);
+    QModelIndex nodeModelIndex = pTree->getNodeModelIndex(pTreeNode);
+    pTree->deleteNodeTriggered(pTreeNode, false, false);
+    pTree->clearSelection();
+    QString modelText;
+    if (isChild()) {
+        modelText = "within " + StringHandler::removeLastWordAfterDot(modelNameStructure) + ";" + mpModelicaEditor->toPlainText();
+    } else {
+        modelText = mpModelicaEditor->toPlainText();
+    }
+    // load the model text in OMC
+    if (!pMainWindow->mpOMCProxy->loadString(modelText))
+    {
+        QString message = QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_MODEL).append(" ").arg(modelText))
+                          .append("\n").append(pMainWindow->mpOMCProxy->getResult());
+        pMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, message, Helper::scriptingKind,
+                                                                    Helper::errorLevel, 0, pMainWindow->mpMessageWidget->mpProblem));
+        return false;
+    }
+    // add tree node again
+    if (isChild()) {
+        pMainWindow->mpLibrary->addModelFiles(StringHandler::getLastWordAfterDot(mModelNameStructure),
+                                              StringHandler::removeLastWordAfterDot(mModelNameStructure), mModelNameStructure,
+                                              nodeModelIndex.row());
+    } else {
+        pMainWindow->mpLibrary->addModelFiles(mModelNameStructure, tr(""), tr(""), nodeModelIndex.row());
+    }
     // clear the complete view before loading the models again
     mpIconGraphicsView->removeAllConnectors();
     mpIconGraphicsView->deleteAllComponentObjects();
@@ -2508,7 +2511,6 @@ bool ProjectTab::modelicaEditorTextChanged()
     mpDiagramGraphicsView->deleteAllComponentObjects();
     mpDiagramGraphicsView->deleteAllShapesObject();
     mpDiagramGraphicsView->scene()->clear();
-    //mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->loadString(modelsText);
     // get the model components and connectors now
     getModelComponents(mModelNameStructure);
     getModelConnections();
@@ -2516,7 +2518,53 @@ bool ProjectTab::modelicaEditorTextChanged()
     // change the model type label in the status bar of projecttab
     mpModelicaTypeLabel->setText(StringHandler::getModelicaClassType(mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->getClassRestriction(mModelNameStructure)));
     this->mOpenMode = false;
+    // since we have processed the first item so remove it from the list now.
+    models.removeFirst();
+    foreach (QString model, models) {
+        if (isChild()) {
+            pMainWindow->mpLibrary->addModelFiles(StringHandler::getLastWordAfterDot(model), StringHandler::removeLastWordAfterDot(model),
+                                                  model);
+        } else {
+            pMainWindow->mpLibrary->addModelFiles(model, tr(""), tr(""));
+        }
+    }
+    // update the Model Browser
+    mpParentProjectTabWidget->tabChanged();
     return true;
+
+//    // first delete the node from tree and delete the model from omc
+//    QString modelNameStructure = mModelNameStructure;
+//    mModelNameStructure = tr("");
+//    ModelicaTree *pTree = pMainWindow->mpLibrary->mpModelicaTree;
+//    pTree->deleteNodeTriggered(pTree->getNode(modelNameStructure), false);
+//    // if the modelicatext is fine then do the processing on the list of models we get
+//    if (isChild()) {
+//        pMainWindow->mpLibrary->loadModel("within " + StringHandler::removeLastWordAfterDot(modelNameStructure) + ";"
+//                                          + mpModelicaEditor->toPlainText(), models);
+//    } else {
+//        pMainWindow->mpLibrary->loadModel(mpModelicaEditor->toPlainText(), models);
+//    }
+//    // now update the current opened tab
+//    mModelNameStructure = models.first();
+//    updateTabName(StringHandler::getLastWordAfterDot(mModelNameStructure), mModelNameStructure);
+//    // clear the complete view before loading the models again
+//    mpIconGraphicsView->removeAllConnectors();
+//    mpIconGraphicsView->deleteAllComponentObjects();
+//    mpIconGraphicsView->deleteAllShapesObject();
+//    mpIconGraphicsView->scene()->clear();
+//    mpDiagramGraphicsView->removeAllConnectors();
+//    mpDiagramGraphicsView->deleteAllComponentObjects();
+//    mpDiagramGraphicsView->deleteAllShapesObject();
+//    mpDiagramGraphicsView->scene()->clear();
+//    //mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->loadString(modelsText);
+//    // get the model components and connectors now
+//    getModelComponents(mModelNameStructure);
+//    getModelConnections();
+//    getModelIconDiagram();
+//    // change the model type label in the status bar of projecttab
+//    mpModelicaTypeLabel->setText(StringHandler::getModelicaClassType(mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->getClassRestriction(mModelNameStructure)));
+//    this->mOpenMode = false;
+//    return true;
     /*
     if (!modelName.isEmpty())
     {
@@ -2727,7 +2775,7 @@ WelcomePageWidget::WelcomePageWidget(MainWindow *parent)
     mpMainFrame->setLayout(verticalLayout);
     QHBoxLayout *layout = new QHBoxLayout;
     layout->addWidget(mpMainFrame);
-    layout->setContentsMargins(15, 15, 15, 15);
+    layout->setContentsMargins(8, 8, 8, 8);
     setLayout(layout);
 }
 
@@ -2785,7 +2833,7 @@ ProjectTabWidget::ProjectTabWidget(MainWindow *parent)
     setVisible(false);
     mShowLines = false;
     mToolBarEnabled = true;
-
+    // make connections
     connect(mpParentMainWindow->openAction, SIGNAL(triggered()), this,SLOT(openFile()));
     connect(mpParentMainWindow->saveAction, SIGNAL(triggered()), this,SLOT(saveProjectTab()));
     connect(mpParentMainWindow->saveAsAction, SIGNAL(triggered()), this,SLOT(saveProjectTabAs()));
@@ -2793,7 +2841,6 @@ ProjectTabWidget::ProjectTabWidget(MainWindow *parent)
     connect(this, SIGNAL(tabAdded()), SLOT(enableProjectToolbar()));
     connect(this, SIGNAL(tabRemoved()), SLOT(disableProjectToolbar()));
     connect(this, SIGNAL(currentChanged(int)), SLOT(tabChanged()));
-
     emit tabRemoved();
     connect(mpParentMainWindow->resetZoomAction, SIGNAL(triggered()),this,SLOT(resetZoom()));
     connect(mpParentMainWindow->zoomInAction, SIGNAL(triggered()),this,SLOT(zoomIn()));

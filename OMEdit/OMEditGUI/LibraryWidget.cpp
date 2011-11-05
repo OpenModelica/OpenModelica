@@ -98,7 +98,7 @@ ModelicaTree::ModelicaTree(LibraryWidget *parent)
 
     connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
     connect(this, SIGNAL(changeTab()), SLOT(tabChanged()));
-    connect(mpParentLibraryWidget, SIGNAL(addModelicaTreeNode(QString,int,QString,QString)), SLOT(addNode(QString,int,QString,QString)));
+    connect(mpParentLibraryWidget, SIGNAL(addModelicaTreeNode(QString,int,QString,QString,int)), SLOT(addNode(QString,int,QString,QString,int)));
 }
 
 ModelicaTree::~ModelicaTree()
@@ -146,12 +146,17 @@ ModelicaTreeNode* ModelicaTree::getNode(QString name)
     return 0;
 }
 
+QModelIndex ModelicaTree::getNodeModelIndex(ModelicaTreeNode *pNode)
+{
+    return indexFromItem(pNode);
+}
+
 QList<ModelicaTreeNode*> ModelicaTree::getModelicaTreeNodes()
 {
     return mModelicaTreeNodesList;
 }
 
-void ModelicaTree::deleteNode(ModelicaTreeNode *item)
+void ModelicaTree::deleteNode(ModelicaTreeNode *item, bool removeTab)
 {
     MainWindow *pMainWindow = mpParentLibraryWidget->mpParentMainWindow;
     ProjectTab *pCurrentTab;
@@ -164,6 +169,8 @@ void ModelicaTree::deleteNode(ModelicaTreeNode *item)
     }
     // Delete the node from list as well
     mModelicaTreeNodesList.removeOne(item);
+    if (!removeTab)
+        return;
     // Delete the tab of the parent item as well
     pCurrentTab = pMainWindow->mpProjectTabs->getTabByName(item->mNameStructure);
     if (pCurrentTab)
@@ -193,38 +200,39 @@ void ModelicaTree::removeChildNodes(ModelicaTreeNode *item)
         qDeleteAll(item->takeChildren());
 }
 
-void ModelicaTree::addNode(QString name, int type, QString parentName, QString parentStructure)
+void ModelicaTree::addNode(QString name, int type, QString parentName, QString parentStructure, int insertIndex)
 {
     ModelicaTreeNode *newTreePost;
-    QStringList info = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(parentStructure + name);
-
     mpParentLibraryWidget->mpParentMainWindow->mpStatusBar->showMessage(QString("Loading: ").append(parentStructure + name));
+    QStringList info = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getClassInformation(parentStructure + name);
     if (parentName.isEmpty())
     {
-        newTreePost = new ModelicaTreeNode(name, parentName, parentStructure + name, StringHandler::createTooltip(info, name, parentStructure + name), type, this);
-        insertTopLevelItem(0, newTreePost);
+        newTreePost = new ModelicaTreeNode(name, parentName, parentStructure + name, StringHandler::createTooltip(info, name, parentStructure + name), type);
+        if (insertIndex == 0)
+            addTopLevelItem(newTreePost);
+        else
+            insertTopLevelItem(insertIndex, newTreePost);
     }
     else
     {
         newTreePost = new ModelicaTreeNode(name, parentName, parentStructure + name, StringHandler::createTooltip(info, name, parentStructure + name), type);
         ModelicaTreeNode *treeNode = getNode(StringHandler::removeLastDot(parentStructure));
-        treeNode->addChild(newTreePost);
+        if (insertIndex == 0)
+            treeNode->addChild(newTreePost);
+        else
+            treeNode->insertChild(insertIndex, newTreePost);
     }
     // load the models icon
     LibraryLoader *libraryLoader = new LibraryLoader(newTreePost, parentStructure + name, this);
     libraryLoader->start(QThread::HighestPriority);
     while (libraryLoader->isRunning())
         qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
-
     //! @note the below line is commented intentionally to avoid flickering of Modelica Tree while loading large libraries.
     //setCurrentItem(newTreePost);
     mModelicaTreeNodesList.append(newTreePost);
-
     QString result;
     result = mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy->getIconAnnotation(parentStructure+name);
-    LibraryComponent *libComponent = new LibraryComponent(result, parentStructure +name,
-                                                          mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy);
-
+    LibraryComponent *libComponent = new LibraryComponent(result, parentStructure +name, mpParentLibraryWidget->mpParentMainWindow->mpOMCProxy);
     QPixmap pixmap = libComponent->getComponentPixmap(Helper::iconSize);
     if (pixmap.isNull())
         newTreePost->setIcon(0, ModelicaTreeNode::getModelicaNodeIcon(newTreePost->mType));
@@ -358,7 +366,7 @@ void ModelicaTree::checkModelicaModel()
     widget->show();
 }
 
-bool ModelicaTree::deleteNodeTriggered(ModelicaTreeNode *node, bool askQuestion)
+bool ModelicaTree::deleteNodeTriggered(ModelicaTreeNode *node, bool askQuestion, bool removeTab)
 {
     QString msg;
     MainWindow *pMainWindow = mpParentLibraryWidget->mpParentMainWindow;
@@ -405,15 +413,7 @@ bool ModelicaTree::deleteNodeTriggered(ModelicaTreeNode *node, bool askQuestion)
 
     if (pMainWindow->mpOMCProxy->deleteClass(treeNode->mNameStructure))
     {
-        // print the message before deleting node,
-        // because after delete treenode is not available to print message :)
-        if (askQuestion)
-        {
-            pMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, tr("'").append(treeNode->mName)
-                                                                        .append("' deleted successfully."), Helper::scriptingKind,
-                                                                        Helper::notificationLevel, 0, pMainWindow->mpMessageWidget->mpProblem));
-        }
-        deleteNode(treeNode);
+        deleteNode(treeNode, removeTab);
         if (treeNode->childCount())
             qDeleteAll(treeNode->takeChildren());
         delete treeNode;
@@ -1377,31 +1377,28 @@ LibraryWidget::~LibraryWidget()
     delete mpLibraryTabs;
 }
 
-void LibraryWidget::addModelicaNode(QString name, int type, QString parentName, QString parentStructure)
+void LibraryWidget::addModelicaNode(QString name, int type, QString parentName, QString parentStructure, int insertIndex)
 {
-    emit addModelicaTreeNode(name, type, parentName, parentStructure);
+    emit addModelicaTreeNode(name, type, parentName, parentStructure, insertIndex);
 }
 
-void LibraryWidget::addModelFiles(QString fileName, QString parentFileName, QString parentStructure)
+void LibraryWidget::addModelFiles(QString fileName, QString parentFileName, QString parentStructure, int insertIndex)
 {
     if (parentFileName.isEmpty())
     {
-        this->addModelicaNode(fileName, mpParentMainWindow->mpOMCProxy->getClassRestriction(fileName), parentFileName, parentStructure);
+        this->addModelicaNode(fileName, mpParentMainWindow->mpOMCProxy->getClassRestriction(fileName), parentFileName, parentStructure, insertIndex);
         parentStructure = fileName;
     }
     else
     {
         this->addModelicaNode(fileName, mpParentMainWindow->mpOMCProxy->getClassRestriction(parentStructure), parentFileName,
-                              StringHandler::removeLastWordAfterDot(parentStructure).append("."));
+                              StringHandler::removeLastWordAfterDot(parentStructure).append("."), insertIndex);
     }
 
-    if (this->mpParentMainWindow->mpOMCProxy->isPackage(parentStructure))
+    QStringList modelsList = this->mpParentMainWindow->mpOMCProxy->getClassNames(parentStructure);
+    foreach (QString model, modelsList)
     {
-        QStringList modelsList = this->mpParentMainWindow->mpOMCProxy->getClassNames(parentStructure);
-        foreach (QString model, modelsList)
-        {
-            addModelFiles(model, fileName, parentStructure + tr(".") + model);
-        }
+        addModelFiles(model, fileName, parentStructure + tr(".") + model);
     }
 }
 

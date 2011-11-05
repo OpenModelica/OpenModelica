@@ -450,6 +450,7 @@ void OMCProxy::addPackage(QStringList *list, QString package, QString parentPack
 //! Opens the OMC Logger dialog.
 void OMCProxy::openOMCLogger()
 {
+    mpExpressionTextBox->setFocus(Qt::ActiveWindowFocusReason);
     this->mpOMCLogger->raise();
     this->mpOMCLogger->show();
 }

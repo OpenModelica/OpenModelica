@@ -585,7 +585,7 @@ void ProblemItem::setColumnsText()
     setToolTip(1, QTime::currentTime().toString());
     setText(2, getFileName());
     setToolTip(2, getFileName());
-    QString line = "line " + QString::number(getLineStart()) + ":" + QString::number(getColumnStart()) + "-" + QString::number(getLineEnd())
+    QString line = QString::number(getLineStart()) + ":" + QString::number(getColumnStart()) + "-" + QString::number(getLineEnd())
                    + ":" + QString::number(getColumnEnd());
     setText(3, line);
     setToolTip(3, line);

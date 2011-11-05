@@ -130,7 +130,6 @@ public:
     ProblemsWidget *mpMessageWidget;
     QStatusBar *mpStatusBar;
     QProgressBar *mpProgressBar;
-    QPushButton *mpBackButton;
     QAction *newAction;
     QAction *newModelAction;
     QAction *newClassAction;

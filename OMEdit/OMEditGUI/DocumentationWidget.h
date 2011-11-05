@@ -61,12 +61,14 @@ public:
     MainWindow *mpParentMainWindow;
     DocumentationViewer *mpDocumentationViewer;
     DocumentationEditor *mpDocumentationEditor;
-    QLabel *mpHeadingLabel;
+    QPlainTextEdit *mpHeadingLabel;
     QLabel *mpPixmapLabel;
     QPushButton *mpEditButton;
     QPushButton *mpSaveButton;
     QDialogButtonBox *mpButtonBox;
     QString mClassName;
+protected:
+    virtual void paintEvent(QPaintEvent *event);
 };
 class ModelicaTextSettings;
 

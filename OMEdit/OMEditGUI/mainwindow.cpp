@@ -143,9 +143,7 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     documentationdock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     documentationdock->setContentsMargins(0, 1, 1, 1);
     mpDocumentationWidget = new DocumentationWidget(this);
-    QScrollArea *documentationScrollArea = new QScrollArea;
-    documentationScrollArea->setWidget(mpDocumentationWidget);
-    documentationdock->setWidget(documentationScrollArea);
+    documentationdock->setWidget(mpDocumentationWidget);
     addDockWidget(Qt::RightDockWidgetArea, documentationdock);
     documentationdock->hide();
     //Create Actions, Toolbar and Menus
@@ -160,15 +158,11 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     // create the welcome page
     mpWelcomePageWidget = new WelcomePageWidget(this);
     this->updateRecentFileActions();
-
-    mpBackButton = new QPushButton("Back");
-    mpCentralgrid->addWidget(mpBackButton,0,0);
-    mpCentralgrid->addWidget(mpWelcomePageWidget,1,0);
-    mpCentralgrid->addWidget(mpProjectTabs,1,0);
-    mpCentralgrid->addWidget(mpPlotWindowContainer,1,0);
-    mpCentralgrid->addWidget(mpInteractiveSimualtionTabWidget,1,0);
-    mpBackButton->hide();
-
+    // set the layout
+    mpCentralgrid->addWidget(mpWelcomePageWidget, 0, 0);
+    mpCentralgrid->addWidget(mpProjectTabs, 1, 0);
+    mpCentralgrid->addWidget(mpPlotWindowContainer, 1, 0);
+    mpCentralgrid->addWidget(mpInteractiveSimualtionTabWidget, 1, 0);
     mpCentralwidget->setLayout(mpCentralgrid);
     //Set the centralwidget
     this->setCentralWidget(mpCentralwidget);
@@ -184,7 +178,6 @@ MainWindow::MainWindow(SplashScreen *splashScreen, QWidget *parent)
     this->setStatusBar(mpStatusBar);
     // Create a New Project Widget
     mpModelCreator = new ModelCreator(this);
-
     connect(this, SIGNAL(fileOpen(QString)), mpProjectTabs, SLOT(openFile(QString)));
     QMetaObject::connectSlotsByName(this);
 }

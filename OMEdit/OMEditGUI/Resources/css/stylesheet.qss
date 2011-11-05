@@ -72,3 +72,7 @@ QTabBar::scroller { /* the width of the scroll buttons */
 QTabBar QToolButton { /* the scroll buttons are tool buttons */
     background-color: palette(window);
 }
+QPlainTextEdit#DocumentationLabel {
+    border: none;
+    background-color: palette(window);
+}

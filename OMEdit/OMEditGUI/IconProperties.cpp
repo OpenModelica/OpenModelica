@@ -198,13 +198,13 @@ void IconProperties::updateIconProperties()
             if (mpComponent->mpOMCProxy->renameComponentInClass(pProjectTab->mModelNameStructure, mpComponent->getName(),
                                                                 mpIconNameTextBox->text().trimmed()))
             {
-                // if renameComponent command is successful update the component with new name
+                // if renameComponentInClass command is successful update the component with new name
                 mpComponent->updateName(mpIconNameTextBox->text().trimmed());
                 valueChanged = true;
             }
             else
             {
-                // if renameComponent command is unsuccessful print the error message
+                // if renameComponentInClass command is unsuccessful print the error message
                 pMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0,
                                                                             mpComponent->mpOMCProxy->getResult(), Helper::scriptingKind,
                                                                             Helper::errorLevel, 0, pMainWindow->mpMessageWidget->mpProblem));

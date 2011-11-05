@@ -46,16 +46,16 @@ DocumentationWidget::DocumentationWidget(MainWindow *pParent)
     mpDocumentationViewer = new DocumentationViewer(this);
     mpDocumentationEditor = new DocumentationEditor(this);
     setIsCustomModel(false);
-    mpHeadingLabel = new QLabel;
+    mpHeadingLabel = new QPlainTextEdit;
+    mpHeadingLabel->setObjectName(tr("DocumentationLabel"));
+    mpHeadingLabel->setReadOnly(true);
     mpHeadingLabel->setFont(QFont("", Helper::headingFontSize - 5));
-    mpHeadingLabel->setAlignment(Qt::AlignTop);
-
     mpPixmapLabel = new QLabel;
     mpPixmapLabel->setObjectName(tr("componentPixmap"));
     mpPixmapLabel->setMaximumSize(QSize(86, 86));
     mpPixmapLabel->setFrameStyle(QFrame::Sunken | QFrame::StyledPanel);
     mpPixmapLabel->setAlignment(Qt::AlignCenter);
-
+    // create buttons
     mpEditButton = new QPushButton(tr("Edit"));
     mpEditButton->setAutoDefault(true);
     mpEditButton->setMaximumSize(QSize(100,20));
@@ -90,8 +90,8 @@ DocumentationWidget::~DocumentationWidget()
 //! @param className the model name
 void DocumentationWidget::show(QString className)
 {
-    mClassName=className;
-    mpHeadingLabel->setText(className);    
+    mClassName = className;
+    mpHeadingLabel->setPlainText(className);
 
     LibraryComponent *libraryComponent = mpParentMainWindow->mpLibrary->getLibraryComponentObject(className);
     if(libraryComponent)
@@ -149,6 +149,18 @@ void DocumentationWidget::setIsCustomModel(bool isCustomModel)
 bool DocumentationWidget::isCustomModel()
 {
     return mIsCustomModel;
+}
+
+//! Reimplementation of paintevent. Draws a rectangle around QWidget
+void DocumentationWidget::paintEvent(QPaintEvent *event)
+{
+    QPainter painter(this);
+    painter.setPen(Qt::gray);
+    QRect rectangle = rect();
+    rectangle.setWidth(rect().width() - 1);
+    rectangle.setHeight(rect().height() - 1);
+    painter.drawRect(rectangle);
+    QWidget::paintEvent(event);
 }
 
 void DocumentationWidget::editDocumentation()

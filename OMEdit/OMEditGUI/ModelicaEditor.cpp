@@ -102,16 +102,22 @@ QStringList ModelicaEditor::getModelsNames()
 {
     OMCProxy *pOMCProxy = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy;
     QStringList models;
-    if (toPlainText().isEmpty())
+    if (toPlainText().isEmpty()) {
         mErrorString = tr("Start and End modifiers are different");
-    else
-        models = pOMCProxy->parseString(toPlainText());
+    } else {
+        if (mpParentProjectTab->isChild()) {
+            models = pOMCProxy->parseString("within " + StringHandler::removeLastWordAfterDot(mpParentProjectTab->mModelNameStructure) + ";"
+                                            + toPlainText());
+        } else {
+            models = pOMCProxy->parseString(toPlainText());
+        }
+    }
     bool existModel = false;
     QStringList existingmodelsList;
     // check if the model already exists
     foreach(QString model, models)
     {
-        if (mpParentProjectTab->mModelName.compare(model) != 0)
+        if (mpParentProjectTab->mModelNameStructure.compare(model) != 0)
         {
             if (pOMCProxy->existClass(model))
             {
