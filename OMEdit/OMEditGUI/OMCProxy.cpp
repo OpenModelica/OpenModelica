@@ -227,10 +227,18 @@ bool OMCProxy::startServer()
         // Start the omc.exe
         QStringList parameters;
         parameters << QString("+c=").append(this->mName).append(fileIdentifier) << QString("+d=interactiveCorba");
-
         QProcess *omcProcess = new QProcess();
-        omcProcess->start( omcPath, parameters );
-
+        QFile omcOutputFile;
+#ifdef WIN32 // Win32
+        omcOutputFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.omc.output.").append(this->mName));
+#else // UNIX environment
+        char *user = getenv("USER");
+        if (!user) { user = "nobody"; }
+        omcOutputFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.").append(*(new QString(user))).append(".omc.output.").append(this->mName));
+#endif
+        omcProcess->setProcessChannelMode(QProcess::MergedChannels);
+        omcProcess->setStandardOutputFile(omcOutputFile.fileName());
+        omcProcess->start(omcPath, parameters);
         // wait for the server to start.
         int ticks = 0;
         while (!objectRefFile.exists())
