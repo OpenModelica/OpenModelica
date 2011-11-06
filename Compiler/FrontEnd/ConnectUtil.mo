@@ -343,7 +343,8 @@ algorithm
       list<DAE.Var> el, streams, flows;
       Sets cs;
 
-    case (ClassInf.CONNECTOR(path = class_path), _, _, cs, _)
+    // check balance of non expandable connectors!
+    case (ClassInf.CONNECTOR(path = class_path, isExpandable = false), _, _, cs, _)
       equation
         checkConnectorBalance(inVars, class_path, info);
         (flows, streams) = getStreamAndFlowVariables(inVars, {}, {});

@@ -398,6 +398,10 @@ algorithm
       equation
         cname_str = Absyn.pathString(path);
         Error.addMessage(Error.ERROR_FLATTENING, {cname_str});
+        
+        // let the GC collect these as they are used only by Inst!
+        setGlobalRoot(instHashIndex, emptyInstHashTable());
+        setGlobalRoot(Types.memoryIndex,  Types.createEmptyTypeMemory());
       then
         fail();
   end matchcontinue;
@@ -2827,8 +2831,6 @@ algorithm
            SOME(FUNC_partialInstClassIn( // result for partial instantiation
              inputs,outputs)));
         //Debug.fprintln("cache", "IIIIPARTIAL->added to instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
-        
-        System.setPartialInstantiation(false);
       then
         (cache,env,ih,ci_state);
 

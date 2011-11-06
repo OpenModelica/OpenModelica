@@ -51,16 +51,16 @@ struct absyn_info{
   int ce;
 };
 // if error_on is true, message is added, otherwise not.
-static bool error_on=true;
-static bool pop_more_on_rollback=false;
-static int numErrorMessages=0;
+static bool error_on = true;
+static bool pop_more_on_rollback = false;
+static int numErrorMessages = 0;
 const char* ErrorLevel_toStr[3] = {"Error","Warning","Notification"};
 const char* ErrorType_toStr[6] = {"SYNTAX","GRAMMAR","TRANSLATION","SYMBOLIC","RUNTIME","SCRIPTING"};
 
 #include "ErrorMessage.hpp"
 static std::string currVariable("");
 static absyn_info finfo;
-static bool haveInfo(false);
+static bool haveInfo = false;
 static stack<ErrorMessage*> errorMessageQueue; // Global variable of all error messages.
 static vector<pair<int,string> > checkPoints; // a checkpoint has a message index no, and a unique identifier
 static string lastDeletedCheckpoint = "";
@@ -68,9 +68,11 @@ static string lastDeletedCheckpoint = "";
 static void push_message(ErrorMessage *msg)
 {
   if (showErrorMessages)
+  {
     std::cerr << msg->getFullMessage() << std::endl;
-  else
-    errorMessageQueue.push(msg);
+  }
+  // adrpo: ALWAYS PUSH THE ERROR MESSAGE IN THE QUEUE, even if we have showErrorMessages because otherwise the numErrorMessages is completely wrong!
+  errorMessageQueue.push(msg);
   if (msg->getSeverity() == ErrorLevel_error) numErrorMessages++;
 }
 
@@ -138,7 +140,7 @@ extern "C"
 
 #include <assert.h>
 
-/* sets the current_variable(which is beeing instantiated) */
+/* sets the current_variable(which is being instantiated) */
 extern void ErrorImpl__updateCurrentComponent(const char* newVar, int wr, const char* fn, int rs, int re, int cs, int ce)
 {
   currVariable = std::string(newVar);
@@ -207,7 +209,7 @@ extern void ErrorImpl__delCheckpoint(const char* id)
 
 extern void ErrorImpl__rollBack(const char* id)
 {
-  // fprintf(stderr, "rollBack(%s)\n",id); fflush(stderr);
+  // fprintf(stderr, "rollBack(%s)\n",id); fflush(NULL);
   if(checkPoints.size() > 0){
     //printf(" ERROREXT: rollback to: %d from %d\n",checkPoints.back(),errorMessageQueue.size());
     std::string res("");
@@ -324,6 +326,7 @@ extern int ErrorImpl__getNumErrorMessages() {
 
 extern void ErrorImpl__clearMessages()
 {
+  // fprintf(stderr, "-> ErrorImpl__clearMessages error messages: %d queue size: %d\n", numErrorMessages, (int)errorMessageQueue.size()); fflush(NULL);
   while(!errorMessageQueue.empty()) {
     pop_message(false);
   }
@@ -368,6 +371,7 @@ extern void* ErrorImpl__getMessages()
 // TODO: Use a string builder instead of creating intermediate results all the time?
 extern std::string ErrorImpl__printMessagesStr()
 {
+  // fprintf(stderr, "-> ErrorImpl__printMessagesStr error messages: %d queue size: %d\n", numErrorMessages, (int)errorMessageQueue.size()); fflush(NULL);
   std::string res("");
   while(!errorMessageQueue.empty()) {
     res = errorMessageQueue.top()->getMessage()+string("\n")+res;

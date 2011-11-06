@@ -458,29 +458,33 @@ algorithm
       Boolean outres;
       Absyn.Exp exp;
       list<Variable> vars;
+      Boolean noGen, noEvalFunc, checkModel;
 
+    // evaluate graphical API
     case ((stmts as ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = _))})),st)
       equation
-        (str,newst) = evaluateGraphicalApi(stmts, st);
+        // adrpo: always evaluate the graphicalAPI with these options so instantiation is faster!
+        checkModel = OptManager.getOption("checkModel"); 
+        OptManager.setOption("checkModel", true);
+        noGen = RTOpts.setDebugFlag("nogen", true);
+        noEvalFunc = RTOpts.setDebugFlag("noevalfunc", true);
+        
+        (str,newst) = evaluateGraphicalApi(stmts, st, checkModel, noGen, noEvalFunc);
+        
         str_1 = stringAppend(str, "\n");
       then
         (str_1,newst);
-    case ((stmts as ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = _))})),st)
-      equation
-        (str,newst) = evaluateGraphicalApi2(stmts, st);
-        str_1 = stringAppend(str, "\n");
-      then
-        (str_1,newst);
-    case
-      (ISTMTS(interactiveStmtLst =
-      {IALG(algItem = (algitem as Absyn.ALGORITHMITEM(algorithm_ = _)))},
-      semicolon = outres),st) /* Evaluate algorithm statements in  evaluate_alg_stmt() */
+        
+    // Evaluate algorithm statements in  evaluateAlgStmt()
+    case (ISTMTS(interactiveStmtLst = {IALG(algItem = (algitem as Absyn.ALGORITHMITEM(algorithm_ = _)))}, semicolon = outres),st) 
       equation
         (str,st_1) = evaluateAlgStmt(algitem, st);
         str_1 = stringAppend(str, "\n");
       then
         (str_1,st_1);
-    case ((stmts as ISTMTS(interactiveStmtLst = {IEXP(exp = exp)})),st) /* Evaluate expressions in evaluate_expr_to_str() */
+    
+    // Evaluate expressions in evaluate_exprToStr()
+    case ((stmts as ISTMTS(interactiveStmtLst = {IEXP(exp = exp)})),st) 
       equation
         (str,st_1) = evaluateExprToStr(exp, st, Absyn.dummyInfo);
         str_1 = stringAppend(str, "\n");
@@ -1330,218 +1334,56 @@ algorithm
   end match;
 end getApiFunctionNamedArgs;
 
-protected function evaluateGraphicalApi2
-"function: evaluateGraphicalApi2
-  Second function for evaluating graphical api.
-  The reason for having two function is that the generated c-code can
-  not be complied in Visual studio if the number of rules are large.
-  This was actually fixed in the latest version of MetaModelica Compiler (MMC)!"
-  input Statements inStatements;
-  input SymbolTable inSymbolTable;
-  output String outString;
-  output SymbolTable outSymbolTable;
-algorithm
-  (outString,outSymbolTable):=
-  matchcontinue (inStatements,inSymbolTable)
-    local
-      Absyn.Program newp,p,p_1;
-      String resstr,ident,filename,cmt,variability,causality,name,value,top_names_str,annotationVersion;
-      Absyn.ComponentRef class_,subident,comp_ref,cr,crident;
-      Absyn.Modification mod;
-      SymbolTable st, newst;
-      Absyn.Path p_class;
-      Boolean finalPrefix,flowPrefix,streamPrefix,protected_,repl,dref1,dref2,addFunctions,noSimplify,show;
-      Integer rest,limit;
-      Statements istmts;
-      list<Absyn.Path> paths;
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "setExtendsModifierValue");
-        {Absyn.CREF(componentRef = class_), 
-         Absyn.CREF(componentRef = crident),
-         Absyn.CREF(componentRef = subident), 
-         Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))} = 
-           getApiFunctionArgs(istmts);
-        (newp,resstr) = setExtendsModifierValue(class_, crident, subident, mod, p);
-        st = setSymbolTableAST(st, newp);
-      then
-        (resstr,st);
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getExtendsModifierNames");
-        {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = cr)} = 
-          getApiFunctionArgs(istmts);
-        resstr = getExtendsModifierNames(class_, cr, p);
-      then
-        (resstr, st);
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getExtendsModifierValue");
-        {Absyn.CREF(componentRef = class_),
-         Absyn.CREF(componentRef = crident),
-         Absyn.CREF(componentRef = subident)} = getApiFunctionArgs(istmts);
-        resstr = getExtendsModifierValue(class_, crident, subident, p);
-      then
-        (resstr, st);
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getComponentModifierNames");
-        {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = cr)} =
-          getApiFunctionArgs(istmts);
-        resstr = getComponentModifierNames(class_, cr, p);
-      then
-        (resstr, st);
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getDefaultComponentName");
-        {Absyn.CREF(componentRef = class_)} = getApiFunctionArgs(istmts);
-        resstr = getDefaultComponentName(Absyn.crefToPath(class_), p);
-      then
-        (resstr,st);
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getDefaultComponentPrefixes");
-        {Absyn.CREF(componentRef = class_)} = getApiFunctionArgs(istmts);
-        resstr = getDefaultComponentPrefixes(Absyn.crefToPath(class_), p);
-      then
-        (resstr,st);
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getComponentModifierValue");
-        {Absyn.CREF(componentRef = class_),
-         Absyn.CREF(componentRef = Absyn.CREF_QUAL(name = ident, componentRef = subident))} = 
-          getApiFunctionArgs(istmts);
-        resstr = getComponentModifierValue(class_, Absyn.CREF_IDENT(ident,{}), subident, p);
-      then
-        (resstr,st);
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getComponentModifierValue");
-        {Absyn.CREF(componentRef = class_),
-         Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = ident))} =
-          getApiFunctionArgs(istmts);
-        resstr = getComponentBinding(class_, Absyn.CREF_IDENT(ident,{}), p);
-      then
-        (resstr,st);
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "setComponentComment");
-        {Absyn.CREF(componentRef = class_), 
-         Absyn.CREF(componentRef = comp_ref), 
-         Absyn.STRING(value = cmt)} =
-          getApiFunctionArgs(istmts);
-        (resstr,newp) = setComponentComment(class_, comp_ref, cmt, p);
-        st = setSymbolTableAST(st, newp);
-      then
-        (resstr,st);
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "setComponentProperties");
-        {Absyn.CREF(componentRef = class_),
-         Absyn.CREF(componentRef = comp_ref),Absyn.ARRAY(arrayExp =
-         {Absyn.BOOL(value = finalPrefix),
-          Absyn.BOOL(value = flowPrefix),
-          Absyn.BOOL(value = streamPrefix),
-          Absyn.BOOL(value = protected_),
-          Absyn.BOOL(value = repl)}),
-          Absyn.ARRAY(arrayExp = {Absyn.STRING(value = variability)}),
-          Absyn.ARRAY(arrayExp = {Absyn.BOOL(value = dref1),Absyn.BOOL(value = dref2)}),
-          Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)})} =
-          getApiFunctionArgs(istmts);
-        p_class = Absyn.crefToPath(class_);
-        (resstr,p_1) = setComponentProperties(p_class, comp_ref, finalPrefix, flowPrefix, streamPrefix, protected_, repl, variability, {dref1,dref2}, causality, p);
-        st = setSymbolTableAST(st, p_1);
-      then
-        (resstr,st);
-
-    /* old version of setComponentProperties, without stream */
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "setComponentProperties");
-        {Absyn.CREF(componentRef = class_),
-         Absyn.CREF(componentRef = comp_ref),
-         Absyn.ARRAY(arrayExp = {
-           Absyn.BOOL(value = finalPrefix),
-           Absyn.BOOL(value = flowPrefix),
-           Absyn.BOOL(value = protected_),
-           Absyn.BOOL(value = repl)}),
-         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = variability)}),
-         Absyn.ARRAY(arrayExp = {Absyn.BOOL(value = dref1),Absyn.BOOL(value = dref2)}),
-         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)})} =
-          getApiFunctionArgs(istmts);
-        p_class = Absyn.crefToPath(class_);
-        (resstr,p_1) = setComponentProperties(p_class, comp_ref, finalPrefix, flowPrefix, false, protected_, repl, variability, {dref1,dref2}, causality, p);
-        st = setSymbolTableAST(st, p_1);
-      then
-        (resstr,st);
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getElementsInfo");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        resstr = getElementsInfo(cr, p);
-      then
-        (resstr,st);
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getElementsOfVisType");
-        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        (_,resstr) = getElementsOfVisType(Absyn.crefToPath(cr), p);
-      then
-        (resstr,st);
-
-    case (istmts, st as SYMBOLTABLE(ast = p))
-      equation
-        matchApiFunction(istmts, "getDefinitions");
-        {Absyn.BOOL(addFunctions)} = getApiFunctionArgs(istmts);
-        (top_names_str) = getDefinitions(p, addFunctions);
-      then
-        (top_names_str, st);
-
-    /* adrpo added 2006-10-16
-     * - i think this function is needed here!
-     */
-    case (istmts, st)
-      equation
-        matchApiFunction(istmts, "getErrorString");
-        {} = getApiFunctionArgs(istmts);
-        resstr = Error.printMessagesStr();
-        resstr = stringAppendList({"\"", resstr, "\""});
-      then
-        (resstr,st);
-
-  end matchcontinue;
-end evaluateGraphicalApi2;
-
 protected function evaluateGraphicalApi
 "function: evaluateGraphicalApi
-   This function evaluates all primitives in the graphical api.
-   NOTE: Do NOT ADD more rules to thisfunction, instead add
-   them to evaluate_graphical_api2, since it wont compile in
-   Visual Studio otherwise."
+  Evaluating graphical api.
+  NOTE: the graphical API is always evaluated with checkModel ON and +d=nogen,noevalfunc ON"
+  input Statements inStatements;
+  input SymbolTable inSymbolTable;
+  input Boolean checkModel;
+  input Boolean noGen;
+  input Boolean noEvalFunc;
+  output String outString;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outString,outSymbolTable) := matchcontinue (inStatements,inSymbolTable,checkModel,noGen,noEvalFunc)
+    
+    case (inStatements, inSymbolTable, checkModel, noGen, noEvalFunc)
+      equation
+        (outString,outSymbolTable) = evaluateGraphicalApi_dispatch(inStatements,inSymbolTable);
+        // reset the flags!
+        OptManager.setOption("checkModel", checkModel);
+        _ = RTOpts.setDebugFlag("nogen", noGen);
+        _ = RTOpts.setDebugFlag("noevalfunc", noEvalFunc);
+      then
+        (outString,outSymbolTable);
+    
+    case (inStatements, inSymbolTable, checkModel, noGen, noEvalFunc)
+      equation
+        // reset the flags!
+        OptManager.setOption("checkModel", checkModel);
+        _ = RTOpts.setDebugFlag("nogen", noGen);
+        _ = RTOpts.setDebugFlag("noevalfunc", noEvalFunc);        
+      then
+        fail();
+        
+  end matchcontinue;
+end evaluateGraphicalApi;
+
+protected function evaluateGraphicalApi_dispatch
+"function: evaluateGraphicalApi
+  This function evaluates all primitives in the graphical api."
   input Statements inStatements;
   input SymbolTable inSymbolTable;
   output String outString;
   output SymbolTable outSymbolTable;
 algorithm
-  (outString,outSymbolTable):=
-  matchcontinue (inStatements,inSymbolTable)
+  (outString,outSymbolTable) := matchcontinue (inStatements,inSymbolTable)
     local
       Absyn.Program p_1,p,newp,p1;
       list<Absyn.Class> aclasses;
-      String resstr,name,top_names_str,str,cmt,s1,res_str,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname;
-      Absyn.ComponentRef class_,ident,subident,cr,tp,model_,cr1,cr2,c1,c2,old_cname,new_cname,cname,from_ident,to_ident;
+      String resstr,name,top_names_str,str,cmt,s1,res_str,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,causality,variability;
+      Absyn.ComponentRef class_,ident,subident,cr,tp,model_,cr1,cr2,c1,c2,old_cname,new_cname,cname,from_ident,to_ident,crident;
       Absyn.Exp exp;
       SymbolTable st,newst;
       list<SCode.Element> s,s_1;
@@ -1549,7 +1391,7 @@ algorithm
       Absyn.Path path_1,path,wpath;
       Integer count,n;
       list<Absyn.NamedArg> nargs;
-      Boolean b1,b2,b,omcfound,gcc_res,touch_res,rm_res,uname_res;
+      Boolean b1,b2,b,omcfound,gcc_res,touch_res,rm_res,uname_res,dref1,dref2,finalPrefix,flowPrefix,streamPrefix,repl,protected_,addFunctions;
       list<LoadedFile> lf;
       AbsynDep.Depends aDep;
       Statements istmts;
@@ -2300,8 +2142,172 @@ algorithm
       then
         ("true",st);
 
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "setExtendsModifierValue");
+        {Absyn.CREF(componentRef = class_), 
+         Absyn.CREF(componentRef = crident),
+         Absyn.CREF(componentRef = subident), 
+         Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))} = 
+           getApiFunctionArgs(istmts);
+        (newp,resstr) = setExtendsModifierValue(class_, crident, subident, mod, p);
+        st = setSymbolTableAST(st, newp);
+      then
+        (resstr,st);
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "getExtendsModifierNames");
+        {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = cr)} = 
+          getApiFunctionArgs(istmts);
+        resstr = getExtendsModifierNames(class_, cr, p);
+      then
+        (resstr, st);
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "getExtendsModifierValue");
+        {Absyn.CREF(componentRef = class_),
+         Absyn.CREF(componentRef = crident),
+         Absyn.CREF(componentRef = subident)} = getApiFunctionArgs(istmts);
+        resstr = getExtendsModifierValue(class_, crident, subident, p);
+      then
+        (resstr, st);
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "getComponentModifierNames");
+        {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = cr)} =
+          getApiFunctionArgs(istmts);
+        resstr = getComponentModifierNames(class_, cr, p);
+      then
+        (resstr, st);
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "getDefaultComponentName");
+        {Absyn.CREF(componentRef = class_)} = getApiFunctionArgs(istmts);
+        resstr = getDefaultComponentName(Absyn.crefToPath(class_), p);
+      then
+        (resstr,st);
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "getDefaultComponentPrefixes");
+        {Absyn.CREF(componentRef = class_)} = getApiFunctionArgs(istmts);
+        resstr = getDefaultComponentPrefixes(Absyn.crefToPath(class_), p);
+      then
+        (resstr,st);
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "getComponentModifierValue");
+        {Absyn.CREF(componentRef = class_),
+         Absyn.CREF(componentRef = Absyn.CREF_QUAL(name = name, componentRef = subident))} = 
+          getApiFunctionArgs(istmts);
+        resstr = getComponentModifierValue(class_, Absyn.CREF_IDENT(name,{}), subident, p);
+      then
+        (resstr,st);
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "getComponentModifierValue");
+        {Absyn.CREF(componentRef = class_),
+         Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name))} =
+          getApiFunctionArgs(istmts);
+        resstr = getComponentBinding(class_, Absyn.CREF_IDENT(name,{}), p);
+      then
+        (resstr,st);
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "setComponentComment");
+        {Absyn.CREF(componentRef = class_), 
+         Absyn.CREF(componentRef = cr), 
+         Absyn.STRING(value = cmt)} =
+          getApiFunctionArgs(istmts);
+        (resstr,newp) = setComponentComment(class_, cr, cmt, p);
+        st = setSymbolTableAST(st, newp);
+      then
+        (resstr,st);
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "setComponentProperties");
+        {Absyn.CREF(componentRef = class_),
+         Absyn.CREF(componentRef = cr),Absyn.ARRAY(arrayExp =
+         {Absyn.BOOL(value = finalPrefix),
+          Absyn.BOOL(value = flowPrefix),
+          Absyn.BOOL(value = streamPrefix),
+          Absyn.BOOL(value = protected_),
+          Absyn.BOOL(value = repl)}),
+          Absyn.ARRAY(arrayExp = {Absyn.STRING(value = variability)}),
+          Absyn.ARRAY(arrayExp = {Absyn.BOOL(value = dref1),Absyn.BOOL(value = dref2)}),
+          Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)})} =
+          getApiFunctionArgs(istmts);
+        (resstr,p_1) = setComponentProperties(Absyn.crefToPath(class_), cr, finalPrefix, flowPrefix, streamPrefix, protected_, repl, variability, {dref1,dref2}, causality, p);
+        st = setSymbolTableAST(st, p_1);
+      then
+        (resstr,st);
+
+    /* old version of setComponentProperties, without stream */
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "setComponentProperties");
+        {Absyn.CREF(componentRef = class_),
+         Absyn.CREF(componentRef = cr),
+         Absyn.ARRAY(arrayExp = {
+           Absyn.BOOL(value = finalPrefix),
+           Absyn.BOOL(value = flowPrefix),
+           Absyn.BOOL(value = protected_),
+           Absyn.BOOL(value = repl)}),
+         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = variability)}),
+         Absyn.ARRAY(arrayExp = {Absyn.BOOL(value = dref1),Absyn.BOOL(value = dref2)}),
+         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)})} =
+          getApiFunctionArgs(istmts);
+        (resstr,p_1) = setComponentProperties(Absyn.crefToPath(class_), cr, finalPrefix, flowPrefix, false, protected_, repl, variability, {dref1,dref2}, causality, p);
+        st = setSymbolTableAST(st, p_1);
+      then
+        (resstr,st);
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "getElementsInfo");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
+        resstr = getElementsInfo(cr, p);
+      then
+        (resstr,st);
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "getElementsOfVisType");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
+        (_,resstr) = getElementsOfVisType(Absyn.crefToPath(cr), p);
+      then
+        (resstr,st);
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "getDefinitions");
+        {Absyn.BOOL(addFunctions)} = getApiFunctionArgs(istmts);
+        (top_names_str) = getDefinitions(p, addFunctions);
+      then
+        (top_names_str, st);
+
+    /* adrpo added 2006-10-16
+     * - i think this function is needed here!
+     */
+    case (istmts, st)
+      equation
+        matchApiFunction(istmts, "getErrorString");
+        {} = getApiFunctionArgs(istmts);
+        resstr = Error.printMessagesStr();
+        resstr = stringAppendList({"\"", resstr, "\""});
+      then
+        (resstr,st);
+
   end matchcontinue;
-end evaluateGraphicalApi;
+end evaluateGraphicalApi_dispatch;
 
 protected function listClass
 "Unparse a class definition and return it in a String"
@@ -7131,8 +7137,7 @@ protected function renameClass
   output String outString;
   output Absyn.Program outProgram;
 algorithm
-  (outString,outProgram):=
-  matchcontinue (inProgram1,inComponentRef2,inComponentRef3)
+  (outString,outProgram) := matchcontinue (inProgram1,inComponentRef2,inComponentRef3)
     local
       Absyn.Path new_path,old_path,new_path_1,old_path_no_last;
       String tmp_str,path_str_lst_no_empty,res;
@@ -7155,7 +7160,7 @@ algorithm
         new_path = Absyn.crefToPath(new_name);
         pa_1 = SCodeUtil.translateAbsyn2SCode(p);
         (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),pa_1, Absyn.IDENT(""));
-        ((p_1,_,(_,_,_,path_str_lst,_))) = traverseClasses(p,NONE(), renameClassVisitor, (old_path,new_path,p,{},env),
+        ((p_1,_,(_,_,_,path_str_lst,_))) = traverseClasses(p, NONE(), renameClassVisitor, (old_path,new_path,p,{},env),
           true) "traverse protected" ;
         path_str_lst_no_empty = Util.stringDelimitListNonEmptyElts(path_str_lst, ",");
         res = stringAppendList({"{",path_str_lst_no_empty,"}"});
@@ -7203,7 +7208,7 @@ algorithm
       tuple<Absyn.Path, Absyn.Path, Absyn.Program, list<String>, list<Env.Frame>> args;
       Option<Absyn.Path> opath;
 
-      // Skip readonly classes.
+    // Skip readonly classes.
     case ((class_ as Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info),opath,args))
       equation
         true = isReadOnly(file_info);
@@ -7220,6 +7225,7 @@ algorithm
         ((Absyn.CLASS(new_name,a,b,c,d,e,file_info),SOME(pa),
           (old_class_path,new_class_path,p,(path_str :: path_str_lst),
           env)));
+    
     case ((Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info),NONE(),(old_class_path,new_class_path,p,path_str_lst,env)))
       equation
         path_1 = Absyn.IDENT(id);
@@ -7230,6 +7236,7 @@ algorithm
         ((Absyn.CLASS(new_name,a,b,c,d,e,file_info),NONE(),
           (old_class_path,new_class_path,p,(path_str :: path_str_lst),
           env)));
+    
     case (((class_ as Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info)),SOME(pa),(old_class_path,new_class_path,p,path_str_lst,env)))
       equation
         path_1 = Absyn.joinPaths(pa, Absyn.IDENT(id));
@@ -7241,6 +7248,7 @@ algorithm
         ((class_1,SOME(pa),
           (old_class_path,new_class_path,p,(path_str :: path_str_lst),
           env)));
+    
     case (((class_ as Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info)),NONE(),(old_class_path,new_class_path,p,path_str_lst,env)))
       equation
         path_1 = Absyn.IDENT(id);
@@ -7252,6 +7260,7 @@ algorithm
         ((class_1,NONE(),
           (old_class_path,new_class_path,p,(path_str :: path_str_lst),
           env)));
+    
     case ((class_,opath,args))
       then
         ((class_,opath,args));
@@ -10641,12 +10650,8 @@ public function getComponents
   input SymbolTable st;
   output String outString;
   output SymbolTable outSt;
-protected
-  Boolean nogen;
 algorithm
-  nogen := RTOpts.setDebugFlag("nogen",true);
   (outString,outSt) := getComponents2(cr,st);
-  _ := RTOpts.setDebugFlag("nogen",nogen);
 end getComponents;
 
 protected function getComponents2

@@ -3220,80 +3220,12 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
     
-    // handle partial models
-    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
-      equation
-        ptot = Dependency.getTotalProgram(className,p);
-        // see if class is partial
-        Absyn.CLASS(partialPrefix = partialPrefix as true, finalPrefix = finalPrefix, encapsulatedPrefix = encapsulatedPrefix, restriction =  restriction, info = info) = 
-          Interactive.getPathedClassInProgram(className, p);
-        // this case should not handle functions so here we check anything but functions!
-        false = listMember(restriction, {Absyn.R_FUNCTION()});
-        Error.clearMessages() "Clear messages";
-        Print.clearErrorBuf() "Clear error buffer";
-        classNameStr = Absyn.pathString(className);
-        /* this part is not needed anymore as when checkModel is active you can normally instantiate partial classes
-           I leave it here as we might use it in some other part 
-        // add a non-partial class to ptot with the same flags (final, encapsulated) and same restriction but instead of partial make it non-partial.
-        Absyn.PROGRAM(classes, within_, globalBuildTimes) = ptot;
-        classNameStr_dummy = classNameStr +& "_$_non_partial";
-        // make a dummy class part containing an element definition as extends given-for-check-partial-class;
-        dummyClassPart = 
-                     Absyn.PUBLIC({
-                       Absyn.ELEMENTITEM(
-                          Absyn.ELEMENT(false, NONE(), Absyn.NOT_INNER_OUTER(), "extends", 
-                            Absyn.EXTENDS(className, {}, NONE()), // extend the given-for-check partial class 
-                            info, NONE())
-                                   )});
-        dummyClass = Absyn.CLASS(classNameStr_dummy, 
-                                 false, 
-                                 finalPrefix, 
-                                 encapsulatedPrefix, 
-                                 restriction, 
-                                 Absyn.PARTS({dummyClassPart}, NONE()),   
-                                 info);
-        // add the dummy class to the program
-        ptot = Absyn.PROGRAM(dummyClass::classes, within_, globalBuildTimes);
-        */
-        // translate the program
-        p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
-
-        //UnitParserExt.clear();
-        //UnitAbsynBuilder.registerUnits(ptot);
-        //UnitParserExt.commit();
-        
-        // instantiate the partial class nomally as it works during checkModel.
-        (cache, env, _, dae) = Inst.instantiateClass(inCache, InnerOuter.emptyInstHierarchy, p_1, className);
-        
-        dae  = DAEUtil.transformationsBeforeBackend(cache,dae);
-        // adrpo: do not store instantiated class as we don't use it later!
-        // ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
-        funcs = Env.getFunctionTree(cache);
-        (dlow as BackendDAE.DAE({syst},shared)) = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
-        Debug.fcall("dumpdaelow", BackendDump.dump, dlow);
-        eqns = BackendEquation.daeEqns(syst);
-        eqnSize = BackendDAEUtil.equationSize(eqns);
-        vars = BackendVariable.daeVars(syst);
-        varSize = BackendVariable.varsSize(vars);
-        (eqnSize,varSize) = subtractDummy(vars,eqnSize,varSize);
-        (m,_) = BackendDAEUtil.incidenceMatrix(syst,shared, BackendDAE.NORMAL());
-        simpleEqnSize = BackendDAEOptimize.countSimpleEquations(dlow,m);
-        eqnSizeStr = intString(eqnSize);
-        varSizeStr = intString(varSize);
-        simpleEqnSizeStr = intString(simpleEqnSize);
-        
-        warnings = Error.printMessagesStr();
-        retStr=stringAppendList({"Check of ",classNameStr," completed successfully.\n\n",warnings,"\nClass ",classNameStr," has ",eqnSizeStr," equation(s) and ",
-          varSizeStr," variable(s).\n",simpleEqnSizeStr," of these are trivial equation(s).\n"});
-      then
-        (cache,Values.STRING(retStr),st);
-
     // handle normal models
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         ptot = Dependency.getTotalProgram(className,p);
-        // non-partial non-functions
-        Absyn.CLASS(partialPrefix = false, restriction = restriction) = Interactive.getPathedClassInProgram(className, p);
+        // non-functions
+        Absyn.CLASS(partialPrefix = _, restriction = restriction) = Interactive.getPathedClassInProgram(className, p);
         // this case should not handle functions so here we check anything but functions!
         false = listMember(restriction, {Absyn.R_FUNCTION()});
         Error.clearMessages() "Clear messages";
@@ -3304,8 +3236,7 @@ algorithm
         //UnitAbsynBuilder.registerUnits(ptot);
         //UnitParserExt.commit();
 
-        (cache, env, _, dae) =
-        Inst.instantiateClass(inCache, InnerOuter.emptyInstHierarchy, p_1, className);
+        (cache, env, _, dae) = Inst.instantiateClass(inCache, InnerOuter.emptyInstHierarchy, p_1, className);
         dae  = DAEUtil.transformationsBeforeBackend(cache, dae);
         // adrpo: do not store instantiated class as we don't use it later!
         // ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
@@ -3344,8 +3275,7 @@ algorithm
         //UnitAbsynBuilder.registerUnits(ptot);
         //UnitParserExt.commit();
         
-        (cache, env, _) =
-        Inst.instantiateFunctionImplicit(inCache, InnerOuter.emptyInstHierarchy, p_1, className);
+        (cache, env, _) = Inst.instantiateFunctionImplicit(inCache, InnerOuter.emptyInstHierarchy, p_1, className);
 
         // adrpo: do not store instantiated class as we don't use it later!
         // ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
@@ -3362,8 +3292,7 @@ algorithm
       classNameStr = Absyn.pathString(className);
       errorMsg = Error.printMessagesStr();
       strEmpty = (stringCompare("",errorMsg)==0);
-      errorMsg = Util.if_(strEmpty,"Internal error, check of model failed with no error message.",errorMsg);
-      // errorMsg = errorMsg +& selectIfNotEmpty("Error Buffer:\n", Print.getErrorString());
+      errorMsg = Util.if_(strEmpty,"Internal error! Check of: " +& classNameStr +& " failed with no error message.", errorMsg); 
     then 
       (cache,Values.STRING(errorMsg),st);
 
@@ -3815,7 +3744,7 @@ algorithm
         print("Checking: " +& Dump.unparseClassAttributesStr(c) +& " " +& Absyn.pathString(className) +& "... ");
         t1 = clock();
         OptManager.setOption("checkModel", true);
-        (_,Values.STRING(str),_) = checkModel(cache, env, className, st, msg);
+        (_,Values.STRING(str),_) = checkModel(Env.emptyCache(), env, className, st, msg);
         OptManager.setOption("checkModel", false);
         t2 = clock(); elapsedTime = t2 -. t1; s = realString(elapsedTime);
         print (s +& " seconds -> " +& failOrSuccess(str) +& "\n\t");

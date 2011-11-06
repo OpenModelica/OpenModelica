@@ -45,6 +45,7 @@ void ErrorExt_5finit(void)
       delete errorMessageQueue.top();
     errorMessageQueue.pop();
   }
+  numErrorMessages = 0;
 }
 
 RML_BEGIN_LABEL(ErrorExt__setCheckpoint)
@@ -179,6 +180,7 @@ RML_BEGIN_LABEL(ErrorExt__printErrorsNoWarning)
     //if(strncmp(errorMessageQueue.top()->getSeverity(),"Error")==0){
     if(errorMessageQueue.top()->getSeverity() == ErrorLevel_error) {
       res = errorMessageQueue.top()->getMessage()+string("\n")+res;
+      numErrorMessages--;
     }
     delete errorMessageQueue.top();
     errorMessageQueue.pop();
