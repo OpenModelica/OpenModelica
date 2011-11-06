@@ -1,10 +1,10 @@
 FILENAME = src/draft.tex
 
-all: html pdf
-
-html:
-	htlatex $(FILENAME) "config_html,2"
+all: pdf 
 
 pdf:
 	pdflatex $(FILENAME) draft.pdf
+
+clean:
+	rm draft.aux draft.log draft.pdf
 
