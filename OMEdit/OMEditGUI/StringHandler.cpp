@@ -116,7 +116,7 @@ QString StringHandler::getErrorKind(int kind)
         case StringHandler::GRAMMAR:
             return "Grammar";
         case StringHandler::TRANSLATION:
-            return "Transalation";
+            return "Translation";
         case StringHandler::SYMBOLIC:
             return "Symbolic";
         case StringHandler::SIMULATION:
