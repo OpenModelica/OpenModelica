@@ -226,7 +226,6 @@ endElement(void *userData, const char *name)
   if (!file) {
     cerr << "simulation_input_xml.cpp: Error: can not read file " << *filename << " as indata to simulation." << endl;
     delete filename;
-    fclose(file);
     EXIT(-1);
   }
   // create the XML parser
