@@ -74,8 +74,8 @@ public:
     QString getCommandFromMap(QString expression);
     void setExpression(QString expression);
     QString getExpression();
-    void writeCommandLog(QString expression);
-    void writeCommandResponseLog();
+    void writeCommandLog(QString expression, QTime* commandTime);
+    void writeCommandResponseLog(QTime* commandTime);
 
     MainWindow *mpParentMainWindow;
     enum mModelicaAnnotationVersion {ANNOTATION_VERSION2X, ANNOTATION_VERSION3X};

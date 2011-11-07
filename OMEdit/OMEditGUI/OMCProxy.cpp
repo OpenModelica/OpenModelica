@@ -163,22 +163,27 @@ QString OMCProxy::getExpression()
 }
 
 //! Writes the commands to the omeditcommands.log file.
-void OMCProxy::writeCommandLog(QString expression)
+//! @param expression the command to write
+//! @param commandTime the command start time
+void OMCProxy::writeCommandLog(QString expression, QTime* commandTime)
 {
     if (mCommandsLogFileTextStream.device())
     {
-        mCommandsLogFileTextStream << expression;
+        mCommandsLogFileTextStream << expression << " " << commandTime->currentTime().toString(tr("hh:mm:ss:zzz"));
         mCommandsLogFileTextStream << "\n";
         mCommandsLogFileTextStream.flush();
     }
 }
 
 //! Writes the command response to the omeditcommands.log file.
-void OMCProxy::writeCommandResponseLog()
+//! @param commandTime the command end time
+void OMCProxy::writeCommandResponseLog(QTime* commandTime)
 {
     if (mCommandsLogFileTextStream.device())
     {
-        mCommandsLogFileTextStream << getResult();
+        mCommandsLogFileTextStream << getResult() << " " << commandTime->currentTime().toString(tr("hh:mm:ss:zzz"));
+        mCommandsLogFileTextStream << "\n";
+        mCommandsLogFileTextStream << "Elapsed Time :: " << QString::number((double)commandTime->elapsed() / 1000).append(" secs");
         mCommandsLogFileTextStream << "\n\n";
         mCommandsLogFileTextStream.flush();
     }
@@ -335,7 +340,9 @@ void OMCProxy::sendCommand(const QString expression)
             return;
         }
     // write command to the commands log.
-    writeCommandLog(expression);
+    QTime commandTime;
+    commandTime.start();
+    writeCommandLog(expression, &commandTime);
     // Send command to server
     try
     {
@@ -347,13 +354,13 @@ void OMCProxy::sendCommand(const QString expression)
             while (future.isRunning())
                 qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
             future.waitForFinished();
-            writeCommandResponseLog();
+            writeCommandResponseLog(&commandTime);
             logOMCMessages(expression);
         }
         else
         {
             mResult = QString::fromLocal8Bit(mOMC->sendExpression(getExpression().toLocal8Bit()));
-            writeCommandResponseLog();
+            writeCommandResponseLog(&commandTime);
             logOMCMessages(expression);
         }
     }
