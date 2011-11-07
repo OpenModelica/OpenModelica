@@ -300,7 +300,7 @@ public constant Message INHERIT_BASIC_WITH_COMPS = MESSAGE(87, TRANSLATION(), ER
 public constant Message MODIFIER_TYPE_MISMATCH_ERROR = MESSAGE(88, TRANSLATION(), ERROR(),
   "Type mismatch in modifier of component %s, expected type %s, got modifier %s of type %s");
 public constant Message ERROR_FLATTENING = MESSAGE(89, TRANSLATION(), ERROR(),
-  "Error occured while flattening model %s");
+  "Error occurred while flattening model %s");
 public constant Message DUPLICATE_ELEMENTS_NOT_IDENTICAL = MESSAGE(90, TRANSLATION(), ERROR(),
   "Duplicate elements (due to inherited elements) not identical:
 	first element is:  %s

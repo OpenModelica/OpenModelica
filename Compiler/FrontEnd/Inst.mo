@@ -271,15 +271,10 @@ algorithm
   end matchcontinue;
 end instantiateImplicit;
 
-public function instantiateClass
-"function: instantiateClass
-  To enable interactive instantiation, an arbitrary class in the program
-  needs to be possible to instantiate. This function performs the same
-  action as instProgram, but given a specific class to instantiate.
-
-   First, all the class definitions are added to the environment without
-  modifications, and then the specified class is instantiated in the
-  function instClassInProgram"
+protected function instantiateClass_dispatch
+"function: instantiateClass_dispatch
+ instantiate a class.
+ if this function fails with stack overflow, it will be caught in the caller"
   input Env.Cache inCache;
   input InstanceHierarchy inIH;
   input SCode.Program inProgram;
@@ -302,12 +297,7 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
       DAE.ElementSource source "the origin of the element";
       list<DAE.Element> daeElts;
-
-    case (cache,ih,{},cr)
-      equation
-        Error.addMessage(Error.NO_CLASSES_LOADED, {});
-      then
-        fail();
+      Boolean stackOverflow;
 
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.IDENT(name = name2))) /* top level class */
       equation
@@ -394,9 +384,62 @@ algorithm
       then
         (cache, env_2, ih, dae);
 
-    case (cache,ih,cdecls,path) /* error instantiating */
+  end matchcontinue;
+end instantiateClass_dispatch;
+
+public function instantiateClass
+"function: instantiateClass
+  To enable interactive instantiation, an arbitrary class in the program
+  needs to be possible to instantiate. This function performs the same
+  action as instProgram, but given a specific class to instantiate.
+
+   First, all the class definitions are added to the environment without
+  modifications, and then the specified class is instantiated in the
+  function instClassInProgram"
+  input Env.Cache inCache;
+  input InstanceHierarchy inIH;
+  input SCode.Program inProgram;
+  input SCode.Path inPath;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
+  output InstanceHierarchy outIH;
+  output DAE.DAElist outDAElist;
+algorithm
+  (outCache,outEnv,outIH,outDAElist) := matchcontinue (inCache,inIH,inProgram,inPath)
+    local
+      Absyn.Path cr,path;
+      list<Env.Frame> env,env_1,env_2;
+      DAE.DAElist dae1,dae,dae2;
+      list<SCode.Element> cdecls;
+      String name2,n,pathstr,name,cname_str;
+      SCode.Element cdef;
+      Env.Cache cache;
+      InstanceHierarchy ih;
+      ConnectionGraph.ConnectionGraph graph;
+      DAE.ElementSource source "the origin of the element";
+      list<DAE.Element> daeElts;
+      Boolean stackOverflow;
+
+    case (cache,ih,{},cr)
       equation
-        cname_str = Absyn.pathString(path);
+        Error.addMessage(Error.NO_CLASSES_LOADED, {});
+      then
+        fail();
+    
+    // instantiate a class
+    case (cache,ih,cdecls as _::_,path)
+      equation
+        (outCache,outEnv,outIH,outDAElist) = instantiateClass_dispatch(cache,ih,cdecls,path); 
+      then 
+        (outCache,outEnv,outIH,outDAElist);
+        
+    // error instantiating
+    case (cache,ih,cdecls as _::_,path)
+      equation
+        // if we got a stack overflow remove the stack-overflow flag
+        // adrpo: NOTE THAT THE NEXT FUNCTION CALL MUST BE THE FIRST IN THIS CASE, otherwise the stack overflow will not be caught! 
+        stackOverflow = System.setStackOverflowSignal(false);
+        cname_str = Absyn.pathString(path) +& Util.if_(stackOverflow, ". The compiler got into Stack Overflow!", "");
         Error.addMessage(Error.ERROR_FLATTENING, {cname_str});
         
         // let the GC collect these as they are used only by Inst!
