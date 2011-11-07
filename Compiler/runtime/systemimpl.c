@@ -1603,7 +1603,7 @@ extern int SystemImpl__reopenStandardStream(int id,const char *filename)
   return 1;
 }
 
-extern int SystemImpl_setStackOverflowSignal(int stackOverflow)
+extern int SystemImpl__setStackOverflowSignal(int stackOverflow)
 {
   return stackOverflow;
 }
