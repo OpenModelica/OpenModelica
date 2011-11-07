@@ -51,7 +51,7 @@ void base_array_create(base_array_t *dest, void *data, int ndims, va_list ap)
     dest->data = data;
     dest->ndims = ndims;
 
-    dest->dim_size = size_alloc(ndims);
+    dest->dim_size = size_alloc(0,ndims);
 
     for (i = 0; i < ndims; ++i) {
         dest->dim_size[i] = va_arg(ap, int);
@@ -218,7 +218,7 @@ size_t base_array_nr_of_elements(base_array_t *a)
 void simple_alloc_1d_base_array(base_array_t *dest, int n, void *data)
 {
     dest->ndims = 1;
-    dest->dim_size = size_alloc(1);
+    dest->dim_size = size_alloc(0,1);
     dest->dim_size[0] = n;
     dest->data = data;
 }
@@ -226,7 +226,7 @@ void simple_alloc_1d_base_array(base_array_t *dest, int n, void *data)
 void simple_alloc_2d_base_array(base_array_t *dest, int r, int c, void *data)
 {
     dest->ndims = 2;
-    dest->dim_size = size_alloc(2);
+    dest->dim_size = size_alloc(0,2);
     dest->dim_size[0] = r;
     dest->dim_size[1] = c;
     dest->data = data;
@@ -237,7 +237,7 @@ size_t alloc_base_array(base_array_t *dest, int ndims, va_list ap)
     int i;
 
     dest->ndims = ndims;
-    dest->dim_size = size_alloc(ndims);
+    dest->dim_size = size_alloc(0,ndims);
 
     for (i = 0; i < ndims; ++i) {
         dest->dim_size[i] = va_arg(ap, _index_t);
@@ -260,7 +260,7 @@ void clone_base_array_spec(base_array_t *source, base_array_t *dest)
     assert(base_array_ok(source));
 
     dest->ndims = source->ndims;
-    dest->dim_size = size_alloc(dest->ndims);
+    dest->dim_size = size_alloc(0,dest->ndims);
     assert(dest->dim_size);
 
     for (i = 0; i < dest->ndims; ++i) {
@@ -350,7 +350,7 @@ void clone_reverse_base_array_spec(base_array_t* source, base_array_t* dest)
     assert(base_array_ok(source));
 
     dest->ndims = source->ndims;
-    dest->dim_size = size_alloc(dest->ndims);
+    dest->dim_size = size_alloc(0,dest->ndims);
     assert(dest->dim_size);
 
     for (i = 0; i < dest->ndims; ++i) {

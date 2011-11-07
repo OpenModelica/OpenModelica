@@ -48,14 +48,6 @@ typedef const char* m_string;
 typedef signed char m_boolean;
 typedef m_integer   _index_t;
 
-extern m_real real_buffer[NR_REAL_ELEMENTS];
-extern m_integer integer_buffer[NR_INTEGER_ELEMENTS];
-extern m_string string_buffer[NR_STRING_ELEMENTS];
-extern m_boolean boolean_buffer[NR_BOOLEAN_ELEMENTS];
-extern m_integer size_buffer[NR_SIZE_ELEMENTS];
-extern _index_t* index_buffer[NR_INDEX_ELEMENTS];
-extern char char_buffer[NR_CHAR_ELEMENTS];
-
 struct state_s {
   _index_t real_buffer_ptr;
   _index_t integer_buffer_ptr;
@@ -75,24 +67,16 @@ void clear_memory_state();
 /*Help functions*/
 void print_current_state();
 
-/*state start_state;*/
-/*state current_state;*/
-/*size_mem current_size;*/
-
 /* Allocation functions */
-m_real* real_alloc(int n);
-m_integer* integer_alloc(int n);
-m_string* string_alloc(int n);
-m_boolean* boolean_alloc(int n);
-_index_t* size_alloc(int n);
-_index_t** index_alloc(int n);
-char* char_alloc(int n);
+m_real* real_alloc(int ix, int n);
+m_integer* integer_alloc(int ix, int n);
+m_string* string_alloc(int ix, int n);
+m_boolean* boolean_alloc(int ix, int n);
+_index_t* size_alloc(int ix, int n);
+_index_t** index_alloc(int ix, int n);
+char* char_alloc(int ix, int n);
 
-_index_t real_free(int n);
-_index_t integer_free(int n);
-_index_t string_free(int n);
-_index_t boolean_free(int n);
-_index_t size_free(int n);
-_index_t index_free(int n);
-_index_t char_free(int n);
+void* push_memory_states(int maxThreads);
+void pop_memory_states(void* new_states);
+
 #endif

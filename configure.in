@@ -42,6 +42,7 @@ AC_SUBST(OMSHELL_TERMINAL)
 AC_SUBST(MODELICA_SPEC_PLATFORM)
 AC_SUBST(OPENMODELICA_SPEC_PLATFORM)
 AC_SUBST(SQLITE3_LIBS)
+AC_SUBST(OPENMP_CFLAGS)
 
 if test x"$prefix" = xNONE; then
   PREFIX=`pwd`/build
@@ -74,6 +75,8 @@ else
 fi
 
 fi
+
+AC_OPENMP()
 
 dnl Simulations spin forever unless -msse2 -mfpmath=sse is set
 dnl Or if -ffloat-store  is set

@@ -34,32 +34,42 @@
 #include <assert.h>
 #include <stdio.h>
 
-state current_state = {
-  0,/*real buffer*/
-  0,/*integer buffer*/
-  0,/*string buffer*/
-  0,/*boolean buffer*/
-  0,/* size buffer */
-  0,/* index buffer */
-  0 /* char buffer */
+struct one_state_s {
+  m_real real_buffer[NR_REAL_ELEMENTS];
+  m_integer integer_buffer[NR_INTEGER_ELEMENTS];
+  m_string string_buffer[NR_STRING_ELEMENTS];
+  m_boolean boolean_buffer[NR_BOOLEAN_ELEMENTS];
+  m_integer size_buffer[NR_SIZE_ELEMENTS];
+  _index_t* index_buffer[NR_INDEX_ELEMENTS];
+  char char_buffer[NR_CHAR_ELEMENTS];
+  state current_state;
 };
 
-m_real real_buffer[NR_REAL_ELEMENTS];
-m_integer integer_buffer[NR_INTEGER_ELEMENTS];
-m_string string_buffer[NR_STRING_ELEMENTS];
-m_boolean boolean_buffer[NR_BOOLEAN_ELEMENTS];
-m_integer size_buffer[NR_SIZE_ELEMENTS];
-_index_t* index_buffer[NR_INDEX_ELEMENTS];
-char char_buffer[NR_CHAR_ELEMENTS];
+typedef struct one_state_s one_state;
 
+one_state *current_states;
+
+void* push_memory_states(int maxThreads)
+{
+  void *res = current_states;
+  current_states = calloc(maxThreads,sizeof(one_state));
+  return res;
+}
+
+void pop_memory_states(void* new_states)
+{
+  free(current_states);
+  current_states = new_states;
+}
 
 state get_memory_state()
 {
-  return current_state;
+  return current_states[0].current_state;
 }
 
 void print_current_state()
 {
+  state current_state = current_states[0].current_state;
   printf("=== Current state ===\n");
   printf("real index: %d\n",(int)current_state.real_buffer_ptr);
   printf("integer index: %d\n",(int)current_state.integer_buffer_ptr);
@@ -80,181 +90,118 @@ void print_state(state s)
 
 void restore_memory_state(state restore_state)
 {
-  current_state = restore_state;
+  current_states[0].current_state = restore_state;
 }
 
 void clear_current_state()
 {
-  current_state.real_buffer_ptr = 0;
-  current_state.integer_buffer_ptr = 0;
-  current_state.string_buffer_ptr = 0;
-  current_state.boolean_buffer_ptr = 0;
-  current_state.char_buffer_ptr = 0;
+  current_states[0].current_state.real_buffer_ptr = 0;
+  current_states[0].current_state.integer_buffer_ptr = 0;
+  current_states[0].current_state.string_buffer_ptr = 0;
+  current_states[0].current_state.boolean_buffer_ptr = 0;
+  current_states[0].current_state.char_buffer_ptr = 0;
 }
 
 /* allocates n reals in the real_buffer */
-m_real* real_alloc(int n)
+m_real* real_alloc(int ix, int n)
 {
   _index_t start;
 
   assert(n>=0);
-  assert(current_state.real_buffer_ptr + n < NR_REAL_ELEMENTS);
+  assert(current_states[ix].current_state.real_buffer_ptr + n < NR_REAL_ELEMENTS);
 
-  start = current_state.real_buffer_ptr;
-  current_state.real_buffer_ptr += n;
-  return real_buffer+start;
+  start = current_states[ix].current_state.real_buffer_ptr;
+  current_states[ix].current_state.real_buffer_ptr += n;
+  return current_states[ix].real_buffer+start;
   /*return start;*/
 }
 
 /* allocates n integers in the integer_buffer */
-m_integer* integer_alloc(int n)
+m_integer* integer_alloc(int ix, int n)
 {
   _index_t start;
 
   assert(n>=0);
-  assert(current_state.integer_buffer_ptr +n < NR_INTEGER_ELEMENTS);
+  assert(current_states[ix].current_state.integer_buffer_ptr +n < NR_INTEGER_ELEMENTS);
 
-  start = current_state.integer_buffer_ptr;
-  current_state.integer_buffer_ptr += n;
+  start = current_states[ix].current_state.integer_buffer_ptr;
+  current_states[ix].current_state.integer_buffer_ptr += n;
 
-  return integer_buffer+start;
+  return current_states[ix].integer_buffer+start;
   /*  return start;*/
 
 }
 
 /* allocates n strings in the string_buffer */
-m_string* string_alloc(int n)
+m_string* string_alloc(int ix, int n)
 {
   _index_t start;
 
   assert(n>=0);
-  assert(current_state.string_buffer_ptr +n < NR_STRING_ELEMENTS);
+  assert(current_states[ix].current_state.string_buffer_ptr +n < NR_STRING_ELEMENTS);
 
-  start = current_state.string_buffer_ptr;
-  current_state.string_buffer_ptr += n;
+  start = current_states[ix].current_state.string_buffer_ptr;
+  current_states[ix].current_state.string_buffer_ptr += n;
 
-  return string_buffer+start;
+  return current_states[ix].string_buffer+start;
   /*return start;*/
 
 }
 
 /* allocates n booleans in the boolean_buffer */
-m_boolean* boolean_alloc(int n)
+m_boolean* boolean_alloc(int ix, int n)
 {
   _index_t start;
 
   assert(n>=0);
-  assert(current_state.boolean_buffer_ptr +n < NR_BOOLEAN_ELEMENTS);
+  assert(current_states[ix].current_state.boolean_buffer_ptr +n < NR_BOOLEAN_ELEMENTS);
 
-  start = current_state.boolean_buffer_ptr;
-  current_state.boolean_buffer_ptr += n;
+  start = current_states[ix].current_state.boolean_buffer_ptr;
+  current_states[ix].current_state.boolean_buffer_ptr += n;
 
-  return boolean_buffer+start;
+  return current_states[ix].boolean_buffer+start;
   /*  return start;*/
 
 }
 
-_index_t* size_alloc(int n)
+_index_t* size_alloc(int ix, int n)
 {
   _index_t start;
 
   assert(n>=0);
-  assert(n + current_state.size_buffer_ptr < NR_SIZE_ELEMENTS);
+  assert(n + current_states[ix].current_state.size_buffer_ptr < NR_SIZE_ELEMENTS);
 
-  start = current_state.size_buffer_ptr;
-  current_state.size_buffer_ptr += n;
-  return size_buffer+start;
+  start = current_states[ix].current_state.size_buffer_ptr;
+  current_states[ix].current_state.size_buffer_ptr += n;
+  return current_states[ix].size_buffer+start;
 
   /*  return start;*/
 }
 
-_index_t** index_alloc(int n)
+_index_t** index_alloc(int ix, int n)
 {
   _index_t start;
 
   assert(n>=0);
-  assert(n + current_state.index_buffer_ptr < NR_INDEX_ELEMENTS);
+  assert(n + current_states[ix].current_state.index_buffer_ptr < NR_INDEX_ELEMENTS);
 
-  start = current_state.index_buffer_ptr;
-  current_state.index_buffer_ptr += n;
-  return index_buffer+start;
+  start = current_states[ix].current_state.index_buffer_ptr;
+  current_states[ix].current_state.index_buffer_ptr += n;
+  return current_states[ix].index_buffer+start;
 
   /*  return start;*/
 }
 
-char* char_alloc(int n)
+char* char_alloc(int ix, int n)
 {
   _index_t start;
 
   assert(n>=0);
-  assert(n + current_state.char_buffer_ptr < NR_CHAR_ELEMENTS);
+  assert(n + current_states[ix].current_state.char_buffer_ptr < NR_CHAR_ELEMENTS);
 
-  start = current_state.char_buffer_ptr;
-  current_state.char_buffer_ptr += n;
-  return char_buffer+start;
+  start = current_states[ix].current_state.char_buffer_ptr;
+  current_states[ix].current_state.char_buffer_ptr += n;
+  return current_states[ix].char_buffer+start;
 
   /*  return start;*/
-}
-
-_index_t real_free(int n)
-{
-  assert(n>=0);
-  assert(current_state.real_buffer_ptr>=n);
-
-  current_state.real_buffer_ptr -= n;
-  return current_state.real_buffer_ptr;
-}
-
-_index_t integer_free(int n)
-{
-  assert(n>=0);
-  assert(current_state.integer_buffer_ptr>=n);
-
-  current_state.integer_buffer_ptr -= n;
-  return current_state.integer_buffer_ptr;
-}
-
-_index_t string_free(int n)
-{
-  assert(n>=0);
-  assert(current_state.string_buffer_ptr>=n);
-
-  current_state.string_buffer_ptr -= n;
-  return current_state.string_buffer_ptr;
-}
-
-_index_t boolean_free(int n)
-{
-  assert(n>=0);
-  assert(current_state.boolean_buffer_ptr>=n);
-
-  current_state.boolean_buffer_ptr -= n;
-  return current_state.boolean_buffer_ptr;
-}
-
-_index_t size_free(int n)
-{
-  assert(n>=0);
-  assert(current_state.size_buffer_ptr>=n);
-
-  current_state.size_buffer_ptr -= n;
-  return current_state.size_buffer_ptr;
-}
-
-_index_t index_free(int n)
-{
-  assert(n>=0);
-  assert(current_state.index_buffer_ptr>=n);
-
-  current_state.index_buffer_ptr -= n;
-  return current_state.index_buffer_ptr;
-}
-
-_index_t char_free(int n)
-{
-  assert(n>=0);
-  assert(current_state.char_buffer_ptr>=n);
-
-  current_state.char_buffer_ptr -= n;
-  return current_state.char_buffer_ptr;
 }

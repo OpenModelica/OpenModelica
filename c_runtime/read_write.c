@@ -200,22 +200,19 @@ void free_type_description(type_description *desc)
     if (desc->retval) {
       free(desc->data.real_array.dim_size);
       free(desc->data.real_array.data);
-    } else
-      free_real_array_data(&(desc->data.real_array));
+    }
     break;
   case TYPE_DESC_INT_ARRAY:
     if (desc->retval) {
       free(desc->data.int_array.dim_size);
       free(desc->data.int_array.data);
-    } else
-      free_integer_array_data(&(desc->data.int_array));
+    }
     break;
   case TYPE_DESC_BOOL_ARRAY:
     if (desc->retval) {
       free(desc->data.bool_array.dim_size);
       free(desc->data.bool_array.data);
-    } else
-      free_boolean_array_data(&(desc->data.bool_array));
+    }
     break;
   case TYPE_DESC_STRING_ARRAY:
     if (desc->retval) {
@@ -227,8 +224,7 @@ void free_type_description(type_description *desc)
       }
       free(desc->data.string_array.dim_size);
       free(desc->data.string_array.data);
-    } else
-      free_string_array_data(&(desc->data.string_array));
+    }
     break;
   case TYPE_DESC_TUPLE: {
     size_t i;
@@ -337,7 +333,6 @@ int read_integer_array(type_description **descptr, integer_array_t *arr)
     if (desc->data.real_array.dim_size[desc->data.real_array.ndims - 1] == 0) {
       int dims = desc->data.real_array.ndims;
       _index_t *dim_size = desc->data.real_array.dim_size;
-      free_real_array_data(&(desc->data.real_array));
       desc->type = TYPE_DESC_INT_ARRAY;
       desc->data.int_array.ndims = dims;
       desc->data.int_array.dim_size = dim_size;
@@ -367,7 +362,6 @@ int read_boolean_array(type_description **descptr, boolean_array_t *arr)
     if (desc->data.real_array.dim_size[desc->data.real_array.ndims - 1] == 0) {
       int dims = desc->data.real_array.ndims;
       _index_t *dim_size = desc->data.real_array.dim_size;
-      free_real_array_data(&(desc->data.real_array));
       desc->type = TYPE_DESC_BOOL_ARRAY;
       desc->data.bool_array.ndims = dims;
       desc->data.bool_array.dim_size = dim_size;
@@ -397,7 +391,6 @@ int read_string_array(type_description **descptr, string_array_t *arr)
     if (desc->data.real_array.dim_size[desc->data.real_array.ndims - 1] == 0) {
       int dims = desc->data.real_array.ndims;
       _index_t *dim_size = desc->data.real_array.dim_size;
-      free_real_array_data(&(desc->data.real_array));
       desc->type = TYPE_DESC_STRING_ARRAY;
       desc->data.string_array.ndims = dims;
       desc->data.string_array.dim_size = dim_size;

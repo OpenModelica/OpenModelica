@@ -587,6 +587,7 @@ startNonInteractiveSimulation(int argc, char**argv)
   long outputSteps = 500;
   double tolerance = 1e-4;
   string method, outputFormat, variableFilter;
+  function_initMemoryState();
   read_input_xml(argc, argv, globalData, &start, &stop, &stepSize, &outputSteps,
       &tolerance, &method, &outputFormat, &variableFilter);
   initializeOutputFilter(globalData,variableFilter);

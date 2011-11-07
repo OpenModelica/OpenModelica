@@ -1038,6 +1038,11 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
     <%funcNames%>
   };
   
+  void function_initMemoryState()
+  {
+    push_memory_states(<% if RTOpts.debugFlag("openmp") then noProc() else 1 %>);
+  }
+  
   int functionODE()
   {
     int id,th_id;
@@ -2955,7 +2960,7 @@ case FUNCTION(__) then
     MMC_CATCH_TOP(return 1)
     <%if outVars then (outVars |> var hasindex i1 fromindex 1 => writeOutVar(var, i1) ;separator="\n") else "write_noretcall(outVar);"%>
     fflush(NULL);
-    
+
     return 0;
   }
   >>

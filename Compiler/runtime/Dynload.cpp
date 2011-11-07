@@ -165,9 +165,9 @@ static int execute_function(void *in_arg, void **out_arg,
   void *v = NULL;
   int retval = 0;
   int debugFlag = check_debug_flag("dynload");
-  state mem_state;
-
-  mem_state = get_memory_state();
+  void *states = push_memory_states(1);
+  state mem_state = get_memory_state();
+  // fprintf(stderr, "states-ix: %d\n", mem_state);
 
   if (debugFlag) { fprintf(stderr, "input parameters:\n"); fflush(stderr); }
 
@@ -216,7 +216,7 @@ static int execute_function(void *in_arg, void **out_arg,
     ++arg;
   }
 
-  restore_memory_state(mem_state);
+  pop_memory_states(states);
 
   if (retval) {
     *out_arg = Values__META_5fFAIL;

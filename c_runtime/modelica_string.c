@@ -143,7 +143,7 @@ modelica_string_const init_modelica_string(modelica_string_const str)
 modelica_string_t alloc_modelica_string(int n)
 {
     /* Reserve place for null terminator too.*/
-    modelica_string_t dest = (modelica_string_t) char_alloc(n+1);
+    modelica_string_t dest = (modelica_string_t) char_alloc(0,n+1);
     dest[n]=0;
     return dest;
 }

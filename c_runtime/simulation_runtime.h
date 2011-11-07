@@ -389,6 +389,7 @@ int initial_residual(double);
 
 /* function for initializing time instants when sample() is activated */
 void function_sampleInit();
+void function_initMemoryState();
 
 /* function for calculation Jacobian */
 extern int jac_flag;  /* Flag for DASSL to work with analytical Jacobian */
