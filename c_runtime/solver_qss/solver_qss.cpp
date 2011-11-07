@@ -157,7 +157,7 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
           sampleEvent_actived = checkForSampleEvent();
           activateSampleEvents();
         }
-      update_DAEsystem();
+      //update_DAEsystem();
       SaveZeroCrossings();
       if (sampleEvent_actived)
         {
@@ -318,6 +318,7 @@ void init_ompd()
   long outputSteps = 500;
   double tolerance = 1e-4;
   string method, outputFormat, variableFilter;
+  function_initMemoryState();
   read_input_xml(argc, argv, globalData, &start, &stop, &stepSize, &outputSteps, &tolerance, &method, &outputFormat, &variableFilter);
   initializeOutputFilter(globalData,variableFilter);
   callExternalObjectConstructors(globalData);
