@@ -774,6 +774,7 @@ algorithm
       Absyn.Within within_;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
+      SimCode.SimulationSettings simSettings;
     
     case (cache,env,"parseString",{Values.STRING(str1),Values.STRING(str2)},st,msg)
       equation
@@ -972,9 +973,10 @@ algorithm
       then
         (cache,Values.STRING(res),Interactive.SYMBOLTABLE(p,aDep,fp,ic_1,iv,cf,lf));
     
-    case (cache,env,"translateModel",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,msg)
+    case (cache,env,"translateModel",vals as {Values.CODE(Absyn.C_TYPENAME(className)),_,_,_,_,_,Values.STRING(filenameprefix),_,_,_,_,_,_,_},st,msg)
       equation
-        (cache,ret_val,st_1,_,_,_,_) = translateModel(cache, env, className, st, filenameprefix, true, NONE());
+        (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st,msg);
+        (cache,ret_val,st_1,_,_,_,_) = translateModel(cache, env, className, st, filenameprefix, true, SOME(simSettings));
       then
         (cache,ret_val,st_1);
    
