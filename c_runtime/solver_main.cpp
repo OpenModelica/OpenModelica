@@ -386,7 +386,7 @@ solver_main(int argc, char** argv, double &start, double &stop,
     fprintf(stdout,
         "       new flag: init-initialization-method [iim] current options are: state or old\n");
     fprintf(stdout,
-        "       new flag: init-optimization-method [iom] current options are: simplex or newuoa\n");
+        "       new flag: init-optimization-method [iom] current options are: simplex, nelder_mead_ex or newuoa\n");
     return -1;
   }
 
