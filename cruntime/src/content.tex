@@ -202,7 +202,52 @@ sim_DATA { /* this is the data structure for saving
 } DATA;
 \end{lstlisting}
 
-to be continued \ldots
+All the variables in the listing \ref{lst:simDATA} and all other global
+variables in the \verb+simulation_*.cpp+ files should categorised and separated
+in of the categories in the figure \ref{fig:seperatedVariables}.
+Therefore could be create a new file \verb+simulation_data.h+ that contains all
+types. 
+$~~$\\
+
+
+\begin{figure}[htb]
+\begin{center}
+  \includegraphics[width=0.5\textwidth]{./img/newSimDATA.png}
+  \caption{Schematic separation of variables used in c-run-time.}
+  \label{fig:seperatedVariables}
+\end{center}
+\end{figure}
+
+\paragraph{Dynamic part}
+\begin{description}
+\item[dynamicVar] contains all values of the variables
+that might be changed during the simulation. Hence we need to interpolate some
+values during the simulation, we need also some old values stored here. For
+handling events proper we need also save for every variable a pre-value.
+\item[dynamicHelp] in the current implementation we save relations,
+ZeroCrossings in \verb+helpvars+. So we should collect them all in central
+structure that is organized similar to all other variables.
+\item[More?]
+\end{description}
+
+\paragraph{Static part:}
+\begin{description}
+\item[staicVar] contains all static information about a variable of the
+simulated model. The static information consists of varInfo and varAttributes.
+\item[equationInfo] a structure defined in \verb+simulation_varinfo.h+.
+\item[lookupVars] contains the indices for the categorised variables (states,
+der(states), algebraics, etc.) of the dynamicVar array. 
+\item[SimData] contains all parameters to control the simulation process.
+\item[SolverData] contains all parameters to setup the used solver.
+\item[debugFlags] contains the flags for debugging the simulation.
+\item[More?]
+\end{description}
+
+\subsubsection{implementation issues}
+
+unions, ring buffer ???
+to be continued in more detail \ldots
+
 
 \subsection{Reducing the size of the generated model code and generated
 functions}\label{sec:ReduceSize}
