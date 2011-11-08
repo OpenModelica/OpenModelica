@@ -1,0 +1,9 @@
+loadFile("simple.mo");
+//list();
+//getDefinitions();
+Simple.AddOne(2);
+//a:=Simple2.extendsTwo(1,2);
+b:=testEvil();
+b:=doubleArray({{1.0,2.0,3.0}});
+Simple.abc(1,2,3);
+//b:=Simple.RecordToRecord(Simple.abc(1,2,3));
