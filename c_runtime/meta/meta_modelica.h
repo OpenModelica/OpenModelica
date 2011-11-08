@@ -41,6 +41,10 @@
 #include "modelica.h"
 #include "meta_modelica_gc.h"
 #include "meta_modelica_string_lit.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 
 #if defined(__cplusplus)
 extern "C" {

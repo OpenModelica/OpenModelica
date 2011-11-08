@@ -98,12 +98,12 @@ typedef boolean_array_t boolean_array;
 typedef string_array_t string_array;
 
 #include <assert.h>
-#include "read_write.h"
+/*#include "read_write.h"*/
 #include "meta_modelica.h"
 #include "meta_modelica_builtin.h"
 #include "meta_modelica_real.h"
-#include "matrix.h"
-#include "simulation_varinfo.h"
+/*#include "matrix.h"
+#include "simulation_varinfo.h"*/
 
 
 /* math functions (-lm)*/

@@ -1,0 +1,56 @@
+CC = @CC@
+ANSI= #-ansi
+CFLAGS   := @CFLAGS@ -Wall $(ANSI) -pedantic $(EXTRA_CFLAGS)
+CPPFLAGS := @CPPFLAGS@ -Wall $(ANSI) $(EXTRA_CFLAGS) -I. -I.. -I../util/
+AR = ar -ru
+FFLAGS  = -O -fexceptions
+
+META_OBJS = \
+meta_modelica.o \
+meta_modelica_builtin.o \
+meta_modelica_real.o \
+meta_modelica_string_lit.o \
+meta_modelica_catch.o \
+meta_modelica_gc.o \
+meta_modelica_gc_list.o \
+meta_modelica_gc_stack.o \
+meta_modelica_gc_roots.o \
+meta_modelica_gc_pages.o \
+meta_modelica_gc_stats.o \
+meta_modelica_gc_settings.o 
+
+META_HFILES = \
+rml_compatibility.h \
+meta_modelica_builtin.h \
+meta_modelica_builtin_boxptr.h \
+meta_modelica_gc.h \
+meta_modelica_real.h \
+meta_modelica_string_lit.h \
+meta_modelica.h \
+meta_modelica_gc_stack.h \
+meta_modelica_gc_list.h \
+meta_modelica_gc_roots.h \
+meta_modelica_gc_pages.h \
+meta_modelica_gc_stats.h \
+meta_modelica_gc_settings.h  
+
+LIBS = libmeta.a
+
+.PHONY : libmeta.a clear
+
+all : libmeta.a
+
+
+libmeta.a : $(META_OBJS) $(META_HFILES)
+	$(AR) $@ $(META_OBJS)
+	ranlib $@
+
+meta_modelica_catch.o : meta_modelica_catch.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ -g $<
+
+clean :
+	rm -f libmeta.a
+	rm -f $(META_OBJS)
+
+Makefile: Makefile.in
+	cd ../../../; ./config.status
