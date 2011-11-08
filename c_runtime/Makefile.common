@@ -21,7 +21,7 @@ meta/meta_modelica_gc_stats.o \
 meta/meta_modelica_gc_settings.o 
 
 OBJS = boolean_array.o index_spec.o integer_array.o memory_pool.o \
-base_array.o real_array.o string_array.o read_write.o utility.o \
+base_array.o real_array.o string_array.o utility.o \
 modelica_string.o bigden.o \
 ddasrt.o  dlinpk.o  enorm.o   hybrd1.o  nelmead.o  qform.o   r1updt.o \
 biglag.o  ddassl.o  dogleg.o  fdjac1.o  hybrj.o   newuoa.o   qrfac.o   trsapp.o \
@@ -87,7 +87,6 @@ ModelicaUtilities.h \
 omc_msvc.h \
 read_matlab4.h \
 read_csv.h \
-read_write.h \
 real_array.h \
 ringbuffer.h \
 rtclock.h \
