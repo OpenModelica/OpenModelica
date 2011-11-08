@@ -76,8 +76,6 @@ fi
 
 fi
 
-AC_OPENMP()
-
 dnl Simulations spin forever unless -msse2 -mfpmath=sse is set
 dnl Or if -ffloat-store  is set
 dnl With the new solver interface, this seems to work even with -mpfpath=387
