@@ -10,10 +10,11 @@ REM If OMDEV is set, use MinGW from there instead of OPENMODELICAHOME
 REM It is not certain that release OMC is installed
 if not %OMDEV%a==a set MINGW=%OMDEV%\tools\MinGW
 REM echo OPENMODELICAHOME = %OPENMODELICAHOME% > %1.log 2>&1
-pushd . >%1.log 2>&1
-cd "%MINGW%\bin"
-set PATH=%CD%;%CD%\..\libexec\gcc\mingw32\4.4.0\;
-popd
+REM echo MINGW = %MINGW% >%1.log 2>&1
+set CURRENT_DIR="%CD%" >%1.log 2>&1
+cd /D "%MINGW%\bin" >>%1.log 2>&1
+set PATH=%CD%;%CD%\..\libexec\gcc\mingw32\4.4.0\; >>%1.log 2>&1
+cd /D "%CURRENT_DIR%" >>%1.log 2>&1
 REM echo PATH = %PATH% >>%1.log 2>&1
 REM echo CD = %CD% >>%1.log 2>&1
 %MinGW%\bin\mingw32-make -f %1.makefile >>%1.log 2>&1
