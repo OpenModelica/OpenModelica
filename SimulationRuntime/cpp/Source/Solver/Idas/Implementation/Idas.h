@@ -2,32 +2,31 @@
 #pragma once
 
 #define BOOST_EXTENSION_SOLVER_DECL BOOST_EXTENSION_IMPORT_DECL
-
 #include "Solver/Implementation/SolverDefaultImplementation.h"
-#include<cvodes.h>
+
+#include<idas.h>
 #include<nvector_serial.h>
-#include<cvodes_dense.h>
+#include<idas_dense.h>
 
 
 
 /*****************************************************************************/
-// Cvode aus dem SUNDIALS-Package
+// CVode aus dem SUNDIALS-Package
 // BDF-Verfahren für steife und nicht-steife ODEs
-// Dokumentation siehe offizielle Cvode Doku
+// Dokumentation siehe offizielle CVode Doku
 
 /*****************************************************************************
 Copyright (c) 2004, Bosch Rexroth AG, All rights reserved
 *****************************************************************************/
-class ICVodeSettings;
+class IIdasSettings;
 
-class Cvode 
-	: public IDAESolver,  public SolverDefaultImplementation
+class Idas 	: public IDAESolver, public SolverDefaultImplementation
 {
 public:
 
-	Cvode(IDAESystem* system, ISolverSettings* settings);
+	Idas(IDAESystem* system, ISolverSettings* settings);
 
-	virtual ~Cvode();
+	virtual ~Idas();
 
 	// geerbt von Object (in SolverDefaultImplementation)
 	//---------------------------------------
@@ -35,7 +34,7 @@ public:
 	virtual void init();
 
 
-	// geerbt von ISolver
+	// geerbt von IDAESolver
 	//---------------------------------------
 	/// Setzen der Startzeit für die numerische Lösung
 	virtual void setStartTime(const double& time)
@@ -56,18 +55,18 @@ public:
 	};
 
 	/// Berechung der numerischen Lösung innerhalb eines gegebenen Zeitintervalls
-	virtual void solve(const SOLVERCALL command = UNDEF_CALL);
+	virtual void solve(const SOLVERCALL  action = UNDEF_CALL);
 
 	/*/// Liefert den Zeitpunkt des letzten erfolgreichen Zeitschrittes (kann ~= tend sein)
 	virtual const double& getCurrentTime()
 	{
 	return (SolverDefaultImplementation::getCurrentTime());
-	};*/
-
+	};
+*/
 	/// Liefert den Status des Solvers nach Beendigung der Simulation
 	virtual const IDAESolver::SOLVERSTATUS getSolverStatus()
 	{
-		return (SolverDefaultImplementation::getSolverStatus());
+	return (SolverDefaultImplementation::getSolverStatus());
 	};
 
 	/*/// Liefert Anzahl der Schritte im Zeitintervall
@@ -80,8 +79,8 @@ public:
 	virtual void giveZeroSteps(int& zeroSearchStps, int& numberOfZeros)
 	{
 	SolverDefaultImplementation::giveZeroSteps(zeroSearchStps,numberOfZeros);
-	};*/
-
+	};
+	*/
 
 	/*/// Veranlasst, dass die Ausgaberoutine des Solvers (writeSolverOutput) nach jedem Schritt aufgerufen wird
 	virtual void activateSolverOutput(const bool& flag)
@@ -93,9 +92,9 @@ public:
 	virtual void setOutputStream(ostream& outputStream)
 	{
 	SolverDefaultImplementation::setOutputStream(outputStream);
-	};
-	*/
-	//// Ausgabe von statistischen Informationen (wird vom SimManager nach Abschluß der Simulation aufgerufen)
+	};*/
+
+	/// Ausgabe von statistischen Informationen (wird vom SimManager nach Abschluß der Simulation aufgerufen)
 	virtual void writeSimulationInfo(ostream& outputStream);
 
 	/// Anfangszustand (und entsprechenden Zeitpunkt) des Systems (als Kopie) speichern
@@ -122,13 +121,13 @@ public:
 private:
 
 	// Solveraufruf
-	void callCVode(); 
+	void callIDA(); 
 
 	/// Kapselung der Berechnung der rechten Seite 
 	void calcFunction(const double& time, const double* y, double* yd);
 
 	// Callback für die rechte Seite
-	static int CV_fCallback(double t, N_Vector y, N_Vector ydot, void *user_data);
+	static int IDA_fCallback(double t, N_Vector y, N_Vector ydot, N_Vector resval, void *user_data);
 
 	// Checks error flags of SUNDIALS
 	int check_flag(void *flagvalue, char *funcname, int opt);
@@ -137,15 +136,15 @@ private:
 	void giveZeroVal(const double &t,const double *y,double *zeroValue);
 
 	// Callback der Nullstellenfunktion
-	static int CV_ZerofCallback(double t, N_Vector y, double *zeroval, void *user_data);
+	static int IDA_ZerofCallback(double t, N_Vector y, N_Vector yp, double *zeroval, void *user_data);
 
 
-	ICVodeSettings
-		*_cvodesettings;							///< Input			- Solver settings
+	IIdasSettings
+		*_idasSettings;							///< Input			- Solver settings
 
 	void
-		*_cvodeMem,									///< Temp			- Memory for the solver
-		*_data;										///< Temp			- User data. Contains pointer to Cvode
+		*_idaMem,									///< Temp			- Memory for the solver
+		*_data;										///< Temp			- User data. Contains pointer to Idas
 
 	long int
 		_dimSys,									///< Input 			- (total) Dimension of system (=number of ODE)
@@ -159,6 +158,7 @@ private:
 	double
 		*_z,										///< Output			- (Current) State vector
 		*_z0,										///< Temp			- (Old) state vector at left border of intervall (last step)
+		*_zp0,										///< Temp			- Initial derivative Vector
 		*_z1,										///< Temp			- (New) state vector at right border of intervall (last step)
 		*_zInit,									///< Temp			- Initial state vector
 		*_zLastSucess,								///< Temp			- State vector of last successfull step 
@@ -189,8 +189,9 @@ private:
 		_doubleZero;								///< Temp			- Flag to denote two zeros in intervall
 
 	N_Vector 
-		_CV_y0,									///< Temp			- Initial values in the Cvode Format
-		_CV_y;									///< Temp			- State in Cvode Format 
+		_IDA_y0,								///< Temp			- Initial values in the CVode Format
+		_IDA_yp0,								///< Temp			- Initial values in the CVode Format
+		_IDA_y,									///< Temp			- State in CVode Format 
+		_IDA_yp;								///< Temp			- State in CVode Format 
 
 };
-
