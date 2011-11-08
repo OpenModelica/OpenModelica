@@ -16,7 +16,7 @@ SolverDefaultImplementation::SolverDefaultImplementation(IDAESystem* system, ISo
 , _tEnd					(0.0)
 , _tLastSuccess			(0.0)
 , _tLastUnsucess		(0.0)
-
+, _tLargeStep			(0.0)
 , _h					(0.0)
 
 //, _firstCall			(true)
@@ -33,6 +33,7 @@ SolverDefaultImplementation::SolverDefaultImplementation(IDAESystem* system, ISo
 , _dimZeroFunc			(0)
 , _zeroVal				(NULL)
 , _zeroValLastSuccess	(NULL)
+, _zeroValLargeStep		(NULL)
 , _events				(NULL)
 , _zeroSearchActive		(false)
 
@@ -117,11 +118,12 @@ void SolverDefaultImplementation::init()
 		_zeroValLastSuccess	= new double[_dimZeroFunc];
 		_events				= new bool[_dimZeroFunc];
 		_zeroValInit			= new double[_dimZeroFunc];
-
+		_zeroValLargeStep		= new double[_dimZeroFunc];
 		event_system->giveZeroFunc(_zeroVal,_settings->getZeroTol());
 		memcpy(_zeroValLastSuccess,_zeroVal,_dimZeroFunc*sizeof(double));
 		memcpy(_zeroValInit,_zeroVal,_dimZeroFunc*sizeof(double));
 		memset(_events,false,_dimZeroFunc*sizeof(bool));
+		memcpy(_zeroValLargeStep,_zeroVal,_dimZeroFunc*sizeof(double));
 	}
      _time_events = event_system->getTimeEvents();
 	 // Set flags

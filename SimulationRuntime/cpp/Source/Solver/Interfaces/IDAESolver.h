@@ -30,6 +30,8 @@ public:
 		RECALL			=	0x00000400,			///< Call to solver after restart (state vector of solver has to be reinitialized)
 		REGULAR_CALL	=	0x00000800,			///< Regular call to solver
 		REPEATED_CALL	=	0x00001000,			///< Call to solver after rejected step (e.g. in external zero search)
+		TIMEEVENTCALL   =   0x00002000,			///< Aufruf nach einem Time-Event
+		RECORDCALL	    =   0x00004000,			///< Erster Aufruf zum recorden von y0
 	};
 
 	/// Enum to define the current status of the solver

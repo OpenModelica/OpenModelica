@@ -71,7 +71,8 @@ public:
 		_tCurrent,						///< current time (is changed by the solver)
 		_tEnd,							///< end time
 		_tLastSuccess,					///< time of last successfull integration step (before zero crossing)
-		_tLastUnsucess;					///< time of last unsuccessfull integration step (after zero crossing)
+		_tLastUnsucess,					///< time of last unsuccessfull integration step (after zero crossing)
+	    _tLargeStep;	
 
 	double
 		_h;								///< step size (changed by the solver)
@@ -100,8 +101,8 @@ public:
 	double
 		*_zeroVal,						///< Vector (of dimension _dimZeroF) containing values of all zero functions
 		*_zeroValInit,					///< Vektor (der Dimension _dimZeroF) mit Nullstellenfunktionswerten am Anfang des Integrationsintervalles
-		*_zeroValLastSuccess;			///< Vector (of dimension _dimZeroF) containing values of all zero functions of last sucessfull integration step (before zero crossing) 
-
+		*_zeroValLastSuccess,		///< Vector (of dimension _dimZeroF) containing values of all zero functions of last sucessfull integration step (before zero crossing) 
+	    *_zeroValLargeStep;	
 	bool
 		_zeroSearchActive;				///< Denotes whether zero search is currently active
 
@@ -113,6 +114,8 @@ public:
 
 	IDAESystem::OUTPUT	
 		_outputCommand;					///< Controls the output
+	
+
 
 private:
 	/// Definition of signum function
