@@ -40,6 +40,7 @@ Ceval.mo \
 CevalFunction.mo \
 ClassInf.mo \
 ClassLoader.mo \
+CodegenC.mo \
 ComponentReference.mo \
 Connect.mo \
 ConnectUtil.mo \

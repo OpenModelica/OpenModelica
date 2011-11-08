@@ -82,6 +82,7 @@ protected import BaseHashTable;
 protected import Builtin;
 protected import CevalScript;
 protected import ClassInf;
+protected import CodegenC;
 protected import ComponentReference;
 protected import DAEDump;
 protected import DAEUtil;
@@ -1126,6 +1127,10 @@ algorithm
       equation
         Tpl.tplNoret(SimCodeC.translateModel, simCode);
       then ();
+    case (simCode,_,"c")
+      equation
+        Tpl.tplNoret(CodegenC.translateModel, simCode);
+      then ();        
     case (simCode,_,"Dump")
       equation
         // Yes, do this better later on...
