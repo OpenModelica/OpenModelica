@@ -563,7 +563,7 @@ template generateStaticFunc(list<list<SimEqSystem>> odeEq,list<ZeroCrossing> zer
       #endif
 
       // Evalute the static function
-      <% (eqs |> eq => SimCodeC.equation_(BackendQSS.replaceZC(eq,zeroCrossings), contextSimulationNonDiscrete, &varDecls /*BUFC*/); separator="\n") %>
+      <% /* (eqs |> eq => SimCodeC.equation_(BackendQSS.replaceZC(eq,zeroCrossings), contextSimulationNonDiscrete, &varDecls ); separator="\n") */ %>
 
       // Write outputs to out[]
       #ifdef _OMC_OMPD

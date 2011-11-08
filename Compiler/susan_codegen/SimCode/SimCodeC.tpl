@@ -106,6 +106,8 @@ case simCode as SIMCODE(__) then
   <%simulationFileHeader(simCode)%>
   <%externalFunctionIncludes(externalFunctionIncludes)%>
   #include "<%fileNamePrefix%>_functions.c"
+  #define _OMC_SEED_HACK
+  #define _OMC_SEED_HACK_2
   #ifdef __cplusplus
   extern "C" {
   #endif
@@ -743,10 +745,12 @@ template functionSampleEquations(list<SimEqSystem> sampleEqns)
  "Generates function for sample equations."
 ::=
   let &varDecls = buffer "" /*BUFD*/
+  let &tmp = buffer ""
   let eqs = (sampleEqns |> eq =>
-      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/)
+      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)
     ;separator="\n")
   <<
+  <%&tmp%>
   int function_updateSample()
   {
     state mem_state;
@@ -765,10 +769,12 @@ template functionInitial(list<SimEqSystem> initialEquations)
  "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
+  let &tmp = buffer ""
   let eqPart = (initialEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(eq, contextOther, &varDecls /*BUFD*/)
+      equation_(eq, contextOther, &varDecls /*BUFD*/, &tmp)
     ;separator="\n")
   <<
+  <%&tmp%>
   int initial_function()
   {
     <%varDecls%>
@@ -824,11 +830,12 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
      case eq as SES_MIXED(__) then functionExtraResiduals(fill(eq.cont,1))
      case eq as SES_NONLINEAR(__) then
      let &varDecls = buffer "" /*BUFD*/
+     let &tmp = buffer ""
      let algs = (eq.eqs |> eq2 as SES_ALGORITHM(__) =>
-         equation_(eq2, contextSimulationDiscrete, &varDecls /*BUFD*/)
+         equation_(eq2, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)
        ;separator="\n")      
      let prebody = (eq.eqs |> eq2 as SES_SIMPLE_ASSIGN(__) =>
-         equation_(eq2, contextOther, &varDecls /*BUFD*/)
+         equation_(eq2, contextOther, &varDecls /*BUFD*/, &tmp)
        ;separator="\n")   
      let body = (eq.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
          let &preExp = buffer "" /*BUFD*/
@@ -837,6 +844,7 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
          '<%preExp%>res[<%i0%>] = <%expPart%>;'
        ;separator="\n")
      <<
+     <%&tmp%>
      void residualFunc<%index%>(int *n, double* xloc, double* res, int* iflag)
      {
        state mem_state;
@@ -861,13 +869,15 @@ template functionBoundParameters(list<SimEqSystem> parameterEquations)
 ::=
   let () = System.tmpTickReset(0)
   let &varDecls = buffer "" /*BUFD*/
+  let &tmp = buffer ""
   let body = (parameterEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(eq, contextOther, &varDecls /*BUFD*/)
+      equation_(eq, contextOther, &varDecls /*BUFD*/, &tmp)
     ;separator="\n")
   let divbody = (parameterEquations |> eq as SES_ALGORITHM(__) =>
-      equation_(eq, contextOther, &varDecls /*BUFD*/)
+      equation_(eq, contextOther, &varDecls /*BUFD*/, &tmp)
     ;separator="\n")    
   <<
+  <%&tmp%>
   int bound_parameters()
   {
     state mem_state;
@@ -1011,8 +1021,10 @@ end functionWhenReinitStatementElse;
 template functionODE_system(list<SimEqSystem> derivativEquations, Integer n)
 ::=
   let &varDecls = buffer ""
-  let odeEqs = derivativEquations |> eq => equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/); separator="\n"
+  let &tmp = buffer ""
+  let odeEqs = derivativEquations |> eq => equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/, &tmp); separator="\n"
   <<
+  <%&tmp%>
   static void functionODE_system<%n%>(int omc_thread_number)
   {
     <%varDecls%>
@@ -1029,10 +1041,12 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
   let nFuncs = listLength(derivativEquations)
   let funcNames = derivativEquations |> eqs hasindex i1 fromindex 0 => 'functionODE_system<%i1%>' ; separator=",\n"
   let &varDecls2 = buffer "" /*BUFD*/
+  let &tmp = buffer ""
   let stateContPartInline = (derivativEquations |> eqs => (eqs |> eq =>
-      equation_(eq, contextInlineSolver, &varDecls2 /*BUFC*/); separator="\n")
+      equation_(eq, contextInlineSolver, &varDecls2 /*BUFC*/, &tmp); separator="\n")
     ;separator="\n")
   <<
+  <%tmp%>
   <%funcs%>
   static void (*functionODE_systems[<%nFuncs%>])(int) = {
     <%funcNames%>
@@ -1095,10 +1109,12 @@ template functionAlgebraic(list<SimEqSystem> algebraicEquations)
  "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
+  let &tmp = buffer ""
   let algEquations = (algebraicEquations |> eq =>
-      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/)
+      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/, &tmp)
     ;separator="\n")
   <<
+  <%tmp%>
   /* for continuous time variables */
   int functionAlgebraics()
   {
@@ -1118,10 +1134,12 @@ template functionAliasEquation(list<SimEqSystem> removedEquations)
  "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
+  let &tmp = buffer ""
   let removedPart = (removedEquations |> eq =>
-      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/)
+      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/, &tmp)
     ;separator="\n")   
   <<
+  <%&tmp%>
   /* for continuous time variables */
   int functionAliasEquations()
   {
@@ -1145,8 +1163,9 @@ template functionDAE( list<SimEqSystem> allEquationsPlusWhen,
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let jens = System.tmpTickReset(0)
+  let &tmp = buffer ""
   let eqs = (allEquationsPlusWhen |> eq =>
-      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/)
+      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)
     ;separator="\n")
     
   let reinit = (whenClauses |> when hasindex i0 =>
@@ -1156,6 +1175,7 @@ template functionDAE( list<SimEqSystem> allEquationsPlusWhen,
       genreinits(when, &varDecls,i0)
     ;separator="\n")
   <<
+  <%&tmp%>
   int functionDAE(int *needToIterate)
   {
     state mem_state;
@@ -1379,13 +1399,15 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars,String
  "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
+  let &tmp = buffer ""
   let eqns_ = (jacEquations |> eq =>
-      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFD*/)
+      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFD*/, &tmp)
       ;separator="\n")
   let outvars_ = (tmpVars |> var => 
       genoutVars(var)
       ;separator="\n")
   <<
+  <%&tmp%>
   int functionJac<%matrixName%>_0(double *seed, double *out_col)
   {
     state mem_state;
@@ -1445,6 +1467,8 @@ case _ then
     ;separator="\n") 
   let index_ = listLength(seedVars)
  <<
+ #define _OMC_SEED_HACK double *seed
+ #define _OMC_SEED_HACK_2 seed
  <%writeJac_%>
  <%jacMats%>
  int functionJac<%matrixname%>(double* jac){
@@ -1594,35 +1618,81 @@ template zeroCrossingOpFunc(Operator op)
 end zeroCrossingOpFunc;
 
 
-template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
+template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Text &eqs)
+ "Generates an equation.
+  This template should not be used for a SES_RESIDUAL.
+  Residual equations are handled differently."
+::=
+  match context case INLINE_CONTEXT() then old_equation_(eq,context,&varDecls) else
+  match eq
+  case e as SES_MIXED(__)
+  then equationMixed(e, context, &varDecls /*BUFD*/, &eqs)
+  case e as SES_ALGORITHM(statements={})
+  then ""
+  else
+  (
+  let ix = System.tmpTickIndex(10)
+  let &tmp = buffer ""
+  let &varD = buffer ""
+  let x = match eq
+  case e as SES_SIMPLE_ASSIGN(__)
+    then equationSimpleAssign(e, context, &varD /*BUFD*/)
+  case e as SES_ARRAY_CALL_ASSIGN(__)
+    then equationArrayCallAssign(e, context, &varD /*BUFD*/)
+  case e as SES_ALGORITHM(__)
+    then equationAlgorithm(e, context, &varD /*BUFD*/)
+  case e as SES_LINEAR(__)
+    then equationLinear(e, context, &varD /*BUFD*/)
+  case e as SES_NONLINEAR(__)
+    then equationNonlinear(e, context, &varD /*BUFD*/)
+  case e as SES_WHEN(__)
+    then equationWhen(e, context, &varD /*BUFD*/)
+  else
+    "NOT IMPLEMENTED EQUATION"
+  let &eqs += 
+  <<
+  
+  void eqFunction_<%ix%>(_OMC_SEED_HACK) {
+    <%&varD%>
+    <%x%>
+  }
+  
+  >>
+  <<
+  eqFunction_<%ix%>(_OMC_SEED_HACK_2);
+  >>
+  )
+end equation_;
+
+template old_equation_(SimEqSystem eq, Context context, Text &varDecls)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
 ::=
   match eq
-  case e as SES_SIMPLE_ASSIGN(__)
-    then equationSimpleAssign(e, context, &varDecls /*BUFD*/)
-  case e as SES_ARRAY_CALL_ASSIGN(__)
-    then equationArrayCallAssign(e, context, &varDecls /*BUFD*/)
-  case e as SES_ALGORITHM(__)
-    then equationAlgorithm(e, context, &varDecls /*BUFD*/)
-  case e as SES_LINEAR(__)
-    then equationLinear(e, context, &varDecls /*BUFD*/)
   case e as SES_MIXED(__)
-    then equationMixed(e, context, &varDecls /*BUFD*/)
+  case e as SES_SIMPLE_ASSIGN(__)
+    then equationSimpleAssign(e, context, &varDecls)
+  case e as SES_ARRAY_CALL_ASSIGN(__)
+    then equationArrayCallAssign(e, context, &varDecls)
+  case e as SES_ALGORITHM(__)
+    then equationAlgorithm(e, context, &varDecls)
+  case e as SES_LINEAR(__)
+    then equationLinear(e, context, &varDecls)
   case e as SES_NONLINEAR(__)
-    then equationNonlinear(e, context, &varDecls /*BUFD*/)
+    then equationNonlinear(e, context, &varDecls)
   case e as SES_WHEN(__)
-    then equationWhen(e, context, &varDecls /*BUFD*/)
+    then equationWhen(e, context, &varDecls)
   else
     "NOT IMPLEMENTED EQUATION"
-end equation_;
+end old_equation_;
 
 template myequation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
 ::=
+  let &tmp = buffer ""
   match eq
   case e as SES_SIMPLE_ASSIGN(__)
     then 
@@ -1656,7 +1726,7 @@ template myequation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
     then
     <<
     printf("Line <%System.tmpTick()%>\n");
-    <%equationMixed(e, context, &varDecls /*BUFD*/)%>
+    <%equationMixed(e, context, &varDecls, &tmp /*BUFD*/)%>
     printf("OK\n");
     >>
   case e as SES_NONLINEAR(__)
@@ -1821,12 +1891,12 @@ case SES_LINEAR(__) then
 end equationLinear;
 
 
-template equationMixed(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
+template equationMixed(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Text &tmp)
  "Generates a mixed equation system."
 ::=
 match eq
 case SES_MIXED(__) then
-  let contEqs = equation_(cont, context, &varDecls /*BUFD*/)
+  let contEqs = equation_(cont, context, &varDecls /*BUFD*/, &tmp)
   let numDiscVarsStr = listLength(discVars) 
   let valuesLenStr = listLength(values)
   let &preDisc = buffer "" /*BUFD*/

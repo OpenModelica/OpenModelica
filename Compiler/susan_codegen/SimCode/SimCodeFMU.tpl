@@ -529,9 +529,9 @@ template initializeFunction(list<SimEqSystem> allEquations)
   "Generates initialize function for c file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let eqPart = (allEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(eq, contextOther, &varDecls /*BUFC*/)
-    ;separator="\n")
+  let eqPart = ""/* (allEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
+      equation_(eq, contextOther, &varDecls)
+    ;separator="\n") */
   <<
   // Used to set the first time event, if any.
   void initialize(ModelInstance* comp, fmiEventInfo* eventInfo) {
