@@ -690,7 +690,7 @@ algorithm
       Option<SCode.ConstrainClass> cc;
       SCode.Element cls;
       Item ty_item;
-      Env ty_env;
+      Env ty_env, env;
       SCode.Ident name;
       SCode.Prefixes prefixes;
 
@@ -703,10 +703,11 @@ algorithm
     case (SCode.EXTENDS(baseClassPath = bc, modifications = mods, info = info),
         _, _)
       equation
-        true = checkNotExtendsDependent(bc, inEnv, info);
-        analyseExtends(bc, inEnv, info);
+        env = SCodeEnv.removeExtendFromLocalScope(bc, inEnv);
+        true = checkNotExtendsDependent(bc, env, info);
+        analyseExtends(bc, env, info);
         (ty_item, _, ty_env) = 
-          SCodeLookup.lookupBaseClassName(bc, inEnv, info);
+          SCodeLookup.lookupBaseClassName(bc, env, info);
         ty_env = SCodeEnv.mergeItemEnv(ty_item, ty_env);
         analyseModifier(mods, inEnv, ty_env, info);
       then

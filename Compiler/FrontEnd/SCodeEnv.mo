@@ -355,6 +355,40 @@ algorithm
   outEnv := FRAME(name, ty, tree, exts, imps, is_used) :: rest;
 end removeExtendsFromLocalScope;
   
+public function removeExtendFromLocalScope
+  "Removes a given extends clause from the local scope."
+  input Absyn.Path inExtend;
+  input Env inEnv;
+  output Env outEnv;
+protected
+  Option<String> name;
+  FrameType ty;
+  AvlTree tree;
+  ImportTable imps;
+  Env rest;
+  Util.StatefulBoolean iu;
+  list<Extends> bcl;
+  list<SCode.Element> re;
+  Option<SCode.Element> cei;
+algorithm
+  FRAME(name = name, frameType = ty, clsAndVars = tree, extendsTable =
+    EXTENDS_TABLE(baseClasses = bcl, redeclaredElements = re, classExtendsInfo = cei), 
+    importTable = imps, isUsed = iu) :: rest := inEnv;
+  (bcl, _) := List.deleteMemberOnTrue(inExtend, bcl, isExtendNamed);
+  outEnv := FRAME(name, ty, tree, EXTENDS_TABLE(bcl, re, cei), imps, iu) :: rest;
+end removeExtendFromLocalScope;
+
+protected function isExtendNamed
+  input Absyn.Path inName;
+  input Extends inExtends;
+  output Boolean outIsNamed;
+protected
+  Absyn.Path bc;
+algorithm
+  EXTENDS(baseClass = bc) := inExtends;
+  outIsNamed := Absyn.pathEqual(inName, bc);
+end isExtendNamed;
+  
 public function removeRedeclaresFromLocalScope
   input Env inEnv;
   output Env outEnv;

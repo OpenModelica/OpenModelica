@@ -111,7 +111,7 @@ public function lookupSimpleName
   output Env outEnv;
 algorithm
   (SOME(outItem), SOME(outPath), SOME(outEnv)) := 
-    lookupSimpleName2(inName, inEnv);
+    lookupSimpleName2(inName, inEnv, {});
 end lookupSimpleName;
 
 public function lookupSimpleName2
@@ -119,41 +119,46 @@ public function lookupSimpleName2
   environment."
   input Absyn.Ident inName;
   input Env inEnv;
+  input list<String> inVisitedScopes;
   output Option<Item> outItem;
   output Option<Absyn.Path> outPath;
   output Option<Env> outEnv;
 algorithm
-  (outItem, outPath, outEnv) := matchcontinue(inName, inEnv)
+  (outItem, outPath, outEnv) := matchcontinue(inName, inEnv, inVisitedScopes)
     local
       FrameType frame_type;
       Env rest_env;
       Option<Item> opt_item;
       Option<Absyn.Path> opt_path;
       Option<Env> opt_env;
+      String scope_name;
 
     // Check the local scope.
-    case (_, _)
+    case (_, _, _)
       equation
-        (opt_item, opt_path, opt_env) = lookupInLocalScope(inName, inEnv);
+        (opt_item, opt_path, opt_env) = 
+          lookupInLocalScope(inName, inEnv, inVisitedScopes);
       then
         (opt_item, opt_path, opt_env);
 
     // If not found in the local scope, check the next frame unless the current
     // frame is encapsulated.
-    case (_, SCodeEnv.FRAME(frameType = frame_type) :: rest_env)
+    case (_, SCodeEnv.FRAME(name = SOME(scope_name), frameType = frame_type) ::
+        rest_env, _)
       equation
         frameNotEncapsulated(frame_type);
-        (opt_item, opt_path, opt_env) = lookupSimpleName2(inName, rest_env);
+        (opt_item, opt_path, opt_env) = 
+          lookupSimpleName2(inName, rest_env, scope_name :: inVisitedScopes);
       then
         (opt_item, opt_path, opt_env);
 
     // If the current frame is encapsulated, check for builtin types and
     // functions in the top scope.
     case (_, SCodeEnv.FRAME(frameType = SCodeEnv.ENCAPSULATED_SCOPE()) :: 
-        rest_env)
+        rest_env, _)
       equation
         rest_env = SCodeEnv.getEnvTopScope(rest_env);
-        (opt_item, opt_path, opt_env) = lookupSimpleName2(inName, rest_env);
+        (opt_item, opt_path, opt_env) = lookupSimpleName2(inName, rest_env, {});
         checkBuiltinItem(opt_item);
       then
         (opt_item, opt_path, opt_env);
@@ -190,11 +195,12 @@ public function lookupInLocalScope
   found), or fails if no match is found."
   input Absyn.Ident inName;
   input Env inEnv;
+  input list<String> inVisitedScopes;
   output Option<Item> outItem;
   output Option<Absyn.Path> outPath;
   output Option<Env> outEnv;
 algorithm
-  (outItem, outPath, outEnv) := matchcontinue(inName, inEnv)
+  (outItem, outPath, outEnv) := matchcontinue(inName, inEnv, inVisitedScopes)
     local
       AvlTree cls_and_vars;
       Env rest_env, env;
@@ -207,7 +213,7 @@ algorithm
       Option<Env> opt_env;
 
     // Look among the locally declared components.
-    case (_, SCodeEnv.FRAME(clsAndVars = cls_and_vars) :: _)
+    case (_, SCodeEnv.FRAME(clsAndVars = cls_and_vars) :: _, _)
       equation
         item = SCodeEnv.avlTreeGet(cls_and_vars, inName);
         item = SCodeEnv.resolveAlias(item, cls_and_vars);
@@ -215,16 +221,16 @@ algorithm
         (SOME(item), SOME(Absyn.IDENT(inName)), SOME(inEnv));
 
     // Look among the inherited components.
-    case (_, _)
+    case (_, _, _)
       equation
         (opt_item, opt_path, _, opt_env) = 
-          lookupInBaseClasses(inName, inEnv, INSERT_REDECLARES());
+          lookupInBaseClasses(inName, inEnv, INSERT_REDECLARES(), inVisitedScopes);
       then
         (opt_item, opt_path, opt_env);
 
     // Look among the qualified imports.
     case (_, SCodeEnv.FRAME(importTable = 
-        SCodeEnv.IMPORT_TABLE(hidden = false, qualifiedImports = imps)) :: _)
+        SCodeEnv.IMPORT_TABLE(hidden = false, qualifiedImports = imps)) :: _, _)
       equation
         (opt_item, opt_path, opt_env) = 
           lookupInQualifiedImports(inName, imps, inEnv);
@@ -233,7 +239,7 @@ algorithm
 
     // Look among the unqualified imports.
     case (_, SCodeEnv.FRAME(importTable = 
-        SCodeEnv.IMPORT_TABLE(hidden = false, unqualifiedImports = imps)) :: _)
+        SCodeEnv.IMPORT_TABLE(hidden = false, unqualifiedImports = imps)) :: _, _)
       equation
         (item, path, env) = 
           lookupInUnqualifiedImports(inName, imps, inEnv);
@@ -242,9 +248,10 @@ algorithm
 
     // Look in the next scope only if the current scope is an implicit scope
     // (for example a for or match/matchcontinue scope).
-    case (_, SCodeEnv.FRAME(frameType = SCodeEnv.IMPLICIT_SCOPE()) :: rest_env)
+    case (_, SCodeEnv.FRAME(frameType = SCodeEnv.IMPLICIT_SCOPE()) :: rest_env, _)
       equation
-        (opt_item, opt_path, opt_env) = lookupInLocalScope(inName, rest_env);
+        (opt_item, opt_path, opt_env) = 
+          lookupInLocalScope(inName, rest_env, inVisitedScopes);
       then
         (opt_item, opt_path, opt_env);
 
@@ -256,6 +263,7 @@ public function lookupInBaseClasses
   input Absyn.Ident inName;
   input Env inEnv;
   input RedeclareReplaceStrategy inReplaceRedeclares;
+  input list<String> inVisitedScopes;
   output Option<Item> outItem;
   output Option<Absyn.Path> outPath;
   output Absyn.Path outBaseClass;
@@ -272,7 +280,7 @@ algorithm
   env := SCodeEnv.removeExtendsFromLocalScope(inEnv);
   env := SCodeEnv.setImportTableHidden(env, false);
   (outItem, outPath, outBaseClass, outEnv) := 
-    lookupInBaseClasses2(inName, bcl, env, inReplaceRedeclares);
+    lookupInBaseClasses2(inName, bcl, env, inReplaceRedeclares, inVisitedScopes);
 end lookupInBaseClasses;
 
 public function lookupInBaseClasses2
@@ -282,13 +290,14 @@ public function lookupInBaseClasses2
   input list<Extends> inBaseClasses;
   input Env inEnv;
   input RedeclareReplaceStrategy inReplaceRedeclares;
+  input list<String> inVisitedScopes;
   output Option<Item> outItem;
   output Option<Absyn.Path> outPath;
   output Absyn.Path outBaseClass;
   output Option<Env> outEnv;
 algorithm
   (outItem, outPath, outBaseClass, outEnv) := 
-  matchcontinue(inName, inBaseClasses, inEnv, inReplaceRedeclares)
+  matchcontinue(inName, inBaseClasses, inEnv, inReplaceRedeclares, inVisitedScopes)
     local
       Absyn.Path bc, path;
       list<Extends> rest_bc;
@@ -302,10 +311,11 @@ algorithm
 
     // Look in the first base class.
     case (_, SCodeEnv.EXTENDS(baseClass = bc, redeclareModifiers = redecls, 
-        info = info) :: _, _, _)
+        info = info) :: _, _, _, _)
       equation
         // Find the base class.
         (item, path, env) = lookupBaseClassName(bc, inEnv, info);
+        true = checkVisitedScopes(inVisitedScopes, inEnv, path);
         // Hide the imports to make sure that we don't find the name via them
         // (imports are not inherited).
         item = SCodeEnv.setImportsInItemHidden(item, true);
@@ -318,15 +328,42 @@ algorithm
         (opt_item, opt_path, bc, opt_env);
 
     // No match, check the rest of the base classes.
-    case (_, _ :: rest_bc, _, _)
+    case (_, _ :: rest_bc, _, _, _)
       equation
         (opt_item, opt_path, bc, opt_env) = 
-          lookupInBaseClasses2(inName, rest_bc, inEnv, inReplaceRedeclares);
+        lookupInBaseClasses2(inName, rest_bc, inEnv, inReplaceRedeclares, inVisitedScopes);
       then
         (opt_item, opt_path, bc, opt_env);
 
   end matchcontinue;
 end lookupInBaseClasses2;
+
+protected function checkVisitedScopes
+  "Checks if we are trying to look up a base class that we are coming from when
+   going up in the environment, to avoid infinite loops."
+  input list<String> inVisitedScopes;
+  input Env inEnv;
+  input Absyn.Path inBaseClass;
+  output Boolean outRes;
+algorithm
+  outRes := matchcontinue(inVisitedScopes, inEnv, inBaseClass)
+    local
+      Absyn.Path env_path, visited_path, bc_path;
+
+    case ({}, _, _) then true;
+
+    case (_, _, _)
+      equation
+        env_path = SCodeEnv.getEnvPath(inEnv);
+        bc_path = Absyn.removePrefix(env_path, inBaseClass);
+        visited_path = Absyn.stringListPath(inVisitedScopes);
+        true = Absyn.pathPrefixOf(visited_path, bc_path);
+      then
+        false;
+
+    else true;
+  end matchcontinue;
+end checkVisitedScopes;
 
 protected function lookupInBaseClasses3
   input Absyn.Path inName;
@@ -486,7 +523,7 @@ algorithm
     // Simple name, look in the local scope.
     case (Absyn.IDENT(name = name), _)
       equation
-        (SOME(item), SOME(path), SOME(env)) = lookupInLocalScope(name, inEnv);
+        (SOME(item), SOME(path), SOME(env)) = lookupInLocalScope(name, inEnv, {});
         env = SCodeEnv.setImportTableHidden(env, false);
       then
         (item, path, env);
@@ -496,7 +533,7 @@ algorithm
       equation
         // Look up the name in the local scope.
         (SOME(item), SOME(new_path), SOME(env)) = 
-          lookupInLocalScope(name, inEnv);
+          lookupInLocalScope(name, inEnv, {});
         env = SCodeEnv.setImportTableHidden(env, false);
         // Look for the rest of the path in the found item.
         (item, path, env) = lookupNameInItem(path, item, env);
@@ -528,7 +565,7 @@ algorithm
     // Simple identifier, look in the local scope.
     case (Absyn.CREF_IDENT(name = name, subscripts = subs), _)
       equation
-        (SOME(item), SOME(new_path), _) = lookupInLocalScope(name, inEnv);
+        (SOME(item), SOME(new_path), _) = lookupInLocalScope(name, inEnv, {});
         cref = Absyn.pathToCrefWithSubs(new_path, subs);
       then
         (item, cref);
@@ -539,7 +576,7 @@ algorithm
       equation
         // Look in the local scope.
         (SOME(item), SOME(new_path), SOME(env)) = 
-          lookupInLocalScope(name, inEnv);
+          lookupInLocalScope(name, inEnv, {});
         // Look for the rest of the reference in the found item.
         (item, cref_rest) = lookupCrefInItem(cref_rest, item, env);
         cref = Absyn.pathToCrefWithSubs(new_path, subs);
@@ -656,7 +693,7 @@ public function lookupBaseClass
   output Item outItem;
 algorithm
   (SOME(outItem), _, outBaseClass, _) := lookupInBaseClasses(inClass, inEnv,
-    INSERT_REDECLARES());
+    INSERT_REDECLARES(), {});
 end lookupBaseClass;
 
 public function lookupRedeclaredClassByItem
@@ -677,7 +714,7 @@ algorithm
     case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name)), _, _)
       equation
         (SOME(item), _, _, SOME(env)) = lookupInBaseClasses(name, inEnv,
-          IGNORE_REDECLARES());
+          IGNORE_REDECLARES(), {});
         SCode.PREFIXES(redeclarePrefix = rdp, replaceablePrefix = rpp) =
           SCodeEnv.getItemPrefixes(item);
         (item, env) = lookupRedeclaredClass2(item, rdp, rpp, env, inInfo);
@@ -728,7 +765,7 @@ algorithm
         SCode.REDECLARE(), SCode.REPLACEABLE(cc = _), _, _)
       equation
         (SOME(item), _, _, SOME(env)) = lookupInBaseClasses(name, inEnv, 
-          IGNORE_REDECLARES());
+          IGNORE_REDECLARES(), {});
         SCode.PREFIXES(redeclarePrefix = rdp, replaceablePrefix = rpp) = 
           SCodeEnv.getItemPrefixes(item);
         (item, env) = lookupRedeclaredClass2(item, rdp, rpp, env, inInfo);
