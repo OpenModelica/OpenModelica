@@ -38,8 +38,9 @@ all: runtime.a install
 runtime.a : $(OBJ)
 	rm -f $@
 	$(AR) -s -r $@ $(OBJ)
-install: libomcruntime.a
-	cp $< $(builddir_lib)/omc/
+install: libomcruntime.a read_write.h
+	cp libomcruntime.a $(builddir_lib)/omc/
+	cp read_write.h $(builddir_inc)/omc/
 libomcruntime.a : $(OMC_OBJ)
 	rm -f $@
 	$(AR) -s -r $@ $(OMC_OBJ)
