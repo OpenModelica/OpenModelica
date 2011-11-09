@@ -6571,6 +6571,7 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
       static const size_t <%name%>_strlen = <%unescapedStringLength(string)%>;
       static const char <%name%>[<%intAdd(1,unescapedStringLength(string))%>] = <%name%>_data;
       >>
+  case lit as MATRIX(ty=ty as ET_ARRAY(__))
   case lit as ARRAY(ty=ty as ET_ARRAY(__)) then
     let ndim = listLength(ty.arrayDimensions)
     let sty = expTypeShort(ty)

@@ -1337,6 +1337,15 @@ algorithm
       equation
         failure(isLiteralArrayExp(exp));
       then ((exp,false,tpl));
+    case ((exp as DAE.MATRIX(matrix=_),_))
+      equation
+        isLiteralArrayExp(exp);
+        ((exp,tpl)) = replaceLiteralExp2(inTpl);
+      then ((exp,false,tpl));
+    case ((exp as DAE.MATRIX(matrix=_),tpl))
+      equation
+        failure(isLiteralArrayExp(exp));
+      then ((exp,false,tpl));
     case ((exp,tpl)) then ((exp,true,tpl));
   end matchcontinue;
 end replaceLiteralArrayExp;
@@ -1467,11 +1476,13 @@ algorithm
     local
       DAE.Exp e1,e2;
       list<DAE.Exp> expl;
+      list<list<DAE.Exp>> expll;
     case DAE.SCONST(_) then ();
     case DAE.ICONST(_) then ();
     case DAE.RCONST(_) then ();
     case DAE.BCONST(_) then ();
     case DAE.ARRAY(array=expl) equation List.map_0(expl,isLiteralArrayExp); then ();
+    case DAE.MATRIX(matrix=expll) equation List.map_0(List.flatten(expll),isLiteralArrayExp); then ();
     case DAE.ENUM_LITERAL(index = _) then ();
     case DAE.META_OPTION(NONE()) then ();
     case DAE.META_OPTION(SOME(exp)) equation isLiteralArrayExp(exp); then ();
