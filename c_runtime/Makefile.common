@@ -26,6 +26,7 @@ modelica_string.o bigden.o \
 ddasrt.o  dlinpk.o  enorm.o   hybrd1.o  nelmead.o  qform.o   r1updt.o \
 biglag.o  ddassl.o  dogleg.o  fdjac1.o  hybrj.o   newuoa.o   qrfac.o   trsapp.o \
 daux.o    dlamch.o  dpmpar.o  hybrd.o   lsame.o   newuob.o   r1mpyq.o  update.o division.o\
+read_write.o \
 java_interface.o rtclock.o ModelicaUtilities.o \
 simulation_varinfo.o read_matlab4.o read_csv.o \
 simulation_init.o simulation_input.o simulation_input_xml.o \
@@ -87,6 +88,7 @@ ModelicaUtilities.h \
 omc_msvc.h \
 read_matlab4.h \
 read_csv.h \
+read_write.h \
 real_array.h \
 ringbuffer.h \
 rtclock.h \
