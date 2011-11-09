@@ -33,6 +33,7 @@
 #ifndef UTILITY_H
 #define UTILITY_H
 
+#include <math.h>
 #include "openmodelica.h"
 
 int in_range_integer(modelica_integer i,

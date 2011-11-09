@@ -32,8 +32,13 @@
 #ifndef REAL_ARRAY_H_
 #define REAL_ARRAY_H_
 
-#include "openmodelica.h"
+
 #include <stdarg.h>
+#include <stdio.h>
+#include "openmodelica.h"
+#include "base_array.h"
+#include "integer_array.h"
+#include "index_spec.h"
 
 /* Indexing 1 dimensions */
 modelica_real real_get(real_array_t *a, size_t i);

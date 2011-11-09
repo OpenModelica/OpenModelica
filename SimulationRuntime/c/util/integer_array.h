@@ -33,6 +33,8 @@
 #define INTEGER_ARRAY_H_
 
 #include "openmodelica.h"
+#include "base_array.h"
+#include "index_spec.h"
 #include <stdarg.h>
 
 /* Indexing 1 dimensions */
