@@ -35,6 +35,7 @@
 
 #define DEFAULT_CC "gcc"
 #define DEFAULT_CXX "g++"
+#define DEFAULT_MAKE "make"
 
 #define DEFAULT_LDFLAGS "-lregex -lexpat"
 
