@@ -226,6 +226,12 @@ public function getLDFlags
   external "C" outString=System_getLDFlags() annotation(Library = "omcruntime");
 end getLDFlags;
 
+public function getMakeCommand
+  output String outString;
+
+  external "C" outString=System_getMakeCommand() annotation(Library = "omcruntime");
+end getMakeCommand;
+
 public function getExeExt
   output String outString;
 

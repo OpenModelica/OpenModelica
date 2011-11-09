@@ -2124,3 +2124,10 @@ RML_BEGIN_LABEL(System__setStackOverflowSignal)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getMakeCommand)
+{
+  rmlA0 = mk_scon(DEFAULT_MAKE);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

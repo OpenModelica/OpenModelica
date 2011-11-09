@@ -2596,7 +2596,7 @@ algorithm
   _ := matchcontinue (inFilePrefix,inLibsList,inFileDir,noClean,solverMethod)
     local
       String pd,omhome,omhome_1,cd_path,libsfilename,libs_str,win_call,make_call,s_call,fileprefix,file_dir,command,filename,str,extra_command, 
-             fileDLL, fileEXE, fileLOG;
+             fileDLL, fileEXE, fileLOG, make;
       list<String> libs;
       Boolean isWindows;
 
@@ -2622,7 +2622,8 @@ algorithm
         omhome = Util.if_(isWindows, "set OPENMODELICAHOME=\"" +& omhome_1 +& "\"&& ", "");
         win_call = stringAppendList({omhome,
           omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile"," ",fileprefix," ",noClean});
-        make_call = stringAppendList({"make -f ",fileprefix,".makefile >",fileprefix,".log 2>&1"});
+        make = System.getMakeCommand();
+        make_call = stringAppendList({make," -f ",fileprefix,".makefile >",fileprefix,".log 2>&1"});
         s_call = Util.if_(isWindows, win_call, make_call);
         
         Debug.fprintln("dynload", "compileModel: running " +& s_call);

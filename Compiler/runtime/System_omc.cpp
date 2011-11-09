@@ -621,4 +621,9 @@ extern void System_getLoadModelPath(const char *className, void *prios, void *mp
   /* TODO: Do not strdup in parent... */
 }
 
+extern const char* System_getMakeCommand()
+{
+  return DEFAULT_MAKE;
+}
+
 }
