@@ -33,8 +33,28 @@
 
 #include "simulation_init.h"
 #include "simulation_runtime.h"
-#include "openmodelica.h"
+#include "solver_main.h"
 #include <math.h>
+#include <string.h>
+
+enum INIT_INIT_METHOD
+{
+	IIM_UNKNOWN = 0,
+	IIM_STATE,
+	IIM_OLD
+};
+
+const char *initMethodStr[3] = {"unknown", "state", "old"};
+
+enum INIT_OPTI_METHOD
+{
+	IOM_UNKNOWN = 0,
+	IOM_SIMPLEX,
+	IOM_NELDER_MEAD_EX,
+	IOM_NEWUOA
+};
+
+const char *optiMethodStr[4] = {"unknown", "simplex", "nelder_mead_ex", "newuoa"};
 
 /*! \fn void leastSquare(long *nz, double *z, double *funcValue)
  *
@@ -72,7 +92,8 @@ void leastSquare(long *nz, double *z, double *funcValue)
 
   if(useVerboseOutput(LOG_INIT))
   {
-    fprintf(stdout, "info    | leastSquare | leastSquare-Value: %g\n", *funcValue); fflush(NULL);
+    fprintf(stdout, "info    | leastSquare | leastSquare-Value: %g\n", *funcValue);
+    fflush(NULL);
   }
 }
 
@@ -115,7 +136,7 @@ double leastSquareWithLambda(long nz, double *z, double* scale, double lambda)
 
   double funcValue = 0;
   for(int i=0; i<globalData->nInitialResiduals; i++)
-    funcValue += globalData->initialResiduals[i] * globalData->initialResiduals[i];    /* * globalData->initialResiduals[i] * globalData->initialResiduals[i]; */
+    funcValue += globalData->initialResiduals[i] * globalData->initialResiduals[i];
 
   return funcValue;
 }
@@ -132,7 +153,7 @@ void NelderMeadOptimization(long N,
     double (*leastSquare)(long, double*, double*, double))
 {
   double alpha    = 1.0;        /* alpha > 0 */
-  double beta        = 2;        /* beta > 1 */
+  double beta     = 2;        	/* beta > 1 */
   double gamma    = 0.5;        /* 0 < gamma < 1 */
 
   double* simplex = new double[(N+1) * N];
@@ -357,7 +378,7 @@ int reportResidualValue(double funcValue)
  *  This function performs initialization using the newuoa function, which is
  *  a trust region method that forms quadratic models by interpolation.
  */
-int newuoa_initialization(long& nz,double *z)
+int newuoa_initialization(long& nz, double *z)
 {
   long IPRINT = sim_verbose >= LOG_INIT? 2 : 0;
   long MAXFUN=50000;
@@ -383,7 +404,7 @@ int newuoa_initialization(long& nz,double *z)
  *  This function performs initialization by using the simplex algorithm.
  *  This does not require a jacobian for the residuals.
  */
-int simplex_initialization(long& nz,double *z)
+int simplex_initialization(long& nz, double *z)
 {
   int ind = 0;
   double funcValue = 0;
@@ -542,8 +563,7 @@ int nelderMeadEx_initialization(long& nz, double *z, double *scale)
  * It uses the generated function initial_residual, which calcualtes the
  * residual of all equations (both continuous time eqns and initial eqns).
  */
-
-int initialize(const std::string init_method)
+int initialize(INIT_OPTI_METHOD optiMethod)
 {
   long nz = 0;
   int ind = 0, indAct = 0, indz = 0;
@@ -554,7 +574,8 @@ int initialize(const std::string init_method)
     {
       if(sim_verbose >= LOG_INIT)
       {
-        fprintf(stdout, "info    | state %s is unfixed.\n", globalData->statesNames[ind].name); fflush(NULL);
+        fprintf(stdout, "info    | state %s is unfixed.\n", globalData->statesNames[ind].name);
+        fflush(NULL);
       }
       nz++;
     }
@@ -568,7 +589,8 @@ int initialize(const std::string init_method)
     {
       if(sim_verbose >= LOG_INIT)
       {
-          fprintf(stdout, "info    | parameter %s is unfixed.\n", globalData->parametersNames[ind-startIndPar].name); fflush(NULL);
+          fprintf(stdout, "info    | parameter %s is unfixed.\n", globalData->parametersNames[ind-startIndPar].name);
+          fflush(NULL);
       }
       nz++;
     }
@@ -576,7 +598,7 @@ int initialize(const std::string init_method)
 
   if(sim_verbose >= LOG_INIT)
   {
-    fprintf(stdout, "info    | initialize | initialization by method: %s\n", init_method.c_str());
+    fprintf(stdout, "info    | initialize | initialization by method: %s\n", optiMethodStr[optiMethod]);
     fprintf(stdout, "info    | initialize | fixed attribute for states:\n");
     for(int i=0;i<globalData->nStates; i++)
       fprintf(stdout, "info    | initialize | %s(fixed=%s)\n", globalData->statesNames[i].name, (globalData->initFixed[i] ? "true" : "false"));
@@ -619,22 +641,23 @@ int initialize(const std::string init_method)
   }
 
   int retVal = 0;
-  if(init_method == std::string("simplex"))
+  if(optiMethod == IOM_SIMPLEX)
   {
     retVal = simplex_initialization(nz, z);
   }
-  else if(init_method == std::string("nelder_mead_ex"))
+  else if(optiMethod == IOM_NELDER_MEAD_EX)
   {
     retVal = nelderMeadEx_initialization(nz, z, scale);
   }
-  else if(init_method == std::string("newuoa"))
+  else if(optiMethod == IOM_NEWUOA)
   {
     retVal = newuoa_initialization(nz, z);
   }
   else
   {
-    fprintf(stderr, "error   | unrecognized option -im %s\n", init_method.c_str());
-    fprintf(stderr, "        | current options are: simplex or newuoa\n"); fflush(NULL);
+    fprintf(stderr, "error   | unrecognized option -iom %s\n", optiMethodStr[optiMethod]);
+    fprintf(stderr, "        | current options are: simplex, nelder_mead_ex or newuoa\n");
+    fflush(NULL);
     retVal= -1;
   }
   delete [] z;
@@ -642,7 +665,7 @@ int initialize(const std::string init_method)
   return retVal;
 }
 
-int old_initialization(const std::string optiMethod)
+int old_initialization(INIT_OPTI_METHOD optiMethod)
 {
   /* call initialize function and save start values */
   saveall();                        /* if initial_function() uses pre-values */
@@ -652,7 +675,7 @@ int old_initialization(const std::string optiMethod)
 
   /* Initialize all relations that are ZeroCrossings */
   update_DAEsystem();
-  // start with the real initialization
+  /* start with the real initialization */
   globalData->init = 1;
 
   /* And restore start values and helpvars */
@@ -669,10 +692,10 @@ int old_initialization(const std::string optiMethod)
 
   if(retVal != 0)
   {
-    if(optiMethod == "simplex")
-      retVal = initialize("newuoa");
-    else if(optiMethod == "newuoa")
-      retVal = initialize("simplex");
+    if(optiMethod == IOM_SIMPLEX)
+      retVal = initialize(IOM_NEWUOA);
+    else if(optiMethod == IOM_NEWUOA)
+      retVal = initialize(IOM_SIMPLEX);
 
     if(retVal != 0)
     {
@@ -703,7 +726,7 @@ int old_initialization(const std::string optiMethod)
   return retVal;
 }
 
-int state_initialization(const std::string optiMethod)
+int state_initialization(INIT_OPTI_METHOD optiMethod)
 {
   /* call initialize function and save start values */
   saveall();                        /* if initial_function() uses pre-values */
@@ -723,7 +746,7 @@ int state_initialization(const std::string optiMethod)
   globalData->init = 1;            /* to evaluate when-equations with initial()-conditions */
 
   int retVal = 0;
-  retVal = initialize("nelder_mead_ex");
+  retVal = initialize(IOM_NELDER_MEAD_EX);
 
   saveall();                        /* save pre-values */
   storeExtrapolationDataEvent();    /* if there are non-linear equations */
@@ -743,7 +766,8 @@ int state_initialization(const std::string optiMethod)
   {
     if(useVerboseOutput(LOG_INIT))
     {
-        fprintf(stdout, "warning | state_initialization | init. failed! use old initialization method\n"); fflush(NULL);
+        fprintf(stdout, "warning | state_initialization | init. failed! use old initialization method\n");
+        fflush(NULL);
     }
     return old_initialization(optiMethod);
   }
@@ -758,37 +782,54 @@ int state_initialization(const std::string optiMethod)
 
 int initialization(const char* pInitMethod, const char* pOptiMethod)
 {
-  std::string initMethod("state");        /* default method */
-  std::string optiMethod("simplex");        /* default method */
+	INIT_INIT_METHOD initMethod = IIM_STATE;			/* default method */
+	INIT_OPTI_METHOD optiMethod = IOM_SIMPLEX;			/* default method */
 
-  /* if there are user-specified options, use them! */
-  if(pInitMethod)
-    initMethod = *pInitMethod;
-  if(pOptiMethod)
-    optiMethod = *pOptiMethod;
+	/* if there are user-specified options, use them! */
+	if(pInitMethod)
+	{
+		if(!strcmp(pInitMethod, "state"))
+			initMethod = IIM_STATE;
+		else if(!strcmp(pInitMethod, "old"))
+			initMethod = IIM_OLD;
+		else
+			initMethod = IIM_UNKNOWN;
+	}
 
-  if(useVerboseOutput(LOG_INIT))
-  {
-    fprintf(stdout, "info    | initialization | initialization method: %s\n", initMethod.c_str());
-    fprintf(stdout, "info    | initialization | optimization method:   %s\n", optiMethod.c_str());
-    fflush(NULL);
-  }
+	if(pOptiMethod)
+	{
+		if(!strcmp(pOptiMethod, "simplex"))
+			optiMethod = IOM_SIMPLEX;
+		else if(!strcmp(pOptiMethod, "nelder_mead_ex"))
+			optiMethod = IOM_NELDER_MEAD_EX;
+		else if(!strcmp(pOptiMethod, "newuoa"))
+			optiMethod = IOM_NEWUOA;
+		else
+			optiMethod = IOM_UNKNOWN;
+	}
 
-  /* select the right initialization-method */
-  if(initMethod == "old")
-  {
-    /* the 'old' initialization-method */
-    return old_initialization(optiMethod);
-  }
-  else if(initMethod == "state")
-  {
-    /* the 'new' initialization-method */
-    return state_initialization(optiMethod);
-  }
+	if(useVerboseOutput(LOG_INIT))
+	{
+		fprintf(stdout, "info    | initialization | initialization method: %s\n", initMethodStr[initMethod]);
+		fprintf(stdout, "info    | initialization | optimization method:   %s\n", optiMethodStr[optiMethod]);
+		fflush(NULL);
+	}
 
-  /* unrecognized initialization-method */
-  fprintf(stderr, "error   | unrecognized option -iim %s\n", initMethod.c_str());
-  fprintf(stderr, "        | current options are: state or old\n");
-  fflush(NULL);
-  return -1;
+	/* select the right initialization-method */
+	if(initMethod == IIM_OLD)
+	{
+		/* the 'old' initialization-method */
+		return old_initialization(optiMethod);
+	}
+	else if(initMethod == IIM_STATE)
+	{
+		/* the 'new' initialization-method */
+		return state_initialization(optiMethod);
+	}
+
+	/* unrecognized initialization-method */
+	fprintf(stderr, "error   | unrecognized option -iim %s\n", initMethodStr[initMethod]);
+	fprintf(stderr, "        | current options are: state or old\n");
+	fflush(NULL);
+	return -1;
 }
