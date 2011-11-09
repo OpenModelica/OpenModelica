@@ -11,8 +11,8 @@ SHELL	= /bin/sh
 CC = @CC@
 CXX = @CXX@
 CFLAGS	+= @CFLAGS@
-CXXFLAGS = $(CFLAGS)
-CPPFLAGS = -I.. -Wall
+CXXFLAGS = $(CFLAGS) 
+CPPFLAGS = -I.. -Wall -I../c/simulation/results/ -I../c/linearization -I../c/simulation/solver/ -I../c/util/ -I../c/ -I../c/simulation/ -I../c/simulation/math-support
 
 OBJ = $(CPPSRC:.cpp=.o)
 
@@ -29,7 +29,7 @@ libinteractive.a : $(OBJ)
 
 client : client.cpp socket.h socket.cpp socket_win.cpp socket_unix.cpp thread.h thread.cpp
 	echo "Building client for interactive simulation ... "
-	g++ -o SampleClient/client client.cpp socket.cpp thread.cpp -lpthread
+	g++ $(CPPFLAGS) -o SampleClient/client client.cpp socket.cpp thread.cpp -lpthread
 
 clean:
 	$(RM) -rf *.o *.a SampleClient/client

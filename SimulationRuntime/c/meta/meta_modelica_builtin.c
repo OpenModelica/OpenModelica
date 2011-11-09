@@ -711,6 +711,6 @@ modelica_real realMaxLit()
 
 modelica_integer intMaxLit()
 {
-  return LONG_MAX / 2;
+  return INT_MAX / 2;
 }
 

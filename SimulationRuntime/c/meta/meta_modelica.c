@@ -31,6 +31,7 @@
 
 #include "openmodelica.h"
 #include "meta_modelica.h"
+#include "meta_modelica_builtin.h"
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
