@@ -35,6 +35,7 @@
 #include "simulation_runtime.h"
 #include "solver_main.h"
 #include <math.h>
+#include <string.h>
 
 enum INIT_INIT_METHOD
 {

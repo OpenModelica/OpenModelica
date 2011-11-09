@@ -2,7 +2,7 @@ AR = ar -ru
 ANSI= #-ansi
 CXXFLAGS := $(CFLAGS) -Wall $(ANSI) $(EXTRA_CFLAGS)
 CFLAGS := $(CFLAGS) -Wall $(ANSI) -pedantic $(EXTRA_CFLAGS)
-CPPFLAGS = -I. -Iinteractive/ -Imeta/ -I../
+CPPFLAGS = -I. -Iinteractive/ -Imeta/ -I../ -I../Compiler/runtime/
 FFLAGS  = -O -fexceptions
 # P.A: before, g77 had -O3 or -O2 but that caused a bug in DDASRT, giving infinite loop.
 
