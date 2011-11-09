@@ -746,7 +746,7 @@ int state_initialization(INIT_OPTI_METHOD optiMethod)
   globalData->init = 1;            /* to evaluate when-equations with initial()-conditions */
 
   int retVal = 0;
-  retVal = initialize(optiMethod);
+  retVal = initialize(IOM_NELDER_MEAD_EX);
 
   saveall();                        /* save pre-values */
   storeExtrapolationDataEvent();    /* if there are non-linear equations */
@@ -783,7 +783,7 @@ int state_initialization(INIT_OPTI_METHOD optiMethod)
 int initialization(const char* pInitMethod, const char* pOptiMethod)
 {
 	INIT_INIT_METHOD initMethod = IIM_STATE;			/* default method */
-	INIT_OPTI_METHOD optiMethod = IOM_NELDER_MEAD_EX;	/* default method */
+	INIT_OPTI_METHOD optiMethod = IOM_SIMPLEX;			/* default method */
 
 	/* if there are user-specified options, use them! */
 	if(pInitMethod)
