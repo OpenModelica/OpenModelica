@@ -10,6 +10,7 @@
 
 #define DEFAULT_CC "@CC@"
 #define DEFAULT_CXX "@CXX@"
+#define DEFAULT_MAKE "@MAKE@"
 
 #if defined(__sparc__)
   #define DEFAULT_LINKER "@CC@ -G"
