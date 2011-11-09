@@ -1,5 +1,7 @@
 # Sources and Headers
-set(ModelicaExternalC_sources ModelicaInternal.c ModelicaStrings.c ModelicaTablesImpl.c)
+set(ModelicaExternalC_sources ModelicaInternal.c 
+                              ModelicaStrings.c 
+							  ModelicaTablesImpl.c)
 
 SET(ModelicaExternalC_headers ModelicaTables.h) 
 

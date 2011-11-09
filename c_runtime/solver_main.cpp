@@ -764,8 +764,8 @@ init_stepsize(int(*f)()) {
     d1[i] = globalData->statesDerivatives[i];
   }
 
-  d0norm = euklidnorm(d0) / sqrt(globalData->nStates);
-  d1norm = euklidnorm(d1) / sqrt(globalData->nStates);
+  d0norm = euklidnorm(d0) / sqrt((double)globalData->nStates);
+  d1norm = euklidnorm(d1) / sqrt((double)globalData->nStates);
 
   delete[] d0;
   delete[] d1;
@@ -786,7 +786,7 @@ init_stepsize(int(*f)()) {
     temp[i] = globalData->statesDerivatives[i] - y[i];
   }
 
-  d2norm = (euklidnorm(temp) / sqrt(globalData->nStates)) / h0;
+  d2norm = (euklidnorm(temp) / sqrt((double)globalData->nStates)) / h0;
 
   d = max(d1norm, d2norm);
 

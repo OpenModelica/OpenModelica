@@ -31,6 +31,7 @@
 
 
 #include "memory_pool.h"
+#include "inline.h"
 #include <assert.h>
 #include <stdio.h>
 

@@ -2,6 +2,14 @@
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/meta)
 
+# OMDEV PATH
+IF(NOT OMDEV)
+  SET(OMDEV $ENV{OMDEV})
+ENDIF(NOT OMDEV)
+
+INCLUDE_DIRECTORIES(${OMDEV}/lib/expat-win32-msvc)
+link_directories(${OMDEV}/lib/expat-win32-msvc)
+
 # OMC Compiler
 SET(OMC_DEBUG ${OMCTRUNCHOME}/build/bin/omcd.exe)
 MESSAGE(" omc is " ${OMC_DEBUG})
@@ -42,6 +50,14 @@ MACRO(BUILDMODEL model dir Flags CSRC)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime/meta)
   
+  # OMDEV PATH
+  IF(NOT OMDEV)
+    SET(OMDEV $ENV{OMDEV})
+  ENDIF(NOT OMDEV)
+
+  INCLUDE_DIRECTORIES(${OMDEV}/lib/expat-win32-msvc)
+  link_directories(${OMDEV}/lib/expat-win32-msvc)
+  
   # Variablen fuer openmodelica2sarturis
   SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.c
@@ -61,7 +77,7 @@ MACRO(BUILDMODEL model dir Flags CSRC)
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
 
   ADD_EXECUTABLE(${model} ${OMC_OUTPUT} ${CSRC})
-  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c meta sendData ModelicaExternalC)
+  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c meta sendData ModelicaExternalC libexpat)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
@@ -78,6 +94,14 @@ MACRO(BUILDMODELMOS model mos Flags CSRC)
 
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime/meta)
+  
+  # OMDEV PATH
+  IF(NOT OMDEV)
+    SET(OMDEV $ENV{OMDEV})
+  ENDIF(NOT OMDEV)
+
+  INCLUDE_DIRECTORIES(${OMDEV}/lib/expat-win32-msvc)
+  link_directories(${OMDEV}/lib/expat-win32-msvc)  
   
   SET(OMC_MODELNAME ${model})  
   # generate model.mos 
@@ -101,7 +125,7 @@ MACRO(BUILDMODELMOS model mos Flags CSRC)
  
   ADD_DEFINITIONS(/TP ${model}.c)
   ADD_EXECUTABLE(${model} ${OMC_OUTPUT} ${CSRC})
-  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c meta sendData ModelicaExternalC)
+  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c meta sendData ModelicaExternalC libexpat)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
@@ -118,6 +142,14 @@ MACRO(BUILDMODELFMU model dir Flags CSRC)
 
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime/meta)
+  
+  # OMDEV PATH
+  IF(NOT OMDEV)
+    SET(OMDEV $ENV{OMDEV})
+  ENDIF(NOT OMDEV)
+
+  INCLUDE_DIRECTORIES(${OMDEV}/lib/expat-win32-msvc)
+  link_directories(${OMDEV}/lib/expat-win32-msvc)  
   
   SET(OMC_MODELNAME ${model})  
   SET(OMC_MODELDIR ${dir})  
@@ -147,7 +179,7 @@ MACRO(BUILDMODELFMU model dir Flags CSRC)
 				   ${OMCTRUNCHOME}/c_runtime/fmiModelTypes.h)
   
   ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
-  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c meta sendData ModelicaExternalC)
+  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c meta sendData ModelicaExternalC libexpat)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
@@ -164,6 +196,14 @@ MACRO(BUILDMODELFMUMOS model mos Flags CSRC)
 
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime/meta)
+
+  # OMDEV PATH
+  IF(NOT OMDEV)
+    SET(OMDEV $ENV{OMDEV})
+  ENDIF(NOT OMDEV)
+
+  INCLUDE_DIRECTORIES(${OMDEV}/lib/expat-win32-msvc)
+  link_directories(${OMDEV}/lib/expat-win32-msvc)  
  
   SET(OMC_MODELNAME ${model})  
   # generate model.mos 
@@ -191,7 +231,7 @@ MACRO(BUILDMODELFMUMOS model mos Flags CSRC)
   
   ADD_DEFINITIONS(/TP ${model}.c)
   ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
-  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c meta sendData ModelicaExternalC)
+  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c meta sendData ModelicaExternalC libexpat)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
@@ -248,20 +288,20 @@ SET(c_runtime_headers  blaswrap.h f2c.h integer_array.h memory_pool.h
 					   java_interface.h jni.h division.h
 					   jni_md.h jni_md_solaris.h jni_md_windows.h fortran_types.h
 					   rtclock.h ModelicaUtilities.h simulation_varinfo.h read_matlab4.h read_csv.h
-					   sendData/sendData.h)				 
+					   sendData/sendData.h inline.h)				 
 						 
-SET(sim_sources simulation_runtime.cpp simulation_init.cpp simulation_input.cpp 
+SET(sim_sources simulation_runtime.cpp simulation_init.cpp simulation_input_xml.cpp 
                 simulation_events.cpp linearize.cpp solver_main.cpp
 				simulation_result_plt.cpp simulation_result_csv.cpp 
 				simulation_result_mat.cpp simulation_delay.cpp tables.cpp options.cpp
 				dgesv_aux.c  simulation_modelinfo.c)
 	
-SET(sim_headers simulation_runtime.h simulation_init.h simulation_input.h
+SET(sim_headers simulation_runtime.h simulation_init.h simulation_input_xml.h
                 simulation_events.h linearize.h solver_main.h 
 				simulation_result.h simulation_result_plt.h simulation_result_mat.h
 				simulation_result_empty.h simulation_result_csv.h 
 				simulation_delay.h tables.h options.h  
-				simulation_inline_solver.h simulation_modelinfo.h )
+				simulation_inline_solver.h simulation_modelinfo.h)
 
 
 # Library c_runtime
@@ -277,7 +317,7 @@ if(WIN32)
 #add_definitions(/MT)
 endif(WIN32)
 ADD_LIBRARY(sim ${sim_sources} ${sim_headers})
-TARGET_LINK_LIBRARIES(sim c_runtime f2c ModelicaExternalC)
+TARGET_LINK_LIBRARIES(sim c_runtime f2c ModelicaExternalC libexpat)
 
 # Install
 INSTALL(TARGETS c_runtime sim
