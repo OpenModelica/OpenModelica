@@ -33,8 +33,8 @@ mkbuilddirs:
 	mkdir -p $(builddir_share)/omnotebook
 	mkdir -p $(builddir_doc)/omc/testmodels
 	mkdir -p $(builddir_man)/man1/
-	mkdir -p $(builddir_lib)/omc2/lib
-	mkdir -p $(builddir_lib)/omc2/include
+	mkdir -p $(builddir_lib)/omc2
+	mkdir -p $(top_builddir)/build/include/omc2
 
 debug: .testvariables mkbuilddirs settings omcd
 profiler: .testvariables mkbuilddirs settings omc_profiler
