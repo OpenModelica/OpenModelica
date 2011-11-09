@@ -11,12 +11,12 @@ LIBS = libsim.a libsolver.a libmath-support.a libutil.a libmeta.a libf2c.a libre
 LIBSPATH= simulation/libsim.a simulation/math-support/libmath-support.a simulation/solver/libsolver.a simulation/results/libresult.a meta/libmeta.a ModelicaExternalC/libModelicaExternalC.a simulation/libf2c/libf2c.a util/libutil.a sendData/release/libsendData.a
 
 
-.PHONY : libsim.a libmath-support.a libsolver.a libutil.a libmeta.a libf2c.a libresult.a libModelicaExternalC.a libsendData.a clean
+.PHONY : libsim.a libmath-support.a libsolver.a libutil.a libmeta.a libf2c.a libresult.a libModelicaExternalC.a libsendData.a clean install
 
-all : libSimulationCRuntime.a libsim.a libsolver.a libmath-support.a libutil.a libmeta.a libf2c.a libresult.a libModelicaExternalC.a libsendData.a
+all : install
 
 
-libSimulationCRuntime.a : $(LIBS) $(LIBSPATH)
+libSimulationCRuntime.a: $(LIBS) $(LIBSPATH)
 	$(AR) rsc $@ *.o
 	rm -f *.o
 	ranlib $@
