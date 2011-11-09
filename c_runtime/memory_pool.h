@@ -40,7 +40,12 @@ typedef const char* m_string;
 typedef signed char m_boolean;
 typedef m_integer   _index_t;
 
-typedef _index_t state;
+struct state_s {
+  _index_t buffer;
+  _index_t offset;
+};
+
+typedef struct state_s state;
 
 state get_memory_state();
 void restore_memory_state(state restore_state);

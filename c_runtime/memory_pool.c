@@ -34,10 +34,12 @@
 #include <assert.h>
 #include <stdio.h>
 
-#define NR_ELEMENTS    10000000
+/* 16 MB of data ought to be enough */
+#define NR_ELEMENTS    4*1024*1024
 
 struct one_state_s {
-  int buffer[NR_ELEMENTS];
+  int **buffer;
+  int nbuffers;
   state current_state;
 };
 
@@ -47,13 +49,23 @@ one_state *current_states;
 
 void* push_memory_states(int maxThreads)
 {
+  int i;
   void *res = current_states;
-  current_states = calloc(maxThreads,sizeof(one_state));
+  current_states = malloc(maxThreads*sizeof(one_state));
+  assert(current_states);
+  for (i=0; i<maxThreads; i++) {
+    current_states[i].buffer = (int**) malloc(sizeof(int*));
+    current_states[i].buffer[0] = malloc(sizeof(int)*NR_ELEMENTS);
+    current_states[i].nbuffers = 1;
+    current_states[i].current_state.buffer = 0;
+    current_states[i].current_state.offset = 0;
+  }
   return res;
 }
 
 void pop_memory_states(void* new_states)
 {
+  free(current_states[0].buffer); /* TODO: Free all of them... */
   free(current_states);
   current_states = new_states;
 }
@@ -67,13 +79,15 @@ void print_current_state()
 {
   state current_state = current_states[0].current_state;
   printf("=== Current state ===\n");
-  printf("  index: %d\n",(int)current_state);
+  printf("  buffer: %d\n",(int)current_state.buffer);
+  printf("  offste: %d\n",(int)current_state.offset);
 }
 
 void print_state(state s)
 {
   printf("=== State ===\n");
-  printf("  index: %d\n",s);
+  printf("  buffer: %d\n",(int)s.buffer);
+  printf("  offste: %d\n",(int)s.offset);
 }
 
 void restore_memory_state(state restore_state)
@@ -83,18 +97,32 @@ void restore_memory_state(state restore_state)
 
 void clear_current_state()
 {
-  current_states[0].current_state = 0;
+  current_states[0].current_state.buffer = 0;
+  current_states[0].current_state.offset = 0;
 }
 
 inline void* alloc_elements(int ix, int n, int sz)
 {
   _index_t start,nelem;
   assert(n>=0);
-  start = current_states[ix].current_state;
+  start = current_states[ix].current_state.offset;
   nelem = (n*sz)/sizeof(int) + ((n*sz)%sizeof(int) ? 1 : 0);
-  assert(start + nelem < NR_ELEMENTS);
-  current_states[ix].current_state += nelem;
-  return current_states[ix].buffer + start;
+  assert(nelem <= NR_ELEMENTS);
+  if (start + nelem > NR_ELEMENTS) {
+    if (current_states[ix].nbuffers == current_states[ix].current_state.buffer+1) {
+      /* We need to allocate another region */
+      current_states[ix].buffer=realloc(current_states[ix].buffer,sizeof(int*)*current_states[ix].nbuffers);
+      current_states[ix].buffer[current_states[ix].nbuffers]=malloc(sizeof(int)*NR_ELEMENTS);
+      assert(current_states[ix].buffer);
+    }
+    current_states[ix].current_state.buffer = current_states[ix].nbuffers++;
+    current_states[ix].current_state.offset = 0;
+    start = 0;
+    /* fprintf(stderr,"realloc %d %d %d\n", current_states[ix].nbuffers, current_states[ix].current_state.buffer, current_states[ix].current_state.offset); */
+  }
+  current_states[ix].current_state.offset += nelem;
+  /* fprintf(stderr,"return data buffer:%d offset:%d\n", current_states[ix].current_state.buffer, start); */
+  return current_states[ix].buffer[current_states[ix].current_state.buffer] + start;
 }
 
 /* allocates n reals in the real_buffer */
