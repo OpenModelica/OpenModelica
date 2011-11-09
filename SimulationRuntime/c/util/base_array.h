@@ -32,19 +32,10 @@
 #ifndef BASE_ARRAY_H_
 #define BASE_ARRAY_H_
 
-#include "index_spec.h"
+#include "openmodelica.h"
 #include <stdlib.h>
 #include <stdarg.h>
 #include <math.h>
-
-struct base_array_s
-{
-  int ndims;
-  _index_t *dim_size;
-  void *data;
-};
-
-typedef struct base_array_s base_array_t;
 
 /* Settings the fields of a base_array */
 void base_array_create(base_array_t *dest, void *data, int ndims, va_list ap);

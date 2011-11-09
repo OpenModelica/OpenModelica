@@ -38,9 +38,8 @@
 #ifndef _SIMULATION_EVENTS_H
 #define _SIMULATION_EVENTS_H
 
-#include "integer_array.h"
-#include "boolean_array.h"
-#include "fortran_types.h"
+#include "openmodelica.h"
+#include "simulation_runtime.h"
 
 #ifdef __cplusplus
 #include <list>
@@ -55,11 +54,6 @@ CheckZeroCrossings(list<int>*);
 extern "C" {
 
 #endif
-
-int
-initializeEventData();
-void
-deinitializeEventData();
 
 void saveall();
 void printAllPreValues();

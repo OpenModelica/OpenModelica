@@ -32,26 +32,7 @@
 #ifndef INDEX_SPEC_H_
 #define INDEX_SPEC_H_
 
-#include "inline.h"
-#include "memory_pool.h"
-
-/* This structure holds indexes when subscripting an array.
- * ndims - number of subscripts, E.g. A[1,{2,3},:] => ndims = 3
- * dim_size - dimension size of each subscript, Eg. A[1,{2,3},:,{3}] => dim_size={1,2,0,1}
- * spec_type - index type for each index, 'S' for scalar, 'A' for array, 'W' for whole dimension (:)
- *     Eg. A[1,{2,3},:,{3}] => spec_type = {'S','A','W','A'}.
- *     spec_type is required to be able to distinguish between {1} and 1 as an index.
- * index - pointer to all indices (except of type 'W'), eg A[1,{2,3},:,{3}] => index -> {1,2,3,3}
-*/
-struct index_spec_s
-{
-  _index_t ndims;  /* number of indices/subscripts */
-  _index_t* dim_size; /* size for each subscript */
-  char* index_type;  /* type of each subscript, any of 'S','A' or 'W' */
-  _index_t** index; /* all indices*/
-};
-
-typedef struct index_spec_s index_spec_t;
+#include "openmodelica.h"
 
 int index_spec_ok(index_spec_t* s);
 void alloc_index_spec(index_spec_t* s);

@@ -32,14 +32,8 @@
 #ifndef INTEGER_ARRAY_H_
 #define INTEGER_ARRAY_H_
 
-#include "base_array.h"
-#include "index_spec.h"
-#include "memory_pool.h"
+#include "openmodelica.h"
 #include <stdarg.h>
-
-typedef m_integer modelica_integer;
-
-typedef base_array_t integer_array_t;
 
 /* Indexing 1 dimensions */
 modelica_integer integer_get(integer_array_t *a, size_t i);

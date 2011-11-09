@@ -32,22 +32,13 @@
 #ifndef MODELICA_STRING_H_
 #define MODELICA_STRING_H_
 
-#include "real_array.h"
-#include "integer_array.h"
-#include "boolean_array.h"
+#include "openmodelica.h"
 
 #ifdef __OPENMODELICA__METAMODELICA
 /* When MetaModelica grammar is enabled, all strings are boxed */
-typedef modelica_metatype modelica_string_t;
-typedef const modelica_metatype modelica_string_const;
-typedef modelica_string_t modelica_string;
 #define stringCompare(x,y) mmc_stringCompare(x,y)
 #define stringEqual(x,y) (MMC_STRLEN(x) == MMC_STRLEN(y) && !stringCompare(x,y))
-
 #else
-typedef char* modelica_string_t;
-typedef const char* modelica_string_const;
-typedef modelica_string_const modelica_string;
 #define stringCompare(x,y) strcmp(x,y)
 #define stringEqual(x,y) (stringCompare(x,y)==0)
 

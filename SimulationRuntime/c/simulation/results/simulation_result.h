@@ -29,37 +29,40 @@
  *
  */
 
+/*
+ * File: simulation_runtime.h
+ *
+ * Description: This file is a C++ header file for the simulation runtime.
+ * It contains a prototype for the simulation result interface.
+ *
+ */
 
-#ifndef UTILITY_H
-#define UTILITY_H
+#ifndef _SIMULATION_RESULT_H
+#define _SIMULATION_RESULT_H
 
-#include "openmodelica.h"
+class SimulationResultBaseException {};
+class SimulationResultFileOpenException : SimulationResultBaseException {};
+class SimulationResultFileCloseException : SimulationResultBaseException {};
+class SimulationResultMallocException : SimulationResultBaseException {};
+class SimulationResultReallocException : SimulationResultBaseException {};
 
-int in_range_integer(modelica_integer i,
-         modelica_integer start,
-         modelica_integer stop);
+/*
+ * numpoints, maximum number of points that can be stored.
+ * nx number of states
+ * ny number of variables
+ * np number of parameters  (not used in this impl.)
+ */
+class simulation_result { 
+protected:
+  const char* filename;
+  const long numpoints;
+public:
 
-int in_range_real(modelica_real i,
-      modelica_real start,
-      modelica_real stop);
+  simulation_result(const char* filename, long numpoints) : filename(filename), numpoints(numpoints) {};
+  virtual ~simulation_result() {};
+  virtual void emit() =0;
+  virtual const char* result_type() = 0;
 
-/* div is already defined in stdlib, so it's redefined here to modelica_div */
-modelica_real modelica_div(modelica_real x, modelica_real y);
-/* fmod in math.h does not work in the same way as mod defined by modelica, so
- * we need to define our own mod. */
-modelica_real modelica_mod_real(modelica_real x, modelica_real y);
-modelica_integer modelica_mod_integer(modelica_integer x, modelica_integer y);
-
-modelica_real modelica_rem_real(modelica_real x, modelica_real y);
-modelica_integer modelica_rem_integer(modelica_integer x, modelica_integer y);
-
-modelica_integer modelica_integer_min(modelica_integer,modelica_integer);
-modelica_integer modelica_integer_max(modelica_integer,modelica_integer);
-
-#define reduction_sum(X,Y) ((X)+(Y))
-#define reduction_product(X,Y) ((X)*(Y))
-
-/* pow(), but for integer exponents (faster implementation) */
-modelica_real real_int_pow(modelica_real,modelica_integer);
+};
 
 #endif

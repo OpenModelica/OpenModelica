@@ -33,6 +33,7 @@
 #define MEMORY_POOL_H_
 
 #include <stdlib.h>
+#include "openmodelica.h"
 
 #define NR_REAL_ELEMENTS    1000000
 #define NR_INTEGER_ELEMENTS 1000000
@@ -41,24 +42,6 @@
 #define NR_SIZE_ELEMENTS    1000000
 #define NR_INDEX_ELEMENTS   1000000
 #define NR_CHAR_ELEMENTS    10000
-
-typedef double      m_real;
-typedef long        m_integer;
-typedef const char* m_string;
-typedef signed char m_boolean;
-typedef m_integer   _index_t;
-
-struct state_s {
-  _index_t real_buffer_ptr;
-  _index_t integer_buffer_ptr;
-  _index_t string_buffer_ptr;
-  _index_t boolean_buffer_ptr;
-  _index_t size_buffer_ptr;
-  _index_t index_buffer_ptr;
-  _index_t char_buffer_ptr;
-};
-
-typedef struct state_s state;
 
 state get_memory_state();
 void restore_memory_state(state restore_state);

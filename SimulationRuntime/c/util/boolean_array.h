@@ -32,16 +32,8 @@
 #ifndef BOOLEAN_ARRAY_H_
 #define BOOLEAN_ARRAY_H_
 
-#include "base_array.h"
-#include "integer_array.h"
-#include "index_spec.h"
-#include "memory_pool.h"
+#include "openmodelica.h"
 #include <stdarg.h>
-
-typedef signed char modelica_boolean;
-
-typedef base_array_t boolean_array_t;
-
 
 /* Indexing 1 dimensions */
 modelica_boolean boolean_get(boolean_array_t *a, size_t i);

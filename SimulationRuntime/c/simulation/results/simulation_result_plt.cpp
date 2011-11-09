@@ -46,7 +46,7 @@
 #include "simulation_runtime.h"
 #include <sstream>
 #include <time.h>
-#include "../Compiler/runtime/config.h"
+//#include "../Compiler/runtime/config.h"
 #include "rtclock.h"
 
 #ifdef CONFIG_WITH_SENDDATA

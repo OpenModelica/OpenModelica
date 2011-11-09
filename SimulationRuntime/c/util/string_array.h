@@ -32,13 +32,8 @@
 #ifndef STRING_ARRAY_H_
 #define STRING_ARRAY_H_
 
-#include "modelica_string.h"
-#include "base_array.h"
-#include "integer_array.h"
-#include "memory_pool.h"
 #include <stdarg.h>
-
-typedef base_array_t string_array_t;
+#include "openmodelica.h"
 
 /* Indexing */
 modelica_string_t string_get(string_array_t *a, size_t i);

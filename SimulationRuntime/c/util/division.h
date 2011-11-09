@@ -33,7 +33,7 @@
 #ifndef DIVISION_H
 #define DIVISION_H
 
-#include "modelica.h"
+#include "openmodelica.h"
 
 #define DIVISION(a,b,c) ((b != 0) ? a / b : a / division_error(b,c))
 

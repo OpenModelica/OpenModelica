@@ -33,7 +33,7 @@
 
 #include "simulation_init.h"
 #include "simulation_runtime.h"
-#include "solver_main.h"
+#include "openmodelica.h"
 #include <math.h>
 
 /*! \fn void leastSquare(long *nz, double *z, double *funcValue)

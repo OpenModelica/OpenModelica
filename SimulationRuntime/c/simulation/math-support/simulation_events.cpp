@@ -29,8 +29,7 @@
  */
 
 #include "simulation_events.h"
-#include "simulation_runtime.h"
-#include "simulation_result.h"
+#include "simulation_runtime.cpp"
 #include <math.h>
 #include <string.h> // for memset
 #include <stdio.h>
@@ -39,106 +38,9 @@
 
 using namespace std;
 
-// vectors with saved values used by pre(v)
-#define x_saved globalData->states_saved
-#define xd_saved globalData->statesDerivatives_saved
-#define y_saved globalData->algebraics_saved
-#define int_saved globalData->intVariables.algebraics_saved
-#define bool_saved globalData->boolVariables.algebraics_saved
-#define str_saved globalData->stringVariables.algebraics_saved
-#define h_saved globalData->helpVars_saved
-
-double* gout = 0;
-double* gout_old = 0;
-modelica_boolean* backuprelations = 0;
-long* zeroCrossingEnabled = 0;
-long inUpdate = 0;
-long inSample = 0;
-int dideventstep = 0;
-
 static list<long> EventQueue;
 static list<int> EventList;
 
-
-/* \brief allocate global data structures for event handling
- *
- * \return zero if successful.
- */
-int
-initializeEventData()
-{
-  /*
-   * Re-Initialization is important because the variables are global and used in every solving step
-   */
-  h_saved = 0;
-  x_saved = 0;
-  xd_saved = 0;
-  y_saved = 0;
-  int_saved = 0;
-  bool_saved = 0;
-
-  gout = 0;
-  gout_old = 0;
-  backuprelations = 0;
-  zeroCrossingEnabled = 0;
-  inUpdate = 0;
-  inSample = 0;
-
-  // load default initial values.
-  gout = new double[globalData->nZeroCrossing];
-  gout_old = new double[globalData->nZeroCrossing];
-  backuprelations = new modelica_boolean[globalData->nZeroCrossing];
-  h_saved = new double[globalData->nHelpVars];
-  x_saved = new double[globalData->nStates];
-  xd_saved = new double[globalData->nStates];
-  y_saved = new double[globalData->nAlgebraic];
-  int_saved = new modelica_integer[globalData->intVariables.nAlgebraic];
-  bool_saved = new modelica_boolean[globalData->boolVariables.nAlgebraic];
-  str_saved = new const char*[globalData->stringVariables.nAlgebraic];
-  zeroCrossingEnabled = new long[globalData->nZeroCrossing];
-  if (!y_saved || !gout || !gout_old || !backuprelations
-      || !h_saved || !x_saved || !xd_saved || !int_saved
-      || !bool_saved || !str_saved || !zeroCrossingEnabled)
-    {
-      cerr << "Could not allocate memory for global event data structures"
-          << endl;
-      return -1;
-    }
-  // adrpo 2006-11-30 -> init the damn structures!
-  memset(gout, 0, sizeof(double) * globalData->nZeroCrossing);
-  memset(gout_old, 0, sizeof(double) * globalData->nZeroCrossing);
-  memset(backuprelations, 0, sizeof(modelica_boolean) * globalData->nZeroCrossing);
-  memset(h_saved, 0, sizeof(double) * globalData->nHelpVars);
-  memset(x_saved, 0, sizeof(double) * globalData->nStates);
-  memset(xd_saved, 0, sizeof(double) * globalData->nStates);
-  memset(y_saved, 0, sizeof(double) * globalData->nAlgebraic);
-  memset(int_saved, 0, sizeof(modelica_integer)
-      * globalData->intVariables.nAlgebraic);
-  memset(bool_saved, 0, sizeof(modelica_boolean)
-      * globalData->boolVariables.nAlgebraic);
-  memset(str_saved, 0, sizeof(char*) * globalData->stringVariables.nAlgebraic);
-  memset(zeroCrossingEnabled, 0, sizeof(long) * globalData->nZeroCrossing);
-  return 0;
-}
-
-/* \brief deallocate global data for event handling.
- *
- */
-void
-deinitializeEventData()
-{
-  delete[] h_saved;
-  delete[] x_saved;
-  delete[] xd_saved;
-  delete[] y_saved;
-  delete[] int_saved;
-  delete[] bool_saved;
-  delete[] gout;
-  delete[] gout_old;
-  delete[] backuprelations;
-  delete[] zeroCrossingEnabled;
-  delete[] str_saved;
-}
 
 // relation functions used in zero crossing detection
 double

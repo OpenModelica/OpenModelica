@@ -38,12 +38,8 @@
 #ifndef _SIMULATION_RUNTIME_H
 #define _SIMULATION_RUNTIME_H
 
-#include "compat.h"
-#include "fortran_types.h"
+#include "openmodelica.h"
 #include "simulation_varinfo.h"
-#include "real_array.h"
-#include "integer_array.h"
-#include "boolean_array.h"
 #include "rtclock.h"
 #include <stdlib.h>
 #include "simulation_events.h"
@@ -88,7 +84,7 @@ extern simulation_result *sim_result;
 int callSolver(int, char**, string, string, string, double, double, double, long, double);
 
 #ifndef NO_INTERACTIVE_DEPENDENCY
-#include "interactive/socket.h"
+#include "../../../interactive/socket.h"
 extern Socket sim_communication_port;
 #endif
 
@@ -121,178 +117,6 @@ extern const int ERROR_NONLINSYS;
 extern const int ERROR_LINSYS;
 
 int useVerboseOutput(int level);
-
-typedef struct sim_DATA_REAL_ALIAS {
-  modelica_real* alias;
-  int negate;
-  int nameID;
-} DATA_REAL_ALIAS;
-
-typedef struct sim_DATA_INT_ALIAS {
-  modelica_integer* alias;
-  int negate;
-  int nameID;
-} DATA_INT_ALIAS;
-
-typedef struct sim_DATA_BOOL_ALIAS {
-  modelica_boolean* alias;
-  int negate;
-  int nameID;
-} DATA_BOOL_ALIAS;
-
-typedef struct sim_DATA_STRING_ALIAS {
-  char** alias;
-  int negate;
-  int nameID;
-} DATA_STRING_ALIAS;
-
-typedef struct sim_DATA_STRING {
-  const char** algebraics;
-  const char** parameters;
-  const char** inputVars;
-  const char** outputVars;
-  const char** algebraics_saved;
-  DATA_STRING_ALIAS* alias;
-
-  long nAlgebraic,nParameters;
-  long nInputVars,nOutputVars;
-  long nAlias;
-} DATA_STRING;
-
-typedef struct sim_DATA_INT {
-  modelica_integer* algebraics;
-  modelica_integer* parameters;
-  modelica_integer* inputVars;
-  modelica_integer* outputVars;
-  modelica_integer*  algebraics_old, *algebraics_old2, *algebraics_saved;
-  DATA_INT_ALIAS* alias;
-  modelica_boolean* algebraicsFilterOutput; /* True if this variable should be filtered */
-  modelica_boolean* aliasFilterOutput; /* True if this variable should be filtered */
-
-  long nAlgebraic,nParameters;
-  long nInputVars,nOutputVars;
-  long nAlias;
-} DATA_INT;
-
-typedef struct sim_DATA_BOOL {
-  modelica_boolean* algebraics;
-  modelica_boolean* parameters;
-  modelica_boolean* inputVars;
-  modelica_boolean* outputVars;
-  modelica_boolean* algebraics_old, *algebraics_old2, *algebraics_saved;
-  DATA_BOOL_ALIAS* alias;
-  modelica_boolean* algebraicsFilterOutput; /* True if this variable should be filtered */
-  modelica_boolean* aliasFilterOutput; /* True if this variable should be filtered */
-
-  long nAlgebraic,nParameters;
-  long nInputVars,nOutputVars;
-  long nAlias;
-} DATA_BOOL;
-
-typedef struct sample_raw_time_st {
-  double start;
-  double interval;
-  int zc_index;
-} sample_raw_time;
-
-typedef struct sample_time_st {
-  double events;
-  int zc_index;
-  int activated;
-} sample_time;
-
-typedef struct sim_DATA {
-  /* this is the data structure for saving important data for this simulation. */
-  /* Each generated function have a DATA* parameter wich contain the data. */
-  /* A object for the data can be created using */
-  /* initializeDataStruc() function*/
-  double* states;
-  double* statesDerivatives;
-  double* algebraics;
-  double* parameters;
-  double* inputVars;
-  double* outputVars;
-  double* helpVars, *helpVars_saved;
-  double* initialResiduals;
-  double* jacobianVars;
-
-  /* True if the variable should be filtered */
-  modelica_boolean* statesFilterOutput;
-  modelica_boolean* statesDerivativesFilterOutput;
-  modelica_boolean* algebraicsFilterOutput;
-  modelica_boolean* aliasFilterOutput;
-
-  /* Old values used for extrapolation */
-  double* states_old,*states_old2,*states_saved;
-  double* statesDerivatives_old,*statesDerivatives_old2,*statesDerivatives_saved;
-  double* algebraics_old,*algebraics_old2,*algebraics_saved;
-  double oldTime,oldTime2;
-  double current_stepsize;
-
-  /* Backup derivative for dassl */
-  double* statesDerivativesBackup;
-  double* statesBackup;
-
-  char* initFixed; /* Fixed attribute for all variables and parameters */
-  char* var_attr; /* Type attribute for all variables and parameters */
-  int init; /* =1 during initialization, 0 otherwise. */
-  int terminal; /* =1 at the end of the simulation, 0 otherwise. */
-  void** extObjs; /* External objects */
-  /* nStatesDerivatives == states */
-  fortran_integer nStates,nAlgebraic,nParameters;
-  long nInputVars,nOutputVars,nFunctions,nEquations,nProfileBlocks;
-  fortran_integer nZeroCrossing/*NG*/;
-  long nJacobianvars;
-  long nRelations/*NREL*/;
-  long nInitialResiduals/*NR*/;
-  long nHelpVars/* NHELP */;
-  /* extern char init_fixed[]; */
-  DATA_STRING stringVariables;
-  DATA_INT intVariables;
-  DATA_BOOL boolVariables;
-
-  DATA_REAL_ALIAS* realAlias;
-  long nAlias;
-
-  const char* modelName; /* For error messages */
-  const char* modelFilePrefix; /* For filenames, input/output */
-  const char* modelGUID; /* to check if the model_init.xml match the model */
-  const struct omc_varInfo* statesNames;
-  const struct omc_varInfo* stateDerivativesNames;
-  const struct omc_varInfo* algebraicsNames;
-  const struct omc_varInfo* parametersNames;
-  const struct omc_varInfo* alias_names;
-  const struct omc_varInfo* int_alg_names;
-  const struct omc_varInfo* int_param_names;
-  const struct omc_varInfo* int_alias_names;
-  const struct omc_varInfo* bool_alg_names;
-  const struct omc_varInfo* bool_param_names;
-  const struct omc_varInfo* bool_alias_names;
-  const struct omc_varInfo* string_alg_names;
-  const struct omc_varInfo* string_param_names;
-  const struct omc_varInfo* string_alias_names;
-  const struct omc_varInfo* inputNames;
-  const struct omc_varInfo* outputNames;
-  const struct omc_varInfo* jacobian_names;
-  const struct omc_functionInfo* functionNames;
-  const struct omc_equationInfo* equationInfo;
-  const int* equationInfo_reverse_prof_index;
-
-  double startTime; /* the start time of the simulation */
-  double timeValue; /* the time for the simulation */
-  /* used in some generated function */
-  /* this is not changed by initializeDataStruc */
-  double lastEmittedTime; /* The last time value that has been emitted. */
-  int forceEmit; /* when != 0 force emit, set e.g. by newTime for equidistant output signal. */
-
-  /* An array containing the initial data of samples used in the sim */
-  sample_raw_time* rawSampleExps;
-  long nRawSamples;
-  /* The queue of sample time events to be processed. */
-  sample_time* sampleTimes; /* Warning: Not implemented yet!? */
-  long curSampleTimeIx;
-  long nSampleTimes;
-} DATA;
 
 /* Global data */
 extern DATA *globalData;
@@ -335,6 +159,13 @@ void deInitializeDataStruc(DATA* data);
 void setLocalData(DATA* data);
 void init_Alias(DATA* data);
 
+
+int
+initializeEventData();
+void
+deinitializeEventData();
+
+
 /* defined in model code. Used to get name of variable by investigating its pointer in the state or alg vectors. */
 const char* getNameReal(double* ptr);
 const char* getNameInt(modelica_integer* ptr);
@@ -350,6 +181,10 @@ void restoreExtrapolationDataOld();
 int functionODE();          /* functionODE with respect to start-values */
 int functionAlgebraics();   /* functionAlgebraics with respect to start-values */
 int functionAliasEquations();
+
+/* function do an event update step */
+void
+update_DAEsystem();
 
 /* function for calculating state values on residual form */
 /*used in DDASRT fortran function*/

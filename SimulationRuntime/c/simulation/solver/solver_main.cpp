@@ -29,10 +29,8 @@
  */
 
 #include "solver_main.h"
-#include "simulation_input_xml.h"
-#include "simulation_init.h"
-#include "simulation_events.h"
 #include "simulation_result.h"
+#include "simulation_init.h"
 #include "simulation_runtime.h"
 #include "options.h"
 #include <math.h>
