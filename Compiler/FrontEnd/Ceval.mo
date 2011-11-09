@@ -5095,7 +5095,7 @@ algorithm
   end match;
 end cevalList;
 
-protected function cevalCref "function: cevalCref
+public function cevalCref "function: cevalCref
   Evaluates ComponentRef, i.e. variables, by
   looking up variables in the environment."
   input Env.Cache inCache;

@@ -6649,6 +6649,7 @@ template literalExpConstArrayVal(Exp lit)
   case ICONST(__) then integer
   case lit as BCONST(__) then if lit.bool then 1 else 0
   case RCONST(__) then real
+  case ENUM_LITERAL(__) then index
   case lit as SHARED_LITERAL(__) then '_OMC_LIT<%lit.index%>'
   else error(sourceInfo(), 'literalExpConstArrayVal failed: <%printExpStr(lit)%>') 
 end literalExpConstArrayVal;
