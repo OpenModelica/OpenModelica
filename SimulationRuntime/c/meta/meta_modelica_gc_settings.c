@@ -37,7 +37,8 @@
  *
  */
 
-#include "modelica.h"
+#include "openmodelica.h"
+#include "meta_modelica.h"
 
 mmc_GC_settings_type mmc_GC_settings_default = 
 {

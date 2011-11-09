@@ -41,7 +41,7 @@
 #ifndef META_MODELICA_GC_SETTINGS_H_
 #define META_MODELICA_GC_SETTINGS_H_
 
-#include "modelica.h"
+#include "openmodelica.h"
 
 #if defined(__cplusplus)
 extern "C" {

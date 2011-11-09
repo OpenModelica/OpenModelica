@@ -29,7 +29,8 @@
  *
  */
 
-#include "modelica.h"
+#include "openmodelica.h"
+#include "meta_modelica.h"
 
 /* make an empty stack */
 mmc_Stack_type* stack_create(size_t default_stack_size)

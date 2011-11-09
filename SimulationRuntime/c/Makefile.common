@@ -6,76 +6,49 @@ CPPFLAGS = -I. -Iinteractive/ -Imeta/ -I../
 FFLAGS  = -O -fexceptions
 # P.A: before, g77 had -O3 or -O2 but that caused a bug in DDASRT, giving infinite loop.
 
-LIBS = libsim.a libmath-support.a lib.a libutil.a libmeta.a libf2c.a libresult.a libModelicaExternalC.a 
+LIBS = libsim.a libsolver.a libmath-support.a libutil.a libmeta.a libf2c.a libresult.a libModelicaExternalC.a libsendData.a
 
-.PHONY : libsendData.a interactive/libinteractive.a ModelicaExternalC/libModelicaExternalC.a
+.PHONY : libsim.a libmath-support.a libsolver.a libutil.a libmeta.a libf2c.a libresult.a libModelicaExternalC.a libsendData.a clean
 
-all : install
+all : libSimulationRuntimeC.a
 
-simulation_result_plt.o : $(CONFIG_H)
 
-#recompile all if a header changes!
-$(SIM_OBJS) : $(HFILES)
-$(QSS_OBJS) : $(HFILES)
-
-# Commented out due to the script not running on all platform, and rarely changes
-#meta/meta_modelica_string_lit.h: meta/meta_modelica_gen_string_lit.sh
-#	sh $< h > $@.tmp
-#	mv $@.tmp $@
-#meta/meta_modelica_string_lit.c: meta/meta_modelica_gen_string_lit.sh
-#	sh $< > $@.tmp
-#	mv $@.tmp $@
-
-libSimulationRuntimeC.a : $(SIM_OBJS) $(HFILES)
-	$(AR) $@ $(SIM_OBJS)
+libSimulationRuntimeC.a : $(LIBS)
+	$(AR) $@ simulation/libsim.a simulation/math-support/libmath-support.a simulation/solver/libsolver.a simulation/results/libresult.a simulation/libf2c/libf2c.a util/libutil.a sendData/release/libsendData.a
 	ranlib $@
 
-libSimulationRuntimeQss.a : $(QSS_OBJS) $(HFILES)
-	$(AR) $@ $(QSS_OBJS)
-	ranlib $@	
+libmath-support.a: 
+	$(MAKE) -C simulation/math-support
 
-simulation_runtime_qss.o: simulation_runtime.cpp
-	$(CXX) $(CPPFLAGS) -c -o $@ simulation_runtime.cpp -D_OMC_QSS_LIB
+libsolver.a: 
+	$(MAKE) -C simulation/solver
 
-ModelicaExternalC/libModelicaExternalC.a: $(addprefix ModelicaExternalC/,ModelicaInternal.c ModelicaStrings.c ModelicaTablesImpl.c) $(HFILES)
-	$(MAKE) -C ModelicaExternalC -f $(EXTERNALCMAKEFILE)
+libresult.a: 
+	$(MAKE) -C simulation/results
 
-interactive/libinteractive.a : interactive/omi_Calculation.cpp interactive/omi_Control.cpp interactive/omi_ResultManager.cpp interactive/omi_ServiceInterface.cpp interactive/omi_Transfer.cpp interactive/socket.cpp interactive/thread.cpp
-	$(MAKE) -C interactive -f $(INTERACTIVEMAKEFILE)
+libf2c.a: 
+	$(MAKE) -C simulation/libf2c -f makefile.u
 
-libf2c/libf2c.a :
-	cd libf2c && $(MAKE) -f $(LIBF2CMAKEFILE)
-	ranlib $@
+libmeta.a: 
+	$(MAKE) -C meta
 
-meta/meta_modelica_catch.o : meta/meta_modelica_catch.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ -g $<
+libutil.a: 
+	$(MAKE) -C util
 
-# Requires IEEE floating-point precision
-simulation_input.o : simulation_input.cpp
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -mfpmath=sse -c -g $<
-simulation_events.o : simulation_events.cpp
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -mfpmath=sse -c -g $<
-
-install: libSimulationRuntimeC.a libSimulationRuntimeQss.a $(LIBF2C) interactive/libinteractive.a $(LIBSENDDATA) omdevinstall ModelicaExternalC/libModelicaExternalC.a
-	cp $(HFILES) $(builddir_inc)/
-	cp fmu_model_interface.c $(builddir_inc)/
-	cp $(LIBS) $(builddir_lib)/
-	test -z "$(LIBF2C)" || cp libf2c/libf2c.* $(builddir_lib)/
-	test -z "$(LIBSENDDATA)" || cp sendData/release/$(LIBSENDDATA) $(builddir_lib)/
-	cp interactive/libinteractive.a $(builddir_lib)/
-	@$(MAKE) -C java_interface -f $(JAVAMAKEFILE) && \
-	$(MAKE) -C java_interface -f $(JAVAMAKEFILE) install || \
-	$(MAKE) -C java_interface -f $(JAVAMAKEFILE) install-nomodelica
-
-clean :
-	test -z "$(LIBF2C)" || $(MAKE) -C libf2c -f $(LIBF2CMAKEFILE) clean
-	$(MAKE) -C java_interface -f $(JAVAMAKEFILE) clean
-	$(MAKE) -C interactive -f $(INTERACTIVEMAKEFILE) clean
-	$(MAKE) -C ModelicaExternalC -f $(EXTERNALCMAKEFILE) clean
-	rm -f libSimulationRuntimeC.a libSimulationRuntimeQss.a
-	rm -f $(OBJS) $(SIM_OBJS) $(QSS_OBJS)
-	cd sendData && rm -fr release debug *sendData*.o *sendData*.a
-	rm -rf sendData/release sendData/debug
-	rm -f sendData.o sendData.a sendData/sendDataHumbug.o sendData/releasesendData.o sendData/Makefile solver_qss/*.o
+libsim.a: 
+	$(MAKE) -C simulation 
 
 
+libModelicaExternalC.a: 
+	$(MAKE) -C ModelicaExternalC 
+
+clean:
+	$(MAKE) -C ModelicaExternalC clean
+	$(MAKE) -C simulation clean
+	$(MAKE) -C simulation/solver clean
+	$(MAKE) -C simulation/libf2c -f makefile.u clean
+	$(MAKE) -C simulation/math-support clean
+	$(MAKE) -C simulation/results clean
+	$(MAKE) -C meta clean
+	$(MAKE) -C util clean
+	

@@ -40,7 +40,7 @@
 #ifndef META_MODELICA_GC_ROOTS_H_
 #define META_MODELICA_GC_ROOTS_H_
 
-#include "modelica.h"
+#include "openmodelica.h"
 
 #if defined(__cplusplus)
 extern "C" {

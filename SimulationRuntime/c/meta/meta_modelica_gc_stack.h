@@ -32,7 +32,7 @@
 #ifndef META_MODELICA_GC_STACK_H_
 #define META_MODELICA_GC_STACK_H_
 
-#include "modelica.h"
+#include "openmodelica.h"
 
 #if defined(__cplusplus)
 extern "C" {

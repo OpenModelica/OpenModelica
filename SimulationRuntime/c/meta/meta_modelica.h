@@ -43,6 +43,7 @@
 #include "meta_modelica_string_lit.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <errno.h>
 

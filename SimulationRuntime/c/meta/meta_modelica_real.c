@@ -30,6 +30,7 @@
 
 #define __OPENMODELICA__METAMODELICA
 
+#include "meta_modelica.h"
 #include "meta_modelica_real.h"
 #include "meta_modelica_builtin.h"
 #include <limits.h>
@@ -45,8 +46,6 @@
 #define snprintf _snprintf
 #endif
 
-extern "C" {
-
 static const MMC_DEFSTRINGLIT(_OMC_LIT_NEG_INF,4,"-inf");
 static const MMC_DEFSTRINGLIT(_OMC_LIT_POS_INF,3,"inf");
 static const MMC_DEFSTRINGLIT(_OMC_LIT_NAN,3,"NaN");
@@ -60,7 +59,7 @@ modelica_string realString(modelica_real r)
    * Add safety margin in case some C runtime is trigger happy. */
   static char buffer[32];
   modelica_string res;
-  // fprintf(stderr, "\nrealString(%g)\n", r);
+  /* fprintf(stderr, "\nrealString(%g)\n", r); */
   if (isinf(r) && r < 0)
     res = MMC_REFSTRINGLIT(_OMC_LIT_NEG_INF);
   else if (isinf(r))
@@ -96,6 +95,4 @@ modelica_metatype boxptr_realMin(modelica_metatype a,modelica_metatype b)
 modelica_metatype boxptr_realMax(modelica_metatype a,modelica_metatype b)
 {
   return mmc_mk_rcon(fmax(mmc_unbox_real(a),mmc_unbox_real(b)));
-}
-
 }

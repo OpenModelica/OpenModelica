@@ -37,7 +37,8 @@
  *
  */
 
-#include "modelica.h"
+#include "openmodelica.h"
+#include "meta_modelica.h"
 
 /* create the statistics structure */
 mmc_GC_stats_type stats_create(void)

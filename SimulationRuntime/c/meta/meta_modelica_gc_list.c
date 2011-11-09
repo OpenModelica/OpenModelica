@@ -29,8 +29,8 @@
  *
  */
 
-#include "modelica.h"
-
+#include "openmodelica.h"
+#include "meta_modelica.h"
 
 /* make an empty list */
 mmc_GC_free_list_type* list_create(size_t default_free_slots_size)

@@ -29,7 +29,8 @@
  *
  */
 
-#include "modelica.h"
+#include "openmodelica.h"
+#include "meta_modelica.h"
 
 /* create the pages structure and allocate the default pages with default size */
 mmc_GC_pages_type pages_create(size_t default_pages_size, size_t default_page_size, size_t default_number_of_pages, size_t default_free_slots_size)

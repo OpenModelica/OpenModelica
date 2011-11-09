@@ -63,7 +63,7 @@
 #ifndef META_MODELICA_GC_H_
 #define META_MODELICA_GC_H_
 
-#include "modelica.h"
+#include "openmodelica.h"
 #include "meta_modelica_gc_settings.h"
 #include "meta_modelica_gc_stack.h"
 #include "meta_modelica_gc_list.h"

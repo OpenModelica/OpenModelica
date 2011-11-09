@@ -29,7 +29,8 @@
  *
  */
 
-#include "modelica.h"
+#include "openmodelica.h"
+#include "meta_modelica.h"
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>

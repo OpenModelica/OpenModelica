@@ -49,7 +49,7 @@ class QStringList;
 //Std headers
 #include <iostream>
 #include <cstdlib>
-#include "../simulation_varinfo.h"
+#include "../simulation/simulation_varinfo.h"
 
 class Connection
 {

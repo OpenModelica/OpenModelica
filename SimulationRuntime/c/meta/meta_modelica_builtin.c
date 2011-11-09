@@ -31,6 +31,7 @@
 #define __OPENMODELICA__METAMODELICA
 
 #include "meta_modelica_builtin.h"
+#include "meta_modelica.h"
 #include <limits.h>
 #include <assert.h>
 #include <time.h>

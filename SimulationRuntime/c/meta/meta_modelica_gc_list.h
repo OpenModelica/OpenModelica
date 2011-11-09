@@ -36,7 +36,7 @@
 extern "C" {
 #endif
 
-#include "modelica.h"
+#include "openmodelica.h"
 
 /*
  * 
