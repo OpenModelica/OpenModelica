@@ -58,6 +58,7 @@ private:
     delete buffer;
     buffer = nb;
     buf_size *= 2;
+	first_element = 0;
     // fprintf(stderr, "expanded to sz %d\n", buf_size);
   }
 
