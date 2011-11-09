@@ -314,7 +314,7 @@ public:
       // read whole line
       std::getline(fp,strLn);
       if (!fp)
-  throw ParsingError(filename,line,(size_t)(fp.tellg()-lnStart));
+        throw ParsingError(filename,line,(size_t)(fp.tellg()-lnStart));
       // check if we read header
       if (parseHead(strLn.data(),strLn.length(),tblName,_rows,_cols)) {
   // is table name the one we are looking for?
@@ -712,7 +712,7 @@ void InterpolationTable::checkValidityOfData() const
 {
   size_t maxSize = colWise ? cols : rows;
   for(size_t i = 1; i < maxSize; ++i)
-    if (getElt(i-1,0) >= getElt(i,0))
+    if (getElt(i-1,0) > getElt(i,0))
       throw CustomError("TimeTable: Column with time variable not monotonous: %g >= %g.", getElt(i-1,0),getElt(i,0));
 }
 
