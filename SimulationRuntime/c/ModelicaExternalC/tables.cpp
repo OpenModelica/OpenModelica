@@ -55,6 +55,24 @@
 
 namespace {
 
+/* \brief This class is used for throwing an exception when simulation code should be terminated.
+ * For instance, when a terminate call occurse or if an assert becomes active
+ */
+
+class TerminateSimulationException {
+public:
+  TerminateSimulationException(const std::string& msg) : currentTime(0.0), errorMessage(msg) {}
+  TerminateSimulationException(double time) : currentTime(time), errorMessage("") {}
+  TerminateSimulationException(double time, const std::string& msg) : currentTime(time), errorMessage(msg) {}
+  TerminateSimulationException() : currentTime(0.0) {}
+  virtual ~TerminateSimulationException() {}
+  const std::string& getMessage() const { return errorMessage; }
+  double getTime() const { return currentTime; }
+protected:
+  double currentTime;
+  std::string errorMessage;
+};
+
 // definition and implementation of some error classes
 class CustomError : public TerminateSimulationException
 {
