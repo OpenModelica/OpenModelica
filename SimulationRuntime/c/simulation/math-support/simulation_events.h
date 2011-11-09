@@ -85,6 +85,7 @@ double
 getNextSampleTimeFMU();
 
 extern long inUpdate;
+extern long inSample;
 static const int IterationMax = 200;
 
 #define ZEROCROSSING(ind,exp) { \

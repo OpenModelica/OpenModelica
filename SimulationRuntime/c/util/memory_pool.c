@@ -37,13 +37,6 @@
 /* 16 MB of data ought to be enough */
 #define NR_ELEMENTS    4*1024*1024
 
-struct one_state_s {
-  int **buffer;
-  int nbuffers;
-  state current_state;
-};
-
-typedef struct one_state_s one_state;
 
 one_state *current_states;
 

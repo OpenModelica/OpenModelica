@@ -28,6 +28,7 @@
  *
  */
 
+
 #include "simulation_runtime.h"
 #include "linearize.h"
 #include <iostream>
@@ -57,13 +58,13 @@ string array2string(double* array, int row, int col){
 }
 
 
-int linearize()
+int linearize(int nstates, int ninputs, int noutputs)
 {
 
     // init Matrix A
-    int size_A = globalData->nStates;
-    int size_Inputs = globalData->nInputVars;
-    int size_Outputs = globalData->nOutputVars;
+    int size_A = nstates;
+    int size_Inputs = ninputs;
+    int size_Outputs = noutputs;
     double* matrixA = new double[size_A*size_A];
     double* matrixB = new double[size_A*size_Inputs];
     double* matrixC = new double[size_Outputs*size_A];

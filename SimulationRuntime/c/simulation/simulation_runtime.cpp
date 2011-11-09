@@ -97,7 +97,7 @@ int modelErrorCode = 0; // set by model calculations. Can be transferred to num.
 
 const std::string *init_method = NULL; // method for  initialization.
 
-// this is the globalData that is used in all the functions
+/* this is the globalData that is used in all the functions */
 DATA *globalData = 0;
 
 // The simulation result
@@ -118,23 +118,6 @@ const int LOG_RES_INIT      = LOG_STATS|LOG_INIT;
 /* Flags for modelErrorCodes */
 extern const int ERROR_NONLINSYS = -1;
 extern const int ERROR_LINSYS = -2;
-
-// vectors with saved values used by pre(v)
-#define x_saved globalData->states_saved
-#define xd_saved globalData->statesDerivatives_saved
-#define y_saved globalData->algebraics_saved
-#define int_saved globalData->intVariables.algebraics_saved
-#define bool_saved globalData->boolVariables.algebraics_saved
-#define str_saved globalData->stringVariables.algebraics_saved
-#define h_saved globalData->helpVars_saved
-
-double* gout = 0;
-double* gout_old = 0;
-modelica_boolean* backuprelations = 0;
-long* zeroCrossingEnabled = 0;
-long inUpdate = 0;
-long inSample = 0;
-int dideventstep = 0;
 
 
 int
@@ -656,7 +639,7 @@ startNonInteractiveSimulation(int argc, char**argv)
 
   if (retVal == 0 && create_linearmodel) {
     rt_tick(SIM_TIMER_LINEARIZE);
-    retVal = linearize();
+    retVal = linearize(globalData->nStates, globalData->nInputVars, globalData->nOutputVars);
     rt_accumulate(SIM_TIMER_LINEARIZE);
     cout << "Linear model is created!" << endl;
   }
@@ -1016,6 +999,8 @@ DATA *initializeDataStruc2(DATA *returnData)
   return returnData;
 }
 
+
+
 /* \brief allocate global data structures for event handling
  *
  * \return zero if successful.
@@ -1026,12 +1011,12 @@ initializeEventData()
   /*
    * Re-Initialization is important because the variables are global and used in every solving step
    */
-  h_saved = 0;
-  x_saved = 0;
-  xd_saved = 0;
-  y_saved = 0;
-  int_saved = 0;
-  bool_saved = 0;
+  globalData->helpVars_saved = 0;
+  globalData->states_saved = 0;
+  globalData->statesDerivatives_saved = 0;
+  globalData->algebraics_saved = 0;
+  globalData->intVariables.algebraics_saved = 0;
+  globalData->boolVariables.algebraics_saved = 0;
 
   gout = 0;
   gout_old = 0;
@@ -1044,17 +1029,16 @@ initializeEventData()
   gout = new double[globalData->nZeroCrossing];
   gout_old = new double[globalData->nZeroCrossing];
   backuprelations = new modelica_boolean[globalData->nZeroCrossing];
-  h_saved = new double[globalData->nHelpVars];
-  x_saved = new double[globalData->nStates];
-  xd_saved = new double[globalData->nStates];
-  y_saved = new double[globalData->nAlgebraic];
-  int_saved = new modelica_integer[globalData->intVariables.nAlgebraic];
-  bool_saved = new modelica_boolean[globalData->boolVariables.nAlgebraic];
-  str_saved = new const char*[globalData->stringVariables.nAlgebraic];
+  globalData->helpVars_saved = new double[globalData->nHelpVars];
+  globalData->states_saved = new double[globalData->nStates];
+  globalData->statesDerivatives_saved = new double[globalData->nStates];
+  globalData->algebraics_saved = new double[globalData->nAlgebraic];
+  globalData->intVariables.algebraics_saved = new modelica_integer[globalData->intVariables.nAlgebraic];
+  globalData->boolVariables.algebraics_saved = new modelica_boolean[globalData->boolVariables.nAlgebraic];
   zeroCrossingEnabled = new long[globalData->nZeroCrossing];
-  if (!y_saved || !gout || !gout_old || !backuprelations
-      || !h_saved || !x_saved || !xd_saved || !int_saved
-      || !bool_saved || !str_saved || !zeroCrossingEnabled)
+  if (!globalData->algebraics_saved || !gout || !gout_old || !backuprelations
+      || !globalData->helpVars_saved || !globalData->states_saved || !globalData->statesDerivatives_saved || !globalData->intVariables.algebraics_saved
+      || !globalData->boolVariables.algebraics_saved || !zeroCrossingEnabled)
     {
       cerr << "Could not allocate memory for global event data structures"
           << endl;
@@ -1064,17 +1048,19 @@ initializeEventData()
   memset(gout, 0, sizeof(double) * globalData->nZeroCrossing);
   memset(gout_old, 0, sizeof(double) * globalData->nZeroCrossing);
   memset(backuprelations, 0, sizeof(modelica_boolean) * globalData->nZeroCrossing);
-  memset(h_saved, 0, sizeof(double) * globalData->nHelpVars);
-  memset(x_saved, 0, sizeof(double) * globalData->nStates);
-  memset(xd_saved, 0, sizeof(double) * globalData->nStates);
-  memset(y_saved, 0, sizeof(double) * globalData->nAlgebraic);
-  memset(int_saved, 0, sizeof(modelica_integer)
+  memset(globalData->helpVars_saved, 0, sizeof(double) * globalData->nHelpVars);
+  memset(globalData->states_saved, 0, sizeof(double) * globalData->nStates);
+  memset(globalData->statesDerivatives_saved, 0, sizeof(double) * globalData->nStates);
+  memset(globalData->algebraics_saved, 0, sizeof(double) * globalData->nAlgebraic);
+  memset(globalData->intVariables.algebraics_saved, 0, sizeof(modelica_integer)
       * globalData->intVariables.nAlgebraic);
-  memset(bool_saved, 0, sizeof(modelica_boolean)
+  memset(globalData->boolVariables.algebraics_saved, 0, sizeof(modelica_boolean)
       * globalData->boolVariables.nAlgebraic);
-  memset(str_saved, 0, sizeof(char*) * globalData->stringVariables.nAlgebraic);
   memset(zeroCrossingEnabled, 0, sizeof(long) * globalData->nZeroCrossing);
   return 0;
+
+
+
 }
 
 /* \brief deallocate global data for event handling.
@@ -1083,19 +1069,17 @@ initializeEventData()
 void
 deinitializeEventData()
 {
-  delete[] h_saved;
-  delete[] x_saved;
-  delete[] xd_saved;
-  delete[] y_saved;
-  delete[] int_saved;
-  delete[] bool_saved;
+  delete[] globalData->helpVars_saved;
+  delete[] globalData->states_saved;
+  delete[] globalData->statesDerivatives_saved;
+  delete[] globalData->algebraics_saved;
+  delete[] globalData->intVariables.algebraics_saved;
+  delete[] globalData->boolVariables.algebraics_saved;
   delete[] gout;
   delete[] gout_old;
   delete[] backuprelations;
   delete[] zeroCrossingEnabled;
-  delete[] str_saved;
 }
-
 
 /**
  * Initialization is the same for interactive or non-interactive simulation
@@ -1211,6 +1195,7 @@ int _main_SimulationRuntime(int argc, char**argv)
     retVal = startNonInteractiveSimulation(argc, argv);
   }
 
+  deinitializeEventData();
   deInitializeDataStruc2(globalData);
   free(globalData);
   fflush(NULL);

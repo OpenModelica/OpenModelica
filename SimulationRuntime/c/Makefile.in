@@ -4,10 +4,10 @@
 # If you need to add files, etc, you modify Makefile.common - a common file
 # for both UNIX/Linux and Windows platforms.
 
-top_builddir = ..
+top_builddir = ../..
 builddir_bin=$(top_builddir)/build/bin
-builddir_lib=$(top_builddir)/build/lib/omc
-builddir_inc=$(top_builddir)/build/include/omc
+builddir_lib=$(top_builddir)/build/lib/omc2
+builddir_inc=$(top_builddir)/build/include/omc2
 
 CC := @CC@
 CXX := @CXX@
@@ -29,6 +29,21 @@ include Makefile.common
 libsendData.a :
 	cd ./sendData && $(QMAKE) && $(MAKE) -f Makefile
 omdevinstall:
+
+
+install:
+	cp libSimulationCRuntime.a $(builddir_lib)
+	cp openmodelica.h $(builddir_inc)
+	cp meta/*.h $(builddir_inc)
+	cp util/*.h $(builddir_inc)
+	cp simulation/*.h $(builddir_inc)
+	cp simulation/math-support/*.h $(builddir_inc)
+	cp simulation/results/*.h $(builddir_inc)
+	cp simulation/solver/*.h $(builddir_inc)
+
+
+
+
 
 Makefile: Makefile.in
 	cd $(top_builddir); ./config.status

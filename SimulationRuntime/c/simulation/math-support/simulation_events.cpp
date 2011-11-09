@@ -28,8 +28,8 @@
  *
  */
 
+#include "simulation_runtime.h"
 #include "simulation_events.h"
-#include "simulation_runtime.cpp"
 #include <math.h>
 #include <string.h> // for memset
 #include <stdio.h>
@@ -40,6 +40,23 @@ using namespace std;
 
 static list<long> EventQueue;
 static list<int> EventList;
+
+// vectors with saved values used by pre(v)
+#define x_saved globalData->states_saved
+#define xd_saved globalData->statesDerivatives_saved
+#define y_saved globalData->algebraics_saved
+#define int_saved globalData->intVariables.algebraics_saved
+#define bool_saved globalData->boolVariables.algebraics_saved
+#define str_saved globalData->stringVariables.algebraics_saved
+#define h_saved globalData->helpVars_saved
+
+double* gout = 0;
+double* gout_old = 0;
+modelica_boolean* backuprelations = 0;
+long* zeroCrossingEnabled = 0;
+long inUpdate = 0;
+long inSample = 0;
+int dideventstep = 0;
 
 
 // relation functions used in zero crossing detection

@@ -1,4 +1,4 @@
-AR = ar -ru
+AR = ar
 ANSI= #-ansi
 CXXFLAGS := $(CFLAGS) -Wall $(ANSI) $(EXTRA_CFLAGS)
 CFLAGS := $(CFLAGS) -Wall $(ANSI) -pedantic $(EXTRA_CFLAGS)
@@ -8,14 +8,22 @@ FFLAGS  = -O -fexceptions
 
 LIBS = libsim.a libsolver.a libmath-support.a libutil.a libmeta.a libf2c.a libresult.a libModelicaExternalC.a libsendData.a
 
+LIBSPATH= simulation/libsim.a simulation/math-support/libmath-support.a simulation/solver/libsolver.a simulation/results/libresult.a meta/libmeta.a ModelicaExternalC/libModelicaExternalC.a simulation/libf2c/libf2c.a util/libutil.a sendData/release/libsendData.a
+
+
 .PHONY : libsim.a libmath-support.a libsolver.a libutil.a libmeta.a libf2c.a libresult.a libModelicaExternalC.a libsendData.a clean
 
-all : libSimulationRuntimeC.a
+all : libSimulationCRuntime.a libsim.a libsolver.a libmath-support.a libutil.a libmeta.a libf2c.a libresult.a libModelicaExternalC.a libsendData.a
 
 
-libSimulationRuntimeC.a : $(LIBS)
-	$(AR) $@ simulation/libsim.a simulation/math-support/libmath-support.a simulation/solver/libsolver.a simulation/results/libresult.a simulation/libf2c/libf2c.a util/libutil.a sendData/release/libsendData.a
+libSimulationCRuntime.a : $(LIBS) $(LIBSPATH)
+	$(AR) rsc $@ *.o
+	rm -f *.o
 	ranlib $@
+
+$(LIBSPATH): $(LIBS)
+	$(AR) -x $@
+		
 
 libmath-support.a: 
 	$(MAKE) -C simulation/math-support

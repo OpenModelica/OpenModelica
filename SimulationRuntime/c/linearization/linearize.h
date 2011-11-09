@@ -40,7 +40,7 @@
 
 using namespace std;
 
-int linearize();
+int linearize(int nstates, int ninputs, int noutputs);
 //int argc, char** argv, string method, double start,
 //double stop, double stepSize , long outputSteps, double tolerance);
 

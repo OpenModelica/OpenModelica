@@ -119,7 +119,7 @@ typedef modelica_string_const modelica_string;
 
 /* BEFORE: #include "memory_pool.h" */
 typedef double      m_real;
-typedef long        m_integer;
+typedef int        m_integer;
 typedef const char* m_string;
 typedef signed char m_boolean;
 typedef m_integer   _index_t;
@@ -130,6 +130,19 @@ struct state_s {
 };
 
 typedef struct state_s state;
+
+
+/* BEFORE: #include "memory_pool.c" */
+struct one_state_s {
+  int **buffer;
+  int nbuffers;
+  state current_state;
+};
+
+typedef struct one_state_s one_state;
+
+
+
 
 /* BEFORE: #include "index_spec.h" */
 /* This structure holds indexes when subscripting an array.
