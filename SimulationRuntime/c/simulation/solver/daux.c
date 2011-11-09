@@ -176,15 +176,14 @@ integer i1mach_(integer *i__)
     static integer sanity = 987;
     static struct {
   integer e_1[16];
-  } equiv_0 = { 5, 6, 7, 6, 32, 4, 2, 31, 2147483647, 2, 24, -125, 128, 
-    53, -1021, 1024 };
+  } equiv_0 = { 5, 6, 7, 6, 32, 4, 2, 31, 2147483647, 2, 24, -125, 128, 53, -1021, 1024 };
 
 
     /* Format strings */
     static char fmt_1999[] = "(\002 I1MACH - I OUT OF BOUNDS\002,i10)";
 
     /* System generated locals */
-    integer ret_val;
+    integer ret_val=0;
 
     /* Builtin functions */
     /* Subroutine */ int s_stop(char *, ftnlen);

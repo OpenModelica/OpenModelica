@@ -1126,7 +1126,7 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1,
       }
 
       if (sim_verbose >= LOG_SOLVER) {
-        fprintf(stdout, "| info LOG_SOLVER | value of idid: %i\n",
+        fprintf(stdout, "| info LOG_SOLVER | value of idid: %ld\n",
                 idid); fflush(NULL);
         fprintf(stdout, "| info LOG_SOLVER | current time value: %0.4g\n",
                 globalData->timeValue); fflush(NULL);
@@ -1136,15 +1136,15 @@ dasrt_step(double* step, double &start, double &stop, bool &trigger1,
                 rwork[2]); fflush(NULL);
         fprintf(stdout, "| info LOG_SOLVER | stepsize used on last successful step: %0.4g\n",
                 rwork[6]); fflush(NULL);
-        fprintf(stdout, "| info LOG_SOLVER | number of steps taken so far: %i\n",
+        fprintf(stdout, "| info LOG_SOLVER | number of steps taken so far: %ld\n",
                 iwork[10]); fflush(NULL);
-        fprintf(stdout, "| info LOG_SOLVER | number of calls of functionODE() : %i\n",
+        fprintf(stdout, "| info LOG_SOLVER | number of calls of functionODE() : %ld\n",
                 iwork[11]); fflush(NULL);
-        fprintf(stdout, "| info LOG_SOLVER | number of calculation of Jacobian : %i\n",
+        fprintf(stdout, "| info LOG_SOLVER | number of calculation of Jacobian : %ld\n",
                 iwork[12]); fflush(NULL);
-        fprintf(stdout, "| info LOG_SOLVER | total number of convergence test failures: %i\n",
+        fprintf(stdout, "| info LOG_SOLVER | total number of convergence test failures: %ld\n",
                 iwork[13]); fflush(NULL);
-        fprintf(stdout, "| info LOG_SOLVER | total number of error test failures: %i\n",
+        fprintf(stdout, "| info LOG_SOLVER | total number of error test failures: %ld\n",
                 iwork[14]); fflush(NULL);
       }
 
