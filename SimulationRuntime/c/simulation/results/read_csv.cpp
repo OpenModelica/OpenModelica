@@ -75,7 +75,7 @@ char** read_csv_variables(const char* filename)
   }
 
   char **res = (char**)malloc((1+variablesList.size())*sizeof(char));
-  for (int k = 0 ; k < variablesList.size(); k++)
+  for (unsigned int k = 0 ; k < variablesList.size(); k++)
   {
     res[k] = strdup(variablesList.at(k).c_str());
   }
