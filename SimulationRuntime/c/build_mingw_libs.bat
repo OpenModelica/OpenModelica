@@ -8,12 +8,12 @@ set OLDPATH=%PATH%
 pushd "%OMDEV%\tools\MinGW\bin"
 set PATH=%CD%;%OMDEV%\tools\msys\bin\
 popd
-del ..\mosh\src\options.o *.o *.a
-pushd ..\mosh\src
+del ..\..\mosh\src\options.o *.o *.a
+pushd ..\..\mosh\src
 g++ -O3 -c options.cpp
 popd
 mingw32-make -f Makefile.omdev.mingw
 pause
-del ..\mosh\src\options.o *.o
-del interactive\*.o
+rem del ..\..\mosh\src\options.o *.o
+rem del interactive\*.o
 set PATH=%OLDPATH%

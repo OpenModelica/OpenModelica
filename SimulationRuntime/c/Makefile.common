@@ -26,29 +26,29 @@ $(LIBSPATH): $(LIBS)
 		
 
 libmath-support.a: 
-	$(MAKE) -C simulation/math-support
+	$(MAKE) -C simulation/math-support -f $(LIBMAKEFILE}
 
 libsolver.a: 
-	$(MAKE) -C simulation/solver
+	$(MAKE) -C simulation/solver -f $(LIBMAKEFILE}
 
 libresult.a: 
-	$(MAKE) -C simulation/results
+	$(MAKE) -C simulation/results -f $(LIBMAKEFILE}
 
 libf2c.a: 
-	$(MAKE) -C simulation/libf2c -f makefile.u
+	$(MAKE) -C simulation/libf2c -f $(LIBMAKEFILE}
 
 libmeta.a: 
-	$(MAKE) -C meta
+	$(MAKE) -C meta -f $(LIBMAKEFILE}
 
 libutil.a: 
-	$(MAKE) -C util
+	$(MAKE) -C util -f $(LIBMAKEFILE}
 
 libsim.a: 
-	$(MAKE) -C simulation 
+	$(MAKE) -C simulation -f $(LIBMAKEFILE}
 
 
 libModelicaExternalC.a: 
-	$(MAKE) -C ModelicaExternalC 
+	$(MAKE) -C ModelicaExternalC -f $(LIBMAKEFILE}
 
 clean:
 	$(MAKE) -C ModelicaExternalC clean
