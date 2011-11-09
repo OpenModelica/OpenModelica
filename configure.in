@@ -553,6 +553,11 @@ OMOptim/build/OMOptim.config \
 testsuite/bootstrapping/LinkMain.makefile \
 c_runtime/libf2c/makefile.u \
 FMI/import/source/Makefile \
+SimulationRuntime/c/Makefile \
+SimulationRuntime/c/meta/Makefile \
+SimulationRuntime/c/util/Makefile \
+SimulationRuntime/c/ModelicaExternalC/Makefile \
+SimulationRuntime/c/simulation/libf2c/makefile.u
 "
 
 AC_CONFIG_COMMANDS([config.unix.h.fix],[./configure-post.sh $ac_cs_config])
