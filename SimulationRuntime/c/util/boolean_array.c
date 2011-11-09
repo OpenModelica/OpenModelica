@@ -31,6 +31,7 @@
 
 
 #include "boolean_array.h"
+#include "memory_pool.h"
 
 #include <stdio.h>
 #include <stdlib.h>

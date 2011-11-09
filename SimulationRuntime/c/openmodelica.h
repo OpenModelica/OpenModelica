@@ -125,13 +125,8 @@ typedef signed char m_boolean;
 typedef m_integer   _index_t;
 
 struct state_s {
-  _index_t real_buffer_ptr;
-  _index_t integer_buffer_ptr;
-  _index_t string_buffer_ptr;
-  _index_t boolean_buffer_ptr;
-  _index_t size_buffer_ptr;
-  _index_t index_buffer_ptr;
-  _index_t char_buffer_ptr;
+  _index_t buffer;
+  _index_t offset;
 };
 
 typedef struct state_s state;

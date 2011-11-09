@@ -57,14 +57,6 @@ extern "C" {
 #define DLLDirection DLLExport
 #endif
 
-typedef void* modelica_complex; /* currently only External objects are represented using modelica_complex.*/
-typedef void* modelica_metatype; /* MetaModelica extension, added by sjoelund */
-/* MetaModelica extension.
-We actually store function-pointers in lists, etc...
-So it needs to be void*. If we use a platform with different sizes of function-
-pointers, some changes need to be done to code generation */
-typedef void* modelica_fnptr;
-
 #if defined(__MINGW32__) || defined(_MSC_VER)
  #define WIN32_LEAN_AND_MEAN
 #if !defined(NOMINMAX)
