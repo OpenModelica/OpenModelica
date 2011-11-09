@@ -50,12 +50,12 @@ libModelicaExternalC.a:
 	$(MAKE) -C ModelicaExternalC -f ${LIBMAKEFILE}
 
 clean:
-	$(MAKE) -C ModelicaExternalC clean
-	$(MAKE) -C simulation clean
-	$(MAKE) -C simulation/solver clean
-	$(MAKE) -C simulation/libf2c -f makefile.u clean
-	$(MAKE) -C simulation/math-support clean
-	$(MAKE) -C simulation/results clean
-	$(MAKE) -C meta clean
-	$(MAKE) -C util clean
+	$(MAKE) -C ModelicaExternalC -f ${LIBMAKEFILE} clean
+	$(MAKE) -C simulation -f ${LIBMAKEFILE} clean
+	$(MAKE) -C simulation/solver -f ${LIBMAKEFILE} clean
+	$(MAKE) -C simulation/libf2c -f ${LIBMAKEFILE} clean
+	$(MAKE) -C simulation/math-support -f ${LIBMAKEFILE} clean
+	$(MAKE) -C simulation/results -f ${LIBMAKEFILE} clean
+	$(MAKE) -C meta -f ${LIBMAKEFILE} clean
+	$(MAKE) -C util -f ${LIBMAKEFILE} clean
 	
