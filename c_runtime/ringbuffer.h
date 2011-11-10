@@ -31,70 +31,37 @@
 #ifndef RINGBUFFER_H
 #define RINGBUFFER_H
 
-template<typename T>
-
 /*
  * This is an expanding ring buffer.
  * When it gets full, it doubles in size.
  * It's basically a queue which has get(ix) instead of get_first()/delete_first().
  */
 
-class ringbuffer { 
-private:
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-  T* buffer;
-  int first_element;
-  int num_element;
-  int buf_size;
+typedef struct RINGBUFFER
+{
+	void* buffer;
+	int item_size;
+	int first_element;
+	int num_element;
+	int buf_size;
+}RINGBUFFER;
 
-  T& fast_get(const int nIndex) {
-    return buffer[(first_element+nIndex)%buf_size];
-  }
+void allocRingBuffer(RINGBUFFER* rb, int sz, int item_size);
+void freeRingBuffer(RINGBUFFER* rb);
 
-  void expand_buffer() {
-    T* nb = new T[buf_size*2];
-    for (int i=0; i<num_element; i++)
-      nb[i] = fast_get(i);
-    delete buffer;
-    buffer = nb;
-    buf_size *= 2;
-	first_element = 0;
-    // fprintf(stderr, "expanded to sz %d\n", buf_size);
-  }
+void* getRingData(RINGBUFFER* rb, int nIndex);
 
-public:
-  ringbuffer(int sz) : first_element(0),num_element(0),buf_size(sz) {
-    buffer = new T[buf_size];
-  }
+void appendRingData(RINGBUFFER* rb, void* value);
+void dequeueNFirstRingDatas(RINGBUFFER* rb, int n);
 
-  ~ringbuffer() {}
+int ringBufferLength(RINGBUFFER* rb);
 
-  void append(T value) {
-    if (buf_size < num_element+1)
-      expand_buffer();
-    buffer[(first_element+num_element)%buf_size] = value;
-    ++num_element;
-  }
-
-  T& operator[] (const int nIndex) {
-    assert(nIndex < num_element);
-    return fast_get(nIndex);
-  }
-
-  void dequeue_n_first(const int n) {
-    assert(n <= num_element);
-    first_element = (first_element+n)%buf_size;
-    num_element -= n;
-  }
-
-  T& get(const int nIndex) {
-    assert(nIndex < num_element);
-    return fast_get(nIndex);
-  }
-
-  int length() {
-    return num_element;
-  }
-};
+#ifdef __cplusplus
+}
+#endif
 
 #endif
