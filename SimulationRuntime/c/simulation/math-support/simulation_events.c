@@ -32,6 +32,8 @@
 #include "simulation_events.h"
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 
 static List EventList;
@@ -52,6 +54,73 @@ long* zeroCrossingEnabled = 0;
 long inUpdate = 0;
 long inSample = 0;
 int dideventstep = 0;
+
+/* \brief allocate global data structures for event handling
+ *
+ * \return zero if successful.
+ */
+int
+initializeEventData()
+{
+  /*
+   * Re-Initialization is important because the variables are global and used in every solving step
+   */
+  globalData->helpVars_saved = 0;
+  globalData->states_saved = 0;
+  globalData->statesDerivatives_saved = 0;
+  globalData->algebraics_saved = 0;
+  globalData->intVariables.algebraics_saved = 0;
+  globalData->boolVariables.algebraics_saved = 0;
+
+  gout = 0;
+  gout_old = 0;
+  backuprelations = 0;
+  zeroCrossingEnabled = 0;
+  inUpdate = 0;
+  inSample = 0;
+
+  /* load default initial values. */
+  gout = (double*) calloc(globalData->nZeroCrossing,sizeof(double));
+  gout_old =  (double*) calloc(globalData->nZeroCrossing,sizeof(double));
+  backuprelations = (modelica_boolean*) calloc(globalData->nZeroCrossing,sizeof(modelica_boolean*));
+  globalData->helpVars_saved = (double*) calloc(globalData->nHelpVars,sizeof(double));
+  globalData->states_saved = (double*) calloc(globalData->nStates,sizeof(double));
+  globalData->statesDerivatives_saved = (double*) calloc(globalData->nStates,sizeof(double));
+  globalData->algebraics_saved = (double*) calloc(globalData->nAlgebraic,sizeof(double));
+  globalData->intVariables.algebraics_saved = (modelica_integer*) calloc(globalData->intVariables.nAlgebraic,sizeof(modelica_integer));
+  globalData->boolVariables.algebraics_saved = (modelica_boolean*) calloc(globalData->boolVariables.nAlgebraic,sizeof(modelica_boolean));
+  globalData->stringVariables.algebraics_saved = (const char**) calloc(globalData->stringVariables.nAlgebraic,sizeof(const char*));
+  zeroCrossingEnabled = (long*) calloc(globalData->nZeroCrossing,sizeof(long));
+  if (!globalData->algebraics_saved || !gout || !gout_old || !backuprelations
+      || !globalData->helpVars_saved || !globalData->states_saved || !globalData->statesDerivatives_saved || !globalData->intVariables.algebraics_saved
+      || !globalData->boolVariables.algebraics_saved || !globalData->stringVariables.algebraics_saved
+       || !zeroCrossingEnabled)
+    {
+      printf("Could not allocate memory for global event data structures\n");
+      return -1;
+    }
+  return 0;
+}
+
+/* \brief deallocate global data for event handling.
+ *
+ */
+void
+deinitializeEventData()
+{
+  free(globalData->helpVars_saved);
+  free(globalData->states_saved);
+  free(globalData->statesDerivatives_saved);
+  free(globalData->algebraics_saved);
+  free(globalData->intVariables.algebraics_saved);
+  free(globalData->boolVariables.algebraics_saved);
+  free(globalData->stringVariables.algebraics_saved);
+  free(gout);
+  free(gout_old);
+  free(backuprelations);
+  free(zeroCrossingEnabled);
+}
+
 
 
  /*relation functions used in zero crossing detection*/
@@ -248,7 +317,7 @@ initSample(double start, double stop)
   Samples = (sample_time*) calloc(max_events + 1, sizeof(sample_time));
   if (Samples == NULL) {
     fprintf(stdout, "| info LOG_EVENTS | Could not allocate Memory for initSample!\n");
-    assert(Sample);
+    /* assert(Sample); */
     /*throw TerminateSimulationException("| info LOG_EVENTS | Could not allocate Memory for initSample!");*/
   }
   for (i = 0; i < num_samples; i++)

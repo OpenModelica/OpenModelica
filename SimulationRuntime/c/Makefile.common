@@ -49,6 +49,25 @@ libsim.a:
 libModelicaExternalC.a: 
 	$(MAKE) -C ModelicaExternalC -f ${LIBMAKEFILE}
 
+install: libSimulationCRuntime.a omdevinstall
+	cp libSimulationCRuntime.a $(builddir_lib)
+	cp ./ModelicaExternalC/libModelicaExternalC.a $(builddir_lib)
+	cp ./ModelicaExternalC/ModelicaUtilities.h $(builddir_inc)
+	cp openmodelica.h $(builddir_inc)
+	cp openmodelica_func.h $(builddir_inc)
+	cp ../interactive/libinteractive.a $(builddir_lib)
+	cp meta/*.h $(builddir_inc)
+	cp util/*.h $(builddir_inc)
+	cp simulation/*.h $(builddir_inc)
+	cp simulation/math-support/*.h $(builddir_inc)
+	cp simulation/results/*.h $(builddir_inc)
+	cp simulation/solver/*.h $(builddir_inc)
+	test -z "$(LIBF2C)" || cp simulation/libf2c/libf2c.* $(builddir_lib)/
+	test -z "$(LIBSENDDATA)" || cp sendData/release/$(LIBSENDDATA) $(builddir_lib)/
+	@$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) && \
+	$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) install || \
+	$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) install-nomodelica	
+
 clean:
 	$(MAKE) -C ModelicaExternalC -f ${LIBMAKEFILE} clean
 	$(MAKE) -C simulation -f ${LIBMAKEFILE} clean

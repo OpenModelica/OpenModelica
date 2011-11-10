@@ -28,18 +28,18 @@ libsendData.a :
 omdevinstall:
 
 
-install: libSimulationCRuntime.a
-	cp libSimulationCRuntime.a $(builddir_lib)
-	cp ./ModelicaExternalC/libModelicaExternalC.a $(builddir_lib)
-	cp ./ModelicaExternalC/ModelicaUtilities.h $(builddir_inc)
-	cp openmodelica.h $(builddir_inc)
-	cp openmodelica_func.h $(builddir_inc)
-	cp meta/*.h $(builddir_inc)
-	cp util/*.h $(builddir_inc)
-	cp simulation/*.h $(builddir_inc)
-	cp simulation/math-support/*.h $(builddir_inc)
-	cp simulation/results/*.h $(builddir_inc)
-	cp simulation/solver/*.h $(builddir_inc)
+#install: libSimulationCRuntime.a
+#	cp libSimulationCRuntime.a $(builddir_lib)
+#	cp ./ModelicaExternalC/libModelicaExternalC.a $(builddir_lib)
+#	cp ./ModelicaExternalC/ModelicaUtilities.h $(builddir_inc)
+#	cp openmodelica.h $(builddir_inc)
+#	cp openmodelica_func.h $(builddir_inc)
+#	cp meta/*.h $(builddir_inc)
+#	cp util/*.h $(builddir_inc)
+#	cp simulation/*.h $(builddir_inc)
+#	cp simulation/math-support/*.h $(builddir_inc)
+#	cp simulation/results/*.h $(builddir_inc)
+#	cp simulation/solver/*.h $(builddir_inc)
 
 Makefile: Makefile.in
 	cd $(top_builddir); ./config.status

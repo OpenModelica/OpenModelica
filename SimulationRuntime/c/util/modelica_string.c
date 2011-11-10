@@ -170,6 +170,8 @@ modelica_string_const copy_modelica_string(modelica_string_const source)
 modelica_string_const cat_modelica_string(modelica_string_const s1, modelica_string_const s2)
 {
   char *dest;
+  printf("%s",s1);
+  printf("%s",s2);
   int len1 = modelica_string_length(s1);
   int len2 = modelica_string_length(s2);
   dest = alloc_modelica_string(len1+len2);

@@ -46,6 +46,12 @@
 extern "C" {
 #endif
 
+
+int
+initializeEventData();
+void
+deinitializeEventData();
+
 double
 BiSection(double*, double*, double*, double*, List);
 
@@ -84,7 +90,6 @@ double
 getNextSampleTimeFMU();
 
 extern long inUpdate;
-extern long inSample;
 static const int IterationMax = 200;
 
 #define ZEROCROSSING(ind,exp) { \
