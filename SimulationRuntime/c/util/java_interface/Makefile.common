@@ -116,8 +116,8 @@ clean:
 	$(antlr_compile) $<
 
 install-nomodelica:
-	cp $(antlr) $(ptplot) ../../build/share/omc/java
-	cp $(licenses) ../../build/share/doc/omc
+	cp $(antlr) $(ptplot) ../../../../build/share/omc/java
+	cp $(licenses) ../../../../build/share/doc/omc
 install: install-nomodelica
-	cp modelica_java.jar ../../build/share/omc/java
+	cp modelica_java.jar ../../../../build/share/omc/java
 
