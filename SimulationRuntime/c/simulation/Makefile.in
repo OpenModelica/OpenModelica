@@ -24,7 +24,7 @@ options.h \
 
 LIBS = libsim.a
 
-.PHONY : libsim.a clear
+.PHONY : libsim.a clean
 
 all : libsim.a
 

@@ -36,7 +36,7 @@ meta_modelica_gc_settings.h
 
 LIBS = libmeta.a
 
-.PHONY : libmeta.a clear
+.PHONY : libmeta.a clean
 
 all : libmeta.a
 

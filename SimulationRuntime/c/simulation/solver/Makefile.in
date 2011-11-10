@@ -19,7 +19,7 @@ solver_main.h \
 
 LIBS = libsolver.a
 
-.PHONY : libsolver.a clear
+.PHONY : libsolver.a clean
 
 all : libsolver.a
 
