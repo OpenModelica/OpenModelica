@@ -35,7 +35,6 @@
 #define _SIMULATION_INIT_H
 
 #ifdef __cplusplus
-#include <string>
 #include <cstdlib>
 
 extern "C"{

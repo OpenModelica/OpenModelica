@@ -92,7 +92,7 @@ MACRO(BUILDMODEL model dir Flags CSRC)
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
 
   ADD_EXECUTABLE(${model} ${OMC_OUTPUT} ${CSRC})
-  TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c meta sendData ModelicaExternalC libexpat)
+  TARGET_LINK_LIBRARIES(${model} simulation sim c_runtime f2c meta sendData ModelicaExternalC libexpat)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
@@ -153,7 +153,7 @@ MACRO(BUILDMODELMOS model mos Flags CSRC)
  
   ADD_DEFINITIONS(/TP ${model}.c)
   ADD_EXECUTABLE(${model} ${OMC_OUTPUT} ${CSRC})
-  TARGET_LINK_LIBRARIES(${model} util math-support results solver f2c meta sendData ModelicaExternalC libexpat)
+  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta sendData ModelicaExternalC libexpat)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)

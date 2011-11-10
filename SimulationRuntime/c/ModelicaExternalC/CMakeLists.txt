@@ -1,12 +1,12 @@
 # Sources and Headers
 set(ModelicaExternalC_sources ModelicaInternal.c
                               ModelicaStrings.c 
-							  ModelicaTablesImpl.c)
-#							  tables.cpp
+							  ModelicaTablesImpl.c
+							  tables.cpp)
 #							  ModelicaUtilities.c)
 
-SET(ModelicaExternalC_headers ModelicaTables.h)
-#                              tables.h
+SET(ModelicaExternalC_headers ModelicaTables.h
+                              tables.h)
 #							  ModelicaUtilities.h) 
 
 # Library ModelicaExternalC

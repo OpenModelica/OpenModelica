@@ -12,7 +12,7 @@ del ..\..\mosh\src\options.o *.o *.a
 pushd ..\..\mosh\src
 g++ -O3 -c options.cpp
 popd
-mingw32-make -f Makefile.omdev.mingw
+mingw32-make -f Makefile.omdev.mingw %1
 pause
 rem del ..\..\mosh\src\options.o *.o
 rem del interactive\*.o

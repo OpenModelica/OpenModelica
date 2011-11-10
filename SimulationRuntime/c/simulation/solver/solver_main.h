@@ -41,7 +41,8 @@
 #define _SOLVER_MAIN_H
 #define DDASRT ddasrt_
 
-#include "fortran_types.h"
+#include "openmodelica.h"
+
 #ifdef __cplusplus
 extern "C" {
   void  DDASRT(
@@ -68,7 +69,7 @@ extern "C" {
   );
 
   double dlamch_(char*,int);
-} // extern "C"
+} /* extern "C"*/
 
 int solver_main( int argc, char** argv,double &start,  double &stop, double &step, long &outputSteps,
     double &tolerance, int flag);
@@ -78,7 +79,7 @@ extern "C" {
 #endif
 void update_DAEsystem();
 #ifdef __cplusplus
-}
+} /* extern "C"*/
 #endif
 
 #endif
