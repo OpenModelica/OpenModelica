@@ -29,7 +29,7 @@
  *
  */
 
-/* File: modelica.h
+/* File: openmodelica.h
  * Description: This is the C header file for the C code generated from
  * Modelica. It includes e.g. the C object representation of the builtin types
  * and arrays, etc.
@@ -189,6 +189,14 @@ typedef base_array_t real_array_t;
 /* BEFORE: #include "integer_array.h" */
 typedef m_integer modelica_integer;
 typedef base_array_t integer_array_t;
+
+
+/* BEFORE: #include "modelica.h" */
+typedef real_array_t real_array;
+typedef integer_array_t integer_array;
+typedef boolean_array_t boolean_array;
+typedef string_array_t string_array;
+
 
 /* BEFORE: fortran_types */
 #if defined(__alpha__) || defined(__sparc64__) || defined(__x86_64__) || defined(__ia64__)
