@@ -39,9 +39,9 @@
 
 struct base_array_s
 {
-  int ndims;
-  _index_t *dim_size;
-  void *data;
+  int ndims /* the number of dimensions */;
+  _index_t *dim_size /* the size of each dimension */;
+  void *data /* the array data */;
 };
 
 typedef struct base_array_s base_array_t;
