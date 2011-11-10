@@ -149,7 +149,7 @@ void createProducerAndConsumer() {
        {
               for(int i = 0; i < NUMBER_PRODUCER; ++i)
               {
-                     producerThreads[i].Create(threadSimulationCalculation);       
+                     producerThreads[i].Create(threadSimulationCalculation);
               }       
 
               for(int i = 0; i < NUMBER_CONSUMER; ++i)
