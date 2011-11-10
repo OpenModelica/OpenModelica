@@ -34,23 +34,22 @@
 #include "assert.h"
 #include <stdio.h>
 
-
 double tStart = 0;
 
 typedef struct _TimeAndValue
 {
     double time;
     double value;
-} t_TimeAndValue;
+}t_TimeAndValue;
 
 typedef struct _ExpressionDelayBuffer
 {
     long currentIndex;
     long maxExpressionBuffer;
     t_TimeAndValue *expressionDelayBuffer;
-} t_ExpressionDelayBuffer;
+}t_ExpressionDelayBuffer;
 
- /*the delayStructure looks like a matrix (rows = expressionNumber+currentColumnIndex, columns={time, value})*/
+/* the delayStructure looks like a matrix (rows = expressionNumber+currentColumnIndex, columns={time, value}) */
 RINGBUFFER **delayStructure;
 
 extern const int numDelayExpressionIndex;
@@ -59,11 +58,11 @@ void initDelay(double startTime)
 {
     int i;
 
-    /* get the start time of the simulation: time.start.*/
+    /* get the start time of the simulation: time.start. */
     tStart = startTime;
 
-    /* allocate the memory for rows*/
-    delayStructure = (RINGBUFFER**) calloc(numDelayExpressionIndex,sizeof( RINGBUFFER));
+    /* allocate the memory for rows */
+    delayStructure = (RINGBUFFER**)calloc(numDelayExpressionIndex, sizeof(RINGBUFFER*));
     assert(delayStructure);
 
     for(i=0; i<numDelayExpressionIndex; i++)
@@ -93,11 +92,11 @@ void deinitDelay()
 }
 
 /*
-* Find row with greatest time that is smaller than or equal to 'time'
-* Conditions:
-*  the buffer in 'delayStruct' is not empty
-*  'time' is smaller than the last entry in 'delayStruct'
-*/
+ * Find row with greatest time that is smaller than or equal to 'time'
+ * Conditions:
+ *  the buffer in 'delayStruct' is not empty
+ *  'time' is smaller than the last entry in 'delayStruct'
+ */
 static int findTime(double time, RINGBUFFER delayStruct)
 {
     int start = 0;
@@ -122,20 +121,20 @@ void storeDelayedExpression(int exprNumber, double exprValue)
 
     if(exprNumber < 0)
     {
-        /* fprintf(stderr, "storeDelayedExpression: Invalid expression number %d.\n", exprNumber);*/
+        /* fprintf(stderr, "storeDelayedExpression: Invalid expression number %d.\n", exprNumber); */
         return;
     }
 
 
     if(time < tStart)
     {
-        /* fprintf(stderr, "storeDelayedExpression: Time is smaller than starting time. Value ignored.\n");*/
+        /* fprintf(stderr, "storeDelayedExpression: Time is smaller than starting time. Value ignored.\n"); */
         return;
     }
 
-    /* fprintf(stderr, "storeDelayed[%d] %g:%g\n", exprNumber, time, exprValue);*/
+    /* fprintf(stderr, "storeDelayed[%d] %g:%g\n", exprNumber, time, exprValue); */
 
-    /* Allocate more space for expressions*/
+    /* Allocate more space for expressions */
     assert(exprNumber < numDelayExpressionIndex);
 
     tpl.time = time;
@@ -150,13 +149,13 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
 
     /* fprintf(stderr, "delayImpl: exprNumber = %d, exprValue = %lf, time = %lf, delayTime = %lf\n", exprNumber, exprValue, time, delayTime); */
 
-    /* Check for errors*/
+    /* Check for errors */
     assert(0 <= exprNumber);
     assert(exprNumber < numDelayExpressionIndex);
 
     if(time <= tStart)
     {
-        /* fprintf(stderr, "delayImpl: Entered at time < starting time: %g.\n", exprValue);*/
+        /* fprintf(stderr, "delayImpl: Entered at time < starting time: %g.\n", exprValue); */
         return exprValue;
     }
 
