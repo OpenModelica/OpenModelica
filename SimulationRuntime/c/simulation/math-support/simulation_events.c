@@ -317,7 +317,7 @@ initSample(double start, double stop)
   Samples = (sample_time*) calloc(max_events + 1, sizeof(sample_time));
   if (Samples == NULL) {
     fprintf(stdout, "| info LOG_EVENTS | Could not allocate Memory for initSample!\n");
-    /* assert(Sample); */
+    EXIT(1);
     /*throw TerminateSimulationException("| info LOG_EVENTS | Could not allocate Memory for initSample!");*/
   }
   for (i = 0; i < num_samples; i++)
@@ -470,14 +470,14 @@ checkTermination()
       else
         {
           fprintf(stdout, "| model error | Simulation call assert() at time %f\nLevel : error\nMessage : %s",globalData->timeValue,TermMsg);
-          assert(0);
+          EXIT(1);
           /*throw TerminateSimulationException(globalData->timeValue);*/
         }
     }
   if (terminationTerminate)
     {
       fprintf(stdout, "| model terminate | Simulation call terminate() at time %f\nMessage : %s",globalData->timeValue,TermMsg);
-      assert(0);
+      EXIT(1);
       /*throw TerminateSimulationException(globalData->timeValue);*/
     }
 }
@@ -792,7 +792,7 @@ EventHandle(int flag)
             {
               /*break; */
               fprintf(stdout, "ERROR: Too many Iteration. System is not consistent!\n");  fflush(NULL);
-              assert(0);
+              EXIT(1);
               /*throw TerminateSimulationException(
                   globalData->timeValue,
                   string(
@@ -839,7 +839,7 @@ EventHandle(int flag)
           if (IterationNum > IterationMax)
             {
               fprintf(stdout,  "ERROR: Too many Iteration. System is not consistent!\n");  fflush(NULL);
-              assert(0);
+              EXIT(1);
               /*throw TerminateSimulationException(globalData->timeValue, string(
                   "ERROR: Too many Iteration. System is not consistent!\n"));*/
             }
@@ -876,13 +876,13 @@ EventHandle(int flag)
           functionDAE(&needToIterate);
           if (sim_verbose >= LOG_EVENTS)
             {
-              /*if (sim_result) sim_result->emit();*/
+              sim_result_emit();
             }
           IterationNum++;
           if (IterationNum > IterationMax)
             {
                 fprintf(stdout, "ERROR: Too many Iteration. System is not consistent!\n");  fflush(NULL);
-                assert(0);
+                EXIT(1);
              /* throw TerminateSimulationException(globalData->timeValue, string(
                   "ERROR: Too many Iteration. System is not consistent!\n"));*/
             }

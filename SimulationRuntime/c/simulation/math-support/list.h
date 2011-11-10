@@ -52,6 +52,8 @@ typedef struct list_list {
     struct list_node *last;
 } List;
 
+#define EMPTYLIST {0,0}
+
 void list_push_front(int data, List *list);
 
 void list_push_back(int data, List *list);
