@@ -726,9 +726,16 @@ const double& InterpolationTable::getElt(size_t row, size_t col) const
 void InterpolationTable::checkValidityOfData() const
 {
   size_t maxSize = colWise ? cols : rows;
+  double eBefore, eCurrent;
   for(size_t i = 1; i < maxSize; ++i)
-    if (getElt(i-1,0) >= getElt(i,0))
+  {
+    eBefore = getElt(i-1,0);
+    eCurrent = getElt(i,0);
+    if (eBefore > eCurrent)
       throw CustomError("TimeTable: Column with time variable not monotonous: %g >= %g.", getElt(i-1,0),getElt(i,0));
+    if (eBefore == eCurrent) // TODO! change it to a ModelicaMessage
+      fprintf(stderr, "ModelicaTables warning: time values not strictly monotonous: table[%d] = table[%d] = %g\n", i, i+1, eBefore);
+  }
 }
 
 
