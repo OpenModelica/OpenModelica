@@ -31,7 +31,7 @@
 #include "simulation_runtime.h"
 #include "simulation_events.h"
 #include <math.h>
-#include <string.h> // for memset
+#include <string.h> /*  for memset*/
 #include <stdio.h>
 #include <list>
 #include <cfloat>
@@ -41,7 +41,7 @@ using namespace std;
 static list<long> EventQueue;
 static list<int> EventList;
 
-// vectors with saved values used by pre(v)
+ /*vectors with saved values used by pre(v)*/
 #define x_saved globalData->states_saved
 #define xd_saved globalData->statesDerivatives_saved
 #define y_saved globalData->algebraics_saved
@@ -59,7 +59,7 @@ long inSample = 0;
 int dideventstep = 0;
 
 
-// relation functions used in zero crossing detection
+ /*relation functions used in zero crossing detection*/
 double
 Less(double a, double b)
 {
@@ -104,9 +104,9 @@ Sample(double t, double start, double interval)
 double
 sample(double start, double interval, int hindex)
 {
-  // double sloop = 4.0/interval;
-  // adrpo: if we test for inSample == 0 no event is generated when start + 0*interval!
-  // if (inSample == 0) return 0;
+  /* double sloop = 4.0/interval;
+     adrpo: if we test for inSample == 0 no event is generated when start + 0*interval!
+     if (inSample == 0) return 0; */
   double tmp = ((globalData->timeValue - start) / interval);
   tmp = 1;
   int tmpindex = globalData->curSampleTimeIx;
@@ -214,7 +214,7 @@ unique(void *base, size_t nmemb, size_t size, int
           a = b;
           c = ((char*) base) + (i - nuniq) * size;
           if (b != c)
-            memcpy(c, b, size); // Happens when nuniq==0
+            memcpy(c, b, size); /* Happens when nuniq==0*/
         }
     }
   return nmemb - nuniq;
@@ -231,7 +231,7 @@ initSample(double start, double stop)
    * The only problem is our backend does not generate this array.
    * Sample() and sample() also need to be changed, but this should be easy to fix. */
   int i;
-  //double stop = 1.0;
+  /*double stop = 1.0;*/
   double d;
   sample_time* Samples = NULL;
   int num_samples = globalData->nRawSamples;
@@ -271,7 +271,7 @@ initSample(double start, double stop)
           }
         }
     }
-  // Sort, filter out unique values
+   /*Sort, filter out unique values*/
   qsort(Samples, max_events, sizeof(sample_time), compSample);
   nuniq = unique(Samples, max_events, sizeof(sample_time), compSampleZC);
   if (sim_verbose  >= LOG_EVENTS)
@@ -387,7 +387,7 @@ checkTermination()
   if (terminationAssert)
     {
       if (warningLevelAssert)
-        { // terminated from assert, etc.
+        { /* terminated from assert, etc.*/
           fprintf(stdout, "| model warning | Simulation call assert() at time %f\nLevel : warning\nMessage : %s",globalData->timeValue,TermMsg.c_str());
         }
       else
@@ -552,11 +552,11 @@ deactivateSampleEventsandEquations()
   function_updateSample();
 }
 
-//
-// This function checks for Events in Interval=[oldTime,timeValue]
-// If a ZeroCrossing Function cause a sign change, root finding
-// process will start
-//
+/*
+   This function checks for Events in Interval=[oldTime,timeValue]
+   If a ZeroCrossing Function cause a sign change, root finding
+   process will start
+*/
 int
 CheckForNewEvent(int* sampleactived)
 {
@@ -612,7 +612,7 @@ CheckForNewEvent(int* sampleactived)
 
       double EventTime = 0;
       FindRoot(&EventTime);
-      //Handle event as state event
+      /*Handle event as state event*/
       EventHandle(0);
 
       if (sim_verbose >= LOG_EVENTS)
@@ -625,12 +625,13 @@ CheckForNewEvent(int* sampleactived)
   return 0;
 }
 
-//
-// This function handle events and change all
-// needed variables for an event
-// parameter flag - Indicate the kind of event
-//    = 0 state event
-//    = 1 sample event
+/*
+  This function handle events and change all
+  needed variables for an event
+  parameter flag - Indicate the kind of event
+     = 0 state event
+     = 1 sample event
+*/
 int
 EventHandle(int flag)
 {
@@ -670,8 +671,8 @@ EventHandle(int flag)
           fprintf(stdout, "\n"); fflush(NULL);
       }
 
-      //debugPrintHelpVars();
-      //determined complete system
+      /*debugPrintHelpVars(); */
+      /*determined complete system */
       int needToIterate = 0;
       int IterationNum = 0;
       functionDAE(&needToIterate);
@@ -706,7 +707,7 @@ EventHandle(int flag)
           IterationNum++;
           if (IterationNum > IterationMax)
             {
-              //break;
+              /*break; */
               throw TerminateSimulationException(
                   globalData->timeValue,
                   string(
@@ -715,7 +716,7 @@ EventHandle(int flag)
 
         }
     }
-  // sample event handling
+  /* sample event handling */
   else if (flag == 1)
     {
       if (sim_verbose >= LOG_EVENTS)
@@ -723,7 +724,7 @@ EventHandle(int flag)
           fprintf(stdout, "| info LOG_EVENTS | Event Handling for Sample : %f!\n",globalData->timeValue); fflush(NULL);
         }
       if (sim_result) sim_result->emit();
-      //evaluate and emit results before sample events are activated
+      /*evaluate and emit results before sample events are activated */
       int needToIterate = 0;
       int IterationNum = 0;
       functionDAE(&needToIterate);
@@ -760,7 +761,7 @@ EventHandle(int flag)
       saveall();
       if (sim_result) sim_result->emit();
 
-      //Activate sample and evaluate again
+      /*Activate sample and evaluate again */
       activateSampleEvents();
 
       functionDAE(&needToIterate);
@@ -809,10 +810,10 @@ EventHandle(int flag)
   return 0;
 }
 
-//
-// This function perform a root finding for
-// Intervall=[oldTime,timeValue]
-//
+/*
+  This function perform a root finding for
+  Intervall=[oldTime,timeValue]
+*/
 void
 FindRoot(double *EventTime)
 {
@@ -834,14 +835,14 @@ FindRoot(double *EventTime)
   double time_left = globalData->oldTime;
   double time_right = globalData->timeValue;
 
-  //write states to work arrays
+  /*write states to work arrays*/
   for (int i = 0; i < globalData->nStates; i++)
     {
       states_left[i] = globalData->states_old[i];
       states_right[i] = globalData->states[i];
     }
 
-  // Search for event time and event_id with Bisection method
+  /* Search for event time and event_id with Bisection method */
   *EventTime = BiSection(&time_left, &time_right, states_left, states_right,
       &tmpEventList);
 
@@ -915,20 +916,20 @@ FindRoot(double *EventTime)
       fprintf(stdout, "| info LOG_EVENTS | at time: %g \nTime at Point left: %g\nTime at Point right: %g\n",*EventTime,time_left,time_right); fflush(NULL);
     }
 
-  //determined system at t_e - epsilon
+  /*determined system at t_e - epsilon */
   globalData->timeValue = time_left;
   for (int i = 0; i < globalData->nStates; i++)
     {
       globalData->states[i] = states_left[i];
     }
-  //determined continuous system
+  /*determined continuous system */
   functionODE();
   functionAlgebraics();
   function_storeDelayed();
   saveall();
   if (sim_result) sim_result->emit();
 
-  //determined system at t_e + epsilon
+  /*determined system at t_e + epsilon */
   globalData->timeValue = time_right;
   for (int i = 0; i < globalData->nStates; i++)
     {
@@ -940,15 +941,15 @@ FindRoot(double *EventTime)
 
 }
 
-//
-// Method to find root in Intervall[oldTime,timeValue]
-//
+/*
+  Method to find root in Intervall[oldTime,timeValue]
+*/
 double
 BiSection(double* a, double* b, double* states_a, double* states_b,
     list<int> *tmpEventList)
 {
 
-  //double TTOL =  DBL_EPSILON*fabs((*b - *a))*100;
+  /*double TTOL =  DBL_EPSILON*fabs((*b - *a))*100; */
   double TTOL = 1e-9;
   double c;
   int right = 0;
@@ -971,23 +972,23 @@ BiSection(double* a, double* b, double* states_a, double* states_b,
       c = (*a + *b) / 2.0;
       globalData->timeValue = c;
 
-      //if (sim_verbose >= LOG_ZEROCROSSINGS){
-      //  cout << "Split interval at point : " << c << endl;
-      //}
+      /*if (sim_verbose >= LOG_ZEROCROSSINGS){
+        cout << "Split interval at point : " << c << endl;
+      } */
 
-      //calculates states at time c
+      /*calculates states at time c */
       for (int i = 0; i < globalData->nStates; i++)
         {
           globalData->states[i] = (states_a[i] + states_b[i]) / 2.0;
         }
 
-      //calculates Values dependents on new states
+      /*calculates Values dependents on new states*/
       functionODE();
       functionAlgebraics();
 
       function_onlyZeroCrossings(gout, &globalData->timeValue);
       if (CheckZeroCrossings(tmpEventList))
-        { //If Zerocrossing in left Section
+        { /*If Zerocrossing in left Section */
 
           for (int i = 0; i < globalData->nStates; i++)
             {
@@ -1000,14 +1001,14 @@ BiSection(double* a, double* b, double* states_a, double* states_b,
                       cout << "states at b : " << states_b[i]  << endl;
                   }
            }*/
-          //for(int i=0;i<globalData->nZeroCrossing;i++){
-          //  backup_gout[i] = gout_old[i];
-          //}
+          /*for(int i=0;i<globalData->nZeroCrossing;i++){
+             backup_gout[i] = gout_old[i];
+          } */
           right = 0;
 
         }
       else
-        { //else Zerocrossing in right Section
+        { /*else Zerocrossing in right Section */
 
           for (int i = 0; i < globalData->nStates; i++)
             {
@@ -1024,9 +1025,9 @@ BiSection(double* a, double* b, double* states_a, double* states_b,
         }
       if (right)
         {
-          //for(int i=0;i<globalData->nZeroCrossing;i++){
-          //  gout_old[i] = gout[i];
-          //}
+          /*for(int i=0;i<globalData->nZeroCrossing;i++){
+            gout_old[i] = gout[i];
+          } */
           std::copy(gout, gout + globalData->nZeroCrossing, gout_old);
           std::copy(backup_gout, backup_gout + globalData->nZeroCrossing, gout);
         }
@@ -1034,15 +1035,14 @@ BiSection(double* a, double* b, double* states_a, double* states_b,
         {
 
           std::copy(gout, gout + globalData->nZeroCrossing, backup_gout);
-          //std::copy(backup_gout, backup_gout + globalData->nZeroCrossing, gout);
-          //for(int i=0;i<globalData->nZeroCrossing;i++){
-          //  gout_old[i] = gout[i];
-          //  gout[i] = backup_gout[i];
-          //}
+          /*std::copy(backup_gout, backup_gout + globalData->nZeroCrossing, gout);
+            for(int i=0;i<globalData->nZeroCrossing;i++){
+            gout_old[i] = gout[i];
+            gout[i] = backup_gout[i];
+          } */
         }
     }
 
-  //
   /*
   if (sim_verbose >= LOG_ZEROCROSSINGS){
       for (long i = 0; i < globalData->nZeroCrossing; i++) {
@@ -1057,10 +1057,10 @@ BiSection(double* a, double* b, double* states_a, double* states_b,
   return c;
 }
 
-//
-// Check if at least one zerocrossing has change sign
-// is used in BiSection
-//
+/*
+   Check if at least one zerocrossing has change sign
+   is used in BiSection
+*/
 int
 CheckZeroCrossings(list<int> *tmpEventList)
 {
@@ -1074,7 +1074,7 @@ CheckZeroCrossings(list<int> *tmpEventList)
           fprintf(stdout, "| info LOG_ZEROCROSSINGS | ZeroCrossing ID: %d \t old = %g \t current = %g \t Direction = %li\n",
                   *it,gout_old[*it], gout[*it],zeroCrossingEnabled[*it]); fflush(NULL);
         }
-      //Found event in left section
+      /*Found event in left section*/
       if ((gout[(*it)] <= 0 && gout_old[(*it)] > 0) || (gout[(*it)] >= 0 && gout_old[(*it)] < 0)
           || (gout[(*it)] > 0 && zeroCrossingEnabled[(*it)] <= -1) || (gout[(*it)] < 0
               && zeroCrossingEnabled[(*it)] >= 1))
@@ -1082,12 +1082,12 @@ CheckZeroCrossings(list<int> *tmpEventList)
           (*tmpEventList).push_front(*it);
         }
     }
-  //Found event in left section
+  /*Found event in left section*/
   if (!(*tmpEventList).empty())
     {
       return 1;
     }
-  // Else event in right section
+  /* Else event in right section */
   else
     {
       return 0;
