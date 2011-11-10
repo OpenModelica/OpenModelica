@@ -75,7 +75,7 @@ int terminationTerminate = 0;
 int terminationAssert = 0;
 char* terminateMessage = 0;
 int warningLevelAssert = 0;
-string TermMsg = string("");
+modelica_string TermMsg = 0;
 omc_fileInfo TermInfo = omc_dummyFileInfo;
 
 #ifndef NO_INTERACTIVE_DEPENDENCY
@@ -178,7 +178,7 @@ newTime(double t, double step, double stop)
 
 void setTermMsg(const char *msg)
 {
-  TermMsg = msg;
+  //TermMsg = msg;
 }
 
 static void deInitializeDataStruc2(DATA *data)
@@ -1205,4 +1205,10 @@ int _main_SimulationRuntime(int argc, char**argv)
   }
 #endif
   EXIT(retVal);
+}
+
+/* C-Interface for sim_result->emit(); */
+void sim_result_emit()
+{
+   if (sim_result) sim_result->emit();
 }

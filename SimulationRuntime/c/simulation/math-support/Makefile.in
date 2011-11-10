@@ -14,7 +14,7 @@ FFLAGS  = -O -fexceptions
 OBJS = bigden.o enorm.o hybrd1.o nelmead.o qform.o r1updt.o \
 biglag.o dogleg.o fdjac1.o hybrj.o newuoa.o qrfac.o trsapp.o \
 dpmpar.o hybrd.o lsame.o newuob.o r1mpyq.o update.o \
-simulation_events.o ringbuffer.o simulation_delay.o simulation_init.o dgesv_aux.o \
+simulation_events.o ringbuffer.o simulation_delay.o simulation_init.o dgesv_aux.o list.o \
 
 HFILES = blaswrap.h \
 matrix.h \
@@ -22,6 +22,7 @@ ringbuffer.h \
 simulation_delay.h \
 simulation_events.h \
 simulation_init.h \
+list.h \
 
 
 LIBS = libmath-support.a

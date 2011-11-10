@@ -78,7 +78,6 @@ protected:
   std::string errorMessage;
 };
 
-extern string TermMsg; /* message for termination. */
 extern simulation_result *sim_result;
 /* function with template for linear model */
 int callSolver(int, char**, string, string, string, double, double, double, long, double);
@@ -89,6 +88,16 @@ extern Socket sim_communication_port;
 #endif
 
 #endif /* cplusplus */
+
+/* C-Interface for sim_result->emit(); */
+#ifdef __cplusplus
+extern "C" {
+#endif /* cplusplus */
+void sim_result_emit();
+#ifdef __cplusplus
+}
+#endif /* cplusplus */
+extern modelica_string TermMsg; /* message for termination. */
 
 extern int measure_time_flag;
 extern int sim_verbose; /* control debug output during simulation. */

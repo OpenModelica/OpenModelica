@@ -40,20 +40,19 @@
 
 #include "openmodelica.h"
 #include "simulation_runtime.h"
+#include "list.h"
 
 #ifdef __cplusplus
-#include <list>
-using namespace std;
+extern "C" {
+#endif
 
 double
-BiSection(double*, double*, double*, double*, list<int> *);
+BiSection(double*, double*, double*, double*, List);
 
 int
-CheckZeroCrossings(list<int>*);
+CheckZeroCrossings(List *list);
 
-extern "C" {
 
-#endif
 
 void saveall();
 void printAllPreValues();

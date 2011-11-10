@@ -18,12 +18,13 @@ ADD_SUBDIRECTORY(testsuite)
 ENDIF(RUN_TESTS)
 
 # Subdirectorys
-ADD_SUBDIRECTORY(c_runtime)
+#ADD_SUBDIRECTORY(c_runtime)
 #ADD_SUBDIRECTORY(modelica_parser)
 #ADD_SUBDIRECTORY(flat_modelica_parser)
 #ADD_SUBDIRECTORY(Compiler)
 #ADD_SUBDIRECTORY(doc)
 #ADD_SUBDIRECTORY(Examples)
+ADD_SUBDIRECTORY(SimulationRuntime)
 
 # -------------------------------------------------------------
 # Models
@@ -33,8 +34,9 @@ ADD_SUBDIRECTORY(c_runtime)
 #    BUILDMODEL(model dir Flags CSRC)
 SET(OMC_DEBUG ${OMCTRUNCHOME}/build/bin/omc.exe)
 #BUILDMODEL(BouncingBall ${CMAKE_CURRENT_SOURCE_DIR}/testsuite/mosfiles-dassl +d=bltdump "")
-#BUILDMODEL(Simple ${CMAKE_CURRENT_SOURCE_DIR}/build/bin/Test +d=bltdump)
+#BUILDMODEL(Test ${CMAKE_CURRENT_SOURCE_DIR}/build/bin/Test +d=dumpdaelow)
 #BUILDMODEL(WheelLoader_der_state ${CMAKE_CURRENT_SOURCE_DIR}/build/bin/Test +d=bltdump "")
 #BUILDMODELFMU(Test ${CMAKE_CURRENT_SOURCE_DIR}/build/bin/Test/FMU +d=bltdump "")
 #BUILDMODEL(Test1 ${CMAKE_CURRENT_SOURCE_DIR}/build/bin/Test/FMU +d=bltdump "")
-BUILDMODELFMUMOS(WheelLoader D:/Programming/Models/Radlader/radlader-cnh/WheelLoader.mos +d=bltdump "")
+#BUILDMODELMOS(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum D:/Software/OpenModelicaProject/OpenModelica/build/bin/Test/Pendulum.mos +d= "")
+BUILDMODELMOS(CombiTimeTableTest D:/Software/OpenModelicaProject/OpenModelica/testsuite/mosfiles/CombiTimeTableTest1.mos +d= "")
