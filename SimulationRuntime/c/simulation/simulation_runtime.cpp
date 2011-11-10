@@ -75,7 +75,7 @@ int terminationTerminate = 0;
 int terminationAssert = 0;
 char* terminateMessage = 0;
 int warningLevelAssert = 0;
-modelica_string TermMsg = 0;
+char* TermMsg = 0;
 omc_fileInfo TermInfo = omc_dummyFileInfo;
 
 #ifndef NO_INTERACTIVE_DEPENDENCY
@@ -178,7 +178,13 @@ newTime(double t, double step, double stop)
 
 void setTermMsg(const char *msg)
 {
-  //TermMsg = msg;
+  if (TermMsg != NULL) {
+      free(TermMsg);
+  }
+  std::string s(msg);
+  TermMsg = new char(s.length());
+  for (size_t i=0;i<s.length();i++)
+      TermMsg[i] = s[i];
 }
 
 static void deInitializeDataStruc2(DATA *data)

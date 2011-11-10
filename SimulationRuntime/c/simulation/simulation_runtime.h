@@ -97,7 +97,7 @@ void sim_result_emit();
 #ifdef __cplusplus
 }
 #endif /* cplusplus */
-extern modelica_string TermMsg; /* message for termination. */
+extern char* TermMsg; /* message for termination. */
 
 extern int measure_time_flag;
 extern int sim_verbose; /* control debug output during simulation. */

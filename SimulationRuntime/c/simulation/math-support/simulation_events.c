@@ -36,7 +36,7 @@
 #include <string.h>
 
 
-static List EventList;
+static List EventList = EMPTYLIST;
 
  /*vectors with saved values used by pre(v)*/
 #define x_saved globalData->states_saved
