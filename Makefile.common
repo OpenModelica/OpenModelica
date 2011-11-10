@@ -43,6 +43,7 @@ release: omc
 c_runtime: mkbuilddirs
 	$(MAKE) -C c_runtime -f $(defaultMakefileTarget)
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget)
+	$(MAKE) -C SimulationRuntime/interactive -f $(defaultMakefileTarget)
 
 docs: mkbuilddirs omlibrary
 	(cp -p doc/*.pdf doc/*.txt doc/OpenModelicaAPI-Howto/*.pdf $(builddir_doc)/omc)
