@@ -728,7 +728,7 @@ void InterpolationTable::checkValidityOfData() const
 {
   size_t maxSize = colWise ? cols : rows;
   for(size_t i = 1; i < maxSize; ++i)
-    if (getElt(i-1,0) >= getElt(i,0))
+    if (getElt(i-1,0) > getElt(i,0))
       throw CustomError("TimeTable: Column with time variable not monotonous: %g >= %g.", getElt(i-1,0),getElt(i,0));
 }
 
