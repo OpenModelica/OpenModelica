@@ -1,37 +1,40 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2008, Linköpings University,
-* Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
-* LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
-* THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
-* PUBLIC LICENSE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from Linköpings University, either from the above address,
-* from the URL: http://www.ida.liu.se/projects/OpenModelica
-* and in the OpenModelica distribution.
-*
-* This program is distributed  WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
-* OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2008, Linköpings University,
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
+ * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * and in the OpenModelica distribution.
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
+/*! \file simulation_delay.c
+ */
 
 #include "simulation_runtime.h"
 #include "ringbuffer.h"
 
-#include "assert.h"
+#include <assert.h>
 #include <stdio.h>
 
 double tStart = 0;
@@ -142,7 +145,7 @@ void storeDelayedExpression(int exprNumber, double exprValue)
     appendRingData(delayStructure[exprNumber], &tpl);
 }
 
-double delayImpl(int exprNumber, double exprValue, double time, double delayTime, double delayMax /* Unused */)
+double delayImpl(int exprNumber, double exprValue, double time, double delayTime, double delayMax)
 {
     RINGBUFFER* delayStruct = delayStructure[exprNumber];
     int length = 0;
@@ -161,7 +164,8 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
 
     if(delayTime < 0.0)
     {
-        assert(delayTime > 0.0);
+        /* needs to be continued */
+        assert(0.0 < delayTime);
         /* throw TerminateSimulationException(globalData->timeValue,
             std::string("Negative delay requested.\n")); */
     }
@@ -170,28 +174,28 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
 
     if(length == 0)
     {
-        /*  This occurs in the initialization phase*/
-        /*  fprintf(stderr, "delayImpl: Missing initial value, using argument value %g instead.\n", exprValue);*/
+        /*  This occurs in the initialization phase */
+        /*  fprintf(stderr, "delayImpl: Missing initial value, using argument value %g instead.\n", exprValue); */
         return exprValue;
     }
 
     /* Returns: expr(time?delayTime) for time>time.start + delayTime and
-              expr(time.start) for time <= time.start + delayTime.
-     The arguments, i.e., expr, delayTime and delayMax, need to be subtypes of Real.
-     DelayMax needs to be additionally a parameter expression.
-     The following relation shall hold: 0 <= delayTime <= delayMax,
-     otherwise an error occurs. If delayMax is not supplied in the argument list,
-     delayTime need to be a parameter expression. See also Section 3.7.2.1.
-     For non-scalar arguments the function is vectorized according to Section 10.6.12.*/
+     *          expr(time.start) for time <= time.start + delayTime.
+     * The arguments, i.e., expr, delayTime and delayMax, need to be subtypes of Real.
+     * DelayMax needs to be additionally a parameter expression.
+     * The following relation shall hold: 0 <= delayTime <= delayMax,
+     * otherwise an error occurs. If delayMax is not supplied in the argument list,
+     * delayTime need to be a parameter expression. See also Section 3.7.2.1.
+     * For non-scalar arguments the function is vectorized according to Section 10.6.12. */
     if(time <= tStart + delayTime)
     {
         double res = ((t_TimeAndValue*)getRingData(delayStruct, 0))->value;
-        /* fprintf(stderr, "findTime: time <= tStart + delayTime: [%d] = %g\n",exprNumber,res);*/
+        /* fprintf(stderr, "findTime: time <= tStart + delayTime: [%d] = %g\n",exprNumber,res); */
         return res;
     }
     else
     {
-        /* return expr(time-delayTime)*/
+        /* return expr(time-delayTime) */
         double timeStamp = time - delayTime;
         double time0, time1, value0, value1;
 
@@ -199,10 +203,10 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
 
         assert(delayTime >= 0.0);
 
-        // find the row for the lower limit
+        /* find the row for the lower limit */
         if(timeStamp > ((t_TimeAndValue*)getRingData(delayStruct, length - 1))->time)
         {
-            /* delay between the last accepted time step and the current time*/
+            /* delay between the last accepted time step and the current time */
             time0 = ((t_TimeAndValue*)getRingData(delayStruct, length - 1))->time;
             value0 = ((t_TimeAndValue*)getRingData(delayStruct, length - 1))->value;
             time1 = time;
@@ -215,22 +219,22 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
             time0 = ((t_TimeAndValue*)getRingData(delayStruct, i))->time;
             value0 = ((t_TimeAndValue*)getRingData(delayStruct, i))->value;
 
-            /* Was it the last value?*/
+            /* was it the last value? */
             if(i+1 == length)
             {
-                if(i>0 && delayMax == delayTime)
+                if(0 < i && delayMax == delayTime)
                     dequeueNFirstRingDatas(delayStruct, i-1);
                 return value0;
             }
             time1 = ((t_TimeAndValue*)getRingData(delayStruct, i+1))->time;
             value1 = ((t_TimeAndValue*)getRingData(delayStruct, i+1))->value;
-            if(i>0 && delayMax == delayTime)
+            if(0 < i && delayMax == delayTime)
                 dequeueNFirstRingDatas(delayStruct, i-1);
         }
         /* was it an exact match?*/
         if(time0 == timeStamp)
         {
-            /*fprintf(stderr, "delayImpl: Exact match at %lf\n", currentTime);*/
+            /* fprintf(stderr, "delayImpl: Exact match at %lf\n", currentTime); */
             return value0;
         }
         else if(time1 == timeStamp)
@@ -239,9 +243,9 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
         }
         else
         {
-            /*fprintf(stderr, "delayImpl: Linear interpolation of %lf between %lf and %lf\n", timeStamp, time0, time1);*/
+            /* fprintf(stderr, "delayImpl: Linear interpolation of %lf between %lf and %lf\n", timeStamp, time0, time1); */
 
-            /* linear interpolation*/
+            /* linear interpolation */
             double timedif = time1 - time0;
             double dt0 = time1 - timeStamp;
             double dt1 = timeStamp - time0;
