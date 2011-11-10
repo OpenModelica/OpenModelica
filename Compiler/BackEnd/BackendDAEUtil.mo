@@ -5445,6 +5445,48 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEExps;
 
+public function traverseBackendDAEExpsNoCopyWithUpdate "
+  This function goes through the BackendDAE.BackendDAE structure and finds all the
+  expressions and performs the function on them in a list 
+  an extra argument passed through the function.
+"
+  replaceable type Type_a subtypeof Any;
+  input BackendDAE.BackendDAE inBackendDAE;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  outTypeA:=
+  matchcontinue (inBackendDAE,func,inTypeA)
+    local
+      BackendDAE.Variables vars1,vars2;
+      BackendDAE.EquationArray eqns,reqns,ieqns;
+      array<BackendDAE.MultiDimEquation> ae;
+      array<DAE.Algorithm> algs;
+      Type_a ext_arg_1,ext_arg_2,ext_arg_3,ext_arg_4,ext_arg_5,ext_arg_6,ext_arg_7;
+      list<BackendDAE.EqSystem> systs;
+    case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns,arrayEqs = ae,algorithms = algs)),func,inTypeA)
+      equation
+        ext_arg_1 = List.fold1(systs,traverseBackendDAEExpsEqSystemWithUpdate,func,inTypeA);
+        ext_arg_2 = traverseBackendDAEExpsVarsWithUpdate(vars2,func,ext_arg_1);
+        ext_arg_4 = traverseBackendDAEExpsEqnsWithUpdate(reqns,func,ext_arg_2);
+        ext_arg_5 = traverseBackendDAEExpsEqnsWithUpdate(ieqns,func,ext_arg_4);
+        (_,ext_arg_6) = traverseBackendDAEArrayNoCopyWithUpdate(ae,func,traverseBackendDAEExpsArrayEqnWithUpdate,1,arrayLength(ae),ext_arg_5);
+        ext_arg_7 = traverseBackendDAEArrayNoCopy(algs,func,traverseAlgorithmExps,1,arrayLength(algs),ext_arg_6);
+      then
+        ext_arg_7;
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAE.traverseBackendDAEExps failed"});
+      then
+        fail();
+  end matchcontinue;
+end traverseBackendDAEExpsNoCopyWithUpdate;
+
 public function traverseBackendDAEExpsEqSystem "function: traverseBackendDAEExps
   author: Frenkel TUD
 
@@ -5469,6 +5511,31 @@ algorithm
   outTypeA := traverseBackendDAEExpsVars(vars,func,inTypeA);
   outTypeA := traverseBackendDAEExpsEqns(eqns,func,outTypeA);
 end traverseBackendDAEExpsEqSystem;
+
+public function traverseBackendDAEExpsEqSystemWithUpdate "function: traverseBackendDAEExps
+  author: Frenkel TUD
+
+  This function goes through the BackendDAE.BackendDAE structure and finds all the
+  expressions and performs the function on them in a list 
+  an extra argument passed through the function.
+"
+  replaceable type Type_a subtypeof Any;
+  input BackendDAE.EqSystem syst;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+protected
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqns;
+algorithm
+  BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns) := syst;
+  outTypeA := traverseBackendDAEExpsVarsWithUpdate(vars,func,inTypeA);
+  outTypeA := traverseBackendDAEExpsEqnsWithUpdate(eqns,func,outTypeA);
+end traverseBackendDAEExpsEqSystemWithUpdate;
 
 public function traverseBackendDAEExpsVars "function: traverseBackendDAEExpsVars
   author: Frenkel TUD
@@ -5502,6 +5569,39 @@ algorithm
         fail();
   end matchcontinue;
 end traverseBackendDAEExpsVars;
+
+public function traverseBackendDAEExpsVarsWithUpdate "function: traverseBackendDAEExpsVars
+  author: Frenkel TUD
+
+  Helper for traverseBackendDAEExps
+"
+  replaceable type Type_a subtypeof Any;
+  input BackendDAE.Variables inVariables;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  outTypeA:=
+  matchcontinue (inVariables,func,inTypeA)
+    local
+      array<Option<BackendDAE.Var>> varOptArr;
+      Type_a ext_arg_1;
+    case (BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr)),func,inTypeA)
+      equation
+        (_,ext_arg_1) = traverseBackendDAEArrayNoCopyWithUpdate(varOptArr,func,traverseBackendDAEExpsVarWithUpdate,1,arrayLength(varOptArr),inTypeA);
+      then
+        ext_arg_1;
+    case (_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- BackendDAE.traverseBackendDAEExpsVarsWithUpdate failed");
+      then
+        fail();
+  end matchcontinue;
+end traverseBackendDAEExpsVarsWithUpdate;
 
 public function traverseBackendDAEArrayNoCopy "
  help function to traverseBackendDAEExps
@@ -5672,7 +5772,26 @@ protected function traverseBackendDAEExpsVar "function: traverseBackendDAEExpsVa
     output tuple<DAE.Exp, Type_a> outTpl;
   end FuncExpType;
 algorithm
-  outTypeA:=
+  (_,outTypeA):=traverseBackendDAEExpsVarWithUpdate(inVar,func,inTypeA);
+end traverseBackendDAEExpsVar;
+
+protected function traverseBackendDAEExpsVarWithUpdate "function: traverseBackendDAEExpsVar
+  author: Frenkel TUD
+  Helper traverseBackendDAEExpsVar. Get all exps from a  Var.
+  DAE.ET_OTHER is used as type for componentref. Not important here.
+  We only use the exp list for finding function calls"
+  replaceable type Type_a subtypeof Any;
+  input Option<BackendDAE.Var> inVar;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output Option<BackendDAE.Var> ovar;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  (ovar,outTypeA) :=
   matchcontinue (inVar,func,inTypeA)
     local
       DAE.Exp e1, expCref, sv, n;
@@ -5682,18 +5801,26 @@ algorithm
       list<Option<DAE.Exp>> ominmax;
       list<DAE.Exp> minmax;
       Type_a ext_arg_1,ext_arg_2,ext_arg_3,ext_arg_4,ext_arg_5,ext_arg_6;
+      BackendDAE.VarKind varKind;
+      DAE.VarDirection varDirection;
+      BackendDAE.Type varType;
+      Option<Values.Value> bindValue;
+      Integer index;
+      DAE.ElementSource source;
+      Option<DAE.VariableAttributes> values;
+      Option<SCode.Comment> comment;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
     
-    case (NONE(),func,inTypeA) then inTypeA;
+    case (NONE(),func,inTypeA) then (NONE(),inTypeA);
     
-    case (SOME(BackendDAE.VAR(varName = cref,
-             bindExp = SOME(e1),
-             arryDim = instdims,
-             values = attr)),func,inTypeA)
+    case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varType,SOME(e1),bindValue,instdims,index,source,attr,comment,flowPrefix,streamPrefix)),func,inTypeA)
       equation
-        ((_,ext_arg_1)) = func((e1,inTypeA));
-        ext_arg_2 = List.fold1(instdims,traverseBackendDAEExpsSubscript,func,ext_arg_1);
+        ((e1,ext_arg_1)) = func((e1,inTypeA));
+        (instdims,ext_arg_2) = List.map1Fold(instdims,traverseBackendDAEExpsSubscriptWithUpdate,func,ext_arg_1);
         //expCref = Expression.crefExp(cref);
         //((_,ext_arg_3)) = func((expCref,ext_arg_2));
+        // TODO: Update attributes?
         ominmax = DAEUtil.getMinMax(attr);
         minmax = List.map1(ominmax,Util.getOptionOrDefault,DAE.RCONST(0.0));
         ((_,ext_arg_4)) = Expression.traverseExpList(minmax,func,ext_arg_2);
@@ -5702,16 +5829,14 @@ algorithm
         n = DAEUtil.getNominalAttr(attr);
         ((_,ext_arg_6)) = func((n,ext_arg_5));
       then
-        ext_arg_6;
+        (SOME(BackendDAE.VAR(cref,varKind,varDirection,varType,SOME(e1),bindValue,instdims,index,source,attr,comment,flowPrefix,streamPrefix)),ext_arg_6);
     
-    case (SOME(BackendDAE.VAR(varName = cref,
-             bindExp = NONE(),
-             arryDim = instdims,
-             values = attr)),func,inTypeA)
+    case (SOME(BackendDAE.VAR(cref,varKind,varDirection,varType,NONE(),bindValue,instdims,index,source,attr,comment,flowPrefix,streamPrefix)),func,inTypeA)
       equation
-        ext_arg_2 = List.fold1(instdims,traverseBackendDAEExpsSubscript,func,inTypeA);
+        (instdims,ext_arg_2) = List.map1Fold(instdims,traverseBackendDAEExpsSubscriptWithUpdate,func,inTypeA);
         //expCref = Expression.crefExp(cref);
         //((_,ext_arg_3)) = func((expCref,ext_arg_2));
+        // TODO: Update attributes?
         ominmax = DAEUtil.getMinMax(attr);
         minmax = List.map1(ominmax,Util.getOptionOrDefault,DAE.RCONST(0.0));
         ((_,ext_arg_4)) = Expression.traverseExpList(minmax,func,ext_arg_2);
@@ -5720,7 +5845,7 @@ algorithm
         n = DAEUtil.getNominalAttr(attr);
         ((_,ext_arg_6)) = func((n,ext_arg_5));
       then
-        ext_arg_6;
+        (SOME(BackendDAE.VAR(cref,varKind,varDirection,varType,NONE(),bindValue,instdims,index,source,attr,comment,flowPrefix,streamPrefix)),ext_arg_6);
     
     case (_,_,_)
       equation
@@ -5728,7 +5853,7 @@ algorithm
       then
         fail();
   end matchcontinue;
-end traverseBackendDAEExpsVar;
+end traverseBackendDAEExpsVarWithUpdate;
 
 protected function traverseBackendDAEExpsSubscript "function: traverseBackendDAEExpsSubscript
   author: Frenkel TUD
@@ -5760,6 +5885,37 @@ algorithm
   end match;
 end traverseBackendDAEExpsSubscript;
 
+protected function traverseBackendDAEExpsSubscriptWithUpdate "function: traverseBackendDAEExpsSubscript
+  author: Frenkel TUD
+  helper for traverseBackendDAEExpsSubscript"
+  replaceable type Type_a subtypeof Any;
+  input DAE.Subscript inSubscript;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output DAE.Subscript outSubscript;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  (outSubscript,outTypeA) :=
+  match (inSubscript,func,inTypeA)
+    local
+      DAE.Exp e;
+      Type_a ext_arg_1;
+    case (DAE.WHOLEDIM(),_,inTypeA) then (DAE.WHOLEDIM(),inTypeA);
+    case (DAE.SLICE(exp = e),func,inTypeA)
+      equation
+        ((e,ext_arg_1)) = func((e,inTypeA));
+      then (DAE.SLICE(e),ext_arg_1);
+    case (DAE.INDEX(exp = e),func,inTypeA)
+      equation
+        ((e,ext_arg_1)) = func((e,inTypeA));
+      then (DAE.INDEX(e),ext_arg_1);
+  end match;
+end traverseBackendDAEExpsSubscriptWithUpdate;
+
 public function traverseBackendDAEExpsEqns "function: traverseBackendDAEExpsEqns
   author: Frenkel TUD
 
@@ -5789,6 +5945,37 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEExpsEqns;
 
+public function traverseBackendDAEExpsEqnsWithUpdate "function: traverseBackendDAEExpsEqns
+  author: Frenkel TUD
+
+  Helper for traverseBackendDAEExpsEqns
+"
+  replaceable type Type_a subtypeof Any;
+  input BackendDAE.EquationArray inEquationArray;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  outTypeA :=
+  matchcontinue (inEquationArray,func,inTypeA)
+    local
+      array<Option<BackendDAE.Equation>> equOptArr;
+    case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),func,inTypeA)
+      equation
+        (_,outTypeA) = traverseBackendDAEArrayNoCopyWithUpdate(equOptArr,func,traverseBackendDAEExpsOptEqnWithUpdate,1,arrayLength(equOptArr),inTypeA);
+      then outTypeA;
+    case (_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- BackendDAE.traverseBackendDAEExpsEqns failed");
+      then
+        fail();
+  end matchcontinue;
+end traverseBackendDAEExpsEqnsWithUpdate;
+
 protected function traverseBackendDAEExpsOptEqn "function: traverseBackendDAEExpsOptEqn
   author: Frenkel TUD 2010-11
   Helper for traverseBackendDAEExpsEqn."
@@ -5802,18 +5989,35 @@ protected function traverseBackendDAEExpsOptEqn "function: traverseBackendDAEExp
     output tuple<DAE.Exp, Type_a> outTpl;
   end FuncExpType;
 algorithm
-  outTypeA:= match (inEquation,func,inTypeA)
+  (_,outTypeA) := traverseBackendDAEExpsOptEqnWithUpdate(inEquation,func,inTypeA);
+end traverseBackendDAEExpsOptEqn;
+
+protected function traverseBackendDAEExpsOptEqnWithUpdate "function: traverseBackendDAEExpsOptEqn
+  author: Frenkel TUD 2010-11
+  Helper for traverseBackendDAEExpsEqn."
+  replaceable type Type_a subtypeof Any;
+  input Option<BackendDAE.Equation> inEquation;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output Option<BackendDAE.Equation> outEquation;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  (outEquation,outTypeA) := match (inEquation,func,inTypeA)
     local
       BackendDAE.Equation eqn;
      Type_a ext_arg_1;
-    case (NONE(),func,inTypeA) then inTypeA;
+    case (NONE(),func,inTypeA) then (NONE(),inTypeA);
     case (SOME(eqn),func,inTypeA)
       equation
-        (_,ext_arg_1) = BackendEquation.traverseBackendDAEExpsEqn(eqn,func,inTypeA);
+        (eqn,ext_arg_1) = BackendEquation.traverseBackendDAEExpsEqn(eqn,func,inTypeA);
       then
-        ext_arg_1;
+        (SOME(eqn),ext_arg_1);
   end match;
-end traverseBackendDAEExpsOptEqn;
+end traverseBackendDAEExpsOptEqnWithUpdate;
 
 public function traverseBackendDAEExpsArrayEqn "function: traverseBackendDAEExpsArrayEqn
   author: Frenkel TUD
@@ -5843,6 +6047,39 @@ algorithm
         ext_arg_2;
   end match;
 end traverseBackendDAEExpsArrayEqn;
+
+public function traverseBackendDAEExpsArrayEqnWithUpdate "function: traverseBackendDAEExpsArrayEqn
+  author: Frenkel TUD
+
+  Helper function to traverseBackendDAEExpsEqn
+"
+  replaceable type Type_a subtypeof Any;
+  input BackendDAE.MultiDimEquation inMultiDimEquation;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output BackendDAE.MultiDimEquation outMultiDimEquation;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  (outMultiDimEquation,outTypeA) :=
+  match (inMultiDimEquation,func,inTypeA)
+    local 
+      list<Integer> dimSize;
+      DAE.Exp e1,e2;
+      Type_a ext_arg_1,ext_arg_2;
+      DAE.ElementSource source;
+    case (BackendDAE.MULTIDIM_EQUATION(dimSize,e1,e2,source),func,inTypeA)
+      equation
+        ((e1,ext_arg_1)) = func((e1,inTypeA));
+        ((e2,ext_arg_2)) = func((e2,ext_arg_1));
+        print("MD replacement: " +& ExpressionDump.printExpStr(e1) +& "\n");
+      then
+        (BackendDAE.MULTIDIM_EQUATION(dimSize,e1,e2,source),ext_arg_2);
+  end match;
+end traverseBackendDAEExpsArrayEqnWithUpdate;
 
 public function traverseAlgorithmExps "function: traverseAlgorithmExps
 

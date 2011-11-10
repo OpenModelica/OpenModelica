@@ -1295,7 +1295,8 @@ algorithm
   (ofns,(i,ht,literals)) := DAEUtil.traverseDAEFunctions(
     fns, findLiteralsHelper,
     (0,HashTableExpToIndex.emptyHashTableSized(BaseHashTable.bigBucketSize),{}));
-  ((i,ht,literals)) := BackendDAEUtil.traverseBackendDAEExps(dae, findLiteralsHelper, (i,ht,literals));
+  // Breaks things :(
+  // ((i,ht,literals)) := BackendDAEUtil.traverseBackendDAEExpsNoCopyWithUpdate(dae, findLiteralsHelper, (i,ht,literals));
   literals := listReverse(literals);
 end simulationFindLiterals;
 

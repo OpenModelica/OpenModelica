@@ -1793,8 +1793,10 @@ case SES_SIMPLE_ASSIGN(__) then
   let &preExp = buffer "" /*BUFD*/
   let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   <<
+  /*#modelicaLine <%eqInfoString(eq)%>*/
   <%preExp%>
   <%cref(cref)%> = <%expPart%>; <%inlineCref(context,cref)%>
+  /*#endModelicaLine*/
   >>
 end equationSimpleAssign;
 
@@ -1803,7 +1805,9 @@ template equationArrayCallAssign(SimEqSystem eq, Context context,
                                  Text &varDecls /*BUFP*/)
  "Generates equation on form 'cref_array = call(...)'."
 ::=
-match eq
+<<
+/*#modelicaLine <%eqInfoString(eq)%>*/
+<%match eq
 
 case eqn as SES_ARRAY_CALL_ASSIGN(__) then
   let &preExp = buffer "" /*BUFD*/
@@ -1835,6 +1839,9 @@ case eqn as SES_ARRAY_CALL_ASSIGN(__) then
     copy_real_array_data_mem(&<%expPart%>, &<%cref(eqn.componentRef)%>);<%inlineArray(context,expPart,eqn.componentRef)%>
     >>
   else error(sourceInfo(), 'No runtime support for this sort of array call: <%printExpStr(eqn.exp)%>')
+%>
+/*#endModelicaLine*/
+>>
 end equationArrayCallAssign;
 
 
@@ -3806,6 +3813,15 @@ template statementInfoString(DAE.Statement stmt)
   case STMT_REINIT(__)
   then (match source case s as SOURCE(__) then infoStr(s.info))
 end statementInfoString;
+
+template eqInfoString(SimEqSystem eq)
+::=
+  match eq
+  case SES_RESIDUAL(__)
+  case SES_SIMPLE_ASSIGN(__)
+  case SES_ARRAY_CALL_ASSIGN(__)
+  then (match source case s as SOURCE(__) then infoStr(s.info))
+end eqInfoString;
 
 template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
  "Generates an algorithm statement."
