@@ -45,8 +45,7 @@
 #include "tables.h"
 
 #ifdef _MSC_VER
-#define fmin min
-#define fmax max
+#include "omc_msvc.h"
 #endif
 
 //extern char *model_dir; // defined somewhere else (where?)
