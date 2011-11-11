@@ -34,6 +34,7 @@
 #define ERROR_H
 
 #include <setjmp.h>
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,11 +43,11 @@ extern "C" {
 /* Global JumpBuffer */
 extern jmp_buf globalJmpbuf;
 
-#define MSG(type,msg) { printf("%s | %s | %d\n        |> %s\n", type, __FILE__, __LINE__, msg); fflush(NULL); }
+#define MSG(type,stream,msg) { fprintf(stream,"%s |  %d | %s\n        |> %s\n", type, __LINE__, __FILE__, msg); fflush(NULL); }
 
-#define INFO(msg)     { MSG("info   ", msg); }
-#define WARNING(msg)  { MSG("warning", msg); }
-#define THROW(msg)    { MSG("error  ", msg); longjmp(globalJmpbuf, 1); }
+#define INFO(msg)     { MSG("info   ", stdout, msg); }
+#define WARNING(msg)  { MSG("warning", stdout, msg); }
+#define THROW(msg)    { MSG("error  ", stderr, msg); longjmp(globalJmpbuf, 1); }
 
 #ifdef __cplusplus
 }

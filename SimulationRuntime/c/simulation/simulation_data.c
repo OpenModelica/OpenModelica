@@ -29,6 +29,8 @@
  */
 
 #include "simulation_data.h"
+#include "error.h"
+
 #include <stdlib.h>
 #include <malloc.h>
 

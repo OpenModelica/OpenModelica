@@ -1028,6 +1028,7 @@ initRuntimeAndSimulation(int argc, char**argv, _X_DATA *data)
                               << endl;
     EXIT(0);
   }
+
   globalData = initializeDataStruc2(initializeDataStruc());
 
   if (!globalData) {

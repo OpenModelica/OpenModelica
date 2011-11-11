@@ -109,6 +109,10 @@ initializeEventData()
 void
 deinitializeEventData()
 {
+  if(!globalData)
+  {
+    return;
+  }
   free(globalData->helpVars_saved);
   free(globalData->states_saved);
   free(globalData->statesDerivatives_saved);
