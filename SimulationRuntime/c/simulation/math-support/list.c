@@ -55,17 +55,17 @@ void list_push_front(int data, List *list)
 void list_push_back(int data, List *list)
 {
     List_Node *new_node = 0;
-    assert(list==0?0:1);
+    assert(list);
     new_node = (List_Node*) malloc(sizeof(List_Node));
     new_node->data = data;
     new_node->next = 0;
     if (list->last!=NULL) {
         list->last->next = new_node;
     } 
-    list->last = new_node;
     if (list->first == NULL) {
         list->first = list->last;
     }
+    list->last = new_node;
 }
 
 int list_empty(List list)

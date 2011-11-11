@@ -182,7 +182,7 @@ void setTermMsg(const char *msg)
       free(TermMsg);
   }
   std::string s(msg);
-  TermMsg = new char(s.length());
+  TermMsg = (char*)calloc(s.length(),sizeof(char));
   for (size_t i=0;i<s.length();i++)
       TermMsg[i] = s[i];
 }
