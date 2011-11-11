@@ -119,7 +119,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
          }
       }
       if (binTrans==0) {
-      int j;
+      uint32_t j;
       char* tmp = (char*) malloc(hdr.ncols*hdr.mrows+1);
         if (fread(tmp,hdr.ncols*hdr.mrows,1,reader->file) != 1)  {
           free(tmp);
@@ -148,7 +148,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
           reader->allInfo[i].descr[hdr.mrows] = '\0';
          }
       } else if (binTrans==0) {
-        int j;
+        uint32_t j;
         char* tmp = (char*) malloc(hdr.ncols*hdr.mrows+1);
         if (fread(tmp,hdr.ncols*hdr.mrows,1,reader->file) != 1)  {
           free(tmp);

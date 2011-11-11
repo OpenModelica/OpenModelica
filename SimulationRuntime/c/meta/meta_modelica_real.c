@@ -43,7 +43,6 @@
 #include <float.h>
 #define isinf(d) (!_finite(d) && !_isnan(d))
 #define isnan _isnan
-#define snprintf _snprintf
 #endif
 
 static const MMC_DEFSTRINGLIT(_OMC_LIT_NEG_INF,4,"-inf");

@@ -39,7 +39,7 @@ extern "C" {
 void initDelay(double startTime);
 void deinitDelay();
 double delayImpl(int exprNumber, double exprValue, double time, double delayTime, double maxDelay);
-void storeDelayedExpression(int exprNumber, double exprValue);
+void storeDelayedExpression(int exprNumber, double exprValue, double time);
 
 #ifdef __cplusplus
 }

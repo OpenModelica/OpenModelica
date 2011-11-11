@@ -62,9 +62,20 @@ ENDMACRO(SHOW_VARIABLE)
 # MACRO BUILDMODEL
 MACRO(BUILDMODEL model dir Flags CSRC)
 
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime/meta)
-    
+
+  # includes
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/linearization)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/meta)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/ModelicaExternalC)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/sendData)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/libf2c)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/math-support)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)  
+  
   # OMDEV PATH
   IF(NOT OMDEV)
     SET(OMDEV $ENV{OMDEV})
@@ -107,9 +118,6 @@ ENDMACRO(BUILDMODEL)
 # MACRO BUILDMODEL
 MACRO(BUILDMODELMOS model mos Flags CSRC)
 
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime/meta)
-  
   # includes
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/linearization)
@@ -122,6 +130,8 @@ MACRO(BUILDMODELMOS model mos Flags CSRC)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/math-support)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)    
+  
+  INCLUDE_DIRECTORIES(D:/Software/OpenModelicaProject/OpenModelica/testsuite/mosfiles)
   
   # OMDEV PATH
   IF(NOT OMDEV)
@@ -168,8 +178,18 @@ ENDMACRO(BUILDMODELMOS)
 # MACRO BUILDMODEL
 MACRO(BUILDMODELFMU model dir Flags CSRC)
 
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime/meta)
+  # includes
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/linearization)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/meta)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/ModelicaExternalC)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/sendData)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/libf2c)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/math-support)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)  
   
   # OMDEV PATH
   IF(NOT OMDEV)
@@ -222,8 +242,18 @@ ENDMACRO(BUILDMODELFMU)
 # MACRO BUILDMODEL
 MACRO(BUILDMODELFMUMOS model mos Flags CSRC)
 
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime/meta)
+  # includes
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/linearization)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/meta)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/ModelicaExternalC)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/sendData)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/libf2c)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/math-support)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)  
 
   # OMDEV PATH
   IF(NOT OMDEV)

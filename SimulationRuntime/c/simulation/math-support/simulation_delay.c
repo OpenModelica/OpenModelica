@@ -36,6 +36,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 double tStart = 0;
 
@@ -117,10 +118,9 @@ static int findTime(double time, RINGBUFFER delayStruct)
     return start;
 }
 
-void storeDelayedExpression(int exprNumber, double exprValue)
+void storeDelayedExpression(int exprNumber, double exprValue, double time)
 {
     t_TimeAndValue tpl;
-    double time = globalData->timeValue;
 
     if(exprNumber < 0)
     {

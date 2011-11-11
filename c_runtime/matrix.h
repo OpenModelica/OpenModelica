@@ -219,8 +219,8 @@ void * _omc_hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
 integer nrhs = 1; /* number of righthand sides*/\
 integer lda = n /* Leading dimension of A */; integer ldb=n; /* Leading dimension of b*/\
 integer * ipiv = (integer*) calloc(n,sizeof(integer)); /* Pivott indices */ \
-assert(ipiv != 0); \
 integer info = 0; /* output */ \
+assert(ipiv != 0); \
 _omc_dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
  if (info < 0) { \
    if (sim_verbose >= LOG_NONLIN_SYS) \
