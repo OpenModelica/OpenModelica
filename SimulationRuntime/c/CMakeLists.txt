@@ -142,6 +142,16 @@ MACRO(BUILDMODELMOS model mos dir Flags CSRC)
   INCLUDE_DIRECTORIES(${OMDEV}/lib/expat-win32-msvc)
   link_directories(${OMDEV}/lib/expat-win32-msvc)  
   
+  # custom command to copy xml file
+  SET(expat_CODE   ${OMDEV}/lib/expat-win32-msvc/libexpat.dll)
+  SET(expat_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo/libexpat.dll)
+  ADD_CUSTOM_COMMAND(OUTPUT ${expat_OUTPUT}
+                     COMMAND cp ${expat_CODE} ${expat_OUTPUT}
+                     WORKING_DIRECTORY ${dir}
+                     COMMENT "copy file ${expat_CODE} to ${expat_OUTPUT}")
+  # target fuer OM_OUTPUT
+  ADD_CUSTOM_TARGET(expat ALL DEPENDS ${expat_OUTPUT})  
+  
   SET(OMC_MODELNAME ${model})  
   # generate model.mos 
   
@@ -177,7 +187,7 @@ MACRO(BUILDMODELMOS model mos dir Flags CSRC)
   ADD_CUSTOM_TARGET(${model}cp_xml ALL DEPENDS ${XML_OUTPUT})
 
   # Dependencies
-  ADD_DEPENDENCIES(${model}cp_xml ${model}codegen )
+  ADD_DEPENDENCIES(${model}cp_xml ${model}codegen expat)
   ADD_DEPENDENCIES(${model} ${model}cp_xml)
   
 #ENDFOREACH(model ${model_sources})
