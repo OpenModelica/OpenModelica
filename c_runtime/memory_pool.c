@@ -46,7 +46,7 @@ struct one_state_s {
 
 typedef struct one_state_s one_state;
 
-one_state *current_states;
+one_state *current_states = NULL;
 
 void* push_memory_states(int maxThreads)
 {
