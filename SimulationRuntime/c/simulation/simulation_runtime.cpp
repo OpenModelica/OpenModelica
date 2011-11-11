@@ -182,9 +182,10 @@ void setTermMsg(const char *msg)
       free(TermMsg);
   }
   std::string s(msg);
-  TermMsg = (char*)calloc(s.length(),sizeof(char));
-  for (size_t i=0;i<s.length();i++)
+  TermMsg = (char*) calloc(s.length()+1,sizeof(char));
+  for (size_t i=0;i<s.length();i++){
       TermMsg[i] = s[i];
+  }
 }
 
 static void deInitializeDataStruc2(DATA *data)
@@ -659,7 +660,6 @@ startNonInteractiveSimulation(int argc, char**argv)
   }
 
   deinitDelay();
-  deInitializeDataStruc2(globalData);
 
   return retVal;
 }

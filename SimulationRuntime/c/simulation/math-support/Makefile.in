@@ -11,10 +11,7 @@ CPPFLAGS := @CPPFLAGS@ -Wall $(ANSI) $(EXTRA_CFLAGS) -I. -I.. -I../../ -I../solv
 AR = ar -ru
 FFLAGS  = -O -fexceptions
 
-OBJS = bigden.o enorm.o hybrd1.o nelmead.o qform.o r1updt.o \
-biglag.o dogleg.o fdjac1.o hybrj.o newuoa.o qrfac.o trsapp.o \
-dpmpar.o hybrd.o lsame.o newuob.o r1mpyq.o update.o \
-simulation_events.o ringbuffer.o simulation_delay.o simulation_init.o dgesv_aux.o list.o \
+include ../../Makefile.objs
 
 HFILES = blaswrap.h \
 matrix.h \
@@ -31,13 +28,13 @@ LIBS = libmath-support.a
 
 all : libmath-support.a
 
-libmath-support.a : $(OBJS) $(HFILES)
-	$(AR) $@ $(OBJS)
+libmath-support.a : $(MATH_OBJS) $(HFILES)
+	$(AR) $@ $(MATH_OBJS)
 	ranlib $@
 
 clean :
 	rm -f libmath-support.a
-	rm -f $(OBJS)
+	rm -f $(MATH_OBJS)
 
 Makefile: Makefile.in
 	cd ../../../../; ./config.status

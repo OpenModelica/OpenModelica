@@ -11,8 +11,8 @@ CPPFLAGS := @CPPFLAGS@ -Wall $(ANSI) $(EXTRA_CFLAGS) -I. -I.. -I../../ -I../solv
 AR = ar -ru
 FFLAGS  = -O -fexceptions
 
-OBJS = \
-read_csv.o read_matlab4.o simulation_result_csv.o simulation_result_mat.o simulation_result_plt.o 
+
+include ../../Makefile.objs
 
 HFILES = \
 read_csv.h \
@@ -30,13 +30,13 @@ LIBS = libresult.a
 
 all : libresult.a
 
-libresult.a : $(OBJS) $(HFILES)
-	$(AR) $@ $(OBJS)
+libresult.a : $(RESULTS_OBJS) $(HFILES)
+	$(AR) $@ $(RESULS_OBJS)
 	ranlib $@
 
 clean :
 	rm -f libresult.a
-	rm -f $(OBJS)
+	rm -f $(RESULTS_OBJS)
 
 Makefile: Makefile.in
 	cd ../../../../; ./config.status

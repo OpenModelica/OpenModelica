@@ -5,19 +5,7 @@ CPPFLAGS := @CPPFLAGS@ -Wall $(ANSI) $(EXTRA_CFLAGS) -I. -I.. -I../util/
 AR = ar -ru
 FFLAGS  = -O -fexceptions
 
-META_OBJS = \
-meta_modelica.o \
-meta_modelica_builtin.o \
-meta_modelica_real.o \
-meta_modelica_string_lit.o \
-meta_modelica_catch.o \
-meta_modelica_gc.o \
-meta_modelica_gc_list.o \
-meta_modelica_gc_stack.o \
-meta_modelica_gc_roots.o \
-meta_modelica_gc_pages.o \
-meta_modelica_gc_stats.o \
-meta_modelica_gc_settings.o 
+include ../Makefile.objs
 
 META_HFILES = \
 rml_compatibility.h \

@@ -5,10 +5,7 @@ CPPFLAGS := @CPPFLAGS@ -Wall $(ANSI) $(EXTRA_CFLAGS) -I. -I.. -I../meta
 AR = ar -ru
 FFLAGS  = -O -fexceptions
 
-OBJS = boolean_array.o index_spec.o integer_array.o memory_pool.o \
-base_array.o real_array.o string_array.o utility.o \
-modelica_string.o division.o\
-java_interface.o rtclock.o 
+include ../Makefile.objs
 
 HFILES = \
 base_array.h \
@@ -35,13 +32,13 @@ LIBS = libutil.a
 
 all : libutil.a
 
-libutil.a : $(OBJS) $(HFILES)
-	$(AR) $@ $(OBJS)
+libutil.a : $(UTIL_OBJS) $(HFILES)
+	$(AR) $@ $(UTIL_OBJS)
 	ranlib $@
 
 clean :
 	rm -f libutils.a 
-	rm -f $(OBJS)
+	rm -f $(UTIL_OBJS)
 
 Makefile: Makefile.in
 	cd ../../../; ./config.status

@@ -11,8 +11,7 @@ CPPFLAGS := @CPPFLAGS@ -Wall $(ANSI) $(EXTRA_CFLAGS) -I. -I.. -I../util -I../lin
 AR = ar -ru
 FFLAGS  = -O -fexceptions
 
-OBJS = options.o simulation_input_xml.o simulation_modelinfo.o simulation_runtime.o simulation_varinfo.o ../linearization/linearize.o
-
+include ../Makefile.objs
 
 HFILES = \
 simulation_input_xml.h \
@@ -28,13 +27,13 @@ LIBS = libsim.a
 
 all : libsim.a
 
-libsim.a : $(OBJS) $(HFILES)
-	$(AR) $@ $(OBJS)
+libsim.a : $(SIM_OBJS) $(HFILES)
+	$(AR) $@ $(SIM_OBJS)
 	ranlib $@
 
 clean :
 	rm -f libsim.a
-	rm -f $(OBJS)
+	rm -f $(SIM_OBJS)
 
 Makefile: Makefile.in
 	cd ../../..; ./config.status

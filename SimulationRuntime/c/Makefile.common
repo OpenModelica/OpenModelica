@@ -1,4 +1,4 @@
-AR = ar
+AR = ar -ru
 ANSI= #-ansi
 CXXFLAGS := $(CFLAGS) -Wall $(ANSI) $(EXTRA_CFLAGS)
 CFLAGS := $(CFLAGS) -Wall $(ANSI) -pedantic $(EXTRA_CFLAGS)
@@ -6,9 +6,11 @@ CPPFLAGS = -I. -Iinteractive/ -Imeta/ -I../
 FFLAGS  = -O -fexceptions
 # P.A: before, g77 had -O3 or -O2 but that caused a bug in DDASRT, giving infinite loop.
 
+include Makefile.objs
+
 LIBS = libsim.a libsolver.a libmath-support.a libutil.a libmeta.a libf2c.a libresult.a libModelicaExternalC.a libsendData.a
 
-LIBSPATH= simulation/libsim.a simulation/math-support/libmath-support.a simulation/solver/libsolver.a simulation/results/libresult.a meta/libmeta.a ModelicaExternalC/libModelicaExternalC.a simulation/libf2c/libf2c.a util/libutil.a sendData/release/libsendData.a
+LIBSPATH= simulation/libsim.a simulation/math-support/libmath-support.a simulation/solver/libsolver.a simulation/results/libresult.a meta/libmeta.a util/libutil.a 
 
 
 .PHONY : libsim.a libmath-support.a libsolver.a libutil.a libmeta.a libf2c.a libresult.a libModelicaExternalC.a libsendData.a clean install
@@ -17,13 +19,8 @@ all : install
 
 
 libSimulationCRuntime.a: $(LIBS) $(LIBSPATH)
-	$(AR) rsc $@ *.o
-	rm -f *.o
+	$(AR) $@ $(ALL_OBJS)
 	ranlib $@
-
-$(LIBSPATH): $(LIBS)
-	$(AR) -x $@
-		
 
 libmath-support.a: 
 	$(MAKE) -C simulation/math-support -f ${LIBMAKEFILE}
