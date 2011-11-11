@@ -10,7 +10,7 @@ include Makefile.objs
 
 LIBS = libsim.a libsolver.a libmath-support.a libutil.a libmeta.a libf2c.a libresult.a libModelicaExternalC.a libsendData.a
 
-LIBSPATH= simulation/libsim.a simulation/math-support/libmath-support.a simulation/solver/libsolver.a simulation/results/libresult.a meta/libmeta.a util/libutil.a 
+LIBSPATH= simulation/libsim.a math-support/libmath-support.a simulation/solver/libsolver.a simulation/results/libresult.a meta/libmeta.a util/libutil.a 
 
 
 .PHONY : libsim.a libmath-support.a libsolver.a libutil.a libmeta.a libf2c.a libresult.a libModelicaExternalC.a libsendData.a clean install
@@ -23,7 +23,7 @@ libSimulationCRuntime.a: $(LIBS) $(LIBSPATH)
 	ranlib $@
 
 libmath-support.a: 
-	$(MAKE) -C simulation/math-support -f ${LIBMAKEFILE}
+	$(MAKE) -C math-support -f ${LIBMAKEFILE}
 
 libsolver.a:
 	$(MAKE) -C simulation/solver -f ${LIBMAKEFILE}
@@ -50,15 +50,15 @@ install: libSimulationCRuntime.a $(LIBS) omdevinstall
 	cp libSimulationCRuntime.a $(builddir_lib)
 	cp ./ModelicaExternalC/libModelicaExternalC.a $(builddir_lib)
 	cp ./ModelicaExternalC/ModelicaUtilities.h $(builddir_inc)
-	cp openmodelica.h $(builddir_inc)
-	cp openmodelica_func.h $(builddir_inc)
+	cp ./openmodelica.h $(builddir_inc)
+	cp ./openmodelica_func.h $(builddir_inc)
 	cp ../interactive/libinteractive.a $(builddir_lib)
-	cp meta/*.h $(builddir_inc)
-	cp util/*.h $(builddir_inc)
-	cp simulation/*.h $(builddir_inc)
-	cp simulation/math-support/*.h $(builddir_inc)
-	cp simulation/results/*.h $(builddir_inc)
-	cp simulation/solver/*.h $(builddir_inc)
+	cp ./meta/*.h $(builddir_inc)
+	cp ./util/*.h $(builddir_inc)
+	cp ./simulation/*.h $(builddir_inc)
+	cp ./math-support/*.h $(builddir_inc)
+	cp ./simulation/results/*.h $(builddir_inc)
+	cp ./simulation/solver/*.h $(builddir_inc)
 	test -z "$(LIBF2C)" || cp simulation/libf2c/libf2c.* $(builddir_lib)/
 	test -z "$(LIBSENDDATA)" || cp sendData/release/$(LIBSENDDATA) $(builddir_lib)/
 	@$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) && \
