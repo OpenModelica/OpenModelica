@@ -31,6 +31,7 @@
 /*! \file simulation_delay.c
  */
 
+#include "delay.h"
 #include "simulation_runtime.h"
 #include "ringbuffer.h"
 

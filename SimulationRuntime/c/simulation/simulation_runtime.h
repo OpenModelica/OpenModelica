@@ -45,9 +45,9 @@
 
 #include "rtclock.h"
 #include <stdlib.h>
-#include "simulation_events.h"
+#include "events.h"
 #include "simulation_inline_solver.h"
-#include "simulation_delay.h"
+#include "delay.h"
 
 #ifdef __cplusplus
 

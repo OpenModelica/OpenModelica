@@ -35,8 +35,8 @@
  * It contains solver functions and other simulation runtime specific functions
  */
 
-#ifndef _SIMULATION_EVENTS_H
-#define _SIMULATION_EVENTS_H
+#ifndef EVENTS_H
+#define EVENTS_H
 
 #include "openmodelica.h"
 #include "simulation_runtime.h"

@@ -29,7 +29,7 @@
  */
 
 #include "simulation_runtime.h"
-#include "simulation_events.h"
+#include "events.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>

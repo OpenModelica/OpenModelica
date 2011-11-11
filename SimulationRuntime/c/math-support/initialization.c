@@ -31,7 +31,7 @@
 /*! \file simulation_init.c
  */
 
-#include "simulation_init.h"
+#include "initialization.h"
 #include "simulation_runtime.h"
 #include "solver_main.h"
 

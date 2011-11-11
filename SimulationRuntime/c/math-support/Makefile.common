@@ -9,9 +9,9 @@ include ../Makefile.objs
 HFILES = blaswrap.h \
 matrix.h \
 ringbuffer.h \
-simulation_delay.h \
-simulation_events.h \
-simulation_init.h \
+delay.h \
+events.h \
+initialization.h \
 list.h \
 
 

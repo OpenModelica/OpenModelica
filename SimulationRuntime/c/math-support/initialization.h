@@ -29,17 +29,18 @@
  *
  */
 
-#ifndef _SIMULATION_DELAY_H
-#define _SIMULATION_DELAY_H
+/*! \file simulation_init.h
+ */
+#ifndef INITIALIZATION_H
+#define INITIALIZATION_H
 
 #ifdef __cplusplus
-extern "C" {
+#include <cstdlib>
+extern "C"
+{
 #endif
 
-void initDelay(double startTime);
-void deinitDelay();
-double delayImpl(int exprNumber, double exprValue, double time, double delayTime, double maxDelay);
-void storeDelayedExpression(int exprNumber, double exprValue, double time);
+int initialization(const char* pInitMethod, const char* pOptiMethod);
 
 #ifdef __cplusplus
 }

@@ -1,30 +1,30 @@
 /*
- * This file is part of OpenModelica.
+  *This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+  *Copyright (c) 1998-2008, Linköpings University,
+  *Department of Computer and Information Science,
+  *SE-58183 Linköping, Sweden.
  *
- * All rights reserved.
+  *All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+  *THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+  *LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+  *THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+  *PUBLIC LICENSE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
- * and in the OpenModelica distribution.
+  *The OpenModelica software and the Open Source Modelica
+  *Consortium (OSMC) Public License (OSMC-PL) are obtained
+  *from Linköpings University, either from the above address,
+  *from the URL: http://www.ida.liu.se/projects/OpenModelica
+  *and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+  *This program is distributed  WITHOUT ANY WARRANTY; without
+  *even the implied warranty of  MERCHANTABILITY or FITNESS
+  *FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+  *IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+  *OF OSMC-PL.
  *
- * See the full OSMC Public License conditions for more details.
+  *See the full OSMC Public License conditions for more details.
  *
  */
 
@@ -34,7 +34,7 @@
 #include <stdlib.h>
 #include <memory.h>
 
-void allocRingBuffer(RINGBUFFER* rb, int sz, int item_size)
+void allocRingBuffer(RINGBUFFER *rb, int sz, int item_size)
 {
 	rb->first_element = 0;
 	rb->num_element = 0;
@@ -44,22 +44,23 @@ void allocRingBuffer(RINGBUFFER* rb, int sz, int item_size)
 	assert(rb->buffer);
 }
 
-void freeRingBuffer(RINGBUFFER* rb)
+void freeRingBuffer(RINGBUFFER *rb)
 {
 	free(rb->buffer);
+  rb = NULL;
 }
 
-void* getRingData(RINGBUFFER* rb, int nIndex)
+void *getRingData(RINGBUFFER *rb, int nIndex)
 {
 	assert(nIndex < rb->num_element);
 	assert(0 <= nIndex);
 	return ((char*)rb->buffer)+(((rb->first_element+nIndex)%rb->buf_size)*rb->item_size);
 }
 
-void expandRingBuffer(RINGBUFFER* rb)
+void expandRingBuffer(RINGBUFFER *rb)
 {
 	int i;
-	void* temp = calloc(2*rb->buf_size, rb->item_size);
+	void *temp = calloc(2*rb->buf_size, rb->item_size);
 	assert(temp);
 
 	for(i=0; i<rb->num_element; i++)
@@ -71,7 +72,7 @@ void expandRingBuffer(RINGBUFFER* rb)
 	rb->first_element = 0;
 }
 
-void appendRingData(RINGBUFFER* rb, void* value)
+void appendRingData(RINGBUFFER *rb, void *value)
 {
 	if(rb->buf_size < rb->num_element+1)
 		expandRingBuffer(rb);
@@ -80,7 +81,7 @@ void appendRingData(RINGBUFFER* rb, void* value)
 	++rb->num_element;
 }
 
-void dequeueNFirstRingDatas(RINGBUFFER* rb, int n)
+void dequeueNFirstRingDatas(RINGBUFFER *rb, int n)
 {
 	assert(n <= rb->num_element);
 	assert(0 <= n);
@@ -88,7 +89,7 @@ void dequeueNFirstRingDatas(RINGBUFFER* rb, int n)
 	rb->num_element -= n;
 }
 
-int ringBufferLength(RINGBUFFER* rb)
+int ringBufferLength(RINGBUFFER *rb)
 {
 	return rb->num_element;
 }

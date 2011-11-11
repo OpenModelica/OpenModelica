@@ -1,30 +1,30 @@
 /*
- * This file is part of OpenModelica.
+  *This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, Linköpings University,
- * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+  *Copyright (c) 1998-2008, Linköpings University,
+  *Department of Computer and Information Science,
+  *SE-58183 Linköping, Sweden.
  *
- * All rights reserved.
+  *All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+  *THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+  *LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+  *THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+  *PUBLIC LICENSE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
- * and in the OpenModelica distribution.
+  *The OpenModelica software and the Open Source Modelica
+  *Consortium (OSMC) Public License (OSMC-PL) are obtained
+  *from Linköpings University, either from the above address,
+  *from the URL: http://www.ida.liu.se/projects/OpenModelica
+  *and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+  *This program is distributed  WITHOUT ANY WARRANTY; without
+  *even the implied warranty of  MERCHANTABILITY or FITNESS
+  *FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+  *IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+  *OF OSMC-PL.
  *
- * See the full OSMC Public License conditions for more details.
+  *See the full OSMC Public License conditions for more details.
  *
  */
 
@@ -32,9 +32,9 @@
 #define RINGBUFFER_H
 
 /*
- * This is an expanding ring buffer.
- * When it gets full, it doubles in size.
- * It's basically a queue which has get(ix) instead of get_first()/delete_first().
+  *This is an expanding ring buffer.
+  *When it gets full, it doubles in size.
+  *It's basically a queue which has get(ix) instead of get_first()/delete_first().
  */
 
 #ifdef __cplusplus
@@ -43,22 +43,22 @@ extern "C" {
 
 typedef struct RINGBUFFER
 {
-	void* buffer;
+	void *buffer;
 	int item_size;
 	int first_element;
 	int num_element;
 	int buf_size;
 }RINGBUFFER;
 
-void allocRingBuffer(RINGBUFFER* rb, int sz, int item_size);
-void freeRingBuffer(RINGBUFFER* rb);
+void allocRingBuffer(RINGBUFFER *rb, int sz, int item_size);
+void freeRingBuffer(RINGBUFFER *rb);
 
-void* getRingData(RINGBUFFER* rb, int nIndex);
+void *getRingData(RINGBUFFER *rb, int nIndex);
 
-void appendRingData(RINGBUFFER* rb, void* value);
-void dequeueNFirstRingDatas(RINGBUFFER* rb, int n);
+void appendRingData(RINGBUFFER *rb, void *value);
+void dequeueNFirstRingDatas(RINGBUFFER *rb, int n);
 
-int ringBufferLength(RINGBUFFER* rb);
+int ringBufferLength(RINGBUFFER *rb);
 
 #ifdef __cplusplus
 }
