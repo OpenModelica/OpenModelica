@@ -117,7 +117,7 @@ MACRO(BUILDMODEL model dir Flags CSRC)
 ENDMACRO(BUILDMODEL)
 
 # MACRO BUILDMODEL
-MACRO(BUILDMODELMOS model mos Flags CSRC)
+MACRO(BUILDMODELMOS model mos dir Flags CSRC)
 
   # includes
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c)
@@ -131,8 +131,8 @@ MACRO(BUILDMODELMOS model mos Flags CSRC)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/math-support)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)    
-  
-  INCLUDE_DIRECTORIES(D:/Software/OpenModelicaProject/OpenModelica/testsuite/mosfiles)
+
+  INCLUDE_DIRECTORIES(${dir})    
   
   # OMDEV PATH
   IF(NOT OMDEV)
@@ -146,33 +146,40 @@ MACRO(BUILDMODELMOS model mos Flags CSRC)
   # generate model.mos 
   
   # Variablen fuer openmodelica2sarturis
-  SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
-                 ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.c
-                 ${CMAKE_CURRENT_BINARY_DIR}/${model}_init.txt)
-  SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
-  #                ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
-				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.h
-				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_records.c)
+  SET(OMC_CODE   ${dir}/${model}.c
+                 ${dir}/${model}_functions.c
+                 ${dir}/${model}_init.txt)
+  SET(OMC_OUTPUT  ${dir}/${model}.c
+  #                ${dir}/${model}_functions.cpp
+				  ${dir}/${model}_functions.h
+				  ${dir}/${model}_records.c)
   # custom command fuer openmodelicacompiler
   ADD_CUSTOM_COMMAND(OUTPUT ${OMC_OUTPUT}
                      COMMAND ${OMC_DEBUG} ${Flags} ${mos}
-                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                     WORKING_DIRECTORY ${dir}
                      COMMENT "Erzeuge Code fuer ${model} with ${OMC_DEBUG}")
   # target fuer OM_OUTPUT
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
 
- 
-  ADD_DEFINITIONS(/TP ${model}.c)
+
+  ADD_DEFINITIONS(/TP ${dir}/${model}.c)
   ADD_EXECUTABLE(${model} ${OMC_OUTPUT} ${CSRC})
   TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta sendData ModelicaExternalC libexpat)
 
+  # custom command to copy xml file
+  SET(XML_CODE   ${dir}/${model}_init.xml)
+  SET(XML_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo/${model}_init.xml)
+  ADD_CUSTOM_COMMAND(OUTPUT ${XML_OUTPUT}
+                     COMMAND cp ${XML_CODE} ${XML_OUTPUT}
+                     WORKING_DIRECTORY ${dir}
+                     COMMENT "copy file ${XML_CODE} to ${XML_OUTPUT}")
+  # target fuer OM_OUTPUT
+  ADD_CUSTOM_TARGET(${model}cp_xml ALL DEPENDS ${XML_OUTPUT})
+
   # Dependencies
-  ADD_DEPENDENCIES(${model} ${model}codegen)
+  ADD_DEPENDENCIES(${model}cp_xml ${model}codegen )
+  ADD_DEPENDENCIES(${model} ${model}cp_xml)
   
-  IF(MODELS_INSTALL)
-    INSTALL(TARGETS ${model} RUNTIME DESTINATION ${MODELS_INSTALL_PATH})
-    INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/modelDescription.xml DESTINATION ${MODELS_INSTALL_PATH})
-  ENDIF(MODELS_INSTALL)
 #ENDFOREACH(model ${model_sources})
 ENDMACRO(BUILDMODELMOS)
 

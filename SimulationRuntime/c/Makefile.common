@@ -18,7 +18,7 @@ LIBSPATH= simulation/libsim.a math-support/libmath-support.a simulation/solver/l
 all : install
 
 
-libSimulationCRuntime.a: $(LIBS) $(LIBSPATH)
+libSimulationRuntimeC.a: $(LIBS) $(LIBSPATH)
 	$(AR) $@ $(ALL_OBJS)
 	ranlib $@
 
@@ -46,8 +46,8 @@ libsim.a:
 libModelicaExternalC.a: 
 	$(MAKE) -C ModelicaExternalC -f ${LIBMAKEFILE}
 
-install: libSimulationCRuntime.a $(LIBS) omdevinstall
-	cp libSimulationCRuntime.a $(builddir_lib)
+install: libSimulationRuntimeC.a $(LIBS) omdevinstall
+	cp libSimulationRuntimeC.a $(builddir_lib)
 	cp ./ModelicaExternalC/libModelicaExternalC.a $(builddir_lib)
 	cp ./ModelicaExternalC/ModelicaUtilities.h $(builddir_inc)
 	cp ./openmodelica.h $(builddir_inc)
@@ -55,6 +55,7 @@ install: libSimulationCRuntime.a $(LIBS) omdevinstall
 	cp ../interactive/libinteractive.a $(builddir_lib)
 	cp ./meta/*.h $(builddir_inc)
 	cp ./util/*.h $(builddir_inc)
+	cp ./simulation_data.h $(builddir_inc)
 	cp ./simulation/*.h $(builddir_inc)
 	cp ./math-support/*.h $(builddir_inc)
 	cp ./simulation/results/*.h $(builddir_inc)

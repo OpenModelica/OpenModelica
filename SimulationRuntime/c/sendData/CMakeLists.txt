@@ -27,15 +27,14 @@ ELSE(QT_QTCORE_INCLUDE_DIR)
 MESSAGE(" QT is not availivle use NOSENDDATA")
 
 # Quellen und Header
-SET(sendData_headers  sendData.h)
-ADD_DEFINITIONS(/DnosendData)
-ENDIF(QT_QTCORE_INCLUDE_DIR)
-
 SET(sendData_sources  nosendData.cpp)				 
 SET(sendData_headers  sendData.h)				 
 
+ADD_DEFINITIONS(/DnosendData)
 ADD_LIBRARY(sendData ${sendData_sources} ${sendData_headers})
 
 # Install
 INSTALL(TARGETS sendData
 		ARCHIVE DESTINATION lib)
+ENDIF(QT_QTCORE_INCLUDE_DIR)
+
