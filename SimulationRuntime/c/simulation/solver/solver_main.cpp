@@ -31,7 +31,7 @@
 #include "simulation_runtime.h"
 #include "solver_main.h"
 #include "simulation_result.h"
-#include "simulation_init.h"
+#include "initialization.h"
 #include "options.h"
 #include <math.h>
 #include <string.h>
