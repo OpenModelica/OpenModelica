@@ -175,7 +175,7 @@ modelica_boolean *calc_boolean_index_va(boolean_array_t *source, int ndims,
 
 void print_boolean_matrix(boolean_array_t *source)
 {
-    size_t i,j;
+    _index_t i,j;
     modelica_boolean value;
 
     if (source->ndims == 2) {
@@ -194,7 +194,8 @@ void print_boolean_matrix(boolean_array_t *source)
 
 void print_boolean_array(boolean_array_t *source)
 {
-    size_t i, j, k, n;
+    size_t k, n;
+    _index_t i,j;
     modelica_boolean *data;
     assert(base_array_ok(source));
 

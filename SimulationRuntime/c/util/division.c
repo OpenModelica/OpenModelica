@@ -39,7 +39,7 @@ int encounteredDivisionByZero = 0;
 modelica_real division_error(modelica_real b, const char* division_str)
 {
   if(!encounteredDivisionByZero) {
-    fprintf(stderr, "ERROR: Division by zero in partial equation: %s.\n",division_str);
+    fprintf(stderr, "ERROR: Division by zero in partial equation: %s.\n",division_str); fflush(stderr);
     encounteredDivisionByZero = 1;
   }
   return b;

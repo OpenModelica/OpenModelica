@@ -34,6 +34,7 @@
 #include "index_spec.h"
 #include "memory_pool.h"
 #include "division.h"
+#include "integer_array.h"
 
 /* Indexing 1 dimension */
 modelica_real real_get(real_array_t *a, size_t i)
@@ -170,7 +171,7 @@ modelica_real *calc_real_index_va(real_array_t *source, int ndims, va_list ap)
 
 void print_real_matrix(real_array_t *source)
 {
-    size_t i,j;
+    _index_t i,j;
     modelica_real value;
 
     if (source->ndims == 2) {
@@ -189,7 +190,8 @@ void print_real_matrix(real_array_t *source)
 
 void print_real_array(real_array_t *source)
 {
-    size_t i, j, k, n;
+    size_t k, n;
+    _index_t i,j;
     modelica_real *data;
     assert(base_array_ok(source));
 
@@ -970,7 +972,7 @@ void division_alloc_real_array_scalar(real_array_t* a,modelica_real b,real_array
 
 void exp_real_array(real_array_t* a, modelica_integer n, real_array_t* dest)
 {
-    size_t i;
+    modelica_integer i;
 
     /* Assert n>=0 */
     /* Assert a matrix */
@@ -1195,8 +1197,8 @@ void outer_product_real_array(real_array_t* v1, real_array_t* v2,
 
 void identity_real_array(int n, real_array_t* dest)
 {
-    size_t i;
-    size_t j;
+    int i;
+    int j;
 
     assert(base_array_ok(dest));
 
@@ -1246,7 +1248,7 @@ void fill_real_array(real_array_t* dest,modelica_real s)
 void linspace_real_array(modelica_real x1, modelica_real x2, int n,
                          real_array_t* dest)
 {
-    size_t i;
+    int i;
 
     /* Assert n>=2 */
 

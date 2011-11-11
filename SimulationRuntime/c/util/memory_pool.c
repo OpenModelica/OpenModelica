@@ -37,7 +37,6 @@
 /* 16 MB of data ought to be enough */
 #define NR_ELEMENTS    4*1024*1024
 
-
 one_state *current_states;
 
 void* push_memory_states(int maxThreads)
@@ -94,7 +93,7 @@ void clear_current_state()
   current_states[0].current_state.offset = 0;
 }
 
-inline void* alloc_elements(int ix, int n, int sz)
+void* alloc_elements(int ix, int n, int sz)
 {
   _index_t start,nelem;
   assert(n>=0);

@@ -29,7 +29,7 @@
  *
  */
 
-
+#include "modelica_string.h"
 
 #if defined(__MINGW32__) || defined(_MSC_VER) /* Windows/MinGW */
 

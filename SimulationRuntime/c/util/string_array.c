@@ -32,6 +32,7 @@
 
 #include "string_array.h"
 #include "memory_pool.h"
+#include "index_spec.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -154,7 +155,7 @@ modelica_string_t *calc_string_index_va(string_array_t *source, int ndims,
 
 void print_string_matrix(string_array_t *source)
 {
-    size_t i,j;
+    _index_t i,j;
     modelica_string_t value;
 
     if (source->ndims == 2) {
@@ -173,7 +174,8 @@ void print_string_matrix(string_array_t *source)
 
 void print_string_array(string_array_t *source)
 {
-    size_t i, j, k, n;
+    size_t k, n;
+    _index_t i,j;
     modelica_string_t *data;
     assert(base_array_ok(source));
 

@@ -35,7 +35,7 @@
 #include <stdarg.h>
 #include "openmodelica.h"
 #include "base_array.h"
-#include "index_spec.h"
+
 
 /* Indexing */
 modelica_string_t string_get(string_array_t *a, size_t i);

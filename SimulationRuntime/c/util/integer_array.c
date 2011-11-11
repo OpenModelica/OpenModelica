@@ -209,7 +209,7 @@ modelica_integer* calc_integer_index_va(integer_array_t* source,int ndims,
 
 void print_integer_matrix(integer_array_t* source)
 {
-    size_t i,j;
+    _index_t i,j;
     modelica_integer value;
 
     if (source->ndims == 2) {
@@ -228,7 +228,8 @@ void print_integer_matrix(integer_array_t* source)
 
 void print_integer_array(integer_array_t* source)
 {
-    size_t i, j, k, n;
+    size_t k, n;
+    _index_t i,j;
     modelica_integer *data;
     assert(base_array_ok(source));
 
@@ -918,7 +919,7 @@ void division_integer_array_scalar(integer_array_t* a,modelica_integer b,integer
     /* Assert that dest has correct size*/
     nr_of_elements = base_array_nr_of_elements(a);
     for (i=0; i < nr_of_elements; ++i) {
-        integer_set(dest, i, DIVISION(integer_get(a, i),b,division_str));
+        integer_set(dest, i, (modelica_integer)DIVISION(integer_get(a, i),b,division_str));
     }
 }
 
@@ -931,7 +932,7 @@ void division_alloc_integer_array_scalar(integer_array_t* a,modelica_integer b,i
 
 void exp_integer_array(integer_array_t* a, modelica_integer n, integer_array_t* dest)
 {
-    size_t i;
+    modelica_integer i;
 
     /* Assert n>=0 */
     /* Assert a matrix */
@@ -1171,8 +1172,8 @@ void fill_alloc_integer_array(integer_array_t* dest, modelica_integer value, int
 
 void identity_integer_array(int n, integer_array_t* dest)
 {
-    size_t i;
-    size_t j;
+    int i;
+    int j;
 
     assert(base_array_ok(dest));
 
@@ -1228,7 +1229,7 @@ void fill_integer_array(integer_array_t* dest,modelica_integer s)
 void linspace_integer_array(modelica_integer x1, modelica_integer x2, int n,
                             integer_array_t* dest)
 {
-    size_t i;
+    int i;
 
     /* Assert n>=2 */
 
