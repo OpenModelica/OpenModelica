@@ -169,12 +169,14 @@ case simCode as SIMCODE(__) then
   #endif
   
   /* forward the main in the simulation runtime */
-  extern int _main_SimulationRuntime(int argc, char**argv);
+  extern int _main_SimulationRuntime(int argc, char**argv, _X_DATA *data);
   
   /* call the simulation runtime main from our main! */
   int main(int argc, char**argv)
   {
-    return _main_SimulationRuntime(argc, argv);
+    _X_DATA data;
+    <%pupulateModelInfo(modelInfo, fileNamePrefix, guid)%>
+    return _main_SimulationRuntime(argc, argv, &data);
   }
   
   <%\n%> 
@@ -192,15 +194,53 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   
   #include "openmodelica.h"
   #include "openmodelica_func.h"
-  #include "assert.h"
-  #include "string.h"
+  #include "simulation_data.h"  
   #include "simulation_runtime.h"
+  
+  #include <assert.h>
+  #include <string.h>
   
   #include "<%fileNamePrefix%>_functions.h"
   
   >>
 end simulationFileHeader;
 
+template pupulateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String guid)
+ "Generates information for data.modelInfo struct."
+::=
+match modelInfo
+case MODELINFO(varInfo=VARINFO(__)) then
+  <<
+  data.modelData.modelName = "<%dotPath(name)%>";
+  data.modelData.modelicaFilePrefix = "<%fileNamePrefix%>";
+  data.modelData.modelDir = "<%directory%>";
+  data.modelData.modelGUID = "{<%guid%>}";
+
+  data.modelData.nStates = <%varInfo.numStateVars%>;
+  data.modelData.nVariablesReal = 2*<%varInfo.numStateVars%>+<%varInfo.numAlgVars%>;
+  data.modelData.nVariablesInteger = <%varInfo.numIntAlgVars%>;
+  data.modelData.nVariablesBoolean = <%varInfo.numBoolAlgVars%>;
+  data.modelData.nVariablesString = <%varInfo.numStringAlgVars%>;
+  data.modelData.nParametersReal = <%varInfo.numParams%>;
+  data.modelData.nParametersInteger = <%varInfo.numIntParams%>;
+  data.modelData.nParametersBoolean = <%varInfo.numBoolParams%>;
+  data.modelData.nParametersStrings = <%varInfo.numStringParamVars%>;
+  data.modelData.nInputVars = <%varInfo.numInVars%>;
+  data.modelData.nOutputVars = <%varInfo.numOutVars%>;
+
+  data.modelData.nHelp = <%varInfo.numHelpVars%>;
+  data.modelData.nZeroCrossings = <%varInfo.numZeroCrossings%>;
+  data.modelData.nSample = <%varInfo.numTimeEvents%>;
+  data.modelData.nResiduals = <%varInfo.numResiduals%>;
+  data.modelData.nExtOpj = <%varInfo.numExternalObjects%>;
+  data.modelData.nFunctions = <%listLength(functions)%>;
+
+  data.modelData.nAliasReal = <%varInfo.numAlgAliasVars%>;
+  data.modelData.nAliasInteger = <%varInfo.numIntAliasVars%>;
+  data.modelData.nAliasBoolean = <%varInfo.numBoolAliasVars%>;
+  data.modelData.nAliasString = <%varInfo.numJacobianVars%>;      
+  >>
+end pupulateModelInfo;
 
 template globalData(ModelInfo modelInfo, String fileNamePrefix, String guid)
  "Generates global data in simulation file."
