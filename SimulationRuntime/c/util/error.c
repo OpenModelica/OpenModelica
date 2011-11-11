@@ -34,3 +34,7 @@
 /* Global JumpBuffer */
 jmp_buf globalJmpbuf;
 
+const unsigned int DF_NONE   = 0;
+const unsigned int DF_SOLVER = 1;
+
+unsigned int globalDebugFlags = 0;

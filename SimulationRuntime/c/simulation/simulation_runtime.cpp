@@ -479,6 +479,7 @@ int verboseLevel(int argc, char**argv) {
   }
   if (flags->find("LOG_SOLVER", 0) != string::npos) {
     res |= LOG_SOLVER;
+    globalDebugFlags |= DF_SOLVER;
   }
   if (flags->find("LOG_EVENTS", 0) != string::npos) {
     res |= LOG_EVENTS;
@@ -1117,6 +1118,10 @@ int _main_SimulationRuntime(int argc, char**argv, _X_DATA *data)
   int retVal = -1;
   if(!setjmp(globalJmpbuf) ) 
   { 
+    /*MSG("info", stdout, "test");
+      DEBUG_INFO(1, "test der DEBUG_INFO %d, %s, %f", 42, "hello world", 0.123f);
+      THROW("ENDE");*/
+
       if (initRuntimeAndSimulation(argc, argv, data)) //initRuntimeAndSimulation returns 1 if an error occurs
         return 1;
       /* sighandler_t oldhandler = different type on all platforms... */

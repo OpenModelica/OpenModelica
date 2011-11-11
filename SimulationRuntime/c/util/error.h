@@ -40,14 +40,24 @@
 extern "C" {
 #endif
 
-/* Global JumpBuffer */
+/* global JumpBuffer */
 extern jmp_buf globalJmpbuf;
 
-#define MSG(type,stream,msg) { fprintf(stream,"%s |  %d | %s\n        |> %s\n", type, __LINE__, __FILE__, msg); fflush(NULL); }
+/* global debug-flags */
+extern unsigned int globalDebugFlags;
 
-#define INFO(msg)     { MSG("info   ", stdout, msg); }
-#define WARNING(msg)  { MSG("warning", stdout, msg); }
-#define THROW(msg)    { MSG("error  ", stderr, msg); longjmp(globalJmpbuf, 1); }
+/* debug options */
+extern const unsigned int DF_NONE;
+extern const unsigned int DF_SOLVER;
+
+#define MSG(type, stream, msg, ...) {fprintf(stream,"%s |  %d | %s\n        |> ", type, __LINE__, __FILE__); fprintf(stream, msg, __VA_ARGS__); fprintf(stream, "\n"); fflush(NULL);}
+
+#define INFO(msg, ...)        {MSG("info   ", stdout, msg, __VA_ARGS__);}
+#define WARNING(msg, ...)     {MSG("warning", stdout, msg, __VA_ARGS__);}
+#define THROW(msg, ...)       {MSG("error  ", stderr, msg, __VA_ARGS__); longjmp(globalJmpbuf, 1);}
+#define ASSERT(exp, msg, ...) {if(!exp){MSG("assert ", stderr, msg, __VA_ARGS__); longjmp(globalJmpbuf, 1);}}
+
+#define DEBUG_INFO(flag, msg, ...) {if(flag & globalDebugFlags) INFO(msg, __VA_ARGS__);}
 
 #ifdef __cplusplus
 }

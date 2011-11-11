@@ -34,6 +34,7 @@
 #include "delay.h"
 #include "simulation_runtime.h"
 #include "ringbuffer.h"
+#include "error.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -71,16 +72,16 @@ void initDelay(double startTime)
     assert(delayStructure);
 
     for(i=0; i<numDelayExpressionIndex; i++)
-    {
-        delayStructure[i] = (RINGBUFFER*)malloc(sizeof(RINGBUFFER));
-        allocRingBuffer(delayStructure[i], 1024, sizeof(t_TimeAndValue));
-    }
+        delayStructure[i] = allocRingBuffer(1024, sizeof(t_TimeAndValue));
 
+    DEBUG_INFO(DF_SOLVER, "initDelay called with startTime = %f\n", startTime);
+
+    /*
     if(sim_verbose >= LOG_SOLVER)
     {
         fprintf(stdout, "initDelay called with startTime = %f\n", startTime);
         fflush(NULL);
-    }
+    }*/
 }
 
 void deinitDelay()
@@ -102,15 +103,15 @@ void deinitDelay()
  *  the buffer in 'delayStruct' is not empty
  *  'time' is smaller than the last entry in 'delayStruct'
  */
-static int findTime(double time, RINGBUFFER delayStruct)
+static int findTime(double time, RINGBUFFER *delayStruct)
 {
     int start = 0;
-    int end = ringBufferLength(&delayStruct);
+    int end = ringBufferLength(delayStruct);
     double t;
     do
     {
         int i = (start + end) / 2;
-        t = ((t_TimeAndValue*)getRingData(&delayStruct, i))->time;
+        t = ((t_TimeAndValue*)getRingData(delayStruct, i))->time;
         if(t > time)
             end = i;
         else
@@ -215,7 +216,7 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
         }
         else
         {
-            i = findTime(timeStamp, *delayStruct);
+            i = findTime(timeStamp, delayStruct);
             assert(i < length);
             time0 = ((t_TimeAndValue*)getRingData(delayStruct, i))->time;
             value0 = ((t_TimeAndValue*)getRingData(delayStruct, i))->value;
