@@ -50,6 +50,6 @@
 #include "matrix.h"
 #include "division.h"
 #include "ModelicaUtilities.h"
-
+#include "utility.h"
   
 #endif
