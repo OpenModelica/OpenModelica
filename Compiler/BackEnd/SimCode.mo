@@ -2239,8 +2239,7 @@ algorithm
           simSettingsOpt,
           filenamePrefix,
           crefToSimVarHT);
-        // (simCode,(_,_,lits)) = traverseExpsSimCode(simCode,findLiteralsHelper,literals);
-        (_,_,lits) = literals;
+        (simCode,(_,_,lits)) = traverseExpsSimCode(simCode,findLiteralsHelper,literals);
         simCode = setSimCodeLiterals(simCode,listReverse(lits));
         Debug.fcall("execFiles",print, "*** SimCode -> collect all files started: " +& realString(clock()) +& "\n" );
         // adrpo: collect all the files from Absyn.Info and DAE.ElementSource

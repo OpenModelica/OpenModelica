@@ -5232,17 +5232,20 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   
   case CALL(attr=CALL_ATTR(ty=ty),
             path=IDENT(name="DIVISION_ARRAY_SCALAR"),
-            expLst={e1, e2, DAE.SCONST(string=string)}) then
+            expLst={e1, e2, e3 as SHARED_LITERAL(__)}) then
     let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" 
                         case ET_ARRAY(ty=ET_ENUMERATION(__)) then "integer_array"
                         else "real_array"
     let var = tempDecl(type, &varDecls)
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     let var2 = daeExp(e2, context, &preExp, &varDecls)
-    let var3 = Util.escapeModelicaStringToCString(string)
-    let &preExp += 'division_alloc_<%type%>_scalar(&<%var1%>, <%var2%>, &<%var%>,"<%var3%>");<%\n%>'
+    let var3 = daeExp(e3, context, &preExp, &varDecls)
+    let &preExp += 'division_alloc_<%type%>_scalar(&<%var1%>, <%var2%>, &<%var%>, <%var3%>);<%\n%>'
     '<%var%>'
   
+  case exp as CALL(path=IDENT(name="DIVISION_ARRAY_SCALAR")) then
+    error(sourceInfo(), 'Code generation does not support <%printExpStr(exp)%>')
+
   case CALL(path=IDENT(name="der"), expLst={arg as CREF(__)}) then
     '$P$DER<%cref(arg.componentRef)%>'
   case CALL(path=IDENT(name="der"), expLst={exp}) then
