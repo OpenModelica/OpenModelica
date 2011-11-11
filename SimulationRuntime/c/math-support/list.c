@@ -39,15 +39,15 @@
 #include <stdlib.h>
 #include <assert.h>
 
-typedef struct list_node {
+struct list_node {
     int data;
     struct list_node *next;
-} List_Node;
+};
 
-typedef struct list_list {
+struct list_list {
     struct list_node *first;
     struct list_node *last;
-} List;
+};
 
 List* list_init()
 {
