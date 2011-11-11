@@ -40,6 +40,9 @@
 
 #include "openmodelica.h"
 #include "simulation_varinfo.h"
+
+#include "simulation_data.h"
+
 #include "rtclock.h"
 #include <stdlib.h>
 #include "simulation_events.h"
@@ -259,7 +262,7 @@ void setTermMsg(const char*);
 /* the main function of the simulation runtime!
  * simulation runtime no longer has main, is defined by the generated model code which calls this function.
  */
-extern int _main_SimulationRuntime(int argc, char**argv);
+extern int _main_SimulationRuntime(int argc, char**argv, _X_DATA *data);
 void communicateStatus(const char *phase, double completionPercent);
 
 #ifdef __cplusplus

@@ -77,12 +77,12 @@ extern "C" {
     const FILE_INFO info;
   }FUNCTION_INFO;
 
-  typedef struct DATA_REAL_ALIAS
+  typedef struct _X_DATA_REAL_ALIAS
   {
     modelica_real* alias;
     int negate;
     int nameID;
-  }DATA_REAL_ALIAS;
+  }_X_DATA_REAL_ALIAS;
 
   typedef struct DATA_INTEGER_ALIAS
   {
@@ -98,12 +98,12 @@ extern "C" {
     int nameID;
   }DATA_BOOLEAN_ALIAS;
 
-  typedef struct DATA_STRING_ALIAS
+  typedef struct _X_DATA_STRING_ALIAS
   {
     modelica_string* alias;
     int negate;
     int nameID;
-  }DATA_STRING_ALIAS;
+  }_X_DATA_STRING_ALIAS;
 
   /* collects all dynamic model data like the variabel-values */
   typedef struct SIMULATION_DATA
@@ -170,7 +170,7 @@ extern "C" {
   {
     VAR_INFO info;
     INTEGER_ATTRIBUTE attribute;
-    DATA_INTEGEr_ALIAS* alias;
+    DATA_INTEGER_ALIAS* alias;
   }STATIC_INTEGER_DATA;
 
   typedef struct STATIC_BOOLEAN_DATA
@@ -197,9 +197,34 @@ extern "C" {
     const FUNCTION_INFO* functionNames;
     const EQUATION_INFO* equationInfo;
 
-    modelica_string modelName;
-    modelica_string modelicaFilePrefix;
-    modelica_string modelGUID;
+    modelica_string_t modelName;
+    modelica_string_t modelicaFilePrefix;
+    modelica_string_t modelDir;
+    modelica_string_t modelGUID;
+
+    long nStates;
+    long nVariablesReal;
+    long nVariablesInteger;
+    long nVariablesBoolean;
+    long nVariablesString;
+    long nParametersReal;
+    long nParametersInteger;
+    long nParametersBoolean;
+    long nParametersStrings;
+    long nInputVars;
+    long nOutputVars;
+
+    long nHelp;
+    long nZeroCrossings;
+    long nSample;
+    long nResiduals;
+    long nExtOpj;
+    long nFunctions;
+
+    long nAliasReal;
+    long nAliasInteger;
+    long nAliasBoolean;
+    long nAliasString;
   }MODEL_DATA;
 
   typedef struct SIMULTAION_INFO
@@ -212,12 +237,12 @@ extern "C" {
   }SIMULATION_INFO;
 
   /* top-level struct to collect dynamic and static model data */
-  typedef struct DATA
+  typedef struct _X_DATA
   {
     RINGBUFFER* simulationData;     /* RINGBUFFER of SIMULATION_DATA */
     MODEL_DATA modelData;           /* static stuff */
-    SIMULTAION_INFO simulationInfo;
-  }DATA;
+    SIMULATION_INFO simulationInfo;
+  }_X_DATA;
 
 #ifdef __cplusplus
 }

@@ -28,6 +28,9 @@
  *
  */
 
+#include "error.h"
+
+#include <setjmp.h>
 #include <string>
 #include <limits>
 #include <list>
@@ -1016,7 +1019,7 @@ DATA *initializeDataStruc2(DATA *returnData)
  * Initialization is the same for interactive or non-interactive simulation
  */
 int
-initRuntimeAndSimulation(int argc, char**argv)
+initRuntimeAndSimulation(int argc, char**argv, _X_DATA *data)
 {
   if (flagSet("?", argc, argv) || flagSet("help", argc, argv)) {
     cout << "usage: " << argv[0]
@@ -1108,23 +1111,26 @@ void communicateStatus(const char *phase, double completionPercent /*0.0 to 1.0*
  * -r res.plt write result to file.
  */
 
-int _main_SimulationRuntime(int argc, char**argv)
+int _main_SimulationRuntime(int argc, char**argv, _X_DATA *data)
 {
   int retVal = -1;
-  if (initRuntimeAndSimulation(argc, argv)) //initRuntimeAndSimulation returns 1 if an error occurs
-    return 1;
-  /* sighandler_t oldhandler = different type on all platforms... */
+  if(!setjmp(globalJmpbuf) ) 
+  { 
+      if (initRuntimeAndSimulation(argc, argv, data)) //initRuntimeAndSimulation returns 1 if an error occurs
+        return 1;
+      /* sighandler_t oldhandler = different type on all platforms... */
 #ifdef SIGUSR1
-  signal(SIGUSR1, SimulationRuntime_printStatus);
+      signal(SIGUSR1, SimulationRuntime_printStatus);
 #endif
 
-  if (interactiveSimulation) {
-    cout << "startInteractiveSimulation: " << version << endl;
-    retVal = startInteractiveSimulation(argc, argv);
-  } else {
-    // cout << "startNonInteractiveSimulation: " << version << endl;
-    retVal = startNonInteractiveSimulation(argc, argv);
-  }
+      if (interactiveSimulation) {
+        cout << "startInteractiveSimulation: " << version << endl;
+        retVal = startInteractiveSimulation(argc, argv);
+      } else {
+        // cout << "startNonInteractiveSimulation: " << version << endl;
+        retVal = startNonInteractiveSimulation(argc, argv);
+      }
+  } 
 
   deinitializeEventData();
   deInitializeDataStruc2(globalData);

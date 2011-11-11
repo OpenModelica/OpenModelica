@@ -70,7 +70,7 @@ clean:
 	$(MAKE) -C simulation -f ${LIBMAKEFILE} clean
 	$(MAKE) -C simulation/solver -f ${LIBMAKEFILE} clean
 	$(MAKE) -C simulation/libf2c -f ${LIBMAKEFILE} clean
-	$(MAKE) -C simulation/math-support -f ${LIBMAKEFILE} clean
+	$(MAKE) -C math-support -f ${LIBMAKEFILE} clean
 	$(MAKE) -C simulation/results -f ${LIBMAKEFILE} clean
 	$(MAKE) -C meta -f ${LIBMAKEFILE} clean
 	$(MAKE) -C util -f ${LIBMAKEFILE} clean

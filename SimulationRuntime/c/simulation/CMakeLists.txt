@@ -9,16 +9,16 @@ ADD_SUBDIRECTORY(solver)
 # Quellen und Header
 SET(simulation_sources  options.cpp simulation_input_xml.cpp
                     simulation_modelinfo.c simulation_runtime.cpp
-					simulation_varinfo.c ../linearization/linearize.cpp  )
+					simulation_varinfo.c ../linearization/linearize.cpp simulation_data.c )
 
 SET(simulation_headers  simulation_input_xml.h simulation_runtime.h 
                     simulation_modelinfo.h simulation_varinfo.h 
-					options.h ../linearization/linearize.h)				 
+					options.h ../linearization/linearize.h ../simulation_data.h)				 
 						 
 # Library util
 ADD_DEFINITIONS(/DNO_INTERACTIVE_DEPENDENCY)
 ADD_LIBRARY(simulation ${simulation_sources} ${simulation_headers})
-#TARGET_LINK_LIBRARIES(util)
+TARGET_LINK_LIBRARIES(util)
 
 # Install
 INSTALL(TARGETS simulation
