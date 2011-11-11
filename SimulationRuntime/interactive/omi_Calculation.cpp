@@ -22,7 +22,7 @@
 #include "omi_ServiceInterface.h"
 #include "omi_Control.h"
 #include "omi_Calculation.h"
-#include "simulation_delay.h"
+#include "delay.h"
 
 using namespace std;
 
