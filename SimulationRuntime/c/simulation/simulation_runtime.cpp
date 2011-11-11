@@ -178,13 +178,20 @@ newTime(double t, double step, double stop)
 
 void setTermMsg(const char *msg)
 {
-  if (TermMsg != NULL) {
-      free(TermMsg);
-  }
-  std::string s(msg);
-  TermMsg = (char*) calloc(s.length()+1,sizeof(char));
-  for (size_t i=0;i<s.length();i++){
-      TermMsg[i] = s[i];
+  size_t length = strlen(msg);
+  if (length > 0) {
+      if (TermMsg == NULL) {
+        TermMsg = (char*)calloc(length+1,sizeof(char));
+      } else {
+          if (strlen(msg) > strlen(TermMsg)) {
+            if (TermMsg != NULL) {
+                  free(TermMsg);
+            }
+            TermMsg = (char*)calloc(length+1,sizeof(char));
+          }
+      }
+      for (size_t i=0;i<length;i++)
+        TermMsg[i] = msg[i];
   }
 }
 
