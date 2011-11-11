@@ -53,7 +53,7 @@ void
 deinitializeEventData();
 
 double
-BiSection(double*, double*, double*, double*, List);
+BiSection(double*, double*, double*, double*, List*);
 
 int
 CheckZeroCrossings(List *list);

@@ -39,7 +39,30 @@
 #include <stdlib.h>
 #include <assert.h>
 
-void list_push_front(int data, List *list)
+typedef struct list_node {
+    int data;
+    struct list_node *next;
+} List_Node;
+
+typedef struct list_list {
+    struct list_node *first;
+    struct list_node *last;
+} List;
+
+List* list_init()
+{
+    return (List*)calloc(1,sizeof(List));
+}
+
+void list_deinit(List *list)
+{
+    if (list) 
+    {
+        free(list);
+    }
+}
+
+void list_push_front(List *list, int data)
 {
     List_Node *new_node = 0;
     assert(list);
@@ -52,7 +75,7 @@ void list_push_front(int data, List *list)
     }
 }
 
-void list_push_back(int data, List *list)
+void list_push_back(List *list, int data)
 {
     List_Node *new_node = 0;
     assert(list);
@@ -68,21 +91,24 @@ void list_push_back(int data, List *list)
     list->last = new_node;
 }
 
-int list_empty(List list)
+int list_empty(List *list)
 {
-    return list.first==0?1:0;
+    assert(list);
+    return list->first==0?1:0;
 }
 
-int list_front(List list)
+int list_front(List *list)
 {
-    assert(list.first);
-    return list.first->data;
+    assert(list);
+    assert(list->first);
+    return list->first->data;
 }
 
-int list_last(List list)
+int list_last(List *list)
 {
-    assert(list.last);
-    return list.last->data;
+    assert(list);
+    assert(list->last);
+    return list->last->data;
 }
 
 void list_pop_front(List *list)
@@ -109,10 +135,23 @@ void list_clear(List *list)
     }
 }
 
-List_Node* list_next(List_Node* node)
+List_Node *list_first(List *list)
 {
+    assert(list);
+    return list->first;
+}
+
+List_Node *list_next(List_Node *node)
+{
+    assert(node);
     if (node==0) {
         return 0;
     }
     return node->next;
+}
+
+int list_node_data(List_Node *node)
+{
+    assert(node);
+    return node->data;
 }

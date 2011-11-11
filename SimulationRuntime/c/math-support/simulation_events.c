@@ -36,7 +36,7 @@
 #include <string.h>
 
 
-static List EventList = EMPTYLIST;
+static List* EventList=NULL;
 
  /*vectors with saved values used by pre(v)*/
 #define x_saved globalData->states_saved
@@ -65,6 +65,7 @@ initializeEventData()
   /*
    * Re-Initialization is important because the variables are global and used in every solving step
    */
+  EventList = list_init();
   globalData->helpVars_saved = 0;
   globalData->states_saved = 0;
   globalData->statesDerivatives_saved = 0;
@@ -119,6 +120,7 @@ deinitializeEventData()
   free(gout_old);
   free(backuprelations);
   free(zeroCrossingEnabled);
+  list_deinit(EventList);
 }
 
 
@@ -661,7 +663,7 @@ CheckForNewEvent(int* sampleactived)
                 {
                   fprintf(stdout, "| info LOG_EVENTS | adding event %d at time: %f\n",i, globalData->timeValue); fflush(NULL);
                 }
-              list_push_front(i,&EventList);
+              list_push_front(EventList,i);
             }
           else if (gout[i] < 0 && zeroCrossingEnabled[i] >= 1)
             {
@@ -669,7 +671,7 @@ CheckForNewEvent(int* sampleactived)
                 {
                   fprintf(stdout, "| info LOG_EVENTS | adding event %d at time: %f\n",i, globalData->timeValue); fflush(NULL);
                 }
-              list_push_front(i,&EventList);
+              list_push_front(EventList,i);
             }
         }
       if ((gout[i] <= 0 && gout_old[i] > 0) ||
@@ -679,7 +681,7 @@ CheckForNewEvent(int* sampleactived)
             {
               fprintf(stdout, "| info LOG_EVENTS | adding event %d at time: %f\n",i, globalData->timeValue); fflush(NULL);
             }
-          list_push_front(i,&EventList);
+          list_push_front(EventList,i);
         }
     }
   if (list_empty(EventList) != 1)
@@ -730,7 +732,7 @@ EventHandle(int flag)
       while (list_empty(EventList) != 1)
         {
           event_id = list_front(EventList);
-          list_pop_front(&EventList);
+          list_pop_front(EventList);
           if (sim_verbose >= LOG_EVENTS)
           {
             fprintf(stdout, "%d", event_id);
@@ -909,23 +911,27 @@ FindRoot(double *EventTime)
 
   int event_id;
   List_Node* it;
-  static List tmpEventList;
   fortran_integer i=0;
-
+  static List *tmpEventList = 0;
   double *states_right = (double*)calloc(globalData->nStates,sizeof(double));
   double *states_left = (double*)calloc(globalData->nStates,sizeof(double));
 
   double time_left = globalData->oldTime;
   double time_right = globalData->timeValue;
 
+  if (!tmpEventList)
+  {
+      tmpEventList = list_init();
+  }
+
   assert(states_right);
   assert(states_left);
 
-  for ( it=EventList.first ; it != 0; it=list_next(it) )
+  for ( it=list_first(EventList) ; it != 0; it=list_next(it) )
     {
       if (sim_verbose >= LOG_ZEROCROSSINGS)
         {
-            fprintf(stdout, "| info LOG_ZEROCROSSINGS | Search for current event. Events in list: %d\n",it->data); fflush(NULL);
+            fprintf(stdout, "| info LOG_ZEROCROSSINGS | Search for current event. Events in list: %d\n",list_node_data(it)); fflush(NULL);
         }
     }
 
@@ -944,31 +950,31 @@ FindRoot(double *EventTime)
   if (list_empty(tmpEventList) == 1)
     {
         double value = fabs(gout[list_front(EventList)]);
-        for ( it=EventList.first ; it != 0; it=list_next(it) )
+        for ( it=list_first(EventList) ; it != 0; it=list_next(it) )
         {
-            if (value > fabs(gout[it->data]))
+            if (value > fabs(gout[list_node_data(it)]))
             {
-                value = fabs(gout[it->data]);
+                value = fabs(gout[list_node_data(it)]);
             }
         }
       if (sim_verbose >= LOG_ZEROCROSSINGS)
         {
           fprintf(stdout, "| info LOG_ZEROCROSSINGS | Minimum value: %g\n",value); fflush(NULL);
         }
-      for ( it=EventList.first ; it != 0; it=list_next(it) )
+      for ( it=list_first(EventList) ; it != 0; it=list_next(it) )
         {
-            if (value == fabs(gout[it->data]))
+            if (value == fabs(gout[list_node_data(it)]))
             {
-              list_push_back(it->data,&tmpEventList);
+              list_push_back(tmpEventList,list_node_data(it));
               if (sim_verbose >= LOG_ZEROCROSSINGS)
                 {
-                  fprintf(stdout, "| info LOG_ZEROCROSSINGS | added tmp event : %d\n",*it); fflush(NULL);
+                  fprintf(stdout, "| info LOG_ZEROCROSSINGS | added tmp event : %d\n",list_node_data(it)); fflush(NULL);
                 }
             }
         }
     }
 
-  list_clear(&EventList);
+  list_clear(EventList);
 
   if (list_empty(tmpEventList) != 1)
     {
@@ -987,7 +993,7 @@ FindRoot(double *EventTime)
   while (list_empty(tmpEventList) != 1)
     {
       event_id = list_front(tmpEventList);
-      list_pop_front(&tmpEventList);
+      list_pop_front(tmpEventList);
       if (sim_verbose >= LOG_EVENTS)
         {
           fprintf(stdout, "%d ", event_id); fflush(NULL);
@@ -999,7 +1005,7 @@ FindRoot(double *EventTime)
               fprintf(stdout, ", "); fflush(NULL);
             }
         }
-      list_push_front(event_id,&EventList);
+      list_push_front(EventList,event_id);
     }
   if (sim_verbose >= LOG_EVENTS)
   {
@@ -1041,7 +1047,7 @@ FindRoot(double *EventTime)
 */
 double
 BiSection(double* a, double* b, double* states_a, double* states_b,
-    List tmpEventList)
+    List *tmpEventList)
 {
 
   /*double TTOL =  DBL_EPSILON*fabs((*b - *a))*100; */
@@ -1085,7 +1091,7 @@ BiSection(double* a, double* b, double* states_a, double* states_b,
       functionAlgebraics();
 
       function_onlyZeroCrossings(gout, &globalData->timeValue);
-      if (CheckZeroCrossings(&tmpEventList))
+      if (CheckZeroCrossings(tmpEventList))
         { /*If Zerocrossing in left Section */
 
           for (i = 0; i < globalData->nStates; i++)
@@ -1166,23 +1172,23 @@ CheckZeroCrossings(List *tmpEventList)
 
   List_Node *it;
   list_clear(tmpEventList);
-  for ( it=EventList.first ; it != 0; it=list_next(it) )
+  for ( it=list_first(EventList) ; it != 0; it=list_next(it) )
     {
       if (sim_verbose >= LOG_ZEROCROSSINGS)
         {
           fprintf(stdout, "| info LOG_ZEROCROSSINGS | ZeroCrossing ID: %d \t old = %g \t current = %g \t Direction = %li\n",
-              *it,gout_old[it->data], gout[it->data],zeroCrossingEnabled[it->data]); fflush(NULL);
+              list_node_data(it),gout_old[list_node_data(it)], gout[list_node_data(it)],zeroCrossingEnabled[list_node_data(it)]); fflush(NULL);
         }
       /*Found event in left section*/
-      if ((gout[it->data] <= 0 && gout_old[it->data] > 0) || (gout[it->data] >= 0 && gout_old[it->data] < 0)
-          || (gout[it->data] > 0 && zeroCrossingEnabled[it->data] <= -1) || (gout[it->data] < 0
-              && zeroCrossingEnabled[it->data] >= 1))
+      if ((gout[list_node_data(it)] <= 0 && gout_old[list_node_data(it)] > 0) || (gout[list_node_data(it)] >= 0 && gout_old[list_node_data(it)] < 0)
+          || (gout[list_node_data(it)] > 0 && zeroCrossingEnabled[list_node_data(it)] <= -1) || (gout[list_node_data(it)] < 0
+              && zeroCrossingEnabled[list_node_data(it)] >= 1))
         {
-           list_push_front(it->data,tmpEventList);
+           list_push_front(tmpEventList,list_node_data(it));
         }
     }
   /*Found event in left section*/
-  if (list_empty(*tmpEventList) != 1)
+  if (list_empty(tmpEventList) != 1)
     {
       return 1;
     }

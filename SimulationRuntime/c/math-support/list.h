@@ -42,33 +42,34 @@
 extern "C" {
 #endif
 
-typedef struct list_node {
-    int data;
-    struct list_node *next;
-} List_Node;
+/* Prototypes for Structs */
+struct list_node;
+struct list_list;
+typedef struct list_node List_Node;
+typedef struct list_list List;
 
-typedef struct list_list {
-    struct list_node *first;
-    struct list_node *last;
-} List;
+List* list_init();
+void list_deinit(List *list);
 
-#define EMPTYLIST {0,0}
+void list_push_front(List *list, int data);
 
-void list_push_front(int data, List *list);
+void list_push_back(List *list, int data);
 
-void list_push_back(int data, List *list);
+int list_empty(List *list);
 
-int list_empty(List list);
+int list_front(List *list);
 
-int list_front(List list);
-
-int list_last(List list);
+int list_last(List *list);
 
 void list_pop_front(List *list);
 
 void list_clear(List *list);
 
-List_Node* list_next(List_Node* node);
+List_Node *list_first(List *list);
+
+List_Node *list_next(List_Node *node);
+
+int list_node_data(List_Node *node);
 
 #ifdef __cplusplus
 }
