@@ -29,7 +29,7 @@
  *
  */
 
-/* File: modelica.h
+/*! \file modelica.h
  * Description: This is the C header file for the C code generated from
  * Modelica. It includes e.g. the C object representation of the builtin types
  * and arrays, etc.
