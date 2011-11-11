@@ -4518,7 +4518,7 @@ algorithm
       equation
         p = listAppend(partOfLst1, partOfLst2);
         i = listAppend(instanceOptLst1, instanceOptLst2);
-        c = listAppend(connectEquationOptLst1, connectEquationOptLst1);
+        c = listAppend(connectEquationOptLst1, connectEquationOptLst2);
         t = listAppend(typeLst1, typeLst2);
         o = listAppend(operations1, operations2);
       then DAE.SOURCE(info,p,i,c,t, o);
