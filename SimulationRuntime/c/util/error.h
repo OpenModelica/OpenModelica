@@ -35,6 +35,10 @@
 
 #include <setjmp.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Global JumpBuffer */
 extern jmp_buf globalJmpbuf;
 
@@ -43,5 +47,9 @@ extern jmp_buf globalJmpbuf;
 #define INFO(msg)     { MSG("info   ", msg); }
 #define WARNING(msg)  { MSG("warning", msg); }
 #define THROW(msg)    { MSG("error  ", msg); longjmp(globalJmpbuf, 1); }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
