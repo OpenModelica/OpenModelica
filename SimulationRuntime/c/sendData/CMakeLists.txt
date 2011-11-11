@@ -1,7 +1,7 @@
 # Include Directorys
 
 # find and setup Qt4 for this project
-find_package(Qt4 REQUIRED)
+find_package(Qt4)
 
 IF(QT_QTCORE_INCLUDE_DIR)
 INCLUDE_DIRECTORIES(${QT_QTCORE_INCLUDE_DIR})
@@ -26,4 +26,7 @@ TARGET_LINK_LIBRARIES(sendData ${QT_LIBRARIES})
 # Install
 INSTALL(TARGETS sendData
 		ARCHIVE DESTINATION lib)
+
+ELSE(QT_QTCORE_INCLUDE_DIR)
+MESSAGE(" QT is not availivle lib sendData will not be compiled, linker error will occure ")
 ENDIF(QT_QTCORE_INCLUDE_DIR)
