@@ -35,6 +35,8 @@
 #ifndef SENDDATA_H
 #define SENDDATA_H
 
+#ifndef NOSENDDATA
+
 //Qt headers
 //#include <QApplication>
 //#include <QtNetwork/QTcpSocket>
@@ -45,12 +47,14 @@ class QColor;
 #include <string>
 class QStringList;
 //#include <QThread>
+#endif 
 
 //Std headers
 #include <iostream>
 #include <cstdlib>
 #include "../simulation/simulation_varinfo.h"
 
+#ifndef NOSENDDATA
 class Connection
 {
 public:
@@ -81,7 +85,9 @@ class Static
   static bool connect(bool graphics = false);
   static bool enabled_;
 };
-
+#else 
+typedef int QColor
+#endif
 #ifdef __cplusplus
 using namespace std;
 extern "C"

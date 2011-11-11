@@ -18,7 +18,7 @@ SET(simulation_headers  simulation_input_xml.h simulation_runtime.h
 # Library util
 ADD_DEFINITIONS(/DNO_INTERACTIVE_DEPENDENCY)
 ADD_LIBRARY(simulation ${simulation_sources} ${simulation_headers})
-TARGET_LINK_LIBRARIES(util)
+#TARGET_LINK_LIBRARIES(util)
 
 # Install
 INSTALL(TARGETS simulation

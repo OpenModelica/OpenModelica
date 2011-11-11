@@ -14,19 +14,28 @@ SET(QT_LIBRARIES "${QT_LIBRARIES}" ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT
 
 # Quellen und Header
 SET(sendData_sources  sendData.cpp )
-SET(sendData_headers  sendData.h)				 
-						 
-
+			 
 # Library sendData
 #ADD_DEFINITIONS(/O2 /frtti /fexceptions /mthreads /Wall /DUNICODE /DQT_LARGEFILE_SUPPORT /DQT_NO_DEBUG /DQT_GUI_LIB /DQT_NETWORK_LIB /DQT_CORE_LIB /DQT_THREAD_SUPPORT)
+
+SET(sendData_headers  sendData.h)				 
 
 ADD_LIBRARY(sendData ${sendData_sources} ${sendData_headers})
 TARGET_LINK_LIBRARIES(sendData ${QT_LIBRARIES})
 
+ELSE(QT_QTCORE_INCLUDE_DIR)
+MESSAGE(" QT is not availivle use NOSENDDATA")
+
+# Quellen und Header
+SET(sendData_headers  sendData.h)
+ADD_DEFINITIONS(/DnosendData)
+ENDIF(QT_QTCORE_INCLUDE_DIR)
+
+SET(sendData_sources  nosendData.cpp)				 
+SET(sendData_headers  sendData.h)				 
+
+ADD_LIBRARY(sendData ${sendData_sources} ${sendData_headers})
+
 # Install
 INSTALL(TARGETS sendData
 		ARCHIVE DESTINATION lib)
-
-ELSE(QT_QTCORE_INCLUDE_DIR)
-MESSAGE(" QT is not availivle lib sendData will not be compiled, linker error will occure ")
-ENDIF(QT_QTCORE_INCLUDE_DIR)
