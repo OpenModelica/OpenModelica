@@ -90,7 +90,7 @@ void list_pop_front(List *list)
     if (list != NULL) {
         if (list->first != NULL) {
             List_Node *node = list->first->next;
-             free(list);
+            free(list->first);
              list->first = node;
              if (list->first == 0) {
                  list->last = list->first;
