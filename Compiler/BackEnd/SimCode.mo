@@ -942,7 +942,7 @@ protected
   list<RecordDeclaration> recordDecls;
   BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1;
   Absyn.ComponentRef a_cref;
-  list<DAE.Exp> literals;
+  tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
 algorithm
   timeBackend := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
   a_cref := Absyn.pathToCref(className);
@@ -1067,7 +1067,7 @@ protected
   BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1;
   Absyn.ComponentRef a_cref;
   BackendQSS.QSSinfo qssInfo;
-  list<DAE.Exp> literals;
+  tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
 algorithm
   timeBackend := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
   a_cref := Absyn.pathToCref(className);
@@ -1287,17 +1287,13 @@ protected function simulationFindLiterals
   input BackendDAE.BackendDAE dae;
   input list<DAE.Function> fns;
   output list<DAE.Function> ofns;
-  output list<DAE.Exp> literals;
-protected
-  Integer i;
-  HashTableExpToIndex.HashTable ht;
+  output tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
 algorithm
-  (ofns,(i,ht,literals)) := DAEUtil.traverseDAEFunctions(
+  (ofns,literals) := DAEUtil.traverseDAEFunctions(
     fns, findLiteralsHelper,
     (0,HashTableExpToIndex.emptyHashTableSized(BaseHashTable.bigBucketSize),{}));
-  // Breaks things :(
+  // Broke things :(
   // ((i,ht,literals)) := BackendDAEUtil.traverseBackendDAEExpsNoCopyWithUpdate(dae, findLiteralsHelper, (i,ht,literals));
-  literals := listReverse(literals);
 end simulationFindLiterals;
 
 protected function findLiteralsHelper
@@ -1609,7 +1605,7 @@ public function createFunctions
   output list<Function> functions;
   output BackendDAE.BackendDAE outBackendDAE;
   output DAE.DAElist outDAE;
-  output list<DAE.Exp> literals;  
+  output tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
 algorithm
   (libs, includes, includeDirs, recordDecls, functions, outBackendDAE, outDAE, literals) :=
   matchcontinue (inDAElist,inBackendDAE,functionTree,inPath)
@@ -1620,6 +1616,7 @@ algorithm
       BackendDAE.BackendDAE dlow;
       Absyn.Path path;
       list<Function> fns;
+      list<DAE.Exp> lits;
       
     case (dae,dlow,functionTree,path)
       equation
@@ -1633,9 +1630,9 @@ algorithm
         //funcelems = List.union(funcelems, part_func_elems);
         funcelems = Inline.inlineCallsInFunctions(funcelems,(NONE(),{DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}));
         //Debug.fprintln("info", "Generating functions, call Codegen.\n") "debug" ;
-        (funcelems,literals) = simulationFindLiterals(dlow,funcelems);
+        (funcelems,literals as (_,_,lits)) = simulationFindLiterals(dlow,funcelems);
         
-        (fns, recordDecls, includes2, includeDirs2, libs2) = elaborateFunctions(funcelems, {}, literals, {}); // Do we need metarecords here as well?
+        (fns, recordDecls, includes2, includeDirs2, libs2) = elaborateFunctions(funcelems, {}, lits, {}); // Do we need metarecords here as well?
       then
         (libs2, includes2, includeDirs2, recordDecls, fns, dlow, dae, literals);
     else
@@ -2094,7 +2091,7 @@ protected function createSimCode
   input list<String> libs;
   input Option<SimulationSettings> simSettingsOpt;
   input list<RecordDeclaration> recordDecls;
-  input list<DAE.Exp> literals;
+  input tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
   output SimCode simCode;
 algorithm
   simCode :=
@@ -2142,6 +2139,8 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.EquationArray removedEqs;
       array<DAE.Algorithm> algs;
+      
+      list<DAE.Exp> lits;
       
     case (functionTree,dlow,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals)
       equation
@@ -2216,7 +2215,7 @@ algorithm
         Debug.fcall("execHash",print, "*** SimCode -> generate cref2simVar hastable done!: " +& realString(clock()) +& "\n" );
         
         simCode = SIMCODE(modelInfo,
-          literals,
+          {} /* Set by the traversal below... */,
           recordDecls,
           externalFunctionIncludes,
           allEquations,
@@ -2240,7 +2239,9 @@ algorithm
           simSettingsOpt,
           filenamePrefix,
           crefToSimVarHT);
-        
+        // (simCode,(_,_,lits)) = traverseExpsSimCode(simCode,findLiteralsHelper,literals);
+        (_,_,lits) = literals;
+        simCode = setSimCodeLiterals(simCode,listReverse(lits));
         Debug.fcall("execFiles",print, "*** SimCode -> collect all files started: " +& realString(clock()) +& "\n" );
         // adrpo: collect all the files from Absyn.Info and DAE.ElementSource
         // simCode = collectAllFiles(simCode);
@@ -12288,5 +12289,221 @@ algorithm
     case (l::lst,i,n,acc1,acc2) then makeEqualLengthLists2(lst,i-1,n,listAppend(l,acc1),acc2);
   end match;
 end makeEqualLengthLists2;
+
+protected function traverseExpsSimCode
+  input SimCode simCode;
+  input Func func;
+  input A a;
+  output SimCode outSimCode;
+  output A oa;
+  replaceable type A subtypeof Any;
+  partial function Func
+    input tuple<DAE.Exp,A> tpl;
+    output tuple<DAE.Exp,A> otpl;
+  end Func;
+algorithm
+  (outSimCode,oa) := match (simCode,func,a)
+    local
+      ModelInfo modelInfo;
+      list<DAE.Exp> literals "shared literals";
+      list<RecordDeclaration> recordDecls;
+      list<String> externalFunctionIncludes;
+      list<SimEqSystem> allEquations;
+      list<list<SimEqSystem>> odeEquations;
+      list<SimEqSystem> algebraicEquations;
+      list<SimEqSystem> residualEquations;
+      list<SimEqSystem> initialEquations;
+      list<SimEqSystem> parameterEquations;
+      list<SimEqSystem> removedEquations;
+      list<DAE.Statement> algorithmAndEquationAsserts;
+      list<BackendDAE.ZeroCrossing> zeroCrossings;
+      list<SampleCondition> sampleConditions;
+      list<SimEqSystem> sampleEquations;
+      list<HelpVarInfo> helpVarInfo;
+      list<SimWhenClause> whenClauses;
+      list<DAE.ComponentRef> discreteModelVars;
+      ExtObjInfo extObjInfo;
+      MakefileParams makefileParams;
+      DelayedExpression delayedExps;
+      list<JacobianMatrix> jacobianMatrixes;
+      Option<SimulationSettings> simulationSettingsOpt;
+      String fileNamePrefix;
+      //*** a protected section *** not exported to SimCodeTV
+      HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
+      tuple<Func,A> tpl;
+
+    case (SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, initialEquations, parameterEquations, removedEquations, algorithmAndEquationAsserts, zeroCrossings, sampleConditions, sampleEquations, helpVarInfo, whenClauses, discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT),func,a)
+      equation
+        (literals,a) = List.mapFoldTuple(literals,func,a);
+        (allEquations,a) = traverseExpsEqSystems(allEquations,func,a,{});
+        (odeEquations,a) = traverseExpsEqSystemsList(odeEquations,func,a,{});
+        (algebraicEquations,a) = traverseExpsEqSystems(algebraicEquations,func,a,{});
+        (residualEquations,a) = traverseExpsEqSystems(residualEquations,func,a,{});
+        (initialEquations,a) = traverseExpsEqSystems(initialEquations,func,a,{});
+        (parameterEquations,a) = traverseExpsEqSystems(parameterEquations,func,a,{});
+        (removedEquations,a) = traverseExpsEqSystems(removedEquations,func,a,{});
+        /* TODO:statements algorithmAndEquationAsserts */
+        /* TODO:zeroCrossing */
+        /* TODO:sampleConditions */
+        (sampleEquations,a) = traverseExpsEqSystems(sampleEquations,func,a,{});
+        /* TODO:whenClauses */
+        /* TODO:discreteModelVars */
+        /* TODO:extObjInfo */
+        /* TODO:delayedExps */
+        /* TODO:jacobianMatrixes */
+      then (SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, initialEquations, parameterEquations, removedEquations, algorithmAndEquationAsserts, zeroCrossings, sampleConditions, sampleEquations, helpVarInfo, whenClauses, discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT),a);
+  end match;
+end traverseExpsSimCode;
+
+protected function traverseExpsEqSystemsList
+  input list<list<SimEqSystem>> eqs;
+  input Func func;
+  input A a;
+  input list<list<SimEqSystem>> acc;
+  output list<list<SimEqSystem>> oeqs;
+  output A oa;
+  replaceable type A subtypeof Any;
+  partial function Func
+    input tuple<DAE.Exp,A> tpl;
+    output tuple<DAE.Exp,A> otpl;
+  end Func;
+algorithm
+  (oeqs,oa) := match (eqs,func,a,acc)
+    local
+      list<SimEqSystem> eq;
+    case ({},_,a,acc) then (listReverse(acc),a);
+    case (eq::eqs,func,a,acc)
+      equation
+        (eq,a) = traverseExpsEqSystems(eq,func,a,{});
+        (oeqs,a) = traverseExpsEqSystemsList(eqs,func,a,eq::acc);
+      then (oeqs,a);
+  end match;
+end traverseExpsEqSystemsList;
+
+protected function traverseExpsEqSystems
+  input list<SimEqSystem> eqs;
+  input Func func;
+  input A a;
+  input list<SimEqSystem> acc;
+  output list<SimEqSystem> oeqs;
+  output A oa;
+  replaceable type A subtypeof Any;
+  partial function Func
+    input tuple<DAE.Exp,A> tpl;
+    output tuple<DAE.Exp,A> otpl;
+  end Func;
+algorithm
+  (oeqs,oa) := match (eqs,func,a,acc)
+    local
+      SimEqSystem eq;
+    case ({},_,a,acc) then (listReverse(acc),a);
+    case (eq::eqs,func,a,acc)
+      equation
+        (eq,a) = traverseExpsEqSystem(eq,func,a);
+        (oeqs,a) = traverseExpsEqSystems(eqs,func,a,eq::acc);
+      then (oeqs,a);
+  end match;
+end traverseExpsEqSystems;
+
+protected function traverseExpsEqSystem
+  input SimEqSystem eq;
+  input Func func;
+  input A a;
+  output SimEqSystem oeq;
+  output A oa;
+  replaceable type A subtypeof Any;
+  partial function Func
+    input tuple<DAE.Exp,A> tpl;
+    output tuple<DAE.Exp,A> otpl;
+  end Func;
+algorithm
+  (oeq,oa) := match (eq,func,a)
+    local
+      DAE.Exp exp,right;
+      DAE.ComponentRef cr,left;
+      list<tuple<Integer, Integer, SimEqSystem>> simJac;
+      list<DAE.Statement> stmts;
+      SimEqSystem cont;
+      list<SimEqSystem> discEqs,eqs;
+      Integer index;
+      Boolean partOfMixed;
+      list<SimVar> vars,discVars;
+      list<DAE.Exp> beqs;
+      list<DAE.ComponentRef> crefs;
+      list<Integer> values,values_dims;
+      list<tuple<DAE.Exp, Integer>> conditions;
+      Option<SimEqSystem> elseWhen;
+      DAE.ElementSource source;
+    case (SES_RESIDUAL(exp,source),func,a)
+      equation
+        ((exp,a)) = func((exp,a));
+      then (SES_RESIDUAL(exp,source),a);
+    case (SES_SIMPLE_ASSIGN(cr,exp,source),func,a)
+      equation
+        ((exp,a)) = func((exp,a));
+      then (SES_SIMPLE_ASSIGN(cr,exp,source),a);
+    case (SES_ARRAY_CALL_ASSIGN(cr,exp,source),func,a)
+      equation
+        ((exp,a)) = func((exp,a));
+      then (SES_ARRAY_CALL_ASSIGN(cr,exp,source),a);
+    case (SES_ALGORITHM(stmts),func,a)
+      equation
+        /* TODO: Me */
+      then (SES_ALGORITHM(stmts),a);
+    case (SES_LINEAR(index,partOfMixed,vars,beqs,simJac),func,a)
+      equation
+        /* TODO: Me */
+      then (SES_LINEAR(index,partOfMixed,vars,beqs,simJac),a);
+    case (SES_NONLINEAR(index,eqs,crefs),func,a)
+      equation
+        /* TODO: Me */
+      then (SES_NONLINEAR(index,eqs,crefs),a);
+    case (SES_MIXED(index,cont,discVars,discEqs,values,values_dims),func,a)
+      equation
+        /* TODO: Me */
+      then (SES_MIXED(index,cont,discVars,discEqs,values,values_dims),a);
+    case (SES_WHEN(left,right,conditions,elseWhen,source),func,a)
+        /* TODO: Me */
+      then (SES_WHEN(left,right,conditions,elseWhen,source),a);
+  end match;
+end traverseExpsEqSystem;
+
+protected function setSimCodeLiterals
+  input SimCode simCode;
+  input list<DAE.Exp> literals;
+  output SimCode outSimCode;
+algorithm
+  outSimCode := match (simCode,literals)
+    local
+      ModelInfo modelInfo;
+      list<RecordDeclaration> recordDecls;
+      list<String> externalFunctionIncludes;
+      list<SimEqSystem> allEquations;
+      list<list<SimEqSystem>> odeEquations;
+      list<SimEqSystem> algebraicEquations;
+      list<SimEqSystem> residualEquations;
+      list<SimEqSystem> initialEquations;
+      list<SimEqSystem> parameterEquations;
+      list<SimEqSystem> removedEquations;
+      list<DAE.Statement> algorithmAndEquationAsserts;
+      list<BackendDAE.ZeroCrossing> zeroCrossings;
+      list<SampleCondition> sampleConditions;
+      list<SimEqSystem> sampleEquations;
+      list<HelpVarInfo> helpVarInfo;
+      list<SimWhenClause> whenClauses;
+      list<DAE.ComponentRef> discreteModelVars;
+      ExtObjInfo extObjInfo;
+      MakefileParams makefileParams;
+      DelayedExpression delayedExps;
+      list<JacobianMatrix> jacobianMatrixes;
+      Option<SimulationSettings> simulationSettingsOpt;
+      String fileNamePrefix;
+      //*** a protected section *** not exported to SimCodeTV
+      HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
+
+    case (SIMCODE(modelInfo, _, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, initialEquations, parameterEquations, removedEquations, algorithmAndEquationAsserts, zeroCrossings, sampleConditions, sampleEquations, helpVarInfo, whenClauses, discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT),literals)
+      then SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, initialEquations, parameterEquations, removedEquations, algorithmAndEquationAsserts, zeroCrossings, sampleConditions, sampleEquations, helpVarInfo, whenClauses, discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT);
+  end match;
+end setSimCodeLiterals;
 
 end SimCode;

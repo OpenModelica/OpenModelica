@@ -1019,6 +1019,9 @@ algorithm
     /* string variable */
     case (BackendDAE.VAR(varType = typeVar as BackendDAE.STRING()))
       then false;
+    /* enum variable */
+    case (BackendDAE.VAR(varType = typeVar as BackendDAE.ENUMERATION(_)))
+      then false;
     /* non-string variable */
     case (var)
       equation
@@ -1059,6 +1062,11 @@ algorithm
       BackendDAE.Type typeVar;
     /* int variable */
     case (BackendDAE.VAR(varType = typeVar as BackendDAE.INT()))
+      equation
+        true = isParam(var);
+      then true;
+    /* enum is also mapped to long */
+    case (BackendDAE.VAR(varType = typeVar as BackendDAE.ENUMERATION(_)))
       equation
         true = isParam(var);
       then true;
