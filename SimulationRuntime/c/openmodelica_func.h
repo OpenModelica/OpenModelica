@@ -46,6 +46,8 @@
 #include "real_array.h"
 #include "string_array.h"
 
+#include "modelica_string.h"
+
 #include "simulation_runtime.h"
 #include "matrix.h"
 #include "division.h"
