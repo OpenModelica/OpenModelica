@@ -42,10 +42,10 @@ void initializeDataStruc(_X_DATA *data)
   size_t i = 0;
   /* RingBuffer */
   data->simulationData = 0;
-  allocRingBuffer(data->simulationData, SIZERINGBUFFER, sizeof(SIMULATION_DATA));
+  data->simulationData = allocRingBuffer(SIZERINGBUFFER, sizeof(SIMULATION_DATA));
   if (!data->simulationData)
   {
-    THROW("Your memory is not strong enough for our Ringbuffer!");
+    THROW("Your memory is not strong enough for our Ringbuffer!", 1);
   }
 
   /* prepair RingBuffer */

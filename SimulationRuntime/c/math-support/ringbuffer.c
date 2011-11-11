@@ -28,8 +28,6 @@
 *
 */
 
-#include "ringbuffer.h"
-
 #include <assert.h>
 #include <stdlib.h>
 #include <memory.h>
@@ -42,6 +40,7 @@ struct RINGBUFFER
   int nElements;      /* number of elements in buffer */
   int bufferSize;     /* number of elements which could be stored in buffer */
 };
+#include "ringbuffer.h"
 
 RINGBUFFER *allocRingBuffer(int bufferSize, int itemSize)
 {
