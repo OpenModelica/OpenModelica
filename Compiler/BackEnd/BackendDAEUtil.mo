@@ -69,6 +69,7 @@ protected import Error;
 protected import Expression;
 protected import ExpressionSimplify;
 protected import ExpressionDump;
+protected import Global;
 protected import HashTable2;
 protected import HashTable4;
 protected import List;
@@ -6713,21 +6714,21 @@ end selectOptModules1;
 
 public function profilerinit
 algorithm
-   setGlobalRoot(5, 0.0);
-   setGlobalRoot(6, 0.0);
-   System.realtimeTick(8);
+  setGlobalRoot(Global.profilerTime1Index, 0.0);
+  setGlobalRoot(Global.profilerTime2Index, 0.0);
+  System.realtimeTick(8);
 end profilerinit;
 
 public function profilerresults
 protected
    Real tg,t1,t2;
 algorithm
-   tg := System.realtimeTock(8);
-   t1 := getGlobalRoot(5);
-   t2 := getGlobalRoot(6);
-   print("Time all: "); print(realString(tg)); print("\n");
-   print("Time t1: "); print(realString(t1)); print("\n");
-   print("Time t2: "); print(realString(t2)); print("\n");
+  tg := System.realtimeTock(8);
+  t1 := getGlobalRoot(Global.profilerTime1Index);
+  t2 := getGlobalRoot(Global.profilerTime2Index);
+  print("Time all: "); print(realString(tg)); print("\n");
+  print("Time t1: "); print(realString(t1)); print("\n");
+  print("Time t2: "); print(realString(t2)); print("\n");
 end profilerresults;
 
 public function profilerstart1
@@ -6745,7 +6746,8 @@ protected
    Real t;
 algorithm
    t := System.realtimeTock(9);
-   setGlobalRoot(5, realAdd(getGlobalRoot(5),t));
+   setGlobalRoot(Global.profilerTime1Index, 
+     realAdd(getGlobalRoot(Global.profilerTime1Index),t));
 end profilerstop1;
 
 public function profilerstop2
@@ -6753,7 +6755,8 @@ protected
    Real t;
 algorithm
    t := System.realtimeTock(10);
-   setGlobalRoot(6, realAdd(getGlobalRoot(6),t));
+   setGlobalRoot(Global.profilerTime2Index, 
+     realAdd(getGlobalRoot(Global.profilerTime2Index),t));
 end profilerstop2;
 
 public function mapEqSystem1

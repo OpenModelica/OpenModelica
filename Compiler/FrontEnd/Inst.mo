@@ -98,9 +98,6 @@ constant Boolean neverUnroll = false;
 
 constant Integer RT_CLOCK_EXECSTAT_MAIN = 11;
 
-// the index of the inst hash table in the global table
-constant Integer instHashIndex = 0;
-
 // **
 // These type aliases are introduced to make the code a little more readable.
 // **
@@ -137,6 +134,7 @@ protected import ErrorExt;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import Global;
 protected import Graph;
 protected import HashTable;
 protected import HashTable5;
@@ -315,8 +313,8 @@ algorithm
         dae2 = DAE.DAE({DAE.COMP(name2,daeElts,source,NONE())});
         
         // let the GC collect these as they are used only by Inst!
-        setGlobalRoot(instHashIndex, emptyInstHashTable());
-        setGlobalRoot(Types.memoryIndex,  Types.createEmptyTypeMemory());
+        setGlobalRoot(Global.instHashIndex, emptyInstHashTable());
+        setGlobalRoot(Global.typesIndex, Types.createEmptyTypeMemory());
       then
         (cache,env_2,ih,dae2);
 
@@ -379,8 +377,8 @@ algorithm
         //print("\nSetSource+DAE: " +& realString(System.getTimerIntervalTime()));
 
         // let the GC collect these as they are used only by Inst!
-        setGlobalRoot(instHashIndex, emptyInstHashTable());
-        setGlobalRoot(Types.memoryIndex,  Types.createEmptyTypeMemory());
+        setGlobalRoot(Global.instHashIndex, emptyInstHashTable());
+        setGlobalRoot(Global.typesIndex, Types.createEmptyTypeMemory());
       then
         (cache, env_2, ih, dae);
 
@@ -443,8 +441,8 @@ algorithm
         Error.addMessage(Error.ERROR_FLATTENING, {cname_str});
         
         // let the GC collect these as they are used only by Inst!
-        setGlobalRoot(instHashIndex, emptyInstHashTable());
-        setGlobalRoot(Types.memoryIndex,  Types.createEmptyTypeMemory());
+        setGlobalRoot(Global.instHashIndex, emptyInstHashTable());
+        setGlobalRoot(Global.typesIndex,  Types.createEmptyTypeMemory());
       then
         fail();
   end matchcontinue;
@@ -1827,7 +1825,7 @@ algorithm
         _, graph, csets, instSingleCref)
       equation
         false = RTOpts.debugFlag("noCache");
-        instHash = getGlobalRoot(instHashIndex);
+        instHash = getGlobalRoot(Global.instHashIndex);
         envPathOpt = Env.getEnvPath(inEnv);
         fullEnvPathPlusClass = Absyn.selectPathsOpt(envPathOpt, Absyn.IDENT(className));
         {SOME(FUNC_instClassIn(inputs, outputs)),_} = BaseHashTable.get(fullEnvPathPlusClass, instHash);
@@ -2806,7 +2804,7 @@ algorithm
     case (cache,env,ih,mods,pre,ci_state,c as SCode.CLASS(name = className, restriction=r),vis,inst_dims)
       equation
         false = RTOpts.debugFlag("noCache");
-        instHash = getGlobalRoot(instHashIndex);
+        instHash = getGlobalRoot(Global.instHashIndex);
         envPathOpt = Env.getEnvPath(inEnv);
         className = SCode.className(c);
         fullEnvPathPlusClass = Absyn.selectPathsOpt(envPathOpt, Absyn.IDENT(className));
@@ -2835,7 +2833,7 @@ algorithm
             ConnectionGraph.ConnectionGraph> outputs;
       equation
         false = RTOpts.debugFlag("noCache");
-        instHash = getGlobalRoot(instHashIndex);
+        instHash = getGlobalRoot(Global.instHashIndex);
         envPathOpt = Env.getEnvPath(inEnv);
         fullEnvPathPlusClass = Absyn.selectPathsOpt(envPathOpt, Absyn.IDENT(className));
         {SOME(FUNC_instClassIn(inputs, outputs)), _} = get(fullEnvPathPlusClass, instHash);
@@ -16124,53 +16122,53 @@ algorithm
     // we have them both
     case (fullEnvPathPlusClass, SOME(fullInst), SOME(partialInst))
       equation
-        instHash = getGlobalRoot(instHashIndex);
+        instHash = getGlobalRoot(Global.instHashIndex);
         instHash = BaseHashTable.add((fullEnvPathPlusClass,{fullInstOpt,partialInstOpt}),instHash);
-        setGlobalRoot(instHashIndex, instHash);
+        setGlobalRoot(Global.instHashIndex, instHash);
       then
         ();
 
     // we have a partial inst result and the full in the cache
     case (fullEnvPathPlusClass, NONE(), SOME(partialInst))
       equation
-        instHash = getGlobalRoot(instHashIndex);
+        instHash = getGlobalRoot(Global.instHashIndex);
         // see if we have a full inst here
         {SOME(fullInst),_} = BaseHashTable.get(fullEnvPathPlusClass, instHash);
         instHash = BaseHashTable.add((fullEnvPathPlusClass,{SOME(fullInst),partialInstOpt}),instHash);
-        setGlobalRoot(instHashIndex, instHash);
+        setGlobalRoot(Global.instHashIndex, instHash);
       then
         ();
 
     // we have a partial inst result and the full is NOT in the cache
     case (fullEnvPathPlusClass, NONE(), SOME(partialInst))
       equation
-        instHash = getGlobalRoot(instHashIndex);
+        instHash = getGlobalRoot(Global.instHashIndex);
         // see if we have a full inst here
         // failed above {SOME(fullInst),_} = get(fullEnvPathPlusClass, instHash);
         instHash = BaseHashTable.add((fullEnvPathPlusClass,{NONE(),partialInstOpt}),instHash);
-        setGlobalRoot(instHashIndex, instHash);
+        setGlobalRoot(Global.instHashIndex, instHash);
       then
         ();
 
     // we have a full inst result and the partial in the cache
     case (fullEnvPathPlusClass, SOME(fullInst), NONE())
       equation
-        instHash = getGlobalRoot(instHashIndex);
+        instHash = getGlobalRoot(Global.instHashIndex);
         // see if we have a partial inst here
         {_,SOME(partialInst)} = BaseHashTable.get(fullEnvPathPlusClass, instHash);
         instHash = BaseHashTable.add((fullEnvPathPlusClass,{fullInstOpt,SOME(partialInst)}),instHash);
-        setGlobalRoot(instHashIndex, instHash);
+        setGlobalRoot(Global.instHashIndex, instHash);
       then
         ();
 
     // we have a full inst result and the partial is NOT in the cache
     case (fullEnvPathPlusClass, SOME(fullInst), NONE())
       equation
-        instHash = getGlobalRoot(instHashIndex);
+        instHash = getGlobalRoot(Global.instHashIndex);
         // see if we have a partial inst here
         // failed above {_,SOME(partialInst)} = get(fullEnvPathPlusClass, instHash);
         instHash = BaseHashTable.add((fullEnvPathPlusClass,{fullInstOpt,NONE()}),instHash);
-        setGlobalRoot(instHashIndex, instHash);
+        setGlobalRoot(Global.instHashIndex, instHash);
       then
         ();
 

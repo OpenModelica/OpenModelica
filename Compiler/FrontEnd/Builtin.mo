@@ -53,6 +53,7 @@ public import SCode;
 // protected imports
 protected import ClassInf;
 protected import Debug;
+protected import Global;
 protected import List;
 protected import Parser;
 protected import SCodeUtil;
@@ -546,8 +547,6 @@ algorithm
   end matchcontinue;
 end initialEnvMetaModelica;
 
-protected constant Integer memoryIndex = 3;
-
 public function getInitialFunctions
 "Fetches the Absyn.Program representation of the functions (and other classes) in the initial environment"
   output Absyn.Program initialProgram;
@@ -560,12 +559,12 @@ algorithm
       Option<Absyn.Program> optProgram;
     case ()
       equation
-        failure(_ = getGlobalRoot(memoryIndex));
-        setGlobalRoot(memoryIndex,{});
+        failure(_ = getGlobalRoot(Global.builtinIndex));
+        setGlobalRoot(Global.builtinIndex,{});
       then fail();
     case ()
       equation
-        assocLst = getGlobalRoot(memoryIndex);
+        assocLst = getGlobalRoot(Global.builtinIndex);
       then Util.assoc(RTOpts.acceptMetaModelicaGrammar(), assocLst);
     case ()
       equation
@@ -575,8 +574,8 @@ algorithm
         initialFunctionStr = System.readFile(fileModelica);
         initialFunctionStrMM = Debug.bcallret1(b, System.readFile, fileMetaModelica, "");
         initialProgram = Parser.parsestring(initialFunctionStr +& initialFunctionStrMM, fileModelica);
-        assocLst = getGlobalRoot(memoryIndex);
-        setGlobalRoot(memoryIndex, (b,initialProgram)::assocLst);
+        assocLst = getGlobalRoot(Global.builtinIndex);
+        setGlobalRoot(Global.builtinIndex, (b,initialProgram)::assocLst);
       then initialProgram;
     else
       equation

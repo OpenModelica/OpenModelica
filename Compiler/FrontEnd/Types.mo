@@ -71,9 +71,6 @@ public
  type TypeMemoryEntry = tuple<DAE.Type, DAE.ExpType>;
  type TypeMemoryEntryList = list<TypeMemoryEntry>;
  type TypeMemoryEntryListArray = array<TypeMemoryEntryList>;
- // the index of the type memory in the global table 
- constant Integer memoryIndex = 1;
-
 
 protected import ComponentReference;
 protected import Dump;
@@ -82,6 +79,7 @@ protected import Error;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import Global;
 protected import List;
 protected import Patternm;
 protected import Print;
@@ -3587,7 +3585,7 @@ algorithm
       equation        
         // oh the horror. if you don't understand this, contact adrpo
         // get from global roots
-        tyMem = getGlobalRoot(memoryIndex);
+        tyMem = getGlobalRoot(Global.typesIndex);
         // select a list based on the constructor of TType value
         indexBasedOnValueConstructor = valueConstructor(tt);
         tyLst = arrayGet(tyMem, indexBasedOnValueConstructor + 1);
@@ -3599,7 +3597,7 @@ algorithm
           List.deleteMemberOnTrue(inType, tyLst, typeMemoryEntryEq);
         tyLst = tyEnt :: tyLst;
         tyMem = arrayUpdate(tyMem, indexBasedOnValueConstructor + 1, tyLst);
-        setGlobalRoot(memoryIndex, tyMem);
+        setGlobalRoot(Global.typesIndex, tyMem);
       then
         expTy;
     
@@ -3610,14 +3608,14 @@ algorithm
         expTy = elabType_dispatch(inType);
         // oh the horror. if you don't understand this, contact adrpo
         // get from global roots        
-        tyMem = getGlobalRoot(memoryIndex);
+        tyMem = getGlobalRoot(Global.typesIndex);
         // select a list based on the constructor of TType value
         indexBasedOnValueConstructor = valueConstructor(tt);
         tyLst = arrayGet(tyMem, indexBasedOnValueConstructor + 1);
         // add the translation to the list and set the array
         tyMem = arrayUpdate(tyMem, indexBasedOnValueConstructor + 1, (inType, expTy)::tyLst);
         // set the global cache with the new value
-        setGlobalRoot(memoryIndex, tyMem);
+        setGlobalRoot(Global.typesIndex, tyMem);
       then 
         expTy;
 

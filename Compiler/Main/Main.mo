@@ -1165,7 +1165,7 @@ algorithm
         // search for System.startTimer/System.stopTimer/System.getTimerIntervalTimer
         // System.resetTimer();
 
-        //setGlobalRoot(ComponentReference.crefMemoryIndex,  ComponentReference.createEmptyCrefMemory());
+        //setGlobalRoot(Global.crefIndex,  ComponentReference.createEmptyCrefMemory());
         //Env.globalCache = fill(Env.emptyCache,1);
         symbolTable = readSettings(args);
         ismode = RTOpts.debugFlag("interactive");

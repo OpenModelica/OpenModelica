@@ -52,6 +52,7 @@ protected import Builtin;
 protected import Debug;
 protected import Dump;
 protected import Error;
+protected import Global;
 protected import Inst;
 protected import InstanceHierarchy;
 protected import List;
@@ -83,8 +84,8 @@ algorithm
 
     case (inProgram)
       equation
-        setGlobalRoot(Inst.instHashIndex, Inst.emptyInstHashTable());
-        setGlobalRoot(Types.memoryIndex,  Types.createEmptyTypeMemory());
+        setGlobalRoot(Global.instHashIndex, Inst.emptyInstHashTable());
+        setGlobalRoot(Global.typesIndex,  Types.createEmptyTypeMemory());
         // adrpo: TODO! FIXME! disable function caching for now as some tests fail.
         // setGlobalRoot(Ceval.cevalHashIndex, Ceval.emptyCevalHashTable());
         Absyn.PROGRAM(classes=inClasses) = MetaUtil.createMetaClassesInProgram(inProgram);

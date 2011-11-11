@@ -50,6 +50,7 @@ protected import Debug;
 protected import Dump;
 protected import Expression;
 protected import ExpressionDump;
+protected import Global;
 protected import List;
 protected import Print;
 protected import RTOpts;
@@ -58,10 +59,6 @@ protected import Util;
 
 // do not make this public. instead use the function below.
 protected constant DAE.ComponentRef dummyCref = DAE.CREF_IDENT("dummy", DAE.ET_OTHER(), {});
-
-// global root index for cref memory 
-public 
-  constant Integer crefMemoryIndex = 2;
 
 public function createEmptyCrefMemory
 "@author: adrpo
@@ -125,7 +122,7 @@ algorithm
       equation        
         // oh the horror. if you don't understand this, contact adrpo
         // get from global roots
-        crefMem = getGlobalRoot(crefMemoryIndex);
+        crefMem = getGlobalRoot(Global.crefIndex);
         // select a list based on the constructor of DAE.ComponentRef value
         indexBasedOnValueConstructor = valueConstructor(inCref);
         crefLst = arrayGet(crefMem, indexBasedOnValueConstructor + 1);
@@ -142,14 +139,14 @@ algorithm
       equation
         // oh the horror. if you don't understand this, contact adrpo
         // get from global roots        
-        crefMem = getGlobalRoot(crefMemoryIndex);
+        crefMem = getGlobalRoot(Global.crefIndex);
         // select a list based on the constructor of DAE.ComponentRef value
         indexBasedOnValueConstructor = valueConstructor(inCref);
         crefLst = arrayGet(crefMem, indexBasedOnValueConstructor + 1);
         // add the translation to the list and set the array
         crefMem = arrayUpdate(crefMem, indexBasedOnValueConstructor + 1, inCref::crefLst);
         // set the global cache with the new value
-        setGlobalRoot(crefMemoryIndex, crefMem);
+        setGlobalRoot(Global.crefIndex, crefMem);
       then 
         inCref;
   end matchcontinue;
