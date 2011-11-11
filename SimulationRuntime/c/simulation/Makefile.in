@@ -8,7 +8,7 @@ CC = @CC@
 CXX = @CXX@
 ANSI= #-ansi
 CFLAGS   := @CFLAGS@ -Wall $(ANSI) -pedantic $(EXTRA_CFLAGS) -mfpmath=sse -c
-CPPFLAGS := @CPPFLAGS@ -Wall $(ANSI) $(EXTRA_CFLAGS) -I. -I.. -I../util -I../linearization -I./results -I./math-support/ -I./solver
+CPPFLAGS := @CPPFLAGS@ -Wall $(ANSI) $(EXTRA_CFLAGS) -I. -I.. -I../util -I../linearization -I./results -I../math-support/ -I./solver
 AR = ar -ru
 FFLAGS  = -O -fexceptions
 
