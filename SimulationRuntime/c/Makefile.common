@@ -46,7 +46,7 @@ libsim.a:
 libModelicaExternalC.a: 
 	$(MAKE) -C ModelicaExternalC -f ${LIBMAKEFILE}
 
-install: libSimulationCRuntime.a omdevinstall
+install: libSimulationCRuntime.a $(LIBS) omdevinstall
 	cp libSimulationCRuntime.a $(builddir_lib)
 	cp ./ModelicaExternalC/libModelicaExternalC.a $(builddir_lib)
 	cp ./ModelicaExternalC/ModelicaUtilities.h $(builddir_inc)
