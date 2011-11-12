@@ -103,6 +103,7 @@ euklidnorm(double* a) {
   return sqrt(erg);
 }
 
+
 /***************************************		STEPSIZE	***********************************/
 int
 init_stepsize(int(*f)(), double tolerence) {

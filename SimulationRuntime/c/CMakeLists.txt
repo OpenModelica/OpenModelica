@@ -150,7 +150,7 @@ MACRO(BUILDMODELMOS model mos dir Flags CSRC)
                      WORKING_DIRECTORY ${dir}
                      COMMENT "copy file ${expat_CODE} to ${expat_OUTPUT}")
   # target fuer OM_OUTPUT
-  ADD_CUSTOM_TARGET(expat ALL DEPENDS ${expat_OUTPUT})  
+  ADD_CUSTOM_TARGET(expat${model} ALL DEPENDS ${expat_OUTPUT})  
   
   SET(OMC_MODELNAME ${model})  
   # generate model.mos 

@@ -619,26 +619,21 @@ dasrt_step(double step, double start, double stop, int trigger1,
     rwork = (double*) calloc(lrw,sizeof(double));
     ASSERT(rwork,"out of memory");
     iwork = (fortran_integer*)  calloc(liw,sizeof(fortran_integer));
-    ASSERT(rwork,"out of memory");
+    ASSERT(iwork,"out of memory");
     jroot = (fortran_integer*)  calloc(globalData->nZeroCrossing,sizeof(fortran_integer));
-    ASSERT(rwork,"out of memory");
+    ASSERT(jroot,"out of memory");
     /* Used when calculating residual for its side effects. (alg. var calc) */
     dummy_delta = (double*) calloc(globalData->nStates,sizeof(double));
-    ASSERT(rwork,"out of memory");
+    ASSERT(dummy_delta,"out of memory");
     rpar = (double*) calloc(1,sizeof(double));
-    ASSERT(rwork,"out of memory");
+    ASSERT(rpar,"out of memory");
     ipar = (fortran_integer*) calloc(3,sizeof(fortran_integer));
-    ASSERT(rwork,"out of memory");
+    ASSERT(ipar,"out of memory");
     ipar[0] = sim_verbose;
     ipar[1] = LOG_JAC;
     ipar[2] = LOG_ENDJAC;
 
-    for (i = 0; i < INFOLEN; i++)
-      info[i] = 0;
-    for (i = 0; i < liw; i++)
-      iwork[i] = 0;
-    for (i = 0; i < lrw; i++)
-      rwork[i] = 0.0;
+    memset(info,0,INFOLEN);
     /*********************************************************************
      *info[2] = 1;  //intermediate-output mode
      *********************************************************************
@@ -652,7 +647,6 @@ dasrt_step(double step, double start, double stop, int trigger1,
     if (jac_flag || num_jac_flag)
       info[4] = 1; /* use sub-routine JAC */
   }
-
   /* If an event is triggered and processed restart dassl. */
   if (trigger1) {
     if (sim_verbose >= LOG_EVENTS) {
