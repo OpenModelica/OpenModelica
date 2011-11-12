@@ -29,7 +29,7 @@
  *
  */
 
-/* File: list.h
+/*! \file list.h
  *
  * Description: This file is a C header file for the simulation runtime.
  * It contains a simple linked list
@@ -42,34 +42,32 @@
 extern "C" {
 #endif
 
-/* Prototypes for Structs */
-struct list_node;
-struct list_list;
-typedef struct list_node List_Node;
-typedef struct list_list List;
+/* type-free list */
+struct LIST_NODE;
+typedef struct LIST_NODE LIST_NODE;
 
-List* list_init();
-void list_deinit(List *list);
+struct LIST;
+typedef struct LIST LIST;
 
-void list_push_front(List *list, int data);
+LIST *allocList(unsigned int itemSize);
+void freeList(LIST *list);
 
-void list_push_back(List *list, int data);
+void listPushFront(LIST *list, void *data);
+void listPushBack(LIST *list, void *data);
 
-int list_empty(List *list);
+int listLength(LIST *list);
 
-int list_front(List *list);
+void *listFirstData(LIST *list);
+void *listLastData(LIST *list);
 
-int list_last(List *list);
+void listPopFront(LIST *list);
 
-void list_pop_front(List *list);
+void listClear(LIST *list);
 
-void list_clear(List *list);
+LIST_NODE *listFirstNode(LIST *list);
+LIST_NODE *listNextNode(LIST_NODE *node);
 
-List_Node *list_first(List *list);
-
-List_Node *list_next(List_Node *node);
-
-int list_node_data(List_Node *node);
+void *listNodeData(LIST_NODE *node);
 
 #ifdef __cplusplus
 }

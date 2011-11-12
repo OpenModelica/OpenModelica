@@ -36,122 +36,146 @@
  */
 
 #include "list.h"
+#include "error.h"
+
+#include <memory.h>
 #include <stdlib.h>
-#include <assert.h>
 
-struct list_node {
-    int data;
-    struct list_node *next;
+struct LIST_NODE
+{
+  void *data;
+  LIST_NODE *next;
 };
 
-struct list_list {
-    struct list_node *first;
-    struct list_node *last;
+struct LIST
+{
+  LIST_NODE *first;
+  LIST_NODE *last;
+  unsigned int itemSize;
+  unsigned int length;
 };
 
-List* list_init()
+LIST *allocList(unsigned int itemSize)
 {
-    return (List*)calloc(1,sizeof(List));
+  LIST *tmpList = (LIST*)malloc(sizeof(LIST));
+  ASSERT(tmpList, "out of memory");
+  
+  tmpList->first = NULL;
+  tmpList->last = NULL;
+  tmpList->itemSize = itemSize;
+  tmpList->length = 0;
+  
+  return tmpList;
 }
 
-void list_deinit(List *list)
+void freeList(LIST *list)
 {
-    if (list) 
-    {
-        free(list);
-    }
+  if(list)
+  {
+	listClear(list);
+    free(list);
+  }
 }
 
-void list_push_front(List *list, int data)
+void listPushFront(LIST *list, void *data)
 {
-    List_Node *new_node = 0;
-    assert(list);
-    new_node = (List_Node*) malloc(sizeof(List_Node));
-    new_node->data = data;
-    new_node->next = list->first;
-    list->first = new_node;
-    if (list->last == NULL) {
+    LIST_NODE *tmpNode = NULL;
+    ASSERT(list, "list == NULL");
+	
+    tmpNode = (LIST_NODE*)malloc(sizeof(LIST_NODE));
+	tmpNode->data = malloc(list->itemSize);
+	memcpy(tmpNode->data, data, list->itemSize);
+    tmpNode->next = list->first;
+	++(list->length);
+	
+    list->first = tmpNode;
+    if(!list->last)
         list->last = list->first;
-    }
 }
 
-void list_push_back(List *list, int data)
+void listPushBack(LIST *list, void *data)
 {
-    List_Node *new_node = 0;
-    assert(list);
-    new_node = (List_Node*) malloc(sizeof(List_Node));
-    new_node->data = data;
-    new_node->next = 0;
-    if (list->last!=NULL) {
-        list->last->next = new_node;
-    } 
-    if (list->first == NULL) {
-        list->first = list->last;
-    }
-    list->last = new_node;
+  LIST_NODE *tmpNode = NULL;
+  ASSERT(list, "list == NULL");
+  
+  tmpNode = (LIST_NODE*)malloc(sizeof(LIST_NODE));
+  tmpNode->data = malloc(list->itemSize);
+  memcpy(tmpNode->data, data, list->itemSize);
+  tmpNode->next = NULL;
+  ++(list->length);
+  
+  if(list->last)
+    list->last->next = tmpNode;
+	
+  list->last = tmpNode;
+
+  if(!list->first)
+    list->first = list->last;
 }
 
-int list_empty(List *list)
+int listLength(LIST *list)
 {
-    assert(list);
-    return list->first==0?1:0;
+  ASSERT(list, "list == NULL");
+  return list->length;
 }
 
-int list_front(List *list)
+void *listFirstData(LIST *list)
 {
-    assert(list);
-    assert(list->first);
+    ASSERT(list, "no list");
+    ASSERT(list->first, "no data");
     return list->first->data;
 }
 
-int list_last(List *list)
+void *listLastData(LIST *list)
 {
-    assert(list);
-    assert(list->last);
+    ASSERT(list, "no list");
+    ASSERT(list->last, "no data");
     return list->last->data;
 }
 
-void list_pop_front(List *list)
+void listPopFront(LIST *list)
 {
-    if (list != NULL) {
-        if (list->first != NULL) {
-            List_Node *node = list->first->next;
-            free(list->first);
-             list->first = node;
-             if (list->first == 0) {
-                 list->last = list->first;
-             }
-        }
-    } 
+  if(list)
+  {
+    if(list->first)
+    {
+      LIST_NODE *tmpNode = list->first->next;
+      free(list->first->data);
+      free(list->first);
+
+      list->first = tmpNode;
+	  --(list->length);
+      if(!list->first)
+        list->last = list->first;
+    }
+  } 
 }
 
-void list_clear(List *list)
+void listClear(LIST *list)
 {
-    if (list == NULL) { 
-        return;
-    }
-    while(list->first != NULL) {
-        list_pop_front(list);
-    }
+    if(!list)
+		return;
+		
+    while(list->first)
+		listPopFront(list);
 }
 
-List_Node *list_first(List *list)
+LIST_NODE *listFirstNode(LIST *list)
 {
-    assert(list);
+    ASSERT(list, "list == NULL");
     return list->first;
 }
 
-List_Node *list_next(List_Node *node)
+LIST_NODE *listNextNode(LIST_NODE *node)
 {
-    assert(node);
-    if (node==0) {
-        return 0;
-    }
-    return node->next;
+    ASSERT(node, "node == NULL");
+    if(node)
+		return node->next;
+	return NULL;
 }
 
-int list_node_data(List_Node *node)
+void *listNodeData(LIST_NODE *node)
 {
-    assert(node);
+    ASSERT(node, "node == NULL");
     return node->data;
 }

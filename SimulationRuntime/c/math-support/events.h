@@ -29,65 +29,42 @@
  *
  */
 
-/* File: simulation_runtime.h
- *
- * Description: This file is a C++ header file for the simulation runtime.
- * It contains solver functions and other simulation runtime specific functions
+/*! \file events.h
  */
 
 #ifndef EVENTS_H
 #define EVENTS_H
 
-#include "openmodelica.h"
-#include "simulation_runtime.h"
 #include "list.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+int initializeEventData();
+void deinitializeEventData();
 
-int
-initializeEventData();
-void
-deinitializeEventData();
+double BiSection(double*, double*, double*, double*, LIST*);
 
-double
-BiSection(double*, double*, double*, double*, List*);
-
-int
-CheckZeroCrossings(List *list);
-
-
+int CheckZeroCrossings(LIST *list);
 
 void saveall();
 void printAllPreValues();
-void
-restoreHelpVars();
+void restoreHelpVars();
 
-double
-Sample(double t, double start, double interval);
-double
-sample(double start, double interval, int hindex);
-void
-initSample(double start, double stop);
+double Sample(double t, double start, double interval);
+double sample(double start, double interval, int hindex);
+void initSample(double start, double stop);
 
-double
-Less(double a, double b);
-double
-LessEq(double a, double b);
-double
-Greater(double a, double b);
-double
-GreaterEq(double a, double b);
+double Less(double a, double b);
+double LessEq(double a, double b);
+double Greater(double a, double b);
+double GreaterEq(double a, double b);
 
-void
-checkTermination();
-int
-checkForSampleEvent();
+void checkTermination();
+int checkForSampleEvent();
 
-double
-getNextSampleTimeFMU();
+double getNextSampleTimeFMU();
 
 extern long inUpdate;
 static const int IterationMax = 200;
@@ -114,53 +91,27 @@ static const int IterationMax = 200;
 #define initial() localData->init
 
 extern long* zeroCrossingEnabled;
-
-int
-function_onlyZeroCrossings(double* gout, double* t);
-
-int
-CheckForNewEvent(int *sampleactived);
-
-int
-EventHandle(int);
-
-void
-FindRoot(double*);
-
-int
-checkForDiscreteChanges();
-
-void
-SaveZeroCrossings();
-
-void
-SaveZeroCrossingsAfterEvent();
-
-void
-initializeZeroCrossings();
-
-void
-correctDirectionZeroCrossings();
-
-int
-activateSampleEvents();
-
-int
-function_updateSample();
+int function_onlyZeroCrossings(double* gout, double* t);
+int CheckForNewEvent(int *sampleactived);
+int EventHandle(int);
+void FindRoot(double*);
+int checkForDiscreteChanges();
+void SaveZeroCrossings();
+void SaveZeroCrossingsAfterEvent();
+void initializeZeroCrossings();
+void correctDirectionZeroCrossings();
+int activateSampleEvents();
+int function_updateSample();
 
 #define INTERVAL 1
 #define NOINTERVAL 0
 
 extern double TOL;
 
-void
-debugPrintHelpVars();
-void
-deactivateSampleEvent();
-void
-deactivateSampleEventsandEquations();
-void
-debugSampleEvents();
+void debugPrintHelpVars();
+void deactivateSampleEvent();
+void deactivateSampleEventsandEquations();
+void debugSampleEvents();
 
 #ifdef __cplusplus
 }
