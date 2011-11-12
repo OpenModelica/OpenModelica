@@ -73,7 +73,9 @@ test:
 testlog:
 	(cd testsuite; time $(MAKE) -f Makefile > testsuite-trace.txt 2>&1)
 	echo "log is in testsuite/testsuite-trace.txt"
-	#cat testsuite/testsuite-trace.txt
+	echo "Failed models: "
+	cat testsuite/testsuite-trace.txt | grep "==== Log" | wc -l
+	cat testsuite/testsuite-trace.txt | grep "==== Log"
 
 testmos:
 	(cd testsuite/mosfiles; time $(MAKE) -f Makefile)
