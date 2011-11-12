@@ -47,17 +47,29 @@ extern jmp_buf globalJmpbuf;
 extern unsigned int globalDebugFlags;
 
 /* debug options */
-extern const unsigned int DF_NONE;
-extern const unsigned int DF_SOLVER;
+extern const unsigned int LV_NONE;
+extern const unsigned int LV_STATS;
+extern const unsigned int LV_INIT;
+extern const unsigned int LV_SOLVER;
+extern const unsigned int LV_JAC;
+extern const unsigned int LV_ENDJAC;
+extern const unsigned int LV_NONLIN_SYS;
+extern const unsigned int LV_EVENTS;
+extern const unsigned int LV_ZEROCROSSINGS;
+extern const unsigned int LV_DEBUG;
+extern const unsigned int LV_LOG_RES_INIT;
 
-#define MSG(type, stream, msg, ...) {fprintf(stream,"%s |  %d | %s\n        |> ", type, __LINE__, __FILE__); fprintf(stream, msg, __VA_ARGS__); fprintf(stream, "\n"); fflush(NULL);}
+#define MSG(type, stream, ...) {fprintf(stream, "%s | [line] %d | [file] %s\n        > ", type, __LINE__, __FILE__); fprintf(stream, __VA_ARGS__); fprintf(stream, "\n"); fflush(NULL);}
+#define MSG_AL(stream, ...)    {fprintf(stream, "        > "); fprintf(stream, __VA_ARGS__); fprintf(stream, "\n"); fflush(NULL);}
 
-#define INFO(msg, ...)        {MSG("info   ", stdout, msg, __VA_ARGS__);}
-#define WARNING(msg, ...)     {MSG("warning", stdout, msg, __VA_ARGS__);}
-#define THROW(msg, ...)       {MSG("error  ", stderr, msg, __VA_ARGS__); longjmp(globalJmpbuf, 1);}
-#define ASSERT(exp, msg, ...) {if(!exp){MSG("assert ", stderr, msg, __VA_ARGS__); longjmp(globalJmpbuf, 1);}}
+#define INFO(...)        {MSG("info   ", stdout, __VA_ARGS__);}
+#define INFO_AL(...)     {MSG_AL(stdout, __VA_ARGS__);}
+#define WARNING(...)     {MSG("warning", stdout, __VA_ARGS__);}
+#define THROW(...)       {MSG("throw  ", stderr, __VA_ARGS__); longjmp(globalJmpbuf, 1);}
+#define ASSERT(exp, ...) {if(!exp){MSG("assert ", stderr, __VA_ARGS__); longjmp(globalJmpbuf, 1);}}
 
-#define DEBUG_INFO(flag, msg, ...) {if(flag & globalDebugFlags) INFO(msg, __VA_ARGS__);}
+#define DEBUG_INFO(flag, ...)    {if(flag & globalDebugFlags) INFO(__VA_ARGS__);}
+#define DEBUG_INFO_AL(flag, ...) {if(flag & globalDebugFlags) INFO_AL(__VA_ARGS__);}
 
 #ifdef __cplusplus
 }

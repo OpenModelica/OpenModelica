@@ -34,7 +34,16 @@
 /* Global JumpBuffer */
 jmp_buf globalJmpbuf;
 
-const unsigned int DF_NONE   = 0;
-const unsigned int DF_SOLVER = 1;
+const unsigned int LV_NONE          = 0;
+const unsigned int LV_STATS         = (1<<0);
+const unsigned int LV_INIT          = (1<<1);
+const unsigned int LV_SOLVER        = (1<<2);
+const unsigned int LV_JAC           = (1<<3);
+const unsigned int LV_ENDJAC        = (1<<4);
+const unsigned int LV_NONLIN_SYS    = (1<<5);
+const unsigned int LV_EVENTS        = (1<<6);
+const unsigned int LV_ZEROCROSSINGS = (1<<7);
+const unsigned int LV_DEBUG         = (1<<8);
+const unsigned int LV_LOG_RES_INIT  = (1<<0) | (1<<1);
 
 unsigned int globalDebugFlags = 0;

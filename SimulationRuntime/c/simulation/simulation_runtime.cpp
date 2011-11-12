@@ -464,34 +464,46 @@ int verboseLevel(int argc, char**argv) {
 
   if (flags->find("LOG_STATS", 0) != string::npos) {
     res |= LOG_STATS;
+	globalDebugFlags |= LV_STATS;
   }
   if (flags->find("LOG_JAC", 0) != string::npos) {
     res |= LOG_JAC;
+	globalDebugFlags |= LV_JAC;
   }
   if (flags->find("LOG_ENDJAC", 0) != string::npos) {
     res |= LOG_ENDJAC;
+	globalDebugFlags |= LV_ENDJAC;
   }
   if (flags->find("LOG_INIT", 0) != string::npos) {
     res |= LOG_INIT;
+	globalDebugFlags |= LV_INIT;
   }
   if (flags->find("LOG_RES_INIT", 0) != string::npos) {
     res |= LOG_RES_INIT;
+	globalDebugFlags |= LV_LOG_RES_INIT;
   }
   if (flags->find("LOG_SOLVER", 0) != string::npos) {
     res |= LOG_SOLVER;
-    globalDebugFlags |= DF_SOLVER;
+    globalDebugFlags |= LV_SOLVER;
   }
   if (flags->find("LOG_EVENTS", 0) != string::npos) {
     res |= LOG_EVENTS;
+	globalDebugFlags |= LV_EVENTS;
   }
   if (flags->find("LOG_NONLIN_SYS", 0) != string::npos) {
     res |= LOG_NONLIN_SYS;
+	globalDebugFlags |= LV_NONLIN_SYS;
   }
   if (flags->find("LOG_ZEROCROSSINGS", 0) != string::npos) {
     res |= LOG_ZEROCROSSINGS;
+	globalDebugFlags |= LV_ZEROCROSSINGS;
   }
   if (flags->find("LOG_DEBUG", 0) != string::npos) {
     res |= LOG_DEBUG;
+	globalDebugFlags |= LV_DEBUG;
+  }
+  if (flags->find("LOG_ALL", 0) != string::npos) {
+	globalDebugFlags = -1;
   }
   return res;
 }
@@ -1117,11 +1129,7 @@ int _main_SimulationRuntime(int argc, char**argv, _X_DATA *data)
 {
   int retVal = -1;
   if(!setjmp(globalJmpbuf) ) 
-  { 
-    /*MSG("info", stdout, "test");
-      DEBUG_INFO(1, "test der DEBUG_INFO %d, %s, %f", 42, "hello world", 0.123f);
-      THROW("ENDE");*/
-
+  {
       if (initRuntimeAndSimulation(argc, argv, data)) //initRuntimeAndSimulation returns 1 if an error occurs
         return 1;
       /* sighandler_t oldhandler = different type on all platforms... */
