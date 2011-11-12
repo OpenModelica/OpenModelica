@@ -617,8 +617,8 @@ dasrt_step(double step, double start, double stop, int trigger1,
     lrw = 52 + (MAXORD + 4) * globalData->nStates + globalData->nStates
         * globalData->nStates + 3 * globalData->nZeroCrossing;
     rwork = (double*) calloc(lrw,sizeof(double));
-    iwork = (fortran_integer*)  calloc(liw,sizeof(double));
-    jroot = (fortran_integer*)  calloc(globalData->nZeroCrossing,sizeof(double));
+    iwork = (fortran_integer*)  calloc(liw,sizeof(fortran_integer));
+    jroot = (fortran_integer*)  calloc(globalData->nZeroCrossing,sizeof(fortran_integer));
     /* Used when calculating residual for its side effects. (alg. var calc) */
     dummy_delta = (double*) calloc(globalData->nStates,sizeof(double));
     rpar = (double*) calloc(1,sizeof(double));
