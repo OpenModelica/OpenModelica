@@ -88,21 +88,8 @@ typedef void* modelica_fnptr;
 #define EXIT(code) {fflush(NULL); _exit(code);}
 #endif
 
-/* BEFORE: inline.h */
-#if defined(_MSC_VER)
-/* Visual C++ */
-# ifndef inline
-#  define inline __inline
-# endif
-#elif defined(__GNUC__)
-/* GCC */
-# ifndef inline
-#  define inline __inline__
-# endif
-#else
-/* Otherwise, leave inline undefined, all functions
- * using inline is also static, so it will hold. */
-#endif
+#include "inline.h"
+
 
 /* BEFORE: modelica_string.h */
 #ifdef __OPENMODELICA__METAMODELICA

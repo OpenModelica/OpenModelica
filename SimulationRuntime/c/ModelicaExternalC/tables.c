@@ -29,40 +29,18 @@
  */
 
 #include "error.h"
-
-#include <deque>
-#include <string>
-#include <iostream>
-#include <fstream>
-#include <utility>
-#include <memory>
-#include <cstring>
-#include <limits>
-#include <algorithm>
-#include <cmath>
-#include <cassert>
-#include <cstdarg>
-#include <cctype>
-
 #include "tables.h"
 
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <math.h>
+
+#include "inline.h"
 #ifdef _MSC_VER
 #include "omc_msvc.h"
 #endif
-
-/* std::deque wrapper that calls deletes stores pointer in destructor */
-template <typename item_t>
-class Holder {
-public:
-  inline item_t* &operator[](size_t idx)  { return list[idx]; }
-  inline void push_back(item_t* item) { list.push_back(item); }
-  inline size_t size() { return list.size(); }
-  ~Holder()
-  { std::for_each(list.begin(),list.end(),free); }
-private:
-  std::deque<item_t*> list;
-  static void free(item_t* item) { delete item; }
-};
 
 typedef struct InterpolationTable
 {
@@ -92,22 +70,23 @@ typedef struct InterpolationTable2D
   int expoType;
 } InterpolationTable2D;
 
-Holder<InterpolationTable> interpolationTables;
-Holder<InterpolationTable2D> interpolationTables2D;
-
+static InterpolationTable** interpolationTables=NULL;
+static size_t ninterpolationTables=0;
+static InterpolationTable2D** interpolationTables2D=NULL;
+static size_t ninterpolationTables2D=0;
 
 InterpolationTable *InterpolationTable_init(double time,double startTime, int ipoType, int expoType,
          const char* tableName, const char* fileName, 
          const double *table, 
          int tableDim1, int tableDim2,int colWise);
 /* InterpolationTable *InterpolationTable_Copy(InterpolationTable *orig); */
-void InterpolationTable_deinit(InterpolationTable **tpl);
+void InterpolationTable_deinit(InterpolationTable *tpl);
 double InterpolationTable_interpolate(InterpolationTable *tpl, double time, size_t col);
 double InterpolationTable_maxTime(InterpolationTable *tpl);
 double InterpolationTable_minTime(InterpolationTable *tpl);
 char InterpolationTable_compare(InterpolationTable *tpl, const char* fname, const char* tname, const double* table);
 
-double InterpolationTable_extrapolate(InterpolationTable *tpl, double time, size_t col, bool beforeData);
+double InterpolationTable_extrapolate(InterpolationTable *tpl, double time, size_t col, char beforeData);
 inline double InterpolationTable_interpolateLin(InterpolationTable *tpl, double time, size_t i, size_t j);
 inline const double InterpolationTable_getElt(InterpolationTable *tpl, size_t row, size_t col);
 void InterpolationTable_checkValidityOfData(InterpolationTable *tpl);
@@ -116,7 +95,7 @@ void InterpolationTable_checkValidityOfData(InterpolationTable *tpl);
 InterpolationTable2D *InterpolationTable2D_init(int ipoType, const char* tableName,
            const char* fileName, const double *table,
            int tableDim1, int tableDim2, int colWise);
-void InterpolationTable2D_deinit(InterpolationTable2D **table);
+void InterpolationTable2D_deinit(InterpolationTable2D *table);
 double InterpolationTable2D_interpolate(InterpolationTable2D *tpl, double x1, double x2);
 char InterpolationTable2D_compare(InterpolationTable2D *tpl, const char* fname, const char* tname, const double* table);
 double InterpolationTable2D_linInterpolate(double x, double x_1, double x_2, double f_1, double f_2);
@@ -143,87 +122,117 @@ void InterpolationTable2D_checkValidityOfData(InterpolationTable2D *tpl);
  *           1 = row major order
  */
 
-extern "C"
+
 int omcTableTimeIni(double timeIn, double startTime,int ipoType,int expoType,
         const char *tableName, const char* fileName, 
         const double *table,int tableDim1, int tableDim2,int colWise)
 {
+  size_t i = 0;
+  InterpolationTable** tmp = NULL;
   /* if table is already initialized, find it */
-  for(size_t i = 0; i < interpolationTables.size(); ++i)
+  for(i = 0; i < ninterpolationTables; ++i)
     if (InterpolationTable_compare(interpolationTables[i],fileName,tableName,table))
       return i;
+  /* increase array */
+  tmp = (InterpolationTable**)malloc((ninterpolationTables+1)*sizeof(InterpolationTable*));
+  for(i = 0; i < ninterpolationTables; ++i)
+  {
+    tmp[i] = interpolationTables[i];
+  }
+  free(interpolationTables);
+  interpolationTables = tmp;
+  ninterpolationTables++;
   /* otherwise initialize new table */
-  interpolationTables.push_back(InterpolationTable_init(timeIn,startTime,
+  interpolationTables[ninterpolationTables-1] = InterpolationTable_init(timeIn,startTime,
                    ipoType,expoType, 
                    tableName, fileName, 
                    table, tableDim1, 
-                   tableDim2, colWise));
-  return (interpolationTables.size()-1);
+                   tableDim2, colWise);
+  return (ninterpolationTables-1);
 }
 
-extern "C"
+
 void omcTableTimeIpoClose(int tableID)
 {
-  if (tableID >= 0 && tableID < (int)interpolationTables.size())
+  if (tableID >= 0 && tableID < (int)ninterpolationTables)
   {
-    InterpolationTable_deinit(&interpolationTables[tableID]); 
+    InterpolationTable_deinit(interpolationTables[tableID]);
+    interpolationTables[tableID] = NULL;
+    ninterpolationTables--;
   }
+  if (ninterpolationTables <=0)
+    free(interpolationTables);
 }
 
-extern "C"
+
 double omcTableTimeIpo(int tableID, int icol, double timeIn)
 {
-  if (tableID >= 0 && tableID < (int)interpolationTables.size())
+  if (tableID >= 0 && tableID < (int)ninterpolationTables)
     return InterpolationTable_interpolate(interpolationTables[tableID],timeIn,icol-1);
   else
     return 0.0;
 }
 
-extern "C"
+
 double omcTableTimeTmax(int tableID)
 {
-  if (tableID >= 0 && tableID < (int)interpolationTables.size())
+  if (tableID >= 0 && tableID < (int)ninterpolationTables)
     return InterpolationTable_maxTime(interpolationTables[tableID]);
   else
     return 0.0;
 }
 
-extern "C"
+
 double omcTableTimeTmin(int tableID)
 {
-  if (tableID >= 0 && tableID < (int)interpolationTables.size())
+  if (tableID >= 0 && tableID < (int)ninterpolationTables)
     return InterpolationTable_minTime(interpolationTables[tableID]);
   else
     return 0.0;
 }
 
-extern "C"
+
 int omcTable2DIni(int ipoType, const char *tableName, const char* fileName, 
       const double *table,int tableDim1,int tableDim2,int colWise)
 {
+  size_t i=0;
+  InterpolationTable2D** tmp = NULL;
   /* if table is already initialized, find it */
-  for(size_t i = 0; i < interpolationTables2D.size(); ++i)
+  for(i = 0; i < ninterpolationTables2D; ++i)
     if (InterpolationTable2D_compare(interpolationTables2D[i],fileName,tableName,table))
       return i;
+  /* increase array */
+  tmp = (InterpolationTable2D**)malloc((ninterpolationTables2D+1)*sizeof(InterpolationTable2D*));
+  for(i = 0; i < ninterpolationTables2D; ++i)
+  {
+    tmp[i] = interpolationTables2D[i];
+  }
+  free(interpolationTables2D);
+  interpolationTables2D = tmp;
+  ninterpolationTables2D++;
   /* otherwise initialize new table */
-  interpolationTables2D.push_back(InterpolationTable2D_init(ipoType,tableName,
-                      fileName,table,tableDim1,tableDim2,colWise));
-  return (interpolationTables2D.size()-1);
+  interpolationTables2D[ninterpolationTables2D-1] = InterpolationTable2D_init(ipoType,tableName,
+                      fileName,table,tableDim1,tableDim2,colWise);
+  return (ninterpolationTables2D-1);
 }
 
-extern "C"
+
 void omcTable2DIpoClose(int tableID)
 {
-  if (tableID >= 0 && tableID < (int)interpolationTables2D.size())
+  if (tableID >= 0 && tableID < (int)ninterpolationTables2D)
   {
-    InterpolationTable2D_deinit(&interpolationTables2D[tableID]);
+    InterpolationTable2D_deinit(interpolationTables2D[tableID]);
+    interpolationTables2D[tableID] = NULL;
+    ninterpolationTables2D--;
   }
+  if (ninterpolationTables2D <=0)
+    free(interpolationTables2D);
 }
 
-extern "C"
+
 double omcTable2DIpo(int tableID,double u1_, double u2_)
 {
-  if (tableID >= 0 && tableID < (int)interpolationTables2D.size())
+  if (tableID >= 0 && tableID < (int)ninterpolationTables2D)
     return InterpolationTable2D_interpolate(interpolationTables2D[tableID], u1_, u2_);
   else
     return 0.0;
@@ -252,10 +261,10 @@ void openFile(const char *filename, const char* tableName, size_t rows, size_t c
 
 typedef struct TEXT_FILE
 {
-  std::ifstream fp;
+  FILE *fp;
   size_t line;
   size_t cpos;
-  std::ifstream::pos_type lnStart;
+  fpos_t *lnStart;
   char *filename;
 } TEXT_FILE;
 
@@ -270,7 +279,8 @@ TEXT_FILE *Text_open(const char *filename)
   {
     f->filename[i] = filename[i];
   }
-  f->fp.open(filename);
+  f->fp = fopen(filename,"r");
+  ASSERT((f->fp==NULL),"Cannot open File %s",filename);
   return f;
 }
 
@@ -280,139 +290,183 @@ void Text_close(TEXT_FILE *f)
   {
     if (f->filename)
       free(f->filename);
-    f->fp.close();
+    fclose(f->fp);
     free(f);
   }
 }
 
-void skipLine(TEXT_FILE *f)
+inline void trim(const char *ptr, size_t *len)
 {
-  f->fp.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
-  ++f->line;
-  f->lnStart = f->fp.tellg();
-}
-
-inline void trim(const char* &ptr, size_t& len)
-{
-  for(; len > 0; ++ptr, --len)
+  for(; *len > 0; ++ptr, --(*len))
     if (!isspace(*ptr)) return;
 }
-inline bool readChr(const char* &ptr, size_t& len, char chr)
+inline char readChr(const char* ptr, size_t *len, char chr)
 {
   trim(ptr,len);
   if (len-- > 0 && *(ptr++) != chr)
-    return false;
+    return 0;
   trim(ptr,len);
-  return true;
+  return 1;
 }
 
-bool parseHead(TEXT_FILE *f, const char* hdr, size_t hdrLen, std::string& name,
-  size_t& rows, size_t& cols)
+char parseHead(TEXT_FILE *f, const char* hdr, size_t hdrLen, const char *name,
+  size_t *rows, size_t *cols)
 {
   char* endptr;
   size_t hLen = hdrLen;
   size_t len = 0;
 
-  trim(hdr,hLen);
+  trim(hdr,&hLen);
 
-  if (strncmp("double",hdr,std::min((size_t)6,hLen)) != 0)
-    return false;
-  trim(hdr += 6, hLen -= 6);
+  if (strncmp("double",hdr,fmin((size_t)6,hLen)) != 0)
+    return 0;
+  hdr += 6;
+  hLen -= 6;
+  trim(hdr, &hLen);
 
   for(len = 1; len < hLen; ++len)
     if (isspace(hdr[len]) || hdr[len] == '(') 
     {
-      name.assign(hdr,len);
+      name = hdr;
       hdr += len;
       hLen -= len;
       break;
     }
-  if (!readChr(hdr,hLen,'('))
+  if (!readChr(hdr,&hLen,'('))
   {
-    f->fp.close();
+    fclose(f->fp);
     THROW("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
   }
-  rows = (size_t)strtol(hdr,&endptr,10);
+  *rows = (size_t)strtol(hdr,&endptr,10);
   if (hdr == endptr)
   {
-    f->fp.close();
+    fclose(f->fp);
     THROW("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
   }
   hLen -= endptr-hdr;
   hdr = endptr;
-  if (!readChr(hdr,hLen,','))
+  if (!readChr(hdr,&hLen,','))
   {
-    f->fp.close();
+    fclose(f->fp);
     THROW("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
   }
-  cols = (size_t)strtol(hdr,&endptr,10);
+  *cols = (size_t)strtol(hdr,&endptr,10);
   if (hdr == endptr)
   {
-    f->fp.close();
+    fclose(f->fp);
     THROW("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
   }
   hLen -= endptr-hdr;
   hdr = endptr;
-  readChr(hdr,hLen,')');
+  readChr(hdr,&hLen,')');
 
   if (hLen > 0 && *hdr != '#')
   {
-    f->fp.close();
+    fclose(f->fp);
     THROW("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
   }
 
-  return true;
+  return 1;
 }
 
-char Text_findTable(TEXT_FILE *f, const char* tableName, size_t& cols, size_t& rows)
+void Text_readLine(TEXT_FILE *f, char **data, size_t *size)
 {
-  std::string strLn, tblName;
-  size_t _cols, _rows;
+  char *tmp = NULL;
+  size_t col=0;
+  size_t i=0;
+  int ch=0;
+  char *buf = *data;
+  /* read whole line */
+  while (!feof(f->fp))
+  {
+    if (col >= *size)
+    {
+      char *tmp = (char*)calloc(*size+100,sizeof(char));
+      for (i = 0; i < *size; i++)
+        tmp[i] = buf[i];
+      free(buf);
+      *data = tmp;
+      buf = *data;
+      *size = *size+100;
+    }
+    ch = fgetc(f->fp);
+    if (ferror(f->fp))
+    {
+      fclose(f->fp);
+      THROW("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,col);
+    }
+    if(ch == '\n')
+      break;
+    buf[col] = ch;
+    col++;
+  }
+}
 
-  while (f->fp.good()) {
+char Text_findTable(TEXT_FILE *f, const char* tableName, size_t *cols, size_t *rows)
+{
+  char *strLn=0;
+  char *tblName=0;
+  int ch=0;
+  size_t buflen=0;
+  size_t col=0;
+  size_t _cols = 0;
+  size_t _rows = 0;
+  size_t i=0;
+
+  while (!feof(f->fp)) 
+  {
     /* start new line, update counters */
     ++f->line;
-    f->lnStart= f->fp.tellg();
-
+    col = 0;
     /* read whole line */
-    std::getline(f->fp,strLn);
-    if (!f->fp)
-    {
-      f->fp.close();
-      THROW("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,(size_t)(f->fp.tellg()-f->lnStart));
-    }
+    Text_readLine(f,&strLn,&buflen);
     /* check if we read header */
-    if (parseHead(f,strLn.data(),strLn.length(),tblName,_rows,_cols)) {
+    if (parseHead(f,strLn,col,tblName,&_rows,&_cols)) 
+    {
       /* is table name the one we are looking for? */
-      if (tblName == tableName) {
-        cols = _cols;
-        rows = _rows;
-        return true;
+      if (strncmp(tblName,tableName,strlen(tableName))==0) 
+      {
+        *cols = _cols;
+        *rows = _rows;
+        if (strLn)
+          free(strLn);
+        return 1;
       }
     }
   }
   /* no header found */
-  return false;
+  if (strLn)
+    free(strLn);
+  return 0;
 }
 
 void Text_readTable(TEXT_FILE *f, double *buf, size_t rows, size_t cols)
 {
   size_t i = 0;
   size_t j = 0;
+  char *strLn=0;
+  size_t buflen=0;
+  size_t sl=0;
+  size_t nlen=0;
+  char *number;
   for(i = 0; i < rows; ++i)
   {
-    f->lnStart = f->fp.tellg();
     ++f->line;
+    Text_readLine(f,&strLn,&buflen);
+    sl = buflen;
+    number = strLn;
     for(j = 0; j < cols; ++j) 
     {
-      f->fp >> buf[i*cols+j];
-      if (!f->fp)
-      {
-        f->fp.close();
-        THROW("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,(size_t)(f->fp.tellg()-f->lnStart));
-      }
+      /* remove sufix whitespaces */
+      trim(number,&sl);
+      number = strLn;
+      for(nlen=0; nlen <sl; sl++)
+        if (isspace(strLn[i]))
+          break;
+      buf[i*cols+j] = atof(number);
+      /* move to next number */
+      number += nlen;
     }
-    f->fp.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
   }
 
 }
@@ -430,7 +484,7 @@ typedef struct {
 
 typedef struct MAT_FILE
 {
-  std::ifstream fp;
+  FILE *fp;
   hdr_t hdr;
   char *filename;
 } MAT_FILE;
@@ -447,7 +501,7 @@ MAT_FILE *Mat_open(const char *filename)
   {
     f->filename[i] = filename[i];
   }
-  f->fp.open(filename,std::ios::in|std::ios::binary);
+  f->fp = fopen(filename,"rb");
   return f;
 }
 
@@ -457,7 +511,7 @@ void Mat_close(MAT_FILE *f)
   {
     if (f->filename)
       free(f->filename);
-    f->fp.close();
+    fclose(f->fp);
     free(f);
   }
 }
@@ -477,7 +531,7 @@ size_t Mat_getTypeSize(MAT_FILE *f, long type)
   case 5:
     return 1;
   default:
-    f->fp.close();
+    fclose(f->fp);
     THROW("Corrupted MAT-file: `%s'",f->filename);
   }
 }
@@ -486,36 +540,36 @@ char Mat_findTable(MAT_FILE *f, const char* tableName, size_t cols, size_t rows)
 {
   char name[256];
   long pos=0;
-  while (!f->fp.eof()) 
+  while (!feof(f->fp)) 
   {
-    f->fp.read((char*)&f->hdr,sizeof(hdr_t));
-    if (!f->fp.good())
+    fgets((char*)&f->hdr,sizeof(hdr_t),f->fp);
+    if (ferror(f->fp))
     {
-      f->fp.close();
+      fclose(f->fp);
       THROW("Could not read from file `%s'.",f->filename);
     }
-    f->fp.read(name,fmin(f->hdr.namelen,(long)256));
+    fgets(name,fmin(f->hdr.namelen,(long)256),f->fp);
     if (strncmp(tableName,name,strlen(tableName)) == 0) 
     {
       if (f->hdr.type%10 != 0 || f->hdr.type/1000 > 1)
       {
-        f->fp.close();
+        fclose(f->fp);
         THROW("Table `%s' not in supported format.",tableName);
       }
       if (f->hdr.mrows <= 0 || f->hdr.ncols <= 0)
       {
-        f->fp.close();
+        fclose(f->fp);
         THROW("Table `%s' has zero dimensions.",tableName);
       }
       if (f->hdr.mrows < rows || f->hdr.ncols < cols)
       {
-        f->fp.close();
+        fclose(f->fp);
         THROW("Table `%s'[%d,%d] has not enough entries [%d,%d].",tableName,f->hdr.mrows,f->hdr.ncols,rows,cols);
       }
       return 1;
     }
-    pos = f->fp.tellg();
-    f->fp.seekg(pos+f->hdr.mrows*f->hdr.ncols*Mat_getTypeSize(f,f->hdr.type)*(f->hdr.imagf?2:1));
+    pos = ftell(f->fp);
+    fseek(f->fp,f->hdr.mrows*f->hdr.ncols*Mat_getTypeSize(f,f->hdr.type)*(f->hdr.imagf?2:1),pos);
   }
   return 0;
 }
@@ -530,28 +584,30 @@ typedef union {
   unsigned char c;
 } elem_t;
 
-#define correctEndianness(stype,type)  inline type correctEndianness_ ## stype (type _num, bool dataEndianness)  \
+inline static char getEndianness()
+{
+  const int endian_test = 1;
+  return ((*(char*)&endian_test) == 0);
+}
+
+#define correctEndianness(stype,type)  inline type correctEndianness_ ## stype (type _num, char dataEndianness)  \
 { \
+  typedef union  \
+  { \
+    type num; \
+    unsigned char b[sizeof(type)]; \
+  } elem_u_ ## stype; \
+  size_t i=0; \
+  elem_u_ ## stype dat1, dat2; \
   if (getEndianness() != dataEndianness) \
   { \
-    union \
-    { \
-      type num; \
-      unsigned char b[sizeof(type)]; \
-    } dat1, dat2; \
     dat1.num = _num; \
-    for(size_t i=0; i < sizeof(type); ++i) \
+    for(i=0; i < sizeof(type); ++i) \
       dat2.b[i] = dat1.b[sizeof(type)-i-1]; \
     return dat2.num; \
   } \
   return _num; \
 } \
-
-inline static bool getEndianness()
-{
-  const int endian_test = 1;
-  return ((*(char*)&endian_test) == 0);
-}
 
 correctEndianness(d,double)
 correctEndianness(f,float)
@@ -563,21 +619,21 @@ correctEndianness(c,unsigned char)
 
 
 
-double Mat_getElem(elem_t& num, char type, bool dataEndianness)
+double Mat_getElem(elem_t *num, char type, char dataEndianness)
 {
   switch(type) {
   case 0:
-    return correctEndianness_d(num.d,dataEndianness);
+    return correctEndianness_d(num->d,dataEndianness);
   case 1:
-    return correctEndianness_f(num.f,dataEndianness);
+    return correctEndianness_f(num->f,dataEndianness);
   case 2:
-    return correctEndianness_i(num.i,dataEndianness);
+    return correctEndianness_i(num->i,dataEndianness);
   case 3:
-    return correctEndianness_s(num.s,dataEndianness);
+    return correctEndianness_s(num->s,dataEndianness);
   case 4:
-    return correctEndianness_us(num.us,dataEndianness);
+    return correctEndianness_us(num->us,dataEndianness);
   default:
-    return correctEndianness_c(num.c,dataEndianness);
+    return correctEndianness_c(num->c,dataEndianness);
   }
 }
 
@@ -593,13 +649,13 @@ void Mat_readTable(MAT_FILE *f, double *buf, size_t rows, size_t cols)
   for(i=0; i < rows; ++i)
     for(j=0; j < cols; ++j) 
   {
-    f->fp.read(readbuf.p,elemSize);
-    if (!f->fp.good())
+    fgets(readbuf.p,elemSize,f->fp);
+    if (ferror(f->fp))
     {
-      f->fp.close();
+      fclose(f->fp);
       THROW("Could not read from file `%s'.",f->filename);
     }
-    buf[i*cols+j] = Mat_getElem(readbuf,P,isBigEndian);
+    buf[i*cols+j] = Mat_getElem(&readbuf,(char)P,isBigEndian);
   }
 }
 
@@ -608,7 +664,7 @@ void Mat_readTable(MAT_FILE *f, double *buf, size_t rows, size_t cols)
 */
 typedef struct CSV_FILE
 {
-  std::ifstream fp;
+  FILE *fp;
   char *filename;
 } CSV_FILE;
 
@@ -675,7 +731,7 @@ void openFile(const char *filename, const char* tableName, size_t rows, size_t c
   else if (strncmp(".txt",filetype,4) != 0) /* csv file */
   {
     TEXT_FILE *f= Text_open(filename);
-    if (Text_findTable(f,tableName,cols,rows)) 
+    if (Text_findTable(f,tableName,&cols,&rows)) 
     {
       Text_readTable(f,data,rows,cols);
       Text_close(f);
@@ -752,14 +808,13 @@ InterpolationTable* InterpolationTable_init(double time, double startTime,
   return tpl;
 }
 
-void InterpolationTable_deinit(InterpolationTable **tpl)
+void InterpolationTable_deinit(InterpolationTable *tpl)
 {
   if (tpl)
   {
-    if ((*tpl)->own_data)
-      free((*tpl)->data);
-    free(*tpl);
-    *tpl = NULL;
+    if (tpl->own_data)
+      free(tpl->data);
+    free(tpl);
   }
 }
 
@@ -811,7 +866,7 @@ char InterpolationTable_compare(InterpolationTable *tpl, const char* fname, cons
   }
 }
 double InterpolationTable_extrapolate(InterpolationTable *tpl, double time, size_t col, 
-               bool beforeData)
+               char beforeData)
 {
   size_t lastIdx;
 
@@ -918,14 +973,13 @@ InterpolationTable2D* InterpolationTable2D_init(int ipoType, const char* tableNa
   return tpl;
 }
 
-void InterpolationTable2D_deinit(InterpolationTable2D **table)
+void InterpolationTable2D_deinit(InterpolationTable2D *table)
 {
   if (table)
   {
-    if ((*table)->own_data)
-      free((*table)->data);
-    free(*table);
-    *table = NULL;
+    if (table->own_data)
+      free(table->data);
+    free(table);
   }
 }
 
@@ -992,7 +1046,7 @@ void InterpolationTable2D_checkValidityOfData(InterpolationTable2D *tpl)
     if (InterpolationTable2D_getElt(tpl,i-1,0) >= InterpolationTable2D_getElt(tpl,i,0))
       THROW("Table: %s independent variable u1 not strictly \
             monotonous: %g >= %g.",tpl->tablename, InterpolationTable2D_getElt(tpl,i-1,0), InterpolationTable2D_getElt(tpl,i,0));
-  for(size_t i=2; i < tpl->cols; ++i)
+  for(i=2; i < tpl->cols; ++i)
     if (InterpolationTable2D_getElt(tpl,0,i-1) >= InterpolationTable2D_getElt(tpl,0,i))
       THROW("Table: %s independent variable u2 not strictly \
             monotonous: %g >= %g.",tpl->tablename, InterpolationTable2D_getElt(tpl,0,i-1), InterpolationTable2D_getElt(tpl,0,i));

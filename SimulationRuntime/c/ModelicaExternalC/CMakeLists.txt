@@ -2,7 +2,7 @@
 set(ModelicaExternalC_sources ModelicaInternal.c
                               ModelicaStrings.c 
 							  ModelicaTablesImpl.c
-							  tables.cpp
+							  tables.c
 							  ModelicaUtilities.c)
 
 SET(ModelicaExternalC_headers ModelicaTables.h

@@ -4,13 +4,14 @@
 # If you need to add files, etc, you modify Makefile.common - a common file
 # for both UNIX/Linux and Windows platforms.
 
-CC = @CC@
-CXX = @CXX@
-CFLAGS   := @CFLAGS@ -I../util 
-CPPFLAGS := @CPPFLAGS@ -I.. -Dlinux -Dstatic= 
-AR = ar -ru
+OBJS = ModelicaInternal.o ModelicaStrings.o ModelicaTablesImpl.o ModelicaUtilities.o tables.o
 
-include Makefile.common
+all: libModelicaExternalC.a
 
-Makefile: Makefile.in
-	cd ../../../; ./config.status
+libModelicaExternalC.a : $(OBJS)
+	$(AR) $@ $(OBJS)
+	ranlib $@
+
+clean:
+	rm -f libModelicaExternalC.a $(OBJS)
+

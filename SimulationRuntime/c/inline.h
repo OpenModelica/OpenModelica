@@ -29,41 +29,22 @@
  *
  */
 
-#include "ModelicaUtilities.h"
-#include "modelica_string.h"
+#ifndef INLINE_H_
+#define INLINE_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
+#if defined(_MSC_VER)
+/* Visual C++ */
+# ifndef inline
+#  define inline __inline
+# endif
+#elif defined(__GNUC__)
+/* GCC */
+# ifndef inline
+#  define inline __inline__
+# endif
+#else
+/* Otherwise, leave inline undefined, all functions
+ * using inline is also static, so it will hold. */
+#endif
 
-void ModelicaMessage(const char* string) {
-  ModelicaFormatMessage("%s", string);
-}
-
-void ModelicaFormatMessage(const char* string,...) {
-  va_list args;
-  va_start(args, string);
-  vfprintf(stdout, string, args);
-  va_end(args);
-  fflush(stdout);
-}
-
-void ModelicaError(const char* string) {
-  ModelicaFormatError("%s", string);
-}
-
-void ModelicaFormatError(const char* string, ...) {
-  va_list args;
-  va_start(args, string);
-  vfprintf(stderr, string, args);
-  va_end(args);
-  fflush(stderr);
-}
-
-char* ModelicaAllocateString(size_t len) {
-  return alloc_modelica_string(len);
-}
-
-char* ModelicaAllocateStringWithErrorReturn(size_t len) {
-  return alloc_modelica_string(len);
-}
+#endif /* INLINE_H_ */

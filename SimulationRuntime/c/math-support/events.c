@@ -463,7 +463,7 @@ debugPrintHelpVars()
   {
     if (sim_verbose >= LOG_EVENTS)
     {
-      fprintf(stdout, "| info LOG_EVENTS | HelpVar[%d] pre: %f, current: %f\n", i, globalData->helpVars_saved[i], globalData->helpVars[i]); fflush(NULL);
+      fprintf(stdout, "| info LOG_EVENTS | HelpVar[%ld] pre: %f, current: %f\n", i, globalData->helpVars_saved[i], globalData->helpVars[i]); fflush(NULL);
     }
   }
 }
@@ -619,7 +619,7 @@ CheckForNewEvent(int* sampleactived)
     {
       if (sim_verbose >= LOG_ZEROCROSSINGS)
         {
-          fprintf(stdout, "| info LOG_ZEROCROSSINGS | ZeroCrossing ID: %d \t old = %g \t current = %g \t Direction = %li\n", 
+          fprintf(stdout, "| info LOG_ZEROCROSSINGS | ZeroCrossing ID: %ld \t old = %g \t current = %g \t Direction = %li\n",
                   i, gout_old[i], gout[i], zeroCrossingEnabled[i]);  fflush(NULL);
         }
       if (gout_old[i] == 0)
@@ -628,7 +628,7 @@ CheckForNewEvent(int* sampleactived)
             {
               if (sim_verbose >= LOG_EVENTS)
                 {
-                  fprintf(stdout, "| info LOG_EVENTS | adding event %d at time: %f\n", i, globalData->timeValue); fflush(NULL);
+                  fprintf(stdout, "| info LOG_EVENTS | adding event %ld at time: %f\n", i, globalData->timeValue); fflush(NULL);
                 }
               listPushFront(eventList, &i);
             }
@@ -636,7 +636,7 @@ CheckForNewEvent(int* sampleactived)
             {
               if (sim_verbose >= LOG_EVENTS)
                 {
-                  fprintf(stdout, "| info LOG_EVENTS | adding event %d at time: %f\n", i, globalData->timeValue); fflush(NULL);
+                  fprintf(stdout, "| info LOG_EVENTS | adding event %ld at time: %f\n", i, globalData->timeValue); fflush(NULL);
                 }
               listPushFront(eventList, &i);
             }
@@ -646,7 +646,7 @@ CheckForNewEvent(int* sampleactived)
         {
           if (sim_verbose >= LOG_EVENTS)
             {
-              fprintf(stdout, "| info LOG_EVENTS | adding event %d at time: %f\n", i, globalData->timeValue); fflush(NULL);
+              fprintf(stdout, "| info LOG_EVENTS | adding event %ld at time: %f\n", i, globalData->timeValue); fflush(NULL);
             }
           listPushFront(eventList, &i);
         }
@@ -895,7 +895,7 @@ void FindRoot(double *EventTime)
     {
       if (sim_verbose >= LOG_ZEROCROSSINGS)
         {
-            fprintf(stdout, "| info LOG_ZEROCROSSINGS | Search for current event. Events in list: %d\n", *((long*)listNodeData(it))); fflush(NULL);
+            fprintf(stdout, "| info LOG_ZEROCROSSINGS | Search for current event. Events in list: %ld\n", *((long*)listNodeData(it))); fflush(NULL);
         }
     }
 
@@ -932,7 +932,7 @@ void FindRoot(double *EventTime)
               listPushBack(tmpEventList, listNodeData(it));
               if (sim_verbose >= LOG_ZEROCROSSINGS)
                 {
-                  fprintf(stdout, "| info LOG_ZEROCROSSINGS | added tmp event : %d\n", *((long*)listNodeData(it))); fflush(NULL);
+                  fprintf(stdout, "| info LOG_ZEROCROSSINGS | added tmp event : %ld\n", *((long*)listNodeData(it))); fflush(NULL);
                 }
             }
         }
@@ -1141,7 +1141,7 @@ CheckZeroCrossings(LIST *tmpEventList)
     {
       if (sim_verbose >= LOG_ZEROCROSSINGS)
         {
-          fprintf(stdout, "| info LOG_ZEROCROSSINGS | ZeroCrossing ID: %d \t old = %g \t current = %g \t Direction = %li\n", 
+          fprintf(stdout, "| info LOG_ZEROCROSSINGS | ZeroCrossing ID: %ld \t old = %g \t current = %g \t Direction = %li\n",
               *((long*)listNodeData(it)), gout_old[*((long*)listNodeData(it))], gout[*((long*)listNodeData(it))], zeroCrossingEnabled[*((long*)listNodeData(it))]); fflush(NULL);
         }
       /*Found event in left section*/
