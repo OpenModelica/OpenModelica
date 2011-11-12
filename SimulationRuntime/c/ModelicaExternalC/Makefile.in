@@ -1,14 +1,14 @@
 CC = @CC@
 CXX = @CXX@
-CFLAGS   := @CFLAGS@
-CPPFLAGS := @CPPFLAGS@ -I.. -Dlinux -Dstatic=
+CFLAGS   := @CFLAGS@ -I../util 
+CPPFLAGS := @CPPFLAGS@ -I.. -Dlinux -Dstatic= 
 OBJS = ModelicaInternal.o ModelicaStrings.o ModelicaTablesImpl.o ModelicaUtilities.o tables.o
 AR = ar -ru
 
 all: libModelicaExternalC.a
 
 tables.o: tables.cpp tables.h
-	$(CXX) $(CFLAGS) @CPPFLAGS@ -I../util -o $@ -c $<
+	$(CXX) $(CFLAGS)  -o $@ -c $<
 
 libModelicaExternalC.a : $(OBJS)
 	$(AR) $@ $(OBJS)
