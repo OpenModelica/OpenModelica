@@ -39,8 +39,8 @@
  *
  */
 
-#ifndef _OMC_TAPLES_H
-#define _OMC_TAPLES_H
+#ifndef _OMC_TABLES_H
+#define _OMC_TABLES_H
 
 #ifdef __cplusplus
 extern "C"

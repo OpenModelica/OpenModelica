@@ -5,9 +5,10 @@
 # for both UNIX/Linux and Windows platforms.
 
 CC = @CC@
+CXX = @CXX@
 ANSI= #-ansi
 CFLAGS   := @CFLAGS@ -Wall $(ANSI) -pedantic $(EXTRA_CFLAGS) -mfpmath=sse -c -I..
-CPPFLAGS := @CPPFLAGS@ -Wall $(ANSI) $(EXTRA_CFLAGS) -I. -I.. -I../../ -I../../util -I../../linearization -I../results -I../math-support/
+CPPFLAGS := @CPPFLAGS@ -Wall $(ANSI) $(EXTRA_CFLAGS) -I. -I.. -I../../ -I../../util -I../../linearization -I../results -I../../math-support/
 AR = ar -ru
 FFLAGS  = -O -fexceptions
 
