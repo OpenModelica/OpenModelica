@@ -536,7 +536,7 @@ class CSVFile : public FileWrapper {
 public:
   static FileWrapper* create(const std::string& fileName)
   { 
-    THROW("Loading tables from CSV files not supported.");
+    THROW("Loading tables from CSV files not supported.", 1);
     return NULL;
   }
 };
