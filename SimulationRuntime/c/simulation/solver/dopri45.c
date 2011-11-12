@@ -103,17 +103,6 @@ euklidnorm(double* a) {
   return sqrt(erg);
 }
 
-double
-max(double a, double b)
-{
-	return a <= b ? b : a;
-}
-double
-min(double a, double b)
-{
-	return a <= b ? a : b;
-}
-
 /***************************************		STEPSIZE	***********************************/
 int
 init_stepsize(int(*f)(), double tolerence) {
@@ -174,15 +163,15 @@ init_stepsize(int(*f)(), double tolerence) {
 
   d2norm = (euklidnorm(temp) / sqrt((double)globalData->nStates)) / h0;
 
-  d = max(d1norm, d2norm);
+  d = fmax(d1norm, d2norm);
 
   if (d <= 1e-15) {
-    h1 = max(1e-6, h0 * 1e-3);
+    h1 = fmax(1e-6, h0 * 1e-3);
   } else {
     h1 = pow((0.01 / d), (1.0 / (p + 1.0)));
   }
 
-  globalData->current_stepsize = min(tolerence * 100 * h0, tolerence * h1);
+  globalData->current_stepsize = fmin(tolerence * 100 * h0, tolerence * h1);
 
   if (sim_verbose >= LOG_SOLVER)
   {
@@ -254,11 +243,11 @@ stepsize_control(double start, double stop, double fixStep, int(*f)(),
       }
       f(); /* get new statesDerivatives */
       retry = 0;
-      globalData->current_stepsize = globalData->current_stepsize / max(alpha, 0.1);
+      globalData->current_stepsize = globalData->current_stepsize / fmax(alpha, 0.1);
     } else {
       reject = reject + 1;
       retry = 1; /* do another step with new stepsize until step is valid */
-      globalData->current_stepsize = globalData->current_stepsize / min(alpha, 10.0);
+      globalData->current_stepsize = globalData->current_stepsize / fmin(alpha, 10.0);
 
       if (sim_verbose >= LOG_SOLVER)
       {
