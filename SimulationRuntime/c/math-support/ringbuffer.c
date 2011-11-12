@@ -54,7 +54,7 @@ RINGBUFFER *allocRingBuffer(int bufferSize, int itemSize)
   rb->bufferSize = bufferSize > 0 ? bufferSize : 1;
   rb->itemSize = itemSize;
   rb->buffer = calloc(rb->bufferSize, rb->itemSize);
-  ASSERT(rb->buffer, "out of memory", 1);
+  ASSERT(rb->buffer, "out of memory");
 }
 
 void freeRingBuffer(RINGBUFFER *rb)
@@ -65,8 +65,8 @@ void freeRingBuffer(RINGBUFFER *rb)
 
 void *getRingData(RINGBUFFER *rb, int i)
 {
-  ASSERT(i < rb->nElements, "index out of range", 1);
-  ASSERT(-rb->nElements < i, "index out of range", 1);
+  ASSERT(i < rb->nElements, "index out of range");
+  ASSERT(-rb->nElements < i, "index out of range");
   return ((char*)rb->buffer)+(((rb->firstElement+i)%rb->bufferSize)*rb->itemSize);
 }
 
@@ -75,7 +75,7 @@ void expandRingBuffer(RINGBUFFER *rb)
   int i;
 
   void *temp = calloc(2*rb->bufferSize, rb->itemSize);
-  ASSERT(temp, "out of memory", 1);
+  ASSERT(temp, "out of memory");
 
   for(i=0; i<rb->nElements; i++)
     memcpy(((char*)temp)+(i*rb->itemSize), getRingData(rb, i), rb->itemSize);
@@ -97,8 +97,8 @@ void appendRingData(RINGBUFFER *rb, void *value)
 
 void dequeueNFirstRingDatas(RINGBUFFER *rb, int n)
 {
-  ASSERT(n <= rb->nElements, "index out of range", 1);
-  ASSERT(0 <= n, "index out of range)", 1);
+  ASSERT(n <= rb->nElements, "index out of range");
+  ASSERT(0 <= n, "index out of range");
 
   rb->firstElement = (rb->firstElement+n)%rb->bufferSize;
   rb->nElements -= n;
@@ -107,4 +107,11 @@ void dequeueNFirstRingDatas(RINGBUFFER *rb, int n)
 int ringBufferLength(RINGBUFFER *rb)
 {
   return rb->nElements;
+}
+
+void rotateRingBuffer(RINGBUFFER *rb, int n)
+{
+  ASSERT(n <= rb->nElements, "index out of range");
+  ASSERT(0 <= n, "index out of range");
+  rb->firstElement = (rb->firstElement+n)%rb->bufferSize;
 }

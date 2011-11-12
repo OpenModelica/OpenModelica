@@ -59,16 +59,19 @@ extern const unsigned int LV_ZEROCROSSINGS;
 extern const unsigned int LV_DEBUG;
 extern const unsigned int LV_LOG_RES_INIT;
 
-#define MSG(type, stream, ...) {fprintf(stream, "%s | [line] %d | [file] %s\n        > ", type, __LINE__, __FILE__); fprintf(stream, __VA_ARGS__); fprintf(stream, "\n"); fflush(NULL);}
-#define MSG_AL(stream, ...)    {fprintf(stream, "        > "); fprintf(stream, __VA_ARGS__); fprintf(stream, "\n"); fflush(NULL);}
+#define MSG_H(type, stream)    {fprintf(stream, "%s | [line] %d | [file] %s\n", type, __LINE__, __FILE__); fflush(NULL);}
+#define MSG(type, stream, ...) {fprintf(stream, "%s > ", type); fprintf(stream, __VA_ARGS__); fprintf(stream, "\n"); fflush(NULL);}
 
 #define INFO(...)        {MSG("info   ", stdout, __VA_ARGS__);}
-#define INFO_AL(...)     {MSG_AL(stdout, __VA_ARGS__);}
-#define WARNING(...)     {MSG("warning", stdout, __VA_ARGS__);}
-#define THROW(...)       {MSG("throw  ", stderr, __VA_ARGS__); longjmp(globalJmpbuf, 1);}
-#define ASSERT(exp, ...) {if(!exp){MSG("assert ", stderr, __VA_ARGS__); longjmp(globalJmpbuf, 1);}}
+#define INFO_AL(...)     {MSG("       ", stdout, __VA_ARGS__);}
 
-#define DEBUG_INFO(flag, ...)    {if(flag & globalDebugFlags) INFO(__VA_ARGS__);}
+#define WARNING(...)     {MSG("warning", stdout, __VA_ARGS__);}
+#define WARNING_AL(...)  {INFO_AL(...);}
+
+#define THROW(...)       {MSG_H("throw  ", stderr); MSG("       ", stderr, __VA_ARGS__); longjmp(globalJmpbuf, 1);}
+#define ASSERT(exp, ...) {if(!(exp)){MSG_H("assert ", stderr); MSG("       ", stderr, __VA_ARGS__); longjmp(globalJmpbuf, 1);}}
+
+#define DEBUG_INFO(flag, ...)    {if(flag & globalDebugFlags){MSG_H("debug  ", stdout); INFO(__VA_ARGS__);}}
 #define DEBUG_INFO_AL(flag, ...) {if(flag & globalDebugFlags) INFO_AL(__VA_ARGS__);}
 
 #ifdef __cplusplus

@@ -54,6 +54,8 @@ extern "C" {
 
   int ringBufferLength(RINGBUFFER *rb);
 
+  void rotateRingBuffer(RINGBUFFER *rb, int n);
+
 #ifdef __cplusplus
 }
 #endif
