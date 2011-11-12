@@ -4,14 +4,16 @@
 # If you need to add files, etc, you modify Makefile.common - a common file
 # for both UNIX/Linux and Windows platforms.
 
-OBJS = ModelicaInternal.o ModelicaStrings.o ModelicaTablesImpl.o ModelicaUtilities.o tables.o
+AR = ar -ru
+
+include ../Makefile.objs
 
 all: libModelicaExternalC.a
 
-libModelicaExternalC.a : $(OBJS)
-	$(AR) $@ $(OBJS)
+libModelicaExternalC.a : $(MOEXTC_OBJS)
+	$(AR) $@ $(MOEXTC_OBJS)
 	ranlib $@
 
 clean:
-	rm -f libModelicaExternalC.a $(OBJS)
+	rm -f libModelicaExternalC.a $(MOEXTC_OBJS)
 

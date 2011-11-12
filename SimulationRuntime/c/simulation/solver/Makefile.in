@@ -12,25 +12,7 @@ CPPFLAGS := @CPPFLAGS@ -Wall $(ANSI) $(EXTRA_CFLAGS) -I. -I.. -I../../ -I../../u
 AR = ar -ru
 FFLAGS  = -O -fexceptions
 
-OBJS = daux.o ddasrt.o ddassl.o dlamch.o dlinpk.o solver_main.o  
-
-HFILES = \
-simulation_inline_solver.h \
-solver_main.h \
-
-LIBS = libsolver.a
-
-.PHONY : libsolver.a clean
-
-all : libsolver.a
-
-libsolver.a : $(OBJS) $(HFILES)
-	$(AR) $@ $(OBJS)
-	ranlib $@
-
-clean :
-	rm -f libsolver.a
-	rm -f $(OBJS)
+include Makefile.common
 
 Makefile: Makefile.in
 	cd ../../../../; ./config.status

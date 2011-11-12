@@ -54,7 +54,7 @@ typedef struct _ExpressionDelayBuffer
 }t_ExpressionDelayBuffer;
 
 /* the delayStructure looks like a matrix (rows = expressionNumber+currentColumnIndex, columns={time, value}) */
-RINGBUFFER **delayStructure;
+static RINGBUFFER **delayStructure;
 
 extern const int numDelayExpressionIndex;
 
@@ -68,9 +68,10 @@ void initDelay(double startTime)
     /* allocate the memory for rows */
     delayStructure = (RINGBUFFER**)calloc(numDelayExpressionIndex, sizeof(RINGBUFFER*));
     ASSERT(delayStructure, "out of memory");
+    for(i=0; i<numDelayExpressionIndex; i++){
+    	delayStructure[i] = allocRingBuffer(1024, sizeof(t_TimeAndValue));
+    }
 
-    for(i=0; i<numDelayExpressionIndex; i++)
-        delayStructure[i] = allocRingBuffer(1024, sizeof(t_TimeAndValue));
 
     DEBUG_INFO(LV_SOLVER, "initDelay called with startTime = %f\n", startTime);
 }
@@ -112,23 +113,13 @@ void storeDelayedExpression(int exprNumber, double exprValue, double time)
 {
     t_TimeAndValue tpl;
 
-    if(exprNumber < 0)
-    {
-        /* ERROR("storeDelayedExpression: Invalid expression number %d", exprNumber); */
-        return;
-    }
-
-
-    if(time < tStart)
-    {
-        /* ERROR("storeDelayedExpression: Time is smaller than starting time. Value ignored"); */
-        return;
-    }
-
-    /* ERROR("storeDelayed[%d] %g:%g", exprNumber, time, exprValue); */
+    /* INFO("storeDelayed[%d] %g:%g", exprNumber, time, exprValue); */
 
     /* Allocate more space for expressions */
-    ASSERT(exprNumber < numDelayExpressionIndex, "exprNumber < numDelayExpressionIndex");
+    ASSERT(exprNumber < numDelayExpressionIndex, "storeDelayedExpression: Invalid expression number %d", exprNumber);
+   	ASSERT(exprNumber >= 0,"storeDelayedExpression: Invalid expression number %d", exprNumber);
+
+   	ASSERT(time >= tStart,"storeDelayedExpression:  Time is smaller than starting time. Value ignored");
 
     tpl.time = time;
     tpl.value = exprValue;
@@ -143,7 +134,7 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
     /* ERROR("delayImpl: exprNumber = %d, exprValue = %lf, time = %lf, delayTime = %lf", exprNumber, exprValue, time, delayTime); */
 
     /* Check for errors */
-    ASSERT(0 <= exprNumber, "0 <= exprNumber");
+    ASSERT(0 <= exprNumber, "0 > exprNumber = %d ",exprNumber);
     ASSERT(exprNumber < numDelayExpressionIndex, "exprNumber < numDelayExpressionIndex");
 
     if(time <= tStart)

@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, Linköpings University,
+ * Copyright (c) 1998-CurrentYear, Link?ping University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 Link?ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from Link?ping University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -28,38 +28,18 @@
  *
  */
 
-#ifndef RINGBUFFER_H
-#define RINGBUFFER_H
+/*********************       internal definitions; do not expose        ***********************/
 
-/*
- * This is an expanding ring buffer.
- * When it gets full, it doubles in size.
- * It's basically a queue which has get(ix) instead of get_first()/delete_first().
- */
+#ifndef _DOPRI45_H
+#define _DOPRI45_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
-  struct RINGBUFFER;
-  typedef struct RINGBUFFER RINGBUFFER;
+int
+stepsize_control(double start, double stop, double fixStep, int(*f)(),
+                 int reinit_step, int useInterpolation, double tolerance, int* reject);
 
-  RINGBUFFER *allocRingBuffer(int bufferSize, int itemSize);
-  void freeRingBuffer(RINGBUFFER *rb);
-
-  void *getRingData(RINGBUFFER *rb, int nIndex);
-
-  void appendRingData(RINGBUFFER *rb, void *value);
-  void dequeueNFirstRingDatas(RINGBUFFER *rb, int n);
-
-  int ringBufferLength(RINGBUFFER *rb);
-
-  void rotateRingBuffer(RINGBUFFER *rb, int n);
-
-  void infoRingBuffer(RINGBUFFER *rb);
-
-#ifdef __cplusplus
-}
-#endif
+int
+interpolation_control(const int dideventstep, double interpolationStep,
+                      double fixStep, double stop);
 
 #endif

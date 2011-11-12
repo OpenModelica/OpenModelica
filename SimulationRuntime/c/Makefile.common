@@ -14,7 +14,7 @@ FFLAGS  = -O -fexceptions
 
 include Makefile.objs
 
-LIBS = libsim.a libsolver.a libmath-support.a libutil.a libmeta.a libf2c.a libresult.a libModelicaExternalC.a libsendData.a
+LIBS = libsim.a libsolver.a libmath-support.a libutil.a libmeta.a libf2c.a libresult.a libModelicaExternalC.a libsendData.a libModelicaExternalC.a
 
 LIBSPATH= simulation/libsim.a math-support/libmath-support.a simulation/solver/libsolver.a simulation/results/libresult.a meta/libmeta.a util/libutil.a 
 
@@ -53,11 +53,12 @@ libModelicaExternalC.a:
 	$(MAKE) -C ModelicaExternalC -f ${LIBMAKEFILE}
 
 install: libSimulationRuntimeC.a $(LIBS) omdevinstall
-	cp libSimulationRuntimeC.a $(builddir_lib)
+	cp ./libSimulationRuntimeC.a $(builddir_lib)
 	cp ./ModelicaExternalC/libModelicaExternalC.a $(builddir_lib)
 	cp ./ModelicaExternalC/ModelicaUtilities.h $(builddir_inc)
 	cp ./openmodelica.h $(builddir_inc)
 	cp ./openmodelica_func.h $(builddir_inc)
+	cp ./inline.h $(builddir_inc)
 	cp ../interactive/libinteractive.a $(builddir_lib)
 	cp ./meta/*.h $(builddir_inc)
 	cp ./util/*.h $(builddir_inc)

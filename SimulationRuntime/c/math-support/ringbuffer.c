@@ -48,6 +48,7 @@ struct RINGBUFFER
 RINGBUFFER *allocRingBuffer(int bufferSize, int itemSize)
 {
   RINGBUFFER *rb = (RINGBUFFER*)malloc(sizeof(RINGBUFFER));
+  ASSERT(rb, "out of memory");
 
   rb->firstElement = 0;
   rb->nElements = 0;
@@ -55,6 +56,8 @@ RINGBUFFER *allocRingBuffer(int bufferSize, int itemSize)
   rb->itemSize = itemSize;
   rb->buffer = calloc(rb->bufferSize, rb->itemSize);
   ASSERT(rb->buffer, "out of memory");
+
+  return rb;
 }
 
 void freeRingBuffer(RINGBUFFER *rb)
@@ -114,4 +117,12 @@ void rotateRingBuffer(RINGBUFFER *rb, int n)
   ASSERT(n <= rb->nElements, "index out of range");
   ASSERT(0 <= n, "index out of range");
   rb->firstElement = (rb->firstElement+n)%rb->bufferSize;
+}
+
+void infoRingBuffer(RINGBUFFER *rb)
+{
+	INFO("size of one item in bytes: %d",rb->itemSize);
+	INFO("position of first element in buffer: %d",rb->firstElement);
+	INFO("number of elements in buffer: %d",rb->nElements);
+	INFO("number of elements which could be stored in buffer %d",rb->bufferSize);
 }

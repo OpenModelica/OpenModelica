@@ -1,0 +1,20 @@
+include ../../Makefile.objs
+
+HFILES = \
+simulation_inline_solver.h \
+solver_main.h \
+dopri45.h \
+
+LIBS = libsolver.a
+
+.PHONY : libsolver.a clean
+
+all : libsolver.a
+
+libsolver.a : $(SOLVER_OBJS) $(HFILES)
+	$(AR) $@ $(SOLVER_OBJS)
+	ranlib $@
+
+clean :
+	rm -f libsolver.a $(SOLVER_OBJS)
+

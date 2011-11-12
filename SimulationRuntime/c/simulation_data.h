@@ -234,6 +234,8 @@ extern "C" {
     modelica_real currentTime;
     modelica_integer currentStep;
     modelica_integer numSteps;
+    modelica_real tolerence;
+    modelica_string method;
   }SIMULATION_INFO;
 
   /* top-level struct to collect dynamic and static model data */
