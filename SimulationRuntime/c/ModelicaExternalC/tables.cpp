@@ -28,6 +28,8 @@
  *
  */
 
+#include "error.h"
+
 #include <deque>
 #include <string>
 #include <iostream>
@@ -48,67 +50,15 @@
 #include "omc_msvc.h"
 #endif
 
-//extern char *model_dir; // defined somewhere else (where?)
+/*extern char *model_dir; // defined somewhere else (where?) */
 
-namespace {
+
 
 /* \brief This class is used for throwing an exception when simulation code should be terminated.
  * For instance, when a terminate call occurse or if an assert becomes active
  */
 
-class TerminateSimulationException {
-public:
-  TerminateSimulationException(const std::string& msg) : currentTime(0.0), errorMessage(msg) {}
-  TerminateSimulationException(double time) : currentTime(time), errorMessage("") {}
-  TerminateSimulationException(double time, const std::string& msg) : currentTime(time), errorMessage(msg) {}
-  TerminateSimulationException() : currentTime(0.0) {}
-  virtual ~TerminateSimulationException() {}
-  const std::string& getMessage() const { return errorMessage; }
-  double getTime() const { return currentTime; }
-protected:
-  double currentTime;
-  std::string errorMessage;
-};
-
-// definition and implementation of some error classes
-class CustomError : public TerminateSimulationException
-{
-protected:
-  inline void saveMessage(const char *format, va_list args)
-  {
-    char buf[4096];
-    vsnprintf(buf,4096,format,args);
-    errorMessage.assign(buf);
-  }
-  CustomError() {}
-public:
-  explicit CustomError(const char *format, ...)
- :TerminateSimulationException(0.0)
-  {
-    va_list args;
-    va_start(args,format);
-    saveMessage(format,args);
-    va_end(args);
-  }
-  virtual ~CustomError() throw() {}
-};
-class AllocFailed : public CustomError
-{
-protected:
-  explicit AllocFailed() {}
-public:
-  explicit AllocFailed(const char *func)
-    :CustomError("%s(): Could not allocate memory.",func) {}
-//  explicit AllocFailed(const char *type)
-//    :CustomError("Could not allocate memory of type %s.",type) {}
-  explicit AllocFailed(const char *type, long size)
-    :CustomError("Could not allocate memory buffer of type %s and size %d.",type,size) {}
-  explicit AllocFailed(const char *func, const char *type, long size)
-    :CustomError("%s(): could not allocate memory buffer of type %s and size %d.",func,type,size) {}
-  virtual ~AllocFailed() throw() {}
-};
-
-// std::deque wrapper that calls deletes stores pointer in destructor
+/* std::deque wrapper that calls deletes stores pointer in destructor */
 template <typename item_t>
 class Holder {
 public:
@@ -122,70 +72,66 @@ private:
   static void free(item_t* item) { delete item; }
 };
 
-class InterpolationTable;
-class InterpolationTable2D;
+typedef struct InterpolationTable
+{
+  char *filename;
+  char *tablename;
+  char own_data;
+  double* data;
+  size_t rows;
+  size_t cols;
+  char colWise;
+  int ipoType;
+  int expoType;
+  double startTime;
+} InterpolationTable;
+
+typedef struct InterpolationTable2D
+{
+  char *filename;
+  char *tablename;
+  char own_data;
+  double *data;
+  size_t rows;
+  size_t cols;
+
+  char colWise;
+  int ipoType;
+  int expoType;
+} InterpolationTable2D;
 
 Holder<InterpolationTable> interpolationTables;
 Holder<InterpolationTable2D> interpolationTables2D;
 
 
-class InterpolationTable {
-public:
-  InterpolationTable(double time,double startTime, int ipoType, int expoType,
+InterpolationTable *InterpolationTable_init(double time,double startTime, int ipoType, int expoType,
          const char* tableName, const char* fileName, 
          const double *table, 
          int tableDim1, int tableDim2,int colWise);
-  InterpolationTable(InterpolationTable& orig);
-  ~InterpolationTable();
-  double interpolate(double time, size_t col) const;
-  double maxTime() const { return (data?getElt(rows-1,0):0.0); }
-  double minTime() const { return (data?data[0]:0.0); }
-  bool compare(const char* fname, const char* tname, const double* table) const;
-private:
-  double extrapolate(double time, size_t col, bool beforeData) const;
-  inline double interpolateLin(double time, size_t i, size_t j) const;
-  inline const double& getElt(size_t row, size_t col) const;
-  void checkValidityOfData() const;
+/* InterpolationTable *InterpolationTable_Copy(InterpolationTable *orig); */
+void InterpolationTable_deinit(InterpolationTable **tpl);
+double InterpolationTable_interpolate(InterpolationTable *tpl, double time, size_t col);
+double InterpolationTable_maxTime(InterpolationTable *tpl);
+double InterpolationTable_minTime(InterpolationTable *tpl);
+char InterpolationTable_compare(InterpolationTable *tpl, const char* fname, const char* tname, const double* table);
 
-  std::string filename;
-  std::string tablename;
-  bool own_data;
-  double* data;
-  size_t rows;
-  size_t cols;
-  bool colWise;
-  int ipoType;
-  int expoType;
-  double startTime;
-};
+double InterpolationTable_extrapolate(InterpolationTable *tpl, double time, size_t col, bool beforeData);
+inline double InterpolationTable_interpolateLin(InterpolationTable *tpl, double time, size_t i, size_t j);
+inline const double InterpolationTable_getElt(InterpolationTable *tpl, size_t row, size_t col);
+void InterpolationTable_checkValidityOfData(InterpolationTable *tpl);
 
-class InterpolationTable2D {
-public:
-  InterpolationTable2D(int ipoType, const char* tableName,
+
+InterpolationTable2D *InterpolationTable2D_init(int ipoType, const char* tableName,
            const char* fileName, const double *table,
            int tableDim1, int tableDim2, int colWise);
-  ~InterpolationTable2D();
-  double interpolate(double x1, double x2);
-  bool compare(const char* fname, const char* tname, const double* table) const;
-private:
-  std::string filename;
-  std::string tablename;
-  bool own_data;
-  double *data;
-  size_t rows;
-  size_t cols;
+void InterpolationTable2D_deinit(InterpolationTable2D **table);
+double InterpolationTable2D_interpolate(InterpolationTable2D *tpl, double x1, double x2);
+char InterpolationTable2D_compare(InterpolationTable2D *tpl, const char* fname, const char* tname, const double* table);
+double InterpolationTable2D_linInterpolate(double x, double x_1, double x_2, double f_1, double f_2);
+const double InterpolationTable2D_getElt(InterpolationTable2D *tpl, size_t row, size_t col);
+void InterpolationTable2D_checkValidityOfData(InterpolationTable2D *tpl);
 
-  bool colWise;
-  int ipoType;
-  int expoType;
 
-  double linInterpolate(double x, double x_1, double x_2,
-      double f_1, double f_2) const;
-  const double& getElt(size_t row, size_t col) const;
-  void checkValidityOfData() const;
-};
-
-} // namespace
 
 /* Initialize table.
  * timeIn - time
@@ -210,12 +156,12 @@ int omcTableTimeIni(double timeIn, double startTime,int ipoType,int expoType,
         const char *tableName, const char* fileName, 
         const double *table,int tableDim1, int tableDim2,int colWise)
 {
-  // if table is already initialized, find it
+  /* if table is already initialized, find it */
   for(size_t i = 0; i < interpolationTables.size(); ++i)
-    if (interpolationTables[i]->compare(fileName,tableName,table))
+    if (InterpolationTable_compare(interpolationTables[i],fileName,tableName,table))
       return i;
-  // otherwise initialize new table
-  interpolationTables.push_back(new InterpolationTable(timeIn,startTime,
+  /* otherwise initialize new table */
+  interpolationTables.push_back(InterpolationTable_init(timeIn,startTime,
                    ipoType,expoType, 
                    tableName, fileName, 
                    table, tableDim1, 
@@ -224,10 +170,19 @@ int omcTableTimeIni(double timeIn, double startTime,int ipoType,int expoType,
 }
 
 extern "C"
+void omcTableTimeIpoClose(int tableID)
+{
+  if (tableID >= 0 && tableID < (int)interpolationTables.size())
+  {
+    InterpolationTable_deinit(&interpolationTables[tableID]); 
+  }
+}
+
+extern "C"
 double omcTableTimeIpo(int tableID, int icol, double timeIn)
 {
   if (tableID >= 0 && tableID < (int)interpolationTables.size())
-    return interpolationTables[tableID]->interpolate(timeIn,icol-1);
+    return InterpolationTable_interpolate(interpolationTables[tableID],timeIn,icol-1);
   else
     return 0.0;
 }
@@ -236,7 +191,7 @@ extern "C"
 double omcTableTimeTmax(int tableID)
 {
   if (tableID >= 0 && tableID < (int)interpolationTables.size())
-    return interpolationTables[tableID]->maxTime();
+    return InterpolationTable_maxTime(interpolationTables[tableID]);
   else
     return 0.0;
 }
@@ -245,7 +200,7 @@ extern "C"
 double omcTableTimeTmin(int tableID)
 {
   if (tableID >= 0 && tableID < (int)interpolationTables.size())
-    return interpolationTables[tableID]->minTime();
+    return InterpolationTable_minTime(interpolationTables[tableID]);
   else
     return 0.0;
 }
@@ -254,29 +209,38 @@ extern "C"
 int omcTable2DIni(int ipoType, const char *tableName, const char* fileName, 
       const double *table,int tableDim1,int tableDim2,int colWise)
 {
-  // if table is already initialized, find it
+  /* if table is already initialized, find it */
   for(size_t i = 0; i < interpolationTables2D.size(); ++i)
-    if (interpolationTables2D[i]->compare(fileName,tableName,table))
+    if (InterpolationTable2D_compare(interpolationTables2D[i],fileName,tableName,table))
       return i;
-  // otherwise initialize new table
-  interpolationTables2D.push_back(new InterpolationTable2D(ipoType,tableName,
+  /* otherwise initialize new table */
+  interpolationTables2D.push_back(InterpolationTable2D_init(ipoType,tableName,
                       fileName,table,tableDim1,tableDim2,colWise));
   return (interpolationTables2D.size()-1);
+}
+
+extern "C"
+void omcTable2DIpoClose(int tableID)
+{
+  if (tableID >= 0 && tableID < (int)interpolationTables2D.size())
+  {
+    InterpolationTable2D_deinit(&interpolationTables2D[tableID]);
+  }
 }
 
 extern "C"
 double omcTable2DIpo(int tableID,double u1_, double u2_)
 {
   if (tableID >= 0 && tableID < (int)interpolationTables2D.size())
-    return interpolationTables2D[tableID]->interpolate(u1_,u2_);
+    return InterpolationTable2D_interpolate(interpolationTables2D[tableID], u1_, u2_);
   else
     return 0.0;
 }
 
-// ******************************
-//  ***    IMPLEMENTATION    ***
-// ******************************
-namespace {
+/* ******************************
+   ***    IMPLEMENTATION    ***
+   ******************************
+*/
 
 class FileWrapper {
 public:
@@ -288,18 +252,18 @@ public:
   static FileWrapper* openFile(const std::string& filename);
 };
 
-// \brief Read data from text file.
-// 
-//  Text file format:
-//   #1
-//  double A(2,2) # comment here
-//    1 0
-//    0 1
-//  double M(3,3) # comment
-//    1 2 3
-//    3 4 5
-//    1 1 1
-// 
+/* \brief Read data from text file.
+  
+   Text file format:
+    #1
+   double A(2,2) # comment here
+     1 0
+     0 1
+   double M(3,3) # comment
+     1 2 3
+     3 4 5
+     1 1 1
+*/ 
 class TextFile : public FileWrapper {
 public:
   static FileWrapper* create(const std::string& fileName)
@@ -308,7 +272,7 @@ public:
   {
     fp.open(filename.c_str());
     if (!fp)
-      throw CustomError("Could not open file `%s' for reading",filename.c_str());
+      THROW("Could not open file `%s' for reading",filename.c_str());
   }
   virtual ~TextFile()
   {
@@ -322,17 +286,17 @@ public:
     size_t _cols, _rows;
 
     while (fp.good()) {
-      // start new line, update counters
+      /* start new line, update counters */
       ++line;
       lnStart= fp.tellg();
 
-      // read whole line
+      /* read whole line */
       std::getline(fp,strLn);
       if (!fp)
-  throw ParsingError(filename,line,(size_t)(fp.tellg()-lnStart));
-      // check if we read header
+  THROW("In file `%s': parsing error at line %d and col %d.",filename,line,(size_t)(fp.tellg()-lnStart));
+      /* check if we read header */
       if (parseHead(strLn.data(),strLn.length(),tblName,_rows,_cols)) {
-  // is table name the one we are looking for?
+  /* is table name the one we are looking for? */
   if (tblName == tableName) {
     cols = _cols;
     rows = _rows;
@@ -340,7 +304,7 @@ public:
   }
       }
     }
-    // no header found
+    /* no header found */
     return false;
   }
 
@@ -351,7 +315,7 @@ public:
       ++line;
       for(size_t j = 0; j < cols; ++j) {
   fp >> buf[i*cols+j];
-  if (!fp) throw ParsingError(filename,line,(size_t)(fp.tellg()-lnStart));
+  if (!fp) THROW("In file `%s': parsing error at line %d and col %d.",filename,line,(size_t)(fp.tellg()-lnStart));
       }
       fp.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
     }
@@ -362,7 +326,7 @@ public:
   {
     fp.close();
     if (!fp.good())
-      throw CustomError("Could not close file `%s'.",filename.c_str());
+      THROW("Could not close file `%s'.",filename.c_str());
   }
 private:
   std::string filename;
@@ -370,16 +334,6 @@ private:
   size_t line;
   size_t cpos;
   std::ifstream::pos_type lnStart;
-
-  class ParsingError : public CustomError {
-  public:
-    ParsingError(const char* fileName, size_t line, size_t col)
-      :CustomError("In file `%s': parsing error at line %d and col %d.",
-       fileName, line, col) {}
-    ParsingError(const std::string& fileName, size_t line, size_t col)
-      :CustomError("In file `%s': parsing error at line %d and col %d.",
-       fileName.c_str(), line, col) {}
-  };
 
   void skipLine()
   {
@@ -408,23 +362,23 @@ private:
   break;
       }
     if (!readChr(hdr,hLen,'('))
-      throw ParsingError(filename,line,hdrLen-hLen);
+      THROW("In file `%s': parsing error at line %d and col %d.",filename,line,hdrLen-hLen);
     rows = (size_t)strtol(hdr,&endptr,10);
     if (hdr == endptr)
-      throw ParsingError(filename,line,hdrLen-hLen);
+      THROW("In file `%s': parsing error at line %d and col %d.",filename,line,hdrLen-hLen);
     hLen -= endptr-hdr;
     hdr = endptr;
     if (!readChr(hdr,hLen,','))
-      throw ParsingError(filename,line,hdrLen-hLen);
+      THROW("In file `%s': parsing error at line %d and col %d.",filename,line,hdrLen-hLen);
     cols = (size_t)strtol(hdr,&endptr,10);
     if (hdr == endptr)
-      throw ParsingError(filename,line,hdrLen-hLen);
+      THROW("In file `%s': parsing error at line %d and col %d.",filename,line,hdrLen-hLen);
     hLen -= endptr-hdr;
     hdr = endptr;
     readChr(hdr,hLen,')');
     
     if (hLen > 0 && *hdr != '#')
-      throw ParsingError(filename,line,hdrLen-hLen);
+      THROW("In file `%s': parsing error at line %d and col %d.",filename,line,hdrLen-hLen);
 
     return true;
   }
@@ -455,7 +409,7 @@ public:
     memset(&hdr,0,sizeof(hdr_t));
     fp.open(filename.c_str(),std::ios::in|std::ios::binary);
     if (!fp)
-      throw CustomError("Could not open file `%s' for reading.",filename.c_str());
+      THROW("Could not open file `%s' for reading.",filename.c_str());
   }
   virtual ~MatFile() {
     fp.close();
@@ -467,13 +421,13 @@ public:
     while (!fp.eof()) {
       fp.read((char*)&hdr,sizeof(hdr));
       if (!fp.good())
-  throw CustomError("Could not read from file `%s'.",filename.c_str());
+  THROW("Could not read from file `%s'.",filename.c_str());
       fp.read(name,std::min(hdr.namelen,(long)256));
       if (strncmp(tableName,name,strlen(tableName)) == 0) {
   if (hdr.type%10 != 0 || hdr.type/1000 > 1)
-    throw CustomError("Table `%s' not in supported format.",tableName);
+    THROW("Table `%s' not in supported format.",tableName);
   if (hdr.mrows <= 0 || hdr.ncols <= 0)
-    throw CustomError("Table `%s' has zero dimensions.",tableName);
+    THROW("Table `%s' has zero dimensions.",tableName);
   rows = hdr.mrows;
   cols = hdr.ncols;
   return true;
@@ -494,7 +448,7 @@ public:
       for(size_t j=0; j < cols; ++j) {
   fp.read(readbuf.p,elemSize);
   if (!fp.good())
-    throw CustomError("Could not read from file `%s'.",filename.c_str());
+    THROW("Could not read from file `%s'.",filename.c_str());
   buf[i*cols+j] = getElem(readbuf,P,isBigEndian);
       }
   }
@@ -537,7 +491,7 @@ private:
     case 5:
       return 1;
     default:
-      throw CustomError("Corrupted MAT-file: `%s'",filename.c_str());
+      THROW("Corrupted MAT-file: `%s'",filename.c_str());
     }
   }
   double getElem(elem_t& num, char type, bool dataEndianness)
@@ -582,7 +536,7 @@ class CSVFile : public FileWrapper {
 public:
   static FileWrapper* create(const std::string& fileName)
   { 
-    throw CustomError("Loading tables from CSV files not supported.");
+    THROW("Loading tables from CSV files not supported.");
     return NULL;
   }
 };
@@ -602,231 +556,342 @@ FileWrapper *FileWrapper::openFile(const std::string& filename)
     if (fileExt == fileFormats[i].first) {
       fptr = fileFormats[i].second(filename);
       if (!fptr) 
-  throw CustomError("Could not allocate memory to read file `%s'",
+  THROW("Could not allocate memory to read file `%s'",
         filename.c_str());
       return (fptr);
     }
-  throw CustomError("Interpolation table: uknown file extension -- `%s'.",
+  THROW("Interpolation table: uknown file extension -- `%s'.",
         fileExt.c_str());
   return NULL;
 }
 
-//
-// implementation of InterpolationTable methods
-//
-InterpolationTable::InterpolationTable(double time, double startTime,
+/*
+   implementation of InterpolationTable methods
+*/
+InterpolationTable* InterpolationTable_init(double time, double startTime,
                int ipoType, int expoType,
                const char* tableName, const char* fileName, 
                const double* table, int tableDim1,
                int tableDim2, int colWise)
-  :tablename(tableName?tableName:""),own_data(false),data(NULL),
-   rows(tableDim1),cols(tableDim2),colWise(colWise),
-   ipoType(ipoType),expoType(expoType),startTime(startTime)
 {
-  if (fileName && strncmp("NoName",fileName,6) != 0) {
-    filename = fileName;
+  size_t i=0;
+  size_t l=0;
+  size_t size = tableDim1*tableDim2;
+  InterpolationTable *tpl = 0;
+  tpl = (InterpolationTable*)calloc(1,sizeof(InterpolationTable));
+  ASSERT(tpl,"Not enough memory for Table: %s",tableName);
+
+  tpl->rows = tableDim1;
+  tpl->cols = tableDim2;
+  tpl->colWise = colWise;
+  tpl->ipoType = ipoType;
+  tpl->expoType = expoType;
+  tpl->startTime = startTime;
+
+  if (tableName)
+  {
+    l = strlen(tableName);
+    tpl->tablename = (char*)calloc(1,l+1);
+    ASSERT(tpl->tablename,"Not enough memory for Table: %s",tableName);
+    for (i=0;i<l;i++)
+    {
+      tpl->tablename[i] = tableName[i];
+    }
+  }
+
+  if (fileName && strncmp("NoName",fileName,6) != 0) 
+  {
+    l = strlen(fileName);
+    tpl->filename = (char*)calloc(1,l+1);
+    ASSERT(tpl->filename,"Not enough memory for Table: %s",tableName);
+    for (i=0;i<l;i++)
+    {
+      tpl->filename[i] = fileName[i];
+    }
     
-    std::auto_ptr<FileWrapper> file(FileWrapper::openFile(filename));
+    std::auto_ptr<FileWrapper> file(FileWrapper::openFile(fileName));
     
-    if (file->findTable(tableName,cols,rows)) {
-      data = new double[rows*cols];
-      if (!data) throw AllocFailed("InterpolationTable","dobule",rows*cols);
-      own_data = true;
+    if (file->findTable(tableName,tpl->cols,tpl->rows)) 
+    {
+      tpl->data = (double*)calloc(size,sizeof(double));
+      ASSERT(tpl->data,"Not enough memory for Table: %s",tableName);
+      tpl->own_data = 1;
       
-      file->readTable(data,rows,cols);
+      file->readTable(tpl->data,tpl->rows,tpl->cols);
       file->close();
-    } else {
-      throw CustomError("No table named `%s' in file `%s'.",tableName,fileName);
+    } else 
+    {
+      THROW("No table named `%s' in file `%s'.",tableName,fileName);
     }
-  } else {
-    data = new double[rows*cols];
-    if (!data) throw AllocFailed("InterpolationTime2D","double",rows*cols);
-    own_data = true;
+  } else 
+  {
+    tpl->data = (double*)calloc(size,sizeof(double));
+    ASSERT(tpl->data,"Not enough memory for Table: %s",tableName);
+    tpl->own_data = 1;
 
-    std::copy(table,table+(rows*cols),data);
+    for (i=0;i<size;i++)
+    {
+      tpl->data[i] = table[i];
+    }
   }
-  // check that time column is strictly monotonous
-  checkValidityOfData();
-}
-InterpolationTable::~InterpolationTable()
-{
-  if (own_data) delete[] data;
+  /* check that time column is strictly monotonous */
+  InterpolationTable_checkValidityOfData(tpl);
+  return tpl;
 }
 
-double InterpolationTable::interpolate(double time, size_t col) const
+void InterpolationTable_deinit(InterpolationTable **tpl)
 {
-  size_t lastIdx = colWise ? cols : rows;
+  if (tpl)
+  {
+    if ((*tpl)->own_data)
+      free((*tpl)->data);
+    free(*tpl);
+    *tpl = NULL;
+  }
+}
 
-  if (!data) return 0.0;
+double InterpolationTable_interpolate(InterpolationTable *tpl, double time, size_t col)
+{
+  size_t i = 0;
+  size_t lastIdx = tpl->colWise ? tpl->cols : tpl->rows;
 
-  // substract time offset
-  //fprintf(stderr, "time %g startTime %g\n", time, startTime);
+  if (!tpl->data) return 0.0;
+
+  /* substract time offset */
+  /*fprintf(stderr, "time %g startTime %g\n", time, startTime); */
   
-  if (time < minTime())
-    return extrapolate(time,col,time <= minTime());
+  if (time < InterpolationTable_minTime(tpl))
+    return InterpolationTable_extrapolate(tpl,time,col,time <= InterpolationTable_minTime(tpl));
 
-  for(size_t i = 0; i < lastIdx; ++i) {
-    //fprintf(stderr, "getElt: %d %g->%g\n", i, getElt(i,0), getElt(i,1));
-    if (getElt(i,0) > time) {
-      return interpolateLin(time, i-1,col);
+  for(i = 0; i < lastIdx; ++i) {
+    /* fprintf(stderr, "getElt: %d %g->%g\n", i, getElt(i,0), getElt(i,1)); */
+    if (InterpolationTable_getElt(tpl,i,0) > time) {
+      return InterpolationTable_interpolateLin(tpl,time, i-1,col);
     }
   }
-  return extrapolate(time,col,time <= minTime());
+  return InterpolationTable_extrapolate(tpl,time,col,time <= InterpolationTable_minTime(tpl));
 }
-bool InterpolationTable::compare(const char* fname, const char* tname,
-         const double* table) const
+
+double InterpolationTable_maxTime(InterpolationTable *tpl) 
+{ 
+  return (tpl->data?InterpolationTable_getElt(tpl,tpl->rows-1,0):0.0); 
+}
+double InterpolationTable_minTime(InterpolationTable *tpl) 
+{ 
+  return (tpl->data?tpl->data[0]:0.0); 
+}
+
+char InterpolationTable_compare(InterpolationTable *tpl, const char* fname, const char* tname,
+         const double* table)
 {
-  if (fname == NULL || tname == NULL) return false;
+  if (fname == NULL || tname == NULL) return 0;
   if (strncmp("NoName",fname,6) == 0 && strncmp("NoName",tname,6) == 0)
-    // table passed as memory location
-    return (data == table);
+  {
+    /* table passed as memory location */
+    return (tpl->data == table);
+  }
   else
-    // table loaded from file
-    return (filename == fname && tablename == tname);
-  return false;
+  {
+    /* table loaded from file */
+    return (tpl->filename == fname && tpl->tablename == tname);
+  return 0;
+  }
 }
-double InterpolationTable::extrapolate(double time, size_t col, 
-               bool beforeData) const
+double InterpolationTable_extrapolate(InterpolationTable *tpl, double time, size_t col, 
+               bool beforeData)
 {
   size_t lastIdx;
 
-  switch(expoType) {
+  switch(tpl->expoType) {
   case 1:
-    // hold last/first value
-    return getElt((beforeData ? 0 :rows-1),col);
+    /* hold last/first value */
+    return InterpolationTable_getElt(tpl,(beforeData ? 0 :tpl->rows-1),col);
   case 2:
-    // extrapolate through first/last two values
-    lastIdx = (colWise ? cols : rows) - 2;
-    return interpolateLin(time,(beforeData?0:lastIdx),col);
+    /* extrapolate through first/last two values */
+    lastIdx = (tpl->colWise ? tpl->cols : tpl->rows) - 2;
+    return InterpolationTable_interpolateLin(tpl,time,(beforeData?0:lastIdx),col);
   case 3:
-    // periodically repeat signal
-    time = startTime + (time - maxTime()*floor(time/maxTime()));
-    return interpolate(time,col);
+    /* periodically repeat signal */
+    time = tpl->startTime + (time - InterpolationTable_maxTime(tpl)*floor(time/InterpolationTable_maxTime(tpl)));
+    return InterpolationTable_interpolate(tpl,time,col);
   default:
     return 0.0;
   }
 }
-double InterpolationTable::interpolateLin(double time, size_t i, size_t j) const
+double InterpolationTable_interpolateLin(InterpolationTable *tpl, double time, size_t i, size_t j)
 {
-  double t_1 = getElt(i,0);
-  double t_2 = getElt(i+1,0);
-  double y_1 = getElt(i,j);
-  double y_2 = getElt(i+1,j);
-  //if (std::abs(t_2-t_1) < 100.0*std::numeric_limits<double>::epsilon())
-  //  return y_1;
-  //else
+  double t_1 = InterpolationTable_getElt(tpl,i,0);
+  double t_2 = InterpolationTable_getElt(tpl,i+1,0);
+  double y_1 = InterpolationTable_getElt(tpl,i,j);
+  double y_2 = InterpolationTable_getElt(tpl,i+1,j);
+  /*if (std::abs(t_2-t_1) < 100.0*std::numeric_limits<double>::epsilon())
+    return y_1;
+    else
+  */
   return (y_1 + ((time-t_1)/(t_2-t_1)) * (y_2-y_1));
 }
 
-const double& InterpolationTable::getElt(size_t row, size_t col) const
+const double InterpolationTable_getElt(InterpolationTable *tpl, size_t row, size_t col)
 {
-  assert(row < rows && col < cols);
-  return data[colWise ? col*rows+row : row*cols+col];
+  ASSERT(row < tpl->rows && col < tpl->cols,"In Table: %s from File: %s with Size[%d,%d] try to get Element[%d,$d] aut of range!", tpl->tablename, tpl->filename, tpl->rows, tpl->cols, row,col);
+  return tpl->data[tpl->colWise ? col*tpl->rows+row : row*tpl->cols+col];
 }
-void InterpolationTable::checkValidityOfData() const
+void InterpolationTable_checkValidityOfData(InterpolationTable *tpl)
 {
-  size_t maxSize = colWise ? cols : rows;
-  for(size_t i = 1; i < maxSize; ++i)
-    if (getElt(i-1,0) > getElt(i,0))
-      throw CustomError("TimeTable: Column with time variable not monotonous: %g >= %g.", getElt(i-1,0),getElt(i,0));
+  size_t i = 0;
+  size_t maxSize = tpl->colWise ? tpl->cols : tpl->rows;
+  for(i = 1; i < maxSize; ++i)
+    if (InterpolationTable_getElt(tpl,i-1,0) > InterpolationTable_getElt(tpl,i,0))
+      THROW("TimeTable: Column with time variable not monotonous: %g >= %g.", InterpolationTable_getElt(tpl,i-1,0),InterpolationTable_getElt(tpl,i,0));
 }
 
 
-//
-// interpolation 2D
-//
-InterpolationTable2D::InterpolationTable2D(int ipoType, const char* tableName,
+/*
+  interpolation 2D
+*/
+InterpolationTable2D* InterpolationTable2D_init(int ipoType, const char* tableName,
            const char* fileName, const double *table,
            int tableDim1, int tableDim2, int colWise)
-  :tablename(tableName?tableName:""),own_data(false),data(NULL),
-   rows(tableDim1),cols(tableDim2), colWise(colWise)
 {
-  if (fileName && strncmp("NoName",fileName,6) != 0) {
-    filename = fileName;
-    
-    std::auto_ptr<FileWrapper> file(FileWrapper::openFile(filename));
-    
-    if (file->findTable(tableName,cols,rows)) {
-      data = new double[rows*cols];
-      if (!data) throw AllocFailed("InterpolationTable2D","double",rows*cols);
-      own_data = true;
+  size_t i=0;
+  size_t l=0;
+  size_t size = tableDim1*tableDim2;
+  InterpolationTable2D *tpl = 0;
+  tpl = (InterpolationTable2D*)calloc(1,sizeof(InterpolationTable2D));
+  ASSERT(tpl,"Not enough memory for Table: %s",tableName);
 
-      file->readTable(data,rows,cols);
+  tpl->rows = tableDim1;
+  tpl->cols = tableDim2;
+  tpl->colWise = colWise;
+
+  if (tableName)
+  {
+    l = strlen(tableName);
+    tpl->tablename = (char*)calloc(1,l+1);
+    ASSERT(tpl->tablename,"Not enough memory for Table: %s",tableName);
+    for (i=0;i<l;i++)
+    {
+      tpl->tablename[i] = tableName[i];
+    }
+  }
+
+  if (fileName && strncmp("NoName",fileName,6) != 0) 
+  {
+    l = strlen(fileName);
+    tpl->filename = (char*)calloc(1,l+1);
+    ASSERT(tpl->filename,"Not enough memory for Table: %s",tableName);
+    for (i=0;i<l;i++)
+    {
+      tpl->filename[i] = fileName[i];
+    }
+    
+    std::auto_ptr<FileWrapper> file(FileWrapper::openFile(fileName));
+    
+    if (file->findTable(tableName,tpl->cols,tpl->rows)) 
+    {
+      tpl->data = (double*)calloc(size,sizeof(double));
+      ASSERT(tpl->data,"Not enough memory for Table: %s",tableName);
+      tpl->own_data = 1;
+
+      file->readTable(tpl->data,tpl->rows,tpl->cols);
       file->close();
     } else {
-      throw CustomError("No table named `%s' in file `%s'.",tableName,fileName);
+      THROW("No table named `%s' in file `%s'.",tableName,fileName);
     }
   } else {
-    data = new double[rows*cols];
-    if (!data) throw AllocFailed("InterpolationTime2D","double",rows*cols);
-    own_data = true;
+    tpl->data = (double*)calloc(size,sizeof(double));
+    ASSERT(tpl->data,"Not enough memory for Table: %s",tableName);
+    tpl->own_data = 1;
 
-    std::copy(table,table+(rows*cols),data);
+    for (i=0;i<size;i++)
+    {
+      tpl->data[i] = table[i];
+    }
   }
-  // check if table is valid
-  checkValidityOfData();
-}
-InterpolationTable2D::~InterpolationTable2D()
-{
-  if (own_data) delete[] data;
+  /* check if table is valid */
+  InterpolationTable2D_checkValidityOfData(tpl);
+  return tpl;
 }
 
-double InterpolationTable2D::interpolate(double x1, double x2)
+void InterpolationTable2D_deinit(InterpolationTable2D **table)
+{
+  if (table)
+  {
+    if ((*table)->own_data)
+      free((*table)->data);
+    free(*table);
+    *table = NULL;
+  }
+}
+
+double InterpolationTable2D_interpolate(InterpolationTable2D *table, double x1, double x2)
 {
   size_t i, j;
-  if (colWise) std::swap(x1,x2);
-
-  // if out of boundary, just set to min/max
-  x1 = fmin(fmax(x1,getElt(1,0)),getElt(rows-1,0));
-  x2 = fmin(fmax(x2,getElt(0,1)),getElt(0,cols-1));
-
-  // find intervals corresponding x1 and x2
-  for(i = 2; i < rows; ++i)
-    if (getElt(i,0) >= x1) break;
-  for(j = 2; j < cols; ++j)
-    if (getElt(0,j) >= x2) break;
-  
-  // bilinear interpolation
   double f_1, f_2;
-  f_1 = linInterpolate(x1,getElt(i-1,0),getElt(i,0),getElt(i-1,j-1),getElt(i,j-1));
-  f_2 = linInterpolate(x1,getElt(i-1,0),getElt(i,0),getElt(i-1,j),getElt(i,j));
-  return linInterpolate(x2,getElt(0,j-1),getElt(0,j),f_1,f_2);
-}
-bool InterpolationTable2D::compare(const char* fname, const char* tname,
-         const double* table) const
-{
-  if (fname == NULL || tname == NULL) return false;
-  if (strncmp("NoName",fname,6) == 0 && strncmp("NoName",tname,6) == 0)
-    // table passed as memory location
-    return (data == table);
-  else
-    // table loaded from file
-    return (filename == fname && tablename == tname);
-  return false;
+  if (table->colWise)
+  {
+    double tmp = x1;
+    x1 = x2;
+    x1 = tmp;
+  }
+
+  /* if out of boundary, just set to min/max */
+  x1 = fmin(fmax(x1,InterpolationTable2D_getElt(table,1,0)),InterpolationTable2D_getElt(table,table->rows-1,0));
+  x2 = fmin(fmax(x2,InterpolationTable2D_getElt(table,0,1)),InterpolationTable2D_getElt(table,0,table->cols-1));
+
+  /* find intervals corresponding x1 and x2 */
+  for(i = 2; i < table->rows; ++i)
+    if (InterpolationTable2D_getElt(table,i,0) >= x1) break;
+  for(j = 2; j < table->cols; ++j)
+    if (InterpolationTable2D_getElt(table,0,j) >= x2) break;
+  
+  /* bilinear interpolation */
+  f_1 = InterpolationTable2D_linInterpolate(x1,InterpolationTable2D_getElt(table,i-1,0),InterpolationTable2D_getElt(table,i,0),InterpolationTable2D_getElt(table,i-1,j-1),InterpolationTable2D_getElt(table,i,j-1));
+  f_2 = InterpolationTable2D_linInterpolate(x1,InterpolationTable2D_getElt(table,i-1,0),InterpolationTable2D_getElt(table,i,0),InterpolationTable2D_getElt(table,i-1,j),InterpolationTable2D_getElt(table,i,j));
+  return InterpolationTable2D_linInterpolate(x2,InterpolationTable2D_getElt(table,0,j-1),InterpolationTable2D_getElt(table,0,j),f_1,f_2);
 }
 
-double InterpolationTable2D::linInterpolate(double x, double x_1, double x_2,
-              double f_1, double f_2) const
+char InterpolationTable2D_compare(InterpolationTable2D *tpl, const char* fname, const char* tname, const double* table) 
+{
+  if (fname == NULL || tname == NULL) return 0;
+  if (strncmp("NoName",fname,6) == 0 && strncmp("NoName",tname,6) == 0)
+  {
+    /* table passed as memory location */
+    return (tpl->data == table);
+  }
+  else
+  {
+    /* table loaded from file */
+    return (tpl->filename == fname && tpl->tablename == tname);
+  }
+  return 0;
+}
+
+double InterpolationTable2D_linInterpolate(double x, double x_1, double x_2,
+              double f_1, double f_2) 
 {
   return ((x_2 - x)*f_1 + (x - x_1)*f_2) / (x_2-x_1);
 }
-const double& InterpolationTable2D::getElt(size_t row, size_t col) const
+const double InterpolationTable2D_getElt(InterpolationTable2D *tpl, size_t row, size_t col)
 {
-  assert(row < rows && col < cols);
-  return data[row*cols+col];
+  ASSERT(row < tpl->rows && col < tpl->cols,"In Table: %s from File: %s with Size[%d,%d] try to get Element[%d,$d] aut of range!", tpl->tablename, tpl->filename, tpl->rows, tpl->cols, row,col);
+  return tpl->data[row*tpl->cols+col];
 }
 
-void InterpolationTable2D::checkValidityOfData() const
+void InterpolationTable2D_checkValidityOfData(InterpolationTable2D *tpl) 
 {
-  // check that first row and column are strictly monotonous
-  for(size_t i=2; i < rows; ++i)
-    if (getElt(i-1,0) >= getElt(i,0))
-      throw CustomError("Table2D: independent variable u1 not strictly \
-monotonous: %g >= %g.",getElt(i-1,0),getElt(i,0));
-  for(size_t i=2; i < cols; ++i)
-    if (getElt(0,i-1) >= getElt(0,i))
-      throw CustomError("Table2D: independent variable u2 not strictly \
-monotonous: %g >= %g.",getElt(0,i-1),getElt(0,i));
+  size_t i = 0;
+  /* check that first row and column are strictly monotonous */
+  for(i=2; i < tpl->rows; ++i)
+  {
+    if (InterpolationTable2D_getElt(tpl,i-1,0) >= InterpolationTable2D_getElt(tpl,i,0))
+      THROW("Table: %s independent variable u1 not strictly \
+            monotonous: %g >= %g.",tpl->tablename, InterpolationTable2D_getElt(tpl,i-1,0), InterpolationTable2D_getElt(tpl,i,0));
+  for(size_t i=2; i < tpl->cols; ++i)
+    if (InterpolationTable2D_getElt(tpl,0,i-1) >= InterpolationTable2D_getElt(tpl,0,i))
+      THROW("Table: %s independent variable u2 not strictly \
+            monotonous: %g >= %g.",tpl->tablename, InterpolationTable2D_getElt(tpl,0,i-1), InterpolationTable2D_getElt(tpl,0,i));
+  }
 }
 
-} // namespace
+

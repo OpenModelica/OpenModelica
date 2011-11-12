@@ -28,6 +28,9 @@
 *
 */
 
+#include "ringbuffer.h"
+#include "error.h"
+
 #include <assert.h>
 #include <stdlib.h>
 #include <memory.h>
