@@ -50,14 +50,6 @@
 #include "omc_msvc.h"
 #endif
 
-/*extern char *model_dir; // defined somewhere else (where?) */
-
-
-
-/* \brief This class is used for throwing an exception when simulation code should be terminated.
- * For instance, when a terminate call occurse or if an assert becomes active
- */
-
 /* std::deque wrapper that calls deletes stores pointer in destructor */
 template <typename item_t>
 class Holder {
@@ -242,15 +234,8 @@ double omcTable2DIpo(int tableID,double u1_, double u2_)
    ******************************
 */
 
-class FileWrapper {
-public:
-  virtual bool findTable(const char* tableName,
-       size_t& cols, size_t& rows) =0;
-  virtual void readTable(double *buf, size_t rows, size_t cols) =0;
-  virtual void close() =0;
+void openFile(const char *filename, const char* tableName, size_t rows, size_t cols, double *data);
 
-  static FileWrapper* openFile(const std::string& filename);
-};
 
 /* \brief Read data from text file.
   
@@ -264,305 +249,442 @@ public:
      3 4 5
      1 1 1
 */ 
-class TextFile : public FileWrapper {
-public:
-  static FileWrapper* create(const std::string& fileName)
-  {  return new TextFile(fileName); }
-  TextFile(const std::string& fileName):filename(fileName),line(0),lnStart(0)
-  {
-    fp.open(filename.c_str());
-    if (!fp)
-      THROW("Could not open file `%s' for reading",filename.c_str());
-  }
-  virtual ~TextFile()
-  {
-    fp.close();
-  }
 
-  virtual bool findTable(const char* tableName, 
-       size_t& cols, size_t& rows)
-  {
-    std::string strLn, tblName;
-    size_t _cols, _rows;
-
-    while (fp.good()) {
-      /* start new line, update counters */
-      ++line;
-      lnStart= fp.tellg();
-
-      /* read whole line */
-      std::getline(fp,strLn);
-      if (!fp)
-  THROW("In file `%s': parsing error at line %d and col %d.",filename,line,(size_t)(fp.tellg()-lnStart));
-      /* check if we read header */
-      if (parseHead(strLn.data(),strLn.length(),tblName,_rows,_cols)) {
-  /* is table name the one we are looking for? */
-  if (tblName == tableName) {
-    cols = _cols;
-    rows = _rows;
-    return true;
-  }
-      }
-    }
-    /* no header found */
-    return false;
-  }
-
-  virtual void readTable(double *buf, size_t rows, size_t cols)
-  {
-    for(size_t i = 0; i < rows; ++i) {
-      lnStart = fp.tellg();
-      ++line;
-      for(size_t j = 0; j < cols; ++j) {
-  fp >> buf[i*cols+j];
-  if (!fp) THROW("In file `%s': parsing error at line %d and col %d.",filename,line,(size_t)(fp.tellg()-lnStart));
-      }
-      fp.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
-    }
-
-  }
-
-  virtual void close()
-  {
-    fp.close();
-    if (!fp.good())
-      THROW("Could not close file `%s'.",filename.c_str());
-  }
-private:
-  std::string filename;
+typedef struct TEXT_FILE
+{
   std::ifstream fp;
   size_t line;
   size_t cpos;
   std::ifstream::pos_type lnStart;
+  char *filename;
+} TEXT_FILE;
 
-  void skipLine()
+TEXT_FILE *Text_open(const char *filename)
+{
+  size_t l,i;
+  TEXT_FILE *f=(TEXT_FILE*)calloc(1,sizeof(TEXT_FILE));
+  l = strlen(filename);
+  f->filename = (char*)calloc(1,l+1);
+  ASSERT(f->filename,"Not enough memory for Filename %s",filename);
+  for (i=0;i<l;i++)
   {
-    fp.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
-    ++line;
-    lnStart = fp.tellg();
+    f->filename[i] = filename[i];
   }
+  f->fp.open(filename);
+  return f;
+}
 
-  bool parseHead(const char* hdr, size_t hdrLen, std::string& name,
-     size_t& rows, size_t& cols) const
+void Text_close(TEXT_FILE *f)
+{
+  if (f)
   {
-    char* endptr;
-    size_t hLen = hdrLen;
+    if (f->filename)
+      free(f->filename);
+    f->fp.close();
+    free(f);
+  }
+}
 
-    trim(hdr,hLen);
-    
-    if (strncmp("double",hdr,std::min((size_t)6,hLen)) != 0)
-      return false;
-    trim(hdr += 6, hLen -= 6);
+void skipLine(TEXT_FILE *f)
+{
+  f->fp.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+  ++f->line;
+  f->lnStart = f->fp.tellg();
+}
 
-    for(size_t len = 1; len < hLen; ++len)
-      if (isspace(hdr[len]) || hdr[len] == '(') {
-  name.assign(hdr,len);
-  hdr += len;
-  hLen -= len;
-  break;
-      }
-    if (!readChr(hdr,hLen,'('))
-      THROW("In file `%s': parsing error at line %d and col %d.",filename,line,hdrLen-hLen);
-    rows = (size_t)strtol(hdr,&endptr,10);
-    if (hdr == endptr)
-      THROW("In file `%s': parsing error at line %d and col %d.",filename,line,hdrLen-hLen);
-    hLen -= endptr-hdr;
-    hdr = endptr;
-    if (!readChr(hdr,hLen,','))
-      THROW("In file `%s': parsing error at line %d and col %d.",filename,line,hdrLen-hLen);
-    cols = (size_t)strtol(hdr,&endptr,10);
-    if (hdr == endptr)
-      THROW("In file `%s': parsing error at line %d and col %d.",filename,line,hdrLen-hLen);
-    hLen -= endptr-hdr;
-    hdr = endptr;
-    readChr(hdr,hLen,')');
-    
-    if (hLen > 0 && *hdr != '#')
-      THROW("In file `%s': parsing error at line %d and col %d.",filename,line,hdrLen-hLen);
-
-    return true;
-  }
-  inline void trim(const char* &ptr, size_t& len) const
-  {
-    for(; len > 0; ++ptr, --len)
-      if (!isspace(*ptr)) return;
-  }
-  inline bool readChr(const char* &ptr, size_t& len, char chr) const
-  {
-    trim(ptr,len);
-    if (len-- > 0 && *(ptr++) != chr)
-      return false;
-    trim(ptr,len);
-    return true;
-  }
-};
-
-
-class MatFile : public FileWrapper {
-public:
-  static FileWrapper* create(const std::string& fileName)
-  { 
-    return new MatFile(fileName);
-  }
-  MatFile(const std::string& fileName):filename(fileName)
-  {
-    memset(&hdr,0,sizeof(hdr_t));
-    fp.open(filename.c_str(),std::ios::in|std::ios::binary);
-    if (!fp)
-      THROW("Could not open file `%s' for reading.",filename.c_str());
-  }
-  virtual ~MatFile() {
-    fp.close();
-  }
-  bool findTable(const char* tableName, size_t& cols, size_t& rows)
-  {
-    char name[256];
-    long pos;
-    while (!fp.eof()) {
-      fp.read((char*)&hdr,sizeof(hdr));
-      if (!fp.good())
-  THROW("Could not read from file `%s'.",filename.c_str());
-      fp.read(name,std::min(hdr.namelen,(long)256));
-      if (strncmp(tableName,name,strlen(tableName)) == 0) {
-  if (hdr.type%10 != 0 || hdr.type/1000 > 1)
-    THROW("Table `%s' not in supported format.",tableName);
-  if (hdr.mrows <= 0 || hdr.ncols <= 0)
-    THROW("Table `%s' has zero dimensions.",tableName);
-  rows = hdr.mrows;
-  cols = hdr.ncols;
-  return true;
-      }
-      pos = fp.tellg();
-      fp.seekg(pos+hdr.mrows*hdr.ncols*getTypeSize(hdr.type)*(hdr.imagf?2:1));
-    }
+inline void trim(const char* &ptr, size_t& len)
+{
+  for(; len > 0; ++ptr, --len)
+    if (!isspace(*ptr)) return;
+}
+inline bool readChr(const char* &ptr, size_t& len, char chr)
+{
+  trim(ptr,len);
+  if (len-- > 0 && *(ptr++) != chr)
     return false;
-  }
-  void readTable(double *buf, size_t rows, size_t cols)
-  {
-    elem_t readbuf;
-    long P = (hdr.type%1000)/100;
-    bool isBigEndian = (hdr.type/1000) == 1;
-    size_t elemSize = getTypeSize(hdr.type);
+  trim(ptr,len);
+  return true;
+}
 
-    for(size_t i=0; i < rows; ++i)
-      for(size_t j=0; j < cols; ++j) {
-  fp.read(readbuf.p,elemSize);
-  if (!fp.good())
-    THROW("Could not read from file `%s'.",filename.c_str());
-  buf[i*cols+j] = getElem(readbuf,P,isBigEndian);
-      }
-  }
-  void close() 
+bool parseHead(TEXT_FILE *f, const char* hdr, size_t hdrLen, std::string& name,
+  size_t& rows, size_t& cols)
+{
+  char* endptr;
+  size_t hLen = hdrLen;
+  size_t len = 0;
+
+  trim(hdr,hLen);
+
+  if (strncmp("double",hdr,std::min((size_t)6,hLen)) != 0)
+    return false;
+  trim(hdr += 6, hLen -= 6);
+
+  for(len = 1; len < hLen; ++len)
+    if (isspace(hdr[len]) || hdr[len] == '(') 
+    {
+      name.assign(hdr,len);
+      hdr += len;
+      hLen -= len;
+      break;
+    }
+  if (!readChr(hdr,hLen,'('))
   {
-    fp.close();
+    f->fp.close();
+    THROW("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
   }
-private:
-  typedef struct {
-    long type;
-    long mrows;
-    long ncols;
-    long imagf;
-    long namelen;
-  } hdr_t;
-  typedef union {
-    char p[8];
-    double d;
-    float f;
-    int i;
-    short s;
-    unsigned short us;
-    unsigned char c;
-  } elem_t;
-  std::string filename;
+  rows = (size_t)strtol(hdr,&endptr,10);
+  if (hdr == endptr)
+  {
+    f->fp.close();
+    THROW("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
+  }
+  hLen -= endptr-hdr;
+  hdr = endptr;
+  if (!readChr(hdr,hLen,','))
+  {
+    f->fp.close();
+    THROW("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
+  }
+  cols = (size_t)strtol(hdr,&endptr,10);
+  if (hdr == endptr)
+  {
+    f->fp.close();
+    THROW("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
+  }
+  hLen -= endptr-hdr;
+  hdr = endptr;
+  readChr(hdr,hLen,')');
+
+  if (hLen > 0 && *hdr != '#')
+  {
+    f->fp.close();
+    THROW("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
+  }
+
+  return true;
+}
+
+char Text_findTable(TEXT_FILE *f, const char* tableName, size_t& cols, size_t& rows)
+{
+  std::string strLn, tblName;
+  size_t _cols, _rows;
+
+  while (f->fp.good()) {
+    /* start new line, update counters */
+    ++f->line;
+    f->lnStart= f->fp.tellg();
+
+    /* read whole line */
+    std::getline(f->fp,strLn);
+    if (!f->fp)
+    {
+      f->fp.close();
+      THROW("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,(size_t)(f->fp.tellg()-f->lnStart));
+    }
+    /* check if we read header */
+    if (parseHead(f,strLn.data(),strLn.length(),tblName,_rows,_cols)) {
+      /* is table name the one we are looking for? */
+      if (tblName == tableName) {
+        cols = _cols;
+        rows = _rows;
+        return true;
+      }
+    }
+  }
+  /* no header found */
+  return false;
+}
+
+void Text_readTable(TEXT_FILE *f, double *buf, size_t rows, size_t cols)
+{
+  size_t i = 0;
+  size_t j = 0;
+  for(i = 0; i < rows; ++i)
+  {
+    f->lnStart = f->fp.tellg();
+    ++f->line;
+    for(j = 0; j < cols; ++j) 
+    {
+      f->fp >> buf[i*cols+j];
+      if (!f->fp)
+      {
+        f->fp.close();
+        THROW("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,(size_t)(f->fp.tellg()-f->lnStart));
+      }
+    }
+    f->fp.ignore(std::numeric_limits<std::streamsize>::max(),'\n');
+  }
+
+}
+
+/*
+  Mat File implementation
+*/
+typedef struct {
+  long type;
+  long mrows;
+  long ncols;
+  long imagf;
+  long namelen;
+} hdr_t;
+
+typedef struct MAT_FILE
+{
   std::ifstream fp;
   hdr_t hdr;
-  size_t getTypeSize(long type) const
-  {
-    switch((type%1000)/100) {
-    case 0:
-      return sizeof(double);
-    case 1:
-      return sizeof(float);
-    case 2:
-      return 4;
-    case 3:
-    case 4:
-      return 2;
-    case 5:
-      return 1;
-    default:
-      THROW("Corrupted MAT-file: `%s'",filename.c_str());
-    }
-  }
-  double getElem(elem_t& num, char type, bool dataEndianness)
-  {
-    switch(type) {
-    case 0:
-      return correctEndianness(num.d,dataEndianness);
-    case 1:
-      return correctEndianness(num.f,dataEndianness);
-    case 2:
-      return correctEndianness(num.i,dataEndianness);
-    case 3:
-      return correctEndianness(num.s,dataEndianness);
-    case 4:
-      return correctEndianness(num.us,dataEndianness);
-    default:
-      return correctEndianness(num.c,dataEndianness);
-    }
-  }
-  template<typename num_t>
-  inline num_t correctEndianness(num_t _num, bool dataEndianness) {
-    if (getEndianness() != dataEndianness) {
-      union {
-  num_t num;
-  unsigned char b[sizeof(num_t)];
-      } dat1, dat2;
-      dat1.num = _num;
-      for(size_t i=0; i < sizeof(num_t); ++i)
-  dat2.b[i] = dat1.b[sizeof(num_t)-i-1];
-      return dat2.num;
-    }
-    return _num;
-  }
-  inline static bool getEndianness()
-  {
-    const int endian_test = 1;
-    return ((*(char*)&endian_test) == 0);
-  }
-};
+  char *filename;
+} MAT_FILE;
 
-class CSVFile : public FileWrapper {
-public:
-  static FileWrapper* create(const std::string& fileName)
-  { 
-    THROW("Loading tables from CSV files not supported.", 1);
-    return NULL;
-  }
-};
-
-FileWrapper *FileWrapper::openFile(const std::string& filename)
+MAT_FILE *Mat_open(const char *filename)
 {
-  static const std::pair<const char*,FileWrapper* (*)(const std::string&)> 
-    fileFormats[3] = {
-    std::make_pair(".txt",&TextFile::create),
-    std::make_pair(".mat",&MatFile::create),
-    std::make_pair(".csv",&CSVFile::create)
-  };
-  FileWrapper *fptr;
-  std::string fileExt = filename.substr(filename.rfind('.'));
+  size_t l,i;
+  MAT_FILE *f=(MAT_FILE*)calloc(1,sizeof(MAT_FILE));
+  memset(&(f->hdr),0,sizeof(hdr_t));
+  l = strlen(filename);
+  f->filename = (char*)calloc(1,l+1);
+  ASSERT(f->filename,"Not enough memory for Filename %s",filename);
+  for (i=0;i<l;i++)
+  {
+    f->filename[i] = filename[i];
+  }
+  f->fp.open(filename,std::ios::in|std::ios::binary);
+  return f;
+}
 
-  for (int i = 0; i < 3; ++i)
-    if (fileExt == fileFormats[i].first) {
-      fptr = fileFormats[i].second(filename);
-      if (!fptr) 
-  THROW("Could not allocate memory to read file `%s'",
-        filename.c_str());
-      return (fptr);
+void Mat_close(MAT_FILE *f)
+{
+  if (f)
+  {
+    if (f->filename)
+      free(f->filename);
+    f->fp.close();
+    free(f);
+  }
+}
+
+size_t Mat_getTypeSize(MAT_FILE *f, long type)
+{
+  switch((type%1000)/100) {
+  case 0:
+    return sizeof(double);
+  case 1:
+    return sizeof(float);
+  case 2:
+    return 4;
+  case 3:
+  case 4:
+    return 2;
+  case 5:
+    return 1;
+  default:
+    f->fp.close();
+    THROW("Corrupted MAT-file: `%s'",f->filename);
+  }
+}
+
+char Mat_findTable(MAT_FILE *f, const char* tableName, size_t cols, size_t rows)
+{
+  char name[256];
+  long pos=0;
+  while (!f->fp.eof()) 
+  {
+    f->fp.read((char*)&f->hdr,sizeof(hdr_t));
+    if (!f->fp.good())
+    {
+      f->fp.close();
+      THROW("Could not read from file `%s'.",f->filename);
     }
-  THROW("Interpolation table: uknown file extension -- `%s'.",
-        fileExt.c_str());
+    f->fp.read(name,fmin(f->hdr.namelen,(long)256));
+    if (strncmp(tableName,name,strlen(tableName)) == 0) 
+    {
+      if (f->hdr.type%10 != 0 || f->hdr.type/1000 > 1)
+      {
+        f->fp.close();
+        THROW("Table `%s' not in supported format.",tableName);
+      }
+      if (f->hdr.mrows <= 0 || f->hdr.ncols <= 0)
+      {
+        f->fp.close();
+        THROW("Table `%s' has zero dimensions.",tableName);
+      }
+      if (f->hdr.mrows < rows || f->hdr.ncols < cols)
+      {
+        f->fp.close();
+        THROW("Table `%s'[%d,%d] has not enough entries [%d,%d].",tableName,f->hdr.mrows,f->hdr.ncols,rows,cols);
+      }
+      return 1;
+    }
+    pos = f->fp.tellg();
+    f->fp.seekg(pos+f->hdr.mrows*f->hdr.ncols*Mat_getTypeSize(f,f->hdr.type)*(f->hdr.imagf?2:1));
+  }
+  return 0;
+}
+
+typedef union {
+  char p[8];
+  double d;
+  float f;
+  int i;
+  short s;
+  unsigned short us;
+  unsigned char c;
+} elem_t;
+
+#define correctEndianness(stype,type)  inline type correctEndianness_ ## stype (type _num, bool dataEndianness)  \
+{ \
+  if (getEndianness() != dataEndianness) \
+  { \
+    union \
+    { \
+      type num; \
+      unsigned char b[sizeof(type)]; \
+    } dat1, dat2; \
+    dat1.num = _num; \
+    for(size_t i=0; i < sizeof(type); ++i) \
+      dat2.b[i] = dat1.b[sizeof(type)-i-1]; \
+    return dat2.num; \
+  } \
+  return _num; \
+} \
+
+inline static bool getEndianness()
+{
+  const int endian_test = 1;
+  return ((*(char*)&endian_test) == 0);
+}
+
+correctEndianness(d,double)
+correctEndianness(f,float)
+correctEndianness(i,int)
+correctEndianness(s,short)
+correctEndianness(us,unsigned short)
+correctEndianness(c,unsigned char)
+
+
+
+
+double Mat_getElem(elem_t& num, char type, bool dataEndianness)
+{
+  switch(type) {
+  case 0:
+    return correctEndianness_d(num.d,dataEndianness);
+  case 1:
+    return correctEndianness_f(num.f,dataEndianness);
+  case 2:
+    return correctEndianness_i(num.i,dataEndianness);
+  case 3:
+    return correctEndianness_s(num.s,dataEndianness);
+  case 4:
+    return correctEndianness_us(num.us,dataEndianness);
+  default:
+    return correctEndianness_c(num.c,dataEndianness);
+  }
+}
+
+void Mat_readTable(MAT_FILE *f, double *buf, size_t rows, size_t cols)
+{
+  elem_t readbuf;
+  size_t i=0;
+  size_t j=0;
+  long P = (f->hdr.type%1000)/100;
+  char isBigEndian = (f->hdr.type/1000) == 1;
+  size_t elemSize = Mat_getTypeSize(f,f->hdr.type);
+
+  for(i=0; i < rows; ++i)
+    for(j=0; j < cols; ++j) 
+  {
+    f->fp.read(readbuf.p,elemSize);
+    if (!f->fp.good())
+    {
+      f->fp.close();
+      THROW("Could not read from file `%s'.",f->filename);
+    }
+    buf[i*cols+j] = Mat_getElem(readbuf,P,isBigEndian);
+  }
+}
+
+/*
+  CSV File implementation
+*/
+typedef struct CSV_FILE
+{
+  std::ifstream fp;
+  char *filename;
+} CSV_FILE;
+
+CSV_FILE *csv_open(const char *filename)
+{
   return NULL;
+}
+
+void csv_close(CSV_FILE *f)
+{;}
+
+char csv_findTable(CSV_FILE *f, const char *tableName, size_t rows, size_t cols)
+{
+  return 0;
+}
+
+void csv_readTable(CSV_FILE *f, double *data, size_t rows, size_t cols)
+{
+
+}
+
+/*
+  Open specified file
+*/
+void openFile(const char *filename, const char* tableName, size_t rows, size_t cols, double *data)
+{
+  size_t i = 0;
+  size_t sl = 0;
+  char filetype[5] = {0};
+  /* get File Type */
+  sl = strlen(filename);
+  filetype[3] = filename[sl-1];
+  filetype[2] = filename[sl-2];
+  filetype[1] = filename[sl-3];
+  filetype[0] = filename[sl-4];
+
+  /* read data from file*/
+  if (strncmp(".txt",filetype,4) != 0) /* text file */
+  {
+    CSV_FILE *f=NULL;
+    THROW("Sorry, loading tables from CSV files is not supported.");
+    f = csv_open(filename);
+    if (csv_findTable(f,tableName,cols,rows)) 
+    {
+      csv_readTable(f,data,rows,cols);
+      csv_close(f);
+      return;
+    } 
+    csv_close(f);
+    THROW("No table named `%s' in file `%s'.",tableName,filename);
+  } 
+  else if (strncmp(".mat",filetype,4) != 0) /* mat file */
+  {
+    MAT_FILE *f= Mat_open(filename);
+    if (Mat_findTable(f,tableName,cols,rows)) 
+    {
+      Mat_readTable(f,data,rows,cols);
+      Mat_close(f);
+      return;
+    } 
+    Mat_close(f);
+    THROW("No table named `%s' in file `%s'.",tableName,filename);
+  }
+  else if (strncmp(".txt",filetype,4) != 0) /* csv file */
+  {
+    TEXT_FILE *f= Text_open(filename);
+    if (Text_findTable(f,tableName,cols,rows)) 
+    {
+      Text_readTable(f,data,rows,cols);
+      Text_close(f);
+      return;
+    } 
+    Text_close(f);
+    THROW("No table named `%s' in file `%s'.",tableName,filename);
+  }
+  THROW("Interpolation table: %s from file %s uknown file extension -- `%s'.",tableName,filename,filetype);
 }
 
 /*
@@ -608,21 +730,12 @@ InterpolationTable* InterpolationTable_init(double time, double startTime,
     {
       tpl->filename[i] = fileName[i];
     }
-    
-    std::auto_ptr<FileWrapper> file(FileWrapper::openFile(fileName));
-    
-    if (file->findTable(tableName,tpl->cols,tpl->rows)) 
-    {
-      tpl->data = (double*)calloc(size,sizeof(double));
-      ASSERT(tpl->data,"Not enough memory for Table: %s",tableName);
-      tpl->own_data = 1;
-      
-      file->readTable(tpl->data,tpl->rows,tpl->cols);
-      file->close();
-    } else 
-    {
-      THROW("No table named `%s' in file `%s'.",tableName,fileName);
-    }
+
+    tpl->data = (double*)calloc(size,sizeof(double));
+    ASSERT(tpl->data,"Not enough memory for Table: %s",tableName);
+    tpl->own_data = 1;
+
+    openFile(fileName,tableName,tpl->cols,tpl->rows,tpl->data);
   } else 
   {
     tpl->data = (double*)calloc(size,sizeof(double));
@@ -784,20 +897,12 @@ InterpolationTable2D* InterpolationTable2D_init(int ipoType, const char* tableNa
     {
       tpl->filename[i] = fileName[i];
     }
-    
-    std::auto_ptr<FileWrapper> file(FileWrapper::openFile(fileName));
-    
-    if (file->findTable(tableName,tpl->cols,tpl->rows)) 
-    {
-      tpl->data = (double*)calloc(size,sizeof(double));
-      ASSERT(tpl->data,"Not enough memory for Table: %s",tableName);
-      tpl->own_data = 1;
 
-      file->readTable(tpl->data,tpl->rows,tpl->cols);
-      file->close();
-    } else {
-      THROW("No table named `%s' in file `%s'.",tableName,fileName);
-    }
+    tpl->data = (double*)calloc(size,sizeof(double));
+    ASSERT(tpl->data,"Not enough memory for Table: %s",tableName);
+    tpl->own_data = 1;
+
+    openFile(fileName,tableName,tpl->cols,tpl->rows,tpl->data);
   } else {
     tpl->data = (double*)calloc(size,sizeof(double));
     ASSERT(tpl->data,"Not enough memory for Table: %s",tableName);
