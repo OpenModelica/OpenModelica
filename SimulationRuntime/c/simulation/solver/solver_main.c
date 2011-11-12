@@ -617,12 +617,18 @@ dasrt_step(double step, double start, double stop, int trigger1,
     lrw = 52 + (MAXORD + 4) * globalData->nStates + globalData->nStates
         * globalData->nStates + 3 * globalData->nZeroCrossing;
     rwork = (double*) calloc(lrw,sizeof(double));
+    ASSERT(rwork,"out of memory");
     iwork = (fortran_integer*)  calloc(liw,sizeof(fortran_integer));
+    ASSERT(rwork,"out of memory");
     jroot = (fortran_integer*)  calloc(globalData->nZeroCrossing,sizeof(fortran_integer));
+    ASSERT(rwork,"out of memory");
     /* Used when calculating residual for its side effects. (alg. var calc) */
     dummy_delta = (double*) calloc(globalData->nStates,sizeof(double));
+    ASSERT(rwork,"out of memory");
     rpar = (double*) calloc(1,sizeof(double));
+    ASSERT(rwork,"out of memory");
     ipar = (fortran_integer*) calloc(3,sizeof(fortran_integer));
+    ASSERT(rwork,"out of memory");
     ipar[0] = sim_verbose;
     ipar[1] = LOG_JAC;
     ipar[2] = LOG_ENDJAC;
