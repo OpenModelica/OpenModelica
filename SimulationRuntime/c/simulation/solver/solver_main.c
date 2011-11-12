@@ -703,17 +703,18 @@ dasrt_step(double step, double start, double stop, int trigger1,
                dummy_Jacobian, dummy_zeroCrossing, &NG_var, jroot);
       }
 
-      if (sim_verbose == LOG_SOLVER) {
-    	 INFO(" DASSL call | value of idid: %d",idid);
-    	 INFO(" DASSL call | current time value: %0.4g",globalData->timeValue);
-    	 INFO(" DASSL call | current integration time value: %0.4g", rwork[3]);
-    	 INFO(" DASSL call | step size H to be attempted on next step: %0.4g", rwork[2]);
-    	 INFO(" DASSL call | step size used on last successful step: %0.4g", rwork[6]);
-    	 INFO(" DASSL call | number of steps taken so far: %d", iwork[10]);
-    	 INFO(" DASSL call | number of calls of functionODE() : %d", iwork[11]);
-    	 INFO(" DASSL call | number of calculation of jacobian : %d", iwork[12]);
-    	 INFO(" DASSL call | total number of convergence test failures: %d",iwork[13]);
-    	 INFO(" DASSL call | total number of error test failures: %d",iwork[14]);
+      if(sim_verbose == LOG_SOLVER)
+      {
+    	  INFO("DASSL call | value of idid: %ld", idid);
+    	  INFO("DASSL call | current time value: %0.4g", globalData->timeValue);
+    	  INFO("DASSL call | current integration time value: %0.4g", rwork[3]);
+    	  INFO("DASSL call | step size H to be attempted on next step: %0.4g", rwork[2]);
+    	  INFO("DASSL call | step size used on last successful step: %0.4g", rwork[6]);
+    	  INFO("DASSL call | number of steps taken so far: %ld", iwork[10]);
+    	  INFO("DASSL call | number of calls of functionODE() : %ld", iwork[11]);
+    	  INFO("DASSL call | number of calculation of jacobian : %ld", iwork[12]);
+    	  INFO("DASSL call | total number of convergence test failures: %ld", iwork[13]);
+    	  INFO("DASSL call | total number of error test failures: %ld", iwork[14]);
       }
 
       /* save dassl stats */

@@ -29,18 +29,15 @@
  *
  */
 
-#ifndef __MATRIX_H
-#define __MATRIX_H
+#ifndef _MATRIX_H_
+#define _MATRIX_H_
 
 #include "blaswrap.h"
 #include "f2c.h"
 
-
-#if defined(__cplusplus)
+#ifdef __cplusplus
 extern "C" {
-
 #endif
-
 
 extern
 int _omc_dgesv_(integer *n, integer *nrhs, doublereal *a, integer
@@ -62,7 +59,7 @@ void * _omc_hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
       double* r,int *lr,double*qtf,double*wa1,double*wa2,
         double* wa3,double* wa4);
 
-#if defined(__cplusplus)
+#ifdef __cplusplus
 }
 #endif
 
@@ -350,6 +347,5 @@ do { \
       fflush(NULL); \
   } \
 } while(0)
-
 
 #endif

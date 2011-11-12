@@ -28,8 +28,8 @@
  *
  */
 
-#ifndef RINGBUFFER_H
-#define RINGBUFFER_H
+#ifndef _RINGBUFFER_H_
+#define _RINGBUFFER_H_
 
 /*
  * This is an expanding ring buffer.

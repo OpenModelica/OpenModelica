@@ -158,6 +158,7 @@ newTime(double t, double step, double stop)
       globalData->forceEmit = 1;
     }
   }
+  else
   {
     newTime = (floor((t + 1e-10) / step) + 1.0) * step;
     globalData->lastEmittedTime = newTime;
@@ -503,7 +504,8 @@ int verboseLevel(int argc, char**argv) {
 	globalDebugFlags |= LV_DEBUG;
   }
   if (flags->find("LOG_ALL", 0) != string::npos) {
-	globalDebugFlags = -1;
+    res = INT_MAX;
+	globalDebugFlags = UINT_MAX;
   }
   return res;
 }
@@ -1131,6 +1133,78 @@ void communicateStatus(const char *phase, double completionPercent /*0.0 to 1.0*
 #endif
 }
 
+//_X_DATA *allocXData(void)
+//{
+//  DATA *old = globalData;
+//  _X_DATA *data = (_X_DATA*)malloc(sizeof(_X_DATA));
+//  long i;
+//
+//  /* copy globalData into data */
+//  data->simulationInfo.startTime = old->startTime;
+//  data->simulationInfo.stopTime = 0;
+//
+//  /* simulationInfo */
+//  data->simulationInfo.startTime = old->startTime;
+//  data->simulationInfo.stopTime = ;
+//  data->simulationInfo.currentTime = old->timeValue;
+//  data->simulationInfo.currentStep = ;
+//  data->simulationInfo.numSteps = ;
+//  data->simulationInfo.tolerence = ;
+//  data->simulationInfo.solverMethod = ;
+//
+//  /* static stuff */
+//  data->modelData.nStates = old->nStates;
+//  data->modelData.nVariablesReal = 2*old->nStates+old->nAlgebraic;
+//  data->modelData.realData = (STATIC_REAL_DATA*)calloc(2*old->nStates+old->nAlgebraic, sizeof(STATIC_REAL_DATA));
+//  for(i=0; i<data->modelData.nVariablesReal; i++)
+//    data->modelData..realData[i] =
+//  
+//  STATIC_INTEGER_DATA* integerData;
+//  STATIC_BOOLEAN_DATA* booleanData;
+//  STATIC_STRING_DATA* stringData;
+//
+//  const FUNCTION_INFO* functionNames;
+//  const EQUATION_INFO* equationInfo;
+//
+//  modelica_string_t modelName;
+//  modelica_string_t modelicaFilePrefix;
+//  modelica_string_t modelDir;
+//  modelica_string_t modelGUID;
+//
+//  long nStates;
+//  long nVariablesReal;
+//  long nVariablesInteger;
+//  long nVariablesBoolean;
+//  long nVariablesString;
+//  long nParametersReal;
+//  long nParametersInteger;
+//  long nParametersBoolean;
+//  long nParametersStrings;
+//  long nInputVars;
+//  long nOutputVars;
+//
+//  long nHelp;
+//  long nZeroCrossings;
+//  long nSample;
+//  long nResiduals;
+//  long nExtOpj;
+//  long nFunctions;
+//
+//  long nAliasReal;
+//  long nAliasInteger;
+//  long nAliasBoolean;
+//  long nAliasString;
+//
+//  return data;
+//}
+//
+//void freeXData(_X_DATA *data)
+//{
+//  /* copy data into globalData */
+//
+//  free(data);
+//}
+
 /* \brief main function for simulator
  *
  * The arguments for the main function are:
@@ -1159,7 +1233,11 @@ int _main_SimulationRuntime(int argc, char**argv, _X_DATA *data)
         // cout << "startNonInteractiveSimulation: " << version << endl;
         retVal = startNonInteractiveSimulation(argc, argv);
       }
-  } 
+  }
+  else
+  {
+    /* THROW was executed */
+  }
 
   deinitializeEventData();
   deInitializeDataStruc2(globalData);

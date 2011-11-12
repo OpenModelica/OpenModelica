@@ -29,10 +29,11 @@
  *
  */
 
-/*! \file simulation_init.h
+/*! \file initialization.h
  */
-#ifndef INITIALIZATION_H
-#define INITIALIZATION_H
+
+#ifndef _INITIALIZATION_H_
+#define _INITIALIZATION_H_
 
 #ifdef __cplusplus
 #include <cstdlib>
@@ -40,7 +41,7 @@ extern "C"
 {
 #endif
 
-int initialization(const char* pInitMethod, const char* pOptiMethod);
+  int initialization(const char* pInitMethod, const char* pOptiMethod);
 
 #ifdef __cplusplus
 }

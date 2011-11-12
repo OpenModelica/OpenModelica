@@ -28,7 +28,7 @@
  *
  */
 
-/*! \file simulation_delay.c
+/*! \file delay.c
  */
 
 #include "delay.h"
@@ -40,18 +40,18 @@
 
 double tStart = 0;
 
-typedef struct _TimeAndValue
+typedef struct TIME_AND_VALUE
 {
-    double time;
-    double value;
-}t_TimeAndValue;
+  double time;
+  double value;
+}TIME_AND_VALUE;
 
-typedef struct _ExpressionDelayBuffer
+typedef struct EXPRESSION_DELAY_BUFFER
 {
-    long currentIndex;
-    long maxExpressionBuffer;
-    t_TimeAndValue *expressionDelayBuffer;
-}t_ExpressionDelayBuffer;
+  long currentIndex;
+  long maxExpressionBuffer;
+  TIME_AND_VALUE *expressionDelayBuffer;
+}EXPRESSION_DELAY_BUFFER;
 
 /* the delayStructure looks like a matrix (rows = expressionNumber+currentColumnIndex, columns={time, value}) */
 static RINGBUFFER **delayStructure;
@@ -60,30 +60,29 @@ extern const int numDelayExpressionIndex;
 
 void initDelay(double startTime)
 {
-    int i;
+  int i;
 
-    /* get the start time of the simulation: time.start. */
-    tStart = startTime;
+  /* get the start time of the simulation: time.start. */
+  tStart = startTime;
 
-    /* allocate the memory for rows */
-    delayStructure = (RINGBUFFER**)calloc(numDelayExpressionIndex, sizeof(RINGBUFFER*));
-    ASSERT(delayStructure, "out of memory");
-    for(i=0; i<numDelayExpressionIndex; i++){
-    	delayStructure[i] = allocRingBuffer(1024, sizeof(t_TimeAndValue));
-    }
+  /* allocate the memory for rows */
+  delayStructure = (RINGBUFFER**)calloc(numDelayExpressionIndex, sizeof(RINGBUFFER*));
+  ASSERT(delayStructure, "out of memory");
 
+  for(i=0; i<numDelayExpressionIndex; i++)
+    delayStructure[i] = allocRingBuffer(1024, sizeof(TIME_AND_VALUE));
 
-    DEBUG_INFO(LV_SOLVER, "initDelay called with startTime = %f\n", startTime);
+  DEBUG_INFO(LV_SOLVER, "initDelay called with startTime = %f\n", startTime);
 }
 
 void deinitDelay()
 {
-    int i;
+  int i;
 
-    for(i=0; i<numDelayExpressionIndex; i++)
-        freeRingBuffer(delayStructure[i]);
+  for(i=0; i<numDelayExpressionIndex; i++)
+    freeRingBuffer(delayStructure[i]);
 
-    free(delayStructure);
+  free(delayStructure);
 }
 
 /*
@@ -94,125 +93,124 @@ void deinitDelay()
  */
 static int findTime(double time, RINGBUFFER *delayStruct)
 {
-    int start = 0;
-    int end = ringBufferLength(delayStruct);
-    double t;
-    do
-    {
-        int i = (start + end) / 2;
-        t = ((t_TimeAndValue*)getRingData(delayStruct, i))->time;
-        if(t > time)
-            end = i;
-        else
-            start = i;
-    }while(t != time && end > start + 1);
-    return start;
+  int start = 0;
+  int end = ringBufferLength(delayStruct);
+  double t;
+
+  do
+  {
+    int i = (start + end) / 2;
+    t = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->time;
+    if(t > time)
+      end = i;
+    else
+      start = i;
+  }while(t != time && end > start + 1);
+  return start;
 }
 
 void storeDelayedExpression(int exprNumber, double exprValue, double time)
 {
-    t_TimeAndValue tpl;
+  TIME_AND_VALUE tpl;
 
-    /* INFO("storeDelayed[%d] %g:%g", exprNumber, time, exprValue); */
+  /* INFO("storeDelayed[%d] %g:%g", exprNumber, time, exprValue); */
 
-    /* Allocate more space for expressions */
-    ASSERT(exprNumber < numDelayExpressionIndex, "storeDelayedExpression: Invalid expression number %d", exprNumber);
-   	ASSERT(exprNumber >= 0,"storeDelayedExpression: Invalid expression number %d", exprNumber);
+  /* Allocate more space for expressions */
+  ASSERT(exprNumber < numDelayExpressionIndex, "storeDelayedExpression: invalid expression number %d", exprNumber);
+  ASSERT(0 <= exprNumber, "storeDelayedExpression: invalid expression number %d", exprNumber);
+  ASSERT(tStart <= time, "storeDelayedExpression: time is smaller than starting time. Value ignored");
 
-   	ASSERT(time >= tStart,"storeDelayedExpression:  Time is smaller than starting time. Value ignored");
-
-    tpl.time = time;
-    tpl.value = exprValue;
-    appendRingData(delayStructure[exprNumber], &tpl);
+  tpl.time = time;
+  tpl.value = exprValue;
+  appendRingData(delayStructure[exprNumber], &tpl);
 }
 
 double delayImpl(int exprNumber, double exprValue, double time, double delayTime, double delayMax)
 {
-    RINGBUFFER* delayStruct = delayStructure[exprNumber];
-    int length = 0;
+  RINGBUFFER* delayStruct = delayStructure[exprNumber];
+  int length = ringBufferLength(delayStruct);
 
-    /* ERROR("delayImpl: exprNumber = %d, exprValue = %lf, time = %lf, delayTime = %lf", exprNumber, exprValue, time, delayTime); */
+  /* ERROR("delayImpl: exprNumber = %d, exprValue = %lf, time = %lf, delayTime = %lf", exprNumber, exprValue, time, delayTime); */
 
-    /* Check for errors */
-    ASSERT(0 <= exprNumber, "0 > exprNumber = %d ",exprNumber);
-    ASSERT(exprNumber < numDelayExpressionIndex, "exprNumber < numDelayExpressionIndex");
+  /* Check for errors */
+  ASSERT(0 <= exprNumber, "invalid exprNumber = %d", exprNumber);
+  ASSERT(exprNumber < numDelayExpressionIndex, "invalid exprNumber = %d", exprNumber);
 
-    if(time <= tStart)
+  if(time <= tStart)
+  {
+    /* ERROR("delayImpl: Entered at time < starting time: %g.", exprValue); */
+    return exprValue;
+  }
+
+  if(delayTime < 0.0)
+  {
+    ASSERT(0.0 < delayTime, "Negative delay requested: delayTime = %g", delayTime);
+    THROW("Negative delay requested");
+  }
+
+  if(length == 0)
+  {
+    /*  This occurs in the initialization phase */
+    /*  ERROR("delayImpl: Missing initial value, using argument value %g instead.", exprValue); */
+    return exprValue;
+  }
+
+  /*
+   * Returns: expr(time?delayTime) for time>time.start + delayTime and
+   *          expr(time.start) for time <= time.start + delayTime.
+   * The arguments, i.e., expr, delayTime and delayMax, need to be subtypes of Real.
+   * DelayMax needs to be additionally a parameter expression.
+   * The following relation shall hold: 0 <= delayTime <= delayMax,
+   * otherwise an error occurs. If delayMax is not supplied in the argument list,
+   * delayTime need to be a parameter expression. See also Section 3.7.2.1.
+   * For non-scalar arguments the function is vectorized according to Section 10.6.12.
+   */
+  if(time <= tStart + delayTime)
+  {
+    double res = ((TIME_AND_VALUE*)getRingData(delayStruct, 0))->value;
+    /* ERROR("findTime: time <= tStart + delayTime: [%d] = %g",exprNumber, res); */
+    return res;
+  }
+  else
+  {
+    /* return expr(time-delayTime) */
+    double timeStamp = time - delayTime;
+    double time0, time1, value0, value1;
+    int i;
+
+    ASSERT(0.0 <= delayTime, "Negative delay requested: delayTime = %g", delayTime);
+
+    /* find the row for the lower limit */
+    if(timeStamp > ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->time)
     {
-        /* ERROR("delayImpl: Entered at time < starting time: %g.", exprValue); */
-        return exprValue;
-    }
-
-    if(delayTime < 0.0)
-    {
-        ASSERT(0.0 < delayTime, "Negative delay requested");
-        THROW("Negative delay requested");
-    }
-
-    length = ringBufferLength(delayStruct);
-
-    if(length == 0)
-    {
-        /*  This occurs in the initialization phase */
-        /*  ERROR("delayImpl: Missing initial value, using argument value %g instead.", exprValue); */
-        return exprValue;
-    }
-
-    /* Returns: expr(time?delayTime) for time>time.start + delayTime and
-     *          expr(time.start) for time <= time.start + delayTime.
-     * The arguments, i.e., expr, delayTime and delayMax, need to be subtypes of Real.
-     * DelayMax needs to be additionally a parameter expression.
-     * The following relation shall hold: 0 <= delayTime <= delayMax,
-     * otherwise an error occurs. If delayMax is not supplied in the argument list,
-     * delayTime need to be a parameter expression. See also Section 3.7.2.1.
-     * For non-scalar arguments the function is vectorized according to Section 10.6.12. */
-    if(time <= tStart + delayTime)
-    {
-        double res = ((t_TimeAndValue*)getRingData(delayStruct, 0))->value;
-        /* ERROR("findTime: time <= tStart + delayTime: [%d] = %g",exprNumber, res); */
-        return res;
+      /* delay between the last accepted time step and the current time */
+      time0 = ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->time;
+      value0 = ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->value;
+      time1 = time;
+      value1 = exprValue;
     }
     else
     {
-        /* return expr(time-delayTime) */
-        double timeStamp = time - delayTime;
-        double time0, time1, value0, value1;
+      i = findTime(timeStamp, delayStruct);
+      ASSERT(i < length, "%d = i < length = %d", i, length);
+      time0 = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->time;
+      value0 = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->value;
 
-        int i;
-
-        ASSERT(0.0 <= delayTime, "0 <= delayTime");
-
-        /* find the row for the lower limit */
-        if(timeStamp > ((t_TimeAndValue*)getRingData(delayStruct, length - 1))->time)
-        {
-            /* delay between the last accepted time step and the current time */
-            time0 = ((t_TimeAndValue*)getRingData(delayStruct, length - 1))->time;
-            value0 = ((t_TimeAndValue*)getRingData(delayStruct, length - 1))->value;
-            time1 = time;
-            value1 = exprValue;
-        }
-        else
-        {
-            i = findTime(timeStamp, delayStruct);
-            ASSERT(i < length, "i < length");
-            time0 = ((t_TimeAndValue*)getRingData(delayStruct, i))->time;
-            value0 = ((t_TimeAndValue*)getRingData(delayStruct, i))->value;
-
-            /* was it the last value? */
-            if(i+1 == length)
-            {
-                if(0 < i && delayMax == delayTime)
-                    dequeueNFirstRingDatas(delayStruct, i-1);
-                return value0;
-            }
-            time1 = ((t_TimeAndValue*)getRingData(delayStruct, i+1))->time;
-            value1 = ((t_TimeAndValue*)getRingData(delayStruct, i+1))->value;
-            if(0 < i && delayMax == delayTime)
-                dequeueNFirstRingDatas(delayStruct, i-1);
-        }
-        /* was it an exact match?*/
-        if(time0 == timeStamp)
-        {
+      /* was it the last value? */
+      if(i+1 == length)
+      {
+        if(0 < i && delayMax == delayTime)
+          dequeueNFirstRingDatas(delayStruct, i-1);
+        return value0;
+      }
+      time1 = ((TIME_AND_VALUE*)getRingData(delayStruct, i+1))->time;
+      value1 = ((TIME_AND_VALUE*)getRingData(delayStruct, i+1))->value;
+      if(0 < i && delayMax == delayTime)
+        dequeueNFirstRingDatas(delayStruct, i-1);
+    }
+    /* was it an exact match?*/
+    if(time0 == timeStamp)
+    {
             /* ERROR("delayImpl: Exact match at %lf", currentTime); */
             return value0;
         }

@@ -66,13 +66,14 @@ extern const unsigned int LV_LOG_RES_INIT;
 #define INFO_AL(...)     {MSG("       ", stdout, __VA_ARGS__);}
 
 #define WARNING(...)     {MSG("warning", stdout, __VA_ARGS__);}
-#define WARNING_AL(...)  {INFO_AL(...);}
+#define WARNING_AL(...)  {INFO_AL(__VA_ARGS__);}
 
 #define THROW(...)       {MSG_H("throw  ", stderr); MSG("       ", stderr, __VA_ARGS__); longjmp(globalJmpbuf, 1);}
 #define ASSERT(exp, ...) {if(!(exp)){MSG_H("assert ", stderr); MSG("       ", stderr, __VA_ARGS__); longjmp(globalJmpbuf, 1);}}
 
-#define DEBUG_INFO(flag, ...)    {if(flag & globalDebugFlags){MSG_H("debug  ", stdout); INFO(__VA_ARGS__);}}
-#define DEBUG_INFO_AL(flag, ...) {if(flag & globalDebugFlags) INFO_AL(__VA_ARGS__);}
+#define DEBUG_FLAG(flag) (flag & globalDebugFlags)
+#define DEBUG_INFO(flag, ...)    {if(DEBUG_FLAG(flag)){MSG_H("debug  ", stdout); INFO(__VA_ARGS__);}}
+#define DEBUG_INFO_AL(flag, ...) {if(DEBUG_FLAG(flag)) INFO_AL(__VA_ARGS__);}
 
 #ifdef __cplusplus
 }

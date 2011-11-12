@@ -34,9 +34,9 @@
 #include "initialization.h"
 #include "simulation_runtime.h"
 #include "solver_main.h"
+#include "error.h"
 
 #include <math.h>
-#include <assert.h>
 
 #ifndef NEWUOA
 #define NEWUOA newuoa_
@@ -47,57 +47,57 @@
 #endif
 
 void NEWUOA(long *nz,
-            long *NPT,
-            double *z,
-            double *RHOBEG,
-            double *RHOEND,
-            long *IPRINT,
-            long *MAXFUN,
-            double *W,
-            void (*leastSquare) (long *nz, double *z, double *funcValue));
+  long *NPT,
+  double *z,
+  double *RHOBEG,
+  double *RHOEND,
+  long *IPRINT,
+  long *MAXFUN,
+  double *W,
+  void (*leastSquare) (long *nz, double *z, double *funcValue));
 
 void NELMEAD(double *z,
-                double *STEP,
-                long *nz,
-                double *funcValue,
-                long *MAXF,
-                long *IPRINT,
-                double *STOPCR,
-                long *NLOOP,
-                long *IQUAD,
-                double *SIMP,
-                double *VAR,
-                void (*leastSquare) (long *nz, double *z, double *funcValue),
-                long *IFAULT);
+  double *STEP,
+  long *nz,
+  double *funcValue,
+  long *MAXF,
+  long *IPRINT,
+  double *STOPCR,
+  long *NLOOP,
+  long *IQUAD,
+  double *SIMP,
+  double *VAR,
+  void (*leastSquare) (long *nz, double *z, double *funcValue),
+  long *IFAULT);
 
 enum INIT_INIT_METHOD
 {
-	IIM_UNKNOWN = 0,
-	IIM_STATE,
-	IIM_OLD
+  IIM_UNKNOWN = 0,
+  IIM_STATE,
+  IIM_OLD
 };
 
 const char *initMethodStr[3] = {"unknown", "state", "old"};
 
 enum INIT_OPTI_METHOD
 {
-	IOM_UNKNOWN = 0,
-	IOM_SIMPLEX,
-	IOM_NELDER_MEAD_EX,
-	IOM_NEWUOA
+  IOM_UNKNOWN = 0,
+  IOM_SIMPLEX,
+  IOM_NELDER_MEAD_EX,
+  IOM_NEWUOA
 };
 
 const char *optiMethodStr[4] = {"unknown", "simplex", "nelder_mead_ex", "newuoa"};
 
 /*! \fn void leastSquare(long nz, double *z, double *funcValue)
- *
- *  This function calculates the residual value 
- *  as the sum of squared residual equations.
- *
- *  \param nz [in] number of variables
- *  \param z [in] vector of variables
- *  \param funcValue [out] result
- */
+*
+*  This function calculates the residual value 
+*  as the sum of squared residual equations.
+*
+*  \param nz [in] number of variables
+*  \param z [in] vector of variables
+*  \param funcValue [out] result
+*/
 void leastSquare(long *nz, double *z, double *funcValue)
 {
   int indz = 0;
@@ -127,23 +127,19 @@ void leastSquare(long *nz, double *z, double *funcValue)
   for(j=0; i<globalData->nInitialResiduals; j++)
     *funcValue += globalData->initialResiduals[j] * globalData->initialResiduals[j];
 
-  if(useVerboseOutput(LOG_INIT))
-  {
-    fprintf(stdout, "info    | leastSquare | leastSquare-Value: %g\n", *funcValue);
-    fflush(NULL);
-  }
+  DEBUG_INFO(LV_INIT, "info    | leastSquare | leastSquare-Value: %g", *funcValue);
 }
 
 /*! \fn double leastSquareWithLambda(long nz, double *z, double lambda)
- *
- *  This function calculates the residual value 
- *  as the sum of squared residual equations.
- *
- *  \param nz [in] number of variables
- *  \param z [in] vector of variables
- *  \param z [in] vector of scaling-factors or NULL
- *  \param lambda [in]
- */
+*
+*  This function calculates the residual value 
+*  as the sum of squared residual equations.
+*
+*  \param nz [in] number of variables
+*  \param z [in] vector of variables
+*  \param z [in] vector of scaling-factors or NULL
+*  \param lambda [in]
+*/
 double leastSquareWithLambda(long nz, double* z, double* scale, double lambda)
 {
   int indz = 0;
@@ -160,37 +156,37 @@ double leastSquareWithLambda(long nz, double* z, double* scale, double lambda)
       indz++;
     }
 
-  /* for real parameters */
-  shiftForInitFixed = 2*globalData->nStates+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+globalData->boolVariables.nAlgebraic;
-  shiftForVar_attr = globalData->nStates+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+globalData->boolVariables.nAlgebraic;
-  for(i=0; i<globalData->nParameters; i++)
-    if(globalData->initFixed[i+shiftForInitFixed] == 0 && globalData->var_attr[i+shiftForVar_attr] == 1)
-    {
-      globalData->parameters[i] = z[indz] * (scale ? scale[indz] : 1.0);
-      indz++;
-    }
-    
-  bound_parameters();            /* evaluate parameters with respect to other parameters */
-  functionODE();
-  functionAlgebraics();
-  
-  initial_residual(lambda);
+    /* for real parameters */
+    shiftForInitFixed = 2*globalData->nStates+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+globalData->boolVariables.nAlgebraic;
+    shiftForVar_attr = globalData->nStates+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+globalData->boolVariables.nAlgebraic;
+    for(i=0; i<globalData->nParameters; i++)
+      if(globalData->initFixed[i+shiftForInitFixed] == 0 && globalData->var_attr[i+shiftForVar_attr] == 1)
+      {
+        globalData->parameters[i] = z[indz] * (scale ? scale[indz] : 1.0);
+        indz++;
+      }
 
-  for(j=0; j<globalData->nInitialResiduals; j++)
-    funcValue += globalData->initialResiduals[j] * globalData->initialResiduals[j];
-  return funcValue;
+      bound_parameters();            /* evaluate parameters with respect to other parameters */
+      functionODE();
+      functionAlgebraics();
+
+      initial_residual(lambda);
+
+      for(j=0; j<globalData->nInitialResiduals; j++)
+        funcValue += globalData->initialResiduals[j] * globalData->initialResiduals[j];
+      return funcValue;
 }
 
 void NelderMeadOptimization(long N, 
-    double* var,
-    double* scale,
-    double lambda_step,
-    double acc,
-    long maxIt,
-    long dump,
-    double* pLambda,
-    long* pIteration,
-    double (*leastSquare)(long, double*, double*, double))
+  double* var,
+  double* scale,
+  double lambda_step,
+  double acc,
+  long maxIt,
+  long dump,
+  double* pLambda,
+  long* pIteration,
+  double (*leastSquare)(long, double*, double*, double))
 {
   double alpha    = 1.0;        /* 0 < alpha */
   double beta     = 2;        	/* 1 < beta */
@@ -219,10 +215,12 @@ void NelderMeadOptimization(long N,
   long iteration = 0;
 
   /* check Memory */
-  assert(xr);
-  assert(xe);
-  assert(xk);
-  assert(xbar);
+  ASSERT(simplex, "out of memory");
+  ASSERT(fvalues, "out of memory");
+  ASSERT(xr, "out of memory");
+  ASSERT(xe, "out of memory");
+  ASSERT(xk, "out of memory");
+  ASSERT(xbar, "out of memory");
 
   /* initialize simplex */
   for(x=0; x<N+1; x++)
@@ -233,7 +231,7 @@ void NelderMeadOptimization(long N,
       simplex[x*N + i] = var[i] + ((x==i) ? 1.0 : 0.0);    /* canonical simplex */
     }
   }
-  
+
   do
   {
     /* lambda-control */
@@ -245,14 +243,11 @@ void NelderMeadOptimization(long N,
 
     /* dump every dump-th step */
     if(dump && !(iteration % dump))
-    {
-      fprintf(stdout, "info    | NelderMeadOptimization | lambda=%g / step=%d / f=%g\n", lambda, (int)iteration, leastSquare(N, simplex, scale, lambda));
-    }
+      INFO("info    | NelderMeadOptimization | lambda=%g / step=%d / f=%g", lambda, (int)iteration, leastSquare(N, simplex, scale, lambda));
 
     /* func-values for the simplex */
     for(x=0; x<N+1; x++)
       fvalues[x] = leastSquare(N, &simplex[x*N], scale, lambda);
-
 
     for(x=0; x<N+1; x++)
       average += fvalues[x];
@@ -267,10 +262,8 @@ void NelderMeadOptimization(long N,
       lambda += lambda_step;
       if(lambda > 1.0)
         lambda = 1.0;
-      if(useVerboseOutput(LOG_INIT))
-      {
-        fprintf(stdout, "info    | NelderMeadOptimization | increasing lambda to %g in step %d at f=%g\n", lambda, (int)iteration, leastSquare(N, simplex, scale, lambda)); fflush(NULL);
-      }
+
+      DEBUG_INFO(LV_INIT, "info    | NelderMeadOptimization | increasing lambda to %g in step %d at f=%g", lambda, (int)iteration, leastSquare(N, simplex, scale, lambda));
       continue;
     }
 
@@ -378,6 +371,7 @@ void NelderMeadOptimization(long N,
     else
     {
       /* not possible to be here */
+      INFO("not possible to be here"); 
     }
   }while((lambda < 1.0 || fvalues[xb] > acc) && iteration < maxIt);
 
@@ -400,25 +394,23 @@ void NelderMeadOptimization(long N,
 }
 
 /*! \fn int reportResidualValue(double funcValue)
- *
- *  Returns 1 if residual is non-zero and prints appropriate error message.
- *
- *  \param funcValue [in] leastSquare-Value
- */
+*
+*  Returns 1 if residual is non-zero and prints appropriate error message.
+*
+*  \param funcValue [in] leastSquare-Value
+*/
 int reportResidualValue(double funcValue)
 {
   long i = 0;
   if(funcValue > 1e-5)
   {
-    fprintf(stderr, "error   | reportResidualValue | error in initialization. System of initial equations are not consistent.\n");
-    fprintf(stderr, "error   | reportResidualValue | (Least Square function value is %g)\n", funcValue);
+    WARNING("reportResidualValue | error in initialization. System of initial equations are not consistent");
+    WARNING("reportResidualValue | (Least Square function value is %g)", funcValue);
 
     for(i=0; i<globalData->nInitialResiduals; i++)
     {
       if(fabs(globalData->initialResiduals[i]) > 1e-6)
-      {
-        fprintf(stderr, "info    | reportResidualValue | residual[%d] = %g\n", (int) i, globalData->initialResiduals[i]);
-      }
+        INFO("reportResidualValue | residual[%d] = %g", (int) i, globalData->initialResiduals[i]);
     }
     return 1;
   }
@@ -426,37 +418,36 @@ int reportResidualValue(double funcValue)
 }
 
 /*! \fn int newuoa_initialization(long nz, double *z)
- *
- *  This function performs initialization using the newuoa function, which is
- *  a trust region method that forms quadratic models by interpolation.
- */
+*
+*  This function performs initialization using the newuoa function, which is
+*  a trust region method that forms quadratic models by interpolation.
+*/
 int newuoa_initialization(long nz, double *z)
 {
-  long IPRINT = sim_verbose >= LOG_INIT? 2 : 0;
+  long IPRINT = sim_verbose >= LV_INIT? 2 : 0;
   long MAXFUN=50000;
   double RHOEND=1.0e-6;
   double RHOBEG=10; /* This should be about one tenth of the greatest
-     expected value of a variable. Perhaps the nominal
-     value can be used for this. */
+                    expected value of a variable. Perhaps the nominal
+                    value can be used for this. */
   long NPT = 2*nz+1;
   double funcValue=0; 
   double *W = (double*)calloc((NPT+13)*(NPT+nz)+3*nz*(nz+3)/2, sizeof(double));
-  assert(W);
+  ASSERT(W, "out of memory");
   NEWUOA(&nz, &NPT, z, &RHOBEG, &RHOEND, &IPRINT, &MAXFUN, W, leastSquare);
 
   /* Calculate the residual to verify that equations are consistent. */
   leastSquare(&nz, z, &funcValue);
-
 
   free(W);
   return reportResidualValue(funcValue);
 }
 
 /*! \fn int simplex_initialization(long nz,double *z)
- *
- *  This function performs initialization by using the simplex algorithm.
- *  This does not require a jacobian for the residuals.
- */
+*
+*  This function performs initialization by using the simplex algorithm.
+*  This does not require a jacobian for the residuals.
+*/
 int simplex_initialization(long nz, double *z)
 {
   int ind = 0;
@@ -465,11 +456,11 @@ int simplex_initialization(long nz, double *z)
   double *VAR = (double*)calloc(nz, sizeof(double));
   double STOPCR = 0,SIMP=0;
   long IPRINT = 0, NLOOP = 0, IQUAD = 0, IFAULT = 0, MAXF = 0;
-  assert(STEP);
-  assert(VAR);
+  ASSERT(STEP, "out of memory");
+  ASSERT(VAR, "out of memory");
 
   /* Start with stepping .5 in each direction. */
-  for (ind = 0; ind < nz; ind++)
+  for(ind = 0; ind < nz; ind++)
   {
     /* some kind of scaling */
     STEP[ind] = (z[ind]!=0.0 ? fabs(z[ind])/1000.0 : 1);    /* 1.0 */
@@ -479,11 +470,11 @@ int simplex_initialization(long nz, double *z)
   /* Set max. no. of function evaluations = 5000, print every 100. */
 
   MAXF = 5000 * nz;
-  IPRINT = sim_verbose >= LOG_INIT ? 100 : -1;
+  IPRINT = sim_verbose >= LV_INIT ? 100 : -1;
 
   /* Set value for stopping criterion.   Stopping occurs when the
-   * standard deviation of the values of the objective function at
-   * the points of the current simplex < stopcr. */
+  * standard deviation of the values of the objective function at
+  * the points of the current simplex < stopcr. */
 
   STOPCR = 1.e-12;
   NLOOP = nz;
@@ -493,8 +484,8 @@ int simplex_initialization(long nz, double *z)
   IQUAD = 0;
 
   /* As function value is being evaluated in DOUBLE PRECISION, it
-   * should be accurate to about 15 decimals.   If we set simp = 1.d-6,
-   * we should get about 9 dec. digits accuracy in fitting the surface. */
+  * should be accurate to about 15 decimals.   If we set simp = 1.d-6,
+  * we should get about 9 dec. digits accuracy in fitting the surface. */
 
   SIMP = 1.e-12;
 
@@ -502,49 +493,44 @@ int simplex_initialization(long nz, double *z)
 
   leastSquare(&nz, z, &funcValue);
 
-  if ( fabs(funcValue) != 0)
+  if(fabs(funcValue) != 0)
   {
     NELMEAD(z,STEP, &nz, &funcValue, &MAXF, &IPRINT, &STOPCR,
-        &NLOOP,&IQUAD,&SIMP,VAR,leastSquare,&IFAULT);
+      &NLOOP,&IQUAD,&SIMP,VAR,leastSquare,&IFAULT);
   }
   else
   {
-    if (sim_verbose >= LOG_INIT)
-    {
-      fprintf(stderr, "info    | simplex_initialization | Result of leastSquare method = %g. The initial guess fits to the system\n", funcValue); fflush(NULL);
-    }
+    DEBUG_INFO(LV_INIT, "simplex_initialization | Result of leastSquare method = %g. The initial guess fits to the system", funcValue);
   }
 
   leastSquare(&nz, z, &funcValue);
-  if(useVerboseOutput(LOG_INIT))
-  {
-    printf("info    | leastSquare=%g\n", funcValue); fflush(NULL);
-  }
 
-  if (IFAULT == 1)
+  DEBUG_INFO(LV_INIT, "leastSquare=%g", funcValue);
+
+  if(IFAULT == 1)
   {
-    if (funcValue > SIMP) {
-      printf("Error in initialization. Solver iterated %d times without finding a solution\n",(int)MAXF); fflush(NULL);
+    if(funcValue > SIMP) {
+      WARNING("Error in initialization. Solver iterated %d times without finding a solution", (int)MAXF);
       return -1;
     }
-  } else if(IFAULT == 2 ) {
-    printf("Error in initialization. Inconsistent initial conditions.\n"); fflush(NULL);
+  }else if(IFAULT == 2 ) {
+    WARNING("Error in initialization. Inconsistent initial conditions.");
     return -1;
-  } else if (IFAULT == 3) {
-    printf("Error in initialization. Number of initial values to calculate < 1\n"); fflush(NULL);
+  }else if(IFAULT == 3) {
+    WARNING("Error in initialization. Number of initial values to calculate < 1");
     return -1;
-  } else if (IFAULT == 4) {
-    printf("Error in initialization. Internal error, NLOOP < 1.\n"); fflush(NULL);
+  }else if(IFAULT == 4) {
+    WARNING("Error in initialization. Internal error, NLOOP < 1.");
     return -1;
   }
   return reportResidualValue(funcValue);
 }
 
 /*! \fn int simplex_initialization(long nz,double *z)
- *
- *  This function performs initialization by using the simplex algorithm.
- *  This does not require a jacobian for the residuals.
- */
+*
+*  This function performs initialization by using the simplex algorithm.
+*  This does not require a jacobian for the residuals.
+*/
 int nelderMeadEx_initialization(long nz, double *z, double *scale)
 {
   double STOPCR = 1.e-16;
@@ -560,26 +546,21 @@ int nelderMeadEx_initialization(long nz, double *z, double *scale)
 
   for(l=0; l<100 && funcValue > STOPCR; l++)
   {
-    if(useVerboseOutput(LOG_INIT))
-    {
-      printf("info    | nelderMeadEx_initialization | initialization-nr. %d\n", (int)l);
-      fflush(NULL);
-    }
+    DEBUG_INFO(LV_INIT, "nelderMeadEx_initialization | initialization-nr. %d", (int)l);
 
     /* down-scale */
     for(i=0; i<nz; i++)
       z[i] /= scale[i];
-    NelderMeadOptimization(nz, z, scale, lambda_step, STOPCR, NLOOP, useVerboseOutput(LOG_INIT) ? 100000 : 0, &lambda, &iteration, leastSquareWithLambda);
+    NelderMeadOptimization(nz, z, scale, lambda_step, STOPCR, NLOOP, useVerboseOutput(LV_INIT) ? 100000 : 0, &lambda, &iteration, leastSquareWithLambda);
     /* up-scale */
     for(i=0; i<nz; i++)
       z[i] *= scale[i];
 
-    if(useVerboseOutput(LOG_INIT))
+    if(DEBUG_FLAG(LV_INIT))
     {
-      printf("info    | nelderMeadEx_initialization | iteration=%d / lambda=%g / f=%g\n", (int) iteration, lambda, leastSquareWithLambda(nz, z, NULL, lambda));
+      INFO("nelderMeadEx_initialization | iteration=%d / lambda=%g / f=%g", (int) iteration, lambda, leastSquareWithLambda(nz, z, NULL, lambda));
       for(i=0; i<nz; i++)
-        printf("info    | nelderMeadEx_initialization | states | %d: %g\n", (int) i, z[i]);
-      fflush(NULL);
+        INFO_AL("nelderMeadEx_initialization | states | %d: %g", (int) i, z[i]);
     }
 
     saveall();                      /* save pre-values */
@@ -596,19 +577,11 @@ int nelderMeadEx_initialization(long nz, double *z, double *scale)
     funcValue = leastSquareWithLambda(nz, z, NULL, 1.0);
   }
 
-  if(useVerboseOutput(LOG_INIT))
-  {
-    printf("info    | nelderMeadEx_initialization | leastSquare=%g\n", funcValue);
-    fflush(NULL);
-  }
+  DEBUG_INFO(LV_INIT, "nelderMeadEx_initialization | leastSquare=%g", funcValue);
 
   if(lambda < 1.0)
   {
-    if(useVerboseOutput(LOG_INIT))
-    {
-      printf("error   | nelderMeadEx_initialization | lambda = %g\n", lambda);
-      fflush(NULL);
-    }
+    DEBUG_INFO(LV_INIT, "error   | nelderMeadEx_initialization | lambda = %g", lambda);
     return -1;
   }
 
@@ -616,12 +589,12 @@ int nelderMeadEx_initialization(long nz, double *z, double *scale)
 }
 
 /*! \fn int initialize(int optiMethod)
- *
- * Perform initialization of the problem. It reads the global variable
- * globalData->initFixed to find out which variables are fixed.
- * It uses the generated function initial_residual, which calcualtes the
- * residual of all equations (both continuous time eqns and initial eqns).
- */
+*
+* Perform initialization of the problem. It reads the global variable
+* globalData->initFixed to find out which variables are fixed.
+* It uses the generated function initial_residual, which calcualtes the
+* residual of all equations (both continuous time eqns and initial eqns).
+*/
 int initialize(int optiMethod)
 {
   long nz = 0;
@@ -637,11 +610,7 @@ int initialize(int optiMethod)
   {
     if(globalData->initFixed[ind]==0)
     {
-      if(sim_verbose >= LOG_INIT)
-      {
-        fprintf(stdout, "info    | state %s is unfixed.\n", globalData->statesNames[ind].name);
-        fflush(NULL);
-      }
+      DEBUG_INFO(LV_INIT, "state %s is unfixed", globalData->statesNames[ind].name);
       nz++;
     }
   }
@@ -652,39 +621,31 @@ int initialize(int optiMethod)
   {
     if(globalData->initFixed[ind]==0 && globalData->var_attr[ind-globalData->nStates]==1)
     {
-      if(sim_verbose >= LOG_INIT)
-      {
-          fprintf(stdout, "info    | parameter %s is unfixed.\n", globalData->parametersNames[ind-startIndPar].name);
-          fflush(NULL);
-      }
+      DEBUG_INFO(LV_INIT, "parameter %s is unfixed", globalData->parametersNames[ind-startIndPar].name);
       nz++;
     }
   }
 
-  if(sim_verbose >= LOG_INIT)
+  if(DEBUG_FLAG(LV_INIT))
   {
-    fprintf(stdout, "info    | initialize | initialization by method: %s\n", optiMethodStr[optiMethod]);
-    fprintf(stdout, "info    | initialize | fixed attribute for states:\n");
+    INFO("initialize | initialization by method: %s", optiMethodStr[optiMethod]);
+    INFO_AL("             fixed attribute for states:");
     for(i=0;i<globalData->nStates; i++)
-      fprintf(stdout, "info    | initialize | %s(fixed=%s)\n", globalData->statesNames[i].name, (globalData->initFixed[i] ? "true" : "false"));
-    fprintf(stdout, "info    | initialize | number of non-fixed variables: %d\n", (int)nz);
-    fflush(NULL);
+      INFO_AL("             %s(fixed=%s)", globalData->statesNames[i].name, (globalData->initFixed[i] ? "true" : "false"));
+    INFO_AL("             number of non-fixed variables: %d", (int)nz);
   }
 
   /* No initial values to calculate. */
   if(nz ==  0)
   {
-    if(sim_verbose >= LOG_INIT)
-    {
-        fprintf(stdout, "info    | no initial values to calculate\n"); fflush(NULL);
-    }
+    DEBUG_INFO(LV_INIT, "no initial values to calculate");
     return 0;
   }
 
   z = (double*)calloc(nz, sizeof(double));
   scale = (double*)calloc(nz, sizeof(double));
-  assert(z);
-  assert(scale);
+  ASSERT(z, "out of memory");
+  ASSERT(scale, "out of memory");
 
   /* Fill z with the non-fixed variables from x and p */
   for(ind=0, indAct=0, indz=0; ind<globalData->nStates; ind++)
@@ -720,9 +681,8 @@ int initialize(int optiMethod)
   }
   else
   {
-    fprintf(stderr, "error   | unrecognized option -iom %s\n", optiMethodStr[optiMethod]);
-    fprintf(stderr, "        | current options are: simplex, nelder_mead_ex or newuoa\n");
-    fflush(NULL);
+    WARNING("unrecognized option -iom %s", optiMethodStr[optiMethod]);
+    WARNING_AL("current options are: simplex, nelder_mead_ex or newuoa");
     retVal= -1;
   }
 
@@ -765,8 +725,8 @@ int old_initialization(int optiMethod)
 
     if(retVal != 0)
     {
-      fprintf(stdout, "info    | Initialization of the current initial set of equations and initial guesses fails!\n");
-      fprintf(stdout, "        | Try with better Initial guesses for the states.\n"); fflush(NULL);
+      INFO("Initialization of the current initial set of equations and initial guesses fails!");
+      INFO_AL("Try with better Initial guesses for the states.");
     }
   }
 
@@ -824,11 +784,7 @@ int state_initialization(int optiMethod)
   /* fall-back case */
   if(retVal)
   {
-    if(useVerboseOutput(LOG_INIT))
-    {
-        fprintf(stdout, "warning | state_initialization | init. failed! use old initialization method\n");
-        fflush(NULL);
-    }
+    DEBUG_INFO(LV_INIT, "state_initialization | init. failed! use old initialization method");
     return old_initialization(optiMethod);
   }
 
@@ -837,54 +793,49 @@ int state_initialization(int optiMethod)
 
 int initialization(const char* pInitMethod, const char* pOptiMethod)
 {
-    int initMethod = IIM_STATE;			/* default method */
-	int optiMethod = IOM_SIMPLEX;	    /* default method */
+  int initMethod = IIM_STATE;			/* default method */
+  int optiMethod = IOM_SIMPLEX;	    /* default method */
 
-	/* if there are user-specified options, use them! */
-	if(pInitMethod)
-	{
-		if(!strcmp(pInitMethod, "state"))
-			initMethod = IIM_STATE;
-		else if(!strcmp(pInitMethod, "old"))
-			initMethod = IIM_OLD;
-		else
-			initMethod = IIM_UNKNOWN;
-	}
+  /* if there are user-specified options, use them! */
+  if(pInitMethod)
+  {
+    if(!strcmp(pInitMethod, "state"))
+      initMethod = IIM_STATE;
+    else if(!strcmp(pInitMethod, "old"))
+      initMethod = IIM_OLD;
+    else
+      initMethod = IIM_UNKNOWN;
+  }
 
-	if(pOptiMethod)
-	{
-		if(!strcmp(pOptiMethod, "simplex"))
-			optiMethod = IOM_SIMPLEX;
-		else if(!strcmp(pOptiMethod, "nelder_mead_ex"))
-			optiMethod = IOM_NELDER_MEAD_EX;
-		else if(!strcmp(pOptiMethod, "newuoa"))
-			optiMethod = IOM_NEWUOA;
-		else
-			optiMethod = IOM_UNKNOWN;
-	}
+  if(pOptiMethod)
+  {
+    if(!strcmp(pOptiMethod, "simplex"))
+      optiMethod = IOM_SIMPLEX;
+    else if(!strcmp(pOptiMethod, "nelder_mead_ex"))
+      optiMethod = IOM_NELDER_MEAD_EX;
+    else if(!strcmp(pOptiMethod, "newuoa"))
+      optiMethod = IOM_NEWUOA;
+    else
+      optiMethod = IOM_UNKNOWN;
+  }
 
-	if(useVerboseOutput(LOG_INIT))
-	{
-		fprintf(stdout, "info    | initialization | initialization method: %s\n", initMethodStr[initMethod]);
-		fprintf(stdout, "info    | initialization | optimization method:   %s\n", optiMethodStr[optiMethod]);
-		fflush(NULL);
-	}
+  DEBUG_INFO(LV_INIT, "initialization | initialization method: %s", initMethodStr[initMethod]);
+  DEBUG_INFO_AL(LV_INIT, "                 optimization method:   %s", optiMethodStr[optiMethod]);
 
-	/* select the right initialization-method */
-	if(initMethod == IIM_OLD)
-	{
-		/* the 'old' initialization-method */
-		return old_initialization(optiMethod);
-	}
-	else if(initMethod == IIM_STATE)
-	{
-		/* the 'new' initialization-method */
-		return state_initialization(optiMethod);
-	}
+  /* select the right initialization-method */
+  if(initMethod == IIM_OLD)
+  {
+    /* the 'old' initialization-method */
+    return old_initialization(optiMethod);
+  }
+  else if(initMethod == IIM_STATE)
+  {
+    /* the 'new' initialization-method */
+    return state_initialization(optiMethod);
+  }
 
-	/* unrecognized initialization-method */
-	fprintf(stderr, "error   | unrecognized option -iim %s\n", initMethodStr[initMethod]);
-	fprintf(stderr, "        | current options are: state or old\n");
-	fflush(NULL);
-	return -1;
+  /* unrecognized initialization-method */
+  WARNING("unrecognized option -iim %s", initMethodStr[initMethod]);
+  WARNING_AL("current options are: state or old");
+  return -1;
 }

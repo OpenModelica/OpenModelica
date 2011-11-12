@@ -32,8 +32,8 @@
 /*! \file events.h
  */
 
-#ifndef EVENTS_H
-#define EVENTS_H
+#ifndef _EVENTS_H_
+#define _EVENTS_H_
 
 #include "list.h"
 
@@ -41,77 +41,77 @@
 extern "C" {
 #endif
 
-int initializeEventData();
-void deinitializeEventData();
+  int initializeEventData();
+  void deinitializeEventData();
 
-double BiSection(double*, double*, double*, double*, LIST*);
+  double BiSection(double*, double*, double*, double*, LIST*);
 
-int CheckZeroCrossings(LIST *list);
+  int CheckZeroCrossings(LIST *list);
 
-void saveall();
-void printAllPreValues();
-void restoreHelpVars();
+  void saveall();
+  void printAllPreValues();
+  void restoreHelpVars();
 
-double Sample(double t, double start, double interval);
-double sample(double start, double interval, int hindex);
-void initSample(double start, double stop);
+  double Sample(double t, double start, double interval);
+  double sample(double start, double interval, int hindex);
+  void initSample(double start, double stop);
 
-double Less(double a, double b);
-double LessEq(double a, double b);
-double Greater(double a, double b);
-double GreaterEq(double a, double b);
+  double Less(double a, double b);
+  double LessEq(double a, double b);
+  double Greater(double a, double b);
+  double GreaterEq(double a, double b);
 
-void checkTermination();
-int checkForSampleEvent();
+  void checkTermination();
+  int checkForSampleEvent();
 
-double getNextSampleTimeFMU();
+  double getNextSampleTimeFMU();
 
-extern long inUpdate;
-static const int IterationMax = 200;
+  extern long inUpdate;
+  static const int IterationMax = 200;
 
 #define ZEROCROSSING(ind,exp) { \
-        gout[ind] = exp; \
-}
+  gout[ind] = exp; \
+  }
 
 #define RELATIONTOZC(res,exp1,exp2,index,op_w,op) { \
-    if (index == -1){ \
-        res = ((exp1) op (exp2)); \
-    }else{ \
-        res = backuprelations[index];} \
-}
+  if (index == -1){ \
+  res = ((exp1) op (exp2)); \
+  }else{ \
+  res = backuprelations[index];} \
+  }
 #define SAVEZEROCROSS(res,exp1,exp2,index,op_w,op) { \
-    if (index == -1){ \
-        res = ((exp1) op (exp2)); \
-    } else{ \
-        res = ((exp1) op (exp2)); \
-        backuprelations[index] = ((exp1) op (exp2)); \
-    }\
-}
+  if (index == -1){ \
+  res = ((exp1) op (exp2)); \
+  } else{ \
+  res = ((exp1) op (exp2)); \
+  backuprelations[index] = ((exp1) op (exp2)); \
+  }\
+  }
 
 #define initial() localData->init
 
-extern long* zeroCrossingEnabled;
-int function_onlyZeroCrossings(double* gout, double* t);
-int CheckForNewEvent(int *sampleactived);
-int EventHandle(int);
-void FindRoot(double*);
-int checkForDiscreteChanges();
-void SaveZeroCrossings();
-void SaveZeroCrossingsAfterEvent();
-void initializeZeroCrossings();
-void correctDirectionZeroCrossings();
-int activateSampleEvents();
-int function_updateSample();
+  extern long* zeroCrossingEnabled;
+  int function_onlyZeroCrossings(double* gout, double* t);
+  int CheckForNewEvent(int *sampleactived);
+  int EventHandle(int);
+  void FindRoot(double*);
+  int checkForDiscreteChanges();
+  void SaveZeroCrossings();
+  void SaveZeroCrossingsAfterEvent();
+  void initializeZeroCrossings();
+  void correctDirectionZeroCrossings();
+  int activateSampleEvents();
+  int function_updateSample();
 
 #define INTERVAL 1
 #define NOINTERVAL 0
 
-extern double TOL;
+  extern double TOL;
 
-void debugPrintHelpVars();
-void deactivateSampleEvent();
-void deactivateSampleEventsandEquations();
-void debugSampleEvents();
+  void debugPrintHelpVars();
+  void deactivateSampleEvent();
+  void deactivateSampleEventsandEquations();
+  void debugSampleEvents();
 
 #ifdef __cplusplus
 }

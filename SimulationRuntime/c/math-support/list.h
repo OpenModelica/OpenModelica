@@ -35,42 +35,42 @@
  * It contains a simple linked list
  */
 
-#ifndef _LIST_H
-#define _LIST_H
+#ifndef _LIST_H_
+#define _LIST_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* type-free list */
-struct LIST_NODE;
-typedef struct LIST_NODE LIST_NODE;
+  /* type-free list */
+  struct LIST_NODE;
+  typedef struct LIST_NODE LIST_NODE;
 
-struct LIST;
-typedef struct LIST LIST;
+  struct LIST;
+  typedef struct LIST LIST;
 
-LIST *allocList(unsigned int itemSize);
-void freeList(LIST *list);
+  LIST *allocList(unsigned int itemSize);
+  void freeList(LIST *list);
 
-void listPushFront(LIST *list, void *data);
-void listPushBack(LIST *list, void *data);
+  void listPushFront(LIST *list, void *data);
+  void listPushBack(LIST *list, void *data);
 
-int listLength(LIST *list);
+  int listLength(LIST *list);
 
-void *listFirstData(LIST *list);
-void *listLastData(LIST *list);
+  void *listFirstData(LIST *list);
+  void *listLastData(LIST *list);
 
-void listPopFront(LIST *list);
+  void listPopFront(LIST *list);
 
-void listClear(LIST *list);
+  void listClear(LIST *list);
 
-LIST_NODE *listFirstNode(LIST *list);
-LIST_NODE *listNextNode(LIST_NODE *node);
+  LIST_NODE *listFirstNode(LIST *list);
+  LIST_NODE *listNextNode(LIST_NODE *node);
 
-void *listNodeData(LIST_NODE *node);
+  void *listNodeData(LIST_NODE *node);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _LIST_H */
+#endif

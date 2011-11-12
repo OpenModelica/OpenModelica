@@ -29,7 +29,7 @@
  *
  */
 
-/* File: list.c
+/*! \file list.c
  *
  * Description: This file is a C header file for the simulation runtime.
  * It contains a simple linked list
@@ -57,56 +57,64 @@ struct LIST
 
 LIST *allocList(unsigned int itemSize)
 {
-  LIST *tmpList = (LIST*)malloc(sizeof(LIST));
-  ASSERT(tmpList, "out of memory");
-  
-  tmpList->first = NULL;
-  tmpList->last = NULL;
-  tmpList->itemSize = itemSize;
-  tmpList->length = 0;
-  
-  return tmpList;
+  LIST *list = (LIST*)malloc(sizeof(LIST));
+  ASSERT(list, "out of memory");
+
+  list->first = NULL;
+  list->last = NULL;
+  list->itemSize = itemSize;
+  list->length = 0;
+
+  return list;
 }
 
 void freeList(LIST *list)
 {
   if(list)
   {
-	listClear(list);
+    listClear(list);
     free(list);
   }
 }
 
 void listPushFront(LIST *list, void *data)
 {
-    LIST_NODE *tmpNode = NULL;
-    ASSERT(list, "list == NULL");
-	
-    tmpNode = (LIST_NODE*)malloc(sizeof(LIST_NODE));
-	tmpNode->data = malloc(list->itemSize);
-	memcpy(tmpNode->data, data, list->itemSize);
-    tmpNode->next = list->first;
-	++(list->length);
-	
-    list->first = tmpNode;
-    if(!list->last)
-        list->last = list->first;
+  LIST_NODE *tmpNode = NULL;
+  ASSERT(list, "invalid list-pointer");
+
+  tmpNode = (LIST_NODE*)malloc(sizeof(LIST_NODE));
+  ASSERT(tmpNode, "out of memory");
+
+  tmpNode->data = malloc(list->itemSize);
+  ASSERT(tmpNode->data, "out of memory");
+
+  memcpy(tmpNode->data, data, list->itemSize);
+  tmpNode->next = list->first;
+  ++(list->length);
+
+  list->first = tmpNode;
+  if(!list->last)
+    list->last = list->first;
 }
 
 void listPushBack(LIST *list, void *data)
 {
   LIST_NODE *tmpNode = NULL;
-  ASSERT(list, "list == NULL");
-  
+  ASSERT(list, "invalid list-pointer");
+
   tmpNode = (LIST_NODE*)malloc(sizeof(LIST_NODE));
+  ASSERT(tmpNode, "out of memory");
+
   tmpNode->data = malloc(list->itemSize);
+  ASSERT(tmpNode->data, "out of memory");
+
   memcpy(tmpNode->data, data, list->itemSize);
   tmpNode->next = NULL;
   ++(list->length);
-  
+
   if(list->last)
     list->last->next = tmpNode;
-	
+
   list->last = tmpNode;
 
   if(!list->first)
@@ -115,22 +123,22 @@ void listPushBack(LIST *list, void *data)
 
 int listLength(LIST *list)
 {
-  ASSERT(list, "list == NULL");
+  ASSERT(list, "invalid list-pointer");
   return list->length;
 }
 
 void *listFirstData(LIST *list)
 {
-    ASSERT(list, "no list");
-    ASSERT(list->first, "no data");
-    return list->first->data;
+  ASSERT(list, "invalid list-pointer");
+  ASSERT(list->first, "empty list");
+  return list->first->data;
 }
 
 void *listLastData(LIST *list)
 {
-    ASSERT(list, "no list");
-    ASSERT(list->last, "no data");
-    return list->last->data;
+  ASSERT(list, "invalid list-pointer");
+  ASSERT(list->last, "empty list");
+  return list->last->data;
 }
 
 void listPopFront(LIST *list)
@@ -144,7 +152,7 @@ void listPopFront(LIST *list)
       free(list->first);
 
       list->first = tmpNode;
-	  --(list->length);
+      --(list->length);
       if(!list->first)
         list->last = list->first;
     }
@@ -153,29 +161,29 @@ void listPopFront(LIST *list)
 
 void listClear(LIST *list)
 {
-    if(!list)
-		return;
-		
-    while(list->first)
-		listPopFront(list);
+  if(!list)
+    return;
+
+  while(list->first)
+    listPopFront(list);
 }
 
 LIST_NODE *listFirstNode(LIST *list)
 {
-    ASSERT(list, "list == NULL");
-    return list->first;
+  ASSERT(list, "invalid list-pointer");
+  return list->first;
 }
 
 LIST_NODE *listNextNode(LIST_NODE *node)
 {
-    ASSERT(node, "node == NULL");
-    if(node)
-		return node->next;
-	return NULL;
+  ASSERT(node, "invalid list-node");
+  if(node)
+    return node->next;
+  return NULL;
 }
 
 void *listNodeData(LIST_NODE *node)
 {
-    ASSERT(node, "node == NULL");
-    return node->data;
+  ASSERT(node, "invalid list-node");
+  return node->data;
 }

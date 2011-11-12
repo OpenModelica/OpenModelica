@@ -29,17 +29,20 @@
  *
  */
 
-#ifndef DELAY_H
-#define DELAY_H
+/*! \file delay.h
+ */
+
+#ifndef _DELAY_H_
+#define _DELAY_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void initDelay(double startTime);
-void deinitDelay();
-double delayImpl(int exprNumber, double exprValue, double time, double delayTime, double maxDelay);
-void storeDelayedExpression(int exprNumber, double exprValue, double time);
+  void initDelay(double startTime);
+  void deinitDelay();
+  double delayImpl(int exprNumber, double exprValue, double time, double delayTime, double maxDelay);
+  void storeDelayedExpression(int exprNumber, double exprValue, double time);
 
 #ifdef __cplusplus
 }

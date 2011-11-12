@@ -259,6 +259,9 @@ void setTermMsg(const char*);
 #define initial() localData->init
 #define terminal() localData->terminal
 
+//_X_DATA *allocXData(void);
+//void freeXData(_X_DATA *data);
+
 /* the main function of the simulation runtime!
  * simulation runtime no longer has main, is defined by the generated model code which calls this function.
  */
@@ -270,4 +273,3 @@ void communicateStatus(const char *phase, double completionPercent);
 #endif
 
 #endif
-

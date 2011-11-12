@@ -230,12 +230,12 @@ extern "C" {
   typedef struct SIMULTAION_INFO
   {
     modelica_real startTime;
-    modelica_real stoptime;
+    modelica_real stopTime;
     modelica_real currentTime;
     modelica_integer currentStep;
     modelica_integer numSteps;
     modelica_real tolerence;
-    modelica_string method;
+    modelica_string solverMethod;
   }SIMULATION_INFO;
 
   /* top-level struct to collect dynamic and static model data */
