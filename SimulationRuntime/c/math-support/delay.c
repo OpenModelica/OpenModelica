@@ -32,11 +32,9 @@
  */
 
 #include "delay.h"
-#include "simulation_runtime.h"
 #include "ringbuffer.h"
 #include "error.h"
 
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -69,19 +67,12 @@ void initDelay(double startTime)
 
     /* allocate the memory for rows */
     delayStructure = (RINGBUFFER**)calloc(numDelayExpressionIndex, sizeof(RINGBUFFER*));
-    assert(delayStructure);
+    ASSERT(delayStructure, "out of memory");
 
     for(i=0; i<numDelayExpressionIndex; i++)
         delayStructure[i] = allocRingBuffer(1024, sizeof(t_TimeAndValue));
 
-    DEBUG_INFO(DF_SOLVER, "initDelay called with startTime = %f\n", startTime);
-
-    /*
-    if(sim_verbose >= LOG_SOLVER)
-    {
-        fprintf(stdout, "initDelay called with startTime = %f\n", startTime);
-        fflush(NULL);
-    }*/
+    DEBUG_INFO(LV_SOLVER, "initDelay called with startTime = %f\n", startTime);
 }
 
 void deinitDelay()
@@ -89,10 +80,7 @@ void deinitDelay()
     int i;
 
     for(i=0; i<numDelayExpressionIndex; i++)
-    {
         freeRingBuffer(delayStructure[i]);
-        free(delayStructure[i]);
-    }
 
     free(delayStructure);
 }
@@ -116,7 +104,7 @@ static int findTime(double time, RINGBUFFER *delayStruct)
             end = i;
         else
             start = i;
-    }while (t != time && end > start + 1);
+    }while(t != time && end > start + 1);
     return start;
 }
 
@@ -126,21 +114,21 @@ void storeDelayedExpression(int exprNumber, double exprValue, double time)
 
     if(exprNumber < 0)
     {
-        /* fprintf(stderr, "storeDelayedExpression: Invalid expression number %d.\n", exprNumber); */
+        /* ERROR("storeDelayedExpression: Invalid expression number %d", exprNumber); */
         return;
     }
 
 
     if(time < tStart)
     {
-        /* fprintf(stderr, "storeDelayedExpression: Time is smaller than starting time. Value ignored.\n"); */
+        /* ERROR("storeDelayedExpression: Time is smaller than starting time. Value ignored"); */
         return;
     }
 
-    /* fprintf(stderr, "storeDelayed[%d] %g:%g\n", exprNumber, time, exprValue); */
+    /* ERROR("storeDelayed[%d] %g:%g", exprNumber, time, exprValue); */
 
     /* Allocate more space for expressions */
-    assert(exprNumber < numDelayExpressionIndex);
+    ASSERT(exprNumber < numDelayExpressionIndex, "exprNumber < numDelayExpressionIndex");
 
     tpl.time = time;
     tpl.value = exprValue;
@@ -152,24 +140,22 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
     RINGBUFFER* delayStruct = delayStructure[exprNumber];
     int length = 0;
 
-    /* fprintf(stderr, "delayImpl: exprNumber = %d, exprValue = %lf, time = %lf, delayTime = %lf\n", exprNumber, exprValue, time, delayTime); */
+    /* ERROR("delayImpl: exprNumber = %d, exprValue = %lf, time = %lf, delayTime = %lf", exprNumber, exprValue, time, delayTime); */
 
     /* Check for errors */
-    assert(0 <= exprNumber);
-    assert(exprNumber < numDelayExpressionIndex);
+    ASSERT(0 <= exprNumber, "0 <= exprNumber");
+    ASSERT(exprNumber < numDelayExpressionIndex, "exprNumber < numDelayExpressionIndex");
 
     if(time <= tStart)
     {
-        /* fprintf(stderr, "delayImpl: Entered at time < starting time: %g.\n", exprValue); */
+        /* ERROR("delayImpl: Entered at time < starting time: %g.", exprValue); */
         return exprValue;
     }
 
     if(delayTime < 0.0)
     {
-        /* needs to be continued */
-        assert(0.0 < delayTime);
-        /* throw TerminateSimulationException(globalData->timeValue,
-            std::string("Negative delay requested.\n")); */
+        ASSERT(0.0 < delayTime, "Negative delay requested");
+        THROW("Negative delay requested");
     }
 
     length = ringBufferLength(delayStruct);
@@ -177,7 +163,7 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
     if(length == 0)
     {
         /*  This occurs in the initialization phase */
-        /*  fprintf(stderr, "delayImpl: Missing initial value, using argument value %g instead.\n", exprValue); */
+        /*  ERROR("delayImpl: Missing initial value, using argument value %g instead.", exprValue); */
         return exprValue;
     }
 
@@ -192,7 +178,7 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
     if(time <= tStart + delayTime)
     {
         double res = ((t_TimeAndValue*)getRingData(delayStruct, 0))->value;
-        /* fprintf(stderr, "findTime: time <= tStart + delayTime: [%d] = %g\n",exprNumber,res); */
+        /* ERROR("findTime: time <= tStart + delayTime: [%d] = %g",exprNumber, res); */
         return res;
     }
     else
@@ -203,7 +189,7 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
 
         int i;
 
-        assert(delayTime >= 0.0);
+        ASSERT(0.0 <= delayTime, "0 <= delayTime");
 
         /* find the row for the lower limit */
         if(timeStamp > ((t_TimeAndValue*)getRingData(delayStruct, length - 1))->time)
@@ -217,7 +203,7 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
         else
         {
             i = findTime(timeStamp, delayStruct);
-            assert(i < length);
+            ASSERT(i < length, "i < length");
             time0 = ((t_TimeAndValue*)getRingData(delayStruct, i))->time;
             value0 = ((t_TimeAndValue*)getRingData(delayStruct, i))->value;
 
@@ -236,7 +222,7 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
         /* was it an exact match?*/
         if(time0 == timeStamp)
         {
-            /* fprintf(stderr, "delayImpl: Exact match at %lf\n", currentTime); */
+            /* ERROR("delayImpl: Exact match at %lf", currentTime); */
             return value0;
         }
         else if(time1 == timeStamp)
@@ -245,7 +231,7 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
         }
         else
         {
-            /* fprintf(stderr, "delayImpl: Linear interpolation of %lf between %lf and %lf\n", timeStamp, time0, time1); */
+            /* ERROR("delayImpl: Linear interpolation of %lf between %lf and %lf", timeStamp, time0, time1); */
 
             /* linear interpolation */
             double timedif = time1 - time0;
