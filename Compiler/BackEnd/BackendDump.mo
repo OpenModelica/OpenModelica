@@ -616,22 +616,55 @@ algorithm
   _:=
   match (inBackendDAE)
     local
-      list<BackendDAE.Var> vars,knvars,extvars;
+      BackendDAE.EqSystems eqs;
+      BackendDAE.Shared shared;
+    case (BackendDAE.DAE(eqs,shared))
+      equation
+        List.map_0(eqs,dumpEqSystem);
+        print("\n"); 
+        dumpShared(shared);
+      then
+        ();
+  end match;
+end dump;
+
+public function dumpOption
+  replaceable type Type_A subtypeof Any;
+  input Option<Type_A> inType;
+  input printType_A infunc;
+  partial function printType_A
+    input Type_A inType;
+  end printType_A;
+algorithm
+  _ := 
+  match(inType,infunc)
+    local 
+      Type_A a;
+    case(SOME(a),infunc) equation infunc(a); then ();
+    else
+      then ();
+  end match;
+end dumpOption;
+
+public function dumpEqSystem
+"function: dumpEqSystem
+  This function dumps the BackendDAE.EqSystem representaton to stdout."
+  input BackendDAE.EqSystem inEqSystem;
+algorithm
+  _:=
+  match (inEqSystem)
+    local
+      list<BackendDAE.Var> vars;
       BackendDAE.Value varlen,eqnlen;
       String varlen_str,eqnlen_str,s;
-      list<BackendDAE.Equation> eqnsl,reqnsl,ieqnsl;
+      list<BackendDAE.Equation> eqnsl;
       list<String> ss;
-      list<BackendDAE.MultiDimEquation> ae_lst;
-      BackendDAE.Variables vars1,vars2,vars3;
-      BackendDAE.AliasVariables av;
-      BackendDAE.EquationArray eqns,reqns,ieqns;
-      array<BackendDAE.MultiDimEquation> ae;
-      array<DAE.Algorithm> algs;
-      list<BackendDAE.ZeroCrossing> zc;
-      list<BackendDAE.WhenClause> wc;
-      BackendDAE.ExternalObjectClasses extObjCls;
-      BackendDAE.BackendDAEType btp;
-    case (BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=vars1,orderedEqs=eqns)::_,BackendDAE.SHARED(vars2,vars3,av,ieqns,reqns,ae,algs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc,whenClauseLst=wc),extObjCls,btp)))
+      BackendDAE.Variables vars1;
+      BackendDAE.EquationArray eqns;
+		  Option<BackendDAE.IncidenceMatrix> m;
+		  Option<BackendDAE.IncidenceMatrix> mT;
+		  BackendDAE.Matching matching;     
+    case (BackendDAE.EQSYSTEM(orderedVars=vars1,orderedEqs=eqns,m=m,mT=mT,matching=matching))
       equation
         print("Variables (");
         vars = BackendDAEUtil.varList(vars1);
@@ -641,7 +674,75 @@ algorithm
         print(")\n");
         print("=========\n");
         dumpVars(vars);
+        print("\n");        
+        print("\nEquations (");
+        eqnsl = BackendDAEUtil.equationList(eqns);
+        eqnlen = listLength(eqnsl);
+        eqnlen_str = intString(eqnlen);
+        print(eqnlen_str);
+        print(")\n");
+        print("=========\n");
+        dumpEqns(eqnsl);
         print("\n");
+        dumpOption(m,dumpIncidenceMatrix);
+        dumpOption(mT,dumpIncidenceMatrixT);
+        dumpFullMatching(matching);
+       then
+        ();
+    case (BackendDAE.EQSYSTEM(orderedVars=vars1,orderedEqs=eqns))
+      equation
+        print("Variables (");
+        vars = BackendDAEUtil.varList(vars1);
+        varlen = listLength(vars);
+        varlen_str = intString(varlen);
+        print(varlen_str);
+        print(")\n");
+        print("=========\n");
+        dumpVars(vars);
+        print("\n");        
+        print("\nEquations (");
+        eqnsl = BackendDAEUtil.equationList(eqns);
+        eqnlen = listLength(eqnsl);
+        eqnlen_str = intString(eqnlen);
+        print(eqnlen_str);
+        print(")\n");
+        print("=========\n");
+        dumpEqns(eqnsl);
+        print("\n");
+       then
+        ();        
+  end match;
+end dumpEqSystem;
+
+public function dumpShared
+"function: dumpShared
+  This function dumps the BackendDAE.Shared representaton to stdout."
+  input BackendDAE.Shared inShared;
+algorithm
+  _:=
+  match (inShared)
+    local
+      list<BackendDAE.Var> knvars,extvars;
+      BackendDAE.Value varlen,eqnlen;
+      String varlen_str,eqnlen_str,s;
+      list<BackendDAE.Equation> reqnsl,ieqnsl;
+      list<String> ss;
+      list<BackendDAE.MultiDimEquation> ae_lst;
+      BackendDAE.Variables vars2,vars3;
+      BackendDAE.AliasVariables av;
+      BackendDAE.EquationArray reqns,ieqns;
+      array<BackendDAE.MultiDimEquation> ae;
+      array<DAE.Algorithm> algs;
+      list<BackendDAE.ZeroCrossing> zc;
+      list<BackendDAE.WhenClause> wc;
+      BackendDAE.ExternalObjectClasses extObjCls;
+      BackendDAE.BackendDAEType btp;
+    case (BackendDAE.SHARED(vars2,vars3,av,ieqns,reqns,ae,algs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc,whenClauseLst=wc),extObjCls,btp))
+      equation
+        print("BackendDAEType: ");
+        dumpBackendDAEType(btp);
+        print("\n\n");
+        
         print("Known Variables (constants) (");
         knvars = BackendDAEUtil.varList(vars2);
         varlen = listLength(knvars);
@@ -669,14 +770,6 @@ algorithm
         
         dumpAliasVariables(av);
         
-        print("\nEquations (");
-        eqnsl = BackendDAEUtil.equationList(eqns);
-        eqnlen = listLength(eqnsl);
-        eqnlen_str = intString(eqnlen);
-        print(eqnlen_str);
-        print(")\n");
-        print("=========\n");
-        dumpEqns(eqnsl);
         print("Simple Equations (");
         reqnsl = BackendDAEUtil.equationList(reqns);
         eqnlen = listLength(reqnsl);
@@ -716,7 +809,19 @@ algorithm
       then
         ();
   end match;
-end dump;
+end dumpShared;
+
+public function dumpBackendDAEType
+  input BackendDAE.BackendDAEType btp; 
+algorithm
+  _ := match(btp)
+    case (BackendDAE.SIMULATION())equation print("simulation"); then ();
+    case (BackendDAE.JACOBIAN()) equation print("jacobian"); then ();
+    case (BackendDAE.ALGEQSYSTEM()) equation print("algebraic loop"); then ();
+    case (BackendDAE.ARRAYSYSTEM()) equation print("multidim equation arrays"); then ();
+    case (BackendDAE.PARAMETERSYSTEM()) equation print("parameter system"); then ();
+  end match;
+end dumpBackendDAEType;
 
 public function dumpAlgorithms "Help function to dump, prints algorithms to stdout"
   input list<DAE.Algorithm> algs;
@@ -1381,6 +1486,23 @@ algorithm
   end match;
 end dumpIncidenceRow;
 
+public function dumpFullMatching
+  input BackendDAE.Matching inMatch;
+algorithm
+  _:= match(inMatch)
+    local 
+      array<Integer> ass1;
+      BackendDAE.StrongComponents comps;
+      case (BackendDAE.NO_MATCHING()) equation print("NoMatching\n"); then ();
+      case (BackendDAE.MATCHING(ass1,_,comps))
+        equation
+				  dumpMatching(ass1);
+				  dumpComponents(comps);          
+        then
+          ();
+    end match;
+end dumpFullMatching;
+
 public function dumpMatching
 "function: dumpMatching
   author: PA
@@ -1722,13 +1844,9 @@ protected
   BackendDAE.StrongComponents comps;
   BackendDAE.BackendDAE ode;
 algorithm
-  (str,ode as BackendDAE.DAE(eqs = BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT),matching=BackendDAE.MATCHING(v1,v2,comps))::{})) := inTpl;
+  (str,ode) := inTpl;
   print(str); print(":\n");
   dump(ode);
-  dumpIncidenceMatrix(m);
-  dumpIncidenceMatrixT(mT);
-  dumpMatching(v1);
-  dumpComponents(comps);
 end bltdump;
 
 public function dumpComponentsAdvanced "function: dumpComponents

@@ -924,9 +924,6 @@ public function generateModelCodeFMU
   input Absyn.Path className;
   input String filenamePrefix;
   input Option<SimulationSettings> simSettingsOpt;
-  input array<Integer> equationIndices;
-  input array<Integer> variableIndices;
-  input BackendDAE.StrongComponents strongComponents;
   output BackendDAE.BackendDAE outIndexedBackendDAE;
   output list<String> libs;
   output String fileDir;
@@ -988,9 +985,6 @@ algorithm
       DAE.DAElist dae;
       list<Env.Frame> env;
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
-      array<list<Integer>> m,mT;
-      array<Integer> ass1,ass2;
-      BackendDAE.StrongComponents comps;
       Absyn.ComponentRef a_cref;
       list<String> libs;
       Interactive.SymbolTable st;
@@ -1013,11 +1007,11 @@ algorithm
         dae = DAEUtil.transformationsBeforeBackend(cache,dae);
         funcs = Env.getFunctionTree(cache);
         dlow = BackendDAECreate.lower(dae,funcs,true);
-        (dlow_1 as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1,ass2,comps))})) = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
+        dlow_1 = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
           NONE(), NONE(), NONE());
         Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
-          generateModelCodeFMU(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt,ass1,ass2,comps);
+          generateModelCodeFMU(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt);
         resultValues = 
         {("timeTemplates",Values.REAL(timeTemplates)),
           ("timeSimCode",  Values.REAL(timeSimCode)),
@@ -1173,9 +1167,6 @@ algorithm
       DAE.DAElist dae;
       list<Env.Frame> env;
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow,indexed_dlow_1;
-      array<list<Integer>> m,mT;
-      array<Integer> ass1,ass2;
-      BackendDAE.StrongComponents comps;
       Absyn.ComponentRef a_cref;
       list<String> libs;
       Interactive.SymbolTable st;

@@ -117,6 +117,8 @@ extern "C" {
     modelica_integer* integerVarsPre;
     modelica_boolean* booleanVarsPre;
     modelica_string* stringVarsPre;
+
+    modelica_real time;
   }SIMULATION_DATA;
 
   /* collect all attributes from one variable in one struct */
@@ -207,6 +209,8 @@ extern "C" {
     modelica_string_t modelicaFilePrefix;
     modelica_string_t modelDir;
     modelica_string_t modelGUID;
+
+    void** extObjs; /* External objects */
 
     long nStates;
     long nVariablesReal;
