@@ -30,6 +30,7 @@
 
 #include "events.h"
 #include "error.h"
+#include "simulation_data.h"
 #include "openmodelica.h"		/* for modelica types */
 #include "simulation_runtime.h"	/* for globalData */
 
@@ -328,6 +329,48 @@ void initSample(double start, double stop)
   globalData->sampleTimes = Samples;
   globalData->curSampleTimeIx = 0;
   globalData->nSampleTimes = nuniq;
+}
+
+/*! \fn void storeStartValues(_X_DATA *data)
+ *
+ *  sets all values to their start-attribute
+ *
+ *  author: lochel
+ */
+void storeStartValues(_X_DATA *data)
+{
+  long i;
+	SIMULATION_DATA *sData = (SIMULATION_DATA*)getRingData(data->simulationData, 0);
+	MODEL_DATA      *mData = &(data->modelData);
+
+  for(i=0; i<mData->nVariablesReal; ++i)
+    sData->realVars[i] = mData->realData[i].attribute.start;
+  for(i=0; i<mData->nVariablesInteger; ++i)
+    sData->integerVars[i] = mData->integerData[i].attribute.start;
+  for(i=0; i<mData->nVariablesBoolean; ++i)
+    sData->booleanVars[i] = mData->booleanData[i].attribute.start;
+  for(i=0; i<mData->nVariablesString; ++i)
+  {
+    free_modelica_string(sData->stringVars[i]);
+    sData->stringVars[i] = copy_modelica_string(mData->stringData[i].attribute.start);
+  }
+}
+
+/*! \fn void storePreValues(_X_DATA *data)
+ *
+ *  copys all the values into their pre-values
+ *
+ *  author: lochel
+ */
+void storePreValues(_X_DATA *data)
+{
+	SIMULATION_DATA *sData = (SIMULATION_DATA*)getRingData(data->simulationData, 0);
+	MODEL_DATA      *mData = &(data->modelData);
+
+	memcpy(sData->realVarsPre, sData->realVars, sizeof(modelica_real)*mData->nVariablesReal);
+	memcpy(sData->integerVarsPre, sData->integerVars, sizeof(modelica_integer)*mData->nVariablesInteger);
+	memcpy(sData->booleanVarsPre, sData->booleanVars, sizeof(modelica_boolean)*mData->nVariablesBoolean);
+	memcpy(sData->stringVarsPre, sData->stringVars, sizeof(modelica_string)*mData->nVariablesString);
 }
 
 /* function: saveall

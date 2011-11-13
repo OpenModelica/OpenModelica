@@ -41,9 +41,10 @@
 
 
 
-typedef struct RK4 {
+typedef struct RK4
+{
 	double** work_states;
-} RK4;
+}RK4;
 
 
 double dlamch_(char*,int);
@@ -82,23 +83,30 @@ solver_main_step(int flag, SOLVER_INFO* solverInfo) {
 /*	function: update_DAEsystem
  *
  * 	! Function to update the whole system with EventIteration.
- * 	Evaluate the functionDAE() */
-void
-update_DAEsystem() {
+ * 	Evaluate the functionDAE()
+ */
+void update_DAEsystem(_X_DATA *data)
+{
   int needToIterate = 0;
   int IterationNum = 0;
 
-  functionDAE(NULL, &needToIterate);
-  while (checkForDiscreteChanges(NULL) || needToIterate) {
-    if (needToIterate) {
-    	DEBUG_INFO(LV_EVENTS, "reinit() call. Iteration needed!");
-    } else {
+  functionDAE(data, &needToIterate);
+  while(checkForDiscreteChanges(data) || needToIterate)
+  {
+    if(needToIterate)
+    {
+      DEBUG_INFO(LV_EVENTS, "reinit() call. Iteration needed!");
+    }
+    else
+    {
     	DEBUG_INFO(LV_EVENTS, "discrete Variable changed. Iteration needed!");
     }
-    saveall();
-    functionDAE(NULL, &needToIterate);
+
+    storePreValues(data);
+    functionDAE(data, &needToIterate);
     IterationNum++;
-    if (IterationNum > IterationMax) {
+    if(IterationNum > IterationMax)
+    {
       THROW("ERROR: Too many event iterations. System is inconsistent!");
     }
   }
@@ -227,7 +235,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 		solverInfo.sampleEventActivated = checkForSampleEvent();
 		activateSampleEvents();
 	}
-	update_DAEsystem();
+	update_DAEsystem(NULL);
 	if (solverInfo.sampleEventActivated) {
 		deactivateSampleEventsandEquations();
 		solverInfo.sampleEventActivated = 0;
@@ -248,7 +256,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
       INFO("Simulation done!");
     }
     globalData->terminal = 1;
-    update_DAEsystem();
+    update_DAEsystem(NULL);
 
     sim_result_emit();
 
@@ -406,7 +414,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 
 	  if (retValIntegrator) {
 		  globalData->terminal = 1;
-		  update_DAEsystem();
+		  update_DAEsystem(NULL);
 		  globalData->terminal = 0;
 		  if (fmt)
 			  fclose(fmt);
@@ -419,7 +427,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
   /* Last step with terminal()=true */
   if (globalData->timeValue >= stop) {
 	  globalData->terminal = 1;
-	  update_DAEsystem();
+	  update_DAEsystem(NULL);
 	  sim_result_emit();
 	  globalData->terminal = 0;
   }

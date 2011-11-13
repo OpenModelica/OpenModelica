@@ -195,10 +195,6 @@ int functionODE(_X_DATA *data);          /* functionODE with respect to start-va
 int functionAlgebraics(_X_DATA *data);   /* functionAlgebraics with respect to start-values */
 int functionAliasEquations(_X_DATA *data);
 
-/* function do an event update step */
-void
-update_DAEsystem();
-
 /* function for calculating state values on residual form */
 /*used in DDASRT fortran function*/
 int

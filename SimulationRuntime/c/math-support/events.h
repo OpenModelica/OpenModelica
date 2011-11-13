@@ -49,6 +49,8 @@ extern "C" {
 
   int CheckZeroCrossings(LIST *list);
 
+  void storeStartValues(_X_DATA *data);
+  void storePreValues(_X_DATA *data);
   void saveall();
   void printAllPreValues();
   void restoreHelpVars();
