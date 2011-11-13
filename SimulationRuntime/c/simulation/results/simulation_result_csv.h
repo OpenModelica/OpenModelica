@@ -29,6 +29,7 @@
  *
  */
 
+#include "simulation_data.h"
 #include "simulation_result.h"
 
 #ifndef _SIMULATION_RESULT_CSV_H
@@ -39,9 +40,9 @@ private:
 FILE* fout;
 public:
 
-simulation_result_csv(const char* filename, long numpoints);
+simulation_result_csv(const char* filename, long numpoints, MODEL_DATA *modelData);
 virtual ~simulation_result_csv();
-virtual void emit();
+virtual void emit(_X_DATA *data);
 virtual const char* result_type() {return "csv";};
 };
 

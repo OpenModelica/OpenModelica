@@ -49,9 +49,9 @@ void printPltLine(FILE* f, double time, double val);
 
 public:
 
-simulation_result_plt(const char* filename, long numpoints);
+simulation_result_plt(const char* filename, long numpoints, MODEL_DATA *modelData);
 virtual ~simulation_result_plt();
-virtual void emit();
+virtual void emit(_X_DATA *data);
 virtual const char* result_type() {return "plt";};
 
 };

@@ -667,7 +667,7 @@ startNonInteractiveSimulation(int argc, char**argv,_X_DATA *data)
   read_input_xml(argc, argv, globalData, &(data->modelData), &(data->simulationInfo), &start, &stop, &stepSize, &outputSteps,
       &tolerance, &method, &outputFormat, &variableFilter);
   initializeOutputFilter(globalData, &(data->modelData),data->simulationInfo.variableFilter);
-  callExternalObjectConstructors(NULL, globalData);
+  callExternalObjectConstructors(data, globalData);
   globalData->lastEmittedTime = start;
   globalData->forceEmit = 0;
 
@@ -754,11 +754,11 @@ callSolver(_X_DATA* simData, string method, string outputFormat,
   if (isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty", outputFormat.c_str())) {
     sim_result = new simulation_result_empty(result_file_cstr.c_str(),maxSteps);
   } else if (0 == strcmp("csv", outputFormat.c_str())) {
-    sim_result = new simulation_result_csv(result_file_cstr.c_str(), maxSteps);
+    sim_result = new simulation_result_csv(result_file_cstr.c_str(), maxSteps,&(simData->modelData));
   } else if (0 == strcmp("mat", outputFormat.c_str())) {
-    sim_result = new simulation_result_mat(result_file_cstr.c_str(), start, stop);
+    sim_result = new simulation_result_mat(result_file_cstr.c_str(), start, stop,&(simData->modelData));
   } else if (0 == strcmp("plt", outputFormat.c_str())) {
-    sim_result = new simulation_result_plt(result_file_cstr.c_str(), maxSteps);
+    sim_result = new simulation_result_plt(result_file_cstr.c_str(), maxSteps,&(simData->modelData));
   } else {
     cerr << "Unknown output format: " << outputFormat << endl;
     return 1;
@@ -1295,7 +1295,7 @@ int _main_SimulationRuntime(int argc, char**argv, _X_DATA *data)
 }
 
 /* C-Interface for sim_result->emit(); */
-void sim_result_emit()
+void sim_result_emit(_X_DATA *data)
 {
-   if (sim_result) sim_result->emit();
+   if (sim_result) sim_result->emit(data);
 }

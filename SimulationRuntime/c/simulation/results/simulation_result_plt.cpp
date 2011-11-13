@@ -94,9 +94,8 @@ static const omc_varInfo** calcDataNames(int dataSize)
   return names;
 }
 
-void simulation_result_plt::emit()
+void simulation_result_plt::emit(_X_DATA *data)
 {
-  storeExtrapolationData();
   rt_tick(SIM_TIMER_OUTPUT);
   if (actualPoints < maxPoints) {
     if(!isInteractiveSimulation())add_result(simulationResultData,&actualPoints); //used for non-interactive simulation
@@ -268,7 +267,7 @@ void simulation_result_plt::add_result(double *data, long *actualPoints)
   (*actualPoints)++;
 }
 
-simulation_result_plt::simulation_result_plt(const char* filename, long numpoints) : simulation_result(filename,numpoints)
+simulation_result_plt::simulation_result_plt(const char* filename, long numpoints, MODEL_DATA *modelData) : simulation_result(filename,numpoints)
 {
   rt_tick(SIM_TIMER_OUTPUT);
   /*
@@ -276,11 +275,11 @@ simulation_result_plt::simulation_result_plt(const char* filename, long numpoint
    */
   simulationResultData = 0;
   currentPos = 0;
-  actualPoints = 0; // the number of actual points saved
+  actualPoints = 0; /* the number of actual points saved */
   dataSize = 0;
   maxPoints = numpoints;
 
-  if (numpoints < 0 ) { // Automatic number of output steps
+  if (numpoints < 0 ) { /* Automatic number of output steps */
     cerr << "Warning automatic output steps not supported in OpenModelica yet." << endl;
     cerr << "Attempt to solve this by allocating large amount of result data." << endl;
     numpoints = abs(numpoints);

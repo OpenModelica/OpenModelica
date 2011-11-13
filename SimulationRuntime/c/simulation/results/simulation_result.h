@@ -37,6 +37,8 @@
  *
  */
 
+#include "simulation_data.h"
+
 #ifndef _SIMULATION_RESULT_H
 #define _SIMULATION_RESULT_H
 
@@ -60,7 +62,7 @@ public:
 
   simulation_result(const char* filename, long numpoints) : filename(filename), numpoints(numpoints) {};
   virtual ~simulation_result() {};
-  virtual void emit() =0;
+  virtual void emit(_X_DATA *data) =0;
   virtual const char* result_type() = 0;
 
 };

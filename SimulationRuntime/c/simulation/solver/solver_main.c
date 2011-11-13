@@ -227,7 +227,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 	SaveZeroCrossings();
 	saveall();
 	if (sim_verbose >= LOG_SOLVER) {
-			sim_result_emit();
+			sim_result_emit(simData);
 	}
 
 	/* Activate sample and evaluate again */
@@ -244,7 +244,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 	CheckForNewEvent(0);
 	SaveZeroCrossings();
 	saveall();
-	sim_result_emit();
+	sim_result_emit(simData);
 	storeExtrapolationDataEvent();
 
   /* Initialization complete */
@@ -258,7 +258,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
     globalData->terminal = 1;
     update_DAEsystem(NULL);
 
-    sim_result_emit();
+    sim_result_emit(simData);
 
     globalData->terminal = 0;
     return 0;
@@ -392,7 +392,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 
 	  SaveZeroCrossings();
 	  /*if (!useInterpolation)*/
-	  sim_result_emit();
+	  sim_result_emit(simData);
 	  /********* end of Emit this time step *********/
 
 	  /* save dassl stats before reset */
@@ -428,7 +428,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
   if (globalData->timeValue >= stop) {
 	  globalData->terminal = 1;
 	  update_DAEsystem(NULL);
-	  sim_result_emit();
+	  sim_result_emit(simData);
 	  globalData->terminal = 0;
   }
   communicateStatus("Finished", 1);

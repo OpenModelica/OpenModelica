@@ -38,7 +38,7 @@ class simulation_result_empty : public simulation_result {
 public:
 
 simulation_result_empty(const char* filename, long numpoints) : simulation_result(filename,numpoints) {};
-void emit() {storeExtrapolationData();};
+void emit(_X_DATA *data) {;};
 virtual const char* result_type() {return "no result file";};
 
 };

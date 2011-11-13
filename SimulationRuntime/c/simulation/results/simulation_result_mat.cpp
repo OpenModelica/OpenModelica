@@ -119,7 +119,7 @@ static const omc_varInfo** calcDataNames(int dataSize, map<void*,int> &indx_para
 }
 
 simulation_result_mat::simulation_result_mat(const char* filename,
-               double tstart, double tstop)
+               double tstart, double tstop, MODEL_DATA *modelData)
   : simulation_result(filename,numpoints),fp(),data2HdrPos(-1),ntimepoints(0)
 {
   const char Aclass[] = "A1 bt. ir1 na  Tj  re  ac  nt  so   r   y   ";
@@ -203,12 +203,10 @@ simulation_result_mat::~simulation_result_mat()
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
-void simulation_result_mat::emit()
+void simulation_result_mat::emit(_X_DATA *data)
 {
   double datPoint;
 
-  // that does not belong here
-  storeExtrapolationData();
   rt_tick(SIM_TIMER_OUTPUT);
 
   // this is done wrong -- a buffering should be used

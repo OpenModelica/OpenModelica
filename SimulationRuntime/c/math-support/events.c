@@ -33,6 +33,7 @@
 #include "simulation_data.h"
 #include "openmodelica.h"		/* for modelica types */
 #include "simulation_runtime.h"	/* for globalData */
+#include "modelica_string.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -736,7 +737,7 @@ EventHandle(int flag)
       functionAliasEquations(NULL);
       if (sim_verbose >= LOG_EVENTS)
         {
-           sim_result_emit();
+           sim_result_emit(NULL);
         }
       while (needToIterate || checkForDiscreteChanges(NULL))
         {
@@ -753,7 +754,7 @@ EventHandle(int flag)
           functionAliasEquations(NULL);
           if (sim_verbose >= LOG_EVENTS)
             {
-              sim_result_emit();
+              sim_result_emit(NULL);
             }
           IterationNum++;
           if (IterationNum > IterationMax)
@@ -770,7 +771,7 @@ EventHandle(int flag)
       int needToIterate = 0;
       int IterationNum = 0;
       DEBUG_INFO1(LV_EVENTS, "Event Handling for Sample : %f!", globalData->timeValue);
-      sim_result_emit();
+      sim_result_emit(NULL);
       /*evaluate and emit results before sample events are activated */
       functionDAE(NULL, &needToIterate);
       while (needToIterate || checkForDiscreteChanges(NULL))
@@ -787,7 +788,7 @@ EventHandle(int flag)
           functionDAE(NULL, &needToIterate);
           if (sim_verbose >= LOG_EVENTS)
             {
-              sim_result_emit();
+              sim_result_emit(NULL);
             }
           IterationNum++;
           if (IterationNum > IterationMax)
@@ -797,7 +798,7 @@ EventHandle(int flag)
 
         }
       saveall();
-      sim_result_emit();
+      sim_result_emit(NULL);
 
       /*Activate sample and evaluate again */
       activateSampleEvents();
@@ -805,7 +806,7 @@ EventHandle(int flag)
       functionDAE(NULL, &needToIterate);
       if (sim_verbose >= LOG_EVENTS)
         {
-          sim_result_emit();
+          sim_result_emit(NULL);
         }
       while (needToIterate || checkForDiscreteChanges(NULL))
         {
@@ -821,7 +822,7 @@ EventHandle(int flag)
           functionDAE(NULL, &needToIterate);
           if (sim_verbose >= LOG_EVENTS)
             {
-              sim_result_emit();
+              sim_result_emit(NULL);
             }
           IterationNum++;
           if (IterationNum > IterationMax)
@@ -944,7 +945,7 @@ void FindRoot(double *EventTime)
   functionAlgebraics(NULL);
   function_storeDelayed(NULL);
   saveall();
-  sim_result_emit();
+  sim_result_emit(NULL);
 
   /*determined system at t_e + epsilon */
   globalData->timeValue = time_right;
