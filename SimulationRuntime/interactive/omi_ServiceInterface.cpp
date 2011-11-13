@@ -17,6 +17,7 @@
  * "Interactive Simulation of SysML Models using Modelica" (Chapter 5)
  */
 
+#include "simulation_data.h"
 #include "simulation_runtime.h"
 #include "simulation_input_xml.h"
 #include "solver_main.h"
@@ -461,7 +462,11 @@ void getSimulationStartData(double *stepSize, long *outputSteps,
 
   gdMutex.Lock();
 
-  read_input_xml(argcTEMP, argvTEMP, globalData, &start, &stop, stepSize,
+  MODEL_DATA modelData;
+  SIMULATION_INFO simData;
+  SOLVER_INFO solverInfo;
+
+  read_input_xml(argcTEMP, argvTEMP, globalData, &modelData, &simData, &solverInfo, &start, &stop, stepSize,
       outputSteps, tolerance, method, outputFormat, &variableFilter);
   callExternalObjectConstructors(globalData);
 
@@ -478,7 +483,7 @@ int callSolverFromOM(string method, string outputFormat, double start, double st
   int retVal = -1;
   gdMutex.Lock();
 
-  retVal = callSolver(argcTEMP, argvTEMP, method, outputFormat, "", start, stop, stepSize, outputSteps, tolerance);
+  retVal = callSolver(method, outputFormat, "", start, stop, stepSize, outputSteps, tolerance);
 
   gdMutex.Unlock();
   return retVal;

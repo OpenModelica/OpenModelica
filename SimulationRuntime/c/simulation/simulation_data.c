@@ -36,31 +36,42 @@
 
 const size_t SIZERINGBUFFER = 3;
 
-void initializeDataStruc(_X_DATA *data)
+void initializeXDataStruc(_X_DATA *data)
 {
-  SIMULATION_DATA *tmpSimData = 0;
+  SIMULATION_DATA tmpSimData;
   size_t i = 0;
   /* RingBuffer */
   data->simulationData = 0;
   data->simulationData = allocRingBuffer(SIZERINGBUFFER, sizeof(SIMULATION_DATA));
   if (!data->simulationData)
   {
-    THROW("Your memory is not strong enough for our Ringbuffer!", 1);
+    THROW("Your memory is not strong enough for our Ringbuffer!");
   }
 
   /* prepair RingBuffer */
   for(i=0; i<SIZERINGBUFFER; i++)
   {
-    tmpSimData = ((SIMULATION_DATA*)getRingData(data->simulationData, (int)SIZERINGBUFFER));
+    tmpSimData.realVars = (modelica_real*)calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
+    tmpSimData.integerVars = (modelica_integer*)calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
+    tmpSimData.booleanVars = (modelica_boolean*)calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
+    tmpSimData.stringVars = (modelica_string*)calloc(data->modelData.nVariablesString, sizeof(modelica_string));
 
-    tmpSimData->realVars = (modelica_real*)calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
-    tmpSimData->integerVars = (modelica_integer*)calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
-    tmpSimData->booleanVars = (modelica_boolean*)calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
-    tmpSimData->stringVars = (modelica_string*)calloc(data->modelData.nVariablesString, sizeof(modelica_string));
-
-    tmpSimData->realVarsPre = (modelica_real*)calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
-    tmpSimData->integerVarsPre = (modelica_integer*)calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
-    tmpSimData->booleanVarsPre = (modelica_boolean*)calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
-    tmpSimData->stringVarsPre = (modelica_string*)calloc(data->modelData.nVariablesString, sizeof(modelica_string));
+    tmpSimData.realVarsPre = (modelica_real*)calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
+    tmpSimData.integerVarsPre = (modelica_integer*)calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
+    tmpSimData.booleanVarsPre = (modelica_boolean*)calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
+    tmpSimData.stringVarsPre = (modelica_string*)calloc(data->modelData.nVariablesString, sizeof(modelica_string));
+    appendRingData(data->simulationData,&tmpSimData);
   }
+
+  /* create modelData var arrays */
+  data->modelData.realData = (STATIC_REAL_DATA*) calloc(data->modelData.nVariablesReal,sizeof(STATIC_REAL_DATA));
+  data->modelData.integerData = (STATIC_INTEGER_DATA*) calloc(data->modelData.nVariablesInteger,sizeof(STATIC_INTEGER_DATA));
+  data->modelData.booleanData = (STATIC_BOOLEAN_DATA*) calloc(data->modelData.nVariablesBoolean,sizeof(STATIC_BOOLEAN_DATA));
+  data->modelData.stringData = (STATIC_STRING_DATA*) calloc(data->modelData.nVariablesString,sizeof(STATIC_STRING_DATA));
+
+  data->modelData.realParameter = (STATIC_REAL_DATA*) calloc(data->modelData.nParametersReal,sizeof(STATIC_REAL_DATA));
+  data->modelData.integerParameter = (STATIC_INTEGER_DATA*) calloc(data->modelData.nParametersInteger,sizeof(STATIC_INTEGER_DATA));
+  data->modelData.booleanParameter = (STATIC_BOOLEAN_DATA*) calloc(data->modelData.nParametersBoolean,sizeof(STATIC_BOOLEAN_DATA));
+  data->modelData.stringParameter = (STATIC_STRING_DATA*) calloc(data->modelData.nParametersString,sizeof(STATIC_STRING_DATA));
+
 }

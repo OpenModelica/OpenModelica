@@ -73,8 +73,8 @@ void freeRingBuffer(RINGBUFFER *rb)
 
 void *getRingData(RINGBUFFER *rb, int i)
 {
-  ASSERT(i < rb->nElements, "index [%d] out of range [%d:%d]", i, -rb->nElements+1, rb->nElements-1);
-  ASSERT(-rb->nElements < i, "index [%d] out of range [%d:%d]", i, 0, -rb->nElements+1);
+  ASSERT(i < rb->nElements, "index [%d] out of range [%d:%d]", i, (-rb->nElements+1), (rb->nElements-1));
+  ASSERT(-rb->nElements < i, "index [%d] out of range [%d:%d]", i, 0, (-rb->nElements+1));
   return ((char*)rb->buffer)+(((rb->firstElement+i)%rb->bufferSize)*rb->itemSize);
 }
 

@@ -65,6 +65,9 @@
 #include "simulation_modelinfo.h"
 #include "rtclock.h"
 
+#include "simulation_data.c"
+
+
 using namespace std;
 
 int interactiveSimulation = 0; //This variable signals if an simulation session is interactive or non-interactive (by default)
@@ -600,7 +603,7 @@ void initializeOutputFilter(DATA* data, string variableFilter)
  * Starts a non-interactive simulation
  */
 int
-startNonInteractiveSimulation(int argc, char**argv)
+startNonInteractiveSimulation(int argc, char**argv,_X_DATA *data)
 {
   int retVal = -1;
 
@@ -621,7 +624,7 @@ startNonInteractiveSimulation(int argc, char**argv)
   double tolerance = 1e-4;
   string method, outputFormat, variableFilter;
   function_initMemoryState();
-  read_input_xml(argc, argv, globalData, &start, &stop, &stepSize, &outputSteps,
+  read_input_xml(argc, argv, globalData, &(data->modelData), &(data->simulationInfo),  &(data->solverInfo), &start, &stop, &stepSize, &outputSteps,
       &tolerance, &method, &outputFormat, &variableFilter);
   initializeOutputFilter(globalData,variableFilter);
   callExternalObjectConstructors(globalData);
@@ -1043,7 +1046,7 @@ initRuntimeAndSimulation(int argc, char**argv, _X_DATA *data)
                               << endl;
     EXIT(0);
   }
-
+  initializeXDataStruc(data);
   globalData = initializeDataStruc2(initializeDataStruc());
 
   if (!globalData) {
@@ -1231,7 +1234,7 @@ int _main_SimulationRuntime(int argc, char**argv, _X_DATA *data)
         retVal = startInteractiveSimulation(argc, argv);
       } else {
         // cout << "startNonInteractiveSimulation: " << version << endl;
-        retVal = startNonInteractiveSimulation(argc, argv);
+        retVal = startNonInteractiveSimulation(argc, argv, data);
       }
   }
   else

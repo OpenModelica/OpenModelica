@@ -224,7 +224,7 @@ case MODELINFO(varInfo=VARINFO(__)) then
   data.modelData.nParametersReal = <%varInfo.numParams%>;
   data.modelData.nParametersInteger = <%varInfo.numIntParams%>;
   data.modelData.nParametersBoolean = <%varInfo.numBoolParams%>;
-  data.modelData.nParametersStrings = <%varInfo.numStringParamVars%>;
+  data.modelData.nParametersString = <%varInfo.numStringParamVars%>;
   data.modelData.nInputVars = <%varInfo.numInVars%>;
   data.modelData.nOutputVars = <%varInfo.numOutVars%>;
 

@@ -84,19 +84,19 @@ extern "C" {
     int nameID;
   }_X_DATA_REAL_ALIAS;
 
-  typedef struct DATA_INTEGER_ALIAS
+  typedef struct _X_DATA_INTEGER_ALIAS
   {
     modelica_integer* alias;
     int negate;
     int nameID;
-  }DATA_INTEGER_ALIAS;
+  }_X_DATA_INTEGER_ALIAS;
 
-  typedef struct DATA_BOOLEAN_ALIAS
+  typedef struct _X_DATA_BOOLEAN_ALIAS
   {
     modelica_boolean* alias;
     int negate;
     int nameID;
-  }DATA_BOOLEAN_ALIAS;
+  }_X_DATA_BOOLEAN_ALIAS;
 
   typedef struct _X_DATA_STRING_ALIAS
   {
@@ -155,36 +155,32 @@ extern "C" {
   typedef struct STRING_ATTRIBUTE
   {
     modelica_string quantity;     /* = "" */
-    modelica_boolean start;       /* = 0 */
-    modelica_boolean initial;
+    modelica_string start;       /* = 0 */
+    modelica_string initial;
   }STRING_ATTRIBUTE;
 
   typedef struct STATIC_REAL_DATA
   {
     VAR_INFO info;
     REAL_ATTRIBUTE attribute;
-    DATA_REAL_ALIAS* alias;
   }STATIC_REAL_DATA;
 
   typedef struct STATIC_INTEGER_DATA
   {
     VAR_INFO info;
     INTEGER_ATTRIBUTE attribute;
-    DATA_INTEGER_ALIAS* alias;
   }STATIC_INTEGER_DATA;
 
   typedef struct STATIC_BOOLEAN_DATA
   {
     VAR_INFO info;
     BOOLEAN_ATTRIBUTE attribute;
-    DATA_BOOLEAN_ALIAS* alias;
   }STATIC_BOOLEAN_DATA;
 
   typedef struct STATIC_STRING_DATA
   {
     VAR_INFO info;
     STRING_ATTRIBUTE attribute;
-    DATA_STRING_ALIAS* alias;
   }STATIC_STRING_DATA;
 
   typedef struct MODEL_DATA
@@ -193,6 +189,16 @@ extern "C" {
     STATIC_INTEGER_DATA* integerData;
     STATIC_BOOLEAN_DATA* booleanData;
     STATIC_STRING_DATA* stringData;
+
+    STATIC_REAL_DATA* realParameter;
+    STATIC_INTEGER_DATA* integerParameter;
+    STATIC_BOOLEAN_DATA* booleanParameter;
+    STATIC_STRING_DATA* stringParameter;
+
+    _X_DATA_REAL_ALIAS* realAlias;
+    _X_DATA_INTEGER_ALIAS* integerAlias;
+    _X_DATA_BOOLEAN_ALIAS* booleanAlias;
+    _X_DATA_STRING_ALIAS* stringAlias;
 
     const FUNCTION_INFO* functionNames;
     const EQUATION_INFO* equationInfo;
@@ -210,7 +216,7 @@ extern "C" {
     long nParametersReal;
     long nParametersInteger;
     long nParametersBoolean;
-    long nParametersStrings;
+    long nParametersString;
     long nInputVars;
     long nOutputVars;
 
@@ -231,12 +237,19 @@ extern "C" {
   {
     modelica_real startTime;
     modelica_real stopTime;
-    modelica_real currentTime;
-    modelica_integer currentStep;
     modelica_integer numSteps;
-    modelica_real tolerence;
+	modelica_real stepSize;
+    modelica_real tolerance;
     modelica_string solverMethod;
+    modelica_string outputFormat;
+    modelica_string variableFilter;
   }SIMULATION_INFO;
+
+  typedef struct SOLVER_INFO
+  {
+	  modelica_real currentTime;
+  }SOLVER_INFO;
+
 
   /* top-level struct to collect dynamic and static model data */
   typedef struct _X_DATA
@@ -244,6 +257,7 @@ extern "C" {
     RINGBUFFER* simulationData;     /* RINGBUFFER of SIMULATION_DATA */
     MODEL_DATA modelData;           /* static stuff */
     SIMULATION_INFO simulationInfo;
+    SOLVER_INFO solverInfo;
   }_X_DATA;
 
 #ifdef __cplusplus
