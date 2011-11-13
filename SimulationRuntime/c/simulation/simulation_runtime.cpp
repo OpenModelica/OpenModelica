@@ -201,11 +201,11 @@ void setTermMsg(const char *msg)
   }
 }
 
-static void deInitializeDataStruc2(DATA *data)
+static void callExternalObjectDestructors2(DATA *data)
 {
   if(!data)
     return;
-  deInitializeDataStruc(data) /* external objects */;
+  callExternalObjectDestructors(data) /* external objects */;
 
   if (data->states) {
     free(data->states);
@@ -1260,7 +1260,7 @@ int _main_SimulationRuntime(int argc, char**argv, _X_DATA *data)
   }
 
   deinitializeEventData();
-  deInitializeDataStruc2(globalData);
+  callExternalObjectDestructors2(globalData);
   free(globalData);
   fflush(NULL);
 #ifndef NO_INTERACTIVE_DEPENDENCY

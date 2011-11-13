@@ -154,7 +154,7 @@ extern modelica_boolean *backuprelations;
  * Make sure that you call this function first because it sets the non-initialize
  * pointer to 0.
  *
- * This flag should be the same for second argument in deInitializeDataStruc
+ * This flag should be the same for second argument in callExternalObjectDestructors
  * to avoid memory leak.
  */
 DATA* initializeDataStruc();
@@ -163,7 +163,7 @@ DATA *initializeDataStruc2(DATA *returnData);
 /* this frees the memory that is allocated in the data-structure.
  * The second argument must have the same value as the argument in initializeDataStruc
  */
-void deInitializeDataStruc(DATA* data);
+void callExternalObjectDestructors(DATA* data);
 /* this is used to set the localData in the generated code
  * that is used in the diferrent generated functions
  *
