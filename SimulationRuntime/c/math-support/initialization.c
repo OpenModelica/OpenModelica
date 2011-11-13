@@ -839,3 +839,192 @@ int initialization(const char* pInitMethod, const char* pOptiMethod)
   WARNING_AL("current options are: state or old");
   return -1;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* use of new simulation_data struct _X_DATA */
+#include "simulation_data.h"
+
+int old_initializationX(_X_DATA *data, int optiMethod)
+{
+  int retVal = 0;
+  /* call initialize function and save start values */
+  saveall();                        /* if initial_function() uses pre-values */
+  initial_function();               /* set all start-Values */
+  storeExtrapolationDataEvent();
+  saveall();                        /* to provide all valid pre-values */
+
+  /* Initialize all relations that are ZeroCrossings */
+  update_DAEsystem();
+  /* start with the real initialization */
+  globalData->init = 1;
+
+  /* And restore start values and helpvars */
+  restoreExtrapolationDataOld();
+  restoreHelpVars();
+  saveall();
+  /* start with the real initialization */
+  globalData->init = 1;             /* to evaluate when-equations with initial()-conditions */
+
+  /* first try with the given method as default simplex and */
+  /* then try with the other one */
+  retVal = initialize(optiMethod);
+
+  if(retVal != 0)
+  {
+    if(optiMethod == IOM_SIMPLEX)
+      retVal = initialize(IOM_NEWUOA);
+    else if(optiMethod == IOM_NEWUOA)
+      retVal = initialize(IOM_SIMPLEX);
+
+    if(retVal != 0)
+    {
+      INFO("Initialization of the current initial set of equations and initial guesses fails!");
+      INFO_AL("Try with better Initial guesses for the states.");
+    }
+  }
+
+  saveall();                        /* save pre-values */
+  storeExtrapolationDataEvent();    /* if there are non-linear equations */
+
+  update_DAEsystem();               /* evaluate discrete variables */
+
+  /* valid system for the first time! */
+
+  SaveZeroCrossings();
+  saveall();
+  storeExtrapolationDataEvent();
+
+  globalData->init = 0;
+
+  return retVal;
+}
+
+void storePreValues(_X_DATA *data)
+{
+	SIMULATION_DATA *sData = (SIMULATION_DATA*)getRingData(data->simulationData, 0);
+	MODEL_DATA *mData = &(data->modelData);
+
+	memcpy(sData->realVarsPre, sData->realVars, sizeof(modelica_real)*mData->nVariablesReal);
+	memcpy(sData->integerVarsPre, sData->integerVars, sizeof(modelica_real)*mData->nVariablesInteger);
+	memcpy(sData->booleanVarsPre, sData->booleanVars, sizeof(modelica_real)*mData->nVariablesBoolean);
+	memcpy(sData->stringVarsPre, sData->stringVars, sizeof(modelica_real)*mData->nVariablesString);
+}
+
+int state_initializationX(_X_DATA *data, int optiMethod)
+{
+  int retVal = 0;
+  /* call initialize function and save start values */
+  saveall();                        /* if initial_function() uses pre-values */
+  initial_function();               /* set all start-Values */
+  storeExtrapolationDataEvent();
+  saveall();                        /* to provide all valid pre-values */
+
+  /* Initialize all relations that are ZeroCrossings */
+  update_DAEsystem();
+
+  /* And restore start values and helpvars */
+  restoreExtrapolationDataOld();
+  restoreHelpVars();
+  saveall();
+
+  /* start with the real initialization */
+  globalData->init = 1;             /* to evaluate when-equations with initial()-conditions */
+
+  retVal = initialize(IOM_NELDER_MEAD_EX);
+
+  saveall();                        /* save pre-values */
+  storeExtrapolationDataEvent();    /* if there are non-linear equations */
+
+  update_DAEsystem();               /* evaluate discrete variables */
+
+  /* valid system for the first time! */
+
+  SaveZeroCrossings();
+  saveall();
+  storeExtrapolationDataEvent();
+
+  globalData->init = 0;
+
+  /* fall-back case */
+  if(retVal)
+  {
+    DEBUG_INFO(LV_INIT, "state_initialization | init. failed! use old initialization method");
+    return old_initialization(optiMethod);
+  }
+
+  return retVal;
+}
+
+/* done */
+int initializationX(_X_DATA *data, const char* pInitMethod, const char* pOptiMethod)
+{
+  int initMethod = IIM_STATE;			/* default method */
+  int optiMethod = IOM_SIMPLEX;	    /* default method */
+
+  /* if there are user-specified options, use them! */
+  if(pInitMethod)
+  {
+    if(!strcmp(pInitMethod, "state"))
+      initMethod = IIM_STATE;
+    else if(!strcmp(pInitMethod, "old"))
+      initMethod = IIM_OLD;
+    else
+      initMethod = IIM_UNKNOWN;
+  }
+
+  if(pOptiMethod)
+  {
+    if(!strcmp(pOptiMethod, "simplex"))
+      optiMethod = IOM_SIMPLEX;
+    else if(!strcmp(pOptiMethod, "nelder_mead_ex"))
+      optiMethod = IOM_NELDER_MEAD_EX;
+    else if(!strcmp(pOptiMethod, "newuoa"))
+      optiMethod = IOM_NEWUOA;
+    else
+      optiMethod = IOM_UNKNOWN;
+  }
+
+  DEBUG_INFO(LV_INIT, "initialization | initialization method: %s", initMethodStr[initMethod]);
+  DEBUG_INFO_AL(LV_INIT, "                 optimization method:   %s", optiMethodStr[optiMethod]);
+
+  /* select the right initialization-method */
+  if(initMethod == IIM_OLD)
+  {
+    /* the 'old' initialization-method */
+    return old_initializationX(data, optiMethod);
+  }
+  else if(initMethod == IIM_STATE)
+  {
+    /* the 'new' initialization-method */
+    return state_initializationX(data, optiMethod);
+  }
+
+  /* unrecognized initialization-method */
+  WARNING("unrecognized option -iim %s", initMethodStr[initMethod]);
+  WARNING_AL("current options are: state or old");
+  return -1;
+}

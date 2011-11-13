@@ -60,7 +60,7 @@ extern const unsigned int LV_DEBUG;
 extern const unsigned int LV_LOG_RES_INIT;
 
 #define MSG_H(type, stream)    {fprintf(stream, "%s | [line] %d | [file] %s\n", type, __LINE__, __FILE__); fflush(NULL);}
-#define MSG(type, stream, ...) {fprintf(stream, "%s > ", type); fprintf(stream, __VA_ARGS__); fprintf(stream, "\n"); fflush(NULL);}
+#define MSG(type, stream, ...) {fprintf(stream, "%s | ", type); fprintf(stream, __VA_ARGS__); fprintf(stream, "\n"); fflush(NULL);}
 
 #define INFO(...)        {MSG("info   ", stdout, __VA_ARGS__);}
 #define INFO_AL(...)     {MSG("       ", stdout, __VA_ARGS__);}
@@ -72,7 +72,7 @@ extern const unsigned int LV_LOG_RES_INIT;
 #define ASSERT(exp, ...) {if(!(exp)){MSG_H("assert ", stderr); MSG("       ", stderr, __VA_ARGS__); longjmp(globalJmpbuf, 1);}}
 
 #define DEBUG_FLAG(flag) (flag & globalDebugFlags)
-#define DEBUG_INFO(flag, ...)    {if(DEBUG_FLAG(flag)){MSG_H("debug  ", stdout); INFO(__VA_ARGS__);}}
+#define DEBUG_INFO(flag, ...)    {if(DEBUG_FLAG(flag)) MSG("debug  ", stdout, __VA_ARGS__);}
 #define DEBUG_INFO_AL(flag, ...) {if(DEBUG_FLAG(flag)) INFO_AL(__VA_ARGS__);}
 
 #ifdef __cplusplus
