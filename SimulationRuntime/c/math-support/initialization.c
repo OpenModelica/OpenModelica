@@ -878,9 +878,9 @@ int initialization(const char* pInitMethod, const char* pOptiMethod)
  */
 void storeStartValues(_X_DATA *data)
 {
+  long i;
 	SIMULATION_DATA *sData = (SIMULATION_DATA*)getRingData(data->simulationData, 0);
 	MODEL_DATA      *mData = &(data->modelData);
-  long i;
 
   for(i=0; i<mData->nVariablesReal; ++i)
     sData->realVars[i] = mData->realData[i].attribute.start;
@@ -913,11 +913,11 @@ void storePreValues(_X_DATA *data)
 	memcpy(sData->stringVarsPre, sData->stringVars, sizeof(modelica_string)*mData->nVariablesString);
 }
 
-/*! \fn int initializeX(_X_DATA *data, int optiMethod)
+/*! \fn int initialize_X_(_X_DATA *data, int optiMethod)
  *
  *  author: lochel
  */
-int initializeX(_X_DATA *data, int optiMethod)
+int initialize_X_(_X_DATA *data, int optiMethod)
 {
   long nz = 0;
   int ind = 0, indAct = 0, indz = 0;
@@ -928,7 +928,7 @@ int initializeX(_X_DATA *data, int optiMethod)
   double *scale = 0;
   fortran_integer i = 0;
 
-  THROW("needs to be updated");
+  INFO("initialize_X_() needs to be updated");
 
   for(ind=0, nz=0; ind<globalData->nStates; ind++)
   {
@@ -1015,11 +1015,11 @@ int initializeX(_X_DATA *data, int optiMethod)
   return retVal;
 }
 
-/*! \fn int old_initializationX(_X_DATA *data, int optiMethod)
+/*! \fn int old_initialization_X_(_X_DATA *data, int optiMethod)
  *
  *  author: lochel
  */
-int old_initializationX(_X_DATA *data, int optiMethod)
+int old_initialization_X_(_X_DATA *data, int optiMethod)
 {
   int retVal = 0;
 
@@ -1077,11 +1077,11 @@ int old_initializationX(_X_DATA *data, int optiMethod)
   return retVal;
 }
 
-/*! \fn int state_initializationX(_X_DATA *data, int optiMethod)
+/*! \fn int state_initialization_X_(_X_DATA *data, int optiMethod)
  *
  *  author: lochel
  */
-int state_initializationX(_X_DATA *data, int optiMethod)
+int state_initialization_X_(_X_DATA *data, int optiMethod)
 {
   int retVal = 0;
 
@@ -1094,8 +1094,7 @@ int state_initializationX(_X_DATA *data, int optiMethod)
   overwriteOldSimulationData(data);
 
   /* Initialize all relations that are ZeroCrossings */
-  update_DAEsystem();
-  THROW("update_DAEsystem() needs to be updated");
+  update_DAEsystem(data);
 
   /* And restore start values and helpvars */
   /* restoreHelpVars(); /* ??? */
@@ -1104,17 +1103,15 @@ int state_initializationX(_X_DATA *data, int optiMethod)
   /* start with the real initialization */
   globalData->init = 1;             /* to evaluate when-equations with initial()-conditions */
 
-  retVal = initializeX(data, IOM_NELDER_MEAD_EX);
+  retVal = initialize_X_(data, IOM_NELDER_MEAD_EX);
 
   storePreValues(data);             /* save pre-values */
   overwriteOldSimulationData(data); /* if there are non-linear equations */  
 
-  update_DAEsystem();               /* evaluate discrete variables */
-  THROW("update_DAEsystem() needs to be updated");
+  update_DAEsystem(data);               /* evaluate discrete variables */
 
   /* valid system for the first time! */
-
-  SaveZeroCrossingsX(data);
+  SaveZeroCrossings_X_(data);
   storePreValues(data);             /* save pre-values */
   overwriteOldSimulationData(data); /* if there are non-linear equations */  
 
@@ -1124,20 +1121,20 @@ int state_initializationX(_X_DATA *data, int optiMethod)
   if(retVal)
   {
     DEBUG_INFO(LV_INIT, "state_initialization | init. failed! use old initialization method");
-    return old_initializationX(data, optiMethod);
+    return old_initialization_X_(data, optiMethod);
   }
 
   return retVal;
 }
 
 /* done */
-/*! \fn int initializationX(_X_DATA *data, const char* pInitMethod, const char* pOptiMethod)
+/*! \fn int initialization_X_(_X_DATA *data, const char* pInitMethod, const char* pOptiMethod)
  *
  *  author: lochel
  */
-int initializationX(_X_DATA *data, const char* pInitMethod, const char* pOptiMethod)
+int initialization_X_(_X_DATA *data, const char* pInitMethod, const char* pOptiMethod)
 {
-  int initMethod = IIM_STATE;			/* default method */
+  int initMethod = IIM_STATE;			  /* default method */
   int optiMethod = IOM_SIMPLEX;	    /* default method */
 
   /* if there are user-specified options, use them! */
@@ -1170,12 +1167,12 @@ int initializationX(_X_DATA *data, const char* pInitMethod, const char* pOptiMet
   if(initMethod == IIM_OLD)
   {
     /* the 'old' initialization-method */
-    return old_initializationX(data, optiMethod);
+    return old_initialization_X_(data, optiMethod);
   }
   else if(initMethod == IIM_STATE)
   {
     /* the 'new' initialization-method */
-    return state_initializationX(data, optiMethod);
+    return state_initialization_X_(data, optiMethod);
   }
 
   /* unrecognized initialization-method */

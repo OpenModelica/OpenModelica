@@ -98,7 +98,7 @@ extern "C" {
   void FindRoot(double*);
   int checkForDiscreteChanges(_X_DATA *data);
   void SaveZeroCrossings();
-  void SaveZeroCrossingsX(_X_DATA *data);
+  void SaveZeroCrossings_X_(_X_DATA *data);
   void SaveZeroCrossingsAfterEvent();
   void initializeZeroCrossings();
   void correctDirectionZeroCrossings();
