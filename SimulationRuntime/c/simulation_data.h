@@ -79,30 +79,34 @@ extern "C" {
 
   typedef struct _X_DATA_REAL_ALIAS
   {
-    modelica_real* alias;
-    int negate;
-    int nameID;
+    int nameID;  /* Pointer to Alias */
+    int negate;  
+    VAR_INFO info;
+    modelica_boolean filterOutput; /* True if this variable should be filtered */
   }_X_DATA_REAL_ALIAS;
 
   typedef struct _X_DATA_INTEGER_ALIAS
   {
-    modelica_integer* alias;
     int negate;
     int nameID;
+    VAR_INFO info;
+    modelica_boolean filterOutput; /* True if this variable should be filtered */
   }_X_DATA_INTEGER_ALIAS;
 
   typedef struct _X_DATA_BOOLEAN_ALIAS
   {
-    modelica_boolean* alias;
     int negate;
     int nameID;
+    VAR_INFO info;
+    modelica_boolean filterOutput; /* True if this variable should be filtered */
   }_X_DATA_BOOLEAN_ALIAS;
 
   typedef struct _X_DATA_STRING_ALIAS
   {
-    modelica_string* alias;
     int negate;
     int nameID;
+    VAR_INFO info;
+    modelica_boolean filterOutput; /* True if this variable should be filtered */
   }_X_DATA_STRING_ALIAS;
 
   /* collects all dynamic model data like the variabel-values */
@@ -165,24 +169,28 @@ extern "C" {
   {
     VAR_INFO info;
     REAL_ATTRIBUTE attribute;
+    modelica_boolean filterOutput; /* True if this variable should be filtered */
   }STATIC_REAL_DATA;
 
   typedef struct STATIC_INTEGER_DATA
   {
     VAR_INFO info;
     INTEGER_ATTRIBUTE attribute;
+    modelica_boolean filterOutput; /* True if this variable should be filtered */
   }STATIC_INTEGER_DATA;
 
   typedef struct STATIC_BOOLEAN_DATA
   {
     VAR_INFO info;
     BOOLEAN_ATTRIBUTE attribute;
+    modelica_boolean filterOutput; /* True if this variable should be filtered */
   }STATIC_BOOLEAN_DATA;
 
   typedef struct STATIC_STRING_DATA
   {
     VAR_INFO info;
     STRING_ATTRIBUTE attribute;
+    modelica_boolean filterOutput; /* True if this variable should be filtered */
   }STATIC_STRING_DATA;
 
   typedef struct MODEL_DATA
@@ -213,7 +221,7 @@ extern "C" {
     void** extObjs; /* External objects */
 
     long nStates;
-    long nVariablesReal;
+    long nVariablesReal; /* all Real Variables of the model (states,statesderivatives,algebraics) */
     long nVariablesInteger;
     long nVariablesBoolean;
     long nVariablesString;

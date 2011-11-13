@@ -573,17 +573,22 @@ startInteractiveSimulation(int argc, char**argv)
  * Read the variable filter and mark variables that should not be part of the result file.
  * This phase is skipped for interactive simulations
  */
-void initializeOutputFilter(DATA* data, string variableFilter)
+void initializeOutputFilter(DATA* data, MODEL_DATA *modelData, modelica_string variableFilter)
 {
 #ifndef _MSC_VER
+  std::string varfilter(variableFilter);
   regex_t myregex;
   int flags = REG_EXTENDED;
   int rc;
-  string tmp = ("^(" + variableFilter + ")$");
+  string tmp = ("^(" + varfilter + ")$");
   const char *filter = tmp.c_str(); // C++ strings are horrible to work with...
   if (data->nStates > 0 && 0 == strcmp(data->statesNames[0].name,"$dummy")) {
     data->statesFilterOutput[0] = 1;
     data->statesDerivativesFilterOutput[0] = 1;
+  }
+  if (modelData->nStates > 0 && 0 == strcmp(modelData->realData[0].info.name,"$dummy")) {
+    modelData->realData[0].filterOutput = 1;
+    modelData->realData[1].filterOutput = 1;
   }
   if (0 == strcmp(filter, ".*")) // This matches all variables, so we don't need to do anything
     return;
@@ -595,6 +600,7 @@ void initializeOutputFilter(DATA* data, string variableFilter)
     std::cerr << "Failed to compile regular expression: " << filter << " with error: " << err_buf << ". Defaulting to outputting all variables." << std::endl;
     return;
   }
+  /* old imple */
   for (int i = 0; i < data->nStates; i++) if (!data->statesFilterOutput[i])
     data->statesFilterOutput[i] = regexec(&myregex, data->statesNames[i].name, 0, NULL, 0) != 0;
   for (int i = 0; i < data->nStates; i++) if (!data->statesDerivativesFilterOutput[i])
@@ -611,6 +617,23 @@ void initializeOutputFilter(DATA* data, string variableFilter)
     data->boolVariables.algebraicsFilterOutput[i] = regexec(&myregex, data->bool_alg_names[i].name, 0, NULL, 0) != 0;
   for (int i = 0; i < data->boolVariables.nAlias; i++) if (!data->boolVariables.aliasFilterOutput[i])
     data->boolVariables.aliasFilterOutput[i] = regexec(&myregex, data->bool_alias_names[i].name, 0, NULL, 0) != 0;
+  /* new imple */
+  for (int i = 0; i < modelData->nVariablesReal; i++) if (!modelData->realData[i].filterOutput)
+    modelData->realData[i].filterOutput = regexec(&myregex, modelData->realData[i].info.name, 0, NULL, 0) != 0;
+  for (int i = 0; i < modelData->nAliasReal; i++) if (!modelData->realAlias[i].filterOutput)
+    modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
+  for (int i = 0; i < modelData->nVariablesInteger; i++) if (!modelData->integerData[i].filterOutput)
+    modelData->integerData[i].filterOutput = regexec(&myregex, modelData->integerData[i].info.name, 0, NULL, 0) != 0;
+  for (int i = 0; i < modelData->nAliasInteger; i++) if (!modelData->integerAlias[i].filterOutput)
+    modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
+  for (int i = 0; i < modelData->nVariablesBoolean; i++) if (!modelData->booleanData[i].filterOutput)
+    modelData->booleanData[i].filterOutput = regexec(&myregex, modelData->booleanData[i].info.name, 0, NULL, 0) != 0;
+  for (int i = 0; i < modelData->nAliasBoolean; i++) if (!modelData->booleanAlias[i].filterOutput)
+    modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
+  for (int i = 0; i < modelData->nVariablesString; i++) if (!modelData->stringData[i].filterOutput)
+    modelData->stringData[i].filterOutput = regexec(&myregex, modelData->stringData[i].info.name, 0, NULL, 0) != 0;
+  for (int i = 0; i < modelData->nAliasString; i++) if (!modelData->stringAlias[i].filterOutput)
+    modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
   regfree(&myregex);
 #endif
   return;
@@ -643,7 +666,7 @@ startNonInteractiveSimulation(int argc, char**argv,_X_DATA *data)
   function_initMemoryState();
   read_input_xml(argc, argv, globalData, &(data->modelData), &(data->simulationInfo), &start, &stop, &stepSize, &outputSteps,
       &tolerance, &method, &outputFormat, &variableFilter);
-  initializeOutputFilter(globalData,variableFilter);
+  initializeOutputFilter(globalData, &(data->modelData),data->simulationInfo.variableFilter);
   callExternalObjectConstructors(NULL, globalData);
   globalData->lastEmittedTime = start;
   globalData->forceEmit = 0;
