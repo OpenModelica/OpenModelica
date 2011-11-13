@@ -641,7 +641,7 @@ startNonInteractiveSimulation(int argc, char**argv,_X_DATA *data)
   double tolerance = 1e-4;
   string method, outputFormat, variableFilter;
   function_initMemoryState();
-  read_input_xml(argc, argv, globalData, &(data->modelData), &(data->simulationInfo),  &(data->solverInfo), &start, &stop, &stepSize, &outputSteps,
+  read_input_xml(argc, argv, globalData, &(data->modelData), &(data->simulationInfo), &start, &stop, &stepSize, &outputSteps,
       &tolerance, &method, &outputFormat, &variableFilter);
   initializeOutputFilter(globalData,variableFilter);
   callExternalObjectConstructors(globalData);
@@ -686,7 +686,7 @@ startNonInteractiveSimulation(int argc, char**argv,_X_DATA *data)
     result_file_cstr = *result_file;
   }
 
-  retVal = callSolver(method, outputFormat, result_file_cstr, start, stop, stepSize,
+  retVal = callSolver(data, method, outputFormat, result_file_cstr, start, stop, stepSize,
       outputSteps, tolerance);
 
   if (retVal == 0 && create_linearmodel) {
@@ -720,7 +720,7 @@ startNonInteractiveSimulation(int argc, char**argv,_X_DATA *data)
  * "dopri5" calls an embedded DOPRI5(4)-solver with stepsize control
  */
 int
-callSolver(string method, string outputFormat,
+callSolver(_X_DATA* simData, string method, string outputFormat,
     string result_file_cstr,
     double start, double stop, double stepSize, long outputSteps,
     double tolerance)
@@ -750,39 +750,39 @@ callSolver(string method, string outputFormat,
     if (sim_verbose >= LOG_SOLVER) {
       cout << "No solver is set, using dassl." << endl; fflush(NULL);
     }
-    retVal = solver_main(start, stop, stepSize, outputSteps, tolerance, 3);
+    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 3);
   } else if (method == std::string("euler")) {
     if (sim_verbose >= LOG_SOLVER) {
       cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
-    retVal = solver_main(start, stop, stepSize, outputSteps, tolerance, 1);
+    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 1);
   } else if (method == std::string("rungekutta")) {
     if (sim_verbose >= LOG_SOLVER) {
       cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
-    retVal = solver_main(start, stop, stepSize, outputSteps, tolerance, 2);
+    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 2);
   } else if (method == std::string("dassl") || method == std::string("dassl2")) {
     if (sim_verbose >= LOG_SOLVER) {
       cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
-    retVal = solver_main(start, stop, stepSize, outputSteps, tolerance, 3);
+    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 3);
   } else if (method == std::string("dassljac")) {
     if (sim_verbose >= LOG_SOLVER) {
       cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
     jac_flag = 1;
-    retVal = solver_main(start, stop, stepSize, outputSteps, tolerance, 3);
+    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 3);
   } else if (method == std::string("dasslnum")) {
     if (sim_verbose >= LOG_SOLVER) {
       cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
     num_jac_flag = 1;
-    retVal = solver_main(start, stop, stepSize, outputSteps, tolerance, 3);
+    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 3);
   } else if (method == std::string("dopri5")) {
        if (sim_verbose >= LOG_SOLVER) {
        cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
        }
-       retVal = solver_main(start, stop, stepSize, outputSteps, tolerance, 6);
+       retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 6);
   } else if (method == std::string("inline-euler")) {
     if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-euler")) {
       cout << "Recognized solver: " << method
@@ -793,7 +793,7 @@ callSolver(string method, string outputFormat,
       if (sim_verbose >= LOG_SOLVER) {
         cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
       }
-      retVal = solver_main(start, stop, stepSize, outputSteps, tolerance, 4);
+      retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 4);
     }
   } else if (method == std::string("inline-rungekutta")) {
     if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-rungekutta")) {
@@ -805,7 +805,7 @@ callSolver(string method, string outputFormat,
       if (sim_verbose >= LOG_SOLVER) {
         cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
       }
-      retVal = solver_main(start, stop, stepSize, outputSteps, tolerance, 4);
+      retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 4);
     }
 #ifdef _OMC_QSS_LIB
   } else if (method == std::string("qss")) {

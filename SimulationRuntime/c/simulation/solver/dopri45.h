@@ -34,6 +34,13 @@
 #define _DOPRI45_H
 
 
+typedef struct DOPRI_DATA{
+	double interpolationStep;
+	modelica_boolean useInterpolation;
+	modelica_boolean reinit_step;
+	modelica_boolean reject;
+} DOPRI_DATA;
+
 int
 stepsize_control(double start, double stop, double fixStep, int(*f)(),
                  int reinit_step, int useInterpolation, double tolerance, int* reject);

@@ -39,21 +39,45 @@
 
 #ifndef _SOLVER_MAIN_H
 #define _SOLVER_MAIN_H
-#define DDASRT ddasrt_
 
 #include "openmodelica.h"
+#include "simulation_data.h"
+
+typedef struct SOLVER_INFO
+{
+  double currentTime;
+  double currentStepSize;
+  double laststep;
+  double offset;
+  double reset;
+
+  modelica_boolean didEventStep;
+  modelica_boolean sampleEventActivated;
+
+  /* stats */
+  unsigned int stateEvents;
+  unsigned int sampleEvents;
+  unsigned int stepNo;
+  unsigned int callsODE;
+  unsigned int callsDAE;
+
+
+
+  void* solverData;
+}SOLVER_INFO;
+
 
 #ifdef __cplusplus
 extern "C" {
-int solver_main(double start,  double stop, double step, long outputSteps,
-    double tolerance, int flag);
+int
+solver_main(_X_DATA* simData, double start, double stop, double step, long outputSteps, double tolerance, int flag);
 
 void update_DAEsystem();
 
 } /* extern "C"*/
 #else
-int solver_main(double start,  double stop, double step, long outputSteps,
-    double tolerance, int flag);
+int
+solver_main(_X_DATA* simData, double start, double stop, double step, long outputSteps, double tolerance, int flag);
 #endif
 
 #endif

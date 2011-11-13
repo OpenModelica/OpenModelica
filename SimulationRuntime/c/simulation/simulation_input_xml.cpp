@@ -167,7 +167,7 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
 
     if (mi->lastCT == NULL)
     {
-      THROW2("simulation_input_xml.cpp: error reading the xml file, found unknown class: %s  for variable: %s",ct.c_str(),v["name"]);
+      THROW2("simulation_input_xml.cpp: error reading the xml file, found unknown class: %s  for variable: %s",ct.c_str(),(v["name"]).c_str());
     }
 
     /* add the ScalarVariable map to the correct map! */
@@ -205,7 +205,6 @@ endElement(void *userData, const char *name)
                      DATA *simData,
                      MODEL_DATA* modelData,
                      SIMULATION_INFO* simulationData,
-                     SOLVER_INFO* solverInfo,
                      double *start, double *stop,
                      double *stepSize, long *outputSteps,
                      double *tolerance, string* method,

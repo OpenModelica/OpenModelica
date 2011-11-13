@@ -249,19 +249,12 @@ extern "C" {
     modelica_string variableFilter;
   }SIMULATION_INFO;
 
-  typedef struct SOLVER_INFO
-  {
-	  modelica_real currentTime;
-  }SOLVER_INFO;
-
-
   /* top-level struct to collect dynamic and static model data */
   typedef struct _X_DATA
   {
     RINGBUFFER* simulationData;     /* RINGBUFFER of SIMULATION_DATA */
     MODEL_DATA modelData;           /* static stuff */
     SIMULATION_INFO simulationInfo;
-    SOLVER_INFO solverInfo;
   }_X_DATA;
 
   void initializeXDataStruc(_X_DATA *data);

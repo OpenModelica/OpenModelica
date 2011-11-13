@@ -83,7 +83,7 @@ protected:
 
 extern simulation_result *sim_result;
 /* function with template for linear model */
-int callSolver(string, string, string, double, double, double, long, double);
+int callSolver(_X_DATA*, string, string, string, double, double, double, long, double);
 
 #ifndef NO_INTERACTIVE_DEPENDENCY
 #include "../../../interactive/socket.h"
