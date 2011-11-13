@@ -281,7 +281,7 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars), vars=SIMVARS(__)) the
   ;separator="\n"%>
   /* Algebraic Parameter */
   <%vars.paramVars |> var =>
-    globalDataParDefine_X_(var, "realData")
+    globalDataParDefine_X_(var, "realParameter")
   ;separator="\n"%>
   /* External Objects */
   <%vars.extObjVars |> var =>
@@ -293,7 +293,7 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars), vars=SIMVARS(__)) the
   ;separator="\n"%>
   /* Algebraic Integer Parameter */
   <%vars.intParamVars |> var =>
-    globalDataParDefine_X_(var, "integerData")
+    globalDataParDefine_X_(var, "integerParameter")
   ;separator="\n"%>
   /* Algebraic Boolean Vars */
   <%vars.boolAlgVars |> var =>
@@ -301,7 +301,7 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars), vars=SIMVARS(__)) the
   ;separator="\n"%>
   /* Algebraic Boolean Parameters */
   <%vars.boolParamVars |> var =>
-    globalDataParDefine_X_(var, "booleanData")
+    globalDataParDefine_X_(var, "booleanParameter")
   ;separator="\n"%>  
   /* Algebraic String Variables */
   <%vars.stringAlgVars |> var =>
@@ -309,7 +309,7 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars), vars=SIMVARS(__)) the
   ;separator="\n"%>
   /* Algebraic String Parameter */
   <%vars.stringParamVars |> var =>
-    globalDataParDefine_X_(var, "stringData")
+    globalDataParDefine_X_(var, "stringParameter")
   ;separator="\n"%>
   /* Jacobian Variables */
   <%vars.jacobianVars |> var =>
@@ -568,12 +568,12 @@ template globalDataParDefine_X_(SimVar simVar, String arrayName)
  match simVar
   case SIMVAR(arrayCref=SOME(c),aliasvar=NOALIAS()) then
     <<
-    #define <%cref(c)%> data.modelData.<%arrayName%>[<%index%>]
-    #define <%cref(name)%> data.modelData.<%arrayName%>[<%index%>]
+    #define <%cref(c)%> data.modelData.<%arrayName%>[<%index%>].attribute.initial
+    #define <%cref(name)%> data.modelData.<%arrayName%>[<%index%>].attribute.initial
     >>
   case SIMVAR(aliasvar=NOALIAS()) then
     <<
-    #define <%cref(name)%> data.modelData.<%arrayName%>[<%index%>]
+    #define <%cref(name)%> data.modelData.<%arrayName%>[<%index%>].attribute.initial
     >>  
 end globalDataParDefine_X_;
 
