@@ -117,11 +117,11 @@ void leastSquare(long *nz, double *z, double *funcValue)
     if(globalData->initFixed[i+shiftForInitFixed] == 0 && globalData->var_attr[i+shiftForVar_attr] == 1)
       globalData->parameters[i] = z[indz++];
 
-  bound_parameters();            /* evaluate parameters with respect to other parameters */
-  functionODE();
-  functionAlgebraics();
+  bound_parameters(NULL);            /* evaluate parameters with respect to other parameters */
+  functionODE(NULL);
+  functionAlgebraics(NULL);
 
-  initial_residual(1.0);
+  initial_residual(NULL, 1.0);
 
   *funcValue = 0;
   for(j=0; i<globalData->nInitialResiduals; j++)
@@ -166,11 +166,11 @@ double leastSquareWithLambda(long nz, double* z, double* scale, double lambda)
         indz++;
       }
 
-      bound_parameters();            /* evaluate parameters with respect to other parameters */
-      functionODE();
-      functionAlgebraics();
+      bound_parameters(NULL);            /* evaluate parameters with respect to other parameters */
+      functionODE(NULL);
+      functionAlgebraics(NULL);
 
-      initial_residual(lambda);
+      initial_residual(NULL, lambda);
 
       for(j=0; j<globalData->nInitialResiduals; j++)
         funcValue += globalData->initialResiduals[j] * globalData->initialResiduals[j];
@@ -696,7 +696,7 @@ int old_initialization(int optiMethod)
   int retVal = 0;
   /* call initialize function and save start values */
   saveall();                        /* if initial_function() uses pre-values */
-  initial_function();               /* set all start-Values */
+  initial_function(NULL);               /* set all start-Values */
   storeExtrapolationDataEvent();
   saveall();                        /* to provide all valid pre-values */
 
@@ -751,7 +751,7 @@ int state_initialization(int optiMethod)
   int retVal = 0;
   /* call initialize function and save start values */
   saveall();                        /* if initial_function() uses pre-values */
-  initial_function();               /* set all start-Values */
+  initial_function(NULL);               /* set all start-Values */
   storeExtrapolationDataEvent();
   saveall();                        /* to provide all valid pre-values */
 
@@ -1026,7 +1026,7 @@ int old_initializationX(_X_DATA *data, int optiMethod)
   /* call initialize function and save start values */
   storeStartValues(data);
   storePreValues(data);             /* if initial_function() uses pre-values */                
-  initial_function();               /* set all start-Values */
+  initial_function(data);               /* set all start-Values */
   THROW("needs to be updated");
   storeExtrapolationDataEvent();
   saveall();                        /* to provide all valid pre-values */
@@ -1088,7 +1088,7 @@ int state_initializationX(_X_DATA *data, int optiMethod)
   /* call initialize function and save start values */
   storeStartValues(data);
   storePreValues(data);             /* if initial_function() uses pre-values */                  
-  initial_function();               /* set all start-Values */
+  initial_function(data);               /* set all start-Values */
   THROW("needs to be updated");
   storePreValues(data);             /* to provide all valid pre-values */
   overwriteOldSimulationData(data);

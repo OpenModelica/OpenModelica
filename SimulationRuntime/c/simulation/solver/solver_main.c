@@ -88,15 +88,15 @@ update_DAEsystem() {
   int needToIterate = 0;
   int IterationNum = 0;
 
-  functionDAE(&needToIterate);
-  while (checkForDiscreteChanges() || needToIterate) {
+  functionDAE(NULL, &needToIterate);
+  while (checkForDiscreteChanges(NULL) || needToIterate) {
     if (needToIterate) {
     	DEBUG_INFO(LV_EVENTS, "reinit() call. Iteration needed!");
     } else {
     	DEBUG_INFO(LV_EVENTS, "discrete Variable changed. Iteration needed!");
     }
     saveall();
-    functionDAE(&needToIterate);
+    functionDAE(NULL, &needToIterate);
     IterationNum++;
     if (IterationNum > IterationMax) {
       THROW("ERROR: Too many event iterations. System is inconsistent!");
@@ -191,7 +191,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 		return -1;
 	}
 
-	if (bound_parameters()) {
+	if (bound_parameters(NULL)) {
 		INFO("Error calculating bound parameters");
 		return -1;
 	}
@@ -200,7 +200,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 
 	/* Evaluate all constant equations during initialization */
 	globalData->init = 1;
-	functionAliasEquations();
+	functionAliasEquations(NULL);
 
 	/* Calculate initial values from initial_function()
 	 * saveall() value as pre values */
@@ -315,9 +315,9 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 	  communicateStatus("Running", (solverInfo.currentTime-simInfo.startTime)/(simInfo.stopTime-simInfo.startTime));
 	  retValIntegrator = solver_main_step(flag, &solverInfo);
 
-	  functionAlgebraics();
-	  functionAliasEquations();
-	  function_storeDelayed();
+	  functionAlgebraics(NULL);
+	  functionAliasEquations(NULL);
+	  function_storeDelayed(NULL);
 	  SaveZeroCrossings();
 
 	  if (solverInfo.reset)
@@ -398,7 +398,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 	  if (terminationAssert || terminationTerminate || modelErrorCode) {
 		  terminationAssert = 0;
 		  terminationTerminate = 0;
-		  checkForAsserts();
+		  checkForAsserts(NULL);
 		  checkTermination();
 		  if (modelErrorCode)
 			  retValIntegrator = 1;
@@ -467,7 +467,7 @@ euler_ex_step(SOLVER_INFO* solverInfo) {
   for (i = 0; i < globalData->nStates; i++) {
     globalData->states[i] += globalData->statesDerivatives[i] * solverInfo->currentStepSize;
   }
-  functionODE();
+  functionODE(NULL);
   return 0;
 }
 
@@ -492,7 +492,7 @@ rungekutta_step(SOLVER_INFO* solverInfo) {
     for (i = 0; i < globalData->nStates; i++) {
       globalData->states[i] = backupstates[i] + solverInfo->currentStepSize * rungekutta_c[j] * k[j - 1][i];
     }
-    functionODE();;
+    functionODE(NULL);
     for (i = 0; i < globalData->nStates; i++) {
       k[j][i] = globalData->statesDerivatives[i];
     }
@@ -505,6 +505,6 @@ rungekutta_step(SOLVER_INFO* solverInfo) {
     }
     globalData->states[i] = backupstates[i] + solverInfo->currentStepSize * sum;
   }
-  functionODE();
+  functionODE(NULL);
   return 0;
 }

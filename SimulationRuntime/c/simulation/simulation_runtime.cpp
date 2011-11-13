@@ -205,7 +205,7 @@ static void callExternalObjectDestructors2(DATA *data)
 {
   if(!data)
     return;
-  callExternalObjectDestructors(data) /* external objects */;
+  callExternalObjectDestructors(NULL, data) /* external objects */;
 
   if (data->states) {
     free(data->states);
@@ -644,7 +644,7 @@ startNonInteractiveSimulation(int argc, char**argv,_X_DATA *data)
   read_input_xml(argc, argv, globalData, &(data->modelData), &(data->simulationInfo), &start, &stop, &stepSize, &outputSteps,
       &tolerance, &method, &outputFormat, &variableFilter);
   initializeOutputFilter(globalData,variableFilter);
-  callExternalObjectConstructors(globalData);
+  callExternalObjectConstructors(NULL, globalData);
   globalData->lastEmittedTime = start;
   globalData->forceEmit = 0;
 

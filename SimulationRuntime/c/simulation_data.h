@@ -253,6 +253,7 @@ extern "C" {
   typedef struct _X_DATA
   {
     RINGBUFFER* simulationData;     /* RINGBUFFER of SIMULATION_DATA */
+    SIMULATION_DATA **localdata;
     MODEL_DATA modelData;           /* static stuff */
     SIMULATION_INFO simulationInfo;
   }_X_DATA;

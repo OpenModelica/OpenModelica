@@ -288,7 +288,7 @@ void initSample(double start, double stop)
   int ix = 0;
   int nuniq;
 
-  function_sampleInit();
+  function_sampleInit(NULL);
 
   num_samples = globalData->nRawSamples;
 
@@ -574,7 +574,7 @@ deactivateSampleEventsandEquations()
                            = 0;
       globalData->curSampleTimeIx++;
     }
-  function_updateSample();
+  function_updateSample(NULL);
 }
 
 /*
@@ -689,13 +689,13 @@ EventHandle(int flag)
       /*determined complete system */
       needToIterate = 0;
       IterationNum = 0;
-      functionDAE(&needToIterate);
-      functionAliasEquations();
+      functionDAE(NULL, &needToIterate);
+      functionAliasEquations(NULL);
       if (sim_verbose >= LOG_EVENTS)
         {
            sim_result_emit();
         }
-      while (needToIterate || checkForDiscreteChanges())
+      while (needToIterate || checkForDiscreteChanges(NULL))
         {
           if (needToIterate)
             {
@@ -706,8 +706,8 @@ EventHandle(int flag)
               DEBUG_INFO(LV_EVENTS, "discrete Var changed. Iteration needed!");
             }
           saveall();
-          functionDAE(&needToIterate);
-          functionAliasEquations();
+          functionDAE(NULL, &needToIterate);
+          functionAliasEquations(NULL);
           if (sim_verbose >= LOG_EVENTS)
             {
               sim_result_emit();
@@ -729,8 +729,8 @@ EventHandle(int flag)
       DEBUG_INFO1(LV_EVENTS, "Event Handling for Sample : %f!", globalData->timeValue);
       sim_result_emit();
       /*evaluate and emit results before sample events are activated */
-      functionDAE(&needToIterate);
-      while (needToIterate || checkForDiscreteChanges())
+      functionDAE(NULL, &needToIterate);
+      while (needToIterate || checkForDiscreteChanges(NULL))
         {
           if (needToIterate)
             {
@@ -741,7 +741,7 @@ EventHandle(int flag)
                 DEBUG_INFO(LV_EVENTS, "discrete Var changed. Iteration needed!");
             }
           saveall();
-          functionDAE(&needToIterate);
+          functionDAE(NULL, &needToIterate);
           if (sim_verbose >= LOG_EVENTS)
             {
               sim_result_emit();
@@ -759,12 +759,12 @@ EventHandle(int flag)
       /*Activate sample and evaluate again */
       activateSampleEvents();
 
-      functionDAE(&needToIterate);
+      functionDAE(NULL, &needToIterate);
       if (sim_verbose >= LOG_EVENTS)
         {
           sim_result_emit();
         }
-      while (needToIterate || checkForDiscreteChanges())
+      while (needToIterate || checkForDiscreteChanges(NULL))
         {
           if (needToIterate)
             {
@@ -775,7 +775,7 @@ EventHandle(int flag)
                 DEBUG_INFO(LV_EVENTS, "discrete Var changed. Iteration needed!");
             }
           saveall();
-          functionDAE(&needToIterate);
+          functionDAE(NULL, &needToIterate);
           if (sim_verbose >= LOG_EVENTS)
             {
               sim_result_emit();
@@ -897,9 +897,9 @@ void FindRoot(double *EventTime)
       globalData->states[i] = states_left[i];
     }
   /*determined continuous system */
-  functionODE();
-  functionAlgebraics();
-  function_storeDelayed();
+  functionODE(NULL);
+  functionAlgebraics(NULL);
+  function_storeDelayed(NULL);
   saveall();
   sim_result_emit();
 
@@ -957,10 +957,10 @@ BiSection(double* a, double* b, double* states_a, double* states_b,
         }
 
       /*calculates Values dependents on new states*/
-      functionODE();
-      functionAlgebraics();
+      functionODE(NULL);
+      functionAlgebraics(NULL);
 
-      function_onlyZeroCrossings(gout, &globalData->timeValue);
+      function_onlyZeroCrossings(NULL, gout, &globalData->timeValue);
       if (CheckZeroCrossings(tmpEventList))
         { /*If Zerocrossing in left Section */
 
@@ -1078,7 +1078,7 @@ SaveZeroCrossings()
   for(i=0;i<globalData->nZeroCrossing;i++){
       gout_old[i] = gout[i];
   } 
-  function_onlyZeroCrossings(gout, &globalData->timeValue);
+  function_onlyZeroCrossings(NULL, gout, &globalData->timeValue);
 }
 
 void SaveZeroCrossingsX(_X_DATA *data)
@@ -1093,7 +1093,7 @@ SaveZeroCrossingsAfterEvent()
 
   DEBUG_INFO(LV_ZEROCROSSINGS, "Save ZeroCrossings after an Event!");
 
-  function_onlyZeroCrossings(gout, &globalData->timeValue);
+  function_onlyZeroCrossings(NULL, gout, &globalData->timeValue);
   for(i=0;i<globalData->nZeroCrossing;i++){
       gout_old[i] = gout[i];
   }

@@ -92,18 +92,18 @@ extern "C" {
 #define initial() localData->init
 
   extern long* zeroCrossingEnabled;
-  int function_onlyZeroCrossings(double* gout, double* t);
+  int function_onlyZeroCrossings(_X_DATA *data, double* gout, double* t);
   int CheckForNewEvent(int *sampleactived);
   int EventHandle(int);
   void FindRoot(double*);
-  int checkForDiscreteChanges();
+  int checkForDiscreteChanges(_X_DATA *data);
   void SaveZeroCrossings();
   void SaveZeroCrossingsX(_X_DATA *data);
   void SaveZeroCrossingsAfterEvent();
   void initializeZeroCrossings();
   void correctDirectionZeroCrossings();
   int activateSampleEvents();
-  int function_updateSample();
+  int function_updateSample(_X_DATA *data);
 
 #define INTERVAL 1
 #define NOINTERVAL 0

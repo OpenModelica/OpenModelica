@@ -163,7 +163,7 @@ DATA *initializeDataStruc2(DATA *returnData);
 /* this frees the memory that is allocated in the data-structure.
  * The second argument must have the same value as the argument in initializeDataStruc
  */
-void callExternalObjectDestructors(DATA* data);
+void callExternalObjectDestructors(_X_DATA *_data, DATA* data);
 /* this is used to set the localData in the generated code
  * that is used in the diferrent generated functions
  *
@@ -191,9 +191,9 @@ void restoreExtrapolationDataOld();
 
 /* function for calculating ouput values */
 /*used in DDASRT fortran function*/
-int functionODE();          /* functionODE with respect to start-values */
-int functionAlgebraics();   /* functionAlgebraics with respect to start-values */
-int functionAliasEquations();
+int functionODE(_X_DATA *data);          /* functionODE with respect to start-values */
+int functionAlgebraics(_X_DATA *data);   /* functionAlgebraics with respect to start-values */
+int functionAliasEquations(_X_DATA *data);
 
 /* function do an event update step */
 void
@@ -206,37 +206,37 @@ functionODE_residual(double *t, double *x, double *xprime, double *delta, fortra
 
 /* Function for calling external object constructors */
 void
-callExternalObjectConstructors(DATA*);
+callExternalObjectConstructors(_X_DATA*, DATA*);
 
 /*   function for calculating all equation sorting order 
   uses in EventHandle  */
 int
-functionDAE(int *needToIterate);
+functionDAE(_X_DATA *data, int *needToIterate);
 
 /* function for storing value histories of delayed expressions
  * called from functionDAE_output()
  */
 int
-function_storeDelayed();
+function_storeDelayed(_X_DATA *data);
 
 /* function for calculating states on explicit ODE form */
 /*used in functionDAE_res function*/
 int functionODE_inline();
 
 /* function for calculate initial values from initial equations and fixed start attibutes */
-int initial_function();
+int initial_function(_X_DATA *data);
 
 /* function for calculating bound parameters that depend on other parameters, e.g. parameter Real n=1/m; */
-int bound_parameters();
+int bound_parameters(_X_DATA *data);
 
 /* function for checking for asserts and terminate */
-int checkForAsserts();
+int checkForAsserts(_X_DATA *data);
 
 /* function for calculate residual values for the initial equations and fixed start attibutes */
-int initial_residual(double);
+int initial_residual(_X_DATA *data, double);
 
 /* function for initializing time instants when sample() is activated */
-void function_sampleInit();
+void function_sampleInit(_X_DATA *data);
 void function_initMemoryState();
 
 /* function for calculation Jacobian */
