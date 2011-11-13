@@ -264,6 +264,8 @@ extern "C" {
     SOLVER_INFO solverInfo;
   }_X_DATA;
 
+  void initializeXDataStruc(_X_DATA *data);
+
 #ifdef __cplusplus
 }
 #endif

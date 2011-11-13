@@ -1081,6 +1081,11 @@ SaveZeroCrossings()
   function_onlyZeroCrossings(gout, &globalData->timeValue);
 }
 
+void SaveZeroCrossingsX(_X_DATA *data)
+{
+  THROW("SaveZeroCrossingsX is not implemented yet!");
+}
+
 void
 SaveZeroCrossingsAfterEvent()
 {

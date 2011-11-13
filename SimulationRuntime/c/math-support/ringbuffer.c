@@ -73,8 +73,9 @@ void freeRingBuffer(RINGBUFFER *rb)
 
 void *getRingData(RINGBUFFER *rb, int i)
 {
-  ASSERT3(i < rb->nElements, "index [%d] out of range [%d:%d]", i, (-rb->nElements+1), (rb->nElements-1));
-  ASSERT3(-rb->nElements < i, "index [%d] out of range [%d:%d]", i, 0, (-rb->nElements+1));
+  ASSERT(rb->nElements > 0, "empty RingBuffer");
+  ASSERT3(i < rb->nElements, "index [%d] out of range [%d:%d]", i, -rb->nElements+1, rb->nElements-1);
+  ASSERT3(-rb->nElements < i, "index [%d] out of range [%d:%d]", i, -rb->nElements+1, rb->nElements-1);
   return ((char*)rb->buffer)+(((rb->firstElement+i)%rb->bufferSize)*rb->itemSize);
 }
 
@@ -105,6 +106,7 @@ void appendRingData(RINGBUFFER *rb, void *value)
 
 void dequeueNFirstRingDatas(RINGBUFFER *rb, int n)
 {
+  ASSERT(rb->nElements > 0, "empty RingBuffer");
   ASSERT3(n < rb->nElements, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
   ASSERT3(0 <= n, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
 
@@ -119,6 +121,7 @@ int ringBufferLength(RINGBUFFER *rb)
 
 void rotateRingBuffer(RINGBUFFER *rb, int n)
 {
+  ASSERT(rb->nElements > 0, "empty RingBuffer");
   ASSERT3(n < rb->nElements, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
   ASSERT3(0 <= n, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
   rb->firstElement = (rb->firstElement+n)%rb->bufferSize;

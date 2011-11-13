@@ -28,7 +28,7 @@
  *
  */
 
-/*! \file simulation_init.c
+/*! \file initialization.c
  */
 
 #include "initialization.h"
@@ -127,7 +127,7 @@ void leastSquare(long *nz, double *z, double *funcValue)
   for(j=0; i<globalData->nInitialResiduals; j++)
     *funcValue += globalData->initialResiduals[j] * globalData->initialResiduals[j];
 
-  DEBUG_INFO1(LV_INIT, "info    | leastSquare | leastSquare-Value: %g", *funcValue);
+  DEBUG_INFO1(LV_INIT, "leastSquare | leastSquare-Value: %g", *funcValue);
 }
 
 /*! \fn double leastSquareWithLambda(long nz, double *z, double lambda)
@@ -243,7 +243,7 @@ void NelderMeadOptimization(long N,
 
     /* dump every dump-th step */
     if(dump && !(iteration % dump))
-      INFO3("info    | NelderMeadOptimization | lambda=%g / step=%d / f=%g", lambda, (int)iteration, leastSquare(N, simplex, scale, lambda));
+      INFO3("NelderMeadOptimization | lambda=%g / step=%d / f=%g", lambda, (int)iteration, leastSquare(N, simplex, scale, lambda));
 
     /* func-values for the simplex */
     for(x=0; x<N+1; x++)
@@ -262,8 +262,8 @@ void NelderMeadOptimization(long N,
       lambda += lambda_step;
       if(lambda > 1.0)
         lambda = 1.0;
-
-      DEBUG_INFO3(LV_INIT, "info    | NelderMeadOptimization | increasing lambda to %g in step %d at f=%g", lambda, (int)iteration, leastSquare(N, simplex, scale, lambda));
+      
+      DEBUG_INFO3(LV_INIT, "NelderMeadOptimization | increasing lambda to %g in step %d at f=%g", lambda, (int)iteration, leastSquare(N, simplex, scale, lambda));
       continue;
     }
 
@@ -581,7 +581,7 @@ int nelderMeadEx_initialization(long nz, double *z, double *scale)
 
   if(lambda < 1.0)
   {
-    DEBUG_INFO1(LV_INIT, "error   | nelderMeadEx_initialization | lambda = %g", lambda);
+    DEBUG_INFO1(LV_INIT, "nelderMeadEx_initialization | lambda = %g", lambda);
     return -1;
   }
 
@@ -867,13 +867,167 @@ int initialization(const char* pInitMethod, const char* pOptiMethod)
 
 /* use of new simulation_data struct _X_DATA */
 #include "simulation_data.h"
+#include "modelica_string.h"
 
+/* done */
+/*! \fn void storeStartValues(_X_DATA *data)
+ *
+ *  sets all values to their start-attribute
+ *
+ *  author: lochel
+ */
+void storeStartValues(_X_DATA *data)
+{
+	SIMULATION_DATA *sData = (SIMULATION_DATA*)getRingData(data->simulationData, 0);
+	MODEL_DATA      *mData = &(data->modelData);
+  long i;
+
+  for(i=0; i<mData->nVariablesReal; ++i)
+    sData->realVars[i] = mData->realData[i].attribute.start;
+  for(i=0; i<mData->nVariablesInteger; ++i)
+    sData->integerVars[i] = mData->integerData[i].attribute.start;
+  for(i=0; i<mData->nVariablesBoolean; ++i)
+    sData->booleanVars[i] = mData->booleanData[i].attribute.start;
+  for(i=0; i<mData->nVariablesString; ++i)
+  {
+    free_modelica_string(sData->stringVars[i]);
+    sData->stringVars[i] = copy_modelica_string(mData->stringData[i].attribute.start);
+  }
+}
+
+/* done */
+/*! \fn void storePreValues(_X_DATA *data)
+ *
+ *  copys all the values into their pre-values
+ *
+ *  author: lochel
+ */
+void storePreValues(_X_DATA *data)
+{
+	SIMULATION_DATA *sData = (SIMULATION_DATA*)getRingData(data->simulationData, 0);
+	MODEL_DATA      *mData = &(data->modelData);
+
+	memcpy(sData->realVarsPre, sData->realVars, sizeof(modelica_real)*mData->nVariablesReal);
+	memcpy(sData->integerVarsPre, sData->integerVars, sizeof(modelica_integer)*mData->nVariablesInteger);
+	memcpy(sData->booleanVarsPre, sData->booleanVars, sizeof(modelica_boolean)*mData->nVariablesBoolean);
+	memcpy(sData->stringVarsPre, sData->stringVars, sizeof(modelica_string)*mData->nVariablesString);
+}
+
+/*! \fn int initializeX(_X_DATA *data, int optiMethod)
+ *
+ *  author: lochel
+ */
+int initializeX(_X_DATA *data, int optiMethod)
+{
+  long nz = 0;
+  int ind = 0, indAct = 0, indz = 0;
+  int retVal = 0;
+  int startIndPar = 0;
+  int endIndPar = 0;
+  double *z = 0;
+  double *scale = 0;
+  fortran_integer i = 0;
+
+  THROW("needs to be updated");
+
+  for(ind=0, nz=0; ind<globalData->nStates; ind++)
+  {
+    if(globalData->initFixed[ind]==0)
+    {
+      DEBUG_INFO1(LV_INIT, "state %s is unfixed", globalData->statesNames[ind].name);
+      nz++;
+    }
+  }
+
+  startIndPar = 2*globalData->nStates+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+globalData->boolVariables.nAlgebraic;
+  endIndPar = startIndPar+globalData->nParameters;
+  for(ind = startIndPar; ind < endIndPar; ind++)
+  {
+    if(globalData->initFixed[ind]==0 && globalData->var_attr[ind-globalData->nStates]==1)
+    {
+      DEBUG_INFO1(LV_INIT, "parameter %s is unfixed", globalData->parametersNames[ind-startIndPar].name);
+      nz++;
+    }
+  }
+
+  if(DEBUG_FLAG(LV_INIT))
+  {
+    INFO1("initialize | initialization by method: %s", optiMethodStr[optiMethod]);
+    INFO_AL("             fixed attribute for states:");
+    for(i=0;i<globalData->nStates; i++)
+      INFO_AL2("             %s(fixed=%s)", globalData->statesNames[i].name, (globalData->initFixed[i] ? "true" : "false"));
+    INFO_AL1("             number of non-fixed variables: %d", (int)nz);
+  }
+
+  /* No initial values to calculate. */
+  if(nz ==  0)
+  {
+    DEBUG_INFO(LV_INIT, "no initial values to calculate");
+    return 0;
+  }
+
+  z = (double*)calloc(nz, sizeof(double));
+  scale = (double*)calloc(nz, sizeof(double));
+  ASSERT(z, "out of memory");
+  ASSERT(scale, "out of memory");
+
+  /* Fill z with the non-fixed variables from x and p */
+  for(ind=0, indAct=0, indz=0; ind<globalData->nStates; ind++)
+  {
+    if(globalData->initFixed[indAct++] == 0)
+    {
+      scale[indz] = hasNominalValue[ind] ? fabs(nominalValue[ind]) : 1;
+      z[indz++] = globalData->states[ind];
+    }
+  }
+
+  /* for real parameters */
+  for(ind=0, indAct=startIndPar; ind<globalData->nParameters; ind++)
+  {
+    if(globalData->initFixed[indAct++]==0 && globalData->var_attr[indAct-globalData->nStates]==1)
+    {
+      scale[indz] = hasNominalValue[globalData->nStates+globalData->nAlgebraic+ind] ? fabs(nominalValue[globalData->nStates+globalData->nAlgebraic+ind]) : 1;
+      z[indz++] = globalData->parameters[ind];
+    }
+  }
+
+  if(optiMethod == IOM_SIMPLEX)
+  {
+    retVal = simplex_initialization(nz, z);
+  }
+  else if(optiMethod == IOM_NELDER_MEAD_EX)
+  {
+    retVal = nelderMeadEx_initialization(nz, z, scale);
+  }
+  else if(optiMethod == IOM_NEWUOA)
+  {
+    retVal = newuoa_initialization(nz, z);
+  }
+  else
+  {
+    WARNING1("unrecognized option -iom %s", optiMethodStr[optiMethod]);
+    WARNING_AL("current options are: simplex, nelder_mead_ex or newuoa");
+    retVal= -1;
+  }
+
+  free(z);
+  free(scale);
+  return retVal;
+}
+
+/*! \fn int old_initializationX(_X_DATA *data, int optiMethod)
+ *
+ *  author: lochel
+ */
 int old_initializationX(_X_DATA *data, int optiMethod)
 {
   int retVal = 0;
+
   /* call initialize function and save start values */
-  saveall();                        /* if initial_function() uses pre-values */
+  storeStartValues(data);
+  storePreValues(data);             /* if initial_function() uses pre-values */                
   initial_function();               /* set all start-Values */
+  THROW("needs to be updated");
   storeExtrapolationDataEvent();
   saveall();                        /* to provide all valid pre-values */
 
@@ -923,49 +1077,46 @@ int old_initializationX(_X_DATA *data, int optiMethod)
   return retVal;
 }
 
-void storePreValues(_X_DATA *data)
-{
-	SIMULATION_DATA *sData = (SIMULATION_DATA*)getRingData(data->simulationData, 0);
-	MODEL_DATA *mData = &(data->modelData);
-
-	memcpy(sData->realVarsPre, sData->realVars, sizeof(modelica_real)*mData->nVariablesReal);
-	memcpy(sData->integerVarsPre, sData->integerVars, sizeof(modelica_real)*mData->nVariablesInteger);
-	memcpy(sData->booleanVarsPre, sData->booleanVars, sizeof(modelica_real)*mData->nVariablesBoolean);
-	memcpy(sData->stringVarsPre, sData->stringVars, sizeof(modelica_real)*mData->nVariablesString);
-}
-
+/*! \fn int state_initializationX(_X_DATA *data, int optiMethod)
+ *
+ *  author: lochel
+ */
 int state_initializationX(_X_DATA *data, int optiMethod)
 {
   int retVal = 0;
+
   /* call initialize function and save start values */
-  saveall();                        /* if initial_function() uses pre-values */
+  storeStartValues(data);
+  storePreValues(data);             /* if initial_function() uses pre-values */                  
   initial_function();               /* set all start-Values */
-  storeExtrapolationDataEvent();
-  saveall();                        /* to provide all valid pre-values */
+  THROW("needs to be updated");
+  storePreValues(data);             /* to provide all valid pre-values */
+  overwriteOldSimulationData(data);
 
   /* Initialize all relations that are ZeroCrossings */
   update_DAEsystem();
+  THROW("update_DAEsystem() needs to be updated");
 
   /* And restore start values and helpvars */
-  restoreExtrapolationDataOld();
-  restoreHelpVars();
-  saveall();
+  /* restoreHelpVars(); /* ??? */
+  storePreValues(data);
 
   /* start with the real initialization */
   globalData->init = 1;             /* to evaluate when-equations with initial()-conditions */
 
-  retVal = initialize(IOM_NELDER_MEAD_EX);
+  retVal = initializeX(data, IOM_NELDER_MEAD_EX);
 
-  saveall();                        /* save pre-values */
-  storeExtrapolationDataEvent();    /* if there are non-linear equations */
+  storePreValues(data);             /* save pre-values */
+  overwriteOldSimulationData(data); /* if there are non-linear equations */  
 
   update_DAEsystem();               /* evaluate discrete variables */
+  THROW("update_DAEsystem() needs to be updated");
 
   /* valid system for the first time! */
 
-  SaveZeroCrossings();
-  saveall();
-  storeExtrapolationDataEvent();
+  SaveZeroCrossingsX(data);
+  storePreValues(data);             /* save pre-values */
+  overwriteOldSimulationData(data); /* if there are non-linear equations */  
 
   globalData->init = 0;
 
@@ -973,13 +1124,17 @@ int state_initializationX(_X_DATA *data, int optiMethod)
   if(retVal)
   {
     DEBUG_INFO(LV_INIT, "state_initialization | init. failed! use old initialization method");
-    return old_initialization(optiMethod);
+    return old_initializationX(data, optiMethod);
   }
 
   return retVal;
 }
 
 /* done */
+/*! \fn int initializationX(_X_DATA *data, const char* pInitMethod, const char* pOptiMethod)
+ *
+ *  author: lochel
+ */
 int initializationX(_X_DATA *data, const char* pInitMethod, const char* pOptiMethod)
 {
   int initMethod = IIM_STATE;			/* default method */

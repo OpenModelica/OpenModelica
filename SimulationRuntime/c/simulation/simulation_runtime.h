@@ -186,6 +186,7 @@ const char* getNameString(const char** ptr);
 
 void storeExtrapolationData();
 void storeExtrapolationDataEvent();
+void overwriteOldSimulationData(_X_DATA *data);
 void restoreExtrapolationDataOld();
 
 /* function for calculating ouput values */

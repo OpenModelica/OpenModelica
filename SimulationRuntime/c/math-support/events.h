@@ -35,6 +35,7 @@
 #ifndef _EVENTS_H_
 #define _EVENTS_H_
 
+#include "simulation_data.h"
 #include "list.h"
 
 #ifdef __cplusplus
@@ -97,6 +98,7 @@ extern "C" {
   void FindRoot(double*);
   int checkForDiscreteChanges();
   void SaveZeroCrossings();
+  void SaveZeroCrossingsX(_X_DATA *data);
   void SaveZeroCrossingsAfterEvent();
   void initializeZeroCrossings();
   void correctDirectionZeroCrossings();

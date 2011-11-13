@@ -29,6 +29,7 @@
  */
 
 #include "error.h"
+#include "simulation_data.h"
 
 #include <setjmp.h>
 #include <string>
@@ -64,8 +65,6 @@
 #include "simulation_result_mat.h"
 #include "simulation_modelinfo.h"
 #include "rtclock.h"
-
-#include "simulation_data.c"
 
 
 using namespace std;
@@ -418,6 +417,24 @@ storeExtrapolationDataEvent()
   }
   globalData->oldTime2 = globalData->timeValue;
   globalData->oldTime = globalData->timeValue;
+}
+
+/*! \fn void overwriteOldSimulationData(_X_DATA *data)
+ *
+ * Stores variables (states, derivatives and algebraic) to be used
+ * by e.g. numerical solvers to extrapolate values as start values.
+ *
+ * This function overwrites all old value with the current.
+ * This function is called after events.
+ *
+ *  author: lochel
+ */
+void overwriteOldSimulationData(_X_DATA *data)
+{
+  long i;
+  
+  for(i=1; i<ringBufferLength(data->simulationData); ++i)
+    memcpy(getRingData(data->simulationData, 0), getRingData(data->simulationData, 1), sizeof(SIMULATION_DATA));
 }
 
 /** function restoreExtrapolationDataOld
