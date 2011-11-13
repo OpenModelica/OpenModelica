@@ -423,6 +423,7 @@ size_t Text_readLine(TEXT_FILE *f, char **data, size_t *size)
   size_t i=0;
   int ch=0;
   char *buf = *data;
+  memset(*data,0,sizeof(char)*(*size));
   /* read whole line */
   while (!feof(f->fp))
   {
@@ -755,6 +756,7 @@ size_t csv_readLine(CSV_FILE *f, char **data, size_t *size)
   size_t i=0;
   int ch=0;
   char *buf = *data;
+  memset(*data,0,sizeof(char)*(*size));
   /* read whole line */
   while (!feof(f->fp))
   {
@@ -784,7 +786,7 @@ size_t csv_readLine(CSV_FILE *f, char **data, size_t *size)
   return col;
 }
 
-char csv_findTable(CSV_FILE *f, const char *tableName, size_t *rows, size_t *cols)
+char csv_findTable(CSV_FILE *f, const char *tableName, size_t *cols, size_t *rows)
 {
   char *strLn=0;
   size_t buflen=0;
@@ -793,6 +795,7 @@ char csv_findTable(CSV_FILE *f, const char *tableName, size_t *rows, size_t *col
   size_t _cols = 1;
   char stop=0;
   *cols=0;
+  *rows=0;
   while (!feof(f->fp)) 
   {
     /* start new line, update counters */
@@ -846,7 +849,7 @@ char csv_findTable(CSV_FILE *f, const char *tableName, size_t *rows, size_t *col
 void csv_readTable(CSV_FILE *f, const char *tableName, double *data, size_t rows, size_t cols)
 {
   char stop=0;
-  char *strLn=0;
+  char *strLn=NULL;
   size_t buflen=0;
   size_t c=0;
   size_t col=0;
@@ -873,7 +876,7 @@ void csv_readTable(CSV_FILE *f, const char *tableName, double *data, size_t rows
         number = strLn;
         for (col=0;col<cols;col++)
         {
-          data[col*cols+row] = strtod(number,&entp);
+          data[row*cols+col] = strtod(number,&entp);
           trim(&entp,&lh);
           number = entp+1;
         }
@@ -1000,7 +1003,7 @@ InterpolationTable* InterpolationTable_init(double time, double startTime,
 
   if (fileName && strncmp("NoName",fileName,6) != 0) 
   {
-    openFile(fileName,tableName,&(tpl->cols),&(tpl->rows),&(tpl->data));
+    openFile(fileName,tableName,&(tpl->rows),&(tpl->cols),&(tpl->data));
     tpl->own_data = 1;
   } else 
   {
@@ -1064,7 +1067,6 @@ double InterpolationTable_minTime(InterpolationTable *tpl)
 char InterpolationTable_compare(InterpolationTable *tpl, const char* fname, const char* tname,
          const double* table)
 {
-  INFO("compare %s %s %s %s %p %p",tpl->filename,fname,tpl->tablename,tname,tpl->data,table);
   if ( (fname == NULL || tname == NULL) || ((strncmp("NoName",fname,6) == 0 && strncmp("NoName",tname,6) == 0)) )
   {
     /* table passed as memory location */
@@ -1149,7 +1151,7 @@ InterpolationTable2D* InterpolationTable2D_init(int ipoType, const char* tableNa
 
   if (fileName && strncmp("NoName",fileName,6) != 0) 
   {
-    openFile(fileName,tableName,&(tpl->cols),&(tpl->rows),&(tpl->data));
+    openFile(fileName,tableName,&(tpl->rows),&(tpl->cols),&(tpl->data));
     tpl->own_data = 1;
   } else {
     ASSERT(table,"No data for Table: %s",tableName);
