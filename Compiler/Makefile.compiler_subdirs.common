@@ -73,4 +73,6 @@ Makefile: Makefile.in
 	cd $(top_builddir); ./config.status
 
 ## dependencies
+ifeq (â$shell(test -f .depend && echo a),a)
 -include .depend
+endif
