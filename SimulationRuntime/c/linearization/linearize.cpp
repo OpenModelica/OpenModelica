@@ -28,6 +28,7 @@
  *
  */
 
+#include "error.h"
 
 #include "simulation_runtime.h"
 #include "linearize.h"
@@ -40,11 +41,13 @@ using namespace std;
 
 string array2string(double* array, int row, int col){
 
+    int i=0;
+    int j=0;
     ostringstream retVal(ostringstream::out);
     retVal.precision(16);
     int k=0;
-    for (int i=0;i<row;i++){
-        for (int j=0;j<col;j++){
+    for (i=0;i<row;i++){
+        for (j=0;j<col;j++){
             k = i + j * row;
             if (j+1==col)
                 retVal << array[k];
@@ -61,45 +64,46 @@ string array2string(double* array, int row, int col){
 int linearize(int nstates, int ninputs, int noutputs)
 {
 
-    // init Matrix A
+    /* init Matrix A */
     int size_A = nstates;
     int size_Inputs = ninputs;
     int size_Outputs = noutputs;
-    double* matrixA = new double[size_A*size_A];
-    double* matrixB = new double[size_A*size_Inputs];
-    double* matrixC = new double[size_Outputs*size_A];
-    double* matrixD = new double[size_Outputs*size_Inputs];
+    double* matrixA = (double*)calloc(size_A*size_A,sizeof(double));
+    double* matrixB = (double*)calloc(size_A*size_Inputs,sizeof(double));
+    double* matrixC = (double*)calloc(size_Outputs*size_A,sizeof(double));
+    double* matrixD = (double*)calloc(size_Outputs*size_Inputs,sizeof(double));
     string strA, strB, strC, strD, strX, strU, filename, linearModel;
 
-    // Determine Matrix A
+    ASSERT(matrixA,"Calloc");
+    ASSERT(matrixB,"Calloc");
+    ASSERT(matrixC,"Calloc");;
+    ASSERT(matrixD,"Calloc");
+
+    /* Determine Matrix A */
     if (functionJacA(matrixA)){
-        cerr << "Error, can not get Matrix A " << endl;
-        exit(-1);
+        THROW("Error, can not get Matrix A ");
     }
     strA = array2string(matrixA,size_A,size_A);
 
-    // Determine Matrix B
+    /* Determine Matrix B */
     if (functionJacB(matrixB)){
-        cerr << "Error, can not get Matrix B " << endl;
-        exit(-1);
+        THROW("Error, can not get Matrix B ");
     }
     strB = array2string(matrixB,size_A,size_Inputs);
-    // Determine Matrix C
+    /* Determine Matrix C */
     if (functionJacC(matrixC)){
-        cerr << "Error, can not get Matrix C " << endl;
-        exit(-1);
+        THROW("Error, can not get Matrix C ");
     }
     strC = array2string(matrixC,size_Outputs,size_A);
-    // Determine Matrix D
+    /* Determine Matrix D */
     if (functionJacD(matrixD)){
-        cerr << "Error, can not get Matrix D " << endl;
-        exit(-1);
+        THROW("Error, can not get Matrix D ");
     }
     strD = array2string(matrixD,size_Outputs,size_Inputs);
 
-    // The empty array {} is not valid modelica, so we need to put something
-    // inside the curly braces for x0 and u0. {for i in in 1:0} will create an
-    // empty array if needed.
+    /* The empty array {} is not valid modelica, so we need to put something
+       inside the curly braces for x0 and u0. {for i in in 1:0} will create an
+       empty array if needed. */
     if(size_A) {
         strX = array2string(globalData->states,1,size_A);
     } else {
@@ -112,14 +116,15 @@ int linearize(int nstates, int ninputs, int noutputs)
         strU = "i for i in 1:0";
     }
 
-    delete [] matrixA;
-    delete [] matrixB;
-    delete [] matrixC;
-    delete [] matrixD;
+    free(matrixA);
+    free(matrixB);
+    free(matrixC);
+    free(matrixD);
 
     filename = "linear_" + string(globalData->modelName) + ".mo";
 
     FILE *fout = fopen(filename.c_str(),"wb");
+    ASSERT1(fout,"Cannot open File %s",filename.c_str());
     fprintf(fout, linear_model_frame, strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str());
     if (sim_verbose>=LOG_STATS)
         printf(linear_model_frame, strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str());

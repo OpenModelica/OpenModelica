@@ -72,7 +72,7 @@ void initDelay(double startTime)
   for(i=0; i<numDelayExpressionIndex; i++)
     delayStructure[i] = allocRingBuffer(1024, sizeof(TIME_AND_VALUE));
 
-  DEBUG_INFO(LV_SOLVER, "initDelay called with startTime = %f", startTime);
+  DEBUG_INFO1(LV_SOLVER, "initDelay called with startTime = %f", startTime);
 }
 
 void deinitDelay()
@@ -116,8 +116,8 @@ void storeDelayedExpression(int exprNumber, double exprValue, double time)
   /* INFO("storeDelayed[%d] %g:%g", exprNumber, time, exprValue); */
 
   /* Allocate more space for expressions */
-  ASSERT(exprNumber < numDelayExpressionIndex, "storeDelayedExpression: invalid expression number %d", exprNumber);
-  ASSERT(0 <= exprNumber, "storeDelayedExpression: invalid expression number %d", exprNumber);
+  ASSERT1(exprNumber < numDelayExpressionIndex, "storeDelayedExpression: invalid expression number %d", exprNumber);
+  ASSERT1(0 <= exprNumber, "storeDelayedExpression: invalid expression number %d", exprNumber);
   ASSERT(tStart <= time, "storeDelayedExpression: time is smaller than starting time. Value ignored");
 
   tpl.time = time;
@@ -133,8 +133,8 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
   /* ERROR("delayImpl: exprNumber = %d, exprValue = %lf, time = %lf, delayTime = %lf", exprNumber, exprValue, time, delayTime); */
 
   /* Check for errors */
-  ASSERT(0 <= exprNumber, "invalid exprNumber = %d", exprNumber);
-  ASSERT(exprNumber < numDelayExpressionIndex, "invalid exprNumber = %d", exprNumber);
+  ASSERT1(0 <= exprNumber, "invalid exprNumber = %d", exprNumber);
+  ASSERT1(exprNumber < numDelayExpressionIndex, "invalid exprNumber = %d", exprNumber);
 
   if(time <= tStart)
   {
@@ -144,7 +144,7 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
 
   if(delayTime < 0.0)
   {
-    ASSERT(0.0 < delayTime, "Negative delay requested: delayTime = %g", delayTime);
+    ASSERT1(0.0 < delayTime, "Negative delay requested: delayTime = %g", delayTime);
     THROW("Negative delay requested");
   }
 
@@ -178,7 +178,7 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
     double time0, time1, value0, value1;
     int i;
 
-    ASSERT(0.0 <= delayTime, "Negative delay requested: delayTime = %g", delayTime);
+    ASSERT1(0.0 <= delayTime, "Negative delay requested: delayTime = %g", delayTime);
 
     /* find the row for the lower limit */
     if(timeStamp > ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->time)
@@ -192,7 +192,7 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
     else
     {
       i = findTime(timeStamp, delayStruct);
-      ASSERT(i < length, "%d = i < length = %d", i, length);
+      ASSERT2(i < length, "%d = i < length = %d", i, length);
       time0 = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->time;
       value0 = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->value;
 

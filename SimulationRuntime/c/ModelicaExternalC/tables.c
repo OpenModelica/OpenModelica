@@ -42,7 +42,12 @@
 #include "omc_msvc.h"
 #endif
 
+/* Definition to get some Debug information if interface is called */
 /* #define DEBUG_INFOS */
+
+/* Definition to make a copy of the arrays */
+/* #define COPY_ARRAYS */
+
 
 typedef struct InterpolationTable
 {
@@ -132,23 +137,23 @@ int omcTableTimeIni(double timeIn, double startTime,int ipoType,int expoType,
   size_t i = 0;
   InterpolationTable** tmp = NULL;
 #ifdef DEBUG_INFOS
-  INFO("Init Table \n timeIn %f \n startTime %f \n ipoType %d \n expoType %d \n tableName %s \n fileName %s \n table %p \n tableDim1 %d \n tableDim2 %d \n colWise %d", timeIn, startTime, ipoType, expoType, tableName, fileName, table, tableDim1, tableDim2, colWise);
+  INFO10("Init Table \n timeIn %f \n startTime %f \n ipoType %d \n expoType %d \n tableName %s \n fileName %s \n table %p \n tableDim1 %d \n tableDim2 %d \n colWise %d", timeIn, startTime, ipoType, expoType, tableName, fileName, table, tableDim1, tableDim2, colWise);
 #endif
   /* if table is already initialized, find it */
   for(i = 0; i < ninterpolationTables; ++i)
     if (InterpolationTable_compare(interpolationTables[i],fileName,tableName,table))
     {
 #ifdef DEBUG_INFOS
-      INFO_AL("Table id = %d",i);
+      INFO_AL1("Table id = %d",i);
 #endif
       return i;
     }
 #ifdef DEBUG_INFOS
-  INFO_AL("Table id = %d",ninterpolationTables);
+  INFO_AL1("Table id = %d",ninterpolationTables);
 #endif
   /* increase array */
   tmp = (InterpolationTable**)malloc((ninterpolationTables+1)*sizeof(InterpolationTable*));
-  ASSERT(tmp,"Not enough memory for new Table[%d] Tablename %s Filename %s",ninterpolationTables,tableName,fileName);
+  ASSERT3(tmp,"Not enough memory for new Table[%d] Tablename %s Filename %s",ninterpolationTables,tableName,fileName);
   for(i = 0; i < ninterpolationTables; ++i)
   {
     tmp[i] = interpolationTables[i];
@@ -169,7 +174,7 @@ int omcTableTimeIni(double timeIn, double startTime,int ipoType,int expoType,
 void omcTableTimeIpoClose(int tableID)
 {
 #ifdef DEBUG_INFOS
-  INFO("Close Table[%d]",tableID);
+  INFO1("Close Table[%d]",tableID);
 #endif
   if (tableID >= 0 && tableID < (int)ninterpolationTables)
   {
@@ -185,7 +190,7 @@ void omcTableTimeIpoClose(int tableID)
 double omcTableTimeIpo(int tableID, int icol, double timeIn)
 {
 #ifdef DEBUG_INFOS
-  INFO("Interpolate Table[%d][%d] add Time %f",tableID,icol,timeIn);
+  INFO3("Interpolate Table[%d][%d] add Time %f",tableID,icol,timeIn);
 #endif
   if (tableID >= 0 && tableID < (int)ninterpolationTables)
   {
@@ -199,7 +204,7 @@ double omcTableTimeIpo(int tableID, int icol, double timeIn)
 double omcTableTimeTmax(int tableID)
 {
 #ifdef DEBUG_INFOS
-  INFO("Time max from Table[%d]",tableID);
+  INFO1("Time max from Table[%d]",tableID);
 #endif
   if (tableID >= 0 && tableID < (int)ninterpolationTables)
     return InterpolationTable_maxTime(interpolationTables[tableID]);
@@ -211,7 +216,7 @@ double omcTableTimeTmax(int tableID)
 double omcTableTimeTmin(int tableID)
 {
 #ifdef DEBUG_INFOS
-  INFO("Time min from Table[%d]",tableID);
+  INFO1("Time min from Table[%d]",tableID);
 #endif
   if (tableID >= 0 && tableID < (int)ninterpolationTables)
     return InterpolationTable_minTime(interpolationTables[tableID]);
@@ -226,23 +231,23 @@ int omcTable2DIni(int ipoType, const char *tableName, const char* fileName,
   size_t i=0;
   InterpolationTable2D** tmp = NULL;
 #ifdef DEBUG_INFOS
-  INFO("Init Table \n ipoType %f \n tableName %f \n fileName %d \n table %p \n tableDim1 %d \n tableDim2 %d \n colWise %d", ipoType, tableName, fileName, table, tableDim1, tableDim2, colWise);
+  INFO7("Init Table \n ipoType %f \n tableName %f \n fileName %d \n table %p \n tableDim1 %d \n tableDim2 %d \n colWise %d", ipoType, tableName, fileName, table, tableDim1, tableDim2, colWise);
 #endif
   /* if table is already initialized, find it */
   for(i = 0; i < ninterpolationTables2D; ++i)
     if (InterpolationTable2D_compare(interpolationTables2D[i],fileName,tableName,table))
     {
 #ifdef DEBUG_INFOS
-      INFO_AL("Table id = %d",i);
+      INFO_AL1("Table id = %d",i);
 #endif
       return i;
     }
 #ifdef DEBUG_INFOS
-  INFO_AL("Table id = %d",ninterpolationTables2D);
+  INFO_AL1("Table id = %d",ninterpolationTables2D);
 #endif
   /* increase array */
   tmp = (InterpolationTable2D**)malloc((ninterpolationTables2D+1)*sizeof(InterpolationTable2D*));
-  ASSERT(tmp,"Not enough memory for new Table[%d] Tablename %s Filename %s",ninterpolationTables,tableName,fileName);
+  ASSERT3(tmp,"Not enough memory for new Table[%d] Tablename %s Filename %s",ninterpolationTables,tableName,fileName);
   for(i = 0; i < ninterpolationTables2D; ++i)
   {
     tmp[i] = interpolationTables2D[i];
@@ -260,7 +265,7 @@ int omcTable2DIni(int ipoType, const char *tableName, const char* fileName,
 void omcTable2DIpoClose(int tableID)
 {
 #ifdef DEBUG_INFOS
-  INFO("Close Table[%d]",tableID);
+  INFO1("Close Table[%d]",tableID);
 #endif
   if (tableID >= 0 && tableID < (int)ninterpolationTables2D)
   {
@@ -276,7 +281,7 @@ void omcTable2DIpoClose(int tableID)
 double omcTable2DIpo(int tableID,double u1_, double u2_)
 {
 #ifdef DEBUG_INFOS
-  INFO("Interpolate Table[%d][%d] add Time %f",tableID,u1_,u2_);
+  INFO3("Interpolate Table[%d][%d] add Time %f",tableID,u1_,u2_);
 #endif
   if (tableID >= 0 && tableID < (int)ninterpolationTables2D)
     return InterpolationTable2D_interpolate(interpolationTables2D[tableID], u1_, u2_);
@@ -318,16 +323,16 @@ TEXT_FILE *Text_open(const char *filename)
 {
   size_t l,i;
   TEXT_FILE *f=(TEXT_FILE*)calloc(1,sizeof(TEXT_FILE));
-  ASSERT(f,"Not enough memory for Filename %s",filename);
+  ASSERT1(f,"Not enough memory for Filename %s",filename);
   l = strlen(filename);
   f->filename = (char*)calloc(1,l+1);
-  ASSERT(f->filename,"Not enough memory for Filename %s",filename);
+  ASSERT1(f->filename,"Not enough memory for Filename %s",filename);
   for (i=0;i<l;i++)
   {
     f->filename[i] = filename[i];
   }
   f->fp = fopen(filename,"r");
-  ASSERT(f->fp,"Cannot open File %s",filename);
+  ASSERT1(f->fp,"Cannot open File %s",filename);
   return f;
 }
 
@@ -382,26 +387,26 @@ char parseHead(TEXT_FILE *f, const char* hdr, size_t hdrLen, char **name,
   if (!readChr(&hdr,&hLen,'('))
   {
     fclose(f->fp);
-    THROW("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
+    THROW3("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
   }
   *rows = (size_t)strtol(hdr,&endptr,10);
   if (hdr == endptr)
   {
     fclose(f->fp);
-    THROW("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
+    THROW3("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
   }
   hLen -= endptr-hdr;
   hdr = endptr;
   if (!readChr(&hdr,&hLen,','))
   {
     fclose(f->fp);
-    THROW("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
+    THROW3("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
   }
   *cols = (size_t)strtol(hdr,&endptr,10);
   if (hdr == endptr)
   {
     fclose(f->fp);
-    THROW("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
+    THROW3("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
   }
   hLen -= endptr-hdr;
   hdr = endptr;
@@ -410,7 +415,7 @@ char parseHead(TEXT_FILE *f, const char* hdr, size_t hdrLen, char **name,
   if ((hLen > 0) && ((*hdr) != '#'))
   {
     fclose(f->fp);
-    THROW("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
+    THROW3("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,hdrLen-hLen);
   }
 
   return 1;
@@ -430,7 +435,7 @@ size_t Text_readLine(TEXT_FILE *f, char **data, size_t *size)
     if (col >= *size)
     {
       char *tmp = (char*)calloc(*size+100,sizeof(char));
-      ASSERT(tmp,"Not enough memory for Filename %s",f->filename);
+      ASSERT1(tmp,"Not enough memory for Filename %s",f->filename);
       for (i = 0; i < *size; i++)
         tmp[i] = buf[i];
       if (buf)
@@ -443,7 +448,7 @@ size_t Text_readLine(TEXT_FILE *f, char **data, size_t *size)
     if (ferror(f->fp))
     {
       fclose(f->fp);
-      THROW("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,col);
+      THROW3("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,col);
     }
     if(ch == '\n')
       break;
@@ -540,17 +545,17 @@ MAT_FILE *Mat_open(const char *filename)
 {
   size_t l,i;
   MAT_FILE *f=(MAT_FILE*)calloc(1,sizeof(MAT_FILE));
-  ASSERT(f,"Not enough memory for Filename %s",filename);
+  ASSERT1(f,"Not enough memory for Filename %s",filename);
   memset(&(f->hdr),0,sizeof(hdr_t));
   l = strlen(filename);
   f->filename = (char*)calloc(1,l+1);
-  ASSERT(f->filename,"Not enough memory for Filename %s",filename);
+  ASSERT1(f->filename,"Not enough memory for Filename %s",filename);
   for (i=0;i<l;i++)
   {
     f->filename[i] = filename[i];
   }
   f->fp = fopen(filename,"rb");
-  ASSERT(f->fp,"Cannot open File %s",filename);
+  ASSERT1(f->fp,"Cannot open File %s",filename);
   return f;
 }
 
@@ -581,7 +586,7 @@ size_t Mat_getTypeSize(MAT_FILE *f, long type)
     return 1;
   default:
     fclose(f->fp);
-    THROW("Corrupted MAT-file: `%s'",f->filename);
+    THROW1("Corrupted MAT-file: `%s'",f->filename);
   }
 }
 
@@ -595,7 +600,7 @@ char Mat_findTable(MAT_FILE *f, const char* tableName, size_t *cols, size_t *row
     if (ferror(f->fp))
     {
       fclose(f->fp);
-      THROW("Could not read from file `%s'.",f->filename);
+      THROW1("Could not read from file `%s'.",f->filename);
     }
     fgets(name,fmin(f->hdr.namelen,(long)256),f->fp);
     if (strncmp(tableName,name,strlen(tableName)) == 0) 
@@ -603,17 +608,17 @@ char Mat_findTable(MAT_FILE *f, const char* tableName, size_t *cols, size_t *row
       if (f->hdr.type%10 != 0 || f->hdr.type/1000 > 1)
       {
         fclose(f->fp);
-        THROW("Table `%s' not in supported format.",tableName);
+        THROW1("Table `%s' not in supported format.",tableName);
       }
       if (f->hdr.mrows <= 0 || f->hdr.ncols <= 0)
       {
         fclose(f->fp);
-        THROW("Table `%s' has zero dimensions.",tableName);
+        THROW1("Table `%s' has zero dimensions.",tableName);
       }
       if (f->hdr.mrows <= 0 || f->hdr.ncols <= 0)
       {
         fclose(f->fp);
-        THROW("Table `%s' has zero dimensions [%d,%d].",tableName,f->hdr.mrows,f->hdr.ncols);
+        THROW3("Table `%s' has zero dimensions [%d,%d].",tableName,f->hdr.mrows,f->hdr.ncols);
       }
       *rows = f->hdr.mrows;
       *cols = f->hdr.ncols;
@@ -704,7 +709,7 @@ void Mat_readTable(MAT_FILE *f, double *buf, size_t rows, size_t cols)
     if (ferror(f->fp))
     {
       fclose(f->fp);
-      THROW("Could not read from file `%s'.",f->filename);
+      THROW1("Could not read from file `%s'.",f->filename);
     }
     buf[i*cols+j] = Mat_getElem(&readbuf,(char)P,isBigEndian);
   }
@@ -725,16 +730,16 @@ CSV_FILE *csv_open(const char *filename)
 {
   size_t l,i;
   CSV_FILE *f=(CSV_FILE*)calloc(1,sizeof(CSV_FILE));
-  ASSERT(f,"Not enough memory for Filename %s",filename);
+  ASSERT1(f,"Not enough memory for Filename %s",filename);
   l = strlen(filename);
   f->filename = (char*)calloc(1,l+1);
-  ASSERT(f->filename,"Not enough memory for Filename %s",filename);
+  ASSERT1(f->filename,"Not enough memory for Filename %s",filename);
   for (i=0;i<l;i++)
   {
     f->filename[i] = filename[i];
   }
   f->fp = fopen(filename,"r");
-  ASSERT(f->fp,"Cannot open File %s",filename);
+  ASSERT1(f->fp,"Cannot open File %s",filename);
   return f;
 }
 
@@ -763,7 +768,7 @@ size_t csv_readLine(CSV_FILE *f, char **data, size_t *size)
     if (col >= *size)
     {
       char *tmp = (char*)calloc(*size+100,sizeof(char));
-      ASSERT(tmp,"Not enough memory for Filename %s",f->filename);
+      ASSERT1(tmp,"Not enough memory for Filename %s",f->filename);
       for (i = 0; i < *size; i++)
         tmp[i] = buf[i];
       if (buf)
@@ -776,7 +781,7 @@ size_t csv_readLine(CSV_FILE *f, char **data, size_t *size)
     if (ferror(f->fp))
     {
       fclose(f->fp);
-      THROW("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,col);
+      THROW3("In file `%s': parsing error at line %d and col %d.",f->filename,f->line,col);
     }
     if(ch == '\n')
       break;
@@ -809,7 +814,7 @@ char csv_findTable(CSV_FILE *f, const char *tableName, size_t *cols, size_t *row
       if (ferror(f->fp))
       {
         perror ("The following error occurred");
-        THROW("Cannot get File Position! from File %s",f->filename);
+        THROW1("Cannot get File Position! from File %s",f->filename);
       }
       while (!feof(f->fp) && (stop==0)) 
       {
@@ -911,13 +916,13 @@ void openFile(const char *filename, const char* tableName, size_t *rows, size_t 
     if (csv_findTable(f,tableName,cols,rows)) 
     {
       *data = (double*)calloc((*cols)*(*rows),sizeof(double));
-      ASSERT(*data,"Not enough memory for Table: %s",tableName);
+      ASSERT1(*data,"Not enough memory for Table: %s",tableName);
       csv_readTable(f,tableName,*data,*rows,*cols);
       csv_close(f);
       return;
     } 
     csv_close(f);
-    THROW("No table named `%s' in file `%s'.",tableName,filename);
+    THROW2("No table named `%s' in file `%s'.",tableName,filename);
   } 
   else if (strncmp(filetype,".mat",4) == 0) /* mat file */
   {
@@ -925,13 +930,13 @@ void openFile(const char *filename, const char* tableName, size_t *rows, size_t 
     if (Mat_findTable(f,tableName,cols,rows)) 
     {
       *data = (double*)calloc((*cols)*(*rows),sizeof(double));
-      ASSERT(*data,"Not enough memory for Table: %s",tableName);
+      ASSERT1(*data,"Not enough memory for Table: %s",tableName);
       Mat_readTable(f,*data,*rows,*cols);
       Mat_close(f);
       return;
     } 
     Mat_close(f);
-    THROW("No table named `%s' in file `%s'.",tableName,filename);
+    THROW2("No table named `%s' in file `%s'.",tableName,filename);
   }
   else if (strncmp(filetype,".txt",4) == 0) /* csv file */
   {
@@ -939,15 +944,15 @@ void openFile(const char *filename, const char* tableName, size_t *rows, size_t 
     if (Text_findTable(f,tableName,cols,rows)) 
     {
       *data = (double*)calloc((*cols)*(*rows),sizeof(double));
-      ASSERT(*data,"Not enough memory for Table: %s",tableName);
+      ASSERT1(*data,"Not enough memory for Table: %s",tableName);
       Text_readTable(f,*data,*rows,*cols);
       Text_close(f);
       return;
     } 
     Text_close(f);
-    THROW("No table named `%s' in file `%s'.",tableName,filename);
+    THROW2("No table named `%s' in file `%s'.",tableName,filename);
   }
-  THROW("Interpolation table: %s from file %s uknown file extension -- `%s'.",tableName,filename,filetype);
+  THROW3("Interpolation table: %s from file %s uknown file extension -- `%s'.",tableName,filename,filetype);
 }
 
 /*
@@ -963,7 +968,7 @@ char *copyTableNameFile(const char *name)
   if (l==0)
     l = 6;
   dst = (char*)calloc(1,l+1);
-  ASSERT(dst,"Not enough memory for Table: %s",name);
+  ASSERT1(dst,"Not enough memory for Table: %s",name);
   if (name)
   {
     for (i=0;i<l;i++)
@@ -989,7 +994,7 @@ InterpolationTable* InterpolationTable_init(double time, double startTime,
   size_t size = tableDim1*tableDim2;
   InterpolationTable *tpl = 0;
   tpl = (InterpolationTable*)calloc(1,sizeof(InterpolationTable));
-  ASSERT(tpl,"Not enough memory for Table: %s",tableName);
+  ASSERT1(tpl,"Not enough memory for Table: %s",tableName);
 
   tpl->rows = tableDim1;
   tpl->cols = tableDim2;
@@ -1007,19 +1012,20 @@ InterpolationTable* InterpolationTable_init(double time, double startTime,
     tpl->own_data = 1;
   } else 
   {
-    ASSERT(table,"No data for Table: %s",tableName);
+#ifndef COPY_ARRAYS
+    ASSERT1(table,"No data for Table: %s",tableName);
     tpl->data = *(double**)((void*)&table);
+#else
     //tpl->data = const_cast<double*>(table);
-    /*
     tpl->data = (double*)calloc(size,sizeof(double));
-    ASSERT(tpl->data,"Not enough memory for Table: %s",tableName);
+    ASSERT1(tpl->data,"Not enough memory for Table: %s",tableName);
     tpl->own_data = 1;
 
     for (i=0;i<size;i++)
     {
       tpl->data[i] = table[i];
     }
-    */
+#endif
   }
   /* check that time column is strictly monotonous */
   InterpolationTable_checkValidityOfData(tpl);
@@ -1115,7 +1121,7 @@ double InterpolationTable_interpolateLin(InterpolationTable *tpl, double time, s
 
 const double InterpolationTable_getElt(InterpolationTable *tpl, size_t row, size_t col)
 {
-  ASSERT(row < tpl->rows && col < tpl->cols,"In Table: %s from File: %s with Size[%d,%d] try to get Element[%d,%d] aut of range!", tpl->tablename, tpl->filename, tpl->rows, tpl->cols, row,col);
+  ASSERT6(row < tpl->rows && col < tpl->cols,"In Table: %s from File: %s with Size[%d,%d] try to get Element[%d,%d] aut of range!", tpl->tablename, tpl->filename, tpl->rows, tpl->cols, row,col);
   return tpl->data[tpl->colWise ? col*tpl->rows+row : row*tpl->cols+col];
 }
 void InterpolationTable_checkValidityOfData(InterpolationTable *tpl)
@@ -1124,7 +1130,7 @@ void InterpolationTable_checkValidityOfData(InterpolationTable *tpl)
   size_t maxSize = tpl->colWise ? tpl->cols : tpl->rows;
   for(i = 1; i < maxSize; ++i)
     if (InterpolationTable_getElt(tpl,i-1,0) > InterpolationTable_getElt(tpl,i,0))
-      THROW("TimeTable: Column with time variable not monotonous: %g >= %g.", InterpolationTable_getElt(tpl,i-1,0),InterpolationTable_getElt(tpl,i,0));
+      THROW2("TimeTable: Column with time variable not monotonous: %g >= %g.", InterpolationTable_getElt(tpl,i-1,0),InterpolationTable_getElt(tpl,i,0));
 }
 
 
@@ -1140,7 +1146,7 @@ InterpolationTable2D* InterpolationTable2D_init(int ipoType, const char* tableNa
   size_t size = tableDim1*tableDim2;
   InterpolationTable2D *tpl = 0;
   tpl = (InterpolationTable2D*)calloc(1,sizeof(InterpolationTable2D));
-  ASSERT(tpl,"Not enough memory for Table: %s",tableName);
+  ASSERT1(tpl,"Not enough memory for Table: %s",tableName);
 
   tpl->rows = tableDim1;
   tpl->cols = tableDim2;
@@ -1154,18 +1160,19 @@ InterpolationTable2D* InterpolationTable2D_init(int ipoType, const char* tableNa
     openFile(fileName,tableName,&(tpl->rows),&(tpl->cols),&(tpl->data));
     tpl->own_data = 1;
   } else {
-    ASSERT(table,"No data for Table: %s",tableName);
+#ifndef COPY_ARRAYS
+    ASSERT1(table,"No data for Table: %s",tableName);
     tpl->data = *(double**)((void*)&table);
-    /*
+#else
     tpl->data = (double*)calloc(size,sizeof(double));
-    ASSERT(tpl->data,"Not enough memory for Table: %s",tableName);
+    ASSERT1(tpl->data,"Not enough memory for Table: %s",tableName);
     tpl->own_data = 1;
 
     for (i=0;i<size;i++)
     {
       tpl->data[i] = table[i];
     }
-    */
+#endif
   }
   /* check if table is valid */
   InterpolationTable2D_checkValidityOfData(tpl);
@@ -1231,7 +1238,7 @@ double InterpolationTable2D_linInterpolate(double x, double x_1, double x_2,
 }
 const double InterpolationTable2D_getElt(InterpolationTable2D *tpl, size_t row, size_t col)
 {
-  ASSERT(row < tpl->rows && col < tpl->cols,"In Table: %s from File: %s with Size[%d,%d] try to get Element[%d,$d] aut of range!", tpl->tablename, tpl->filename, tpl->rows, tpl->cols, row,col);
+  ASSERT6(row < tpl->rows && col < tpl->cols,"In Table: %s from File: %s with Size[%d,%d] try to get Element[%d,%d] aut of range!", tpl->tablename, tpl->filename, tpl->rows, tpl->cols, row,col);
   return tpl->data[row*tpl->cols+col];
 }
 
@@ -1242,11 +1249,11 @@ void InterpolationTable2D_checkValidityOfData(InterpolationTable2D *tpl)
   for(i=2; i < tpl->rows; ++i)
   {
     if (InterpolationTable2D_getElt(tpl,i-1,0) >= InterpolationTable2D_getElt(tpl,i,0))
-      THROW("Table: %s independent variable u1 not strictly \
+      THROW3("Table: %s independent variable u1 not strictly \
             monotonous: %g >= %g.",tpl->tablename, InterpolationTable2D_getElt(tpl,i-1,0), InterpolationTable2D_getElt(tpl,i,0));
   for(i=2; i < tpl->cols; ++i)
     if (InterpolationTable2D_getElt(tpl,0,i-1) >= InterpolationTable2D_getElt(tpl,0,i))
-      THROW("Table: %s independent variable u2 not strictly \
+      THROW3("Table: %s independent variable u2 not strictly \
             monotonous: %g >= %g.",tpl->tablename, InterpolationTable2D_getElt(tpl,0,i-1), InterpolationTable2D_getElt(tpl,0,i));
   }
 }

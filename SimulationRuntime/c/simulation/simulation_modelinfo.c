@@ -28,6 +28,7 @@
  *
  */
 
+#include "error.h"
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -228,11 +229,10 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
   plotCommands = popen("gnuplot", "w");
 #endif
   if (!plotCommands) {
-    fprintf(stderr, "Warning: Plots of profiling data were disabled: %s\n", strerror(errno));
+    WARNING1("Plots of profiling data were disabled: %s\n", strerror(errno));
   }
   if (!fout) {
-    fprintf(stderr, "Failed to open %s: %s\n", filename, strerror(errno));
-    return 1;
+    THROW2("Failed to open %s: %s\n", filename, strerror(errno));
   }
   if (plotCommands) {
     fputs("set terminal svg\n", plotCommands);
@@ -252,12 +252,12 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
   <!ATTLIST ref refid IDREF #REQUIRED>\
   ]>\n");
   if (time(&t) < 0) {
-    fprintf(stderr, "time() failed: %s", strerror(errno));
+    WARNING1("time() failed: %s", strerror(errno));
     fclose(fout);
     return 1;
   }
   if (!strftime(buf, 250, "%Y-%m-%d %H:%M:%S", localtime(&t))) {
-    fprintf(stderr, "strftime() failed");
+    WARNING("strftime() failed");
     fclose(fout);
     return 1;
   }
@@ -320,19 +320,19 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
     char *buf;
     int genHtmlRes;
     omhome = getenv("OPENMODELICAHOME");
-    buf = malloc(230 + 2*strlen(plotfile) + 2*(omhome ? strlen(omhome) : 0));
+    buf = (char*)malloc(230 + 2*strlen(plotfile) + 2*(omhome ? strlen(omhome) : 0));
     assert(buf);
 #if defined(__MINGW32__) || defined(_MSC_VER)
     if (omhome) {
       sprintf(buf, "%s/lib/omc/libexec/gnuplot/binary/gnuplot.exe %s", omhome, plotfile);
       fclose(plotCommands);
       if (0 != system(buf)) {
-        fprintf(stderr, "Warning: Plot command failed: %s\n", buf);
+        WARNING1("Plot command failed: %s\n", buf);
       }
     }
 #else
     if (0 != pclose(plotCommands)) {
-      fprintf(stderr, "Warning: Plot command failed\n");
+      WARNING("Warning: Plot command failed\n");
     }
 #endif
     if (omhome) {
@@ -353,8 +353,8 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
       genHtmlRes = 1;
     }
     if (genHtmlRes)
-      fprintf(stderr, "Warning: Failed to generate html version of profiling results: %s\n", buf);
-    fprintf(stdout, "Time measurements are stored in %s_prof.html (human-readable) and %s_prof.xml (for XSL transforms or more details)\n", data->modelFilePrefix, data->modelFilePrefix);
+      WARNING1("Failed to generate html version of profiling results: %s\n", buf);
+    INFO2("Time measurements are stored in %s_prof.html (human-readable) and %s_prof.xml (for XSL transforms or more details)\n", data->modelFilePrefix, data->modelFilePrefix);
     free(buf);
   }
   return 0;

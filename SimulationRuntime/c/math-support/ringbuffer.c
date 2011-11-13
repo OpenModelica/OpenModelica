@@ -73,8 +73,8 @@ void freeRingBuffer(RINGBUFFER *rb)
 
 void *getRingData(RINGBUFFER *rb, int i)
 {
-  ASSERT(i < rb->nElements, "index [%d] out of range [%d:%d]", i, (-rb->nElements+1), (rb->nElements-1));
-  ASSERT(-rb->nElements < i, "index [%d] out of range [%d:%d]", i, 0, (-rb->nElements+1));
+  ASSERT3(i < rb->nElements, "index [%d] out of range [%d:%d]", i, (-rb->nElements+1), (rb->nElements-1));
+  ASSERT3(-rb->nElements < i, "index [%d] out of range [%d:%d]", i, 0, (-rb->nElements+1));
   return ((char*)rb->buffer)+(((rb->firstElement+i)%rb->bufferSize)*rb->itemSize);
 }
 
@@ -105,8 +105,8 @@ void appendRingData(RINGBUFFER *rb, void *value)
 
 void dequeueNFirstRingDatas(RINGBUFFER *rb, int n)
 {
-  ASSERT(n < rb->nElements, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
-  ASSERT(0 <= n, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
+  ASSERT3(n < rb->nElements, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
+  ASSERT3(0 <= n, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
 
   rb->firstElement = (rb->firstElement+n)%rb->bufferSize;
   rb->nElements -= n;
@@ -119,16 +119,16 @@ int ringBufferLength(RINGBUFFER *rb)
 
 void rotateRingBuffer(RINGBUFFER *rb, int n)
 {
-  ASSERT(n < rb->nElements, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
-  ASSERT(0 <= n, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
+  ASSERT3(n < rb->nElements, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
+  ASSERT3(0 <= n, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
   rb->firstElement = (rb->firstElement+n)%rb->bufferSize;
 }
 
 void infoRingBuffer(RINGBUFFER *rb)
 {
   INFO("RingBuffer-Info");
-  INFO_AL("itemSize: %d [size of one item in bytes]", rb->itemSize);
-  INFO_AL("firstElement: %d [position of first element in buffer]", rb->firstElement);
-  INFO_AL("nElements: %d [number of elements in buffer]", rb->nElements);
-  INFO_AL("bufferSize: %d [number of elements which could be stored in buffer]", rb->bufferSize);
+  INFO_AL1("itemSize: %d [size of one item in bytes]", rb->itemSize);
+  INFO_AL1("firstElement: %d [position of first element in buffer]", rb->firstElement);
+  INFO_AL1("nElements: %d [number of elements in buffer]", rb->nElements);
+  INFO_AL1("bufferSize: %d [number of elements which could be stored in buffer]", rb->bufferSize);
 }

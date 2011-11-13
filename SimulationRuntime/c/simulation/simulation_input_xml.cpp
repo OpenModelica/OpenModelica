@@ -58,38 +58,38 @@ typedef map < string, string >             omc_ModelDescription;
 typedef map < string, string >             omc_DefaultExperiment;
 typedef map < string, string >             omc_ScalarVariable;
 typedef map < int, omc_ScalarVariable >    omc_ModelVariables;
-// maybe use a map below {"rSta" -> omc_ModelVariables}
-// typedef map < string, omc_ModelVariables > omc_ModelVariablesClassified;
+/* maybe use a map below {"rSta" -> omc_ModelVariables} */
+/* typedef map < string, omc_ModelVariables > omc_ModelVariablesClassified; */
 
 /* structure used to collect data from the xml input file */
 typedef struct omc_ModelInput
 {
-  omc_ModelDescription  md; // model description
-  omc_DefaultExperiment de; // default experiment
+  omc_ModelDescription  md; /* model description */
+  omc_DefaultExperiment de; /* default experiment */
 
-  omc_ModelVariables    rSta; // states
-  omc_ModelVariables    rDer; // derivatives
-  omc_ModelVariables    rAlg; // algebraic
-  omc_ModelVariables    rPar; // parameters
-  omc_ModelVariables    rAli; // aliases
+  omc_ModelVariables    rSta; /* states */
+  omc_ModelVariables    rDer; /* derivatives */
+  omc_ModelVariables    rAlg; /* algebraic */
+  omc_ModelVariables    rPar; /* parameters */
+  omc_ModelVariables    rAli; /* aliases */
 
-  omc_ModelVariables    iAlg; // int algebraic
-  omc_ModelVariables    iPar; // int parameters
-  omc_ModelVariables    iAli; // int aliases
+  omc_ModelVariables    iAlg; /* int algebraic */
+  omc_ModelVariables    iPar; /* int parameters */
+  omc_ModelVariables    iAli; /* int aliases */
 
-  omc_ModelVariables    bAlg; // bool algebraic
-  omc_ModelVariables    bPar; // bool parameters
-  omc_ModelVariables    bAli; // bool aliases
+  omc_ModelVariables    bAlg; /* bool algebraic */
+  omc_ModelVariables    bPar; /* bool parameters */
+  omc_ModelVariables    bAli; /* bool aliases */
 
-  omc_ModelVariables    sAlg; // string algebraic
-  omc_ModelVariables    sPar; // string parameters
-  omc_ModelVariables    sAli; // string aliases
+  omc_ModelVariables    sAlg; /* string algebraic */
+  omc_ModelVariables    sPar; /* string parameters */
+  omc_ModelVariables    sAli; /* string aliases */
 
-  // these two we need to know to be able to add
-  // the stuff in <Real ... />, <String ... /> to
-  // the correct variable in the correct map
-  int                   lastCI; // index
-  omc_ModelVariables*   lastCT; // type (classification)
+  /* these two we need to know to be able to add
+     the stuff in <Real ... />, <String ... /> to
+     the correct variable in the correct map */
+  int                   lastCI; /* index */ 
+  omc_ModelVariables*   lastCT; /* type (classification) */
 } omc_ModelInput;
 
 /* reads double value from a string */
@@ -110,7 +110,7 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
   omc_ModelInput* mi = (omc_ModelInput*)userData;
   int i = 0;
 
-  // handle fmiModelDescription
+  /* handle fmiModelDescription */
   if (!strcmp(name, "fmiModelDescription"))
   {
     for (i = 0; attr[i]; i += 2)
@@ -119,7 +119,7 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
     }
     return;
   }
-  // handle DefaultExperiment
+  /* handle DefaultExperiment */
   if (!strcmp(name, "DefaultExperiment"))
   {
     for (i = 0; attr[i]; i += 2)
@@ -129,7 +129,7 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
     return;
   }
 
-  // handle ScalarVariable
+  /* handle ScalarVariable */
   if (!strcmp(name, "ScalarVariable"))
   {
     omc_ScalarVariable v;
@@ -140,13 +140,13 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
     {
       v[attr[i]] = attr[i + 1];
     }
-    // fetch the class index/type
+    /* fetch the class index/type  */
     ci = v["classIndex"];
     ct = v["classType"];
-    // transform to int
+    /* transform to int  */
     mi->lastCI = atoi(ci.c_str());
 
-    // which one of the classifications?
+    /* which one of the classifications?  */
     mi->lastCT = ct.compare("rSta") ? mi->lastCT : &mi->rSta;
     mi->lastCT = ct.compare("rDer") ? mi->lastCT : &mi->rDer;
     mi->lastCT = ct.compare("rAlg") ? mi->lastCT : &mi->rAlg;
@@ -167,34 +167,32 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
 
     if (mi->lastCT == NULL)
     {
-      cerr << "simulation_input_xml.cpp: error reading the xml file, found unknown class: "
-           << ct << " for variable: " << v["name"] << endl;
-      EXIT(1);
+      THROW2("simulation_input_xml.cpp: error reading the xml file, found unknown class: %s  for variable: %s",ct.c_str(),v["name"]);
     }
 
-    // add the ScalarVariable map to the correct map!
+    /* add the ScalarVariable map to the correct map! */
     (*mi->lastCT)[mi->lastCI] = v;
     return;
   }
-  // handle Real/Integer/Boolean/String
+  /* handle Real/Integer/Boolean/String */
   if (!strcmp(name, "Real") || !strcmp(name, "Integer") || !strcmp(name, "Boolean") || !strcmp(name, "String"))
   {
-    // add keys/value to the last variable
+    /* add keys/value to the last variable */
     for (i = 0; attr[i]; i += 2)
     {
-      // add more key/value pairs to the last variable
+      /* add more key/value pairs to the last variable */
       ((*mi->lastCT)[mi->lastCI])[attr[i]] = attr[i + 1];
     }
     ((*mi->lastCT)[mi->lastCI])["variableType"] = name;
     return;
   }
-  // anything else, we don't handle!
+  /* anything else, we don't handle! */
 }
 
 static void XMLCALL
 endElement(void *userData, const char *name)
 {
-  // do nothing!
+  /* do nothing! */
 }
 
 /* \brief
@@ -220,30 +218,28 @@ endElement(void *userData, const char *name)
   XML_Parser parser = NULL;
   int done = 0;
 
-  // read the filename from the command line (if any)
+  /* read the filename from the command line (if any) */
   filename=(string*)getFlagValue("f",argc,argv);
-  // no file given on the command line? use the default
+  /* no file given on the command line? use the default */
   if (filename == NULL) {
-    filename = new string(string(simData->modelFilePrefix)+"_init.xml");  // model_name defined in generated code for model.
+    filename = new string(string(simData->modelFilePrefix)+"_init.xml");  /* model_name defined in generated code for model.*/
   }
-  // open the file and fail on error. we open it read-write to be sure other processes can overwrite it
+  /* open the file and fail on error. we open it read-write to be sure other processes can overwrite it */
   file = fopen(filename->c_str(), "r");
   if (!file) {
-	  THROW("simulation_input_xml.cpp: Error: can not read file %s as indata to simulation.",filename->c_str());
-    delete filename;
-    EXIT(-1);
+    THROW1("simulation_input_xml.cpp: Error: can not read file %s as indata to simulation.",filename->c_str());
+    /* if (filename) delete filename; */
   }
-  // create the XML parser
+  /* create the XML parser */
   parser = XML_ParserCreate(NULL);
   if (!parser) {
-      cerr << "simulation_input_xml.cpp: Error: couldn't allocate memory for the XML parser!" << endl;
-      delete filename;
+      if (filename) delete filename;
       fclose(file);
-      EXIT(-1);
+      THROW("simulation_input_xml.cpp: Error: couldn't allocate memory for the XML parser!");
   }
-  // set our user data
+  /* set our user data */
   XML_SetUserData(parser, &mi);
-  // set the handlers for start/end of element.
+  /* set the handlers for start/end of element. */
   XML_SetElementHandler(parser, startElement, endElement);
   do
   {
@@ -251,78 +247,75 @@ endElement(void *userData, const char *name)
     done = len < sizeof(buf);
     if (XML_Parse(parser, buf, len, done) == XML_STATUS_ERROR)
     {
-      fprintf(stderr,
-              "simulation_input_xml.cpp: Error: failed to read the XML file %s: %s at line %lu\n",
+      fclose(file);
+      THROW3("simulation_input_xml.cpp: Error: failed to read the XML file %s: %s at line %lu\n",
               filename->c_str(),
               XML_ErrorString(XML_GetErrorCode(parser)),
               XML_GetCurrentLineNumber(parser));
       delete filename;
       XML_ParserFree(parser);
-      fclose(file);
       EXIT(1);
     }
   } while (!done);
 
-  // now we should have all the data inside omc_ModelInput mi.
+  /* now we should have all the data inside omc_ModelInput mi. */
 
-  // first, check the modelGUID!
-  // TODO! FIXME! THIS SEEMS TO FAIL!
-  // ARE WE READING THE OLD XML FILE??
+  /* first, check the modelGUID!
+     TODO! FIXME! THIS SEEMS TO FAIL!
+     ARE WE READING THE OLD XML FILE?? */
 
   if (strcmp(simData->modelGUID, mi.md["guid"].c_str()))
   {
-    cerr << "Error, the GUID: " << mi.md["guid"].c_str() << " from input data file: " << filename->c_str()
-         << " does not match the GUID compiled in the model: " << simData->modelGUID
-         << endl;
-    delete filename;
     XML_ParserFree(parser);
     fclose(file);
+    THROW3("Error, the GUID: %s from input data file: %s does not match the GUID compiled in the model: %s",mi.md["guid"].c_str(),filename->c_str(),simData->modelGUID);
+    delete filename;
     EXIT(1);
   }
 
 
   string *methodc = (string*)getFlagValue("m",argc,argv);
 
-  // read all the DefaultExperiment values
+  /* read all the DefaultExperiment values */
   read_value(mi.de["startTime"],start);
   simulationData->startTime = *start;
-  DEBUG_INFO(LV_SOLVER,"read start = %f from init file",*start);
+  DEBUG_INFO1(LV_SOLVER,"read start = %f from init file",*start);
   read_value(mi.de["stopTime"],stop);
   simulationData->stopTime = *stop;
-  DEBUG_INFO(LV_SOLVER," read stop = %f from init file",*stop);
+  DEBUG_INFO1(LV_SOLVER," read stop = %f from init file",*stop);
   read_value(mi.de["stepSize"],stepSize);
   simulationData->stepSize = *stepSize;
-  DEBUG_INFO(LV_SOLVER," read step = %f from init file",*stepSize);
+  DEBUG_INFO1(LV_SOLVER," read step = %f from init file",*stepSize);
   read_value(mi.de["tolerance"],tolerance);
   simulationData->tolerance = *tolerance;
-  DEBUG_INFO(LV_SOLVER," read tolerance = %f from init file",*tolerance);
+  DEBUG_INFO1(LV_SOLVER," read tolerance = %f from init file",*tolerance);
 
   if (methodc == NULL)
   {
     read_value(mi.de["solver"], method);
     simulationData->solverMethod = method->c_str();
-    DEBUG_INFO(LV_SOLVER," read solver method = %s from init file",method->c_str());
+    DEBUG_INFO1(LV_SOLVER," read solver method = %s from init file",method->c_str());
   }
   else
   {
     string tmp;
     read_value(mi.de["solver"],&tmp);
     simulationData->solverMethod = methodc->c_str();
-    DEBUG_INFO(LV_SOLVER," read solver method = %s from command line",methodc->c_str());
+    DEBUG_INFO1(LV_SOLVER," read solver method = %s from command line",methodc->c_str());
   }
   read_value(mi.de["outputFormat"],outputFormat);
   simulationData->outputFormat = outputFormat->c_str();
-  DEBUG_INFO(LV_SOLVER," read outputFormat = %s from init file",outputFormat->c_str());
+  DEBUG_INFO1(LV_SOLVER," read outputFormat = %s from init file",outputFormat->c_str());
   read_value(mi.de["variableFilter"],variableFilter);
   simulationData->variableFilter = variableFilter->c_str();
-  DEBUG_INFO(LV_SOLVER," read outputFormat = %s from init file",variableFilter->c_str());
+  DEBUG_INFO1(LV_SOLVER," read outputFormat = %s from init file",variableFilter->c_str());
 
-  // set the step size
+  /* set the step size */
   globalData->current_stepsize = *stepSize;
-  if (stepSize < 0) { // stepSize < 0 => Automatic number of outputs
+  if (stepSize < 0) { /* stepSize < 0 => Automatic number of outputs */
     *outputSteps = -1;
   } else {
-    // Calculate outputSteps from stepSize, start and stop
+    /* Calculate outputSteps from stepSize, start and stop */
     *outputSteps = (long)(int(*stop-*start) /(*stepSize));
   }
   simulationData->numSteps = *outputSteps;
@@ -368,358 +361,358 @@ endElement(void *userData, const char *name)
 
   for(int i = 0; i < simData->nStates; i++) { // Read x initial values
     read_value(mi.rSta[i]["start"],&simData->states[i]);
-    DEBUG_INFO(LV_SOLVER,"read %s  =  %f from init file",simData->statesNames[i].name, simData->states[i]);
+    DEBUG_INFO2(LV_SOLVER,"read %s  =  %f from init file",simData->statesNames[i].name, simData->states[i]);
   }
 
   for(int i = 0; i < simData->nStates; i++) { // Read der(x) initial values
     read_value(mi.rDer[i]["start"],&simData->statesDerivatives[i]);
-    DEBUG_INFO(LV_SOLVER,"read %s  =  %f from init file",simData->stateDerivativesNames[i].name, simData->statesDerivatives[i]);
+    DEBUG_INFO2(LV_SOLVER,"read %s  =  %f from init file",simData->stateDerivativesNames[i].name, simData->statesDerivatives[i]);
   }
 
   for(int i = 0; i < simData->nAlgebraic; i++) { // Read y initial values
     read_value(mi.rAlg[i]["start"],&simData->algebraics[i]);
-    DEBUG_INFO(LV_SOLVER," read %s  =  %f from init file",simData->algebraicsNames[i].name, simData->algebraics[i]);
+    DEBUG_INFO2(LV_SOLVER," read %s  =  %f from init file",simData->algebraicsNames[i].name, simData->algebraics[i]);
   }
 
   for(int i = 0; i < simData->nParameters; i++) { // Read parameter values
     read_value(mi.rPar[i]["start"],&simData->parameters[i]);
-    DEBUG_INFO(LV_SOLVER," read %s  =  %f from init file",simData->parametersNames[i].name, simData->parameters[i]);
+    DEBUG_INFO2(LV_SOLVER," read %s  =  %f from init file",simData->parametersNames[i].name, simData->parameters[i]);
   }
 
   for(int i = 0; i < simData->intVariables.nParameters; i++) { // Read parameter values
     read_value(mi.iPar[i]["start"],&simData->intVariables.parameters[i]);
-    DEBUG_INFO(LV_SOLVER," read %s  =  %ld from init file",simData->int_param_names[i].name, simData->intVariables.parameters[i]);
+    DEBUG_INFO2(LV_SOLVER," read %s  =  %ld from init file",simData->int_param_names[i].name, simData->intVariables.parameters[i]);
   }
 
   for(int i = 0; i < simData->intVariables.nAlgebraic; i++) { // Read parameter values
     read_value(mi.iAlg[i]["start"],&simData->intVariables.algebraics[i]);
-    DEBUG_INFO(LV_SOLVER," read %s  =  %ld from init file",simData->int_alg_names[i].name, simData->intVariables.algebraics[i]);
+    DEBUG_INFO2(LV_SOLVER," read %s  =  %ld from init file",simData->int_alg_names[i].name, simData->intVariables.algebraics[i]);
   }
 
   for(int i = 0; i < simData->boolVariables.nParameters; i++) { // Read parameter values
     read_value(mi.bPar[i]["start"],&simData->boolVariables.parameters[i]);
-    DEBUG_INFO(LV_SOLVER," read %s  =  %d from init file",simData->bool_param_names[i].name, simData->boolVariables.parameters[i]);
+    DEBUG_INFO2(LV_SOLVER," read %s  =  %d from init file",simData->bool_param_names[i].name, simData->boolVariables.parameters[i]);
   }
 
   for(int i = 0; i < simData->boolVariables.nAlgebraic; i++) { // Read parameter values
     read_value(mi.bAlg[i]["start"],&simData->boolVariables.algebraics[i]);
-    DEBUG_INFO(LV_SOLVER," read %s  =  %d from init file",simData->bool_alg_names[i].name, simData->boolVariables.algebraics[i]);
+    DEBUG_INFO2(LV_SOLVER," read %s  =  %d from init file",simData->bool_alg_names[i].name, simData->boolVariables.algebraics[i]);
   }
 
   for(int i=0; i < simData->stringVariables.nParameters; i++) { // Read string parameter values
     read_value(mi.sPar[i]["start"],&(simData->stringVariables.parameters[i]));
-    DEBUG_INFO(LV_SOLVER," read %s  =  %s from init file",simData->string_param_names[i].name, simData->stringVariables.parameters[i]);
+    DEBUG_INFO2(LV_SOLVER," read %s  =  %s from init file",simData->string_param_names[i].name, simData->stringVariables.parameters[i]);
   }
 
   for(int i=0; i < simData->stringVariables.nAlgebraic; i++) { // Read string algebraic values
     read_value(mi.sAlg[i]["start"],&simData->stringVariables.algebraics[i]);
-    DEBUG_INFO(LV_SOLVER," read %s  =  %s from init file",simData->string_alg_names[i].name, simData->stringVariables.algebraics[i]);
+    DEBUG_INFO2(LV_SOLVER," read %s  =  %s from init file",simData->string_alg_names[i].name, simData->stringVariables.algebraics[i]);
   }
-  DEBUG_INFO(LV_SOLVER,"Read parameter data from file %s",filename->c_str());
+  DEBUG_INFO1(LV_SOLVER,"Read parameter data from file %s",filename->c_str());
 
 
   /* Read all static data from File for every variable */
-  for(int i = 0; i < modelData->nStates; i++) { // Read states static data
+  for(int i = 0; i < modelData->nStates; i++) { /* Read states static data */
 
-	  DEBUG_INFO(LV_DEBUG, "Read xml file for states");
-	  /* read var info */
+    DEBUG_INFO(LV_DEBUG, "Read xml file for states");
+    /* read var info */
       read_value(mi.rSta[i]["name"],&(modelData->realData[i].info.name));
-      DEBUG_INFO(LV_DEBUG," read var %s from init file",modelData->realData[i].info.name);
+      DEBUG_INFO1(LV_DEBUG," read var %s from init file",modelData->realData[i].info.name);
       read_value(mi.rSta[i]["valueReference"],&(modelData->realData[i].info.id));
-      DEBUG_INFO(LV_DEBUG," read for %s id %d from init file",modelData->realData[i].info.name,modelData->realData[i].info.id);
+      DEBUG_INFO2(LV_DEBUG," read for %s id %d from init file",modelData->realData[i].info.name,modelData->realData[i].info.id);
       read_value(mi.rSta[i]["description"],&(modelData->realData[i].info.comment));
-      DEBUG_INFO(LV_DEBUG," read for %s description \"%s\" from init file",modelData->realData[i].info.name,modelData->realData[i].info.comment);
+      DEBUG_INFO2(LV_DEBUG," read for %s description \"%s\" from init file",modelData->realData[i].info.name,modelData->realData[i].info.comment);
       read_value(mi.rSta[i]["fileName"], (const char**) (void*)&(modelData->realData[i].info.info.filename));
-      DEBUG_INFO(LV_DEBUG," read for %s filename %s from init file",modelData->realData[i].info.name, modelData->realData[i].info.info.filename);
-	  read_value(mi.rSta[i]["startLine"],(modelica_integer*)&(modelData->realData[i].info.info.lineStart));
-      DEBUG_INFO(LV_DEBUG," read for %s lineStart %d from init file",modelData->realData[i].info.name,modelData->realData[i].info.info.lineStart);
+      DEBUG_INFO2(LV_DEBUG," read for %s filename %s from init file",modelData->realData[i].info.name, modelData->realData[i].info.info.filename);
+      read_value(mi.rSta[i]["startLine"],(modelica_integer*)&(modelData->realData[i].info.info.lineStart));
+      DEBUG_INFO2(LV_DEBUG," read for %s lineStart %d from init file",modelData->realData[i].info.name,modelData->realData[i].info.info.lineStart);
       read_value(mi.rSta[i]["startColumn"],(modelica_integer*)&(modelData->realData[i].info.info.colStart));
-      DEBUG_INFO(LV_DEBUG," read for %s colStart %d from init file",modelData->realData[i].info.name,modelData->realData[i].info.info.colStart);
+      DEBUG_INFO2(LV_DEBUG," read for %s colStart %d from init file",modelData->realData[i].info.name,modelData->realData[i].info.info.colStart);
       read_value(mi.rSta[i]["endLine"],(modelica_integer*)&(modelData->realData[i].info.info.lineEnd));
-      DEBUG_INFO(LV_DEBUG," read for %s lineEnd %d from init file",modelData->realData[i].info.name,modelData->realData[i].info.info.lineEnd);
+      DEBUG_INFO2(LV_DEBUG," read for %s lineEnd %d from init file",modelData->realData[i].info.name,modelData->realData[i].info.info.lineEnd);
       read_value(mi.rSta[i]["endColumn"],(modelica_integer*)&(modelData->realData[i].info.info.colEnd));
-      DEBUG_INFO(LV_DEBUG," read for %s colEnd %d from init file",modelData->realData[i].info.name,modelData->realData[i].info.info.colEnd);
+      DEBUG_INFO2(LV_DEBUG," read for %s colEnd %d from init file",modelData->realData[i].info.name,modelData->realData[i].info.info.colEnd);
       read_value(mi.rSta[i]["fileWritable"],(modelica_integer*)&(modelData->realData[i].info.info.readonly));
-      DEBUG_INFO(LV_DEBUG," read for %s readonly %d from init file",modelData->realData[i].info.name,modelData->realData[i].info.info.readonly);
+      DEBUG_INFO2(LV_DEBUG," read for %s readonly %d from init file",modelData->realData[i].info.name,modelData->realData[i].info.info.readonly);
 
       /* read var attribute */
-	  read_value(mi.rSta[i]["start"],&(modelData->realData[i].attribute.start));
-	  DEBUG_INFO(LV_SOLVER," read start-value for %s =  %f from init file",modelData->realData[i].info.name,modelData->realData[i].attribute.start);
-	  read_value(mi.rSta[i]["fixed"],(signed char*)&(modelData->realData[i].attribute.fixed));
-	  DEBUG_INFO(LV_SOLVER," read fixed for %s = %s from init file",modelData->realData[i].info.name,(modelData->realData[i].attribute.fixed)?"true":"false");
+    read_value(mi.rSta[i]["start"],&(modelData->realData[i].attribute.start));
+    DEBUG_INFO2(LV_SOLVER," read start-value for %s =  %f from init file",modelData->realData[i].info.name,modelData->realData[i].attribute.start);
+    read_value(mi.rSta[i]["fixed"],(signed char*)&(modelData->realData[i].attribute.fixed));
+    DEBUG_INFO2(LV_SOLVER," read fixed for %s = %s from init file",modelData->realData[i].info.name,(modelData->realData[i].attribute.fixed)?"true":"false");
   }
 
-  for(int i = 0; i < modelData->nStates; i++) { // Read stateDerivatives static data
+  for(int i = 0; i < modelData->nStates; i++) { /* Read stateDerivatives static data */
 
-	  DEBUG_INFO(LV_DEBUG, "Read xml file for stateDerivatives");
-	  /* read var info */
+    DEBUG_INFO(LV_DEBUG, "Read xml file for stateDerivatives");
+    /* read var info */
       read_value(mi.rDer[i]["name"], &(modelData->realData[modelData->nStates+i].info.name));
-      DEBUG_INFO(LV_DEBUG," read var %s from init file",modelData->realData[modelData->nStates+i].info.name);
+      DEBUG_INFO1(LV_DEBUG," read var %s from init file",modelData->realData[modelData->nStates+i].info.name);
       read_value(mi.rDer[i]["valueReference"], &(modelData->realData[modelData->nStates+i].info.id));
-      DEBUG_INFO(LV_DEBUG," read for %s id %d from init file",modelData->realData[modelData->nStates+i].info.name,modelData->realData[modelData->nStates+i].info.id);
+      DEBUG_INFO2(LV_DEBUG," read for %s id %d from init file",modelData->realData[modelData->nStates+i].info.name,modelData->realData[modelData->nStates+i].info.id);
       read_value(mi.rDer[i]["description"], &(modelData->realData[modelData->nStates+i].info.comment));
-      DEBUG_INFO(LV_DEBUG," read for %s comment %s from init file",modelData->realData[modelData->nStates+i].info.name,modelData->realData[modelData->nStates+i].info.comment);
+      DEBUG_INFO2(LV_DEBUG," read for %s comment %s from init file",modelData->realData[modelData->nStates+i].info.name,modelData->realData[modelData->nStates+i].info.comment);
       read_value(mi.rDer[i]["fileName"], (const char**)(void*)&(modelData->realData[modelData->nStates+i].info.info.filename));
-      DEBUG_INFO(LV_DEBUG," read for %s filename %s from init file",modelData->realData[modelData->nStates+i].info.name,modelData->realData[modelData->nStates+i].info.info.filename);
+      DEBUG_INFO2(LV_DEBUG," read for %s filename %s from init file",modelData->realData[modelData->nStates+i].info.name,modelData->realData[modelData->nStates+i].info.info.filename);
       read_value(mi.rDer[i]["startLine"], (modelica_integer*) &(modelData->realData[modelData->nStates+i].info.info.lineStart));
-      DEBUG_INFO(LV_DEBUG," read for %s lineStart %d from init file",modelData->realData[modelData->nStates+i].info.name,modelData->realData[modelData->nStates+i].info.info.lineStart);
+      DEBUG_INFO2(LV_DEBUG," read for %s lineStart %d from init file",modelData->realData[modelData->nStates+i].info.name,modelData->realData[modelData->nStates+i].info.info.lineStart);
       read_value(mi.rDer[i]["startColumn"], (modelica_integer*) &(modelData->realData[modelData->nStates+i].info.info.colStart));
-      DEBUG_INFO(LV_DEBUG," read for %s colStart %d from init file",modelData->realData[modelData->nStates+i].info.name,modelData->realData[modelData->nStates+i].info.info.colStart);
+      DEBUG_INFO2(LV_DEBUG," read for %s colStart %d from init file",modelData->realData[modelData->nStates+i].info.name,modelData->realData[modelData->nStates+i].info.info.colStart);
       read_value(mi.rDer[i]["endLine"], (modelica_integer*) &(modelData->realData[modelData->nStates+i].info.info.lineEnd));
-      DEBUG_INFO(LV_DEBUG," read for %s lineEnd %d from init file",modelData->realData[modelData->nStates+i].info.name,modelData->realData[modelData->nStates+i].info.info.lineEnd);
+      DEBUG_INFO2(LV_DEBUG," read for %s lineEnd %d from init file",modelData->realData[modelData->nStates+i].info.name,modelData->realData[modelData->nStates+i].info.info.lineEnd);
       read_value(mi.rDer[i]["endColumn"], (modelica_integer*) &(modelData->realData[modelData->nStates+i].info.info.colEnd));
-      DEBUG_INFO(LV_DEBUG," read for %s colEnd %d from init file",modelData->realData[modelData->nStates+i].info.name,modelData->realData[modelData->nStates+i].info.info.colEnd);
+      DEBUG_INFO2(LV_DEBUG," read for %s colEnd %d from init file",modelData->realData[modelData->nStates+i].info.name,modelData->realData[modelData->nStates+i].info.info.colEnd);
       read_value(mi.rDer[i]["fileWritable"], (modelica_integer*) &(modelData->realData[modelData->nStates+i].info.info.readonly));
-      DEBUG_INFO(LV_DEBUG," read for %s readonly %d from init file",modelData->realData[modelData->nStates+i].info.name,modelData->realData[modelData->nStates+i].info.info.readonly);
+      DEBUG_INFO2(LV_DEBUG," read for %s readonly %d from init file",modelData->realData[modelData->nStates+i].info.name,modelData->realData[modelData->nStates+i].info.info.readonly);
 
       /* read var attribute */
-	  read_value(mi.rDer[i]["start"],&(modelData->realData[modelData->nStates+i].attribute.start));
-	  DEBUG_INFO(LV_SOLVER," read start-value for %s =  %f from init file",modelData->realData[modelData->nStates+i].info.name,modelData->realData[modelData->nStates+i].attribute.start);
-	  read_value(mi.rDer[i]["fixed"],(signed char*)&(modelData->realData[modelData->nStates+i].attribute.fixed));
-	  DEBUG_INFO(LV_SOLVER," read fixed for %s = %s from init file",modelData->realData[modelData->nStates+i].info.name,(modelData->realData[modelData->nStates+i].attribute.fixed)?"true":"false");
+    read_value(mi.rDer[i]["start"],&(modelData->realData[modelData->nStates+i].attribute.start));
+    DEBUG_INFO2(LV_SOLVER," read start-value for %s =  %f from init file",modelData->realData[modelData->nStates+i].info.name,modelData->realData[modelData->nStates+i].attribute.start);
+    read_value(mi.rDer[i]["fixed"],(signed char*)&(modelData->realData[modelData->nStates+i].attribute.fixed));
+    DEBUG_INFO2(LV_SOLVER," read fixed for %s = %s from init file",modelData->realData[modelData->nStates+i].info.name,(modelData->realData[modelData->nStates+i].attribute.fixed)?"true":"false");
   }
 
 
-  for(int i = 0; i < (modelData->nVariablesReal - 2*modelData->nStates); i++) { // Read stateDerivatives static data
+  for(int i = 0; i < (modelData->nVariablesReal - 2*modelData->nStates); i++) { /* Read stateDerivatives static data */
 
-	  int j = 2*modelData->nStates + i;
-	  DEBUG_INFO(LV_DEBUG, "Read xml file for real algebracis");
-	  /* read var info */
+    int j = 2*modelData->nStates + i;
+    DEBUG_INFO(LV_DEBUG, "Read xml file for real algebracis");
+    /* read var info */
       read_value(mi.rAlg[i]["name"], &(modelData->realData[j].info.name));
-      DEBUG_INFO(LV_DEBUG," read var %s from init file",modelData->realData[j].info.name);
+      DEBUG_INFO1(LV_DEBUG," read var %s from init file",modelData->realData[j].info.name);
       read_value(mi.rAlg[i]["valueReference"], &(modelData->realData[j].info.id));
-      DEBUG_INFO(LV_DEBUG," read for %s id %d from init file",modelData->realData[j].info.name,modelData->realData[j].info.id);
+      DEBUG_INFO2(LV_DEBUG," read for %s id %d from init file",modelData->realData[j].info.name,modelData->realData[j].info.id);
       read_value(mi.rAlg[i]["description"], &(modelData->realData[j].info.comment));
-      DEBUG_INFO(LV_DEBUG," read for %s comment %s from init file",modelData->realData[j].info.name,modelData->realData[j].info.comment);
+      DEBUG_INFO2(LV_DEBUG," read for %s comment %s from init file",modelData->realData[j].info.name,modelData->realData[j].info.comment);
       read_value(mi.rAlg[i]["fileName"], (const char**)(void*)&(modelData->realData[j].info.info.filename));
-      DEBUG_INFO(LV_DEBUG," read for %s filename %s from init file",modelData->realData[j].info.name,modelData->realData[j].info.info.filename);
+      DEBUG_INFO2(LV_DEBUG," read for %s filename %s from init file",modelData->realData[j].info.name,modelData->realData[j].info.info.filename);
       read_value(mi.rAlg[i]["startLine"], (modelica_integer*) &(modelData->realData[j].info.info.lineStart));
-      DEBUG_INFO(LV_DEBUG," read for %s lineStart %d from init file",modelData->realData[j].info.name,modelData->realData[j].info.info.lineStart);
+      DEBUG_INFO2(LV_DEBUG," read for %s lineStart %d from init file",modelData->realData[j].info.name,modelData->realData[j].info.info.lineStart);
       read_value(mi.rAlg[i]["startColumn"], (modelica_integer*) &(modelData->realData[j].info.info.colStart));
-      DEBUG_INFO(LV_DEBUG," read for %s colStart %d from init file",modelData->realData[j].info.name,modelData->realData[j].info.info.colStart);
+      DEBUG_INFO2(LV_DEBUG," read for %s colStart %d from init file",modelData->realData[j].info.name,modelData->realData[j].info.info.colStart);
       read_value(mi.rAlg[i]["endLine"], (modelica_integer*) &(modelData->realData[j].info.info.lineEnd));
-      DEBUG_INFO(LV_DEBUG," read for %s lineEnd %d from init file",modelData->realData[j].info.name,modelData->realData[j].info.info.lineEnd);
+      DEBUG_INFO2(LV_DEBUG," read for %s lineEnd %d from init file",modelData->realData[j].info.name,modelData->realData[j].info.info.lineEnd);
       read_value(mi.rAlg[i]["endColumn"], (modelica_integer*) &(modelData->realData[j].info.info.colEnd));
-      DEBUG_INFO(LV_DEBUG," read for %s colEnd %d from init file",modelData->realData[j].info.name,modelData->realData[j].info.info.colEnd);
+      DEBUG_INFO2(LV_DEBUG," read for %s colEnd %d from init file",modelData->realData[j].info.name,modelData->realData[j].info.info.colEnd);
       read_value(mi.rAlg[i]["fileWritable"], (modelica_integer*) &(modelData->realData[j].info.info.readonly));
-      DEBUG_INFO(LV_DEBUG," read for %s readonly %d from init file",modelData->realData[j].info.name,modelData->realData[j].info.info.readonly);
+      DEBUG_INFO2(LV_DEBUG," read for %s readonly %d from init file",modelData->realData[j].info.name,modelData->realData[j].info.info.readonly);
 
       /* read var attribute */
-	  read_value(mi.rAlg[i]["start"],&(modelData->realData[j].attribute.start));
-	  DEBUG_INFO(LV_SOLVER," read start-value for %s =  %f from init file",modelData->realData[j].info.name,modelData->realData[j].attribute.start);
-	  read_value(mi.rAlg[i]["fixed"],(signed char*)&(modelData->realData[j].attribute.fixed));
-	  DEBUG_INFO(LV_SOLVER," read fixed for %s = %s from init file",modelData->realData[j].info.name,modelData->realData[j].attribute.fixed?"true":"false");
+    read_value(mi.rAlg[i]["start"],&(modelData->realData[j].attribute.start));
+    DEBUG_INFO2(LV_SOLVER," read start-value for %s =  %f from init file",modelData->realData[j].info.name,modelData->realData[j].attribute.start);
+    read_value(mi.rAlg[i]["fixed"],(signed char*)&(modelData->realData[j].attribute.fixed));
+    DEBUG_INFO2(LV_SOLVER," read fixed for %s = %s from init file",modelData->realData[j].info.name,modelData->realData[j].attribute.fixed?"true":"false");
   }
 
 
-  for(int i = 0; i < modelData->nVariablesInteger; i++) { // Read stateDerivatives static data
+  for(int i = 0; i < modelData->nVariablesInteger; i++) { /* Read interger variables static data */
 
-	  DEBUG_INFO(LV_DEBUG, "Read xml file for integer algebracis");
-	  /* read var info */
+    DEBUG_INFO(LV_DEBUG, "Read xml file for integer algebracis");
+    /* read var info */
       read_value(mi.iAlg[i]["name"], &(modelData->integerData[i].info.name));
-      DEBUG_INFO(LV_DEBUG," read var %s from init file",modelData->integerData[i].info.name);
+      DEBUG_INFO1(LV_DEBUG," read var %s from init file",modelData->integerData[i].info.name);
       read_value(mi.iAlg[i]["valueReference"], &(modelData->integerData[i].info.id));
-      DEBUG_INFO(LV_DEBUG," read for %s id %d from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.id);
+      DEBUG_INFO2(LV_DEBUG," read for %s id %d from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.id);
       read_value(mi.iAlg[i]["description"], &(modelData->integerData[i].info.comment));
-      DEBUG_INFO(LV_DEBUG," read for %s comment %s from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.comment);
+      DEBUG_INFO2(LV_DEBUG," read for %s comment %s from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.comment);
       read_value(mi.iAlg[i]["fileName"], (const char**)(void*)&(modelData->integerData[i].info.info.filename));
-      DEBUG_INFO(LV_DEBUG," read for %s filename %s from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.info.filename);
+      DEBUG_INFO2(LV_DEBUG," read for %s filename %s from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.info.filename);
       read_value(mi.iAlg[i]["startLine"], (modelica_integer*) &(modelData->integerData[i].info.info.lineStart));
-      DEBUG_INFO(LV_DEBUG," read for %s lineStart %d from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.info.lineStart);
+      DEBUG_INFO2(LV_DEBUG," read for %s lineStart %d from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.info.lineStart);
       read_value(mi.iAlg[i]["startColumn"], (modelica_integer*) &(modelData->integerData[i].info.info.colStart));
-      DEBUG_INFO(LV_DEBUG," read for %s colStart %d from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.info.colStart);
+      DEBUG_INFO2(LV_DEBUG," read for %s colStart %d from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.info.colStart);
       read_value(mi.iAlg[i]["endLine"], (modelica_integer*) &(modelData->integerData[i].info.info.lineEnd));
-      DEBUG_INFO(LV_DEBUG," read for %s lineEnd %d from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.info.lineEnd);
+      DEBUG_INFO2(LV_DEBUG," read for %s lineEnd %d from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.info.lineEnd);
       read_value(mi.iAlg[i]["endColumn"], (modelica_integer*) &(modelData->integerData[i].info.info.colEnd));
-      DEBUG_INFO(LV_DEBUG," read for %s colEnd %d from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.info.colEnd);
+      DEBUG_INFO2(LV_DEBUG," read for %s colEnd %d from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.info.colEnd);
       read_value(mi.iAlg[i]["fileWritable"], (modelica_integer*) &(modelData->integerData[i].info.info.readonly));
-      DEBUG_INFO(LV_DEBUG," read for %s readonly %d from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.info.readonly);
+      DEBUG_INFO2(LV_DEBUG," read for %s readonly %d from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.info.readonly);
 
       /* read var attribute */
-	  read_value(mi.iAlg[i]["start"],&(modelData->integerData[i].attribute.start));
-	  DEBUG_INFO(LV_SOLVER," read start-value for %s =  %ld from init file",modelData->integerData[i].info.name,modelData->integerData[i].attribute.start);
-	  read_value(mi.iAlg[i]["fixed"],(signed char*)&(modelData->integerData[i].attribute.fixed));
-	  DEBUG_INFO(LV_SOLVER," read fixed for %s = %s from init file",modelData->integerData[i].info.name,modelData->integerData[i].attribute.fixed?"true":"false");
+    read_value(mi.iAlg[i]["start"],&(modelData->integerData[i].attribute.start));
+    DEBUG_INFO2(LV_SOLVER," read start-value for %s =  %ld from init file",modelData->integerData[i].info.name,modelData->integerData[i].attribute.start);
+    read_value(mi.iAlg[i]["fixed"],(signed char*)&(modelData->integerData[i].attribute.fixed));
+    DEBUG_INFO2(LV_SOLVER," read fixed for %s = %s from init file",modelData->integerData[i].info.name,modelData->integerData[i].attribute.fixed?"true":"false");
   }
 
-  for(int i = 0; i < modelData->nVariablesBoolean; i++) { // Read stateDerivatives static data
+  for(int i = 0; i < modelData->nVariablesBoolean; i++) { /* Read boolean variables static data */
 
-	  DEBUG_INFO(LV_DEBUG, "Read xml file for boolean algebracis");
-	  /* read var info */
+    DEBUG_INFO(LV_DEBUG, "Read xml file for boolean algebracis");
+    /* read var info */
       read_value(mi.bAlg[i]["name"], &(modelData->booleanData[i].info.name));
-      DEBUG_INFO(LV_DEBUG," read var %s from init file",modelData->booleanData[i].info.name);
+      DEBUG_INFO1(LV_DEBUG," read var %s from init file",modelData->booleanData[i].info.name);
       read_value(mi.bAlg[i]["valueReference"], &(modelData->booleanData[i].info.id));
-      DEBUG_INFO(LV_DEBUG," read for %s id %d from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.id);
+      DEBUG_INFO2(LV_DEBUG," read for %s id %d from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.id);
       read_value(mi.bAlg[i]["description"], &(modelData->booleanData[i].info.comment));
-      DEBUG_INFO(LV_DEBUG," read for %s comment %s from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.comment);
+      DEBUG_INFO2(LV_DEBUG," read for %s comment %s from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.comment);
       read_value(mi.bAlg[i]["fileName"], (const char**)(void*)&(modelData->booleanData[i].info.info.filename));
-      DEBUG_INFO(LV_DEBUG," read for %s filename %s from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.info.filename);
+      DEBUG_INFO2(LV_DEBUG," read for %s filename %s from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.info.filename);
       read_value(mi.bAlg[i]["startLine"], (modelica_integer*) &(modelData->booleanData[i].info.info.lineStart));
-      DEBUG_INFO(LV_DEBUG," read for %s lineStart %d from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.info.lineStart);
+      DEBUG_INFO2(LV_DEBUG," read for %s lineStart %d from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.info.lineStart);
       read_value(mi.bAlg[i]["startColumn"], (modelica_integer*) &(modelData->booleanData[i].info.info.colStart));
-      DEBUG_INFO(LV_DEBUG," read for %s colStart %d from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.info.colStart);
+      DEBUG_INFO2(LV_DEBUG," read for %s colStart %d from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.info.colStart);
       read_value(mi.bAlg[i]["endLine"], (modelica_integer*) &(modelData->booleanData[i].info.info.lineEnd));
-      DEBUG_INFO(LV_DEBUG," read for %s lineEnd %d from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.info.lineEnd);
+      DEBUG_INFO2(LV_DEBUG," read for %s lineEnd %d from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.info.lineEnd);
       read_value(mi.bAlg[i]["endColumn"], (modelica_integer*) &(modelData->booleanData[i].info.info.colEnd));
-      DEBUG_INFO(LV_DEBUG," read for %s colEnd %d from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.info.colEnd);
+      DEBUG_INFO2(LV_DEBUG," read for %s colEnd %d from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.info.colEnd);
       read_value(mi.bAlg[i]["fileWritable"], (modelica_integer*) &(modelData->booleanData[i].info.info.readonly));
-      DEBUG_INFO(LV_DEBUG," read for %s readonly %d from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.info.readonly);
+      DEBUG_INFO2(LV_DEBUG," read for %s readonly %d from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.info.readonly);
 
       /* read var attribute */
-	  read_value(mi.bAlg[i]["start"],&(modelData->booleanData[i].attribute.start));
-	  DEBUG_INFO(LV_SOLVER," read start-value for %s =  %c from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].attribute.start);
-	  read_value(mi.bAlg[i]["fixed"],(signed char*)&(modelData->booleanData[i].attribute.fixed));
-	  DEBUG_INFO(LV_SOLVER," read fixed for %s = %s from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].attribute.fixed?"true":"false");
+    read_value(mi.bAlg[i]["start"],&(modelData->booleanData[i].attribute.start));
+    DEBUG_INFO2(LV_SOLVER," read start-value for %s =  %c from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].attribute.start);
+    read_value(mi.bAlg[i]["fixed"],(signed char*)&(modelData->booleanData[i].attribute.fixed));
+    DEBUG_INFO2(LV_SOLVER," read fixed for %s = %s from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].attribute.fixed?"true":"false");
   }
 
-  for(int i = 0; i < modelData->nVariablesString; i++) { // Read stateDerivatives static data
+  for(int i = 0; i < modelData->nVariablesString; i++) { /* Read string variables static data */
 
-	  DEBUG_INFO(LV_DEBUG, "Read xml file for string algebracis");
-	  /* read var info */
+    DEBUG_INFO(LV_DEBUG, "Read xml file for string algebracis");
+    /* read var info */
       read_value(mi.sAlg[i]["name"], &(modelData->stringData[i].info.name));
-      DEBUG_INFO(LV_DEBUG," read var %s from init file",modelData->stringData[i].info.name);
+      DEBUG_INFO1(LV_DEBUG," read var %s from init file",modelData->stringData[i].info.name);
       read_value(mi.sAlg[i]["valueReference"], &(modelData->stringData[i].info.id));
-      DEBUG_INFO(LV_DEBUG," read for %s id %d from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.id);
+      DEBUG_INFO2(LV_DEBUG," read for %s id %d from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.id);
       read_value(mi.sAlg[i]["description"], &(modelData->stringData[i].info.comment));
-      DEBUG_INFO(LV_DEBUG," read for %s comment %s from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.comment);
+      DEBUG_INFO2(LV_DEBUG," read for %s comment %s from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.comment);
       read_value(mi.sAlg[i]["fileName"], (const char**)(void*)&(modelData->stringData[i].info.info.filename));
-      DEBUG_INFO(LV_DEBUG," read for %s filename %s from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.info.filename);
+      DEBUG_INFO2(LV_DEBUG," read for %s filename %s from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.info.filename);
       read_value(mi.sAlg[i]["startLine"], (modelica_integer*) &(modelData->stringData[i].info.info.lineStart));
-      DEBUG_INFO(LV_DEBUG," read for %s lineStart %d from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.info.lineStart);
+      DEBUG_INFO2(LV_DEBUG," read for %s lineStart %d from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.info.lineStart);
       read_value(mi.sAlg[i]["startColumn"], (modelica_integer*) &(modelData->stringData[i].info.info.colStart));
-      DEBUG_INFO(LV_DEBUG," read for %s colStart %d from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.info.colStart);
+      DEBUG_INFO2(LV_DEBUG," read for %s colStart %d from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.info.colStart);
       read_value(mi.sAlg[i]["endLine"], (modelica_integer*) &(modelData->stringData[i].info.info.lineEnd));
-      DEBUG_INFO(LV_DEBUG," read for %s lineEnd %d from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.info.lineEnd);
+      DEBUG_INFO2(LV_DEBUG," read for %s lineEnd %d from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.info.lineEnd);
       read_value(mi.sAlg[i]["endColumn"], (modelica_integer*) &(modelData->stringData[i].info.info.colEnd));
-      DEBUG_INFO(LV_DEBUG," read for %s colEnd %d from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.info.colEnd);
+      DEBUG_INFO2(LV_DEBUG," read for %s colEnd %d from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.info.colEnd);
       read_value(mi.sAlg[i]["fileWritable"], (modelica_integer*) &(modelData->stringData[i].info.info.readonly));
-      DEBUG_INFO(LV_DEBUG," read for %s readonly %d from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.info.readonly);
+      DEBUG_INFO2(LV_DEBUG," read for %s readonly %d from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.info.readonly);
 
       /* read var attribute */
-	  read_value(mi.sAlg[i]["start"],&(modelData->stringData[i].attribute.start));
-	  DEBUG_INFO(LV_SOLVER," read for %s start-value %s from init file",modelData->stringData[i].info.name,modelData->stringData[i].attribute.start);
+    read_value(mi.sAlg[i]["start"],&(modelData->stringData[i].attribute.start));
+    DEBUG_INFO2(LV_SOLVER," read for %s start-value %s from init file",modelData->stringData[i].info.name,modelData->stringData[i].attribute.start);
   }
 
   /*
    *  Real all parameter
    */
-  for(int i = 0; i < modelData->nParametersReal; i++) { // Read Parameters static data
+  for(int i = 0; i < modelData->nParametersReal; i++) { /* Read Parameters static data */
 
-	  DEBUG_INFO(LV_DEBUG, "Read xml file for real parameters");
-	  /* read var info */
+    DEBUG_INFO(LV_DEBUG, "Read xml file for real parameters");
+    /* read var info */
       read_value(mi.rPar[i]["name"], &(modelData->realData[i].info.name));
-      DEBUG_INFO(LV_DEBUG," read var %s from init file",modelData->realData[i].info.name);
+      DEBUG_INFO1(LV_DEBUG," read var %s from init file",modelData->realData[i].info.name);
       read_value(mi.rPar[i]["valueReference"], &(modelData->realData[i].info.id));
-      DEBUG_INFO(LV_DEBUG," read for %s id %d from init file",modelData->realData[i].info.name,modelData->realData[i].info.id);
+      DEBUG_INFO2(LV_DEBUG," read for %s id %d from init file",modelData->realData[i].info.name,modelData->realData[i].info.id);
       read_value(mi.rPar[i]["description"], &(modelData->realData[i].info.comment));
-      DEBUG_INFO(LV_DEBUG," read for %s comment %s from init file",modelData->realData[i].info.name,modelData->realData[i].info.comment);
+      DEBUG_INFO2(LV_DEBUG," read for %s comment %s from init file",modelData->realData[i].info.name,modelData->realData[i].info.comment);
       read_value(mi.rPar[i]["fileName"], (const char**)(void*)&(modelData->realData[i].info.info.filename));
-      DEBUG_INFO(LV_DEBUG," read for %s filename %s from init file",modelData->realData[i].info.name,modelData->realData[i].info.info.filename);
+      DEBUG_INFO2(LV_DEBUG," read for %s filename %s from init file",modelData->realData[i].info.name,modelData->realData[i].info.info.filename);
       read_value(mi.rPar[i]["startLine"], (modelica_integer*) &(modelData->realData[i].info.info.lineStart));
-      DEBUG_INFO(LV_DEBUG," read for %s lineStart %d from init file",modelData->realData[i].info.name,modelData->realData[i].info.info.lineStart);
+      DEBUG_INFO2(LV_DEBUG," read for %s lineStart %d from init file",modelData->realData[i].info.name,modelData->realData[i].info.info.lineStart);
       read_value(mi.rPar[i]["startColumn"], (modelica_integer*) &(modelData->realData[i].info.info.colStart));
-      DEBUG_INFO(LV_DEBUG," read for %s colStart %d from init file",modelData->realData[i].info.name,modelData->realData[i].info.info.colStart);
+      DEBUG_INFO2(LV_DEBUG," read for %s colStart %d from init file",modelData->realData[i].info.name,modelData->realData[i].info.info.colStart);
       read_value(mi.rPar[i]["endLine"], (modelica_integer*) &(modelData->realData[i].info.info.lineEnd));
-      DEBUG_INFO(LV_DEBUG," read for %s lineEnd %d from init file",modelData->realData[i].info.name,modelData->realData[i].info.info.lineEnd);
+      DEBUG_INFO2(LV_DEBUG," read for %s lineEnd %d from init file",modelData->realData[i].info.name,modelData->realData[i].info.info.lineEnd);
       read_value(mi.rPar[i]["endColumn"], (modelica_integer*) &(modelData->realData[i].info.info.colEnd));
-      DEBUG_INFO(LV_DEBUG," read for %s colEnd %d from init file",modelData->realData[i].info.name,modelData->realData[i].info.info.colEnd);
+      DEBUG_INFO2(LV_DEBUG," read for %s colEnd %d from init file",modelData->realData[i].info.name,modelData->realData[i].info.info.colEnd);
       read_value(mi.rPar[i]["fileWritable"], (modelica_integer*) &(modelData->realData[i].info.info.readonly));
-      DEBUG_INFO(LV_DEBUG," read for %s readonly %d from init file",modelData->realData[i].info.name,modelData->realData[i].info.info.readonly);
+      DEBUG_INFO2(LV_DEBUG," read for %s readonly %d from init file",modelData->realData[i].info.name,modelData->realData[i].info.info.readonly);
 
       /* read var attribute */
-	  read_value(mi.rPar[i]["start"],&(modelData->realData[i].attribute.start));
-	  DEBUG_INFO(LV_SOLVER," read start-value for %s =  %f from init file",modelData->realData[i].info.name,modelData->realData[i].attribute.start);
-	  read_value(mi.rPar[i]["fixed"],(signed char*)&(modelData->realData[i].attribute.fixed));
-	  DEBUG_INFO(LV_SOLVER," read fixed for %s = %s from init file",modelData->realData[i].info.name,modelData->realData[i].attribute.fixed?"true":"false");
+    read_value(mi.rPar[i]["start"],&(modelData->realData[i].attribute.start));
+    DEBUG_INFO2(LV_SOLVER," read start-value for %s =  %f from init file",modelData->realData[i].info.name,modelData->realData[i].attribute.start);
+    read_value(mi.rPar[i]["fixed"],(signed char*)&(modelData->realData[i].attribute.fixed));
+    DEBUG_INFO2(LV_SOLVER," read fixed for %s = %s from init file",modelData->realData[i].info.name,modelData->realData[i].attribute.fixed?"true":"false");
   }
 
 
-  for(int i = 0; i < modelData->nVariablesInteger; i++) { // Read stateDerivatives static data
+  for(int i = 0; i < modelData->nVariablesInteger; i++) { /* Read integer static data */
 
-	  DEBUG_INFO(LV_DEBUG, "Read xml file for integer parameters");
-	  /* read var info */
+    DEBUG_INFO(LV_DEBUG, "Read xml file for integer parameters");
+    /* read var info */
       read_value(mi.iPar[i]["name"], &(modelData->integerData[i].info.name));
-      DEBUG_INFO(LV_DEBUG," read var %s from init file",modelData->integerData[i].info.name);
+      DEBUG_INFO1(LV_DEBUG," read var %s from init file",modelData->integerData[i].info.name);
       read_value(mi.iPar[i]["valueReference"], &(modelData->integerData[i].info.id));
-      DEBUG_INFO(LV_DEBUG," read for %s id %d from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.id);
+      DEBUG_INFO2(LV_DEBUG," read for %s id %d from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.id);
       read_value(mi.iPar[i]["description"], &(modelData->integerData[i].info.comment));
-      DEBUG_INFO(LV_DEBUG," read for %s comment %s from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.comment);
+      DEBUG_INFO2(LV_DEBUG," read for %s comment %s from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.comment);
       read_value(mi.iPar[i]["fileName"], (const char**)(void*)&(modelData->integerData[i].info.info.filename));
-      DEBUG_INFO(LV_DEBUG," read for %s filename %s from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.info.filename);
+      DEBUG_INFO2(LV_DEBUG," read for %s filename %s from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.info.filename);
       read_value(mi.iPar[i]["startLine"], (modelica_integer*) &(modelData->integerData[i].info.info.lineStart));
-      DEBUG_INFO(LV_DEBUG," read for %s lineStart %d from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.info.lineStart);
+      DEBUG_INFO2(LV_DEBUG," read for %s lineStart %d from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.info.lineStart);
       read_value(mi.iPar[i]["startColumn"], (modelica_integer*) &(modelData->integerData[i].info.info.colStart));
-      DEBUG_INFO(LV_DEBUG," read for %s colStart %d from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.info.colStart);
+      DEBUG_INFO2(LV_DEBUG," read for %s colStart %d from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.info.colStart);
       read_value(mi.iPar[i]["endLine"], (modelica_integer*) &(modelData->integerData[i].info.info.lineEnd));
-      DEBUG_INFO(LV_DEBUG," read for %s lineEnd %d from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.info.lineEnd);
+      DEBUG_INFO2(LV_DEBUG," read for %s lineEnd %d from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.info.lineEnd);
       read_value(mi.iPar[i]["endColumn"], (modelica_integer*) &(modelData->integerData[i].info.info.colEnd));
-      DEBUG_INFO(LV_DEBUG," read for %s colEnd %d from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.info.colEnd);
+      DEBUG_INFO2(LV_DEBUG," read for %s colEnd %d from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.info.colEnd);
       read_value(mi.iPar[i]["fileWritable"], (modelica_integer*) &(modelData->integerData[i].info.info.readonly));
-      DEBUG_INFO(LV_DEBUG," read for %s readonly %d from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.info.readonly);
+      DEBUG_INFO2(LV_DEBUG," read for %s readonly %d from init file",modelData->integerData[i].info.name,modelData->integerData[i].info.info.readonly);
 
       /* read var attribute */
-	  read_value(mi.iPar[i]["start"],&(modelData->integerData[i].attribute.start));
-	  DEBUG_INFO(LV_SOLVER," read start-value for %s =  %ld from init file",modelData->integerData[i].info.name,modelData->integerData[i].attribute.start);
-	  read_value(mi.iPar[i]["fixed"],(signed char*)&(modelData->integerData[i].attribute.fixed));
-	  DEBUG_INFO(LV_SOLVER," read fixed for %s = %s from init file",modelData->integerData[i].info.name,modelData->integerData[i].attribute.fixed?"true":"false");
+    read_value(mi.iPar[i]["start"],&(modelData->integerData[i].attribute.start));
+    DEBUG_INFO2(LV_SOLVER," read start-value for %s =  %ld from init file",modelData->integerData[i].info.name,modelData->integerData[i].attribute.start);
+    read_value(mi.iPar[i]["fixed"],(signed char*)&(modelData->integerData[i].attribute.fixed));
+    DEBUG_INFO2(LV_SOLVER," read fixed for %s = %s from init file",modelData->integerData[i].info.name,modelData->integerData[i].attribute.fixed?"true":"false");
   }
 
-  for(int i = 0; i < modelData->nVariablesBoolean; i++) { // Read stateDerivatives static data
+  for(int i = 0; i < modelData->nVariablesBoolean; i++) { /* Read boolean static data */
 
-	  DEBUG_INFO(LV_DEBUG, "Read xml file for boolean parameters");
-	  /* read var info */
+    DEBUG_INFO(LV_DEBUG, "Read xml file for boolean parameters");
+    /* read var info */
       read_value(mi.bPar[i]["name"], &(modelData->booleanData[i].info.name));
-      DEBUG_INFO(LV_DEBUG," read var %s from init file",modelData->booleanData[i].info.name);
+      DEBUG_INFO1(LV_DEBUG," read var %s from init file",modelData->booleanData[i].info.name);
       read_value(mi.bPar[i]["valueReference"], &(modelData->booleanData[i].info.id));
-      DEBUG_INFO(LV_DEBUG," read for %s id %d from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.id);
+      DEBUG_INFO2(LV_DEBUG," read for %s id %d from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.id);
       read_value(mi.bPar[i]["description"], &(modelData->booleanData[i].info.comment));
-      DEBUG_INFO(LV_DEBUG," read for %s comment %s from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.comment);
+      DEBUG_INFO2(LV_DEBUG," read for %s comment %s from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.comment);
       read_value(mi.bPar[i]["fileName"], (const char**)(void*)&(modelData->booleanData[i].info.info.filename));
-      DEBUG_INFO(LV_DEBUG," read for %s filename %s from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.info.filename);
+      DEBUG_INFO2(LV_DEBUG," read for %s filename %s from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.info.filename);
       read_value(mi.bPar[i]["startLine"], (modelica_integer*) &(modelData->booleanData[i].info.info.lineStart));
-      DEBUG_INFO(LV_DEBUG," read for %s lineStart %d from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.info.lineStart);
+      DEBUG_INFO2(LV_DEBUG," read for %s lineStart %d from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.info.lineStart);
       read_value(mi.bPar[i]["startColumn"], (modelica_integer*) &(modelData->booleanData[i].info.info.colStart));
-      DEBUG_INFO(LV_DEBUG," read for %s colStart %d from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.info.colStart);
+      DEBUG_INFO2(LV_DEBUG," read for %s colStart %d from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.info.colStart);
       read_value(mi.bPar[i]["endLine"], (modelica_integer*) &(modelData->booleanData[i].info.info.lineEnd));
-      DEBUG_INFO(LV_DEBUG," read for %s lineEnd %d from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.info.lineEnd);
+      DEBUG_INFO2(LV_DEBUG," read for %s lineEnd %d from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.info.lineEnd);
       read_value(mi.bPar[i]["endColumn"], (modelica_integer*) &(modelData->booleanData[i].info.info.colEnd));
-      DEBUG_INFO(LV_DEBUG," read for %s colEnd %d from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.info.colEnd);
+      DEBUG_INFO2(LV_DEBUG," read for %s colEnd %d from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.info.colEnd);
       read_value(mi.bPar[i]["fileWritable"], (modelica_integer*) &(modelData->booleanData[i].info.info.readonly));
-      DEBUG_INFO(LV_DEBUG," read for %s readonly %d from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.info.readonly);
+      DEBUG_INFO2(LV_DEBUG," read for %s readonly %d from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].info.info.readonly);
 
       /* read var attribute */
-	  read_value(mi.bPar[i]["start"],&(modelData->booleanData[i].attribute.start));
-	  DEBUG_INFO(LV_SOLVER," read start-value for %s =  %c from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].attribute.start);
-	  read_value(mi.bPar[i]["fixed"],(signed char*)&(modelData->booleanData[i].attribute.fixed));
-	  DEBUG_INFO(LV_SOLVER," read fixed for %s = %s from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].attribute.fixed?"true":"false");
+    read_value(mi.bPar[i]["start"],&(modelData->booleanData[i].attribute.start));
+    DEBUG_INFO2(LV_SOLVER," read start-value for %s =  %c from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].attribute.start);
+    read_value(mi.bPar[i]["fixed"],(signed char*)&(modelData->booleanData[i].attribute.fixed));
+    DEBUG_INFO2(LV_SOLVER," read fixed for %s = %s from init file",modelData->booleanData[i].info.name,modelData->booleanData[i].attribute.fixed?"true":"false");
   }
 
-  for(int i = 0; i < modelData->nVariablesString; i++) { // Read stateDerivatives static data
+  for(int i = 0; i < modelData->nVariablesString; i++) { /* Read stateDerivatives static data */
 
-	  DEBUG_INFO(LV_DEBUG, "Read xml file for string parameters");
-	  /* read var info */
+    DEBUG_INFO(LV_DEBUG, "Read xml file for string parameters");
+    /* read var info */
       read_value(mi.sPar[i]["name"], &(modelData->stringData[i].info.name));
-      DEBUG_INFO(LV_DEBUG," read var %s from init file",modelData->stringData[i].info.name);
+      DEBUG_INFO1(LV_DEBUG," read var %s from init file",modelData->stringData[i].info.name);
       read_value(mi.sPar[i]["valueReference"], &(modelData->stringData[i].info.id));
-      DEBUG_INFO(LV_DEBUG," read for %s id %d from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.id);
+      DEBUG_INFO2(LV_DEBUG," read for %s id %d from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.id);
       read_value(mi.sPar[i]["description"], &(modelData->stringData[i].info.comment));
-      DEBUG_INFO(LV_DEBUG," read for %s comment %s from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.comment);
+      DEBUG_INFO2(LV_DEBUG," read for %s comment %s from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.comment);
       read_value(mi.sPar[i]["fileName"], (const char**)(void*)&(modelData->stringData[i].info.info.filename));
-      DEBUG_INFO(LV_DEBUG," read for %s filename %s from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.info.filename);
+      DEBUG_INFO2(LV_DEBUG," read for %s filename %s from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.info.filename);
       read_value(mi.sPar[i]["startLine"], (modelica_integer*) &(modelData->stringData[i].info.info.lineStart));
-      DEBUG_INFO(LV_DEBUG," read for %s lineStart %d from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.info.lineStart);
+      DEBUG_INFO2(LV_DEBUG," read for %s lineStart %d from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.info.lineStart);
       read_value(mi.sPar[i]["startColumn"], (modelica_integer*) &(modelData->stringData[i].info.info.colStart));
-      DEBUG_INFO(LV_DEBUG," read for %s colStart %d from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.info.colStart);
+      DEBUG_INFO2(LV_DEBUG," read for %s colStart %d from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.info.colStart);
       read_value(mi.sPar[i]["endLine"], (modelica_integer*) &(modelData->stringData[i].info.info.lineEnd));
-      DEBUG_INFO(LV_DEBUG," read for %s lineEnd %d from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.info.lineEnd);
+      DEBUG_INFO2(LV_DEBUG," read for %s lineEnd %d from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.info.lineEnd);
       read_value(mi.sPar[i]["endColumn"], (modelica_integer*) &(modelData->stringData[i].info.info.colEnd));
-      DEBUG_INFO(LV_DEBUG," read for %s colEnd %d from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.info.colEnd);
+      DEBUG_INFO2(LV_DEBUG," read for %s colEnd %d from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.info.colEnd);
       read_value(mi.sPar[i]["fileWritable"], (modelica_integer*) &(modelData->stringData[i].info.info.readonly));
-      DEBUG_INFO(LV_DEBUG," read for %s readonly %d from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.info.readonly);
+      DEBUG_INFO2(LV_DEBUG," read for %s readonly %d from init file",modelData->stringData[i].info.name,modelData->stringData[i].info.info.readonly);
 
       /* read var attribute */
-	  read_value(mi.sPar[i]["start"],&(modelData->stringData[i].attribute.start));
-	  DEBUG_INFO(LV_SOLVER," read for %s start-value %s from init file",modelData->stringData[i].info.name,modelData->stringData[i].attribute.start);
+    read_value(mi.sPar[i]["start"],&(modelData->stringData[i].attribute.start));
+    DEBUG_INFO2(LV_SOLVER," read for %s start-value %s from init file",modelData->stringData[i].info.name,modelData->stringData[i].attribute.start);
   }
 
 
@@ -739,7 +732,7 @@ inline void read_value(string s, string *str)
 inline void read_value(string s, const char **str)
 {
   if (str == NULL) {
-    cerr << "error read_value, no data allocated for storing string" << endl;
+    WARNING("error read_value, no data allocated for storing string");
     return;
   }
   *str = strdup(s.c_str());

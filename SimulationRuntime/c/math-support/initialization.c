@@ -127,7 +127,7 @@ void leastSquare(long *nz, double *z, double *funcValue)
   for(j=0; i<globalData->nInitialResiduals; j++)
     *funcValue += globalData->initialResiduals[j] * globalData->initialResiduals[j];
 
-  DEBUG_INFO(LV_INIT, "info    | leastSquare | leastSquare-Value: %g", *funcValue);
+  DEBUG_INFO1(LV_INIT, "info    | leastSquare | leastSquare-Value: %g", *funcValue);
 }
 
 /*! \fn double leastSquareWithLambda(long nz, double *z, double lambda)
@@ -243,7 +243,7 @@ void NelderMeadOptimization(long N,
 
     /* dump every dump-th step */
     if(dump && !(iteration % dump))
-      INFO("info    | NelderMeadOptimization | lambda=%g / step=%d / f=%g", lambda, (int)iteration, leastSquare(N, simplex, scale, lambda));
+      INFO3("info    | NelderMeadOptimization | lambda=%g / step=%d / f=%g", lambda, (int)iteration, leastSquare(N, simplex, scale, lambda));
 
     /* func-values for the simplex */
     for(x=0; x<N+1; x++)
@@ -263,7 +263,7 @@ void NelderMeadOptimization(long N,
       if(lambda > 1.0)
         lambda = 1.0;
 
-      DEBUG_INFO(LV_INIT, "info    | NelderMeadOptimization | increasing lambda to %g in step %d at f=%g", lambda, (int)iteration, leastSquare(N, simplex, scale, lambda));
+      DEBUG_INFO3(LV_INIT, "info    | NelderMeadOptimization | increasing lambda to %g in step %d at f=%g", lambda, (int)iteration, leastSquare(N, simplex, scale, lambda));
       continue;
     }
 
@@ -405,12 +405,12 @@ int reportResidualValue(double funcValue)
   if(funcValue > 1e-5)
   {
     WARNING("reportResidualValue | error in initialization. System of initial equations are not consistent");
-    WARNING("reportResidualValue | (Least Square function value is %g)", funcValue);
+    WARNING1("reportResidualValue | (Least Square function value is %g)", funcValue);
 
     for(i=0; i<globalData->nInitialResiduals; i++)
     {
       if(fabs(globalData->initialResiduals[i]) > 1e-6)
-        INFO("reportResidualValue | residual[%d] = %g", (int) i, globalData->initialResiduals[i]);
+        INFO2("reportResidualValue | residual[%d] = %g", (int) i, globalData->initialResiduals[i]);
     }
     return 1;
   }
@@ -500,17 +500,17 @@ int simplex_initialization(long nz, double *z)
   }
   else
   {
-    DEBUG_INFO(LV_INIT, "simplex_initialization | Result of leastSquare method = %g. The initial guess fits to the system", funcValue);
+    DEBUG_INFO1(LV_INIT, "simplex_initialization | Result of leastSquare method = %g. The initial guess fits to the system", funcValue);
   }
 
   leastSquare(&nz, z, &funcValue);
 
-  DEBUG_INFO(LV_INIT, "leastSquare=%g", funcValue);
+  DEBUG_INFO1(LV_INIT, "leastSquare=%g", funcValue);
 
   if(IFAULT == 1)
   {
     if(funcValue > SIMP) {
-      WARNING("Error in initialization. Solver iterated %d times without finding a solution", (int)MAXF);
+      WARNING1("Error in initialization. Solver iterated %d times without finding a solution", (int)MAXF);
       return -1;
     }
   }else if(IFAULT == 2 ) {
@@ -546,7 +546,7 @@ int nelderMeadEx_initialization(long nz, double *z, double *scale)
 
   for(l=0; l<100 && funcValue > STOPCR; l++)
   {
-    DEBUG_INFO(LV_INIT, "nelderMeadEx_initialization | initialization-nr. %d", (int)l);
+    DEBUG_INFO1(LV_INIT, "nelderMeadEx_initialization | initialization-nr. %d", (int)l);
 
     /* down-scale */
     for(i=0; i<nz; i++)
@@ -558,9 +558,9 @@ int nelderMeadEx_initialization(long nz, double *z, double *scale)
 
     if(DEBUG_FLAG(LV_INIT))
     {
-      INFO("nelderMeadEx_initialization | iteration=%d / lambda=%g / f=%g", (int) iteration, lambda, leastSquareWithLambda(nz, z, NULL, lambda));
+      INFO3("nelderMeadEx_initialization | iteration=%d / lambda=%g / f=%g", (int) iteration, lambda, leastSquareWithLambda(nz, z, NULL, lambda));
       for(i=0; i<nz; i++)
-        INFO_AL("nelderMeadEx_initialization | states | %d: %g", (int) i, z[i]);
+        INFO_AL2("nelderMeadEx_initialization | states | %d: %g", (int) i, z[i]);
     }
 
     saveall();                      /* save pre-values */
@@ -577,11 +577,11 @@ int nelderMeadEx_initialization(long nz, double *z, double *scale)
     funcValue = leastSquareWithLambda(nz, z, NULL, 1.0);
   }
 
-  DEBUG_INFO(LV_INIT, "nelderMeadEx_initialization | leastSquare=%g", funcValue);
+  DEBUG_INFO1(LV_INIT, "nelderMeadEx_initialization | leastSquare=%g", funcValue);
 
   if(lambda < 1.0)
   {
-    DEBUG_INFO(LV_INIT, "error   | nelderMeadEx_initialization | lambda = %g", lambda);
+    DEBUG_INFO1(LV_INIT, "error   | nelderMeadEx_initialization | lambda = %g", lambda);
     return -1;
   }
 
@@ -610,7 +610,7 @@ int initialize(int optiMethod)
   {
     if(globalData->initFixed[ind]==0)
     {
-      DEBUG_INFO(LV_INIT, "state %s is unfixed", globalData->statesNames[ind].name);
+      DEBUG_INFO1(LV_INIT, "state %s is unfixed", globalData->statesNames[ind].name);
       nz++;
     }
   }
@@ -621,18 +621,18 @@ int initialize(int optiMethod)
   {
     if(globalData->initFixed[ind]==0 && globalData->var_attr[ind-globalData->nStates]==1)
     {
-      DEBUG_INFO(LV_INIT, "parameter %s is unfixed", globalData->parametersNames[ind-startIndPar].name);
+      DEBUG_INFO1(LV_INIT, "parameter %s is unfixed", globalData->parametersNames[ind-startIndPar].name);
       nz++;
     }
   }
 
   if(DEBUG_FLAG(LV_INIT))
   {
-    INFO("initialize | initialization by method: %s", optiMethodStr[optiMethod]);
+    INFO1("initialize | initialization by method: %s", optiMethodStr[optiMethod]);
     INFO_AL("             fixed attribute for states:");
     for(i=0;i<globalData->nStates; i++)
-      INFO_AL("             %s(fixed=%s)", globalData->statesNames[i].name, (globalData->initFixed[i] ? "true" : "false"));
-    INFO_AL("             number of non-fixed variables: %d", (int)nz);
+      INFO_AL2("             %s(fixed=%s)", globalData->statesNames[i].name, (globalData->initFixed[i] ? "true" : "false"));
+    INFO_AL1("             number of non-fixed variables: %d", (int)nz);
   }
 
   /* No initial values to calculate. */
@@ -681,7 +681,7 @@ int initialize(int optiMethod)
   }
   else
   {
-    WARNING("unrecognized option -iom %s", optiMethodStr[optiMethod]);
+    WARNING1("unrecognized option -iom %s", optiMethodStr[optiMethod]);
     WARNING_AL("current options are: simplex, nelder_mead_ex or newuoa");
     retVal= -1;
   }
@@ -819,8 +819,8 @@ int initialization(const char* pInitMethod, const char* pOptiMethod)
       optiMethod = IOM_UNKNOWN;
   }
 
-  DEBUG_INFO(LV_INIT, "initialization | initialization method: %s", initMethodStr[initMethod]);
-  DEBUG_INFO_AL(LV_INIT, "                 optimization method:   %s", optiMethodStr[optiMethod]);
+  DEBUG_INFO1(LV_INIT, "initialization | initialization method: %s", initMethodStr[initMethod]);
+  DEBUG_INFO_AL1(LV_INIT, "                 optimization method:   %s", optiMethodStr[optiMethod]);
 
   /* select the right initialization-method */
   if(initMethod == IIM_OLD)
@@ -835,7 +835,7 @@ int initialization(const char* pInitMethod, const char* pOptiMethod)
   }
 
   /* unrecognized initialization-method */
-  WARNING("unrecognized option -iim %s", initMethodStr[initMethod]);
+  WARNING1("unrecognized option -iim %s", initMethodStr[initMethod]);
   WARNING_AL("current options are: state or old");
   return -1;
 }
@@ -1008,8 +1008,8 @@ int initializationX(_X_DATA *data, const char* pInitMethod, const char* pOptiMet
       optiMethod = IOM_UNKNOWN;
   }
 
-  DEBUG_INFO(LV_INIT, "initialization | initialization method: %s", initMethodStr[initMethod]);
-  DEBUG_INFO_AL(LV_INIT, "                 optimization method:   %s", optiMethodStr[optiMethod]);
+  DEBUG_INFO1(LV_INIT, "initialization | initialization method: %s", initMethodStr[initMethod]);
+  DEBUG_INFO_AL1(LV_INIT, "                 optimization method:   %s", optiMethodStr[optiMethod]);
 
   /* select the right initialization-method */
   if(initMethod == IIM_OLD)
@@ -1024,7 +1024,7 @@ int initializationX(_X_DATA *data, const char* pInitMethod, const char* pOptiMet
   }
 
   /* unrecognized initialization-method */
-  WARNING("unrecognized option -iim %s", initMethodStr[initMethod]);
+  WARNING1("unrecognized option -iim %s", initMethodStr[initMethod]);
   WARNING_AL("current options are: state or old");
   return -1;
 }

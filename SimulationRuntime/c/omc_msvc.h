@@ -49,7 +49,9 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 
 /* Compatibility header for MSVC compiler */
 #if defined(_MSC_VER)
+#ifndef WIN32
 #define WIN32
+#endif
 #if defined(_WIN32) || defined(_WIN64)
 #define fmax(x, y) ((x>y)?x:y)
 #define fmin(x, y) ((x<y)?x:y)

@@ -333,7 +333,7 @@ solver_main(double start, double stop, double step, long outputSteps, double tol
   }
 
   DEBUG_INFO(LV_SOLVER, "Performed initial value calculation.");
-  DEBUG_INFO(LV_SOLVER, "Start numerical solver from %g to %g", globalData->timeValue, stop);
+  DEBUG_INFO2(LV_SOLVER, "Start numerical solver from %g to %g", globalData->timeValue, stop);
 
   if (measure_time_flag) {
 	char* filename = (char*) malloc(strlen(globalData->modelFilePrefix)+1+11);
@@ -341,7 +341,7 @@ solver_main(double start, double stop, double step, long outputSteps, double tol
     filename = strcat(filename,"_prof.data");
     fmt = fopen(filename, "wb");
     if (!fmt) {
-      WARNING("Warning: Time measurements output file %s could not be opened: %s", filename, strerror(errno));
+      WARNING2("Warning: Time measurements output file %s could not be opened: %s", filename, strerror(errno));
       fclose(fmt);
       fmt = NULL;
     }
@@ -361,7 +361,7 @@ solver_main(double start, double stop, double step, long outputSteps, double tol
 		  dideventstep = 0;
 		  if (offset + uround > step)
 			  offset = 0;
-		  DEBUG_INFO(LV_SOLVER, "Offset value for the next step: %g", offset);
+		  DEBUG_INFO1(LV_SOLVER, "Offset value for the next step: %g", offset);
 	  } else {
 		  offset = 0;
 	  }
@@ -379,7 +379,7 @@ solver_main(double start, double stop, double step, long outputSteps, double tol
 		  sampleEvent_actived = checkForSampleEvent();
 	  }
 
-	  DEBUG_INFO(LV_SOLVER, "Call Solver from %g to %g", globalData->timeValue,
+	  DEBUG_INFO2(LV_SOLVER, "Call Solver from %g to %g", globalData->timeValue,
 				  globalData->timeValue + globalData->current_stepsize);
 	  /* do one integration step
 	   *
@@ -453,7 +453,7 @@ solver_main(double start, double stop, double step, long outputSteps, double tol
 		  }
 		  rt_accumulate(SIM_TIMER_OVERHEAD);
 		  if (!flag) {
-			  WARNING("Warning: Disabled time measurements because the output file could not be generated: %s", strerror(errno));
+			  WARNING1("Warning: Disabled time measurements because the output file could not be generated: %s", strerror(errno));
 			  fclose(fmt);
 			  fmt = NULL;
 		  }
@@ -485,10 +485,10 @@ solver_main(double start, double stop, double step, long outputSteps, double tol
 		  globalData->terminal = 0;
 		  if (fmt)
 			  fclose(fmt);
-		  THROW("model terminate | Simulation terminated at time %g",globalData->timeValue);
+		  THROW1("model terminate | Simulation terminated at time %g",globalData->timeValue);
 	  }
 
-	  DEBUG_INFO(LV_SOLVER, "** Step to  %g Done!", globalData->timeValue);
+	  DEBUG_INFO1(LV_SOLVER, "** Step to  %g Done!", globalData->timeValue);
 
   }
   /* Last step with terminal()=true */
@@ -509,19 +509,19 @@ solver_main(double start, double stop, double step, long outputSteps, double tol
     rt_accumulate(SIM_TIMER_TOTAL);
 
     INFO("##### Statistics #####");
-    INFO("simulation time: %g", rt_accumulated(SIM_TIMER_TOTAL));
-    INFO("Events: %d", stateEvents + sampleEvents);
-    INFO("State Events: %d", stateEvents);
-    INFO("Sample Events: %d", sampleEvents);
-    INFO("##### Solver Statistics #####");
-    INFO("The number of steps taken: %d", dasslStats[0]);
-    INFO("The number of calls to functionODE: %d", dasslStats[1]);
-    INFO("The evaluations of Jacobian: %d", dasslStats[2]);
-    INFO("The number of error test failures: %d", dasslStats[3]);
-    INFO("The number of convergence test failures: %d", dasslStats[4]);
+    INFO_AL1("simulation time: %g", rt_accumulated(SIM_TIMER_TOTAL));
+    INFO_AL1("Events: %d", stateEvents + sampleEvents);
+    INFO_AL1("State Events: %d", stateEvents);
+    INFO_AL1("Sample Events: %d", sampleEvents);
+    INFO_AL("##### Solver Statistics #####");
+    INFO_AL1("The number of steps taken: %d", dasslStats[0]);
+    INFO_AL1("The number of calls to functionODE: %d", dasslStats[1]);
+    INFO_AL1("The evaluations of Jacobian: %d", dasslStats[2]);
+    INFO_AL1("The number of error test failures: %d", dasslStats[3]);
+    INFO_AL1("The number of convergence test failures: %d", dasslStats[4]);
     if (flag == 6)
     {
-        INFO("DOPRI5: total number of steps rejected: %d", reject);
+        INFO1("DOPRI5: total number of steps rejected: %d", reject);
     }
   }
 
@@ -653,7 +653,7 @@ dasrt_step(double step, double start, double stop, int trigger1,
         return 0;
       }
 
-      DEBUG_INFO(LV_SOLVER, "**Calling DDASRT from %g to %g", globalData->timeValue, tout);
+      DEBUG_INFO2(LV_SOLVER, "**Calling DDASRT from %g to %g", globalData->timeValue, tout);
 
       /* Save all statesDerivatives due to avoid this in functionODE_residual */
       memcpy(globalData->statesDerivativesBackup,
@@ -681,16 +681,16 @@ dasrt_step(double step, double start, double stop, int trigger1,
 
       if(sim_verbose == LOG_SOLVER)
       {
-    	  INFO("DASSL call | value of idid: %ld", idid);
-    	  INFO("DASSL call | current time value: %0.4g", globalData->timeValue);
-    	  INFO("DASSL call | current integration time value: %0.4g", rwork[3]);
-    	  INFO("DASSL call | step size H to be attempted on next step: %0.4g", rwork[2]);
-    	  INFO("DASSL call | step size used on last successful step: %0.4g", rwork[6]);
-    	  INFO("DASSL call | number of steps taken so far: %ld", iwork[10]);
-    	  INFO("DASSL call | number of calls of functionODE() : %ld", iwork[11]);
-    	  INFO("DASSL call | number of calculation of jacobian : %ld", iwork[12]);
-    	  INFO("DASSL call | total number of convergence test failures: %ld", iwork[13]);
-    	  INFO("DASSL call | total number of error test failures: %ld", iwork[14]);
+    	  INFO1("DASSL call | value of idid: %ld", idid);
+    	  INFO_AL1("DASSL call | current time value: %0.4g", globalData->timeValue);
+    	  INFO_AL1("DASSL call | current integration time value: %0.4g", rwork[3]);
+    	  INFO_AL1("DASSL call | step size H to be attempted on next step: %0.4g", rwork[2]);
+    	  INFO_AL1("DASSL call | step size used on last successful step: %0.4g", rwork[6]);
+    	  INFO_AL1("DASSL call | number of steps taken so far: %ld", iwork[10]);
+    	  INFO_AL1("DASSL call | number of calls of functionODE() : %ld", iwork[11]);
+    	  INFO_AL1("DASSL call | number of calculation of jacobian : %ld", iwork[12]);
+    	  INFO_AL1("DASSL call | total number of convergence test failures: %ld", iwork[13]);
+    	  INFO_AL1("DASSL call | total number of error test failures: %ld", iwork[14]);
       }
 
       /* save dassl stats */
@@ -708,7 +708,7 @@ dasrt_step(double step, double start, double stop, int trigger1,
           info[0] = 1; /* try again */
         }
         if (!continue_DASRT(&idid, &tolerance))
-          THROW("DASRT can't continue. time = %f", globalData->timeValue);
+          THROW1("DASRT can't continue. time = %f", globalData->timeValue);
       }
 
       functionODE();
