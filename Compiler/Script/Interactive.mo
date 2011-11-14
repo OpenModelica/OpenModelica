@@ -13023,6 +13023,7 @@ algorithm
           modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp))))::xs)
       equation
         s = Dump.printExpStr(exp);
+        s = stringAppendList({"info","(",s,")"});
         ss = getDocumentationAnnotationString2(xs);
       then s::ss;
 
@@ -13030,6 +13031,7 @@ algorithm
           modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp))))::xs)
       equation
         s = Dump.printExpStr(exp);
+        s = stringAppendList({"revisions","(",s,")"});
         ss = getDocumentationAnnotationString2(xs);
       then s::ss;
 
