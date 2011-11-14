@@ -31,7 +31,7 @@ LIBS = libresult.a
 all : libresult.a
 
 libresult.a : $(RESULTS_OBJS) $(HFILES)
-	$(AR) $@ $(RESULS_OBJS)
+	$(AR) $@ $(RESULTS_OBJS)
 	ranlib $@
 
 clean :
