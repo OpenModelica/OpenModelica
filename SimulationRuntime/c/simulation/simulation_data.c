@@ -32,7 +32,6 @@
 #include "error.h"
 
 #include <stdlib.h>
-#include <malloc.h>
 
 const size_t SIZERINGBUFFER = 3;
 
