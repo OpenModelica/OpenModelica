@@ -1864,7 +1864,16 @@ algorithm
         matchApiFunction(istmts, "getClassNamesRecursive");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         path = Absyn.crefToPath(cr);
-        resstr = getClassNamesRecursive(path, p, "  ");
+        resstr = getClassNamesRecursive(SOME(path), p, "  ");
+        Print.clearErrorBuf();
+      then
+        (resstr,st);
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "getClassNamesRecursive");
+        {} = getApiFunctionArgs(istmts);
+        resstr = getClassNamesRecursive(NONE(), p, "  ");
         Print.clearErrorBuf();
       then
         (resstr,st);
@@ -18617,7 +18626,7 @@ end joinPaths;
 protected function getClassNamesRecursive
 "function: getClassNamesRecursive
   Returns a string with all the classes for a given path."
-  input Absyn.Path inPath;
+  input Option<Absyn.Path> inPath;
   input Absyn.Program inProgram;
   input String indent;
   output String outString;
@@ -18630,20 +18639,26 @@ algorithm
       list<String> strlst;
       Absyn.Path pp;
       Absyn.Program p;
-      list<Absyn.Path> result_path_lst;
-    case (pp,p,indent)
+      list<Absyn.Class> classes;
+      list<Option<Absyn.Path>> result_path_lst;
+    case (SOME(pp),p,indent)
       equation
         cdef = getPathedClassInProgram(pp, p);
         strlst = getClassnamesInClassList(pp, p, cdef);
         parent_string = Absyn.pathString(pp);
-        result_path_lst = List.map1(strlst, joinPaths, pp);
+        result_path_lst = List.map(List.map1(strlst, joinPaths, pp),Util.makeOption);
         indent = indent +& "  ";
         result = stringAppendList(List.map2(result_path_lst,
           getClassNamesRecursive, p, indent));
         res = stringAppendList({indent, parent_string,"\n",result});
       then
         res;
-    case (pp,_,indent)
+    case (NONE(),p as Absyn.PROGRAM(classes=classes),indent)
+      equation
+        strlst = List.map(classes, Absyn.getClassName);
+        result_path_lst = List.mapMap(strlst, Absyn.makeIdentPathFromString, Util.makeOption);
+      then stringAppendList(List.map2(result_path_lst, getClassNamesRecursive, p, indent));
+    case (SOME(pp),_,indent)
       equation
         parent_string = Absyn.pathString(pp);
         indent = indent +& "  ";
