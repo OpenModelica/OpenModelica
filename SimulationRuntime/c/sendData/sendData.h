@@ -52,7 +52,6 @@ class QStringList;
 //Std headers
 #include <iostream>
 #include <cstdlib>
-#include "../simulation/simulation_varinfo.h"
 
 #ifndef NOSENDDATA
 class Connection
@@ -97,7 +96,7 @@ extern "C"
   void setDataPort(int port);
   void enableSendData(int enable);
   //void initSendData(int variableCount, const char* variableNames);
-  void initSendData(int variableCount, const struct omc_varInfo** names);
+  void initSendData(int variableCount, const char** names);
   void sendPacket(const char* data);
   void closeSendData();
 

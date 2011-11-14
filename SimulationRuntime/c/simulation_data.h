@@ -79,8 +79,9 @@ extern "C" {
 
   typedef struct _X_DATA_REAL_ALIAS
   {
-    int nameID;  /* Pointer to Alias */
     int negate;  
+    int nameID;  /* Pointer to Alias */
+    char aliasType; /* 0 variable, 1 parameter, 2 time */
     VAR_INFO info;
     modelica_boolean filterOutput; /* True if this variable should be filtered */
   }_X_DATA_REAL_ALIAS;
@@ -89,6 +90,7 @@ extern "C" {
   {
     int negate;
     int nameID;
+    char aliasType; /* 0 variable, 1 parameter */
     VAR_INFO info;
     modelica_boolean filterOutput; /* True if this variable should be filtered */
   }_X_DATA_INTEGER_ALIAS;
@@ -97,6 +99,7 @@ extern "C" {
   {
     int negate;
     int nameID;
+    char aliasType; /* 0 variable, 1 parameter */
     VAR_INFO info;
     modelica_boolean filterOutput; /* True if this variable should be filtered */
   }_X_DATA_BOOLEAN_ALIAS;
@@ -105,6 +108,7 @@ extern "C" {
   {
     int negate;
     int nameID;
+    char aliasType; /* 0 variable, 1 parameter */
     VAR_INFO info;
     modelica_boolean filterOutput; /* True if this variable should be filtered */
   }_X_DATA_STRING_ALIAS;

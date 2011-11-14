@@ -698,7 +698,7 @@ void enableSendData(int enable)
   Static::enabled_ = enable;
 }
 
-void initSendData(int variableCount, const struct omc_varInfo** names)
+void initSendData(int variableCount, const char** names)
 {
   char* port = getenv("sendDataPort");
   if(port != NULL && strlen(port))
@@ -772,7 +772,7 @@ void initSendData(int variableCount, const struct omc_varInfo** names)
   for(int i = 0; i < variableCount; ++i)
   {
     // cout << names[i]->name << endl;
-    *Static::out << QString(names[i]->name);
+    *Static::out << QString(names[i]);
     //         *Static::out << QColor(Qt::color0);
     ++N;
   }

@@ -38,6 +38,8 @@
  *
  */
 
+#include "error.h"
+
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
@@ -46,68 +48,71 @@
 #include "simulation_runtime.h"
 #include <sstream>
 #include <time.h>
-//#include "../Compiler/runtime/config.h"
+
 #include "rtclock.h"
 
 #ifdef CONFIG_WITH_SENDDATA
 #include "sendData/sendData.h"
 #endif
 
-static const struct omc_varInfo timeValName = {0,"time","Simulation time [s]",{"",-1,-1,-1,-1}};
+static const char * timeName = "time";
 
-static int calcDataSize()
+static int calcDataSize(MODEL_DATA *modelData)
 {
   int sz = 1; // time
-  for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesFilterOutput[i]) sz++;
-  for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesDerivativesFilterOutput[i]) sz++;
-  for (int i = 0; i < globalData->nAlgebraic; i++) if (!globalData->algebraicsFilterOutput[i]) sz++;
-  for (int i = 0; i < globalData->nAlias; i++) if (!globalData->aliasFilterOutput[i]) sz++;
-  for (int i = 0; i < globalData->intVariables.nAlgebraic; i++) if (!globalData->intVariables.algebraicsFilterOutput[i]) sz++;
-  for (int i = 0; i < globalData->intVariables.nAlias; i++) if (!globalData->intVariables.aliasFilterOutput[i]) sz++;
-  for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++) if (!globalData->boolVariables.algebraicsFilterOutput[i]) sz++;
-  for (int i = 0; i < globalData->boolVariables.nAlias; i++) if (!globalData->boolVariables.aliasFilterOutput[i]) sz++;
+  for (int i = 0; i < modelData->nVariablesReal; i++) if (!modelData->realData[i].filterOutput) sz++;
+  for (int i = 0; i < modelData->nVariablesInteger; i++) if (!modelData->integerData[i].filterOutput) sz++;
+  for (int i = 0; i < modelData->nVariablesBoolean; i++) if (!modelData->booleanData[i].filterOutput) sz++;
+  /* for (int i = 0; i < modelData->nVariablesString; i++) if (!modelData->stringData[i].filterOutput) sz++; */
+
+  for (int i = 0; i < modelData->nAliasReal; i++) if (!modelData->realAlias[i].filterOutput) sz++;
+  for (int i = 0; i < modelData->nAliasInteger; i++) if (!modelData->integerAlias[i].filterOutput) sz++;
+  for (int i = 0; i < modelData->nAliasBoolean; i++) if (!modelData->booleanAlias[i].filterOutput) sz++;
+  /* for (int i = 0; i < modelData->nAliasString; i++) if (!modelData->stringAlias[i].filterOutput) sz++; */
+
   return sz;
 }
 
-static const omc_varInfo** calcDataNames(int dataSize)
+static const char** calcDataNames(MODEL_DATA *modelData, int dataSize)
 {
-  const omc_varInfo** names = (const omc_varInfo**) malloc(dataSize*sizeof(struct omc_varInfo*));
+  const char** names = (const char**)calloc(dataSize,sizeof(char*));
+  ASSERT(names,"Not enough memory!");
   int curVar = 0;
-  names[curVar++] = &timeValName;
-  for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesFilterOutput[i])
-      names[curVar++] = &globalData->statesNames[i];
-  for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesDerivativesFilterOutput[i])
-      names[curVar++] = &globalData->stateDerivativesNames[i];
-  for (int i = 0; i < globalData->nAlgebraic; i++) if (!globalData->algebraicsFilterOutput[i])
-      names[curVar++] = &globalData->algebraicsNames[i];
-  for (int i = 0; i < globalData->nAlias; i++) if (!globalData->aliasFilterOutput[i])
-      names[curVar++] = &globalData->alias_names[i];
-  for (int i = 0; i < globalData->intVariables.nAlgebraic; i++) if (!globalData->intVariables.algebraicsFilterOutput[i])
-      names[curVar++] = &globalData->int_alg_names[i];
-  for (int i = 0; i < globalData->intVariables.nAlias; i++) if (!globalData->intVariables.aliasFilterOutput[i])
-      names[curVar++] = &globalData->int_alias_names[i];
-  for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++) if (!globalData->boolVariables.algebraicsFilterOutput[i])
-      names[curVar++] = &globalData->bool_alg_names[i];
-  for (int i = 0; i < globalData->boolVariables.nAlias; i++) if (!globalData->boolVariables.aliasFilterOutput[i])
-      names[curVar++] = &globalData->bool_alias_names[i];
-
+  names[curVar++] = timeName;
+  for (int i = 0; i < modelData->nVariablesReal; i++) if (!modelData->realData[i].filterOutput)
+    names[curVar++] = modelData->realData[i].info.name;
+  for (int i = 0; i < modelData->nVariablesInteger; i++) if (!modelData->integerData[i].filterOutput)
+    names[curVar++] = modelData->integerData[i].info.name;
+  for (int i = 0; i < modelData->nVariablesBoolean; i++) if (!modelData->booleanData[i].filterOutput)
+    names[curVar++] = modelData->booleanData[i].info.name;
+/*  for (int i = 0; i < modelData->nVariablesString; i++) if (!modelData->stringData[i].filterOutput)
+    names[curVar++] = modelData->stringData[i].info.name; */
+  for (int i = 0; i < modelData->nAliasReal; i++) if (!modelData->realAlias[i].filterOutput)
+    names[curVar++] = modelData->realAlias[i].info.name;
+  for (int i = 0; i < modelData->nAliasInteger; i++) if (!modelData->integerAlias[i].filterOutput)
+    names[curVar++] = modelData->integerAlias[i].info.name;
+  for (int i = 0; i < modelData->nAliasBoolean; i++) if (!modelData->booleanAlias[i].filterOutput)
+    names[curVar++] = modelData->booleanAlias[i].info.name;
+/*  for (int i = 0; i < modelData->nAliasString; i++) if (!modelData->stringAlias[i].filterOutput)
+    names[curVar++] = modelData->stringAlias[i].info.name; */
   return names;
 }
 
 void simulation_result_plt::emit(_X_DATA *data)
 {
   rt_tick(SIM_TIMER_OUTPUT);
-  if (actualPoints < maxPoints) {
-    if(!isInteractiveSimulation())add_result(simulationResultData,&actualPoints); //used for non-interactive simulation
-  } else {
+  if (actualPoints < maxPoints) 
+  {
+    if(!isInteractiveSimulation())
+      add_result(simulationResultData,&actualPoints,data); /*used for non-interactive simulation */
+  } else 
+  {
     maxPoints = (long)(1.4*maxPoints + (maxPoints-actualPoints) + 2000);
-    // cerr << "realloc simulationResultData to a size of " << maxPoints * dataSize * sizeof(double) << endl;
+    /* cerr << "realloc simulationResultData to a size of " << maxPoints * dataSize * sizeof(double) << endl; */
     simulationResultData = (double*)realloc(simulationResultData, maxPoints * dataSize * sizeof(double));
-    if (!simulationResultData) {
-      cerr << "Error allocating simulation result data of size " << maxPoints * dataSize << endl;
-      throw SimulationResultReallocException();
-    }
-    add_result(simulationResultData,&actualPoints);
+    if (!simulationResultData) 
+      THROW1("Error allocating simulation result data of size %ld",maxPoints * dataSize);
+    add_result(simulationResultData,&actualPoints,data);
   }
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
@@ -116,158 +121,128 @@ void simulation_result_plt::emit(_X_DATA *data)
  * add the values of one step for all variables to the data
  * array to be able to later store this on file.
  */
-void simulation_result_plt::add_result(double *data, long *actualPoints)
+void simulation_result_plt::add_result(double *data, long *actualPoints, _X_DATA *simData)
 {
-  //save time first
-  //cerr << "adding result for time: " << time;
-  //cerr.flush();
+  /* save time first */
+  /* cerr << "adding result for time: " << time; */
+  /* cerr.flush(); */
 #ifdef CONFIG_WITH_SENDDATA
   if(Static::enabled())
   {
   std::ostringstream ss;
   ss << "time" << "\n";
-  ss << (data[currentPos++] = globalData->timeValue) << "\n";
-  // .. then states..
-  for (int i = 0; i < globalData->nStates; i++) {
-    if (!globalData->statesFilterOutput[i]) {
-      ss << globalData->statesNames[i].name << "\n";
-      ss << (data[currentPos++] = globalData->states[i]) << "\n";
+  ss << (data[currentPos++] = simData->localdata[0]->time) << "\n";
+  /* .. reals .. */
+  for (int i = 0; i < simData->modelData.nVariablesReal; i++) {
+    if (!simData->modelData.realData[i].filterOutput) {
+      ss << simData->modelData.realData[i].info.name << "\n";
+      ss << (data[currentPos++] = simData->localdata[0]->realVars[i]) << "\n";
     }
   }
-  // ..followed by derivatives..
-  for (int i = 0; i < globalData->nStates; i++) {
-    if (!globalData->statesDerivativesFilterOutput[i]) {
-      ss << globalData->stateDerivativesNames[i].name << "\n";
-      ss << (data[currentPos++] = globalData->statesDerivatives[i]) << "\n";
+  /* .. integers .. */
+  for (int i = 0; i < simData->modelData.nVariablesInteger; i++) {
+    if (!simData->modelData.integerData[i].filterOutput) {
+      ss << simData->modelData.integerData[i].info.name << "\n";
+      ss << (data[currentPos++] = simData->localdata[0]->integerVars[i]) << "\n";
     }
   }
-  // .. and last alg. vars.
-  for (int i = 0; i < globalData->nAlgebraic; i++) {
-    if (!globalData->algebraicsFilterOutput[i]) {
-      ss << globalData->algebraicsNames[i].name << "\n";
-      ss << (data[currentPos++] = globalData->algebraics[i]) << "\n";
+  /* .. booleans .. */
+  for (int i = 0; i < simData->modelData.nVariablesBoolean; i++) {
+    if (!simData->modelData.booleanData[i].filterOutput) {
+      ss << simData->modelData.booleanData[i].info.name << "\n";
+      ss << (data[currentPos++] = simData->localdata[0]->booleanVars[i]) << "\n";
     }
   }
-  // .. and last alg. vars. alias
-  for (int i = 0; i < globalData->nAlias; i++) {
-    if (!globalData->aliasFilterOutput[i]) {
-      ss << globalData->alias_names[i].name << "\n";
-      if (((globalData->realAlias)[i]).negate){
-        ss << (data[currentPos++] = - *(((globalData->realAlias)[i].alias))) << "\n";
-  }else{
-        ss << (data[currentPos++] = *(((globalData->realAlias)[i].alias))) << "\n";
-      }
+  /* .. alias reals .. */
+  for (int i = 0; i < simData->modelData.nAliasReal; i++) {
+    if (!simData->modelData.realAlias[i].filterOutput) {
+      ss << simData->modelData.realAlias[i].info.name << "\n";
+      if (simData->modelData.realAlias[i].negate)
+        ss << (data[currentPos++] = -simData->localdata[0]->realVars[simData->modelData.realAlias[i].nameID]) << "\n";
+      else
+        ss << (data[currentPos++] = simData->localdata[0]->realVars[simData->modelData.realAlias[i].nameID]) << "\n";
     }
   }
- // .. and int alg. vars.
-  for (int i = 0; i < globalData->intVariables.nAlgebraic; i++) {
-    if (!globalData->intVariables.algebraicsFilterOutput[i]) {
-      ss << globalData->int_alg_names[i].name << "\n";
-      ss << (data[currentPos++] = (double) globalData->intVariables.algebraics[i]) << "\n";
+  /* .. alias integers .. */
+  for (int i = 0; i < simData->modelData.nAliasInteger; i++) {
+    if (!simData->modelData.integerAlias[i].filterOutput) {
+      ss << simData->modelData.integerAlias[i].info.name << "\n";
+      if (simData->modelData.integerAlias[i].negate)
+        ss << (data[currentPos++] = -simData->localdata[0]->integerVars[simData->modelData.integerAlias[i].nameID]) << "\n";
+      else
+        ss << (data[currentPos++] = simData->localdata[0]->integerVars[simData->modelData.integerAlias[i].nameID]) << "\n";
     }
   }
-   // .. and int alg. vars. alias
-  for (int i = 0; i < globalData->intVariables.nAlias; i++) {
-    if (!globalData->intVariables.aliasFilterOutput[i]) {
-      ss << globalData->int_alias_names[i].name << "\n";
-      if (((globalData->intVariables.alias)[i]).negate){
-        ss << (data[currentPos++] = -(double) *(((globalData->intVariables.alias)[i].alias))) << "\n";
-        }else{
-        ss << (data[currentPos++] = (double) *(((globalData->intVariables.alias)[i].alias))) << "\n";
-      }
-    }
-  } // .. and bool alg. vars.
-  for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++) {
-    if (!globalData->boolVariables.algebraicsFilterOutput[i]) {
-      ss << globalData->bool_alg_names[i].name << "\n";
-      ss << (data[currentPos++] = (double) globalData->boolVariables.algebraics[i]) << "\n";
+  /* .. alias booleans .. */
+  for (int i = 0; i < simData->modelData.nAliasBoolean; i++) {
+    if (!simData->modelData.booleanAlias[i].filterOutput) {
+      ss << simData->modelData.booleanAlias[i].info.name << "\n";
+      if (simData->modelData.booleanAlias[i].negate)
+        ss << (data[currentPos++] = -simData->localdata[0]->booleanVars[simData->modelData.booleanAlias[i].nameID]) << "\n";
+      else
+        ss << (data[currentPos++] = simData->localdata[0]->booleanVars[simData->modelData.booleanAlias[i].nameID]) << "\n";
     }
   }
-  // .. and bool alg. vars. alias
-  for (int i = 0; i < globalData->boolVariables.nAlias; i++) {
-    if (!globalData->boolVariables.aliasFilterOutput[i]) {
-      ss << globalData->bool_alias_names[i].name << "\n";
-      if (((globalData->boolVariables.alias)[i]).negate){
-        ss << (data[currentPos++] = -(double) *(((globalData->boolVariables.alias)[i].alias))) << "\n";
-        }else{
-        ss << (data[currentPos++] = (double) *(((globalData->boolVariables.alias)[i].alias))) << "\n";
-      }
-    }
-  } // .. and bool alg. vars.
   sendPacket(ss.str().c_str());
   }
   else
-#endif // CONFIG_WITH_SENDDATA
+#endif /* CONFIG_WITH_SENDDATA */
   {
-  data[currentPos++] = globalData->timeValue;
+    data[currentPos++] = simData->localdata[0]->time;
 
-  // .. then states..
-  for (int i = 0; i < globalData->nStates; i++) {
-    if (!globalData->statesFilterOutput[i]) {
-      data[currentPos++] = globalData->states[i];
-    }
-  }
-  // ..followed by derivatives..
-  for (int i = 0; i < globalData->nStates; i++) {
-    if (!globalData->statesDerivativesFilterOutput[i]) {
-      data[currentPos++] = globalData->statesDerivatives[i];
-    }
-  }
-  // .. and last alg. vars.
-  for (int i = 0; i < globalData->nAlgebraic; i++) {
-    if (!globalData->algebraicsFilterOutput[i]) {
-      data[currentPos++] = globalData->algebraics[i];
-    }
-  }
-  // .. and alg. vars. alias
-  for (int i = 0; i < globalData->nAlias; i++) {
-    if (!globalData->aliasFilterOutput[i]) {
-      if (((globalData->realAlias)[i]).negate){
-        data[currentPos++] = (-1.0) * *(((globalData->realAlias)[i].alias));
-      }else{
-        data[currentPos++] = *(((globalData->realAlias)[i].alias));
+    /* .. reals .. */
+    for (int i = 0; i < simData->modelData.nVariablesReal; i++) {
+      if (!simData->modelData.realData[i].filterOutput) {
+        data[currentPos++] = simData->localdata[0]->realVars[i];
       }
     }
-  }
-  // .. and int alg. vars.
-  for (int i = 0; i < globalData->intVariables.nAlgebraic; i++) {
-    if (!globalData->intVariables.algebraicsFilterOutput[i]) {
-      data[currentPos++] = (double) globalData->intVariables.algebraics[i];
+    /* .. integers .. */
+    for (int i = 0; i < simData->modelData.nVariablesInteger; i++) {
+      if (!simData->modelData.integerData[i].filterOutput) {
+        data[currentPos++] = simData->localdata[0]->integerVars[i];
+      }
     }
-  }
-  // .. and int alg. vars. alias
-  for (int i = 0; i < globalData->intVariables.nAlias; i++) {
-    if (!globalData->intVariables.aliasFilterOutput[i]) {
-      if (((globalData->intVariables.alias)[i]).negate){
-        data[currentPos++] = (double) (-1.0) * *(((globalData->intVariables.alias)[i].alias));
-      }else{
-        data[currentPos++] = (double)*(((globalData->intVariables.alias)[i].alias));
+    /* .. booleans .. */
+    for (int i = 0; i < simData->modelData.nVariablesBoolean; i++) {
+      if (!simData->modelData.booleanData[i].filterOutput) {
+        data[currentPos++] = simData->localdata[0]->booleanVars[i];
+      }
+    }
+    /* .. alias reals .. */
+    for (int i = 0; i < simData->modelData.nAliasReal; i++) {
+      if (!simData->modelData.realAlias[i].filterOutput) {
+        if (simData->modelData.realAlias[i].negate)
+          data[currentPos++] = -simData->localdata[0]->realVars[simData->modelData.realAlias[i].nameID];
+        else
+          data[currentPos++] = simData->localdata[0]->realVars[simData->modelData.realAlias[i].nameID];
+      }
+    }
+    /* .. alias integers .. */
+    for (int i = 0; i < simData->modelData.nAliasInteger; i++) {
+      if (!simData->modelData.integerAlias[i].filterOutput) {
+        if (simData->modelData.integerAlias[i].negate)
+          data[currentPos++] = -simData->localdata[0]->integerVars[simData->modelData.integerAlias[i].nameID];
+        else
+          data[currentPos++] = simData->localdata[0]->integerVars[simData->modelData.integerAlias[i].nameID];
+      }
+    }
+    /* .. alias booleans .. */
+    for (int i = 0; i < simData->modelData.nAliasBoolean; i++) {
+      if (!simData->modelData.booleanAlias[i].filterOutput) {
+        if (simData->modelData.booleanAlias[i].negate)
+          data[currentPos++] = -simData->localdata[0]->booleanVars[simData->modelData.booleanAlias[i].nameID];
+        else
+          data[currentPos++] = simData->localdata[0]->booleanVars[simData->modelData.booleanAlias[i].nameID];
       }
     }
   } 
-  // .. and bool alg. vars.
-  for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++) {
-    if (!globalData->boolVariables.algebraicsFilterOutput[i]) {
-      data[currentPos++] = (double) globalData->boolVariables.algebraics[i];
-    }
-  }
-  // .. and bool alg. vars. alias
-  for (int i = 0; i < globalData->boolVariables.nAlias; i++) {
-    if (!globalData->boolVariables.aliasFilterOutput[i]) {
-      if (((globalData->boolVariables.alias)[i]).negate){
-        data[currentPos++] = (double) (-1.0) * *(((globalData->boolVariables.alias)[i].alias));
-      }else{
-        data[currentPos++] = (double) *((globalData->boolVariables.alias[i]).alias);
-      }
-    }
-  }
-  } 
 
-  //cerr << "  ... done" << endl;
+  /*cerr << "  ... done" << endl; */
   (*actualPoints)++;
 }
 
-simulation_result_plt::simulation_result_plt(const char* filename, long numpoints, MODEL_DATA *modelData) : simulation_result(filename,numpoints)
+simulation_result_plt::simulation_result_plt(const char* filename, long numpoints, MODEL_DATA *modeldata) :
+simulation_result(filename,numpoints), modelData(modeldata)
 {
   rt_tick(SIM_TIMER_OUTPUT);
   /*
@@ -285,11 +260,10 @@ simulation_result_plt::simulation_result_plt(const char* filename, long numpoint
     numpoints = abs(numpoints);
     maxPoints = abs(numpoints);
   }
-  dataSize = calcDataSize();
-  simulationResultData = (double*)malloc(numpoints * dataSize * sizeof(double));
+  num_vars = calcDataSize(modelData);
+  simulationResultData = (double*)malloc(numpoints * num_vars * sizeof(double));
   if (!simulationResultData) {
-    cerr << "Error allocating simulation result data of size " << numpoints * dataSize << endl;
-    throw SimulationResultMallocException();
+    THROW1("Error allocating simulation result data of size %ld failed",numpoints * num_vars);
   }
   currentPos = 0;
 #ifdef CONFIG_WITH_SENDDATA
@@ -298,11 +272,11 @@ simulation_result_plt::simulation_result_plt(const char* filename, long numpoint
     Static::enabled_ = !strcmp(enabled, "1");
   }
   if(Static::enabled()) {
-    const omc_varInfo** names = calcDataNames(dataSize);
-    initSendData(dataSize,names);
+    const char** names = calcDataNames(modelData,num_vars);
+    initSendData(num_vars,names);
     free(names);
   }
-#endif // CONFIG_WITH_SENDDATA
+#endif /* CONFIG_WITH_SENDDATA */
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
@@ -312,8 +286,10 @@ simulation_result_plt::simulation_result_plt(const char* filename, long numpoint
  * the solvers will be called in a loop and they allocate
  * memory for the simulationResultData all the time
  */
-void simulation_result_plt::deallocResult(){
-  free(simulationResultData);
+void simulation_result_plt::deallocResult()
+{
+  if (simulationResultData)
+    free(simulationResultData);
 }
 
 void simulation_result_plt::printPltLine(FILE* f, double time, double val) {
@@ -323,7 +299,7 @@ void simulation_result_plt::printPltLine(FILE* f, double time, double val) {
   fwrite(&val, sizeof(double), 1, f);
   fputs("\n", f);
 #else
-  // Double has max 16 digits precision
+  /* Double has max 16 digits precision */
   fprintf(f, "%.16g, %.16g\n", time, val);
 #endif
 }
@@ -342,14 +318,12 @@ simulation_result_plt::~simulation_result_plt()
   FILE* f = fopen(filename, "w");
   if (!f)
   {
-    fprintf(stderr, "Error, couldn't create output file: [%s] because of %s", filename, strerror(errno));
     deallocResult();
-    throw SimulationResultFileOpenException();
+    THROW2("Error, couldn't create output file: [%s] because of %s", filename, strerror(errno));
   }
 
-  int num_vars = calcDataSize();
-  // Rather ugly numbers than unneccessary rounding.
-  //f.precision(std::numeric_limits<double>::digits10 + 1);
+  /* Rather ugly numbers than unneccessary rounding.
+     f.precision(std::numeric_limits<double>::digits10 + 1); */
   fprintf(f, "#Ptolemy Plot file, generated by OpenModelica\n");
   fprintf(f, "#NumberofVariables=%d\n", num_vars);
   fprintf(f, "#IntervalSize=%ld\n", actualPoints);
@@ -358,17 +332,17 @@ simulation_result_plt::~simulation_result_plt()
 
   int varn = 0;
 
-  // time variable.
+  /* time variable. */
   fprintf(f, "DataSet: time\n");
   for(int i = 0; i < actualPoints; ++i)
       printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars]);
   fprintf(f, "\n");
   varn++;
 
-  for(int var = 0; var < globalData->nStates; ++var)
+  for(int var = 0; var < modelData->nVariablesReal; ++var)
   {
-    if (!globalData->statesFilterOutput[var]) {
-      fprintf(f, "DataSet: %s\n", globalData->statesNames[var].name);
+    if (!modelData->realData[var].filterOutput) {
+      fprintf(f, "DataSet: %s\n", modelData->realData[var].info.name);
       for(int i = 0; i < actualPoints; ++i)
         printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + varn]);
       fprintf(f, "\n");
@@ -376,10 +350,10 @@ simulation_result_plt::~simulation_result_plt()
     }
   }
 
-  for(int var = 0; var < globalData->nStates; ++var)
+  for(int var = 0; var < modelData->nVariablesInteger; ++var)
   {
-    if (!globalData->statesDerivativesFilterOutput[var]) {
-      fprintf(f, "DataSet: %s\n", globalData->stateDerivativesNames[var].name);
+    if (!modelData->integerData[var].filterOutput) {
+      fprintf(f, "DataSet: %s\n", modelData->integerData[var].info.name);
       for(int i = 0; i < actualPoints; ++i)
         printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + varn]);
       fprintf(f, "\n");
@@ -387,40 +361,10 @@ simulation_result_plt::~simulation_result_plt()
     }
   }
 
-  for(int var = 0; var < globalData->nAlgebraic; ++var)
+  for(int var = 0; var < modelData->nVariablesBoolean; ++var)
   {
-    if (!globalData->algebraicsFilterOutput[var]) {
-      fprintf(f, "DataSet: %s\n", globalData->algebraicsNames[var].name);
-      for(int i = 0; i < actualPoints; ++i)
-        printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + varn]);
-      fprintf(f, "\n");
-      varn++;
-    }
-  }
-  for(int var = 0; var < globalData->nAlias; ++var)
-  {
-    if (!globalData->aliasFilterOutput[var]) {
-      fprintf(f, "DataSet: %s\n", globalData->alias_names[var].name);
-      for(int i = 0; i < actualPoints; ++i)
-        printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + varn]);
-      fprintf(f, "\n");
-      varn++;
-    }
-  }
-  for(int var = 0; var < globalData->intVariables.nAlgebraic; ++var)
-  {
-    if (!globalData->intVariables.algebraicsFilterOutput[var]) {
-      fprintf(f, "DataSet: %s\n", globalData->int_alg_names[var].name);
-      for(int i = 0; i < actualPoints; ++i)
-        printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + varn]);
-      fprintf(f, "\n");
-      varn++;
-    }
-  }
-  for(int var = 0; var < globalData->intVariables.nAlias; ++var)
-  {
-    if (!globalData->intVariables.aliasFilterOutput[var]) {
-      fprintf(f, "DataSet: %s\n", globalData->int_alias_names[var].name);
+    if (!modelData->booleanData[var].filterOutput) {
+      fprintf(f, "DataSet: %s\n", modelData->booleanData[var].info.name);
       for(int i = 0; i < actualPoints; ++i)
         printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + varn]);
       fprintf(f, "\n");
@@ -428,20 +372,10 @@ simulation_result_plt::~simulation_result_plt()
     }
   }
 
-  for(int var = 0; var < globalData->boolVariables.nAlgebraic; ++var)
+  for(int var = 0; var < modelData->nAliasReal; ++var)
   {
-    if (!globalData->boolVariables.algebraicsFilterOutput[var]) {
-      fprintf(f, "DataSet: %s\n", globalData->bool_alg_names[var].name);
-      for(int i = 0; i < actualPoints; ++i)
-        printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + varn]);
-      fprintf(f, "\n");
-      varn++;
-    }
-  }
-  for(int var = 0; var < globalData->boolVariables.nAlias; ++var)
-  {
-    if (!globalData->boolVariables.aliasFilterOutput[var]) {
-      fprintf(f, "DataSet: %s\n", globalData->bool_alias_names[var].name);
+    if (!modelData->realAlias[var].filterOutput) {
+      fprintf(f, "DataSet: %s\n", modelData->realAlias[var].info.name);
       for(int i = 0; i < actualPoints; ++i)
         printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + varn]);
       fprintf(f, "\n");
@@ -449,13 +383,32 @@ simulation_result_plt::~simulation_result_plt()
     }
   }
 
+  for(int var = 0; var < modelData->nAliasInteger; ++var)
+  {
+    if (!modelData->integerAlias[var].filterOutput) {
+      fprintf(f, "DataSet: %s\n", modelData->integerAlias[var].info.name);
+      for(int i = 0; i < actualPoints; ++i)
+        printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + varn]);
+      fprintf(f, "\n");
+      varn++;
+    }
+  }
+
+  for(int var = 0; var < modelData->nAliasBoolean; ++var)
+  {
+    if (!modelData->booleanAlias[var].filterOutput) {
+      fprintf(f, "DataSet: %s\n", modelData->booleanAlias[var].info.name);
+      for(int i = 0; i < actualPoints; ++i)
+        printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + varn]);
+      fprintf(f, "\n");
+      varn++;
+    }
+  }
 
   deallocResult();
   if (fclose(f))
   {
-    fprintf(stderr, "Error, couldn't write to output file %s\n", filename);
-    throw SimulationResultFileCloseException();
+    THROW1("Error, couldn't write to output file %s\n", filename);
   }
-
   rt_accumulate(SIM_TIMER_OUTPUT);
 }

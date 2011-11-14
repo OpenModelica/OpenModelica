@@ -39,17 +39,19 @@ private:
 
 double* simulationResultData;
 long currentPos;
-long actualPoints; // the number of actual points saved
+long actualPoints; /* the number of actual points saved */
 long maxPoints;
 long dataSize;
+int num_vars;
+MODEL_DATA *modelData;
 
-void add_result(double *data, long *actualPoints);
+void add_result(double *data, long *actualPoints, _X_DATA *simData);
 void deallocResult();
 void printPltLine(FILE* f, double time, double val);
 
 public:
 
-simulation_result_plt(const char* filename, long numpoints, MODEL_DATA *modelData);
+simulation_result_plt(const char* filename, long numpoints, MODEL_DATA *modeldata);
 virtual ~simulation_result_plt();
 virtual void emit(_X_DATA *data);
 virtual const char* result_type() {return "plt";};

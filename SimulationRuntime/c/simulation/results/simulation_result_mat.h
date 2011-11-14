@@ -55,7 +55,7 @@ public:
   virtual ~simulation_result_mat();
   virtual void emit(_X_DATA *data);
   virtual const char* result_type() { 
-    //return "Dymosim's compatible MAT-file";
+    /* return "Dymosim's compatible MAT-file"; */
     return "mat";
   }
 
@@ -63,25 +63,35 @@ public:
 
 private:
   std::ofstream fp;
-  std::ofstream::pos_type data2HdrPos; // position of data_2 matrix's header in a file
-  unsigned long ntimepoints; // count of how many time emits() was called
+  std::ofstream::pos_type data2HdrPos; /* position of data_2 matrix's header in a file */
+  unsigned long ntimepoints; /* count of how many time emits() was called */
 
-  map<void*,int> indx_map;
-  map<void*,int> indx_parammap;
+  typedef map<int,int> INTMAP;
+
+  INTMAP r_indx_map;
+  INTMAP r_indx_parammap;
+  INTMAP i_indx_map;
+  INTMAP i_indx_parammap;
+  INTMAP b_indx_map;
+  INTMAP b_indx_parammap;
+  
   int numVars;
 
-  // helper functions  
-  long flattenStrBuf(int dims, const struct omc_varInfo** src,
+  /* helper functions */  
+  long flattenStrBuf(int dims, const struct VAR_INFO** src,
           char* &dest, int& longest, int& nstrings, 
           bool fixNames, bool useComment);
   void writeMatVer4MatrixHeader(const char *name, int rows, int cols,
         unsigned int size);
   void writeMatVer4Matrix(const char *name, int rows, int cols, 
         const void *data, unsigned int size);
-  static void generateDataInfo(int* &dataInfo, int& rows, int& cols,
-             const sim_DATA *mdl_data, int nVars, int nParams, map<void*,int> &indx_map, map<void*,int> &indx_parammap);
-  static void generateData_1(double* &data_1, int& rows, int& cols,
-           const sim_DATA *mdl_data, double tstart, double tstop);
+  void generateDataInfo(int* &dataInfo, int& rows, int& cols,
+             const MODEL_DATA *mdl_data, int nVars, int nParams);
+  void generateData_1(double* &data_1, int& rows, int& cols,
+           const MODEL_DATA *mdl_data, double tstart, double tstop);
+
+  int calcDataSize(MODEL_DATA *modelData);
+  const VAR_INFO** calcDataNames(int dataSize, MODEL_DATA *modelData);
 };
 
 #endif /* _SIMULATION_RESULT_MAT_H_ */

@@ -58,7 +58,6 @@ void simulation_result_csv::emit(_X_DATA *data)
   const char* formatstring = "\"%s\",";
   rt_tick(SIM_TIMER_OUTPUT);
   fprintf(fout, format, globalData->timeValue);
-  /* new imple */
 
   for (int i = 0; i < data->modelData.nVariablesReal; i++) if (!data->modelData.realData[i].filterOutput)
     fprintf(fout, format, (data->localdata[0])->realVars[i]);
@@ -70,43 +69,23 @@ void simulation_result_csv::emit(_X_DATA *data)
     fprintf(fout, formatstring, (data->localdata[0])->stringVars[i]);
 
   for (int i = 0; i < data->modelData.nAliasReal; i++) if (!data->modelData.realAlias[i].filterOutput)
-    fprintf(fout, format, (data->localdata[0])->realVars[data->modelData.realAlias[i].nameID]);
+    if (data->modelData.realAlias[i].negate)
+      fprintf(fout, format, -(data->localdata[0])->realVars[data->modelData.realAlias[i].nameID]);
+    else
+      fprintf(fout, format, (data->localdata[0])->realVars[data->modelData.realAlias[i].nameID]);
   for (int i = 0; i < data->modelData.nAliasInteger; i++) if (!data->modelData.integerAlias[i].filterOutput)
-    fprintf(fout, formatint, (data->localdata[0])->integerVars[data->modelData.integerAlias[i].nameID]);
+    if (data->modelData.integerAlias[i].negate)
+      fprintf(fout, formatint, -(data->localdata[0])->integerVars[data->modelData.integerAlias[i].nameID]);
+    else
+      fprintf(fout, formatint, (data->localdata[0])->integerVars[data->modelData.integerAlias[i].nameID]);
   for (int i = 0; i < data->modelData.nAliasBoolean; i++) if (!data->modelData.booleanAlias[i].filterOutput)
-    fprintf(fout, formatbool, (data->localdata[0])->booleanVars[data->modelData.booleanAlias[i].nameID]);
+    if (data->modelData.booleanAlias[i].negate)
+      fprintf(fout, formatbool, -(data->localdata[0])->booleanVars[data->modelData.booleanAlias[i].nameID]);
+    else
+      fprintf(fout, formatbool, (data->localdata[0])->booleanVars[data->modelData.booleanAlias[i].nameID]);
   for (int i = 0; i < data->modelData.nAliasString; i++) if (!data->modelData.stringAlias[i].filterOutput)
+    /* there would no negation of a string happen */
     fprintf(fout, formatstring, (data->localdata[0])->stringVars[data->modelData.stringAlias[i].nameID]);
-
-  /* old imple */
-  for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesFilterOutput[i])
-    fprintf(fout, format, globalData->states[i]);
-  for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesDerivativesFilterOutput[i])
-    fprintf(fout, format, globalData->statesDerivatives[i]);
-  for (int i = 0; i < globalData->nAlgebraic; i++) if (!globalData->algebraicsFilterOutput[i])
-    fprintf(fout, format, globalData->algebraics[i]);
-  for (int i = 0; i < globalData->nAlias; i++) if (!globalData->aliasFilterOutput[i]){
-    if (((globalData->realAlias)[i]).negate)
-        fprintf(fout, format, - *(((globalData->realAlias)[i].alias)));
-    else
-        fprintf(fout, format, *(((globalData->realAlias)[i].alias)));
-  }
-  for (int i = 0; i < globalData->intVariables.nAlgebraic; i++) if (!globalData->intVariables.algebraicsFilterOutput[i])
-    fprintf(fout, formatint, globalData->intVariables.algebraics[i]);
-  for (int i = 0; i < globalData->intVariables.nAlias; i++) if (!globalData->intVariables.aliasFilterOutput[i]){
-    if (((globalData->intVariables.alias)[i]).negate)
-        fprintf(fout, formatint, - *(((globalData->intVariables.alias)[i].alias)));
-      else
-        fprintf(fout, formatint, *(((globalData->intVariables.alias)[i].alias)));
-  }
-  for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++) if (!globalData->boolVariables.algebraicsFilterOutput[i])
-    fprintf(fout, formatbool, globalData->boolVariables.algebraics[i]);
-  for (int i = 0; i < globalData->boolVariables.nAlias; i++) if (!globalData->boolVariables.aliasFilterOutput[i]){
-    if (((globalData->boolVariables.alias)[i]).negate)
-        fprintf(fout, formatbool, - *(((globalData->boolVariables.alias)[i].alias)));
-    else
-        fprintf(fout, formatbool, *(((globalData->boolVariables.alias)[i].alias)));
-  }
   fprintf(fout, "\n");
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
@@ -121,24 +100,6 @@ simulation_result_csv::simulation_result_csv(const char* filename, long numpoint
   }
 
   fprintf(fout, format, "time");
-  /* old imple */
-  for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesFilterOutput[i])
-    fprintf(fout, format, globalData->statesNames[i].name);
-  for (int i = 0; i < globalData->nStates; i++) if (!globalData->statesDerivativesFilterOutput[i])
-    fprintf(fout, format, globalData->stateDerivativesNames[i].name);
-  for (int i = 0; i < globalData->nAlgebraic; i++) if (!globalData->algebraicsFilterOutput[i])
-    fprintf(fout, format, globalData->algebraicsNames[i].name);
-  for (int i = 0; i < globalData->nAlias; i++) if (!globalData->aliasFilterOutput[i])
-    fprintf(fout, format, globalData->alias_names[i].name);
-  for (int i = 0; i < globalData->intVariables.nAlgebraic; i++) if (!globalData->intVariables.algebraicsFilterOutput[i])
-    fprintf(fout, format, globalData->int_alg_names[i].name);
-  for (int i = 0; i < globalData->intVariables.nAlias; i++) if (!globalData->intVariables.aliasFilterOutput[i])
-    fprintf(fout, format, globalData->int_alias_names[i].name);
-  for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++) if (!globalData->boolVariables.algebraicsFilterOutput[i])
-    fprintf(fout, format, globalData->bool_alg_names[i].name);
-  for (int i = 0; i < globalData->boolVariables.nAlias; i++) if (!globalData->boolVariables.aliasFilterOutput[i])
-    fprintf(fout, format, globalData->bool_alias_names[i].name);
-  /* new imple */
   for (int i = 0; i < modelData->nVariablesReal; i++) if (!modelData->realData[i].filterOutput)
     fprintf(fout, format, modelData->realData[i].info.name);
   for (int i = 0; i < modelData->nVariablesInteger; i++) if (!modelData->integerData[i].filterOutput)
