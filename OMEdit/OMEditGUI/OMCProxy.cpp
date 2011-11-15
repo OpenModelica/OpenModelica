@@ -1251,7 +1251,26 @@ QString OMCProxy::getDocumentationAnnotation(QString className)
     {
         sendCommand(expression);
         expressionResult = getResult();
-        QStringList lst = StringHandler::unparseStrings(expressionResult);
+        QStringList lst;
+        QStringList docsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(expressionResult));
+        foreach (QString docString, docsList)
+        {
+          docString = StringHandler::removeFirstLastCurlBrackets(docString);
+          if (docString.startsWith("info"))
+          {
+            docString = docString.mid(QString("info").length());
+            docString = StringHandler::removeFirstLastBrackets(docString);
+            docString = StringHandler::unparse(docString);
+            lst.append(docString);
+          }
+          else if (docString.startsWith("revisions"))
+          {
+            docString = docString.mid(QString("revisions").length());
+            docString = StringHandler::removeFirstLastBrackets(docString);
+            docString = StringHandler::unparse(docString);
+            lst.append(docString);
+          }
+        }
         QString doc;
         foreach (QString expressionResult, lst) {
             expressionResult = expressionResult.replace("Modelica://", "Modelica:/");

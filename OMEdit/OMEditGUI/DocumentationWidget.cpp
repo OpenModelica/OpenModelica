@@ -223,8 +223,8 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pParent)
     QString baseUrl = QString(Helper::OpenModelicaLibrary).replace("\\", "/").append("/Modelica ").append(versionStr).append("/Images/");
     setBaseUrl(baseUrl);
     // set page font settings
-    //settings()->setFontFamily(QWebSettings::StandardFont, "Verdana");
-    //settings()->setFontSize(QWebSettings::DefaultFontSize, 10);
+    settings()->setFontFamily(QWebSettings::StandardFont, "Verdana");
+    settings()->setFontSize(QWebSettings::DefaultFontSize, 10);
     // set page links settings
     page()->setLinkDelegationPolicy(QWebPage::DelegateAllLinks);
 
