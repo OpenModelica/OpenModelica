@@ -789,12 +789,18 @@ algorithm
 
     case (cache,env,"parseFile",{Values.STRING(str1)},st,msg)
       equation
+        // clear the errors before!
+        Error.clearMessages() "Clear messages";
+        Print.clearErrorBuf() "Clear error buffer";
         (paths, st) = Interactive.parseFile(str1, st);
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then (cache,ValuesUtil.makeArray(vals),st);
 
     case (cache,env,"loadFileInteractiveQualified",{Values.STRING(str1)},st,msg)
       equation
+        // clear the errors before!
+        Error.clearMessages() "Clear messages";
+        Print.clearErrorBuf() "Clear error buffer";
         (paths, st) = Interactive.loadFileInteractiveQualified(str1, st);
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then (cache,ValuesUtil.makeArray(vals),st);

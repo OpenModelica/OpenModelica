@@ -3532,5 +3532,114 @@ algorithm
   end match;
 end isNotBuiltinClass;
 
+public function hasBooleanNamedAnnotationInClass
+  input Element inClass;
+  input String namedAnnotation;
+  output Boolean hasAnn;
+algorithm
+  hasAnn := matchcontinue(inClass,namedAnnotation)
+    local
+      list<Annotation> anns;
+
+    case(CLASS(classDef = PARTS(annotationLst = anns)),namedAnnotation)
+      then hasBooleanNamedAnnotation(anns,namedAnnotation);
+
+    case(CLASS(classDef = CLASS_EXTENDS(composition = PARTS(annotationLst = anns))),namedAnnotation)
+      then hasBooleanNamedAnnotation(anns,namedAnnotation);
+    else false;
+  end matchcontinue;
+end hasBooleanNamedAnnotationInClass;
+
+public function hasBooleanNamedAnnotation
+"check if the named annotation is present and has value true"
+  input list<Annotation> inAnnos;
+  input String annotationName;
+  output Boolean outB;
+algorithm
+  outB := matchcontinue (inAnnos,annotationName)
+    local
+      Boolean b;
+      list<Annotation> rest;
+      Mod mod;
+    case (ANNOTATION(modification = mod) :: rest,annotationName)
+      equation
+        true = hasBooleanNamedAnnotation2(mod,annotationName);
+      then
+        true;
+    case (ANNOTATION(modification = mod) :: rest,annotationName)
+      equation
+        false = hasBooleanNamedAnnotation2(mod,annotationName);
+        b = hasBooleanNamedAnnotation(rest,annotationName);
+      then
+        b;
+  end matchcontinue;
+end hasBooleanNamedAnnotation;
+
+protected function hasBooleanNamedAnnotation2
+"check if the named annotation is present"
+  input Mod inMod;
+  input String annotationName;
+  output Boolean outB;
+algorithm
+  (outB) := match (inMod,annotationName)
+    local
+      Boolean b;
+      list<SubMod> subModLst;
+    case (MOD(subModLst=subModLst),annotationName)
+      equation
+        b = hasBooleanNamedAnnotation3(subModLst,annotationName);
+      then
+        b;
+  end match;
+end hasBooleanNamedAnnotation2;
+
+protected function hasBooleanNamedAnnotation3
+"check if the named annotation is present in comment"
+  input list<SubMod> inSubModes;
+  input String namedAnnotation;
+  output Boolean outB;
+algorithm
+  (outB) := matchcontinue (inSubModes,namedAnnotation)
+    local
+      Boolean b;
+      list<SubMod> rest;
+      SubMod submod;
+      Mod mod;
+      String id;
+    case (NAMEMOD(ident = id,A=MOD(binding=SOME((Absyn.BOOL(value=true),_)))) :: rest,namedAnnotation)
+      equation
+        true = id ==& namedAnnotation;
+      then true;
+    case (IDXMOD(an=mod) :: rest,namedAnnotation)
+      equation
+        true = hasBooleanNamedAnnotation2(mod,namedAnnotation);
+      then
+        true;
+    case (submod :: rest,namedAnnotation)
+      equation
+        b = hasBooleanNamedAnnotation3(rest,namedAnnotation);
+      then
+        b;
+  end matchcontinue;
+end hasBooleanNamedAnnotation3;
+
+public function getEvaluateAnnotation
+"@author: adrpo
+ returns true if annotation(Evaluate = true) is present,
+ otherwise false"
+  input Option<Comment> inCommentOpt;
+  output Boolean evalIsTrue;
+algorithm
+  evalIsTrue := matchcontinue(inCommentOpt)
+    local Annotation ann;
+    case (SOME(COMMENT(annotation_ = SOME(ann))))
+      equation
+         true = hasBooleanNamedAnnotation({ann}, "Evaluate");
+      then 
+        true;
+    case (_) then false;
+  end matchcontinue;
+end getEvaluateAnnotation;
+
 end SCode;
 

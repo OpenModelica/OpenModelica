@@ -10,6 +10,7 @@ if($#ARGV < 0) {
 }
 
 my $test = $ARGV[0];
+my $OMHOME = $ENV{OPENMODELICAHOME};
 my @output;
 my @expected_output;
 
@@ -20,9 +21,9 @@ unless(-e $test) {
 }
 
 # Run omc on the test case and redirect the output to the @output list.
-open TESTRUN, "omc $test |" or die "Failed to open pipeline";
+open TESTRUN, "'$OMHOME'/bin/omc -- --running-testsuite $test |" or die "Failed to open pipeline";
 while(<TESTRUN>) {
-  push @output, $_;  
+  push @output, $_;
 }
 
 # Open the test case and read the expected output into the @expected_output list.
@@ -52,13 +53,18 @@ while(<TESTCASE>) {
 my $eoi = 0;
 for(my $i = 0; $i <= $#output; $i++) {
   for(; $eoi <= $#expected_output; $eoi++) {
-    if ($output[$i] eq $expected_output[$eoi]) {
+    my $so = $output[$i];
+    my $seo = $expected_output[$eoi];
+    # trim the crap (windows/linux line endings and stuff)
+    $so =~ s/^\s+|\s+$//g;
+    $seo =~ s/^\s+|\s+$//g;
+    if ($so eq $seo) {
       splice @expected_output, $eoi, 1;
       splice @output, $i, 1;
       $i--;
       last;
     } 
-    elsif ($output[$i] lt $expected_output[$eoi]) {
+    elsif ($so lt $seo) {
       last;
     }
   }

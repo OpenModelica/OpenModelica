@@ -2284,7 +2284,7 @@ algorithm
       equation
         false = RTOpts.splitArrays();
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
-        v = instBuiltinAttribute(cache,env,"min",optVal,exp,ty,p);
+        v = instBuiltinAttribute(cache,env,"min",optVal,exp,DAE.T_REAL_DEFAULT,p);
         then v::varLst;
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
       equation
@@ -2297,7 +2297,7 @@ algorithm
       equation
         false = RTOpts.splitArrays();
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
-        v = instBuiltinAttribute(cache,env,"max",optVal,exp,ty,p);
+        v = instBuiltinAttribute(cache,env,"max",optVal,exp,DAE.T_REAL_DEFAULT,p);
         then v::varLst;
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
       equation
@@ -2580,37 +2580,44 @@ algorithm
     local
       Values.Value v;
       DAE.Type t_1,bindTp;
-      DAE.Exp bind1;
+      DAE.Exp bind1,vbind;
       DAE.Const c;
       DAE.Dimension d;
       String s,s1,s2;
+      
     case(cache,env,id,SOME(v),bind,expectedTp,DAE.PROP(bindTp,c))
       equation
-        failure(equality(c=DAE.C_VAR()));
+        false = valueEq(c,DAE.C_VAR());
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
+        // convert the value also if needed!!
+        (vbind,_) = Types.matchType(ValuesUtil.valueExp(v),bindTp,expectedTp,true);
+        v = ValuesUtil.expValue(vbind);
       then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
         SCode.PUBLIC(),t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
         
     case(cache,env,id,SOME(v),bind,expectedTp,DAE.PROP(bindTp as (DAE.T_ARRAY(arrayDim = d),_),c))
       equation
-        failure(equality(c=DAE.C_VAR()));
+        false = valueEq(c,DAE.C_VAR());
         true = OptManager.getOption("checkModel");
         expectedTp = Types.liftArray(expectedTp, d);
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
+        // convert the value also if needed!!
+        (vbind,_) = Types.matchType(ValuesUtil.valueExp(v),bindTp,expectedTp,true);
+        v = ValuesUtil.expValue(vbind);
       then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
         SCode.PUBLIC(),t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
         
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
       equation
-        failure(equality(c=DAE.C_VAR()));
+        false = valueEq(c,DAE.C_VAR());
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
-        (cache,v,_) = Ceval.ceval(cache,env, bind1, false,NONE(), Ceval.NO_MSG());
+        (cache,v,_) = Ceval.ceval(cache, env, bind1, false, NONE(), Ceval.NO_MSG());
       then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
       SCode.PUBLIC(),t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
 
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp as (DAE.T_ARRAY(arrayDim = d),_),c))
       equation
-        failure(equality(c=DAE.C_VAR()));
+        false = valueEq(c,DAE.C_VAR());
         true = OptManager.getOption("checkModel");
         expectedTp = Types.liftArray(expectedTp, d);
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
@@ -2620,14 +2627,14 @@ algorithm
       
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
       equation
-        failure(equality(c=DAE.C_VAR()));
+        false = valueEq(c,DAE.C_VAR());
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
       then DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.PARAM(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
       SCode.PUBLIC(),t_1,DAE.EQBOUND(bind1,NONE(),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
 
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
       equation
-        equality(c=DAE.C_VAR());
+        true = valueEq(c,DAE.C_VAR());
         s = ExpressionDump.printExpStr(bind);
         Error.addMessage(Error.HIGHER_VARIABILITY_BINDING,{id,"PARAM",s,"VAR"});
       then fail();
@@ -3331,6 +3338,8 @@ algorithm
         (env1,ih) = addClassdefsToEnv(env, ih, pre, cdefelts, impl, SOME(mods)) "1. CLASS & IMPORT nodes and COMPONENT nodes(add to env)" ;
         cdefelts_1 = addNomod(cdefelts) "instantiate CDEFS so redeclares are carried out" ;
         (cache,env2,ih,cdefelts_2) = updateCompeltsMods(cache,env1,ih, pre, cdefelts_1, ci_state, impl);
+        //env2 = env1;
+        //cdefelts_2 = cdefelts_1;
 
         //(cache, cdefelts_2) = removeConditionalComponents(cache, env2, cdefelts_2, pre);
         (cache,env3,ih,store,dae1,csets,ci_state1,tys,graph) =
@@ -3626,9 +3635,11 @@ algorithm
         //later in instElementList (where update_variable is called)"
         (cache,env3,ih) = addComponentsToEnv(cache, env2, ih, emods, pre, ci_state, compelts_1, compelts_1, eqs_1, inst_dims, impl);
         //Update the modifiers of elements to typed ones, needed for modifiers
-        //on components that are inherited.       
+        //on components that are inherited.
         (cache,env4,ih,compelts_2) = updateCompeltsMods(cache, env3, ih, pre, extcomps, ci_state, impl);
-
+        //compelts_2 = extcomps;
+        //env4 = env3;
+        
         compelts_1 = addNomod(compelts);
         cdefelts_1 = addNomod(cdefelts);
         compelts_2 = List.flatten({compelts_2, compelts_1, cdefelts_1});
@@ -4994,6 +5005,7 @@ algorithm
       list<DAE.Subscript> inst_dims2;
       list<DAE.Dimension> dims;
       Option<DAE.EqMod> eq;
+      Boolean isPartialInst;
 
       // long class definition, the normal case, a class with parts
       case (cache,env,ih,mods,pre,ci_state,
@@ -5002,6 +5014,7 @@ algorithm
             normalAlgorithmLst = alg, initialAlgorithmLst = initalg),
             re,partialPrefix,vis,inst_dims,className,info)
       equation
+        isPartialInst = true;
         // Debug.traceln(" Partialinstclassdef for: " +& PrefixUtil.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods));
         // Debug.fprintln("instTrace", "PARTIALICD: " +& Env.printEnvPathStr(env) +& " cn:" +& className +& " mods: " +& Mod.printModStr(mods));
         partialPrefix = isPartial(partialPrefix, mods);
@@ -5009,14 +5022,17 @@ algorithm
         (cdefelts,classextendselts,extendselts,_) = splitElts(els);
         (env1,ih) = addClassdefsToEnv(env, ih, pre, cdefelts, true, SOME(mods)) " CLASS & IMPORT nodes are added to env" ;
         (cache,env2,ih,emods,extcomps,_,_,_,_) =
-        InstExtends.instExtendsAndClassExtendsList(cache, env1, ih, mods, pre, extendselts, classextendselts, ci_state, className, true, true)
+        InstExtends.instExtendsAndClassExtendsList(cache, env1, ih, mods, pre, extendselts, classextendselts, ci_state, className, true, isPartialInst)
         "2. EXTENDS Nodes inst_Extends_List only flatten inhteritance structure. It does not perform component instantiations." ;
         
         // this does not work, see Modelica.Media SingleGasNasa!
         // els = Util.if_(SCode.partialBool(partialPrefix), {}, els);
         
         // If we partially instantiate a partial package, we filter out constants (maybe we should also filter out functions) /sjoelund
-        lst_constantEls = listAppend(extcomps,addNomod(constantAndParameterEls(els))) " Retrieve all constants";
+        lst_constantEls = listAppend(extcomps,addNomod(constantEls(els))) " Retrieve all constants";
+        
+        // if we are not in a package, just remove
+        
         /*
          Since partial instantiation is done in lookup, we need to add inherited classes here.
          Otherwise when looking up e.g. A.B where A inherits the definition of B, and without having a
@@ -5032,8 +5048,9 @@ algorithm
         (cache,env3,ih) = addComponentsToEnv(cache, env2, ih, mods, pre, ci_state,
                                              lst_constantEls, lst_constantEls, {},
                                              inst_dims, false); // adrpo: here SHOULD BE IMPL=TRUE! not FALSE!
-        (cache,env3,ih,lst_constantEls) = updateCompeltsMods(cache,env3,ih, pre, lst_constantEls, ci_state, true);
-        //lst_constantEls = listAppend(extcomps,lst_constantEls);
+        
+        (cache,env3,ih,lst_constantEls) = updateCompeltsMods(cache, env3, ih, pre, lst_constantEls, ci_state, true);
+        
         (cache,env3,ih,_,_,_,ci_state2,_,_) =
            instElementList(cache, env3, ih, UnitAbsyn.noStore, mods, pre, ci_state1, lst_constantEls,
               inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, false) "instantiate constants";
@@ -5169,9 +5186,9 @@ algorithm
 end partialInstClassdef;
 
 protected function constantEls
-"Returns only elements that are constants.
-author: PA
-Used buy partialInstClassdef to instantiate constants in packages."
+"Returns only elements that are constants or have annotation(Evaluate = true)!
+ author: PA & adrpo
+ Used buy partialInstClassdef to instantiate constants in packages."
   input list<SCode.Element> elements;
   output list<SCode.Element> outElements;
 algorithm
@@ -5180,12 +5197,13 @@ algorithm
       SCode.Attributes attr;
       SCode.Element el;
       list<SCode.Element> els,els1;
+      Option<SCode.Comment> cmt;
     
     case ({}) then {};
 
-    case ((el as SCode.COMPONENT(attributes=attr))::els)
+    case ((el as SCode.COMPONENT(attributes=attr, comment =  cmt))::els)
      equation
-        SCode.CONST() = SCode.attrVariability(attr);
+        true = SCode.isConstant(SCode.attrVariability(attr)); // or SCode.getEvaluateAnnotation(cmt);
         els1 = constantEls(els);
     then (el::els1);
 
@@ -5213,7 +5231,7 @@ algorithm
 
     case ((el as SCode.COMPONENT(attributes=attr))::els)
      equation
-        true = boolOr(valueEq(SCode.CONST(),SCode.attrVariability(attr)), valueEq(SCode.PARAM(),SCode.attrVariability(attr)));
+        true = SCode.isParameterOrConst(SCode.attrVariability(attr));
         els1 = constantAndParameterEls(els);
     then (el::els1);
 
@@ -5502,7 +5520,9 @@ algorithm
   // print("push " +& PrefixUtil.printPrefixStr(inPrefix) +& "\n");
   cache := pushStructuralParameters(inCache);
   // i1 := numStructuralParameterScopes(cache);
-  el := sortElementList(inElements, inEnv);
+  //Debug.fprintln("idep", "Before:\n" +& stringDelimitList(List.map(List.map(inElements, Util.tuple21), SCodeDump.unparseElementStr), "\n"));
+  el := sortElementList(inElements, inEnv, Env.inFunctionScope(inEnv));
+  //Debug.fprintln("idep", "After: " +& stringDelimitList(List.map(List.map(el, Util.tuple21), SCode.elementName), ", "));
   (cache, outEnv, outIH, outStore, outDae, outSets, outState, outTypesVarLst, outGraph) := 
     instElementList2(cache, inEnv, inIH, store, inMod, inPrefix,
       inState, el, inInstDims, inImplInst, inCallingScope, inGraph, inSets, inStopOnError);
@@ -5518,67 +5538,244 @@ protected function sortElementList
   before they are used."
   input list<Element> inElements;
   input Env.Env inEnv;
-  output list<Element> outElements;
+  input Boolean isFunctionScope;
+  output list<Element> outElements;  
   type Element = tuple<SCode.Element, DAE.Mod>;
-protected
-  list<tuple<Element, list<Element>>> cycles;
 algorithm
-  (outElements, cycles) := Graph.topologicalSort(
-    Graph.buildGraph(inElements, getElementDependencies, inElements),
-    isElementEqual);
-  checkCyclicalComponents(cycles, inEnv);
+  outElements := matchcontinue(inElements, inEnv, isFunctionScope)
+    local 
+      list<Element> outE;
+      list<tuple<Element, list<Element>>> cycles;
+    
+    // no sorting for meta-modelica!
+    case (_, _, _)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+      then
+        inElements;
+    
+    // sort the elements according to the dependencies
+    case (_, _, _)
+      equation
+        (outE, cycles) = Graph.topologicalSort(Graph.buildGraph(inElements, getElementDependencies, (inElements,isFunctionScope)), isElementEqual);
+         // append the elements in the cycles as they might not actually be cycles, but they depend on elements not in the list (i.e. package constants, etc)!
+        outE = List.appendNoCopy(outE, List.map(cycles, Util.tuple21)); 
+        checkCyclicalComponents(cycles, inEnv);
+      then
+        outE;
+  end matchcontinue;
 end sortElementList;
+
+protected function getDepsFromExps
+  input list<Absyn.Exp> inExps;
+  input list<tuple<SCode.Element, DAE.Mod>> inAllElements;
+  input list<tuple<SCode.Element, DAE.Mod>> inDependencies;
+  output list<tuple<SCode.Element, DAE.Mod>> outDependencies;
+algorithm
+  outDependencies := matchcontinue(inExps, inAllElements, inDependencies)
+    local 
+      list<Absyn.Exp> rest;
+      Absyn.Exp e;
+      list<tuple<SCode.Element, DAE.Mod>> deps;
+
+    // handle the empty case
+    case ({}, _, _) then inDependencies;
+    // handle the normal case
+    case (e::rest, _, deps) 
+      equation
+        (_, (_, _, (_, deps))) = Absyn.traverseExpBidir(e, (getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (inAllElements, deps)));
+        deps = getDepsFromExps(rest, inAllElements, deps);
+      then
+        deps;
+  end matchcontinue;
+end getDepsFromExps;
+
+protected function removeCurrentElementFromArrayDimDeps
+"@author: adrpo
+ removes the name from deps (Real A[size(A,1)] dependency)"
+  input String name;
+  input list<tuple<SCode.Element, DAE.Mod>> inDependencies;
+  output list<tuple<SCode.Element, DAE.Mod>> outDependencies;
+algorithm
+  outDependencies := matchcontinue(name, inDependencies)
+    local
+      list<tuple<SCode.Element, DAE.Mod>> rest;
+      SCode.Element e;
+      tuple<SCode.Element, DAE.Mod> dep;
+    
+    // handle empty case
+    case (_, {}) then {};
+    // handle match
+    case (name, (e,_)::rest)
+      equation
+        true = stringEq(name, SCode.elementName(e));
+        rest = removeCurrentElementFromArrayDimDeps(name, rest);
+      then
+        rest;
+    // handle rest
+    case (name, dep::rest)
+      equation
+        rest = removeCurrentElementFromArrayDimDeps(name, rest);
+      then
+        dep::rest;
+  end matchcontinue;
+end removeCurrentElementFromArrayDimDeps;
+
+protected function getExpsFromSubMods
+  input list<SCode.SubMod> inSubMods "the component sub modifiers";
+  output list<Absyn.Exp> outSubsExps "the expressions from subs";
+algorithm
+  outSubsExps := matchcontinue(inSubMods)
+    local
+      SCode.Mod mod;
+      list<SCode.SubMod> rest;
+      list<Absyn.Exp> e, exps, sm;
+      
+    
+    // handle empty
+    case ({}) then {};
+    
+    // handle namemod 
+    case (SCode.NAMEMOD(A = mod)::rest)
+      equation
+        (e, sm) = getExpsFromMod(mod);
+        exps = getExpsFromSubMods(rest);
+        exps = listAppend(e, listAppend(sm, exps));
+      then
+        exps;
+    
+    // handle indexmod 
+    case (SCode.IDXMOD(an = mod)::rest)
+      equation
+        (e, sm) = getExpsFromMod(mod);
+        exps = getExpsFromSubMods(rest);
+        exps = listAppend(e, listAppend(sm, exps));
+      then
+        exps;
+    
+  end matchcontinue;
+end getExpsFromSubMods;
+
+protected function getExpsFromMod
+  input SCode.Mod inMod "the component modifier";
+  output list<Absyn.Exp> outBindingExp "the bind exp if any";
+  output list<Absyn.Exp> outSubsExps "the expressions from subs";
+algorithm
+  (outBindingExp, outSubsExps) := matchcontinue(inMod)
+    local
+      list<Absyn.Exp> be, se;
+      Absyn.Exp e;
+      list<SCode.SubMod> subs;
+      list<SCode.Element> els;
+    
+    // no mods!
+    case (SCode.NOMOD()) then ({}, {});
+
+    // mods with binding
+    case (SCode.MOD(subModLst = subs, binding = SOME((e, _))))
+      equation
+        se = getExpsFromSubMods(subs);
+      then
+        ({e}, se);
+    
+    // mods without binding
+    case (SCode.MOD(subModLst = subs, binding = NONE()))
+      equation
+        se = getExpsFromSubMods(subs);
+      then
+        ({}, se);
+    
+    // redeclares
+    case (SCode.REDECL(elementLst = els))
+      equation
+        // TODO! get exps from mods in els!, i.e. redeclare X = Y(mods); redeclare X a(mods);
+      then
+        ({}, {});
+        
+  end matchcontinue;
+end getExpsFromMod;
 
 protected function getElementDependencies
   "Returns the dependencies given an element."
   input tuple<SCode.Element, DAE.Mod> inElement;
-  input list<tuple<SCode.Element, DAE.Mod>> inAllElements;
+  input tuple<list<tuple<SCode.Element, DAE.Mod>>, Boolean> inAllElementsAndIsFunctionScope;
   output list<tuple<SCode.Element, DAE.Mod>> outDependencies;
 algorithm
-  outDependencies := matchcontinue(inElement, inAllElements)
+  outDependencies := matchcontinue(inElement, inAllElementsAndIsFunctionScope)
     local
       SCode.Variability var;
       Absyn.Exp bind_exp, cond_exp;
+      Option<Absyn.Exp> cExpOpt;
       list<tuple<SCode.Element, DAE.Mod>> deps;
+      DAE.Mod daeMod;
+      Absyn.ArrayDim ad;
+      list<Absyn.Exp> exps, sexps, bexps, cexps;
+      SCode.Mod mod;
+      String name;
+      Boolean hasUnknownDims;
+      Absyn.Direction direction;
+      list<tuple<SCode.Element, DAE.Mod>> inAllElements;
 
-    // For constants and parameters we check the binding modification.
-    case ((SCode.COMPONENT(condition = SOME(cond_exp), attributes = SCode.ATTR(variability = var),
-        modifications = SCode.MOD(binding = SOME((bind_exp, _)))), _), _)
+    // For constants and parameters we check the component conditional, array dimensions, modifiers and binding
+    case ((SCode.COMPONENT(name = name, condition = cExpOpt, attributes = SCode.ATTR(arrayDims = ad, variability = var),
+           modifications = mod), daeMod), (inAllElements, _))
       equation
         true = SCode.isParameterOrConst(var);
-        (_, (_, _, (_, deps))) = Absyn.traverseExpBidir(bind_exp,
-          (getElementDependenciesTraverserEnter,
-           getElementDependenciesTraverserExit,
-           (inAllElements, {})));
-        (_, (_, _, (_, deps))) = Absyn.traverseExpBidir(cond_exp,
-          (getElementDependenciesTraverserEnter,
-           getElementDependenciesTraverserExit,
-           (inAllElements, deps)));
+        (_, exps) = Absyn.getExpsFromArrayDim(ad);
+        (bexps, sexps) = getExpsFromMod(mod);
+        exps = listAppend(bexps, listAppend(sexps, exps));
+        (bexps, sexps) = getExpsFromMod(Mod.unelabMod(daeMod));
+        exps = listAppend(bexps, listAppend(sexps, exps));
+        deps = getDepsFromExps(exps, inAllElements, {});
+        // remove the current element from the deps as it is usally Real A[size(A,1)];
+        deps = removeCurrentElementFromArrayDimDeps(name, deps); 
+        deps = getDepsFromExps(Util.optionList(cExpOpt), inAllElements, deps);
       then
         deps;
 
-    case ((SCode.COMPONENT(condition = NONE(), attributes = SCode.ATTR(variability = var),
-        modifications = SCode.MOD(binding = SOME((bind_exp, _)))), _), _)
+    // For input and output variables in function scope return no dependencies so they stay in order! 
+    case ((SCode.COMPONENT(name = name, condition = cExpOpt, attributes = SCode.ATTR(arrayDims = ad, direction = direction),
+           modifications = mod), daeMod), (inAllElements, true))
       equation
-        true = SCode.isParameterOrConst(var);
-        (_, (_, _, (_, deps))) = Absyn.traverseExpBidir(bind_exp,
-          (getElementDependenciesTraverserEnter,
-           getElementDependenciesTraverserExit,
-           (inAllElements, {})));
-      then
-        deps;
+        true = Absyn.isInputOrOutput(direction);
+      then 
+        {};
 
-    // For other variables we check the condition, since they might be
-    // conditional on a constant or parameter.
-    case ((SCode.COMPONENT(condition = SOME(cond_exp)), _), _)
+    // For other variables we check the condition, since they might be conditional on a constant or parameter.
+    case ((SCode.COMPONENT(name = name, condition = cExpOpt, attributes = SCode.ATTR(arrayDims = ad),
+           modifications = mod), daeMod), (inAllElements, _))
       equation
-        (_, (_, _, (_, deps))) = Absyn.traverseExpBidir(cond_exp,
-          (getElementDependenciesTraverserEnter,
-           getElementDependenciesTraverserExit,
-           (inAllElements, {})));
+        (hasUnknownDims, exps) = Absyn.getExpsFromArrayDim(ad);
+        (bexps, sexps) = getExpsFromMod(mod);
+        exps = listAppend(sexps, exps);
+        // ignore the binding for variables if array dims does not have unknown dimensions
+        exps = Util.if_(hasUnknownDims, listAppend(bexps, exps), exps); 
+        (bexps, sexps) = getExpsFromMod(Mod.unelabMod(daeMod));
+        exps = listAppend(sexps, exps);
+        // ignore the binding for variables if array dims does not have unknown dimensions
+        exps = Util.if_(hasUnknownDims, listAppend(bexps, exps), exps);
+        deps = getDepsFromExps(exps, inAllElements, {});
+        // remove the current element from the deps as it is usally Real A[size(A,1)];
+        deps = removeCurrentElementFromArrayDimDeps(name, deps); 
+        deps = getDepsFromExps(Util.optionList(cExpOpt), inAllElements, deps);
       then
         deps;
-
+    
+    // We might actually get packages here, check the modifiers and the array dimensions
+    case ((SCode.CLASS(name = name, classDef = SCode.DERIVED(modifications = mod, attributes = SCode.ATTR(arrayDims = ad))), 
+           daeMod), (inAllElements, _))
+      equation
+        (_, exps) = Absyn.getExpsFromArrayDim(ad);
+        (_, sexps) = getExpsFromMod(mod);
+        exps = listAppend(sexps, exps);
+        // ignore the binding for variables if array dims does not have unknown dimensions 
+        (_, sexps) = getExpsFromMod(Mod.unelabMod(daeMod));
+        exps = listAppend(sexps, exps);
+        // ignore the binding for variables if array dims does not have unknown dimensions
+        deps = getDepsFromExps(exps, inAllElements, {});
+      then
+        deps;
+    
     else then {};
   end matchcontinue;
 end getElementDependencies;
@@ -5598,16 +5795,26 @@ algorithm
       ElementList all_el, accum_el;
       tuple<SCode.Element, DAE.Mod> e;
 
-    case ((exp as Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = id)), 
-        (all_el, accum_el)))
+    case ((exp as Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = id)), (all_el, accum_el)))
       equation
         // Try and delete the element with the given name from the list of all
         // elements. If this succeeds, add it to the list of elements. This
         // ensures that we don't add any dependency more than once.
-        (all_el, SOME(e)) = List.deleteMemberOnTrue(id, all_el,
-          isElementNamed);
+        (all_el, SOME(e)) = List.deleteMemberOnTrue(id, all_el, isElementNamed);
       then
         ((exp, (all_el, e :: accum_el)));
+
+    /* this doesn't work yet as we don't know the structure of a component reference! 
+       For example (false positive): 
+       Error: Cyclically dependent constants or parameters found in scope Modelica.Electrical.Machines.Examples.TransformerTestbench: {transformer,transformerData}
+    case ((exp as Absyn.CREF(componentRef = Absyn.CREF_QUAL(name = id)), (all_el, accum_el)))
+      equation
+        // Try and delete the element with the given name from the list of all
+        // elements. If this succeeds, add it to the list of elements. This
+        // ensures that we don't add any dependency more than once.
+        (all_el, SOME(e)) = List.deleteMemberOnTrue(id, all_el, isElementNamed);
+      then
+        ((exp, (all_el, e :: accum_el)));*/
 
     else then inTuple;
   end matchcontinue;
@@ -5655,6 +5862,13 @@ algorithm
       then
         true;
 
+    // we can also have packages!
+    case (_, (SCode.CLASS(name = name), _))
+      equation
+        true = stringEqual(name, inName);
+      then
+        true;
+
     else false;
   end matchcontinue;
 end isElementNamed;
@@ -5672,6 +5886,11 @@ algorithm
     case ((SCode.COMPONENT(name = id1), _), 
           (SCode.COMPONENT(name = id2), _))
       then stringEqual(id1, id2);
+    
+    // we can also have packages!
+    case ((SCode.CLASS(name = id1), _), 
+          (SCode.CLASS(name = id2), _))
+      then stringEqual(id1, id2);
 
     else then false;
   end matchcontinue;
@@ -5685,7 +5904,7 @@ protected function checkCyclicalComponents
   input Env.Env inEnv;
   type Element = tuple<SCode.Element, DAE.Mod>;
 algorithm
-  _ := match(inCycles, inEnv)
+  _ := matchcontinue(inCycles, inEnv)
     local
       list<list<Element>> cycles;
       list<list<String>> names;
@@ -5694,6 +5913,12 @@ algorithm
 
     case ({}, _) then ();
 
+    case (_, _)
+      equation
+        {} = Graph.findCycles(inCycles, isElementEqual);
+      then
+        ();
+    
     else
       equation
         cycles = Graph.findCycles(inCycles, isElementEqual);
@@ -5705,7 +5930,7 @@ algorithm
         Error.addMessage(Error.CIRCULAR_COMPONENTS, {scope_str, cycles_str});
       then
         fail();
-  end match;
+  end matchcontinue;
 end checkCyclicalComponents;
 
 protected function elementName
@@ -6210,6 +6435,34 @@ algorithm
   end matchcontinue;
 end isStructuralIfEquationParameter;
 
+protected function checkCompEnvPathVsCompTypePath
+"fails if the comp env path is NOT a prefix of comp type path"
+  input Option<Absyn.Path> inCompEnvPath;
+  input Absyn.Path inCompTypePath; 
+algorithm
+  _ := matchcontinue(inCompEnvPath, inCompTypePath)
+    
+    local Absyn.Path ep, tp;
+    
+    // if the type path is just an ident, we have a problem!
+    case (_, Absyn.IDENT(_)) then ();
+    
+    // if env path where the component C resides A.B.P.Z
+    // has as prefix the component C type path C say A.B.P.C
+    // it means that when we search for component A.B.P.Z.C 
+    // we might find the type: A.B.P.C instead.  
+    case (SOME(ep), tp)
+      equation
+        tp = Absyn.stripLast(tp);
+        true = Absyn.pathPrefixOf(tp, ep);
+      then 
+        ();
+    
+    case (_, _) then fail();
+    
+  end matchcontinue;
+end checkCompEnvPathVsCompTypePath;
+
 public function addComponentsToEnv
 "function: addComponentsToEnv
   author: PA
@@ -6288,8 +6541,18 @@ algorithm
     case (cache,env,ih,mod,pre,cistate,
           ((comp as SCode.COMPONENT(name = n,typeSpec = (tss as Absyn.TPATH(tpp, _)), info = aInfo)),cmod)::xs, _, _, instdims,impl)
       equation
+        // name is equal with the last ident from type path.
+        // this is only a problem if the environment in which the component 
+        // resides has as prefix the type path (without the last ident)
+        // as this would mean that we might find the type instead of the 
+        // component when we do lookup
         true = stringEq(n, Absyn.pathLastIdent(tpp));
+        
+        // this will fail if the type path is a prefix of the env path
+        checkCompEnvPathVsCompTypePath(Env.getEnvPath(env), tpp);
+        
         ns = Absyn.pathString(tpp);
+        n = n +& " in env: " +&  Env.printEnvPathStr(env);
         Error.addSourceMessage(Error.COMPONENT_NAME_SAME_AS_TYPE_NAME, {n,ns}, aInfo);
       then
         fail();
@@ -6565,7 +6828,7 @@ algorithm
       SCode.Each  e;
       SCode.Element cls;
       String name;
-      list<SCode.SubMod> rest;
+      list<SCode.SubMod> rest, subs;
       Option<tuple<Absyn.Exp, Boolean>> b;
       SCode.Mod sm;
       list<SCode.Element> els;
@@ -6577,12 +6840,12 @@ algorithm
       then 
         SCode.REDECL(f, e, cls::els);
     
-    case (inModOuter,SCode.MOD(f, e, SCode.NAMEMOD(name, sm as SCode.REDECL(finalPrefix = _))::rest, b))
+    case (inModOuter, SCode.MOD(f, e, SCode.NAMEMOD(name, sm as SCode.REDECL(finalPrefix = _))::rest, b))
       equation
         // lookup the class mod in the outer
-        sm = chainRedeclares(inModOuter, sm);
+        sm = chainRedeclares(inModOuter, sm); SCode.MOD(subModLst = subs) = chainRedeclares(inModOuter, SCode.MOD(f, e, rest, b));
       then 
-        SCode.MOD(f, e, SCode.NAMEMOD(name, sm)::rest, b);
+        SCode.MOD(f, e, SCode.NAMEMOD(name, sm)::subs, b);
     
     case (_, inModInner) then inModInner;
     
@@ -6760,8 +7023,8 @@ algorithm
           impl, inst_dims, pre, mods, info);
 
         // can call instVar
-        (cache, env2, ih) = updateComponentsInEnv(cache, env, ih, pre, mods,
-          crefs, ci_state, impl);
+        (cache, env2, ih) = updateComponentsInEnv(cache, env, ih, pre, mods, crefs, ci_state, impl);
+        //env2 = env;
 
         // Update the untyped modifiers to typed ones, and extract class and
         // component modifiers again.
@@ -6825,6 +7088,8 @@ algorithm
         
         // adrpo: 2010-09-28: check if the IDX mod doesn't overlap!
         Mod.checkIdxModsForNoOverlap(mod_1, PrefixUtil.prefixAdd(name, {}, pre, vt, ci_state), info);
+        
+        // replace classes
         
         (cache, comp_env, ih, store, dae, csets, ty, graph_new) = instVar(cache,
           cenv, ih, store, ci_state, mod_1, pre, name, cls, attr,
@@ -13261,7 +13526,7 @@ algorithm
     case (mod,varLst,etype,index_list,bind_name,useConstValue) /* Have subscript/index */
       equation
         mod2 = Mod.lookupCompModification(mod, bind_name);
-        result = instBinding2(mod2, etype, index_list, bind_name,useConstValue);
+        result = instBinding2(mod2, etype, index_list, bind_name, useConstValue);
       then
         result;
     
@@ -13270,7 +13535,7 @@ algorithm
         failure(_ = Mod.lookupCompModification(mod, bind_name));
       then
         NONE();
-    
+            
     case (mod,DAE.TYPES_VAR(name,binding=binding)::_,etype,index_list,bind_name,useConstValue) 
       equation
         true = stringEq(name, bind_name);
@@ -13399,9 +13664,9 @@ algorithm
     case (cache,env,mod,tp as (DAE.T_REAL(varLstReal = varLst),path),index_list)
       equation
         (quantity_str) = instBinding(mod, varLst, DAE.T_STRING_DEFAULT,index_list, "quantity",false);
-        (unit_str) = instBinding( mod, varLst, DAE.T_STRING_DEFAULT, index_list, "unit",false);
+        (unit_str) = instBinding(mod, varLst, DAE.T_STRING_DEFAULT, index_list, "unit",false);
         (displayunit_str) = instBinding(mod, varLst,DAE.T_STRING_DEFAULT, index_list, "displayUnit",false);
-        (min_val) = instBinding( mod, varLst, DAE.T_REAL_DEFAULT,index_list, "min",false);
+        (min_val) = instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "min",false);
         (max_val) = instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "max",false);
         (start_val) = instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "start",false);
         (fixed_val) = instBinding( mod, varLst, DAE.T_BOOL_DEFAULT,index_list, "fixed",false);
@@ -16522,13 +16787,13 @@ algorithm
         outVars = List.filter(vl,Types.isOutputVar);
         name = SCode.isBuiltinFunction(cl,List.map(inVars,Types.varName),List.map(outVars,Types.varName));
         inlineType = isInlineFunc2(cl);
-        purity = not DAEUtil.hasBooleanNamedAnnotation(cl,"__OpenModelica_Impure");
+        purity = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
       then (DAE.FUNCTION_ATTRIBUTES(inlineType,purity,DAE.FUNCTION_BUILTIN(SOME(name))));
     case (SCode.CLASS(restriction=restriction),_)
       equation
         inlineType = isInlineFunc2(cl);
-        isBuiltin = Util.if_(DAEUtil.hasBooleanNamedAnnotation(cl,"__OpenModelica_BuiltinPtr"), DAE.FUNCTION_BUILTIN_PTR(), DAE.FUNCTION_NOT_BUILTIN());
-        purity = not DAEUtil.hasBooleanNamedAnnotation(cl,"__OpenModelica_Impure");
+        isBuiltin = Util.if_(SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_BuiltinPtr"), DAE.FUNCTION_BUILTIN_PTR(), DAE.FUNCTION_NOT_BUILTIN());
+        purity = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
       then DAE.FUNCTION_ATTRIBUTES(inlineType,purity,isBuiltin);
   end matchcontinue;
 end getFunctionAttributes;

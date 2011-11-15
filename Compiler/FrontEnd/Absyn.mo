@@ -935,10 +935,10 @@ uniontype Subscript "The Subscript uniontype is used both in array declarations 
   when it is used in a component reference it means a slice of the
   whole dimension.
   - Subscripts"
-  record NOSUB end NOSUB;
+  record NOSUB "unknown array dimension" end NOSUB;
 
-  record SUBSCRIPT
-    Exp subscript "subscript" ;
+  record SUBSCRIPT "dimension as an expression"
+    Exp subscript "subscript";
   end SUBSCRIPT;
 
 end Subscript;
@@ -5263,5 +5263,65 @@ public function isDerCrefFail
 algorithm
   CALL(CREF_IDENT("der",{}),FUNCTIONARGS({CREF(_)},{})) := exp;
 end isDerCrefFail;
+
+public function getExpsFromArrayDim
+ "author: adrpo
+  returns all the expressions from array dimension as a list
+  also returns if we have unknown dimensions in the array dimension"
+  input ArrayDim inAd;
+  output Boolean hasUnknownDimensions;
+  output list<Exp> outExps;
+algorithm
+  (hasUnknownDimensions, outExps) := getExpsFromArrayDim_tail(inAd, {});
+end getExpsFromArrayDim;
+
+
+public function getExpsFromArrayDim_tail
+ "author: adrpo
+  returns all the expressions from array dimension as a list
+  also returns if we have unknown dimensions in the array dimension"
+  input ArrayDim inAd;
+  input list<Exp> inAccumulator;
+  output Boolean hasUnknownDimensions;
+  output list<Exp> outExps;
+algorithm
+  (hasUnknownDimensions, outExps) := matchcontinue(inAd, inAccumulator)
+    local
+      list<Subscript> rest;
+      Exp e;
+      list<Exp> exps, acc;
+      Boolean b;
+    
+    // handle empty list
+    case ({}, acc) then (false, listReverse(acc));
+    
+    // handle SUBSCRIPT
+    case (SUBSCRIPT(e)::rest, acc)
+      equation
+        (b, exps) = getExpsFromArrayDim_tail(rest, e::acc);
+       then
+         (b, exps);
+    
+    // handle NOSUB
+    case (NOSUB()::rest, acc)
+      equation
+        (b, exps) = getExpsFromArrayDim_tail(rest, acc);
+       then
+         (true, exps);
+  end matchcontinue;
+end getExpsFromArrayDim_tail;
+
+public function isInputOrOutput
+"@author: adrpo
+ returns true if the given direction is input or output"
+ input Direction direction;
+ output Boolean isIorO "input or output only";
+algorithm
+  isIorO := match(direction)
+    case (INPUT()) then true;
+    case (OUTPUT()) then true;
+    case (BIDIR()) then false;
+  end match;
+end isInputOrOutput;
 
 end Absyn;

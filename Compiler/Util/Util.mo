@@ -2637,4 +2637,19 @@ algorithm
   end matchcontinue;
 end arrayMemberEqualityFuncLoop;
 
+public function optionList
+"@author: adrpo
+ SOME(a) => {a}
+ NONE()  => {}"
+  input Option<Type_a> inOption;
+  output list<Type_a> outLst;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outLst := match(inOption)
+    local Type_a a;
+    case SOME(a) then {a};
+    case NONE() then {};
+  end match;
+end optionList;
+  
 end Util;

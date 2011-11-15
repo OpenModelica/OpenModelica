@@ -124,6 +124,7 @@ algorithm
       SCode.Mod scodeMod;
       SCode.Final finalPrefix;
       Absyn.Info info;
+      Option<SCode.Comment> cmt;
 
     /* no further elements to instantiate */
     case (cache,env,ih,mod,pre,{},ci_state,className,impl,_) then (cache,env,ih,mod,{},{},{},{},{});
@@ -230,13 +231,15 @@ algorithm
          (elt as SCode.COMPONENT(name = s, attributes = 
           SCode.ATTR(variability = var), 
           modifications = scodeMod, 
-          prefixes = SCode.PREFIXES(finalPrefix=finalPrefix))) :: rest,
+          prefixes = SCode.PREFIXES(finalPrefix=finalPrefix),
+          comment = cmt)) :: rest,
           ci_state,className,impl,isPartialInst)
       equation 
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) =
         instExtendsList(cache, env, ih, mod, pre, rest, ci_state, className, impl, isPartialInst);
-        /* Filter out non-constants or parameters if partial inst */
-        notConst = not SCode.isParameterOrConst(var);
+        // Filter out non-constants or parameters if partial inst
+        notConst = not SCode.isConstant(var); // not (SCode.isConstant(var) or SCode.getEvaluateAnnotation(cmt));
+        // we should always add it as the class that variable represents might contain constants!
         compelts2 = Util.if_(notConst and isPartialInst,compelts2,(elt,DAE.NOMOD(),false)::compelts2);
       then
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2);

@@ -10955,7 +10955,7 @@ protected function elabCrefSubs
 "function: elabCrefSubs
   This function elaborates on all subscripts in a component reference."
   input Env.Cache inCache;
-  input Env.Env inEnv;
+  input Env.Env inCrefEnv "search for the cref in this environment";  
   input Absyn.ComponentRef inComponentRef;
   input Prefix.Prefix crefPrefix "the accumulated cref, required for lookup";
   input Boolean inBoolean;
@@ -10968,12 +10968,12 @@ protected function elabCrefSubs
   not mean that the variable x[1,2] is constant)";
   output Boolean outHasZeroSizeDim;
 algorithm
-  (outCache,outComponentRef,outConst,outHasZeroSizeDim) := matchcontinue (inCache,inEnv,inComponentRef,crefPrefix,inBoolean,hasZeroSizeDim,info)
+  (outCache,outComponentRef,outConst,outHasZeroSizeDim) := matchcontinue (inCache,inCrefEnv,inComponentRef,crefPrefix,inBoolean,hasZeroSizeDim,info)
     local
       DAE.Type t;
       list<DAE.Dimension> sl;
       DAE.Const const,const1,const2;
-      list<Env.Frame> env;
+      list<Env.Frame> crefEnv, subscriptsEnv;
       Ident id;
       list<Absyn.Subscript> ss;
       Boolean impl;
@@ -10981,93 +10981,75 @@ algorithm
       Absyn.ComponentRef absynCr;
       DAE.ExpType ty;
       list<DAE.Subscript> ss_1;
-      Absyn.ComponentRef subs,acr;
+      Absyn.ComponentRef restCref,absynCref;
       Env.Cache cache;
       SCode.Variability vt;
-
-    /*/ Wildcard
-    case (cache,env, Absyn.WILD(),_,impl,info) then (cache,DAE.WILD(),DAE.C_VAR());
-    
-    // if the cref has no subscripts, just return the same!
-    case( cache,env,acr, _,impl,info)
-      equation
-        // adrpo: to circumvent lookup see if the cref has subscripts or not!
-        false = Absyn.crefHasSubscripts(acr);
-        cr = absynCrefToComponentReference(acr);
-        // prefix it!
-        (cache,cr) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,crefPrefix,cr);
-      then 
-        (cache,cr,DAE.C_CONST());
-    */
     
     // IDENT
-    case (cache,env,Absyn.CREF_IDENT(name = id,subscripts = ss),crefPrefix,impl,hasZeroSizeDim,info)
+    case (cache,crefEnv,Absyn.CREF_IDENT(name = id,subscripts = ss),crefPrefix,impl,hasZeroSizeDim,info)
       equation
         // Debug.traceln("Try elabSucscriptsDims " +& id);
-        (cache,cr) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,crefPrefix,ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
-        (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr);
+        (cache,cr) = PrefixUtil.prefixCref(cache,crefEnv,InnerOuter.emptyInstHierarchy,crefPrefix,ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
+        (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache, crefEnv, cr);
         // print("elabCrefSubs type of: " +& id +& " is " +& Types.printTypeStr(t) +& "\n");
         // Debug.traceln("    elabSucscriptsDims " +& id +& " got var");
         ty = Types.elabType(t);
         ((_,hasZeroSizeDim)) = Types.traverseType((t,hasZeroSizeDim),Types.isZeroLengthArray);
         sl = Types.getDimensions(t);
-        /*Constant evaluate subscripts on form x[1,p,q] where p,q are constants or parameters*/
-        (cache,ss_1,const) = elabSubscriptsDims(cache,env, ss, sl, impl,crefPrefix,info);
+        // Constant evaluate subscripts on form x[1,p,q] where p,q are constants or parameters
+        (cache,ss_1,const) = elabSubscriptsDims(cache, crefEnv, ss, sl, impl, crefPrefix, info);
       then       
         (cache,ComponentReference.makeCrefIdent(id,ty,ss_1),const,hasZeroSizeDim);
         
     // QUAL,with no subscripts => looking for var in the top env!
-    case (cache,env,Absyn.CREF_QUAL(name = id,subscripts = {},componentRef = subs),crefPrefix,impl,hasZeroSizeDim,info)
+    case (cache,crefEnv,Absyn.CREF_QUAL(name = id,subscripts = {},componentRef = restCref),crefPrefix,impl,hasZeroSizeDim,info)
       equation
-        (cache,cr) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,crefPrefix,ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
-        //print("env:");print(Env.printEnvStr(env));print("\n");
-        (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr);
+        (cache,cr) = PrefixUtil.prefixCref(cache,crefEnv,InnerOuter.emptyInstHierarchy,crefPrefix,ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
+        //print("env:");print(Env.printEnvStr(env));print("\n"); 
+        (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache, crefEnv, cr);
         ty = Types.elabType(t);
         crefPrefix = PrefixUtil.prefixAdd(id,{},crefPrefix,SCode.VAR(),ClassInf.UNKNOWN(Absyn.IDENT(""))); // variability doesn't matter
-        (cache,cr,const,hasZeroSizeDim) = elabCrefSubs(cache,env,subs,crefPrefix,impl,hasZeroSizeDim,info);
+        (cache,cr,const,hasZeroSizeDim) = elabCrefSubs(cache, crefEnv, restCref, crefPrefix, impl, hasZeroSizeDim, info);
       then
         (cache,ComponentReference.makeCrefQual(id,ty,{},cr),const,hasZeroSizeDim);
         
     // QUAL,with no subscripts second case => look for class
-    case (cache,env,Absyn.CREF_QUAL(name = id,subscripts = {},componentRef = subs),crefPrefix,impl,hasZeroSizeDim,info)
+    case (cache,crefEnv,Absyn.CREF_QUAL(name = id,subscripts = {},componentRef = restCref),crefPrefix,impl,hasZeroSizeDim,info)
       equation
         crefPrefix = PrefixUtil.prefixAdd(id,{},crefPrefix,SCode.VAR(),ClassInf.UNKNOWN(Absyn.IDENT(""))); // variability doesn't matter
-        (cache,cr,const,hasZeroSizeDim) = elabCrefSubs(cache, env, subs, crefPrefix, impl, hasZeroSizeDim, info);
+        (cache,cr,const,hasZeroSizeDim) = elabCrefSubs(cache, crefEnv, restCref, crefPrefix, impl, hasZeroSizeDim, info);
       then
         (cache,ComponentReference.makeCrefQual(id,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),{},cr),const,hasZeroSizeDim);
     
     // QUAL,with constant subscripts
-    case (cache,env,Absyn.CREF_QUAL(name = id,subscripts = ss as _::_,componentRef = subs),crefPrefix,impl,hasZeroSizeDim,info)
+    case (cache,crefEnv,Absyn.CREF_QUAL(name = id,subscripts = ss as _::_,componentRef = restCref),crefPrefix,impl,hasZeroSizeDim,info)
       equation
-        (cache,cr) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,crefPrefix,ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
-        (cache,DAE.ATTR(_,_,vt,_,_),t,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr);
+        (cache,cr) = PrefixUtil.prefixCref(cache,crefEnv,InnerOuter.emptyInstHierarchy,crefPrefix,ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
+        (cache,DAE.ATTR(_,_,vt,_,_),t,_,_,_,_,_,_) = Lookup.lookupVar(cache, crefEnv, cr);
         sl = Types.getDimensions(t);
         ty = Types.elabType(t);
-        (cache,ss_1,const1) = elabSubscriptsDims(cache,env, ss, sl, impl,crefPrefix,info);
-        //indexes = Expression.subscriptsInt(ss_1);
-        //crefPrefix = Prefix.prefixAdd(id,indexes,crefPrefix,vt);
-        crefPrefix = PrefixUtil.prefixAdd(id, ss_1, crefPrefix, vt,ClassInf.UNKNOWN(Absyn.IDENT("")));
-        (cache,cr,const2,hasZeroSizeDim) = elabCrefSubs(cache,env, subs,crefPrefix,impl,hasZeroSizeDim,info);
+        (cache,ss_1,const1) = elabSubscriptsDims(cache, crefEnv, ss, sl, impl, crefPrefix, info);
+        crefPrefix = PrefixUtil.prefixAdd(id, ss_1, crefPrefix, vt, ClassInf.UNKNOWN(Absyn.IDENT("")));
+        (cache,cr,const2,hasZeroSizeDim) = elabCrefSubs(cache, crefEnv, restCref, crefPrefix, impl, hasZeroSizeDim, info);
         const = Types.constAnd(const1, const2);
       then
         (cache,ComponentReference.makeCrefQual(id,ty,ss_1,cr),const,hasZeroSizeDim);
 
-    case (cache, env, Absyn.CREF_FULLYQUALIFIED(componentRef = absynCr), crefPrefix, impl, hasZeroSizeDim, info)
+    case (cache, crefEnv, Absyn.CREF_FULLYQUALIFIED(componentRef = absynCr), crefPrefix, impl, hasZeroSizeDim, info)
       equation
-        (cache, cr, const1, hasZeroSizeDim) = elabCrefSubs(cache, env, absynCr, crefPrefix, impl, hasZeroSizeDim, info);
+        (cache, cr, const1, hasZeroSizeDim) = elabCrefSubs(cache, crefEnv, absynCr, crefPrefix, impl, hasZeroSizeDim, info);
       then
         (cache, cr, const1, hasZeroSizeDim);
 
     // failure
-    case (cache,env,acr,crefPrefix,impl,hasZeroSizeDim,info)
+    case (cache,crefEnv,absynCref,crefPrefix,impl,hasZeroSizeDim,info)
       equation 
         // FAILTRACE REMOVE
         true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- Static.elabCrefSubs failed on: prefix: " +&
-        PrefixUtil.printPrefixStr(crefPrefix) +& " cr: " +&
-          Dump.printComponentRefStr(acr) +& " env: " +&
-          Env.printEnvPathStr(env));
-        // enableTrace();
+        Debug.fprintln("failtrace", "- Static.elabCrefSubs failed on: " +&
+        PrefixUtil.printPrefixStr(crefPrefix) +& "." +&
+          Dump.printComponentRefStr(absynCref) +& " env: " +&
+          Env.printEnvPathStr(crefEnv));
       then
         fail();
   end matchcontinue;

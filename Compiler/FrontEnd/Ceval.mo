@@ -1259,7 +1259,7 @@ algorithm
      equation
        true = System.getPartialInstantiation();
      then
-       false;   
+       false;
    
    // partial functions are not complete!
    case (cache, env, fpath)
@@ -1267,6 +1267,14 @@ algorithm
        (_, SCode.CLASS(partialPrefix = SCode.PARTIAL()), _) = Lookup.lookupClass(cache, env, fpath, true); 
      then 
        false;
+
+   /*/ do not evaluate not known external functions!
+   case (cache, env, fpath)
+     equation
+       (_, c as SCode.CLASS(name = _), _) = Lookup.lookupClass(cache, env, fpath, true);
+       failure(isCevaluableFunction(c)); 
+     then 
+       false;*/
 
    // replaceable functions are not fine if they don't have an algorithm section!
    case (cache, env, fpath)
@@ -4821,8 +4829,7 @@ algorithm
       equation
         (cache, fill_value, st) = cevalBuiltinFill2(cache, inEnv, inFillValue,
           rest_dims, inImpl, inST, inMsg);
-        (cache, Values.INTEGER(int_dim), st) = 
-          ceval(cache, inEnv, dim, inImpl, st, inMsg);
+        (cache, Values.INTEGER(int_dim), st) = ceval(cache, inEnv, dim, inImpl, st, inMsg);
         fill_vals = List.fill(fill_value, int_dim);
         array_dims = ValuesUtil.valueDimensions(fill_value);
         array_dims = int_dim :: array_dims;
