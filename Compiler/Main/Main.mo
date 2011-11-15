@@ -265,6 +265,12 @@ algorithm
         str = stringAppend(str, Error.printMessagesStr());
       then
         (true,str,isymb);
+    case (str,isymb)
+      equation
+        _=System.setStackOverflowSignal(false);
+        Error.addMessage(Error.STACK_OVERFLOW,{str});
+      then
+        (true,"",isymb);
   end matchcontinue;
 end handleCommand;
 

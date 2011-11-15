@@ -551,6 +551,7 @@ public constant Message UNFILLED_SLOT = MESSAGE(203, TRANSLATION(), ERROR(),
   "Function argument %s was not given by the function call, and does not have a default value.");
 public constant Message SAME_CONNECT_INSTANCE = MESSAGE(204, TRANSLATION(), WARNING(),
   "connect(%s, %s) connects the same connector instance! The connect equation will be ignored.");
+public constant Message STACK_OVERFLOW = MESSAGE(205, SCRIPTING(), ERROR(), "Stack overflow occurred while evaluating %s");
 
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   "Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value");
