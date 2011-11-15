@@ -13023,7 +13023,7 @@ algorithm
       list<Absyn.ElementArg> xs;
       String s;
       String ss;
-    case ({}) then "";
+    case ({}) then "\"\"";
     case (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "info"),
           modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp))))::xs)
       equation
@@ -13049,7 +13049,7 @@ algorithm
       list<Absyn.ElementArg> xs;
       String s;
       String ss;
-    case ({}) then "";
+    case ({}) then "\"\"";
     case (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "revisions"),
           modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp))))::xs)
       equation
