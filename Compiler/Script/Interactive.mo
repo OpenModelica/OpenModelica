@@ -12995,17 +12995,15 @@ algorithm
   docStr := match (mod)
     local 
       list<Absyn.ElementArg> arglst;
-      list<String> strs;
+      String info, revisions;
       String s;
-
     case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
       equation
-        strs = getDocumentationAnnotationString2(arglst);
-        s = stringDelimitList(strs,",");
-        s = stringAppendList({"{", s, "}"});
+        info = getDocumentationAnnotationInfo(arglst);
+        revisions = getDocumentationAnnotationRevision(arglst);
+        s = stringAppendList({"{",info,",",revisions,"}"});
       then 
         s;
-    
     // adrpo: fail if we don't find it!
     // case (_) 
     //   then 
@@ -13013,44 +13011,57 @@ algorithm
   end match;
 end getDocumentationAnnotationString;
 
-protected function getDocumentationAnnotationString2
-"function getDocumentationAnnotationString2
+protected function getDocumentationAnnotationInfo
+"function getDocumentationAnnotationInfo
   Helper function to getDocumentationAnnotationString"
   input list<Absyn.ElementArg> eltArgs;
-  output list<String> strs;
+  output String str;
 algorithm
-  strs := matchcontinue (eltArgs)
+  str := matchcontinue (eltArgs)
     local
       Absyn.Exp exp;
       list<Absyn.ElementArg> xs;
       String s;
-      list<String> ss;
-
-    case ({}) then {};
-
+      String ss;
+    case ({}) then "";
     case (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "info"),
           modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp))))::xs)
       equation
         s = Dump.printExpStr(exp);
-        s = stringAppendList({"{","info","(",s,")","}"});
-        ss = getDocumentationAnnotationString2(xs);
-      then s::ss;
+        ss = getDocumentationAnnotationInfo(xs);
+      then s;
+    case (_::xs)
+      equation
+        ss = getDocumentationAnnotationInfo(xs);
+      then ss;
+    end matchcontinue;
+end getDocumentationAnnotationInfo;
 
+protected function getDocumentationAnnotationRevision
+"function getDocumentationAnnotationRevision
+  Helper function to getDocumentationAnnotationString"
+  input list<Absyn.ElementArg> eltArgs;
+  output String str;
+algorithm
+  str := matchcontinue (eltArgs)
+    local
+      Absyn.Exp exp;
+      list<Absyn.ElementArg> xs;
+      String s;
+      String ss;
+    case ({}) then "";
     case (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "revisions"),
           modification=SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=exp))))::xs)
       equation
         s = Dump.printExpStr(exp);
-        s = stringAppendList({"{","revisions","(",s,")","}"});
-        ss = getDocumentationAnnotationString2(xs);
-      then s::ss;
-
+        ss = getDocumentationAnnotationRevision(xs);
+      then s;
     case (_::xs)
       equation
-        ss = getDocumentationAnnotationString2(xs);
+        ss = getDocumentationAnnotationRevision(xs);
       then ss;
-
     end matchcontinue;
-end getDocumentationAnnotationString2;
+end getDocumentationAnnotationRevision;
 
 protected function getNthPublicConnectorStr
 "function: getNthPublicConnectorStr
