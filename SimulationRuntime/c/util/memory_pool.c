@@ -57,13 +57,20 @@ void* push_memory_states(int maxThreads)
 
 void pop_memory_states(void* new_states)
 {
-  free(current_states[0].buffer); /* TODO: Free all of them... */
-  free(current_states);
+  if (current_states)
+  {
+    free(current_states[0].buffer); /* TODO: Free all of them... */
+    free(current_states);
+  }
   current_states = new_states;
 }
 
 state get_memory_state()
 {
+  if (!current_states)
+  {
+    push_memory_states(1);
+  }
   return current_states[0].current_state;
 }
 
@@ -84,6 +91,10 @@ void print_state(state s)
 
 void restore_memory_state(state restore_state)
 {
+  if (!current_states)
+  {
+    push_memory_states(1);
+  }
   current_states[0].current_state = restore_state;
 }
 
