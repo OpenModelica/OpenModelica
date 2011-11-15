@@ -1380,7 +1380,7 @@ protected function translateEquations
   input list<Absyn.EquationItem> inAbsynEquationItemLst;
   output list<SCode.Equation> outEquationLst;
 algorithm
-  outEquationLst := match (inAbsynEquationItemLst)
+  outEquationLst := matchcontinue (inAbsynEquationItemLst)
     local
       SCode.EEquation e_1;
       list<SCode.Equation> es_1;
@@ -1389,8 +1389,21 @@ algorithm
       Option<Absyn.Comment> acom;
       Option<SCode.Comment> com;
       Absyn.Info info;
+      String s1, s2;
+      Absyn.ComponentRef c1, c2;
 
     case {} then {};
+
+    // adrpo: check for connect(A, A) as we should give a warning and remove it!
+    case (Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(c1, c2),comment = acom,info = info) :: es)
+      equation
+        true = Absyn.crefEqual(c1, c2);
+        s1 = Dump.printComponentRefStr(c1);
+        s2 = Dump.printComponentRefStr(c1);
+        Error.addSourceMessage(Error.SAME_CONNECT_INSTANCE, {s1, s2}, info);
+        es_1 = translateEquations(es);
+      then
+        (es_1);
 
     case (Absyn.EQUATIONITEM(equation_ = e,comment = acom,info = info) :: es)
       equation
@@ -1406,7 +1419,7 @@ algorithm
         es_1 = translateEquations(es);
       then
         es_1;
-  end match;
+  end matchcontinue;
 end translateEquations;
 
 

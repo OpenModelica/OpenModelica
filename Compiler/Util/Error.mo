@@ -549,6 +549,9 @@ public constant Message PROTECTED_FORMAL_FUNCTION_VAR = MESSAGE(202, TRANSLATION
   "Invalid protected formal parameter %s, formal arguments must be public.");
 public constant Message UNFILLED_SLOT = MESSAGE(203, TRANSLATION(), ERROR(),
   "Function argument %s was not given by the function call, and does not have a default value.");
+public constant Message SAME_CONNECT_INSTANCE = MESSAGE(204, TRANSLATION(), WARNING(),
+  "connect(%s, %s) connects the same connector instance! The connect equation will be ignored.");
+
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   "Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value");
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
@@ -602,6 +605,7 @@ public constant Message FAILED_TO_EVALUATE_EXPRESSION = MESSAGE(522, TRANSLATION
   "Could not evaluate expression: %s");
 public constant Message WARNING_JACOBIAN_EQUATION_SOLVE = MESSAGE(523, SYMBOLIC(), WARNING(),
   "jacobian equation %s could not solve proper for %s. Assume %s=0.");
+
 public constant Message INDEX_REDUCTION_NOTIFICATION = MESSAGE(1000, SYMBOLIC(), NOTIFICATION(),
   "Differentiated equation %s to %s for index reduction");
 public constant Message SELECTED_STATE_DUE_TO_START_NOTIFICATION = MESSAGE(1001, SYMBOLIC(), NOTIFICATION(),
