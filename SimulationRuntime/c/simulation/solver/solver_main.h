@@ -49,7 +49,6 @@ typedef struct SOLVER_INFO
   double currentStepSize;
   double laststep;
   double offset;
-  double reset;
 
   modelica_boolean didEventStep;
   modelica_boolean sampleEventActivated;

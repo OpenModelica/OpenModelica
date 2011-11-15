@@ -32,7 +32,10 @@
 #include "simulation_runtime.h"
 #include "initialization.h"
 #include "events.h"
-/*#include "dopri45.h"*/
+/*
+ * #include "dopri45.h"
+ * #include "dassl.h"
+ */
 #include "rtclock.h"
 #include "error.h"
 #include <math.h>
@@ -50,10 +53,10 @@ typedef struct RK4
 double dlamch_(char*,int);
 
 int
-euler_ex_step(SOLVER_INFO* solverInfo);
+euler_ex_step(_X_DATA* simData, SOLVER_INFO* solverInfo);
 
 int
-rungekutta_step(SOLVER_INFO* solverInfo);
+rungekutta_step(_X_DATA* simData, SOLVER_INFO* solverInfo);
 
 const int rungekutta_s = 4;
 const double rungekutta_b[4] = { 1.0 / 6.0, 1.0 / 3.0, 1.0 / 3.0, 1.0 / 6.0 };
@@ -61,12 +64,12 @@ const double rungekutta_c[4] = { 0.0, 0.5, 0.5, 1.0 };
 
 
 int
-solver_main_step(int flag, SOLVER_INFO* solverInfo) {
+solver_main_step(int flag, _X_DATA* simData, SOLVER_INFO* solverInfo) {
   switch (flag) {
   case 2:
-    return rungekutta_step(solverInfo);
-/*  case 3:
-    return dasrt_step(globalData->current_stepsize, start, stop, reset, stats, tolarence);
+    return rungekutta_step(simData, solverInfo);
+/*case 3:
+    return dasrt_step(simData, solverInfo);
   case 4:
     return functionODE_inline();
   case 6:
@@ -75,7 +78,7 @@ solver_main_step(int flag, SOLVER_INFO* solverInfo) {
 */
   case 1:
   default:
-    return euler_ex_step(solverInfo);
+    return euler_ex_step(simData, solverInfo);
   }
   return 1;
 }
@@ -101,7 +104,6 @@ void update_DAEsystem(_X_DATA *data)
     {
     	DEBUG_INFO(LV_EVENTS, "discrete Variable changed. Iteration needed!");
     }
-
     storePreValues(data);
     functionDAE(data, &needToIterate);
     IterationNum++;
@@ -125,13 +127,13 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 
 	int i;
 
-	/*********************work array for inline implementation*************************************/
-	RK4 rungeData;
-	double **work_states = NULL;
-
 	SOLVER_INFO solverInfo;
 
-	SIMULATION_INFO simInfo = simData->simulationInfo;
+	SIMULATION_INFO *simInfo = &(simData->simulationInfo);
+
+	SIMULATION_DATA *sData = (SIMULATION_DATA*)getRingData(simData->simulationData, 0);
+
+	RK4 rungeData;
 
 	double uround = dlamch_((char*) "P", 1);
 
@@ -140,16 +142,27 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 	FILE *fmt = NULL;
 	unsigned int stepNo = 0;
 
-	if (simInfo.numSteps > 0) { /* Use outputSteps if set, otherwise use step size. */
-		simInfo.stepSize = (simInfo.stopTime - simInfo.startTime) / simInfo.numSteps;
+	if (simInfo->numSteps > 0) { /* Use outputSteps if set, otherwise use step size. */
+		simInfo->stepSize = (simInfo->stopTime - simInfo->startTime) / simInfo->numSteps;
 	} else {
-		if (simInfo.stepSize == 0) { /* outputsteps not defined and zero step, use default 1e-3 */
-			simInfo.stepSize = 1e-3;
+		if (simInfo->stepSize == 0) { /* outputsteps not defined and zero step, use default 1e-3 */
+			simInfo->stepSize = 1e-3;
 		}
 	}
-	solverInfo.currentStepSize = simInfo.stepSize;
+	/* initial solverInfo */
+	solverInfo.currentTime = simInfo->startTime;
+	solverInfo.currentStepSize = simInfo->stepSize;
+	solverInfo.laststep = 0;
+	solverInfo.offset = 0;
+	solverInfo.didEventStep = 0;
+	solverInfo.sampleEventActivated = 0;
+	solverInfo.stateEvents = 0;
+	solverInfo.sampleEvents = 0;
+	solverInfo.stepNo = 0;
+	solverInfo.callsODE = 0;
+	solverInfo.callsDAE = 0;
 
-	/* will remove -> DOPRI45 */
+	/* will be removed -> DOPRI45 */
 	/* first interpolation point is the value of the fixed external stepsize */
 	/* interpolationStep = step;*/
 
@@ -157,8 +170,9 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 	/* Set user tolerance for solver (DASSL,Dopri5) */
 
 	globalData->terminal = 0;
-	globalData->oldTime = simInfo.startTime;
-	globalData->timeValue = simInfo.startTime;
+	globalData->oldTime = simInfo->startTime;
+	globalData->timeValue = simInfo->startTime;
+	sData->time = simInfo->startTime;
 
 
 	switch (flag) {
@@ -170,18 +184,19 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 		break;
 /*
 	case 3:
-		if (!dasrt_initial(_X_DATA* simData, SOLVER_INFO* solverInfo)){
+		DEBUG_INFO(LV_SOLVER, "*** Initializing DASSL");
+		if (!dasrt_initial(simData, &solverInfo)){
 			THROW("Initial DASSL failed");
 		}
 		break;
-		*/
+*/
 		/* Enable inlining solvers */
-	/*case 4:
-		work_states = (double**) malloc(inline_work_states_ndims * sizeof(double*));
+	case 4:
+		rungeData.work_states = (double**) malloc(inline_work_states_ndims * sizeof(double*));
 		for (i = 0; i < inline_work_states_ndims; i++)
-			work_states[i] = (double*) calloc(globalData->nStates, sizeof(double));
+			rungeData.work_states[i] = (double*) calloc(globalData->nStates, sizeof(double));
 		break;
-		*/
+
 		/* Allocate DOPRI5(4) derivative array and activate dense output */
 		/*
 	case 6:
@@ -199,7 +214,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 		return -1;
 	}
 
-	if (bound_parameters(NULL)) {
+	if (bound_parameters(simData)) {
 		INFO("Error calculating bound parameters");
 		return -1;
 	}
@@ -208,7 +223,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 
 	/* Evaluate all constant equations during initialization */
 	globalData->init = 1;
-	functionAliasEquations(NULL);
+	functionAliasEquations(simData);
 
 	/* Calculate initial values from initial_function()
 	 * saveall() value as pre values */
@@ -216,7 +231,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 		rt_accumulate(SIM_TIMER_PREINIT);
 		rt_tick(SIM_TIMER_INIT);
 	}
-	if(initialization("state",	"nelder_mead_ex")) {
+	if(initialization_X_(simData, "state", "nelder_mead_ex")) {
 			THROW("Error in initialization. Storing results and exiting.");
 	}
 	/*if (initialization(init_initMethod ? init_initMethod->c_str() : NULL,
@@ -235,7 +250,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 		solverInfo.sampleEventActivated = checkForSampleEvent();
 		activateSampleEvents();
 	}
-	update_DAEsystem(NULL);
+	update_DAEsystem(simData);
 	if (solverInfo.sampleEventActivated) {
 		deactivateSampleEventsandEquations();
 		solverInfo.sampleEventActivated = 0;
@@ -251,12 +266,12 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
   if (measure_time_flag)
     rt_accumulate( SIM_TIMER_INIT);
 
-  if (globalData->timeValue >= simInfo.stopTime) {
+  if (globalData->timeValue >= simInfo->stopTime) {
     if (sim_verbose >= LOG_SOLVER) {
       INFO("Simulation done!");
     }
     globalData->terminal = 1;
-    update_DAEsystem(NULL);
+    update_DAEsystem(simData);
 
     sim_result_emit(simData);
 
@@ -265,7 +280,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
   }
 
   DEBUG_INFO(LV_SOLVER, "Performed initial value calculation.");
-  DEBUG_INFO2(LV_SOLVER, "Start numerical solver from %g to %g", globalData->timeValue, simInfo.stopTime);
+  DEBUG_INFO2(LV_SOLVER, "Start numerical solver from %g to %g", globalData->timeValue, simInfo->stopTime);
 
   if (measure_time_flag) {
 	char* filename = (char*) malloc(strlen(globalData->modelFilePrefix)+1+11);
@@ -279,7 +294,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
     }
   }
 
-  while (solverInfo.currentTime < simInfo.stopTime) {
+  while (solverInfo.currentTime < simInfo->stopTime) {
 	  if (measure_time_flag) {
 		  for (i = 0; i < globalData->nFunctions + globalData->nProfileBlocks; i++)
 			  rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
@@ -300,10 +315,10 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 
 	  if (flag != 6) {
 		  /*!!!!! not for DOPRI5 with stepsize control */
-		  solverInfo.currentStepSize = simInfo.stepSize - solverInfo.offset;
+		  solverInfo.currentStepSize = simInfo->stepSize - solverInfo.offset;
 
-		  if (solverInfo.currentTime + solverInfo.currentStepSize > simInfo.stopTime) {
-			  solverInfo.currentStepSize = simInfo.stopTime - globalData->timeValue;
+		  if (solverInfo.currentTime + solverInfo.currentStepSize > simInfo->stopTime) {
+			  solverInfo.currentStepSize = simInfo->stopTime - globalData->timeValue;
 		  }
 	  }
 
@@ -320,16 +335,13 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 	   * update continuous part with
 	   * functionODE() and functionAlgebraics(); */
 
-	  communicateStatus("Running", (solverInfo.currentTime-simInfo.startTime)/(simInfo.stopTime-simInfo.startTime));
-	  retValIntegrator = solver_main_step(flag, &solverInfo);
+	  communicateStatus("Running", (solverInfo.currentTime-simInfo->startTime)/(simInfo->stopTime-simInfo->startTime));
+	  retValIntegrator = solver_main_step(flag, simData, &solverInfo);
 
-	  functionAlgebraics(NULL);
-	  functionAliasEquations(NULL);
-	  function_storeDelayed(NULL);
+	  functionAlgebraics(simData);
+	  functionAliasEquations(simData);
+	  function_storeDelayed(simData);
 	  SaveZeroCrossings();
-
-	  if (solverInfo.reset)
-		  solverInfo.reset = 0;
 
 	  /* Check for Events */
 	  if (measure_time_flag)
@@ -337,14 +349,12 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 
 	  if (CheckForNewEvent((int*)&(solverInfo.sampleEventActivated))) {
 		  solverInfo.stateEvents++;
-		  solverInfo.reset = 1;
 		  solverInfo.didEventStep = 1;
 		  /* due to an event overwrite old values */
 		  storeExtrapolationDataEvent();
 	  } else if (solverInfo.sampleEventActivated) {
 		  EventHandle(1);
 		  solverInfo.sampleEvents++;
-		  solverInfo.reset = 1;
 		  solverInfo.didEventStep = 1;
 		  solverInfo.sampleEventActivated = 0;
 		  /* due to an event overwrite old values */
@@ -406,7 +416,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 	  if (terminationAssert || terminationTerminate || modelErrorCode) {
 		  terminationAssert = 0;
 		  terminationTerminate = 0;
-		  checkForAsserts(NULL);
+		  checkForAsserts(simData);
 		  checkTermination();
 		  if (modelErrorCode)
 			  retValIntegrator = 1;
@@ -414,7 +424,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 
 	  if (retValIntegrator) {
 		  globalData->terminal = 1;
-		  update_DAEsystem(NULL);
+		  update_DAEsystem(simData);
 		  globalData->terminal = 0;
 		  if (fmt)
 			  fclose(fmt);
@@ -427,7 +437,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
   /* Last step with terminal()=true */
   if (globalData->timeValue >= stop) {
 	  globalData->terminal = 1;
-	  update_DAEsystem(NULL);
+	  update_DAEsystem(simData);
 	  sim_result_emit(simData);
 	  globalData->terminal = 0;
   }
@@ -468,20 +478,23 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 
 /***************************************		EULER_EXP     *********************************/
 int
-euler_ex_step(SOLVER_INFO* solverInfo) {
+euler_ex_step(_X_DATA* simData, SOLVER_INFO* solverInfo) {
   int i;
-  globalData->timeValue += solverInfo->currentStepSize;
+  SIMULATION_DATA *sData = (SIMULATION_DATA*)getRingData(simData->simulationData, 0);
+  modelica_real* stateDer = sData->realVars + simData->modelData.nStates;
+  /*globalData->timeValue += solverInfo->currentStepSize; */
+  sData->time += solverInfo->currentStepSize;
   solverInfo->currentTime += solverInfo->currentStepSize;
-  for (i = 0; i < globalData->nStates; i++) {
-    globalData->states[i] += globalData->statesDerivatives[i] * solverInfo->currentStepSize;
+  for (i = 0; i < simData->modelData.nStates; i++) {
+    sData->realVars[i] += stateDer[i] * solverInfo->currentStepSize;
   }
-  functionODE(NULL);
+  functionODE(simData);
   return 0;
 }
 
 /***************************************		RK4  		***********************************/
 int
-rungekutta_step(SOLVER_INFO* solverInfo) {
+rungekutta_step(_X_DATA* simData, SOLVER_INFO* solverInfo) {
   double* backupstates = ((RK4*)(solverInfo->solverData))->work_states[rungekutta_s];
   double** k = ((RK4*)(solverInfo->solverData))->work_states;
   double sum;
@@ -500,7 +513,7 @@ rungekutta_step(SOLVER_INFO* solverInfo) {
     for (i = 0; i < globalData->nStates; i++) {
       globalData->states[i] = backupstates[i] + solverInfo->currentStepSize * rungekutta_c[j] * k[j - 1][i];
     }
-    functionODE(NULL);
+    functionODE(simData);
     for (i = 0; i < globalData->nStates; i++) {
       k[j][i] = globalData->statesDerivatives[i];
     }
@@ -513,6 +526,6 @@ rungekutta_step(SOLVER_INFO* solverInfo) {
     }
     globalData->states[i] = backupstates[i] + solverInfo->currentStepSize * sum;
   }
-  functionODE(NULL);
+  functionODE(simData);
   return 0;
 }

@@ -50,11 +50,14 @@ void initializeXDataStruc(_X_DATA *data)
   /* prepair RingBuffer */
   for(i=0; i<SIZERINGBUFFER; i++)
   {
+    /* set the time on startTime */
+    tmpSimData.time = data->simulationInfo.startTime;
+    /* buffer for all variable values */
     tmpSimData.realVars = (modelica_real*)calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
     tmpSimData.integerVars = (modelica_integer*)calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
     tmpSimData.booleanVars = (modelica_boolean*)calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
     tmpSimData.stringVars = (modelica_string*)calloc(data->modelData.nVariablesString, sizeof(modelica_string));
-
+    /* buffer for all variable pre values */
     tmpSimData.realVarsPre = (modelica_real*)calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
     tmpSimData.integerVarsPre = (modelica_integer*)calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
     tmpSimData.booleanVarsPre = (modelica_boolean*)calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
@@ -72,5 +75,10 @@ void initializeXDataStruc(_X_DATA *data)
   data->modelData.integerParameter = (STATIC_INTEGER_DATA*) calloc(data->modelData.nParametersInteger,sizeof(STATIC_INTEGER_DATA));
   data->modelData.booleanParameter = (STATIC_BOOLEAN_DATA*) calloc(data->modelData.nParametersBoolean,sizeof(STATIC_BOOLEAN_DATA));
   data->modelData.stringParameter = (STATIC_STRING_DATA*) calloc(data->modelData.nParametersString,sizeof(STATIC_STRING_DATA));
+
+  data->modelData.realAlias = (_X_DATA_REAL_ALIAS*) calloc(data->modelData.nAliasReal,sizeof(_X_DATA_REAL_ALIAS));
+  data->modelData.integerAlias = (_X_DATA_INTEGER_ALIAS*) calloc(data->modelData.nAliasInteger,sizeof(_X_DATA_INTEGER_ALIAS));
+  data->modelData.booleanAlias = (_X_DATA_BOOLEAN_ALIAS*) calloc(data->modelData.nAliasBoolean,sizeof(_X_DATA_BOOLEAN_ALIAS));
+  data->modelData.stringAlias = (_X_DATA_STRING_ALIAS*) calloc(data->modelData.nAliasString,sizeof(_X_DATA_STRING_ALIAS));
 
 }

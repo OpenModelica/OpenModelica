@@ -254,7 +254,7 @@ extern "C" {
     modelica_real startTime;
     modelica_real stopTime;
     modelica_integer numSteps;
-	modelica_real stepSize;
+    modelica_real stepSize;
     modelica_real tolerance;
     modelica_string solverMethod;
     modelica_string outputFormat;
