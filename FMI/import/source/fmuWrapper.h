@@ -6,7 +6,7 @@
 #include "xmlparser.h"
 #define COMBINENAME(a,b) a##_##b
 
-// handling platform dependency
+/* handling platform dependency */
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
 #define getFunctionPointerFromDLL  GetProcAddress
@@ -21,14 +21,13 @@
 #define GetLastError(X) 
 
 #endif
-// end
 
 
 #ifdef __cplusplus
 extern "C"{
 #endif
 
-// typedef of function pointers to FMI interface functions       
+/* typedef of function pointers to FMI interface functions */
 typedef const char* (*fGetModelTypesPlatform)();
 typedef const char* (*fGetVersion)();
 typedef fmiComponent (*fInstantiateModel)(fmiString instanceName, fmiString GUID,
@@ -56,9 +55,9 @@ typedef fmiStatus (*fGetNominalContinuousStates)(fmiComponent c, fmiReal x_nomin
 typedef fmiStatus (*fGetStateValueReferences)   (fmiComponent c, fmiValueReference vrx[], size_t nx);
 typedef fmiStatus (*fTerminate)                 (fmiComponent c);
 
-// typedef of the data structure FMI containing loaded FMI functions
+/* typedef of the data structure FMI containing loaded FMI functions */
 typedef struct {
-    ModelDescription* modelDescription;
+    void* modelDescription; /* ModelDescription* */
     void* dllHandle;
     fGetModelTypesPlatform getModelTypesPlatform;
     fGetVersion getVersion;
@@ -132,7 +131,7 @@ void fmiGetDer(void* in_fmi, void* in_fmu, double* der_x, int nx, const double* 
 void fmiGetRealVR(void* in_fmi, void* in_fmu, const int* in_vr, double* rv, int nvr);
 void fmiGetIntegerVR(void* in_fmi, void* in_fmu, const int* in_vr, int* iv, int nvr);
 void fmiGetStringVR(void* in_fmi, void* in_fmu, const int* in_vr, const char** sv, int nvr);
-void fmiGetBooleanVR(void* in_fmi, void* in_fmu, const int* in_vr, char* bv, int nvr);
+void fmiGetBooleanVR(void* in_fmi, void* in_fmu, const int* in_vr, int* bv, int nvr);
 void fmiGetTimeEvent(void * in_evtInfo, double in_time, double in_pretime, void * in_timeEvt, double* out_nextTime);
 void fmiGetEventInd(void* in_fmi, void* in_fmu, double* z, int ni);
 void fmuStateEventCheck(void* stateEvt, int ni, const double* z, const double* prez);
@@ -149,8 +148,8 @@ void freeFMUFun(void* in_fmi);
 void* fmuBooleanInst(int def_bool);
 void freefmuBooleanInst(void* in_bool);
 
-//void fmiFreeModelInst(void* in_fmufun, void* in_fmu);
-void fmiFreeModelInst(void* in_fmu);
+void fmiFreeModelInst(void* in_fmufun, void* in_fmu);
+//void fmiFreeModelInst(void* in_fmu);
  
 void* fmiCallbackFuns();
 void fmiFreeCallbackFuns(void * functions);
@@ -164,20 +163,23 @@ void freeFMUDll(void* dummy);
 void printVariables(const double * var, int n, const char* varName);
 void printIntVariables(const int * var, int n, const char* varName);
 
+/*
 // void* fmiInstantiate(void* in_fmi, const char* instanceName,  const char* GUID, void* in_functions, int logFlag);
 // void fmiSetT(void* in_fmi, void* in_fmu, double t);
-// void fmiGetContStates(void * /*_fmufun*/, void * /*_in_inst*/, double * /*_in_x*/, int);
+// void fmiGetContStates(void *, void *, double *, int);
 // void fmiGetDer(void* in_fmi, void* in_fmu, double* der_x, int nx, const double* x);
 // void* instantiateFMIFun(const char* mid, const char* pathFMUDll);
 // void fmiCompIntStep(void* in_fmi, void* in_fmu, void* in_stepEvt);
 // void freeFMIfun(void* in_fmi);
-// void printVariables(const double * /*_var*/, int /*_n*/, const char* /*_varName*/);
+// void printVariables(const double *, int, const char*);
 // // void fmiFreeModelInst(void* in_fmi, void* in_fmu);
 // void fmiFreeModelInst(void* in_fmu);
-// void fmiGetTimeEvent(void * /*_in_evtInfo*/, double /*_in_time*/, double /*_in_pretime*/, void * /*_in_timeEvt*/, double* /*_out_nextTime*/);
-// void fmuStateEventCheck(void * /*_stateEvt*/, int /*_ni*/, const double * /*_z*/, const double * /*_prez*/);
-// //signed char fmuStateEventCheck(void * /*_stateEvt*/, int /*_ni*/, const double * /*_z*/, const double * /*_prez*/);
-// void fmuEventUpdate(void * /*_in_fmufun*/, void * /*_in_inst*/, void * /*_in_evtInfo*/, void * /*_timeEvt*/, void * /*_stepEvt*/, void * /*_stateEvt*/, void * /*_interMediateRes*/, double, double*);
+// void fmiGetTimeEvent(void *, double, double, void *, double*);
+// void fmuStateEventCheck(void *, int, const double *, const double *);
+// //signed char fmuStateEventCheck(void *, int, const double *, const double *);
+// void fmuEventUpdate(void *, void *, void *, void *, void *, void *, void *, double, double*);
+*/
+
 #ifdef __cplusplus
 } //extern "C"
 #endif
