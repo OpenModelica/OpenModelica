@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University, 
+ * Copyright (c) 1998-2010, Linköpings University,
  * Department of Computer and Information Science, 
  * SE-58183 Linköping, Sweden.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address, 
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -344,16 +344,43 @@ void storeStartValues(_X_DATA *data)
 	SIMULATION_DATA *sData = (SIMULATION_DATA*)getRingData(data->simulationData, 0);
 	MODEL_DATA      *mData = &(data->modelData);
 
-  for(i=0; i<mData->nVariablesReal; ++i)
+  for(i=0; i<mData->nVariablesReal; ++i){
     sData->realVars[i] = mData->realData[i].attribute.start;
-  for(i=0; i<mData->nVariablesInteger; ++i)
+  }
+  for(i=0; i<mData->nVariablesInteger; ++i){
     sData->integerVars[i] = mData->integerData[i].attribute.start;
-  for(i=0; i<mData->nVariablesBoolean; ++i)
+  }
+  for(i=0; i<mData->nVariablesBoolean; ++i){
     sData->booleanVars[i] = mData->booleanData[i].attribute.start;
-  for(i=0; i<mData->nVariablesString; ++i)
-  {
-    free_modelica_string(sData->stringVars[i]);
-    sData->stringVars[i] = copy_modelica_string(mData->stringData[i].attribute.start);
+  }
+  for(i=0; i<mData->nVariablesString; ++i){
+    free_modelica_string((char**)sData->stringVars[i]);
+    sData->stringVars[i] = copy_modelica_string((modelica_string_const)mData->stringData[i].attribute.start);
+  }
+}
+
+/*! \fn void storeStartValuesParam(_X_DATA *data)
+ *
+ *  sets all parameter initial values to their start-attribute
+ *
+ *  author: wbraun
+ */
+void storeStartValuesParam(_X_DATA *data)
+{
+  long i;
+  MODEL_DATA      *mData = &(data->modelData);
+
+  for(i=0; i<mData->nParametersReal; ++i){
+    mData->realParameter[i].attribute.initial = mData->realParameter[i].attribute.start;
+  }
+  for(i=0; i<mData->nParametersInteger; ++i){
+    mData->integerParameter[i].attribute.initial = mData->integerParameter[i].attribute.start;
+  }
+  for(i=0; i<mData->nParametersBoolean; ++i){
+    mData->booleanParameter[i].attribute.initial = mData->booleanParameter[i].attribute.start;
+  }
+  for(i=0; i<mData->nParametersString; ++i){
+    mData->stringParameter[i].attribute.initial = copy_modelica_string((modelica_string_const)mData->stringParameter[i].attribute.start);
   }
 }
 

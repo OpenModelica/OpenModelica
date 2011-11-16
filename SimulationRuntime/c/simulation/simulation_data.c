@@ -50,8 +50,8 @@ void initializeXDataStruc(_X_DATA *data)
   /* prepair RingBuffer */
   for(i=0; i<SIZERINGBUFFER; i++)
   {
-    /* set the time on startTime */
-    tmpSimData.time = data->simulationInfo.startTime;
+    /* set time value */
+    tmpSimData.time = 0;
     /* buffer for all variable values */
     tmpSimData.realVars = (modelica_real*)calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
     tmpSimData.integerVars = (modelica_integer*)calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
@@ -64,6 +64,10 @@ void initializeXDataStruc(_X_DATA *data)
     tmpSimData.stringVarsPre = (modelica_string*)calloc(data->modelData.nVariablesString, sizeof(modelica_string));
     appendRingData(data->simulationData,&tmpSimData);
   }
+
+  data->localData = (void**) calloc(SIZERINGBUFFER, sizeof(void*));
+
+  rotateRingBuffer(data->simulationData,0, data->localData);
 
   /* create modelData var arrays */
   data->modelData.realData = (STATIC_REAL_DATA*) calloc(data->modelData.nVariablesReal,sizeof(STATIC_REAL_DATA));
@@ -80,5 +84,55 @@ void initializeXDataStruc(_X_DATA *data)
   data->modelData.integerAlias = (_X_DATA_INTEGER_ALIAS*) calloc(data->modelData.nAliasInteger,sizeof(_X_DATA_INTEGER_ALIAS));
   data->modelData.booleanAlias = (_X_DATA_BOOLEAN_ALIAS*) calloc(data->modelData.nAliasBoolean,sizeof(_X_DATA_BOOLEAN_ALIAS));
   data->modelData.stringAlias = (_X_DATA_STRING_ALIAS*) calloc(data->modelData.nAliasString,sizeof(_X_DATA_STRING_ALIAS));
+
+}
+
+void DeinitializeXDataStruc(_X_DATA *data)
+{
+  SIMULATION_DATA tmpSimData;
+  size_t i = 0;
+  /* RingBuffer */
+  data->simulationData = 0;
+  data->simulationData = allocRingBuffer(SIZERINGBUFFER, sizeof(SIMULATION_DATA));
+  if (!data->simulationData)
+  {
+    THROW("Your memory is not strong enough for our Ringbuffer!");
+  }
+
+  /* prepair RingBuffer */
+  for(i=0; i<SIZERINGBUFFER; i++)
+  {
+    /* free buffer for all variable values */
+    free(tmpSimData.realVars);
+    free(tmpSimData.integerVars);
+    free(tmpSimData.booleanVars);
+    free(tmpSimData.stringVars);
+    /* free buffer for all variable pre values */
+    free(tmpSimData.realVarsPre);
+    free(tmpSimData.integerVarsPre);
+    free(tmpSimData.booleanVarsPre);
+    free(tmpSimData.stringVarsPre);
+    /* rotate the ring buffer */
+    rotateRingBuffer(data->simulationData,0, data->localData);
+  }
+
+  free(data->localData);
+  free(data);
+
+  /* create modelData var arrays */
+  free(data->modelData.realData);
+  free(data->modelData.integerData);
+  free(data->modelData.booleanData);
+  free(data->modelData.stringData);
+
+  free(data->modelData.realParameter);
+  free(data->modelData.integerParameter);
+  free(data->modelData.booleanParameter);
+  free(data->modelData.stringParameter);
+
+  free(data->modelData.realAlias);
+  free(data->modelData.integerAlias);
+  free(data->modelData.booleanAlias);
+  free(data->modelData.stringAlias);
 
 }

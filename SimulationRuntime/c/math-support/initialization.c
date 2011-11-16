@@ -121,7 +121,7 @@ void leastSquare(long *nz, double *z, double *funcValue)
   functionODE(NULL);
   functionAlgebraics(NULL);
 
-  initial_residual(NULL, 1.0);
+  initial_residual(NULL, 1.0, NULL);
 
   *funcValue = 0;
   for(j=0; i<globalData->nInitialResiduals; j++)
@@ -170,7 +170,7 @@ double leastSquareWithLambda(long nz, double* z, double* scale, double lambda)
       functionODE(NULL);
       functionAlgebraics(NULL);
 
-      initial_residual(NULL, lambda);
+      initial_residual(NULL, lambda, NULL);
 
       for(j=0; j<globalData->nInitialResiduals; j++)
         funcValue += globalData->initialResiduals[j] * globalData->initialResiduals[j];
@@ -1155,7 +1155,8 @@ int state_initialization_X_(_X_DATA *data, int optiMethod)
 
   /* call initialize function and save start values */
   storeStartValues(data);
-  storePreValues(data);             /* if initial_function() uses pre-values */                  
+  storePreValues(data);             /* if initial_function() uses pre-values */
+  storeStartValuesParam(data);
   initial_function(data);           /* set all start-Values */
 
   storePreValues(data);             /* to provide all valid pre-values */
@@ -1169,21 +1170,33 @@ int state_initialization_X_(_X_DATA *data, int optiMethod)
   storePreValues(data);
 
   /* start with the real initialization */
-  globalData->init = 1;             /* to evaluate when-equations with initial()-conditions */
+  data->simulationInfo.init = 1;             /* to evaluate when-equations with initial()-conditions */
 
   retVal = initialize_X_(data, IOM_NELDER_MEAD_EX);
 
   storePreValues(data);             /* save pre-values */
-  overwriteOldSimulationData(data); /* if there are non-linear equations */  
+  overwriteOldSimulationData(data); /* if there are non-linear equations */
 
   update_DAEsystem(data);           /* evaluate discrete variables */
 
   /* valid system for the first time! */
   SaveZeroCrossings_X_(data);
   storePreValues(data);             /* save pre-values */
-  overwriteOldSimulationData(data); /* if there are non-linear equations */  
+  overwriteOldSimulationData(data); /* if there are non-linear equations */
 
-  globalData->init = 0;
+  data->simulationInfo.init = 0;
+
+  return retVal;
+}
+
+int copyStartValuestoInitValues(_X_DATA *data, int optiMethod)
+{
+  int retVal = 0;
+
+  /* just copy all start values to initial */
+  storeStartValues(data);
+  storePreValues(data);
+  storeStartValuesParam(data);
 
   return retVal;
 }
@@ -1226,7 +1239,10 @@ int initialization_X_(_X_DATA *data, const char* pInitMethod, const char* pOptiM
   if(initMethod == IIM_STATE)
   {
     /* the 'new' initialization-method */
-    return state_initialization_X_(data, optiMethod);
+    /* return state_initialization_X_(data, optiMethod); */
+
+    /* as long as initialization not ready */
+    return copyStartValuestoInitValues(data, optiMethod);
   }
 
   /* unrecognized initialization-method */

@@ -91,7 +91,6 @@ extern "C" {
   }\
   }
 
-#define initial() localData->init
 
   extern long* zeroCrossingEnabled;
   int function_onlyZeroCrossings(_X_DATA *data, double* gout, double* t);

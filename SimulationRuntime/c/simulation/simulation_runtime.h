@@ -164,14 +164,12 @@ DATA *initializeDataStruc2(DATA *returnData);
  * The second argument must have the same value as the argument in initializeDataStruc
  */
 void callExternalObjectDestructors(_X_DATA *_data, DATA* data);
+
+
 /* this is used to set the localData in the generated code
  * that is used in the diferrent generated functions
  *
  */
-void setLocalData(DATA* data);
-void init_Alias(DATA* data);
-
-
 int
 initializeEventData();
 void
@@ -229,7 +227,7 @@ int bound_parameters(_X_DATA *data);
 int checkForAsserts(_X_DATA *data);
 
 /* function for calculate residual values for the initial equations and fixed start attibutes */
-int initial_residual(_X_DATA *data, double);
+int initial_residual(_X_DATA *data, double lambda, double* initialResiduals);
 
 /* function for initializing time instants when sample() is activated */
 void function_sampleInit(_X_DATA *data);
@@ -253,8 +251,8 @@ void setTermMsg(const char*);
 
 #define MODELICA_TERMINATE(msg)  { modelTermination=1; terminationTerminate = 1; setTermMsg(msg); TermInfo.filename=""; TermInfo.lineStart=-1; TermInfo.colStart=-1; TermInfo.lineEnd=-1; TermInfo.colEnd=-1; TermInfo.readonly=-1; }
 
-#define initial() localData->init
-#define terminal() localData->terminal
+#define initial() data->simulationInfo.init
+#define terminal() data->simulationInfo.terminal
 
 /* _X_DATA *allocXData(void); */
 /* void freeXData(_X_DATA *data); */

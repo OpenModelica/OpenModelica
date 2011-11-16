@@ -60,32 +60,32 @@ void simulation_result_csv::emit(_X_DATA *data)
   fprintf(fout, format, globalData->timeValue);
 
   for (int i = 0; i < data->modelData.nVariablesReal; i++) if (!data->modelData.realData[i].filterOutput)
-    fprintf(fout, format, (data->localdata[0])->realVars[i]);
+    fprintf(fout, format, (data->localData[0])->realVars[i]);
   for (int i = 0; i < data->modelData.nVariablesInteger; i++) if (!data->modelData.integerData[i].filterOutput)
-    fprintf(fout, formatint, (data->localdata[0])->integerVars[i]);
+    fprintf(fout, formatint, (data->localData[0])->integerVars[i]);
   for (int i = 0; i < data->modelData.nVariablesBoolean; i++) if (!data->modelData.booleanData[i].filterOutput)
-    fprintf(fout, formatbool, (data->localdata[0])->booleanVars[i]);
+    fprintf(fout, formatbool, (data->localData[0])->booleanVars[i]);
   for (int i = 0; i < data->modelData.nVariablesString; i++) if (!data->modelData.stringData[i].filterOutput)
-    fprintf(fout, formatstring, (data->localdata[0])->stringVars[i]);
+    fprintf(fout, formatstring, (data->localData[0])->stringVars[i]);
 
   for (int i = 0; i < data->modelData.nAliasReal; i++) if (!data->modelData.realAlias[i].filterOutput)
     if (data->modelData.realAlias[i].negate)
-      fprintf(fout, format, -(data->localdata[0])->realVars[data->modelData.realAlias[i].nameID]);
+      fprintf(fout, format, -(data->localData[0])->realVars[data->modelData.realAlias[i].nameID]);
     else
-      fprintf(fout, format, (data->localdata[0])->realVars[data->modelData.realAlias[i].nameID]);
+      fprintf(fout, format, (data->localData[0])->realVars[data->modelData.realAlias[i].nameID]);
   for (int i = 0; i < data->modelData.nAliasInteger; i++) if (!data->modelData.integerAlias[i].filterOutput)
     if (data->modelData.integerAlias[i].negate)
-      fprintf(fout, formatint, -(data->localdata[0])->integerVars[data->modelData.integerAlias[i].nameID]);
+      fprintf(fout, formatint, -(data->localData[0])->integerVars[data->modelData.integerAlias[i].nameID]);
     else
-      fprintf(fout, formatint, (data->localdata[0])->integerVars[data->modelData.integerAlias[i].nameID]);
+      fprintf(fout, formatint, (data->localData[0])->integerVars[data->modelData.integerAlias[i].nameID]);
   for (int i = 0; i < data->modelData.nAliasBoolean; i++) if (!data->modelData.booleanAlias[i].filterOutput)
     if (data->modelData.booleanAlias[i].negate)
-      fprintf(fout, formatbool, -(data->localdata[0])->booleanVars[data->modelData.booleanAlias[i].nameID]);
+      fprintf(fout, formatbool, -(data->localData[0])->booleanVars[data->modelData.booleanAlias[i].nameID]);
     else
-      fprintf(fout, formatbool, (data->localdata[0])->booleanVars[data->modelData.booleanAlias[i].nameID]);
+      fprintf(fout, formatbool, (data->localData[0])->booleanVars[data->modelData.booleanAlias[i].nameID]);
   for (int i = 0; i < data->modelData.nAliasString; i++) if (!data->modelData.stringAlias[i].filterOutput)
     /* there would no negation of a string happen */
-    fprintf(fout, formatstring, (data->localdata[0])->stringVars[data->modelData.stringAlias[i].nameID]);
+    fprintf(fout, formatstring, (data->localData[0])->stringVars[data->modelData.stringAlias[i].nameID]);
   fprintf(fout, "\n");
   rt_accumulate(SIM_TIMER_OUTPUT);
 }

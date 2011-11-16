@@ -132,55 +132,7 @@ int
 startNonInteractiveSimulation(int, char**);
 int
 initRuntimeAndSimulation(int, char**);
-/* \brief returns the next simulation time.
- *
- * Returns the next simulation time when an output data is requested.
- * \param t is the current time
- * \param step defines the step size between two consecutive result data.
- * \param stop defines the stop time of the simulation, should not be exceeded.
- */
-double
-newTime(double t, double step, double stop)
-{
-  const double maxSolverStep = 0.001;
-  double newTime;
-  if (step > maxSolverStep)
-  { /* Prevent solver from taking larger step than maxSolverStep
-     NOTE: DASSL run into problems if the stepsize (TOUT-T) is too large, since it internally keeps track
-     of number of iterations and explain if it goes over 500.
-   */
-    /* Take a max step size forward */
-    newTime = t + maxSolverStep;
 
-    /* If output interval point reached, choose that time instead. */
-    if (newTime - (globalData->lastEmittedTime + step) >= -1e-10)
-    {
-      newTime = globalData->lastEmittedTime + step;
-      globalData->lastEmittedTime = newTime;
-      globalData->forceEmit = 1;
-    }
-  }
-  else
-  {
-    newTime = (floor((t + 1e-10) / step) + 1.0) * step;
-    globalData->lastEmittedTime = newTime;
-    globalData->forceEmit = 1;
-  }
-
-  // Small gain taking hints from the scheduled sample events. Needs to be done better.
-  //while (globalData->curSampleTimeIx < globalData->nSampleTimes && globalData->sampleTimes[globalData->curSampleTimeIx] < t)
-  //  globalData->curSampleTimeIx++;
-  //if (globalData->curSampleTimeIx && globalData->curSampleTimeIx < globalData->nSampleTimes && newTime > globalData->sampleTimes[globalData->curSampleTimeIx]) {
-  //  newTime = globalData->sampleTimes[globalData->curSampleTimeIx++] + 1e-15;
-  //}
-  // Do not exceed the stop time.
-  if (newTime > stop)
-  {
-    newTime = stop;
-  }
-  globalData->current_stepsize = newTime - t;
-  return newTime;
-}
 
 void setTermMsg(const char *msg)
 {
@@ -1093,7 +1045,6 @@ initRuntimeAndSimulation(int argc, char**argv, _X_DATA *data)
     std::cerr << "Error: Could not initialize the global data structure file" << std::endl;
   }
   //this sets the static variable that is in the file with the generated-model functions
-  setLocalData(globalData);
   if (globalData->nStates == 0 && globalData->nAlgebraic == 0) {
     std::cerr << "No variables in the model." << std::endl;
     return 1;
@@ -1175,78 +1126,6 @@ void communicateStatus(const char *phase, double completionPercent /*0.0 to 1.0*
   }
 #endif
 }
-
-//_X_DATA *allocXData(void)
-//{
-//  DATA *old = globalData;
-//  _X_DATA *data = (_X_DATA*)malloc(sizeof(_X_DATA));
-//  long i;
-//
-//  /* copy globalData into data */
-//  data->simulationInfo.startTime = old->startTime;
-//  data->simulationInfo.stopTime = 0;
-//
-//  /* simulationInfo */
-//  data->simulationInfo.startTime = old->startTime;
-//  data->simulationInfo.stopTime = ;
-//  data->simulationInfo.currentTime = old->timeValue;
-//  data->simulationInfo.currentStep = ;
-//  data->simulationInfo.numSteps = ;
-//  data->simulationInfo.tolerence = ;
-//  data->simulationInfo.solverMethod = ;
-//
-//  /* static stuff */
-//  data->modelData.nStates = old->nStates;
-//  data->modelData.nVariablesReal = 2*old->nStates+old->nAlgebraic;
-//  data->modelData.realData = (STATIC_REAL_DATA*)calloc(2*old->nStates+old->nAlgebraic, sizeof(STATIC_REAL_DATA));
-//  for(i=0; i<data->modelData.nVariablesReal; i++)
-//    data->modelData..realData[i] =
-//  
-//  STATIC_INTEGER_DATA* integerData;
-//  STATIC_BOOLEAN_DATA* booleanData;
-//  STATIC_STRING_DATA* stringData;
-//
-//  const FUNCTION_INFO* functionNames;
-//  const EQUATION_INFO* equationInfo;
-//
-//  modelica_string_t modelName;
-//  modelica_string_t modelicaFilePrefix;
-//  modelica_string_t modelDir;
-//  modelica_string_t modelGUID;
-//
-//  long nStates;
-//  long nVariablesReal;
-//  long nVariablesInteger;
-//  long nVariablesBoolean;
-//  long nVariablesString;
-//  long nParametersReal;
-//  long nParametersInteger;
-//  long nParametersBoolean;
-//  long nParametersStrings;
-//  long nInputVars;
-//  long nOutputVars;
-//
-//  long nHelp;
-//  long nZeroCrossings;
-//  long nSample;
-//  long nResiduals;
-//  long nExtOpj;
-//  long nFunctions;
-//
-//  long nAliasReal;
-//  long nAliasInteger;
-//  long nAliasBoolean;
-//  long nAliasString;
-//
-//  return data;
-//}
-//
-//void freeXData(_X_DATA *data)
-//{
-//  /* copy data into globalData */
-//
-//  free(data);
-//}
 
 /* \brief main function for simulator
  *

@@ -63,6 +63,52 @@ const double rungekutta_b[4] = { 1.0 / 6.0, 1.0 / 3.0, 1.0 / 3.0, 1.0 / 6.0 };
 const double rungekutta_c[4] = { 0.0, 0.5, 0.5, 1.0 };
 
 
+/*! \fn void printAllVars(_X_DATA *data)
+ *
+ *  prints all values
+ *
+ *  author: wbraun
+ */
+void printAllVars(_X_DATA *data)
+{
+  long i;
+  SIMULATION_DATA *sData = (SIMULATION_DATA*)getRingData(data->simulationData, 0);
+  MODEL_DATA      *mData = &(data->modelData);
+  INFO("all real variables");
+  for(i=0; i<mData->nVariablesReal; ++i){
+    INFO2("sData->realVars[%ld] = %g",i,sData->realVars[i]);
+  }
+  INFO("all integer variables");
+  for(i=0; i<mData->nVariablesInteger; ++i){
+    INFO2("sData->integerVars[%ld] = %ld",i,sData->integerVars[i]);
+  }
+  INFO("all boolean variables");
+  for(i=0; i<mData->nVariablesBoolean; ++i){
+    INFO2("sData->booleanVars[%ld] = %s",i,sData->booleanVars[i]?"true":"false");
+  }
+  INFO("all string variables");
+  for(i=0; i<mData->nVariablesString; ++i){
+    INFO2("sData->stringVars[%ld] = %s",i,sData->stringVars[i]);
+  }
+  INFO("all real parameters");
+  for(i=0; i<mData->nParametersReal; ++i){
+    INFO2("sData->realParameter[%ld] = %g",i,mData->realParameter[i].attribute.initial);
+  }
+  INFO("all integer parameters");
+  for(i=0; i<mData->nParametersInteger; ++i){
+    INFO2("sData->integerParameter[%ld] = %ld",i,mData->integerParameter[i].attribute.initial);
+  }
+  INFO("all boolean parameters");
+  for(i=0; i<mData->nParametersBoolean; ++i){
+    INFO2("sData->booleanParameter[%ld] = %s",i,mData->booleanParameter[i].attribute.initial?"true":"false");
+  }
+  INFO("all string parameters");
+  for(i=0; i<mData->nParametersString; ++i){
+    INFO2("sData->stringParameter[%ld] = %s",i,mData->stringParameter[i].attribute.initial);
+  }
+
+}
+
 int
 solver_main_step(int flag, _X_DATA* simData, SOLVER_INFO* solverInfo) {
   switch (flag) {
@@ -131,7 +177,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 
 	SIMULATION_INFO *simInfo = &(simData->simulationInfo);
 
-	SIMULATION_DATA *sData = (SIMULATION_DATA*)getRingData(simData->simulationData, 0);
+	SIMULATION_DATA *sData = simData->localData[0];
 
 	RK4 rungeData;
 
@@ -172,7 +218,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 	globalData->terminal = 0;
 	globalData->oldTime = simInfo->startTime;
 	globalData->timeValue = simInfo->startTime;
-	sData->time = simInfo->startTime;
+	sData->time = 0;
 
 
 	switch (flag) {
@@ -234,6 +280,10 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 	if(initialization_X_(simData, "state", "nelder_mead_ex")) {
 			THROW("Error in initialization. Storing results and exiting.");
 	}
+
+	/* debug print */
+	if (DEBUG_FLAG(LOG_SOLVER))
+	  printAllVars(simData);
 	/*if (initialization(init_initMethod ? init_initMethod->c_str() : NULL,
 			init_optiMethod ? init_optiMethod->c_str() : NULL)) {
 		THROW("Error in initialization. Storing results and exiting.");
@@ -241,9 +291,11 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 
 	SaveZeroCrossings();
 	saveall();
-	if (sim_verbose >= LOG_SOLVER) {
-			sim_result_emit(simData);
-	}
+	/*
+	 * if (sim_verbose >= LOG_SOLVER) {
+   *   sim_result_emit(simData);
+   * }
+	 */
 
 	/* Activate sample and evaluate again */
 	if (globalData->curSampleTimeIx < globalData->nSampleTimes) {
@@ -260,7 +312,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 	SaveZeroCrossings();
 	saveall();
 	sim_result_emit(simData);
-	storeExtrapolationDataEvent();
+	//storeExtrapolationDataEvent();
 
   /* Initialization complete */
   if (measure_time_flag)
@@ -280,12 +332,12 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
   }
 
   DEBUG_INFO(LV_SOLVER, "Performed initial value calculation.");
-  DEBUG_INFO2(LV_SOLVER, "Start numerical solver from %g to %g", globalData->timeValue, simInfo->stopTime);
+  DEBUG_INFO2(LV_SOLVER, "Start numerical solver from %g to %g", sData->time, simInfo->stopTime);
 
   if (measure_time_flag) {
-	char* filename = (char*) malloc(strlen(globalData->modelFilePrefix)+1+11);
-	filename = strncpy(filename,globalData->modelFilePrefix,strlen(globalData->modelFilePrefix));
-    filename = strcat(filename,"_prof.data");
+    char* filename = (char*) calloc(((size_t)strlen(globalData->modelFilePrefix)+1+11),sizeof(char));
+	  filename = strncpy(filename,globalData->modelFilePrefix,strlen(globalData->modelFilePrefix));
+    filename = strncat(filename,"_prof.data",10);
     fmt = fopen(filename, "wb");
     if (!fmt) {
       WARNING2("Warning: Time measurements output file %s could not be opened: %s", filename, strerror(errno));
@@ -294,6 +346,9 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
     }
   }
 
+  /*
+   * Start main simulation loop
+   */
   while (solverInfo.currentTime < simInfo->stopTime) {
 	  if (measure_time_flag) {
 		  for (i = 0; i < globalData->nFunctions + globalData->nProfileBlocks; i++)
@@ -318,7 +373,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 		  solverInfo.currentStepSize = simInfo->stepSize - solverInfo.offset;
 
 		  if (solverInfo.currentTime + solverInfo.currentStepSize > simInfo->stopTime) {
-			  solverInfo.currentStepSize = simInfo->stopTime - globalData->timeValue;
+			  solverInfo.currentStepSize = simInfo->stopTime - solverInfo.currentTime;
 		  }
 	  }
 
@@ -327,7 +382,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 	  }
 
 	  DEBUG_INFO2(LV_SOLVER, "Call Solver from %g to %g", solverInfo.currentTime,
-			  solverInfo.currentTime +solverInfo.currentStepSize);
+			  solverInfo.currentTime + solverInfo.currentStepSize);
 	  /* do one integration step
 	   *
 	   * one step means:
@@ -428,12 +483,19 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 		  globalData->terminal = 0;
 		  if (fmt)
 			  fclose(fmt);
-		  THROW1("model terminate | Simulation terminated at time %g",globalData->timeValue);
+		    THROW1("model terminate | Simulation terminated at time %g",solverInfo.currentTime);
 	  }
 
-	  DEBUG_INFO1(LV_SOLVER, "** Step to  %g Done!", globalData->timeValue);
+	  DEBUG_INFO1(LV_SOLVER, "** Step to  %g Done!", solverInfo.currentTime);
+	  /* debug print */
+	  if (DEBUG_FLAG(LOG_SOLVER))
+	    printAllVars(simData);
+	  /* rotated Ring buffer when Step is done */
+	  rotateRingBuffer(simData->simulationData, 1, NULL);
 
   }
+
+
   /* Last step with terminal()=true */
   if (globalData->timeValue >= stop) {
 	  globalData->terminal = 1;
@@ -480,15 +542,16 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 int
 euler_ex_step(_X_DATA* simData, SOLVER_INFO* solverInfo) {
   int i;
-  SIMULATION_DATA *sData = (SIMULATION_DATA*)getRingData(simData->simulationData, 0);
+  SIMULATION_DATA *sData = (SIMULATION_DATA*)simData->localData[0];
   modelica_real* stateDer = sData->realVars + simData->modelData.nStates;
-  /*globalData->timeValue += solverInfo->currentStepSize; */
+
   sData->time += solverInfo->currentStepSize;
-  solverInfo->currentTime += solverInfo->currentStepSize;
   for (i = 0; i < simData->modelData.nStates; i++) {
     sData->realVars[i] += stateDer[i] * solverInfo->currentStepSize;
   }
+  sData->time += solverInfo->currentStepSize;
   functionODE(simData);
+  solverInfo->currentTime += solverInfo->currentStepSize;
   return 0;
 }
 
@@ -500,32 +563,38 @@ rungekutta_step(_X_DATA* simData, SOLVER_INFO* solverInfo) {
   double sum;
   int i,j;
 
+  SIMULATION_DATA *sData = (SIMULATION_DATA*)simData->localData[0];
+  SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)simData->localData[1];
+  modelica_real* stateDer = sData->realVars + simData->modelData.nStates;
+
+
   /* We calculate k[0] before returning from this function.
    * We only want to calculate f() 4 times per call */
-  for (i = 0; i < globalData->nStates; i++) {
-    k[0][i] = globalData->statesDerivatives[i];
-    backupstates[i] = globalData->states[i];
+  for (i = 0; i < simData->modelData.nStates; i++) {
+    k[0][i] = stateDer[i];
+    backupstates[i] = sData->realVars[i];
   }
 
   for (j = 1; j < rungekutta_s; j++) {
-    globalData->timeValue = globalData->oldTime + rungekutta_c[j] * solverInfo->currentStepSize;
-    solverInfo->currentTime = globalData->oldTime + rungekutta_c[j] * solverInfo->currentStepSize;
-    for (i = 0; i < globalData->nStates; i++) {
-      globalData->states[i] = backupstates[i] + solverInfo->currentStepSize * rungekutta_c[j] * k[j - 1][i];
+    for (i = 0; i < simData->modelData.nStates; i++) {
+      sData->realVars[i] = backupstates[i] + solverInfo->currentStepSize * rungekutta_c[j] * k[j - 1][i];
     }
+    sData->time += sDataOld->time + rungekutta_c[j] * solverInfo->currentStepSize;
     functionODE(simData);
-    for (i = 0; i < globalData->nStates; i++) {
-      k[j][i] = globalData->statesDerivatives[i];
+    for (i = 0; i < simData->modelData.nStates; i++) {
+      k[j][i] = stateDer[i];
     }
   }
 
-  for (i = 0; i < globalData->nStates; i++) {
+  for (i = 0; i < simData->modelData.nStates; i++) {
     sum = 0;
     for (j = 0; j < rungekutta_s; j++) {
       sum = sum + rungekutta_b[j] * k[j][i];
     }
-    globalData->states[i] = backupstates[i] + solverInfo->currentStepSize * sum;
+    sData->realVars[i] = backupstates[i] + solverInfo->currentStepSize * sum;
   }
+  sData->time += sDataOld->time + solverInfo->currentStepSize;
   functionODE(simData);
+  solverInfo->currentTime += solverInfo->currentStepSize;
   return 0;
 }

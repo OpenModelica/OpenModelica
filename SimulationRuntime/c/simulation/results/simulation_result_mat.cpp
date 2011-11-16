@@ -74,7 +74,7 @@ int simulation_result_mat::calcDataSize(MODEL_DATA *modelData)
 
 const VAR_INFO** simulation_result_mat::calcDataNames(int dataSize, MODEL_DATA *modelData)
     {
-  const VAR_INFO** names = (const VAR_INFO**) malloc(dataSize*sizeof(struct VAR_INFO*));
+  const VAR_INFO** names = (const VAR_INFO**) malloc((dataSize+1)*sizeof(struct VAR_INFO*));
   int curVar = 0;
   int sz = 1;
   names[curVar++] = &timeValName;
@@ -205,17 +205,17 @@ void simulation_result_mat::emit(_X_DATA *data)
   /* this is done wrong -- a buffering should be used
      although ofstream does have some buffering, but it is not enough and 
      not for this purpose */
-  fp.write((char*)&(data->localdata[0]->time),sizeof(double));
+  fp.write((char*)&(data->localData[0]->time),sizeof(double));
   for (int i = 0; i < data->modelData.nVariablesReal; i++) if (!data->modelData.realData[i].filterOutput)
-    fp.write((char*)&(data->localdata[0]->realVars[i]),sizeof(double));
+    fp.write((char*)&(data->localData[0]->realVars[i]),sizeof(double));
   for (int i = 0; i < data->modelData.nVariablesInteger; i++) if (!data->modelData.integerData[i].filterOutput)
     {
-      datPoint = (double) data->localdata[0]->integerVars[i];
+      datPoint = (double) data->localData[0]->integerVars[i];
       fp.write((char*)&datPoint,sizeof(double));
     }
   for (int i = 0; i < data->modelData.nVariablesBoolean; i++) if (!data->modelData.booleanData[i].filterOutput)
     {
-      datPoint = (double) data->localdata[0]->booleanVars[i];
+      datPoint = (double) data->localData[0]->booleanVars[i];
       fp.write((char*)&datPoint,sizeof(double));
     }
   if (!fp)

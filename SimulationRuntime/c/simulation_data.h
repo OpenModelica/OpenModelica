@@ -259,13 +259,16 @@ extern "C" {
     modelica_string solverMethod;
     modelica_string outputFormat;
     modelica_string variableFilter;
+
+    int init; /* =1 during initialization, 0 otherwise. */
+    int terminal; /* =1 at the end of the simulation, 0 otherwise. */
   }SIMULATION_INFO;
 
   /* top-level struct to collect dynamic and static model data */
   typedef struct _X_DATA
   {
     RINGBUFFER* simulationData;     /* RINGBUFFER of SIMULATION_DATA */
-    SIMULATION_DATA **localdata;
+    SIMULATION_DATA **localData;
     MODEL_DATA modelData;           /* static stuff */
     SIMULATION_INFO simulationInfo;
   }_X_DATA;
