@@ -385,8 +385,12 @@ void overwriteOldSimulationData(_X_DATA *data)
 {
   long i;
   
-  for(i=1; i<ringBufferLength(data->simulationData); ++i)
-    memcpy(getRingData(data->simulationData, 0), getRingData(data->simulationData, 1), sizeof(SIMULATION_DATA));
+  for(i=1; i<ringBufferLength(data->simulationData); ++i){
+    memcpy(data->localData[i]->realVars, data->localData[i-1]->realVars, sizeof(modelica_real)*data->modelData.nVariablesReal);
+    memcpy(data->localData[i]->integerVars, data->localData[i-1]->integerVars, sizeof(modelica_integer)*data->modelData.nVariablesInteger);
+    memcpy(data->localData[i]->booleanVars, data->localData[i-1]->booleanVars, sizeof(modelica_boolean)*data->modelData.nVariablesBoolean);
+    memcpy(data->localData[i]->stringVars, data->localData[i-1]->stringVars, sizeof(modelica_string)*data->modelData.nVariablesString);
+  }
 }
 
 /** function restoreExtrapolationDataOld

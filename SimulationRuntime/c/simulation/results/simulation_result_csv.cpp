@@ -57,7 +57,7 @@ void simulation_result_csv::emit(_X_DATA *data)
   const char* formatbool = "%i,";
   const char* formatstring = "\"%s\",";
   rt_tick(SIM_TIMER_OUTPUT);
-  fprintf(fout, format, globalData->timeValue);
+  fprintf(fout, format, data->localData[0]->time);
 
   for (int i = 0; i < data->modelData.nVariablesReal; i++) if (!data->modelData.realData[i].filterOutput)
     fprintf(fout, format, (data->localData[0])->realVars[i]);

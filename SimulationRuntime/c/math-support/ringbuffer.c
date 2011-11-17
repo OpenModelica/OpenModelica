@@ -126,12 +126,14 @@ void rotateRingBuffer(RINGBUFFER *rb, int n, void **lookup)
   ASSERT(rb->nElements > 0, "empty RingBuffer");
   ASSERT3(n < rb->nElements, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
   ASSERT3(0 <= n, "index [%d] out of range [%d:%d]", n, 0, rb->nElements-1);
+
   rb->firstElement = (rb->firstElement+n)%rb->bufferSize;
 
   if(lookup)
   {
-    for(i=0; i<rb->nElements; ++i)
-      lookup[i] = getRingData(rb, i);
+    for(i=0; i<rb->nElements; ++i){
+      lookup[i] = getRingData(rb, (rb->firstElement+i)%rb->bufferSize);
+    }
   }
 }
 
