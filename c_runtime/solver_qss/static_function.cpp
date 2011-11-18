@@ -95,17 +95,17 @@ void StaticFunction::writeOutputs(Time t)
   {
     if (isState(*it))
     {
-      cout << "Block " << devsIndex << " writes der " << stateNumber(*it) << endl;
-      derX[stateNumber(*it)].sampledAt(t);
-      derX[stateNumber(*it)].setCoeff(0,out[i]);
-      if (order>1) 
-        derX[stateNumber(*it)].setCoeff(1,(outdt[i]-out_dt[i])/(dt*2));
+      //cout << "Block " << devsIndex << " writes der " << stateNumber(*it) << endl;
+      //derX[stateNumber(*it)].sampledAt(t);
+      //derX[stateNumber(*it)].setCoeff(0,out[i]);
+      //if (order>1) 
+        //derX[stateNumber(*it)].setCoeff(1,(outdt[i]-out_dt[i])/(dt*2));
     } else {
-      cout << "Block " << devsIndex << " writes algebraic " << algNumber(*it) << endl;
-      alg[algNumber(*it)].sampledAt(t);
-      alg[algNumber(*it)].setCoeff(0,out[i]);
-      if (order>1)
-        alg[algNumber(*it)].setCoeff(1,(outdt[i]-out_dt[i])/(dt*2));
+      //cout << "Block " << devsIndex << " writes algebraic " << algNumber(*it) << endl;
+      //alg[algNumber(*it)].sampledAt(t);
+      //alg[algNumber(*it)].setCoeff(0,out[i]);
+      //if (order>1)
+        //alg[algNumber(*it)].setCoeff(1,(outdt[i]-out_dt[i])/(dt*2));
     }
     if (order==2) 
     {
@@ -131,11 +131,11 @@ void StaticFunction::advanceInputs(Time t)
   {
     if (isState(*it))
     {
-      cout << "Block " << devsIndex << " uses state " << stateNumber(*it) << endl;
-      inp[i] = q[stateNumber(*it)].valueAt(t);
+      //cout << "Block " << devsIndex << " uses state " << stateNumber(*it) << endl;
+      //inp[i] = q[stateNumber(*it)].valueAt(t);
     } else {
-      cout << "Block " << devsIndex << " uses state " << algNumber(*it) << endl;
-      inp[i] = alg[algNumber(*it)].valueAt(t);
+      //cout << "Block " << devsIndex << " uses state " << algNumber(*it) << endl;
+      //inp[i] = alg[algNumber(*it)].valueAt(t);
     }
   }
 }

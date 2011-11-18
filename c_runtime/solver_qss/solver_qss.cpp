@@ -226,17 +226,17 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
   // Create one integrator for each state
   for (int i=0;i<globalData->nStates;i++)
   {
-    childs[i] = new IntegratorQSS(dQmin,dQrel);
+    //childs[i] = new IntegratorQSS(dQmin,dQrel);
     childs[i]->init(globalData->timeValue,i);
     tn[i] = globalData->timeValue+childs[i]->ta();
   }
   // Init static functions and zero crossings functions
   for (int i=0;i<staticBlocks;i++)
   {
-    childs[i+globalData->nStates] = new StaticFunction(1,dQmin,dQrel,i+globalData->nStates);
+    //childs[i+globalData->nStates] = new StaticFunction(1,dQmin,dQrel,i+globalData->nStates);
     childs[i+globalData->nStates]->init(globalData->timeValue,i);
-    if (i >= staticPureBlocks) // if it is a crossing function
-      dynamic_cast<StaticFunction*>(childs[i+globalData->nStates])->setCrossing(i-staticPureBlocks);
+    //if (i >= staticPureBlocks) // if it is a crossing function
+    //  dynamic_cast<StaticFunction*>(childs[i+globalData->nStates])->setCrossing(i-staticPureBlocks);
     tn[i+globalData->nStates] = globalData->timeValue+childs[i+globalData->nStates]->ta();
   }
  
@@ -244,13 +244,13 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
   for (int i=0;i<zeroCrossings;i++)
   {
     const int index=i+globalData->nStates+staticBlocks;
-    childs[index] = new CrossDetector(1,dQmin,dQrel);
+    //childs[index] = new CrossDetector(1,dQmin,dQrel);
     childs[index]->init(globalData->timeValue,i);
     tn[index] = globalData->timeValue+childs[index]->ta();
   }
  
   // Periodic sampler for outputs
-  childs[size-1] = new Sampler(outputSteps,start,stop);
+  //childs[size-1] = new Sampler(outputSteps,start,stop);
   childs[size-1]->init(globalData->timeValue,0);
   tn[size-1] = globalData->timeValue+childs[size-1]->ta();
 
@@ -306,6 +306,9 @@ int qss_main( int argc, char** argv,double &start,  double &stop, double &step, 
   return 0;
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void init_ompd()
 {
@@ -454,6 +457,10 @@ void clean_ompd()
   deInitializeDataStruc(globalData);
   free(globalData);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 int
 main_qss(int argc, char**argv)

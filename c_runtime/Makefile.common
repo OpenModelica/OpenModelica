@@ -42,8 +42,8 @@ SIM_OBJS = $(OBJS) simulation_runtime.o
 
 QSS_OBJS = $(OBJS) \
 simulation_runtime_qss.o \
-solver_qss/solver_qss.o \
-solver_qss/sampler.o \
+solver_qss/solver_qss.o 
+#solver_qss/sampler.o \
 solver_qss/integrator.o \
 solver_qss/qss_signal.o \
 solver_qss/static_function.o \
