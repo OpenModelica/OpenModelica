@@ -1226,7 +1226,7 @@ algorithm
           bindExp = SOME(e), arryDim = dims, index = idx, source = src, 
           values = va, comment = c, flowPrefix = fp, streamPrefix = sp), cache, env, _)
       equation
-        ((e2, _)) = Expression.traverseExp(e, replaceCrefsWithValues, vars);
+        ((e2, _)) = Expression.traverseExp(e, replaceCrefsWithValues, (vars, cr));
         (_, v, _) = Ceval.ceval(cache, env, e2, false,NONE(), Ceval.NO_MSG());
       then
         BackendDAE.VAR(cr, vk, vd, ty, SOME(e), SOME(v), dims, idx, src, va, c, fp, sp);
@@ -1235,20 +1235,21 @@ algorithm
 end calculateValue;
 
 public function replaceCrefsWithValues
-  input tuple<DAE.Exp, BackendDAE.Variables> inTuple;
-  output tuple<DAE.Exp, BackendDAE.Variables> outTuple;
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables, DAE.ComponentRef>> inTuple;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables, DAE.ComponentRef>> outTuple;
 algorithm
   outTuple := matchcontinue(inTuple)
     local
       DAE.Exp e;
       BackendDAE.Variables vars;
-      DAE.ComponentRef cr;
-    case ((DAE.CREF(cr, _), vars))
+      DAE.ComponentRef cr, cr_orign;
+    case ((DAE.CREF(cr, _), (vars, cr_orign)))
       equation
+          false = ComponentReference.crefEqualNoStringCompare(cr, cr_orign);
          ({BackendDAE.VAR(bindExp = SOME(e))}, _) = BackendVariable.getVar(cr, vars);
-         ((e, _)) = Expression.traverseExp(e, replaceCrefsWithValues, vars);
+         ((e, _)) = Expression.traverseExp(e, replaceCrefsWithValues, (vars, cr_orign));
       then
-        ((e, vars));
+        ((e, (vars,cr_orign)));
     case (_) then inTuple;
   end matchcontinue;
 end replaceCrefsWithValues;
