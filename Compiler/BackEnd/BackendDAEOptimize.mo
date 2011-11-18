@@ -2017,7 +2017,7 @@ algorithm
     case ((v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.PARAM(),bindExp=SOME(exp),values=values),(repl,vars)))
       equation
         true = BackendVariable.isFinalVar(v);
-        ((exp1, _)) = Expression.traverseExp(exp, BackendDAEUtil.replaceCrefsWithValues, vars);
+        ((exp1, _)) = Expression.traverseExp(exp, BackendDAEUtil.replaceCrefsWithValues, (vars, varName));
         repl_1 = BackendVarTransform.addReplacement(repl, varName, exp1);
       then ((v,(repl_1,vars)));
     case ((v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.PARAM(),bindValue=SOME(bindValue),values=values),(repl,vars)))
@@ -2149,7 +2149,7 @@ algorithm
       Values.Value bindValue;
     case ((v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.PARAM(),bindExp=SOME(exp),values=values),(repl,vars)))
       equation
-        ((exp1, _)) = Expression.traverseExp(exp, BackendDAEUtil.replaceCrefsWithValues, vars);
+        ((exp1, _)) = Expression.traverseExp(exp, BackendDAEUtil.replaceCrefsWithValues, (vars, varName));
         repl_1 = BackendVarTransform.addReplacement(repl, varName, exp1);
       then ((v,(repl_1,vars)));
     case ((v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.PARAM(),bindValue=SOME(bindValue),values=values),(repl,vars)))
