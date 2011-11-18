@@ -45,7 +45,7 @@ int main(int argc, const char* argv[])
 			
 			// Command for integration: Since integration is done "at once" the solver is only called once. Hence it is both, first and last 
 			// call to the solver at the same time. Furthermore it is supposed to be a regular call (not a recall)
-			IDAESolver::SOLVERCALL command = IDAESolver::SOLVERCALL(IDAESolver::FIRST_CALL|IDAESolver::LAST_CALL|IDAESolver::REGULAR_CALL);
+			IDAESolver::SOLVERCALL command = IDAESolver::SOLVERCALL(IDAESolver::FIRST_CALL|IDAESolver::LAST_CALL|IDAESolver::REGULAR_CALL|IDAESolver::RECORDCALL);
 			// The simulation entity is supposed to set start and end time
 			solver->setStartTime(global_settings->getStartTime());
 			solver->setEndTime(global_settings->getEndTime());

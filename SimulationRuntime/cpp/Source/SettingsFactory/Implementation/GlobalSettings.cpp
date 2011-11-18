@@ -5,7 +5,7 @@
 
 GlobalSettings::GlobalSettings()
 : _startTime			(0.0)
-, _endTime			(1.0)
+, _endTime			(5.0)
 , _hOutput			(0.02)
 , _resultsOutput		(true)	
 , _infoOutput		(true)

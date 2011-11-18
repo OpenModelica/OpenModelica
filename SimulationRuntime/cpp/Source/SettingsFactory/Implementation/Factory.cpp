@@ -31,6 +31,9 @@ tuple<boost::shared_ptr<IGlobalSettings>,boost::shared_ptr<ISolverSettings> > Se
 	else
 		throw std::invalid_argument("Selected Solver is not available");
 	
+	//solver_dll.assign("Idas.dll");
+	//solver_dll.assign("CVODE.dll");
+
 	string settings = _global_settings->getSelectedSolver().append("Settings");
 	string settings_file ="config//";
 	settings_file.append(

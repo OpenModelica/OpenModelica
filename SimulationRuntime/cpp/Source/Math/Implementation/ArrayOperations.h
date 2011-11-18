@@ -302,6 +302,7 @@ void
 
 
 
+
 /**
 finds min/max elements of an array 
 template < typename T, size_t NumDims >

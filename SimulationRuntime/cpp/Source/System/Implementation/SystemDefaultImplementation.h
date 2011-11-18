@@ -66,10 +66,10 @@ public:
 	
 	// Member variables
 	//---------------------------------------------------------------
-
+protected:
      void Assert(bool cond,string msg);
 	 void Terminate(string msg); 
-
+	 bool initial();
 	double
 		time;				///< current simulation time (given by the solver) 
 
@@ -84,6 +84,7 @@ public:
 		_dimODE1stOrder,	///< Number (dimension) of first order ordinary differential equations 
 		_dimODE2ndOrder,	///< Number (dimension) of second order ordinary differential equations (RHS of a mechanical system)
 		_dimAE;				///< Number (dimension) of algebraic equations (e.g. constraints from an algebraic loop)
+	bool _initial;		
 
 private:
 	int

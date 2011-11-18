@@ -4,6 +4,8 @@
 
 IdasSettings::IdasSettings(IGlobalSettings* globalSettings)
 	: SolverSettings		(globalSettings)
+	,_denseOutput(false)
+	,_eventOutput(false)
 
 {
 };

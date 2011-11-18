@@ -30,7 +30,11 @@ void SystemDefaultImplementation::Terminate(string msg)
 {
 	throw std::runtime_error(msg);
 }
+bool SystemDefaultImplementation::initial()
+{
+	return _initial;
 
+}
 int SystemDefaultImplementation::getDimVars(const IContinous::INDEX index) const	
 {
 	int i=0;

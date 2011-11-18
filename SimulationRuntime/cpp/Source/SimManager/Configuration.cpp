@@ -45,7 +45,9 @@ IDAESolver* Configuration::createSolver(IDAESystem* system)
 		solver_dll.assign(EULER_LIB);
 	else
 		throw std::invalid_argument("Selected Solver is not available");
-		
+    
+	//solver_dll.assign("Idas.dll");	
+	//solver_dll.assign("CVODE.dll");	
 	if(!load_single_library(types, solver_dll))
 		throw std::invalid_argument(solver_dll + "library could not be loaded");
 	std::map<std::string, factory<IDAESolver,IDAESystem*, ISolverSettings*> >::iterator iter;
