@@ -462,12 +462,13 @@ void getSimulationStartData(double *stepSize, long *outputSteps,
 
   gdMutex.Lock();
 
+  _X_DATA simData;
   MODEL_DATA modelData;
-  SIMULATION_INFO simData;
+  SIMULATION_INFO simInfo;
 
-  read_input_xml(argcTEMP, argvTEMP, globalData, &modelData, &simData, &start, &stop, stepSize,
+  read_input_xml(argcTEMP, argvTEMP, globalData, &modelData, &simInfo, &start, &stop, stepSize,
       outputSteps, tolerance, method, outputFormat, &variableFilter);
-  callExternalObjectConstructors(NULL, globalData);
+  callExternalObjectConstructors(&simData);
 
   gdMutex.Unlock();
 }
