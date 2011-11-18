@@ -34,9 +34,11 @@
 #include "initialization.h"
 #include "simulation_runtime.h"
 #include "solver_main.h"
+#include "events.h"
 #include "error.h"
 
 #include <math.h>
+#include <string.h> /* strcmp */
 
 #ifndef NEWUOA
 #define NEWUOA newuoa_
@@ -127,7 +129,7 @@ void leastSquare(long *nz, double *z, double *funcValue)
   for(j=0; i<globalData->nInitialResiduals; j++)
     *funcValue += globalData->initialResiduals[j] * globalData->initialResiduals[j];
 
-  DEBUG_INFO1(LV_INIT, "leastSquare | leastSquare-Value: %g", *funcValue);
+  DEBUG_INFO1(LOG_INIT, "leastSquare | leastSquare-Value: %g", *funcValue);
 }
 
 /*! \fn double leastSquareWithLambda(long nz, double *z, double lambda)
@@ -263,7 +265,7 @@ void NelderMeadOptimization(long N,
       if(lambda > 1.0)
         lambda = 1.0;
       
-      DEBUG_INFO3(LV_INIT, "NelderMeadOptimization | increasing lambda to %g in step %d at f=%g", lambda, (int)iteration, leastSquare(N, simplex, scale, lambda));
+      DEBUG_INFO3(LOG_INIT, "NelderMeadOptimization | increasing lambda to %g in step %d at f=%g", lambda, (int)iteration, leastSquare(N, simplex, scale, lambda));
       continue;
     }
 
@@ -424,7 +426,7 @@ int reportResidualValue(double funcValue)
 */
 int newuoa_initialization(long nz, double *z)
 {
-  long IPRINT = sim_verbose >= LV_INIT? 2 : 0;
+  long IPRINT = sim_verbose >= LOG_INIT? 2 : 0;
   long MAXFUN=50000;
   double RHOEND=1.0e-6;
   double RHOBEG=10; /* This should be about one tenth of the greatest
@@ -470,7 +472,7 @@ int simplex_initialization(long nz, double *z)
   /* Set max. no. of function evaluations = 5000, print every 100. */
 
   MAXF = 5000 * nz;
-  IPRINT = sim_verbose >= LV_INIT ? 100 : -1;
+  IPRINT = sim_verbose >= LOG_INIT ? 100 : -1;
 
   /* Set value for stopping criterion.   Stopping occurs when the
   * standard deviation of the values of the objective function at
@@ -500,12 +502,12 @@ int simplex_initialization(long nz, double *z)
   }
   else
   {
-    DEBUG_INFO1(LV_INIT, "simplex_initialization | Result of leastSquare method = %g. The initial guess fits to the system", funcValue);
+    DEBUG_INFO1(LOG_INIT, "simplex_initialization | Result of leastSquare method = %g. The initial guess fits to the system", funcValue);
   }
 
   leastSquare(&nz, z, &funcValue);
 
-  DEBUG_INFO1(LV_INIT, "leastSquare=%g", funcValue);
+  DEBUG_INFO1(LOG_INIT, "leastSquare=%g", funcValue);
 
   if(IFAULT == 1)
   {
@@ -546,42 +548,42 @@ int nelderMeadEx_initialization(long nz, double *z, double *scale)
 
   for(l=0; l<100 && funcValue > STOPCR; l++)
   {
-    DEBUG_INFO1(LV_INIT, "nelderMeadEx_initialization | initialization-nr. %d", (int)l);
+    DEBUG_INFO1(LOG_INIT, "nelderMeadEx_initialization | initialization-nr. %d", (int)l);
 
     /* down-scale */
     for(i=0; i<nz; i++)
       z[i] /= scale[i];
-    NelderMeadOptimization(nz, z, scale, lambda_step, STOPCR, NLOOP, useVerboseOutput(LV_INIT) ? 100000 : 0, &lambda, &iteration, leastSquareWithLambda);
+    NelderMeadOptimization(nz, z, scale, lambda_step, STOPCR, NLOOP, useVerboseOutput(LOG_INIT) ? 100000 : 0, &lambda, &iteration, leastSquareWithLambda);
     /* up-scale */
     for(i=0; i<nz; i++)
       z[i] *= scale[i];
 
-    if(DEBUG_FLAG(LV_INIT))
+    if(DEBUG_FLAG(LOG_INIT))
     {
       INFO3("nelderMeadEx_initialization | iteration=%d / lambda=%g / f=%g", (int) iteration, lambda, leastSquareWithLambda(nz, z, NULL, lambda));
       for(i=0; i<nz; i++)
         INFO_AL2("nelderMeadEx_initialization | states | %d: %g", (int) i, z[i]);
     }
 
-    saveall();                      /* save pre-values */
+    storePreValues(NULL);                      /* save pre-values */
     storeExtrapolationDataEvent();  /* if there are non-linear equations */
 
     update_DAEsystem(NULL);             /* evaluate discrete variables */
 
     /* valid system for the first time! */
 
-    SaveZeroCrossings();
-    saveall();
+    SaveZeroCrossings(NULL);
+    storePreValues(NULL);
     storeExtrapolationDataEvent();
 
     funcValue = leastSquareWithLambda(nz, z, NULL, 1.0);
   }
 
-  DEBUG_INFO1(LV_INIT, "nelderMeadEx_initialization | leastSquare=%g", funcValue);
+  DEBUG_INFO1(LOG_INIT, "nelderMeadEx_initialization | leastSquare=%g", funcValue);
 
   if(lambda < 1.0)
   {
-    DEBUG_INFO1(LV_INIT, "nelderMeadEx_initialization | lambda = %g", lambda);
+    DEBUG_INFO1(LOG_INIT, "nelderMeadEx_initialization | lambda = %g", lambda);
     return -1;
   }
 
@@ -610,7 +612,7 @@ int initialize(int optiMethod)
   {
     if(globalData->initFixed[ind]==0)
     {
-      DEBUG_INFO1(LV_INIT, "state %s is unfixed", globalData->statesNames[ind].name);
+      DEBUG_INFO1(LOG_INIT, "state %s is unfixed", globalData->statesNames[ind].name);
       nz++;
     }
   }
@@ -621,12 +623,12 @@ int initialize(int optiMethod)
   {
     if(globalData->initFixed[ind]==0 && globalData->var_attr[ind-globalData->nStates]==1)
     {
-      DEBUG_INFO1(LV_INIT, "parameter %s is unfixed", globalData->parametersNames[ind-startIndPar].name);
+      DEBUG_INFO1(LOG_INIT, "parameter %s is unfixed", globalData->parametersNames[ind-startIndPar].name);
       nz++;
     }
   }
 
-  if(DEBUG_FLAG(LV_INIT))
+  if(DEBUG_FLAG(LOG_INIT))
   {
     INFO1("initialize | initialization by method: %s", optiMethodStr[optiMethod]);
     INFO_AL("             fixed attribute for states:");
@@ -638,7 +640,7 @@ int initialize(int optiMethod)
   /* No initial values to calculate. */
   if(nz ==  0)
   {
-    DEBUG_INFO(LV_INIT, "no initial values to calculate");
+    DEBUG_INFO(LOG_INIT, "no initial values to calculate");
     return 0;
   }
 
@@ -650,21 +652,25 @@ int initialize(int optiMethod)
   /* Fill z with the non-fixed variables from x and p */
   for(ind=0, indAct=0, indz=0; ind<globalData->nStates; ind++)
   {
+    /* deactived since globalData ist removed
     if(globalData->initFixed[indAct++] == 0)
     {
       scale[indz] = hasNominalValue[ind] ? fabs(nominalValue[ind]) : 1;
       z[indz++] = globalData->states[ind];
     }
+    */
   }
 
   /* for real parameters */
   for(ind=0, indAct=startIndPar; ind<globalData->nParameters; ind++)
   {
+    /* deactived since globalData ist removed
     if(globalData->initFixed[indAct++]==0 && globalData->var_attr[indAct-globalData->nStates]==1)
     {
       scale[indz] = hasNominalValue[globalData->nStates+globalData->nAlgebraic+ind] ? fabs(nominalValue[globalData->nStates+globalData->nAlgebraic+ind]) : 1;
       z[indz++] = globalData->parameters[ind];
     }
+    */
   }
 
   if(optiMethod == IOM_SIMPLEX)
@@ -695,10 +701,10 @@ int old_initialization(int optiMethod)
 {
   int retVal = 0;
   /* call initialize function and save start values */
-  saveall();                        /* if initial_function() uses pre-values */
+  storePreValues(NULL);                        /* if initial_function() uses pre-values */
   initial_function(NULL);               /* set all start-Values */
   storeExtrapolationDataEvent();
-  saveall();                        /* to provide all valid pre-values */
+  storePreValues(NULL);                        /* to provide all valid pre-values */
 
   /* Initialize all relations that are ZeroCrossings */
   update_DAEsystem(NULL);
@@ -707,8 +713,8 @@ int old_initialization(int optiMethod)
 
   /* And restore start values and helpvars */
   restoreExtrapolationDataOld();
-  restoreHelpVars();
-  saveall();
+  resetAllHelpVars(NULL);
+  storePreValues(NULL);
   /* start with the real initialization */
   globalData->init = 1;             /* to evaluate when-equations with initial()-conditions */
 
@@ -730,15 +736,15 @@ int old_initialization(int optiMethod)
     }
   }
 
-  saveall();                        /* save pre-values */
+  storePreValues(NULL);                        /* save pre-values */
   storeExtrapolationDataEvent();    /* if there are non-linear equations */
 
   update_DAEsystem(NULL);               /* evaluate discrete variables */
 
   /* valid system for the first time! */
 
-  SaveZeroCrossings();
-  saveall();
+  SaveZeroCrossings(NULL);
+  storePreValues(NULL);
   storeExtrapolationDataEvent();
 
   globalData->init = 0;
@@ -750,33 +756,33 @@ int state_initialization(int optiMethod)
 {
   int retVal = 0;
   /* call initialize function and save start values */
-  saveall();                        /* if initial_function() uses pre-values */
+  storePreValues(NULL);                        /* if initial_function() uses pre-values */
   initial_function(NULL);               /* set all start-Values */
   storeExtrapolationDataEvent();
-  saveall();                        /* to provide all valid pre-values */
+  storePreValues(NULL);                        /* to provide all valid pre-values */
 
   /* Initialize all relations that are ZeroCrossings */
   update_DAEsystem(NULL);
 
   /* And restore start values and helpvars */
   restoreExtrapolationDataOld();
-  restoreHelpVars();
-  saveall();
+  resetAllHelpVars(NULL);
+  storePreValues(NULL);
 
   /* start with the real initialization */
   globalData->init = 1;             /* to evaluate when-equations with initial()-conditions */
 
   retVal = initialize(IOM_NELDER_MEAD_EX);
 
-  saveall();                        /* save pre-values */
+  storePreValues(NULL);                        /* save pre-values */
   storeExtrapolationDataEvent();    /* if there are non-linear equations */
 
   update_DAEsystem(NULL);               /* evaluate discrete variables */
 
   /* valid system for the first time! */
 
-  SaveZeroCrossings();
-  saveall();
+  SaveZeroCrossings(NULL);
+  storePreValues(NULL);
   storeExtrapolationDataEvent();
 
   globalData->init = 0;
@@ -784,7 +790,7 @@ int state_initialization(int optiMethod)
   /* fall-back case */
   if(retVal)
   {
-    DEBUG_INFO(LV_INIT, "state_initialization | init. failed! use old initialization method");
+    DEBUG_INFO(LOG_INIT, "state_initialization | init. failed! use old initialization method");
     return old_initialization(optiMethod);
   }
 
@@ -819,8 +825,8 @@ int initialization(const char* pInitMethod, const char* pOptiMethod)
       optiMethod = IOM_UNKNOWN;
   }
 
-  DEBUG_INFO1(LV_INIT, "initialization | initialization method: %s", initMethodStr[initMethod]);
-  DEBUG_INFO_AL1(LV_INIT, "                 optimization method:   %s", optiMethodStr[optiMethod]);
+  DEBUG_INFO1(LOG_INIT, "initialization | initialization method: %s", initMethodStr[initMethod]);
+  DEBUG_INFO_AL1(LOG_INIT, "                 optimization method:   %s", optiMethodStr[optiMethod]);
 
   /* select the right initialization-method */
   if(initMethod == IIM_OLD)
@@ -876,7 +882,7 @@ int initialization(const char* pInitMethod, const char* pOptiMethod)
 */
 int newuoa_initialization_X_(_X_DATA *data, long nz, double *z)
 {
-  long IPRINT = sim_verbose >= LV_INIT? 2 : 0;
+  long IPRINT = sim_verbose >= LOG_INIT? 2 : 0;
   long MAXFUN=50000;
   double RHOEND=1.0e-6;
   double RHOBEG=10; /* This should be about one tenth of the greatest
@@ -922,7 +928,7 @@ int simplex_initialization_X_(_X_DATA *data, long nz, double *z)
   /* Set max. no. of function evaluations = 5000, print every 100. */
 
   MAXF = 5000 * nz;
-  IPRINT = sim_verbose >= LV_INIT ? 100 : -1;
+  IPRINT = sim_verbose >= LOG_INIT ? 100 : -1;
 
   /* Set value for stopping criterion.   Stopping occurs when the
   * standard deviation of the values of the objective function at
@@ -952,12 +958,12 @@ int simplex_initialization_X_(_X_DATA *data, long nz, double *z)
   }
   else
   {
-    DEBUG_INFO1(LV_INIT, "simplex_initialization | Result of leastSquare method = %g. The initial guess fits to the system", funcValue);
+    DEBUG_INFO1(LOG_INIT, "simplex_initialization | Result of leastSquare method = %g. The initial guess fits to the system", funcValue);
   }
 
   leastSquare(&nz, z, &funcValue);
 
-  DEBUG_INFO1(LV_INIT, "leastSquare=%g", funcValue);
+  DEBUG_INFO1(LOG_INIT, "leastSquare=%g", funcValue);
 
   if(IFAULT == 1)
   {
@@ -998,42 +1004,42 @@ int nelderMeadEx_initialization_X_(_X_DATA *data, long nz, double *z, double *sc
 
   for(l=0; l<100 && funcValue > STOPCR; l++)
   {
-    DEBUG_INFO1(LV_INIT, "nelderMeadEx_initialization | initialization-nr. %d", (int)l);
+    DEBUG_INFO1(LOG_INIT, "nelderMeadEx_initialization | initialization-nr. %d", (int)l);
 
     /* down-scale */
     for(i=0; i<nz; i++)
       z[i] /= scale[i];
-    NelderMeadOptimization(nz, z, scale, lambda_step, STOPCR, NLOOP, useVerboseOutput(LV_INIT) ? 100000 : 0, &lambda, &iteration, leastSquareWithLambda);
+    NelderMeadOptimization(nz, z, scale, lambda_step, STOPCR, NLOOP, useVerboseOutput(LOG_INIT) ? 100000 : 0, &lambda, &iteration, leastSquareWithLambda);
     /* up-scale */
     for(i=0; i<nz; i++)
       z[i] *= scale[i];
 
-    if(DEBUG_FLAG(LV_INIT))
+    if(DEBUG_FLAG(LOG_INIT))
     {
       INFO3("nelderMeadEx_initialization | iteration=%d / lambda=%g / f=%g", (int) iteration, lambda, leastSquareWithLambda(nz, z, NULL, lambda));
       for(i=0; i<nz; i++)
         INFO_AL2("nelderMeadEx_initialization | states | %d: %g", (int) i, z[i]);
     }
 
-    saveall();                      /* save pre-values */
+    storePreValues(NULL);                      /* save pre-values */
     storeExtrapolationDataEvent();  /* if there are non-linear equations */
 
     update_DAEsystem(NULL);             /* evaluate discrete variables */
 
     /* valid system for the first time! */
 
-    SaveZeroCrossings();
-    saveall();
+    SaveZeroCrossings(NULL);
+    storePreValues(NULL);
     storeExtrapolationDataEvent();
 
     funcValue = leastSquareWithLambda(nz, z, NULL, 1.0);
   }
 
-  DEBUG_INFO1(LV_INIT, "nelderMeadEx_initialization | leastSquare=%g", funcValue);
+  DEBUG_INFO1(LOG_INIT, "nelderMeadEx_initialization | leastSquare=%g", funcValue);
 
   if(lambda < 1.0)
   {
-    DEBUG_INFO1(LV_INIT, "nelderMeadEx_initialization | lambda = %g", lambda);
+    DEBUG_INFO1(LOG_INIT, "nelderMeadEx_initialization | lambda = %g", lambda);
     return -1;
   }
 
@@ -1054,44 +1060,44 @@ int initialize_X_(_X_DATA *data, int optiMethod)
   double *z = NULL;
   double *scale = NULL;
 
-  DEBUG_INFO1(LV_INIT, "initialization by method: %s", optiMethodStr[optiMethod]);
+  DEBUG_INFO1(LOG_INIT, "initialization by method: %s", optiMethodStr[optiMethod]);
 
   /* count unfixed states */
-  DEBUG_INFO(LV_INIT, "fixed attribute for states:");
+  DEBUG_INFO(LOG_INIT, "fixed attribute for states:");
   for(i=0; i<data->modelData.nStates; ++i)
   {
     if(data->modelData.realData[i].attribute.fixed == 0)
     {
-      DEBUG_INFO1(LV_INIT, "state %s(fixed=false)", data->modelData.realData[i].info.name);
+      DEBUG_INFO1(LOG_INIT, "state %s(fixed=false)", data->modelData.realData[i].info.name);
       ++nz;
     }
     else
     {
-      DEBUG_INFO1(LV_INIT, "state %s(fixed=true)", data->modelData.realData[i].info.name);
+      DEBUG_INFO1(LOG_INIT, "state %s(fixed=true)", data->modelData.realData[i].info.name);
     }
   }
 
   /* plus unfixed real-parameters */
-  DEBUG_INFO(LV_INIT, "fixed attribute for parameters:");
+  DEBUG_INFO(LOG_INIT, "fixed attribute for parameters:");
   for(i=0; i<data->modelData.nParametersReal; ++i)
   {
     if(data->modelData.realParameter[i].attribute.fixed == 0)
     {
-      DEBUG_INFO1(LV_INIT, "parameter %s(fixed=false)", data->modelData.realParameter[i].info.name);
+      DEBUG_INFO1(LOG_INIT, "parameter %s(fixed=false)", data->modelData.realParameter[i].info.name);
       ++nz;
     }
     else
     {
-      DEBUG_INFO1(LV_INIT, "parameter %s(fixed=true)", data->modelData.realParameter[i].info.name);
+      DEBUG_INFO1(LOG_INIT, "parameter %s(fixed=true)", data->modelData.realParameter[i].info.name);
     }
   }
 
-  DEBUG_INFO1(LV_INIT, "number of non-fixed variables: %d", (int)nz);
+  DEBUG_INFO1(LOG_INIT, "number of non-fixed variables: %d", (int)nz);
 
   /* No initial values to calculate. */
   if(nz == 0)
   {
-    DEBUG_INFO(LV_INIT, "no initial values to calculate");
+    DEBUG_INFO(LOG_INIT, "no initial values to calculate");
     return 0;
   }
 
@@ -1166,7 +1172,7 @@ int state_initialization_X_(_X_DATA *data, int optiMethod)
   update_DAEsystem(data);
 
   /* And restore start values and helpvars */
-  /* restoreHelpVars(); /* ??? */
+  /* resetAllHelpVars(data); /* ??? */
   storePreValues(data);
 
   /* start with the real initialization */
@@ -1180,7 +1186,7 @@ int state_initialization_X_(_X_DATA *data, int optiMethod)
   update_DAEsystem(data);           /* evaluate discrete variables */
 
   /* valid system for the first time! */
-  SaveZeroCrossings_X_(data);
+  SaveZeroCrossings(data);
   storePreValues(data);             /* save pre-values */
   overwriteOldSimulationData(data); /* if there are non-linear equations */
 
@@ -1233,8 +1239,8 @@ int initialization_X_(_X_DATA *data, const char* pInitMethod, const char* pOptiM
       optiMethod = IOM_UNKNOWN;
   }
 
-  DEBUG_INFO1(LV_INIT, "initialization | initialization method: %s", initMethodStr[initMethod]);
-  DEBUG_INFO_AL1(LV_INIT, "                 optimization method:   %s", optiMethodStr[optiMethod]);
+  DEBUG_INFO1(LOG_INIT, "initialization | initialization method: %s", initMethodStr[initMethod]);
+  DEBUG_INFO_AL1(LOG_INIT, "                 optimization method:   %s", optiMethodStr[optiMethod]);
 
   /* select the right initialization-method */
   if(initMethod == IIM_STATE)

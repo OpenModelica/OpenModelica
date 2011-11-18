@@ -218,7 +218,7 @@ static void printProfilingDataHeader(FILE *fout, DATA *data) {
   indent(fout, 2); fprintf(fout, "</format>\n");
 }
 
-int printModelInfo(DATA *data, const char *filename, const char *plotfile, const char *plotFormat, const char *method, const char *outputFormat, const char *outputFilename) {
+int printModelInfo(_X_DATA *data, const char *filename, const char *plotfile, const char *plotFormat, const char *method, const char *outputFormat, const char *outputFilename) {
   static char buf[256];
   FILE *fout = fopen(filename, "w");
   FILE *plotCommands;
@@ -238,7 +238,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
     fputs("set terminal svg\n", plotCommands);
     fputs("set nokey\n", plotCommands);
     /* The column containing the time spent to calculate each step */
-    printPlotCommand(plotCommands, plotFormat, "Execution time of global steps", data->modelFilePrefix, data->nFunctions+data->nProfileBlocks, -1, 999);
+    printPlotCommand(plotCommands, plotFormat, "Execution time of global steps", data->modelData.modelFilePrefix, data->modelData.nFunctions+data->modelData.nProfileBlocks, -1, 999);
   }
   /* The doctype is needed for id() lookup to work properly */
   fprintf(fout, "<!DOCTYPE doc [\
@@ -261,11 +261,11 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
     fclose(fout);
     return 1;
   }
-
+/* TODO: fix that block for new structure
   fprintf(fout, "<simulation>\n");
   fprintf(fout, "<modelinfo>\n");
-  indent(fout, 2); fprintf(fout, "<name>");printStrXML(fout,data->modelName);fprintf(fout,"</name>\n");
-  indent(fout, 2); fprintf(fout, "<prefix>");printStrXML(fout,data->modelFilePrefix);fprintf(fout,"</prefix>\n");
+  indent(fout, 2); fprintf(fout, "<name>");printStrXML(fout,data->modelData.modelName);fprintf(fout,"</name>\n");
+  indent(fout, 2); fprintf(fout, "<prefix>");printStrXML(fout,data->modelData.modelFilePrefix);fprintf(fout,"</prefix>\n");
   indent(fout, 2); fprintf(fout, "<date>");printStrXML(fout,buf);fprintf(fout,"</date>\n");
   indent(fout, 2); fprintf(fout, "<method>");printStrXML(fout,method);fprintf(fout,"</method>\n");
   indent(fout, 2); fprintf(fout, "<outputFormat>");printStrXML(fout,outputFormat);fprintf(fout,"</outputFormat>\n");
@@ -288,16 +288,16 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
   fprintf(fout, "</profilingdataheader>\n");
 
   fprintf(fout, "<variables>\n");
-  printVars(fout, 2, data->nStates, data->statesNames);
-  printVars(fout, 2, data->nStates, data->stateDerivativesNames);
-  printVars(fout, 2, data->nAlgebraic, data->algebraicsNames);
-  printVars(fout, 2, data->nParameters, data->parametersNames);
-  printVars(fout, 2, data->intVariables.nAlgebraic, data->int_alg_names);
-  printVars(fout, 2, data->intVariables.nParameters, data->int_param_names);
-  printVars(fout, 2, data->boolVariables.nAlgebraic, data->bool_alg_names);
-  printVars(fout, 2, data->boolVariables.nParameters, data->bool_param_names);
-  printVars(fout, 2, data->stringVariables.nAlgebraic, data->string_alg_names);
-  printVars(fout, 2, data->stringVariables.nParameters, data->string_param_names);
+  printVars(fout, 2, data->modelData.nStates, data->modelData.statesNames);
+  printVars(fout, 2, data->modelData.nStates, data->modelData.stateDerivativesNames);
+  printVars(fout, 2, data->modelData.nVariablesReal - 2*data->modelData.nStates, data->modelData.algebraicsNames);
+  printVars(fout, 2, data->modelData.nParameters, data->modelData.parametersNames);
+  printVars(fout, 2, data->modelData.intVariables.nAlgebraic, data->modelData.int_alg_names);
+  printVars(fout, 2, data->modelData.intVariables.nParameters, data->modelData.int_param_names);
+  printVars(fout, 2, data->modelData.boolVariables.nAlgebraic, data->modelData.bool_alg_names);
+  printVars(fout, 2, data->modelData.boolVariables.nParameters, data->modelData.bool_param_names);
+  printVars(fout, 2, data->modelData.stringVariables.nAlgebraic, data->modelData.string_alg_names);
+  printVars(fout, 2, data->modelData.stringVariables.nParameters, data->modelData.string_param_names);
   fprintf(fout, "</variables>\n");
 
   fprintf(fout, "<functions>\n");
@@ -311,7 +311,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
   fprintf(fout, "<profileblocks>\n");
   printProfileBlocks(fout, plotCommands, plotFormat, data);
   fprintf(fout, "</profileblocks>\n");
-
+*/
   fprintf(fout, "</simulation>\n");
 
   fclose(fout);
@@ -343,7 +343,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
 #else
       const char *xsltproc = "xsltproc";
 #endif
-      sprintf(buf, "%s -o %s_prof.html %s/share/omc/scripts/default_profiling.xsl %s_prof.xml", xsltproc, data->modelFilePrefix, omhome, data->modelFilePrefix);
+      sprintf(buf, "%s -o %s_prof.html %s/share/omc/scripts/default_profiling.xsl %s_prof.xml", xsltproc, data->modelData.modelFilePrefix, omhome, data->modelData.modelFilePrefix);
 #if defined(__MINGW32__) || defined(_MSC_VER)
       free(xsltproc);
 #endif
@@ -354,7 +354,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
     }
     if (genHtmlRes)
       WARNING1("Failed to generate html version of profiling results: %s\n", buf);
-    INFO2("Time measurements are stored in %s_prof.html (human-readable) and %s_prof.xml (for XSL transforms or more details)\n", data->modelFilePrefix, data->modelFilePrefix);
+    INFO2("Time measurements are stored in %s_prof.html (human-readable) and %s_prof.xml (for XSL transforms or more details)\n", data->modelData.modelFilePrefix, data->modelData.modelFilePrefix);
     free(buf);
   }
   return 0;

@@ -44,7 +44,7 @@ static const struct VAR_INFO timeValName = {0,"time","Simulation time [s]",{"",-
 
 int simulation_result_mat::calcDataSize(MODEL_DATA *modelData)
 {
-  int sz = 0;
+  int sz = 1; /* start with one for the timeValue */
   for (int i = 0; i < modelData->nVariablesReal; i++) 
     if (!modelData->realData[i].filterOutput)
     {
@@ -63,18 +63,18 @@ int simulation_result_mat::calcDataSize(MODEL_DATA *modelData)
        b_indx_map[i] = sz; 
        sz++;
     }
-  for (int i = 0; i < globalData->nAlias; i++)
-    if (!globalData->aliasFilterOutput[i]) sz++;
-  for (int i = 0; i < globalData->intVariables.nAlias; i++)
-    if (!globalData->intVariables.aliasFilterOutput[i]) sz++;
-  for (int i = 0; i < globalData->boolVariables.nAlias; i++)
-    if (!globalData->boolVariables.aliasFilterOutput[i]) sz++;
+  for (int i = 0; i < modelData->nAliasReal; i++)
+    if (!modelData->realAlias[i].filterOutput) sz++;
+  for (int i = 0; i < modelData->nAliasInteger; i++)
+    if (!modelData->integerAlias[i].filterOutput) sz++;
+  for (int i = 0; i < modelData->nAliasBoolean; i++)
+    if (!modelData->booleanAlias[i].filterOutput) sz++;
   return sz;
 }
 
 const VAR_INFO** simulation_result_mat::calcDataNames(int dataSize, MODEL_DATA *modelData)
     {
-  const VAR_INFO** names = (const VAR_INFO**) malloc((dataSize+1)*sizeof(struct VAR_INFO*));
+  const VAR_INFO** names = (const VAR_INFO**) malloc((dataSize)*sizeof(struct VAR_INFO*));
   int curVar = 0;
   int sz = 1;
   names[curVar++] = &timeValName;
@@ -136,7 +136,6 @@ simulation_result_mat::simulation_result_mat(const char* filename,
 
     /* write `AClass' matrix */
     writeMatVer4Matrix("Aclass", 4, 11, Aclass, sizeof(int8_t));
-
     /* flatten variables' names */
     flattenStrBuf(numVars+nParams, names, stringMatrix, rows, cols, false /* We cannot plot derivatives if we fix the names ... */, false);
     /* write `name' matrix */
@@ -159,12 +158,12 @@ simulation_result_mat::simulation_result_mat(const char* filename,
     generateData_1(doubleMatrix, rows, cols, modelData, tstart, tstop);
     //  write `data_1' matrix
     writeMatVer4Matrix("data_1", cols, rows, doubleMatrix, sizeof(double));
-    free(doubleMatrix); 
+    free(doubleMatrix);
     doubleMatrix = NULL;
 
     data2HdrPos = fp.tellp();
     /* write `data_2' header */
-    writeMatVer4MatrixHeader("data_2", r_indx_map.size() + i_indx_map.size() + b_indx_map.size(), 0, sizeof(double));
+    writeMatVer4MatrixHeader("data_2", r_indx_map.size() + i_indx_map.size() + b_indx_map.size() + 1 /* add one more for timeValue*/, 0, sizeof(double));
 
     fp.flush();
 
@@ -187,7 +186,7 @@ simulation_result_mat::~simulation_result_mat()
   if (fp) {
     try {
       fp.seekp(data2HdrPos);
-      writeMatVer4MatrixHeader("data_2", r_indx_map.size() + i_indx_map.size() + b_indx_map.size(), ntimepoints, sizeof(double));
+      writeMatVer4MatrixHeader("data_2", r_indx_map.size() + i_indx_map.size() + b_indx_map.size() + 1 /* add one more for timeValue*/, ntimepoints, sizeof(double));
       fp.close();
     } catch (...) {
       /* just ignore, we are in destructor */
@@ -205,7 +204,7 @@ void simulation_result_mat::emit(_X_DATA *data)
   /* this is done wrong -- a buffering should be used
      although ofstream does have some buffering, but it is not enough and 
      not for this purpose */
-  fp.write((char*)&(data->localData[0]->time),sizeof(double));
+  fp.write((char*)&(data->localData[0]->timeValue),sizeof(double));
   for (int i = 0; i < data->modelData.nVariablesReal; i++) if (!data->modelData.realData[i].filterOutput)
     fp.write((char*)&(data->localData[0]->realVars[i]),sizeof(double));
   for (int i = 0; i < data->modelData.nVariablesInteger; i++) if (!data->modelData.integerData[i].filterOutput)
@@ -343,7 +342,7 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo,
   dataInfo = new int[rows*cols];
   ASSERT(dataInfo,"Cannot alloc memory");
   /* continuous and discrete variables, including time */
-  for(size_t i = 0; i < (size_t)(r_indx_map.size() + i_indx_map.size() + b_indx_map.size()); ++i) {
+  for(size_t i = 0; i < (size_t)(r_indx_map.size() + i_indx_map.size() + b_indx_map.size() + 1/* add one more for timeValue*/ ); ++i) {
       /* row 1 - which table */
       dataInfo[ccol++] = 2;
       /* row 2 - index of var in table (variable 'Time' have index 1) */

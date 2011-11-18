@@ -171,6 +171,7 @@ void listClear(LIST *list)
 LIST_NODE *listFirstNode(LIST *list)
 {
   ASSERT(list, "invalid list-pointer");
+  ASSERT(list->first, "invalid fist list-pointer");
   return list->first;
 }
 
@@ -185,5 +186,6 @@ LIST_NODE *listNextNode(LIST_NODE *node)
 void *listNodeData(LIST_NODE *node)
 {
   ASSERT(node, "invalid list-node");
+  ASSERT(node->data, "invalid data node");
   return node->data;
 }

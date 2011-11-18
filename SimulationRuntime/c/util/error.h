@@ -49,17 +49,17 @@ extern jmp_buf globalJmpbuf;
 extern unsigned int globalDebugFlags;
 
 /* debug options */
-extern const unsigned int LV_NONE;
-extern const unsigned int LV_STATS;
-extern const unsigned int LV_INIT;
-extern const unsigned int LV_SOLVER;
-extern const unsigned int LV_JAC;
-extern const unsigned int LV_ENDJAC;
-extern const unsigned int LV_NONLIN_SYS;
-extern const unsigned int LV_EVENTS;
-extern const unsigned int LV_ZEROCROSSINGS;
-extern const unsigned int LV_DEBUG;
-extern const unsigned int LV_LOG_RES_INIT;
+extern const unsigned int LOG_NONE;
+extern const unsigned int LOG_STATS;
+extern const unsigned int LOG_INIT;
+extern const unsigned int LOG_SOLVER;
+extern const unsigned int LOG_JAC;
+extern const unsigned int LOG_ENDJAC;
+extern const unsigned int LOG_NONLIN_SYS;
+extern const unsigned int LOG_EVENTS;
+extern const unsigned int LOG_ZEROCROSSINGS;
+extern const unsigned int LOG_DEBUG;
+extern const unsigned int LOG_RES_INIT;
 
 #define MSG_H(type, stream)    {fprintf(stream, "%s | [line] %d | [file] %s\n", type, __LINE__, __FILE__); fflush(NULL);}
 
@@ -76,6 +76,12 @@ extern const unsigned int LV_LOG_RES_INIT;
 #define MSG8(type, stream, msg, a, b, c, d, e, f, g, h)    {MSG_T(type, stream); fprintf(stream, msg, a, b, c, d, e, f, g, h); MSG_F(stream);}
 #define MSG9(type, stream, msg, a, b, c, d, e, f, g, h, i)    {MSG_T(type, stream); fprintf(stream, msg, a, b, c, d, e, f, g, h, i); MSG_F(stream);}
 #define MSG10(type, stream, msg, a, b, c, d, e, f, g, h, i, j)    {MSG_T(type, stream); fprintf(stream, msg, a, b, c, d, e, f, g, h, i, j); MSG_F(stream);}
+
+#define MSG_NEL(type, stream, msg)    {MSG_T(type, stream); fprintf(stream, msg);}
+#define MSG1_NEL(type, stream, msg, a)    {MSG_T(type, stream); fprintf(stream, msg, a);}
+
+#define MSG_NELA(stream, msg)    {fprintf(stream, msg);}
+#define MSG1_NELA(stream, msg, a)    {fprintf(stream, msg, a);}
 
 #define INFO(msg)        {MSG("info   ", stdout, msg);}
 #define INFO1(msg, a)        {MSG1("info   ", stdout, msg, a);}
@@ -175,6 +181,12 @@ extern const unsigned int LV_LOG_RES_INIT;
 #define DEBUG_INFO8(flag, msg, a, b, c, d, e, f, g, h)    {if(DEBUG_FLAG(flag)) MSG8("debug  ", stdout, msg, a, b, c, d, e, f, g, h);}
 #define DEBUG_INFO9(flag, msg, a, b, c, d, e, f, g, h, i)    {if(DEBUG_FLAG(flag)) MSG9("debug  ", stdout, msg, a, b, c, d, e, f, g, h, i);}
 #define DEBUG_INFO10(flag, msg, a, b, c, d, e, f, g, h, i, j)    {if(DEBUG_FLAG(flag)) MSG10("debug  ", stdout, msg, a, b, c, d, e, f, g, h, i, j);}
+
+#define DEBUG_INFO_NEL(flag, msg)    {if(DEBUG_FLAG(flag)) MSG_NEL("debug  ", stdout, msg);}
+#define DEBUG_INFO_NEL1(flag, msg, a)    {if(DEBUG_FLAG(flag)) MSG1_NEL("debug  ", stdout, msg, a);}
+
+#define DEBUG_INFO_NELA(flag, msg)    {if(DEBUG_FLAG(flag)) MSG_NELA(stdout, msg);}
+#define DEBUG_INFO_NELA1(flag, msg, a)    {if(DEBUG_FLAG(flag)) MSG1_NELA(stdout, msg, a);}
 
 #define DEBUG_INFO_AL(flag, msg) {if(DEBUG_FLAG(flag)) INFO_AL(msg);}
 #define DEBUG_INFO_AL1(flag, msg, a) {if(DEBUG_FLAG(flag)) INFO_AL1(msg, a);}

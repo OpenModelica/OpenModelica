@@ -36,6 +36,7 @@
 #define _EVENTS_H_
 
 #include "simulation_data.h"
+#include "solver_main.h"
 #include "list.h"
 
 #ifdef __cplusplus
@@ -45,65 +46,61 @@ extern "C" {
   int initializeEventData();
   void deinitializeEventData();
 
-  double BiSection(double*, double*, double*, double*, LIST*);
+  double BiSection(_X_DATA* data, double*, double*, double*, double*, LIST*, LIST*);
 
-  int CheckZeroCrossings(LIST *list);
+  int CheckZeroCrossings(_X_DATA *data, LIST *list, LIST*);
 
   void storeStartValues(_X_DATA *data);
   void storePreValues(_X_DATA *data);
-  void saveall();
-  void printAllPreValues();
-  void restoreHelpVars();
+  /* void printAllPreValues(); */
+  void resetAllHelpVars(_X_DATA *data);
 
   double Sample(double t, double start, double interval);
-  double sample(double start, double interval, int hindex);
-  void initSample(double start, double stop);
+  double sample(_X_DATA *data, double start, double interval, int hindex);
+  void initSample(_X_DATA *data, double start, double stop);
 
   double Less(double a, double b);
   double LessEq(double a, double b);
   double Greater(double a, double b);
   double GreaterEq(double a, double b);
 
-  void checkTermination();
-  int checkForSampleEvent();
+  void checkTermination(_X_DATA *data);
+  int checkForSampleEvent(_X_DATA *data, SOLVER_INFO* solverInfo);
 
-  double getNextSampleTimeFMU();
+  double getNextSampleTimeFMU(_X_DATA *data);
 
-  extern long inUpdate;
   static const int IterationMax = 200;
 
 #define ZEROCROSSING(ind,exp) { \
-  gout[ind] = exp; \
+  data->simulationInfo.zeroCrossings[ind] = exp; \
   }
 
 #define RELATIONTOZC(res,exp1,exp2,index,op_w,op) { \
   if (index == -1){ \
   res = ((exp1) op (exp2)); \
   }else{ \
-  res = backuprelations[index];} \
+  res = data->simulationInfo.backupRelations[index];} \
   }
 #define SAVEZEROCROSS(res,exp1,exp2,index,op_w,op) { \
   if (index == -1){ \
   res = ((exp1) op (exp2)); \
   } else{ \
   res = ((exp1) op (exp2)); \
-  backuprelations[index] = ((exp1) op (exp2)); \
+  data->simulationInfo.backupRelations[index] = ((exp1) op (exp2)); \
   }\
   }
 
 
-  extern long* zeroCrossingEnabled;
   int function_onlyZeroCrossings(_X_DATA *data, double* gout, double* t);
-  int CheckForNewEvent(int *sampleactived);
-  int EventHandle(int);
-  void FindRoot(double*);
+  int CheckForNewEvent(_X_DATA *data, modelica_boolean *sampleactived, double* currentTime);
+  int EventHandle(_X_DATA *data, int, LIST *eventList);
+  void FindRoot(_X_DATA *data, double*, LIST *eventList);
   int checkForDiscreteChanges(_X_DATA *data);
-  void SaveZeroCrossings();
-  void SaveZeroCrossings_X_(_X_DATA *data);
-  void SaveZeroCrossingsAfterEvent();
-  void initializeZeroCrossings();
-  void correctDirectionZeroCrossings();
-  int activateSampleEvents();
+  void SaveZeroCrossings(_X_DATA *data);
+  void SaveZeroCrossingsAfterEvent(_X_DATA *data);
+  void initializeZeroCrossings(_X_DATA *data);
+  void correctDirectionZeroCrossings(_X_DATA *data);
+  int activateSampleEvents(_X_DATA *data);
   int function_updateSample(_X_DATA *data);
 
 #define INTERVAL 1

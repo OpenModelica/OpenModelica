@@ -110,6 +110,7 @@ DATA *globalData = 0;
 simulation_result *sim_result = NULL;
 
 /* Flags for controlling logging to stdout */
+/*
 const int LOG_STATS         = (1<<0);
 const int LOG_INIT          = (1<<1);
 const int LOG_SOLVER        = (1<<2);
@@ -120,6 +121,7 @@ const int LOG_EVENTS        = (1<<6);
 const int LOG_ZEROCROSSINGS = (1<<7);
 const int LOG_DEBUG         = (1<<8);
 const int LOG_RES_INIT      = LOG_STATS|LOG_INIT;
+*/
 
 /* Flags for modelErrorCodes */
 extern const int ERROR_NONLINSYS = -1;
@@ -153,135 +155,11 @@ void setTermMsg(const char *msg)
   }
 }
 
-static void callExternalObjectDestructors2(DATA *data)
+static void callExternalObjectDestructors2(_X_DATA *data)
 {
   if(!data)
     return;
-  callExternalObjectDestructors(NULL, data) /* external objects */;
-
-  if (data->states) {
-    free(data->states);
-    data->states = 0;
-  }
-
-  if (data->states_old) {
-    free(data->states_old);
-    data->states_old = 0;
-  }
-
-  if (data->states_old2) {
-    free(data->states_old2);
-    data->states_old2 = 0;
-  }
-
-  if (data->statesDerivatives) {
-    free(data->statesDerivatives);
-    data->statesDerivatives = 0;
-  }
-
-  if (data->statesDerivatives_old) {
-    free(data->statesDerivatives_old);
-    data->statesDerivatives_old = 0;
-  }
-
-  if (data->statesDerivatives_old2) {
-    free(data->statesDerivatives_old2);
-    data->statesDerivatives_old2 = 0;
-  }
-
-  if (data->algebraics) {
-    free(data->algebraics);
-    data->algebraics = 0;
-  }
-
-  if (data->algebraics_old) {
-    free(data->algebraics_old);
-    data->algebraics_old = 0;
-  }
-
-  if (data->algebraics_old2) {
-    free(data->algebraics_old2);
-    data->algebraics_old2 = 0;
-  }
-
-  if (data->parameters) {
-    free(data->parameters);
-    data->parameters = 0;
-  }
-
-  if (data->inputVars) {
-    free(data->inputVars);
-    data->inputVars = 0;
-  }
-
-  if (data->outputVars) {
-    free(data->outputVars);
-    data->outputVars = 0;
-  }
-
-  if (data->intVariables.algebraics) {
-    free(data->intVariables.algebraics);
-    data->intVariables.algebraics = 0;
-  }
-
-  if (data->intVariables.algebraics_old) {
-    free(data->intVariables.algebraics_old);
-    data->intVariables.algebraics_old = 0;
-  }
-
-  if (data->intVariables.algebraics_old2) {
-    free(data->intVariables.algebraics_old2);
-    data->intVariables.algebraics_old2 = 0;
-  }
-
-  if (data->boolVariables.algebraics) {
-    free(data->boolVariables.algebraics);
-    data->boolVariables.algebraics = 0;
-  }
-
-  if (data->boolVariables.algebraics_old) {
-    free(data->boolVariables.algebraics_old);
-    data->boolVariables.algebraics_old = 0;
-  }
-
-  if (data->boolVariables.algebraics_old2) {
-    free(data->boolVariables.algebraics_old2);
-    data->boolVariables.algebraics_old2 = 0;
-  }
-
-  if (data->realAlias) {
-    free(data->realAlias);
-    data->realAlias = 0;
-  }
-
-  if (data->intVariables.alias) {
-    free(data->intVariables.alias);
-    data->intVariables.alias = 0;
-  }
-
-  if (data->boolVariables.alias) {
-    free(data->boolVariables.alias);
-    data->boolVariables.alias = 0;
-  }
-
-  if (data->stringVariables.alias) {
-    free(data->stringVariables.alias);
-    data->stringVariables.alias = 0;
-  }
-
-  if (data->jacobianVars) {
-    free(data->jacobianVars);
-    data->jacobianVars = 0;
-  }
-
-  if (data->initialResiduals){
-    free(data->initialResiduals);
-    data->initialResiduals = 0;
-  }
-  if (data->rawSampleExps) {
-    free(data->rawSampleExps);
-    data->rawSampleExps = 0;
-  }
+  callExternalObjectDestructors(data) /* external objects */;
 }
 
 /** function storeExtrapolationData
@@ -386,6 +264,7 @@ void overwriteOldSimulationData(_X_DATA *data)
   long i;
   
   for(i=1; i<ringBufferLength(data->simulationData); ++i){
+    data->localData[i]->timeValue = data->localData[i-1]->timeValue;
     memcpy(data->localData[i]->realVars, data->localData[i-1]->realVars, sizeof(modelica_real)*data->modelData.nVariablesReal);
     memcpy(data->localData[i]->integerVars, data->localData[i-1]->integerVars, sizeof(modelica_integer)*data->modelData.nVariablesInteger);
     memcpy(data->localData[i]->booleanVars, data->localData[i-1]->booleanVars, sizeof(modelica_boolean)*data->modelData.nVariablesBoolean);
@@ -441,47 +320,47 @@ int verboseLevel(int argc, char**argv) {
 
   if (flags->find("LOG_STATS", 0) != string::npos) {
     res |= LOG_STATS;
-	globalDebugFlags |= LV_STATS;
+    globalDebugFlags |= LOG_STATS;
   }
   if (flags->find("LOG_JAC", 0) != string::npos) {
     res |= LOG_JAC;
-	globalDebugFlags |= LV_JAC;
+    globalDebugFlags |= LOG_JAC;
   }
   if (flags->find("LOG_ENDJAC", 0) != string::npos) {
     res |= LOG_ENDJAC;
-	globalDebugFlags |= LV_ENDJAC;
+    globalDebugFlags |= LOG_ENDJAC;
   }
   if (flags->find("LOG_INIT", 0) != string::npos) {
     res |= LOG_INIT;
-	globalDebugFlags |= LV_INIT;
+    globalDebugFlags |= LOG_INIT;
   }
   if (flags->find("LOG_RES_INIT", 0) != string::npos) {
     res |= LOG_RES_INIT;
-	globalDebugFlags |= LV_LOG_RES_INIT;
+    globalDebugFlags |= LOG_RES_INIT;
   }
   if (flags->find("LOG_SOLVER", 0) != string::npos) {
     res |= LOG_SOLVER;
-    globalDebugFlags |= LV_SOLVER;
+    globalDebugFlags |= LOG_SOLVER;
   }
   if (flags->find("LOG_EVENTS", 0) != string::npos) {
     res |= LOG_EVENTS;
-	globalDebugFlags |= LV_EVENTS;
+    globalDebugFlags |= LOG_EVENTS;
   }
   if (flags->find("LOG_NONLIN_SYS", 0) != string::npos) {
     res |= LOG_NONLIN_SYS;
-	globalDebugFlags |= LV_NONLIN_SYS;
+    globalDebugFlags |= LOG_NONLIN_SYS;
   }
   if (flags->find("LOG_ZEROCROSSINGS", 0) != string::npos) {
     res |= LOG_ZEROCROSSINGS;
-	globalDebugFlags |= LV_ZEROCROSSINGS;
+    globalDebugFlags |= LOG_ZEROCROSSINGS;
   }
   if (flags->find("LOG_DEBUG", 0) != string::npos) {
     res |= LOG_DEBUG;
-	globalDebugFlags |= LV_DEBUG;
+    globalDebugFlags |= LOG_DEBUG;
   }
   if (flags->find("LOG_ALL", 0) != string::npos) {
     res = INT_MAX;
-	globalDebugFlags = UINT_MAX;
+    globalDebugFlags = UINT_MAX;
   }
   return res;
 }
@@ -529,7 +408,7 @@ startInteractiveSimulation(int argc, char**argv)
  * Read the variable filter and mark variables that should not be part of the result file.
  * This phase is skipped for interactive simulations
  */
-void initializeOutputFilter(DATA* data, MODEL_DATA *modelData, modelica_string variableFilter)
+void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilter)
 {
 #ifndef _MSC_VER
   std::string varfilter(variableFilter);
@@ -538,10 +417,6 @@ void initializeOutputFilter(DATA* data, MODEL_DATA *modelData, modelica_string v
   int rc;
   string tmp = ("^(" + varfilter + ")$");
   const char *filter = tmp.c_str(); // C++ strings are horrible to work with...
-  if (data->nStates > 0 && 0 == strcmp(data->statesNames[0].name,"$dummy")) {
-    data->statesFilterOutput[0] = 1;
-    data->statesDerivativesFilterOutput[0] = 1;
-  }
   if (modelData->nStates > 0 && 0 == strcmp(modelData->realData[0].info.name,"$dummy")) {
     modelData->realData[0].filterOutput = 1;
     modelData->realData[1].filterOutput = 1;
@@ -556,23 +431,6 @@ void initializeOutputFilter(DATA* data, MODEL_DATA *modelData, modelica_string v
     std::cerr << "Failed to compile regular expression: " << filter << " with error: " << err_buf << ". Defaulting to outputting all variables." << std::endl;
     return;
   }
-  /* old imple */
-  for (int i = 0; i < data->nStates; i++) if (!data->statesFilterOutput[i])
-    data->statesFilterOutput[i] = regexec(&myregex, data->statesNames[i].name, 0, NULL, 0) != 0;
-  for (int i = 0; i < data->nStates; i++) if (!data->statesDerivativesFilterOutput[i])
-    data->statesDerivativesFilterOutput[i] = regexec(&myregex, data->stateDerivativesNames[i].name, 0, NULL, 0) != 0;
-  for (int i = 0; i < data->nAlgebraic; i++) if (!data->algebraicsFilterOutput[i])
-    data->algebraicsFilterOutput[i] = regexec(&myregex, data->algebraicsNames[i].name, 0, NULL, 0) != 0;
-  for (int i = 0; i < data->nAlias; i++) if (!data->aliasFilterOutput[i])
-    data->aliasFilterOutput[i] = regexec(&myregex, data->alias_names[i].name, 0, NULL, 0) != 0;
-  for (int i = 0; i < data->intVariables.nAlgebraic; i++) if (!data->intVariables.algebraicsFilterOutput[i])
-    data->intVariables.algebraicsFilterOutput[i] = regexec(&myregex, data->int_alg_names[i].name, 0, NULL, 0) != 0;
-  for (int i = 0; i < data->intVariables.nAlias; i++) if (!data->intVariables.aliasFilterOutput[i])
-    data->intVariables.aliasFilterOutput[i] = regexec(&myregex, data->int_alias_names[i].name, 0, NULL, 0) != 0;
-  for (int i = 0; i < data->boolVariables.nAlgebraic; i++) if (!data->boolVariables.algebraicsFilterOutput[i])
-    data->boolVariables.algebraicsFilterOutput[i] = regexec(&myregex, data->bool_alg_names[i].name, 0, NULL, 0) != 0;
-  for (int i = 0; i < data->boolVariables.nAlias; i++) if (!data->boolVariables.aliasFilterOutput[i])
-    data->boolVariables.aliasFilterOutput[i] = regexec(&myregex, data->bool_alias_names[i].name, 0, NULL, 0) != 0;
   /* new imple */
   for (int i = 0; i < modelData->nVariablesReal; i++) if (!modelData->realData[i].filterOutput)
     modelData->realData[i].filterOutput = regexec(&myregex, modelData->realData[i].info.name, 0, NULL, 0) != 0;
@@ -622,16 +480,14 @@ startNonInteractiveSimulation(int argc, char**argv,_X_DATA *data)
   function_initMemoryState();
   read_input_xml(argc, argv, globalData, &(data->modelData), &(data->simulationInfo), &start, &stop, &stepSize, &outputSteps,
       &tolerance, &method, &outputFormat, &variableFilter);
-  initializeOutputFilter(globalData, &(data->modelData),data->simulationInfo.variableFilter);
-  callExternalObjectConstructors(data, globalData);
-  globalData->lastEmittedTime = start;
-  globalData->forceEmit = 0;
+  initializeOutputFilter(&(data->modelData),data->simulationInfo.variableFilter);
+  callExternalObjectConstructors(data);
 
-  initSample(start, stop);
+  initSample(data, start, stop);
   initDelay(start);
 
   if (measure_time_flag) {
-    rt_init(SIM_TIMER_FIRST_FUNCTION + globalData->nFunctions + globalData->nProfileBlocks + 4 /* sentinel */);
+    rt_init(SIM_TIMER_FIRST_FUNCTION + data->modelData.nFunctions + data->modelData.nProfileBlocks + 4 /* sentinel */);
     rt_tick( SIM_TIMER_TOTAL );
     rt_tick( SIM_TIMER_PREINIT );
     rt_clear( SIM_TIMER_OUTPUT );
@@ -660,7 +516,7 @@ startNonInteractiveSimulation(int argc, char**argv,_X_DATA *data)
   string *result_file = (string*) getFlagValue("r", argc, argv);
   string result_file_cstr;
   if (!result_file) {
-    result_file_cstr = string(globalData->modelFilePrefix) + string("_res.") + outputFormat; /* TODO: Fix result file name based on mode */
+    result_file_cstr = string(data->modelData.modelFilePrefix) + string("_res.") + outputFormat; /* TODO: Fix result file name based on mode */
   } else {
     result_file_cstr = *result_file;
   }
@@ -670,14 +526,14 @@ startNonInteractiveSimulation(int argc, char**argv,_X_DATA *data)
 
   if (retVal == 0 && create_linearmodel) {
     rt_tick(SIM_TIMER_LINEARIZE);
-    retVal = linearize(globalData->nStates, globalData->nInputVars, globalData->nOutputVars);
+    retVal = linearize(data->modelData.nStates, data->modelData.nInputVars, data->modelData.nOutputVars);
     rt_accumulate(SIM_TIMER_LINEARIZE);
     cout << "Linear model is created!" << endl;
   }
 
   if (retVal == 0 && measure_time_flag && ! sim_verbose) {
-    const string modelInfo = string(globalData->modelFilePrefix) + "_prof.xml";
-    const string plotFile = string(globalData->modelFilePrefix) + "_prof.plt";
+    const string modelInfo = string(data->modelData.modelFilePrefix) + "_prof.xml";
+    const string plotFile = string(data->modelData.modelFilePrefix) + "_prof.plt";
     rt_accumulate(SIM_TIMER_TOTAL);
     string* plotFormat = (string*) getFlagValue("measureTimePlotFormat", argc, argv);
     retVal = printModelInfo(globalData, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat->c_str() : "svg", method.c_str(), outputFormat.c_str(), result_file_cstr.c_str()) && retVal;
@@ -706,7 +562,7 @@ callSolver(_X_DATA* simData, string method, string outputFormat,
 {
   int retVal = -1;
 
-  long maxSteps = 2 * outputSteps + 2 * globalData->nSampleTimes;
+  long maxSteps = 2 * outputSteps + 2 * simData->simulationInfo.nSampleTimes;
   if (isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty", outputFormat.c_str())) {
     sim_result = new simulation_result_empty(result_file_cstr.c_str(),maxSteps);
   } else if (0 == strcmp("csv", outputFormat.c_str())) {
@@ -719,46 +575,46 @@ callSolver(_X_DATA* simData, string method, string outputFormat,
     cerr << "Unknown output format: " << outputFormat << endl;
     return 1;
   }
-  if (sim_verbose >= LOG_SOLVER) {
+  if (DEBUG_FLAG(LOG_SOLVER)) {
     cout << "Allocated simulation result data storage for method '"
         << sim_result->result_type() << "' and file='" << result_file_cstr
         << "'" << endl; fflush(NULL);
   }
 
   if (method == std::string("")) {
-    if (sim_verbose >= LOG_SOLVER) {
+    if (DEBUG_FLAG(LOG_SOLVER)) {
       cout << "No solver is set, using dassl." << endl; fflush(NULL);
     }
     retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 3);
   } else if (method == std::string("euler")) {
-    if (sim_verbose >= LOG_SOLVER) {
+    if (DEBUG_FLAG(LOG_SOLVER)) {
       cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
     retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 1);
   } else if (method == std::string("rungekutta")) {
-    if (sim_verbose >= LOG_SOLVER) {
+    if (DEBUG_FLAG(LOG_SOLVER)) {
       cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
     retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 2);
   } else if (method == std::string("dassl") || method == std::string("dassl2")) {
-    if (sim_verbose >= LOG_SOLVER) {
+    if (DEBUG_FLAG(LOG_SOLVER)) {
       cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
     retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 3);
   } else if (method == std::string("dassljac")) {
-    if (sim_verbose >= LOG_SOLVER) {
+    if (DEBUG_FLAG(LOG_SOLVER)) {
       cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
     jac_flag = 1;
     retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 3);
   } else if (method == std::string("dasslnum")) {
-    if (sim_verbose >= LOG_SOLVER) {
+    if (DEBUG_FLAG(LOG_SOLVER)) {
       cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
     num_jac_flag = 1;
     retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 3);
   } else if (method == std::string("dopri5")) {
-       if (sim_verbose >= LOG_SOLVER) {
+       if (DEBUG_FLAG(LOG_SOLVER)) {
        cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
        }
        retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 6);
@@ -769,7 +625,7 @@ callSolver(_X_DATA* simData, string method, string outputFormat,
           << endl; fflush(NULL);
       retVal = 1;
     } else {
-      if (sim_verbose >= LOG_SOLVER) {
+      if (DEBUG_FLAG(LOG_SOLVER)) {
         cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
       }
       retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 4);
@@ -781,14 +637,14 @@ callSolver(_X_DATA* simData, string method, string outputFormat,
           << endl; fflush(NULL);
       retVal = 1;
     } else {
-      if (sim_verbose >= LOG_SOLVER) {
+      if (DEBUG_FLAG(LOG_SOLVER)) {
         cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
       }
       retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, 4);
     }
 #ifdef _OMC_QSS_LIB
   } else if (method == std::string("qss")) {
-    if (sim_verbose >= LOG_SOLVER) {
+    if (DEBUG_FLAG(LOG_SOLVER)) {
       cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
     retVal = qss_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 3);
@@ -805,229 +661,6 @@ callSolver(_X_DATA* simData, string method, string outputFormat,
   return retVal;
 }
 
-DATA *initializeDataStruc2(DATA *returnData)
-{
-  if (returnData->nStates) {
-    returnData->states = (double*) malloc(sizeof(double)*returnData->nStates);
-    returnData->statesFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->nStates);
-    returnData->states_old = (double*) malloc(sizeof(double)*returnData->nStates);
-    returnData->states_old2 = (double*) malloc(sizeof(double)*returnData->nStates);
-    assert(returnData->states&&returnData->states_old&&returnData->states_old2);
-    memset(returnData->states,0,sizeof(double)*returnData->nStates);
-    memset(returnData->statesFilterOutput,0,sizeof(modelica_boolean)*returnData->nStates);
-    memset(returnData->states_old,0,sizeof(double)*returnData->nStates);
-    memset(returnData->states_old2,0,sizeof(double)*returnData->nStates);
-  } else {
-    returnData->states = 0;
-    returnData->statesFilterOutput = 0;
-    returnData->states_old = 0;
-    returnData->states_old2 = 0;
-  }
-
-  if (returnData->nStates) {
-    returnData->statesDerivatives = (double*) malloc(sizeof(double)*returnData->nStates);
-    returnData->statesDerivativesFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->nStates);
-    returnData->statesDerivatives_old = (double*) malloc(sizeof(double)*returnData->nStates);
-    returnData->statesDerivatives_old2 = (double*) malloc(sizeof(double)*returnData->nStates);
-    returnData->statesDerivativesBackup = (double*) malloc(sizeof(double)*returnData->nStates);
-    assert(returnData->statesDerivatives&&returnData->statesDerivatives_old&&returnData->statesDerivatives_old2&&returnData->statesDerivativesBackup);
-    memset(returnData->statesDerivatives,0,sizeof(double)*returnData->nStates);
-    memset(returnData->statesDerivativesFilterOutput,0,sizeof(modelica_boolean)*returnData->nStates);
-    memset(returnData->statesDerivatives_old,0,sizeof(double)*returnData->nStates);
-    memset(returnData->statesDerivatives_old2,0,sizeof(double)*returnData->nStates);
-    memset(returnData->statesDerivativesBackup,0,sizeof(double)*returnData->nStates);
-  } else {
-    returnData->statesDerivatives = 0;
-    returnData->statesDerivativesFilterOutput = 0;
-    returnData->statesDerivatives_old = 0;
-    returnData->statesDerivatives_old2 = 0;
-    returnData->statesDerivativesBackup = 0;
-  }
-
-  if (returnData->nHelpVars) {
-    returnData->helpVars = (double*) malloc(sizeof(double)*returnData->nHelpVars);
-    assert(returnData->helpVars);
-    memset(returnData->helpVars,0,sizeof(double)*returnData->nHelpVars);
-  } else {
-    returnData->helpVars = 0;
-  }
-
-  if (returnData->nAlgebraic) {
-    returnData->algebraics = (double*) malloc(sizeof(double)*returnData->nAlgebraic);
-    returnData->algebraicsFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->nAlgebraic);
-    returnData->algebraics_old = (double*) malloc(sizeof(double)*returnData->nAlgebraic);
-    returnData->algebraics_old2 = (double*) malloc(sizeof(double)*returnData->nAlgebraic);
-    assert(returnData->algebraics&&returnData->algebraics_old&&returnData->algebraics_old2);
-    memset(returnData->algebraics,0,sizeof(double)*returnData->nAlgebraic);
-    memset(returnData->algebraicsFilterOutput,0,sizeof(modelica_boolean)*returnData->nAlgebraic);
-    memset(returnData->algebraics_old,0,sizeof(double)*returnData->nAlgebraic);
-    memset(returnData->algebraics_old2,0,sizeof(double)*returnData->nAlgebraic);
-  } else {
-    returnData->algebraics = 0;
-    returnData->algebraicsFilterOutput = 0;
-    returnData->algebraics_old = 0;
-    returnData->algebraics_old2 = 0;
-  }
-
-  if (returnData->stringVariables.nAlgebraic) {
-    returnData->stringVariables.algebraics = (const char**)malloc(sizeof(char*)*returnData->stringVariables.nAlgebraic);
-    assert(returnData->stringVariables.algebraics);
-    memset(returnData->stringVariables.algebraics,0,sizeof(char*)*returnData->stringVariables.nAlgebraic);
-  } else {
-    returnData->stringVariables.algebraics=0;
-  }
-
-  if (returnData->intVariables.nAlgebraic) {
-    returnData->intVariables.algebraics = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
-    returnData->intVariables.algebraicsFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->intVariables.nAlgebraic);
-    returnData->intVariables.algebraics_old = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
-    returnData->intVariables.algebraics_old2 = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
-    assert(returnData->intVariables.algebraics&&returnData->intVariables.algebraics_old&&returnData->intVariables.algebraics_old2);
-    memset(returnData->intVariables.algebraics,0,sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
-    memset(returnData->intVariables.algebraicsFilterOutput,0,sizeof(modelica_boolean)*returnData->intVariables.nAlgebraic);
-    memset(returnData->intVariables.algebraics_old,0,sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
-    memset(returnData->intVariables.algebraics_old2,0,sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
-  } else {
-    returnData->intVariables.algebraics=0;
-    returnData->intVariables.algebraicsFilterOutput=0;
-    returnData->intVariables.algebraics_old = 0;
-    returnData->intVariables.algebraics_old2 = 0;
-  }
-
-  if (returnData->boolVariables.nAlgebraic) {
-    returnData->boolVariables.algebraics = (modelica_boolean*)malloc(sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
-    returnData->boolVariables.algebraicsFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
-    returnData->boolVariables.algebraics_old = (signed char*)malloc(sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
-    returnData->boolVariables.algebraics_old2 = (signed char*)malloc(sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
-    assert(returnData->boolVariables.algebraics&&returnData->boolVariables.algebraics_old&&returnData->boolVariables.algebraics_old2);
-    memset(returnData->boolVariables.algebraics,0,sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
-    memset(returnData->boolVariables.algebraicsFilterOutput,0,sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
-    memset(returnData->boolVariables.algebraics_old,0,sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
-    memset(returnData->boolVariables.algebraics_old2,0,sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
-  } else {
-    returnData->boolVariables.algebraics=0;
-    returnData->boolVariables.algebraicsFilterOutput=0;
-    returnData->boolVariables.algebraics_old = 0;
-    returnData->boolVariables.algebraics_old2 = 0;
-  }
-
-  if (returnData->nParameters) {
-    returnData->parameters = (double*) malloc(sizeof(double)*returnData->nParameters);
-    assert(returnData->parameters);
-    memset(returnData->parameters,0,sizeof(double)*returnData->nParameters);
-  } else {
-    returnData->parameters = 0;
-  }
-
-  if (returnData->stringVariables.nParameters) {
-    returnData->stringVariables.parameters = (const char**)malloc(sizeof(char*)*returnData->stringVariables.nParameters);
-    assert(returnData->stringVariables.parameters);
-    memset(returnData->stringVariables.parameters,0,sizeof(char*)*returnData->stringVariables.nParameters);
-  } else {
-    returnData->stringVariables.parameters=0;
-  }
-
-  if (returnData->intVariables.nParameters) {
-    returnData->intVariables.parameters = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nParameters);
-    assert(returnData->intVariables.parameters);
-    memset(returnData->intVariables.parameters,0,sizeof(modelica_integer)*returnData->intVariables.nParameters);
-  } else {
-    returnData->intVariables.parameters=0;
-  }
-
-  if (returnData->boolVariables.nParameters) {
-    returnData->boolVariables.parameters = (modelica_boolean*)malloc(sizeof(modelica_boolean)*returnData->boolVariables.nParameters);
-    assert(returnData->boolVariables.parameters);
-    memset(returnData->boolVariables.parameters,0,sizeof(modelica_boolean)*returnData->boolVariables.nParameters);
-  } else {
-    returnData->boolVariables.parameters=0;
-  }
-
-  if (returnData->nOutputVars) {
-    returnData->outputVars = (double*) malloc(sizeof(double)*returnData->nOutputVars);
-    assert(returnData->outputVars);
-    memset(returnData->outputVars,0,sizeof(double)*returnData->nOutputVars);
-  } else {
-    returnData->outputVars = 0;
-  }
-
-  if (returnData->nInputVars) {
-    returnData->inputVars = (double*) malloc(sizeof(double)*returnData->nInputVars);
-    assert(returnData->inputVars);
-    memset(returnData->inputVars,0,sizeof(double)*returnData->nInputVars);
-  } else {
-    returnData->inputVars = 0;
-  }
-
-  if (returnData->nAlias) {
-    returnData->realAlias = (DATA_REAL_ALIAS*) malloc(sizeof(DATA_REAL_ALIAS)*returnData->nAlias);
-    assert(returnData->realAlias);
-    returnData->aliasFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->nAlias);
-    assert(returnData->aliasFilterOutput);
-    memset(returnData->realAlias,0,sizeof(DATA_REAL_ALIAS)*returnData->nAlias);
-    memset(returnData->aliasFilterOutput,0,sizeof(modelica_boolean)*returnData->nAlias);
-  } else {
-    returnData->realAlias = 0;
-    returnData->aliasFilterOutput = 0;
-  }
-
-  if (returnData->intVariables.nAlias) {
-    returnData->intVariables.alias = (DATA_INT_ALIAS*) malloc(sizeof(DATA_INT_ALIAS)*returnData->intVariables.nAlias);
-    assert(returnData->intVariables.alias);
-    returnData->intVariables.aliasFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->intVariables.nAlias);
-    assert(returnData->intVariables.aliasFilterOutput);
-    memset(returnData->intVariables.alias,0,sizeof(DATA_INT_ALIAS)*returnData->intVariables.nAlias);
-    memset(returnData->intVariables.aliasFilterOutput,0,sizeof(modelica_boolean)*returnData->intVariables.nAlias);
-  } else {
-    returnData->intVariables.alias = 0;
-    returnData->intVariables.aliasFilterOutput=0;
-  }
-
-  if (returnData->boolVariables.nAlias) {
-    returnData->boolVariables.alias = (DATA_BOOL_ALIAS*) malloc(sizeof(DATA_BOOL_ALIAS)*returnData->boolVariables.nAlias);
-    assert(returnData->boolVariables.alias);
-    returnData->boolVariables.aliasFilterOutput = (modelica_boolean*) malloc(sizeof(modelica_boolean)*returnData->boolVariables.nAlias);
-    assert(returnData->boolVariables.aliasFilterOutput);
-    memset(returnData->boolVariables.alias,0,sizeof(DATA_BOOL_ALIAS)*returnData->boolVariables.nAlias);
-    memset(returnData->boolVariables.aliasFilterOutput,0,sizeof(modelica_boolean)*returnData->boolVariables.nAlias);
-  } else {
-    returnData->boolVariables.alias = 0;
-    returnData->boolVariables.aliasFilterOutput=0;
-  }
-
-  if (returnData->stringVariables.nAlias) {
-    returnData->stringVariables.alias = (DATA_STRING_ALIAS*) malloc(sizeof(DATA_STRING_ALIAS)*returnData->stringVariables.nAlias);
-    assert(returnData->stringVariables.alias);
-    memset(returnData->stringVariables.alias,0,sizeof(DATA_STRING_ALIAS)*returnData->stringVariables.nAlias);
-  } else {
-    returnData->stringVariables.alias = 0;
-  }
-
-  if (returnData->nJacobianvars) {
-    returnData->jacobianVars = (double*) malloc(sizeof(double)*returnData->nJacobianvars);
-    assert(returnData->jacobianVars);
-    memset(returnData->jacobianVars,0,sizeof(double)*returnData->nJacobianvars);
-  } else {
-    returnData->jacobianVars = 0;
-  }
-
-  if (returnData->nInitialResiduals) {
-    returnData->initialResiduals = (double*) malloc(sizeof(double)*returnData->nInitialResiduals);
-    assert(returnData->initialResiduals);
-    memset(returnData->initialResiduals,0,sizeof(double)*returnData->nInitialResiduals);
-  } else {
-    returnData->initialResiduals = 0;
-  }
-
-  if (returnData->nRawSamples) {
-    returnData->rawSampleExps = (sample_raw_time*) malloc(sizeof(sample_raw_time)*returnData->nRawSamples);
-    assert(returnData->rawSampleExps);
-    memset(returnData->rawSampleExps,0,sizeof(sample_raw_time)*returnData->nRawSamples);
-  } else {
-    returnData->rawSampleExps = 0;
-  }
-  return returnData;
-}
 
 /**
  * Initialization is the same for interactive or non-interactive simulation
@@ -1043,13 +676,13 @@ initRuntimeAndSimulation(int argc, char**argv, _X_DATA *data)
     EXIT(0);
   }
   initializeXDataStruc(data);
-  globalData = initializeDataStruc2(initializeDataStruc());
+  callExternalObjectConstructors(data);
 
-  if (!globalData) {
+  if (!data) {
     std::cerr << "Error: Could not initialize the global data structure file" << std::endl;
   }
   //this sets the static variable that is in the file with the generated-model functions
-  if (globalData->nStates == 0 && globalData->nAlgebraic == 0) {
+  if (data->modelData.nVariablesReal == 0 && data->modelData.nVariablesInteger && data->modelData.nVariablesBoolean) {
     std::cerr << "No variables in the model." << std::endl;
     return 1;
   }
@@ -1058,21 +691,6 @@ initRuntimeAndSimulation(int argc, char**argv, _X_DATA *data)
   sim_noemit = flagSet("noemit", argc, argv);
   jac_flag = flagSet("jac", argc, argv);
   num_jac_flag = flagSet("numjac", argc, argv);
-
-
-  const std::string* init_method = getFlagValue("im", argc, argv);      /* get the old initialization-flag */
-  const std::string* init_initMethod = getFlagValue("iim", argc, argv); /* get the initialization method */
-  const std::string* init_optiMethod = getFlagValue("iom", argc, argv); /* get the optimization method for the initialization */
-
-  if (init_method) {
-    fprintf(stdout,
-        "Error: old flag: initialization-method [im] is rejected\n");
-    fprintf(stdout,
-        "       new flag: init-initialization-method [iim] current options are: state or old\n");
-    fprintf(stdout,
-        "       new flag: init-optimization-method [iom] current options are: simplex or newuoa\n");
-    return -1;
-  }
 
 
   // ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
@@ -1156,7 +774,7 @@ int _main_SimulationRuntime(int argc, char**argv, _X_DATA *data)
         cout << "startInteractiveSimulation: " << version << endl;
         retVal = startInteractiveSimulation(argc, argv);
       } else {
-        // cout << "startNonInteractiveSimulation: " << version << endl;
+        /* cout << "startNonInteractiveSimulation: " << version << endl; */
         retVal = startNonInteractiveSimulation(argc, argv, data);
       }
   }
@@ -1165,9 +783,12 @@ int _main_SimulationRuntime(int argc, char**argv, _X_DATA *data)
     /* THROW was executed */
   }
 
-  deinitializeEventData();
-  callExternalObjectDestructors2(globalData);
-  free(globalData);
+  /* deinitializeEventData();
+   * callExternalObjectDestructors2(globalData);
+   * free(globalData);
+   */
+  callExternalObjectDestructors(data);
+  DeinitializeXDataStruc(data);
   fflush(NULL);
 #ifndef NO_INTERACTIVE_DEPENDENCY
   if (sim_communication_port_open) {

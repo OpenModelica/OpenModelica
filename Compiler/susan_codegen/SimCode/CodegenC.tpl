@@ -221,7 +221,7 @@ match modelInfo
 case MODELINFO(varInfo=VARINFO(__)) then
   <<
   data->modelData.modelName = "<%dotPath(name)%>";
-  data->modelData.modelicaFilePrefix = "<%fileNamePrefix%>";
+  data->modelData.modelFilePrefix = "<%fileNamePrefix%>";
   data->modelData.modelDir = "<%directory%>";
   data->modelData.modelGUID = "{<%guid%>}";
 
@@ -236,18 +236,25 @@ case MODELINFO(varInfo=VARINFO(__)) then
   data->modelData.nParametersString = <%varInfo.numStringParamVars%>;
   data->modelData.nInputVars = <%varInfo.numInVars%>;
   data->modelData.nOutputVars = <%varInfo.numOutVars%>;
-
-  data->modelData.nHelp = <%varInfo.numHelpVars%>;
-  data->modelData.nZeroCrossings = <%varInfo.numZeroCrossings%>;
-  data->modelData.nSample = <%varInfo.numTimeEvents%>;
-  data->modelData.nResiduals = <%varInfo.numResiduals%>;
-  data->modelData.nExtOpj = <%varInfo.numExternalObjects%>;
-  data->modelData.nFunctions = <%listLength(functions)%>;
+  data->modelData.nHelpVars = <%varInfo.numHelpVars%>;
 
   data->modelData.nAliasReal = <%varInfo.numAlgAliasVars%>;
   data->modelData.nAliasInteger = <%varInfo.numIntAliasVars%>;
   data->modelData.nAliasBoolean = <%varInfo.numBoolAliasVars%>;
-  data->modelData.nAliasString = <%varInfo.numJacobianVars%>;      
+  data->modelData.nAliasString = <%varInfo.numJacobianVars%>;
+  
+  data->modelData.nZeroCrossings = <%varInfo.numZeroCrossings%>;
+  data->modelData.nSamples = <%varInfo.numTimeEvents%>;
+  data->modelData.nResiduals = <%varInfo.numResiduals%>;
+  data->modelData.nExtOpjs = <%varInfo.numExternalObjects%>;
+  data->modelData.nFunctions = <%listLength(functions)%>;
+  
+  data->modelData.nEquations = nEquation;
+  data->modelData.nProfileBlocks = n_omc_equationInfo_reverse_prof_index;
+  data->modelData.functionNames = (FUNCTION_INFO*) function_names;
+  data->modelData.equationInfo = (EQUATION_INFO*) equation_info;
+  data->modelData.equationInfo_reverse_prof_index = *omc_equationInfo_reverse_prof_index;
+      
   >>
 end pupulateModelInfo;
 
@@ -260,7 +267,7 @@ let () = System.tmpTickReset(1000)
 match modelInfo
 case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars), vars=SIMVARS(__)) then
   <<
-  #define time localData->time
+  #define time data->localData[0]->timeValue
   
   /* States */
   <%vars.stateVars |> var =>
@@ -376,107 +383,6 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   <%globalDataFunctionInfoArray("function_names", functions)%>
   
   #include "<%fileNamePrefix%>.h"
-    
-  void init_Alias(DATA* data)
-  {
-  <%globalDataAliasVarArray("DATA_REAL_ALIAS","omc__realAlias", vars.aliasVars)%>
-  <%globalDataAliasVarArray("DATA_INT_ALIAS","omc__intAlias", vars.intAliasVars)%>
-  <%globalDataAliasVarArray("DATA_BOOL_ALIAS","omc__boolAlias", vars.boolAliasVars)%>
-  <%globalDataAliasVarArray("DATA_STRING_ALIAS","omc__stringAlias", vars.stringAliasVars)%>
-  if (data->nAlias)
-    memcpy(data->realAlias,omc__realAlias,sizeof(DATA_REAL_ALIAS)*data->nAlias);
-  if (data->intVariables.nAlias)
-    memcpy(data->intVariables.alias,omc__intAlias,sizeof(DATA_INT_ALIAS)*data->intVariables.nAlias);
-  if (data->boolVariables.nAlias)
-    memcpy(data->boolVariables.alias,omc__boolAlias,sizeof(DATA_BOOL_ALIAS)*data->boolVariables.nAlias);
-  if (data->stringVariables.nAlias)
-    memcpy(data->stringVariables.alias,omc__stringAlias,sizeof(DATA_STRING_ALIAS)*data->stringVariables.nAlias);  
-  };
-  
-  static char init_fixed[NX+NX+NY+NYINT+NYBOOL+NP+NPINT+NPBOOL] = {
-    <%{(vars.stateVars |> SIMVAR(__) =>
-        '<%globalDataFixedInt(isFixed)%> /* <%crefStr(name)%> */'
-      ;separator=",\n"),
-      (vars.derivativeVars |> SIMVAR(__) =>
-        '<%globalDataFixedInt(isFixed)%> /* <%crefStr(name)%> */'
-      ;separator=",\n"),
-      (vars.algVars |> SIMVAR(__) =>
-        '<%globalDataFixedInt(isFixed)%> /* <%crefStr(name)%> */'
-      ;separator=",\n"),
-      (vars.intAlgVars |> SIMVAR(__) =>
-        '<%globalDataFixedInt(isFixed)%> /* <%crefStr(name)%> */'
-      ;separator=",\n"),
-      (vars.boolAlgVars |> SIMVAR(__) =>
-        '<%globalDataFixedInt(isFixed)%> /* <%crefStr(name)%> */'
-      ;separator=",\n"),        
-      (vars.paramVars |> SIMVAR(__) =>
-        '<%globalDataFixedInt(isFixed)%> /* <%crefStr(name)%> */'
-      ;separator=",\n"),
-     (vars.intParamVars |> SIMVAR(__) =>
-        '<%globalDataFixedInt(isFixed)%> /* <%crefStr(name)%> */'
-      ;separator=",\n"),
-     (vars.boolParamVars |> SIMVAR(__) =>
-        '<%globalDataFixedInt(isFixed)%> /* <%crefStr(name)%> */'
-      ;separator=",\n")}
-    ;separator=",\n"%>
-  };
-  
-  char hasNominalValue[NX+NY+NP] = {
-    <%{(vars.stateVars |> SIMVAR(__) =>
-        '<%globalDataHasNominalValue(nominalValue)%> /* <%crefStr(name)%> */'
-      ;separator=",\n"),
-      (vars.algVars |> SIMVAR(__) =>
-        '<%globalDataHasNominalValue(nominalValue)%> /* <%crefStr(name)%> */'
-      ;separator=",\n"),      
-      (vars.paramVars |> SIMVAR(__) =>
-        '<%globalDataHasNominalValue(nominalValue)%> /* <%crefStr(name)%> */'
-      ;separator=",\n")}
-    ;separator=",\n"%>
-  };
-  
-  double nominalValue[NX+NY+NP] = {
-    <%{(vars.stateVars |> SIMVAR(__) =>
-        '<%globalDataNominalValue(nominalValue)%> /* <%crefStr(name)%> */'
-      ;separator=",\n"),
-      (vars.algVars |> SIMVAR(__) =>
-        '<%globalDataNominalValue(nominalValue)%> /* <%crefStr(name)%> */'
-      ;separator=",\n"),      
-      (vars.paramVars |> SIMVAR(__) =>
-        '<%globalDataNominalValue(nominalValue)%> /* <%crefStr(name)%> */'
-      ;separator=",\n")}
-    ;separator=",\n"%>
-  };
-  
-  char var_attr[NX+NY+NYINT+NYBOOL+NYSTR+NP+NPINT+NPBOOL+NPSTR] = {
-    <%{(vars.stateVars |> SIMVAR(__) =>
-        '<%globalDataAttrInt(type_)%>+<%globalDataDiscAttrInt(isDiscrete)%> /* <%crefStr(name)%> */'
-      ;separator=",\n"),
-      (vars.algVars |> SIMVAR(__) =>
-        '<%globalDataAttrInt(type_)%>+<%globalDataDiscAttrInt(isDiscrete)%> /* <%crefStr(name)%> */'
-      ;separator=",\n"),
-      (vars.intAlgVars |> SIMVAR(__) =>
-        '<%globalDataAttrInt(type_)%>+<%globalDataDiscAttrInt(isDiscrete)%> /* <%crefStr(name)%> */'
-      ;separator=",\n"),
-      (vars.boolAlgVars |> SIMVAR(__) =>
-        '<%globalDataAttrInt(type_)%>+<%globalDataDiscAttrInt(isDiscrete)%> /* <%crefStr(name)%> */'
-      ;separator=",\n"),
-      (vars.stringAlgVars |> SIMVAR(__) =>
-        '<%globalDataAttrInt(type_)%>+<%globalDataDiscAttrInt(isDiscrete)%> /* <%crefStr(name)%> */'
-      ;separator=",\n"),      
-      (vars.paramVars |> SIMVAR(__) =>
-        '<%globalDataAttrInt(type_)%>+<%globalDataDiscAttrInt(isDiscrete)%> /* <%crefStr(name)%> */'
-       ;separator=",\n"),
-      (vars.intParamVars |> SIMVAR(__) =>
-        '<%globalDataAttrInt(type_)%>+<%globalDataDiscAttrInt(isDiscrete)%> /* <%crefStr(name)%> */'
-       ;separator=",\n"),
-      (vars.boolParamVars |> SIMVAR(__) =>
-        '<%globalDataAttrInt(type_)%>+<%globalDataDiscAttrInt(isDiscrete)%> /* <%crefStr(name)%> */'
-       ;separator=",\n"),
-      (vars.stringParamVars |> SIMVAR(__) =>
-        '<%globalDataAttrInt(type_)%>+<%globalDataDiscAttrInt(isDiscrete)%> /* <%crefStr(name)%> */'
-       ;separator=",\n") }
-    ;separator=",\n"%>
-  };
   >>
 end globalData;
 
@@ -679,76 +585,6 @@ template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix,
   {  
     ASSERT(data,"Error while initialize Data");
     <%pupulateModelInfo(modelInfo, fileNamePrefix, guid)%>
-  }   
-
-  DATA* initializeDataStruc()
-  {  
-    DATA* returnData = (DATA*)malloc(sizeof(DATA));
-  
-    if(!returnData) //error check
-      return 0;
-  
-    memset(returnData,0,sizeof(DATA));
-    returnData->nStates = NX;
-    returnData->nAlgebraic = NY;
-    returnData->nAlias = NA;
-    returnData->nParameters = NP;
-    returnData->nInputVars = NI;
-    returnData->nOutputVars = NO;
-    returnData->nFunctions = NFUNC;
-    returnData->nEquations = nEquation;
-    returnData->nProfileBlocks = n_omc_equationInfo_reverse_prof_index;
-    returnData->nZeroCrossing = NG;
-    returnData->nRawSamples = NG_SAM;
-    returnData->nInitialResiduals = NR;
-    returnData->nHelpVars = NHELP;
-    returnData->stringVariables.nParameters = NPSTR;
-    returnData->stringVariables.nAlgebraic = NYSTR;
-    returnData->stringVariables.nAlias = NASTR;
-    returnData->intVariables.nParameters = NPINT;
-    returnData->intVariables.nAlgebraic = NYINT;
-    returnData->intVariables.nAlias = NAINT;
-    returnData->boolVariables.nParameters = NPBOOL;
-    returnData->boolVariables.nAlgebraic = NYBOOL;
-    returnData->boolVariables.nAlias = NABOOL;
-    returnData->nJacobianvars = NJACVARS;
-  
-    returnData->initFixed = init_fixed;
-    returnData->var_attr = var_attr;
-    returnData->modelName = model_name;
-    returnData->modelFilePrefix = model_fileprefix;
-    returnData->modelGUID = MODEL_GUID;
-    returnData->statesNames = state_names;
-    returnData->stateDerivativesNames = derivative_names;
-    returnData->algebraicsNames = algvars_names;
-    returnData->int_alg_names = int_alg_names;
-    returnData->bool_alg_names = bool_alg_names;
-    returnData->string_alg_names = string_alg_names;
-    returnData->parametersNames = param_names;
-    returnData->int_param_names = int_param_names;
-    returnData->bool_param_names = bool_param_names;
-    returnData->string_param_names = string_param_names;
-    returnData->alias_names = alias_names;
-    returnData->int_alias_names = int_alias_names;
-    returnData->bool_alias_names = bool_alias_names;
-    returnData->string_alias_names = string_alias_names;
-    returnData->jacobian_names = jacobian_names;
-    returnData->functionNames = function_names;
-    returnData->equationInfo = equation_info;
-    returnData->equationInfo_reverse_prof_index = omc_equationInfo_reverse_prof_index;
-    
-    if (NEXT) {
-      returnData->extObjs = (void**)malloc(sizeof(void*)*NEXT);
-      if (!returnData->extObjs) {
-        printf("error allocating external objects\n");
-        exit(-2);
-      }
-      memset(returnData->extObjs,0,sizeof(void*)*NEXT);
-    } else {
-      returnData->extObjs = 0;
-    }
-  
-    return returnData;
   }
   >>
 end functionInitializeDataStruc;
@@ -774,11 +610,12 @@ case EXTOBJINFO(__) then
     ;separator="\n")
   <<
   /* Has to be performed after _init.xml file has been read */
-  void callExternalObjectConstructors(_X_DATA *_data, DATA *data)
+  void callExternalObjectConstructors(_X_DATA *_data)
   {
     <%varDecls%>
     state mem_state;
     mem_state = get_memory_state();
+    _data->modelData.extObjs = NULL;
     <%ctorCalls%>
     <%aliases |> (var1, var2) => '<%cref(var1)%> = <%cref(var2)%>;' ;separator="\n"%>
   }
@@ -791,12 +628,12 @@ template functionCallExternalObjectDestructors(ExtObjInfo extObjInfo)
 match extObjInfo
 case extObjInfo as EXTOBJINFO(__) then
   <<
-  void callExternalObjectDestructors(_X_DATA *_data, DATA *data)
+  void callExternalObjectDestructors(_X_DATA *_data)
   {
-    if (data->extObjs) {
+    if (_data->modelData.extObjs) {
       <%extObjInfo.vars |> var as SIMVAR(varKind=ext as EXTOBJ(__)) => '_<%underscorePath(ext.fullClassName)%>_destructor(<%cref(var.name)%>);' ;separator="\n"%>
-      free(data->extObjs);
-      data->extObjs = 0;
+      free(_data->modelData.extObjs);
+      _data->modelData.extObjs = 0;
     }
   }
   >>
@@ -851,6 +688,7 @@ template functionInitSample(list<SampleCondition> sampleConditions)
      calcualted parameters. */
   void function_sampleInit(_X_DATA *data)
   {
+    SIMULATION_DATA *localData = data->localData[0];
     <%if timeEventCode then "int i = 0; // Current index"%>
     <%timeEventCode%>
   }
@@ -1076,7 +914,7 @@ case SIM_WHEN_CLAUSE(__) then
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>] /* edge */'
+      'localData->helpVars[<%hidx%>] && !localData->helpVarsPre[<%hidx%>] /* edge */'
     ;separator=" || ")
   let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/)                     
 
@@ -1307,14 +1145,11 @@ template functionDAE( list<SimEqSystem> allEquationsPlusWhen,
     state mem_state;
     <%varDecls%>
     *needToIterate = 0;
-    inUpdate=initial()?0:1;
   
     mem_state = get_memory_state();
     <%eqs%>
     <%reinit%>
     restore_memory_state(mem_state);
-  
-    inUpdate=0;
   
     return 0;
   }
@@ -1722,9 +1557,9 @@ template timeEventTpl(Integer index1, Exp relation, Text &varDecls /*BUFP*/)
     let e2 = daeExp(interval, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     <<
     <%preExp%>
-    localData->rawSampleExps[i].start = <%e1%>;
-    localData->rawSampleExps[i].interval = <%e2%>;
-    localData->rawSampleExps[i++].zc_index = <%index1%>;
+    data->simulationInfo.rawSampleExps[i].start = <%e1%>;
+    data->simulationInfo.rawSampleExps[i].interval = <%e2%>;
+    data->simulationInfo.rawSampleExps[i++].zc_index = <%index1%>;
     >>
   else
     <<
@@ -1942,7 +1777,7 @@ case eqn as SES_ARRAY_CALL_ASSIGN(__) then
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>] /* edge */'
+      'localData->helpVars[<%hidx%>] && !localData->helpVarsPre[<%hidx%>] /* edge */'
     ;separator=" || ")C*/, &varDecls /*BUFD*/)
   match expTypeFromExpShort(eqn.exp)
   case "boolean" then
@@ -2108,7 +1943,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>] /* edge */'
+      'localData->helpVars[<%hidx%>] && !localData->helpVarsPre[<%hidx%>] /* edge */'
     ;separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
@@ -2128,7 +1963,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>] /* edge */'
+      'localData->helpVars[<%hidx%>] && !localData->helpVarsPre[<%hidx%>] /* edge */'
     ;separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
@@ -2155,7 +1990,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>] /* edge */'
+      'localData->helpVars[<%hidx%>] && !localData->helpVarsPre[<%hidx%>] /* edge */'
     ;separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
@@ -2169,7 +2004,7 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseW
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>] /* edge */'
+      'localData->helpVars[<%hidx%>] && !localData->helpVarsPre[<%hidx%>] /* edge */'
     ;separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
@@ -4437,7 +4272,7 @@ case SIMULATION(genDiscrete=true) then
     let else = algStatementWhenElse(elseWhen, &varDecls /*BUFD*/)
     <<
     <%preIf%>
-    if (<%helpVarIndices |> idx => 'localData->helpVars[<%idx%>] && !localData->helpVars_saved[<%idx%>] /* edge */' ;separator=" || "%>) {
+    if (<%helpVarIndices |> idx => 'localData->helpVars[<%idx%>] && !localData->helpVarsPre[<%idx%>] /* edge */' ;separator=" || "%>) {
       <%statements%>
     }
     <%else%>
@@ -4495,7 +4330,7 @@ case SOME(when as STMT_WHEN(__)) then
     ;separator="\n")
   let else = algStatementWhenElse(when.elseWhen, &varDecls /*BUFD*/)
   let elseCondStr = (when.helpVarIndices |> hidx =>
-      'localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>] /* edge */'
+      'localData->helpVars[<%hidx%>] && !localData->helpVarsPre[<%hidx%>] /* edge */'
     ;separator=" || ")
   <<
   else if (<%elseCondStr%>) {
@@ -5563,6 +5398,15 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
 
   case CALL(path=IDENT(name="noEvent"), expLst={e1}) then
     daeExp(e1, context, &preExp, &varDecls)
+  
+  case CALL(path=IDENT(name="sample"), expLst={e1, e2, e3}) then
+    let tvar = tempDecl("modelica_boolean", &varDecls /*BUFD*/)
+    
+    let var1 = daeExp(e1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let var2 = daeExp(e2, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let var3 = daeExp(e3, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let &preExp += '<%tvar%> = sample(data, <%var1%>, <%var2%>, <%var3%>);<%\n%>'
+    '<%tvar%>'
   
   case CALL(path=IDENT(name="anyString"), expLst={e1}) then
     'mmc_anyString(<%daeExp(e1, context, &preExp, &varDecls)%>)'

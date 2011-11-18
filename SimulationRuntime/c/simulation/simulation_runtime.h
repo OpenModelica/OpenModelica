@@ -113,17 +113,6 @@ extern int warningLevelAssert; /* Becomes non-zero when model call assert with w
 extern omc_fileInfo TermInfo; /* message for termination. */
 extern const char *linear_model_frame; /* printf format-string with holes for 6 strings */
 
-/* Flags for controlling logging to stdout */
-extern const int LOG_STATS;
-extern const int LOG_INIT;
-extern const int LOG_RES_INIT;
-extern const int LOG_SOLVER;
-extern const int LOG_JAC;
-extern const int LOG_ENDJAC;
-extern const int LOG_EVENTS;
-extern const int LOG_NONLIN_SYS;
-extern const int LOG_ZEROCROSSINGS;
-extern const int LOG_DEBUG;
 /* Flags for modelErrorCodes */
 extern const int ERROR_NONLINSYS;
 extern const int ERROR_LINSYS;
@@ -160,20 +149,12 @@ extern modelica_boolean *backuprelations;
 DATA* initializeDataStruc();
 DATA *initializeDataStruc2(DATA *returnData);
 
-/* this frees the memory that is allocated in the data-structure.
- * The second argument must have the same value as the argument in initializeDataStruc
- */
-void callExternalObjectDestructors(_X_DATA *_data, DATA* data);
-
-
-/* this is used to set the localData in the generated code
- * that is used in the diferrent generated functions
- *
- */
-int
-initializeEventData();
+/* Function for calling external object constructors */
 void
-deinitializeEventData();
+callExternalObjectConstructors(_X_DATA *data);
+/* Function for calling external object deconstructors */
+void
+callExternalObjectDestructors(_X_DATA *_data);
 
 
 /* defined in model code. Used to get name of variable by investigating its pointer in the state or alg vectors. */
@@ -197,10 +178,6 @@ int functionAliasEquations(_X_DATA *data);
 /*used in DDASRT fortran function*/
 int
 functionODE_residual(double *t, double *x, double *xprime, double *delta, fortran_integer *ires, double *rpar, fortran_integer* ipar);
-
-/* Function for calling external object constructors */
-void
-callExternalObjectConstructors(_X_DATA*, DATA*);
 
 /*   function for calculating all equation sorting order 
   uses in EventHandle  */

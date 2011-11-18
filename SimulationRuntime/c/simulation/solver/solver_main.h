@@ -77,6 +77,8 @@ void update_DAEsystem(_X_DATA *data);
 #else
 int
 solver_main(_X_DATA* simData, double start, double stop, double step, long outputSteps, double tolerance, int flag);
+
+void update_DAEsystem(_X_DATA *data);
 #endif
 
 #endif

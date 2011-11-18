@@ -72,7 +72,7 @@ void initDelay(double startTime)
   for(i=0; i<numDelayExpressionIndex; i++)
     delayStructure[i] = allocRingBuffer(1024, sizeof(TIME_AND_VALUE));
 
-  DEBUG_INFO1(LV_SOLVER, "initDelay called with startTime = %f", startTime);
+  DEBUG_INFO1(LOG_SOLVER, "initDelay called with startTime = %f", startTime);
 }
 
 void deinitDelay()

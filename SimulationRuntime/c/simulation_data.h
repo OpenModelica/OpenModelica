@@ -113,22 +113,6 @@ extern "C" {
     modelica_boolean filterOutput; /* True if this variable should be filtered */
   }_X_DATA_STRING_ALIAS;
 
-  /* collects all dynamic model data like the variabel-values */
-  typedef struct SIMULATION_DATA
-  {
-    modelica_real* realVars;
-    modelica_integer* integerVars;
-    modelica_boolean* booleanVars;
-    modelica_string* stringVars;
-
-    modelica_real* realVarsPre;
-    modelica_integer* integerVarsPre;
-    modelica_boolean* booleanVarsPre;
-    modelica_string* stringVarsPre;
-
-    modelica_real time;
-  }SIMULATION_DATA;
-
   /* collect all attributes from one variable in one struct */
   typedef struct REAL_ATTRIBUTE
   {
@@ -214,11 +198,12 @@ extern "C" {
     _X_DATA_BOOLEAN_ALIAS* booleanAlias;
     _X_DATA_STRING_ALIAS* stringAlias;
 
-    const FUNCTION_INFO* functionNames;
-    const EQUATION_INFO* equationInfo;
+    FUNCTION_INFO* functionNames;
+    EQUATION_INFO* equationInfo;
+    int equationInfo_reverse_prof_index;
 
     modelica_string_t modelName;
-    modelica_string_t modelicaFilePrefix;
+    modelica_string_t modelFilePrefix;
     modelica_string_t modelDir;
     modelica_string_t modelGUID;
 
@@ -235,13 +220,15 @@ extern "C" {
     long nParametersString;
     long nInputVars;
     long nOutputVars;
+    long nHelpVars;   /* results of relations in when equation */
 
-    long nHelp;
     long nZeroCrossings;
-    long nSample;
+    long nSamples;
     long nResiduals;
-    long nExtOpj;
+    long nExtOpjs;
     long nFunctions;
+    long nEquations;
+    long nProfileBlocks;
 
     long nAliasReal;
     long nAliasInteger;
@@ -260,9 +247,41 @@ extern "C" {
     modelica_string outputFormat;
     modelica_string variableFilter;
 
-    int init; /* =1 during initialization, 0 otherwise. */
-    int terminal; /* =1 at the end of the simulation, 0 otherwise. */
+    modelica_boolean init; /* =1 during initialization, 0 otherwise. */
+    modelica_boolean terminal; /* =1 at the end of the simulation, 0 otherwise. */
+
+    /* An array containing the initial data of samples used in the sim */
+    sample_raw_time* rawSampleExps;
+    /* The queue of sample time events to be processed. */
+    sample_time* sampleTimes;
+    modelica_integer curSampleTimeIx;
+    modelica_integer nSampleTimes;
+
+    modelica_real* zeroCrossings;
+    modelica_real* zeroCrossingsPre;
+    modelica_boolean* backupRelations;
+    modelica_boolean* zeroCrossingEnabled;
+
   }SIMULATION_INFO;
+
+  /* collects all dynamic model data like the variabel-values */
+  typedef struct SIMULATION_DATA
+  {
+    modelica_real timeValue;
+
+    modelica_real* realVars;
+    modelica_integer* integerVars;
+    modelica_boolean* booleanVars;
+    modelica_string* stringVars;
+    modelica_boolean* helpVars;
+
+    modelica_real* realVarsPre;
+    modelica_integer* integerVarsPre;
+    modelica_boolean* booleanVarsPre;
+    modelica_string* stringVarsPre;
+    modelica_boolean* helpVarsPre;
+
+  }SIMULATION_DATA;
 
   /* top-level struct to collect dynamic and static model data */
   typedef struct _X_DATA
@@ -274,6 +293,7 @@ extern "C" {
   }_X_DATA;
 
   void initializeXDataStruc(_X_DATA *data);
+  void DeinitializeXDataStruc(_X_DATA *data);
 
 #ifdef __cplusplus
 }

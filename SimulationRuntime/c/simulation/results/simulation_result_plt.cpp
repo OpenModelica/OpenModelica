@@ -131,7 +131,7 @@ void simulation_result_plt::add_result(double *data, long *actualPoints, _X_DATA
   {
   std::ostringstream ss;
   ss << "time" << "\n";
-  ss << (data[currentPos++] = simData->localData[0]->time) << "\n";
+  ss << (data[currentPos++] = simData->localData[0]->timeValue) << "\n";
   /* .. reals .. */
   for (int i = 0; i < simData->modelData.nVariablesReal; i++) {
     if (!simData->modelData.realData[i].filterOutput) {
@@ -188,7 +188,7 @@ void simulation_result_plt::add_result(double *data, long *actualPoints, _X_DATA
   else
 #endif /* CONFIG_WITH_SENDDATA */
   {
-    data[currentPos++] = simData->localData[0]->time;
+    data[currentPos++] = simData->localData[0]->timeValue;
 
     /* .. reals .. */
     for (int i = 0; i < simData->modelData.nVariablesReal; i++) {
