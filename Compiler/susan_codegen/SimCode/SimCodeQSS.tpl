@@ -62,7 +62,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let guid = getUUIDStr()
   let()= textFile(simulationFile(simCode,qssInfo,guid), 'modelica_funcs.cpp')
   let()= textFile(SimCodeC.simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls), 'model_functions.h')
-  let()= textFile(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, literals), 'model_functions.cpp')
+  let()= textFile(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, literals), 'model_functions.c')
   let()= textFile(SimCodeC.recordsFile(fileNamePrefix, recordDecls), 'model_records.c')
   let()= textFile(simulationMakefile(simCode), '<%fileNamePrefix%>.makefile')
   let()= textFile(structureFile(simCode,qssInfo), 'modelica_structure.pds')
@@ -82,6 +82,12 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
   <<
 
   <%simulationFileHeader(simCode)%>
+  #include "model_functions.c"
+  #define _OMC_SEED_HACK
+  #define _OMC_SEED_HACK_2
+  #ifdef __cplusplus
+  extern "C" {
+  #endif
 
   #ifdef _OMC_QSS
   extern "C" { // adrpo: this is needed for Visual C++ compilation to work!
@@ -313,6 +319,8 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(varInfo=varInfo as  VARINFO(__))) 
   <%SimCodeC.functionlinearmodel(modelInfo)%>
   
   <%\n%> 
+
+  }
   >>
   /* adrpo: leave a newline at the end of file to get rid of the warning */
 end simulationFile;
@@ -496,10 +504,11 @@ template functionQssStaticBlocks(list<list<SimEqSystem>> derivativEquations,list
 	match qssInfo
 	case BackendQSS.QSSINFO(__) then
   	let &varDecls = buffer "" /*BUFD*/
+    let &tmp = buffer ""
 		let numStatic = intAdd(listLength(eqs),listLength(zeroCrossings))
 		let numPureStatic = listLength(eqs)
 		let numZeroCross = listLength(zeroCrossings)
-		let staticFun = generateStaticFunc(derivativEquations,zeroCrossings,varDecls,DEVSstructure,eqs,outVarLst,nStates)
+		let staticFun = generateStaticFunc(derivativEquations,zeroCrossings,varDecls,DEVSstructure,eqs,outVarLst,nStates,tmp)
 		let zeroCross = generateZeroCrossingsEq(listLength(eqs),zeroCrossings,varDecls,DEVSstructure,outVarLst,nStates)
 
   <<
@@ -507,6 +516,7 @@ template functionQssStaticBlocks(list<list<SimEqSystem>> derivativEquations,list
   int staticPureBlocks = <% numPureStatic %>;
   int zeroCrossings = <% numZeroCross %>;
 
+  <%tmp%>
   void function_staticBlocks(int staticFunctionIndex, double t, double *in, double *out)
   {
     state mem_state;
@@ -549,7 +559,7 @@ template generateInputs(BackendQSS.DevsStruct devsst, Integer index, list<Backen
 end generateInputs;
 
 template generateStaticFunc(list<list<SimEqSystem>> odeEq,list<ZeroCrossing> zeroCrossings, 
-	Text &varDecls /*BUFP*/, BackendQSS.DevsStruct devsst,list<list<SimCode.SimEqSystem>> BLTblocks, list<BackendDAE.Var> varLst, Integer nStates)
+	Text &varDecls /*BUFP*/, BackendQSS.DevsStruct devsst,list<list<SimCode.SimEqSystem>> BLTblocks, list<BackendDAE.Var> varLst, Integer nStates, Text &tmp)
 "Generate the cases for the static function "
 ::= 
   (BLTblocks |> eqs hasindex i0 =>
@@ -563,7 +573,7 @@ template generateStaticFunc(list<list<SimEqSystem>> odeEq,list<ZeroCrossing> zer
       #endif
 
       // Evalute the static function
-      <% /* (eqs |> eq => SimCodeC.equation_(BackendQSS.replaceZC(eq,zeroCrossings), contextSimulationNonDiscrete, &varDecls ); separator="\n") */ %>
+      <%  (eqs |> eq => SimCodeC.equation_(BackendQSS.replaceZC(eq,zeroCrossings), contextSimulationNonDiscrete, &varDecls, &tmp ); separator="\n")  %>
 
       // Write outputs to out[]
       #ifdef _OMC_OMPD
@@ -833,8 +843,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   PERL=perl
   
   .PHONY: <%fileNamePrefix%>
-  <%fileNamePrefix%>: <%fileNamePrefix%>.conv.cpp model_functions.cpp model_functions.h model_records.c
-  <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(EXEEXT) <%fileNamePrefix%>.conv.cpp model_functions.cpp <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -linteractive $(SENDDATALIBS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> model_records.c 
+  <%fileNamePrefix%>: <%fileNamePrefix%>.conv.cpp model_functions.c model_functions.h model_records.c
+  <%\t%> $(CXX) -I. -o <%fileNamePrefix%>$(EXEEXT) <%fileNamePrefix%>.conv.cpp model_functions.c <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -linteractive $(SENDDATALIBS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> model_records.c 
   <%fileNamePrefix%>.conv.cpp: modelica_funcs.cpp
   <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
   <%\t%> @mv $@.tmp $@

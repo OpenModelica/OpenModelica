@@ -73,6 +73,7 @@ uniontype QSSinfo "- equation indices in static blocks and DEVS structure"
     list<list<SimCode.SimEqSystem>> eqs;
     list<BackendDAE.Var> outVarLst;
     list<Integer> zcSamplesInd;
+    list<BackendDAE.Var> stateVarLst;
   end QSSINFO;
 end QSSinfo;
 
@@ -142,6 +143,10 @@ algorithm
         
         orderedVars = BackendVariable.daeVars(syst);
         varlst = BackendDAEUtil.varList(orderedVars);
+        print("\n ----------------------------\n");
+        print(" Variable list ");
+        print("\n ----------------------------\n");
+        printVars(stateVarsList,0);
         
         // ZERO-CROSSES
         (zeroCrossList, zc_inVars, samplesList, zcSamplesInd) = getListofZeroCrossings(dlow);
@@ -321,7 +326,7 @@ algorithm
         dumpDEVSstructs(DEVS_structure);       
        
         
-        qssInfo = QSSINFO(stateEq_blt, DEVS_structure,eqs,varlst,zcSamplesInd);
+        qssInfo = QSSINFO(stateEq_blt, DEVS_structure,eqs,varlst,zcSamplesInd,stateVarsList);
         conns = generateConnections(qssInfo);
         print("CONNECTIONS");
         printListOfLists(conns);        
@@ -3288,9 +3293,9 @@ algorithm
   states := 
     match qssInfo
       local
-        list<BackendDAE.Var> outVarLst;
-      case QSSINFO(outVarLst=outVarLst)
-      then List.filterOnTrue(outVarLst,BackendVariable.isStateVar);
+        list<BackendDAE.Var> states;
+      case QSSINFO(stateVarLst=states)
+      then states;
     end match;
 end getStates;
 
@@ -3917,6 +3922,30 @@ algorithm
          (temp);
   end matchcontinue;
 end findElementInList;
+
+
+public function printVars
+  input list<BackendDAE.Var> varlst;
+  input Integer index;
+algorithm
+  _ := matchcontinue (varlst,index)
+    local
+      list<BackendDAE.Var> rest;
+      DAE.ComponentRef cr;
+      String s;
+  case (BackendDAE.VAR(varName = cr)::rest,index) 
+    equation
+        s = ComponentReference.printComponentRefStr(cr);
+        print(intString(index));
+        print(": ");
+        print(s);
+        print("\n");
+        printVars(rest,index+1);
+    then ();
+  case ({},_) 
+    then ();
+  end matchcontinue;
+end printVars;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 /////  END OF PACKAGE
