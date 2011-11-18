@@ -5470,26 +5470,23 @@ protected function filter1OnTrue_tail
     output Boolean outResult;
   end FilterFunc;
 algorithm
-  outList := matchcontinue(inList, inFilterFunc, inArg1, inAccumList)
+  outList := match(inList, inFilterFunc, inArg1, inAccumList)
     local
       ElementType e;
-      list<ElementType> rest;
+      list<ElementType> rest, accum;
+      Boolean filter;
 
     // Reverse at the end.
     case ({}, _, _, _) then listReverse(inAccumList);
 
-    // Add to front if the condition works.
     case (e :: rest, _, _, _)
       equation
-        true = inFilterFunc(e, inArg1);
+        filter = inFilterFunc(e, inArg1);
+        accum = consOnTrue(filter, e, inAccumList);
       then
-        filter1OnTrue_tail(rest, inFilterFunc, inArg1, e :: inAccumList);
+        filter1OnTrue_tail(rest, inFilterFunc, inArg1, accum);
 
-    // Filter out and move along.
-    case (e :: rest, _, _, _)
-      then filter1OnTrue_tail(rest, inFilterFunc, inArg1, inAccumList);
-
-  end matchcontinue;
+  end match;
 end filter1OnTrue_tail;
 
 public function filter1rOnTrue
@@ -5525,26 +5522,23 @@ protected function filter1rOnTrue_tail
     output Boolean outResult;
   end FilterFunc;
 algorithm
-  outList := matchcontinue(inList, inFilterFunc, inArg1, inAccumList)
+  outList := match(inList, inFilterFunc, inArg1, inAccumList)
     local
       ElementType e;
-      list<ElementType> rest;
+      list<ElementType> rest, accum;
+      Boolean filter;
 
     // Reverse at the end.
     case ({}, _, _, _) then listReverse(inAccumList);
 
-    // Add to front if the condition works.
     case (e :: rest, _, _, _)
       equation
-        true = inFilterFunc(inArg1, e);
+        filter = inFilterFunc(inArg1, e);
+        accum = consOnTrue(filter, e, inAccumList);
       then
-        filter1rOnTrue_tail(rest, inFilterFunc, inArg1, e :: inAccumList);
+        filter1rOnTrue_tail(rest, inFilterFunc, inArg1, accum);
 
-    // Filter out and move along.
-    case (e :: rest, _, _, _)
-      then filter1rOnTrue_tail(rest, inFilterFunc, inArg1, inAccumList);
-
-  end matchcontinue;
+  end match;
 end filter1rOnTrue_tail;
 
 public function removeOnTrue
@@ -5560,25 +5554,40 @@ public function removeOnTrue
     output Boolean outIsEqual;
   end CompFunc;
 algorithm
-  outList := matchcontinue(inValue, inCompFunc, inList)
+  outList := removeOnTrue_tail(inValue, inCompFunc, inList, {});
+end removeOnTrue;
+
+public function removeOnTrue_tail
+  "Tail recursive implementation of removeOnTrue."
+  input ValueType inValue;
+  input CompFunc inCompFunc;
+  input list<ElementType> inList;
+  input list<ElementType> inAccumList;
+  output list<ElementType> outList;
+
+  partial function CompFunc
+    input ValueType inValue;
+    input ElementType inElement;
+    output Boolean outIsEqual;
+  end CompFunc;
+algorithm
+  outList := matchcontinue(inValue, inCompFunc, inList, inAccumList)
     local
       ElementType e;
-      list<ElementType> rest;
+      list<ElementType> rest, accum;
+      Boolean is_equal;
 
-    case (_, _, {}) then {};
-    case (_, _, e :: rest)
-      equation
-        true = inCompFunc(inValue, e);
-      then
-        removeOnTrue(inValue, inCompFunc, rest);
+    case (_, _, {}, _) then listReverse(inAccumList);
 
-    case (_, _, e :: rest)
+    case (_, _, e :: rest, _)
       equation
-        rest = removeOnTrue(inValue, inCompFunc, rest);
+        is_equal = inCompFunc(inValue, e);
+        accum = consOnTrue(not is_equal, e, inAccumList);
       then
-        e :: rest;
+        removeOnTrue_tail(inValue, inCompFunc, rest, accum);
+
   end matchcontinue;
-end removeOnTrue;
+end removeOnTrue_tail;
 
 public function select
   "This function retrieves all elements of a list for which the given function
