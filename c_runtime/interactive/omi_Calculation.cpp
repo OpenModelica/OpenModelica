@@ -22,7 +22,7 @@
 #include "omi_ServiceInterface.h"
 #include "omi_Control.h"
 #include "omi_Calculation.h"
-#include "simulation_delay.h"
+#include "simulation_runtime.h"
 
 using namespace std;
 
@@ -52,7 +52,8 @@ int calculate() {
 	double tolerance = 1e-4;
 	string method;
 	string outputFormat;
-
+	measure_time_flag = 0;
+	function_initMemoryState();
 	getSimulationStartData(&stepSizeORG, &outputSteps, &tolerance, &method,
 			&outputFormat);
 	//TODO  20100217 pv catch correct stepSize value for calculation loop
@@ -72,7 +73,7 @@ int calculate() {
 		set_forceEmit(0);
 	}
 
-	initDelay(start);
+	callExternalObjectConstructors(globalData);
 
 	while (!calculationInterrupted) { //TODO 20100210 pv Interrupt is not implemented yet
 
@@ -123,6 +124,9 @@ int calculate() {
 			}
 		}
 
+	        initSample(start, stop);
+	        initDelay(start);
+
 		retVal = callSolverFromOM(method, outputFormat, start, stop, stepSize, outputSteps, tolerance);
 
 		if (retVal != 0) {
@@ -135,6 +139,8 @@ int calculate() {
 		createSSDEntry(method);
 		calculationInterrupted = false;
 		setResultData(p_SimStepData_from_Calculation); //ssd(tn) as parameter
+
+	        deinitDelay();
 	}
 	//if (debugCalculation)
 	cout
