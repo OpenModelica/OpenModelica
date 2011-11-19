@@ -840,9 +840,9 @@ algorithm
         false = List.isEqualOnTrue(tlst1,tlst2,Types.equivtypes);
         // add Warning
         typlststring = List.map(tlst1,Types.unparseType);
-        typstring = stringDelimitList(typlststring,";");
+        typstring = "\n" +& stringDelimitList(typlststring,";\n");
         dastring = Absyn.pathString(da);
-        Error.addMessage(Error.UNEXCPECTED_FUNCTION_INPUTS_WARNING, {dastring,typstring});
+        Error.addMessage(Error.UNEXPECTED_FUNCTION_INPUTS_WARNING, {dastring,typstring});
       then
         fail();
     
@@ -875,9 +875,9 @@ algorithm
         false = List.isEqualOnTrue(tlst,tlst2,Types.equivtypes);
         // add Warning
         typlststring = List.map(tlst,Types.unparseType);
-        typstring = stringDelimitList(typlststring,";");
+        typstring = "\n" +& stringDelimitList(typlststring,";\n");
         dastring = Absyn.pathString(da);
-        Error.addMessage(Error.UNEXCPECTED_FUNCTION_INPUTS_WARNING, {dastring,typstring});
+        Error.addMessage(Error.UNEXPECTED_FUNCTION_INPUTS_WARNING, {dastring,typstring});
       then
         fail();
   end matchcontinue;
@@ -945,9 +945,9 @@ algorithm
         (false,tlst) = checkDerivativeFunctionInputs(blst,tp,dtp);
         // add Warning
         typlststring = List.map(tlst,Types.unparseType);
-        typstring = stringDelimitList(typlststring,";");
+        typstring = "\n" +& stringDelimitList(typlststring,";\n");
         dastring = Absyn.pathString(da);
-        Error.addMessage(Error.UNEXCPECTED_FUNCTION_INPUTS_WARNING, {dastring,typstring});
+        Error.addMessage(Error.UNEXPECTED_FUNCTION_INPUTS_WARNING, {dastring,typstring});
       then
         fail();
   end matchcontinue;

@@ -2019,6 +2019,9 @@ package RTOpts
   function noProc
     output Integer n;
   end noProc;
+  function getRunningTestsuite
+    output Boolean runningTestsuite;
+  end getRunningTestsuite;
 end RTOpts;
 
 package Settings

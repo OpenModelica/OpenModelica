@@ -1188,7 +1188,7 @@ algorithm
         errstr = Print.getErrorString();
         Debug.fcall("errorbuf", print, errstr);
         */
-        // print("Total time for timer: " +& realString(System.getTimerCummulatedTime()) +& "\n");
+        //print("Total time for timer: " +& realString(System.getTimerCummulatedTime()) +& "\n");
         //dbResult = Database.query(0, "end transaction;");
         //dbResult = Database.query(0, "select * from Inst");
       then

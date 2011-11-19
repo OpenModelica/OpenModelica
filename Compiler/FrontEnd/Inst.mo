@@ -3646,7 +3646,8 @@ algorithm
  
         // adrpo: MAKE SURE inner objects ARE FIRST in the list for instantiation!
         // TODO! FIXME! CHECKME! join this function with splitElts to make it faster
-        compelts_2 =  sortInnerFirstTplLstElementMod(compelts_2);
+        // do not bother to sort here, do it in sortElementList in instElementList!
+        // compelts_2 =  sortInnerFirstTplLstElementMod(compelts_2);
 
         //Instantiate components
         compelts_2_elem = List.map(compelts_2,Util.tuple21);
@@ -5521,7 +5522,10 @@ algorithm
   cache := pushStructuralParameters(inCache);
   // i1 := numStructuralParameterScopes(cache);
   //Debug.fprintln("idep", "Before:\n" +& stringDelimitList(List.map(List.map(inElements, Util.tuple21), SCodeDump.unparseElementStr), "\n"));
+  //System.startTimer();
   el := sortElementList(inElements, inEnv, Env.inFunctionScope(inEnv));
+  el := sortInnerFirstTplLstElementMod(el);
+  //System.stopTimer();
   //Debug.fprintln("idep", "After: " +& stringDelimitList(List.map(List.map(el, Util.tuple21), SCode.elementName), ", "));
   (cache, outEnv, outIH, outStore, outDae, outSets, outState, outTypesVarLst, outGraph) := 
     instElementList2(cache, inEnv, inIH, store, inMod, inPrefix,
@@ -6852,6 +6856,52 @@ algorithm
   end matchcontinue;
 end chainRedeclares;
 
+protected function addRecordConstructorsToTheCache
+"@author: adrpo
+ add the record constructor to the cache if we have
+ it as the type of an input component to a function"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input InstanceHierarchy inIH;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
+  input ClassInf.State inState;
+  input Absyn.Direction inDirection;
+  input SCode.Element inClass;
+  input InstDims inInstDims;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
+  output InstanceHierarchy outIH;
+algorithm
+  (outCache, outEnv, outIH) := matchcontinue(inCache, inEnv, inIH, inMod, inPrefix, inState, inDirection, inClass, inInstDims)
+    local
+      Env.Cache cache;
+      Env.Env env;
+      InstanceHierarchy ih;
+      String name;
+      Absyn.Path path;
+    
+    // add it to the cache if we have a input record component 
+    case (inCache, inEnv, inIH, inMod, inPrefix, inState as ClassInf.FUNCTION(path = path), inDirection, 
+          inClass as SCode.CLASS(name = name, restriction = SCode.R_RECORD()), inInstDims)
+      equation
+        false = RTOpts.acceptMetaModelicaGrammar();
+        true = Absyn.isInputOrOutput(inDirection);
+        // TODO, add the env path to the check!
+        false = stringEq(Absyn.pathLastIdent(path), name);
+        // print("implicitFunctionInstantiation: " +& name +& " in f:" +& Absyn.pathString(path) +& " in s:" +& Env.printEnvPathStr(inEnv) +& " m: " +& Mod.printModStr(inMod) +& "\n");
+        (cache, env, ih) = implicitFunctionInstantiation(inCache, inEnv, inIH, inMod, inPrefix, inClass, inInstDims); 
+      then
+        (cache, env, ih);
+    
+    // do nothing otherwise!
+    case (inCache, inEnv, inIH, inMod, inPrefix, inState, inDirection, inClass, inInstDims)
+      then
+        (inCache, inEnv, inIH);
+      
+  end matchcontinue;
+end addRecordConstructorsToTheCache;
+
 public function instElement "
   This monster function instantiates an element of a class definition.  An
   element is either a class definition, a variable, or an import clause."
@@ -7085,6 +7135,10 @@ algorithm
         is_function_input = isFunctionInput(ci_state, dir);
         (cache, dims) = elabArraydim(cache, env2, own_cref, t, ad, eq, impl, 
           NONE(), true, is_function_input, pre, info, inst_dims);
+        
+        // adrpo: 2011-11-18: see if the component is an INPUT or OUTPUT and class is a record
+        //                    and add it to the cache!
+        (cache, _, _) = addRecordConstructorsToTheCache(cache, cenv, ih, mod_1, pre, ci_state, dir, cls, inst_dims); 
         
         // adrpo: 2010-09-28: check if the IDX mod doesn't overlap!
         Mod.checkIdxModsForNoOverlap(mod_1, PrefixUtil.prefixAdd(name, {}, pre, vt, ci_state), info);
@@ -11030,7 +11084,7 @@ algorithm
   (outCache,outPath) := matchcontinue (inCache,inEnv,inPath)
     local
       list<Env.Frame> env,env_1;
-      Absyn.Path path,path_2,path3;
+      Absyn.Path path,path_2,path3,restPath;
       String s;
       Env.Cache cache;
       SCode.Element cl;
@@ -11057,15 +11111,25 @@ algorithm
     // do NOT fully quallify again a fully qualified path!
     case (cache,env,Absyn.FULLYQUALIFIED(path)) then (cache, inPath);
     
+    // try to lookup the first class only if not MetaModelica!  
+    case (cache,env,path as Absyn.QUALIFIED(name, restPath))
+      equation
+        false = RTOpts.acceptMetaModelicaGrammar(); 
+        (cache,cl as SCode.CLASS(name = name),env_1) = Lookup.lookupClass(cache, env, Absyn.IDENT(name), false);
+        // use the name we get back as it could be an import stuff!
+        path_2 = makeFullyQualified2(env_1,Absyn.joinPaths(Absyn.IDENT(name), restPath));
+      then
+        (cache,Absyn.FULLYQUALIFIED(path_2));
+        
     // To make a class fully qualified, the class path is looked up in the environment.
     // The FQ path consist of the simple class name appended to the environment path of the looked up class. 
     case (cache,env,path)
       equation 
-        (cache,cl,env_1) = Lookup.lookupClass(cache, env, path, false);
-        path_2 = makeFullyQualified2(env_1,SCode.className(cl));
+        (cache,cl as SCode.CLASS(name = name),env_1) = Lookup.lookupClass(cache, env, path, false);
+        path_2 = makeFullyQualified2(env_1,Absyn.IDENT(name));
       then
         (cache,Absyn.FULLYQUALIFIED(path_2));
-    
+        
     // Needed to make external objects fully-qualified
     case (cache,env as (Env.FRAME(optName=SOME(name))::_),Absyn.IDENT(s)) 
       equation 
@@ -11075,10 +11139,10 @@ algorithm
         (cache,Absyn.FULLYQUALIFIED(path_2));
 
     // A type can exist without a class (i.e. builtin functions)  
-    case (cache,env,Absyn.IDENT(s)) 
+    case (cache,env,path as Absyn.IDENT(s)) 
       equation 
          (cache,_,env_1) = Lookup.lookupType(cache,env, Absyn.IDENT(s), NONE());
-         path_2 = makeFullyQualified2(env_1,s);
+         path_2 = makeFullyQualified2(env_1,path);
       then
         (cache,Absyn.FULLYQUALIFIED(path_2));
 
@@ -11087,7 +11151,7 @@ algorithm
       equation 
         crPath = ComponentReference.pathToCref(path);
         (cache,_,_,_,_,_,env,_,name) = Lookup.lookupVarInternal(cache, {f}, crPath, Lookup.SEARCH_ALSO_BUILTIN());
-        path3 = makeFullyQualified2(env,name);
+        path3 = makeFullyQualified2(env,Absyn.IDENT(name));
       then
         (cache,Absyn.FULLYQUALIFIED(path3));
 
@@ -11096,7 +11160,7 @@ algorithm
       equation 
           crPath = ComponentReference.pathToCref(path);
          (cache,env,_,_,_,_,_,_,name) = Lookup.lookupVarInPackages(cache, env, crPath, {}, Util.makeStatefulBoolean(false));
-          path3 = makeFullyQualified2(env,name);
+          path3 = makeFullyQualified2(env,Absyn.IDENT(name));
       then
         (cache,Absyn.FULLYQUALIFIED(path3));
     
@@ -11112,6 +11176,43 @@ algorithm
         (cache,path);
   end matchcontinue;
 end makeFullyQualified;
+
+protected function addFunctionsToDAE
+"@author: adrpo
+ we might need to intantiate partial functions, but we should NOT add them to the DAE!"
+  input Env.Cache inCache;
+  input list<DAE.Function> funcs "fully qualified function name";
+  input SCode.Partial inPartialPrefix;
+  output Env.Cache outCache;
+algorithm
+  outCache := matchcontinue(inCache, funcs, inPartialPrefix)
+    local
+      Env.Cache cache;
+      SCode.Partial pPrefix;
+      DAE.Function f;
+      list<DAE.Function> rest, fLst;
+    
+    /*/ if not meta-modelica and we have a partial function, DO NOT ADD IT TO THE DAE!
+    case (cache, funcs, pPrefix as SCode.PARTIAL())
+      equation
+        false = RTOpts.acceptMetaModelicaGrammar();
+        true = System.getPartialInstantiation();
+        // if all the functions are complete, add them, otherwise, NO
+        fLst = List.select(funcs, DAEUtil.isNotCompleteFunction);
+        fLst = Util.if_(List.isEmpty(fLst), funcs, {});
+        cache = Env.addDaeFunction(cache, fLst);
+      then
+        cache;*/
+        
+    // otherwise add it to the DAE!
+    case (cache, funcs, pPrefix)
+      equation
+        cache = Env.addDaeFunction(cache, funcs);
+      then
+        cache;
+        
+  end matchcontinue;
+end addFunctionsToDAE;
 
 public function implicitFunctionInstantiation
 "function: implicitFunctionInstantiation
@@ -11146,21 +11247,22 @@ algorithm
       list<DAE.Function> funs;
       DAE.Function fun;
       SCode.Restriction r;
+      SCode.Partial pPrefix;
       
-    case (cache,env,ih,mod,pre,(c as SCode.CLASS(name = n,restriction = SCode.R_RECORD())),inst_dims)
+    case (cache,env,ih,mod,pre,(c as SCode.CLASS(name = n,restriction = SCode.R_RECORD(), partialPrefix = pPrefix)),inst_dims)
       equation
         (cache,c,cenv) = Lookup.lookupRecordConstructorClass(cache,env,Absyn.IDENT(n));
-        (cache,env,ih,{DAE.FUNCTION(fpath,_,ty1,false,_,source,_)}) = implicitFunctionInstantiation2(cache,cenv,ih,mod,pre,c,inst_dims,true);
+        (cache,env,ih,{DAE.FUNCTION(fpath,_,ty1,_,_,source,_)}) = implicitFunctionInstantiation2(cache,cenv,ih,mod,pre,c,inst_dims,true);
         fun = DAE.RECORD_CONSTRUCTOR(fpath,ty1,source);
-        cache = Env.addDaeFunction(cache, {fun});
+        cache = addFunctionsToDAE(cache, {fun}, pPrefix);
       then (cache,env,ih);
 
-    case (cache,env,ih,mod,pre,(c as SCode.CLASS(name = n,restriction = r)),inst_dims)
+    case (cache,env,ih,mod,pre,(c as SCode.CLASS(name = n,restriction = r,partialPrefix = pPrefix)),inst_dims)
       equation
         failure(SCode.R_RECORD() = r);
         true = MetaUtil.strictRMLCheck(RTOpts.debugFlag("rml"),c);
         (cache,env,ih,funs) = implicitFunctionInstantiation2(cache,env,ih,mod,pre,c,inst_dims,false);
-        cache = Env.addDaeFunction(cache, funs);
+        cache = addFunctionsToDAE(cache, funs, pPrefix);
       then (cache,env,ih);
 
     // handle failure
@@ -16253,21 +16355,22 @@ end checkVariabilityOfUpdatedComponent;
 protected function makeFullyQualified2
 "help function to makeFullyQualified"
   input Env.Env env;
-  input Ident className;
+  input Absyn.Path restPath;
 output Absyn.Path path;
 algorithm
-  path := matchcontinue(env,className)
+  path := matchcontinue(env,restPath)
     local
       Absyn.Path scope;
-    case(env,className)
+    case(env,restPath)
       equation
         SOME(scope) = Env.getEnvPath(env);
-        path = Absyn.joinPaths(scope, Absyn.IDENT(className));
+        path = Absyn.joinPaths(scope, restPath);
       then path;
-    case(env,className)
+    case(env,restPath)
       equation
         NONE() = Env.getEnvPath(env);
-      then Absyn.IDENT(className);
+      then 
+        restPath;
   end matchcontinue;
 end makeFullyQualified2;
 

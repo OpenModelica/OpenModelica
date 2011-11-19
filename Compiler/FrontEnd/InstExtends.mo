@@ -1462,6 +1462,7 @@ algorithm
     
     case (cache,env,SCode.MOD(finalPrefix,eachPrefix,subModLst,SOME((exp,b))),ht)
       equation
+        (cache, subModLst) = fixSubModList(cache, env, subModLst, ht);
         (cache,exp) = fixExp(cache,env,exp,ht);
       then 
         (cache,SCode.MOD(finalPrefix,eachPrefix,subModLst,SOME((exp,b))));
@@ -1472,7 +1473,9 @@ algorithm
       then 
         (cache,SCode.MOD(finalPrefix,eachPrefix,subModLst,NONE()));
     
-    case (cache,env,SCode.MOD(finalPrefix,eachPrefix,subModLst,NONE()),ht) 
+    case (cache,env,SCode.MOD(finalPrefix,eachPrefix,subModLst,NONE()),ht)
+      equation
+        (cache, subModLst) = fixSubModList(cache, env, subModLst, ht); 
       then 
         (cache,SCode.MOD(finalPrefix,eachPrefix,subModLst,NONE()));
         

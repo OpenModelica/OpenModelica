@@ -40,7 +40,7 @@ debug: .testvariables mkbuilddirs settings omcd
 profiler: .testvariables mkbuilddirs settings omc_profiler
 release: omc
 
-oldc_runtime: mkbuilddirs
+oldc_runtime: .testvariables mkbuilddirs
 	$(MAKE) -C c_runtime -f $(defaultMakefileTarget)
 newc_runtime: mkbuilddirs
 	$(MAKE) -C SimulationRuntime/interactive -f $(defaultMakefileTarget)

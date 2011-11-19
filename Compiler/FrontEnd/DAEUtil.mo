@@ -3436,20 +3436,23 @@ public function getFunctionList
 algorithm
   fns := matchcontinue ft
     local
-      list<tuple<DAE.AvlKey,DAE.AvlValue>> lst;
+      list<tuple<DAE.AvlKey,DAE.AvlValue>> lst, lstInvalid, lstValid;
       Absyn.Path path;
       String str;
+      
     case ft
       equation
         lst = avlTreeToList(ft);
-      then List.mapMap(lst, Util.tuple22, Util.getOption);
+      then 
+        List.mapMap(lst, Util.tuple22, Util.getOption);
     case ft
       equation
         lst = avlTreeToList(ft);
-        ((path,_)) = List.selectFirst(lst, isInvalidFunctionEntry);
-        str = Absyn.pathString(path);
+        lstInvalid = List.select(lst, isInvalidFunctionEntry);
+        str = stringDelimitList(List.map(List.map(lstInvalid, Util.tuple21), Absyn.pathString), ", ");
         Error.addMessage(Error.NON_INSTANTIATED_FUNCTION, {str});
-      then fail();
+      then 
+        fail();
   end matchcontinue;
 end getFunctionList;
 
@@ -3462,6 +3465,13 @@ algorithm
     case ((_,_)) then false;
   end matchcontinue;
 end isInvalidFunctionEntry;
+
+protected function isValidFunctionEntry
+  input tuple<DAE.AvlKey,DAE.AvlValue> tpl;
+  output Boolean b;
+algorithm
+  b := not isInvalidFunctionEntry(tpl);
+end isValidFunctionEntry;
 
 public function traverseDAE " This function traverses all dae exps.
 NOTE, it also traverses DAE.VAR(componenname) as an expression."
@@ -5636,5 +5646,78 @@ algorithm
     else true;
   end match;
 end isBound;
+
+public function isCompleteFunction
+"@author: adrpo
+ this function returns true if the given function is complete:
+ - has inputs
+ - has outputs
+ - has an algorithm section
+ note that record constructors are always considered complete"
+ input DAE.Function f;
+ output Boolean isComplete;
+algorithm
+  isComplete := matchcontinue(f)
+    local
+      list<DAE.FunctionDefinition> functions;
+    
+    // record constructors are always complete!
+    case (DAE.RECORD_CONSTRUCTOR(path = _)) then true;
+    
+    // functions are complete if they have inputs, outputs and algorithm section
+    case (DAE.FUNCTION(functions = functions))
+      equation
+        true = isCompleteFunctionBody(functions);
+      then 
+        true;
+        
+    case (_) 
+      then false;
+  end matchcontinue;
+end isCompleteFunction;
+
+public function isCompleteFunctionBody
+"@author: adrpo
+ this function returns true if the given function body is complete"
+ input list<DAE.FunctionDefinition> functions;
+ output Boolean isComplete;
+algorithm
+  isComplete := matchcontinue(functions)
+    local
+      list<DAE.FunctionDefinition> rest;
+      list<DAE.Element> els;
+      list<DAE.Element> v, ie, ia, e, a, o;
+    
+    case ({}) then false;
+    
+    // external are complete!
+    case (DAE.FUNCTION_EXT(body = _)::rest) then true;
+    
+    // functions are complete if they have inputs, outputs and algorithm section
+    case (DAE.FUNCTION_DEF(els)::rest)
+      equation
+        // algs are not empty
+        (v,ie,ia,e,a,o) = splitElements(els);
+        false = List.isEmpty(a);
+      then 
+        true;
+        
+    case (DAE.FUNCTION_DER_MAPPER(derivedFunction = _)::rest)
+      equation
+        true = isCompleteFunctionBody(rest);
+      then 
+        true;
+        
+    case (_) 
+      then false;
+  end matchcontinue;
+end isCompleteFunctionBody;
+
+public function isNotCompleteFunction
+ input DAE.Function f;
+ output Boolean isNotComplete;
+algorithm
+  isNotComplete := not isCompleteFunction(f);
+end isNotCompleteFunction;
 
 end DAEUtil;

@@ -82,6 +82,8 @@
 #define CONFIG_PATH_DELIMITER "/"
 #define CONFIG_GROUP_DELIMITER ";"
 
+#include "revision.h"
+
 #else /* Unix */
 
 #define DEFAULT_LDFLAGS "-lexpat"

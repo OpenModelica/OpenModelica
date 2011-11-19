@@ -554,16 +554,16 @@ public function setPartialInstantiation
 "@author: adrpo
  sets the external flag that signals the
  presence of expandable connectors in a model"
-  input Boolean isPartialInstnatiation;
-  external "C" System_setPartialInstantiation(isPartialInstnatiation) annotation(Library = "omcruntime");
+  input Boolean isPartialInstantiation;
+  external "C" System_setPartialInstantiation(isPartialInstantiation) annotation(Library = "omcruntime");
 end setPartialInstantiation;
 
 public function getPartialInstantiation
 "@author: adrpo
  retrieves the external flag that signals the
  presence of expandable connectors in a model"
-  output Boolean isPartialInstnatiation;
-  external "C" isPartialInstnatiation=System_getPartialInstantiation() annotation(Library = "omcruntime");
+  output Boolean isPartialInstantiation;
+  external "C" isPartialInstantiation=System_getPartialInstantiation() annotation(Library = "omcruntime");
 end getPartialInstantiation;
 
 public function setHasStreamConnectors

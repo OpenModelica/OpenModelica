@@ -458,18 +458,15 @@ algorithm
       Boolean outres;
       Absyn.Exp exp;
       list<Variable> vars;
-      Boolean noGen, noEvalFunc, checkModel;
+      Boolean partialInst;
 
     // evaluate graphical API
     case ((stmts as ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = _))})),st)
       equation
         // adrpo: always evaluate the graphicalAPI with these options so instantiation is faster!
-        checkModel = OptManager.getOption("checkModel"); 
-        OptManager.setOption("checkModel", true);
-        noGen = RTOpts.setDebugFlag("nogen", true);
-        noEvalFunc = RTOpts.setDebugFlag("noevalfunc", true);
-        
-        (str,newst) = evaluateGraphicalApi(stmts, st, checkModel, noGen, noEvalFunc);
+        partialInst = System.getPartialInstantiation();
+        System.setPartialInstantiation(true);
+        (str,newst) = evaluateGraphicalApi(stmts, st, partialInst);
         
         str_1 = stringAppend(str, "\n");
       then
@@ -1340,30 +1337,24 @@ protected function evaluateGraphicalApi
   NOTE: the graphical API is always evaluated with checkModel ON and +d=nogen,noevalfunc ON"
   input Statements inStatements;
   input SymbolTable inSymbolTable;
-  input Boolean checkModel;
-  input Boolean noGen;
-  input Boolean noEvalFunc;
+  input Boolean isPartialInst;
   output String outString;
   output SymbolTable outSymbolTable;
 algorithm
-  (outString,outSymbolTable) := matchcontinue (inStatements,inSymbolTable,checkModel,noGen,noEvalFunc)
+  (outString,outSymbolTable) := matchcontinue (inStatements,inSymbolTable,isPartialInst)
     
-    case (inStatements, inSymbolTable, checkModel, noGen, noEvalFunc)
+    case (inStatements, inSymbolTable, isPartialInst)
       equation
         (outString,outSymbolTable) = evaluateGraphicalApi_dispatch(inStatements,inSymbolTable);
         // reset the flags!
-        OptManager.setOption("checkModel", checkModel);
-        _ = RTOpts.setDebugFlag("nogen", noGen);
-        _ = RTOpts.setDebugFlag("noevalfunc", noEvalFunc);
+        System.setPartialInstantiation(isPartialInst);
       then
         (outString,outSymbolTable);
     
-    case (inStatements, inSymbolTable, checkModel, noGen, noEvalFunc)
+    case (inStatements, inSymbolTable, isPartialInst)
       equation
         // reset the flags!
-        OptManager.setOption("checkModel", checkModel);
-        _ = RTOpts.setDebugFlag("nogen", noGen);
-        _ = RTOpts.setDebugFlag("noevalfunc", noEvalFunc);        
+        System.setPartialInstantiation(isPartialInst);        
       then
         fail();
         

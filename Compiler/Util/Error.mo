@@ -384,7 +384,7 @@ public constant Message NESTED_WHEN = MESSAGE(125, TRANSLATION(), ERROR(),
   "Nested when statements are not allowed.");
 public constant Message INVALID_ENUM_LITERAL = MESSAGE(126, TRANSLATION(), ERROR(),
   "Invalid use of reserved attribute name %s as enumeration literal.");
-public constant Message UNEXCPECTED_FUNCTION_INPUTS_WARNING = MESSAGE(127, TRANSLATION(), WARNING(),
+public constant Message UNEXPECTED_FUNCTION_INPUTS_WARNING = MESSAGE(127, TRANSLATION(), WARNING(),
   "Function %s has not the expected inputs. Expected inputs are %s.");
 public constant Message DUPLICATE_CLASSES_NOT_EQUIVALENT = MESSAGE(128, TRANSLATION(), ERROR(),
   "Duplicate class definitions (due to inheritance) not equivalent, first definiton is: %s, second definition is: %s");
