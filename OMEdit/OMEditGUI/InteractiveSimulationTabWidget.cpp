@@ -791,7 +791,7 @@ void InteractiveSimulationTab::initializeInteractivePlotting()
     }
     if (!selectedVariablesList.isEmpty())
     {
-        mpOMIProxy->sendSequenceMessage(tr("setfilter#%1#").append(selectedVariablesList.join(":")).append("#end"));
+        mpOMIProxy->sendSequenceMessage(tr("setfilter#%1#").append(selectedVariablesList.join(":")).append("##end"));
     }
 
     // make the start button enabled

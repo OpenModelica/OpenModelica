@@ -105,7 +105,8 @@ LIBS += -L$$(OMDEV)/lib/omniORB-4.1.4-mingw/lib/x86_win32 \
 }
 INCLUDEPATH += $$(OMDEV)/lib/omniORB-4.1.4-mingw/include \
                $$(OMDEV)/lib/qwt-5.2.1-mingw/include \
-               ../../OMPlot/OMPlotGUI
+               ../../OMPlot/OMPlotGUI \
+               ../../
 } else {
     include(OMEdit.config)
 }
