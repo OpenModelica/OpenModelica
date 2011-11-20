@@ -1,0 +1,7 @@
+/*
+ * The HumModOMCTotal.mo model is GPL v2 (http://www.gnu.org/licenses/gpl-2.0.html).
+ * contact Pavol at: Pavol.Privitzer@lf1.cuni.cz if you have questions about the model
+ */
+
+loadFile("HumModOMCTotal.mo"); getErrorString();
+instantiateModel(HumMod_HumMod_GolemEdition); getErrorString();
