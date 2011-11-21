@@ -86,6 +86,7 @@ package SimCode
       Option<SimulationSettings> simulationSettingsOpt;
       String fileNamePrefix;
     end SIMCODE;
+
   end SimCode;
 
   uniontype DelayedExpression
@@ -538,6 +539,11 @@ package SimCode
       input list<Function> inFncLst;
       output Integer outDynLoadFuncs;     
    end countDynamicExternalFunctions;
+
+  function eqInfo
+    input SimEqSystem eq;
+    output Absyn.Info info;
+  end eqInfo;
 
 end SimCode;
 
@@ -2174,5 +2180,12 @@ package Algorithm
     output DAE.ElementSource source;
   end getStatementSource;
 end Algorithm;
+
+package DAEUtil
+  function getElementSourceFileInfo
+    input DAE.ElementSource source;
+    output Absyn.Info info;
+  end getElementSourceFileInfo;
+end DAEUtil;
 
 end SimCodeTV;

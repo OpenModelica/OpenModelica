@@ -1793,10 +1793,11 @@ case SES_SIMPLE_ASSIGN(__) then
   let &preExp = buffer "" /*BUFD*/
   let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   <<
-  /*#modelicaLine <%eqInfoString(eq)%>*/
+  
+  <%modelicaLine(eqInfo(eq))%>
   <%preExp%>
   <%cref(cref)%> = <%expPart%>; <%inlineCref(context,cref)%>
-  /*#endModelicaLine*/
+  <%endModelicaLine()%>
   >>
 end equationSimpleAssign;
 
@@ -1806,7 +1807,7 @@ template equationArrayCallAssign(SimEqSystem eq, Context context,
  "Generates equation on form 'cref_array = call(...)'."
 ::=
 <<
-/*#modelicaLine <%eqInfoString(eq)%>*/
+<%modelicaLine(eqInfo(eq))%>
 <%match eq
 
 case eqn as SES_ARRAY_CALL_ASSIGN(__) then
@@ -1840,7 +1841,7 @@ case eqn as SES_ARRAY_CALL_ASSIGN(__) then
     >>
   else error(sourceInfo(), 'No runtime support for this sort of array call: <%printExpStr(eqn.exp)%>')
 %>
-/*#endModelicaLine*/
+<%endModelicaLine()%>
 >>
 end equationArrayCallAssign;
 
@@ -3796,38 +3797,6 @@ template funStatement(Statement stmt, Text &varDecls /*BUFP*/)
     "NOT IMPLEMENTED FUN STATEMENT"
 end funStatement;
 
-template statementInfoString(DAE.Statement stmt)
-::=
-  match stmt
-  case STMT_ASSIGN(__)
-  case STMT_ASSIGN_ARR(__)
-  case STMT_TUPLE_ASSIGN(__)
-  case STMT_IF(__)
-  case STMT_FOR(__)
-  case STMT_WHILE(__)
-  case STMT_ASSERT(__)
-  case STMT_TERMINATE(__)
-  case STMT_WHEN(__)
-  case STMT_BREAK(__)
-  case STMT_FAILURE(__)
-  case STMT_TRY(__)
-  case STMT_CATCH(__)
-  case STMT_THROW(__)
-  case STMT_RETURN(__)
-  case STMT_NORETCALL(__)
-  case STMT_REINIT(__)
-  then (match source case s as SOURCE(__) then infoStr(s.info))
-end statementInfoString;
-
-template eqInfoString(SimEqSystem eq)
-::=
-  match eq
-  case SES_RESIDUAL(__)
-  case SES_SIMPLE_ASSIGN(__)
-  case SES_ARRAY_CALL_ASSIGN(__)
-  then (match source case s as SOURCE(__) then infoStr(s.info))
-end eqInfoString;
-
 template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
  "Generates an algorithm statement."
 ::=
@@ -3852,9 +3821,9 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP
   case s as STMT_REINIT(__)         then algStmtReinit(s, context, &varDecls /*BUFD*/)
   else error(sourceInfo(), 'ALG_STATEMENT NYI')
   <<
-  /*#modelicaLine <%statementInfoString(stmt)%>*/
+  <%modelicaLine(getElementSourceFileInfo(getStatementSource(stmt)))%>
   <%res%>
-  /*#endModelicaLine*/
+  <%endModelicaLine()%>
   >>
 end algStatement;
 
@@ -5903,7 +5872,7 @@ case exp as MATCHEXPRESSION(__) then
   let onPatternFail = match exp.matchType case MATCHCONTINUE(__) then "MMC_THROW()" case MATCH(__) then "break"
   let &preExp +=
       <<
-      /*#endModelicaLine*/
+      <%endModelicaLine()%>
       { /* <% match exp.matchType case MATCHCONTINUE(__) then "matchcontinue expression" case MATCH(__) then "match expression" %> */        
         <%varDeclsInput%>
         <%preExpInput%>
@@ -5976,9 +5945,9 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
     %>
     <%assignments%>
     <%stmts%>
-    /*#modelicaLine <%infoStr(c.resultInfo)%>*/
+    <%modelicaLine(c.resultInfo)%>
     <% if c.result then '<%preRes%><%caseRes%>' else 'MMC_THROW();<%\n%>' %>
-    /*#endModelicaLine*/
+    <%endModelicaLine()%>
     <%done%> = 1;
     
     /* GC: pop the mark! */
@@ -6908,6 +6877,18 @@ template addRootsTempArray()
       mmc_GC_add_roots(tmpMeta, <%i%>, mmc_GC_local_state, "Array of temporaries");
       >>
 end addRootsTempArray;
+
+template modelicaLine(Info info)
+::=
+  match info
+  case INFO(columnNumberStart=0) then "/* Dummy Line */"
+  else '/*#modelicaLine <%infoStr(info)%>*/'
+end modelicaLine;
+
+template endModelicaLine()
+::=
+  "/*#endModelicaLine*/"
+end endModelicaLine;
 
 end SimCodeC;
 

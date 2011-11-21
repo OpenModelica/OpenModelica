@@ -10661,6 +10661,17 @@ algorithm
   end match;
 end functionInfo;
 
+public function eqInfo
+  input SimEqSystem eq;
+  output Absyn.Info info;
+algorithm
+  info := match eq
+    case SES_RESIDUAL(source=DAE.SOURCE(info=info)) then info;
+    case SES_SIMPLE_ASSIGN(source=DAE.SOURCE(info=info)) then info;
+    case SES_ARRAY_CALL_ASSIGN(source=DAE.SOURCE(info=info)) then info;
+    case SES_WHEN(source=DAE.SOURCE(info=info)) then info;
+  end match;
+end eqInfo;
 
 function twodigit
   input Integer i;
