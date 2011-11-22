@@ -423,9 +423,11 @@ solver_main(int argc, char** argv, double &start, double &stop,
     fprintf(stdout, "Error calculating bound parameters\n"); fflush(NULL);
     return -1;
   }
+
   if (sim_verbose >= LOG_SOLVER) {
     fprintf(stdout, "| info LOG_SOLVER | Calculated bound parameters\n"); fflush(NULL);
   }
+
   /* Evaluate all constant equations during initialization */
   globalData->init = 1;
   functionAliasEquations();
@@ -441,6 +443,16 @@ solver_main(int argc, char** argv, double &start, double &stop,
         init_optiMethod ? init_optiMethod->c_str() : NULL)) {
       throw TerminateSimulationException(globalData->timeValue,
             string("Error in initialization. Storing results and exiting.\n"));
+    }
+
+    // adrpo: write the parameter data in the file once again after bound parameters and initialization!
+    // TODO! FIXME! adrpo: is it OK here, after the initialization??
+    if (sim_result)
+    {
+      sim_result->writeParameterData();
+      if (sim_verbose >= LOG_SOLVER) {
+          fprintf(stdout, "| info LOG_SOLVER | Wrote parameters to the file after initialization (for output formats that support this)\n"); fflush(NULL);
+      }
     }
 
     SaveZeroCrossings();

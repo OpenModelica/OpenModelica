@@ -39,6 +39,7 @@ public:
 
 simulation_result_empty(const char* filename, long numpoints) : simulation_result(filename,numpoints) {};
 void emit() {storeExtrapolationData();};
+void writeParameterData() { /* do nothing */ };
 virtual const char* result_type() {return "no result file";};
 
 };

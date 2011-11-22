@@ -42,6 +42,7 @@ public:
 simulation_result_csv(const char* filename, long numpoints);
 virtual ~simulation_result_csv();
 virtual void emit();
+void writeParameterData() { /* do nothing */ };
 virtual const char* result_type() {return "csv";};
 };
 

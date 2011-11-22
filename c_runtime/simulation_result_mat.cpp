@@ -118,9 +118,30 @@ static const omc_varInfo** calcDataNames(int dataSize, map<void*,int> &indx_para
   return names;
 }
 
+// write the parameter data after bound_parameters is called
+void simulation_result_mat::writeParameterData()
+{
+  int rows, cols;
+  double *doubleMatrix = NULL;
+  try{
+    std::ofstream::pos_type remember = fp.tellp();
+    fp.seekp(data1HdrPos);
+    // generate `data_1' matrix (with parameter data)
+    generateData_1(doubleMatrix, rows, cols, globalData, startTime, stopTime);
+    //  write `data_1' matrix
+    writeMatVer4Matrix("data_1", cols, rows, doubleMatrix, sizeof(double));
+    delete[] doubleMatrix; doubleMatrix = NULL;
+    fp.seekp(remember);
+  } catch(...) {
+    fp.close();
+    delete[] doubleMatrix;
+    throw;
+  }
+};
+
 simulation_result_mat::simulation_result_mat(const char* filename,
                double tstart, double tstop)
-  : simulation_result(filename,numpoints),fp(),data2HdrPos(-1),ntimepoints(0)
+  : simulation_result(filename,numpoints),fp(),data1HdrPos(-1),data2HdrPos(-1),ntimepoints(0),startTime(tstart),stopTime(tstop)
 {
   const char Aclass[] = "A1 bt. ir1 na  Tj  re  ac  nt  so   r   y   ";
 
@@ -136,7 +157,6 @@ simulation_result_mat::simulation_result_mat(const char* filename,
   rt_tick(SIM_TIMER_OUTPUT);
   numVars = calcDataSize(indx_map);
   names = calcDataNames(numVars+nParams,indx_parammap);
-
   try {
     // open file
     fp.open(filename, std::ofstream::binary|std::ofstream::trunc);
@@ -163,12 +183,16 @@ simulation_result_mat::simulation_result_mat(const char* filename,
     writeMatVer4Matrix("dataInfo", cols, rows, intMatrix, sizeof(int32_t));
     delete[] doubleMatrix; doubleMatrix = NULL;
 
+    // remember data1HdrPos
+    data1HdrPos = fp.tellp();
+
+    // adrpo: i cannot use writeParameterData here as it would return back to dataHdr1Pos
     // generate `data_1' matrix (with parameter data)
     generateData_1(doubleMatrix, rows, cols, globalData, tstart, tstop);
     //  write `data_1' matrix
     writeMatVer4Matrix("data_1", cols, rows, doubleMatrix, sizeof(double));
-    delete[] doubleMatrix; doubleMatrix = NULL;
 
+    // remember data2HdrPos
     data2HdrPos = fp.tellp();
     // write `data_2' header
     writeMatVer4MatrixHeader("data_2", indx_map.size(), 0, sizeof(double));
@@ -186,6 +210,7 @@ simulation_result_mat::simulation_result_mat(const char* filename,
   free(names); names=NULL;
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
+
 simulation_result_mat::~simulation_result_mat()
 {
   rt_tick(SIM_TIMER_OUTPUT);
@@ -483,5 +508,5 @@ void simulation_result_mat::generateData_1(double* &data_1,
       data_1[offset+i] = (double)mdl_data->boolVariables.parameters[i];
       data_1[offset+i+cols] = (double)mdl_data->boolVariables.parameters[i];
   }
-
 }
+
