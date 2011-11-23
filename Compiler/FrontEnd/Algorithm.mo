@@ -412,34 +412,6 @@ algorithm
   t := Types.elabType(ty);
 end getPropExpType;
 
-/*
-protected function getTypeExpType "function: getTypeExpType
-  Returns the expression type for a given Type module type. Used only by
-  getPropExpType."
-  input DAE.Type inType;
-  output DAE.ExpType outType;
-algorithm
-  outType:=
-  matchcontinue (inType)
-    local DAE.Type t;
-    case ((DAE.T_INTEGER(varLstInt = _),_)) then DAE.ET_INT();
-    case ((DAE.T_REAL(varLstReal = _),_)) then DAE.ET_REAL();
-    case ((DAE.T_STRING(varLstString = _),_)) then DAE.ET_STRING();
-    case ((DAE.T_BOOL(varLstBool = _),_)) then DAE.ET_BOOL();
-    case ((DAE.T_ARRAY(arrayType = t),_)) then getTypeExpType(t);
-    case ((DAE.T_COMPLEX(_,{},SOME(t),_),_))
-       then getTypeExpType(t);
-    case ((DAE.T_COMPLEX(_,_::_,_,_),_))
-      equation
-      // Commenting out this line because it prints a lot of warnings for
-      // record assignments (which actually work just fine). // sjoelund // 2009-05-07
-      //print("Warning complex_varList not implemented for Array_assign\n");
-      then fail();
-    case ((_,_)) then DAE.ET_OTHER();  / was fail but records must be handled somehow
-  end matchcontinue;
-end getTypeExpType;
-*/
-
 public function makeIf "function: makeIf
   This function creates an `DAE.STMT_IF\' construct, checking that the types
   of the parts are correct. Else part is generated using the makeElse
