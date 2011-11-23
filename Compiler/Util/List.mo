@@ -6165,4 +6165,17 @@ algorithm
   end match;
 end toString;
 
+public function hasOneElement
+"@author:adrpo
+ returns true if the list has exactly one element, otherwise false"
+  input list<ElementType> inList;
+  output Boolean b;
+algorithm
+  b := match(inList)
+    local ElementType x;
+    case ({x}) then true;
+    case (_) then false;
+  end match;
+end hasOneElement;
+
 end List;
