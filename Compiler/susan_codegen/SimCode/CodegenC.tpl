@@ -455,15 +455,14 @@ case _ then
     #define <%cref(c)%> _<%cref(name)%>(0)
     #define _<%cref(name)%>(i) data->localData[i]-><%arrayName%>[<%intAdd(offset,index)%>]
     #define <%cref(name)%> _<%cref(name)%>(0)
-    #define _$P$PRE<%cref(name)%>(i) data->localData[i]-><%arrayName%>Pre[<%intAdd(offset,index)%>]
-    #define $P$PRE<%cref(name)%> _$P$PRE<%cref(name)%>(0)
+    #define $P$PRE<%cref(name)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
     >>
   case SIMVAR(aliasvar=NOALIAS()) then
     <<
     #define _<%cref(name)%>(i) data->localData[i]-><%arrayName%>[<%intAdd(offset,index)%>]
     #define <%cref(name)%> _<%cref(name)%>(0)
-    #define _$P$PRE<%cref(name)%>(i) data->localData[i]-><%arrayName%>Pre[<%intAdd(offset,index)%>]
-    #define $P$PRE<%cref(name)%> _$P$PRE<%cref(name)%>(0)
+    #define $P$PRE<%cref(name)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
+   
     >>  
 end globalDataVarDefine_X_;
 
@@ -907,27 +906,26 @@ template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int)
 " Generates reinit statemeant"
 ::=
 
-match whenClauses
-case SIM_WHEN_CLAUSE(__) then
-  let &preExp = buffer "" /*BUFD*/
-  let &helpInits = buffer "" /*BUFD*/
-  let helpIf = (conditions |> (e, hidx) =>
-      let helpInit = daeExp(e, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'localData->helpVars[<%hidx%>] && !localData->helpVarsPre[<%hidx%>] /* edge */'
-    ;separator=" || ")
-  let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/)                     
+    match whenClauses
+    case SIM_WHEN_CLAUSE(__) then
+      let &preExp = buffer "" /*BUFD*/
+      let &helpInits = buffer "" /*BUFD*/
+      let helpIf = (conditions |> (e, hidx) =>
+          let helpInit = daeExp(e, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+          let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
+          'data->simulationInfo.helpVars[<%hidx%>] && !data->simulationInfo.helpVarsPre[<%hidx%>] /* edge */'
+        ;separator=" || ")
+      let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/)                     
 
-if reinits then  
-<<
-
-  //For whenclause index: <%int%>
-  <%preExp%>
-  <%helpInits%>
-  if (<%helpIf%>) { 
-    <%ifthen%>
-  }
->>
+    if reinits then  
+    <<
+        //For whenclause index: <%int%>
+        <%preExp%>
+        <%helpInits%>
+        if (<%helpIf%>) { 
+            <%ifthen%>
+        }
+    >>
 end genreinits;
 
 
@@ -1776,8 +1774,8 @@ case eqn as SES_ARRAY_CALL_ASSIGN(__) then
   let &helpInits = buffer "" /*BUFD*/
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'localData->helpVars[<%hidx%>] && !localData->helpVarsPre[<%hidx%>] /* edge */'
+      let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
+      'data->simulationInfo.helpVars[<%hidx%>] && !data->simulationInfo.helpVarsPre[<%hidx%>] /* edge */'
     ;separator=" || ")C*/, &varDecls /*BUFD*/)
   match expTypeFromExpShort(eqn.exp)
   case "boolean" then
@@ -1942,8 +1940,8 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   let &helpInits = buffer "" /*BUFD*/
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'localData->helpVars[<%hidx%>] && !localData->helpVarsPre[<%hidx%>] /* edge */'
+      let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
+      'data->simulationInfo.helpVars[<%hidx%>] && !data->simulationInfo.helpVarsPre[<%hidx%>] /* edge */'
     ;separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
@@ -1962,8 +1960,8 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   let &helpInits = buffer "" /*BUFD*/
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'localData->helpVars[<%hidx%>] && !localData->helpVarsPre[<%hidx%>] /* edge */'
+      let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
+      'data->simulationInfo.helpVars[<%hidx%>] && !data->simulationInfo.helpVarsPre[<%hidx%>] /* edge */'
     ;separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
@@ -1989,8 +1987,8 @@ match eq
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'localData->helpVars[<%hidx%>] && !localData->helpVarsPre[<%hidx%>] /* edge */'
+      let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
+      'data->simulationInfo.helpVars[<%hidx%>] && !data->simulationInfo.helpVarsPre[<%hidx%>] /* edge */'
     ;separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
@@ -2003,8 +2001,8 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
   let helpIf = (conditions |> (e, hidx) =>
       let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
-      'localData->helpVars[<%hidx%>] && !localData->helpVarsPre[<%hidx%>] /* edge */'
+      let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
+      'data->simulationInfo.helpVars[<%hidx%>] && !data->simulationInfo.helpVarsPre[<%hidx%>] /* edge */'
     ;separator=" || ")
   let &preExp2 = buffer "" /*BUFD*/
   let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
@@ -4272,7 +4270,7 @@ case SIMULATION(genDiscrete=true) then
     let else = algStatementWhenElse(elseWhen, &varDecls /*BUFD*/)
     <<
     <%preIf%>
-    if (<%helpVarIndices |> idx => 'localData->helpVars[<%idx%>] && !localData->helpVarsPre[<%idx%>] /* edge */' ;separator=" || "%>) {
+    if (<%helpVarIndices |> idx => 'data->simulationInfo.helpVars[<%idx%>] && !data->simulationInfo.helpVarsPre[<%idx%>] /* edge */' ;separator=" || "%>) {
       <%statements%>
     }
     <%else%>
@@ -4314,7 +4312,7 @@ template algStatementWhenPre(DAE.Statement stmt, Text &varDecls /*BUFP*/)
                      &preExp /*BUFC*/, &varDecls /*BUFD*/)
       <<
       <%preExp%>
-      localData->helpVars[<%i%>] = <%res%>;
+      data->simulationInfo.helpVars[<%i%>] = <%res%>;
       <%restPre%>
       >>
 end algStatementWhenPre;
@@ -4330,7 +4328,7 @@ case SOME(when as STMT_WHEN(__)) then
     ;separator="\n")
   let else = algStatementWhenElse(when.elseWhen, &varDecls /*BUFD*/)
   let elseCondStr = (when.helpVarIndices |> hidx =>
-      'localData->helpVars[<%hidx%>] && !localData->helpVarsPre[<%hidx%>] /* edge */'
+      'data->simulationInfo.helpVars[<%hidx%>] && !data->simulationInfo.helpVarsPre[<%hidx%>] /* edge */'
     ;separator=" || ")
   <<
   else if (<%elseCondStr%>) {
@@ -4358,7 +4356,7 @@ template algStatementWhenPreAssigns(list<Exp> exps, list<Integer> ints,
       let firstExpPart = daeExp(firstExp, contextSimulationDiscrete,
                               &preExp /*BUFC*/, &varDecls /*BUFD*/)
       <<
-      localData->helpVars[<%firstInt%>] = <%firstExpPart%>;
+      data->simulationInfo.helpVars[<%firstInt%>] = <%firstExpPart%>;
       <%rest%>
       >>
 end algStatementWhenPreAssigns;

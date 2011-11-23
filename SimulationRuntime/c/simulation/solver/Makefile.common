@@ -3,6 +3,7 @@ include ../../Makefile.objs
 HFILES = \
 simulation_inline_solver.h \
 solver_main.h \
+dassl.h \
 dopri45.h \
 
 LIBS = libsolver.a

@@ -483,9 +483,6 @@ startNonInteractiveSimulation(int argc, char**argv,_X_DATA *data)
   initializeOutputFilter(&(data->modelData),data->simulationInfo.variableFilter);
   callExternalObjectConstructors(data);
 
-  initSample(data, start, stop);
-  initDelay(start);
-
   if (measure_time_flag) {
     rt_init(SIM_TIMER_FIRST_FUNCTION + data->modelData.nFunctions + data->modelData.nProfileBlocks + 4 /* sentinel */);
     rt_tick( SIM_TIMER_TOTAL );

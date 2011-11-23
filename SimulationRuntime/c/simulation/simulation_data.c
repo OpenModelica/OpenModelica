@@ -57,13 +57,6 @@ void initializeXDataStruc(_X_DATA *data)
     tmpSimData.integerVars = (modelica_integer*)calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
     tmpSimData.booleanVars = (modelica_boolean*)calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
     tmpSimData.stringVars = (modelica_string*)calloc(data->modelData.nVariablesString, sizeof(modelica_string));
-    tmpSimData.helpVars = (modelica_boolean*)calloc(data->modelData.nHelpVars, sizeof(modelica_boolean));
-    /* buffer for all variable pre values */
-    tmpSimData.realVarsPre = (modelica_real*)calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
-    tmpSimData.integerVarsPre = (modelica_integer*)calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
-    tmpSimData.booleanVarsPre = (modelica_boolean*)calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
-    tmpSimData.stringVarsPre = (modelica_string*)calloc(data->modelData.nVariablesString, sizeof(modelica_string));
-    tmpSimData.helpVarsPre = (modelica_boolean*)calloc(data->modelData.nHelpVars, sizeof(modelica_boolean));
     appendRingData(data->simulationData,&tmpSimData);
   }
   data->localData = (SIMULATION_DATA**) calloc(SIZERINGBUFFER, sizeof(SIMULATION_DATA*));
@@ -92,6 +85,14 @@ void initializeXDataStruc(_X_DATA *data)
   data->simulationInfo.backupRelations = (modelica_boolean*) calloc(data->modelData.nZeroCrossings,sizeof(modelica_boolean));
   data->simulationInfo.zeroCrossingEnabled = (modelica_boolean*) calloc(data->modelData.nZeroCrossings,sizeof(modelica_boolean));
 
+  data->simulationInfo.helpVars = (modelica_boolean*) calloc(data->modelData.nHelpVars, sizeof(modelica_boolean));
+  data->simulationInfo.helpVarsPre = (modelica_boolean*) calloc(data->modelData.nHelpVars, sizeof(modelica_boolean));
+
+  /* buffer for all variable pre values */
+  data->simulationInfo.realVarsPre = (modelica_real*)calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
+  data->simulationInfo.integerVarsPre = (modelica_integer*)calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
+  data->simulationInfo.booleanVarsPre = (modelica_boolean*)calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
+  data->simulationInfo.stringVarsPre = (modelica_string*)calloc(data->modelData.nVariablesString, sizeof(modelica_string));
 }
 
 void DeinitializeXDataStruc(_X_DATA *data)
@@ -107,17 +108,10 @@ void DeinitializeXDataStruc(_X_DATA *data)
     free(tmpSimData->integerVars);
     free(tmpSimData->booleanVars);
     free(tmpSimData->stringVars);
-    free(tmpSimData->helpVars);
-    /* free buffer for all variable pre values */
-    free(tmpSimData->realVarsPre);
-    free(tmpSimData->integerVarsPre);
-    free(tmpSimData->booleanVarsPre);
-    free(tmpSimData->stringVarsPre);
-    free(tmpSimData->helpVarsPre);
-
   }
+  free(data->localData);
 
-  /* create modelData var arrays */
+  /* free modelData var arrays */
   free(data->modelData.realData);
   free(data->modelData.integerData);
   free(data->modelData.booleanData);
@@ -133,9 +127,23 @@ void DeinitializeXDataStruc(_X_DATA *data)
   free(data->modelData.booleanAlias);
   free(data->modelData.stringAlias);
 
-  free(data->localData);
-
+  /* free simulationInfo arrays */
   free(data->simulationInfo.rawSampleExps);
   free(data->simulationInfo.sampleTimes);
+
+  free(data->simulationInfo.helpVars);
+  free(data->simulationInfo.helpVarsPre);
+  free(data->simulationInfo.zeroCrossings);
+  free(data->simulationInfo.zeroCrossingsPre);
+  free(data->simulationInfo.backupRelations);
+  free(data->simulationInfo.zeroCrossingEnabled);
+
+  /* free buffer for all variable pre values */
+  free(data->simulationInfo.realVarsPre);
+  free(data->simulationInfo.integerVarsPre);
+  free(data->simulationInfo.booleanVarsPre);
+  free(data->simulationInfo.stringVarsPre);
+
+
 
 }

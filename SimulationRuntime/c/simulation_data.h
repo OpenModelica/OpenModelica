@@ -262,6 +262,15 @@ extern "C" {
     modelica_boolean* backupRelations;
     modelica_boolean* zeroCrossingEnabled;
 
+    /* helpVars are the result when relations and samples */
+    modelica_boolean* helpVars;
+    modelica_boolean* helpVarsPre;
+
+    modelica_real* realVarsPre;
+    modelica_integer* integerVarsPre;
+    modelica_boolean* booleanVarsPre;
+    modelica_string* stringVarsPre;
+
   }SIMULATION_INFO;
 
   /* collects all dynamic model data like the variabel-values */
@@ -273,13 +282,6 @@ extern "C" {
     modelica_integer* integerVars;
     modelica_boolean* booleanVars;
     modelica_string* stringVars;
-    modelica_boolean* helpVars;
-
-    modelica_real* realVarsPre;
-    modelica_integer* integerVarsPre;
-    modelica_boolean* booleanVarsPre;
-    modelica_string* stringVarsPre;
-    modelica_boolean* helpVarsPre;
 
   }SIMULATION_DATA;
 

@@ -216,7 +216,6 @@ void initSample(_X_DATA* data, double start, double stop)
     if(stop >= data->simulationInfo.rawSampleExps[i].start)
 	  max_events += (int)(((stop - data->simulationInfo.rawSampleExps[i].start) / data->simulationInfo.rawSampleExps[i].interval) + 1);
   }
-  
   Samples = (sample_time*)calloc(max_events+1, sizeof(sample_time));
   if(Samples == NULL)
   {
@@ -311,12 +310,14 @@ void storePreValues(_X_DATA *data)
 {
 	SIMULATION_DATA *sData = data->localData[0];
 	MODEL_DATA      *mData = &(data->modelData);
+	SIMULATION_INFO *siData = &(data->simulationInfo);
 
-	memcpy(sData->realVarsPre, sData->realVars, sizeof(modelica_real)*mData->nVariablesReal);
-	memcpy(sData->integerVarsPre, sData->integerVars, sizeof(modelica_integer)*mData->nVariablesInteger);
-	memcpy(sData->booleanVarsPre, sData->booleanVars, sizeof(modelica_boolean)*mData->nVariablesBoolean);
-	memcpy(sData->stringVarsPre, sData->stringVars, sizeof(modelica_string)*mData->nVariablesString);
-	memcpy(sData->helpVarsPre, sData->helpVars, sizeof(modelica_boolean)*mData->nHelpVars);
+	memcpy(siData->realVarsPre, sData->realVars, sizeof(modelica_real)*mData->nVariablesReal);
+	memcpy(siData->integerVarsPre, sData->integerVars, sizeof(modelica_integer)*mData->nVariablesInteger);
+	memcpy(siData->booleanVarsPre, sData->booleanVars, sizeof(modelica_boolean)*mData->nVariablesBoolean);
+	memcpy(siData->stringVarsPre, sData->stringVars, sizeof(modelica_string)*mData->nVariablesString);
+	memcpy(siData->helpVarsPre, siData->helpVars, sizeof(modelica_boolean)*mData->nHelpVars);
+
 }
 
 
@@ -371,7 +372,7 @@ void resetAllHelpVars(_X_DATA* data)
   int i = 0;
   for(i = 0; i < data->modelData.nHelpVars; i++)
   {
-    data->localData[0]->helpVars[i] = 0;
+    data->simulationInfo.helpVars[i] = 0;
   }
 }
 
@@ -526,7 +527,7 @@ deactivateSampleEventsandEquations(_X_DATA *data)
       DEBUG_INFO1(LOG_EVENTS, "Deactivate Sample Events index: %li", data->simulationInfo.curSampleTimeIx);
 
       (data->simulationInfo.sampleTimes[data->simulationInfo.curSampleTimeIx]).activated = 0;
-      data->localData[0]->helpVars[((data->simulationInfo.sampleTimes[data->simulationInfo.curSampleTimeIx]).zc_index)]
+      data->simulationInfo.helpVars[((data->simulationInfo.sampleTimes[data->simulationInfo.curSampleTimeIx]).zc_index)]
                            = 0;
       data->simulationInfo.curSampleTimeIx++;
     }
@@ -596,6 +597,7 @@ CheckForNewEvent(_X_DATA* simData, modelica_boolean* sampleactived, double* curr
 
       FindRoot(simData, &EventTime, eventList);
       /*Handle event as state event*/
+      simData->localData[0]->timeValue = EventTime;
       EventHandle(simData, 0, eventList);
 
       DEBUG_INFO1(LOG_EVENTS, "Event Handling at EventTime: %f done!", EventTime);
@@ -608,135 +610,124 @@ CheckForNewEvent(_X_DATA* simData, modelica_boolean* sampleactived, double* curr
 }
 
 /*
-  This function handle events and change all
-  needed variables for an event
-  parameter flag - Indicate the kind of event
-     = 0 state event
-     = 1 sample event
-*/
-int EventHandle(_X_DATA* simData, int flag, LIST *eventList){
+ This function handle events and change all
+ needed variables for an event
+ parameter flag - Indicate the kind of event
+ = 0 state event
+ = 1 sample event
+ */
+int EventHandle(_X_DATA* simData, int flag, LIST *eventList) {
 
-  if (flag == 0){
+  if (flag == 0) {
     long event_id = 0;
     int needToIterate = 0;
     int IterationNum = 0;
     LIST_NODE* it;
 
-    DEBUG_INFO_NEL(LOG_EVENTS,"Handle Event caused by ZeroCrossings: ");
-    for(it=listFirstNode(eventList); it; it=listNextNode(it)){
-      event_id=*((long*)listNodeData(it));
-      DEBUG_INFO_NELA1(LOG_EVENTS,"%ld",event_id);
-      if (listLength(eventList) > 0){
-        DEBUG_INFO_NELA(LOG_EVENTS,", ");
+    DEBUG_INFO_NEL(LOG_EVENTS, "Handle Event caused by ZeroCrossings: ");
+    for (it = listFirstNode(eventList); it; it = listNextNode(it)) {
+      event_id = *((long*) listNodeData(it));
+      DEBUG_INFO_NELA1(LOG_EVENTS, "%ld", event_id);
+      if (listLength(eventList) > 0) {
+        DEBUG_INFO_NELA(LOG_EVENTS, ", ");
       }
 
       /* switch the direction of ZeroCrossing */
-      if (simData->simulationInfo.zeroCrossingEnabled[event_id] == -1){
+      if (simData->simulationInfo.zeroCrossingEnabled[event_id] == -1) {
         simData->simulationInfo.zeroCrossingEnabled[event_id] = 1;
-      }else if (simData->simulationInfo.zeroCrossingEnabled[event_id] == 1){
+      } else if (simData->simulationInfo.zeroCrossingEnabled[event_id] == 1) {
         simData->simulationInfo.zeroCrossingEnabled[event_id] = -1;
       }
     }
-    DEBUG_INFO_NELA(LOG_EVENTS,"\n");
+    DEBUG_INFO_NELA(LOG_EVENTS, "\n");
     /*debugPrintHelpVars(); */
     /*determined complete system */
     needToIterate = 0;
     IterationNum = 0;
     functionDAE(simData, &needToIterate);
     functionAliasEquations(simData);
-    if (DEBUG_FLAG(LOG_EVENTS)){
+    if (DEBUG_FLAG(LOG_EVENTS)) {
       sim_result_emit(simData);
     }
 
-    while (needToIterate || checkForDiscreteChanges(simData)){
+    while (needToIterate || checkForDiscreteChanges(simData)) {
 
-        if (needToIterate){
-            DEBUG_INFO(LOG_EVENTS, "reinit call. Iteration needed!");
-        } else {
-            DEBUG_INFO(LOG_EVENTS, "discrete Var changed. Iteration needed!");
-        }
-        storePreValues(simData);
-        functionDAE(simData, &needToIterate);
-        functionAliasEquations(simData);
-        if (DEBUG_FLAG(LOG_EVENTS)){
-          sim_result_emit(simData);
-        }
-        IterationNum++;
-        if (IterationNum > IterationMax){
-            /*break; */
-            THROW("ERROR: Too many Iteration. System is not consistent!");
-        }
+      if (needToIterate) {
+        DEBUG_INFO(LOG_EVENTS, "reinit call. Iteration needed!");
+      } else {
+        DEBUG_INFO(LOG_EVENTS, "discrete Var changed. Iteration needed!");
+      }
+      storePreValues(simData);
+      functionDAE(simData, &needToIterate);
+      functionAliasEquations(simData);
+      if (DEBUG_FLAG(LOG_EVENTS)) {
+        sim_result_emit(simData);
+      }
+      IterationNum++;
+      if (IterationNum > IterationMax) {
+        /*break; */
+        THROW("ERROR: Too many Iteration. System is not consistent!");
+      }
     }
   }
   /* sample event handling */
-  else if (flag == 1)
-    {
-      int needToIterate = 0;
-      int IterationNum = 0;
-      DEBUG_INFO1(LOG_EVENTS, "Event Handling for Sample : %f!", simData->localData[0]->timeValue);
-      sim_result_emit(simData);
-      /*evaluate and emit results before sample events are activated */
-      functionDAE(simData, &needToIterate);
-      while (needToIterate || checkForDiscreteChanges(simData))
-        {
-          if (needToIterate)
-            {
-              DEBUG_INFO(LOG_EVENTS, "reinit call. Iteration needed!");
-            }
-          else
-            {
-                DEBUG_INFO(LOG_EVENTS, "discrete Var changed. Iteration needed!");
-            }
-          storePreValues(simData);
-          functionDAE(simData, &needToIterate);
-          if (sim_verbose >= LOG_EVENTS)
-            {
-              sim_result_emit(NULL);
-            }
-          IterationNum++;
-          if (IterationNum > IterationMax)
-            {
-              THROW("ERROR: Too many Iteration. System is not consistent!");
-            }
+  else if (flag == 1) {
+    int needToIterate = 0;
+    int IterationNum = 0;
+    DEBUG_INFO1(LOG_EVENTS, "Event Handling for Sample : %f!",
+        simData->localData[0]->timeValue);
+    sim_result_emit(simData);
+    /*evaluate and emit results before sample events are activated */
+    functionDAE(simData, &needToIterate);
+    while (needToIterate || checkForDiscreteChanges(simData)) {
 
-        }
+      if (needToIterate) {
+        DEBUG_INFO(LOG_EVENTS, "reinit call. Iteration needed!");
+      } else {
+        DEBUG_INFO(LOG_EVENTS, "discrete Var changed. Iteration needed!");
+      }
       storePreValues(simData);
-      sim_result_emit(simData);
-
-      /*Activate sample and evaluate again */
-      activateSampleEvents(simData);
-
       functionDAE(simData, &needToIterate);
-      if (sim_verbose >= LOG_EVENTS)
-        {
-          sim_result_emit(simData);
-        }
-      while (needToIterate || checkForDiscreteChanges(simData))
-        {
-          if (needToIterate)
-            {
-                DEBUG_INFO(LOG_EVENTS, "reinit call. Iteration needed!");
-            }
-          else
-            {
-                DEBUG_INFO(LOG_EVENTS, "discrete Var changed. Iteration needed!");
-            }
-          storePreValues(simData);
-          functionDAE(simData, &needToIterate);
-          if (sim_verbose >= LOG_EVENTS)
-            {
-              sim_result_emit(simData);
-            }
-          IterationNum++;
-          if (IterationNum > IterationMax)
-            {
-                THROW("ERROR: Too many Iteration. System is not consistent!");
-            }
+      if (DEBUG_FLAG(LOG_EVENTS)) {
+        sim_result_emit(simData);
+      }
+      IterationNum++;
+      if (IterationNum > IterationMax) {
+        THROW("ERROR: Too many Iteration. System is not consistent!");
+      }
 
-        }
-      deactivateSampleEventsandEquations(simData);
-      DEBUG_INFO1(LOG_EVENTS, "Event Handling for Sample : %f done!", simData->localData[0]->timeValue);
     }
+    storePreValues(simData);
+    sim_result_emit(simData);
+
+    /*Activate sample and evaluate again */
+    activateSampleEvents(simData);
+
+    functionDAE(simData, &needToIterate);
+    if (sim_verbose >= LOG_EVENTS) {
+      sim_result_emit(simData);
+    }
+    while (needToIterate || checkForDiscreteChanges(simData)) {
+      if (needToIterate) {
+        DEBUG_INFO(LOG_EVENTS, "reinit call. Iteration needed!");
+      } else {
+        DEBUG_INFO(LOG_EVENTS, "discrete Var changed. Iteration needed!");
+      }
+      storePreValues(simData);
+      functionDAE(simData, &needToIterate);
+      if (sim_verbose >= LOG_EVENTS) {
+        sim_result_emit(simData);
+      }
+      IterationNum++;
+      if (IterationNum > IterationMax) {
+        THROW("ERROR: Too many Iteration. System is not consistent!");
+      }
+
+    }
+    deactivateSampleEventsandEquations(simData);
+    DEBUG_INFO1(LOG_EVENTS, "Event Handling for Sample : %f done!",
+        simData->localData[0]->timeValue);
+  }
   SaveZeroCrossingsAfterEvent(simData);
   correctDirectionZeroCrossings(simData);
   return 0;
