@@ -54,6 +54,7 @@ public:
   simulation_result_mat(const char* filename, double tstart, double tstop, MODEL_DATA *modelData);
   virtual ~simulation_result_mat();
   virtual void emit(_X_DATA *data);
+  void writeParameterData(MODEL_DATA *modelData);
   virtual const char* result_type() { 
     /* return "Dymosim's compatible MAT-file"; */
     return "mat";
@@ -63,8 +64,11 @@ public:
 
 private:
   std::ofstream fp;
+  std::ofstream::pos_type data1HdrPos; // position of data_1 matrix's header in a file
   std::ofstream::pos_type data2HdrPos; /* position of data_2 matrix's header in a file */
   unsigned long ntimepoints; /* count of how many time emits() was called */
+  double startTime; // the start time
+  double stopTime;  // the stop time
 
   typedef map<int,int> INTMAP;
 

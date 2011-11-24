@@ -110,9 +110,32 @@ const VAR_INFO** simulation_result_mat::calcDataNames(int dataSize, MODEL_DATA *
   return names;
 }
 
+/* write the parameter data after bound_parameters is called */
+void simulation_result_mat::writeParameterData(MODEL_DATA *modelData)
+{
+  int rows, cols;
+  double *doubleMatrix = NULL;
+  try{
+    std::ofstream::pos_type remember = fp.tellp();
+    fp.seekp(data1HdrPos);
+    /* generate `data_1' matrix (with parameter data) */
+    generateData_1(doubleMatrix, rows, cols, modelData, startTime, stopTime);
+    /*  write `data_1' matrix */
+    writeMatVer4Matrix("data_1", cols, rows, doubleMatrix, sizeof(double));
+    delete[] doubleMatrix; doubleMatrix = NULL;
+    fp.seekp(remember);
+  } catch(...) {
+    fp.close();
+    delete[] doubleMatrix;
+    throw;
+  }
+};
+
+
+
 simulation_result_mat::simulation_result_mat(const char* filename,
                double tstart, double tstop, MODEL_DATA *modelData)
-  : simulation_result(filename,numpoints),fp(),data2HdrPos(-1),ntimepoints(0)
+  : simulation_result(filename,numpoints),fp(),data1HdrPos(-1),data2HdrPos(-1),ntimepoints(0),startTime(tstart),stopTime(tstop)
 {
   const char Aclass[] = "A1 bt. ir1 na  Tj  re  ac  nt  so   r   y   ";
 
@@ -150,21 +173,25 @@ simulation_result_mat::simulation_result_mat(const char* filename,
 
     /* generate dataInfo table */
     generateDataInfo(intMatrix, rows, cols, modelData, numVars, nParams);
-    // write `dataInfo' matrix
+    /* write `dataInfo' matrix */
     writeMatVer4Matrix("dataInfo", cols, rows, intMatrix, sizeof(int32_t));
-    delete[] doubleMatrix; doubleMatrix = NULL;
 
-    // generate `data_1' matrix (with parameter data)
+    /* remember data1HdrPos */
+    data1HdrPos = fp.tellp();
+
+    /* adrpo: i cannot use writeParameterData here as it would return back to dataHdr1Pos */
+    /* generate `data_1' matrix (with parameter data) */
     generateData_1(doubleMatrix, rows, cols, modelData, tstart, tstop);
-    //  write `data_1' matrix
+    /*  write `data_1' matrix */
     writeMatVer4Matrix("data_1", cols, rows, doubleMatrix, sizeof(double));
-    free(doubleMatrix);
-    doubleMatrix = NULL;
 
+    /* remember data2HdrPos */
     data2HdrPos = fp.tellp();
     /* write `data_2' header */
     writeMatVer4MatrixHeader("data_2", r_indx_map.size() + i_indx_map.size() + b_indx_map.size() + 1 /* add one more for timeValue*/, 0, sizeof(double));
 
+    free(doubleMatrix);
+    doubleMatrix = NULL;
     fp.flush();
 
   } catch(...) {
@@ -361,16 +388,16 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo,
       {
         it = r_indx_map.find(mdl_data->realAlias[i].nameID);
         if (it != r_indx_map.end()) 
-          table = 1;
+          table = 2;
       }
       else if (mdl_data->realAlias[i].aliasType == 1) /* parameter */
       {
         it = r_indx_parammap.find(mdl_data->realAlias[i].nameID);
         if (it != r_indx_map.end()) 
-          table = 2;
+          table = 1;
       } else if (mdl_data->realAlias[i].aliasType == 2) /* time */
       {
-        table = 1;
+        table = 2;
       }
       if(table)
       {
@@ -397,13 +424,13 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo,
       {
         it = i_indx_map.find(mdl_data->integerAlias[i].nameID);
         if (it != i_indx_map.end()) 
-          table = 1;
+          table = 2;
       }
       else if (mdl_data->integerAlias[i].aliasType == 1) /* parameter */
       {
         it = i_indx_parammap.find(mdl_data->integerAlias[i].nameID);
         if (it != i_indx_map.end()) 
-          table = 2;
+          table = 1;
       } 
       if(table)
       {
@@ -430,13 +457,13 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo,
       {
         it = b_indx_map.find(mdl_data->booleanAlias[i].nameID);
         if (it != b_indx_map.end()) 
-          table = 1;
+          table = 2;
       }
       else if (mdl_data->booleanAlias[i].aliasType == 1) /* parameter */
       {
         it = b_indx_parammap.find(mdl_data->booleanAlias[i].nameID);
         if (it != b_indx_map.end()) 
-          table = 2;
+          table = 1;
       } 
       if(table)
       {
@@ -490,19 +517,19 @@ void simulation_result_mat::generateData_1(double* &data_1,
   /* double variables */
   for(i = 0; i < mdl_data->nParametersReal; ++i) {
     data_1[offset+i] = mdl_data->realParameter[i].attribute.initial;
-      data_1[offset+i+cols] =  mdl_data->realParameter[i].attribute.initial;
+    data_1[offset+i+cols] =  mdl_data->realParameter[i].attribute.initial;
   }
   offset += mdl_data->nParametersReal;
   /* integer variables */
   for(i = 0; i < mdl_data->nParametersInteger; ++i) {
-      data_1[offset+i] = (double)mdl_data->integerParameter[i].attribute.initial;
-      data_1[offset+i+cols] = (double)mdl_data->integerParameter[i].attribute.initial;
+    data_1[offset+i] = (double)mdl_data->integerParameter[i].attribute.initial;
+    data_1[offset+i+cols] = (double)mdl_data->integerParameter[i].attribute.initial;
   }
   offset += mdl_data->nParametersInteger;
   /* bool variables */
   for(i = 0; i < mdl_data->nParametersBoolean; ++i) {
-      data_1[offset+i] = (double)mdl_data->booleanParameter[i].attribute.initial;
-      data_1[offset+i+cols] = (double)mdl_data->booleanParameter[i].attribute.initial;
+    data_1[offset+i] = (double)mdl_data->booleanParameter[i].attribute.initial;
+    data_1[offset+i+cols] = (double)mdl_data->booleanParameter[i].attribute.initial;
   }
 
 }

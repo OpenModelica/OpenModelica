@@ -141,7 +141,7 @@ dasrt_initial(_X_DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
 int
 dasrt_step(_X_DATA* simData, SOLVER_INFO* solverInfo) {
   double tout = 0;
-  /* int i = 0;*/
+  int i = 0;
 
   SIMULATION_DATA *sData = (SIMULATION_DATA*)simData->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)simData->localData[1];
@@ -168,9 +168,14 @@ dasrt_step(_X_DATA* simData, SOLVER_INFO* solverInfo) {
        * else will dassl get in trouble. If that is the case we skip the current step. */
       if (solverInfo->currentTime - tout >= -1e-13) {
         DEBUG_INFO(LOG_SOLVER, "**Desired step to small try next one");
+        DEBUG_INFO(LOG_SOLVER, "**Interpolate linear");
 
-        solverInfo->currentTime = tout;
+        for (i = 0; i < simData->modelData.nStates; i++) {
+          sData->realVars[i] = sDataOld->realVars[i] + stateDer[i] * solverInfo->currentStepSize;
+        }
         sData->timeValue = tout;
+        functionODE(simData);
+        solverInfo->currentTime = tout;
         /*TODO: interpolate states and evaluate the system again */
         return 2;
       }
@@ -239,7 +244,6 @@ dasrt_step(_X_DATA* simData, SOLVER_INFO* solverInfo) {
           functionODE(simData);
           INFO1("DASRT can't continue. time = %f", sData->timeValue);
           return 1;
-          //THROW1("DASRT can't continue. time = %f", solverInfo->currentTime);
       }
       sData->timeValue = solverInfo->currentTime;
       functionODE(simData);
@@ -253,7 +257,6 @@ dasrt_step(_X_DATA* simData, SOLVER_INFO* solverInfo) {
 
 int
 continue_DASRT(fortran_integer* idid, double* atol) {
-  static int atolZeroIterations = 0;
   int retValue = 1;
 
   switch (*idid) {
@@ -271,7 +274,8 @@ continue_DASRT(fortran_integer* idid, double* atol) {
     retValue = 0;
     break;
   case -3:
-    //THROW("DDASRT: THE LAST STEP TERMINATED WITH A NEGATIVE IDID value");
+    /* wbraun: don't throw at this point let the solver handle it */
+    /* THROW("DDASRT: THE LAST STEP TERMINATED WITH A NEGATIVE IDID value"); */
     retValue = 0;
     break;
   case -6:

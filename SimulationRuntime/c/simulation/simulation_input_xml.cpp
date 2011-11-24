@@ -719,12 +719,12 @@ void read_input_xml(int argc, char **argv,
 
     string aliasTmp;
     read_value(mi.rAli[i]["alias"], &aliasTmp);
-    if (aliasTmp.compare("alias") == 1){
-      modelData->realAlias[i].negate = 0;
-    }else{
+    if (aliasTmp.compare("negatedAlias") == 0){
       modelData->realAlias[i].negate = 1;
+    }else{
+      modelData->realAlias[i].negate = 0;
     }
-    DEBUG_INFO2(LOG_DEBUG," read for %s negated %d from init file",modelData->realAlias[i].info.name,modelData->realAlias[i].negate);
+    DEBUG_INFO2(LOG_DEBUG," read for %s negated %d from init file", modelData->realAlias[i].info.name, modelData->realAlias[i].negate);
 
     read_value(mi.rAli[i]["aliasVariable"], &aliasTmp);
 
@@ -742,7 +742,10 @@ void read_input_xml(int argc, char **argv,
     }else{
         THROW("Alias variable not found.");
     }
-    DEBUG_INFO2(LOG_DEBUG," read for %s aliasID %d from init file",modelData->realAlias[i].info.name,modelData->realAlias[i].nameID);
+    DEBUG_INFO3(LOG_DEBUG," read for %s aliasID %d from %s from init file",
+                modelData->realAlias[i].info.name,
+                modelData->realAlias[i].nameID,
+                modelData->realAlias[i].aliasType?((modelData->realAlias[i].aliasType==2)?"time":"real parameters"):"real variables");
 
   }
 
@@ -774,10 +777,10 @@ void read_input_xml(int argc, char **argv,
 
     string aliasTmp;
     read_value(mi.iAli[i]["alias"], &aliasTmp);
-    if (aliasTmp.compare("alias") == 1){
-      modelData->integerAlias[i].negate = 0;
-    }else{
+    if (aliasTmp.compare("negatedAlias") == 0){
       modelData->integerAlias[i].negate = 1;
+    }else{
+      modelData->integerAlias[i].negate = 0;
     }
     DEBUG_INFO2(LOG_DEBUG," read for %s negated %d from init file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].negate);
 
@@ -795,7 +798,10 @@ void read_input_xml(int argc, char **argv,
     }else{
         THROW("Alias variable not found.");
     }
-    DEBUG_INFO2(LOG_DEBUG," read for %s aliasID %d from init file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].nameID);
+    DEBUG_INFO3(LOG_DEBUG," read for %s aliasID %d from %s from init file",
+                modelData->integerAlias[i].info.name,
+                modelData->integerAlias[i].nameID,
+                modelData->integerAlias[i].aliasType?"integer parameters":"integer variables");
 
   }
 
@@ -827,12 +833,12 @@ void read_input_xml(int argc, char **argv,
 
     string aliasTmp;
     read_value(mi.bAli[i]["alias"], &aliasTmp);
-    if (aliasTmp.compare("alias") == 1){
-      modelData->booleanAlias[i].negate = 0;
-    }else{
+    if (aliasTmp.compare("negatedAlias") == 0){
       modelData->booleanAlias[i].negate = 1;
+    }else{
+      modelData->booleanAlias[i].negate = 0;
     }
-    DEBUG_INFO2(LOG_DEBUG," read for %s negated %d from init file",modelData->booleanAlias[i].info.name,modelData->booleanAlias[i].negate);
+    DEBUG_INFO2(LOG_DEBUG," read for %s negated %d from init file", modelData->booleanAlias[i].info.name, modelData->booleanAlias[i].negate);
 
     read_value(mi.bAli[i]["aliasVariable"], &aliasTmp);
 
@@ -848,7 +854,10 @@ void read_input_xml(int argc, char **argv,
     }else{
         THROW("Alias variable not found.");
     }
-    DEBUG_INFO2(LOG_DEBUG," read for %s aliasID %d from init file",modelData->booleanAlias[i].info.name,modelData->booleanAlias[i].nameID);
+    DEBUG_INFO3(LOG_DEBUG, " read for %s aliasID %d from %s from init file",
+                modelData->booleanAlias[i].info.name,
+                modelData->booleanAlias[i].nameID,
+                modelData->booleanAlias[i].aliasType?"boolean parameters":"boolean variables");
 
   }
 
@@ -881,12 +890,12 @@ void read_input_xml(int argc, char **argv,
 
     string aliasTmp;
     read_value(mi.sAli[i]["alias"], &aliasTmp);
-    if (aliasTmp.compare("alias") == 1){
-      modelData->stringAlias[i].negate = 0;
-    }else{
+    if (aliasTmp.compare("negatedAlias") == 0){
       modelData->stringAlias[i].negate = 1;
+    }else{
+      modelData->stringAlias[i].negate = 0;
     }
-    DEBUG_INFO2(LOG_DEBUG," read for %s negated %d from init file",modelData->stringAlias[i].info.name,modelData->stringAlias[i].negate);
+    DEBUG_INFO2(LOG_DEBUG, " read for %s negated %d from init file", modelData->stringAlias[i].info.name, modelData->stringAlias[i].negate);
 
     read_value(mi.sAli[i]["aliasVariable"], &aliasTmp);
 
@@ -902,7 +911,10 @@ void read_input_xml(int argc, char **argv,
     }else{
         THROW("Alias variable not found.");
     }
-    DEBUG_INFO2(LOG_DEBUG," read for %s aliasID %d from init file",modelData->stringAlias[i].info.name,modelData->stringAlias[i].nameID);
+    DEBUG_INFO3(LOG_DEBUG," read for %s aliasID %d from %s from init file",
+                modelData->stringAlias[i].info.name,
+                modelData->stringAlias[i].nameID,
+                modelData->stringAlias[i].aliasType?"string parameters":"string variables");
 
   }
 

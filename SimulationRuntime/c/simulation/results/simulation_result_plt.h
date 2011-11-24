@@ -54,6 +54,7 @@ public:
 simulation_result_plt(const char* filename, long numpoints, MODEL_DATA *modeldata);
 virtual ~simulation_result_plt();
 virtual void emit(_X_DATA *data);
+void writeParameterData(MODEL_DATA *modelData) { /* do nothing */ };
 virtual const char* result_type() {return "plt";};
 
 };

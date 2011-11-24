@@ -1204,6 +1204,7 @@ int copyStartValuestoInitValues(_X_DATA *data, int optiMethod)
   storePreValues(data);
   storeStartValuesParam(data);
   overwriteOldSimulationData(data);
+  bound_parameters(data);
 
   return retVal;
 }

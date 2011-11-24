@@ -276,9 +276,13 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 		rt_accumulate(SIM_TIMER_PREINIT);
 		rt_tick(SIM_TIMER_INIT);
 	}
+
 	if(initialization_X_(simData, "state", "nelder_mead_ex")) {
 			THROW("Error in initialization. Storing results and exiting.");
 	}
+  /* adrpo: write the parameter data in the file once again after bound parameters and initialization! */
+	sim_result_writeParameterData(&(simData->modelData));
+  DEBUG_INFO(LOG_SOLVER, "Wrote parameters to the file after initialization (for output formats that support this)");
 
 	/* debug print */
 	if (DEBUG_FLAG(LOG_SOLVER)){
@@ -288,11 +292,12 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 	  }
 	}
 
-	SaveZeroCrossings(simData);
-	storePreValues(simData);
-
   initSample(simData, simInfo->startTime, simInfo->stopTime);
   initDelay(simInfo->startTime);
+
+
+	SaveZeroCrossings(simData);
+	storePreValues(simData);
 
 	/*
 	 * if (sim_verbose >= LOG_SOLVER) {
@@ -399,13 +404,11 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 	  communicateStatus("Running", (solverInfo.currentTime-simInfo->startTime)/(simInfo->stopTime-simInfo->startTime));
 	  retValIntegrator = solver_main_step(flag, simData, &solverInfo);
 
-	  /* don't evaluate the system if dassl step is to small */
-    if (retValIntegrator != 2) {
-      functionAlgebraics(simData);
-      functionAliasEquations(simData);
-      function_storeDelayed(simData);
-      SaveZeroCrossings(simData);
-    }
+    functionAlgebraics(simData);
+    functionAliasEquations(simData);
+    function_storeDelayed(simData);
+    SaveZeroCrossings(simData);
+    storePreValues(simData);
 
 	  /* Check for Events */
 	  if (measure_time_flag)

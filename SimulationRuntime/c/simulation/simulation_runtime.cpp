@@ -262,7 +262,7 @@ storeExtrapolationDataEvent()
 void overwriteOldSimulationData(_X_DATA *data)
 {
   long i;
-  
+
   for(i=1; i<ringBufferLength(data->simulationData); ++i){
     data->localData[i]->timeValue = data->localData[i-1]->timeValue;
     memcpy(data->localData[i]->realVars, data->localData[i-1]->realVars, sizeof(modelica_real)*data->modelData.nVariablesReal);
@@ -565,7 +565,7 @@ callSolver(_X_DATA* simData, string method, string outputFormat,
   } else if (0 == strcmp("csv", outputFormat.c_str())) {
     sim_result = new simulation_result_csv(result_file_cstr.c_str(), maxSteps,&(simData->modelData));
   } else if (0 == strcmp("mat", outputFormat.c_str())) {
-    sim_result = new simulation_result_mat(result_file_cstr.c_str(), start, stop,&(simData->modelData));
+    sim_result = new simulation_result_mat(result_file_cstr.c_str(), simData->simulationInfo.startTime, simData->simulationInfo.stopTime,&(simData->modelData));
   } else if (0 == strcmp("plt", outputFormat.c_str())) {
     sim_result = new simulation_result_plt(result_file_cstr.c_str(), maxSteps,&(simData->modelData));
   } else {
@@ -799,4 +799,10 @@ int _main_SimulationRuntime(int argc, char**argv, _X_DATA *data)
 void sim_result_emit(_X_DATA *data)
 {
    if (sim_result) sim_result->emit(data);
+}
+
+/* C-Interface for sim_result->writeParameterData(); */
+void sim_result_writeParameterData(MODEL_DATA *modelData)
+{
+   if (sim_result) sim_result->writeParameterData(modelData);
 }

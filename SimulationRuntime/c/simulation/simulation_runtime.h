@@ -97,6 +97,7 @@ extern Socket sim_communication_port;
 extern "C" {
 #endif /* cplusplus */
 void sim_result_emit(_X_DATA *data);
+void sim_result_writeParameterData(MODEL_DATA *modelData);
 #ifdef __cplusplus
 }
 #endif /* cplusplus */
