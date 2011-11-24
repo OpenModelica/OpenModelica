@@ -84,6 +84,7 @@ protected import CevalScript;
 protected import ClassInf;
 protected import CodegenC;
 protected import ComponentReference;
+protected import Config;
 protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
@@ -92,12 +93,12 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import ExpressionSolve;
+protected import Flags;
 protected import InnerOuter;
 protected import Inst;
 protected import List;
 protected import Mod;
 protected import PartFn;
-protected import RTOpts;
 protected import SCodeUtil;
 protected import Settings;
 protected import SimCodeC;
@@ -1009,7 +1010,7 @@ algorithm
         dlow = BackendDAECreate.lower(dae,funcs,true);
         dlow_1 = BackendDAEUtil.getSolvedSystem(cache, env, dlow, funcs,
           NONE(), NONE(), NONE());
-        Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");
+        Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
           generateModelCodeFMU(dlow_1,funcs,p, dae,  className, filenameprefix, inSimSettingsOpt);
         resultValues = 
@@ -1025,7 +1026,7 @@ algorithm
     case (_,_,className,_,_,_, _)
       equation        
         resstr = Absyn.pathStringNoQual(className);
-        resstr = stringAppendList({"SimCode: The model ",resstr," could not been translated to FMU"});
+        resstr = stringAppendList({"SimCode: The model ",resstr," could not be translated to FMU"});
         Error.addMessage(Error.INTERNAL_ERROR, {resstr});
       then
         fail();
@@ -1076,7 +1077,7 @@ algorithm
   Debug.execStat("SimCode",CevalScript.RT_CLOCK_BUILD_MODEL);
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
   
-  callTargetTemplates(simCode,inBackendDAE,RTOpts.simCodeTarget());
+  callTargetTemplates(simCode,inBackendDAE,Config.simCodeTarget());
   timeTemplates := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
 end generateModelCode;
 
@@ -1199,16 +1200,16 @@ algorithm
           ("timeBackend",  Values.REAL(timeBackend)),
           ("timeFrontend", Values.REAL(timeFrontend))
           };
-        resstr = Util.if_(RTOpts.debugFlag("failtrace"),Absyn.pathStringNoQual(className),"");
+        resstr = Util.if_(Flags.isSet(Flags.FAILTRACE),Absyn.pathStringNoQual(className),"");
         resstr = stringAppendList({"SimCode: The model ",resstr," has been translated"});
         //        resstr = "SimCode: The model has been translated";
       then
         (cache,Values.STRING(resstr),st,indexed_dlow_1,libs,file_dir, resultValues);
     case (_,_,className,_,_,_, _)
       equation        
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         resstr = Absyn.pathStringNoQual(className);
-        resstr = stringAppendList({"SimCode: The model ",resstr," could not been translated"});
+        resstr = stringAppendList({"SimCode: The model ",resstr," could not be translated"});
         Error.addMessage(Error.INTERNAL_ERROR, {resstr});
       then
         fail();
@@ -1620,7 +1621,7 @@ algorithm
         funcelems = List.union(part_func_elems, part_func_elems);
         //funcelems = List.union(funcelems, part_func_elems);
         funcelems = Inline.inlineCallsInFunctions(funcelems,(NONE(),{DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}));
-        //Debug.fprintln("info", "Generating functions, call Codegen.\n") "debug" ;
+        //Debug.fprintln(Flags.INFO, "Generating functions, call Codegen.\n") "debug" ;
         (funcelems,literals as (_,_,lits)) = simulationFindLiterals(dlow,funcelems);
         
         (fns, recordDecls, includes2, includeDirs2, libs2) = elaborateFunctions(funcelems, {}, lits, {}); // Do we need metarecords here as well?
@@ -1646,11 +1647,11 @@ algorithm
   res := matchcontinue(dae, dlow)
     case (dae, dlow)
       equation
-        false = RTOpts.acceptMetaModelicaGrammar();
+        false = Config.acceptMetaModelicaGrammar();
       then {};
     case (dae, dlow)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         fcallexps = BackendDAEUtil.traverseBackendDAEExps(dlow,matchFnRefs,{});
         calledfuncs = List.map(fcallexps, getCallPath);
         res = removeDuplicatePaths(calledfuncs);
@@ -2063,7 +2064,7 @@ algorithm
       ALGORITHM(stmts);
     case (_)
       equation
-        Debug.fprint("failtrace", "# SimCode.elaborateStatement failed\n");
+        Debug.fprint(Flags.FAILTRACE, "# SimCode.elaborateStatement failed\n");
       then
         fail();
   end matchcontinue;
@@ -2136,8 +2137,8 @@ algorithm
     case (functionTree,dlow,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals)
       equation
         System.tmpTickReset(0);
-        ifcpp = stringEqual(RTOpts.simCodeTarget(),"Cpp");
-         //Debug.fcall("cppvar",print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
+        ifcpp = stringEqual(Config.simCodeTarget(),"Cpp");
+         //Debug.fcall(Flags.CPP_VAR,print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
         cname = Absyn.pathStringNoQual(class_);
                
         (helpVarInfo,dlow2,sampleEqns) = generateHelpVarInfo(dlow);
@@ -2160,7 +2161,7 @@ algorithm
         // equation generation for euler, dassl2, rungekutta
         (odeEquations,algebraicEquations,allEquations) = createEquationsForSystems(ifcpp,systs,shared,0,helpVarInfo,{},{},{});
         
-        odeEquations = makeEqualLengthLists(odeEquations,RTOpts.noProc());
+        odeEquations = makeEqualLengthLists(odeEquations,Config.noProc());
 
         // Assertions and crap
         initialEquations = BackendDAEUtil.foldEqSystem(dlow2,createInitialEquations,{});
@@ -2201,9 +2202,9 @@ algorithm
         LinearMatrices = createJacobianLinearCode(functionTree,dlow);
         modelInfo = expandModelInfoVars(LinearMatrices,modelInfo);
         
-        Debug.fcall("execHash",print, "*** SimCode -> generate cref2simVar hastable: " +& realString(clock()) +& "\n" );
+        Debug.fcall(Flags.EXEC_HASH,print, "*** SimCode -> generate cref2simVar hastable: " +& realString(clock()) +& "\n" );
         crefToSimVarHT = createCrefToSimVarHT(modelInfo);
-        Debug.fcall("execHash",print, "*** SimCode -> generate cref2simVar hastable done!: " +& realString(clock()) +& "\n" );
+        Debug.fcall(Flags.EXEC_HASH,print, "*** SimCode -> generate cref2simVar hastable done!: " +& realString(clock()) +& "\n" );
         
         simCode = SIMCODE(modelInfo,
           {} /* Set by the traversal below... */,
@@ -2232,10 +2233,10 @@ algorithm
           crefToSimVarHT);
         (simCode,(_,_,lits)) = traverseExpsSimCode(simCode,findLiteralsHelper,literals);
         simCode = setSimCodeLiterals(simCode,listReverse(lits));
-        Debug.fcall("execFiles",print, "*** SimCode -> collect all files started: " +& realString(clock()) +& "\n" );
+        Debug.fcall(Flags.EXEC_FILES,print, "*** SimCode -> collect all files started: " +& realString(clock()) +& "\n" );
         // adrpo: collect all the files from Absyn.Info and DAE.ElementSource
         // simCode = collectAllFiles(simCode);
-        Debug.fcall("execFiles",print, "*** SimCode -> collect all files done!: " +& realString(clock()) +& "\n" );
+        Debug.fcall(Flags.EXEC_FILES,print, "*** SimCode -> collect all files done!: " +& realString(clock()) +& "\n" );
       then
         simCode;
     else
@@ -2381,7 +2382,7 @@ algorithm
   res := matchcontinue (functions,dlow)
     case (functions,dlow)
       equation
-        true = RTOpts.debugFlag("jacobian") or RTOpts.debugFlag("linearization");
+        true = Flags.isSet(Flags.JACOBIAN) or Flags.isSet(Flags.LINEARIZATION);
         dlow = BackendDAEOptimize.collapseIndependentBlocks(dlow,functions);
         // The jacobian code requires single systems; I did not rewrite it to take advantage of any parallelism in the code
         res = createJacobianCC(functions,dlow);
@@ -2389,7 +2390,7 @@ algorithm
       then res;
     else
       equation
-        false = RTOpts.debugFlag("jacobian") or RTOpts.debugFlag("linearization");
+        false = Flags.isSet(Flags.JACOBIAN) or Flags.isSet(Flags.LINEARIZATION);
         res = {({},{},"A"),({},{},"B"),({},{},"C"),({},{},"D")};
       then res;
   end matchcontinue;
@@ -2419,7 +2420,7 @@ algorithm
       
     case (functions,dlow as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars = v,orderedEqs = e)::{},BackendDAE.SHARED(knownVars = kv)),_)
       equation
-        true = RTOpts.debugFlag("linearization");
+        true = Flags.isSet(Flags.LINEARIZATION);
         
         // Prepare all needed variables
         varlst = BackendDAEUtil.varList(v);
@@ -2442,22 +2443,22 @@ algorithm
         comref_outputvars = List.map(outputvars,BackendVariable.varCref);
         
         // Differentiate the System w.r.t states for matrices A
-        Debug.fcall("execstat",print, "*** analytical Jacobians -> generated system for matrix A : " +& realString(clock()) +& "\n" );
+        Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> generated system for matrix A : " +& realString(clock()) +& "\n" );
         linearModelMatrix = createJacobianFunction(functions,dlow,comref_states,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars), BackendDAEUtil.listVar(states),varlst,(comref_vars,comref_knvars),"A");
         linearModelMatrices = {linearModelMatrix};
 
         // Differentiate the System w.r.t inputs for matrices B
-        Debug.fcall("execstat",print, "*** analytical Jacobians -> generated system for matrix B : " +& realString(clock()) +& "\n" );
+        Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> generated system for matrix B : " +& realString(clock()) +& "\n" );
         linearModelMatrix = createJacobianFunction(functions,dlow,comref_inputvars,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars), BackendDAEUtil.listVar(states),varlst,(comref_vars,comref_knvars),"B");
         linearModelMatrices = listAppend(linearModelMatrices,{linearModelMatrix});
 
         // Differentiate the System w.r.t states for matrices C
-        Debug.fcall("execstat",print, "*** analytical Jacobians -> generated system for matrix C : " +& realString(clock()) +& "\n" );
+        Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> generated system for matrix C : " +& realString(clock()) +& "\n" );
         linearModelMatrix = createJacobianFunction(functions,dlow,comref_states,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars),BackendDAEUtil.listVar(outputvars),varlst,(comref_vars,comref_knvars),"C");
         linearModelMatrices = listAppend(linearModelMatrices,{linearModelMatrix});
         
         // Differentiate the System w.r.t inputs for matrices D
-        Debug.fcall("execstat",print, "*** analytical Jacobians -> generated system for matrix D : " +& realString(clock()) +& "\n" );
+        Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> generated system for matrix D : " +& realString(clock()) +& "\n" );
         linearModelMatrix = createJacobianFunction(functions,dlow,comref_inputvars,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars),BackendDAEUtil.listVar(outputvars),varlst,(comref_vars,comref_knvars),"D");
         linearModelMatrices = listAppend(linearModelMatrices,{linearModelMatrix});
         
@@ -2465,15 +2466,15 @@ algorithm
         linearModelMatrices;
     case (_,dlow,linearModelMatrices)
       equation
-        false = RTOpts.debugFlag("linearization");
-        true = RTOpts.debugFlag("jacobian");
+        false = Flags.isSet(Flags.LINEARIZATION);
+        true = Flags.isSet(Flags.JACOBIAN);
       then
         linearModelMatrices;
 
     case (_,dlow,_)
       equation
-        false = RTOpts.debugFlag("linearization");
-        false = RTOpts.debugFlag("jacobian");
+        false = Flags.isSet(Flags.LINEARIZATION);
+        false = Flags.isSet(Flags.JACOBIAN);
         linearModelMatrices = {({},{},"A"),({},{},"B"),({},{},"C"),({},{},"D")};
       then
         linearModelMatrices;
@@ -2513,7 +2514,7 @@ algorithm
       
     case (functions,dlow as BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(orderedVars = v,orderedEqs = e,matching=BackendDAE.MATCHING(ass1,ass2,comps))},shared as BackendDAE.SHARED(knownVars = kv)))
       equation
-        true = RTOpts.debugFlag("jacobian");
+        true = Flags.isSet(Flags.JACOBIAN);
         
         (blt_states, _) = BackendDAEUtil.generateStatePartition(syst);
         
@@ -2538,7 +2539,7 @@ algorithm
         
         comref_states = List.map(states,BackendVariable.varCref);
         
-        Debug.fcall("execstat",print, "*** analytical Jacobians -> generated system for matrix A : " +& realString(clock()) +& "\n" );
+        Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> generated system for matrix A : " +& realString(clock()) +& "\n" );
         linearModelMatrix = createJacobianFunction(functions,dlow,comref_states,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars),BackendDAEUtil.listVar(states),varlst,(comref_vars,comref_knvars),"A");
         // add empty matrices B,C,D
         linearModelMatrices = {linearModelMatrix,({},{},"B"),({},{},"C"),({},{},"D")};
@@ -2547,7 +2548,7 @@ algorithm
         linearModelMatrices;
     case (_,dlow)
       equation
-        false = RTOpts.debugFlag("jacobian");
+        false = Flags.isSet(Flags.JACOBIAN);
         linearModelMatrices = {({},{},"A"),({},{},"B"),({},{},"C"),({},{},"D")};
       then
         linearModelMatrices;
@@ -2639,13 +2640,13 @@ algorithm
  
         
         // Differentiate the ODE system w.r.t states for jacobian
-        Debug.fcall("execstat",print,"*** analytical Jacobians Differentiate System.\n");
+        Debug.fcall(Flags.EXEC_STAT,print,"*** analytical Jacobians Differentiate System.\n");
         backendDAE = BackendDAEOptimize.generateSymbolicJacobian(inBackendDAE, inFunctions, inDiffVars, inDifferentiatedVars, BackendDAEUtil.listVar(seedlst), inStateVars, inInputVars, inParameterVars);
         
         // create equations and variables
         (backendDAE as BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},shared=shared)) = BackendDAEOptimize.generateLinearMatrix(backendDAE,inFunctions,comref_differentiatedVars,inDiffVars,inVars,0);
         columnEquations = createEquations(false, false, false, false, true, syst, shared, 0, comps, {});
-        Debug.fcall("execstat",print, "*** analytical Jacobians differentiated!\n");
+        Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians differentiated!\n");
         
         vars = BackendVariable.daeVars(syst);
         knvars = BackendVariable.daeKnVars(shared);
@@ -2656,7 +2657,7 @@ algorithm
         ((columnVarsKn,_)) =  BackendVariable.traverseBackendDAEVars(knvars,traversingdlowvarToSimvar,({},empty));
         columnVars = listAppend(columnVars,columnVarsKn);
         columnVars = listReverse(columnVars);
-        Debug.fcall("execstat",print, "*** analytical Jacobians BackendDAE created!\n");
+        Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians BackendDAE created!\n");
         
         
      then
@@ -2749,7 +2750,7 @@ algorithm
   omhome := Settings.getInstallationDirectoryPath();
   omhome := System.trim(omhome, "\""); // Remove any quotation marks from omhome.
   cflags := System.getCFlags();
-  cflags := Debug.bcallret2(RTOpts.debugFlag("openmp"),stringAppend,cflags," -fopenmp",cflags);
+  cflags := Debug.bcallret2(Flags.isSet(Flags.OPENMP),stringAppend,cflags," -fopenmp",cflags);
   ldflags := System.getLDFlags();
   senddatalibs := System.getSendDataLibs();
   platform := System.modelicaPlatform();
@@ -3067,7 +3068,7 @@ algorithm
         
     case ((DAE.ALGORITHM(algorithm_ = algorithm_) :: rest), accRecDecls, rt)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         ((_,expl)) = BackendDAEUtil.traverseAlgorithmExps(algorithm_, Expression.traverseSubexpressionsHelper, (matchMetarecordCalls,{}));
         (accRecDecls,rt_2) = elaborateRecordDeclarationsForMetarecords(expl, accRecDecls, rt);
         //TODO: ? what about rest ? , can be there something else after the ALGORITHM
@@ -4476,7 +4477,7 @@ algorithm
       // create always a linear system of equations 
     case (genDiscrete,skipDiscInAlgorithm,true,offset,syst as BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns),shared as BackendDAE.SHARED(knownVars = knvars,arrayEqs = ae,algorithms = al),comp as BackendDAE.EQUATIONSYSTEM(eqns=ieqns,vars=ivars,jac=jac,jacType=jac_tp),helpVarInfo)
       equation
-        Debug.fprintln("failtrace", "SimCode.createOdeSystem create system (create linear jacobian).");
+        Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem create system (create linear jacobian).");
         //print("\ncreateOdeSystem -> Linear: ...\n");
         //BackendDump.printEquations(block_,daelow);
         // extract the variables and equations of the block.
@@ -4500,7 +4501,7 @@ algorithm
         equations_;
     case (genDiscrete,skipDiscInAlgorithm,true,offset,BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns),BackendDAE.SHARED(knownVars = knvars, externalObjects = exvars, arrayEqs = ae,algorithms = al, eventInfo = ev, extObjClasses = eoc),comp as BackendDAE.MIXEDEQUATIONSYSTEM(disc_eqns=disc_eqns,disc_vars=disc_vars),helpVarInfo)
       equation
-        Debug.fprintln("failtrace", "SimCode.createOdeSystem create mixed system (create linear jacobian).");
+        Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem create mixed system (create linear jacobian).");
         //print("\ncreateOdeSystem -> Linear: ...\n");
         //BackendDump.printEquations(block_,daelow);
         // extract the variables and equations of the block.
@@ -4531,7 +4532,7 @@ algorithm
         // mixed system of equations, continuous part only
     case (false, skipDiscInAlgorithm, false,offset,syst,shared,BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1),helpVarInfo)
       equation
-        Debug.fprintln("failtrace", "SimCode.createOdeSystem create mixed system continuous part.");
+        Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem create mixed system continuous part.");
         equations_ = createEquations(true,false,false,skipDiscInAlgorithm,false,syst,shared,offset,{comp1},helpVarInfo);
       then
         equations_;
@@ -4539,7 +4540,7 @@ algorithm
         // mixed system of equations, both continous and discrete eqns
     case (true, skipDiscInAlgorithm, false,offset,syst as BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns),shared as BackendDAE.SHARED(knownVars=knvars),BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1,disc_eqns=ieqns,disc_vars=ivars),helpVarInfo)
       equation
-        Debug.fprintln("failtrace", "SimCode.createOdeSystem create mixed system.");
+        Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem create mixed system.");
         //print("\ncreateOdeSystem -> Mixed: cont. and discrete\n");
         //BackendDump.printEquations(block_,dlow);
         disc_eqn = BackendEquation.getEqns(ieqns,eqns); 
@@ -4563,7 +4564,7 @@ algorithm
       equation
         //print("\ncreateOdeSystem -> Tearing: ...\n");
         // check tearing
-        true = RTOpts.debugFlag("tearing");
+        true = Flags.isSet(Flags.TEARING);
         (eqn_lst,var_lst,index) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
         ae1 = Util.arrayMap(ae,replaceDerOpMultiDimEquations);
@@ -4596,7 +4597,7 @@ algorithm
         /* continuous system of equations */
     case (genDiscrete, skipDiscInAlgorithm, false,offset,BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns),BackendDAE.SHARED(knownVars = knvars, externalObjects = exvars, arrayEqs = ae,algorithms = al, eventInfo = ev, extObjClasses = eoc),comp as BackendDAE.EQUATIONSYSTEM(jac=jac,jacType=jac_tp),helpVarInfo)
       equation
-        Debug.fprintln("failtrace", "SimCode.createOdeSystem create continuous system.");
+        Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem create continuous system.");
         //print("\ncreateOdeSystem -> Cont sys: ...\n");
         // extract the variables and equations of the block.
         (eqn_lst,var_lst,index) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
@@ -4700,7 +4701,7 @@ algorithm
         SES_NONLINEAR(index, simeqnsystem1, tcrs);
     case (_,_,_,_,_,_,_,_,_,_,_)
       equation
-        Debug.fprint("failtrace", "-generateTearingSystem failed \n");
+        Debug.fprint(Flags.FAILTRACE, "-generateTearingSystem failed \n");
       then
         fail();
   end matchcontinue;
@@ -4868,7 +4869,7 @@ algorithm
         // here. Currently uses dgesv as for next case
     case (mixedEvent,genDiscrete,skipDiscInAlgorithm,v,kv,eqn,ae,algorithms,SOME(jac),BackendDAE.JAC_CONSTANT(),helpVarInfo,_)
       equation
-        Debug.fprintln("failtrace", "SimCode.createOdeSystem2 create linear system(const jacobian).");
+        Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem2 create linear system(const jacobian).");
         eqn_size = BackendDAEUtil.equationSize(eqn);
         ((simVars,_)) = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
         simVars = listReverse(simVars);
@@ -4891,7 +4892,7 @@ algorithm
     case (mixedEvent,genDiscrete,skipDiscInAlgorithm,v,kv,eqn,ae,algorithms,SOME(jac),BackendDAE.JAC_TIME_VARYING(),helpVarInfo,_)
       equation
         // check Relaxation
-        true = RTOpts.debugFlag("relaxation");
+        true = Flags.isSet(Flags.RELAXATION);
         ave = BackendDAEUtil.emptyAliasVariables();
         evars = BackendDAEUtil.emptyVars();
         eeqns = BackendDAEUtil.listEquation({});
@@ -4910,7 +4911,7 @@ algorithm
         // Time varying jacobian. Linear system of equations that needs to be solved during runtime.
     case (mixedEvent,_,skipDiscInAlgorithm,v,kv,eqn,ae,algorithms,SOME(jac),BackendDAE.JAC_TIME_VARYING(),helpVarInfo,inIndx)
       equation
-        Debug.fprintln("failtrace", "SimCode.createOdeSystem2 create linear system(time varying jacobian).");
+        Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem2 create linear system(time varying jacobian).");
         ((simVars,_)) = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
         simVars = listReverse(simVars);
         ((_,_,_,beqs,_)) = BackendEquation.traverseBackendDAEEqns(eqn,BackendEquation.equationToExp,(v,ae,{},{},{}));
@@ -4922,7 +4923,7 @@ algorithm
         // Time varying nonlinear jacobian. Non-linear system of equations.
     case (mixedEvent,_,skipDiscInAlgorithm,v,kv,eqn,ae,algorithms,SOME(jac),BackendDAE.JAC_NONLINEAR(),helpVarInfo,inIndx)
       equation
-        Debug.fprintln("failtrace", "SimCode.createOdeSystem2 create non-linear system with jacobian.");
+        Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem2 create non-linear system with jacobian.");
         eqn_lst = BackendDAEUtil.equationList(eqn);
         crefs = BackendVariable.getAllCrefFromVariables(v);
         (resEqs,_) = createNonlinearResidualEquations(eqn_lst, ae, algorithms, {});
@@ -4932,7 +4933,7 @@ algorithm
         // No analytic jacobian available. Generate non-linear system.
     case (mixedEvent,_,skipDiscInAlgorithm,v,kv,eqn,ae,algorithms,NONE(),BackendDAE.JAC_NO_ANALYTIC(),helpVarInfo,inIndx)
       equation
-        Debug.fprintln("failtrace", "SimCode.createOdeSystem2 create non-linear system without jacobian.");
+        Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem2 create non-linear system without jacobian.");
         eqn_lst = BackendDAEUtil.equationList(eqn);
         crefs = BackendVariable.getAllCrefFromVariables(v);
         (resEqs,_) = createNonlinearResidualEquations(eqn_lst, ae, algorithms, {});
@@ -5184,7 +5185,7 @@ algorithm
         
     else
       equation
-        Debug.fprint("failtrace", "- SimCode.generateRelaxationSystem failed \n");
+        Debug.fprint(Flags.FAILTRACE, "- SimCode.generateRelaxationSystem failed \n");
       then
         fail();
   end matchcontinue;
@@ -5270,7 +5271,7 @@ algorithm
         (sol,asserts);
     case (_,_)
       equation
-        Debug.fprint("failtrace", "- SimCode.solveEquation failed \n");
+        Debug.fprint(Flags.FAILTRACE, "- SimCode.solveEquation failed \n");
       then
         fail();
   end match;
@@ -6000,15 +6001,15 @@ algorithm
         //mT = BackendDAEUtil.transposeMatrix(m);
         v1 = listArray(lv1);
         v2 = listArray(lv2);
-        Debug.fcall("paramdlowdump", print,"Param DAE:\n");
-        Debug.fcall("paramdlowdump", BackendDump.dump,paramdlow);
-        Debug.fcall("paramdlowdump", BackendDump.dumpIncidenceMatrix,m);
-        Debug.fcall("paramdlowdump", BackendDump.dumpIncidenceMatrixT,mT);
-        Debug.fcall("paramdlowdump", BackendDump.dumpMatching,v1);
+        Debug.fcall(Flags.PARAM_DLOW_DUMP, print,"Param DAE:\n");
+        Debug.fcall(Flags.PARAM_DLOW_DUMP, BackendDump.dump,paramdlow);
+        Debug.fcall(Flags.PARAM_DLOW_DUMP, BackendDump.dumpIncidenceMatrix,m);
+        Debug.fcall(Flags.PARAM_DLOW_DUMP, BackendDump.dumpIncidenceMatrixT,mT);
+        Debug.fcall(Flags.PARAM_DLOW_DUMP, BackendDump.dumpMatching,v1);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(v1,v2,{}));
         (syst,comps) = BackendDAETransform.strongComponents(syst, shared);
         paramdlow = BackendDAE.DAE({syst},shared);
-        Debug.fcall("paramdlowdump", BackendDump.dumpComponents,comps);
+        Debug.fcall(Flags.PARAM_DLOW_DUMP, BackendDump.dumpComponents,comps);
         
         (helpVarInfo, BackendDAE.DAE({syst},shared),_) = generateHelpVarInfo(paramdlow);
         parameterEquations = createEquations(false, false, true, false, false, syst, shared, 0, comps, helpVarInfo);
@@ -6432,22 +6433,22 @@ algorithm
         na_string = listLength(stringAliasVars);
         next = listLength(extObjVars);
         (dim_1,dim_2)= dimensions(dlow);
-        Debug.fcall("cpp",print,"create varinfo \n");
+        Debug.fcall(Flags.CPP,print,"create varinfo \n");
         varInfo = createVarInfo(dlow,nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numResiduals,
                  ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,dim_1,dim_2);
-         Debug.fcall("cpp",print,"create state index \n");
+         Debug.fcall(Flags.CPP,print,"create state index \n");
          states1 = stateindex1(stateVars,dlow);
-          Debug.fcall("cpp",print,"set state index \n");
+          Debug.fcall(Flags.CPP,print,"set state index \n");
          states_lst= setStatesVectorIndex(states1);
-         Debug.fcall("cpp",print,"gernerate der states  \n");
+         Debug.fcall(Flags.CPP,print,"gernerate der states  \n");
          der_states_lst = generateDerStates(states_lst);
          states_lst2 =listAppend(states_lst,der_states_lst);
-         Debug.fcall("cpp",print,"replace index in states \n");
+         Debug.fcall(Flags.CPP,print,"replace index in states \n");
          states_2 = replaceindex1(stateVars,states_lst);
-         // Debug.fcall("cppvar",print," replace der varibales: \n " +&dumpVarinfoList(states_lst2));
-          Debug.fcall("cpp",print,"replace index in der states  \n");
+         // Debug.fcall(Flags.CPP_VAR,print," replace der varibales: \n " +&dumpVarinfoList(states_lst2));
+          Debug.fcall(Flags.CPP,print,"replace index in der states  \n");
          derivatives_2=replaceindex1(derivative,der_states_lst);
-         //Debug.fcall("cppvar",print,"state varibales: \n " +&dumpVarinfoList(states_lst2));
+         //Debug.fcall(Flags.CPP_VAR,print,"state varibales: \n " +&dumpVarinfoList(states_lst2));
       then
         MODELINFO(class_, directory, varInfo, SIMVARS(states_2,derivatives_2,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,
                   intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,stringAlgVars,stringParamVars,stringAliasVars,extObjVars,jacobianVars,constVars,intConstVars,boolConstVars,stringConstVars), 
@@ -8726,7 +8727,7 @@ algorithm
         els = DAEUtil.getFunctionElements(funcelem);
         // Function reference variables are filtered out
         varfuncs = List.fold(els, DAEUtil.collectFunctionRefVarPaths, {});
-        (_,(_,varfuncs)) = DAEUtil.traverseDAE2(Util.if_(RTOpts.acceptMetaModelicaGrammar(), els, {}),Expression.traverseSubexpressionsHelper,(DAEUtil.collectValueblockFunctionRefVars,varfuncs));
+        (_,(_,varfuncs)) = DAEUtil.traverseDAE2(Util.if_(Config.acceptMetaModelicaGrammar(), els, {}),Expression.traverseSubexpressionsHelper,(DAEUtil.collectValueblockFunctionRefVars,varfuncs));
         (_,(_,(calledfuncs,_))) = DAEUtil.traverseDAE2(els,Expression.traverseSubexpressionsHelper,(matchNonBuiltinCallsAndFnRefPaths,({},varfuncs)));
         ht = BaseHashTable.add((pathstr,path),ht);
         ht = getCalledFunctionsInFunctions(calledfuncs, ht, funcs);
@@ -8887,7 +8888,7 @@ protected function useZerocrossing
 protected
   Boolean flagSet;
 algorithm
-  flagSet := RTOpts.debugFlag("noevents");
+  flagSet := Flags.isSet(Flags.NO_EVENTS);
   res := boolNot(flagSet);
 end useZerocrossing;
 
@@ -10727,7 +10728,7 @@ algorithm outOrder := matchcontinue(inDlow,inEqSystems)
      {};
  case(inDlow,syst::systs)
     equation
-      Debug.fcall("cppvar",print, " set  variabale der index for eqsystem"+& "\n");
+      Debug.fcall(Flags.CPP_VAR,print, " set  variabale der index for eqsystem"+& "\n");
      variableIndex =  setVariableDerIndex2(inDlow,syst);
       variableIndex2 = setVariableDerIndex(inDlow,systs);
     variableIndex3 = listAppend(variableIndex,variableIndex2);
@@ -10764,22 +10765,22 @@ algorithm outOrder := matchcontinue(inDlow,syst)
     BackendDAE.EqSystems systs;
   case(inDlow,syst)
     equation
-      Debug.fcall("cppvar",print, " set variabale der index"+& "\n");
+      Debug.fcall(Flags.CPP_VAR,print, " set variabale der index"+& "\n");
       dovars = BackendVariable.daeVars(syst);
       deqns = BackendEquation.daeEqns(syst);
       vars = BackendDAEUtil.varList(dovars);
       eqns = BackendDAEUtil.equationList(deqns);
       derExps = makeCallDerExp(vars);
-      Debug.fcall("cppvar",print, " possible der exp: " +& stringDelimitList(List.map(derExps, ExpressionDump.printExpStr), ", ") +& "\n");
+      Debug.fcall(Flags.CPP_VAR,print, " possible der exp: " +& stringDelimitList(List.map(derExps, ExpressionDump.printExpStr), ", ") +& "\n");
       eqns = flattenEqns(eqns,inDlow);
      // eq_str=dumpEqLst(eqns);
-      // Debug.fcall("cppvar",print,"filtered eq's " +& eq_str +& "\n");
+      // Debug.fcall(Flags.CPP_VAR,print,"filtered eq's " +& eq_str +& "\n");
       (variableIndex,firstOrderVars) = List.map2_2(derExps,locateDerAndSerachOtherSide,eqns,eqns);
-       Debug.fcall("cppvar",print,"united variables \n");
+       Debug.fcall(Flags.CPP_VAR,print,"united variables \n");
       firstOrderVarsFiltered = List.fold(firstOrderVars,List.union,{});
-      Debug.fcall("cppvar",print,"list fold variables \n");
+      Debug.fcall(Flags.CPP_VAR,print,"list fold variables \n");
       variableIndex = setFirstOrderInSecondOrderVarIndex(variableIndex,firstOrderVarsFiltered);
-     // Debug.fcall("cppvar",print,"Deriving Variable indexis:\n" +& dumpVariableindex(variableIndex) +& "\n");
+     // Debug.fcall(Flags.CPP_VAR,print,"Deriving Variable indexis:\n" +& dumpVariableindex(variableIndex) +& "\n");
      then
       variableIndex;
   case(_,_)
@@ -10817,7 +10818,7 @@ algorithm oeqns := matchcontinue(eqns, dlow)
      case( (eq as BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(_,_,_,_))) ::rest , dlow)
      equation
        str = BackendDump.equationStr(eq);
-       Debug.fcall("cppvar",print,"Found When eq " +& str +& "\n");
+       Debug.fcall(Flags.CPP_VAR,print,"Found When eq " +& str +& "\n");
        rec = flattenEqns(rest,dlow);
        //rec = List.unionElt(eq,rec);
       then
@@ -10840,7 +10841,7 @@ algorithm oeqns := matchcontinue(eqns, dlow)
   case(_::rest,dlow)
     equation 
      // str = BackendDAE.equationStr(eq);
-      Debug.fcall("cppvar",print," FAILURE IN flattenEqns possible unsupported equation...\n" /*+& str*/);
+      Debug.fcall(Flags.CPP_VAR,print," FAILURE IN flattenEqns possible unsupported equation...\n" /*+& str*/);
     then
       fail();
    end matchcontinue;
@@ -10906,7 +10907,7 @@ algorithm (out,sysOrdOneVars) := matchcontinue(derExp,inEqns,inEqnsOrg)
     equation
       true = Expression.expEqual(e1,derExp);
       inEqnsOrg = List.removeOnTrue(eq,Util.isEqual,inEqnsOrg);
-      Debug.fcall("cppvar",print, "\nFound equation containing " +& ExpressionDump.printExpStr(derExp) +& " Other side: " +& ExpressionDump.printExpStr(e2) +& ", extracted crefs: " +& ExpressionDump.printExpStr(deriveVar) +& "\n");
+      Debug.fcall(Flags.CPP_VAR,print, "\nFound equation containing " +& ExpressionDump.printExpStr(derExp) +& " Other side: " +& ExpressionDump.printExpStr(e2) +& ", extracted crefs: " +& ExpressionDump.printExpStr(deriveVar) +& "\n");
       (rec,crefs) = locateDerAndSerachOtherSide2(DAE.CALL(Absyn.IDENT("der"),{e2},DAE.callAttrBuiltinReal),inEqnsOrg);
       (highestIndex as (_,i1),_) = locateDerAndSerachOtherSide(derExp,eqs,inEqnsOrg);
       rec = rec+1;
@@ -10918,7 +10919,7 @@ algorithm (out,sysOrdOneVars) := matchcontinue(derExp,inEqns,inEqnsOrg)
     equation
       true = Expression.expEqual(e2,derExp);
       inEqnsOrg = List.removeOnTrue(eq,Util.isEqual,inEqnsOrg);
-      Debug.fcall("cppvar",print, "\nFound equation containing " +& ExpressionDump.printExpStr(derExp) +& " Other side: " +& ExpressionDump.printExpStr(e1) +& ", extracted crefs: " +& ExpressionDump.printExpStr(deriveVar) +& "\n");
+      Debug.fcall(Flags.CPP_VAR,print, "\nFound equation containing " +& ExpressionDump.printExpStr(derExp) +& " Other side: " +& ExpressionDump.printExpStr(e1) +& ", extracted crefs: " +& ExpressionDump.printExpStr(deriveVar) +& "\n");
       (rec,crefs) = locateDerAndSerachOtherSide2(DAE.CALL(Absyn.IDENT("der"),{e1},DAE.callAttrBuiltinReal),inEqnsOrg);
       (highestIndex as (_,i1),_) = locateDerAndSerachOtherSide(derExp,eqs,inEqnsOrg);
       rec = rec+1;
@@ -10935,19 +10936,19 @@ algorithm (out,sysOrdOneVars) := matchcontinue(derExp,inEqns,inEqnsOrg)
       (highestIndex,crefs);
  case(derExp, (eq as BackendDAE.ARRAY_EQUATION(index=_))::eqs,inEqnsOrg)
     equation
-      Debug.fcall("cppvar",print, "\nFound  array equation is not supported yet  searching for varibale index  \n");
+      Debug.fcall(Flags.CPP_VAR,print, "\nFound  array equation is not supported yet  searching for varibale index  \n");
       (highestIndex,crefs) = locateDerAndSerachOtherSide(derExp,eqs,inEqnsOrg);
     then
       (highestIndex,crefs);
   case(derExp, (eq as BackendDAE.IF_EQUATION(indx=_))::eqs,inEqnsOrg)
     equation
-      Debug.fcall("cppvar",print, "\nFound  if equation is not supported yet  searching for varibale index  \n");
+      Debug.fcall(Flags.CPP_VAR,print, "\nFound  if equation is not supported yet  searching for varibale index  \n");
       (highestIndex,crefs) = locateDerAndSerachOtherSide(derExp,eqs,inEqnsOrg);
     then
       (highestIndex,crefs);
  case(derExp, (eq as BackendDAE.ALGORITHM(index=_))::eqs,inEqnsOrg)
     equation
-      Debug.fcall("cppvar",print, "\nFound  algorithm is not supported yet  searching for varibale index  \n");
+      Debug.fcall(Flags.CPP_VAR,print, "\nFound  algorithm is not supported yet  searching for varibale index  \n");
       (highestIndex,crefs) = locateDerAndSerachOtherSide(derExp,eqs,inEqnsOrg);
     then
       (highestIndex,crefs);
@@ -10994,19 +10995,19 @@ algorithm (oi,firstOrderDers) := matchcontinue(inDer,inEqns)
     equation
       true = Expression.expEqual(inDer,e1);
       {cr} = Expression.extractCrefsFromExp(e1);
-      Debug.fcall("cppvar",BackendDump.debugStrExpStrExpStrExpStr,(" found derivative for ",inDer," in equation ",e1," = ",e2, "\n"));
+      Debug.fcall(Flags.CPP_VAR,BackendDump.debugStrExpStrExpStrExpStr,(" found derivative for ",inDer," in equation ",e1," = ",e2, "\n"));
     then
       (1,{cr});
   case(inDer,(BackendDAE.EQUATION(e1,e2,_)::rest))
     equation
       true = Expression.expEqual(inDer,e2);
       {cr} = Expression.extractCrefsFromExp(e2);
-      Debug.fcall("cppvar",BackendDump.debugStrExpStrExpStrExpStr,(" found derivative for ",inDer," in equation ",e1," = ",e2,"\n"));
+      Debug.fcall(Flags.CPP_VAR,BackendDump.debugStrExpStrExpStrExpStr,(" found derivative for ",inDer," in equation ",e1," = ",e2,"\n"));
     then
       (1,{cr});
   case(inDer,(BackendDAE.EQUATION(e1,e2,_)::rest))
     equation
-      Debug.fcall("cppvar",BackendDump.debugExpStrExpStrExpStr,(inDer," NOT contained in ",e1," = ",e2,"\n"));
+      Debug.fcall(Flags.CPP_VAR,BackendDump.debugExpStrExpStrExpStr,(inDer," NOT contained in ",e1," = ",e2,"\n"));
       (oi,firstOrderDers) = locateDerAndSerachOtherSide22(inDer,rest);
     then
       (oi,firstOrderDers);
@@ -11112,17 +11113,17 @@ algorithm (new_index) := matchcontinue(var,odered_vars)
   case(var ,((cr,i)::_))    
     equation
       true = ComponentReference.crefEqual(var,cr);
-    Debug.fcall("cppvarindex",BackendDump.debugStrCrefStrIntStr,(" found state variable ",var," with index: ",i,"\n"));
-  // Debug.fcall("cppvar",print, +& " with index: " +& intString(i) +& "\n");
+    Debug.fcall(Flags.CPP_VAR_INDEX,BackendDump.debugStrCrefStrIntStr,(" found state variable ",var," with index: ",i,"\n"));
+  // Debug.fcall(Flags.CPP_VAR,print, +& " with index: " +& intString(i) +& "\n");
     then 
       (i);
   case(var,_::rest)
     equation
      
       (i)=stateindex(var,rest);
-       Debug.fcall("cppvarindex",BackendDump.debugStrCrefStrIntStr,(" state variable ",var," with index: ",i,"\n"));
+       Debug.fcall(Flags.CPP_VAR_INDEX,BackendDump.debugStrCrefStrIntStr,(" state variable ",var," with index: ",i,"\n"));
   
-   //  Debug.fcall("cppvar",print, +& " with index: " +& intString(i) +& "\n");
+   //  Debug.fcall(Flags.CPP_VAR,print, +& " with index: " +& intString(i) +& "\n");
     then (i);
 end matchcontinue;
 end stateindex;
@@ -11184,7 +11185,7 @@ algorithm (outSimVar):= matchcontinue(stateVars,dae_low)
     BackendDAE.EqSystems eqsystems;
   case(SIMVAR(name=name,varKind=varKind,comment=comment,unit=unit,displayUnit=displayUnit,index=index,initialValue=initialValue,nominalValue=nominalValue,isFixed=isFixed,type_=type_,isDiscrete=isDiscrete,arrayCref=arrayCref,aliasvar=aliasvar,source=source,causality=causality,variable_index=variable_index,numArrayElement=numArrayElement),dae_low as BackendDAE.DAE(eqs=eqsystems))
      equation
-      Debug.fcall("cppvarindex",BackendDump.debugStrCrefStr,(" search index for state variable ",name,"\n"));
+      Debug.fcall(Flags.CPP_VAR_INDEX,BackendDump.debugStrCrefStr,(" search index for state variable ",name,"\n"));
       ordered_states=setVariableDerIndex(dae_low,eqsystems);
       new_index=stateindex(name,ordered_states);
            
@@ -11325,7 +11326,7 @@ algorithm out_varinfo_lst := matchcontinue(in_varinfo_lst)
     equation
       dv = generateDerStates2(v);
      // s= dumpVarInfo(dv);
-      //Debug.fcall("cppvar",print,"Generate der state" +& s +& "\n" );
+      //Debug.fcall(Flags.CPP_VAR,print,"Generate der state" +& s +& "\n" );
       dv_list = generateDerStates(rest);
      then
        dv::dv_list;
@@ -11401,7 +11402,7 @@ algorithm
       equation
         name_str = ComponentReference.printComponentRefStr(name);
         id_str = intString(i);
-        Debug.fcall("cpp",print,"generateDerStates2 failed for " +& name_str +& "and index " +& id_str +& "\n" );
+        Debug.fcall(Flags.CPP,print,"generateDerStates2 failed for " +& name_str +& "and index " +& id_str +& "\n" );
         Error.addMessage(Error.INTERNAL_ERROR, {"generateDerStates2 failed " });
       then
         fail();
@@ -11441,7 +11442,7 @@ algorithm
   
   case((v as SIMVAR(name,varKind,comment,unit,displayUnit,index,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)),SIMVAR(name1,_,_,_,_,index1,_,_,_,_,_,_,_,_,_,SOME(variable_index1),_)::_)    
     equation
-      Debug.fcall("cppvarindex",BackendDump.debugStrCrefStrCrefStr,(" compare variable ",name,"with ",name1,"\n"));
+      Debug.fcall(Flags.CPP_VAR_INDEX,BackendDump.debugStrCrefStrCrefStr,(" compare variable ",name,"with ",name1,"\n"));
       true = ComponentReference.crefEqual(name,name1);
     then 
       SIMVAR(name,varKind,comment,unit,displayUnit,variable_index1,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,SOME(index1),numArrayElement);
@@ -11504,13 +11505,13 @@ algorithm
     case (DAE.INDEX(exp = DAE.ICONST(integer = i)))
       equation
         res = intString(i);
-        Debug.fcall("cppsim1",print, "arraydim1: " +& res  +& "\n" );
+        Debug.fcall(Flags.CPP_SIM1,print, "arraydim1: " +& res  +& "\n" );
       then
         res;
     case (DAE.INDEX(exp = DAE.ENUM_LITERAL(name = enum_lit)))
       equation
         res = Absyn.pathString(enum_lit);
-        Debug.fcall("cppsim1",print, "arraydim2: " +& res  +& "\n" );
+        Debug.fcall(Flags.CPP_SIM1,print, "arraydim2: " +& res  +& "\n" );
       then
         res;
   end match;
@@ -12096,7 +12097,7 @@ algorithm
 
     case inSimCode
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
       then
         inSimCode;
     
@@ -12255,7 +12256,7 @@ algorithm
       list<A> l;
     case (lst,_)
       equation
-        false = RTOpts.debugFlag("openmp") or RTOpts.debugFlag("pthreads");
+        false = Flags.isSet(Flags.OPENMP) or Flags.isSet(Flags.PTHREADS);
         l = List.flatten(lst);
       then l::{};
     case (lst,0) then lst;

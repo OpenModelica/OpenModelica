@@ -69,6 +69,7 @@ Lookup.mo \
 MMath.mo \
 MetaUtil.mo \
 Mod.mo \
+Parser.mo \
 Patternm.mo \
 Prefix.mo \
 PrefixUtil.mo \
@@ -144,8 +145,10 @@ Unparsing.mo
 UTIL = \
 AvlTree.mo \
 BaseHashTable.mo \
+Config.mo \
 Debug.mo \
 Error.mo \
+Flags.mo \
 Graph.mo \
 HashTable.mo \
 HashTable2.mo \
@@ -163,7 +166,6 @@ Pool.mo \
 Name.mo \
 Scope.mo \
 Relation.mo \
-RTOptsData.mo \
 VarTransform.mo \
 # Not used by OpenModelica!
 # HashTable4.mo \
@@ -183,13 +185,11 @@ Corba.mo \
 DynLoad.mo \
 ErrorExt.mo \
 Database.mo \
-Parser.mo \
+ParserExt.mo \
 UnitParserExt.mo \
 IOStreamExt.mo \
 Lapack.mo \
-OptManager.mo \
 Print.mo \
-RTOpts.mo \
 Settings.mo \
 SimulationResults.mo \
 Socket.mo \

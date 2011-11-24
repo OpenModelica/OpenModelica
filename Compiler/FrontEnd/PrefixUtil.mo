@@ -49,7 +49,6 @@ public import DAE;
 public import Env;
 public import Lookup;
 public import SCode;
-public import RTOpts;
 public import Prefix;
 public import InnerOuter;
 public import ClassInf;
@@ -61,6 +60,7 @@ protected import ComponentReference;
 protected import Debug;
 protected import Expression;
 protected import ExpressionDump;
+protected import Flags;
 protected import List;
 protected import Print;
 protected import Util;
@@ -584,14 +584,14 @@ algorithm
     case (cache,env,ih,cref,pre)
       equation
         (cache,DAE.ATTR(innerOuter = io),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cref);
-        // Debug.fprintln("innerouter", printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(cref) +& 
+        // Debug.fprintln(Flags.INNER_OUTER, printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(cref) +& 
         //   Util.if_(Absyn.isOuter(io), " [outer] ", " ") +& 
         //   Util.if_(Absyn.isInner(io), " [inner] ", " "));
         true = Absyn.isInner(io);
         false = Absyn.isOuter(io);
         // prefix normally
         newCref = prefixCref(pre, cref);
-        // Debug.fprintln("innerouter", "INNER normally prefixed: " +& ComponentReference.printComponentRefStr(newCref));
+        // Debug.fprintln(Flags.INNER_OUTER, "INNER normally prefixed: " +& ComponentReference.printComponentRefStr(newCref));
       then
         (cache,newCref);
 
@@ -599,7 +599,7 @@ algorithm
     case (cache,env,ih,cref as DAE.CREF_IDENT(ident=_),pre)
       equation
         (cache,DAE.ATTR(innerOuter = io),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cref);
-        // Debug.fprintln("innerouter", printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(cref) +& 
+        // Debug.fprintln(Flags.INNER_OUTER, printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(cref) +& 
         //   Util.if_(Absyn.isOuter(io), " [outer] ", " ") +& 
         //   Util.if_(Absyn.isInner(io), " [inner] ", " "));
         true = Absyn.isOuter(io);
@@ -612,7 +612,7 @@ algorithm
         
         newCref = prefixCref(innerPrefix, lastCref);
         
-        // Debug.fprintln("innerouter", "OUTER IDENT prefixed INNER : " +& ComponentReference.printComponentRefStr(newCref));
+        // Debug.fprintln(Flags.INNER_OUTER, "OUTER IDENT prefixed INNER : " +& ComponentReference.printComponentRefStr(newCref));
       then
         (cache,newCref);
     
@@ -624,7 +624,7 @@ algorithm
         true = Absyn.isOuter(io);
         (cache,innerPrefix) = searchForInnerPrefix(cache,env,ih,cref,pre,io);
         newCref = prefixCref(innerPrefix, cref);
-        // Debug.fprintln("innerouter", "OUTER QUAL prefixed INNER: " +& ComponentReference.printComponentRefStr(newCref));
+        // Debug.fprintln(Flags.INNER_OUTER, "OUTER QUAL prefixed INNER: " +& ComponentReference.printComponentRefStr(newCref));
       then
         (cache,newCref);
     */
@@ -866,11 +866,11 @@ algorithm
 
     case (_,_,_,e,_)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "-prefix_exp failed on exp:");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE, "-prefix_exp failed on exp:");
         s = ExpressionDump.printExpStr(e);
-        Debug.fprint("failtrace", s);
-        Debug.fprint("failtrace", "\n");
+        Debug.fprint(Flags.FAILTRACE, s);
+        Debug.fprint(Flags.FAILTRACE, "\n");
       then
         fail();
   end matchcontinue;

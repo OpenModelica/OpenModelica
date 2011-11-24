@@ -67,9 +67,9 @@ protected import ExpressionDump;
 protected import ExpressionSolve;
 protected import ExpressionSimplify;
 protected import Error;
+protected import Flags;
 protected import Inline;
 protected import List;
-protected import RTOpts;
 protected import System;
 protected import Util;
 protected import Values;
@@ -417,7 +417,7 @@ algorithm
     case (false,syst,shared,_,_,_,_) then (syst,shared);
     case (true,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns),BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,arreqns,algorithms,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst),eoc,btp),repl,movedVars,movedAVars,meqns)
       equation
-        Debug.fcall("dumprepl", BackendVarTransform.dumpReplacements, repl);
+        Debug.fcall(Flags.DUMP_REPL, BackendVarTransform.dumpReplacements, repl);
         // delete alias variables from orderedVars
         ordvars1 = BackendVariable.deleteVars(movedAVars,ordvars);
         // move changed variables 
@@ -974,7 +974,7 @@ algorithm
         //false = BackendVariable.isVarOnTopLevelAndOutput(var);
         //false = BackendVariable.isVarOnTopLevelAndInput(var);
         //failure( _ = BackendVariable.varStartValueFail(var));
-        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr," = ",exp," found (1).\n"));
+        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr," = ",exp," found (1).\n"));
         knvars = BackendVariable.daeKnVars(shared);
         ((v::_),_) = BackendVariable.getVar(cra,knvars);
         // merge fixed,start,nominal
@@ -997,7 +997,7 @@ algorithm
         // update vars
         syst = BackendVariable.addVarDAE(var3,syst);
         // store changed var
-        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Const Equation ",cr," = ",exp," found (2).\n"));
+        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Const Equation ",cr," = ",exp," found (2).\n"));
         newvars = BackendDAEUtil.treeAdd(mvars, cr, 0);
         eqTy = Util.if_(constExp,1,0);
       then
@@ -1178,7 +1178,7 @@ protected
   BackendDAE.Var v1;
   list<DAE.SymbolicOperation> ops;
 algorithm
-  Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("Alias Equation ",acr," = ",e," found (2).\n"));
+  Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Alias Equation ",acr," = ",e," found (2).\n"));
   // merge fixed,start,nominal
   v1 := mergeAliasVars(var,avar,negate);
   osyst := BackendVariable.addVarDAE(v1,syst);
@@ -1735,7 +1735,7 @@ algorithm
       
     case (_,_,_,_,_,_)
       equation
-        Debug.fprintln("failtrace", "- BackendDAEOptimize.traverseIncidenceMatrixList failed");
+        Debug.fprintln(Flags.FAILTRACE, "- BackendDAEOptimize.traverseIncidenceMatrixList failed");
       then
         fail();      
   end matchcontinue;
@@ -1987,7 +1987,7 @@ algorithm
         algs = arrayList(algorithms);
         ((repl1,_)) = BackendVariable.traverseBackendDAEVars(knvars,removeFinalParametersFinder,(repl,knvars));
         (knvars1,repl2) = replaceFinalVars(1,knvars,repl1);
-        Debug.fcall("dumpFPrepl", BackendVarTransform.dumpReplacements, repl2);
+        Debug.fcall(Flags.DUMP_FP_REPL, BackendVarTransform.dumpReplacements, repl2);
         eqns_1 = BackendVarTransform.replaceEquations(lsteqns, repl2);
         lstarreqns1 = BackendVarTransform.replaceMultiDimEquations(lstarreqns, repl2);
         (algs_1,_) = BackendVarTransform.replaceAlgorithms(algs,repl2);
@@ -2120,7 +2120,7 @@ algorithm
         algs = arrayList(algorithms);
         ((repl1,_)) = BackendVariable.traverseBackendDAEVars(knvars,removeParametersFinder,(repl,knvars));
         (knvars1,repl2) = replaceFinalVars(1,knvars,repl1);
-        Debug.fcall("dumpParamrepl", BackendVarTransform.dumpReplacements, repl2);
+        Debug.fcall(Flags.DUMP_PARAM_REPL, BackendVarTransform.dumpReplacements, repl2);
         eqns_1 = BackendVarTransform.replaceEquations(lsteqns, repl2);
         lstarreqns1 = BackendVarTransform.replaceMultiDimEquations(lstarreqns, repl2);
         (algs_1,_) = BackendVarTransform.replaceAlgorithms(algs,repl2);
@@ -2197,7 +2197,7 @@ algorithm
         lstarreqns = arrayList(arreqns);
         algs = arrayList(algorithms);
         repl1 = BackendVariable.traverseBackendDAEVars(knvars,protectedParametersFinder,repl);
-        Debug.fcall("dumpPPrepl", BackendVarTransform.dumpReplacements, repl1);
+        Debug.fcall(Flags.DUMP_PP_REPL, BackendVarTransform.dumpReplacements, repl1);
         eqns_1 = BackendVarTransform.replaceEquations(lsteqns, repl1);
         lstarreqns1 = BackendVarTransform.replaceMultiDimEquations(lstarreqns, repl1);
         (algs_1,_) = BackendVarTransform.replaceAlgorithms(algs,repl1);
@@ -3183,25 +3183,25 @@ algorithm
       list<list<Integer>> r,t,comps_1,comps_2;
     case (dlow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT))::{}),v1,v2,comps)
       equation
-        Debug.fcall("tearingdump", print, "Tearing\n==========\n");
+        Debug.fcall(Flags.TEARING_DUMP, print, "Tearing\n==========\n");
         // get residual eqn and tearing var for each block
         // copy dlow
         dlow1 = copyDaeLowforTearing(dlow);
         comps_1 = List.map(comps,getEqnIndxFromComp);
         (r,t,_,dlow_1,m_1,mT_1,v1_1,v2_1,comps_2) = tearingSystem1(dlow,dlow1,m,mT,v1,v2,comps_1);
-        Debug.fcall("tearingdump", BackendDump.dumpIncidenceMatrix, m_1);
-        Debug.fcall("tearingdump", BackendDump.dumpIncidenceMatrixT, mT_1);
-        Debug.fcall("tearingdump", BackendDump.dump, dlow_1);
-        Debug.fcall("tearingdump", BackendDump.dumpMatching, v1_1);
-        //Debug.fcall("tearingdump", BackendDump.dumpComponents, comps_2);
-        Debug.fcall("tearingdump", print, "==========\n");
-        Debug.fcall2("tearingdump", BackendDump.dumpTearing, r,t);
-        Debug.fcall("tearingdump", print, "==========\n");
+        Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpIncidenceMatrix, m_1);
+        Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpIncidenceMatrixT, mT_1);
+        Debug.fcall(Flags.TEARING_DUMP, BackendDump.dump, dlow_1);
+        Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpMatching, v1_1);
+        //Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpComponents, comps_2);
+        Debug.fcall(Flags.TEARING_DUMP, print, "==========\n");
+        Debug.fcall2(Flags.TEARING_DUMP, BackendDump.dumpTearing, r,t);
+        Debug.fcall(Flags.TEARING_DUMP, print, "==========\n");
       then
         (dlow_1,v1_1,v2_1,comps_2,r,t);
     case (dlow,v1,v2,comps)
       equation
-        Debug.fcall("tearingdump", print, "No Tearing\n==========\n");
+        Debug.fcall(Flags.TEARING_DUMP, print, "No Tearing\n==========\n");
       then
         fail();
   end matchcontinue;
@@ -3463,7 +3463,7 @@ algorithm
         true = residualeqn > 0;
         str = intString(residualeqn);
         str1 = stringAppend("ResidualEqn: ", str);
-        Debug.fcall("tearingdump", print, str1);
+        Debug.fcall(Flags.TEARING_DUMP, print, str1);
          // get from mT variable with most equations
         vars = m[residualeqn];
         vars_1 = List.select1(vars,listMember,tvars);
@@ -3486,7 +3486,7 @@ algorithm
         // get from eqn equation with most variables
         (residualeqn,_) = getMaxfromListList(m,comp,tvars,0,0,exclude);
         false = residualeqn > 0;
-        Debug.fcall("tearingdump", print, "Select Residual BackendDAE.Equation failed\n");
+        Debug.fcall(Flags.TEARING_DUMP, print, "Select Residual BackendDAE.Equation failed\n");
       then
         fail();
   end matchcontinue;
@@ -3567,7 +3567,7 @@ algorithm
         str = intString(tearingvar);
         str1 = stringAppend("\nTearingVar: ", str);
         str2 = stringAppend(str1,"\n");
-        Debug.fcall("tearingdump", print, str2);
+        Debug.fcall(Flags.TEARING_DUMP, print, str2);
         // copy dlow
         dlowc = copyDaeLowforTearing(dlow);
         BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars as BackendDAE.VARIABLES(varArr=varr),eqns,_,_,_)::{},shared) = dlowc;
@@ -3639,7 +3639,7 @@ algorithm
         false = tearingvar > 0;
         // clear errors
         Error.clearMessages();
-        Debug.fcall("tearingdump", print, "Select Tearing BackendDAE.Var failed\n");
+        Debug.fcall(Flags.TEARING_DUMP, print, "Select Tearing BackendDAE.Var failed\n");
       then
         fail();
   end matchcontinue;
@@ -4018,7 +4018,7 @@ algorithm
         then (BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,om,omT,BackendDAE.MATCHING(ea,ea,{}))::{},shared));
       case (dlow,functionTree,eqvars,diffvars,varlst,inNoColumn)
         equation
-          true = RTOpts.debugFlag("linearization");
+          true = Flags.isSet(Flags.LINEARIZATION);
         
           // Remove simple Equtaion and Parameters
           dlow = removeFinalParameters(dlow,functionTree);
@@ -4026,20 +4026,20 @@ algorithm
           dlow = removeParameters(dlow,functionTree);
           dlow = removeSimpleEquations(dlow,functionTree);
 
-          Debug.fcall("execstat",print, "*** analytical Jacobians -> removed simply equations: " +& realString(clock()) +& "\n" );
+          Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> removed simply equations: " +& realString(clock()) +& "\n" );
           // figure out new matching and the strong components  
           (dlow as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps1))})) = BackendDAEUtil.transformBackendDAE(dlow,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE());
-          Debug.fcall("jacdump2", BackendDump.bltdump, ("jacdump2",dlow));
-          Debug.fcall("execstat",print, "*** analytical Jacobians -> performed matching and sorting: " +& realString(clock()) +& "\n" );
+          Debug.fcall(Flags.JAC_DUMP2, BackendDump.bltdump, ("jacdump2",dlow));
+          Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> performed matching and sorting: " +& realString(clock()) +& "\n" );
         
-          Debug.fcall("jacdump2", BackendDump.dumpComponents, comps1);
-          //Debug.fcall("execstat",print, "*** analytical Jacobians -> performed splitig the system: " +& realString(clock()) +& "\n" );
+          Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpComponents, comps1);
+          //Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> performed splitig the system: " +& realString(clock()) +& "\n" );
         then dlow;
 
           
       case (dlow,functionTree,eqvars,diffvars,varlst,inNoColumn)
         equation
-          true = RTOpts.debugFlag("jacobian");
+          true = Flags.isSet(Flags.JACOBIAN);
         
           // Remove simple Equtaion and Parameters
           dlow = removeFinalParameters(dlow,functionTree);
@@ -4047,11 +4047,11 @@ algorithm
           dlow = removeParameters(dlow,functionTree);
           dlow = removeSimpleEquations(dlow,functionTree);
 
-          Debug.fcall("execstat",print, "*** analytical Jacobians -> removed simply equations: " +& realString(clock()) +& "\n" );
+          Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> removed simply equations: " +& realString(clock()) +& "\n" );
           // figure out new matching and the strong components  
           dlow = BackendDAEUtil.transformBackendDAE(dlow,functionTree,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE());        
-          Debug.fcall("jacdump2", BackendDump.bltdump, ("jacdump2",dlow));
-          Debug.fcall("execstat",print, "*** analytical Jacobians -> performed matching and sorting: " +& realString(clock()) +& "\n" );
+          Debug.fcall(Flags.JAC_DUMP2, BackendDump.bltdump, ("jacdump2",dlow));
+          Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> performed matching and sorting: " +& realString(clock()) +& "\n" );
        
         then dlow;
      else
@@ -4127,9 +4127,9 @@ algorithm
     then jacobian;
       
     case(bDAE as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs)::{}, BackendDAE.SHARED(knownVars=knownVars, removedEqs=removedEqs, algorithms=algorithms)), functions, vars, diffedVars, inseedVars, stateVars, inputVars, paramVars) equation
-      Debug.fcall("jacdump", print, "\n+++++++++++++++++++++ daeLow-dump:    input +++++++++++++++++++++\n");
-      Debug.fcall("jacdump", BackendDump.dump, bDAE);
-      Debug.fcall("jacdump", print, "##################### daeLow-dump:    input #####################\n\n");
+      Debug.fcall(Flags.JAC_DUMP, print, "\n+++++++++++++++++++++ daeLow-dump:    input +++++++++++++++++++++\n");
+      Debug.fcall(Flags.JAC_DUMP, BackendDump.dump, bDAE);
+      Debug.fcall(Flags.JAC_DUMP, print, "##################### daeLow-dump:    input #####################\n\n");
       
       // Generate tmp varibales
       diffvars = BackendDAEUtil.varList(orderedVars);
@@ -4139,7 +4139,7 @@ algorithm
       // differentiate the equation system
       (derivedAlgorithms, derivedAlgorithmsLookUp) = deriveAllAlg(arrayList(algorithms), {x}, functions, inputVars, paramVars, stateVars, knownVars, orderedVars, 0,vars);
       derivedEquations = deriveAll(BackendDAEUtil.equationList(orderedEqs), {x}, functions, inputVars, paramVars, stateVars, knownVars, derivedAlgorithmsLookUp, orderedVars, vars);
-      Debug.fcall("execstat",print, "*** analytical Jacobians -> created all derived equation: " +& realString(clock()) +& "\n" );
+      Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> created all derived equation: " +& realString(clock()) +& "\n" );
       
       // create BackendDAE.DAE with derivied vars and equations
       
@@ -4169,9 +4169,9 @@ algorithm
       
       jacobian = BackendDAE.DAE(BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING())::{}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, jacArrayEqs, jacAlgorithms, jacEventInfo, jacExtObjClasses,BackendDAE.JACOBIAN()));
       
-      Debug.fcall("jacdump", print, "\n+++++++++++++++++++++ daeLow-dump: jacobian +++++++++++++++++++++\n");
-      Debug.fcall("jacdump", BackendDump.dump, jacobian);
-      Debug.fcall("jacdump", print, "##################### daeLow-dump: jacobian #####################\n");
+      Debug.fcall(Flags.JAC_DUMP, print, "\n+++++++++++++++++++++ daeLow-dump: jacobian +++++++++++++++++++++\n");
+      Debug.fcall(Flags.JAC_DUMP, BackendDump.dump, jacobian);
+      Debug.fcall(Flags.JAC_DUMP, print, "##################### daeLow-dump: jacobian #####################\n");
     then jacobian;
       
     else
@@ -4481,16 +4481,16 @@ algorithm
     case (curr  as BackendDAE.VAR(varName=currCREF),(currVar,currInd)::restTuple,bt) equation
       true = ComponentReference.crefEqual(currCREF, currVar) ;
       changedVar = BackendVariable.setVarIndex(curr,currInd);
-      Debug.fcall("varIndex2",BackendDump.debugCrefStrIntStr,(currVar," ",currInd,"\n"));
+      Debug.fcall(Flags.VAR_INDEX2,BackendDump.debugCrefStrIntStr,(currVar," ",currInd,"\n"));
       bt = BackendDAEUtil.treeAddList(bt,{currCREF});
     then (changedVar,bt);
     case (curr  as BackendDAE.VAR(varName=currCREF),{},bt) equation
       changedVar = BackendVariable.setVarIndex(curr,-1);
-      Debug.fcall("varIndex2",BackendDump.debugCrefStr, (currCREF," -1\n"));
+      Debug.fcall(Flags.VAR_INDEX2,BackendDump.debugCrefStr, (currCREF," -1\n"));
     then (changedVar,bt);
     case (curr  as BackendDAE.VAR(varName=currCREF),(currVar,currInd)::restTuple,bt) equation
       changedVar = BackendVariable.setVarIndex(curr,-1);
-      Debug.fcall("varIndex2",BackendDump.debugCrefStr,(currCREF," -1\n"));
+      Debug.fcall(Flags.VAR_INDEX2,BackendDump.debugCrefStr,(currCREF," -1\n"));
       (changedVar,bt) = changeIndices2(changedVar,restTuple,bt);
     then (changedVar,bt);
     else
@@ -4530,14 +4530,14 @@ algorithm
     case({}, _, _, _, _, _, _, _, _, _) then {};
       
     case(currEquation::restEquations, vars, functions, inputVars, paramVars, stateVars, knownVars, algorithmsLookUp, inorderedVars, inDiffVars) equation
-      Debug.fcall("jacdumpeqn", BackendDump.dumpEqns, {currEquation});
-      Debug.fcall("jacdumpeqn", print, "\n");
+      Debug.fcall(Flags.JAC_DUMP_EQN, BackendDump.dumpEqns, {currEquation});
+      Debug.fcall(Flags.JAC_DUMP_EQN, print, "\n");
       //dummycref = ComponentReference.makeCrefIdent("$pDERdummy", DAE.ET_REAL(), {});
-      Debug.fcall("execstat",print, "*** analytical Jacobians -> derive one equation: " +& realString(clock()) +& "\n" );
+      Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> derive one equation: " +& realString(clock()) +& "\n" );
       currDerivedEquations = derive(currEquation, vars, functions, inputVars, paramVars, stateVars, knownVars, algorithmsLookUp, inorderedVars, inDiffVars);
-      Debug.fcall("jacdumpeqn", BackendDump.dumpEqns, currDerivedEquations);
-      Debug.fcall("jacdumpeqn", print, "\n");
-      Debug.fcall("execstat",print, "*** analytical Jacobians -> created other equations from that: " +& realString(clock()) +& "\n" );
+      Debug.fcall(Flags.JAC_DUMP_EQN, BackendDump.dumpEqns, currDerivedEquations);
+      Debug.fcall(Flags.JAC_DUMP_EQN, print, "\n");
+      Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> created other equations from that: " +& realString(clock()) +& "\n" );
       restDerivedEquations = deriveAll(restEquations, vars, functions, inputVars, paramVars, stateVars, knownVars, algorithmsLookUp, inorderedVars, inDiffVars);
       derivedEquations = listAppend(currDerivedEquations, restDerivedEquations);
     then derivedEquations;
@@ -4586,11 +4586,11 @@ algorithm
     //remove dicrete Equation  
     case(currEquation as BackendDAE.EQUATION(exp=lhs, scalar=rhs, source=source), vars, functions, inputVars, paramVars, stateVars, knownVars, _, inorderedVars, _) equation
       true = BackendDAEUtil.isDiscreteEquation(currEquation,inorderedVars,knownVars);
-      Debug.fcall("jacdump",print,"BackendDAEOptimize.derive: discrete equation has been removed.\n");
+      Debug.fcall(Flags.JAC_DUMP,print,"BackendDAEOptimize.derive: discrete equation has been removed.\n");
     then {};
         
     case(currEquation as BackendDAE.WHEN_EQUATION(_, _), vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _) equation
-      Debug.fcall("jacdump",print,"BackendDAEOptimize.derive: WHEN_EQUATION has been removed.\n");
+      Debug.fcall(Flags.JAC_DUMP,print,"BackendDAEOptimize.derive: WHEN_EQUATION has been removed.\n");
     then {};
 
     case(currEquation as BackendDAE.EQUATION(exp=lhs, scalar=rhs, source=source), vars, functions, inputVars, paramVars, stateVars, knownVars, _, inorderedVars, inDiffVars) equation
@@ -5371,8 +5371,9 @@ algorithm
   */         
     case(e, xlist, _, _, _, _, _, _,_)
       equation
+        true = Flags.isSet(Flags.FAILTRACE_JAC);
         str = "BackendDAEOptimize.differentiateWithRespectToXVec failed: " +& ExpressionDump.printExpStr(e) +& "\n";
-        Debug.fcall("failtraceJac",print,str);
+        print(str);
         //Error.addMessage(Error.INTERNAL_ERROR, {str});
       then {};
   end matchcontinue;
@@ -5411,8 +5412,9 @@ algorithm
 
      case(e, diff_cref::rest, _, _)
        equation
+        true = Flags.isSet(Flags.FAILTRACE_JAC);
          str = "BackendDAEOptimize.createDiffListMeta failed: " +& ExpressionDump.printExpStr(e) +& " | " +& ComponentReference.printComponentRefStr(diff_cref);
-         Debug.fcall("failtraceJac",print,str);
+         print(str);
         //Error.addMessage(Error.INTERNAL_ERROR, {str});
        then fail();
   end matchcontinue;

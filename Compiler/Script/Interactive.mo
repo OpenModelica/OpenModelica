@@ -52,7 +52,6 @@ public import AbsynDep;
 public import ConnectionGraph;
 public import DAE;
 public import Env;
-public import OptManager;
 public import SCode;
 public import SCodeUtil;
 public import Settings;
@@ -64,6 +63,7 @@ protected import Ceval;
 protected import ClassInf;
 protected import ClassLoader;
 protected import ComponentReference;
+protected import Config;
 protected import Connect;
 protected import ConnectUtil;
 protected import Constants;
@@ -76,6 +76,7 @@ protected import ErrorExt;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import Flags;
 protected import InnerOuter;
 protected import Inst;
 protected import List;
@@ -86,7 +87,6 @@ protected import Parser;
 protected import Prefix;
 protected import Print;
 protected import Refactor;
-protected import RTOpts;
 protected import SCodeFlatten;
 protected import Static;
 protected import System;
@@ -343,7 +343,7 @@ algorithm
   _:= matchcontinue(s, semicolon)
     case (s, semicolon)
       equation
-        true = RTOpts.debugFlag("showStatement");
+        true = Flags.isSet(Flags.SHOW_STATEMENT);
         print("Evaluating: " +& Dump.printIstmtStr(ISTMTS({s}, semicolon)) +& "\n");        
       then 
         ();
@@ -1590,9 +1590,9 @@ algorithm
         matchApiFunction(istmts, "getComponentAnnotations");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         ErrorExt.setCheckpoint("getComponentAnnotations");
-        RTOpts.setEvaluateParametersInAnnotations(true);
+        Config.setEvaluateParametersInAnnotations(true);
         resstr = getComponentAnnotations(cr, p);
-        RTOpts.setEvaluateParametersInAnnotations(false);
+        Config.setEvaluateParametersInAnnotations(false);
         ErrorExt.rollBack("getComponentAnnotations");
       then
         (resstr,st);
@@ -1602,9 +1602,9 @@ algorithm
         matchApiFunction(istmts, "getNthComponentAnnotation");
         {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
         ErrorExt.setCheckpoint("getNthComponentAnnotation");
-        RTOpts.setEvaluateParametersInAnnotations(true);
+        Config.setEvaluateParametersInAnnotations(true);
         resstr = getNthComponentAnnotation(cr, p, n);
-        RTOpts.setEvaluateParametersInAnnotations(false);
+        Config.setEvaluateParametersInAnnotations(false);
         ErrorExt.rollBack("getNthComponentAnnotation");
       then
         (resstr,st);
@@ -1706,9 +1706,9 @@ algorithm
         {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
         ErrorExt.setCheckpoint("getNthConnectionAnnotation");
         modelpath = Absyn.crefToPath(cr);
-        RTOpts.setEvaluateParametersInAnnotations(true);
+        Config.setEvaluateParametersInAnnotations(true);
         resstr = getNthConnectionAnnotation(modelpath, p, n);
-        RTOpts.setEvaluateParametersInAnnotations(false);
+        Config.setEvaluateParametersInAnnotations(false);
         ErrorExt.rollBack("getNthConnectionAnnotation");
       then
         (resstr,st);
@@ -1737,9 +1737,9 @@ algorithm
         {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
         ErrorExt.setCheckpoint("getNthConnectorIconAnnotation");
         modelpath = Absyn.crefToPath(cr);
-        RTOpts.setEvaluateParametersInAnnotations(true);
+        Config.setEvaluateParametersInAnnotations(true);
         resstr = getNthConnectorIconAnnotation(modelpath, p, n);
-        RTOpts.setEvaluateParametersInAnnotations(false);
+        Config.setEvaluateParametersInAnnotations(false);
         ErrorExt.rollBack("getNthConnectorIconAnnotation");
       then
         (resstr,st);
@@ -1750,9 +1750,9 @@ algorithm
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         modelpath = Absyn.crefToPath(cr);
         ErrorExt.setCheckpoint("getIconAnnotation");
-        RTOpts.setEvaluateParametersInAnnotations(true);
+        Config.setEvaluateParametersInAnnotations(true);
         resstr = getIconAnnotation(modelpath, p);
-        RTOpts.setEvaluateParametersInAnnotations(false);
+        Config.setEvaluateParametersInAnnotations(false);
         ErrorExt.rollBack("getIconAnnotation");
       then
         (resstr,st);
@@ -1763,9 +1763,9 @@ algorithm
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         modelpath = Absyn.crefToPath(cr);
         ErrorExt.setCheckpoint("getDiagramAnnotation");
-        RTOpts.setEvaluateParametersInAnnotations(true);
+        Config.setEvaluateParametersInAnnotations(true);
         resstr = getDiagramAnnotation(modelpath, p);
-        RTOpts.setEvaluateParametersInAnnotations(false);
+        Config.setEvaluateParametersInAnnotations(false);
         ErrorExt.rollBack("getDiagramAnnotation");
       then
         (resstr,st);
@@ -1776,9 +1776,9 @@ algorithm
         {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
         ErrorExt.setCheckpoint("getNthInheritedClassIconMapAnnotation");
         modelpath = Absyn.crefToPath(cr);
-        RTOpts.setEvaluateParametersInAnnotations(true);
+        Config.setEvaluateParametersInAnnotations(true);
         resstr = getNthInheritedClassMapAnnotation(modelpath, n, p, "IconMap");
-        RTOpts.setEvaluateParametersInAnnotations(false);
+        Config.setEvaluateParametersInAnnotations(false);
         ErrorExt.rollBack("getNthInheritedClassIconMapAnnotation");
       then
         (resstr,st);
@@ -1789,9 +1789,9 @@ algorithm
         {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
         ErrorExt.setCheckpoint("getNthInheritedClassDiagramMapAnnotation");
         modelpath = Absyn.crefToPath(cr);
-        RTOpts.setEvaluateParametersInAnnotations(true);
+        Config.setEvaluateParametersInAnnotations(true);
         resstr = getNthInheritedClassMapAnnotation(modelpath, n, p, "DiagramMap");
-        RTOpts.setEvaluateParametersInAnnotations(false);
+        Config.setEvaluateParametersInAnnotations(false);
         ErrorExt.rollBack("getNthInheritedClassDiagramMapAnnotation");
       then
         (resstr,st);
@@ -1802,9 +1802,9 @@ algorithm
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         modelpath = Absyn.crefToPath(cr);
         ErrorExt.setCheckpoint("getDocumentationAnnotation");
-        RTOpts.setEvaluateParametersInAnnotations(true);
+        Config.setEvaluateParametersInAnnotations(true);
         resstr = getNamedAnnotation(modelpath, p, "Documentation", getDocumentationAnnotationString);
-        RTOpts.setEvaluateParametersInAnnotations(false);
+        Config.setEvaluateParametersInAnnotations(false);
         ErrorExt.rollBack("getDocumentationAnnotation");
       then
         (resstr,st);
@@ -1843,9 +1843,9 @@ algorithm
         getApiFunctionArgs(istmts);
         modelpath = Absyn.crefToPath(cr);
         ErrorExt.setCheckpoint("getNamedAnnotation");
-        RTOpts.setEvaluateParametersInAnnotations(true);
+        Config.setEvaluateParametersInAnnotations(true);
         resstr = getNamedAnnotation(modelpath, p, str, getAnnotationValue);
-        RTOpts.setEvaluateParametersInAnnotations(false);
+        Config.setEvaluateParametersInAnnotations(false);
         ErrorExt.rollBack("getNamedAnnotation");
       then
         (resstr,st);
@@ -2138,7 +2138,8 @@ algorithm
         matchApiFunction(istmts, "setOption");
         {Absyn.CREF(componentRef = Absyn.CREF_IDENT(str, _)), Absyn.BOOL(value = b1)} =
           getApiFunctionArgs(istmts);
-        OptManager.setOption(str, b1);
+        str = "--" +& str;
+        _ = Flags.readArgs({str});
       then
         ("true",st);
 
@@ -2420,7 +2421,7 @@ algorithm
     
     case (p,_,_,_)
       equation
-        Debug.fprint("failtrace", "rename_component failed\n");
+        Debug.fprint(Flags.FAILTRACE, "rename_component failed\n");
       then
         ("Error",p);
   end matchcontinue;
@@ -2469,7 +2470,7 @@ algorithm
     
     case (p,_,_,_)
       equation
-        Debug.fprint("failtrace", "renameComponentOnlyInClass failed\n");
+        Debug.fprint(Flags.FAILTRACE, "renameComponentOnlyInClass failed\n");
       then
         ("Error",p);
   end matchcontinue;
@@ -9051,7 +9052,7 @@ algorithm
       equation
         true = Absyn.pathEqual(functionInCf, functionName);
         tmp = Absyn.pathStringReplaceDot(functionName, "_");
-        System.freeFunction(funcHandle);
+        System.freeFunction(funcHandle, Flags.isSet(Flags.DYN_LOAD));
         res = removeCf(rest, functionName);
       then
         res;
@@ -9346,7 +9347,7 @@ algorithm
     
     case (path,inmodel,p as Absyn.PROGRAM(globalBuildTimes=ts))
       equation
-        //Debug.fprintln("inter", "Interactive.lookupClassdef 1 Looking for: " +& Absyn.pathString(path) +& " in: " +& Absyn.pathString(inmodel));
+        //Debug.fprintln(Flags.INTER, "Interactive.lookupClassdef 1 Looking for: " +& Absyn.pathString(path) +& " in: " +& Absyn.pathString(inmodel));
         // remove self reference, otherwise we go into an infinite loop!
         path = Inst.removeSelfReference(Absyn.pathLastIdent(inmodel),path);
         inmodeldef = getPathedClassInProgram(inmodel, p) "Look first inside \'inmodel\'" ;
@@ -9357,7 +9358,7 @@ algorithm
     
     case (path,inmodel,p) /* Then look inside next level */
       equation
-        //Debug.fprintln("inter", "Interactive.lookupClassdef 2 Looking for: " +& Absyn.pathString(path) +& " in: " +& Absyn.pathString(inmodel));
+        //Debug.fprintln(Flags.INTER, "Interactive.lookupClassdef 2 Looking for: " +& Absyn.pathString(path) +& " in: " +& Absyn.pathString(inmodel));
         innewpath = Absyn.stripLast(inmodel);
         (cdef,respath) = lookupClassdef(path, innewpath, p);
       then
@@ -9365,7 +9366,7 @@ algorithm
     
     case (path,inmodel,p)
       equation
-        //Debug.fprintln("inter", "Interactive.lookupClassdef 3 Looking for: " +& Absyn.pathString(path) +& " in: " +& Absyn.pathString(inmodel));
+        //Debug.fprintln(Flags.INTER, "Interactive.lookupClassdef 3 Looking for: " +& Absyn.pathString(path) +& " in: " +& Absyn.pathString(inmodel));
         cdef = getPathedClassInProgram(path, p) "Finally look in top level" ;
       then
         (cdef,path);
@@ -9384,7 +9385,7 @@ algorithm
     
     case (path,inmodel,_)
       equation
-        //Debug.fprintln("inter", "Interactive.lookupClassdef 8 Looking for: " +& Absyn.pathString(path) +& " in: " +& Absyn.pathString(inmodel));
+        //Debug.fprintln(Flags.INTER, "Interactive.lookupClassdef 8 Looking for: " +& Absyn.pathString(path) +& " in: " +& Absyn.pathString(inmodel));
         s1 = Absyn.pathString(path);
         s2 = Absyn.pathString(inmodel);
         Error.addMessage(Error.LOOKUP_ERROR, {s1,s2});
@@ -13413,7 +13414,7 @@ algorithm
     
     case (Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT(annName,_),SOME(Absyn.CLASSMOD(mod,_)),_) :: rest,info,inClass, inFullProgram, inModelPath)
       equation
-        lineProgram = modelicaAnnotationProgram(RTOpts.getAnnotationVersion());
+        lineProgram = modelicaAnnotationProgram(Config.getAnnotationVersion());
         fargs = createFuncargsFromElementargs(mod);
         p_1 = SCodeUtil.translateAbsyn2SCode(lineProgram);
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
@@ -13734,7 +13735,7 @@ protected
   list<String> res;
   Absyn.Program placementProgram;
 algorithm
-  placementProgram := modelicaAnnotationProgram(RTOpts.getAnnotationVersion());
+  placementProgram := modelicaAnnotationProgram(Config.getAnnotationVersion());
   graphicProgramSCode := SCodeUtil.translateAbsyn2SCode(placementProgram);
   (_,env) := Inst.makeEnvFromProgram(Env.emptyCache(), graphicProgramSCode, Absyn.IDENT(""));
   res := getComponentitemsAnnotations(comps, env, inClass, inFullProgram, inModelPath);
@@ -14095,7 +14096,7 @@ algorithm
     case (inFullProgram, inModelPath, inAnnotationMod, inAnnotationClass)
       equation
         false = Absyn.onlyLiteralsInAnnotationMod(inAnnotationMod);
-        graphicProgram = modelicaAnnotationProgram(RTOpts.getAnnotationVersion());
+        graphicProgram = modelicaAnnotationProgram(Config.getAnnotationVersion());
         graphicProgram = updateProgram(graphicProgram, inFullProgram);
         graphicProgramSCode = SCodeUtil.translateAbsyn2SCode(graphicProgram);
         
@@ -14106,13 +14107,13 @@ algorithm
         
         // fully instantiate the class that contains the annotation!
         // set check model on so that partial classes can be instantiated!                
-        b1 = OptManager.getOption("checkModel");
-        b2 = RTOpts.getEvaluateParametersInAnnotations();
-        OptManager.setOption("checkModel", true);
-        RTOpts.setEvaluateParametersInAnnotations(true); // set to evaluate the parameters!
+        b1 = Flags.getConfigBool(Flags.CHECK_MODEL);
+        b2 = Config.getEvaluateParametersInAnnotations();
+        Flags.setConfigBool(Flags.CHECK_MODEL, true);
+        Config.setEvaluateParametersInAnnotations(true); // set to evaluate the parameters!
         (cache,env,_,_) = Inst.instantiateClass(Env.emptyCache(),InnerOuter.emptyInstHierarchy,graphicProgramSCode,inModelPath);
-        RTOpts.setEvaluateParametersInAnnotations(b2);
-        OptManager.setOption("checkModel", b1);
+        Config.setEvaluateParametersInAnnotations(b2);
+        Flags.setConfigBool(Flags.CHECK_MODEL, b1);
       then
         (cache, env, graphicProgram);
     
@@ -14126,7 +14127,7 @@ algorithm
         // print("Annotation to get: (" +& stringDelimitList(List.map(inAnnotationMod, Dump.unparseElementArgStr), ", ") +& ")\n");
         // print("Annotation class: " +& inAnnotationClass +& "\n");
 
-        graphicProgram = modelicaAnnotationProgram(RTOpts.getAnnotationVersion());
+        graphicProgram = modelicaAnnotationProgram(Config.getAnnotationVersion());
         graphicProgramSCode = SCodeUtil.translateAbsyn2SCode(graphicProgram);
         (cache,env) = Inst.makeSimpleEnvFromProgram(Env.emptyCache(), graphicProgramSCode, Absyn.IDENT(inAnnotationClass));
       then
@@ -14326,8 +14327,8 @@ algorithm
 
     case (inAnnotation, inClass, inFullProgram, inModelPath)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", 
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprintln(Flags.FAILTRACE, 
           "- Interactive.getAnnotationString failed on annotation: " +& 
           Dump.unparseAnnotationOption(0, SOME(inAnnotation)));
       then
@@ -15609,11 +15610,11 @@ algorithm
         Absyn.PROGRAM((c1 :: newclst),w,newTs);
     case (c,p as Absyn.PROGRAM(globalBuildTimes=ts))
       equation
-        true = RTOpts.debugFlag("dump");
+        true = Flags.isSet(Flags.DUMP);
         Print.printBuf("Interactive.replaceClassInProgram failed \n class:");
-        Debug.fcall("dump", Dump.dump, Absyn.PROGRAM({c},Absyn.TOP(),ts));
+        Dump.dump(Absyn.PROGRAM({c}, Absyn.TOP(), ts));
         Print.printBuf("\nprogram: \n");
-        Debug.fcall("dump", Dump.dump, p);
+        Dump.dump(p);
       then
         fail();
   end matchcontinue;

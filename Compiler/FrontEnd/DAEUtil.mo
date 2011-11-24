@@ -240,17 +240,17 @@ protected import Algorithm;
 protected import BaseHashTable;
 protected import Ceval;
 protected import ComponentReference;
+protected import Config;
 protected import Debug;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
+protected import Flags;
 protected import List;
-protected import RTOpts;
 protected import System;
 protected import Types;
 protected import Util;
 protected import DAEDump;
-protected import OptManager;
 
 public function splitDAEIntoVarsAndEquations
 "Splits the DAE into one with vars and no equations and algorithms
@@ -383,7 +383,7 @@ algorithm
       then (DAE.DAE(elts2),DAE.DAE(e::elts3));
     case(DAE.DAE(e::elts))
       equation
-        Debug.fprintln("failtrace", "- DAEUtil.splitDAEIntoVarsAndEquations failed on: " );
+        Debug.fprintln(Flags.FAILTRACE, "- DAEUtil.splitDAEIntoVarsAndEquations failed on: " );
       then fail();
   end matchcontinue;
 end splitDAEIntoVarsAndEquations;
@@ -1746,7 +1746,7 @@ algorithm
     case (cache,env,cname,DAE.VAR(componentRef = cr, binding = SOME(rhs),
           source= source) :: rest, impl)
       equation
-        // Debug.fprintln("failtrace", "- DAEUtil.daeToRecordValue typeOfRHS: " +& ExpressionDump.typeOfString(rhs));
+        // Debug.fprintln(Flags.FAILTRACE, "- DAEUtil.daeToRecordValue typeOfRHS: " +& ExpressionDump.typeOfString(rhs));
         info = getElementSourceFileInfo(source);
         (cache, value,_) = Ceval.ceval(cache, env, rhs, impl, NONE(), Ceval.MSG(info));
         (cache, Values.RECORD(cname,vals,names,ix)) = daeToRecordValue(cache, env, cname, rest, impl);
@@ -1764,9 +1764,9 @@ algorithm
     */
     case (cache,env,_,el::_,_)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         str = DAEDump.dumpDebugDAE(DAE.DAE({el}));
-        Debug.fprintln("failtrace", "- DAEUtil.daeToRecordValue failed on: " +& str);
+        Debug.fprintln(Flags.FAILTRACE, "- DAEUtil.daeToRecordValue failed on: " +& str);
       then
         fail();
   end matchcontinue;
@@ -2134,7 +2134,7 @@ algorithm
         msg = stringDelimitList(List.mapMap(getFunctionList(functions), functionName, Absyn.pathString), "\n  ");
         msg = "DAEUtil.getNamedFunction failed: " +& Absyn.pathString(path) +& "\nThe following functions were part of the cache:\n  ";
         // Error.addMessage(Error.INTERNAL_ERROR,{msg});
-        Debug.fprintln("failtrace", msg);
+        Debug.fprintln(Flags.FAILTRACE, msg);
       then
         fail();
   end matchcontinue;
@@ -2154,7 +2154,7 @@ algorithm
     case (path,fn::fns) then getNamedFunctionFromList(path, fns);
     case (path,{})
       equation
-        Debug.fprintln("failtrace", "- DAEUtil.getNamedFunctionFromList failed " +& Absyn.pathString(path));
+        Debug.fprintln(Flags.FAILTRACE, "- DAEUtil.getNamedFunctionFromList failed " +& Absyn.pathString(path));
       then
         fail();
   end matchcontinue;
@@ -2753,7 +2753,7 @@ algorithm
    // failure?!
    case (_, _, _, source, false, onlyConstantEval)
      equation
-       // Debug.fprintln("failtrace", "- DAEUtil.selectBranches failed: the IF equation is malformed!");
+       // Debug.fprintln(Flags.FAILTRACE, "- DAEUtil.selectBranches failed: the IF equation is malformed!");
      then fail();
  end matchcontinue;
 end selectBranches;
@@ -2815,7 +2815,7 @@ algorithm
     // adrpo: if we are running checkModel and condition is initial(), ignore error!
     case (DAE.IF_EQUATION(condition1 = cond as {DAE.CALL(path = fpath)},equations2 = true_branch,equations3 = false_branch,source=source),onlyConstantEval as false)
       equation
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
         true = Util.isEqual(fpath, Absyn.IDENT("initial"));
         // leave the if equation as it is!
       then {inElement};
@@ -2835,9 +2835,9 @@ algorithm
     case (elt as DAE.IF_EQUATION(source=source),onlyConstantEval) // only display failure on if equation
       equation
         // TODO: Do errors in the other functions...
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         elt_str = DAEDump.dumpElementsStr({elt});
-        Debug.fprintln("failtrace", "- DAEUtil.ifEqToExpr failed " +& elt_str);
+        Debug.fprintln(Flags.FAILTRACE, "- DAEUtil.ifEqToExpr failed " +& elt_str);
       then fail();
   end matchcontinue;
 end ifEqToExpr;
@@ -3522,7 +3522,7 @@ algorithm
       then ((p,SOME(daeFunc))::funcLst,extraArg);
     case((p,NONE())::_,_,_)
       equation
-        Debug.fprintln("failtrace", "- DAEUtil.traverseDAEFuncLst failed: " +& Absyn.pathString(p));
+        Debug.fprintln(Flags.FAILTRACE, "- DAEUtil.traverseDAEFuncLst failed: " +& Absyn.pathString(p));
       then fail();
   end match;
 end traverseDAEFuncLst;
@@ -3919,7 +3919,7 @@ algorithm
         ((e_1, extraArg)) = func((e, extraArg));
         failure(((DAE.CREF(_,_), _)) = func((Expression.crefExp(cr), extraArg)));
         /* We need to pass this through because simplify/etc may scalarize the cref...
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         print(DAEDump.ppStatementStr(x));
         print("Warning, not allowed to set the componentRef to a expression in DAEUtil.traverseDAEEquationsStmts\n");
         */
@@ -4501,7 +4501,7 @@ algorithm
         elts = List.appendNoCopy(elts1,elts2);
         // t2 = clock();
         // ti = t2 -. t1;
-        // Debug.fprintln("innerouter", " joinDAEs: (" +& realString(ti) +& ") -> " +& intString(listLength(elts1)) +& " + " +&  intString(listLength(elts2)));
+        // Debug.fprintln(Flags.INNER_OUTER, " joinDAEs: (" +& realString(ti) +& ") -> " +& intString(listLength(elts1)) +& " + " +&  intString(listLength(elts2)));
       then DAE.DAE(elts);
     
   end match;
@@ -5189,7 +5189,7 @@ algorithm
   outPaths := matchcontinue (funcs, els)
     case (_,_)
       equation
-        false = RTOpts.acceptMetaModelicaGrammar();
+        false = Config.acceptMetaModelicaGrammar();
       then {};
     case (funcs, els)
       equation
@@ -5267,7 +5267,7 @@ algorithm
       HashTable.HashTable ht;
     case (dae)
       equation
-        false = RTOpts.debugFlag("frontend-inline-euler");
+        false = Flags.isSet(Flags.FRONTEND_INLINE_EULER);
       then dae;
     case (dae)
       equation

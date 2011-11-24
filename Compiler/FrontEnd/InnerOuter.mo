@@ -37,33 +37,32 @@ encapsulated package InnerOuter
   RCS: $Id$"
 
 import Absyn;
+import Connect;
+import ConnectionGraph;
 import DAE;
 import Env;
 import Prefix;
 import SCode;
 import UnitAbsyn;
-import Connect;
-import ConnectionGraph;
 
 protected import ComponentReference;
-protected import System;
-protected import Util;
-protected import Debug;
+protected import ConnectUtil;
 protected import DAEUtil;
-protected import Expression;
-protected import VarTransform;
-protected import OptManager;
+protected import Debug;
 protected import Dump;
 protected import Error;
-protected import List;
-protected import Lookup;
+protected import ErrorExt;
+protected import Expression;
+protected import Flags;
 protected import Inst;
 protected import InstSection;
-protected import ConnectUtil;
-protected import RTOpts;
+protected import List;
+protected import Lookup;
 protected import Mod;
 protected import PrefixUtil;
-protected import ErrorExt;
+protected import System;
+protected import Util;
+protected import VarTransform;
 
 public
 type Cache     = Env.Cache;
@@ -248,7 +247,7 @@ algorithm
       equation
         (DAE.DAE(innerVars),DAE.DAE(outerVars)) = DAEUtil.findAllMatchingElements(inDae,DAEUtil.isInnerVar,DAEUtil.isOuterVar);
         repl = buildInnerOuterRepl(innerVars,outerVars,VarTransform.emptyReplacements());
-        // Debug.fprintln("innerouter", "Number of elts/inner vars/outer vars: " +&
+        // Debug.fprintln(Flags.INNER_OUTER, "Number of elts/inner vars/outer vars: " +&
         //        intString(listLength(allDAEelts)) +&
         //        "/" +& intString(listLength(innerVars)) +&
         //        "/" +& intString(listLength(outerVars)));
@@ -264,8 +263,8 @@ algorithm
     // failtrace
     case(inDae,csets,ih,graph,true)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- Inst.changeOuterReferences failed!");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.changeOuterReferences failed!");
       then
         fail();
   end matchcontinue;
@@ -427,7 +426,7 @@ algorithm
       equation
         (_,true) = innerOuterBooleans(io1);
         ncr1 = PrefixUtil.prefixToCref(scope);
-        // Debug.fprintln("ios", "changeInnerOuterInOuterConnect: changing left: " +&
+        // Debug.fprintln(Flags.IOS, "changeInnerOuterInOuterConnect: changing left: " +&
         //   ComponentReference.printComponentRefStr(cr1) +& " to inner");
         false = ComponentReference.crefFirstCrefLastCrefEqual(ncr1,cr1);
       then
@@ -438,7 +437,7 @@ algorithm
       equation
         (_,true) = innerOuterBooleans(io2);
         ncr2 = PrefixUtil.prefixToCref(scope);
-        // Debug.fprintln("ios", "changeInnerOuterInOuterConnect: changing right: " +&
+        // Debug.fprintln(Flags.IOS, "changeInnerOuterInOuterConnect: changing right: " +&
         //   ComponentReference.printComponentRefStr(cr2) +& " to inner");
         false = ComponentReference.crefFirstCrefLastCrefEqual(ncr2,cr2);
       then
@@ -660,7 +659,7 @@ algorithm
     // something went wrong, print a failtrace and then 
     case (inPrefix, inCref)
       equation
-        //true = RTOpts.debugFlag("failtrace");
+        //true = Flags.isSet(Flags.FAILTRACE);
         //Debug.traceln("- InnerOuter.removeInnerPrefixFromCref failed on prefix: " +& PrefixUtil.printPrefixStr(inPrefix) +&
         // " cref: " +& ComponentReference.printComponentRefStr(inCref));
       then 
@@ -1073,8 +1072,8 @@ public function failExceptForCheck
  a instantiation for performing checkModel call should not fail"
 algorithm
   _ := matchcontinue()
-    case() equation true = OptManager.getOption("checkModel"); then ();
-    case() equation /* false = OptManager.getOption("checkModel"); */ then fail();
+    case() equation true = Flags.getConfigBool(Flags.CHECK_MODEL); then ();
+    case() equation /* false = Flags.getConfigBool(Flags.CHECK_MODEL); */ then fail();
   end matchcontinue;
 end failExceptForCheck;
 
@@ -1188,8 +1187,8 @@ algorithm
     // and makes mosfiles/interactive_api_attributes.mos to fail!
     case (TOP_INSTANCE(_, ht, outerPrefixes), Prefix.NOPRE(),  name)
       equation
-        // Debug.fprintln("innerouter", "Error: outer component: " +& name +& " defined at the top level!");
-        // Debug.fprintln("innerouter", "InnerOuter.lookupInnerInIH : looking for: " +& PrefixUtil.printPrefixStr(Prefix.NOPRE()) +& "/" +& name +& " REACHED TOP LEVEL!");
+        // Debug.fprintln(Flags.INNER_OUTER, "Error: outer component: " +& name +& " defined at the top level!");
+        // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : looking for: " +& PrefixUtil.printPrefixStr(Prefix.NOPRE()) +& "/" +& name +& " REACHED TOP LEVEL!");
         // TODO! add warning!
       then emptyInstInner(Prefix.NOPRE(), name);
     
@@ -1198,11 +1197,11 @@ algorithm
       equation
         // back one step in the instance hierarchy
         
-        // Debug.fprintln("innerouter", "InnerOuter.lookupInnerInIH : looking for: " +& PrefixUtil.printPrefixStr(inPrefix) +& "/" +& name);
+        // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : looking for: " +& PrefixUtil.printPrefixStr(inPrefix) +& "/" +& name);
 
         prefix = PrefixUtil.prefixStripLast(inPrefix);
 
-        // Debug.fprintln("innerouter", "InnerOuter.lookupInnerInIH : stripping and looking for: " +& PrefixUtil.printPrefixStr(prefix) +& "/" +& name);
+        // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : stripping and looking for: " +& PrefixUtil.printPrefixStr(prefix) +& "/" +& name);
 
         // put the name as the last prefix
         (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,prefix, ComponentReference.makeCrefIdent(name, DAE.ET_OTHER(), {}));
@@ -1212,7 +1211,7 @@ algorithm
 
         // isInner = Absyn.isInner(io);
         // instInner = Util.if_(isInner, instInner, emptyInstInner(inPrefix, name));
-        // Debug.fprintln("innerouter", "InnerOuter.lookupInnerInIH : Looking up: " +&  
+        // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : Looking up: " +&  
         //  ComponentReference.printComponentRefStr(cref) +& " FOUND with innerPrefix: " +&
         //  PrefixUtil.printPrefixStr(innerPrefix));
       then
@@ -1222,11 +1221,11 @@ algorithm
     case (TOP_INSTANCE(_, ht, outerPrefixes), inPrefix,  name)
       equation
         // back one step in the instance hierarchy
-        // Debug.fprintln("innerouter", "InnerOuter.lookupInnerInIH : looking for: " +& PrefixUtil.printPrefixStr(inPrefix) +& "/" +& name);
+        // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : looking for: " +& PrefixUtil.printPrefixStr(inPrefix) +& "/" +& name);
         
         prefix = PrefixUtil.prefixStripLast(inPrefix);
         
-        // Debug.fprintln("innerouter", "InnerOuter.lookupInnerInIH : stripping and looking for: " +& PrefixUtil.printPrefixStr(prefix) +& "/" +& name);
+        // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : stripping and looking for: " +& PrefixUtil.printPrefixStr(prefix) +& "/" +& name);
         
         // put the name as the last prefix
         (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,prefix, ComponentReference.makeCrefIdent(name, DAE.ET_OTHER(), {}));
@@ -1234,7 +1233,7 @@ algorithm
         // search in instance hierarchy we had a failure
         failure(instInner = get(cref, ht));
         
-        // Debug.fprintln("innerouter", "InnerOuter.lookupInnerInIH : Couldn't find: " +& ComponentReference.printComponentRefStr(cref) +& " going deeper");
+        // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : Couldn't find: " +& ComponentReference.printComponentRefStr(cref) +& " going deeper");
         
         // call recursively to back one more step!
         instInner = lookupInnerInIH(inTIH, prefix, name);
@@ -1244,7 +1243,7 @@ algorithm
     // if we fail return nothing
     case (inTIH as TOP_INSTANCE(_, ht, outerPrefixes), prefix, name)
       equation
-        // Debug.fprintln("innerouter", "InnerOuter.lookupInnerInIH : looking for: " +& PrefixUtil.printPrefixStr(prefix) +& "/" +& name +& " NOT FOUND!");
+        // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : looking for: " +& PrefixUtil.printPrefixStr(prefix) +& "/" +& name +& " NOT FOUND!");
         // dumpInstHierarchyHashTable(ht);
       then 
         emptyInstInner(prefix, name);
@@ -1617,7 +1616,7 @@ algorithm
     // failure in case we look for anything else but outer!
     case (cache,env,_,pre,n,io)
       equation
-        Debug.fprintln("failtrace", "InnerOuter.lookupInnerVar failed on component: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n);
+        Debug.fprintln(Flags.FAILTRACE, "InnerOuter.lookupInnerVar failed on component: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n);
       then
         fail();
   end matchcontinue;
@@ -1673,7 +1672,7 @@ algorithm
         cref_ = ComponentReference.makeCrefIdent(name, DAE.ET_OTHER(), {});
         (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, cref_);
         // add to hashtable!
-        // Debug.fprintln("innerouter", "InnerOuter.updateInstHierarchy adding: " +& 
+        // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.updateInstHierarchy adding: " +& 
         //   PrefixUtil.printPrefixStr(inPrefix) +& "/" +& name +& " to IH");
         ht = add((cref,inInstInner), ht);
       then
@@ -1684,7 +1683,7 @@ algorithm
       equation
         // prefix the name!
         //(_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, ComponentReference.makeCrefIdent("UNKNOWN", DAE.ET_OTHER(), {}));
-        // Debug.fprintln("innerouter", "InnerOuter.updateInstHierarchy failure for: " +& 
+        // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.updateInstHierarchy failure for: " +& 
         //   PrefixUtil.printPrefixStr(inPrefix) +& "/" +& name);
       then
         fail();
@@ -1720,7 +1719,7 @@ algorithm
     // add to the top instance
     case((tih as TOP_INSTANCE(pathOpt, ht, outerPrefixes))::restIH, inOuterComponentRef, inInnerComponentRef)
       equation
-        // Debug.fprintln("innerouter", "InnerOuter.addOuterPrefix adding: outer cref: " +& 
+        // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.addOuterPrefix adding: outer cref: " +& 
         //   ComponentReference.printComponentRefStr(inOuterComponentRef) +& " refers to inner cref: " +& 
         //   ComponentReference.printComponentRefStr(inInnerComponentRef) +& " to IH");
         outerPrefixes = List.unionElt(OUTER(inOuterComponentRef,inInnerComponentRef), outerPrefixes);
@@ -1730,7 +1729,7 @@ algorithm
     // failure
     case(ih,inOuterComponentRef, inInnerComponentRef)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("InnerOuter.addOuterPrefix failed to add: outer cref: " +& 
           ComponentReference.printComponentRefStr(inOuterComponentRef) +& " refers to inner cref: " +& 
           ComponentReference.printComponentRefStr(inInnerComponentRef) +& " to IH");
@@ -1767,7 +1766,7 @@ algorithm
 
         innerCref = changeOuterReferenceToInnerReference(fullCref, outerCrefPrefix, innerCrefPrefix);
 
-        // Debug.fprintln("innerouter", "- InnerOuter.prefixOuterCrefWithTheInnerPrefix replaced cref " +& 
+        // Debug.fprintln(Flags.INNER_OUTER, "- InnerOuter.prefixOuterCrefWithTheInnerPrefix replaced cref " +& 
         //  ComponentReference.printComponentRefStr(fullCref) +& " with cref: " +& 
         //  ComponentReference.printComponentRefStr(innerCref));
       then 
@@ -1776,7 +1775,7 @@ algorithm
     // failure 
     case (_, inOuterComponentRef, inPrefix)
       equation
-        // true = RTOpts.debugFlag("failtrace");
+        // true = Flags.isSet(Flags.FAILTRACE);
         // Debug.traceln("- InnerOuter.prefixOuterCrefWithTheInnerPrefix failed to find prefix of inner for outer: prefix/cref " +& 
         //   PrefixUtil.printPrefixStr(inPrefix) +& "/" +& ComponentReference.printComponentRefStr(inOuterComponentRef));
       then

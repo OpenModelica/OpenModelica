@@ -771,10 +771,10 @@ package Tpl
   end addTemplateError;
 end Tpl;
 
-package RTOpts
+package Config
   function showAnnotations
     output Boolean show;
   end showAnnotations;
-end RTOpts;
+end Config;
 
 end SCodeTV;

@@ -42,13 +42,15 @@ extern "C" {
 extern "C" {
 #endif
 
-void Parser_5finit(void)
+void ParserExt_5finit(void)
 {
 }
 
-RML_BEGIN_LABEL(Parser__parse)
+RML_BEGIN_LABEL(ParserExt__parse)
 {
-  rmlA0 = parseFile(RML_STRINGDATA(rmlA0),PARSE_MODELICA);
+  int flags = PARSE_MODELICA;
+  if(RML_UNTAGFIXNUM(rmlA1)) flags |= PARSE_META_MODELICA;
+  rmlA0 = parseFile(RML_STRINGDATA(rmlA0),flags,RML_UNTAGFIXNUM(rmlA2));
   if (rmlA0)
     RML_TAILCALLK(rmlSC);
   else
@@ -57,9 +59,11 @@ RML_BEGIN_LABEL(Parser__parse)
 RML_END_LABEL
 
 
-RML_BEGIN_LABEL(Parser__parseexp)
+RML_BEGIN_LABEL(ParserExt__parseexp)
 {
-  rmlA0 = parseFile(RML_STRINGDATA(rmlA0),PARSE_EXPRESSION);
+  int flags = PARSE_EXPRESSION;
+  if(RML_UNTAGFIXNUM(rmlA1)) flags |= PARSE_META_MODELICA;
+  rmlA0 = parseFile(RML_STRINGDATA(rmlA0),flags,RML_UNTAGFIXNUM(rmlA2));
   if (rmlA0)
     RML_TAILCALLK(rmlSC);
   else
@@ -67,9 +71,11 @@ RML_BEGIN_LABEL(Parser__parseexp)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(Parser__parsestring)
+RML_BEGIN_LABEL(ParserExt__parsestring)
 {
-  rmlA0 = parseString(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1),PARSE_MODELICA);
+  int flags = PARSE_MODELICA;
+  if(RML_UNTAGFIXNUM(rmlA2)) flags |= PARSE_META_MODELICA;
+  rmlA0 = parseString(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1),flags,RML_UNTAGFIXNUM(rmlA2));
   if (rmlA0) {
     RML_TAILCALLK(rmlSC);
   } else {
@@ -79,9 +85,11 @@ RML_BEGIN_LABEL(Parser__parsestring)
 RML_END_LABEL
 
 
-RML_BEGIN_LABEL(Parser__parsestringexp)
+RML_BEGIN_LABEL(ParserExt__parsestringexp)
 {
-  rmlA0 = parseString(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1),PARSE_EXPRESSION);
+  int flags = PARSE_EXPRESSION;
+  if(RML_UNTAGFIXNUM(rmlA2)) flags |= PARSE_META_MODELICA;
+  rmlA0 = parseString(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1),flags,RML_UNTAGFIXNUM(rmlA2));
   if (rmlA0) {
     RML_TAILCALLK(rmlSC);
   } else {

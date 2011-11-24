@@ -88,7 +88,6 @@ public import Env;
 public import InnerOuter;
 public import Mod;
 public import Prefix;
-public import RTOpts;
 public import SCode;
 public import UnitAbsyn;
 
@@ -125,6 +124,7 @@ protected import Builtin;
 protected import Ceval;
 protected import ConnectUtil;
 protected import ComponentReference;
+protected import Config;
 protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
@@ -134,6 +134,7 @@ protected import ErrorExt;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import Flags;
 protected import Global;
 protected import Graph;
 protected import HashTable;
@@ -144,7 +145,6 @@ protected import Interactive;
 protected import List;
 protected import Lookup;
 protected import MetaUtil;
-protected import OptManager;
 protected import PrefixUtil;
 protected import SCodeUtil;
 protected import Static;
@@ -207,21 +207,21 @@ algorithm
     case (cache,iIH,p)
       equation
         p = SCodeFlatten.flattenProgram(p);
-        // Debug.fprintln("insttr", "instantiate");
+        // Debug.fprintln(Flags.INSTTR, "instantiate");
         pnofunc = List.select(p, isNotFunction);
         pfunc = List.select(p, SCode.isFunction);
         (cache,env) = Builtin.initialEnv(cache);
-        // Debug.fprintln("insttr", "Instantiating functions");
+        // Debug.fprintln(Flags.INSTTR, "Instantiating functions");
         // pfuncnames = List.map(pfunc, SCode.className);
         // str1 = stringDelimitList(pfuncnames, ", ");
-        // Debug.fprint("insttr", "Instantiating functions: ");
-        // Debug.fprintln("insttr", str1);
+        // Debug.fprint(Flags.INSTTR, "Instantiating functions: ");
+        // Debug.fprintln(Flags.INSTTR, str1);
         envimpl = Env.extendFrameClasses(env, p) "pfunc" ;
         (cache,envimpl_1,oIH1,lfunc) = instProgramImplicit(cache, envimpl, iIH, pfunc);
-        // Debug.fprint("insttr", "Instantiating other classes: ");
+        // Debug.fprint(Flags.INSTTR, "Instantiating other classes: ");
         // pnofuncnames = List.map(pnofunc, SCode.className);
         // str2 = stringDelimitList(pnofuncnames, ", ");
-        // Debug.fprintln("insttr", str2);
+        // Debug.fprintln(Flags.INSTTR, str2);
         (cache, oIH2, lnofunc) = instProgram(cache, envimpl_1, oIH1, pnofunc);
         l = DAEUtil.joinDaes(lfunc, lnofunc);
         // p_1 = addElaboratedFuncsToProgram(cache,env,p); // stefan
@@ -229,7 +229,7 @@ algorithm
         (cache,oIH2,l,p);
     case (_,_,_)
       equation
-        //Debug.fprintln("failtrace", "Inst.instantiate failed");
+        //Debug.fprintln(Flags.FAILTRACE, "Inst.instantiate failed");
       then
         fail();
   end match;
@@ -255,7 +255,7 @@ algorithm
       Env.Cache cache;
     case (cache,inIH,p)
       equation
-        // Debug.fprintln("insttr", "instantiate_implicit");
+        // Debug.fprintln(Flags.INSTTR, "instantiate_implicit");
         (cache,env) = Builtin.initialEnv(cache);
         env_1 = Env.extendFrameClasses(env, p);
         (cache,_,outIH,l) = instProgramImplicit(cache,env_1,inIH, p);
@@ -263,7 +263,7 @@ algorithm
         (cache,outIH,l);
     case (_,_,_)
       equation
-        //Debug.fprintln("failtrace", "Inst.instantiateImplicit failed");
+        //Debug.fprintln(Flags.FAILTRACE, "Inst.instantiateImplicit failed");
       then
         fail();
   end matchcontinue;
@@ -305,8 +305,8 @@ algorithm
         (cache,env_1,ih,dae1) = instClassDecls(cache, env, ih, cdecls, path);
         (cache,env_2,ih,dae2) = instClassInProgram(cache, env_1, ih, cdecls, path);
         // check the models for balancing
-        //Debug.fcall2("checkModel", checkModelBalancing, SOME(path), dae1);
-        //Debug.fcall2("checkModel", checkModelBalancing, SOME(path), dae2);
+        //Debug.fcall2(Flags.CHECK_MODEL_BALANCE, checkModelBalancing, SOME(path), dae1);
+        //Debug.fcall2(Flags.CHECK_MODEL_BALANCE, checkModelBalancing, SOME(path), dae2);
         // set the source of this element
         source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
         daeElts = DAEUtil.daeElements(dae2);
@@ -365,7 +365,7 @@ algorithm
         //print("\nReEvaluateIf: " +& realString(System.getTimerIntervalTime()));
 
         // check the model for balancing
-        // Debug.fcall2("checkModel", checkModelBalancing, SOME(path), dae);
+        // Debug.fcall2(Flags.CHECK_MODEL_BALANCE, checkModelBalancing, SOME(path), dae);
 
         //System.startTimer();
         //print("\nSetSource+DAE");
@@ -754,8 +754,8 @@ algorithm
     case (_,_,_,path)
       equation
         //print("-instantiateFunctionImplicit ");print(Absyn.pathString(path));print(" failed\n");
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "-Inst.instantiateFunctionImplicit " +& Absyn.pathString(path) +& " failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE, "-Inst.instantiateFunctionImplicit " +& Absyn.pathString(path) +& " failed\n");
       then
         fail();
   end matchcontinue;
@@ -801,7 +801,7 @@ algorithm
         dae = reEvaluateInitialIfEqns(cache,env_1,dae,true);
         
         // check the models for balancing
-        //Debug.fcall2("checkModel",checkModelBalancing,SOME(inPath),dae);
+        //Debug.fcall2(Flags.CHECK_MODEL_BALANCE,checkModelBalancing,SOME(inPath),dae);
       then
         (cache,env_1,ih,dae);
 
@@ -828,7 +828,7 @@ algorithm
     
     case (cache,env,ih,_,_)
       equation
-        Debug.fprintln("failtrace", "Inst.instClassInProgram failed");
+        Debug.fprintln(Flags.FAILTRACE, "Inst.instClassInProgram failed");
       then fail();
   end matchcontinue;
 end instClassInProgram;
@@ -878,7 +878,7 @@ algorithm
 
     case (_,env,ih,_,_)
       equation
-        Debug.fprint("failtrace", "Inst.instClassInProgramImplicit failed");
+        Debug.fprint(Flags.FAILTRACE, "Inst.instClassInProgramImplicit failed");
       then fail();
   end matchcontinue;
 end instClassInProgramImplicit;
@@ -1093,9 +1093,9 @@ algorithm
 
     case (cache,env,ih,{(c as SCode.CLASS(name = n, classDef = cdef))})
       equation
-        // Debug.fprint("insttr", "inst_program1: ");
-        // Debug.fprint("insttr", n);
-        // Debug.fprintln("insttr", "");
+        // Debug.fprint(Flags.INSTTR, "inst_program1: ");
+        // Debug.fprint(Flags.INSTTR, n);
+        // Debug.fprintln(Flags.INSTTR, "");
         containedInOpt = Env.getEnvPath(env);
         (cache,env_1,ih,store,dae,csets,_,_,_,graph) =
           instClass(cache,env,ih,UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(),
@@ -1107,7 +1107,7 @@ algorithm
         dae = reEvaluateInitialIfEqns(cache,env_1,dae,true);
         
         // check the models for balancing
-        //Debug.fcall2("checkModel",checkModelBalancing,containedInOpt,dae);
+        //Debug.fcall2(Flags.CHECK_MODEL_BALANCE,checkModelBalancing,containedInOpt,dae);
 
         // set the source of this element
         source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
@@ -1123,7 +1123,7 @@ algorithm
 
     case (cache,env,ih,(c :: (cs as (_ :: _))))
       equation
-        // Debug.fprintln("insttr", "inst_program2");
+        // Debug.fprintln(Flags.INSTTR, "inst_program2");
         (cache,env_1,ih,dae1) = instClassDecl(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), c, {}) ;
         //str = SCodeDump.printClassStr(c); print("------------------- CLASS instProgram-----------------\n");print(str);print("\n===============================================\n");
         //str = Env.printEnvStr(env_1);print("------------------- env instProgram 1-----------------\n");print(str);print("\n===============================================\n");
@@ -1134,7 +1134,7 @@ algorithm
 
     case (_,_,ih,_)
       equation
-        //Debug.fprintln("failtrace", "- Inst.instProgram failed");
+        //Debug.fprintln(Flags.FAILTRACE, "- Inst.instProgram failed");
       then
         fail();
 
@@ -1167,9 +1167,9 @@ algorithm
 
     case (cache,env,ih,((c as SCode.CLASS(name = n,restriction = restr)) :: cs))
       equation
-        // Debug.fprint("insttr", "inst_program_implicit: ");
-        // Debug.fprint("insttr", n);
-        // Debug.fprintln("insttr", "");
+        // Debug.fprint(Flags.INSTTR, "inst_program_implicit: ");
+        // Debug.fprint(Flags.INSTTR, n);
+        // Debug.fprintln(Flags.INSTTR, "");
         env = Env.extendFrameC(env, c);
         (cache,env_1,ih,dae1) = implicitInstantiation(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), c, {});
         (cache,env_2,ih,dae2) = instProgramImplicit(cache,env_1,ih, cs);
@@ -1179,7 +1179,7 @@ algorithm
 
     case (cache,env,ih,{})
       equation
-        // Debug.fprintln("insttr", "Inst.instProgramImplicit (end)");
+        // Debug.fprintln(Flags.INSTTR, "Inst.instProgramImplicit (end)");
       then
         (cache,env,ih,DAEUtil.emptyDae);
   end match;
@@ -1250,7 +1250,7 @@ algorithm
           (c as SCode.CLASS(name=n, partialPrefix = SCode.PARTIAL(), info = info)),
           inst_dims,impl,callscope,graph,_)
       equation
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
         c = SCode.setClassPartialPrefix(SCode.NOT_PARTIAL(), c);
         // add a warning
         Error.addSourceMessage(Error.INST_PARTIAL_CLASS_CHECK_MODEL_WARNING, {n}, info);
@@ -1312,7 +1312,7 @@ algorithm
 
     case (_,env,ih,_,_,_,SCode.CLASS(name = n),_,impl,_,graph,_)
       equation
-        Debug.fprintln("failtrace", "- Inst.instClass: " +& n +& " in env: " +&
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.instClass: " +& n +& " in env: " +&
         Env.printEnvPathStr(env) +& " failed");
       then
         fail();
@@ -1476,7 +1476,7 @@ algorithm
   _ := matchcontinue(topScope,store)
   local Boolean complete; UnitAbsyn.Store st;
     case(_,_) equation
-      false = OptManager.getOption("unitChecking");
+      false = Flags.getConfigBool(Flags.UNIT_CHECKING);
     then ();
     case(true,UnitAbsyn.INSTSTORE(st,_,SOME(UnitAbsyn.CONSISTENT()))) equation
       (complete,_) = UnitChecker.isComplete(st);
@@ -1723,7 +1723,7 @@ algorithm
 
     case (_,_,ih,_,_,_,SCode.CLASS(name = n),_,impl,_,_)
       equation
-        //Debug.fprintln("failtrace", "- Inst.instClassBasictype: " +& n +& " failed");
+        //Debug.fprintln(Flags.FAILTRACE, "- Inst.instClassBasictype: " +& n +& " failed");
       then
         fail();
     
@@ -1824,7 +1824,7 @@ algorithm
         c as SCode.CLASS(name = className, restriction=r), vis, inst_dims, impl,
         _, graph, csets, instSingleCref)
       equation
-        false = RTOpts.debugFlag("noCache");
+        false = Flags.isSet(Flags.NO_CACHE);
         instHash = getGlobalRoot(Global.instHashIndex);
         envPathOpt = Env.getEnvPath(inEnv);
         fullEnvPathPlusClass = Absyn.selectPathsOpt(envPathOpt, Absyn.IDENT(className));
@@ -1838,7 +1838,7 @@ algorithm
         (env,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graphCached) = outputs;
         graph = ConnectionGraph.merge(graph, graphCached);
         /*
-        Debug.fprintln("cache", "IIII->got from instCache: " +& Absyn.pathString(fullEnvPathPlusClass) +&
+        Debug.fprintln(Flags.CACHE, "IIII->got from instCache: " +& Absyn.pathString(fullEnvPathPlusClass) +&
           "\n\tpre: " +& PrefixUtil.printPrefixStr(pre) +& " class: " +&  className +& 
           "\n\tmods: " +& Mod.printModStr(mods) +& 
           "\n\tenv: " +& Env.printEnvPathStr(inEnv) +&
@@ -1872,7 +1872,7 @@ algorithm
              (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,inVisibility,inInstDims),
              (env,ci_state)))*/ NONE());
         /*
-        Debug.fprintln("cache", "IIII->added to instCache: " +& Absyn.pathString(fullEnvPathPlusClass) +&
+        Debug.fprintln(Flags.CACHE, "IIII->added to instCache: " +& Absyn.pathString(fullEnvPathPlusClass) +&
           "\n\tpre: " +& PrefixUtil.printPrefixStr(pre) +& " class: " +&  className +& 
           "\n\tmods: " +& Mod.printModStr(mods) +& 
           "\n\tenv: " +& Env.printEnvPathStr(inEnv) +&
@@ -1891,8 +1891,8 @@ algorithm
         restriction = r, classDef = d), vis, inst_dims, impl, _, graph, _, _)
       equation
         //print("instClassIn(");print(n);print(") failed\n");
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- Inst.instClassIn failed on class:" +&
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.instClassIn failed on class:" +&
            n +& " in environment: " +& Env.printEnvPathStr(env));
       then
         fail();
@@ -1914,7 +1914,7 @@ algorithm
     // when +g=MetaModelica, check class equality!
     case (c1,c2)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         failure(equality(c1 = c2));
       then
         false;
@@ -2073,7 +2073,7 @@ algorithm
     case (cache,env,ih,store,mods,pre, ci_state, 
         (c as SCode.CLASS(name = "Real",restriction = r,classDef = d)),vis,inst_dims,impl,_,graph,_,_)
       equation
-        true = RTOpts.splitArrays();
+        true = Config.splitArrays();
         tys = instRealClass(cache,env,mods,pre,DAE.T_REAL_DEFAULT);
         bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_REAL(tys),NONE()));
       then
@@ -2084,7 +2084,7 @@ algorithm
     case (cache,env,ih,store,mods,pre, ci_state, 
         (c as SCode.CLASS(name = "Real",restriction = r,classDef = d)),vis,inst_dims,impl,_,graph,_,_)
       equation
-        false = RTOpts.splitArrays();
+        false = Config.splitArrays();
         typ = Types.liftArraySubscriptList(DAE.T_REAL_DEFAULT, List.first(inst_dims));
         tys = instRealClass(cache,env,mods,pre,typ);
         bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_REAL(tys),NONE()));
@@ -2177,10 +2177,10 @@ algorithm
           vis,inst_dims,impl,callscope,graph,_,instSingleCref)
       equation
         false = isBuiltInClass(n) "If failed above, no need to try again";
-        // Debug.fprint("insttr", "ICLASS [");
+        // Debug.fprint(Flags.INSTTR, "ICLASS [");
         implstr = Util.if_(impl, "impl] ", "expl] ");
-        // Debug.fprint("insttr", implstr);
-        // Debug.fprintln("insttr", Env.printEnvPathStr(env) +& "." +& n +& " mods: " +& Mod.printModStr(mods));
+        // Debug.fprint(Flags.INSTTR, implstr);
+        // Debug.fprintln(Flags.INSTTR, Env.printEnvPathStr(env) +& "." +& n +& " mods: " +& Mod.printModStr(mods));
         // t1 = clock();
         (cache,env_1,ih,store,dae,csets,ci_state_1,tys,bc,oDA,eqConstraint,graph) = 
           instClassdef(cache, env, ih, store, mods, pre, ci_state, n, d, r, vis,
@@ -2190,7 +2190,7 @@ algorithm
         // time = t2 -. t1;
         // b=realGt(time,0.05);
         // s = realString(time);
-        // Debug.fprintln("insttr", " -> ICLASS " +& n +& " inst time: " +& s +& " in env: " +& Env.printEnvPathStr(env) +& " mods: " +& Mod.printModStr(mods));
+        // Debug.fprintln(Flags.INSTTR, " -> ICLASS " +& n +& " inst time: " +& s +& " in env: " +& Env.printEnvPathStr(env) +& " mods: " +& Mod.printModStr(mods));
         cache = Env.addCachedEnv(cache,n,env_1);
       then
         (cache,env_1,ih,store,dae,csets,ci_state_1,tys,bc,oDA,eqConstraint,graph);
@@ -2199,7 +2199,7 @@ algorithm
     else
       equation
         //print("instClassIn(");print(n);print(") failed\n");
-        //Debug.fprintln("failtrace", "- Inst.instClassIn failed" +& n);
+        //Debug.fprintln(Flags.FAILTRACE, "- Inst.instClassIn failed" +& n);
       then
         fail();
   end matchcontinue;
@@ -2275,40 +2275,40 @@ algorithm
         then v::varLst;
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
       equation
-        true = RTOpts.splitArrays();
+        true = Config.splitArrays();
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"min",optVal,exp,DAE.T_REAL_DEFAULT,p);
         then v::varLst;
     // min, the case of non-expanded arrays      
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
       equation
-        false = RTOpts.splitArrays();
+        false = Config.splitArrays();
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"min",optVal,exp,DAE.T_REAL_DEFAULT,p);
         then v::varLst;
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
       equation
-        true = RTOpts.splitArrays();
+        true = Config.splitArrays();
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"max",optVal,exp,DAE.T_REAL_DEFAULT,p);
         then v::varLst;
     // max, the case of non-expanded arrays      
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
       equation
-        false = RTOpts.splitArrays();
+        false = Config.splitArrays();
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"max",optVal,exp,DAE.T_REAL_DEFAULT,p);
         then v::varLst;
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
       equation
-        true = RTOpts.splitArrays();
+        true = Config.splitArrays();
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"start",optVal,exp,DAE.T_REAL_DEFAULT,p);
         then v::varLst;
     // start, the case of non-expanded arrays      
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
       equation
-        false = RTOpts.splitArrays();
+        false = Config.splitArrays();
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"start",optVal,exp,ty,p);
         then v::varLst;
@@ -2598,7 +2598,7 @@ algorithm
     case(cache,env,id,SOME(v),bind,expectedTp,DAE.PROP(bindTp as (DAE.T_ARRAY(arrayDim = d),_),c))
       equation
         false = valueEq(c,DAE.C_VAR());
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
         expectedTp = Types.liftArray(expectedTp, d);
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
         // convert the value also if needed!!
@@ -2618,7 +2618,7 @@ algorithm
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp as (DAE.T_ARRAY(arrayDim = d),_),c))
       equation
         false = valueEq(c,DAE.C_VAR());
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
         expectedTp = Types.liftArray(expectedTp, d);
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
         (cache,v,_) = Ceval.ceval(cache,env, bind1, false,NONE(), Ceval.NO_MSG());
@@ -2648,16 +2648,16 @@ algorithm
       then fail();
     
     case(cache,env,id,SOME(v),bind,expectedTp,bindProp) equation
-      true = RTOpts.debugFlag("failtrace");
-      Debug.fprintln("failtrace", "instBuiltinAttribute failed for: " +& id +&
+      true = Flags.isSet(Flags.FAILTRACE);
+      Debug.fprintln(Flags.FAILTRACE, "instBuiltinAttribute failed for: " +& id +&
                                   " value binding: " +& ValuesUtil.printValStr(v) +&
                                   " binding: " +& ExpressionDump.printExpStr(bind) +&
                                   " expected type: " +& Types.printTypeStr(expectedTp) +&
                                   " type props: " +& Types.printPropStr(bindProp));
     then fail();
     case(cache,env,id,_,bind,expectedTp,bindProp) equation
-      true = RTOpts.debugFlag("failtrace");
-      Debug.fprintln("failtrace", "instBuiltinAttribute failed for: " +& id +&
+      true = Flags.isSet(Flags.FAILTRACE);
+      Debug.fprintln(Flags.FAILTRACE, "instBuiltinAttribute failed for: " +& id +&
                                   " value binding: NONE()" +&
                                   " binding: " +& ExpressionDump.printExpStr(bind) +&
                                   " expected type: " +& Types.printTypeStr(expectedTp) +&
@@ -2723,13 +2723,13 @@ algorithm
     // The case of non-expanded arrays.
     case (DAE.WHOLE_NONEXP(exp=e) :: ss) 
       equation
-        false = RTOpts.splitArrays();
+        false = Config.splitArrays();
         res = instdimsIntOptList(ss);
       then
         DAE.DIM_EXP(e) :: res;
     case (DAE.INDEX(exp = _) :: ss)
       equation
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
         res = instdimsIntOptList(ss);
       then
         DAE.DIM_UNKNOWN() :: res;
@@ -2810,7 +2810,7 @@ algorithm
     // see if we find a partial class inst
     case (cache,env,ih,mods,pre,ci_state,c as SCode.CLASS(name = className, restriction=r),vis,inst_dims)
       equation
-        false = RTOpts.debugFlag("noCache");
+        false = Flags.isSet(Flags.NO_CACHE);
         instHash = getGlobalRoot(Global.instHashIndex);
         envPathOpt = Env.getEnvPath(inEnv);
         className = SCode.className(c);
@@ -2823,7 +2823,7 @@ algorithm
         bby = (inst_dims, mods, ci_state, c);
         equality(bbx = bby);
         (env,ci_state_1) = outputs;
-        //Debug.fprintln("cache", "IIIIPARTIAL->got PARTIAL from instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
+        //Debug.fprintln(Flags.CACHE, "IIIIPARTIAL->got PARTIAL from instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
       then
         (inCache,env,ih,ci_state_1);
 
@@ -2839,7 +2839,7 @@ algorithm
             Option<SCode.Attributes>, DAE.EqualityConstraint,
             ConnectionGraph.ConnectionGraph> outputs;
       equation
-        false = RTOpts.debugFlag("noCache");
+        false = Flags.isSet(Flags.NO_CACHE);
         instHash = getGlobalRoot(Global.instHashIndex);
         envPathOpt = Env.getEnvPath(inEnv);
         fullEnvPathPlusClass = Absyn.selectPathsOpt(envPathOpt, Absyn.IDENT(className));
@@ -2853,7 +2853,7 @@ algorithm
         equality(bbx = bby);
         // true = checkClassEqual(aa_5, c);
         (cache,env,_,_,_,_,ci_state_1,_,_,_,_,_) = outputs;
-        //Debug.fprintln("cache", "IIIIPARTIAL->got FULL from instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
+        //Debug.fprintln(Flags.CACHE, "IIIIPARTIAL->got FULL from instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
       then
         (inCache,env,ih,ci_state_1);*/
 
@@ -2878,13 +2878,13 @@ algorithm
            NONE(),
            SOME(FUNC_partialInstClassIn( // result for partial instantiation
              inputs,outputs)));
-        //Debug.fprintln("cache", "IIIIPARTIAL->added to instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
+        //Debug.fprintln(Flags.CACHE, "IIIIPARTIAL->added to instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
       then
         (cache,env,ih,ci_state);
 
     case (cache,env,ih,mods,pre,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d)),vis,inst_dims)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.partialInstClassIn failed on class:" +&
            n +& " in environment: " +& Env.printEnvPathStr(env));
       then
@@ -2961,7 +2961,7 @@ algorithm
         //b=realGt(time,0.05);
         // s = realString(time);
         // s2 = Env.printEnvPathStr(env);
-        // Debug.fprintln("insttr", "ICLASSPARTIAL " +& n +& " inst time: " +& s +& " in env " +& s2 +& " mods: " +& Mod.printModStr(mods));
+        // Debug.fprintln(Flags.INSTTR, "ICLASSPARTIAL " +& n +& " inst time: " +& s +& " in env " +& s2 +& " mods: " +& Mod.printModStr(mods));
         //print(Util.if_(b,s,""));
         //print("inCache:");print(Env.printCacheStr(cache));print("\n");
         // adrpo: never add a partial environment to the cache!
@@ -3069,7 +3069,7 @@ algorithm
     // do nothing if we don't have to do unit checking
     case (cache,env,store,pre,compDAE,daes,className)
       equation
-        false = OptManager.getOption("unitChecking");
+        false = Flags.getConfigBool(Flags.UNIT_CHECKING);
       then
         (cache,env,store);
 
@@ -3509,7 +3509,7 @@ algorithm
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,inClassDef6,
           re,vis,_,_,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
-        // Debug.fprintln("instTrace", "ICD BEGIN: " +& Env.printEnvPathStr(env) +& " cn:" +& className +& " mods: " +& Mod.printModStr(mods));
+        // Debug.fprintln(Flags.INST_TRACE, "ICD BEGIN: " +& Env.printEnvPathStr(env) +& " cn:" +& className +& " mods: " +& Mod.printModStr(mods));
       then
         fail();*/
       
@@ -3540,7 +3540,7 @@ algorithm
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,inClassDef6,
           re,vis,_,_,inst_dims,impl,_,graph,instSingleCref,info,stopInst)
       equation
-        // Debug.fprintln("instTrace", "ICD AFTER BASIC TYPE: " +& Env.printEnvPathStr(env) +& " cn:" +& className +& " mods: " +& Mod.printModStr(mods));
+        // Debug.fprintln(Flags.INST_TRACE, "ICD AFTER BASIC TYPE: " +& Env.printEnvPathStr(env) +& " cn:" +& className +& " mods: " +& Mod.printModStr(mods));
       then
         fail();*/
 
@@ -3579,7 +3579,7 @@ algorithm
         (env1,ih) = addClassdefsToEnv(env, ih, pre, cdefelts, impl, SOME(mods))
         "1. CLASS & IMPORT nodes and COMPONENT nodes(add to env)" ;
         
-        //// Debug.fprintln("instTrace", "after addClassdefsToEnv ENV: " +& Util.if_(stringEq(className, "PortVolume"), Env.printEnvStr(env1), " no env print "));        
+        //// Debug.fprintln(Flags.INST_TRACE, "after addClassdefsToEnv ENV: " +& Util.if_(stringEq(className, "PortVolume"), Env.printEnvStr(env1), " no env print "));        
 
         // adrpo: TODO! DO SOME CHECKS HERE!
         // restriction on what can inherit what, see 7.1.3 Restrictions on the Kind of Base Class
@@ -3591,8 +3591,8 @@ algorithm
         InstExtends.instExtendsAndClassExtendsList(cache, env1, ih, mods, pre, extendselts, extendsclasselts, ci_state, className, impl, false)
         "2. EXTENDS Nodes inst_extends_list only flatten inhteritance structure. It does not perform component instantiations.";
         
-        //Debug.fprint("instExtTrace", "EXTENDS RETURNS:\n" +& Debug.fcallret1("instExtTrace", printElementAndModList, extcomps, "") +& "\n");
-        //Debug.fprint("instExtTrace", "EXTENDS RETURNS EMODS: " +& Mod.printModStr(emods) +& "\n");  
+        //Debug.fprint(Flags.INST_EXT_TRACE, "EXTENDS RETURNS:\n" +& Debug.fcallret1(Flags.INST_EXT_TRACE, printElementAndModList, extcomps, "") +& "\n");
+        //Debug.fprint(Flags.INST_EXT_TRACE, "EXTENDS RETURNS EMODS: " +& Mod.printModStr(emods) +& "\n");  
         
         compelts_1 = addNomod(compelts)
         "Problem. Modifiers on inherited components are unelabed, loosing their
@@ -3629,7 +3629,7 @@ algorithm
 
         (csets, env2, ih) = addConnectionCrefsFromEqs(csets, eqs_1, pre, env2, ih);
 
-        //// Debug.fprintln("instTrace", "Emods to addComponentsToEnv: " +& Mod.printModStr(emods));
+        //// Debug.fprintln(Flags.INST_TRACE, "Emods to addComponentsToEnv: " +& Mod.printModStr(emods));
 
         //Add variables to env, wihtout type and binding, which will be added
         //later in instElementList (where update_variable is called)"
@@ -3652,8 +3652,8 @@ algorithm
         //Instantiate components
         compelts_2_elem = List.map(compelts_2,Util.tuple21);
         
-        // Debug.fprintln("innerouter", "Number of components: " +& intString(listLength(compelts_2_elem)));
-        // Debug.fprintln("innerouter", stringDelimitList(List.map(compelts_2_elem, SCodeDump.printElementStr), "\n"));
+        // Debug.fprintln(Flags.INNER_OUTER, "Number of components: " +& intString(listLength(compelts_2_elem)));
+        // Debug.fprintln(Flags.INNER_OUTER, stringDelimitList(List.map(compelts_2_elem, SCodeDump.printElementStr), "\n"));
         
         checkMods = Mod.merge(mods,emods,env4,Prefix.NOPRE());
         mods = checkMods;
@@ -3716,7 +3716,7 @@ algorithm
         //(dae,csets5,ih,graph) = InnerOuter.changeOuterReferences(dae,csets5,ih,graph);
         //t2 = clock();
         //ti = t2 -. t1;
-        //Debug.fprintln("innerouter", " INST_CLASS: (" +& realString(ti) +& ") -> " +& PrefixUtil.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods) +& " in env: " +& Env.printEnvPathStr(env5));
+        //Debug.fprintln(Flags.INNER_OUTER, " INST_CLASS: (" +& realString(ti) +& ") -> " +& PrefixUtil.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods) +& " in env: " +& Env.printEnvPathStr(env5));
 
         csets5 = InnerOuter.changeInnerOuterInOuterConnect(csets5);
         
@@ -3818,7 +3818,7 @@ algorithm
         false = Util.getStatefulBoolean(stopInst);
 
         // no meta-modelica
-        false = RTOpts.acceptMetaModelicaGrammar();        
+        false = Config.acceptMetaModelicaGrammar();        
         // no types, enums or connectors please!
         false = valueEq(re, SCode.R_TYPE());
         // false = valueEq(re, SCode.R_FUNCTION());
@@ -3911,7 +3911,7 @@ algorithm
           SCode.DERIVED(Absyn.TCOMPLEX(path=_),modifications = mod),
           re,vis,partialPrefix,encapsulatedPrefix,inst_dims,impl,_,graph,_,instSingleCref,info,stopInst)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         false = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         Error.addSourceMessage(Error.META_COMPLEX_TYPE_MOD, {}, info);
       then fail();
@@ -3920,7 +3920,7 @@ algorithm
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("list"),{tSpec},NONE()),modifications = mod, attributes=DA),
           re,vis,_,_,inst_dims,impl,_,graph,_,instSingleCref,info,stopInst)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         (cache,cenv,ih,tys,csets,oDA) =
@@ -3935,7 +3935,7 @@ algorithm
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("Option"),{tSpec},NONE()),modifications = mod, attributes=DA),
           re,vis,_,_,inst_dims,impl,_,graph,_,instSingleCref,info,stopInst)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         (cache,cenv,ih,{ty},csets,oDA) =
@@ -3949,7 +3949,7 @@ algorithm
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("tuple"),tSpecs,NONE()),modifications = mod, attributes=DA),
           re,vis,_,_,inst_dims,impl,_,graph,_,instSingleCref,info,stopInst)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         (cache,cenv,ih,tys,csets,oDA) = instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{}, inSets);
@@ -3962,7 +3962,7 @@ algorithm
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("array"),{tSpec},NONE()),modifications = mod, attributes=DA),
           re,vis,_,_,inst_dims,impl,_,graph,_,instSingleCref,info,stopInst)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         (cache,cenv,ih,{ty},csets,oDA) = instClassDefHelper(cache,env,ih,{tSpec},pre,inst_dims,impl,{}, inSets);
@@ -3975,7 +3975,7 @@ algorithm
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE())},NONE()),modifications = mod, attributes=DA),
           re,vis,_,_,inst_dims,impl,_,graph,_,instSingleCref,info,stopInst)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopInst);
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         (cache,cenv,ih,tys,csets,oDA) = instClassDefHelper(cache,env,ih,{},pre,inst_dims,impl,{}, inSets);
@@ -3987,7 +3987,7 @@ algorithm
           SCode.DERIVED(typeSpec=Absyn.TCOMPLEX(path=Absyn.IDENT("polymorphic")),modifications=mod),
           re,vis,_,_,inst_dims,impl,_,graph,_,instSingleCref,info,stopInst)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         true = Mod.emptyModOrEquality(mods) and SCode.emptyModOrEquality(mod);
         Error.addSourceMessage(Error.META_POLYMORPHIC, {className}, info);
       then fail();
@@ -3996,7 +3996,7 @@ algorithm
           SCode.DERIVED(typeSpec=tSpec as Absyn.TCOMPLEX(arrayDim=SOME(_)),modifications=mod),
           re,vis,_,_,inst_dims,impl,_,graph,_,instSingleCref,info,stopInst)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         cns = Dump.unparseTypeSpec(tSpec);
         Error.addSourceMessage(Error.META_INVALID_COMPLEX_TYPE, {cns}, info);
       then fail();
@@ -4014,7 +4014,7 @@ algorithm
           SCode.DERIVED(typeSpec=tSpec as Absyn.TCOMPLEX(path=cn,typeSpecs=tSpecs),modifications=mod),
           re,vis,_,_,inst_dims,impl,_,graph,_,instSingleCref,info,stopInst)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         false = listMember((Absyn.pathString(cn),listLength(tSpecs)==1), {("tuple",false),("array",true),("Option",true),("list",true)});
         cns = Dump.unparseTypeSpec(tSpec);
         Error.addSourceMessage(Error.META_INVALID_COMPLEX_TYPE, {cns}, info);
@@ -4039,18 +4039,18 @@ algorithm
           SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod),
           re,vis,_,_,inst_dims,impl,_,graph,_,instSingleCref,info,stopInst)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         failure((_,_,_) = Lookup.lookupClass(cache,env, cn, false));
-        Debug.fprint("failtrace", "- Inst.instClassdef DERIVED( ");
-        Debug.fprint("failtrace", Absyn.pathString(cn));
-        Debug.fprint("failtrace", ") lookup failed\n ENV:");
-        Debug.fprint("failtrace",Env.printEnvStr(env));
+        Debug.fprint(Flags.FAILTRACE, "- Inst.instClassdef DERIVED( ");
+        Debug.fprint(Flags.FAILTRACE, Absyn.pathString(cn));
+        Debug.fprint(Flags.FAILTRACE, ") lookup failed\n ENV:");
+        Debug.fprint(Flags.FAILTRACE,Env.printEnvStr(env));
       then
         fail();
 
     else
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.instClassdef failed");
         s = Env.printEnvPathStr(inEnv);
         Debug.traceln("  class :" +& s);
@@ -4158,9 +4158,9 @@ algorithm
   
     case(inComps, SOME(cr), allComps, className)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- Inst.extractConstantPlusDeps failure to find " +& ComponentReference.printComponentRefStr(cr) +& ", returning \n");
-        Debug.fprint("failtrace", "- Inst.extractConstantPlusDeps elements to instantiate:" +& intString(listLength(inComps)) +& "\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE, "- Inst.extractConstantPlusDeps failure to find " +& ComponentReference.printComponentRefStr(cr) +& ", returning \n");
+        Debug.fprint(Flags.FAILTRACE, "- Inst.extractConstantPlusDeps elements to instantiate:" +& intString(listLength(inComps)) +& "\n");
       then
         inComps;
   end matchcontinue;
@@ -5017,7 +5017,7 @@ algorithm
       equation
         isPartialInst = true;
         // Debug.traceln(" Partialinstclassdef for: " +& PrefixUtil.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods));
-        // Debug.fprintln("instTrace", "PARTIALICD: " +& Env.printEnvPathStr(env) +& " cn:" +& className +& " mods: " +& Mod.printModStr(mods));
+        // Debug.fprintln(Flags.INST_TRACE, "PARTIALICD: " +& Env.printEnvPathStr(env) +& " cn:" +& className +& " mods: " +& Mod.printModStr(mods));
         partialPrefix = isPartial(partialPrefix, mods);
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         (cdefelts,classextendselts,extendselts,_) = splitElts(els);
@@ -5090,7 +5090,7 @@ algorithm
           re,partialPrefix,vis,inst_dims,className,info)
       equation
         // no meta-modelica
-        false = RTOpts.acceptMetaModelicaGrammar();        
+        false = Config.acceptMetaModelicaGrammar();        
         // no types, enums or connectors please!
         false = valueEq(re, SCode.R_TYPE());
         // false = valueEq(re, SCode.R_FUNCTION());
@@ -5521,12 +5521,12 @@ algorithm
   // print("push " +& PrefixUtil.printPrefixStr(inPrefix) +& "\n");
   cache := pushStructuralParameters(inCache);
   // i1 := numStructuralParameterScopes(cache);
-  //Debug.fprintln("idep", "Before:\n" +& stringDelimitList(List.map(List.map(inElements, Util.tuple21), SCodeDump.unparseElementStr), "\n"));
+  //Debug.fprintln(Flags.IDEP, "Before:\n" +& stringDelimitList(List.map(List.map(inElements, Util.tuple21), SCodeDump.unparseElementStr), "\n"));
   //System.startTimer();
   el := sortElementList(inElements, inEnv, Env.inFunctionScope(inEnv));
   el := sortInnerFirstTplLstElementMod(el);
   //System.stopTimer();
-  //Debug.fprintln("idep", "After: " +& stringDelimitList(List.map(List.map(el, Util.tuple21), SCode.elementName), ", "));
+  //Debug.fprintln(Flags.IDEP, "After: " +& stringDelimitList(List.map(List.map(el, Util.tuple21), SCode.elementName), ", "));
   (cache, outEnv, outIH, outStore, outDae, outSets, outState, outTypesVarLst, outGraph) := 
     instElementList2(cache, inEnv, inIH, store, inMod, inPrefix,
       inState, el, inInstDims, inImplInst, inCallingScope, inGraph, inSets, inStopOnError);
@@ -5554,7 +5554,7 @@ algorithm
     // no sorting for meta-modelica!
     case (_, _, _)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
       then
         inElements;
     
@@ -6043,7 +6043,7 @@ algorithm
     case (cache,env,ih,store,mod,pre,ci_state,el :: els,inst_dims,impl,callscope,graph, csets, _)
       equation
         ErrorExt.setCheckpoint("instElementList2"); 
-        // Debug.fprintln("instTrace", "INST ELEMENT: " +& Env.printEnvPathStr(env) +& " el: " +& SCodeDump.shortElementStr(Util.tuple21(el)) +& " mods: " +& Mod.printModStr(mod));
+        // Debug.fprintln(Flags.INST_TRACE, "INST ELEMENT: " +& Env.printEnvPathStr(env) +& " el: " +& SCodeDump.shortElementStr(Util.tuple21(el)) +& " mods: " +& Mod.printModStr(mod));
         // check for duplicate modifications
         ele = Util.tuple21(el);
         (elementName, info) = extractCurrentName(ele);
@@ -6087,7 +6087,7 @@ algorithm
         ErrorExt.delCheckpoint("instElementList2");
         //print("instElementList2 failed\n ");
         // no need for this line as we already printed the crappy element that we couldn't instantiate
-        // Debug.fprintln("failtrace", "- Inst.instElementList failed");
+        // Debug.fprintln(Flags.FAILTRACE, "- Inst.instElementList failed");
       then
         fail();
   end matchcontinue;
@@ -6253,7 +6253,7 @@ algorithm
        then (env_2,inIH);
     case(_,_,_,_,_,_)
       equation
-        Debug.fprint("failtrace", "- Inst.addClassdefsToEnv failed\n");
+        Debug.fprint(Flags.FAILTRACE, "- Inst.addClassdefsToEnv failed\n");
         then
           fail();
   end matchcontinue;
@@ -6356,7 +6356,7 @@ algorithm
 
     case(env,ih,pre,_,_,_)
       equation
-        Debug.fprint("failtrace", "- Inst.addClassdefsToEnv2 failed\n");
+        Debug.fprint(Flags.FAILTRACE, "- Inst.addClassdefsToEnv2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -6646,7 +6646,7 @@ algorithm
 
     case (_,env,_,_,_,_,comps,_,_,_,_)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.addComponentsToEnv failed");
       then
         fail();
@@ -6751,8 +6751,8 @@ algorithm
     // failtrace
     case (cache,env,ih,_,_,_,comps,_,_)
       equation
-        Debug.fprint("failtrace", "- Inst.addComponentsToEnv2 failed\n");
-        Debug.fprint("failtrace", "\n\n");
+        Debug.fprint(Flags.FAILTRACE, "- Inst.addComponentsToEnv2 failed\n");
+        Debug.fprint(Flags.FAILTRACE, "\n\n");
       then
         fail();
   end matchcontinue;
@@ -6885,7 +6885,7 @@ algorithm
     case (inCache, inEnv, inIH, inMod, inPrefix, inState as ClassInf.FUNCTION(path = path), inDirection, 
           inClass as SCode.CLASS(name = name, restriction = SCode.R_RECORD()), inInstDims)
       equation
-        false = RTOpts.acceptMetaModelicaGrammar();
+        false = Config.acceptMetaModelicaGrammar();
         true = Absyn.isInputOrOutput(inDirection);
         // TODO, add the env path to the check!
         false = stringEq(Absyn.pathLastIdent(path), name);
@@ -7104,7 +7104,7 @@ algorithm
          */
         mod = Mod.merge(mod, var_class_mod, env2, pre);
         
-        // Debug.fprintln("instTrace", "INST ELEMENT: name: " +& name +& " mod: " +& Mod.printModStr(mod));
+        // Debug.fprintln(Flags.INST_TRACE, "INST ELEMENT: name: " +& name +& " mod: " +& Mod.printModStr(mod));
         
         // Apply redeclaration modifier to component
         (cache, env2, ih, comp as SCode.COMPONENT(name, 
@@ -7196,7 +7196,7 @@ algorithm
           ts as Absyn.TCOMPLEX(path = type_name), m, comment, cond, info), cmod),
         inst_dims, impl, _, graph, csets)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
 
         // see if we have a modification on the inner component
         m = traverseModAddFinal(m, final_prefix);
@@ -7271,14 +7271,14 @@ algorithm
         pre = PrefixUtil.prefixAdd(name, {}, pre, vt, ci_state);
         ns = PrefixUtil.printPrefixStrIgnoreNoPre(pre);
         Error.addSourceMessage(Error.LOOKUP_ERROR_COMPNAME, {s, scope_str, ns}, info);
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("Lookup class failed:" +& Absyn.pathString(t));
       then
         fail();
 
     case (_, env, _, _, _, _, _, (comp, mod), _, _, _, _, _)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.instElement failed: " +& SCodeDump.printElementStr(comp));
         Debug.traceln("  Scope: " +& Env.printEnvPathStr(env));
       then
@@ -7493,7 +7493,7 @@ algorithm
     // failure
     case (cache,env,mod,prefix,ciState,_,_,_)
       equation
-        Debug.fprint("failtrace","-Inst.checkMultiplyDeclared failed\n");
+        Debug.fprint(Flags.FAILTRACE,"-Inst.checkMultiplyDeclared failed\n");
         ErrorExt.delCheckpoint("checkMultiplyDeclared");
       then fail();
   end matchcontinue;
@@ -7737,7 +7737,7 @@ algorithm
     case (cache,env,ih,inMod as DAE.REDECL(finalPrefix = _),inElement,
           pre,ci_state,impl,cmod)
       equation
-        // Debug.fprintln("instTrace", "redeclareType\nmodifier: " +& Mod.printModStr(inMod) +& "\nelement\n:" +& SCodeDump.unparseElementStr(inElement));
+        // Debug.fprintln(Flags.INST_TRACE, "redeclareType\nmodifier: " +& Mod.printModStr(inMod) +& "\nelement\n:" +& SCodeDump.unparseElementStr(inElement));
       then
         fail();
     
@@ -7869,7 +7869,7 @@ algorithm
 
     case (_,_,ih,_,_,_,_,_,_)
       equation
-        Debug.fprintln("failtrace", "- Inst.redeclareType failed");
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.redeclareType failed");
       then
         fail();
   end matchcontinue;
@@ -8046,7 +8046,7 @@ algorithm
         io = SCode.prefixesInnerOuter(pf);
         true = Absyn.isOnlyInner(io);
         
-        // Debug.fprintln("innerouter", "- Inst.instVar inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
+        // Debug.fprintln(Flags.INNER_OUTER, "- Inst.instVar inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
         
         // instantiate as inner
         (cache,innerCompEnv,ih,store,dae,csets,ty,graph) =
@@ -8112,7 +8112,7 @@ algorithm
         // we should have NO modifications on only outer!
         true = Mod.modEqual(mod, DAE.NOMOD());
 
-        // Debug.fprintln("innerouter", "- Inst.instVar outer: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
+        // Debug.fprintln(Flags.INNER_OUTER, "- Inst.instVar outer: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
         
         // lookup in IH
         InnerOuter.INST_INNER(
@@ -8170,7 +8170,7 @@ algorithm
            instResult as NONE(),outers) =
           InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io);
         
-        // Debug.fprintln("innerouter", "- Inst.instVar failed to lookup inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
+        // Debug.fprintln(Flags.INNER_OUTER, "- Inst.instVar failed to lookup inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
         
         // display an error message!
         (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.ET_OTHER(), {}));
@@ -8202,7 +8202,7 @@ algorithm
         // lookup in IH, crap, we couldn't find it!
         failure(_ = InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io));
         
-        // Debug.fprintln("innerouter", "- Inst.instVar failed to lookup inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
+        // Debug.fprintln(Flags.INNER_OUTER, "- Inst.instVar failed to lookup inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
         
         // display an error message!
         (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.ET_OTHER(), {}));
@@ -8228,7 +8228,7 @@ algorithm
         io = SCode.prefixesInnerOuter(pf);
         true = Absyn.isInnerOuter(io);
         
-        // Debug.fprintln("innerouter", "- Inst.instVar inner outer: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
+        // Debug.fprintln(Flags.INNER_OUTER, "- Inst.instVar inner outer: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
         
         (cache,innerCompEnv,ih,store,dae,csetsInner,ty,graph) =
            instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph, csets);
@@ -8278,7 +8278,7 @@ algorithm
         io = SCode.prefixesInnerOuter(pf);
         true = Absyn.isNotInnerOuter(io);
         
-        // Debug.fprintln("innerouter", "- Inst.instVar NO inner NO outer: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
+        // Debug.fprintln(Flags.INNER_OUTER, "- Inst.instVar NO inner NO outer: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
         
         (cache,compenv,ih,store,dae,csets,ty,graph) =
           instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets);
@@ -8288,9 +8288,9 @@ algorithm
     // failtrace
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,_,_)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.ET_OTHER(), {}));
-        Debug.fprintln("failtrace", "- Inst.instVar failed while instatiating variable: " +&
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.instVar failed while instatiating variable: " +&
           ComponentReference.printComponentRefStr(cref) +& " " +& Mod.prettyPrintMod(mod, 0) +&
           " in scope: " +& Env.printEnvPathStr(env));
       then 
@@ -8573,7 +8573,7 @@ algorithm
     case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_)))),pre,n,cl,attr,pf,
         ((dim as DAE.DIM_UNKNOWN()) :: dims),idxs,inst_dims,impl,comment,info,graph, csets)
       equation
-        true = RTOpts.splitArrays();
+        true = Config.splitArrays();
         failure(ClassInf.isFunction(ci_state));
         // Try to deduce the dimension from the modifier.
         (dime as DAE.INDEX(DAE.ICONST(integer = deduced_dim))) = 
@@ -8590,7 +8590,7 @@ algorithm
     case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_)))),pre,n,cl,attr,pf,
       ((dim as DAE.DIM_UNKNOWN()) :: dims),idxs,inst_dims,impl,comment,info,graph, csets)
       equation
-        false = RTOpts.splitArrays();
+        false = Config.splitArrays();
         failure(ClassInf.isFunction(ci_state));
         // Try to deduce the dimension from the modifier.
         dime = instWholeDimFromMod(dim, mod, n, info);
@@ -8606,7 +8606,7 @@ algorithm
     // Array variables , e.g. Real x[3]
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,(dim :: dims),idxs,inst_dims,impl,comment,info,graph,csets)
       equation
-        true = RTOpts.splitArrays();
+        true = Config.splitArrays();
         failure(ClassInf.isFunction(ci_state));
         dime = instDimExp(dim, impl);
         inst_dims_1 = List.appendLastList(inst_dims, {dime});
@@ -8619,7 +8619,7 @@ algorithm
     // Array variables , non-expanding case
     case (cache,env,ih,store,ci_state,mod,pre,n,cl,attr,pf,(dim :: dims),idxs,inst_dims,impl,comment,info,graph,csets)
       equation
-        false = RTOpts.splitArrays();
+        false = Config.splitArrays();
         failure(ClassInf.isFunction(ci_state));
         dime = instDimExpNonSplit(dim, impl);
         inst_dims_1 = List.appendLastList(inst_dims, {dime});
@@ -8641,8 +8641,8 @@ algorithm
     // failtrace 
     case (_,env,ih,_,_,mod,pre,n,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- Inst.instVar2 failed: " +&
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.instVar2 failed: " +&
           PrefixUtil.printPrefixStr(pre) +& "." +&
           n +& "(" +& Mod.prettyPrintMod(mod, 0) +& ")\n  Scope: " +&
           Env.printEnvPathStr(env));
@@ -8734,7 +8734,7 @@ algorithm
 
         // Attempt to set the correct type for array variable if splitArrays is
         // false. Does not work correctly yet.
-        ty = Debug.bcallret2(not RTOpts.splitArrays(), Types.liftArraySubscriptList,
+        ty = Debug.bcallret2(not Config.splitArrays(), Types.liftArraySubscriptList,
           ty, List.flatten(inInstDims), ty);
 
         // Make a component reference for the component.
@@ -8771,8 +8771,8 @@ algorithm
 
     else
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- Inst.instScalar failed on " +& inName +& "\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.instScalar failed on " +& inName +& "\n");
       then
         fail();
   end matchcontinue;
@@ -9047,7 +9047,7 @@ algorithm
   // unknown dimensions. 
   case (DAE.C_PARAM(),DAE.C_UNKNOWN(),_,_,_,_)
     equation
-      true = OptManager.getOption("checkModel");
+      true = Flags.getConfigBool(Flags.CHECK_MODEL);
     then ();
     
   // Since c1 is generated by Types.matchProp, it can not be lower that c, so no need to check that it is higher            
@@ -9107,7 +9107,7 @@ algorithm
         ((DAE.T_ARRAY(dim, ty_1), p));
     case (_,_)
       equation
-        Debug.fprintln("failtrace", "- Inst.makeArrayType failed");
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.makeArrayType failed");
       then
         fail();
   end matchcontinue;
@@ -9170,7 +9170,7 @@ algorithm
                                                                    modifications = mod)),
           dims,impl)
       equation
-        true=RTOpts.acceptMetaModelicaGrammar();
+        true=Config.acceptMetaModelicaGrammar();
         owncref = Absyn.CREF_IDENT(id,{});
         ad_1 = getOptionArraydim(ad);
         // Absyn.IDENT("Integer") used as a dummie
@@ -9247,7 +9247,7 @@ algorithm
 
     case (_,_,_,_,_,SCode.CLASS(name = id),_,_)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         id = SCodeDump.printClassStr(inClass);
         Debug.traceln("Inst.getUsertypeDimensions failed: " +& id);
       then fail();
@@ -9368,7 +9368,7 @@ algorithm
     case (_) then {}; // this should never happen, keeping it anyway.
     case (_)
       equation
-        Debug.fprintln("failtrace", "- Inst.getCrefFromMod failed");
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.getCrefFromMod failed");
       then
         fail();
   end matchcontinue;
@@ -9402,7 +9402,7 @@ algorithm
     case ({}) then {};
     case (_)
       equation
-        Debug.fprintln("failtrace", "- Inst.getCrefFromDim failed");
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.getCrefFromDim failed");
       then
         fail();
   end matchcontinue;
@@ -9453,10 +9453,10 @@ protected
 algorithm
   //myTick := intString(tick());
   //crefsStr := stringDelimitList(List.map(crefs, Dump.printComponentRefStr),",");
-  //Debug.fprintln("debug","start update comps " +& myTick +& " # " +& crefsStr);
+  //Debug.fprintln(Flags.DEBUG,"start update comps " +& myTick +& " # " +& crefsStr);
   (outCache,outEnv,outIH,_):=
     updateComponentsInEnv2(cache,env,inIH,pre,mod,crefs,ci_state,impl,HashTable5.emptyHashTable(), NONE());
-  //Debug.fprintln("debug","finished update comps" +& myTick);
+  //Debug.fprintln(Flags.DEBUG,"finished update comps" +& myTick);
   //print("outEnv:");print(Env.printEnvStr(outEnv));print("\n");
 end updateComponentsInEnv;
 
@@ -9549,7 +9549,7 @@ algorithm
         //true = valueEq(tsOld, tsNew);
         
         // update frame in env!
-        // Debug.fprintln("instTrace", "updateComponentInEnv: found a redeclaration that only changes bindings and prefixes: NEW:\n" +& SCodeDump.unparseElementStr(compNew) +& " in env:" +& Env.printEnvPathStr(env));
+        // Debug.fprintln(Flags.INST_TRACE, "updateComponentInEnv: found a redeclaration that only changes bindings and prefixes: NEW:\n" +& SCodeDump.unparseElementStr(compNew) +& " in env:" +& Env.printEnvPathStr(env));
         
         // update the mod then give it to 
         (cache, daeMod) = Mod.elabMod(cache, env, ih, pre, smod, impl, info);
@@ -9585,20 +9585,20 @@ algorithm
     // redeclare class!
     case (cache,env,ih,pre,mods as DAE.REDECL(_, _, {(compNew as SCode.CLASS(name = name),_)}),cref,ci_state,impl,updatedComps,_)
       equation
-        // Debug.fprintln("instTrace", "REDECLARE CLASS 1" +& Mod.printModStr(mods) +& " cref: " +& Absyn.printComponentRefStr(cref));
+        // Debug.fprintln(Flags.INST_TRACE, "REDECLARE CLASS 1" +& Mod.printModStr(mods) +& " cref: " +& Absyn.printComponentRefStr(cref));
         id = Absyn.crefFirstIdent(cref);
-        // Debug.fprintln("instTrace", "REDECLARE CLASS 2" +& Mod.printModStr(mods) +& " cref: " +& Absyn.printComponentRefStr(cref));
+        // Debug.fprintln(Flags.INST_TRACE, "REDECLARE CLASS 2" +& Mod.printModStr(mods) +& " cref: " +& Absyn.printComponentRefStr(cref));
         true = stringEq(name, id);
-        // Debug.fprintln("instTrace", "REDECLARE CLASS 3" +& Mod.printModStr(mods) +& " cref: " +& Absyn.printComponentRefStr(cref));
+        // Debug.fprintln(Flags.INST_TRACE, "REDECLARE CLASS 3" +& Mod.printModStr(mods) +& " cref: " +& Absyn.printComponentRefStr(cref));
         //(cache,cl as SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix = rpp)),cenv) = Lookup.lookupClass(cache, env, Absyn.IDENT(id), false);
-        // Debug.fprintln("instTrace", "REDECLARE CLASS 4" +& Mod.printModStr(mods) +& " cref: " +& Absyn.printComponentRefStr(cref));
+        // Debug.fprintln(Flags.INST_TRACE, "REDECLARE CLASS 4" +& Mod.printModStr(mods) +& " cref: " +& Absyn.printComponentRefStr(cref));
         //str = Util.if_(SCode.replaceableBool(rpp), "", "Not replaceable class redeclared: " +& name +& "\n");        
         //print(str);
-        // Debug.fprintln("instTrace", "REDECLARE CLASS 5" +& Mod.printModStr(mods) +& " cref: " +& Absyn.printComponentRefStr(cref));
+        // Debug.fprintln(Flags.INST_TRACE, "REDECLARE CLASS 5" +& Mod.printModStr(mods) +& " cref: " +& Absyn.printComponentRefStr(cref));
         env = Env.updateFrameC(env, compNew, env);
-        // Debug.fprintln("instTrace", "REDECLARE CLASS 6" +& Mod.printModStr(mods) +& " cref: " +& Absyn.printComponentRefStr(cref));
+        // Debug.fprintln(Flags.INST_TRACE, "REDECLARE CLASS 6" +& Mod.printModStr(mods) +& " cref: " +& Absyn.printComponentRefStr(cref));
         updatedComps = BaseHashTable.add((cref,0),updatedComps);
-        // Debug.fprintln("instTrace", "REDECLARE CLASS 7" +& Mod.printModStr(mods) +& " cref: " +& Absyn.printComponentRefStr(cref));
+        // Debug.fprintln(Flags.INST_TRACE, "REDECLARE CLASS 7" +& Mod.printModStr(mods) +& " cref: " +& Absyn.printComponentRefStr(cref));
         //print("ENV:" +& Env.printEnvPathStr(env) +& "\n");
         //print("updateComponentInEnv: NEW ENV:\n" +& Env.printEnvStr(env) +& "\n");
       then
@@ -9662,7 +9662,7 @@ algorithm
     // report an error!
     case (cache,env,ih,pre,mod,cref,ci_state,impl,updatedComps,_)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.updateComponentInEnv failed, cref = " +& Dump.printComponentRefStr(cref));
         Debug.traceln(" mods: " +& Mod.printModStr(mod));
         Debug.traceln(" scope: " +& Env.printEnvPathStr(env));
@@ -9815,7 +9815,7 @@ algorithm
         /* The environment is extended with the new variable binding. */
         (cache,binding) = makeBinding(cache, env, attr, mod_3, ty, pre, name, info);
         /* type info present */
-        //Debug.fprintln("debug","VAR " +& name +& " has new type " +& Types.unparseType(ty) +& ", " +& Types.printBindingStr(binding) +& "m:" +& SCodeDump.printModStr(m));
+        //Debug.fprintln(Flags.DEBUG,"VAR " +& name +& " has new type " +& Types.unparseType(ty) +& ", " +& Types.printBindingStr(binding) +& "m:" +& SCodeDump.printModStr(m));
         vis = SCode.prefixesVisibility(inPrefixes);
         env = Env.updateFrameV(env, DAE.TYPES_VAR(name,dattr,vis,ty,binding,NONE()), Env.VAR_TYPED(), compenv);
         //updatedComps = BaseHashTable.delete(cref,updatedComps);
@@ -9861,7 +9861,7 @@ algorithm
         /* The environment is extended with the new variable binding. */
         (cache,binding) = makeBinding(cache, env, attr, m_1, ty, pre, name, info);
         /* type info present */
-        //Debug.fprintln("debug","VAR " +& name +& " has new type " +& Types.unparseType(ty) +& ", " +& Types.printBindingStr(binding) +& "m:" +& SCodeDump.printModStr(m));
+        //Debug.fprintln(Flags.DEBUG,"VAR " +& name +& " has new type " +& Types.unparseType(ty) +& ", " +& Types.printBindingStr(binding) +& "m:" +& SCodeDump.printModStr(m));
         vis = SCode.prefixesVisibility(inPrefixes);
         env = Env.updateFrameV(env, DAE.TYPES_VAR(name,dattr,vis,ty,binding,NONE()), Env.VAR_TYPED(), compenv);
         //updatedComps = BaseHashTable.delete(cref,updatedComps);
@@ -10021,7 +10021,7 @@ algorithm
 
     case (DAE.DIM_UNKNOWN(), _, _, _)
       equation
-        Debug.fprint("failtrace","- Inst.instWholeDimFromMod failed\n");
+        Debug.fprint(Flags.FAILTRACE,"- Inst.instWholeDimFromMod failed\n");
       then 
         fail();
   end matchcontinue;
@@ -10497,8 +10497,8 @@ algorithm
 
     else
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- Inst.instArray failed: " +& inIdent);
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.instArray failed: " +& inIdent);
       then
         fail();
   end matchcontinue;
@@ -10565,7 +10565,7 @@ algorithm
         (cache,dims);
     case (_, _, cref,_)
       equation
-        Debug.fprintln("failtrace", "- Inst.elabComponentArraydimFromEnv failed: " 
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.elabComponentArraydimFromEnv failed: " 
           +& ComponentReference.printComponentRefStr(cref));
       then
         fail();
@@ -10732,7 +10732,7 @@ algorithm
       equation
         // adrpo: do not display error when running checkModel 
         //        TODO! FIXME! check if this doesn't actually get rid of useful error messages
-        false = OptManager.getOption("checkModel");
+        false = Flags.getConfigBool(Flags.CHECK_MODEL);
         (cache,dim1) = Static.elabArrayDims(cache,env, cref, ad, impl, st,doVect,pre,info);
         dim2 = elabArraydimType(t, ad, e, path, pre, cref, info,inst_dims);
         failure(dim3 = List.threadMap(dim1, dim2, compatibleArraydim));
@@ -10746,7 +10746,7 @@ algorithm
     case (_,_,cref,path,ad,eq,_,_,_,_,_,_,_)
       equation
         // only display when the failtrace flag is on
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Inst.elabArraydim failed on: \n\tcref:");
         Debug.trace(Absyn.pathString(path) +& " " +& Dump.printComponentRefStr(cref));
         Debug.traceln(Dump.printArraydimStr(ad) +& " = " +& Types.unparseOptionEqMod(eq));
@@ -10797,7 +10797,7 @@ algorithm
         x;
     case (_, _)
       equation
-        Debug.fprintln("failtrace", "- Inst.compatibleArraydim failed");
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.compatibleArraydim failed");
       then
         fail();
   end matchcontinue;
@@ -10895,14 +10895,14 @@ algorithm
       list<DAE.Subscript> flat_id;
     case(t,ad,exp,path,_,_,_,_)
       equation
-        true = RTOpts.splitArrays();
+        true = Config.splitArrays();
         true = (Types.numberOfDimensions(t) >= listLength(ad));
         outDimensionLst = elabArraydimType2(t,ad,{});
       then outDimensionLst;
 
     case(t,ad,exp,path,_,_,_,id)
       equation
-        false = RTOpts.splitArrays();
+        false = Config.splitArrays();
         flat_id = List.flatten(id);
         true = (Types.numberOfDimensions(t) >= listLength(ad) + listLength(flat_id));
         outDimensionLst = elabArraydimType2(t,ad,flat_id);
@@ -10955,10 +10955,10 @@ algorithm
         l; */
     case (t,(_ :: ad),_) /* PR, for debugging */
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "Undefined!");
-        Debug.fprint("failtrace", " The type detected: ");
-        Debug.fprint("failtrace", Types.printTypeStr(t));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE, "Undefined!");
+        Debug.fprint(Flags.FAILTRACE, " The type detected: ");
+        Debug.fprint(Flags.FAILTRACE, Types.printTypeStr(t));
       then
         fail();
   end matchcontinue;
@@ -11008,7 +11008,7 @@ algorithm
     
     case (cache,env,ih,_,_,_,_)
       equation
-        Debug.fprint("failtrace", "- Inst.instClassDecl failed\n");
+        Debug.fprint(Flags.FAILTRACE, "- Inst.instClassDecl failed\n");
       then
         fail();
   end matchcontinue;
@@ -11101,11 +11101,11 @@ algorithm
     case(cache,env,path as Absyn.IDENT("smooth")) then (cache,path);
 
     // MetaModelica extensions
-    case (cache,_,path as Absyn.IDENT("list"))        equation true = RTOpts.acceptMetaModelicaGrammar(); then (cache,path);
-    case (cache,_,path as Absyn.IDENT("Option"))      equation true = RTOpts.acceptMetaModelicaGrammar(); then (cache,path);
-    case (cache,_,path as Absyn.IDENT("tuple"))       equation true = RTOpts.acceptMetaModelicaGrammar(); then (cache,path);
-    case (cache,_,path as Absyn.IDENT("polymorphic")) equation true = RTOpts.acceptMetaModelicaGrammar(); then (cache,path);
-    case (cache,_,path as Absyn.IDENT("array"))       equation true = RTOpts.acceptMetaModelicaGrammar(); then (cache,path);
+    case (cache,_,path as Absyn.IDENT("list"))        equation true = Config.acceptMetaModelicaGrammar(); then (cache,path);
+    case (cache,_,path as Absyn.IDENT("Option"))      equation true = Config.acceptMetaModelicaGrammar(); then (cache,path);
+    case (cache,_,path as Absyn.IDENT("tuple"))       equation true = Config.acceptMetaModelicaGrammar(); then (cache,path);
+    case (cache,_,path as Absyn.IDENT("polymorphic")) equation true = Config.acceptMetaModelicaGrammar(); then (cache,path);
+    case (cache,_,path as Absyn.IDENT("array"))       equation true = Config.acceptMetaModelicaGrammar(); then (cache,path);
     // -------------------------    
      
     // do NOT fully quallify again a fully qualified path!
@@ -11114,7 +11114,7 @@ algorithm
     // try to lookup the first class only if not MetaModelica!  
     case (cache,env,path as Absyn.QUALIFIED(name, restPath))
       equation
-        false = RTOpts.acceptMetaModelicaGrammar(); 
+        false = Config.acceptMetaModelicaGrammar(); 
         (cache,cl as SCode.CLASS(name = name),env_1) = Lookup.lookupClass(cache, env, Absyn.IDENT(name), false);
         // use the name we get back as it could be an import stuff!
         path_2 = makeFullyQualified2(env_1,Absyn.joinPaths(Absyn.IDENT(name), restPath));
@@ -11195,7 +11195,7 @@ algorithm
     /*/ if not meta-modelica and we have a partial function, DO NOT ADD IT TO THE DAE!
     case (cache, funcs, pPrefix as SCode.PARTIAL())
       equation
-        false = RTOpts.acceptMetaModelicaGrammar();
+        false = Config.acceptMetaModelicaGrammar();
         true = System.getPartialInstantiation();
         // if all the functions are complete, add them, otherwise, NO
         fLst = List.select(funcs, DAEUtil.isNotCompleteFunction);
@@ -11260,7 +11260,7 @@ algorithm
     case (cache,env,ih,mod,pre,(c as SCode.CLASS(name = n,restriction = r,partialPrefix = pPrefix)),inst_dims)
       equation
         failure(SCode.R_RECORD() = r);
-        true = MetaUtil.strictRMLCheck(RTOpts.debugFlag("rml"),c);
+        true = MetaUtil.strictRMLCheck(Flags.isSet(Flags.RML),c);
         (cache,env,ih,funs) = implicitFunctionInstantiation2(cache,env,ih,mod,pre,c,inst_dims,false);
         cache = addFunctionsToDAE(cache, funs, pPrefix);
       then (cache,env,ih);
@@ -11268,7 +11268,7 @@ algorithm
     // handle failure
     case (_,env,_,_,_,SCode.CLASS(name=n),_)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.implicitFunctionInstantiation failed " +& n);
         Debug.traceln("  Scope: " +& Env.printEnvPathStr(env));
       then fail();
@@ -11330,7 +11330,7 @@ algorithm
     case (cache,env,ih,mod,pre,(c as SCode.CLASS(classDef=cd,partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(),info = info)),inst_dims,instFunctionTypeOnly)
       equation
         // if we're not MetaModelica set it to non-partial
-        c = Util.if_(RTOpts.acceptMetaModelicaGrammar(),
+        c = Util.if_(Config.acceptMetaModelicaGrammar(),
                      c,
                      SCode.setClassPartialPrefix(SCode.NOT_PARTIAL(), c));
         
@@ -11356,7 +11356,7 @@ algorithm
         daeElts = optimizeFunction(fpath,daeElts,NONE(),{},{},{});
         cmt = extractClassDefComment(cache, env, cd);
         /* Not working 100% yet... Also, a lot of code has unused inputs :( */
-        Debug.bcall3(false and RTOpts.acceptMetaModelicaGrammar() and not instFunctionTypeOnly,checkFunctionInputUsed,daeElts,NONE(),Absyn.pathString(fpath));
+        Debug.bcall3(false and Config.acceptMetaModelicaGrammar() and not instFunctionTypeOnly,checkFunctionInputUsed,daeElts,NONE(),Absyn.pathString(fpath));
       then
         (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(daeElts)::derFuncs,ty1,partialPrefixBool,inlineType,source,cmt)});
 
@@ -11408,7 +11408,7 @@ algorithm
     // handle failure
     case (_,env,_,_,_,SCode.CLASS(name=n),_,_)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.implicitFunctionInstantiation2 failed " +& n);
         Debug.traceln("  Scope: " +& Env.printEnvPathStr(env));
       then fail();
@@ -11471,7 +11471,7 @@ algorithm
 
     else
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         p :: _ = paths;
         Debug.traceln("- Inst.instantiateDerivativeFuncs2 failed for " +&
           Absyn.pathString(p));
@@ -12065,7 +12065,7 @@ algorithm
 
     case (_,_,_,SCode.CLASS(name=id))
       equation
-        Debug.fprintln("failtrace", "- Inst.implicitFunctionTypeInstantiation failed " +& id);
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.implicitFunctionTypeInstantiation failed " +& id);
       then fail();
   end matchcontinue;
 end implicitFunctionTypeInstantiation;
@@ -12122,7 +12122,7 @@ algorithm
     // failure
     case (cache,env,ih,pre,(fn :: fns))
       equation 
-        Debug.fprint("failtrace", "- Inst.instOverloaded_functions failed " +& Absyn.pathString(fn) +& "\n");
+        Debug.fprint(Flags.FAILTRACE, "- Inst.instOverloaded_functions failed " +& Absyn.pathString(fn) +& "\n");
       then
         fail();
   end matchcontinue;
@@ -12193,7 +12193,7 @@ algorithm
         (cache,ih,daeextdecl);
     case (_,env,ih,_,_,_,_,_)
       equation 
-        Debug.fprintln("failtrace", "#-- Inst.instExtDecl failed");
+        Debug.fprintln(Flags.FAILTRACE, "#-- Inst.instExtDecl failed");
       then
         fail();
   end matchcontinue;
@@ -12286,7 +12286,7 @@ algorithm
       then ((exp,els));
     case ((exp as DAE.CALL(path=path),els))
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         cr = ComponentReference.pathToCref(path);
         els = List.select1(els,checkExpInputUsed3,cr);
       then ((exp,els));
@@ -12447,7 +12447,7 @@ algorithm
         extdecl;
     case (_,_,_)
       equation 
-        Debug.fprintln("failtrace", "#-- Inst.instExtMakeExternaldecl failed");
+        Debug.fprintln(Flags.FAILTRACE, "#-- Inst.instExtMakeExternaldecl failed");
       then
         fail();
   end matchcontinue;
@@ -12693,7 +12693,7 @@ algorithm
         (cache,e,prop,st);
     case (cache,env,absynExp,impl,st,pre,info)
       equation 
-        Debug.fprintln("failtrace", "-Inst.elabExpExt failed");
+        Debug.fprintln(Flags.FAILTRACE, "-Inst.elabExpExt failed");
       then
         fail();
   end matchcontinue;
@@ -12733,7 +12733,7 @@ algorithm
         (cache,extargs);
     case (_,_,_,impl,_,_)
       equation 
-        Debug.fprintln("failtrace", "- Inst.instExtGetFargs failed");
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.instExtGetFargs failed");
       then
         fail();
   end matchcontinue;
@@ -12820,7 +12820,7 @@ algorithm
 
     case (cache,_,exp,prop)
       equation 
-        Debug.fprintln("failtrace", "#-- Inst.instExtGetFargsSingle failed for expression: " +& ExpressionDump.printExpStr(exp));
+        Debug.fprintln(Flags.FAILTRACE, "#-- Inst.instExtGetFargsSingle failed for expression: " +& ExpressionDump.printExpStr(exp));
       then
         fail();
   end matchcontinue;
@@ -12865,7 +12865,7 @@ algorithm
 
     case (_,_,_,_,_,_)
       equation 
-        Debug.fprintln("failtrace", "- Inst.instExtRettype failed");
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.instExtRettype failed");
       then
         fail();
   end matchcontinue;
@@ -12988,7 +12988,7 @@ algorithm
         dae;
     case (_,_,_,_,_,_,_,_,_,_,_,_,source,_)
       equation 
-        Debug.fprintln("failtrace", "- Inst.daeDeclare failed");
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.daeDeclare failed");
       then
         fail();
   end matchcontinue;
@@ -13053,7 +13053,7 @@ algorithm
         dae;
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,source,_)
       equation 
-        Debug.fprintln("failtrace", "- Inst.daeDeclare2 failed");
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.daeDeclare2 failed");
       then
         fail();
   end matchcontinue;
@@ -13116,7 +13116,7 @@ algorithm
         dae;
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,source,_)
       equation 
-        //Debug.fprintln("failtrace", "- Inst.daeDeclare3 failed");
+        //Debug.fprintln(Flags.FAILTRACE, "- Inst.daeDeclare3 failed");
       then
         fail();
   end match;
@@ -13247,14 +13247,14 @@ algorithm
     /* Arrays with unknown dimension are allowed if not expanded */
     case (vn,(DAE.T_ARRAY(arrayDim = _,arrayType = tp),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation
-        false = RTOpts.splitArrays();
+        false = Config.splitArrays();
         dae = daeDeclare4(vn, tp, fl, st, kind, dir, prot,e, inst_dims, start, dae_var_attr,comment,io,finalPrefix,source,declareComplexVars);
       then dae;
         
     /* If arrays are expanded and dimension is unknown, report an error */
     case (vn,(DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = tp),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
-        true = RTOpts.splitArrays();
+        true = Config.splitArrays();
         s = ComponentReference.printComponentRefStr(vn);
         Error.addMessage(Error.DIMENSION_NOT_KNOWN, {s});
       then
@@ -13278,7 +13278,7 @@ algorithm
     // MetaModelica extension
     case (vn,ty,fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         true = Types.isBoxedType(ty);
         finst_dims = List.flatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,SCode.finalBool(finalPrefix));
@@ -14119,14 +14119,14 @@ algorithm
     
     case (c,ty1,m,source,impl)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- Inst.instModEquation failed\n type: ");
-        Debug.fprint("failtrace", Types.printTypeStr(ty1));
-        Debug.fprint("failtrace", "\n  cref: ");
-        Debug.fprint("failtrace", ComponentReference.printComponentRefStr(c));
-        Debug.fprint("failtrace", "\n mod:");
-        Debug.fprint("failtrace", Mod.printModStr(m));
-        Debug.fprint("failtrace", "\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE, "- Inst.instModEquation failed\n type: ");
+        Debug.fprint(Flags.FAILTRACE, Types.printTypeStr(ty1));
+        Debug.fprint(Flags.FAILTRACE, "\n  cref: ");
+        Debug.fprint(Flags.FAILTRACE, ComponentReference.printComponentRefStr(c));
+        Debug.fprint(Flags.FAILTRACE, "\n mod:");
+        Debug.fprint(Flags.FAILTRACE, Mod.printModStr(m));
+        Debug.fprint(Flags.FAILTRACE, "\n");
       then
         fail();
   end matchcontinue;
@@ -14261,7 +14261,7 @@ algorithm
     
     case (_,_,_,_,_,inPrefix,componentName,_)
       equation
-        Debug.fprint("failtrace", "- Inst.makeBinding failed on component:" +& PrefixUtil.printPrefixStr(inPrefix) +& "." +& componentName +& "\n");
+        Debug.fprint(Flags.FAILTRACE, "- Inst.makeBinding failed on component:" +& PrefixUtil.printPrefixStr(inPrefix) +& "." +& componentName +& "\n");
       then
         fail();
   end matchcontinue;
@@ -14385,7 +14385,7 @@ algorithm
 
     case (_, _, _, _, DAE.TYPES_VAR(name = name) :: _, _, _, _, _, _)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.makeRecordBinding2 failed for " +& Absyn.pathString(inRecordName) +& "." +& name +& "\n");
       then
         fail();
@@ -14557,31 +14557,31 @@ algorithm
         dir = Absyn.INPUT();
         attr = SCode.ATTR(dim,f,s,var,dir);
 
-        //Debug.fprint("recconst", "inst_record_constructor_elt called\n");
+        //Debug.fprint(Flags.REC_CONST, "inst_record_constructor_elt called\n");
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, t, true);
-        //Debug.fprint("recconst", "looked up class\n");
+        //Debug.fprint(Flags.REC_CONST, "looked up class\n");
         (cache,mod_1) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), mod, impl, info);
         mod_1 = Mod.merge(outerMod,mod_1,cenv,Prefix.NOPRE());
         owncref = Absyn.CREF_IDENT(id,{});
         (cache,dimexp) = elabArraydim(cache, env, owncref, t, dim, NONE(), false, NONE(), true, false, Prefix.NOPRE(), info, {});
-        //Debug.fprint("recconst", "calling inst_var\n");
+        //Debug.fprint(Flags.REC_CONST, "calling inst_var\n");
         (cache,_,ih,_,_,_,tp_1,_) = instVar(cache, cenv, ih, UnitAbsyn.noStore, ClassInf.FUNCTION(Absyn.IDENT("")), mod_1, Prefix.NOPRE(),
           id, cl, attr, prefixes, dimexp, {}, {}, impl, comment, info, ConnectionGraph.EMPTY, Connect.emptySet, env);
-        //Debug.fprint("recconst", "Type of argument:");
-        Debug.fprint("recconst", Types.printTypeStr(tp_1));
-        //Debug.fprint("recconst", "\nMod=");
-        Debug.fcall("recconst", Mod.printMod, mod_1);
+        //Debug.fprint(Flags.REC_CONST, "Type of argument:");
+        Debug.fprint(Flags.REC_CONST, Types.printTypeStr(tp_1));
+        //Debug.fprint(Flags.REC_CONST, "\nMod=");
+        Debug.fcall(Flags.REC_CONST, Mod.printMod, mod_1);
         (cache,bind) = makeBinding(cache,env, attr, mod_1, tp_1, Prefix.NOPRE(), id, info);
       then
         (cache,ih,DAE.TYPES_VAR(id,DAE.ATTR(f,s,var,dir,Absyn.NOT_INNER_OUTER()),vis,tp_1,bind,NONE()));
 
     case (cache,env,ih,elt,outerMod,impl)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- Inst.instRecordConstructorElt failed.,elt:");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE, "- Inst.instRecordConstructorElt failed.,elt:");
         str = SCodeDump.printElementStr(elt);
-        Debug.fprint("failtrace", str);
-        Debug.fprint("failtrace", "\n");
+        Debug.fprint(Flags.FAILTRACE, str);
+        Debug.fprint(Flags.FAILTRACE, "\n");
       then
         fail();
   end matchcontinue;
@@ -15211,9 +15211,9 @@ algorithm
 
     case(env,ih,pre, SOME(mo as DAE.MOD(_,_, lsm ,_)), sele as SCode.CLASS(name=str))
       equation
-        // Debug.fprintln("instTrace", "Mods in addClassdefsToEnv3: " +& Mod.printModStr(mo) +& " class name: " +& str);
+        // Debug.fprintln(Flags.INST_TRACE, "Mods in addClassdefsToEnv3: " +& Mod.printModStr(mo) +& " class name: " +& str);
         (mo2,lsm2) = extractCorrectClassMod2(lsm,str,{});
-        // Debug.fprintln("instTrace", "Mods in addClassdefsToEnv3 after extractCorrectClassMod2: " +& Mod.printModStr(mo2) +& " class name: " +& str);
+        // Debug.fprintln(Flags.INST_TRACE, "Mods in addClassdefsToEnv3 after extractCorrectClassMod2: " +& Mod.printModStr(mo2) +& " class name: " +& str);
         // TODO: classinf below should be FQ
         (_,env2,ih, sele2 as SCode.CLASS(name = _) , _) =
         redeclareType(Env.emptyCache(), env, ih, mo2, sele, pre, ClassInf.MODEL(Absyn.IDENT(str)), true, DAE.NOMOD());
@@ -15256,7 +15256,7 @@ algorithm (omod,restmods) := matchcontinue( smod , name , premod)
     
   case(_,_,_)
     equation
-      Debug.fprint("failtrace", "- extract_Correct_Class_Mod_2 failed\n");
+      Debug.fprint(Flags.FAILTRACE, "- extract_Correct_Class_Mod_2 failed\n");
     then
       fail();
   end matchcontinue;
@@ -15427,7 +15427,7 @@ algorithm
     
   case (_,_,_,mod,_,_) //If arrays are expanded, no action is needed
     equation
-      true = RTOpts.splitArrays();
+      true = Config.splitArrays();
     then
       mod; 
 /*  case (_,_,_,mod,inst_dims,decDims)
@@ -16055,7 +16055,7 @@ algorithm
         fail();
     case (_, _, _, _, _, _)
       equation
-        Debug.fprintln("failtrace", 
+        Debug.fprintln(Flags.FAILTRACE, 
           "- Inst.instConditionalDeclaration failed on component: " +& compName +& 
           " for cond: " +& Dump.printExpStr(cond));
       then
@@ -16189,7 +16189,7 @@ algorithm ety := matchcontinue(baseType,dims)
 
   case(_,_)
     equation
-    Debug.fprint("failtrace", "- make_makeCrefBaseType failed\n");
+    Debug.fprint(Flags.FAILTRACE, "- make_makeCrefBaseType failed\n");
     print("makCrefBaseType failed\n");
     then
       fail();
@@ -16301,7 +16301,7 @@ algorithm
 
     else 
       equation
-        Debug.fprint("failtrace","-updateComponentsInEnv failed\n");
+        Debug.fprint(Flags.FAILTRACE,"-updateComponentsInEnv failed\n");
       then fail();
   end matchcontinue;
 end updateComponentsInEnv2;
@@ -16483,7 +16483,7 @@ algorithm
     // nothing is we have +d=noCache
     case (_, _, _)
       equation
-        true = RTOpts.debugFlag("noCache");
+        true = Flags.isSet(Flags.NO_CACHE);
        then
          ();
       
@@ -16667,18 +16667,18 @@ algorithm
         //warnings = Error.printMessagesStr();
         //retStr= stringAppendList({"# CHECK: ", classNameStr, " inst has 0 equation(s) and 0 variable(s)", warnings, "."});
         // do not show empty elements with 0 vars and 0 equs
-        // Debug.fprintln("checkModel", retStr);
+        // Debug.fprintln(Flags.CHECK_MODEL_BALANCE, retStr);
     then ();
     // check the balancing of the instantiated model
     case (classNameOpt, dae)
       equation
         dae = DAEUtil.transformIfEqToExpr(dae,false);
-        elimLevel = RTOpts.eliminationLevel();
-        RTOpts.setEliminationLevel(0); // No variable elimination
+        elimLevel = Config.eliminationLevel();
+        Config.setEliminationLevel(0); // No variable elimination
         (dlow as BackendDAE.DAE(orderedVars = BackendDAE.VARIABLES(numberOfVars = varSize),orderedEqs = eqns))
         = BackendDAECreate.lower(dae, false, true);
-        // Debug.fcall("dumpdaelow", BackendDump.dump, dlow);
-        RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
+        // Debug.fcall(Flags.DUMP_DAE_LOW, BackendDump.dump, dlow);
+        Config.setEliminationLevel(elimLevel); // reset elimination level.
         eqnSize = BackendEquation.equationSize(eqns);
         (eqnSize,varSize) = CevalScript.subtractDummy(BackendVariable.daeVars(dlow),eqnSize,varSize);
         simpleEqnSize = BackendDAEOptimize.countSimpleEquations(eqns);
@@ -16691,13 +16691,13 @@ algorithm
                                        " equation(s) and ", varSizeStr," variable(s). ",
                                        simpleEqnSizeStr, " of these are trivial equation(s).",
                                        warnings});
-        Debug.fprintln("checkModel", retStr);
+        Debug.fprintln(Flags.CHECK_MODEL_BALANCE, retStr);
     then ();
     // we might fail, show a message
     case (classNameOpt, inDAEElements)
       equation
         classNameStr = Absyn.optPathString(classNameOpt);
-        Debug.fprintln("checkModel", "# CHECK: " +& classNameStr +& " inst failed!");
+        Debug.fprintln(Flags.CHECK_MODEL_BALANCE, "# CHECK: " +& classNameStr +& " inst failed!");
       then ();
   end matchcontinue;
 end checkModelBalancing;
@@ -16726,7 +16726,7 @@ algorithm
     // check anything else
     case (_, pathOpt, dae)
       equation
-        true = RTOpts.debugFlag("checkModel");
+        true = Flags.isSet(Flags.CHECK_MODEL);
         checkModelBalancing(pathOpt, dae);
       then ();
     // do nothing if the debug flag checkModel is not set
@@ -17168,7 +17168,7 @@ algorithm
       equation
         true = Absyn.pathEqual(path1,path2);
         str = "Tail recursion of: " +& ExpressionDump.printExpStr(rhs) +& " with input vars: " +& stringDelimitList(vars,",");
-        Debug.bcall3(RTOpts.debugFlag("tail"),Error.addSourceMessage,Error.COMPILER_NOTIFICATION,{str},DAEUtil.getElementSourceFileInfo(source));
+        Debug.bcall3(Flags.isSet(Flags.TAIL),Error.addSourceMessage,Error.COMPILER_NOTIFICATION,{str},DAEUtil.getElementSourceFileInfo(source));
       then (DAE.CALL(path2,es,DAE.CALL_ATTR(tp,b1,b2,i,DAE.TAIL(vars))),true);
     case (path,DAE.IFEXP(e1,e2,e3),vars,source)
       equation

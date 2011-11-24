@@ -53,14 +53,15 @@ public type Subscript = DAE.Subscript;
 
 // protected imports
 protected import ComponentReference;
+protected import Config;
 protected import DAEUtil;
 protected import Debug;
 protected import Env;
 protected import Expression;
 protected import ExpressionDump;
+protected import Flags;
 protected import List;
 protected import Prefix;
-protected import RTOpts;
 protected import Static;
 protected import Types;
 protected import Util;
@@ -87,7 +88,7 @@ algorithm
       Boolean b;
     case (e)
       equation
-        true = RTOpts.getNoSimplify();
+        true = Config.getNoSimplify();
         (eNew,b) = simplify1(e);
       then (eNew,b);
     case (e)
@@ -197,7 +198,7 @@ algorithm
     // MetaModelica builtin operators are calls
     case ((e,_))
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
       then ((simplifyMetaModelica(e),true));
     
     // other subscripting/asub simplifications where e is not simplified first.
@@ -2194,7 +2195,7 @@ algorithm
     
     case (_)
       equation
-        Debug.fprint("failtrace","- ExpressionSimplify.simplifyBinaryAddConstants failed\n");
+        Debug.fprint(Flags.FAILTRACE,"- ExpressionSimplify.simplifyBinaryAddConstants failed\n");
       then
         fail();
   end matchcontinue;
@@ -2391,7 +2392,7 @@ algorithm
     
     case (_)
       equation
-        Debug.fprint("failtrace","- ExpressionSimplify.simplifyAdd failed\n");
+        Debug.fprint(Flags.FAILTRACE,"- ExpressionSimplify.simplifyAdd failed\n");
       then
         fail();
   end matchcontinue;
@@ -2422,7 +2423,7 @@ algorithm
     
     case (_)
       equation
-        Debug.fprint("failtrace","- ExpressionSimplify.simplifyAdd2 failed\n");
+        Debug.fprint(Flags.FAILTRACE,"- ExpressionSimplify.simplifyAdd2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -4240,11 +4241,12 @@ algorithm
   outExpl := match (expl,acc)
     local
       DAE.Exp exp;
-    case ({},acc) then listReverse(acc);
-    case (exp::expl,acc)
+      list<DAE.Exp> rest_expl;
+    case ({},_) then listReverse(acc);
+    case (exp::rest_expl,_)
       equation
         (exp,_) = simplify1(exp);
-      then simplifyList(expl,exp::acc);
+      then simplifyList(rest_expl,exp::acc);
   end match;
 end simplifyList;
 

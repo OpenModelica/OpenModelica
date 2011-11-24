@@ -15,6 +15,7 @@ protected import Util;
 protected import Print;
 protected import CevalScript;
 protected import Error;
+protected import Flags;
 public import Absyn;
 
 
@@ -204,7 +205,7 @@ algorithm
     //- when compilation is correct, this is impossible (only completed texts can be accessible to write out)
     case (_ , _)
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.writeText failed - incomplete text was passed to be written\n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.writeText failed - incomplete text was passed to be written\n");
       then 
         fail();
   end matchcontinue;
@@ -241,7 +242,7 @@ algorithm
     //should not ever happen 
     case (_ , _)
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.writeParseNL failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.writeParseNL failed.\n");
       then 
         fail();
   end matchcontinue;
@@ -284,7 +285,7 @@ algorithm
     //should not ever happen 
     case (_ , _)
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.writeChars failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.writeChars failed.\n");
       then 
         fail();
   end matchcontinue;
@@ -359,7 +360,7 @@ algorithm
     //should not ever happen 
     case (_ )
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.takeLineOrString failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.takeLineOrString failed.\n");
       then 
         fail();
   end matchcontinue;
@@ -402,7 +403,7 @@ algorithm
     //should not ever happen 
     case (_)
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.softNL failed. \n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.softNL failed. \n");
       then 
         fail();
         
@@ -493,7 +494,7 @@ algorithm
     //should not ever happen 
     case (_, _)
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.pushBlock failed \n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.pushBlock failed \n");
       then 
         fail();
     
@@ -532,7 +533,7 @@ algorithm
     //- when compilation is correct, this is impossible (pushs and pops should be balanced)
     case (_)
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.popBlock failed - probably pushBlock and popBlock are not well balanced !\n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.popBlock failed - probably pushBlock and popBlock are not well balanced !\n");
       then 
        fail();
   end matchcontinue;
@@ -566,7 +567,7 @@ algorithm
     //should not ever happen 
     case (_ , _)
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.pushIter failed \n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.pushIter failed \n");
       then 
         fail();
   end matchcontinue;
@@ -604,7 +605,7 @@ algorithm
     //- when compilation is correct, this is impossible (pushs and pops should be balanced)
     case (_)
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.popIter failed - probably pushIter and popIter are not well balanced or something was written between the last nextIter and popIter ?\n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.popIter failed - probably pushIter and popIter are not well balanced or something was written between the last nextIter and popIter ?\n");
       then 
        fail();
   end matchcontinue;
@@ -683,7 +684,7 @@ algorithm
     //should not ever happen 
     case (_ )
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.nextIter failed - nextIter was called in a non-iteration context ? \n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.nextIter failed - nextIter was called in a non-iteration context ? \n");
       then 
         fail();
   end matchcontinue;
@@ -707,7 +708,7 @@ algorithm
     //should not ever happen 
     case (_ )
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.getIter_i0 failed - getIter_i0 was called in a non-iteration context ? \n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.getIter_i0 failed - getIter_i0 was called in a non-iteration context ? \n");
       then 
         fail();
   end matchcontinue;
@@ -731,7 +732,7 @@ algorithm
     //should not ever happen 
     case (_ )
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.getIter_i1 failed - getIter_i1 was called in a non-iteration context ? \n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.getIter_i1 failed - getIter_i1 was called in a non-iteration context ? \n");
       then 
         fail();
   end matchcontinue;
@@ -759,7 +760,7 @@ algorithm
     //should not ever happen 
     case (_ )
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.textString failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.textString failed.\n");
       then 
         fail();
   end matchcontinue;
@@ -786,14 +787,14 @@ algorithm
             blocksStack = _::_
             ))
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.textString failed - a non-comlete text was given.\n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.textString failed - a non-comlete text was given.\n");
       then 
         fail();
     
     //should not ever happen 
     case (_ )
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.textString failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.textString failed.\n");
       then 
         fail();
   end matchcontinue;
@@ -830,7 +831,7 @@ algorithm
     //should not ever happen 
     case (_,_,_,_)
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.tokensString failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.tokensString failed.\n");
       then 
         fail();
   end match;
@@ -914,7 +915,7 @@ algorithm
     //should not ever happen 
     else
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.tokString failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.tokString failed.\n");
       then 
         fail();
   end match;
@@ -1015,7 +1016,7 @@ algorithm
     //should not ever happen 
     case (_,_,_,_)
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.stringListString failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.stringListString failed.\n");
       then 
         fail();
   end matchcontinue;
@@ -1063,7 +1064,7 @@ algorithm
     //should not ever happen 
     case (_)
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.spaceStr failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.spaceStr failed.\n");
       then 
         fail();
   end matchcontinue;
@@ -1232,7 +1233,7 @@ algorithm
     //should not ever happen 
     case (_,_,_,_,_)
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.tokString failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.tokString failed.\n");
       then 
         fail();
   end matchcontinue;
@@ -1272,7 +1273,7 @@ algorithm
     //should not ever happen 
     case (_,_,_,_,_)
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.iterSeparatorString failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.iterSeparatorString failed.\n");
       then 
         fail();
   end matchcontinue;
@@ -1337,7 +1338,7 @@ algorithm
     //should not ever happen 
     case (_,_,_,_,_,_,_,_,_,_)
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.iterSeparatorAlignWrapString failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.iterSeparatorAlignWrapString failed.\n");
       then 
         fail();
   end matchcontinue;
@@ -1410,7 +1411,7 @@ algorithm
     //should not ever happen 
     case (_,_,_,_,_,_,_,_,_)
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.iterAlignWrapString failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.iterAlignWrapString failed.\n");
       then 
         fail();
   end matchcontinue;
@@ -1450,7 +1451,7 @@ algorithm
     //should not ever happen 
     case (_,_,_,_,_)
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.tryWrap failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.tryWrap failed.\n");
       then 
         fail();
   end matchcontinue;
@@ -1499,7 +1500,7 @@ algorithm
     //- when compilation is correct, this is impossible (only completed texts can be accessible to write out)
     case (_ )
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.textStrTok failed - incomplete text was passed to be converted.\n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.textStrTok failed - incomplete text was passed to be converted.\n");
       then 
         fail();
   end matchcontinue;
@@ -1676,7 +1677,7 @@ algorithm
         rtTickW = System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
         Print.writeBuf(file);
         Print.clearBuf();
-        Debug.fprintln("perfTimes",
+        Debug.fprintln(Flags.PERF_TIMES,
                 "textFile " +& file 
            +& "\n    text:" +& realString(realSub(rtTickW,rtTickTxt)) 
            +& "\n   write:" +& realString(realSub(System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL), rtTickW))
@@ -1687,14 +1688,14 @@ algorithm
     //TODO: let this function fail and the error message can be reported via  # ( textFile(txt,"file.cpp") ; failMsg="error" )
     case (_,_)
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.textFile failed - a system error ?\n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.textFile failed - a system error ?\n");
       then 
         ();
     
     //should not ever happen 
     //case (_ )
     //  equation
-    //    Debug.fprint("failtrace", "-!!!Tpl.textFile failed.\n");
+    //    Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.textFile failed.\n");
     //  then 
     //    fail();
   end matchcontinue;

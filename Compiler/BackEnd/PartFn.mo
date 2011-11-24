@@ -51,6 +51,7 @@ protected import ComponentReference;
 protected import DAEUtil;
 protected import Error;
 protected import Expression;
+protected import Flags;
 protected import List;
 protected import Types;
 protected import Util;
@@ -86,7 +87,7 @@ algorithm
       BackendDAE.Shared shared;
     /*case(dae,dlow)
       equation
-        false = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
+        false = Flags.isSet(Flags.FNPTR) or Config.acceptMetaModelicaGrammar();
       then
         (dae,dlow);*/
     case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),_,(BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses,btp),dae))
@@ -131,7 +132,7 @@ algorithm
         (algarr_1,dae);
     case(_,_)
       equation
-        Debug.fprintln("failtrace","- PartFn.partEvalAlgs failed");
+        Debug.fprintln(Flags.FAILTRACE,"- PartFn.partEvalAlgs failed");
       then
         fail();
   end matchcontinue;
@@ -159,7 +160,7 @@ algorithm
         (alg_1 :: cdr,dae);
     case(_,_)
       equation
-        Debug.fprintln("failtrace","- PartFn.partEvalAlgLst failed");
+        Debug.fprintln(Flags.FAILTRACE,"- PartFn.partEvalAlgLst failed");
       then
         fail();
   end matchcontinue;
@@ -194,7 +195,7 @@ algorithm
         (res,dae);
     case(_,_)
       equation
-        Debug.fprintln("failtrace","- PartFn.partEvalArrEqs failed");
+        Debug.fprintln(Flags.FAILTRACE,"- PartFn.partEvalArrEqs failed");
       then
         fail();
   end matchcontinue;
@@ -226,7 +227,7 @@ algorithm
     
     case(_,_)
       equation
-        Debug.fprintln("failtrace","- PartFn.partEvalVars failed");
+        Debug.fprintln(Flags.FAILTRACE,"- PartFn.partEvalVars failed");
       then
         fail();
   end matchcontinue;
@@ -274,7 +275,7 @@ algorithm
                          source,values,comment,flowPrefix,streamPrefix)) :: cdr_1,dae);
     case(_,_)
       equation
-        Debug.fprintln("failtrace","- PartFn.partEvalVarLst failed");
+        Debug.fprintln(Flags.FAILTRACE,"- PartFn.partEvalVarLst failed");
       then
         fail();
   end matchcontinue;
@@ -303,7 +304,7 @@ algorithm
         (BackendDAE.EQUATION_ARRAY(num,size,eqarr),dae);
     case(_,_)
       equation
-        Debug.fprintln("failtrace","- PartFn.partEvalEqArr failed");
+        Debug.fprintln(Flags.FAILTRACE,"- PartFn.partEvalEqArr failed");
       then
         fail();
   end matchcontinue;
@@ -381,7 +382,7 @@ algorithm
 
     case(_,_)
       equation
-        Debug.fprintln("failtrace","- PartFn.partEvalEqs failed");
+        Debug.fprintln(Flags.FAILTRACE,"- PartFn.partEvalEqs failed");
       then
         fail();
   end matchcontinue;
@@ -415,7 +416,7 @@ algorithm
         (BackendDAE.WHEN_EQ(i,cref,e_1,NONE()),dae);
     case(_,_)
       equation
-        Debug.fprintln("failtrace","- PartFn.partEvalWhenEq failed");
+        Debug.fprintln(Flags.FAILTRACE,"- PartFn.partEvalWhenEq failed");
       then
         fail();
   end matchcontinue;
@@ -436,7 +437,7 @@ algorithm
       DAE.DAElist dlst;
     /*case(dlst,dae)
       equation
-        false = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
+        false = Flags.isSet(Flags.FNPTR) or Config.acceptMetaModelicaGrammar();
       then
         (dlst,dae);*/
     case(DAE.DAE(elts),dae)
@@ -447,7 +448,7 @@ algorithm
         (dlst,dae);
     case(_,_)
       equation
-        Debug.fprintln("failtrace","- PartFn.partEvalDAE failed");
+        Debug.fprintln(Flags.FAILTRACE,"- PartFn.partEvalDAE failed");
       then
         fail();
   end matchcontinue;
@@ -464,7 +465,7 @@ algorithm
       list<DAE.Function> elts,elts_1;
     /*case(elts)
       equation
-        false = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
+        false = Flags.isSet(Flags.FNPTR) or Config.acceptMetaModelicaGrammar();
       then
         elts;*/
     case(elts)
@@ -474,7 +475,7 @@ algorithm
         elts_1;
     case(_)
       equation
-        Debug.fprintln("failtrace","PartFn.createPartEvalFunctions failed");
+        Debug.fprintln(Flags.FAILTRACE,"PartFn.createPartEvalFunctions failed");
       then
         fail();
   end matchcontinue;
@@ -494,7 +495,7 @@ algorithm
       DAE.Function fn, el;
     case(_,{})
       equation
-        Debug.fprintln("failtrace","- PartFn.replaceFnInFnLst failed");
+        Debug.fprintln(Flags.FAILTRACE,"- PartFn.replaceFnInFnLst failed");
       then
         fail();
     case(fn as DAE.FUNCTION(path = newFn),DAE.FUNCTION(path = p) :: cdr)
@@ -742,7 +743,7 @@ algorithm
 
     case(_,_)
       equation
-        Debug.fprintln("failtrace","PartFn.elabFunctions failed");
+        Debug.fprintln(Flags.FAILTRACE,"PartFn.elabFunctions failed");
       then
         fail();
   end matchcontinue;
@@ -767,7 +768,7 @@ algorithm
         (DAE.ALGORITHM_STMTS(stmts_1),dae);
     case(_,_)
       equation
-        Debug.fprintln("failtrace","- PartFn.elabAlg failed");
+        Debug.fprintln(Flags.FAILTRACE,"- PartFn.elabAlg failed");
       then
         fail();
   end matchcontinue;
@@ -897,7 +898,7 @@ algorithm
         (stmt :: cdr_1,dae);
     case(_,_)
       equation
-        Debug.fprintln("failtrace","- PartFn.elabStmts failed");
+        Debug.fprintln(Flags.FAILTRACE,"- PartFn.elabStmts failed");
       then
         fail();
   end matchcontinue;
@@ -932,7 +933,7 @@ algorithm
         (DAE.ELSE(stmts),dae);
     case(_,_)
       equation
-        Debug.fprintln("failtrace","- PartFn.elabElse failed");
+        Debug.fprintln(Flags.FAILTRACE,"- PartFn.elabElse failed");
       then
         fail();
   end matchcontinue;
@@ -960,7 +961,7 @@ algorithm
         (elst_1 :: cdr_1,dae);
     case(_,_)
       equation
-        Debug.fprintln("failtrace","- PartFn.elabExpMatrix failed");
+        Debug.fprintln(Flags.FAILTRACE,"- PartFn.elabExpMatrix failed");
       then
         fail();
   end matchcontinue;
@@ -988,7 +989,7 @@ algorithm
         (e_1 :: cdr_1,dae);
     case(_,_)
       equation
-        Debug.fprintln("failtrace","- PartFn.elabExpMatrix failed");
+        Debug.fprintln(Flags.FAILTRACE,"- PartFn.elabExpMatrix failed");
       then
         fail();
   end matchcontinue;
@@ -1086,7 +1087,7 @@ algorithm
         newFn :: dae;
     case(_,_,_,_)
       equation
-        Debug.fprintln("failtrace","PartFn.buildNewFunction failed");
+        Debug.fprintln(Flags.FAILTRACE,"PartFn.buildNewFunction failed");
       then
         fail();
   end matchcontinue;
@@ -1125,7 +1126,7 @@ algorithm
         res;
     case(_,_,_,_,_)
       equation
-        Debug.fprintln("failtrace","PartFn.buildNewFunction2 failed");
+        Debug.fprintln(Flags.FAILTRACE,"PartFn.buildNewFunction2 failed");
       then
         fail();
   end matchcontinue;
@@ -1154,7 +1155,7 @@ algorithm
         ((DAE.T_FUNCTION(args_2,retType,functionAttributes),po));
     case(_,_)
       equation
-        Debug.fprintln("failtrace","- PartFn.buildNewFunctionType failed");
+        Debug.fprintln(Flags.FAILTRACE,"- PartFn.buildNewFunctionType failed");
       then
         fail();
   end matchcontinue;
@@ -1208,7 +1209,7 @@ algorithm
         (res,vars);
     case(_,_,_,_,_)
       equation
-        Debug.fprintln("failtrace","PartFn.buildNewFunctionParts failed");
+        Debug.fprintln(Flags.FAILTRACE,"PartFn.buildNewFunctionParts failed");
       then
         fail();
   end matchcontinue;
@@ -1235,7 +1236,7 @@ algorithm
         res;
     case(_)
       equation
-        Debug.fprintln("failtrace","- PartFn.buildTypeVar failed");
+        Debug.fprintln(Flags.FAILTRACE,"- PartFn.buildTypeVar failed");
       then
         fail();
   end matchcontinue;
@@ -1289,7 +1290,7 @@ algorithm
       DAE.Element e;
     case({},_)
       equation
-        Debug.fprintln("failtrace","PartFn.insertAfterInputs failed - no inputs found");
+        Debug.fprintln(Flags.FAILTRACE,"PartFn.insertAfterInputs failed - no inputs found");
       then
         fail();
     case((e as DAE.VAR(direction = DAE.INPUT())) :: cdr,inputs)
@@ -1305,7 +1306,7 @@ algorithm
         e :: res;
     case(_,_)
       equation
-        Debug.fprintln("failtrace","PartFn.insertAfterInputs failed - no inputs found");
+        Debug.fprintln(Flags.FAILTRACE,"PartFn.insertAfterInputs failed - no inputs found");
       then
         fail();
   end matchcontinue;
@@ -1333,7 +1334,7 @@ algorithm
         res;
     case(_,_)
       equation
-        Debug.fprintln("failtrace","PartFn.renameInput failed - expected input variable");
+        Debug.fprintln(Flags.FAILTRACE,"PartFn.renameInput failed - expected input variable");
       then
         fail();
   end matchcontinue;
@@ -1479,7 +1480,7 @@ algorithm
 
     case(_,_,_,_,_)
       equation
-        Debug.fprintln("failtrace","PartFn.fixCalls failed");
+        Debug.fprintln(Flags.FAILTRACE,"PartFn.fixCalls failed");
       then
         fail();
   end matchcontinue;
@@ -1620,7 +1621,7 @@ algorithm
         stmt :: cdr_1;
     case(_,_,_,_,_)
       equation
-        Debug.fprintln("failtrace","PartFn.fixCallsAlg failed");
+        Debug.fprintln(Flags.FAILTRACE,"PartFn.fixCallsAlg failed");
       then
         fail();
   end matchcontinue;
@@ -1678,7 +1679,7 @@ algorithm
         e_1;
     case(_,_)
       equation
-        Debug.fprintln("failtrace","PartFn.handleExpList2 failed");
+        Debug.fprintln(Flags.FAILTRACE,"PartFn.handleExpList2 failed");
       then
         fail();
   end matchcontinue;

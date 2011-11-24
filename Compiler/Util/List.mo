@@ -96,8 +96,9 @@ encapsulated package List
 "
   
 protected import Debug;
-protected import Util;
+protected import Flags;
 protected import Error;
+protected import Util;
 
 public
 
@@ -167,7 +168,7 @@ algorithm
 
     else
       equation
-        Debug.fprintln("failtrace", "- List.fill failed with negative value " 
+        Debug.fprintln(Flags.FAILTRACE, "- List.fill failed with negative value " 
           +& intString(inCount));
       then
         fail();
@@ -4216,7 +4217,7 @@ algorithm
 
     case ({}, _)
       equation
-        Debug.fprintln("failtrace", "- Util.listReduce failed on empty list!\n");
+        Debug.fprintln(Flags.FAILTRACE, "- Util.listReduce failed on empty list!\n");
       then
         fail();
   end match;
@@ -4259,7 +4260,7 @@ algorithm
 
     case ({}, _, _)
       equation
-        Debug.fprintln("failtrace", "- Util.listReduce failed on empty list!\n");
+        Debug.fprintln(Flags.FAILTRACE, "- Util.listReduce failed on empty list!\n");
       then
         fail();
   end match;

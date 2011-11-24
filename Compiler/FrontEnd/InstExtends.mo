@@ -58,11 +58,11 @@ protected import ComponentReference;
 protected import Debug;
 protected import Dump;
 protected import Error;
+protected import Flags;
 protected import Inst;
 protected import List;
 protected import Lookup;
 protected import Mod;
-protected import RTOpts;
 protected import Types;
 protected import Util;
 protected import SCodeDump;
@@ -132,7 +132,7 @@ algorithm
     /* instantiate a base class */
     case (cache,env,ih,mod,pre,(elt as SCode.EXTENDS(info = info, baseClassPath = tp, modifications = emod)) :: rest,ci_state,className,impl,isPartialInst)
       equation
-        // Debug.fprintln("instTrace", "EXTENDS: " +& Env.printEnvPathStr(env) +& " el: " +& SCodeDump.unparseElementStr(elt) +& " mods: " +& Mod.printModStr(mod));        
+        // Debug.fprintln(Flags.INST_TRACE, "EXTENDS: " +& Env.printEnvPathStr(env) +& " el: " +& SCodeDump.unparseElementStr(elt) +& " mods: " +& Mod.printModStr(mod));        
         //print("EXTENDS: " +& Env.printEnvPathStr(env) +& "/" +& Absyn.pathString(tp) +& "(" +& SCodeDump.printModStr(emod) +& ") outemod: " +& Mod.printModStr(mod) +& "\n");
         // adrpo - here we need to check if we don't have recursive extends of the form:
         // package Icons
@@ -151,7 +151,7 @@ algorithm
         // fully qualify modifiers in extends in this environment!
         (cache, emod) = fixModifications(cache, env, emod, HashTableStringToPath.emptyHashTable());
         
-        // Debug.fprintln("instTrace", "EXTENDS (FULLY QUAL): " +& Env.printEnvPathStr(env) +& " el: " +& SCodeDump.printModStr(emod));
+        // Debug.fprintln(Flags.INST_TRACE, "EXTENDS (FULLY QUAL): " +& Env.printEnvPathStr(env) +& " el: " +& SCodeDump.printModStr(emod));
         
         (cache,(c as SCode.CLASS(name=cn,encapsulatedPrefix=encf,restriction=r)),cenv) = Lookup.lookupClass(cache, env, tp, false);
         //print("Found " +& cn +& "\n");
@@ -264,7 +264,7 @@ algorithm
     /* instantiation failed */
     case (cache,env,ih,mod,pre,rest,ci_state,className,_,_)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.instExtendsList failed on:\n\t" +&
           "className: " +&  className +& "\n\t" +&
           "env:       " +&  Env.printEnvPathStr(env) +& "\n\t" +&
@@ -305,7 +305,7 @@ protected
   list<tuple<SCode.Element, DAE.Mod, Boolean>> outTplSCodeElementModLstTpl3;
   list<SCode.Element> cdefelts,tmpelts;
 algorithm
-  //Debug.fprintln("debug","instExtendsAndClassExtendsList: " +& inClassName);
+  //Debug.fprintln(Flags.DEBUG,"instExtendsAndClassExtendsList: " +& inClassName);
   (outCache,outEnv,outIH,outMod,outTplSCodeElementModLstTpl3,outSCodeNormalEquationLst,outSCodeInitialEquationLst,outSCodeNormalAlgorithmLst,outSCodeInitialAlgorithmLst):=
   instExtendsAndClassExtendsList2(inCache,inEnv,inIH,inMod,inPrefix,inExtendsElementLst,inClassExtendsElementLst,inState,inClassName,inImpl,isPartialInst);
   // Filter out the last boolean in the tuple
@@ -315,7 +315,7 @@ algorithm
   (_,cdefelts,_,_) := Inst.splitEltsNoComponents(tmpelts);
   // Add the class definitions to the environment
   (outEnv,outIH) := Inst.addClassdefsToEnv(outEnv,outIH,inPrefix,cdefelts,inImpl,SOME(outMod));
-  //Debug.fprintln("debug","instExtendsAndClassExtendsList: " +& inClassName +& " done");
+  //Debug.fprintln(Flags.DEBUG,"instExtendsAndClassExtendsList: " +& inClassName +& " done");
 end instExtendsAndClassExtendsList;
 
 protected function instExtendsAndClassExtendsList2 "
@@ -380,7 +380,7 @@ algorithm
     
     case (_,_,SCode.CLASS(name=name)::rest,compelts)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.instClassExtendsList failed " +& name);
         Debug.traceln("  Candidate classes: ");
         els = List.map(compelts, Util.tuple31);
@@ -549,7 +549,7 @@ algorithm
 
     case (cache,env,ih,mod,pre,SCode.CLASS(info = info, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(tp, _),modifications = dmod)),impl, _)
       equation
-        // Debug.fprintln("instTrace", "DERIVED: " +& Env.printEnvPathStr(env) +& " el: " +& SCodeDump.unparseElementStr(inClass) +& " mods: " +& Mod.printModStr(mod));
+        // Debug.fprintln(Flags.INST_TRACE, "DERIVED: " +& Env.printEnvPathStr(env) +& " el: " +& SCodeDump.unparseElementStr(inClass) +& " mods: " +& Mod.printModStr(mod));
         (cache, c, cenv) = Lookup.lookupClass(cache, env, tp, true);
         // modifiers should be evaluated in the current scope for derived!
         //(cache,daeDMOD) = Mod.elabMod(cache, env, ih, pre, dmod, impl, info);
@@ -569,7 +569,7 @@ algorithm
 
     else
       equation
-        Debug.fprint("failtrace", "- Inst.instDerivedClasses failed\n");
+        Debug.fprint(Flags.FAILTRACE, "- Inst.instDerivedClasses failed\n");
       then
         fail();
   end matchcontinue;
@@ -686,7 +686,7 @@ algorithm
     case ((comp,cmod,b),inEnv,inMod)
       equation
         Debug.fprintln(
-          "failtrace", 
+          Flags.FAILTRACE, 
           "- InstExtends.updateComponentsAndClassdefs2 failed on:\n" +&
           "env = " +& Env.printEnvPathStr(inEnv) +&
           "\nmod = " +& Mod.printModStr(inMod) +&
@@ -871,7 +871,7 @@ algorithm
     
     case (cache,env,SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, fp, sp, var, dir), typeSpec, modifications, comment, condition, info),ht)
       equation
-        //Debug.fprintln("debug","fix comp " +& SCodeDump.printElementStr(elt));
+        //Debug.fprintln(Flags.DEBUG,"fix comp " +& SCodeDump.printElementStr(elt));
         (cache,modifications) = fixModifications(cache,env,modifications,ht);
         (cache,typeSpec) = fixTypeSpec(cache,env,typeSpec,ht);
         (cache,SOME(ad)) = fixArrayDim(cache, env, SOME(ad), ht);
@@ -880,7 +880,7 @@ algorithm
     
     case (cache,env,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, info),ht)
       equation
-        //Debug.fprintln("debug","fixClassdef " +& name);
+        //Debug.fprintln(Flags.DEBUG,"fixClassdef " +& name);
         (cache,env) = Builtin.initialEnv(cache);
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
       then 
@@ -888,14 +888,14 @@ algorithm
     
     case (cache,env,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, info),ht)
       equation 
-        //Debug.fprintln("debug","fixClassdef " +& name +& str);
+        //Debug.fprintln(Flags.DEBUG,"fixClassdef " +& name +& str);
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
       then 
         (cache,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, info));
     
     case (cache,env,SCode.EXTENDS(extendsPath,vis,modifications,optAnnotation,info),ht)
       equation
-        //Debug.fprintln("debug","fix extends " +& SCodeDump.printElementStr(elt));
+        //Debug.fprintln(Flags.DEBUG,"fix extends " +& SCodeDump.printElementStr(elt));
         (cache,extendsPath) = fixPath(cache,env,extendsPath,ht);
         (cache,modifications) = fixModifications(cache,env,modifications,ht);
       then 
@@ -905,7 +905,7 @@ algorithm
 
     case (cache,env,elt,ht)
       equation
-        Debug.fprintln("failtrace", "InstExtends.fixElement failed: " +& SCodeDump.printElementStr(elt));
+        Debug.fprintln(Flags.FAILTRACE, "InstExtends.fixElement failed: " +& SCodeDump.printElementStr(elt));
       then fail();
     
   end matchcontinue;
@@ -966,7 +966,7 @@ algorithm
 
     case (cache,env,cd,ht)
       equation
-        Debug.fprintln("failtrace", "InstExtends.fixClassDef failed: " +& SCodeDump.printClassdefStr(cd));
+        Debug.fprintln(Flags.FAILTRACE, "InstExtends.fixClassDef failed: " +& SCodeDump.printClassdefStr(cd));
       then 
         fail();
 
@@ -995,7 +995,7 @@ algorithm
         (cache,SCode.EQUATION(eeq));
     case (cache,env,SCode.EQUATION(eeq),ht)
       equation
-        Debug.fprintln("failtrace", "- Inst.fixEquation failed: " +& SCodeDump.equationStr(eeq));        
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.fixEquation failed: " +& SCodeDump.equationStr(eeq));        
       then
         fail();
   end match;
@@ -1192,7 +1192,7 @@ algorithm
 
     case (cache,env,stmt,ht)
       equation
-        Debug.fprintln("failtrace", "- Inst.fixStatement failed: " +& Dump.unparseAlgorithmStr(4,SCode.statementToAlgorithmItem(stmt)));
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.fixStatement failed: " +& Dump.unparseAlgorithmStr(4,SCode.statementToAlgorithmItem(stmt)));
       then fail();
   end matchcontinue;
 end fixStatement;
@@ -1293,7 +1293,7 @@ algorithm
     
     case (cache,env,path1 as Absyn.FULLYQUALIFIED(_),ht)
       equation
-        //Debug.fprintln("debug", "Path FULLYQUAL: " +& Absyn.pathString(path)); 
+        //Debug.fprintln(Flags.DEBUG, "Path FULLYQUAL: " +& Absyn.pathString(path)); 
       then 
         (cache,path1);
     
@@ -1302,35 +1302,35 @@ algorithm
         id = Absyn.pathFirstIdent(path1);
         path2 = BaseHashTable.get(id,ht);
         path2 = Absyn.pathReplaceFirstIdent(path1,path2);
-        //Debug.fprintln("debug", "Replacing: " +& Absyn.pathString(path1) +& " with " +& Absyn.pathString(path2) +& " s:" +& Env.printEnvPathStr(env));
+        //Debug.fprintln(Flags.DEBUG, "Replacing: " +& Absyn.pathString(path1) +& " with " +& Absyn.pathString(path2) +& " s:" +& Env.printEnvPathStr(env));
       then (cache,path2);
     /*
     // when a class is partial, do not fully qualify as it SHOULD POINT TO THE ONE IN THE DERIVED CLASS!
     case (cache,env,path,ht)
       equation
-        Debug.fprintln("debug","Try lookupC " +& Absyn.pathString(path));
+        Debug.fprintln(Flags.DEBUG,"Try lookupC " +& Absyn.pathString(path));
         (_,SCode.CLASS(partialPrefix = SCode.PARTIAL()),env) = Lookup.lookupClass(cache,env,path,false);
-        Debug.fprintln("debug", "Path PARTIAL not fixed: " +& Absyn.pathString(path));
+        Debug.fprintln(Flags.DEBUG, "Path PARTIAL not fixed: " +& Absyn.pathString(path));
       then (cache,path);
 
     // when a class is replaceable, do not fully qualify it as it SHOULD POINT TO THE ONE IN THE DERIVED CLASS!
     case (cache,env,path,ht)
       equation
-        Debug.fprintln("debug","Try lookupC " +& Absyn.pathString(path));
+        Debug.fprintln(Flags.DEBUG,"Try lookupC " +& Absyn.pathString(path));
         (_,SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))),env) = Lookup.lookupClass(cache,env,path,false);
-        Debug.fprintln("debug", "Path REPLACEABLE not fixed: " +& Absyn.pathString(path));
+        Debug.fprintln(Flags.DEBUG, "Path REPLACEABLE not fixed: " +& Absyn.pathString(path));
       then (cache,path);*/
 
     case (cache,env,path,ht)
       equation
-        //Debug.fprintln("debug","Try makeFullyQualified " +& Absyn.pathString(path));
+        //Debug.fprintln(Flags.DEBUG,"Try makeFullyQualified " +& Absyn.pathString(path));
         (cache,path) = Inst.makeFullyQualified(cache,env,path);
-        //Debug.fprintln("debug","FullyQual: " +& Absyn.pathString(path));
+        //Debug.fprintln(Flags.DEBUG,"FullyQual: " +& Absyn.pathString(path));
       then (cache,path);
     
     case (cache,env,path,_)
       equation
-        //Debug.fprintln("debug", "Path not fixed: " +& Absyn.pathString(path) +& "\n"); 
+        //Debug.fprintln(Flags.DEBUG, "Path not fixed: " +& Absyn.pathString(path) +& "\n"); 
       then 
         (cache,path);
   end matchcontinue;
@@ -1379,11 +1379,11 @@ algorithm
     case (cache,env,cref,ht)
       equation
         id = Absyn.crefFirstIdent(cref);
-        //Debug.fprintln("debug","Try ht lookup " +& id);
+        //Debug.fprintln(Flags.DEBUG,"Try ht lookup " +& id);
         path = BaseHashTable.get(id,ht);
-        //Debug.fprintln("debug","Got path " +& Absyn.pathString(path));
+        //Debug.fprintln(Flags.DEBUG,"Got path " +& Absyn.pathString(path));
         cref = Absyn.crefReplaceFirstIdent(cref,path);
-        //Debug.fprintln("debug", "Cref HT fixed: " +& Absyn.printComponentRefStr(cref));
+        //Debug.fprintln(Flags.DEBUG, "Cref HT fixed: " +& Absyn.printComponentRefStr(cref));
       then (cache,cref);
 
     // try lookup var (constant in a package?)
@@ -1391,46 +1391,46 @@ algorithm
       equation
         id = Absyn.crefFirstIdent(cref);
         cref_ = ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{});
-        //Debug.fprintln("debug","Try lookupV " +& id);
+        //Debug.fprintln(Flags.DEBUG,"Try lookupV " +& id);
         (env,id) = lookupVarNoErrorMessage(cache,env,cref_);
-        //Debug.fprintln("debug","Got env " +& intString(listLength(env)));
+        //Debug.fprintln(Flags.DEBUG,"Got env " +& intString(listLength(env)));
         env = Env.openScope(env,SCode.ENCAPSULATED(),SOME(id),NONE());
         cref = Absyn.crefReplaceFirstIdent(cref,Env.getEnvName(env));
-        //Debug.fprintln("debug", "Cref VAR fixed: " +& Absyn.printComponentRefStr(cref));
+        //Debug.fprintln(Flags.DEBUG, "Cref VAR fixed: " +& Absyn.printComponentRefStr(cref));
       then (cache,cref);    
 
     /*// when a class is partial, do not fully qualify as it SHOULD POINT TO THE ONE IN THE DERIVED CLASS!
     case (cache,env,cref,ht)
       equation
         id = Absyn.crefFirstIdent(cref);
-        Debug.fprintln("debug","Try lookupC " +& id);
+        Debug.fprintln(Flags.DEBUG,"Try lookupC " +& id);
         (_,SCode.CLASS(partialPrefix = SCode.PARTIAL()),env) = Lookup.lookupClass(cache,env,Absyn.IDENT(id),false);
-        Debug.fprintln("debug", "Cref PARTIAL CLASS fixed: " +& Absyn.printComponentRefStr(cref));
+        Debug.fprintln(Flags.DEBUG, "Cref PARTIAL CLASS fixed: " +& Absyn.printComponentRefStr(cref));
       then (cache,cref);
 
     // when a class is replaceable, do not fully qualify it as it SHOULD POINT TO THE ONE IN THE DERIVED CLASS!
     case (cache,env,cref,ht)
       equation
         id = Absyn.crefFirstIdent(cref);
-        Debug.fprintln("debug","Try lookupC " +& id);
+        Debug.fprintln(Flags.DEBUG,"Try lookupC " +& id);
         (_,SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))),env) = Lookup.lookupClass(cache,env,Absyn.IDENT(id),false);
-        Debug.fprintln("debug", "Cref REPLACEABLE CLASS fixed: " +& Absyn.printComponentRefStr(cref));
+        Debug.fprintln(Flags.DEBUG, "Cref REPLACEABLE CLASS fixed: " +& Absyn.printComponentRefStr(cref));
       then (cache,cref);*/
     
     case (cache,env,cref,ht)
       equation
         id = Absyn.crefFirstIdent(cref);
-        //Debug.fprintln("debug","Try lookupC " +& id);
+        //Debug.fprintln(Flags.DEBUG,"Try lookupC " +& id);
         (_,_,env) = Lookup.lookupClass(cache,env,Absyn.IDENT(id),false);
-        //Debug.fprintln("debug","Got env " +& intString(listLength(env)));
+        //Debug.fprintln(Flags.DEBUG,"Got env " +& intString(listLength(env)));
         env = Env.openScope(env,SCode.ENCAPSULATED(),SOME(id),NONE());
         cref = Absyn.crefReplaceFirstIdent(cref,Env.getEnvName(env));
-        //Debug.fprintln("debug", "Cref CLASS fixed: " +& Absyn.printComponentRefStr(cref));
+        //Debug.fprintln(Flags.DEBUG, "Cref CLASS fixed: " +& Absyn.printComponentRefStr(cref));
       then (cache,cref);
         
     case (cache,env,cref,_)
       equation
-        //Debug.fprintln("debug", "Cref not fixed: " +& Absyn.printComponentRefStr(cref)); 
+        //Debug.fprintln(Flags.DEBUG, "Cref not fixed: " +& Absyn.printComponentRefStr(cref)); 
       then 
         (cache,cref);
     
@@ -1487,7 +1487,7 @@ algorithm
         
     case (cache,env,mod,ht)
       equation
-        Debug.fprintln("failtrace","InstExtends.fixModifications failed: " +& SCodeDump.printModStr(mod));
+        Debug.fprintln(Flags.FAILTRACE,"InstExtends.fixModifications failed: " +& SCodeDump.printModStr(mod));
       then 
         fail();
     
@@ -1617,7 +1617,7 @@ algorithm
     case (cache,env,Absyn.BOOL(_),ht) then (cache,exp);
     case (cache,env,exp,ht)
       equation
-        Debug.fprintln("failtrace","InstExtends.fixExp failed: " +& Dump.printExpStr(exp));
+        Debug.fprintln(Flags.FAILTRACE,"InstExtends.fixExp failed: " +& Dump.printExpStr(exp));
       then fail();
   end matchcontinue;
 end fixExp;

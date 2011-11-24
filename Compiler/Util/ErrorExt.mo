@@ -164,5 +164,10 @@ public function getLastDeletedCheckpoint
   external "C" lastCheckpoint=Error_getLastDeletedCheckpoint() annotation(Library = "omcruntime");
 end getLastDeletedCheckpoint;
 
+public function setShowErrorMessages
+  input Boolean inShow;
+  external "C" Error_setShowErrorMessages(inShow) annotation(Library = "omcruntime");
+end setShowErrorMessages;
+
 end ErrorExt;
 

@@ -51,6 +51,7 @@ protected import Derive;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import Flags;
 protected import List;
 protected import Util;
 
@@ -131,7 +132,7 @@ algorithm
         
     case (e1,e2,e3)
       equation
-        Debug.fprint("failtrace", "-ExpressionSolve.solve failed\n");
+        Debug.fprint(Flags.FAILTRACE, "-ExpressionSolve.solve failed\n");
         //print("solve ");print(printExpStr(e1));print(" = ");print(printExpStr(e2));
         //print(" w.r.t ");print(printExpStr(e3));print(" failed\n");
       then
@@ -232,7 +233,7 @@ algorithm
         
     case (e1,e2,e3)
       equation
-        Debug.fprint("failtrace", "-Expression.solve failed\n");
+        Debug.fprint(Flags.FAILTRACE, "-Expression.solve failed\n");
         //print("solve ");print(ExpressionDump.printExpStr(e1));print(" = ");print(ExpressionDump.printExpStr(e2));
         //print(" w.r.t ");print(ExpressionDump.printExpStr(e3));print(" failed\n");
       then

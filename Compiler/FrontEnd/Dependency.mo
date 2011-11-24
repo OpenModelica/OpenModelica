@@ -51,6 +51,7 @@ protected import BaseHashTable;
 protected import HashTable2;
 protected import ComponentReference;
 protected import Connect;
+protected import Flags;
 protected import Inst;
 protected import List;
 protected import Util;
@@ -63,7 +64,6 @@ protected import Lookup;
 protected import ConnectionGraph;
 protected import System;
 protected import SCodeUtil;
-protected import RTOpts;
 
 public function getTotalProgramLastClass "Retrieves a total program for the last class in the program"
 input Absyn.Program p;
@@ -87,14 +87,15 @@ algorithm
   outP := matchcontinue(modelName,p)
   local AbsynDep.Depends dep; AbsynDep.AvlTree uses; Absyn.Program p2,p1;
     case(modelName,p) equation
-      true = RTOpts.debugFlag("usedep"); // do dependency ONLY if this flag is true
+
+      true = Flags.isSet(Flags.USEDEP); // do dependency ONLY if this flag is true
       dep = getTotalProgram2(modelName,p);
       uses = AbsynDep.getUsesTransitive(dep,modelName);
       uses = AbsynDep.avlTreeAdd(uses,modelName,{});
       p1 = extractProgram(p,uses);
       p2 = getTotalModelOnTop(p,modelName) "creates a top model if target is qualified";
       p = Interactive.updateProgram(p1,p2);
-      // Debug.fprintln("deps", Dump.unparseStr(p, false));
+      // Debug.fprintln(Flags.DEPS, Dump.unparseStr(p, false));
     then p;
     case(modelName,p) then p;
   end matchcontinue;
@@ -115,7 +116,7 @@ algorithm
       uses = AbsynDep.avlTreeAdd(uses,modelName,{});
       p1 = extractProgram(p,uses);
       p = p1;
-      // Debug.fprintln("deps", Dump.unparseStr(p, false));
+      // Debug.fprintln(Flags.DEPS, Dump.unparseStr(p, false));
     then p;
     case(modelName,p) then p;
   end matchcontinue;

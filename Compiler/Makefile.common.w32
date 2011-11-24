@@ -6,6 +6,7 @@ SRCMO= Absyn.mo \
 	CevalScript.mo \
 	ClassInf.mo \
 	ClassLoader.mo \
+	Config.mo \
 	Connect.mo \
 	ExpandableConnectors.mo \
 	ConnectionGraph.mo \
@@ -23,6 +24,7 @@ SRCMO= Absyn.mo \
 	Env.mo \
 	Error.mo \
 	Exp.mo \
+	Flags.mo \
 	SCode.mo \
 	SCodeUtil.mo \
 	Graphviz.mo \
@@ -81,7 +83,6 @@ SRCMO= Absyn.mo \
 ALLMO = $(SRCMO) \
 	BackendDAEEXT.mo \
 	Print.mo \
-	RTOpts.mo \
 	System.mo \
 	Parser.mo \
 	TaskGraphExt.mo \
@@ -89,8 +90,8 @@ ALLMO = $(SRCMO) \
 	Socket.mo \
 	ErrorExt.mo \
 	Settings.mo \
-	OptManager.mo \
 	SimulationResults.mo \
 	DynLoad.mo \
 	UnitParserExt.mo \
-	IOStreamExt.mo 
+	IOStreamExt.mo \
+	ParserExt.mo

@@ -53,6 +53,7 @@ protected import Debug;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
+protected import Flags;
 protected import IOStream;
 protected import List;
 protected import SCode;
@@ -142,10 +143,10 @@ algorithm
     case ({}) then ();
     case ((currVar,currInd)::restTuple)
       equation
-        Debug.fcall("varIndex",print, ComponentReference.printComponentRefStr(currVar))  ;
-        Debug.fcall("varIndex",print,":   ");
-        Debug.fcall("varIndex",print,intString(currInd));
-        Debug.fcall("varIndex",print,"\n");
+        Debug.fcall(Flags.VAR_INDEX,print, ComponentReference.printComponentRefStr(currVar))  ;
+        Debug.fcall(Flags.VAR_INDEX,print,":   ");
+        Debug.fcall(Flags.VAR_INDEX,print,intString(currInd));
+        Debug.fcall(Flags.VAR_INDEX,print,"\n");
         printTuple(restTuple);
       then ();
     case (_) equation

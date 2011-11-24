@@ -20,9 +20,9 @@ SET(SRCMO Absyn.mo AbsynDep.mo Algorithm.mo Builtin.mo
 		  DAEQuery.mo XMLDump.mo InstanceHierarchy.mo InnerOuter.mo 
 		  ConnectUtil.mo Dependency.mo)
 
-SET(ALLMO ${SRCMO} DAEEXT.mo DynLoad.mo Print.mo RTOpts.mo System.mo Parser.mo 
+SET(ALLMO ${SRCMO} DAEEXT.mo DynLoad.mo Print.mo System.mo Parser.mo 
 		TaskGraphExt.mo Corba.mo Socket.mo ErrorExt.mo Settings.mo 
-		OptManager.mo UnitParserExt.mo SimulationResults.mo)
+		UnitParserExt.mo SimulationResults.mo)
 		  
 # RML
 IF(NOT RML)

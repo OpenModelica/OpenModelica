@@ -36,7 +36,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <utility>
-#include "rtopts.h"
 #include "errorext.h"
 
 using namespace std;
@@ -64,6 +63,8 @@ static bool haveInfo = false;
 static stack<ErrorMessage*> errorMessageQueue; // Global variable of all error messages.
 static vector<pair<int,string> > checkPoints; // a checkpoint has a message index no, and a unique identifier
 static string lastDeletedCheckpoint = "";
+
+int showErrorMessages = 0;
 
 static void push_message(ErrorMessage *msg)
 {

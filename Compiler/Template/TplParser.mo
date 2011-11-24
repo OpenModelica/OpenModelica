@@ -7,15 +7,15 @@ encapsulated package TplParser
   $Id$
 "
 
-public import Tpl;
-public import Util;
-public import TplAbsyn;
-public import RTOpts;
 public import Absyn;
+public import Tpl;
+public import TplAbsyn;
+public import Util;
 
-protected import System;
 protected import Debug;
+protected import Flags;
 protected import List;
+protected import System;
 //protected import Print;
 
 
@@ -211,7 +211,7 @@ algorithm
         (_, colnum) = getPosition(chars, linfo);
         locStr = intString(lnum) +& "." +& intString(colnum);
         errMsg = fname +& ":" +& locStr +& "-" +& locStr +& " Error:(parser)" +& errMsg +& "(col "+&intString(colnum)+& ")";     //TplParser.mo:126.38-126.55 Error:
-        Debug.fprint("failtrace", "TplParser.parseError msg: " +& errMsg +& "\n");
+        Debug.fprint(Flags.FAILTRACE, "TplParser.parseError msg: " +& errMsg +& "\n");
       then (LINE_INFO(PARSE_INFO(fname, errMsg :: errLst, isfatal), lnum,llen, solchars));
     
     case (_, linfo as LINE_INFO( parseInfo = PARSE_INFO(wasFatalError = true)), _, _)
@@ -219,7 +219,7 @@ algorithm
     
     case (_,_,_,_) 
       equation
-        Debug.fprint("failtrace", "- !!! TplParser.parseError failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "- !!! TplParser.parseError failed.\n");
       then fail();
         
   end matchcontinue;
@@ -262,7 +262,7 @@ algorithm
     
     case (_,_,_,_,_) 
       equation
-        Debug.fprint("failtrace", "- !!! TplParser.parseErrorPrevPosition failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "- !!! TplParser.parseErrorPrevPosition failed.\n");
       then fail();
         
   end matchcontinue;
@@ -302,7 +302,7 @@ algorithm
     
     case (_) 
       equation
-        Debug.fprint("failtrace", "- !!! TplParser.makeEmptyErrors failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "- !!! TplParser.makeEmptyErrors failed.\n");
       then fail();
         
   end matchcontinue;
@@ -333,7 +333,7 @@ algorithm
     
     case (_,_) 
       equation
-        Debug.fprint("failtrace", "- !!! TplParser.mergeErrors failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "- !!! TplParser.mergeErrors failed.\n");
       then fail();
         
   end matchcontinue;
@@ -367,7 +367,7 @@ algorithm
     
     case (_,_,_,_,_) 
       equation
-        Debug.fprint("failtrace", "- !!! TplParser.parseErrorPrevPositionOpt failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "- !!! TplParser.parseErrorPrevPositionOpt failed.\n");
       then fail();
         
   end matchcontinue;
@@ -398,12 +398,12 @@ algorithm
         //failure(equality(c = ec));
         //or chars = {}
         (linfo) = parseError(chars, linfo, "Expected character '" +& ec +& "' at the position.", false);
-        //Debug.fprint("failtrace", "???Expected character '" +& ec +& "'\n");
+        //Debug.fprint(Flags.FAILTRACE, "???Expected character '" +& ec +& "'\n");
       then (chars, linfo);
     
     case (_,_,_) 
       equation
-        Debug.fprint("failtrace", "- !!! TplParser.expectChar failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "- !!! TplParser.expectChar failed.\n");
       then fail();
         
   end matchcontinue;
@@ -441,7 +441,7 @@ algorithm
     
     case (_,_,_) 
       equation
-        Debug.fprint("failtrace", "- !!! TplParser.interleaveExpectChar failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "- !!! TplParser.interleaveExpectChar failed.\n");
       then fail();
         
   end matchcontinue;
@@ -526,7 +526,7 @@ algorithm
     
     case (_,_,_,_) 
       equation
-        Debug.fprint("failtrace", "- !!! TplParser.interleaveExpectKeyWord failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "- !!! TplParser.interleaveExpectKeyWord failed.\n");
       then fail();
         
   end matchcontinue;
@@ -557,7 +557,7 @@ algorithm
     
     case (_,_) 
       equation
-        Debug.fprint("failtrace", "- !!! TplParser.interleaveExpectEndOfFile failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "- !!! TplParser.interleaveExpectEndOfFile failed.\n");
       then fail();
         
   end matchcontinue;
@@ -595,8 +595,8 @@ algorithm
     
     case (file) 
       equation
-				true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "Parse error - TplParser.openFile failed for file '" +& file +& "'.\n");
+				true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE, "Parse error - TplParser.openFile failed for file '" +& file +& "'.\n");
       then fail();
                 
   end matchcontinue;
@@ -625,8 +625,8 @@ algorithm
     
     case (file) 
       equation
-				true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "Parse error - TplParser.templPackageFromFile failed for file '" +& file +& "'.\n");
+				true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE, "Parse error - TplParser.templPackageFromFile failed for file '" +& file +& "'.\n");
       then fail();
 
   end matchcontinue;
@@ -661,8 +661,8 @@ algorithm
     
     case (_,_) 
       equation
-				true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "Parse error - TplParser.typeviewDefsFromInterfaceFile failed.\n");
+				true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE, "Parse error - TplParser.typeviewDefsFromInterfaceFile failed.\n");
       then fail();
                 
   end matchcontinue;
@@ -702,8 +702,8 @@ algorithm
     
     case (_,_,_) 
       equation
-				true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "Parse error - TplParser.typeviewDefsFromInterfaceFile failed.\n");
+				true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE, "Parse error - TplParser.typeviewDefsFromInterfaceFile failed.\n");
       then fail();
                 
   end matchcontinue;
@@ -733,8 +733,8 @@ algorithm
     
     case (_) 
       equation
-				true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "Parse error - TplParser.templateDefToAstDefType failed.\n");
+				true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE, "Parse error - TplParser.templateDefToAstDefType failed.\n");
       then fail();
                 
   end matchcontinue;
@@ -911,7 +911,7 @@ algorithm
     
     //case ({}, linfo) 
     //  equation
-    //    Debug.fprint("failtrace", "!!Parse error - TplParser.comment - unmatched /* */ comment - reached end of file.\n");
+    //    Debug.fprint(Flags.FAILTRACE, "!!Parse error - TplParser.comment - unmatched /* */ comment - reached end of file.\n");
     //  then fail(); //({}, linfo);
   end matchcontinue;
 end comment;
@@ -1191,7 +1191,7 @@ algorithm
         
     case (chars, linfo)
       equation
-        Debug.fprint("failtrace", "!!!Parse error - TplParser.templPackage failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "!!!Parse error - TplParser.templPackage failed.\n");
       then fail();
                 
   end matchcontinue;
@@ -1650,7 +1650,7 @@ algorithm
     case ( {}, linfo ) 
       equation
         strErr = "Unmatched \" \" comment - reached end of file.";
-        Debug.fprint("failtrace", "Parse error - TplParser.stringCommentRest - " +& strErr +& "\n");
+        Debug.fprint(Flags.FAILTRACE, "Parse error - TplParser.stringCommentRest - " +& strErr +& "\n");
       then ( {}, linfo, SOME(strErr) );
 
   end matchcontinue;
@@ -1680,7 +1680,7 @@ algorithm
    
    case (_,_) 
       equation
-        Debug.fprint("failtrace", "!!! TplParser.semicolon failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "!!! TplParser.semicolon failed.\n");
       then fail();
    
    
@@ -1729,7 +1729,7 @@ algorithm
         
     case (chars, linfo, _)
       equation
-        Debug.fprint("failtrace", "!!!Parse error - TplParser.interfacePackage failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "!!!Parse error - TplParser.interfacePackage failed.\n");
       then fail();
                 
   end matchcontinue;
@@ -1853,7 +1853,7 @@ algorithm
         linfo = parseErrorPrevPosition(startChars, startLinfo, linfo, 
                    "Unmatched ident for 'end'. Expected '" +& TplAbsyn.pathIdentString(pidToMatch) +& "', but '" +& TplAbsyn.pathIdentString(pid) +& "' found instead.",
                    false);
-        //Debug.fprint("failtrace", "Parse warning - TplParser.endDefPathIdent - unmatched ident for 'end' of the definition of '" +& TplAbsyn.pathIdentString(pidToMatch) +& "' ... 'end " +& TplAbsyn.pathIdentString(pid) +& "' found instead.\n");
+        //Debug.fprint(Flags.FAILTRACE, "Parse warning - TplParser.endDefPathIdent - unmatched ident for 'end' of the definition of '" +& TplAbsyn.pathIdentString(pidToMatch) +& "' ... 'end " +& TplAbsyn.pathIdentString(pid) +& "' found instead.\n");
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo) = semicolon(chars, linfo);
       then (chars, linfo);
@@ -1867,7 +1867,7 @@ algorithm
    
    case (chars, linfo, pidToMatch)
      equation
-        Debug.fprint("failtrace", "!!!Parse error - TplParser.endDefPathIdent failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "!!!Parse error - TplParser.endDefPathIdent failed.\n");
      then (chars, linfo);
    
   end matchcontinue;
@@ -1912,7 +1912,7 @@ algorithm
         linfo = parseErrorPrevPosition(startChars, startLinfo, linfo, 
                    "Unmatched ident for 'end'. Expected '" +& idToMatch +& "', but '" +& id +& "' found instead.",
                    false);
-        //Debug.fprint("failtrace", "Parse warning - TplParser.endDefIdent - unmatched ident for 'end' of the definition of " +& idToMatch +& " ... end " +& id +& " found instead.\n");
+        //Debug.fprint(Flags.FAILTRACE, "Parse warning - TplParser.endDefIdent - unmatched ident for 'end' of the definition of " +& idToMatch +& " ... end " +& id +& " found instead.\n");
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo) = semicolon(chars, linfo);
       then (chars, linfo);
@@ -1926,7 +1926,7 @@ algorithm
    
    case (chars, linfo, _)
      equation
-        Debug.fprint("failtrace", "!!!Parse error - TplParser.endDefIdent failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "!!!Parse error - TplParser.endDefIdent failed.\n");
      then (chars, linfo);
    
   end matchcontinue;
@@ -2157,7 +2157,7 @@ algorithm
     
     case (chars, linfo)
      equation
-        Debug.fprint("failtrace", "!!!Parse error - TplParser.typeDecls failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "!!!Parse error - TplParser.typeDecls failed.\n");
      then (chars, linfo, {} );
            
   end matchcontinue;
@@ -2195,7 +2195,7 @@ algorithm
         
     case (chars, linfo)
      equation
-        Debug.fprint("failtrace", "!!!Parse error - TplParser.recordTags failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "!!!Parse error - TplParser.recordTags failed.\n");
      then (chars, linfo, {});
                 
   end matchcontinue;
@@ -2586,7 +2586,7 @@ algorithm
   
   case (chars, linfo)
       equation
-        Debug.fprint("failtrace", "!!!Parse error - TplParser.templDef_Templ failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "!!!Parse error - TplParser.templDef_Templ failed.\n");
       then fail();
           
   end matchcontinue;
@@ -2808,7 +2808,7 @@ algorithm
         afterKeyword(chars);
         (linfo) = parseError(startChars, linfo, "Implicit argument 'it' appeared at non-first position in the template argument list. 'it' can be explicitly only as the first argument.",
         false);
-        //Debug.fprint("failtrace", "Parse error - implicit argument 'it' appeared at non-first position in the template argument list. 'it' can be explicitly only as the first argument.\n");
+        //Debug.fprint(Flags.FAILTRACE, "Parse error - implicit argument 'it' appeared at non-first position in the template argument list. 'it' can be explicitly only as the first argument.\n");
       then (chars, linfo, "#Error-displaced it#");
     
     case (chars, linfo)
@@ -3347,7 +3347,7 @@ algorithm
    
    case (_, _, _, _)
      equation
-       Debug.fprint("failtrace", "!!!Parse error - TplParser.letExp failed.\n");
+       Debug.fprint(Flags.FAILTRACE, "!!!Parse error - TplParser.letExp failed.\n");
      then fail();
   end matchcontinue;
 end letExp;
@@ -3996,7 +3996,7 @@ algorithm
       equation
         str = stringCharListString(listReverse(accChars));
         errStr = "Unmatched \" \" quotes for a string constant - reached end of file.";
-        Debug.fprint("failtrace", "Parse error - TplParser.doubleQuoteConst - " +& errStr +& "\n");
+        Debug.fprint(Flags.FAILTRACE, "Parse error - TplParser.doubleQuoteConst - " +& errStr +& "\n");
       then ({}, linfo, str :: accStrList, SOME(errStr));
     
   end matchcontinue;
@@ -4106,7 +4106,7 @@ algorithm
       equation
         str = stringCharListString(listReverse(accChars));
         errStr = "Unmatched %"+&rquot+&" "+&rquot+&"% quotes for a verbatim string constant - reached end of file.";
-        Debug.fprint("failtrace", "Parse error - TplParser.verbatimConst - " +& errStr +& "\n");
+        Debug.fprint(Flags.FAILTRACE, "Parse error - TplParser.verbatimConst - " +& errStr +& "\n");
       then ({}, linfo, str :: accStrList, SOME(errStr));
                 
   end matchcontinue;
@@ -4191,7 +4191,7 @@ algorithm
     // should not ever happen
     case ( _ ) 
       equation
-        Debug.fprint("failtrace", "Parse invalid operation error - TplParser.makeStrTokFromRevStrList failed (an empty string list passed?) .\n");
+        Debug.fprint(Flags.FAILTRACE, "Parse invalid operation error - TplParser.makeStrTokFromRevStrList failed (an empty string list passed?) .\n");
       then fail();
                 
   end matchcontinue;
@@ -4848,7 +4848,7 @@ algorithm
         true = ( lineInd < baseInd );
         errStr = "Indent level is under the level of the '<<' determined level (by "+& intString(baseInd - lineInd)+& " chars).";
         errOpt = SOME(errStr);
-        //Debug.fprint("failtrace", "Parse warning onEscapedExp() - indent level is under the level of the '<<' determined level.\n");
+        //Debug.fprint(Flags.FAILTRACE, "Parse warning onEscapedExp() - indent level is under the level of the '<<' determined level.\n");
         //call again as  lineInd = baseInd 
         (expLst, indStack,  actInd, _) = onEscapedExp(exp, expLst, {}, baseInd, baseInd, accChars);
       then (expLst, indStack,  actInd, errOpt);
@@ -4865,7 +4865,7 @@ algorithm
    //should not happen
    case (_,_,_,_,_,_) 
       equation
-        Debug.fprint("failtrace", "Parse unexpected error - TplParser.onEscapedExp failed .\n");
+        Debug.fprint(Flags.FAILTRACE, "Parse unexpected error - TplParser.onEscapedExp failed .\n");
       then fail();
          
   end matchcontinue;
@@ -4968,7 +4968,7 @@ algorithm
         true = ( lineInd < baseInd );
         errStr = "Indent level is under the level of the '<<' determined level (by "+& intString(baseInd - lineInd)+& " chars).";
         errOpt = SOME(errStr);
-        //Debug.fprint("failtrace", "Parse warning onNewLine() - indent level is under the level of the '<<' determined level.\n");
+        //Debug.fprint(Flags.FAILTRACE, "Parse warning onNewLine() - indent level is under the level of the '<<' determined level.\n");
         //call again as  lineInd = baseInd         
         (expLst, indStack,  actInd, _) = onNewLine(expLst, {}, baseInd, baseInd, accChars);
       then (expLst, indStack,  actInd, errOpt);
@@ -4988,7 +4988,7 @@ algorithm
    //should not happen
    case (_,_,_,_,_) 
       equation
-        Debug.fprint("failtrace", "Parse unexpected error - TplParser.onNewLine failed .\n");
+        Debug.fprint(Flags.FAILTRACE, "Parse unexpected error - TplParser.onNewLine failed .\n");
       then fail();
          
   end matchcontinue;
@@ -5033,7 +5033,7 @@ algorithm
    case (_, {}, {}, baseInd, lineInd, {})
       equation
         true = (lineInd < baseInd);
-        Debug.fprint("failtrace", "Parse warning onTemplEnd() - indent level is under the level of the '<<' determined level.\n");
+        Debug.fprint(Flags.FAILTRACE, "Parse warning onTemplEnd() - indent level is under the level of the '<<' determined level.\n");
       then {};
    */
    
@@ -5091,7 +5091,7 @@ algorithm
    case (dropLastNL, expLst, {}, baseInd, lineInd, accChars)
       equation
         true = ( lineInd < baseInd );
-        Debug.fprint("failtrace", "Parse warning onTemplEnd() - indent level is under the level of the '<<' determined level.\n");
+        Debug.fprint(Flags.FAILTRACE, "Parse warning onTemplEnd() - indent level is under the level of the '<<' determined level.\n");
         expLst = onTemplEnd(dropLastNL, expLst, {}, baseInd, baseInd, accChars);
       then expLst;
    
@@ -5108,7 +5108,7 @@ algorithm
    //should not happen
    case (_,_,_,_,_,_) 
       equation
-        Debug.fprint("failtrace", "!!!Parse error - TplParser.onTemplEnd failed .\n");
+        Debug.fprint(Flags.FAILTRACE, "!!!Parse error - TplParser.onTemplEnd failed .\n");
       then fail();
          
   end matchcontinue;
@@ -5155,7 +5155,7 @@ algorithm
    //should not happen
    case (_,_,_,_) 
       equation
-        Debug.fprint("failtrace", "!!!Parse error - TplParser.popIndentStack failed .\n");
+        Debug.fprint(Flags.FAILTRACE, "!!!Parse error - TplParser.popIndentStack failed .\n");
       then fail();
          
   end matchcontinue;
@@ -5228,7 +5228,7 @@ algorithm
    //should not happen
    case (_,_) 
       equation
-        Debug.fprint("failtrace", "!!!Parse error - TplParser.addAccStringChars failed .\n");
+        Debug.fprint(Flags.FAILTRACE, "!!!Parse error - TplParser.addAccStringChars failed .\n");
       then fail();
          
   end matchcontinue;
@@ -5315,7 +5315,7 @@ algorithm
    //should ever not happen
    case (_) 
       equation
-        Debug.fprint("failtrace", "!!!Parse error - TplParser.finalizeLastStringToken failed .\n");
+        Debug.fprint(Flags.FAILTRACE, "!!!Parse error - TplParser.finalizeLastStringToken failed .\n");
       then fail();
          
   end matchcontinue;
@@ -5401,7 +5401,7 @@ algorithm
    
    case (_,_,_,_) 
       equation
-        Debug.fprint("failtrace", "- !!! TplParser.thenBranch failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "- !!! TplParser.thenBranch failed.\n");
       then fail();
    
   end matchcontinue;
@@ -5865,7 +5865,7 @@ algorithm
    
    case (_,_,_,_) 
       equation
-        Debug.fprint("failtrace", "!!! TplParser.matchCaseListNoOpt failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "!!! TplParser.matchCaseListNoOpt failed.\n");
       then fail();
         
   end matchcontinue;
@@ -6045,7 +6045,7 @@ algorithm
    case (chars, linfo) 
       equation
         (linfo) = parseError(chars, linfo, "Expected a valid match binding expression at the position.", true);
-        //Debug.fprint("failtrace", "Parse error - TplParser.matchBinding_base failed .\n");
+        //Debug.fprint(Flags.FAILTRACE, "Parse error - TplParser.matchBinding_base failed .\n");
       then (chars, linfo, TplAbsyn.LITERAL_MATCH("#Error#", TplAbsyn.UNRESOLVED_TYPE("#Error#")));
    
   end matchcontinue;
@@ -6278,7 +6278,7 @@ algorithm
    
    case (_,_,_) 
       equation
-        Debug.fprint("failtrace", "!!! TplParser.afterIdentBinding failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "!!! TplParser.afterIdentBinding failed.\n");
       then fail();
         
   end matchcontinue;
@@ -6318,7 +6318,7 @@ algorithm
    
    case (_,_) 
       equation
-        Debug.fprint("failtrace", "- !!! TplParser.fieldBinding failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "- !!! TplParser.fieldBinding failed.\n");
       then fail();
    
   end matchcontinue;

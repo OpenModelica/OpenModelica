@@ -55,13 +55,13 @@ public type Var = DAE.ExpVar;
 
 // protected imports
 protected import ComponentReference;
+protected import Config;
 protected import DAEDump;
 protected import Dump;
 protected import Error;
 protected import Expression;
 protected import List;
 protected import Patternm;
-protected import RTOpts;
 protected import Util;
 protected import Print;
 protected import System;
@@ -157,14 +157,14 @@ algorithm
     
     case op
       equation
-        false = RTOpts.typeinfo();
+        false = Config.typeinfo();
         s = binopSymbol1(op);
       then
         s;
     
     case op
       equation
-        true = RTOpts.typeinfo();
+        true = Config.typeinfo();
         s = binopSymbol2(op);
       then
         s;
@@ -929,13 +929,55 @@ algorithm
         
     case (DAE.CODE(code=code),_,_,_) then "$Code(" +& Dump.printCodeStr(code) +& ")";
 
-    case (e, _, _, _)
-      equation
-        // debug_print("unknown expression - printExp2Str: ", e);
-      then
-        "#UNKNOWN EXPRESSION# ----eee ";
+    else printExpTypeStr(inExp);
+
   end matchcontinue;
 end printExp2Str;
+
+protected function printExpTypeStr
+  "Prints out the name of the expression uniontype to a string."
+  input DAE.Exp inExp;
+  output String outString;
+algorithm
+  outString := match(inExp)
+    case DAE.ICONST(_) then "ICONST";
+    case DAE.RCONST(_) then "RCONST";
+    case DAE.SCONST(_) then "SCONST";
+    case DAE.BCONST(_) then "BCONST";
+    case DAE.ENUM_LITERAL(name = _) then "ENUM_LITERAL";
+    case DAE.CREF(componentRef = _) then "CREF";
+    case DAE.BINARY(exp1 = _) then "BINARY";
+    case DAE.UNARY(exp = _) then "UNARY";
+    case DAE.LBINARY(exp1 = _) then "LBINARY";
+    case DAE.LUNARY(exp = _) then "LUNARY";
+    case DAE.RELATION(exp1 = _) then "RELATION";
+    case DAE.IFEXP(expCond = _) then "IFEXP";
+    case DAE.CALL(path = _) then "CALL";
+    case DAE.PARTEVALFUNCTION(path = _) then "PARTEVALFUNCTION";
+    case DAE.ARRAY(ty = _) then "ARRAY";
+    case DAE.MATRIX(ty = _) then "MATRIX";
+    case DAE.RANGE(ty = _) then "RANGE";
+    case DAE.TUPLE(PR = _) then "TUPLE";
+    case DAE.CAST(ty = _) then "CAST";
+    case DAE.ASUB(exp = _) then "ASUB";
+    case DAE.TSUB(exp = _) then "TSUB";
+    case DAE.SIZE(exp = _) then "SIZE";
+    case DAE.CODE(code = _) then "CODE";
+    case DAE.EMPTY(scope = _) then "EMPTY";
+    case DAE.REDUCTION(reductionInfo = _) then "REDUCTION";
+    case DAE.LIST(valList = _) then "LIST";
+    case DAE.CONS(car = _) then "CAR";
+    case DAE.META_TUPLE(listExp = _) then "META_TUPLE";
+    case DAE.META_OPTION(exp = _) then "META_OPTION";
+    case DAE.METARECORDCALL(path = _) then "METARECORDCALL";
+    case DAE.MATCHEXPRESSION(matchType = _) then "MATCHEXPRESSION";
+    case DAE.BOX(exp = _) then "BOX";
+    case DAE.UNBOX(exp = _) then "UNBOX";
+    case DAE.SHARED_LITERAL(index = _) then "SHARED_LITERAL";
+    case DAE.PATTERN(pattern = _) then "PATTERN";
+    else "#UNKNOWN EXPRESSION#";
+  end match;
+end printExpTypeStr;
 
 protected function reductionIteratorStr
   input DAE.ReductionIterator riter;
@@ -2029,7 +2071,7 @@ algorithm
     
     case (DAE.CAST(ty = expTy,exp = e),_)
       equation
-        false = RTOpts.modelicaOutput();
+        false = Config.modelicaOutput();
         s = "/*" +& typeString(expTy) +& "*/";
         Print.printBuf(s +& "(");
         printExp(e);
@@ -2039,7 +2081,7 @@ algorithm
 
     case (DAE.CAST(ty = _,exp = e),_)
       equation
-        true = RTOpts.modelicaOutput();
+        true = Config.modelicaOutput();
         printExp(e);
       then
         ();

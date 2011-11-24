@@ -54,6 +54,7 @@ void DynLoad_5finit(void)
 RML_BEGIN_LABEL(DynLoad__executeFunction)
 {
   modelica_integer funcIndex = RML_UNTAGFIXNUM(rmlA0);
+  modelica_integer printDebug = RML_UNTAGFIXNUM(rmlA2);
   modelica_ptr_t func = NULL;
   /* modelica_ptr_t lib = NULL; */
   int retval = -1;
@@ -66,7 +67,7 @@ RML_BEGIN_LABEL(DynLoad__executeFunction)
   /* fprintf(stderr, "CALL FUNCTION LIB \n"); */
   /* index[%d]/count[%d]/handle[%ul].\n", (lib-ptr_vector),((modelica_ptr_t)(lib-ptr_vector))->cnt, lib->data.lib); fflush(stderr); */
 
-  retval = execute_function(rmlA1, &retarg, func->data.func.handle);
+  retval = execute_function(rmlA1, &retarg, func->data.func.handle, printDebug);
   if (retval) {
     RML_TAILCALLK(rmlFC);
   } else {

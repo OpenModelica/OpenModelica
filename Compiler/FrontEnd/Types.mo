@@ -73,22 +73,22 @@ public
  type TypeMemoryEntryListArray = array<TypeMemoryEntryList>;
 
 protected import ComponentReference;
+protected import Config;
 protected import Dump;
 protected import Debug;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import Flags;
 protected import Global;
 protected import List;
 protected import Patternm;
 protected import Print;
 protected import Util;
-protected import RTOpts;
 protected import System;
 protected import ValuesUtil;
 protected import DAEUtil;
-protected import OptManager;
 protected import SCodeDump;
 protected import Mod;
 
@@ -423,7 +423,7 @@ algorithm
       then ty2;
     case(_)
       equation
-        Debug.fprint("failtrace", "-Types.expTypetoTypesType Conversion of all Exp types not yet implemented\n");
+        Debug.fprint(Flags.FAILTRACE, "-Types.expTypetoTypesType Conversion of all Exp types not yet implemented\n");
       then
         fail();
   end matchcontinue;
@@ -474,7 +474,7 @@ algorithm
     case(_)
       equation
         print("-Types.convertFromTypesToExpVar failed\n");
-        Debug.fprint("failtrace", "-Types.convertFromTypesToExpVar failed\n");
+        Debug.fprint(Flags.FAILTRACE, "-Types.convertFromTypesToExpVar failed\n");
       then 
         fail();
   end matchcontinue;
@@ -884,19 +884,19 @@ algorithm
   
     case((inmod as DAE.REDECL(f,e,redecls)),componentModified)
       equation
-        //Debug.fprint("redecl","Removing redeclare mods: " +& componentModified +&" before" +& Mod.printModStr(inmod) +& "\n");  
+        //Debug.fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" before" +& Mod.printModStr(inmod) +& "\n");  
         redecls = removeRedeclareMods(redecls,componentModified);
         outmod = Util.if_(listLength(redecls) > 0,DAE.REDECL(f,e,redecls), DAE.NOMOD());
-        //Debug.fprint("redecl","Removing redeclare mods: " +& componentModified +&" after" +& Mod.printModStr(outmod) +& "\n");
+        //Debug.fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" after" +& Mod.printModStr(outmod) +& "\n");
       then
         outmod;
 
     case(DAE.MOD(f,e,subs,oem),componentModified)
       equation
-        //Debug.fprint("redecl","Removing redeclare mods: " +& componentModified +&" before" +& Mod.printModStr(inmod) +& "\n");
+        //Debug.fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" before" +& Mod.printModStr(inmod) +& "\n");
         subs = removeModInSubs(subs,componentModified);
         outmod = DAE.MOD(f,e,subs,oem);
-        //Debug.fprint("redecl","Removing redeclare mods: " +& componentModified +&" after" +& Mod.printModStr(outmod) +& "\n");
+        //Debug.fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" after" +& Mod.printModStr(outmod) +& "\n");
       then
         outmod;
   end match;
@@ -1108,7 +1108,7 @@ algorithm
                        NONE()) :: rest);
     case (_,_)
       equation
-        Debug.fprint("failtrace", "-values_to_vars failed\n");
+        Debug.fprint(Flags.FAILTRACE, "-values_to_vars failed\n");
       then
         fail();
   end matchcontinue;
@@ -1440,14 +1440,14 @@ algorithm
 
     case ((DAE.T_ARRAY(arrayType = t1), _), (DAE.T_ARRAY(arrayDim = DAE.DIM_EXP(exp = _), arrayType = t2), _))
       equation
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
         true = subtype(t1, t2);
       then
         true;
         
     case ((DAE.T_ARRAY(arrayDim = DAE.DIM_EXP(exp = _), arrayType = t1), _), (DAE.T_ARRAY(arrayType = t2), _))
       equation
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
         true = subtype(t1, t2);
       then
         true;
@@ -1545,7 +1545,7 @@ algorithm
         l1 = unparseType(t1);
         l2 = unparseType(t2);
         l1 = stringAppendList({"- Types.subtype failed:\n  t1=",l1,"\n  t2=",l2});
-        Debug.fprintln("failtrace", l1);
+        Debug.fprintln(Flags.FAILTRACE, l1);
         */
       then false;
   end matchcontinue;
@@ -2657,7 +2657,7 @@ algorithm
       then makeEnumerationType(inPath, ty);
     case (_, _)
       equation
-        Debug.fprintln("failtrace", "- Types.makeEnumerationType failed on " +&
+        Debug.fprintln(Flags.FAILTRACE, "- Types.makeEnumerationType failed on " +&
             printTypeStr(inType));
       then
         fail();
@@ -3276,10 +3276,10 @@ algorithm
         res;
     case prop
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- prop_all_const failed: ");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE, "- prop_all_const failed: ");
         str = printPropStr(prop);
-        Debug.fprintln("failtrace", str);
+        Debug.fprintln(Flags.FAILTRACE, str);
       then
         fail();
   end matchcontinue;
@@ -3308,10 +3308,10 @@ algorithm
         res;
     case prop
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- prop_any_const failed: ");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE, "- prop_any_const failed: ");
         str = printPropStr(prop);
-        Debug.fprintln("failtrace", str);
+        Debug.fprintln(Flags.FAILTRACE, str);
       then
         fail();
   end matchcontinue;
@@ -3362,10 +3362,10 @@ algorithm
         res;
     case const
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- prop_tuple_any_const failed: ");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE, "- prop_tuple_any_const failed: ");
         str = unparseTupleconst(const);
-        Debug.fprintln("failtrace", str);
+        Debug.fprintln(Flags.FAILTRACE, str);
       then
         fail();
   end matchcontinue;
@@ -3410,10 +3410,10 @@ algorithm
         res;
     case const
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- prop_tuple_all_const failed: ");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE, "- prop_tuple_all_const failed: ");
         str = unparseTupleconst(const);
-        Debug.fprintln("failtrace", str);
+        Debug.fprintln(Flags.FAILTRACE, str);
       then
         fail();
   end matchcontinue;
@@ -3831,7 +3831,7 @@ algorithm
          * this case converts a TUPLE to META_TUPLE */
     case (e,DAE.PROP_TUPLE(type_ = (gt as (DAE.T_TUPLE(_),_)),tupleConst = tc1), DAE.PROP(type_ = (et as (DAE.T_METATUPLE(_),_)),constFlag = c2),printFailtrace)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         (e_1,t_1) = matchType(e, gt, et, printFailtrace);
         c_1 = propTupleAllConst(tc1);
         c = constAnd(c_1, c2);
@@ -3839,7 +3839,7 @@ algorithm
         (e_1,DAE.PROP(t_1,c));
     case (e,DAE.PROP_TUPLE(type_ = (gt as (DAE.T_TUPLE(_),_)),tupleConst = tc1), DAE.PROP(type_ = (et as (DAE.T_BOXED(_),_)),constFlag = c2),printFailtrace)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         (e_1,t_1) = matchType(e, gt, et, printFailtrace);
         c_1 = propTupleAllConst(tc1);
         c = constAnd(c_1, c2);
@@ -3849,7 +3849,7 @@ algorithm
     case(e,inProperties2,inProperties3,true)
       equation
         // activate on +d=types flag
-        true = RTOpts.debugFlag("types");
+        true = Flags.isSet(Flags.TYPES);
         Debug.traceln("- Types.matchProp failed on exp: " +& ExpressionDump.printExpStr(e));
         Debug.traceln(printPropStr(inProperties2) +& " != ");
         Debug.traceln(printPropStr(inProperties3));
@@ -3881,7 +3881,7 @@ algorithm
         (e_1::e_2,(tp :: res));
     case (_,_,_,true)
       equation
-        Debug.fprint("types", "- matchTypeList failed\n");
+        Debug.fprint(Flags.TYPES, "- matchTypeList failed\n");
       then
         fail();
   end matchcontinue;
@@ -3913,7 +3913,7 @@ algorithm
         (e_1::e_2,(tp :: res));
     case (_,(t1 :: ts1),(t2 :: ts2),true)
       equation
-        Debug.fprint("failtrace", "- Types.matchTypeTuple failed\n");
+        Debug.fprint(Flags.FAILTRACE, "- Types.matchTypeTuple failed\n");
       then
         fail();
   end matchcontinue;
@@ -3941,7 +3941,7 @@ algorithm
       then ();
     case (_,(t1 :: ts1),(t2 :: ts2))
       equation
-        Debug.fprint("failtrace", "- matchTypeTupleCall failed\n");
+        Debug.fprint(Flags.FAILTRACE, "- matchTypeTupleCall failed\n");
       then
         fail();
   end matchcontinue;
@@ -4218,21 +4218,21 @@ algorithm
     /* MetaModelica Option */
     case (DAE.META_OPTION(SOME(e)),(DAE.T_METAOPTION(t1),_),(DAE.T_METAOPTION(t2),p2),printFailtrace)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         (e_1, t_1) = matchType(e,t1,t2,printFailtrace);
       then
         (DAE.META_OPTION(SOME(e_1)),(DAE.T_METAOPTION(t_1),p2));
     
     case (DAE.META_OPTION(NONE()),_,(DAE.T_METAOPTION(t2),p2),printFailtrace)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
       then
         (DAE.META_OPTION(NONE()),(DAE.T_METAOPTION(t2),p2));
 
     /* MetaModelica Tuple */
     case (DAE.TUPLE(elist),(DAE.T_TUPLE(tupleType = tys1),_),(DAE.T_METATUPLE(tys2),p2),printFailtrace)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         tys2 = List.map(tys2, boxIfUnboxedType);
         (elist_1,tys_1) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
       then
@@ -4240,7 +4240,7 @@ algorithm
     
     case (DAE.MATCHEXPRESSION(matchTy,inputs,localDecls,cases,et),actual,expected,printFailtrace)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         elist = Patternm.resultExps(cases);
         (elist_1,tys_1) = matchTypeList(elist, actual, expected, printFailtrace);
         cases=Patternm.fixCaseReturnTypes2(cases,elist_1,Absyn.dummyInfo);
@@ -4257,7 +4257,7 @@ algorithm
     
     case (DAE.TUPLE(elist),(DAE.T_TUPLE(tupleType = tys1),_),ty2 as (DAE.T_BOXED((DAE.T_NOTYPE(),_)),p2),printFailtrace)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         e_1 = DAE.META_TUPLE(elist);
         tys2 = List.fill(ty2, listLength(tys1));
         (elist_1,tys_1) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
@@ -4277,7 +4277,7 @@ algorithm
        */
     case (e as DAE.ARRAY(DAE.ET_ARRAY(ty = t),_,elist),(DAE.T_ARRAY(arrayType=t1),_),(DAE.T_LIST(t2),p2),printFailtrace)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         t2 = boxIfUnboxedType(t2);
         (elist_1, _) = matchTypeList(elist, t1, t2, printFailtrace);
         e_1 = DAE.LIST(elist_1);
@@ -4286,7 +4286,7 @@ algorithm
     
     case (e as DAE.ARRAY(DAE.ET_ARRAY(ty = t),_,elist),(DAE.T_ARRAY(arrayType=t1),_),(DAE.T_BOXED(t2),p2),printFailtrace)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         (elist_1, tys1) = matchTypeList(elist, t1, t2, printFailtrace);
         (elist_1, t2) = listMatchSuperType(elist_1, tys1, printFailtrace);
         t2 = boxIfUnboxedType(t2);
@@ -4297,14 +4297,14 @@ algorithm
     
     case (e as DAE.MATRIX(DAE.ET_ARRAY(ty = t),_,elist_big),t1,t2,printFailtrace)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         (elist,ty2) = typeConvertMatrixToList(elist_big,t1,t2,printFailtrace);
         e_1 = DAE.LIST(elist);
       then (e_1,ty2);
     
     case (e as DAE.LIST(elist),(DAE.T_LIST(t1),_),(DAE.T_LIST(t2),p2),printFailtrace)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         (elist_1, tys1) = matchTypeList(elist, t1, t2, printFailtrace);
         (elist_1, t2) = listMatchSuperType(elist_1, tys1, printFailtrace);
         e_1 = DAE.LIST(elist_1);
@@ -4337,7 +4337,7 @@ algorithm
 
     case (e, t1 as (DAE.T_ARRAY(arrayType = _),_), (DAE.T_BOXED(t2), _), _)
       equation
-        // true = RTOpts.acceptMetaModelicaGrammar();
+        // true = Config.acceptMetaModelicaGrammar();
         (e, t1) = matchType(e, t1, unboxedType(t2), printFailtrace);
         t2 = (DAE.T_BOXED(t1), NONE());
         t = elabType(t2);
@@ -4359,7 +4359,7 @@ algorithm
 
     case (e as DAE.CALL(path = _), t1 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),_), (DAE.T_BOXED(t2),_),printFailtrace)
       equation
-        Debug.fprintln("failtrace", "- Not yet implemented: Converting record calls (not constructor) into boxed records");
+        Debug.fprintln(Flags.FAILTRACE, "- Not yet implemented: Converting record calls (not constructor) into boxed records");
       then fail();
 
     case (e as DAE.CREF(cref,_), t1 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),SOME(path)), (DAE.T_BOXED(t2),_),printFailtrace)
@@ -4416,16 +4416,16 @@ algorithm
     /* See printFailure()
     case (exp,t1,t2,printFailtrace)
       equation
-        Debug.fprint("tcvt", "- type conversion failed: ");
+        Debug.fprint(Flags.TCVT, "- type conversion failed: ");
         str = ExpressionDump.printExpStr(exp);
-        Debug.fprint("tcvt", str);
-        Debug.fprint("tcvt", "  ");
+        Debug.fprint(Flags.TCVT, str);
+        Debug.fprint(Flags.TCVT, "  ");
         str = unparseType(t1);
-        Debug.fprint("tcvt", str);
-        Debug.fprint("tcvt", ", ");
+        Debug.fprint(Flags.TCVT, str);
+        Debug.fprint(Flags.TCVT, ", ");
         str = unparseType(t2);
-        Debug.fprint("tcvt", str);
-        Debug.fprint("tcvt", "\n");
+        Debug.fprint(Flags.TCVT, str);
+        Debug.fprint(Flags.TCVT, "\n");
       then
         fail();
       */
@@ -4561,7 +4561,7 @@ algorithm
       then (e::expl,(DAE.T_LIST(t1),NONE()));
     case (_,_,_,_)
       equation
-        Debug.fprintln("types", "- typeConvertMatrixToList failed");
+        Debug.fprintln(Flags.TYPES, "- typeConvertMatrixToList failed");
       then fail();
   end matchcontinue;
 end typeConvertMatrixToList;
@@ -4703,8 +4703,8 @@ algorithm
   
     case(inProperties1,inProperties2,inBoolean3) 
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace","- Types.matchWithPromote failed on: " +& 
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprintln(Flags.FAILTRACE,"- Types.matchWithPromote failed on: " +& 
            "\nprop1: " +& printPropStr(inProperties1) +&
            "\nprop2: " +& printPropStr(inProperties2) +&
            "\nhaveReal: " +& Util.if_(inBoolean3, "true", "false"));
@@ -5094,9 +5094,9 @@ algorithm
 
     case tty
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         str = unparseType((tty,NONE()));
-        Debug.fprintln("failtrace", "-- Types.getAllExpsTt failed " +& str);
+        Debug.fprintln(Flags.FAILTRACE, "-- Types.getAllExpsTt failed " +& str);
       then
         fail();
   end matchcontinue;
@@ -5158,7 +5158,7 @@ algorithm
     case DAE.VALBOUND(valBound = v) then {};
     case _
       equation
-        Debug.fprintln("failtrace", "-- Types.getAllExpsBinding failed");
+        Debug.fprintln(Flags.FAILTRACE, "-- Types.getAllExpsBinding failed");
       then
         fail();
   end matchcontinue;
@@ -5255,7 +5255,7 @@ algorithm
       then (elist, st);
     case (_,_,_)
       equation
-        Debug.fprintln("failtrace", "- Types.listMatchSuperType failed");
+        Debug.fprintln(Flags.FAILTRACE, "- Types.listMatchSuperType failed");
       then fail();
   end matchcontinue;
 end listMatchSuperType;
@@ -5282,9 +5282,9 @@ algorithm
       then (e::erest);
     case (e::_,_,_,_)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         str = ExpressionDump.printExpStr(e);
-        Debug.fprintln("failtrace", "- Types.listMatchSuperType2 failed: " +& str);
+        Debug.fprintln(Flags.FAILTRACE, "- Types.listMatchSuperType2 failed: " +& str);
       then fail();
   end matchcontinue;
 end listMatchSuperType2;
@@ -5394,20 +5394,20 @@ algorithm
 
     case (exp,actual,expected,_,polymorphicBindings,printFailtrace)
       equation
-        false = RTOpts.acceptMetaModelicaGrammar();
+        false = Config.acceptMetaModelicaGrammar();
         (e_1,e_type_1) = matchType(exp,actual,expected,printFailtrace);
       then 
         (e_1,e_type_1,polymorphicBindings);
     case (exp,actual,expected,_,polymorphicBindings,printFailtrace)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         {} = getAllInnerTypesOfType(expected, isPolymorphic);
         (e_1,e_type_1) = matchType(exp,actual,expected,printFailtrace);
       then 
         (e_1,e_type_1,polymorphicBindings);
     case (exp,actual,expected,envPath,polymorphicBindings,_)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         // print("match type: " +& ExpressionDump.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& "\n");
         _::_ = getAllInnerTypesOfType(expected, isPolymorphic);
         (exp,actual) = matchType(exp,actual,(DAE.T_BOXED((DAE.T_NOTYPE(),NONE())),NONE()),printFailtrace);
@@ -5418,7 +5418,7 @@ algorithm
         (exp,actual,polymorphicBindings);
     case (e,e_type,expected_type,_,_,true)
       equation
-        printFailure("types", "matchTypePolymorphic", e, e_type, expected_type);
+        printFailure(Flags.TYPES, "matchTypePolymorphic", e, e_type, expected_type);
       then fail();
   end matchcontinue;
 end matchTypePolymorphic;
@@ -5452,7 +5452,7 @@ algorithm
         (e_1,e_type_1);
     case (e,e_type,expected_type,true)
       equation
-        printFailure("types", "matchType", e, e_type, expected_type);
+        printFailure(Flags.TYPES, "matchType", e, e_type, expected_type);
       then fail();
   end matchcontinue;
 end matchType;
@@ -5490,7 +5490,7 @@ protected function printFailure
  print the message only when flag is on.
  this is to speed up the flattening as we don't
  generate the strings at all."
-  input String flag;
+  input Flags.DebugFlag flag;
   input String source;
   input DAE.Exp e;
   input Type e_type;
@@ -5499,13 +5499,13 @@ algorithm
   _ := matchcontinue (flag, source, e, e_type, expected_type)
     case (flag, source, e, e_type, expected_type)
       equation
-        true = RTOpts.debugFlag(flag);
+        true = Flags.isSet(flag);
         Debug.traceln("- Types." +& source +& " failed on:" +& ExpressionDump.printExpStr(e));
         Debug.traceln("  type:" +& unparseType(e_type) +& " differs from expected\n  type:" +& unparseType(expected_type));
       then ();
     case (flag, source, e, e_type, expected_type)
       equation
-        false = RTOpts.debugFlag(flag);
+        false = Flags.isSet(flag);
       then ();
   end matchcontinue;
 end printFailure;
@@ -5779,7 +5779,7 @@ algorithm
       then ty1; */
     case _
       equation
-        // Debug.fprintln("failtrace", "- Types.makeFunctionPolymorphicReference failed");
+        // Debug.fprintln(Flags.FAILTRACE, "- Types.makeFunctionPolymorphicReference failed");
       then fail();
   end match;
 end makeFunctionPolymorphicReference;
@@ -6810,7 +6810,7 @@ algorithm
     // All the other ones we don't handle
     case ((_,_))
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Types.typeToValue failed on unhandled Type ");
         s1 = printTypeStr(inType);
         Debug.traceln(s1);
@@ -6848,7 +6848,7 @@ algorithm
     
     case (_)
       equation
-        Debug.fprint("failtrace", "- Types.varsToValues failed\n");
+        Debug.fprint(Flags.FAILTRACE, "- Types.varsToValues failed\n");
       then
         fail();
   end matchcontinue;

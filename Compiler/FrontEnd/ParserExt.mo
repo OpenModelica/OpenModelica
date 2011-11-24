@@ -29,7 +29,7 @@
  *
  */
 
-encapsulated package Parser
+encapsulated package ParserExt
 " file:        Parser.mo
   package:     Parser
   description: Interface to external code for parsing
@@ -41,41 +41,41 @@ encapsulated package Parser
 
 public import Absyn;
 public import Interactive;
-protected import Config;
-protected import ParserExt;
 
 public function parse "Parse a mo-file"
   input String filename;
+  input Boolean acceptMM;
+  input Boolean runningTestsuite;
   output Absyn.Program outProgram;
-algorithm
-  outProgram := ParserExt.parse(filename, Config.acceptMetaModelicaGrammar(),
-    Config.getRunningTestsuite());
+
+  external "C" outProgram=ParserExt_parse(filename, acceptMM, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
 end parse;
 
 public function parseexp "Parse a mos-file"
   input String filename;
+  input Boolean acceptMM;
+  input Boolean runningTestsuite;
   output Interactive.Statements outStatements;
-algorithm
-  outStatements := ParserExt.parseexp(filename,
-    Config.acceptMetaModelicaGrammar(), Config.getRunningTestsuite());
+
+  external "C" outStatements=ParserExt_parseexp(filename, acceptMM, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
 end parseexp;
 
 public function parsestring "Parse a string as if it were a stored definition"
   input String str;
   input String infoFilename := "<interactive>";
+  input Boolean acceptMM;
+  input Boolean runningTestsuite;
   output Absyn.Program outProgram;
-algorithm
-  outProgram := ParserExt.parsestring(str,infoFilename,
-    Config.acceptMetaModelicaGrammar(), Config.getRunningTestsuite());
+  external "C" outProgram=ParserExt_parsestring(str,infoFilename, acceptMM, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
 end parsestring;
 
 public function parsestringexp "Parse a string as if it was a sequence of statements"
   input String str;
   input String infoFilename := "<interactive>";
+  input Boolean acceptMM;
+  input Boolean runningTestsuite;
   output Interactive.Statements outStatements;
-algorithm
-  outStatements := ParserExt.parsestringexp(str,infoFilename,
-    Config.acceptMetaModelicaGrammar(), Config.getRunningTestsuite());
+  external "C" outStatements=ParserExt_parsestringexp(str,infoFilename, acceptMM, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
 end parsestringexp;
-end Parser;
+end ParserExt;
 

@@ -52,7 +52,6 @@ extern "C" {
 #include <antlr3intstream.h>
 
 #include "runtime/errorext.h"
-#include "runtime/rtopts.h" /* for accept_meta_modelica_grammar() function */
 #include "runtime/systemimpl.h"
 
 static long unsigned int szMemoryUsed = 0;
@@ -264,7 +263,7 @@ static void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 *
 
 }
 
-static void* parseStream(pANTLR3_INPUT_STREAM input)
+static void* parseStream(pANTLR3_INPUT_STREAM input, int runningTestsuite)
 {
   pANTLR3_LEXER               pLexer;
   pANTLR3_COMMON_TOKEN_STREAM tstream;
@@ -273,13 +272,10 @@ static void* parseStream(pANTLR3_INPUT_STREAM input)
   void* res = NULL;
 
   // Only use the basename of the file when running the testsuite
-  ModelicaParser_filename_C = running_testsuite ?
+  ModelicaParser_filename_C = runningTestsuite ?
     SystemImpl__basename(ModelicaParser_filename_C) :
     ModelicaParser_filename_C;
   ModelicaParser_filename_RML = mk_scon(ModelicaParser_filename_C);
-
-  // TODO: Add flags to the actual Parser.parse() call instead of here?
-  if (RTOptsImpl__acceptMetaModelicaGrammar()) ModelicaParser_flags |= PARSE_META_MODELICA;
 
   if (ModelicaParser_flags & PARSE_META_MODELICA) {
     lxr = MetaModelica_LexerNew(input);
@@ -338,11 +334,11 @@ static void* parseStream(pANTLR3_INPUT_STREAM input)
   return res;
 }
 
-static void* parseString(const char* data, const char* interactiveFilename, int flags)
+static void* parseString(const char* data, const char* interactiveFilename, int flags, int runningTestsuite)
 {
-  bool debug         = check_debug_flag("parsedebug");
-  bool parsedump     = check_debug_flag("parsedump");
-  bool parseonly     = check_debug_flag("parseonly");
+  bool debug         = false; //check_debug_flag("parsedebug");
+  bool parsedump     = false; //check_debug_flag("parsedump");
+  bool parseonly     = false; //check_debug_flag("parseonly");
 
   pANTLR3_UINT8               fName;
   pANTLR3_INPUT_STREAM        input;
@@ -359,14 +355,14 @@ static void* parseString(const char* data, const char* interactiveFilename, int 
     fprintf(stderr, "Unable to open file %s\n", ModelicaParser_filename_C); fflush(stderr);
     return NULL;
   }
-  return parseStream(input);
+  return parseStream(input, runningTestsuite);
 }
 
-static void* parseFile(const char* fileName, int flags)
+static void* parseFile(const char* fileName, int flags, int runningTestsuite)
 {
-  bool debug         = check_debug_flag("parsedebug");
-  bool parsedump     = check_debug_flag("parsedump");
-  bool parseonly     = check_debug_flag("parseonly");
+  bool debug         = false; //check_debug_flag("parsedebug");
+  bool parsedump     = false; //check_debug_flag("parsedump");
+  bool parseonly     = false; //check_debug_flag("parseonly");
 
   pANTLR3_UINT8               fName;
   pANTLR3_INPUT_STREAM        input;
@@ -388,14 +384,14 @@ static void* parseFile(const char* fileName, int flags)
    */
   struct stat st;
   stat(ModelicaParser_filename_C, &st);
-  if (0 == st.st_size) return parseString("",ModelicaParser_filename_C,ModelicaParser_flags);
+  if (0 == st.st_size) return parseString("",ModelicaParser_filename_C,ModelicaParser_flags, runningTestsuite);
 
   fName  = (pANTLR3_UINT8)ModelicaParser_filename_C;
   input  = antlr3AsciiFileStreamNew(fName);
   if ( input == NULL ) {
     return NULL;
   }
-  return parseStream(input);
+  return parseStream(input, runningTestsuite);
 }
 
 #ifdef __cplusplusend

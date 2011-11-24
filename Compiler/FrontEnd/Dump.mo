@@ -54,6 +54,7 @@ public type Ident = String;
 // protected imports
 protected import Debug;
 protected import Error;
+protected import Flags;
 protected import List;
 protected import Print;
 protected import Util;
@@ -4942,23 +4943,23 @@ algorithm
       list<Type_a> rest;
     case (_,{},_,_)
       equation
-        Debug.fprintln("dumptr", "print_list_debug-1");
+        Debug.fprintln(Flags.DUMPTR, "print_list_debug-1");
       then
         ();
     case (caller,{h},r,_)
       equation
-        Debug.fprintl("dumptr", {"print_list_debug-2 from ",caller,"\n"});
+        Debug.fprintl(Flags.DUMPTR, {"print_list_debug-2 from ",caller,"\n"});
         r(h);
-        Debug.fprintln("dumptr", "//print_list_debug-2");
+        Debug.fprintln(Flags.DUMPTR, "//print_list_debug-2");
       then
         ();
     case (caller,(h :: rest),r,sep)
       equation
         s1 = stringAppend("print_list_debug-3 from ", caller);
-        Debug.fprintl("dumptr", {s1,"\n"});
+        Debug.fprintl(Flags.DUMPTR, {s1,"\n"});
         r(h);
         Print.printBuf(sep);
-        Debug.fprintln("dumptr", "//print_list_debug-3");
+        Debug.fprintln(Flags.DUMPTR, "//print_list_debug-3");
         printListDebug(s1, rest, r, sep);
       then
         ();

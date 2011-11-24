@@ -299,6 +299,17 @@ extern char* System_toupper(const char *str)
   return strToUpper;
 }
 
+extern char* System_tolower(const char *str)
+{
+  int i;
+  char* strToLower = strdup(str);
+  for (i = 0; i < strlen(strToLower); i++)
+  {
+    strToLower[i] = tolower(strToLower[i]);
+  }
+  return strToLower;
+}
+
 const char* System_getClassnamesForSimulation()
 {
   if(class_names_for_simulation)
@@ -383,14 +394,14 @@ extern int System_lookupFunction(int _inLibHandle, const char* _inFunc)
   return res;
 }
 
-extern void System_freeFunction(int _inFuncHandle)
+extern void System_freeFunction(int _inFuncHandle, int printDebug)
 {
-  if (SystemImpl__freeFunction(_inFuncHandle)) MMC_THROW();
+  if (SystemImpl__freeFunction(_inFuncHandle, printDebug)) MMC_THROW();
 }
 
-extern void System_freeLibrary(int _inLibHandle)
+extern void System_freeLibrary(int _inLibHandle, int printDebug)
 {
-  if (SystemImpl__freeLibrary(_inLibHandle)) MMC_THROW();
+  if (SystemImpl__freeLibrary(_inLibHandle, printDebug)) MMC_THROW();
 }
 
 extern int System_getHasSendDataSupport()
@@ -453,9 +464,9 @@ extern const char* System_getUUIDStr()
   return strdup(SystemImpl__getUUIDStr());
 }
 
-extern int System_loadLibrary(const char *name)
+extern int System_loadLibrary(const char *name, int printDebug)
 {
-  int res = SystemImpl__loadLibrary(name);
+  int res = SystemImpl__loadLibrary(name, printDebug);
   if (res == -1) MMC_THROW();
   return res;
 }

@@ -212,4 +212,10 @@ RML_BEGIN_LABEL(ErrorExt__clearMessages)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(ErrorExt__setShowErrorMessages)
+{
+  showErrorMessages = RML_UNTAGFIXNUM(rmlA0) ? 1 : 0;
+  RML_TAILCALLK(rmlSC);
+}
+
 } //extern "C"

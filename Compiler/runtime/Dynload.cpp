@@ -35,7 +35,6 @@ extern "C" {
 #include <stdlib.h>
 #include "modelica.h"
 #include "systemimpl.h"
-#include "rtopts.h"
 #include "errorext.h"
 
 
@@ -43,7 +42,7 @@ static void *type_desc_to_value(type_description *desc);
 static int value_to_type_desc(void *value, type_description *desc);
 static int execute_function(void *in_arg, void **out_arg,
                             int (* func)(type_description *,
-                                         type_description *));
+                                         type_description *), int printDebug);
 static int parse_array(type_description *desc, void *arrdata, void *dimLst);
 static void *value_to_mmc(void* value);
 static const char* path_to_name(void* path, char del);
@@ -158,18 +157,17 @@ static int value_to_type_desc(void *value, type_description *desc)
 
 static int execute_function(void *in_arg, void **out_arg,
                             int (* func)(type_description *,
-                                         type_description *))
+                                         type_description *), int printDebug)
 {
   type_description arglst[RML_NUM_ARGS + 1], crashbuf[50], *arg = NULL;
   type_description crashbufretarg, retarg;
   void *v = NULL;
   int retval = 0;
-  int debugFlag = check_debug_flag("dynload");
   void *states = push_memory_states(1);
   state mem_state = get_memory_state();
   // fprintf(stderr, "states-ix: %d\n", mem_state);
 
-  if (debugFlag) { fprintf(stderr, "input parameters:\n"); fflush(stderr); }
+  if (printDebug) { fprintf(stderr, "input parameters:\n"); fflush(stderr); }
 
   v = in_arg;
   arg = arglst;
@@ -178,14 +176,14 @@ static int execute_function(void *in_arg, void **out_arg,
     void *val = RML_CAR(v);
     if (value_to_type_desc(val, arg)) {
       restore_memory_state(mem_state);
-      if (debugFlag)
+      if (printDebug)
       {
         puttype(arg);
         fprintf(stderr, "returning from execute function due to value_to_type_desc failure!\n"); fflush(stderr);
       }
       return -1;
     }
-    if (debugFlag) puttype(arg);
+    if (printDebug) puttype(arg);
     ++arg;
     v = RML_CDR(v);
   }
@@ -197,7 +195,7 @@ static int execute_function(void *in_arg, void **out_arg,
 
   retarg.retval = 1;
 
-  if (debugFlag) { fprintf(stderr, "calling the function\n"); fflush(stderr); }
+  if (printDebug) { fprintf(stderr, "calling the function\n"); fflush(stderr); }
   
   fflush(stdout);
   /* call our function pointer! */
@@ -222,7 +220,7 @@ static int execute_function(void *in_arg, void **out_arg,
     *out_arg = Values__META_5fFAIL;
     return 0;
   } else {
-    if (debugFlag) { fprintf(stderr, "output results:\n"); fflush(stderr); puttype(&retarg); }
+    if (printDebug) { fprintf(stderr, "output results:\n"); fflush(stderr); puttype(&retarg); }
 
     (*out_arg) = type_desc_to_value(&retarg);
     /* out_arg doesn't seem to get freed, something we can do anything about?

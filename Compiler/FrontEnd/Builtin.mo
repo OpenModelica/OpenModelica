@@ -47,12 +47,13 @@ public import Absyn;
 public import DAE;
 public import Env;
 public import Error;
-public import RTOpts;
 public import SCode;
 
 // protected imports
 protected import ClassInf;
+protected import Config;
 protected import Debug;
+protected import Flags;
 protected import Global;
 protected import List;
 protected import Parser;
@@ -539,7 +540,7 @@ algorithm
       list<Env.Frame> env;
     case (env)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         // getGlobalRoot can not be represented by a regular function...
         env = Env.extendFrameT(env, "getGlobalRoot", int2boxed);
       then env;
@@ -565,10 +566,10 @@ algorithm
     case ()
       equation
         assocLst = getGlobalRoot(Global.builtinIndex);
-      then Util.assoc(RTOpts.acceptMetaModelicaGrammar(), assocLst);
+      then Util.assoc(Config.acceptMetaModelicaGrammar(), assocLst);
     case ()
       equation
-        b = RTOpts.acceptMetaModelicaGrammar();
+        b = Config.acceptMetaModelicaGrammar();
         fileModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ModelicaBuiltin.mo";
         fileMetaModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/MetaModelicaBuiltin.mo";
         initialFunctionStr = System.readFile(fileModelica);

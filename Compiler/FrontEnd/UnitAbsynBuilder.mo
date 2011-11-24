@@ -23,10 +23,10 @@ protected import ComponentReference;
 protected import DAEUtil;
 protected import Expression;
 protected import ExpressionDump;
+protected import Flags;
 protected import Interactive;
 protected import List;
 protected import Lookup;
-protected import OptManager;
 protected import SCode;
 protected import SCodeUtil;
 protected import Types;
@@ -45,7 +45,7 @@ algorithm
    local
      list<DAE.Element> elts;
    case(cache,env,dae) equation
-       false = OptManager.getOption("unitChecking");
+       false = Flags.getConfigBool(Flags.UNIT_CHECKING);
    then ();
 
    case(cache,env,DAE.DAE(elementLst=elts)) equation
@@ -145,12 +145,12 @@ are referenced in the model are picked up
 algorithm
   _ := matchcontinue(prg)
     case(prg) equation
-      true = OptManager.getOption("unitChecking");
+      true = Flags.getConfigBool(Flags.UNIT_CHECKING);
       ((_,_,_)) = Interactive.traverseClasses(prg,NONE(),registerUnitInClass,0,false); // defineunits must be in public section.
     then ();
       
     case(prg) equation
-      false = OptManager.getOption("unitChecking");
+      false = Flags.getConfigBool(Flags.UNIT_CHECKING);
     then ();
   end matchcontinue;
 end registerUnits;
@@ -685,7 +685,7 @@ algorithm
       Option<UnitAbsyn.UnitCheckResult> res;
     case(env,dae,compDae,store)
       equation
-        false = OptManager.getOption("unitChecking");
+        false = Flags.getConfigBool(Flags.UNIT_CHECKING);
       then(UnitAbsyn.noStore,{});
     case(env,dae,compDae,UnitAbsyn.NOSTORE()) then  (UnitAbsyn.NOSTORE(),{});
     case(env,dae,compDae,UnitAbsyn.INSTSTORE(st,ht,res))
@@ -736,7 +736,7 @@ algorithm
       Option<UnitAbsyn.UnitCheckResult> res;
 
     case(store,_,_) equation
-      false = OptManager.getOption("unitChecking");
+      false = Flags.getConfigBool(Flags.UNIT_CHECKING);
     then UnitAbsyn.noStore;
 
     case(UnitAbsyn.INSTSTORE(st,ht,res),(DAE.T_REAL(DAE.TYPES_VAR(name="unit",binding = DAE.EQBOUND(exp=DAE.SCONST(unitStr)))::_),_),cr) equation

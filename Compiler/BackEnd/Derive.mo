@@ -48,7 +48,6 @@ public import Absyn;
 public import BackendDAE;
 public import DAE;
 public import DAEUtil;
-public import RTOpts;
 public import Types;
 public import Values;
 
@@ -64,6 +63,7 @@ protected import Error;
 protected import Expression;
 protected import ExpressionSimplify;
 protected import ExpressionDump;
+protected import Flags;
 protected import Inline;
 protected import List;
 protected import Util;
@@ -979,7 +979,7 @@ algorithm
         (ret,tlst);
     case (_,_,_)
       equation
-        Debug.fprintln("failtrace", "-Derive.checkDerivativeFunctionInputs failed\n");
+        Debug.fprintln(Flags.FAILTRACE, "-Derive.checkDerivativeFunctionInputs failed\n");
       then
         fail();
     end matchcontinue;
@@ -1108,7 +1108,7 @@ algorithm
     // failure
     case (_,_,_,_)
       equation
-        Debug.fprintln("failtrace", "-Derive.checkDerFunctionConds failed\n");
+        Debug.fprintln(Flags.FAILTRACE, "-Derive.checkDerFunctionConds failed\n");
       then
         fail();
   end matchcontinue;
@@ -1146,7 +1146,7 @@ algorithm
       list<DAE.FunctionDefinition> flst;
       DAE.Type t;
       DAE.FunctionDefinition m;
-      String s,s1,s2;
+      String s;
     case(fname,functions)
       equation
         SOME(DAE.FUNCTION(functions=flst,type_=t)) = DAEUtil.avlTreeGet(functions,fname);
@@ -1154,10 +1154,10 @@ algorithm
       then (m,t);
     case (fname,functions)
       equation
+        true = Flags.isSet(Flags.FAILTRACE);
         s = Absyn.pathString(fname);
-        s1 = stringAppend("-Derive.getFunctionMapper failed for function ",s);
-        s2 = stringAppend(s1,"\n");
-        Debug.fprintln("failtrace", s1 );
+        s = stringAppend("-Derive.getFunctionMapper failed for function ",s);
+        Debug.traceln(s);
       then
         fail();
   end matchcontinue;
@@ -1179,7 +1179,7 @@ algorithm
     then m;
     case (_)
       equation
-        Debug.fprintln("failtrace", "-Derive.getFunctionMapper1 failed\n");
+        Debug.fprintln(Flags.FAILTRACE, "-Derive.getFunctionMapper1 failed\n");
       then
         fail();
   end matchcontinue;
@@ -1466,12 +1466,12 @@ algorithm
     
     case (e,cr,differentiateIfExp)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         s = ExpressionDump.printExpStr(e);
         s2 = ComponentReference.printComponentRefStr(cr);
         str = stringAppendList({"- Derive.differentiateExp ",s," w.r.t: ",s2," failed\n"});
         //print(str);
-        Debug.fprint("failtrace", str);
+        Debug.fprint(Flags.FAILTRACE, str);
       then
         fail();
   end matchcontinue;

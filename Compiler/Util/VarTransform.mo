@@ -378,7 +378,7 @@ algorithm
     // failtrace. adrpo: TODO! FIXME! this SHOULD NOT FAIL!
     case (elt::dae,repl,condExpFunc)
       equation
-        // Debug.fprintln("failtrace", "- VarTransform.applyReplacementsDAEElts could not apply replacements to: " +& DAEDump.dumpElementsStr({elt}));
+        // Debug.fprintln(Flags.FAILTRACE, "- VarTransform.applyReplacementsDAEElts could not apply replacements to: " +& DAEDump.dumpElementsStr({elt}));
         dae = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then elt::dae;
   end matchcontinue;
@@ -977,7 +977,7 @@ algorithm
           {"add_replacement(",s1,", ",s2,") -> add_replacement(",s3,
           ", ",s4,")\n"});
           print(s);
-        Debug.fprint("addrepl", s);*/
+        Debug.fprint(Flags.ADD_REPL, s);*/
         ht_1 = BaseHashTable.add((src_1, dst_1),ht);
         invHt_1 = addReplacementInv(invHt, src_1, dst_1);
       then

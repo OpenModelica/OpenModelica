@@ -42,12 +42,12 @@ public import Absyn;
 public import SCode;
 public import SCodeEnv;
 
+protected import Config;
 protected import Dump;
 protected import Error;
 protected import List;
 protected import Util;
 protected import SCodeDump;
-protected import RTOptsData;
 
 public function checkDuplicateClasses
   input SCode.Program inProgram;
@@ -199,7 +199,7 @@ algorithm
     // baseclasses weren't explicitly forbidden in older versions.
     case (_, _, _, _)
       equation
-        true = RTOptsData.languageStandardAtMost(RTOptsData.MODELICA_2_X());
+        true = Config.languageStandardAtMost(Config.MODELICA_2_X());
       then
         ();
 

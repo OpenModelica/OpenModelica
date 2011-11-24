@@ -246,9 +246,10 @@ end getDllExt;
 
 public function loadLibrary
   input String inLib;
+  input Boolean inPrintDebug;
   output Integer outLibHandle;
 
-  external "C" outLibHandle=System_loadLibrary(inLib) annotation(Library = "omcruntime");
+  external "C" outLibHandle=System_loadLibrary(inLib, inPrintDebug) annotation(Library = "omcruntime");
 end loadLibrary;
 
 public function lookupFunction
@@ -261,14 +262,16 @@ end lookupFunction;
 
 public function freeFunction
   input Integer inFuncHandle;
+  input Boolean inPrintDebug;
 
-  external "C" System_freeFunction(inFuncHandle) annotation(Library = "omcruntime");
+  external "C" System_freeFunction(inFuncHandle, inPrintDebug) annotation(Library = "omcruntime");
 end freeFunction;
 
 public function freeLibrary
   input Integer inLibHandle;
+  input Boolean inPrintDebug;
 
-  external "C" System_freeLibrary(inLibHandle) annotation(Library = "omcruntime");
+  external "C" System_freeLibrary(inLibHandle, inPrintDebug) annotation(Library = "omcruntime");
 end freeLibrary;
 
 public function sendData

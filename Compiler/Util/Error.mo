@@ -552,9 +552,14 @@ public constant Message UNFILLED_SLOT = MESSAGE(203, TRANSLATION(), ERROR(),
 public constant Message SAME_CONNECT_INSTANCE = MESSAGE(204, TRANSLATION(), WARNING(),
   "connect(%s, %s) connects the same connector instance! The connect equation will be ignored.");
 public constant Message STACK_OVERFLOW = MESSAGE(205, SCRIPTING(), ERROR(), "Stack overflow occurred while evaluating %s");
-
+public constant Message UNKNOWN_DEBUG_FLAG = MESSAGE(206, SCRIPTING(), ERROR(),
+  "Unknown debug flag %s.");
+public constant Message INVALID_FLAG_TYPE = MESSAGE(207, SCRIPTING(), ERROR(),
+  "Invalid type of flag %s, expected %s but got %s");
 public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
   "Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value");
+public constant Message CHANGED_STD_VERSION = MESSAGE(208, SCRIPTING(), NOTIFICATION(),
+  "Modelica language version set to %s due to loading of MSL %s.");
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
   "Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)");
 public constant Message BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER = MESSAGE(501, TRANSLATION(), WARNING(),
@@ -700,7 +705,6 @@ public constant Message TEMPLATE_ERROR = MESSAGE(7001, TRANSLATION(), ERROR(),
 
 protected import ErrorExt;
 protected import Print;
-protected import RTOpts;
 protected import System;
 
 public function updateCurrentComponent "Function: updateCurrentComponent

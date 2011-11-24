@@ -70,24 +70,23 @@ protected import BackendEquation;
 protected import BackendVariable;
 protected import ClassInf;
 protected import ClassLoader;
+protected import Config;
 protected import DAEQuery;
 protected import DAEUtil;
 protected import DAEDump;
 protected import Debug;
 protected import Dump;
 protected import Expression;
+protected import Flags;
 protected import Inst;
 protected import InnerOuter;
 protected import List;
 protected import Lookup;
 protected import MetaUtil;
-protected import OptManager;
 protected import Prefix;
 protected import Parser;
 protected import Print;
 protected import Refactor;
-protected import RTOpts;
-protected import RTOptsData;
 protected import SCodeDump;
 protected import SCodeFlatten;
 protected import SimCode;
@@ -215,7 +214,7 @@ public constant list<String> simulationOptionsNames =
 public function getSimulationResultType
   output DAE.Type t;
 algorithm
-  t := Util.if_(RTOpts.getRunningTestsuite(), simulationResultType_rtest, simulationResultType_full);
+  t := Util.if_(Config.getRunningTestsuite(), simulationResultType_rtest, simulationResultType_full);
 end getSimulationResultType;
 
 public function createSimulationResult
@@ -232,9 +231,9 @@ protected
 algorithm
   resultValues := listReverse(inAddResultValues);
   //TODO: maybe we should test if the fields are the ones in simulationResultType_full
-  fields := Util.if_(RTOpts.getRunningTestsuite(), {},
+  fields := Util.if_(Config.getRunningTestsuite(), {},
                      List.map(resultValues, Util.tuple21));
-  vals := Util.if_(RTOpts.getRunningTestsuite(), {}, 
+  vals := Util.if_(Config.getRunningTestsuite(), {}, 
                    List.map(resultValues, Util.tuple22));
   res := Values.RECORD(Absyn.IDENT("SimulationResult"),
     Values.STRING(resultFile)::Values.STRING(options)::Values.STRING(message)::vals,
@@ -1009,9 +1008,9 @@ algorithm
     
     case (cache,env,"checkModel",{Values.CODE(Absyn.C_TYPENAME(className))},st,msg)
       equation
-        OptManager.setOption("checkModel", true);
+        Flags.setConfigBool(Flags.CHECK_MODEL, true);
         (cache,ret_val,st_1) = checkModel(cache, env, className, st, msg);
-        OptManager.setOption("checkModel", false);
+        Flags.setConfigBool(Flags.CHECK_MODEL, false);
       then
         (cache,ret_val,st_1);
     
@@ -1101,56 +1100,56 @@ algorithm
 
     case (cache,env,"getAnnotationVersion",{},st,msg)
       equation
-        res = RTOpts.getAnnotationVersion();
+        res = Config.getAnnotationVersion();
       then
         (cache,Values.STRING(res),st);
 
     case (cache,env,"getNoSimplify",{},st,msg)
       equation
-        b = RTOpts.getNoSimplify();
+        b = Config.getNoSimplify();
       then
         (cache,Values.BOOL(b),st);
 
     case (cache,env,"setNoSimplify",{Values.BOOL(b)},st,msg)
       equation
-        RTOpts.setNoSimplify(b);
+        Config.setNoSimplify(b);
       then
         (cache,Values.BOOL(true),st);
 
     case (cache,env,"getShowAnnotations",{},st,msg)
       equation
-        b = RTOpts.showAnnotations();
+        b = Config.showAnnotations();
       then
         (cache,Values.BOOL(b),st);
 
     case (cache,env,"setShowAnnotations",{Values.BOOL(b)},st,msg)
       equation
-        RTOpts.setShowAnnotations(b);
+        Config.setShowAnnotations(b);
       then
         (cache,Values.BOOL(true),st);
 
     case (cache,env,"getVectorizationLimit",{},st,msg)
       equation
-        i = RTOpts.vectorizationLimit();
+        i = Config.vectorizationLimit();
       then
         (cache,Values.INTEGER(i),st);
 
     case (cache,env,"getOrderConnections",{},st,msg)
       equation
-        b = RTOpts.orderConnections();
+        b = Config.orderConnections();
       then
         (cache,Values.BOOL(b),st);
 
     case (cache,env,"getLanguageStandard",{},st,msg)
       equation
-        res = RTOptsData.languageStandardString(RTOpts.getLanguageStandard());
+        res = Config.languageStandardString(Config.getLanguageStandard());
       then
         (cache,Values.STRING(res),st);
 
     case (cache,env,"buildModel",vals,st,msg)
       equation
         (cache,compileDir,executable,method_str,outputFormat_str,st,initfilename,_) = buildModel(cache,env, vals, st, msg);
-        executable = Util.if_(not RTOpts.getRunningTestsuite(),compileDir +& executable,executable);
+        executable = Util.if_(not Config.getRunningTestsuite(),compileDir +& executable,executable);
       then
         (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
         
@@ -1160,7 +1159,7 @@ algorithm
     case (cache,env,"buildModelBeast",vals,st,msg)
       equation
         (cache,compileDir,executable,method_str,st,initfilename) = buildModelBeast(cache,env,vals,st,msg);
-        executable = Util.if_(not RTOpts.getRunningTestsuite(),compileDir +& executable,executable);
+        executable = Util.if_(not Config.getRunningTestsuite(),compileDir +& executable,executable);
       then
         (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
     
@@ -1188,7 +1187,7 @@ algorithm
         (cache,compileDir,executable,method_str,outputFormat_str,st,_,resultValues) = buildModel(cache,env,vals,st_1,msg);
         
         cit = winCitation();
-        ifcpp=Util.equal(RTOpts.simCodeTarget(),"Cpp");
+        ifcpp=Util.equal(Config.simCodeTarget(),"Cpp");
         executable1=Util.if_(ifcpp,"Simulation",executable);
         executableSuffixedExe = stringAppend(executable1, System.getExeExt());
         // sim_call = stringAppendList({"sh -c ",cit,"ulimit -t 60; ",cit,pwd,pd,executableSuffixedExe,cit," > output.log 2>&1",cit});
@@ -1197,7 +1196,7 @@ algorithm
         SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
         0 = System.systemCall(sim_call);
         
-        result_file = stringAppendList(List.consOnTrue(not RTOpts.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
+        result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
         timeSimulation = System.realtimeTock(RT_CLOCK_SIMULATE_SIMULATION);
         timeTotal = System.realtimeTock(RT_CLOCK_SIMULATE_TOTAL);
         simValue = createSimulationResult(
@@ -1346,7 +1345,9 @@ algorithm
         
     case (cache,env,"setCommandLineOptions",{Values.STRING(str)},st,msg)
       equation
-        args = RTOpts.args({str});
+        args = System.strtok(str, " ");
+        Flags.clearDebugFlags();
+        _ = Flags.readArgs(args);
       then
         (Env.emptyCache(),Values.BOOL(true),st);
         
@@ -2511,9 +2512,9 @@ algorithm
         //win1 = getWithinStatement(classname);
         s3 = extractNoCleanCommand(noClean);
         
-        Debug.fprintln("dynload", "buildModel: about to compile model " +& filenameprefix +& ", " +& file_dir);
+        Debug.fprintln(Flags.DYN_LOAD, "buildModel: about to compile model " +& filenameprefix +& ", " +& file_dir);
         compileModel(filenameprefix, libs, file_dir, s3, method_str);
-        Debug.fprintln("dynload", "buildModel: Compiling done.");
+        Debug.fprintln(Flags.DYN_LOAD, "buildModel: Compiling done.");
         _ = System.cd(oldDir);
         p = setBuildTime(p,classname);
         st2 = st;// Interactive.replaceSymbolTableProgram(st,p);
@@ -2632,7 +2633,7 @@ algorithm
         make_call = stringAppendList({make," -f ",fileprefix,".makefile >",fileprefix,".log 2>&1"});
         s_call = Util.if_(isWindows, win_call, make_call);
         
-        Debug.fprintln("dynload", "compileModel: running " +& s_call);
+        Debug.fprintln(Flags.DYN_LOAD, "compileModel: running " +& s_call);
         
         // remove .exe .dll .log!
         fileEXE = fileprefix +& System.getExeExt();
@@ -2645,7 +2646,7 @@ algorithm
         // call the system command to compile the model!
         0 = System.systemCall(s_call);
                 
-        Debug.fprintln("dynload", "compileModel: successful! ");
+        Debug.fprintln(Flags.DYN_LOAD, "compileModel: successful! ");
       then
         ();
 
@@ -2655,7 +2656,7 @@ algorithm
         true = System.regularFileExists(filename);
         str = System.readFile(filename);
         Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
-        Debug.fprintln("dynload", "compileModel: failed!");
+        Debug.fprintln(Flags.DYN_LOAD, "compileModel: failed!");
       then
         fail();
 
@@ -3251,7 +3252,7 @@ algorithm
         // ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         funcs = Env.getFunctionTree(cache);
         (dlow as BackendDAE.DAE({syst},shared)) = BackendDAECreate.lower(dae, funcs, false) "no dummy state" ;
-        Debug.fcall("dumpdaelow", BackendDump.dump, dlow);
+        Debug.fcall(Flags.DUMP_DAE_LOW, BackendDump.dump, dlow);
         eqns = BackendEquation.daeEqns(syst);
         eqnSize = BackendDAEUtil.equationSize(eqns);
         vars = BackendVariable.daeVars(syst);
@@ -3476,7 +3477,7 @@ algorithm
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);
-        compileDir = Util.if_(RTOpts.getRunningTestsuite(),"",compileDir);
+        compileDir = Util.if_(Config.getRunningTestsuite(),"",compileDir);
       then
         (cache,st,xml_contents,stringAppendList({"The model has been dumped to xml file: ",compileDir,xml_filename}));
       
@@ -3503,7 +3504,7 @@ algorithm
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);
-        compileDir = Util.if_(RTOpts.getRunningTestsuite(),"",compileDir);
+        compileDir = Util.if_(Config.getRunningTestsuite(),"",compileDir);
       then
         (cache,st,xml_contents,stringAppendList({"The model has been dumped to xml file: ",compileDir,xml_filename}));
       
@@ -3528,7 +3529,7 @@ algorithm
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);
-        compileDir = Util.if_(RTOpts.getRunningTestsuite(),"",compileDir);
+        compileDir = Util.if_(Config.getRunningTestsuite(),"",compileDir);
       then
         (cache,st,xml_contents,stringAppendList({"The model has been dumped to xml file: ",compileDir,xml_filename}));
     
@@ -3752,9 +3753,10 @@ algorithm
         false = Interactive.isType(cr, p);
         print("Checking: " +& Dump.unparseClassAttributesStr(c) +& " " +& Absyn.pathString(className) +& "... ");
         t1 = clock();
-        OptManager.setOption("checkModel", true);
+        Flags.setConfigBool(Flags.CHECK_MODEL, true);
         (_,Values.STRING(str),_) = checkModel(Env.emptyCache(), env, className, st, msg);
-        OptManager.setOption("checkModel", false);
+        Flags.setConfigBool(Flags.CHECK_MODEL, false);
+        (_,Values.STRING(str),_) = checkModel(Env.emptyCache(), env, className, st, msg);
         t2 = clock(); elapsedTime = t2 -. t1; s = realString(elapsedTime);
         print (s +& " seconds -> " +& failOrSuccess(str) +& "\n\t");
         print (System.stringReplace(str, "\n", "\n\t"));
@@ -3827,9 +3829,9 @@ algorithm
         //(cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str,options_str,outputFormat_str) 
         //= calculateSimulationSettings(cache,env, exp, st, msg, cname_str);
         //SimCode.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename, starttime_r, stoptime_r, interval_r,tolerance_r,method_str,options_str,outputFormat_str);
-        Debug.fprintln("dynload", "buildModel: about to compile model " +& filenameprefix +& ", " +& file_dir);
+        Debug.fprintln(Flags.DYN_LOAD, "buildModel: about to compile model " +& filenameprefix +& ", " +& file_dir);
         compileModel(filenameprefix, libs, file_dir, "", method_str);
-        Debug.fprintln("dynload", "buildModel: Compiling done.");
+        Debug.fprintln(Flags.DYN_LOAD, "buildModel: Compiling done.");
         // SimCodegen.generateMakefileBeast(makefilename, filenameprefix, libs, file_dir);
         win1 = getWithinStatement(classname);
         p2 = Absyn.PROGRAM({cdef},win1,ts);
@@ -3914,8 +3916,8 @@ algorithm
     // template based translation
     case (cache, env, path)
       equation
-        false = RTOpts.debugFlag("nogen");
-        false = RTOpts.debugFlag("generateCodeCheat");
+        false = Flags.isSet(Flags.NO_GEN);
+        false = Flags.isSet(Flags.GENERATE_CODE_CHEAT);
         
         (cache, mainFunction, d, metarecordTypes) = collectDependencies(cache, env, path);
         
@@ -3932,8 +3934,8 @@ algorithm
     // * Don't compile the generated files
     case (cache, env, path)
       equation
-        false = RTOpts.debugFlag("nogen");
-        true = RTOpts.debugFlag("generateCodeCheat");
+        false = Flags.isSet(Flags.NO_GEN);
+        true = Flags.isSet(Flags.GENERATE_CODE_CHEAT);
         funcs = Env.getFunctionTree(cache);
         // First check if the main function exists... If it does not it might be an interactive function...
         pathstr = generateFunctionName(path);
@@ -3946,12 +3948,12 @@ algorithm
 
     case (cache, env, path)
       equation
-        false = RTOpts.debugFlag("nogen");
+        false = Flags.isSet(Flags.NO_GEN);
         (cache,false) = Static.isExternalObjectFunction(cache,env,path);
         pathstr = generateFunctionName(path);
         pathstr = stringAppend("/*- CevalScript.cevalGenerateFunction failed(", pathstr);
         pathstr = stringAppend(pathstr,")*/\n");
-        Debug.fprint("failtrace", pathstr);
+        Debug.fprint(Flags.FAILTRACE, pathstr);
       then
         fail();
   end matchcontinue;

@@ -13,13 +13,8 @@ using namespace std;
 
 
 extern "C" {
-/*
- * @author adrpo
- * @date 2007-02-08
- * This variable is set in rtopts by function setCorbaSessionName(char* name);
- * system independent Corba Session Name
- */  
-extern char* corbaSessionName;
+
+char* corbaSessionName;
 
 void Corba_5finit(void)
 {  
@@ -28,6 +23,13 @@ void Corba_5finit(void)
 void errmsg() {
   cerr << "CORBA disabled. Configure with --with-CORBA and recompile for enabling." << endl;
 }
+
+RML_BEGIN_LABEL(Corba__setSessionName)
+{
+  errmsg();
+  RML_TAILCALLK(rmlFC);
+}
+RML_END_LABEL
 
 RML_BEGIN_LABEL(Corba__initialize)
 {

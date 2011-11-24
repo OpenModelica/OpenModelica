@@ -46,6 +46,7 @@ public import SCode;
 
 // protected imports
 protected import ComponentReference;
+protected import Config;
 protected import DAEUtil;
 protected import Print;
 protected import Util;
@@ -58,7 +59,6 @@ protected import Values;
 protected import Types;
 protected import ClassInf;
 protected import Algorithm;
-protected import RTOpts;
 protected import SCodeDump;
 protected import List;
 
@@ -879,7 +879,7 @@ algorithm
     // Class comment, show annotations enabled.
     case (SOME(SCode.CLASS_COMMENT(annotations = annl, comment = cmtopt)))
       equation
-        true = RTOpts.showAnnotations();
+        true = Config.showAnnotations();
         str = dumpCommentOptionStr(cmtopt);
         ann_strl = List.map1(List.map(annl, dumpAnnotationStr), 
           stringAppend, ";");
@@ -908,7 +908,7 @@ algorithm
       String s;
     case SOME(ann)
       equation
-        true = RTOpts.showAnnotations();
+        true = Config.showAnnotations();
         s = dumpAnnotationStr(ann);
       then
         s;

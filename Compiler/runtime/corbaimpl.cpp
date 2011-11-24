@@ -46,8 +46,7 @@ extern "C" {
 #include <stdio.h>
 #include "settingsimpl.h"
 
-/* This variable is set in rtopts by function setCorbaSessionName(char* name); */
-extern const char* corbaSessionName;
+char* corbaSessionName = 0;
 const char* omc_cmd_message="";
 const char* omc_reply_message="";
 
@@ -70,6 +69,18 @@ OmcCommunication_impl* server;
 
 /* the file in which we have to dump the Corba IOR ID */
 std::ostringstream objref_file;
+
+void CorbaImpl__setSessionName(const char *name)
+{
+  if (strlen(name) == 0) return;
+  if (corbaSessionName) free(corbaSessionName);
+
+  if (*name) {
+    corbaSessionName = strdup(name);
+  } else {
+    corbaSessionName = NULL;
+  }
+}
 
 // windows and mingw32
 #if defined(__MINGW32__) || defined(_MSC_VER)

@@ -48,8 +48,8 @@ public type Env = SCodeEnv.Env;
 
 protected import Debug;
 protected import Error;
+protected import Flags;
 protected import List;
-protected import RTOpts;
 protected import SCodeLookup;
 protected import Util;
 
@@ -99,7 +99,7 @@ algorithm
 
     else
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- SCodeFlattenImports.flattenClass failed on " +&
           SCode.elementName(inClass) +& " in " +& SCodeEnv.getEnvName(inEnv));
       then

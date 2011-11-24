@@ -46,14 +46,15 @@ public import DAE;
 
 // protected imports
 protected import ClassInf;
+protected import Config;
 protected import Debug;
 protected import Dump;
 protected import Expression;
 protected import ExpressionDump;
+protected import Flags;
 protected import Global;
 protected import List;
 protected import Print;
-protected import RTOpts;
 protected import System;
 protected import Util;
 
@@ -529,7 +530,7 @@ algorithm
     // Qualified - Modelica output - does not handle names with underscores
     case DAE.CREF_QUAL(ident = s,subscriptLst = subs,componentRef = cr)
       equation
-        true = RTOpts.modelicaOutput();
+        true = Config.modelicaOutput();
         str = printComponentRef2Str(s, subs);
         strrest = printComponentRefStr(cr);
         str = stringAppendList({str, "__", strrest});
@@ -539,7 +540,7 @@ algorithm
     // Qualified - non Modelica output
     case DAE.CREF_QUAL(ident = s,subscriptLst = subs,componentRef = cr)
       equation
-        false = RTOpts.modelicaOutput();
+        false = Config.modelicaOutput();
         str = printComponentRef2Str(s, subs);
         strrest = printComponentRefStr(cr);
         str = stringAppendList({str, ".", strrest});
@@ -569,7 +570,7 @@ algorithm
     // some subscripts, Modelica output
     case (s,l)
       equation
-        true = RTOpts.modelicaOutput();
+        true = Config.modelicaOutput();
         str = ExpressionDump.printListStr(l, ExpressionDump.printSubscriptStr, ",");
         str = stringAppendList({s, "_L", str, "_R"});
       then
@@ -578,7 +579,7 @@ algorithm
     // some subscripts, non Modelica output
     case (s,l)
       equation
-        false = RTOpts.modelicaOutput();
+        false = Config.modelicaOutput();
         str = ExpressionDump.printListStr(l, ExpressionDump.printSubscriptStr, ",");
         str = stringAppendList({s, "[", str, "]"});
       then
@@ -613,7 +614,7 @@ algorithm
     
     case DAE.CREF_QUAL(ident = s,identType=ty,subscriptLst = subs,componentRef = cr) /* Does not handle names with underscores */
       equation
-        true = RTOpts.modelicaOutput();
+        true = Config.modelicaOutput();
         str = printComponentRef2Str(s, subs);
         str2 = ExpressionDump.typeString(ty);
         strrest = debugPrintComponentRefTypeStr(cr);
@@ -623,7 +624,7 @@ algorithm
     
     case DAE.CREF_QUAL(ident = s,identType=ty,subscriptLst = subs,componentRef = cr)
       equation
-        false = RTOpts.modelicaOutput();
+        false = Config.modelicaOutput();
         str = printComponentRef2Str(s, subs);
         str2 = ExpressionDump.typeString(ty);
         strrest = debugPrintComponentRefTypeStr(cr);
@@ -1328,11 +1329,11 @@ algorithm
     
     case(inRef)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "ComponentReference.crefType failed on Cref:");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE, "ComponentReference.crefType failed on Cref:");
         s = printComponentRefStr(inRef);
-        Debug.fprint("failtrace", s);
-        Debug.fprint("failtrace", "\n");
+        Debug.fprint(Flags.FAILTRACE, s);
+        Debug.fprint(Flags.FAILTRACE, "\n");
       then
         fail();
   end matchcontinue;
@@ -1447,11 +1448,11 @@ algorithm
     
     case(inRef)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "-ComponentReference.crefType failed on Cref:");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE, "-ComponentReference.crefType failed on Cref:");
         s = printComponentRefStr(inRef);
-        Debug.fprint("failtrace", s);
-        Debug.fprint("failtrace", "\n");
+        Debug.fprint(Flags.FAILTRACE, s);
+        Debug.fprint(Flags.FAILTRACE, "\n");
       then
         fail();
   end matchcontinue;
@@ -1723,7 +1724,7 @@ algorithm
       equation
         false = (listLength(Expression.arrayTypeDimensions(t2)) >= (listLength(subs)+listLength(newSub)));
         child = subscriptCref(child,newSub);
-        Debug.fprintln("failtrace", "WARNING - Expression.replaceCref_SliceSub setting subscript last, not containing dimension");
+        Debug.fprintln(Flags.FAILTRACE, "WARNING - Expression.replaceCref_SliceSub setting subscript last, not containing dimension");
       then
         child;
         
@@ -1751,7 +1752,7 @@ algorithm
         
     case(_,_)
       equation
-        Debug.fprint("failtrace", "- Expression.replaceCref_SliceSub failed\n ");
+        Debug.fprint(Flags.FAILTRACE, "- Expression.replaceCref_SliceSub failed\n ");
       then
         fail();
   end matchcontinue;
@@ -2032,7 +2033,7 @@ algorithm
     // qualified crefs, does not handle names with underscores
     case DAE.CREF_QUAL(ident = s,subscriptLst = subs,componentRef = cr)
       equation
-        true = RTOpts.modelicaOutput();
+        true = Config.modelicaOutput();
         printComponentRef2(s, subs);
         Print.printBuf("__");
         printComponentRef(cr);
@@ -2040,7 +2041,7 @@ algorithm
         ();
     case DAE.CREF_QUAL(ident = s,subscriptLst = subs,componentRef = cr)
       equation
-        false = RTOpts.modelicaOutput();
+        false = Config.modelicaOutput();
         printComponentRef2(s, subs);
         Print.printBuf(".");
         printComponentRef(cr);
@@ -2066,7 +2067,7 @@ algorithm
         ();
     case (s,l)
       equation
-        true = RTOpts.modelicaOutput();
+        true = Config.modelicaOutput();
         Print.printBuf(s);
         Print.printBuf("_L");
         ExpressionDump.printList(l, ExpressionDump.printSubscript, ",");
@@ -2075,7 +2076,7 @@ algorithm
         ();
     case (s,l)
       equation
-        false = RTOpts.modelicaOutput();
+        false = Config.modelicaOutput();
         Print.printBuf(s);
         Print.printBuf("[");
         ExpressionDump.printList(l, ExpressionDump.printSubscript, ",");

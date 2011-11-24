@@ -2014,21 +2014,30 @@ package ExpressionDump
   end typeString;
 end ExpressionDump;
 
-package RTOpts
+package Config
   function acceptMetaModelicaGrammar
     output Boolean outBoolean;
   end acceptMetaModelicaGrammar;
-  function debugFlag
-    input String flag;
-    output Boolean outBoolean;
-  end debugFlag;
+
   function noProc
     output Integer n;
   end noProc;
+
   function getRunningTestsuite
     output Boolean runningTestsuite;
   end getRunningTestsuite;
-end RTOpts;
+end Config;
+
+package Flags
+  uniontype DebugFlag end DebugFlag;
+
+  constant DebugFlag OPENMP;
+
+  function isSet
+    input DebugFlag inFlag;
+    output Boolean outValue;
+  end isSet;
+end Flags;
 
 package Settings
   function getVersionNr

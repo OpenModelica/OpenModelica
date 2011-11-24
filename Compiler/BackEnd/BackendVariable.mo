@@ -50,10 +50,10 @@ protected import DAEUtil;
 protected import Debug;
 protected import Expression;
 protected import ExpressionSimplify;
+protected import Flags;
 protected import HashTable2;
 protected import List;
 protected import SCode;
-protected import RTOpts;
 protected import Util;
 
 /* =======================================================
@@ -269,7 +269,7 @@ algorithm
   case (v) // states are by default fixed. 
       equation
         BackendDAE.STATE() = varKind(v);
-        fixed = RTOpts.debugFlag("initdlowdump");
+        fixes = Flags.isSet(Flags.INIT_DLOW_DUMP);
       then
         not fixed;
 */
@@ -3366,8 +3366,8 @@ algorithm
         v;
     case (BackendDAE.VARIABLES(varArr = vararr),n)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "getVarAt failed to get the variable at index:" +& intString(n));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprintln(Flags.FAILTRACE, "getVarAt failed to get the variable at index:" +& intString(n));
       then
         fail();
   end matchcontinue;
@@ -3415,7 +3415,7 @@ algorithm
     /* failure
     case (cr,vars)
       equation
-        Debug.fprintln("daelow", "- getVar failed on component reference: " +& ComponentReference.printComponentRefStr(cr));
+        Debug.fprintln(Flags.DAE_LOW, "- getVar failed on component reference: " +& ComponentReference.printComponentRefStr(cr));
       then
         fail();
     */
@@ -3695,7 +3695,7 @@ algorithm
         ext_arg_1;
     case (_,_,_)
       equation
-        Debug.fprintln("failtrace", "- BackendVariable.traverseBackendDAEVars failed");
+        Debug.fprintln(Flags.FAILTRACE, "- BackendVariable.traverseBackendDAEVars failed");
       then
         fail();
   end matchcontinue;
@@ -3727,7 +3727,7 @@ algorithm
         ext_arg;
     case (_,_,_)
       equation
-        Debug.fprintln("failtrace", "- BackendVariable.traverseBackendDAEVar failed");
+        Debug.fprintln(Flags.FAILTRACE, "- BackendVariable.traverseBackendDAEVar failed");
       then
         fail();
   end matchcontinue;
@@ -3764,7 +3764,7 @@ algorithm
         (BackendDAE.VARIABLES(crefIdxLstArr,BackendDAE.VARIABLE_ARRAY(numberOfElements,arrSize,varOptArr1),bucketSize,numberOfVars),ext_arg_1);
     case (_,_,_)
       equation
-        Debug.fprintln("failtrace", "- BackendVariable.traverseBackendDAEVarsWithUpdate failed");
+        Debug.fprintln(Flags.FAILTRACE, "- BackendVariable.traverseBackendDAEVarsWithUpdate failed");
       then
         fail();
   end matchcontinue;
@@ -3799,7 +3799,7 @@ algorithm
         (ovar,ext_arg);
     case (_,_,_)
       equation
-        Debug.fprintln("failtrace", "- BackendVariable.traverseBackendDAEVar failed");
+        Debug.fprintln(Flags.FAILTRACE, "- BackendVariable.traverseBackendDAEVar failed");
       then
         fail();
   end matchcontinue;

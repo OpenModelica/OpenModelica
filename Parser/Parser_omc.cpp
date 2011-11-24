@@ -34,26 +34,35 @@ extern "C" {
 #include "rml_compatibility.h"
 #include "parse.c"
 
-void* Parser_parse(const char* filename)
+void* ParserExt_parse(const char* filename, int acceptMM, int runningTestsuite)
 {
-  void *res = parseFile(filename,PARSE_MODELICA);
+  int flags = PARSE_MODELICA;
+  if(acceptMM) flags |= PARSE_META_MODELICA;
+
+  void *res = parseFile(filename, flags, runningTestsuite);
   if (res == NULL)
     MMC_THROW();
   // printAny(res);
   return res;
 }
 
-void* Parser_parseexp(const char* filename)
+void* ParserExt_parseexp(const char* filename, int acceptMM, int runningTestsuite)
 {
-  void *res = parseFile(filename,PARSE_EXPRESSION);
+  int flags = PARSE_EXPRESSION;
+  if(acceptMM) flags |= PARSE_META_MODELICA;
+  
+  void *res = parseFile(filename, flags, runningTestsuite);
   if (res == NULL)
     MMC_THROW();
   return res;
 }
 
-void* Parser_parsestring(const char* data, const char* filename)
+void* ParserExt_parsestring(const char* data, const char* filename, int acceptMM, int runningTestsuite)
 {
-  void *res = parseString(data,filename,PARSE_MODELICA);
+  int flags = PARSE_MODELICA;
+  if(acceptMM) flags |= PARSE_META_MODELICA;
+
+  void *res = parseString(data, filename, flags, runningTestsuite);
   if (res != NULL) {
     return res;
   } else {
@@ -61,9 +70,12 @@ void* Parser_parsestring(const char* data, const char* filename)
   }
 }
 
-void* Parser_parsestringexp(const char* data, const char* filename)
+void* ParserExt_parsestringexp(const char* data, const char* filename, int acceptMM, int runningTestsuite)
 {
-  void *res = parseString(data,filename,PARSE_EXPRESSION);
+  int flags = PARSE_EXPRESSION;
+  if(acceptMM) flags |= PARSE_META_MODELICA;
+
+  void *res = parseString(data, filename, flags, runningTestsuite);
   if (res != NULL) {
     return res;
   } else {

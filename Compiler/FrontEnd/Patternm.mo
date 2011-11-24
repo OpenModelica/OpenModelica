@@ -62,12 +62,12 @@ protected import Debug;
 protected import Expression;
 protected import ExpressionDump;
 protected import Error;
+protected import Flags;
 protected import Inst;
 protected import InstSection;
 protected import List;
 protected import Lookup;
 protected import MetaUtil;
-protected import RTOpts;
 protected import SCodeUtil;
 protected import Static;
 protected import System;
@@ -628,7 +628,7 @@ algorithm
         // Do DCE before converting mc to m
         matchTy = optimizeContinueToMatch(matchTy,elabCases,info);
         elabCases = optimizeContinueJumps(matchTy, elabCases);
-        ht = getUsedLocalCrefs(RTOpts.debugFlag("patternmSkipFilterUnusedAsBindings"),DAE.MATCHEXPRESSION(DAE.MATCHCONTINUE(),elabExps,matchDecls,elabCases,et));
+        ht = getUsedLocalCrefs(Flags.isSet(Flags.PATTERNM_SKIP_FILTER_UNUSED_AS_BINDINGS),DAE.MATCHEXPRESSION(DAE.MATCHCONTINUE(),elabExps,matchDecls,elabCases,et));
         (matchDecls,ht) = filterUnusedDecls(matchDecls,ht,{},HashTableStringToPath.emptyHashTable());
         elabCases = filterUnusedAsBindings(elabCases,ht);
         (elabExps,elabCases) = filterUnusedPatterns(elabExps,elabCases) "filterUnusedPatterns() Then again to filter out the last parts.";
@@ -675,7 +675,7 @@ algorithm
         tpl = findPatternToConvertToSwitch(optPatternMatrix,0,numNonEmptyColumns,info);
         (_,ty,_) = tpl;
         str = ExpressionDump.typeString(ty);
-        Error.assertionOrAddSourceMessage(not RTOpts.debugFlag("patternmAllInfo"),Error.MATCH_TO_SWITCH_OPTIMIZATION, {str}, info);
+        Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.MATCH_TO_SWITCH_OPTIMIZATION, {str}, info);
       then DAE.MATCH(SOME(tpl));
     else DAE.MATCH(NONE());
   end matchcontinue;
@@ -899,7 +899,7 @@ algorithm
     case ((DAE.PAT_AS(id=id,pat=pat),tpl as (ht,info)))
       equation
         _ = BaseHashTable.get(id, ht);
-        Error.assertionOrAddSourceMessage(not RTOpts.debugFlag("patternmAllInfo"),Error.META_UNUSED_AS_BINDING, {id}, info);
+        Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_AS_BINDING, {id}, info);
       then ((pat,tpl));
     case ((DAE.PAT_AS_FUNC_PTR(id=id,pat=pat),tpl as (ht,info)))
       equation
@@ -1172,7 +1172,7 @@ algorithm
       equation
         failure(_ = BaseHashTable.get(name, ht));
         unusedHt = BaseHashTable.add((name,Absyn.IDENT("")),unusedHt);
-        Error.assertionOrAddSourceMessage(not RTOpts.debugFlag("patternmAllInfo"),Error.META_UNUSED_DECL, {name}, info);
+        Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_DECL, {name}, info);
         (acc,unusedHt) = filterUnusedDecls(rest,ht,acc,unusedHt);
       then (acc,unusedHt);
     case (el::rest,ht,acc,unusedHt)
@@ -1204,20 +1204,20 @@ algorithm
     case (_,{},_,acc,true) then caseDeadCodeEliminiation(matchType,listReverse(acc),{},{},false);
     case (_,DAE.CASE(body={},result=NONE(),info=info)::{},prevPatterns,acc,iter)
       equation
-        Error.assertionOrAddSourceMessage(not RTOpts.debugFlag("patternmAllInfo"), Error.META_DEAD_CODE, {"Last pattern is empty"}, info);
+        Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.META_DEAD_CODE, {"Last pattern is empty"}, info);
       then caseDeadCodeEliminiation(matchType,listReverse(acc),{},{},false);
         /* Tricky to get right; I'll try again later as it probably only gives marginal results anyway
     case (Absyn.MATCH(),DAE.CASE(patterns=pats,info=info)::rest,prevPatterns as _::_,acc,iter)
       equation
         oinfo = findOverlappingPattern(pats,acc);
-        Error.assertionOrAddSourceMessage(not RTOpts.debugFlag("patternmAllInfo"), Error.META_DEAD_CODE, {"Unreachable pattern"}, info);
-        Error.assertionOrAddSourceMessage(not RTOpts.debugFlag("patternmAllInfo"), Error.META_DEAD_CODE, {"Shadowing case"}, oinfo);
+        Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.META_DEAD_CODE, {"Unreachable pattern"}, info);
+        Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.META_DEAD_CODE, {"Shadowing case"}, oinfo);
       then caseDeadCodeEliminiation(matchType,rest,pats::prevPatterns,acc,true);
       */
     case (Absyn.MATCHCONTINUE(),DAE.CASE(patterns=pats,body={},result=NONE(),info=info)::rest,prevPatterns,acc,_)
       equation
-        false = RTOpts.debugFlag("patternmSkipMCDCE");
-        Error.assertionOrAddSourceMessage(not RTOpts.debugFlag("patternmAllInfo"), Error.META_DEAD_CODE, {"Empty matchcontinue case"}, info);
+        false = Flags.isSet(Flags.PATTERNM_SKIP_MCDCE);
+        Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.META_DEAD_CODE, {"Empty matchcontinue case"}, info);
         acc = caseDeadCodeEliminiation(matchType,rest,pats::prevPatterns,acc,true);
       then acc;
     case (_,(case_ as DAE.CASE(patterns=pats))::rest,prevPatterns,acc,iter) then caseDeadCodeEliminiation(matchType,rest,pats::prevPatterns,case_::acc,iter);
@@ -1366,7 +1366,7 @@ algorithm
       list<DAE.Pattern> patterns;
     case ({},_,info)
       equation
-        Error.assertionOrAddSourceMessage(not RTOpts.debugFlag("patternmAllInfo"), Error.MATCHCONTINUE_TO_MATCH_OPTIMIZATION, {}, info);
+        Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.MATCHCONTINUE_TO_MATCH_OPTIMIZATION, {}, info);
       then Absyn.MATCH();
     case (DAE.CASE(patterns=patterns)::cases,prevPatterns,info)
       equation
@@ -1614,7 +1614,7 @@ algorithm
     case (cache,env,body,exp,impl,st,performVectorization,pre,info)
       equation
         (cache,elabExp,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);
-        (body,elabExp,info) = elabResultExp2(RTOpts.debugFlag("patternmSkipMoveLastExp"),body,elabExp,info);
+        (body,elabExp,info) = elabResultExp2(Flags.isSet(Flags.PATTERNM_SKIP_MOVE_LAST_EXP),body,elabExp,info);
         ty = Types.getPropType(prop);
       then (cache,body,SOME(elabExp),info,SOME(ty),st);
   end matchcontinue;

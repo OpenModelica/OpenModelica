@@ -55,6 +55,7 @@ protected import Debug;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import Flags;
 protected import List;
 protected import Util;
 
@@ -150,7 +151,7 @@ algorithm
           {"add_replacement(",s1,", ",s2,") -> add_replacement(",s3,
           ", ",s4,")\n"});
           print(s);
-        Debug.fprint("addrepl", s);*/
+        Debug.fprint(Flags.ADD_REPL, s);*/
         ht_1 = BaseHashTable.add((src_1, dst_1),ht);
         invHt_1 = addReplacementInv(invHt, src_1, dst_1);
         eht_1 = addExtendReplacement(eht,src_1,NONE());
@@ -476,7 +477,7 @@ algorithm
       then erepl;
     case (extendrepl,cr,_)
       equation
-        Debug.fprintln("failtrace", "- BackendVarTransform.addExtendReplacement failed");
+        Debug.fprintln(Flags.FAILTRACE, "- BackendVarTransform.addExtendReplacement failed");
       then extendrepl;
   end matchcontinue;
 end addExtendReplacement;

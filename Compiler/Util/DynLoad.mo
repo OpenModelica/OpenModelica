@@ -44,9 +44,10 @@ Executes a function given a handle (from System.lookupFunction) and a list
 of values."
   input Integer inFuncHandle;
   input list<Values.Value> inValLst;
+  input Boolean inPrintDebug;
   output Values.Value outVal;
 
-  external "C" outVal=DynLoad_executeFunction(inFuncHandle,inValLst) annotation(Library = "omcruntime");
+  external "C" outVal=DynLoad_executeFunction(inFuncHandle,inValLst,inPrintDebug) annotation(Library = "omcruntime");
 end executeFunction;
 
 end DynLoad;

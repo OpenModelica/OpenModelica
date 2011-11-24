@@ -51,6 +51,7 @@ constant Integer crefIndex = 2;
 constant Integer builtinIndex = 3;
 constant Integer profilerTime1Index = 5;
 constant Integer profilerTime2Index = 6;
+constant Integer flagsIndex = 7;
 
 type Names       = Name.Names;
 type Scopes      = Scope.Scopes;

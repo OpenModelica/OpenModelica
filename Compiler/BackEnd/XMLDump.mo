@@ -84,13 +84,13 @@ public import DAE;
 public import BackendDAEEXT;
 public import Values;
 public import SCode;
-public import RTOpts;
 
 protected import Algorithm;
 protected import BackendDAEUtil;
 protected import BackendVariable;
 protected import BackendDAETransform;
 protected import ComponentReference;
+protected import Config;
 protected import DAEUtil;
 protected import Debug;
 protected import Dump;
@@ -1841,14 +1841,14 @@ algorithm
       then ();
     case (DAE.CAST(ty = DAE.ET_REAL(),exp = DAE.ICONST(integer = ival)))
       equation
-        false = RTOpts.modelicaOutput();
+        false = Config.modelicaOutput();
         rval = intReal(ival);
         res = realString(rval);
         dumpStrMathMLNumberAttr(res,MathMLType,MathMLReal);
       then ();
     case (DAE.CAST(ty = DAE.ET_REAL(),exp = DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = DAE.ICONST(integer = ival))))
       equation
-        false = RTOpts.modelicaOutput();
+        false = Config.modelicaOutput();
         rval = intReal(ival);
         res = realString(rval);
         dumpStrOpenTag(MathMLApply);
@@ -1858,7 +1858,7 @@ algorithm
       then ();
     case (DAE.CAST(ty = DAE.ET_REAL(),exp = e))
       equation
-        false = RTOpts.modelicaOutput();
+        false = Config.modelicaOutput();
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLReal);
         dumpExp2(e);
@@ -1866,7 +1866,7 @@ algorithm
       then ();
     case (DAE.CAST(ty = DAE.ET_REAL(),exp = e))
       equation
-        true = RTOpts.modelicaOutput();
+        true = Config.modelicaOutput();
         dumpExp2(e);
       then ();
     case (DAE.CAST(ty = tp,exp = e))

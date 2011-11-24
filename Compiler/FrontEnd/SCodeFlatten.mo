@@ -48,8 +48,8 @@ public import SCodeFlattenExtends;
 public import SCodeFlattenRedeclare;
 
 protected import Debug;
+protected import Flags;
 protected import List;
-protected import RTOpts;
 protected import SCodeEnv;
 protected import System;
 protected import SCodeLookup;
@@ -136,7 +136,7 @@ algorithm
 
     else
       equation
-        Debug.fprintln("failtrace", "SCodeFlatten.flattenClassInProgram failed on " +&
+        Debug.fprintln(Flags.FAILTRACE, "SCodeFlatten.flattenClassInProgram failed on " +&
           Absyn.pathString(inClassName));
       then
         fail();
@@ -187,7 +187,7 @@ algorithm
 
     else
       equation
-        Debug.fprintln("failtrace", "SCodeFlatten.flattenCompleteProgram failed");
+        Debug.fprintln(Flags.FAILTRACE, "SCodeFlatten.flattenCompleteProgram failed");
       then
         fail();
 

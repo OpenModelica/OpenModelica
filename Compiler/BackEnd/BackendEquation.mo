@@ -52,6 +52,7 @@ protected import Debug;
 protected import Error;
 protected import Expression;
 protected import ExpressionSimplify;
+protected import Flags;
 protected import List;
 protected import Util;
 
@@ -645,7 +646,7 @@ algorithm
       then BackendDAEUtil.traverseBackendDAEArrayNoCopy(equOptArr,func,traverseBackendDAEOptEqn,1,arrayLength(equOptArr),inTypeA);
     case (_,_,_)
       equation
-        Debug.fprintln("failtrace", "- BackendEquation.traverseBackendDAEEqns failed");
+        Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEEqns failed");
       then
         fail();
   end matchcontinue;
@@ -676,7 +677,7 @@ algorithm
         ext_arg;
     case (_,_,_)
       equation
-        Debug.fprintln("failtrace", "- BackendEquation.traverseBackendDAEOptEqn failed");
+        Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEOptEqn failed");
       then
         fail();
   end matchcontinue;
@@ -705,7 +706,7 @@ algorithm
       then BackendDAEUtil.traverseBackendDAEArrayNoCopyWithStop(equOptArr,func,traverseBackendDAEOptEqnWithStop,1,arrayLength(equOptArr),inTypeA);
     case (_,_,_)
       equation
-        Debug.fprintln("failtrace", "- BackendEquation.traverseBackendDAEEqnsWithStop failed");
+        Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEEqnsWithStop failed");
       then
         fail();
   end matchcontinue;
@@ -738,7 +739,7 @@ algorithm
         (b,ext_arg);
     case (_,_,_)
       equation
-        Debug.fprintln("failtrace", "- BackendEquation.traverseBackendDAEOptEqnWithStop failed");
+        Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEOptEqnWithStop failed");
       then
         fail();
   end matchcontinue;
@@ -772,7 +773,7 @@ algorithm
       then (BackendDAE.EQUATION_ARRAY(numberOfElement,arrSize,equOptArr),ext_arg);
     case (_,_,_)
       equation
-        Debug.fprintln("failtrace", "- BackendEquation.traverseBackendDAEEqnsWithStop failed");
+        Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEEqnsWithStop failed");
       then
         fail();
   end matchcontinue;
@@ -806,7 +807,7 @@ algorithm
         (oeqn,ext_arg);
     case (_,_,_)
       equation
-        Debug.fprintln("failtrace", "- BackendEquation.traverseBackendDAEOptEqnWithUpdate failed");
+        Debug.fprintln(Flags.FAILTRACE, "- BackendEquation.traverseBackendDAEOptEqnWithUpdate failed");
       then
         fail();
   end matchcontinue;
@@ -1131,7 +1132,7 @@ algorithm
     
     case (backendEq)
       equation
-        Debug.fprintln("failtrace", "- BackendDAE.equationToResidualForm failed");
+        Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.equationToResidualForm failed");
       then
         fail();
   end matchcontinue;

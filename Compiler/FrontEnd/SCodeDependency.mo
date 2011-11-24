@@ -47,8 +47,8 @@ public type Env = SCodeEnv.Env;
 
 protected import Debug;
 protected import Error;
+protected import Flags;
 protected import List;
-protected import RTOpts;
 protected import SCodeCheck;
 protected import SCodeFlattenRedeclare;
 protected import SCodeLookup;
@@ -103,7 +103,7 @@ algorithm
 
     else
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- SCodeDependency.analyseClass failed for " +& 
           Absyn.pathString(inClassName) +& " in " +& 
           SCodeEnv.getEnvName(inEnv));
@@ -302,7 +302,7 @@ algorithm
 
     else
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- SCodeDependency.analyseItem failed on " +&
           SCodeEnv.getItemName(inItem) +& " in " +&
           SCodeEnv.getEnvName(inEnv));
@@ -663,7 +663,7 @@ algorithm
 
     else
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- SCodeDependency.analyseRedeclaredClass2 failed for " +&
           SCodeEnv.getItemName(inItem) +& " in " +&
           SCodeEnv.getEnvName(inEnv));

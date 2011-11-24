@@ -12,6 +12,7 @@ and contains some tests for basic parts of Susan.
 "
 
 protected import Debug;
+protected import Flags;
 protected import Util;
 protected import Print;
 protected import System;
@@ -173,7 +174,7 @@ algorithm
     //should not ever happen 
     case (_,_,_,_,_,_)
       equation
-        Debug.fprint("failtrace", "-!!!Tpl.tplMainTest failed.\n");
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.tplMainTest failed.\n");
       then 
         fail();
   end matchcontinue;

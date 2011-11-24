@@ -55,8 +55,8 @@ public import Name;
 protected import BaseHashTable;
 protected import Debug;
 protected import Dump;
+protected import Flags;
 protected import List;
-protected import RTOpts;
 protected import SCodeLookup;
 protected import SCodeDump;
 protected import SCodeFlat;
@@ -113,7 +113,7 @@ algorithm
 
     case (_, _, _)
       equation
-        false = RTOpts.debugFlag("scodeFlatten");
+        false = Flags.isSet(Flags.SCODE_FLATTEN);
       then
         inProgram;
 

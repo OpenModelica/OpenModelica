@@ -60,6 +60,7 @@ protected import DAEUtil;
 protected import Error;
 protected import Expression;
 protected import ExpressionSimplify;
+protected import Flags;
 protected import List;
 protected import Types;
 
@@ -108,7 +109,7 @@ algorithm
         BackendDAE.DAE(eqs,BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,arrayEqs,algorithms,eventInfo,extObjClasses,btp));
     case(_,_,_)
       equation
-        Debug.fprintln("failtrace","Inline.inlineCalls failed");
+        Debug.fprintln(Flags.FAILTRACE,"Inline.inlineCalls failed");
       then
         fail();
   end matchcontinue;
@@ -157,7 +158,7 @@ algorithm
         BackendDAE.EQUATION_ARRAY(i1,i2,eqarr_1);
     case(_,_)
       equation
-        Debug.fprintln("failtrace","Inline.inlineEquationArray failed");
+        Debug.fprintln(Flags.FAILTRACE,"Inline.inlineEquationArray failed");
       then
         fail();
   end matchcontinue;
@@ -227,7 +228,7 @@ algorithm
         SOME(BackendDAE.COMPLEX_EQUATION(i,e1_1,e2_1,source));
     case(_,_)
       equation
-        Debug.fprintln("failtrace","Inline.inlineEqOpt failed");
+        Debug.fprintln(Flags.FAILTRACE,"Inline.inlineEqOpt failed");
       then
         fail();
   end matchcontinue;
@@ -262,7 +263,7 @@ algorithm
         (BackendDAE.WHEN_EQ(i,cref,e_1,SOME(weq_1)),source);
     else
       equation
-        Debug.fprintln("failtrace","Inline.inlineWhenEq failed");
+        Debug.fprintln(Flags.FAILTRACE,"Inline.inlineWhenEq failed");
       then
         fail();
   end matchcontinue;
@@ -291,7 +292,7 @@ algorithm
         BackendDAE.VARIABLES(crefind,BackendDAE.VARIABLE_ARRAY(i3,i4,vararr_1),i1,i2);
     case(_,_)
       equation
-        Debug.fprintln("failtrace","Inline.inlineVariables failed");
+        Debug.fprintln(Flags.FAILTRACE,"Inline.inlineVariables failed");
       then
         fail();
   end matchcontinue;
@@ -369,7 +370,7 @@ algorithm
         BackendDAE.MULTIDIM_EQUATION(ilst,e1_1,e2_1,source);
     case(_,_)
       equation
-        Debug.fprintln("failtrace","Inline.inlineMultiDimEqs failed");
+        Debug.fprintln(Flags.FAILTRACE,"Inline.inlineMultiDimEqs failed");
       then
         fail();
   end matchcontinue;
@@ -395,7 +396,7 @@ algorithm
         BackendDAE.EVENT_INFO(wclst_1,zclst_1);
     case(_,_)
       equation
-        Debug.fprintln("failtrace","Inline.inlineEventInfo failed");
+        Debug.fprintln(Flags.FAILTRACE,"Inline.inlineEventInfo failed");
       then
         fail();
   end matchcontinue;
@@ -420,7 +421,7 @@ algorithm
         BackendDAE.ZERO_CROSSING(e_1,ilst1,ilst2);
     case(_,_)
       equation
-        Debug.fprintln("failtrace","Inline.inlineZeroCrossing failed");
+        Debug.fprintln(Flags.FAILTRACE,"Inline.inlineZeroCrossing failed");
       then
         fail();
   end matchcontinue;
@@ -448,7 +449,7 @@ algorithm
         BackendDAE.WHEN_CLAUSE(e_1,rslst_1,io);
     case(_,_)
       equation
-        Debug.fprintln("failtrace","Inline.inlineWhenClause failed");
+        Debug.fprintln(Flags.FAILTRACE,"Inline.inlineWhenClause failed");
       then
         fail();
   end matchcontinue;
@@ -766,7 +767,7 @@ algorithm
         DAE.ALGORITHM_STMTS(stmts_1);
     case(_,_)
       equation
-        Debug.fprintln("failtrace","Inline.inlineAlgorithm failed");
+        Debug.fprintln(Flags.FAILTRACE,"Inline.inlineAlgorithm failed");
       then
         fail();
   end matchcontinue;
@@ -1151,7 +1152,7 @@ algorithm
       then ((c1,exp));
     case(_,_,_)
       equation
-        Debug.fprintln("failtrace","Inline.extendCrefRecords1 failed");
+        Debug.fprintln(Flags.FAILTRACE,"Inline.extendCrefRecords1 failed");
       then
         fail();
   end matchcontinue;
@@ -1175,7 +1176,7 @@ algorithm
       then c1;
     case(_,_)
       equation
-        Debug.fprintln("failtrace","Inline.extendCrefRecords2 failed");
+        Debug.fprintln(Flags.FAILTRACE,"Inline.extendCrefRecords2 failed");
       then
         fail();
   end matchcontinue;
@@ -1198,7 +1199,7 @@ algorithm
       then body;
     case(_,_)
       equation
-        Debug.fprintln("failtrace", "Inline.getFunctionBody failed");
+        Debug.fprintln(Flags.FAILTRACE, "Inline.getFunctionBody failed");
         // Error.addMessage(Error.INTERNAL_ERROR, {"Inline.getFunctionBody failed"});
       then
         fail();
@@ -1217,7 +1218,7 @@ algorithm
       DAE.Exp res;
     case({})
       equation
-        Debug.fprintln("failtrace","Inline.getRhsExp failed - cannot inline such a function");
+        Debug.fprintln(Flags.FAILTRACE,"Inline.getRhsExp failed - cannot inline such a function");
       then
         fail();
     case(DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN(exp=res)})) :: _) then res;
@@ -1335,7 +1336,7 @@ algorithm
       list<DAE.Subscript> subs;
     case({},_)
       equation
-        Debug.fprintln("failtrace","Inline.getExpFromArgMap failed");
+        Debug.fprintln(Flags.FAILTRACE,"Inline.getExpFromArgMap failed");
       then
         fail();
     case((cref,exp) :: cdr,key)

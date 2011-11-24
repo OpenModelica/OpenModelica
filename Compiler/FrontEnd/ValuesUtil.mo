@@ -51,11 +51,11 @@ protected import Dump;
 protected import Error;
 protected import Expression;
 protected import ExpressionSimplify;
+protected import Flags;
 protected import List;
 protected import Print;
 protected import System;
 protected import Util;
-protected import RTOpts;
 protected import ClassInf;
 protected import Types;
 protected import SimulationResults;
@@ -1721,7 +1721,7 @@ algorithm
         makeArray({Values.REAL(r1)});
     case (lst1,lst2)
       equation
-        Debug.fprintln("failtrace", "Values.multScalarProduct failed");
+        Debug.fprintln(Flags.FAILTRACE, "Values.multScalarProduct failed");
       then
         fail();
   end matchcontinue;
@@ -2262,7 +2262,7 @@ algorithm
         ();
     case _
       equation
-        Debug.fprintln("failtrace", "- ValuesUtil.valListString failed");
+        Debug.fprintln(Flags.FAILTRACE, "- ValuesUtil.valListString failed");
       then
         fail();
   end matchcontinue;
@@ -2447,8 +2447,8 @@ algorithm
         ();
     case (v1, v2)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- ValuesUtil.unparsePtolemySet2 failed on v1: " +&
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprintln(Flags.FAILTRACE, "- ValuesUtil.unparsePtolemySet2 failed on v1: " +&
           printValStr(v1) +& " and v2: " +& printValStr(v1));
       then
         fail();

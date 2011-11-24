@@ -907,7 +907,7 @@ end dumpAnnotationOpt;
 
 template dumpAnnotation(SCode.Annotation annotation)
 ::=
-if RTOpts.showAnnotations() then
+if Config.showAnnotations() then
   match annotation
     case ANNOTATION(__) then ' annotation<%dumpModifier(modification)%>'
 end dumpAnnotation;
@@ -941,7 +941,7 @@ end dumpCommentOpt;
 
 template dumpComment(SCode.Comment comment)
 ::= 
-if RTOpts.showAnnotations() then
+if Config.showAnnotations() then
   match comment
     case COMMENT(__) then
       let ann_str = dumpAnnotationOpt(annotation_)

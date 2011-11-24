@@ -49,7 +49,6 @@ public import DAE;
 public import Env;
 public import Prefix;
 public import SCode;
-public import RTOpts;
 public import InnerOuter;
 public import ComponentReference;
 
@@ -59,12 +58,14 @@ type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 
 protected import Ceval;
 protected import ClassInf;
+protected import Config;
 protected import Dump;
 protected import Debug;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import Flags;
 protected import Inst;
 protected import List;
 protected import PrefixUtil;
@@ -139,7 +140,7 @@ algorithm
       equation
         (cache,subs_1) = elabSubmods(cache, env, ih, pre, subs, impl,info);
         // print("Mod.elabMod: calling elabExp on mod exp: " +& Dump.printExpStr(e) +& " in env: " +& Env.printEnvPathStr(env) +& "\n");
-        (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl, NONE(), RTOpts.splitArrays(), pre, info); // Vectorize only if arrays are expanded
+        (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl, NONE(), Config.splitArrays(), pre, info); // Vectorize only if arrays are expanded
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_val) = elabModValue(cache, env, e_1, prop, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre)
@@ -168,10 +169,10 @@ algorithm
     /*
     case (cache,env,ih,pre,mod,impl,info)
       equation
-        Debug.fprint("failtrace", "#-- elab_mod ");
+        Debug.fprint(Flags.FAILTRACE, "#-- elab_mod ");
         str = SCodeDump.printModStr(mod);
-        Debug.fprint("failtrace", str);
-        Debug.fprint("failtrace", " failed\n");
+        Debug.fprint(Flags.FAILTRACE, str);
+        Debug.fprint(Flags.FAILTRACE, " failed\n");
         print("elab mod failed, mod:");print(str);print("\n");
         print("env:");print(Env.printEnvStr(env));print("\n");
         elab mod can fail?
@@ -559,8 +560,8 @@ algorithm
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_val) = elabModValue(cache,env,e_1,prop,info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        Debug.fprint("updmod", "Updated mod: ");
-        Debug.fprintln("updmod", Debug.fcallret1("updmod", printModStr, DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,NONE(),prop,SOME(e)))),""));
+        Debug.fprint(Flags.UPDMOD, "Updated mod: ");
+        Debug.fprintln(Flags.UPDMOD, Debug.fcallret1(Flags.UPDMOD, printModStr, DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,NONE(),prop,SOME(e)))),""));
       then
         (cache,DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,e_val,prop,SOME(e)))));
 
@@ -583,7 +584,7 @@ algorithm
 
     case (cache,env,ih,pre,m,impl,info)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         str = printModStr(m);
         Debug.traceln("- Mod.updateMod failed mod: " +& str);
       then
@@ -1480,7 +1481,7 @@ algorithm
     
     case (inSubModLst,inIdent)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Mod.lookupCompModification2 failed while searching for:" +& 
           inIdent +& " inside mofifications: " +&
           printModStr(DAE.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),inSubModLst,NONE())));
@@ -1518,14 +1519,14 @@ algorithm
         mod_3;
     case (mod,idx)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- Mod.lookupIdxModification(");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE, "- Mod.lookupIdxModification(");
         str = printModStr(mod);
-        Debug.fprint("failtrace", str);
-        Debug.fprint("failtrace", ", ");
+        Debug.fprint(Flags.FAILTRACE, str);
+        Debug.fprint(Flags.FAILTRACE, ", ");
         s = intString(idx);
-        Debug.fprint("failtrace", s);
-        Debug.fprint("failtrace", ") failed\n");
+        Debug.fprint(Flags.FAILTRACE, s);
+        Debug.fprint(Flags.FAILTRACE, ") failed\n");
       then
         fail();
   end matchcontinue;
@@ -1593,7 +1594,7 @@ algorithm
     
     case (_,_)
       equation
-       Debug.fprint("failtrace", "- Mod.lookupIdxModification2 failed\n");
+       Debug.fprint(Flags.FAILTRACE, "- Mod.lookupIdxModification2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -1626,8 +1627,8 @@ algorithm
       then DAE.MOD(f,SCode.EACH(),subs,eq);
     case (inMod,idx) 
       equation
-      true = RTOpts.debugFlag("failtrace");
-      Debug.fprintln("failtrace", "- Mod.lookupIdxModification3 failed for mod: \n" +&
+      true = Flags.isSet(Flags.FAILTRACE);
+      Debug.fprintln(Flags.FAILTRACE, "- Mod.lookupIdxModification3 failed for mod: \n" +&
                      printModStr(inMod) +& "\n for index:" +& intString(idx));
     then fail();
   end matchcontinue;
@@ -1696,8 +1697,8 @@ algorithm
 
     case (SOME(eq),inIntegerLst) 
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- Mod.indexEqmod failed for mod:\n " +&
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprintln(Flags.FAILTRACE, "- Mod.indexEqmod failed for mod:\n " +&
                Types.unparseEqMod(eq) +& "\n indexes:" +&
                stringDelimitList(List.map(inIntegerLst, intString), ", "));
       then fail();
@@ -2123,7 +2124,7 @@ algorithm
     case(mod1, mod2) then false;
     case(mod1, mod2) 
       equation
-        //true = RTOpts.debugFlag("failtrace");
+        //true = Flags.isSet(Flags.FAILTRACE);
         //Debug.traceln("- Mod.modSubsetOrEqualOrNonOverlap failed on: " +& 
         //   " mod1: " +& printModStr(mod1) +& 
         //   " mod2: " +& printModStr(mod2));

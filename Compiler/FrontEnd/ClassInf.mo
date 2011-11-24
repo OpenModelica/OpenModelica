@@ -52,9 +52,9 @@ public import Absyn;
 
 protected import Debug;
 protected import Error;
+protected import Flags;
 protected import List;
 protected import Print;
-protected import RTOpts;
 protected import SCodeDump;
 protected import Util;
 
@@ -487,7 +487,7 @@ algorithm
 
     case (st,ev)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- ClassInf.trans failed: " +& printStateStr(st) +& ", " +& printEventStr(ev));
       then
         fail();

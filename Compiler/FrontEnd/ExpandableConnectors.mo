@@ -65,6 +65,7 @@ public import SCode;
 public import InstanceHierarchy;
 
 protected import Debug;
+protected import Flags;
 
 public function elaborateExpandableConnectors
   input SCode.Program inProgram;
@@ -104,8 +105,8 @@ algorithm
         // PHASE_1
         // build the instance hierarchy
         ih = InstanceHierarchy.createInstanceHierarchyFromProgram(inIH, NONE(), inProgram);
-        Debug.fcall2("dumpIH", InstanceHierarchy.dumpInstanceHierarchy, ih, 0);
-        Debug.fcall("dumpIH", print, "\n\n");
+        Debug.fcall2(Flags.DUMPIH, InstanceHierarchy.dumpInstanceHierarchy, ih, 0);
+        Debug.fcall(Flags.DUMPIH, print, "\n\n");
         // PHASE_2
         // add components from connect(expandable, non-expandable)
         ih = addComponentsFromNonExpandableConnectors(ih);

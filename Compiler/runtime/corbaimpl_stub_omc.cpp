@@ -34,6 +34,12 @@ extern "C" {
 
 #include "meta_modelica.h"
 
+extern void Corba_setSessionName(const char* _inSessionName)
+{
+  fprintf(stderr, "Corba NYI\n");
+  MMC_THROW();
+}
+
 extern const char* Corba_waitForCommand()
 {
   fprintf(stderr, "Corba NYI\n");

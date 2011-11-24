@@ -64,17 +64,17 @@ public type Var = DAE.ExpVar;
 // protected imports
 protected import ClassInf;
 protected import ComponentReference;
+protected import Config;
 protected import DAEUtil;
 protected import Debug;
 protected import Env;
 protected import Error;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import Flags;
 protected import List;
-protected import OptManager;
 protected import Patternm;
 protected import Prefix;
-protected import RTOpts;
 protected import Static;
 protected import Types;
 protected import Util;
@@ -983,7 +983,7 @@ algorithm
     case (DAE.USERDEFINED(fqName = _), _) then inOp;
     case (_, _)
       equation
-        Debug.fprintln("failtrace","- Expression.setOpType failed on unknown operator");
+        Debug.fprintln(Flags.FAILTRACE,"- Expression.setOpType failed on unknown operator");
       then  
         fail();
   end matchcontinue;
@@ -1089,7 +1089,7 @@ algorithm
     
     case (_, _)
       equation
-        Debug.fprintln("failtrace", "- Expression.arrayAppend failed.");
+        Debug.fprintln(Flags.FAILTRACE, "- Expression.arrayAppend failed.");
       then
         fail();
   end matchcontinue;
@@ -1293,7 +1293,7 @@ algorithm
     case (DAE.INDEX(exp = e)) then e;
     else
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Expression.subscriptIndexExp failed on " +&
           ExpressionDump.printSubscriptStr(inSubscript));
       then
@@ -1450,9 +1450,9 @@ algorithm
     
     case (ss :: subs)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         sub_str = ExpressionDump.subscriptString(ss);
-        Debug.fprintln("failtrace", "- Expression.subscriptDimensions failed on " +& sub_str);
+        Debug.fprintln(Flags.FAILTRACE, "- Expression.subscriptDimensions failed on " +& sub_str);
       then
         fail();
   end matchcontinue;
@@ -1477,13 +1477,13 @@ algorithm
     // Special cases for non-expanded arrays
     case  DAE.WHOLE_NONEXP(exp = DAE.ICONST(x))
       equation
-        false = RTOpts.splitArrays();
+        false = Config.splitArrays();
       then
         DAE.DIM_INTEGER(x);
     
     case DAE.WHOLE_NONEXP(exp=e)
       equation
-        false = RTOpts.splitArrays();
+        false = Config.splitArrays();
       then
         DAE.DIM_EXP(e);
     
@@ -1491,9 +1491,9 @@ algorithm
     
     case ss 
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         sub_str = ExpressionDump.subscriptString(ss);
-        Debug.fprintln("failtrace", "- Expression.subscriptDimension failed on " +& sub_str);
+        Debug.fprintln(Flags.FAILTRACE, "- Expression.subscriptDimension failed on " +& sub_str);
       then
         fail();
   end matchcontinue;
@@ -1601,12 +1601,12 @@ algorithm
     case DAE.DIM_EXP(exp = e) then expInt(e);
     case DAE.DIM_EXP(exp = _)
       equation
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
       then
         0;
     case DAE.DIM_UNKNOWN()
       equation
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
       then
         0;
   end matchcontinue;
@@ -2368,7 +2368,7 @@ algorithm
     // do not check type
     case (cref, tGiven)
       equation
-        false = RTOpts.debugFlag("checkDAECrefType");
+        false = Flags.isSet(Flags.CHECK_DAE_CREF_TYPE);
         e = DAE.CREF(cref, tGiven);
       then
         e;
@@ -2376,7 +2376,7 @@ algorithm
     // check type, type the same
     case (cref, tGiven)
       equation
-        true = RTOpts.debugFlag("checkDAECrefType");
+        true = Flags.isSet(Flags.CHECK_DAE_CREF_TYPE);
         tExisting = ComponentReference.crefLastType(cref);
         equality(tGiven = tExisting); // true = valueEq(tGiven, tExisting);
         e = DAE.CREF(cref, tGiven);
@@ -2386,7 +2386,7 @@ algorithm
     // check type, type different, print warning
     case (cref, tGiven)
       equation
-        true = RTOpts.debugFlag("checkDAECrefType");
+        true = Flags.isSet(Flags.CHECK_DAE_CREF_TYPE);
         tExisting = ComponentReference.crefLastType(cref);
         failure(equality(tGiven = tExisting)); // false = valueEq(tGiven, tExisting);
         Debug.traceln("Warning: Expression.makeCrefExp: given type DAE.CREF.ty: " +& 
@@ -2448,7 +2448,7 @@ algorithm
     // do not check the DAE.ASUB  
     case(inExp,inSubs)
       equation
-        false = RTOpts.debugFlag("checkASUB");
+        false = Flags.isSet(Flags.CHECK_ASUB);
         exp = DAE.ASUB(inExp,inSubs);
       then 
         exp;
@@ -2456,7 +2456,7 @@ algorithm
     // check the DAE.ASUB so that the given expression is NOT a cref
     case(inExp as DAE.CREF(componentRef = _), inSubs) 
       equation
-        true = RTOpts.debugFlag("checkASUB");
+        true = Flags.isSet(Flags.CHECK_ASUB);
         Debug.traceln("Warning: makeASUB: given expression: " +& 
                       ExpressionDump.printExpStr(inExp) +&
                       " contains a component reference!\n" +&
@@ -2469,7 +2469,7 @@ algorithm
     // check the DAE.ASUB -> was not a cref
     case(inExp, inSubs)
       equation
-        true = RTOpts.debugFlag("checkASUB");
+        true = Flags.isSet(Flags.CHECK_ASUB);
         exp = DAE.ASUB(inExp,inSubs);
       then
         exp;
@@ -2680,12 +2680,12 @@ algorithm
         res;
     case (lst)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace","-Expression.makeSum failed, DAE.Exp lst:");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE,"-Expression.makeSum failed, DAE.Exp lst:");
         explst = List.map(lst, ExpressionDump.printExpStr);
         str = stringDelimitList(explst, ", ");
-        Debug.fprint("failtrace",str);
-        Debug.fprint("failtrace","\n");
+        Debug.fprint(Flags.FAILTRACE,str);
+        Debug.fprint(Flags.FAILTRACE,"\n");
       then
         fail();
   end matchcontinue;
@@ -2833,12 +2833,12 @@ algorithm
         res;
     case (lst)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace","-Expression.makeProductLst failed, DAE.Exp lst:");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE,"-Expression.makeProductLst failed, DAE.Exp lst:");
         explst = List.map(lst, ExpressionDump.printExpStr);
         str = stringDelimitList(explst, ", ");
-        Debug.fprint("failtrace",str);
-        Debug.fprint("failtrace","\n");
+        Debug.fprint(Flags.FAILTRACE,str);
+        Debug.fprint(Flags.FAILTRACE,"\n");
       then
         fail();
   end matchcontinue;
@@ -6088,7 +6088,7 @@ algorithm
     // metamodeling code
     case (DAE.CODE(code = _),DAE.CODE(code = _),_,_)
       equation
-        Debug.fprint("failtrace","exp_equal on CODE not impl.\n");
+        Debug.fprint(Flags.FAILTRACE,"exp_equal on CODE not impl.\n");
       then
         false;
     
@@ -6321,11 +6321,11 @@ algorithm
     
     case (e,cr)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- Expression.expContains failed\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE, "- Expression.expContains failed\n");
         s = ExpressionDump.printExpStr(e);
         str = stringAppendList({"exp = ",s,"\n"});
-        Debug.fprint("failtrace", str);
+        Debug.fprint(Flags.FAILTRACE, str);
       then
         fail();
   end matchcontinue;

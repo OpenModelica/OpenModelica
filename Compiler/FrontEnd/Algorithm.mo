@@ -60,13 +60,14 @@ public type Statement = DAE.Statement;
 public type Else = DAE.Else;
 
 protected import ComponentReference;
+protected import Config;
 protected import DAEUtil;
 protected import Debug;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
+protected import Flags;
 protected import List;
-protected import RTOpts;
 protected import SCodeDump;
 protected import Types;
 protected import Util;
@@ -184,7 +185,7 @@ algorithm
     // assignment to an input, report error - but keep going anyway; bootstrapping needs this :(
     case (lhs,_,rhs,_,DAE.ATTR(direction=Absyn.INPUT()),_,source)
       equation
-        false = RTOpts.acceptMetaModelicaGrammar();
+        false = Config.acceptMetaModelicaGrammar();
         lhs_str = ExpressionDump.printExpStr(lhs);
         Error.addSourceMessage(Error.ASSIGN_READONLY_ERROR, {"input",lhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
@@ -200,7 +201,7 @@ algorithm
     case (lhs,lhprop,rhs,rhprop,DAE.ATTR(direction=direction),_,source)
       equation
         DAE.C_VAR() = Types.propAnyConst(lhprop);
-        true = RTOpts.acceptMetaModelicaGrammar() or (not valueEq(Absyn.INPUT(),direction));
+        true = Config.acceptMetaModelicaGrammar() or (not valueEq(Absyn.INPUT(),direction));
         outStatement = makeAssignment2(lhs,lhprop,rhs,rhprop,source);
       then outStatement;
 
@@ -222,7 +223,7 @@ algorithm
      /* failing */
     case (lhs,lprop,rhs,rprop,_,_,source)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Algorithm.makeAssignment failed");
         Debug.trace("    ");
         Debug.trace(ExpressionDump.printExpStr(lhs));
@@ -383,7 +384,7 @@ algorithm
         DAE.STMT_TUPLE_ASSIGN(DAE.ET_OTHER(),expl,rhs,source);
     case (lhs,lprop,rhs,rprop,initial_,source)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         sl = List.map(lhs, ExpressionDump.printExpStr);
         s = stringDelimitList(sl, ", ");
         lhs_str = stringAppendList({"(",s,")"});

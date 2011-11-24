@@ -62,6 +62,7 @@ protected import BaseHashTable;
 protected import ComponentReference;
 protected import Ceval;
 protected import ClassInf;
+protected import Config;
 protected import DAEUtil;
 protected import Derive;
 protected import Debug;
@@ -69,12 +70,11 @@ protected import Error;
 protected import Expression;
 protected import ExpressionSimplify;
 protected import ExpressionDump;
+protected import Flags;
 protected import Global;
 protected import HashTable2;
 protected import HashTable4;
 protected import List;
-protected import OptManager;
-protected import RTOpts;
 protected import SCode;
 protected import System;
 protected import Util;
@@ -97,12 +97,12 @@ algorithm
     local BackendDAE.BackendDAE bdae;
     case (bdae)
       equation
-        false = RTOpts.debugFlag("checkBackendDAE");
+        false = Flags.isSet(Flags.CHECK_BACKEND_DAE);
       then
         ();
     case (bdae)
       equation
-        true = RTOpts.debugFlag("checkBackendDAE");
+        true = Flags.isSet(Flags.CHECK_BACKEND_DAE);
         (expCrefs,wrongEqns) = checkBackendDAE(inBackendDAE);
         printcheckBackendDAEWithErrorMsg(expCrefs,wrongEqns);
       then
@@ -241,7 +241,7 @@ algorithm
     
     else
       equation
-        Debug.fprintln("failtrace", "- BackendDAEUtil.checkBackendDAE failed");
+        Debug.fprintln(Flags.FAILTRACE, "- BackendDAEUtil.checkBackendDAE failed");
       then
         fail();
   end matchcontinue;
@@ -402,7 +402,7 @@ algorithm
     case(_, _)
       equation
         // Don't check assertions when checking models
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
       then ();
     case(cond,message) equation
       false = Expression.isConstFalse(cond);
@@ -530,7 +530,7 @@ algorithm
     case (inUnfixed,inInitialEqns,BackendDAE.EQSYSTEM(vars,orderedEqs,om,omT,matching),BackendDAE.SHARED(knownVars=knvars,initialEqs=initialEqs,externalObjects=exObj,aliasVars=alisvars,removedEqs=removedEqs,
            arrayEqs=arrayEqs,algorithms=algs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=btp),funcs,inVars,inVarsWS,inStates,inStatesWS)
       equation
-        true = RTOpts.debugFlag("dumpInit");
+        true = Flags.isSet(Flags.DUMP_INIT);
         print("Warning initial conditions not fully specified.\n");
         print("Variables with fixed=false: ");print(intString(inUnfixed)); print("\n");
         print("Number of equations for initialisation: ");print(intString(inInitialEqns)); print("\n");
@@ -665,7 +665,7 @@ algorithm
     // vars with no case print
     case ((var,(vars,varsws,states,statesws,unfixed)))
       equation
-        true = RTOpts.debugFlag("dumpInit");
+        true = Flags.isSet(Flags.DUMP_INIT);
         cr = BackendVariable.varCref(var);
         scr = ComponentReference.printComponentRefStr(cr);
         s = stringAppendList({"countInitialVars: No case for  ",scr,"\n"});
@@ -823,7 +823,7 @@ algorithm
         
     case (_,_,inVariables,inKnVariables,_,_,_,_)
       equation
-        true = RTOpts.debugFlag("dumpInit");
+        true = Flags.isSet(Flags.DUMP_INIT);
         print("- BackendDAEUtil.fixInitalVars failed\n");
       then
         (inVariables,inKnVariables);
@@ -846,7 +846,7 @@ algorithm
       String scr,s;
     case (cr,false)
       equation
-        true = RTOpts.debugFlag("dumpInit");
+        true = Flags.isSet(Flags.DUMP_INIT);
         scr = ComponentReference.printComponentRefStr(cr);
         s = stringAppendList({"Set ",scr," fixed=true.\n"});
         print(s);
@@ -854,7 +854,7 @@ algorithm
         ();
     case (cr,true)
       equation
-        true = RTOpts.debugFlag("dumpInit");
+        true = Flags.isSet(Flags.DUMP_INIT);
         scr = ComponentReference.printComponentRefStr(cr);
         s = stringAppendList({"Set ",scr," fixed=true.\n"});
         s = stringAppendList({s, "Set default start value = 0.0.\n"});
@@ -1371,7 +1371,7 @@ algorithm
         aliasVariables = BackendVariable.addVar(v,aliasVariables);
         exp = BackendVariable.varBindExp(v);
         cr = BackendVariable.varCref(v);
-        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("++++ added Alias eqn: ",cr," = ",exp,"\n"));
+        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("++++ added Alias eqn: ",cr," = ",exp,"\n"));
         aliasMappingsCref1 = BaseHashTable.addNoUpdCheck((cr,exp),aliasMappingsCref);
         aliasMappingsExp1 = BaseHashTable.addNoUpdCheck((exp,cr),aliasMappingsExp);
         aliases =  addAliasVariables(rest,BackendDAE.ALIASVARS(aliasMappingsCref1,aliasMappingsExp1,aliasVariables));
@@ -1439,7 +1439,7 @@ algorithm
       equation
         exp1 = Expression.crefExp(inCref);
         cr1 = BaseHashTable.get(exp1,aliasMappingsExp);
-        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("update ComponentRef: ",inCref," with Exp : ",inExp,"\n"));
+        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("update ComponentRef: ",inCref," with Exp : ",inExp,"\n"));
         
         tableList = BaseHashTable.hashTableList(aliasMappingsExp);
         aliases = updateAliasVars(tableList,exp1,inExp,aliases);
@@ -1456,7 +1456,7 @@ algorithm
         exp = Expression.negate(exp1);
         (exp,_) = ExpressionSimplify.simplify1(exp);
         cr1 = BaseHashTable.get(exp,aliasMappingsExp);
-        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("update ComponentRef: ",inCref," with  ",inExp,"\n"));
+        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("update ComponentRef: ",inCref," with  ",inExp,"\n"));
         
         tableList = BaseHashTable.hashTableList(aliasMappingsExp);
         aliases = updateAliasVars(tableList,exp1,inExp,aliases);
@@ -1471,7 +1471,7 @@ algorithm
       equation
         exp1 = Expression.crefExp(inCref);
         failure(_ = BaseHashTable.get(exp1,aliasMappingsExp));
-        Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,(" Search for ",inCref," with binding: ",inExp," failed.\n"));
+        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,(" Search for ",inCref," with binding: ",inExp," failed.\n"));
         v = BackendVariable.setBindExp(v,inExp);
         aliases = addAliasVariables({v},aliases);
       then
@@ -1521,23 +1521,23 @@ algorithm
       
       case (inAliases as BackendDAE.ALIASVARS(aliasVars=aliasvars),(exp,cref),inExp1,inExp2)
         equation
-          Debug.fcall("debugAlias",BackendDump.debugStrExpStr,("*** search for: ",inExp1,"\n"));
+          Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrExpStr,("*** search for: ",inExp1,"\n"));
           ty = Expression.typeof(inExp2);
           (true,b,exp2) = compareExpAlias(exp,inExp1);
-          Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("*** got : ",cref," = Exp : ",exp2,"\n"));
+          Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("*** got : ",cref," = Exp : ",exp2,"\n"));
           ({v},_) = BackendVariable.getVar(cref,aliasvars);
           exp = BackendVariable.varBindExp(v);
           exp2 = Util.if_(b,DAE.UNARY(DAE.UMINUS(ty),inExp2),inExp2);
           (exp2,_) = ExpressionSimplify.simplify1(exp2);
-          Debug.fcall("debugAlias",BackendDump.debugStrExpStrExpStr,("*** replace : ",exp," = ",exp2,"\n"));
+          Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrExpStrExpStr,("*** replace : ",exp," = ",exp2,"\n"));
           v = BackendVariable.setBindExp(v,exp2);
           v = BackendVariable.mergeVariableOperations(v,Util.if_(Expression.expEqual(exp,exp2),{},{DAE.SUBSTITUTION({exp2},exp)}));
           aliasVariables = addAliasVariables({v},inAliases);
-          Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("RES *** ComponentRef : ",cref," = Exp : ",exp2,"\n"));
+          Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("RES *** ComponentRef : ",cref," = Exp : ",exp2,"\n"));
         then aliasVariables;
       case (aliasVariables,(exp,cref),_,_)
         equation
-          Debug.fcall("debugAlias",BackendDump.debugStrCrefStrExpStr,("*** let ",cref," with binding Exp : ",exp,"\n"));
+          Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("*** let ",cref," with binding Exp : ",exp,"\n"));
         then aliasVariables;
    end matchcontinue;
 end updateAliasVarsFold;
@@ -3448,7 +3448,7 @@ algorithm outExp := matchcontinue(inExp)
   // CASE for Matrix and checkModel is on    
   case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad as {id, jd})), (funcs,_)) )
     equation
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
         // consider size 1
         i = Expression.dimensionSize(DAE.DIM_INTEGER(1));
         j = Expression.dimensionSize(DAE.DIM_INTEGER(1));
@@ -3477,7 +3477,7 @@ algorithm outExp := matchcontinue(inExp)
   // CASE for Array and checkModel is on
   case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad)), (funcs,b)) )
     equation
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
         // consider size 1      
         subslst = dimensionsToRange({DAE.DIM_INTEGER(1)});
         subslst1 = rangesToSubscripts(subslst);
@@ -4835,7 +4835,7 @@ algorithm
         (SOME(eqns),entrylst1);
     case (_,_,_,_,_,_,_,_)
       equation
-        Debug.fprintln("failtrace", "- BackendDAE.calculateJacobianRow failed");
+        Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.calculateJacobianRow failed");
       then
         fail();
   end matchcontinue;
@@ -4887,7 +4887,7 @@ algorithm
         (subs1,entry::entrylst);
     case (_,_,_)
       equation
-        Debug.fprintln("failtrace", "- BackendDAE.getArrayEquationSub failed");
+        Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.getArrayEquationSub failed");
       then
         fail();
   end matchcontinue;
@@ -5276,7 +5276,7 @@ algorithm
         res;
     case (_,_)
       equation
-        Debug.fprint("failtrace", "- BackendDAEUtil.getEqnsysRhsExp failed\n");
+        Debug.fprint(Flags.FAILTRACE, "- BackendDAEUtil.getEqnsysRhsExp failed\n");
       then
         fail();
   end matchcontinue;
@@ -5566,7 +5566,7 @@ algorithm
         ext_arg_1;
     case (_,_,_)
       equation
-        Debug.fprintln("failtrace", "- BackendDAE.traverseBackendDAEExpsVars failed");
+        Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.traverseBackendDAEExpsVars failed");
       then
         fail();
   end matchcontinue;
@@ -5599,7 +5599,7 @@ algorithm
         ext_arg_1;
     case (_,_,_)
       equation
-        Debug.fprintln("failtrace", "- BackendDAE.traverseBackendDAEExpsVarsWithUpdate failed");
+        Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.traverseBackendDAEExpsVarsWithUpdate failed");
       then
         fail();
   end matchcontinue;
@@ -5851,7 +5851,7 @@ algorithm
     
     case (_,_,_)
       equation
-        Debug.fprintln("failtrace", "- BackendDAE.traverseBackendDAEExpsVar failed");
+        Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.traverseBackendDAEExpsVar failed");
       then
         fail();
   end matchcontinue;
@@ -5941,7 +5941,7 @@ algorithm
       then traverseBackendDAEArrayNoCopy(equOptArr,func,traverseBackendDAEExpsOptEqn,1,arrayLength(equOptArr),inTypeA);
     case (_,_,_)
       equation
-        Debug.fprintln("failtrace", "- BackendDAE.traverseBackendDAEExpsEqns failed");
+        Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.traverseBackendDAEExpsEqns failed");
       then
         fail();
   end matchcontinue;
@@ -5972,7 +5972,7 @@ algorithm
       then outTypeA;
     case (_,_,_)
       equation
-        Debug.fprintln("failtrace", "- BackendDAE.traverseBackendDAEExpsEqns failed");
+        Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.traverseBackendDAEExpsEqns failed");
       then
         fail();
   end matchcontinue;
@@ -6179,15 +6179,15 @@ algorithm
   pastOptModules := getPastOptModules(strPastOptModules);
   daeHandler := getIndexReductionMethod(strdaeHandler);
   
-  Debug.fcall("dumpdaelow", print, "dumpdaelow:\n");
-  Debug.fcall("dumpdaelow", BackendDump.dump, inDAE);
+  Debug.fcall(Flags.DUMP_DAE_LOW, print, "dumpdaelow:\n");
+  Debug.fcall(Flags.DUMP_DAE_LOW, BackendDump.dump, inDAE);
   System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   // pre optimisation phase
   (optdae,Util.SUCCESS()) := preoptimiseDAE(inDAE,functionTree,preOptModules);
 
   // transformation phase (matching and sorting using a index reduction method
   sode := transformDAE(optdae,functionTree,NONE(),daeHandler);
-  Debug.fcall("bltdump", BackendDump.bltdump, ("bltdump",sode));
+  Debug.fcall(Flags.DUMP_DAE_LOW, BackendDump.bltdump, ("bltdump",sode));
 
   // past optimisation phase
   (sode,Util.SUCCESS()) := pastoptimiseDAE(sode,functionTree,pastOptModules,daeHandler);
@@ -6197,8 +6197,8 @@ algorithm
   Debug.execStat("translateDAE",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   outSODE := calculateValues(inCache, inEnv, indexed_dlow);
   Debug.execStat("calculateValue",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-  Debug.fcall("dumpindxdae", print, "dumpindxdae:\n");
-  Debug.fcall("dumpindxdae", BackendDump.dump, outSODE);
+  Debug.fcall(Flags.DUMP_INDX_DAE, print, "dumpindxdae:\n");
+  Debug.fcall(Flags.DUMP_INDX_DAE, BackendDump.dump, outSODE);
 end getSolvedSystem;
 
 public function preOptimiseBackendDAE
@@ -6238,8 +6238,8 @@ algorithm
       equation
         dae1 = optModule(dae,funcs);
         Debug.execStat("preOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-        Debug.fcall("optdaedump", print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
-        Debug.fcall("optdaedump", BackendDump.dump, dae1);
+        Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
+        Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.dump, dae1);
         (dae2,status) = preoptimiseDAE(dae1,funcs,rest);
       then (dae2,status);
     case (dae,funcs,(optModule,moduleStr,b)::rest)
@@ -6412,8 +6412,8 @@ algorithm
       equation
         (dae1,runMatching) = optModule(dae,funcs);
         Debug.execStat("pastOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-        Debug.fcall("optdaedump", print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
-        Debug.fcall("optdaedump", BackendDump.dump, dae1);
+        Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
+        Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.dump, dae1);
         dae1 = checktransformDAE(runMatching,dae1,funcs,daeHandler);
         (dae2,status) = pastoptimiseDAE(dae1,funcs,rest,daeHandler);
       then
@@ -6450,7 +6450,7 @@ algorithm
     case (true,dae,funcs,daeHandler)
       equation
         sode = transformDAE(dae,funcs,NONE(),daeHandler);
-        Debug.fcall("bltdump", BackendDump.bltdump, ("bltdump",sode));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.bltdump, ("bltdump",sode));
       then sode;
     case (false,dae,funcs,_)
       then dae;
@@ -6517,7 +6517,7 @@ public function getIndexReductionMethodString
 " function: getIndexReductionMethodString"
   output String strIndexReductionMethod;
 algorithm
- strIndexReductionMethod := RTOpts.getIndexReductionMethod("dummyDerivative");
+  strIndexReductionMethod := Config.getIndexReductionMethod();
 end getIndexReductionMethodString;
 
 protected function getIndexReductionMethod
@@ -6575,15 +6575,7 @@ public function getPreOptModulesString
 " function: getPreOptModulesString"
   output list<String> strPreOptModules;
 algorithm
-  strPreOptModules := RTOpts.getPreOptModules({
-    "removeFinalParameters",
-    "removeEqualFunctionCalls",
-    "partitionIndependentBlocks",
-    "expandDerOperator",
-    "removeSimpleEquations"
-    // "residualForm"
-    // "collapseIndependentBlocks"
-  });
+  strPreOptModules := Config.getPreOptModules();
 end getPreOptModulesString;
 
 protected function getPreOptModules
@@ -6617,7 +6609,7 @@ public function getPastOptModulesString
 " function: getPreOptModulesString"
   output list<String> strPastOptModules;
 algorithm
- strPastOptModules := RTOpts.getPastOptModules({"lateInline","inlineArrayEqn","constantLinearSystem","removeSimpleEquations"});           
+  strPastOptModules := Config.getPastOptModules();           
 end getPastOptModulesString;
 
 protected function getPastOptModules

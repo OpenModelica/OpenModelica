@@ -88,8 +88,8 @@ end DateTime;
 public import Absyn;
 protected import Debug;
 protected import Error;
+protected import Flags;
 protected import List;
-protected import OptManager;
 protected import Print;
 protected import System;
 
@@ -1170,7 +1170,7 @@ algorithm
   res_str := matchcontinue(str,changeDerCall)
     case(str,false) // BoschRexroth specifics
       equation
-        false = OptManager.getOption("translateDAEString");
+        false = Flags.getConfigBool(Flags.TRANSLATE_DAE_STRING);
         then
           str;
     case(str,false)
@@ -1655,7 +1655,7 @@ algorithm
         (res,file_path);
     case (name)
       equation
-        Debug.fprint("failtrace", "- Util.getAbsoluteDirectoryAndFile failed");
+        Debug.fprint(Flags.FAILTRACE, "- Util.getAbsoluteDirectoryAndFile failed");
       then
         fail();
   end matchcontinue;
@@ -2637,6 +2637,47 @@ algorithm
   end matchcontinue;
 end arrayMemberEqualityFuncLoop;
 
+public function boolInt
+  "Returns 1 if the given boolean is true, otherwise 0."
+  input Boolean inBoolean;
+  output Integer outInteger;
+algorithm
+  outInteger := match(inBoolean)
+    case true then 1;
+    else 0;
+  end match;
+end boolInt;
+
+public function intBool
+  "Returns true if the given integer is larger than 0, otherwise false."
+  input Integer inInteger;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := inInteger > 0;
+end intBool;
+
+public function stringBool
+  "Converts a string to a boolean value. true and yes is converted to true,
+  false and no is converted to false. The function is case-insensitive."
+  input String inString;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := stringBool2(System.tolower(inString));
+end stringBool;
+
+protected function stringBool2
+  "Helper function to stringBool."
+  input String inString;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match(inString)
+    case "true" then true;
+    case "false" then false;
+    case "yes" then true;
+    case "no" then false;
+  end match;
+end stringBool2;
+
 public function optionList
 "@author: adrpo
  SOME(a) => {a}
@@ -2652,4 +2693,146 @@ algorithm
   end match;
 end optionList;
   
+public function stringPadRight
+  "Pads a string with the given padding so that the resulting string is as long
+   as the given width. If the string is already longer nothing is done to it.
+   Note that the length of the padding is assumed to be one, i.e. a single char."
+  input String inString;
+  input Integer inPadWidth;
+  input String inPadString;
+  output String outString;
+algorithm
+  outString := matchcontinue(inString, inPadWidth, inPadString)
+    local
+      Integer pad_length;
+      String pad_str;
+
+    case (_, _, _)
+      equation
+        pad_length = inPadWidth - stringLength(inString);
+        true = pad_length > 0;
+        pad_str = stringAppendList(List.fill(inPadString, pad_length));
+      then
+        inString +& pad_str;
+
+    else inString;
+  end matchcontinue;
+end stringPadRight;
+  
+public function stringPadLeft
+  "Pads a string with the given padding so that the resulting string is as long
+   as the given width. If the string is already longer nothing is done to it.
+   Note that the length of the padding is assumed to be one, i.e. a single char."
+  input String inString;
+  input Integer inPadWidth;
+  input String inPadString;
+  output String outString;
+algorithm
+  outString := matchcontinue(inString, inPadWidth, inPadString)
+    local
+      Integer pad_length;
+      String pad_str;
+
+    case (_, _, _)
+      equation
+        pad_length = inPadWidth - stringLength(inString);
+        true = pad_length > 0;
+        pad_str = stringAppendList(List.fill(inPadString, pad_length));
+      then
+        pad_str +& inString;
+
+    else inString;
+  end matchcontinue;
+end stringPadLeft;
+
+public function stringWrap
+  "Breaks the given string into multiple parts which are no longer than the
+   given wrap length. The string is broken at word boundaries, i.e. at spaces, so
+   that words are not split. The delimiter is prefixed to all result strings
+   except for the first one. Example:
+    stringWrap('this is a somewhat long string', 12, '\n  ') =>
+      {'this is a', '\n  somewhat', '\n  long string'}"
+  input String inString;
+  input Integer inWrapLength;
+  input String inDelimiter;
+  output list<String> outStrings;
+protected
+  list<String> str;
+  Integer dl;
+algorithm
+  str := stringListStringChar(inString);
+  dl := stringLength(inDelimiter);
+  outStrings := stringWrap2(str, inWrapLength, inDelimiter, dl, {}, 0, {});
+end stringWrap;
+
+protected function stringWrap2
+  "Helper function to stringWrap."
+  input list<String> inString;
+  input Integer inWrapLength;
+  input String inDelimiter;
+  input Integer inDelimiterLength;
+  input list<String> inAccumString;
+  input Integer inStringLength;
+  input list<String> inAccumStrings;
+  output list<String> outStrings;
+algorithm
+  outStrings := matchcontinue(inString, inWrapLength, inDelimiter,
+      inDelimiterLength, inAccumString, inStringLength, inAccumStrings)
+    local
+      String char, str, delim;
+      list<String> rest_str, acc_strl, acc_str;
+      Integer wl, sl, dl, pos;
+
+    // The case when the given string is a multiple of the wraplength, i.e. both
+    // the string and the accumulated string is empty.
+    case ({}, _, _, _, _, 0, _) then listReverse(inAccumStrings);
+
+    // Wrap on newline (the newline will be thrown away).
+    case ("\n" :: rest_str, wl, delim, dl, acc_str, sl, acc_strl)
+      equation
+        // The delimiter should not be applied to the first string.
+        delim = if_(List.isEmpty(acc_strl), "", delim);
+        str = delim +& stringAppendList(listReverse(acc_str));
+        acc_strl = str :: acc_strl;
+      then
+        stringWrap2(rest_str, wl, inDelimiter, dl, {}, 0, acc_strl);
+
+    // The string is empty, assemble the accumulated string and return the
+    // wrapped strings.
+    case ({}, _, delim, _, acc_str, _, acc_strl)
+      equation
+        // The delimiter should not be applied to the first string.
+        delim = if_(List.isEmpty(acc_strl), "", delim);
+        str = delim +& stringAppendList(listReverse(acc_str));
+        acc_strl = str :: acc_strl;
+      then
+        listReverse(acc_strl);
+
+    // The length of the accumulated string is equal to the wrap length, time to
+    // assemble it and start accumulate a new string.
+    case (_, wl, delim, dl, acc_str, sl, acc_strl)
+      equation
+        // The delimiter should not be applied to the first string.
+        ((delim, dl)) = if_(List.isEmpty(acc_strl), ("", 0), (delim, dl));
+        true = sl + dl >= wl;
+        // Split the string at the first space (will be the last since the
+        // string is reversed). The first part before the space will be the new
+        // accumulated string, while the rest is added to the list of result
+        // strings.
+        pos = List.position(" ", acc_str);
+        (acc_str, rest_str) = List.split(acc_str, pos);
+        sl = listLength(acc_str);
+        str = delim +& stringAppendList(listReverse(rest_str));
+      then
+        stringWrap2(inString, wl, inDelimiter, inDelimiterLength, acc_str,
+          sl, str :: acc_strl);
+
+    // None of the above cases matches, add the first character to the
+    // accumulated string and continue with the rest of the string.
+    case (char :: rest_str, wl, delim, dl, acc_str, sl, acc_strl)
+      then stringWrap2(rest_str, wl, delim, dl, char :: acc_str, sl + 1, acc_strl);
+
+  end matchcontinue;
+end stringWrap2;
+
 end Util;

@@ -45,9 +45,10 @@ public import Debug;
 public import SCode;
 public import SCodeUtil;
 
+protected import Config;
 protected import Error;
+protected import Flags;
 protected import List;
-protected import RTOpts;
 protected import Types;
 protected import Util;
 
@@ -303,7 +304,7 @@ algorithm
     
     case (program)
       equation
-        false = RTOpts.acceptMetaModelicaGrammar();
+        false = Config.acceptMetaModelicaGrammar();
       then program;
     
     case (Absyn.PROGRAM(classes = classes,within_ = w,globalBuildTimes=ts))
@@ -760,7 +761,7 @@ algorithm
     case (exp,ty)
       equation
         (flatType,_) = Types.flattenArrayType(ty);
-        false = (not Types.isString(flatType) and Types.isBoxedType(flatType)) or RTOpts.debugFlag("rml") "debug flag to produce better error messages by converting all arrays into lists; the compiler does not use Modelica-style arrays anyway";
+        false = (not Types.isString(flatType) and Types.isBoxedType(flatType)) or Flags.isSet(Flags.RML) "debug flag to produce better error messages by converting all arrays into lists; the compiler does not use Modelica-style arrays anyway";
       then (exp,ty);
   end match;
 end tryToConvertArrayToList;

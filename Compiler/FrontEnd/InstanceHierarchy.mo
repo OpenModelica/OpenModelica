@@ -57,9 +57,9 @@ end Face;
 
 protected import Debug;
 protected import Dump;
+protected import Flags;
 protected import List;
 protected import Util;
-protected import RTOpts;
 protected import SCodeDump;
 
 public
@@ -138,8 +138,8 @@ algorithm
 
     case (ih,scope,c::_)
       equation
-        true = RTOpts.debugFlag("instance");
-        Debug.fprintln("instance", "InstanceHierarchy.createInstanceFromProgram failed on class:" +& SCodeDump.printClassStr(c));
+        true = Flags.isSet(Flags.INSTANCE);
+        Debug.traceln("InstanceHierarchy.createInstanceFromProgram failed on class:" +& SCodeDump.printClassStr(c));
       then
         fail();
   end matchcontinue;
@@ -171,7 +171,7 @@ algorithm
     case ATTRIBUTES(element=SCode.CLASS(classDef = cd)) then cd;
     case _
       equation
-        Debug.fprintln("instance", "InstanceHierarchy.getClassDefinition failed");
+        Debug.fprintln(Flags.INSTANCE, "InstanceHierarchy.getClassDefinition failed");
       then fail();
   end matchcontinue;
 end getClassDefinition;
@@ -194,7 +194,7 @@ algorithm
       equation
         path = Absyn.crefToPath(fullCr);
         classDef = getClassDefinition(attributes);
-        Debug.fprintln("instance", "IH: Creating instance: " +& Absyn.pathString(path));
+        Debug.fprintln(Flags.INSTANCE, "IH: Creating instance: " +& Absyn.pathString(path));
         (children, connects) = createInstanceHierarchyFromClassDef(SOME(path), classDef);
       then
         INSTANCE(fullCr, attributes, children, connects, NONE(), NONE());
@@ -320,8 +320,8 @@ algorithm
 
     case (scope, el::rest)
       equation
-        true = RTOpts.debugFlag("instance");
-        Debug.fprintln("instance", "InstanceHierarchy.createInstanceHierarchyFromElements failed on element: " +& SCodeDump.unparseElementStr(el));
+        true = Flags.isSet(Flags.INSTANCE);
+        Debug.traceln("InstanceHierarchy.createInstanceHierarchyFromElements failed on element: " +& SCodeDump.unparseElementStr(el));
       then
         fail();
   end matchcontinue;

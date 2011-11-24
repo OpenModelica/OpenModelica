@@ -39,6 +39,13 @@ void Corba_5finit(void)
 
 }
 
+RML_BEGIN_LABEL(Corba__setSessionName)
+{
+  const char *name = RML_STRINGDATA(rmlA0);
+  CorbaImpl__setSessionName(name);
+  RML_TAILCALLK(rmlSC);
+}
+
 RML_BEGIN_LABEL(Corba__initialize)
 {
   if (CorbaImpl__initialize()) RML_TAILCALLK(rmlFC);

@@ -67,7 +67,6 @@ public import DAE;
 public import Env;
 public import Interactive;
 public import MetaUtil;
-public import RTOpts;
 public import SCode;
 public import SCodeUtil;
 public import Values;
@@ -89,6 +88,7 @@ end Slot;
 protected import Ceval;
 protected import ClassInf;
 protected import ComponentReference;
+protected import Config;
 protected import Debug;
 protected import Dump;
 protected import Error;
@@ -96,13 +96,13 @@ protected import ErrorExt;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import Flags;
 protected import Inline;
 protected import Inst;
 protected import InnerOuter;
 protected import List;
 protected import Lookup;
 protected import Mod;
-protected import OptManager;
 protected import Patternm;
 protected import Print;
 protected import System;
@@ -378,7 +378,7 @@ algorithm
 
     case (cache,env,Absyn.CREF(componentRef = cr),impl,st,doVect,pre,info,_) // BoschRexroth specifics
       equation
-        false = OptManager.getOption("cevalEquation");
+        false = Flags.getConfigBool(Flags.CEVAL_EQUATION);
         (cache,SOME((exp,prop as DAE.PROP(ty,DAE.C_PARAM()),_))) = elabCref(cache,env, cr, impl, doVect, pre, info);
       then
         (cache,exp,DAE.PROP(ty,DAE.C_VAR()),st);
@@ -463,7 +463,7 @@ algorithm
        /* Part of MetaModelica extension. KS */
     case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("SOME",_),functionArgs = Absyn.FUNCTIONARGS(args = (e1 :: _),argNames = _)),impl,st,doVect,pre,info,_)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         (cache,e_1,prop,st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info);
         t = Types.getPropType(prop);
         (e_1,t) = Types.matchType(e_1,t,DAE.T_BOXED_DEFAULT,true);
@@ -475,7 +475,7 @@ algorithm
 
     case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("NONE",_),functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = _)),impl,st,doVect,_,info,_)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         e_1 = DAE.META_OPTION(NONE());
         prop1 = DAE.PROP((DAE.T_METAOPTION((DAE.T_NOTYPE(),NONE())),NONE()),DAE.C_CONST());
       then
@@ -483,11 +483,11 @@ algorithm
 
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect,pre,info,_)
       equation
-        Debug.fprintln("sei", "elab_exp CALL...") "Function calls PA. Only positional arguments are elaborated for now. TODO: Implement elaboration of named arguments." ;
+        Debug.fprintln(Flags.SEI, "elab_exp CALL...") "Function calls PA. Only positional arguments are elaborated for now. TODO: Implement elaboration of named arguments." ;
         (cache,e_1,prop,st_1) = elabCall(cache,env, fn, args, nargs, impl, st,pre,info,Error.getNumErrorMessages());
         c = Types.propAllConst(prop);
         (e_1,_) = ExpressionSimplify.simplify1(e_1);
-        Debug.fprintln("sei", "elab_exp CALL done");
+        Debug.fprintln(Flags.SEI, "elab_exp CALL done");
       then
         (cache,e_1,prop,st_1);
     // stefan
@@ -521,7 +521,7 @@ algorithm
     // Part of the MetaModelica extension. This eliminates elab_array failed failtraces when using the empty list. sjoelund
     case (cache,env,Absyn.ARRAY({}),impl,st,doVect,pre,info,_)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         (cache,exp,prop,st) = elabExp(cache,env,Absyn.LIST({}),impl,st,doVect,pre,info);
       then (cache,exp,prop,st);
 
@@ -568,7 +568,7 @@ algorithm
        // Part of the MetaModelica extension. KS
    case (cache,env,Absyn.ARRAY(es),impl,st,doVect,pre,info,_)
      equation
-       true = RTOpts.acceptMetaModelicaGrammar();
+       true = Config.acceptMetaModelicaGrammar();
        (cache,exp,prop,st) = elabExp(cache,env,Absyn.LIST(es),impl,st,doVect,pre,info);
      then (cache,exp,prop,st);
 
@@ -633,8 +633,8 @@ algorithm
         msg = Dump.printExpStr(e);
         Error.addSourceMessage(Error.GENERIC_ELAB_EXPRESSION,{msg},info);
         /* FAILTRACE REMOVE
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- Static.elabExp failed: ");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE, "- Static.elabExp failed: ");
 
         Debug.traceln(Dump.printExpStr(e));
         Debug.traceln("  Scope: " +& Env.printEnvPathStr(env));
@@ -747,7 +747,7 @@ algorithm
         (cache,DAE.LIST(expExpList),DAE.PROP((DAE.T_LIST(t),NONE()),c),st);
     case (_,_,_,_,_,_,_,_,_)
       equation
-        Debug.fprintln("failtrace", "- elabListExp failed, non-matching args in list constructor?");
+        Debug.fprintln(Flags.FAILTRACE, "- elabListExp failed, non-matching args in list constructor?");
       then
         fail();
   end matchcontinue;
@@ -1010,7 +1010,7 @@ algorithm
         res;
     case (_)
       equation
-        Debug.fprint("failtrace", "-matrix_constr_max_dim failed\n");
+        Debug.fprint(Flags.FAILTRACE, "-matrix_constr_max_dim failed\n");
       then
         fail();
   end matchcontinue;
@@ -1087,7 +1087,7 @@ algorithm
 
     case (cache,env,fn,exp,iterators,impl,st,doVect,pre,info)
       equation
-        Debug.fprint("failtrace", "Static.elabCallReduction - failed!\n");
+        Debug.fprint(Flags.FAILTRACE, "Static.elabCallReduction - failed!\n");
       then fail();
   end matchcontinue;
 end elabCallReduction;
@@ -1331,7 +1331,7 @@ algorithm
         (typeA,typeB,resType,path) = checkReductionType1(env,path,fnTypes,info);
         inExp = checkReductionType2(inExp,inType,typeA,typeB,resType,Types.equivtypes(typeA,typeB),Types.equivtypes(typeB,resType),info);
         (cache,Util.SUCCESS()) = instantiateDaeFunction(cache, env, path, false, NONE(), true);
-        Error.assertionOrAddSourceMessage(RTOpts.acceptMetaModelicaGrammar() or RTOpts.debugFlag("experimentalReductions"), Error.COMPILER_NOTIFICATION, {"Custom reduction functions are an OpenModelica extension to the Modelica Specification. Do not use them if you need your model to compile using other tools or if you are concerned about using experimental features. Use +d=experimentalReductions to disable this message."}, info);
+        Error.assertionOrAddSourceMessage(Config.acceptMetaModelicaGrammar() or Flags.isSet(Flags.EXPERIMENTAL_REDUCTIONS), Error.COMPILER_NOTIFICATION, {"Custom reduction functions are an OpenModelica extension to the Modelica Specification. Do not use them if you need your model to compile using other tools or if you are concerned about using experimental features. Use +d=experimentalReductions to disable this message."}, info);
       then (cache,inExp,resType,NONE(),path);
   end match;
 end reductionType;
@@ -1415,7 +1415,7 @@ algorithm
     case(DAE.C_CONST()) then SCode.CONST();
     case(DAE.C_UNKNOWN())
       equation
-        Debug.fprintln("failtrace", "- Static.constToVariability failed on DAE.C_UNKNOWN()");
+        Debug.fprintln(Flags.FAILTRACE, "- Static.constToVariability failed on DAE.C_UNKNOWN()");
       then
         fail();
   end match;
@@ -1569,9 +1569,9 @@ algorithm
     //     (cache,dexp,prop);
     case (cache,env,Absyn.CREF(componentRef = cr),impl,pre,info)
       equation
-        Debug.fprint("tcvt","before Static.elabCref in elabGraphicsExp\n");
+        Debug.fprint(Flags.TCVT,"before Static.elabCref in elabGraphicsExp\n");
         (cache,SOME((dexp,prop,_))) = elabCref(cache,env, cr, impl,true /*perform vectorization*/,pre,info);
-        Debug.fprint("tcvt","after Static.elabCref in elabGraphicsExp\n");
+        Debug.fprint(Flags.TCVT,"after Static.elabCref in elabGraphicsExp\n");
       then
         (cache,dexp,prop);
     case (cache,env,(exp as Absyn.BINARY(exp1 = e1,op = op,exp2 = e2)),impl,pre,info) /* Binary and unary operations */
@@ -1818,7 +1818,7 @@ algorithm
 
     case (_, _, Absyn.RANGE(start = start, step = opt_step, stop = stop), _, _, _, _, _)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         error_strs = List.map(
         List.consr(List.consOption(opt_step, {stop}), start),
           Dump.dumpExpStr);
@@ -2045,7 +2045,7 @@ algorithm
         (cache,DAE.PARTEVALFUNCTION(p,args,ty),prop_1,st);
     case(_,_,_,_,_,_,_,_)
       equation
-        Debug.fprintln("failtrace","Static.elabPartEvalFunction failed");
+        Debug.fprintln(Flags.FAILTRACE,"Static.elabPartEvalFunction failed");
       then
         fail();
   end matchcontinue;
@@ -2069,7 +2069,7 @@ algorithm
         ((DAE.T_FUNCTION(args,resType,functionAttributes),po));
     case(_,_)
       equation
-        Debug.fprintln("failtrace","- Static.stripExtraArgsFromType failed");
+        Debug.fprintln(Flags.FAILTRACE,"- Static.stripExtraArgsFromType failed");
       then
         fail();
   end matchcontinue;
@@ -2220,7 +2220,7 @@ algorithm
         c = Types.constAnd(c2, c1);
       then
         c;
-    case (_) equation Debug.fprint("failtrace", "-elabArrayConst failed\n"); then fail();
+    case (_) equation Debug.fprint(Flags.FAILTRACE, "-elabArrayConst failed\n"); then fail();
   end matchcontinue;
 end elabArrayConst;
 
@@ -2433,7 +2433,7 @@ algorithm
         (cache, el_1, prop, dim1, dim2_1);
     else
       equation
-        Debug.fprint("failtrace", "- Static.elabMatrixComma failed\n");
+        Debug.fprint(Flags.FAILTRACE, "- Static.elabMatrixComma failed\n");
       then
         fail();
   end matchcontinue;
@@ -2462,7 +2462,7 @@ algorithm
         res;
     case (_)
       equation
-        Debug.fprint("failtrace", "-elab_matrix_cat_one failed\n");
+        Debug.fprint(Flags.FAILTRACE, "-elab_matrix_cat_one failed\n");
       then
         fail();
   end matchcontinue;
@@ -2643,7 +2643,7 @@ algorithm
       then
         (e_2,prop_1);
     case(_,_,_) equation
-      Debug.fprint("failtrace","-promoteExp failed\n");
+      Debug.fprint(Flags.FAILTRACE,"-promoteExp failed\n");
       then fail();
   end matchcontinue;
 end promoteExp;
@@ -3219,9 +3219,9 @@ algorithm
 
     case (cache,env,expl,_,impl,pre,info)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         sp = PrefixUtil.printPrefixStr3(pre);
-        Debug.fprint("failtrace", "- Static.elabBuiltinNdims failed for: ndims(" +& Dump.printExpLstStr(expl) +& " in component: " +& sp);
+        Debug.fprint(Flags.FAILTRACE, "- Static.elabBuiltinNdims failed for: ndims(" +& Dump.printExpLstStr(expl) +& " in component: " +& sp);
       then
         fail();
   end matchcontinue;
@@ -3298,7 +3298,7 @@ algorithm
     // TODO: check that the diemnsions are parametric?  
     case (cache, env, (s :: dims), _, impl,pre,info)
       equation
-        false = RTOpts.splitArrays();
+        false = Config.splitArrays();
         (cache, s_1, DAE.PROP(sty, c1), _) = elabExp(cache, env, s, impl,NONE(), true,pre,info);
         (cache, dims_1, dimprops, _) = elabExpList(cache, env, dims, impl,NONE(), true,pre,info);
         sty = makeFillArgListType(sty, dimprops);
@@ -3311,15 +3311,15 @@ algorithm
       
     case (cache,env,dims,_,impl,pre,info)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace",
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE,
           "- Static.elabBuiltinFill: Couldn't elaborate fill(): ");
         implstr = boolString(impl);
         expstrs = List.map(dims, Dump.printExpStr);
         expstr = stringDelimitList(expstrs, ", ");
         sp = PrefixUtil.printPrefixStr3(pre);
         str = stringAppendList({expstr," impl=",implstr,", in component: ",sp});
-        Debug.fprintln("failtrace", str);
+        Debug.fprintln(Flags.FAILTRACE, str);
       then
         fail();
   end matchcontinue;
@@ -4574,7 +4574,7 @@ algorithm
         (cache, res, DAE.PROP(ty,c));
     case (_,_,_,_,_,_,_)
       equation
-        Debug.fprintln("failtrace", "- Static.elabBuiltinDiagonal: Couldn't elaborate diagonal()");
+        Debug.fprintln(Flags.FAILTRACE, "- Static.elabBuiltinDiagonal: Couldn't elaborate diagonal()");
       then
         fail();
   end matchcontinue;
@@ -4772,7 +4772,7 @@ algorithm
         symbol_table_2;
     case (_,_,_)
       equation
-        Debug.fprint("failtrace",
+        Debug.fprint(Flags.FAILTRACE,
           "-absyn_cref_list_to_interactive_var_list failed\n");
       then
         fail();
@@ -5195,7 +5195,7 @@ algorithm
       equation
         (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),c),_) = elabExp(cache,env, dim, impl,NONE(),true,pre,info);
         true = Types.isParameterOrConstant(c);
-        msg = Util.if_(OptManager.getOption("checkModel"), Ceval.NO_MSG(), Ceval.MSG(info));
+        msg = Util.if_(Flags.getConfigBool(Flags.CHECK_MODEL), Ceval.NO_MSG(), Ceval.MSG(info));
         (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), msg);
         dim_size = DAE.DIM_INTEGER(size);
         ty = Types.liftArrayListDims(DAE.T_INTEGER_DEFAULT, {dim_size, dim_size});
@@ -5215,7 +5215,7 @@ algorithm
         
     case (cache,env,{dim},_,impl,pre,info)
       equation
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
         (cache,dim_exp,DAE.PROP(type_ = (DAE.T_INTEGER(_), _)),_) = elabExp(cache,env,dim,impl,NONE(),true,pre,info);
         ty = Types.liftArrayListDims(DAE.T_INTEGER_DEFAULT, {DAE.DIM_UNKNOWN(), DAE.DIM_UNKNOWN()});
         ety = Types.elabType(ty);
@@ -6191,12 +6191,12 @@ algorithm
     case (cache,env,fn,args,nargs,(impl as true),st,pre,info,numErrorMessages)
       equation
         false = hasBuiltInHandler(fn);
-        Debug.fprintln("sei", "elab_call 3");
+        Debug.fprintln(Flags.SEI, "elab_call 3");
         fn_1 = Absyn.crefToPath(fn);
         (cache,e,prop) = elabCallArgs(cache,env, fn_1, args, nargs, impl, st,pre,info);
-        Debug.fprint("sei", "elab_call 3 succeeded: ");
+        Debug.fprint(Flags.SEI, "elab_call 3 succeeded: ");
         fnstr = Dump.printComponentRefStr(fn);
-        Debug.fprintln("sei", fnstr);
+        Debug.fprintln(Flags.SEI, fnstr);
       then
         (cache,e,prop,st);
 
@@ -6204,30 +6204,30 @@ algorithm
     case (cache,env,fn,args,nargs,(impl as false),st,pre,info,numErrorMessages)
       equation
         false = hasBuiltInHandler(fn);
-        Debug.fprint("sei", "elab_call 4: ");
+        Debug.fprint(Flags.SEI, "elab_call 4: ");
         fnstr = Dump.printComponentRefStr(fn);
-        Debug.fprintln("sei", fnstr);
+        Debug.fprintln(Flags.SEI, fnstr);
         fn_1 = Absyn.crefToPath(fn);
         (cache,e,prop) = elabCallArgs(cache,env, fn_1, args, nargs, impl, st,pre,info);
-        Debug.fprint("sei", "elab_call 4 succeeded: ");
-        Debug.fprintln("sei", fnstr);
+        Debug.fprint(Flags.SEI, "elab_call 4 succeeded: ");
+        Debug.fprintln(Flags.SEI, fnstr);
       then
         (cache,e,prop,st);
     
     case (cache,env,fn,args,nargs,impl,st,pre,info,numErrorMessages)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- Static.elabCall failed\n");
-        Debug.fprint("failtrace", " function: ");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE, "- Static.elabCall failed\n");
+        Debug.fprint(Flags.FAILTRACE, " function: ");
         fnstr = Dump.printComponentRefStr(fn);
-        Debug.fprint("failtrace", fnstr);
-        Debug.fprint("failtrace", "   posargs: ");
+        Debug.fprint(Flags.FAILTRACE, fnstr);
+        Debug.fprint(Flags.FAILTRACE, "   posargs: ");
         argstrs = List.map(args, Dump.printExpStr);
         argstr = stringDelimitList(argstrs, ", ");
-        Debug.fprintln("failtrace", argstr);
-        Debug.fprint("failtrace", " prefix: ");
+        Debug.fprintln(Flags.FAILTRACE, argstr);
+        Debug.fprint(Flags.FAILTRACE, " prefix: ");
         prestr = PrefixUtil.printPrefixStr(pre);
-        Debug.fprintln("failtrace", prestr);
+        Debug.fprintln(Flags.FAILTRACE, prestr);
       then
         fail();
   end matchcontinue;
@@ -7000,7 +7000,7 @@ algorithm
       equation
         // transform modifications into function arguments and prefix the UNQUALIFIED component
         // references with the function prefix, here world.
-        Debug.fprintln("static", "Found modifications: " +& SCodeDump.printModStr(mod));
+        Debug.fprintln(Flags.STATIC, "Found modifications: " +& SCodeDump.printModStr(mod));
         /* modification elaboration doesn't work as World is not a package!
            anyhow we can deal with this in a different way, see below
         // build the prefix
@@ -7008,10 +7008,10 @@ algorithm
                                Prefix.CLASSPRE(SCode.VAR()));
         // elaborate the modification
         (cache, daeMod) = Mod.elabMod(cache, classEnv, prefix, mod, impl);
-        Debug.fprintln("static", "Elaborated modifications: " +& Mod.printModStr(daeMod));
+        Debug.fprintln(Flags.STATIC, "Elaborated modifications: " +& Mod.printModStr(daeMod));
         */
         nArgs = SCodeUtil.translateSCodeModToNArgs(prefix, mod);
-        Debug.fprintln("static", "Translated mods to named arguments: " +&
+        Debug.fprintln(Flags.STATIC, "Translated mods to named arguments: " +&
            stringDelimitList(List.map(nArgs, Dump.printNamedArgStr), ", "));
      then
        nArgs;
@@ -7261,9 +7261,9 @@ algorithm
         // join the type with the function name: Modelica.Mechanics.MultiBody.World.gravityAcceleration
         functionClassPath = Absyn.joinPaths(componentType, Absyn.IDENT(fnIdent));
 
-        Debug.fprintln("static", "Looking for function: " +& Absyn.pathString(fn));
+        Debug.fprintln(Flags.STATIC, "Looking for function: " +& Absyn.pathString(fn));
         // lookup the function using the correct typeOf(world).functionName
-        Debug.fprintln("static", "Looking up class: " +& Absyn.pathString(functionClassPath));
+        Debug.fprintln(Flags.STATIC, "Looking up class: " +& Absyn.pathString(functionClassPath));
         (_, scodeClass, classEnv) = Lookup.lookupClass(cache, env, functionClassPath, true);
         Util.setStatefulBoolean(stopElab,true);
         // see if class scodeClass is derived and then
@@ -7357,7 +7357,7 @@ algorithm
     /* ------ */
     case (cache,env,fn,args,nargs,impl,stopElab,st,pre,info) /* Metamodelica extension, added by simbj */
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopElab);
         (cache,t as (DAE.T_METARECORD(utPath=utPath,index=index,fields=vars),SOME(fqPath)),env_1) = Lookup.lookupType(cache, env, fn, NONE());
         Util.setStatefulBoolean(stopElab,true);
@@ -7440,8 +7440,8 @@ algorithm
 
     case (cache,env,fn,args,nargs,impl,stopElab,st,pre,info)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- Static.elabCallArgs failed on: " +& Absyn.pathString(fn) +& " in env: " +& Env.printEnvPathStr(env));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprintln(Flags.FAILTRACE, "- Static.elabCallArgs failed on: " +& Absyn.pathString(fn) +& " in env: " +& Env.printEnvPathStr(env));
       then
         fail();
   end matchcontinue;
@@ -7486,7 +7486,7 @@ algorithm
   tuple_ := isTuple(restype);
   (isBuiltin,builtin,fn_1) := isBuiltinFunc(fn_1,functype);
   const := List.fold(constlist, Types.constAnd, DAE.C_CONST());
-  const := Util.if_((RTOpts.debugFlag("rml") and not builtin) or (not isPure), DAE.C_VAR(), const) "in RML no function needs to be ceval'ed; this speeds up compilation significantly when bootstrapping";
+  const := Util.if_((Flags.isSet(Flags.RML) and not builtin) or (not isPure), DAE.C_VAR(), const) "in RML no function needs to be ceval'ed; this speeds up compilation significantly when bootstrapping";
   (cache,const) := determineConstSpecialFunc(cache,env,const,fn);
   tyconst := elabConsts(restype, const);
   prop := getProperties(restype, tyconst);
@@ -7866,14 +7866,14 @@ algorithm
     // that takes a vector of unknown size. So pretend that the dimension is 1.
     case (e, (DAE.DIM_UNKNOWN() :: ad), slots, prop, info)
       equation
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
         (vect_exp_1, prop) = vectorizeCall(e, DAE.DIM_INTEGER(1) :: ad, slots, prop, info);
       then 
         (vect_exp_1, prop);
       /* TODO: Remove me :D */
     case (e, (DAE.DIM_EXP(exp=_) :: ad), slots, prop, info)
       equation
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
         (vect_exp_1, prop) = vectorizeCall(e, DAE.DIM_INTEGER(1) :: ad, slots, prop, info);
       then 
         (vect_exp_1, prop);
@@ -7943,7 +7943,7 @@ algorithm
     case (_,dim::_,_,_,_)
       equation
         str = ExpressionDump.dimensionString(dim);
-        Debug.fprintln("failtrace", "- Static.vectorizeCall failed: " +& str);
+        Debug.fprintln(Flags.FAILTRACE, "- Static.vectorizeCall failed: " +& str);
       then
         fail();
   end matchcontinue;
@@ -8108,7 +8108,7 @@ algorithm
         new_exp;
     case (_,_,_,_)
       equation
-        Debug.fprint("failtrace", "-Static.vectorizeCallScalar failed\n");
+        Debug.fprint(Flags.FAILTRACE, "-Static.vectorizeCallScalar failed\n");
       then
         fail();
   end matchcontinue;
@@ -8286,7 +8286,7 @@ algorithm
     // failtrace
     case (cache,env,_,_,t::_,_,_,_,_)
       equation
-        Debug.fprintln("failtrace", "- Static.elabTypes failed: " +& Types.unparseType(t));
+        Debug.fprintln(Flags.FAILTRACE, "- Static.elabTypes failed: " +& Types.unparseType(t));
       then
         fail();
   end matchcontinue;
@@ -8341,7 +8341,7 @@ algorithm
         ad;
     case (_)
       equation
-        Debug.fprint("failtrace", "-slots_vectorizable failed\n");
+        Debug.fprint(Flags.FAILTRACE, "-slots_vectorizable failed\n");
       then
         fail();
   end matchcontinue;
@@ -8445,13 +8445,13 @@ algorithm
     case (t,DAE.SINGLE_CONST(const = b)) then DAE.PROP(t,b);
     case (ty,const)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- get_properties failed: ");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE, "- get_properties failed: ");
         tystr = Types.unparseType(ty);
         conststr = Types.unparseTupleconst(const);
-        Debug.fprint("failtrace", tystr);
-        Debug.fprint("failtrace", ", ");
-        Debug.fprintln("failtrace", conststr);
+        Debug.fprint(Flags.FAILTRACE, tystr);
+        Debug.fprint(Flags.FAILTRACE, ", ");
+        Debug.fprintln(Flags.FAILTRACE, conststr);
       then
         fail();
   end matchcontinue;
@@ -8677,7 +8677,7 @@ algorithm
     case (vs)
       equation
         // enabled only by +d=failtrace
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Static.functionParams failed on: " +& stringDelimitList(List.map(vs, Types.printVarStr), "; "));
       then
         fail();
@@ -8756,7 +8756,7 @@ algorithm
 
     // fail trace
     else
-      /* FAILTRACE REMOVE equation Debug.fprint("failtrace","elabInputArgs failed\n"); */ then fail();
+      /* FAILTRACE REMOVE equation Debug.fprint(Flags.FAILTRACE,"elabInputArgs failed\n"); */ then fail();
   end match;
 end elabInputArgs;
 
@@ -9147,11 +9147,11 @@ algorithm
         /* FAILTRACE REMOVE
         (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache,env,e,impl,NONE(),true,pre,info);
         failure((_,_,_) = Types.matchTypePolymorphic(e_1,t,vt,polymorphicBindings,false,fnPath));
-        Debug.fprint("failtrace", "elabPositionalInputArgs failed, expected type:");
-        Debug.fprint("failtrace", Types.unparseType(vt));
-        Debug.fprint("failtrace", " found type");
-        Debug.fprint("failtrace", Types.unparseType(t));
-        Debug.fprint("failtrace", "\n");
+        Debug.fprint(Flags.FAILTRACE, "elabPositionalInputArgs failed, expected type:");
+        Debug.fprint(Flags.FAILTRACE, Types.unparseType(vt));
+        Debug.fprint(Flags.FAILTRACE, " found type");
+        Debug.fprint(Flags.FAILTRACE, Types.unparseType(t));
+        Debug.fprint(Flags.FAILTRACE, "\n");
         */
       then
         fail();
@@ -9159,9 +9159,9 @@ algorithm
     case (cache, env, es, _, slots, checkTypes, impl, polymorphicBindings,pre,info)
       equation
         /* FAILTRACE REMOVE
-        Debug.fprint("failtrace", "elabPositionalInputArgs failed: expl:");
-        Debug.fprint("failtrace", stringDelimitList(List.map(es,Dump.printExpStr),", "));
-        Debug.fprint("failtrace", "\n");
+        Debug.fprint(Flags.FAILTRACE, "elabPositionalInputArgs failed: expl:");
+        Debug.fprint(Flags.FAILTRACE, stringDelimitList(List.map(es,Dump.printExpStr),", "));
+        Debug.fprint(Flags.FAILTRACE, "\n");
         */
       then
         fail();
@@ -9251,9 +9251,9 @@ algorithm
     // failure
     case (cache,env,narg,farg,_,checkTypes,impl,polymorphicBindings,pre,info)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         pre_str = PrefixUtil.printPrefixStr3(pre);
-        Debug.fprintln("failtrace", "Static.elabNamedInputArgs failed for first named argument in: (" +&
+        Debug.fprintln(Flags.FAILTRACE, "Static.elabNamedInputArgs failed for first named argument in: (" +&
            stringDelimitList(List.map(narg, Dump.printNamedArgStr), ", ") +& "), in component: " +& pre_str);
       then
         fail();
@@ -9482,7 +9482,7 @@ algorithm
     // No vectorization is performed
     case (cache,env,c as Absyn.CREF_IDENT(name=id, subscripts={Absyn.SUBSCRIPT(e)}),impl,doVect,pre,evalCref,info)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         (cache,SOME((exp1,DAE.PROP((DAE.T_META_ARRAY(t),_), const1),attr))) = elabCref1(cache,env,Absyn.CREF_IDENT(id,{}),false,false,pre,evalCref,info);
         (cache,exp2,DAE.PROP((DAE.T_INTEGER(_),_), const2),_) = elabExp(cache,env,e,impl,NONE(),false,pre,info);
         const = Types.constAnd(const1,const2);
@@ -9524,7 +9524,7 @@ algorithm
     // MetaModelica Partial Function
     case (cache,env,c,impl,doVect,pre,evalCref,info)
       equation
-        // true = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
+        // true = Flags.isSet(Flags.FNPTR) or Config.acceptMetaModelicaGrammar();
         path = Absyn.crefToPath(c);
         // call the lookup function that removes errors when it fails!
         (cache, {t}) = lookupFunctionsInEnvNoError(cache, env, path, info);
@@ -9545,7 +9545,7 @@ algorithm
     // MetaModelica extension
     case (cache,env,Absyn.CREF_IDENT("NONE",{}),impl,doVect,_,_,info)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         Error.addSourceMessage(Error.META_NONE_CREF, {}, info);
       then
         (cache,NONE());
@@ -9553,7 +9553,7 @@ algorithm
     case (cache,env,c,impl,doVect,pre,_,info)
       equation
         // enabled with +d=failtrace
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Static.elabCref failed: " +&
           Dump.printComponentRefStr(c) +& " in env: " +&
           Env.printEnvPathStr(env));
@@ -10101,11 +10101,11 @@ algorithm
       then
         (cache,Expression.makeCrefExp(cr,expTy),DAE.C_CONST(),attr);
 
-    // evaluate parameters only if "evalparam" or RTOpts.getEvaluateParametersInAnnotations()is set
+    // evaluate parameters only if "evalparam" or Config.getEvaluateParametersInAnnotations()is set
     // TODO! also ceval if annotation Evaluate=true.
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),_,_,tt,DAE.VALBOUND(valBound = v),doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,info)
       equation
-        true = boolOr(RTOpts.debugFlag("evalparam"), RTOpts.getEvaluateParametersInAnnotations());
+        true = boolOr(Flags.isSet(Flags.EVAL_PARAM), Config.getEvaluateParametersInAnnotations());
         // make it a constant if evalparam is used
         attr = DAEUtil.setAttrVariability(attr, SCode.CONST());
         expTy = Types.elabType(tt);
@@ -10121,7 +10121,7 @@ algorithm
     case (cache,env,cr,attr as DAE.ATTR(variability = var),_,_,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,info) 
       equation         
         true = SCode.isParameterOrConst(var);
-        true = boolOr(RTOpts.debugFlag("evalparam"), RTOpts.getEvaluateParametersInAnnotations());
+        true = boolOr(Flags.isSet(Flags.EVAL_PARAM), Config.getEvaluateParametersInAnnotations());
         // make it a constant if evalparam is used
         attr = DAEUtil.setAttrVariability(attr, SCode.CONST());        
         expTy = Types.elabType(tt) "Constants with equal bindings should be constant, i.e. true
@@ -10208,7 +10208,7 @@ algorithm
         pre_str = PrefixUtil.printPrefixStr2(pre);
         s = pre_str +& s;
         Error.addSourceMessage(Error.NO_CONSTANT_BINDING, {s,scope}, info);
-        Debug.fprintln("static","- Static.elabCref2 failed on: " +& pre_str +& s +& " with no constant binding in scope: " +& scope);
+        Debug.fprintln(Flags.STATIC,"- Static.elabCref2 failed on: " +& pre_str +& s +& " with no constant binding in scope: " +& scope);
         expTy = Types.elabType(tt);
         cr_1 = fillCrefSubscripts(cr, tt);
         // tyStr = Types.printTypeStr(tt);
@@ -10247,7 +10247,7 @@ algorithm
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),_,forIteratorConstOpt,tt,DAE.UNBOUND(),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),pre,info)
       equation
         s = ComponentReference.printComponentRefStr(cr);
-        genWarning = not (Util.isSome(forIteratorConstOpt) or OptManager.getOption("checkModel"));
+        genWarning = not (Util.isSome(forIteratorConstOpt) or Flags.getConfigBool(Flags.CHECK_MODEL));
         pre_str = PrefixUtil.printPrefixStr2(pre);
         // Don't generate warning if variable is for iterator, since it doesn't have a value (it's iterated over separately)
         s = pre_str +& s;
@@ -10262,9 +10262,9 @@ algorithm
     // failure!
     case (cache,env,cr,attr,_,_,tp,bind,doVect,_,pre,info)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         pre_str = PrefixUtil.printPrefixStr2(pre);
-        Debug.fprint("failtrace", "- Static.elabCref2 failed for: " +& pre_str +& ComponentReference.printComponentRefStr(cr) +& "\n env:" +& Env.printEnvStr(env));
+        Debug.fprint(Flags.FAILTRACE, "- Static.elabCref2 failed for: " +& pre_str +& ComponentReference.printComponentRefStr(cr) +& "\n env:" +& Env.printEnvStr(env));
       then
         fail();
   end matchcontinue;
@@ -10311,8 +10311,8 @@ algorithm
     case (_, _, (DAE.T_ARRAY(arrayDim = d1, arrayType = (DAE.T_ARRAY(arrayDim = d2), _)), _),
         SOME(DAE.CREF(componentRef = cr)), crefIdType, applyLimits)
       equation
-        b1 = (Expression.dimensionSize(d1) < RTOpts.vectorizationLimit());
-        b2 = (Expression.dimensionSize(d2) < RTOpts.vectorizationLimit());
+        b1 = (Expression.dimensionSize(d1) < Config.vectorizationLimit());
+        b2 = (Expression.dimensionSize(d2) < Config.vectorizationLimit());
         true = boolAnd(b1, b2) or not applyLimits;
         e = elabCrefSlice(cr,crefIdType);
         e = elabMatrixToMatrixExp(e);
@@ -10323,7 +10323,7 @@ algorithm
         SOME(DAE.CREF(componentRef = cr)), crefIdType, applyLimits)
       equation
         false = Types.isArray(t);
-        true = (Expression.dimensionSize(d1) < RTOpts.vectorizationLimit()) or not applyLimits;
+        true = (Expression.dimensionSize(d1) < Config.vectorizationLimit()) or not applyLimits;
         e = elabCrefSlice(cr,crefIdType);
       then
         e;
@@ -10335,8 +10335,8 @@ algorithm
       equation 
         ds = Expression.dimensionSize(d1);
         ds2 = Expression.dimensionSize(d2);
-        b1 = (ds < RTOpts.vectorizationLimit());
-        b2 = (ds2 < RTOpts.vectorizationLimit());
+        b1 = (ds < Config.vectorizationLimit());
+        b2 = (ds2 < Config.vectorizationLimit());
         true = boolAnd(b1, b2) or not applyLimits;
         e = createCrefArray2d(cr, 1, ds, ds2, exptp, t,crefIdType);
       then
@@ -10348,7 +10348,7 @@ algorithm
       equation 
         false = Types.isArray(t);
         ds = Expression.dimensionSize(d1);
-        true = (ds < RTOpts.vectorizationLimit()) or not applyLimits;
+        true = (ds < Config.vectorizationLimit()) or not applyLimits;
         e = createCrefArray(cr, 1, ds, exptp, t,crefIdType);
       then
         e;
@@ -10794,7 +10794,7 @@ algorithm
         (DAE.CALL(fn,(e :: args),attr) :: es_1);
     case (_,_)
       equation
-        Debug.fprintln("failtrace", "- Static.callVectorize failed");
+        Debug.fprintln(Flags.FAILTRACE, "- Static.callVectorize failed");
       then
         fail();
   end matchcontinue;
@@ -10863,7 +10863,7 @@ algorithm
     // failure
     case (cr,indx,ds,et,t,crefIdType)
       equation
-        Debug.fprintln("failtrace", "createCrefArray failed on:" +& ComponentReference.printComponentRefStr(cr));
+        Debug.fprintln(Flags.FAILTRACE, "createCrefArray failed on:" +& ComponentReference.printComponentRefStr(cr));
       then
         fail();
   end matchcontinue;
@@ -10911,8 +10911,8 @@ algorithm
     //
     case (cr,indx,ds,ds2,et,t,crefIdType)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- Static.createCrefArray2d failed on: " +& ComponentReference.printComponentRefStr(cr));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprintln(Flags.FAILTRACE, "- Static.createCrefArray2d failed on: " +& ComponentReference.printComponentRefStr(cr));
       then
         fail();
   end matchcontinue;
@@ -11045,8 +11045,8 @@ algorithm
     case (cache,crefEnv,absynCref,crefPrefix,impl,hasZeroSizeDim,info)
       equation 
         // FAILTRACE REMOVE
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- Static.elabCrefSubs failed on: " +&
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprintln(Flags.FAILTRACE, "- Static.elabCrefSubs failed on: " +&
         PrefixUtil.printPrefixStr(crefPrefix) +& "." +&
           Dump.printComponentRefStr(absynCref) +& " env: " +&
           Env.printEnvPathStr(crefEnv));
@@ -11252,7 +11252,7 @@ algorithm
     // but skip the constant evaluation.
     case (_, _, _, _, _, _, _, _)
       equation
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
         true = Types.isParameterOrConstant(inConst);
       then
         (inCache, inSubscript);
@@ -11320,8 +11320,8 @@ algorithm
     // failtrace
     else
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- Static.elabSubscript failed on " +&
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprintln(Flags.FAILTRACE, "- Static.elabSubscript failed on " +&
           Dump.printSubscriptStr(inSubscript) +& " in env: " +&
           Env.printEnvPathStr(inEnv));
       then
@@ -11688,7 +11688,7 @@ algorithm
     // handle wild _
     case (cache,env,DAE.WILD(),impl)
       equation 
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
       then
         (cache,DAE.WILD());
 
@@ -11717,10 +11717,9 @@ algorithm
     // failtrace
     case (cache,env,cr,_)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- Static.canonCref failed, cr: ");
-        Debug.fprint("failtrace", ComponentReference.printComponentRefStr(cr));
-        Debug.fprint("failtrace", "\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Static.canonCref failed, cr: ");
+        Debug.traceln(ComponentReference.printComponentRefStr(cr));
       then
         fail();
   end matchcontinue;
@@ -11887,8 +11886,8 @@ algorithm
 
     case (((op,params,rtype) :: _),args,_,pre,info)
       equation
-        //Debug.fprint("dovl", stringDelimitList(List.map(params, Types.printTypeStr),"\n"));
-        //Debug.fprint("dovl", "\n===\n");
+        //Debug.fprint(Flags.DOVL, stringDelimitList(List.map(params, Types.printTypeStr),"\n"));
+        //Debug.fprint(Flags.DOVL, "\n===\n");
         (args_1,types_1) = elabArglist(params, args);
         rtype_1 = computeReturnType(op, types_1, rtype,pre,info);
         ty = Types.elabType(rtype_1);
@@ -12243,7 +12242,7 @@ algorithm
     // dimensionsEqual instead, which matches anything against DIM_UNKNOWN.
     case (_, _)
       equation
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
         true = Expression.dimensionsEqual(dim1, dim2);
       then
         true;
@@ -12776,7 +12775,7 @@ algorithm
         (cache,types);
     case (cache,op,env,t1,t2)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Static.operators failed, op: " +& Dump.opSymbol(op));
       then
         fail();
@@ -13037,7 +13036,7 @@ protected function unevaluatedFunctionVariability
 algorithm
   outConst := matchcontinue(inEnv)
     case _ equation true = Env.inFunctionScope(inEnv); then DAE.C_VAR();
-    case _ equation true = OptManager.getOption("checkModel"); then DAE.C_UNKNOWN();
+    case _ equation true = Flags.getConfigBool(Flags.CHECK_MODEL); then DAE.C_UNKNOWN();
   end matchcontinue;
 end unevaluatedFunctionVariability;
 
@@ -13250,7 +13249,7 @@ algorithm
 
     else
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Static.elabArrayDim failed on: " +&
           Absyn.printComponentRefStr(inCref) +&
           Dump.printArraydimStr({inDimension}));
@@ -13297,7 +13296,7 @@ algorithm
     // When arrays are non-expanded, non-constant parametric dimensions are allowed.
     case (_, _, _, DAE.PROP((DAE.T_INTEGER(_), _), DAE.C_PARAM()), _, _, _, _, _)
       equation
-        false = RTOpts.splitArrays();
+        false = Config.splitArrays();
       then
         (inCache, SOME(DAE.DIM_EXP(inExp)));
 
@@ -13326,7 +13325,7 @@ algorithm
 
     case (_, _, _, _, _, _, _, _, _)
       equation
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
       then
         (inCache, SOME(DAE.DIM_UNKNOWN()));
 

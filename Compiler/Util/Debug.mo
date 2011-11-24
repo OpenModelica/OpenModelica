@@ -44,8 +44,8 @@ encapsulated package Debug
   fprint(\"inst\", \"Starting instantiation...\"). See runtime/rtopts.c for
   implementation of flag checking."
 
+public import Flags;
 // protected imports
-protected import RTOpts;
 protected import Print;
 protected import System;
 
@@ -72,11 +72,11 @@ public function fprint
 "function: fprint
   author: LS
   Flag controlled debugging"
-  input String flag;
+  input Flags.DebugFlag flag;
   input String str;
   // annotation(__OpenModelica_EarlyInline=true);
 algorithm
-  bprint(RTOpts.debugFlag(flag),str);
+  bprint(Flags.isSet(flag),str);
 end fprint;
 
 public function bprint
@@ -117,27 +117,27 @@ end bprintln;
 public function fprintln
 "function: fprintln
   Flag controlled debugging, printing with newline."
-  input String flag;
+  input Flags.DebugFlag flag;
   input String str;
   // annotation(__OpenModelica_EarlyInline=true);
 algorithm
-  bprintln(RTOpts.debugFlag(flag),str);
+  bprintln(Flags.isSet(flag),str);
 end fprintln;
 
 public function fprintl
 "function: fprintl
   flag controlled debugging, printing of string list."
-  input String inString;
+  input Flags.DebugFlag inFlag;
   input list<String> inStringLst;
   // annotation(__OpenModelica_EarlyInline=true);
 algorithm
-  _ := matchcontinue (inString,inStringLst)
+  _ := matchcontinue (inFlag,inStringLst)
     local
-      String str,flag;
+      String str;
       list<String> strlist;
-    case (flag,strlist)
+    case (_,strlist)
       equation
-        true = RTOpts.debugFlag(flag);
+        true = Flags.isSet(inFlag);
         str = stringAppendList(strlist);
         Print.printErrorBuf(str);
       then
@@ -149,7 +149,7 @@ end fprintl;
 public function fcall2
 "function: fcall2
   Flag controlled calling of the given function (2nd arg)"
-  input String inString;
+  input Flags.DebugFlag inFlag;
   input FuncTypeTypeATypeB func;
   input Type_a inTypeA;
   input Type_b inTypeB;
@@ -160,15 +160,14 @@ public function fcall2
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
 algorithm
-  _ := matchcontinue (inString,func,inTypeA,inTypeB)
+  _ := matchcontinue (inFlag,func,inTypeA,inTypeB)
     local
       Type_a arg1;
       Type_b arg2;
-      String flag;
     
-    case (flag,func,arg1,arg2)
+    case (_,func,arg1,arg2)
       equation
-        true = RTOpts.debugFlag(flag);
+        true = Flags.isSet(inFlag);
         func(arg1,arg2);
       then
         ();
@@ -179,7 +178,7 @@ end fcall2;
 public function fcall
 "function: fcall
   Flag controlled calling of the given function (2nd arg)"
-  input String inString;
+  input Flags.DebugFlag inFlag;
   input FuncTypeType_aTo inFuncTypeTypeATo;
   input Type_a inTypeA;
   partial function FuncTypeType_aTo
@@ -187,14 +186,13 @@ public function fcall
   end FuncTypeType_aTo;
   replaceable type Type_a subtypeof Any;
 algorithm
-  _ := matchcontinue (inString,inFuncTypeTypeATo,inTypeA)
+  _ := matchcontinue (inFlag,inFuncTypeTypeATo,inTypeA)
     local
-      String flag;
       FuncTypeType_aTo func;
       Type_a str;
-    case (flag,func,str)
+    case (_,func,str)
       equation
-        true = RTOpts.debugFlag(flag);
+        true = Flags.isSet(inFlag);
         func(str);
       then
         ();
@@ -205,18 +203,17 @@ end fcall;
 public function fcall0
 "function: fcall0
   Flag controlled calling of given function  (2nd arg)"
-  input String inString;
+  input Flags.DebugFlag inFlag;
   input FuncTypeTo inFuncTypeTo;
   partial function FuncTypeTo
   end FuncTypeTo;
 algorithm
-  _ := matchcontinue (inString,inFuncTypeTo)
+  _ := matchcontinue (inFlag,inFuncTypeTo)
     local
-      String flag;
       FuncTypeTo func;
-    case (flag,func)
+    case (_,func)
       equation
-        true = RTOpts.debugFlag(flag);
+        true = Flags.isSet(inFlag);
         func();
       then
         ();
@@ -229,7 +226,7 @@ public function fcallret0
   Flag controlled calling of given function (2nd arg).
   The passed function gets 0 arguments.
   The last parameter is returned if the given flag is not set."
-  input String inString;
+  input Flags.DebugFlag inFlag;
   input FuncTypeToType_b inFuncTypeTypeB;
   input Type_b inTypeB;
   output Type_b outTypeB;
@@ -238,14 +235,13 @@ public function fcallret0
   end FuncTypeToType_b;
   replaceable type Type_b subtypeof Any;
 algorithm
-  outTypeB := matchcontinue (inString,inFuncTypeTypeB,inTypeB)
+  outTypeB := matchcontinue (inFlag,inFuncTypeTypeB,inTypeB)
     local
       Type_b res,def;
-      String flag;
       FuncTypeToType_b func;
-    case (flag,func,def)
+    case (_,func,def)
       equation
-        true = RTOpts.debugFlag(flag);
+        true = Flags.isSet(inFlag);
         res = func();
       then
         res;
@@ -258,7 +254,7 @@ public function fcallret1
   Flag controlled calling of given function (2nd arg).
   The passed function gets 1 arguments.
   The last parameter is returned if the given flag is not set."
-  input String inString;
+  input Flags.DebugFlag inFlag;
   input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;
   input Type_a inTypeA;
   input Type_b inTypeB;
@@ -270,15 +266,14 @@ public function fcallret1
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
 algorithm
-  outTypeB := matchcontinue (inString,inFuncTypeTypeAToTypeB,inTypeA,inTypeB)
+  outTypeB := matchcontinue (inFlag,inFuncTypeTypeAToTypeB,inTypeA,inTypeB)
     local
       Type_b res,def;
-      String flag;
       FuncTypeType_aToType_b func;
       Type_a arg;
-    case (flag,func,arg,def)
+    case (_,func,arg,def)
       equation
-        true = RTOpts.debugFlag(flag);
+        true = Flags.isSet(inFlag);
         res = func(arg);
       then
         res;
@@ -291,7 +286,7 @@ public function fcallret2
   Flag controlled calling of given function (2nd arg).
   The passed function gets 2 arguments.
   The last parameter is returned if the given flag is not set."
-  input String flag;
+  input Flags.DebugFlag inFlag;
   input FuncAB_C func;
   input Type_a arg1;
   input Type_b arg2;
@@ -306,10 +301,10 @@ public function fcallret2
   replaceable type Type_b subtypeof Any;
   replaceable type Type_c subtypeof Any;
 algorithm
-  res := matchcontinue (flag,func,arg1,arg2,default)
-    case (flag,func,arg1,arg2,_)
+  res := matchcontinue (inFlag,func,arg1,arg2,default)
+    case (_,func,arg1,arg2,_)
       equation
-        true = RTOpts.debugFlag(flag);
+        true = Flags.isSet(inFlag);
         res = func(arg1,arg2);
       then
         res;
@@ -552,7 +547,7 @@ public function notfcall
   Call the given function (2nd arg)
   if the flag given in 1st arg is
   NOT set"
-  input String inString;
+  input Flags.DebugFlag inFlag;
   input FuncTypeType_aTo inFuncTypeTypeATo;
   input Type_a inTypeA;
   partial function FuncTypeType_aTo
@@ -560,14 +555,13 @@ public function notfcall
   end FuncTypeType_aTo;
   replaceable type Type_a subtypeof Any;
 algorithm
-  _ := matchcontinue (inString,inFuncTypeTypeATo,inTypeA)
+  _ := matchcontinue (inFlag,inFuncTypeTypeATo,inTypeA)
     local
-      String flag;
       FuncTypeType_aTo func;
       Type_a str;
-    case (flag,func,str)
+    case (_,func,str)
       equation
-        false = RTOpts.debugFlag(flag);
+        false = Flags.isSet(inFlag);
         func(str);
       then
         ();
@@ -579,7 +573,7 @@ public function fprintList
 "function: fprintList
   If flag is set, print the elements in
   the list, using the passed function."
-  input String inString1;
+  input Flags.DebugFlag inFlag;
   input list<Type_a> inTypeALst2;
   input FuncTypeType_aTo inFuncTypeTypeATo3;
   input String inString4;
@@ -588,14 +582,14 @@ public function fprintList
     input Type_a inTypeA;
   end FuncTypeType_aTo;
 algorithm
-  _ := matchcontinue (inString1,inTypeALst2,inFuncTypeTypeATo3,inString4)
+  _ := matchcontinue (inFlag,inTypeALst2,inFuncTypeTypeATo3,inString4)
     local
-      String flag,sep;
+      String sep;
       list<Type_a> lst;
       FuncTypeType_aTo func;
-    case (flag,lst,func,sep)
+    case (_,lst,func,sep)
       equation
-        true = RTOpts.debugFlag(flag);
+        true = Flags.isSet(inFlag);
         printList(lst, func, sep);
       then
         ();
@@ -647,7 +641,7 @@ public function execStat
   input String name;
   input Integer clockIndex;
 algorithm
-  execStat2(RTOpts.debugFlag("execstat"),name,clockIndex);
+  execStat2(Flags.isSet(Flags.EXEC_STAT),name,clockIndex);
 end execStat;
 
 protected function execStat2

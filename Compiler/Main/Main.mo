@@ -48,6 +48,7 @@ protected import BackendDAECreate;
 protected import BackendDAEUtil;
 protected import CevalScript;
 protected import ClassLoader;
+protected import Config;
 protected import Corba;
 protected import DAE;
 protected import DAEDump;
@@ -60,13 +61,13 @@ protected import DumpGraphviz;
 protected import Env;
 protected import Error;
 protected import ErrorExt;
+protected import Flags;
 protected import InnerOuter;
 protected import Inst;
 protected import Interactive;
 protected import List;
 protected import Parser;
 protected import Print;
-protected import RTOpts;
 protected import SCode;
 protected import SCodeUtil;
 protected import Settings;
@@ -77,7 +78,6 @@ protected import TaskGraph;
 protected import TaskGraphExt;
 protected import TplMain;
 protected import Util;
-protected import RTOptsData;
 
 protected function serverLoop
 "function: serverLoop
@@ -95,9 +95,9 @@ algorithm
     case (shandle,isymb)
       equation
         str = Socket.handlerequest(shandle);
-        Debug.fprint("interactivedump", "------- Recieved Data from client -----\n");
-        Debug.fprint("interactivedump", str);
-        Debug.fprint("interactivedump", "------- End recieved Data-----\n");
+        Debug.fprint(Flags.INTERACTIVE_DUMP, "------- Recieved Data from client -----\n");
+        Debug.fprint(Flags.INTERACTIVE_DUMP, str);
+        Debug.fprint(Flags.INTERACTIVE_DUMP, "------- End recieved Data-----\n");
         Print.clearBuf();
         (true,replystr,newsymb) = handleCommand(str, isymb) "Print.clearErrorBuf &" ;
         Socket.sendreply(shandle, replystr);
@@ -107,9 +107,9 @@ algorithm
     case (shandle,isymb)
       equation
         str = Socket.handlerequest(shandle) "2004-11-27 - adrpo added this part to make the loop deterministic" ;
-        Debug.fprint("interactivedump", "------- Recieved Data from client -----\n");
-        Debug.fprint("interactivedump", str);
-        Debug.fprint("interactivedump", "------- End recieved Data-----\n");
+        Debug.fprint(Flags.INTERACTIVE_DUMP, "------- Recieved Data from client -----\n");
+        Debug.fprint(Flags.INTERACTIVE_DUMP, str);
+        Debug.fprint(Flags.INTERACTIVE_DUMP, "------- End recieved Data-----\n");
         Print.clearBuf() "Print.clearErrorBuf &" ;
         (false,replystr,newsymb) = handleCommand(str, isymb);
         Print.printBuf("Exiting\n") "2004-11-27 - adrpo added part ends here" ;
@@ -164,16 +164,16 @@ algorithm
 end checkClassdef;
 
 protected function makeDebugResult
-  input String flagstr;
+  input Flags.DebugFlag inFlag;
   input String res;
   output String res_1;
 algorithm
-  res_1 := matchcontinue (flagstr,res)
+  res_1 := matchcontinue (inFlag,res)
     local
-      String debugstr,res_with_debug;
-    case (flagstr,res)
+      String debugstr,res_with_debug,flagstr;
+    case (Flags.DEBUG_FLAG(name = flagstr),res)
       equation
-        true = RTOpts.debugFlag(flagstr);
+        true = Flags.isSet(inFlag);
         debugstr = Print.getString();
         res_with_debug = stringAppendList({res,"\n---DEBUG(",flagstr,")---\n",debugstr,"\n---/DEBUG(",flagstr,")---\n"});
       then res_with_debug;
@@ -213,16 +213,16 @@ algorithm
       equation
         ErrorExt.setCheckpoint("parsestring");
         //debug_print("Command: don't typeCheck", str);
-        Debug.fcall0("dump", Print.clearBuf);
-        Debug.fcall0("dumpgraphviz", Print.clearBuf);
-        Debug.fprint("dump",
+        Debug.fcall0(Flags.DUMP, Print.clearBuf);
+        Debug.fcall0(Flags.DUMP_GRAPHVIZ, Print.clearBuf);
+        Debug.fprint(Flags.DUMP,
           "\nNot a class definition, trying expresion parser\n");
         exp = Parser.parsestringexp(str,"<interactive>");
         (evalstr,newisymb) = Interactive.evaluate(exp, isymb, false);
-        Debug.fprint("dump", "\n--------------- Parsed expression ---------------\n");
-        Debug.fcall("dump", Dump.dumpIstmt, exp);
-        res_1 = makeDebugResult("dump", evalstr);
-        res = makeDebugResult("dumpgraphviz", res_1);
+        Debug.fprint(Flags.DUMP, "\n--------------- Parsed expression ---------------\n");
+        Debug.fcall(Flags.DUMP, Dump.dumpIstmt, exp);
+        res_1 = makeDebugResult(Flags.DUMP, evalstr);
+        res = makeDebugResult(Flags.DUMP_GRAPHVIZ, res_1);
         ErrorExt.delCheckpoint("parsestring");
       then
         (true,res,newisymb);
@@ -237,9 +237,9 @@ algorithm
       equation
         ErrorExt.rollBack("parsestring");
         //debug_print("Command: typeCheck", str);
-        Debug.fcall0("dump", Print.clearBuf);
-        Debug.fcall0("dumpgraphviz", Print.clearBuf);
-        Debug.fprint("dump", "\nTrying to parse class definition...\n");
+        Debug.fcall0(Flags.DUMP, Print.clearBuf);
+        Debug.fcall0(Flags.DUMP_GRAPHVIZ, Print.clearBuf);
+        Debug.fprint(Flags.DUMP, "\nTrying to parse class definition...\n");
         p = Parser.parsestring(str,"<interactive>");
         p_1 = Interactive.addScope(p, vars);
         vars_1 = Interactive.updateScope(p, vars);
@@ -247,12 +247,12 @@ algorithm
         // not needed. the functions will be remove by examining
         // build times and files!
         cf_1 = cf; // cf_1 = Interactive.removeCompiledFunctions(p, cf);
-        Debug.fprint("dump", "\n--------------- Parsed program ---------------\n");
-        Debug.fcall("dumpgraphviz", DumpGraphviz.dump, newprog);
-        Debug.fcall("dump", Dump.dump, newprog);
+        Debug.fprint(Flags.DUMP, "\n--------------- Parsed program ---------------\n");
+        Debug.fcall(Flags.DUMP_GRAPHVIZ, DumpGraphviz.dump, newprog);
+        Debug.fcall(Flags.DUMP, Dump.dump, newprog);
         res_1 = makeClassDefResult(p_1) "return vector of toplevel classnames";
-        res_1 = makeDebugResult("dump", res_1);
-        res = makeDebugResult("dumpgraphviz", res_1);
+        res_1 = makeDebugResult(Flags.DUMP, res_1);
+        res = makeDebugResult(Flags.DUMP_GRAPHVIZ, res_1);
         isymb = Interactive.SYMBOLTABLE(newprog,aDep,NONE(),b,vars_1,cf_1,lf);
         // Interactive.typeCheckFunction(p, isymb); // You need the new environment before you can check the added functions
       then
@@ -366,15 +366,6 @@ algorithm
   last :: _ := listReverse(lst);
   true := stringEq(last, "tpl");
 end isCodegenTemplateFile;
-
-protected function versionRequest
-algorithm
-  _:= match()
-    case () equation
-      true = RTOpts.versionRequest();
-    then ();
-  end match;
-end versionRequest;
 
 protected function showErrors
   input String errorString;
@@ -529,16 +520,22 @@ algorithm
       /* Version requested using --version*/
     case (_) // try first to see if we had a version request among flags.
       equation
-        versionRequest();
+        true = Config.versionRequest();
         print(Settings.getVersionNr());
         print("\n");
       then ();
+
+    case (_)
+      equation
+        true = Config.helpRequest();
+      then
+        ();
 
     // A .mo-file, followed by an optional list of extra .mo-files and libraries.
     // The last class in the first file will be instantiated.
     case (f :: libs)
       equation
-        //print("Class to instantiate: " +& RTOpts.classToInstantiate() +& "\n");
+        //print("Class to instantiate: " +& Config.classToInstantiate() +& "\n");
         System.realtimeTick(CevalScript.RT_CLOCK_EXECSTAT_MAIN);
         Debug.execStat("Enter Main",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
         // Check that it's a .mo-file.
@@ -553,52 +550,52 @@ algorithm
         // Merge our program with the possible libs and models from extra .mo-files.
         p = Interactive.updateProgram(pLibs, p);
 
-        Debug.fprint("dump", "\n--------------- Parsed program ---------------\n");
-        Debug.fcall("dumpgraphviz", DumpGraphviz.dump, p);
-        Debug.fcall("dump", Dump.dump, p);
-        s = Debug.fcallret0("dump", Print.getString, "");
-        Debug.fcall("dump",print,s);
+        Debug.fprint(Flags.DUMP, "\n--------------- Parsed program ---------------\n");
+        Debug.fcall(Flags.DUMP_GRAPHVIZ, DumpGraphviz.dump, p);
+        Debug.fcall(Flags.DUMP, Dump.dump, p);
+        s = Debug.fcallret0(Flags.DUMP, Print.getString, "");
+        Debug.fcall(Flags.DUMP,print,s);
 
         p = transformFlatProgram(p,f);
 
-        Debug.fprint("info", "\n------------------------------------------------------------ \n");
-        Debug.fprint("info", "---elaborating\n");
-        Debug.fprint("info", "\n------------------------------------------------------------ \n");
-        Debug.fprint("info", "---instantiating\n");
+        Debug.fprint(Flags.INFO, "\n------------------------------------------------------------ \n");
+        Debug.fprint(Flags.INFO, "---elaborating\n");
+        Debug.fprint(Flags.INFO, "\n------------------------------------------------------------ \n");
+        Debug.fprint(Flags.INFO, "---instantiating\n");
         Debug.execStat("Parsed file",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
 
         // Instantiate the program.
         (cache, env, d_1, scode, cname) = instantiate(p);
 
-        Debug.fprint("beforefixmodout", "Explicit part:\n");
-        Debug.fcall("beforefixmodout", DAEDump.dumpDebug, d_1);
+        Debug.fprint(Flags.BEFORE_FIX_MOD_OUT, "Explicit part:\n");
+        Debug.fcall(Flags.BEFORE_FIX_MOD_OUT, DAEDump.dumpDebug, d_1);
 
         d = fixModelicaOutput(d_1);
 
-        d = Debug.bcallret2(RTOpts.debugFlag("transformsbeforedump"),DAEUtil.transformationsBeforeBackend,cache,d,d);
+        d = Debug.bcallret2(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP),DAEUtil.transformationsBeforeBackend,cache,d,d);
 
         funcs = Env.getFunctionTree(cache);
 
         Print.clearBuf();
-        Debug.fprint("info", "---dumping\n");
+        Debug.fprint(Flags.INFO, "---dumping\n");
         Debug.execStat("Transformations before Dump",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
-        s = Debug.fcallret2("flatmodelica", DAEDump.dumpStr, d, funcs, "");
-        Debug.fcall("flatmodelica", Print.printBuf, s);
+        s = Debug.fcallret2(Flags.FLAT_MODELICA, DAEDump.dumpStr, d, funcs, "");
+        Debug.fcall(Flags.FLAT_MODELICA, Print.printBuf, s);
         Debug.execStat("Dump done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
-        s = Debug.fcallret2("none", DAEDump.dumpStr, d, funcs, "");
+        s = DAEDump.dumpStr(d, funcs);
         Debug.execStat("DAEDump done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
-        Debug.fcall("none", Print.printBuf, s);
-        Debug.fcall2("daedump", DAEDump.dump, d, funcs);
-        Debug.fcall("daedump2", DAEDump.dump2, d);
-        Debug.fcall("daedumpdebug", DAEDump.dumpDebug, d);
-        Debug.fcall("daedumpgraphv", DAEDump.dumpGraphviz, d);
+        Print.printBuf(s);
+        Debug.fcall2(Flags.DAE_DUMP, DAEDump.dump, d, funcs);
+        Debug.fcall(Flags.DAE_DUMP2, DAEDump.dump2, d);
+        Debug.fcall(Flags.DAE_DUMP_DEBUG, DAEDump.dumpDebug, d);
+        Debug.fcall(Flags.DAE_DUMP_GRAPHV, DAEDump.dumpGraphviz, d);
         Debug.execStat("Misc Dump",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
 
         // Do any transformations required before going into code generation, e.g. if-equations to expressions.
-        d = Debug.bcallret2(boolNot(RTOpts.debugFlag("transformsbeforedump")),DAEUtil.transformationsBeforeBackend,cache,d,d);
+        d = Debug.bcallret2(boolNot(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP)),DAEUtil.transformationsBeforeBackend,cache,d,d);
         
         str = Print.getString();
-        silent = RTOpts.silent();
+        silent = Config.silent();
         notsilent = boolNot(silent);
         Debug.bcall(notsilent, print, str);
         Debug.execStat("Transformations before backend",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
@@ -698,7 +695,7 @@ algorithm
       equation
         // If no class was explicitly specified, instantiate the last class in
         // the program.
-        class_to_instantiate = RTOpts.classToInstantiate();
+        class_to_instantiate = Config.classToInstantiate();
         true = Util.isEmptyString(class_to_instantiate);
         p = Dependency.getTotalProgramLastClass(program);
         s = SCodeUtil.translateAbsyn2SCode(p);
@@ -712,7 +709,7 @@ algorithm
       equation
         // If a class to instantiate was given on the command line, instantiate
         // that class.
-        class_to_instantiate = RTOpts.classToInstantiate();
+        class_to_instantiate = Config.classToInstantiate();
         true = Util.isNotEmptyString(class_to_instantiate);
         class_path = Absyn.stringPath(class_to_instantiate);
         p = Dependency.getTotalProgram(class_path, program);
@@ -736,9 +733,9 @@ protected
   Boolean bltflag,sim_cg,par,res;
   Integer n;
 algorithm
-  bltflag := RTOpts.debugFlag("blt");
-  sim_cg := RTOpts.simulationCg();
-  n := RTOpts.noProc();
+  bltflag := Flags.isSet(Flags.BLT);
+  sim_cg := Config.simulationCg();
+  n := Config.noProc();
   par := (n > 0);
   res := boolOr(bltflag, par);
   res_1 := boolOr(res, sim_cg);
@@ -803,7 +800,7 @@ algorithm
       BackendDAE.StrongComponents comps;
     case _
       equation
-        n = RTOpts.noProc() "If modpar not enabled, nproc = 0, return" ;
+        n = Config.noProc() "If modpar not enabled, nproc = 0, return" ;
         (n == 0) = true;
       then
         ();
@@ -811,8 +808,8 @@ algorithm
       equation
         TaskGraph.buildTaskgraph(dae, comps);
         TaskGraphExt.dumpGraph("model.viz");
-        l = RTOpts.latency();
-        b = RTOpts.bandwidth();
+        l = Config.latency();
+        b = Config.bandwidth();
         t1 = clock();
         TaskGraphExt.mergeTasks(l, b);
         t2 = clock();
@@ -822,7 +819,7 @@ algorithm
         print(timestr);
         print(" seconds\n");
         TaskGraphExt.dumpMergedGraph("merged_model.viz");
-        n = RTOpts.noProc();
+        n = Config.noProc();
         TaskGraphExt.schedule(n);
         (nx,ny,np,_,_,_,_,_,_,_,_,_) = BackendDAEUtil.calculateSizes(dae);
         nps = intString(np);
@@ -835,7 +832,7 @@ algorithm
         ();
     else
       equation
-        Debug.fprint("failtrace", "-modpar failed\n");
+        Debug.fprint(Flags.FAILTRACE, "-modpar failed\n");
       then
         fail();
   end matchcontinue;
@@ -870,7 +867,7 @@ algorithm
 
     case (dlow,functionTree,classname,ap,dae) /* classname ass1 ass2 blocks */
       equation
-        true = RTOpts.simulationCg();
+        true = Config.simulationCg();
         Print.clearErrorBuf();
         Print.clearBuf();
         cname_str = Absyn.pathString(classname);
@@ -882,7 +879,7 @@ algorithm
     /* If not generating simulation code: Succeed so no error messages are printed */
     else
       equation
-        false = RTOpts.simulationCg();
+        false = Config.simulationCg();
       then
         ();
   end matchcontinue;
@@ -894,7 +891,7 @@ protected function runModparQ
   output Boolean res;
   Integer n;
 algorithm
-  n := RTOpts.noProc();
+  n := Config.noProc();
   res := (n > 0);
 end runModparQ;
 
@@ -912,13 +909,13 @@ algorithm
       DAE.DAElist d;
     case d
       equation
-        true = RTOpts.modelicaOutput();
+        true = Config.modelicaOutput();
         print("DEPRECATED: modelicaOutput option no longer needed\n");
       then
         d;
     case ((d as DAE.DAE(elementLst = dae)))
       equation
-        false = RTOpts.modelicaOutput();
+        false = Config.modelicaOutput();
       then
         d;
   end matchcontinue;
@@ -1059,71 +1056,6 @@ algorithm
   end matchcontinue;
 end readSettingsFile;
 
-function printUsage
-algorithm
-  print("OpenModelica Compiler "); print(Settings.getVersionNr());
-  print(" Copyright Linkoping University 1997-2010\n");
-  print("Distributed under OMSC-PL and GPL, see www.openmodelica.org\n");
-  print("Please check the System Guide for full information about flags.\n");
-  print("Usage: omc [-runtimeOptions +omcOptions] (Model.mo | Model.mof | Script.mos) [Libraries | .mo(f)-files] \n");
-  print("* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n");
-  print("*            The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n");
-  print("* runtimeOptions: call omc -help for seeing runtime options\n");
-  print("* omcOptions:\n");
-  print("\t++v|+version               will print the version and exit\n");
-  print("\t+s Model.mo                will generate code for Model:\n");
-  print("\t                           Model.cpp           the model C++ code\n");
-  print("\t                           Model_functions.cpp the model functions C++ code\n");
-  print("\t                           Model.makefile      the makefile to compile the model.\n");
-  print("\t                           Model_init.xml      the initial values for parameters and start values\n");
-  print("\t+d=interactive             start omc as a server listening on the socket interface\n");
-  print("\t+d=interactiveCorba        start omc as a server listening on the Corba interface\n");
-  print("\t+c=corbaName               works togheter with +d=interactiveCorba;\n");
-  print("\t                           will start omc with a different Corba session name; \n");
-  print("\t                           this way multiple omc compilers can be started\n");
-  print("\t+annotationVersion=1.x     what annotation version should be used\n");
-  print("\t                           accept 1.x or 2.x (default) or 3.x\n");
-  print("\t+std=version               the language standard that should be used.\n");
-  print("\t                           accepts 1.x, 2.x, 3.1, 3.2 or 3.3; default to latest version.\n");
-  print("\t+noSimplify                do not simplify expressions (default is to simplify)\n");
-  print("\t+preOptModules=module1,..  pre optimisation modules (default is removeFinalParameters,removeEqualFunctionCalls,removeSimpleEquations,expandDerOperator)\n");
-  print("\t+pastOptModules=module1,.. past optimisation modules (default is lateInline,inlineArrayEqn,removeSimpleEquations)\n");
-  print("\t+indexReductionMethod=method index reduction method (default is dummyDerivative)\n");
-  //print("\t+q                         run in quiet mode, output nothing\n");
-  print("\t+g=MetaModelica            accept MetaModelica grammar and semantics\n");
-  print("\t+showErrorMessages         show error messages while they happen; default to no. \n");
-  print("\t+showAnnotations           show annotations in the flat modelica output.\n");
-  print("\t+orderConnections=false    disables alphabetical ordering of connections; default is true.\n");
-  print("\t+d=flags                   set debug flags, where flags is a comma-delimited list: \n");
-  print("\t+d=bltdump                 dump the blt form\n");
-  print("\t+d=failtrace               prints a lot of error messages; use if your model fails; see also below.\n");
-  print("\t+d=parsedump               dump the parsing tree\n");
-  //print("\t+d=parseonly               will only parse the given file and exit\n");
-  print("\t+d=dynload                 display debug information about dynamic loading of compiled functions\n");
-  print("\t+d=nogen                   do not use the dynamic loading.\n");
-  print("\t+d=usedep                  use dependency analysis to speed up the compilation. [experimental].\n");
-  print("\t+d=showStatement           will show the statement that is currently executed in a .mos file.\n");  
-  print("\t                           default is to not use the dependency analysis.\n");
-  print("\t+d=noevalfunc              do not use the function interpreter, uses dynamic loading instead.\n");
-  print("\t                           default is to use the function interpreter.\n");
-  print("\t+i=classpath               instantiate the class given by the fully qualified path.\n");
-  print("\t+v=N                       sets the vectorization limit, arrays and matrices with dimensions\n");
-  print("\t                           larger than N will not be vectorized (default 20).\n");
-  print("\t+simCodeTarget=name        Default target for code generation is \"C\".");
-  print("\n");
-  print("* Examples:\n");
-  print("\tomc Model.mo               will produce flattened Model on standard output\n");
-  //print("\tomc Model.mof              will produce flattened Model on standard output\n");
-  print("\tomc Script.mos             will run the commands from Script.mos\n");
-  print("\tomc Model.mo Modelica      will first load the Modelica library and then produce \n");
-  print("\t                           flattened Model on standard output\n");
-  print("\tomc Model1.mo Model2.mo    will load both Model1.mo and Model2.mo, and produce \n");
-  print("\t                           flattened Model1 on standard output\n");
-  print("\t*.mo (Modelica files) \n");
-  //print("\t*.mof (Flat Modelica files) \n");
-  print("\t*.mos (Modelica Script files) \n");
-end printUsage;
-
 public function main
 "function: main
   This is the main function that the MetaModelica Compiler (MMC) runtime system calls to
@@ -1159,9 +1091,9 @@ algorithm
     
     case args as _::_
       equation
-        args_1 = RTOpts.args(args);
+        args_1 = Flags.new(args);
        
-        false = System.userIsRoot();
+        true = not System.userIsRoot() or Config.getRunningTestsuite();
         _ = Settings.getInstallationDirectoryPath();
         
         // debug_show_depth(2);
@@ -1173,9 +1105,9 @@ algorithm
 
         //setGlobalRoot(Global.crefIndex,  ComponentReference.createEmptyCrefMemory());
         //Env.globalCache = fill(Env.emptyCache,1);
-        symbolTable = readSettings(args);
-        ismode = RTOpts.debugFlag("interactive");
-        icmode = RTOpts.debugFlag("interactiveCorba");
+        symbolTable = readSettings(args_1);
+        ismode = Flags.isSet(Flags.INTERACTIVE);
+        icmode = Flags.isSet(Flags.INTERACTIVE_CORBA);
         imode = boolOr(ismode, icmode);
         imode_1 = boolNot(imode);
         // see if the interactive Socket mode is active
@@ -1186,7 +1118,7 @@ algorithm
         Debug.bcall(imode_1, translateFile, args_1);
         /*
         errstr = Print.getErrorString();
-        Debug.fcall("errorbuf", print, errstr);
+        Debug.fcall(Flags.ERRORBUF, print, errstr);
         */
         //print("Total time for timer: " +& realString(System.getTimerCummulatedTime()) +& "\n");
         //dbResult = Database.query(0, "end transaction;");
@@ -1204,23 +1136,15 @@ algorithm
         print("* The good news is there is no reason to run OpenModelica as root.\n");
       then fail();
     
-    case args as _::_
-      equation
-        false = System.userIsRoot();
-        _ = Settings.getInstallationDirectoryPath();
-        failure(args_1 = RTOpts.args(args));
-        printUsage();
-      then ();
-    
     case {}
       equation
         false = System.userIsRoot();
-        printUsage();
+        Flags.printUsage();
       then ();
     
     case _
       equation
-        false = System.userIsRoot();
+        true = not System.userIsRoot() or Config.getRunningTestsuite();
         _ = Settings.getInstallationDirectoryPath();
         print("# Error encountered! Exiting...\n");
         print("# Please check the error message and the flags.\n");
@@ -1233,7 +1157,7 @@ algorithm
 
     case _
       equation
-        false = System.userIsRoot();
+        true = not System.userIsRoot() or Config.getRunningTestsuite();
         failure(_ = Settings.getInstallationDirectoryPath());
         print("Error: OPENMODELICAHOME was not set.\n");
         print("  Read the documentation for instructions on how to set it properly.\n");

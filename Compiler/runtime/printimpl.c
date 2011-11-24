@@ -35,7 +35,7 @@
 /* errorext.h is a C++ header... */
 void c_add_message(int errorID, const char* type, const char* severity, const char* message, const char** ctokens, int nTokens);
 
-/* adrpo: this is defined in rtopts. (enabled with omc +showErrorMessages) */
+/* adrpo: this is defined in errorext. (enabled with omc +showErrorMessages) */
 extern int showErrorMessages;
 
 #define GROWTH_FACTOR 1.4  /* According to some roumours of buffer growth */

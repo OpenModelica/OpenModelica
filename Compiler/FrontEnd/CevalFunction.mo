@@ -70,11 +70,11 @@ protected import Debug;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
+protected import Flags;
 protected import Graph;
 protected import Lapack;
 protected import List;
 protected import Lookup;
-protected import RTOpts;
 protected import System;
 protected import Types;
 protected import Util;
@@ -142,7 +142,7 @@ algorithm
         type_ = ty,
         partialPrefix = partialPrefix), _, st)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- CevalFunction.evaluate failed for function: " +& Util.if_(partialPrefix, "partial ", "") +& Absyn.pathString(p));
       then
         fail();
@@ -236,7 +236,7 @@ algorithm
 
     else
       equation
-        Debug.fprintln("evalfunc", "- CevalFunction.evaluateFunction failed.\n");
+        Debug.fprintln(Flags.EVAL_FUNC, "- CevalFunction.evaluateFunction failed.\n");
       then
         fail();
   end matchcontinue;
@@ -263,7 +263,7 @@ algorithm
 
     case ((var as DAE.VAR(direction = DAE.INPUT())) :: _, {})
       equation
-        Debug.fprintln("evalfunc", "- CevalFunction.pairFuncParamsWithArgs " 
+        Debug.fprintln(Flags.EVAL_FUNC, "- CevalFunction.pairFuncParamsWithArgs " 
          +& "failed because of too few input arguments.");
       then
         fail();
@@ -324,7 +324,7 @@ algorithm
 
     else
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         err_str = DAEDump.dumpExtArgStr(inArgument);
         Debug.traceln("- CevalFunction.evaluateExtInputArg failed on " +& err_str);
       then
@@ -1058,7 +1058,7 @@ algorithm
 
     else
       equation
-        true = RTOpts.debugFlag("evalfunc");
+        true = Flags.isSet(Flags.EVAL_FUNC);
         Debug.traceln("- CevalFunction.evaluateStatement failed for:");
         Debug.traceln(DAEDump.ppStatementStr(inStatement));
       then
@@ -1282,7 +1282,7 @@ algorithm
 
     case (DAE.STMT_FOR(range = range), _, _, _)
       equation
-        true = RTOpts.debugFlag("evalfunc");
+        true = Flags.isSet(Flags.EVAL_FUNC);
         Debug.traceln("- evaluateForStatement not implemented for:");
         Debug.traceln(ExpressionDump.printExpStr(range));
       then
@@ -1384,7 +1384,7 @@ algorithm
     case DAE.CREF(componentRef = cref) then cref;
     else
       equation
-        Debug.fprintln("evalfunc", 
+        Debug.fprintln(Flags.EVAL_FUNC, 
           "- CevalFunction.extractLhsComponentRef failed on " +&
           ExpressionDump.printExpStr(inExp) +& "\n");
       then
@@ -1493,7 +1493,7 @@ algorithm
     
     case (_, env, (e, _), _)
       equation
-        true = RTOpts.debugFlag("evalfunc");
+        true = Flags.isSet(Flags.EVAL_FUNC);
         Debug.traceln("- CevalFunction.extendEnvWithFunctionVars failed for:");
         Debug.traceln(DAEDump.dumpElementsStr({e}));
       then
@@ -1837,7 +1837,7 @@ algorithm
     
     case (_, sub :: _, _, _, _, _)
       equation
-        Debug.fprintln("evalfunc", "- CevalFunction.appendDimensions2 failed");
+        Debug.fprintln(Flags.EVAL_FUNC, "- CevalFunction.appendDimensions2 failed");
       then
         fail();
   end matchcontinue;
@@ -2084,7 +2084,7 @@ algorithm
 
     case (_, _, sub :: _, _, _, _)
       equation
-        true = RTOpts.debugFlag("evalfunc");
+        true = Flags.isSet(Flags.EVAL_FUNC);
         print("- CevalFunction.assignVector failed on: ");
         print(ExpressionDump.printSubscriptStr(sub) +& "\n");
       then
@@ -2265,7 +2265,7 @@ algorithm
         Values.RECORD(path, values, var_names, -1);
     case (_)
       equation
-        Debug.fprintln("evalfunc", "- CevalFunction.generateDefaultBinding failed\n");
+        Debug.fprintln(Flags.EVAL_FUNC, "- CevalFunction.generateDefaultBinding failed\n");
       then
         fail();
   end matchcontinue;
@@ -2291,7 +2291,7 @@ algorithm
 
     case (DAE.TYPES_VAR(name = name))
       equation
-        true = RTOpts.debugFlag("evalfunc");
+        true = Flags.isSet(Flags.EVAL_FUNC);
         Debug.traceln("- CevalFunction.getRecordVarBindingAndName failed on variable "
           +& name +& "\n");
       then

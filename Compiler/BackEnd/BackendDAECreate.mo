@@ -51,6 +51,7 @@ protected import BackendVariable;
 protected import BaseHashTable;
 protected import ComponentReference;
 protected import ClassInf;
+protected import Config;
 protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
@@ -59,11 +60,10 @@ protected import Error;
 protected import Expression;
 protected import ExpressionSimplify;
 protected import ExpressionDump;
+protected import Flags;
 protected import HashTableExpToIndex;
 protected import Inline;
 protected import List;
-protected import OptManager;
-protected import RTOpts;
 protected import SCode;
 protected import Util;
 
@@ -463,7 +463,7 @@ algorithm
         // make sure is not constrain as we don't support it, see below.
         b1 = boolNot(Util.isEqual(func_name, Absyn.IDENT("constrain")));
         // constrain is fine when we do check model!
-        b2 = OptManager.getOption("checkModel");
+        b2 = Flags.getConfigBool(Flags.CHECK_MODEL);
         true = boolOr(b1, b2);
         
         s = DAE.STMT_NORETCALL(DAE.CALL(func_name, args, DAE.CALL_ATTR(DAE.ET_NORETCALL(), false, false, DAE.NORM_INLINE(), DAE.NO_TAIL())),source);
@@ -483,7 +483,7 @@ algorithm
     // if equation that cannot be translated to if expression but have initial() as condition
     case (daeEl as DAE.IF_EQUATION(condition1 = {DAE.CALL(path=Absyn.IDENT("initial"))}, source = DAE.SOURCE(info = info)),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states)
       equation
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states);
     
@@ -491,7 +491,7 @@ algorithm
     // initial if equation that cannot be translated to if expression 
     case (daeEl as DAE.INITIAL_IF_EQUATION(condition1 = _, source = DAE.SOURCE(info = info)),functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states)
       equation
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states);
     
@@ -531,8 +531,8 @@ algorithm
     case (daeEl,functionTree,vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,ialgs,whenclauses_1,extObjCls,states)
       equation
         // show only on failtrace!
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- BackendDAECreate.lower3 failed on: " +& DAEDump.dumpElementsStr({daeEl}));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- BackendDAECreate.lower3 failed on: " +& DAEDump.dumpElementsStr({daeEl}));
       then
         fail();
   end matchcontinue;
@@ -1250,7 +1250,7 @@ algorithm
     case (DAE.COMPLEX_EQUATION(lhs = e1, rhs = e2,source = source),funcs)
       equation
         // no MetaModelica
-        false = RTOpts.acceptMetaModelicaGrammar();
+        false = Config.acceptMetaModelicaGrammar();
         (e1_1,b1) = ExpressionSimplify.simplify(e1);
         (e2_1,b2) = ExpressionSimplify.simplify(e2);
         source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1,e1_1);
@@ -1463,8 +1463,8 @@ algorithm
     // failure  
     case ((el::xs), i)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- BackendDAECreate.lowerWhenEqn2 failed on:" +& DAEDump.dumpElementsStr({el}));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- BackendDAECreate.lowerWhenEqn2 failed on:" +& DAEDump.dumpElementsStr({el}));
       then 
         fail();
     
@@ -1473,7 +1473,7 @@ algorithm
     // just ignore this equation.
     case ((el::xs), i)
       equation
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
         (eqnl,reinit) = lowerWhenEqn2(xs, i + 1);
       then
         (eqnl, reinit);
@@ -2003,7 +2003,7 @@ algorithm
     case(vars, DAE.STMT_THROW(source=_)) then ({}, {});
     case(_, _)
       equation
-        Debug.fprintln("failtrace", "- BackendDAECreate.lowerStatementInputsOutputs failed\n");
+        Debug.fprintln(Flags.FAILTRACE, "- BackendDAECreate.lowerStatementInputsOutputs failed\n");
       then 
         fail();
   end matchcontinue;
@@ -2432,7 +2432,7 @@ algorithm
         explst;
     case (_,_)
       equation
-        Debug.fprint("failtrace","BackendDAECreate.extendRange failed. Maybe some ZeroCrossing are not supported\n");
+        Debug.fprint(Flags.FAILTRACE,"BackendDAECreate.extendRange failed. Maybe some ZeroCrossing are not supported\n");
       then
         ({});
   end matchcontinue;
@@ -2808,8 +2808,8 @@ algorithm
       then BackendDAE.ZERO_CROSSING(e2,eq,wc);
     case (BackendDAE.ZERO_CROSSING(relation_ = e1 as DAE.RELATION(index=index1),occurEquLst = eq1,occurWhenLst = wc1),BackendDAE.ZERO_CROSSING(relation_ = e2 as DAE.RELATION(index=index2),occurEquLst = eq2,occurWhenLst = wc2))
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- BackendDAECreate.mergeZeroCrossing failed!");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- BackendDAECreate.mergeZeroCrossing failed!");
       then
         fail();
   end matchcontinue;
@@ -3078,7 +3078,7 @@ algorithm
         zc_lst = mergeZeroCrossings(zc_lst);
         itmp = (listLength(zc_lst)-listLength(zeroCrossings));
          indx = indx + (listLength(zc_lst) - listLength(zeroCrossings));
-      // Debug.fcall("relidx",print, "sample index: " +& intString(indx) +& "\n");  
+      // Debug.fcall(Flags.RELIDX,print, "sample index: " +& intString(indx) +& "\n");  
       then ((e,true,((zc_lst,indx),(eq_count,wc_count,vars,knvars))));
     // function with discrete expressions generate no zerocrossing
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),((zeroCrossings,indx),(eq_count,wc_count,vars,knvars)))) 
@@ -3094,7 +3094,7 @@ algorithm
         e_1 = DAE.RELATION(e1,op,e2,new_idx,NONE());
          {zc} = makeZeroCrossings({e_1}, {eq_count}, {wc_count});
         ((eres,zc_lst,indx))=zerocrossingindex(e_1,indx,zeroCrossings,zc);
-     //Debug.fcall("relidx",print, "collectZC result zc : "  +& ExpressionDump.printExpStr(eres)+& "index: " +& intString(indx) +& "\n");
+     //Debug.fcall(Flags.RELIDX,print, "collectZC result zc : "  +& ExpressionDump.printExpStr(eres)+& "index: " +& intString(indx) +& "\n");
       then ((eres,true,((zc_lst,indx),(eq_count,wc_count,vars,knvars))));  
     case ((e,((zeroCrossings,indx),(eq_count,wc_count,vars,knvars)))) then ((e,true,((zeroCrossings,indx),(eq_count,wc_count,vars,knvars))));
   end matchcontinue;
@@ -3134,7 +3134,7 @@ algorithm
         zc_lst = listAppend(zeroCrossings, zc_lst);
         zc_lst = mergeZeroCrossings(zc_lst);
         indx = indx + (listLength(zc_lst) - listLength(zeroCrossings));
-       // Debug.fcall("relidx",print, "sample index algotihm: " +& intString(indx) +& "\n");  
+       // Debug.fcall(Flags.RELIDX,print, "sample index algotihm: " +& intString(indx) +& "\n");  
       then ((e,true,(iterator,le,range,(zc_lst,indx),(alg_indx,vars,knvars,eqns))));
     // function with discrete expressions generate no zerocrossing
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(iterator,le,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns)))) 
@@ -3151,7 +3151,7 @@ algorithm
         e_1 = DAE.RELATION(e1,op,e2,new_idx,NONE());
        {zc} = makeZeroCrossings({e_1}, eqs, {});
       ((eres,zc_lst,indx))=zerocrossingindex(e_1,indx,zeroCrossings,zc);
-      // Debug.fcall("relidx",print, "collectZCAlgs result zc : "  +& ExpressionDump.printExpStr(eres)+& "index:"  +& intString(indx) +& "\n");
+      // Debug.fcall(Flags.RELIDX,print, "collectZCAlgs result zc : "  +& ExpressionDump.printExpStr(eres)+& "index:"  +& intString(indx) +& "\n");
       then ((eres,true,(iterator,le,range,(zc_lst,indx),(alg_indx,vars,knvars,eqns))));
     case ((e,(iterator,le,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns)))) then ((e,true,(iterator,le,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns))));
   end matchcontinue;
@@ -3179,7 +3179,7 @@ algorithm
       equation
         {} = List.select1(zeroCrossings, sameZeroCrossing,z_c/*zc1*/);
         zc_lst = listAppend(zeroCrossings, {z_c});
-        //Debug.fcall("relidx",print, " zerocrossingindex 1 : "  +& ExpressionDump.printExpStr(exp) +& " index: " +& intString(index) +& "\n");
+        //Debug.fcall(Flags.RELIDX,print, " zerocrossingindex 1 : "  +& ExpressionDump.printExpStr(exp) +& " index: " +& intString(index) +& "\n");
       then 
          ((exp,zc_lst,index));
     case ((exp as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),index,zeroCrossings,z_c)
@@ -3187,7 +3187,7 @@ algorithm
         newzero= List.select1(zeroCrossings, sameZeroCrossing,z_c);
         length=listLength(newzero);
         BackendDAE.ZERO_CROSSING((e_1 as DAE.RELATION(_,_,_,indx,_)),_,_)=List.first(newzero);
-        //Debug.fcall("relidx",print, " zerocrossingindex 2: results "  +& ExpressionDump.printExpStr(e_1)+& "index: " +& intString(indx) +& " lenght: " +& intString(length) +& "\n");
+        //Debug.fcall(Flags.RELIDX,print, " zerocrossingindex 2: results "  +& ExpressionDump.printExpStr(e_1)+& "index: " +& intString(indx) +& " lenght: " +& intString(length) +& "\n");
       then 
         ((e_1,zeroCrossings,indx));
     case (exp ,_,_,_)
@@ -3262,7 +3262,7 @@ algorithm
       equation
         ((e_1,extraArg)) = Expression.traverseExpTopDown(e, func, extraArg);
         failure(((DAE.CREF(_,_),_,_)) = func((Expression.crefExp(cr), extraArg)));
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         print(DAEDump.ppStatementStr(x));
         print("Warning, not allowed to set the componentRef to a expression in BackendDAECreate.traverseStmtsExps for ZeroCrosssing\n");
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
@@ -3440,7 +3440,7 @@ algorithm
         zc = listAppend(zeroCrossings, zc);
         zc = mergeZeroCrossings(zc);
         indx = indx + (listLength(zc) - listLength(zeroCrossings));
-            Debug.fcall("relidx",print, "collectZCAlgsFor sample" +& "\n");
+        Debug.fcall(Flags.RELIDX,print, "collectZCAlgsFor sample" +& "\n");
       then ((e,true,(iterator,inExpLst,range,(zc,indx),(alg_indx,vars,knvars,eqns))));
     // function with discrete expressions generate no zerocrossing.
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(iterator,inExpLst,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns)))) 
@@ -3465,7 +3465,7 @@ algorithm
         zc = mergeZeroCrossings(zc);
         itmp = (listLength(zc)-listLength(zeroCrossings));
         eres = Util.if_((itmp>0),e_1,e);
-         Debug.fcall("relidx",print, "collectZCAlgsFor result zc : "  +& ExpressionDump.printExpStr(eres)+& "index:"  +& intString(indx) +& "\n");
+        Debug.fcall(Flags.RELIDX,print, "collectZCAlgsFor result zc : "  +& ExpressionDump.printExpStr(eres)+& "index:"  +& intString(indx) +& "\n");
       then ((eres,true,(iterator,inExpLst,range,(zc,indx),(alg_indx,vars,knvars,eqns))));
     // All other functions generate zerocrossing.  
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(iterator,inExpLst,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns))))
@@ -3481,7 +3481,7 @@ algorithm
         itmp = (listLength(zc)-listLength(zeroCrossings));
         indx = indx + itmp;
         eres = Util.if_((itmp>0),e_1,e);
-            Debug.fcall("relidx",print, "collectZCAlgsFor result zc : "  +& ExpressionDump.printExpStr(eres)+& "index:"  +& intString(indx) +& "\n");
+        Debug.fcall(Flags.RELIDX,print, "collectZCAlgsFor result zc : "  +& ExpressionDump.printExpStr(eres)+& "index:"  +& intString(indx) +& "\n");
       then ((eres,true,(iterator,inExpLst,range,(zc,indx),(alg_indx,vars,knvars,eqns))));
     case ((e,(iterator,inExpLst,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns)))) then ((e,true,(iterator,inExpLst,range,(zeroCrossings,indx),(alg_indx,vars,knvars,eqns))));
   end matchcontinue;
@@ -3892,7 +3892,7 @@ algorithm
     case(inAlg,funcs)
       equation
         // Don't extend array?
-        false = RTOpts.splitArrays();
+        false = Config.splitArrays();
       then inAlg;
     case(DAE.ALGORITHM_STMTS(statementLst=statementLst),funcs)
       equation
@@ -3913,7 +3913,7 @@ algorithm
     case (itpl)
       equation
         // Don't extend array?
-        false = RTOpts.splitArrays();
+        false = Config.splitArrays();
       then itpl;
     case (itpl) then BackendDAEUtil.extendArrExp(itpl);
   end matchcontinue;

@@ -18,19 +18,19 @@ else
 endif
 RML_COMPAT=$(top_builddir)/c_runtime/meta/rml_compatibility.h
 
-SRC	= RTOpts_rml.c Print_rml.c System_rml.c Settings_rml.c \
+SRC	= Print_rml.c System_rml.c Settings_rml.c \
   SimulationResults_rml.c IOStreamExt_rml.c Database_rml.c Socket_rml.c Lapack_rml.c
 
 CPPSRC  = unitparser.cpp UnitParserExt_rml.cpp ptolemyio_rml.cpp \
-  BackendDAEEXT_rml.cpp ErrorMessage.cpp Error_rml.cpp OptManager_rml.cpp \
+  BackendDAEEXT_rml.cpp ErrorMessage.cpp Error_rml.cpp \
   systemimplmisc.cpp Dynload_rml.cpp $(CORBASRC)
 
 OBJ     = $(SRC:.c=.o) $(CPPSRC:.cpp=.o) $(CPPSRC:.cc=.o)
 
-OMC_OBJ = Error_omc.o Print_omc.o RTOpts_omc.o System_omc.o Settings_omc.o \
+OMC_OBJ = Error_omc.o Print_omc.o System_omc.o Settings_omc.o \
   IOStreamExt_omc.o ErrorMessage.o systemimplmisc.o \
   UnitParserExt_omc.o unitparser.o BackendDAEEXT_omc.o Socket_omc.o \
-  Database_omc.o Dynload_omc.o OptManager_omc.o SimulationResults_omc.o ptolemyio_omc.o Lapack_omc.o $(OMCCORBASRC)
+  Database_omc.o Dynload_omc.o SimulationResults_omc.o ptolemyio_omc.o Lapack_omc.o $(OMCCORBASRC)
 
 all: runtime.a install
 .PHONY: all install
@@ -51,8 +51,8 @@ omc_communication.h: omc_communication_impl.cpp corbaimpl.cpp
 omc_communication_impl.o: omc_communication.h
 Corba_rml.o: omc_communication.h corbaimpl.cpp
 Corba_omc.o: omc_communication.h corbaimpl.cpp
-Dynload_rml.o: systemimpl.h errorext.h rtopts.h ../Absyn.h ../Values.h ../../c_runtime/read_write.h ../../c_runtime/memory_pool.h Dynload.cpp
-Dynload_omc.o: systemimpl.h errorext.h rtopts.h ../OpenModelicaBootstrappingHeader.h ../../c_runtime/read_write.h ../../c_runtime/memory_pool.h Dynload.cpp $(RML_COMPAT)
+Dynload_rml.o: systemimpl.h errorext.h ../Absyn.h ../Values.h ../../c_runtime/read_write.h ../../c_runtime/memory_pool.h Dynload.cpp
+Dynload_omc.o: systemimpl.h errorext.h ../OpenModelicaBootstrappingHeader.h ../../c_runtime/read_write.h ../../c_runtime/memory_pool.h Dynload.cpp $(RML_COMPAT)
 Database_rml.o: Database.c Database_rml.c
 Database_omc.o: Database.c Database_omc.c
 Print_rml.o : printimpl.c
@@ -63,12 +63,8 @@ System_rml.o : systemimpl.c config.h errorext.h $(configUnix)
 System_omc.o : systemimpl.c config.h errorext.h $(configUnix) $(RML_COMPAT)
 Lapack_rml.o : lapackimpl.c config.h $(configUnix)
 Lapack_omc.o : lapackimpl.c config.h $(configUnix) $(RML_COMPAT)
-RTOpts_rml.o : rtoptsimpl.c
-RTOpts_omc.o : rtoptsimpl.c
 IOStreamExt_rml.o : IOStreamExt.c
 IOStreamExt_omc.o : IOStreamExt.c
-OptManager_rml.o : optmanager.cpp
-OptManager_omc.o : optmanager.cpp
 Settings_rml.o : settingsimpl.c config.h $(configUnix)
 Settings_omc.o : settingsimpl.c config.h $(configUnix)
 UnitParserExt_rml.o : unitparserext.cpp unitparser.h

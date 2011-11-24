@@ -44,7 +44,9 @@ encapsulated package ClassLoader
 public import Absyn;
 public import Interactive;
 
+protected import Config;
 protected import Debug;
+protected import Flags;
 protected import List;
 protected import Parser;
 protected import Print;
@@ -88,7 +90,7 @@ algorithm
     /* failure */
     else
       equation
-        Debug.fprint("failtrace", "ClassLoader.loadClass failed\n");
+        Debug.fprint(Flags.FAILTRACE, "ClassLoader.loadClass failed\n");
       then
         fail();
   end matchcontinue;
@@ -121,6 +123,7 @@ protected
   Boolean isDir;
 algorithm
   (mp,name,isDir) := System.getLoadModelPath(id,prios,mps);
+  Config.setLanguageStandardFromMSL(name);
   outProgram := loadClassFromMp(id, mp, name, isDir);
 end loadClassFromMps;
 
@@ -269,7 +272,7 @@ algorithm
 
     case (pack::_,_,_,_,_)
       equation
-        Debug.fprintln("failtrace","ClassLoader.loadCompleteSubdirs failed: " +& pack);
+        Debug.fprintln(Flags.FAILTRACE,"ClassLoader.loadCompleteSubdirs failed: " +& pack);
       then
         fail();
   end matchcontinue;
@@ -310,7 +313,7 @@ algorithm
 
     case (_,_,_,_)
       equation
-        Debug.fprintln("failtrace","ClassLoader.loadCompleteSubfiles failed");
+        Debug.fprintln(Flags.FAILTRACE,"ClassLoader.loadCompleteSubfiles failed");
       then
         fail();
   end matchcontinue;
@@ -349,7 +352,7 @@ algorithm
 
     case (_,_,_,_)
       equation
-        Debug.fprintln("failtrace","ClassLoader.loadSubpackageFiles failed");
+        Debug.fprintln(Flags.FAILTRACE,"ClassLoader.loadSubpackageFiles failed");
       then fail();
   end matchcontinue;
 end loadSubpackageFiles;
@@ -388,7 +391,7 @@ algorithm
     // faliling
     case _
       equation
-        Debug.fprint("failtrace", "ClassLoader.loadFile failed\n");
+        Debug.fprint(Flags.FAILTRACE, "ClassLoader.loadFile failed\n");
       then
         fail();
   end matchcontinue;
@@ -425,7 +428,7 @@ algorithm
 
     case (_,_)
       equation
-        Debug.fprint("failtrace", "ClassLoader.loadModelFromEachClass failed\n");
+        Debug.fprint(Flags.FAILTRACE, "ClassLoader.loadModelFromEachClass failed\n");
       then
         fail();
   end matchcontinue;

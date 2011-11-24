@@ -1012,7 +1012,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
   
   void function_initMemoryState()
   {
-    push_memory_states(<% if RTOpts.debugFlag("openmp") then noProc() else 1 %>);
+    push_memory_states(<% if Flags.isSet(Flags.OPENMP) then noProc() else 1 %>);
   }
   
   int functionODE(_X_DATA *data)
@@ -1021,7 +1021,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
     int id,th_id;
     state mem_state; /* We need to have separate memory pools for separate systems... */
     mem_state = get_memory_state();
-    <% if RTOpts.debugFlag("openmp") then '#pragma omp parallel for private(id,th_id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)' %>
+    <% if Flags.isSet(Flags.OPENMP) then '#pragma omp parallel for private(id,th_id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)' %>
     for (id=0; id<<%nFuncs%>; id++) {
       th_id = omp_get_thread_num();
       functionODE_systems[id](data,th_id);
@@ -2234,7 +2234,7 @@ template commonHeader()
 ::=
   <<
   <% if acceptMetaModelicaGrammar() then "#define __OPENMODELICA__METAMODELICA"%>
-  <% if RTOpts.debugFlag("openmp") then "#include <omp.h>" else "#define omp_get_thread_num() 0" %>
+  <% if Flags.isSet(Flags.OPENMP) then "#include <omp.h>" else "#define omp_get_thread_num() 0" %>
   #include <stdio.h>
   #include <stdlib.h>
   #include <errno.h>

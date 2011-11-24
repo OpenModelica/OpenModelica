@@ -75,6 +75,7 @@ protected import CevalFunction;
 protected import CevalScript;
 protected import ClassInf;
 protected import ComponentReference;
+protected import Config;
 protected import Debug;
 protected import Derive;
 protected import Dump;
@@ -83,14 +84,13 @@ protected import Error;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import Flags;
 protected import InnerOuter;
 protected import Inst;
 protected import List;
 protected import Mod;
-protected import OptManager;
 protected import Prefix;
 protected import Print;
-protected import RTOpts;
 protected import SCode;
 protected import Static;
 protected import System;
@@ -276,13 +276,13 @@ algorithm
     // MetaModelica Tuple. sjoelund 2009-07-02 
     case (cache,env,DAE.META_TUPLE(expl),impl,stOpt,msg)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         (cache,vallst,stOpt) = cevalList(cache, env, expl, impl, stOpt, msg);
       then (cache,Values.META_TUPLE(vallst),stOpt);
 
     case (cache,env,DAE.TUPLE(expl),impl,stOpt,msg)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         (cache,vallst,stOpt) = cevalList(cache, env, expl, impl, stOpt, msg);
       then (cache,Values.TUPLE(vallst),stOpt);
 
@@ -328,10 +328,10 @@ algorithm
 
     case (_,_,e as DAE.CALL(path = _),_,_,_)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- Ceval.ceval DAE.CALL failed: ");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Ceval.ceval DAE.CALL failed: ");
         str = ExpressionDump.printExpStr(e);
-        Debug.fprintln("failtrace", str);
+        Debug.traceln(str);
       then
         fail();
 
@@ -812,7 +812,7 @@ algorithm
     // ceval can fail and that is ok, caught by other rules... 
     case (cache,env,e,_,_,_) // MSG())
       equation
-        true = RTOpts.debugFlag("ceval");
+        true = Flags.isSet(Flags.CEVAL);
         Debug.traceln("- Ceval.ceval failed: " +& ExpressionDump.printExpStr(e));
         Debug.traceln("  Scope: " +& Env.printEnvPathStr(env));
         // Debug.traceln("  Env:" +& Env.printEnvStr(env));
@@ -854,7 +854,7 @@ algorithm
     
     case (_, _, e, DAE.PROP(constFlag = DAE.C_PARAM(), type_ = tp), _, _) // BoschRexroth specifics
       equation
-        false = OptManager.getOption("cevalEquation");
+        false = Flags.getConfigBool(Flags.CEVAL_EQUATION);
       then
         (inCache, e, DAE.PROP(tp, DAE.C_VAR()));
     
@@ -875,7 +875,7 @@ algorithm
     
     case (_, _, e, DAE.PROP_TUPLE(tupleConst = _), _, _) // BoschRexroth specifics
       equation
-        false = OptManager.getOption("cevalEquation");
+        false = Flags.getConfigBool(Flags.CEVAL_EQUATION);
         DAE.C_PARAM() = Types.propAllConst(inProp);
         print(" tuple non constant evaluation not implemented yet\n");
       then
@@ -1089,29 +1089,29 @@ algorithm
     case "Modelica.Utilities.Strings.substring" then cevalBuiltinSubstring;
     case "print" then cevalBuiltinPrint;
     // MetaModelica type conversions
-    case "intString" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalIntString;
-    case "realString" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalRealString;
-    case "stringCharInt" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalStringCharInt;
-    case "intStringChar" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalIntStringChar;
-    case "stringLength" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalStringLength;
-    case "stringInt" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalStringInt;
-    // case "stringReal" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalStringReal;
-    case "stringListStringChar" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalStringListStringChar;
-    case "listStringCharString" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListStringCharString;
-    case "stringAppendList" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalStringAppendList;
-    case "stringDelimitList" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalStringDelimitList;
-    case "listLength" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListLength;
-    case "listAppend" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListAppend;
-    case "listReverse" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListReverse;
-    case "listHead" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListFirst;
-    case "listRest" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListRest;
-    case "anyString" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalAnyString;
+    case "intString" equation true = Config.acceptMetaModelicaGrammar(); then cevalIntString;
+    case "realString" equation true = Config.acceptMetaModelicaGrammar(); then cevalRealString;
+    case "stringCharInt" equation true = Config.acceptMetaModelicaGrammar(); then cevalStringCharInt;
+    case "intStringChar" equation true = Config.acceptMetaModelicaGrammar(); then cevalIntStringChar;
+    case "stringLength" equation true = Config.acceptMetaModelicaGrammar(); then cevalStringLength;
+    case "stringInt" equation true = Config.acceptMetaModelicaGrammar(); then cevalStringInt;
+    // case "stringReal" equation true = Config.acceptMetaModelicaGrammar(); then cevalStringReal;
+    case "stringListStringChar" equation true = Config.acceptMetaModelicaGrammar(); then cevalStringListStringChar;
+    case "listStringCharString" equation true = Config.acceptMetaModelicaGrammar(); then cevalListStringCharString;
+    case "stringAppendList" equation true = Config.acceptMetaModelicaGrammar(); then cevalStringAppendList;
+    case "stringDelimitList" equation true = Config.acceptMetaModelicaGrammar(); then cevalStringDelimitList;
+    case "listLength" equation true = Config.acceptMetaModelicaGrammar(); then cevalListLength;
+    case "listAppend" equation true = Config.acceptMetaModelicaGrammar(); then cevalListAppend;
+    case "listReverse" equation true = Config.acceptMetaModelicaGrammar(); then cevalListReverse;
+    case "listHead" equation true = Config.acceptMetaModelicaGrammar(); then cevalListFirst;
+    case "listRest" equation true = Config.acceptMetaModelicaGrammar(); then cevalListRest;
+    case "anyString" equation true = Config.acceptMetaModelicaGrammar(); then cevalAnyString;
 
     //case "semiLinear" then cevalBuiltinSemiLinear;
     //case "delay" then cevalBuiltinDelay;
     case id
       equation
-        true = RTOpts.debugFlag("ceval");
+        true = Flags.isSet(Flags.CEVAL);
         Debug.traceln("No cevalBuiltinHandler found for " +& id);
       then
         fail();
@@ -1195,10 +1195,10 @@ algorithm
     // Record constructors
     case(cache,env,(e as DAE.CALL(path = funcpath,attr = DAE.CALL_ATTR(ty = DAE.ET_COMPLEX(complexClassType = ClassInf.RECORD(complexName), varLst=varLst)))),vallst,impl,st,msg)
       equation
-        Debug.fprintln("dynload", "CALL: record constructor: func: " +& Absyn.pathString(funcpath) +& " type path: " +& Absyn.pathString(complexName));
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: record constructor: func: " +& Absyn.pathString(funcpath) +& " type path: " +& Absyn.pathString(complexName));
         true = Absyn.pathEqual(funcpath,complexName);
         varNames = List.map(varLst,Expression.varName);
-        Debug.fprintln("dynload", "CALL: record constructor: [success] func: " +& Absyn.pathString(funcpath));        
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: record constructor: [success] func: " +& Absyn.pathString(funcpath));        
       then 
         (cache,Values.RECORD(funcpath,vallst,varNames,-1),st);
 
@@ -1206,13 +1206,13 @@ algorithm
     case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(builtin = false)), vallst, impl, st, msg)
       equation
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
-        Debug.fprintln("dynload", "CALL: try to evaluate or generate function: " +& Absyn.pathString(funcpath));
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: try to evaluate or generate function: " +& Absyn.pathString(funcpath));
 
         true = isCompleteFunction(cache, env, funcpath);
         
         (cache, newval, st) = cevalCallFunctionEvaluateOrGenerate(inCache,inEnv,inExp,inValuesValueLst,impl,inSymTab,inMsg);
         
-        Debug.fprintln("dynload", "CALL: constant evaluation success: " +& Absyn.pathString(funcpath));
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: constant evaluation success: " +& Absyn.pathString(funcpath));
       then
         (cache, newval, st);
 
@@ -1220,11 +1220,11 @@ algorithm
     case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(builtin = false)), vallst, impl, st, msg)
       equation
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
-        Debug.fprintln("dynload", "CALL: try to evaluate or generate function: " +& Absyn.pathString(funcpath));
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: try to evaluate or generate function: " +& Absyn.pathString(funcpath));
         
         false = isCompleteFunction(cache, env, funcpath);
         
-        Debug.fprintln("dynload", "CALL: constant evaluation failed: " +& Absyn.pathString(funcpath));
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: constant evaluation failed: " +& Absyn.pathString(funcpath));
       then
         fail();
 
@@ -1314,7 +1314,7 @@ algorithm
       DAE.Exp e;
       Absyn.Path funcpath;
       list<DAE.Exp> expl;
-      Boolean builtin;
+      Boolean builtin, print_debug;
       list<Values.Value> vallst;
       Msg msg;
       Env.Cache cache;
@@ -1351,9 +1351,9 @@ algorithm
     // try function interpretation
     case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(builtin = false)), vallst, impl, st, msg)
       equation
-        false = RTOpts.debugFlag("noevalfunc");
+        false = Flags.isSet(Flags.NO_EVAL_FUNC);
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
-        Debug.fprintln("dynload", "CALL: try constant evaluation: " +& Absyn.pathString(funcpath));
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: try constant evaluation: " +& Absyn.pathString(funcpath));
         (cache, 
          sc as SCode.CLASS(
           partialPrefix = SCode.NOT_PARTIAL(), 
@@ -1371,7 +1371,7 @@ algorithm
           {});
         func = Env.getCachedInstFunc(cache, funcpath);
         (cache, newval, st) = CevalFunction.evaluate(cache, env, func, vallst, st);
-        Debug.fprintln("dynload", "CALL: constant evaluation SUCCESS: " +& Absyn.pathString(funcpath));
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: constant evaluation SUCCESS: " +& Absyn.pathString(funcpath));
       then
         (cache, newval, st);
 
@@ -1379,10 +1379,10 @@ algorithm
     case (cache,env,(e as DAE.CALL(path = funcpath, expLst = expl, attr = DAE.CALL_ATTR(builtin = false))),vallst,impl,// (impl as true)
       (st as SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))),msg)
       equation
-        false = RTOpts.debugFlag("nogen");
+        false = Flags.isSet(Flags.NO_GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
                 
-        Debug.fprintln("dynload", "CALL: [func from file] check if is in CF list: " +& Absyn.pathString(funcpath));
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: [func from file] check if is in CF list: " +& Absyn.pathString(funcpath));
         
         (true, funcHandle, buildTime, fOld) = Static.isFunctionInCflist(cflist, funcpath);
         Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,Absyn.INFO(fileName = fNew)) = Interactive.getPathedClassInProgram(funcpath, p);
@@ -1390,9 +1390,10 @@ algorithm
         false = stringEq(fNew,""); // see if the WE have a file or not!
         false = Static.needToRebuild(fNew,fOld,buildTime); // we don't need to rebuild!
         
-        Debug.fprintln("dynload", "CALL: [func from file] About to execute function present in CF list: " +& Absyn.pathString(funcpath));        
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: [func from file] About to execute function present in CF list: " +& Absyn.pathString(funcpath));        
         
-        newval = DynLoad.executeFunction(funcHandle, vallst);
+        print_debug = Flags.isSet(Flags.DYN_LOAD);
+        newval = DynLoad.executeFunction(funcHandle, vallst, print_debug);
       then
         (cache,newval,st);
     
@@ -1400,10 +1401,10 @@ algorithm
     case (cache,env,(e as DAE.CALL(path = funcpath, expLst = expl, attr = DAE.CALL_ATTR(builtin = false))),vallst,impl,// impl as true
       (st as SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))),msg)
       equation
-        false = RTOpts.debugFlag("nogen");
+        false = Flags.isSet(Flags.NO_GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
         
-        Debug.fprintln("dynload", "CALL: [func from buffer] check if is in CF list: " +& Absyn.pathString(funcpath));
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: [func from buffer] check if is in CF list: " +& Absyn.pathString(funcpath));
                 
         (true, funcHandle, buildTime, fOld) = Static.isFunctionInCflist(cflist, funcpath);
         Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,Absyn.INFO(fileName = fNew, buildTimes= Absyn.TIMESTAMP(build,_))) = Interactive.getPathedClassInProgram(funcpath, p);
@@ -1414,9 +1415,10 @@ algorithm
         true = (buildTime >=. build);
         true = (buildTime >. edit);
         
-        Debug.fprintln("dynload", "CALL: [func from buffer] About to execute function present in CF list: " +& Absyn.pathString(funcpath));
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: [func from buffer] About to execute function present in CF list: " +& Absyn.pathString(funcpath));
         
-        newval = DynLoad.executeFunction(funcHandle, vallst);
+        print_debug = Flags.isSet(Flags.DYN_LOAD);
+        newval = DynLoad.executeFunction(funcHandle, vallst, print_debug);
       then
         (cache,newval,st);
 
@@ -1424,26 +1426,26 @@ algorithm
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = false))),vallst,impl,
           SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,a,b,c,cf,lf)),msg) // yeha! we have a symboltable!
       equation
-        false = RTOpts.debugFlag("nogen");
+        false = Flags.isSet(Flags.NO_GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
         
-        Debug.fprintln("dynload", "CALL: [SOME SYMTAB] not in in CF list: " +& Absyn.pathString(funcpath));        
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: [SOME SYMTAB] not in in CF list: " +& Absyn.pathString(funcpath));        
         
         // remove it and all its dependencies as it might be there with an older build time.
         // get dependencies!
         (_, functionDependencies, _) = CevalScript.getFunctionDependencies(cache, funcpath);
         newCF = Interactive.removeCfAndDependencies(cf, funcpath::functionDependencies);
         
-        Debug.fprintln("dynload", "CALL: [SOME SYMTAB] not in in CF list: removed deps:" +& 
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: [SOME SYMTAB] not in in CF list: removed deps:" +& 
           stringDelimitList(List.map(functionDependencies, Absyn.pathString) ,", "));        
         
         // now is safe to generate code 
         (cache, funcstr) = CevalScript.cevalGenerateFunction(cache, env, funcpath);
-        
-        libHandle = System.loadLibrary(funcstr);
+        print_debug = Flags.isSet(Flags.DYN_LOAD);
+        libHandle = System.loadLibrary(funcstr, print_debug);
         funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
-        newval = DynLoad.executeFunction(funcHandle, vallst);
-        System.freeLibrary(libHandle);
+        newval = DynLoad.executeFunction(funcHandle, vallst, print_debug);
+        System.freeLibrary(libHandle, print_debug);
         buildTime = System.getCurrentTime();
         // update the build time in the class!
         Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(),body,info) = Interactive.getPathedClassInProgram(funcpath, p);
@@ -1452,12 +1454,12 @@ algorithm
         ts = Absyn.setTimeStampBuild(ts, buildTime);
         w = Interactive.buildWithin(funcpath);
         
-        Debug.fprintln("dynload", "Updating build time for function path: " +& Absyn.pathString(funcpath) +& " within: " +& Dump.unparseWithin(0, w) +& "\n");
+        Debug.fprintln(Flags.DYN_LOAD, "Updating build time for function path: " +& Absyn.pathString(funcpath) +& " within: " +& Dump.unparseWithin(0, w) +& "\n");
         
         p = Interactive.updateProgram(Absyn.PROGRAM({Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(),body,info)},w,ts), p);
         f = Absyn.getFileNameFromInfo(info);
         
-        Debug.fprintln("dynload", "CALL: [SOME SYMTAB] not in in CF list [finished]: " +& Absyn.pathString(funcpath));
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: [SOME SYMTAB] not in in CF list [finished]: " +& Absyn.pathString(funcpath));
       then
         (cache,newval,SOME(Interactive.SYMBOLTABLE(p, aDep, a, b, c,
           Interactive.CFunction(funcpath,(DAE.T_NOTYPE(),SOME(funcpath)),funcHandle,buildTime,f)::newCF, lf)));
@@ -1466,35 +1468,36 @@ algorithm
     // no symtab, WE SHOULD NOT EVALUATE! 
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = false))),vallst,impl,NONE(),msg) // crap! we have no symboltable!
       equation
-        false = RTOpts.debugFlag("nogen");
+        false = Flags.isSet(Flags.NO_GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
          
-        Debug.fprintln("dynload", "CALL: [NO SYMTAB] not in in CF list: " +& Absyn.pathString(funcpath));         
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: [NO SYMTAB] not in in CF list: " +& Absyn.pathString(funcpath));         
          
         // we might actually have a function loaded here already!
         // we need to unload all functions to not get conflicts!
         (cache,funcstr) = CevalScript.cevalGenerateFunction(cache, env, funcpath);
         // generate a uniquely named dll!
-        Debug.fprintln("dynload", "cevalCallFunction: about to execute " +& funcstr);
-        libHandle = System.loadLibrary(funcstr);
+        Debug.fprintln(Flags.DYN_LOAD, "cevalCallFunction: about to execute " +& funcstr);
+        print_debug = Flags.isSet(Flags.DYN_LOAD);
+        libHandle = System.loadLibrary(funcstr, print_debug);
         funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
-        newval = DynLoad.executeFunction(funcHandle, vallst);
-        System.freeFunction(funcHandle);
-        System.freeLibrary(libHandle);
+        newval = DynLoad.executeFunction(funcHandle, vallst, print_debug);
+        System.freeFunction(funcHandle, print_debug);
+        System.freeLibrary(libHandle, print_debug);
         
-        Debug.fprintln("dynload", "CALL: [NO SYMTAB] not in in CF list [finished]: " +& Absyn.pathString(funcpath));
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: [NO SYMTAB] not in in CF list [finished]: " +& Absyn.pathString(funcpath));
         
       then
         (cache,newval,NONE());
 
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,impl,st,msg)
       equation
-        Debug.fprintln("dynload", "CALL: FAILED to constant evaluate function: " +& Absyn.pathString(funcpath)); 
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: FAILED to constant evaluate function: " +& Absyn.pathString(funcpath)); 
         error_Str = Absyn.pathString(funcpath);
         //TODO: readd this when testsuite is okay.
         //Error.addMessage(Error.FAILED_TO_EVALUATE_FUNCTION, {error_Str});
-        true = RTOpts.debugFlag("nogen");
-        Debug.fprint("failtrace", "- codegeneration is turned off. switch \"nogen\" flag off\n");
+        true = Flags.isSet(Flags.NO_GEN);
+        Debug.fprint(Flags.FAILTRACE, "- codegeneration is turned off. switch \"nogen\" flag off\n");
       then
         fail();
   
@@ -1954,7 +1957,7 @@ algorithm
     
     case (cache,env,exp,dimExp,impl,st,MSG(info = _))
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Print.printErrorBuf("#-- Ceval.cevalBuiltinSize failed: ");
         expstr = ExpressionDump.printExpStr(exp);
         Print.printErrorBuf(expstr);
@@ -1992,7 +1995,7 @@ algorithm
     
     case (_,_)
       equation
-        Debug.fprint("failtrace", "- Ceval.cevalBuiltinSize2 failed\n");
+        Debug.fprint(Flags.FAILTRACE, "- Ceval.cevalBuiltinSize2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -2382,7 +2385,7 @@ algorithm
         Values.ARRAY(vs_1,i::il);
     case (_,_)
       equation
-        Debug.fprintln("failtrace", "- Ceval.cevalBuiltinPromote2 failed");
+        Debug.fprintln(Flags.FAILTRACE, "- Ceval.cevalBuiltinPromote2 failed");
       then fail();
   end matchcontinue;
 end cevalBuiltinPromote2;
@@ -4598,7 +4601,7 @@ algorithm
     
     case (_,_,_,_,_,matrixDimension,row,list_,MSG(info = info))
       equation
-        true = RTOpts.debugFlag("ceval");
+        true = Flags.isSet(Flags.CEVAL);
         str = Error.infoStr(info);
         Debug.traceln(str +& " Ceval.cevalBuiltinDiagonal2 failed");
       then
@@ -4874,8 +4877,8 @@ algorithm
     
     case (v1, op, v2)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- Ceval.cevalRelation failed on: " +&
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- Ceval.cevalRelation failed on: " +&
           ValuesUtil.printValStr(v1) +&
           ExpressionDump.binopSymbol(op) +&
           ValuesUtil.printValStr(v2));
@@ -5194,7 +5197,7 @@ algorithm
         str = ComponentReference.printComponentRefStr(inCref);
         scope_str = Env.printEnvPathStr(inEnv);
         Error.addSourceMessage(Error.NO_CONSTANT_BINDING, {str, scope_str}, info);
-        Debug.fprintln("ceval", "- Ceval.cevalCref on: " +& str +& 
+        Debug.fprintln(Flags.CEVAL, "- Ceval.cevalCref on: " +& str +& 
           " failed with no constant binding in scope: " +& scope_str);
         // build a default binding for it!
         s1 = Env.printEnvPathStr(inEnv);
@@ -5251,7 +5254,7 @@ algorithm
 
     case (cache,env,cr,DAE.VALBOUND(valBound = v),impl,msg) 
       equation 
-        Debug.fprint("tcvt", "+++++++ Ceval.cevalCrefBinding DAE.VALBOUND\n");
+        Debug.fprint(Flags.TCVT, "+++++++ Ceval.cevalCrefBinding DAE.VALBOUND\n");
         subsc = ComponentReference.crefLastSubs(cr);
         (cache,res) = cevalSubscriptValue(cache, env, subsc, v, impl, msg);
       then
@@ -5261,7 +5264,7 @@ algorithm
 
     case (cache,env,_,DAE.UNBOUND(),(impl as true),MSG(_))
       equation
-        Debug.fprint("ceval", "#- Ceval.cevalCrefBinding: Ignoring unbound when implicit");
+        Debug.fprint(Flags.CEVAL, "#- Ceval.cevalCrefBinding: Ignoring unbound when implicit");
       then
         fail();
 
@@ -5316,23 +5319,23 @@ algorithm
     // if the binding has constant-ness DAE.C_VAR we cannot constant evaluate.
     case (cache,env,_,DAE.EQBOUND(exp = exp,constant_ = DAE.C_VAR()),impl,MSG(_))
       equation
-        true = RTOpts.debugFlag("ceval");
-        Debug.fprint("ceval", "#- Ceval.cevalCrefBinding failed (nonconstant EQBOUND(");
+        true = Flags.isSet(Flags.CEVAL);
+        Debug.trace("#- Ceval.cevalCrefBinding failed (nonconstant EQBOUND(");
         expstr = ExpressionDump.printExpStr(exp);
-        Debug.fprint("ceval", expstr);
-        Debug.fprintln("ceval", "))");
+        Debug.trace(expstr);
+        Debug.traceln("))");
       then
         fail();
 
     case (cache,env,e1,inBinding,_,_)
       equation
-        true = RTOpts.debugFlag("ceval");
+        true = Flags.isSet(Flags.CEVAL);
         s1 = ComponentReference.printComponentRefStr(e1);
         s2 = Types.printBindingStr(inBinding);
         str = Env.printEnvPathStr(env);
         str = stringAppendList({"- Ceval.cevalCrefBinding: ", 
-                s1, " = [", s2, "] in env:", str, " failed\n"});
-        Debug.fprint("ceval", str);
+                s1, " = [", s2, "] in env:", str, " failed"});
+        Debug.traceln(str);
         //print("ENV: " +& Env.printEnvStr(inEnv) +& "\n");
       then
         fail();
@@ -5423,8 +5426,8 @@ algorithm
     /*// failtrace
     case (cache, env, subs, inValue, dims, _, _)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- Ceval.cevalSubscriptValue failed on:" +&
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- Ceval.cevalSubscriptValue failed on:" +&
           "\n env: " +& Env.printEnvPathStr(env) +&
           "\n subs: " +& stringDelimitList(List.map(subs, ExpressionDump.printSubscriptStr), ", ") +&
           "\n value: " +& ValuesUtil.printValStr(inValue) +&

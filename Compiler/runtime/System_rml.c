@@ -43,7 +43,7 @@
 #endif
 
 #include "rml.h"
-#include "RTOptsData.h"
+#include "Config.h"
 #include "systemimpl.c"
 
 /* use this one to output messages depending on flags! */
@@ -686,7 +686,8 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__freeFunction)
 {
   modelica_integer funcIndex = RML_UNTAGFIXNUM(rmlA0);
-  if (SystemImpl__freeFunction(funcIndex))
+  modelica_integer printDebug = RML_UNTAGFIXNUM(rmlA1);
+  if (SystemImpl__freeFunction(funcIndex, printDebug))
     RML_TAILCALLK(rmlFC);
   RML_TAILCALLK(rmlSC);
 }
@@ -695,7 +696,8 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__freeLibrary)
 {
   modelica_integer libIndex = RML_UNTAGFIXNUM(rmlA0);
-  if (SystemImpl__freeLibrary(libIndex))
+  modelica_integer printDebug = RML_UNTAGFIXNUM(rmlA1);
+  if (SystemImpl__freeLibrary(libIndex, printDebug))
     RML_TAILCALLK(rmlFC);
   RML_TAILCALLK(rmlSC);
 }
@@ -1931,7 +1933,8 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__loadLibrary)
 {
   const char *str = RML_STRINGDATA(rmlA0);
-  int res = SystemImpl__loadLibrary(str);
+  modelica_integer printDebug = RML_UNTAGFIXNUM(rmlA1);
+  int res = SystemImpl__loadLibrary(str, printDebug);
   if (res == -1)
     RML_TAILCALLK(rmlFC);
   rmlA0 = mk_icon(res);

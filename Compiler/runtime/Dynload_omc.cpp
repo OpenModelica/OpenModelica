@@ -36,7 +36,7 @@ extern "C" {
 #include "OpenModelicaBootstrappingHeader.h"
 #include "Dynload.cpp"
 
-extern void* DynLoad_executeFunction(int _inFuncHandle, void* _inValLst)
+extern void* DynLoad_executeFunction(int _inFuncHandle, void* _inValLst, int _inPrintDebug)
 {
   modelica_ptr_t func = NULL;
   int retval = -1;
@@ -44,7 +44,7 @@ extern void* DynLoad_executeFunction(int _inFuncHandle, void* _inValLst)
   func = lookup_ptr(_inFuncHandle);
   if (func == NULL) MMC_THROW();
 
-  retval = execute_function(_inValLst, &retarg, func->data.func.handle);
+  retval = execute_function(_inValLst, &retarg, func->data.func.handle, _inPrintDebug);
   if (retval) MMC_THROW();
   return retarg;
 }

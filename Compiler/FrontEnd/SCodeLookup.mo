@@ -95,7 +95,7 @@ public constant Item BUILTIN_EXTERNALOBJECT = SCodeEnv.CLASS(
       Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BUILTIN());
 
 protected import Debug;
-protected import RTOpts;
+protected import Flags;
 protected import SCodeCheck;
 protected import SCodeFlattenImports;
 protected import SCodeFlattenRedeclare;
@@ -727,7 +727,7 @@ algorithm
     // outputs its own errors.
     else
       equation
-        true = RTOpts.debugFlag("failtrace");  
+        true = Flags.isSet(Flags.FAILTRACE);  
         Debug.traceln("- SCodeLookup.lookupRedeclaredClass2 failed on " +&
             SCodeEnv.getItemName(inItem) +& " in " +&
             SCodeEnv.getEnvName(inEnv));
@@ -791,7 +791,7 @@ algorithm
 
     else
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- SCodeLookup.lookupRedeclaredClass2 failed on " +&
             SCodeEnv.getItemName(inItem) +& " in " +&
             SCodeEnv.getEnvName(inEnv));
@@ -1361,7 +1361,7 @@ algorithm
 
     else
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- SCodeLookup.qualifyPath failed on " +&
           Absyn.pathString(inPath) +& " in " +&
           SCodeEnv.getEnvName(inEnv));

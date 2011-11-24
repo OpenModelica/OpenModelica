@@ -47,12 +47,12 @@ public import DAE;
 public import Env;
 public import InnerOuter;
 public import Prefix;
-public import RTOpts;
 public import SCode;
 
 protected import Algorithm;
 protected import Ceval;
 protected import ComponentReference;
+protected import Config;
 protected import ConnectUtil;
 protected import DAEUtil;
 protected import Debug;
@@ -61,11 +61,11 @@ protected import Error;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import Flags;
 protected import Inst;
 protected import List;
 protected import Lookup;
 protected import MetaUtil;
-protected import OptManager;
 protected import Patternm;
 protected import PrefixUtil;
 protected import Static;
@@ -134,11 +134,11 @@ algorithm
         
     case (_,_,_,_,_,_,_,SCode.EQUATION(eEquation = eqn),impl,unrollForLoops,graph)
       equation 
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         str= SCodeDump.equationStr(eqn);
-        Debug.fprint("failtrace", "- instEquation failed eqn:");
-        Debug.fprint("failtrace", str);
-        Debug.fprint("failtrace", "\n");
+        Debug.fprint(Flags.FAILTRACE, "- instEquation failed eqn:");
+        Debug.fprint(Flags.FAILTRACE, str);
+        Debug.fprint(Flags.FAILTRACE, "\n");
       then
         fail();
   end matchcontinue;
@@ -189,7 +189,7 @@ algorithm
     // failure
     case(cache,env,ih,mods,pre,csets,ci_state,eq,impl,unrollForLoops,graph) 
       equation
-        Debug.fprint("failtrace","Inst.instEEquation failed for "+&SCodeDump.equationStr(eq)+&"\n");
+        Debug.fprint(Flags.FAILTRACE,"Inst.instEEquation failed for "+&SCodeDump.equationStr(eq)+&"\n");
     then fail();
   end matchcontinue;
 end instEEquation;
@@ -241,7 +241,7 @@ algorithm
         
     case (_,_,ih,_,_,_,_,_,impl,_,_)
       equation 
-        Debug.fprint("failtrace", "- instInitialEquation failed\n");
+        Debug.fprint(Flags.FAILTRACE, "- instInitialEquation failed\n");
       then
         fail();
   end matchcontinue;
@@ -531,7 +531,7 @@ algorithm
     // been chosen, so this case therefore chooses one of the branches.
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb,info=info),SCode.NON_INITIAL(),impl,graph)
       equation
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
         (cache, _,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
         (DAE.PROP((DAE.T_BOOL(_),_),DAE.C_PARAM())) = Types.propsAnd(props);
         b = Util.selectList({true}, tb, fb);
@@ -680,7 +680,7 @@ algorithm
         // instantiated.
     case (cache, env, ih, mod, pre, csets, ci_state, SCode.EQ_FOR(index = i, range = e, eEquationLst = el,info=info), initial_, impl, graph)
       equation
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
         (cache, e_1, DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = id_t), _), constFlag = cnst as DAE.C_PARAM()), _) =
           Static.elabExp(cache, env, e, impl,NONE(), true, pre,info);
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
@@ -839,10 +839,10 @@ algorithm
                
     case (_,env,ih,_,_,_,_,eqn,_,impl,graph)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         s = SCodeDump.equationStr(eqn);
-        Debug.fprint("failtrace", "- instEquationCommonWork failed for eqn: ");
-        Debug.fprint("failtrace", s +& " in scope:" +& Env.getScopeName(env) +& "\n");
+        Debug.fprint(Flags.FAILTRACE, "- instEquationCommonWork failed for eqn: ");
+        Debug.fprint(Flags.FAILTRACE, s +& " in scope:" +& Env.getScopeName(env) +& "\n");
         //print("ENV: " +& Env.printEnvStr(env) +& "\n");
       then
         fail();
@@ -1150,8 +1150,8 @@ algorithm
     
     case (_,_,_,_,_,_,_,_,v,_,_,_,_)
       equation 
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- InstSection.unroll failed: " +& ValuesUtil.valString(v));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprintln(Flags.FAILTRACE, "- InstSection.unroll failed: " +& ValuesUtil.valString(v));
       then
         fail();
   end matchcontinue;
@@ -1260,7 +1260,7 @@ algorithm
         s1 = stringAppendList({e1_str,"=",e2_str});
         s2 = stringAppendList({t1_str,"=",t2_str});
         Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {s1,s2}, DAEUtil.getElementSourceFileInfo(source));
-        Debug.fprintln("failtrace", "- InstSection.instEqEquation failed with type mismatch in equation: " +& s1 +& " tys: " +& s2);
+        Debug.fprintln(Flags.FAILTRACE, "- InstSection.instEqEquation failed with type mismatch in equation: " +& s1 +& " tys: " +& s2);
       then
         fail();
   end matchcontinue;
@@ -1337,25 +1337,25 @@ algorithm
     /* MetaModelica types */
     case (e1,e2,(DAE.T_LIST(_),_),_,source,initial_)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         dae = makeDaeEquation(e1, e2, source, initial_);
       then
         dae;
     case (e1,e2,(DAE.T_METATUPLE(_),_),_,source,initial_)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         dae = makeDaeEquation(e1, e2, source, initial_);
       then
         dae;
     case (e1,e2,(DAE.T_METAOPTION(_),_),_,source,initial_)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         dae = makeDaeEquation(e1, e2, source, initial_);
       then
         dae;
     case (e1,e2,(DAE.T_UNIONTYPE(paths=_),_),_,source,initial_)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         dae = makeDaeEquation(e1, e2, source, initial_);
       then
         dae;
@@ -1419,7 +1419,7 @@ algorithm
    
     else
       equation 
-        Debug.fprintln("failtrace", "- InstSection.instEqEquation2 failed");
+        Debug.fprintln(Flags.FAILTRACE, "- InstSection.instEqEquation2 failed");
       then
         fail();
   end matchcontinue;
@@ -1635,7 +1635,7 @@ algorithm
     // Array equation of any size, non-expanding case
     case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), _, source, initial_)
       equation
-        false = RTOpts.splitArrays();
+        false = Config.splitArrays();
         // Expand along the first dimensions of the expressions, and generate an
         // equation for each pair of elements.
         DAE.ET_ARRAY(arrayDimensions = lhs_dim :: _) = Expression.typeof(lhs);
@@ -1649,7 +1649,7 @@ algorithm
     // Array dimension of known size, expanding case.
     case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), _, source, initial_)
       equation
-        true = RTOpts.splitArrays();
+        true = Config.splitArrays();
         true = Expression.dimensionKnown(dim);
         // Expand along the first dimensions of the expressions, and generate an
         // equation for each pair of elements.
@@ -1663,7 +1663,7 @@ algorithm
         
     case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), _, source, initial_)
       equation
-        true = RTOpts.splitArrays();
+        true = Config.splitArrays();
         true = Expression.dimensionKnown(dim);
         true = Expression.isRange(lhs) or Expression.isRange(rhs);
         ds = Types.getDimensions(tp);
@@ -1673,10 +1673,10 @@ algorithm
     // Array dimension of unknown size, expanding case.
     case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), _, source, initial_)
       equation
-        true = RTOpts.splitArrays();
+        true = Config.splitArrays();
         false = Expression.dimensionKnown(dim);
         // It's ok with array equation of unknown size if checkModel is used.
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
         // Expand along the first dimensions of the expressions, and generate an
         // equation for each pair of elements.
         DAE.ET_ARRAY(arrayDimensions = lhs_dim :: _) = Expression.typeof(lhs);
@@ -1690,9 +1690,9 @@ algorithm
     /* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; (expanding case)*/
     case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), _, source, SCode.INITIAL())
       equation
-        true = RTOpts.splitArrays();
+        true = Config.splitArrays();
         // It's ok with array equation of unknown size if checkModel is used.
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
         // generate an initial array equation of dim 1
         // Now the dimension can be made DAE.DIM_UNKNOWN(), I just don't want to break anything for now -- alleb
       then 
@@ -1701,9 +1701,9 @@ algorithm
     /* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; (expanding case)*/
     case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), _, source, SCode.NON_INITIAL())
       equation
-         true = RTOpts.splitArrays();
+         true = Config.splitArrays();
         // It's ok with array equation of unknown size if checkModel is used.
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
         // generate an array equation of dim 1
         // Now the dimension can be made DAE.DIM_UNKNOWN(), I just don't want to break anything for now -- alleb
       then 
@@ -1712,9 +1712,9 @@ algorithm
     /* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; (expanding case)*/
     case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN()), _), _, _, _)
       equation
-        true = RTOpts.splitArrays();
+        true = Config.splitArrays();
         // It's ok with array equation of unknown size if checkModel is used.
-        false = OptManager.getOption("checkModel");
+        false = Flags.getConfigBool(Flags.CHECK_MODEL);
         lhs_str = ExpressionDump.printExpStr(lhs);
         rhs_str = ExpressionDump.printExpStr(rhs);
         eq_str = stringAppendList({lhs_str, "=", rhs_str});
@@ -1724,7 +1724,7 @@ algorithm
 
     else
       equation
-        Debug.fprintln("failtrace", "- InstSection.instArrayEquation failed");
+        Debug.fprintln(Flags.FAILTRACE, "- InstSection.instArrayEquation failed");
       then
         fail();
   end matchcontinue;
@@ -1841,7 +1841,7 @@ algorithm
         str = Dump.unparseAlgorithmStr(0, 
                SCode.statementToAlgorithmItem(SCode.ALG_FOR(inIterators, sl,NONE(),info)));
         Error.addSourceMessage(Error.UNROLL_LOOP_CONTAINING_WHEN, {str}, info);
-        Debug.fprintln("failtrace", "- InstSection.unrollForLoop failed on: " +& str);
+        Debug.fprintln(Flags.FAILTRACE, "- InstSection.unrollForLoop failed on: " +& str);
       then
         fail();
   end matchcontinue;
@@ -2238,7 +2238,7 @@ algorithm
 
     case (_,_,_,_,_,_,_,algSCode,_,_,_)
       equation 
-        Debug.fprintln("failtrace", "- InstSection.instAlgorithm failed");
+        Debug.fprintln(Flags.FAILTRACE, "- InstSection.instAlgorithm failed");
       then
         fail();
   end matchcontinue;
@@ -2298,7 +2298,7 @@ algorithm
 
     case (_,_,_,_,_,_,_,_,_,_,_)
       equation 
-        Debug.fprintln("failtrace", "- InstSection.instInitialAlgorithm failed");
+        Debug.fprintln(Flags.FAILTRACE, "- InstSection.instInitialAlgorithm failed");
       then
         fail();
   end matchcontinue;
@@ -2566,7 +2566,7 @@ algorithm
     //------------------------------------------
     case (cache,env,ih,pre,ci_state,SCode.ALG_FAILURE(stmts = sl, comment = comment, info = info),source,initial_,impl,unrollForLoops,_)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         (cache,sl_1) = instStatements(cache,env,ih,pre,ci_state,sl,source,initial_,impl,unrollForLoops);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = DAE.STMT_FAILURE(sl_1,source);
@@ -2576,7 +2576,7 @@ algorithm
     /* try */
     case (cache,env,ih,pre,ci_state,SCode.ALG_TRY(tryBody = sl, comment = comment, info = info),source,initial_,impl,unrollForLoops,_)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         (cache,sl_1) = instStatements(cache, env, ih, pre, ci_state, sl, source, initial_, impl, unrollForLoops);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = DAE.STMT_TRY(sl_1,source);
@@ -2586,7 +2586,7 @@ algorithm
     /* catch */
     case (cache,env,ih,pre,ci_state,SCode.ALG_CATCH(catchBody = sl, comment = comment, info = info),source,initial_,impl,unrollForLoops,_)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         (cache,sl_1) = instStatements(cache, env, ih, pre, ci_state, sl, source, initial_, impl, unrollForLoops);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = DAE.STMT_CATCH(sl_1,source);
@@ -2596,7 +2596,7 @@ algorithm
     /* throw */
     case (cache,env,ih,pre,ci_state,SCode.ALG_THROW(comment = comment, info = info),source,initial_,impl,unrollForLoops,_)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = DAE.STMT_THROW(source);
       then
@@ -2772,8 +2772,8 @@ algorithm
         
     case (_,_,_,_,_,_,v,_,_,_,_,_)
       equation 
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- InstSection.loopOverRange failed to loop over range: " +& ValuesUtil.valString(v));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprintln(Flags.FAILTRACE, "- InstSection.loopOverRange failed to loop over range: " +& ValuesUtil.valString(v));
       then
         fail();
   end matchcontinue;
@@ -2862,8 +2862,8 @@ algorithm
 
     case (cache,env,ih,mod,pre,csets,ci_state,(e :: es),_,impl,graph)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "InstSection.instIfTrueBranches failed on equations: " +&
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprintln(Flags.FAILTRACE, "InstSection.instIfTrueBranches failed on equations: " +&
                        stringDelimitList(List.map(e, SCodeDump.equationStr), "\n"));
       then
         fail();
@@ -2917,7 +2917,7 @@ algorithm
 
     else
       equation
-        Debug.fprintln("failtrace", "- InstSection.instElseIfs failed");
+        Debug.fprintln(Flags.FAILTRACE, "- InstSection.instElseIfs failed");
       then
         fail();
   end matchcontinue;
@@ -3034,7 +3034,7 @@ algorithm
 
     case (cache,env,ih,sets,pre,c1,c2,impl,_,_)
       equation
-        Debug.fprintln("failtrace", "- InstSection.instConnect failed for: connect(" +& 
+        Debug.fprintln(Flags.FAILTRACE, "- InstSection.instConnect failed for: connect(" +& 
           Dump.printComponentRefStr(c1) +& ", " +&
           Dump.printComponentRefStr(c2) +& ")");
       then
@@ -3155,35 +3155,35 @@ algorithm
 
         // do the union of the connectors by adding the missing 
         // components from one to the other and vice-versa.
-        // Debug.fprintln("expandable", ">>>> connect(expandable, expandable)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")" );
+        // Debug.fprintln(Flags.EXPANDABLE, ">>>> connect(expandable, expandable)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")" );
         
         // get the environments of the expandable connectors
         // which contain all the virtual components.
         (_,_,_,_,_,_,_,env1,_) = Lookup.lookupVar(cache, env, c1_2);
         (_,_,_,_,_,_,_,env2,_) = Lookup.lookupVar(cache, env, c2_2);
         
-        // Debug.fprintln("expandable", "1 connect(expandable, expandable)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")" );
+        // Debug.fprintln(Flags.EXPANDABLE, "1 connect(expandable, expandable)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")" );
              
-        // Debug.fprintln("expandable", "env ===>\n" +& Env.printEnvStr(env));
-        // Debug.fprintln("expandable", "env(c1) ===>\n" +& Env.printEnvStr(env1));
-        // Debug.fprintln("expandable", "env(c2) ===>\n" +& Env.printEnvStr(env2));
+        // Debug.fprintln(Flags.EXPANDABLE, "env ===>\n" +& Env.printEnvStr(env));
+        // Debug.fprintln(Flags.EXPANDABLE, "env(c1) ===>\n" +& Env.printEnvStr(env1));
+        // Debug.fprintln(Flags.EXPANDABLE, "env(c2) ===>\n" +& Env.printEnvStr(env2));
              
         // get the virtual components
         variables1 = Env.getVariablesFromEnv(env1);
-        // Debug.fprintln("expandable", "Variables1: " +& stringDelimitList(variables1, ", "));
+        // Debug.fprintln(Flags.EXPANDABLE, "Variables1: " +& stringDelimitList(variables1, ", "));
         variables2 = Env.getVariablesFromEnv(env2);
-        // Debug.fprintln("expandable", "Variables2: " +& stringDelimitList(variables2, ", "));
+        // Debug.fprintln(Flags.EXPANDABLE, "Variables2: " +& stringDelimitList(variables2, ", "));
         variablesUnion = List.union(variables1, variables2);
         // sort so we have them in order
         variablesUnion = List.sort(variablesUnion, stringGte);
-        // Debug.fprintln("expandable", "Union of expandable connector variables: " +& stringDelimitList(variablesUnion, ", "));
+        // Debug.fprintln(Flags.EXPANDABLE, "Union of expandable connector variables: " +& stringDelimitList(variablesUnion, ", "));
         
-        // Debug.fprintln("expandable", "2 connect(expandable, expandable)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
+        // Debug.fprintln(Flags.EXPANDABLE, "2 connect(expandable, expandable)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
         
         // then connect each of the components normally.
         (cache,env,ih,sets,dae,graph) = connectExpandableVariables(cache,env,ih,sets,pre,c1,c2,variablesUnion,impl,graph,info);
         
-        // Debug.fprintln("expandable", "<<<< connect(expandable, expandable)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
+        // Debug.fprintln(Flags.EXPANDABLE, "<<<< connect(expandable, expandable)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
         
       then
         (cache,env,ih,sets,dae,graph);
@@ -3194,7 +3194,7 @@ algorithm
         // c2 is expandable
         (cache,NONE()) = Static.elabCref(cache, env, c2, impl, false, pre, info);
         (cache,SOME((DAE.CREF(c1_1,t1),prop1,attr))) = Static.elabCref(cache, env, c1, impl, false, pre, info);
-        // Debug.fprintln("expandable", "connect(existing, expandable)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
+        // Debug.fprintln(Flags.EXPANDABLE, "connect(existing, expandable)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
         (cache,env,ih,sets,dae,graph) = connectExpandableConnectors(cache,env,ih,sets,pre,c2,c1,impl,graph,info);
       then
         (cache,env,ih,sets,dae,graph);
@@ -3219,7 +3219,7 @@ algorithm
         (cache,NONE()) = Static.elabCref(cache, env, c1, impl, false, pre, info);
         (cache,SOME((DAE.CREF(c2_1,t2),prop2,attr2))) = Static.elabCref(cache, env, c2, impl, false, pre, info);
 
-        // Debug.fprintln("expandable", ">>>> connect(expandable, existing)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
+        // Debug.fprintln(Flags.EXPANDABLE, ">>>> connect(expandable, existing)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
         
         // lookup the existing connector
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
@@ -3227,7 +3227,7 @@ algorithm
         // bind the attributes
         DAE.ATTR(flowPrefix2,streamPrefix2,vt2,dir2,io2) = attr2;
         
-        // Debug.fprintln("expandable", "1 connect(expandable, existing)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
+        // Debug.fprintln(Flags.EXPANDABLE, "1 connect(expandable, existing)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
 
         // strip the last prefix!
         c1_prefix = Absyn.crefStripLast(c1);
@@ -3248,7 +3248,7 @@ algorithm
         // more than 1 variables
         true = listLength(variablesUnion) > 1;
         
-        // Debug.fprintln("expandable", "2 connect(expandable, existing[MULTIPLE])(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
+        // Debug.fprintln(Flags.EXPANDABLE, "2 connect(expandable, existing[MULTIPLE])(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
 
         // get the virtual component name
         Absyn.CREF_IDENT(componentName, _) = Absyn.crefGetLastIdent(c1);
@@ -3292,7 +3292,7 @@ algorithm
         (cache,NONE()) = Static.elabCref(cache, env, c1, impl, false, pre, info);
         (cache,SOME((DAE.CREF(c2_1,t2),prop2,attr2))) = Static.elabCref(cache, env, c2, impl, false, pre, info);
         
-        // Debug.fprintln("expandable", ">>>> connect(expandable, existing)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
+        // Debug.fprintln(Flags.EXPANDABLE, ">>>> connect(expandable, existing)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
         
         // lookup the existing connector
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
@@ -3300,7 +3300,7 @@ algorithm
         // bind the attributes
         DAE.ATTR(flowPrefix2,streamPrefix2,vt2,dir2,io2) = attr2;
         
-        // Debug.fprintln("expandable", "1 connect(expandable, existing)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
+        // Debug.fprintln(Flags.EXPANDABLE, "1 connect(expandable, existing)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
         
         // strip the last prefix!
         c1_prefix = Absyn.crefStripLast(c1);
@@ -3321,7 +3321,7 @@ algorithm
         // max 1 variable, should check for empty!
         false = listLength(variablesUnion) > 1;
         
-        // Debug.fprintln("expandable", "2 connect(expandable, existing[SINGLE])(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
+        // Debug.fprintln(Flags.EXPANDABLE, "2 connect(expandable, existing[SINGLE])(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
         
         // get the virtual component name
         Absyn.CREF_IDENT(componentName, _) = Absyn.crefGetLastIdent(c1);
@@ -3350,11 +3350,11 @@ algorithm
                     envExpandable);
         // ******************************************************************************
         
-        // Debug.fprintln("expandable", "3 connect(expandable, existing[SINGLE])(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
+        // Debug.fprintln(Flags.EXPANDABLE, "3 connect(expandable, existing[SINGLE])(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")");
 
-        //Debug.fprintln("expandable", "env expandable: " +& Env.printEnvStr(envExpandable));
-        //Debug.fprintln("expandable", "env component: " +& Env.printEnvStr(envComponent));
-        //Debug.fprintln("expandable", "env: " +& Env.printEnvStr(env));
+        //Debug.fprintln(Flags.EXPANDABLE, "env expandable: " +& Env.printEnvStr(envExpandable));
+        //Debug.fprintln(Flags.EXPANDABLE, "env component: " +& Env.printEnvStr(envComponent));
+        //Debug.fprintln(Flags.EXPANDABLE, "env: " +& Env.printEnvStr(env));
         
         // now it should be in the Env, fetch the info!
         (cache,SOME((DAE.CREF(c1_1,t1),prop1,_))) = Static.elabCref(cache, env, c1, impl, false, pre,info);
@@ -3379,7 +3379,7 @@ algorithm
         
         dae = DAEUtil.joinDaes(dae, daeExpandable);
         
-        // Debug.fprintln("expandable", "<<<< connect(expandable, existing)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")\nDAE:" +&DAEDump.dump2str(daeExpandable));
+        // Debug.fprintln(Flags.EXPANDABLE, "<<<< connect(expandable, existing)(" +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c1) +& ", " +& PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "." +& Dump.printComponentRefStr(c2) +& ")\nDAE:" +&DAEDump.dump2str(daeExpandable));
       then
         (cache,env,ih,sets,dae,graph);
     
@@ -3399,7 +3399,7 @@ algorithm
         false = isExpandableConnectorType(ty1);
         false = isExpandableConnectorType(ty2);
 
-        // Debug.fprintln("expandable", 
+        // Debug.fprintln(Flags.EXPANDABLE, 
         //   "connect(non-expandable, non-expandable)(" +& 
         //      Dump.printComponentRefStr(c1) +& ", " +&
         //      Dump.printComponentRefStr(c2) +& ")"
@@ -3538,7 +3538,7 @@ algorithm
         // add name to both c1 and c2, then connect normally
         c1_full = Absyn.joinCrefs(c1, Absyn.CREF_IDENT(name, {}));
         c2_full = Absyn.joinCrefs(c2, Absyn.CREF_IDENT(name, {}));
-        // Debug.fprintln("expandable", 
+        // Debug.fprintln(Flags.EXPANDABLE, 
         //   "connect(full_expandable, full_expandable)(" +& 
         //      Dump.printComponentRefStr(c1_full) +& ", " +&
         //      Dump.printComponentRefStr(c2_full) +& ")");
@@ -3791,8 +3791,8 @@ algorithm
 
     case (env,_,c1,_,_,c2,_,_,io1,io2,info)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- InstSection.checkConnectTypes(" +&
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprintln(Flags.FAILTRACE, "- InstSection.checkConnectTypes(" +&
           ComponentReference.printComponentRefStr(c1) +& " <-> " +&
           ComponentReference.printComponentRefStr(c2) +& " failed");
       then
@@ -3801,7 +3801,7 @@ algorithm
     case (env,ih,c1,t1,DAE.ATTR(flowPrefix = flow1, streamPrefix = stream1),
                  c2,t2,DAE.ATTR(flowPrefix = flow2, streamPrefix = stream2),io1,io2,info)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         b0 = Types.equivtypes(t1, t2);
         s0 = Util.if_(b0,"types equivalent;","types NOT equivalent");
         s1 = SCodeDump.flowStr(flow1) +& " " +& SCodeDump.streamStr(stream1);
@@ -4062,7 +4062,7 @@ algorithm
 
     case (cache,env,ih,_,pre,c1,_,t1,vt1,c2,_,t2,vt2,_,_,_,_,_,_)
       equation
-        Debug.fprintln("failtrace", "- InstSection.connectComponents failed\n");
+        Debug.fprintln(Flags.FAILTRACE, "- InstSection.connectComponents failed\n");
       then
         fail();
   end matchcontinue;
@@ -4263,7 +4263,7 @@ algorithm
     */
     case (DAE.DIM_UNKNOWN(), _)
       equation
-        true = OptManager.getOption("checkModel");
+        true = Flags.getConfigBool(Flags.CHECK_MODEL);
         ints = List.intRange(1); // try to make an array index of 1 when we don't know the dimension
         expl = List.map1(ints, makeAsubIndex, inArray);
       then
@@ -4351,7 +4351,7 @@ algorithm
         ();
     case _
       equation
-        Debug.fprintln("failtrace", "- InstSection.checkForNestedWhen failed.");
+        Debug.fprintln(Flags.FAILTRACE, "- InstSection.checkForNestedWhen failed.");
       then
         fail();
   end matchcontinue;
@@ -4394,7 +4394,7 @@ algorithm
     case SCode.EQ_NORETCALL(info = _) then ();
     case _
       equation
-        Debug.fprintln("failtrace", "- InstSection.checkForNestedWhenInEq failed.");
+        Debug.fprintln(Flags.FAILTRACE, "- InstSection.checkForNestedWhenInEq failed.");
       then
         fail();
   end matchcontinue;
@@ -4539,7 +4539,7 @@ algorithm
     // (v1,v2,..,vn) := match...
     case (cache,env,ih,pre,Absyn.TUPLE(expressions = expl),e_1,eprop,info,source,initial_,impl,unrollForLoops)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         true = MetaUtil.onlyCrefExpressions(expl);
         true = Types.isTuple(Types.getPropType(eprop));
         (cache, e_1 as DAE.MATCHEXPRESSION(matchType=_), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
@@ -4553,7 +4553,7 @@ algorithm
 
     case (cache,env,ih,pre,left,e_1,prop,info,source,initial_,impl,unrollForLoops)
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        true = Config.acceptMetaModelicaGrammar();
         ty = Types.getPropType(prop);
         (e_1,ty) = Types.convertTupleToMetaTuple(e_1,ty);
         (cache,pattern) = Patternm.elabPattern(cache,env,left,ty,info);

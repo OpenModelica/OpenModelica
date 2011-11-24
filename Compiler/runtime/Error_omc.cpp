@@ -87,4 +87,9 @@ extern int Error_getNumMessages()
   return errorMessageQueue.size();
 }
 
+void Error_setShowErrorMessages(int *show)
+{
+  showErrorMessages = show ? 1 : 0;
+}
+
 }

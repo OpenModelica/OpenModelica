@@ -58,7 +58,6 @@ extern "C" {
 
 #include "rtclock.h"
 #include "config.h"
-#include "rtopts.h"
 #include "errorext.h"
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
@@ -125,7 +124,7 @@ static modelica_integer last_ptr_index = -1;
 
 static inline modelica_integer alloc_ptr();
 static inline void free_ptr(modelica_integer index);
-static void free_library(modelica_ptr_t lib);
+static void free_library(modelica_ptr_t lib, modelica_integer printDebug);
 static void free_function(modelica_ptr_t func);
 
 static char *cc     = (char*) DEFAULT_CC;
@@ -731,7 +730,7 @@ static const char* SystemImpl__getUUIDStr()
 typedef void (*mmc_GC_function_set_gc_state)(mmc_GC_state_type*);
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-int SystemImpl__loadLibrary(const char *str)
+int SystemImpl__loadLibrary(const char *str, int printDebug)
 {
   char libname[MAXPATHLEN];
   char currentDirectory[MAXPATHLEN];
@@ -774,12 +773,12 @@ int SystemImpl__loadLibrary(const char *str)
   }
   lib = lookup_ptr(libIndex); // lib->cnt = 1
   lib->data.lib = h;
-  if (check_debug_flag("dynload")) { fprintf(stderr, "LIB LOAD name[%s] index[%d] handle[%lu].\n", libname, libIndex, h); fflush(stderr); }
+  if (printDebug) { fprintf(stderr, "LIB LOAD name[%s] index[%d] handle[%lu].\n", libname, libIndex, h); fflush(stderr); }
   return libIndex;
 }
 
 #else
-int SystemImpl__loadLibrary(const char *str)
+int SystemImpl__loadLibrary(const char *str, int printDebug)
 {
   char libname[MAXPATHLEN];
   modelica_ptr_t lib = NULL;
@@ -814,7 +813,7 @@ int SystemImpl__loadLibrary(const char *str)
   }
   lib = lookup_ptr(libIndex);
   lib->data.lib = h;
-  if (check_debug_flag("dynload"))
+  if (printDebug)
   {
     fprintf(stderr, "LIB LOAD [%s].\n", libname); fflush(stderr);
   }
@@ -903,7 +902,7 @@ extern int SystemImpl__lookupFunction(int libIndex, const char *str)
   return funcIndex;
 }
 
-static int SystemImpl__freeFunction(int funcIndex)
+static int SystemImpl__freeFunction(int funcIndex, int printDebug)
 {
   modelica_ptr_t func = NULL, lib = NULL;
 
@@ -921,7 +920,7 @@ static int SystemImpl__freeFunction(int funcIndex)
 
 
   if (lib->cnt <= 1) {
-    free_library(lib);
+    free_library(lib, printDebug);
     free_ptr(func->data.func.lib);
     // fprintf(stderr, "library count %u, after unloading!\n", lib->cnt); fflush(stderr);
   } else {
@@ -934,7 +933,7 @@ static int SystemImpl__freeFunction(int funcIndex)
   return 0;
 }
 
-static int SystemImpl__freeLibrary(int libIndex)
+static int SystemImpl__freeLibrary(int libIndex, int printDebug)
 {
   modelica_ptr_t lib = NULL;
 
@@ -943,7 +942,7 @@ static int SystemImpl__freeLibrary(int libIndex)
   if (lib == NULL) return 1;
 
   if (lib->cnt <= 1) {
-    free_library(lib);
+    free_library(lib, printDebug);
     free_ptr(libIndex);
     /* fprintf(stderr, "LIB UNLOAD index[%d]/count[%d]/handle[%ul].\n", libIndex, lib->cnt, lib->data.lib); fflush(stderr); */
   } else {
@@ -953,9 +952,9 @@ static int SystemImpl__freeLibrary(int libIndex)
   return 0;
 }
 
-static void free_library(modelica_ptr_t lib)
+static void free_library(modelica_ptr_t lib, modelica_integer printDebug)
 {
-  if (check_debug_flag("dynload")) { fprintf(stderr, "LIB UNLOAD handle[%lu].\n", (unsigned long) lib->data.lib); fflush(stderr); }
+  if (printDebug) { fprintf(stderr, "LIB UNLOAD handle[%lu].\n", (unsigned long) lib->data.lib); fflush(stderr); }
   if (FreeLibraryFromHandle(lib->data.lib))
   {
     fprintf(stderr,"System.freeLibrary error code: %lu while unloading dll.\n", GetLastError());
@@ -1441,41 +1440,6 @@ static int getPrio(const char *ver, size_t versionLen)
   return 1;
 }
 
-void set_lang_std(const char *lang_version, const char *msl_version, void *std) {
-  const char* toks[2] = {lang_version, msl_version};
-
-  if(language_standard != std) {
-    language_standard = std;
-
-    if(lang_version && msl_version) {
-      c_add_message(-1, ErrorType_scripting, ErrorLevel_notification, 
-        "Modelica language version set to %s due to loading of MSL %s.", toks, 2);
-    }
-  }
-}
-
-void set_lang_std_from_MSL(const char *version, size_t versionLen) {
-  if(!version) return;
-
-  if(versionLen >= 3 && version[1] == '.') {
-    if(version[0] == '1') {
-      set_lang_std(version, "1.x", RTOptsData__MODELICA_5f1_5fX);
-    } else if(version[0] == '2') {
-      set_lang_std(version, "2.x", RTOptsData__MODELICA_5f2_5fX);
-    } else if(version[0] == '3') {
-      if(version[2] == '0') {
-        set_lang_std(version, "3.0", RTOptsData__MODELICA_5f3_5f0);
-      } else if(version[2] == '1') {
-        set_lang_std(NULL, NULL, RTOptsData__MODELICA_5f3_5f1);
-      } else if(version[2] == '2') {
-        set_lang_std(NULL, NULL, RTOptsData__MODELICA_5f3_5f2);
-      } else if(version[2] == '3') {
-        set_lang_std(NULL, NULL, RTOptsData__MODELICA_5f3_5f3);
-      }
-    }
-  }
-}
-
 int SystemImpl__getLoadModelPath(const char *name, void *prios, void *mps, const char **outDir, char **outName, int *isDir)
 {
   size_t nlen = strlen(name);
@@ -1541,9 +1505,6 @@ int SystemImpl__getLoadModelPath(const char *name, void *prios, void *mps, const
             if (*outName) free(*outName);
             *outName = strdup(ent->d_name);
             *isDir = cIsDir;
-            if(0 == strcmp("Modelica", name)) {
-              set_lang_std_from_MSL(version, versionLen);
-            }
           }
           prio++;
         } /* prios loop */

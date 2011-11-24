@@ -47,7 +47,6 @@ extern "C" {
 
 #include "rtclock.h"
 #include "config.h"
-#include "rtopts.h"
 #include "errorext.h"
 
 /*

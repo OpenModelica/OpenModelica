@@ -102,8 +102,8 @@ public type Extends = SCodeEnv.Extends;
 
 protected import Debug;
 protected import Error;
+protected import Flags;
 protected import List;
-protected import RTOpts;
 protected import SCodeCheck;
 protected import Util;
 protected import SCodeDump;
@@ -369,7 +369,7 @@ algorithm
 
     else
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- SCodeFlattenRedeclare.addElementRedeclarationsToEnv failed for " +&
           SCode.elementName(inRedeclare) +& " in " +& 
           SCodeEnv.getEnvName(inEnv) +& "\n");
@@ -503,7 +503,7 @@ algorithm
 
     else
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- SCodeFlattenRedeclare.qualifyRedeclare failed on " +&
           SCodeDump.printElementStr(SCodeEnv.getRedeclarationElement(inRedeclare)) +& 
           " in " +& Absyn.pathString(SCodeEnv.getEnvPath(inEnv)));
@@ -582,7 +582,7 @@ algorithm
 
     else
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv failed for: ");
         Debug.traceln("redeclares: " +& 
           stringDelimitList(List.map(inRedeclares, SCodeEnv.printRedeclarationStr), "\n---------\n") +&  
@@ -699,7 +699,7 @@ algorithm
 
     else
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- SCodeEnv.replaceRedeclaredElementInEnv failed on " +&
           SCode.elementName(SCodeEnv.getRedeclarationElement(inRedeclare)) +& 
           " in " +& SCodeEnv.getEnvName(inEnv));
@@ -807,7 +807,7 @@ algorithm
 
     else
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- SCodeFlattenRedeclare.replaceElementInEnv3 failed for ");
         Debug.trace(Absyn.pathString(inPath));
         Debug.trace(" in ");

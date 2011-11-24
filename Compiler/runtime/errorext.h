@@ -91,6 +91,9 @@ char* ErrorImpl__rollBackAndPrint(const char* id); // Returns the error string t
         int endCol,
         bool isReadOnly,
         const char* filename);
+
+extern int showErrorMessages;
+
 #endif
 
 #endif

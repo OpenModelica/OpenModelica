@@ -46,10 +46,16 @@ encapsulated package Corba
   OpenModelica does not in itself include a complete CORBA implementaton.
   You need to download one, for example MICO from http://www.mico.org.
 
-  There exists some options that can be sent to configure concerinng
+  There exists some options that can be sent to configure concerning
   the usage of corba:
      --with-CORBA=/location/of/corba/library
      --without-CORBA"
+
+public function setSessionName
+  input String inSessionName;
+
+  external "C" Corba_setSessionName(inSessionName) annotation(Library = {"omcruntime", "OpenModelicaCorba"});
+end setSessionName;
 
 public function initialize
 

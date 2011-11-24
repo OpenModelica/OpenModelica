@@ -50,7 +50,6 @@ public import ClassInf;
 public import DAE;
 public import Env;
 public import HashTableStringToPath;
-public import RTOpts;
 public import SCode;
 public import Util;
 public import Types;
@@ -58,6 +57,7 @@ public import Types;
 protected import BaseHashTable;
 protected import Builtin;
 protected import ComponentReference;
+protected import Config;
 protected import Connect;
 protected import ConnectUtil;
 protected import ConnectionGraph;
@@ -66,6 +66,7 @@ protected import Debug;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
+protected import Flags;
 protected import Inst;
 protected import InstExtends;
 protected import InnerOuter;
@@ -205,7 +206,7 @@ algorithm
       equation
         env_2 = Env.openScope(env_1, encflag, SOME(id), SOME(Env.CLASS_SCOPE()));
         ci_state = ClassInf.start(r, Env.getEnvName(env_2));
-        // Debug.fprintln("instTrace", "LOOKUP TYPE ICD: " +& Env.printEnvPathStr(env_1) +& " path:" +& Absyn.pathString(path));
+        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " +& Env.printEnvPathStr(env_1) +& " path:" +& Absyn.pathString(path));
         (cache,env_3,_,_,_,_,_,types,_,_,_,_) =
         Inst.instClassIn(
           cache,env_2,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
@@ -230,7 +231,7 @@ algorithm
     // Classes that are external objects. Implicitly instantiate to get type
     case (cache,env_1,path,c)
       equation
-        // Debug.fprintln("instTrace", "LOOKUP TYPE ICD: " +& Env.printEnvPathStr(env_1) +& " path:" +& Absyn.pathString(path));        
+        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " +& Env.printEnvPathStr(env_1) +& " path:" +& Absyn.pathString(path));        
         true = Inst.classIsExternalObject(c);
         (cache,_::env_1,_,_,_,_,_,_,_,_) = Inst.instClass(
           cache,env_1,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
@@ -246,7 +247,7 @@ algorithm
     // up the type.
     case (cache,env_1,path,c as SCode.CLASS(name = id,restriction=restr))
       equation
-        // Debug.fprintln("instTrace", "LOOKUP TYPE ICD: " +& Env.printEnvPathStr(env_1) +& " path:" +& Absyn.pathString(path));        
+        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " +& Env.printEnvPathStr(env_1) +& " path:" +& Absyn.pathString(path));        
         true = SCode.isFunctionOrExtFunction(restr);
         (cache,env_2,_) =
         Inst.implicitFunctionTypeInstantiation(cache,env_1,InnerOuter.emptyInstHierarchy,c);
@@ -521,14 +522,14 @@ algorithm
       equation
         env = frame::env;
         (cache,c,env,prevFrames) = lookupClass2(cache,env,path,prevFrames,inState,msg);
-        // Debug.fprintln("instTrace", "LOOKUP CLASS QUALIFIED FRAME: " +& Env.printEnvPathStr(env) +& " path: " +& Absyn.pathString(path) +& " class: " +& SCodeDump.shortElementStr(c));
+        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP CLASS QUALIFIED FRAME: " +& Env.printEnvPathStr(env) +& " path: " +& Absyn.pathString(path) +& " class: " +& SCodeDump.shortElementStr(c));
       then (cache,c,env,prevFrames);
     
     case (cache,env,path,SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr),NONE(),_,inState,msg)
       equation 
         env = Env.openScope(env, encflag, SOME(id), Env.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, Env.getEnvName(env));
-        // Debug.fprintln("instTrace", "LOOKUP CLASS QUALIFIED PARTIALICD: " +& Env.printEnvPathStr(env) +& " path: " +& Absyn.pathString(path) +& " class: " +& SCodeDump.shortElementStr(c));
+        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP CLASS QUALIFIED PARTIALICD: " +& Env.printEnvPathStr(env) +& " path: " +& Absyn.pathString(path) +& " class: " +& SCodeDump.shortElementStr(c));
         (cache,env,_,_) =
         Inst.partialInstClassIn(
           cache,env,InnerOuter.emptyInstHierarchy,
@@ -823,7 +824,7 @@ algorithm
         (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache,{fr}, path, false);
         env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
-        // Debug.fprintln("instTrace", "LOOKUP MORE UNQUALIFIED IMPORTED ICD: " +& Env.printEnvPathStr(env) +& "." +& ident);
+        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP MORE UNQUALIFIED IMPORTED ICD: " +& Env.printEnvPathStr(env) +& "." +& ident);
         (cache,(f :: _),_,_) = Inst.partialInstClassIn(cache, env2,
           InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), ci_state,
           c, SCode.PUBLIC(), {}); (cache,_,_) = lookupClass(cache,{f},
@@ -886,7 +887,7 @@ algorithm
         (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1,prevFrames) = lookupClass2(cache,{fr},path,prevFrames,Util.makeStatefulBoolean(false),false);
         env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
-        // Debug.fprintln("instTrace", "LOOKUP UNQUALIFIED IMPORTED ICD: " +& Env.printEnvPathStr(env) +& "." +& ident);
+        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP UNQUALIFIED IMPORTED ICD: " +& Env.printEnvPathStr(env) +& "." +& ident);
         (cache,env2,_,cistate1) =
         Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {});
@@ -1022,7 +1023,7 @@ algorithm
     /*
     case (cache,env,cref)
       equation
-        true = RTOpts.debugFlag("lookup");
+        true = Flags.isSet(Flags.LOOKUP);
         Debug.traceln("lookupVar: " +& 
           ComponentReference.printComponentRefStr(cref) +& 
           " in env: " +& 
@@ -1049,7 +1050,7 @@ algorithm
     // fail if we couldn't find it
     case (_,env,cref) 
       equation
-        //Debug.fprintln("failtrace",  "- Lookup.lookupVar failed " +& ComponentReference.printComponentRefStr(cref) +& " in " +& Env.printEnvPathStr(env));
+        //Debug.fprintln(Flags.FAILTRACE,  "- Lookup.lookupVar failed " +& ComponentReference.printComponentRefStr(cref) +& " in " +& Env.printEnvPathStr(env));
       then fail();
   end matchcontinue;
 end lookupVar;
@@ -1075,7 +1076,7 @@ algorithm
         s1 = ComponentReference.printComponentRefStr(cref);
         s2 = Env.printEnvPathStr(env);
         Error.addMessage(Error.PACKAGE_VARIABLE_NOT_CONSTANT,{s1,s2});
-        Debug.fprintln("failtrace", "- Lookup.checkPackageVariableConstant failed: " +& s1 +& " in " +& s2);
+        Debug.fprintln(Flags.FAILTRACE, "- Lookup.checkPackageVariableConstant failed: " +& s1 +& " in " +& s2);
       then fail();
   end matchcontinue;
 end checkPackageVariableConstant;
@@ -1244,7 +1245,7 @@ algorithm
                 
         env3 = Env.openScope(env2, encflag, SOME(n), Env.restrictionToScopeType(r));
         ci_state = ClassInf.start(r, Env.getEnvName(env3));
-        // Debug.fprintln("instTrace", "LOOKUP VAR IN PACKAGES ICD: " +& Env.printEnvPathStr(env3) +& " var: " +& ComponentReference.printComponentRefStr(cref));
+        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP VAR IN PACKAGES ICD: " +& Env.printEnvPathStr(env3) +& " var: " +& ComponentReference.printComponentRefStr(cref));
         (cache,env5,_,_,_,_,_,_,_,_,_,_) =
         Inst.instClassIn(cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {},
@@ -1285,7 +1286,7 @@ algorithm
     case (cache,(env as (Env.FRAME(optName = sid,imports = items) :: _)),(cr as DAE.CREF_IDENT(ident = id,subscriptLst = sb)),prevFrames,inState)
       equation
         // no unqual import in MetaModelica!
-        //false = RTOpts.acceptMetaModelicaGrammar();
+        //false = Config.acceptMetaModelicaGrammar();
         (cache,p_env,attr,ty,bind,cnstForRange,unique,splicedExpData,componentEnv,name) = lookupUnqualifiedImportedVarInFrame(cache,items, env, id);
         reportSeveralNamesError(unique,id);
         Util.setStatefulBoolean(inState,true);
@@ -1302,7 +1303,7 @@ algorithm
 
     case (cache,env,cr,prevFrames,inState)
       equation
-        //true = RTOpts.debugFlag("failtrace");
+        //true = Flags.isSet(Flags.FAILTRACE);
         //Debug.traceln("- Lookup.lookupVarInPackages failed on exp:" +& ComponentReference.printComponentRefStr(cr) +& " in scope: " +& Env.printEnvPathStr(env));
       then 
         fail();
@@ -1320,7 +1321,7 @@ algorithm
   ocR := matchcontinue(incr)
     case(incr as DAE.CREF_IDENT(_,_,_))
       equation
-        false = RTOpts.acceptMetaModelicaGrammar();
+        false = Config.acceptMetaModelicaGrammar();
       then SOME(incr);
     case(_) then NONE();
   end matchcontinue;
@@ -1492,7 +1493,7 @@ algorithm
         dmod = Mod.elabUntypedMod(mod,env,Prefix.NOPRE());
         //(cache,dmod,_ /* Return fn's here */) = Mod.elabMod(cache,env,Prefix.NOPRE(),mod,true); - breaks things but is needed for other things... bleh
         // Debug.traceln("dmod: " +& Mod.printModStr(dmod));
-        // Debug.fprintln("instTrace", "LOOKUP AND INST ICD: " +& Env.printEnvPathStr(cenv) +& "." +& cn2);
+        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP AND INST ICD: " +& Env.printEnvPathStr(cenv) +& "." +& cn2);
         (cache,classEnv,_,_) =
         Inst.partialInstClassIn(cache, cenv_2, InnerOuter.emptyInstHierarchy,
           dmod, Prefix.NOPRE(), new_ci_state, c, SCode.PUBLIC(), {});
@@ -1501,7 +1502,7 @@ algorithm
     
     case(cache,env,path,mod,msg)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln( "- Lookup.lookupAndInstantiate failed " +&  Absyn.pathString(path) +& " with mod: " +& SCodeDump.printModStr(mod) +& " in scope " +& Env.printEnvPathStr(env));
      then 
        fail();
@@ -1605,8 +1606,8 @@ algorithm
     case (cache,_,_,_) then (cache,{});
     case (_,_,id,_)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "lookupFunctionsInEnv failed on: " +& Absyn.pathString(id));
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprintln(Flags.FAILTRACE, "lookupFunctionsInEnv failed on: " +& Absyn.pathString(id));
       then
         fail();
   end matchcontinue;
@@ -1685,7 +1686,7 @@ algorithm
         (cache,(c as SCode.CLASS(name=str,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache,f::fs, id, false);
         true = SCode.isFunctionOrExtFunction(restr);
         // get function dae from instantiation
-        // Debug.fprintln("instTrace", "LOOKUP FUNCTIONS IN ENV ID ICD: " +& Env.printEnvPathStr(env_1) +& "." +& str);
+        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN ENV ID ICD: " +& Env.printEnvPathStr(env_1) +& "." +& str);
         (cache,(env_2 as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes)::_)),_)
            = Inst.implicitFunctionTypeInstantiation(cache,env_1,InnerOuter.emptyInstHierarchy, c);
          
@@ -1700,7 +1701,7 @@ algorithm
         env2 = Env.openScope(env_1, encflag, SOME(str), Env.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
 
-        // Debug.fprintln("instTrace", "LOOKUP FUNCTIONS IN ENV QUAL ICD: " +& Env.printEnvPathStr(env2) +& "." +& str);
+        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN ENV QUAL ICD: " +& Env.printEnvPathStr(env2) +& "." +& str);
         (cache,env_2,_,cistate1) =
         Inst.partialInstClassIn(
           cache, env2, InnerOuter.emptyInstHierarchy,
@@ -1863,7 +1864,7 @@ algorithm
     case (cache,Env.CLASS((cdef as SCode.CLASS(restriction=restr)),cenv),env,id)
       equation
         true = SCode.isFunctionOrExtFunction(restr);
-        // Debug.fprintln("instTrace", "LOOKUP TYPE IN FRAME ICD: " +& Env.printEnvPathStr(env) +& " id:" +& id);
+        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP TYPE IN FRAME ICD: " +& Env.printEnvPathStr(env) +& " id:" +& id);
         (cache ,env_1,_) = Inst.implicitFunctionInstantiation(
           cache,cenv,InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), cdef, {});
@@ -1934,7 +1935,7 @@ algorithm
         Env.CLASS((cdef as SCode.CLASS(restriction=restr)),cenv) = Env.avlTreeGet(ht, id);
         true = SCode.isFunctionOrExtFunction(restr) "If found class that is function.";
         //function dae collected from instantiation
-        // Debug.fprintln("instTrace", "LOOKUP FUNCTIONS IN FRAME ICD: " +& Env.printEnvPathStr(env) +& "." +& id);
+        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN FRAME ICD: " +& Env.printEnvPathStr(env) +& "." +& id);
         (cache,env_1,_) =
         Inst.implicitFunctionTypeInstantiation(cache,cenv,InnerOuter.emptyInstHierarchy,cdef) ;
         
@@ -1947,7 +1948,7 @@ algorithm
         equation
           Env.CLASS(cdef,cenv) = Env.avlTreeGet(ht, id);
           true = Inst.classIsExternalObject(cdef);
-          // Debug.fprintln("instTrace", "LOOKUP FUNCTIONS IN FRAME ICD: " +& Env.printEnvPathStr(env) +& "." +& id);
+          // Debug.fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN FRAME ICD: " +& Env.printEnvPathStr(env) +& "." +& id);
           (cache,env_1,_,_,_,_,t,_,_,_) = 
           Inst.instClass(cache,cenv,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
             DAE.NOMOD(), Prefix.NOPRE(), cdef, {}, false, Inst.TOP_CALL(),
@@ -1973,7 +1974,7 @@ protected
 algorithm
   (outCache,_,cdef) := buildRecordConstructorClass(cache,env,cdef);
   name := SCode.className(cdef);
-  // Debug.fprintln("instTrace", "LOOKUP BUILD RECORD TY ICD: " +& Env.printEnvPathStr(env) +& "." +& name);
+  // Debug.fprintln(Flags.INST_TRACE", "LOOKUP BUILD RECORD TY ICD: " +& Env.printEnvPathStr(env) +& "." +& name);
   (outCache,outEnv,_) := Inst.implicitFunctionTypeInstantiation(
      outCache,env,InnerOuter.emptyInstHierarchy, cdef);
   (outCache,ftype,_) := lookupTypeInEnv(outCache,outEnv,Absyn.IDENT(name));
@@ -2010,7 +2011,7 @@ algorithm
         (cache,env,cl);
     case (cache,env,cl)
       equation
-        Debug.fprintln("failtrace","buildRecordConstructorClass failed");
+        Debug.fprintln(Flags.FAILTRACE,"buildRecordConstructorClass failed");
       then fail();
   end matchcontinue;
 end buildRecordConstructorClass;
@@ -2197,7 +2198,7 @@ algorithm
 
     case ((comp,cmod)::_,mods,_)
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Lookup.buildRecordConstructorElts failed " +& SCodeDump.printElementStr(comp) +& " with mod: " +& Mod.printModStr(cmod) +& " and: " +& Mod.printModStr(mods));
       then fail();
   end matchcontinue;
@@ -2450,8 +2451,8 @@ algorithm
         fail();*/
     case (cache,ht,id)
       equation
-        true = RTOpts.debugFlag("lookup");
-        false = RTOpts.acceptMetaModelicaGrammar(); // MetaModelica function references generate too much failtrace...
+        true = Flags.isSet(Flags.LOOKUP);
+        false = Config.acceptMetaModelicaGrammar(); // MetaModelica function references generate too much failtrace...
         Env.CLASS(SCode.CLASS(name = name, restriction = r), env) = Env.avlTreeGet(ht, id);
         name = id +& " = " +& Env.printEnvPathStr(env) +& "." +& name;
         Debug.traceln("- Lookup.lookupVar2 failed because we find a class instead of a variable: " +& name);
@@ -2557,12 +2558,12 @@ algorithm
     case(t as (DAE.T_NOTYPE(),_),_) then t;
     case (t,s)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- Lookup.checkSubscripts failed (tp: ");
-        Debug.fprint("failtrace", Types.printTypeStr(t));
-        Debug.fprint("failtrace", " subs:");
-        Debug.fprint("failtrace", stringDelimitList(List.map(s,ExpressionDump.printSubscriptStr),","));
-        Debug.fprint("failtrace", ")\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.fprint(Flags.FAILTRACE, "- Lookup.checkSubscripts failed (tp: ");
+        Debug.fprint(Flags.FAILTRACE, Types.printTypeStr(t));
+        Debug.fprint(Flags.FAILTRACE, " subs:");
+        Debug.fprint(Flags.FAILTRACE, stringDelimitList(List.map(s,ExpressionDump.printSubscriptStr),","));
+        Debug.fprint(Flags.FAILTRACE, ")\n");
       then
         fail();
   end matchcontinue;

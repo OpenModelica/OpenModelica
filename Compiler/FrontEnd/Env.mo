@@ -33,7 +33,7 @@ encapsulated package Env
 "
   file:        Env.mo
   package:     Env
-  description: Environmane management
+  description: Environment management
 
   RCS: $Id$
 
@@ -97,12 +97,11 @@ protected import Dump;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
+protected import Flags;
 protected import List;
 protected import Print;
 protected import Util;
 protected import Types;
-protected import OptManager;
-protected import RTOpts;
 protected import SCodeDump;
 protected import Mod;
 
@@ -210,7 +209,7 @@ public function emptyCache
 algorithm
   //print("EMPTYCACHE\n");
   arr := arrayCreate(1, ENVCACHE(CACHETREE("$global",emptyEnv,{})));
-  envCache := Util.if_(OptManager.getOption("envCache"),SOME(arr),NONE());
+  envCache := Util.if_(Flags.getConfigBool(Flags.ENV_CACHE),SOME(arr),NONE());
   instFuncs := arrayCreate(1, DAEUtil.emptyFuncTree);
   ht := (HashTable.emptyHashTableSized(BaseHashTable.lowBucketSize),{});
   cache := CACHE(envCache,NONE(),instFuncs,ht,Absyn.IDENT("##UNDEFINED##"));
@@ -504,7 +503,7 @@ algorithm
 
     case (env,e,classEnv)
       equation
-        // Debug.fprintln("instTrace", "Updating class: " +& valueStr(CLASS(e, classEnv)) +& "\nIn env/cenv:" +& printEnvPathStr(env) +& "/" +& printEnvPathStr(classEnv)); 
+        // Debug.fprintln(Flags.INST_TRACE, "Updating class: " +& valueStr(CLASS(e, classEnv)) +& "\nIn env/cenv:" +& printEnvPathStr(env) +& "/" +& printEnvPathStr(classEnv)); 
       then 
         fail();
 
@@ -660,8 +659,8 @@ algorithm
     case ((FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),i,env)
       equation
         (var as VAR(_,c,_,_)) = avlTreeGet(ht, n);
-        // Debug.fprintln("instTrace", "Updating variable: " +& valueStr(VAR(v,c,i,env)) +& "\n In current env:" +& printEnvPathStr(inEnv1));
-        // Debug.fprintln("instTrace", "Previous variable: " +& valueStr(var) +& "\nIn current env:" +& printEnvPathStr(inEnv1));
+        // Debug.fprintln(Flags.INST_TRACE, "Updating variable: " +& valueStr(VAR(v,c,i,env)) +& "\n In current env:" +& printEnvPathStr(inEnv1));
+        // Debug.fprintln(Flags.INST_TRACE, "Previous variable: " +& valueStr(var) +& "\nIn current env:" +& printEnvPathStr(inEnv1));
         (ht_1) = avlTreeAdd(ht, n, VAR(v,c,i,env));
       then
         (FRAME(sid,st,ht_1,httypes,imps,crs,encflag,defineUnits) :: fs);
@@ -1405,7 +1404,7 @@ algorithm
       equation
         // this should be placed in the global environment
         // how do we do that??
-        true = RTOpts.debugFlag("env");
+        true = Flags.isSet(Flags.ENV);
         Debug.traceln("<<<< Env.addCachedEnv - failed to add env to cache for: " +& printEnvPathStr(env) +& " [" +& id +& "]");
       then inCache;
 
@@ -1526,7 +1525,7 @@ algorithm
         // print(id);print(" already added\n");
         true = stringEq(id1, id2);
         // shouldn't we replace it?
-        // Debug.fprintln("env", ">>>> Env.cacheAdd - already in cache: " +& printEnvPathStr(env));
+        // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - already in cache: " +& printEnvPathStr(env));
       then tree;
 
     // simple names try next
@@ -1538,7 +1537,7 @@ algorithm
     // Simple names, not found
     case (Absyn.IDENT(id1),CACHETREE(globalID,globalEnv,{}),env)
       equation
-        // Debug.fprintln("env", ">>>> Env.cacheAdd - add to cache: " +& printEnvPathStr(env));
+        // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - add to cache: " +& printEnvPathStr(env));
       then CACHETREE(globalID,globalEnv,{CACHETREE(id1,env,{})});
 
     // Qualified names.
@@ -1579,7 +1578,7 @@ algorithm
     case (Absyn.IDENT(id1),CACHETREE(id2,env2,children2)::children,env)
       equation
         true = stringEq(id1, id2);
-        // Debug.fprintln("env", ">>>> Env.cacheAdd - already in cache: " +& printEnvPathStr(env));
+        // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - already in cache: " +& printEnvPathStr(env));
         //print("single name, found matching\n");
       then CACHETREE(id2,env2,children2)::children;
 
@@ -1594,7 +1593,7 @@ algorithm
     case (Absyn.QUALIFIED(id1,path),{},env)
       equation
         children = cacheAddEnv2(path,{},env);
-        // Debug.fprintln("env", ">>>> Env.cacheAdd - add to cache: " +& printEnvPathStr(env));
+        // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - add to cache: " +& printEnvPathStr(env));
         //print("qualified name no child found, create one.\n");
       then {CACHETREE(id1,emptyEnv,children)};
     
@@ -1602,7 +1601,7 @@ algorithm
     case (Absyn.IDENT(id1),{},env)
       equation
         // print("simple name no child found, create one.\n");
-        // Debug.fprintln("env", ">>>> Env.cacheAdd - add to cache: " +& printEnvPathStr(env));
+        // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - add to cache: " +& printEnvPathStr(env));
       then {CACHETREE(id1,env,{})};
     
     case (_,_,_) equation print("cacheAddEnv2 failed\n"); then fail();

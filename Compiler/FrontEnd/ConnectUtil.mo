@@ -49,6 +49,7 @@ encapsulated package ConnectUtil
 public import Absyn;
 public import SCode;
 public import ClassInf;
+public import Config;
 public import Connect;
 public import DAE;
 public import Env;
@@ -61,11 +62,10 @@ protected import DAEUtil;
 protected import Debug;
 protected import Error;
 protected import Expression;
+protected import Flags;
 protected import List;
 protected import Lookup;
 protected import PrefixUtil;
-protected import RTOpts;
-protected import RTOptsData;
 protected import System;
 protected import Types;
 protected import Util;
@@ -2125,7 +2125,7 @@ algorithm
     case (_, Connect.SET(elements = el), _, 
         Connect.CONNECTOR_ELEMENT(ty = ty as Connect.EQU()))
       equation
-        true = RTOpts.orderConnections();
+        true = Config.orderConnections();
         el = List.mergeSorted({inElement}, el, equSetElementLess);
       then
         arrayUpdate(inSets, inIndex, Connect.SET(ty, el));
@@ -2256,7 +2256,7 @@ algorithm
     case ((e1 as Connect.CONNECTOR_ELEMENT(name = x, source = x_src)) ::
           (e2 as Connect.CONNECTOR_ELEMENT(name = y, source = y_src)) :: rest_el)
       equation
-        e1 = Util.if_(RTOpts.orderConnections(), e1, e2);
+        e1 = Util.if_(Config.orderConnections(), e1, e2);
         DAE.DAE(eq) = generateEquEquations(e1 :: rest_el);
         src = DAEUtil.mergeSources(x_src, y_src);
         src = DAEUtil.addElementSourceConnectOpt(src, SOME((x, y)));
@@ -2265,7 +2265,7 @@ algorithm
 
     else
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         str = stringDelimitList(List.map(inElements, printElementStr), ", ");
         Debug.traceln("- ConnectUtil.generateEquEquations failed on {" +& str +& "}");
       then
@@ -2691,7 +2691,7 @@ algorithm
 
     else
       equation
-        true = RTOpts.debugFlag("failtrace");
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- ConnectUtil.evaluateInStream failed for " +&
           ComponentReference.crefStr(inStreamCref) +& "\n");
       then
@@ -2950,7 +2950,7 @@ algorithm
     case (_, _, _, _, _)
       equation
         true = intEq(inPotentialVars, inFlowVars) or
-          RTOptsData.languageStandardAtMost(RTOptsData.MODELICA_2_X());
+          Config.languageStandardAtMost(Config.MODELICA_2_X());
         true = Util.if_(intEq(inStreamVars, 0), true, intEq(inFlowVars, 1));
       then
         ();
@@ -3115,7 +3115,7 @@ algorithm
     // Anything we forgot?
     case t
       equation
-        Debug.fprintln("failtrace", "- Inst.sizeOfVariable failed on " +&
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.sizeOfVariable failed on " +&
           Types.printTypeStr(t));
       then
         fail();
