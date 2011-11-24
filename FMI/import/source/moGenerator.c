@@ -255,9 +255,9 @@ static int decompress(const char* fmuPath, const char* decompPath) {
 	char * cmd; /* needed to be free*/
 
 #ifdef USE_UNZIP
-	n = (strlen(fmuPath)+1) + (strlen(decompPath)+1) + 13;
+	n = (strlen(fmuPath)+1) + (strlen(decompPath)+1) + 20;
 	cmd = (char*) calloc(n, sizeof(char));
-	sprintf(cmd, "unzip -o %s -d %s", fmuPath, decompPath);
+	sprintf(cmd, "unzip -q -o %s -d %s", fmuPath, decompPath);
 	err = system(cmd);
 	if(err!=UNZIP_NO_ERROR){
 		switch(err){
@@ -1541,7 +1541,7 @@ int main(int argc, char *argv[]){
 	free((void*)decompPath);
 	free(list);
 	freeScalarVariableLst(list,nsv);
-	freeElement((void*)md);
+        freeElement((void*)md);
 	fclose(errLogFile);
 	fclose(logFile);
 	// end

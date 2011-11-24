@@ -792,9 +792,12 @@ void freeElement(void* element){
             freeList((void **)md->vendorAnnotations);
             freeList((void **)md->modelVariables);
             break;
-		default:
-			/* ERRORPRINT; fprintf(stderr," unknown AST node type of the Element in function: %s\n",__func__); */
-			exit(EXIT_FAILURE);
+	default:
+            /* ERRORPRINT; fprintf(stderr," unknown AST node type of the Element in function: %s\n",__func__); */
+            /* adrpo:
+             * do not exit, just return as we need fmiimport to exit with code 0!
+             * exit(EXIT_FAILURE); */
+	    return;
     }
     /* free the struct */
     free(e);
