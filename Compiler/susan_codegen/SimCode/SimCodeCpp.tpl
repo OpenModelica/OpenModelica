@@ -217,7 +217,10 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   let modelname = lastIdentOfPath(modelInfo.name)
    let &varDecls = buffer "" 
-  match eq
+   let &arrayInit = buffer ""
+   let constructorParams = ConstructorParamAlgloop(modelInfo)
+   let iniAlgloopParamas = InitAlgloopParams(modelInfo,arrayInit)
+match eq
 	case SES_NONLINEAR(__) then
 	
   <<
@@ -227,11 +230,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    
     
-    <%modelname%>Algloop<%index%>::<%modelname%>Algloop<%index%>() 
+    <%modelname%>Algloop<%index%>::<%modelname%>Algloop<%index%>(
+    															<%constructorParams%>
+    															 ) 
    :AlgLoopDefaultImplementation()
    ,_residuals(NULL)
-     <%simulationInitFile(simCode)%>
+   <%iniAlgloopParamas%>
     { 
+      
       <%initAlgloopDimension(eq,varDecls)%>
 	  
     }
@@ -253,8 +259,8 @@ template upateAlgloop( SimCode simCode,SimEqSystem eqn)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
+  let () = System.tmpTickReset(0)
   let modelname = lastIdentOfPath(modelInfo.name)
- 
   match eqn
      //case eq as SES_MIXED(__) then functionExtraResiduals(fill(eq.cont,1),simCode)
      case eq as SES_NONLINEAR(__) then
@@ -1120,22 +1126,34 @@ template init(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
+   let () = System.tmpTickReset(0)
+   let &varDecls = buffer "" /*BUFD*/
+   let initVariables = initvar(modelInfo,simCode)
+   let initFunctions = functionInitial(initialEquations,varDecls,simCode)
+   let initZeroCrossings = functionOnlyZeroCrossing(zeroCrossings,varDecls,simCode)
+   let initTimeEventFunctions = timeEventCondition(sampleConditions,varDecls,simCode)
+   let initEventHandling = eventHandlingInit(simCode)
+   let initBoundParameters = boundParameters(parameterEquations,varDecls,simCode)
+   let initALgloopSolvers = initAlgloopsolvers(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)
+   
   <<
    void <%lastIdentOfPath(modelInfo.name)%>::init(double ts,double te)
-   {  
-   <%initvar(modelInfo,simCode)%>
-   <%functionInitial(initialEquations,simCode)%>
-    <%functionOnlyZeroCrossing(zeroCrossings,simCode)%>
-    <%timeEventCondition(sampleConditions,simCode)%>
-    <%eventHandlingInit(simCode)%>
+   {
+    <%varDecls%>  
+    <%initVariables%>
+   <%initFunctions%>
+    <%initZeroCrossings%>
+    <%initTimeEventFunctions%>
+    <%initEventHandling%>
     _event_handling.init(this,<%helpvarlength(simCode)%>);
     saveAll(); 
     vector<unsigned int> var_ouputs_idx;
    _historyImpl->setOutputs(var_ouputs_idx);
    _historyImpl->clear();
-   <%initAlgloopsolvers(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>
+    <%initALgloopSolvers%>
     //initialize equations
-   _initial=true;
+   <%initBoundParameters%>
+    _initial=true;
    update(ALL);
   _initial=false;
     }
@@ -1155,7 +1173,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   void <%modelname%>Algloop<%index%>::init()
   {  
  		AlgLoopDefaultImplementation::init();
- 		<%initalgvars%>
  		<%initAlgloopEquation(eq,varDecls)%>
  		if(_residuals) 
 		{
@@ -1203,7 +1220,7 @@ case SES_NONLINEAR(__) then
    <%crefs |> name hasindex i0 =>
     let namestr = cref(name)
     <<
-     <%namestr%> = doubleUnknowns[<%i0%>];
+      doubleUnknowns[<%i0%>] = <%namestr%>;
      >>
   ;separator="\n"%>
    >>
@@ -1425,13 +1442,16 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   let modelname = lastIdentOfPath(modelInfo.name)
   let algvars = MemberVariableAlgloop(modelInfo)
+  let constructorParams = ConstructorParamAlgloop(modelInfo)
   match eq
 	case SES_NONLINEAR(__) then
   <<
   class <%modelname%>Algloop<%index%>: public IAlgLoop, public AlgLoopDefaultImplementation
   { 
   public: 
-      <%modelname%>Algloop<%index%>(); 
+      <%modelname%>Algloop<%index%>(
+      								 <%constructorParams%>
+      								); 
       ~<%modelname%>Algloop<%index%>();
       
        <%generateAlgloopMethodDeclarationCode(simCode)%>
@@ -1815,18 +1835,379 @@ case MODELINFO(vars=SIMVARS(__)) then
   >>
 end MemberVariable;
 
-
 template MemberVariableAlgloop(ModelInfo modelInfo)
- "Define membervariable in algloop file."
+ "Define membervariable in simulation file."
 ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
+  
   <<
   <%vars.algVars |> var =>
-    MemberVariableDefine("empty",var, "algebraics")
-  ;separator="\n"%>
-   >>
+    MemberVariableDefineReference2(var, "algebraics","")
+  ;separator=";\n"%>
+  <%if vars.algVars then ";" else " "%>  
+  <%vars.paramVars |> var =>
+    MemberVariableDefineReference2(var, "parameters","")
+  ;separator=";\n"%>
+  <%if vars.paramVars then ";" else " "%>
+ 
+   <%vars.aliasVars |> var =>
+    MemberVariableDefineReference2(var, "aliasVars","")
+  ;separator=";\n"%>
+  <%if vars.aliasVars then ";" else " "%>
+
+  <%vars.intAlgVars |> var =>
+    MemberVariableDefineReference("int", var, "intVariables.algebraics","")
+  ;separator=";\n"%>
+  <%if vars.intAlgVars then ";" else " "%>
+  
+  <%vars.intParamVars |> var =>
+    MemberVariableDefineReference("int", var, "intVariables.parameters","")
+  ;separator=";\n"%>
+  <%if vars.intParamVars then ";" else " "%>
+   
+   
+   <%vars.intAliasVars |> var =>
+   MemberVariableDefineReference("int", var, "intVariables.AliasVars","")
+  ;separator=";\n"%>
+  <%if vars.intAliasVars then ";" else " "%>
+  
+  <%vars.boolAlgVars |> var =>
+    MemberVariableDefineReference("bool",var, "boolVariables.algebraics","")
+  ;separator=";\n"%>
+  <%if vars.boolAlgVars then ";" else " "%>
+  
+  <%vars.boolParamVars |> var =>
+    MemberVariableDefineReference("bool",var, "boolVariables.parameters","")
+  ;separator=";\n"%>
+  <%if vars.boolParamVars then ";" else " "%>
+   
+   <%vars.boolAliasVars |> var =>
+     MemberVariableDefineReference("bool ",var, "boolVariables.AliasVars","")
+  ;separator=";\n"%>
+  <%if vars.boolAliasVars then ";" else " "%>
+  
+  
+     
+  <%vars.stringAlgVars |> var =>
+    MemberVariableDefineReference("string",var, "stringVariables.algebraics","")
+  ;separator=";\n"%>
+  <%if vars.stringAlgVars then ";" else " "%>
+  
+  <%vars.stringParamVars |> var =>
+    MemberVariableDefineReference("string",var, "stringVariables.parameters","")
+  ;separator=";\n"%>
+  <%if vars.stringParamVars then ";" else " "%>
+  
+  <%vars.stringAliasVars |> var =>
+    MemberVariableDefineReference("string",var, "stringVariables.AliasVars","")
+  ;separator=";\n"%>
+  <%if vars.stringAliasVars then ";" else " "%>
+  
+  
+   <%vars.constVars |> var =>
+    MemberVariableDefineReference2(var, "constvariables","")
+  ;separator=";\n"%>
+  <%if vars.constVars then ";" else " "%>
+   
+   <%vars.intConstVars |> var =>
+    MemberVariableDefineReference("const int", var, "intConstvariables","")
+  ;separator=";\n"%>
+  <%if vars.intConstVars then ";" else " "%>
+   
+   
+   <%vars.boolConstVars |> var =>
+    MemberVariableDefineReference("const bool", var, "boolConstvariables","")
+  ;separator=";\n"%>
+  <%if vars.boolConstVars then ";" else " "%>
+   
+   <%vars.stringConstVars |> var =>
+    MemberVariableDefineReference("const string",var, "stringConstvariables","")
+  ;separator=";\n"%>
+  <%if vars.stringConstVars then ";" else " "%>
+  
+  >>
 end MemberVariableAlgloop;
+
+
+
+template ConstructorParamAlgloop(ModelInfo modelInfo)
+ "Define membervariable in simulation file."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  
+    
+  <<
+
+  <%vars.algVars |> var =>
+    MemberVariableDefineReference2(var, "algebraics","_")
+  ;separator=", "%>
+ 
+   <%if vars.paramVars then "," else ""%> 
+  <%vars.paramVars |> var =>
+    MemberVariableDefineReference2(var, "parameters","_")
+  ;separator=", "%>
+  
+  <%if vars.aliasVars then "," else ""%> 
+   <%vars.aliasVars |> var =>
+    MemberVariableDefineReference2(var, "aliasVars","_")
+  ;separator=", "%>
+ 
+  <%if vars.intAlgVars then "," else ""%> 
+  <%vars.intAlgVars |> var =>
+    MemberVariableDefineReference("int", var, "intVariables.algebraics","_")
+  ;separator=", "%>
+  
+  <%if vars.intParamVars then "," else ""%>
+  <%vars.intParamVars |> var =>
+    MemberVariableDefineReference("int", var, "intVariables.parameters","_")
+  ;separator=", "%>
+  
+  <%if vars.intAliasVars then "," else ""%>
+   <%vars.intAliasVars |> var =>
+    MemberVariableDefineReference("int", var, "intVariables.AliasVars","_")
+  ;separator=", "%>
+  
+  <%if vars.boolAlgVars then "," else ""%>
+  <%vars.boolAlgVars |> var =>
+    MemberVariableDefineReference("bool",var, "boolVariables.algebraics","_")
+  ;separator=", "%>
+  
+  <%if vars.boolParamVars then "," else ""%>
+  <%vars.boolParamVars |> var =>
+    MemberVariableDefineReference("bool",var, "boolVariables.parameters","_")
+  ;separator=", "%>
+  
+  <%if vars.boolAliasVars then "," else ""%>
+   <%vars.boolAliasVars |> var =>
+    MemberVariableDefineReference("bool ",var, "boolVariables.AliasVars","_")
+  ;separator=", "%>
+  
+  <%if vars.stringAlgVars then "," else "" %>   
+  <%vars.stringAlgVars |> var =>
+    MemberVariableDefineReference("string",var, "stringVariables.algebraics","_")
+  ;separator=", "%>
+  
+  
+  <%if vars.stringParamVars then "," else ""%>  
+  <%vars.stringParamVars |> var =>
+    MemberVariableDefineReference("string",var, "stringVariables.parameters","_")
+  ;separator=", "%>
+  
+   <%if vars.stringAliasVars then "," else ""%>
+  <%vars.stringAliasVars |> var =>
+    MemberVariableDefineReference("string",var, "stringVariables.AliasVars","_")
+  ;separator=", "%>
+ 
+  <%if vars.constVars then "," else ""%>
+   <%vars.constVars |> var =>
+    MemberVariableDefineReference2(var, "constvariables","_")
+  ;separator=", "%>
+  
+  <%if vars.intConstVars then "," else ""%>
+   <%vars.intConstVars |> var =>
+    MemberVariableDefineReference("const int", var, "intConstvariables","_")
+  ;separator=", "%>
+  
+  <%if vars.boolConstVars then "," else "" %>
+   <%vars.boolConstVars |> var =>
+    MemberVariableDefineReference("const bool", var, "boolConstvariables","_")
+  ;separator=", "%>
+  
+  <%if vars.stringConstVars then "," else ""%>
+   <%vars.stringConstVars |> var =>
+    MemberVariableDefineReference("const string",var, "stringConstvariables","_")
+  ;separator=", "%>
+  >>
+end ConstructorParamAlgloop;
+
+template CallAlgloopParams(ModelInfo modelInfo)
+ "Define membervariable in simulation file."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  
+    
+  <<
+
+  <%vars.algVars |> var =>
+    CallAlgloopParam(var)
+  ;separator=", "%>
+ 
+   <%if vars.paramVars then "," else ""%> 
+  <%vars.paramVars |> var =>
+    CallAlgloopParam(var)
+  ;separator=", "%>
+  
+  <%if vars.aliasVars then "," else ""%> 
+   <%vars.aliasVars |> var =>
+    CallAlgloopParam(var)
+  ;separator=", "%>
+ 
+  <%if vars.intAlgVars then "," else ""%> 
+  <%vars.intAlgVars |> var =>
+    CallAlgloopParam(var)
+  ;separator=", "%>
+  
+  <%if vars.intParamVars then "," else ""%>
+  <%vars.intParamVars |> var =>
+    CallAlgloopParam(var)
+  ;separator=", "%>
+  
+  <%if vars.intAliasVars then "," else ""%>
+   <%vars.intAliasVars |> var =>
+    CallAlgloopParam( var)
+  ;separator=", "%>
+  
+  <%if vars.boolAlgVars then "," else ""%>
+  <%vars.boolAlgVars |> var =>
+    CallAlgloopParam(var)
+  ;separator=", "%>
+  
+  <%if vars.boolParamVars then "," else ""%>
+  <%vars.boolParamVars |> var =>
+    CallAlgloopParam(var)
+  ;separator=", "%>
+  
+  <%if vars.boolAliasVars then "," else ""%>
+   <%vars.boolAliasVars |> var =>
+    CallAlgloopParam(var)
+  ;separator=", "%>
+  
+  <%if vars.stringAlgVars then "," else "" %>   
+  <%vars.stringAlgVars |> var =>
+    CallAlgloopParam(var)
+  ;separator=", "%>
+  
+  
+  <%if vars.stringParamVars then "," else ""%>  
+  <%vars.stringParamVars |> var =>
+    CallAlgloopParam(var)
+  ;separator=", "%>
+  
+   <%if vars.stringAliasVars then "," else ""%>
+  <%vars.stringAliasVars |> var =>
+    CallAlgloopParam(var)
+  ;separator=", "%>
+ 
+  <%if vars.constVars then "," else ""%>
+   <%vars.constVars |> var =>
+    CallAlgloopParam(var)
+  ;separator=", "%>
+  
+  <%if vars.intConstVars then "," else ""%>
+   <%vars.intConstVars |> var =>
+    CallAlgloopParam(var)
+  ;separator=", "%>
+  
+  <%if vars.boolConstVars then "," else "" %>
+   <%vars.boolConstVars |> var =>
+    CallAlgloopParam(var)
+  ;separator=", "%>
+  
+  <%if vars.stringConstVars then "," else ""%>
+   <%vars.stringConstVars |> var =>
+    CallAlgloopParam(var)
+  ;separator=", "%>
+  >>
+end CallAlgloopParams;
+
+
+
+template InitAlgloopParams(ModelInfo modelInfo,Text& arrayInit)
+ "Define membervariable in simulation file."
+::=
+match modelInfo
+case MODELINFO(vars=SIMVARS(__)) then
+  
+    
+  <<
+  <%if vars.algVars then "," else ""%>
+  <%vars.algVars |> var =>
+    InitAlgloopParam(var, "algebraics",arrayInit)
+  ;separator="\n,"%>
+
+  <%if vars.paramVars then "," else ""%>
+  <%vars.paramVars |> var =>
+    InitAlgloopParam(var, "parameters",arrayInit)
+  ;separator="\n,"%>
+
+  <%if vars.aliasVars then "," else ""%>
+   <%vars.aliasVars |> var =>
+    InitAlgloopParam(var, "aliasVars",arrayInit)
+  ;separator="\n,"%>
+  
+  <%if vars.intAlgVars then "," else ""%>
+  <%vars.intAlgVars |> var =>
+    InitAlgloopParam( var, "intVariables.algebraics",arrayInit)
+  ;separator="\n,"%>
+
+  <%if vars.intParamVars then "," else ""%>
+  <%vars.intParamVars |> var =>
+    InitAlgloopParam( var, "intVariables.parameters",arrayInit)
+  ;separator="\n,"%>
+
+  <%if vars.intAliasVars then "," else ""%>	
+   <%vars.intAliasVars |> var =>
+    InitAlgloopParam( var, "intVariables.AliasVars",arrayInit)
+  ;separator="\n,"%>
+
+  <%if vars.boolAlgVars then "," else ""%>
+  <%vars.boolAlgVars |> var =>
+    InitAlgloopParam(var, "boolVariables.algebraics",arrayInit)
+  ;separator="\n,"%>
+
+  <%if vars.boolParamVars then "," else ""%>
+  <%vars.boolParamVars |> var =>
+    InitAlgloopParam(var, "boolVariables.parameters",arrayInit)
+  ;separator="\n,"%>
+
+   <%if vars.boolAliasVars then "," else ""%>
+   <%vars.boolAliasVars |> var =>
+    InitAlgloopParam(var, "boolVariables.AliasVars",arrayInit)
+  ;separator="\n,"%>
+  
+  <%if vars.stringAlgVars then "," else ""%>
+  <%vars.stringAlgVars |> var =>
+    InitAlgloopParam(var, "stringVariables.algebraics",arrayInit)
+  ;separator="\n,"%>
+
+  <%if vars.stringParamVars then "," else "" %>
+  <%vars.stringParamVars |> var =>
+    InitAlgloopParam(var, "stringVariables.parameters",arrayInit)
+  ;separator="\n,"%>
+ 
+  <%if vars.stringAliasVars then "," else "" %>
+  <%vars.stringAliasVars |> var =>
+    InitAlgloopParam(var, "stringVariables.AliasVars",arrayInit)
+  ;separator="\n,"%>
+
+  <%if vars.constVars then "," else ""%>
+   <%vars.constVars |> var =>
+    InitAlgloopParam(var, "constvariables",arrayInit)
+  ;separator="\n,"%>
+
+  <%if vars.intConstVars then "," else ""%>
+   <%vars.intConstVars |> var =>
+    InitAlgloopParam( var, "intConstvariables",arrayInit)
+  ;separator="\n,"%>
+
+   <%if vars.boolConstVars  then "," else ""%>
+   <%vars.boolConstVars |> var =>
+    InitAlgloopParam( var, "boolConstvariables",arrayInit)
+  ;separator="\n,"%>
+
+  <%if vars.stringConstVars then "," else ""%>
+   <%vars.stringConstVars |> var =>
+    InitAlgloopParam(var, "stringConstvariables",arrayInit)
+  ;separator="\n,"%>
+  >>
+end InitAlgloopParams;
+
+
+
+
 
 
 template MemberVariableDefine(String type,SimVar simVar, String arrayName)
@@ -1846,6 +2227,26 @@ match simVar
        >>
    
 end MemberVariableDefine;
+
+template MemberVariableDefineReference(String type,SimVar simVar, String arrayName,String pre)
+::=
+match simVar
+  	case SIMVAR(numArrayElement={}) then
+      <<
+       <%type%>& <%pre%><%cref(name)%>
+       >>
+    case v as SIMVAR(name=CREF_IDENT(subscriptLst = sub),arrayCref=SOME(_),numArrayElement=num) then
+      <<
+       multi_array<<%variableType(type_)%>,<%listLength(sub)%>>& <%pre%><%arraycref(name)%>
+       >>
+     case v as SIMVAR(name=CREF_QUAL(componentRef=CREF_IDENT(subscriptLst = sub)),arrayCref=SOME(_),numArrayElement=num) then
+      <<
+       multi_array<<%variableType(type_)%>,<%listLength(sub)%>>& <%pre%><%arraycref(name)%>
+       >>
+   
+end MemberVariableDefineReference;
+
+
 template MemberVariableDefine2(SimVar simVar, String arrayName)
 ::=
 match simVar
@@ -1863,6 +2264,59 @@ match simVar
        >>
    
 end MemberVariableDefine2;
+
+
+template InitAlgloopParam(SimVar simVar, String arrayName,Text& arrayInit)
+::=
+match simVar
+  	case SIMVAR(numArrayElement={}) then
+      <<
+       <%cref(name)%>(_<%cref(name)%>)
+       >>
+    case v as SIMVAR(name=CREF_IDENT(subscriptLst = sub),arrayCref=SOME(_),numArrayElement=num) then
+      //let &arrayInit+= ',<%arraycref(name)%>=_<%arraycref(name)%>'
+      '<%arraycref(name)%>(_<%arraycref(name)%>)'
+     case v as SIMVAR(name=CREF_QUAL(componentRef=CREF_IDENT(subscriptLst = sub)),arrayCref=SOME(_),numArrayElement=num) then
+      //let &arrayInit+= ' ,<%arraycref(name)%>= _<%arraycref(name)%>'
+     ' <%arraycref(name)%>( _<%arraycref(name)%>)'
+   
+end InitAlgloopParam;
+
+template CallAlgloopParam(SimVar simVar)
+::=
+match simVar
+  	case SIMVAR(numArrayElement={}) then
+      <<
+       <%cref(name)%>
+       >>
+    case v as SIMVAR(name=CREF_IDENT(subscriptLst = sub),arrayCref=SOME(_),numArrayElement=num) then
+      //let &arrayInit+= ',<%arraycref(name)%>=_<%arraycref(name)%>'
+      '<%arraycref(name)%>'
+     case v as SIMVAR(name=CREF_QUAL(componentRef=CREF_IDENT(subscriptLst = sub)),arrayCref=SOME(_),numArrayElement=num) then
+      //let &arrayInit+= ' ,<%arraycref(name)%>= _<%arraycref(name)%>'
+     ' <%arraycref(name)%>'
+   
+end CallAlgloopParam;
+
+
+
+template MemberVariableDefineReference2(SimVar simVar, String arrayName,String pre)
+::=
+match simVar
+  	case SIMVAR(numArrayElement={}) then
+      <<
+        <%variableType(type_)%>& <%pre%><%cref(name)%>
+       >>
+    case v as SIMVAR(name=CREF_IDENT(subscriptLst = sub),arrayCref=SOME(_),numArrayElement=num) then
+      <<
+       multi_array<<%variableType(type_)%>,<%listLength(sub)%>>& <%pre%><%arraycref(name)%>
+       >>
+     case v as SIMVAR(name=CREF_QUAL(componentRef=CREF_IDENT(subscriptLst = sub)),arrayCref=SOME(_),numArrayElement=num) then
+      <<
+       multi_array<<%variableType(type_)%>,<%listLength(sub)%>>& <%pre%><%arraycref(name)%>
+       >>
+   
+end MemberVariableDefineReference2;
 
 
 template arrayConstruct(ModelInfo modelInfo)
@@ -2283,6 +2737,24 @@ case MODELINFO(vars=SIMVARS(__)) then
   >>
 end initAlgloopvars;
 
+template boundParameters(list<SimEqSystem> parameterEquations,Text &varDecls,SimCode simCode)
+ "Generates function in simulation file."
+::=
+  
+  let &tmp = buffer ""
+  let body = (parameterEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
+      equation_(eq, contextOther, &varDecls /*BUFD*/, simCode)
+    ;separator="\n")
+  let divbody = (parameterEquations |> eq as SES_ALGORITHM(__) =>
+      equation_(eq, contextOther, &varDecls /*BUFD*/, simCode)
+    ;separator="\n")    
+  <<
+    
+    <%body%>
+    <%divbody%>
+   >>
+end boundParameters;
+
 template initValst(list<SimVar> varsLst, SimCode simCode) ::=
   varsLst |> sv as SIMVAR(__) =>
 	match initialValue 
@@ -2527,16 +2999,16 @@ template crefFunctionName(ComponentRef cr)
     '<%System.stringReplace(unquoteIdentifier(ident), "_", "__")%>_<%crefFunctionName(componentRef)%>'
 end crefFunctionName;
 
-template functionInitial(list<SimEqSystem> initialEquations,SimCode simCode)
+template functionInitial(list<SimEqSystem> initialEquations,Text &varDecls,SimCode simCode)
 
 ::=
-  let &preExp = buffer "" /*BUFD*/
- 
+  
+
   let eqPart = (initialEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(eq, contextOther, &preExp,simCode)
+      equation_(eq, contextOther, &varDecls,simCode)
     ;separator="\n")
   <<
-    <%preExp%>
+    
     <%eqPart%>
   >>
 end functionInitial;
@@ -2592,7 +3064,10 @@ template generateAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls
   case SIMCODE(modelInfo = MODELINFO(__)) then    
   <<
   _algLoopSolverFactory = boost::shared_ptr<IAlgLoopSolverFactory>(iter->second.create());
-  _algLoop<%num%> =  boost::shared_ptr<<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>>(new <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>);
+  _algLoop<%num%> =  boost::shared_ptr<<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>>(new <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>(
+  																																				<%CallAlgloopParams(modelInfo)%>
+  																																				)
+  																																);
   _algLoopSolver<%num%> = boost::shared_ptr<IAlgLoopSolver>(_algLoopSolverFactory->createAlgLoopSolver(_algLoop<%num%>.get()));
    >>
   else
@@ -3212,11 +3687,33 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
      '_condition<%eIndex%>'
   case CALL(path=IDENT(name="initial") ) then
       'initial()'
+   
+   case CALL(path=IDENT(name="DIVISION"),
+            expLst={e1, e2}) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
+    let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
+     
+    'division(<%var1%>,<%var2%>,"<%var1%>/<%var2%> because <%var2%>  == 0")'      
+  
   case CALL(path=IDENT(name="DIVISION"),
             expLst={e1, e2, DAE.SCONST(string=string)}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
-    '(<%var1%>/<%var2%>)'
+     let var3 = Util.escapeModelicaStringToCString(string)
+    'division(<%var1%>,<%var2%>,"<%var3%>")'
+   
+   case CALL(path=IDENT(name="sign"),
+            expLst={e1}) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
+     'sgn(<%var1%>)'
+   case CALL(path=IDENT(name="DIVISION"))
+            then
+    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
+   // let typeStr = expTypeShort(attr.ty )
+   let typeStr ="double"
+    let retVar = tempDecl(typeStr, &varDecls /*BUFD*/)
+    let &preExp += '<%retVar%> = division(<%argStr%>,"division by zero");<%\n%>'
+    '<%retVar%>'              
   
   case CALL(path=IDENT(name="DIVISION_ARRAY_SCALAR"),
             expLst={e1, e2, DAE.SCONST(string=string)},attr=attr as CALL_ATTR(__)) then
@@ -3275,17 +3772,11 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   
   case CALL(path=IDENT(name="sqrt"),
             expLst={e1},attr=attr as CALL_ATTR(__)) then
-    //relation = DAE.LBINARY(e1,DAE.GREATEREQ(ET_REAL()),DAE.RCONST(0))
-    //string = DAE.SCONST('Model error: Argument of sqrt should  >= 0')
-    //let retPre = assertCommon(relation,s, context, &varDecls)
-    //let retPre = assertCommon(createAssertforSqrt(e1),createDAEString("Model error: Argument of sqrt should be >= 0"), context, &varDecls, dummyInfo,simCode)
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
-    let funName = '<%underscorePath(path)%>'
-    let retType = '<%funName%>_rettype'
-    //let &preExp += '<%retPre%>'
-    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
-    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
+    let typeStr = expTypeShort(attr.ty )
+    let retVar = tempDecl(typeStr, &varDecls /*BUFD*/)
+    let &preExp += '<%retVar%> = sqrt(<%argStr%>);<%\n%>'
+    '<%retVar%>' 
   
   case CALL(path=IDENT(name="sin"),
             expLst={e1},attr=attr as CALL_ATTR(__)) then
@@ -4386,13 +4877,13 @@ template expTypeArray1(DAE.ExpType ty, Integer dims) ::=
 end expTypeArray1;
 
 
-template functionOnlyZeroCrossing(list<ZeroCrossing> zeroCrossings,SimCode simCode)
+template functionOnlyZeroCrossing(list<ZeroCrossing> zeroCrossings,Text& varDecls,SimCode simCode)
   "Generates function in simulation file."
 ::=
-  let &varDecls = buffer "" /*BUFD*/
+  
   let zeroCrossingsCode = zeroCrossingsTpl2(zeroCrossings, &varDecls /*BUFD*/, simCode)
   <<
-    <%varDecls%>
+    
     <%zeroCrossingsCode%> 
   >>
 end functionOnlyZeroCrossing;
@@ -4425,12 +4916,12 @@ template zeroCrossingTpl2(Integer index1, Exp relation, Text &varDecls /*BUFP*/,
 end zeroCrossingTpl2;
 
 
-template timeEventCondition(list<SampleCondition> sampleConditions,SimCode simCode)
+template timeEventCondition(list<SampleCondition> sampleConditions,Text &varDecls, SimCode simCode)
 ::=
-  let &varDecls = buffer "" /*BUFD*/
+  
   let timeEventConditionCode = timeEventcondition(sampleConditions, &varDecls /*BUFD*/, simCode)
   <<
-    <%varDecls%>
+  
     <%timeEventConditionCode%>
   >>
 end timeEventCondition;

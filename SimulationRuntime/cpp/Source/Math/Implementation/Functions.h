@@ -24,6 +24,14 @@ inline static int sgn (const double &c)
 	return (c < 0) ? -1 : ((c == 0) ? 0 : 1);
 }
 
+/// Definition of Signum function
+inline static double division (const double &a,const double &b,string text)
+{
+	return (b != 0) ?  a/b : throw std::invalid_argument(text);
+	
+}
+
+
 /// Provides the maximum Norm 
 inline static double maxNorm(const int& length, const double* vector)
 {

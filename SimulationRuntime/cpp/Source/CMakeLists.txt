@@ -42,6 +42,8 @@ add_subdirectory (SimManager)
 add_subdirectory (System/Implementation)
 add_subdirectory (System/Modelica)
 add_subdirectory (System/Newton/Implementation)
+add_subdirectory (ModelicaExternalC)
+
 #include_directories ("${PROJECT_SOURCE_DIR}/System/Modelica/Implementation")
 
 GET_TARGET_PROPERTY(libNewton Newton LOCATION)
