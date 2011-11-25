@@ -726,7 +726,7 @@ void OMCProxy::loadStandardLibrary()
     double version = versionStr.toDouble();
 
     if (version >= 3.0 && version < 4.0) {
-        deleteClass("Modelica.Fluid");
+        /* adrpo: DO NOT DELETE Modeilca.Fluid anymore! deleteClass("Modelica.Fluid"); */
     } else if (!versionLst.empty()) {
         if (version < 2) sendCommand("setAnnotationVersion(\"1.x\")");
         else if (version < 3) sendCommand("setAnnotationVersion(\"2.x\")");
