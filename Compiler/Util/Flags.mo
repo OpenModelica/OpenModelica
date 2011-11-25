@@ -893,7 +893,7 @@ algorithm
     // Special case for +d, set the given debug flags.
     case ("d", _, FLAGS(debugFlags = debug_flags))
       equation
-        List.map1_0(inValues, enableDebugFlag, debug_flags);
+        List.map1_0(inValues, setDebugFlag, debug_flags);
       then
         ();
         
@@ -917,22 +917,35 @@ algorithm
   end match;
 end parseFlag2;
 
-protected function enableDebugFlag
-  "Enables a debug flag given as a string."
+protected function setDebugFlag
+  "Enables a debug flag given as a string, or disables it if it's prefixed with -."
   input String inFlag;
   input array<Boolean> inFlags;
+protected
+  Boolean negated;
+  String flag_str;
 algorithm
-  _ := matchcontinue(inFlag, inFlags)
+  negated := stringEq(stringGetStringChar(inFlag, 1), "-");
+  flag_str := Debug.bcallret1(negated, Util.stringRest, inFlag, inFlag);
+  setDebugFlag2(flag_str, not negated, inFlags);
+end setDebugFlag;
+
+protected function setDebugFlag2
+  input String inFlag;
+  input Boolean inValue;
+  input array<Boolean> inFlags;
+algorithm
+  _ := matchcontinue(inFlag, inValue, inFlags)
     local
       DebugFlag flag;
 
-    case (_, _)
+    case (_, _, _)
       equation
         flag = List.getMemberOnTrue(inFlag, allDebugFlags, matchDebugFlag);
-        (_, _) = updateDebugFlagArray(inFlags, true, flag);
+        (_, _) = updateDebugFlagArray(inFlags, inValue, flag);
       then
         ();
-
+         
     else
       equation
         Error.addMessage(Error.UNKNOWN_DEBUG_FLAG, {inFlag});
@@ -940,7 +953,7 @@ algorithm
         fail();
 
   end matchcontinue;      
-end enableDebugFlag;
+end setDebugFlag2;
 
 protected function matchDebugFlag
   "Returns true if the given flag has the given name, otherwise false."
@@ -1306,8 +1319,9 @@ algorithm
 
     case {"debug"}
       equation
-        print("The debug flag takes a comma-separated list of flags which are by the compiler for\n");
-        print("debugging. The available flags are:\n\n");
+        print("The debug flag takes a comma-separated list of flags which are used by the\n");
+        print("compiler for debugging. Flags prefixed with - will be disabled.\n");
+        print("The available flags are:\n\n");
         debug_flags = List.map(allDebugFlags, printDebugFlag);
         str = stringAppendList(debug_flags);
         print(str);

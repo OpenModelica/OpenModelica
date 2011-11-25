@@ -1346,7 +1346,6 @@ algorithm
     case (cache,env,"setCommandLineOptions",{Values.STRING(str)},st,msg)
       equation
         args = System.strtok(str, " ");
-        Flags.clearDebugFlags();
         _ = Flags.readArgs(args);
       then
         (Env.emptyCache(),Values.BOOL(true),st);

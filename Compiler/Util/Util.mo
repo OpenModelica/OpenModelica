@@ -2835,4 +2835,15 @@ algorithm
   end matchcontinue;
 end stringWrap2;
 
+public function stringRest
+  "Returns all but the first character of a string."
+  input String inString;
+  output String outRest;
+protected
+  Integer len;
+algorithm
+  len := stringLength(inString);
+  outRest := System.substring(inString, 1, len);
+end stringRest;
+
 end Util;
