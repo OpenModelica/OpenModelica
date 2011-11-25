@@ -190,12 +190,9 @@ algorithm
     case (DAE.DIV_ARR(ty = _)) then " / ";
     case (DAE.POW_ARR(ty = _)) then " ^ ";
     case (DAE.POW_ARR2(ty = _)) then " ^ ";
-    case (DAE.MUL_SCALAR_ARRAY(ty = _)) then " * ";
     case (DAE.MUL_ARRAY_SCALAR(ty = _)) then " * ";
-    case (DAE.ADD_SCALAR_ARRAY(ty = _)) then " + ";
     case (DAE.ADD_ARRAY_SCALAR(ty = _)) then " + ";
     case (DAE.SUB_SCALAR_ARRAY(ty = _)) then " - ";
-    case (DAE.SUB_ARRAY_SCALAR(ty = _)) then " - ";
     case (DAE.POW_SCALAR_ARRAY(ty = _)) then " ^ ";
     case (DAE.POW_ARRAY_SCALAR(ty = _)) then " ^ ";
     case (DAE.MUL_SCALAR_PRODUCT(ty = _)) then " * ";
@@ -224,12 +221,9 @@ algorithm
     case (DAE.DIV_ARR(ty = _)) then " /ARR ";
     case (DAE.POW_ARR(ty = _)) then " ^ARR ";
     case (DAE.POW_ARR2(ty = _)) then " ^ARR2 ";
-    case (DAE.MUL_SCALAR_ARRAY(ty = _)) then " S*ARR ";
     case (DAE.MUL_ARRAY_SCALAR(ty = _)) then " ARR*S ";
-    case (DAE.ADD_SCALAR_ARRAY(ty = _)) then " S+ARR ";
     case (DAE.ADD_ARRAY_SCALAR(ty = _)) then " ARR+S ";
     case (DAE.SUB_SCALAR_ARRAY(ty = _)) then " - ";
-    case (DAE.SUB_ARRAY_SCALAR(ty = _)) then " ARR-S ";
     case (DAE.POW_SCALAR_ARRAY(ty = _)) then " S^ARR ";
     case (DAE.POW_ARRAY_SCALAR(ty = _)) then " ARR^S ";
     case (DAE.MUL_SCALAR_PRODUCT(ty = _)) then " Dot ";
@@ -295,16 +289,9 @@ algorithm
     case (DAE.DIV_ARR(ty = _)) then " / ";
     case (DAE.POW_ARR(ty = _)) then " ^ ";
     case (DAE.POW_ARR2(ty = _)) then " ^ ";
-    case (DAE.MUL_SCALAR_ARRAY(ty = t))
-      equation
-        ts = typeString(t);
-        s = stringAppendList({" *<", ts, "> "});
-      then s;
     case (DAE.MUL_ARRAY_SCALAR(ty = _)) then " *<MUL_ARRAY_SCALAR> ";
-    case (DAE.ADD_SCALAR_ARRAY(ty = _)) then " + ";
     case (DAE.ADD_ARRAY_SCALAR(ty = _)) then " + ";
     case (DAE.SUB_SCALAR_ARRAY(ty = _)) then " - ";
-    case (DAE.SUB_ARRAY_SCALAR(ty = _)) then " - ";
     case (DAE.POW_SCALAR_ARRAY(ty = _)) then " ^ ";
     case (DAE.POW_ARRAY_SCALAR(ty = _)) then " ^ ";
     case (DAE.MUL_SCALAR_PRODUCT(ty = _)) then " * ";
@@ -1076,12 +1063,9 @@ algorithm
     case (DAE.BINARY(operator = DAE.DIV_ARRAY_SCALAR(_))) then 2;
     case (DAE.BINARY(operator = DAE.MUL(_))) then 3;
     case (DAE.BINARY(operator = DAE.MUL_ARR(_))) then 3;
-    case (DAE.BINARY(operator = DAE.MUL_SCALAR_ARRAY(_))) then 3;
     case (DAE.BINARY(operator = DAE.MUL_ARRAY_SCALAR(_))) then 3;
-    case (DAE.BINARY(operator = DAE.ADD_SCALAR_ARRAY(_))) then 5;
     case (DAE.BINARY(operator = DAE.ADD_ARRAY_SCALAR(_))) then 5;
     case (DAE.BINARY(operator = DAE.SUB_SCALAR_ARRAY(_))) then 5;
-    case (DAE.BINARY(operator = DAE.SUB_ARRAY_SCALAR(_))) then 5;
     case (DAE.BINARY(operator = DAE.MUL_SCALAR_PRODUCT(_))) then 3;
     case (DAE.BINARY(operator = DAE.MUL_MATRIX_PRODUCT(_))) then 3;
     case (DAE.UNARY(operator = DAE.UPLUS(_))) then 6;
@@ -2283,12 +2267,9 @@ algorithm
     case (DAE.POW_ARR(ty = _)) then 38;
     case (DAE.POW_ARR2(ty = _)) then 38;
     case (DAE.MUL(ty = _)) then 35;
-    case (DAE.MUL_SCALAR_ARRAY(ty = _)) then 35;
     case (DAE.MUL_ARRAY_SCALAR(ty = _)) then 35;
-    case (DAE.ADD_SCALAR_ARRAY(ty = _)) then 32;
     case (DAE.ADD_ARRAY_SCALAR(ty = _)) then 32;
     case (DAE.SUB_SCALAR_ARRAY(ty = _)) then 33;
-    case (DAE.SUB_ARRAY_SCALAR(ty = _)) then 33;
     case (DAE.MUL_SCALAR_PRODUCT(ty = _)) then 35;
     case (DAE.MUL_MATRIX_PRODUCT(ty = _)) then 35;
     case (DAE.DIV(ty = _)) then 36;

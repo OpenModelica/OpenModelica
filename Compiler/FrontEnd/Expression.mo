@@ -324,12 +324,9 @@ algorithm
     case(DAE.SUB_ARR(_)) then Absyn.SUB();
     case(DAE.MUL_ARR(_)) then Absyn.MUL();
     case(DAE.DIV_ARR(_)) then Absyn.DIV();
-    case(DAE.MUL_SCALAR_ARRAY(_)) then Absyn.MUL();
     case(DAE.MUL_ARRAY_SCALAR(_)) then Absyn.MUL();
-    case(DAE.ADD_SCALAR_ARRAY(_)) then Absyn.ADD();
     case(DAE.ADD_ARRAY_SCALAR(_)) then Absyn.ADD();
     case(DAE.SUB_SCALAR_ARRAY(_)) then Absyn.SUB();
-    case(DAE.SUB_ARRAY_SCALAR(_)) then Absyn.SUB();
     case(DAE.MUL_SCALAR_PRODUCT(_)) then Absyn.MUL();
     case(DAE.MUL_MATRIX_PRODUCT(_)) then Absyn.MUL();
     case(DAE.DIV_SCALAR_ARRAY(_)) then Absyn.DIV();
@@ -957,12 +954,9 @@ algorithm
     case (DAE.SUB_ARR(ty = _), _) then DAE.SUB_ARR(inType);
     case (DAE.MUL_ARR(ty = _), _) then DAE.MUL_ARR(inType);
     case (DAE.DIV_ARR(ty = _), _) then DAE.DIV_ARR(inType);
-    case (DAE.MUL_SCALAR_ARRAY(ty = _), _) then DAE.MUL_SCALAR_ARRAY(inType);
     case (DAE.MUL_ARRAY_SCALAR(ty = _), _) then DAE.MUL_ARRAY_SCALAR(inType);
-    case (DAE.ADD_SCALAR_ARRAY(ty = _), _) then DAE.ADD_SCALAR_ARRAY(inType);
     case (DAE.ADD_ARRAY_SCALAR(ty = _), _) then DAE.ADD_ARRAY_SCALAR(inType);
     case (DAE.SUB_SCALAR_ARRAY(ty = _), _) then DAE.SUB_SCALAR_ARRAY(inType);
-    case (DAE.SUB_ARRAY_SCALAR(ty = _), _) then DAE.SUB_ARRAY_SCALAR(inType);
     case (DAE.MUL_SCALAR_PRODUCT(ty = _), _) then DAE.MUL_SCALAR_PRODUCT(inType);
     case (DAE.MUL_MATRIX_PRODUCT(ty = _), _) then DAE.MUL_MATRIX_PRODUCT(inType);
     case (DAE.DIV_ARRAY_SCALAR(ty = _), _) then DAE.DIV_ARRAY_SCALAR(inType);
@@ -1708,12 +1702,9 @@ algorithm
     case (DAE.SUB_ARR(ty = t)) then t;
     case (DAE.MUL_ARR(ty = t)) then t;
     case (DAE.DIV_ARR(ty = t)) then t;
-    case (DAE.MUL_SCALAR_ARRAY(ty = t)) then t;
     case (DAE.MUL_ARRAY_SCALAR(ty = t)) then t;
-    case (DAE.ADD_SCALAR_ARRAY(ty = t)) then t;
     case (DAE.ADD_ARRAY_SCALAR(ty = t)) then t;
     case (DAE.SUB_SCALAR_ARRAY(ty = t)) then t;
-    case (DAE.SUB_ARRAY_SCALAR(ty = t)) then t;
     case (DAE.MUL_SCALAR_PRODUCT(ty = t)) then t;
     case (DAE.MUL_MATRIX_PRODUCT(ty = t)) then t;
     case (DAE.DIV_ARRAY_SCALAR(ty = t)) then t;
@@ -1871,14 +1862,6 @@ algorithm
       then 
         f1;
    
-    case (e as DAE.BINARY(e1,DAE.MUL_SCALAR_ARRAY(tp),e2)) 
-      equation
-        (f1 as _::_::_) = allTerms(e2);
-        f1 = List.map1(f1,makeProduct,e1);
-        f1 = List.flatten(List.map(f1,allTerms));
-      then 
-        f1;
-   
     case (e as DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(tp),e2)) 
       equation
         (f1 as _::_::_) = allTerms(e2);
@@ -1897,14 +1880,6 @@ algorithm
         f1;
    
     case (e as DAE.BINARY(e1,DAE.MUL_ARR(tp),e2)) 
-      equation
-        (f1 as _::_::_) = allTerms(e1);
-        f1 = List.map1(f1,makeProduct,e2);
-        f1 = List.flatten(List.map(f1,allTerms));
-      then 
-        f1;
-   
-    case (e as DAE.BINARY(e1,DAE.MUL_SCALAR_ARRAY(tp),e2)) 
       equation
         (f1 as _::_::_) = allTerms(e1);
         f1 = List.map1(f1,makeProduct,e2);
@@ -1955,7 +1930,6 @@ algorithm
    
     case (e as DAE.BINARY(operator = DAE.MUL(ty = _))) then {e};
     case (e as DAE.BINARY(operator = DAE.MUL_ARR(ty = _))) then {e};
-    case (e as DAE.BINARY(operator = DAE.MUL_SCALAR_ARRAY(ty = _))) then {e};
     case (e as DAE.BINARY(operator = DAE.MUL_ARRAY_SCALAR(ty = _))) then {e};
     case (e as DAE.BINARY(operator = DAE.DIV(ty = _))) then {e};
     case (e as DAE.BINARY(operator = DAE.DIV_ARR(ty = _))) then {e};
@@ -6377,12 +6351,9 @@ algorithm
     case (DAE.SUB_ARR(ty = _),DAE.SUB_ARR(ty = _)) then true;
     case (DAE.MUL_ARR(ty = _),DAE.MUL_ARR(ty = _)) then true;
     case (DAE.DIV_ARR(ty = _),DAE.DIV_ARR(ty = _)) then true;
-    case (DAE.MUL_SCALAR_ARRAY(ty = _),DAE.MUL_SCALAR_ARRAY(ty = _)) then true;
     case (DAE.MUL_ARRAY_SCALAR(ty = _),DAE.MUL_ARRAY_SCALAR(ty = _)) then true;
-    case (DAE.ADD_SCALAR_ARRAY(ty = _),DAE.ADD_SCALAR_ARRAY(ty = _)) then true;
     case (DAE.ADD_ARRAY_SCALAR(ty = _),DAE.ADD_ARRAY_SCALAR(ty = _)) then true;
     case (DAE.SUB_SCALAR_ARRAY(ty = _),DAE.SUB_SCALAR_ARRAY(ty = _)) then true;
-    case (DAE.SUB_ARRAY_SCALAR(ty = _),DAE.SUB_ARRAY_SCALAR(ty = _)) then true;
     case (DAE.MUL_SCALAR_PRODUCT(ty = _),DAE.MUL_SCALAR_PRODUCT(ty = _)) then true;
     case (DAE.MUL_MATRIX_PRODUCT(ty = _),DAE.MUL_MATRIX_PRODUCT(ty = _)) then true;
     case (DAE.DIV_SCALAR_ARRAY(ty = _),DAE.DIV_SCALAR_ARRAY(ty = _)) then true;

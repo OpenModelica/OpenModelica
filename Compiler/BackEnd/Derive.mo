@@ -660,14 +660,6 @@ algorithm
         DAE.BINARY(DAE.BINARY(e1,DAE.MUL_ARR(tp),e2_1),DAE.ADD_ARR(tp),
           DAE.BINARY(e1_1,DAE.MUL_ARR(tp),e2));
     
-    case (DAE.BINARY(exp1 = e1,operator = DAE.MUL_SCALAR_ARRAY(ty = tp),exp2 = e2),inVariables) /* f\'g + fg\' */
-      equation
-        e1_1 = differentiateExpTime(e1, inVariables);
-        e2_1 = differentiateExpTime(e2, inVariables);
-      then
-        DAE.BINARY(DAE.BINARY(e1,DAE.MUL_SCALAR_ARRAY(tp),e2_1),DAE.ADD_ARR(tp),
-          DAE.BINARY(e1_1,DAE.MUL_SCALAR_ARRAY(tp),e2));
-    
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL_ARRAY_SCALAR(ty = tp),exp2 = e2),inVariables) /* f\'g + fg\' */
       equation
         e1_1 = differentiateExpTime(e1, inVariables);
@@ -675,13 +667,6 @@ algorithm
       then
         DAE.BINARY(DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(tp),e2_1),DAE.ADD_ARR(tp),
           DAE.BINARY(e1_1,DAE.MUL_ARRAY_SCALAR(tp),e2));
-    
-    case (DAE.BINARY(exp1 = e1,operator = DAE.ADD_SCALAR_ARRAY(ty = tp),exp2 = e2),inVariables)
-      equation
-        e1_1 = differentiateExpTime(e1, inVariables);
-        e2_1 = differentiateExpTime(e2, inVariables);
-      then
-        DAE.BINARY(e1_1,DAE.ADD_SCALAR_ARRAY(tp),e2_1);
     
     case (DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARRAY_SCALAR(ty = tp),exp2 = e2),inVariables)
       equation
@@ -696,13 +681,6 @@ algorithm
         e2_1 = differentiateExpTime(e2, inVariables);
       then
         DAE.BINARY(e1_1,DAE.SUB_SCALAR_ARRAY(tp),e2_1);
-    
-    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARRAY_SCALAR(ty = tp),exp2 = e2),inVariables)
-      equation
-        e1_1 = differentiateExpTime(e1, inVariables);
-        e2_1 = differentiateExpTime(e2, inVariables);
-      then
-        DAE.BINARY(e1_1,DAE.SUB_ARRAY_SCALAR(tp),e2_1);
     
     case (DAE.BINARY(exp1 = e1,operator = DAE.DIV_ARRAY_SCALAR(ty = tp),exp2 = e2),inVariables) /* (f\'g - fg\' ) / g^2 */
       equation

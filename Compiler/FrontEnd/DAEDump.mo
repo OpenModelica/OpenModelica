@@ -179,12 +179,9 @@ algorithm
     case(DAE.SUB_ARR(ty=ty)) then " SUB_ARR ";
     case(DAE.MUL_ARR(ty=ty)) then " MUL_ARR ";
     case(DAE.DIV_ARR(ty=ty)) then " DIV_ARR ";
-    case(DAE.MUL_SCALAR_ARRAY(ty=ty)) then " MUL_SCALAR_ARRAY ";
     case(DAE.MUL_ARRAY_SCALAR(ty=ty)) then " MUL_ARRAY_SCALAR ";
-    case(DAE.ADD_SCALAR_ARRAY(ty=ty)) then " ADD_SCALAR_ARRAY ";
     case(DAE.ADD_ARRAY_SCALAR(ty=ty)) then " ADD_ARRAY_SCALAR ";
     case(DAE.SUB_SCALAR_ARRAY(ty=ty)) then " SUB_SCALAR_ARRAY ";
-    case(DAE.SUB_ARRAY_SCALAR(ty=ty)) then " SUB_ARRAY_SCALAR ";
     case(DAE.MUL_SCALAR_PRODUCT(ty=ty)) then " MUL_SCALAR_PRODUCT ";
     case(DAE.MUL_MATRIX_PRODUCT(ty=ty)) then " MUL_MATRIX_PRODUCT ";
     case(DAE.DIV_ARRAY_SCALAR(ty=ty)) then " DIV_ARRAY_SCALAR ";

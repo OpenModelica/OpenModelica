@@ -414,7 +414,6 @@ algorithm
     case (DAE.POW(ty = _)) then MathMLPower;
     case (DAE.ADD_ARR(ty = _)) then MathMLPlus;
     case (DAE.SUB_ARR(ty = _)) then MathMLMinus;
-    case (DAE.MUL_SCALAR_ARRAY(ty = _)) then MathMLTimes;
     case (DAE.MUL_ARRAY_SCALAR(ty = _)) then MathMLTimes;
     case (DAE.MUL_SCALAR_PRODUCT(ty = _)) then MathMLScalarproduct;
     case (DAE.MUL_MATRIX_PRODUCT(ty = _)) then MathMLVectorproduct;

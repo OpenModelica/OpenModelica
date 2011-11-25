@@ -1281,30 +1281,6 @@ algorithm
       then 
         DAE.BINARY(e1,DAE.SUB_ARR(tp),e2);
 
-    // scalar * matrix
-    case (s1,DAE.MUL_SCALAR_ARRAY(ty = tp),a1 as DAE.MATRIX(ty=_))
-      equation
-        tp = Expression.typeof(s1);
-        atp = Expression.typeof(a1);
-        atp2 = Expression.unliftArray(Expression.unliftArray(atp));
-        b = DAEUtil.expTypeArray(atp2);
-        op2 = Util.if_(b,DAE.MUL_SCALAR_ARRAY(atp2),DAE.MUL(tp));
-        res = simplifyVectorScalar(s1, op2, a1);
-      then
-        res;
-
-    // scalar * array
-    case (s1,DAE.MUL_SCALAR_ARRAY(ty = tp),a1 as DAE.ARRAY(array=_))
-      equation
-        tp = Expression.typeof(s1);
-        atp = Expression.typeof(a1);
-        atp2 = Expression.unliftArray(atp);
-        b = DAEUtil.expTypeArray(atp2);
-        op2 = Util.if_(b,DAE.MUL_SCALAR_ARRAY(atp2),DAE.MUL(tp));
-        res = simplifyVectorScalar(s1, op2, a1);
-      then
-        res;
-
     // matrix * scalar
     case (a1 as DAE.MATRIX(ty =_),DAE.MUL_ARRAY_SCALAR(ty = tp),s1)
       equation
@@ -1325,18 +1301,6 @@ algorithm
         atp2 = Expression.unliftArray(atp);
         b = DAEUtil.expTypeArray(atp2);
         op2 = Util.if_(b,DAE.MUL_ARRAY_SCALAR(atp2),DAE.MUL(tp));
-        res = simplifyVectorScalar(s1, op2, a1);
-      then
-        res;
-
-    // scalar .+ array
-    case (s1,DAE.ADD_SCALAR_ARRAY(ty = tp),a1)
-      equation
-        tp = Expression.typeof(s1);
-        atp = Expression.typeof(a1);
-        atp2 = Expression.unliftArray(atp);
-        b = DAEUtil.expTypeArray(atp2);
-        op2 = Util.if_(b,DAE.ADD_SCALAR_ARRAY(atp2),DAE.ADD(tp));
         res = simplifyVectorScalar(s1, op2, a1);
       then
         res;
@@ -1362,18 +1326,6 @@ algorithm
         b = DAEUtil.expTypeArray(atp2);
         op2 = Util.if_(b,DAE.SUB_SCALAR_ARRAY(atp2),DAE.SUB(tp));
         res = simplifyVectorScalar(s1, op2, a1);
-      then
-        res;
-
-    // array .- scalar
-    case (a1,DAE.SUB_ARRAY_SCALAR(ty = tp),s1)
-      equation
-        tp = Expression.typeof(s1);
-        atp = Expression.typeof(a1);
-        atp2 = Expression.unliftArray(atp);
-        b = DAEUtil.expTypeArray(atp2);
-        op2 = Util.if_(b,DAE.SUB_ARRAY_SCALAR(atp2),DAE.SUB(tp));
-        res = simplifyVectorScalar(a1, op2, s1);
       then
         res;
 
@@ -2843,16 +2795,6 @@ algorithm
       then
         exp;
     
-    case (exp as DAE.BINARY(exp1 = e1,operator = DAE.MUL_SCALAR_ARRAY(ty = t),exp2 = e2),sub)
-      equation
-        e2_1 = simplifyAsub(e2, sub);
-        t2 = Expression.typeof(e2_1);
-        b = DAEUtil.expTypeArray(t2);
-        op = Util.if_(b,DAE.MUL_SCALAR_ARRAY(t2),DAE.MUL(t2));
-        exp = DAE.BINARY(e1,op,e2_1);
-      then
-        exp;
-    
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL_ARRAY_SCALAR(ty = t),exp2 = e2),sub)
       equation
         e1_1 = simplifyAsub(e1, sub);
@@ -2860,16 +2802,6 @@ algorithm
         b = DAEUtil.expTypeArray(t2);
         op = Util.if_(b,DAE.MUL_ARRAY_SCALAR(t2),DAE.MUL(t2));
         exp = DAE.BINARY(e1_1,op,e2);
-      then
-        exp;
-    
-    case (exp as DAE.BINARY(exp1 = e1,operator = DAE.ADD_SCALAR_ARRAY(ty = t),exp2 = e2),sub)
-      equation
-        e2_1 = simplifyAsub(e2, sub);
-        t2 = Expression.typeof(e2_1);
-        b = DAEUtil.expTypeArray(t2);
-        op = Util.if_(b,DAE.ADD_SCALAR_ARRAY(t2),DAE.ADD(t2));
-        exp = DAE.BINARY(e1,op,e2_1);
       then
         exp;
     
@@ -2890,16 +2822,6 @@ algorithm
         b = DAEUtil.expTypeArray(t2);
         op = Util.if_(b,DAE.SUB_SCALAR_ARRAY(t2),DAE.SUB(t2));
         exp = DAE.BINARY(e1,op,e2_1);
-      then
-        exp;
-    
-    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARRAY_SCALAR(ty = t),exp2 = e2),sub)
-      equation
-        e1_1 = simplifyAsub(e1, sub);
-        t2 = Expression.typeof(e1_1);
-        b = DAEUtil.expTypeArray(t2);
-        op = Util.if_(b,DAE.SUB_ARRAY_SCALAR(t2),DAE.SUB(t2));
-        exp = DAE.BINARY(e1_1,op,e2);
       then
         exp;
     
@@ -3369,6 +3291,12 @@ algorithm
     case (DAE.ADD(ty = tp),e1,DAE.UNARY(operator = DAE.UMINUS(ty = tp2),exp = e2))
       equation
         e = DAE.BINARY(e1,DAE.SUB(tp),e2);
+      then e;
+
+    // (-a)+b
+    case (DAE.ADD(ty = tp),DAE.UNARY(operator = DAE.UMINUS(ty = tp2),exp = e1),e2)
+      equation
+        e = DAE.BINARY(e2,DAE.SUB(tp),e1);
       then e;
 
     // 0+e => e

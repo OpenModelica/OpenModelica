@@ -1048,24 +1048,15 @@ package DAE
     record DIV_ARR
       ExpType ty;
     end DIV_ARR;
-    record MUL_SCALAR_ARRAY
-      ExpType ty;
-    end MUL_SCALAR_ARRAY;
     record MUL_ARRAY_SCALAR
       ExpType ty;
     end MUL_ARRAY_SCALAR;
-    record ADD_SCALAR_ARRAY
-      ExpType ty;
-    end ADD_SCALAR_ARRAY;
     record ADD_ARRAY_SCALAR
       ExpType ty;
     end ADD_ARRAY_SCALAR;
     record SUB_SCALAR_ARRAY
       ExpType ty;
     end SUB_SCALAR_ARRAY;
-    record SUB_ARRAY_SCALAR
-      ExpType ty;
-    end SUB_ARRAY_SCALAR;
     record MUL_SCALAR_PRODUCT
       ExpType ty;
     end MUL_SCALAR_PRODUCT;

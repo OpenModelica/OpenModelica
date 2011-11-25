@@ -2896,7 +2896,7 @@ algorithm
     local
       list<Boolean> b;
       list<String> strs;
-      String str;
+      String str,eqstr;
       list<Integer> nrOfEquationsBranches;
     case (trueBranches,falseBranch,source)
       equation
@@ -2909,10 +2909,11 @@ algorithm
       equation
         nrOfEquations = countEquations(falseBranch);
         nrOfEquationsBranches = List.map(trueBranches, countEquations);
+        eqstr = stringDelimitList(List.map1(List.mapList(listAppend(trueBranches,{falseBranch}),DAEDump.dumpEquationStr),stringDelimitList,","),"\n");
         strs = List.map(nrOfEquationsBranches, intString);
         str = stringDelimitList(strs,",");
         str = "{" +& str +& "," +& intString(nrOfEquations) +& "}";
-        Error.addSourceMessage(Error.IF_EQUATION_UNBALANCED_2,{str},getElementSourceFileInfo(source));
+        Error.addSourceMessage(Error.IF_EQUATION_UNBALANCED_2,{str,eqstr},getElementSourceFileInfo(source));
       then fail();
   end matchcontinue;
 end countEquationsInBranches;

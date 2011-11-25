@@ -399,14 +399,6 @@ algorithm
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // Array multipled scalar
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_SCALAR_ARRAY(ty = _),exp2 = rh),impl,stOpt,msg)
-      equation
-        (cache,sval,stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
-        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
-        reslst = ValuesUtil.multScalarArrayelt(sval, aval);
-      then
-        (cache,Values.ARRAY(reslst,dims),stOpt);
-
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_ARRAY_SCALAR(ty = _),exp2 = rh),impl,stOpt,msg)
       equation
         (cache,sval,stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
@@ -416,14 +408,6 @@ algorithm
         (cache,Values.ARRAY(reslst,dims),stOpt);
 
     // Array add scalar
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD_SCALAR_ARRAY(ty = _),exp2 = rh),impl,stOpt,msg)
-      equation
-        (cache,sval,stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
-        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
-        reslst = ValuesUtil.addScalarArrayelt(sval, aval);
-      then
-        (cache,Values.ARRAY(reslst,dims),stOpt);
-
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD_ARRAY_SCALAR(ty = _),exp2 = rh),impl,stOpt,msg)
       equation
         (cache,sval,stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
@@ -438,14 +422,6 @@ algorithm
         (cache,sval,stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
         (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
         reslst = ValuesUtil.subScalarArrayelt(sval, aval);
-      then
-        (cache,Values.ARRAY(reslst,dims),stOpt);
-
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.SUB_ARRAY_SCALAR(ty = _),exp2 = rh),impl,stOpt,msg)
-      equation
-        (cache,sval,stOpt) = ceval(cache,env, rh, impl, stOpt, msg);
-        (cache,Values.ARRAY(aval,dims),stOpt) = ceval(cache,env, lh, impl, stOpt, msg);
-        reslst = ValuesUtil.subArrayeltScalar(sval, aval);
       then
         (cache,Values.ARRAY(reslst,dims),stOpt);
 

@@ -395,7 +395,7 @@ public constant Message STRUCT_SINGULAR_EQUATION = MESSAGE(130, SYMBOLIC(), ERRO
 public constant Message IF_EQUATION_WARNING = MESSAGE(131, SYMBOLIC(), WARNING(),
   "If-equations are only partially supported. Ignoring %s");
 public constant Message IF_EQUATION_UNBALANCED_2 = MESSAGE(132, SYMBOLIC(), ERROR(),
-  "If-equation with conditions that are not parameter expressions must have the same number of equations in each branch, equation count is %s for each respective branch.");
+  "If-equation with conditions that are not parameter expressions must have the same number of equations in each branch, equation count is %s for each respective branch:\n%s");
 public constant Message EQUATION_GENERIC_FAILURE = MESSAGE(133, TRANSLATION(), ERROR(),
   "Failed to instantiate equation %s");
 public constant Message INST_PARTIAL_CLASS_CHECK_MODEL_WARNING = MESSAGE(134, TRANSLATION(), WARNING(),

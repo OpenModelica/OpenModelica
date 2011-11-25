@@ -1421,29 +1421,17 @@ uniontype Operator "Operators which are overloaded in the abstract syntax are he
     ExpType ty;
   end DIV_ARR;
 
-  record MUL_SCALAR_ARRAY " s * {a,b,c}"
-    ExpType ty "type of the array" ;
-  end MUL_SCALAR_ARRAY;
-
   record MUL_ARRAY_SCALAR " {a,b,c} * s"
     ExpType ty "type of the array" ;
   end MUL_ARRAY_SCALAR;
 
-  record ADD_SCALAR_ARRAY "s + {a,b,c}"
-    ExpType ty "type of the array" ;
-  end ADD_SCALAR_ARRAY;
-
-  record ADD_ARRAY_SCALAR " {a,b,c} + s"
+  record ADD_ARRAY_SCALAR " {a,b,c} .+ s"
     ExpType ty "type of the array";
   end ADD_ARRAY_SCALAR;
 
-  record SUB_SCALAR_ARRAY "s - {a,b,c}"
+  record SUB_SCALAR_ARRAY "s .- {a,b,c}"
     ExpType ty "type of the array" ;
   end SUB_SCALAR_ARRAY;
-
-  record SUB_ARRAY_SCALAR "{a,b,c} - s"
-    ExpType ty "type of the array" ;
-  end SUB_ARRAY_SCALAR;
 
   record MUL_SCALAR_PRODUCT " {a,b,c} * {c,d,e} => a*c+b*d+c*e"
     ExpType ty "type of the array" ;

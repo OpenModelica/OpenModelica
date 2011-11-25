@@ -395,8 +395,7 @@ algorithm
         (cache,e2_1,DAE.PROP(t2,c2),st_2) = elabExp(cache,env, e2, impl, st_1,doVect,pre,info);
         c = Types.constAnd(c1, c2);
 
-        (cache,ops) = operators(cache, op, env, t1, t2);
-        (op_1,{e1_2,e2_2},rtype) = deoverload(ops,{(e1_1,t1),(e2_1,t2)},e,pre,info);
+        (op_1,e1_2,e2_2,rtype) = operatorDeoverloadBinary(op,t1,e1_1,t2,e2_1,e,pre,info);
         exp_1 = replaceOperatorWithFcall(DAE.BINARY(e1_2,op_1,e2_2), c);
         (exp_1,_) = ExpressionSimplify.simplify(exp_1);
         prop = DAE.PROP(rtype,c);
@@ -406,8 +405,7 @@ algorithm
     case (cache,env,(e as Absyn.UNARY(op = op,exp = e1)),impl,st,doVect,pre,info,_)
       equation
         (cache,e_1,DAE.PROP(t,c),st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
-        (cache,ops) = operators(cache,op, env, t, (DAE.T_NOTYPE(),NONE()));
-        (op_1,{e_2},rtype) = deoverload(ops,{(e_1,t)},e,pre,info);
+        (op_1,e_2,rtype) = operatorDeoverloadUnary(op,t,e_1,e,pre,info);
         exp_1 = replaceOperatorWithFcall(DAE.UNARY(op_1,e_2), c);
         prop = DAE.PROP(rtype,c);
       then
@@ -417,8 +415,7 @@ algorithm
         (cache,e1_1,DAE.PROP(t1,c1),st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info) "Logical binary expressions" ;
         (cache,e2_1,DAE.PROP(t2,c2),st_2) = elabExp(cache,env, e2, impl, st_1,doVect,pre,info);
         c = Types.constAnd(c1, c2);
-        (cache,ops) = operators(cache,op, env, t1, t2);
-        (op_1,{e1_2,e2_2},rtype) = deoverload(ops, {(e1_1,t1),(e2_1,t2)},e,pre,info);
+        (op_1,e1_2,e2_2,rtype) = operatorDeoverloadBinary(op,t1,e1_1,t2,e2_1,e,pre,info);
         exp_1 = replaceOperatorWithFcall(DAE.LBINARY(e1_2,op_1,e2_2), c);
         prop = DAE.PROP(rtype,c);
       then
@@ -426,8 +423,7 @@ algorithm
     case (cache,env,(e as Absyn.LUNARY(op = op,exp = e1)),impl,st,doVect,pre,info,_)
       equation
         (cache,e_1,DAE.PROP(t,c),st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info) "Logical unary expressions" ;
-        (cache,ops) = operators(cache,op, env, t, (DAE.T_NOTYPE(),NONE()));
-        (op_1,{e_2},rtype) = deoverload(ops, {(e_1,t)},e,pre,info);
+        (op_1,e_2,rtype) = operatorDeoverloadUnary(op,t,e_1,e,pre,info);
         exp_1 = replaceOperatorWithFcall(DAE.LUNARY(op_1,e_2), c);
         prop = DAE.PROP(rtype,c);
       then
@@ -437,8 +433,7 @@ algorithm
         (cache,e1_1,DAE.PROP(t1,c1),st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info) "Relations, e.g. a < b" ;
         (cache,e2_1,DAE.PROP(t2,c2),st_2) = elabExp(cache,env, e2, impl, st_1,doVect,pre,info);
         c = Types.constAnd(c1, c2);
-        (cache,ops) = operators(cache,op, env, t1, t2);
-        (op_1,{e1_2,e2_2},rtype) = deoverload(ops,{(e1_1,t1),(e2_1,t2)},e,pre,info);
+        (op_1,e1_2,e2_2,rtype) = operatorDeoverloadBinary(op,t1,e1_1,t2,e2_1,e,pre,info);
         exp_1 = replaceOperatorWithFcall(DAE.RELATION(e1_2,op_1,e2_2,-1,NONE()), c);
         prop = DAE.PROP(rtype,c);
         warnUnsafeRelations(env,c,t1,t2,e1_2,e2_2,op_1,pre);
@@ -1579,15 +1574,13 @@ algorithm
         (cache,e1_1,DAE.PROP(t1,c1)) = elabGraphicsExp(cache,env, e1, impl,pre,info);
         (cache,e2_1,DAE.PROP(t2,c2)) = elabGraphicsExp(cache,env, e2, impl,pre,info);
         c = Types.constAnd(c1, c2);
-        (cache,ops) = operators(cache,op, env, t1, t2);
-        (op_1,{e1_2,e2_2},rtype) = deoverload(ops, {(e1_1,t1),(e2_1,t2)}, exp,pre,info);
+        (op_1,e1_2,e2_2,rtype) = operatorDeoverloadBinary(op,t1,e1_1,t2,e2_1,exp,pre,info);
       then
         (cache,DAE.BINARY(e1_2,op_1,e2_2),DAE.PROP(rtype,c));
     case (cache,env,(exp as Absyn.UNARY(op = op,exp = e)),impl,pre,info)
       equation
         (cache,e_1,DAE.PROP(t,c)) = elabGraphicsExp(cache,env, e, impl,pre,info);
-        (cache,ops) = operators(cache,op, env, t, (DAE.T_NOTYPE(),NONE()));
-        (op_1,{e_2},rtype) = deoverload(ops, {(e_1,t)}, exp,pre,info);
+        (op_1,e_2,rtype) = operatorDeoverloadUnary(op,t,e_1,exp,pre,info);
       then
         (cache,DAE.UNARY(op_1,e_2),DAE.PROP(rtype,c));
     case (cache,env,(exp as Absyn.LBINARY(exp1 = e1,op = op,exp2 = e2)),impl,pre,info)
@@ -1595,15 +1588,13 @@ algorithm
         (cache,e1_1,DAE.PROP(t1,c1)) = elabGraphicsExp(cache,env, e1, impl,pre,info) "Logical binary expressions" ;
         (cache,e2_1,DAE.PROP(t2,c2)) = elabGraphicsExp(cache,env, e2, impl,pre,info);
         c = Types.constAnd(c1, c2);
-        (cache,ops) = operators(cache,op, env, t1, t2);
-        (op_1,{e1_2,e2_2},rtype) = deoverload(ops, {(e1_1,t1),(e2_1,t2)}, exp,pre,info);
+        (op_1,e1_2,e2_2,rtype) = operatorDeoverloadBinary(op,t1,e1_1,t2,e2_1,exp,pre,info);
       then
         (cache,DAE.LBINARY(e1_2,op_1,e2_2),DAE.PROP(rtype,c));
     case (cache,env,(exp as Absyn.LUNARY(op = op,exp = e)),impl,pre,info)
       equation
         (cache,e_1,DAE.PROP(t,c)) = elabGraphicsExp(cache,env, e, impl,pre,info) "Logical unary expressions" ;
-        (cache,ops) = operators(cache,op, env, t, (DAE.T_NOTYPE(),NONE()));
-        (op_1,{e_2},rtype) = deoverload(ops, {(e_1,t)}, exp,pre,info);
+        (op_1,e_2,rtype) = operatorDeoverloadUnary(op,t,e_1,e,pre,info);
       then
         (cache,DAE.LUNARY(op_1,e_2),DAE.PROP(rtype,c));
     case (cache,env,(exp as Absyn.RELATION(exp1 = e1,op = op,exp2 = e2)),impl,pre,info)
@@ -1611,8 +1602,7 @@ algorithm
         (cache,e1_1,DAE.PROP(t1,c1)) = elabGraphicsExp(cache,env, e1, impl,pre,info) "Relation expressions" ;
         (cache,e2_1,DAE.PROP(t2,c2)) = elabGraphicsExp(cache,env, e2, impl,pre,info);
         c = Types.constAnd(c1, c2);
-        (cache,ops) = operators(cache,op, env, t1, t2);
-        (op_1,{e1_2,e2_2},rtype) = deoverload(ops, {(e1_1,t1),(e2_1,t2)}, exp,pre,info);
+        (op_1,e1_2,e2_2,rtype) = operatorDeoverloadBinary(op,t1,e1_1,t2,e2_1,exp,pre,info);
       then
         (cache,DAE.RELATION(e1_2,op_1,e2_2,-1,NONE()),DAE.PROP(rtype,c));
     case (cache,env,e as Absyn.IFEXP(ifExp = _),impl,pre,info) /* Conditional expressions */
@@ -12136,17 +12126,11 @@ algorithm
       then
         fail();
     
-    case (DAE.MUL_SCALAR_ARRAY(ty = _),{typ1,typ2},rtype,_, _) then typ2;  /* rtype */
-
     case (DAE.MUL_ARRAY_SCALAR(ty = _),{typ1,typ2},rtype,_, _) then typ1;  /* rtype */
-
-    case (DAE.ADD_SCALAR_ARRAY(ty = _),{typ1,typ2},rtype,_, _) then typ2;  /* rtype */
 
     case (DAE.ADD_ARRAY_SCALAR(ty = _),{typ1,typ2},rtype,_, _) then typ1;  /* rtype */
 
     case (DAE.SUB_SCALAR_ARRAY(ty = _),{typ1,typ2},rtype,_, _) then typ2;  /* rtype */
-
-    case (DAE.SUB_ARRAY_SCALAR(ty = _),{typ1,typ2},rtype,_, _) then typ1;  /* rtype */
 
     case (DAE.DIV_SCALAR_ARRAY(ty = _),{typ1,typ2},rtype,_, _) then typ2;  /* rtype */
 
@@ -12359,7 +12343,49 @@ protected constant list<DAE.Type> stringtypes = {
 };
 
 
-public function operators "function: operators
+protected function operatorDeoverloadBinary
+  input Absyn.Operator inOperator1;
+  input DAE.Type ty1;
+  input DAE.Exp e1;
+  input DAE.Type ty2;
+  input DAE.Exp e2;
+  input Absyn.Exp exp "For error-messages only";
+  input Prefix.Prefix pre "For error-messages only";
+  input Absyn.Info info "For error-messages only";
+  output DAE.Operator op;
+  output DAE.Exp oe1;
+  output DAE.Exp oe2;
+  output DAE.Type ty;
+protected
+  list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> ops;
+  DAE.Type oty1,oty2;
+algorithm
+  // print("deoverload arg1: " +& ExpressionDump.printExpStr(e1) +& " of type " +& Types.unparseType(ty1) +& "\n");
+  // print("deoverload arg2: " +& ExpressionDump.printExpStr(e2) +& " of type " +& Types.unparseType(ty2) +& "\n");
+  (ops,oty1,oe1,oty2,oe2) := operatorsBinary(inOperator1,ty1,e1,ty2,e2);
+  // print("deoverload arg1 (2): " +& ExpressionDump.printExpStr(oe1) +& " of type " +& Types.unparseType(oty1) +& "\n");
+  // print("deoverload arg2 (2): " +& ExpressionDump.printExpStr(oe2) +& " of type " +& Types.unparseType(oty2) +& "\n");
+  (op,{oe1,oe2},ty) := deoverload(ops,{(oe1,oty1),(oe2,oty2)},exp,pre,info);
+end operatorDeoverloadBinary;
+
+protected function operatorDeoverloadUnary
+  input Absyn.Operator inOperator1;
+  input DAE.Type ty;
+  input DAE.Exp e;
+  input Absyn.Exp exp "For error-messages only";
+  input Prefix.Prefix pre "For error-messages only";
+  input Absyn.Info info "For error-messages only";
+  output DAE.Operator op;
+  output DAE.Exp oe;
+  output DAE.Type oty;
+protected
+  list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> ops;
+algorithm
+  ops := operatorsUnary(inOperator1);
+  (op,{oe},oty) := deoverload(ops,{(e,ty)},exp,pre,info);
+end operatorDeoverloadUnary;
+
+protected function operatorsBinary "function: operators
 
   This function relates the operators in the abstract syntax to the
   de-overloaded operators in the SCode. It produces a list of available
@@ -12368,16 +12394,19 @@ public function operators "function: operators
   Real to work, operators that work on both Integers and Reals must
   return the Integer type -before- the Real type in the list.
 "
-  input Env.Cache inCache;
   input Absyn.Operator inOperator1;
-  input Env.Env inEnv2;
   input DAE.Type inType3;
+  input DAE.Exp e1;
   input DAE.Type inType4;
-  output Env.Cache outCache;
-  output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> outTplExpOperatorTypesTypeLstTypesTypeLst;
+  input DAE.Exp e2;
+  output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> ops;
+  output DAE.Type oty1;
+  output DAE.Exp oe1;
+  output DAE.Type oty2;
+  output DAE.Exp oe2;
 algorithm
-  (outCache,outTplExpOperatorTypesTypeLstTypesTypeLst) :=
-  matchcontinue (inCache,inOperator1,inEnv2,inType3,inType4)
+  (ops,oty1,oe1,oty2,oe2) :=
+  matchcontinue (inOperator1,inType3,e1,inType4,e2)
     local
       list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> intarrs,realarrs,boolarrs,stringarrs,scalars,arrays,types,scalarprod,matrixprod,intscalararrs,realscalararrs,intarrsscalar,realarrsscalar,realarrscalar,arrscalar,stringscalararrs,stringarrsscalar;
       tuple<DAE.Operator, list<DAE.Type>, DAE.Type> enum_op;
@@ -12385,9 +12414,9 @@ algorithm
       DAE.Type t1,t2,int_scalar,int_vector,int_matrix,real_scalar,real_vector,real_matrix;
       DAE.Operator int_mul,real_mul,int_mul_sp,real_mul_sp,int_mul_mp,real_mul_mp,real_div,real_pow,int_pow;
       Absyn.Operator op;
-      Env.Cache cache;
       DAE.ExpType defaultExpType;
-    case (cache,Absyn.ADD(),env,t1,t2) /* Arithmetical operators */
+
+    case (Absyn.ADD(),t1,e1,t2,e2) /* Arithmetical operators */
       equation
         intarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
                     intarrtypes, intarrtypes, intarrtypes);
@@ -12405,9 +12434,11 @@ algorithm
         arrays = List.flatten({intarrs,realarrs,stringarrs});
         types = List.flatten({scalars,arrays});
       then
-        (cache,types);
-    case (cache,Absyn.ADD_EW(),env,t1,t2) /* Arithmetical operators */
+        (types,t1,e1,t2,e2);
+
+    case (Absyn.ADD_EW(),t1,e1,t2,e2) /* Arithmetical operators */
       equation
+        false = Types.isArray(t2) and (not Types.isArray(t1));
         intarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
                     intarrtypes, intarrtypes, intarrtypes);
         realarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
@@ -12421,24 +12452,17 @@ algorithm
           {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT),
           (DAE.ADD(DAE.ET_STRING()),
           {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_STRING_DEFAULT)};
-        intscalararrs = operatorReturn(DAE.ADD_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
-                          inttypes, intarrtypes, intarrtypes);
-        realscalararrs = operatorReturn(DAE.ADD_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
-                           realtypes, realarrtypes, realarrtypes);
         intarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
                           intarrtypes, inttypes, intarrtypes);
         realarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
                            realarrtypes, realtypes, realarrtypes);
-        stringscalararrs = operatorReturn(DAE.ADD_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_STRING(), {DAE.DIM_UNKNOWN()})),
-                             stringtypes, stringarrtypes, stringarrtypes);
         stringarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_STRING(), {DAE.DIM_UNKNOWN()})),
                              stringarrtypes, stringtypes, stringarrtypes);
-        types = List.flatten({scalars,intscalararrs,realscalararrs,stringscalararrs,intarrsscalar,
-          realarrsscalar,stringarrsscalar,intarrs,realarrs,stringarrs});
+        types = List.flatten({scalars,intarrsscalar,realarrsscalar,stringarrsscalar,intarrs,realarrs,stringarrs});
       then
-        (cache,types);
+        (types,t1,e1,t2,e2);
 
-    case (cache,Absyn.SUB(),env,t1,t2)
+    case (Absyn.SUB(),t1,e1,t2,e2)
       equation
         intarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
                     intarrtypes, intarrtypes, intarrtypes);
@@ -12451,9 +12475,11 @@ algorithm
           {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT)};
         types = List.flatten({scalars,intarrs,realarrs});
       then
-        (cache,types);
-    case (cache,Absyn.SUB_EW(),env,t1,t2) /* Arithmetical operators */
+        (types,t1,e1,t2,e2);
+
+    case (Absyn.SUB_EW(),t1,e1,t2,e2) /* Arithmetical operators */
       equation
+        false = Types.isArray(t1) and (not Types.isArray(t2));
         intarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
                     intarrtypes, intarrtypes, intarrtypes);
         realarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
@@ -12467,17 +12493,13 @@ algorithm
                           inttypes, intarrtypes, intarrtypes);
         realscalararrs = operatorReturn(DAE.SUB_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
                            realtypes, realarrtypes, realarrtypes);
-        intarrsscalar = operatorReturn(DAE.SUB_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
-                          intarrtypes, inttypes, intarrtypes);
-        realarrsscalar = operatorReturn(DAE.SUB_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
-                           realarrtypes, realtypes, realarrtypes);
-        types = List.flatten({scalars,intscalararrs,realscalararrs,intarrsscalar,
-          realarrsscalar,intarrs,realarrs});
+        types = List.flatten({scalars,intscalararrs,realscalararrs,intarrs,realarrs});
       then
-        (cache,types);
+        (types,t1,e1,t2,e2);
 
-    case (cache,Absyn.MUL(),env,t1,t2)
+    case (Absyn.MUL(),t1,e1,t2,e2)
       equation
+        false = Types.isArray(t2) and (not Types.isArray(t1));
         int_mul = DAE.MUL(DAE.ET_INT());
         real_mul = DAE.MUL(DAE.ET_REAL());
         int_mul_sp = DAE.MUL_SCALAR_PRODUCT(DAE.ET_INT());
@@ -12498,21 +12520,17 @@ algorithm
           (int_mul_mp,{int_matrix,int_vector},int_vector),(int_mul_mp,{int_matrix,int_matrix},int_matrix),
           (real_mul_mp,{real_vector,real_matrix},real_vector),(real_mul_mp,{real_matrix,real_vector},real_vector),
           (real_mul_mp,{real_matrix,real_matrix},real_matrix)};
-        intscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
-                          inttypes, intarrtypes, intarrtypes);
-        realscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
-                           realtypes, realarrtypes, realarrtypes);
         intarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
                           intarrtypes, inttypes, intarrtypes);
         realarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
                            realarrtypes, realtypes, realarrtypes);
-        types = List.flatten(
-          {scalars,intscalararrs,realscalararrs,intarrsscalar,
-          realarrsscalar,scalarprod,matrixprod});
+        types = List.flatten({scalars,intarrsscalar,realarrsscalar,scalarprod,matrixprod});
       then
-        (cache,types);
-    case (cache,Absyn.MUL_EW(),env,t1,t2) /* Arithmetical operators */
+        (types,t1,e1,t2,e2);
+
+    case (Absyn.MUL_EW(),t1,e1,t2,e2) /* Arithmetical operators */
       equation
+        false = Types.isArray(t2) and (not Types.isArray(t1));
         intarrs = operatorReturn(DAE.MUL_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
           intarrtypes, intarrtypes, intarrtypes);
         realarrs = operatorReturn(DAE.MUL_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
@@ -12522,20 +12540,15 @@ algorithm
           {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_INTEGER_DEFAULT),
           (DAE.MUL(DAE.ET_REAL()),
           {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT)};
-        intscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
-          inttypes, intarrtypes, intarrtypes);
-        realscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
-          realtypes, realarrtypes, realarrtypes);
         intarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
           intarrtypes, inttypes, intarrtypes);
         realarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
           realarrtypes, realtypes, realarrtypes);
-        types = List.flatten({scalars,intscalararrs,realscalararrs,intarrsscalar,
-          realarrsscalar,intarrs,realarrs});
+        types = List.flatten({scalars,intarrsscalar,realarrsscalar,intarrs,realarrs});
       then
-        (cache,types);
+        (types,t1,e1,t2,e2);
 
-    case (cache,Absyn.DIV(),env,t1,t2)
+    case (Absyn.DIV(),t1,e1,t2,e2)
       equation
         real_div = DAE.DIV(DAE.ET_REAL());
         real_scalar = DAE.T_REAL_DEFAULT;
@@ -12544,8 +12557,9 @@ algorithm
           realarrtypes, realtypes, realarrtypes);
         types = List.flatten({scalars,realarrscalar});
       then
-        (cache,types);
-    case (cache,Absyn.DIV_EW(),env,t1,t2) /* Arithmetical operators */
+        (types,t1,e1,t2,e2);
+
+    case (Absyn.DIV_EW(),t1,e1,t2,e2) /* Arithmetical operators */
       equation
         realarrs = operatorReturn(DAE.DIV_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
           realarrtypes, realarrtypes, realarrtypes);
@@ -12559,9 +12573,9 @@ algorithm
         types = List.flatten({scalars,realscalararrs,
           realarrsscalar,realarrs});
       then
-        (cache,types);
+        (types,t1,e1,t2,e2);
 
-    case (cache,Absyn.POW(),env,t1,t2)
+    case (Absyn.POW(),t1,e1,t2,e2)
       equation
         // Note: POW_ARR uses Integer exponents, while POW only uses Real exponents
         real_scalar = DAE.T_REAL_DEFAULT;
@@ -12575,8 +12589,8 @@ algorithm
           real_matrix)};
         types = List.flatten({scalars,arrscalar});
       then
-        (cache,types);
-    case (cache,Absyn.POW_EW(),env,t1,t2)
+        (types,t1,e1,t2,e2);
+    case (Absyn.POW_EW(),t1,e1,t2,e2)
       equation
         realarrs = operatorReturn(DAE.POW_ARR2(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
           realarrtypes, realarrtypes, realarrtypes);
@@ -12590,90 +12604,23 @@ algorithm
         types = List.flatten({scalars,realscalararrs,
           realarrsscalar,realarrs});
       then
-        (cache,types);
+        (types,t1,e1,t2,e2);
 
-    case (cache,Absyn.UMINUS(),env,t1,t2)
-      equation
-        scalars = {
-          (DAE.UMINUS(DAE.ET_INT()),{DAE.T_INTEGER_DEFAULT},
-          DAE.T_INTEGER_DEFAULT),
-          (DAE.UMINUS(DAE.ET_REAL()),{DAE.T_REAL_DEFAULT},
-          DAE.T_REAL_DEFAULT)} "The UMINUS operator, unary minus" ;
-        intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
-          intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
-          realarrtypes, realarrtypes);
-        types = List.flatten({scalars,intarrs,realarrs});
-      then
-        (cache,types);
-    case (cache,Absyn.UPLUS(),env,t1,t2)
-      equation
-        scalars = {
-          (DAE.UPLUS(DAE.ET_INT()),{DAE.T_INTEGER_DEFAULT},
-          DAE.T_INTEGER_DEFAULT),
-          (DAE.UPLUS(DAE.ET_REAL()),{DAE.T_REAL_DEFAULT},
-          DAE.T_REAL_DEFAULT)} "The UPLUS operator, unary plus." ;
-        intarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
-          intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
-          realarrtypes, realarrtypes);
-        types = List.flatten({scalars,intarrs,realarrs});
-      then
-        (cache,types);
-    case (cache,Absyn.UMINUS_EW(),env,t1,t2)
-      equation
-        scalars = {
-          (DAE.UMINUS(DAE.ET_INT()),{DAE.T_INTEGER_DEFAULT},
-          DAE.T_INTEGER_DEFAULT),
-          (DAE.UMINUS(DAE.ET_REAL()),{DAE.T_REAL_DEFAULT},
-          DAE.T_REAL_DEFAULT)} "The UMINUS operator, unary minus" ;
-        intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
-          intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
-          realarrtypes, realarrtypes);
-        types = List.flatten({scalars,intarrs,realarrs});
-      then
-        (cache,types);
-    case (cache,Absyn.UPLUS_EW(),env,t1,t2)
-      equation
-        scalars = {
-          (DAE.UPLUS(DAE.ET_INT()),{DAE.T_INTEGER_DEFAULT},
-          DAE.T_INTEGER_DEFAULT),
-          (DAE.UPLUS(DAE.ET_REAL()),{DAE.T_REAL_DEFAULT},
-          DAE.T_REAL_DEFAULT)} "The UPLUS operator, unary plus." ;
-        intarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
-          intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
-          realarrtypes, realarrtypes);
-        types = List.flatten({scalars,intarrs,realarrs});
-      then
-        (cache,types);
-
-    case (cache, Absyn.AND(), env, t1, t2)
+    case (Absyn.AND(), t1, e1, t2, e2)
       equation
         scalars = {(DAE.AND(DAE.ET_BOOL()), {DAE.T_BOOL_DEFAULT, DAE.T_BOOL_DEFAULT}, DAE.T_BOOL_DEFAULT)};
         boolarrs = operatorReturn(DAE.AND(DAE.ET_BOOL()), boolarrtypes, boolarrtypes, boolarrtypes);
         types = List.flatten({scalars, boolarrs});
-      then
-        (cache, types);
+      then (types,t1,e1,t2,e2);
 
-    case (cache, Absyn.OR(), env, t1, t2)
+    case (Absyn.OR(), t1, e1, t2, e2)
       equation
         scalars = {(DAE.OR(DAE.ET_BOOL()), {DAE.T_BOOL_DEFAULT, DAE.T_BOOL_DEFAULT}, DAE.T_BOOL_DEFAULT)};
         boolarrs = operatorReturn(DAE.OR(DAE.ET_BOOL()), boolarrtypes, boolarrtypes, boolarrtypes);
         types = List.flatten({scalars, boolarrs});
-      then
-        (cache, types);
+      then (types,t1,e1,t2,e2);
         
-    case (cache, Absyn.NOT(), env, t1, t2)
-      equation
-        scalars = {(DAE.NOT(DAE.ET_BOOL()), {DAE.T_BOOL_DEFAULT}, DAE.T_BOOL_DEFAULT)};
-        boolarrs = operatorReturnUnary(DAE.NOT(DAE.ET_BOOL()), boolarrtypes, boolarrtypes);
-        types = List.flatten({scalars, boolarrs});
-      then
-        (cache, types);
-
-    case (cache,Absyn.LESS(),env,t1,t2) /* Relational operators */
+    case (Absyn.LESS(),t1,e1,t2,e2) /* Relational operators */
       equation
         enum_op = makeEnumOperator(DAE.LESS(DAE.ET_ENUMERATION(Absyn.IDENT(""), {},{})), t1, t2);
         scalars = {
@@ -12687,9 +12634,8 @@ algorithm
           (DAE.LESS(DAE.ET_STRING()),
             {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT)};
         types = List.flatten({scalars});
-      then
-        (cache,types);
-    case (cache,Absyn.LESSEQ(),env,t1,t2)
+      then (types,t1,e1,t2,e2);
+    case (Absyn.LESSEQ(),t1,e1,t2,e2)
       equation
         enum_op = makeEnumOperator(DAE.LESSEQ(DAE.ET_ENUMERATION(Absyn.IDENT(""), {},{})), t1, t2);
         scalars = {
@@ -12703,9 +12649,8 @@ algorithm
           (DAE.LESSEQ(DAE.ET_STRING()),
             {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT)};
         types = List.flatten({scalars});
-      then
-        (cache,types);
-    case (cache,Absyn.GREATER(),env,t1,t2)
+      then (types,t1,e1,t2,e2);
+    case (Absyn.GREATER(),t1,e1,t2,e2)
       equation
         enum_op = makeEnumOperator(DAE.GREATER(DAE.ET_ENUMERATION(Absyn.IDENT(""), {},{})), t1, t2);
         scalars = {
@@ -12719,9 +12664,8 @@ algorithm
           (DAE.GREATER(DAE.ET_STRING()),
             {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT)};
         types = List.flatten({scalars});
-      then
-        (cache,types);
-    case (cache,Absyn.GREATEREQ(),env,t1,t2)
+      then (types,t1,e1,t2,e2);
+    case (Absyn.GREATEREQ(),t1,e1,t2,e2)
       equation
         enum_op = makeEnumOperator(DAE.GREATEREQ(DAE.ET_ENUMERATION(Absyn.IDENT(""), {},{})), t1, t2);
         scalars = {
@@ -12735,9 +12679,8 @@ algorithm
           (DAE.GREATEREQ(DAE.ET_STRING()),
             {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT)};
         types = List.flatten({scalars});
-      then
-        (cache,types);
-    case (cache,Absyn.EQUAL(),env,t1,t2)
+      then (types,t1,e1,t2,e2);
+    case (Absyn.EQUAL(),t1,e1,t2,e2)
       equation
         enum_op = makeEnumOperator(DAE.EQUAL(DAE.ET_ENUMERATION(Absyn.IDENT(""), {},{})), t1, t2);
         defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), DAE.ET_BOXED(DAE.ET_OTHER()), DAE.ET_ENUMERATION(Absyn.IDENT(""),{},{}));
@@ -12754,8 +12697,8 @@ algorithm
           (DAE.EQUAL(defaultExpType),{t1,t2},DAE.T_BOOL_DEFAULT)};
         types = List.flatten({scalars});
       then
-        (cache,types);
-    case (cache,Absyn.NEQUAL(),env,t1,t2)
+        (types,t1,e1,t2,e2);
+    case (Absyn.NEQUAL(),t1,e1,t2,e2)
       equation
         enum_op = makeEnumOperator(DAE.NEQUAL(DAE.ET_ENUMERATION(Absyn.IDENT(""), {},{})), t1, t2);
         defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), DAE.ET_BOXED(DAE.ET_OTHER()), DAE.ET_ENUMERATION(Absyn.IDENT(""),{},{}));
@@ -12772,15 +12715,133 @@ algorithm
           (DAE.NEQUAL(defaultExpType),{t1,t2},DAE.T_BOOL_DEFAULT)};
         types = List.flatten({scalars});
       then
-        (cache,types);
-    case (cache,op,env,t1,t2)
+        (types,t1,e1,t2,e2);
+
+      /* Element-wise equivalent operators */
+    case (Absyn.ADD_EW(),t1,e1,t2,e2)
+      equation
+        true = Types.isArray(t2) and (not Types.isArray(t1));
+        (types,t1,e1,t2,e2) = operatorsBinary(Absyn.ADD_EW(),t2,e2,t1,e1);
+      then (types,t1,e1,t2,e2);
+
+    case (Absyn.SUB_EW(),t1,e1,t2,e2)
+      equation
+        true = Types.isArray(t1) and (not Types.isArray(t2));
+        e2 = Expression.negate(e2);
+        (types,t1,e1,t2,e2) = operatorsBinary(Absyn.ADD_EW(),t1,e1,t2,e2);
+      then (types,t1,e1,t2,e2);
+
+    case (Absyn.MUL(),t1,e1,t2,e2)
+      equation
+        true = Types.isArray(t2) and (not Types.isArray(t1));
+        (types,t1,e1,t2,e2) = operatorsBinary(Absyn.MUL(),t2,e2,t1,e1);
+      then (types,t1,e1,t2,e2);
+
+    case (Absyn.MUL_EW(),t1,e1,t2,e2)
+      equation
+        true = Types.isArray(t2) and (not Types.isArray(t1));
+        (types,t1,e1,t2,e2) = operatorsBinary(Absyn.MUL_EW(),t2,e2,t1,e1);
+      then (types,t1,e1,t2,e2);
+
+    case (op,t1,e1,t2,e2)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Static.operators failed, op: " +& Dump.opSymbol(op));
+        Debug.traceln("- Static.operatorsBinary failed, op: " +& Dump.opSymbol(op));
       then
         fail();
   end matchcontinue;
-end operators;
+end operatorsBinary;
+
+protected function operatorsUnary "function: operatorsUnary
+
+  This function relates the operators in the abstract syntax to the
+  de-overloaded operators in the SCode. It produces a list of available
+  types for a specific operator, that the overload function chooses from.
+  Therefore, in order for the builtin type conversion from Integer to
+  Real to work, operators that work on both Integers and Reals must
+  return the Integer type -before- the Real type in the list.
+"
+  input Absyn.Operator op;
+  output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> ops;
+algorithm
+  ops := match op
+    local
+      list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> intarrs,realarrs,boolarrs,stringarrs,scalars,arrays,types,scalarprod,matrixprod,intscalararrs,realscalararrs,intarrsscalar,realarrsscalar,realarrscalar,arrscalar,stringscalararrs,stringarrsscalar;
+      tuple<DAE.Operator, list<DAE.Type>, DAE.Type> enum_op;
+      list<Env.Frame> env;
+      DAE.Type t1,t2,int_scalar,int_vector,int_matrix,real_scalar,real_vector,real_matrix;
+      DAE.ExpType defaultExpType;
+
+    case Absyn.UMINUS()
+      equation
+        scalars = {
+          (DAE.UMINUS(DAE.ET_INT()),{DAE.T_INTEGER_DEFAULT},
+          DAE.T_INTEGER_DEFAULT),
+          (DAE.UMINUS(DAE.ET_REAL()),{DAE.T_REAL_DEFAULT},
+          DAE.T_REAL_DEFAULT)} "The UMINUS operator, unary minus" ;
+        intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
+          intarrtypes, intarrtypes);
+        realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
+          realarrtypes, realarrtypes);
+        types = List.flatten({scalars,intarrs,realarrs});
+      then types;
+
+    case Absyn.UPLUS()
+      equation
+        scalars = {
+          (DAE.UPLUS(DAE.ET_INT()),{DAE.T_INTEGER_DEFAULT},
+          DAE.T_INTEGER_DEFAULT),
+          (DAE.UPLUS(DAE.ET_REAL()),{DAE.T_REAL_DEFAULT},
+          DAE.T_REAL_DEFAULT)} "The UPLUS operator, unary plus." ;
+        intarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
+          intarrtypes, intarrtypes);
+        realarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
+          realarrtypes, realarrtypes);
+        types = List.flatten({scalars,intarrs,realarrs});
+      then types;
+
+    case (Absyn.UMINUS_EW())
+      equation
+        scalars = {
+          (DAE.UMINUS(DAE.ET_INT()),{DAE.T_INTEGER_DEFAULT},
+          DAE.T_INTEGER_DEFAULT),
+          (DAE.UMINUS(DAE.ET_REAL()),{DAE.T_REAL_DEFAULT},
+          DAE.T_REAL_DEFAULT)} "The UMINUS operator, unary minus" ;
+        intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
+          intarrtypes, intarrtypes);
+        realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
+          realarrtypes, realarrtypes);
+        types = List.flatten({scalars,intarrs,realarrs});
+      then types;
+
+    case Absyn.UPLUS_EW()
+      equation
+        scalars = {
+          (DAE.UPLUS(DAE.ET_INT()),{DAE.T_INTEGER_DEFAULT},
+          DAE.T_INTEGER_DEFAULT),
+          (DAE.UPLUS(DAE.ET_REAL()),{DAE.T_REAL_DEFAULT},
+          DAE.T_REAL_DEFAULT)} "The UPLUS operator, unary plus." ;
+        intarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
+          intarrtypes, intarrtypes);
+        realarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
+          realarrtypes, realarrtypes);
+        types = List.flatten({scalars,intarrs,realarrs});
+      then types;
+
+    case Absyn.NOT()
+      equation
+        scalars = {(DAE.NOT(DAE.ET_BOOL()), {DAE.T_BOOL_DEFAULT}, DAE.T_BOOL_DEFAULT)};
+        boolarrs = operatorReturnUnary(DAE.NOT(DAE.ET_BOOL()), boolarrtypes, boolarrtypes);
+        types = List.flatten({scalars, boolarrs});
+      then types;
+
+    case op
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- Static.operatorsUnary failed, op: " +& Dump.opSymbol(op));
+      then fail();
+  end match;
+end operatorsUnary;
 
 protected function makeEnumOperator
   "Used by operators to create an operator with enumeration type. It sets the

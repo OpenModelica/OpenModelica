@@ -4897,14 +4897,7 @@ case BINARY(__) then
     let &preExp += 'sub_alloc_<%type%>(&<%e1%>, &<%e2%>, &<%var%>);<%\n%>'
     '<%var%>'
   case MUL_ARR(__) then  'daeExpBinary:ERR for MUL_ARR'  
-  case DIV_ARR(__) then  'daeExpBinary:ERR for DIV_ARR'  
-  case MUL_SCALAR_ARRAY(__) then
-    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" 
-                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then "integer_array"
-                        else "real_array"
-    let var = tempDecl(type, &varDecls /*BUFD*/)
-    let &preExp += 'mul_alloc_scalar_<%type%>(<%e1%>, &<%e2%>, &<%var%>);<%\n%>'
-    '<%var%>'    
+  case DIV_ARR(__) then  'daeExpBinary:ERR for DIV_ARR'
   case MUL_ARRAY_SCALAR(__) then
     let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" 
                         case ET_ARRAY(ty=ET_ENUMERATION(__)) then "integer_array"
@@ -4912,10 +4905,8 @@ case BINARY(__) then
     let var = tempDecl(type, &varDecls /*BUFD*/)
     let &preExp += 'mul_alloc_<%type%>_scalar(&<%e1%>, <%e2%>, &<%var%>);<%\n%>'
     '<%var%>'  
-  case ADD_SCALAR_ARRAY(__) then 'daeExpBinary:ERR for ADD_SCALAR_ARRAY'
   case ADD_ARRAY_SCALAR(__) then 'daeExpBinary:ERR for ADD_ARRAY_SCALAR'
   case SUB_SCALAR_ARRAY(__) then 'daeExpBinary:ERR for SUB_SCALAR_ARRAY'
-  case SUB_ARRAY_SCALAR(__) then 'daeExpBinary:ERR for SUB_ARRAY_SCALAR'
   case MUL_SCALAR_PRODUCT(__) then
     let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_scalar" 
                         case ET_ARRAY(ty=ET_ENUMERATION(__)) then "integer_scalar"
@@ -6369,12 +6360,9 @@ template expTypeFromOpFlag(Operator op, Integer flag)
   case o as SUB_ARR(__)
   case o as MUL_ARR(__)
   case o as DIV_ARR(__)
-  case o as MUL_SCALAR_ARRAY(__)
   case o as MUL_ARRAY_SCALAR(__)
-  case o as ADD_SCALAR_ARRAY(__)
   case o as ADD_ARRAY_SCALAR(__)
   case o as SUB_SCALAR_ARRAY(__)
-  case o as SUB_ARRAY_SCALAR(__)
   case o as MUL_SCALAR_PRODUCT(__)
   case o as MUL_MATRIX_PRODUCT(__)
   case o as DIV_ARRAY_SCALAR(__)
