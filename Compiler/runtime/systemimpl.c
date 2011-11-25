@@ -81,7 +81,7 @@ extern "C" {
 #define MAXPATHLEN MAX_PATH
 #define S_IFLNK  0120000  /* symbolic link */
 
-#if defined(__MINGW32__) /* include dirent for MINGW */
+#if defined(__MINGW32__) || defined(_MSC_VER) /* include dirent for MINGW */
 #include <sys/types.h>
 #include <dirent.h>
 #endif
@@ -1563,12 +1563,6 @@ extern int SystemImpl__reopenStandardStream(int id,const char *filename)
   }
   return 1;
 }
-
-extern int SystemImpl__setStackOverflowSignal(int stackOverflow)
-{
-  return stackOverflow;
-}
-
 
 #ifdef __cplusplus
 }

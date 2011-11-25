@@ -752,7 +752,7 @@ int mmc_GC_collect(mmc_GC_local_state_type local_GC_state)
   assert(sizeFree <= sizePages);
 
   /* only collect if sizeof free is 5% sizeof pages */
-  if ((double)sizeFree * 4 > mmc_GC_state->settings.page_size)
+  if ((double)sizeFree * 10 > mmc_GC_state->settings.page_size)
   {
     return 0;
   }
@@ -778,7 +778,7 @@ int mmc_GC_collect(mmc_GC_local_state_type local_GC_state)
 
   mmc_GC_state->pages = free_list_compact(mmc_GC_state->pages);
 
-  if ((sizeFree - saved) && debug)
+  if ((sizeFree - saved)/* && debug*/)
   {
     fprintf(stderr, "GC collect: free: %8.2fMb pages: %8.2fMb free: %8.3f%% freed: %8.4fMb  lst: %10lu p: %4ld s: %6lu r:%6lu [%s]\n",
         (double)sizeFree/(1024.0*1024.0),

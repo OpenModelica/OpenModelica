@@ -72,6 +72,7 @@ protected import Util;
 public constant Integer lowBucketSize =  257;
 public constant Integer avgBucketSize = 2053;
 public constant Integer bigBucketSize = 4013;
+public constant Integer biggerBucketSize = 25343;
 public constant Integer hugeBucketSize = 536870879 "2^29 - 33 is prime :)";
 public constant Integer defaultBucketSize = avgBucketSize;
 
@@ -143,7 +144,8 @@ algorithm
       Value value;
       FuncsTuple fntpl;
       FuncHash hashFunc;
-      /* Adding when not existing previously */
+    
+    // Adding when not existing previously
     case ((v as (key,value)),(hashTable as (hashvec,varr,bsize,n,fntpl as (hashFunc,_,_,_))))
       equation
         failure((_) = get(key, hashTable));
@@ -326,6 +328,7 @@ algorithm
       Key k;
       FuncEq keyEqual;
       FuncHash hashFunc;
+      
     case (key,(hashvec,varr,bsize,n,(hashFunc,keyEqual,_,_)))
       equation
         hashindx = hashFunc(key, bsize);
@@ -334,6 +337,7 @@ algorithm
         (k, v) = valueArrayNth(varr, indx);
       then
         (v,indx);
+        
   end match;
 end get1;
 
@@ -347,16 +351,19 @@ protected function get2
   partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
   replaceable type Key subtypeof Any;
 algorithm
-  index :=
-  matchcontinue (key,keyIndices,keyEqual)
+  index := matchcontinue (key,keyIndices,keyEqual)
     local
       Key key2;
       list<tuple<Key,Integer>> xs;
+        
+    // search for the key, found the good one
     case (key,((key2,index) :: _),keyEqual)
       equation
         true = keyEqual(key, key2);
       then
         index;
+    
+    // search more
     case (key,(_ :: xs),keyEqual)
       equation
         index = get2(key, xs, keyEqual);

@@ -858,3 +858,12 @@ end realSqrt;
 function fail
   external "builtin";
 end fail;
+
+function setStackOverflowSignal
+  "Sets the stack overflow signal to the given value and returns the old one"
+  input Boolean inSignal;
+  output Boolean outSignal;
+  annotation(__OpenModelica_Impure = true);
+external "builtin";
+end setStackOverflowSignal;
+

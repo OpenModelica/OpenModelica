@@ -899,12 +899,4 @@ public function reopenStandardStream
   external "C" success=SystemImpl__reopenStandardStream(_stream,filename) annotation(Library = {"omcruntime"});
 end reopenStandardStream;
 
-public function setStackOverflowSignal
-"@author: adrpo
- sets the stack overflow signal and returns the previous one"
-  input Boolean inStackOverflow;
-  output Boolean outStackOverflow;
-  external "C" outStackOverflow = SystemImpl__setStackOverflowSignal(inStackOverflow) annotation(Library = {"omcruntime"});
-end setStackOverflowSignal;
-
 end System;

@@ -3538,7 +3538,7 @@ public
  constant DAE.ExpType etNoRetCall   = DAE.ET_NORETCALL();
  constant DAE.ExpType etFuncRefVar  = DAE.ET_FUNCTION_REFERENCE_VAR();
  constant DAE.ExpType etMetaType    = DAE.ET_METATYPE();
- constant DAE.ExpType etOther        = DAE.ET_OTHER();
+ constant DAE.ExpType etOther       = DAE.ET_OTHER();
 
 public function elabType 
 "@author: adrpo
@@ -3694,7 +3694,7 @@ algorithm
   outEq := typesElabEquivalent(inType1, ty2);
 end typeMemoryEntryEq;
 
-protected function typesElabEquivalent
+public function typesElabEquivalent
   "This function checks if two types will result in the same elaborated type.
   Used by elabType to check if a matching elaborated type already exists."
   input DAE.Type inType1;
@@ -7230,5 +7230,12 @@ algorithm
     case (DAE.ET_NORETCALL(), _) then ();
   end match;
 end verifyExpressionType2;
+
+public function printExpTypeStr
+  input DAE.ExpType iet;
+  output String str;
+algorithm
+  str := printTypeStr(expTypetoTypesType(iet));
+end printExpTypeStr;
         
 end Types;

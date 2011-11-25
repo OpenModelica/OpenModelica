@@ -52,7 +52,9 @@
 #endif
 
 #define LDFLAGS_SENDDATA " -static-libgcc -lsendData -lQtNetwork-mingw -lQtCore-mingw -lQtGui-mingw -luuid -lole32 -lws2_32"
+#if !defined(_MSC_VER)
 #define CONFIG_WITH_SENDDATA 1
+#endif
 #define CONFIG_EXE_EXT ".exe"
 #define CONFIG_DLL_EXT ".dll"
 #define CONFIG_OS "Windows_NT"

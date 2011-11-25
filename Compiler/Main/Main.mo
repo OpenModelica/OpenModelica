@@ -267,7 +267,8 @@ algorithm
         (true,str,isymb);
     case (str,isymb)
       equation
-        _=System.setStackOverflowSignal(false);
+        _ = setStackOverflowSignal(false);
+
         Error.addMessage(Error.STACK_OVERFLOW,{str});
       then
         (true,"",isymb);

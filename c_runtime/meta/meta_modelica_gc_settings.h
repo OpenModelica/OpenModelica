@@ -56,7 +56,7 @@ extern "C" {
 #define MMC_GC_NUMBER_OF_PAGES                1  /* default number of pages at start */
 #define MMC_GC_PAGES_SIZE_INITIAL          1024  /* default size for pages array at start, realloc on full */
 
-#define MMC_GC_FREE_SIZES                     1  /* small object with size until max 101 */
+#define MMC_GC_FREE_SIZES                  1024  /* small object with size until max 101 */
 #define MMC_GC_FREE_SLOTS_SIZE_INITIAL        1  /* for big objects */
 
 #define MMC_GC_ROOTS_SIZE_INITIAL        8*1024  /* initial size of roots, reallocate on full */

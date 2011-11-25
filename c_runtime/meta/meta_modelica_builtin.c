@@ -713,3 +713,9 @@ modelica_integer intMaxLit()
   return LONG_MAX / 2;
 }
 
+modelica_boolean setStackOverflowSignal(modelica_boolean inSignal)
+{
+  /* return for now what we got */
+  return inSignal;
+}
+

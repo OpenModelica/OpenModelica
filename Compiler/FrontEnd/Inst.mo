@@ -436,7 +436,8 @@ algorithm
       equation
         // if we got a stack overflow remove the stack-overflow flag
         // adrpo: NOTE THAT THE NEXT FUNCTION CALL MUST BE THE FIRST IN THIS CASE, otherwise the stack overflow will not be caught! 
-        stackOverflow = System.setStackOverflowSignal(false);
+        stackOverflow = setStackOverflowSignal(false);
+                
         cname_str = Absyn.pathString(path) +& Util.if_(stackOverflow, ". The compiler got into Stack Overflow!", "");
         Error.addMessage(Error.ERROR_FLATTENING, {cname_str});
         

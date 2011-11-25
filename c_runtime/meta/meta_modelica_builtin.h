@@ -143,6 +143,8 @@ modelica_metatype boxptr_valueConstructor(modelica_metatype);
 modelica_real realMaxLit();
 modelica_integer intMaxLit();
 
+modelica_boolean setStackOverflowSignal(modelica_boolean);
+
 #if defined(__cplusplus)
 }
 #endif
