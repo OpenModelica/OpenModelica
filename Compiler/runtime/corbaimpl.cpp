@@ -141,6 +141,7 @@ DWORD WINAPI runOrb(void* arg) {
   return 0;
 }
 
+/* Windows version */
 int CorbaImpl__initialize()
 {
 #ifndef NOMICO
@@ -307,15 +308,17 @@ try {
   return NULL;
 }
 
+/* Linux version */
 int CorbaImpl__initialize()
 {
 #ifndef NOMICO
 #if defined(USE_OMNIORB)
-  char *dummyArgv[] = { "omc", "-NoResolve", "-IIOPAddr", "inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
+  char *dummyArgv[] = { "omc", "-NoResolve", "-IIOPAddr", "inet:127.0.0.1:0", "-ORBgiopMaxMsgSize", "10485760" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
+  int argc=6;
 #else
   char *dummyArgv[] = { "omc", "-ORBNoResolve", "-ORBIIOPAddr", "inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
-#endif
   int argc=4;
+#endif
   
   pthread_cond_init(&omc_waitformsg,NULL);
   pthread_cond_init(&corba_waitformsg,NULL);
