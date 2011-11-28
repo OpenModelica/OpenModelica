@@ -157,6 +157,7 @@ end ValidOptions;
 // Change this to a proper enum when we have support for them.
 public constant Integer MODELICA = 1;
 public constant Integer METAMODELICA = 2;
+public constant Integer PARMODELICA = 3;
 
 // DEBUG FLAGS
 public
@@ -444,8 +445,8 @@ constant ConfigFlag TARGET = CONFIG_FLAG(5, "target", NONE(), EXTERNAL(),
   STRING_FLAG("gcc"), SOME(STRING_OPTION({"gcc, msvc"})),
   "Sets the target compiler to use.");
 constant ConfigFlag GRAMMAR = CONFIG_FLAG(6, "grammar", SOME("g"), EXTERNAL(),
-  ENUM_FLAG(MODELICA, {("Modelica", MODELICA), ("MetaModelica", METAMODELICA)}), 
-  SOME(STRING_OPTION({"Modelica", "MetaModelica"})),
+  ENUM_FLAG(MODELICA, {("Modelica", MODELICA), ("MetaModelica", METAMODELICA), ("ParModelica", PARMODELICA)}), 
+  SOME(STRING_OPTION({"Modelica", "MetaModelica", "ParModelica"})),
   "Sets the grammar and semantics to accept.");
 constant ConfigFlag ANNOTATION_VERSION = CONFIG_FLAG(7, "annotationVersion",
   NONE(), EXTERNAL(), STRING_FLAG("3.x"), SOME(STRING_OPTION({"1.x", "2.x", "3.x"})),

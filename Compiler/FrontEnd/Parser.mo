@@ -48,7 +48,7 @@ public function parse "Parse a mo-file"
   input String filename;
   output Absyn.Program outProgram;
 algorithm
-  outProgram := ParserExt.parse(filename, Config.acceptMetaModelicaGrammar(),
+  outProgram := ParserExt.parse(filename, Config.acceptedGrammar(),
     Config.getRunningTestsuite());
 end parse;
 
@@ -57,7 +57,7 @@ public function parseexp "Parse a mos-file"
   output Interactive.Statements outStatements;
 algorithm
   outStatements := ParserExt.parseexp(filename,
-    Config.acceptMetaModelicaGrammar(), Config.getRunningTestsuite());
+    Config.acceptedGrammar(), Config.getRunningTestsuite());
 end parseexp;
 
 public function parsestring "Parse a string as if it were a stored definition"
@@ -66,7 +66,7 @@ public function parsestring "Parse a string as if it were a stored definition"
   output Absyn.Program outProgram;
 algorithm
   outProgram := ParserExt.parsestring(str,infoFilename,
-    Config.acceptMetaModelicaGrammar(), Config.getRunningTestsuite());
+    Config.acceptedGrammar(), Config.getRunningTestsuite());
 end parsestring;
 
 public function parsestringexp "Parse a string as if it was a sequence of statements"
@@ -75,7 +75,7 @@ public function parsestringexp "Parse a string as if it was a sequence of statem
   output Interactive.Statements outStatements;
 algorithm
   outStatements := ParserExt.parsestringexp(str,infoFilename,
-    Config.acceptMetaModelicaGrammar(), Config.getRunningTestsuite());
+    Config.acceptedGrammar(), Config.getRunningTestsuite());
 end parsestringexp;
 end Parser;
 
