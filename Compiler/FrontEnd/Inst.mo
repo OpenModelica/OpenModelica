@@ -302,7 +302,7 @@ algorithm
         cache = Env.setCacheClassName(cache,path);
         cdecls = SCodeFlatten.flattenClassInProgram(inPath, cdecls);
         (cache,env) = Builtin.initialEnv(cache);
-        (cache,env_1,ih,dae1) = instClassDecls(cache, env, ih, cdecls, path);
+        (cache,env_1,ih,dae1) = instClassDecls(cache, env, ih, cdecls);
         (cache,env_2,ih,dae2) = instClassInProgram(cache, env_1, ih, cdecls, path);
         // check the models for balancing
         //Debug.fcall2(Flags.CHECK_MODEL_BALANCE, checkModelBalancing, SOME(path), dae1);
@@ -332,7 +332,7 @@ algorithm
         
         //System.startTimer();
         //print("\nInstClassDecls");
-        (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls, path);
+        (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls);
         //System.stopTimer();
         //print("\nInstClassDecls: " +& realString(System.getTimerIntervalTime()));
 
@@ -602,7 +602,7 @@ algorithm
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.IDENT(name = name2))) /* top level class */
       equation
         (cache,env) = Builtin.initialEnv(cache);
-        (cache,env_1,ih,dae1) = instClassDecls(cache, env, ih, cdecls, path);
+        (cache,env_1,ih,dae1) = instClassDecls(cache, env, ih, cdecls);
         cdecls = List.map1(cdecls,SCode.classSetPartial,SCode.NOT_PARTIAL());
         (cache,env_2,ih,dae) = instClassInProgram(cache, env_1, ih, cdecls, path);
 
@@ -616,7 +616,7 @@ algorithm
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name))) /* class in package */
       equation
         (cache,env) = Builtin.initialEnv(cache);
-        (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls, path);
+        (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls);
         (cache,(cdef as SCode.CLASS(name = n)),env_2) = Lookup.lookupClass(cache,env_1, path, true);
         cdef = SCode.classSetPartial(cdef, SCode.NOT_PARTIAL());
         (cache,env_2,ih,_,dae,_,_,_,_,_) =
@@ -675,7 +675,7 @@ algorithm
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.IDENT(name = name2))) /* top level class */
       equation
         (cache,env) = Builtin.initialEnv(cache);
-        (cache,env_1,ih,dae1) = instClassDecls(cache, env, ih, cdecls, path);
+        (cache,env_1,ih,dae1) = instClassDecls(cache, env, ih, cdecls);
         (cache,env_2,ih,dae) = instClassInProgramImplicit(cache, env_1, ih, cdecls, path);
       then
         (cache,env_2,ih,dae);
@@ -683,7 +683,7 @@ algorithm
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name))) /* class in package */
       equation
         (cache,env) = Builtin.initialEnv(cache);
-        (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls, path);
+        (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls);
         (cache,(cdef as SCode.CLASS(name = n)),env_2) = Lookup.lookupClass(cache,env_1, path, true);
         env_2 = Env.extendFrameC(env_2, cdef);
         (cache, env, ih, dae) = implicitInstantiation(cache, env_2, ih, DAE.NOMOD(), Prefix.NOPRE(), cdef, {});
@@ -737,7 +737,7 @@ algorithm
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.IDENT(name = name2))) /* top level class */
       equation
         (cache,env) = Builtin.initialEnv(cache);
-        (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls, path);
+        (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls);
         (cache,env_2,ih) = instFunctionInProgramImplicit(cache, env_1, ih, cdecls, path);
       then
         (cache,env_2,ih);
@@ -745,7 +745,7 @@ algorithm
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name))) /* class in package */
       equation
         (cache,env) = Builtin.initialEnv(cache);
-        (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls, path);
+        (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls);
         (cache,(cdef as SCode.CLASS(name = n)),env_2) = Lookup.lookupClass(cache,env_1, path, true);
         env_2 = Env.extendFrameC(env_2, cdef);
         (cache,env,ih) = implicitFunctionInstantiation(cache, env_2, ih, DAE.NOMOD(), Prefix.NOPRE(), cdef, {});
@@ -936,65 +936,31 @@ protected function instClassDecls
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input SCode.Program inProgram;
-  input SCode.Path inPath;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InstanceHierarchy outIH;
   output DAE.DAElist outDae;
 algorithm
-  (outCache,outEnv,outIH,outDae) := matchcontinue (inCache,inEnv,inIH,inProgram,inPath)
+  (outCache,outEnv,outIH,outDae) := matchcontinue (inCache,inEnv,inIH,inProgram)
     local
-      list<Env.Frame> env_1,env_2,env;
-      DAE.DAElist dae1,dae2,dae;
-      SCode.Element c;
-      String name1,name2;
-      list<SCode.Element> cs;
-      Absyn.Path ref;
+      DAE.DAElist dae1, dae2, dae;
+      Env.Env env;
       Env.Cache cache;
       InstanceHierarchy ih;
+      SCode.Element c;
+      list<SCode.Element> cs;
+      String name;
 
-    case (cache,env,ih,((c as SCode.CLASS(name = name1)) :: cs),(ref as Absyn.IDENT(name = name2)))
+    case (cache, env, ih, {}) then (cache, env, ih, DAEUtil.emptyDae);
+      
+    case (cache, env, ih, c :: cs)
       equation
-        false = stringEq(name1, name2);
-        (cache,env_1,ih,dae1) = instClassDecl(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), c, {}) ;
-        (cache,env_2,ih,dae2) = instClassDecls(cache,env_1,ih, cs, ref);
+        (cache, env, ih, dae1) = instClassDecl(cache, env, ih, DAE.NOMOD(), Prefix.NOPRE(), c, {});
+        (cache, env, ih, dae2) = instClassDecls(cache, env, ih, cs);
         dae = DAEUtil.joinDaes(dae1, dae2);
       then
-        (cache,env_2,ih,dae);
+        (cache, env, ih, dae);
 
-    case (cache,env,ih,((c as SCode.CLASS(name = name1)) :: cs),(ref as Absyn.IDENT(name = name2)))
-      equation
-        true = stringEq(name1, name2);
-        (cache,env_1,ih,dae2) = instClassDecls(cache,env,ih, cs, ref);
-      then
-        (cache,env_1,ih,dae2);
-
-    case (cache,env,ih,((c as SCode.CLASS(name = name1)) :: cs),(ref as Absyn.QUALIFIED(name = name2)))
-      equation
-        true = stringEq(name1, name2);
-        (cache,env_1,ih,dae1) = instClassDecl(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), c, {});
-        (cache,env_2,ih,dae2) = instClassDecls(cache,env_1,ih, cs, ref);
-        dae = DAEUtil.joinDaes(dae1, dae2);
-      then
-        (cache,env_2,ih,dae);
-
-    case (cache,env,ih,((c as SCode.CLASS(name = name1)) :: cs),(ref as Absyn.QUALIFIED(name = name2)))
-      equation
-        false = stringEq(name1, name2);
-        (cache,env_1,ih,dae1) = instClassDecl(cache,env,ih, DAE.NOMOD(),
-        Prefix.NOPRE(), c, {})  ;
-        (cache,env_2,ih,dae2) = instClassDecls(cache,env_1,ih, cs, ref);
-        dae = DAEUtil.joinDaes(dae1, dae2);
-      then
-        (cache,env_2,ih,dae);
-
-    case (cache,env,ih,{},_) then (cache,env,ih,DAEUtil.emptyDae);
-    
-    case (_,_,ih,_,ref)
-      equation
-        print("Inst.instClassDecls failed\n ref =" +& Absyn.pathString(ref) +& "\n");
-      then
-        fail();
   end matchcontinue;
 end instClassDecls;
 
@@ -1044,7 +1010,7 @@ protected function addProgramToEnv
   output Env.Env env_1;
   output InstanceHierarchy outIH;
 algorithm
-  (outCache,env_1,outIH,_) := instClassDecls(inCache,env,inIH, p, path);
+  (outCache,env_1,outIH,_) := instClassDecls(inCache,env,inIH, p);
 end addProgramToEnv;
 
 protected function instProgram
@@ -1097,7 +1063,7 @@ algorithm
         // Debug.fprint(Flags.INSTTR, "inst_program1: ");
         // Debug.fprint(Flags.INSTTR, n);
         // Debug.fprintln(Flags.INSTTR, "");
-        containedInOpt = Env.getEnvPath(env);
+        //containedInOpt = Env.getEnvPath(env);
         (cache,env_1,ih,store,dae,csets,_,_,_,graph) =
           instClass(cache,env,ih,UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(),
             Prefix.NOPRE(), c, {}, false, TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet) ;
@@ -14638,7 +14604,7 @@ algorithm
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.IDENT(name = name2))) /* top level class */
       equation
         (cache,env) = Builtin.initialEnv(cache);
-        (cache,env_1,ih,dae1) = instClassDecls(cache,env,ih, cdecls, path);
+        (cache,env_1,ih,dae1) = instClassDecls(cache,env,ih, cdecls);
         (cache,env_2,ih,dae) = instBoschClassInProgram(cache,env_1,ih, cdecls, path);
       then
         (cache,env_2,ih,dae);
@@ -14646,7 +14612,7 @@ algorithm
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name))) /* class in package */
       equation
         (cache,env) = Builtin.initialEnv(cache);
-        (cache,env_1,ih,_) = instClassDecls(cache,env,ih, cdecls, path);
+        (cache,env_1,ih,_) = instClassDecls(cache,env,ih, cdecls);
         (cache,(cdef as SCode.CLASS(name = n)),env_2) = Lookup.lookupClass(cache,env_1, path, true);
         (cache,env_2,ih,_,dae,_,_,_,_,_) =
           instClass(cache,env_2,ih,UnitAbsyn.noStore, DAE.NOMOD(), Prefix.NOPRE(),
