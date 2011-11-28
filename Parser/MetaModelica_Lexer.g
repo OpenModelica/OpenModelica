@@ -60,6 +60,12 @@ SUBTYPEOF : 'subtypeof';
 COLONCOLON : '::';
 MOD : '%';
 
+/*mahge: moved from BaseModelica_Lexer. e.g. function match end match; should not be error with out MetaModelica*/
+END_MATCH : 'end' EAT_WS_COMMENT 'match';
+END_MATCHCONTINUE : 'end' EAT_WS_COMMENT 'matchcontinue';
+
+
+
 STAR    : '*' {METAMODELICA_REAL_OP()};
 MINUS    : '-' {METAMODELICA_REAL_OP()};
 PLUS    : '+' {METAMODELICA_REAL_STRING_OP()};
@@ -91,3 +97,15 @@ CONSTRAINT : 'constraint';
 //INITIALGUESS : 'initialGuess';
 //FREE : 'free';
 //FINALTIME : 'finalTime';
+
+
+// ---------
+// ParModelica Extensions
+// ---------
+
+PARFOR : 'parfor';
+T_PARALLEL: 'parallel';
+T_LOCAL: 'parlocal';
+T_GLOBAL: 'parglobal';
+T_KERNEL: 'parkernel';
+END_PARFOR : 'end' EAT_WS_COMMENT 'parfor';

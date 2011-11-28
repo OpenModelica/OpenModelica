@@ -48,6 +48,7 @@ extern "C" {
 
 #include <MetaModelica_Lexer.h>
 #include <Modelica_3_Lexer.h>
+#include <ParModelica_Lexer.h>
 #include <ModelicaParser.h>
 #include <antlr3intstream.h>
 
@@ -279,11 +280,21 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int runningTestsuite)
 
   if (ModelicaParser_flags & PARSE_META_MODELICA) {
     lxr = MetaModelica_LexerNew(input);
+	//printf("Parsing MetaModelica.\n\n");
     if (lxr == NULL ) { fprintf(stderr, "Unable to create the lexer due to malloc() failure1\n"); fflush(stderr); exit(ANTLR3_ERR_NOMEM); }
     pLexer = ((pMetaModelica_Lexer)lxr)->pLexer;
     pLexer->rec->displayRecognitionError = handleLexerError;
     pLexer->recover = lexNoRecover;
     tstream = antlr3CommonTokenStreamSourceNew(ANTLR3_SIZE_HINT, TOKENSOURCE(((pMetaModelica_Lexer)lxr)));
+  } 
+  else if (ModelicaParser_flags & PARSE_PAR_MODELICA) {
+    lxr = ParModelica_LexerNew(input);
+	//printf("Parsing ParModelica.\n\n");
+    if (lxr == NULL ) { fprintf(stderr, "Unable to create the lexer due to malloc() failure1\n"); exit(ANTLR3_ERR_NOMEM); }
+    pLexer = ((pParModelica_Lexer)lxr)->pLexer;
+    pLexer->rec->displayRecognitionError = handleLexerError;
+    pLexer->recover = lexNoRecover;
+    tstream = antlr3CommonTokenStreamSourceNew(ANTLR3_SIZE_HINT, TOKENSOURCE(((pParModelica_Lexer)lxr)));
   } else {
     lxr = Modelica_3_LexerNew(input);
     if (lxr == NULL ) { fprintf(stderr, "Unable to create the lexer due to malloc() failure1\n"); fflush(stderr); exit(ANTLR3_ERR_NOMEM); }
@@ -324,6 +335,9 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int runningTestsuite)
   tstream = (pANTLR3_COMMON_TOKEN_STREAM) NULL;
   if (ModelicaParser_flags & PARSE_META_MODELICA) {
     ((pMetaModelica_Lexer)lxr)->free((pMetaModelica_Lexer)lxr);
+  } 
+  else if (ModelicaParser_flags & PARSE_PAR_MODELICA) {
+    ((pParModelica_Lexer)lxr)->free((pParModelica_Lexer)lxr);
   } else {
     ((pModelica_3_Lexer)lxr)->free((pModelica_3_Lexer)lxr);
   }

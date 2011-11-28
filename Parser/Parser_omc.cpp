@@ -34,10 +34,11 @@ extern "C" {
 #include "rml_compatibility.h"
 #include "parse.c"
 
-void* ParserExt_parse(const char* filename, int acceptMM, int runningTestsuite)
+void* ParserExt_parse(const char* filename, int acceptedGrammer, int runningTestsuite)
 {
   int flags = PARSE_MODELICA;
-  if(acceptMM) flags |= PARSE_META_MODELICA;
+  if(acceptedGrammer == 2) flags |= PARSE_META_MODELICA;
+  else if(acceptedGrammer == 3) flags |= PARSE_PAR_MODELICA;
 
   void *res = parseFile(filename, flags, runningTestsuite);
   if (res == NULL)
@@ -46,10 +47,11 @@ void* ParserExt_parse(const char* filename, int acceptMM, int runningTestsuite)
   return res;
 }
 
-void* ParserExt_parseexp(const char* filename, int acceptMM, int runningTestsuite)
+void* ParserExt_parseexp(const char* filename, int acceptedGrammer, int runningTestsuite)
 {
   int flags = PARSE_EXPRESSION;
-  if(acceptMM) flags |= PARSE_META_MODELICA;
+  if(acceptedGrammer == 2) flags |= PARSE_META_MODELICA;
+  else if(acceptedGrammer == 3) flags |= PARSE_PAR_MODELICA;
   
   void *res = parseFile(filename, flags, runningTestsuite);
   if (res == NULL)
@@ -57,10 +59,11 @@ void* ParserExt_parseexp(const char* filename, int acceptMM, int runningTestsuit
   return res;
 }
 
-void* ParserExt_parsestring(const char* data, const char* filename, int acceptMM, int runningTestsuite)
+void* ParserExt_parsestring(const char* data, const char* filename, int acceptedGrammer, int runningTestsuite)
 {
   int flags = PARSE_MODELICA;
-  if(acceptMM) flags |= PARSE_META_MODELICA;
+  if(acceptedGrammer == 2) flags |= PARSE_META_MODELICA;
+  else if(acceptedGrammer == 3) flags |= PARSE_PAR_MODELICA;
 
   void *res = parseString(data, filename, flags, runningTestsuite);
   if (res != NULL) {
@@ -70,10 +73,11 @@ void* ParserExt_parsestring(const char* data, const char* filename, int acceptMM
   }
 }
 
-void* ParserExt_parsestringexp(const char* data, const char* filename, int acceptMM, int runningTestsuite)
+void* ParserExt_parsestringexp(const char* data, const char* filename, int acceptedGrammer, int runningTestsuite)
 {
   int flags = PARSE_EXPRESSION;
-  if(acceptMM) flags |= PARSE_META_MODELICA;
+  if(acceptedGrammer == 2) flags |= PARSE_META_MODELICA;
+  else if(acceptedGrammer == 3) flags |= PARSE_PAR_MODELICA;
 
   void *res = parseString(data, filename, flags, runningTestsuite);
   if (res != NULL) {

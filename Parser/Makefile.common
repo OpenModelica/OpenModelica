@@ -25,15 +25,20 @@ HFILES = \
   ModelicaParserCommon.h \
   MetaModelica_Lexer.h \
   MetaModelica_Lexer_BaseModelica_Lexer.h \
+  ParModelica_Lexer.h \
+  ParModelica_Lexer_BaseModelica_Lexer.h \
   Modelica_3_Lexer.h \
   Modelica_3_Lexer_BaseModelica_Lexer.h
 
 OBJS = \
+ParModelica_Lexer_BaseModelica_Lexer.o ParModelica_Lexer.o \
 MetaModelica_Lexer_BaseModelica_Lexer.o MetaModelica_Lexer.o \
 Modelica_3_Lexer_BaseModelica_Lexer.o Modelica_3_Lexer.o
 
+ParModelica_Lexer.o: ParModelica_Lexer.h ParModelica_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h
 MetaModelica_Lexer.o: MetaModelica_Lexer.h MetaModelica_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h
 Modelica_3_Lexer.o: Modelica_3_Lexer.h Modelica_3_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h
+ParModelica_Lexer_BaseModelica_Lexer.o: ParModelica_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h
 MetaModelica_Lexer_BaseModelica_Lexer.o: MetaModelica_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h
 Modelica_3_Lexer_BaseModelica_Lexer.o: Modelica_3_Lexer_BaseModelica_Lexer.h ../Compiler/runtime/errorext.h
 ModelicaParser_rml.o: ModelicaParser.c ModelicaParser.h ModelicaParserCommon.h ../Compiler/Absyn.h ../Compiler/Interactive.h ../Compiler/runtime/errorext.h
@@ -55,6 +60,7 @@ libomparse.a: Parser_omc.o $(OBJS) ModelicaParser_omc.o
 parsergen = ModelicaParser.c ModelicaParser.h
 modelica3gen = Modelica_3_Lexer_BaseModelica_Lexer.c Modelica_3_Lexer_BaseModelica_Lexer.h Modelica_3_Lexer.c Modelica_3_Lexer.h
 metamodelicagen = MetaModelica_Lexer_BaseModelica_Lexer.c MetaModelica_Lexer_BaseModelica_Lexer.h MetaModelica_Lexer.c MetaModelica_Lexer.h
+parmodelicagen = ParModelica_Lexer_BaseModelica_Lexer.c ParModelica_Lexer_BaseModelica_Lexer.h ParModelica_Lexer.c ParModelica_Lexer.h
 
 ModelicaParser.stamp: Modelica.g
 	@rm -f $@.tmp
@@ -77,7 +83,14 @@ MetaModelica_Lexer.stamp: MetaModelica_Lexer.g BaseModelica_Lexer.g
 	$(ANTLRCMD) $<
 	@touch -c $(metamodelicagen)
 	@mv -f $@.tmp $@
-
+ParModelica_Lexer.stamp: ParModelica_Lexer.g BaseModelica_Lexer.g
+	@rm -f $@.tmp
+	@touch $@.tmp
+	@touch $<
+	$(ANTLRCMD) $<
+	@touch -c $(parmodelicagen)
+	@mv -f $@.tmp $@
+	
 $(parsergen) : ModelicaParser.stamp
 	## Recover from the removal of $@
 	@if test -f $@; then :; else \
@@ -93,6 +106,13 @@ $(modelica3gen) : Modelica_3_Lexer.stamp
 	fi
 
 $(metamodelicagen) : MetaModelica_Lexer.stamp
+	## Recover from the removal of $@
+	@if test -f $@; then :; else \
+	rm -f $<; \
+	$(MAKE) $<; \
+	fi
+	
+$(parmodelicagen) : ParModelica_Lexer.stamp
 	## Recover from the removal of $@
 	@if test -f $@; then :; else \
 	rm -f $<; \

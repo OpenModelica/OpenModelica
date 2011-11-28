@@ -36,6 +36,7 @@ options {
 }
 
 import MetaModelica_Lexer; /* Makes all tokens defined, imported in OptiMo_Lexer */
+//import ParModelica_Lexer; /* Makes all tokens defined, except the ones specific to MetaModelica */
 //import OptiMo_Lexer;  /* Makes all tokens defined */
 
 @includes {
@@ -453,7 +454,7 @@ component_clause returns [void* ast] @declarations {
   ;
 
 type_prefix returns [void* flow, void* stream, void* variability, void* direction] :
-  (fl=FLOW|st=STREAM)? (di=DISCRETE|pa=PARAMETER|co=CONSTANT)? (in=T_INPUT|out=T_OUTPUT)?
+  (fl=FLOW|st=STREAM)? (srd=T_LOCAL|prl=T_GLOBAL)? (di=DISCRETE|pa=PARAMETER|co=CONSTANT)? (in=T_INPUT|out=T_OUTPUT)?
     {
       $flow = mk_bcon(fl);
       $stream = mk_bcon(st);
@@ -629,6 +630,7 @@ equation returns [void* ast] :
   ( ee=equality_or_noretcall_equation {e=ee.ast;}
   | e=conditional_equation_e
   | e=for_clause_e
+  | e=parfor_clause_e
   | e=connect_clause
   | e=when_clause_e   
   | FAILURE LPAR eq=equation RPAR { e = Absyn__EQ_5fFAILURE(eq.ast); }
@@ -645,6 +647,7 @@ constraint returns [void* ast] :
   ( ee=equality_or_noretcall_equation {e=ee.ast;}
   | e=conditional_equation_e
   | e=for_clause_e
+  | e=parfor_clause_e
   | e=connect_clause
   | e=when_clause_e   
   | FAILURE LPAR eq=equation RPAR { e = Absyn__EQ_5fFAILURE(eq.ast); }
@@ -662,6 +665,7 @@ algorithm returns [void* ast] :
   ( aa=assign_clause_a {a = aa.ast;}
   | a=conditional_equation_a
   | a=for_clause_a
+  | a=parfor_clause_a
   | a=while_clause
   | a=when_clause_a
   | BREAK {a = Absyn__ALG_5fBREAK;}
@@ -752,6 +756,14 @@ for_clause_e returns [void* ast] :
 
 for_clause_a returns [void* ast] :
   FOR is=for_indices LOOP as=algorithm_list END_FOR {ast = Absyn__ALG_5fFOR(is,as);}
+  ;
+
+parfor_clause_e returns [void* ast] :
+  PARFOR is=for_indices LOOP es=equation_list END_PARFOR {ast = Absyn__EQ_5fFOR(is,es);}
+  ;
+
+parfor_clause_a returns [void* ast] :
+  PARFOR is=for_indices LOOP as=algorithm_list END_PARFOR {ast = Absyn__ALG_5fFOR(is,as);}
   ;
 
 while_clause returns [void* ast] :
@@ -1305,6 +1317,7 @@ top_algorithm returns [void* ast, int isExp] :
   | ( a=top_assign_clause_a
     | a=conditional_equation_a
     | a=for_clause_a
+    | a=parfor_clause_a
     | a=while_clause
     )
     cmt=comment

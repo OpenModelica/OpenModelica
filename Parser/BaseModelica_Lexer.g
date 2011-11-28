@@ -135,6 +135,19 @@ CONSTRAINT;
 //FINALTIME;
 
 // ---------
+// ParModelica Extensions
+// ---------
+
+PARFOR;
+T_PARALLEL;
+T_LOCAL;
+T_GLOBAL;
+T_KERNEL;
+END_PARFOR;
+
+
+
+// ---------
 // Operators
 // ---------
 
@@ -313,8 +326,6 @@ EAT_WS_COMMENT : (WS)+ {$channel=ANTLR3_TOKEN_DEFAULT_CHANNEL;};
 
 END_IF : 'end' EAT_WS_COMMENT 'if';
 END_FOR : 'end' EAT_WS_COMMENT 'for';
-END_MATCH : 'end' EAT_WS_COMMENT 'match';
-END_MATCHCONTINUE : 'end' EAT_WS_COMMENT 'matchcontinue';
 END_WHEN : 'end' EAT_WS_COMMENT 'when';
 END_WHILE : 'end' EAT_WS_COMMENT 'while';
 END_IDENT : 'end' EAT_WS_COMMENT
