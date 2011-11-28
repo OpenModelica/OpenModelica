@@ -570,7 +570,7 @@ constant ConfigFlag ENV_CACHE = CONFIG_FLAG(34,
 
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialisation so that all flags are
-// sorted by index (and this have unique indices).
+// sorted by index (and thus have unique indices).
 constant list<ConfigFlag> allConfigFlags = {
   DEBUG,
   HELP,

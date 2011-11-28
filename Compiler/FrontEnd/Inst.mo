@@ -7089,7 +7089,7 @@ algorithm
         (var_class_mod, class_mod) = modifyInstantiateClass(class_mod, t);
         
         // print("Inst.instElement: before elabMod " +& PrefixUtil.printPrefixStr(pre) +& 
-        // "." +& n +& " component mod: " +& SCodeDump.printModStr(m) +& " in env: " +& 
+        // "." +& name +& " component mod: " +& SCodeDump.printModStr(m) +& " in env: " +& 
         // Env.printEnvPathStr(env2) +& "\n");
         (cache, m_1) = Mod.elabMod(cache, env2, ih, pre, m, impl, info);
                 
