@@ -733,7 +733,9 @@ algorithm
         
     // sqrt(e ^ r) => e ^ (0.5 * r)
     case DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={DAE.BINARY(e1,DAE.POW(ty = DAE.ET_REAL()),e2)})
-      then DAE.BINARY(e1,DAE.POW(DAE.ET_REAL()),DAE.BINARY(DAE.RCONST(0.5),DAE.MUL(DAE.ET_REAL()),e2));
+      equation
+        e = DAE.BINARY(e1,DAE.POW(DAE.ET_REAL()),DAE.BINARY(DAE.RCONST(0.5),DAE.MUL(DAE.ET_REAL()),e2));
+      then Expression.makeBuiltinCall("abs",{e},DAE.ET_REAL());
     
     // delay of constant expression
     case DAE.CALL(path=Absyn.IDENT("delay"),expLst={e1,_,_})
@@ -3654,9 +3656,9 @@ algorithm
     case (oper as DAE.POW(ty = _),DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e}),DAE.RCONST(r))
       equation
         true = realEq(r,2.0);
-      then e;
+      then Expression.makeBuiltinCall("abs", {e}, DAE.ET_REAL());
 
-    // sqrt(e) ^ r => sqrt(e) ^ 0.5*r
+    // sqrt(e) ^ r => e ^ 0.5*r
     case (oper as DAE.POW(ty = _),DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e1}),e)
       then
         DAE.BINARY(e1,oper,DAE.BINARY(DAE.RCONST(0.5),DAE.MUL(DAE.ET_REAL()),e));
