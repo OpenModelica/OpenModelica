@@ -3456,6 +3456,34 @@ algorithm
         res = DAE.BINARY(DAE.BINARY(e1,DAE.DIV(ty),e3),DAE.POW(ty2),e2);
       then res;
 
+    // a*(b^(-e)) => a/(b^e)
+    case (DAE.MUL(ty = ty),e1,DAE.BINARY(exp1 = e2,operator = DAE.POW(ty = ty2),exp2 = DAE.UNARY(exp=e3,operator=DAE.UMINUS(ty=_))))
+      equation
+        res = DAE.BINARY(e1,DAE.DIV(ty2),DAE.BINARY(e2,DAE.POW(ty2),e3));
+      then res;
+
+    // a/(b^(-e)) => a*(b^e)
+    case (DAE.DIV(ty = ty),e1,DAE.BINARY(exp1 = e2,operator = DAE.POW(ty = ty2),exp2 = DAE.UNARY(exp=e3,operator=DAE.UMINUS(ty=_))))
+      equation
+        res = DAE.BINARY(e1,DAE.MUL(ty2),DAE.BINARY(e2,DAE.POW(ty2),e3));
+      then res;
+
+    // a*(b^(-r)) => a/(b^r)
+    case (DAE.MUL(ty = ty),e1,DAE.BINARY(exp1 = e2,operator = DAE.POW(ty = ty2),exp2 = DAE.RCONST(r)))
+      equation
+        true = realLt(r,0.0);
+        r = realNeg(r);
+        res = DAE.BINARY(e1,DAE.DIV(ty2),DAE.BINARY(e2,DAE.POW(ty2),DAE.RCONST(r)));
+      then res;
+
+    // a/(b^(-r)) => a*(b^r)
+    case (DAE.DIV(ty = ty),e1,DAE.BINARY(exp1 = e2,operator = DAE.POW(ty = ty2),exp2 = DAE.RCONST(r)))
+      equation
+        true = realLt(r,0.0);
+        r = realNeg(r);
+        res = DAE.BINARY(e1,DAE.MUL(ty2),DAE.BINARY(e2,DAE.POW(ty2),DAE.RCONST(r)));
+      then res;
+
     // (a+b)/c1 => a/c1+b/c1, for constant c1
     case (DAE.DIV(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = ty2),exp2 = e2),e3)
       equation
