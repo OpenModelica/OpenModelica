@@ -1637,6 +1637,25 @@ function val "Works on the filename pointed to by the scripting variable current
 external "builtin";
 end val;
 
+function getAlgorithmCount "Counts the number of Algorithm sections in a class"
+  input TypeName class_;
+  output Integer count;
+external "builtin";
+end getAlgorithmCount;
+
+function getNthAlgorithm "Returns the Nth Algorithm section"
+  input TypeName class_;
+  input Integer index;
+  output Integer count;
+external "builtin";
+end getNthAlgorithm;
+
+function getEquationCount "Counts the number of Equation sections in a class"
+  input TypeName class_;
+  output Integer count;
+external "builtin";
+end getEquationCount;
+
 end Scripting;
 
 annotation(Documentation(info="<html>OpenModelica internal defintions and scripting functions are defined here.</html>", __Dymola_DocumentationClass = true));

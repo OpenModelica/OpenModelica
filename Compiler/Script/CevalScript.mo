@@ -1938,6 +1938,33 @@ algorithm
         varNameStr = ValuesUtil.printCodeVariableName(cvar);
         val = SimulationResults.val(filename,varNameStr,timeStamp);
       then (cache,Values.REAL(val),st);
+    
+    case (cache,env,"getAlgorithmCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+      equation
+        absynClass = Interactive.getPathedClassInProgram(path, p);
+        n = countAlgorithms(absynClass);
+      then
+        (cache,Values.INTEGER(n),st);
+    
+    case (cache,env,"getAlgorithmCount",_,st,msg) then (cache,Values.INTEGER(0),st);
+      
+    case (cache,env,"getNthAlgorithm",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+      equation
+        absynClass = Interactive.getPathedClassInProgram(path, p);
+        str = getNthAlgorithmInClass(absynClass, n);
+      then
+        (cache,Values.STRING(str),st);
+    
+    case (cache,env,"getNthAlgorithm",_,st,msg) then (cache,Values.STRING(""),st);
+      
+    case (cache,env,"getEquationCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+      equation
+        absynClass = Interactive.getPathedClassInProgram(path, p);
+        n = countEquations(absynClass);
+      then
+        (cache,Values.INTEGER(n),st);
+    
+    case (cache,env,"getEquationCount",_,st,msg) then (cache,Values.INTEGER(0),st);
                 
         /* plotparametric This rule represents the normal case when an array of at least two elements
          *  is given as an argument
@@ -4230,5 +4257,178 @@ algorithm
       then getVariableNames(vs,Values.CODE(Absyn.C_VARIABLENAME(Absyn.CREF_IDENT(p,{})))::acc);
   end match;
 end getVariableNames;
+
+protected function countAlgorithms
+"function: countAlgorithms
+  Counts the number of Algorithm sections in a class."
+  input Absyn.Class inClass;
+  output Integer outInteger;
+algorithm
+  outInteger := match (inClass)
+    local
+      Integer count;
+      list<Absyn.ClassPart> parts;
+    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
+      equation
+        count = countAlgorithmsInClassParts(parts);
+      then
+        count;
+    // check also the case model extends X end X;
+    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
+      equation
+        count = countAlgorithmsInClassParts(parts);
+      then
+        count;
+    case Absyn.CLASS(body = Absyn.DERIVED(typeSpec = _)) then 0;
+  end match;
+end countAlgorithms;
+
+protected function countAlgorithmsInClassParts
+"function: countAlgorithmsInClassParts
+  Helper function to countAlgorithms"
+  input list<Absyn.ClassPart> inAbsynClassPartLst;
+  output Integer outInteger;
+algorithm
+  outInteger := matchcontinue (inAbsynClassPartLst)
+    local
+      Integer r1,r2,res;
+      list<Absyn.AlgorithmItem> algs;
+      list<Absyn.ClassPart> xs;
+    case ((Absyn.ALGORITHMS(contents = algs) :: xs))
+      equation
+        r1 = 1;
+        r2 = countAlgorithmsInClassParts(xs);
+      then
+        r1 + r2;
+    case ((_ :: xs))
+      equation
+        res = countAlgorithmsInClassParts(xs);
+      then
+        res;
+    case ({}) then 0;
+  end matchcontinue;
+end countAlgorithmsInClassParts;
+
+protected function getNthAlgorithmInClass
+  input Absyn.Class inClass;
+  input Integer inInteger;
+  output String outString;
+algorithm
+  outString := match (inClass,inInteger)
+    local
+      String str;
+      list<Absyn.ClassPart> parts;
+      Integer n;
+    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),n)
+      equation
+        str = getNthAlgorithmInClassPartLst(parts, n);
+      then
+        str;
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)),n)
+      equation
+        str = getNthAlgorithmInClassPartLst(parts, n);
+      then
+        str;
+  end match;
+end getNthAlgorithmInClass;
+
+protected function getNthAlgorithmInClassPartLst
+  input list<Absyn.ClassPart> inAbsynClassPartLst;
+  input Integer inInteger;
+  output String outString;
+algorithm
+  outString := matchcontinue (inAbsynClassPartLst,inInteger)
+    local
+      String s1,s2,res;
+      Integer i;
+      Absyn.ClassPart x;
+      list<Absyn.ClassPart> xs;
+    case ({},_) then "";
+    case ((x :: xs),i)
+      equation
+        s1 = getNthAlgorithmInClassPart(x);
+        s2 = getNthAlgorithmInClassPartLst(xs, i);
+        res = stringAppend(s1, s2);
+      then
+        res;
+  end matchcontinue;
+end getNthAlgorithmInClassPartLst;
+
+protected function getNthAlgorithmInClassPart
+  input Absyn.ClassPart inClassPart;
+  //input Integer inInteger;
+  output String outString;
+algorithm
+  outString := match (inClassPart)
+    local
+      Integer i;
+      String s1,str;
+      list<Absyn.AlgorithmItem> als;
+    case (Absyn.PUBLIC(contents = {})) then "abc";
+    case (Absyn.PROTECTED(contents = {})) then "";
+    case (Absyn.EQUATIONS(contents = {})) then "";
+    case (Absyn.INITIALEQUATIONS(contents = {})) then "";
+    case (Absyn.ALGORITHMS(contents = {})) then "";
+    case (Absyn.INITIALALGORITHMS(contents = {})) then "";  
+    case (Absyn.ALGORITHMS(contents = als))
+      equation
+        //s1 = Dump.unparseAlgorithmStrLst(i, als, "\n");
+        s1 = "s1";
+        str = s1;
+      then
+        str;
+  end match;
+end getNthAlgorithmInClassPart;
+
+protected function countEquations
+"function: countEquations
+  Counts the number of Equation sections in a class."
+  input Absyn.Class inClass;
+  output Integer outInteger;
+algorithm
+  outInteger := match (inClass)
+    local
+      Integer count;
+      list<Absyn.ClassPart> parts;
+    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
+      equation
+        count = countEquationsInClassParts(parts);
+      then
+        count;
+    // check also the case model extends X end X;
+    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
+      equation
+        count = countEquationsInClassParts(parts);
+      then
+        count;
+    case Absyn.CLASS(body = Absyn.DERIVED(typeSpec = _)) then 0;
+  end match;
+end countEquations;
+
+protected function countEquationsInClassParts
+"function: countEquationsInClassParts
+  Helper function to countEquations"
+  input list<Absyn.ClassPart> inAbsynClassPartLst;
+  output Integer outInteger;
+algorithm
+  outInteger := matchcontinue (inAbsynClassPartLst)
+    local
+      Integer r1,r2,res;
+      list<Absyn.EquationItem> eqs;
+      list<Absyn.ClassPart> xs;
+    case ((Absyn.EQUATIONS(contents = eqs) :: xs))
+      equation
+        r1 = 1;
+        r2 = countEquationsInClassParts(xs);
+      then
+        r1 + r2;
+    case ((_ :: xs))
+      equation
+        res = countEquationsInClassParts(xs);
+      then
+        res;
+    case ({}) then 0;
+  end matchcontinue;
+end countEquationsInClassParts;
 
 end CevalScript;
