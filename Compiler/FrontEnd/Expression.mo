@@ -317,9 +317,7 @@ algorithm
     case(DAE.DIV(_)) then Absyn.DIV();
     case(DAE.POW(_)) then Absyn.POW();
     case(DAE.UMINUS(_)) then Absyn.UMINUS();
-    case(DAE.UPLUS(_)) then Absyn.UPLUS();
     case(DAE.UMINUS_ARR(_)) then Absyn.UMINUS();
-    case(DAE.UPLUS_ARR(_)) then Absyn.UPLUS();
     case(DAE.ADD_ARR(_)) then Absyn.ADD();
     case(DAE.SUB_ARR(_)) then Absyn.SUB();
     case(DAE.MUL_ARR(_)) then Absyn.MUL();
@@ -947,9 +945,7 @@ algorithm
     case (DAE.DIV(ty = _), _) then DAE.DIV(inType);
     case (DAE.POW(ty = _), _) then DAE.POW(inType);
     case (DAE.UMINUS(ty = _), _) then DAE.UMINUS(inType);
-    case (DAE.UPLUS(ty = _), _) then DAE.UPLUS(inType);
     case (DAE.UMINUS_ARR(ty = _), _) then DAE.UMINUS_ARR(inType);
-    case (DAE.UPLUS_ARR(ty = _), _) then DAE.UPLUS_ARR(inType);
     case (DAE.ADD_ARR(ty = _), _) then DAE.ADD_ARR(inType);
     case (DAE.SUB_ARR(ty = _), _) then DAE.SUB_ARR(inType);
     case (DAE.MUL_ARR(ty = _), _) then DAE.MUL_ARR(inType);
@@ -1695,9 +1691,7 @@ algorithm
     case (DAE.DIV(ty = t)) then t;
     case (DAE.POW(ty = t)) then t;
     case (DAE.UMINUS(ty = t)) then t;
-    case (DAE.UPLUS(ty = t)) then t;
     case (DAE.UMINUS_ARR(ty = t)) then t;
-    case (DAE.UPLUS_ARR(ty = t)) then t;
     case (DAE.ADD_ARR(ty = t)) then t;
     case (DAE.SUB_ARR(ty = t)) then t;
     case (DAE.MUL_ARR(ty = t)) then t;
@@ -2202,13 +2196,6 @@ algorithm
         nonxt = DAE.BINARY(nonxt1,DAE.SUB(ty),nonxt2);
       then
         (xt,nonxt);
-    case (DAE.UNARY(operator = DAE.UPLUS(ty = ty),exp = e),(cr as DAE.CREF(componentRef = _)))
-      equation
-        (xt1,nonxt1) = getTermsContainingX(e, cr);
-        xt = DAE.UNARY(DAE.UPLUS(ty),xt1);
-        nonxt = DAE.UNARY(DAE.UPLUS(ty),nonxt1);
-      then
-        (xt,nonxt);
     case (DAE.UNARY(operator = DAE.UMINUS(ty = ty),exp = e),(cr as DAE.CREF(componentRef = _)))
       equation
         (xt1,nonxt1) = getTermsContainingX(e, cr);
@@ -2230,13 +2217,6 @@ algorithm
         (xt2,nonxt2) = getTermsContainingX(e2, cr);
         xt = DAE.BINARY(xt1,DAE.SUB_ARR(ty),xt2);
         nonxt = DAE.BINARY(nonxt1,DAE.SUB_ARR(ty),nonxt2);
-      then
-        (xt,nonxt);
-    case (DAE.UNARY(operator = DAE.UPLUS_ARR(ty = ty),exp = e),(cr as DAE.CREF(componentRef = _)))
-      equation
-        (xt1,nonxt1) = getTermsContainingX(e, cr);
-        xt = DAE.UNARY(DAE.UPLUS_ARR(ty),xt1);
-        nonxt = DAE.UNARY(DAE.UPLUS_ARR(ty),nonxt1);
       then
         (xt,nonxt);
     case (DAE.UNARY(operator = DAE.UMINUS_ARR(ty = ty),exp = e),(cr as DAE.CREF(componentRef = _)))
@@ -6346,7 +6326,6 @@ algorithm
     case (DAE.POW(ty = _),DAE.POW(ty = _)) then true;
     case (DAE.UMINUS(ty = _),DAE.UMINUS(ty = _)) then true;
     case (DAE.UMINUS_ARR(ty = _),DAE.UMINUS_ARR(ty = _)) then true;
-    case (DAE.UPLUS_ARR(ty = _),DAE.UPLUS_ARR(ty = _)) then true;
     case (DAE.ADD_ARR(ty = _),DAE.ADD_ARR(ty = _)) then true;
     case (DAE.SUB_ARR(ty = _),DAE.SUB_ARR(ty = _)) then true;
     case (DAE.MUL_ARR(ty = _),DAE.MUL_ARR(ty = _)) then true;

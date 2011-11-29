@@ -310,9 +310,7 @@ algorithm
   outString:=
   match (inOperator)
     case (DAE.UMINUS(ty = _)) then "-";
-    case (DAE.UPLUS(ty = _)) then "+";
     case (DAE.UMINUS_ARR(ty = _)) then "-";
-    case (DAE.UPLUS_ARR(ty = _)) then "+";
   end match;
 end unaryopSymbol;
 
@@ -1066,10 +1064,8 @@ algorithm
     case (DAE.BINARY(operator = DAE.MUL_ARRAY_SCALAR(_))) then 7;
     case (DAE.BINARY(operator = DAE.MUL_SCALAR_PRODUCT(_))) then 7;
     case (DAE.BINARY(operator = DAE.MUL_MATRIX_PRODUCT(_))) then 7;
-    case (DAE.UNARY(operator = DAE.UPLUS(_))) then 8;
     case (DAE.UNARY(operator = DAE.UMINUS(_))) then 8;
     case (DAE.UNARY(operator = DAE.UMINUS_ARR(_))) then 8;
-    case (DAE.UNARY(operator = DAE.UPLUS_ARR(_))) then 8;
     case (DAE.BINARY(operator = DAE.ADD(_))) then 9;
     case (DAE.BINARY(operator = DAE.ADD_ARR(_))) then 9;
     case (DAE.BINARY(operator = DAE.ADD_ARRAY_SCALAR(_))) then 9;
@@ -2289,9 +2285,7 @@ public function unaryopPriority
 algorithm
   outInteger := match (inOperator)
     case (DAE.UMINUS(ty = _)) then 37;
-    case (DAE.UPLUS(ty = _)) then 37;
     case (DAE.UMINUS_ARR(ty = _)) then 37;
-    case (DAE.UPLUS_ARR(ty = _)) then 37;
   end match;
 end unaryopPriority;
 

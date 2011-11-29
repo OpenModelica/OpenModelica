@@ -1027,15 +1027,9 @@ package DAE
     record UMINUS
       ExpType ty;
     end UMINUS;
-    record UPLUS
-      ExpType ty;
-    end UPLUS;
     record UMINUS_ARR
       ExpType ty;
     end UMINUS_ARR;
-    record UPLUS_ARR
-      ExpType ty;
-    end UPLUS_ARR;
     record ADD_ARR
       ExpType ty;
     end ADD_ARR;

@@ -4961,13 +4961,11 @@ case UNARY(__) then
   let e = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   match operator
   case UMINUS(__)     then '(-<%e%>)'
-  case UPLUS(__)      then '(<%e%>)'
   case UMINUS_ARR(ty=ET_ARRAY(ty=ET_REAL(__))) then
     let &preExp += 'usub_real_array(&<%e%>);<%\n%>'
     '<%e%>'
-  case UMINUS_ARR(__) then 'unary minus for non-real arrays not implemented'
-  case UPLUS_ARR(__)  then "UPLUS_ARR_NOT_IMPLEMENTED"
-  else "daeExpUnary:ERR"
+  case UMINUS_ARR(__) then error(sourceInfo(),"unary minus for non-real arrays not implemented")
+  else error(sourceInfo(),"daeExpUnary:ERR")
 end daeExpUnary;
 
 
@@ -6365,9 +6363,7 @@ template expTypeFromOpFlag(Operator op, Integer flag)
   case o as POW(__)
 
   case o as UMINUS(__)
-  case o as UPLUS(__)
   case o as UMINUS_ARR(__)
-  case o as UPLUS_ARR(__)
   case o as ADD_ARR(__)
   case o as SUB_ARR(__)
   case o as MUL_ARR(__)

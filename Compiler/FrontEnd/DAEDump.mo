@@ -172,9 +172,7 @@ algorithm
     case(DAE.DIV(ty=ty)) then " DIV ";
     case(DAE.POW(ty=ty)) then " POW ";
     case(DAE.UMINUS(ty=ty)) then " UMINUS ";
-    case(DAE.UPLUS(ty=ty)) then " UPLUS ";
     case(DAE.UMINUS_ARR(ty=ty)) then " UMINUS_ARR ";
-    case(DAE.UPLUS_ARR(ty=ty)) then " UPLUS_ARR ";
     case(DAE.ADD_ARR(ty=ty)) then " ADD_ARR ";
     case(DAE.SUB_ARR(ty=ty)) then " SUB_ARR ";
     case(DAE.MUL_ARR(ty=ty)) then " MUL_ARR ";

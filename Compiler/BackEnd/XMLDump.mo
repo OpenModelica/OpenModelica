@@ -3763,9 +3763,7 @@ algorithm
   outString:=
   match (inOperator)
     case (DAE.UMINUS(ty = _)) then MathMLMinus;
-    case (DAE.UPLUS(ty = _)) then "";//Not necessay
     case (DAE.UMINUS_ARR(ty = _)) then MathMLMinus;
-    case (DAE.UPLUS_ARR(ty = _)) then "";//Not necessary
   end match;
 end unaryopSymbol;
 

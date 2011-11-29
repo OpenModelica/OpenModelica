@@ -2766,16 +2766,6 @@ algorithm
       then
         exp;
     
-    case (DAE.UNARY(operator = DAE.UPLUS_ARR(ty = t),exp = e),sub)
-      equation
-        e_1 = simplifyAsub(e, sub);
-        t2 = Expression.typeof(e_1);
-        b = DAEUtil.expTypeArray(t2);
-        op2 = Util.if_(b,DAE.UPLUS_ARR(t2),DAE.UPLUS(t2));
-        exp = DAE.UNARY(op2,e_1);
-      then
-        exp;
-    
     case (DAE.LUNARY(operator = DAE.NOT(ty = t), exp = e), sub)
       equation
         e_1 = simplifyAsub(e, sub);
@@ -3754,12 +3744,6 @@ algorithm
         b1 = not b1;
       then 
         DAE.BCONST(b1);
-    
-    // +e => e
-    case (DAE.UPLUS(ty = ty),e1) 
-      then e1;
-    case (DAE.UPLUS_ARR(ty = ty),e1) 
-      then e1;
     
     // -x => 0 - x
     case (DAE.UMINUS(ty = ty),DAE.ICONST(integer = i))

@@ -576,13 +576,6 @@ algorithm
       then
         (cache,v_1,stOpt);
 
-    // unary plus of expression
-    case (cache,env,DAE.UNARY(operator = DAE.UPLUS(ty = _),exp = daeExp),impl,stOpt,msg)
-      equation
-        (cache,v,stOpt) = ceval(cache,env, daeExp, impl, stOpt, msg);
-      then
-        (cache,v,stOpt);
-
     // Logical operations false AND rhs
     // special case when leftside is false...
     // We allow errors on right hand side. and even if there is no errors, the performance

@@ -402,6 +402,13 @@ algorithm
       then
         (cache,exp_1,prop,st_2);
 
+    case (cache,env,(e as Absyn.UNARY(op = Absyn.UPLUS(),exp = e1)),impl,st,doVect,pre,info,_)
+      equation
+        (cache,exp_1,DAE.PROP(t,c),st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
+        true = Types.isIntegerOrRealOrSubTypeOfEither(Types.arrayElementType(t));
+        prop = DAE.PROP(t,c);
+      then
+        (cache,exp_1,prop,st_1);
     case (cache,env,(e as Absyn.UNARY(op = op,exp = e1)),impl,st,doVect,pre,info,_)
       equation
         (cache,e_1,DAE.PROP(t,c),st_1) = elabExp(cache,env,e1,impl,st,doVect,pre,info);
@@ -1577,6 +1584,13 @@ algorithm
         (op_1,e1_2,e2_2,rtype) = operatorDeoverloadBinary(op,t1,e1_1,t2,e2_1,exp,pre,info);
       then
         (cache,DAE.BINARY(e1_2,op_1,e2_2),DAE.PROP(rtype,c));
+    case (cache,env,(e as Absyn.UNARY(op = Absyn.UPLUS(),exp = e1)),impl,pre,info)
+      equation
+        (cache,e_1,DAE.PROP(t,c)) = elabGraphicsExp(cache,env, e, impl,pre,info);
+        true = Types.isRealOrSubTypeReal(Types.arrayElementType(t));
+        prop = DAE.PROP(t,c);
+      then
+        (cache,e_1,prop);
     case (cache,env,(exp as Absyn.UNARY(op = op,exp = e)),impl,pre,info)
       equation
         (cache,e_1,DAE.PROP(t,c)) = elabGraphicsExp(cache,env, e, impl,pre,info);
@@ -12154,10 +12168,6 @@ algorithm
 
     case (DAE.UMINUS_ARR(ty = _),(typ1 :: _),_,_, _) then typ1;
 
-    case (DAE.UPLUS(ty = _),_,typ,_, _) then typ;
-
-    case (DAE.UPLUS_ARR(ty = _),(typ1 :: _),_,_, _) then typ1;
-
     case (DAE.AND(ty = _), {typ1, typ2}, _, _, _)
       equation
         true = Types.equivtypes(typ1, typ2);
@@ -12782,48 +12792,6 @@ algorithm
         intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
           intarrtypes, intarrtypes);
         realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
-          realarrtypes, realarrtypes);
-        types = List.flatten({scalars,intarrs,realarrs});
-      then types;
-
-    case Absyn.UPLUS()
-      equation
-        scalars = {
-          (DAE.UPLUS(DAE.ET_INT()),{DAE.T_INTEGER_DEFAULT},
-          DAE.T_INTEGER_DEFAULT),
-          (DAE.UPLUS(DAE.ET_REAL()),{DAE.T_REAL_DEFAULT},
-          DAE.T_REAL_DEFAULT)} "The UPLUS operator, unary plus." ;
-        intarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
-          intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
-          realarrtypes, realarrtypes);
-        types = List.flatten({scalars,intarrs,realarrs});
-      then types;
-
-    case (Absyn.UMINUS_EW())
-      equation
-        scalars = {
-          (DAE.UMINUS(DAE.ET_INT()),{DAE.T_INTEGER_DEFAULT},
-          DAE.T_INTEGER_DEFAULT),
-          (DAE.UMINUS(DAE.ET_REAL()),{DAE.T_REAL_DEFAULT},
-          DAE.T_REAL_DEFAULT)} "The UMINUS operator, unary minus" ;
-        intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
-          intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
-          realarrtypes, realarrtypes);
-        types = List.flatten({scalars,intarrs,realarrs});
-      then types;
-
-    case Absyn.UPLUS_EW()
-      equation
-        scalars = {
-          (DAE.UPLUS(DAE.ET_INT()),{DAE.T_INTEGER_DEFAULT},
-          DAE.T_INTEGER_DEFAULT),
-          (DAE.UPLUS(DAE.ET_REAL()),{DAE.T_REAL_DEFAULT},
-          DAE.T_REAL_DEFAULT)} "The UPLUS operator, unary plus." ;
-        intarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_UNKNOWN()})),
-          intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()})),
           realarrtypes, realarrtypes);
         types = List.flatten({scalars,intarrs,realarrs});
       then types;

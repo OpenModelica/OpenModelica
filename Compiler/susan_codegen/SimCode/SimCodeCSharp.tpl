@@ -1841,10 +1841,8 @@ template daeExpUnary(Operator it, Exp exp, Context context, Text &preExp, SimCod
   let e = daeExp(exp, context, &preExp, simCode)
   match it
   case UMINUS(__)     then '(-<%e%>)'
-  case UPLUS(__)      then '(<%e%>)'
   case NOT(__)        then '(!<%e%>)'
   case UMINUS_ARR(__) then "UMINUS_ARR_NOT_IMPLEMENTED"
-  case UPLUS_ARR(__)  then "UPLUS_ARR_NOT_IMPLEMENTED"
   case _          then "daeExpUnary:ERR"
 
 end daeExpUnary;
@@ -2231,9 +2229,7 @@ template expTypeFromOp(Operator it) ::=
   case DIV(__)
   case POW(__)
   case UMINUS(__)
-  case UPLUS(__)
   case UMINUS_ARR(__)
-  case UPLUS_ARR(__)
   case ADD_ARR(__)
   case SUB_ARR(__)
   case MUL_ARR(__)
