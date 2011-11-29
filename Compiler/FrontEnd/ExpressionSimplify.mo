@@ -3423,7 +3423,7 @@ protected function simplifyBinary
 algorithm
   outExp := matchcontinue (inOperator2,inExp3,inExp4)
     local
-      DAE.Exp e1_1,e3,e,e1,e2,res,e_1,one;
+      DAE.Exp e1_1,e3,e,e1,e2,e4,res,e_1,one;
       Operator oper;
       Type ty,ty2,tp,tp2,ty1;
       list<DAE.Exp> exp_lst,exp_lst_1;
@@ -3442,6 +3442,20 @@ algorithm
       then
         e3;
     
+    // a^e*b^e => (a*b)^e
+    case (DAE.MUL(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = ty2),exp2 = e2),DAE.BINARY(exp1 = e3,operator = DAE.POW(ty = _),exp2 = e4))
+      equation
+        true = Expression.expEqual(e2,e4);
+        res = DAE.BINARY(DAE.BINARY(e1,DAE.MUL(ty),e3),DAE.POW(ty2),e2);
+      then res;
+
+    // a^e/b^e => (a/b)^e
+    case (DAE.DIV(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = ty2),exp2 = e2),DAE.BINARY(exp1 = e3,operator = DAE.POW(ty = _),exp2 = e4))
+      equation
+        true = Expression.expEqual(e2,e4);
+        res = DAE.BINARY(DAE.BINARY(e1,DAE.DIV(ty),e3),DAE.POW(ty2),e2);
+      then res;
+
     // (a+b)/c1 => a/c1+b/c1, for constant c1
     case (DAE.DIV(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = ty2),exp2 = e2),e3)
       equation
