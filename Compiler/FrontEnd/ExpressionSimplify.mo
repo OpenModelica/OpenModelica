@@ -291,7 +291,34 @@ public function simplify1
   output Boolean hasChanged;
 algorithm
   (outExp,hasChanged) := simplify1FixP(inExp,100,true);
+  checkSimplify(Flags.isSet(Flags.CHECK_SIMPLIFY),inExp,outExp);
 end simplify1;
+
+protected function checkSimplify
+  "Verifies that the complexity of the expression is lower or equal than before the simplification was performed"
+  input Boolean check;
+  input DAE.Exp before;
+  input DAE.Exp after;
+algorithm
+  _ := matchcontinue (check,before,after)
+    local
+      Integer c1,c2;
+      Boolean b;
+      String s1,s2,s3,s4;
+    case (false,_,_) then ();
+    case (true,before,after)
+      equation
+        c1 = Expression.complexity(before);
+        c2 = Expression.complexity(after);
+        b = c1 < c2;
+        s1 = intString(c2);
+        s2 = intString(c1);
+        s3 = Debug.bcallret1(b,ExpressionDump.printExpStr,before,"");
+        s4 = Debug.bcallret1(b,ExpressionDump.printExpStr,after,"");
+        Error.assertionOrAddSourceMessage(not b, Error.SIMPLIFICATION_COMPLEXITY, {s1,s2,s3,s4}, Absyn.dummyInfo);
+      then ();
+  end matchcontinue;
+end checkSimplify;
 
 protected function simplify1FixP
 "Does fixpoint simplify1 max n times"

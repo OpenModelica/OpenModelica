@@ -611,6 +611,8 @@ public constant Message FAILED_TO_EVALUATE_EXPRESSION = MESSAGE(522, TRANSLATION
   "Could not evaluate expression: %s");
 public constant Message WARNING_JACOBIAN_EQUATION_SOLVE = MESSAGE(523, SYMBOLIC(), WARNING(),
   "jacobian equation %s could not solve proper for %s. Assume %s=0.");
+public constant Message SIMPLIFICATION_COMPLEXITY = MESSAGE(523, SYMBOLIC(), NOTIFICATION(),
+  "Simplification produced a higher complexity (%s) than the original (%s). The simplification was: %s => %s.");
 
 public constant Message INDEX_REDUCTION_NOTIFICATION = MESSAGE(1000, SYMBOLIC(), NOTIFICATION(),
   "Differentiated equation %s to %s for index reduction");

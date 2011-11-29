@@ -139,8 +139,7 @@ algorithm
 end helpRequest;
 
 public function acceptedGrammar
-"@author: mahge 2011-11-28
- returns: the flag number representing the accepted grammer. Instead of using 
+"returns: the flag number representing the accepted grammer. Instead of using 
  booleans. This way more extensions can be added easily.
  usage: omc [+g=Modelica|MetaModelica|ParModelica] = [1|2|3], default to 'Modelica'."
   output Integer outGrammer;
@@ -149,8 +148,7 @@ algorithm
 end acceptedGrammar;
 
 public function acceptMetaModelicaGrammar
-"@author: adrpo 2007-06-11
- returns: true if MetaModelica grammar is accepted or false otherwise
+"returns: true if MetaModelica grammar is accepted or false otherwise
  usage: omc [+g=Modelica|MetaModelica|ParModelica], default to 'Modelica'."
   output Boolean outBoolean;
 algorithm
@@ -158,8 +156,7 @@ algorithm
 end acceptMetaModelicaGrammar;
 
 public function acceptParModelicaGrammar
-"@author: mahge 2011-11-28
- returns: true if ParModelica grammar is accepted or false otherwise
+"returns: true if ParModelica grammar is accepted or false otherwise
  usage: omc [+g=Modelica|MetaModelica|ParModelica], default to 'Modelica'."
   output Boolean outBoolean;
 algorithm
@@ -167,8 +164,7 @@ algorithm
 end acceptParModelicaGrammar;
 
 public function getAnnotationVersion
-"@author: adrpo 2008-11-28
-   returns what flag was given at start
+"returns what flag was given at start
      omc [+annotationVersion=3.x]
    or via the API
      setAnnotationVersion(\"3.x\");
@@ -179,8 +175,7 @@ algorithm
 end getAnnotationVersion;
 
 public function setAnnotationVersion
-"@author: adrpo 2008-11-28
-   setAnnotationVersion(\"3.x\");
+"setAnnotationVersion(\"3.x\");
    for annotations: 1.x or 2.x or 3.x"
   input String annotationVersion;
 algorithm
@@ -188,11 +183,10 @@ algorithm
 end setAnnotationVersion;
 
 public function getNoSimplify
-"@author: adrpo 2008-12-13
-   returns what flag was given at start
-     omc [+noSimplify]
-   or via the API
-     setNoSimplify(true|false);"
+"returns what flag was given at start
+   omc [+noSimplify]
+ or via the API
+   setNoSimplify(true|false);"
   output Boolean noSimplify;
 algorithm
   noSimplify := Flags.getConfigBool(Flags.NO_SIMPLIFY);

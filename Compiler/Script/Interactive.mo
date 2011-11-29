@@ -17921,8 +17921,7 @@ end loadFileInteractiveQualified;
 /* Start getDefinitions */
 
 protected function getDefinitions
-"@author sjoelund.se
- This function dumps the defined packages, classes and functions to a string.
+"This function dumps the defined packages, classes and functions to a string.
  The function is used by org.openmodelica.corba.parser.DefinitionsCreator."
   input  Absyn.Program ast "The AST to dump";
   input  Boolean addFunctions;

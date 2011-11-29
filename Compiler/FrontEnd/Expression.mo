@@ -6841,5 +6841,251 @@ algorithm
   end match;
 end isTailCall;
 
+public function complexityTraverse
+  input tuple<DAE.Exp,Integer> tpl;
+  output tuple<DAE.Exp,Integer> otpl;
+protected
+  DAE.Exp exp;
+  Integer i;
+algorithm
+  (exp,i) := tpl;
+  ((exp,i)) := traverseExp(exp,complexityTraverse2,i);
+  otpl := (exp,i);
+end complexityTraverse;
+
+protected function complexityTraverse2
+  input tuple<DAE.Exp,Integer> tpl;
+  output tuple<DAE.Exp,Integer> otpl;
+protected
+  DAE.Exp exp;
+  Integer i;
+algorithm
+  (exp,i) := tpl;
+  i := i+complexity(exp);
+  otpl := (exp,i);
+end complexityTraverse2;
+
+protected constant Integer complexityAlloc = 5;
+protected constant Integer complexityVeryBig = 500000 "Things that are too hard to calculate :(";
+protected constant Integer complexityDimLarge = 1000 "Unknown dimensions usually aren't big, but might be";
+
+public function complexity
+  input DAE.Exp exp;
+  output Integer i;
+algorithm
+  i := match exp
+    local
+      DAE.Operator op;
+      DAE.Exp e,e1,e2,e3;
+      Integer c1,c2,c3;
+      list<DAE.Exp> exps;
+      list<list<DAE.Exp>> matrix;
+      String str,name;
+      DAE.ExpType tp;
+    case DAE.ICONST(integer=_) then 0;
+    case DAE.RCONST(real=_) then 0;
+    case DAE.SCONST(string=_) then 0;
+    case DAE.BCONST(bool=_) then 0;
+    case DAE.SHARED_LITERAL(index=_) then 0;
+    case DAE.ENUM_LITERAL(index=_) then 0;
+    case DAE.CREF(ty=tp) then tpComplexity(tp);
+    case DAE.BINARY(exp1=e1,operator=op,exp2=e2)
+      equation
+        c1 = complexity(e1);
+        c2 = complexity(e2);
+        c3 = opComplexity(op);
+      then c1+c2+c3;
+    case DAE.UNARY(exp=e,operator=op)
+      equation
+        c1 = complexity(e);
+        c2 = opComplexity(op);
+      then c1+c2;
+    case DAE.LBINARY(exp1=e1,exp2=e2,operator=op)
+      equation
+        c1 = complexity(e1);
+        c2 = complexity(e2);
+        c3 = opComplexity(op);
+      then c1+c2+c3;
+    case DAE.LUNARY(exp=e,operator=op)
+      equation
+        c1 = complexity(e);
+        c2 = opComplexity(op);
+      then c1+c2;
+    case DAE.RELATION(exp1=e1,exp2=e2,operator=op)
+      equation
+        c1 = complexity(e1);
+        c2 = complexity(e2);
+        c3 = opComplexity(op);
+      then c1+c2+c3;
+    case DAE.IFEXP(expCond=e1,expThen=e2,expElse=e3)
+      equation
+        c1 = complexity(e1);
+        c2 = complexity(e2);
+        c3 = complexity(e3);
+      then c1+intMax(c2,c3);
+    case DAE.CALL(path=Absyn.IDENT(name),expLst=exps,attr=DAE.CALL_ATTR(ty=tp,builtin=true))
+      equation
+        c1 = List.fold(List.map(exps,complexity),intAdd,0);
+        c2 = complexityBuiltin(name,tp);
+        /* TODO: Cost is based on type and size of inputs. Maybe even name for builtins :) */
+      then c1+c2;
+    case DAE.CALL(expLst=exps)
+      equation
+        c1 = List.fold(List.map(exps,complexity),intAdd,0);
+        c2 = listLength(exps);
+        /* TODO: Cost is based on type and size of inputs. Maybe even name for builtins :) */
+      then c1+c2+25;
+    case DAE.PARTEVALFUNCTION(ty=_)
+      then complexityVeryBig; /* This should not be here anyway :) */
+    case DAE.ARRAY(array=exps,ty=tp)
+      equation
+        c1 = List.fold(List.map(exps,complexity),intAdd,Util.if_(isArrayType(tp),0,complexityAlloc));
+        c2 = listLength(exps);
+      then c1+c2;
+    case DAE.MATRIX(matrix=matrix as (exps::_))
+      equation
+        c1 = List.fold(List.map(List.flatten(matrix),complexity),intAdd,complexityAlloc);
+        c2 = listLength(exps)*listLength(matrix);
+      then c1 + c2;
+    case DAE.RANGE(exp=e1,range=e2,expOption=NONE())
+      then complexityDimLarge+complexity(e1)+complexity(e2); /* TODO: Check type maybe? */
+    case DAE.RANGE(exp=e1,range=e2,expOption=SOME(e3))
+      then complexityDimLarge+complexity(e1)+complexity(e2)+complexity(e3); /* TODO: Check type maybe? */
+    case DAE.TUPLE(PR=exps)
+      equation
+        c1 = List.fold(List.map(exps,complexity),intAdd,complexityAlloc);
+        c2 = listLength(exps);
+      then c1+c2;
+    case DAE.CAST(exp=e,ty=tp) then tpComplexity(tp)+complexity(e);
+    case DAE.ASUB(exp=e,sub=exps)
+      equation
+        c1 = List.fold(List.map(exps,complexity),intAdd,complexityAlloc);
+        c2 = listLength(exps);
+        c3 = complexity(e);
+      then c1+c2+c3;
+    case DAE.TSUB(exp=e) then complexity(e)+1;
+    case DAE.SIZE(exp=e,sz=NONE()) then complexity(e)+complexityAlloc+10; /* TODO: Cost is based on type (creating the array) */
+    case DAE.SIZE(exp=e1,sz=SOME(e2)) then complexity(e1)+complexity(e2)+1;
+    case DAE.CODE(ty=_) then complexityVeryBig;
+    case DAE.EMPTY(ty=_) then complexityVeryBig;
+    case DAE.REDUCTION(expr=_) then complexityVeryBig; /* TODO: We need a real traversal... */
+    case DAE.LIST(valList=exps)
+      equation
+        c1 = List.fold(List.map(exps,complexity),intAdd,complexityAlloc);
+        c2 = listLength(exps);
+      then c1+c2+complexityAlloc;
+    case DAE.CONS(car=e1,cdr=e2)
+      then complexityAlloc+complexity(e1)+complexity(e2);
+    case DAE.META_TUPLE(listExp=exps)
+      equation
+        c1 = List.fold(List.map(exps,complexity),intAdd,complexityAlloc);
+        c2 = listLength(exps);
+      then complexityAlloc+c1+c2;
+    case DAE.META_OPTION(exp=NONE()) then 0;
+    case DAE.META_OPTION(exp=SOME(e)) then complexity(e)+complexityAlloc;
+    case DAE.METARECORDCALL(args=exps)
+      equation
+        c1 = List.fold(List.map(exps,complexity),intAdd,complexityAlloc);
+        c2 = listLength(exps);
+      then c1+c2+complexityAlloc;
+    case DAE.MATCHEXPRESSION(inputs=_) then complexityVeryBig;
+    case DAE.BOX(exp=e) then complexityAlloc+complexity(e);
+    case DAE.UNBOX(exp=e) then 1+complexity(e);
+    case DAE.PATTERN(pattern=_) then 0;
+    else
+      equation
+        str = "Expression.complexityWork failed: " +& ExpressionDump.printExpStr(exp);
+        Error.addMessage(Error.INTERNAL_ERROR,{str});
+      then fail();
+  end match;
+end complexity;
+
+protected function complexityBuiltin
+  input String name;
+  input DAE.ExpType tp;
+  output Integer complexity;
+algorithm
+  complexity := match (name,tp)
+    case ("identity",tp) then complexityAlloc+tpComplexity(tp);
+    case ("cross",tp) then 3*3;
+    else 25;
+  end match;
+end complexityBuiltin;
+
+protected function tpComplexity
+  input DAE.ExpType tp;
+  output Integer i;
+algorithm
+  i := match tp
+    local
+      list<DAE.Dimension> dims;
+    case DAE.ET_ARRAY(arrayDimensions=dims)
+      equation
+        i = List.fold(List.map(dims,dimComplexity),intMul,1);
+      then i;
+    else 0;
+  end match;
+end tpComplexity;
+
+protected function dimComplexity
+  input DAE.Dimension dim;
+  output Integer i;
+algorithm
+  i := match dim
+    case DAE.DIM_INTEGER(integer=i) then i;
+    case DAE.DIM_ENUM(size=i) then i;
+    else complexityDimLarge;
+  end match;
+end dimComplexity;
+
+protected function opComplexity
+  input DAE.Operator op;
+  output Integer i;
+algorithm
+  i := match op
+    local
+      DAE.ExpType tp;
+    case DAE.ADD(ty=DAE.ET_STRING()) then 100;
+    case DAE.ADD(ty=tp) then 1;
+    case DAE.SUB(ty=tp) then 1;
+    case DAE.MUL(ty=tp) then 1;
+    case DAE.DIV(ty=tp) then 1;
+    case DAE.POW(ty=tp) then 30;
+    case DAE.UMINUS(ty=tp) then 1;
+      /* TODO: Array dims? */
+    case DAE.UMINUS_ARR(ty=tp) then complexityAlloc+tpComplexity(tp);
+    case DAE.ADD_ARR(ty=tp) then complexityAlloc+tpComplexity(tp);
+    case DAE.SUB_ARR(ty=tp) then complexityAlloc+tpComplexity(tp);
+    case DAE.MUL_ARR(ty=tp) then complexityAlloc+tpComplexity(tp);
+    case DAE.DIV_ARR(ty=tp) then complexityAlloc+tpComplexity(tp);
+    case DAE.MUL_ARRAY_SCALAR(ty=tp) then complexityAlloc+tpComplexity(tp);
+    case DAE.ADD_ARRAY_SCALAR(ty=tp) then complexityAlloc+tpComplexity(tp);
+    case DAE.SUB_SCALAR_ARRAY(ty=tp) then complexityAlloc+tpComplexity(tp);
+    case DAE.MUL_SCALAR_PRODUCT(ty=tp) then complexityAlloc+3*tpComplexity(tp);
+    case DAE.MUL_MATRIX_PRODUCT(ty=tp) then complexityAlloc+3*tpComplexity(tp);
+    case DAE.DIV_ARRAY_SCALAR(ty=tp) then complexityAlloc+tpComplexity(tp);
+    case DAE.DIV_SCALAR_ARRAY(ty=tp) then complexityAlloc+tpComplexity(tp);
+    case DAE.POW_ARRAY_SCALAR(ty=tp) then complexityAlloc+30*tpComplexity(tp);
+    case DAE.POW_SCALAR_ARRAY(ty=tp) then complexityAlloc+30*tpComplexity(tp);
+    case DAE.POW_ARR(ty=tp) then complexityAlloc+30*tpComplexity(tp);
+    case DAE.POW_ARR2(ty=tp) then complexityAlloc+30*tpComplexity(tp);
+      /* TODO: Array ops? */
+    case DAE.AND(ty=tp) then 1;
+    case DAE.OR(ty=tp) then 1;
+    case DAE.NOT(ty=tp) then 1;
+    case DAE.LESS(ty=tp) then 1;
+    case DAE.LESSEQ(ty=tp) then 1;
+    case DAE.GREATER(ty=tp) then 1;
+    case DAE.GREATEREQ(ty=tp) then 1;
+    case DAE.EQUAL(ty=tp) then 1;
+    case DAE.NEQUAL(ty=tp) then 1;
+    case DAE.USERDEFINED(fqName=_) then 100;
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"SimCode.opWCET failed"});
+      then fail();
+  end match;
+end opComplexity;
+
 end Expression;
 

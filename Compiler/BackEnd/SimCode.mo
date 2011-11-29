@@ -12508,4 +12508,15 @@ algorithm
   end match;
 end setSimCodeLiterals;
 
+protected function eqSystemWCET
+  "Calculate the estimated worst-case execution time of the system for partitioning"
+  input list<SimEqSystem> eqs;
+  output tuple<list<SimEqSystem>,Integer> tpl;
+protected
+  Integer i;
+algorithm
+  (_,i) := traverseExpsEqSystems(eqs, Expression.complexityTraverse, 0, {});
+  tpl := (eqs,i);
+end eqSystemWCET;
+
 end SimCode;

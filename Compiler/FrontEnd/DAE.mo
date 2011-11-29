@@ -1449,11 +1449,11 @@ uniontype Operator "Operators which are overloaded in the abstract syntax are he
     ExpType ty "type of the array" ;
   end POW_SCALAR_ARRAY;
 
-  record POW_ARR "Power of a matrix"
+  record POW_ARR "Power of a matrix: {{1,2,3},{4,5.0,6},{7,8,9}}^2"
     ExpType ty "type of the array";
   end POW_ARR;
 
-  record POW_ARR2 "elementwise power of arrays"
+  record POW_ARR2 "elementwise power of arrays: {1,2,3}.^{3,2,1}"
     ExpType ty "type of the array";
   end POW_ARR2;
 
