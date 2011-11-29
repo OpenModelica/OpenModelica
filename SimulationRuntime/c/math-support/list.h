@@ -55,7 +55,7 @@ extern "C" {
   void listPushFront(LIST *list, void *data);
   void listPushBack(LIST *list, void *data);
 
-  int listLength(LIST *list);
+  int listLen(LIST *list);
 
   void *listFirstData(LIST *list);
   void *listLastData(LIST *list);

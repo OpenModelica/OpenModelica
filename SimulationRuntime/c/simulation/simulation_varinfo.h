@@ -38,42 +38,9 @@
 extern "C" {
 #endif
 
-typedef struct {
-  const char* filename;
-  int lineStart;
-  int colStart;
-  int lineEnd;
-  int colEnd;
-  int readonly;
-} omc_fileInfo;
+void printErrorEqSyst(equationSystemError, struct EQUATION_INFO, double var);
 
-#define omc_dummyFileInfo {"",-1,-1,-1,-1,1}
-
-struct omc_varInfo {
-  int id;
-  const char* name;
-  const char* comment;
-  const omc_fileInfo info;
-};
-
-struct omc_equationInfo {
-  int id;
-  const char *name;
-  int numVar;
-  const struct omc_varInfo** vars; /* The variables involved in the equation */
-};
-
-struct omc_functionInfo {
-  int id;
-  const char* name;
-  const omc_fileInfo info;
-};
-
-typedef enum {ERROR_AT_TIME,NO_PROGRESS_START_POINT,NO_PROGRESS_FACTOR,IMPROPER_INPUT} equationSystemError;
-
-void printErrorEqSyst(equationSystemError,struct omc_equationInfo,double var);
-
-void printInfo(FILE *stream, omc_fileInfo info);
+void printInfo(FILE *stream, FILE_INFO info);
 
 #ifdef __cplusplus
 }

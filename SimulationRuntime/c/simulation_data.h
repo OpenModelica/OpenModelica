@@ -40,10 +40,13 @@
 #include "openmodelica.h"
 #include "ringbuffer.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
+#define omc_dummyFileInfo {"",-1,-1,-1,-1,1}
+#define omc_dummyVarInfo {-1,"","",omc_dummyFileInfo}
+#define omc_dummyEquationInfo {-1,"",-1,NULL}
+#define omc_dummyFunctionInfo {-1,"",omc_dummyFileInfo}
+
+  /* Model info structures */
   typedef struct FILE_INFO
   {
     const char* filename;
@@ -77,6 +80,22 @@ extern "C" {
     const FILE_INFO info;
   }FUNCTION_INFO;
 
+  typedef enum {ERROR_AT_TIME,NO_PROGRESS_START_POINT,NO_PROGRESS_FACTOR,IMPROPER_INPUT} equationSystemError;
+
+  /* Sample times */
+  typedef struct SAMPLE_RAW_TIME {
+    double start;
+    double interval;
+    int zc_index;
+  } SAMPLE_RAW_TIME;
+
+  typedef struct SAMPLE_TIME {
+    double events;
+    int zc_index;
+    int activated;
+  } SAMPLE_TIME;
+
+  /* Alias data with various types*/
   typedef struct _X_DATA_REAL_ALIAS
   {
     int negate;  
@@ -112,6 +131,7 @@ extern "C" {
     VAR_INFO info;
     modelica_boolean filterOutput; /* True if this variable should be filtered */
   }_X_DATA_STRING_ALIAS;
+
 
   /* collect all attributes from one variable in one struct */
   typedef struct REAL_ATTRIBUTE
@@ -183,15 +203,15 @@ extern "C" {
 
   typedef struct MODEL_DATA
   {
-    STATIC_REAL_DATA* realData;
-    STATIC_INTEGER_DATA* integerData;
-    STATIC_BOOLEAN_DATA* booleanData;
-    STATIC_STRING_DATA* stringData;
+    STATIC_REAL_DATA* realVarsData;
+    STATIC_INTEGER_DATA* integerVarsData;
+    STATIC_BOOLEAN_DATA* booleanVarsData;
+    STATIC_STRING_DATA* stringVarsData;
 
-    STATIC_REAL_DATA* realParameter;
-    STATIC_INTEGER_DATA* integerParameter;
-    STATIC_BOOLEAN_DATA* booleanParameter;
-    STATIC_STRING_DATA* stringParameter;
+    STATIC_REAL_DATA* realParameterData;
+    STATIC_INTEGER_DATA* integerParameterData;
+    STATIC_BOOLEAN_DATA* booleanParameterData;
+    STATIC_STRING_DATA* stringParameterData;
 
     _X_DATA_REAL_ALIAS* realAlias;
     _X_DATA_INTEGER_ALIAS* integerAlias;
@@ -200,14 +220,12 @@ extern "C" {
 
     FUNCTION_INFO* functionNames;
     EQUATION_INFO* equationInfo;
-    int equationInfo_reverse_prof_index;
+    int* equationInfo_reverse_prof_index;
 
     modelica_string_t modelName;
     modelica_string_t modelFilePrefix;
     modelica_string_t modelDir;
     modelica_string_t modelGUID;
-
-    void** extObjs; /* External objects */
 
     long nStates;
     long nVariablesReal; /* all Real Variables of the model (states,statesderivatives,algebraics) */
@@ -220,12 +238,13 @@ extern "C" {
     long nParametersString;
     long nInputVars;
     long nOutputVars;
+    long nJacobianVars;
     long nHelpVars;   /* results of relations in when equation */
 
     long nZeroCrossings;
     long nSamples;
     long nResiduals;
-    long nExtOpjs;
+    long nExtObjs;
     long nFunctions;
     long nEquations;
     long nProfileBlocks;
@@ -247,13 +266,15 @@ extern "C" {
     modelica_string outputFormat;
     modelica_string variableFilter;
 
-    modelica_boolean init; /* =1 during initialization, 0 otherwise. */
+    modelica_boolean initial; /* =1 during initialization, 0 otherwise. */
     modelica_boolean terminal; /* =1 at the end of the simulation, 0 otherwise. */
 
+    void** extObjs; /* External objects */
+
     /* An array containing the initial data of samples used in the sim */
-    sample_raw_time* rawSampleExps;
+    SAMPLE_RAW_TIME* rawSampleExps;
     /* The queue of sample time events to be processed. */
-    sample_time* sampleTimes;
+    SAMPLE_TIME* sampleTimes;
     modelica_integer curSampleTimeIx;
     modelica_integer nSampleTimes;
 
@@ -270,6 +291,16 @@ extern "C" {
     modelica_integer* integerVarsPre;
     modelica_boolean* booleanVarsPre;
     modelica_string* stringVarsPre;
+
+    modelica_real* realParameter;
+    modelica_integer* integerParameter;
+    modelica_boolean* booleanParameter;
+    modelica_string* stringParameter;
+
+    modelica_real* jacobianVars;
+    modelica_real* inputVars;
+    modelica_real* outputVars;
+
 
   }SIMULATION_INFO;
 
@@ -293,6 +324,11 @@ extern "C" {
     MODEL_DATA modelData;           /* static stuff */
     SIMULATION_INFO simulationInfo;
   }_X_DATA;
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
   void initializeXDataStruc(_X_DATA *data);
   void DeinitializeXDataStruc(_X_DATA *data);

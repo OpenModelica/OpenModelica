@@ -59,13 +59,13 @@ void simulation_result_csv::emit(_X_DATA *data)
   rt_tick(SIM_TIMER_OUTPUT);
   fprintf(fout, format, data->localData[0]->timeValue);
 
-  for (int i = 0; i < data->modelData.nVariablesReal; i++) if (!data->modelData.realData[i].filterOutput)
+  for (int i = 0; i < data->modelData.nVariablesReal; i++) if (!data->modelData.realVarsData[i].filterOutput)
     fprintf(fout, format, (data->localData[0])->realVars[i]);
-  for (int i = 0; i < data->modelData.nVariablesInteger; i++) if (!data->modelData.integerData[i].filterOutput)
+  for (int i = 0; i < data->modelData.nVariablesInteger; i++) if (!data->modelData.integerVarsData[i].filterOutput)
     fprintf(fout, formatint, (data->localData[0])->integerVars[i]);
-  for (int i = 0; i < data->modelData.nVariablesBoolean; i++) if (!data->modelData.booleanData[i].filterOutput)
+  for (int i = 0; i < data->modelData.nVariablesBoolean; i++) if (!data->modelData.booleanVarsData[i].filterOutput)
     fprintf(fout, formatbool, (data->localData[0])->booleanVars[i]);
-  for (int i = 0; i < data->modelData.nVariablesString; i++) if (!data->modelData.stringData[i].filterOutput)
+  for (int i = 0; i < data->modelData.nVariablesString; i++) if (!data->modelData.stringVarsData[i].filterOutput)
     fprintf(fout, formatstring, (data->localData[0])->stringVars[i]);
 
   for (int i = 0; i < data->modelData.nAliasReal; i++) if (!data->modelData.realAlias[i].filterOutput)
@@ -100,14 +100,14 @@ simulation_result_csv::simulation_result_csv(const char* filename, long numpoint
   }
 
   fprintf(fout, format, "time");
-  for (int i = 0; i < modelData->nVariablesReal; i++) if (!modelData->realData[i].filterOutput)
-    fprintf(fout, format, modelData->realData[i].info.name);
-  for (int i = 0; i < modelData->nVariablesInteger; i++) if (!modelData->integerData[i].filterOutput)
-    fprintf(fout, format, modelData->integerData[i].info.name);
-  for (int i = 0; i < modelData->nVariablesBoolean; i++) if (!modelData->booleanData[i].filterOutput)
-    fprintf(fout, format, modelData->booleanData[i].info.name);
-  for (int i = 0; i < modelData->nVariablesString; i++) if (!modelData->stringData[i].filterOutput)
-    fprintf(fout, format, modelData->stringData[i].info.name);
+  for (int i = 0; i < modelData->nVariablesReal; i++) if (!modelData->realVarsData[i].filterOutput)
+    fprintf(fout, format, modelData->realVarsData[i].info.name);
+  for (int i = 0; i < modelData->nVariablesInteger; i++) if (!modelData->integerVarsData[i].filterOutput)
+    fprintf(fout, format, modelData->integerVarsData[i].info.name);
+  for (int i = 0; i < modelData->nVariablesBoolean; i++) if (!modelData->booleanVarsData[i].filterOutput)
+    fprintf(fout, format, modelData->booleanVarsData[i].info.name);
+  for (int i = 0; i < modelData->nVariablesString; i++) if (!modelData->stringVarsData[i].filterOutput)
+    fprintf(fout, format, modelData->stringVarsData[i].info.name);
 
   for (int i = 0; i < modelData->nAliasReal; i++) if (!modelData->realAlias[i].filterOutput)
     fprintf(fout, format, modelData->realAlias[i].info.name);

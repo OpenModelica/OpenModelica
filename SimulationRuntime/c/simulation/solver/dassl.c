@@ -102,11 +102,6 @@ dasrt_initial(_X_DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
   dasslData->iwork = (fortran_integer*)  calloc(dasslData->liw,sizeof(fortran_integer));
   ASSERT(dasslData->iwork,"out of memory");
   dasslData->jroot = NULL;
-  /*ASSERT(dasslData->jroot,"out of memory"); */
-  /* Used when calculating residual for its side effects. (alg. var calc) */
-  /*dasslData->dummy_delta = (double*) calloc(simData->modelData.nStates,sizeof(double));
-  ASSERT(dasslData->dummy_delta,"out of memory");
-  */
   dasslData->rpar = NULL;
   dasslData->ipar = (fortran_integer*) calloc(5,sizeof(fortran_integer));
   ASSERT(dasslData->ipar,"out of memory");

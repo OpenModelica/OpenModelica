@@ -5217,6 +5217,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     error(sourceInfo(), 'Code generation does not support der(<%printExpStr(exp)%>)') 
   case CALL(path=IDENT(name="pre"), expLst={arg}) then
     daeExpCallPre(arg, context, preExp, varDecls)
+  case CALL(path=IDENT(name="start"), expLst={arg}) then
+    daeExpCallPre(arg, context, preExp, varDecls)    
   case CALL(path=IDENT(name="edge"), expLst={arg as CREF(__)}) then
     '(<%cref(arg.componentRef)%> && !$P$PRE<%cref(arg.componentRef)%>)'
   case CALL(path=IDENT(name="edge"), expLst={exp}) then

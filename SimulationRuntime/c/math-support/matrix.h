@@ -44,20 +44,20 @@ int _omc_dgesv_(integer *n, integer *nrhs, doublereal *a, integer
      *lda, integer *ipiv, doublereal *b, integer *ldb, integer *info);
 
 extern
-void _omc_hybrd_(void (*) (int*, double *, double*, int*),
+void _omc_hybrd_(void (*) (int*, double *, double*, int*, void* data),
       int* n, double* x,double* fvec,double* xtol,
       int* maxfev, int* ml,int* mu,double* epsfcn,
       double* diag,int* mode, double* factor,
       int* nprint,int* info,int* nfev,double* fjac,
       int* ldfjac,double* r, int* lr, double* qtf,
-      double* wa1,double* wa2,double* wa3,double* wa4);
+      double* wa1,double* wa2,double* wa3,double* wa4, void* userdata);
 
 extern
-void * _omc_hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
+void * _omc_hybrj_(void(*) (int*, double*, double*, double *, int*, int*, void* data),
       int *n,double*x,double*fvec,double*fjac,int *ldfjac,double*xtol,int* maxfev,
       double* diag,int *mode,double*factor,int *nprint,int*info,int*nfev,int*njev,
       double* r,int *lr,double*qtf,double*wa1,double*wa2,
-        double* wa3,double* wa4);
+        double* wa3,double* wa4, void* userdata);
 
 #ifdef __cplusplus
 }
@@ -85,7 +85,7 @@ void * _omc_hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
   printf("}\n"); \
 } while(0)
 
-#define solve_nonlinear_system_mixed(residual,no) do { \
+#define solve_nonlinear_system_mixed(residual,no, userdata) do { \
    int giveUp = 0; \
    int retries = 0; \
    int retries2 = 0; \
@@ -93,45 +93,38 @@ void * _omc_hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
      giveUp = 1; \
      _omc_hybrd_(residual,&n, nls_x,nls_fvec,&xtol,&maxfev,&ml,&mu,&epsfcn, \
           nls_diag,&mode,&factor,&nprint,&info,&nfev,nls_fjac,&ldfjac, \
-        nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4); \
+        nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4, userdata); \
       if (info == 0) { \
-          if (sim_verbose >= LOG_NONLIN_SYS) { \
-            printf("improper input parameters to nonlinear eq. syst %s:%d.\n", __FILE__, __LINE__); fflush(NULL); \
-          } \
+        DEBUG_INFO2(LOG_NONLIN_SYS,"improper input parameters to nonlinear eq. syst %s:%d.\n", __FILE__, __LINE__); \
       } \
       if ((info == 4 || info == 5) && retries < 3) { /* first try to decrease factor*/ \
       retries++; giveUp = 0; \
       factor = factor / 10.0; \
-      if (sim_verbose >= LOG_NONLIN_SYS) { \
-          printf("Solving nonlinear system: iteration not making progress, trying to decrease factor to %f\n",factor); fflush(NULL); \
-      } else if ((info == 4 || info == 5) && retries < 5) { /* Then, try with different starting point*/  \
+      DEBUG_INFO2(LOG_NONLIN_SYS,"Solving nonlinear system: iteration not making progress, trying to decrease factor to %f",factor);  \
+      if ((info == 4 || info == 5) && retries < 5) { /* Then, try with different starting point*/  \
         int i = 0; \
         for (i = 0; i < n; i++) { nls_x[i]+=0.1; }; \
-          retries++; giveUp = 0; \
-          if (sim_verbose >= LOG_NONLIN_SYS) { \
-            printf("Solving nonlinear system: iteration not making progress, trying with different starting points (+1e-6)\n"); fflush(NULL); \
-          } else if ((info == 4 || info == 5) && retries2 < 1) { /*Then try with old values (instead of extrapolating )*/ \
-            retries = 0; retries2++; giveUp = 0; \
-            int i = 0; \
-            for (i = 0; i < n; i++) { nls_x[i] = nls_xold[i]; } \
-          } else if (info >= 2 && info <= 5) { \
-              int i = 0; \
-              modelErrorCode=ERROR_NONLINSYS; \
-              if (sim_verbose >= LOG_NONLIN_SYS) { \
-                  printf("error solving nonlinear system nr. %d at time %f\n",no,time); fflush(NULL); \
-              } \
-              if (sim_verbose >= LOG_NONLIN_SYS) { \
-                  for (i = 0; i < n; i++) { \
-                     printf(" residual[%d] = %f\n",i,nls_fvec[i]); \
-                     printf(" x[%d] = %f\n",i,nls_x[i]); \
-                  } \
-                  fflush(NULL); \
-              } \
+        retries++; giveUp = 0; \
+        DEBUG_INFO2(LOG_NONLIN_SYS,"Solving nonlinear system: iteration not making progress, trying with different starting points (+1e-6)"); \
+        if ((info == 4 || info == 5) && retries2 < 1) { /*Then try with old values (instead of extrapolating )*/ \
+          retries = 0; retries2++; giveUp = 0; \
+          int i = 0; \
+          for (i = 0; i < n; i++) { nls_x[i] = nls_xold[i]; } \
+        } else if (info >= 2 && info <= 5) { \
+          int i = 0; \
+          modelErrorCode=ERROR_NONLINSYS; \
+          DEBUG_INFO2(LOG_NONLIN_SYS,"error solving nonlinear system nr. %d at time %f",-1,data->localData[0]->timeValue); \
+          if (DEBUG_FLAG(LOG_NONLIN_SYS)) { \
+            for (i = 0; i < n; i++) { \
+               DEBUG_INFO_AL2(LOG_NONLIN_SYS," residual[%d] = %f",i,nls_fvec[i]); \
+               DEBUG_INFO_AL2(LOG_NONLIN_SYS," x[%d] = %f",i,nls_x[i]); \
+            } \
           } \
+        } \
       }\
 } while(0) /* (no trailing ;)*/
 
-#define solve_nonlinear_system(residual,no) do { \
+#define solve_nonlinear_system(residual,no, userdata) do { \
    int giveUp = 0; \
    int retries = 0; \
    int retries2 = 0; \
@@ -139,67 +132,64 @@ void * _omc_hybrj_(void(*) (int *,double*,double*,double *,int*, int*),
      giveUp = 1; \
      _omc_hybrd_(residual,&n, nls_x,nls_fvec,&xtol,&maxfev,&ml,&mu,&epsfcn, \
           nls_diag,&mode,&factor,&nprint,&info,&nfev,nls_fjac,&ldfjac, \
-        nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4); \
-      if (info == 0) { \
-          printErrorEqSyst(IMPROPER_INPUT,no,time); \
-      } \
-        if ((info == 4 || info == 5) && retries < 3) { /* first try to decrease factor*/ \
+        nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4, userdata); \
+      if (info == 0) \
+          printErrorEqSyst(IMPROPER_INPUT,-1,data->localData[0]->timeValue); \
+      if ((info == 4 || info == 5) && retries < 3) { /* first try to decrease factor*/ \
         retries++;  giveUp = 0; \
         factor = factor / 10.0; \
-           if (sim_verbose & LOG_NONLIN_SYS)  \
-          printErrorEqSyst(NO_PROGRESS_FACTOR,no,factor); \
+        if (DEBUG_FLAG(LOG_NONLIN_SYS))  \
+          printErrorEqSyst(NO_PROGRESS_FACTOR,-1,factor); \
       } else if ((info == 4 || info == 5) && retries < 5) { /* Then, try with different starting point*/  \
         int i = 0; \
         for (i = 0; i < n; i++) { nls_x[i] += 0.1; }; \
         retries++;  giveUp=0; \
-        if (sim_verbose >= LOG_NONLIN_SYS) \
+        if (DEBUG_FLAG(LOG_NONLIN_SYS)) \
           printErrorEqSyst(NO_PROGRESS_START_POINT,no,1e-6); \
       } else if ((info == 4 || info == 5) && retries2 < 1) { /*Then try with old values (instead of extrapolating )*/ \
         retries = 0; retries2++; giveUp = 0; \
         int i = 0; \
         for (i = 0; i < n; i++) { nls_x[i] = nls_xold[i]; } \
-      } \
-      else if (info >= 2 && info <= 5) { \
+      } else if (info >= 2 && info <= 5) { \
         int i = 0; \
         modelErrorCode=ERROR_NONLINSYS; \
-        printErrorEqSyst(ERROR_AT_TIME,no,time); \
-        if (sim_verbose >= LOG_NONLIN_SYS) { \
-            for (i = 0; i < n; i++) { \
-            printf(" residual[%d] = %f\n",i,nls_fvec[i]); \
-            printf(" x[%d] = %f\n",i,nls_x[i]); \
-            } \
-            fflush(NULL); \
+        printErrorEqSyst(ERROR_AT_TIME,-1,data->localData[0]->timeValue); \
+        if (DEBUG_FLAG(LOG_NONLIN_SYS)) { \
+          for (i = 0; i < n; i++) { \
+             DEBUG_INFO_AL2(LOG_NONLIN_SYS," residual[%d] = %f",i,nls_fvec[i]); \
+             DEBUG_INFO_AL2(LOG_NONLIN_SYS," x[%d] = %f",i,nls_x[i]); \
           } \
-      } \
+        } \
+      }\
    }\
 } while(0) /* (no trailing ;)*/
 
-#define solve_nonlinear_system_analytic_jac(residual,no) do { \
+#define solve_nonlinear_system_analytic_jac(residual, no, userdata) do { \
    int giveUp = 0; \
    int retries = 0; \
    while(!giveUp) { \
      giveUp = 1; \
      _omc_hybrj_(residual,&n, nls_x,nls_fvec,nls_fjac,&ldfjac,&xtol,&maxfev,\
           nls_diag,&mode,&factor,&nprint,&info,&nfev,&njev, \
-        nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4); \
+        nls_r,&lr,nls_qtf,nls_wa1,nls_wa2,nls_wa3,nls_wa4, userdata); \
       if (info == 0) { \
-          printErrorEqSyst(IMPROPER_INPUT,no,time); \
+          printErrorEqSyst(IMPROPER_INPUT,-1,data->localData[0]->timeValue); \
       } \
       if ((info == 4 || info == 5) && retries < 3) { /* First try to decrease factor*/ \
         retries++; giveUp = 0; \
         factor = factor / 10.0; \
            if (sim_verbose)  \
-          printErrorEqSyst(NO_PROGRESS_FACTOR,no,factor); \
+          printErrorEqSyst(NO_PROGRESS_FACTOR,-1,factor); \
       } else if ((info == 4 || info == 5) && retries < 5) { /* Secondly, try with different starting point*/  \
         int i = 0; \
         for (i = 0; i < n; i++) { nls_x[i] += 0.1; }; \
         retries++; giveUp=0; \
         if (sim_verbose) \
-            printErrorEqSyst(NO_PROGRESS_START_POINT,no,1e-6); \
+            printErrorEqSyst(NO_PROGRESS_START_POINT,-1,1e-6); \
         } \
         else if (info >= 2 && info <= 5) { \
           modelErrorCode=ERROR_NONLINSYS; \
-          printErrorEqSyst(no,time); \
+          printErrorEqSyst(-1,data->localData[0]->timeValue); \
         } \
      }\
 } while(0) /* (no trailing ;)*/
@@ -220,12 +210,10 @@ integer info = 0; /* output */ \
 assert(ipiv != 0); \
 _omc_dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
  if (info < 0) { \
-   if (sim_verbose >= LOG_NONLIN_SYS) \
-     printf("Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,localData->timeValue,info); fflush(NULL); \
+   DEBUG_INFO3(LOG_NONLIN_SYS,"Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,data->localData[0]->timeValue,info); \
  } \
  else if (info > 0) { \
-   if (sim_verbose >= LOG_NONLIN_SYS) \
-     printf("Error solving linear system of equations (no. %d) at time %f, system is singular.\n",id,localData->timeValue); fflush(NULL); \
+   DEBUG_INFO2(LOG_NONLIN_SYS,"Error solving linear system of equations (no. %d) at time %f, system is singular.\n",id,data->localData[0]->timeValue); \
  } \
 free(ipiv); \
 } while (0) /* (no trailing ; ) */
@@ -295,10 +283,10 @@ int lr = (size*(size + 1)) / 2; \
 int ldfjac = size;
 #define end_nonlinear_system() } do {} while(0)
 
-#define extraPolate(v,old1,old2) (localData->oldTime == localData->oldTime2 ) ? v: \
-(((old1)-(old2))/(localData->oldTime-localData->oldTime2)*localData->timeValue \
-+(localData->oldTime*(old2)-localData->oldTime2*(old1))/ \
-(localData->oldTime-localData->oldTime2))
+#define extraPolate(v,old1,old2) (data->localData[1]->timeValue == data->localData[2]->timeValue ) ? v: \
+(((old1)-(old2))/(data->localData[1]->timeValue-data->localData[2]->timeValue)*data->localData[0]->timeValue \
++(data->localData[1]->timeValue*(old2)-data->localData[2]->timeValue*(old1))/ \
+(data->localData[1]->timeValue-data->localData[2]->timeValue))
 
 #define mixed_equation_system(size) do { \
     int found_solution = 0; \
@@ -336,13 +324,13 @@ do { \
       } \
   } \
   /* we found a solution*/ \
-  if (found_solution && (sim_verbose >= LOG_NONLIN_SYS)){ \
+  if (found_solution && DEBUG_FLAG(LOG_NONLIN_SYS)){ \
       int i = 0; \
       printf("Result of mixed system discrete variables:\n"); \
       for (i = 0; i < size; i++) { \
-        int ix = (loc_ptrs[i]-localData->boolVariables.algebraics); \
-        const char *__name = localData->bool_alg_names[ix].name; \
-        printf("%s = %d  pre(%s)= %d\n",__name, *loc_ptrs[i], __name, localData->boolVariables.algebraics_saved[ix]); \
+        int ix = (loc_ptrs[i]-data->localData[0]->booleanVars); \
+        const char *__name = data->modelData.booleanVarsData[ix].info.name; \
+        printf("%s = %d  pre(%s)= %d\n",__name, *loc_ptrs[i], __name, data->simulationInfo.booleanVarsPre[ix]); \
       } \
       fflush(NULL); \
   } \

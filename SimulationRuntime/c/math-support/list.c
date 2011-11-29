@@ -121,7 +121,7 @@ void listPushBack(LIST *list, void *data)
     list->first = list->last;
 }
 
-int listLength(LIST *list)
+int listLen(LIST *list)
 {
   ASSERT(list, "invalid list-pointer");
   return list->length;

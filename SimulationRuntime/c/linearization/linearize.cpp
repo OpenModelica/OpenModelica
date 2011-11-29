@@ -61,13 +61,13 @@ string array2string(double* array, int row, int col){
 }
 
 
-int linearize(int nstates, int ninputs, int noutputs)
+int linearize(_X_DATA* data)
 {
 
     /* init Matrix A */
-    int size_A = nstates;
-    int size_Inputs = ninputs;
-    int size_Outputs = noutputs;
+    int size_A = data->modelData.nStates;
+    int size_Inputs = data->modelData.nInputVars;
+    int size_Outputs = data->modelData.nOutputVars;
     double* matrixA = (double*)calloc(size_A*size_A,sizeof(double));
     double* matrixB = (double*)calloc(size_A*size_Inputs,sizeof(double));
     double* matrixC = (double*)calloc(size_Outputs*size_A,sizeof(double));
@@ -80,23 +80,23 @@ int linearize(int nstates, int ninputs, int noutputs)
     ASSERT(matrixD,"Calloc");
 
     /* Determine Matrix A */
-    if (functionJacA(matrixA)){
+    if (functionJacA(data, matrixA)){
         THROW("Error, can not get Matrix A ");
     }
     strA = array2string(matrixA,size_A,size_A);
 
     /* Determine Matrix B */
-    if (functionJacB(matrixB)){
+    if (functionJacB(data, matrixB)){
         THROW("Error, can not get Matrix B ");
     }
     strB = array2string(matrixB,size_A,size_Inputs);
     /* Determine Matrix C */
-    if (functionJacC(matrixC)){
+    if (functionJacC(data, matrixC)){
         THROW("Error, can not get Matrix C ");
     }
     strC = array2string(matrixC,size_Outputs,size_A);
     /* Determine Matrix D */
-    if (functionJacD(matrixD)){
+    if (functionJacD(data, matrixD)){
         THROW("Error, can not get Matrix D ");
     }
     strD = array2string(matrixD,size_Outputs,size_Inputs);
@@ -105,13 +105,13 @@ int linearize(int nstates, int ninputs, int noutputs)
        inside the curly braces for x0 and u0. {for i in in 1:0} will create an
        empty array if needed. */
     if(size_A) {
-        strX = array2string(globalData->states,1,size_A);
+        strX = array2string(data->localData[0]->realVars,1,size_A);
     } else {
         strX = "i for i in 1:0";
     }
 
     if(size_Inputs) {
-        strU = array2string(globalData->inputVars,1,size_Inputs);
+        strU = array2string(data->simulationInfo.inputVars,1,size_Inputs);
     } else {
         strU = "i for i in 1:0";
     }
@@ -121,13 +121,13 @@ int linearize(int nstates, int ninputs, int noutputs)
     free(matrixC);
     free(matrixD);
 
-    filename = "linear_" + string(globalData->modelName) + ".mo";
+    filename = "linear_" + string(data->modelData.modelName) + ".mo";
 
     FILE *fout = fopen(filename.c_str(),"wb");
     ASSERT1(fout,"Cannot open File %s",filename.c_str());
     fprintf(fout, linear_model_frame, strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str());
-    if (sim_verbose>=LOG_STATS)
-        printf(linear_model_frame, strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str());
+    if (DEBUG_FLAG(LOG_STATS))
+    DEBUG_INFO6(LOG_STATS, linear_model_frame, strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str());
     fflush(fout);
     fclose(fout);
 

@@ -42,7 +42,6 @@
 #include "simulation_runtime.h"
 
 void read_input_xml(int argc, char **argv,
-                    DATA *simData,
                     MODEL_DATA* modelData,
                     SIMULATION_INFO* simulationData,
                     double *start, double *stop,

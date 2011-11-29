@@ -54,36 +54,40 @@ void initializeXDataStruc(_X_DATA *data)
     tmpSimData.timeValue = 0;
     /* buffer for all variable values */
     tmpSimData.realVars = (modelica_real*)calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
+    ASSERT(tmpSimData.realVars,"out of memory");
     tmpSimData.integerVars = (modelica_integer*)calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
+    ASSERT(tmpSimData.integerVars,"out of memory");
     tmpSimData.booleanVars = (modelica_boolean*)calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
+    ASSERT(tmpSimData.booleanVars,"out of memory");
     tmpSimData.stringVars = (modelica_string*)calloc(data->modelData.nVariablesString, sizeof(modelica_string));
+    ASSERT(tmpSimData.stringVars,"out of memory");
     appendRingData(data->simulationData,&tmpSimData);
   }
   data->localData = (SIMULATION_DATA**) calloc(SIZERINGBUFFER, sizeof(SIMULATION_DATA*));
   rotateRingBuffer(data->simulationData, 0, (void**) data->localData);
 
   /* create modelData var arrays */
-  data->modelData.realData = (STATIC_REAL_DATA*) calloc(data->modelData.nVariablesReal,sizeof(STATIC_REAL_DATA));
-  data->modelData.integerData = (STATIC_INTEGER_DATA*) calloc(data->modelData.nVariablesInteger,sizeof(STATIC_INTEGER_DATA));
-  data->modelData.booleanData = (STATIC_BOOLEAN_DATA*) calloc(data->modelData.nVariablesBoolean,sizeof(STATIC_BOOLEAN_DATA));
-  data->modelData.stringData = (STATIC_STRING_DATA*) calloc(data->modelData.nVariablesString,sizeof(STATIC_STRING_DATA));
+  data->modelData.realVarsData = (STATIC_REAL_DATA*) calloc(data->modelData.nVariablesReal, sizeof(STATIC_REAL_DATA));
+  data->modelData.integerVarsData = (STATIC_INTEGER_DATA*) calloc(data->modelData.nVariablesInteger, sizeof(STATIC_INTEGER_DATA));
+  data->modelData.booleanVarsData = (STATIC_BOOLEAN_DATA*) calloc(data->modelData.nVariablesBoolean, sizeof(STATIC_BOOLEAN_DATA));
+  data->modelData.stringVarsData = (STATIC_STRING_DATA*) calloc(data->modelData.nVariablesString, sizeof(STATIC_STRING_DATA));
 
-  data->modelData.realParameter = (STATIC_REAL_DATA*) calloc(data->modelData.nParametersReal,sizeof(STATIC_REAL_DATA));
-  data->modelData.integerParameter = (STATIC_INTEGER_DATA*) calloc(data->modelData.nParametersInteger,sizeof(STATIC_INTEGER_DATA));
-  data->modelData.booleanParameter = (STATIC_BOOLEAN_DATA*) calloc(data->modelData.nParametersBoolean,sizeof(STATIC_BOOLEAN_DATA));
-  data->modelData.stringParameter = (STATIC_STRING_DATA*) calloc(data->modelData.nParametersString,sizeof(STATIC_STRING_DATA));
+  data->modelData.realParameterData = (STATIC_REAL_DATA*) calloc(data->modelData.nParametersReal, sizeof(STATIC_REAL_DATA));
+  data->modelData.integerParameterData = (STATIC_INTEGER_DATA*) calloc(data->modelData.nParametersInteger, sizeof(STATIC_INTEGER_DATA));
+  data->modelData.booleanParameterData = (STATIC_BOOLEAN_DATA*) calloc(data->modelData.nParametersBoolean, sizeof(STATIC_BOOLEAN_DATA));
+  data->modelData.stringParameterData = (STATIC_STRING_DATA*) calloc(data->modelData.nParametersString, sizeof(STATIC_STRING_DATA));
 
-  data->modelData.realAlias = (_X_DATA_REAL_ALIAS*) calloc(data->modelData.nAliasReal,sizeof(_X_DATA_REAL_ALIAS));
-  data->modelData.integerAlias = (_X_DATA_INTEGER_ALIAS*) calloc(data->modelData.nAliasInteger,sizeof(_X_DATA_INTEGER_ALIAS));
-  data->modelData.booleanAlias = (_X_DATA_BOOLEAN_ALIAS*) calloc(data->modelData.nAliasBoolean,sizeof(_X_DATA_BOOLEAN_ALIAS));
-  data->modelData.stringAlias = (_X_DATA_STRING_ALIAS*) calloc(data->modelData.nAliasString,sizeof(_X_DATA_STRING_ALIAS));
+  data->modelData.realAlias = (_X_DATA_REAL_ALIAS*) calloc(data->modelData.nAliasReal, sizeof(_X_DATA_REAL_ALIAS));
+  data->modelData.integerAlias = (_X_DATA_INTEGER_ALIAS*) calloc(data->modelData.nAliasInteger, sizeof(_X_DATA_INTEGER_ALIAS));
+  data->modelData.booleanAlias = (_X_DATA_BOOLEAN_ALIAS*) calloc(data->modelData.nAliasBoolean, sizeof(_X_DATA_BOOLEAN_ALIAS));
+  data->modelData.stringAlias = (_X_DATA_STRING_ALIAS*) calloc(data->modelData.nAliasString, sizeof(_X_DATA_STRING_ALIAS));
 
-  data->simulationInfo.rawSampleExps = (sample_raw_time*) calloc(data->modelData.nSamples,sizeof(sample_raw_time));
+  data->simulationInfo.rawSampleExps = (SAMPLE_RAW_TIME*) calloc(data->modelData.nSamples, sizeof(SAMPLE_RAW_TIME));
 
-  data->simulationInfo.zeroCrossings = (modelica_real*) calloc(data->modelData.nZeroCrossings,sizeof(modelica_real));
-  data->simulationInfo.zeroCrossingsPre = (modelica_real*) calloc(data->modelData.nZeroCrossings,sizeof(modelica_real));
-  data->simulationInfo.backupRelations = (modelica_boolean*) calloc(data->modelData.nZeroCrossings,sizeof(modelica_boolean));
-  data->simulationInfo.zeroCrossingEnabled = (modelica_boolean*) calloc(data->modelData.nZeroCrossings,sizeof(modelica_boolean));
+  data->simulationInfo.zeroCrossings = (modelica_real*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_real));
+  data->simulationInfo.zeroCrossingsPre = (modelica_real*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_real));
+  data->simulationInfo.backupRelations = (modelica_boolean*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_boolean));
+  data->simulationInfo.zeroCrossingEnabled = (modelica_boolean*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_boolean));
 
   data->simulationInfo.helpVars = (modelica_boolean*) calloc(data->modelData.nHelpVars, sizeof(modelica_boolean));
   data->simulationInfo.helpVarsPre = (modelica_boolean*) calloc(data->modelData.nHelpVars, sizeof(modelica_boolean));
@@ -93,6 +97,30 @@ void initializeXDataStruc(_X_DATA *data)
   data->simulationInfo.integerVarsPre = (modelica_integer*)calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
   data->simulationInfo.booleanVarsPre = (modelica_boolean*)calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
   data->simulationInfo.stringVarsPre = (modelica_string*)calloc(data->modelData.nVariablesString, sizeof(modelica_string));
+
+  /* buffer for all parameters values */
+  data->simulationInfo.realParameter = (modelica_real*) calloc(data->modelData.nParametersReal, sizeof(modelica_real));
+  data->simulationInfo.integerParameter = (modelica_integer*) calloc(data->modelData.nParametersInteger, sizeof(modelica_integer));
+  data->simulationInfo.booleanParameter = (modelica_boolean*) calloc(data->modelData.nParametersBoolean, sizeof(modelica_boolean));
+  data->simulationInfo.stringParameter = (modelica_string*) calloc(data->modelData.nParametersString, sizeof(modelica_string));
+
+  data->simulationInfo.jacobianVars = (modelica_real*) calloc(data->modelData.nJacobianVars, sizeof(modelica_real));
+  data->simulationInfo.inputVars = (modelica_real*) calloc(data->modelData.nInputVars, sizeof(modelica_real));
+  data->simulationInfo.outputVars = (modelica_real*) calloc(data->modelData.nOutputVars, sizeof(modelica_real));
+
+  /* buffer for equations and fucntions */
+  data->modelData.functionNames = (FUNCTION_INFO*) malloc(data->modelData.nFunctions*sizeof(FUNCTION_INFO));
+  data->modelData.equationInfo = (EQUATION_INFO*) malloc(data->modelData.nEquations*sizeof(EQUATION_INFO));
+
+  /* buffer for external objects */
+  data->simulationInfo.extObjs = NULL;
+  data->simulationInfo.extObjs = (void**) calloc(data->modelData.nExtObjs, sizeof(void*));
+  ASSERT(data->simulationInfo.extObjs,"error allocating external objects");
+
+  /* initial build calls terminal, initial */
+  data->simulationInfo.terminal = 0;
+  data->simulationInfo.initial = 0;
+
 }
 
 void DeinitializeXDataStruc(_X_DATA *data)
@@ -112,15 +140,15 @@ void DeinitializeXDataStruc(_X_DATA *data)
   free(data->localData);
 
   /* free modelData var arrays */
-  free(data->modelData.realData);
-  free(data->modelData.integerData);
-  free(data->modelData.booleanData);
-  free(data->modelData.stringData);
+  free(data->modelData.realVarsData);
+  free(data->modelData.integerVarsData);
+  free(data->modelData.booleanVarsData);
+  free(data->modelData.stringVarsData);
 
-  free(data->modelData.realParameter);
-  free(data->modelData.integerParameter);
-  free(data->modelData.booleanParameter);
-  free(data->modelData.stringParameter);
+  free(data->modelData.realParameterData);
+  free(data->modelData.integerParameterData);
+  free(data->modelData.booleanParameterData);
+  free(data->modelData.stringParameterData);
 
   free(data->modelData.realAlias);
   free(data->modelData.integerAlias);
@@ -144,6 +172,29 @@ void DeinitializeXDataStruc(_X_DATA *data)
   free(data->simulationInfo.booleanVarsPre);
   free(data->simulationInfo.stringVarsPre);
 
+  /* free buffer for all parameters values */
+  free(data->simulationInfo.realParameter);
+  free(data->simulationInfo.integerParameter);
+  free(data->simulationInfo.booleanParameter);
+  free(data->simulationInfo.stringParameter);
+
+  /* free buffer jacobians */
+  free(data->simulationInfo.jacobianVars);
+
+  /* free inputs and output */
+  free(data->simulationInfo.inputVars);
+  free(data->simulationInfo.outputVars);
+
+  /* free external objects buffer */
+  free(data->simulationInfo.extObjs);
+
+  /* free functionNames */
+  free(data->modelData.functionNames);
+  /* free equationInfo */
+  for(i=0;i<data->modelData.nEquations;++i)
+    free(data->modelData.equationInfo[i].vars);
+  free(data->modelData.equationInfo);
 
 
 }
+

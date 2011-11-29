@@ -33,6 +33,8 @@
 
 #include <setjmp.h>
 #include <string>
+#include <iostream>
+#include <sstream>
 #include <limits>
 #include <list>
 #include <cmath>
@@ -57,7 +59,7 @@
 #include "linearize.h"
 // ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
 #ifndef NO_INTERACTIVE_DEPENDENCY
-#include "../../interactive/omi_ServiceInterface.h"
+/* #include "../../interactive/omi_ServiceInterface.h" */
 #endif
 #include "simulation_result_empty.h"
 #include "simulation_result_plt.h"
@@ -81,7 +83,7 @@ int terminationAssert = 0;
 char* terminateMessage = 0;
 int warningLevelAssert = 0;
 char* TermMsg = 0;
-omc_fileInfo TermInfo = omc_dummyFileInfo;
+FILE_INFO TermInfo = omc_dummyFileInfo;
 
 #ifndef NO_INTERACTIVE_DEPENDENCY
 Socket sim_communication_port;
@@ -102,9 +104,6 @@ int modelErrorCode = 0; // set by model calculations. Can be transferred to num.
 
 const std::string *init_method = NULL; // method for  initialization.
 
-
-/* this is the globalData that is used in all the functions */
-DATA *globalData = 0;
 
 // The simulation result
 simulation_result *sim_result = NULL;
@@ -131,7 +130,7 @@ extern const int ERROR_LINSYS = -2;
 int
 startInteractiveSimulation(int, char**);
 int
-startNonInteractiveSimulation(int, char**);
+startNonInteractiveSimulation(int, char**, _X_DATA* data);
 int
 initRuntimeAndSimulation(int, char**);
 
@@ -162,93 +161,6 @@ static void callExternalObjectDestructors2(_X_DATA *data)
   callExternalObjectDestructors(data) /* external objects */;
 }
 
-/** function storeExtrapolationData
- * author: PA
- *
- * Stores variables (states, derivatives and algebraic) to be used
- * by e.g. numerical solvers to extrapolate values as start values.
- *
- *
- * The storing is done in two steps, so the two latest values of a variable can
- * be retrieved. This function is called in emit().
- */
-void
-storeExtrapolationData()
-{
-  if (globalData->timeValue == globalData->oldTime && globalData->init != 1)
-    return;
-
-  int i;
-  for (i = 0; i < globalData->nStates; i++)
-  {
-    globalData->states_old2[i] = globalData->states_old[i];
-    globalData->statesDerivatives_old2[i]
-                                       = globalData->statesDerivatives_old[i];
-    globalData->states_old[i] = globalData->states[i];
-    globalData->statesDerivatives_old[i] = globalData->statesDerivatives[i];
-  }
-  for (i = 0; i < globalData->nAlgebraic; i++)
-  {
-    globalData->algebraics_old2[i] = globalData->algebraics_old[i];
-    globalData->algebraics_old[i] = globalData->algebraics[i];
-  }
-  for (i = 0; i < globalData->intVariables.nAlgebraic; i++)
-  {
-    globalData->intVariables.algebraics_old2[i]
-                                             = globalData->intVariables.algebraics_old[i];
-    globalData->intVariables.algebraics_old[i]
-                                            = globalData->intVariables.algebraics[i];
-  }
-  for (i = 0; i < globalData->boolVariables.nAlgebraic; i++)
-  {
-    globalData->boolVariables.algebraics_old2[i]
-                                              = globalData->boolVariables.algebraics_old[i];
-    globalData->boolVariables.algebraics_old[i]
-                                             = globalData->boolVariables.algebraics[i];
-  }
-  globalData->oldTime2 = globalData->oldTime;
-  globalData->oldTime = globalData->timeValue;
-}
-
-/** function storeExtrapolationDataEvent
- * author: wbraun
- *
- * Stores variables (states, derivatives and algebraic) to be used
- * by e.g. numerical solvers to extrapolate values as start values.
- *
- * This function overwrites all old value with the current.
- * This function is called after events.
- */
-void
-storeExtrapolationDataEvent()
-{
-  int i;
-  for (i = 0; i < globalData->nStates; i++)
-  {
-    globalData->states_old2[i] = globalData->states[i];
-    globalData->statesDerivatives_old2[i] = globalData->statesDerivatives[i];
-    globalData->states_old[i] = globalData->states[i];
-    globalData->statesDerivatives_old[i] = globalData->statesDerivatives[i];
-  }
-  for (i = 0; i < globalData->nAlgebraic; i++)
-  {
-    globalData->algebraics_old2[i] =  globalData->algebraics[i];
-    globalData->algebraics_old[i] = globalData->algebraics[i];
-  }
-  for (i = 0; i < globalData->intVariables.nAlgebraic; i++)
-  {
-    globalData->intVariables.algebraics_old2[i] = globalData->intVariables.algebraics[i];
-    globalData->intVariables.algebraics_old[i] = globalData->intVariables.algebraics[i];
-  }
-  for (i = 0; i < globalData->boolVariables.nAlgebraic; i++)
-  {
-    globalData->boolVariables.algebraics_old2[i] = globalData->boolVariables.algebraics[i];
-    globalData->boolVariables.algebraics_old[i] = globalData->boolVariables.algebraics[i];
-  }
-  globalData->oldTime2 = globalData->timeValue;
-  globalData->oldTime = globalData->timeValue;
-}
-
 /*! \fn void overwriteOldSimulationData(_X_DATA *data)
  *
  * Stores variables (states, derivatives and algebraic) to be used
@@ -271,40 +183,6 @@ void overwriteOldSimulationData(_X_DATA *data)
     memcpy(data->localData[i]->stringVars, data->localData[i-1]->stringVars, sizeof(modelica_string)*data->modelData.nVariablesString);
   }
 }
-
-/** function restoreExtrapolationDataOld
- * author: wbraun
- *
- * Restores variables (states, derivatives and algebraic).
- *
- * This function overwrites all variable with old values.
- * This function is called while the initialization to be able
- * initialize all ZeroCrossing relations.
- */
-void
-restoreExtrapolationDataOld()
-{
-  int i;
-  for (i = 0; i < globalData->nStates; i++)
-  {
-    globalData->states[i] = globalData->states_old[i];
-    globalData->statesDerivatives[i] = globalData->statesDerivatives_old[i];
-  }
-  for (i = 0; i < globalData->nAlgebraic; i++)
-  {
-    globalData->algebraics[i] = globalData->algebraics_old[i];
-  }
-  for (i = 0; i < globalData->intVariables.nAlgebraic; i++)
-  {
-    globalData->intVariables.algebraics[i] = globalData->intVariables.algebraics_old[i];
-  }
-  for (i = 0; i < globalData->boolVariables.nAlgebraic; i++)
-  {
-    globalData->boolVariables.algebraics[i] = globalData->boolVariables.algebraics_old[i];
-  }
-  globalData->timeValue = globalData->oldTime;
-}
-
 
 /* \brief determine verboselevel by investigating flag -lv=flags
  *
@@ -383,6 +261,7 @@ int isInteractiveSimulation()
  * Starts an Interactive simulation session
  * the runtime waits until a user shuts down the simulation
  */
+/*
 int
 startInteractiveSimulation(int argc, char**argv)
 {
@@ -403,7 +282,7 @@ startInteractiveSimulation(int argc, char**argv)
 #endif
   return retVal; //TODO 20100211 pv return value implementation / error handling
 }
-
+*/
 /**
  * Read the variable filter and mark variables that should not be part of the result file.
  * This phase is skipped for interactive simulations
@@ -417,9 +296,9 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
   int rc;
   string tmp = ("^(" + varfilter + ")$");
   const char *filter = tmp.c_str(); // C++ strings are horrible to work with...
-  if (modelData->nStates > 0 && 0 == strcmp(modelData->realData[0].info.name,"$dummy")) {
-    modelData->realData[0].filterOutput = 1;
-    modelData->realData[1].filterOutput = 1;
+  if (modelData->nStates > 0 && 0 == strcmp(modelData->realVarsData[0].info.name,"$dummy")) {
+    modelData->realVarsData[0].filterOutput = 1;
+    modelData->realVarsData[modelData->nStates].filterOutput = 1;
   }
   if (0 == strcmp(filter, ".*")) // This matches all variables, so we don't need to do anything
     return;
@@ -432,20 +311,20 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
     return;
   }
   /* new imple */
-  for (int i = 0; i < modelData->nVariablesReal; i++) if (!modelData->realData[i].filterOutput)
-    modelData->realData[i].filterOutput = regexec(&myregex, modelData->realData[i].info.name, 0, NULL, 0) != 0;
+  for (int i = 0; i < modelData->nVariablesReal; i++) if (!modelData->realVarsData[i].filterOutput)
+    modelData->realVarsData[i].filterOutput = regexec(&myregex, modelData->realVarsData[i].info.name, 0, NULL, 0) != 0;
   for (int i = 0; i < modelData->nAliasReal; i++) if (!modelData->realAlias[i].filterOutput)
     modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
-  for (int i = 0; i < modelData->nVariablesInteger; i++) if (!modelData->integerData[i].filterOutput)
-    modelData->integerData[i].filterOutput = regexec(&myregex, modelData->integerData[i].info.name, 0, NULL, 0) != 0;
+  for (int i = 0; i < modelData->nVariablesInteger; i++) if (!modelData->integerVarsData[i].filterOutput)
+    modelData->integerVarsData[i].filterOutput = regexec(&myregex, modelData->integerVarsData[i].info.name, 0, NULL, 0) != 0;
   for (int i = 0; i < modelData->nAliasInteger; i++) if (!modelData->integerAlias[i].filterOutput)
     modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
-  for (int i = 0; i < modelData->nVariablesBoolean; i++) if (!modelData->booleanData[i].filterOutput)
-    modelData->booleanData[i].filterOutput = regexec(&myregex, modelData->booleanData[i].info.name, 0, NULL, 0) != 0;
+  for (int i = 0; i < modelData->nVariablesBoolean; i++) if (!modelData->booleanVarsData[i].filterOutput)
+    modelData->booleanVarsData[i].filterOutput = regexec(&myregex, modelData->booleanVarsData[i].info.name, 0, NULL, 0) != 0;
   for (int i = 0; i < modelData->nAliasBoolean; i++) if (!modelData->booleanAlias[i].filterOutput)
     modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
-  for (int i = 0; i < modelData->nVariablesString; i++) if (!modelData->stringData[i].filterOutput)
-    modelData->stringData[i].filterOutput = regexec(&myregex, modelData->stringData[i].info.name, 0, NULL, 0) != 0;
+  for (int i = 0; i < modelData->nVariablesString; i++) if (!modelData->stringVarsData[i].filterOutput)
+    modelData->stringVarsData[i].filterOutput = regexec(&myregex, modelData->stringVarsData[i].info.name, 0, NULL, 0) != 0;
   for (int i = 0; i < modelData->nAliasString; i++) if (!modelData->stringAlias[i].filterOutput)
     modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
   regfree(&myregex);
@@ -457,7 +336,7 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
  * Starts a non-interactive simulation
  */
 int
-startNonInteractiveSimulation(int argc, char**argv,_X_DATA *data)
+startNonInteractiveSimulation(int argc, char**argv, _X_DATA* data)
 {
   int retVal = -1;
 
@@ -478,13 +357,13 @@ startNonInteractiveSimulation(int argc, char**argv,_X_DATA *data)
   double tolerance = 1e-4;
   string method, outputFormat, variableFilter;
   function_initMemoryState();
-  read_input_xml(argc, argv, globalData, &(data->modelData), &(data->simulationInfo), &start, &stop, &stepSize, &outputSteps,
+  read_input_xml(argc, argv, &(data->modelData), &(data->simulationInfo), &start, &stop, &stepSize, &outputSteps,
       &tolerance, &method, &outputFormat, &variableFilter);
   initializeOutputFilter(&(data->modelData),data->simulationInfo.variableFilter);
-  callExternalObjectConstructors(data);
+  initializeDataStruc_X_2(data);
 
   if (measure_time_flag) {
-    rt_init(SIM_TIMER_FIRST_FUNCTION + data->modelData.nFunctions + data->modelData.nProfileBlocks + 4 /* sentinel */);
+    rt_init(SIM_TIMER_FIRST_FUNCTION + data->modelData.nFunctions + data->modelData.nProfileBlocks + 4 /*sentinel */ );
     rt_tick( SIM_TIMER_TOTAL );
     rt_tick( SIM_TIMER_PREINIT );
     rt_clear( SIM_TIMER_OUTPUT );
@@ -492,21 +371,22 @@ startNonInteractiveSimulation(int argc, char**argv,_X_DATA *data)
     rt_clear( SIM_TIMER_INIT );
   }
 
+
   if (create_linearmodel) {
     if (lintime == NULL) {
-      stop = start;
+      data->simulationInfo.stopTime = data->simulationInfo.startTime;
     } else {
-      stop = atof((*lintime).c_str());
+      data->simulationInfo.stopTime = atof(lintime->c_str());
     }
-    cout << "Linearization will performed at point of time: " << stop << endl;
-    method = "dassl";
+    cout << "Linearization will performed at point of time: " << data->simulationInfo.stopTime << endl;
+    data->simulationInfo.solverMethod = "dassl";
   }
 
   int methodflag = flagSet("s", argc, argv);
   if (methodflag) {
-    string* solvermethod = (string*) getFlagValue("s", argc, argv);
-    if (!(solvermethod == NULL))
-      method.assign(*solvermethod);
+    string* method = (string*) getFlagValue("s", argc, argv);
+    if (!(method == NULL))
+      data->simulationInfo.solverMethod = method->c_str();
   }
 
   // Create a result file
@@ -523,7 +403,7 @@ startNonInteractiveSimulation(int argc, char**argv,_X_DATA *data)
 
   if (retVal == 0 && create_linearmodel) {
     rt_tick(SIM_TIMER_LINEARIZE);
-    retVal = linearize(data->modelData.nStates, data->modelData.nInputVars, data->modelData.nOutputVars);
+    retVal = linearize(data);
     rt_accumulate(SIM_TIMER_LINEARIZE);
     cout << "Linear model is created!" << endl;
   }
@@ -533,7 +413,7 @@ startNonInteractiveSimulation(int argc, char**argv,_X_DATA *data)
     const string plotFile = string(data->modelData.modelFilePrefix) + "_prof.plt";
     rt_accumulate(SIM_TIMER_TOTAL);
     string* plotFormat = (string*) getFlagValue("measureTimePlotFormat", argc, argv);
-    retVal = printModelInfo(globalData, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat->c_str() : "svg", method.c_str(), outputFormat.c_str(), result_file_cstr.c_str()) && retVal;
+    retVal = printModelInfo(data, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat->c_str() : "svg", method.c_str(), outputFormat.c_str(), result_file_cstr.c_str()) && retVal;
   }
 
   deinitDelay();
@@ -559,13 +439,13 @@ callSolver(_X_DATA* simData, string method, string outputFormat,
 {
   int retVal = -1;
 
-  long maxSteps = 2 * outputSteps + 2 * simData->simulationInfo.nSampleTimes;
+  long maxSteps = 4 * outputSteps;
   if (isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty", outputFormat.c_str())) {
     sim_result = new simulation_result_empty(result_file_cstr.c_str(),maxSteps);
   } else if (0 == strcmp("csv", outputFormat.c_str())) {
     sim_result = new simulation_result_csv(result_file_cstr.c_str(), maxSteps,&(simData->modelData));
   } else if (0 == strcmp("mat", outputFormat.c_str())) {
-    sim_result = new simulation_result_mat(result_file_cstr.c_str(), simData->simulationInfo.startTime, simData->simulationInfo.stopTime,&(simData->modelData));
+    sim_result = new simulation_result_mat(result_file_cstr.c_str(), simData->simulationInfo.startTime, simData->simulationInfo.stopTime, &(simData->modelData));
   } else if (0 == strcmp("plt", outputFormat.c_str())) {
     sim_result = new simulation_result_plt(result_file_cstr.c_str(), maxSteps,&(simData->modelData));
   } else {
@@ -673,7 +553,6 @@ initRuntimeAndSimulation(int argc, char**argv, _X_DATA *data)
     EXIT(0);
   }
   initializeXDataStruc(data);
-  callExternalObjectConstructors(data);
 
   if (!data) {
     std::cerr << "Error: Could not initialize the global data structure file" << std::endl;
@@ -691,9 +570,10 @@ initRuntimeAndSimulation(int argc, char**argv, _X_DATA *data)
 
 
   // ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
+
 #ifndef NO_INTERACTIVE_DEPENDENCY
   interactiveSimulation = flagSet("interactive", argc, argv);
-
+  /*
   if (interactiveSimulation && flagSet("port", argc, argv)) {
     cout << "userPort" << endl;
     string *portvalue = (string*) getFlagValue("port", argc, argv);
@@ -702,6 +582,8 @@ initRuntimeAndSimulation(int argc, char**argv, _X_DATA *data)
     stream >> userPort;
     setPortOfControlServer(userPort);
   } else if (!interactiveSimulation && flagSet("port", argc, argv)) {
+  */
+  if (!interactiveSimulation && flagSet("port", argc, argv)) {
     string *portvalue = (string*) getFlagValue("port", argc, argv);
     std::istringstream stream(*portvalue);
     int port;
@@ -712,24 +594,30 @@ initRuntimeAndSimulation(int argc, char**argv, _X_DATA *data)
     communicateStatus("Starting",0.0);
   }
 #endif
+
   int verbose_flags = verboseLevel(argc, argv);
   sim_verbose = verbose_flags ? verbose_flags : sim_verbose;
-  if (sim_verbose)
+  if (sim_verbose){
+    globalDebugFlags |= LOG_STATS;
     measure_time_flag = 1;
+  }
 
   return 0;
 }
 
 void SimulationRuntime_printStatus(int sig) {
   printf("<status>\n");
-  printf("<model>%s</model>\n", globalData->modelFilePrefix);
   printf("<phase>UNKNOWN</phase>\n");
-  printf("<currentStepSize>%g</currentStepSize>\n",globalData->current_stepsize);
-  printf("<oldTime>%.12g</oldTime>\n",globalData->oldTime);
-  printf("<oldTime2>%.12g</oldTime2>\n",globalData->oldTime2);
-  printf("<diffOldTime>%g</diffOldTime>\n",globalData->oldTime-globalData->oldTime2);
-  printf("<currentTime>%g</currentTime>\n",globalData->timeValue);
-  printf("<diffCurrentTime>%g</diffCurrentTime>\n",globalData->timeValue-globalData->oldTime);
+  /*
+  printf("<model>%s</model>\n", data->modelData.modelFilePrefix);
+  printf("<phase>UNKNOWN</phase>\n");
+  printf("<currentStepSize>%g</currentStepSize>\n", data->simulationInfo.stepSize);
+  printf("<oldTime>%.12g</oldTime>\n",data->localData[1]->timeValue);
+  printf("<oldTime2>%.12g</oldTime2>\n",data->localData[2]->timeValue);
+  printf("<diffOldTime>%g</diffOldTime>\n",data->localData[1]->timeValue-data->localData[2]->timeValue);
+  printf("<currentTime>%g</currentTime>\n",data->localData[0]->timeValue);
+  printf("<diffCurrentTime>%g</diffCurrentTime>\n",data->localData[0]->timeValue-data->localData[1]->timeValue);
+  */
   printf("</status>\n");
 }
 
@@ -767,13 +655,14 @@ int _main_SimulationRuntime(int argc, char**argv, _X_DATA *data)
       signal(SIGUSR1, SimulationRuntime_printStatus);
 #endif
 
-      if (interactiveSimulation) {
+      /*if (interactiveSimulation) {
         cout << "startInteractiveSimulation: " << version << endl;
         retVal = startInteractiveSimulation(argc, argv);
       } else {
+      */
         /* cout << "startNonInteractiveSimulation: " << version << endl; */
         retVal = startNonInteractiveSimulation(argc, argv, data);
-      }
+      /*}*/
   }
   else
   {

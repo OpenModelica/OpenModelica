@@ -5732,7 +5732,7 @@ algorithm
       
       e = Expression.crefExp(cref);
       tp = Expression.typeof(e);
-      startExp = Expression.makeBuiltinCall("pre", {e}, tp);
+      startExp = Expression.makeBuiltinCall("start", {e}, tp);
       e2 = DAE.BINARY(crefExp, DAE.SUB(DAE.ET_REAL()), startExp);
       
       e1 = DAE.BINARY(e1, DAE.MUL(DAE.ET_REAL()), e2);
@@ -7626,7 +7626,7 @@ algorithm
         //startv = DAEUtil.getStartAttr(attr);
         e = Expression.crefExp(cr);
         tp = Expression.typeof(e);
-        startv = Expression.makeBuiltinCall("pre", {e}, tp);
+        startv = Expression.makeBuiltinCall("start", {e}, tp);
       then
         ((v,(BackendDAE.EQUATION(e,startv,source)::eqns,av)));
     case (((v as BackendDAE.VAR(varName = cr,varKind = BackendDAE.STATE(),values = attr,source=source)),(eqns,av))) /* add equations for variables with fixed = true */
@@ -7637,7 +7637,7 @@ algorithm
         //startv = DAEUtil.getStartAttr(attr);
         e = Expression.crefExp(cr);
         tp = Expression.typeof(e);
-        startv = Expression.makeBuiltinCall("pre", {e}, tp);
+        startv = Expression.makeBuiltinCall("start", {e}, tp);
       then
         ((v,(BackendDAE.EQUATION(e,startv,source)::eqns,av)));
     case ((inTpl)) then inTpl;

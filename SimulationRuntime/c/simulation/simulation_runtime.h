@@ -39,7 +39,6 @@
 #define _SIMULATION_RUNTIME_H
 
 #include "openmodelica.h"
-#include "simulation_varinfo.h"
 
 #include "simulation_data.h"
 
@@ -111,7 +110,7 @@ extern int modelTermination; /* Becomes non-zero when user terminates simulation
 extern int terminationTerminate; /* Becomes non-zero when user terminates simulation. */
 extern int terminationAssert; /* Becomes non-zero when model call assert simulation. */
 extern int warningLevelAssert; /* Becomes non-zero when model call assert with warning level. */
-extern omc_fileInfo TermInfo; /* message for termination. */
+extern FILE_INFO TermInfo; /* message for termination. */
 extern const char *linear_model_frame; /* printf format-string with holes for 6 strings */
 
 /* Flags for modelErrorCodes */
@@ -120,8 +119,6 @@ extern const int ERROR_LINSYS;
 
 int useVerboseOutput(int level);
 
-/* Global data */
-extern DATA *globalData;
 
 extern char hasNominalValue[];  /* for all variables and parameters */
 extern double nominalValue[];   /* for all variables and parameters */
@@ -147,8 +144,11 @@ extern modelica_boolean *backuprelations;
  * This flag should be the same for second argument in callExternalObjectDestructors
  * to avoid memory leak.
  */
+/*
 DATA* initializeDataStruc();
 DATA *initializeDataStruc2(DATA *returnData);
+*/
+void initializeDataStruc_X_2(_X_DATA *data);
 
 /* Function for calling external object constructors */
 void
@@ -193,7 +193,7 @@ function_storeDelayed(_X_DATA *data);
 
 /* function for calculating states on explicit ODE form */
 /*used in functionDAE_res function*/
-int functionODE_inline();
+int functionODE_inline(_X_DATA *data, double stepsize);
 
 /* function for calculate initial values from initial equations and fixed start attibutes */
 int initial_function(_X_DATA *data);
@@ -214,10 +214,10 @@ void function_initMemoryState();
 /* function for calculation Jacobian */
 extern int jac_flag;  /* Flag for DASSL to work with analytical Jacobian */
 extern int num_jac_flag;  /* Flag for DASSL to work with selfmade numerical Jacobian */
-int functionJacA(double* jac);
-int functionJacB(double* jac);
-int functionJacC(double* jac);
-int functionJacD(double* jac);
+int functionJacA(_X_DATA* data, double* jac);
+int functionJacB(_X_DATA* data, double* jac);
+int functionJacC(_X_DATA* data, double* jac);
+int functionJacD(_X_DATA* data, double* jac);
 
 int isInteractiveSimulation();
 
@@ -229,11 +229,8 @@ void setTermMsg(const char*);
 
 #define MODELICA_TERMINATE(msg)  { modelTermination=1; terminationTerminate = 1; setTermMsg(msg); TermInfo.filename=""; TermInfo.lineStart=-1; TermInfo.colStart=-1; TermInfo.lineEnd=-1; TermInfo.colEnd=-1; TermInfo.readonly=-1; }
 
-#define initial() data->simulationInfo.init
+#define initial() data->simulationInfo.initial
 #define terminal() data->simulationInfo.terminal
-
-/* _X_DATA *allocXData(void); */
-/* void freeXData(_X_DATA *data); */
 
 /* the main function of the simulation runtime!
  * simulation runtime no longer has main, is defined by the generated model code which calls this function.

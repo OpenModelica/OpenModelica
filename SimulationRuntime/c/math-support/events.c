@@ -141,8 +141,8 @@ static int compdbl(const void* a, const void* b)
 
 static int compSample(const void* a, const void* b)
 {
-  const sample_time *v1 = (const sample_time *) a;
-  const sample_time *v2 = (const sample_time *) b;
+  const SAMPLE_TIME *v1 = (const SAMPLE_TIME *) a;
+  const SAMPLE_TIME *v2 = (const SAMPLE_TIME *) b;
   const double diff = v1->events - v2->events;
   const double epsilon = 0.0000000001;
 
@@ -153,8 +153,8 @@ static int compSample(const void* a, const void* b)
 
 static int compSampleZC(const void* a, const void* b)
 {
-  const sample_time *v1 = (const sample_time *) a;
-  const sample_time *v2 = (const sample_time *) b;
+  const SAMPLE_TIME *v1 = (const SAMPLE_TIME *) a;
+  const SAMPLE_TIME *v2 = (const SAMPLE_TIME *) b;
   const double diff = v1->events - v2->events;
   const int diff2 = v1->zc_index - v2->zc_index;
   const double epsilon = 0.0000000001;
@@ -201,7 +201,7 @@ void initSample(_X_DATA* data, double start, double stop)
   int i;
   /* double stop = 1.0; */
   double d;
-  sample_time* Samples = NULL;
+  SAMPLE_TIME* Samples = NULL;
   int num_samples = 0;
   int max_events = 0;
   int ix = 0;
@@ -216,7 +216,7 @@ void initSample(_X_DATA* data, double start, double stop)
     if(stop >= data->simulationInfo.rawSampleExps[i].start)
 	  max_events += (int)(((stop - data->simulationInfo.rawSampleExps[i].start) / data->simulationInfo.rawSampleExps[i].interval) + 1);
   }
-  Samples = (sample_time*)calloc(max_events+1, sizeof(sample_time));
+  Samples = (SAMPLE_TIME*)calloc(max_events+1, sizeof(SAMPLE_TIME));
   if(Samples == NULL)
   {
     DEBUG_INFO(LOG_EVENTS, "Could not allocate Memory for initSample!");
@@ -236,8 +236,8 @@ void initSample(_X_DATA* data, double start, double stop)
   }
   
   /* Sort, filter out unique values */
-  qsort(Samples, max_events, sizeof(sample_time), compSample);
-  nuniq = unique(Samples, max_events, sizeof(sample_time), compSampleZC);
+  qsort(Samples, max_events, sizeof(SAMPLE_TIME), compSample);
+  nuniq = unique(Samples, max_events, sizeof(SAMPLE_TIME), compSampleZC);
   
   DEBUG_INFO1(LOG_EVENTS, "Number of sorted, unique sample events: %d", nuniq);
   for(i = 0; i < nuniq; i++)
@@ -261,17 +261,16 @@ void storeStartValues(_X_DATA* data)
 	MODEL_DATA      *mData = &(data->modelData);
 
   for(i=0; i<mData->nVariablesReal; ++i){
-    sData->realVars[i] = mData->realData[i].attribute.start;
+    sData->realVars[i] = mData->realVarsData[i].attribute.start;
   }
   for(i=0; i<mData->nVariablesInteger; ++i){
-    sData->integerVars[i] = mData->integerData[i].attribute.start;
+    sData->integerVars[i] = mData->integerVarsData[i].attribute.start;
   }
   for(i=0; i<mData->nVariablesBoolean; ++i){
-    sData->booleanVars[i] = mData->booleanData[i].attribute.start;
+    sData->booleanVars[i] = mData->booleanVarsData[i].attribute.start;
   }
   for(i=0; i<mData->nVariablesString; ++i){
-    free_modelica_string((char**)sData->stringVars[i]);
-    sData->stringVars[i] = copy_modelica_string((modelica_string_const)mData->stringData[i].attribute.start);
+    sData->stringVars[i] = copy_modelica_string((modelica_string_const)mData->stringVarsData[i].attribute.start);
   }
 }
 
@@ -287,18 +286,48 @@ void storeStartValuesParam(_X_DATA *data)
   MODEL_DATA      *mData = &(data->modelData);
 
   for(i=0; i<mData->nParametersReal; ++i){
-    mData->realParameter[i].attribute.initial = mData->realParameter[i].attribute.start;
+    mData->realParameterData[i].attribute.initial = mData->realParameterData[i].attribute.start;
+    data->simulationInfo.realParameter[i] = mData->realParameterData[i].attribute.start;
   }
   for(i=0; i<mData->nParametersInteger; ++i){
-    mData->integerParameter[i].attribute.initial = mData->integerParameter[i].attribute.start;
+    mData->integerParameterData[i].attribute.initial = mData->integerParameterData[i].attribute.start;
+    data->simulationInfo.integerParameter[i] = mData->integerParameterData[i].attribute.start;
   }
   for(i=0; i<mData->nParametersBoolean; ++i){
-    mData->booleanParameter[i].attribute.initial = mData->booleanParameter[i].attribute.start;
+    mData->booleanParameterData[i].attribute.initial = mData->booleanParameterData[i].attribute.start;
+    data->simulationInfo.booleanParameter[i] = mData->booleanParameterData[i].attribute.start;
   }
   for(i=0; i<mData->nParametersString; ++i){
-    mData->stringParameter[i].attribute.initial = copy_modelica_string((modelica_string_const)mData->stringParameter[i].attribute.start);
+    mData->stringParameterData[i].attribute.initial = copy_modelica_string((modelica_string_const)mData->stringParameterData[i].attribute.start);
+    data->simulationInfo.stringParameter[i] = copy_modelica_string((modelica_string_const)mData->stringParameterData[i].attribute.start);
   }
 }
+
+/*! \fn void storeInitialValuesParam(_X_DATA *data)
+ *
+ *  sets all parameter initial values to their start-attribute
+ *
+ *  author: wbraun
+ */
+void storeInitialValuesParam(_X_DATA *data)
+{
+  long i;
+  MODEL_DATA      *mData = &(data->modelData);
+
+  for(i=0; i<mData->nParametersReal; ++i){
+    mData->realParameterData[i].attribute.initial = data->simulationInfo.realParameter[i];
+  }
+  for(i=0; i<mData->nParametersInteger; ++i){
+    mData->integerParameterData[i].attribute.initial = data->simulationInfo.integerParameter[i];
+  }
+  for(i=0; i<mData->nParametersBoolean; ++i){
+    mData->booleanParameterData[i].attribute.initial = data->simulationInfo.booleanParameter[i];
+  }
+  for(i=0; i<mData->nParametersString; ++i){
+    mData->stringParameterData[i].attribute.initial = copy_modelica_string((modelica_string_const)data->simulationInfo.stringParameter[i]);
+  }
+}
+
 
 /*! \fn void storePreValues(_X_DATA *data)
  *
@@ -380,10 +409,11 @@ void checkTermination(_X_DATA* simData)
 {
   if(terminationAssert || terminationTerminate)
   {
+    modelErrorCode = 1;
     printInfo(stdout, TermInfo);
     fputc(' ', stdout);
   }
-  
+
   if(terminationAssert)
   {
     if(warningLevelAssert)
@@ -394,14 +424,14 @@ void checkTermination(_X_DATA* simData)
     else
     {
 	  WARNING2("Simulation call assert() at time %f\nLevel : error\nMessage : %s", simData->localData[0]->timeValue, TermMsg);
-	  THROW1("timeValue = %f", simData->localData[0]->timeValue);
+	  /* THROW1("timeValue = %f", simData->localData[0]->timeValue); */
 	}
   }
   
   if(terminationTerminate)
   {
     WARNING2("Simulation call terminate() at time %f\nMessage : %s", simData->localData[0]->timeValue, TermMsg);
-    THROW1("timeValue = %f", simData->localData[0]->timeValue);
+    /* THROW1("timeValue = %f", simData->localData[0]->timeValue); */
   }
 }
 
@@ -582,7 +612,7 @@ CheckForNewEvent(_X_DATA* simData, modelica_boolean* sampleactived, double* curr
           listPushFront(eventList, &i);
         }
     }
-  if (listLength(eventList) > 0)
+  if (listLen(eventList) > 0)
     {
       DEBUG_INFO(LOG_EVENTS,"Print List");
       for(it=listFirstNode(eventList),i=0; it; it=listNextNode(it)){
@@ -628,7 +658,7 @@ int EventHandle(_X_DATA* simData, int flag, LIST *eventList) {
     for (it = listFirstNode(eventList); it; it = listNextNode(it)) {
       event_id = *((long*) listNodeData(it));
       DEBUG_INFO_NELA1(LOG_EVENTS, "%ld", event_id);
-      if (listLength(eventList) > 0) {
+      if (listLen(eventList) > 0) {
         DEBUG_INFO_NELA(LOG_EVENTS, ", ");
       }
 
@@ -772,7 +802,7 @@ void FindRoot(_X_DATA* simData, double *EventTime, LIST *eventList)
   *EventTime = BiSection(simData, &time_left, &time_right, states_left, states_right,
       tmpEventList, eventList);
 
-  if (listLength(tmpEventList) == 0)
+  if (listLen(tmpEventList) == 0)
     {
         double value = fabs(simData->simulationInfo.zeroCrossings[*((long*)listFirstData(eventList))]);
         for(it=listFirstNode(eventList); it; it=listNextNode(it))
@@ -795,18 +825,18 @@ void FindRoot(_X_DATA* simData, double *EventTime, LIST *eventList)
 
   listClear(eventList);
 
-  if (listLength(tmpEventList) > 0){
+  if (listLen(tmpEventList) > 0){
     DEBUG_INFO_NEL(LOG_EVENTS, "Found events: ");
   }else{
     DEBUG_INFO_NEL(LOG_EVENTS, "Found event: ");
   }
-  while (listLength(tmpEventList) > 0){
+  while (listLen(tmpEventList) > 0){
       event_id = *((long*)listFirstData(tmpEventList));
       listPopFront(tmpEventList);
       if (DEBUG_FLAG(LOG_EVENTS)){
         DEBUG_INFO_NELA1(LOG_EVENTS, "%ld ", event_id);
       }
-      if (listLength(tmpEventList) > 0){
+      if (listLen(tmpEventList) > 0){
         DEBUG_INFO_NELA(LOG_EVENTS, ", ");
       }
       listPushFront(eventList, &event_id);
@@ -840,11 +870,9 @@ void FindRoot(_X_DATA* simData, double *EventTime, LIST *eventList)
 
 /*
   Method to find root in Intervall[oldTime, timeValue]
-*/
-double
-BiSection(_X_DATA* simData, double* a, double* b, double* states_a, double* states_b,
-    LIST *tmpEventList, LIST *eventList)
-{
+ */
+double BiSection(_X_DATA* simData, double* a, double* b, double* states_a,
+    double* states_b, LIST *tmpEventList, LIST *eventList) {
 
   /*double TTOL =  DBL_EPSILON*fabs((*b - *a))*100; */
   double TTOL = 1e-9;
@@ -853,74 +881,65 @@ BiSection(_X_DATA* simData, double* a, double* b, double* states_a, double* stat
   long i = 0;
   LIST_NODE* it;
 
-  double *backup_gout = (double*)calloc(simData->modelData.nZeroCrossings, sizeof(double));
+  double *backup_gout = (double*) calloc(simData->modelData.nZeroCrossings,
+      sizeof(double));
   assert(backup_gout);
 
-  for (i = 0; i < simData->modelData.nZeroCrossings; i++)
-    {
-      backup_gout[i] = simData->simulationInfo.zeroCrossings[i];
-    }
+  for (i = 0; i < simData->modelData.nZeroCrossings; i++) {
+    backup_gout[i] = simData->simulationInfo.zeroCrossings[i];
+  }
 
   DEBUG_INFO2(LOG_ZEROCROSSINGS, "Check interval [%g, %g]", *a, *b);
   DEBUG_INFO1(LOG_ZEROCROSSINGS, "TTOL is set to: %g", TTOL);
 
-  while (fabs(*b - *a) > TTOL)
-    {
+  while (fabs(*b - *a) > TTOL) {
 
-      c = (*a + *b) / 2.0;
-      simData->localData[0]->timeValue = c;
+    c = (*a + *b) / 2.0;
+    simData->localData[0]->timeValue = c;
 
-      /*if (sim_verbose >= LOG_ZEROCROSSINGS){
-        cout << "Split interval at point : " << c << endl;
-      } */
+    /*if (sim_verbose >= LOG_ZEROCROSSINGS){
+     cout << "Split interval at point : " << c << endl;
+     } */
 
-      /*calculates states at time c */
-      for (i = 0; i <  simData->modelData.nStates; i++)
-        {
-        simData->localData[0]->realVars[i] = (states_a[i] + states_b[i]) / 2.0;
-        }
-
-      /*calculates Values dependents on new states*/
-      functionODE(simData);
-      functionAlgebraics(simData);
-
-      function_onlyZeroCrossings(simData, simData->simulationInfo.zeroCrossings, &(simData->localData[0]->timeValue));
-      if (CheckZeroCrossings(simData, tmpEventList, eventList))
-        { /*If Zerocrossing in left Section */
-
-          for (i = 0; i <  simData->modelData.nStates; i++)
-            {
-              states_b[i] = simData->localData[0]->realVars[i];
-            }
-          *b = c;
-          right = 0;
-
-        }
-      else
-        { /*else Zerocrossing in right Section */
-
-          for (i = 0; i < simData->modelData.nStates; i++)
-            {
-              states_a[i] = simData->localData[0]->realVars[i];
-            }
-          *a = c;
-          right = 1;
-        }
-      if (right)
-        {
-          for(i=0;i<simData->modelData.nZeroCrossings;i++){
-            simData->simulationInfo.zeroCrossingsPre[i] = simData->simulationInfo.zeroCrossings[i];
-            simData->simulationInfo.zeroCrossings[i] = backup_gout[i];
-          }
-        }
-      else
-        {
-          for(i=0;i<simData->modelData.nZeroCrossings;i++){
-            simData->simulationInfo.zeroCrossingsPre[i] = simData->simulationInfo.zeroCrossings[i];
-            simData->simulationInfo.zeroCrossings[i] = backup_gout[i];
-          } 
-        }
+    /*calculates states at time c */
+    for (i = 0; i < simData->modelData.nStates; i++) {
+      simData->localData[0]->realVars[i] = (states_a[i] + states_b[i]) / 2.0;
     }
+
+    /*calculates Values dependents on new states*/
+    functionODE(simData);
+    functionAlgebraics(simData);
+
+    function_onlyZeroCrossings(simData, simData->simulationInfo.zeroCrossings,
+        &(simData->localData[0]->timeValue));
+    if (CheckZeroCrossings(simData, tmpEventList, eventList)) { /*If Zerocrossing in left Section */
+
+      for (i = 0; i < simData->modelData.nStates; i++) {
+        states_b[i] = simData->localData[0]->realVars[i];
+      }
+      *b = c;
+      right = 0;
+
+    } else { /*else Zerocrossing in right Section */
+
+      for (i = 0; i < simData->modelData.nStates; i++) {
+        states_a[i] = simData->localData[0]->realVars[i];
+      }
+      *a = c;
+      right = 1;
+    }
+    if (right) {
+      for (i = 0; i < simData->modelData.nZeroCrossings; i++) {
+        simData->simulationInfo.zeroCrossingsPre[i] =
+            simData->simulationInfo.zeroCrossings[i];
+        simData->simulationInfo.zeroCrossings[i] = backup_gout[i];
+      }
+    } else {
+      for (i = 0; i < simData->modelData.nZeroCrossings; i++) {
+        backup_gout[i] = simData->simulationInfo.zeroCrossings[i];
+      }
+    }
+  }
   free(backup_gout);
   c = (*a + *b) / 2.0;
   return c;
@@ -943,10 +962,10 @@ CheckZeroCrossings(_X_DATA *simData, LIST *tmpEventList, LIST *eventList)
               *((long*)listNodeData(it)), simData->simulationInfo.zeroCrossingsPre[*((long*)listNodeData(it))], simData->simulationInfo.zeroCrossings[*((long*)listNodeData(it))], simData->simulationInfo.zeroCrossingEnabled[*((long*)listNodeData(it))]); fflush(NULL);
 
       /*Found event in left section*/
-      if ((simData->simulationInfo.zeroCrossings[*((long*)listNodeData(it))] <= 0
-              && simData->simulationInfo.zeroCrossingsPre[*((long*)listNodeData(it))] > 0)
-          || (simData->simulationInfo.zeroCrossings[*((long*)listNodeData(it))] >= 0
-              && simData->simulationInfo.zeroCrossingsPre[*((long*)listNodeData(it))] < 0)
+      if ((simData->simulationInfo.zeroCrossings[*((long*)listNodeData(it))] < 0
+              && simData->simulationInfo.zeroCrossingsPre[*((long*)listNodeData(it))] >= 0)
+          || (simData->simulationInfo.zeroCrossings[*((long*)listNodeData(it))] > 0
+              && simData->simulationInfo.zeroCrossingsPre[*((long*)listNodeData(it))] <= 0)
           || (simData->simulationInfo.zeroCrossings[*((long*)listNodeData(it))] > 0
               && simData->simulationInfo.zeroCrossingEnabled[*((long*)listNodeData(it))] <= -1)
           || (simData->simulationInfo.zeroCrossings[*((long*)listNodeData(it))] < 0
@@ -956,7 +975,7 @@ CheckZeroCrossings(_X_DATA *simData, LIST *tmpEventList, LIST *eventList)
         }
     }
   /*Found event in left section*/
-  if (listLength(tmpEventList) > 0)
+  if (listLen(tmpEventList) > 0)
     {
       return 1;
     }

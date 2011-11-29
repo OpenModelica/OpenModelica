@@ -29,29 +29,32 @@
  *
  */
 
+#include "error.h"
+#include "simulation_data.h"
 #include "simulation_varinfo.h"
 
-void printErrorEqSyst(equationSystemError err, struct omc_equationInfo eq, double var)
+
+void printErrorEqSyst(equationSystemError err, struct EQUATION_INFO eq, double var)
 {
   switch (err) {
   case ERROR_AT_TIME:
-    printf("Error solving nonlinear system %s at time %g\n", eq.name, var);
+    WARNING2("Error solving nonlinear system %s at time %g\n", eq.name, var);
     break;
   case NO_PROGRESS_START_POINT:
-    printf("Solving nonlinear system %s: iteration not making progress, trying with different starting points (+%g)\n", eq.name, var);
+    WARNING2("Solving nonlinear system %s: iteration not making progress, trying with different starting points (+%g)\n", eq.name, var);
     break;
   case NO_PROGRESS_FACTOR:
-    printf("Solving nonlinear system %s: iteration not making progress, trying to decrease factor to %g\n", eq.name, var);
+    WARNING2("Solving nonlinear system %s: iteration not making progress, trying to decrease factor to %g\n", eq.name, var);
     break;
   case IMPROPER_INPUT:
-    printf("improper input parameters to nonlinear eq. syst: %s at time %g\n", eq.name, var);
+    WARNING2("improper input parameters to nonlinear eq. syst: %s at time %g\n", eq.name, var);
     break;
   default:
-    printf("Unknown equation system error: %d %s %g\n", err, eq.name, var);
+    WARNING3("Unknown equation system error: %d %s %g\n", err, eq.name, var);
   }
 }
 
-void printInfo(FILE *stream, omc_fileInfo info)
+void printInfo(FILE *stream, FILE_INFO info)
 {
   fprintf(stream, "[%s:%d:%d-%d:%d:%s]", info.filename, info.lineStart, info.colStart, info.lineEnd, info.colEnd, info.readonly ? "readonly" : "writable");
 }

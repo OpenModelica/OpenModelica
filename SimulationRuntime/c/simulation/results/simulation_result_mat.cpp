@@ -46,19 +46,19 @@ int simulation_result_mat::calcDataSize(MODEL_DATA *modelData)
 {
   int sz = 1; /* start with one for the timeValue */
   for (int i = 0; i < modelData->nVariablesReal; i++) 
-    if (!modelData->realData[i].filterOutput)
+    if (!modelData->realVarsData[i].filterOutput)
     {
        r_indx_map[i] = sz; 
        sz++;
     }
   for (int i = 0; i < modelData->nVariablesInteger; i++) 
-    if (!modelData->integerData[i].filterOutput)
+    if (!modelData->integerVarsData[i].filterOutput)
     {
        i_indx_map[i] = sz; 
        sz++;
     }
   for (int i = 0; i < modelData->nVariablesBoolean; i++) 
-    if (!modelData->booleanData[i].filterOutput)
+    if (!modelData->booleanVarsData[i].filterOutput)
     {
        b_indx_map[i] = sz; 
        sz++;
@@ -78,12 +78,12 @@ const VAR_INFO** simulation_result_mat::calcDataNames(int dataSize, MODEL_DATA *
   int curVar = 0;
   int sz = 1;
   names[curVar++] = &timeValName;
-  for (int i = 0; i < modelData->nVariablesReal; i++) if (!modelData->realData[i].filterOutput)
-    names[curVar++] = &(modelData->realData[i].info);
-  for (int i = 0; i < modelData->nVariablesInteger; i++) if (!modelData->integerData[i].filterOutput)
-    names[curVar++] = &(modelData->integerData[i].info);
-  for (int i = 0; i < modelData->nVariablesBoolean; i++) if (!modelData->booleanData[i].filterOutput)
-    names[curVar++] = &(modelData->booleanData[i].info);
+  for (int i = 0; i < modelData->nVariablesReal; i++) if (!modelData->realVarsData[i].filterOutput)
+    names[curVar++] = &(modelData->realVarsData[i].info);
+  for (int i = 0; i < modelData->nVariablesInteger; i++) if (!modelData->integerVarsData[i].filterOutput)
+    names[curVar++] = &(modelData->integerVarsData[i].info);
+  for (int i = 0; i < modelData->nVariablesBoolean; i++) if (!modelData->booleanVarsData[i].filterOutput)
+    names[curVar++] = &(modelData->booleanVarsData[i].info);
   for (int i = 0; i < modelData->nAliasReal; i++) if (!modelData->realAlias[i].filterOutput)
     names[curVar++] = &(modelData->realAlias[i].info);
   for (int i = 0; i < modelData->nAliasInteger; i++) if (!modelData->integerAlias[i].filterOutput)
@@ -93,17 +93,17 @@ const VAR_INFO** simulation_result_mat::calcDataNames(int dataSize, MODEL_DATA *
 
 
   for (int i = 0; i < modelData->nParametersReal; i++) {
-    names[curVar++] = &(modelData->realParameter[i].info);
+    names[curVar++] = &(modelData->realParameterData[i].info);
     r_indx_parammap[i]=sz; 
     sz++;
   }
   for (int i = 0; i < modelData->nParametersInteger; i++) {
-    names[curVar++] = &(modelData->integerParameter[i].info);
+    names[curVar++] = &(modelData->integerParameterData[i].info);
     i_indx_parammap[i]=sz; 
     sz++;
   }
   for (int i = 0; i < modelData->nParametersBoolean; i++) {
-    names[curVar++] = &(modelData->booleanParameter[i].info);
+    names[curVar++] = &(modelData->booleanParameterData[i].info);
     b_indx_parammap[i]=sz;  
     sz++;
   }
@@ -122,7 +122,7 @@ void simulation_result_mat::writeParameterData(MODEL_DATA *modelData)
     generateData_1(doubleMatrix, rows, cols, modelData, startTime, stopTime);
     /*  write `data_1' matrix */
     writeMatVer4Matrix("data_1", cols, rows, doubleMatrix, sizeof(double));
-    delete[] doubleMatrix; doubleMatrix = NULL;
+    free(doubleMatrix); doubleMatrix = NULL;
     fp.seekp(remember);
   } catch(...) {
     fp.close();
@@ -232,14 +232,14 @@ void simulation_result_mat::emit(_X_DATA *data)
      although ofstream does have some buffering, but it is not enough and 
      not for this purpose */
   fp.write((char*)&(data->localData[0]->timeValue),sizeof(double));
-  for (int i = 0; i < data->modelData.nVariablesReal; i++) if (!data->modelData.realData[i].filterOutput)
+  for (int i = 0; i < data->modelData.nVariablesReal; i++) if (!data->modelData.realVarsData[i].filterOutput)
     fp.write((char*)&(data->localData[0]->realVars[i]),sizeof(double));
-  for (int i = 0; i < data->modelData.nVariablesInteger; i++) if (!data->modelData.integerData[i].filterOutput)
+  for (int i = 0; i < data->modelData.nVariablesInteger; i++) if (!data->modelData.integerVarsData[i].filterOutput)
     {
       datPoint = (double) data->localData[0]->integerVars[i];
       fp.write((char*)&datPoint,sizeof(double));
     }
-  for (int i = 0; i < data->modelData.nVariablesBoolean; i++) if (!data->modelData.booleanData[i].filterOutput)
+  for (int i = 0; i < data->modelData.nVariablesBoolean; i++) if (!data->modelData.booleanVarsData[i].filterOutput)
     {
       datPoint = (double) data->localData[0]->booleanVars[i];
       fp.write((char*)&datPoint,sizeof(double));
@@ -516,20 +516,20 @@ void simulation_result_mat::generateData_1(double* &data_1,
   offset = 1;
   /* double variables */
   for(i = 0; i < mdl_data->nParametersReal; ++i) {
-    data_1[offset+i] = mdl_data->realParameter[i].attribute.initial;
-    data_1[offset+i+cols] =  mdl_data->realParameter[i].attribute.initial;
+    data_1[offset+i] = mdl_data->realParameterData[i].attribute.initial;
+    data_1[offset+i+cols] =  mdl_data->realParameterData[i].attribute.initial;
   }
   offset += mdl_data->nParametersReal;
   /* integer variables */
   for(i = 0; i < mdl_data->nParametersInteger; ++i) {
-    data_1[offset+i] = (double)mdl_data->integerParameter[i].attribute.initial;
-    data_1[offset+i+cols] = (double)mdl_data->integerParameter[i].attribute.initial;
+    data_1[offset+i] = (double)mdl_data->integerParameterData[i].attribute.initial;
+    data_1[offset+i+cols] = (double)mdl_data->integerParameterData[i].attribute.initial;
   }
   offset += mdl_data->nParametersInteger;
   /* bool variables */
   for(i = 0; i < mdl_data->nParametersBoolean; ++i) {
-    data_1[offset+i] = (double)mdl_data->booleanParameter[i].attribute.initial;
-    data_1[offset+i+cols] = (double)mdl_data->booleanParameter[i].attribute.initial;
+    data_1[offset+i] = (double)mdl_data->booleanParameterData[i].attribute.initial;
+    data_1[offset+i+cols] = (double)mdl_data->booleanParameterData[i].attribute.initial;
   }
 
 }

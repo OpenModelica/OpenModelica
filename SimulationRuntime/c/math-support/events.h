@@ -52,6 +52,8 @@ extern "C" {
 
   void storeStartValues(_X_DATA *data);
   void storePreValues(_X_DATA *data);
+  void storeStartValuesParam(_X_DATA *data);
+  void storeInitialValuesParam(_X_DATA *data);
   /* void printAllPreValues(); */
   void resetAllHelpVars(_X_DATA *data);
 

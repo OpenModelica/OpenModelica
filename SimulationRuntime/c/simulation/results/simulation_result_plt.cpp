@@ -60,10 +60,10 @@ static const char * timeName = "time";
 static int calcDataSize(MODEL_DATA *modelData)
 {
   int sz = 1; // time
-  for (int i = 0; i < modelData->nVariablesReal; i++) if (!modelData->realData[i].filterOutput) sz++;
-  for (int i = 0; i < modelData->nVariablesInteger; i++) if (!modelData->integerData[i].filterOutput) sz++;
-  for (int i = 0; i < modelData->nVariablesBoolean; i++) if (!modelData->booleanData[i].filterOutput) sz++;
-  /* for (int i = 0; i < modelData->nVariablesString; i++) if (!modelData->stringData[i].filterOutput) sz++; */
+  for (int i = 0; i < modelData->nVariablesReal; i++) if (!modelData->realVarsData[i].filterOutput) sz++;
+  for (int i = 0; i < modelData->nVariablesInteger; i++) if (!modelData->integerVarsData[i].filterOutput) sz++;
+  for (int i = 0; i < modelData->nVariablesBoolean; i++) if (!modelData->booleanVarsData[i].filterOutput) sz++;
+  /* for (int i = 0; i < modelData->nVariablesString; i++) if (!modelData->stringVarsData[i].filterOutput) sz++; */
 
   for (int i = 0; i < modelData->nAliasReal; i++) if (!modelData->realAlias[i].filterOutput) sz++;
   for (int i = 0; i < modelData->nAliasInteger; i++) if (!modelData->integerAlias[i].filterOutput) sz++;
@@ -79,14 +79,14 @@ static const char** calcDataNames(MODEL_DATA *modelData, int dataSize)
   ASSERT(names,"Not enough memory!");
   int curVar = 0;
   names[curVar++] = timeName;
-  for (int i = 0; i < modelData->nVariablesReal; i++) if (!modelData->realData[i].filterOutput)
-    names[curVar++] = modelData->realData[i].info.name;
-  for (int i = 0; i < modelData->nVariablesInteger; i++) if (!modelData->integerData[i].filterOutput)
-    names[curVar++] = modelData->integerData[i].info.name;
-  for (int i = 0; i < modelData->nVariablesBoolean; i++) if (!modelData->booleanData[i].filterOutput)
-    names[curVar++] = modelData->booleanData[i].info.name;
-/*  for (int i = 0; i < modelData->nVariablesString; i++) if (!modelData->stringData[i].filterOutput)
-    names[curVar++] = modelData->stringData[i].info.name; */
+  for (int i = 0; i < modelData->nVariablesReal; i++) if (!modelData->realVarsData[i].filterOutput)
+    names[curVar++] = modelData->realVarsData[i].info.name;
+  for (int i = 0; i < modelData->nVariablesInteger; i++) if (!modelData->integerVarsData[i].filterOutput)
+    names[curVar++] = modelData->integerVarsData[i].info.name;
+  for (int i = 0; i < modelData->nVariablesBoolean; i++) if (!modelData->booleanVarsData[i].filterOutput)
+    names[curVar++] = modelData->booleanVarsData[i].info.name;
+/*  for (int i = 0; i < modelData->nVariablesString; i++) if (!modelData->stringVarsData[i].filterOutput)
+    names[curVar++] = modelData->stringVarsData[i].info.name; */
   for (int i = 0; i < modelData->nAliasReal; i++) if (!modelData->realAlias[i].filterOutput)
     names[curVar++] = modelData->realAlias[i].info.name;
   for (int i = 0; i < modelData->nAliasInteger; i++) if (!modelData->integerAlias[i].filterOutput)
@@ -134,22 +134,22 @@ void simulation_result_plt::add_result(double *data, long *actualPoints, _X_DATA
   ss << (data[currentPos++] = simData->localData[0]->timeValue) << "\n";
   /* .. reals .. */
   for (int i = 0; i < simData->modelData.nVariablesReal; i++) {
-    if (!simData->modelData.realData[i].filterOutput) {
-      ss << simData->modelData.realData[i].info.name << "\n";
+    if (!simData->modelData.realVarsData[i].filterOutput) {
+      ss << simData->modelData.realVarsData[i].info.name << "\n";
       ss << (data[currentPos++] = simData->localData[0]->realVars[i]) << "\n";
     }
   }
   /* .. integers .. */
   for (int i = 0; i < simData->modelData.nVariablesInteger; i++) {
-    if (!simData->modelData.integerData[i].filterOutput) {
-      ss << simData->modelData.integerData[i].info.name << "\n";
+    if (!simData->modelData.integerVarsData[i].filterOutput) {
+      ss << simData->modelData.integerVarsData[i].info.name << "\n";
       ss << (data[currentPos++] = simData->localData[0]->integerVars[i]) << "\n";
     }
   }
   /* .. booleans .. */
   for (int i = 0; i < simData->modelData.nVariablesBoolean; i++) {
-    if (!simData->modelData.booleanData[i].filterOutput) {
-      ss << simData->modelData.booleanData[i].info.name << "\n";
+    if (!simData->modelData.booleanVarsData[i].filterOutput) {
+      ss << simData->modelData.booleanVarsData[i].info.name << "\n";
       ss << (data[currentPos++] = simData->localData[0]->booleanVars[i]) << "\n";
     }
   }
@@ -192,19 +192,19 @@ void simulation_result_plt::add_result(double *data, long *actualPoints, _X_DATA
 
     /* .. reals .. */
     for (int i = 0; i < simData->modelData.nVariablesReal; i++) {
-      if (!simData->modelData.realData[i].filterOutput) {
+      if (!simData->modelData.realVarsData[i].filterOutput) {
         data[currentPos++] = simData->localData[0]->realVars[i];
       }
     }
     /* .. integers .. */
     for (int i = 0; i < simData->modelData.nVariablesInteger; i++) {
-      if (!simData->modelData.integerData[i].filterOutput) {
+      if (!simData->modelData.integerVarsData[i].filterOutput) {
         data[currentPos++] = simData->localData[0]->integerVars[i];
       }
     }
     /* .. booleans .. */
     for (int i = 0; i < simData->modelData.nVariablesBoolean; i++) {
-      if (!simData->modelData.booleanData[i].filterOutput) {
+      if (!simData->modelData.booleanVarsData[i].filterOutput) {
         data[currentPos++] = simData->localData[0]->booleanVars[i];
       }
     }
@@ -342,8 +342,8 @@ simulation_result_plt::~simulation_result_plt()
 
   for(int var = 0; var < modelData->nVariablesReal; ++var)
   {
-    if (!modelData->realData[var].filterOutput) {
-      fprintf(f, "DataSet: %s\n", modelData->realData[var].info.name);
+    if (!modelData->realVarsData[var].filterOutput) {
+      fprintf(f, "DataSet: %s\n", modelData->realVarsData[var].info.name);
       for(int i = 0; i < actualPoints; ++i)
         printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + varn]);
       fprintf(f, "\n");
@@ -353,8 +353,8 @@ simulation_result_plt::~simulation_result_plt()
 
   for(int var = 0; var < modelData->nVariablesInteger; ++var)
   {
-    if (!modelData->integerData[var].filterOutput) {
-      fprintf(f, "DataSet: %s\n", modelData->integerData[var].info.name);
+    if (!modelData->integerVarsData[var].filterOutput) {
+      fprintf(f, "DataSet: %s\n", modelData->integerVarsData[var].info.name);
       for(int i = 0; i < actualPoints; ++i)
         printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + varn]);
       fprintf(f, "\n");
@@ -364,8 +364,8 @@ simulation_result_plt::~simulation_result_plt()
 
   for(int var = 0; var < modelData->nVariablesBoolean; ++var)
   {
-    if (!modelData->booleanData[var].filterOutput) {
-      fprintf(f, "DataSet: %s\n", modelData->booleanData[var].info.name);
+    if (!modelData->booleanVarsData[var].filterOutput) {
+      fprintf(f, "DataSet: %s\n", modelData->booleanVarsData[var].info.name);
       for(int i = 0; i < actualPoints; ++i)
         printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + varn]);
       fprintf(f, "\n");

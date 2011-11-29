@@ -118,14 +118,14 @@ static void printStrXML(FILE *fout, const char *str)
   }
 }
 
-static void printInfoTag(FILE *fout, int level, const omc_fileInfo info) {
+static void printInfoTag(FILE *fout, int level, const FILE_INFO info) {
   indent(fout,level);
   fprintf(fout, "<info filename=\"");
   printStrXML(fout, info.filename);
   fprintf(fout, "\" startline=\"%d\" startcol=\"%d\" endline=\"%d\" endcol=\"%d\" readonly=\"%s\" />\n", info.lineStart, info.colStart, info.lineEnd, info.colEnd, info.readonly ? "readonly" : "writable");
 }
 
-static void printVars(FILE *fout, int level, int n, const struct omc_varInfo *vars) {
+static void printVars(FILE *fout, int level, int n, const struct VAR_INFO *vars) {
   int i;
   for (i=0; i<n; i++) {
     indent(fout,level);
@@ -139,11 +139,24 @@ static void printVars(FILE *fout, int level, int n, const struct omc_varInfo *va
     fprintf(fout, "</variable>\n");
   }
 }
+static void printVar(FILE *fout, int level, VAR_INFO* info) {
 
-static void printFunctions(FILE *fout, FILE *plt, const char *plotFormat, const char *modelFilePrefix, DATA *data, const struct omc_functionInfo *funcs) {
+  indent(fout,level);
+  fprintf(fout, "<variable id=\"%d\" name=\"", info->id);
+  printStrXML(fout, info->name);
+  fprintf(fout, "\" comment=\"");
+  printStrXML(fout, info->comment);
+  fprintf(fout, "\">\n");
+  printInfoTag(fout, level+2, info->info);
+  indent(fout,level);
+  fprintf(fout, "</variable>\n");
+}
+
+
+static void printFunctions(FILE *fout, FILE *plt, const char *plotFormat, const char *modelFilePrefix, _X_DATA *data, const struct FUNCTION_INFO *funcs) {
   int i;
-  for (i=0; i<data->nFunctions; i++) {
-    printPlotCommand(plt, plotFormat, funcs[i].name, modelFilePrefix, data->nFunctions+data->nProfileBlocks, i, funcs[i].id);
+  for (i=0; i<data->modelData.nFunctions; i++) {
+    printPlotCommand(plt, plotFormat, funcs[i].name, modelFilePrefix, data->modelData.nFunctions+data->modelData.nProfileBlocks, i, funcs[i].id);
     rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
     indent(fout,2);
     fprintf(fout, "<function id=\"%d\">\n", funcs[i].id);
@@ -157,11 +170,11 @@ static void printFunctions(FILE *fout, FILE *plt, const char *plotFormat, const 
   }
 }
 
-static void printProfileBlocks(FILE *fout, FILE *plt, const char *plotFormat, DATA *data) {
+static void printProfileBlocks(FILE *fout, FILE *plt, const char *plotFormat, _X_DATA *data) {
   int i;
-  for (i = data->nFunctions; i < data->nFunctions + data->nProfileBlocks; i++) {
-    const struct omc_equationInfo *eq = &data->equationInfo[data->equationInfo_reverse_prof_index[i-data->nFunctions]];
-    printPlotCommand(plt, plotFormat, eq->name, data->modelFilePrefix, data->nFunctions+data->nProfileBlocks, i, eq->id);
+  for (i = data->modelData.nFunctions; i < data->modelData.nFunctions + data->modelData.nProfileBlocks; i++) {
+    const struct EQUATION_INFO *eq = &(data->modelData.equationInfo[data->modelData.equationInfo_reverse_prof_index[i-data->modelData.nFunctions]]);
+    printPlotCommand(plt, plotFormat, eq->name, data->modelData.modelFilePrefix, data->modelData.nFunctions+data->modelData.nProfileBlocks, i, eq->id);
     rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
     indent(fout,2);fprintf(fout, "<profileblock>\n");
     indent(fout,4);fprintf(fout, "<ref refid=\"%d\"/>\n", (int) eq->id);
@@ -172,7 +185,7 @@ static void printProfileBlocks(FILE *fout, FILE *plt, const char *plotFormat, DA
   }
 }
 
-static void printEquations(FILE *fout, int n, const struct omc_equationInfo *eqns) {
+static void printEquations(FILE *fout, int n, EQUATION_INFO *eqns) {
   int i,j;
   for (i=0; i<n; i++) {
     indent(fout,2);fprintf(fout, "<equation id=\"%d\" name=\"", eqns[i].id);printStrXML(fout,eqns[i].name);fprintf(fout,"\">\n");
@@ -185,12 +198,12 @@ static void printEquations(FILE *fout, int n, const struct omc_equationInfo *eqn
   }
 }
 
-static void printProfilingDataHeader(FILE *fout, DATA *data) {
+static void printProfilingDataHeader(FILE *fout, _X_DATA *data) {
   char *filename;
   int i;
   
-  filename = malloc(strlen(data->modelFilePrefix) + 15);
-  sprintf(filename, "%s_prof.data", data->modelFilePrefix);
+  filename = malloc(strlen(data->modelData.modelFilePrefix) + 15);
+  sprintf(filename, "%s_prof.data", data->modelData.modelFilePrefix);
   indent(fout, 2); fprintf(fout, "<filename>");printStrXML(fout,filename);fprintf(fout,"</filename>\n");
   indent(fout, 2); fprintf(fout, "<filesize>%ld</filesize>\n", (long) fileSize(filename));
   free(filename);
@@ -199,20 +212,20 @@ static void printProfilingDataHeader(FILE *fout, DATA *data) {
   indent(fout, 4); fprintf(fout, "<uint32>step</uint32>\n");
   indent(fout, 4); fprintf(fout, "<double>time</double>\n");
   indent(fout, 4); fprintf(fout, "<double>cpu time</double>\n");
-  for (i = 0; i < data->nFunctions; i++) {
-    const char *name = data->functionNames[i].name;
+  for (i = 0; i < data->modelData.nFunctions; i++) {
+    const char *name = data->modelData.functionNames[i].name;
     indent(fout, 4); fprintf(fout, "<uint32>");printStrXML(fout,name);fprintf(fout, " (calls)</uint32>\n");
   }
-  for (i = 0; i < data->nProfileBlocks; i++) {
-    const char *name = data->equationInfo[data->equationInfo_reverse_prof_index[i]].name;
+  for (i = 0; i < data->modelData.nProfileBlocks; i++) {
+    const char *name = data->modelData.equationInfo[data->modelData.equationInfo_reverse_prof_index[i]].name;
     indent(fout, 4); fprintf(fout, "<uint32>");printStrXML(fout,name);fprintf(fout, " (calls)</uint32>\n");
   }
-  for (i = 0; i < data->nFunctions; i++) {
-    const char *name = data->functionNames[i].name;
+  for (i = 0; i < data->modelData.nFunctions; i++) {
+    const char *name = data->modelData.functionNames[i].name;
     indent(fout, 4); fprintf(fout, "<double>");printStrXML(fout,name);fprintf(fout, " (cpu time)</double>\n");
   }
-  for (i = 0; i < data->nProfileBlocks; i++) {
-    const char *name = data->equationInfo[data->equationInfo_reverse_prof_index[i]].name;
+  for (i = 0; i < data->modelData.nProfileBlocks; i++) {
+    const char *name = data->modelData.equationInfo[data->modelData.equationInfo_reverse_prof_index[i]].name;
     indent(fout, 4); fprintf(fout, "<double>");printStrXML(fout,name);fprintf(fout, " (cpu time)</double>\n");
   }
   indent(fout, 2); fprintf(fout, "</format>\n");
@@ -223,6 +236,7 @@ int printModelInfo(_X_DATA *data, const char *filename, const char *plotfile, co
   FILE *fout = fopen(filename, "w");
   FILE *plotCommands;
   time_t t;
+  int i;
 #if defined(__MINGW32__) || defined(_MSC_VER)
   plotCommands = fopen(plotfile, "w");
 #else
@@ -261,14 +275,13 @@ int printModelInfo(_X_DATA *data, const char *filename, const char *plotfile, co
     fclose(fout);
     return 1;
   }
-/* TODO: fix that block for new structure
   fprintf(fout, "<simulation>\n");
   fprintf(fout, "<modelinfo>\n");
   indent(fout, 2); fprintf(fout, "<name>");printStrXML(fout,data->modelData.modelName);fprintf(fout,"</name>\n");
   indent(fout, 2); fprintf(fout, "<prefix>");printStrXML(fout,data->modelData.modelFilePrefix);fprintf(fout,"</prefix>\n");
   indent(fout, 2); fprintf(fout, "<date>");printStrXML(fout,buf);fprintf(fout,"</date>\n");
-  indent(fout, 2); fprintf(fout, "<method>");printStrXML(fout,method);fprintf(fout,"</method>\n");
-  indent(fout, 2); fprintf(fout, "<outputFormat>");printStrXML(fout,outputFormat);fprintf(fout,"</outputFormat>\n");
+  indent(fout, 2); fprintf(fout, "<method>");printStrXML(fout,data->simulationInfo.solverMethod);fprintf(fout,"</method>\n");
+  indent(fout, 2); fprintf(fout, "<outputFormat>");printStrXML(fout,data->simulationInfo.outputFormat);fprintf(fout,"</outputFormat>\n");
   indent(fout, 2); fprintf(fout, "<outputFilename>");printStrXML(fout,outputFilename);fprintf(fout,"</outputFilename>\n");
   indent(fout, 2); fprintf(fout, "<outputFilesize>%ld</outputFilesize>\n", (long) fileSize(outputFilename));
   indent(fout, 2); fprintf(fout, "<overheadTime>%f</overheadTime>\n", rt_accumulated(SIM_TIMER_OVERHEAD));
@@ -288,30 +301,44 @@ int printModelInfo(_X_DATA *data, const char *filename, const char *plotfile, co
   fprintf(fout, "</profilingdataheader>\n");
 
   fprintf(fout, "<variables>\n");
-  printVars(fout, 2, data->modelData.nStates, data->modelData.statesNames);
-  printVars(fout, 2, data->modelData.nStates, data->modelData.stateDerivativesNames);
-  printVars(fout, 2, data->modelData.nVariablesReal - 2*data->modelData.nStates, data->modelData.algebraicsNames);
-  printVars(fout, 2, data->modelData.nParameters, data->modelData.parametersNames);
-  printVars(fout, 2, data->modelData.intVariables.nAlgebraic, data->modelData.int_alg_names);
-  printVars(fout, 2, data->modelData.intVariables.nParameters, data->modelData.int_param_names);
-  printVars(fout, 2, data->modelData.boolVariables.nAlgebraic, data->modelData.bool_alg_names);
-  printVars(fout, 2, data->modelData.boolVariables.nParameters, data->modelData.bool_param_names);
-  printVars(fout, 2, data->modelData.stringVariables.nAlgebraic, data->modelData.string_alg_names);
-  printVars(fout, 2, data->modelData.stringVariables.nParameters, data->modelData.string_param_names);
+  for(i=0;i<data->modelData.nVariablesReal;++i){
+    printVar(fout, 2, &(data->modelData.realVarsData[i].info));
+  }
+  for(i=0;i<data->modelData.nParametersReal;++i){
+    printVar(fout, 2, &data->modelData.realParameterData[i].info);
+  }
+  for(i=0;i<data->modelData.nVariablesInteger;++i){
+    printVar(fout, 2, &data->modelData.integerVarsData[i].info);
+  }
+  for(i=0;i<data->modelData.nParametersInteger;++i){
+    printVar(fout, 2, &data->modelData.integerParameterData[i].info);
+  }
+  for(i=0;i<data->modelData.nVariablesBoolean;++i){
+    printVar(fout, 2, &data->modelData.booleanVarsData[i].info);
+  }
+  for(i=0;i<data->modelData.nParametersBoolean;++i){
+    printVar(fout, 2, &data->modelData.booleanParameterData[i].info);
+  }
+  for(i=0;i<data->modelData.nVariablesString;++i){
+    printVar(fout, 2, &data->modelData.stringVarsData[i].info);
+  }
+  for(i=0;i<data->modelData.nParametersString;++i){
+    printVar(fout, 2, &data->modelData.stringParameterData[i].info);
+  }
   fprintf(fout, "</variables>\n");
 
   fprintf(fout, "<functions>\n");
-  printFunctions(fout, plotCommands, plotFormat, data->modelFilePrefix, data, data->functionNames);
+  printFunctions(fout, plotCommands, plotFormat, data->modelData.modelFilePrefix, data, data->modelData.functionNames);
   fprintf(fout, "</functions>\n");
 
   fprintf(fout, "<equations>\n");
-  printEquations(fout, data->nEquations, data->equationInfo);
+  printEquations(fout, data->modelData.nEquations, data->modelData.equationInfo);
   fprintf(fout, "</equations>\n");
 
   fprintf(fout, "<profileblocks>\n");
   printProfileBlocks(fout, plotCommands, plotFormat, data);
   fprintf(fout, "</profileblocks>\n");
-*/
+
   fprintf(fout, "</simulation>\n");
 
   fclose(fout);

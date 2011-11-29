@@ -22,7 +22,7 @@ static logical c_false = FALSE_;
   doublereal *epsfcn, doublereal *diag, integer *mode, doublereal *
   factor, integer *nprint, integer *info, integer *nfev, doublereal *
   fjac, integer *ldfjac, doublereal *r__, integer *lr, doublereal *qtf, 
-  doublereal *wa1, doublereal *wa2, doublereal *wa3, doublereal *wa4)
+  doublereal *wa1, doublereal *wa2, doublereal *wa3, doublereal *wa4, void* userdata)
 {
     /* Initialized data */
 
@@ -56,7 +56,7 @@ static logical c_false = FALSE_;
     extern /* Subroutine */ int qform_(integer *, integer *, doublereal *, 
       integer *, doublereal *), fdjac1_(S_fp, integer *, doublereal *, 
       doublereal *, doublereal *, integer *, integer *, integer *, 
-      integer *, doublereal *, doublereal *, doublereal *);
+      integer *, doublereal *, doublereal *, doublereal *, void *);
     static doublereal pnorm, xnorm, fnorm1;
     extern /* Subroutine */ int r1updt_(integer *, integer *, doublereal *, 
       integer *, doublereal *, doublereal *, doublereal *, logical *);
@@ -272,7 +272,7 @@ L20:
 /*     and calculate its norm. */
 
     iflag = 1;
-    (*fcn)(n, &x[1], &fvec[1], &iflag);
+    (*fcn)(n, &x[1], &fvec[1], &iflag, userdata);
     *nfev = 1;
     if (iflag < 0) {
   goto L300;
@@ -303,7 +303,7 @@ L30:
 
     iflag = 2;
     fdjac1_((S_fp)fcn, n, &x[1], &fvec[1], &fjac[fjac_offset], ldfjac, &iflag,
-       ml, mu, epsfcn, &wa1[1], &wa2[1]);
+       ml, mu, epsfcn, &wa1[1], &wa2[1], userdata);
     *nfev += msum;
     if (iflag < 0) {
   goto L300;
@@ -430,7 +430,7 @@ L180:
     }
     iflag = 0;
     if ((iter - 1) % *nprint == 0) {
-  (*fcn)(n, &x[1], &fvec[1], &iflag);
+  (*fcn)(n, &x[1], &fvec[1], &iflag, userdata);
     }
     if (iflag < 0) {
   goto L300;
@@ -462,7 +462,7 @@ L190:
 /*           evaluate the function at x + p and calculate its norm. */
 
     iflag = 1;
-    (*fcn)(n, &wa2[1], &wa4[1], &iflag);
+    (*fcn)(n, &wa2[1], &wa4[1], &iflag, userdata);
     ++(*nfev);
     if (iflag < 0) {
   goto L300;
@@ -643,7 +643,7 @@ L300:
     }
     iflag = 0;
     if (*nprint > 0) {
-  (*fcn)(n, &x[1], &fvec[1], &iflag);
+  (*fcn)(n, &x[1], &fvec[1], &iflag, userdata);
     }
     return 0;
 

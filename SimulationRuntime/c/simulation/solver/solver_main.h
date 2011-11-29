@@ -43,6 +43,7 @@
 #include "openmodelica.h"
 #include "simulation_data.h"
 
+
 typedef struct SOLVER_INFO
 {
   double currentTime;
