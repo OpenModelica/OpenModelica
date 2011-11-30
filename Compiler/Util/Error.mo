@@ -562,6 +562,8 @@ public constant Message CHANGED_STD_VERSION = MESSAGE(208, SCRIPTING(), NOTIFICA
   "Modelica language version set to %s due to loading of MSL %s.");
 public constant Message SIMPLIFY_FIXPOINT_MAXIMUM = MESSAGE(209, TRANSLATION(), WARNING(),
   "Expression simplification iterated to the fixpoint maximum, which may be a performance bottleneck. The last two iterations were: %s, and %s");
+public constant Message UNKNOWN_OPTION = MESSAGE(210, SCRIPTING(), ERROR(),
+  "Unknown option %s.");
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
   "Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)");
 public constant Message BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER = MESSAGE(501, TRANSLATION(), WARNING(),

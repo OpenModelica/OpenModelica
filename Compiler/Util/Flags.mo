@@ -856,6 +856,11 @@ algorithm
       then
         false;
 
+    // Flags beginning with - are consumed by the RML runtime, until -- is
+    // encountered. The bootstrapped compiler gets all flags though, so this
+    // case is to make sure that -- is consumed and not treated as a flag.
+    case ("--", _) then false;
+
     // Flags that start with +.
     else
       equation
@@ -890,8 +895,6 @@ algorithm
     local
       array<Boolean> debug_flags;
       array<FlagData> config_flags;
-      ConfigFlag config_flag;
-      String help_str;
       list<String> values;
 
     // Special case for +d, set the given debug flags.
@@ -913,14 +916,39 @@ algorithm
     // All other configuration flags.
     case (_, _, FLAGS(configFlags = config_flags))
       equation
-        config_flag = List.getMemberOnTrue(inFlag, allConfigFlags, matchConfigFlag);
-        setConfigFlag(config_flag, config_flags, inValues);
+        parseConfigFlag(inFlag, inValues, config_flags);
       then
         ();
 
   end match;
 end parseFlag2;
 
+protected function parseConfigFlag
+  "Tries to look up the flag with the given name, and set it to the given value."
+  input String inFlag;
+  input list<String> inValues;
+  input array<FlagData> inFlags;
+algorithm
+  _ := matchcontinue(inFlag, inValues, inFlags)
+    local
+      ConfigFlag config_flag;
+
+    case (_, _, _)
+      equation
+        config_flag = List.getMemberOnTrue(inFlag, allConfigFlags, matchConfigFlag);
+        setConfigFlag(config_flag, inFlags, inValues);
+      then
+        ();
+
+    else
+      equation
+        Error.addMessage(Error.UNKNOWN_OPTION, {inFlag});
+      then
+        fail();
+
+  end matchcontinue;
+end parseConfigFlag;
+      
 protected function setDebugFlag
   "Enables a debug flag given as a string, or disables it if it's prefixed with -."
   input String inFlag;

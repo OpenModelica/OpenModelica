@@ -3793,16 +3793,28 @@ algorithm
   end match;
 end crefFirstIdentNoSubs;
 
-public function crefIsIdent "
-Returns the base-name of the Absyn.componentReference"
+public function crefIsIdent
+  "Returns true if the component reference is a simple identifier, otherwise false."
   input ComponentRef inComponentRef;
-  output Boolean bol;
+  output Boolean outIsIdent;
 algorithm
-  bol := matchcontinue(inComponentRef)
-    case(CREF_IDENT(_,_)) then true;
-    case(_) then false;
-  end matchcontinue;
+  outIsIdent := match(inComponentRef)
+    case CREF_IDENT(name = _) then true;
+    else false;
+  end match;
 end crefIsIdent;
+
+public function crefIsQual
+  "Returns true if the component reference is a qualified identifier, otherwise false."
+  input ComponentRef inComponentRef;
+  output Boolean outIsQual;
+algorithm
+  outIsQual := match(inComponentRef)
+    case CREF_QUAL(name = _) then true;
+    case CREF_FULLYQUALIFIED(componentRef = _) then true;
+    else false;
+  end match;
+end crefIsQual;
 
 public function crefLastSubs "function: crefLastSubs
   Return the last subscripts of an Absyn.ComponentRef"
