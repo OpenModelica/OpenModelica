@@ -6169,6 +6169,18 @@ algorithm
       BackendDAE.Matching matching;
 
     case (syst,shared,{},_,inDerivedAlgs,inDerivedMultiEqn) then (syst,shared,{},inDerivedAlgs,inDerivedMultiEqn);
+
+    case (BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared,(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn)
+      equation
+        e_1 = e - 1;
+        eqn = BackendDAEUtil.equationNth(eqns, e_1);
+        ev = BackendEquation.equationsLstVars({eqn},v,BackendDAEUtil.emptyVars());
+        false = BackendVariable.hasContinousVar(BackendDAEUtil.varList(ev));
+        BackendDAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
+        (syst,shared,reqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared, es, inFunctions,inDerivedAlgs,inDerivedMultiEqn);
+      then
+        (syst,shared,(e :: reqns),derivedAlgs1,derivedMultiEqn1);
+        
     case (BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared as BackendDAE.SHARED(kv,ev,av,ie,seqns,ae,al,wc,eoc,btp),(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn)
       equation
         e_1 = e - 1;
