@@ -6,6 +6,7 @@
 // Modelica MultiBody 3.x: instantiation and balance checking
 //
 
-loadModel(Modelica,{"3.1"}); getErrorString();
+loadModel(Modelica); getErrorString();
+loadModel(ModelicaServices); getErrorString();
 instantiateModel(Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot); getErrorString();
 
