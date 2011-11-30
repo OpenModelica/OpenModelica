@@ -1646,7 +1646,7 @@ end getAlgorithmCount;
 function getNthAlgorithm "Returns the Nth Algorithm section"
   input TypeName class_;
   input Integer index;
-  output Integer count;
+  output String result;
 external "builtin";
 end getNthAlgorithm;
 
@@ -1655,6 +1655,13 @@ function getEquationCount "Counts the number of Equation sections in a class"
   output Integer count;
 external "builtin";
 end getEquationCount;
+
+function getNthEquation "Returns the Nth Equation section"
+  input TypeName class_;
+  input Integer index;
+  output String result;
+external "builtin";
+end getNthEquation;
 
 end Scripting;
 

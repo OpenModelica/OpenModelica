@@ -2816,7 +2816,7 @@ algorithm
   end matchcontinue;
 end unparseEquationStr;
 
-protected function unparseEquationitemStrLst "function:unparseEquationitemStrLst
+public function unparseEquationitemStrLst "function:unparseEquationitemStrLst
   Prettyprints and EquationItem list to a string."
   input Integer inInteger;
   input list<Absyn.EquationItem> inAbsynEquationItemLst;
