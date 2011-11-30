@@ -7,8 +7,3 @@ target_link_libraries( Simulation ${Boost_LIBRARIES})
 
 install (TARGETS Simulation DESTINATION bin)
  
-
-
-  
-  
- 

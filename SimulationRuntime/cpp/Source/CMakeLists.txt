@@ -2,55 +2,120 @@ cmake_minimum_required (VERSION 2.6)
 
 project(CppSolverInterface)
 
-# on windows  boost,blas,lapack from omdev is used else the installed versions are used
+# on windows  boost,blas,lapack  and sundial solvers from omdev is used else the installed versions are used
 IF( WIN32 )
 SET(ENV{BOOST_ROOT} $ENV{OMDEV}"/lib/3rdParty/boost_1_45_0/")
-#set(BLAS_blas_LIBRARY $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas.dll CACHE FILEPATH "Blas library")
-#set(LAPACK_lapack_LIBRARY  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack.dll CACHE FILEPATH "Lapack library")
-#Lapack and Blas for Visual Studio
-set(BLAS_blas_LIBRARY $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.dll CACHE FILEPATH "Blas library")
-set(LAPACK_lapack_LIBRARY  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.dll CACHE FILEPATH "Lapack library")
+SET(BLAS_blas_LIBRARY $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.dll CACHE FILEPATH "Blas library")
+SET(LAPACK_lapack_LIBRARY  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.dll CACHE FILEPATH "Lapack library")
+SET(MICO_LIB_HOME $ENV{OMDEV}/lib/mico-msys-mingw/)
+SET(MICO_INCLUDE_HOME  $ENV{OMDEV}/include/mico-msys-mingw/)
+#Sundials solvers include and library directories
+SET(SUNDIALS_INLCUDE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/include)
+SET(SUNDIALS_LIBRARY_RELEASE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/lib/release)
 ENDIF( WIN32 )
 
 SET(Boost_USE_STATIC_LIBS OFF)
 SET(Boost_USE_MULTITHREADED ON)
 SET(Boost_USE_STATIC_RUNTIME OFF)
 SET(MODELICA_MODEL "ModelicaSystem")
+SET(USE_MICO OFF)
+SET(REDUCE_DAE OFF)
+SET(USE_SUNDIALS ON)
+
+
 
 find_package(Boost 1.45.0 COMPONENTS serialization REQUIRED )
 find_package( BLAS )
 find_package( LAPACK  )
- #PATHS $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/ 
+
+# Sundials solvers
+if(USE_SUNDIALS)
+
+find_path(SUNDIALS_INCLUDE_DIR cvode/cvode.h
+		PATHS ${SUNDIALS_INLCUDE_HOME})
+ message(STATUS ${SUNDIALS_INCLUDE_DIR})
+
+find_library(SUNDIALS_NVECSERIAL_LIB sundials_nvecserial
+		PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME})
+find_library(SUNDIALS_CVODES_LIB sundials_cvodes
+		PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
+
+find_library(SUNDIALS_IDAS_LIB sundials_idas
+		PATHS ${SUNDIALS_LIBRARY_RELEASE_HOME} )
+
+set(SUNDIALS_LIBS ${SUNDIALS_NVECSERIAL_LIB}  ${SUNDIALS_CVODES_LIB}  ${SUNDIALS_IDAS_LIB})
+message(STATUS ${SUNDIALS_LIBS})
+add_definitions(-DPMC_USE_SUNDIALS)
+endif()
+
+#Mico corba
+if(USE_MICO)
+	find_library(MICO_LIBRARY  mico2313  
+		PATHS ${MICO_LIB_HOME}) #you can add additional search paths for mico library
+	find_path(MICO_INCLUDE_DIR CORBA.h 
+		 ${MICO_INCLUDE_HOME}) #you can add additional search paths for mico include
+	message(STATUS ${MICO_LIBRARY})
+	message(STATUS ${MICO_INCLUDE_DIR})
+endif()
+
+
+
 link_directories ( ${Boost_LIBRARY_DIRS} )
+
 include_directories ( ${Boost_INCLUDE_DIRS} )
-
-
-
 include_directories ("${PROJECT_SOURCE_DIR}")
 include_directories ("${PROJECT_BINARY_DIR}")
+
+
+
+
+
+
 #add solver default implemention project
 add_subdirectory (Solver/Implementation)
+
+
 #add  Euler solver project
 add_subdirectory (Solver/Euler/Implementation)
+
+
+
 #add  math project
 add_subdirectory (Math/Implementation)
 add_subdirectory (SettingsFactory/Implementation)
 #add  simmanager project
 add_subdirectory (SimManager)
-#add  system default implementation project
+
+if(REDUCE_DAE)
+	add_subdirectory(ReduceDAE/Implementation)
+endif()
 
 add_subdirectory (System/Implementation)
 add_subdirectory (System/Modelica)
 add_subdirectory (System/Newton/Implementation)
 add_subdirectory (ModelicaExternalC)
 
-#include_directories ("${PROJECT_SOURCE_DIR}/System/Modelica/Implementation")
+if(USE_SUNDIALS)
+#add  Cvode solver project
+add_subdirectory (Solver/CVode/Implementation)
+#add  Idas solver project
+add_subdirectory (Solver/Idas/Implementation)
+GET_TARGET_PROPERTY(libCVode CVode LOCATION)
+GET_FILENAME_COMPONENT(libCVodeName ${libCVode} NAME)
+GET_TARGET_PROPERTY(libIdas Idas LOCATION)
+GET_FILENAME_COMPONENT(libIdasName ${libIdas} NAME)
+set (IDAS_LIB ${libIdasName})
+set (CVODE_LIB ${libCVodeName})
+
+endIf()
 
 GET_TARGET_PROPERTY(libNewton Newton LOCATION)
 GET_FILENAME_COMPONENT(libNewtonName ${libNewton} NAME) 
 
 GET_TARGET_PROPERTY(libEuler Euler LOCATION)
 GET_FILENAME_COMPONENT(libEulerName ${libEuler} NAME)
+
+
 
 GET_TARGET_PROPERTY(libSetFactory SettingsFactory LOCATION)
 GET_FILENAME_COMPONENT(libSetFactoryName ${libSetFactory} NAME)
@@ -75,8 +140,18 @@ configure_file (
   "${PROJECT_BINARY_DIR}/LibrariesConfig.h"
   )
 
-  
+message(STATUS  ${SUNDIALS_CVODES_LIB})
+if(USE_SUNDIALS)
+	install (FILES "${SUNDIALS_NVECSERIAL_LIB}"  "${SUNDIALS_IDAS_LIB}"  "${SUNDIALS_CVODES_LIB}" DESTINATION bin)
+endif()
 
+if(USE_MICO)
+	install (FILES "${MICO_LIBRARY}"   DESTINATION bin)
+endif()
+
+install (FILES "${Boost_LIBRARIES}"   DESTINATION bin)
 install (FILES "${PROJECT_BINARY_DIR}/LibrariesConfig.h" DESTINATION bin)
 install (FILES "DataExchange/Interfaces/IHistory.h" 
   DESTINATION include/omc/cpp/DataExchange/Interfaces)
+  
+  

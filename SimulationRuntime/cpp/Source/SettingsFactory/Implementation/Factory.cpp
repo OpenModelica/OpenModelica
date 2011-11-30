@@ -26,14 +26,15 @@ tuple<boost::shared_ptr<IGlobalSettings>,boost::shared_ptr<ISolverSettings> > Se
 	_global_settings->load("config//GlobalSettings.xml");
 	std::string solver_dll;
 	//Load solver dll
+	
 	if(_global_settings->getSelectedSolver().compare("Euler")==0)
 		solver_dll.assign(EULER_LIB);
+	else if(_global_settings->getSelectedSolver().compare("Idas")==0)
+		solver_dll.assign(IDAS_LIB);
+	else if(_global_settings->getSelectedSolver().compare("CVode")==0)
+		solver_dll.assign(CVODE_LIB);
 	else
 		throw std::invalid_argument("Selected Solver is not available");
-	
-	//solver_dll.assign("Idas.dll");
-	//solver_dll.assign("CVODE.dll");
-
 	string settings = _global_settings->getSelectedSolver().append("Settings");
 	string settings_file ="config//";
 	settings_file.append(

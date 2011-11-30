@@ -34,8 +34,12 @@ files to you boost header files folder.
 To generate the build files for out-of-source build call cmake from the build folder: trunk/SimulationRuntime/cpp/build :
 cmake -G "your generator" -D  CMAKE_INSTALL_PREFIX:PATH="Insall directory" MAKE_CXX_COMPILER=g++ folder to project source dir
 
+
 e.g for MinGW and Windwos (you need the mingw/bin dir in you path environment variable)
 cmake -G "MinGW Makefiles" -D  CMAKE_INSTALL_PREFIX:PATH="C:/OpenModelica/build" MAKE_CXX_COMPILER=g++ C:/OpenModelica/SimulationRuntime/cpp/Source
+or
+cmake -G "Visual Studio 10" -D  CMAKE_INSTALL_PREFIX:PATH="C:/OpenModelica/build"   C:/OpenModelica/SimulationRuntime/cpp/Source
+
 after that you can call
 make install
 e.g. 

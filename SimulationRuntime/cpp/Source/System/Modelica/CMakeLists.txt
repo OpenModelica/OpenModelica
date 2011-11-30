@@ -4,7 +4,7 @@ project(Modelica)
 
 add_library(Modelica SHARED ModelicaSystem.cpp )
 
-target_link_libraries (Modelica  System)
+target_link_libraries (Modelica  System ModelicaExternalC)
 
 
 GET_TARGET_PROPERTY(libModelicaSystem Modelica LOCATION)
