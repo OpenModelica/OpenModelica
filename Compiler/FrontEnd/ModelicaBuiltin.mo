@@ -1650,6 +1650,19 @@ function getNthAlgorithm "Returns the Nth Algorithm section"
 external "builtin";
 end getNthAlgorithm;
 
+function getInitialAlgorithmCount "Counts the number of Initial Algorithm sections in a class"
+  input TypeName class_;
+  output Integer count;
+external "builtin";
+end getInitialAlgorithmCount;
+
+function getNthInitialAlgorithm "Returns the Nth Initial Algorithm section"
+  input TypeName class_;
+  input Integer index;
+  output String result;
+external "builtin";
+end getNthInitialAlgorithm;
+
 function getEquationCount "Counts the number of Equation sections in a class"
   input TypeName class_;
   output Integer count;
@@ -1662,6 +1675,19 @@ function getNthEquation "Returns the Nth Equation section"
   output String result;
 external "builtin";
 end getNthEquation;
+
+function getInitialEquationCount "Counts the number of Initial Equation sections in a class"
+  input TypeName class_;
+  output Integer count;
+external "builtin";
+end getInitialEquationCount;
+
+function getNthInitialEquation "Returns the Nth Initial Equation section"
+  input TypeName class_;
+  input Integer index;
+  output String result;
+external "builtin";
+end getNthInitialEquation;
 
 end Scripting;
 

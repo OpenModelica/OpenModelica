@@ -1957,6 +1957,24 @@ algorithm
     
     case (cache,env,"getNthAlgorithm",_,st,msg) then (cache,Values.STRING(""),st);
       
+    case (cache,env,"getInitialAlgorithmCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+      equation
+        absynClass = Interactive.getPathedClassInProgram(path, p);
+        n = listLength(getInitialAlgorithms(absynClass));
+      then
+        (cache,Values.INTEGER(n),st);
+    
+    case (cache,env,"getInitialAlgorithmCount",_,st,msg) then (cache,Values.INTEGER(0),st);
+      
+    case (cache,env,"getNthInitialAlgorithm",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+      equation
+        absynClass = Interactive.getPathedClassInProgram(path, p);
+        str = getNthInitialAlgorithm(absynClass, n);
+      then
+        (cache,Values.STRING(str),st);
+    
+    case (cache,env,"getNthInitialAlgorithm",_,st,msg) then (cache,Values.STRING(""),st);
+      
     case (cache,env,"getEquationCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
@@ -1974,6 +1992,24 @@ algorithm
         (cache,Values.STRING(str),st);
     
     case (cache,env,"getNthEquation",_,st,msg) then (cache,Values.STRING(""),st);
+      
+    case (cache,env,"getInitialEquationCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+      equation
+        absynClass = Interactive.getPathedClassInProgram(path, p);
+        n = listLength(getInitialEquations(absynClass));
+      then
+        (cache,Values.INTEGER(n),st);
+    
+    case (cache,env,"getInitialEquationCount",_,st,msg) then (cache,Values.INTEGER(0),st);
+      
+    case (cache,env,"getNthInitialEquation",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+      equation
+        absynClass = Interactive.getPathedClassInProgram(path, p);
+        str = getNthInitialEquation(absynClass, n);
+      then
+        (cache,Values.STRING(str),st);
+    
+    case (cache,env,"getNthInitialEquation",_,st,msg) then (cache,Values.STRING(""),st);
                 
         /* plotparametric This rule represents the normal case when an array of at least two elements
          *  is given as an argument
@@ -4319,6 +4355,8 @@ algorithm
 end getAlgorithmsInClassParts;
 
 protected function getNthAlgorithm
+"function: getNthAlgorithm
+  Returns the Nth Algorithm section from a class."
   input Absyn.Class inClass;
   input Integer inInteger;
   output String outString;
@@ -4329,6 +4367,8 @@ algorithm
 end getNthAlgorithm;
 
 protected function getNthAlgorithmInClass
+"function: getNthAlgorithmInClass
+  Helper function to getNthAlgorithm."
   input Absyn.ClassPart inClassPart;
   output String outString;
 algorithm
@@ -4338,11 +4378,92 @@ algorithm
       list<Absyn.AlgorithmItem> algs;
   case (Absyn.ALGORITHMS(contents = algs))
       equation
-        str = Dump.unparseAlgorithmStrLst(1, algs, "\n");
+        str = Dump.unparseAlgorithmStrLst(0, algs, "\n");
       then
         str;
   end match; 
 end getNthAlgorithmInClass;
+
+protected function getInitialAlgorithms
+"function: getInitialAlgorithms
+  Counts the number of Initial Algorithm sections in a class."
+  input Absyn.Class inClass;
+  output list<Absyn.ClassPart> outList;
+algorithm
+  outList := match (inClass)
+    local
+      list<Absyn.ClassPart> algsList;
+      list<Absyn.ClassPart> parts;
+    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
+      equation
+        algsList = getInitialAlgorithmsInClassParts(parts);
+      then
+        algsList;
+    // check also the case model extends X end X;
+    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
+      equation
+        algsList = getInitialAlgorithmsInClassParts(parts);
+      then
+        algsList;
+    case Absyn.CLASS(body = Absyn.DERIVED(typeSpec = _)) then {};
+  end match;
+end getInitialAlgorithms;
+
+protected function getInitialAlgorithmsInClassParts
+"function: getInitialAlgorithmsInClassParts
+  Helper function to getInitialAlgorithms"
+  input list<Absyn.ClassPart> inAbsynClassPartLst;
+  output list<Absyn.ClassPart> outList;
+algorithm
+  outList := matchcontinue (inAbsynClassPartLst)
+    local
+      list<Absyn.ClassPart> algsList;
+      list<Absyn.AlgorithmItem> algs;
+      list<Absyn.ClassPart> xs;
+      Absyn.ClassPart cp;
+    case ((cp as Absyn.INITIALALGORITHMS(contents = algs)) :: xs)
+      equation
+        algsList = getInitialAlgorithmsInClassParts(xs);
+      then
+        cp::algsList;
+    case ((_ :: xs))
+      equation
+        algsList = getInitialAlgorithmsInClassParts(xs);
+      then
+        algsList;
+    case ({}) then {};
+  end matchcontinue;
+end getInitialAlgorithmsInClassParts;
+
+protected function getNthInitialAlgorithm
+"function: getNthInitialAlgorithm
+  Returns the Nth Initial Algorithm section from a class."
+  input Absyn.Class inClass;
+  input Integer inInteger;
+  output String outString;
+  protected list<Absyn.ClassPart> algsList;
+algorithm
+  algsList := getInitialAlgorithms(inClass);
+  outString := getNthInitialAlgorithmInClass(listGet(algsList, inInteger));
+end getNthInitialAlgorithm;
+
+protected function getNthInitialAlgorithmInClass
+"function: getNthInitialAlgorithmInClass
+  Helper function to getNthInitialAlgorithm."
+  input Absyn.ClassPart inClassPart;
+  output String outString;
+algorithm
+  outString := match (inClassPart)
+    local
+      String str;
+      list<Absyn.AlgorithmItem> algs;
+  case (Absyn.INITIALALGORITHMS(contents = algs))
+      equation
+        str = Dump.unparseAlgorithmStrLst(0, algs, "\n");
+      then
+        str;
+  end match; 
+end getNthInitialAlgorithmInClass;
 
 protected function getEquations
 "function: getEquations
@@ -4396,6 +4517,8 @@ algorithm
 end getEquationsInClassParts;
 
 protected function getNthEquation
+"function: getNthEquation
+  Returns the Nth Equation section from a class."
   input Absyn.Class inClass;
   input Integer inInteger;
   output String outString;
@@ -4406,6 +4529,8 @@ algorithm
 end getNthEquation;
 
 protected function getNthEquationInClass
+"function: getNthEquationInClass
+  Helper function to getNthEquation"
   input Absyn.ClassPart inClassPart;
   output String outString;
 algorithm
@@ -4415,10 +4540,91 @@ algorithm
       list<Absyn.EquationItem> eqs;
   case (Absyn.EQUATIONS(contents = eqs))
       equation
-        str = Dump.unparseEquationitemStrLst(1, eqs, "\n");
+        str = Dump.unparseEquationitemStrLst(0, eqs, ";\n");
       then
         str;
   end match; 
 end getNthEquationInClass;
+
+protected function getInitialEquations
+"function: getInitialEquations
+  Counts the number of Initial Equation sections in a class."
+  input Absyn.Class inClass;
+  output list<Absyn.ClassPart> outList;
+algorithm
+  outList := match (inClass)
+    local
+      list<Absyn.ClassPart> eqsList;
+      list<Absyn.ClassPart> parts;
+    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
+      equation
+        eqsList = getInitialEquationsInClassParts(parts);
+      then
+        eqsList;
+    // check also the case model extends X end X;
+    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
+      equation
+        eqsList = getInitialEquationsInClassParts(parts);
+      then
+        eqsList;
+    case Absyn.CLASS(body = Absyn.DERIVED(typeSpec = _)) then {};
+  end match;
+end getInitialEquations;
+
+protected function getInitialEquationsInClassParts
+"function: getInitialEquationsInClassParts
+  Helper function to getInitialEquations"
+  input list<Absyn.ClassPart> inAbsynClassPartLst;
+  output list<Absyn.ClassPart> outList;
+algorithm
+  outList := matchcontinue (inAbsynClassPartLst)
+    local
+      list<Absyn.ClassPart> eqsList;
+      list<Absyn.EquationItem> eqs;
+      list<Absyn.ClassPart> xs;
+      Absyn.ClassPart cp;
+    case ((cp as Absyn.INITIALEQUATIONS(contents = eqs)) :: xs)
+      equation
+        eqsList = getInitialEquationsInClassParts(xs);
+      then
+        cp::eqsList;
+    case ((_ :: xs))
+      equation
+        eqsList = getInitialEquationsInClassParts(xs);
+      then
+        eqsList;
+    case ({}) then {};
+  end matchcontinue;
+end getInitialEquationsInClassParts;
+
+protected function getNthInitialEquation
+"function: getNthInitialEquation
+  Returns the Nth Initial Equation section from a class."
+  input Absyn.Class inClass;
+  input Integer inInteger;
+  output String outString;
+  protected list<Absyn.ClassPart> eqsList;
+algorithm
+  eqsList := getInitialEquations(inClass);
+  outString := getNthInitialEquationInClass(listGet(eqsList, inInteger));
+end getNthInitialEquation;
+
+protected function getNthInitialEquationInClass
+"function: getNthInitialEquationInClass
+  Helper function to getNthInitialEquation."
+  input Absyn.ClassPart inClassPart;
+  output String outString;
+algorithm
+  outString := match (inClassPart)
+    local
+      String str;
+      list<Absyn.EquationItem> eqs;
+  case (Absyn.INITIALEQUATIONS(contents = eqs))
+      equation
+        str = Dump.unparseEquationitemStrLst(0, eqs, ";\n");
+      then
+        str;
+  end match; 
+end getNthInitialEquationInClass;
 
 end CevalScript;
