@@ -11619,6 +11619,24 @@ algorithm
   end matchcontinue;
 end getUsesAnnotation;
 
+public function getUsesAnnotationOrDefault
+"function: getUsesAnnotationOrDefault
+  This function takes a Path and a Program and returns a comma separated
+  string of values for the Documentation annotation for the class named by the
+  first argument."
+  input Absyn.Program p;
+  output list<tuple<Absyn.Path,list<String>>> usesStr;
+protected
+  list<Absyn.Path> paths;
+  list<list<String>> strs;
+algorithm
+  usesStr := getUsesAnnotation(p);
+  paths := List.map(usesStr,Util.tuple21);
+  strs := List.map(usesStr,Util.tuple22);
+  strs := List.map1(strs,listAppend,{"default"});
+  usesStr := List.threadTuple(paths,strs);
+end getUsesAnnotationOrDefault;
+
 protected function getUsesAnnotationString
   input Option<Absyn.Modification> mod;
   output list<tuple<Absyn.Path,list<String>>> usesStr;

@@ -601,7 +601,7 @@ algorithm
         b = checkModelLoaded(path,strings,p,forceLoad);
         pnew = Debug.bcallret3(not b, ClassLoader.loadClass, path, strings, modelicaPath, Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp));
         p = Interactive.updateProgram(pnew, p);
-        (p,b1) = loadModel(Interactive.getUsesAnnotation(pnew),modelicaPath,p,false);
+        (p,b1) = loadModel(Interactive.getUsesAnnotationOrDefault(pnew),modelicaPath,p,false);
         (p,b2) = loadModel(modelsToLoad,modelicaPath,p,forceLoad);
       then (p,b1 and b2);
     case ((path,strings)::_,modelicaPath,p,_)
@@ -626,7 +626,7 @@ algorithm
       String str1,str2;
       Option<String> ostr2;
     case (_,_,_,true) then false;
-    case (path,{str1},p,false)
+    case (path,{str1,_},p,false)
       equation
         cdef = Interactive.getPathedClassInProgram(path,p);
         ostr2 = Interactive.getNamedAnnotationInClass(cdef,"version",Interactive.getAnnotationStringValueOrFail);
