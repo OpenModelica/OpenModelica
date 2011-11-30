@@ -2148,51 +2148,41 @@ protected function cevalBuiltinCardinality "function: cevalBuiltinCardinality
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<Interactive.SymbolTable> inST;
   input Msg inMsg;
   output Env.Cache outCache;
   output Values.Value outValue;
-  output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
+  output Option<Interactive.SymbolTable> outST;
+protected
+  DAE.Exp exp;
 algorithm
-  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
-  match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
-    local
-      Integer cnt;
-      list<Env.Frame> env;
-      DAE.ComponentRef cr;
-      Boolean impl;
-      Option<Interactive.SymbolTable> st;
-      Msg msg;
-      Env.Cache cache;
-    case (cache,env,{DAE.CREF(componentRef = cr)},impl,st,msg)
-      equation
-        (cache,cnt) = cevalCardinality(cache,env, cr);
-      then
-        (cache,Values.INTEGER(cnt),st);
-  end match;
+  outCache := inCache;
+  outST := inST;
+  {exp} := inExpExpLst;
+  outValue := cevalCardinality(exp, inEnv);
 end cevalBuiltinCardinality;
 
 protected function cevalCardinality "function: cevalCardinality
   author: PA
   counts the number of connect occurences of the
   component ref in equations in current scope."
-  input Env.Cache inCache;
+  input DAE.Exp inExp;
   input Env.Env inEnv;
-  input DAE.ComponentRef inComponentRef;
-  output Env.Cache outCache;
-  output Integer outInteger;
+  output Values.Value outValue;
 algorithm
-  (outCache,outInteger) :=
-  match (inCache,inEnv,inComponentRef)
+  outValue := match(inExp, inEnv)
     local
       Env.Env env;
       list<DAE.ComponentRef> cr_lst,cr_lst2,cr_totlst,crs;
-      Integer res;
+      Integer res, dim;
       DAE.ComponentRef cr;
       Env.Cache cache;
       DAE.ComponentRef prefix,currentPrefix;
       Absyn.Ident currentPrefixIdent;
-    case (cache,env ,cr)
+      list<DAE.Exp> expl;
+      list<Values.Value> vals;
+
+    case (DAE.CREF(componentRef = cr), env)
       equation
         (env as (Env.FRAME(connectionSet = (crs,prefix))::_)) = Env.stripForLoopScope(env);
         cr_lst = List.select1(crs, ComponentReference.crefContainedIn, cr);
@@ -2216,7 +2206,15 @@ algorithm
          print("prefix =");print(ComponentReference.printComponentRefStr(prefix));print("\n");*/
        //  print("env:");print(Env.printEnvStr(env));
       then
-        (cache,res);
+        Values.INTEGER(res);
+
+    case (DAE.ARRAY(array = expl), _)
+      equation
+        vals = List.map1(expl, cevalCardinality, inEnv);
+        dim = listLength(vals);
+      then
+        Values.ARRAY(vals, {dim});
+
   end match;
 end cevalCardinality;
 

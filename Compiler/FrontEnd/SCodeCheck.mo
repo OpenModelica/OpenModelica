@@ -339,7 +339,6 @@ algorithm
         ty = "component";
         checkRedeclarationReplaceable(name, ty, repl, inInfo, info);
         checkRedeclarationFinal(name, ty, fin, inInfo, info);
-        checkRedeclarationVisibility(name, ty, vis, inInfo, info);
         checkRedeclarationVariability(name, ty, var, inInfo, info);
         true = intEq(err_count, Error.getNumErrorMessages());
       then
@@ -358,7 +357,6 @@ algorithm
         ty = SCodeDump.restrictionStringPP(res);
         checkRedeclarationReplaceable(name, ty, repl, inInfo, info);
         checkRedeclarationFinal(name, ty, fin, inInfo, info);
-        checkRedeclarationVisibility(name, ty, vis, inInfo, info);
         true = intEq(err_count, Error.getNumErrorMessages());
       then
         ();
@@ -387,29 +385,6 @@ algorithm
         ();
   end match;
 end checkRedeclarationReplaceable;
-
-protected function checkRedeclarationVisibility
-  input SCode.Ident inName;
-  input String inType;
-  input SCode.Visibility inVisibility;
-  input Absyn.Info inOriginInfo;
-  input Absyn.Info inInfo;
-algorithm
-  _ := match(inName, inType, inVisibility, inOriginInfo, inInfo)
-    local
-      String err_str;
-    
-    case (_, _, SCode.PROTECTED(), _, _)
-      equation
-        err_str = "protected " +& inType +& " " +& inName;
-        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
-        Error.addSourceMessage(Error.INVALID_REDECLARE, {err_str}, inInfo);
-      then
-        ();
-
-    case (_, _, SCode.PUBLIC(), _, _) then ();
-  end match;
-end checkRedeclarationVisibility;
 
 protected function checkRedeclarationFinal
   input SCode.Ident inName;

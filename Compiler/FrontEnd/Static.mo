@@ -2939,12 +2939,14 @@ algorithm
       Env.Cache cache;
       Prefix.Prefix pre;
     
-    case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl,pre,info)
+    case (cache, env, {exp}, _, impl, pre, info)
       equation
-        (cache,(exp_1 as DAE.CREF(cr_1,_)),DAE.PROP(tp1,_),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
-        exp_1 = Expression.makeBuiltinCall("cardinality", {exp_1}, DAE.T_INTEGER_DEFAULT);
+        (cache, exp_1, DAE.PROP(tp1, _), _) = 
+          elabExp(cache, env, exp, impl, NONE(), true, pre, info);
+        tp1 = Types.liftArrayListDims(DAE.T_INTEGER_DEFAULT, Types.getDimensions(tp1));
+        exp_1 = Expression.makeBuiltinCall("cardinality", {exp_1}, tp1);
       then
-        (cache, exp_1, DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_CONST()));
+        (cache, exp_1, DAE.PROP(tp1, DAE.C_CONST()));
   end match;
 end elabBuiltinCardinality;
 
