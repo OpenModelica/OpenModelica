@@ -156,14 +156,14 @@ package SimCode
   uniontype Variable
     record VARIABLE
       DAE.ComponentRef name;
-      DAE.ExpType ty;
+      DAE.Type ty;
       Option<DAE.Exp> value;
       list<DAE.Exp> instDims;
     end VARIABLE;  
 
     record FUNCTION_PTR
       String name;
-      list<DAE.ExpType> tys;
+      list<DAE.Type> tys;
       list<Variable> args;
     end FUNCTION_PTR;
   end Variable;
@@ -320,7 +320,7 @@ package SimCode
       Option<DAE.Exp> initialValue;
       Option<DAE.Exp> nominalValue;
       Boolean isFixed;
-      DAE.ExpType type_;
+      DAE.Type type_;
       Boolean isDiscrete;
       Option<DAE.ComponentRef> arrayCref;
       AliasVariable aliasvar;
@@ -398,17 +398,17 @@ package SimCode
       Integer outputIndex;
       Boolean isArray;
       Boolean hasBinding;
-      DAE.ExpType type_;
+      DAE.Type type_;
     end SIMEXTARG;
     record SIMEXTARGEXP
       DAE.Exp exp;
-      DAE.ExpType type_;
+      DAE.Type type_;
     end SIMEXTARGEXP;
     record SIMEXTARGSIZE
       DAE.ComponentRef cref;
       Boolean isInput;
       Integer outputIndex;
-      DAE.ExpType type_;
+      DAE.Type type_;
       DAE.Exp exp;
     end SIMEXTARGSIZE;
     record SIMNOEXTARG end SIMNOEXTARG;
@@ -462,7 +462,7 @@ package SimCode
 
   function makeCrefRecordExp
     input DAE.ComponentRef inCRefRecord;
-    input DAE.ExpVar inVar;
+    input DAE.Var inVar;
     output DAE.Exp outExp;
   end makeCrefRecordExp;
    
@@ -550,17 +550,17 @@ end SimCode;
 
 package BackendDAE
 
-  uniontype VarKind "- Variable kind"
-    record VARIABLE end VARIABLE;
-    record STATE end STATE;
-    record STATE_DER end STATE_DER;
-    record DUMMY_DER end DUMMY_DER;
-    record DUMMY_STATE end DUMMY_STATE;
-    record DISCRETE end DISCRETE;
-    record PARAM end PARAM;
-    record CONST end CONST;
-    record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
-  end VarKind;
+	uniontype VarKind "- Variabile kind"
+	  record VARIABLE end VARIABLE;
+	  record STATE end STATE;
+	  record STATE_DER end STATE_DER;
+	  record DUMMY_DER end DUMMY_DER;
+	  record DUMMY_STATE end DUMMY_STATE;
+	  record DISCRETE end DISCRETE;
+	  record PARAM end PARAM;
+	  record CONST end CONST;
+	  record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
+	end VarKind;
 
   uniontype ZeroCrossing
     record ZERO_CROSSING
@@ -595,10 +595,6 @@ package BackendDAE
       Option<WhenEquation> elsewhenPart;
     end WHEN_EQ;
   end WhenEquation;
-
-  uniontype VarKind
-    record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
-  end VarKind;
   
 end BackendDAE;
 
@@ -729,44 +725,22 @@ end Absyn;
 
 package DAE
 
-  type Type = tuple<TType, Option<Absyn.Path>>;
   type Ident = String;
+    
+	uniontype VarKind
+	  record VARIABLE "variable" end VARIABLE;
+	  record DISCRETE "discrete" end DISCRETE;
+	  record PARAM "parameter"   end PARAM;
+	  record CONST "constant"    end CONST;
+	  
+	  // back-end dae variable kinds  
+	  record STATE end STATE;
+	  record STATE_DER end STATE_DER;
+	  record DUMMY_DER end DUMMY_DER;
+	  record DUMMY_STATE end DUMMY_STATE;
+	  record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
+	end VarKind;
 
-  uniontype ExpType
-    record ET_INT end ET_INT;
-    record ET_REAL end ET_REAL;
-    record ET_BOOL end ET_BOOL;
-    record ET_STRING end ET_STRING;
-    record ET_ENUMERATION
-      Absyn.Path path;
-      list<String> names;
-      list<ExpVar> varLst;
-    end ET_ENUMERATION;
-    record ET_COMPLEX
-      Absyn.Path name;
-      list<ExpVar> varLst; 
-      ClassInf.State complexClassType;
-    end ET_COMPLEX;
-    record ET_OTHER end ET_OTHER;
-    record ET_ARRAY
-      ExpType ty;
-      list<DAE.Dimension> arrayDimensions;
-    end ET_ARRAY;
-    record ET_METATYPE end ET_METATYPE;
-    record ET_BOXED ExpType ty; end ET_BOXED;
-    record ET_FUNCTION_REFERENCE_VAR end ET_FUNCTION_REFERENCE_VAR;
-    record ET_FUNCTION_REFERENCE_FUNC
-      Boolean builtin;
-    end ET_FUNCTION_REFERENCE_FUNC;
-    record ET_NORETCALL end ET_NORETCALL;
-  end ExpType;
-
-  uniontype ExpVar
-    record COMPLEX_VAR
-      String name;
-      ExpType tp;
-    end COMPLEX_VAR;
-  end ExpVar;
 
   uniontype Exp
     record ICONST
@@ -787,7 +761,7 @@ package DAE
     end ENUM_LITERAL;
     record CREF
       ComponentRef componentRef;
-      ExpType ty;
+      Type ty;
     end CREF;
     record BINARY
       Exp exp1;
@@ -825,17 +799,17 @@ package DAE
       CallAttributes attr;
     end CALL;
     record ARRAY
-      ExpType ty;
+      Type ty;
       Boolean scalar;
       list<Exp> array;
     end ARRAY;
     record MATRIX
-      ExpType ty;
+      Type ty;
       Integer integer;
       list<list<Exp>> matrix;
     end MATRIX;
     record RANGE
-      ExpType ty;
+      Type ty;
       Exp exp;
       Option<Exp> expOption;
       Exp range;
@@ -844,7 +818,7 @@ package DAE
       list<Exp> PR;
     end TUPLE;
     record CAST
-      ExpType ty;
+      Type ty;
       Exp exp;
     end CAST;
     record ASUB
@@ -854,7 +828,7 @@ package DAE
     record TSUB
       Exp exp;
       Integer index;
-      ExpType ty;
+      Type ty;
     end TSUB;
     record SIZE
       Exp exp;
@@ -862,7 +836,7 @@ package DAE
     end SIZE;
     record CODE
       Absyn.CodeNode code;
-      ExpType ty;
+      Type ty;
     end CODE;
     record REDUCTION
       ReductionInfo reductionInfo;
@@ -893,18 +867,18 @@ package DAE
       list<Exp> inputs;
       list<Element> localDecls;
       list<MatchCase> cases;
-      ExpType et;
+      Type et;
     end MATCHEXPRESSION;
     record BOX
       Exp exp;
     end BOX;
     record UNBOX
       Exp exp;
-      ExpType ty;
+      Type ty;
     end UNBOX;
     record SHARED_LITERAL
       Integer index;
-      ExpType ty;
+      Type ty;
     end SHARED_LITERAL;
     record PATTERN
       Pattern pattern;
@@ -913,7 +887,7 @@ package DAE
   
   uniontype CallAttributes
     record CALL_ATTR
-      ExpType ty "The type of the return value, if several return values this is undefined";
+      Type ty "The type of the return value, if several return values this is undefined";
       Boolean tuple_ "tuple" ;
       Boolean builtin "builtin Function call" ;
       InlineType inlineType;
@@ -956,12 +930,12 @@ package DAE
     record PAT_WILD "_"
     end PAT_WILD;
     record PAT_CONSTANT "compare to this constant value using equality"
-      Option<ExpType> ty "so we can unbox if needed";
+      Option<Type> ty "so we can unbox if needed";
       Exp exp;
     end PAT_CONSTANT;
     record PAT_AS "id as pat"
       String id;
-      Option<ExpType> ty;
+      Option<Type> ty;
       Pattern pat;
     end PAT_AS;
     record PAT_AS_FUNC_PTR "id as pat"
@@ -986,7 +960,7 @@ package DAE
     end PAT_CALL;
     record PAT_CALL_NAMED "RECORD(pat1,...,patn); all patterns are named"
       Absyn.Path name;
-      list<tuple<Pattern,String,ExpType>> patterns;
+      list<tuple<Pattern,String,Type>> patterns;
     end PAT_CALL_NAMED;
     record PAT_SOME "SOME(pat)"
       Pattern pat;
@@ -996,13 +970,13 @@ package DAE
   uniontype ComponentRef
     record CREF_QUAL
       Ident ident;
-      ExpType identType;
+      Type identType;
       list<Subscript> subscriptLst;
       ComponentRef componentRef;
     end CREF_QUAL;
     record CREF_IDENT
       Ident ident;
-      ExpType identType;
+      Type identType;
       list<Subscript> subscriptLst;
     end CREF_IDENT;
     record WILD end WILD;
@@ -1010,97 +984,97 @@ package DAE
 
   uniontype Operator
     record ADD
-      ExpType ty;
+      Type ty;
     end ADD;
     record SUB
-      ExpType ty;
+      Type ty;
     end SUB;
     record MUL
-      ExpType ty;
+      Type ty;
     end MUL;
     record DIV
-      ExpType ty;
+      Type ty;
     end DIV;
     record POW
-      ExpType ty;
+      Type ty;
     end POW;
     record UMINUS
-      ExpType ty;
+      Type ty;
     end UMINUS;
     record UMINUS_ARR
-      ExpType ty;
+      Type ty;
     end UMINUS_ARR;
     record ADD_ARR
-      ExpType ty;
+      Type ty;
     end ADD_ARR;
     record SUB_ARR
-      ExpType ty;
+      Type ty;
     end SUB_ARR;
     record MUL_ARR
-      ExpType ty;
+      Type ty;
     end MUL_ARR;
     record DIV_ARR
-      ExpType ty;
+      Type ty;
     end DIV_ARR;
     record MUL_ARRAY_SCALAR
-      ExpType ty;
+      Type ty;
     end MUL_ARRAY_SCALAR;
     record ADD_ARRAY_SCALAR
-      ExpType ty;
+      Type ty;
     end ADD_ARRAY_SCALAR;
     record SUB_SCALAR_ARRAY
-      ExpType ty;
+      Type ty;
     end SUB_SCALAR_ARRAY;
     record MUL_SCALAR_PRODUCT
-      ExpType ty;
+      Type ty;
     end MUL_SCALAR_PRODUCT;
     record MUL_MATRIX_PRODUCT
-      ExpType ty;
+      Type ty;
     end MUL_MATRIX_PRODUCT;
     record DIV_ARRAY_SCALAR
-      ExpType ty;
+      Type ty;
     end DIV_ARRAY_SCALAR;
     record DIV_SCALAR_ARRAY
-      ExpType ty;
+      Type ty;
     end DIV_SCALAR_ARRAY;
     record POW_ARRAY_SCALAR
-      ExpType ty;
+      Type ty;
     end POW_ARRAY_SCALAR;
     record POW_SCALAR_ARRAY
-      ExpType ty;
+      Type ty;
     end POW_SCALAR_ARRAY;
     record POW_ARR
-      ExpType ty;
+      Type ty;
     end POW_ARR;
     record POW_ARR2
-      ExpType ty;
+      Type ty;
     end POW_ARR2;
     record AND 
-      ExpType ty;
+      Type ty;
     end AND;
     record OR 
-      ExpType ty;
+      Type ty;
     end OR;
     record NOT 
-      ExpType ty;
+      Type ty;
     end NOT;
     record LESS
-      ExpType ty;
+      Type ty;
     end LESS;
     record LESSEQ
-      ExpType ty;
+      Type ty;
     end LESSEQ;
     record GREATER
-      ExpType ty;
+      Type ty;
     end GREATER;
     record GREATEREQ
-      ExpType ty;
+      Type ty;
     end GREATEREQ;
     record EQUAL
-      ExpType ty;
+      Type ty;
     end EQUAL;
     record NEQUAL
-      ExpType ty;
+      Type ty;
     end NEQUAL;
     record USERDEFINED
       Absyn.Path fqName;
@@ -1109,19 +1083,19 @@ package DAE
   
   uniontype Statement
     record STMT_ASSIGN
-      ExpType type_;
+      Type type_;
       Exp exp1;
       Exp exp;
       ElementSource source;
     end STMT_ASSIGN;
     record STMT_ASSIGN_ARR
-      ExpType type_;
+      Type type_;
       ComponentRef componentRef;
       Exp exp;
       ElementSource source;
     end STMT_ASSIGN_ARR;
     record STMT_TUPLE_ASSIGN
-      ExpType type_;
+      Type type_;
       list<Exp> expExpLst;
       Exp exp;
       ElementSource source;
@@ -1133,7 +1107,7 @@ package DAE
       ElementSource source;
     end STMT_IF;
     record STMT_FOR
-      ExpType type_;
+      Type type_;
       Boolean iterIsArray;
       Ident iter;
       Exp range;
@@ -1209,41 +1183,166 @@ package DAE
     record TYPES_VAR
       Ident name;
       Attributes attributes;
-      Boolean protected_;
-      Type type_;
+      SCode.Visibility visibility;
+      Type ty;
       Binding binding;
     end TYPES_VAR;
   end Var;
 
-  uniontype TType
-    record T_INTEGER
-      list<Var> varLstInt;
-    end T_INTEGER;
-    record T_REAL
-      list<Var> varLstReal;
-    end T_REAL;
-    record T_STRING
-      list<Var> varLstString;
-    end T_STRING;
-    record T_BOOL
-      list<Var> varLstBool;
-    end T_BOOL;
-    record T_ARRAY
-      Dimension arrayDim;
-      Type arrayType;
-    end T_ARRAY;
-    record T_NORETCALL end T_NORETCALL;
-    record T_NOTYPE end T_NOTYPE;
-    record T_ANYTYPE
-      Option<ClassInf.State> anyClassType;
-    end T_ANYTYPE;
-    record T_COMPLEX
-      ClassInf.State complexClassType;
-      list<Var> complexVarLst;
-      Option<Type> complexTypeOption;
-      EqualityConstraint equalityConstraint;
-    end T_COMPLEX;
-  end TType;
+  type TypeSource = list<Absyn.Path> "the class(es) where the type originated";
+
+	uniontype Type "models the different front-end and back-end types"
+	  
+	  record T_INTEGER
+	    list<Var> varLst;
+	    TypeSource source;  
+	  end T_INTEGER;
+	
+	  record T_REAL
+	    list<Var> varLst;
+	    TypeSource source;
+	  end T_REAL;
+	
+	  record T_STRING
+	    list<Var> varLst;
+	    TypeSource source;
+	  end T_STRING;
+	
+	  record T_BOOL
+	    list<Var> varLst;
+	    TypeSource source;
+	  end T_BOOL;
+	
+	  record T_ENUMERATION "If the list of names is empty, this is the super-enumeration that is the super-class of all enumerations"
+	    Option<Integer> index "the enumeration value index, SOME for element, NONE() for type" ;
+	    Absyn.Path path "enumeration path" ;
+	    list<String> names "names" ;
+	    list<Var> literalVarLst;
+	    list<Var> attributeLst;
+	    TypeSource source;
+	  end T_ENUMERATION;
+	
+	  record T_ARRAY 
+	    "an array can be represented in two equivalent ways: 
+	       1. T_ARRAY(non_array_type, {dim1, dim2, dim3}) =  
+	       2. T_ARRAY(T_ARRAY(T_ARRAY(non_array_type, {dim1}), {dim2}), {dim3})
+	       In general Inst generates 1 and all the others generates 2"
+	    Type ty "Type";
+	    Dimensions dims "dims";
+	    TypeSource source;
+	  end T_ARRAY;
+	
+	  record T_NORETCALL "For functions not returning any values."
+	    TypeSource source; 
+	  end T_NORETCALL;
+	
+	  record T_UNKNOWN "Used when type is not yet determined"
+	    TypeSource source; 
+	  end T_UNKNOWN;
+	
+	  record T_COMPLEX
+	    ClassInf.State complexClassType "complexClassType ; The type of. a class" ;
+	    list<Var> varLst "complexVarLst ; The variables of a complex type" ;
+	    EqualityConstraint equalityConstraint;
+	    TypeSource source;
+	  end T_COMPLEX;
+	  
+	  record T_SUBTYPE_BASIC
+	    ClassInf.State complexClassType "complexClassType ; The type of. a class" ;
+	    list<Var> varLst "complexVarLst; The variables of a complex type! Should be empty, kept here to verify!";
+	    Type complexType "complexType; A complex type can be a subtype of another (primitive) type (through extends)";
+	    EqualityConstraint equalityConstraint;
+	    TypeSource source;
+	  end T_SUBTYPE_BASIC;
+	
+	  record T_FUNCTION
+	    list<FuncArg> funcArg "funcArg" ;
+	    Type funcResultType "funcResultType ; Only single-result" ;
+	    FunctionAttributes functionAttributes;
+	    TypeSource source;
+	  end T_FUNCTION;
+	  
+	  record T_FUNCTION_REFERENCE_VAR "MetaModelica Function Reference that is a variable"
+	    Type functionType "the type of the function";
+	    TypeSource source;
+	  end T_FUNCTION_REFERENCE_VAR;
+	  
+	  record T_FUNCTION_REFERENCE_FUNC "MetaModelica Function Reference that is a direct reference to a function"
+	    Boolean builtin;
+	    Type functionType "type of the non-boxptr function";
+	    TypeSource source;
+	  end T_FUNCTION_REFERENCE_FUNC;
+	  
+	  record T_TUPLE
+	    list<Type> tupleType "tupleType ; For functions returning multiple values.";
+	    TypeSource source;
+	  end T_TUPLE;
+	
+	  record T_CODE
+	    CodeType ty;
+	    TypeSource source;
+	  end T_CODE;
+	
+	  record T_ANYTYPE
+	    Option<ClassInf.State> anyClassType "anyClassType - used for generic types. When class state present the type is assumed to be a complex type which has that restriction.";
+	    TypeSource source;
+	  end T_ANYTYPE;
+	
+	  // MetaModelica extensions
+	  record T_METALIST "MetaModelica list type"
+	    Type listType "listType";
+	    TypeSource source;
+	  end T_METALIST;
+	
+	  record T_METATUPLE "MetaModelica tuple type"
+	    list<Type> types;
+	    TypeSource source;
+	  end T_METATUPLE;
+	
+	  record T_METAOPTION "MetaModelica option type"
+	    Type optionType;
+	    TypeSource source;
+	  end T_METAOPTION;
+	
+	  record T_METAUNIONTYPE "MetaModelica Uniontype, added by simbj"
+	    list<Absyn.Path> paths;
+	    Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
+	    TypeSource source;
+	  end T_METAUNIONTYPE;
+	
+	  record T_METARECORD "MetaModelica Record, used by Uniontypes. added by simbj"
+	    Absyn.Path utPath "the path to its uniontype; this is what we match the type against";
+	    // If the metarecord constructor was added to the FunctionTree, this would
+	    // not be needed. They are used to create the datatype in the runtime...
+	    Integer index; //The index in the uniontype
+	    list<Var> fields;
+	    Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
+	    TypeSource source;
+	  end T_METARECORD;
+	
+	  record T_METAARRAY
+	    Type ty;
+	    TypeSource source;
+	  end T_METAARRAY;
+	
+	  record T_METABOXED "Used for MetaModelica generic types"
+	    Type ty;
+	    TypeSource source;
+	  end T_METABOXED;
+	
+	  record T_METAPOLYMORPHIC
+	    String name;
+	    TypeSource source;
+	  end T_METAPOLYMORPHIC;
+	  
+	  record T_METATYPE "this type contains all the meta types"
+	    Type ty;
+	    TypeSource source;
+	  end T_METATYPE;
+	  
+	end Type;
+
+  type Dimensions = list<Dimension> "a list of dimensions";
 
   uniontype Dimension
     record DIM_INTEGER
@@ -1273,7 +1372,7 @@ package DAE
   uniontype MatchType
     record MATCHCONTINUE end MATCHCONTINUE;
     record MATCH
-      Option<tuple<Integer,ExpType,Integer>> switch;
+      Option<tuple<Integer,Type,Integer>> switch;
     end MATCH;
   end MatchType;
 
@@ -1400,6 +1499,11 @@ package ClassInf
       Absyn.Path path;
     end EXTERNAL_OBJ;
   end State;
+  
+  function getStateName
+    input State inState;
+    output Absyn.Path outPath;
+  end getStateName;
 
 end ClassInf;
 
@@ -1949,7 +2053,7 @@ package ComponentReference
 
   function crefLastType
     input DAE.ComponentRef inRef;
-    output DAE.ExpType res;
+    output DAE.Type res;
   end crefLastType;
 
 end ComponentReference;
@@ -1963,7 +2067,7 @@ package Expression
 
   function typeof
     input DAE.Exp inExp;
-    output DAE.ExpType outType;
+    output DAE.Type outType;
   end typeof;
 
   function isHalf
@@ -1982,7 +2086,7 @@ package Expression
   end flattenArrayExpToList;
 
   function isArrayType
-    input DAE.ExpType e;
+    input DAE.Type e;
     output Boolean b;
   end isArrayType;
 
@@ -1994,7 +2098,7 @@ package ExpressionDump
     output String s;
   end printExpStr;
   function typeString
-    input DAE.ExpType et;
+    input DAE.Type et;
     output String s;
   end typeString;
 end ExpressionDump;

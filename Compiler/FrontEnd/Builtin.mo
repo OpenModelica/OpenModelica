@@ -30,7 +30,7 @@
  */
 
 encapsulated package Builtin
-" file:         Builtin.mo
+" file:        Builtin.mo
   package:     Builtin
   description: Builting tyepes and variables
 
@@ -73,90 +73,51 @@ protected import Util;
 
 // Predefined DAE.Types
 // Real arrays
-protected constant DAE.Type T_REAL_ARRAY_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_UNKNOWN(), DAE.T_REAL_DEFAULT),NONE());
-protected constant DAE.Type T_REAL_ARRAY_1_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(1), DAE.T_REAL_DEFAULT),NONE());
-protected constant DAE.Type T_REAL_ARRAY_2_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(2), DAE.T_REAL_DEFAULT),NONE());
-protected constant DAE.Type T_REAL_ARRAY_3_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(3), DAE.T_REAL_DEFAULT),NONE());
-protected constant DAE.Type T_REAL_ARRAY_4_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(4), DAE.T_REAL_DEFAULT),NONE());
-protected constant DAE.Type T_REAL_ARRAY_5_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(5), DAE.T_REAL_DEFAULT),NONE());
-protected constant DAE.Type T_REAL_ARRAY_6_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(6), DAE.T_REAL_DEFAULT),NONE());
-protected constant DAE.Type T_REAL_ARRAY_7_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(7), DAE.T_REAL_DEFAULT),NONE());
-protected constant DAE.Type T_REAL_ARRAY_8_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(8), DAE.T_REAL_DEFAULT),NONE());
-protected constant DAE.Type T_REAL_ARRAY_9_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(9), DAE.T_REAL_DEFAULT),NONE());
+protected constant DAE.Type T_REAL_ARRAY_DEFAULT   = DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()},   DAE.emptyTypeSource);
+protected constant DAE.Type T_REAL_ARRAY_1_DEFAULT = DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_INTEGER(1)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_REAL_ARRAY_2_DEFAULT = DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_INTEGER(2)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_REAL_ARRAY_3_DEFAULT = DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_INTEGER(3)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_REAL_ARRAY_4_DEFAULT = DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_INTEGER(4)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_REAL_ARRAY_5_DEFAULT = DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_INTEGER(5)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_REAL_ARRAY_6_DEFAULT = DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_INTEGER(6)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_REAL_ARRAY_7_DEFAULT = DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_INTEGER(7)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_REAL_ARRAY_8_DEFAULT = DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_INTEGER(8)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_REAL_ARRAY_9_DEFAULT = DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_INTEGER(9)}, DAE.emptyTypeSource);
 
 // Integer arrays
-protected constant DAE.Type T_INT_ARRAY_1_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(1), DAE.T_INTEGER_DEFAULT),NONE());
-protected constant DAE.Type T_INT_ARRAY_2_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(2), DAE.T_INTEGER_DEFAULT),NONE());
-protected constant DAE.Type T_INT_ARRAY_3_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(3), DAE.T_INTEGER_DEFAULT),NONE());
-protected constant DAE.Type T_INT_ARRAY_4_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(4), DAE.T_INTEGER_DEFAULT),NONE());
-protected constant DAE.Type T_INT_ARRAY_5_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(5), DAE.T_INTEGER_DEFAULT),NONE());
-protected constant DAE.Type T_INT_ARRAY_6_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(6), DAE.T_INTEGER_DEFAULT),NONE());
-protected constant DAE.Type T_INT_ARRAY_7_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(7), DAE.T_INTEGER_DEFAULT),NONE());
-protected constant DAE.Type T_INT_ARRAY_8_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(8), DAE.T_INTEGER_DEFAULT),NONE());
-protected constant DAE.Type T_INT_ARRAY_9_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(9), DAE.T_INTEGER_DEFAULT),NONE());
+protected constant DAE.Type T_INT_ARRAY_1_DEFAULT = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(1)}, DAE.emptyTypeSource);  
+protected constant DAE.Type T_INT_ARRAY_2_DEFAULT = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(2)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_INT_ARRAY_3_DEFAULT = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(3)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_INT_ARRAY_4_DEFAULT = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(4)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_INT_ARRAY_5_DEFAULT = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(5)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_INT_ARRAY_6_DEFAULT = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(6)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_INT_ARRAY_7_DEFAULT = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(7)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_INT_ARRAY_8_DEFAULT = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(8)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_INT_ARRAY_9_DEFAULT = DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT, {DAE.DIM_INTEGER(9)}, DAE.emptyTypeSource);
 
 // Boolean array
-protected constant DAE.Type T_BOOL_ARRAY_1_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(1), DAE.T_BOOL_DEFAULT),NONE());
-protected constant DAE.Type T_BOOL_ARRAY_2_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(2), DAE.T_BOOL_DEFAULT),NONE());
-protected constant DAE.Type T_BOOL_ARRAY_3_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(3), DAE.T_BOOL_DEFAULT),NONE());
-protected constant DAE.Type T_BOOL_ARRAY_4_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(4), DAE.T_BOOL_DEFAULT),NONE());
-protected constant DAE.Type T_BOOL_ARRAY_5_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(5), DAE.T_BOOL_DEFAULT),NONE());
-protected constant DAE.Type T_BOOL_ARRAY_6_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(6), DAE.T_BOOL_DEFAULT),NONE());
-protected constant DAE.Type T_BOOL_ARRAY_7_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(7), DAE.T_BOOL_DEFAULT),NONE());
-protected constant DAE.Type T_BOOL_ARRAY_8_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(8), DAE.T_BOOL_DEFAULT),NONE());
-protected constant DAE.Type T_BOOL_ARRAY_9_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(9), DAE.T_BOOL_DEFAULT),NONE());
+protected constant DAE.Type T_BOOL_ARRAY_1_DEFAULT = DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_INTEGER(1)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_BOOL_ARRAY_2_DEFAULT = DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_INTEGER(2)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_BOOL_ARRAY_3_DEFAULT = DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_INTEGER(3)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_BOOL_ARRAY_4_DEFAULT = DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_INTEGER(4)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_BOOL_ARRAY_5_DEFAULT = DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_INTEGER(5)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_BOOL_ARRAY_6_DEFAULT = DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_INTEGER(6)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_BOOL_ARRAY_7_DEFAULT = DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_INTEGER(7)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_BOOL_ARRAY_8_DEFAULT = DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_INTEGER(8)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_BOOL_ARRAY_9_DEFAULT = DAE.T_ARRAY(DAE.T_BOOL_DEFAULT, {DAE.DIM_INTEGER(9)}, DAE.emptyTypeSource);
 
 // String arrays
-protected constant DAE.Type T_STRING_ARRAY_1_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(1), DAE.T_STRING_DEFAULT),NONE());
-protected constant DAE.Type T_STRING_ARRAY_2_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(2), DAE.T_STRING_DEFAULT),NONE());
-protected constant DAE.Type T_STRING_ARRAY_3_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(3), DAE.T_STRING_DEFAULT),NONE());
-protected constant DAE.Type T_STRING_ARRAY_4_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(4), DAE.T_STRING_DEFAULT),NONE());
-protected constant DAE.Type T_STRING_ARRAY_5_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(5), DAE.T_STRING_DEFAULT),NONE());
-protected constant DAE.Type T_STRING_ARRAY_6_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(6), DAE.T_STRING_DEFAULT),NONE());
-protected constant DAE.Type T_STRING_ARRAY_7_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(7), DAE.T_STRING_DEFAULT),NONE());
-protected constant DAE.Type T_STRING_ARRAY_8_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(8), DAE.T_STRING_DEFAULT),NONE());
-protected constant DAE.Type T_STRING_ARRAY_9_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(9), DAE.T_STRING_DEFAULT),NONE());
+protected constant DAE.Type T_STRING_ARRAY_1_DEFAULT = DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_INTEGER(1)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_STRING_ARRAY_2_DEFAULT = DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_INTEGER(2)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_STRING_ARRAY_3_DEFAULT = DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_INTEGER(3)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_STRING_ARRAY_4_DEFAULT = DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_INTEGER(4)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_STRING_ARRAY_5_DEFAULT = DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_INTEGER(5)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_STRING_ARRAY_6_DEFAULT = DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_INTEGER(6)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_STRING_ARRAY_7_DEFAULT = DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_INTEGER(7)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_STRING_ARRAY_8_DEFAULT = DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_INTEGER(8)}, DAE.emptyTypeSource);
+protected constant DAE.Type T_STRING_ARRAY_9_DEFAULT = DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_INTEGER(9)}, DAE.emptyTypeSource);
 
-protected constant DAE.Type T_NOTYPE_ARRAY_1_DEFAULT =
-  (DAE.T_ARRAY(DAE.DIM_INTEGER(1), (DAE.T_NOTYPE(),NONE())),NONE());
-
+protected constant DAE.Type T_UNKNOWN_ARRAY_1_DEFAULT = DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, {DAE.DIM_INTEGER(1)}, DAE.emptyTypeSource);
 
 public constant SCode.Prefixes commonPrefixes = 
   SCode.PREFIXES(
@@ -175,74 +136,74 @@ constant SCode.Attributes attrParam = SCode.ATTR({},SCode.NOT_FLOW(),SCode.NOT_S
   These are the primitive types that are used to build the types
   `Real\', `Integer\' etc.
 */
-public constant SCode.Element rlType=SCode.CLASS("RealType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_REAL(),
+public constant SCode.Element rlType = SCode.CLASS("RealType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_REAL(),
           SCode.PARTS({},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) " real type ";
 
-public constant SCode.Element intType=SCode.CLASS("IntegerType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_INTEGER(),
+public constant SCode.Element intType = SCode.CLASS("IntegerType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_INTEGER(),
           SCode.PARTS({},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo);
 
-public constant SCode.Element strType=SCode.CLASS("StringType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_STRING(),
+public constant SCode.Element strType = SCode.CLASS("StringType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_STRING(),
           SCode.PARTS({},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo);
 
-public constant SCode.Element boolType=SCode.CLASS("BooleanType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_BOOLEAN(),
+public constant SCode.Element boolType = SCode.CLASS("BooleanType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_BOOLEAN(),
           SCode.PARTS({},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo);
 
-protected constant SCode.Element enumType=SCode.CLASS("EnumType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_ENUMERATION(),
+protected constant SCode.Element enumType = SCode.CLASS("EnumType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_ENUMERATION(),
           SCode.PARTS({},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo);
 
-protected constant SCode.Element unit=SCode.COMPONENT("unit",commonPrefixes,
+protected constant SCode.Element unit = SCode.COMPONENT("unit",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
           SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING(""),false))),NONE(),NONE(),Absyn.dummyInfo) "This `unit\' component is used in several places below, and it is
   declared once here to make the definitions below easier to read." ;
 
-protected constant SCode.Element quantity=SCode.COMPONENT("quantity",commonPrefixes,
+protected constant SCode.Element quantity = SCode.COMPONENT("quantity",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
           SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING(""),false))),NONE(),NONE(),Absyn.dummyInfo);
 
-protected constant SCode.Element displayUnit=SCode.COMPONENT("displayUnit",commonPrefixes,
+protected constant SCode.Element displayUnit = SCode.COMPONENT("displayUnit",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
           SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING(""),false))),NONE(),NONE(),Absyn.dummyInfo);
 
-protected constant SCode.Element min=SCode.COMPONENT("min",commonPrefixes,
+protected constant SCode.Element min = SCode.COMPONENT("min",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
           SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.REAL(-1e+099),false))),NONE(),NONE(),Absyn.dummyInfo);
 
-protected constant SCode.Element max=SCode.COMPONENT("max",commonPrefixes,
+protected constant SCode.Element max = SCode.COMPONENT("max",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
           SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.REAL(1e+099),false))),NONE(),NONE(),Absyn.dummyInfo);
 
-protected constant SCode.Element realStart=SCode.COMPONENT("start",commonPrefixes,
+protected constant SCode.Element realStart = SCode.COMPONENT("start",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
           SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.REAL(0.0),false))),NONE(),NONE(),Absyn.dummyInfo);
 
-protected constant SCode.Element integerStart=SCode.COMPONENT("start",commonPrefixes,
+protected constant SCode.Element integerStart = SCode.COMPONENT("start",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("IntegerType"),NONE()),
           SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.INTEGER(0),false))),NONE(),NONE(),Absyn.dummyInfo);
 
-protected constant SCode.Element stringStart=SCode.COMPONENT("start",commonPrefixes,
+protected constant SCode.Element stringStart = SCode.COMPONENT("start",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
           SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING(""),false))),NONE(),NONE(),Absyn.dummyInfo);
 
-protected constant SCode.Element booleanStart=SCode.COMPONENT("start",commonPrefixes,
+protected constant SCode.Element booleanStart = SCode.COMPONENT("start",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("BooleanType"),NONE()),
           SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.BOOL(false),false))),NONE(),NONE(),Absyn.dummyInfo);
 
-protected constant SCode.Element fixed=SCode.COMPONENT("fixed",commonPrefixes,
+protected constant SCode.Element fixed = SCode.COMPONENT("fixed",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("BooleanType"),NONE()),
           SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.BOOL(false),false))),NONE(),NONE(),Absyn.dummyInfo) "Should be true for variables" ;
 
-protected constant SCode.Element nominal=SCode.COMPONENT("nominal",commonPrefixes,
+protected constant SCode.Element nominal = SCode.COMPONENT("nominal",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
           SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},NONE()),NONE(),NONE(),Absyn.dummyInfo);
 
-protected constant SCode.Element stateSelect=SCode.COMPONENT("stateSelect",commonPrefixes,
+protected constant SCode.Element stateSelect = SCode.COMPONENT("stateSelect",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("StateSelect"),NONE()),
           SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},
           SOME((
           Absyn.CREF(
           Absyn.CREF_QUAL("StateSelect",{},Absyn.CREF_IDENT("default",{}))),false))),NONE(),NONE(),Absyn.dummyInfo);
 
-protected constant list<SCode.Element> stateSelectComps={
+protected constant list<SCode.Element> stateSelectComps = {
           SCode.COMPONENT("never",commonPrefixes,
           attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),NONE(),NONE(),Absyn.dummyInfo),
           SCode.COMPONENT("avoid",commonPrefixes,
@@ -254,31 +215,31 @@ protected constant list<SCode.Element> stateSelectComps={
           SCode.COMPONENT("always",commonPrefixes,
           attrConst,Absyn.TPATH(Absyn.IDENT("EnumType"),NONE()),SCode.NOMOD(),NONE(),NONE(),Absyn.dummyInfo)} "The StateSelect enumeration" ;
 
-protected constant SCode.Element stateSelectType=SCode.CLASS("StateSelect",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_ENUMERATION(),
+protected constant SCode.Element stateSelectType = SCode.CLASS("StateSelect",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_ENUMERATION(),
           SCode.PARTS(stateSelectComps,{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "The State Select Type";
 
-public constant SCode.Element ExternalObjectType=SCode.CLASS("ExternalObject",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_CLASS(),
+public constant SCode.Element ExternalObjectType = SCode.CLASS("ExternalObject",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_CLASS(),
           SCode.PARTS({},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "ExternalObject type" ;
 
-public constant SCode.Element realType=SCode.CLASS("Real",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_REAL(),
+public constant SCode.Element realType = SCode.CLASS("Real",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_REAL(),
           SCode.PARTS({unit,quantity,displayUnit,min,max,realStart,fixed,nominal,
           stateSelect},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Real\' type" ;
 
-protected constant SCode.Element integerType=SCode.CLASS("Integer",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_INTEGER(),
+protected constant SCode.Element integerType = SCode.CLASS("Integer",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_INTEGER(),
           SCode.PARTS({quantity,min,max,integerStart,fixed},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Integer\' type" ;
 
-protected constant SCode.Element stringType=SCode.CLASS("String",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_STRING(),
+protected constant SCode.Element stringType = SCode.CLASS("String",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_STRING(),
           SCode.PARTS({quantity,stringStart},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `String\' type" ;
 
-protected constant SCode.Element booleanType=SCode.CLASS("Boolean",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_BOOLEAN(),
+protected constant SCode.Element booleanType = SCode.CLASS("Boolean",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_BOOLEAN(),
           SCode.PARTS({quantity,booleanStart,fixed},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Boolean\' type" ;
 
 /* The builtin variable time. See also variableIsBuiltin */
-protected constant DAE.Var timeVar=DAE.TYPES_VAR("time",
+protected constant DAE.Var timeVar = DAE.TYPES_VAR("time",
           DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER()),
           SCode.PUBLIC(),DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `time\' variable" ;
 
-protected constant DAE.Type stringIntInt2string=(
+protected constant DAE.Type stringIntInt2string = 
           DAE.T_FUNCTION(
               {
               ("x",DAE.T_STRING_DEFAULT,DAE.C_VAR(),NONE()),
@@ -286,116 +247,181 @@ protected constant DAE.Type stringIntInt2string=(
               ("z",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())
               },
               DAE.T_STRING_DEFAULT,
-              DAE.FUNCTION_ATTRIBUTES_BUILTIN),
-              NONE());
+              DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+              DAE.emptyTypeSource);
 
-protected constant DAE.Type real2real=(
-          DAE.T_FUNCTION({("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},DAE.T_REAL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_BUILTIN),NONE());
-
-protected constant DAE.Type realReal2real=(
+protected constant DAE.Type real2real = 
           DAE.T_FUNCTION(
-          {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},DAE.T_REAL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_BUILTIN),NONE());
+            {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_REAL_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
-protected constant DAE.Type int2int=(
-          DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
-          DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_BUILTIN),NONE());
-
-protected constant DAE.Type int2bool=(
-          DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
-          DAE.T_BOOL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_BUILTIN),NONE());
-
-protected constant DAE.Type enumeration2int=(
-          DAE.T_FUNCTION({("x",(DAE.T_ENUMERATION(NONE(), Absyn.IDENT(""), {}, {}, {}),NONE()),DAE.C_VAR(),NONE())},
-          DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_BUILTIN),NONE());
-
-protected constant DAE.Type intInt2int=(
+protected constant DAE.Type realReal2real = 
           DAE.T_FUNCTION(
-          {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE()),
-          ("y",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_BUILTIN),NONE());
+            {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
+             ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_REAL_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
-protected constant DAE.Type intInt2bool=(
+protected constant DAE.Type int2int = 
           DAE.T_FUNCTION(
-          {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE()),
-          ("y",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},DAE.T_BOOL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_BUILTIN),NONE());
+            {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_INTEGER_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
-protected constant DAE.Type bool2bool=(
-          DAE.T_FUNCTION({("x",DAE.T_BOOL_DEFAULT,DAE.C_VAR(),NONE())},DAE.T_BOOL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_BUILTIN),NONE());
-
-protected constant DAE.Type real2bool=(
-          DAE.T_FUNCTION({("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},DAE.T_BOOL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_BUILTIN),NONE());
-
-protected constant DAE.Type realReal2bool=(
+protected constant DAE.Type int2bool = 
           DAE.T_FUNCTION(
-          {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},DAE.T_BOOL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_BUILTIN),NONE());
+            {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_BOOL_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
-protected constant DAE.Type realRealReal2Real=(
+protected constant DAE.Type enumeration2int = 
           DAE.T_FUNCTION(
-          {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),("z",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},DAE.T_REAL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_BUILTIN),NONE());
+            {("x",DAE.T_ENUMERATION(NONE(), Absyn.IDENT(""), {}, {}, {}, DAE.emptyTypeSource),DAE.C_VAR(),NONE())},
+            DAE.T_INTEGER_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
-protected constant DAE.Type anyNonExpandableConnector2int=(
+protected constant DAE.Type intInt2int = 
           DAE.T_FUNCTION(
-          {
-          ("x",
-          (DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR(Absyn.IDENT("$dummy$"),false))),NONE()),DAE.C_VAR(),NONE())},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_BUILTIN),NONE());
+            {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE()),
+             ("y",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_INTEGER_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
-protected constant DAE.Type anyExpandableConnector2int=(
+protected constant DAE.Type intInt2bool = 
           DAE.T_FUNCTION(
-          {
-          ("x",
-          (DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR(Absyn.IDENT("$dummy$"),true))),NONE()),DAE.C_VAR(),NONE())},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_BUILTIN),NONE());
+            {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE()),
+             ("y",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_BOOL_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
-protected constant DAE.Type vectorVector2int=(
+protected constant DAE.Type bool2bool = 
           DAE.T_FUNCTION(
-          {
-          ("x",
-          T_INT_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE()),
-          ("y",
-          T_INT_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE())},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_BUILTIN),NONE());
+            {("x",DAE.T_BOOL_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_BOOL_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
-protected constant DAE.Type vectorVector2real=(
-          DAE.T_FUNCTION({("x", T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE()), ("y", T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE())}, 
-            DAE.T_REAL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_BUILTIN),NONE());
-
-protected constant DAE.Type intInt2vectorreal=(
+protected constant DAE.Type real2bool = 
           DAE.T_FUNCTION(
-          {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE()),
-          ("y",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
-            T_REAL_ARRAY_1_DEFAULT, DAE.FUNCTION_ATTRIBUTES_BUILTIN),NONE());
+            {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_BOOL_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
-protected constant DAE.Type realRealInt2vectorreal=(
+protected constant DAE.Type realReal2bool = 
           DAE.T_FUNCTION(
-          {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
-          ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
-          ("n",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
-          T_REAL_ARRAY_DEFAULT, DAE.FUNCTION_ATTRIBUTES_BUILTIN),NONE());
+            {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
+             ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_BOOL_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
-protected constant DAE.Type array2real=(
+protected constant DAE.Type realRealReal2Real =
           DAE.T_FUNCTION(
-          {
-          ("x",
-          T_INT_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE())},DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_BUILTIN),NONE()) "T_ARRAY is appearently not constant. To bad!" ;
+            {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
+             ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
+             ("z",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_REAL_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
-protected constant DAE.Type int2boxed = (
-          DAE.T_FUNCTION({("index",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},DAE.T_BOXED_DEFAULT,DAE.FUNCTION_ATTRIBUTES_BUILTIN),NONE());
-
-protected constant DAE.Type string2string=(
-          DAE.T_FUNCTION({("x",DAE.T_STRING_DEFAULT,DAE.C_VAR(),NONE())},DAE.T_STRING_DEFAULT,DAE.FUNCTION_ATTRIBUTES_BUILTIN),NONE());
-
-protected constant DAE.Type array1dimrealarray1dimrealarray1dimreal2array1dimreal=(
+protected constant DAE.Type anyNonExpandableConnector2int =
           DAE.T_FUNCTION(
-          {
-          ("x",T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE()),
-          ("y",T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE()),
-          ("z",T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE())
-          },
-          T_REAL_ARRAY_1_DEFAULT,DAE.FUNCTION_ATTRIBUTES_BUILTIN),NONE());
-protected constant DAE.Type realrealreal2real=(
+            {("x", DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR(Absyn.IDENT("$dummy$"),false)),DAE.emptyTypeSource),DAE.C_VAR(),NONE())},
+            DAE.T_INTEGER_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
+
+protected constant DAE.Type anyExpandableConnector2int =
           DAE.T_FUNCTION(
-          {
-          ("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
-          ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
-          ("z",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())
-          },DAE.T_REAL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_BUILTIN),NONE());
+            {("x",DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR(Absyn.IDENT("$dummy$"),true)),DAE.emptyTypeSource),DAE.C_VAR(),NONE())},
+            DAE.T_INTEGER_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
+
+protected constant DAE.Type vectorVector2int = 
+          DAE.T_FUNCTION(
+            {("x",T_INT_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE()),
+             ("y",T_INT_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_INTEGER_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
+
+protected constant DAE.Type vectorVector2real = 
+          DAE.T_FUNCTION(
+            {("x", T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE()),
+             ("y", T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE())}, 
+            DAE.T_REAL_DEFAULT, 
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
+
+protected constant DAE.Type intInt2vectorreal = 
+          DAE.T_FUNCTION(
+            {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE()),
+             ("y",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
+            T_REAL_ARRAY_1_DEFAULT, 
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
+
+protected constant DAE.Type realRealInt2vectorreal = 
+          DAE.T_FUNCTION(
+            {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
+             ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
+             ("n",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
+            T_REAL_ARRAY_DEFAULT, 
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
+
+protected constant DAE.Type array2real = 
+          DAE.T_FUNCTION(
+            {("x",T_INT_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_INTEGER_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource) "T_ARRAY is appearently not constant. To bad!" ;
+
+protected constant DAE.Type int2boxed =  
+          DAE.T_FUNCTION(
+            {("index",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_METABOXED_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
+
+protected constant DAE.Type string2string = 
+          DAE.T_FUNCTION(
+            {("x",DAE.T_STRING_DEFAULT,DAE.C_VAR(),NONE())},
+            DAE.T_STRING_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
+
+protected constant DAE.Type array1dimrealarray1dimrealarray1dimreal2array1dimreal = 
+          DAE.T_FUNCTION(
+            {
+            ("x",T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE()),
+            ("y",T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE()),
+            ("z",T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE())
+            },
+            T_REAL_ARRAY_1_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
+
+protected constant DAE.Type realrealreal2real = 
+          DAE.T_FUNCTION(
+            {
+            ("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
+            ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
+            ("z",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())
+            },
+            DAE.T_REAL_DEFAULT,
+            DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+            DAE.emptyTypeSource);
 
 public function variableIsBuiltin "Returns true if cref is a builtin variable.
 Currently only 'time' is a builtin variable.

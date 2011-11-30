@@ -475,7 +475,7 @@ algorithm
     
     case (BackendDAE.REINIT(stateVar = leftHand, value = rightHand)::rest_reinits, vars, tempOutIncidenceMat, tempOutVars) 
       equation  
-        lst1 = BackendDAEUtil.incidenceRowExp(DAE.CREF(leftHand,DAE.ET_REAL()), vars, {});
+        lst1 = BackendDAEUtil.incidenceRowExp(DAE.CREF(leftHand,DAE.T_REAL_DEFAULT), vars, {});
         lst2 = BackendDAEUtil.incidenceRowExp(rightHand, vars, {});
         row = lst2;
         elem = listNth(lst1, 0);
@@ -633,7 +633,7 @@ algorithm
     case(BackendDAE.WHEN_EQ(left = outRef, right = inExpr), vars)
       equation
         
-        lst1 = BackendDAEUtil.incidenceRowExp(DAE.CREF(outRef,DAE.ET_REAL()), vars, {});
+        lst1 = BackendDAEUtil.incidenceRowExp(DAE.CREF(outRef,DAE.T_REAL_DEFAULT), vars, {});
         lst2 = BackendDAEUtil.incidenceRowExp(inExpr, vars, {});
         //lst2 = makeListNegative(lst2, {});
         row = listAppend(lst1, lst2);
@@ -2027,7 +2027,7 @@ algorithm
       list<DAE.Exp> expLst,expLst2;
       Boolean tuple_ "tuple" ;
       Boolean builtin "builtin Function call" ;
-      DAE.ExpType ty "The type of the return value, if several return values this is undefined";
+      DAE.Type ty "The type of the return value, if several return values this is undefined";
       DAE.InlineType inlineType;
       DAE.CallAttributes attr;
     case ((e as (DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst=expLst, attr=attr)),i),_) 
@@ -2104,7 +2104,7 @@ algorithm
     local 
       DAE.Statement st;
       list<DAE.Statement> rest;
-      DAE.ExpType type_;
+      DAE.Type type_;
       DAE.Exp exp1;
       DAE.Exp exp;
       list<DAE.Exp> zce;

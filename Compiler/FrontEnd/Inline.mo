@@ -31,7 +31,7 @@
 
 // stefan
 encapsulated package Inline
-" file:         Inline.mo
+" file:        Inline.mo
   package:     Inline
   description: inline functions
 
@@ -556,13 +556,13 @@ algorithm
       Option<DAE.VariableAttributes> variableAttributesOption;
       Option<SCode.Comment> absynCommentOption;
       Absyn.InnerOuter innerOuter;
-      list<DAE.Dimension> dimension;
+      DAE.Dimensions dimension;
       Algorithm.Algorithm alg,alg_1;
       Ident i;
       Absyn.Path p;
       list<DAE.Exp> explst,explst_1;
       DAE.ElementSource source "the origin of the element";
-      DAE.Function f1,f2;
+      DAE.Function f1,f2;      
 
     case ({},_) then {};
     case (DAE.VAR(componentRef,kind,direction,protection,ty,SOME(binding),dims,flowPrefix,streamPrefix,
@@ -784,7 +784,7 @@ algorithm
     local
       Functiontuple fns;
       Algorithm.Statement stmt,stmt_1;
-      DAE.ExpType t;
+      DAE.Type t;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
       list<DAE.Exp> explst,explst_1;
       DAE.ComponentRef cref;
@@ -1004,7 +1004,7 @@ algorithm
       Absyn.Path p;
       list<DAE.Exp> args;
       Boolean tup,built;
-      DAE.ExpType t;
+      DAE.Type t;
       list<DAE.ComponentRef> crefs;
       list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
       DAE.Exp newExp,newExp1, e1;
@@ -1041,7 +1041,7 @@ algorithm
       Absyn.Path p;
       list<DAE.Exp> args;
       Boolean tup,built;
-      DAE.ExpType t;
+      DAE.Type t;
       list<DAE.ComponentRef> crefs;
       list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
       DAE.Exp newExp,newExp1, e1;
@@ -1093,11 +1093,11 @@ algorithm
       list<tuple<DAE.ComponentRef, DAE.Exp>> res,res1,res2,new,new1;
       DAE.ComponentRef c,cref;
       DAE.Exp e;
-      list<DAE.ExpVar> varLst;
+      list<DAE.Var> varLst;
       list<DAE.Exp> expl;
       list<DAE.ComponentRef> crlst;
     case ({}) then {};
-    case((c,e as (DAE.CREF(componentRef = cref,ty=DAE.ET_COMPLEX(varLst=varLst))))::res)
+    case((c,e as (DAE.CREF(componentRef = cref,ty=DAE.T_COMPLEX(varLst=varLst))))::res)
       equation
         res1 = extendCrefRecords(res);
         new = List.map2(varLst,extendCrefRecords1,c,cref);
@@ -1108,13 +1108,13 @@ algorithm
        this case is needed. */    
     case((c,e as (DAE.CREF(componentRef = cref)))::res)
       equation
-        DAE.ET_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cref);
+        DAE.T_COMPLEX(varLst=varLst) = ComponentReference.crefLastType(cref);
         res1 = extendCrefRecords(res);
         new = List.map2(varLst,extendCrefRecords1,c,cref);
         new1 = extendCrefRecords(new);
         res2 = listAppend(new1,res1);
       then ((c,e)::res2);
-    case((c,e as (DAE.CALL(expLst = expl,attr=DAE.CALL_ATTR(ty=DAE.ET_COMPLEX(varLst=varLst)))))::res)
+    case((c,e as (DAE.CALL(expLst = expl,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst)))))::res)
       equation
         res1 = extendCrefRecords(res);
         crlst = List.map1(varLst,extendCrefRecords2,c);
@@ -1132,19 +1132,19 @@ end extendCrefRecords;
 protected function extendCrefRecords1
 "function: extendCrefRecords1
   helper for extendCrefRecords"
-  input DAE.ExpVar ev;
+  input DAE.Var ev;
   input DAE.ComponentRef c;
   input DAE.ComponentRef e;
   output tuple<DAE.ComponentRef, DAE.Exp> outArg;
 algorithm
   outArg := matchcontinue(ev,c,e)
     local
-      DAE.ExpType tp;
+      DAE.Type tp;
       String name;
       DAE.ComponentRef c1,e1;
       DAE.Exp exp;
     
-    case(DAE.COMPLEX_VAR(name=name,tp=tp),c,e) 
+    case(DAE.TYPES_VAR(name=name,ty=tp),c,e) 
       equation
         c1 = ComponentReference.crefPrependIdent(c,name,{},tp);
         e1 = ComponentReference.crefPrependIdent(e,name,{},tp);
@@ -1161,16 +1161,17 @@ end extendCrefRecords1;
 protected function extendCrefRecords2
 "function: extendCrefRecords1
   helper for extendCrefRecords"
-  input DAE.ExpVar ev;
+  input DAE.Var ev;
   input DAE.ComponentRef c;
   output DAE.ComponentRef outArg;
 algorithm
   outArg := matchcontinue(ev,c)
     local
-      DAE.ExpType tp;
+      DAE.Type tp;
       String name;
       DAE.ComponentRef c1;
-    case(DAE.COMPLEX_VAR(name=name,tp=tp),c) 
+      
+    case(DAE.TYPES_VAR(name=name,ty=tp),c) 
       equation
         c1 = ComponentReference.crefPrependIdent(c,name,{},tp);
       then c1;
@@ -1246,7 +1247,7 @@ algorithm
       Absyn.Path path;
       list<DAE.Exp> expLst;
       Boolean tuple_,b;
-      DAE.ExpType ty,ty2;
+      DAE.Type ty,ty2;
       DAE.InlineType inlineType;
       DAE.TailCall tc;
     case ((DAE.CREF(componentRef = cref),argmap))
@@ -1267,7 +1268,7 @@ algorithm
       then
         ((e,argmap));
         /* TODO: Use the inlineType of the function reference! */
-    case((DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.ET_METATYPE(),tuple_,false,_,tc)),argmap))
+    case((DAE.CALL(path,expLst,DAE.CALL_ATTR(DAE.T_METATYPE(ty = _),tuple_,false,_,tc)),argmap))
       equation
         cref = ComponentReference.pathToCref(path);
         (e as DAE.CREF(componentRef=cref,ty=ty)) = getExpFromArgMap(argmap,cref);
@@ -1290,13 +1291,13 @@ protected function boxIfUnboxedFunRef
   This function handles (2)
   "
   input DAE.Exp exp;
-  input DAE.ExpType ty;
+  input DAE.Type ty;
   output DAE.Exp outExp;
 algorithm
   outExp := match (exp,ty)
     local
       DAE.Type t;
-    case (exp,DAE.ET_FUNCTION_REFERENCE_FUNC(functionType=(DAE.T_FUNCTION(funcResultType=t),_)))
+    case (exp,DAE.T_FUNCTION_REFERENCE_FUNC(functionType=DAE.T_FUNCTION(funcResultType=t)))
       equation
         exp = Util.if_(Types.isBoxedType(t), exp, DAE.BOX(exp));
       then exp;
@@ -1308,15 +1309,15 @@ protected function functionReferenceType
   "Retrieves the ExpType that the call should have (this changes if the replacing
   function does not return a boxed value).
   We also return the inline type of the new call."
-  input DAE.ExpType ty1;
-  output DAE.ExpType ty2;
+  input DAE.Type ty1;
+  output DAE.Type ty2;
   output DAE.InlineType inlineType;
 algorithm
   (ty2,inlineType) := match ty1
     local
       DAE.Type ty;
-    case DAE.ET_FUNCTION_REFERENCE_FUNC(functionType=(DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(inline=inlineType),funcResultType=ty),_))
-      then (Types.elabType(ty),inlineType);
+    case DAE.T_FUNCTION_REFERENCE_FUNC(functionType=DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(inline=inlineType),funcResultType=ty))
+      then (Types.simplifyType(ty),inlineType);
     else (ty1,DAE.NO_INLINE());
   end match;
 end functionReferenceType;

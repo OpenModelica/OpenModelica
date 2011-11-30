@@ -3,7 +3,7 @@
 OMC = OPENMODELICAHOME=`pwd`/../../../build/ ../../../build/bin/omc +d=failtrace
 
 
-all : CodegenC.mo SimCodeC.mo SimCodeCSharp.mo SimCodeFMU.mo Unparsing.mo SimCodeQSS.mo SimCodeCpp.mo SimCodeDump.mo SCodeDumpTpl.mo SimCodeAdevs.mo
+all : SimCodeC.mo CodegenC.mo SimCodeCSharp.mo SimCodeFMU.mo Unparsing.mo SimCodeQSS.mo SimCodeCpp.mo SimCodeDump.mo SCodeDumpTpl.mo SimCodeAdevs.mo
 
 SimCodeAdevs.mo : SimCodeAdevs.tpl SimCodeTV.mo
 	@echo " ** SimCodeAdevs template compilation ** "

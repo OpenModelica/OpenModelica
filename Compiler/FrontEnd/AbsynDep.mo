@@ -30,8 +30,7 @@
  */
 
 encapsulated package AbsynDep 
-" 
-  file:        AbsynDep.mo
+" file:        AbsynDep.mo
   package:     AbsynDep
   description: AbsynDep builds dependencies based on a start class (program slicing)
   author:      Peter Aronsson

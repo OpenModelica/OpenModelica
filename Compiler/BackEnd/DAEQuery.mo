@@ -30,7 +30,7 @@
  */
 
 encapsulated package DAEQuery
-" file:         DAEQuery.mo
+" file:        DAEQuery.mo
   package:     DAEQuery
   description: DAEQuery contains functionality for query of Incidence Matrix.
 
@@ -551,7 +551,7 @@ algorithm
   outStringLst := matchcontinue (inAlgorithmStatementLst,inVariables)
     local
       list<String> lst1,lst2,lst3,res,lst3_1;
-      DAE.ExpType tp;
+      DAE.Type tp;
       DAE.ComponentRef cr;
       DAE.Exp e, e1;
       list<Algorithm.Statement> rest,stmts;

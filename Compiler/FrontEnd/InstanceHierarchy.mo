@@ -30,8 +30,7 @@
  */
 
 encapsulated package InstanceHierarchy
-"
-  file:         InstanceHierarchy.mo
+" file:        InstanceHierarchy.mo
   package:     InstanceHierarchy
   description: Data structure for representing the instance hierarchy
 

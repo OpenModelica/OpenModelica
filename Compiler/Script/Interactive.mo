@@ -595,7 +595,7 @@ algorithm
       equation
         env = buildEnvFromSymboltable(st);
         (cache,srexp,rprop,SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, rexp, true, SOME(st),true,Prefix.NOPRE(),info);
-        ((DAE.T_TUPLE(types),_)) = Types.getPropType(rprop);
+        DAE.T_TUPLE(tupleType = types) = Types.getPropType(rprop);
         idents = List.map(crefexps, getIdentFromTupleCrefexp);
         (_,Values.TUPLE(values),SOME(st_2)) = Ceval.ceval(cache, env, srexp, true, SOME(st_1), Ceval.MSG(info));
         newst = addVarsToSymboltable(idents, values, types, st_2);
@@ -1271,7 +1271,7 @@ algorithm
       list<Variable> rest;
     case ((IVAR(varIdent = id,value = v,type_ = tp) :: rest),env)
       equation
-        (_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
+        (_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
         env_1 = Env.updateFrameV(env,
           DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
           SCode.PUBLIC(),tp,DAE.VALBOUND(v,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()), Env.VAR_TYPED(), {});
@@ -1280,7 +1280,7 @@ algorithm
         env_2;
     case ((IVAR(varIdent = id,value = v,type_ = tp) :: rest),env)
       equation
-        failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{})));
+        failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{})));
         env_1 = Env.extendFrameV(env,
           DAE.TYPES_VAR(id,DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),
           SCode.PUBLIC(),tp,DAE.VALBOUND(v,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()),NONE(), Env.VAR_UNTYPED(), {});
@@ -9178,48 +9178,10 @@ public function updateScope
   input list<Variable> inVariableLst;
   output list<Variable> outVariableLst;
 algorithm
-  outVariableLst:=
-  match (inProgram,inVariableLst)
+  outVariableLst := match (inProgram,inVariableLst)
     local
       list<Variable> vars;
 
-    /*
-    case (Absyn.BEGIN_DEFINITION(path = Absyn.IDENT(name = id)),vars)
-      equation
-        Values.CODE(Absyn.C_TYPENAME(path)) = getVariableValue("scope", vars) "If not top scope" ;
-        newscope = Absyn.joinPaths(path, Absyn.IDENT(id));
-        newscope_1 = Values.CODE(Absyn.C_TYPENAME(newscope));
-        vars_1 = addVarToVarlist("scope", newscope_1,
-          (DAE.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),{},NONE()),NONE()), vars);
-      then
-        vars_1;
-    case (Absyn.BEGIN_DEFINITION(path = Absyn.IDENT(name = id)),vars)
-      equation
-        newscope_1 = Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(id))) "If top scope" ;
-        vars_1 = addVarToVarlist("scope", newscope_1,
-          (DAE.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),{},NONE()),NONE()), vars);
-      then
-        vars_1;
-    case (Absyn.END_DEFINITION(name = id1),vars)
-      equation
-        Values.CODE(Absyn.C_TYPENAME(path)) = getVariableValue("scope", vars) "If not top scope" ;
-        id2 = Absyn.pathLastIdent(path);
-        true = stringEq(id1, id2);
-        newscope = Absyn.stripLast(path);
-        newscope_1 = Values.CODE(Absyn.C_TYPENAME(newscope));
-        path_1 = Absyn.stripLast(path);
-        vars_1 = addVarToVarlist("scope", newscope_1,
-          (DAE.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),{},NONE()),NONE()), vars);
-      then
-        vars_1;
-    case (Absyn.END_DEFINITION(name = id1),vars)
-      equation
-        Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(id2))) = getVariableValue("scope", vars);
-        true = stringEq(id1, id2);
-        vars_1 = removeVarFromVarlist("scope", vars);
-      then
-        vars_1;
-    */
     case (_,vars) then vars;
   end match;
 end updateScope;
@@ -9313,7 +9275,7 @@ algorithm
         true = stringEq(id1, id3);
         ix = List.positionOnTrue(id2, comp, stringEq);
         v = listNth(vals, ix);
-        v = getVariableValueLst(id2::ids, {IVAR(id2,v,(DAE.T_NOTYPE(),NONE()))});
+        v = getVariableValueLst(id2::ids, {IVAR(id2,v,DAE.T_UNKNOWN_DEFAULT)});
       then
         v;
     

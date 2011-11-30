@@ -30,7 +30,7 @@
  */
 
 encapsulated package BackendVariable
-" file:         mo
+" file:        BackendVariable.mo
   package:     BackendVariable
   description: BackendVariables contains the function that deals with the datytypes
                BackendDAE.VAR BackendDAE.Variables and BackendVariablesArray.
@@ -169,7 +169,7 @@ algorithm
     case (BackendDAE.VAR(varName = a,
               varKind = b,
               varDirection = c,
-              varType = BackendDAE.REAL(),
+              varType = DAE.T_REAL(source = _),
               bindExp = e,
               bindValue = f,
               arryDim = g,
@@ -180,14 +180,14 @@ algorithm
               flowPrefix = t,
               streamPrefix = streamPrefix),fixed)
       then
-        BackendDAE.VAR(a,b,c,BackendDAE.REAL(),e,f,g,i,source,
+        BackendDAE.VAR(a,b,c,DAE.T_REAL_DEFAULT,e,f,g,i,source,
             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
               varDirection = c,
-              varType = BackendDAE.INT(),
+              varType = DAE.T_INTEGER(source = _),
               bindExp = e,
               bindValue = f,
               arryDim = g,
@@ -198,14 +198,14 @@ algorithm
               flowPrefix = t,
               streamPrefix = streamPrefix),fixed)
       then
-        BackendDAE.VAR(a,b,c,BackendDAE.REAL(),e,f,g,i,source,
+        BackendDAE.VAR(a,b,c,DAE.T_REAL_DEFAULT,e,f,g,i,source,
             SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
               varDirection = c,
-              varType = BackendDAE.BOOL(),
+              varType = DAE.T_BOOL(source = _),
               bindExp = e,
               bindValue = f,
               arryDim = g,
@@ -216,14 +216,14 @@ algorithm
               flowPrefix = t,
               streamPrefix = streamPrefix),fixed)
       then
-        BackendDAE.VAR(a,b,c,BackendDAE.REAL(),e,f,g,i,source,
+        BackendDAE.VAR(a,b,c,DAE.T_REAL_DEFAULT,e,f,g,i,source,
             SOME(DAE.VAR_ATTR_BOOL(NONE(),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
               varDirection = c,
-              varType = BackendDAE.ENUMERATION(_),
+              varType = DAE.T_ENUMERATION(source = _),
               bindExp = e,
               bindValue = f,
               arryDim = g,
@@ -234,7 +234,7 @@ algorithm
               flowPrefix = t,
               streamPrefix = streamPrefix),fixed)
       then
-        BackendDAE.VAR(a,b,c,BackendDAE.REAL(),e,f,g,i,source,
+        BackendDAE.VAR(a,b,c,DAE.T_REAL_DEFAULT,e,f,g,i,source,
             SOME(DAE.VAR_ATTR_ENUMERATION(NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(fixed)),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
   end match;
@@ -322,7 +322,7 @@ algorithm
     case (BackendDAE.VAR(varName = a,
               varKind = b,
               varDirection = c,
-              varType = BackendDAE.REAL(),
+              varType = DAE.T_REAL(source = _),
               bindExp = e,
               bindValue = f,
               arryDim = g,
@@ -333,14 +333,14 @@ algorithm
               flowPrefix = t,
               streamPrefix = streamPrefix),inExp)
       then
-        BackendDAE.VAR(a,b,c,BackendDAE.REAL(),e,f,g,i,source,
+        BackendDAE.VAR(a,b,c,DAE.T_REAL_DEFAULT,e,f,g,i,source,
             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),SOME(inExp),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
               varDirection = c,
-              varType = BackendDAE.INT(),
+              varType = DAE.T_INTEGER(source = _),
               bindExp = e,
               bindValue = f,
               arryDim = g,
@@ -351,14 +351,14 @@ algorithm
               flowPrefix = t,
               streamPrefix = streamPrefix),inExp)
       then
-        BackendDAE.VAR(a,b,c,BackendDAE.REAL(),e,f,g,i,source,
+        BackendDAE.VAR(a,b,c,DAE.T_REAL_DEFAULT,e,f,g,i,source,
             SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),SOME(inExp),NONE(),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
               varDirection = c,
-              varType = BackendDAE.BOOL(),
+              varType = DAE.T_BOOL(source = _),
               bindExp = e,
               bindValue = f,
               arryDim = g,
@@ -369,14 +369,14 @@ algorithm
               flowPrefix = t,
               streamPrefix = streamPrefix),inExp)
       then
-        BackendDAE.VAR(a,b,c,BackendDAE.REAL(),e,f,g,i,source,
+        BackendDAE.VAR(a,b,c,DAE.T_REAL_DEFAULT,e,f,g,i,source,
             SOME(DAE.VAR_ATTR_BOOL(NONE(),SOME(inExp),NONE(),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
               varDirection = c,
-              varType = BackendDAE.ENUMERATION(_),
+              varType = DAE.T_ENUMERATION(source = _),
               bindExp = e,
               bindValue = f,
               arryDim = g,
@@ -387,7 +387,7 @@ algorithm
               flowPrefix = t,
               streamPrefix = streamPrefix),inExp)
       then
-        BackendDAE.VAR(a,b,c,BackendDAE.REAL(),e,f,g,i,source,
+        BackendDAE.VAR(a,b,c,DAE.T_REAL_DEFAULT,e,f,g,i,source,
             SOME(DAE.VAR_ATTR_ENUMERATION(NONE(),(NONE(),NONE()),SOME(inExp),NONE(),NONE(),NONE(),NONE())),
             s,t,streamPrefix);
   end match;
@@ -771,9 +771,9 @@ algorithm
   outBoolean := 
   matchcontinue (inVar)
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())) then true;
-    case (BackendDAE.VAR(varType = BackendDAE.INT())) then true;
-    case (BackendDAE.VAR(varType = BackendDAE.BOOL())) then true;
-    case (BackendDAE.VAR(varType = BackendDAE.ENUMERATION(_))) then true;
+    case (BackendDAE.VAR(varType = DAE.T_INTEGER(source = _))) then true;
+    case (BackendDAE.VAR(varType = DAE.T_BOOL(source = _))) then true;
+    case (BackendDAE.VAR(varType = DAE.T_ENUMERATION(source = _))) then true;
     case (_) then false;
   end matchcontinue;
 end isVarDiscrete;
@@ -838,15 +838,15 @@ algorithm
       list<BackendDAE.VarKind> kind_lst;
     /* bool variable */
     case (BackendDAE.VAR(varKind = kind,
-                     varType = typeVar as BackendDAE.BOOL()))
+                     varType = typeVar as DAE.T_BOOL(source = _)))
       then false;
     /* int variable */
     case (BackendDAE.VAR(varKind = kind,
-                     varType = typeVar as BackendDAE.INT()))
+                     varType = typeVar as DAE.T_INTEGER(source = _)))
       then false;
     /* string variable */
     case (BackendDAE.VAR(varKind = kind,
-                     varType = typeVar as BackendDAE.STRING()))
+                     varType = typeVar as DAE.T_STRING(source = _)))
       then false;
     /* non-string variable */
     case (BackendDAE.VAR(varKind = kind))
@@ -869,7 +869,7 @@ algorithm
       list<BackendDAE.VarKind> kind_lst;
     /* string variable */
     case (BackendDAE.VAR(varKind = kind,
-                     varType = typeVar as BackendDAE.STRING()))
+                     varType = typeVar as DAE.T_STRING(source = _)))
       equation
         kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
                     BackendDAE.DUMMY_STATE()};
@@ -889,7 +889,7 @@ algorithm
       list<BackendDAE.VarKind> kind_lst;
     /* int variable */
     case (BackendDAE.VAR(varKind = kind,
-                     varType = typeVar as BackendDAE.INT()))
+                     varType = typeVar as DAE.T_INTEGER(source = _)))
       equation
 
         kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
@@ -911,7 +911,7 @@ algorithm
       list<BackendDAE.VarKind> kind_lst;
     /* int variable */
     case (BackendDAE.VAR(varKind = kind,
-                     varType = typeVar as BackendDAE.BOOL()))
+                     varType = typeVar as DAE.T_BOOL(source = _)))
       equation
         kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
                     BackendDAE.DUMMY_STATE()};
@@ -929,13 +929,13 @@ algorithm
     local
       BackendDAE.Type typeVar;
     /* bool variable */
-    case (BackendDAE.VAR(varType = typeVar as BackendDAE.BOOL()))
+    case (BackendDAE.VAR(varType = typeVar as DAE.T_BOOL(source = _)))
       then false;
     /* int variable */
-    case (BackendDAE.VAR(varType = typeVar as BackendDAE.INT()))
+    case (BackendDAE.VAR(varType = typeVar as DAE.T_INTEGER(source = _)))
       then false;
     /* string variable */
-    case (BackendDAE.VAR(varType = typeVar as BackendDAE.STRING()))
+    case (BackendDAE.VAR(varType = typeVar as DAE.T_STRING(source = _)))
       then false;
     /* non-string variable */
     case (var)
@@ -956,7 +956,7 @@ algorithm
     local
       BackendDAE.Type typeVar;
     /* string variable */
-    case (BackendDAE.VAR(varType = typeVar as BackendDAE.STRING()))
+    case (BackendDAE.VAR(varType = typeVar as DAE.T_STRING(source = _)))
       equation
         true = isConst(var);
       then true;
@@ -974,7 +974,7 @@ algorithm
     local
       BackendDAE.Type typeVar;
     /* int variable */
-    case (BackendDAE.VAR(varType = typeVar as BackendDAE.INT()))
+    case (BackendDAE.VAR(varType = typeVar as DAE.T_INTEGER(source = _)))
       equation
         true = isConst(var);
       then true;
@@ -992,7 +992,7 @@ algorithm
     local
       BackendDAE.Type typeVar;
     /* string variable */
-    case (BackendDAE.VAR(varType = typeVar as BackendDAE.BOOL()))
+    case (BackendDAE.VAR(varType = typeVar as DAE.T_BOOL(source = _)))
       equation
         true = isConst(var);
       then true;
@@ -1011,16 +1011,16 @@ algorithm
     local
       BackendDAE.Type typeVar;
     /* bool variable */
-    case (BackendDAE.VAR(varType = typeVar as BackendDAE.BOOL()))
+    case (BackendDAE.VAR(varType = typeVar as DAE.T_BOOL(source = _)))
       then false;
     /* int variable */
-    case (BackendDAE.VAR(varType = typeVar as BackendDAE.INT()))
+    case (BackendDAE.VAR(varType = typeVar as DAE.T_INTEGER(source = _)))
       then false;
     /* string variable */
-    case (BackendDAE.VAR(varType = typeVar as BackendDAE.STRING()))
+    case (BackendDAE.VAR(varType = typeVar as DAE.T_STRING(source = _)))
       then false;
     /* enum variable */
-    case (BackendDAE.VAR(varType = typeVar as BackendDAE.ENUMERATION(_)))
+    case (BackendDAE.VAR(varType = typeVar as DAE.T_ENUMERATION(source = _)))
       then false;
     /* non-string variable */
     case (var)
@@ -1042,7 +1042,7 @@ algorithm
     local
       BackendDAE.Type typeVar;
     /* string variable */
-    case (BackendDAE.VAR(varType = typeVar as BackendDAE.STRING()))
+    case (BackendDAE.VAR(varType = typeVar as DAE.T_STRING(source = _)))
       equation
         true = isParam(var);
       then true;
@@ -1060,13 +1060,13 @@ algorithm
   matchcontinue (var)
     local
       BackendDAE.Type typeVar;
-    /* int variable */
-    case (BackendDAE.VAR(varType = typeVar as BackendDAE.INT()))
+    // int variable 
+    case (BackendDAE.VAR(varType = typeVar as DAE.T_INTEGER(source = _)))
       equation
         true = isParam(var);
       then true;
-    /* enum is also mapped to long */
-    case (BackendDAE.VAR(varType = typeVar as BackendDAE.ENUMERATION(_)))
+    // enum is also mapped to long 
+    case (BackendDAE.VAR(varType = typeVar as DAE.T_ENUMERATION(source = _)))
       equation
         true = isParam(var);
       then true;
@@ -1084,7 +1084,7 @@ algorithm
     local
       BackendDAE.Type typeVar;
     /* string variable */
-    case (BackendDAE.VAR(varType = typeVar as BackendDAE.BOOL()))
+    case (BackendDAE.VAR(varType = typeVar as DAE.T_BOOL(source = _)))
       equation
         true = isParam(var);
       then true;
@@ -1157,7 +1157,7 @@ public function isIntParam
 algorithm
   outBoolean:=
   matchcontinue (inVar)
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(),varType = BackendDAE.INT())) then true;
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(),varType = DAE.T_INTEGER(source = _))) then true;
     case (_) then false;
   end matchcontinue;
 end isIntParam;
@@ -1170,7 +1170,7 @@ public function isBoolParam
 algorithm
   outBoolean:=
   matchcontinue (inVar)
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(),varType = BackendDAE.BOOL())) then true;
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(),varType = DAE.T_BOOL(source = _))) then true;
     case (_) then false;
   end matchcontinue;
 end isBoolParam;
@@ -1183,7 +1183,7 @@ public function isStringParam
 algorithm
   outBoolean:=
   matchcontinue (inVar)
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(),varType = BackendDAE.STRING())) then true;
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(),varType = DAE.T_STRING(source = _))) then true;
     case (_) then false;
   end matchcontinue;
 end isStringParam;
@@ -1208,7 +1208,7 @@ public function isRealParam
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (inVar)
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(),varType = BackendDAE.REAL())) then true;
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(),varType = DAE.T_REAL(source = _))) then true;
     case (_) then false;
   end matchcontinue;
 end isRealParam;
@@ -1660,7 +1660,7 @@ algorithm
       DAE.Exp e,cond,msg;
       list<Option<DAE.Exp>> ominmax;
       String str;
-      DAE.ExpType tp;
+      DAE.Type tp;
     case(_,_,_,BackendDAE.CONST(),_) then {};
     case (attr,name,source,_,vartype)
       equation 
@@ -1685,7 +1685,7 @@ protected function getMinMaxAsserts1
 "Author: Frenkel TUD 2011-03"
   input list<Option<DAE.Exp>> ominmax;
   input DAE.Exp e;
-  input DAE.ExpType tp;
+  input DAE.Type tp;
   output DAE.Exp cond;
 algorithm
   cond :=
@@ -1694,7 +1694,7 @@ algorithm
       DAE.Exp min,max;
     case (SOME(min)::(SOME(max)::{}),e,tp)
       then DAE.LBINARY(DAE.RELATION(e,DAE.GREATEREQ(tp),min,-1,NONE()),
-                            DAE.AND(DAE.ET_BOOL()),
+                            DAE.AND(DAE.T_BOOL_DEFAULT),
                             DAE.RELATION(e,DAE.LESSEQ(tp),max,-1,NONE()));
     case (SOME(min)::(NONE()::{}),e,tp)
       then DAE.RELATION(e,DAE.GREATEREQ(tp),min,-1,NONE());
@@ -1718,7 +1718,7 @@ algorithm
       DAE.Exp e,cond,msg;
       list<Option<DAE.Exp>> ominmax;
       String str;
-      DAE.ExpType tp;
+      DAE.Type tp;
       Boolean b;
     case(_,_,_,BackendDAE.CONST(),_) then {};
     case (attr as SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))),name,source,_,vartype)
@@ -2517,7 +2517,7 @@ algorithm
     case (((BackendDAE.VAR(varName = cr,
                varKind = BackendDAE.VARIABLE(),
                varDirection = d,
-               varType = tp as BackendDAE.STRING(),
+               varType = tp as DAE.T_STRING(source = _),
                bindExp = b,
                bindValue = value,
                arryDim = dim,
@@ -2557,7 +2557,7 @@ algorithm
     case (((BackendDAE.VAR(varName = cr,
                varKind = BackendDAE.STATE(),
                varDirection = d,
-               varType = tp as BackendDAE.STRING(),
+               varType = tp as DAE.T_STRING(source = _),
                bindExp = b,
                bindValue = value,
                arryDim = dim,
@@ -2597,7 +2597,7 @@ algorithm
     case (((BackendDAE.VAR(varName = cr,
                varKind = BackendDAE.DUMMY_DER(),
                varDirection = d,
-               varType = tp as BackendDAE.STRING(),
+               varType = tp as DAE.T_STRING(source = _),
                bindExp = b,
                bindValue = value,
                arryDim = dim,
@@ -2637,7 +2637,7 @@ algorithm
     case (((BackendDAE.VAR(varName = cr,
                varKind = BackendDAE.DUMMY_STATE(),
                varDirection = d,
-               varType = tp as BackendDAE.STRING(),
+               varType = tp as DAE.T_STRING(source = _),
                bindExp = b,
                bindValue = value,
                arryDim = dim,
@@ -2677,7 +2677,7 @@ algorithm
     case (((BackendDAE.VAR(varName = cr,
                varKind = BackendDAE.DISCRETE(),
                varDirection = d,
-               varType = tp as BackendDAE.STRING(),
+               varType = tp as DAE.T_STRING(source = _),
                bindExp = b,
                bindValue = value,
                arryDim = dim,
@@ -2717,7 +2717,7 @@ algorithm
     case (((BackendDAE.VAR(varName = cr,
                varKind = BackendDAE.PARAM(),
                varDirection = d,
-               varType = tp as BackendDAE.STRING(),
+               varType = tp as DAE.T_STRING(source = _),
                bindExp = b,
                bindValue = value,
                arryDim = dim,
@@ -3620,7 +3620,7 @@ algorithm
   (outVarLst,outIntegerLst) := match (inComponentRef,inVariables)
     local
       DAE.ComponentRef cr;
-      list<DAE.ExpVar> varLst;
+      list<DAE.Var> varLst;
       list<DAE.ComponentRef> crefs,crefs1;
       list<list<BackendDAE.Var>> varslst;
       list<list<Integer>> ilstlst;
@@ -3628,7 +3628,7 @@ algorithm
       list<Integer> ilst;
     case (cr,inVariables)
       equation
-        DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)) = ComponentReference.crefLastType(cr);
+        DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)) = ComponentReference.crefLastType(cr);
         crefs =  List.map(varLst,ComponentReference.creffromVar);
         crefs1 = List.map1r(crefs,ComponentReference.joinCrefs,cr);
         (varslst,ilstlst) = List.map1_2(crefs1,getVar,inVariables);

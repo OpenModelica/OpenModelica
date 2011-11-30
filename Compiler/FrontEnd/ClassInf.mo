@@ -30,8 +30,8 @@
  */
 
 encapsulated package ClassInf
-" file:   ClassInf.mo
-  package:      ClassInf
+" file:        ClassInf.mo
+  package:     ClassInf
   description: Class restrictions
 
   RCS:   $Id$
@@ -149,9 +149,9 @@ uniontype State "- Machine states, the string contains the classname."
     Absyn.Path path;
   end META_RECORD;
 
-  record UNIONTYPE
+  record META_UNIONTYPE
     Absyn.Path path;
-  end UNIONTYPE;
+  end META_UNIONTYPE;
 
   record META_ARRAY
     Absyn.Path path;
@@ -217,7 +217,7 @@ algorithm
     case META_RECORD(p) then "meta_record";
     case META_POLYMORPHIC(p) then "polymorphic";
     case META_ARRAY(p) then "meta_array";
-    case UNIONTYPE(p) then "uniontype";
+    case META_UNIONTYPE(p) then "uniontype";
     case _ then "#printStateStr failed#";
   end matchcontinue;
 end printStateStr;
@@ -347,7 +347,7 @@ algorithm
     case META_LIST(p) then p;
     case META_OPTION(p) then p;
     case META_RECORD(p) then p;
-    case UNIONTYPE(p) then p;
+    case META_UNIONTYPE(p) then p;
     case META_ARRAY(p) then p;
     case META_POLYMORPHIC(p) then p;
       
@@ -398,7 +398,7 @@ algorithm
     case (SCode.R_PREDEFINED_BOOLEAN(),p) then TYPE_BOOL(p);
     case (SCode.R_PREDEFINED_ENUMERATION(),p) then TYPE_ENUM(p);
      /* Meta Modelica extensions */
-    case (SCode.R_UNIONTYPE(),p) then UNIONTYPE(p);
+    case (SCode.R_UNIONTYPE(),p) then META_UNIONTYPE(p);
     case (SCode.R_METARECORD(index=_),p) then META_RECORD(p);
   end match;
 end start;
@@ -435,7 +435,7 @@ algorithm
     case (TYPE_STRING(path = p),NEWDEF()) then TYPE_STRING(p);
     case (TYPE_BOOL(path = p),NEWDEF()) then TYPE_BOOL(p);
     case (TYPE_ENUM(path = p),NEWDEF()) then TYPE_ENUM(p);  /* Event `FOUND_EQUATION\' */
-    case (UNIONTYPE(path = p),NEWDEF()) then UNIONTYPE(p);  // Added 2009-05-11. sjoelund
+    case (META_UNIONTYPE(path = p),NEWDEF()) then META_UNIONTYPE(p);  // Added 2009-05-11. sjoelund
     case (META_RECORD(path = p),NEWDEF()) then META_RECORD(p);  // Added 2009-08-18. sjoelund
 
    /* Event 'FOUND_COMPONENT' */
@@ -552,7 +552,7 @@ algorithm
     case (META_OPTION(p),SCode.R_TYPE()) then ();
     case (META_RECORD(p),SCode.R_TYPE()) then ();
     case (META_ARRAY(p),SCode.R_TYPE()) then ();
-    case (UNIONTYPE(p),SCode.R_TYPE()) then ();
+    case (META_UNIONTYPE(p),SCode.R_TYPE()) then ();
 
   end match;
 end valid;

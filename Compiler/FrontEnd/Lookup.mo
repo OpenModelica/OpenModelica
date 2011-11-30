@@ -30,8 +30,7 @@
  */
 
 encapsulated package Lookup
-"
-  file:        Lookup.mo
+" file:        Lookup.mo
   package:     Lookup
   description: Scoping rules
 
@@ -129,14 +128,14 @@ algorithm
     // Special handling for Connections.isRoot
     case (cache,env,Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),msg)
       equation
-        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE()),NONE()),DAE.C_VAR(),NONE())}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
+        t = DAE.T_FUNCTION({("x", DAE.T_ANYTYPE_DEFAULT, DAE.C_VAR(), NONE())}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT, DAE.emptyTypeSource);
       then
         (cache, t, env);
 
     // Special handling for MultiBody 3.x rooted() operator
     case (cache,env,Absyn.IDENT("rooted"),msg)
       equation
-        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE()),NONE()),DAE.C_VAR(),NONE())}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE());
+        t = DAE.T_FUNCTION({("x", DAE.T_ANYTYPE_DEFAULT, DAE.C_VAR(), NONE())}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT, DAE.emptyTypeSource);
       then
         (cache, t, env);
 
@@ -193,6 +192,7 @@ algorithm
       list<String> names;
       ClassInf.State ci_state;
       SCode.Encapsulated encflag;
+      DAE.TypeSource ts;
 
     // Record constructors
     case (cache,env_1,path,c as SCode.CLASS(name=id,restriction=SCode.R_RECORD()))
@@ -216,7 +216,8 @@ algorithm
         // build names
         (_,names) = SCode.getClassComponents(c);
         // generate the enumeration type
-        t = (DAE.T_ENUMERATION(NONE(), path, names, types, {}), SOME(path));
+        ts = Types.mkTypeSource(SOME(path));
+        t = DAE.T_ENUMERATION(NONE(), path, names, types, {}, ts);
         env_3 = Env.extendFrameT(env_3, id, t);
       then
         (cache,t,env_3);
@@ -620,7 +621,7 @@ algorithm
       equation
         f::prevFrames = listReverse(env);
         cref = ComponentReference.pathToCref(path);
-        cref = ComponentReference.crefPrependIdent(cref,ident,{},DAE.ET_OTHER());
+        cref = ComponentReference.crefPrependIdent(cref,ident,{},DAE.T_UNKNOWN_DEFAULT);
         (cache,_,_,_,_,_,_,_,_) = lookupVarInPackages(cache,{f},cref,prevFrames,Util.makeStatefulBoolean(false));
       then
         (cache,true);
@@ -674,7 +675,7 @@ algorithm
       equation 
         f::prevFrames = listReverse(env);
         cref = ComponentReference.pathToCref(path);
-        cref = ComponentReference.crefPrependIdent(cref,ident,{},DAE.ET_OTHER());
+        cref = ComponentReference.crefPrependIdent(cref,ident,{},DAE.T_UNKNOWN_DEFAULT);
         (cache,classEnv,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,{f},cref,prevFrames,Util.makeStatefulBoolean(false));
         (cache,more) = moreLookupUnqualifiedImportedVarInFrame(cache, fs, env, ident);
         unique = boolNot(more);
@@ -1201,7 +1202,7 @@ algorithm
       Option<DAE.Const> cnstForRange;
       Absyn.Path path,scope;
       Boolean unique;
-      DAE.ExpType ety;
+      DAE.Type ety;
       Env.AvlTree ht;
 
       // If we search for A1.A2....An.x while in scope A1.A2...An, just search for x. 
@@ -1224,7 +1225,7 @@ algorithm
         path = Absyn.stripLast(path);
         f::fs = Env.cacheGet(scope,path,cache);
         Util.setStatefulBoolean(inState,true);
-        (cache,attr,ty,bind,cnstForRange,splicedExpData,classEnv,componentEnv,name) = lookupVarLocal(cache,f::fs, ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
+        (cache,attr,ty,bind,cnstForRange,splicedExpData,classEnv,componentEnv,name) = lookupVarLocal(cache,f::fs, ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
         //print("found ");print(ComponentReference.printComponentRefStr(cr));print(" in cache\n");
       then
         (cache,f::fs,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
@@ -1742,10 +1743,16 @@ algorithm
     local list<Env.Frame> env;
     /* function_name cardinality */
     case (env,"cardinality")
-      then {(DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.CONNECTOR(Absyn.IDENT("$$"),false),{},NONE(),NONE()),NONE()),DAE.C_VAR(),NONE())},
-                              DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE()),
-            (DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.CONNECTOR(Absyn.IDENT("$$"),true),{},NONE(),NONE()),NONE()),DAE.C_VAR(),NONE())},
-                              DAE.T_INTEGER_DEFAULT,DAE.FUNCTION_ATTRIBUTES_DEFAULT),NONE())};
+      then {DAE.T_FUNCTION(
+              {("x",DAE.T_COMPLEX(ClassInf.CONNECTOR(Absyn.IDENT("$$"),false),{},NONE(),DAE.emptyTypeSource),DAE.C_VAR(),NONE())},
+              DAE.T_INTEGER_DEFAULT,
+              DAE.FUNCTION_ATTRIBUTES_DEFAULT,
+              DAE.emptyTypeSource),
+            DAE.T_FUNCTION(
+              {("x",DAE.T_COMPLEX(ClassInf.CONNECTOR(Absyn.IDENT("$$"),true),{},NONE(),DAE.emptyTypeSource),DAE.C_VAR(),NONE())},
+              DAE.T_INTEGER_DEFAULT,
+              DAE.FUNCTION_ATTRIBUTES_DEFAULT,
+              DAE.emptyTypeSource)};
 
   end match;
 end createGenericBuiltinFunctions;
@@ -1896,7 +1903,7 @@ algorithm
       String id,n;
       SCode.Element cdef;
       DAE.Type ftype,t;
-      DAE.TType tty;
+      DAE.Type tty;
       Env.Cache cache;
       SCode.Restriction restr;
 
@@ -1910,9 +1917,10 @@ algorithm
     // MetaModelica Partial Function. sjoelund
     case (cache,ht,httypes,env,id,_)
       equation
-        Env.VAR(instantiated = DAE.TYPES_VAR(ty = (tty as DAE.T_FUNCTION(_,_,_),_))) = Env.avlTreeGet(ht, id);
+        Env.VAR(instantiated = DAE.TYPES_VAR(ty = tty as DAE.T_FUNCTION(funcArg = _))) = Env.avlTreeGet(ht, id);
+        tty = Types.setTypeSource(tty, Types.mkTypeSource(SOME(Absyn.IDENT(id))));
       then
-        (cache,{(tty, SOME(Absyn.IDENT(id)))});
+        (cache,{tty});
 
     case (cache,ht,httypes,env,id,info)
       equation
@@ -2468,23 +2476,26 @@ protected function checkSubscripts "function: checkSubscripts
   input list<DAE.Subscript> inExpSubscriptLst;
   output DAE.Type outType;
 algorithm
-  outType:=
-  matchcontinue (inType,inExpSubscriptLst)
+  outType := matchcontinue (inType,inExpSubscriptLst)
     local
       DAE.Type t,t_1;
       DAE.Dimension dim;
-      Option<Absyn.Path> p;
+      DAE.TypeSource ts;
       list<DAE.Subscript> ys,s;
       Integer sz,ind,dim_int;
       list<DAE.Exp> se;
       DAE.Exp e;
+    
+    // empty case
     case (t,{}) then t;
-    case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),p),(DAE.WHOLEDIM() :: ys))
+
+    case (DAE.T_ARRAY(dims = {dim},ty = t,source = ts),(DAE.WHOLEDIM() :: ys))
       equation
         t_1 = checkSubscripts(t, ys);
       then
-        ((DAE.T_ARRAY(dim,t_1),p));
-    case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),p),
+        DAE.T_ARRAY(t_1,{dim},ts);
+
+    case (DAE.T_ARRAY(dims = {dim}, ty = t, source = ts),
           (DAE.SLICE(exp = DAE.ARRAY(array = se)) :: ys))
       equation
         sz = Expression.dimensionSize(dim);
@@ -2493,17 +2504,17 @@ algorithm
         true = (dim_int <= sz);
         true = checkSubscriptsRange(se,sz);
       then
-        ((DAE.T_ARRAY(DAE.DIM_INTEGER(dim_int),t_1),p));
+        DAE.T_ARRAY(t_1,{DAE.DIM_INTEGER(dim_int)},ts);
 
     // Unexpanded array means non-constant range, so no range-checking possible.
-    case ((DAE.T_ARRAY(arrayDim = dim, arrayType = t), p), 
+    case (DAE.T_ARRAY(dims = {dim}, ty = t, source = ts), 
           (DAE.SLICE(exp = DAE.RANGE(ty = _)) :: ys))
       equation
         t_1 = checkSubscripts(t, ys);
       then
-        ((DAE.T_ARRAY(dim, t_1), p));
+        DAE.T_ARRAY(t_1, {dim}, ts);
 
-    case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),_),
+    case (DAE.T_ARRAY(dims = {dim}, ty = t, source = ts),
           (DAE.INDEX(exp = DAE.ICONST(integer = ind)) :: ys))
       equation
         sz = Expression.dimensionSize(dim);
@@ -2512,50 +2523,56 @@ algorithm
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
-    /* HJ: Subscripts needn't be constant. No range-checking can be done */
-    case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),_),
+    
+    // HJ: Subscripts needn't be constant. No range-checking can be done
+    case (DAE.T_ARRAY(dims = {dim}, ty = t),
           (DAE.INDEX(exp = e) :: ys)) 
       equation
         true = Expression.dimensionKnown(dim);
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = t),_),
+    
+    case (DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}, ty = t),
           (DAE.INDEX(exp = _) :: ys))
       equation
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_EXP(exp = _), arrayType = t), _),
+    
+    case (DAE.T_ARRAY(dims = {DAE.DIM_EXP(exp = _)}, ty = t),
           (DAE.INDEX(exp = _) :: ys))
       equation
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
 
-    case ((DAE.T_ARRAY(arrayType = t),_),
+    case (DAE.T_ARRAY(ty = t),
           (DAE.WHOLEDIM() :: ys))
       equation
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
 
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN(),arrayType = t),p),
+    case (DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}, ty = t, source = ts),
           (DAE.SLICE(exp = _) :: ys))
       equation
         t_1 = checkSubscripts(t, ys);
       then
-        ((DAE.T_ARRAY(DAE.DIM_UNKNOWN(),t_1),p));
+        DAE.T_ARRAY(t_1, {DAE.DIM_UNKNOWN()}, ts);
 
-    case ((DAE.T_ARRAY(arrayDim = dim as DAE.DIM_EXP(exp = _), arrayType = t), p),
+    case (DAE.T_ARRAY(dims = {(dim as DAE.DIM_EXP(exp = _))}, ty = t, source = ts),
           (DAE.SLICE(exp = _) :: ys))
       equation
         t_1 = checkSubscripts(t, ys);
       then
-        ((DAE.T_ARRAY(dim, t_1), p));
-    case ((DAE.T_COMPLEX(_,_,SOME(t),_),_),ys)
+        DAE.T_ARRAY(t_1, {dim}, ts);
+    
+    case (DAE.T_SUBTYPE_BASIC(complexType = t),ys)
       then checkSubscripts(t,ys);
-    case(t as (DAE.T_NOTYPE(),_),_) then t;
+    
+    case(t as DAE.T_UNKNOWN(_), _) then t;
+    
     case (t,s)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -2591,7 +2608,7 @@ algorithm
     case(expl,dims)
       equation
         str2 = intString(dims);
-        exp = DAE.ARRAY(DAE.ET_INT(),false,expl);
+        exp = DAE.ARRAY(DAE.T_INTEGER_DEFAULT,false,expl);
         str1 = stringDelimitList(List.map(expl,ExpressionDump.printExpStr)," and position " );
         Error.addMessage(Error.ARRAY_INDEX_OUT_OF_BOUNDS,{str1,str2});
       then
@@ -2666,14 +2683,14 @@ algorithm
       list<Env.Frame> componentEnv;
       DAE.ComponentRef ids;
       Env.Cache cache;
-      DAE.ExpType ty2_2;
+      DAE.Type ty2_2;
       Absyn.InnerOuter io;
       Option<DAE.Exp> texp;
       DAE.Type ty1,ty2;
       DAE.ComponentRef xCref,tCref,cref_;
       list<DAE.ComponentRef> ltCref;
       DAE.Exp splicedExp;
-      DAE.ExpType eType,tty;
+      DAE.Type eType,tty;
       Option<DAE.Const> cnstForRange;
 
     // Simple identifier
@@ -2682,7 +2699,7 @@ algorithm
         (cache,DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,vt,di,io),_,ty,bind,cnstForRange),_,_,componentEnv) = lookupVar2(cache,ht, id);
         ty_1 = checkSubscripts(ty, ss);
         ss = addArrayDimensions(ty,ss);
-        tty = Types.elabType(ty);
+        tty = Types.simplifyType(ty);
         cref_ = ComponentReference.makeCrefIdent(id,tty, ss);
         splicedExp = Expression.makeCrefExp(cref_,tty);
         //print("splicedExp ="+&ExpressionDump.dumpExpStr(splicedExp,0)+&"\n");
@@ -2702,9 +2719,9 @@ algorithm
         ty1 = checkSubscripts(ty2, ss);
         ty = sliceDimensionType(ty1,ty);
         ss = addArrayDimensions(ty2,ss);
-        ty2_2 = Types.elabType(ty2);
+        ty2_2 = Types.simplifyType(ty2);
         xCref = ComponentReference.makeCrefQual(id,ty2_2,ss,tCref);
-        eType = Types.elabType(ty);
+        eType = Types.simplifyType(ty);
         splicedExp = Expression.makeCrefExp(xCref,eType);
         vt = SCode.variabilityOr(vt,vt2);
       then
@@ -2752,10 +2769,10 @@ algorithm
   matchcontinue (tySub, ss)
     local
       list<DAE.Subscript> subs;
-      list<DAE.Dimension> dims;
+      DAE.Dimensions dims;
     case(_, _)
       equation
-        true = Types.isArray(tySub);
+        true = Types.isArray(tySub, {});
         dims = Types.getDimensions(tySub);
         subs = List.map(dims, makeDimensionSubscript);
         subs = expandWholeDimSubScript(ss,subs);
@@ -2779,19 +2796,19 @@ algorithm
     // Special case when addressing array[0].
     case DAE.DIM_INTEGER(integer = 0)
       then
-        DAE.SLICE(DAE.ARRAY(DAE.ET_INT(), true, {DAE.ICONST(0)}));
+        DAE.SLICE(DAE.ARRAY(DAE.T_INTEGER_DEFAULT, true, {DAE.ICONST(0)}));
     // Array with integer dimension.
     case DAE.DIM_INTEGER(integer = sz)
       equation
         expl = List.map(List.intRange(sz), Expression.makeIntegerExp);
       then
-        DAE.SLICE(DAE.ARRAY(DAE.ET_INT(), true, expl));
+        DAE.SLICE(DAE.ARRAY(DAE.T_INTEGER_DEFAULT, true, expl));
     // Array with enumeration dimension.
     case DAE.DIM_ENUM(enumTypeName = enum_name, literals = l, size = sz)
       equation
         expl = makeEnumLiteralIndices(enum_name, l, 1);
       then
-        DAE.SLICE(DAE.ARRAY(DAE.ET_ENUMERATION(enum_name, l, {}), true, expl));
+        DAE.SLICE(DAE.ARRAY(DAE.T_ENUMERATION(NONE(), enum_name, l, {}, {}, DAE.emptyTypeSource), true, expl));
   end matchcontinue;
 end makeDimensionSubscript;
           
@@ -2870,7 +2887,7 @@ algorithm
     local
       DAE.Type t,tOrg;
       list<Integer> dimensions;
-      list<DAE.Dimension> dim2;
+      DAE.Dimensions dim2;
     case(t, tOrg)
       equation
         dimensions = Types.getDimensionSizes(t);
@@ -2916,6 +2933,7 @@ protected
   list<DAE.Var> varlst;
   list<SCode.Element> els;
   Boolean singleton;
+  DAE.TypeSource ts;
 algorithm
   SCode.CLASS(name=id,restriction=SCode.R_METARECORD(utPath,index,singleton),classDef=SCode.PARTS(elementLst = els)) := cdef;
   env := Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(id), SOME(Env.CLASS_SCOPE()));
@@ -2928,7 +2946,8 @@ algorithm
     ClassInf.META_RECORD(Absyn.IDENT("")), List.map1(els,Util.makeTuple,DAE.NOMOD()),
     {}, false, Inst.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, true);
   varlst := Types.boxVarLst(varlst);
-  ftype := (DAE.T_METARECORD(utPath,index,varlst,singleton),SOME(path));
+  ts := Types.mkTypeSource(SOME(path));
+  ftype := DAE.T_METARECORD(utPath,index,varlst,singleton,ts);
   // print("buildMetaRecordType " +& id +& " in scope " +& Env.printEnvPathStr(env) +& " OK " +& Types.unparseType(ftype) +&"\n");
 end buildMetaRecordType;
 

@@ -30,7 +30,7 @@
  */
 
 encapsulated package BackendDAE
-" file:         BackendDAE.mo
+" file:        BackendDAE.mo
   package:     BackendDAE
   description: BackendDAE contains the datatypes used by the backend.
 
@@ -49,35 +49,10 @@ public import HashTableCG;
 public constant String partialDerivativeNamePrefix="$pDER";
 public constant Integer RT_CLOCK_EXECSTAT_BACKEND_MODULES=12;
 
-public uniontype Type "
-Once we are in BackendDAE, the Type can be only basic types or enumeration.
-We cannot do this in DAE because functions may contain many more types."
-  record REAL end REAL;
-  record INT end INT;
-  record BOOL end BOOL;
-  record STRING end STRING;
-
-  record ENUMERATION
-    list<String> stringLst;
-  end ENUMERATION;
-
-  record EXT_OBJECT
-    Absyn.Path fullClassName;
-  end EXT_OBJECT;
-end Type;
-
-public
-uniontype VarKind "- Variabile kind"
-  record VARIABLE end VARIABLE;
-  record STATE end STATE;
-  record STATE_DER end STATE_DER;
-  record DUMMY_DER end DUMMY_DER;
-  record DUMMY_STATE end DUMMY_STATE;
-  record DISCRETE end DISCRETE;
-  record PARAM end PARAM;
-  record CONST end CONST;
-  record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
-end VarKind;
+public type Type = .DAE.Type 
+"Once we are in BackendDAE, the Type can be only basic types or enumeration. 
+ We cannot do this in DAE because functions may contain many more types.
+ adrpo: yes we can, we just simplify the DAE.Type, see Types.simplifyType";
 
 public
 uniontype BackendDAEType 
@@ -96,6 +71,18 @@ uniontype BackendDAEType
 end BackendDAEType;
 
 public
+uniontype VarKind "- Variabile kind"
+  record VARIABLE end VARIABLE;
+  record STATE end STATE;
+  record STATE_DER end STATE_DER;
+  record DUMMY_DER end DUMMY_DER;
+  record DUMMY_STATE end DUMMY_STATE;
+  record DISCRETE end DISCRETE;
+  record PARAM end PARAM;
+  record CONST end CONST;
+  record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
+end VarKind;
+
 uniontype Var "- Variables"
   record VAR
     .DAE.ComponentRef varName "varName ; variable name" ;

@@ -246,12 +246,11 @@ algorithm
   outStatement := matchcontinue(lhs,lhprop,rhs,rhprop,source)
     local
       DAE.ComponentRef c;
-      DAE.ExpType crt,t;
       DAE.Exp rhs_1,e3,e1;
-      DAE.Type ty;
+      DAE.Type t,ty;
       list<DAE.Exp> ea2;
     
-    case (lhs as DAE.CREF(componentRef = c,ty = crt),lhprop,rhs,rhprop,source)
+    case (lhs as DAE.CREF(componentRef = c,ty = _),lhprop,rhs,rhprop,source)
       equation
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop, true);
         false = Types.isPropArray(lhprop);
@@ -267,12 +266,12 @@ algorithm
       then
         DAE.STMT_ASSIGN(t,e1,rhs_1);
       */
-    case (DAE.CREF(componentRef = c,ty = crt),lhprop,rhs,rhprop,source)
+    case (DAE.CREF(componentRef = c,ty = _),lhprop,rhs,rhprop,source)
       equation
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop, false /* Don't duplicate errors */);
         true = Types.isPropArray(lhprop);
         ty = Types.getPropType(lhprop);
-        t = Types.elabType(ty);
+        t = Types.simplifyType(ty);
       then
         DAE.STMT_ASSIGN_ARR(t,c,rhs_1,source);
 
@@ -362,7 +361,7 @@ algorithm
       then
         fail();
     // a normal prop in rhs that contains a T_TUPLE!
-    case (expl,lhprops,rhs,DAE.PROP(type_ = (DAE.T_TUPLE(tupleType = tpl),_)),_,source)
+    case (expl,lhprops,rhs,DAE.PROP(type_ = DAE.T_TUPLE(tupleType = tpl)),_,source)
       equation
         bvals = List.map(lhprops, Types.propAnyConst);
         DAE.C_VAR() = List.reduce(bvals, Types.constOr);
@@ -371,9 +370,9 @@ algorithm
          /* Don\'t use new rhs\', since type conversions of 
             several output args are not clearly defined. */ 
       then
-        DAE.STMT_TUPLE_ASSIGN(DAE.ET_OTHER(),expl,rhs,source);
+        DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,expl,rhs,source);
     // a tuple in rhs        
-    case (expl,lhprops,rhs,DAE.PROP_TUPLE(type_ = (DAE.T_TUPLE(tupleType = tpl),_),tupleConst = DAE.TUPLE_CONST(tupleConstLst = clist)),_,source)
+    case (expl,lhprops,rhs,DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(tupleType = tpl),tupleConst = DAE.TUPLE_CONST(tupleConstLst = clist)),_,source)
       equation
         bvals = List.map(lhprops, Types.propAnyConst);
         DAE.C_VAR() = List.reduce(bvals, Types.constOr);
@@ -381,7 +380,7 @@ algorithm
         Types.matchTypeTupleCall(rhs, tpl, lhrtypes);
          /* Don\'t use new rhs\', since type conversions of several output args are not clearly defined. */
       then
-        DAE.STMT_TUPLE_ASSIGN(DAE.ET_OTHER(),expl,rhs,source);
+        DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,expl,rhs,source);
     case (lhs,lprop,rhs,rprop,initial_,source)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -405,12 +404,12 @@ protected function getPropExpType "function: getPropExpType
   Returns the expression type for a given Properties by calling
   getTypeExpType. Used by makeAssignment."
   input DAE.Properties p;
-  output DAE.ExpType t;
+  output DAE.Type t;
 protected
   DAE.Type ty;
 algorithm
   ty := Types.getPropType(p);
-  t := Types.elabType(ty);
+  t := Types.simplifyType(ty);
 end getPropExpType;
 
 public function makeIf "function: makeIf
@@ -533,21 +532,23 @@ public function makeFor "function: makeFor
   input DAE.ElementSource source;
   output Statement outStatement;
 algorithm
-  outStatement:=
-  matchcontinue (inIdent,inExp,inProperties,inStatementLst,source)
+  outStatement := matchcontinue (inIdent,inExp,inProperties,inStatementLst,source)
     local
-      Boolean array;
-      DAE.ExpType et;
+      Boolean isArray;
+      DAE.Type et;
       Ident i,e_str,t_str;
       DAE.Exp e;
       DAE.Type t;
       list<Statement> stmts;
-    case (i,e,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = t),_)),stmts,source)
+      DAE.Dimensions dims;
+    
+    case (i,e,DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)),stmts,source)
       equation
-        array = Types.isArray(t);
-        et = Types.elabType(t);
+        isArray = Types.isArray(t, dims);
+        et = Types.simplifyType(t);
       then
-        DAE.STMT_FOR(et,array,i,e,stmts,source);
+        DAE.STMT_FOR(t,isArray,i,e,stmts,source);
+    
     case (_,e,DAE.PROP(type_ = t),_,source)
       equation
         e_str = ExpressionDump.printExpStr(e);
@@ -574,7 +575,7 @@ algorithm
       list<Statement> stmts;
       Ident e_str,t_str;
       DAE.Type t;
-    case (e,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_)),stmts,source) then DAE.STMT_WHILE(e,stmts,source);
+    case (e,DAE.PROP(type_ = DAE.T_BOOL(varLst = _)),stmts,source) then DAE.STMT_WHILE(e,stmts,source);
     case (e,DAE.PROP(type_ = t),_,source)
       equation
         e_str = ExpressionDump.printExpStr(e);
@@ -603,8 +604,8 @@ algorithm
       Option<Statement> elsew;
       Ident e_str,t_str;
       DAE.Type t;
-    case (e,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_)),stmts,elsew,source) then DAE.STMT_WHEN(e,stmts,elsew,{},source);
-    case (e,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = (DAE.T_BOOL(varLstBool = _),_)),_)),stmts,elsew,source) then DAE.STMT_WHEN(e,stmts,elsew,{},source);
+    case (e,DAE.PROP(type_ = DAE.T_BOOL(varLst = _)),stmts,elsew,source) then DAE.STMT_WHEN(e,stmts,elsew,{},source);
+    case (e,DAE.PROP(type_ = DAE.T_ARRAY(ty = DAE.T_BOOL(varLst = _))),stmts,elsew,source) then DAE.STMT_WHEN(e,stmts,elsew,{},source);
     case (e,DAE.PROP(type_ = t),_,_,source)
       equation
         e_str = ExpressionDump.printExpStr(e);
@@ -669,7 +670,7 @@ algorithm
         Error.addSourceMessage(Error.ASSERT_CONSTANT_FALSE_ERROR,{"Message was not constant and could not be evaluated"},info);
       then fail();
     */
-    case (cond,msg,DAE.PROP(type_ = (DAE.T_BOOL(varLstBool = _),_)),DAE.PROP(type_ = (DAE.T_STRING(varLstString = _),_)),source)
+    case (cond,msg,DAE.PROP(type_ = DAE.T_BOOL(varLst = _)),DAE.PROP(type_ = DAE.T_STRING(varLst = _)),source)
       then {DAE.STMT_ASSERT(cond,msg,source)};
   end match;
 end makeAssert;
@@ -683,7 +684,7 @@ public function makeTerminate "
   output Statement outStatement;
 algorithm
   outStatement := match (msg,props,source)
-    case (msg,DAE.PROP(type_ = (DAE.T_STRING(varLstString = _),_)),source) then DAE.STMT_TERMINATE(msg,source);
+    case (msg,DAE.PROP(type_ = DAE.T_STRING(varLst = _)),source) then DAE.STMT_TERMINATE(msg,source);
   end match;
 end makeTerminate;
 

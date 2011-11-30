@@ -30,7 +30,7 @@
  */
 
 encapsulated package MetaUtil
-" file:         MetaUtil.mo
+" file:        MetaUtil.mo
   package:     MetaUtil
   description: Different MetaModelica extension functions.
 
@@ -59,9 +59,8 @@ public function isList "function: isList
   input DAE.Properties prop;
   output Boolean bool;
 algorithm
-  bool :=
-  matchcontinue (prop)
-    case (DAE.PROP((DAE.T_LIST(_),_),_)) then true;
+  bool := matchcontinue (prop)
+    case (DAE.PROP(DAE.T_METALIST(listType = _),_)) then true;
     case (_) then false;
   end matchcontinue;
 end isList;
@@ -71,8 +70,7 @@ public function transformArrayNodesToListNodes "function: transformArrayNodesToL
   input list<Absyn.Exp> accList;
   output list<Absyn.Exp> outList;
 algorithm
-  outList :=
-  matchcontinue (inList,accList)
+  outList := matchcontinue (inList,accList)
     local
       list<Absyn.Exp> localAccList,es,restList;
       Absyn.Exp firstExp;
@@ -110,13 +108,11 @@ algorithm
     case (localT,0) then localT;
     case (localT,n)
       equation
-        t = (DAE.T_LIST(localT),NONE());
+        t = DAE.T_METALIST(localT, DAE.emptyTypeSource);
         t = createListType(t,n-1);
       then t;
   end matchcontinue;
 end createListType;
-
-
 
 public function getTypeFromProp "function: getTypeFromProp"
   input DAE.Properties inProp;
@@ -143,23 +139,23 @@ algorithm
       DAE.Type tLocal;
       list<DAE.Properties> restList;
     case (_,{}) then true;
-    case (tLocal as (DAE.T_INTEGER(_),_),DAE.PROP((DAE.T_INTEGER(_),_),_) :: restList)
+    case (tLocal as DAE.T_INTEGER(varLst = _),DAE.PROP(DAE.T_INTEGER(varLst = _),_) :: restList)
       equation
         b = typeMatching(tLocal,restList);
       then b;
-    case (tLocal as (DAE.T_REAL(_),_),DAE.PROP((DAE.T_REAL(_),_),_) :: restList)
+    case (tLocal as DAE.T_REAL(varLst = _),DAE.PROP(DAE.T_REAL(varLst = _),_) :: restList)
       equation
         b = typeMatching(tLocal,restList);
       then b;
-    case (tLocal as (DAE.T_STRING(_),_),DAE.PROP((DAE.T_STRING(_),_),_) :: restList)
+    case (tLocal as DAE.T_STRING(varLst = _),DAE.PROP(DAE.T_STRING(varLst = _),_) :: restList)
      equation
         b = typeMatching(tLocal,restList);
       then b;
-    case (tLocal as (DAE.T_BOOL(_),_),DAE.PROP((DAE.T_BOOL(_),_),_) :: restList)
+    case (tLocal as DAE.T_BOOL(varLst = _),DAE.PROP(DAE.T_BOOL(varLst = _),_) :: restList)
      equation
         b = typeMatching(tLocal,restList);
       then b;
-    case (tLocal as (DAE.T_NOTYPE(),_),DAE.PROP((DAE.T_NOTYPE(),_),_) :: restList)
+    case (tLocal as (DAE.T_UNKNOWN(),_),DAE.PROP((DAE.T_UNKNOWN(),_),_) :: restList)
      equation
         b = typeMatching(tLocal,restList);
       then b;
@@ -171,8 +167,8 @@ algorithm
         b = typeMatching(tLocal,restList);
       then b;
 
-    case (tLocal as (DAE.T_LIST(t1),_),
-      DAE.PROP((DAE.T_LIST(t2),_),_) :: restList)
+    case (tLocal as (DAE.T_METALIST(t1),_),
+      DAE.PROP((DAE.T_METALIST(t2),_),_) :: restList)
       local String s1,s2;
       equation
         true = (s1 ==& s2);
@@ -209,7 +205,7 @@ algorithm
         list<Absyn.ElementItem> varList;
         list<Absyn.Exp> restExp;
         Integer n;
-        DAE.TType t;
+        DAE.Type t;
         Absyn.TypeSpec t2;
       equation
         (localCache,DAE.TYPES_VAR(_,_,_,(t,_),_),_,_) = Lookup.lookupIdent(localCache,localEnv,c);
@@ -651,12 +647,14 @@ algorithm
       list<DAE.Type> types;
       list<DAE.FuncArg> fargs;
       list<DAE.Var> fields;
-    case ((DAE.T_METARECORD(fields = fields),_))
+    
+    case (DAE.T_METARECORD(fields = fields))
       equation
         names = List.map(fields, Types.getVarName);
         types = List.map(fields, Types.getVarType);
       then (names,types);
-    case ((DAE.T_FUNCTION(fargs,(DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_),_),_))
+    
+    case (DAE.T_FUNCTION(funcArg = fargs,funcResultType = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_))))
       equation
         names = List.map(fargs, Util.tuple41);
         types = List.map(fargs, Util.tuple42);
@@ -677,13 +675,18 @@ algorithm
       list<Absyn.Path> paths;
       Absyn.Path p;
       Boolean b;
-    case (ClassInf.UNIONTYPE(p),t,SCode.PARTS(elementLst = els))
+      DAE.TypeSource ts;
+    
+    case (ClassInf.META_UNIONTYPE(p),t,SCode.PARTS(elementLst = els))
       equation
         p = Absyn.FULLYQUALIFIED(p);
         slst = getListOfStrings(els);
         paths = List.map1r(slst, Absyn.pathReplaceIdent, p);
         b = listLength(paths)==1;
-      then SOME((DAE.T_UNIONTYPE(paths,b),SOME(p)));
+        ts = Types.mkTypeSource(SOME(p));
+      then 
+        SOME(DAE.T_METAUNIONTYPE(paths,b,ts));
+    
     case (_,t,_) then t;
   end matchcontinue;
 end fixUniontype;

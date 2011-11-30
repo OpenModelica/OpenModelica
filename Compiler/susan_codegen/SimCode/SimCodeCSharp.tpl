@@ -399,7 +399,7 @@ public <%lastIdentOfPath(name)%>() {
 >>
 end modelDataMembers;
 
-template simVarTypeName(VarKind varKind, ExpType type_) ::=
+template simVarTypeName(VarKind varKind, Type type_) ::=
   match varKind 
   case VARIABLE(__)    then "Algebraic" + simVarTypeNamePostfix(type_)
   case STATE(__)       then "State"
@@ -413,16 +413,16 @@ template simVarTypeName(VarKind varKind, ExpType type_) ::=
   //case CONST(__)       then "CONST_VAR_KIND"
 end simVarTypeName;
 
-template simVarTypeNamePostfix(ExpType type_) ::=
+template simVarTypeNamePostfix(Type type_) ::=
   match type_ 
-  case ET_INT(__)  then "Int"
-  case ET_REAL(__) then ""
-  case ET_BOOL(__) then "Bool"
-  case ET_STRING(__) then "String"
-  case ET_ENUMERATION(__) then "/*Enum*/"
-  //case ET_COMPLEX(__) then "Complex"
-  //case ET_ARRAY(__) then "Array"
-  //case ET_OTHER(__) then "Other"
+  case T_INTEGER(__)  then "Int"
+  case T_REAL(__) then ""
+  case T_BOOL(__) then "Bool"
+  case T_STRING(__) then "String"
+  case T_ENUMERATION(__) then "/*Enum*/"
+  //case T_COMPLEX(__) then "Complex"
+  //case T_ARRAY(__) then "Array"
+  //case T_OTHER(__) then "Other"
   else error(sourceInfo(), "Unknown simVarTypeNamePostfix")
 end simVarTypeNamePostfix;
 
@@ -1169,7 +1169,7 @@ template representationCref(ComponentRef inCref, SimCode simCode) ::=
 	'<%representationArrayName(varKind, type_)%>[<% index %>]'
 end representationCref;
 
-template representationArrayName(VarKind varKind, ExpType type_) ::=
+template representationArrayName(VarKind varKind, Type type_) ::=
   match varKind 
   case VARIABLE(__)    then "Y" + representationArrayNameTypePostfix(type_)
   case STATE(__)       then "X"
@@ -1183,11 +1183,11 @@ template representationArrayName(VarKind varKind, ExpType type_) ::=
   else "BAD_VARKIND"
 end representationArrayName;
 
-template representationArrayNameTypePostfix(ExpType type_) ::=
+template representationArrayNameTypePostfix(Type type_) ::=
   match type_ 
-  case ET_INT(__)  then "I"
-  case ET_BOOL(__) then "B"
-  case ET_REAL(__) then ""
+  case T_INTEGER(__)  then "I"
+  case T_BOOL(__) then "B"
+  case T_REAL(__) then ""
   else "BAD_ARRAY_NAME_POSTFIX"
 end representationArrayNameTypePostfix;
 
@@ -1196,7 +1196,7 @@ template crefToReal(ComponentRef cr, SimCode simCode) ::=
 <</*(double)<% crefStr(cr, simCode) 
             %>*/<% cref2simvar(cr, simCode) |> SIMVAR(__) => //representationCref(cr, simCode)
                    '<%representationArrayName(varKind, type_)%>[<% index %>]'
-                   + (match type_ case ET_BOOL(__) 
+                   + (match type_ case T_BOOL(__) 
                       then "?1.0:0.0")
                 %>
 >>
@@ -1206,8 +1206,8 @@ end crefToReal;
 template convertRealExpForCref(Text realExp, ComponentRef cr, SimCode simCode) ::=
   cref2simvar(cr, simCode) |> SIMVAR(__) =>
      match type_ 
-     case ET_BOOL(__) then '(<%realExp%>) != 0.0'
-     case ET_INT(__) then '(int)(<%realExp%>)'
+     case T_BOOL(__) then '(<%realExp%>) != 0.0'
+     case T_INTEGER(__) then '(int)(<%realExp%>)'
      else realExp                
 
 end convertRealExpForCref;
@@ -1574,16 +1574,16 @@ end scalarLhsCref;
 */
 
 //TODO: this wrong for qualified integers !
-template rhsCref(ComponentRef it, ExpType ty, SimCode simCode) ::=
+template rhsCref(ComponentRef it, Type ty, SimCode simCode) ::=
   match it
   case CREF_IDENT(__) then '<%rhsCrefType(ty)%><%replaceDollarWorkaround(ident)%>'
   case CREF_QUAL(__)  then '<%rhsCrefType(ty)%><%ident%>.<%rhsCref(componentRef,ty, simCode)%>'
   case _          then "rhsCref:ERROR"
 end rhsCref;
 
-template rhsCrefType(ExpType it) ::=
+template rhsCrefType(Type it) ::=
   match it
-  case ET_INT(__) then "(int)"
+  case T_INTEGER(__) then "(int)"
   case _      then ""
 end rhsCrefType;
 
@@ -1603,8 +1603,8 @@ template daeExp(Exp inExp, Context context, Text &preExp, SimCode simCode) ::=
   case SCONST(__)     then '"<%Util.escapeModelicaStringToCString(string)%>"'
   case BCONST(__)     then if bool then "true" else "false" //"(1)" else "(0)"
   case ENUM_LITERAL(__) then '<%index%>/*ENUM:<%dotPath(name)%>*/'
-  case CREF(ty = ET_FUNCTION_REFERENCE_FUNC(__)) then 'FUNC_REF_NOT_SUPPORTED(cr=<%crefStr(componentRef,simCode)%>)'
-  case CREF(ty = ET_COMPLEX(complexClassType = RECORD(__))) then
+  case CREF(ty = T_FUNCTION_REFERENCE_FUNC(__)) then 'FUNC_REF_NOT_SUPPORTED(cr=<%crefStr(componentRef,simCode)%>)'
+  case CREF(ty = T_COMPLEX(complexClassType = RECORD(__))) then
     match context case FUNCTION_CONTEXT(__) then
       daeExpCrefRhs(inExp, context, &preExp, simCode)
     else
@@ -1659,8 +1659,8 @@ template daeExpCrefRhs(Exp ecr, Context context, Text &preExp, SimCode simCode) 
       box
     else if crefIsScalar(cr, context) then
       //match ecr.ty 
-      //case ET_INT(__)  then '(int)<%contextCref(cr, context, simCode)%>'
-      //case ET_BOOL(__) then 
+      //case T_INTEGER(__)  then '(int)<%contextCref(cr, context, simCode)%>'
+      //case T_BOOL(__) then 
       //	match context
       //	case FUNCTION_CONTEXT(__) then contextCref(cr, context, simCode) //TODO: a hack!
       //	else '(<%contextCref(cr, context, simCode)%> !=0.0)'
@@ -1668,7 +1668,7 @@ template daeExpCrefRhs(Exp ecr, Context context, Text &preExp, SimCode simCode) 
       contextCref(cr, context, simCode)
     else if crefSubIsScalar(cr) then
       // The array subscript results in a scalar
-      //let ety = match ecr.ty case ET_ARRAY(__) then "array" else "noarray"
+      //let ety = match ecr.ty case T_ARRAY(__) then "array" else "noarray"
       let arrName = contextCref(crefStripLastSubs(cr), context, simCode)
       //let arrayType = expTypeArray(ecr.ty,listLength(crefSubs(cr)))
       //let dimsLenStr = listLength(crefSubs(cr))
@@ -1691,7 +1691,7 @@ end daeExpCrefRhs;
 
 template daeExpCrefRhsArrayBox(Exp exp, Context context, Text &preExp, SimCode simCode) ::=
 match exp
-case ecr as CREF(ty=ET_ARRAY(ty=aty,arrayDimensions=dims)) then
+case ecr as CREF(ty=T_ARRAY(ty=aty,dims=dims)) then
   match context 
   case FUNCTION_CONTEXT(__) then ""
   else
@@ -1716,7 +1716,7 @@ template daeExpCrefRhsIndexSpec(list<Subscript> subs, Context context, Text &pre
          "null"
        case SLICE(__) then
          match exp
-         case ARRAY(scalar=true, ty=ET_INT(__)) then
+         case ARRAY(scalar=true, ty=T_INTEGER(__)) then
            <<
            new int[]{<% array |> e => '(<%expTypeFromExp(e)%>)<%daeExp(e, context, &preExp, simCode)%>-1' 
                         ;separator=","
@@ -1755,7 +1755,7 @@ template daeExpAsub(Exp aexp, Context context, Text &preExp, SimCode simCode)
       daeExpCrefRhs(buildCrefExpFromAsub(ecr, subs), context, &preExp, simCode)
     else //SIMULATION or OTHER contexts
       match ecr.ty
-      case ET_ARRAY(ty = ET_REAL(__), arrayDimensions = dims) then //daeExpCrefRhsArrayBox
+      case T_ARRAY(ty = T_REAL(__), dims = dims) then //daeExpCrefRhsArrayBox
         <<
         /*<% crefStr(cr, simCode) 
            %>[]*/<% cref2simvar(cr, simCode) |> SIMVAR(__) =>
@@ -1803,7 +1803,7 @@ end asubSubsripts;
 // TODO: Use this function in other places where almost the same thing is hard
 //       coded
 // not used yet 
-template arrayScalarRhs(ExpType ty, list<Exp> subs, Text arrName, Context context,
+template arrayScalarRhs(Type ty, list<Exp> subs, Text arrName, Context context,
                         Text &preExp, SimCode simCode)
  "Helper to daeExpAsub."
 ::=
@@ -1857,30 +1857,30 @@ template daeExpRelation(Exp inExp, Context context, Text &preExp, SimCode simCod
     if  simrel then simrel
     else //non-SIMULATION context or precise equality 
       match operator
-      case LESS(ty = ET_BOOL(__))        then '(!<%e1%> && <%e2%>)'
-      case LESS(ty = ET_STRING(__))      then "# string comparison not supported\n"
-      case LESS(ty = ET_INT(__))
-      case LESS(ty = ET_REAL(__))        then '(<%e1%> < <%e2%>)'
-      case GREATER(ty = ET_BOOL(__))     then '(<%e1%> && !<%e2%>)'
-      case GREATER(ty = ET_STRING(__))   then "# string comparison not supported\n"
-      case GREATER(ty = ET_INT(__))
-      case GREATER(ty = ET_REAL(__))     then '(<%e1%> > <%e2%>)'
-      case LESSEQ(ty = ET_BOOL(__))      then '(!<%e1%> || <%e2%>)'
-      case LESSEQ(ty = ET_STRING(__))    then "# string comparison not supported\n"
-      case LESSEQ(ty = ET_INT(__))
-      case LESSEQ(ty = ET_REAL(__))      then '(<%e1%> <= <%e2%>)'
-      case GREATEREQ(ty = ET_BOOL(__))   then '(<%e1%> || !<%e2%>)'
-      case GREATEREQ(ty = ET_STRING(__)) then "# string comparison not supported\n"
-      case GREATEREQ(ty = ET_INT(__))
-      case GREATEREQ(ty = ET_REAL(__))   then '(<%e1%> >= <%e2%>)'
-      case EQUAL(ty = ET_BOOL(__))       then '((!<%e1%> && !<%e2%>) || (<%e1%> && <%e2%>))'
-      case EQUAL(ty = ET_STRING(__))
-      case EQUAL(ty = ET_INT(__))
-      case EQUAL(ty = ET_REAL(__))       then '(<%e1%> == <%e2%>)'
-      case NEQUAL(ty = ET_BOOL(__))      then '((!<%e1%> && <%e2%>) || (<%e1%> && !<%e2%>))'
-      case NEQUAL(ty = ET_STRING(__))
-      case NEQUAL(ty = ET_INT(__))
-      case NEQUAL(ty = ET_REAL(__))      then '(<%e1%> != <%e2%>)'
+      case LESS(ty = T_BOOL(__))        then '(!<%e1%> && <%e2%>)'
+      case LESS(ty = T_STRING(__))      then "# string comparison not supported\n"
+      case LESS(ty = T_INTEGER(__))
+      case LESS(ty = T_REAL(__))        then '(<%e1%> < <%e2%>)'
+      case GREATER(ty = T_BOOL(__))     then '(<%e1%> && !<%e2%>)'
+      case GREATER(ty = T_STRING(__))   then "# string comparison not supported\n"
+      case GREATER(ty = T_INTEGER(__))
+      case GREATER(ty = T_REAL(__))     then '(<%e1%> > <%e2%>)'
+      case LESSEQ(ty = T_BOOL(__))      then '(!<%e1%> || <%e2%>)'
+      case LESSEQ(ty = T_STRING(__))    then "# string comparison not supported\n"
+      case LESSEQ(ty = T_INTEGER(__))
+      case LESSEQ(ty = T_REAL(__))      then '(<%e1%> <= <%e2%>)'
+      case GREATEREQ(ty = T_BOOL(__))   then '(<%e1%> || !<%e2%>)'
+      case GREATEREQ(ty = T_STRING(__)) then "# string comparison not supported\n"
+      case GREATEREQ(ty = T_INTEGER(__))
+      case GREATEREQ(ty = T_REAL(__))   then '(<%e1%> >= <%e2%>)'
+      case EQUAL(ty = T_BOOL(__))       then '((!<%e1%> && !<%e2%>) || (<%e1%> && <%e2%>))'
+      case EQUAL(ty = T_STRING(__))
+      case EQUAL(ty = T_INTEGER(__))
+      case EQUAL(ty = T_REAL(__))       then '(<%e1%> == <%e2%>)'
+      case NEQUAL(ty = T_BOOL(__))      then '((!<%e1%> && <%e2%>) || (<%e1%> && !<%e2%>))'
+      case NEQUAL(ty = T_STRING(__))
+      case NEQUAL(ty = T_INTEGER(__))
+      case NEQUAL(ty = T_REAL(__))      then '(<%e1%> != <%e2%>)'
       case _                         then "daeExpRelation:ERR"
 end daeExpRelation;
 
@@ -1997,7 +1997,7 @@ template daeExpCall(Exp it, Context context, Text &preExp, SimCode simCode) ::=
   case CALL(path=IDENT(name="pre"), expLst={arg as CREF(__)}) then
     //let retType = expType(arg.ty)
     <<
-    <%match arg.ty case ET_INT(__) then "(int)"
+    <%match arg.ty case T_INTEGER(__) then "(int)"
     %><% preCref(arg.componentRef, simCode) %>
     >>
   
@@ -2018,7 +2018,7 @@ template daeExpCall(Exp it, Context context, Text &preExp, SimCode simCode) ::=
     let var2 = daeExp(e2, context, &preExp, simCode)
     'Mod_<%expTypeShort(attr.ty)%>(<%var1%>,<%var2%>)'
   
-  case CALL(path=IDENT(name="abs"), expLst={e1}, attr=CALL_ATTR(ty = ET_INT())) then
+  case CALL(path=IDENT(name="abs"), expLst={e1}, attr=CALL_ATTR(ty = T_INTEGER(__))) then
     let var1 = daeExp(e1, context, &preExp, simCode)
     'Abs_int(<%var1%>)'
     
@@ -2046,7 +2046,7 @@ template daeExpCall(Exp it, Context context, Text &preExp, SimCode simCode) ::=
     
   // TODO: add more special builtins (Codegen.generateBuiltinFunction)
   // no return calls
-  case CALL(attr=CALL_ATTR(tuple_=false,ty=ET_NORETCALL(__))) then
+  case CALL(attr=CALL_ATTR(tuple_=false,ty=T_NORETCALL(__))) then
     let argStr = (expLst |> it => daeExp(it, context, &preExp, simCode) ;separator=", ")
     let &preExp += '<%underscorePrefix(attr.builtin)%><%underscorePath(path)%>(<%argStr%>);<%\n%>'
     <<
@@ -2060,7 +2060,7 @@ template daeExpCall(Exp it, Context context, Text &preExp, SimCode simCode) ::=
     <%underscorePrefix(attr.builtin)
     %><%funName%>(<%argStr%>)<%if not attr.builtin then '/* !!!TODO:.<%funName%>_rettype_1 */'%>
     >>
-  case _ then "daeExpCall:NOT_YET_IMPLEMENTED"
+  case _ then "daeExpCall:NOT_YT_IMPLEMENTED"
 end daeExpCall;
 
 template daeExpArray(Exp aexp, Context context, Text &preExp, SimCode simCode) ::=
@@ -2113,8 +2113,8 @@ match cexp
 case CAST(__) then
   let expVar = daeExp(exp, context, &preExp, simCode)
   match ty
-  case ET_INT(__)   then '((int)<%expVar%>)'
-  case ET_REAL(__)  then '((double)<%expVar%>)'
+  case T_INTEGER(__)   then '((int)<%expVar%>)'
+  case T_REAL(__)  then '((double)<%expVar%>)'
   else "NOT_IMPLEMENTED_CAST"    
 end daeExpCast;
 
@@ -2152,23 +2152,24 @@ case VARIABLE(__) then
 end varType;
 
 // TODO: Check with Codegen
-template expTypeShort(DAE.ExpType it) ::=
+template expTypeShort(DAE.Type it) ::=
   match it
-  case ET_INT(__)    then "int"
-  case ET_REAL(__)   then "double"
-  case ET_STRING(__) then "string"
-  case ET_BOOL(__)   then "bool"
-  case ET_OTHER(__)  then "OTHER_TYPE_NOT_SUPPORTED"
-  case ET_ARRAY(__)  then expTypeShort(ty)   
-  case ET_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then "object"
-  case ET_COMPLEX(__) then '/*struct*/<%underscorePath(name)%>'
-  case ET_METATYPE(__) case ET_BOXED(__) then "META_TYPE_NOT_SUPPORTED"
-  case ET_FUNCTION_REFERENCE_VAR(__) then "FN_PTR_NOT_SUPPORTED"
+  case T_INTEGER(__)    then "int"
+  case T_REAL(__)   then "double"
+  case T_STRING(__) then "string"
+  case T_BOOL(__)   then "bool"
+  case T_UNKNOWN(__)  then "UNKNOWN_TYPE_NOT_SUPPORTED"
+  case T_ANYTYPE(__)  then "ANYTYPE_TYPE_NOT_SUPPORTED"
+  case T_ARRAY(__)  then expTypeShort(ty)   
+  case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then "object"
+  case T_COMPLEX(__) then '/*struct*/<%underscorePath(ClassInf.getStateName(complexClassType))%>'
+  case T_METATYPE(__) case T_METABOXED(__) then "META_TYPE_NOT_SUPPORTED"
+  case T_FUNCTION_REFERENCE_VAR(__) then "FN_PTR_NOT_SUPPORTED"
   else "expTypeShort_ERROR"
 end expTypeShort;
 
 
-template expType(DAE.ExpType ty, Boolean isArray)
+template expType(DAE.Type ty, Boolean isArray)
  "Generate type helper."
 ::=
   if isArray 
@@ -2176,17 +2177,17 @@ template expType(DAE.ExpType ty, Boolean isArray)
   else expTypeShort(ty)
 end expType;
 
-template expTypeArray(DAE.ExpType ty, Integer dims) ::=
+template expTypeArray(DAE.Type ty, Integer dims) ::=
 <<
 SimArray<%dims%><<%expTypeShort(ty)%>>
 >>
 end expTypeArray;
 
-template expTypeArrayIf(DAE.ExpType ty)
+template expTypeArrayIf(DAE.Type ty)
  "Generate type helper."
 ::=
   match ty
-  case ET_ARRAY(__) then expTypeArray(ty, listLength(arrayDimensions))
+  case T_ARRAY(__) then expTypeArray(ty, listLength(dims))
   else expTypeShort(ty)
 end expTypeArrayIf;
 

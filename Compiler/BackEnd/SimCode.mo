@@ -279,7 +279,7 @@ uniontype SimVar
     Option<DAE.Exp> initialValue;
     Option<DAE.Exp> nominalValue;
     Boolean isFixed;
-    DAE.ExpType type_;
+    DAE.Type type_;
     Boolean isDiscrete;
     // arrayCref is the name of the array if this variable is the first in that
     // array
@@ -363,17 +363,17 @@ uniontype SimExtArg
     Integer outputIndex; // > 0 if output
     Boolean isArray;
     Boolean hasBinding "avoid double allocation";
-    DAE.ExpType type_;
+    DAE.Type type_;
   end SIMEXTARG;
   record SIMEXTARGEXP
     DAE.Exp exp;
-    DAE.ExpType type_;
+    DAE.Type type_;
   end SIMEXTARGEXP;
   record SIMEXTARGSIZE
     DAE.ComponentRef cref;
     Boolean isInput;
     Integer outputIndex; // > 0 if output
-    DAE.ExpType type_;
+    DAE.Type type_;
     DAE.Exp exp;
   end SIMEXTARGSIZE;
   record SIMNOEXTARG end SIMNOEXTARG;
@@ -383,14 +383,14 @@ end SimExtArg;
 uniontype Variable
   record VARIABLE
     DAE.ComponentRef name;
-    DAE.ExpType ty;
+    DAE.Type ty;
     Option<DAE.Exp> value; // Default value
     list<DAE.Exp> instDims;
   end VARIABLE;
   
   record FUNCTION_PTR
     String name;
-    list<DAE.ExpType> tys;
+    list<DAE.Type> tys;
     list<Variable> args;
   end FUNCTION_PTR;
 end Variable;
@@ -590,7 +590,7 @@ algorithm
   cRefOut := matchcontinue(cref, subs)
     local
       DAE.Exp crefExp;
-      DAE.ExpType ty;
+      DAE.Type ty;
       DAE.ComponentRef crNew;
       list<DAE.Subscript> indexes;
       
@@ -627,15 +627,15 @@ public function makeCrefRecordExp
 "function: makeCrefRecordExp
   Helper function to generate records."
   input DAE.ComponentRef inCRefRecord;
-  input DAE.ExpVar inVar;
+  input DAE.Var inVar;
   output DAE.Exp outExp;
 algorithm
   outExp := match (inCRefRecord,inVar)
     local
       DAE.ComponentRef cr,cr1;
       String name;
-      DAE.ExpType tp;
-    case (cr,DAE.COMPLEX_VAR(name=name,tp=tp))
+      DAE.Type tp;
+    case (cr,DAE.TYPES_VAR(name=name,ty=tp))
       equation
         cr1 = ComponentReference.crefPrependIdent(cr,name,{},tp);
         outExp = Expression.makeCrefExp(cr1,tp);
@@ -664,11 +664,11 @@ algorithm
         
     case (cref, _)
       equation
-        badcref = ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed", DAE.ET_REAL(), {});
+        badcref = ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed", DAE.T_REAL_DEFAULT, {});
         //errstr = "Template did not find the simulation variable for "+& ComponentReference.printComponentRefStr(cref) +& ". ";
         //Error.addMessage(Error.INTERNAL_ERROR, {errstr});
       then
-        SIMVAR(badcref, BackendDAE.STATE(), "", "", "", -1, NONE(), NONE(), false, DAE.ET_REAL(), false, NONE(), NOALIAS(), DAE.emptyElementSource, INTERNAL(),NONE(),{});
+        SIMVAR(badcref, BackendDAE.STATE(), "", "", "", -1, NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), NOALIAS(), DAE.emptyElementSource, INTERNAL(),NONE(),{});
   end matchcontinue;
 end cref2simvar;
 
@@ -699,7 +699,7 @@ algorithm
     local
       list<DAE.Exp> aRest;
       DAE.ComponentRef cr;
-      DAE.ExpType aty;
+      DAE.Type aty;
       DAE.Exp crefExp;
       
     case(DAE.ARRAY(ty=aty, scalar=true, array =(DAE.CREF(componentRef=cr) ::aRest)),context)
@@ -754,7 +754,7 @@ algorithm
   outExp := matchcontinue (inExp, context)
     local
       DAE.ComponentRef cr;
-      DAE.ExpType aty;
+      DAE.Type aty;
       list<list<DAE.Exp>> rows;
       DAE.Exp crefExp;
       
@@ -830,7 +830,7 @@ public function createAssertforSqrt
 algorithm
   outExp := 
   matchcontinue (inExp)
-  case(_) then DAE.RELATION(inExp,DAE.GREATEREQ(DAE.ET_REAL()),DAE.RCONST(0.0),-1,NONE());
+  case(_) then DAE.RELATION(inExp,DAE.GREATEREQ(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0),-1,NONE());
   end matchcontinue;
 end createAssertforSqrt;
 
@@ -1393,7 +1393,7 @@ algorithm
       DAE.Exp exp,nexp;
       Integer i,ix;
       list<DAE.Exp> l;
-      DAE.ExpType et;
+      DAE.Type et;
       HashTableExpToIndex.HashTable ht;
     case ((exp,(i,ht,l)))
       equation
@@ -1418,7 +1418,7 @@ algorithm
   o := match e
     local
       list<DAE.Exp> es;
-      DAE.ExpType ty;
+      DAE.Type ty;
     case DAE.LIST(es as _::_) then listToCons2(es);
   end match;
 end listToCons;
@@ -1577,9 +1577,9 @@ protected function isBoxedArg
 algorithm
   _ := match var
     case FUNCTION_PTR(tys = _) then ();
-    case VARIABLE(ty = DAE.ET_BOXED(_)) then ();
-    case VARIABLE(ty = DAE.ET_METATYPE()) then ();
-    case VARIABLE(ty = DAE.ET_STRING()) then ();
+    case VARIABLE(ty = DAE.T_METABOXED(source = _)) then ();
+    case VARIABLE(ty = DAE.T_METATYPE(source = _)) then ();
+    case VARIABLE(ty = DAE.T_STRING(source = _)) then ();
   end match;
 end isBoxedArg;
 
@@ -1705,7 +1705,7 @@ algorithm
       String name;
     case ({}, accfns, rt, decls, includes, includeDirs, libs)
     then (listReverse(accfns), rt, decls, includes, includeDirs, libs);
-    case ((DAE.FUNCTION(type_ = (DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN_PTR())),_)) :: rest), accfns, rt, decls, includes, includeDirs, libs)
+    case ((DAE.FUNCTION(type_ = DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN_PTR()))) :: rest), accfns, rt, decls, includes, includeDirs, libs)
       equation
         // skip over builtin functions
         (fns, rt_2, decls, includes, includeDirs, libs) = elaborateFunctions2(rest, accfns, rt, decls, includes, includeDirs, libs);
@@ -1784,7 +1784,7 @@ algorithm
       // Modelica functions.
     case (DAE.FUNCTION(path = fpath, source = source,
       functions = DAE.FUNCTION_DEF(body = daeElts)::_, // might be followed by derivative maps
-      type_ = tp as (DAE.T_FUNCTION(funcArg=args, funcResultType=restype), _),
+      type_ = tp as DAE.T_FUNCTION(funcArg=args, funcResultType=restype),
       partialPrefix=false), rt, recordDecls, includes, includeDirs, libs)
       equation
         outVars = List.map(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
@@ -1801,7 +1801,7 @@ algorithm
         // External functions.
     case (DAE.FUNCTION(path = fpath, source = source,
       functions = DAE.FUNCTION_EXT(body =  daeElts, externalDecl = extdecl)::_, // might be followed by derivative maps
-      type_ = (tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_))),rt,recordDecls,includes,includeDirs,libs)
+      type_ = (tp as DAE.T_FUNCTION(funcArg = args,funcResultType = restype))),rt,recordDecls,includes,includeDirs,libs)
       equation
         DAE.EXTERNALDECL(name=extfnname, args=extargs,
           returnArg=extretarg, language=lang, ann=ann) = extdecl;
@@ -1829,7 +1829,7 @@ algorithm
           rt_1, recordDecls, includes, includeDirs, libs);
         
         // Record constructor.
-    case (DAE.RECORD_CONSTRUCTOR(path = fpath, source = source, type_ = tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_)),_)), rt,recordDecls,includes,includeDirs,libs)
+    case (DAE.RECORD_CONSTRUCTOR(path = fpath, source = source, type_ = tp as DAE.T_FUNCTION(funcArg = args,funcResultType = restype as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)))), rt,recordDecls,includes,includeDirs,libs)
       equation
         funArgs = List.map(args, typesSimFunctionArg);
         (recordDecls,rt_1) = elaborateRecordDeclarationsForRecord(restype, recordDecls, rt);
@@ -1856,41 +1856,40 @@ algorithm
   outVar := matchcontinue (inFuncArg)
     local
       Types.Type tty;
-      DAE.ExpType expType;
+      DAE.Type expType;
       String name;
       DAE.ComponentRef cref_;
       list<Types.FuncArg> args;
       DAE.Type res_ty;
-      list<DAE.ExpType> etys;
       list<Variable> var_args;
       list<DAE.Type> tys;
       
-    case ((name, tty as (DAE.T_FUNCTION(funcArg = args, funcResultType = (DAE.T_TUPLE(tys),_)), _),_,_))
+    case ((name, tty as DAE.T_FUNCTION(funcArg = args, funcResultType = DAE.T_TUPLE(tupleType = tys)), _, _))
       equation
         var_args = List.map(args, typesSimFunctionArg);
-        etys = List.map(tys, Types.elabType);
+        tys = List.map(tys, Types.simplifyType);
       then
-        FUNCTION_PTR(name, etys, var_args);
+        FUNCTION_PTR(name, tys, var_args);
         
-    case ((name, tty as (DAE.T_FUNCTION(funcArg = args, funcResultType = (DAE.T_NORETCALL(),_)), _),_,_))
+    case ((name, tty as DAE.T_FUNCTION(funcArg = args, funcResultType = DAE.T_NORETCALL(source = _)),_,_))
       equation
         var_args = List.map(args, typesSimFunctionArg);
       then
         FUNCTION_PTR(name, {}, var_args);
         
-    case ((name, tty as (DAE.T_FUNCTION(funcArg = args, funcResultType = res_ty), _),_,_))
+    case ((name, tty as DAE.T_FUNCTION(funcArg = args, funcResultType = res_ty),_,_))
       equation
-        expType = Types.elabType(res_ty);
+        res_ty = Types.simplifyType(res_ty);
         var_args = List.map(args, typesSimFunctionArg);
       then
-        FUNCTION_PTR(name, {expType}, var_args);
+        FUNCTION_PTR(name, {res_ty}, var_args);
         
     case ((name,tty,_,_))
       equation
-        expType = Types.elabType(tty);
-        cref_  = ComponentReference.makeCrefIdent(name, expType, {});
+        tty = Types.simplifyType(tty);
+        cref_  = ComponentReference.makeCrefIdent(name, tty, {});
       then
-        VARIABLE(cref_,expType,NONE(),{});
+        VARIABLE(cref_,tty,NONE(),{});
   end matchcontinue;
 end typesSimFunctionArg;
 
@@ -1901,14 +1900,13 @@ algorithm
   outVar := matchcontinue(inElement)
     local
       String name;
-      DAE.ExpType expType;
       DAE.Type daeType;
       Expression.ComponentRef id;
       list<Expression.Subscript> inst_dims;
       list<DAE.Exp> inst_dims_exp;
       Option<DAE.Exp> binding;
       Variable var;
-    case (DAE.VAR(componentRef = DAE.CREF_IDENT(ident=name),ty = daeType as (DAE.T_FUNCTION(funcArg=_),_)))
+    case (DAE.VAR(componentRef = DAE.CREF_IDENT(ident=name),ty = daeType as DAE.T_FUNCTION(funcArg=_)))
       equation
         var = typesSimFunctionArg((name,daeType,DAE.C_VAR(),NONE()));
       then var;
@@ -1919,9 +1917,9 @@ algorithm
       dims = inst_dims
     ))
       equation
-        expType = Types.elabType(daeType);
+        daeType = Types.simplifyType(daeType);
         inst_dims_exp = List.map(inst_dims, indexSubscriptToExp);
-      then VARIABLE(id,expType,binding,inst_dims_exp);
+      then VARIABLE(id,daeType,binding,inst_dims_exp);
     case (_)
       equation
         // TODO: ArrayEqn fails here
@@ -1944,30 +1942,32 @@ algorithm
       Boolean isInput;
       Boolean isOutput;
       Boolean isArray;
-      DAE.ExpType expType;
       DAE.Exp exp_;
       Integer outputIndex;
+    
     case DAE.EXTARG(componentRef, attributes, type_)
       equation
         isInput = Types.isInputAttr(attributes);
         isOutput = Types.isOutputAttr(attributes);
         outputIndex = Util.if_(isOutput, -1, 0); // correct output index is added later by fixOutputIndex
-        isArray = Types.isArray(type_);
-        expType = Types.elabType(type_);
-      then SIMEXTARG(componentRef, isInput, outputIndex, isArray, false /*fixed later*/, expType);
+        isArray = Types.isArray(type_, {});
+        type_ = Types.simplifyType(type_);
+      then SIMEXTARG(componentRef, isInput, outputIndex, isArray, false /*fixed later*/, type_);
+    
     case DAE.EXTARGEXP(exp_, type_)
       equation
-        expType = Types.elabType(type_);
-      then SIMEXTARGEXP(exp_, expType);
+        type_ = Types.simplifyType(type_);
+      then SIMEXTARGEXP(exp_, type_);
+    
     case DAE.EXTARGSIZE(componentRef, attributes, type_, exp_)
       equation
         isInput = Types.isInputAttr(attributes);
         isOutput = Types.isOutputAttr(attributes);
         outputIndex = Util.if_(isOutput, -1, 0); // correct output index is added later by fixOutputIndex
-        expType = Types.elabType(type_);
-      then SIMEXTARGSIZE(componentRef, isInput, outputIndex, expType, exp_);
-    case DAE.NOEXTARG()
-    then SIMNOEXTARG();
+        type_ = Types.simplifyType(type_);
+      then SIMEXTARGSIZE(componentRef, isInput, outputIndex, type_, exp_);
+    
+    case DAE.NOEXTARG() then SIMNOEXTARG();
   end match;
 end extArgsToSimExtArgs;
 
@@ -2001,7 +2001,7 @@ algorithm
       Boolean isInput;
       Integer outputIndex; // > 0 if output
       Boolean isArray,hasBinding;
-      DAE.ExpType type_;
+      DAE.Type type_;
       DAE.Exp exp;
       Integer newOutputIndex;
     
@@ -2846,7 +2846,7 @@ algorithm
       Absyn.Path name;
       list<DAE.Exp> args_;
       Boolean tup,builtin_;
-      DAE.ExpType exty;
+      DAE.Type exty;
       DAE.InlineType inty;
       DAE.CallAttributes attr;
     case (((e as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,attr=attr)),(nhelpvars,helpvars)))
@@ -3105,7 +3105,7 @@ algorithm
       Integer index;
       RecordDeclaration recDecl;
       
-    case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name), complexVarLst = varlst),SOME(path)), accRecDecls, rt)
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name), varLst = varlst, source = {path}), accRecDecls, rt)
       equation
         sname = Absyn.pathStringReplaceDot(name, "_");
         false = listMember(sname,rt);
@@ -3116,10 +3116,10 @@ algorithm
         accRecDecls = List.appendElt(recDecl, accRecDecls);
       then (accRecDecls,rt_2);
         
-    case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name), complexVarLst = varlst),_), accRecDecls, rt)
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name), varLst = varlst), accRecDecls, rt)
     then (accRecDecls,rt);
-        
-    case ((DAE.T_METARECORD(index = index, fields = varlst), SOME(path)), accRecDecls, rt)
+           
+    case (DAE.T_METARECORD(index = index, fields = varlst, source = {path}), accRecDecls, rt)
       equation
         sname = Absyn.pathStringReplaceDot(path, "_");
         false = listMember(sname,rt);
@@ -3129,10 +3129,10 @@ algorithm
         (accRecDecls,rt_2) = elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
       then (accRecDecls,rt_2);
         
-    case ((_,_), accRecDecls, rt)
+    case (_, accRecDecls, rt)
     then (accRecDecls,rt);
         
-    case ((_,_), accRecDecls, rt) then
+    case (_, accRecDecls, rt) then
       (RECORD_DECL_FULL("#an odd record#", Absyn.IDENT("?noname?"), {}) :: accRecDecls ,rt);
   end matchcontinue;
 end elaborateRecordDeclarationsForRecord;
@@ -3169,7 +3169,7 @@ algorithm
       list<RecordDeclaration> accRecDecls;
     case ({},accRecDecls,rt)
     then (accRecDecls,rt);
-    case (DAE.TYPES_VAR(ty = (ty as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_)))::rest,accRecDecls,rt)
+    case (DAE.TYPES_VAR(ty = ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)))::rest,accRecDecls,rt)
       equation
         (accRecDecls,rt_1) = elaborateRecordDeclarationsForRecord(ty,accRecDecls,rt);
         (accRecDecls,rt_2) = elaborateNestedRecordDeclarations(rest,accRecDecls,rt_1);
@@ -3316,7 +3316,7 @@ algorithm
     case (((e as DAE.CALL(path=Absyn.IDENT(name="sqrt"), expLst={e1})),inasserts))
       equation
         estr = "Model error: Argument of sqrt should be >= 0";
-        addAssert = DAE.STMT_ASSERT(DAE.RELATION(e1,DAE.GREATEREQ(DAE.ET_REAL()),DAE.RCONST(0.0),-1,NONE()),DAE.SCONST(estr),DAE.emptyElementSource);
+        addAssert = DAE.STMT_ASSERT(DAE.RELATION(e1,DAE.GREATEREQ(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0),-1,NONE()),DAE.SCONST(estr),DAE.emptyElementSource);
       then ((e, addAssert::inasserts));
     
     case inTuple then inTuple;
@@ -3768,11 +3768,11 @@ algorithm
       
     case(inExp, SOME( .DAE.VAR_ATTR_REAL(initial_=SOME(startValue))), true) equation
       false = Expression.expContainsAnyIfExp(inExp);
-      lambda = DAE.CREF(DAE.CREF_IDENT("$_lambda", DAE.ET_REAL, {}), DAE.ET_REAL);
-      e1 = DAE.BINARY(DAE.RCONST(1.0), DAE.SUB(DAE.ET_REAL), lambda);
-      e2 = DAE.BINARY(lambda, DAE.MUL(DAE.ET_REAL), inExp);
-      e3 = DAE.BINARY(e1, DAE.MUL(DAE.ET_REAL), startValue);
-      e4 = DAE.BINARY(e2, DAE.ADD(DAE.ET_REAL), e3);
+      lambda = DAE.CREF(DAE.CREF_IDENT("$_lambda", DAE.T_REAL, {}), DAE.T_REAL);
+      e1 = DAE.BINARY(DAE.RCONST(1.0), DAE.SUB(DAE.T_REAL), lambda);
+      e2 = DAE.BINARY(lambda, DAE.MUL(DAE.T_REAL), inExp);
+      e3 = DAE.BINARY(e1, DAE.MUL(DAE.T_REAL), startValue);
+      e4 = DAE.BINARY(e2, DAE.ADD(DAE.T_REAL), e3);
     then e4;
     
     case(inExp, _, _)
@@ -3808,9 +3808,9 @@ algorithm
       
     case(eqn::eqns, (var as BackendDAE.VAR(values=varAttr))::vars, true) equation
       BackendDAE.EQUATION(exp, scalar, source) = eqn;
-      // lambda = DAE.CREF(DAE.CREF_IDENT("$_lambda", DAE.ET_REAL, {}), DAE.ET_REAL);
-      // e1 = DAE.BINARY(DAE.RCONST(1.0), DAE.SUB(DAE.ET_REAL), lambda);
-      // eqn = BackendDAE.EQUATION(DAE.BINARY(DAE.BINARY(lambda, DAE.MUL(DAE.ET_REAL), exp), DAE.ADD(DAE.ET_REAL), DAE.BINARY(e1, DAE.MUL(DAE.ET_REAL), startValue)), DAE.BINARY(lambda, DAE.MUL(DAE.ET_REAL), scalar), source);
+      // lambda = DAE.CREF(DAE.CREF_IDENT("$_lambda", DAE.T_REAL, {}), DAE.T_REAL);
+      // e1 = DAE.BINARY(DAE.RCONST(1.0), DAE.SUB(DAE.T_REAL), lambda);
+      // eqn = BackendDAE.EQUATION(DAE.BINARY(DAE.BINARY(lambda, DAE.MUL(DAE.T_REAL), exp), DAE.ADD(DAE.T_REAL), DAE.BINARY(e1, DAE.MUL(DAE.T_REAL), startValue)), DAE.BINARY(lambda, DAE.MUL(DAE.T_REAL), scalar), source);
       scalar = addStartValueHomotopy(scalar, varAttr, true);
       eqn = BackendDAE.EQUATION(exp, scalar, source);
       eqns = addStartValueHomotopyToOdeSystem(eqns, vars, true);
@@ -4156,7 +4156,7 @@ algorithm
       Absyn.Path name;
       list<DAE.Exp> args_;
       Boolean tup,builtin_;
-      DAE.ExpType exty;
+      DAE.Type exty;
       DAE.InlineType inty;
       DAE.Exp condition1;
       DAE.CallAttributes attr;
@@ -4226,7 +4226,7 @@ algorithm
    Absyn.Path name;
    list<DAE.Exp> args_;
    Boolean tup,builtin_;
-   DAE.ExpType exty;
+   DAE.Type exty;
    DAE.InlineType inty;
    DAE.CallAttributes attr;
   case(condition, {}) then condition;
@@ -4263,7 +4263,7 @@ algorithm
   matchcontinue (eqs, arrayEqs, algs, inEntrylst)
     local
       Integer indx,aindx;
-      DAE.ExpType tp;
+      DAE.Type tp;
       DAE.Exp res_exp,e1,e2,e;
       list<DAE.Exp> explst;
       list<BackendDAE.Equation> rest;
@@ -4677,7 +4677,7 @@ algorithm
         crefs = BackendVariable.getAllCrefFromVariables(v);
         // get Tearingvar from crs
         // to use listNth cref and eqn_lst have to start at 1 and not at 0 -> right shift
-        cr = ComponentReference.makeCrefIdent("shift",DAE.ET_REAL(),{});
+        cr = ComponentReference.makeCrefIdent("shift",DAE.T_REAL_DEFAULT,{});
         crefs1 = cr :: crefs;
         eq = BackendDAE.EQUATION(DAE.RCONST(0.0),DAE.RCONST(0.0),DAE.emptyElementSource);
         eqn_lst1 = eq :: eqn_lst;
@@ -5245,7 +5245,7 @@ algorithm
   (outExp,outAsserts) := match (inEqn,inExp)
     local
       DAE.Exp exp,e1,e2,sol,zero;
-      DAE.ExpType tp;
+      DAE.Type tp;
       list<DAE.Statement> asserts;
       DAE.ComponentRef cr;
       
@@ -5601,7 +5601,7 @@ algorithm
     local
       DAE.ComponentRef cr,eltcr,cr2;
       DAE.Exp e1,e2;
-      DAE.ExpType ty;
+      DAE.Type ty;
       
     case (cr,eltcr,(e1 as DAE.CREF(componentRef = cr2)),e2,source)
       equation
@@ -5685,16 +5685,16 @@ algorithm
     case({}) then {};
       
     case(BackendDAE.EQUATION(e1, e2, es)::eqns) equation
-      lambda = DAE.CREF(DAE.CREF_IDENT("$_lambda", DAE.ET_REAL(), {}), DAE.ET_REAL());
-      e1 = DAE.BINARY(lambda, DAE.MUL(DAE.ET_REAL()), e1);
-      e2 = DAE.BINARY(lambda, DAE.MUL(DAE.ET_REAL()), e2);
+      lambda = DAE.CREF(DAE.CREF_IDENT("$_lambda", DAE.T_REAL_DEFAULT, {}), DAE.T_REAL_DEFAULT);
+      e1 = DAE.BINARY(lambda, DAE.MUL(DAE.T_REAL_DEFAULT), e1);
+      e2 = DAE.BINARY(lambda, DAE.MUL(DAE.T_REAL_DEFAULT), e2);
       eqn = BackendDAE.EQUATION(e1, e2, es);
       eqns = addLambdaToEquationList(eqns);
     then eqn::eqns;
       
     case(BackendDAE.RESIDUAL_EQUATION(e1, es)::eqns) equation
-      lambda = DAE.CREF(DAE.CREF_IDENT("$_lambda", DAE.ET_REAL(), {}), DAE.ET_REAL());
-      e1 = DAE.BINARY(lambda, DAE.MUL(DAE.ET_REAL()), e1);
+      lambda = DAE.CREF(DAE.CREF_IDENT("$_lambda", DAE.T_REAL_DEFAULT, {}), DAE.T_REAL_DEFAULT);
+      e1 = DAE.BINARY(lambda, DAE.MUL(DAE.T_REAL_DEFAULT), e1);
       eqn = BackendDAE.RESIDUAL_EQUATION(e1, es);
       eqns = addLambdaToEquationList(eqns);
     then eqn::eqns;
@@ -5719,23 +5719,23 @@ algorithm
     list<BackendDAE.Equation> eqns;
     DAE.Exp e, e1, e2, lambda, crefExp, startExp;
     DAE.ComponentRef cref;
-    DAE.ExpType tp;
+    DAE.Type tp;
     case({}) then {};
       
     case(var::vars) equation
       SOME(startExp) = BackendVariable.varStartValueOption(var);
-      lambda = DAE.CREF(DAE.CREF_IDENT("$_lambda", DAE.ET_REAL(), {}), DAE.ET_REAL());
+      lambda = DAE.CREF(DAE.CREF_IDENT("$_lambda", DAE.T_REAL_DEFAULT, {}), DAE.T_REAL_DEFAULT);
       cref = BackendVariable.varCref(var);
-      crefExp = DAE.CREF(cref, DAE.ET_REAL());
+      crefExp = DAE.CREF(cref, DAE.T_REAL_DEFAULT);
       
-      e1 = DAE.BINARY(DAE.RCONST(1.0), DAE.SUB(DAE.ET_REAL()), lambda);
+      e1 = DAE.BINARY(DAE.RCONST(1.0), DAE.SUB(DAE.T_REAL_DEFAULT), lambda);
       
       e = Expression.crefExp(cref);
       tp = Expression.typeof(e);
       startExp = Expression.makeBuiltinCall("start", {e}, tp);
-      e2 = DAE.BINARY(crefExp, DAE.SUB(DAE.ET_REAL()), startExp);
+      e2 = DAE.BINARY(crefExp, DAE.SUB(DAE.T_REAL_DEFAULT), startExp);
       
-      e1 = DAE.BINARY(e1, DAE.MUL(DAE.ET_REAL()), e2);
+      e1 = DAE.BINARY(e1, DAE.MUL(DAE.T_REAL_DEFAULT), e2);
       eqn = BackendDAE.RESIDUAL_EQUATION(e1, DAE.emptyElementSource);
       eqns = generateStartValueResiduals(vars);
     then eqn::eqns;
@@ -6232,7 +6232,7 @@ algorithm
       Absyn.Path name;
       list<DAE.Exp> args_;
       Boolean tup,builtin_;
-      DAE.ExpType exty;
+      DAE.Type exty;
       DAE.InlineType inty;
       DAE.CallAttributes attr;
     // if no HelpVar created yet, create one
@@ -6729,7 +6729,7 @@ algorithm
       Integer index;
       Option<DAE.Exp> initVal, nomVal;
       Boolean isFixed;
-      DAE.ExpType type_;
+      DAE.Type type_;
       Boolean isDiscrete;
       DAE.ComponentRef arrayCref;
       DAE.ElementSource source;
@@ -7014,7 +7014,7 @@ algorithm
       String comment, unit, displayUnit;
       Option<DAE.Exp> initVal, nomVal;
       Boolean isFixed;
-      DAE.ExpType type_;
+      DAE.Type type_;
       Boolean isDiscrete;
       Option<DAE.ComponentRef> arrayCref;
       Integer index_;
@@ -7121,7 +7121,7 @@ algorithm
       Integer index;
       Option<DAE.Exp> initVal, nomVal;
       Boolean isFixed;
-      DAE.ExpType type_;
+      DAE.Type type_;
       Boolean isDiscrete;
       Option<DAE.ComponentRef> arrayCref;
       AliasVariable aliasvar;
@@ -7467,13 +7467,13 @@ algorithm
       Algorithm.Statement statement;
       Algorithm.Statement elseWhen;
       list<HelpVarInfo> helpvars,helpvars1,helpvars2;
-      DAE.ExpType ty;
+      DAE.Type ty;
       Boolean scalar;
       DAE.ElementSource source;
       Absyn.Path name;
       list<DAE.Exp> args_;
       Boolean tup,builtin_;
-      DAE.ExpType exty;
+      DAE.Type exty;
       DAE.InlineType inty;
       DAE.CallAttributes attr;
       
@@ -7543,7 +7543,7 @@ algorithm
       Absyn.Path name;
       list<DAE.Exp> args_;
       Boolean tup,builtin_;
-      DAE.ExpType exty;
+      DAE.Type exty;
       DAE.CallAttributes attr;
       
     case (nextInd, {}) then ({},{},nextInd);
@@ -7612,7 +7612,7 @@ algorithm
       Expression.ComponentRef cr;
       BackendDAE.VarKind kind;
       DAE.Exp e,startv;
-      DAE.ExpType tp;
+      DAE.Type tp;
       Option<DAE.VariableAttributes> attr;
       DAE.ElementSource source;
       BackendDAE.AliasVariables av;
@@ -7667,7 +7667,7 @@ algorithm
       Absyn.Path name;
       list<DAE.Exp> args_;
       Boolean tup,builtin_;
-      DAE.ExpType exty;
+      DAE.Type exty;
       DAE.InlineType inty;
       DAE.CallAttributes attr;
     
@@ -7763,7 +7763,7 @@ algorithm
       Absyn.Path name;
       list<DAE.Exp> args_;
       Boolean tup,builtin_;
-      DAE.ExpType exty;
+      DAE.Type exty;
       DAE.CallAttributes attr;
     case ((e as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,attr=attr),(helpVarInfoList,helpVarIndex)))
       equation
@@ -8171,14 +8171,14 @@ algorithm
       
     case (rels,(v :: vs),cg_id) /* booleans, generate true (1.0) and false (0.0) */
       equation
-        BackendDAE.BOOL() = BackendVariable.varType(v);
+        DAE.T_BOOL(source = _) = BackendVariable.varType(v);
         (values,dims) = generateMixedDiscretePossibleValues2(rels, vs, cg_id);
       then
         ({1,0} :: values, 2 :: dims);
         
     case (rels,(v :: vs),_)
       equation
-        BackendDAE.INT() = BackendVariable.varType(v);
+        DAE.T_INTEGER(source = _) = BackendVariable.varType(v);
         Error.addMessage(Error.INTERNAL_ERROR,
           {"Mixed system of equations with dicrete variables of type Integer not supported. Try to rewrite using Boolean variables."});
       then
@@ -8226,7 +8226,7 @@ algorithm
     local
       DAE.Exp e,e12,e22,vTerm,res,rhs,f;
       list<DAE.Exp> exps,exps_1;
-      DAE.ExpType tp;
+      DAE.Type tp;
       Boolean b;
       DAE.ComponentRef c;
       
@@ -8438,7 +8438,7 @@ algorithm
       
     case (repl,(cr :: crs),pos)
       equation
-        cref_ = ComponentReference.makeCrefIdent("xloc", DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN()}), {DAE.INDEX(DAE.ICONST(pos))});
+        cref_ = ComponentReference.makeCrefIdent("xloc", DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource), {DAE.INDEX(DAE.ICONST(pos))});
         repl_1 = VarTransform.addReplacement(repl, cr, Expression.crefExp(cref_));
         pos_1 = pos + 1;
         repl_2 = makeResidualReplacements2(repl_1, crs, pos_1);
@@ -8950,14 +8950,14 @@ algorithm
   outVar := match (inTypesVar)
     local
       String name;
-      Types.Type typesType;
-      DAE.ExpType expType;
+      Types.Type ty;
       DAE.ComponentRef cref_;
-    case (DAE.TYPES_VAR(name=name, ty=typesType))
+      
+    case (DAE.TYPES_VAR(name=name, ty=ty))
       equation
-        expType = Types.elabType(typesType);
-        cref_ = ComponentReference.makeCrefIdent(name, expType, {});
-      then VARIABLE(cref_, expType,NONE(), {});
+        ty = Types.simplifyType(ty);
+        cref_ = ComponentReference.makeCrefIdent(name, ty, {});
+      then VARIABLE(cref_, ty, NONE(), {});
   end match;
 end typesVar;
 
@@ -8984,7 +8984,7 @@ algorithm
       Option<DAE.Exp> initVal;
       Option<DAE.Exp> nomVal;
       Boolean isFixed;
-      DAE.ExpType type_;
+      DAE.Type type_;
       Boolean isDiscrete;
       Option<DAE.ComponentRef> arrayCref;
       AliasVariable aliasvar;
@@ -9010,7 +9010,7 @@ algorithm
         nomVal = getNominalValue(dlowVar);
         checkInitVal(initVal,source);
         isFixed = BackendVariable.varFixed(dlowVar);
-        type_ = BackendDAEUtil.makeExpType(tp);
+        type_ = tp;
         isDiscrete = BackendVariable.isVarDiscrete(dlowVar);
         arrayCref = getArrayCref(dlowVar);
         aliasvar = getAliasVar(dlowVar,optAliasVars);
@@ -9038,7 +9038,7 @@ algorithm
     case (SOME(DAE.BCONST(_)),_) then ();
     // adrpo, 2011-04-18 -> enumeration literal is OK also
     case (SOME(DAE.ENUM_LITERAL(index = _)),_) then ();
-    case (SOME(DAE.CALL(attr=DAE.CALL_ATTR(ty=DAE.ET_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(path=_))))),_) then ();
+    case (SOME(DAE.CALL(attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(path=_))))),_) then ();
     case (SOME(exp),DAE.SOURCE(info=info))
       equation
         str = "Initial value of unknown type: " +& ExpressionDump.printExpStr(exp);
@@ -9169,7 +9169,7 @@ algorithm
         path = Absyn.makeNotFullyQualified(path);
         false = List.isMemberOnTrue(path,filter,Absyn.pathEqual);
       then ((e,(path::acc,filter)));
-    case ((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = false)),(acc,filter)))
+    case ((e as DAE.CREF(ty = DAE.T_FUNCTION_REFERENCE_FUNC(builtin = false)),(acc,filter)))
       equation
         path = Absyn.crefToPath(getCrefFromExp(e));
         false = List.isMemberOnTrue(path,filter,Absyn.pathEqual);
@@ -9454,13 +9454,14 @@ algorithm
       list<DAE.Exp> acc;
       DAE.ComponentRef cref;
       Absyn.Path p;
+      DAE.Type ty;
       
-    case ((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = false)),acc)) then ((e,e::acc));
+    case ((e as DAE.CREF(ty = DAE.T_FUNCTION_REFERENCE_FUNC(builtin = false)),acc)) then ((e,e::acc));
       
-    case ((e as DAE.PARTEVALFUNCTION(ty = DAE.ET_FUNCTION_REFERENCE_VAR(),path=p),acc))
+    case ((e as DAE.PARTEVALFUNCTION(ty = ty as DAE.T_FUNCTION_REFERENCE_VAR(source = _),path=p),acc))
       equation
         cref = ComponentReference.pathToCref(p);
-        e2 = Expression.makeCrefExp(cref,DAE.ET_FUNCTION_REFERENCE_VAR());
+        e2 = Expression.makeCrefExp(cref,ty);
       then
         ((e,e2::acc));
         
@@ -9481,7 +9482,7 @@ algorithm
   outExpLst := matchcontinue(inExpLst)
     local
       DAE.ComponentRef cref;
-      DAE.ExpType record_type;
+      DAE.Type record_type;
       Absyn.Path record_path;
       list<DAE.Exp> rest_expr;
       DAE.Exp record_cref;
@@ -9489,7 +9490,7 @@ algorithm
       // A record component reference.
     case (DAE.CREF(
       componentRef = cref, 
-      ty = (record_type as DAE.ET_COMPLEX(
+      ty = (record_type as DAE.T_COMPLEX(
         complexClassType = ClassInf.RECORD(path = record_path)))) :: rest_expr)
       equation
         // Make sure it has no subscripts, i.e. it's a component reference for
@@ -9953,7 +9954,7 @@ algorithm
         true = Expression.isConst(e);
       then
         SOME(e);
-    case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), varType = BackendDAE.STRING(), values = dae_var_attr))
+    case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE(), varType = DAE.T_STRING(source = _), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
         true = Expression.isConst(e);
@@ -10007,7 +10008,7 @@ algorithm
         true = Expression.isConst(e);
       then
         SOME(e);
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), varType = BackendDAE.STRING(), bindValue = SOME(value)))
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), varType = DAE.T_STRING(source = _), bindValue = SOME(value)))
       equation
         e = ValuesUtil.valueExp(value);
         true = Expression.isConst(e);
@@ -10020,7 +10021,7 @@ algorithm
       then
         SOME(e);
         /* String - Parameters without value binding. Investigate if it has start value */
-    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), varType = BackendDAE.STRING(), bindValue = NONE(), values = dae_var_attr))
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), varType = DAE.T_STRING(source = _), bindValue = NONE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttr(dae_var_attr);
         true = Expression.isConst(e);
@@ -10051,7 +10052,7 @@ algorithm
       Values.Value value;
       DAE.Exp e;
 
-    case (BackendDAE.VAR(varType = BackendDAE.REAL(), values = dae_var_attr)) equation
+    case (BackendDAE.VAR(varType = DAE.T_REAL(source = _), values = dae_var_attr)) equation
       e = DAEUtil.getNominalAttrFail(dae_var_attr);
       true = Expression.isConst(e);
     then SOME(e);
@@ -10865,13 +10866,13 @@ algorithm outDerExps := matchcontinue(inVars)
       //true = DAELow.isStateVar(v);
       rec = makeCallDerExp(vars);
     then
-      DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(cr,DAE.ET_REAL())},DAE.callAttrBuiltinReal)::rec;
+      DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(cr,DAE.T_REAL_DEFAULT)},DAE.callAttrBuiltinReal)::rec;
   //case((v as DAELow.VAR(varKind = DAELow.DUMMY_STATE(),varName = cr))::vars)
    // equation
       //true = DAELow.isStateVar(v);
    //   rec = makeCallDerExp(vars);
    // then
-    //  DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(cr,DAE.ET_OTHER())},false,false,DAE.ET_OTHER(),DAE.NO_INLINE())::rec;
+    //  DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(cr,DAE.T_UNKNOWN_DEFAULT)},false,false,DAE.T_UNKNOWN_DEFAULT,DAE.NO_INLINE())::rec;
   case(v::vars)
     equation
       rec = makeCallDerExp(vars);
@@ -11173,7 +11174,7 @@ algorithm (outSimVar):= matchcontinue(stateVars,dae_low)
     Option<DAE.Exp> initialValue;
     Option<DAE.Exp> nominalValue;
     Boolean isFixed,isDiscrete;
-    DAE.ExpType type_;
+    DAE.Type type_;
     // arrayCref is the name of the array if this variable is the first in that
     // array
     Option<DAE.ComponentRef> arrayCref;
@@ -11242,7 +11243,7 @@ algorithm
       Option<DAE.Exp> initialValue;
       Option<DAE.Exp> nominalValue;
       Boolean isFixed;
-      DAE.ExpType type_;
+      DAE.Type type_;
       Boolean isDiscrete;
       // arrayCref is the name of the array if this variable is the first in that
       // array
@@ -11355,7 +11356,7 @@ algorithm
       Option<DAE.Exp> initialValue;
       Option<DAE.Exp> nominalValue;
       Boolean isFixed;
-      DAE.ExpType type_;
+      DAE.Type type_;
       Boolean isDiscrete;
       // arrayCref is the name of the array if this variable is the first in that
       // array
@@ -11372,14 +11373,14 @@ algorithm
       equation
         name_str = ComponentReference.printComponentRefStr(name);
         id_str = stringAppendList({DAE.derivativeNamePrefix,"." ,name_str});
-        cr_1 = ComponentReference.makeCrefIdent(id_str,DAE.ET_REAL(),{});
+        cr_1 = ComponentReference.makeCrefIdent(id_str,DAE.T_REAL_DEFAULT,{});
       then
         SIMVAR(cr_1,varKind,comment,unit,displayUnit,0,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement);
     case(SIMVAR(name,varKind,comment,unit,displayUnit,1,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)) 
       equation
         name_str = ComponentReference.printComponentRefStr(name);
         id_str = stringAppendList({DAE.derivativeNamePrefix,".",name_str});
-        cr_1 = ComponentReference.makeCrefIdent(id_str,DAE.ET_REAL(),{});
+        cr_1 = ComponentReference.makeCrefIdent(id_str,DAE.T_REAL_DEFAULT,{});
       then
         SIMVAR(cr_1,varKind,comment,unit,displayUnit,1,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement);
     
@@ -11387,7 +11388,7 @@ algorithm
       equation
         name_str = ComponentReference.printComponentRefStr(name);
         id_str = stringAppendList({DAE.derivativeNamePrefix,".",name_str});
-        cr_1 = ComponentReference.makeCrefIdent(id_str,DAE.ET_REAL(),{});
+        cr_1 = ComponentReference.makeCrefIdent(id_str,DAE.T_REAL_DEFAULT,{});
       then
         SIMVAR(cr_1,varKind,comment,unit,displayUnit,2,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement);
        */
@@ -11395,7 +11396,7 @@ algorithm
       equation
         name_str = ComponentReference.printComponentRefStr(name);
         id_str = stringAppendList({DAE.derivativeNamePrefix,".",name_str});
-        cr_1 = ComponentReference.makeCrefIdent(id_str,DAE.ET_REAL(),{});
+        cr_1 = ComponentReference.makeCrefIdent(id_str,DAE.T_REAL_DEFAULT,{});
       then
         SIMVAR(cr_1,varKind,comment,unit,displayUnit,i,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement);
     /*case (SIMVAR(name,_,_,_,_,i,_,_,_,_,_,_,_,_,_,_,_))
@@ -11429,7 +11430,7 @@ algorithm
       Option<DAE.Exp> initialValue;
       Option<DAE.Exp> nominalValue;
       Boolean isFixed;
-      DAE.ExpType type_;
+      DAE.Type type_;
       Boolean isDiscrete;
       Option<DAE.ComponentRef> arrayCref;
       AliasVariable aliasvar;

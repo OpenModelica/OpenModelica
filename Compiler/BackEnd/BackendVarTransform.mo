@@ -30,7 +30,7 @@
  */
 
 encapsulated package BackendVarTransform
-" file:         BackendVarTransform.mo
+" file:        BackendVarTransform.mo
   package:     BackendVarTransform
   description: BackendVarTransform contains a Binary Tree representation of variable replacements.
 
@@ -395,16 +395,16 @@ algorithm
       HashTable2.HashTable erepl,erepl1;
       DAE.ComponentRef cr,subcr,precr,precr1,pcr,precrn,precrn1;
       DAE.Ident ident;
-      DAE.ExpType ty;
+      DAE.Type ty;
       list<DAE.Subscript> subscriptLst;
-    case (extendrepl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_ARRAY(ty=_),subscriptLst=subscriptLst),NONE())
+    case (extendrepl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY(ty=_),subscriptLst=subscriptLst),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         failure(_ = BaseHashTable.get(precr,extendrepl));
         // update Replacements
         erepl = BaseHashTable.add((precr, DAE.RCONST(0.0)),extendrepl);
       then erepl;
-    case (extendrepl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_ARRAY(ty=_),subscriptLst=subscriptLst),SOME(pcr))
+    case (extendrepl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY(ty=_),subscriptLst=subscriptLst),SOME(pcr))
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         precr1 = ComponentReference.joinCrefs(pcr,precr);
@@ -412,13 +412,13 @@ algorithm
         // update Replacements
         erepl = BaseHashTable.add((precr1, DAE.RCONST(0.0)),extendrepl);
       then erepl;
-    case (extendrepl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_COMPLEX(complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst),NONE())
+    case (extendrepl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst),NONE())
       equation
         failure(_ = BaseHashTable.get(cr,extendrepl));
         // update Replacements
         erepl = BaseHashTable.add((cr, DAE.RCONST(0.0)),extendrepl);
       then erepl;
-    case (extendrepl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.ET_COMPLEX(complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst),SOME(pcr))
+    case (extendrepl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst),SOME(pcr))
       equation
         precr1 = ComponentReference.joinCrefs(pcr,cr);
         failure(_ = BaseHashTable.get(precr1,extendrepl));
@@ -426,7 +426,7 @@ algorithm
         erepl = BaseHashTable.add((precr1, DAE.RCONST(0.0)),extendrepl);
       then erepl;        
     case (extendrepl,DAE.CREF_IDENT(ident=_),_) then extendrepl;
-    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_ARRAY(ty=_),subscriptLst=subscriptLst,componentRef=subcr),NONE())
+    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.T_ARRAY(ty=_),subscriptLst=subscriptLst,componentRef=subcr),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         failure(_ = BaseHashTable.get(precr,extendrepl));
@@ -435,7 +435,7 @@ algorithm
         precrn = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
         erepl1 = addExtendReplacement(erepl,subcr,SOME(precrn));
       then erepl1;
-    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_COMPLEX(complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst,componentRef=subcr),NONE())
+    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst,componentRef=subcr),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
         failure(_ = BaseHashTable.get(precr,extendrepl));
@@ -443,7 +443,7 @@ algorithm
         erepl = BaseHashTable.add((precr, DAE.RCONST(0.0)),extendrepl);
         erepl1 = addExtendReplacement(erepl,subcr,SOME(precr));
       then erepl1;
-    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_ARRAY(ty=_),subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
+    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.T_ARRAY(ty=_),subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         precr1 = ComponentReference.joinCrefs(pcr,precr);
@@ -454,7 +454,7 @@ algorithm
         precrn1 = ComponentReference.joinCrefs(pcr,precrn);
         erepl1 = addExtendReplacement(erepl,subcr,SOME(precrn1));
       then erepl1;
-    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.ET_COMPLEX(complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
+    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)),subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
         precr1 = ComponentReference.joinCrefs(pcr,precr);
@@ -532,22 +532,21 @@ end getExtendReplacement;
 protected function avoidDoubleHashLookup "
 Author BZ 200X-XX modified 2008-06
 When adding replacement rules, we might not have the correct type availible at the moment.
-Then DAE.ET_OTHER() is used, so when replacing exp and finding DAE.ET_OTHER(), we use the
+Then DAE.T_UNKNOWN_DEFAULT is used, so when replacing exp and finding DAE.T_UNKNOWN_DEFAULT, we use the
 type of the expression to be replaced instead.
 TODO: find out why array residual functions containing arrays as xloc[] does not work,
       doing that will allow us to use this function for all crefs."
   input DAE.Exp inExp;
-  input DAE.ExpType inType;
+  input DAE.Type inType;
   output DAE.Exp outExp;
 algorithm  outExp := matchcontinue(inExp,inType)
   local DAE.ComponentRef cr;
-  case(DAE.CREF(cr,DAE.ET_OTHER()),inType) then Expression.makeCrefExp(cr,inType);
+  case(DAE.CREF(cr,DAE.T_UNKNOWN(source = _)),inType) then Expression.makeCrefExp(cr,inType);
   case(inExp,_) then inExp;
   end matchcontinue;
 end avoidDoubleHashLookup;
 
 public function replaceExp "function: replaceExp
-
   Takes a set of replacement rules and an expression and a function
   giving a boolean value for an expression.
   The function replaces all variables in the expression using
@@ -569,7 +568,7 @@ algorithm
     local
       DAE.ComponentRef cr;
       DAE.Exp e,e1_1,e2_1,e1,e2,e3_1,e3,r_1,r;
-      DAE.ExpType t,tp,ety;
+      DAE.Type t,tp,ety;
       VariableReplacements repl;
       Option<FuncTypeExp_ExpToBoolean> cond;
       DAE.Operator op;
@@ -763,7 +762,7 @@ algorithm
     local
       String name;
       DAE.ComponentRef cr,cr_1;
-      DAE.ExpType ty;
+      DAE.Type ty;
       list<DAE.Subscript> subs,subs_1;
       Boolean c1,c2;
 
@@ -1077,7 +1076,7 @@ algorithm
   local Integer i;
     DAE.ComponentRef cr,cr1;
     DAE.Exp e,e1,e2;
-    DAE.ExpType tp;
+    DAE.Type tp;
     BackendDAE.WhenEquation elsePart,elsePart2;
     Boolean b1;
 
@@ -1202,7 +1201,7 @@ algorithm
       VariableReplacements repl;
       list<DAE.Statement> es,es_1,statementLst,statementLst_1;
       DAE.Statement statement,statement_1;
-      DAE.ExpType type_;
+      DAE.Type type_;
       DAE.Exp e1_1,e2_1,e1,e2,e1_2,e2_2;
       list<DAE.Exp> expExpLst,expExpLst_1;
       DAE.Else else_,else_1;

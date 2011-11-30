@@ -30,8 +30,7 @@
  */
 
 encapsulated package ExpressionDump
-"
-  file:         ExpressionDump.mo
+" file:        ExpressionDump.mo
   package:     ExpressionDump
   description: ExpressionDump
 
@@ -49,9 +48,9 @@ public import Graphviz;
 public type ComponentRef = DAE.ComponentRef;
 public type Ident = String;
 public type Operator = DAE.Operator;
-public type Type = DAE.ExpType;
+public type Type = DAE.Type;
 public type Subscript = DAE.Subscript;
-public type Var = DAE.ExpVar;
+public type Var = DAE.Var;
 
 // protected imports
 protected import ComponentReference;
@@ -65,6 +64,7 @@ protected import Patternm;
 protected import Util;
 protected import Print;
 protected import System;
+protected import Types;
 
 /*
  * - Printing expressions
@@ -105,19 +105,20 @@ algorithm
     local
       list<Ident> ss;
       Type t;
-      list<DAE.Dimension> dims;
+      DAE.Dimensions dims;
       String s1,ts,res,s;
       list<Var> vars;
       ClassInf.State ci;
       
-    case DAE.ET_INT() then "INT";
-    case DAE.ET_REAL() then "REAL";
-    case DAE.ET_BOOL() then "BOOL";
-    case DAE.ET_STRING() then "STRING";
-    case DAE.ET_ENUMERATION(path = _) then "ENUM TYPE";
-    case DAE.ET_OTHER() then "OTHER";
+    case DAE.T_INTEGER(varLst = _) then "T_INT";
+    case DAE.T_REAL(varLst = _) then "T_REAL";
+    case DAE.T_BOOL(varLst = _) then "T_BOOL";
+    case DAE.T_STRING(varLst = _) then "T_STRING";
+    case DAE.T_ENUMERATION(path = _) then "T_ENUMERATION";
+    case DAE.T_UNKNOWN(source = _) then "T_UNKNOWN";
+    case DAE.T_ANYTYPE(source = _) then "T_ANYTYPE";
     
-    case (DAE.ET_ARRAY(ty = t,arrayDimensions = dims))
+    case (DAE.T_ARRAY(ty = t,dims = dims))
       equation
         ss = List.map(dims, dimensionString);
         s1 = Util.stringDelimitListNonEmptyElts(ss, ", ");
@@ -126,21 +127,30 @@ algorithm
       then
         res;
     
-    case(DAE.ET_COMPLEX(varLst=vars,complexClassType=ci))
+    case(DAE.T_COMPLEX(varLst=vars,complexClassType=ci))
       equation
-        s = "DAE.ET_COMPLEX(" +& typeVarsStr(vars) +& "):" +& ClassInf.printStateStr(ci);
+        s = "DAE.T_COMPLEX(" +& typeVarsStr(vars) +& "):" +& ClassInf.printStateStr(ci);
+      then s;
+        
+    case(DAE.T_SUBTYPE_BASIC(varLst=vars,complexClassType=ci, complexType = t))
+      equation
+        s = "DAE.T_SUBTYPE_BASIC(" +& typeVarsStr(vars) +& "):" +& ClassInf.printStateStr(ci) +& 
+            " extending basic type: " +& typeString(t);
       then s;
     
-    case (DAE.ET_METATYPE()) then "METATYPE";
-    case (DAE.ET_BOXED(_)) then "BOXED";
-    case (DAE.ET_NORETCALL()) then "ET_NORETCALL";
-    case (DAE.ET_FUNCTION_REFERENCE_VAR()) then "ET_FUNCTION_REFERENCE_VAR";
-    case (DAE.ET_FUNCTION_REFERENCE_FUNC(builtin=_)) then "ET_FUNCTION_REFERENCE_FUNC";
+    case (DAE.T_METATYPE(ty = _)) then "T_METATYPE";
+    case (DAE.T_METABOXED(ty = _)) then "T_METABOXED";
+    case (DAE.T_NORETCALL(source = _)) then "T_NORETCALL";
+    case (DAE.T_FUNCTION_REFERENCE_VAR(functionType = _)) then "T_FUNCTION_REFERENCE_VAR";
+    case (DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)) then "T_FUNCTION_REFERENCE_FUNC";
     
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"ExpressionDump.typeString failed"});
-      then "#ExpressionDump.typeString failed#";
+        ts = Types.printTypeStr(inType);
+        s = "ExpressionDump.typeString failed on type: " +& ts;
+        Error.addMessage(Error.INTERNAL_ERROR,{s});
+        s = "#" +& s +& "#";
+      then s;
   end matchcontinue;
 end typeString;
 
@@ -578,7 +588,7 @@ algorithm
       list<DAE.Exp> aexpl;
       list<list<DAE.Exp>> lstes;
       DAE.MatchType matchTy;
-      DAE.ExpType et;
+      DAE.Type et;
       list<DAE.MatchCase> cases;
       DAE.Pattern pat;
       Absyn.CodeNode code;
@@ -786,7 +796,7 @@ algorithm
       then
         s;
     
-    case (DAE.CAST(ty = DAE.ET_REAL(),exp = e), _, _, _)
+    case (DAE.CAST(ty = DAE.T_REAL(varLst = _),exp = e), _, _, _)
       equation
         s = printExp2Str(e, stringDelimiter, opcreffunc, opcallfunc);
         s_2 = stringAppendList({"Real(",s,")"});
@@ -1708,11 +1718,11 @@ protected function typeVarString "help function to typeVarsStr"
 algorithm
   s := match (v)
     local 
-      String name; Type tp;
+      String name; Type ty;
     
-    case(DAE.COMPLEX_VAR(name,tp)) 
+    case(DAE.TYPES_VAR(name = name,ty = ty)) 
       equation
-        s = name +& ":" +& typeString(tp);
+        s = name +& ":" +& typeString(ty);
       then s;
   end match;
 end typeVarString;

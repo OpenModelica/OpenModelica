@@ -165,7 +165,7 @@ algorithm
   str := matchcontinue(op)
     local
       Absyn.Path p;
-      DAE.ExpType ty;
+      DAE.Type ty;
     case(DAE.ADD(ty=ty)) then " ADD ";
     case(DAE.SUB(ty=ty)) then " SUB ";
     case(DAE.MUL(ty=ty)) then " MUL ";
@@ -225,7 +225,7 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       list<DAE.Element> xs,elts;
-      list<DAE.Dimension> dl;
+      DAE.Dimensions dl;
       
     case DAE.DAE((DAE.VAR(componentRef = cr,
                                binding = SOME(e),
@@ -1392,7 +1392,7 @@ protected function printRecordConstructorInputsStr "help function to dumpFunctio
 algorithm
   str := matchcontinue(tp)
     local
-      Option<Absyn.Path> optPath;
+      list<Absyn.Path> lstPath;
       Option<DAE.Type> optTp;
       DAE.EqualityConstraint ec;
       DAE.Binding binding;
@@ -1401,35 +1401,35 @@ algorithm
       list<DAE.Var> varLst;
 
     // handle empty
-    case((DAE.T_COMPLEX(complexVarLst={}),_)) then "";
+    case(DAE.T_COMPLEX(varLst={})) then "";
 
     // protected vars are not input!, see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
-    case((DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,visibility=SCode.PROTECTED(),ty=tp,binding=binding)::varLst,optTp,ec),optPath)) 
+    case(DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,visibility=SCode.PROTECTED(),ty=tp,binding=binding)::varLst,ec,lstPath)) 
       equation
         s1 ="  protected "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
-        s2 = printRecordConstructorInputsStr((DAE.T_COMPLEX(cistate,varLst,optTp,ec),optPath));
+        s2 = printRecordConstructorInputsStr(DAE.T_COMPLEX(cistate,varLst,ec,lstPath));
         str = s1 +&s2;
       then 
         str;
 
     // constants are not input! see Modelica Spec 3.2, Section 12.6, Record Constructor Functions, page 140
-    case((DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(variability=SCode.CONST()),ty=tp,binding=binding)::varLst,optTp,ec),optPath)) 
+    case(DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(variability=SCode.CONST()),ty=tp,binding=binding)::varLst,ec,lstPath)) 
       equation
         s1 ="  constant "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
-        s2 = printRecordConstructorInputsStr((DAE.T_COMPLEX(cistate,varLst,optTp,ec),optPath));
+        s2 = printRecordConstructorInputsStr(DAE.T_COMPLEX(cistate,varLst,ec,lstPath));
         str = s1 +& s2;
       then 
         str;
 
-    case((DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,ty=tp,binding=binding)::varLst,optTp,ec),optPath)) 
+    case(DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,ty=tp,binding=binding)::varLst,ec,lstPath)) 
       equation
         s1 ="  input "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
-        s2 = printRecordConstructorInputsStr((DAE.T_COMPLEX(cistate,varLst,optTp,ec),optPath));
+        s2 = printRecordConstructorInputsStr(DAE.T_COMPLEX(cistate,varLst,ec,lstPath));
         str = s1 +& s2;
       then 
         str;
 
-    case((DAE.T_FUNCTION(funcResultType=tp),_)) then printRecordConstructorInputsStr(tp);
+    case(DAE.T_FUNCTION(funcResultType=tp)) then printRecordConstructorInputsStr(tp);
     
   end matchcontinue;
 end printRecordConstructorInputsStr;
@@ -1651,8 +1651,7 @@ protected function ppWhenStmtStr
   input Integer inInteger;
   output String outString;
 algorithm
-  outString:=
-  match (inStatement,inInteger)
+  outString := match (inStatement,inInteger)
     local
       String s3,s4,s5,s6,str,s7,s8,s9,s10;
       DAE.Exp e;
@@ -2563,11 +2562,11 @@ algorithm
       String name; Absyn.Path path;
       Types.Type bc_tp;
 
-    case((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),SOME(path))) equation
+    case(DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_),source = {path})) equation
       name = Absyn.pathStringNoQual(path);
     then name;
 
-    case((DAE.T_COMPLEX(complexTypeOption = SOME(bc_tp)),_)) then Types.unparseType(bc_tp);
+    case(DAE.T_SUBTYPE_BASIC(complexType = bc_tp)) then Types.unparseType(bc_tp);
 
     case(tp) then Types.unparseType(tp);
   end matchcontinue;

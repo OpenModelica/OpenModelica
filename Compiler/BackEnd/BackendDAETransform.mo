@@ -30,7 +30,7 @@
  */
 
 encapsulated package BackendDAETransform
-" file:         BackendDAETransform.mo
+" file:        BackendDAETransform.mo
   package:     BackendDAETransform
   description: BackendDAETransform contains functions that are needed to perform 
                a transformation to a Block-Lower-Triangular-DAE.
@@ -2566,10 +2566,10 @@ algorithm
         ((BackendDAE.VAR(_,BackendDAE.STATE(),a,b,c,d,lstSubs,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_::_) = BackendVariable.getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
         // do not use the normal derivative prefix for the name
         //dummyder = ComponentReference.crefPrefixDer(cr);
-        dummyder = ComponentReference.makeCrefQual("$_DER",DAE.ET_REAL(),{},cr);
+        dummyder = ComponentReference.makeCrefQual("$_DER",DAE.T_REAL_DEFAULT,{},cr);
         (eqns_1,so1) = addDummyStateEqn(vars,eqns,cr,dummyder,so);
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.STATE(), a, b, NONE(), NONE(), lstSubs, 0, source, SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),SOME(DAE.NEVER()),NONE(),NONE(),NONE())), comment, flowPrefix, streamPrefix), vars);
-        e = Expression.makeCrefExp(dummyder,DAE.ET_REAL());
+        e = Expression.makeCrefExp(dummyder,DAE.T_REAL_DEFAULT);
         i = BackendVariable.varsSize(vars_1);
       then
         ((DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal), (vars_1,eqns_1,so1,i::ilst)));
@@ -2630,8 +2630,8 @@ algorithm
         (inEqns,inSo);
     case (inVars,inEqns,inCr,inDCr,so)
       equation
-        ecr = Expression.makeCrefExp(inCr,DAE.ET_REAL());
-        edcr = Expression.makeCrefExp(inDCr,DAE.ET_REAL());
+        ecr = Expression.makeCrefExp(inCr,DAE.T_REAL_DEFAULT);
+        edcr = Expression.makeCrefExp(inDCr,DAE.T_REAL_DEFAULT);
         c = DAE.CALL(Absyn.IDENT("der"),{ecr},DAE.callAttrBuiltinReal);
         eqns1 = BackendEquation.equationAdd(BackendDAE.EQUATION(edcr,c,DAE.emptyElementSource),inEqns);
         so = addStateOrder(inCr,inDCr,so);
@@ -4029,13 +4029,13 @@ algorithm
         (derdummystate,syst,shared) = makeDummyState(dummystate,stateno,syst,shared);
         (derdummystate1,syst,shared) = makeDummyState(dummystate1,stateno1,syst,shared);
         dsxy = ComponentReference.joinCrefs(dummystate,dummystate1);
-        dsxyvar = BackendDAE.VAR(dsxy,BackendDAE.STATE(),DAE.BIDIR(),BackendDAE.REAL(),NONE(),NONE(),{},0,DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM_CONNECTOR());
+        dsxyvar = BackendDAE.VAR(dsxy,BackendDAE.STATE(),DAE.BIDIR(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},0,DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM_CONNECTOR());
         dsxyvar = BackendVariable.setVarFixed(dsxyvar,false);
         vars = BackendVariable.daeVars(syst);
         dummyvar = BackendVariable.getVarAt(vars,stateno1);
         dsxyvar = BackendVariable.setVarStartValue(dsxyvar,BackendVariable.varStartValue(dummyvar));
-        dsxycont = ComponentReference.joinCrefs(dsxy,ComponentReference.makeCrefIdent("cont",DAE.ET_BOOL(),{}));
-        dsxyvarcont = BackendDAE.VAR(dsxycont,BackendDAE.DISCRETE(),DAE.BIDIR(),BackendDAE.BOOL(),NONE(),NONE(),{},0,DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM_CONNECTOR());
+        dsxycont = ComponentReference.joinCrefs(dsxy,ComponentReference.makeCrefIdent("cont",DAE.T_BOOL_DEFAULT,{}));
+        dsxyvarcont = BackendDAE.VAR(dsxycont,BackendDAE.DISCRETE(),DAE.BIDIR(),DAE.T_BOOL_DEFAULT,NONE(),NONE(),{},0,DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM_CONNECTOR());
         ev = BackendVariable.varsSize(vars)-1;
         syst = BackendVariable.addVarDAE(dsxyvar,syst);
         syst = BackendVariable.addVarDAE(dsxyvarcont,syst);
@@ -4045,9 +4045,9 @@ algorithm
         ds2 = Expression.crefExp(dummystate1);
         dds1 = Expression.crefExp(derdummystate);
         dds2 = Expression.crefExp(derdummystate1);
-        cont1 = DAE.RELATION(DAE.CALL(Absyn.IDENT("abs"),{dse2},DAE.callAttrBuiltinReal),DAE.LESS(DAE.ET_REAL()),DAE.CALL(Absyn.IDENT("abs"),{dse1},DAE.callAttrBuiltinReal),0,NONE());
+        cont1 = DAE.RELATION(DAE.CALL(Absyn.IDENT("abs"),{dse2},DAE.callAttrBuiltinReal),DAE.LESS(DAE.T_REAL_DEFAULT),DAE.CALL(Absyn.IDENT("abs"),{dse1},DAE.callAttrBuiltinReal),0,NONE());
         ((cont,_)) = Expression.traverseExp(dxdyecont, traversingComponentRefToPre, 0);
-        icont = DAE.LBINARY(DAE.CALL(Absyn.IDENT("initial"),{},DAE.callAttrBuiltinBool),DAE.OR(DAE.ET_BOOL()),cont);
+        icont = DAE.LBINARY(DAE.CALL(Absyn.IDENT("initial"),{},DAE.callAttrBuiltinBool),DAE.OR(DAE.T_BOOL_DEFAULT),cont);
         eq = BackendDAE.EQUATION(dxdye,DAE.IFEXP(icont,ds2,ds1),DAE.emptyElementSource);
         syst = BackendEquation.equationAddDAE(eq,syst); 
         deq = BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{dxdye},DAE.callAttrBuiltinReal),DAE.IFEXP(icont,dds2,dds1),DAE.emptyElementSource);
@@ -4055,7 +4055,7 @@ algorithm
         syst = BackendEquation.equationAddDAE(deq,syst);
         
         wc = BackendDAE.WHEN_CLAUSE(dxdyecont,{BackendDAE.REINIT(dsxy,ds2,DAE.emptyElementSource)},NONE());
-        wc1 = BackendDAE.WHEN_CLAUSE(DAE.LUNARY(DAE.NOT(DAE.ET_BOOL()),dxdyecont),{BackendDAE.REINIT(dsxy,ds1,DAE.emptyElementSource)},NONE());
+        wc1 = BackendDAE.WHEN_CLAUSE(DAE.LUNARY(DAE.NOT(DAE.T_BOOL_DEFAULT),dxdyecont),{BackendDAE.REINIT(dsxy,ds1,DAE.emptyElementSource)},NONE());
         shared = BackendDAEUtil.whenClauseAddDAE({wc,wc1},shared);
         eqcont = BackendDAE.EQUATION(dxdyecont,DAE.IFEXP(DAE.CALL(Absyn.IDENT("initial"),{},DAE.callAttrBuiltinBool),DAE.BCONST(true),cont1),DAE.emptyElementSource);
         syst = BackendEquation.equationAddDAE(eqcont,syst);
@@ -4181,7 +4181,7 @@ algorithm
       list<Integer> changedeqns;
       DAE.ComponentRef dummy_der;
       DAE.Exp stateexp,stateexpcall,dummyderexp;
-      DAE.ExpType tp;
+      DAE.Type tp;
       BackendDAE.BackendDAE dae,dae1,dae2;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
@@ -4680,7 +4680,7 @@ algorithm
       list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedAlgs1;
       list<tuple<Integer,Integer,Integer>> derivedMultiEqn,derivedMultiEqn1;
       DAE.Exp stateexp,stateexpcall,dummyderexp;
-      DAE.ExpType tp;
+      DAE.Type tp;
       BackendDAE.Assignments ass1,ass2;
 
     case (BackendDAE.REDUCE_INDEX(),syst as BackendDAE.EQSYSTEM(mT=SOME(mt)),shared,inFunctions,ass1,ass2,derivedAlgs,derivedMultiEqn,inArg)
@@ -5474,7 +5474,7 @@ algorithm
         dummyder = ComponentReference.crefPrefixDer(cr);
         dummyder = ComponentReference.crefPrefixDer(dummyder);
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, b, NONE(), NONE(), lstSubs, 0, source, NONE(), comment, flowPrefix, streamPrefix), vars);
-        e = Expression.makeCrefExp(dummyder,DAE.ET_REAL());
+        e = Expression.makeCrefExp(dummyder,DAE.T_REAL_DEFAULT);
       then
         ((e, (vars_1,i+1)));
 
@@ -5483,7 +5483,7 @@ algorithm
         ((BackendDAE.VAR(_,BackendDAE.DUMMY_DER(),a,b,c,d,lstSubs,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(cr, vars) "der(der_s)) der_s is dummy var => der_der_s" ;
         dummyder = ComponentReference.crefPrefixDer(cr);
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, b, NONE(), NONE(), lstSubs, 0, source, NONE(), comment, flowPrefix, streamPrefix), vars);
-        e = Expression.makeCrefExp(dummyder,DAE.ET_REAL());
+        e = Expression.makeCrefExp(dummyder,DAE.T_REAL_DEFAULT);
       then
         ((e, (vars_1,i+1)));
 
@@ -5492,7 +5492,7 @@ algorithm
         ((BackendDAE.VAR(_,BackendDAE.VARIABLE(),a,b,c,d,lstSubs,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
         dummyder = ComponentReference.crefPrefixDer(cr);
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, b, NONE(), NONE(), lstSubs, 0, source, NONE(), comment, flowPrefix, streamPrefix), vars);
-        e = Expression.makeCrefExp(dummyder,DAE.ET_REAL());
+        e = Expression.makeCrefExp(dummyder,DAE.T_REAL_DEFAULT);
       then
         ((e, (vars_1,i+1)));
 

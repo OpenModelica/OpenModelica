@@ -30,11 +30,9 @@
  */
 
 encapsulated package DumpGraphviz
-"
-  file:         DumpGraphviz.mo
+" file:        DumpGraphviz.mo
   package:     DumpGraphviz
-  description: Dumps the AST to a graph representation that can be read
-                by the graphviz tool.
+  description: Dumps the AST to a graph representation that can be read by the graphviz tool.
 
   RCS: $Id$
 

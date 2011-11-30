@@ -446,6 +446,115 @@ case _ then
     >>  
 end globalDataVarDefine_X_;
 
+template globalDataVarDefine(SimVar simVar, String arrayName)
+ "Generates a define statement for a varable in the global data section."
+::=
+match arrayName
+case "jacobianVars" then
+  match simVar
+  case SIMVAR(aliasvar=NOALIAS()) then
+    <<
+    #define <%cref(name)%> localData-><%arrayName%>[<%index%>]
+    >> 
+  end match
+case _ then
+  match simVar
+  case SIMVAR(arrayCref=SOME(c),aliasvar=NOALIAS()) then
+    <<
+    #define <%cref(c)%> localData-><%arrayName%>[<%index%>]
+    #define $P$PRE<%cref(c)%> localData-><%arrayName%>_saved[<%index%>]
+    #define <%cref(name)%> localData-><%arrayName%>[<%index%>]
+    #define $P$old<%cref(name)%> localData-><%arrayName%>_old[<%index%>]
+    #define $P$old2<%cref(name)%> localData-><%arrayName%>_old2[<%index%>]
+    #define $P$PRE<%cref(name)%> localData-><%arrayName%>_saved[<%index%>]
+    >>
+  case SIMVAR(aliasvar=NOALIAS()) then
+    <<
+    #define <%cref(name)%> localData-><%arrayName%>[<%index%>]
+    #define $P$old<%cref(name)%> localData-><%arrayName%>_old[<%index%>]
+    #define $P$old2<%cref(name)%> localData-><%arrayName%>_old2[<%index%>]
+    #define $P$PRE<%cref(name)%> localData-><%arrayName%>_saved[<%index%>]
+    >>  
+end globalDataVarDefine;
+
+template globalDataAliasVarArray(String _type, String _name, list<SimVar> items)
+ "Generates array with variable names in global data section."
+::=
+  match items
+  case {} then
+    <<
+      <%_type%> <%_name%>[1] = {{0,0,-1}};
+    >>
+  case items then
+    <<
+      <%_type%> <%_name%>[<%listLength(items)%>] = {
+        <%items |> var as SIMVAR(__) => '{<%aliasVarNameType(aliasvar)%>,<%index%>}'; separator=",\n"%>
+      };
+    >>
+end globalDataAliasVarArray;
+
+template aliasVarNameType(AliasVariable var)
+ "Generates type of alias."
+::=
+  match var
+  case NOALIAS() then
+    <<
+    0,0
+    >>
+  case ALIAS(__) then
+    <<
+    &<%cref(varName)%>,0
+    >>
+  case NEGATEDALIAS(__) then
+    <<
+    &<%cref(varName)%>,1
+    >>    
+end aliasVarNameType;
+
+template globalDataFixedInt(Boolean isFixed)
+ "Generates integer for use in arrays in global data section."
+::=
+  match isFixed
+  case true  then "1"
+  case false then "0"
+end globalDataFixedInt;
+
+template globalDataNominalValue(Option<DAE.Exp> nominal)
+ "Generates integer for use in arrays in global data section."
+::=
+  match nominal
+  case NONE()  then "0 /* default */"
+  case SOME(v) then initVal(v)
+end globalDataNominalValue;
+
+template globalDataHasNominalValue(Option<DAE.Exp> nominal)
+ "Generates integer for use in arrays in global data section."
+::=
+  match nominal
+  case NONE()  then "0"
+  case SOME(v) then "1"
+end globalDataHasNominalValue;
+
+template globalDataAttrInt(DAE.Type type)
+ "Generates integer for use in arrays in global data section."
+::=
+  match type
+  case T_REAL(__)        then "1"
+  case T_STRING(__)      then "2"
+  case T_INTEGER(__)     then "4"
+  case T_ENUMERATION(__) then "4"
+  case T_BOOL(__)        then "8"
+end globalDataAttrInt;
+
+
+template globalDataDiscAttrInt(Boolean isDiscrete)
+ "Generates integer for use in arrays in global data section."
+::=
+  match isDiscrete
+  case true  then "16"
+  case false then "0"
+end globalDataDiscAttrInt;
+
 template functionCallExternalObjectConstructors(ExtObjInfo extObjInfo)
  "Generates function in simulation file."
 ::=
@@ -2536,8 +2645,8 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
     <%outVars |> var hasindex i1 fromindex 1 =>
       match var
       case VARIABLE(__) then
-        let dimStr = match ty case ET_ARRAY(__) then
-          '[<%arrayDimensions |> dim => dimension(dim) ;separator=", "%>]'
+        let dimStr = match ty case T_ARRAY(__) then
+          '[<%dims |> dim => dimension(dim) ;separator=", "%>]'
         let typeStr = if boxed then varTypeBoxed(var) else varType(var) 
         '<%typeStr%> targ<%i1%>; /* <%crefStr(name)%><%dimStr%> */'
       case FUNCTION_PTR(__) then
@@ -2627,42 +2736,42 @@ template extReturnType(SimExtArg extArg)
 end extReturnType;
 
 
-template extType(ExpType type, Boolean isInput, Boolean isArray)
+template extType(Type type, Boolean isInput, Boolean isArray)
  "Generates type for external function argument or return value."
 ::=
   let s = match type
-  case ET_INT(__)         then "int"
-  case ET_REAL(__)        then "double"
-  case ET_STRING(__)      then "const char*"
-  case ET_BOOL(__)        then "int"
-  case ET_ENUMERATION(__) then "int"
-  case ET_ARRAY(__)       then extType(ty,isInput,true)
-  case ET_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
+  case T_INTEGER(__)         then "int"
+  case T_REAL(__)        then "double"
+  case T_STRING(__)      then "const char*"
+  case T_BOOL(__)        then "int"
+  case T_ENUMERATION(__) then "int"
+  case T_ARRAY(__)       then extType(ty,isInput,true)
+  case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "void *"
-  case ET_COMPLEX(complexClassType=RECORD(path=rname))
+  case T_COMPLEX(complexClassType=RECORD(path=rname))
                       then 'struct <%underscorePath(rname)%>'
-  case ET_METATYPE(__) case ET_BOXED(__)    then "modelica_metatype"
+  case T_METATYPE(__) case T_METABOXED(__)    then "modelica_metatype"
   else error(sourceInfo(), 'Unknown external C type <%typeString(type)%>')
-  match type case ET_ARRAY(__) then s else if isInput then (if isArray then '<%match s case "const char*" then "" else "const "%><%s%>*' else s) else '<%s%>*'
+  match type case T_ARRAY(__) then s else if isInput then (if isArray then '<%match s case "const char*" then "" else "const "%><%s%>*' else s) else '<%s%>*'
 end extType;
 
-template extTypeF77(ExpType type, Boolean isReference)
+template extTypeF77(Type type, Boolean isReference)
   "Generates type for external function argument or return value for F77."
 ::=
   let s = match type
-  case ET_INT(__)         then "int"
-  case ET_REAL(__)        then "double"
-  case ET_STRING(__)      then "char"
-  case ET_BOOL(__)        then "int"
-  case ET_ENUMERATION(__) then "int"
-  case ET_ARRAY(__)       then extTypeF77(ty, true)
-  case ET_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
-                      then "void*"
-  case ET_COMPLEX(complexClassType=RECORD(path=rname))
-                      then 'struct <%underscorePath(rname)%>'
-  case ET_METATYPE(__) case ET_BOXED(__)    then "void*"
+  case T_INTEGER(__)     then "int"
+  case T_REAL(__)        then "double"
+  case T_STRING(__)      then "char"
+  case T_BOOL(__)        then "int"
+  case T_ENUMERATION(__) then "int"
+  case T_ARRAY(__)       then extTypeF77(ty, true)
+  case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
+                         then "void*"
+  case T_COMPLEX(complexClassType=RECORD(path=rname))
+                         then 'struct <%underscorePath(rname)%>'
+  case T_METATYPE(__) case T_METABOXED(__) then "void*"
   else error(sourceInfo(), 'Unknown external F77 type <%typeString(type)%>')
-  match type case ET_ARRAY(__) then s else if isReference then '<%s%>*' else s
+  match type case T_ARRAY(__) then s else if isReference then '<%s%>*' else s
 end extTypeF77;
   
 template extFunDefArg(SimExtArg extArg)
@@ -2739,10 +2848,10 @@ template addRoots(Variable var)
   match var
   case var as VARIABLE(__) then
   match ty 
-    case ET_METATYPE(__) 
+    case T_METATYPE(__) 
       then 'mmc_GC_add_root(&<%contextCref(var.name,contextFunction)%>, mmc_GC_local_state, "<%contextCref(var.name,contextFunction)%>");'
-    case ET_BOXED(__) then 'mmc_GC_add_root(&<%contextCref(var.name,contextFunction)%>, mmc_GC_local_state, "<%contextCref(var.name,contextFunction)%>");'
-    /*case ET_COMPLEX(__) then 'mmc_GC_add_root(&<%contextCref(var.name,contextFunction)%>, mmc_GC_local_state, "<%contextCref(var.name,contextFunction)%>");'*/
+    case T_METABOXED(__) then 'mmc_GC_add_root(&<%contextCref(var.name,contextFunction)%>, mmc_GC_local_state, "<%contextCref(var.name,contextFunction)%>");'
+    /*case T_COMPLEX(__) then 'mmc_GC_add_root(&<%contextCref(var.name,contextFunction)%>, mmc_GC_local_state, "<%contextCref(var.name,contextFunction)%>");'*/
     case _ then
       let typ = varType(var)
       match typ case "modelica_metatype" then 'mmc_GC_add_root(&<%contextCref(var.name,contextFunction)%>, mmc_GC_local_state, "<%contextCref(var.name,contextFunction)%>");'
@@ -3020,31 +3129,31 @@ case FUNCTION_PTR(__) then // Function pointers don't need to be boxed.
   name 
 end funArgUnbox;
 
-template unboxVariable(String varName, ExpType varType, Text &preExp, Text &varDecls)
+template unboxVariable(String varName, Type varType, Text &preExp, Text &varDecls)
 ::=
 match varType
-case ET_STRING(__) case ET_METATYPE(__) case ET_BOXED(__) then varName
-case ET_COMPLEX(complexClassType = RECORD(__)) then
+case T_STRING(__) case T_METATYPE(__) case T_METABOXED(__) then varName
+case T_COMPLEX(complexClassType = RECORD(__)) then
   unboxRecord(varName, varType, &preExp, &varDecls)
 else
-  let shortType = mmcExpTypeShort(varType)
+  let shortType = mmcTypeShort(varType)
   let ty = 'modelica_<%shortType%>'
   let tmpVar = tempDecl(ty, &varDecls)
   let &preExp += '<%tmpVar%> = mmc_unbox_<%shortType%>(<%varName%>);<%\n%>'
   tmpVar
 end unboxVariable;
 
-template unboxRecord(String recordVar, ExpType ty, Text &preExp, Text &varDecls)
+template unboxRecord(String recordVar, Type ty, Text &preExp, Text &varDecls)
 ::=
 match ty
-case ET_COMPLEX(complexClassType = RECORD(path = path), varLst = vars) then
+case T_COMPLEX(complexClassType = RECORD(path = path), varLst = vars) then
   let tmpVar = tempDecl('struct <%underscorePath(path)%>', &varDecls)
-  let &preExp += (vars |> COMPLEX_VAR(name = compname) hasindex offset fromindex 2 =>
-    let varType = mmcExpTypeShort(tp)
+  let &preExp += (vars |> TYPES_VAR(name = compname) hasindex offset fromindex 2 =>
+    let varType = mmcTypeShort(ty)
     let untagTmp = tempDecl('modelica_metatype', &varDecls)
     //let offsetStr = incrementInt(i1, 1)
     let &unboxBuf = buffer ""
-    let unboxStr = unboxVariable(untagTmp, tp, &unboxBuf, &varDecls)
+    let unboxStr = unboxVariable(untagTmp, ty, &unboxBuf, &varDecls)
     <<
     <%untagTmp%> = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%recordVar%>), <%offset%>)));
     <%unboxBuf%>
@@ -3054,7 +3163,7 @@ case ET_COMPLEX(complexClassType = RECORD(path = path), varLst = vars) then
   tmpVar
 end unboxRecord; 
 
-template funArgBox(String varName, ExpType ty, Text &varUnbox, Text &varDecls)
+template funArgBox(String varName, Type ty, Text &varUnbox, Text &varDecls)
  "Generates code to box a variable."
 ::=
   let constructorType = mmcConstructorType(ty)
@@ -3067,45 +3176,44 @@ template funArgBox(String varName, ExpType ty, Text &varUnbox, Text &varDecls)
     varName
 end funArgBox;
 
-template mmcConstructorType(ExpType type)
+template mmcConstructorType(Type type)
 ::=
   match type
-  case ET_INT(__)
-  case ET_BOOL(__)
-  case ET_REAL(__)
-  case ET_ENUMERATION(__)
-  case ET_ARRAY(__)
-  case ET_COMPLEX(__) then 'modelica_metatype'
+  case T_INTEGER(__)
+  case T_BOOL(__)
+  case T_REAL(__)
+  case T_ENUMERATION(__)
+  case T_ARRAY(__)
+  case T_COMPLEX(__) then 'modelica_metatype'
 end mmcConstructorType;
 
-template mmcConstructor(ExpType type, String varName, Text &preExp, Text &varDecls)
+template mmcConstructor(Type type, String varName, Text &preExp, Text &varDecls)
 ::=
   match type
-  case ET_INT(__) then 'mmc_mk_icon(<%varName%>)'
-  case ET_BOOL(__) then 'mmc_mk_icon(<%varName%>)'
-  case ET_REAL(__) then 'mmc_mk_rcon(<%varName%>)'
-  case ET_STRING(__) then 'mmc_mk_string(<%varName%>)'
-  case ET_ENUMERATION(__) then 'mmc_mk_icon(<%varName%>)'
-  case ET_ARRAY(__) then 'mmc_mk_acon(<%varName%>)'
-  case ET_COMPLEX(complexClassType = RECORD(path = path), varLst = vars) then
+  case T_INTEGER(__) then 'mmc_mk_icon(<%varName%>)'
+  case T_BOOL(__) then 'mmc_mk_icon(<%varName%>)'
+  case T_REAL(__) then 'mmc_mk_rcon(<%varName%>)'
+  case T_STRING(__) then 'mmc_mk_string(<%varName%>)'
+  case T_ENUMERATION(__) then 'mmc_mk_icon(<%varName%>)'
+  case T_ARRAY(__) then 'mmc_mk_acon(<%varName%>)'
+  case T_COMPLEX(complexClassType = RECORD(path = path), varLst = vars) then
     let varCount = incrementInt(listLength(vars), 1)
-    //let varsStr = (vars |> var as COMPLEX_VAR(__) => '<%varName%>.<%name%>' ;separator=", ")
-    let varsStr = (vars |> var as COMPLEX_VAR(__) =>
+    let varsStr = (vars |> var as TYPES_VAR(__) =>
       let varname = '<%varName%>.<%name%>'
-      funArgBox(varname, tp, &preExp, &varDecls) ;separator=", ")
+      funArgBox(varname, ty, &preExp, &varDecls) ;separator=", ")
     'mmc_mk_box<%varCount%>(3, &<%underscorePath(path)%>__desc, <%varsStr%>)'
-  case ET_COMPLEX(__) then 'mmc_mk_box(<%varName%>)'
+  case T_COMPLEX(__) then 'mmc_mk_box(<%varName%>)'
 end mmcConstructor;
 
 template readInVar(Variable var)
  "Generates code for reading a variable from inArgs."
 ::=
   match var
-  case VARIABLE(name=cr, ty=ET_COMPLEX(complexClassType=RECORD(__))) then
+  case VARIABLE(name=cr, ty=T_COMPLEX(complexClassType=RECORD(__))) then
     <<
     if (read_modelica_record(&inArgs, <%readInVarRecordMembers(ty, contextCref(cr,contextFunction))%>)) return 1;
     >>
-  case VARIABLE(name=cr, ty=ET_STRING(__)) then
+  case VARIABLE(name=cr, ty=T_STRING(__)) then
     <<
     if (read_<%expTypeArrayIf(ty)%>(&inArgs, <%if not acceptMetaModelicaGrammar() then "(char**)"%> &<%contextCref(name,contextFunction)%>)) return 1;
     >>
@@ -3116,15 +3224,15 @@ template readInVar(Variable var)
 end readInVar;
 
 
-template readInVarRecordMembers(ExpType type, String prefix)
+template readInVarRecordMembers(Type type, String prefix)
  "Helper to readInVar."
 ::=
 match type
-case ET_COMPLEX(varLst=vl) then
-  (vl |> subvar as COMPLEX_VAR(__) =>
-    match tp case ET_COMPLEX(__) then
+case T_COMPLEX(varLst=vl) then
+  (vl |> subvar as TYPES_VAR(__) =>
+    match ty case T_COMPLEX(__) then
       let newPrefix = '<%prefix%>.<%subvar.name%>'
-      readInVarRecordMembers(tp, newPrefix)
+      readInVarRecordMembers(ty, newPrefix)
     else
       '&(<%prefix%>.<%subvar.name%>)'
   ;separator=", ")
@@ -3136,7 +3244,7 @@ template writeOutVar(Variable var, Integer index)
 
 ::=
   match var
-  case VARIABLE(ty=ET_COMPLEX(complexClassType=RECORD(__))) then
+  case VARIABLE(ty=T_COMPLEX(complexClassType=RECORD(__))) then
     <<
     write_modelica_record(outVar, <%writeOutVarRecordMembers(ty, index, "")%>);
     >>
@@ -3148,18 +3256,18 @@ template writeOutVar(Variable var, Integer index)
 end writeOutVar;
 
 
-template writeOutVarRecordMembers(ExpType type, Integer index, String prefix)
+template writeOutVarRecordMembers(Type type, Integer index, String prefix)
  "Helper to writeOutVar."
 ::=
 match type
-case ET_COMPLEX(varLst=vl, name=n) then
-  let basename = underscorePath(n)
-  let args = (vl |> subvar as COMPLEX_VAR(__) =>
-      match tp case ET_COMPLEX(__) then
+case T_COMPLEX(varLst=vl, complexClassType=n) then
+  let basename = underscorePath(ClassInf.getStateName(n))
+  let args = (vl |> subvar as TYPES_VAR(__) =>
+      match ty case T_COMPLEX(__) then
         let newPrefix = '<%prefix%>.<%subvar.name%>'
-        '<%expTypeRW(tp)%>, <%writeOutVarRecordMembers(tp, index, newPrefix)%>'
+        '<%expTypeRW(ty)%>, <%writeOutVarRecordMembers(ty, index, newPrefix)%>'
       else
-        '<%expTypeRW(tp)%>, &(out.targ<%index%><%prefix%>.<%subvar.name%>)'
+        '<%expTypeRW(ty)%>, &(out.targ<%index%><%prefix%>.<%subvar.name%>)'
     ;separator=", ")
   <<
   &<%basename%>__desc<%if args then ', <%args%>'%>, TYPE_DESC_NONE
@@ -3248,7 +3356,7 @@ case var as FUNCTION_PTR(__) then
       <% tys |> arg hasindex i1 fromindex 1 => '#define <%rettype%>_<%i1%> targ<%i1%>' ; separator="\n" %>
       typedef struct <%rettype%>_s
       {
-        <% tys |> ty hasindex i1 fromindex 1 => 'modelica_<%mmcExpTypeShort(ty)%> targ<%i1%>;' ; separator="\n" %> 
+        <% tys |> ty hasindex i1 fromindex 1 => 'modelica_<%mmcTypeShort(ty)%> targ<%i1%>;' ; separator="\n" %> 
       } <%rettype%>;
       <%rettype%>(*_<%name%>)(<%typelist%>);<%\n%>
       >>
@@ -3263,7 +3371,7 @@ match var
 /* The storage size of arrays is known at call time, so they can be allocated
  * before set_memory_state. Strings are not known, so we copy them, etc...
  */
-case var as VARIABLE(ty = ET_STRING(__)) then 
+case var as VARIABLE(ty = T_STRING(__)) then 
     if not acceptMetaModelicaGrammar() then
       // We need to strdup() all strings, then allocate them on the memory pool again, then free the temporary string
       let strVar = tempDecl("modelica_string_t", &varDecls)
@@ -3300,18 +3408,18 @@ end varOutput;
 template initRecordMembers(Variable var)
 ::=
 match var
-case VARIABLE(ty = ET_COMPLEX(complexClassType = RECORD(__))) then
+case VARIABLE(ty = T_COMPLEX(complexClassType = RECORD(__))) then
   let varName = contextCref(name,contextFunction)
   (ty.varLst |> v => recordMemberInit(v, varName) ;separator="\n")
 end initRecordMembers;
 
-template recordMemberInit(ExpVar v, Text varName)
+template recordMemberInit(Var v, Text varName)
 ::=
 match v
-case COMPLEX_VAR(tp = ET_ARRAY(__)) then 
-  let arrayType = expType(tp, true) 
-  let dims = (tp.arrayDimensions |> dim => dimension(dim) ;separator=", ")
-  'alloc_<%arrayType%>(&<%varName%>.<%name%>, <%listLength(tp.arrayDimensions)%>, <%dims%>);'
+case TYPES_VAR(ty = T_ARRAY(__)) then 
+  let arrayType = expType(ty, true) 
+  let dims = (ty.dims |> dim => dimension(dim) ;separator=", ")
+  'alloc_<%arrayType%>(&<%varName%>.<%name%>, <%listLength(ty.dims)%>, <%dims%>);'
 end recordMemberInit;
 
 template extVarName(ComponentRef cr)
@@ -3398,7 +3506,7 @@ template extFunCallVardecl(SimExtArg arg, Text &varDecls /*BUFP*/)
 ::=
   match arg
   case SIMEXTARG(isInput=true, isArray=false, type_=ty, cref=c) then
-    match ty case ET_STRING(__) then
+    match ty case T_STRING(__) then
       ""
     else
       let &varDecls += '<%extType(ty,true,false)%> <%extVarName(c)%>;<%\n%>'
@@ -3435,13 +3543,13 @@ template extFunCallVardeclF77(SimExtArg arg, Text &varDecls)
     ""
 end extFunCallVardeclF77;
 
-template typeDefaultValue(DAE.ExpType ty)
+template typeDefaultValue(DAE.Type ty)
 ::=
   match ty
-  case ty as ET_INT(__) then '0'
-  case ty as ET_REAL(__) then '0.0'
-  case ty as ET_BOOL(__) then '0'
-  case ty as ET_STRING(__) then '0' /* Always segfault is better than only sometimes segfault :) */
+  case ty as T_INTEGER(__) then '0'
+  case ty as T_REAL(__) then '0.0'
+  case ty as T_BOOL(__) then '0'
+  case ty as T_STRING(__) then '0' /* Always segfault is better than only sometimes segfault :) */
   else ""
 end typeDefaultValue;
 
@@ -3482,7 +3590,7 @@ case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
     out.targ<%oi%> = (<%expTypeModelica(ty)%>)<%
       if acceptMetaModelicaGrammar() then
         (match ty
-          case ET_STRING(__) then 'mmc_mk_scon(<%cr%>)'
+          case T_STRING(__) then 'mmc_mk_scon(<%cr%>)'
           else cr)
       else cr %>;
     >>
@@ -3517,9 +3625,9 @@ template extArg(SimExtArg extArg, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=0, type_=t) then
     let cr = '<%contextCref(c,contextFunction)%>'
     if acceptMetaModelicaGrammar() then
-      (match t case ET_STRING(__) then 'MMC_STRINGDATA(<%cr%>)' else '<%cr%>_ext')
+      (match t case T_STRING(__) then 'MMC_STRINGDATA(<%cr%>)' else '<%cr%>_ext')
     else
-      '<%cr%><%match t case ET_STRING(__) then "" else "_ext"%>'
+      '<%cr%><%match t case T_STRING(__) then "" else "_ext"%>'
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=oi, type_=t) then
     '&<%extVarName(c)%>'
   case SIMEXTARGEXP(__) then
@@ -3537,18 +3645,18 @@ template extArgF77(SimExtArg extArg, Text &preExp, Text &varDecls)
   case SIMEXTARG(cref=c, isArray=true, type_=t) then
     // Arrays are converted to fortran format that are stored in _ext-variables.
     'data_of_<%expTypeShort(t)%>_array(&(<%extVarName(c)%>))' 
-  case SIMEXTARG(cref=c, outputIndex=oi, type_=ET_INT()) then
+  case SIMEXTARG(cref=c, outputIndex=oi, type_=T_INTEGER(__)) then
     // Always prefix fortran arguments with &.
     let suffix = if oi then "_ext"
     '(int*) &<%contextCref(c,contextFunction)%><%suffix%>'
-  case SIMEXTARG(cref=c, outputIndex=oi, type_ = ET_STRING()) then
+  case SIMEXTARG(cref=c, outputIndex=oi, type_ = T_STRING(__)) then
     // modelica_string SHOULD NOT BE PREFIXED by &!
     '(char*)<%contextCref(c,contextFunction)%>'
   case SIMEXTARG(cref=c, outputIndex=oi, type_=t) then
     // Always prefix fortran arguments with &.
     let suffix = if oi then "_ext"
     '&<%contextCref(c,contextFunction)%><%suffix%>'
-  case SIMEXTARGEXP(exp=exp, type_ = ET_STRING()) then
+  case SIMEXTARGEXP(exp=exp, type_ = T_STRING(__)) then
     // modelica_string SHOULD NOT BE PREFIXED by &!
     let texp = daeExp(exp, contextFunction, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let tvar = tempDecl(expTypeFromExpFlag(exp,8),&varDecls)
@@ -3663,8 +3771,8 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     <<
     <%preExp%>
     >>
-  case STMT_ASSIGN(exp1=CREF(ty = ET_FUNCTION_REFERENCE_VAR(__)))
-  case STMT_ASSIGN(exp1=CREF(ty = ET_FUNCTION_REFERENCE_FUNC(__))) then
+  case STMT_ASSIGN(exp1=CREF(ty = T_FUNCTION_REFERENCE_VAR(__)))
+  case STMT_ASSIGN(exp1=CREF(ty = T_FUNCTION_REFERENCE_FUNC(__))) then
     let &preExp = buffer "" /*BUFD*/
     let varPart = scalarLhsCref(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -3735,7 +3843,7 @@ case STMT_ASSIGN_ARR(exp=e, componentRef=cr, type_=t) then
     >>
 end algStmtAssignArr;
 
-template indexedAssign(DAE.ExpType ty, String exp, DAE.ComponentRef cr, 
+template indexedAssign(DAE.Type ty, String exp, DAE.ComponentRef cr, 
   String ispec, Context context, Text &varDecls)
 ::=
   let type = expTypeArray(ty)
@@ -3751,7 +3859,7 @@ template indexedAssign(DAE.ExpType ty, String exp, DAE.ComponentRef cr,
     >>
 end indexedAssign;
 
-template copyArrayData(DAE.ExpType ty, String exp, DAE.ComponentRef cr,
+template copyArrayData(DAE.Type ty, String exp, DAE.ComponentRef cr,
 
   Context context)
 ::=
@@ -3821,7 +3929,7 @@ template writeLhsCref(Exp exp, String rhsStr, Context context, Text &preExp /*BU
 match exp
 case ecr as CREF(componentRef=WILD(__)) then
   ''
-case CREF(ty= t as DAE.ET_ARRAY(__)) then
+case CREF(ty= t as DAE.T_ARRAY(__)) then
   let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   match context
   case SIMULATION(__) then
@@ -3830,7 +3938,7 @@ case CREF(ty= t as DAE.ET_ARRAY(__)) then
     >>
   else
     '<%lhsStr%> = <%rhsStr%>;'
-case UNARY(exp = e as CREF(ty= t as DAE.ET_ARRAY(__))) then
+case UNARY(exp = e as CREF(ty= t as DAE.T_ARRAY(__))) then
   let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   match context
   case SIMULATION(__) then
@@ -4266,7 +4374,7 @@ template scalarLhsCref(Exp ecr, Context context, Text &preExp, Text &varDecls)
   reference."
 ::=
   match ecr
-  case CREF(componentRef = cr, ty = ET_FUNCTION_REFERENCE_VAR(__)) then
+  case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_VAR(__)) then
     '*((modelica_fnptr*)&_<%crefStr(cr)%>)'
   case ecr as CREF(componentRef=CREF_IDENT(__)) then
     if crefNoSub(ecr.componentRef) then
@@ -4281,7 +4389,7 @@ template scalarLhsCref(Exp ecr, Context context, Text &preExp, Text &varDecls)
     "ONLY_IDENT_OR_QUAL_CREF_SUPPORTED_SLHS"
 end scalarLhsCref;
 
-template rhsCref(ComponentRef cr, ExpType ty)
+template rhsCref(ComponentRef cr, Type ty)
  "Like cref but with cast if type is integer."
 ::=
   match cr
@@ -4291,12 +4399,12 @@ template rhsCref(ComponentRef cr, ExpType ty)
 end rhsCref;
 
 
-template rhsCrefType(ExpType type)
+template rhsCrefType(Type type)
  "Helper to rhsCref."
 ::=
   match type
-  case ET_INT(__) then "(modelica_integer)"
-  case ET_ENUMERATION(__) then "(modelica_integer)"
+  case T_INTEGER(__) then "(modelica_integer)"
+  case T_ENUMERATION(__) then "(modelica_integer)"
   //else ""
 end rhsCrefType;
   
@@ -4343,7 +4451,7 @@ template daeExternalCExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &
   "Like daeExp, but also converts the type to external C"
 ::=
   match typeof(exp)
-    case ET_ARRAY(__) then  // Array-expressions
+    case T_ARRAY(__) then  // Array-expressions
       let shortTypeStr = expTypeShort(typeof(exp))
       '(<%extType(typeof(exp),true,true)%>) data_of_<%shortTypeStr%>_array(&<%daeExp(exp, context, &preExp, &varDecls)%>)'
     else daeExp(exp, context, &preExp, &varDecls)
@@ -4372,14 +4480,14 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp /*BUFP*/,
   match exp
   // A record cref without subscripts (i.e. a record instance) is handled
   // by daeExpRecordCrefRhs only in a simulation context, not in a function.
-  case CREF(componentRef = cr, ty = t as ET_COMPLEX(complexClassType = RECORD(path = _))) then
+  case CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = RECORD(path = _))) then
     match context case FUNCTION_CONTEXT(__) then
       daeExpCrefRhs2(exp, context, &preExp, &varDecls)
     else
       daeExpRecordCrefRhs(t, cr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  case CREF(componentRef = cr, ty = ET_FUNCTION_REFERENCE_FUNC(__)) then
+  case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_FUNC(__)) then
     '((modelica_fnptr)boxptr_<%crefFunctionName(cr)%>)'
-  case CREF(componentRef = cr, ty = ET_FUNCTION_REFERENCE_VAR(__)) then
+  case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_VAR(__)) then
     '((modelica_fnptr) _<%crefStr(cr)%>)'
   else daeExpCrefRhs2(exp, context, &preExp, &varDecls)
 end daeExpCrefRhs;
@@ -4397,8 +4505,8 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
     else 
       if crefIsScalar(cr, context) 
       then
-        let cast = match ty case ET_INT(__) then "(modelica_integer)"
-                          case ET_ENUMERATION(__) then "(modelica_integer)" //else ""
+        let cast = match ty case T_INTEGER(__) then "(modelica_integer)"
+                          case T_ENUMERATION(__) then "(modelica_integer)" //else ""
         '<%cast%><%contextCref(cr,context)%>'
       else 
         if crefSubIsScalar(cr) 
@@ -4425,9 +4533,9 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
                 >>
               else
                 match crefLastType(cr)
-                case et as ET_ARRAY(__) then
+                case et as T_ARRAY(__) then
                 <<
-                (&<%arrName%>)[<%threadDimSubList(et.arrayDimensions,crefSubs(cr),context,&preExp,&varDecls)%>]
+                (&<%arrName%>)[<%threadDimSubList(et.dims,crefSubs(cr),context,&preExp,&varDecls)%>]
                 >>
                 else error(sourceInfo(),'Indexing non-array <%printExpStr(ecr)%>')
         else
@@ -4499,7 +4607,7 @@ template daeExpCrefRhsArrayBox(Exp ecr, Context context, Text &preExp /*BUFP*/,
  "Helper to daeExpCrefRhs."
 ::=
 match ecr
-case ecr as CREF(ty=ET_ARRAY(ty=aty,arrayDimensions=dims)) then
+case ecr as CREF(ty=T_ARRAY(ty=aty,dims=dims)) then
   match context
   case FUNCTION_CONTEXT(__) then ''
   else
@@ -4514,14 +4622,14 @@ case ecr as CREF(ty=ET_ARRAY(ty=aty,arrayDimensions=dims)) then
 end daeExpCrefRhsArrayBox;
 
 
-template daeExpRecordCrefRhs(DAE.ExpType ty, ComponentRef cr, Context context, Text &preExp /*BUFP*/,
+template daeExpRecordCrefRhs(DAE.Type ty, ComponentRef cr, Context context, Text &preExp /*BUFP*/,
                        Text &varDecls /*BUFP*/)
 ::=
 match ty
-case ET_COMPLEX(name = record_path, varLst = var_lst) then
+case T_COMPLEX(complexClassType = record_state, varLst = var_lst) then
   let vars = var_lst |> v => daeExp(makeCrefRecordExp(cr,v), context, &preExp, &varDecls) 
              ;separator=", "
-  let record_type_name = underscorePath(record_path)
+  let record_type_name = underscorePath(ClassInf.getStateName(record_state))
   let ret_type = '<%record_type_name%>_rettype'
   let ret_var = tempDecl(ret_type, &varDecls)
   let &preExp += '<%ret_var%> = _<%record_type_name%>(<%vars%>);<%\n%>'
@@ -4550,14 +4658,14 @@ template daeExpCrefLhs(Exp exp, Context context, Text &afterExp /*BUFP*/,
   match exp
   // A record cref without subscripts (i.e. a record instance) is handled
   // by daeExpRecordCrefLhs only in a simulation context, not in a function.
-  case CREF(componentRef = cr, ty = t as ET_COMPLEX(complexClassType = RECORD(path = _))) then
+  case CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = RECORD(path = _))) then
     match context case FUNCTION_CONTEXT(__) then
       daeExpCrefLhs2(exp, context, &afterExp, &varDecls)
     else
       daeExpRecordCrefLhs(t, cr, context, &afterExp /*BUFC*/, &varDecls /*BUFD*/)
-  case CREF(componentRef = cr, ty = ET_FUNCTION_REFERENCE_FUNC(__)) then
+  case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_FUNC(__)) then
     '((modelica_fnptr)boxptr_<%crefFunctionName(cr)%>)'
-  case CREF(componentRef = cr, ty = ET_FUNCTION_REFERENCE_VAR(__)) then
+  case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_VAR(__)) then
     '((modelica_fnptr) _<%crefStr(cr)%>)'
   else daeExpCrefLhs2(exp, context, &afterExp, &varDecls)
 end daeExpCrefLhs;
@@ -4575,8 +4683,8 @@ template daeExpCrefLhs2(Exp ecr, Context context, Text &afterExp /*BUFP*/,
     else 
       if crefIsScalar(cr, context) 
       then
-        let cast = match ty case ET_INT(__) then "(modelica_integer)"
-                          case ET_ENUMERATION(__) then "(modelica_integer)" //else ""
+        let cast = match ty case T_INTEGER(__) then "(modelica_integer)"
+                          case T_ENUMERATION(__) then "(modelica_integer)" //else ""
         '<%cast%><%contextCref(cr,context)%>'
       else 
         if crefSubIsScalar(cr) 
@@ -4646,7 +4754,7 @@ template daeExpCrefLhsArrayBox(Exp ecr, Context context, Text &afterExp /*BUFP*/
  "Helper to daeExpCrefLhs."
 ::=
 match ecr
-case ecr as CREF(ty=ET_ARRAY(ty=aty,arrayDimensions=dims)) then
+case ecr as CREF(ty=T_ARRAY(ty=aty,dims=dims)) then
   match context
   case FUNCTION_CONTEXT(__) then ''
   else
@@ -4660,14 +4768,14 @@ case ecr as CREF(ty=ET_ARRAY(ty=aty,arrayDimensions=dims)) then
     tmpArr
 end daeExpCrefLhsArrayBox;
 
-template daeExpRecordCrefLhs(DAE.ExpType ty, ComponentRef cr, Context context, Text &afterExp /*BUFP*/,
+template daeExpRecordCrefLhs(DAE.Type ty, ComponentRef cr, Context context, Text &afterExp /*BUFP*/,
                              Text &varDecls /*BUFP*/)
 ::=
 match ty
-case ET_COMPLEX(name = record_path, varLst = var_lst) then
+case T_COMPLEX(complexClassType = record_state, varLst = var_lst) then
   let vars = var_lst |> v => daeExp(makeCrefRecordExp(cr,v), context, &afterExp, &varDecls) 
              ;separator=", "
-  let record_type_name = underscorePath(record_path)
+  let record_type_name = underscorePath(ClassInf.getStateName(record_state))
   let ret_type = '<%record_type_name%>_rettype'
   let ret_var = tempDecl(ret_type, &varDecls)
   let &afterExp += '<%ret_var%> = _<%record_type_name%>(<%vars%>);<%\n%>'
@@ -4691,7 +4799,7 @@ case BINARY(__) then
   let e1 = daeExp(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   let e2 = daeExp(exp2, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   match operator
-  case ADD(ty = ET_STRING(__)) then
+  case ADD(ty = T_STRING(__)) then
     let tmpStr = if acceptMetaModelicaGrammar() 
                  then tempDecl("modelica_metatype", &varDecls /*BUFD*/)
                  else tempDecl("modelica_string", &varDecls /*BUFD*/)
@@ -4724,15 +4832,15 @@ case BINARY(__) then
       else 'pow(<%e1%>, <%e2%>)'
   case UMINUS(__) then daeExpUnary(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/) 
   case ADD_ARR(__) then
-    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" 
-                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then "integer_array"
+    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array" 
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
                         else "real_array"
     let var = tempDecl(type, &varDecls /*BUFD*/)
     let &preExp += 'add_alloc_<%type%>(&<%e1%>, &<%e2%>, &<%var%>);<%\n%>'
     '<%var%>'
   case SUB_ARR(__) then
-    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" 
-                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then "integer_array"
+    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array" 
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
                         else "real_array"
     let var = tempDecl(type, &varDecls /*BUFD*/)
     let &preExp += 'sub_alloc_<%type%>(&<%e1%>, &<%e2%>, &<%var%>);<%\n%>'
@@ -4740,8 +4848,8 @@ case BINARY(__) then
   case MUL_ARR(__) then  'daeExpBinary:ERR for MUL_ARR'  
   case DIV_ARR(__) then  'daeExpBinary:ERR for DIV_ARR'
   case MUL_ARRAY_SCALAR(__) then
-    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" 
-                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then "integer_array"
+    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array" 
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
                         else "real_array"
     let var = tempDecl(type, &varDecls /*BUFD*/)
     let &preExp += 'mul_alloc_<%type%>_scalar(&<%e1%>, <%e2%>, &<%var%>);<%\n%>'
@@ -4749,21 +4857,21 @@ case BINARY(__) then
   case ADD_ARRAY_SCALAR(__) then 'daeExpBinary:ERR for ADD_ARRAY_SCALAR'
   case SUB_SCALAR_ARRAY(__) then 'daeExpBinary:ERR for SUB_SCALAR_ARRAY'
   case MUL_SCALAR_PRODUCT(__) then
-    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_scalar" 
-                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then "integer_scalar"
+    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_scalar" 
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_scalar"
                         else "real_scalar"
     'mul_<%type%>_product(&<%e1%>, &<%e2%>)'
   case MUL_MATRIX_PRODUCT(__) then
-    let typeShort = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer" 
-                             case ET_ARRAY(ty=ET_ENUMERATION(__)) then "integer"
+    let typeShort = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer" 
+                             case T_ARRAY(ty=T_ENUMERATION(__)) then "integer"
                              else "real"
     let type = '<%typeShort%>_array'
     let var = tempDecl(type, &varDecls /*BUFD*/)
     let &preExp += 'mul_alloc_<%typeShort%>_matrix_product_smart(&<%e1%>, &<%e2%>, &<%var%>);<%\n%>'
     '<%var%>'
   case DIV_ARRAY_SCALAR(__) then
-    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" 
-                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then "integer_array"
+    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array" 
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
                         else "real_array"
     let var = tempDecl(type, &varDecls /*BUFD*/)
     let &preExp += 'div_alloc_<%type%>_scalar(&<%e1%>, <%e2%>, &<%var%>);<%\n%>'
@@ -4786,7 +4894,7 @@ case UNARY(__) then
   let e = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   match operator
   case UMINUS(__)     then '(-<%e%>)'
-  case UMINUS_ARR(ty=ET_ARRAY(ty=ET_REAL(__))) then
+  case UMINUS_ARR(ty=T_ARRAY(ty=T_REAL(__))) then
     let &preExp += 'usub_real_array(&<%e%>);<%\n%>'
     '<%e%>'
   case UMINUS_ARR(__) then error(sourceInfo(),"unary minus for non-real arrays not implemented")
@@ -4835,41 +4943,41 @@ case rel as RELATION(__) then
     let e2 = daeExp(rel.exp2, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     match rel.operator
     
-    case LESS(ty = ET_BOOL(__))             then '(!<%e1%> && <%e2%>)'
-    case LESS(ty = ET_STRING(__))           then '(stringCompare(<%e1%>, <%e2%>) < 0)'
-    case LESS(ty = ET_INT(__))              then '(<%e1%> < <%e2%>)'
-    case LESS(ty = ET_REAL(__))             then '(<%e1%> < <%e2%>)'
-    case LESS(ty = ET_ENUMERATION(__))      then '(<%e1%> < <%e2%>)'
+    case LESS(ty = T_BOOL(__))             then '(!<%e1%> && <%e2%>)'
+    case LESS(ty = T_STRING(__))           then '(stringCompare(<%e1%>, <%e2%>) < 0)'
+    case LESS(ty = T_INTEGER(__))              then '(<%e1%> < <%e2%>)'
+    case LESS(ty = T_REAL(__))             then '(<%e1%> < <%e2%>)'
+    case LESS(ty = T_ENUMERATION(__))      then '(<%e1%> < <%e2%>)'
     
-    case GREATER(ty = ET_BOOL(__))          then '(<%e1%> && !<%e2%>)'
-    case GREATER(ty = ET_STRING(__))        then '(stringCompare(<%e1%>, <%e2%>) > 0)'
-    case GREATER(ty = ET_INT(__))           then '(<%e1%> > <%e2%>)'
-    case GREATER(ty = ET_REAL(__))          then '(<%e1%> > <%e2%>)'
-    case GREATER(ty = ET_ENUMERATION(__))   then '(<%e1%> > <%e2%>)'
+    case GREATER(ty = T_BOOL(__))          then '(<%e1%> && !<%e2%>)'
+    case GREATER(ty = T_STRING(__))        then '(stringCompare(<%e1%>, <%e2%>) > 0)'
+    case GREATER(ty = T_INTEGER(__))           then '(<%e1%> > <%e2%>)'
+    case GREATER(ty = T_REAL(__))          then '(<%e1%> > <%e2%>)'
+    case GREATER(ty = T_ENUMERATION(__))   then '(<%e1%> > <%e2%>)'
     
-    case LESSEQ(ty = ET_BOOL(__))           then '(!<%e1%> || <%e2%>)'
-    case LESSEQ(ty = ET_STRING(__))         then '(stringCompare(<%e1%>, <%e2%>) <= 0)'
-    case LESSEQ(ty = ET_INT(__))            then '(<%e1%> <= <%e2%>)'
-    case LESSEQ(ty = ET_REAL(__))           then '(<%e1%> <= <%e2%>)'
-    case LESSEQ(ty = ET_ENUMERATION(__))    then '(<%e1%> <= <%e2%>)'
+    case LESSEQ(ty = T_BOOL(__))           then '(!<%e1%> || <%e2%>)'
+    case LESSEQ(ty = T_STRING(__))         then '(stringCompare(<%e1%>, <%e2%>) <= 0)'
+    case LESSEQ(ty = T_INTEGER(__))            then '(<%e1%> <= <%e2%>)'
+    case LESSEQ(ty = T_REAL(__))           then '(<%e1%> <= <%e2%>)'
+    case LESSEQ(ty = T_ENUMERATION(__))    then '(<%e1%> <= <%e2%>)'
     
-    case GREATEREQ(ty = ET_BOOL(__))        then '(<%e1%> || !<%e2%>)'
-    case GREATEREQ(ty = ET_STRING(__))      then '(stringCompare(<%e1%>, <%e2%>) >= 0)'
-    case GREATEREQ(ty = ET_INT(__))         then '(<%e1%> >= <%e2%>)'
-    case GREATEREQ(ty = ET_REAL(__))        then '(<%e1%> >= <%e2%>)'
-    case GREATEREQ(ty = ET_ENUMERATION(__)) then '(<%e1%> >= <%e2%>)'
+    case GREATEREQ(ty = T_BOOL(__))        then '(<%e1%> || !<%e2%>)'
+    case GREATEREQ(ty = T_STRING(__))      then '(stringCompare(<%e1%>, <%e2%>) >= 0)'
+    case GREATEREQ(ty = T_INTEGER(__))         then '(<%e1%> >= <%e2%>)'
+    case GREATEREQ(ty = T_REAL(__))        then '(<%e1%> >= <%e2%>)'
+    case GREATEREQ(ty = T_ENUMERATION(__)) then '(<%e1%> >= <%e2%>)'
     
-    case EQUAL(ty = ET_BOOL(__))            then '((!<%e1%> && !<%e2%>) || (<%e1%> && <%e2%>))'
-    case EQUAL(ty = ET_STRING(__))          then '(stringEqual(<%e1%>, <%e2%>))'
-    case EQUAL(ty = ET_INT(__))             then '(<%e1%> == <%e2%>)'
-    case EQUAL(ty = ET_REAL(__))            then '(<%e1%> == <%e2%>)'
-    case EQUAL(ty = ET_ENUMERATION(__))     then '(<%e1%> == <%e2%>)'    
+    case EQUAL(ty = T_BOOL(__))            then '((!<%e1%> && !<%e2%>) || (<%e1%> && <%e2%>))'
+    case EQUAL(ty = T_STRING(__))          then '(stringEqual(<%e1%>, <%e2%>))'
+    case EQUAL(ty = T_INTEGER(__))             then '(<%e1%> == <%e2%>)'
+    case EQUAL(ty = T_REAL(__))            then '(<%e1%> == <%e2%>)'
+    case EQUAL(ty = T_ENUMERATION(__))     then '(<%e1%> == <%e2%>)'    
     
-    case NEQUAL(ty = ET_BOOL(__))           then '((!<%e1%> && <%e2%>) || (<%e1%> && !<%e2%>))'
-    case NEQUAL(ty = ET_STRING(__))         then '(!stringEqual(<%e1%>, <%e2%>))'
-    case NEQUAL(ty = ET_INT(__))            then '(<%e1%> != <%e2%>)'
-    case NEQUAL(ty = ET_REAL(__))           then '(<%e1%> != <%e2%>)'
-    case NEQUAL(ty = ET_ENUMERATION(__))    then '(<%e1%> != <%e2%>)'
+    case NEQUAL(ty = T_BOOL(__))           then '((!<%e1%> && <%e2%>) || (<%e1%> && !<%e2%>))'
+    case NEQUAL(ty = T_STRING(__))         then '(!stringEqual(<%e1%>, <%e2%>))'
+    case NEQUAL(ty = T_INTEGER(__))            then '(<%e1%> != <%e2%>)'
+    case NEQUAL(ty = T_REAL(__))           then '(<%e1%> != <%e2%>)'
+    case NEQUAL(ty = T_ENUMERATION(__))    then '(<%e1%> != <%e2%>)'
     
     else "daeExpRelation:ERR"
 
@@ -5021,8 +5129,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   case CALL(attr=CALL_ATTR(ty=ty),
             path=IDENT(name="DIVISION_ARRAY_SCALAR"),
             expLst={e1, e2, e3 as SHARED_LITERAL(__)}) then
-    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" 
-                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then "integer_array"
+    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array" 
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
                         else "real_array"
     let var = tempDecl(type, &varDecls)
     let var1 = daeExp(e1, context, &preExp, &varDecls)
@@ -5052,7 +5160,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     if acceptMetaModelicaGrammar() then 'print(<%var1%>)' else 'puts(<%var1%>)'
   
-  case CALL(path=IDENT(name="max"), attr=CALL_ATTR(ty = ET_REAL()), expLst={e1,e2}) then
+  case CALL(path=IDENT(name="max"), attr=CALL_ATTR(ty = T_REAL(__)), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     let var2 = daeExp(e2, context, &preExp, &varDecls)
     'fmax(<%var1%>,<%var2%>)'
@@ -5067,7 +5175,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let ty_str = '<%expTypeArray(ty)%>'
     'sum_<%ty_str%>(&<%arr%>)'
   
-  case CALL(path=IDENT(name="min"), attr=CALL_ATTR(ty = ET_REAL()), expLst={e1,e2}) then
+  case CALL(path=IDENT(name="min"), attr=CALL_ATTR(ty = T_REAL(__)), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     let var2 = daeExp(e2, context, &preExp, &varDecls)
     'fmin(<%var1%>,<%var2%>)'
@@ -5077,7 +5185,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var2 = daeExp(e2, context, &preExp, &varDecls)
     'modelica_integer_min((modelica_integer)<%var1%>,(modelica_integer)<%var2%>)'
   
-  case CALL(path=IDENT(name="abs"), expLst={e1}, attr=CALL_ATTR(ty = ET_INT())) then
+  case CALL(path=IDENT(name="abs"), expLst={e1}, attr=CALL_ATTR(ty = T_INTEGER(__))) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     'labs(<%var1%>)'
   
@@ -5092,7 +5200,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += '<%retPre%>'
     'sqrt(<%argStr%>)'
   
-  case CALL(path=IDENT(name="div"), expLst={e1,e2}, attr=CALL_ATTR(ty = ET_INT())) then
+  case CALL(path=IDENT(name="div"), expLst={e1,e2}, attr=CALL_ATTR(ty = T_INTEGER(__))) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     let var2 = daeExp(e2, context, &preExp, &varDecls)
     'ldiv(<%var1%>,<%var2%>).quot'
@@ -5264,11 +5372,11 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   case exp as CALL(attr=attr as CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>' ;separator=", ")
     let funName = '<%underscorePath(path)%>'
-    let retType = if attr.builtin then (match attr.ty case ET_NORETCALL(__) then ""
+    let retType = if attr.builtin then (match attr.ty case T_NORETCALL(__) then ""
       else expTypeModelica(attr.ty))
       else '<%funName%>_rettype'
     let retVar = match attr.ty
-      case ET_NORETCALL(__) then ""
+      case T_NORETCALL(__) then ""
       else tempDecl(retType, &varDecls)
     let &preExp += if not attr.builtin then match context case SIMULATION(__) then
       <<
@@ -5285,7 +5393,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
       >>
     match exp
       // no return calls
-      case CALL(attr=CALL_ATTR(ty=ET_NORETCALL(__))) then '/* NORETCALL */'
+      case CALL(attr=CALL_ATTR(ty=T_NORETCALL(__))) then '/* NORETCALL */'
       // non tuple calls (single return value)
       case CALL(attr=CALL_ATTR(tuple_=false)) then
         if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
@@ -5405,11 +5513,11 @@ match exp
 case CAST(__) then
   let expVar = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   match ty
-  case ET_INT(__)   then '((modelica_integer)<%expVar%>)'  
-  case ET_REAL(__)  then '((modelica_real)<%expVar%>)'
-  case ET_ENUMERATION(__)   then '((modelica_integer)<%expVar%>)'
-  case ET_BOOL(__)   then '((modelica_boolean)<%expVar%>)'  
-  case ET_ARRAY(__) then
+  case T_INTEGER(__)   then '((modelica_integer)<%expVar%>)'  
+  case T_REAL(__)  then '((modelica_real)<%expVar%>)'
+  case T_ENUMERATION(__)   then '((modelica_integer)<%expVar%>)'
+  case T_BOOL(__)   then '((modelica_boolean)<%expVar%>)'  
+  case T_ARRAY(__) then
     let arrayTypeStr = expTypeArray(ty)
     let tvar = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
     let to = expTypeShort(ty)
@@ -5666,7 +5774,7 @@ template daeExpMatch(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varD
 ::=
 match exp
 case exp as MATCHEXPRESSION(__) then
-  let res = match et case ET_NORETCALL(__) then "ERROR_MATCH_EXPRESSION_NORETCALL" else tempDecl(expTypeModelica(et), &varDecls)
+  let res = match et case T_NORETCALL(__) then "ERROR_MATCH_EXPRESSION_NORETCALL" else tempDecl(expTypeModelica(et), &varDecls)
   daeExpMatch2(exp,listExpLength1,res,context,&preExp,&varDecls)
 end daeExpMatch;
 
@@ -5695,11 +5803,11 @@ case exp as MATCHEXPRESSION(__) then
     let &expInput += '<%decl%> = <%daeExp(exp, context, &preExpInput, &varDeclsInput)%>;<%\n%>'
     ""; empty)
   let ix = match exp.matchType
-    case MATCH(switch=SOME((switchIndex,ET_STRING(__),div))) then
+    case MATCH(switch=SOME((switchIndex,T_STRING(__),div))) then
       'stringHashDjb2Mod(<%prefix%>_in<%switchIndex%>,<%div%>)'
-    case MATCH(switch=SOME((switchIndex,ET_METATYPE(__),_))) then
+    case MATCH(switch=SOME((switchIndex,T_METATYPE(__),_))) then
       'valueConstructor(<%prefix%>_in<%switchIndex%>)'
-    case MATCH(switch=SOME((switchIndex,ty as ET_INT(__),_))) then
+    case MATCH(switch=SOME((switchIndex,ty as T_INTEGER(__),_))) then
 
       '<%prefix%>_in<%switchIndex%>'
     case MATCH(switch=SOME(_)) then
@@ -5835,7 +5943,7 @@ end daeExpSharedLiteral;
 // TODO: Optimize as in Codegen
 // TODO: Use this function in other places where almost the same thing is hard
 //       coded
-template arrayScalarRhs(ExpType ty, list<Exp> subs, String arrName, Context context,
+template arrayScalarRhs(Type ty, list<Exp> subs, String arrName, Context context,
                Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
  "Helper to daeExpAsub."
 ::=
@@ -6014,63 +6122,64 @@ end varTypeBoxed;
 
 
 
-template expTypeRW(DAE.ExpType type)
+template expTypeRW(DAE.Type type)
  "Helper to writeOutVarRecordMembers."
 ::=
   match type
-  case ET_INT(__)         then "TYPE_DESC_INT"
-  case ET_REAL(__)        then "TYPE_DESC_REAL"
-  case ET_STRING(__)      then "TYPE_DESC_STRING"
-  case ET_BOOL(__)        then "TYPE_DESC_BOOL"
-  case ET_ENUMERATION(__) then "TYPE_DESC_INT"  
-  case ET_ARRAY(__)       then '<%expTypeRW(ty)%>_ARRAY'
-  case ET_COMPLEX(complexClassType=RECORD(__))
+  case T_INTEGER(__)         then "TYPE_DESC_INT"
+  case T_REAL(__)        then "TYPE_DESC_REAL"
+  case T_STRING(__)      then "TYPE_DESC_STRING"
+  case T_BOOL(__)        then "TYPE_DESC_BOOL"
+  case T_ENUMERATION(__) then "TYPE_DESC_INT"  
+  case T_ARRAY(__)       then '<%expTypeRW(ty)%>_ARRAY'
+  case T_COMPLEX(complexClassType=RECORD(__))
                       then "TYPE_DESC_RECORD"
-  case ET_METATYPE(__) case ET_BOXED(__)    then "TYPE_DESC_MMC"
+  case T_METATYPE(__) case T_METABOXED(__)    then "TYPE_DESC_MMC"
 end expTypeRW;
 
-template expTypeShort(DAE.ExpType type)
+template expTypeShort(DAE.Type type)
  "Generate type helper."
 ::=
   match type
-  case ET_INT(__)         then "integer"  
-  case ET_REAL(__)        then "real"
-  case ET_STRING(__)      then if acceptMetaModelicaGrammar() then "metatype" else "string"
-  case ET_BOOL(__)        then "boolean"
-  case ET_ENUMERATION(__) then "integer"  
-  case ET_ARRAY(__)       then expTypeShort(ty)   
-  case ET_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
+  case T_INTEGER(__)         then "integer"  
+  case T_REAL(__)        then "real"
+  case T_STRING(__)      then if acceptMetaModelicaGrammar() then "metatype" else "string"
+  case T_BOOL(__)        then "boolean"
+  case T_ENUMERATION(__) then "integer"  
+  case T_ARRAY(__)       then expTypeShort(ty)   
+  case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "complex"
-  case ET_COMPLEX(__)     then 'struct <%underscorePath(name)%>'  
-  case ET_METATYPE(__) case ET_BOXED(__)    then "metatype"
-  case ET_FUNCTION_REFERENCE_VAR(__) then "fnptr"
-  case ET_OTHER(__) then "complex" /* TODO: Don't do this to me! */
+  case T_COMPLEX(__)     then 'struct <%underscorePath(ClassInf.getStateName(complexClassType))%>'  
+  case T_METATYPE(__) case T_METABOXED(__)    then "metatype"
+  case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"
+  case T_UNKNOWN(__) then "complex" /* TODO: Don't do this to me! */
+  case T_ANYTYPE(__) then "complex" /* TODO: Don't do this to me! */
   else error(sourceInfo(),'expTypeShort:<%typeString(type)%>')
 end expTypeShort;
 
 template mmcVarType(Variable var)
 ::=
   match var
-  case VARIABLE(__) then 'modelica_<%mmcExpTypeShort(ty)%>'
+  case VARIABLE(__) then 'modelica_<%mmcTypeShort(ty)%>'
   case FUNCTION_PTR(__) then 'modelica_fnptr'
 end mmcVarType;
 
-template mmcExpTypeShort(DAE.ExpType type)
+template mmcTypeShort(DAE.Type type)
 ::=
   match type
-  case ET_INT(__)                     then "integer"
-  case ET_REAL(__)                    then "real"
-  case ET_STRING(__)                  then "string"
-  case ET_BOOL(__)                    then "integer"
-  case ET_ENUMERATION(__)             then "integer"
-  case ET_ARRAY(__)                   then "array"
-  case ET_METATYPE(__) case ET_BOXED(__)                then "metatype"
-  case ET_FUNCTION_REFERENCE_VAR(__)  then "fnptr"
-  else "mmcExpTypeShort:ERROR"
-end mmcExpTypeShort;
+  case T_INTEGER(__)                     then "integer"
+  case T_REAL(__)                    then "real"
+  case T_STRING(__)                  then "string"
+  case T_BOOL(__)                    then "integer"
+  case T_ENUMERATION(__)             then "integer"
+  case T_ARRAY(__)                   then "array"
+  case T_METATYPE(__) case T_METABOXED(__)                then "metatype"
+  case T_FUNCTION_REFERENCE_VAR(__)  then "fnptr"
+  else "mmcTypeShort:ERROR"
+end mmcTypeShort;
 
 
-template expType(DAE.ExpType ty, Boolean array)
+template expType(DAE.Type ty, Boolean array)
  "Generate type helper."
 ::=
   match array
@@ -6079,21 +6188,21 @@ template expType(DAE.ExpType ty, Boolean array)
 end expType;
 
 
-template expTypeModelica(DAE.ExpType ty)
+template expTypeModelica(DAE.Type ty)
  "Generate type helper."
 ::=
   expTypeFlag(ty, 2)
 end expTypeModelica;
 
 
-template expTypeArray(DAE.ExpType ty)
+template expTypeArray(DAE.Type ty)
  "Generate type helper."
 ::=
   expTypeFlag(ty, 3)
 end expTypeArray;
 
 
-template expTypeArrayIf(DAE.ExpType ty)
+template expTypeArrayIf(DAE.Type ty)
  "Generate type helper."
 ::=
   expTypeFlag(ty, 4)
@@ -6128,7 +6237,7 @@ template expTypeFromExpArrayIf(Exp exp)
 end expTypeFromExpArrayIf;
 
 
-template expTypeFlag(DAE.ExpType ty, Integer flag)
+template expTypeFlag(DAE.Type ty, Integer flag)
  "Generate type helper."
 ::=
   match flag
@@ -6137,10 +6246,10 @@ template expTypeFlag(DAE.ExpType ty, Integer flag)
     expTypeShort(ty)
   case 2 then
     // we want the "modelica type"
-    match ty case ET_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then
+    match ty case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then
       'modelica_<%expTypeShort(ty)%>'
-    else match ty case ET_COMPLEX(__) then
-      'struct <%underscorePath(name)%>'
+    else match ty case T_COMPLEX(__) then
+      'struct <%underscorePath(ClassInf.getStateName(complexClassType))%>'
     else
       'modelica_<%expTypeShort(ty)%>'
   case 3 then
@@ -6149,7 +6258,7 @@ template expTypeFlag(DAE.ExpType ty, Integer flag)
   case 4 then
     // we want the "array type" only if type is array, otherwise "modelica type"
     match ty
-    case ET_ARRAY(__) then '<%expTypeShort(ty)%>_array'
+    case T_ARRAY(__) then '<%expTypeShort(ty)%>_array'
     else expTypeFlag(ty, 2)
 end expTypeFlag;
 
@@ -6396,11 +6505,11 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
       static const size_t <%name%>_strlen = <%unescapedStringLength(string)%>;
       static const char <%name%>[<%intAdd(1,unescapedStringLength(string))%>] = <%name%>_data;
       >>
-  case lit as MATRIX(ty=ty as ET_ARRAY(__))
-  case lit as ARRAY(ty=ty as ET_ARRAY(__)) then
-    let ndim = listLength(ty.arrayDimensions)
+  case lit as MATRIX(ty=ty as T_ARRAY(__))
+  case lit as ARRAY(ty=ty as T_ARRAY(__)) then
+    let ndim = listLength(ty.dims)
     let sty = expTypeShort(ty)
-    let dims = (ty.arrayDimensions |> dim => dimension(dim) ;separator=", ")
+    let dims = (ty.dims |> dim => dimension(dim) ;separator=", ")
     let data = flattenArrayExpToList(lit) |> exp => literalExpConstArrayVal(exp) ; separator=", "
     <<
     static _index_t <%name%>_dims[<%ndim%>] = {<%dims%>};
@@ -6669,15 +6778,15 @@ match aliasvar
   else '"noAlias"'
 end getAliasVar;
 
-template ScalarVariableType(DAE.ExpType type_, String unit, String displayUnit, Option<DAE.Exp> initialValue, Boolean isFixed)
+template ScalarVariableType(DAE.Type type_, String unit, String displayUnit, Option<DAE.Exp> initialValue, Boolean isFixed)
  "Generates code for ScalarVariable Type file for FMU target."
 ::=
   match type_
-    case ET_INT(__) then '<Integer <%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)%> />' 
-    case ET_REAL(__) then '<Real <%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)%> />' 
-    case ET_BOOL(__) then '<Boolean <%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)%> />' 
-    case ET_STRING(__) then '<String <%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)%> />' 
-    case ET_ENUMERATION(__) then '<Integer <%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)%> />' 
+    case T_INTEGER(__) then '<Integer <%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)%> />' 
+    case T_REAL(__) then '<Real <%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)%> />' 
+    case T_BOOL(__) then '<Boolean <%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)%> />' 
+    case T_STRING(__) then '<String <%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)%> />' 
+    case T_ENUMERATION(__) then '<Integer <%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)%> />' 
     else 'UNKOWN_TYPE'
 end ScalarVariableType;
 

@@ -640,7 +640,7 @@ algorithm
         cmod2 = Mod.lookupCompModificationFromEqu(inMod, id);
         // Debug.traceln("\tSpecific mods on comp: " +&  Mod.printModStr(cmod2));
         cmod = Mod.merge(cmod2, cmod, inEnv, Prefix.NOPRE());
-        mod_rest = Types.removeMod(inMod, id);
+        mod_rest = Mod.removeMod(inMod, id);
       then
         ((comp, cmod, b), mod_rest);
 
@@ -653,7 +653,7 @@ algorithm
     case ((comp as SCode.CLASS(name = id, prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), _, b), _, _)
       equation
         DAE.REDECL(_, _, (comp, cmod)::_) = Mod.lookupCompModification(inMod, id);
-        mod_rest = Types.removeMod(inMod, id);
+        mod_rest = Mod.removeMod(inMod, id);
       then
         ((comp, cmod, b), mod_rest);
 
@@ -1390,7 +1390,7 @@ algorithm
     case (cache,env,cref,ht)
       equation
         id = Absyn.crefFirstIdent(cref);
-        cref_ = ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{});
+        cref_ = ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{});
         //Debug.fprintln(Flags.DEBUG,"Try lookupV " +& id);
         (env,id) = lookupVarNoErrorMessage(cache,env,cref_);
         //Debug.fprintln(Flags.DEBUG,"Got env " +& intString(listLength(env)));

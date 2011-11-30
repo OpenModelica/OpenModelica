@@ -30,8 +30,7 @@
  */
 
 encapsulated package ExpressionSolve
-"
-  file:         ExpressionSolve.mo
+" file:        ExpressionSolve.mo
   package:     ExpressionSolve
   description: ExpressionSolve
 
@@ -155,7 +154,7 @@ algorithm
     local
       DAE.Exp crexp,crexp2,rhs,lhs,res,res_1,cr,e1,e2,e3;
       DAE.ComponentRef cr1,cr2;
-      DAE.ExpType tp,tp1;
+      DAE.Type tp,tp1;
       list<DAE.Statement> asserts,asserts1,asserts2;
     
     // case(debuge1,debuge2,debuge3) // FOR DEBBUGING...
@@ -259,7 +258,7 @@ algorithm
       DAE.Exp invCr;
       list<DAE.Exp> factors;
       Boolean linExp;
-      DAE.ExpType tp;
+      DAE.Type tp;
       list<DAE.Statement> asserts;
       String estr,se1,se2,sa;
     

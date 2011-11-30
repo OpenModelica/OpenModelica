@@ -29,8 +29,7 @@
  *
  */
 encapsulated package InnerOuter
-"
-  file:         InnerOuter.mo
+" file:        InnerOuter.mo
   package:     InnerOuter
   description: Instance hierarchy and functionality to deal with Inner/Outer definitions
 
@@ -44,6 +43,7 @@ import Env;
 import Prefix;
 import SCode;
 import UnitAbsyn;
+import Values;
 
 protected import ComponentReference;
 protected import ConnectUtil;
@@ -559,7 +559,7 @@ would become: model2.connector"
 algorithm 
   cr3 := matchcontinue(prefixedCref,innerCref)
     local
-      DAE.ExpType ty,ty2;
+      DAE.Type ty,ty2;
       DAE.ComponentRef c1,c2,c3;
     
     case(prefixedCref,innerCref)
@@ -1204,7 +1204,7 @@ algorithm
         // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : stripping and looking for: " +& PrefixUtil.printPrefixStr(prefix) +& "/" +& name);
 
         // put the name as the last prefix
-        (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,prefix, ComponentReference.makeCrefIdent(name, DAE.ET_OTHER(), {}));
+        (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,prefix, ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
 
         // search in instance hierarchy
         instInner = get(cref, ht);
@@ -1228,7 +1228,7 @@ algorithm
         // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : stripping and looking for: " +& PrefixUtil.printPrefixStr(prefix) +& "/" +& name);
         
         // put the name as the last prefix
-        (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,prefix, ComponentReference.makeCrefIdent(name, DAE.ET_OTHER(), {}));
+        (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,prefix, ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
         
         // search in instance hierarchy we had a failure
         failure(instInner = get(cref, ht));
@@ -1310,12 +1310,12 @@ public function switchInnerToOuterAndPrefix
       String idName;
       DAE.ElementSource source "the origin of the element";
 
-      /* Component that is unspecified does not change inner/outer on subcomponents */
+    // Component that is unspecified does not change inner/outer on subcomponents
     case (lst,Absyn.NOT_INNER_OUTER(),_) then lst;
 
     case ({},_,_) then {};
 
-      /* unspecified variables are changed to inner/outer if component has such prefix. */
+    // unspecified variables are changed to inner/outer if component has such prefix.
     case ((DAE.VAR(componentRef = cr,
                    kind = vk,
                    direction = dir,
@@ -1335,14 +1335,14 @@ public function switchInnerToOuterAndPrefix
       then
         (DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,source,dae_var_attr,comment,io) :: r_1);
 
-    /* If var already have inner/outer, keep it. */
+    // If var already have inner/outer, keep it.
     case ( (v as DAE.VAR(componentRef = _)) :: r,io,pre)
       equation
         r_1 = switchInnerToOuterAndPrefix(r, io, pre);
       then
         v :: r_1;
 
-      /* Traverse components */
+    // Traverse components
     case ((DAE.COMP(ident = idName,dAElist = lst,source = source,comment = comment) :: r),io,pre)
       equation
         lst_1 = switchInnerToOuterAndPrefix(lst, io, pre);
@@ -1386,6 +1386,7 @@ public function prefixOuterDaeVars
       DAE.VarVisibility prot;
       String idName;
       DAE.ElementSource source "the origin of the element";
+      
 
     case ({},_) then {};
 
@@ -1649,7 +1650,7 @@ algorithm
       equation
         false = Absyn.isInner(inInnerOuter);
         // prefix the name!
-        (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, ComponentReference.makeCrefIdent(name, DAE.ET_OTHER(), {}));
+        (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
         // print ("InnerOuter.updateInstHierarchy jumping over non-inner: " +& ComponentReference.printComponentRefStr(cref) +& "\n");
       then
         ih;*/
@@ -1669,7 +1670,7 @@ algorithm
          inInstInner as INST_INNER(name=name, io=io))
       equation
         // prefix the name!
-        cref_ = ComponentReference.makeCrefIdent(name, DAE.ET_OTHER(), {});
+        cref_ = ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {});
         (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, cref_);
         // add to hashtable!
         // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.updateInstHierarchy adding: " +& 
@@ -1682,7 +1683,7 @@ algorithm
     case(ih,inPrefix,inInnerOuter,inInstInner as INST_INNER(name=name, io=io))
       equation
         // prefix the name!
-        //(_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, ComponentReference.makeCrefIdent("UNKNOWN", DAE.ET_OTHER(), {}));
+        //(_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, ComponentReference.makeCrefIdent("UNKNOWN", DAE.T_UNKNOWN_DEFAULT, {}));
         // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.updateInstHierarchy failure for: " +& 
         //   PrefixUtil.printPrefixStr(inPrefix) +& "/" +& name);
       then

@@ -209,7 +209,7 @@ protected
   list<DAE.Subscript> subs;
 algorithm
   Prefix.PREFIX(compPre = Prefix.PRE(prefix = name, subscripts = subs)) := inPrefix;
-  outCref := DAE.CREF_IDENT(name, DAE.ET_OTHER(), subs);
+  outCref := DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, subs);
 end prefixFirstCref;
 
 public function prefixLast "function: prefixLast
@@ -387,14 +387,14 @@ algorithm
     case (cache,env,inIH,Prefix.PREFIX(Prefix.NOCOMPPRE(),_),SOME(cref)) then (cache,cref);
     case (cache,env,inIH,Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs,ci_state=ci_state),cp),NONE())
       equation
-        cref_ = ComponentReference.makeCrefIdent(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ci_state),s);
+        cref_ = ComponentReference.makeCrefIdent(i,DAE.T_COMPLEX(ci_state, {}, NONE(), DAE.emptyTypeSource),s);
         (cache,cref_1) = prefixToCref2(cache,env,inIH,Prefix.PREFIX(xs,cp), SOME(cref_));
       then
         (cache,cref_1);
     case (cache,env,inIH,Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs,ci_state=ci_state),cp),SOME(cref))
       equation
         (cache,cref) = prefixSubscriptsInCref(cache,env,inIH,inPrefix,cref);
-        cref_2 = ComponentReference.makeCrefQual(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ci_state),s,cref);
+        cref_2 = ComponentReference.makeCrefQual(i,DAE.T_COMPLEX(ci_state, {}, NONE(), DAE.emptyTypeSource),s,cref);
         (cache,cref_1) = prefixToCref2(cache,env,inIH,Prefix.PREFIX(xs,cp), SOME(cref_2));
       then
         (cache,cref_1);
@@ -430,13 +430,13 @@ algorithm
     case (Prefix.PREFIX(Prefix.NOCOMPPRE(),_),SOME(cref)) then SOME(cref);
     case (Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs),cp),NONE())
       equation
-        cref_ = ComponentReference.makeCrefIdent(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),s);
+        cref_ = ComponentReference.makeCrefIdent(i,DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE(), DAE.emptyTypeSource),s);
         cref_1 = prefixToCrefOpt2(Prefix.PREFIX(xs,cp), SOME(cref_));
       then
         cref_1;
     case (inPrefix as Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs),cp),SOME(cref))
       equation
-        cref_ = ComponentReference.makeCrefQual(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),s,cref);
+        cref_ = ComponentReference.makeCrefQual(i,DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE(), DAE.emptyTypeSource),s,cref);
         cref_1 = prefixToCrefOpt2(Prefix.PREFIX(xs,cp), SOME(cref_));
       then
         cref_1;
@@ -456,13 +456,13 @@ algorithm
     
     case(Prefix.NOPRE())
       equation
-        c = ComponentReference.makeCrefIdent("", DAE.ET_OTHER(), {});
+        c = ComponentReference.makeCrefIdent("", DAE.T_UNKNOWN_DEFAULT, {});
       then
         c;
         
     case(Prefix.PREFIX(Prefix.NOCOMPPRE(), _))
       equation
-        c = ComponentReference.makeCrefIdent("", DAE.ET_OTHER(), {});
+        c = ComponentReference.makeCrefIdent("", DAE.T_UNKNOWN_DEFAULT, {});
       then
         c;
     
@@ -486,7 +486,7 @@ algorithm
   (outCache,outCr) := match (cache,env,inIH,pre,cr)
   local 
     DAE.Ident id;
-    DAE.ExpType tp;
+    DAE.Type tp;
     list<DAE.Subscript> subs;
     
     case(cache,env,inIH,pre,DAE.CREF_IDENT(id,tp,subs)) equation
@@ -661,7 +661,7 @@ algorithm
       InstanceHierarchy ih;
       Prefix.Prefix p;
       Integer b,a;
-      DAE.ExpType t,tp;
+      DAE.Type t,tp;
       Integer index_;
       Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
       Option<Values.Value> v;
@@ -978,7 +978,7 @@ algorithm
       list<DAE.Element> rest,temp;
       DAE.Element elem;
       DAE.Exp e1,e2;
-
+    
     case (localCache,_,_,{},localAccList,_) then (localCache,localAccList);
     // variables
     case (localCache,localEnv,ih,DAE.VAR(cRef,v1,v2,prot,ty,binding,dims,
@@ -1020,8 +1020,7 @@ protected function prefixStatements "function: prefixStatements
   output Env.Cache outCache;
   output list<DAE.Statement> outStmts;
 algorithm
-  (outCache,outStmts) :=
-  matchcontinue (cache,env,inIH,stmts,accList,p)
+  (outCache,outStmts) := matchcontinue (cache,env,inIH,stmts,accList,p)
     local
       Env.Cache localCache;
       Env.Env localEnv;
@@ -1029,7 +1028,7 @@ algorithm
       Prefix.Prefix pre;
       InstanceHierarchy ih;
       DAE.ElementSource source;
-      DAE.ExpType t;
+      DAE.Type t;
       DAE.Statement elem;
       list<DAE.Statement> elems,sList,b;
       String s,id;

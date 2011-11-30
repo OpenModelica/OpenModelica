@@ -30,8 +30,7 @@
  */
 
 encapsulated package Dump
-"
-  file:         Dump.mo
+" file:        Dump.mo
   package:     Dump
   description: debug printing
 

@@ -30,7 +30,7 @@
  */
 
 encapsulated package ExpandableConnectors
-" file:         ExpandableConnectors.mo
+" file:        ExpandableConnectors.mo
   package:     ExpandableConnectors
   description: ExpandableConnectors translates Absyn to SCode intermediate form
 

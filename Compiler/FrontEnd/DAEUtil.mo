@@ -78,15 +78,15 @@ algorithm
 end constStrFriendly;
 
 public function expTypeSimple "returns true if type is simple type"
-  input DAE.ExpType tp;
+  input DAE.Type tp;
   output Boolean isSimple;
 algorithm
   isSimple := matchcontinue(tp)
-    case(DAE.ET_REAL()) then true;
-    case(DAE.ET_INT()) then true;
-    case(DAE.ET_STRING()) then true;
-    case(DAE.ET_BOOL()) then true;
-    case(DAE.ET_ENUMERATION(path=_)) then true;
+    case(DAE.T_REAL(varLst = _)) then true;
+    case(DAE.T_INTEGER(varLst = _)) then true;
+    case(DAE.T_STRING(varLst = _)) then true;
+    case(DAE.T_BOOL(varLst = _)) then true;
+    case(DAE.T_ENUMERATION(path=_)) then true;
 
     case(_) then false;
 
@@ -94,43 +94,43 @@ algorithm
 end expTypeSimple;
 
 public function expTypeElementType "returns the element type of an array"
-  input DAE.ExpType tp;
-  output DAE.ExpType eltTp;
+  input DAE.Type tp;
+  output DAE.Type eltTp;
 algorithm
   eltTp := matchcontinue(tp)
-    case(DAE.ET_ARRAY(ty=tp)) then expTypeElementType(tp);
+    case(DAE.T_ARRAY(ty=tp)) then expTypeElementType(tp);
     case(tp) then tp;
   end matchcontinue;
 end expTypeElementType;
 
 public function expTypeComplex "returns true if type is complex type"
-  input DAE.ExpType tp;
+  input DAE.Type tp;
   output Boolean isComplex;
 algorithm
   isComplex := matchcontinue(tp)
-    case(DAE.ET_COMPLEX(name=_)) then true;
+    case(DAE.T_COMPLEX(complexClassType = _)) then true;
     case(_) then false;
   end matchcontinue;
 end expTypeComplex;
 
 public function expTypeArray "returns true if type is array type
 Alternative names: isArrayType, isExpTypeArray"
-  input DAE.ExpType tp;
+  input DAE.Type tp;
   output Boolean isArray;
 algorithm
   isArray := matchcontinue(tp)
-    case(DAE.ET_ARRAY(ty=_)) then true;
+    case(DAE.T_ARRAY(ty=_)) then true;
     case(_) then false;
   end matchcontinue;
 end expTypeArray;
 
 public function expTypeArrayDimensions "returns the array dimensions of an ExpType"
-  input DAE.ExpType tp;
+  input DAE.Type tp;
   output list<Integer> dims;
 algorithm
   dims := matchcontinue(tp)
-    local list<DAE.Dimension> array_dims;
-    case(DAE.ET_ARRAY(arrayDimensions=array_dims)) equation
+    local DAE.Dimensions array_dims;
+    case(DAE.T_ARRAY(dims=array_dims)) equation
       dims = List.map(array_dims, Expression.dimensionSize);
     then dims;
   end matchcontinue;
@@ -582,7 +582,7 @@ algorithm outCr := match(inCr)
   local
     DAE.ComponentRef newChild,child;
     String id;
-    DAE.ExpType idt;
+    DAE.Type idt;
     list<DAE.Subscript> subs;
   case(DAE.CREF_IDENT(id,idt,subs))
     equation
@@ -608,7 +608,7 @@ output DAE.ComponentRef ocr;
 algorithm ocr := matchcontinue(cr,removalString)
   local
     String str,str2;
-    DAE.ExpType ty;
+    DAE.Type ty;
     DAE.ComponentRef child,child_2;
     list<DAE.Subscript> subs;
   case(DAE.CREF_IDENT(str,ty,subs),removalString)
@@ -1394,7 +1394,7 @@ public function isFunctionRefVar "
   output Boolean outBoolean;
 algorithm
   outBoolean := match (inElem)
-    case DAE.VAR(ty = (DAE.T_FUNCTION(_,_,_),_)) then true;
+    case DAE.VAR(ty = DAE.T_FUNCTION(funcArg = _)) then true;
     else false;
   end match;
 end isFunctionRefVar;
@@ -1479,20 +1479,19 @@ protected function getVariableList "function: getVariableList
   input list<DAE.Element> inElementLst;
   output list<DAE.Element> outElementLst;
 algorithm
-  outElementLst:=
-  matchcontinue (inElementLst)
+  outElementLst := matchcontinue (inElementLst)
     local
       list<DAE.Element> res,lst;
       DAE.Element x;
 
     /* adrpo: filter out records! */
-    case ((x as DAE.VAR(ty = (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_))) :: lst)
+    case ((x as DAE.VAR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)))) :: lst)
       equation
         res = getVariableList(lst);
       then
         (res);
 
-    case ((x as DAE.VAR(_,_,_,_,_,_,_,_,_,_,_,_,_)) :: lst)
+    case ((x as DAE.VAR(ty = _)) :: lst)
       equation
         res = getVariableList(lst);
       then
@@ -1647,7 +1646,7 @@ algorithm
     case ((cr :: xs),id)
       equation
         res = getFlowVariables2(xs, id);
-        cr_1 = ComponentReference.makeCrefQual(id,DAE.ET_OTHER(),{}, cr);
+        cr_1 = ComponentReference.makeCrefQual(id,DAE.T_UNKNOWN_DEFAULT,{}, cr);
       then
         (cr_1 :: res);
   end matchcontinue;
@@ -1705,7 +1704,7 @@ algorithm
     case ((cr :: xs),id)
       equation
         res = getStreamVariables2(xs, id);
-        cr_1 = ComponentReference.makeCrefQual(id,DAE.ET_OTHER(),{}, cr);
+        cr_1 = ComponentReference.makeCrefQual(id,DAE.T_UNKNOWN_DEFAULT,{}, cr);
       then
         (cr_1 :: res);
   end matchcontinue;
@@ -1801,7 +1800,7 @@ algorithm
       list<DAE.Element> elts_1,elts,welts_1,welts,telts_1,eelts_1,telts,eelts,elts2;
       Option<DAE.Exp> d_1,d,f;
       DAE.ComponentRef cr,cr_1,cref_,cr1,cr2;
-      DAE.ExpType ty;
+      DAE.Type ty;
       DAE.VarKind a;
       DAE.VarDirection b;
       DAE.Type t;
@@ -1994,6 +1993,7 @@ algorithm
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> a11;
       Option<SCode.Comment> a12; Absyn.InnerOuter a13;
+      
     case(newCr, DAE.VAR(a1,a2,a3,a4,a5,a6,a7,a8,a9,source,a11,a12,a13))
       then DAE.VAR(newCr,a2,a3,a4,a5,a6,a7,a8,a9,source,a11,a12,a13);
   end match;
@@ -2017,7 +2017,7 @@ protected function toModelicaFormCref "function: toModelicaFormCref
   output DAE.ComponentRef outComponentRef;
 protected
   String str,str_1;
-  DAE.ExpType ty;
+  DAE.Type ty;
 algorithm
   str := ComponentReference.printComponentRefStr(cr);
   ty := ComponentReference.crefLastType(cr);
@@ -2033,7 +2033,7 @@ algorithm
   outExp := matchcontinue (inExp)
     local
       DAE.ComponentRef cr_1,cr;
-      DAE.ExpType t,tp;
+      DAE.Type t,tp;
       DAE.Exp e1_1,e2_1,e1,e2,e_1,e,e3_1,e3;
       DAE.Operator op;
       list<DAE.Exp> expl_1,expl;
@@ -2190,7 +2190,7 @@ protected function crefToExp "function: crefToExp
   input DAE.ComponentRef inComponentRef;
   output DAE.Exp outExp;
 algorithm
-  outExp:= Expression.makeCrefExp(inComponentRef,DAE.ET_OTHER());
+  outExp:= Expression.makeCrefExp(inComponentRef,DAE.T_UNKNOWN_DEFAULT);
 end crefToExp;
 
 public function verifyWhenEquation
@@ -2653,7 +2653,7 @@ algorithm
       Option<DAE.VariableAttributes> variableAttributesOption;
       Option<SCode.Comment> absynCommentOption;
       Absyn.InnerOuter innerOuter;
-      Integer i,j;
+      Integer i,j;      
       
     case (DAE.COMP(ident=ident,dAElist = sublist,source=source,comment=comment),ht)
       equation
@@ -3007,7 +3007,7 @@ algorithm
     local
       DAE.Exp e1,e2;
       DAE.ComponentRef cr1,cr2;
-      DAE.ExpType ty,ty1,ty2;
+      DAE.Type ty,ty1,ty2;
       String str;
     // normal equation
     case(DAE.EQUATION(e1,e2,_))
@@ -3228,7 +3228,7 @@ algorithm
   outTplExpExpString := matchcontinue (inTplExpExpString)
     local
       DAE.ComponentRef cr,cr2,cref_;
-      DAE.ExpType cty,ty;
+      DAE.Type cty,ty;
       Integer oarg;
       list<DAE.Subscript> subs;
       DAE.Exp exp;
@@ -3280,7 +3280,7 @@ Function for Expression.traverseExp, removes the constant 'UNIQUEIO' from any cr
 algorithm 
   outTplExpExpString := matchcontinue (inTplExpExpString)
     local 
-      DAE.ComponentRef cr,cr2; DAE.ExpType ty; Integer oarg; DAE.Exp exp;
+      DAE.ComponentRef cr,cr2; DAE.Type ty; Integer oarg; DAE.Exp exp;
       
     case((DAE.CREF(cr,ty),oarg))
       equation
@@ -3329,7 +3329,7 @@ Function for Expression.traverseExp, adds the constant 'UNIQUEIO' to the CREF_ID
 algorithm 
   outTplExpExpString := matchcontinue (inTplExpExpString)
     local 
-      DAE.ComponentRef cr,cr2; DAE.ExpType ty; Integer oarg; DAE.Exp exp;
+      DAE.ComponentRef cr,cr2; DAE.Type ty; Integer oarg; DAE.Exp exp;
     
     case((DAE.CREF(cr,ty),oarg))
       equation
@@ -3666,14 +3666,14 @@ algorithm
       Option<SCode.Comment> cmt;
       Option<DAE.Exp> optExp;
       Absyn.InnerOuter io;
-      list<DAE.Dimension> idims;
+      DAE.Dimensions idims;
       String id,str;
       list<DAE.Statement> stmts,stmts2;
       list<list<DAE.Element>> tbs,tbs_1;
       list<DAE.Exp> conds,conds_1;
       Absyn.Path path;
       list<DAE.Exp> expl;
-      DAE.ElementSource source "the origin of the element";
+      DAE.ElementSource source "the origin of the element";      
   
     case(DAE.VAR(cr,kind,dir,prot,tp,optExp,dims,fl,st,source,attr,cmt,io),func,extraArg)
       equation
@@ -3884,7 +3884,7 @@ algorithm
       list<DAE.Exp> expl1,expl2;
       DAE.ComponentRef cr_1,cr;
       list<DAE.Statement> xs_1,xs,stmts,stmts1,stmts2;
-      DAE.ExpType tp;
+      DAE.Type tp;
       DAE.Statement x,ew,ew_1,res;
       Boolean b1;
       String id1,str;
@@ -5157,6 +5157,7 @@ algorithm
           splitElements_dispatch(rest, v_acc, ie_acc, ia_acc, e_acc, a_acc, o_acc);
       then
         (v_acc, ie_acc, ia_acc, e_acc, a_acc, o_acc);
+        
   end match;
 end splitElements_dispatch;
 
@@ -5196,7 +5197,7 @@ algorithm
       equation
         paths1 = getUniontypePathsFunctions(funcs);
         paths2 = getUniontypePathsElements(els);
-        // Use accumulators? Small gain as T_UNIONTYPE has lists of paths anyway?
+        // Use accumulators? Small gain as T_METAUNIONTYPE has lists of paths anyway?
         outPaths = listAppend(paths1, paths2);
       then outPaths;
   end matchcontinue;
@@ -5289,15 +5290,15 @@ algorithm
       HashTable.HashTable crs0,crs1;
       DAE.Exp exp,e1,e2;
       
-    case ((DAE.CALL(path=Absyn.IDENT("der"),expLst={exp as DAE.CREF(componentRef = cr, ty = DAE.ET_REAL())}),crs0))
+    case ((DAE.CALL(path=Absyn.IDENT("der"),expLst={exp as DAE.CREF(componentRef = cr, ty = DAE.T_REAL(varLst = _))}),crs0))
       equation
-        cref_1 = ComponentReference.makeCrefQual("$old",DAE.ET_REAL(),{},cr);
-        cref_2 = ComponentReference.makeCrefIdent("$current_step_size",DAE.ET_REAL(),{});
-        e1 = Expression.makeCrefExp(cref_1,DAE.ET_REAL());
-        e2 = Expression.makeCrefExp(cref_2,DAE.ET_REAL());
+        cref_1 = ComponentReference.makeCrefQual("$old",DAE.T_REAL_DEFAULT,{},cr);
+        cref_2 = ComponentReference.makeCrefIdent("$current_step_size",DAE.T_REAL_DEFAULT,{});
+        e1 = Expression.makeCrefExp(cref_1,DAE.T_REAL_DEFAULT);
+        e2 = Expression.makeCrefExp(cref_2,DAE.T_REAL_DEFAULT);
         exp = DAE.BINARY(
-                DAE.BINARY(exp, DAE.SUB(DAE.ET_REAL()), e1),
-                DAE.DIV(DAE.ET_REAL()),
+                DAE.BINARY(exp, DAE.SUB(DAE.T_REAL_DEFAULT), e1),
+                DAE.DIV(DAE.T_REAL_DEFAULT),
                 e2);
         crs1 = BaseHashTable.add((cr,0),crs0);
       then 
@@ -5431,7 +5432,7 @@ algorithm
   outAcc := matchcontinue (inElem,acc)
     local
       Absyn.Path path;
-    case (DAE.VAR(ty = ((DAE.T_FUNCTION(funcArg=_)),SOME(path))),acc)
+    case (DAE.VAR(ty = DAE.T_FUNCTION(source = {path})),acc)
       then path::acc;
     case (_,acc) then acc;
   end matchcontinue;

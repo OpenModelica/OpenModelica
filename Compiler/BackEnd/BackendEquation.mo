@@ -30,7 +30,7 @@
  */
 
 encapsulated package BackendEquation
-" file:         BackendEquation.mo
+" file:        BackendEquation.mo
   package:     BackendEquation
   description: BackendEquation contains functions that do something with
                BackendDAEEquation datatype.
@@ -197,7 +197,7 @@ algorithm
       BackendDAE.Variables vars,vars1;
       DAE.ComponentRef cr;
       list<DAE.Exp> expl;
-      list<DAE.ExpVar> varLst;
+      list<DAE.Var> varLst;
       DAE.Ident ident;
       list<BackendDAE.Var> backendVars;
       BackendDAE.Var var;
@@ -208,7 +208,7 @@ algorithm
       then ((e, (vars,vars1)));
     
     // Special Case for Records
-    case ((e as DAE.CREF(componentRef = cr,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,vars1)))
+    case ((e as DAE.CREF(componentRef = cr,ty= DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,vars1)))
       equation
         expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         ((_,(vars,vars1))) = Expression.traverseExpList(expl,checkEquationsVarsExp,(vars,vars1));
@@ -216,7 +216,7 @@ algorithm
         ((e, (vars,vars1)));
 
     // Special Case for Arrays
-    case ((e as DAE.CREF(ty = DAE.ET_ARRAY(ty=_)),(vars,vars1)))
+    case ((e as DAE.CREF(ty = DAE.T_ARRAY(ty=_)),(vars,vars1)))
       equation
         ((e1,(_,true))) = BackendDAEUtil.extendArrExp((e,(NONE(),false)));
         ((_,(vars,vars1))) = Expression.traverseExp(e1,checkEquationsVarsExp,(vars,vars1));
@@ -224,7 +224,7 @@ algorithm
         ((e, (vars,vars1)));
     
     // case for functionpointers    
-    case ((e as DAE.CREF(ty=DAE.ET_FUNCTION_REFERENCE_FUNC(builtin=_)),(vars,vars1)))
+    case ((e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)),(vars,vars1)))
       then
         ((e, (vars,vars1)));
 
@@ -402,7 +402,7 @@ algorithm
     local
       DAE.Exp e1,e2,e_1,e_2;
       list<DAE.Exp> expl,expl1,exps,exps1;
-      DAE.ExpType tp;
+      DAE.Type tp;
       DAE.ComponentRef cr,cr1;
       BackendDAE.WhenEquation elsePart,elsePart1;
       DAE.ElementSource source;
@@ -526,7 +526,7 @@ algorithm
     local
       DAE.Exp e1,e2,e_1,e_2;
       list<DAE.Exp> expl,exps;
-      DAE.ExpType tp;
+      DAE.Type tp;
       DAE.ComponentRef cr,cr1;
       BackendDAE.WhenEquation elsePart,elsePart1;
       DAE.ElementSource source;

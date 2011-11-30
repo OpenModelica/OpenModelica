@@ -731,7 +731,7 @@ algorithm
       HashTable.HashTable ht;
       String unitStr;
       UnitAbsyn.Unit unit; Integer indx;
-      Option<Absyn.Path> optPath;
+      DAE.TypeSource ts;
       list<DAE.Var> vs;
       Option<UnitAbsyn.UnitCheckResult> res;
 
@@ -739,29 +739,27 @@ algorithm
       false = Flags.getConfigBool(Flags.UNIT_CHECKING);
     then UnitAbsyn.noStore;
 
-    case(UnitAbsyn.INSTSTORE(st,ht,res),(DAE.T_REAL(DAE.TYPES_VAR(name="unit",binding = DAE.EQBOUND(exp=DAE.SCONST(unitStr)))::_),_),cr) equation
+    case(UnitAbsyn.INSTSTORE(st,ht,res),DAE.T_REAL(varLst = DAE.TYPES_VAR(name="unit",binding = DAE.EQBOUND(exp=DAE.SCONST(unitStr)))::_),cr) equation
       unit = str2unit(unitStr,NONE());
       unit = Util.if_(0 == stringCompare(unitStr,""),UnitAbsyn.UNSPECIFIED(),unit);
       (st,indx) = add(unit,st);
        ht = BaseHashTable.add((cr,indx),ht);
     then UnitAbsyn.INSTSTORE(st,ht,res);
-    case(store,(DAE.T_REAL(_::vs),optPath),cr) equation
-     then instAddStore(store,(DAE.T_REAL(vs),optPath),cr);
+    case(store,DAE.T_REAL(_::vs,ts),cr) equation
+     then instAddStore(store,DAE.T_REAL(vs,ts),cr);
 
       /* No unit available. */
-    case(UnitAbsyn.INSTSTORE(st,ht,res),(DAE.T_REAL({}),_),cr) equation
-
+    case(UnitAbsyn.INSTSTORE(st,ht,res),DAE.T_REAL(varLst = {}),cr) equation
       (st,indx) = add(UnitAbsyn.UNSPECIFIED(),st);
        ht = BaseHashTable.add((cr,indx),ht);
     then UnitAbsyn.INSTSTORE(st,ht,res);
 
-    case(store,(DAE.T_COMPLEX(complexTypeOption=SOME(tp)),_),cr) equation
+    case(store,DAE.T_SUBTYPE_BASIC(complexType=tp),cr) equation
        store = instAddStore(store,tp,cr);
     then store;
     case(store,_,cr) then store;
   end matchcontinue;
 end instAddStore;
-
 
 public function storeSize "return the number of elements of the store"
 input UnitAbsyn.Store store;
@@ -866,13 +864,13 @@ algorithm
     case({},ht,nextElt) then ({},ht,nextElt);
 
     case((r,UnitAbsyn.TYPEPARAMETER(name,0))::params,ht,nextElt) equation
-      cref_ = ComponentReference.makeCrefIdent(name,DAE.ET_OTHER(),{});
+      cref_ = ComponentReference.makeCrefIdent(name,DAE.T_UNKNOWN_DEFAULT,{});
       indx = BaseHashTable.get(cref_,ht);
       (params,ht,nextElt) = createTypeParameterLocations4(params,ht,nextElt);
     then ((r,UnitAbsyn.TYPEPARAMETER(name,indx))::params,ht,nextElt);
 
     case((r,UnitAbsyn.TYPEPARAMETER(name,0))::params,ht,nextElt) equation
-        cref_ = ComponentReference.makeCrefIdent(name,DAE.ET_OTHER(),{});
+        cref_ = ComponentReference.makeCrefIdent(name,DAE.T_UNKNOWN_DEFAULT,{});
         ht = BaseHashTable.add((cref_,nextElt),ht);
        (params,ht,nextElt) = createTypeParameterLocations4(params,ht,nextElt);
     then((r,UnitAbsyn.TYPEPARAMETER(name,nextElt))::params,ht,nextElt+1);
@@ -918,7 +916,7 @@ algorithm
       (ut2,terms2,store) = buildTermExp(env,e2,false,ht,store);
       (terms,store) = buildTerms(env,DAE.DAE(elts),ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));
-    then  (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2))::terms,store);
+    then  (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(e1,DAE.SUB(DAE.T_REAL_DEFAULT),e2))::terms,store);
 
     case(env,DAE.DAE(elementLst=DAE.EQUEQUATION(cr1,cr2,_)::elts),ht,store) equation
       crefExp1 = Expression.crefExp(cr1);
@@ -928,7 +926,7 @@ algorithm
       (terms,store) = buildTerms(env,DAE.DAE(elts),ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));
     then 
-      (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(crefExp1,DAE.SUB(DAE.ET_REAL()),crefExp2))::terms,store);
+      (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(crefExp1,DAE.SUB(DAE.T_REAL_DEFAULT),crefExp2))::terms,store);
 
       /* Only consider variables with binding from this instance level, not furhter down */
     case(env,DAE.DAE(elementLst=DAE.VAR(componentRef=cr1 as DAE.CREF_IDENT(_,_,_),binding = SOME(e1))::elts),ht,store) equation
@@ -938,7 +936,7 @@ algorithm
       (terms,store) = buildTerms(env,DAE.DAE(elts),ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));
     then  
-      (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(crefExp1,DAE.SUB(DAE.ET_REAL()),e1))::terms,store);
+      (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(crefExp1,DAE.SUB(DAE.T_REAL_DEFAULT),e1))::terms,store);
 
     case(env,DAE.DAE(elementLst=DAE.DEFINE(cr1,e1,_)::elts),ht,store) equation
       crefExp1 = Expression.crefExp(cr1);
@@ -947,7 +945,7 @@ algorithm
       (terms,store) = buildTerms(env,DAE.DAE(elts),ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));
     then  
-      (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(crefExp1,DAE.SUB(DAE.ET_REAL()),e1))::terms,store);
+      (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(crefExp1,DAE.SUB(DAE.T_REAL_DEFAULT),e1))::terms,store);
 
     case(env,DAE.DAE(elementLst=_::elts),ht,store) equation
       (terms,store) = buildTerms(env,DAE.DAE(elts),ht,store);
@@ -984,14 +982,14 @@ algorithm
 
     /*case(env,e as DAE.RCONST(r),ht,store) equation
       s1 = realString(r);
-      indx = BaseHashTable.get(ComponentReference.makeCrefIdent(s1,DAE.ET_OTHER(),{}),ht);
+      indx = BaseHashTable.get(ComponentReference.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{}),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);*/
 
     case(env,e as DAE.ICONST(i),divOrMul,ht,store) equation
       s1 = "$"+&intString(tick())+&"_"+&intString(i);
       u = Util.if_(divOrMul,str2unit("1",NONE()),UnitAbsyn.UNSPECIFIED());
       (store,indx) = add(u,store);
-       ht = BaseHashTable.add((ComponentReference.makeCrefIdent(s1,DAE.ET_OTHER(),{}),indx),ht);
+       ht = BaseHashTable.add((ComponentReference.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{}),indx),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
 
     /* for each constant, add new unspecified unit*/
@@ -999,7 +997,7 @@ algorithm
       s1 = "$"+&intString(tick())+&"_"+&realString(r);
       u = Util.if_(divOrMul,str2unit("1",NONE()),UnitAbsyn.UNSPECIFIED());
       (store,indx) = add(u,store);
-       ht = BaseHashTable.add((ComponentReference.makeCrefIdent(s1,DAE.ET_OTHER(),{}),indx),ht);
+       ht = BaseHashTable.add((ComponentReference.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{}),indx),ht);
     then (UnitAbsyn.LOC(indx,e),{},store);
 
     case(env,DAE.CAST(_,e1),divOrMul,ht,store) equation
@@ -1100,7 +1098,7 @@ and EQN to make the constraint that they must have the same unit"
   output list<UnitAbsyn.UnitTerm> outUts;
 algorithm
   outUts := match(uts,expl)
-  local UnitAbsyn.UnitTerm ut1,ut2;  DAE.ExpType ty; DAE.Exp e1,e2;
+  local UnitAbsyn.UnitTerm ut1,ut2;  DAE.Type ty; DAE.Exp e1,e2;
     case({},_) then  {};
     case(uts as {_},_) then uts;
     case(ut1::ut2::uts,e1::e2::expl) equation
@@ -1155,7 +1153,7 @@ algorithm
   local String unitStr; UnitAbsyn.Unit unit; Integer indx,indx2; Boolean unspec;
     list<DAE.Type> typeLst;
     /* Real */
-    case((DAE.T_FUNCTION(_,functp,_),_),funcInstId,funcCallExp,store) equation
+    case(DAE.T_FUNCTION(_,functp,_,_),funcInstId,funcCallExp,store) equation
       unitStr = getUnitStr(functp);
       //print("Got unit='"+&unitStr+&"'\n");
       unspec = 0 == stringCompare(unitStr,"");
@@ -1167,7 +1165,7 @@ algorithm
       then ({UnitAbsyn.LOC(indx2,funcCallExp)},{UnitAbsyn.EQN(UnitAbsyn.LOC(indx2,funcCallExp),UnitAbsyn.LOC(indx,funcCallExp),funcCallExp)},store);
 
     /* Tuple */
-    case((DAE.T_FUNCTION(_,(DAE.T_TUPLE(typeLst),_),_),_),funcInstId,funcCallExp,store) equation
+    case(DAE.T_FUNCTION(_,DAE.T_TUPLE(tupleType = typeLst),_,_),funcInstId,funcCallExp,store) equation
       (terms,extraTerms,store) = buildTupleResultTerms(typeLst,funcInstId,funcCallExp,store);
      then (terms,extraTerms,store);
     case(_,_,_,_) equation
@@ -1231,7 +1229,7 @@ protected function buildFuncTypeStores "help function to buildTermCall"
 algorithm
   (outStore,indxs) := matchcontinue(funcType,funcInstId,store)
   local list<DAE.FuncArg>  args; DAE.Type tp;
-    case((DAE.T_FUNCTION(args,_,_),_),funcInstId,store) equation
+    case(DAE.T_FUNCTION(funcArg = args),funcInstId,store) equation
       (store,indxs) = buildFuncTypeStores2(args,funcInstId,store);
     then (store,indxs);
     case(tp,_,_) equation
@@ -1268,13 +1266,13 @@ from a Type (must be T_REAL)"
 algorithm
   str := matchcontinue(tp)
   local list<DAE.Var> varLst;
-    Option<Absyn.Path> optPath;
-    case((DAE.T_REAL(DAE.TYPES_VAR(name="unit",binding=DAE.EQBOUND(exp=DAE.SCONST(str)))::_),_))
+    DAE.TypeSource ts;
+    case(DAE.T_REAL(varLst = DAE.TYPES_VAR(name="unit",binding=DAE.EQBOUND(exp=DAE.SCONST(str)))::_))
       then str;
-    case((DAE.T_REAL(_::varLst),optPath)) then getUnitStr((DAE.T_REAL(varLst),optPath));
-    case((DAE.T_REAL({}),_)) then "";
-    case((DAE.T_INTEGER(_),_)) then "";
-    case((DAE.T_ARRAY(arrayType=tp),_)) then getUnitStr(tp);
+    case(DAE.T_REAL(_::varLst,ts)) then getUnitStr(DAE.T_REAL(varLst,ts));
+    case(DAE.T_REAL({},_)) then "";
+    case(DAE.T_INTEGER(varLst = _)) then "";
+    case(DAE.T_ARRAY(ty=tp)) then getUnitStr(tp);
     case(tp) equation print("getUnitStr for type "+&Types.unparseType(tp)+&" failed\n"); then fail();
   end matchcontinue;
 end getUnitStr;
@@ -1410,7 +1408,7 @@ algorithm
       unit = selectConstantUnit(parentOp);
       (store,indx) = add(unit,store);
       s1 = realString(r);
-      cref_ = ComponentReference.makeCrefIdent(s1,DAE.ET_OTHER(),{});
+      cref_ = ComponentReference.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{});
       ht = BaseHashTable.add((cref_,indx),ht);
     then (store,ht);
 
@@ -1418,7 +1416,7 @@ algorithm
       unit = selectConstantUnit(parentOp);
       (store,indx) = add(unit,store);
       s1 = intString(i);
-      cref_ = ComponentReference.makeCrefIdent(s1,DAE.ET_OTHER(),{});
+      cref_ = ComponentReference.makeCrefIdent(s1,DAE.T_UNKNOWN_DEFAULT,{});
       ht = BaseHashTable.add((cref_,indx),ht);
     then (store,ht);
 

@@ -30,8 +30,7 @@
  */
 
 encapsulated package Env
-"
-  file:        Env.mo
+" file:        Env.mo
   package:     Env
   description: Environment management
 
@@ -244,7 +243,7 @@ protected
 algorithm
   ht := avlTreeNew();
   httypes := avlTreeNew();
-  cref_ := ComponentReference.makeCrefIdent("",DAE.ET_OTHER(),{});
+  cref_ := ComponentReference.makeCrefIdent("",DAE.T_UNKNOWN_DEFAULT,{});
   outFrame := FRAME(inName,inType,ht,httypes,{},({},cref_),encapsulatedPrefix,{});
 end newFrame;
 

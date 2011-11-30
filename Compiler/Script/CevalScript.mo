@@ -110,13 +110,13 @@ public constant Integer RT_CLOCK_BUILD_MODEL = 10;
 public constant Integer RT_CLOCK_EXECSTAT_MAIN = Inst.RT_CLOCK_EXECSTAT_MAIN;
 public constant Integer RT_CLOCK_EXECSTAT_BACKEND_MODULES = BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES;
 
-protected constant DAE.Type simulationResultType_rtest = (DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
+protected constant DAE.Type simulationResultType_rtest = DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
   DAE.TYPES_VAR("resultFile",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("simulationOptions",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("messages",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())
-  },NONE(),NONE()),NONE());
+  },NONE(),DAE.emptyTypeSource);
 
-protected constant DAE.Type simulationResultType_full = (DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
+protected constant DAE.Type simulationResultType_full = DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
   DAE.TYPES_VAR("resultFile",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("simulationOptions",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("messages",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
@@ -127,7 +127,7 @@ protected constant DAE.Type simulationResultType_full = (DAE.T_COMPLEX(ClassInf.
   DAE.TYPES_VAR("timeCompile",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("timeSimulation",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("timeTotal",DAE.ATTR(SCode.NOT_FLOW(),SCode.NOT_STREAM(),SCode.VAR(),Absyn.BIDIR(),Absyn.NOT_INNER_OUTER()),SCode.PUBLIC(),DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE())
-  },NONE(),NONE()),NONE());
+  },NONE(),DAE.emptyTypeSource);
 
 //these are in reversed order than above
 protected constant list<tuple<String,Values.Value>> zeroAdditionalSimulationResultValues =
@@ -256,8 +256,8 @@ protected function buildCurrentSimulationResultExp
 protected 
   DAE.ComponentRef cref;
 algorithm
-  cref := ComponentReference.makeCrefIdent("currentSimulationResult",DAE.ET_OTHER(),{});
-  outExp := Expression.makeCrefExp(cref,DAE.ET_OTHER());
+  cref := ComponentReference.makeCrefIdent("currentSimulationResult",DAE.T_UNKNOWN_DEFAULT,{});
+  outExp := Expression.makeCrefExp(cref,DAE.T_UNKNOWN_DEFAULT);
 end buildCurrentSimulationResultExp;
 
 protected function cevalCurrentSimulationResultExp
@@ -415,9 +415,9 @@ end setFileNamePrefixInSimulationOptions;
 
 protected function getConst
 "@author: adrpo
-  Tranform a literal Absyn.Exp to DAE.Exp with the given DAE.ExpType"
+  Tranform a literal Absyn.Exp to DAE.Exp with the given DAE.Type"
   input  Absyn.Exp inAbsynExp;
-  input DAE.ExpType inExpType;
+  input DAE.Type inExpType;
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inAbsynExp, inExpType)
@@ -425,11 +425,11 @@ algorithm
       Integer i; Real r;
       Absyn.Exp exp;
     
-    case (Absyn.INTEGER(i), DAE.ET_INT())  then DAE.ICONST(i);
-    case (Absyn.REAL(r),    DAE.ET_REAL()) then DAE.RCONST(r);
+    case (Absyn.INTEGER(i), DAE.T_INTEGER(source = _))  then DAE.ICONST(i);
+    case (Absyn.REAL(r),    DAE.T_REAL(source = _)) then DAE.RCONST(r);
         
-    case (Absyn.INTEGER(i), DAE.ET_REAL()) equation r = intReal(i); then DAE.RCONST(r);
-    case (Absyn.REAL(r),    DAE.ET_INT())  equation i = realInt(r); then DAE.ICONST(i);
+    case (Absyn.INTEGER(i), DAE.T_REAL(source = _)) equation r = intReal(i); then DAE.RCONST(r);
+    case (Absyn.REAL(r),    DAE.T_INTEGER(source = _))  equation i = realInt(r); then DAE.ICONST(i);
     
     case (exp,    _)  
       equation 
@@ -472,7 +472,7 @@ algorithm
     case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags), 
           Absyn.NAMEDARG(argName = "Tolerance", argValue = exp)::rest)
       equation
-        tolerance = getConst(exp, DAE.ET_REAL());
+        tolerance = getConst(exp, DAE.T_REAL_DEFAULT);
         simOpt = populateSimulationOptions(
           SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
                              fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime,cflags),
@@ -483,7 +483,7 @@ algorithm
     case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags), 
           Absyn.NAMEDARG(argName = "StartTime", argValue = exp)::rest)
       equation
-        startTime = getConst(exp, DAE.ET_REAL());
+        startTime = getConst(exp, DAE.T_REAL_DEFAULT);
         simOpt = populateSimulationOptions(
           SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
                              fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime,cflags),
@@ -494,7 +494,7 @@ algorithm
     case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags), 
           Absyn.NAMEDARG(argName = "StopTime", argValue = exp)::rest)
       equation
-        stopTime = getConst(exp, DAE.ET_REAL());
+        stopTime = getConst(exp, DAE.T_REAL_DEFAULT);
         simOpt = populateSimulationOptions(
           SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
                              fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime,cflags),
@@ -505,7 +505,7 @@ algorithm
     case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags), 
           Absyn.NAMEDARG(argName = "NumberOfIntervals", argValue = exp)::rest)
       equation
-        numberOfIntervals = getConst(exp, DAE.ET_INT());
+        numberOfIntervals = getConst(exp, DAE.T_INTEGER_DEFAULT);
         simOpt = populateSimulationOptions(
           SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
                              fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime,cflags),
@@ -516,7 +516,7 @@ algorithm
     case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags), 
           Absyn.NAMEDARG(argName = "Interval", argValue = exp)::rest)
       equation
-        DAE.RCONST(rStepSize) = getConst(exp, DAE.ET_REAL());
+        DAE.RCONST(rStepSize) = getConst(exp, DAE.T_REAL_DEFAULT);
         // a bit different for Interval, handle it LAST!!!!
         SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
                            fileNamePrefix,storeInTemp,noClean,options,outputFormat,variableFilter,measureTime,cflags) = 
@@ -3437,7 +3437,7 @@ public function subtractDummy
 algorithm
   (outEqnSize,outVarSize) := matchcontinue(vars,eqnSize,varSize)
     case(vars,eqnSize,varSize) equation
-      (_,_) = BackendVariable.getVar(ComponentReference.makeCrefIdent("$dummy",DAE.ET_OTHER(),{}),vars);
+      (_,_) = BackendVariable.getVar(ComponentReference.makeCrefIdent("$dummy",DAE.T_UNKNOWN_DEFAULT,{}),vars);
     then (eqnSize-1,varSize-1);
     case(vars,eqnSize,varSize) then (eqnSize,varSize);
   end matchcontinue;
@@ -4048,7 +4048,7 @@ algorithm
         acc = List.consOnTrue(not listMember(name,acc),name,acc);
       then ((e,acc));
       */
-    case ((e as DAE.CREF(componentRef=cr,ty=DAE.ET_FUNCTION_REFERENCE_FUNC(builtin=false)),acc))
+    case ((e as DAE.CREF(componentRef=cr,ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=false)),acc))
       equation
         Absyn.QUALIFIED(name,Absyn.IDENT(_)) = ComponentReference.crefToPath(cr);
         acc = List.consOnTrue(not listMember(name,acc),name,acc);

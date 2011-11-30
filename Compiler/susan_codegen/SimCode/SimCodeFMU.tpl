@@ -311,15 +311,15 @@ match aliasvar
   else "noAlias"
 end getAliasVar;
 
-template ScalarVariableType(DAE.ExpType type_, String unit, String displayUnit, Option<DAE.Exp> initialValue, Boolean isFixed)
+template ScalarVariableType(DAE.Type type_, String unit, String displayUnit, Option<DAE.Exp> initialValue, Boolean isFixed)
  "Generates code for ScalarVariable Type file for FMU target."
 ::=
 match type_
-  case ET_INT(__) then '<Integer/>' 
-  case ET_REAL(__) then '<Real <%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)%>/>' 
-  case ET_BOOL(__) then '<Boolean/>' 
-  case ET_STRING(__) then '<String/>' 
-  case ET_ENUMERATION(__) then '<Real/>' 
+  case T_INTEGER(__) then '<Integer/>' 
+  case T_REAL(__) then '<Real <%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)%>/>' 
+  case T_BOOL(__) then '<Boolean/>' 
+  case T_STRING(__) then '<String/>' 
+  case T_ENUMERATION(__) then '<Real/>' 
   else 'UNKOWN_TYPE'
 end ScalarVariableType;
 

@@ -58,6 +58,7 @@ protected import IOStream;
 protected import List;
 protected import SCode;
 protected import Util;
+protected import ClassInf;
 
 public function printComponentRefStrDIVISION
   input DAE.ComponentRef inCref;
@@ -193,9 +194,7 @@ end printEquations;
 
 protected function printEquationNo "function: printEquationNo
   author: PA
-
-  Helper function to print_equations
-"
+  Helper function to print_equations"
   input Integer inInteger;
   input BackendDAE.EqSystem syst;
 algorithm
@@ -315,8 +314,7 @@ algorithm
 end printVarsStatistics;
 
 public function dumpTypeStr
-" Dump BackendDAE.Type to a string.
-"
+"Dump BackendDAE.Type to a string."
   input BackendDAE.Type inType;
   output String outString;
 algorithm
@@ -325,19 +323,19 @@ algorithm
     local
       String s1,s2,str;
       list<String> l;
-    case BackendDAE.INT() then "Integer ";
-    case BackendDAE.REAL() then "Real ";
-    case BackendDAE.BOOL() then "Boolean ";
-    case BackendDAE.STRING() then "String ";
+    case DAE.T_INTEGER(source = _) then "Integer ";
+    case DAE.T_REAL(source = _) then "Real ";
+    case DAE.T_BOOL(source = _) then "Boolean ";
+    case DAE.T_STRING(source = _) then "String ";
 
-    case BackendDAE.ENUMERATION(stringLst = l)
+    case DAE.T_ENUMERATION(names = l)
       equation
         s1 = stringDelimitList(l, ", ");
         s2 = stringAppend("enumeration(", s1);
         str = stringAppend(s2, ")");
       then
         str;
-    case BackendDAE.EXT_OBJECT(_) then "ExternalObject ";
+    case DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)) then "ExternalObject ";
   end match;
 end dumpTypeStr;
 

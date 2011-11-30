@@ -30,7 +30,7 @@
  */
 
 encapsulated package PartFn
-" file:         PartFn.mo
+" file:        PartFn.mo
   package:     PartFn
   description: partially evaluated functions
 
@@ -548,7 +548,7 @@ algorithm
       Option<DAE.VariableAttributes> variableAttributesOption;
       Option<SCode.Comment> absynCommentOption;
       Absyn.InnerOuter innerOuter;
-      list<DAE.Dimension> ilst;
+      DAE.Dimensions ilst;
       Ident i;
       Absyn.Path p;
       list<DAE.Exp> elst,elst_1;
@@ -786,7 +786,7 @@ algorithm
     local
       list<DAE.Statement> cdr,cdr_1,stmts,stmts_1;
       list<DAE.Function> dae;
-      DAE.ExpType ty;
+      DAE.Type ty;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
       list<DAE.Exp> elst,elst_1;
       DAE.Else els,els_1;
@@ -1029,7 +1029,7 @@ algorithm
       list<DAE.Function> dae;
       Absyn.Path p,p1,p_1;
       list<DAE.Exp> args,args1,args_1;
-      DAE.ExpType ty;
+      DAE.Type ty;
       Boolean tu,bi;
       DAE.InlineType inl;
       Integer i,numArgs;
@@ -1144,15 +1144,16 @@ algorithm
       list<DAE.Var> vars;
       list<DAE.FuncArg> args,args_1,args_2,new_args;
       DAE.Type retType;
-      Option<Absyn.Path> po;
+      DAE.TypeSource ts;
       DAE.FunctionAttributes functionAttributes;
-    case((DAE.T_FUNCTION(args,retType,functionAttributes),po),vars)
+      
+    case(DAE.T_FUNCTION(args,retType,functionAttributes,ts),vars)
       equation
         new_args = Types.makeFargsList(vars);
         args_1 = List.select(args,isNotFunctionType);
         args_2 = listAppend(args_1,new_args);
       then
-        ((DAE.T_FUNCTION(args_2,retType,functionAttributes),po));
+        DAE.T_FUNCTION(args_2,retType,functionAttributes,ts);
     case(_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE,"- PartFn.buildNewFunctionType failed");
@@ -1168,7 +1169,7 @@ protected function isNotFunctionType
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue(inFuncArg)
-    case((_,(DAE.T_FUNCTION(funcArg = _),_),_,_)) then false;
+    case((_,DAE.T_FUNCTION(funcArg = _),_,_)) then false;
     case(_) then true;
   end matchcontinue;
 end isNotFunctionType;
@@ -1249,8 +1250,8 @@ protected function isNotFunctionInput
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue(inElement)
-    case(DAE.VAR(direction = DAE.INPUT(),ty = (DAE.T_FUNCTION(funcArg = _),_))) then false;
-    case(_) then true;
+    case DAE.VAR(direction = DAE.INPUT(),ty = DAE.T_FUNCTION(funcArg = _)) then false;
+    case _ then true;
   end matchcontinue;
 end isNotFunctionInput;
 
@@ -1371,7 +1372,7 @@ algorithm
       DAE.ComponentRef cref;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
       list<DAE.Statement> alg,alg_1;
-      list<DAE.Dimension> ilst;
+      DAE.Dimensions ilst;
       DAE.ComponentRef componentRef " The variable name";
       DAE.VarKind kind "varible kind: variable, constant, parameter, discrete etc." ;
       DAE.VarDirection direction "input, output or bidir" ;
@@ -1502,7 +1503,7 @@ algorithm
       list<DAE.Function> dae;
       list<DAE.Element> inputs;
       Absyn.Path p,current;
-      DAE.ExpType ty;
+      DAE.Type ty;
       DAE.ComponentRef cref;
       DAE.Else el,el_1;
       Ident i;
@@ -1697,7 +1698,7 @@ algorithm
       Absyn.Path p,orig_p,new_p,current;
       list<DAE.Function> dae;
       list<DAE.Element> inputs;
-      DAE.ExpType ty,ty_1;
+      DAE.Type ty,ty_1;
       Boolean tup,bui;
       DAE.InlineType inl;
       list<DAE.Exp> args,args2,args_1;
@@ -1749,11 +1750,11 @@ algorithm
     
     case({},_) then fail();
     
-    case(DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_VAR()) :: cdr,newArgs) 
+    case(DAE.CREF(ty = DAE.T_FUNCTION_REFERENCE_VAR(source = _)) :: cdr,newArgs) 
       then 
         listAppend(newArgs,cdr);
     
-    case(DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = _)) :: cdr,newArgs) 
+    case(DAE.CREF(ty = DAE.T_FUNCTION_REFERENCE_FUNC(builtin = _)) :: cdr,newArgs) 
       then 
         listAppend(newArgs,cdr);
     
@@ -1773,7 +1774,7 @@ protected function isSimpleArg
 algorithm
   outBoolean := matchcontinue(inArgs)
     local
-      DAE.ExpType et;
+      DAE.Type et;
     case({DAE.ICONST(_)}) then true;
     case({DAE.RCONST(_)}) then true;
     case({DAE.BCONST(_)}) then true;
@@ -1783,7 +1784,7 @@ algorithm
         true = Expression.typeBuiltin(et);
       then
         true;
-    case({DAE.CALL(attr=DAE.CALL_ATTR(ty = DAE.ET_BOXED(et)))})
+    case({DAE.CALL(attr=DAE.CALL_ATTR(ty = DAE.T_METABOXED(ty = et)))})
       equation
         true = Expression.typeBuiltin(et);
       then
@@ -1821,18 +1822,5 @@ algorithm
   end matchcontinue;
 end getPartEvalFunction;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 end PartFn;
+

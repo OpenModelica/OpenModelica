@@ -317,7 +317,7 @@ algorithm
 
     case (DAE.EXTARGSIZE(componentRef = cref, exp = exp), cache, _, st)
       equation
-        exp = DAE.SIZE(DAE.CREF(cref, DAE.ET_OTHER()), SOME(exp));
+        exp = DAE.SIZE(DAE.CREF(cref, DAE.T_UNKNOWN_DEFAULT), SOME(exp));
         (cache, val, st) = cevalExp(exp, cache, inEnv, st);
       then
         (val, cache, st);
@@ -485,14 +485,13 @@ algorithm
       DAE.Type ty;
       list<Values.Value> vals;
       Integer dim;
+      DAE.Dimensions dims;
 
     // Matrix value, array type => convert.
-    case (_, Values.ARRAY(valueLst = vals as Values.ARRAY(valueLst = _) :: _,
-          dimLst = dim :: _), _)
+    case (_, Values.ARRAY(valueLst = vals as Values.ARRAY(valueLst = _) :: _, dimLst = dim :: _), _)
       equation
-        ((DAE.T_ARRAY(arrayType = ty), _), _) =
-          getVariableTypeAndBinding(inCref, inEnv);
-        false = Types.isArray(ty);
+        (DAE.T_ARRAY(ty = ty, dims = dims), _) = getVariableTypeAndBinding(inCref, inEnv);
+        false = Types.isArray(ty, dims);
         vals = List.map(vals, ValuesUtil.arrayScalar);
       then
         Values.ARRAY(vals, {dim});
@@ -1254,7 +1253,7 @@ algorithm
   (outCache, outEnv, outLoopControl, outST) := 
   matchcontinue(inStatement, inCache, inEnv, inST)
     local
-      DAE.ExpType ety;
+      DAE.Type ety;
       DAE.Type ty;
       String iter_name;
       DAE.Exp start, stop, step, range;
@@ -1663,9 +1662,7 @@ algorithm
       Env.Env env;
       SymbolTable st;
 
-    case ((DAE.T_COMPLEX(
-        complexClassType = ClassInf.RECORD(path = _),
-        complexVarLst = var_lst), _), _, _, st)
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = _),varLst = var_lst), _, _, st)
       equation
         env = Env.newEnvironment();
         vals = getRecordValues(inOptValue, inRecordType);
@@ -1696,7 +1693,8 @@ algorithm
         opt_vals = List.map(vals, Util.makeOption);
       then
         opt_vals;
-    case (NONE(), (DAE.T_COMPLEX(complexVarLst = vars), _))
+    
+    case (NONE(), DAE.T_COMPLEX(varLst = vars))
       equation
         n = listLength(vars);
         opt_vals = List.fill(NONE(), n);
@@ -1735,7 +1733,7 @@ protected function extendEnvWithForScope
   scope and adding the given iterator to it. For convenience it also returns the
   type and component reference of the iterator."
   input String inIterName;
-  input DAE.ExpType inIterType;
+  input DAE.Type inIterType;
   input Env.Env inEnv;
   output Env.Env outEnv;
   output DAE.Type outIterType;
@@ -1813,27 +1811,24 @@ algorithm
         dim_int = ValuesUtil.valueInteger(dim_val);
         dim = Expression.intDimension(dim_int);
         bind_dims = List.stripFirst(bind_dims);
-        (cache, ty, st) = 
-          appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
+        (cache, ty, st) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
       then
-        (cache, (DAE.T_ARRAY(dim, ty), NONE()), st);
+        (cache, DAE.T_ARRAY(ty, {dim}, DAE.emptyTypeSource), st);
     
     // Otherwise, take the dimension from the binding if it's an input.
     case (ty, DAE.WHOLEDIM() :: rest_dims, dim_int :: bind_dims, _, _, st)
       equation
         dim = Expression.intDimension(dim_int);
-        (cache, ty, st) = 
-          appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
+        (cache, ty, st) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
       then
-        (cache, (DAE.T_ARRAY(dim, ty), NONE()), st);
+        (cache, DAE.T_ARRAY(ty, {dim}, DAE.emptyTypeSource), st);
     
     // If the variable is not an input, set the dimension size to 0 (dynamic size).
     case (ty, DAE.WHOLEDIM() :: rest_dims, bind_dims, _, _, st)
       equation
-        (cache, ty, st) =
-          appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
+        (cache, ty, st) = appendDimensions2(ty, rest_dims, bind_dims, inCache, inEnv, st);
       then
-        (cache, (DAE.T_ARRAY(DAE.DIM_INTEGER(0), ty), NONE()), st);
+        (cache, DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(0)}, DAE.emptyTypeSource), st);
     
     case (_, sub :: _, _, _, _, _)
       equation
@@ -1864,7 +1859,7 @@ algorithm
       Env.Env env;
       list<DAE.Subscript> subs;
       DAE.Type ty;
-      DAE.ExpType ety;
+      DAE.Type ety;
       Values.Value val;
       DAE.Var var;
       Env.InstStatus inst_status;
@@ -1876,7 +1871,7 @@ algorithm
 
     // A record assignment.
     case (cr as DAE.CREF_IDENT(ident = id, subscriptLst = {}, identType = ety as
-        DAE.ET_COMPLEX(complexClassType = ClassInf.RECORD(path = _))), _, _, _, st)
+        DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = _))), _, _, _, st)
       equation
         (_, var, _, inst_status, env) =
           Lookup.lookupIdentLocal(inCache, inEnv, id);
@@ -1951,7 +1946,7 @@ algorithm
 end assignTuple;
 
 protected function assignRecord
-  input DAE.ExpType inType;
+  input DAE.Type inType;
   input Values.Value inValue;
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -1963,11 +1958,11 @@ algorithm
   (outCache, outEnv, outST) := match(inType, inValue, inCache, inEnv, inST)
     local
       list<Values.Value> values;
-      list<DAE.ExpVar> vars;
+      list<DAE.Var> vars;
       Env.Cache cache;
       Env.Env env;
       SymbolTable st;
-    case (DAE.ET_COMPLEX(varLst = vars), Values.RECORD(orderd = values), _, _, st)
+    case (DAE.T_COMPLEX(varLst = vars), Values.RECORD(orderd = values), _, _, st)
       equation
         (cache, env, st) = assignRecordComponents(vars, values, inCache, inEnv, st);
       then
@@ -1976,7 +1971,7 @@ algorithm
 end assignRecord;
 
 protected function assignRecordComponents
-  input list<DAE.ExpVar> inVars;
+  input list<DAE.Var> inVars;
   input list<Values.Value> inValues;
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -1987,22 +1982,21 @@ protected function assignRecordComponents
 algorithm
   (outCache, outEnv, outST) := match(inVars, inValues, inCache, inEnv, inST)
     local
-      list<DAE.ExpVar> rest_vars;
+      list<DAE.Var> rest_vars;
       Values.Value val;
       list<Values.Value> rest_vals;
       String name;
       DAE.ComponentRef cr;
-      DAE.ExpType ety;
+      DAE.Type ty;
       Env.Cache cache;
       Env.Env env;
       SymbolTable st;
      
     case ({}, {}, _, _, _) then (inCache, inEnv, inST);
       
-    case (DAE.COMPLEX_VAR(name = name, tp = ety) :: rest_vars,
-      val :: rest_vals, _ , _, st)
+    case (DAE.TYPES_VAR(name = name, ty = ty) :: rest_vars, val :: rest_vals, _ , _, st)
       equation
-        cr = ComponentReference.makeCrefIdent(name, ety, {});
+        cr = ComponentReference.makeCrefIdent(name, ty, {});
         (cache, env, st) = assignVariable(cr, val, inCache, inEnv, st);
         (cache, env, st) = assignRecordComponents(rest_vars, rest_vals, cache, env, st);
       then
@@ -2043,8 +2037,7 @@ algorithm
 
     // An index subscript. Extract the indicated vector element and update it
     // with assignVector, and then put it back in the list of old values.
-    case (_, Values.ARRAY(valueLst = values, dimLst = dims), 
-        DAE.INDEX(exp = e) :: rest_subs, _, _, st)
+    case (_, Values.ARRAY(valueLst = values, dimLst = dims), DAE.INDEX(exp = e) :: rest_subs, _, _, st)
       equation
         (cache, index, st) = cevalExp(e, inCache, inEnv, st);
         i = ValuesUtil.valueInteger(index) - 1;
@@ -2056,8 +2049,8 @@ algorithm
 
     // A slice.
     case (Values.ARRAY(valueLst = values),
-        Values.ARRAY(valueLst = old_values, dimLst = dims),
-        DAE.SLICE(exp = e) :: rest_subs, _, _, st)
+          Values.ARRAY(valueLst = old_values, dimLst = dims),
+          DAE.SLICE(exp = e) :: rest_subs, _, _, st)
       equation
         // Evaluate the slice range to a list of values.
         (cache, Values.ARRAY(valueLst = (indices as (Values.INTEGER(integer = i) :: _))), st) =
@@ -2075,7 +2068,7 @@ algorithm
     // A : (whole dimension).
     case (Values.ARRAY(valueLst = values), 
           Values.ARRAY(valueLst = values2, dimLst = dims),
-        DAE.WHOLEDIM() :: rest_subs, _, _, st)
+          DAE.WHOLEDIM() :: rest_subs, _, _, st)
       equation
         (cache, values, st) = 
           assignWholeDim(values, values2, rest_subs, inCache, inEnv, st);
@@ -2243,13 +2236,14 @@ algorithm
       list<DAE.Var> vars;
       list<String> var_names;
 
-    case ((DAE.T_INTEGER(varLstInt = _), _)) then Values.INTEGER(0);
-    case ((DAE.T_REAL(varLstReal = _), _)) then Values.REAL(0.0);
-    case ((DAE.T_STRING(varLstString = _), _)) then Values.STRING("");
-    case ((DAE.T_BOOL(varLstBool = _), _)) then Values.BOOL(false);
-    case ((DAE.T_ENUMERATION(index = _), _)) 
+    case (DAE.T_INTEGER(varLst = _)) then Values.INTEGER(0);
+    case (DAE.T_REAL(varLst = _)) then Values.REAL(0.0);
+    case (DAE.T_STRING(varLst = _)) then Values.STRING("");
+    case (DAE.T_BOOL(varLst = _)) then Values.BOOL(false);
+    case (DAE.T_ENUMERATION(index = _)) 
       then Values.ENUM_LITERAL(Absyn.IDENT(""), 0);
-    case ((DAE.T_ARRAY(arrayDim = dim, arrayType = ty), _))
+    
+    case (DAE.T_ARRAY(dims = {dim}, ty = ty))
       equation
         int_dim = Expression.dimensionSize(dim);
         value = generateDefaultBinding(ty);
@@ -2257,12 +2251,13 @@ algorithm
         dims = ValuesUtil.valueDimensions(value);
       then
         Values.ARRAY(values, int_dim :: dims);
-    case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = path),
-        complexVarLst = vars), _))
+    
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = path), varLst = vars))
       equation
         (values, var_names) = List.map_2(vars, getRecordVarBindingAndName);
       then
         Values.RECORD(path, values, var_names, -1);
+    
     case (_)
       equation
         Debug.fprintln(Flags.EVAL_FUNC, "- CevalFunction.generateDefaultBinding failed\n");
@@ -2334,7 +2329,7 @@ algorithm
 
     // A record doesn't have a value, but an environment with it's components.
     // So we need to assemble the records value.
-    case (_, (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = _)), _), _)
+    case (_, DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = _)), _)
       equation
         p = ComponentReference.crefToPath(inCref);
         val = getRecordValue(p, inType, inEnv);
@@ -2367,8 +2362,8 @@ algorithm
       Absyn.Path p;
       Env.Env env;
     case (Absyn.IDENT(name = id), 
-          (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = p),
-                         complexVarLst = vars), _), _)
+          DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = p),
+                        varLst = vars), _)
       equation
         (_, _, _, _, env) =
           Lookup.lookupIdentLocal(Env.emptyCache(), inEnv, id);
@@ -2394,7 +2389,7 @@ algorithm
     // The component is a record itself.
     case (DAE.TYPES_VAR(
         name = id, 
-        ty   = ty as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = _)), _)), _)
+        ty   = ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = _))), _)
       equation
         val = getRecordValue(Absyn.IDENT(id), ty, inEnv);
       then
@@ -2696,7 +2691,7 @@ algorithm
   outTuple := match(inTuple)
     local
       DAE.ComponentRef cref;
-      DAE.ExpType ety;
+      DAE.Type ety;
       list<DAE.Exp> sub_exps;
       list<DAE.Subscript> subs;
       Env.Env env;

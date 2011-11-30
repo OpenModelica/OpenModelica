@@ -442,23 +442,23 @@ end extFunDefArg;
 
 
 
-template extType2(ExpType type, Boolean isInput, Boolean isArray)
+template extType2(Type type, Boolean isInput, Boolean isArray)
  "Generates type for external function argument or return value."
 ::=
   let s = match type
-  case ET_INT(__)         then "int"
-  case ET_REAL(__)        then "double"
-  case ET_STRING(__)      then "const char*"
-  case ET_BOOL(__)        then "int"
-  case ET_ENUMERATION(__) then "int"
-  case ET_ARRAY(__)       then extType2(ty,isInput,true)
-  case ET_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
+  case T_INTEGER(__)         then "int"
+  case T_REAL(__)        then "double"
+  case T_STRING(__)      then "const char*"
+  case T_BOOL(__)        then "int"
+  case T_ENUMERATION(__) then "int"
+  case T_ARRAY(__)       then extType2(ty,isInput,true)
+  case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "void *"
-  case ET_COMPLEX(complexClassType=RECORD(path=rname))
+  case T_COMPLEX(complexClassType=RECORD(path=rname))
                       then 'struct <%underscorePath(rname)%>'
-  case ET_METATYPE(__) case ET_BOXED(__)    then "modelica_metatype"
+  case T_METATYPE(__) case T_METABOXED(__)    then "modelica_metatype"
   else error(sourceInfo(), 'Unknown external C type <%typeString(type)%>')
-  match type case ET_ARRAY(__) then s else if isInput then (if isArray then '<%match s case "const char*" then "" else "const "%><%s%>*' else s) else '<%s%>*'
+  match type case T_ARRAY(__) then s else if isInput then (if isArray then '<%match s case "const char*" then "" else "const "%><%s%>*' else s) else '<%s%>*'
 end extType2;
 
 template extReturnType(SimExtArg extArg)
@@ -656,7 +656,7 @@ template writeOutVar(Variable var, Integer index)
 
 ::=
   match var
-  case VARIABLE(ty=ET_COMPLEX(complexClassType=RECORD(__))) then
+  case VARIABLE(ty=T_COMPLEX(complexClassType=RECORD(__))) then
     <<
     write_modelica_record(outVar, <%writeOutVarRecordMembers(ty, index, "")%>);
     >>
@@ -668,47 +668,47 @@ template writeOutVar(Variable var, Integer index)
 end writeOutVar;
 
 
-template writeOutVarRecordMembers(ExpType type, Integer index, String prefix)
+template writeOutVarRecordMembers(Type type, Integer index, String prefix)
  "Helper to writeOutVar."
 ::=
 match type
-case ET_COMPLEX(varLst=vl, name=n) then
-  let basename = underscorePath(n)
-  let args = (vl |> subvar as COMPLEX_VAR(__) =>
-      match tp case ET_COMPLEX(__) then
+case T_COMPLEX(varLst=vl, complexClassType = n) then
+  let basename = underscorePath(ClassInf.getStateName(n))
+  let args = (vl |> subvar as TYPES_VAR(__) =>
+      match ty case T_COMPLEX(__) then
         let newPrefix = '<%prefix%>.<%subvar.name%>'
-        '<%expTypeRW(tp)%>, <%writeOutVarRecordMembers(tp, index, newPrefix)%>'
+        '<%expTypeRW(ty)%>, <%writeOutVarRecordMembers(ty, index, newPrefix)%>'
       else
-        '<%expTypeRW(tp)%>, &(out.targTest7<%index%><%prefix%>.<%subvar.name%>)'
+        '<%expTypeRW(ty)%>, &(out.targTest7<%index%><%prefix%>.<%subvar.name%>)'
     ;separator=", ")
   <<
   &<%basename%>__desc<%if args then ', <%args%>'%>, TYPE_DESC_NONE
   >>
 end writeOutVarRecordMembers;
-template expTypeRW(DAE.ExpType type)
+template expTypeRW(DAE.Type type)
  "Helper to writeOutVarRecordMembers."
 ::=
   match type
-  case ET_INT(__)         then "TYPE_DESC_INT"
-  case ET_REAL(__)        then "TYPE_DESC_REAL"
-  case ET_STRING(__)      then "TYPE_DESC_STRING"
-  case ET_BOOL(__)        then "TYPE_DESC_BOOL"
-  case ET_ENUMERATION(__) then "TYPE_DESC_INT"  
-  case ET_ARRAY(__)       then '<%expTypeRW(ty)%>_ARRAY'
-  case ET_COMPLEX(complexClassType=RECORD(__))
+  case T_INTEGER(__)         then "TYPE_DESC_INT"
+  case T_REAL(__)        then "TYPE_DESC_REAL"
+  case T_STRING(__)      then "TYPE_DESC_STRING"
+  case T_BOOL(__)        then "TYPE_DESC_BOOL"
+  case T_ENUMERATION(__) then "TYPE_DESC_INT"  
+  case T_ARRAY(__)       then '<%expTypeRW(ty)%>_ARRAY'
+  case T_COMPLEX(complexClassType=RECORD(__))
                       then "TYPE_DESC_RECORD"
-  case ET_METATYPE(__) case ET_BOXED(__)    then "TYPE_DESC_MMC"
+  case T_METATYPE(__) case T_METABOXED(__)    then "TYPE_DESC_MMC"
 end expTypeRW;
 
 template readInVar(Variable var,SimCode simCode)
  "Generates code for reading a variable from inArgs."
 ::=
   match var
-  case VARIABLE(name=cr, ty=ET_COMPLEX(complexClassType=RECORD(__))) then
+  case VARIABLE(name=cr, ty=T_COMPLEX(complexClassType=RECORD(__))) then
     <<
     if (read_modelica_record(&inArgs, <%readInVarRecordMembers(ty, contextCref(cr,contextFunction,simCode))%>)) return 1;
     >>
-  case VARIABLE(name=cr, ty=ET_STRING(__)) then
+  case VARIABLE(name=cr, ty=T_STRING(__)) then
     <<
     if (read_<%expTypeArrayIf(ty)%>(&inArgs, <%if not acceptMetaModelicaGrammar() then "(char**)"%> &<%contextCref(name,contextFunction,simCode)%>)) return 1;
     >>
@@ -719,15 +719,15 @@ template readInVar(Variable var,SimCode simCode)
 end readInVar;
 
 
-template readInVarRecordMembers(ExpType type, String prefix)
+template readInVarRecordMembers(Type type, String prefix)
  "Helper to readInVar."
 ::=
 match type
-case ET_COMPLEX(varLst=vl) then
-  (vl |> subvar as COMPLEX_VAR(__) =>
-    match tp case ET_COMPLEX(__) then
+case T_COMPLEX(varLst=vl) then
+  (vl |> subvar as TYPES_VAR(__) =>
+    match ty case T_COMPLEX(__) then
       let newPrefix = '<%prefix%>.<%subvar.name%>'
-      readInVarRecordMembers(tp, newPrefix)
+      readInVarRecordMembers(ty, newPrefix)
     else
       '&(<%prefix%>.<%subvar.name%>)'
   ;separator=", ")
@@ -804,7 +804,7 @@ case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
     >>
 end extFunCallVarcopy;
 
-template expTypeModelica(DAE.ExpType ty)
+template expTypeModelica(DAE.Type ty)
  "Generate type helper."
 ::=
   expTypeFlag(ty, 2)
@@ -822,9 +822,9 @@ template extArg(SimExtArg extArg, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=0, type_=t) then
     let cr = '<%contextCref2(c,contextFunction)%>'
     if acceptMetaModelicaGrammar() then
-      (match t case ET_STRING(__) then 'MMC_STRINGDATA(<%cr%>)' else '<%cr%>_ext')
+      (match t case T_STRING(__) then 'MMC_STRINGDATA(<%cr%>)' else '<%cr%>_ext')
     else
-      '<%cr%><%match t case ET_STRING(__) then ".c_str()" else "_ext"%>'
+      '<%cr%><%match t case T_STRING(__) then ".c_str()" else "_ext"%>'
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=oi, type_=t) then
     '&<%extVarName2(c)%>'
   case SIMEXTARGEXP(__) then
@@ -842,7 +842,7 @@ template daeExternalCExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &
   "Like daeExp, but also converts the type to external C"
 ::=
   match typeof(exp)
-    case ET_ARRAY(__) then  // Array-expressions
+    case T_ARRAY(__) then  // Array-expressions
       let shortTypeStr = expTypeShort(typeof(exp))
       '<%daeExp(exp, context, &preExp, &varDecls,simCode)%>).data()'
     else daeExp(exp, context, &preExp, &varDecls,simCode)
@@ -855,7 +855,7 @@ template extFunCallVardecl(SimExtArg arg, Text &varDecls /*BUFP*/)
 ::=
   match arg
   case SIMEXTARG(isInput=true, isArray=false, type_=ty, cref=c) then
-    match ty case ET_STRING(__) then
+    match ty case T_STRING(__) then
       ""
     else
       let &varDecls += '<%extType2(ty,true,false)%> <%extVarName2(c)%>;<%\n%>'
@@ -882,7 +882,7 @@ match var
 /* The storage size of arrays is known at call time, so they can be allocated
  * before set_memory_state. Strings are not known, so we copy them, etc...
  */
-case var as VARIABLE(ty = ET_STRING(__)) then 
+case var as VARIABLE(ty = T_STRING(__)) then 
     if not acceptMetaModelicaGrammar() then
       // We need to strdup() all strings, then allocate them on the memory pool again, then free the temporary string
       let strVar = tempDecl("modelica_string_t", &varDecls)
@@ -989,7 +989,7 @@ case var as FUNCTION_PTR(__) then
       <% tys |> arg hasindex i1 fromindex 1 => '#define <%rettype%>_<%i1%> targTest2<%i1%>' ; separator="\n" %>
       typedef struct <%rettype%>_s
       {
-        <% tys |> ty hasindex i1 fromindex 1 => 'modelica_<%mmcExpTypeShort(ty)%> targTest1<%i1%>;' ; separator="\n" %> 
+        <% tys |> ty hasindex i1 fromindex 1 => 'modelica_<%mmcTypeShort(ty)%> targTest1<%i1%>;' ; separator="\n" %> 
       } <%rettype%>;
       <%rettype%>(*_<%name%>)(<%typelist%>);<%\n%>
       >>
@@ -999,23 +999,23 @@ end functionArg;
 template mmcVarType(Variable var)
 ::=
   match var
-  case VARIABLE(__) then 'modelica_<%mmcExpTypeShort(ty)%>'
+  case VARIABLE(__) then 'modelica_<%mmcTypeShort(ty)%>'
   case FUNCTION_PTR(__) then 'modelica_fnptr'
 end mmcVarType;
 
-template mmcExpTypeShort(DAE.ExpType type)
+template mmcTypeShort(DAE.Type type)
 ::=
   match type
-  case ET_INT(__)                     then "integer"
-  case ET_REAL(__)                    then "real"
-  case ET_STRING(__)                  then "string"
-  case ET_BOOL(__)                    then "integer"
-  case ET_ENUMERATION(__)             then "integer"
-  case ET_ARRAY(__)                   then "array"
-  case ET_METATYPE(__) case ET_BOXED(__)                then "metatype"
-  case ET_FUNCTION_REFERENCE_VAR(__)  then "fnptr"
-  else "mmcExpTypeShort:ERROR"
-end mmcExpTypeShort;
+  case T_INTEGER(__)                     then "integer"
+  case T_REAL(__)                    then "real"
+  case T_STRING(__)                  then "string"
+  case T_BOOL(__)                    then "integer"
+  case T_ENUMERATION(__)             then "integer"
+  case T_ARRAY(__)                   then "array"
+  case T_METATYPE(__) case T_METABOXED(__)                then "metatype"
+  case T_FUNCTION_REFERENCE_VAR(__)  then "fnptr"
+  else "mmcTypeShort:ERROR"
+end mmcTypeShort;
 
 template extVarName(ComponentRef cr, SimCode simCode)
 ::= '<%contextCref(cr,contextFunction,simCode)%>_ext'
@@ -2352,14 +2352,14 @@ template arrayConstruct1(list<SimVar> varsLst) ::=
   ;separator="\n"
 end arrayConstruct1;
 
-template variableType(DAE.ExpType type)
+template variableType(DAE.Type type)
  "Generates integer for use in arrays in global data section."
 ::=
   match type
-  case ET_REAL(__)        then "double"
-  case ET_STRING(__)      then "string"
-  case ET_INT(__)         then "int"
-  case ET_BOOL(__)        then "bool"
+  case T_REAL(__)        then "double"
+  case T_STRING(__)      then "string"
+  case T_INTEGER(__)         then "int"
+  case T_BOOL(__)        then "bool"
 end variableType;
 
 template lastIdentOfPath(Path modelName) ::=
@@ -2847,7 +2847,7 @@ template arrayCrefStr(ComponentRef cr)
   else "CREF_NOT_IDENT_OR_QUAL"
 end arrayCrefStr;
 
-template expTypeFlag(DAE.ExpType ty, Integer flag)
+template expTypeFlag(DAE.Type ty, Integer flag)
 
 ::=
   match flag
@@ -2856,10 +2856,10 @@ template expTypeFlag(DAE.ExpType ty, Integer flag)
     expTypeShort(ty)
   case 2 then
     // we want the "modelica type"
-    match ty case ET_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then
+    match ty case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then
       '<%expTypeShort(ty)%>'
-    else match ty case ET_COMPLEX(__) then
-      'struct <%underscorePath(name)%>'
+    else match ty case T_COMPLEX(__) then
+      'struct <%underscorePath(ClassInf.getStateName(complexClassType))%>'
     else
       '<%expTypeShort(ty)%>'
   case 3 then
@@ -2867,56 +2867,57 @@ template expTypeFlag(DAE.ExpType ty, Integer flag)
     '<%expTypeShort(ty)%>'  
   case 4 then
     match ty
-    case ET_ARRAY(__) then '<%expTypeShort(ty)%>'
+    case T_ARRAY(__) then '<%expTypeShort(ty)%>'
     else expTypeFlag(ty, 2)
     end match
   case 5 then
     match ty
-    case ET_ARRAY(arrayDimensions=dims) then 'multi_array_ref<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
+    case T_ARRAY(dims=dims) then 'multi_array_ref<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
     else expTypeFlag(ty, 2)
     end match
   case 6 then
     match ty
-    case ET_ARRAY(arrayDimensions=dims) then 'multi_array<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
+    case T_ARRAY(dims=dims) then 'multi_array<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
     else expTypeFlag(ty, 2)
     end match
   case 7 then
      match ty
-    case ET_ARRAY(arrayDimensions=dims)
+    case T_ARRAY(dims=dims)
     then
      'multi_array<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
     end match
  
 end expTypeFlag;
 
-template expTypeArray(DAE.ExpType ty)
+template expTypeArray(DAE.Type ty)
 
 ::=
   expTypeFlag(ty, 3)
 end expTypeArray;
 
-template expTypeArrayforDim(DAE.ExpType ty)
+template expTypeArrayforDim(DAE.Type ty)
 
 ::=
   expTypeFlag(ty, 6)
 end expTypeArrayforDim;
 
-template expTypeShort(DAE.ExpType type)
+template expTypeShort(DAE.Type type)
 
 ::=
   match type
-  case ET_INT(__)         then "int"  
-  case ET_REAL(__)        then "double"
-  case ET_STRING(__)      then if acceptMetaModelicaGrammar() then "metatype" else "string"
-  case ET_BOOL(__)        then "bool"
-  case ET_ENUMERATION(__) then "int"  
-  case ET_OTHER(__)       then "complex"
-  case ET_ARRAY(__)       then expTypeShort(ty)   
-  case ET_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
+  case T_INTEGER(__)         then "int"  
+  case T_REAL(__)        then "double"
+  case T_STRING(__)      then if acceptMetaModelicaGrammar() then "metatype" else "string"
+  case T_BOOL(__)        then "bool"
+  case T_ENUMERATION(__) then "int"  
+  case T_UNKNOWN(__)     then "complex"
+  case T_ANYTYPE(__)     then "complex"
+  case T_ARRAY(__)       then expTypeShort(ty)   
+  case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "complex"
-  case ET_COMPLEX(__)     then 'struct <%underscorePath(name)%>'  
-  case ET_METATYPE(__) case ET_BOXED(__)    then "metatype"
-  case ET_FUNCTION_REFERENCE_VAR(__) then "fnptr"
+  case T_COMPLEX(__)     then 'struct <%underscorePath(ClassInf.getStateName(complexClassType))%>'  
+  case T_METATYPE(__) case T_METABOXED(__)    then "metatype"
+  case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"
   else "expTypeShort:ERROR"
 end expTypeShort;
 
@@ -3647,11 +3648,11 @@ match exp
 case CAST(__) then
   let expVar = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   match ty
-  case ET_INT(__)   then '((int)<%expVar%>)'  
-  case ET_REAL(__)  then '((double)<%expVar%>)'
-  case ET_ENUMERATION(__)   then '((modelica_integer)<%expVar%>)'
-  case ET_BOOL(__)   then '((bool)<%expVar%>)'  
-  case ET_ARRAY(__) then
+  case T_INTEGER(__)   then '((int)<%expVar%>)'  
+  case T_REAL(__)  then '((double)<%expVar%>)'
+  case T_ENUMERATION(__)   then '((modelica_integer)<%expVar%>)'
+  case T_BOOL(__)   then '((bool)<%expVar%>)'  
+  case T_ARRAY(__) then
     let arrayTypeStr = expTypeArray(ty)
     let tvar = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
     let to = expTypeShort(ty)
@@ -3717,8 +3718,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   
   case CALL(path=IDENT(name="DIVISION_ARRAY_SCALAR"),
             expLst={e1, e2, DAE.SCONST(string=string)},attr=attr as CALL_ATTR(__)) then
-    let type = match attr.ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" 
-                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then "integer_array"
+    let type = match attr.ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array" 
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
                         else "real_array"
     let var = tempDecl(type, &varDecls)
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
@@ -3732,8 +3733,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   case CALL(path=IDENT(name="pre"), expLst={arg as CREF(__)}) then
     let retType = '<%expTypeArrayIf(arg.ty)%>'
     let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-    let cast = match arg.ty case ET_INT(__) then "(int)" 
-                            case ET_ENUMERATION(__) then "(int)" //else ""
+    let cast = match arg.ty case T_INTEGER(__) then "(int)" 
+                            case T_ENUMERATION(__) then "(int)" //else ""
     let &preExp += '<%retVar%> = <%cast%>pre(<%cref(arg.componentRef)%>);<%\n%>'
     '<%retVar%>'
   
@@ -3741,7 +3742,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     if acceptMetaModelicaGrammar() then 'print(<%var1%>)' else 'puts(<%var1%>)'
   
-  case CALL(path=IDENT(name="max"), attr=CALL_ATTR(ty = ET_REAL()), expLst={e1,e2}) then
+  case CALL(path=IDENT(name="max"), attr=CALL_ATTR(ty = T_REAL(__)), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
     'fmax(<%var1%>,<%var2%>)'
@@ -3751,7 +3752,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
     'int_max((int)<%var1%>,(int)<%var2%>)'
   
-  case CALL(attr=CALL_ATTR(ty = ET_REAL()),
+  case CALL(attr=CALL_ATTR(ty = T_REAL(__)),
             path=IDENT(name="min"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
@@ -3762,7 +3763,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
     'int_min((int)<%var1%>,(int)<%var2%>)'
   
-  case CALL(path=IDENT(name="abs"), expLst={e1}, attr=CALL_ATTR(ty = ET_INT())) then
+  case CALL(path=IDENT(name="abs"), expLst={e1}, attr=CALL_ATTR(ty = T_INTEGER(__))) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     'labs(<%var1%>)'
   
@@ -3805,7 +3806,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
     if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
   
-  case CALL(path=IDENT(name="div"), expLst={e1,e2}, attr=CALL_ATTR(ty = ET_INT())) then
+  case CALL(path=IDENT(name="div"), expLst={e1,e2}, attr=CALL_ATTR(ty = T_INTEGER(__))) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
     'ldiv(<%var1%>,<%var2%>).quot'
@@ -3969,14 +3970,14 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let funName = '<%underscorePath(path)%>'
     let retType = '<%funName%>RetType'
     let retVar = match exp
-      case CALL(attr=CALL_ATTR(ty=ET_NORETCALL(__))) then ""
+      case CALL(attr=CALL_ATTR(ty=T_NORETCALL(__))) then ""
       else tempDecl(retType, &varDecls)
     let &preExp += match context case FUNCTION_CONTEXT(__) then'<%if retVar then '<%retVar%> = '%><%funName%>(<%argStr%>);<%\n%>'
     /*let &preExp += match context case OTHER(__) then*/ else '<%if retVar then '<%retVar%> = '%>_functions.<%funName%>(<%argStr%>);<%\n%>'
     
     match exp
       // no return calls
-      case CALL(attr=CALL_ATTR(ty=ET_NORETCALL(__))) then '/* NORETCALL */'
+      case CALL(attr=CALL_ATTR(ty=T_NORETCALL(__))) then '/* NORETCALL */'
       // non tuple calls (single return value)
       case CALL(attr=CALL_ATTR(tuple_=false)) then
        if attr.builtin then '<%retVar%>' else 'get<0>(<%retVar%>)'
@@ -4079,31 +4080,31 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
   case POW(__) then 'pow(<%e1%>, <%e2%>)'
   case AND(__) then '(<%e1%> && <%e2%>)'
   case OR(__)  then '(<%e1%> || <%e2%>)'
-  case MUL_ARRAY_SCALAR(ty=ET_ARRAY(arrayDimensions=dims)) then
-    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then 'multi_array<int,<%listLength(dims)%>>'
-                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then 'multi_array<int,<%listLength(dims)%>>'
+  case MUL_ARRAY_SCALAR(ty=T_ARRAY(dims=dims)) then
+    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then 'multi_array<int,<%listLength(dims)%>>'
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then 'multi_array<int,<%listLength(dims)%>>'
                         else 'multi_array<double,<%listLength(dims)%>>'
-    let type1 = match ty case ET_ARRAY(ty=ET_INT(__)) then "int"
-                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then "int"
+    let type1 = match ty case T_ARRAY(ty=T_INTEGER(__)) then "int"
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then "int"
                         else "double"
     //let var = tempDecl(type,&varDecls /*BUFD*/)
     let var1 = tempDecl1(type,e1,&varDecls /*BUFD*/)
     let &preExp += '<%var1%>=multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>);<%\n%>'
     '<%var1%>'  
-  case MUL_MATRIX_PRODUCT(ty=ET_ARRAY(arrayDimensions=dims)) then
-    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then 'multi_array<int,<%listLength(dims)%>>'
-                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then 'multi_array<int,<%listLength(dims)%>>'
+  case MUL_MATRIX_PRODUCT(ty=T_ARRAY(dims=dims)) then
+    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then 'multi_array<int,<%listLength(dims)%>>'
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then 'multi_array<int,<%listLength(dims)%>>'
                         else 'multi_array<double,<%listLength(dims)%>>'
-    let type1 = match ty case ET_ARRAY(ty=ET_INT(__)) then "int"
-                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then "int"
+    let type1 = match ty case T_ARRAY(ty=T_INTEGER(__)) then "int"
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then "int"
                         else "double"
     //let var = tempDecl(type,&varDecls /*BUFD*/)
     let var1 = tempDecl1(type,e1,&varDecls /*BUFD*/)
     let &preExp += '<%var1%>=multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>);<%\n%>'
     '<%var1%>'  
-  case DIV_ARRAY_SCALAR(ty=ET_ARRAY(arrayDimensions=dims)) then
-  let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" 
-                        case ET_ARRAY(ty=ET_ENUMERATION(__)) then "integer_array"
+  case DIV_ARRAY_SCALAR(ty=T_ARRAY(dims=dims)) then
+  let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array" 
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
                         else "real_array"
     let var = tempDecl(type, &varDecls /*BUFD*/)
     let &preExp += 'div_alloc_<%type%>_scalar(&<%e1%>, <%e2%>, &<%var%>);<%\n%>'
@@ -4136,7 +4137,7 @@ case UNARY(__) then
   let e = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   match operator
   case UMINUS(__)     then '(-<%e%>)'
-  case UMINUS_ARR(ty=ET_ARRAY(ty=ET_REAL(__))) then
+  case UMINUS_ARR(ty=T_ARRAY(ty=T_REAL(__))) then
     let &preExp += 'usub_real_array(&<%e%>);<%\n%>'
     '<%e%>'
   case UMINUS_ARR(__) then 'unary minus for non-real arrays not implemented'
@@ -4152,26 +4153,26 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp /*BUFP*/,
   match exp
   // A record cref without subscripts (i.e. a record instance) is handled
   // by daeExpRecordCrefRhs only in a simulation context, not in a function.
-  case CREF(componentRef = cr, ty = t as ET_COMPLEX(complexClassType = RECORD(path = _))) then
+  case CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = RECORD(path = _))) then
     match context case FUNCTION_CONTEXT(__) then
       daeExpCrefRhs2(exp, context, &preExp, &varDecls,simCode)
     else
       daeExpRecordCrefRhs(t, cr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-  case CREF(componentRef = cr, ty = ET_FUNCTION_REFERENCE_FUNC(__)) then
+  case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_FUNC(__)) then
     '((modelica_fnptr)boxptr_<%crefFunctionName(cr)%>)'
-  case CREF(componentRef = cr, ty = ET_FUNCTION_REFERENCE_VAR(__)) then
+  case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_VAR(__)) then
     '((modelica_fnptr) _<%crefStr(cr)%>)'
   else daeExpCrefRhs2(exp, context, &preExp, &varDecls,simCode)
 end daeExpCrefRhs;
 
-template daeExpRecordCrefRhs(DAE.ExpType ty, ComponentRef cr, Context context, Text &preExp /*BUFP*/,
+template daeExpRecordCrefRhs(DAE.Type ty, ComponentRef cr, Context context, Text &preExp /*BUFP*/,
                        Text &varDecls /*BUFP*/,SimCode simCode)
 ::=
 match ty
-case ET_COMPLEX(name = record_path, varLst = var_lst) then
+case T_COMPLEX(complexClassType = record_state, varLst = var_lst) then
   let vars = var_lst |> v => daeExp(makeCrefRecordExp(cr,v), context, &preExp, &varDecls,simCode) 
              ;separator=", "
-  let record_type_name = underscorePath(record_path)
+  let record_type_name = underscorePath(ClassInf.getStateName(record_state))
   let ret_type = '<%record_type_name%>RetType'
   let ret_var = tempDecl(ret_type, &varDecls)
   let &preExp += '<%ret_var%> = _functions.<%record_type_name%>(<%vars%>);<%\n%>'
@@ -4188,8 +4189,8 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
     if box then
       box
     else if crefIsScalar(cr, context) then
-      let cast = match ty case ET_INT(__) then ""
-                          case ET_ENUMERATION(__) then "" //else ""
+      let cast = match ty case T_INTEGER(__) then ""
+                          case T_ENUMERATION(__) then "" //else ""
       '<%cast%><%contextCref(cr,context,simCode)%>'
     else 
      if crefSubIsScalar(cr) then
@@ -4252,7 +4253,7 @@ template daeExpCrefRhsArrayBox(Exp ecr, Context context, Text &preExp /*BUFP*/,
  "Helper to daeExpCrefRhs."
 ::=
 match ecr
-case ecr as CREF(ty=ET_ARRAY(ty=aty,arrayDimensions=dims)) then
+case ecr as CREF(ty=T_ARRAY(ty=aty,dims=dims)) then
   match context
   case FUNCTION_CONTEXT(__) then ''
   else
@@ -4338,58 +4339,58 @@ template daeExpRelation(Operator op, Integer index,Exp exp1, Exp exp2, Context c
   match index 
   case -1 then 
      match op
-    case LESS(ty = ET_BOOL(__))        then '(!<%e1%> && <%e2%>)'
-    case LESS(ty = ET_STRING(__))      then "# string comparison not supported\n"
-    case LESS(ty = ET_INT(__))
-    case LESS(ty = ET_REAL(__))        then '(<%e1%> < <%e2%>)'
-    case GREATER(ty = ET_BOOL(__))     then '(<%e1%> && !<%e2%>)'
-    case GREATER(ty = ET_STRING(__))   then "# string comparison not supported\n"
-    case GREATER(ty = ET_INT(__))
-    case GREATER(ty = ET_REAL(__))     then '(<%e1%> > <%e2%>)'
-    case LESSEQ(ty = ET_BOOL(__))      then '(!<%e1%> || <%e2%>)'
-    case LESSEQ(ty = ET_STRING(__))    then "# string comparison not supported\n"
-    case LESSEQ(ty = ET_INT(__))
-    case LESSEQ(ty = ET_REAL(__))       then '(<%e1%> <= <%e2%>)'
-    case GREATEREQ(ty = ET_BOOL(__))   then '(<%e1%> || !<%e2%>)'
-    case GREATEREQ(ty = ET_STRING(__)) then "# string comparison not supported\n"
-    case GREATEREQ(ty = ET_INT(__))
-    case GREATEREQ(ty = ET_REAL(__))   then '(<%e1%> >= <%e2%>)'
-    case EQUAL(ty = ET_BOOL(__))       then '((!<%e1%> && !<%e2%>) || (<%e1%> && <%e2%>))'
-    case EQUAL(ty = ET_STRING(__))
-    case EQUAL(ty = ET_INT(__))
-    case EQUAL(ty = ET_REAL(__))       then '(<%e1%> == <%e2%>)'
-    case NEQUAL(ty = ET_BOOL(__))      then '((!<%e1%> && <%e2%>) || (<%e1%> && !<%e2%>))'
-    case NEQUAL(ty = ET_STRING(__))
-    case NEQUAL(ty = ET_INT(__))
-    case NEQUAL(ty = ET_REAL(__))      then '(<%e1%> != <%e2%>)'
+    case LESS(ty = T_BOOL(__))        then '(!<%e1%> && <%e2%>)'
+    case LESS(ty = T_STRING(__))      then "# string comparison not supported\n"
+    case LESS(ty = T_INTEGER(__))
+    case LESS(ty = T_REAL(__))        then '(<%e1%> < <%e2%>)'
+    case GREATER(ty = T_BOOL(__))     then '(<%e1%> && !<%e2%>)'
+    case GREATER(ty = T_STRING(__))   then "# string comparison not supported\n"
+    case GREATER(ty = T_INTEGER(__))
+    case GREATER(ty = T_REAL(__))     then '(<%e1%> > <%e2%>)'
+    case LESSEQ(ty = T_BOOL(__))      then '(!<%e1%> || <%e2%>)'
+    case LESSEQ(ty = T_STRING(__))    then "# string comparison not supported\n"
+    case LESSEQ(ty = T_INTEGER(__))
+    case LESSEQ(ty = T_REAL(__))       then '(<%e1%> <= <%e2%>)'
+    case GREATEREQ(ty = T_BOOL(__))   then '(<%e1%> || !<%e2%>)'
+    case GREATEREQ(ty = T_STRING(__)) then "# string comparison not supported\n"
+    case GREATEREQ(ty = T_INTEGER(__))
+    case GREATEREQ(ty = T_REAL(__))   then '(<%e1%> >= <%e2%>)'
+    case EQUAL(ty = T_BOOL(__))       then '((!<%e1%> && !<%e2%>) || (<%e1%> && <%e2%>))'
+    case EQUAL(ty = T_STRING(__))
+    case EQUAL(ty = T_INTEGER(__))
+    case EQUAL(ty = T_REAL(__))       then '(<%e1%> == <%e2%>)'
+    case NEQUAL(ty = T_BOOL(__))      then '((!<%e1%> && <%e2%>) || (<%e1%> && !<%e2%>))'
+    case NEQUAL(ty = T_STRING(__))
+    case NEQUAL(ty = T_INTEGER(__))
+    case NEQUAL(ty = T_REAL(__))      then '(<%e1%> != <%e2%>)'
     case _                         then "daeExpRelation:ERR"
       end match
   case _ then 
      match op
-    case LESS(ty = ET_BOOL(__))        then '_condition<%index%>'
-    case LESS(ty = ET_STRING(__))      then "# string comparison not supported\n"
-    case LESS(ty = ET_INT(__))
-    case LESS(ty = ET_REAL(__))        then '_condition<%index%>'
-    case GREATER(ty = ET_BOOL(__))     then '_condition<%index%>'
-    case GREATER(ty = ET_STRING(__))   then "# string comparison not supported\n"
-    case GREATER(ty = ET_INT(__))
-    case GREATER(ty = ET_REAL(__))     then '_condition<%index%>'
-    case LESSEQ(ty = ET_BOOL(__))      then '_condition<%index%>'
-    case LESSEQ(ty = ET_STRING(__))    then "# string comparison not supported\n"
-    case LESSEQ(ty = ET_INT(__))
-    case LESSEQ(ty = ET_REAL(__))       then '_condition<%index%>'
-    case GREATEREQ(ty = ET_BOOL(__))   then '_condition<%index%>'
-    case GREATEREQ(ty = ET_STRING(__)) then "# string comparison not supported\n"
-    case GREATEREQ(ty = ET_INT(__))
-    case GREATEREQ(ty = ET_REAL(__))   then '_condition<%index%>'
-    case EQUAL(ty = ET_BOOL(__))       then '_condition<%index%>'
-    case EQUAL(ty = ET_STRING(__))
-    case EQUAL(ty = ET_INT(__))
-    case EQUAL(ty = ET_REAL(__))       then '_condition<%index%>'
-    case NEQUAL(ty = ET_BOOL(__))      then '_condition<%index%>'
-    case NEQUAL(ty = ET_STRING(__))
-    case NEQUAL(ty = ET_INT(__))
-    case NEQUAL(ty = ET_REAL(__))      then '_condition<%index%>'
+    case LESS(ty = T_BOOL(__))        then '_condition<%index%>'
+    case LESS(ty = T_STRING(__))      then "# string comparison not supported\n"
+    case LESS(ty = T_INTEGER(__))
+    case LESS(ty = T_REAL(__))        then '_condition<%index%>'
+    case GREATER(ty = T_BOOL(__))     then '_condition<%index%>'
+    case GREATER(ty = T_STRING(__))   then "# string comparison not supported\n"
+    case GREATER(ty = T_INTEGER(__))
+    case GREATER(ty = T_REAL(__))     then '_condition<%index%>'
+    case LESSEQ(ty = T_BOOL(__))      then '_condition<%index%>'
+    case LESSEQ(ty = T_STRING(__))    then "# string comparison not supported\n"
+    case LESSEQ(ty = T_INTEGER(__))
+    case LESSEQ(ty = T_REAL(__))       then '_condition<%index%>'
+    case GREATEREQ(ty = T_BOOL(__))   then '_condition<%index%>'
+    case GREATEREQ(ty = T_STRING(__)) then "# string comparison not supported\n"
+    case GREATEREQ(ty = T_INTEGER(__))
+    case GREATEREQ(ty = T_REAL(__))   then '_condition<%index%>'
+    case EQUAL(ty = T_BOOL(__))       then '_condition<%index%>'
+    case EQUAL(ty = T_STRING(__))
+    case EQUAL(ty = T_INTEGER(__))
+    case EQUAL(ty = T_REAL(__))       then '_condition<%index%>'
+    case NEQUAL(ty = T_BOOL(__))      then '_condition<%index%>'
+    case NEQUAL(ty = T_STRING(__))
+    case NEQUAL(ty = T_INTEGER(__))
+    case NEQUAL(ty = T_REAL(__))      then '_condition<%index%>'
     case _                         then "daeExpRelation:ERR"
       end match
 end daeExpRelation;
@@ -4766,7 +4767,7 @@ template writeLhsCref(Exp exp, String rhsStr, Context context, Text &preExp /*BU
 match exp
 case ecr as CREF(componentRef=WILD(__)) then
   ''
-case CREF(ty= t as DAE.ET_ARRAY(__)) then
+case CREF(ty= t as DAE.T_ARRAY(__)) then
   let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   match context
   case SIMULATION(__) then
@@ -4775,7 +4776,7 @@ case CREF(ty= t as DAE.ET_ARRAY(__)) then
     >>
   else
     '<%lhsStr%> = <%rhsStr%>;'
-case UNARY(exp = e as CREF(ty= t as DAE.ET_ARRAY(__))) then
+case UNARY(exp = e as CREF(ty= t as DAE.T_ARRAY(__))) then
   let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   match context
   case SIMULATION(__) then
@@ -4848,7 +4849,7 @@ template elseExpr(DAE.Else it, Context context, Text &preExp, Text &varDecls,Sim
 end elseExpr;
 
 
-template expType(DAE.ExpType ty, Boolean isArray)
+template expType(DAE.Type ty, Boolean isArray)
  "Generate type helper."
 ::=
   if isArray 
@@ -4857,13 +4858,13 @@ template expType(DAE.ExpType ty, Boolean isArray)
 end expType;
 
 
-template expTypeArrayIf(DAE.ExpType ty)
+template expTypeArrayIf(DAE.Type ty)
  "Generate type helper."
 ::=
   expTypeFlag(ty, 4)
 end expTypeArrayIf;
 
-template expTypeArray1(DAE.ExpType ty, Integer dims) ::=
+template expTypeArray1(DAE.Type ty, Integer dims) ::=
 <<
  SimArray<%dims%><<%expTypeShort(ty)%>>
 >>

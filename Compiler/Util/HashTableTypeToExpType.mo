@@ -55,7 +55,7 @@ protected import Types;
 protected import System;
 
 public type Key = DAE.Type;
-public type Value = DAE.ExpType;
+public type Value = DAE.Type;
 
 public type HashTableCrefFunctionsType = tuple<FuncHashType,FuncTypeEqual,FuncTypeStr,FuncExpTypeStr>;
 public type HashTable = tuple<
@@ -94,7 +94,7 @@ public function myHash
   output Integer hash;
 protected
   String str;
-  DAE.TType tt;
+  DAE.Type tt;
   DAE.Type t;
 algorithm
   //str := Types.printTypeStr(inTy);

@@ -91,6 +91,9 @@ uniontype FullMod "used for error reporting"
   end SUB_MOD;
 end FullMod;
 
+public type SubMod = DAE.SubMod;
+public type EqMod = DAE.EqMod;
+
 public function elabMod "
   This function elaborates on the expressions in a modification and
   turns them into global expressions.  This is done because the
@@ -1260,7 +1263,7 @@ algorithm
     case(NONE(),_,_,_) then DAE.NOMOD();
     
     case(SOME(DAE.TYPED(e,SOME(Values.RECORD(_,values,names,-1)),
-                        DAE.PROP((DAE.T_COMPLEX(complexVarLst = varLst),_),_),_)),
+                        DAE.PROP(DAE.T_COMPLEX(varLst = varLst),_),_)),
          n,finalPrefix,each_) 
       equation
         mod = lookupComplexCompModification2(values,names,varLst,n,finalPrefix,each_);
@@ -1403,7 +1406,7 @@ algorithm
     case ((x as DAE.NAMEMOD(mod=mod1))::rest)
       equation
         // make sure x is not present in the rest
-        fullMods = getFullModsFromSubMods(ComponentReference.makeCrefIdent("", DAE.ET_OTHER(), {}), inSubModLst);
+        fullMods = getFullModsFromSubMods(ComponentReference.makeCrefIdent("", DAE.T_UNKNOWN_DEFAULT, {}), inSubModLst);
         // print("FullModsTry: " +& stringDelimitList(List.map1(fullMods, prettyPrintFullMod, 1), " ||| ") +& "\n");
         checkDuplicatesInFullMods(fullMods, Prefix.NOPRE(), "", Absyn.dummyInfo, false);
         mod2 = tryMergeSubMods(rest);
@@ -1413,7 +1416,7 @@ algorithm
     case ((x as DAE.IDXMOD(mod=mod1))::rest)
       equation
         // make sure x is not present in the rest
-        fullMods = getFullModsFromSubMods(ComponentReference.makeCrefIdent("", DAE.ET_OTHER(), {}), inSubModLst);
+        fullMods = getFullModsFromSubMods(ComponentReference.makeCrefIdent("", DAE.T_UNKNOWN_DEFAULT, {}), inSubModLst);
         // print("FullModsTry: " +& stringDelimitList(List.map1(fullMods, prettyPrintFullMod, 1), " ||| ") +& "\n");
         checkDuplicatesInFullMods(fullMods, Prefix.NOPRE(), "", Absyn.dummyInfo, false);
         mod2 = tryMergeSubMods(rest);
@@ -3011,7 +3014,7 @@ algorithm
         cref = ComponentReference.joinCrefs(
                  inTopCref, 
                  ComponentReference.makeCrefIdent(
-                   id, DAE.ET_OTHER(), {}));
+                   id, DAE.T_UNKNOWN_DEFAULT, {}));
         fullMods = getFullModsFromModRedeclare(inTopCref, rest, finalPrefix, eachPrefix);
       then
         MOD(cref, DAE.REDECL(finalPrefix, eachPrefix, {x}))::fullMods;
@@ -3022,7 +3025,7 @@ algorithm
         cref = ComponentReference.joinCrefs(
                  inTopCref, 
                  ComponentReference.makeCrefIdent(
-                   id, DAE.ET_OTHER(), {}));
+                   id, DAE.T_UNKNOWN_DEFAULT, {}));
         fullMods = getFullModsFromModRedeclare(inTopCref, rest, finalPrefix, eachPrefix);
       then
         MOD(cref, DAE.REDECL(finalPrefix, eachPrefix, {x}))::fullMods;
@@ -3067,7 +3070,7 @@ algorithm
         cref = ComponentReference.joinCrefs(
                  inTopCref, 
                  ComponentReference.makeCrefIdent(
-                   id, DAE.ET_OTHER(), {}));
+                   id, DAE.T_UNKNOWN_DEFAULT, {}));
         fullMods1 = getFullModsFromMod(cref, mod);
         fullMods2 = getFullModsFromSubMods(inTopCref, rest);
         fullMods = listAppend(
@@ -3340,6 +3343,198 @@ algorithm
 
   end match;
 end getUntypedCrefFromSubMod;
+
+// moved from Types!
+public function stripSubmod
+"function: stripSubmod
+  author: PA
+  Removes the sub modifiers of a modifier."
+  input DAE.Mod inMod;
+  output DAE.Mod outMod;
+algorithm
+  outMod := matchcontinue (inMod)
+    local
+      SCode.Final f;
+      SCode.Each each_;
+      list<SubMod> subs;
+      Option<EqMod> eq;
+      DAE.Mod m;
+    case (DAE.MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,eqModOption = eq)) 
+      then DAE.MOD(f,each_,{},eq);
+    case (m) then m;
+  end matchcontinue;
+end stripSubmod;
+
+public function removeFirstSubsRedecl "
+Author: BZ, 2009-08
+Removed REDECLARE() statements at first level of SubMods"
+  input DAE.Mod inMod;
+  output DAE.Mod outMod;
+algorithm
+  outMod := matchcontinue (inMod)
+    local
+      SCode.Final f;
+      SCode.Each each_;
+      list<SubMod> subs;
+      Option<EqMod> eq;
+      DAE.Mod m;
+    case (DAE.MOD(finalPrefix = f,eachPrefix = each_,subModLst = {},eqModOption = eq)) 
+      then DAE.MOD(f,each_,{},eq);
+    case (DAE.MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,eqModOption = NONE()))
+      equation
+         {} = removeRedecl(subs);
+      then
+        DAE.NOMOD();
+    case (DAE.MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,eqModOption = eq))
+      equation
+         subs = removeRedecl(subs);
+      then
+        DAE.MOD(f,each_,subs,eq);
+    case (m) then m;
+  end matchcontinue;
+end removeFirstSubsRedecl;
+
+protected function removeRedecl "
+Author BZ
+helper function for removeFirstSubsRedecl"
+  input list<SubMod> subs;
+  output list<SubMod> osubs;
+algorithm 
+  osubs := matchcontinue(subs)
+    local
+      SubMod sm;
+      String s;
+  
+    case({}) then {};
+    case(DAE.NAMEMOD(s,DAE.REDECL(_,_,_))::subs) then removeRedecl(subs);
+    case(sm::subs)
+      equation
+        osubs = removeRedecl(subs);
+      then
+        sm::osubs;
+  end matchcontinue;
+end removeRedecl;
+
+public function removeModList "
+Author BZ, 2009-07
+Delete a list of named modifiers"
+  input DAE.Mod inMod;
+  input list<String> remStrings;
+  output DAE.Mod outMod;
+protected
+  String s;
+algorithm 
+  outMod := match(inMod,remStrings)
+    case(inMod,{}) then inMod;
+    case(inMod, s::remStrings)
+      equation
+        inMod = removeMod(inMod,s);
+      then 
+        removeModList(inMod,remStrings);
+  end match;
+end removeModList;
+
+public function removeMod "
+Author: BZ, 2009-05
+Remove a modifier(/s) on a specified component.
+TODO: implement IDXMOD and a better support for redeclare."
+  input DAE.Mod inmod;
+  input String componentModified;
+  output DAE.Mod outmod;
+algorithm 
+  outmod := match(inmod,componentModified)
+    local
+      SCode.Final f;
+      SCode.Each e;
+      list<SubMod> subs;
+      Option<EqMod> oem;
+      list<tuple<SCode.Element, DAE.Mod>> redecls;
+  
+    case(DAE.NOMOD(),_) then DAE.NOMOD();
+  
+    case((inmod as DAE.REDECL(f,e,redecls)),componentModified)
+      equation
+        //Debug.fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" before" +& Mod.printModStr(inmod) +& "\n");  
+        redecls = removeRedeclareMods(redecls,componentModified);
+        outmod = Util.if_(listLength(redecls) > 0,DAE.REDECL(f,e,redecls), DAE.NOMOD());
+        //Debug.fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" after" +& Mod.printModStr(outmod) +& "\n");
+      then
+        outmod;
+
+    case(DAE.MOD(f,e,subs,oem),componentModified)
+      equation
+        //Debug.fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" before" +& Mod.printModStr(inmod) +& "\n");
+        subs = removeModInSubs(subs,componentModified);
+        outmod = DAE.MOD(f,e,subs,oem);
+        //Debug.fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" after" +& Mod.printModStr(outmod) +& "\n");
+      then
+        outmod;
+  end match;
+end removeMod;
+
+protected function removeRedeclareMods ""
+  input list<tuple<SCode.Element, DAE.Mod>> inLst;
+  input String currComp;
+  output list<tuple<SCode.Element, DAE.Mod>> outLst;
+algorithm 
+  outLst := matchcontinue(inLst,currComp)
+    local
+      SCode.Element comp;
+      DAE.Mod mod;
+      String s1;
+    
+    case({},_) then {};
+    
+    case((comp,mod)::inLst,currComp)
+      equation
+        outLst = removeRedeclareMods(inLst,currComp);
+        s1 = SCode.elementName(comp);
+        true = stringEq(s1,currComp);
+      then
+        outLst;
+    
+    case((comp,mod)::inLst,currComp)
+      equation
+        outLst = removeRedeclareMods(inLst,currComp);
+      then
+        (comp,mod)::outLst;
+  
+    case(_,_) 
+      equation 
+        print("removeRedeclareMods failed\n"); 
+      then fail();
+  end matchcontinue;
+end removeRedeclareMods;
+
+protected function removeModInSubs "
+Author BZ, 2009-05
+Helper function for removeMod, removes modifiers in submods;
+"
+  input list<SubMod> insubs;
+  input String componentName;
+  output list<SubMod> outsubs;
+algorithm outsubs := match(insubs,componentName)
+  local
+    DAE.Mod m1;
+    list<SubMod> subs1,subs2;
+    String s1;
+    SubMod sub;
+  case({},_) then {};
+  case((sub as DAE.NAMEMOD(s1,m1))::insubs,componentName)
+    equation
+      subs1 = Util.if_(stringEq(s1,componentName),{},{DAE.NAMEMOD(s1,m1)});
+      subs2 = removeModInSubs(insubs,componentName) "check for multiple mod on same comp";
+      outsubs = listAppend(subs1,subs2);
+    then
+      outsubs;
+  case((sub as DAE.IDXMOD(_,m1))::insubs,componentName)
+    equation
+      //TODO: implement check for idxmod?
+      subs2 = removeModInSubs(insubs,componentName);
+    then
+      sub::subs2;
+end match;
+end removeModInSubs;
 
 end Mod;
 

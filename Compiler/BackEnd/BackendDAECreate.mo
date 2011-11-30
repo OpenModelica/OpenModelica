@@ -30,10 +30,9 @@
  */
 
 encapsulated package BackendDAECreate
-" file:         BackendDAECreate.mo
+" file:        BackendDAECreate.mo
   package:     BackendDAECreate
-  description:  This file contains all functions for transforming the DAE structure 
-                to the BackendDAE. 
+  description: This file contains all functions for transforming the DAE structure to the BackendDAE. 
   
   RCS: $Id$
 
@@ -466,7 +465,7 @@ algorithm
         b2 = Flags.getConfigBool(Flags.CHECK_MODEL);
         true = boolOr(b1, b2);
         
-        s = DAE.STMT_NORETCALL(DAE.CALL(func_name, args, DAE.CALL_ATTR(DAE.ET_NORETCALL(), false, false, DAE.NORM_INLINE(), DAE.NO_TAIL())),source);
+        s = DAE.STMT_NORETCALL(DAE.CALL(func_name, args, DAE.CALL_ATTR(DAE.T_NORETCALL_DEFAULT, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL())),source);
         a = Inline.inlineAlgorithm(DAE.ALGORITHM_STMTS({s}),(SOME(functionTree),{DAE.NORM_INLINE()}));
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,a::algs,ialgs,whenclauses_1,extObjCls,states);
@@ -718,25 +717,25 @@ algorithm
       states = BackendDAEUtil.treeAdd(states, v, 0);
     then (BackendDAE.STATE(),states);
 
-    case (DAE.VARIABLE(),(DAE.T_BOOL(_),_),cr,dir,flowPrefix,_,states,_)
+    case (DAE.VARIABLE(),DAE.T_BOOL(varLst = _),cr,dir,flowPrefix,_,states,_)
       equation
         failure(BackendVariable.topLevelInput(cr, dir, flowPrefix));
       then
         (BackendDAE.DISCRETE(),states);
 
-    case (DAE.DISCRETE(),(DAE.T_BOOL(_),_),cr,dir,flowPrefix,_,states,_)
+    case (DAE.DISCRETE(),DAE.T_BOOL(varLst = _),cr,dir,flowPrefix,_,states,_)
       equation
         failure(BackendVariable.topLevelInput(cr, dir, flowPrefix));
       then
         (BackendDAE.DISCRETE(),states);
 
-    case (DAE.VARIABLE(),(DAE.T_INTEGER(_),_),cr,dir,flowPrefix,_,states,_)
+    case (DAE.VARIABLE(),DAE.T_INTEGER(varLst = _),cr,dir,flowPrefix,_,states,_)
       equation
         failure(BackendVariable.topLevelInput(cr, dir, flowPrefix));
       then
         (BackendDAE.DISCRETE(),states);
 
-    case (DAE.DISCRETE(),(DAE.T_INTEGER(_),_),cr,dir,flowPrefix,_,states,_)
+    case (DAE.DISCRETE(),DAE.T_INTEGER(varLst = _),cr,dir,flowPrefix,_,states,_)
       equation
         failure(BackendVariable.topLevelInput(cr, dir, flowPrefix));
       then
@@ -784,15 +783,14 @@ algorithm
     //    BackendDAE.VARIABLE();
     case (_,_,_,_)
       equation
-        print("lower_known_varkind failed\n");
+        print("lowerKnownVarkind failed\n");
       then
         fail();
   end matchcontinue;
 end lowerKnownVarkind;
 
 protected function lowerType
-"Transforms a DAE.Type to Type
-"
+"Transforms a DAE.Type to Type"
   input  DAE.Type inType;
   output BackendDAE.Type outType;
 algorithm
@@ -800,16 +798,16 @@ algorithm
     local
       list<String> strLst;
       Absyn.Path path;
-    case ((DAE.T_REAL(_),_)) then BackendDAE.REAL();
-    case ((DAE.T_INTEGER(_),_)) then BackendDAE.INT();
-    case ((DAE.T_BOOL(_),_)) then BackendDAE.BOOL();
-    case ((DAE.T_STRING(_),_)) then BackendDAE.STRING();
-    case ((DAE.T_ENUMERATION(names = strLst),_)) then BackendDAE.ENUMERATION(strLst);
-    case ((DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),_)) then BackendDAE.EXT_OBJECT(path);
+    case (DAE.T_REAL(varLst = _)) then DAE.T_REAL_DEFAULT;
+    case (DAE.T_INTEGER(varLst = _)) then DAE.T_INTEGER_DEFAULT;
+    case (DAE.T_BOOL(varLst = _)) then DAE.T_BOOL_DEFAULT;
+    case (DAE.T_STRING(varLst = _)) then DAE.T_STRING_DEFAULT;
+    case (DAE.T_ENUMERATION(names = strLst)) then inType;
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path))) 
+      then inType;
     else equation print("lowerType failed\n"); then fail();
   end matchcontinue;
 end lowerType;
-
 
 protected function lowerExtObjVar
 " Helper function to lower2
@@ -859,10 +857,10 @@ protected function lowerExtObjVarkind
   input DAE.Type inType;
   output BackendDAE.VarKind outVarKind;
 algorithm
-  outVarKind:=
+  outVarKind :=
   match (inType)
     local Absyn.Path path;
-    case ((DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),_)) then BackendDAE.EXTOBJ(path);
+    case DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)) then BackendDAE.EXTOBJ(path);
   end match;
 end lowerExtObjVarkind;
 
@@ -948,7 +946,7 @@ algorithm
     local
       DAE.Exp e1,e2,e1_1,e2_1,e1_2,e2_2,e1_3,e2_3;
       list<BackendDAE.Value> ds;
-      list<DAE.Dimension> dims;
+      DAE.Dimensions dims;
       DAE.ElementSource source;
       Boolean b1,b2;
 
@@ -1158,19 +1156,19 @@ algorithm
     local
       BackendDAE.Variables vars,vars_1;
       DAE.Exp e1,left,left1;
-      DAE.ExpType ty,tp,tp1;
+      DAE.Type ty,tp,tp1;
       Integer i;
       list<BackendDAE.MultiDimEquation> aeqs;
       list<Integer> dimSize;
       DAE.ElementSource source;
       Absyn.Path path;
       DAE.ComponentRef cr,id;
-      list<DAE.Dimension> ad;
+      DAE.Dimensions ad;
       list<list<DAE.Subscript>> subslst,subslst1;
       list<DAE.ComponentRef> crlst;
       list<BackendDAE.Var> varlst;
       BackendDAE.Type btp;
-    case((e1 as DAE.CALL(path=path,attr = DAE.CALL_ATTR(ty=ty as DAE.ET_ARRAY(arrayDimensions=ad,ty=tp))),(vars,i,aeqs,source)))
+    case((e1 as DAE.CALL(path=path,attr = DAE.CALL_ATTR(ty=ty as DAE.T_ARRAY(dims=ad,ty=tp))),(vars,i,aeqs,source)))
      equation
       dimSize = List.map(ad, Expression.dimensionSize);
       cr = ComponentReference.pathToCref(path);
@@ -1181,7 +1179,7 @@ algorithm
       subslst1 = BackendDAEUtil.rangesToSubscripts(subslst);
       crlst = List.map1r(subslst1,ComponentReference.subscriptCref,cr);
       tp1 = Expression.unliftArray(tp);
-      btp = expTypeToBackendType(tp1);
+      btp = tp1;
       varlst = List.map1(crlst,makeVariable,btp);
       vars_1 = BackendVariable.addVars(varlst, vars);
       ((left1,(_,_))) = BackendDAEUtil.extendArrExp((left,(NONE(),false)));
@@ -1201,26 +1199,6 @@ algorithm
                             NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM());
 end makeVariable;
 
-protected function expTypeToBackendType
-"Transforms a DAE.ExpType to BackendDAE.Type
-"
-  input  DAE.ExpType inType;
-  output BackendDAE.Type outType;
-algorithm
-  outType := match(inType)
-    local
-      list<String> strLst;
-      Absyn.Path path;
-    case DAE.ET_INT() then BackendDAE.INT();
-    case DAE.ET_REAL() then BackendDAE.REAL();
-    case DAE.ET_BOOL() then BackendDAE.BOOL();
-    case DAE.ET_STRING() then BackendDAE.STRING();
-    case DAE.ET_ENUMERATION(names = strLst) then BackendDAE.ENUMERATION(strLst);
-    case DAE.ET_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)) then BackendDAE.EXT_OBJECT(path);
-    case (_) then fail();
-  end match;
-end expTypeToBackendType;
-
 protected function lowerComplexEqn
 "function: lowerComplexEqn
   Helper function to lower2.
@@ -1233,7 +1211,7 @@ algorithm
   (outComplexEquations,outMultiDimEquations) := matchcontinue (inElement, funcs)
     local
       DAE.Exp e1,e2,e1_1,e2_1;
-      DAE.ExpType ty;
+      DAE.Type ty;
       Integer i;
       list<BackendDAE.Equation> complexEqs;
       list<BackendDAE.MultiDimEquation> arreqns;
@@ -1522,10 +1500,10 @@ algorithm
       list<DAE.Exp> expl;
       /* Only succeds for tuple equations, i.e. (a,b,c) = foo(x,y,z) or foo(x,y,z) = (a,b,c) */
     case(DAE.EQUATION(DAE.TUPLE(expl),e2 as DAE.CALL(path =_),source))
-    then DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.ET_OTHER(),expl,e2,source)});
+    then DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,expl,e2,source)});
 
     case(DAE.EQUATION(e2 as DAE.CALL(path =_),DAE.TUPLE(expl),source))
-    then DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.ET_OTHER(),expl,e2,source)});
+    then DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,expl,e2,source)});
   end match;
 end lowerTupleEquation;
 
@@ -1883,7 +1861,7 @@ algorithm
   (outExpExpLst1,outExpExpLst2) := matchcontinue (inVariables,inStatement)
     local
       BackendDAE.Variables vars;
-      DAE.ExpType tp;
+      DAE.Type tp;
       DAE.ComponentRef cr;
       DAE.Exp e, exp1, e1, e2;
       list<Algorithm.Statement> statements;
@@ -2144,7 +2122,7 @@ algorithm
       HashTableExpToIndex.HashTable ht;
       Integer i;
       Boolean t, b;
-      DAE.ExpType ty;
+      DAE.Type ty;
       DAE.InlineType it;
       DAE.CallAttributes attr;
     case ((e as DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht,_)))
@@ -2198,8 +2176,8 @@ algorithm
     case (v,e,false) then (v,e);
     case (vars,eqns,true) /* TODO::The dummy variable must be fixed */
       equation
-        cref_ = ComponentReference.makeCrefIdent("$dummy",DAE.ET_REAL(),{});
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cref_, BackendDAE.STATE(),DAE.BIDIR(),BackendDAE.REAL(),NONE(),NONE(),{},-1,
+        cref_ = ComponentReference.makeCrefIdent("$dummy",DAE.T_REAL_DEFAULT,{});
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cref_, BackendDAE.STATE(),DAE.BIDIR(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},-1,
                             DAE.emptyElementSource,
                             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE())),
                             NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM()), vars);
@@ -2296,7 +2274,7 @@ algorithm
       list<BackendDAE.Var> vars;
       DAE.Statement statement;
       Boolean b;
-      DAE.ExpType tp;
+      DAE.Type tp;
       DAE.Ident iteratorName;
       DAE.Exp e,iteratorExp;
       list<DAE.Exp> iteratorexps;
@@ -2414,7 +2392,7 @@ algorithm
   matchcontinue (rangeExp,inKnVariables)
     local 
       list<DAE.Exp> explst;
-      DAE.ExpType tp;
+      DAE.Type tp;
       DAE.Exp startvalue,stopvalue,stepvalue;
       Option<DAE.Exp> stepvalueopt;
       BackendDAE.Variables knv;
@@ -2444,11 +2422,11 @@ protected function expInt "returns the int value of an expression"
   output Integer i;
 algorithm
   i := match(exp,inKnVariables)
- local 
-   Integer i,i1,i2;
-   DAE.ComponentRef cr;
-   BackendDAE.Variables knv;
-   DAE.Exp e,e1,e2;
+    local 
+      Integer i,i1,i2;
+      DAE.ComponentRef cr;
+      BackendDAE.Variables knv;
+      DAE.Exp e,e1,e2;
     case (DAE.ICONST(integer = i2),_) then i2;
     case (DAE.ENUM_LITERAL(index = i2),_) then i2;
     case (DAE.CREF(componentRef=cr),knv)
@@ -2457,17 +2435,17 @@ algorithm
         i2 = expInt(e,knv);
       then
         i2;
-    case (DAE.BINARY(exp1 = e1,operator=DAE.ADD(DAE.ET_INT()),exp2 = e2),knv)
+    case (DAE.BINARY(exp1 = e1,operator=DAE.ADD(DAE.T_INTEGER(varLst = _)),exp2 = e2),knv)
       equation
-          i1 = expInt(e1,knv);
-          i2 = expInt(e1,knv);
-          i = i1 + i2;
+        i1 = expInt(e1,knv);
+        i2 = expInt(e1,knv);
+        i = i1 + i2;
       then i;
-    case (DAE.BINARY(exp1 = e1,operator=DAE.SUB(DAE.ET_INT()),exp2 = e2),knv)
+    case (DAE.BINARY(exp1 = e1,operator=DAE.SUB(DAE.T_INTEGER(varLst = _)),exp2 = e2),knv)
       equation
-          i1 = expInt(e1,knv);
-          i2 = expInt(e2,knv);
-          i = i1 - i2;
+        i1 = expInt(e1,knv);
+        i2 = expInt(e2,knv);
+        i = i1 - i2;
       then i;
   end match;
 end expInt;
@@ -3223,7 +3201,7 @@ algorithm
       list<DAE.Exp> expl1,expl2,iteratorexps;
       DAE.ComponentRef cr_1,cr;
       list<DAE.Statement> xs_1,xs,stmts,stmts2;
-      DAE.ExpType tp,tt;
+      DAE.Type tp,tt;
       DAE.Statement x,ew,ew_1;
       Boolean b1;
       String id1,str;
@@ -3760,7 +3738,7 @@ algorithm
     DAE.FunctionTree funcs;
     DAE.ComponentRef cr1,cr2;
     list<DAE.Exp> e1lst,e2lst;
-    list<DAE.ExpVar> varLst;
+    list<DAE.Var> varLst;
     Integer i;
     list<tuple<list<BackendDAE.Equation>,list<BackendDAE.MultiDimEquation>>> compmultilistlst,compmultilistlst1;
     list<list<BackendDAE.MultiDimEquation>> multiEqsLst,multiEqsLst1;
@@ -3772,7 +3750,7 @@ algorithm
     list<DAE.Exp> expLst;
     list<tuple<DAE.Exp,DAE.Exp>> exptpllst;
   // a=b
-  case (BackendDAE.COMPLEX_EQUATION(index=i,lhs = DAE.CREF(componentRef=cr1,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))), rhs = DAE.CREF(componentRef=cr2),source = source),funcs)
+  case (BackendDAE.COMPLEX_EQUATION(index=i,lhs = DAE.CREF(componentRef=cr1,ty= DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))), rhs = DAE.CREF(componentRef=cr2),source = source),funcs)
     equation
       // create as many equations as the dimension of the record
       e1lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr1);
@@ -3793,7 +3771,7 @@ algorithm
     then
       ((complexEqs1,multiEqs2));
   // a=Record()
-  case (BackendDAE.COMPLEX_EQUATION(index=i,lhs = DAE.CREF(componentRef=cr1,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))), rhs = DAE.CALL(path=path,expLst=expLst),source = source),funcs)
+  case (BackendDAE.COMPLEX_EQUATION(index=i,lhs = DAE.CREF(componentRef=cr1,ty= DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))), rhs = DAE.CALL(path=path,expLst=expLst),source = source),funcs)
     equation
       SOME(DAE.RECORD_CONSTRUCTOR(path=fname)) = DAEUtil.avlTreeGet(funcs,path);
       // create as many equations as the dimension of the record
@@ -3836,10 +3814,10 @@ algorithm
     DAE.ComponentRef cr1;
     BackendDAE.Equation eqn;
     Expression.Type tp;
-    list<DAE.Dimension> ad;
+    DAE.Dimensions ad;
     list<Integer> ds;
   // array types to array equations  
-  case ((e1 as DAE.CREF(componentRef=cr1,ty=DAE.ET_ARRAY(arrayDimensions=ad)),e2),source,inFuncs)
+  case ((e1 as DAE.CREF(componentRef=cr1,ty=DAE.T_ARRAY(dims=ad)),e2),source,inFuncs)
     equation 
       ((e1_1,(_,_))) = BackendDAEUtil.extendArrExp((e1,(SOME(inFuncs),false)));
       ((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(SOME(inFuncs),false)));

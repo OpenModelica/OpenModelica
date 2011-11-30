@@ -30,7 +30,7 @@
  */
 
 encapsulated package BackendDAEUtil
-" file:         BackendDAEUtil.mo
+" file:        BackendDAEUtil.mo
   package:     BackendDAEUtil 
   description: BackendDAEUtil comprised functions for BackendDAE data types.
 
@@ -157,7 +157,7 @@ algorithm
     BackendDAE.Equation eqn;
     DAE.Exp e1, e2;
     DAE.ComponentRef cr;
-    DAE.ExpType t1,t2;
+    DAE.Type t1,t2;
     String eqnstr, t1str, t2str, tstr;
     DAE.ElementSource source;
     case (eqn as BackendDAE.EQUATION(exp=e1,scalar=e2,source=source))
@@ -279,7 +279,7 @@ algorithm
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> crefs,crefs1;
       list<DAE.Exp> expl;
-      list<DAE.ExpVar> varLst;
+      list<DAE.Var> varLst;
       DAE.Ident ident;
       list<BackendDAE.Var> backendVars;
       DAE.ReductionIterators riters;
@@ -289,7 +289,7 @@ algorithm
       then ((e, (vars,crefs)));
     
     // Special Case for Records
-    case ((e as DAE.CREF(componentRef = cr,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,crefs)))
+    case ((e as DAE.CREF(componentRef = cr,ty= DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,crefs)))
       equation
         expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         ((_,(vars1,crefs1))) = Expression.traverseExpList(expl,traversecheckBackendDAEExp,(vars,crefs));
@@ -297,7 +297,7 @@ algorithm
         ((e, (vars1,crefs1)));
 
     // Special Case for Arrays
-    case ((e as DAE.CREF(ty = DAE.ET_ARRAY(ty=_)),(vars,crefs)))
+    case ((e as DAE.CREF(ty = DAE.T_ARRAY(ty=_)),(vars,crefs)))
       equation
         ((e1,(_,true))) = extendArrExp((e,(NONE(),false)));
         ((_,(vars1,crefs1))) = Expression.traverseExp(e1,traversecheckBackendDAEExp,(vars,crefs));
@@ -314,7 +314,7 @@ algorithm
         ((e, (vars,crefs)));
     
     // case for functionpointers    
-    case ((e as DAE.CREF(ty=DAE.ET_FUNCTION_REFERENCE_FUNC(builtin=_)),(vars,crefs)))
+    case ((e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)),(vars,crefs)))
       then
         ((e, (vars,crefs)));
     
@@ -342,18 +342,16 @@ protected
   DAE.ComponentRef cr;
 algorithm
   name := Expression.reductionIterName(iter);
-  cr := ComponentReference.makeCrefIdent(name,DAE.ET_INT(),{});
-  backendVar := BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),BackendDAE.INT(),NONE(),NONE(),{},0,
+  cr := ComponentReference.makeCrefIdent(name,DAE.T_INTEGER_DEFAULT,{});
+  backendVar := BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.T_INTEGER_DEFAULT,NONE(),NONE(),{},0,
                      DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM_CONNECTOR());
 end makeIterVariable;
 
 protected function checkEquationSize"function: checkEquationSize
   author: Frenkel TUD 2010-12
-
-  - check if the left hand site and thr rigth hand site have equal types.
-"
-    input tuple<BackendDAE.Equation, list<BackendDAE.Equation>> inTpl;
-    output tuple<BackendDAE.Equation, list<BackendDAE.Equation>> outTpl;
+  - check if the left hand side and the rigth hand side have equal types."
+  input tuple<BackendDAE.Equation, list<BackendDAE.Equation>> inTpl;
+  output tuple<BackendDAE.Equation, list<BackendDAE.Equation>> outTpl;
 algorithm
   outTpl := matchcontinue(inTpl)
   local 
@@ -361,7 +359,7 @@ algorithm
     list<BackendDAE.Equation> wrongEqns,wrongEqns1;
     DAE.Exp e1, e2;
     DAE.ComponentRef cr;
-    DAE.ExpType t1,t2;
+    DAE.Type t1,t2;
     Boolean b;
     case ((e as BackendDAE.EQUATION(exp=e1,scalar=e2),wrongEqns))
       equation
@@ -436,11 +434,7 @@ end checkInitialSystem;
 
 protected function checkInitialSystemWork "function: checkInitialSystem
   author: Frenkel TUD 2010-12
-
-  - check if the inital conditions full specified and fix it 
-  if not.
-"
-
+  - check if the inital conditions are fully specified and fix them if not."
   input BackendDAE.EqSystem syst;
   input DAE.FunctionTree funcs;
   input BackendDAE.Shared shared;
@@ -1093,15 +1087,15 @@ algorithm
       DAE.Flow flowPrefix;
       BackendDAE.Var var;
 
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varType=BackendDAE.STRING(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varType=DAE.T_STRING(source = _),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx,ny,ny_string+1, ny_int,ny_bool)));
 
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varType=BackendDAE.INT(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varType=DAE.T_INTEGER(source = _),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx,ny,ny_string, ny_int+1,ny_bool)));
 
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varType=BackendDAE.BOOL(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varType=DAE.T_BOOL(source = _),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx,ny,ny_string, ny_int,ny_bool+1)));
 
@@ -1109,15 +1103,15 @@ algorithm
       then
         ((var,(nx,ny+1,ny_string, ny_int,ny_bool)));
     
-     case ((var as BackendDAE.VAR(varKind = BackendDAE.DISCRETE(),varType=BackendDAE.STRING(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+     case ((var as BackendDAE.VAR(varKind = BackendDAE.DISCRETE(),varType=DAE.T_STRING(source = _),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx,ny,ny_string+1, ny_int,ny_bool)));
         
-     case ((var as BackendDAE.VAR(varKind = BackendDAE.DISCRETE(),varType=BackendDAE.INT(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+     case ((var as BackendDAE.VAR(varKind = BackendDAE.DISCRETE(),varType=DAE.T_INTEGER(source = _),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx,ny,ny_string, ny_int+1,ny_bool)));
      
-     case ((var as BackendDAE.VAR(varKind = BackendDAE.DISCRETE(),varType=BackendDAE.BOOL(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+     case ((var as BackendDAE.VAR(varKind = BackendDAE.DISCRETE(),varType=DAE.T_BOOL(source = _),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx,ny,ny_string, ny_int,ny_bool+1)));
                  
@@ -1129,15 +1123,15 @@ algorithm
       then
         ((var,(nx+1,ny,ny_string, ny_int,ny_bool)));
 
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=BackendDAE.STRING(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool))) /* A dummy state is an algebraic variable */
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=DAE.T_STRING(source = _),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool))) /* A dummy state is an algebraic variable */
       then
         ((var,(nx,ny,ny_string+1, ny_int,ny_bool)));
         
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=BackendDAE.INT(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool))) /* A dummy state is an algebraic variable */
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=DAE.T_INTEGER(source = _),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool))) /* A dummy state is an algebraic variable */
       then
         ((var,(nx,ny,ny_string, ny_int+1,ny_bool)));
     
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=BackendDAE.BOOL(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=DAE.T_BOOL(source = _),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx,ny,ny_string, ny_int,ny_bool+1)));
         
@@ -1145,15 +1139,15 @@ algorithm
       then
         ((var,(nx,ny+1,ny_string, ny_int,ny_bool)));
 
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varType=BackendDAE.STRING(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varType=DAE.T_STRING(source = _),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx,ny,ny_string+1, ny_int,ny_bool)));
         
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varType=BackendDAE.INT(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varType=DAE.T_INTEGER(source = _),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx,ny,ny_string, ny_int+1,ny_bool)));
     
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varType=BackendDAE.BOOL(),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varType=DAE.T_BOOL(source = _),flowPrefix = flowPrefix),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx,ny,ny_string, ny_int,ny_bool+1)));
         
@@ -1255,21 +1249,11 @@ algorithm
 end replaceCrefsWithValues;
   
 public function makeExpType
-"Transforms a BackendDAE.Type to DAE.ExpType
-"
+"Transforms a BackendDAE.Type to DAE.Type"
   input BackendDAE.Type inType;
-  output DAE.ExpType outType;
+  output DAE.Type outType;
 algorithm
-  outType := match(inType)
-    local
-      list<String> strLst;
-    case BackendDAE.REAL() then DAE.ET_REAL();
-    case BackendDAE.INT() then DAE.ET_INT();
-    case BackendDAE.BOOL() then DAE.ET_BOOL();
-    case BackendDAE.STRING() then DAE.ET_STRING();
-    case BackendDAE.ENUMERATION(strLst) then DAE.ET_ENUMERATION(Absyn.IDENT(""),strLst,{});
-    case BackendDAE.EXT_OBJECT(_) then DAE.ET_OTHER();
-  end match;
+  outType := inType;
 end makeExpType;
 
 public function statesDaelow
@@ -1516,7 +1500,7 @@ algorithm
       BackendDAE.Var v;
       BackendDAE.Variables aliasvars;
       BackendDAE.AliasVariables aliasVariables;
-      DAE.ExpType ty;
+      DAE.Type ty;
       Boolean b;
       
       case (inAliases as BackendDAE.ALIASVARS(aliasVars=aliasvars),(exp,cref),inExp1,inExp2)
@@ -1554,7 +1538,7 @@ protected function  compareExpAlias
 algorithm
   (outB, outB2, outExp) := matchcontinue(inExp1,inExp2)
     local
-      DAE.ExpType ty;
+      DAE.Type ty;
       DAE.ComponentRef cref;
       Boolean b;
     // case a=a
@@ -2118,10 +2102,10 @@ algorithm
     list<DAE.Exp> expl,res;
     DAE.Exp e,e1;
     list<list<DAE.Exp>> lst;
-    list<DAE.ExpVar> varLst;
+    list<DAE.Var> varLst;
     BackendDAE.Variables vars;
     // Special Case for Records 
-    case (((e as DAE.CREF(componentRef = cr,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)))),(vars,expl)))
+    case (((e as DAE.CREF(componentRef = cr,ty= DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)))),(vars,expl)))
       equation
         expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         lst = List.map1(expl, statesAndVarsExp, vars);
@@ -2129,7 +2113,7 @@ algorithm
       then
         ((e,true,(vars,res)));
     // Special Case for unextended arrays
-    case (((e as DAE.CREF(componentRef = cr,ty = DAE.ET_ARRAY(arrayDimensions=_))),(vars,expl)))
+    case (((e as DAE.CREF(componentRef = cr,ty = DAE.T_ARRAY(dims=_))),(vars,expl)))
       equation
         ((e1,(_,true))) = extendArrExp((e,(NONE(),false)));
         res = statesAndVarsExp(e1, vars);
@@ -2216,7 +2200,7 @@ algorithm
   newArrayVar := matchcontinue(arrayVar)
     local 
       DAE.ComponentRef cr;
-      DAE.ExpType ty;
+      DAE.Type ty;
       list<DAE.Exp> subs;
       DAE.Exp e;
       
@@ -2437,7 +2421,7 @@ algorithm
   maybeCref := matchcontinue(asub)
     local
       DAE.Ident varIdent;
-      DAE.ExpType arrayType, varType;
+      DAE.Type arrayType, varType;
       list<DAE.Exp> subExprs, subExprsSimplified;
       list<DAE.Subscript> subscripts;
       DAE.Exp newCrefExp;
@@ -3417,21 +3401,21 @@ algorithm outExp := matchcontinue(inExp)
     Option<DAE.FunctionTree> funcs;
     DAE.ComponentRef cr;
     list<DAE.ComponentRef> crlst;
-    DAE.ExpType t,ty;
+    DAE.Type t,ty;
     DAE.Dimension id, jd;
     list<DAE.Dimension> ad;
     Integer i,j;
     list<list<DAE.Subscript>> subslst,subslst1;
     list<DAE.Exp> expl;
     DAE.Exp e_new;
-    list<DAE.ExpVar> varLst;
+    list<DAE.Var> varLst;
     Absyn.Path name;
     tuple<DAE.Exp, tuple<Option<DAE.FunctionTree>,Boolean> > restpl;
     list<list<DAE.Exp>> mat;
     Boolean b,sc;
     
   // CASE for Matrix    
-  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad as {id, jd})), (funcs,_)) )
+  case( (DAE.CREF(componentRef=cr,ty= t as DAE.T_ARRAY(ty=ty,dims=ad as {id, jd})), (funcs,_)) )
     equation
         i = Expression.dimensionSize(id);
         j = Expression.dimensionSize(jd);
@@ -3446,7 +3430,7 @@ algorithm outExp := matchcontinue(inExp)
       (restpl);
   
   // CASE for Matrix and checkModel is on    
-  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad as {id, jd})), (funcs,_)) )
+  case( (DAE.CREF(componentRef=cr,ty= t as DAE.T_ARRAY(ty=ty,dims=ad as {id, jd})), (funcs,_)) )
     equation
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
         // consider size 1
@@ -3463,7 +3447,7 @@ algorithm outExp := matchcontinue(inExp)
       (restpl);
   
   // CASE for Array
-  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad)), (funcs,_)) )
+  case( (DAE.CREF(componentRef=cr,ty= t as DAE.T_ARRAY(ty=ty,dims=ad)), (funcs,_)) )
     equation
         subslst = dimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
@@ -3475,7 +3459,7 @@ algorithm outExp := matchcontinue(inExp)
       (restpl);
 
   // CASE for Array and checkModel is on
-  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad)), (funcs,b)) )
+  case( (DAE.CREF(componentRef=cr,ty= t as DAE.T_ARRAY(ty=ty,dims=ad)), (funcs,b)) )
     equation
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
         // consider size 1      
@@ -3488,7 +3472,7 @@ algorithm outExp := matchcontinue(inExp)
     then
       (restpl);
   // CASE for Records
-  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_))), (funcs,_)) )
+  case( (DAE.CREF(componentRef=cr,ty= t as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(name))), (funcs,_)) )
     equation
         expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         i = listLength(expl);
@@ -3553,7 +3537,7 @@ algorithm
       DAE.Exp e;
       DAE.ElementSource source;
       
-      DAE.ExpType tp;
+      DAE.Type tp;
       Boolean b1;
       String id1;
       list<Integer> li;
@@ -3711,7 +3695,7 @@ algorithm outExp := matchcontinue(inExp)
   local
     Option<DAE.FunctionTree> funcs;
     DAE.ComponentRef cr;
-    DAE.ExpType ty;
+    DAE.Type ty;
     Integer i;
     DAE.Exp e,e1,e1_1,e1_2;
     Boolean b;
@@ -5038,7 +5022,7 @@ protected function rhsConstant2 "function: rhsConstant2
 algorithm
   outTpl := matchcontinue (inTpl)
     local
-      DAE.ExpType tp;
+      DAE.Type tp;
       DAE.Exp new_exp,rhs_exp,e1,e2,e;
       Boolean b,res;
       BackendDAE.Equation eqn;
@@ -5298,7 +5282,7 @@ algorithm
       Boolean tpl ;
       Boolean b;
       DAE.InlineType i;
-      DAE.ExpType ty;
+      DAE.Type ty;
       DAE.CallAttributes attr;
     
     case({},vars) then {};
@@ -5762,7 +5746,7 @@ end arrayUpdateCond;
 protected function traverseBackendDAEExpsVar "function: traverseBackendDAEExpsVar
   author: Frenkel TUD
   Helper traverseBackendDAEExpsVar. Get all exps from a  Var.
-  DAE.ET_OTHER is used as type for componentref. Not important here.
+  DAE.T_UNKNOWN_DEFAULT is used as type for componentref. Not important here.
   We only use the exp list for finding function calls"
   replaceable type Type_a subtypeof Any;
   input Option<BackendDAE.Var> inVar;
@@ -5780,7 +5764,7 @@ end traverseBackendDAEExpsVar;
 protected function traverseBackendDAEExpsVarWithUpdate "function: traverseBackendDAEExpsVar
   author: Frenkel TUD
   Helper traverseBackendDAEExpsVar. Get all exps from a  Var.
-  DAE.ET_OTHER is used as type for componentref. Not important here.
+  DAE.T_UNKNOWN_DEFAULT is used as type for componentref. Not important here.
   We only use the exp list for finding function calls"
   replaceable type Type_a subtypeof Any;
   input Option<BackendDAE.Var> inVar;

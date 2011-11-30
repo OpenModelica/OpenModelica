@@ -30,7 +30,7 @@
  */
 
 encapsulated package BackendDAEOptimize
-" file:         BackendDAEOptimize.mo
+" file:        BackendDAEOptimize.mo
   package:     BackendDAEOptimize
   description: BackendDAEOPtimize contains functions that do some kind of
                optimazation on the BackendDAE datatype:
@@ -40,9 +40,7 @@ encapsulated package BackendDAEOptimize
                - Inline Integration
                - and so on ... 
                
-  RCS: $Id$
-
-"
+  RCS: $Id$"
 
 public import Absyn;
 public import BackendDAE;
@@ -2684,7 +2682,7 @@ algorithm
       BackendDAE.Variables vars,vars1;
       DAE.ComponentRef cr;
       list<DAE.Exp> expl;
-      list<DAE.ExpVar> varLst;
+      list<DAE.Var> varLst;
       DAE.Ident ident;
       list<BackendDAE.Var> backendVars;
       BackendDAE.Var var;
@@ -2695,7 +2693,7 @@ algorithm
       then ((e, (vars,vars1)));
     
     // Special Case for Records
-    case ((e as DAE.CREF(componentRef = cr,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,vars1)))
+    case ((e as DAE.CREF(componentRef = cr,ty= DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,vars1)))
       equation
         expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         ((_,(vars,vars1))) = Expression.traverseExpList(expl,checkUnusedParameterExp,(vars,vars1));
@@ -2703,7 +2701,7 @@ algorithm
         ((e, (vars,vars1)));
 
     // Special Case for Arrays
-    case ((e as DAE.CREF(ty = DAE.ET_ARRAY(ty=_)),(vars,vars1)))
+    case ((e as DAE.CREF(ty = DAE.T_ARRAY(ty=_)),(vars,vars1)))
       equation
         ((e1,(_,true))) = BackendDAEUtil.extendArrExp((e,(NONE(),false)));
         ((_,(vars,vars1))) = Expression.traverseExp(e1,checkUnusedParameterExp,(vars,vars1));
@@ -2711,7 +2709,7 @@ algorithm
         ((e, (vars,vars1)));
     
     // case for functionpointers    
-    case ((e as DAE.CREF(ty=DAE.ET_FUNCTION_REFERENCE_FUNC(builtin=_)),(vars,vars1)))
+    case ((e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)),(vars,vars1)))
       then
         ((e, (vars,vars1)));
 
@@ -2822,7 +2820,7 @@ algorithm
       BackendDAE.Variables vars,vars1;
       DAE.ComponentRef cr;
       list<DAE.Exp> expl;
-      list<DAE.ExpVar> varLst;
+      list<DAE.Var> varLst;
       DAE.Ident ident;
       list<BackendDAE.Var> backendVars;
       BackendDAE.Var var;
@@ -2833,7 +2831,7 @@ algorithm
       then ((e, (vars,vars1)));
     
     // Special Case for Records
-    case ((e as DAE.CREF(componentRef = cr,ty= DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,vars1)))
+    case ((e as DAE.CREF(componentRef = cr,ty= DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),(vars,vars1)))
       equation
         expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         ((_,(vars,vars1))) = Expression.traverseExpList(expl,checkUnusedVariablesExp,(vars,vars1));
@@ -2841,7 +2839,7 @@ algorithm
         ((e, (vars,vars1)));
 
     // Special Case for Arrays
-    case ((e as DAE.CREF(ty = DAE.ET_ARRAY(ty=_)),(vars,vars1)))
+    case ((e as DAE.CREF(ty = DAE.T_ARRAY(ty=_)),(vars,vars1)))
       equation
         ((e1,(_,true))) = BackendDAEUtil.extendArrExp((e,(NONE(),false)));
         ((_,(vars,vars1))) = Expression.traverseExp(e1,checkUnusedVariablesExp,(vars,vars1));
@@ -2849,7 +2847,7 @@ algorithm
         ((e, (vars,vars1)));
     
     // case for functionpointers    
-    case ((e as DAE.CREF(ty=DAE.ET_FUNCTION_REFERENCE_FUNC(builtin=_)),(vars,vars1)))
+    case ((e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)),(vars,vars1)))
       then
         ((e, (vars,vars1)));
 
@@ -3552,7 +3550,7 @@ algorithm
       DAE.Exp eqn,scalar,rhs,expCref;
 
       DAE.ElementSource source;
-      DAE.ExpType identType;
+      DAE.Type identType;
       list<DAE.Subscript> subscriptLst;
       BackendDAE.Var var;
       BackendDAE.Shared shared;
@@ -3577,7 +3575,7 @@ algorithm
         var = BackendVariable.vararrayNth(varr, tearingvar-1);
         cr = BackendVariable.varCref(var);
         crt = ComponentReference.prependStringCref("tearingresidual_",cr);
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(crt, BackendDAE.VARIABLE(),DAE.BIDIR(),BackendDAE.REAL(),NONE(),NONE(),{},-1,DAE.emptyElementSource,
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(crt, BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},-1,DAE.emptyElementSource,
                             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE())),
                             NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM()), ordvars);
         // replace in residual equation orgvar with Tearing Var
@@ -3588,9 +3586,9 @@ algorithm
 
         // Add Residual eqn
         rhs = Expression.crefExp(crt);
-        eqns_1 = BackendEquation.equationSetnth(eqns,residualeqn-1,BackendDAE.EQUATION(DAE.BINARY(eqn,DAE.SUB(DAE.ET_REAL()),scalar),rhs,source));
+        eqns_1 = BackendEquation.equationSetnth(eqns,residualeqn-1,BackendDAE.EQUATION(DAE.BINARY(eqn,DAE.SUB(DAE.T_REAL_DEFAULT),scalar),rhs,source));
 
-        eqns1_1 = BackendEquation.equationSetnth(eqns1,residualeqn-1,BackendDAE.EQUATION(DAE.BINARY(eqn,DAE.SUB(DAE.ET_REAL()),scalar),DAE.RCONST(0.0),source));
+        eqns1_1 = BackendEquation.equationSetnth(eqns1,residualeqn-1,BackendDAE.EQUATION(DAE.BINARY(eqn,DAE.SUB(DAE.T_REAL_DEFAULT),scalar),DAE.RCONST(0.0),source));
         // add equation to calc org var
         expCref = Expression.crefExp(cr);
         eqns_2 = BackendEquation.equationAdd(BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("tearing"),
@@ -4133,7 +4131,7 @@ algorithm
       
       // Generate tmp varibales
       diffvars = BackendDAEUtil.varList(orderedVars);
-      x = DAE.CREF_IDENT("dummyVar",DAE.ET_REAL(),{});
+      x = DAE.CREF_IDENT("dummyVar",DAE.T_REAL_DEFAULT,{});
       derivedVariables = creatallDiffedVars(diffvars,x,diffedVars,0);
 
       // differentiate the equation system
@@ -4147,7 +4145,7 @@ algorithm
       // d(ordered vars)/d(dummyVar) 
       diffvars = BackendDAEUtil.varList(orderedVars);
       diffvars = List.sort(diffvars, BackendVariable.varIndexComparer);
-      x = DAE.CREF_IDENT("dummyVar",DAE.ET_REAL(),{});
+      x = DAE.CREF_IDENT("dummyVar",DAE.T_REAL_DEFAULT,{});
       derivedVariables = creatallDiffedVars(diffvars,x,diffedVars,0);    
       jacOrderedVars = BackendDAEUtil.listVar(derivedVariables);
       
@@ -4210,7 +4208,7 @@ algorithm
     case (indiffVar)
       equation 
         derivedCref = differentiateVarWithRespectToX(indiffVar, indiffVar);
-        jacvar = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), BackendDAE.REAL(), NONE(), NONE(), {}, -1,  DAE.emptyElementSource, NONE(), NONE(), DAE.FLOW(), DAE.STREAM());
+        jacvar = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, -1,  DAE.emptyElementSource, NONE(), NONE(), DAE.FLOW(), DAE.STREAM());
       then jacvar;
   end match;          
 end createJacVars;
@@ -4272,7 +4270,7 @@ algorithm
     case(var as BackendDAE.VAR(varName=cref,varKind=BackendDAE.STATE()), currVar::restVar) equation
       cref = ComponentReference.crefPrefixDer(cref);
       derivedCref = differentiateVarWithRespectToX(cref, currVar);
-      r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), BackendDAE.REAL(), NONE(), NONE(), {}, -1,  DAE.emptyElementSource, NONE(), NONE(), DAE.FLOW(), DAE.STREAM());
+      r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, -1,  DAE.emptyElementSource, NONE(), NONE(), DAE.FLOW(), DAE.STREAM());
       (r2,res1) = generateJacobianVars2(var, restVar);
       res = listAppend({derivedCref}, res1);
       r = listAppend({r1}, r2);
@@ -4280,7 +4278,7 @@ algorithm
 
     case(var as BackendDAE.VAR(varName=cref), currVar::restVar) equation
       derivedCref = differentiateVarWithRespectToX(cref, currVar);
-      r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), BackendDAE.REAL(), NONE(), NONE(), {}, -1,  DAE.emptyElementSource, NONE(), NONE(), DAE.FLOW(), DAE.STREAM());
+      r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, -1,  DAE.emptyElementSource, NONE(), NONE(), DAE.FLOW(), DAE.STREAM());
       (r2,res1) = generateJacobianVars2(var, restVar);
       res = listAppend({derivedCref}, res1);
       r = listAppend({r1}, r2);
@@ -4320,7 +4318,7 @@ algorithm
       ({v1}, _) = BackendVariable.getVar(currVar, inAllVars);
       currVar = ComponentReference.crefPrefixDer(currVar);
       derivedCref = differentiateVarWithRespectToX(currVar, cref);
-      r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), BackendDAE.REAL(), NONE(), NONE(), {}, inIndex,  DAE.emptyElementSource, NONE(), NONE(), DAE.FLOW(), DAE.STREAM());
+      r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, inIndex,  DAE.emptyElementSource, NONE(), NONE(), DAE.FLOW(), DAE.STREAM());
       r2 = creatallDiffedVars(restVar,cref,inAllVars,inIndex+1);
       r = listAppend({r1}, r2);
     then r;
@@ -4328,7 +4326,7 @@ algorithm
     case(BackendDAE.VAR(varName=currVar)::restVar,cref,inAllVars,inIndex) equation
       ({v1}, _) = BackendVariable.getVar(currVar, inAllVars);
       derivedCref = differentiateVarWithRespectToX(currVar, cref);
-      r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), BackendDAE.REAL(), NONE(), NONE(), {}, inIndex,  DAE.emptyElementSource, NONE(), NONE(), DAE.FLOW(), DAE.STREAM());
+      r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, inIndex,  DAE.emptyElementSource, NONE(), NONE(), DAE.FLOW(), DAE.STREAM());
       r2 = creatallDiffedVars(restVar,cref,inAllVars,inIndex+1);
       r = listAppend({r1}, r2);
     then r;  
@@ -4336,14 +4334,14 @@ algorithm
      case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE())::restVar,cref,inAllVars,inIndex) equation
       currVar = ComponentReference.crefPrefixDer(currVar);
       derivedCref = differentiateVarWithRespectToX(currVar, cref);
-      r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), BackendDAE.REAL(), NONE(), NONE(), {}, -1,  DAE.emptyElementSource, NONE(), NONE(), DAE.FLOW(), DAE.STREAM());
+      r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, -1,  DAE.emptyElementSource, NONE(), NONE(), DAE.FLOW(), DAE.STREAM());
       r2 = creatallDiffedVars(restVar,cref,inAllVars,inIndex);
       r = listAppend({r1}, r2);
     then r;
       
     case(BackendDAE.VAR(varName=currVar)::restVar,cref,inAllVars,inIndex) equation
       derivedCref = differentiateVarWithRespectToX(currVar, cref);
-      r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), BackendDAE.REAL(), NONE(), NONE(), {}, -1,  DAE.emptyElementSource, NONE(), NONE(), DAE.FLOW(), DAE.STREAM());
+      r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, -1,  DAE.emptyElementSource, NONE(), NONE(), DAE.FLOW(), DAE.STREAM());
       r2 = creatallDiffedVars(restVar,cref,inAllVars,inIndex);
       r = listAppend({r1}, r2);
     then r;  
@@ -4532,7 +4530,7 @@ algorithm
     case(currEquation::restEquations, vars, functions, inputVars, paramVars, stateVars, knownVars, algorithmsLookUp, inorderedVars, inDiffVars) equation
       Debug.fcall(Flags.JAC_DUMP_EQN, BackendDump.dumpEqns, {currEquation});
       Debug.fcall(Flags.JAC_DUMP_EQN, print, "\n");
-      //dummycref = ComponentReference.makeCrefIdent("$pDERdummy", DAE.ET_REAL(), {});
+      //dummycref = ComponentReference.makeCrefIdent("$pDERdummy", DAE.T_REAL_DEFAULT, {});
       Debug.fcall(Flags.EXEC_STAT,print, "*** analytical Jacobians -> derive one equation: " +& realString(clock()) +& "\n" );
       currDerivedEquations = derive(currEquation, vars, functions, inputVars, paramVars, stateVars, knownVars, algorithmsLookUp, inorderedVars, inDiffVars);
       Debug.fcall(Flags.JAC_DUMP_EQN, BackendDump.dumpEqns, currDerivedEquations);
@@ -4782,7 +4780,7 @@ algorithm
       id = Util.stringReplaceChar(id, ".", "$P");
       id = Util.stringReplaceChar(id, "[", "$lB");
       id = Util.stringReplaceChar(id, "]", "$rB");
-    then ComponentReference.makeCrefIdent(id, DAE.ET_REAL(), {});
+    then ComponentReference.makeCrefIdent(id, DAE.T_REAL_DEFAULT, {});
       
     case(cref, _)
       equation
@@ -4914,7 +4912,7 @@ algorithm
     local
       DAE.Exp e, currVar, currDerVar, derFun;
       list<DAE.Exp> restVar, restDerVar, varExpList1Added, varExpListTotal;
-      DAE.ExpType et;
+      DAE.Type et;
       Boolean tuple_, builtin;
       DAE.InlineType inlineType;
       Integer nArgs1, nArgs2;
@@ -4928,7 +4926,7 @@ algorithm
         varExpList1Added = List.replaceAtWithFill(DAE.RCONST(0.0),nArgs1 + nDerArgs - 1, varExpListTotal ,DAE.RCONST(0.0));
         varExpList1Added = List.replaceAtWithFill(DAE.RCONST(1.0),nArgs1 + nDerArgs - (nArgs2 + 1), varExpList1Added,DAE.RCONST(0.0));
         derFun = DAE.CALL(derFname, varExpList1Added, attr);
-      then DAE.BINARY(e, DAE.ADD(DAE.ET_REAL()), DAE.BINARY(derFun, DAE.MUL(DAE.ET_REAL()), currDerVar));
+      then DAE.BINARY(e, DAE.ADD(DAE.T_REAL_DEFAULT), DAE.BINARY(derFun, DAE.MUL(DAE.T_REAL_DEFAULT), currDerVar));
   end match;
 end partialAnalyticalDifferentiation;
 
@@ -4943,7 +4941,7 @@ algorithm
     local
       DAE.Exp e, currVar, currDerVar, derFun, delta, absCurr;
       list<DAE.Exp> restVar, restDerVar, varExpListHAdded, varExpListTotal;
-      DAE.ExpType et;
+      DAE.Type et;
       Absyn.Path fname;
       Boolean tuple_, builtin;
       DAE.InlineType inlineType;
@@ -4953,13 +4951,13 @@ algorithm
     case (currVar::restVar, currDerVar::restDerVar, inState, functionCall as DAE.CALL(path=fname, expLst=varExpListTotal, attr=attr))
       equation
         e = partialNumericalDifferentiation(restVar, restDerVar, inState, functionCall);
-        absCurr = DAE.LBINARY(DAE.RELATION(currVar,DAE.GREATER(DAE.ET_REAL()),DAE.RCONST(1e-8),-1,NONE()),DAE.OR(DAE.ET_BOOL()),DAE.RELATION(currVar,DAE.LESS(DAE.ET_REAL()),DAE.RCONST(-1e-8),-1,NONE()));
-        delta = DAE.IFEXP( absCurr, DAE.BINARY(currVar,DAE.MUL(DAE.ET_REAL()),DAE.RCONST(1e-8)), DAE.RCONST(1e-8));
+        absCurr = DAE.LBINARY(DAE.RELATION(currVar,DAE.GREATER(DAE.T_REAL_DEFAULT),DAE.RCONST(1e-8),-1,NONE()),DAE.OR(DAE.T_BOOL_DEFAULT),DAE.RELATION(currVar,DAE.LESS(DAE.T_REAL_DEFAULT),DAE.RCONST(-1e-8),-1,NONE()));
+        delta = DAE.IFEXP( absCurr, DAE.BINARY(currVar,DAE.MUL(DAE.T_REAL_DEFAULT),DAE.RCONST(1e-8)), DAE.RCONST(1e-8));
         nArgs1 = listLength(varExpListTotal);
         nArgs2 = listLength(restVar);
-        varExpListHAdded = List.replaceAtWithFill(DAE.BINARY(currVar, DAE.ADD(DAE.ET_REAL()),delta),nArgs1-(nArgs2+1), varExpListTotal,DAE.RCONST(0.0));
-        derFun = DAE.BINARY(DAE.BINARY(DAE.CALL(fname, varExpListHAdded, attr), DAE.SUB(DAE.ET_REAL()), DAE.CALL(fname, varExpListTotal, attr)), DAE.DIV(DAE.ET_REAL()), delta);
-      then DAE.BINARY(e, DAE.ADD(DAE.ET_REAL()), DAE.BINARY(derFun, DAE.MUL(DAE.ET_REAL()), currDerVar));
+        varExpListHAdded = List.replaceAtWithFill(DAE.BINARY(currVar, DAE.ADD(DAE.T_REAL_DEFAULT),delta),nArgs1-(nArgs2+1), varExpListTotal,DAE.RCONST(0.0));
+        derFun = DAE.BINARY(DAE.BINARY(DAE.CALL(fname, varExpListHAdded, attr), DAE.SUB(DAE.T_REAL_DEFAULT), DAE.CALL(fname, varExpListTotal, attr)), DAE.DIV(DAE.T_REAL_DEFAULT), delta);
+      then DAE.BINARY(e, DAE.ADD(DAE.T_REAL_DEFAULT), DAE.BINARY(derFun, DAE.MUL(DAE.T_REAL_DEFAULT), currDerVar));
   end match;
 end partialNumericalDifferentiation;
 
@@ -5084,7 +5082,7 @@ algorithm
       list<DAE.Statement> derivedStatements1;
       list<DAE.Statement> derivedStatements2;
       DAE.Exp exp;
-      DAE.ExpType type_;
+      DAE.Type type_;
       DAE.Exp lhs, rhs;
       DAE.Exp derivedLHS, derivedRHS;
       //list<DAE.Exp> derivedLHS, derivedRHS;
@@ -5146,8 +5144,8 @@ algorithm
       
     case(DAE.STMT_FOR(type_=type_, iterIsArray=iterIsArray, iter=ident, range=exp, statementLst=statementLst, source=source)::restStatements, var, functions, inputVars, paramVars, stateVars, controlVars, knownVars, allVars, diffVars)
     equation
-      cref = ComponentReference.makeCrefIdent(ident, DAE.ET_INT(), {});
-      controlVar = BackendDAE.VAR(cref, BackendDAE.VARIABLE(), DAE.BIDIR(), BackendDAE.REAL(), NONE(), NONE(), {}, -1,  DAE.emptyElementSource, NONE(), NONE(), DAE.FLOW(), DAE.STREAM());
+      cref = ComponentReference.makeCrefIdent(ident, DAE.T_INTEGER_DEFAULT, {});
+      controlVar = BackendDAE.VAR(cref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, -1,  DAE.emptyElementSource, NONE(), NONE(), DAE.FLOW(), DAE.STREAM());
       controlVars = listAppend(controlVars, {controlVar});
       derivedStatements1 = differentiateAlgorithmStatements(statementLst, var, functions, inputVars, paramVars, stateVars, controlVars, knownVars, allVars, diffVars);
 
@@ -5214,7 +5212,7 @@ end differentiateAlgorithmStatements;
 protected function createDiffStatements
   input DAE.Exp inLHS;
   input DAE.Exp inRHS;
-  input DAE.ExpType inType;
+  input DAE.Type inType;
   input DAE.Statement inStmt;
   input DAE.ElementSource Source;
   output list<DAE.Statement> outEqn;
@@ -5246,7 +5244,7 @@ algorithm
       DAE.ComponentRef x, cref, cref_;
       DAE.FunctionTree functions;
       DAE.Exp e1, e1_, e2, e2_, e;
-      DAE.ExpType et;
+      DAE.Type et;
       DAE.Operator op;
       
       Absyn.Path fname,derFname;
@@ -5454,7 +5452,7 @@ algorithm
   outTplExpTypeA := matchcontinue(inTplExpTypeA)
   local
     DAE.ComponentRef cref,cref_,x;
-    DAE.ExpType et;
+    DAE.Type et;
     case((DAE.CREF(componentRef=cref, ty=et),x,_))
       equation
       cref_ = differentiateVarWithRespectToX(cref, x);
@@ -5470,7 +5468,7 @@ protected function diffCref
 algorithm
   outTplExpTypeA := matchcontinue(inTplExpTypeA)
   local
-    DAE.ExpType et;
+    DAE.Type et;
     DAE.FunctionTree functions;
     DAE.ComponentRef x, cref,cref_;
     list<DAE.ComponentRef> diffVars;
@@ -5529,9 +5527,9 @@ algorithm
       equation
       cref = Expression.expCref(e1);
       cref = ComponentReference.crefPrefixDer(cref);
-      //x = DAE.CREF_IDENT("pDERdummy",DAE.ET_REAL(),{});
+      //x = DAE.CREF_IDENT("pDERdummy",DAE.T_REAL_DEFAULT,{});
       cref = differentiateVarWithRespectToX(cref,x);
-    then DAE.CREF(cref, DAE.ET_REAL());
+    then DAE.CREF(cref, DAE.T_REAL_DEFAULT);
  end matchcontinue;
 end diffDerCref;
 
@@ -5547,7 +5545,7 @@ algorithm
     list<DAE.Exp> expList1,expList2;
     Boolean tuple_, builtin;
     DAE.InlineType inlineType;
-    DAE.ExpType et;
+    DAE.Type et;
     DAE.Type tp;
     Integer nArgs;
     BackendDAE.Variables inputVars, paramVars, stateVars, knownVars, allVars;
@@ -5590,51 +5588,51 @@ algorithm
   outExp := match(inExp1,inExp2,inOrgExp1)
   local
     DAE.Exp e,z1,z2;
-    DAE.ExpType et;
+    DAE.Type et;
     String str;
     //sin(x)
     case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("sin")))
       equation
-        e = DAE.BINARY(inExp1, DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("cos"),{inExp2},DAE.callAttrBuiltinReal));
+        e = DAE.BINARY(inExp1, DAE.MUL(DAE.T_REAL_DEFAULT), DAE.CALL(Absyn.IDENT("cos"),{inExp2},DAE.callAttrBuiltinReal));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
     // cos(x)
     case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("cos")))
       equation
-        e = DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()), DAE.BINARY(inExp1,DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("sin"),{inExp2},DAE.callAttrBuiltinReal)));
+        e = DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT), DAE.BINARY(inExp1,DAE.MUL(DAE.T_REAL_DEFAULT), DAE.CALL(Absyn.IDENT("sin"),{inExp2},DAE.callAttrBuiltinReal)));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
     // ln(x)
     case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("log")))
       equation
-        e = DAE.BINARY(inExp1, DAE.DIV(DAE.ET_REAL()), inExp2);
+        e = DAE.BINARY(inExp1, DAE.DIV(DAE.T_REAL_DEFAULT), inExp2);
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
     // log10(x)
     case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("log10")))          
       equation
-        e = DAE.BINARY(inExp1, DAE.DIV(DAE.ET_REAL()), DAE.BINARY(inExp2, DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("log"),{DAE.RCONST(10.0)},DAE.callAttrBuiltinReal)));
+        e = DAE.BINARY(inExp1, DAE.DIV(DAE.T_REAL_DEFAULT), DAE.BINARY(inExp2, DAE.MUL(DAE.T_REAL_DEFAULT), DAE.CALL(Absyn.IDENT("log"),{DAE.RCONST(10.0)},DAE.callAttrBuiltinReal)));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
     // exp(x)
     case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("exp")))    
       equation
-        e = DAE.BINARY(inExp1,DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("exp"),{inExp2},DAE.callAttrBuiltinReal));
+        e = DAE.BINARY(inExp1,DAE.MUL(DAE.T_REAL_DEFAULT), DAE.CALL(Absyn.IDENT("exp"),{inExp2},DAE.callAttrBuiltinReal));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
     // sqrt(x)
     case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("sqrt")))    
       equation
         e = DAE.BINARY(
-          DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.ET_REAL()),
-          DAE.BINARY(DAE.RCONST(2.0),DAE.MUL(DAE.ET_REAL()),
-          DAE.CALL(Absyn.IDENT("sqrt"),{inExp2},DAE.callAttrBuiltinReal))),DAE.MUL(DAE.ET_REAL()),inExp1);
+          DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.T_REAL_DEFAULT),
+          DAE.BINARY(DAE.RCONST(2.0),DAE.MUL(DAE.T_REAL_DEFAULT),
+          DAE.CALL(Absyn.IDENT("sqrt"),{inExp2},DAE.callAttrBuiltinReal))),DAE.MUL(DAE.T_REAL_DEFAULT),inExp1);
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
    // abs(x)
     case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("abs")))          
       equation
-        e = DAE.IFEXP(DAE.RELATION(inExp2,DAE.GREATEREQ(DAE.ET_REAL()),DAE.RCONST(0.0),-1,NONE()), inExp1, DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),inExp1));
+        e = DAE.IFEXP(DAE.RELATION(inExp2,DAE.GREATEREQ(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0),-1,NONE()), inExp1, DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),inExp1));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
     
@@ -5652,7 +5650,7 @@ algorithm
   outExp := matchcontinue(inExp1,inExp2,inOp,inOrgExp1,inOrgExp2)
   local
     DAE.Exp e,z1,z2;
-    DAE.ExpType et;
+    DAE.Type et;
     case (inExp1,inExp2,inOp as DAE.ADD(_), _, _)
       equation
         e = DAE.BINARY(inExp1,inOp,inExp2);
@@ -5722,7 +5720,7 @@ end mergeUn;
 
 protected function mergeCast
   input DAE.Exp inExp1;
-  input DAE.ExpType inType;
+  input DAE.Type inType;
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inExp1,inType)
@@ -6119,14 +6117,14 @@ algorithm
       Boolean keep;
       DAE.Exp e1,e2,e;
       DAE.ElementSource source;
-      DAE.ExpType et;
+      DAE.Type et;
       Integer i;
     case ((BackendDAE.EQUATION(e1,e2,source),i))
       equation
         // This is ok, because EQUATION is not an array equation :D
-        DAE.ET_REAL() = Expression.typeof(e1);
+        DAE.T_REAL(source = _) = Expression.typeof(e1);
         false = Expression.isZero(e1) or Expression.isZero(e2);
-        e = DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2);
+        e = DAE.BINARY(e1,DAE.SUB(DAE.T_REAL_DEFAULT),e2);
         (e,_) = ExpressionSimplify.simplify(e);
         source = DAEUtil.addSymbolicTransformation(source, DAE.OP_RESIDUAL(e1,e2,e));
         ntpl = (BackendDAE.EQUATION(DAE.RCONST(0.0),e,source),i);

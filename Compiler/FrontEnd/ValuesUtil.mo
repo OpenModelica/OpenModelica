@@ -40,6 +40,7 @@ encapsulated package ValuesUtil
   expression values."
 
 public import Absyn;
+public import SCode;
 public import DAE;
 public import Values;
 
@@ -62,8 +63,8 @@ protected import SimulationResults;
 
 public function typeConvert "function: typeConvert
   Apply type conversion on a list of Values"
-  input DAE.ExpType inType1;
-  input DAE.ExpType inType2;
+  input DAE.Type inType1;
+  input DAE.Type inType2;
   input list<Value> inValueLst3;
   output list<Value> outValueLst;
 algorithm
@@ -71,22 +72,26 @@ algorithm
     local
       list<Value> vallst,vrest,vallst2,vals;
       Real rval,r;
-      DAE.ExpType from,to;
+      DAE.Type from,to;
       Integer i,ival;
       list<Integer> dims;
+    
     case (_,_,{}) then {};
-    case ((from as DAE.ET_INT()),(to as DAE.ET_REAL()),(Values.INTEGER(integer = i) :: vrest))
+    
+    case (from as DAE.T_INTEGER(varLst = _),to as DAE.T_REAL(varLst = _),(Values.INTEGER(integer = i) :: vrest))
       equation
         vallst = typeConvert(from, to, vrest);
         rval = intReal(i);
       then
         (Values.REAL(rval) :: vallst);
-    case ((from as DAE.ET_REAL()),(to as DAE.ET_INT()),(Values.REAL(real = r) :: vrest))
+    
+    case (from as DAE.T_REAL(varLst = _),to as DAE.T_INTEGER(varLst = _),(Values.REAL(real = r) :: vrest))
       equation
         vallst = typeConvert(from, to, vrest);
         ival = realInt(r);
       then
         (Values.INTEGER(ival) :: vallst);
+    
     case (from,to,(Values.ARRAY(valueLst = vals, dimLst = dims) :: vrest))
       equation
         vallst = typeConvert(from, to, vals);
@@ -96,39 +101,39 @@ algorithm
   end match;
 end typeConvert;
 
-public function valueExpType "creates a DAE.ExpType from a Value"
+public function valueExpType "creates a DAE.Type from a Value"
   input Value inValue;
-  output DAE.ExpType tp;
+  output DAE.Type tp;
 algorithm
   tp := matchcontinue(inValue)
   local 
     Absyn.Path path;
     Integer indx;
     list<String> nameLst;
-    DAE.ExpType eltTp;
+    DAE.Type eltTp;
     list<Values.Value> valLst;
-    list<DAE.ExpType> eltTps;
-    list<DAE.ExpVar> varLst;
+    list<DAE.Type> eltTps;
+    list<DAE.Var> varLst;
     list<Integer> int_dims;
-    list<DAE.Dimension> dims;
+    DAE.Dimensions dims;
     
-    case(Values.INTEGER(_)) then DAE.ET_INT();
-    case(Values.REAL(_)) then DAE.ET_REAL();
-    case(Values.BOOL(_)) then DAE.ET_BOOL();
-    case(Values.STRING(_)) then DAE.ET_STRING();
+    case(Values.INTEGER(_)) then DAE.T_INTEGER_DEFAULT;
+    case(Values.REAL(_)) then DAE.T_REAL_DEFAULT;
+    case(Values.BOOL(_)) then DAE.T_BOOL_DEFAULT;
+    case(Values.STRING(_)) then DAE.T_STRING_DEFAULT;
     case(Values.ENUM_LITERAL(name = path, index = indx)) 
       equation
         path = Absyn.pathPrefix(path);
-      then DAE.ET_ENUMERATION(path,{},{});
+      then DAE.T_ENUMERATION(NONE(),path,{},{},{},DAE.emptyTypeSource);
     case(Values.ARRAY(valLst,int_dims)) equation
       eltTp=valueExpType(List.first(valLst));
       dims = List.map(int_dims, Expression.intDimension);
-    then DAE.ET_ARRAY(eltTp,dims);
+    then DAE.T_ARRAY(eltTp,dims,DAE.emptyTypeSource);
     
     case(Values.RECORD(path,valLst,nameLst,indx)) equation
       eltTps = List.map(valLst,valueExpType);
       varLst = List.threadMap(eltTps,nameLst,valueExpTypeExpVar);
-    then DAE.ET_COMPLEX(path,varLst,ClassInf.RECORD(path));
+    then DAE.T_COMPLEX(ClassInf.RECORD(path),varLst,NONE(),DAE.emptyTypeSource);
     
     case(inValue)
       equation
@@ -138,12 +143,12 @@ algorithm
 end valueExpType;
 
 protected function valueExpTypeExpVar "help function to valueExpType"
-  input DAE.ExpType etp;
+  input DAE.Type etp;
   input String name;
-  output DAE.ExpVar expVar;
+  output DAE.Var expVar;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  expVar := DAE.COMPLEX_VAR(name,etp);
+  expVar := DAE.TYPES_VAR(name, DAE.dummyAttrVar, SCode.PUBLIC(), etp, DAE.UNBOUND(), NONE());
 end valueExpTypeExpVar;
    
 public function isZero "Returns true if value is zero"
@@ -203,37 +208,33 @@ end isRecord;
 
 public function nthArrayelt "function: nthArrayelt
   author: PA
-
-  Return the nth value of an array, indexed from 1..n
-"
+  Return the nth value of an array, indexed from 1..n"
   input Value inValue;
   input Integer inInteger;
   output Value outValue;
 algorithm
-  outValue:=
-  match (inValue,inInteger)
+  outValue := match (inValue,inInteger)
     local
       Integer n_1,n;
       Value res;
       list<Value> vlst;
+    
     case (Values.ARRAY(valueLst = vlst),n)
       equation
         n_1 = n - 1;
         res = listNth(vlst, n_1);
       then
         res;
+    
   end match;
 end nthArrayelt;
 
 public function unparseValues "function: unparseValues
-
-  Prints a list of Value to a string.
-"
+  Prints a list of Value to a string."
   input list<Value> inValueLst;
   output String outString;
 algorithm
-  outString:=
-  match (inValueLst)
+  outString := match (inValueLst)
     local
       String s1,s2,s3,str;
       Value v;
@@ -251,15 +252,12 @@ algorithm
 end unparseValues;
 
 protected function unparseValueNumbers "function: unparseValueNumbers
-
   Helper function to unparse_values.
-  Prints all the numbers of the values.
-"
+  Prints all the numbers of the values."
   input list<Value> inValueLst;
   output String outString;
 algorithm
-  outString:=
-  match (inValueLst)
+  outString := match (inValueLst)
     local
       String s1,s2,res,istr,sval;
       list<Value> lst,xs;
@@ -887,7 +885,7 @@ algorithm
       Integer dim;
       list<DAE.Exp> explist;
       DAE.Type vt, ty;
-      DAE.ExpType t;
+      DAE.Type t;
       DAE.Exp e;
       Values.Value v;
       list<Values.Value> xs,xs2,vallist;
@@ -895,20 +893,20 @@ algorithm
       list<list<DAE.Exp>> mexpl;
       list<DAE.Exp> mexpl2;
       list<Integer> int_dims;
-      list<DAE.Dimension> dims;
+      DAE.Dimensions dims;
       Integer i;
       Real r;
       String s, scope, name, tyStr;
       Boolean b,sc;
       list<DAE.Exp> expl;
-      list<DAE.ExpType> tpl;
+      list<DAE.Type> tpl;
       list<String> namelst;
-      list<DAE.ExpVar> varlst;
+      list<DAE.Var> varlst;
       Integer ix;
       Absyn.Path path;
       Absyn.CodeNode code;
       Value valType;
-      DAE.ExpType ety; 
+      DAE.Type ety; 
 
     case (Values.INTEGER(integer = i)) then DAE.ICONST(i);
     case (Values.REAL(real = r))       then DAE.RCONST(r);
@@ -916,43 +914,45 @@ algorithm
     case (Values.BOOL(boolean = b))    then DAE.BCONST(b);
     case (Values.ENUM_LITERAL(name = path, index = i)) then DAE.ENUM_LITERAL(path, i);
 
-    case (Values.ARRAY(valueLst = {}, dimLst = {})) then DAE.ARRAY(DAE.ET_OTHER(),false,{});
+    case (Values.ARRAY(valueLst = {}, dimLst = {})) then DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT,false,{});
     case (Values.ARRAY(valueLst = {}, dimLst = int_dims))
       equation
         dims = List.map(int_dims, Expression.intDimension);
-      then DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER(), dims),false,{});
+      then DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, dims, DAE.emptyTypeSource),false,{});
 
-    /* Matrix */
+    // Matrix
     case(Values.ARRAY(valueLst = Values.ARRAY(valueLst=v::xs)::xs2, dimLst = dim::int_dims))
       equation
         failure(Values.ARRAY(valueLst = _) = v);
         explist = List.map((v :: xs), valueExp);
         DAE.MATRIX(t,i,mexpl) = valueExp(Values.ARRAY(xs2,int_dims));
         t = Expression.arrayDimensionSetFirst(t, DAE.DIM_INTEGER(dim));
-      then DAE.MATRIX(t,dim,explist::mexpl);
+      then 
+        DAE.MATRIX(t,dim,explist::mexpl);
 
-    /* Matrix last row*/
+    // Matrix last row
     case(Values.ARRAY(valueLst = {Values.ARRAY(valueLst=v::xs)}))
       equation
         failure(Values.ARRAY(valueLst = _) = v);
         dim = listLength(v::xs);
         explist = List.map((v :: xs), valueExp);
         vt = Types.typeOfValue(v);
-        t = Types.elabType(vt);
+        t = Types.simplifyType(vt);
         dim = listLength(v::xs);
         t = Expression.liftArrayR(t,DAE.DIM_INTEGER(dim));
         t = Expression.liftArrayR(t,DAE.DIM_INTEGER(1));
-      then DAE.MATRIX(t,dim,{explist});
+      then 
+        DAE.MATRIX(t,dim,{explist});
 
-    /* Generic array */
+    // Generic array
     case (Values.ARRAY(valueLst = (v :: xs)))
       equation
         explist = List.map((v :: xs), valueExp);
         vt = Types.typeOfValue(v);
-        t = Types.elabType(vt);
+        t = Types.simplifyType(vt);
         dim = listLength(v::xs);
         t = Expression.liftArrayR(t,DAE.DIM_INTEGER(dim));
-        b = Types.isArray(vt);
+        b = Types.isArray(vt,{});
         b = boolNot(b);
       then
         DAE.ARRAY(t,b,explist);
@@ -968,7 +968,7 @@ algorithm
         expl = List.map(vallist,valueExp);
         tpl = List.map(expl,Expression.typeof);
         varlst = List.threadMap(namelst,tpl,Expression.makeVar);
-      then DAE.CALL(path,expl,DAE.CALL_ATTR(DAE.ET_COMPLEX(path,varlst,ClassInf.RECORD(path)),false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+      then DAE.CALL(path,expl,DAE.CALL_ATTR(DAE.T_COMPLEX(ClassInf.RECORD(path),varlst,NONE(),DAE.emptyTypeSource),false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 
     case(Values.ENUM_LITERAL(name = path, index = ix))
       then DAE.ENUM_LITERAL(path, ix);
@@ -982,7 +982,7 @@ algorithm
     case (Values.OPTION(SOME(v)))
       equation
         e = valueExp(v);
-        (e,_) = Types.matchType(e, Types.typeOfValue(v), DAE.T_BOXED_DEFAULT, true);
+        (e,_) = Types.matchType(e, Types.typeOfValue(v), DAE.T_METABOXED_DEFAULT, true);
       then DAE.META_OPTION(SOME(e));
 
     case (Values.OPTION(NONE())) then DAE.META_OPTION(NONE());
@@ -1022,11 +1022,11 @@ algorithm
       then DAE.BOX(e);
 
     case (Values.CODE(A=code))
-      then DAE.CODE(code,DAE.ET_OTHER());
+      then DAE.CODE(code,DAE.T_UNKNOWN_DEFAULT);
 
     case (Values.EMPTY(scope = scope, name = name, tyStr = tyStr, ty = valType))
       equation
-        ety = Types.elabType(Types.typeOfValue(valType));
+        ety = Types.simplifyType(Types.typeOfValue(valType));
       then 
         DAE.EMPTY(scope, DAE.CREF_IDENT(name, ety, {}), ety, tyStr);
     

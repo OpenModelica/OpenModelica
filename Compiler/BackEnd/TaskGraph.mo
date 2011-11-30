@@ -30,7 +30,7 @@
  */
 
 encapsulated package TaskGraph
-" file:         TaskGraph.mo
+" file:        TaskGraph.mo
   package:     TaskGraph
   description: Building of task graphs from expressions, and equation systems.
 
@@ -90,9 +90,9 @@ algorithm
         knvars = BackendDAEUtil.vararrayList(knvararr);
         addVariables(vars, starttask);
         addVariables(knvars, starttask);
-        cref_ = ComponentReference.makeCrefIdent("sim_time",DAE.ET_REAL(),{});
+        cref_ = ComponentReference.makeCrefIdent("sim_time",DAE.T_REAL_DEFAULT,{});
         addVariables({BackendDAE.VAR(cref_,BackendDAE.VARIABLE(),
-                      DAE.INPUT(),BackendDAE.REAL(),NONE(),NONE(),{},0,DAE.emptyElementSource,NONE(),
+                      DAE.INPUT(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},0,DAE.emptyElementSource,NONE(),
                       NONE(),DAE.NON_CONNECTOR(),DAE.NON_STREAM())}, starttask);
         buildBlocks(dae, comps);
         print("done building taskgraph, about to build inits.\n");
@@ -338,7 +338,7 @@ algorithm
         c_name = name;
         //id = stringAppendList({DAE.derivativeNamePrefix,c_name});
         id = c_name;
-        cr_1 = ComponentReference.makeCrefIdent(id,DAE.ET_REAL(),{});
+        cr_1 = ComponentReference.makeCrefIdent(id,DAE.T_REAL_DEFAULT,{});
         varexp = Expression.crefExp(cr_1);
         (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
         buildAssignment(cr_1, expr, origname_str) "  Expression.print_exp_str e1 => e1s &
@@ -369,10 +369,10 @@ algorithm
         c_name = name;
         //id = stringAppendList({DAE.derivativeNamePrefix,c_name});
         id = c_name;
-        cr_1 = ComponentReference.makeCrefIdent(id,DAE.ET_REAL(),{});
+        cr_1 = ComponentReference.makeCrefIdent(id,DAE.T_REAL_DEFAULT,{});
         varexp = Expression.crefExp(cr_1);
         failure((_,_) = ExpressionSolve.solve(e1, e2, varexp));
-        buildNonlinearEquations({varexp}, {DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2)});
+        buildNonlinearEquations({varexp}, {DAE.BINARY(e1,DAE.SUB(DAE.T_REAL_DEFAULT),e2)});
       then
         ();
     case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)::{}),BackendDAE.SINGLEEQUATION(eqn=e,var=v_1))
@@ -383,7 +383,7 @@ algorithm
         true = BackendVariable.isNonStateVar(v);
         varexp = Expression.crefExp(cr) "print \"Solving for non-states\\n\" &" ;
         failure((_,_) = ExpressionSolve.solve(e1, e2, varexp));
-        buildNonlinearEquations({varexp}, {DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2)});
+        buildNonlinearEquations({varexp}, {DAE.BINARY(e1,DAE.SUB(DAE.T_REAL_DEFAULT),e2)});
       then
         ();
     case (_,_)
@@ -488,7 +488,7 @@ algorithm
       equation
         pstr = intString(pos);
         str = stringAppendList({"xloc[",pstr,"]"});
-        cref_ = ComponentReference.makeCrefIdent(str,DAE.ET_REAL(),{});
+        cref_ = ComponentReference.makeCrefIdent(str,DAE.T_REAL_DEFAULT,{});
         repl_1 = VarTransform.addReplacement(repl, cr, Expression.crefExp(cref_));
         pos_1 = pos + 1;
         repl_2 = makeResidualReplacements2(repl_1, es, pos_1);
@@ -752,7 +752,7 @@ algorithm
       String str,cr2s,crs,origname;
       DAE.ComponentRef cr,cr2;
       DAE.Exp exp;
-      DAE.ExpType tp;
+      DAE.Type tp;
     case (cr,(exp as DAE.CREF(componentRef = cr2,ty = tp)),origname) /* varname expression orig. name */
       equation
         (task,str) = buildExpression(exp) "special rule for equation a:=b" ;

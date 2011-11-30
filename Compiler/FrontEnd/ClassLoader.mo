@@ -30,8 +30,8 @@
  */
 
 encapsulated package ClassLoader
-" file:   ClassLoader.mo
-  package:      ClassLoader
+" file:        ClassLoader.mo
+  package:     ClassLoader
   description: Loading of classes from $OPENMODELICALIBRARY.
 
   RCS: $Id$

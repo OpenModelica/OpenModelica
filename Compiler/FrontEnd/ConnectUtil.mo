@@ -239,16 +239,16 @@ public function addArrayConnection
   input Connect.Sets inSets;
   input DAE.ComponentRef inCref1;
   input Connect.Face inFace1;
-  input list<DAE.Dimension> inDims1;
+  input DAE.Dimensions inDims1;
   input DAE.ComponentRef inCref2;
   input Connect.Face inFace2;
-  input list<DAE.Dimension> inDims2;
+  input DAE.Dimensions inDims2;
   input DAE.ElementSource source;
   input SCode.Flow flowPrefix;
   input SCode.Stream streamPrefix;
   output Connect.Sets outSets;
 protected
-  list<DAE.Dimension> dims1, dims2;
+  DAE.Dimensions dims1, dims2;
 algorithm
   dims1 := List.map(inDims1, reverseEnumType);
   dims2 := List.map(inDims2, reverseEnumType);
@@ -265,10 +265,10 @@ protected function addArrayConnection_impl
   input Connect.Sets inSets;
   input DAE.ComponentRef inCref1;
   input Connect.Face inFace1;
-  input list<DAE.Dimension> inDims1;
+  input DAE.Dimensions inDims1;
   input DAE.ComponentRef inCref2;
   input Connect.Face inFace2;
-  input list<DAE.Dimension> inDims2;
+  input DAE.Dimensions inDims2;
   input DAE.ElementSource source;
   input SCode.Flow inFlowPrefix;
   input SCode.Stream inStreamPrefix;
@@ -281,7 +281,7 @@ algorithm
       DAE.ComponentRef cr1, cr2;
       DAE.Exp idx1, idx2;
       DAE.Dimension dim1, dim2;
-      list<DAE.Dimension> rest_dims1, rest_dims2;
+      DAE.Dimensions rest_dims1, rest_dims2;
 
     // No more dimensions left, add the connection to the sets.
     case (_, _, _, {}, _, _, {}, _, _, _)
@@ -454,29 +454,29 @@ algorithm
       list<DAE.Var> vars;
       list<DAE.ComponentRef> crefs, crefs2;
       DAE.Type ty;
-      list<DAE.Dimension> dims;
+      DAE.Dimensions dims;
       DAE.ComponentRef cr;
 
     // Scalar
-    case (DAE.TYPES_VAR(name = name, ty = (DAE.T_REAL(_), _)))
-      then {DAE.CREF_IDENT(name, DAE.ET_REAL(), {})};
+    case (DAE.TYPES_VAR(name = name, ty = DAE.T_REAL(varLst = _)))
+      then {DAE.CREF_IDENT(name, DAE.T_REAL_DEFAULT, {})};
 
     // Complex type
     case (DAE.TYPES_VAR(name = name, 
-        ty = (DAE.T_COMPLEX(complexVarLst = vars), _)))
+        ty = DAE.T_COMPLEX(varLst = vars)))
       equation
         crefs = List.mapFlat(vars, daeVarToCrefs);
-        cr = DAE.CREF_IDENT(name, DAE.ET_REAL(), {});
+        cr = DAE.CREF_IDENT(name, DAE.T_REAL_DEFAULT, {});
         crefs = List.map1r(crefs, ComponentReference.joinCrefs, cr);
       then
         crefs;
 
     // Array
     case (DAE.TYPES_VAR(name = name, 
-        ty = ty as (DAE.T_ARRAY(arrayDim = _), _)))
+        ty = ty as DAE.T_ARRAY(dims = _)))
       equation
         dims = Types.getDimensions(ty);
-        cr = DAE.CREF_IDENT(name, DAE.ET_REAL(), {});
+        cr = DAE.CREF_IDENT(name, DAE.T_REAL_DEFAULT, {});
         crefs = expandArrayCref(cr, dims, {});
       then
         crefs;
@@ -494,14 +494,14 @@ protected function expandArrayCref
   "This function takes an array cref and a list of dimensions, and generates all
   scalar crefs by expanding the dimensions into subscripts."
   input DAE.ComponentRef inCref;
-  input list<DAE.Dimension> inDims;
+  input DAE.Dimensions inDims;
   input list<DAE.ComponentRef> inAccumCrefs;
   output list<DAE.ComponentRef> outCrefs;
 algorithm
   outCrefs := matchcontinue(inCref, inDims, inAccumCrefs)
     local
       DAE.Dimension dim;
-      list<DAE.Dimension> dims;
+      DAE.Dimensions dims;
       DAE.Exp idx;
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> crefs, crefs2;
@@ -1139,7 +1139,7 @@ algorithm
       DAE.ComponentRef rest_cr;
       SetTrieNode node;
       DAE.ComponentRef cr;
-      DAE.ExpType ty;
+      DAE.Type ty;
       ConnectorElement el;
       
     // A simple identifier, just create a new leaf.
@@ -2087,7 +2087,7 @@ algorithm
 
     case (DAE.CREF_IDENT(ident = id, subscriptLst = subs) :: rest_cr, cr)
       equation
-        cr = DAE.CREF_QUAL(id, DAE.ET_OTHER(), subs, cr);
+        cr = DAE.CREF_QUAL(id, DAE.T_UNKNOWN_DEFAULT, subs, cr);
       then
         buildElementPrefix2(rest_cr, cr);
 
@@ -2540,7 +2540,7 @@ protected
   DAE.Exp stream_exp, flow_exp;
 algorithm
   (stream_exp, flow_exp) := streamFlowExp(inElement);
-  flow_exp := DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()), flow_exp);
+  flow_exp := DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT), flow_exp);
   outExp := Expression.expMul(makePositiveMaxCall(flow_exp), stream_exp);
 end sumInside1;
 
@@ -2567,7 +2567,7 @@ protected
   DAE.Exp flow_exp;
 algorithm
   flow_exp := flowExp(inElement);
-  flow_exp := DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()), flow_exp);
+  flow_exp := DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT), flow_exp);
   outExp := makePositiveMaxCall(flow_exp);
 end sumInside2;
 
@@ -2591,7 +2591,7 @@ protected function makeInStreamCall
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
   outInStreamCall := DAE.CALL(Absyn.IDENT("inStream"), {inStreamExp},
-    DAE.CALL_ATTR(DAE.ET_OTHER(), false, false, DAE.NO_INLINE(), DAE.NO_TAIL()));
+    DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT, false, false, DAE.NO_INLINE(), DAE.NO_TAIL()));
 end makeInStreamCall;
 
 protected function makePositiveMaxCall
@@ -2601,7 +2601,7 @@ protected function makePositiveMaxCall
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
   outPositiveMaxCall := DAE.CALL(Absyn.IDENT("max"), 
-    {inFlowExp, DAE.RCONST(1e-15)}, DAE.CALL_ATTR(DAE.ET_REAL(), false, true, DAE.NO_INLINE(), DAE.NO_TAIL()));
+    {inFlowExp, DAE.RCONST(1e-15)}, DAE.CALL_ATTR(DAE.T_REAL_DEFAULT, false, true, DAE.NO_INLINE(), DAE.NO_TAIL()));
 end makePositiveMaxCall;
 
 protected function evaluateStreamOperators
@@ -2799,7 +2799,7 @@ algorithm
     local
       DAE.ComponentRef flow_cr;
       DAE.Exp e, flow_exp, stream_exp, instream_exp;
-      DAE.ExpType ety;
+      DAE.Type ety;
       Connect.Sets sets;
 
     case (_, (sets, _))
@@ -2879,8 +2879,8 @@ algorithm
     // is a qualified cref and is a connector => OUTSIDE 
     case (env,ih,DAE.CREF_QUAL(ident = id,componentRef = cr)) 
       equation
-       (_,_,(DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)),_),_,_,_,_,_,_) 
-         = Lookup.lookupVar(Env.emptyCache(),env,ComponentReference.makeCrefIdent(id,DAE.ET_OTHER(),{}));
+       (_,_,DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)),_,_,_,_,_,_) 
+         = Lookup.lookupVar(Env.emptyCache(),env,ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
       then Connect.OUTSIDE();
 
     // is a qualified cref and is NOT a connector => INSIDE
@@ -2912,7 +2912,7 @@ algorithm
     // is a non-qualified cref => OUTSIDE
     case (DAE.CREF_IDENT(ident = _)) then Connect.OUTSIDE();
     // is a qualified cref and is a connector => OUTSIDE
-    case (DAE.CREF_QUAL(identType = DAE.ET_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)))) then Connect.OUTSIDE();
+    case (DAE.CREF_QUAL(identType = DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)))) then Connect.OUTSIDE();
     // is a qualified cref and is NOT a connector => INSIDE
     case (DAE.CREF_QUAL(componentRef =_)) then Connect.INSIDE();
   end matchcontinue;
@@ -3097,21 +3097,21 @@ algorithm
       list<DAE.Var> v;
 
     // Scalar values consist of one element.
-    case ((DAE.T_INTEGER(_), _)) then 1;
-    case ((DAE.T_REAL(_), _)) then 1;
-    case ((DAE.T_STRING(_), _)) then 1;
-    case ((DAE.T_BOOL(_), _)) then 1;
-    case ((DAE.T_ENUMERATION(index = NONE()), _)) then 1;
+    case (DAE.T_INTEGER(_, _)) then 1;
+    case (DAE.T_REAL(_, _)) then 1;
+    case (DAE.T_STRING(_, _)) then 1;
+    case (DAE.T_BOOL(_, _)) then 1;
+    case (DAE.T_ENUMERATION(index = NONE())) then 1;
     // The size of an array is its dimension multiplied with the size of its type.
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(integer = n), arrayType = t), _))
+    case (DAE.T_ARRAY(dims = {DAE.DIM_INTEGER(integer = n)}, ty = t))
       then n * sizeOfVariable2(t);
     // The size of a complex type without an equalityConstraint (such as a
     // record), is the sum of the sizes of its components.
-    case ((DAE.T_COMPLEX(complexVarLst = v, equalityConstraint = NONE()), _))
+    case (DAE.T_COMPLEX(varLst = v, equalityConstraint = NONE()))
       then sizeOfVariableList(v);
     // The size of a complex type with an equalityConstraint function is
     // determined by the size of the return value of that function.
-    case ((DAE.T_COMPLEX(equalityConstraint = SOME((_, n, _))), _)) then n;
+    case (DAE.T_COMPLEX(equalityConstraint = SOME((_, n, _)))) then n;
     // Anything we forgot?
     case t
       equation

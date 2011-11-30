@@ -30,8 +30,7 @@
  */
 
 encapsulated package Graphviz
-"
-  file:         Graphviz.mo
+" file:        Graphviz.mo
   package:     Graphviz
   description: Graphviz is a tool for drawing graphs from a textual
                representation. This module generates the textual input 

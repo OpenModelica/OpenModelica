@@ -62,7 +62,7 @@ public uniontype VarKind
   record VARIABLE "variable" end VARIABLE;
   record DISCRETE "discrete" end DISCRETE;
   record PARAM "parameter"   end PARAM;
-  record CONST "constant"    end CONST;
+  record CONST "constant"    end CONST;  
 end VarKind;
 
 public uniontype Flow "The Flow of a variable indicates if it is a Flow variable or not, or if
@@ -156,7 +156,7 @@ public uniontype Element
     VarDirection direction "input, output or bidir" ;
     VarVisibility protection "if protected or public";
     Type ty "Full type information required";
-    Option<Exp> binding "Binding expression e.g. for parameters ; value of start attribute" ;
+    Option<Exp> binding "Binding expression e.g. for parameters ; value of start attribute";
     InstDims  dims "dimensions";
     Flow flowPrefix "Flow of connector variable. Needed for unconnected flow variables" ;
     Stream streamPrefix "Stream variables in connectors" ;
@@ -191,14 +191,14 @@ public uniontype Element
   end EQUEQUATION;
 
   record ARRAY_EQUATION " an array equation"
-    list<Dimension> dimension "dimension sizes" ;
+    Dimensions dimension "dimension sizes" ;
     Exp exp;
     Exp array;
     ElementSource source "the origin of the component/equation/algorithm";
   end ARRAY_EQUATION;
 
   record INITIAL_ARRAY_EQUATION "An initial array equation"
-    list<Dimension> dimension "dimension sizes";
+    Dimensions dimension "dimension sizes";
     Exp exp;
     Exp array;
     ElementSource source "the origin of the component/equation/algorithm";
@@ -501,21 +501,21 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
     (`for i in 1:10 loop ...; end for;\') and when statements
     (`when E do S; end when;\')."
   record STMT_ASSIGN
-    ExpType type_;
+    Type type_;
     Exp exp1;
     Exp exp;
     ElementSource source "the origin of the component/equation/algorithm";
   end STMT_ASSIGN;
 
   record STMT_TUPLE_ASSIGN
-    ExpType type_;
+    Type type_;
     list<Exp> expExpLst;
     Exp exp;
     ElementSource source "the origin of the component/equation/algorithm";
   end STMT_TUPLE_ASSIGN;
 
   record STMT_ASSIGN_ARR
-    ExpType type_;
+    Type type_;
     ComponentRef componentRef;
     Exp exp;
     ElementSource source "the origin of the component/equation/algorithm";
@@ -529,7 +529,7 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
   end STMT_IF;
 
   record STMT_FOR
-    ExpType type_ "this is the type of the iterator";
+    Type type_ "this is the type of the iterator";
     Boolean iterIsArray "True if the iterator has an array type, otherwise false.";
     Ident iter "the iterator variable";
     Exp range "range for the loop";
@@ -675,47 +675,53 @@ uniontype Binding "- Binding"
 
 end Binding;
 
-public type Type = tuple<TType, Option<Absyn.Path>> "
-     A Type is a tuple of a TType (containing the actual type) and a optional classname
-     for the class where the type originates from.
-
-- Type";
-
 public
 type EqualityConstraint = Option<tuple<Absyn.Path, Integer, InlineType>>
   "contains the path to the equalityConstraint function, 
    the dimension of the output and the inline type of the function";
 
-public constant Type T_REAL_DEFAULT        = (T_REAL({}),NONE());
-public constant Type T_INTEGER_DEFAULT     = (T_INTEGER({}),NONE());
-public constant Type T_STRING_DEFAULT      = (T_STRING({}),NONE());
-public constant Type T_BOOL_DEFAULT        = (T_BOOL({}),NONE());
-public constant Type T_ENUMERATION_DEFAULT = (T_ENUMERATION(NONE(), Absyn.IDENT(""), {}, {}, {}), NONE());
-public constant Type T_REAL_BOXED          = (T_BOXED((T_REAL({}),NONE())),NONE());
-public constant Type T_INTEGER_BOXED       = (T_BOXED((T_INTEGER({}),NONE())),NONE());
-public constant Type T_STRING_BOXED        = (T_BOXED((T_STRING({}),NONE())),NONE());
-public constant Type T_BOOL_BOXED          = (T_BOXED((T_BOOL({}),NONE())),NONE());
-public constant Type T_BOXED_DEFAULT       = (T_BOXED((T_NOTYPE(),NONE())),NONE());
-public constant Type T_LIST_DEFAULT        = (T_LIST((T_NOTYPE(),NONE())),NONE());
-public constant Type T_NONE_DEFAULT        = (T_METAOPTION((T_NOTYPE(),NONE())),NONE());
-public constant Type T_NOTYPE_DEFAULT      = (T_NOTYPE(),NONE());
-public constant Type T_NORETCALL_DEFAULT   = (T_NORETCALL(),NONE());
+public type TypeSource = list<Absyn.Path> "the class(es) where the type originated";
+public constant TypeSource emptyTypeSource = {} "an empty origin for the type";
 
-public uniontype TType "-TType contains the actual type"
+// default constants that can be used 
+public constant Type T_REAL_DEFAULT        = T_REAL({}, emptyTypeSource);
+public constant Type T_INTEGER_DEFAULT     = T_INTEGER({}, emptyTypeSource);
+public constant Type T_STRING_DEFAULT      = T_STRING({}, emptyTypeSource);
+public constant Type T_BOOL_DEFAULT        = T_BOOL({}, emptyTypeSource);
+public constant Type T_ENUMERATION_DEFAULT = T_ENUMERATION(NONE(), Absyn.IDENT(""), {}, {}, {}, emptyTypeSource);
+public constant Type T_REAL_BOXED          = T_METABOXED(T_REAL_DEFAULT, emptyTypeSource);
+public constant Type T_INTEGER_BOXED       = T_METABOXED(T_INTEGER_DEFAULT, emptyTypeSource);
+public constant Type T_STRING_BOXED        = T_METABOXED(T_STRING_DEFAULT, emptyTypeSource);
+public constant Type T_BOOL_BOXED          = T_METABOXED(T_BOOL_DEFAULT, emptyTypeSource);
+public constant Type T_METABOXED_DEFAULT   = T_METABOXED(T_UNKNOWN_DEFAULT, emptyTypeSource);
+public constant Type T_METALIST_DEFAULT    = T_METALIST(T_UNKNOWN_DEFAULT, emptyTypeSource);
+public constant Type T_NONE_DEFAULT        = T_METAOPTION(T_UNKNOWN_DEFAULT, emptyTypeSource);
+public constant Type T_ANYTYPE_DEFAULT     = T_ANYTYPE(NONE(), emptyTypeSource);
+public constant Type T_UNKNOWN_DEFAULT     = T_UNKNOWN(emptyTypeSource);
+public constant Type T_NORETCALL_DEFAULT   = T_NORETCALL(emptyTypeSource);
+public constant Type T_METATYPE_DEFAULT    = T_METATYPE(T_UNKNOWN_DEFAULT, emptyTypeSource);
+public constant Type T_COMPLEX_DEFAULT     = T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE(), emptyTypeSource) "default complex with unknown CiState";
+
+public uniontype Type "models the different front-end and back-end types"
+  
   record T_INTEGER
-    list<Var> varLstInt;
+    list<Var> varLst;
+    TypeSource source;  
   end T_INTEGER;
 
   record T_REAL
-    list<Var> varLstReal;
+    list<Var> varLst;
+    TypeSource source;
   end T_REAL;
 
   record T_STRING
-    list<Var> varLstString;
+    list<Var> varLst;
+    TypeSource source;
   end T_STRING;
 
   record T_BOOL
-    list<Var> varLstBool;
+    list<Var> varLst;
+    TypeSource source;
   end T_BOOL;
 
   record T_ENUMERATION "If the list of names is empty, this is the super-enumeration that is the super-class of all enumerations"
@@ -724,38 +730,96 @@ public uniontype TType "-TType contains the actual type"
     list<String> names "names" ;
     list<Var> literalVarLst;
     list<Var> attributeLst;
+    TypeSource source;
   end T_ENUMERATION;
 
-  record T_ARRAY
-    Dimension arrayDim "arrayDim" ;
-    Type arrayType "arrayType" ;
+  record T_ARRAY 
+    "an array can be represented in two equivalent ways: 
+       1. T_ARRAY(non_array_type, {dim1, dim2, dim3}) =  
+       2. T_ARRAY(T_ARRAY(T_ARRAY(non_array_type, {dim1}), {dim2}), {dim3})
+       In general Inst generates 1 and all the others generates 2"
+    Type ty "Type";
+    Dimensions dims "dims";
+    TypeSource source;
   end T_ARRAY;
 
-  record T_NORETCALL "For functions not returning any values." end T_NORETCALL;
+  record T_NORETCALL "For functions not returning any values."
+    TypeSource source; 
+  end T_NORETCALL;
 
-  record T_NOTYPE "Used when type is not yet determined" end T_NOTYPE;
+  record T_UNKNOWN "Used when type is not yet determined"
+    TypeSource source; 
+  end T_UNKNOWN;
+
+  record T_COMPLEX
+    ClassInf.State complexClassType "complexClassType ; The type of. a class" ;
+    list<Var> varLst "complexVarLst ; The variables of a complex type" ;
+    EqualityConstraint equalityConstraint;
+    TypeSource source;
+  end T_COMPLEX;
+  
+  record T_SUBTYPE_BASIC
+    ClassInf.State complexClassType "complexClassType ; The type of. a class" ;
+    list<Var> varLst "complexVarLst; The variables of a complex type! Should be empty, kept here to verify!";
+    Type complexType "complexType; A complex type can be a subtype of another (primitive) type (through extends)";
+    EqualityConstraint equalityConstraint;
+    TypeSource source;
+  end T_SUBTYPE_BASIC;
+
+  record T_FUNCTION
+    list<FuncArg> funcArg "funcArg" ;
+    Type funcResultType "funcResultType ; Only single-result" ;
+    FunctionAttributes functionAttributes;
+    TypeSource source;
+  end T_FUNCTION;
+  
+  record T_FUNCTION_REFERENCE_VAR "MetaModelica Function Reference that is a variable"
+    Type functionType "the type of the function";
+    TypeSource source;
+  end T_FUNCTION_REFERENCE_VAR;
+  
+  record T_FUNCTION_REFERENCE_FUNC "MetaModelica Function Reference that is a direct reference to a function"
+    Boolean builtin;
+    Type functionType "type of the non-boxptr function";
+    TypeSource source;
+  end T_FUNCTION_REFERENCE_FUNC;
+  
+  record T_TUPLE
+    list<Type> tupleType "tupleType ; For functions returning multiple values.";
+    TypeSource source;
+  end T_TUPLE;
+
+  record T_CODE
+    CodeType ty;
+    TypeSource source;
+  end T_CODE;
 
   record T_ANYTYPE
-    Option<ClassInf.State> anyClassType "anyClassType - used for generic types. When class state present the type is assumed to be a complex type which has that restriction." ;
+    Option<ClassInf.State> anyClassType "anyClassType - used for generic types. When class state present the type is assumed to be a complex type which has that restriction.";
+    TypeSource source;
   end T_ANYTYPE;
 
   // MetaModelica extensions
-  record T_LIST "MetaModelica list type"
+  record T_METALIST "MetaModelica list type"
     Type listType "listType";
-  end T_LIST;
+    TypeSource source;
+  end T_METALIST;
 
   record T_METATUPLE "MetaModelica tuple type"
     list<Type> types;
+    TypeSource source;
   end T_METATUPLE;
 
   record T_METAOPTION "MetaModelica option type"
     Type optionType;
+    TypeSource source;
   end T_METAOPTION;
 
-  record T_UNIONTYPE "MetaModelica Uniontype, added by simbj"
+  record T_METAUNIONTYPE "MetaModelica Uniontype, added by simbj"
     list<Absyn.Path> paths;
     Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
-  end T_UNIONTYPE;
+    TypeSource source;
+  end T_METAUNIONTYPE;
 
   record T_METARECORD "MetaModelica Record, used by Uniontypes. added by simbj"
     Absyn.Path utPath "the path to its uniontype; this is what we match the type against";
@@ -764,42 +828,30 @@ public uniontype TType "-TType contains the actual type"
     Integer index; //The index in the uniontype
     list<Var> fields;
     Boolean knownSingleton "The runtime system (dynload), does not know if the value is a singleton. But optimizations are safe if this is true.";
+    TypeSource source;
   end T_METARECORD;
 
-  record T_COMPLEX
-    ClassInf.State complexClassType "complexClassType ; The type of. a class" ;
-    list<Var> complexVarLst "complexVarLst ; The variables of a complex type" ;
-    Option<Type> complexTypeOption "complexTypeOption ; A complex type can be a subtype of another (primitive) type (through extends). In that case the varlist is empty" ;
-    EqualityConstraint equalityConstraint;
-  end T_COMPLEX;
-
-  record T_FUNCTION
-    list<FuncArg> funcArg "funcArg" ;
-    Type funcResultType "funcResultType ; Only single-result" ;
-    FunctionAttributes functionAttributes;
-  end T_FUNCTION;
-
-  record T_TUPLE
-    list<Type> tupleType "tupleType ; For functions returning multiple values."  ;
-  end T_TUPLE;
-
-  record T_BOXED "Used for MetaModelica generic types"
+  record T_METAARRAY
     Type ty;
-  end T_BOXED;
+    TypeSource source;
+  end T_METAARRAY;
 
-  record T_POLYMORPHIC
+  record T_METABOXED "Used for MetaModelica generic types"
+    Type ty;
+    TypeSource source;
+  end T_METABOXED;
+
+  record T_METAPOLYMORPHIC
     String name;
-  end T_POLYMORPHIC;
-
-  record T_META_ARRAY
-    Type ty;
-  end T_META_ARRAY;
+    TypeSource source;
+  end T_METAPOLYMORPHIC;
   
-  record T_CODE
-    CodeType ty;
-  end T_CODE;
-
-end TType;
+  record T_METATYPE "this type contains all the meta types"
+    Type ty;
+    TypeSource source;
+  end T_METATYPE;
+  
+end Type;
 
 public uniontype CodeType
   record C_TYPENAME
@@ -829,12 +881,17 @@ public
 uniontype FunctionBuiltin
   record FUNCTION_NOT_BUILTIN "Function is not builtin"
   end FUNCTION_NOT_BUILTIN;
+  
   record FUNCTION_BUILTIN "Function is builtin"
     Option<String> name;
   end FUNCTION_BUILTIN;
+  
   record FUNCTION_BUILTIN_PTR "The function has a body, but its function pointer is builtin. This means inline code+optimized pointer if need be."
   end FUNCTION_BUILTIN_PTR;
+  
 end FunctionBuiltin;
+
+type Dimensions = list<Dimension> "a list of dimensions";
 
 public
 uniontype Dimension
@@ -866,7 +923,7 @@ public uniontype DimensionBinding
    end DIM_UNBOUND;
    record DIM_BOUND "dimension is bound to an expression with constrains"
       Exp binding "the dimension is bound to this expression";
-      list<Dimension> constrains "the bound has these constrains (collected when doing subtyping)";
+      Dimensions constrains "the bound has these constrains (collected when doing subtyping)";
    end DIM_BOUND;
 end DimensionBinding;
 
@@ -983,62 +1040,7 @@ uniontype Mod "Modification"
 end Mod;
 
 /* -- End Types.mo -- */
-
-/* -- Start Expression.mo -- */
-public
-uniontype ExpType "- Basic types
-    These types are not used as expression types (see the `Types\'
-    module for expression types).  They are used to parameterize
-    operators which may work on several simple types and for code generation."
-  record ET_INT end ET_INT;
-
-  record ET_REAL end ET_REAL;
-
-  record ET_BOOL end ET_BOOL;
-
-  record ET_STRING end ET_STRING;
-
-  record ET_ENUMERATION
-    Absyn.Path path "enumeration path" ;
-    list<String> names "names" ;
-    list<ExpVar> varLst "varLst" ;
-  end ET_ENUMERATION;
-
-  record ET_COMPLEX "Complex types"
-    Absyn.Path name;
-    list<ExpVar> varLst;
-    ClassInf.State complexClassType;
-  end ET_COMPLEX;
-
-  record ET_OTHER "e.g. complex types, etc." end ET_OTHER;
-
-  record ET_ARRAY
-    ExpType ty;
-    list<Dimension> arrayDimensions "arrayDimensions" ;
-  end ET_ARRAY;
-
-  // MetaModelica extension. KS
-  record ET_FUNCTION_REFERENCE_VAR "MetaModelica Function Reference that is a variable"
-  end ET_FUNCTION_REFERENCE_VAR;
-  record ET_FUNCTION_REFERENCE_FUNC "MetaModelica Function Reference that is a direct reference to a function"
-    Boolean builtin;
-    Type functionType "type of the non-boxptr function";
-  end ET_FUNCTION_REFERENCE_FUNC;
-
-  record ET_METATYPE "MetaModelica boxed types (any)" end ET_METATYPE;
-  record ET_BOXED ExpType ty; end ET_BOXED;
-
-  record ET_NORETCALL "For functions not returning any values." end ET_NORETCALL;
-
-end ExpType;
-
-uniontype ExpVar "A variable is used to describe a complex type which contains a list of variables. See also DAE.Var "
-  record COMPLEX_VAR
-    String name;
-    ExpType tp;
-  end COMPLEX_VAR;
-end ExpVar;
-
+  
 public
 uniontype Exp "Expressions
     The `Exp\' datatype closely corresponds to the `Absyn.Exp\'
@@ -1077,7 +1079,7 @@ uniontype Exp "Expressions
 
   record CREF "component references, e.g. a.b{2}.c{1}"
     ComponentRef componentRef;
-    ExpType ty;
+    Type ty;
   end CREF;
 
    record BINARY "Binary operations, e.g. a+4"
@@ -1128,23 +1130,23 @@ uniontype Exp "Expressions
   record PARTEVALFUNCTION
     Absyn.Path path;
     list<Exp> expList;
-    ExpType ty;
+    Type ty;
   end PARTEVALFUNCTION;
 
   record ARRAY
-    ExpType ty;
+    Type ty;
     Boolean scalar "scalar for codegen" ;
     list<Exp> array "Array constructor, e.g. {1,3,4}" ;
   end ARRAY;
 
   record MATRIX
-    ExpType ty;
+    Type ty;
     Integer integer;
     list<list<Exp>> matrix;
   end MATRIX;
 
   record RANGE
-    ExpType ty;
+    Type ty;
     Exp exp "start value";
     Option<Exp> expOption "step value";
     Exp range "stop value; Range constructor, e.g. 1:0.5:10" ;
@@ -1156,7 +1158,7 @@ uniontype Exp "Expressions
   end TUPLE;
 
   record CAST "Cast operator"
-    ExpType ty "This is the full type of this expression, i.e. ET_ARRAY(...) for arrays and matrices";
+    Type ty "This is the full type of this expression, i.e. ET_ARRAY(...) for arrays and matrices";
     Exp exp;
   end CAST;
 
@@ -1168,7 +1170,7 @@ uniontype Exp "Expressions
   record TSUB "Tuple 'subscript' (accessing only single values in calls)"
     Exp exp;
     Integer ix;
-    ExpType ty;
+    Type ty;
   end TSUB;
 
   record SIZE "The size operator"
@@ -1178,7 +1180,7 @@ uniontype Exp "Expressions
 
   record CODE "Modelica AST constructor"
     Absyn.CodeNode code;
-    ExpType ty;
+    Type ty;
   end CODE;
 
   record EMPTY 
@@ -1188,7 +1190,7 @@ uniontype Exp "Expressions
      From Modelica specification: a package may we look inside should not be partial in a simulation model!"
     String scope "the scope where we could not find the binding";
     ComponentRef name "the name of the variable";
-    ExpType ty "the type of the variable";
+    Type ty "the type of the variable";
     String tyStr;
   end EMPTY;
 
@@ -1232,7 +1234,7 @@ uniontype Exp "Expressions
     list<Exp> inputs;
     list<Element> localDecls;
     list<MatchCase> cases;
-    ExpType et;
+    Type et;
   end MATCHEXPRESSION;
   
   record BOX "MetaModelica boxed value"
@@ -1241,7 +1243,7 @@ uniontype Exp "Expressions
 
   record UNBOX "MetaModelica value unboxing (similar to a cast)"
     Exp exp;
-    ExpType ty;
+    Type ty;
   end UNBOX;
   
   record SHARED_LITERAL
@@ -1250,7 +1252,7 @@ uniontype Exp "Expressions
     basic MetaModelica types and Modelica strings are fine. There is no point
     to share Real, Integer, Boolean or Enum though."
     Integer index;
-    ExpType ty "The type is required for code generation to work properly";
+    Type ty "The type is required for code generation to work properly";
   end SHARED_LITERAL;
   
   record PATTERN "(x,1,ROOT(a as _,false,_)) := rhs; MetaModelica extension"
@@ -1269,14 +1271,14 @@ public uniontype TailCall
   end TAIL;
 end TailCall;
 
-public constant CallAttributes callAttrBuiltinBool = CALL_ATTR(ET_BOOL(),false,true,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinReal = CALL_ATTR(ET_REAL(),false,true,NO_INLINE(),NO_TAIL());
-public constant CallAttributes callAttrBuiltinOther = CALL_ATTR(ET_OTHER(),false,true,NO_INLINE(),NO_TAIL());
+public constant CallAttributes callAttrBuiltinBool = CALL_ATTR(T_BOOL_DEFAULT,false,true,NO_INLINE(),NO_TAIL());
+public constant CallAttributes callAttrBuiltinReal = CALL_ATTR(T_REAL_DEFAULT,false,true,NO_INLINE(),NO_TAIL());
+public constant CallAttributes callAttrBuiltinOther = CALL_ATTR(T_UNKNOWN_DEFAULT,false,true,NO_INLINE(),NO_TAIL());
 
 public
 uniontype CallAttributes
   record CALL_ATTR
-    ExpType ty "The type of the return value, if several return values this is undefined";
+    Type ty "The type of the return value, if several return values this is undefined";
     Boolean tuple_ "tuple" ;
     Boolean builtin "builtin Function call" ;
     InlineType inlineType;
@@ -1319,7 +1321,7 @@ end MatchCase;
 public uniontype MatchType
   record MATCHCONTINUE end MATCHCONTINUE;
   record MATCH
-    Option<tuple<Integer,ExpType,Integer>> switch "The index of the pattern to switch over, its type and an the value to divide string hashes with";
+    Option<tuple<Integer,Type,Integer>> switch "The index of the pattern to switch over, its type and an the value to divide string hashes with";
   end MATCH;
 end MatchType;
 
@@ -1327,12 +1329,12 @@ public uniontype Pattern "Patterns deconstruct expressions"
   record PAT_WILD "_"
   end PAT_WILD;
   record PAT_CONSTANT "compare to this constant value using equality"
-    Option<ExpType> ty "so we can unbox if needed";
+    Option<Type> ty "so we can unbox if needed";
     Exp exp;
   end PAT_CONSTANT;
   record PAT_AS "id as pat"
     String id;
-    Option<ExpType> ty "so we can unbox if needed";
+    Option<Type> ty "so we can unbox if needed";
     Pattern pat;
   end PAT_AS;
   record PAT_AS_FUNC_PTR "id as pat"
@@ -1357,7 +1359,7 @@ public uniontype Pattern "Patterns deconstruct expressions"
   end PAT_CALL;
   record PAT_CALL_NAMED "RECORD(pat1,...,patn); all patterns are named"
     Absyn.Path name;
-    list<tuple<Pattern,String,ExpType>> patterns;
+    list<tuple<Pattern,String,Type>> patterns;
   end PAT_CALL_NAMED;
   record PAT_SOME "SOME(pat)"
     Pattern pat;
@@ -1370,127 +1372,127 @@ uniontype Operator "Operators which are overloaded in the abstract syntax are he
     and the real addition operator (`ADD(REAL)\') are two distinct
     operators."
   record ADD
-    ExpType ty;
+    Type ty;
   end ADD;
 
   record SUB
-    ExpType ty;
+    Type ty;
   end SUB;
 
   record MUL
-    ExpType ty;
+    Type ty;
   end MUL;
 
   record DIV
-    ExpType ty;
+    Type ty;
   end DIV;
 
   record POW
-    ExpType ty;
+    Type ty;
   end POW;
 
   record UMINUS
-    ExpType ty;
+    Type ty;
   end UMINUS;
 
   record UMINUS_ARR
-    ExpType ty;
+    Type ty;
   end UMINUS_ARR;
 
   record ADD_ARR
-    ExpType ty;
+    Type ty;
   end ADD_ARR;
 
   record SUB_ARR
-    ExpType ty;
+    Type ty;
   end SUB_ARR;
 
   record MUL_ARR
-    ExpType ty;
+    Type ty;
   end MUL_ARR;
 
   record DIV_ARR
-    ExpType ty;
+    Type ty;
   end DIV_ARR;
 
   record MUL_ARRAY_SCALAR " {a,b,c} * s"
-    ExpType ty "type of the array" ;
+    Type ty "type of the array" ;
   end MUL_ARRAY_SCALAR;
 
   record ADD_ARRAY_SCALAR " {a,b,c} .+ s"
-    ExpType ty "type of the array";
+    Type ty "type of the array";
   end ADD_ARRAY_SCALAR;
 
   record SUB_SCALAR_ARRAY "s .- {a,b,c}"
-    ExpType ty "type of the array" ;
+    Type ty "type of the array" ;
   end SUB_SCALAR_ARRAY;
 
   record MUL_SCALAR_PRODUCT " {a,b,c} * {c,d,e} => a*c+b*d+c*e"
-    ExpType ty "type of the array" ;
+    Type ty "type of the array" ;
   end MUL_SCALAR_PRODUCT;
 
   record MUL_MATRIX_PRODUCT "M1 * M2, matrix dot product"
-    ExpType ty "{{..},..}  {{..},{..}}" ;
+    Type ty "{{..},..}  {{..},{..}}" ;
   end MUL_MATRIX_PRODUCT;
 
   record DIV_ARRAY_SCALAR "{a, b} / c"
-    ExpType ty  "type of the array";
+    Type ty  "type of the array";
   end DIV_ARRAY_SCALAR;
 
   record DIV_SCALAR_ARRAY "c / {a,b}"
-    ExpType ty "type of the array" ;
+    Type ty "type of the array" ;
   end DIV_SCALAR_ARRAY;
 
   record POW_ARRAY_SCALAR
-    ExpType ty "type of the array" ;
+    Type ty "type of the array" ;
   end POW_ARRAY_SCALAR;
 
   record POW_SCALAR_ARRAY
-    ExpType ty "type of the array" ;
+    Type ty "type of the array" ;
   end POW_SCALAR_ARRAY;
 
   record POW_ARR "Power of a matrix: {{1,2,3},{4,5.0,6},{7,8,9}}^2"
-    ExpType ty "type of the array";
+    Type ty "type of the array";
   end POW_ARR;
 
   record POW_ARR2 "elementwise power of arrays: {1,2,3}.^{3,2,1}"
-    ExpType ty "type of the array";
+    Type ty "type of the array";
   end POW_ARR2;
 
   record AND
-    ExpType ty;
+    Type ty;
   end AND;
 
   record OR 
-    ExpType ty;
+    Type ty;
   end OR;
 
   record NOT 
-    ExpType ty;
+    Type ty;
   end NOT;
 
   record LESS
-    ExpType ty;
+    Type ty;
   end LESS;
 
   record LESSEQ
-    ExpType ty;
+    Type ty;
   end LESSEQ;
 
   record GREATER
-    ExpType ty;
+    Type ty;
   end GREATER;
 
   record GREATEREQ
-    ExpType ty;
+    Type ty;
   end GREATEREQ;
 
   record EQUAL
-    ExpType ty;
+    Type ty;
   end EQUAL;
 
   record NEQUAL
-    ExpType ty;
+    Type ty;
   end NEQUAL;
 
   record USERDEFINED
@@ -1506,14 +1508,14 @@ uniontype ComponentRef "- Component references
   
   record CREF_QUAL
     Ident ident;
-    ExpType identType "type of the identifier, without considering the subscripts";
+    Type identType "type of the identifier, without considering the subscripts";
     list<Subscript> subscriptLst;
     ComponentRef componentRef;
   end CREF_QUAL;
 
   record CREF_IDENT
     Ident ident;
-    ExpType identType "type of the identifier, without considering the subscripts";
+    Type identType "type of the identifier, without considering the subscripts";
     list<Subscript> subscriptLst;
   end CREF_IDENT;
 
@@ -1521,7 +1523,7 @@ uniontype ComponentRef "- Component references
 
 end ComponentRef;
 
-public constant ComponentRef crefTime = CREF_IDENT("time",ET_REAL(),{});
+public constant ComponentRef crefTime = CREF_IDENT("time",T_REAL_DEFAULT,{});
 
 public
 uniontype Subscript "The `Subscript\' and `ComponentRef\' datatypes are simple
@@ -1546,3 +1548,59 @@ end Subscript;
 
 end DAE;
 
+
+/* -- Start Expression.mo --
+public
+uniontype ExpType "- Basic types
+    These types are not used as expression types (see the `Types\'
+    module for expression types).  They are used to parameterize
+    operators which may work on several simple types and for code generation."
+  record ET_INT end ET_INT;
+
+  record ET_REAL end ET_REAL;
+
+  record ET_BOOL end ET_BOOL;
+
+  record ET_STRING end ET_STRING;
+
+  record ET_ENUMERATION
+    Absyn.Path path "enumeration path" ;
+    list<String> names "names" ;
+    list<ExpVar> varLst "varLst" ;
+  end ET_ENUMERATION;
+
+  record ET_COMPLEX "Complex types"
+    Absyn.Path name;
+    list<ExpVar> varLst;
+    ClassInf.State complexClassType;
+  end ET_COMPLEX;
+
+  record ET_OTHER "e.g. complex types, etc." end ET_OTHER;
+
+  record ET_ARRAY
+    ExpType ty;
+    Dimensions dims "dims" ;
+  end ET_ARRAY;
+
+  // MetaModelica extension. KS
+  record ET_FUNCTION_REFERENCE_VAR "MetaModelica Function Reference that is a variable"
+  end ET_FUNCTION_REFERENCE_VAR;
+  record ET_FUNCTION_REFERENCE_FUNC "MetaModelica Function Reference that is a direct reference to a function"
+    Boolean builtin;
+    Type functionType "type of the non-boxptr function";
+  end ET_FUNCTION_REFERENCE_FUNC;
+
+  record ET_METATYPE "MetaModelica boxed types (any)" end ET_METATYPE;
+  record ET_METABOXED ExpType ty; end ET_METABOXED;
+
+  record ET_NORETCALL "For functions not returning any values." end ET_NORETCALL;
+
+end ExpType;
+
+uniontype ExpVar "A variable is used to describe a complex type which contains a list of variables. See also DAE.Var "
+  record COMPLEX_VAR
+    String name;
+    ExpType tp;
+  end COMPLEX_VAR;
+end ExpVar;
+*/

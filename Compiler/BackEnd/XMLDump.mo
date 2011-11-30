@@ -72,7 +72,7 @@ within the equation element.
 
 
 encapsulated package XMLDump
-" file:         XMLDump.mo
+" file:        XMLDump.mo
   package:     XMLDump
   description: Dumping of DAE as XML
 
@@ -102,6 +102,7 @@ protected import Print;
 protected import Util;
 protected import DAEDump;
 protected import ValuesUtil;
+protected import ClassInf;
 
 
   protected constant String HEADER        = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
@@ -1607,7 +1608,7 @@ algorithm
       Integer x,ival;
       Real rval;
       DAE.ComponentRef c;
-      DAE.ExpType t,tp;
+      DAE.Type t,tp;
       DAE.Exp e1,e2,e,start,stop,step,cr,dim,exp,iterexp,cond,tb,fb;
       DAE.Operator op;
       Absyn.Path fcn;
@@ -1838,14 +1839,14 @@ algorithm
         dumpStrCloseTag(MathMLOperator);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.CAST(ty = DAE.ET_REAL(),exp = DAE.ICONST(integer = ival)))
+    case (DAE.CAST(ty = DAE.T_REAL(source = _),exp = DAE.ICONST(integer = ival)))
       equation
         false = Config.modelicaOutput();
         rval = intReal(ival);
         res = realString(rval);
         dumpStrMathMLNumberAttr(res,MathMLType,MathMLReal);
       then ();
-    case (DAE.CAST(ty = DAE.ET_REAL(),exp = DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = DAE.ICONST(integer = ival))))
+    case (DAE.CAST(ty = DAE.T_REAL(source = _),exp = DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = DAE.ICONST(integer = ival))))
       equation
         false = Config.modelicaOutput();
         rval = intReal(ival);
@@ -1855,7 +1856,7 @@ algorithm
         dumpStrMathMLNumberAttr(res,MathMLType,MathMLReal);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.CAST(ty = DAE.ET_REAL(),exp = e))
+    case (DAE.CAST(ty = DAE.T_REAL(source = _),exp = e))
       equation
         false = Config.modelicaOutput();
         dumpStrOpenTag(MathMLApply);
@@ -1863,7 +1864,7 @@ algorithm
         dumpExp2(e);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.CAST(ty = DAE.ET_REAL(),exp = e))
+    case (DAE.CAST(ty = DAE.T_REAL(source = _),exp = e))
       equation
         true = Config.modelicaOutput();
         dumpExp2(e);
@@ -2069,7 +2070,7 @@ algorithm
   _:= matchcontinue (fun)
     local
       Absyn.Path name;
-    case DAE.FUNCTION(type_ = (DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isBuiltin = DAE.FUNCTION_BUILTIN(_))),_)) then ();
+    case DAE.FUNCTION(type_ = DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isBuiltin = DAE.FUNCTION_BUILTIN(_)))) then ();
     case(fun)
       equation
         name = DAEUtil.functionName(fun);
@@ -3062,18 +3063,19 @@ algorithm
     local
       DAE.Ident s1,s2,str;
       list<DAE.Ident> l;
-    case BackendDAE.INT()    then VARTYPE_INTEGER;
-    case BackendDAE.REAL()   then VARTYPE_REAL;
-    case BackendDAE.BOOL()   then VARTYPE_BOOLEAN;
-    case BackendDAE.STRING() then VARTYPE_STRING;
-    case BackendDAE.ENUMERATION(stringLst = l)
+    case DAE.T_INTEGER(source = _) then VARTYPE_INTEGER;
+    case DAE.T_REAL(source = _)    then VARTYPE_REAL;
+    case DAE.T_BOOL(source = _)    then VARTYPE_BOOLEAN;
+    case DAE.T_STRING(source = _)  then VARTYPE_STRING;
+    case DAE.T_ENUMERATION(names = l)
       equation
         s1 = stringDelimitList(l, ", ");
         s2 = stringAppend(VARTYPE_ENUMERATION,stringAppend("(", s1));
         str = stringAppend(s2, ")");
       then
         str;
-    case BackendDAE.EXT_OBJECT(_) then VARTYPE_EXTERNALOBJECT;
+    case DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)) 
+      then VARTYPE_EXTERNALOBJECT;
   end match;
 end dumpTypeStr;
 

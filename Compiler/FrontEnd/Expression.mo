@@ -30,8 +30,7 @@
  */
 
 encapsulated package Expression
-"
-  file:         Expression.mo
+" file:        Expression.mo
   package:     Expression
   description: Expressions
 
@@ -50,6 +49,7 @@ encapsulated package Expression
 
 // public imports
 public import Absyn;
+public import SCode;
 public import DAE;
 public import Values;
 
@@ -57,9 +57,9 @@ public type ComponentRef = DAE.ComponentRef;
 public type Exp = DAE.Exp;
 public type Ident = String;
 public type Operator = DAE.Operator;
-public type Type = DAE.ExpType;
+public type Type = DAE.Type;
 public type Subscript = DAE.Subscript;
-public type Var = DAE.ExpVar;
+public type Var = DAE.Var;
 
 // protected imports
 protected import ClassInf;
@@ -381,10 +381,10 @@ algorithm
       DAE.Exp e;
       list<Boolean> blist;
   
-    case ((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_VAR()), ilst)) 
+    case ((e as DAE.CREF(ty = DAE.T_FUNCTION_REFERENCE_VAR(functionType = _)), ilst)) 
       then ((e, ilst));
       
-    case ((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = _)), ilst)) 
+    case ((e as DAE.CREF(ty = DAE.T_FUNCTION_REFERENCE_FUNC(builtin = _)), ilst)) 
       then ((e, ilst));
   
     case( (DAE.CREF(cr,ty), ilst) )
@@ -455,14 +455,15 @@ algorithm
     local
       Type elt_tp;
       list<DAE.Dimension> dims;
+      DAE.TypeSource ts;
 
-    case(DAE.ET_ARRAY(elt_tp,dims),n)
+    case(DAE.T_ARRAY(elt_tp,dims,ts),n)
       equation
         dims = n::dims;
       then 
-        DAE.ET_ARRAY(elt_tp,dims);
+        DAE.T_ARRAY(elt_tp,dims,ts);
         
-    case(tp,n) then DAE.ET_ARRAY(tp,{n});
+    case(tp,n) then DAE.T_ARRAY(tp,{n},DAE.emptyTypeSource);
 
   end matchcontinue;
 end liftArrayR;
@@ -564,7 +565,7 @@ public function negateReal
   input DAE.Exp inReal;
   output DAE.Exp outNegatedReal;
 algorithm
-  outNegatedReal := DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()), inReal);
+  outNegatedReal := DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT), inReal);
 end negateReal;
 
 public function expand "expands products
@@ -575,7 +576,7 @@ a *(b+c) => a*b + a*c"
 algorithm
   outE := matchcontinue(e)
     local 
-      DAE.ExpType tp;
+      DAE.Type tp;
       DAE.Operator op;
       DAE.Exp e1,e2,e21,e22;
     
@@ -825,16 +826,17 @@ public function unliftArray
   input Type inType;
   output Type outType;
 algorithm
-  outType:=
-  matchcontinue (inType)
+  outType := matchcontinue (inType)
     local
       Type tp,t;
       DAE.Dimension d;
-      list<DAE.Dimension> ds;
-    case (DAE.ET_ARRAY(ty = tp,arrayDimensions = {_}))
+      DAE.Dimensions ds;
+      DAE.TypeSource ts;
+      
+    case (DAE.T_ARRAY(ty = tp,dims = {_}))
       then tp;
-    case (DAE.ET_ARRAY(ty = tp,arrayDimensions = (d :: ds)))
-      then DAE.ET_ARRAY(tp,ds);
+    case (DAE.T_ARRAY(ty = tp,dims = (d :: ds),source = ts))
+      then DAE.T_ARRAY(tp,ds,ts);
     case (t) then t;
   end matchcontinue;
 end unliftArray;
@@ -889,7 +891,7 @@ end unliftExp;
 public function liftArrayRight "
 This function adds an array dimension to a type on the right side, i.e.
 liftArrayRigth(Real[2,3],SOME(4)) => Real[2,3,4].
-This function has the same functionality as Types.liftArrayType but for DAE.ExpType.'"
+This function has the same functionality as Types.liftArrayType but for DAE.Type.'"
   input Type inType;
   input DAE.Dimension inDimension;
   output Type outType;
@@ -897,16 +899,17 @@ algorithm
   outType := matchcontinue (inType,inDimension)
     local
       Type ty_1,ty;
-      list<DAE.Dimension> dims;
+      DAE.Dimensions dims;
       DAE.Dimension dim;
+      DAE.TypeSource ts;
     
-    case (DAE.ET_ARRAY(ty,dims),dim)
+    case (DAE.T_ARRAY(ty,dims,ts),dim)
       equation
         ty_1 = liftArrayRight(ty, dim);
       then
-        DAE.ET_ARRAY(ty_1,dims);
+        DAE.T_ARRAY(ty_1,dims,ts);
     
-    case (ty,dim) then DAE.ET_ARRAY(ty,{dim});
+    case (ty,dim) then DAE.T_ARRAY(ty,{dim},DAE.emptyTypeSource);
 
   end matchcontinue;
 end liftArrayRight;
@@ -922,12 +925,13 @@ algorithm
   outType := matchcontinue (inType,inDimension)
     local
       Type ty;
-      list<DAE.Dimension> dims;
+      DAE.Dimensions dims;
       DAE.Dimension dim;
+      DAE.TypeSource ts;
       
-    case (DAE.ET_ARRAY(ty,dims),dim) then DAE.ET_ARRAY(ty,dim::dims);
+    case (DAE.T_ARRAY(ty,dims,ts),dim) then DAE.T_ARRAY(ty,dim::dims,ts);
       
-    case (ty,dim)then DAE.ET_ARRAY(ty,{dim});
+    case (ty,dim)then DAE.T_ARRAY(ty,{dim},DAE.emptyTypeSource);
       
   end matchcontinue;
 end liftArrayLeft;
@@ -1061,21 +1065,22 @@ public function arrayAppend
 algorithm
   array := matchcontinue(head, rest)
     local
-      DAE.ExpType ty;
+      DAE.Type ty;
       Boolean scalar;
       list<DAE.Exp> expl;
       Integer dim;
-      list<DAE.Dimension> dims;
+      DAE.Dimensions dims;
+      DAE.TypeSource ts;
     
     case (_, DAE.ARRAY(
-        DAE.ET_ARRAY(ty = ty, arrayDimensions = DAE.DIM_INTEGER(dim) :: dims),
+        DAE.T_ARRAY(ty = ty, dims = DAE.DIM_INTEGER(dim) :: dims, source  = ts),
         scalar = scalar, 
         array = expl))
       equation
         dim = dim + 1;
         dims = DAE.DIM_INTEGER(dim) :: dims;
       then
-        DAE.ARRAY(DAE.ET_ARRAY(ty, dims), scalar, head :: expl);
+        DAE.ARRAY(DAE.T_ARRAY(ty, dims, ts), scalar, head :: expl);
     
     case (_, _)
       equation
@@ -1088,17 +1093,18 @@ end arrayAppend;
 
 public function arrayDimensionSetFirst
   "Updates the first dimension of an array type."
-  input DAE.ExpType inArrayType;
+  input DAE.Type inArrayType;
   input DAE.Dimension dimension;
-  output DAE.ExpType outArrayType;
+  output DAE.Type outArrayType;
 algorithm
   outArrayType := match(inArrayType, dimension)
     local
-      DAE.ExpType ty;
-      list<DAE.Dimension> rest_dims;
+      DAE.Type ty;
+      DAE.Dimensions rest_dims;
+      DAE.TypeSource ts;
     
-    case (DAE.ET_ARRAY(ty = ty, arrayDimensions = _ :: rest_dims), _)
-      then DAE.ET_ARRAY(ty, dimension :: rest_dims);
+    case (DAE.T_ARRAY(ty = ty, dims = _ :: rest_dims, source = ts), _)
+      then DAE.T_ARRAY(ty, dimension :: rest_dims, ts);
   end match;
 end arrayDimensionSetFirst;
 
@@ -1150,7 +1156,7 @@ public function varName "Returns the name of a Var"
   output String name;
 algorithm
   name := match(v)
-    case(DAE.COMPLEX_VAR(name,_)) then name;
+    case(DAE.TYPES_VAR(name = name)) then name;
   end match;
 end varName;
 
@@ -1159,7 +1165,7 @@ public function varType "Returns the type of a Var"
   output Type tp;
 algorithm
   tp := match(v)
-    case(DAE.COMPLEX_VAR(_,tp)) then tp;
+    case(DAE.TYPES_VAR(ty = tp)) then tp;
   end match;
 end varType;
 
@@ -1242,7 +1248,7 @@ algorithm
   outType := matchcontinue(inType)
     local
       Type ty;
-    case(DAE.ET_BOXED(ty)) then ty;
+    case(DAE.T_METABOXED(ty = ty)) then ty;
     case(ty) then ty;
   end matchcontinue;
 end unboxExpType;
@@ -1254,7 +1260,7 @@ public function unboxExp
 algorithm
   outExp := match (e)
     local
-      DAE.ExpType ty;
+      DAE.Type ty;
     case (DAE.BOX(e)) then unboxExp(e);
     else e;
   end match;
@@ -1284,8 +1290,8 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- Expression.subscriptIndexExp failed on " +&
-          ExpressionDump.printSubscriptStr(inSubscript));
+        Debug.traceln("- Expression.subscriptIndexExp failed on subscript: [" +&
+          ExpressionDump.printSubscriptStr(inSubscript) +& "]");
       then
         fail();
   end match;
@@ -1368,11 +1374,11 @@ end expLastSubs;
 public function expDimensions
   "Tries to return the dimensions from an expression, typically an array."
   input Exp inExp;
-  output list<DAE.Dimension> outDims;
+  output DAE.Dimensions outDims;
 algorithm
   outDims := match(inExp)
     local
-      DAE.ExpType tp;
+      DAE.Type tp;
       Exp e;
 
     case DAE.ARRAY(ty = tp) then arrayDimension(tp);
@@ -1386,10 +1392,10 @@ Author BZ
 Get dimension of array.
 "
   input Type tp;
-  output list<DAE.Dimension> dims;
+  output DAE.Dimensions dims;
 algorithm
   dims := matchcontinue(tp)
-    case(DAE.ET_ARRAY(_,dims)) then dims;
+    case(DAE.T_ARRAY(dims = dims)) then dims;
     case(_) then {};
   end matchcontinue;
 end arrayDimension;
@@ -1397,24 +1403,24 @@ end arrayDimension;
 public function arrayTypeDimensions
 "Return the array dimensions of a type."
   input Type tp;
-  output list<DAE.Dimension> dims;
+  output DAE.Dimensions dims;
 algorithm
   dims := match(tp)
-    case(DAE.ET_ARRAY(_,dims)) then dims;
+    case(DAE.T_ARRAY(dims = dims)) then dims;
   end match;
 end arrayTypeDimensions;
 
 public function subscriptDimensions "Function: subscriptDimensions
 Returns the dimensionality of the subscript expression"
   input list<Subscript> insubs;
-  output list<DAE.Dimension> oint;
+  output DAE.Dimensions oint;
 algorithm 
   oint := matchcontinue(insubs)
     local
       Subscript ss;
       list<Subscript> subs;
       Integer x;
-      list<DAE.Dimension> recursive;
+      DAE.Dimensions recursive;
       DAE.Exp e;
       String sub_str;
           
@@ -1497,32 +1503,32 @@ public function arrayEltType
 algorithm
   outType := matchcontinue (inType)
     local Type t;
-    case (DAE.ET_ARRAY(ty = t)) then arrayEltType(t);
+    case (DAE.T_ARRAY(ty = t)) then arrayEltType(t);
     case (t) then t;
   end matchcontinue;
 end arrayEltType;
 
 public function sizeOf
 "Returns the size of an ET_ARRAY or ET_COMPLEX"
-  input DAE.ExpType inType;
+  input DAE.Type inType;
   output Integer i;
 algorithm
   i := matchcontinue inType
     local
-      list<DAE.Dimension> ad;
+      DAE.Dimensions ad;
       Integer nr;
       list<Integer> lstInt;
       list<Var> varLst;
     
     // count the variables in array
-    case DAE.ET_ARRAY(arrayDimensions = ad)
+    case DAE.T_ARRAY(dims = ad)
       equation
         nr = dimensionSize(List.reduce(ad, dimensionsMult));
       then
         nr;
     
     // count the variables in record
-    case DAE.ET_COMPLEX(varLst = varLst)
+    case DAE.T_COMPLEX(varLst = varLst)
       equation
         lstInt = List.map(List.map(varLst, varType), sizeOf);
         nr = List.reduce(lstInt, intAdd);
@@ -1604,7 +1610,7 @@ end dimensionSizeAll;
 
 public function dimensionsSizes
   "Extracts a list of integers from a list of array dimensions"
-  input list<DAE.Dimension> inDims;
+  input DAE.Dimensions inDims;
   output list<Integer> outValues;
 algorithm
   outValues := List.map(inDims, dimensionSizeAll);
@@ -1621,16 +1627,18 @@ algorithm
       Type tp;
       Operator op;
       DAE.Exp e1,e2,e3,e;
-      list<DAE.Exp> explist;
+      list<DAE.Exp> explist,exps;
       Absyn.Path p;
       String msg;
       DAE.Type ty;
+      list<DAE.Type> tys;
+      Integer i;
     
-    case (DAE.ICONST(integer = _)) then DAE.ET_INT();
-    case (DAE.RCONST(real = _)) then DAE.ET_REAL();
-    case (DAE.SCONST(string = _)) then DAE.ET_STRING();
-    case (DAE.BCONST(bool = _)) then DAE.ET_BOOL();
-    case (DAE.ENUM_LITERAL(name = p)) then DAE.ET_ENUMERATION(p, {}, {});
+    case (DAE.ICONST(integer = _)) then DAE.T_INTEGER_DEFAULT;
+    case (DAE.RCONST(real = _)) then DAE.T_REAL_DEFAULT;
+    case (DAE.SCONST(string = _)) then DAE.T_STRING_DEFAULT;
+    case (DAE.BCONST(bool = _)) then DAE.T_BOOL_DEFAULT;
+    case (DAE.ENUM_LITERAL(name = p)) then DAE.T_ENUMERATION(NONE(), p, {}, {}, {}, DAE.emptyTypeSource);
     case (DAE.CREF(ty = tp)) then tp;
     case (DAE.BINARY(operator = op)) then typeofOp(op);
     case (DAE.UNARY(operator = op)) then typeofOp(op);
@@ -1652,22 +1660,39 @@ algorithm
     case (DAE.TSUB(ty = tp)) then tp;
     case (DAE.CODE(ty = tp)) then tp;
     case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(exprType=ty,path = Absyn.IDENT("array"))))
-      then liftArrayR(Types.elabType(ty),DAE.DIM_UNKNOWN());
+      then liftArrayR(Types.simplifyType(ty),DAE.DIM_UNKNOWN());
     case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(exprType=ty)))
-      then Types.elabType(ty);
-    case (DAE.SIZE(_,NONE())) then DAE.ET_ARRAY(DAE.ET_INT(),{DAE.DIM_UNKNOWN()});
-    case (DAE.SIZE(_,SOME(_))) then DAE.ET_INT();
+      then Types.simplifyType(ty);
+    case (DAE.SIZE(_,NONE())) then DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource);
+    case (DAE.SIZE(_,SOME(_))) then DAE.T_INTEGER_DEFAULT;
     
     // MetaModelica extension
-    case (DAE.LIST(valList = _)) then DAE.ET_METATYPE();
-    case (DAE.CONS(car = _)) then DAE.ET_METATYPE();
-    case (DAE.META_TUPLE(_)) then DAE.ET_METATYPE();
-    case (DAE.TUPLE(_)) then DAE.ET_METATYPE();
-    case (DAE.META_OPTION(_))then DAE.ET_METATYPE();
-    case (DAE.METARECORDCALL(path=_)) then DAE.ET_METATYPE();
-    case (DAE.BOX(_)) then DAE.ET_METATYPE();
+    case (DAE.LIST(valList = _)) then DAE.T_METATYPE(DAE.T_METALIST_DEFAULT, DAE.emptyTypeSource);
+    case (DAE.CONS(car = _)) then DAE.T_METATYPE(DAE.T_METALIST_DEFAULT, DAE.emptyTypeSource);
+    case (DAE.META_TUPLE(exps))
+      equation
+         tys = List.map(exps, typeof);
+      then 
+        DAE.T_METATYPE(DAE.T_METATUPLE(tys, DAE.emptyTypeSource), DAE.emptyTypeSource);
+    case (DAE.TUPLE(exps))
+      equation
+         tys = List.map(exps, typeof);
+      then 
+        DAE.T_METATYPE(DAE.T_TUPLE(tys, DAE.emptyTypeSource), DAE.emptyTypeSource) ;
+    case (DAE.META_OPTION(_))then DAE.T_METATYPE(DAE.T_NONE_DEFAULT, DAE.emptyTypeSource);
+    case (DAE.METARECORDCALL(path=p, index = i)) 
+      equation
+        
+      then 
+        DAE.T_METATYPE(DAE.T_METARECORD(p, i, {}, false, DAE.emptyTypeSource), DAE.emptyTypeSource);
+    case (DAE.BOX(e))
+      equation
+         ty = typeof(e);
+      then 
+        DAE.T_METATYPE(DAE.T_METABOXED(ty, DAE.emptyTypeSource), DAE.emptyTypeSource);
     case (DAE.UNBOX(ty = tp)) then tp;
     case (DAE.SHARED_LITERAL(ty = tp)) then tp;
+    
     case e
       equation
         msg = "- Expression.typeof failed for " +& ExpressionDump.printExpStr(e);
@@ -1716,7 +1741,7 @@ algorithm
     case (DAE.GREATEREQ(ty = t)) then t;
     case (DAE.EQUAL(ty = t)) then t;
     case (DAE.NEQUAL(ty = t)) then t;
-    case (DAE.USERDEFINED(fqName = _)) then DAE.ET_OTHER();
+    case (DAE.USERDEFINED(fqName = _)) then DAE.T_UNKNOWN_DEFAULT;
   end match;
 end typeofOp;
 
@@ -2054,7 +2079,7 @@ algorithm
         acc = factorsWork(e1,acc,true,doInverseFactors);
         acc = factorsWork(e2,acc,true,doInverseFactors);
       then acc;
-    case (DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = DAE.ET_REAL()),exp2 = e2),acc,noFactors,doInverseFactors)
+    case (DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = DAE.T_REAL(varLst = _)),exp2 = e2),acc,noFactors,doInverseFactors)
       equation
         acc = factorsWork(e1,acc,true,doInverseFactors);
         acc = factorsWork(e2,acc,true,not doInverseFactors);
@@ -2155,14 +2180,14 @@ algorithm
         DAE.BINARY(e2,op,e1);
     case e
       equation
-        DAE.ET_REAL() = typeof(e);
+        DAE.T_REAL(varLst = _) = typeof(e);
       then
-        DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.ET_REAL()),e);
+        DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.T_REAL_DEFAULT),e);
     case e
       equation
-        DAE.ET_INT() = typeof(e);
+        DAE.T_INTEGER(varLst = _) = typeof(e);
       then
-        DAE.BINARY(DAE.ICONST(1),DAE.DIV(DAE.ET_INT()),e);
+        DAE.BINARY(DAE.ICONST(1),DAE.DIV(DAE.T_INTEGER_DEFAULT),e);
   end matchcontinue;
 end inverseFactors;
 
@@ -2364,7 +2389,7 @@ algorithm cref := matchcontinue(cr)
     list<Subscript> subs;
   case(cr)
     equation
-      (ty1 as DAE.ET_ARRAY(_,_)) = ComponentReference.crefLastType(cr);
+      (ty1 as DAE.T_ARRAY(ty = _)) = ComponentReference.crefLastType(cr);
       subs = ComponentReference.crefLastSubs(cr);
       ty2 = unliftArrayTypeWithSubs(subs,ty1);
     then
@@ -2432,19 +2457,20 @@ end makeASUB;
 
 public function generateCrefsExpFromExpVar "
 Author: Frenkel TUD 2010-05"
-  input DAE.ExpVar inVar;
+  input DAE.Var inVar;
   input DAE.ComponentRef inCrefPrefix;
   output DAE.Exp outCrefExp;
 algorithm outCrefExp := match(inVar,inCrefPrefix)
   local
     String name;
-    DAE.ExpType tp;
+    DAE.Type ty;
     DAE.ComponentRef cr;
     DAE.Exp e;
-  case (DAE.COMPLEX_VAR(name=name,tp=tp),inCrefPrefix)
+    
+  case (DAE.TYPES_VAR(name=name,ty=ty),inCrefPrefix)
   equation
-    cr = ComponentReference.crefPrependIdent(inCrefPrefix,name,{},tp);
-    e = makeCrefExp(cr, tp);
+    cr = ComponentReference.crefPrependIdent(inCrefPrefix,name,{},ty);
+    e = makeCrefExp(cr, ty);
   then
     e;
  end match;
@@ -2463,13 +2489,13 @@ public function makeScalarArray
 "function: makeRealArray
   Construct an array node of an DAE.Exp list of type REAL."
   input list<DAE.Exp> inExpLst;
-  input DAE.ExpType et;
+  input DAE.Type et;
   output DAE.Exp outExp;
 protected
   Integer i;
 algorithm
   i := listLength(inExpLst);
-  outExp := DAE.ARRAY(DAE.ET_ARRAY(et, {DAE.DIM_INTEGER(i)}), true, inExpLst);
+  outExp := DAE.ARRAY(DAE.T_ARRAY(et, {DAE.DIM_INTEGER(i)}, DAE.emptyTypeSource), true, inExpLst);
 end makeScalarArray;
 
 public function makeRealArray
@@ -2478,7 +2504,7 @@ public function makeRealArray
   input list<DAE.Exp> expl;
   output DAE.Exp outExp;
 algorithm
-  outExp := makeScalarArray(expl,DAE.ET_REAL());
+  outExp := makeScalarArray(expl,DAE.T_REAL_DEFAULT);
 end makeRealArray;
 
 public function makeRealAdd
@@ -2488,7 +2514,7 @@ public function makeRealAdd
   input DAE.Exp inExp2;
   output DAE.Exp outExp;
 algorithm
-  outExp := DAE.BINARY(inExp1, DAE.ADD(DAE.ET_REAL()), inExp2);
+  outExp := DAE.BINARY(inExp1, DAE.ADD(DAE.T_REAL_DEFAULT), inExp2);
 end makeRealAdd;
 
 public function expAdd
@@ -2806,7 +2832,7 @@ input Type inTp;
 output Type outTp;
 algorithm
   outTp := matchcontinue(inTp)
-    case (DAE.ET_OTHER()) then DAE.ET_REAL();
+    case (DAE.T_UNKNOWN(_)) then DAE.T_REAL_DEFAULT;
     case (inTp) then inTp;
   end matchcontinue;
 end checkIfOther;
@@ -2890,8 +2916,8 @@ public function makeConstOne
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (inType)
-    case (DAE.ET_INT()) then DAE.ICONST(1);
-    case (DAE.ET_REAL()) then DAE.RCONST(1.0);
+    case (DAE.T_INTEGER(varLst = _)) then DAE.ICONST(1);
+    case (DAE.T_REAL(varLst = _)) then DAE.RCONST(1.0);
     case(_) then DAE.RCONST(1.0);
   end matchcontinue;
 end makeConstOne;
@@ -2902,8 +2928,8 @@ public function makeConstZero
   output DAE.Exp const;
 algorithm
   const := matchcontinue(inType)
-    case (DAE.ET_REAL()) then DAE.RCONST(0.0);
-    case (DAE.ET_INT()) then DAE.ICONST(0);
+    case (DAE.T_REAL(varLst = _)) then DAE.RCONST(0.0);
+    case (DAE.T_INTEGER(varLst = _)) then DAE.ICONST(0);
     case(_) then DAE.RCONST(0.0);
   end matchcontinue;
 end makeConstZero;
@@ -2937,7 +2963,7 @@ end makeRealArrayOfZeros;
 
 public function makeZeroExpression
 " creates a Real or array<Real> zero expression with given dimensions, also returns its type"
-  input list<DAE.Dimension> inDims;
+  input DAE.Dimensions inDims;
   output DAE.Exp outExp;
   output DAE.Type outType;
 algorithm
@@ -2945,12 +2971,14 @@ algorithm
     local
       Integer i;
       DAE.Dimension d;
-      list<DAE.Dimension> dims;
+      DAE.Dimensions dims;
       DAE.Exp e;
       list<DAE.Exp> eLst;
       DAE.Type ty;
       Boolean scalar;
+    
     case {} then (DAE.RCONST(0.0), DAE.T_REAL_DEFAULT);
+    
     case d::dims
       equation
         i = dimensionSize(d);
@@ -2958,13 +2986,13 @@ algorithm
         eLst = List.fill(e,i);
         scalar = List.isEmpty(dims);
       then
-        (DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(),d::dims),scalar,eLst), 
-         (DAE.T_ARRAY(d,ty),NONE()));
+        (DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,d::dims,DAE.emptyTypeSource),scalar,eLst), 
+         DAE.T_ARRAY(ty,{d},DAE.emptyTypeSource));
   end match;
 end makeZeroExpression;
 
 public function arrayFill
-  input list<DAE.Dimension> dims;
+  input DAE.Dimensions dims;
   input DAE.Exp inExp;
   output DAE.Exp oExp;
 algorithm 
@@ -2981,7 +3009,7 @@ algorithm
 end arrayFill;
 
 protected function arrayFill2
-  input list<DAE.Dimension> dims;
+  input DAE.Dimensions dims;
   input DAE.Exp inExp;
   output DAE.Exp oExp;
 algorithm 
@@ -2991,13 +3019,15 @@ algorithm
     DAE.Dimension d;
     Type ty;
     list<DAE.Exp> expl;
+  
   case({d},inExp)
     equation
       ty = typeof(inExp);
       i = dimensionSize(d);
       expl = listCreateExp(i,inExp);
     then
-      DAE.ARRAY(DAE.ET_ARRAY(ty,{DAE.DIM_INTEGER(i)}),true,expl);
+      DAE.ARRAY(DAE.T_ARRAY(ty,{DAE.DIM_INTEGER(i)},DAE.emptyTypeSource),true,expl);
+  
   case(_::dims,inExp)
     equation
       print(" arrayFill2 not implemented for matrixes, only single arrays \n");
@@ -3044,7 +3074,7 @@ public function makeVar "Creates a Var given a name and Type"
   output Var v;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  v:= DAE.COMPLEX_VAR(name,tp);
+  v := DAE.TYPES_VAR(name, DAE.dummyAttrVar, SCode.PUBLIC(), tp, DAE.UNBOUND(), NONE());
 end makeVar;
 
 public function dimensionsMult
@@ -3075,21 +3105,22 @@ end dimensionsAdd;
 
 public function concatArrayType
   "Concatenates two array types, so that the resulting type is correct."
-  input DAE.ExpType arrayType1;
-  input DAE.ExpType arrayType2;
-  output DAE.ExpType concatType;
+  input DAE.Type arrayType1;
+  input DAE.Type arrayType2;
+  output DAE.Type concatType;
 algorithm
   concatType := match(arrayType1, arrayType2)
     local
-      DAE.ExpType et;
+      DAE.Type et;
       DAE.Dimension dim1, dim2;
-      list<DAE.Dimension> dims1, dims2;
-    case (DAE.ET_ARRAY(ty = et, arrayDimensions = dim1 :: dims1),
-          DAE.ET_ARRAY(arrayDimensions = dim2 :: dims2))
+      DAE.Dimensions dims1, dims2;
+      DAE.TypeSource ts;
+    
+    case (DAE.T_ARRAY(ty = et, dims = dim1 :: dims1, source = ts), DAE.T_ARRAY(dims = dim2 :: dims2))
       equation
         dim1 = dimensionsAdd(dim1, dim2);
       then
-        DAE.ET_ARRAY(et, dim1 :: dims1);
+        DAE.T_ARRAY(et, dim1 :: dims1, ts);
   end match;
 end concatArrayType;
 
@@ -3118,7 +3149,7 @@ algorithm
       DAE.Exp expr,source,target;
       Integer c;
       DAE.ComponentRef cr;
-      DAE.ExpType ty;
+      DAE.Type ty;
     case ((expr,(source,target,c)))
       equation
         true = expEqual(expr, source);
@@ -5089,19 +5120,20 @@ input Type t1,t2;
 output Boolean b;
 algorithm b := matchcontinue(t1,t2)
   local
-    list<DAE.ExpVar> vars1,vars2;
+    list<DAE.Var> vars1,vars2;
     Type ty1,ty2;
-    list<DAE.Dimension> ad1,ad2;
+    DAE.Dimensions ad1,ad2;
     list<Integer> li1,li2;
 
-  case(DAE.ET_INT(),DAE.ET_INT()) then true;
-  case(DAE.ET_REAL(),DAE.ET_REAL()) then true;
-  case(DAE.ET_STRING(),DAE.ET_STRING()) then true;
-  case(DAE.ET_BOOL(),DAE.ET_BOOL()) then true;
+  case(DAE.T_INTEGER(varLst = _),DAE.T_INTEGER(varLst = _)) then true;
+  case(DAE.T_REAL(varLst = _),DAE.T_REAL(varLst = _)) then true;
+  case(DAE.T_STRING(varLst = _),DAE.T_STRING(varLst = _)) then true;
+  case(DAE.T_BOOL(varLst = _),DAE.T_BOOL(varLst = _)) then true;
 
-  case(DAE.ET_COMPLEX(_,vars1,_), DAE.ET_COMPLEX(_,vars2,_))
+  case(DAE.T_COMPLEX(varLst = vars1), DAE.T_COMPLEX(varLst = vars2))
        then equalTypesComplexVars(vars1,vars2);
-  case(DAE.ET_ARRAY(ty1,ad1),DAE.ET_ARRAY(ty2,ad2))
+  
+  case(DAE.T_ARRAY(ty1,ad1,_),DAE.T_ARRAY(ty2,ad2,_))
     equation
       li1 = List.map(ad1, dimensionSize);
       li2 = List.map(ad2, dimensionSize);
@@ -5114,17 +5146,17 @@ algorithm b := matchcontinue(t1,t2)
 end equalTypes;
 
 protected function equalTypesComplexVars ""
-input list<DAE.ExpVar> vars1,vars2;
+input list<DAE.Var> vars1,vars2;
 output Boolean b;
 algorithm
   b := matchcontinue(vars1,vars2)
     local
-      DAE.ExpType t1,t2;
+      DAE.Type t1,t2;
       String s1,s2;
     
     case({},{}) then true;
     
-    case(DAE.COMPLEX_VAR(s1,t1)::vars1,DAE.COMPLEX_VAR(s2,t2)::vars2)
+    case(DAE.TYPES_VAR(name = s1, ty = t1)::vars1,DAE.TYPES_VAR(name = s2, ty = t2)::vars2)
       equation
         //print(" verify subvars: " +& s1 +& " and " +& s2 +& " to go: " +& intString(listLength(vars1)) +& " , " +& intString(listLength(vars2))  +& "\n");
         true = stringEq(s1,s2);
@@ -5145,10 +5177,10 @@ public function typeBuiltin
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (inType)
-    case (DAE.ET_INT()) then true;
-    case (DAE.ET_REAL()) then true;
-    case (DAE.ET_STRING()) then true;
-    case (DAE.ET_BOOL()) then true;
+    case (DAE.T_INTEGER(varLst = _)) then true;
+    case (DAE.T_REAL(varLst = _)) then true;
+    case (DAE.T_STRING(varLst = _)) then true;
+    case (DAE.T_BOOL(varLst = _)) then true;
     case (_) then false;
   end matchcontinue;
 end typeBuiltin;
@@ -5170,10 +5202,10 @@ algorithm
   re := matchcontinue(it)
     local
       Type t1,t2;
-    case(DAE.ET_ARRAY(ty=t2))
+    case(DAE.T_ARRAY(ty=t2))
       then
         isReal(t2);
-    case(DAE.ET_INT()) then true;
+    case(DAE.T_INTEGER(varLst = _)) then true;
     case(_) then false;
   end matchcontinue;
 end isInt;
@@ -5185,10 +5217,10 @@ algorithm
   re := matchcontinue(it)
     local
       Type t1,t2;
-    case(DAE.ET_ARRAY(ty=t2))
+    case(DAE.T_ARRAY(ty=t2))
       then
         isReal(t2);
-    case(DAE.ET_REAL()) then true;
+    case(DAE.T_REAL(varLst = _)) then true;
     case(_) then false;
   end matchcontinue;
 end isReal;
@@ -5316,7 +5348,7 @@ algorithm
     case (DAE.CALL(path = Absyn.IDENT(name = "actualStream"))) then false;
     
     // a call that has an return array type returns true 
-    case (DAE.CALL(attr = DAE.CALL_ATTR(ty = DAE.ET_ARRAY(_,_)))) then true;
+    case (DAE.CALL(attr = DAE.CALL_ATTR(ty = DAE.T_ARRAY(ty = _)))) then true;
     
     // any other call returns false
     case (DAE.CALL(path = _)) then false;
@@ -5722,7 +5754,7 @@ public function isCrefArray
   output Boolean outIsArray;
 algorithm
   outIsArray := match(inExp)
-    case(DAE.CREF(ty = DAE.ET_ARRAY(_,_))) then true;
+    case(DAE.CREF(ty = DAE.T_ARRAY(ty = _))) then true;
     else false;
   end match;
 end isCrefArray;
@@ -5737,7 +5769,7 @@ algorithm
       ComponentRef cr;
       Boolean b;
     
-    case DAE.CREF(ty = DAE.ET_ARRAY(ty = _))
+    case DAE.CREF(ty = DAE.T_ARRAY(ty = _))
       equation
         cr = expCref(inExp);
         b = ComponentReference.crefHasScalarSubscripts(cr);
@@ -5855,8 +5887,8 @@ input Type tp;
 output Boolean res;
 algorithm
   res := matchcontinue(tp)
-    case(DAE.ET_REAL()) then  true;
-    case(DAE.ET_INT()) then true;
+    case(DAE.T_REAL(varLst = _)) then  true;
+    case(DAE.T_INTEGER(varLst = _)) then true;
     else false;
   end matchcontinue;
 end isIntegerOrReal;
@@ -6250,9 +6282,9 @@ algorithm
       then
         res;
     
-    case (DAE.CAST(ty = DAE.ET_REAL(),exp = DAE.ICONST(integer = i)),cr ) then false;
+    case (DAE.CAST(ty = DAE.T_REAL(varLst = _),exp = DAE.ICONST(integer = i)),cr ) then false;
     
-    case (DAE.CAST(ty = DAE.ET_REAL(),exp = e),cr )
+    case (DAE.CAST(ty = DAE.T_REAL(varLst= _),exp = e),cr )
       equation
         res = expContains(e, cr);
       then
@@ -6361,13 +6393,13 @@ end operatorEqual;
 
 public function arrayContainZeroDimension " function containZeroDimension
 Check wheter an arrayDim contains a zero dimension or not."
-  input list<DAE.Dimension> inDim;
+  input DAE.Dimensions inDim;
   output Boolean zero;
 algorithm
   zero := matchcontinue(inDim)
     local
       DAE.Dimension d;
-      list<DAE.Dimension> iLst;
+      DAE.Dimensions iLst;
       Boolean retVal;
     
     case({}) then true;
@@ -6391,12 +6423,12 @@ end arrayContainZeroDimension;
 
 public function arrayContainWholeDimension
   "Checks if a list of dimensions contain a wholedim, i.e. NONE."
-  input list<DAE.Dimension> inDim;
+  input DAE.Dimensions inDim;
   output Boolean wholedim;
 algorithm
   wholedim := matchcontinue(inDim)
     local
-      list<DAE.Dimension> rest_dims;
+      DAE.Dimensions rest_dims;
     case ({}) then false;
     case (DAE.DIM_UNKNOWN() :: rest_dims) then true;
     case (_ :: rest_dims) then arrayContainZeroDimension(rest_dims);
@@ -6404,12 +6436,12 @@ algorithm
 end arrayContainWholeDimension;
 
 public function isArrayType
-"Returns true if inType is an ET_ARRAY"
-  input DAE.ExpType inType;
+"Returns true if inType is an T_ARRAY"
+  input DAE.Type inType;
   output Boolean b;
 algorithm
   b := match inType
-    case DAE.ET_ARRAY(_,_) then true;
+    case DAE.T_ARRAY(ty = _) then true;
     else false;
   end match;
 end isArrayType;
@@ -6420,21 +6452,10 @@ public function isRecordType
   output Boolean b;
 algorithm
   b := match(inType)
-    case DAE.ET_COMPLEX(complexClassType = ClassInf.RECORD(path = _)) then true;
+    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = _)) then true;
     else false;
   end match;
 end isRecordType;
-
-public function isOtherType
-  "Return true if the type is ET_OTHER"
-  input Type inType;
-  output Boolean b;
-algorithm
-  b := match(inType)
-    case DAE.ET_OTHER() then true;
-    else false;
-  end match;
-end isOtherType;
 
 public function dimensionsEqual
   "Returns whether two dimensions are equal or not."
@@ -6652,7 +6673,7 @@ public function isBuiltinFunctionReference
   output Boolean b;
 algorithm
   b := match exp
-    case DAE.CREF(ty=DAE.ET_FUNCTION_REFERENCE_FUNC(builtin=true)) then true;
+    case DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=true)) then true;
     else false;
   end match;
 end isBuiltinFunctionReference;
@@ -6670,7 +6691,7 @@ public function makeBuiltinCall
   "Create a DAE.CALL with the given data for a call to a builtin function."
   input String name;
   input list<DAE.Exp> args;
-  input DAE.ExpType result_type;
+  input DAE.Type result_type;
   output DAE.Exp call;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
@@ -6881,7 +6902,7 @@ algorithm
       list<DAE.Exp> exps;
       list<list<DAE.Exp>> matrix;
       String str,name;
-      DAE.ExpType tp;
+      DAE.Type tp;
     case DAE.ICONST(integer=_) then 0;
     case DAE.RCONST(real=_) then 0;
     case DAE.SCONST(string=_) then 0;
@@ -7002,7 +7023,7 @@ end complexity;
 
 protected function complexityBuiltin
   input String name;
-  input DAE.ExpType tp;
+  input DAE.Type tp;
   output Integer complexity;
 algorithm
   complexity := match (name,tp)
@@ -7013,13 +7034,13 @@ algorithm
 end complexityBuiltin;
 
 protected function tpComplexity
-  input DAE.ExpType tp;
+  input DAE.Type tp;
   output Integer i;
 algorithm
   i := match tp
     local
       list<DAE.Dimension> dims;
-    case DAE.ET_ARRAY(arrayDimensions=dims)
+    case DAE.T_ARRAY(dims=dims)
       equation
         i = List.fold(List.map(dims,dimComplexity),intMul,1);
       then i;
@@ -7044,8 +7065,8 @@ protected function opComplexity
 algorithm
   i := match op
     local
-      DAE.ExpType tp;
-    case DAE.ADD(ty=DAE.ET_STRING()) then 100;
+      DAE.Type tp;
+    case DAE.ADD(ty=DAE.T_STRING(source = _)) then 100;
     case DAE.ADD(ty=tp) then 1;
     case DAE.SUB(ty=tp) then 1;
     case DAE.MUL(ty=tp) then 1;
@@ -7069,7 +7090,7 @@ algorithm
     case DAE.POW_SCALAR_ARRAY(ty=tp) then complexityAlloc+30*tpComplexity(tp);
     case DAE.POW_ARR(ty=tp) then complexityAlloc+30*tpComplexity(tp);
     case DAE.POW_ARR2(ty=tp) then complexityAlloc+30*tpComplexity(tp);
-      /* TODO: Array ops? */
+    /* TODO: Array ops? */
     case DAE.AND(ty=tp) then 1;
     case DAE.OR(ty=tp) then 1;
     case DAE.NOT(ty=tp) then 1;

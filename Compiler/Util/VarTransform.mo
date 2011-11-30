@@ -30,7 +30,7 @@
  */
 
 encapsulated package VarTransform
-" file:         VarTransform.mo
+" file:        VarTransform.mo
   package:     VarTransform
   description: VarTransform contains a Binary Tree representation of variable replacements.
 
@@ -187,7 +187,7 @@ algorithm
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> cmt;
       Absyn.InnerOuter io;
-      list<DAE.Dimension> idims;
+      DAE.Dimensions idims;
       DAE.ExternalDecl extDecl;
       DAE.Ident id;
       Absyn.Path path;
@@ -639,7 +639,7 @@ algorithm
       list<DAE.Exp> expl1,expl2;
       DAE.ComponentRef cr_1,cr;
       list<DAE.Statement> xs_1,xs,stmts,stmts2;
-      DAE.ExpType tp,tt;
+      DAE.Type tp,tt;
       VariableReplacements repl;
       DAE.Statement x;
       Boolean b1,b2,b3;
@@ -1315,16 +1315,16 @@ end replaceExpOpt;
 protected function avoidDoubleHashLookup "
 Author BZ 200X-XX modified 2008-06
 When adding replacement rules, we might not have the correct type availible at the moment.
-Then DAE.ET_OTHER() is used, so when replacing exp and finding DAE.ET_OTHER(), we use the
+Then DAE.T_UNKNOWN_DEFAULT is used, so when replacing exp and finding DAE.T_UNKNOWN(_), we use the
 type of the expression to be replaced instead.
 TODO: find out why array residual functions containing arrays as xloc[] does not work,
       doing that will allow us to use this function for all crefs."
   input DAE.Exp inExp;
-  input DAE.ExpType inType;
+  input DAE.Type inType;
   output DAE.Exp outExp;
 algorithm  outExp := matchcontinue(inExp,inType)
   local DAE.ComponentRef cr;
-  case(DAE.CREF(cr,DAE.ET_OTHER()),inType) then Expression.makeCrefExp(cr,inType);
+  case(DAE.CREF(cr,DAE.T_UNKNOWN(source = _)),inType) then Expression.makeCrefExp(cr,inType);
   case(inExp,_) then inExp;
   end matchcontinue;
 end avoidDoubleHashLookup;
@@ -1400,7 +1400,7 @@ algorithm
     local
       DAE.ComponentRef cr;
       DAE.Exp e,e1_1,e2_1,e1,e2,e3_1,e3,r_1,r;
-      DAE.ExpType t,tp,ety;
+      DAE.Type t,tp,ety;
       VariableReplacements repl;
       Option<FuncTypeExp_ExpToBoolean> cond;
       DAE.Operator op;
