@@ -331,15 +331,17 @@ algorithm
     local
       DAE.Exp exp;
       Boolean b;
-      String str;
+      String str1,str2;
     case (exp,_,false)
       equation
         // print("End fixp: " +& ExpressionDump.printExpStr(exp) +& "\n");
       then (exp,false);
     case (exp,0,_)
       equation
-        str = "ExpressionSimplify iterated to the fixpoint maximum for expression: " +& ExpressionDump.printExpStr(exp);
-        Error.addMessage(Error.COMPILER_WARNING, {str});
+        str1 = ExpressionDump.printExpStr(exp);
+        ((exp,_)) = Expression.traverseExp(exp,simplifyWork,false);
+        str2 = ExpressionDump.printExpStr(exp);
+        Error.addMessage(Error.SIMPLIFY_FIXPOINT_MAXIMUM, {str1,str2});
       then (exp,false); 
     case (exp,n,_)
       equation
@@ -3719,7 +3721,13 @@ algorithm
     // (a1a2...an)^e2 => a1^e2a2^e2..an^e2
     case (DAE.POW(ty = _),e1,e2)
       equation
+        /*
+         * Only do this for constant exponent and any constant expression.
+         * Exponentation is very expensive compared to the inner expressions.
+         */
+        true = Expression.isConst(e2);
         ((exp_lst as (_ :: _ :: _ :: _))) = Expression.factors(e1);
+        _ = List.selectFirst(exp_lst,Expression.isConst);
         exp_lst_1 = simplifyBinaryDistributePow(exp_lst, e2);
         res = Expression.makeProductLst(exp_lst_1);
       then
