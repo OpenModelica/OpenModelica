@@ -12828,40 +12828,40 @@ algorithm
     case (Absyn.EQUAL(),t1,e1,t2,e2)
       equation
         enum_op = makeEnumOperator(DAE.EQUAL(DAE.T_ENUMERATION_DEFAULT), t1, t2);
-        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), 
-                                  DAE.T_METABOXED_DEFAULT, 
-                                  DAE.T_ENUMERATION_DEFAULT);
-        scalars = {
+        types = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), 
+                                  {(DAE.EQUAL(DAE.T_METABOXED_DEFAULT),{t1,t2},DAE.T_BOOL_DEFAULT)}, 
+                                  {});
+        types = 
           (DAE.EQUAL(DAE.T_INTEGER_DEFAULT),
-            {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
-          enum_op,
+            {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT)::
+          enum_op::
           (DAE.EQUAL(DAE.T_REAL_DEFAULT),
-            {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT),
+            {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT)::
           (DAE.EQUAL(DAE.T_STRING_DEFAULT),
-            {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT),
+            {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT)::
           (DAE.EQUAL(DAE.T_BOOL_DEFAULT),
-            {DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT),
-          (DAE.EQUAL(defaultExpType),{t1,t2},DAE.T_BOOL_DEFAULT)};
-        types = List.flatten({scalars});
+            {DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT)::
+          types;
       then
         (types,t1,e1,t2,e2);
     
     case (Absyn.NEQUAL(),t1,e1,t2,e2)
       equation
         enum_op = makeEnumOperator(DAE.NEQUAL(DAE.T_ENUMERATION_DEFAULT), t1, t2);
-        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), DAE.T_METABOXED_DEFAULT, DAE.T_ENUMERATION_DEFAULT);
-        scalars = {
+        types = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), 
+                                  {(DAE.NEQUAL(DAE.T_METABOXED_DEFAULT),{t1,t2},DAE.T_BOOL_DEFAULT)}, 
+                                  {});
+        types = 
           (DAE.NEQUAL(DAE.T_INTEGER_DEFAULT),
-            {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
-          enum_op,
+            {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT)::
+          enum_op::
           (DAE.NEQUAL(DAE.T_REAL_DEFAULT),
-            {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT),
+            {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT)::
           (DAE.NEQUAL(DAE.T_STRING_DEFAULT),
-            {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT),
+            {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT)::
           (DAE.NEQUAL(DAE.T_BOOL_DEFAULT),
-            {DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT),
-          (DAE.NEQUAL(defaultExpType),{t1,t2},DAE.T_BOOL_DEFAULT)};
-        types = List.flatten({scalars});
+            {DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT)::
+          types;
       then
         (types,t1,e1,t2,e2);
 
