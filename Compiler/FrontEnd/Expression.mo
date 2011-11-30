@@ -2074,6 +2074,8 @@ algorithm
     local
       DAE.Exp e1,e2,e;
       ComponentRef cr;
+      Real r;
+      Boolean b;
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = _),exp2 = e2),acc,noFactors,doInverseFactors)
       equation
         acc = factorsWork(e1,acc,true,doInverseFactors);
@@ -2092,14 +2094,18 @@ algorithm
       equation
         e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
       then e::acc;
+    case ((e as DAE.ICONST(integer = 1)),acc,noFactors,doInverseFactors)
+      then acc;
     case ((e as DAE.ICONST(integer = _)),acc,noFactors,doInverseFactors)
       equation
         e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
       then e::acc;
-    case ((e as DAE.RCONST(real = _)),acc,noFactors,doInverseFactors)
+    case ((e as DAE.RCONST(real = r)),acc,noFactors,doInverseFactors)
       equation
-        e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
-      then e::acc;
+        b = not realEq(r,1.0);
+        e = Debug.bcallret1(b and doInverseFactors, inverseFactors, e, e);
+        acc = List.consOnTrue(b, e, acc);
+      then acc;
     case ((e as DAE.SCONST(string = _)),acc,noFactors,doInverseFactors)
       equation
         e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
