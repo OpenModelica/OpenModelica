@@ -3637,32 +3637,19 @@ public function traverseExpTopDown
   replaceable type Type_a subtypeof Any;
   input DAE.Exp inExp;
   input FuncExpType func;
-  input Type_a inTypeA;
+  input Type_a ext_arg;
   output tuple<DAE.Exp, Type_a> outTplExpTypeA;
   partial function FuncExpType
     input tuple<DAE.Exp, Type_a> inTplExpTypeA;
     output tuple<DAE.Exp, Boolean, Type_a> outTplExpBoolTypeA;
   end FuncExpType;
+protected
+  DAE.Exp e;
+  Type_a ext_arg_1;
+  Boolean cont;
 algorithm
-  outTplExpTypeA := matchcontinue (inExp,func,inTypeA)  
-    local
-      DAE.Exp e;
-      Type_a ext_arg_1,ext_arg_2;
-    
-    case (inExp,func,ext_arg_1) 
-      equation 
-        ((e,true,ext_arg_2)) = func((inExp,ext_arg_1));
-        outTplExpTypeA = traverseExpTopDown1(e,func,ext_arg_2);
-      then 
-        outTplExpTypeA;
-    
-    case (inExp,func,inTypeA) 
-      equation 
-        ((e,false,ext_arg_1)) = func((inExp,inTypeA));
-        outTplExpTypeA = ((e,ext_arg_1));
-      then 
-        outTplExpTypeA;
-  end matchcontinue;
+  ((e,cont,ext_arg_1)) := func((inExp,ext_arg));
+  outTplExpTypeA := Debug.bcallret3(cont,traverseExpTopDown1,e,func,ext_arg_1,(e,ext_arg_1));
 end traverseExpTopDown;
 
 protected function traverseExpTopDown1
