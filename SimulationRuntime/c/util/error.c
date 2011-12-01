@@ -37,13 +37,14 @@ jmp_buf globalJmpbuf;
 const unsigned int LOG_NONE          = 0;
 const unsigned int LOG_STATS         = (1<<0);
 const unsigned int LOG_INIT          = (1<<1);
-const unsigned int LOG_SOLVER        = (1<<2);
-const unsigned int LOG_JAC           = (1<<3);
-const unsigned int LOG_ENDJAC        = (1<<4);
-const unsigned int LOG_NONLIN_SYS    = (1<<5);
-const unsigned int LOG_EVENTS        = (1<<6);
-const unsigned int LOG_ZEROCROSSINGS = (1<<7);
-const unsigned int LOG_DEBUG         = (1<<8);
-const unsigned int LOG_RES_INIT  = (1<<0) | (1<<1);
+const unsigned int LOG_RES_INIT      = (1<<2);
+const unsigned int LOG_SOLVER        = (1<<3);
+const unsigned int LOG_JAC           = (1<<4);
+const unsigned int LOG_ENDJAC        = (1<<5);
+const unsigned int LOG_NONLIN_SYS    = (1<<6);
+const unsigned int LOG_EVENTS        = (1<<7);
+const unsigned int LOG_ZEROCROSSINGS = (1<<8);
+const unsigned int LOG_DEBUG         = (1<<9);
+
 
 unsigned int globalDebugFlags = 0;

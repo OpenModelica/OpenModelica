@@ -110,6 +110,7 @@ case simCode as SIMCODE(modelInfo=MODELINFO(__)) then
   >>
 end simulationHeaderFile;
 
+
 template simulationFile(SimCode simCode, String guid)
  "Generates code for main C file for simulation target."
 ::=
@@ -118,6 +119,7 @@ case simCode as SIMCODE(__) then
   <<
   <%simulationFileHeader(simCode)%>
   <%externalFunctionIncludes(externalFunctionIncludes)%>
+  #include "<%fileNamePrefix%>.h"
   #include "<%fileNamePrefix%>_functions.c"
   #define _OMC_SEED_HACK char* _omc_hack
   #define _OMC_SEED_HACK_2  NULL
@@ -214,8 +216,6 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   #include <string.h>
   
   #include "<%fileNamePrefix%>_functions.h"
-  
-  #include "<%fileNamePrefix%>.h"
   
   >>
 end simulationFileHeader;
@@ -2049,7 +2049,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
   CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc2" -I. <%dirExtra%> <%makefileParams.includes ; separator=" "%>
-  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc2" -lSimulationRuntimeC <%makefileParams.ldflags%>
+  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc2" -lSimulationRuntimeC <%makefileParams.ldflags%> -ldl
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   PERL=perl
   MAINFILE=<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.c
@@ -5145,7 +5145,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     error(sourceInfo(), 'Code generation does not support der(<%printExpStr(exp)%>)') 
   case CALL(path=IDENT(name="pre"), expLst={arg}) then
     daeExpCallPre(arg, context, preExp, varDecls)
-  case CALL(path=IDENT(name="start"), expLst={arg}) then
+// a $_start is used to get get start value of a variable
+  case CALL(path=IDENT(name="$_start"), expLst={arg}) then
     daeExpCallStart(arg, context, preExp, varDecls)    
   case CALL(path=IDENT(name="edge"), expLst={arg as CREF(__)}) then
     '(<%cref(arg.componentRef)%> && !$P$PRE<%cref(arg.componentRef)%>)'

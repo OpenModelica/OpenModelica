@@ -3,7 +3,7 @@
 OMC = OPENMODELICAHOME=`pwd`/../../../build/ ../../../build/bin/omc +d=failtrace
 
 
-all : SimCodeC.mo CodegenC.mo SimCodeCSharp.mo SimCodeFMU.mo Unparsing.mo SimCodeQSS.mo SimCodeCpp.mo SimCodeDump.mo SCodeDumpTpl.mo SimCodeAdevs.mo
+all : SimCodeC.mo CodegenC.mo CodegenFMU.mo SimCodeCSharp.mo SimCodeFMU.mo Unparsing.mo SimCodeQSS.mo SimCodeCpp.mo SimCodeDump.mo SCodeDumpTpl.mo SimCodeAdevs.mo
 
 SimCodeAdevs.mo : SimCodeAdevs.tpl SimCodeTV.mo
 	@echo " ** SimCodeAdevs template compilation ** "
@@ -33,7 +33,13 @@ SimCodeFMU.mo : SimCodeFMU.tpl SimCodeTV.mo SimCodeC.tpl
 	@echo " ** SimCodeFMU template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	cp -pf $@ ../../Template/
-	@echo " "	
+	@echo " "
+		
+CodegenFMU.mo : CodegenFMU.tpl SimCodeTV.mo CodegenC.tpl
+	@echo " ** CodegenFMU template compilation ** "
+	$(OMC) $< > $@.log || (cat $@.log && false)
+	cp -pf $@ ../../Template/
+	@echo " "
 
 Unparsing.mo : Unparsing.tpl SimCodeTV.mo
 	@echo " ** Unparsing template compilation ** "

@@ -1,5 +1,34 @@
-#ifndef __FMU_MODEL_INTERFACE_C__
-#define __FMU_MODEL_INTERFACE_C__
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-CurrentYear, Linköping University,
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköping University, either from the above address,
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
+ * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+#include "simulation_data.h"
 
 // array of value references of states
 #if NUMBER_OF_STATES>0
@@ -109,24 +138,21 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
   comp->eventInfo.upcomingTimeEvent = fmiFalse;
   comp->eventInfo.nextEventTime = 0;
 
-  globalData = NULL;
-  globalData = initializeDataStruc2(initializeDataStruc());
-  if (!globalData) {
+  _X_DATA* fmudata = (_X_DATA*)functions.allocateMemory(1,sizeof(_X_DATA));
+  initializeDataStruc_X_(fmudata);
+  initializeXDataStruc(fmudata);
+  if (!fmudata) {
     functions.logger(NULL, instanceName, fmiError, "error",
         "fmiInstantiateModel: Error: Could not initialize the global data structure file.");
     return NULL;
   }
-  comp->time = &globalData->timeValue;
-  setLocalData(globalData);
+  comp->fmuData = fmudata;
+  fmudata->localData[0]->timeValue= 0;
+  comp->time = fmudata->localData[0]->timeValue;
   sim_verbose = comp->loggingOn?64:0;
-  sim_noemit = 0;
-  jac_flag = 0;
-  num_jac_flag = 0;
-  warningLevelAssert = 1;
 
   setStartValues(comp); // to be implemented by the includer of this file
 
-  callExternalObjectConstructors(globalData);
   return comp;
 }
 
@@ -155,6 +181,7 @@ void fmiFreeModelInstance(fmiComponent c) {
     }
     comp->functions.freeMemory(comp->s);
   }
+  DeinitializeXDataStruc(comp->fmuData);
   comp->functions.freeMemory(comp);
 }
 
@@ -276,7 +303,7 @@ fmiStatus fmiSetTime(fmiComponent c, fmiReal time) {
     return fmiError;
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
     "fmiSetTime: time=%.16g", time);
-  *comp->time = time;
+  comp->time = time;
   return fmiOK;
 }
 
@@ -468,8 +495,8 @@ fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx) {
     return fmiError;
 #if (NUMBER_OF_STATES>0)
     // calculate new values
-      functionODE();
-    functionAlgebraics();
+    functionODE(comp->fmuData);
+    functionAlgebraics(comp->fmuData);
 
     for (i=0; i<nx; i++) {
       fmiValueReference vr = vrStatesDerivatives[i];
@@ -509,8 +536,6 @@ fmiStatus fmiGetEventIndicators(fmiComponent c, fmiReal eventIndicators[], size_
 
 fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal relativeTolerance,
     fmiEventInfo* eventInfo) {
-  int sampleEvent_actived = 0;
-  //std::string init_method = std::string("simplex");
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiInitialize", modelInstantiated))
     return fmiError;
@@ -524,12 +549,18 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
   eventInfo->stateValuesChanged  = comp->eventInfo.stateValuesChanged;
   eventInfo->terminateSimulation = comp->eventInfo.terminateSimulation;
   eventInfo->upcomingTimeEvent = comp->eventInfo.upcomingTimeEvent;
-  globalData->lastEmittedTime = *comp->time;
-  globalData->forceEmit = 0;
-  //TODO: Simulation stop time is need to  all sample events
-  initSample(*comp->time, 100 /*should be stopTime*/);
-  initDelay(*comp->time);
+  //globalData->lastEmittedTime = *comp->time;
+  //globalData->forceEmit = 0;
 
+  copyStartValuestoInitValues(comp->fmuData);
+  /* read input vars */
+  input_function(comp->fmuData);
+  /* initial sample and delay before initial the system */
+  callExternalObjectConstructors(comp->fmuData);
+  //TODO: Simulation stop time is need to  all sample events
+  initSample(comp->fmuData, comp->time,  100 /*should be stopTime*/);
+  initDelay(comp->time);
+  /*
   if (initializeEventData()) {
     comp->functions.logger(c, comp->instanceName, fmiError, "log",
         "fmiInitialize: initializeEventData failed");
@@ -541,58 +572,14 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
         "fmiInitialize: bound_parameters failed");
     return fmiError;
   }
+  */
+  if (!(initialization(comp->fmuData, "state", "nelder_mead_ex"))){
+    comp->state = modelInitialized;
+  } else {
+    comp->state = modelError;
+  }
 
-  // Evaluate all constant equations
-  functionAliasEquations();
-
-  /*try{
-                if (initialize(NULL, NULL))
-                  {
-                    comp->functions.logger(c, comp->instanceName, fmiError, "log",
-                    "fmiInitialize: main_initialize failed");
-                    return fmiError;
-                  }
-                SaveZeroCrossings();
-                saveall();
-
-                //Activate sample and evaluate again
-                if (globalData->curSampleTimeIx < globalData->nSampleTimes)
-                  {
-                    sampleEvent_actived = checkForSampleEvent();
-                    activateSampleEvents();
-                  }
-                update_DAEsystem();
-
-                SaveZeroCrossings();
-                if (sampleEvent_actived)
-                  {
-                    deactivateSampleEventsandEquations();
-                    sampleEvent_actived = 0;
-                  }
-                saveall();
-                storeExtrapolationData();
-                storeExtrapolationData();
-
-                // Initialize Next Sample Event Time
-                double nextSampleEvent;
-                  nextSampleEvent = getNextSampleTimeFMU();
-                  if (nextSampleEvent == -1){
-                    eventInfo->upcomingTimeEvent = fmiFalse;
-                  }else{
-                    eventInfo->upcomingTimeEvent = fmiTrue;
-                    eventInfo->nextEventTime = nextSampleEvent;
-                  }
-              /*}
-              catch (TerminateSimulationException &e)
-              {
-                comp->functions.logger(c, comp->instanceName, fmiError, "log",
-                "fmiInitialize: fmiInitialize failed!");
-                return fmiError;
-              }*/
-  // Initialization complete
-
-  comp->state = modelInitialized;
-  return fmiOK;
+  return comp->state;
 }
 
 fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEventInfo* eventInfo) {
@@ -607,18 +594,18 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
 
   int needtoiterate=0;
 
-  saveall();
-  functionDAE(&needtoiterate);
+  storePreValues(comp->fmuData);
+  functionDAE(comp->fmuData, &needtoiterate);
 
   //Activate sample and evaluate again
-  if (activateSampleEvents()){
+  if (activateSampleEvents(comp->fmuData)){
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
         "fmiEventUpdate: Sample Event!");
-    saveall();
-    functionDAE(&needtoiterate);
-    deactivateSampleEventsandEquations();
+    storePreValues(comp->fmuData);
+    functionDAE(comp->fmuData, &needtoiterate);
+    deactivateSampleEventsandEquations(comp->fmuData);
   }
-  if(checkForDiscreteChanges() || needtoiterate){
+  if(checkForDiscreteChanges(comp->fmuData) || needtoiterate){
     intermediateResults = fmiTrue;
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
         "fmiEventUpdate: Need to iterate(discrete changes)!");
@@ -639,7 +626,7 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
 
   //Get Next Event TIme
   double nextSampleEvent=0;
-  nextSampleEvent = getNextSampleTimeFMU();
+  nextSampleEvent = getNextSampleTimeFMU(comp->fmuData);
   if (nextSampleEvent == -1){
     eventInfo->upcomingTimeEvent = fmiFalse;
   }else{
@@ -661,6 +648,7 @@ fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean* callEventUpdate
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
     "fmiCompletedIntegratorStep");
   *callEventUpdate = fmiFalse;
+  rotateRingBuffer(comp->fmuData->simulationData, 1, (void**) comp->fmuData->localData);
   return fmiOK;
 }
 
@@ -671,9 +659,10 @@ fmiStatus fmiTerminate(fmiComponent c){
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
     "fmiTerminate");
 
-  deinitDelay();
-  deInitializeDataStruc(globalData);
-  free(globalData);
+  deinitDelay(comp->fmuData);
+  callExternalObjectDestructors(comp->fmuData);
+  DeinitializeXDataStruc(comp->fmuData);
+  free(comp->fmuData);
 
   comp->state = modelTerminated;
   return fmiOK;
@@ -729,5 +718,3 @@ FmiGreaterEq(fmiReal a, fmiReal b)
 {
   return b - a;
 }
-
-#endif

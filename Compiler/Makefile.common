@@ -40,7 +40,6 @@ Ceval.mo \
 CevalFunction.mo \
 ClassInf.mo \
 ClassLoader.mo \
-CodegenC.mo \
 ComponentReference.mo \
 Connect.mo \
 ConnectUtil.mo \
@@ -127,6 +126,8 @@ GLOBAL = \
 Global.mo
 
 TEMPLATE = \
+CodegenC.mo \
+CodegenFMU.mo \
 SCodeDumpTpl.mo \
 SimCodeC.mo \
 SimCodeCSharp.mo \

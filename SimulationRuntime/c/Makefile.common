@@ -67,6 +67,10 @@ install: libSimulationRuntimeC.a $(LIBS) omdevinstall
 	cp ./math-support/*.h $(builddir_inc)
 	cp ./simulation/results/*.h $(builddir_inc)
 	cp ./simulation/solver/*.h $(builddir_inc)
+	cp ../fmi/export/*.h $(builddir_inc)
+	cp ../fmi/export/fmu_model_interface.c $(builddir_inc)
+	#cp ../fmi/import/fmuWrapper.h $(builddir_inc)
+	#cp ../fmi/import/xmlparser.h $(builddir_inc)
 	test -z "$(LIBF2C)" || cp simulation/libf2c/libf2c.* $(builddir_lib)/
 	test -z "$(LIBSENDDATA)" || cp sendData/release/$(LIBSENDDATA) $(builddir_lib)/
 	@$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) && \

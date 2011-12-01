@@ -83,6 +83,7 @@ protected import Builtin;
 protected import CevalScript;
 protected import ClassInf;
 protected import CodegenC;
+protected import CodegenFMU;
 protected import ComponentReference;
 protected import Config;
 protected import DAEDump;
@@ -954,7 +955,7 @@ algorithm
   Debug.execStat("SimCode",CevalScript.RT_CLOCK_BUILD_MODEL);
   
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
-  Tpl.tplNoret(SimCodeFMU.translateModel, simCode);
+  callTargetTemplatesFMU(simCode, Config.simCodeTarget());
   timeTemplates := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
 end generateModelCodeFMU;
 
@@ -1139,6 +1140,39 @@ algorithm
   end match;
 end callTargetTemplates;
 
+protected function callTargetTemplatesFMU
+"Generate target code by passing the SimCode data structure to templates."
+  input SimCode simCode;
+  input String target;
+algorithm
+  _ := match (simCode,target)
+    local
+      BackendDAE.BackendDAE outIndexedBackendDAE;
+      array<Integer> equationIndices, variableIndices;
+      BackendDAE.IncidenceMatrix incidenceMatrix;
+      BackendDAE.IncidenceMatrixT incidenceMatrixT;
+      BackendDAE.StrongComponents strongComponents;
+      
+    case (simCode,"C")
+      equation
+        Tpl.tplNoret(SimCodeFMU.translateModel, simCode);
+      then ();
+    case (simCode,"c")
+      equation
+        Tpl.tplNoret(CodegenFMU.translateModel, simCode);
+      then ();        
+    case (simCode,"Dump")
+      equation
+        // Yes, do this better later on...
+        print(Tpl.tplString(SimCodeDump.dumpSimCode, simCode));
+      then ();
+    case (_,target)
+      equation
+        target = "Unknown template target: " +& target;
+        Error.addMessage(Error.INTERNAL_ERROR, {target});
+      then fail();
+  end match;
+end callTargetTemplatesFMU;
 
 
 public function translateModel
@@ -5732,7 +5766,7 @@ algorithm
       
       e = Expression.crefExp(cref);
       tp = Expression.typeof(e);
-      startExp = Expression.makeBuiltinCall("start", {e}, tp);
+      startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
       e2 = DAE.BINARY(crefExp, DAE.SUB(DAE.T_REAL_DEFAULT), startExp);
       
       e1 = DAE.BINARY(e1, DAE.MUL(DAE.T_REAL_DEFAULT), e2);
@@ -7626,7 +7660,7 @@ algorithm
         //startv = DAEUtil.getStartAttr(attr);
         e = Expression.crefExp(cr);
         tp = Expression.typeof(e);
-        startv = Expression.makeBuiltinCall("start", {e}, tp);
+        startv = Expression.makeBuiltinCall("$_start", {e}, tp);
       then
         ((v,(BackendDAE.EQUATION(e,startv,source)::eqns,av)));
     case (((v as BackendDAE.VAR(varName = cr,varKind = BackendDAE.STATE(),values = attr,source=source)),(eqns,av))) /* add equations for variables with fixed = true */
@@ -7637,7 +7671,7 @@ algorithm
         //startv = DAEUtil.getStartAttr(attr);
         e = Expression.crefExp(cr);
         tp = Expression.typeof(e);
-        startv = Expression.makeBuiltinCall("start", {e}, tp);
+        startv = Expression.makeBuiltinCall("$_start", {e}, tp);
       then
         ((v,(BackendDAE.EQUATION(e,startv,source)::eqns,av)));
     case ((inTpl)) then inTpl;

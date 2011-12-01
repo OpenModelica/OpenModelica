@@ -106,7 +106,7 @@ const char *optiMethodStr[4] = {"unknown", "simplex", "nelder_mead_ex", "newuoa"
 *  \param z [in] vector of scaling-factors or NULL
 *  \param lambda [in]
 */
-double leastSquareWithLambda(long nz, double* z, double* scale, double lambda, _X_DATA* data, double* initialResiduals)
+static double leastSquareWithLambda(long nz, double* z, double* scale, double lambda, _X_DATA* data, double* initialResiduals)
 {
   int indz = 0;
   fortran_integer i = 0;
@@ -393,7 +393,7 @@ int nelderMeadEx_initialization(_X_DATA *data, long nz, double *z, double *scale
   double lambda_step = 0.1;
   long NLOOP = 10000 * nz;
 
-  double funcValue = leastSquareWithLambda(nz, z, NULL, 1.0, data, initialResiduals);
+  double funcValue = leastSquareWithLambda(nz, z, scale, 1.0, data, initialResiduals);
 
   double lambda = 0;
   long iteration = 0;
@@ -414,7 +414,7 @@ int nelderMeadEx_initialization(_X_DATA *data, long nz, double *z, double *scale
 
     if(DEBUG_FLAG(LOG_INIT))
     {
-      INFO3("nelderMeadEx_initialization | iteration=%d / lambda=%g / f=%g", (int) iteration, lambda, leastSquareWithLambda(nz, z, NULL, lambda, data, initialResiduals));
+      INFO3("nelderMeadEx_initialization | iteration=%d / lambda=%g / f=%g", (int) iteration, lambda, leastSquareWithLambda(nz, z, scale, lambda, data, initialResiduals));
       for(i=0; i<nz; i++)
         INFO_AL2("nelderMeadEx_initialization | states | %d: %g", (int) i, z[i]);
     }
@@ -430,7 +430,7 @@ int nelderMeadEx_initialization(_X_DATA *data, long nz, double *z, double *scale
     storePreValues(data);
     overwriteOldSimulationData(data);
 
-    funcValue = leastSquareWithLambda(nz, z, NULL, 1.0, data, initialResiduals);
+    funcValue = leastSquareWithLambda(nz, z, scale, 1.0, data, initialResiduals);
   }
 
   DEBUG_INFO1(LOG_INIT, "nelderMeadEx_initialization | leastSquare=%g", funcValue);

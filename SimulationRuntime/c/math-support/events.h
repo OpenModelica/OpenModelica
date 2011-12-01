@@ -43,9 +43,6 @@
 extern "C" {
 #endif
 
-  int initializeEventData();
-  void deinitializeEventData();
-
   double BiSection(_X_DATA* data, double*, double*, double*, double*, LIST*, LIST*);
 
   int CheckZeroCrossings(_X_DATA *data, LIST *list, LIST*);
