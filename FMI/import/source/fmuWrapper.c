@@ -7,8 +7,10 @@
 
 
 /* Define for Debuging */
-//#define _PRINT_OUT__
-//#define _DEBUG_
+/*
+#define _PRINT_OUT__
+#define _DEBUG_
+*/
 extern int smi_verbose;
 
 
@@ -568,9 +570,13 @@ void fmuEventUpdate(void * in_fmufun, void * in_inst, void * in_evtInfo, void * 
  * logger(c, comp->instanceName, fmiOK, "log", "fmiSetTime: time=%.16g", time); */
 void fmuLogger(void* in_fmu, const char* instanceName, fmiStatus status,
     const char* category, const char* message, ...){
+  va_list message_args;
+  va_start(message_args, message);
+  printf("-----------------------------------------------------------\n");
+  printf("#### address of in_fmu: %lx, instanceName: %s fmiStatus: %d, category: %s, message:\n",(long)in_fmu,instanceName,status,category);
+  vprintf(message, message_args);
   printf("\n-----------------------------------------------------------\n");
-  printf("#### address of in_fmu: %lx, instanceName: %s fmiStatus: %d, category: %s, message: %s\n",(long)in_fmu,instanceName,status,category,message);
-  printf("-----------------------------------------------------------\n\n");
+  va_end(message_args);
 }
 
 /* instantiation of an fmiComponent instance, i.e. an FMU

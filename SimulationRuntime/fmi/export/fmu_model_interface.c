@@ -53,7 +53,7 @@ static fmiBoolean invalidState(ModelInstance* comp, const char* f, int statesExp
   if (!(comp->state & statesExpected)) {
     comp->state = modelError;
     comp->functions.logger(comp, comp->instanceName, fmiError, "error",
-      "%s: Illegal call sequence.", f);
+      "%s: Illegal call sequence. Expected State: %d.", f, statesExpected);
     return fmiTrue;
   }
   return fmiFalse;
@@ -113,19 +113,30 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
   }
   comp = (ModelInstance *)functions.allocateMemory(1, sizeof(ModelInstance));
   if (comp) {
-    comp->r = (fmiReal*)functions.allocateMemory(NUMBER_OF_REALS,    sizeof(fmiReal));
-    comp->i = (fmiInteger*)functions.allocateMemory(NUMBER_OF_INTEGERS, sizeof(fmiInteger));
-    comp->b = (fmiBoolean*)functions.allocateMemory(NUMBER_OF_BOOLEANS, sizeof(fmiBoolean));
-    comp->s = (fmiString*)functions.allocateMemory(NUMBER_OF_STRINGS,  sizeof(fmiString));
+	_X_DATA* fmudata = (_X_DATA *)functions.allocateMemory(1, sizeof(_X_DATA));
+	comp->fmuData = fmudata;
+	if (!comp->fmuData) {
+		functions.logger(NULL, instanceName, fmiError, "error",
+		"fmiInstantiateModel: Error: Could not initialize the global data structure file.");
+		return NULL;
+	}
     comp->isPositive = (fmiBoolean*)calloc(NUMBER_OF_EVENT_INDICATORS, sizeof(fmiBoolean));
-  }
-  if (!comp || !comp->r || !comp->i || !comp->b || !comp->s || !comp->isPositive) {
+    if (!comp->isPositive) {
+      functions.logger(NULL, instanceName, fmiError, "error",
+          "fmiInstantiateModel: Out of memory.");
+      return NULL;
+    }
+  }else{
     functions.logger(NULL, instanceName, fmiError, "error",
         "fmiInstantiateModel: Out of memory.");
     return NULL;
   }
   if (comp->loggingOn) comp->functions.logger(NULL, instanceName, fmiOK, "log",
       "fmiInstantiateModel: GUID=%s", GUID);
+  /* intialize modelData */
+  initializeDataStruc_X_(comp->fmuData);
+  initializeXDataStruc(comp->fmuData);
+
   comp->instanceName = instanceName;
   comp->GUID = GUID;
   comp->functions = functions;
@@ -138,17 +149,7 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
   comp->eventInfo.upcomingTimeEvent = fmiFalse;
   comp->eventInfo.nextEventTime = 0;
 
-  _X_DATA* fmudata = (_X_DATA*)functions.allocateMemory(1,sizeof(_X_DATA));
-  initializeDataStruc_X_(fmudata);
-  initializeXDataStruc(fmudata);
-  if (!fmudata) {
-    functions.logger(NULL, instanceName, fmiError, "error",
-        "fmiInstantiateModel: Error: Could not initialize the global data structure file.");
-    return NULL;
-  }
-  comp->fmuData = fmudata;
-  fmudata->localData[0]->timeValue= 0;
-  comp->time = fmudata->localData[0]->timeValue;
+  comp->fmuData->localData[0]->timeValue= 0;
   sim_verbose = comp->loggingOn?64:0;
 
   setStartValues(comp); // to be implemented by the includer of this file
@@ -171,16 +172,7 @@ void fmiFreeModelInstance(fmiComponent c) {
   if (!comp) return;
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
     "fmiFreeModelInstance");
-  if (comp->r) comp->functions.freeMemory(comp->r);
-  if (comp->i) comp->functions.freeMemory(comp->i);
-  if (comp->b) comp->functions.freeMemory(comp->b);
-  if (comp->s) {
-    int i;
-    for (i=0; i<NUMBER_OF_STRINGS; i++){
-      if (comp->s[i]) comp->functions.freeMemory((void*)comp->s[i]);
-    }
-    comp->functions.freeMemory(comp->s);
-  }
+
   DeinitializeXDataStruc(comp->fmuData);
   comp->functions.freeMemory(comp);
 }
@@ -274,7 +266,7 @@ fmiStatus fmiSetString(fmiComponent c, const fmiValueReference vr[], size_t nvr,
   if (comp->loggingOn)
     comp->functions.logger(c, comp->instanceName, fmiOK, "log", "fmiSetString: nvr = %d",  nvr);
   for (i=0; i<nvr; i++) {
-    char* string = (char*)comp->s[vr[i]];
+    char* string = (char*)comp->fmuData->localData[0]->stringVars[vr[i]];
     if (vrOutOfRange(comp, "fmiSetString", vr[i], NUMBER_OF_STRINGS))
       return fmiError;
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
@@ -283,14 +275,14 @@ fmiStatus fmiSetString(fmiComponent c, const fmiValueReference vr[], size_t nvr,
       return fmiError;
     if (string==NULL || strlen(string) < strlen(value[i])) {
       if (string) comp->functions.freeMemory(string);
-      comp->s[vr[i]] = *(fmiString*)comp->functions.allocateMemory(1+strlen(value[i]), sizeof(char));
-      if (!comp->s[vr[i]]) {
+      comp->fmuData->localData[0]->stringVars[vr[i]] = *(fmiString*)comp->functions.allocateMemory(1+strlen(value[i]), sizeof(char));
+      if (!comp->fmuData->localData[0]->stringVars[vr[i]]) {
         comp->state = modelError;
         comp->functions.logger(NULL, comp->instanceName, fmiError, "error", "fmiSetString: Out of memory.");
         return fmiError;
       }
     }
-    strcpy((char*)comp->s[vr[i]], (char*)value[i]);
+    strcpy((char*)comp->fmuData->localData[0]->stringVars[vr[i]], (char*)value[i]);
   }
   comp->outputsvalid = fmiFalse;
   comp->eventInfo.stateValuesChanged = fmiTrue;
@@ -303,7 +295,8 @@ fmiStatus fmiSetTime(fmiComponent c, fmiReal time) {
     return fmiError;
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
     "fmiSetTime: time=%.16g", time);
-  comp->time = time;
+  rotateRingBuffer(comp->fmuData->simulationData, 1, (void**) comp->fmuData->localData);
+  comp->fmuData->localData[0]->timeValue = time;
   return fmiOK;
 }
 
@@ -327,7 +320,12 @@ fmiStatus fmiSetContinuousStates(fmiComponent c, const fmiReal x[], size_t nx){
     if (setReal(comp, vr,x[i]) != fmiOK) // to be implemented by the includer of this file
       return fmiError;
   }
+  // calculate new values
+  functionODE(comp->fmuData);
 #endif
+  functionAlgebraics(comp->fmuData);
+  functionAliasEquations(comp->fmuData);
+  function_storeDelayed(comp->fmuData);
   return fmiOK;
 }
 
@@ -354,7 +352,7 @@ fmiStatus fmiGetReal(fmiComponent c, const fmiValueReference vr[], size_t nvr, f
   }
   return fmiOK;
 #else
-  return fmiError;
+  return fmiOK;
 #endif
 }
 
@@ -377,7 +375,7 @@ fmiStatus fmiGetInteger(fmiComponent c, const fmiValueReference vr[], size_t nvr
   }
   return fmiOK;
 #else
-  return fmiError;
+  return fmiOK;
 #endif
 }
 
@@ -400,7 +398,7 @@ fmiStatus fmiGetBoolean(fmiComponent c, const fmiValueReference vr[], size_t nvr
   }
   return fmiOK;
 #else
-  return fmiError;
+  return fmiOK;
 #endif
 }
 
@@ -423,7 +421,7 @@ fmiStatus fmiGetString(fmiComponent c, const fmiValueReference vr[], size_t nvr,
   }
   return fmiOK;
 #else
-  return fmiError;
+  return fmiOK;
 #endif
 }
 
@@ -494,10 +492,6 @@ fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx) {
   if (nullPointer(comp, "fmiGetDerivatives", "derivatives[]", derivatives))
     return fmiError;
 #if (NUMBER_OF_STATES>0)
-    // calculate new values
-    functionODE(comp->fmuData);
-    functionAlgebraics(comp->fmuData);
-
     for (i=0; i<nx; i++) {
       fmiValueReference vr = vrStatesDerivatives[i];
       derivatives[i] = getReal(comp, vr); // to be implemented by the includer of this file
@@ -549,37 +543,29 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
   eventInfo->stateValuesChanged  = comp->eventInfo.stateValuesChanged;
   eventInfo->terminateSimulation = comp->eventInfo.terminateSimulation;
   eventInfo->upcomingTimeEvent = comp->eventInfo.upcomingTimeEvent;
-  //globalData->lastEmittedTime = *comp->time;
-  //globalData->forceEmit = 0;
+
 
   copyStartValuestoInitValues(comp->fmuData);
   /* read input vars */
-  input_function(comp->fmuData);
+  //input_function(comp->fmuData);
   /* initial sample and delay before initial the system */
   callExternalObjectConstructors(comp->fmuData);
-  //TODO: Simulation stop time is need to  all sample events
-  initSample(comp->fmuData, comp->time,  100 /*should be stopTime*/);
-  initDelay(comp->time);
-  /*
-  if (initializeEventData()) {
-    comp->functions.logger(c, comp->instanceName, fmiError, "log",
-        "fmiInitialize: initializeEventData failed");
-    return fmiError;
-  }
+  /*TODO: Simulation stop time is need to calculate in before hand all sample events
+   	   	  We shouldn't generate them all in beforehand */
+  initSample(comp->fmuData, comp->fmuData->localData[0]->timeValue,  100 /*should be stopTime*/);
+  initDelay(comp->fmuData->localData[0]->timeValue);
 
-  if(bound_parameters()) {
-    comp->functions.logger(c, comp->instanceName, fmiError, "log",
-        "fmiInitialize: bound_parameters failed");
-    return fmiError;
-  }
-  */
-  if (!(initialization(comp->fmuData, "state", "nelder_mead_ex"))){
-    comp->state = modelInitialized;
-  } else {
+  if (initialization(comp->fmuData, "state", "nelder_mead_ex")){
     comp->state = modelError;
+    if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
+          "fmiInitialization: failed");
+  } else {
+    comp->state = modelInitialized;
+    if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
+          "fmiInitialization: succeed");
   }
 
-  return comp->state;
+  return fmiOK;
 }
 
 fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEventInfo* eventInfo) {
@@ -648,7 +634,7 @@ fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean* callEventUpdate
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
     "fmiCompletedIntegratorStep");
   *callEventUpdate = fmiFalse;
-  rotateRingBuffer(comp->fmuData->simulationData, 1, (void**) comp->fmuData->localData);
+
   return fmiOK;
 }
 

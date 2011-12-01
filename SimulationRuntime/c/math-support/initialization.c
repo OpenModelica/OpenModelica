@@ -139,7 +139,7 @@ static double leastSquareWithLambda(long nz, double* z, double* scale, double la
   return funcValue;
 }
 
-void NelderMeadOptimization(long N, 
+static void NelderMeadOptimization(long N,
   double* var,
   double* scale,
   double lambda_step,
@@ -363,7 +363,7 @@ void NelderMeadOptimization(long N,
 *
 *  \param funcValue [in] leastSquare-Value
 */
-int reportResidualValue(double funcValue, _X_DATA* data, double* initialResiduals)
+static int reportResidualValue(double funcValue, _X_DATA* data, double* initialResiduals)
 {
   long i = 0;
   if(funcValue > 1e-5)
@@ -387,7 +387,7 @@ int reportResidualValue(double funcValue, _X_DATA* data, double* initialResidual
 *  nelderMead algorithm.
 *  This does not require a jacobian for the residuals.
 */
-int nelderMeadEx_initialization(_X_DATA *data, long nz, double *z, double *scale, double* initialResiduals)
+static int nelderMeadEx_initialization(_X_DATA *data, long nz, double *z, double *scale, double* initialResiduals)
 {
   double STOPCR = 1.e-16;
   double lambda_step = 0.1;
@@ -449,7 +449,7 @@ int nelderMeadEx_initialization(_X_DATA *data, long nz, double *z, double *scale
  *
  *  author: lochel
  */
-int initialize(_X_DATA *data, int optiMethod)
+static int initialize(_X_DATA *data, int optiMethod)
 {
   long i = 0;
   long iz = 0;
@@ -521,8 +521,8 @@ int initialize(_X_DATA *data, int optiMethod)
   {
     if(data->modelData.realParameterData[i].attribute.fixed == 0)
     {
-      scale[iz] = data->modelData.realParameterData[0].attribute.useNominal ? fabs(data->modelData.realParameterData[0].attribute.nominal) : 1;
-      z[iz++] = data->modelData.realParameterData[0].attribute.start;
+      scale[iz] = data->modelData.realParameterData[i].attribute.useNominal ? fabs(data->modelData.realParameterData[i].attribute.nominal) : 1;
+      z[iz++] = data->modelData.realParameterData[i].attribute.start;
     }
   }
 
@@ -557,7 +557,7 @@ int initialize(_X_DATA *data, int optiMethod)
  *
  *  author: lochel
  */
-int state_initialization(_X_DATA *data, int optiMethod)
+static int state_initialization(_X_DATA *data, int optiMethod)
 {
   int retVal = 0;
 

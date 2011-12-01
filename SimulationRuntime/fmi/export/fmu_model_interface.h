@@ -41,10 +41,6 @@ extern "C" {
 #endif
 
 // macros used to define variables
-#define  r(vr) comp->r[vr]
-#define  i(vr) comp->i[vr]
-#define  b(vr) comp->b[vr]
-#define  s(vr) comp->s[vr]
 #define pos(z) comp->isPositive[z]
 #define copy(vr, value) setString(comp, vr, value)
 
@@ -58,12 +54,7 @@ typedef enum {
 } ModelState;
 
 typedef struct {
-    fmiReal    *r;
-    fmiInteger *i;
-    fmiBoolean *b;
-    fmiString  *s;
     fmiBoolean *isPositive;
-    fmiReal time;
     fmiString instanceName;
     fmiString GUID;
     fmiCallbackFunctions functions;

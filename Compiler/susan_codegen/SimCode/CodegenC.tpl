@@ -404,7 +404,7 @@ template globalDataParDefine_X_(SimVar simVar, String arrayName)
   case SIMVAR(aliasvar=NOALIAS()) then
     <<
     #define <%cref(name)%> data->simulationInfo.<%arrayName%>[<%index%>]
-    #define $P$START<%cref(name)%> data->simulationInfo.<%arrayName%>Data[<%index%>].attribute.start
+    #define $P$START<%cref(name)%> data->modelData.<%arrayName%>Data[<%index%>].attribute.start
     #define <%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%index%>].info
     >>  
 end globalDataParDefine_X_;
@@ -2049,7 +2049,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
   CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc2" -I. <%dirExtra%> <%makefileParams.includes ; separator=" "%>
-  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc2" -lSimulationRuntimeC <%makefileParams.ldflags%> -ldl
+  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc2" -lSimulationRuntimeC <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   PERL=perl
   MAINFILE=<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.c

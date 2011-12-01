@@ -556,7 +556,7 @@ end initializeFunction;
 template initVals(SimVar var, String arrayName, Integer offset) ::=
   match var
     case SIMVAR(__) then
-    let str = 'comp->fmuData->localData[0]-><%arrayName%>[<%intAdd(index,offset)%>]'
+    let str = 'comp->fmuData->modelData.<%arrayName%>Data[<%intAdd(index,offset)%>].attribute.start'
     match initialValue 
       case SOME(v) then 
        '<%str%> = <%initVal(v)%>;'
@@ -565,7 +565,7 @@ end initVals;
 template initParams(SimVar var, String arrayName) ::=
   match var
     case SIMVAR(__) then
-    let str = 'comp->fmuData->simulationInfo.<%arrayName%>[<%index%>]'
+    let str = 'comp->fmuData->modelData.<%arrayName%>Data[<%index%>].attribute.start'
     match initialValue 
       case SOME(v) then 
        '<%str%> = <%initVal(v)%>;'
@@ -668,7 +668,7 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numStateVars=numStateVars)) then
         <%vars.algVars |> var => SwitchVars(var,"realVars", intMul(2,numStateVars)) ;separator="\n"%>
         <%vars.paramVars |> var => SwitchParameters(var,"realParameter") ;separator="\n"%>
         default: 
-        	return 0.0;
+        	return fmiError;
     }
   }
   
@@ -934,14 +934,14 @@ match platform
   <%fileNamePrefix%>_FMU: <%fileNamePrefix%>.def <%fileNamePrefix%>.dll
   <%\t%> dlltool -d <%fileNamePrefix%>.def --dllname <%fileNamePrefix%>.dll --output-lib <%fileNamePrefix%>.lib --kill-at
         
-  <%\t%> mv <%fileNamePrefix%>.dll <%fileNamePrefix%>/binaries/<%platform%>/
-  <%\t%> mv <%fileNamePrefix%>.lib <%fileNamePrefix%>/binaries/<%platform%>/
-  <%\t%> mv <%fileNamePrefix%>.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>.c
-  <%\t%> mv <%fileNamePrefix%>_FMU.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_FMU.c
-  <%\t%> mv <%fileNamePrefix%>_functions.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.c
-  <%\t%> mv <%fileNamePrefix%>_functions.h <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.h
-  <%\t%> mv <%fileNamePrefix%>_records.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_records.c
-  <%\t%> mv modelDescription.xml <%fileNamePrefix%>/modelDescription.xml
+  <%\t%> cp <%fileNamePrefix%>.dll <%fileNamePrefix%>/binaries/<%platform%>/
+  <%\t%> cp <%fileNamePrefix%>.lib <%fileNamePrefix%>/binaries/<%platform%>/
+  <%\t%> cp <%fileNamePrefix%>.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>.c
+  <%\t%> cp <%fileNamePrefix%>_FMU.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_FMU.c
+  <%\t%> cp <%fileNamePrefix%>_functions.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.c
+  <%\t%> cp <%fileNamePrefix%>_functions.h <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.h
+  <%\t%> cp <%fileNamePrefix%>_records.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_records.c
+  <%\t%> cp modelDescription.xml <%fileNamePrefix%>/modelDescription.xml
   <%\t%> cp <%omhome%>/lib/omc/libexec/gnuplot/binary/libexpat-1.dll <%fileNamePrefix%>/binaries/<%platform%>/
   <%\t%> cd <%fileNamePrefix%>&& rm -f ../<%fileNamePrefix%>.fmu&& zip -r ../<%fileNamePrefix%>.fmu *
   <%\t%> rm -rf <%fileNamePrefix%>
@@ -975,8 +975,8 @@ match platform
   <%\t%> cp <%fileNamePrefix%>_records.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_records.c 
   <%\t%> cp modelDescription.xml <%fileNamePrefix%>/modelDescription.xml
   <%\t%> cd <%fileNamePrefix%>; rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fileNamePrefix%>.fmu *
-  #<%\t%> rm -rf <%fileNamePrefix%>
-  #<%\t%> rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>_FMU.libs <%fileNamePrefix%>_FMU.makefile <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>_records.o
+  <%\t%> rm -rf <%fileNamePrefix%>
+  <%\t%> rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>_FMU.libs <%fileNamePrefix%>_FMU.makefile <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>_records.o
   
   >>
 end getPlatformString2; 
@@ -1016,15 +1016,15 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   MAINFILE=<%fileNamePrefix%>_FMU<% if acceptMetaModelicaGrammar() then ".conv"%>.c
   MAINOBJ=<%fileNamePrefix%>_FMU<% if acceptMetaModelicaGrammar() then ".conv"%>.o  
   
-  PHONY: <%fileNamePrefix%>_FMU
+  PHONY: clean <%fileNamePrefix%>_FMU
   <%compilecmds%>
   
   <%fileNamePrefix%>.conv.c: <%fileNamePrefix%>.c
   <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
   <%\t%> @mv $@.tmp $@
   $(MAINOBJ): $(MAINFILE) <%fileNamePrefix%>.c <%fileNamePrefix%>_functions.c <%fileNamePrefix%>_functions.h
-  #clean:
-  #<%\t%> @rm -f <%fileNamePrefix%>_records.o $(MAINOBJ) <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>.o 
+  clean:
+  <%\t%> @rm -f <%fileNamePrefix%>_records.o $(MAINOBJ) <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>.o 
   >>
 end fmuMakefile;
 

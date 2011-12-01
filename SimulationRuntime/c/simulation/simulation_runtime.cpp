@@ -161,6 +161,52 @@ static void callExternalObjectDestructors2(_X_DATA *data)
   callExternalObjectDestructors(data) /* external objects */;
 }
 
+/*! \fn void printAllVars(_X_DATA *data, int )
+ *
+ *  prints all values as arguments it need data
+ *  and which part of the ring should printed.
+ *
+ *  author: wbraun
+ */
+void printAllVars(_X_DATA *data, int ringSegment)
+{
+  long i;
+  MODEL_DATA      *mData = &(data->modelData);
+  INFO1("all real variables regarding point in time: %g", data->localData[ringSegment]->timeValue);
+  for(i=0; i<mData->nVariablesReal; ++i){
+    INFO3("localData->realVars[%ld] = %s = %g",i,mData->realVarsData[i].info.name,data->localData[ringSegment]->realVars[i]);
+  }
+  INFO("all integer variables");
+  for(i=0; i<mData->nVariablesInteger; ++i){
+    INFO3("localData->integerVars[%ld] = %s = %ld",i,mData->integerVarsData[i].info.name,data->localData[ringSegment]->integerVars[i]);
+  }
+  INFO("all boolean variables");
+  for(i=0; i<mData->nVariablesBoolean; ++i){
+    INFO3("localData->booleanVars[%ld] = %s = %s",i,mData->booleanVarsData[i].info.name,data->localData[ringSegment]->booleanVars[i]?"true":"false");
+  }
+  INFO("all string variables");
+  for(i=0; i<mData->nVariablesString; ++i){
+    INFO3("localData->stringVars[%ld] = %s = %s",i,mData->stringVarsData[i].info.name,data->localData[ringSegment]->stringVars[i]);
+  }
+  INFO("all real parameters");
+  for(i=0; i<mData->nParametersReal; ++i){
+    INFO3("mData->realParameterData[%ld] = %s = %g",i,mData->realParameterData[i].info.name,mData->realParameterData[i].attribute.initial);
+  }
+  INFO("all integer parameters");
+  for(i=0; i<mData->nParametersInteger; ++i){
+    INFO3("mData->integerParameterData[%ld] = %s = %ld",i,mData->integerParameterData[i].info.name,mData->integerParameterData[i].attribute.initial);
+  }
+  INFO("all boolean parameters");
+  for(i=0; i<mData->nParametersBoolean; ++i){
+    INFO3("mData->booleanParameterData[%ld] = %s = %s",i,mData->booleanParameterData[i].info.name,mData->booleanParameterData[i].attribute.initial?"true":"false");
+  }
+  INFO("all string parameters");
+  for(i=0; i<mData->nParametersString; ++i){
+    INFO3("mData->stringParameterData[%ld] = %s = %s",i,mData->stringParameterData[i].info.name,mData->stringParameterData[i].attribute.initial);
+  }
+
+}
+
 /*! \fn void overwriteOldSimulationData(_X_DATA *data)
  *
  * Stores variables (states, derivatives and algebraic) to be used

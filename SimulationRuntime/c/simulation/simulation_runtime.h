@@ -164,10 +164,8 @@ const char* getNameInt(modelica_integer* ptr);
 const char* getNameBool(modelica_boolean* ptr);
 const char* getNameString(const char** ptr);
 
-void storeExtrapolationData();
-void storeExtrapolationDataEvent();
 void overwriteOldSimulationData(_X_DATA *data);
-void restoreExtrapolationDataOld();
+void printAllVars(_X_DATA *data, int ringSegment);
 
 /* function for calculating ouput values */
 /*used in DDASRT fortran function*/

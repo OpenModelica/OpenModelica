@@ -262,15 +262,19 @@ void storeStartValues(_X_DATA* data)
 
   for(i=0; i<mData->nVariablesReal; ++i){
     sData->realVars[i] = mData->realVarsData[i].attribute.start;
+    DEBUG_INFO2(LOG_DEBUG,"Set Real var %s = %g",mData->realVarsData[i].info.name, sData->realVars[i]);
   }
   for(i=0; i<mData->nVariablesInteger; ++i){
     sData->integerVars[i] = mData->integerVarsData[i].attribute.start;
+    DEBUG_INFO2(LOG_DEBUG,"Set Integer var %s = %d",mData->integerVarsData[i].info.name, sData->integerVars[i]);
   }
   for(i=0; i<mData->nVariablesBoolean; ++i){
     sData->booleanVars[i] = mData->booleanVarsData[i].attribute.start;
+    DEBUG_INFO2(LOG_DEBUG,"Set Boolean var %s = %s",mData->booleanVarsData[i].info.name, sData->booleanVars[i]?"true":"false");
   }
   for(i=0; i<mData->nVariablesString; ++i){
     sData->stringVars[i] = copy_modelica_string((modelica_string_const)mData->stringVarsData[i].attribute.start);
+    DEBUG_INFO2(LOG_DEBUG,"Set String var %s = %s",mData->stringVarsData[i].info.name, sData->stringVars[i]);
   }
 }
 
@@ -288,18 +292,22 @@ void storeStartValuesParam(_X_DATA *data)
   for(i=0; i<mData->nParametersReal; ++i){
     mData->realParameterData[i].attribute.initial = mData->realParameterData[i].attribute.start;
     data->simulationInfo.realParameter[i] = mData->realParameterData[i].attribute.start;
+    DEBUG_INFO2(LOG_DEBUG,"Set Real var %s = %g",mData->realParameterData[i].info.name,data->simulationInfo.realParameter[i]);
   }
   for(i=0; i<mData->nParametersInteger; ++i){
     mData->integerParameterData[i].attribute.initial = mData->integerParameterData[i].attribute.start;
     data->simulationInfo.integerParameter[i] = mData->integerParameterData[i].attribute.start;
+    DEBUG_INFO2(LOG_DEBUG,"Set Integer var %s = %d",mData->integerParameterData[i].info.name, data->simulationInfo.integerParameter[i]);
   }
   for(i=0; i<mData->nParametersBoolean; ++i){
     mData->booleanParameterData[i].attribute.initial = mData->booleanParameterData[i].attribute.start;
     data->simulationInfo.booleanParameter[i] = mData->booleanParameterData[i].attribute.start;
+    DEBUG_INFO2(LOG_DEBUG,"Set Boolean var %s = %s",mData->booleanParameterData[i].info.name, data->simulationInfo.booleanParameter[i]?"true":"false");
   }
   for(i=0; i<mData->nParametersString; ++i){
     mData->stringParameterData[i].attribute.initial = copy_modelica_string((modelica_string_const)mData->stringParameterData[i].attribute.start);
     data->simulationInfo.stringParameter[i] = copy_modelica_string((modelica_string_const)mData->stringParameterData[i].attribute.start);
+    DEBUG_INFO2(LOG_DEBUG,"Set String var %s = %s",mData->stringParameterData[i].info.name, data->simulationInfo.stringParameter[i]);
   }
 }
 
@@ -316,15 +324,19 @@ void storeInitialValuesParam(_X_DATA *data)
 
   for(i=0; i<mData->nParametersReal; ++i){
     mData->realParameterData[i].attribute.initial = data->simulationInfo.realParameter[i];
+    DEBUG_INFO2(LOG_DEBUG,"Set Real Parameter var %s = %g",mData->realParameterData[i].info.name,data->simulationInfo.realParameter[i]);
   }
   for(i=0; i<mData->nParametersInteger; ++i){
     mData->integerParameterData[i].attribute.initial = data->simulationInfo.integerParameter[i];
+    DEBUG_INFO2(LOG_DEBUG,"Set Integer Parameter var %s = %d",mData->integerParameterData[i].info.name, data->simulationInfo.integerParameter[i]);
   }
   for(i=0; i<mData->nParametersBoolean; ++i){
     mData->booleanParameterData[i].attribute.initial = data->simulationInfo.booleanParameter[i];
+    DEBUG_INFO2(LOG_DEBUG,"Set Boolean Parameter var %s = %s",mData->booleanParameterData[i].info.name, data->simulationInfo.booleanParameter[i]?"true":"false");
   }
   for(i=0; i<mData->nParametersString; ++i){
     mData->stringParameterData[i].attribute.initial = copy_modelica_string((modelica_string_const)data->simulationInfo.stringParameter[i]);
+    DEBUG_INFO2(LOG_DEBUG,"Set String Parameter var %s = %s",mData->stringParameterData[i].info.name, data->simulationInfo.stringParameter[i]);
   }
 }
 
