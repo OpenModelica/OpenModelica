@@ -223,6 +223,18 @@ static inline void* mmc_mk_scon(const char *s)
     return res;
 }
 
+static inline void* mmc_mk_scon_len(unsigned nbytes)
+{
+    unsigned header = MMC_STRINGHDR(nbytes);
+    unsigned nwords = MMC_HDRSLOTS(header) + 1;
+    struct mmc_string *p;
+    void *res;
+    p = (struct mmc_string *) mmc_alloc_words(nwords);
+    p->header = header;
+    res = MMC_TAGPTR(p);
+    return res;
+}
+
 static inline void *mmc_mk_box0(unsigned ctor)
 {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(1);

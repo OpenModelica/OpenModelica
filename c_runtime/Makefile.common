@@ -18,7 +18,8 @@ meta/meta_modelica_gc_stack.o \
 meta/meta_modelica_gc_roots.o \
 meta/meta_modelica_gc_pages.o \
 meta/meta_modelica_gc_stats.o \
-meta/meta_modelica_gc_settings.o 
+meta/meta_modelica_gc_settings.o \
+meta/realString.o
 
 OBJS = boolean_array.o index_spec.o integer_array.o memory_pool.o \
 base_array.o real_array.o string_array.o utility.o \
@@ -62,7 +63,7 @@ meta/meta_modelica_gc_list.h \
 meta/meta_modelica_gc_roots.h \
 meta/meta_modelica_gc_pages.h \
 meta/meta_modelica_gc_stats.h \
-meta/meta_modelica_gc_settings.h  
+meta/meta_modelica_gc_settings.h
 
 HFILES = \
 base_array.h \
@@ -161,6 +162,8 @@ libf2c/libf2c.a :
 
 meta/meta_modelica_catch.o : meta/meta_modelica_catch.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ -g $<
+
+meta/realString.o : meta/realString.c meta/dtoa.c
 
 # Requires IEEE floating-point precision
 simulation_input.o : simulation_input.cpp
