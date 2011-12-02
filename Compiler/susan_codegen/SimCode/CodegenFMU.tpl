@@ -394,7 +394,6 @@ case SIMCODE(__) then
   #endif
 
   void setStartValues(ModelInstance *comp);
-  fmiStatus getEventIndicator(ModelInstance* comp, fmiReal eventIndicators[]);
   void eventUpdate(ModelInstance* comp, fmiEventInfo* eventInfo);
   fmiReal getReal(ModelInstance* comp, const fmiValueReference vr);  
   fmiStatus setReal(ModelInstance* comp, const fmiValueReference vr, const fmiReal value);  
@@ -411,7 +410,6 @@ case SIMCODE(__) then
   #include "fmu_model_interface.c"
  
   <%setStartValues(modelInfo)%>
-  <%getEventIndicatorFunction(simCode)%>
   <%eventUpdateFunction(simCode)%>
   <%getRealFunction(modelInfo)%>
   <%setRealFunction(modelInfo)%>
@@ -594,66 +592,6 @@ case SIMCODE(__) then
   
   >>
 end eventUpdateFunction;
-
-template getEventIndicatorFunction(SimCode simCode)
- "Generates get event indicator function for c file."
-::=
-match simCode
-case SIMCODE(__) then
-  let &varDecls = buffer "" /*BUFD*/
-  let zeroCrossingsCode = zeroCrossingsTpl2_fmu(zeroCrossings, &varDecls /*BUFD*/)
-  <<
-  // Used to get event indicators
-  fmiStatus getEventIndicator(ModelInstance* comp, fmiReal eventIndicators[]) {
-  int res = function_onlyZeroCrossings(comp->fmuData, eventIndicators, &(comp->fmuData->localData[0]->timeValue));
-  if (res == 0) return fmiOK;
-  return fmiError;
-  }
-  
-  >>
-end getEventIndicatorFunction;
-
-
-template zeroCrossingsTpl2_fmu(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/)
- "Generates code for zero crossings."
-::=
-
-  (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
-    zeroCrossingTpl2_fmu(i0, relation_, &varDecls /*BUFD*/)
-  ;separator="\n")
-end zeroCrossingsTpl2_fmu;
-
-template zeroCrossingTpl2_fmu(Integer index1, Exp relation, Text &varDecls /*BUFP*/)
- "Generates code for a zero crossing."
-::=
-  match relation
-  case RELATION(__) then
-    let &preExp = buffer "" /*BUFD*/
-    let e1 = daeExp(exp1, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let op = zeroCrossingOpFunc_fmu(operator)
-    let e2 = daeExp(exp2, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    <<
-    <%preExp%>
-    FMIZEROCROSSING(<%index1%>, <%op%>(<%e1%>_, <%e2%>));
-    >>
-  case CALL(path=IDENT(name="sample"), expLst={start, interval}) then
-  << >>
-  else
-    <<
-    // UNKNOWN ZERO CROSSING for <%index1%>
-    >>
-end zeroCrossingTpl2_fmu;
-
-template zeroCrossingOpFunc_fmu(Operator op)
- "Generates zero crossing function name for operator."
-::=
-  match op
-  case LESS(__)      then "FmiLess"
-  case GREATER(__)   then "FmiGreater"
-  case LESSEQ(__)    then "FmiLessEq"
-  case GREATEREQ(__) then "FmiGreaterEq"
-  
-end zeroCrossingOpFunc_fmu;
 
 template getRealFunction(ModelInfo modelInfo)
  "Generates getReal function for c file."

@@ -8,7 +8,7 @@ AR = ar -ru
 ANSI= #-ansi
 CXXFLAGS := $(CFLAGS) -Wall $(ANSI) $(EXTRA_CFLAGS)
 CFLAGS := $(CFLAGS) -Wall $(ANSI) -pedantic $(EXTRA_CFLAGS)
-CPPFLAGS = -I. -Imeta/ -I../
+CPPFLAGS = $(CFLAGS) -Wall -I. -Imeta/ -I../ $(EXTRA_CFLAGS)
 FFLAGS  = -O -fexceptions
 # P.A: before, g77 had -O3 or -O2 but that caused a bug in DDASRT, giving infinite loop.
 
@@ -69,8 +69,8 @@ install: libSimulationRuntimeC.a $(LIBS) omdevinstall
 	cp ./simulation/solver/*.h $(builddir_inc)
 	cp ../fmi/export/*.h $(builddir_inc)
 	cp ../fmi/export/fmu_model_interface.c $(builddir_inc)
-	#cp ../fmi/import/fmuWrapper.h $(builddir_inc)
-	#cp ../fmi/import/xmlparser.h $(builddir_inc)
+	cp ../../FMI/import/source/fmuWrapper.h $(builddir_inc)
+	cp ../../FMI/import/source/xmlparser.h $(builddir_inc)
 	test -z "$(LIBF2C)" || cp simulation/libf2c/libf2c.* $(builddir_lib)/
 	test -z "$(LIBSENDDATA)" || cp sendData/release/$(LIBSENDDATA) $(builddir_lib)/
 	@$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) && \

@@ -510,16 +510,18 @@ fmiStatus fmiGetEventIndicators(fmiComponent c, fmiReal eventIndicators[], size_
   if (invalidNumber(comp, "fmiGetEventIndicators", "ni", ni, NUMBER_OF_EVENT_INDICATORS))
     return fmiError;
 #if NUMBER_OF_EVENT_INDICATORS>0
- // for (i=0; i<ni; i++) {
-    //eventIndicators[i] = getEventIndicator(comp, i); // to be implemented by the includer of this file
-    getEventIndicator(comp, eventIndicators); // to be implemented by the includer of this file
-    if (comp->loggingOn)
-      {
+ function_onlyZeroCrossings(comp->fmuData,NULL,&(comp->fmuData->localData[0]->timeValue));
+ for (i=0; i<ni; i++) {
+    //retVal = getEventIndicator(comp, i, eventIndicators[i]); // to be implemented by the includer of this file
+    //getEventIndicator(comp, eventIndicators); // to be implemented by the includer of this file
+   eventIndicators[i] = comp->fmuData->simulationInfo.zeroCrossings[i];
+    if (comp->loggingOn){
       for (i=0; i<ni; i++) {
         comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiGetEventIndicators: z%d = %.16g", i, eventIndicators[i]);
       }
-  }
+    }
+ }
 #endif
   return fmiOK;
 }

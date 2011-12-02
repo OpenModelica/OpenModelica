@@ -86,7 +86,6 @@
 #define PATHSIZE 1024
 
 #define MODEL_DESCRIPTION "modelDescription.xml"
-#define FMU_TEMPLATE "../source/fmuModelica.tmp"
 #define FMU_PATH "../fmu"
 #define BIN_PATH "../bin"
 
@@ -763,7 +762,11 @@ void tmpcodegen(fmuModelDescription* fmuMD, const char* decompPath){
 		 * since the makefile create the header file from it and then we assign that header FMU_TEMPLATE_STR
 		 */
 		const char *FMU_TEMPLATE_STR =
+#if defined(__MINGW32__) || defined(_MSC_VER)
 #include "fmuModelica.h"
+#else
+#include "fmuModelica.unix.h"
+#endif
 				;
 		fprintf(pfile,"\npackage FMUImport_%s\n",fmuMD->mid);
 		fputs(FMU_TEMPLATE_STR, pfile);
@@ -1146,7 +1149,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath, const char
 			if (noReal>0){
 				tmpReal = pntReal;
 				fprintf(pfile,"\tReal realV[%d];\n",noReal);
-				fprintf(pfile,"\tInteger realVR[%d] = {",noReal);
+				fprintf(pfile,"\tparameter Integer realVR[%d] = {",noReal);
 				if(noReal==1) fprintf(pfile,"%d};\n",tmpReal->vr);				
 				else if(noReal>1){					
 					for(j = 0; j<noReal-1; j++){
@@ -1160,7 +1163,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath, const char
 			if (noInteger>0){
 				tmpInteger = pntInteger;
 				fprintf(pfile,"\tInteger integerV[%d];\n",noInteger);
-				fprintf(pfile,"\tInteger integerVR[%d] = {",noInteger);
+				fprintf(pfile,"\tparameter Integer integerVR[%d] = {",noInteger);
 				if(noInteger==1) fprintf(pfile,"%d};\n",tmpInteger->vr);
 				else if(noInteger>1){
 					for(j=0; j<noInteger-1; j++){
@@ -1173,7 +1176,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath, const char
 			if (noBoolean>0){
 				tmpBoolean = pntBoolean;
 				fprintf(pfile,"\tBoolean booleanV[%d];\n",noBoolean);
-				fprintf(pfile,"\tInteger booleanVR[%d] = {",noBoolean);
+				fprintf(pfile,"\tparameter Integer booleanVR[%d] = {",noBoolean);
 				if(noBoolean==1) fprintf(pfile,"%d};\n",tmpBoolean->vr);
 				else if(noBoolean>1){
 					for(j=0; j<noBoolean-1; j++){
@@ -1186,7 +1189,7 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath, const char
 			if (noString>0){
 				tmpString = pntString;
 				fprintf(pfile,"\tString stringV[%d];\n",noString);
-				fprintf(pfile,"\tInteger stringVR[%d] = {",noString);
+				fprintf(pfile,"\tparameter Integer stringVR[%d] = {",noString);
 				if(noString==1) fprintf(pfile,"%d};\n",tmpString->vr);
 				else if(noString>1){
 					for(j=0; j<noString-1; j++){
@@ -1219,6 +1222,10 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath, const char
 		/*fprintf(pfile,"\tfmuBoolean freeAll = fmuBoolean(default);\n");*/
 		fprintf(pfile,"\tfmuFunctions fmufun = fmuFunctions(\"%s\",dllPath);\n",fmuMD->mid);
 		fprintf(pfile,"\tfmuCallbackFuns functions = fmuCallbackFuns();\n");
+		fprintf(pfile,"\tReal flowhack1;\n");
+		fprintf(pfile,"\tReal flowhack2;\n");
+		fprintf(pfile,"\tReal flowhack3;\n");
+		fprintf(pfile,"\tReal flowhack4;\n");
 		fprintf(pfile,"initial algorithm\n");
 		fprintf(pfile,"\tfmuSetTime(fmufun, inst, time);\n");
 		fprintf(pfile,"\tfmuInit(fmufun, inst, tolControl, relTol, evtInfo);\n");
@@ -1230,10 +1237,11 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath, const char
 #endif
 
 			fprintf(pfile,"algorithm \n");
+      fputs("\tfmuSetTime(fmufun, inst, time);",pfile);
+      fprintf(pfile,"\tfmuSetContStates(fmufun, inst, %s, %s);\n",nx,x);
 			fprintf(pfile,"\t%s:=fmuGetDer(fmufun, inst, %s, %s);\n",der_x,nx,x);
-			fputs("\tfmuSetTime(fmufun, inst, time);",pfile);
 			fprintf(pfile,"\t%s:=%s;\n",y,der_x);
-
+			fprintf(pfile,"\tflowhack1:=1;\n");
 			fprintf(pfile,"equation\n");
 			fprintf(pfile,"\tder(%s) = %s;\n",x,der_x);
 
@@ -1325,15 +1333,16 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath, const char
 				}
 				free(aliasInd);
 			}
+			fprintf(pfile,"\tflowhack2 = flowhack1*time; // added time just to be sure it's not simple\n");
 			fprintf(pfile,"algorithm\n");
-			fprintf(pfile,"\tfmuSetContStates(fmufun, inst, %s, %s);\n",nx,x);
+			fprintf(pfile,"\tflowhack3 := flowhack2;\n");
 
 #ifdef _DEBUG_MODELICA
 			fprintf(pfile,"\tprintVariable(time, 1, \"time\");\n");
 			fprintf(pfile,"\tprintVariable(%s, %s, \"nx\");\n",x,nx);
 #endif
 		}
-		fprintf(pfile,"\tfmuCompIntStep(fmufun, inst, stepEvt);\n");
+
 		if(fmuMD->nei>0){
 			fprintf(pfile,"\t%s:=%s;\n",prez,z);
 			fprintf(pfile,"\t%s:=fmuGetEventInd(fmufun, inst, %s);\n",z,nz);
@@ -1360,11 +1369,14 @@ void blockcodegen(fmuModelDescription* fmuMD, const char* decompPath, const char
 				fprintf(pfile,"\tend when;\n");
 			}
 		}
-
+		fprintf(pfile,"algorithm\n");
+		fprintf(pfile,"\tflowhack4 := flowhack3;\n");
+    fprintf(pfile,"\tfmuCompIntStep(fmufun, inst, stepEvt);\n");
 		/* fprintf(pfile,"equation\n");*/
 		fprintf(pfile,"\twhen terminal() then\n");
 		/*fprintf(pfile,"\t\t freeAll:=fmuFreeAll(inst, fmufun, functions);\n");*/
 		fprintf(pfile,"\tend when;\n");
+
 		fputs("end FMUBlock;\n",pfile);
 		fprintf(pfile,"end FMUImport_%s;\n",fmuMD->mid);
 	}
