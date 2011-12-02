@@ -78,7 +78,7 @@ exponent(char *p0, int expo)
  * Does not check for inf/NaN in the default mode since realString
  * handles them in a more efficient manner (static data, no allocation)
  */
-static char * dtostr(double d)
+static void* dtostr(double d)
 {
   const int prec = 16 /* 1 more than mathematically relevant */;
   int signflag,i,totalsz;
@@ -129,6 +129,7 @@ static char * dtostr(double d)
   }
   retval = mmc_mk_scon_len(totalsz);
   res = MMC_STRINGDATA(retval);
+  *res = '\0';
   	
   if (signflag) *res++ = '-';
   if (expt == ndig) {
@@ -191,7 +192,7 @@ modelica_string realString(modelica_real r)
     return MMC_REFSTRINGLIT(_OMC_LIT_POS_INF);
   else if (isnan(r))
     return MMC_REFSTRINGLIT(_OMC_LIT_NAN);
-  return mmc_mk_scon(dtostr(r));
+  return dtostr(r);
 }
 
 #ifdef REAL_STRING_TEST_MAIN
