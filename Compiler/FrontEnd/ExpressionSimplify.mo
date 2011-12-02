@@ -1067,7 +1067,7 @@ algorithm
       then DAE.ICONST(i);
 
     // min function on reals
-    case(DAE.CALL(path=Absyn.IDENT("min"),expLst={e, e1})) 
+    case(DAE.CALL(path=Absyn.IDENT("min"),expLst={e, e1},attr=DAE.CALL_ATTR(ty=DAE.T_REAL(source=_)))) 
       equation
         v1 = Expression.getRealConst(e);
         v2 = Expression.getRealConst(e1);
@@ -1081,7 +1081,7 @@ algorithm
       then DAE.ICONST(i);
 
     // max function on reals
-    case(DAE.CALL(path=Absyn.IDENT("max"),expLst={e, e1})) 
+    case(DAE.CALL(path=Absyn.IDENT("max"),expLst={e, e1},attr=DAE.CALL_ATTR(ty=DAE.T_REAL(source=_)))) 
       equation
         v1 = Expression.getRealConst(e);
         v2 = Expression.getRealConst(e1);
