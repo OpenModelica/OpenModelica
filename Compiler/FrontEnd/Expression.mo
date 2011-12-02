@@ -1234,6 +1234,7 @@ algorithm
     case(DAE.RCONST(v)) then v;
     case(DAE.CAST(_,e)) then getRealConst(e);
     case(DAE.ICONST(i)) then intReal(i);
+    case DAE.ENUM_LITERAL(index = i) then intReal(i);
   end match;
 end getRealConst;
 
