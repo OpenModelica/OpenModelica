@@ -6340,27 +6340,10 @@ algorithm
         (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=v1)),comps) = BackendDAETransform.strongComponents(syst, shared);
         // if comps vector does not match to matching size 
         // restart the matching
-        true = checkCompsMatching(comps,arrayList(v1)); 
+        (syst,shared) = restartMatching(not checkCompsMatching(comps,arrayList(v1)),syst, shared, match_opts, daeHandlerfunc, funcs);
         Debug.execStat("transformDAE -> sort components",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then (syst,shared);
         
-    case (syst,shared,funcs,inMatchingOptions,(daeHandlerfunc,methodstr))
-      equation
-        (syst,m,mT) = getIncidenceMatrixfromOption(syst,shared);
-        match_opts = Util.getOptionOrDefault(inMatchingOptions,(BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT()));
-        // matching algorithm
-        (syst,shared) = BackendDAETransform.matchingAlgorithm(syst, shared, match_opts, daeHandlerfunc, funcs);
-        Debug.execStat("transformDAE -> index Reduction Method " +& methodstr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-        // sorting algorithm
-        (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=v1)),comps) = BackendDAETransform.strongComponents(syst, shared);
-        // if comps vector does not match to matching size 
-        // restart the matching
-        false = checkCompsMatching(comps,arrayList(v1)); 
-        (syst,shared) = BackendDAETransform.matchingAlgorithm(syst, shared, match_opts, daeHandlerfunc, funcs);
-        // sorting algorithm
-        (syst,_) = BackendDAETransform.strongComponents(syst,shared);
-        Debug.execStat("transformDAE -> sort components",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-      then (syst,shared);      
     else
       equation
         str = "Transformation Module failed!";
@@ -6368,6 +6351,27 @@ algorithm
       then fail();
   end matchcontinue;
 end transformDAEWork;
+
+protected function restartMatching
+  "Restarts matching if cond is true."
+  input Boolean cond;
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input BackendDAE.MatchingOptions opts;
+  input daeHandlerFunc daeHandler;
+  input DAE.FunctionTree funcs;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+algorithm
+  (osyst,oshared) := match (cond,syst,shared,opts,daeHandler,funcs)
+    case (false,syst,shared,_,_,_) then (syst,shared);
+    case (true,syst,shared,opts,daeHandler,funcs)
+      equation
+        (syst,shared) = BackendDAETransform.matchingAlgorithm(syst, shared, opts, daeHandler, funcs);
+        (syst,_) = BackendDAETransform.strongComponents(syst,shared);
+      then (syst,shared);
+  end match;
+end restartMatching;
 
 protected function pastoptimiseDAE
 "function optimiseDAE 
