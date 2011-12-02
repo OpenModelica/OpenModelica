@@ -174,6 +174,7 @@ static void* dtostr(double d)
   }
   *res = 0;
   freedtoa(cporig);
+  MMC_CHECK_STRING(retval);
   return retval;
 }
 
