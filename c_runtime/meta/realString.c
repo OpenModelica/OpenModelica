@@ -35,7 +35,7 @@
 
 #define	to_char(n)	((n) + '0')
 
-#define MAXEXPDIG 4
+#define MAXEXPDIG 6
 
 static int
 exponent(char *p0, int expo)
@@ -82,7 +82,7 @@ static void* dtostr(double d)
 {
   const int prec = 16 /* 1 more than mathematically relevant */;
   int signflag,i,totalsz;
-  int expt,expsz,ndig;
+  int expt,expsz=0,ndig;
   char *cp,*cporig,*dtoaend;
   char expbuf[MAXEXPDIG];
   void *retval;
@@ -95,10 +95,11 @@ static void* dtostr(double d)
   else if (isnan(d))
     return "NaN";
 #endif
-
+  *expbuf = 0;
   cporig = dtoa(d,1,prec,&expt,&signflag,&dtoaend);
   cp = cporig;
 	ndig = dtoaend - cp;
+  ndig = ndig > prec ? prec : ndig;
   /*
    * Allocate the string on GC'ed heap directly
    * We just need to calculate the exact length of the string first :)
@@ -112,25 +113,23 @@ static void* dtostr(double d)
     if (expt < 0) {
       totalsz += 2;
     } else {
-      *res++ = *cp++;
       if (ndig>1)
         totalsz += 1;
-      expt--;
       if (expt == 0 && ndig == 1) {
         totalsz += 2;
       }
     }
     totalsz += ndig-1;
-    if (expt) {
+    if (expt!=1) {
       /* Yup, this is then used later ;) */
-      expsz = exponent(expbuf,expt);
+      expsz = exponent(expbuf,expt < 0 ? expt + 1 : expt - 1);
       totalsz += expsz;
     }
   }
   retval = mmc_mk_scon_len(totalsz);
   res = MMC_STRINGDATA(retval);
   *res = '\0';
-  	
+
   if (signflag) *res++ = '-';
   if (expt == ndig) {
     strcpy(res,cp);
@@ -153,7 +152,7 @@ static void* dtostr(double d)
     strcpy(res,cp);
     res += ndig;
   } else {
-    if (expt < 0) {
+    if (expt <= 0) {
       *res++ = '0';
       *res++ = '.';
     } else {
