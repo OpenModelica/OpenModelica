@@ -260,8 +260,8 @@ algorithm
     // if true and false branches are equal
     case ((DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),_))
       equation
-        (e,b) = simplifyIfExp(e1,e2,e3);
-      then ((e,b));
+        e = simplifyIfExp(e1,e2,e3);
+      then ((e,true));
     
     // component references
     case ((DAE.CREF(componentRef = c_1 as DAE.CREF_IDENT(idn,_,s),ty=t),_))
@@ -391,25 +391,24 @@ protected function simplifyIfExp
   input DAE.Exp tb;
   input DAE.Exp fb;
   output DAE.Exp exp;
-  output Boolean changed;
 algorithm
-  (exp,changed) := match (cond,tb,fb)
+  exp := match (cond,tb,fb)
+    local
+      Boolean remove_if;
       // Condition is constant
-    case (DAE.BCONST(true),tb,fb) then (tb,true);
-    case (DAE.BCONST(false),tb,fb) then (fb,true);
+    case (DAE.BCONST(true),tb,fb) then tb;
+    case (DAE.BCONST(false),tb,fb) then fb;
       // The expression is the condition
-    case (exp,DAE.BCONST(true),DAE.BCONST(false)) then (exp,true);
+    case (exp,DAE.BCONST(true),DAE.BCONST(false)) then exp;
     case (exp,DAE.BCONST(false),DAE.BCONST(true))
       equation
         exp = DAE.LUNARY(DAE.NOT(DAE.T_BOOL_DEFAULT), exp);
-      then (exp,true);
+      then exp;
       // Are the branches equal?
     case (cond,tb,fb)
       equation
         true = Expression.expEqual(tb,fb);
-      then (tb,true);
-    case (cond,tb,fb)
-      then (DAE.IFEXP(cond,tb,fb),false);          
+      then tb;
   end match;
 end simplifyIfExp;
 
