@@ -377,9 +377,11 @@ void read_input_xml(int argc, char **argv,
 
     /* read var attribute */
     read_value(mi.rSta[i]["start"],&(modelData->realVarsData[i].attribute.start));
-    DEBUG_INFO2(LOG_SOLVER," read start-value for %s =  %f from init file",modelData->realVarsData[i].info.name,modelData->realVarsData[i].attribute.start);
+    DEBUG_INFO2(LOG_DEBUG," read start-value for %s =  %f from init file",modelData->realVarsData[i].info.name,modelData->realVarsData[i].attribute.start);
     read_value(mi.rSta[i]["fixed"],(signed char*)&(modelData->realVarsData[i].attribute.fixed));
-    DEBUG_INFO2(LOG_SOLVER," read fixed for %s = %s from init file",modelData->realVarsData[i].info.name,(modelData->realVarsData[i].attribute.fixed)?"true":"false");
+    DEBUG_INFO2(LOG_DEBUG," read fixed for %s = %s from init file",modelData->realVarsData[i].info.name,(modelData->realVarsData[i].attribute.fixed)?"true":"false");
+    read_value(mi.rSta[i]["nominal"], &(modelData->realVarsData[i].attribute.nominal));
+    DEBUG_INFO2(LOG_DEBUG," read nominal-value for %s =  %f from init file", modelData->realVarsData[i].info.name,modelData->realVarsData[i].attribute.nominal);
 
     /* create a mapping for Alias variable to get the correct index */
     mapAlias[(modelData->realVarsData[i].info.name)]=i;

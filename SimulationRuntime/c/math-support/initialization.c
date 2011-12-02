@@ -31,7 +31,6 @@
 /*! \file initialization.c
  */
 
-/* use of new simulation_data struct _X_DATA */
 #include "simulation_data.h"
 #include "modelica_string.h"
 #include "initialization.h"
@@ -43,6 +42,7 @@
 #include <math.h>
 #include <string.h> /* strcmp */
 
+/*
 #ifndef NEWUOA
 #define NEWUOA newuoa_
 #endif
@@ -51,7 +51,6 @@
 #define NELMEAD nelmead_
 #endif
 
-/*
 void NEWUOA(long *nz,
   long *NPT,
   double *z,
@@ -113,15 +112,20 @@ static double leastSquareWithLambda(long nz, double* z, double* scale, double la
   long j = 0;
   double funcValue = 0;
 
-  for(i=0; i<data->modelData.nStates; i++){
-    if(data->modelData.realVarsData[i].attribute.fixed==0){
+  for(i=0; i<data->modelData.nStates; i++)
+  {
+    if(data->modelData.realVarsData[i].attribute.fixed==0)
+    {
       data->localData[0]->realVars[i] = z[indz] * (scale ? scale[indz] : 1.0);
       indz++;
     }
   }
+
   /* for real parameters */
-  for(i=0; i<data->modelData.nParametersReal; i++){
-    if(data->modelData.realParameterData[i].attribute.fixed == 0){
+  for(i=0; i<data->modelData.nParametersReal; i++)
+  {
+    if(data->modelData.realParameterData[i].attribute.fixed == 0)
+    {
       data->simulationInfo.realParameter[i] = z[indz] * (scale ? scale[indz] : 1.0);
       indz++;
     }
@@ -133,7 +137,8 @@ static double leastSquareWithLambda(long nz, double* z, double* scale, double la
 
   initial_residual(data, lambda, initialResiduals);
 
-  for(j=0; j<data->modelData.nResiduals; j++){
+  for(j=0; j<data->modelData.nResiduals; j++)
+  {
     funcValue += initialResiduals[j] * initialResiduals[j];
   }
   return funcValue;
@@ -374,7 +379,9 @@ static int reportResidualValue(double funcValue, _X_DATA* data, double* initialR
     for(i=0; i<data->modelData.nResiduals; i++)
     {
       if(fabs(initialResiduals[i]) > 1e-6)
+      {
         INFO2("reportResidualValue | residual[%d] = %g", (int) i, initialResiduals[i]);
+      }
     }
     return 1;
   }
@@ -407,7 +414,9 @@ static int nelderMeadEx_initialization(_X_DATA *data, long nz, double *z, double
     /* down-scale */
     for(i=0; i<nz; i++)
       z[i] /= scale[i];
+
     NelderMeadOptimization(nz, z, scale, lambda_step, STOPCR, NLOOP, useVerboseOutput(LOG_INIT) ? 100000 : 0, &lambda, &iteration, leastSquareWithLambda, data, initialResiduals);
+
     /* up-scale */
     for(i=0; i<nz; i++)
       z[i] *= scale[i];
@@ -416,13 +425,15 @@ static int nelderMeadEx_initialization(_X_DATA *data, long nz, double *z, double
     {
       INFO3("nelderMeadEx_initialization | iteration=%d / lambda=%g / f=%g", (int) iteration, lambda, leastSquareWithLambda(nz, z, scale, lambda, data, initialResiduals));
       for(i=0; i<nz; i++)
+      {
         INFO_AL2("nelderMeadEx_initialization | states | %d: %g", (int) i, z[i]);
+      }
     }
 
-    storePreValues(data);                      /* save pre-values */
-    overwriteOldSimulationData(data);/* if there are non-linear equations */
+    storePreValues(data);                       /* save pre-values */
+    overwriteOldSimulationData(data);           /* if there are non-linear equations */
 
-    update_DAEsystem(data);             /* evaluate discrete variables */
+    update_DAEsystem(data);                     /* evaluate discrete variables */
 
     /* valid system for the first time! */
 
@@ -444,7 +455,6 @@ static int nelderMeadEx_initialization(_X_DATA *data, long nz, double *z, double
   return reportResidualValue(funcValue, data, initialResiduals);
 }
 
-/* done */
 /*! \fn int initialize(_X_DATA *data, int optiMethod)
  *
  *  author: lochel
@@ -552,7 +562,6 @@ static int initialize(_X_DATA *data, int optiMethod)
   return retVal;
 }
 
-/* done */
 /*! \fn int state_initialization(_X_DATA *data, int optiMethod)
  *
  *  author: lochel
@@ -600,8 +609,6 @@ static int state_initialization(_X_DATA *data, int optiMethod)
   return retVal;
 }
 
-
-/* done */
 /*! \fn int initialization(_X_DATA *data, const char* pInitMethod, const char* pOptiMethod)
  *
  *  author: lochel
@@ -639,8 +646,14 @@ int initialization(_X_DATA *data, const char* pInitMethod, const char* pOptiMeth
   if(initMethod == IIM_STATE)
   {
     /* the 'new' initialization-method */
-    return state_initialization(data, optiMethod);
+    int result = state_initialization(data, optiMethod);
 
+    if(result)
+    {
+      WARNING("state-initialization fails");
+    }
+
+    return result;
   }
 
   /* unrecognized initialization-method */

@@ -251,10 +251,11 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 		rt_tick(SIM_TIMER_INIT);
 	}
 
-
-	if(initialization(simData, "state", "nelder_mead_ex")) {
+	if(initialization(simData, "state", "nelder_mead_ex"))
+  {
 			THROW("Error in initialization. Storing results and exiting.");
 	}
+
   /* adrpo: write the parameter data in the file once again after bound parameters and initialization! */
 	sim_result_writeParameterData(&(simData->modelData));
   DEBUG_INFO(LOG_SOLVER, "Wrote parameters to the file after initialization (for output formats that support this)");
