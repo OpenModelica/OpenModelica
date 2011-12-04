@@ -116,19 +116,20 @@ static void* dtostr(double d)
   } else if (expt > 0 && expt < prec) {
     totalsz = signflag+ndig+1;
     if (debug) fprintf(stderr, "totalsz: #3\n");
-  } else if (expt <= 0 && expt > -prec && -expt > ndig) {
-    totalsz = signflag+expt+ndig+2;
+  } else if (expt <= 0 && ndig+expt > -prec) {
+    totalsz = signflag-expt+ndig+2;
     if (debug) fprintf(stderr, "totalsz: #4\n");
   } else {
     totalsz = signflag;
-    if (expt == 0 || ndig == 1) totalsz += ndig+2;
+    if (expt && ndig == 1) totalsz += ndig;
+    else if (expt == 1 || ndig == 1) totalsz += ndig+2;
     else totalsz += ndig+1;
     if (expt!=1) {
       /* Yup, this is then used later ;) */
       expsz = exponent(expbuf,expt == 0 ? expt : expt - 1);
       totalsz += expsz;
     }
-    if (debug) fprintf(stderr, "totalsz: #5: %d %d %d\n", expt, ndig, expsz);
+    if (debug) fprintf(stderr, "totalsz: #5: %d %d %d %d\n", expt, ndig, expsz, totalsz);
   }
   retval = mmc_mk_scon_len(totalsz);
   res = MMC_STRINGDATA(retval);
@@ -160,7 +161,7 @@ static void* dtostr(double d)
     *res++ = '.';
     strcpy(res,cp);
     res += ndig-expt;
-  } else if (expt <= 0 && expt > -prec && -expt > ndig) {
+  } else if (expt <= 0 && ndig+expt > -prec) {
     *res++ = '0';
     *res++ = '.';
     for (i=0;i<-expt;i++)
@@ -173,8 +174,9 @@ static void* dtostr(double d)
       *res++ = '.';
     } else {
       *res++ = *cp++;
-      *res++ = '.';
+      if (expt && ndig > 1) *res++ = '.';
       if (expt == 1 && ndig == 1) {
+        *res++ = '.';
         *res++ = '0';
       }
     }
