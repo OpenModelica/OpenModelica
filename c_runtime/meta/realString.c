@@ -87,6 +87,7 @@ static void* dtostr(double d)
   char expbuf[MAXEXPDIG];
   void *retval;
   char *res;
+  const int debug = 0;
 #ifdef REAL_STRING_TEST_MAIN
   if (isinf(d) && d < 0)
     return "-inf";
@@ -99,39 +100,47 @@ static void* dtostr(double d)
   cporig = dtoa(d,1,prec,&expt,&signflag,&dtoaend);
   cp = cporig;
 	ndig = dtoaend - cp;
-  ndig = ndig > prec ? prec : ndig;
   /*
    * Allocate the string on GC'ed heap directly
    * We just need to calculate the exact length of the string first :)
    */
-  if (expt == ndig || (expt > 0 && expt < prec && expt > ndig)) {
+  if (expt == 0) {
+    totalsz = signflag+2+ndig;
+    if (debug) fprintf(stderr, "totalsz: #1\n");
+  } else if (expt == ndig || (expt > 0 && expt < prec && expt > ndig)) {
     totalsz = signflag+expt+2;
-  } else if (expt < 0 && expt > -prec && -expt > ndig) {
+    if (debug) fprintf(stderr, "totalsz: #2\n");
+  } else if (expt > 0 && expt < prec && expt > ndig) {
+    totalsz = signflag+expt+2;
+    if (debug) fprintf(stderr, "totalsz: #2.5\n");
+  } else if (expt > 0 && expt < prec) {
+    totalsz = signflag+ndig+1;
+    if (debug) fprintf(stderr, "totalsz: #3\n");
+  } else if (expt <= 0 && expt > -prec && -expt > ndig) {
     totalsz = signflag+expt+ndig+2;
+    if (debug) fprintf(stderr, "totalsz: #4\n");
   } else {
     totalsz = signflag;
-    if (expt < 0) {
-      totalsz += 2;
-    } else {
-      if (ndig>1)
-        totalsz += 1;
-      if (expt == 0 && ndig == 1) {
-        totalsz += 2;
-      }
-    }
-    totalsz += ndig-1;
+    if (expt == 0 || ndig == 1) totalsz += ndig+2;
+    else totalsz += ndig+1;
     if (expt!=1) {
       /* Yup, this is then used later ;) */
-      expsz = exponent(expbuf,expt < 0 ? expt + 1 : expt - 1);
+      expsz = exponent(expbuf,expt == 0 ? expt : expt - 1);
       totalsz += expsz;
     }
+    if (debug) fprintf(stderr, "totalsz: #5: %d %d %d\n", expt, ndig, expsz);
   }
   retval = mmc_mk_scon_len(totalsz);
   res = MMC_STRINGDATA(retval);
   *res = '\0';
 
   if (signflag) *res++ = '-';
-  if (expt == ndig) {
+  if (expt == 0) {
+    *res++ = '0';
+    *res++ = '.';
+    strcpy(res,cp);
+    res += ndig;
+  } else if (expt == ndig) {
     strcpy(res,cp);
     res += ndig;
     *res++ = '.';
@@ -144,7 +153,14 @@ static void* dtostr(double d)
     }
     *res++ = '.';
     *res++ = '0';
-  } else if (expt < 0 && expt > -prec && -expt > ndig) {
+  } else if (expt > 0 && expt < prec) {
+    for (i=0;i<expt;i++) {
+      *res++ = *cp++;
+    }
+    *res++ = '.';
+    strcpy(res,cp);
+    res += ndig-expt;
+  } else if (expt <= 0 && expt > -prec && -expt > ndig) {
     *res++ = '0';
     *res++ = '.';
     for (i=0;i<-expt;i++)
@@ -152,16 +168,13 @@ static void* dtostr(double d)
     strcpy(res,cp);
     res += ndig;
   } else {
-    if (expt <= 0) {
+    if (expt == 0) {
       *res++ = '0';
       *res++ = '.';
     } else {
       *res++ = *cp++;
-      if (ndig>1)
-        *res++ = '.';
-      expt--;
-      if (expt == 0 && ndig == 1) {
-        *res++ = '.';
+      *res++ = '.';
+      if (expt == 1 && ndig == 1) {
         *res++ = '0';
       }
     }
@@ -174,6 +187,8 @@ static void* dtostr(double d)
   }
   *res = 0;
   freedtoa(cporig);
+  if (debug) fprintf(stderr, "%.15g => %s\n", d, MMC_STRINGDATA(retval));
+  if (debug) fprintf(stderr, "%d => %d\n", strlen(MMC_STRINGDATA(retval)), MMC_STRLEN(retval));
   MMC_CHECK_STRING(retval);
   return retval;
 }
