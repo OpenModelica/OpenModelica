@@ -59,6 +59,7 @@ extern "C" {
 #include "rtclock.h"
 #include "config.h"
 #include "errorext.h"
+#include "iconv.h"
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #define getFunctionPointerFromDLL  GetProcAddress
@@ -1562,6 +1563,51 @@ extern int SystemImpl__reopenStandardStream(int id,const char *filename)
     return 0;
   }
   return 1;
+}
+
+extern char* SystemImpl__iconv(const char * str, const char *from, const char *to)
+{
+  static char *buf = 0;
+  static int buflen = 0;
+  char *in_str,*res;
+  size_t sz,out_sz;
+  iconv_t ic;
+  int count;
+  sz = strlen(str);
+  if (buflen < sz*4) {
+    if (buf) free(buf);
+    buf = (char*)malloc(sz*8);
+    if (!buf) {
+      buflen = 0;
+      return (char*) "";
+    }
+    buflen = sz*8;
+  }
+  *buf = 0;
+  /* fprintf(stderr,"iconv(%s,to=%s,%s) of size %d, buflen %d\n",str,to,from,sz,buflen); */
+  ic = iconv_open(to, from);
+  if (ic == (iconv_t) -1) {
+    const char *tokens[4] = {strerror(errno),from,to,str};
+    c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s",tokens,4);
+    return buf;
+  }
+  in_str = (char*) str;
+  out_sz = buflen-1;
+  res = buf;
+  count = iconv(ic,&in_str,&sz,&res,&out_sz);
+  iconv_close(ic);
+  if (count == -1) {
+    const char *tokens[4] = {strerror(errno),from,to,str};
+    c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s",tokens,4);
+    return (char*) "";
+  }
+  buf[(buflen-1)-out_sz] = 0;
+  if (strlen(buf) != (buflen-1)-out_sz) {
+    const char *tokens[1] = {to};
+    c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"iconv(to=%s) failed because the character set output null bytes in the middle of the string.",&to,1);
+    return (char*) "";
+  }
+  return buf;
 }
 
 #ifdef __cplusplus

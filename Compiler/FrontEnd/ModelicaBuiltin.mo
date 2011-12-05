@@ -1689,6 +1689,17 @@ function getNthInitialEquation "Returns the Nth Initial Equation section"
 external "builtin";
 end getNthInitialEquation;
 
+function iconv "The iconv() function converts one multibyte characters from one character
+  set to another.
+  See man (3) iconv for more information.
+"
+  input String string;
+  input String from;
+  input String to := "UTF-8";
+  output String result;
+external "builtin";
+end iconv;
+
 end Scripting;
 
 annotation(Documentation(info="<html>OpenModelica internal defintions and scripting functions are defined here.</html>", __Dymola_DocumentationClass = true));

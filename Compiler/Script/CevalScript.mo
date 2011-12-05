@@ -731,7 +731,7 @@ algorithm
       Option<list<SCode.Element>> fp;
       list<Env.Frame> env;
       SCode.Element c;
-      String s1,str,str1,str2,str3,re,token,varid,cmd,executable,executable1,method_str,outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,errMsg,errorStr,uniqueStr,interpolation,title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir;
+      String s1,str,str1,str2,str3,re,token,varid,cmd,executable,executable1,method_str,outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,errMsg,errorStr,uniqueStr,interpolation,title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,from,to;
       DAE.ComponentRef cr,cref,classname;
       Interactive.SymbolTable newst,st_1,st;
       Absyn.Program p,pnew,newp,ptot;
@@ -1306,6 +1306,12 @@ algorithm
         b = System.reopenStandardStream(i-1,filename);
       then
         (cache,Values.BOOL(b),st);
+        
+    case (cache,env,"iconv",{Values.STRING(str),Values.STRING(from),Values.STRING(to)},st,msg)
+      equation
+        str = System.iconv(str,from,to);
+      then
+        (cache,Values.STRING(str),st);
         
     case (cache,env,"setDataPort",{Values.INTEGER(i)},st,msg)
       equation

@@ -899,4 +899,15 @@ public function reopenStandardStream
   external "C" success=SystemImpl__reopenStandardStream(_stream,filename) annotation(Library = {"omcruntime"});
 end reopenStandardStream;
 
+function iconv "The iconv() function converts one multibyte characters from one character
+  set to another.
+  See man (3) iconv for more information.
+"
+  input String string;
+  input String from;
+  input String to;
+  output String result;
+external "C" result=SystemImpl__iconv(string,from,to) annotation(Library = {"omcruntime"});
+end iconv;
+
 end System;
