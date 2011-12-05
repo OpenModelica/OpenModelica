@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, LinkÃ¶ping University,
+ * Copyright (c) 1998-CurrentYear, Linköping University,
  * Department of Computer and Information Science,
- * SE-58183 LinkÃ¶ping, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from LinkÃ¶ping University, either from the above address,
+ * from Linköping University, either from the above address,
  * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
  * http://www.openmodelica.org, and in the OpenModelica distribution. 
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
@@ -29,9 +29,8 @@
  *
  */
 
-#include "dtoa.c"
-
 #include "meta_modelica.h"
+#include "dtoa.c"
 
 #define	to_char(n)	((n) + '0')
 
@@ -200,6 +199,12 @@ static void* dtostr(double d)
 static const MMC_DEFSTRINGLIT(_OMC_LIT_NEG_INF,4,"-inf");
 static const MMC_DEFSTRINGLIT(_OMC_LIT_POS_INF,3,"inf");
 static const MMC_DEFSTRINGLIT(_OMC_LIT_NAN,3,"NaN");
+*/
+#if defined(_MSC_VER)
+#include <float.h>
+#define isnan _isnan
+#define isinf !_finite
+#endif
 
 modelica_string realString(modelica_real r)
 {
@@ -211,6 +216,48 @@ modelica_string realString(modelica_real r)
     return MMC_REFSTRINGLIT(_OMC_LIT_NAN);
   return dtostr(r);
 }
+/*
+static const MMC_DEFSTRINGLIT(_OMC_LIT_NEG_INF,4,"-inf");
+static const MMC_DEFSTRINGLIT(_OMC_LIT_POS_INF,3,"inf");
+static const MMC_DEFSTRINGLIT(_OMC_LIT_NAN,3,"NaN");
+
+modelica_string realString(modelica_real r)
+{
+  / NOTE: The RML runtime uses the same code as this function.
+   * If you update one, you must update the other or the testsuite might break
+   *
+   * 64-bit (1+11+52) double: -d.[15 digits]E-[4 digits] = ~24 digits max.
+   * Add safety margin in case some C runtime is trigger happy. /
+  static char buffer[32];
+  modelica_string res;
+  // fprintf(stderr, "\nrealString(%g)\n", r);
+  if (isinf(r) && r < 0)
+    res = MMC_REFSTRINGLIT(_OMC_LIT_NEG_INF);
+  else if (isinf(r))
+    res = MMC_REFSTRINGLIT(_OMC_LIT_POS_INF);
+  else if (isnan(r))
+    res = MMC_REFSTRINGLIT(_OMC_LIT_NAN);
+  else {
+    char* endptr;
+    int ix = snprintf(buffer, 32, "%.15g", r);
+    long ignore;
+    if (ix < 0)
+      MMC_THROW();
+    errno = 0;
+    / If it looks like an integer, we need to append .0 so it looks like real /
+    ignore = strtol(buffer,&endptr,10);
+    if (errno == 0 && *endptr == '\0') {
+      if (ix > 30)
+        MMC_THROW();
+      buffer[ix++] = '.';
+      buffer[ix++] = '0';
+      buffer[ix] = '\0';
+    }
+    res = mmc_mk_scon(buffer);
+  }
+  return res;
+}
+*/
 
 #ifdef REAL_STRING_TEST_MAIN
 #define c 15
