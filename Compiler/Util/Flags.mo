@@ -335,6 +335,8 @@ constant DebugFlag PERF_TIMES = DEBUG_FLAG(86, "perfTimes",
   "");
 constant DebugFlag CHECK_SIMPLIFY = DEBUG_FLAG(87, "checkSimplify",
   "Enables checks for expression simplification and prints a notification whenever an undesirable transformation has been performed.");
+constant DebugFlag SCODE_INST = DEBUG_FLAG(88, "scodeInst",
+  "Enables experimental SCode instantiation phase.");
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -427,7 +429,8 @@ constant list<DebugFlag> allDebugFlags = {
   SEI,
   STATIC,
   PERF_TIMES,
-  CHECK_SIMPLIFY
+  CHECK_SIMPLIFY,
+  SCODE_INST
 };
 
 // CONFIGURATION FLAGS

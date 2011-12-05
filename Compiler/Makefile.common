@@ -82,6 +82,7 @@ SCodeLookup.mo \
 SCodeFlattenImports.mo \
 SCodeFlattenExtends.mo \
 SCodeFlattenRedeclare.mo \
+SCodeInst.mo \
 SCodeSimplify.mo \
 SCodeFlatten.mo \
 SCodeMod.mo \

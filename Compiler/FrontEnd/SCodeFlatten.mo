@@ -54,6 +54,7 @@ protected import SCodeEnv;
 protected import System;
 protected import SCodeLookup;
 protected import SCodeDump;
+protected import SCodeInst;
 
 protected type Env = SCodeEnv.Env;
 
@@ -125,6 +126,7 @@ algorithm
         checkForCardinality(env);
         //print(SCodeDump.programStr(prog) +& "\n");
         (prog, env) = SCodeFlattenImports.flattenProgram(prog, env);
+        Debug.fcall2(Flags.SCODE_INST, SCodeInst.instClass, inClassName, env); 
         prog = SCodeFlattenExtends.flattenProgram(inClassName, prog, env);
         
         //System.stopTimer();
