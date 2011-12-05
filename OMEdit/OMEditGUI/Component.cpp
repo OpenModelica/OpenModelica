@@ -1041,10 +1041,6 @@ void Component::getClassComponents(QString className, int type)
         }
         getClassComponents(inheritedClass, type);
     }
-
-    if (className.compare("Modelica_LinearSystems2.ZerosAndPoles.Internal.normalizationFactor") == 0)
-      qDebug() << "i m here";
-
     QList<ComponentsProperties*> components = mpOMCProxy->getComponents(className);
     this->mpChildComponentProperties = components;
     QStringList componentsAnnotationsList = mpOMCProxy->getComponentAnnotations(className);
