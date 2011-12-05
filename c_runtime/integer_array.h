@@ -272,10 +272,10 @@ static inline int* data_of_integer_array(integer_array_t *a)
   if (sizeof(int) == sizeof(modelica_integer))
     return (int*) a->data;
   n=integer_array_nr_of_elements(a);
-  res = (int*) a->data;
+  res = (int*) alloc_elements(0,n,sizeof(int));
   data = (modelica_integer*) a->data;
   for (i=0; i<n; i++)
-    res[i] = (int) data[i]; /* TODO: Check int out of range? */
+    res[i] = (int) data[i];
   return res;
 }
 #endif

@@ -57,7 +57,7 @@ extern "C" {
  *
  */
 
-#if 0 /* Enable if you need to debug some MMC runtime assertions */
+#if 1 /* Enable if you need to debug some MMC runtime assertions */
 #define MMC_DEBUG_ASSERT(x) assert(x)
 #else
 #define MMC_DEBUG_ASSERT(x) 

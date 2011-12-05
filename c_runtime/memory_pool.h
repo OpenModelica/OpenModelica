@@ -55,6 +55,7 @@ void clear_memory_state();
 void print_current_state();
 
 /* Allocation functions */
+void* alloc_elements(int ix, int n, int sz);
 m_real* real_alloc(int ix, int n);
 m_integer* integer_alloc(int ix, int n);
 m_string* string_alloc(int ix, int n);
