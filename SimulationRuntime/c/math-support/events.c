@@ -260,21 +260,25 @@ void storeStartValues(_X_DATA* data)
 	SIMULATION_DATA *sData = data->localData[0];
 	MODEL_DATA      *mData = &(data->modelData);
 
-  for(i=0; i<mData->nVariablesReal; ++i){
+  for(i=0; i<mData->nVariablesReal; ++i)
+  {
     sData->realVars[i] = mData->realVarsData[i].attribute.start;
-    DEBUG_INFO2(LOG_DEBUG,"Set Real var %s = %g",mData->realVarsData[i].info.name, sData->realVars[i]);
+    DEBUG_INFO2(LOG_DEBUG, "Set Real var %s = %g", mData->realVarsData[i].info.name, sData->realVars[i]);
   }
-  for(i=0; i<mData->nVariablesInteger; ++i){
+  for(i=0; i<mData->nVariablesInteger; ++i)
+  {
     sData->integerVars[i] = mData->integerVarsData[i].attribute.start;
-    DEBUG_INFO2(LOG_DEBUG,"Set Integer var %s = %d",mData->integerVarsData[i].info.name, sData->integerVars[i]);
+    DEBUG_INFO2(LOG_DEBUG, "Set Integer var %s = %d", mData->integerVarsData[i].info.name, sData->integerVars[i]);
   }
-  for(i=0; i<mData->nVariablesBoolean; ++i){
+  for(i=0; i<mData->nVariablesBoolean; ++i)
+  {
     sData->booleanVars[i] = mData->booleanVarsData[i].attribute.start;
-    DEBUG_INFO2(LOG_DEBUG,"Set Boolean var %s = %s",mData->booleanVarsData[i].info.name, sData->booleanVars[i]?"true":"false");
+    DEBUG_INFO2(LOG_DEBUG, "Set Boolean var %s = %s", mData->booleanVarsData[i].info.name, sData->booleanVars[i]?"true":"false");
   }
-  for(i=0; i<mData->nVariablesString; ++i){
+  for(i=0; i<mData->nVariablesString; ++i)
+  {
     sData->stringVars[i] = copy_modelica_string((modelica_string_const)mData->stringVarsData[i].attribute.start);
-    DEBUG_INFO2(LOG_DEBUG,"Set String var %s = %s",mData->stringVarsData[i].info.name, sData->stringVars[i]);
+    DEBUG_INFO2(LOG_DEBUG, "Set String var %s = %s", mData->stringVarsData[i].info.name, sData->stringVars[i]);
   }
 }
 

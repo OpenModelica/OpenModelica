@@ -105,28 +105,28 @@ const char *optiMethodStr[4] = {"unknown", "simplex", "nelder_mead_ex", "newuoa"
 *  \param z [in] vector of scaling-factors or NULL
 *  \param lambda [in]
 */
-static double leastSquareWithLambda(long nz, double* z, double* scale, double lambda, _X_DATA* data, double* initialResiduals)
+static double leastSquareWithLambda(long nz, double* z, double* zNominal, double lambda, _X_DATA* data, double* initialResiduals)
 {
   int indz = 0;
   fortran_integer i = 0;
   long j = 0;
   double funcValue = 0;
 
-  for(i=0; i<data->modelData.nStates; i++)
+  for(i=0; i<data->modelData.nStates; ++i)
   {
     if(data->modelData.realVarsData[i].attribute.fixed==0)
     {
-      data->localData[0]->realVars[i] = z[indz] * (scale ? scale[indz] : 1.0);
+      data->localData[0]->realVars[i] = z[indz] * (zNominal ? zNominal[indz] : 1.0);
       indz++;
     }
   }
 
   /* for real parameters */
-  for(i=0; i<data->modelData.nParametersReal; i++)
+  for(i=0; i<data->modelData.nParametersReal; ++i)
   {
     if(data->modelData.realParameterData[i].attribute.fixed == 0)
     {
-      data->simulationInfo.realParameter[i] = z[indz] * (scale ? scale[indz] : 1.0);
+      data->simulationInfo.realParameter[i] = z[indz] * (zNominal ? zNominal[indz] : 1.0);
       indz++;
     }
   }
@@ -136,8 +136,7 @@ static double leastSquareWithLambda(long nz, double* z, double* scale, double la
   functionAlgebraics(data);
 
   initial_residual(data, lambda, initialResiduals);
-
-  for(j=0; j<data->modelData.nResiduals; j++)
+  for(j=0; j<data->modelData.nResiduals; ++j)
   {
     funcValue += initialResiduals[j] * initialResiduals[j];
   }
@@ -161,13 +160,13 @@ static void NelderMeadOptimization(long N,
   double beta     = 2;        	/* 1 < beta */
   double gamma    = 0.5;        /* 0 < gamma < 1 */
 
-  double* simplex = (double*)calloc((N+1) * N,sizeof(double));
-  double* fvalues = (double*)calloc(N+1,sizeof(double));
+  double* simplex = (double*)calloc((N+1)*N, sizeof(double));
+  double* fvalues = (double*)calloc(N+1, sizeof(double));
 
-  double* xr = (double*)calloc(N,sizeof(double));
-  double* xe = (double*)calloc(N,sizeof(double));
-  double* xk = (double*)calloc(N,sizeof(double));
-  double* xbar = (double*)calloc(N,sizeof(double));
+  double* xr = (double*)calloc(N, sizeof(double));
+  double* xe = (double*)calloc(N, sizeof(double));
+  double* xk = (double*)calloc(N, sizeof(double));
+  double* xbar = (double*)calloc(N, sizeof(double));
 
   double fxr;
   double fxe;
@@ -180,7 +179,7 @@ static void NelderMeadOptimization(long N,
   long x = 0;
   long i = 0;
 
-  double lambda = 0.0;    /* no lambda-control is activated */
+  double lambda = 0.0;
   long iteration = 0;
 
   /* check Memory */
@@ -394,18 +393,18 @@ static int reportResidualValue(double funcValue, _X_DATA* data, double* initialR
 *  nelderMead algorithm.
 *  This does not require a jacobian for the residuals.
 */
-static int nelderMeadEx_initialization(_X_DATA *data, long nz, double *z, double *scale, double* initialResiduals)
+static int nelderMeadEx_initialization(_X_DATA *data, long nz, double *z, double *zNominal, double* initialResiduals)
 {
   double STOPCR = 1.e-16;
   double lambda_step = 0.1;
   long NLOOP = 10000 * nz;
 
-  double funcValue = leastSquareWithLambda(nz, z, scale, 1.0, data, initialResiduals);
+  double funcValue = leastSquareWithLambda(nz, z, zNominal, 1.0, data, initialResiduals);
 
   double lambda = 0;
   long iteration = 0;
 
-  long l=0,i=0;
+  long l=0, i=0;
 
   for(l=0; l<100 && funcValue > STOPCR; l++)
   {
@@ -413,17 +412,17 @@ static int nelderMeadEx_initialization(_X_DATA *data, long nz, double *z, double
 
     /* down-scale */
     for(i=0; i<nz; i++)
-      z[i] /= scale[i];
+      z[i] /= zNominal[i];
 
-    NelderMeadOptimization(nz, z, scale, lambda_step, STOPCR, NLOOP, useVerboseOutput(LOG_INIT) ? 100000 : 0, &lambda, &iteration, leastSquareWithLambda, data, initialResiduals);
+    NelderMeadOptimization(nz, z, zNominal, lambda_step, STOPCR, NLOOP, DEBUG_FLAG(LOG_INIT) ? 100000 : 0, &lambda, &iteration, leastSquareWithLambda, data, initialResiduals);
 
     /* up-scale */
     for(i=0; i<nz; i++)
-      z[i] *= scale[i];
+      z[i] *= zNominal[i];
 
     if(DEBUG_FLAG(LOG_INIT))
     {
-      INFO3("nelderMeadEx_initialization | iteration=%d / lambda=%g / f=%g", (int) iteration, lambda, leastSquareWithLambda(nz, z, scale, lambda, data, initialResiduals));
+      INFO3("nelderMeadEx_initialization | iteration=%d / lambda=%g / f=%g", (int) iteration, lambda, leastSquareWithLambda(nz, z, zNominal, lambda, data, initialResiduals));
       for(i=0; i<nz; i++)
       {
         INFO_AL2("nelderMeadEx_initialization | states | %d: %g", (int) i, z[i]);
@@ -441,7 +440,7 @@ static int nelderMeadEx_initialization(_X_DATA *data, long nz, double *z, double
     storePreValues(data);
     overwriteOldSimulationData(data);
 
-    funcValue = leastSquareWithLambda(nz, z, scale, 1.0, data, initialResiduals);
+    funcValue = leastSquareWithLambda(nz, z, zNominal, 1.0, data, initialResiduals);
   }
 
   DEBUG_INFO1(LOG_INIT, "nelderMeadEx_initialization | leastSquare=%g", funcValue);
@@ -466,7 +465,7 @@ static int initialize(_X_DATA *data, int optiMethod)
   long nz = 0;
   int retVal = 0;
   double *z = NULL;
-  double *scale = NULL;
+  double *zNominal = NULL;
   double *initialResiduals = NULL;
 
   DEBUG_INFO1(LOG_INIT, "initialization by method: %s", optiMethodStr[optiMethod]);
@@ -475,30 +474,18 @@ static int initialize(_X_DATA *data, int optiMethod)
   DEBUG_INFO(LOG_INIT, "fixed attribute for states:");
   for(i=0; i<data->modelData.nStates; ++i)
   {
+    DEBUG_INFO2(LOG_INIT, "state %s(fixed=%s)", data->modelData.realVarsData[i].info.name, (data->modelData.realVarsData[i].attribute.fixed ? "true" : "false"));
     if(data->modelData.realVarsData[i].attribute.fixed == 0)
-    {
-      DEBUG_INFO1(LOG_INIT, "state %s(fixed=false)", data->modelData.realVarsData[i].info.name);
       ++nz;
-    }
-    else
-    {
-      DEBUG_INFO1(LOG_INIT, "state %s(fixed=true)", data->modelData.realVarsData[i].info.name);
-    }
   }
 
   /* plus unfixed real-parameters */
   DEBUG_INFO(LOG_INIT, "fixed attribute for parameters:");
   for(i=0; i<data->modelData.nParametersReal; ++i)
   {
+    DEBUG_INFO2(LOG_INIT, "parameter %s(fixed=%s)", data->modelData.realParameterData[i].info.name, (data->modelData.realParameterData[i].attribute.fixed ? "true" : "false"));
     if(data->modelData.realParameterData[i].attribute.fixed == 0)
-    {
-      DEBUG_INFO1(LOG_INIT, "parameter %s(fixed=false)", data->modelData.realParameterData[i].info.name);
       ++nz;
-    }
-    else
-    {
-      DEBUG_INFO1(LOG_INIT, "parameter %s(fixed=true)", data->modelData.realParameterData[i].info.name);
-    }
   }
 
   DEBUG_INFO1(LOG_INIT, "number of non-fixed variables: %d", (int)nz);
@@ -511,17 +498,25 @@ static int initialize(_X_DATA *data, int optiMethod)
   }
 
   z = (double*)calloc(nz, sizeof(double));
-  scale = (double*)calloc(nz, sizeof(double));
+  zNominal = (double*)calloc(nz, sizeof(double));
   initialResiduals = (double*) calloc(data->modelData.nResiduals, sizeof(double));
   ASSERT(z, "out of memory");
-  ASSERT(scale, "out of memory");
+  ASSERT(zNominal, "out of memory");
+  ASSERT(initialResiduals, "out of memory");
 
   /* fill z with the non-fixed variables from x and p */
   for(i=0, iz=0; i<data->modelData.nStates; ++i)
   {
     if(data->modelData.realVarsData[i].attribute.fixed == 0)
     {
-      scale[iz] = data->modelData.realVarsData[i].attribute.useNominal ? fabs(data->modelData.realVarsData[i].attribute.nominal) : 1;
+      zNominal[iz] = fabs(data->modelData.realVarsData[i].attribute.nominal);
+
+      if(zNominal[iz] == 0.0)
+      {
+        WARNING1("nominal for real parameter is zero > nominal(%s) := 1.0", data->modelData.realParameterData[i].info.name);
+        zNominal[iz] = 1.0;
+      }
+
       z[iz++] = data->modelData.realVarsData[i].attribute.start;
     }
   }
@@ -531,14 +526,21 @@ static int initialize(_X_DATA *data, int optiMethod)
   {
     if(data->modelData.realParameterData[i].attribute.fixed == 0)
     {
-      scale[iz] = data->modelData.realParameterData[i].attribute.useNominal ? fabs(data->modelData.realParameterData[i].attribute.nominal) : 1;
+      zNominal[iz] = fabs(data->modelData.realParameterData[i].attribute.nominal);
+
+      if(zNominal[iz] == 0.0)
+      {
+        WARNING1("nominal for real parameter is zero > nominal(%s) := 1.0", data->modelData.realParameterData[i].info.name);
+        zNominal[iz] = 1.0;
+      }
+
       z[iz++] = data->modelData.realParameterData[i].attribute.start;
     }
   }
 
   if(optiMethod == IOM_NELDER_MEAD_EX)
   {
-    retVal = nelderMeadEx_initialization(data, nz, z, scale, initialResiduals);
+    retVal = nelderMeadEx_initialization(data, nz, z, zNominal, initialResiduals);
   }
   /*
   else if(optiMethod == IOM_SIMPLEX)
@@ -553,12 +555,13 @@ static int initialize(_X_DATA *data, int optiMethod)
   else
   {
     WARNING1("unrecognized option -iom %s", optiMethodStr[optiMethod]);
-    WARNING_AL("current options are: nelder_mead_ex, simplex or newuoa");
+    WARNING_AL("current options are: nelder_mead_ex");   /* WARNING_AL("current options are: nelder_mead_ex, simplex or newuoa"); */
     retVal= -1;
   }
 
   free(z);
-  free(scale);
+  free(zNominal);
+  free(initialResiduals);
   return retVal;
 }
 
@@ -579,18 +582,18 @@ static int state_initialization(_X_DATA *data, int optiMethod)
   storePreValues(data);             /* to provide all valid pre-values */
   overwriteOldSimulationData(data);
 
-  /* Initialize all relations that are ZeroCrossings */
+  /* initialize all relations that are ZeroCrossings */
   bound_parameters(data);
   update_DAEsystem(data);
 
-  /* And restore start values and helpvars */
-  resetAllHelpVars(data); /* ??? */
+  /* and restore start values and helpvars */
+  resetAllHelpVars(data);
   storePreValues(data);
 
   /* start with the real initialization */
   data->simulationInfo.initial = 1;             /* to evaluate when-equations with initial()-conditions */
 
-  retVal = initialize(data, IOM_NELDER_MEAD_EX);
+  retVal = initialize(data, optiMethod);
 
   storeInitialValuesParam(data);
   storePreValues(data);             /* save pre-values */
