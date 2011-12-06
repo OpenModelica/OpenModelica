@@ -199,7 +199,7 @@ static void* dtostr(double d)
 static const MMC_DEFSTRINGLIT(_OMC_LIT_NEG_INF,4,"-inf");
 static const MMC_DEFSTRINGLIT(_OMC_LIT_POS_INF,3,"inf");
 static const MMC_DEFSTRINGLIT(_OMC_LIT_NAN,3,"NaN");
-*/
+
 #if defined(_MSC_VER)
 #include <float.h>
 #define isnan _isnan
