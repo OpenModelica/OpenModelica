@@ -2385,21 +2385,23 @@ algorithm
       Values.Value val;
       String id;
       DAE.Type ty;
+      DAE.Binding binding;
 
     // The component is a record itself.
     case (DAE.TYPES_VAR(
         name = id, 
-        ty   = ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = _))), _)
+        ty = ty as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = _))), _)
       equation
         val = getRecordValue(Absyn.IDENT(id), ty, inEnv);
       then
         val;
 
     // A non-record variable.
-    case (DAE.TYPES_VAR(name = id), _)
+    case (DAE.TYPES_VAR(name = id, ty = ty), _)
       equation
-        (_, DAE.TYPES_VAR(binding = DAE.VALBOUND(valBound = val)), _, _, _) =
+        (_, DAE.TYPES_VAR(binding = binding), _, _, _) =
           Lookup.lookupIdentLocal(Env.emptyCache(), inEnv, id);
+        val = getBindingOrDefault(binding, ty);
       then
         val;
   end match;
