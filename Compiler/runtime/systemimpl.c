@@ -1594,7 +1594,7 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
   in_str = (char*) str;
   out_sz = buflen-1;
   res = buf;
-  count = iconv(ic,(const char**)&in_str,&sz,&res,&out_sz);
+  count = iconv(ic,&in_str,&sz,&res,&out_sz);
   iconv_close(ic);
   if (count == -1) {
     const char *tokens[4] = {strerror(errno),from,to,str};
