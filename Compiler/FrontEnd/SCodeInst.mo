@@ -111,7 +111,7 @@ algorithm
       equation
         env = SCodeEnv.mergeItemEnv(inItem, inEnv);
         el = List.map1(el, lookupElement, cls_and_vars);
-        var_counts = List.map2(el, instVar, env, inPrefix);
+        var_counts = List.map2(el, instElement, env, inPrefix);
         // Add a 0 so we have something to reduce if the class is empty.
         var_counts = 0 :: var_counts;
         var_count = List.reduce(var_counts, intAdd);
@@ -152,12 +152,12 @@ algorithm
         el;
 
     // Only components need to be looked up. Extends are not allowed to be
-    // redeclared, while classes are not instantiated by instVar.
+    // redeclared, while classes are not instantiated by instElement.
     else inElement;
   end match;
 end lookupElement;
         
-protected function instVar
+protected function instElement
   input SCode.Element inVar;
   input Env inEnv;
   input Prefix inPrefix;
@@ -176,6 +176,7 @@ algorithm
       Integer var_count, dim_count;
       SCode.Mod mod;
       list<SCodeEnv.Redeclaration> redecls;
+      SCodeEnv.ExtendsTable exts;
 
     // A component, look up it's type and instantiate that class.
     case (SCode.COMPONENT(name = name, attributes = SCode.ATTR(arrayDims = ad),
@@ -199,12 +200,13 @@ algorithm
         var_count * dim_count;
 
     // An extends, look up the extended class and instantiate it.
-    case (SCode.EXTENDS(baseClassPath = path, modifications = mod, info = info), _, _)
+    case (SCode.EXTENDS(baseClassPath = path, modifications = mod, info = info),
+        SCodeEnv.FRAME(extendsTable = exts) :: _, _)
       equation
         (item, path, env) = SCodeLookup.lookupClassName(path, inEnv, info);
-        // TODO: Fetch element redeclarations from the extends table.
+        path = SCodeEnv.mergePathWithEnvPath(path, env);
         // Apply the redeclarations.
-        redecls = SCodeFlattenRedeclare.extractRedeclaresFromModifier(mod, inEnv);
+        redecls = SCodeFlattenRedeclare.lookupExtendsRedeclaresInTable(path, exts);
         (item, env) =
           SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, item, env, inEnv);
         var_count = instClassItem(item, env, inPrefix);
@@ -213,7 +215,7 @@ algorithm
         
     else 0;
   end match;
-end instVar;
+end instElement;
 
 protected function printVar
   input Prefix inName;
