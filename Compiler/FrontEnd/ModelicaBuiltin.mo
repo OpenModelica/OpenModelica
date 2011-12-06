@@ -621,7 +621,12 @@ function loadFile "load file (*.mo) and merge it with the loaded AST"
 external "builtin";
 end loadFile;
  
-function loadString
+function loadString "Parses the data and merges the resulting AST with the
+  loaded AST.
+  If a filename is given, it is used to provide error-messages as if the string
+was read in binary format from a file with the same name.
+  The file is converted to UTF-8 from the given character set.
+  "
   input String data;
   input String filename := "<interactive>";
   input String encoding := "UTF-8";
