@@ -731,7 +731,7 @@ algorithm
       Option<list<SCode.Element>> fp;
       list<Env.Frame> env;
       SCode.Element c;
-      String s1,str,str1,str2,str3,re,token,varid,cmd,executable,executable1,method_str,outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,errMsg,errorStr,uniqueStr,interpolation,title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,from,to;
+      String s1,str,str1,str2,str3,re,token,varid,cmd,executable,executable1,encoding,method_str,outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,mp,pathstr,name,cname,fileNamePrefix_s,errMsg,errorStr,uniqueStr,interpolation,title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,from,to;
       DAE.ComponentRef cr,cref,classname;
       Interactive.SymbolTable newst,st_1,st;
       Absyn.Program p,pnew,newp,ptot;
@@ -1516,12 +1516,13 @@ algorithm
     case (cache,env,"loadFile",{Values.STRING(name)},st,msg)
       then (cache,Values.BOOL(false),st);
         
-    case (cache,env,"loadString",{Values.STRING(str),Values.STRING(name)},
+    case (cache,env,"loadString",{Values.STRING(str),Values.STRING(name),Values.STRING(encoding)},
           (st as Interactive.SYMBOLTABLE(
             ast = p,depends=aDep,instClsLst = ic,
             lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),msg)
       equation
+        str = Debug.bcallret3(not (encoding ==& "UTF-8"), System.iconv, str, encoding, "UTF-8", str);
         newp = Parser.parsestring(str,name);
         newp = Interactive.updateProgram(newp, p);
       then

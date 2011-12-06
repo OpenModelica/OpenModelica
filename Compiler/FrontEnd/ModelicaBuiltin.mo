@@ -624,6 +624,7 @@ end loadFile;
 function loadString
   input String data;
   input String filename := "<interactive>";
+  input String encoding := "UTF-8";
   output Boolean success;
 external "builtin";
 end loadString;
