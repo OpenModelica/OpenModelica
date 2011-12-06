@@ -1272,6 +1272,20 @@ algorithm
   end match;
 end crefLastPath;
 
+public function crefFirstIdent
+  "Returns the first identifier of a component reference."
+  input DAE.ComponentRef inComponentRef;
+  output DAE.Ident outIdent;
+algorithm
+  outIdent := match(inComponentRef)
+    local
+      DAE.Ident id;
+
+    case DAE.CREF_IDENT(ident = id) then id;
+    case DAE.CREF_QUAL(ident = id) then id;
+  end match;
+end crefFirstIdent;
+
 public function crefLastIdent
 "function: crefLastIdent
   author: PA

@@ -1591,9 +1591,10 @@ algorithm
     case (_, _, _, _, _, _, _)
       equation
         true = Types.isRecord(inType);
+        binding = getBinding(inOptValue);
         (cache, ty, st) = 
           appendDimensions(inType, inOptValue, inDims, inCache, inEnv, inST);
-        var = makeFunctionVariable(inName, ty, DAE.UNBOUND());
+        var = makeFunctionVariable(inName, ty, binding);
         (cache, record_env, st) = 
           makeRecordEnvironment(inType, inOptValue, cache, st);
         env = Env.extendFrameV(inEnv, var, NONE(), Env.VAR_TYPED(), record_env);
@@ -1863,7 +1864,7 @@ algorithm
       Values.Value val;
       DAE.Var var;
       Env.InstStatus inst_status;
-      String id;
+      String id, comp_id;
       SymbolTable st;
 
     // Wildcard, no need to assign anything.
@@ -1876,6 +1877,7 @@ algorithm
         (_, var, _, inst_status, env) =
           Lookup.lookupIdentLocal(inCache, inEnv, id);
         (cache, env, st) = assignRecord(ety, inNewValue, inCache, env, st);
+        var = updateRecordBinding(var, inNewValue);
         env = Env.updateFrameV(inEnv, var, inst_status, env);
       then
         (cache, env, st);
@@ -1907,6 +1909,8 @@ algorithm
         (_, var, _, inst_status, env) =
           Lookup.lookupIdentLocal(inCache, inEnv, id);
         (cache, env, st) = assignVariable(cr_rest, inNewValue, inCache, env, st);
+        comp_id = ComponentReference.crefFirstIdent(cr_rest);
+        var = updateRecordComponentBinding(var, comp_id, inNewValue);
         env = Env.updateFrameV(inEnv, var, inst_status, env);
       then
         (cache, env, st);
@@ -2175,6 +2179,62 @@ algorithm
     DAE.VALBOUND(inNewValue, DAE.BINDING_FROM_DEFAULT_VALUE()));
   outEnv := Env.updateFrameV(inEnv, var, Env.VAR_TYPED(), {});
 end updateVariableBinding;
+
+protected function updateRecordBinding
+  "Updates the binding of a record variable."
+  input DAE.Var inVar;
+  input Values.Value inValue;
+  output DAE.Var outVar;
+protected
+  DAE.Ident name;
+  DAE.Attributes attr;
+  SCode.Visibility vis;
+  DAE.Type ty;
+  Option<DAE.Const> c;
+algorithm
+  DAE.TYPES_VAR(name, attr, vis, ty, _, c) := inVar;
+  outVar := DAE.TYPES_VAR(name, attr, vis, ty, 
+    DAE.VALBOUND(inValue, DAE.BINDING_FROM_DEFAULT_VALUE()), c);
+end updateRecordBinding;
+  
+protected function updateRecordComponentBinding
+  "Updates the binding of a record component."
+  input DAE.Var inVar;
+  input String inComponentId;
+  input Values.Value inValue;
+  output DAE.Var outVar;
+protected
+  DAE.Ident name;
+  DAE.Attributes attr;
+  SCode.Visibility vis;
+  DAE.Type ty;
+  DAE.Binding binding;
+  Option<DAE.Const> c;
+  Values.Value val;
+algorithm
+  DAE.TYPES_VAR(name, attr, vis, ty, binding, c) := inVar;
+  val := getBindingOrDefault(binding, ty);
+  val := updateRecordComponentValue(inComponentId, inValue, val);
+  binding := DAE.VALBOUND(val, DAE.BINDING_FROM_DEFAULT_VALUE());
+  outVar := DAE.TYPES_VAR(name, attr, vis, ty, binding, c);
+end updateRecordComponentBinding;
+
+protected function updateRecordComponentValue
+  input String inComponentId;
+  input Values.Value inComponentValue;
+  input Values.Value inRecordValue;
+  output Values.Value outRecordValue;
+protected
+  Absyn.Path name;
+  list<Values.Value> vals;
+  list<String> comps;
+  Integer pos;
+algorithm
+  Values.RECORD(name, vals, comps, -1) := inRecordValue;
+  pos := List.position(inComponentId, comps);
+  vals := List.replaceAt(inComponentValue, pos, vals);
+  outRecordValue := Values.RECORD(name, vals, comps, -1);
+end updateRecordComponentValue;
 
 protected function getVariableTypeAndBinding
   "This function looks a variable up in the environment, and returns it's type
