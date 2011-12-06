@@ -179,6 +179,8 @@ static void handleLexerError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 *
   free(chars[1]);
 }
 
+#include "lookupTokenName.c"
+
 /* Error handling based on antlr3baserecognizer.c */
 static void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenNames)
 {
@@ -230,11 +232,17 @@ static void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 *
 
   switch (type) {
   case ANTLR3_UNWANTED_TOKEN_EXCEPTION:
-    token_text[0] = ex->expecting == ANTLR3_TOKEN_EOF ? "<EOF>" : (const char*) tokenNames[ex->expecting];
-    c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "Unwanted token: %s", token_text, 1, p_line, p_offset, n_line, n_offset, false, ModelicaParser_filename_C);
-    break;
+    {
+      ANTLR3_COMMON_TOKEN *token = (ANTLR3_COMMON_TOKEN*) ex->token;
+      ANTLR3_STRING *str = token->getText(token);
+      token_text[0] = lookupTokenName(token->type,tokenNames);
+      token_text[1] = token->type == ANTLR3_TOKEN_EOF ? "" : (const char*) str->chars;
+      token_text[2] = lookupTokenName(ex->expecting,tokenNames);
+      c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "Expected token of type %s, got '%s' of type %s", token_text, 3, p_line, p_offset, n_line, n_offset, false, ModelicaParser_filename_C);
+      break;
+    }
   case ANTLR3_MISSING_TOKEN_EXCEPTION:
-    token_text[0] = ex->expecting == ANTLR3_TOKEN_EOF ? "<EOF>" : (const char*) tokenNames[ex->expecting];
+    token_text[0] = lookupTokenName(ex->expecting,tokenNames);
     c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "Missing token: %s", token_text, 1, p_line, p_offset, p_line, p_offset, false, ModelicaParser_filename_C);
     break;
   case ANTLR3_NO_VIABLE_ALT_EXCEPTION:
@@ -256,7 +264,7 @@ static void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 *
   default:
     token_text[2] = (const char*)ex->message;
     token_text[1] = preToken->type == ANTLR3_TOKEN_EOF ? "" : (const char*)preToken->getText(preToken)->chars;
-    token_text[0] = preToken->type == ANTLR3_TOKEN_EOF ? "<EOF>" : (const char*) tokenNames[preToken->type];
+    token_text[0] = lookupTokenName(preToken->type,tokenNames);
     if (preToken->type == ANTLR3_TOKEN_EOF) n_offset = p_offset;
     c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "Parser error: %s near: %s (%s)", token_text, 3, p_line, p_offset, n_line, n_offset, false, ModelicaParser_filename_C);
     break;
