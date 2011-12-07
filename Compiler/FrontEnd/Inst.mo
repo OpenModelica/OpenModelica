@@ -4043,8 +4043,8 @@ algorithm
       SCode.Element elem;
       String cn,s1,s2;
     
-    case({},DAE.NOMOD(),_) then ();
-    case({},DAE.MOD(subModLst={}),_) then ();
+    case(_,DAE.NOMOD(),_) then ();
+    case(_,DAE.MOD(subModLst={}),_) then ();
     
     case({},inmod,callingScope)
       equation

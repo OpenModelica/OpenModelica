@@ -654,6 +654,7 @@ algorithm
       equation
         DAE.REDECL(_, _, (comp, cmod)::_) = Mod.lookupCompModification(inMod, id);
         mod_rest = Mod.removeMod(inMod, id);
+        comp = SCode.renameElement(comp, id);
       then
         ((comp, cmod, b), mod_rest);
 

@@ -825,6 +825,34 @@ algorithm
   end match;
 end elementName;
 
+public function renameElement
+  input Element inElement;
+  input String inName;
+  output Element outElement;
+algorithm
+  outElement := match(inElement, inName)
+    local
+      Prefixes pf;
+      Encapsulated ep;
+      Partial pp;
+      Restriction res;
+      ClassDef cdef;
+      Absyn.Info i;
+      Attributes attr;
+      Absyn.TypeSpec ty;
+      Mod mod;
+      Option<Comment> cmt;
+      Option<Absyn.Exp> cond;
+
+    case (CLASS(_, pf, ep, pp, res, cdef, i), _)
+      then CLASS(inName, pf, ep, pp, res, cdef, i);
+
+    case (COMPONENT(_, pf, attr, ty, mod, cmt, cond, i), _)
+      then COMPONENT(inName, pf, attr, ty, mod, cmt, cond, i);
+
+  end match;
+end renameElement;
+  
 public function enumName ""
 input Enum e;
 output String s;
