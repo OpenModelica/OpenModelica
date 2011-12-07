@@ -64,6 +64,7 @@ public import HashTableExpToIndex;
 public import HashTableStringToPath;
 public import Inline;
 public import Interactive;
+public import PriorityQueue;
 public import SCode;
 public import Tpl;
 public import Types;
@@ -12301,6 +12302,8 @@ algorithm
       then l::{};
     case (lst,i)
       equation
+        /* TODO: Use priorityqueue for greedy algorithm here */
+        _ = PriorityQueue.empty;
         n = listLength(lst);
         n = intDiv(n,i) + Util.if_(intMod(n,i)>0,1,0);
       then makeEqualLengthLists2(lst,n,n,{},{});
@@ -12545,12 +12548,12 @@ end setSimCodeLiterals;
 
 protected function eqSystemWCET
   "Calculate the estimated worst-case execution time of the system for partitioning"
-  input list<SimEqSystem> eqs;
-  output tuple<list<SimEqSystem>,Integer> tpl;
+  input SimEqSystem eqs;
+  output tuple<SimEqSystem,Integer> tpl;
 protected
   Integer i;
 algorithm
-  (_,i) := traverseExpsEqSystems(eqs, Expression.complexityTraverse, 0, {});
+  (_,i) := traverseExpsEqSystems({eqs}, Expression.complexityTraverse, 0, {});
   tpl := (eqs,i);
 end eqSystemWCET;
 

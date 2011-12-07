@@ -164,6 +164,7 @@ IOStream.mo \
 List.mo \
 Util.mo \
 Pool.mo \
+PriorityQueue.mo \
 Name.mo \
 Scope.mo \
 Relation.mo \
