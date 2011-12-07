@@ -1695,6 +1695,19 @@ function getNthInitialEquation "Returns the Nth Initial Equation section"
 external "builtin";
 end getNthInitialEquation;
 
+function getAnnotationCount "Counts the number of Annotation sections in a class"
+  input TypeName class_;
+  output Integer count;
+external "builtin";
+end getAnnotationCount;
+
+function getNthAnnotationString "Returns the Nth Annotation section as string"
+  input TypeName class_;
+  input Integer index;
+  output String result;
+external "builtin";
+end getNthAnnotationString;
+
 function iconv "The iconv() function converts one multibyte characters from one character
   set to another.
   See man (3) iconv for more information.

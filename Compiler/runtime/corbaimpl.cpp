@@ -153,7 +153,7 @@ int CorbaImpl__initialize()
             (char*)"-IIOPAddr",
             (char*)"inet:127.0.0.1:0",
             (char*)"-ORBgiopMaxMsgSize",
-            (char*)"10485760" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
+            (char*)"2147483647" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
 #else
   int argc=4;
   char *dummyArgv[] =
@@ -313,7 +313,7 @@ int CorbaImpl__initialize()
 {
 #ifndef NOMICO
 #if defined(USE_OMNIORB)
-  char *dummyArgv[] = { "omc", "-NoResolve", "-IIOPAddr", "inet:127.0.0.1:0", "-ORBgiopMaxMsgSize", "10485760" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
+  char *dummyArgv[] = { "omc", "-NoResolve", "-IIOPAddr", "inet:127.0.0.1:0", "-ORBgiopMaxMsgSize", "2147483647" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
   int argc=6;
 #else
   char *dummyArgv[] = { "omc", "-ORBNoResolve", "-ORBIIOPAddr", "inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };

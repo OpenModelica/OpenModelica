@@ -61,11 +61,9 @@ public import Values;
 protected import Builtin;
 protected import Ceval;
 protected import ClassInf;
-protected import ClassLoader;
 protected import ComponentReference;
 protected import Config;
 protected import Connect;
-protected import ConnectUtil;
 protected import Constants;
 protected import DAEUtil;
 protected import Debug;
@@ -1391,6 +1389,7 @@ algorithm
       list<Values.Value> vals;
       Absyn.Class cls,refactoredClass;
       list<DAE.Exp> simOptions;
+      Absyn.ClassDef cdef;
 
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation
@@ -1935,6 +1934,17 @@ algorithm
         failure(resstr = getClassInformation(cr, p));
       then
         ("error",st);
+    
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "getClassComment");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
+        path = Absyn.crefToPath(cr);
+        cls = getPathedClassInProgram(path, p);
+        Absyn.CLASS(_,_,_,_,_,cdef,_) = getPathedClassInProgram(path, p);
+        resstr = getClassComment(cdef);
+      then
+        (resstr,st);
 
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation
@@ -2220,6 +2230,15 @@ algorithm
       then
         (resstr,st);
 
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "getComponentComment");
+        {Absyn.CREF(componentRef = class_),Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
+        resstr = getComponentComment(class_, cr, p);
+        resstr = stringAppendList({"\"", resstr, "\""});
+      then
+        (resstr,st);
+    
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "setComponentComment");
@@ -11052,6 +11071,192 @@ algorithm
   end matchcontinue;
 end deleteEquationInEqlist;
 
+protected function getComponentComment
+"function: setComponentComment
+  Get the component commment."
+  input Absyn.ComponentRef inComponentRef1;
+  input Absyn.ComponentRef inComponentRef2;
+  input Absyn.Program inProgram4;
+  output String outString;
+algorithm
+  (outString) :=  match (inComponentRef1,inComponentRef2,inProgram4)
+    local
+      Absyn.Path p_class;
+      Absyn.Within within_;
+      Absyn.Class cdef;
+      Absyn.Program p;
+      Absyn.ComponentRef class_,cr1;
+      String cmt;
+      Absyn.TimeStamp ts;
+
+    case (class_,cr1,p as Absyn.PROGRAM(globalBuildTimes=ts))
+      equation
+        p_class = Absyn.crefToPath(class_);
+        within_ = buildWithin(p_class);
+        cdef = getPathedClassInProgram(p_class, p);
+        cmt = getComponentCommentInClass(cdef, cr1);
+      then
+        cmt;
+  end match;
+end getComponentComment;
+
+protected function getComponentCommentInClass
+  input Absyn.Class inClass;
+  input Absyn.ComponentRef inComponentRef;
+  output String outString;
+algorithm
+  outString := match (inClass,inComponentRef)
+    local
+      list<Absyn.ClassPart> parts;
+      String cmt;
+      Absyn.ComponentRef cr1;
+    /* a class with parts */      
+    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),cr1)
+      equation
+        cmt = getComponentCommentInParts(parts, cr1);      
+      then
+        cmt;
+    /* an extended class with parts: model extends M end M; */
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)),cr1)
+      equation
+        cmt = getComponentCommentInParts(parts, cr1);
+      then
+        cmt;
+  end match;
+end getComponentCommentInClass;
+
+protected function getComponentCommentInParts
+  input list<Absyn.ClassPart> inAbsynClassPartLst;
+  input Absyn.ComponentRef inComponentRef;
+  output String outString;
+algorithm
+  outString := matchcontinue (inAbsynClassPartLst,inComponentRef)
+    local
+      list<Absyn.ElementItem> elts,e;
+      list<Absyn.ClassPart> xs;
+      Absyn.ComponentRef cr1;
+      String cmt;
+      Absyn.ClassPart p;
+    case ((Absyn.PUBLIC(contents = elts) :: xs),cr1)
+      equation
+        cmt = getComponentCommentInElementitems(elts, cr1);
+      then
+        cmt;
+    case ((Absyn.PUBLIC(contents = e) :: xs),cr1) /* rule above failed */
+      equation
+        cmt = getComponentCommentInParts(xs, cr1);
+      then
+        cmt;
+    case ((Absyn.PROTECTED(contents = elts) :: xs),cr1)
+      equation
+        cmt = getComponentCommentInElementitems(elts, cr1);
+      then
+        cmt;
+    case ((Absyn.PROTECTED(contents = e) :: xs),cr1) /* rule above failed */
+      equation
+        cmt = getComponentCommentInParts(xs, cr1);
+      then
+        cmt;
+    case ((p :: xs),cr1)
+      equation
+        cmt = getComponentCommentInParts(xs, cr1);
+      then
+        cmt;
+  end matchcontinue;
+end getComponentCommentInParts;
+
+protected function getComponentCommentInElementitems
+  input list<Absyn.ElementItem> inAbsynElementItemLst;
+  input Absyn.ComponentRef inComponentRef;
+  output String outString;
+algorithm
+  outString := matchcontinue (inAbsynElementItemLst,inComponentRef)
+    local
+      Absyn.ElementSpec spec_1,spec;
+      Boolean f;
+      Option<Absyn.RedeclareKeywords> r;
+      Absyn.InnerOuter inout;
+      String n,cmt;
+      Absyn.Info info;
+      Option<Absyn.ConstrainClass> constr;
+      list<Absyn.ElementItem> es,es_1;
+      Absyn.ComponentRef cr1;
+      Absyn.ElementItem e;
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,name = n,specification = spec,info = info,constrainClass = constr)) :: es),cr1)
+      equation
+        cmt = getComponentCommentInElementspec(spec, cr1);
+      then
+        cmt;
+    case ((e :: es),cr1)
+      equation
+        cmt = getComponentCommentInElementitems(es, cr1);
+      then
+        cmt;
+  end matchcontinue;
+end getComponentCommentInElementitems;
+
+protected function getComponentCommentInElementspec
+  input Absyn.ElementSpec inElementSpec;
+  input Absyn.ComponentRef inComponentRef;
+  output String outString;
+algorithm
+  outString := match (inElementSpec,inComponentRef)
+    local
+      list<Absyn.ComponentItem> citems_1,citems;
+      Absyn.ElementAttributes attr;
+      Absyn.TypeSpec tp;
+      Absyn.ComponentRef cr;
+      String cmt;
+    case (Absyn.COMPONENTS(attributes = attr,typeSpec=tp,components = citems),cr)
+      equation
+        cmt = getComponentCommentInCompitems(citems, cr);
+      then
+        cmt;
+  end match;
+end getComponentCommentInElementspec;
+
+protected function getComponentCommentInCompitems
+  input list<Absyn.ComponentItem> inAbsynComponentItemLst;
+  input Absyn.ComponentRef inComponentRef;
+  output String outString;
+algorithm
+  outString := matchcontinue (inAbsynComponentItemLst,inComponentRef)
+    local
+      Option<Absyn.Comment> compcmt_1,compcmt;
+      String id,cmt;
+      list<Absyn.Subscript> ad;
+      Option<Absyn.Modification> mod;
+      Option<Absyn.Exp> cond;
+      list<Absyn.ComponentItem> cs,cs_1;
+      Absyn.ComponentRef cr;
+      Absyn.ComponentItem c;
+    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = ad,modification = mod),condition = cond,comment = compcmt) :: cs),cr)
+      equation
+        true = Absyn.crefEqual(Absyn.CREF_IDENT(id,ad), cr);
+        cmt = getClassCommentInCommentOpt(compcmt);
+      then
+        cmt;
+    case ((c :: cs),cr)
+      equation
+        cmt = getComponentCommentInCompitems(cs, cr);
+      then
+        cmt;
+  end matchcontinue;
+end getComponentCommentInCompitems;
+
+protected function getClassCommentInCommentOpt
+  input Option<Absyn.Comment> inAbsynCommentOption;
+  output String outString;
+algorithm
+  outString := match (inAbsynCommentOption)
+    local
+      Option<Absyn.Annotation> ann;
+      String cmt;
+    case (SOME(Absyn.COMMENT(_,SOME(cmt)))) then cmt;
+    case (SOME(Absyn.COMMENT(_,_))) then "";
+  end match;
+end getClassCommentInCommentOpt;
+
 protected function setComponentComment
 "function: setComponentComment
   author :PA
@@ -14898,15 +15103,20 @@ algorithm
         tpname = Absyn.pathLastIdent(p);
         p_1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
         typename = Absyn.pathString(p_1);
+        typename = stringAppendList({"\"",typename,"\""});
         names = getComponentitemsName(lst);
         dims = getComponentitemsDimension(lst);
         strLst = prefixTypename(typename, names);
         finalPrefix = boolString(f);
+        finalPrefix = stringAppendList({"\"",finalPrefix,"\""});
         r_1 = keywordReplaceable(r);
         repl = boolString(r_1);
+        repl = stringAppendList({"\"",repl,"\""});
         inout_str = innerOuterStr(inout);
         flowPrefixstr = attrFlowStr(attr);
+        flowPrefixstr = stringAppendList({"\"",flowPrefixstr,"\""});
         streamPrefixstr = attrStreamStr(attr);
+        streamPrefixstr = stringAppendList({"\"",streamPrefixstr,"\""});
         variability_str = attrVariabilityStr(attr);
         dir_str = attrDirectionStr(attr);
         typeAdStr = arrayDimensionStr(typeAd);
@@ -14921,15 +15131,20 @@ algorithm
           access,env)
       equation
         typename = Absyn.pathString(p);
+        typename = stringAppendList({"\"",typename,"\""});
         names = getComponentitemsName(lst);
         dims = getComponentitemsDimension(lst);
         strLst = prefixTypename(typename, names);
         finalPrefix = boolString(f);
+        finalPrefix = stringAppendList({"\"",finalPrefix,"\""});
         r_1 = keywordReplaceable(r);
         repl = boolString(r_1);
+        repl = stringAppendList({"\"",repl,"\""});
         inout_str = innerOuterStr(inout);
         flowPrefixstr = attrFlowStr(attr);
+        flowPrefixstr = stringAppendList({"\"",flowPrefixstr,"\""});
         streamPrefixstr = attrStreamStr(attr);
+        streamPrefixstr = stringAppendList({"\"",streamPrefixstr,"\""});
         variability_str = attrVariabilityStr(attr);
         dir_str = attrDirectionStr(attr);
         str = stringDelimitList({access,finalPrefix,flowPrefixstr,streamPrefixstr,repl,variability_str,inout_str,dir_str}, ", ");
@@ -15260,7 +15475,7 @@ algorithm
       equation
         res = suffixInfos(rest, dims,typeAd,suffix);
         s1 = Util.stringDelimitListNonEmptyElts({dim,typeAd},",");
-        str_1 = stringAppendList({str,", ",suffix,",{",s1,"}"});
+        str_1 = stringAppendList({str,", ",suffix,",\"{",s1,"}\""});
       then
         (str_1 :: res);
   end match;
@@ -15305,13 +15520,13 @@ algorithm
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = SOME(Absyn.COMMENT(_,SOME(s2)))) :: (c2 :: rest)))
       equation
         lst = getComponentitemsName((c2 :: rest));
-        str = stringAppendList({c1, ",", "\"",s2,"\""});
+        str = stringAppendList({"\"", c1, "\"", ",", "\"", s2, "\""});
       then
         (str :: lst);
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = NONE()) :: (c2 :: rest)))
       equation
         lst = getComponentitemsName((c2 :: rest));
-        str = stringAppendList({c1, ",", "\"\""});
+        str = stringAppendList({"\"", c1, "\"", ",", "\"\""});
       then
         (str :: lst);
     case ((_ :: rest))
@@ -15321,12 +15536,12 @@ algorithm
         res;
     case ({Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = SOME(Absyn.COMMENT(_,SOME(s2))))})
       equation
-        str = stringAppendList({c1,",\"",s2,"\""});
+        str = stringAppendList({"\"", c1, "\"", ",\"", s2, "\""});
       then
         {str};
     case ({Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1))})
       equation
-        str = stringAppendList({c1,",\"\""});
+        str = stringAppendList({"\"", c1, "\"", ",\"\""});
       then
         {str};
     case ({_}) then {};
