@@ -362,10 +362,6 @@ void OMCProxy::sendCommand(const QString expression)
             logOMCMessages(expression);
         }
     }
-    catch (CORBA::TRANSIENT&)
-    {
-    qDebug() << "transient";
-    }
     catch(CORBA::Exception&)
     {
         // if the command is quit() and we get exception just simply quit
