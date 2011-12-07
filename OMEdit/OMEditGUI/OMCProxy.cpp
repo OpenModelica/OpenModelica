@@ -256,7 +256,7 @@ bool OMCProxy::startServer()
         }
         // ORB initialization.
         int argc = 2;
-        static const char *argv[] = { "-ORBgiopMaxMsgSize", "10485760" };
+        static const char *argv[] = { "-ORBgiopMaxMsgSize", "2147483647" };
         CORBA::ORB_var orb = CORBA::ORB_init(argc, (char **)argv);
 
         objectRefFile.open(QIODevice::ReadOnly);
@@ -361,6 +361,10 @@ void OMCProxy::sendCommand(const QString expression)
             writeCommandResponseLog(&commandTime);
             logOMCMessages(expression);
         }
+    }
+    catch (CORBA::TRANSIENT&)
+    {
+    qDebug() << "transient";
     }
     catch(CORBA::Exception&)
     {
@@ -1206,13 +1210,13 @@ QList<ComponentsProperties*> OMCProxy::getComponents(QString className)
     }
 
     QList<ComponentsProperties*> components;
-    QStringList list = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(result));
+    QStringList list = StringHandler::unparseArrays(result);
 
     for (int i = 0 ; i < list.size() ; i++)
     {
         if (list.at(i) == "Error")
             continue;
-        components.append(new ComponentsProperties(StringHandler::removeFirstLastCurlBrackets(list.at(i))));
+        components.append(new ComponentsProperties(list.at(i)));
     }
 
     return components;

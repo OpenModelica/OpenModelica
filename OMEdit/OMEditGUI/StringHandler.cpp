@@ -412,7 +412,6 @@ QString StringHandler::unparse(QString value)
     }
 }
 
-
 QStringList StringHandler::unparseStrings(QString value)
 {
     QStringList lst;
@@ -444,6 +443,8 @@ QStringList StringHandler::unparseStrings(QString value)
             lst.append(res);
             i++;
             res = "";
+            while (value[i] == ' ')     // if we have space before next value e.g {"x", "y", "z"}
+              i++;
             continue;
         }
         while (value[i] != '"' && value[i] != '\0') {
@@ -454,6 +455,98 @@ QStringList StringHandler::unparseStrings(QString value)
     return lst; // ERROR?
 }
 
+QStringList StringHandler::unparseArrays(QString value)
+{
+//    QStringList lst;
+//    value = value.trimmed();
+//    value = StringHandler::removeFirstLastCurlBrackets(value);
+//    int openBrackets = 0;
+//    QString res;
+//    int i = 0;
+//    foreach (QChar ch, value) {
+//      if (ch == '{')
+//      {
+//        openBrackets++;
+//        CONSUME_CHAR(value,res,i);
+//        i++;
+//      }
+//      else if (ch == '}')
+//      {
+//        openBrackets--;
+//        CONSUME_CHAR(value,res,i);
+//        i++;
+//        if (openBrackets == 0)
+//        {
+//          lst.append(res);
+//          res = "";
+//        }
+//      }
+//      else if (openBrackets != 0)
+//      {
+//        CONSUME_CHAR(value,res,i);
+//        i++;
+//      }
+//      else
+//        i++;
+//    }
+//    return lst;
+  QStringList lst;
+  size_t qopen = 0;
+  size_t qopenindex = 0;
+  size_t braceopen = 0;
+  size_t mainbraceopen = 0;
+  size_t i = 0;
+  size_t count = 0;
+  value = StringHandler::removeFirstLastCurlBrackets(value);
+  size_t length = value.size();
+  int subbraceopen = 0;
+  for (; i < length ; i++)
+  {
+    if (value.at(i) == ' ' || value.at(i) == ',') continue; // ignore any kind of space
+    if (value.at(i) == '{' && qopen == 0 && braceopen == 0)
+    {
+      braceopen = 1;
+      mainbraceopen = i;
+      continue;
+    }
+    if (value.at(i) == '{')
+    {
+      subbraceopen = 1;
+    }
+
+    if (value.at(i) == '}' && braceopen == 1 && qopen == 0 && subbraceopen == 0)
+    {
+      //closing of a group
+      char * tmp = new char [i -mainbraceopen +5];
+      int copylength = i- mainbraceopen+1;
+      strncpy (tmp, value.toStdString().data() + mainbraceopen , copylength);
+      tmp [copylength] = 0;
+      braceopen = 0;
+      //printf("arr[%d]=%s;\n", count, tmp);
+      lst.append(QString(tmp));
+      delete tmp;
+      count ++;
+      continue;
+    }
+    if (value.at(i) == '}')
+      subbraceopen = 0;
+
+    if (value.at(i) == '\"')
+    {
+      if (qopen == 0)
+      {
+        qopen = 1;
+        qopenindex = i;
+      }
+      else
+      {
+        // its a closing quote
+        qopen = 0;
+      }
+    }
+  }
+  return lst;
+}
 
 bool StringHandler::unparseBool(QString value)
 {
