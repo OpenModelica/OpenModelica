@@ -4522,9 +4522,9 @@ algorithm
     /* v := expr; */
     case (cache,env,ih,pre,Absyn.CREF(cr),e_1,eprop,info,source,initial_,impl,unrollForLoops) 
       equation     
-        (cache,SOME((cre,cprop,attr))) = Static.elabCref(cache, env, cr, impl, false,pre,info);
-        (cache,DAE.CREF(ce,t)) = PrefixUtil.prefixExp(cache, env, ih, cre, pre);
-        (cache,ce_1) = Static.canonCref(cache, env, ce, impl);
+        (cache,SOME((DAE.CREF(ce,t),cprop,attr))) = Static.elabCref(cache, env, cr, impl, false,pre,info);
+        (cache, ce_1) = Static.canonCref(cache, env, ce, impl);
+        (cache, ce_1) = PrefixUtil.prefixCref(cache, env, ih, pre, ce_1);
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);

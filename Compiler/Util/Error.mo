@@ -437,7 +437,7 @@ public constant Message LOOKUP_FUNCTION_GOT_CLASS = MESSAGE(148, TRANSLATION(), 
   "Looking for a function %s but found a %s.");
 public constant Message NON_STREAM_OPERAND_IN_STREAM_OPERATOR = MESSAGE(149, TRANSLATION(), ERROR(),
   "Operand %s to operator %s is not a stream variable.");
-public constant Message UNBALANCED_CONNECTOR = MESSAGE(150, TRANSLATION(), WARNING(),
+public constant Message UNBALANCED_CONNECTOR = MESSAGE(150, TRANSLATION(), ERROR(),
   "Connector %s is not balanced: %s");
 public constant Message RESTRICTION_VIOLATION = MESSAGE(151, TRANSLATION(), ERROR(),
   "Restriction violation: %s is a %s, not a %s");
