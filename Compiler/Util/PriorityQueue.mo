@@ -52,15 +52,17 @@ TODO: Implement insert() in O(1) time
 TODO: Implement meld() in O(1) time
 "
 
-import List;
-import Util;
+protected import List;
+protected import Util;
+public import SimCode;
 
+public
 /* protected */
 /* TODO: Hide when RML is killed */
 
 /* This specific version... */
 replaceable type Priority = Integer;
-replaceable type Data = list<Integer>;
+replaceable type Data = list<SimCode.SimEqSystem>;
 
 /* Replaceable types */
 
@@ -163,6 +165,40 @@ algorithm
   (NODE(trees=ts1),ts2) := getMin(ts);
   ots := meld(listReverse(ts1),ts2);
 end deleteMin;
+
+function deleteAndReturnMin
+  input T ts;
+  output T ots;
+  output Element elt;
+protected
+  T ts1,ts2;
+algorithm
+  (NODE(elt=elt,trees=ts1),ts2) := getMin(ts);
+  ots := meld(listReverse(ts1),ts2);
+end deleteAndReturnMin;
+
+function elements
+  input T ts;
+  output list<Element> elts;
+algorithm
+  elts := elements2(ts,{});
+end elements;
+
+function elements2
+  input T ts;
+  input list<Element> acc;
+  output list<Element> elts;
+algorithm
+  elts := match (ts,acc)
+    local
+      Element elt;
+    case ({},acc) then listReverse(acc);
+    case (ts,acc)
+      equation
+        (ts,elt) = deleteAndReturnMin(ts);
+      then elements2(ts,elt::acc);
+  end match;
+end elements2;
 
 /* TODO: Hide from user when we remove RML... */
 

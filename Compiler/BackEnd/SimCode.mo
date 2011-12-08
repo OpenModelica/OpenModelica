@@ -64,7 +64,6 @@ public import HashTableExpToIndex;
 public import HashTableStringToPath;
 public import Inline;
 public import Interactive;
-public import PriorityQueue;
 public import SCode;
 public import Tpl;
 public import Types;
@@ -101,6 +100,7 @@ protected import Inst;
 protected import List;
 protected import Mod;
 protected import PartFn;
+protected import PriorityQueue;
 protected import SCodeUtil;
 protected import Settings;
 protected import SimCodeC;
@@ -12281,15 +12281,21 @@ algorithm
 end fileName2fileIndex;
 
 protected function makeEqualLengthLists
-  input list<list<A>> lst;
+  "Greedy algorithm for scheduling. Very simple:
+  Calculate the weight of each eq.system, sort these s.t.
+  the most expensive system is treated first. Add
+  this eq.system to the block with the least cost at the moment.
+  "
+  input list<list<SimEqSystem>> lst;
   input Integer i;
-  output list<list<A>> olst;
-  replaceable type A subtypeof Any;
+  output list<list<SimEqSystem>> olst;
 algorithm
   olst := matchcontinue (lst,i)
     local
       Integer n;
-      list<A> l;
+      list<SimEqSystem> l;
+      PriorityQueue.T q;
+      list<tuple<Integer,list<SimEqSystem>>> prios;
     case (lst,_)
       equation
         false = Flags.isSet(Flags.OPENMP) or Flags.isSet(Flags.PTHREADS);
@@ -12302,33 +12308,41 @@ algorithm
       then l::{};
     case (lst,i)
       equation
-        /* TODO: Use priorityqueue for greedy algorithm here */
-        _ = PriorityQueue.empty;
-        n = listLength(lst);
-        n = intDiv(n,i) + Util.if_(intMod(n,i)>0,1,0);
-      then makeEqualLengthLists2(lst,n,n,{},{});
+        q = List.fold(List.fill((0,{}),i),PriorityQueue.insert,PriorityQueue.empty);
+        prios = List.map(lst,calcPriority);
+        q = makeEqualLengthLists2(prios,q);
+        lst = List.map(PriorityQueue.elements(q),Util.tuple22);
+      then lst;
   end matchcontinue;
 end makeEqualLengthLists;
 
 protected function makeEqualLengthLists2
-  input list<list<A>> lst;
-  input Integer i;
-  input Integer n;
-  input list<A> acc1;
-  input list<list<A>> acc2;
-  output list<list<A>> olst;
-  replaceable type A subtypeof Any;
+  input list<tuple<Integer,list<SimEqSystem>>> lst;
+  input PriorityQueue.T q;
+  output PriorityQueue.T oq;
 algorithm
-  olst := match (lst,i,n,acc1,acc2)
+  oq := match (lst,q)
     local
-      list<A> l;
-    case ({},i,n,{},acc2) then acc2;
-    case ({},i,n,acc1,acc2) then acc1::acc2;
-    case (lst,0,n,{},acc2) then makeEqualLengthLists2(lst,n,n,{},acc2);
-    case (lst,0,n,acc1,acc2) then makeEqualLengthLists2(lst,n,n,{},acc1::acc2);
-    case (l::lst,i,n,acc1,acc2) then makeEqualLengthLists2(lst,i-1,n,listAppend(l,acc1),acc2);
+      list<SimEqSystem> l1,l2;
+      Integer i1,i2;
+    case ({},q) then q;
+    case ((i1,l1)::lst,q)
+      equation
+        (q,(i2,l2)) = PriorityQueue.deleteAndReturnMin(q);
+        q = PriorityQueue.insert((i1+i2,listAppend(l2,l1)),q);
+      then makeEqualLengthLists2(lst,q);
   end match;
 end makeEqualLengthLists2;
+
+protected function calcPriority
+  input list<SimEqSystem> eqs;
+  output tuple<Integer,list<SimEqSystem>> prio;
+protected
+  Integer i;
+algorithm
+  (_,i) := traverseExpsEqSystems(eqs, Expression.complexityTraverse, 0, {});
+  prio := (i,eqs);
+end calcPriority;
 
 protected function traverseExpsSimCode
   input SimCode simCode;
