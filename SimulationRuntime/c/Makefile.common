@@ -1,89 +1,94 @@
-# Adrian Pop, adrpo@ida.liu.se, Martin Sjölund, marsj@ida.liu.se
+# Adrian Pop, adrpo@ida.liu.se, Martin SjÃ¶lund, marsj@ida.liu.se
 # - Use make -f Makefile.omdev.mingw if you want to compile on Windows/MinGW
 # - Please leave the UNIX Makefile as it is if you are not using UNIX/Linux
 # If you need to add files, etc, you modify Makefile.common - a common file
 # for both UNIX/Linux and Windows platforms.
 
+include Makefile.objs
+
 AR = ar -ru
-ANSI= #-ansi
-CXXFLAGS := $(CFLAGS) -Wall $(ANSI) $(EXTRA_CFLAGS)
-CFLAGS := $(CFLAGS) -Wall $(ANSI) -pedantic $(EXTRA_CFLAGS)
-CPPFLAGS = $(CFLAGS) -Wall -I. -Imeta/ -I../ $(EXTRA_CFLAGS)
+ANSI=# -ansi
+CXXFLAGS := $(CFLAGS) -mfpmath=sse -Wall $(ANSI) $(EXTRA_CFLAGS) -I. -I$(UTILPATH)
+CPPFLAGS := $(CFLAGS) -mfpmath=sse -Wall $(ANSI) $(EXTRA_CFLAGS) -I. -I$(UTILPATH)
+CFLAGS := $(CFLAGS) -mfpmath=sse -Wall $(ANSI) -pedantic $(EXTRA_CFLAGS) -I.
 FFLAGS  = -O -fexceptions
 # P.A: before, g77 had -O3 or -O2 but that caused a bug in DDASRT, giving infinite loop.
 
-include Makefile.objs
 
-LIBS = libsim.a libsolver.a libmath-support.a libutil.a libmeta.a libf2c.a libresult.a libModelicaExternalC.a libsendData.a libModelicaExternalC.a
-
-LIBSPATH= simulation/libsim.a math-support/libmath-support.a simulation/solver/libsolver.a simulation/results/libresult.a meta/libmeta.a util/libutil.a 
-
-
-.PHONY : libsim.a libmath-support.a libsolver.a libutil.a libmeta.a libf2c.a libresult.a libModelicaExternalC.a libsendData.a clean install
+.PHONY : clean all ModelicaExternalC/libModelicaExternalC.a $(LIBF2C)
 
 all : install
 
 
-libSimulationRuntimeC.a: $(LIBS) $(LIBSPATH)
+#recompile all if a header changes!
+$(ALL_OBJS) : $(ALL_HEADERS)
+
+libSimulationRuntimeC.a: $(ALL_OBJS) libmeta
 	$(AR) $@ $(ALL_OBJS)
 	ranlib $@
 
-libmath-support.a: 
-	$(MAKE) -C math-support -f ${LIBMAKEFILE}
+$(UTILOBJSPATH):%.o: %.c
+	$(CC) -c $(CFLAGS) -o $@ $< -I$(UTILPATH) -I$(METAPATH)
 
-libsolver.a:
-	$(MAKE) -C simulation/solver -f ${LIBMAKEFILE}
+$(MATHOBJSPATH):%.o: %.c
+	$(CC) -c $(CFLAGS) -o $@ $< -I$(MATHPATH) -I$(MATHPATH) -I$(UTILPATH) 
 
-libresult.a: 
-	$(MAKE) -C simulation/results -f ${LIBMAKEFILE}
+$(SOLVEROBJSPATH):%.o: %.c
+	$(CC) -c $(CFLAGS) -o $@ $< -I$(SOLVERPATH) -I$(SIMPATH) -I$(MATHPATH) -I$(UTILPATH)
 
-libf2c.a: 
+$(RESULTSOBJSPATH):%.o: $(RESULTSFILESPATH)
+
+$(SIMOBJSPATH):%.o: %.cpp linearization/linearize.cpp
+	$(CXX) -c $(CXXFLAGS) -o $@ $< -I$(SIMPATH) -I$(UTILPATH) -I$(MATHPATH) -I$(RESULTSPATH) -I$(SOLVERPATH) -Ilinearization/
+
+libmeta: $(METAHFILESPATH)
+	$(MAKE) -C meta -f ${LIBMAKEFILE} 
+
+ModelicaExternalC/libModelicaExternalC.a: $(addprefix ModelicaExternalC/,ModelicaInternal.c ModelicaStrings.c ModelicaTablesImpl.c) $(HFILES)
+	$(MAKE) -C ModelicaExternalC -f $(EXTERNALCMAKEFILE)
+
+simulation/libf2c/libf2c.a: 
 	$(MAKE) -C simulation/libf2c -f ${LIBMAKEFILE}
 
-libmeta.a: 
-	$(MAKE) -C meta -f ${LIBMAKEFILE}
-
-libutil.a: 
-	$(MAKE) -C util -f ${LIBMAKEFILE}
-
-libsim.a: 
-	$(MAKE) -C simulation -f ${LIBMAKEFILE}
-
-libModelicaExternalC.a: 
-	$(MAKE) -C ModelicaExternalC -f ${LIBMAKEFILE}
-
-install: libSimulationRuntimeC.a $(LIBS) omdevinstall
+install: ModelicaExternalC/libModelicaExternalC.a libSimulationRuntimeC.a simulation/libf2c/libf2c.a $(ALL_OBJS) omdevinstall
+	# move libraries
 	cp ./libSimulationRuntimeC.a $(builddir_lib)
 	cp ./ModelicaExternalC/libModelicaExternalC.a $(builddir_lib)
 	cp ./ModelicaExternalC/ModelicaUtilities.h $(builddir_inc)
+	cp ../interactive/libinteractive.a $(builddir_lib)
+	test -z "$(LIBF2C)" || cp simulation/libf2c/libf2c.* $(builddir_lib)/
+	test -z "$(LIBSENDDATA)" || cp sendData/release/$(LIBSENDDATA) $(builddir_lib)/
+	# move header files
+	cp ./inline.h $(builddir_inc)
 	cp ./openmodelica.h $(builddir_inc)
 	cp ./openmodelica_func.h $(builddir_inc)
-	cp ./inline.h $(builddir_inc)
-	cp ../interactive/libinteractive.a $(builddir_lib)
-	cp ./meta/*.h $(builddir_inc)
-	cp ./util/*.h $(builddir_inc)
 	cp ./simulation_data.h $(builddir_inc)
-	cp ./simulation/*.h $(builddir_inc)
+	cp ./util/*.h $(builddir_inc)
+	cp ./math-support/matrix.h $(builddir_inc)
+	cp ./math-support/blaswrap.h $(builddir_inc)
+	cp ./math-support/model_help.h $(builddir_inc)
+	cp ./simulation/simulation_runtime.h $(builddir_inc)
+	cp ./simulation/solver/simulation_inline_solver.h $(builddir_inc)
+	cp ./util/*.h $(builddir_inc)
 	cp ./math-support/*.h $(builddir_inc)
-	cp ./simulation/results/*.h $(builddir_inc)
+	cp ./simulation/*.h $(builddir_inc)
 	cp ./simulation/solver/*.h $(builddir_inc)
+	cp ./simulation/results/*.h $(builddir_inc)	
+	cp ./meta/*.h $(builddir_inc)
+	# move fmi stuff
 	cp ../fmi/export/*.h $(builddir_inc)
 	cp ../fmi/export/fmu_model_interface.c $(builddir_inc)
 	cp ../../FMI/import/source/fmuWrapper.h $(builddir_inc)
 	cp ../../FMI/import/source/xmlparser.h $(builddir_inc)
-	test -z "$(LIBF2C)" || cp simulation/libf2c/libf2c.* $(builddir_lib)/
-	test -z "$(LIBSENDDATA)" || cp sendData/release/$(LIBSENDDATA) $(builddir_lib)/
+	# move java interface stuff
 	@$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) && \
 	$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) install || \
 	$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) install-nomodelica	
 
 clean:
+	rm -f $(ALL_OBJS)
+	rm -f libSimulationRuntimeC.a
 	$(MAKE) -C ModelicaExternalC -f ${LIBMAKEFILE} clean
-	$(MAKE) -C simulation -f ${LIBMAKEFILE} clean
-	$(MAKE) -C simulation/solver -f ${LIBMAKEFILE} clean
 	$(MAKE) -C simulation/libf2c -f ${LIBMAKEFILE} clean
-	$(MAKE) -C math-support -f ${LIBMAKEFILE} clean
-	$(MAKE) -C simulation/results -f ${LIBMAKEFILE} clean
-	$(MAKE) -C meta -f ${LIBMAKEFILE} clean
-	$(MAKE) -C util -f ${LIBMAKEFILE} clean
+	$(MAKE) -C meta -f ${LIBMAKEFILE} clean	
 	

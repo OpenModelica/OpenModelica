@@ -22,22 +22,17 @@ meta_modelica_gc_pages.h \
 meta_modelica_gc_stats.h \
 meta_modelica_gc_settings.h  
 
-LIBS = libmeta.a
 
-.PHONY : libmeta.a clean
+.PHONY : all clean
 
-all : libmeta.a
+all : $(META_OBJS)
 
-
-libmeta.a : $(META_OBJS) $(META_HFILES)
-	$(AR) $@ $(META_OBJS)
-	ranlib $@
+$(META_OBJS): $(META_HFILES)
 
 meta_modelica_catch.o : meta_modelica_catch.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ -g $<
 
 clean :
-	rm -f libmeta.a
 	rm -f $(META_OBJS)
 
 Makefile: Makefile.in

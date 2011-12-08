@@ -67,20 +67,13 @@ typedef struct SOLVER_INFO
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
 int
 solver_main(_X_DATA* simData, double start, double stop, double step, long outputSteps, double tolerance, int flag);
 
-void update_DAEsystem(_X_DATA *data);
-
-void copyStartValuestoInitValues(_X_DATA *data);
-} /* extern "C"*/
-#else
-int
-solver_main(_X_DATA* simData, double start, double stop, double step, long outputSteps, double tolerance, int flag);
-
-void update_DAEsystem(_X_DATA *data);
-
-void copyStartValuestoInitValues(_X_DATA *data);
+#ifdef __cplusplus
+}
 #endif
 
 #endif

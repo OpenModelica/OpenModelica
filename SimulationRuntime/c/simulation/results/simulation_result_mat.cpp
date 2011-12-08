@@ -33,8 +33,9 @@
  */
 
 #include "error.h"
-
 #include "simulation_result_mat.h"
+#include "rtclock.h"
+
 #include <cstring>
 #include <cstdlib>
 #include <stdint.h>

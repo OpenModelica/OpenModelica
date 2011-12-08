@@ -150,7 +150,6 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
   comp->eventInfo.nextEventTime = 0;
 
   comp->fmuData->localData[0]->timeValue= 0;
-  sim_verbose = comp->loggingOn?64:0;
 
   setStartValues(comp); // to be implemented by the includer of this file
 

@@ -20,6 +20,7 @@ QMAKE=@QMAKE@
 CONFIG_H=$(top_builddir)/Compiler/runtime/config.h $(top_builddir)/Compiler/runtime/config.unix.h
 # Use f2c from the OS itself...
 LIBF2C=@LIBF2C@
+EXTERNALCMAKEFILE=Makefile
 
 include Makefile.common
 

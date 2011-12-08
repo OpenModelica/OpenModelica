@@ -135,7 +135,7 @@ case simCode as SIMCODE(__) then
   int measure_time_flag = 0;
   #endif
 
-  <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, appendLists(allEquations,appendAllequations(jacobianMatrixes)))%>
+  <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, appendLists(allEquations,appendAllequations(jacobianMatrixes)), delayedExps)%>
   
   <%functionInitializeDataStruc2(modelInfo, appendLists(allEquations,appendAllequations(jacobianMatrixes)))%>
   
@@ -220,7 +220,7 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   >>
 end simulationFileHeader;
 
-template pupulateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations)
+template pupulateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, DelayedExpression delayed)
  "Generates information for data.modelInfo struct."
 ::=
 match modelInfo
@@ -256,18 +256,20 @@ case MODELINFO(varInfo=VARINFO(__)) then
   data->modelData.nExtObjs = <%varInfo.numExternalObjects%>;
   data->modelData.nFunctions = <%listLength(functions)%>;
   data->modelData.nEquations = <%listLength(allEquations)%>;
+  
+  data->modelData.nDelayExpressions = <%match delayed case DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
 
   >>
 end pupulateModelInfo;
 
-template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations)
+template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, DelayedExpression delayed)
  "Generates function in simulation file."
 ::=
   <<
   void initializeDataStruc_X_(_X_DATA *data)
   {  
     ASSERT(data,"Error while initialize Data");
-    <%pupulateModelInfo(modelInfo, fileNamePrefix, guid, allEquations)%>
+    <%pupulateModelInfo(modelInfo, fileNamePrefix, guid, allEquations, delayed)%>
   }
   >>
 end functionInitializeDataStruc;
@@ -695,7 +697,7 @@ template functionInitial(list<SimEqSystem> initialEquations)
     <%eqPart%>
   
     <%initialEquations |> SES_SIMPLE_ASSIGN(__) =>
-      'if (sim_verbose >= LOG_INIT) { printf("Setting variable start value: %s(start=%f)\n", "<%cref(cref)%>", (<%crefType(cref)%>) <%cref(cref)%>); }'
+      'if (DEBUG_FLAG(LOG_INIT)) { printf("Setting variable start value: %s(start=%f)\n", "<%cref(cref)%>", (<%crefType(cref)%>) <%cref(cref)%>); }'
     ;separator="\n"%>
   
     return 0;
@@ -817,11 +819,10 @@ template functionStoreDelayed(DelayedExpression delayed)
                       &preExp /*BUFC*/, &varDecls /*BUFD*/)
       <<
       <%preExp%>
-      storeDelayedExpression(<%id%>, <%eRes%>, time);<%\n%>
+      storeDelayedExpression(data, <%id%>, <%eRes%>, time);<%\n%>
       >>
     ))
-  <<
-  int numDelayExpressionIndex = <%match delayed case DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
+  <<  
   int function_storeDelayed(_X_DATA *data)
   {
     state mem_state;
@@ -1328,7 +1329,7 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars,String
     <%outvars_%>
     int i;
     for(i=0;i<<%columnName%>;i++){
-        if (sim_verbose == LOG_JAC || sim_verbose == LOG_ENDJAC){
+        if (DEBUG_FLAG(LOG_JAC) || DEBUG_FLAG(LOG_ENDJAC)){
           printf("col: col[%d] = %f \n",i,out_col[i]);
         }
     }
@@ -1387,7 +1388,7 @@ case _ then
     for(i=0,k=0;  i < <%index_%>;i++){
       seed[i] = 1;
       
-      if (sim_verbose == LOG_JAC || sim_verbose == LOG_ENDJAC){
+      if (DEBUG_FLAG(LOG_JAC) || DEBUG_FLAG(LOG_ENDJAC)){
         printf("Caluculate one row:\n");
         for(l=0;  l < <%index_%>;l++){
           printf("seed: seed[%d]= %f\n",l,seed[l]);
@@ -2049,7 +2050,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
   CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc2" -I. <%dirExtra%> <%makefileParams.includes ; separator=" "%>
-  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc2" -lSimulationRuntimeC <%makefileParams.ldflags%>
+  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc2" -lSimulationRuntimeC -lModelicaExternalC <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   PERL=perl
   MAINFILE=<%fileNamePrefix%><% if acceptMetaModelicaGrammar() then ".conv"%>.c
@@ -4319,7 +4320,7 @@ template algStmtReinit(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     let expPart1 = daeExp(var, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let expPart2 = daeExp(value, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     <<
-    if (sim_verbose >= LOG_EVENTS) {
+    if (DEBUG_FLAG(LOG_EVENTS)) {
       printf("reinit <%expPart1%> = %f\n", <%expPart1%>);
     }
     $P$PRE<%expPart1%> = <%expPart1%>;
@@ -5321,7 +5322,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let var2 = daeExp(d, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let var3 = daeExp(delayMax, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let &preExp += '<%tvar%> = delayImpl(<%index%>, <%var1%>, time, <%var2%>, <%var3%>);<%\n%>'
+    let &preExp += '<%tvar%> = delayImpl(data, <%index%>, <%var1%>, time, <%var2%>, <%var3%>);<%\n%>'
     '<%tvar%>'
   
   case CALL(path=IDENT(name="integer"), expLst={toBeCasted}) then

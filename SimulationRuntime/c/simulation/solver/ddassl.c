@@ -10,7 +10,10 @@
     http://www.netlib.org/f2c/libf2c.zip
 */
 
+#include <openmodelica.h>
+#include <stdio.h>
 #include "f2c.h"
+
 
 /* Common Block Declarations */
 
@@ -3767,7 +3770,7 @@ L100:
         }
     }
     if (ipar[1] == ipar[3])
-        exit(0);
+        EXIT(0);
     /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
 
 
@@ -3832,7 +3835,7 @@ L200:
             }
     }
     if (ipar[1] == ipar[3])
-        exit(0);
+        EXIT(0);
    /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
 
 
@@ -4298,7 +4301,7 @@ L400:
 
 /*       THEN WHETHER THE PROGRAM WILL CONTINUE. */
 
-  if (mkntrl == 2 && *level >= 1 || mkntrl == 1 && *level == 2) {
+  if ((mkntrl == 2 && *level >= 1) || (mkntrl == 1 && *level == 2)) {
       i__1 = ltemp;
       s_copy(temp + i__1, " PROGRAM ABORTED.", ltemp + 17 - i__1, (
         ftnlen)17);

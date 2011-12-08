@@ -29,8 +29,8 @@
  */
 
 #include "error.h"
-
-#include "simulation_runtime.h"
+#include "simulation_data.h"
+#include "openmodelica_func.h"
 #include "linearize.h"
 #include <iostream>
 #include <sstream>

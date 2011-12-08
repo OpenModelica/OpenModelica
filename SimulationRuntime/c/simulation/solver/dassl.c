@@ -28,10 +28,13 @@
  *
  */
 
-#include "simulation_runtime.h"
-#include "solver_main.h"
 #include "dassl.h"
 #include "error.h"
+#include "simulation_data.h"
+#include "simulation_runtime.h"
+#include "solver_main.h"
+#include "openmodelica_func.h"
+
 
 
 /* provides a dummy Jacobian to be used with DASSL */
@@ -46,12 +49,13 @@ dummy_zeroCrossing(fortran_integer *neqm, double *t, double *y,
   return 0;
 }
 
-
+/*
 int Jacobian(double *t, double *y, double *yprime, double *pd, double *cj,
     double *rpar, fortran_integer* ipar);
 int JacA_num(double *t, double *y, double *matrixA);
 int Jacobian_num(double *t, double *y, double *yprime, double *pd, double *cj,
     double *rpar, fortran_integer* ipar);
+*/
 
 void  DDASRT(
     int (*res) (double *t, double *y, double *yprime, double *delta, fortran_integer *ires, double *rpar, fortran_integer* ipar),
@@ -85,7 +89,7 @@ continue_DASRT(fortran_integer* idid, double* tolarence);
 int
 dasrt_initial(_X_DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
 
-  int i;
+  /* int i; */
 
   /*will remove -> DASSL
 	for (i = 0; i < DASSLSTATS; i++) {
@@ -105,7 +109,7 @@ dasrt_initial(_X_DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
   dasslData->rpar = NULL;
   dasslData->ipar = (fortran_integer*) calloc(5,sizeof(fortran_integer));
   ASSERT(dasslData->ipar,"out of memory");
-  dasslData->ipar[0] = sim_verbose;
+  dasslData->ipar[0] = globalDebugFlags;
   dasslData->ipar[1] = LOG_JAC;
   dasslData->ipar[2] = LOG_ENDJAC;
   dasslData->info = (fortran_integer*) calloc(infoLength,sizeof(fortran_integer));

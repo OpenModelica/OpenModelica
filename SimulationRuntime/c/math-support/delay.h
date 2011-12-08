@@ -35,14 +35,30 @@
 #ifndef _DELAY_H_
 #define _DELAY_H_
 
+#include "simulation_data.h"
+
+typedef struct TIME_AND_VALUE
+{
+  double time;
+  double value;
+}TIME_AND_VALUE;
+
+typedef struct EXPRESSION_DELAY_BUFFER
+{
+  long currentIndex;
+  long maxExpressionBuffer;
+  TIME_AND_VALUE *expressionDelayBuffer;
+}EXPRESSION_DELAY_BUFFER;
+
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-  void initDelay(double startTime);
-  void deinitDelay();
-  double delayImpl(int exprNumber, double exprValue, double time, double delayTime, double maxDelay);
-  void storeDelayedExpression(int exprNumber, double exprValue, double time);
+  void initDelay(_X_DATA* data, double startTime);
+  double delayImpl(_X_DATA* data, int exprNumber, double exprValue, double time, double delayTime, double maxDelay);
+  void storeDelayedExpression(_X_DATA* data, int exprNumber, double exprValue, double time);
 
 #ifdef __cplusplus
 }

@@ -39,16 +39,16 @@
  */
 
 #include "error.h"
+#include "simulation_result_csv.h"
+#include "rtclock.h"
 
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
 #include <limits> /* adrpo - for std::numeric_limits in MSVC */
-#include "simulation_result_csv.h"
-#include "simulation_runtime.h"
 #include <sstream>
 #include <time.h>
-#include "rtclock.h"
+
 
 void simulation_result_csv::emit(_X_DATA *data)
 {
@@ -68,21 +68,24 @@ void simulation_result_csv::emit(_X_DATA *data)
   for (int i = 0; i < data->modelData.nVariablesString; i++) if (!data->modelData.stringVarsData[i].filterOutput)
     fprintf(fout, formatstring, (data->localData[0])->stringVars[i]);
 
-  for (int i = 0; i < data->modelData.nAliasReal; i++) if (!data->modelData.realAlias[i].filterOutput)
+  for (int i = 0; i < data->modelData.nAliasReal; i++) if (!data->modelData.realAlias[i].filterOutput){
     if (data->modelData.realAlias[i].negate)
       fprintf(fout, format, -(data->localData[0])->realVars[data->modelData.realAlias[i].nameID]);
     else
       fprintf(fout, format, (data->localData[0])->realVars[data->modelData.realAlias[i].nameID]);
-  for (int i = 0; i < data->modelData.nAliasInteger; i++) if (!data->modelData.integerAlias[i].filterOutput)
+  }
+  for (int i = 0; i < data->modelData.nAliasInteger; i++) if (!data->modelData.integerAlias[i].filterOutput){
     if (data->modelData.integerAlias[i].negate)
       fprintf(fout, formatint, -(data->localData[0])->integerVars[data->modelData.integerAlias[i].nameID]);
     else
       fprintf(fout, formatint, (data->localData[0])->integerVars[data->modelData.integerAlias[i].nameID]);
-  for (int i = 0; i < data->modelData.nAliasBoolean; i++) if (!data->modelData.booleanAlias[i].filterOutput)
+  }
+  for (int i = 0; i < data->modelData.nAliasBoolean; i++) if (!data->modelData.booleanAlias[i].filterOutput){
     if (data->modelData.booleanAlias[i].negate)
       fprintf(fout, formatbool, -(data->localData[0])->booleanVars[data->modelData.booleanAlias[i].nameID]);
     else
       fprintf(fout, formatbool, (data->localData[0])->booleanVars[data->modelData.booleanAlias[i].nameID]);
+  }
   for (int i = 0; i < data->modelData.nAliasString; i++) if (!data->modelData.stringAlias[i].filterOutput)
     /* there would no negation of a string happen */
     fprintf(fout, formatstring, (data->localData[0])->stringVars[data->modelData.stringAlias[i].nameID]);

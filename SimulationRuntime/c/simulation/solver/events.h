@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
+ * Copyright (c) 1998-CurrentYear, Linkï¿½ping University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 Linkï¿½ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
+ * from Linkï¿½ping University, either from the above address,
  * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
  * http://www.openmodelica.org, and in the OpenModelica distribution. 
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
@@ -47,60 +47,24 @@ extern "C" {
 
   int CheckZeroCrossings(_X_DATA *data, LIST *list, LIST*);
 
-  void storeStartValues(_X_DATA *data);
-  void storePreValues(_X_DATA *data);
-  void storeStartValuesParam(_X_DATA *data);
-  void storeInitialValuesParam(_X_DATA *data);
-  /* void printAllPreValues(); */
-  void resetAllHelpVars(_X_DATA *data);
 
   double Sample(double t, double start, double interval);
-  double sample(_X_DATA *data, double start, double interval, int hindex);
+  modelica_boolean sample(_X_DATA *data, double start, double interval, int hindex);
   void initSample(_X_DATA *data, double start, double stop);
 
-  double Less(double a, double b);
-  double LessEq(double a, double b);
-  double Greater(double a, double b);
-  double GreaterEq(double a, double b);
-
-  void checkTermination(_X_DATA *data);
   int checkForSampleEvent(_X_DATA *data, SOLVER_INFO* solverInfo);
 
   double getNextSampleTimeFMU(_X_DATA *data);
 
-  static const int IterationMax = 200;
-
-#define ZEROCROSSING(ind,exp) { \
-  data->simulationInfo.zeroCrossings[ind] = exp; \
-  }
-
-#define RELATIONTOZC(res,exp1,exp2,index,op_w,op) { \
-  if (index == -1){ \
-  res = ((exp1) op (exp2)); \
-  }else{ \
-  res = data->simulationInfo.backupRelations[index];} \
-  }
-#define SAVEZEROCROSS(res,exp1,exp2,index,op_w,op) { \
-  if (index == -1){ \
-  res = ((exp1) op (exp2)); \
-  } else{ \
-  res = ((exp1) op (exp2)); \
-  data->simulationInfo.backupRelations[index] = ((exp1) op (exp2)); \
-  }\
-  }
-
-
-  int function_onlyZeroCrossings(_X_DATA *data, double* gout, double* t);
   int CheckForNewEvent(_X_DATA *data, modelica_boolean *sampleactived, double* currentTime);
   int EventHandle(_X_DATA *data, int, LIST *eventList);
   void FindRoot(_X_DATA *data, double*, LIST *eventList);
-  int checkForDiscreteChanges(_X_DATA *data);
-  void SaveZeroCrossings(_X_DATA *data);
+
   void SaveZeroCrossingsAfterEvent(_X_DATA *data);
   void initializeZeroCrossings(_X_DATA *data);
   void correctDirectionZeroCrossings(_X_DATA *data);
   int activateSampleEvents(_X_DATA *data);
-  int function_updateSample(_X_DATA *data);
+
 
 #define INTERVAL 1
 #define NOINTERVAL 0

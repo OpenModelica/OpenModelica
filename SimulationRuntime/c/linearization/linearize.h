@@ -32,11 +32,7 @@
 #ifndef _LINEARIZE
 #define _LINEARIZE
 
-#include <stdlib.h>
-#include <fstream>
-#include <iostream>
-#include <string>
-
+#include "simulation_data.h"
 
 using namespace std;
 

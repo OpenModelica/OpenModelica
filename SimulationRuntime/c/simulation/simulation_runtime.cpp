@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, LinkÃ¶pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 LinkÃ¶ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from LinkÃ¶pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -30,6 +30,21 @@
 
 #include "error.h"
 #include "simulation_data.h"
+#include "openmodelica_func.h"
+
+#include "linearize.h"
+#include "options.h"
+#include "simulation_runtime.h"
+#include "simulation_input_xml.h"
+#include "simulation_result_empty.h"
+#include "simulation_result_plt.h"
+#include "simulation_result_csv.h"
+#include "simulation_result_mat.h"
+#include "solver_main.h"
+#include "modelinfo.h"
+#include "model_help.h"
+#include "rtclock.h"
+
 
 #include <setjmp.h>
 #include <string>
@@ -47,58 +62,39 @@
 #ifndef _MSC_VER
 #include <regex.h>
 #endif
-#include "simulation_runtime.h"
-#include "simulation_input_xml.h"
-#include "solver_main.h"
 
 #ifdef _OMC_QSS_LIB
 #include "solver_qss/solver_qss.h"
 #endif
 
-#include "options.h"
-#include "linearize.h"
 // ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
 #ifndef NO_INTERACTIVE_DEPENDENCY
 /* #include "../../interactive/omi_ServiceInterface.h" */
 #endif
-#include "simulation_result_empty.h"
-#include "simulation_result_plt.h"
-#include "simulation_result_csv.h"
-#include "simulation_result_mat.h"
-#include "simulation_modelinfo.h"
-#include "rtclock.h"
-
 
 using namespace std;
 
 int interactiveSimulation = 0; //This variable signals if an simulation session is interactive or non-interactive (by default)
 
-/* Global Data */
-/***************/
 const char* version = "20110520_1120";
-// Becomes non-zero when model terminates simulation.
-int modelTermination = 0;
-int terminationTerminate = 0;
-int terminationAssert = 0;
-char* terminateMessage = 0;
-int warningLevelAssert = 0;
-char* TermMsg = 0;
-FILE_INFO TermInfo = omc_dummyFileInfo;
 
 #ifndef NO_INTERACTIVE_DEPENDENCY
 Socket sim_communication_port;
 static int sim_communication_port_open = 0;
 #endif
 
-int sim_verbose = 0; // Flag for logging
-int sim_verboseLevel = 0; // Flag for logging level
+
+int modelTermination; /* Becomes non-zero when simulation terminates. */
+int terminationTerminate; /* Becomes non-zero when user terminates simulation. */
+int terminationAssert; /* Becomes non-zero when model call assert simulation. */
+int warningLevelAssert; /* Becomes non-zero when model call assert with warning level. */
+FILE_INFO TermInfo; /* message for termination. */
+
+char* TermMsg; /* message for termination. */
+
 int sim_noemit = 0; // Flag for not emitting data
 int jac_flag = 0; // Flag usage of jacobian
 int num_jac_flag = 0; // Flag usage of numerical jacobian
-
-int acceptedStep = 0; /* Flag for knowning when step is accepted and when solver searches for solution.
- If solver is only searching for a solution, asserts, etc. should not be triggered, causing faulty error messages to be printed
- */
 
 int modelErrorCode = 0; // set by model calculations. Can be transferred to num. solver.
 
@@ -108,35 +104,36 @@ const std::string *init_method = NULL; // method for  initialization.
 // The simulation result
 simulation_result *sim_result = NULL;
 
-/* Flags for controlling logging to stdout */
-/*
-const int LOG_STATS         = (1<<0);
-const int LOG_INIT          = (1<<1);
-const int LOG_SOLVER        = (1<<2);
-const int LOG_JAC           = (1<<3);
-const int LOG_ENDJAC        = (1<<4);
-const int LOG_NONLIN_SYS    = (1<<5);
-const int LOG_EVENTS        = (1<<6);
-const int LOG_ZEROCROSSINGS = (1<<7);
-const int LOG_DEBUG         = (1<<8);
-const int LOG_RES_INIT      = LOG_STATS|LOG_INIT;
-*/
 
 /* Flags for modelErrorCodes */
 extern const int ERROR_NONLINSYS = -1;
 extern const int ERROR_LINSYS = -2;
 
+/* function with template for linear model */
+int callSolver(_X_DATA*, string, string, string, double, double, double, long, double);
 
+int isInteractiveSimulation();
+
+/*
 int
 startInteractiveSimulation(int, char**);
+*/
 int
 startNonInteractiveSimulation(int, char**, _X_DATA* data);
 int
-initRuntimeAndSimulation(int, char**);
+initRuntimeAndSimulation(int, char**, _X_DATA *data);
 
 
+
+/*! \fn void setTermMsg(_X_DATA* simData, const char* msg )
+ *
+ *  prints all values as arguments it need data
+ *  and which part of the ring should printed.
+ *
+ */
 void setTermMsg(const char *msg)
 {
+  size_t i;
   size_t length = strlen(msg);
   if (length > 0) {
       if (TermMsg == NULL) {
@@ -149,86 +146,11 @@ void setTermMsg(const char *msg)
             TermMsg = (char*)calloc(length+1,sizeof(char));
           }
       }
-      for (size_t i=0;i<length;i++)
+      for (i=0;i<length;i++)
         TermMsg[i] = msg[i];
   }
 }
 
-static void callExternalObjectDestructors2(_X_DATA *data)
-{
-  if(!data)
-    return;
-  callExternalObjectDestructors(data) /* external objects */;
-}
-
-/*! \fn void printAllVars(_X_DATA *data, int )
- *
- *  prints all values as arguments it need data
- *  and which part of the ring should printed.
- *
- *  author: wbraun
- */
-void printAllVars(_X_DATA *data, int ringSegment)
-{
-  long i;
-  MODEL_DATA      *mData = &(data->modelData);
-  INFO1("all real variables regarding point in time: %g", data->localData[ringSegment]->timeValue);
-  for(i=0; i<mData->nVariablesReal; ++i){
-    INFO3("localData->realVars[%ld] = %s = %g",i,mData->realVarsData[i].info.name,data->localData[ringSegment]->realVars[i]);
-  }
-  INFO("all integer variables");
-  for(i=0; i<mData->nVariablesInteger; ++i){
-    INFO3("localData->integerVars[%ld] = %s = %ld",i,mData->integerVarsData[i].info.name,data->localData[ringSegment]->integerVars[i]);
-  }
-  INFO("all boolean variables");
-  for(i=0; i<mData->nVariablesBoolean; ++i){
-    INFO3("localData->booleanVars[%ld] = %s = %s",i,mData->booleanVarsData[i].info.name,data->localData[ringSegment]->booleanVars[i]?"true":"false");
-  }
-  INFO("all string variables");
-  for(i=0; i<mData->nVariablesString; ++i){
-    INFO3("localData->stringVars[%ld] = %s = %s",i,mData->stringVarsData[i].info.name,data->localData[ringSegment]->stringVars[i]);
-  }
-  INFO("all real parameters");
-  for(i=0; i<mData->nParametersReal; ++i){
-    INFO3("mData->realParameterData[%ld] = %s = %g",i,mData->realParameterData[i].info.name,mData->realParameterData[i].attribute.initial);
-  }
-  INFO("all integer parameters");
-  for(i=0; i<mData->nParametersInteger; ++i){
-    INFO3("mData->integerParameterData[%ld] = %s = %ld",i,mData->integerParameterData[i].info.name,mData->integerParameterData[i].attribute.initial);
-  }
-  INFO("all boolean parameters");
-  for(i=0; i<mData->nParametersBoolean; ++i){
-    INFO3("mData->booleanParameterData[%ld] = %s = %s",i,mData->booleanParameterData[i].info.name,mData->booleanParameterData[i].attribute.initial?"true":"false");
-  }
-  INFO("all string parameters");
-  for(i=0; i<mData->nParametersString; ++i){
-    INFO3("mData->stringParameterData[%ld] = %s = %s",i,mData->stringParameterData[i].info.name,mData->stringParameterData[i].attribute.initial);
-  }
-
-}
-
-/*! \fn void overwriteOldSimulationData(_X_DATA *data)
- *
- * Stores variables (states, derivatives and algebraic) to be used
- * by e.g. numerical solvers to extrapolate values as start values.
- *
- * This function overwrites all old value with the current.
- * This function is called after events.
- *
- *  author: lochel
- */
-void overwriteOldSimulationData(_X_DATA *data)
-{
-  long i;
-
-  for(i=1; i<ringBufferLength(data->simulationData); ++i){
-    data->localData[i]->timeValue = data->localData[i-1]->timeValue;
-    memcpy(data->localData[i]->realVars, data->localData[i-1]->realVars, sizeof(modelica_real)*data->modelData.nVariablesReal);
-    memcpy(data->localData[i]->integerVars, data->localData[i-1]->integerVars, sizeof(modelica_integer)*data->modelData.nVariablesInteger);
-    memcpy(data->localData[i]->booleanVars, data->localData[i-1]->booleanVars, sizeof(modelica_boolean)*data->modelData.nVariablesBoolean);
-    memcpy(data->localData[i]->stringVars, data->localData[i-1]->stringVars, sizeof(modelica_string)*data->modelData.nVariablesString);
-  }
-}
 
 /* \brief determine verboselevel by investigating flag -lv=flags
  *
@@ -291,7 +213,7 @@ int verboseLevel(int argc, char**argv) {
 
 int useVerboseOutput(int level)
 {
-  return (sim_verbose >= level);
+  return (globalDebugFlags >= (unsigned int) level);
 }
 
 /**
@@ -454,15 +376,13 @@ startNonInteractiveSimulation(int argc, char**argv, _X_DATA* data)
     cout << "Linear model is created!" << endl;
   }
 
-  if (retVal == 0 && measure_time_flag && ! sim_verbose) {
+  if (retVal == 0 && measure_time_flag && ! globalDebugFlags) {
     const string modelInfo = string(data->modelData.modelFilePrefix) + "_prof.xml";
     const string plotFile = string(data->modelData.modelFilePrefix) + "_prof.plt";
     rt_accumulate(SIM_TIMER_TOTAL);
     string* plotFormat = (string*) getFlagValue("measureTimePlotFormat", argc, argv);
     retVal = printModelInfo(data, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat->c_str() : "svg", method.c_str(), outputFormat.c_str(), result_file_cstr.c_str()) && retVal;
   }
-
-  deinitDelay();
 
   return retVal;
 }
@@ -609,7 +529,7 @@ initRuntimeAndSimulation(int argc, char**argv, _X_DATA *data)
     return 1;
   }
   /* verbose flag is set : -v */
-  sim_verbose = flagSet("v", argc, argv);
+  globalDebugFlags = flagSet("v", argc, argv);
   sim_noemit = flagSet("noemit", argc, argv);
   jac_flag = flagSet("jac", argc, argv);
   num_jac_flag = flagSet("numjac", argc, argv);
@@ -642,8 +562,8 @@ initRuntimeAndSimulation(int argc, char**argv, _X_DATA *data)
 #endif
 
   int verbose_flags = verboseLevel(argc, argv);
-  sim_verbose = verbose_flags ? verbose_flags : sim_verbose;
-  if (sim_verbose){
+  globalDebugFlags = verbose_flags ? verbose_flags : globalDebugFlags;
+  if (globalDebugFlags){
     globalDebugFlags |= LOG_STATS;
     measure_time_flag = 1;
   }

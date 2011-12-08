@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, Linkï¿½pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 Linkï¿½ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from Linkï¿½pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -39,23 +39,24 @@
  */
 
 #include "error.h"
+#include "simulation_result_plt.h"
+#include "rtclock.h"
 
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <iostream>
 #include <limits> /* adrpo - for std::numeric_limits in MSVC */
-#include "simulation_result_plt.h"
-#include "simulation_runtime.h"
 #include <sstream>
 #include <time.h>
 
-#include "rtclock.h"
+
 
 #ifdef CONFIG_WITH_SENDDATA
 #include "sendData/sendData.h"
 #endif
 
-static const char * timeName = "time";
+/* static const char * timeName = "time"; */
 
 static int calcDataSize(MODEL_DATA *modelData)
 {
@@ -72,7 +73,7 @@ static int calcDataSize(MODEL_DATA *modelData)
 
   return sz;
 }
-
+/*
 static const char** calcDataNames(MODEL_DATA *modelData, int dataSize)
 {
   const char** names = (const char**)calloc(dataSize,sizeof(char*));
@@ -85,28 +86,26 @@ static const char** calcDataNames(MODEL_DATA *modelData, int dataSize)
     names[curVar++] = modelData->integerVarsData[i].info.name;
   for (int i = 0; i < modelData->nVariablesBoolean; i++) if (!modelData->booleanVarsData[i].filterOutput)
     names[curVar++] = modelData->booleanVarsData[i].info.name;
-/*  for (int i = 0; i < modelData->nVariablesString; i++) if (!modelData->stringVarsData[i].filterOutput)
-    names[curVar++] = modelData->stringVarsData[i].info.name; */
+//  for (int i = 0; i < modelData->nVariablesString; i++) if (!modelData->stringVarsData[i].filterOutput)
+//    names[curVar++] = modelData->stringVarsData[i].info.name;
   for (int i = 0; i < modelData->nAliasReal; i++) if (!modelData->realAlias[i].filterOutput)
     names[curVar++] = modelData->realAlias[i].info.name;
   for (int i = 0; i < modelData->nAliasInteger; i++) if (!modelData->integerAlias[i].filterOutput)
     names[curVar++] = modelData->integerAlias[i].info.name;
   for (int i = 0; i < modelData->nAliasBoolean; i++) if (!modelData->booleanAlias[i].filterOutput)
     names[curVar++] = modelData->booleanAlias[i].info.name;
-/*  for (int i = 0; i < modelData->nAliasString; i++) if (!modelData->stringAlias[i].filterOutput)
-    names[curVar++] = modelData->stringAlias[i].info.name; */
+//  for (int i = 0; i < modelData->nAliasString; i++) if (!modelData->stringAlias[i].filterOutput)
+//    names[curVar++] = modelData->stringAlias[i].info.name;
   return names;
 }
+*/
 
 void simulation_result_plt::emit(_X_DATA *data)
 {
   rt_tick(SIM_TIMER_OUTPUT);
-  if (actualPoints < maxPoints) 
-  {
-    if(!isInteractiveSimulation())
+  if (actualPoints < maxPoints) {
       add_result(simulationResultData,&actualPoints,data); /*used for non-interactive simulation */
-  } else 
-  {
+  } else {
     maxPoints = (long)(1.4*maxPoints + (maxPoints-actualPoints) + 2000);
     /* cerr << "realloc simulationResultData to a size of " << maxPoints * dataSize * sizeof(double) << endl; */
     simulationResultData = (double*)realloc(simulationResultData, maxPoints * dataSize * sizeof(double));
@@ -255,8 +254,8 @@ simulation_result(filename,numpoints), modelData(modeldata)
   maxPoints = numpoints;
 
   if (numpoints < 0 ) { /* Automatic number of output steps */
-    cerr << "Warning automatic output steps not supported in OpenModelica yet." << endl;
-    cerr << "Attempt to solve this by allocating large amount of result data." << endl;
+    std::cerr << "Warning automatic output steps not supported in OpenModelica yet." << std::endl;
+    std::cerr << "Attempt to solve this by allocating large amount of result data." << std::endl;
     numpoints = abs(numpoints);
     maxPoints = abs(numpoints);
   }

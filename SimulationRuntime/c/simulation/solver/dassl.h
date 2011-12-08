@@ -31,6 +31,8 @@
 #ifndef DASSL_H
 #define DASSL_H
 
+#include "solver_main.h"
+
 #define DDASRT ddasrt_
 
 static const unsigned int maxOrder = 5;

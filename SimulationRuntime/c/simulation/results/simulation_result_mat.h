@@ -42,10 +42,14 @@
 #ifndef _SIMULATION_RESULT_MAT_H_
 #define _SIMULATION_RESULT_MAT_H_
 
-#include <fstream>
-#include <map>
 #include "simulation_result.h"
-#include "simulation_runtime.h"
+#include "simulation_data.h"
+
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <string>
+#include <utility>
 
 
 
@@ -60,7 +64,7 @@ public:
     return "mat";
   }
 
-  typedef pair<void*,int> indx_type;
+  typedef std::pair<void*,int> indx_type;
 
 private:
   std::ofstream fp;
@@ -70,7 +74,7 @@ private:
   double startTime; // the start time
   double stopTime;  // the stop time
 
-  typedef map<int,int> INTMAP;
+  typedef std::map<int,int> INTMAP;
 
   INTMAP r_indx_map;
   INTMAP r_indx_parammap;

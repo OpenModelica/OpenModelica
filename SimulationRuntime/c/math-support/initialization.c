@@ -31,13 +31,12 @@
 /*! \file initialization.c
  */
 
-#include "simulation_data.h"
-#include "modelica_string.h"
 #include "initialization.h"
-#include "simulation_runtime.h"
-#include "solver_main.h"
-#include "events.h"
+#include "simulation_data.h"
 #include "error.h"
+#include "openmodelica.h"
+#include "openmodelica_func.h"
+#include "model_help.h"
 
 #include <math.h>
 #include <string.h> /* strcmp */
@@ -571,7 +570,7 @@ static int initialize(_X_DATA *data, int optiMethod)
  */
 static int state_initialization(_X_DATA *data, int optiMethod)
 {
-  int retVal = 0;
+  int retVal = 0, i;
 
   /* call initialize function and save start values */
   storeStartValues(data);
@@ -590,16 +589,30 @@ static int state_initialization(_X_DATA *data, int optiMethod)
   resetAllHelpVars(data);
   storePreValues(data);
 
+  /* debug print */
+  if (DEBUG_FLAG(LOG_DEBUG)){
+    for (i=0; i<3;i++){
+      INFO1("Print values for buffer segment = %d",i);
+      printAllVars(data,i);
+    }
+  }
   /* start with the real initialization */
   data->simulationInfo.initial = 1;             /* to evaluate when-equations with initial()-conditions */
 
   retVal = initialize(data, optiMethod);
 
+
+  /* debug print */
+  if (DEBUG_FLAG(LOG_DEBUG)){
+    for (i=0; i<3;i++){
+      INFO1("Print values for buffer segment = %d",i);
+      printAllVars(data,i);
+    }
+  }
   storeInitialValuesParam(data);
   storePreValues(data);             /* save pre-values */
   overwriteOldSimulationData(data); /* if there are non-linear equations */
 
-  functionAliasEquations(data);
   update_DAEsystem(data);           /* evaluate discrete variables */
 
   /* valid system for the first time! */
@@ -642,7 +655,7 @@ int initialization(_X_DATA *data, const char* pInitMethod, const char* pOptiMeth
       optiMethod = IOM_UNKNOWN;
   }
 
-  DEBUG_INFO1(LOG_INIT, "initialization | initialization method: %s", initMethodStr[initMethod]);
+  DEBUG_INFO1(LOG_INIT,    "initialization | initialization method: %s", initMethodStr[initMethod]);
   DEBUG_INFO_AL1(LOG_INIT, "                 optimization method:   %s", optiMethodStr[optiMethod]);
 
   /* select the right initialization-method */

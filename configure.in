@@ -560,14 +560,8 @@ c_runtime/libf2c/makefile.u \
 FMI/import/source/Makefile \
 SimulationRuntime/c/Makefile \
 SimulationRuntime/c/meta/Makefile \
-SimulationRuntime/c/util/Makefile \
 SimulationRuntime/c/ModelicaExternalC/Makefile \
-SimulationRuntime/c/simulation/Makefile \
-SimulationRuntime/c/Makefile \
 SimulationRuntime/c/simulation/libf2c/makefile.u \
-SimulationRuntime/c/math-support/Makefile \
-SimulationRuntime/c/simulation/solver/Makefile \
-SimulationRuntime/c/simulation/results/Makefile \
 SimulationRuntime/interactive/Makefile \
 "
 

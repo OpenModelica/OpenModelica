@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
+ * Copyright (c) 1998-CurrentYear, Linkï¿½ping University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 Linkï¿½ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
+ * from Linkï¿½ping University, either from the above address,
  * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
  * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
@@ -169,7 +169,8 @@ mmc_GC_pages_type pages_decrease(mmc_GC_pages_type pages, size_t default_pages_s
 /* populate the free list with free space */
 mmc_GC_page_type list_populate(mmc_GC_page_type page)
 {
-  size_t i = 0, sz = MMC_MAX_OBJECT_SIZE_BYTES;
+  /*size_t i = 0;*/ /* get rid of warnings*/
+  size_t sz = MMC_MAX_OBJECT_SIZE_BYTES;
   modelica_metatype p = page.start;
   if (sz > page.size) /* we have pages less than max obj size! */
   {

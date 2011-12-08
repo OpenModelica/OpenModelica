@@ -591,7 +591,7 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.rPar[i]["fixed"],(signed char*)&(modelData->realParameterData[i].attribute.fixed));
     DEBUG_INFO2(LOG_SOLVER, "read fixed for %s = %s from init file", modelData->realParameterData[i].info.name, modelData->realParameterData[i].attribute.fixed?"true":"false");
     read_value(mi.rPar[i]["nominal"], &(modelData->realParameterData[i].attribute.nominal));
-    DEBUG_INFO2(LOG_SOLVER, "read nominal for %s = %s from init file", modelData->realParameterData[i].info.name, modelData->realParameterData[i].attribute.nominal);
+    DEBUG_INFO2(LOG_SOLVER, "read nominal for %s = %f from init file", modelData->realParameterData[i].info.name, modelData->realParameterData[i].attribute.nominal);
 
     /* create a mapping for Alias variable to get the correct index */
     mapAliasParam[(modelData->realParameterData[i].info.name)]=i;

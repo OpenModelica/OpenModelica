@@ -30,9 +30,12 @@
 
 #include "solver_main.h"
 #include "simulation_runtime.h"
+#include "openmodelica_func.h"
 #include "initialization.h"
-#include "events.h"
 #include "dassl.h"
+#include "delay.h"
+#include "events.h"
+#include "varinfo.h"
 /*
  * #include "dopri45.h"
  */
@@ -65,7 +68,7 @@ euler_ex_step(_X_DATA* simData, SOLVER_INFO* solverInfo);
 int
 rungekutta_step(_X_DATA* simData, SOLVER_INFO* solverInfo);
 
-
+void checkTermination(_X_DATA* simData);
 
 int
 solver_main_step(int flag, _X_DATA* simData, SOLVER_INFO* solverInfo) {
@@ -89,52 +92,7 @@ solver_main_step(int flag, _X_DATA* simData, SOLVER_INFO* solverInfo) {
   return 1;
 }
 
-/*	function: update_DAEsystem
- *
- * 	! Function to update the whole system with EventIteration.
- * 	Evaluate the functionDAE()
- */
-void update_DAEsystem(_X_DATA *data)
-{
-  int needToIterate = 0;
-  int IterationNum = 0;
 
-  functionDAE(data, &needToIterate);
-  while(checkForDiscreteChanges(data) || needToIterate)
-  {
-    if(needToIterate)
-    {
-      DEBUG_INFO(LOG_EVENTS, "reinit() call. Iteration needed!");
-    }
-    else
-    {
-    	DEBUG_INFO(LOG_EVENTS, "discrete Variable changed. Iteration needed!");
-    }
-    storePreValues(data);
-    functionDAE(data, &needToIterate);
-    IterationNum++;
-    if(IterationNum > IterationMax)
-    {
-      THROW("ERROR: Too many event iterations. System is inconsistent!");
-    }
-  }
-}
-
-/* function: copyStartValuestoInitValues
- *
- * ! Function to copy all start values to initial values
- *
- */
-void copyStartValuestoInitValues(_X_DATA *data)
-{
-
-  /* just copy all start values to initial */
-  storeStartValuesParam(data);
-  storeStartValues(data);
-  storePreValues(data);
-  overwriteOldSimulationData(data);
-
-}
 
 /* The main function for a solver with synchronous event handling
  * flag 1=explicit euler
@@ -194,7 +152,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 	/* initial sample and delay before initial the system */
 	callExternalObjectConstructors(simData);
 	initSample(simData, simInfo->startTime, simInfo->stopTime);
-	initDelay(simInfo->startTime);
+	initDelay(simData, simInfo->startTime);
 
 	/* will be removed -> DOPRI45 */
 	/* first interpolation point is the value of the fixed external stepsize */
@@ -272,18 +230,13 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 	 * parameters during Initialization */
 	/*
 	callExternalObjectConstructors(simData);
-	initSample(simData, simInfo->startTime, simInfo->stopTime);
-	initDelay(simInfo->startTime);
 	*/
+	initSample(simData, simInfo->startTime, simInfo->stopTime);
+	initDelay(simData, simInfo->startTime);
 
 	SaveZeroCrossings(simData);
 	storePreValues(simData);
 
-	/*
-	 * if (sim_verbose >= LOG_SOLVER) {
-   *   sim_result_emit(simData);
-   * }
-	 */
 
 	/* Activate sample and evaluate again */
 	if (simData->simulationInfo.curSampleTimeIx < simData->simulationInfo.nSampleTimes) {
@@ -307,7 +260,7 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
     rt_accumulate( SIM_TIMER_INIT);
 
   if (simData->localData[0]->timeValue >= simInfo->stopTime) {
-    if (sim_verbose >= LOG_SOLVER) {
+    if (DEBUG_FLAG(LOG_SOLVER)) {
       INFO("Simulation done!");
     }
     simData->simulationInfo.terminal = 1;
@@ -466,7 +419,10 @@ solver_main(_X_DATA* simData, double start, double stop, double step, long outpu
 	  }
 	  */
 	  /* Check for termination of terminate() or assert() */
-	  if (terminationAssert || terminationTerminate || modelErrorCode) {
+	  if (terminationAssert ||
+	      terminationTerminate ||
+	      modelErrorCode) {
+
 		  terminationAssert = 0;
 		  terminationTerminate = 0;
 		  checkForAsserts(simData);
@@ -600,3 +556,39 @@ rungekutta_step(_X_DATA* simData, SOLVER_INFO* solverInfo) {
   solverInfo->currentTime += solverInfo->currentStepSize;
   return 0;
 }
+
+/** function checkTermination
+ *  author: wbraun
+ *
+ *  function checks if the model should really terminated.
+ */
+void checkTermination(_X_DATA* simData)
+{
+  if(terminationAssert || terminationTerminate)
+  {
+    modelErrorCode = 1;
+    printInfo(stdout, TermInfo);
+    fputc(' ', stdout);
+  }
+
+  if(terminationAssert)
+  {
+    if(warningLevelAssert)
+  {
+      /* terminated from assert, etc. */
+    WARNING2("Simulation call assert() at time %f\nLevel : warning\nMessage : %s", simData->localData[0]->timeValue, TermMsg);
+    }
+    else
+    {
+    WARNING2("Simulation call assert() at time %f\nLevel : error\nMessage : %s", simData->localData[0]->timeValue, TermMsg);
+    /* THROW1("timeValue = %f", simData->localData[0]->timeValue); */
+  }
+  }
+
+  if(terminationTerminate)
+  {
+    WARNING2("Simulation call terminate() at time %f\nMessage : %s", simData->localData[0]->timeValue, TermMsg);
+    /* THROW1("timeValue = %f", simData->localData[0]->timeValue); */
+  }
+}
+

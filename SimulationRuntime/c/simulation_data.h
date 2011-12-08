@@ -1,9 +1,9 @@
 /*
 * This file is part of OpenModelica.
 *
-* Copyright (c) 1998-CurrentYear, Linköping University,
+* Copyright (c) 1998-CurrentYear, Linkï¿½ping University,
 * Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
+* SE-58183 Linkï¿½ping, Sweden.
 *
 * All rights reserved.
 *
@@ -14,7 +14,7 @@
 *
 * The OpenModelica software and the Open Source Modelica
 * Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from Linköping University, either from the above address,
+* from Linkï¿½ping University, either from the above address,
 * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
 * http://www.openmodelica.org, and in the OpenModelica distribution. 
 * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
@@ -243,6 +243,7 @@
 
     long nZeroCrossings;
     long nSamples;
+    long nDelayExpressions;
     long nResiduals;
     long nExtObjs;
     long nFunctions;
@@ -301,6 +302,9 @@
     modelica_real* inputVars;
     modelica_real* outputVars;
 
+    /* delay vars */
+    double tStart;
+    RINGBUFFER **delayStructure;
 
   }SIMULATION_INFO;
 
@@ -324,17 +328,5 @@
     MODEL_DATA modelData;           /* static stuff */
     SIMULATION_INFO simulationInfo;
   }_X_DATA;
-
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-  void initializeXDataStruc(_X_DATA *data);
-  void DeinitializeXDataStruc(_X_DATA *data);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

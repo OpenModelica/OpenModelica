@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, Linköpings University,
+ * Copyright (c) 1998-2008, Linkï¿½pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 Linkï¿½ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from Linkï¿½pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -32,57 +32,22 @@
  */
 
 #include "delay.h"
-#include "ringbuffer.h"
 #include "error.h"
+#include "simulation_data.h"
+#include "ringbuffer.h"
+#include "openmodelica.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
-double tStart = 0;
-
-typedef struct TIME_AND_VALUE
-{
-  double time;
-  double value;
-}TIME_AND_VALUE;
-
-typedef struct EXPRESSION_DELAY_BUFFER
-{
-  long currentIndex;
-  long maxExpressionBuffer;
-  TIME_AND_VALUE *expressionDelayBuffer;
-}EXPRESSION_DELAY_BUFFER;
 
 /* the delayStructure looks like a matrix (rows = expressionNumber+currentColumnIndex, columns={time, value}) */
-static RINGBUFFER **delayStructure;
 
-extern const int numDelayExpressionIndex;
 
-void initDelay(double startTime)
+void initDelay(_X_DATA* data, double startTime)
 {
-  int i;
-
   /* get the start time of the simulation: time.start. */
-  tStart = startTime;
-
-  /* allocate the memory for rows */
-  delayStructure = (RINGBUFFER**)calloc(numDelayExpressionIndex, sizeof(RINGBUFFER*));
-  ASSERT(delayStructure, "out of memory");
-
-  for(i=0; i<numDelayExpressionIndex; i++)
-    delayStructure[i] = allocRingBuffer(1024, sizeof(TIME_AND_VALUE));
-
-  DEBUG_INFO1(LOG_SOLVER, "initDelay called with startTime = %f", startTime);
-}
-
-void deinitDelay()
-{
-  int i;
-
-  for(i=0; i<numDelayExpressionIndex; i++)
-    freeRingBuffer(delayStructure[i]);
-
-  free(delayStructure);
+  data->simulationInfo.tStart = startTime;
 }
 
 /*
@@ -106,40 +71,42 @@ static int findTime(double time, RINGBUFFER *delayStruct)
     else
       start = i;
   }while(t != time && end > start + 1);
-  return start;
+  return (start);
 }
 
-void storeDelayedExpression(int exprNumber, double exprValue, double time)
+void storeDelayedExpression(_X_DATA* data, int exprNumber, double exprValue, double time)
 {
   TIME_AND_VALUE tpl;
 
-  /* INFO("storeDelayed[%d] %g:%g", exprNumber, time, exprValue); */
+  DEBUG_INFO3(LOG_EVENTS,"storeDelayed[%d] %g:%g", exprNumber, time, exprValue);
 
   /* Allocate more space for expressions */
-  ASSERT1(exprNumber < numDelayExpressionIndex, "storeDelayedExpression: invalid expression number %d", exprNumber);
+  ASSERT1(exprNumber < data->modelData.nDelayExpressions, "storeDelayedExpression: invalid expression number %d", exprNumber);
   ASSERT1(0 <= exprNumber, "storeDelayedExpression: invalid expression number %d", exprNumber);
-  ASSERT(tStart <= time, "storeDelayedExpression: time is smaller than starting time. Value ignored");
+  ASSERT(data->simulationInfo.tStart <= time, "storeDelayedExpression: time is smaller than starting time. Value ignored");
 
   tpl.time = time;
   tpl.value = exprValue;
-  appendRingData(delayStructure[exprNumber], &tpl);
+  appendRingData(data->simulationInfo.delayStructure[exprNumber], &tpl);
 }
 
-double delayImpl(int exprNumber, double exprValue, double time, double delayTime, double delayMax)
+double delayImpl(_X_DATA* data, int exprNumber, double exprValue, double time, double delayTime, double delayMax)
 {
-  RINGBUFFER* delayStruct = delayStructure[exprNumber];
+  RINGBUFFER* delayStruct = data->simulationInfo.delayStructure[exprNumber];
   int length = ringBufferLength(delayStruct);
 
-  /* ERROR("delayImpl: exprNumber = %d, exprValue = %lf, time = %lf, delayTime = %lf", exprNumber, exprValue, time, delayTime); */
+  DEBUG_INFO4(LOG_EVENTS,"delayImpl: exprNumber = %d, exprValue = %g, time = %g, delayTime = %g\n", exprNumber, exprValue, time, delayTime);
 
   /* Check for errors */
-  ASSERT1(0 <= exprNumber, "invalid exprNumber = %d", exprNumber);
-  ASSERT1(exprNumber < numDelayExpressionIndex, "invalid exprNumber = %d", exprNumber);
 
-  if(time <= tStart)
+  ASSERT1(0 <= exprNumber, "invalid exprNumber = %d", exprNumber);
+  ASSERT1(exprNumber < data->modelData.nDelayExpressions, "invalid exprNumber = %d", exprNumber);
+
+  if(time <= data->simulationInfo.tStart)
   {
-    /* ERROR("delayImpl: Entered at time < starting time: %g.", exprValue); */
-    return exprValue;
+    DEBUG_INFO1(LOG_EVENTS,"delayImpl: Entered at time < starting time: %g.", exprValue);
+    /* printf("delayImpl: Entered at time < starting time: %g.\n", exprValue); fflush(NULL);*/
+    return (exprValue);
   }
 
   if(delayTime < 0.0)
@@ -151,8 +118,9 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
   if(length == 0)
   {
     /*  This occurs in the initialization phase */
-    /*  ERROR("delayImpl: Missing initial value, using argument value %g instead.", exprValue); */
-    return exprValue;
+    DEBUG_INFO1(LOG_EVENTS,"delayImpl: Missing initial value, using argument value %g instead.", exprValue);
+    /* printf("delayImpl: Missing initial value, using argument value %g instead.\n", exprValue); fflush(NULL);*/
+    return (exprValue);
   }
 
   /*
@@ -165,10 +133,10 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
    * delayTime need to be a parameter expression. See also Section 3.7.2.1.
    * For non-scalar arguments the function is vectorized according to Section 10.6.12.
    */
-  if(time <= tStart + delayTime)
+  if(time <= data->simulationInfo.tStart + delayTime)
   {
     double res = ((TIME_AND_VALUE*)getRingData(delayStruct, 0))->value;
-    /* ERROR("findTime: time <= tStart + delayTime: [%d] = %g",exprNumber, res); */
+    /*printf("findTime: time <= tStart + delayTime: [%d] = %g\n",exprNumber, res);fflush(NULL);*/
     return res;
   }
   else
@@ -201,6 +169,7 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
       {
         if(0 < i && delayMax == delayTime)
           dequeueNFirstRingDatas(delayStruct, i-1);
+        DEBUG_INFO3(LOG_EVENTS,"delayImpl: dequeueNFirstRingDatas[%d] %g = %g", i, delayMax, delayTime);
         return value0;
       }
       time1 = ((TIME_AND_VALUE*)getRingData(delayStruct, i+1))->time;
@@ -209,24 +178,27 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
         dequeueNFirstRingDatas(delayStruct, i-1);
     }
     /* was it an exact match?*/
-    if(time0 == timeStamp)
-    {
-            /* ERROR("delayImpl: Exact match at %lf", currentTime); */
-            return value0;
-        }
-        else if(time1 == timeStamp)
-        {
-            return value1;
-        }
-        else
-        {
-            /* ERROR("delayImpl: Linear interpolation of %lf between %lf and %lf", timeStamp, time0, time1); */
+    if(time0 == timeStamp){
+      DEBUG_INFO2(LOG_EVENTS,"delayImpl: Exact match at %g = %g", timeStamp, value0);
+      /*printf("delayImpl: Exact match at %g = %g\n", timeStamp, value0);fflush(NULL);*/
 
-            /* linear interpolation */
-            double timedif = time1 - time0;
-            double dt0 = time1 - timeStamp;
-            double dt1 = timeStamp - time0;
-            return (value0 * dt0 + value1 * dt1) / timedif;
-        }
+      return value0;
+    } else if(time1 == timeStamp) {
+      DEBUG_INFO2(LOG_EVENTS,"delayImpl: Exact match at %g = %g", timeStamp, value1);
+      /*printf("delayImpl: Exact match at %g = %g\n", timeStamp, value1);fflush(NULL);*/
+
+      return value1;
+    } else {
+      /* linear interpolation */
+      double timedif = time1 - time0;
+      double dt0 = time1 - timeStamp;
+      double dt1 = timeStamp - time0;
+      double retVal = (value0 * dt0 + value1 * dt1) / timedif;
+      DEBUG_INFO3(LOG_EVENTS,"delayImpl: Linear interpolation of %g between %g and %g\n", timeStamp, time0, time1);
+
+      DEBUG_INFO4(LOG_EVENTS,"delayImpl: Linear interpolation of %g value: %g and %g = %g\n", timeStamp, value0, value1, retVal);
+	  return (retVal);
     }
+  }
 }
+

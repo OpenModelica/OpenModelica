@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, Linkï¿½pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 Linkï¿½ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from Linkï¿½pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -29,12 +29,15 @@
  */
 
 #include "error.h"
+#include "simulation_data.h"
+#include "rtclock.h"
+#include "modelinfo.h"
+
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-#include "assert.h"
-#include <simulation_runtime.h>
+#include <assert.h>
 
 /* Returns -1 if the file was not found */
 static size_t fileSize(const char *filename) {
@@ -112,7 +115,7 @@ static void printStrXML(FILE *fout, const char *str)
   case '\'': fputs("&apos;",fout);break;
   case '"': fputs("\\\"",fout);break;
   case '\\': fputs("\\\\",fout);break;
-  default: fputc(*str,fout);
+  default: fputc(*str,fout); break;
   }
   str++;
   }
@@ -125,20 +128,6 @@ static void printInfoTag(FILE *fout, int level, const FILE_INFO info) {
   fprintf(fout, "\" startline=\"%d\" startcol=\"%d\" endline=\"%d\" endcol=\"%d\" readonly=\"%s\" />\n", info.lineStart, info.colStart, info.lineEnd, info.colEnd, info.readonly ? "readonly" : "writable");
 }
 
-static void printVars(FILE *fout, int level, int n, const struct VAR_INFO *vars) {
-  int i;
-  for (i=0; i<n; i++) {
-    indent(fout,level);
-    fprintf(fout, "<variable id=\"%d\" name=\"", vars[i].id);
-    printStrXML(fout, vars[i].name);
-    fprintf(fout, "\" comment=\"");
-    printStrXML(fout, vars[i].comment);
-    fprintf(fout, "\">\n");
-    printInfoTag(fout, level+2, vars[i].info);
-    indent(fout,level);
-    fprintf(fout, "</variable>\n");
-  }
-}
 static void printVar(FILE *fout, int level, VAR_INFO* info) {
 
   indent(fout,level);

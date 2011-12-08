@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
+ * Copyright (c) 1998-CurrentYear, Linkï¿½ping University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 Linkï¿½ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
+ * from Linkï¿½ping University, either from the above address,
  * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
  * http://www.openmodelica.org, and in the OpenModelica distribution. 
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
@@ -206,6 +206,15 @@ typedef unsigned long int fortran_uinteger;
 #define fmin(x, y) ((x<y)?x:y)
 #define snprintf sprintf_s
 #endif
+
+/* initial and terminal function calls */
+#define initial() data->simulationInfo.initial
+#define terminal() data->simulationInfo.terminal
+
+#define MODELICA_ASSERT(info,msg) { terminationAssert = 1; setTermMsg(msg); TermInfo = info; }
+
+#define MODELICA_TERMINATE(msg)  { modelTermination=1; terminationTerminate = 1; setTermMsg(msg); TermInfo = (struct FILEINFO){"",-1,-1,-1,-1,1}; }
+
 
 #if defined(__cplusplus)
 }
