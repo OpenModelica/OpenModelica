@@ -15,9 +15,9 @@ FFLAGS  = -O -fexceptions
 # P.A: before, g77 had -O3 or -O2 but that caused a bug in DDASRT, giving infinite loop.
 
 
-.PHONY : clean all ModelicaExternalC/libModelicaExternalC.a $(LIBF2C)
+.PHONY : clean all libsendData.a ModelicaExternalC/libModelicaExternalC.a $(LIBF2C)
 
-all : install
+all : install 
 
 
 #recompile all if a header changes!
@@ -50,7 +50,7 @@ ModelicaExternalC/libModelicaExternalC.a: $(addprefix ModelicaExternalC/,Modelic
 simulation/libf2c/libf2c.a: 
 	$(MAKE) -C simulation/libf2c -f ${LIBMAKEFILE}
 
-install: ModelicaExternalC/libModelicaExternalC.a libSimulationRuntimeC.a simulation/libf2c/libf2c.a $(ALL_OBJS) omdevinstall
+install: ModelicaExternalC/libModelicaExternalC.a libSimulationRuntimeC.a simulation/libf2c/libf2c.a $(ALL_OBJS) omdevinstall $(LIBSENDDATA)
 	# move libraries
 	cp ./libSimulationRuntimeC.a $(builddir_lib)
 	cp ./ModelicaExternalC/libModelicaExternalC.a $(builddir_lib)
