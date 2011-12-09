@@ -12310,27 +12310,29 @@ algorithm
       equation
         q = List.fold(List.fill((0,{}),i),PriorityQueue.insert,PriorityQueue.empty);
         prios = List.map(lst,calcPriority);
-        q = makeEqualLengthLists2(prios,q);
+        q = List.fold(prios,makeEqualLengthLists2,q);
         lst = List.map(PriorityQueue.elements(q),Util.tuple22);
       then lst;
   end matchcontinue;
 end makeEqualLengthLists;
 
 protected function makeEqualLengthLists2
-  input list<tuple<Integer,list<SimEqSystem>>> lst;
+  input tuple<Integer,list<SimEqSystem>> elt;
   input PriorityQueue.T q;
   output PriorityQueue.T oq;
 algorithm
-  oq := match (lst,q)
+  oq := match (elt,q)
     local
       list<SimEqSystem> l1,l2;
       Integer i1,i2;
-    case ({},q) then q;
-    case ((i1,l1)::lst,q)
+    case ((i1,l1),q)
       equation
+        // print("priorities before: " +& stringDelimitList(List.map(List.map(PriorityQueue.elements(q),Util.tuple21),intString),",") +& "\n");
         (q,(i2,l2)) = PriorityQueue.deleteAndReturnMin(q);
+        // print("priorities (popped): " +& stringDelimitList(List.map(List.map(PriorityQueue.elements(q),Util.tuple21),intString),",") +& "\n");
         q = PriorityQueue.insert((i1+i2,listAppend(l2,l1)),q);
-      then makeEqualLengthLists2(lst,q);
+        // print("priorities after (i1=" +& intString(i1) +& "): " +& stringDelimitList(List.map(List.map(PriorityQueue.elements(q),Util.tuple21),intString),",") +& "\n");
+      then q;
   end match;
 end makeEqualLengthLists2;
 
