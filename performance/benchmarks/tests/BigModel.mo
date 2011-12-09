@@ -4,7 +4,7 @@ package BigModel
     annotation(Diagram(coordinateSystem(extent={{-148.5,-105.0},{148.5,105.0}}, preserveAspectRatio=true, initialScale=0.1, grid={5,5})));
   end BigResistors;
 
-  model Circuit
+  model CircuitL1
     extends Modelica.Electrical.Analog.Interfaces.TwoPort;
     annotation(Icon(coordinateSystem(extent={{-100.0,-100.0},{100.0,100.0}}, preserveAspectRatio=true, initialScale=0.1, grid={10,10}), graphics={Text(visible=true, origin={2.7439,0.8554}, fillPattern=FillPattern.Solid, extent={{-37.2561,-40.8554},{37.2561,40.8554}}, textString="L1", fontName="Arial")}), Diagram(coordinateSystem(extent={{-148.5,-105.0},{148.5,105.0}}, preserveAspectRatio=true, initialScale=0.1, grid={5,5})));
     Modelica.Electrical.Analog.Basic.Resistor resistor1 annotation(Placement(visible=true, transformation(origin={-75.0,50.0}, extent={{-10.0,-10.0},{10.0,10.0}}, rotation=0)));
@@ -34,7 +34,45 @@ package BigModel
     connect(inductor1.n,resistor2.p) annotation(Line(visible=true, origin={-32.2364,50.0}, points={{-5.3768,0.0},{5.3768,0.0}}, color={0,0,255}));
     connect(resistor1.n,inductor1.p) annotation(Line(visible=true, origin={-61.3066,50.0}, points={{-3.6934,0.0},{3.6934,0.0}}, color={0,0,255}));
     connect(p1,resistor1.p) annotation(Line(visible=true, origin={-92.5,50.0}, points={{-7.5,0.0},{7.5,0.0}}, color={0,0,255}));
-  end Circuit;
+  end CircuitL1;
+
+  model CircuitL2
+    extends Modelica.Electrical.Analog.Interfaces.TwoPort;
+    annotation(Icon(coordinateSystem(extent={{-100.0,-100.0},{100.0,100.0}}, preserveAspectRatio=true, initialScale=0.1, grid={10,10}), graphics={Text(visible=true, origin={9.9608,0.4669}, fillPattern=FillPattern.Solid, extent={{-45.4461,-33.7733},{45.4461,33.7733}}, textString="L2", fontName="Arial")}), Diagram(coordinateSystem(extent={{-148.5,-105.0},{148.5,105.0}}, preserveAspectRatio=true, initialScale=0.1, grid={5,5})));
+    BigModel.CircuitL1 circuit1 annotation(Placement(visible=true, transformation(origin={-65.0,35.0}, extent={{-10.0,-10.0},{10.0,10.0}}, rotation=0)));
+    BigModel.CircuitL1 circuit2 annotation(Placement(visible=true, transformation(origin={-65.0,-10.0}, extent={{-10.0,-10.0},{10.0,10.0}}, rotation=0)));
+    BigModel.CircuitL1 circuit3 annotation(Placement(visible=true, transformation(origin={-30.0,10.0}, extent={{-10.0,-10.0},{10.0,10.0}}, rotation=0)));
+    BigModel.CircuitL1 circuit4 annotation(Placement(visible=true, transformation(origin={-5.0,-10.0}, extent={{-10.0,-10.0},{10.0,10.0}}, rotation=0)));
+    BigModel.CircuitL1 circuit5 annotation(Placement(visible=true, transformation(origin={-1.7335,32.3868}, extent={{-10.0,-10.0},{10.0,10.0}}, rotation=0)));
+    BigModel.CircuitL1 circuit6 annotation(Placement(visible=true, transformation(origin={27.6878,12.2865}, extent={{-10.0,-10.0},{10.0,10.0}}, rotation=0)));
+    BigModel.CircuitL1 circuit7 annotation(Placement(visible=true, transformation(origin={60.0,-10.0}, extent={{-10.0,-10.0},{10.0,10.0}}, rotation=0)));
+    BigModel.CircuitL1 circuit8 annotation(Placement(visible=true, transformation(origin={52.4871,35.0}, extent={{-10.0,-10.0},{10.0,10.0}}, rotation=0)));
+    BigModel.CircuitL1 circuit9 annotation(Placement(visible=true, transformation(origin={85.0,-10.0}, extent={{-10.0,-10.0},{10.0,10.0}}, rotation=0)));
+    BigModel.CircuitL1 circuit10 annotation(Placement(visible=true, transformation(origin={81.8827,35.0}, extent={{-10.0,-10.0},{10.0,10.0}}, rotation=0)));
+  equation 
+    connect(circuit10.p2,p2) annotation(Line(visible=true, origin={94.5885,46.6667}, points={{-2.7058,-6.6667},{-2.7058,3.3333},{5.4115,3.3333}}, color={0,0,255}));
+    connect(circuit9.n2,n2) annotation(Line(visible=true, origin={98.3333,-26.6667}, points={{-3.3333,11.6667},{1.6667,11.6667},{1.6667,-23.3333}}, color={0,0,255}));
+    connect(circuit7.n2,circuit9.n1) annotation(Line(visible=true, origin={72.5,-15.0}, points={{-2.5,-0.0},{2.5,0.0}}, color={0,0,255}));
+    connect(circuit7.p2,circuit9.p1) annotation(Line(visible=true, origin={72.5,-5.0}, points={{-2.5,-0.0},{2.5,0.0}}, color={0,0,255}));
+    connect(circuit10.n2,circuit9.p2) annotation(Line(visible=true, origin={95.7207,12.5}, points={{-3.838,17.5},{2.2793,17.5},{2.2793,-17.5},{-0.7207,-17.5}}, color={0,0,255}));
+    connect(circuit8.n2,circuit10.n1) annotation(Line(visible=true, origin={67.1849,30.0}, points={{-4.6978,0.0},{4.6978,0.0}}, color={0,0,255}));
+    connect(circuit8.p2,circuit10.p1) annotation(Line(visible=true, origin={67.1849,40.0}, points={{-4.6978,0.0},{4.6978,0.0}}, color={0,0,255}));
+    connect(circuit6.n2,circuit7.p1) annotation(Line(visible=true, origin={45.4219,1.1433}, points={{-7.7342,6.1433},{1.5781,6.1433},{1.5781,-6.1433},{4.5781,-6.1433}}, color={0,0,255}));
+    connect(circuit6.p2,circuit8.n1) annotation(Line(visible=true, origin={40.7873,23.6433}, points={{-3.0995,-6.3567},{0.6998,-6.3567},{0.6998,6.3567},{1.6998,6.3567}}, color={0,0,255}));
+    connect(circuit5.n2,circuit6.p1) annotation(Line(visible=true, origin={13.8324,22.3367}, points={{-5.566,5.0502},{0.8553,5.0502},{0.8553,-5.0502},{3.8553,-5.0502}}, color={0,0,255}));
+    connect(circuit4.p2,circuit6.n1) annotation(Line(visible=true, origin={13.0158,1.1433}, points={{-8.0158,-6.1433},{1.6719,-6.1433},{1.6719,6.1433},{4.6719,6.1433}}, color={0,0,255}));
+    connect(circuit5.p2,circuit8.p1) annotation(Line(visible=true, origin={32.6884,38.6934}, points={{-24.4219,-1.3066},{7.3116,-1.3066},{7.3116,1.3066},{9.7987,1.3066}}, color={0,0,255}));
+    connect(circuit3.p2,circuit5.n1) annotation(Line(visible=true, origin={-15.3002,21.1934}, points={{-4.6998,-6.1934},{0.5666,-6.1934},{0.5666,6.1934},{3.5666,6.1934}}, color={0,0,255}));
+    connect(circuit1.p2,circuit5.p1) annotation(Line(visible=true, origin={-24.0502,38.6934}, points={{-30.9498,1.3066},{9.3166,1.3066},{9.3166,-1.3066},{12.3166,-1.3066}}, color={0,0,255}));
+    connect(circuit4.n2,circuit7.n1) annotation(Line(visible=true, origin={27.5,-15.0}, points={{-22.5,0.0},{22.5,-0.0}}, color={0,0,255}));
+    connect(circuit3.n2,circuit4.p1) annotation(Line(visible=true, origin={-16.75,0.0}, points={{-3.25,5.0},{0.75,5.0},{0.75,-5.0},{1.75,-5.0}}, color={0,0,255}));
+    connect(circuit1.n2,circuit3.p1) annotation(Line(visible=true, origin={-45.25,22.5}, points={{-9.75,7.5},{2.25,7.5},{2.25,-7.5},{5.25,-7.5}}, color={0,0,255}));
+    connect(circuit2.p2,circuit3.n1) annotation(Line(visible=true, origin={-45.25,0.0}, points={{-9.75,-5.0},{2.25,-5.0},{2.25,5.0},{5.25,5.0}}, color={0,0,255}));
+    connect(circuit2.n2,circuit4.n1) annotation(Line(visible=true, origin={-35.0,-15.0}, points={{-20.0,0.0},{20.0,0.0}}, color={0,0,255}));
+    connect(circuit2.n1,n1) annotation(Line(visible=true, origin={-91.6667,-26.6667}, points={{16.6667,11.6667},{-8.3333,11.6667},{-8.3333,-23.3333}}, color={0,0,255}));
+    connect(circuit1.n1,circuit2.p1) annotation(Line(visible=true, origin={-76.5,12.5}, points={{1.5,17.5},{-1.5,17.5},{-1.5,-17.5},{1.5,-17.5}}, color={0,0,255}));
+    connect(p1,circuit1.p1) annotation(Line(visible=true, origin={-82.75,45.0}, points={{-17.25,5.0},{4.75,5.0},{4.75,-5.0},{7.75,-5.0}}, color={0,0,255}));
+  end CircuitL2;
 
   model CircuitL3
     extends Modelica.Electrical.Analog.Interfaces.TwoPort;
@@ -114,44 +152,6 @@ package BigModel
     connect(circuit1.n1,circuit2.p1) annotation(Line(visible=true, origin={-76.5,12.5}, points={{1.5,17.5},{-1.5,17.5},{-1.5,-17.5},{1.5,-17.5}}, color={0,0,255}));
     connect(p1,circuit1.p1) annotation(Line(visible=true, origin={-82.75,45.0}, points={{-17.25,5.0},{4.75,5.0},{4.75,-5.0},{7.75,-5.0}}, color={0,0,255}));
   end CircuitL4;
-
-  model CircuitL2
-    extends Modelica.Electrical.Analog.Interfaces.TwoPort;
-    annotation(Icon(coordinateSystem(extent={{-100.0,-100.0},{100.0,100.0}}, preserveAspectRatio=true, initialScale=0.1, grid={10,10}), graphics={Text(visible=true, origin={9.9608,0.4669}, fillPattern=FillPattern.Solid, extent={{-45.4461,-33.7733},{45.4461,33.7733}}, textString="L2", fontName="Arial")}), Diagram(coordinateSystem(extent={{-148.5,-105.0},{148.5,105.0}}, preserveAspectRatio=true, initialScale=0.1, grid={5,5})));
-    BigModel.Circuit circuit1 annotation(Placement(visible=true, transformation(origin={-65.0,35.0}, extent={{-10.0,-10.0},{10.0,10.0}}, rotation=0)));
-    BigModel.Circuit circuit2 annotation(Placement(visible=true, transformation(origin={-65.0,-10.0}, extent={{-10.0,-10.0},{10.0,10.0}}, rotation=0)));
-    BigModel.Circuit circuit3 annotation(Placement(visible=true, transformation(origin={-30.0,10.0}, extent={{-10.0,-10.0},{10.0,10.0}}, rotation=0)));
-    BigModel.Circuit circuit4 annotation(Placement(visible=true, transformation(origin={-5.0,-10.0}, extent={{-10.0,-10.0},{10.0,10.0}}, rotation=0)));
-    BigModel.Circuit circuit5 annotation(Placement(visible=true, transformation(origin={-1.7335,32.3868}, extent={{-10.0,-10.0},{10.0,10.0}}, rotation=0)));
-    BigModel.Circuit circuit6 annotation(Placement(visible=true, transformation(origin={27.6878,12.2865}, extent={{-10.0,-10.0},{10.0,10.0}}, rotation=0)));
-    BigModel.Circuit circuit7 annotation(Placement(visible=true, transformation(origin={60.0,-10.0}, extent={{-10.0,-10.0},{10.0,10.0}}, rotation=0)));
-    BigModel.Circuit circuit8 annotation(Placement(visible=true, transformation(origin={52.4871,35.0}, extent={{-10.0,-10.0},{10.0,10.0}}, rotation=0)));
-    BigModel.Circuit circuit9 annotation(Placement(visible=true, transformation(origin={85.0,-10.0}, extent={{-10.0,-10.0},{10.0,10.0}}, rotation=0)));
-    BigModel.Circuit circuit10 annotation(Placement(visible=true, transformation(origin={81.8827,35.0}, extent={{-10.0,-10.0},{10.0,10.0}}, rotation=0)));
-  equation 
-    connect(circuit10.p2,p2) annotation(Line(visible=true, origin={94.5885,46.6667}, points={{-2.7058,-6.6667},{-2.7058,3.3333},{5.4115,3.3333}}, color={0,0,255}));
-    connect(circuit9.n2,n2) annotation(Line(visible=true, origin={98.3333,-26.6667}, points={{-3.3333,11.6667},{1.6667,11.6667},{1.6667,-23.3333}}, color={0,0,255}));
-    connect(circuit7.n2,circuit9.n1) annotation(Line(visible=true, origin={72.5,-15.0}, points={{-2.5,-0.0},{2.5,0.0}}, color={0,0,255}));
-    connect(circuit7.p2,circuit9.p1) annotation(Line(visible=true, origin={72.5,-5.0}, points={{-2.5,-0.0},{2.5,0.0}}, color={0,0,255}));
-    connect(circuit10.n2,circuit9.p2) annotation(Line(visible=true, origin={95.7207,12.5}, points={{-3.838,17.5},{2.2793,17.5},{2.2793,-17.5},{-0.7207,-17.5}}, color={0,0,255}));
-    connect(circuit8.n2,circuit10.n1) annotation(Line(visible=true, origin={67.1849,30.0}, points={{-4.6978,0.0},{4.6978,0.0}}, color={0,0,255}));
-    connect(circuit8.p2,circuit10.p1) annotation(Line(visible=true, origin={67.1849,40.0}, points={{-4.6978,0.0},{4.6978,0.0}}, color={0,0,255}));
-    connect(circuit6.n2,circuit7.p1) annotation(Line(visible=true, origin={45.4219,1.1433}, points={{-7.7342,6.1433},{1.5781,6.1433},{1.5781,-6.1433},{4.5781,-6.1433}}, color={0,0,255}));
-    connect(circuit6.p2,circuit8.n1) annotation(Line(visible=true, origin={40.7873,23.6433}, points={{-3.0995,-6.3567},{0.6998,-6.3567},{0.6998,6.3567},{1.6998,6.3567}}, color={0,0,255}));
-    connect(circuit5.n2,circuit6.p1) annotation(Line(visible=true, origin={13.8324,22.3367}, points={{-5.566,5.0502},{0.8553,5.0502},{0.8553,-5.0502},{3.8553,-5.0502}}, color={0,0,255}));
-    connect(circuit4.p2,circuit6.n1) annotation(Line(visible=true, origin={13.0158,1.1433}, points={{-8.0158,-6.1433},{1.6719,-6.1433},{1.6719,6.1433},{4.6719,6.1433}}, color={0,0,255}));
-    connect(circuit5.p2,circuit8.p1) annotation(Line(visible=true, origin={32.6884,38.6934}, points={{-24.4219,-1.3066},{7.3116,-1.3066},{7.3116,1.3066},{9.7987,1.3066}}, color={0,0,255}));
-    connect(circuit3.p2,circuit5.n1) annotation(Line(visible=true, origin={-15.3002,21.1934}, points={{-4.6998,-6.1934},{0.5666,-6.1934},{0.5666,6.1934},{3.5666,6.1934}}, color={0,0,255}));
-    connect(circuit1.p2,circuit5.p1) annotation(Line(visible=true, origin={-24.0502,38.6934}, points={{-30.9498,1.3066},{9.3166,1.3066},{9.3166,-1.3066},{12.3166,-1.3066}}, color={0,0,255}));
-    connect(circuit4.n2,circuit7.n1) annotation(Line(visible=true, origin={27.5,-15.0}, points={{-22.5,0.0},{22.5,-0.0}}, color={0,0,255}));
-    connect(circuit3.n2,circuit4.p1) annotation(Line(visible=true, origin={-16.75,0.0}, points={{-3.25,5.0},{0.75,5.0},{0.75,-5.0},{1.75,-5.0}}, color={0,0,255}));
-    connect(circuit1.n2,circuit3.p1) annotation(Line(visible=true, origin={-45.25,22.5}, points={{-9.75,7.5},{2.25,7.5},{2.25,-7.5},{5.25,-7.5}}, color={0,0,255}));
-    connect(circuit2.p2,circuit3.n1) annotation(Line(visible=true, origin={-45.25,0.0}, points={{-9.75,-5.0},{2.25,-5.0},{2.25,5.0},{5.25,5.0}}, color={0,0,255}));
-    connect(circuit2.n2,circuit4.n1) annotation(Line(visible=true, origin={-35.0,-15.0}, points={{-20.0,0.0},{20.0,0.0}}, color={0,0,255}));
-    connect(circuit2.n1,n1) annotation(Line(visible=true, origin={-91.6667,-26.6667}, points={{16.6667,11.6667},{-8.3333,11.6667},{-8.3333,-23.3333}}, color={0,0,255}));
-    connect(circuit1.n1,circuit2.p1) annotation(Line(visible=true, origin={-76.5,12.5}, points={{1.5,17.5},{-1.5,17.5},{-1.5,-17.5},{1.5,-17.5}}, color={0,0,255}));
-    connect(p1,circuit1.p1) annotation(Line(visible=true, origin={-82.75,45.0}, points={{-17.25,5.0},{4.75,5.0},{4.75,-5.0},{7.75,-5.0}}, color={0,0,255}));
-  end CircuitL2;
 
   model CircuitL5
     extends Modelica.Electrical.Analog.Interfaces.TwoPort;
