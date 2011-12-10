@@ -1191,7 +1191,7 @@ QString OMCProxy::getNthInheritedClass(QString className, int num)
 QList<ComponentsProperties*> OMCProxy::getComponents(QString className)
 {
     QString result;
-    QString expression = "getComponents(" + className + ")";
+    QString expression = "getComponents(" + className + ", useQuotes = true)";
     // check the expression in CommandsMap
     QString expressionResult = getCommandFromMap(expression);
     if (expressionResult.isEmpty())
