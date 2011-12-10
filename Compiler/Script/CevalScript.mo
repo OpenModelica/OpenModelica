@@ -4744,7 +4744,7 @@ end getAnnotationsInClassParts;
 
 protected function getAnnotationsInElementItems
 "function: getAnnotationsInElementItems
-  Helper function to getAnnotationsInClassParts"
+  Helper function to getAnnotationCount"
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   output Integer outInteger;
 algorithm
@@ -4767,8 +4767,8 @@ algorithm
 end getAnnotationsInElementItems;
 
 protected function getAnnotationsInEquationsItems
-"function: getAnnotationsInElementItems
-  Helper function to getAnnotationsInClassParts"
+"function: getAnnotationsInEquationsItems
+  Helper function to getAnnotationCount"
   input list<Absyn.EquationItem> inAbsynEquationItemLst;
   output Integer outInteger;
 algorithm
@@ -4791,8 +4791,8 @@ algorithm
 end getAnnotationsInEquationsItems;
 
 protected function getAnnotationsInAlgorithmsItems
-"function: getAnnotationsInElementItems
-  Helper function to getAnnotationsInClassParts"
+"function: getAnnotationsInAlgorithmsItems
+  Helper function to getAnnotationCount"
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
   output Integer outInteger;
 algorithm
@@ -4842,8 +4842,7 @@ end getNthAnnotationString;
 
 protected function getNthAnnotationStringInClassParts
 "function: getNthAnnotationStringInClassParts
-  This function takes a `ClassPart\' list and an int and returns
-  the nth annotation string."
+  Helper function to getNthAnnotationString"
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   input Integer inInteger;
   output String outString;
@@ -4953,7 +4952,7 @@ protected function getNthAnnotationStringInElements
    This function takes an Element list and an int
    and returns the nth annotation as string.
    If the number is larger than the number of annotations
-   in the list, the function fails."
+   in the list, the function fails. Helper function to getNthAnnotationString."
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input Integer inInteger;
   output String outString;
@@ -4991,7 +4990,7 @@ protected function getNthAnnotationStringInEquations
    This function takes  an Equation list and an int
    and returns the nth connection as an Equation.
    If the number is larger than the number of connections
-   in the list, the function fails."
+   in the list, the function fails. Helper function to getNthAnnotationString."
   input list<Absyn.EquationItem> inAbsynEquationItemLst;
   input Integer inInteger;
   output String outString;
@@ -5029,7 +5028,7 @@ protected function getNthAnnotationStringInAlgorithms
    This function takes an Algorithm list and an int
    and returns the nth annotation as String.
    If the number is larger than the number of annotations
-   in the list, the function fails."
+   in the list, the function fails. Helper function to getNthAnnotationString."
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
   input Integer inInteger;
   output String outString;

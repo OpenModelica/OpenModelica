@@ -1390,6 +1390,7 @@ algorithm
       Absyn.Class cls,refactoredClass;
       list<DAE.Exp> simOptions;
       Absyn.ClassDef cdef;
+      Absyn.Within within_;
 
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation
@@ -1580,7 +1581,9 @@ algorithm
       equation
         matchApiFunction(istmts, "getComponents");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
-        (resstr,st) = getComponents(cr, st);
+        nargs = getApiFunctionNamedArgs(istmts);
+        b1 = useQuotes(nargs);
+        (resstr,st) = getComponents(cr, b1, st);
       then
         (resstr,st);
 
@@ -1613,6 +1616,14 @@ algorithm
         matchApiFunction(istmts, "getNthComponentModification");
         {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
         resstr = getNthComponentModification(cr, p, n);
+      then
+        (resstr,st);
+        
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "getNthComponentCondition");
+        {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
+        resstr = getNthComponentCondition(cr, p, n);
       then
         (resstr,st);
 
@@ -1940,7 +1951,6 @@ algorithm
         matchApiFunction(istmts, "getClassComment");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         path = Absyn.crefToPath(cr);
-        cls = getPathedClassInProgram(path, p);
         Absyn.CLASS(_,_,_,_,_,cdef,_) = getPathedClassInProgram(path, p);
         resstr = getClassComment(cdef);
       then
@@ -2062,6 +2072,36 @@ algorithm
           getApiFunctionArgs(istmts);
         b1 = isConstant(cr, class_, p);
         resstr = boolString(b1);
+      then
+        (resstr,st);
+        
+   case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "isEnumeration");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
+        path = Absyn.crefToPath(cr);
+        cls = getPathedClassInProgram(path, p);
+        b1 = isEnumeration(cls);
+        resstr = boolString(b1);
+      then
+        (resstr,st);
+        
+   case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "isReplaceable");
+        {Absyn.CREF(componentRef = class_), Absyn.STRING(value = name)} = getApiFunctionArgs(istmts);
+        b1 = isReplaceable(class_, name, p);
+        resstr = boolString(b1);
+      then
+        (resstr,st);
+   
+   case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "getEnumerationLiterals");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
+        path = Absyn.crefToPath(cr);
+        cls = getPathedClassInProgram(path, p);
+        resstr = getEnumLiterals(cls);
       then
         (resstr,st);
 
@@ -5363,7 +5403,7 @@ algorithm
     case (Absyn.COMPONENTS(attributes = attr,typeSpec = typeSpec,components = lst))
       equation
         typename = Dump.unparseTypeSpec(typeSpec);
-        names = getComponentitemsName(lst);
+        names = getComponentitemsName(lst,false);
         flowPrefixstr = attrFlowStr(attr);
         streamPrefixstr = attrStreamStr(attr);
         variability_str = attrVariabilityStr(attr);
@@ -8717,6 +8757,134 @@ algorithm
   end matchcontinue;
 end isConstant;
 
+protected function isEnumeration
+"function: isEnumeration
+   It returns true if the refrenced class has the restriction
+   \"type\" and is an \"Enumeration\", otherwise it returns false."
+  input Absyn.Class inClass;
+  output Boolean outBoolean;
+algorithm
+  outBoolean:= match (inClass)
+    local
+    case (Absyn.CLASS(restriction = Absyn.R_TYPE(), body = Absyn.ENUMERATION(_,_)))
+      then
+        true;
+    case (_) then false;
+  end match;
+end isEnumeration;
+
+protected function isReplaceable
+"function: isReplaceable
+  Returns true if the class referenced by inString within inComponentRef1 is replaceable.
+  Only look to Element Items of inComponentRef1 for components use getComponents."
+  input Absyn.ComponentRef inComponentRef1;
+  input String inString;
+  input Absyn.Program inProgram;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (inComponentRef1,inString,inProgram)
+    local
+      Absyn.Path modelpath;
+      Boolean res, public_res, protected_res;
+      String element_name,str;
+      list<Absyn.ClassPart> parts;
+      list<Absyn.ElementItem> public_elementitem_list, protected_elementitem_list;
+      Absyn.ComponentRef model_;
+      Absyn.Program p;
+    /* a class with parts */
+    case (model_,str,p)
+      equation
+        modelpath = Absyn.crefToPath(model_);
+        Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(classParts=parts),_) = getPathedClassInProgram(modelpath, p);
+        public_elementitem_list = getPublicList(parts);
+        protected_elementitem_list = getProtectedList(parts);
+        public_res = isReplaceableInElements(public_elementitem_list, str);
+        res = Util.if_(public_res, true, false);
+        protected_res = isReplaceableInElements(protected_elementitem_list, str);
+        res = Util.if_(protected_res, true, false);
+      then
+        res;
+    case (_,_,_) then false;
+  end matchcontinue;
+end isReplaceable;
+
+protected function isReplaceableInElements
+"function: isReplaceableInElements
+  Helper function to isReplaceable."
+  input list<Absyn.ElementItem> inAbsynElementItemLst;
+  input String inString;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (inAbsynElementItemLst, inString)
+    local
+      String str;
+      Boolean res;
+      Absyn.ElementItem current;
+      list<Absyn.ElementItem> rest;
+    case ({}, _) then false;
+    case ((current :: {}), str) /* deal with the last element */
+      equation
+        res = isReplaceableInElement(current, str);
+      then
+        res;
+    case ((current :: rest), str)
+      equation
+        res = isReplaceableInElements(rest, str);
+      then
+        res;
+  end matchcontinue;
+end isReplaceableInElements;
+
+protected function isReplaceableInElement
+"function: isReplaceableInElement
+  Helper function to isReplaceable."
+  input Absyn.ElementItem inElementItem;
+  input String inString;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (inElementItem, inString)
+    local
+      Boolean res;
+      String str,id;
+      Option<Absyn.RedeclareKeywords> r;
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(redeclareKeywords = r,specification = Absyn.CLASSDEF(class_ = Absyn.CLASS(name = id))))), str) /* ok, first see if is a classdef if is not a classdef, just follow the normal stuff */
+      equation
+        true = stringEq(id,str);
+        res = keywordReplaceable(r);
+      then
+        res;
+    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(redeclareKeywords = r,name = id))), str)
+      equation
+        true = stringEq(id,str);
+        res = keywordReplaceable(r);
+      then
+        res;
+    case (_,_) then false;  /* for annotations we don\'t care */
+  end matchcontinue;
+end isReplaceableInElement;
+
+protected function getEnumLiterals
+"function: getEnumLiterals
+  Returns the enum literals as a list of string."
+  input Absyn.Class inClass;
+  output String outString;
+algorithm
+  outString:= match (inClass)
+    local
+      list<Absyn.EnumLiteral> literals;
+      String str;
+      list<String> enumList;
+    case (Absyn.CLASS(restriction = Absyn.R_TYPE(), body = Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(enumLiterals = literals))))
+      equation
+        enumList = List.map(literals, getEnumerationLiterals);
+        str = stringDelimitList(enumList, ",");
+        str = stringAppendList({"{",str,"}"});
+      then
+        str;
+    case (_) then "";
+  end match;
+end getEnumLiterals;
+
 protected function getElementitemContainsName
 "function: getElementitemContainsName
   Returns the element that has the component name given as argument."
@@ -10624,16 +10792,36 @@ algorithm
   end matchcontinue;
 end getNthComponent2;
 
+protected function useQuotes
+  input list<Absyn.NamedArg> inAbsynNamedArgLst;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (inAbsynNamedArgLst)
+    local
+      Absyn.NamedArg a;
+      list<Absyn.NamedArg> al;
+      Boolean b,res;
+    case ({}) then false;
+    case ((Absyn.NAMEDARG(argName = "useQuotes",argValue = Absyn.BOOL(value = b)) :: _)) then b;
+    case ((a :: al))
+      equation
+        res = useQuotes(al);
+      then
+        res;
+  end matchcontinue;
+end useQuotes;
+
 public function getComponents
 "function: getComponents
    This function takes a `ComponentRef\', a `Program\' and an int and  returns
    a list of all components, as returned by get_nth_component."
   input Absyn.ComponentRef cr;
+  input Boolean inBoolean;
   input SymbolTable st;
   output String outString;
   output SymbolTable outSt;
 algorithm
-  (outString,outSt) := getComponents2(cr,st);
+  (outString,outSt) := getComponents2(cr,inBoolean,st);
 end getComponents;
 
 protected function getComponents2
@@ -10641,11 +10829,12 @@ protected function getComponents2
    This function takes a `ComponentRef\', a `Program\' and an int and  returns
    a list of all components, as returned by get_nth_component."
   input Absyn.ComponentRef inComponentRef;
+  input Boolean inBoolean;
   input SymbolTable st;
   output String outString;
   output SymbolTable outSt;
 algorithm
-  (outString,outSt) := matchcontinue (inComponentRef,st)
+  (outString,outSt) := matchcontinue (inComponentRef,inBoolean,st)
     local
       Absyn.Path modelpath;
       Absyn.Class cdef;
@@ -10660,8 +10849,9 @@ algorithm
       Absyn.ComponentRef model_;
       Absyn.Program p;
       Env.Cache cache;
+      Boolean b;
 
-    case (model_,st as SYMBOLTABLE(ast=p))
+    case (model_,b,st as SYMBOLTABLE(ast=p))
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
@@ -10674,14 +10864,14 @@ algorithm
           Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(),
             Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {});
         comps1 = getPublicComponentsInClass(cdef);
-        s1 = getComponentsInfo(comps1, "\"public\"", env_2);
+        s1 = getComponentsInfo(comps1, b, "\"public\"", env_2);
         comps2 = getProtectedComponentsInClass(cdef);
-        s2 = getComponentsInfo(comps2, "\"protected\"", env_2);
+        s2 = getComponentsInfo(comps2, b, "\"protected\"", env_2);
         str = Util.stringDelimitListNonEmptyElts({s1,s2}, ",");
         res = stringAppendList({"{",str,"}"});
       then
         (res,st);
-    case (_,_) then ("Error",st);
+    case (_,_,_) then ("Error",st);
   end matchcontinue;
 end getComponents2;
 
@@ -10786,6 +10976,79 @@ algorithm
     case (_,_,_) then "Error";
   end matchcontinue;
 end getNthComponentModification;
+
+protected function getNthComponentCondition
+"function: getNthComponentCondition
+  This function takes a `ComponentRef\', a `Program\' and an int and
+  returns a component condition."
+  input Absyn.ComponentRef inComponentRef;
+  input Absyn.Program inProgram;
+  input Integer inInteger;
+  output String outString;
+algorithm
+  outString:=
+  matchcontinue (inComponentRef,inProgram,inInteger)
+    local
+      Absyn.Path modelpath;
+      Absyn.Class cdef;
+      Absyn.Element comp;
+      String str,str_1;
+      Absyn.ComponentRef model_;
+      Absyn.Program p;
+      Integer n;
+    case (model_,p,n)
+      equation
+        modelpath = Absyn.crefToPath(model_);
+        cdef = getPathedClassInProgram(modelpath, p);
+        comp = getNthComponentInClass(cdef, n);
+        str = getComponentCondition(comp);
+        str = System.trim(str, " ");
+        str_1 = stringAppendList({"\"",str,"\""});
+      then
+        str_1;
+    case (_,_,_) then "Error";
+  end matchcontinue;
+end getNthComponentCondition;
+
+protected function getComponentCondition
+"function: getComponentCondition
+   Helper function to getNthComponentCondition."
+  input Absyn.Element inElement;
+  output String outString;
+algorithm
+  outString:=
+  matchcontinue (inElement)
+    local
+      String str;
+      list<Absyn.ComponentItem> lst;
+    case (Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = lst),constrainClass = NONE()))
+      equation
+        str = getComponentitemsCondition(lst);
+      then
+        str;
+    case _ then "";
+  end matchcontinue;
+end getComponentCondition;
+
+protected function getComponentitemsCondition
+"function: getComponentitemsCondition
+  Helper function to getNthComponentCondition."
+  input list<Absyn.ComponentItem> inAbsynComponentItemLst;
+  output String outString;
+algorithm
+  outString:=
+  matchcontinue (inAbsynComponentItemLst)
+    local
+      String s1,s2,res,str;
+      Option<Absyn.ComponentCondition> cond;
+      list<Absyn.ComponentItem> rest;
+    case ({(Absyn.COMPONENTITEM(condition = cond))})
+      equation
+        res = Dump.unparseComponentCondition(cond);
+      then
+        res;
+  end matchcontinue;
+end getComponentitemsCondition;
 
 protected function getConnectionCount "function: getConnectionCount
 
@@ -11072,7 +11335,7 @@ algorithm
 end deleteEquationInEqlist;
 
 protected function getComponentComment
-"function: setComponentComment
+"function: getComponentComment
   Get the component commment."
   input Absyn.ComponentRef inComponentRef1;
   input Absyn.ComponentRef inComponentRef2;
@@ -11082,17 +11345,14 @@ algorithm
   (outString) :=  match (inComponentRef1,inComponentRef2,inProgram4)
     local
       Absyn.Path p_class;
-      Absyn.Within within_;
       Absyn.Class cdef;
       Absyn.Program p;
       Absyn.ComponentRef class_,cr1;
       String cmt;
       Absyn.TimeStamp ts;
-
     case (class_,cr1,p as Absyn.PROGRAM(globalBuildTimes=ts))
       equation
         p_class = Absyn.crefToPath(class_);
-        within_ = buildWithin(p_class);
         cdef = getPathedClassInProgram(p_class, p);
         cmt = getComponentCommentInClass(cdef, cr1);
       then
@@ -11101,6 +11361,8 @@ algorithm
 end getComponentComment;
 
 protected function getComponentCommentInClass
+"function: getComponentCommentInClass
+  Helper function to getComponentComment."
   input Absyn.Class inClass;
   input Absyn.ComponentRef inComponentRef;
   output String outString;
@@ -11126,6 +11388,8 @@ algorithm
 end getComponentCommentInClass;
 
 protected function getComponentCommentInParts
+"function: getComponentCommentInParts
+  Helper function to getComponentComment."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   input Absyn.ComponentRef inComponentRef;
   output String outString;
@@ -11166,6 +11430,8 @@ algorithm
 end getComponentCommentInParts;
 
 protected function getComponentCommentInElementitems
+"function: getComponentCommentInElementitems
+  Helper function to getComponentComment."
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input Absyn.ComponentRef inComponentRef;
   output String outString;
@@ -11196,6 +11462,8 @@ algorithm
 end getComponentCommentInElementitems;
 
 protected function getComponentCommentInElementspec
+"function: getComponentCommentInElementspec
+  Helper function to getComponentComment."
   input Absyn.ElementSpec inElementSpec;
   input Absyn.ComponentRef inComponentRef;
   output String outString;
@@ -11216,6 +11484,8 @@ algorithm
 end getComponentCommentInElementspec;
 
 protected function getComponentCommentInCompitems
+"function: getComponentCommentInCompitems
+  Helper function to getComponentComment."
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
   input Absyn.ComponentRef inComponentRef;
   output String outString;
@@ -11245,6 +11515,8 @@ algorithm
 end getComponentCommentInCompitems;
 
 protected function getClassCommentInCommentOpt
+"function: getClassCommentInCommentOpt
+  Helper function to getComponentComment."
   input Option<Absyn.Comment> inAbsynCommentOption;
   output String outString;
 algorithm
@@ -15074,12 +15346,13 @@ protected function getComponentInfo
    inputs: (Absyn.Element, string, /* public or protected */, Env.Env)
    outputs: string list"
   input Absyn.Element inElement;
+  input Boolean inBoolean;
   input String inString;
   input Env.Env inEnv;
   output list<String> outStringLst;
 algorithm
   outStringLst:=
-  matchcontinue (inElement,inString,inEnv)
+  matchcontinue (inElement,inBoolean,inString,inEnv)
     local
       SCode.Element c;
       list<Env.Frame> env_1,env;
@@ -15088,7 +15361,7 @@ algorithm
       String typeAdStr;
       list<Absyn.ComponentItem> lst;
       list<String> names,lst_1,dims,strLst;
-      Boolean r_1,f;
+      Boolean r_1,f,b;
       Option<Absyn.RedeclareKeywords> r;
       Absyn.InnerOuter inout;
       Absyn.ElementAttributes attr;
@@ -15096,66 +15369,66 @@ algorithm
 
     case (Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,
                         specification = Absyn.COMPONENTS(attributes = attr,typeSpec = Absyn.TPATH(p, typeAd),components = lst)),
-          access,env)
+          b,access,env)
       equation
         (_,c,env_1) = Lookup.lookupClass(Env.emptyCache(),env, p, true);
         SOME(envpath) = Env.getEnvPath(env_1);
         tpname = Absyn.pathLastIdent(p);
         p_1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
         typename = Absyn.pathString(p_1);
-        typename = stringAppendList({"\"",typename,"\""});
-        names = getComponentitemsName(lst);
+        typename = Util.if_(b,stringAppendList({"\"",typename,"\""}),typename);
+        names = getComponentitemsName(lst,b);
         dims = getComponentitemsDimension(lst);
         strLst = prefixTypename(typename, names);
         finalPrefix = boolString(f);
-        finalPrefix = stringAppendList({"\"",finalPrefix,"\""});
+        finalPrefix = Util.if_(b,stringAppendList({"\"",finalPrefix,"\""}),finalPrefix);
         r_1 = keywordReplaceable(r);
         repl = boolString(r_1);
-        repl = stringAppendList({"\"",repl,"\""});
+        repl = Util.if_(b,stringAppendList({"\"",repl,"\""}),repl);
         inout_str = innerOuterStr(inout);
         flowPrefixstr = attrFlowStr(attr);
-        flowPrefixstr = stringAppendList({"\"",flowPrefixstr,"\""});
+        flowPrefixstr = Util.if_(b,stringAppendList({"\"",flowPrefixstr,"\""}),flowPrefixstr);
         streamPrefixstr = attrStreamStr(attr);
-        streamPrefixstr = stringAppendList({"\"",streamPrefixstr,"\""});
+        streamPrefixstr = Util.if_(b,stringAppendList({"\"",streamPrefixstr,"\""}),streamPrefixstr);
         variability_str = attrVariabilityStr(attr);
         dir_str = attrDirectionStr(attr);
         typeAdStr = arrayDimensionStr(typeAd);
         typeAdStr =  attrDimensionStr(attr);
         str = stringDelimitList({access,finalPrefix,flowPrefixstr,streamPrefixstr,repl,variability_str,inout_str,dir_str}, ", ");
-        lst_1 = suffixInfos(strLst,dims,typeAdStr,str);
+        lst_1 = suffixInfos(strLst,dims,typeAdStr,str,b);
       then
         lst_1;
 
     case (Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,
                         specification = Absyn.COMPONENTS(attributes = attr,typeSpec = Absyn.TPATH(p, typeAd),components = lst)),
-          access,env)
+          b,access,env)
       equation
         typename = Absyn.pathString(p);
-        typename = stringAppendList({"\"",typename,"\""});
-        names = getComponentitemsName(lst);
+        typename = Util.if_(b,stringAppendList({"\"",typename,"\""}),typename);
+        names = getComponentitemsName(lst,b);
         dims = getComponentitemsDimension(lst);
         strLst = prefixTypename(typename, names);
         finalPrefix = boolString(f);
-        finalPrefix = stringAppendList({"\"",finalPrefix,"\""});
+        finalPrefix = Util.if_(b,stringAppendList({"\"",finalPrefix,"\""}),finalPrefix);
         r_1 = keywordReplaceable(r);
         repl = boolString(r_1);
-        repl = stringAppendList({"\"",repl,"\""});
+        repl = Util.if_(b,stringAppendList({"\"",repl,"\""}),repl);
         inout_str = innerOuterStr(inout);
         flowPrefixstr = attrFlowStr(attr);
-        flowPrefixstr = stringAppendList({"\"",flowPrefixstr,"\""});
+        flowPrefixstr = Util.if_(b,stringAppendList({"\"",flowPrefixstr,"\""}),flowPrefixstr);
         streamPrefixstr = attrStreamStr(attr);
-        streamPrefixstr = stringAppendList({"\"",streamPrefixstr,"\""});
+        streamPrefixstr = Util.if_(b,stringAppendList({"\"",streamPrefixstr,"\""}),streamPrefixstr);
         variability_str = attrVariabilityStr(attr);
         dir_str = attrDirectionStr(attr);
         str = stringDelimitList({access,finalPrefix,flowPrefixstr,streamPrefixstr,repl,variability_str,inout_str,dir_str}, ", ");
         typeAdStr =  attrDimensionStr(attr);
-        lst_1 = suffixInfos(strLst,dims,typeAdStr,str);
+        lst_1 = suffixInfos(strLst,dims,typeAdStr,str,b);
       then
         lst_1;
 
-    case (_,_,env) then {};
+    case (_,_,_,env) then {};
 
-    case (_,_,_)
+    case (_,_,_,_)
       equation
         print("Interactive.getComponentInfo failed\n");
       then
@@ -15196,25 +15469,27 @@ protected function getComponentsInfo
   inputs:  (Absyn.Element list, string /* \"public\" or \"protected\" */, Env.Env)
   outputs:  string"
   input list<Absyn.Element> inAbsynElementLst;
+  input Boolean inBoolean;
   input String inString;
   input Env.Env inEnv;
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inAbsynElementLst,inString,inEnv)
+  matchcontinue (inAbsynElementLst,inBoolean,inString,inEnv)
     local
       list<String> lst;
       String lst_1,res,access;
       list<Absyn.Element> elts;
       list<Env.Frame> env;
-    case (elts,access,env)
+      Boolean b;
+    case (elts,b,access,env)
       equation
-        ((lst as (_ :: _))) = getComponentsInfo2(elts, access, env);
+        ((lst as (_ :: _))) = getComponentsInfo2(elts, inBoolean, access, env);
         lst_1 = stringDelimitList(lst, "},{");
         res = stringAppendList({"{",lst_1,"}"});
       then
         res;
-    case (_,_,_) then "";
+    case (_,_,_,_) then "";
   end matchcontinue;
 end getComponentsInfo;
 
@@ -15224,23 +15499,25 @@ protected function getComponentsInfo2
   inputs: (Absyn.Element list, string /* \"public\" or \"protected\" */, Env.Env)
   outputs: string list"
   input list<Absyn.Element> inAbsynElementLst;
+  input Boolean inBoolean;
   input String inString;
   input Env.Env inEnv;
   output list<String> outStringLst;
 algorithm
   outStringLst:=
-  match (inAbsynElementLst,inString,inEnv)
+  match (inAbsynElementLst,inBoolean,inString,inEnv)
     local
       list<String> lst1,lst2,res;
       Absyn.Element elt;
       list<Absyn.Element> rest;
       String access;
       list<Env.Frame> env;
-    case ({},_,_) then {};
-    case ((elt :: rest),access,env)
+      Boolean b;
+    case ({},_,_,_) then {};
+    case ((elt :: rest),b,access,env)
       equation
-        lst1 = getComponentInfo(elt, access, env);
-        lst2 = getComponentsInfo2(rest, access, env);
+        lst1 = getComponentInfo(elt, b, access, env);
+        lst2 = getComponentsInfo2(rest, b, access, env);
         res = listAppend(lst1, lst2);
       then
         res;
@@ -15295,7 +15572,7 @@ algorithm
         tpname = Absyn.pathLastIdent(p);
         p_1 = Absyn.joinPaths(envpath, Absyn.IDENT(tpname));
         typename = Absyn.pathString(p_1);
-        names = getComponentitemsName(lst);
+        names = getComponentitemsName(lst,false);
         strList = prefixTypename(typename, names);
       then
         strList;
@@ -15305,7 +15582,7 @@ algorithm
           env)
       equation
         typename = Absyn.pathString(p);
-        names = getComponentitemsName(lst);
+        names = getComponentitemsName(lst,false);
         strList = prefixTypename(typename, names);
       then
         strList;
@@ -15437,12 +15714,12 @@ algorithm
       Absyn.ArrayDim ad;
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(arrayDim=ad))) :: (c2 :: rest))
       equation
-        lst = getComponentitemsName((c2 :: rest));
+        lst = getComponentitemsName((c2 :: rest),false);
         str = stringDelimitList(List.map(ad,Dump.printSubscriptStr),",");
       then (str :: lst);
     case ((_ :: rest))
       equation
-        res = getComponentitemsName(rest);
+        res = getComponentitemsName(rest,false);
       then
         res;
     case ({Absyn.COMPONENTITEM(component = Absyn.COMPONENT(arrayDim = ad))})
@@ -15462,20 +15739,22 @@ protected function suffixInfos
   input list<String> dims;
   input String typeAd;
   input String suffix;
+  input Boolean inBoolean;
   output list<String> outStringLst;
 algorithm
   outStringLst:=
-  match (eltInfo,dims,typeAd,suffix)
+  match (eltInfo,dims,typeAd,suffix,inBoolean)
     local
       list<String> res,rest;
       String str_1,str;
       String dim,s1;
-    case ({},{},_,_) then {};
-    case ((str :: rest),dim::dims,typeAd,suffix)
+      Boolean b;
+    case ({},{},_,_,_) then {};
+    case ((str :: rest),dim::dims,typeAd,suffix,b)
       equation
-        res = suffixInfos(rest, dims,typeAd,suffix);
+        res = suffixInfos(rest, dims,typeAd,suffix,b);
         s1 = Util.stringDelimitListNonEmptyElts({dim,typeAd},",");
-        str_1 = stringAppendList({str,", ",suffix,",\"{",s1,"}\""});
+        str_1 = Util.if_(b,stringAppendList({str,", ",suffix,",\"{",s1,"}\""}),stringAppendList({str,", ",suffix,",{",s1,"}"}));
       then
         (str_1 :: res);
   end match;
@@ -15508,43 +15787,45 @@ public function getComponentitemsName
    This function takes a ComponentItems list and returns a comma
    separated list of all component names and comments (if any)."
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
+  input Boolean inBoolean;
   output list<String> outStringLst;
 algorithm
   outStringLst:=
-  matchcontinue (inAbsynComponentItemLst)
+  matchcontinue (inAbsynComponentItemLst,inBoolean)
     local
       String str,c1,s2;
       list<String> lst,res;
       Absyn.ComponentItem c2;
       list<Absyn.ComponentItem> rest;
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = SOME(Absyn.COMMENT(_,SOME(s2)))) :: (c2 :: rest)))
+      Boolean b;
+    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = SOME(Absyn.COMMENT(_,SOME(s2)))) :: (c2 :: rest)),b)
       equation
-        lst = getComponentitemsName((c2 :: rest));
-        str = stringAppendList({"\"", c1, "\"", ",", "\"", s2, "\""});
+        lst = getComponentitemsName((c2 :: rest),b);
+        str = Util.if_(b,stringAppendList({"\"", c1, "\"", ",", "\"", s2, "\""}),stringAppendList({c1, ",", "\"", s2, "\""}));
       then
         (str :: lst);
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = NONE()) :: (c2 :: rest)))
+    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = NONE()) :: (c2 :: rest)),b)
       equation
-        lst = getComponentitemsName((c2 :: rest));
-        str = stringAppendList({"\"", c1, "\"", ",", "\"\""});
+        lst = getComponentitemsName((c2 :: rest),b);
+        str = Util.if_(b,stringAppendList({"\"", c1, "\"", ",", "\"\""}),stringAppendList({c1, ",", "\"\""}));
       then
         (str :: lst);
-    case ((_ :: rest))
+    case ((_ :: rest),b)
       equation
-        res = getComponentitemsName(rest);
+        res = getComponentitemsName(rest,b);
       then
         res;
-    case ({Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = SOME(Absyn.COMMENT(_,SOME(s2))))})
+    case ({Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = SOME(Absyn.COMMENT(_,SOME(s2))))},b)
       equation
-        str = stringAppendList({"\"", c1, "\"", ",\"", s2, "\""});
+        str = Util.if_(b,stringAppendList({"\"", c1, "\"", ",", "\"", s2, "\""}),stringAppendList({c1, ",", "\"", s2, "\""}));
       then
         {str};
-    case ({Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1))})
+    case ({Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1))},b)
       equation
-        str = stringAppendList({"\"", c1, "\"", ",\"\""});
+        str = Util.if_(b,stringAppendList({"\"", c1, "\"", ",", "\"\""}),stringAppendList({c1, ",", "\"\""}));
       then
         {str};
-    case ({_}) then {};
+    case ({_},_) then {};
   end matchcontinue;
 end getComponentitemsName;
 
@@ -18248,7 +18529,11 @@ algorithm
   out := matchcontinue el
   local
     String out;
-    case Absyn.ENUMLITERAL(literal = out) then out;
+    case Absyn.ENUMLITERAL(literal = out)
+      equation
+        out = stringAppendList({"\"",out,"\""});
+      then
+        out;
   end matchcontinue;
 end getEnumerationLiterals;
 
@@ -18467,7 +18752,7 @@ algorithm
     case (Absyn.COMPONENTS(attributes = attr,typeSpec = typeSpec,components = lst))
       equation
 //        str = Dump.unparseTypeSpec(typeSpec);
-        names = getComponentitemsName(lst);
+        names = getComponentitemsName(lst,false);
         str = stringDelimitList(names, ", ");
         //print("names: " +& str +& "\n");
       then
