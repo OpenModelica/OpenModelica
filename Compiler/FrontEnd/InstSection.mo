@@ -4590,7 +4590,7 @@ algorithm
         true = Config.acceptMetaModelicaGrammar();
         ty = Types.getPropType(prop);
         (e_1,ty) = Types.convertTupleToMetaTuple(e_1,ty);
-        (cache,pattern) = Patternm.elabPattern(cache,env,left,ty,info);
+        (cache,pattern) = Patternm.elabPattern(cache,env,left,ty,info,Patternm.bDisallowTopLevelInputs);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = DAE.STMT_ASSIGN(DAE.T_UNKNOWN_DEFAULT,DAE.PATTERN(pattern),e_1,source);
       then (cache,{stmt});

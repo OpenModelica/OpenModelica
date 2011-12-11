@@ -698,6 +698,8 @@ public constant Message UNSUPPORTED_REDUCTION_TYPE = MESSAGE(5031, TRANSLATION()
   "Expected a reduction function with type signature ('A,'B) => 'B, but got %s.");
 public constant Message MATCH_SHADOWING_OPTIMIZER = MESSAGE(5032, TRANSLATION(), WARNING(),
   "Cannot optimize function due to a local variable having the same name as an input variable: %s.");
+public constant Message META_ASSIGNMENT_TO_INPUT = MESSAGE(5033, TRANSLATION(), WARNING(),
+  "Input variable %s is assigned! This is not allowed.");
 public constant Message COMPILER_ERROR = MESSAGE(5999, TRANSLATION(), ERROR(),
   "%s");
 public constant Message COMPILER_WARNING = MESSAGE(6000, TRANSLATION(), WARNING(),
