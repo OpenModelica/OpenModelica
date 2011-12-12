@@ -41,7 +41,7 @@
 extern "C" {
 #endif
 
-typedef struct RINGBUFFER
+typedef struct
 {
 	void* buffer;
 	int item_size;
@@ -50,15 +50,15 @@ typedef struct RINGBUFFER
 	int buf_size;
 }RINGBUFFER;
 
-void allocRingBuffer(RINGBUFFER* rb, int sz, int item_size);
-void freeRingBuffer(RINGBUFFER* rb);
+extern void allocRingBuffer(RINGBUFFER* rb, int sz, int item_size);
+extern void freeRingBuffer(RINGBUFFER* rb);
 
-void* getRingData(RINGBUFFER* rb, int nIndex);
+extern void* getRingData(RINGBUFFER* rb, int nIndex);
 
-void appendRingData(RINGBUFFER* rb, void* value);
-void dequeueNFirstRingDatas(RINGBUFFER* rb, int n);
+extern void appendRingData(RINGBUFFER* rb, void* value);
+extern void dequeueNFirstRingDatas(RINGBUFFER* rb, int n);
 
-int ringBufferLength(RINGBUFFER* rb);
+extern int ringBufferLength(const RINGBUFFER* rb);
 
 #ifdef __cplusplus
 }

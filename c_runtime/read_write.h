@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -93,54 +93,54 @@ struct type_desc_s {
   } data;
 };
 
-void init_type_description(type_description *);
-void free_type_description(type_description *);
+extern void init_type_description(type_description * desc);
+extern void free_type_description(type_description * desc);
 
-int read_modelica_real(type_description **, modelica_real *);
-int read_real_array(type_description **, real_array_t *);
-void write_modelica_real(type_description *, modelica_real *);
-void write_real_array(type_description *, real_array_t *);
+extern int read_modelica_real(type_description ** descptr, modelica_real * data);
+extern int read_real_array(type_description ** descptr, real_array_t *arr);
+extern void write_modelica_real(type_description *desc, const modelica_real *data);
+extern void write_real_array(type_description *desc, const real_array_t *arr);
 
-int read_modelica_integer(type_description **, modelica_integer *);
-int read_integer_array(type_description **, integer_array_t *);
-void write_modelica_integer(type_description *, modelica_integer *);
-void write_integer_array(type_description *, integer_array_t *);
+extern int read_modelica_integer(type_description **descptr, modelica_integer *data);
+extern int read_integer_array(type_description ** descptr, integer_array_t *arr);
+extern void write_modelica_integer(type_description *desc, const modelica_integer *data);
+extern void write_integer_array(type_description *desc, const integer_array_t *arr);
 
-int read_modelica_boolean(type_description **, modelica_boolean *);
-int read_boolean_array(type_description **, boolean_array_t *);
-void write_modelica_boolean(type_description *, modelica_boolean *);
-void write_boolean_array(type_description *, boolean_array_t *);
+extern int read_modelica_boolean(type_description **descptr, modelica_boolean *data);
+extern int read_boolean_array(type_description ** descptr, boolean_array_t *arr);
+extern void write_modelica_boolean(type_description *desc, const modelica_boolean *data);
+extern void write_boolean_array(type_description *desc, const boolean_array_t *arr);
 
-int read_modelica_string(type_description **, modelica_string_t *);
-int read_string_array(type_description **, string_array_t *);
-void write_modelica_string(type_description *, modelica_string *);
-void write_string_array(type_description *, string_array_t *);
+extern int read_modelica_string(type_description **descptr, modelica_string_t *str);
+extern int read_string_array(type_description ** descptr, string_array_t *arr);
+extern void write_modelica_string(type_description *desc, modelica_string *str);
+extern void write_string_array(type_description *desc, const string_array_t *arr);
 
-int read_modelica_complex(type_description **, modelica_complex *);
-void write_modelica_complex(type_description *, modelica_complex *);
+extern int read_modelica_complex(type_description **descptr, modelica_complex *data);
+extern void write_modelica_complex(type_description *desc, const modelica_complex *data);
 
 /* function pointer functions - added by stefan */
-int read_modelica_fnptr(type_description **, modelica_fnptr *);
-void write_modelica_fnptr(type_description *, modelica_fnptr *);
+extern int read_modelica_fnptr(type_description **descptr, modelica_fnptr *fn);
+extern void write_modelica_fnptr(type_description *desc, const modelica_fnptr *fn);
 
-int read_modelica_metatype(type_description **, modelica_metatype*);
-void write_modelica_metatype(type_description *, modelica_metatype*);
+extern int read_modelica_metatype(type_description **descptr, modelica_metatype*ut);
+extern void write_modelica_metatype(type_description *desc, const modelica_metatype*ut);
 
-int read_modelica_record(type_description **, ...);
-void write_modelica_record(type_description *, void *, ...);
+extern int read_modelica_record(type_description **descptr, ...);
+extern void write_modelica_record(type_description *desc, void *rec_desc_void, ...);
 
-void write_noretcall(type_description *);
+extern void write_noretcall(type_description *desc);
 
-type_description *add_modelica_record_member(type_description *desc,
+extern type_description *add_modelica_record_member(type_description *desc,
                                              const char *name, size_t nlen);
 
-type_description *add_tuple_member(type_description *desc);
+extern type_description *add_tuple_member(type_description *desc);
 
-char *my_strdup(const char *s);
+extern char *my_strdup(const char *s);
 
-int getMyBool(const type_description *desc);
+extern int getMyBool(const type_description *desc);
 
-void puttype(const type_description *desc);
+extern void puttype(const type_description *desc);
 
 #if defined(__cplusplus)
 }

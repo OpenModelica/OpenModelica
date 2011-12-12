@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -37,33 +37,36 @@
 #include <assert.h>
 #include <stdarg.h>
 
-modelica_boolean boolean_get(boolean_array_t *a, size_t i)
+modelica_boolean boolean_get(const boolean_array_t *a, size_t i)
 {
     return ((modelica_boolean *) a->data)[i];
 }
 
 /* Indexing 2 dimensions */
-modelica_boolean boolean_get_2D(boolean_array_t *a, size_t i, size_t j)
+modelica_boolean boolean_get_2D(const boolean_array_t *a, size_t i, size_t j)
 {
-  modelica_boolean value = boolean_get(a, i * a->dim_size[1] + j);
-  return value;
+    modelica_boolean value = boolean_get(a, (i * a->dim_size[1]) + j);
+    return value;
 }
 
 /* Indexing 3 dimensions */
-modelica_boolean boolean_get_3D(boolean_array_t *a, size_t i, size_t j, size_t k)
+modelica_boolean boolean_get_3D(const boolean_array_t *a, size_t i, size_t j, size_t k)
 {
-  modelica_boolean value = boolean_get(a, i * a->dim_size[1] + j * a->dim_size[2] + k);
-  return value;
+    modelica_boolean value = boolean_get(a, (i * a->dim_size[1] * a->dim_size[2])
+                                          + (j * a->dim_size[2]) + k);
+    return value;
 }
 
 /* Indexing 4 dimensions */
-modelica_boolean boolean_get_4D(boolean_array_t *a, size_t i, size_t j, size_t k, size_t l)
+modelica_boolean boolean_get_4D(const boolean_array_t *a, size_t i, size_t j, size_t k, size_t l)
 {
-  modelica_boolean value = boolean_get(a, i * a->dim_size[1] + j * a->dim_size[2] + k * a->dim_size[3] + l);
-  return value;
+    modelica_boolean value = boolean_get(a, (i * a->dim_size[1] * a->dim_size[2] * a->dim_size[3])
+                                          + (j * a->dim_size[2] * a->dim_size[3])
+                                          + (k * a->dim_size[3]) + l);
+    return value;
 }
 
-static inline modelica_boolean *boolean_ptrget(boolean_array_t *a, size_t i)
+static inline modelica_boolean *boolean_ptrget(const boolean_array_t *a, size_t i)
 {
     return ((modelica_boolean *) a->data) + i;
 }
@@ -112,7 +115,7 @@ void alloc_boolean_array_data(boolean_array_t* a)
     a->data = boolean_alloc(0,base_array_nr_of_elements(a));
 }
 
-void copy_boolean_array_data(boolean_array_t *source, boolean_array_t *dest)
+void copy_boolean_array_data(const boolean_array_t *source, boolean_array_t *dest)
 {
     size_t i, nr_of_elements;
 
@@ -127,7 +130,7 @@ void copy_boolean_array_data(boolean_array_t *source, boolean_array_t *dest)
     }
 }
 
-void copy_boolean_array_data_mem(boolean_array_t *source, modelica_boolean *dest)
+void copy_boolean_array_data_mem(const boolean_array_t *source, modelica_boolean *dest)
 {
     size_t i, nr_of_elements;
 
@@ -140,7 +143,7 @@ void copy_boolean_array_data_mem(boolean_array_t *source, modelica_boolean *dest
     }
 }
 
-void copy_boolean_array(boolean_array_t *source, boolean_array_t *dest)
+void copy_boolean_array(const boolean_array_t *source, boolean_array_t *dest)
 {
     clone_base_array_spec(source, dest);
     alloc_boolean_array_data(dest);
@@ -151,28 +154,28 @@ void copy_boolean_array(boolean_array_t *source, boolean_array_t *dest)
  a[1:3] := b;
 */
 
-static inline modelica_boolean *calc_boolean_index_spec(int ndims, _index_t* idx_vec,
-                                                        boolean_array_t *arr,
-                                                        index_spec_t *spec)
+static inline modelica_boolean *calc_boolean_index_spec(int ndims, const _index_t* idx_vec,
+                                                        const boolean_array_t *arr,
+                                                        const index_spec_t *spec)
 {
     return boolean_ptrget(arr, calc_base_index_spec(ndims, idx_vec, arr, spec));
 }
 
 /* Uses zero based indexing */
-modelica_boolean *calc_boolean_index(int ndims, _index_t *idx_vec,
-                                     boolean_array_t *arr)
+modelica_boolean *calc_boolean_index(int ndims, const _index_t *idx_vec,
+                                     const boolean_array_t *arr)
 {
     return boolean_ptrget(arr, calc_base_index(ndims, idx_vec, arr));
 }
 
 /* One based index*/
-modelica_boolean *calc_boolean_index_va(boolean_array_t *source, int ndims,
+modelica_boolean *calc_boolean_index_va(const boolean_array_t *source, int ndims,
                                         va_list ap)
 {
     return boolean_ptrget(source, calc_base_index_va(source, ndims, ap));
 }
 
-void print_boolean_matrix(boolean_array_t *source)
+void print_boolean_matrix(const boolean_array_t *source)
 {
     size_t i,j;
     modelica_boolean value;
@@ -181,7 +184,7 @@ void print_boolean_matrix(boolean_array_t *source)
         printf("%d X %d matrix:\n", (int) source->dim_size[0], (int) source->dim_size[1]);
         for (i = 0; i < source->dim_size[0]; ++i) {
             for (j = 0; j < source->dim_size[1]; ++j) {
-                value = boolean_get(source, i * source->dim_size[1] + j);
+                value = boolean_get(source, (i * source->dim_size[1]) + j);
                 printf("%c\t", value ? 'T' : 'F');
             }
             printf("\n");
@@ -191,7 +194,7 @@ void print_boolean_matrix(boolean_array_t *source)
     }
 }
 
-void print_boolean_array(boolean_array_t *source)
+void print_boolean_array(const boolean_array_t *source)
 {
     size_t i, j, k, n;
     modelica_boolean *data;
@@ -244,12 +247,12 @@ void put_boolean_matrix_element(m_boolean value, int r, int c,
 {
     /* Assert that dest hast correct dimension */
     /* Assert that r and c are valid indices */
-    boolean_set(dest, r * dest->dim_size[1] + c, value);
+    boolean_set(dest, (r * dest->dim_size[1]) + c, value);
     /* printf("Index %d\n",r*dest->dim_size[1]+c); */
 }
 
 /* Zero based index */
-void simple_indexed_assign_boolean_array1(boolean_array_t* source,
+void simple_indexed_assign_boolean_array1(const boolean_array_t* source,
                                           int i1,
                                           boolean_array_t* dest)
 {
@@ -258,25 +261,24 @@ void simple_indexed_assign_boolean_array1(boolean_array_t* source,
     boolean_set(dest, i1, boolean_get(source, i1));
 }
 
-void simple_indexed_assign_boolean_array2(boolean_array_t* source,
+void simple_indexed_assign_boolean_array2(const boolean_array_t* source,
                                           int i1, int i2,
                                           boolean_array_t* dest)
 {
     size_t index;
     /* Assert that source has correct dimension */
     /* Assert that dest has correct dimension */
-    index = i1 * source->dim_size[1] + i2;
+    index = (i1 * source->dim_size[1]) + i2;
     boolean_set(dest, index, boolean_get(source, index));
 }
 
-void indexed_assign_boolean_array(boolean_array_t* source,
+void indexed_assign_boolean_array(const boolean_array_t* source,
                                   boolean_array_t* dest,
-                                  index_spec_t* dest_spec)
+                                  const index_spec_t* dest_spec)
 {
     _index_t* idx_vec1;
     _index_t* idx_vec2;
     _index_t* idx_size;
-    int quit;
     int i,j;
     state mem_state;
 
@@ -284,8 +286,12 @@ void indexed_assign_boolean_array(boolean_array_t* source,
     assert(base_array_ok(dest));
     assert(index_spec_ok(dest_spec));
     assert(index_spec_fit_base_array(dest_spec, dest));
-    for (i = 0,j = 0; i < dest_spec->ndims; ++i)
-        if (dest_spec->dim_size[i] != 0) ++j;
+    j = 0;
+    for (i = 0; i < dest_spec->ndims; ++i) {
+        if (dest_spec->dim_size[i] != 0) {
+            ++j;
+        }
+    }
     assert(j == source->ndims);
 
     mem_state = get_memory_state();
@@ -294,20 +300,21 @@ void indexed_assign_boolean_array(boolean_array_t* source,
     idx_size = size_alloc(0,dest_spec->ndims);
 
     for (i = 0; i < dest_spec->ndims; ++i) {
-  idx_vec1[i] = 0;
+        idx_vec1[i] = 0;
 
-  if (dest_spec->index[i])
+        if (dest_spec->index[i] != NULL) {
             idx_size[i] = imax(dest_spec->dim_size[i],1);
-  else
+        } else {
             idx_size[i] = dest->dim_size[i];
+        }
     }
 
-    quit = 0;
-    while (1) {
-  for (i = 0, j = 0; i < dest_spec->ndims; ++i) {
-      if (dest_spec->dim_size[i] != 0) {
-    idx_vec2[j] = idx_vec1[i];
-    ++j;
+    do {
+        j = 0;
+        for (i = 0; i < dest_spec->ndims; ++i) {
+            if (dest_spec->dim_size[i] != 0) {
+                idx_vec2[j] = idx_vec1[i];
+                ++j;
             }
         }
         boolean_set(dest, calc_base_index_spec(dest->ndims, idx_vec1,
@@ -315,10 +322,7 @@ void indexed_assign_boolean_array(boolean_array_t* source,
                     boolean_get(source, calc_base_index(source->ndims,
                                                         idx_vec2, source)));
 
-  quit = next_index(dest_spec->ndims, idx_vec1, idx_size);
-
-  if (quit) break;
-    }
+    } while (0 == next_index(dest_spec->ndims, idx_vec1, idx_size));
 
     restore_memory_state(mem_state);
 }
@@ -334,14 +338,13 @@ void indexed_assign_boolean_array(boolean_array_t* source,
  *
  */
 
-void index_boolean_array(boolean_array_t* source,
-                         index_spec_t* source_spec,
+void index_boolean_array(const boolean_array_t* source,
+                         const index_spec_t* source_spec,
                          boolean_array_t* dest)
 {
     _index_t* idx_vec1;
     _index_t* idx_vec2;
     _index_t* idx_size;
-    int quit;
     int j;
     int i;
     state mem_state;
@@ -350,11 +353,14 @@ void index_boolean_array(boolean_array_t* source,
     assert(base_array_ok(dest));
     assert(index_spec_ok(source_spec));
     assert(index_spec_fit_base_array(source_spec,source));
-    for (i = 0, j = 0; i < source->ndims; ++i)
+    j = 0;
+    for (i = 0; i < source->ndims; ++i) {
         if ((source_spec->index_type[i] == 'W')
             ||
-            (source_spec->index_type[i] == 'A'))
+            (source_spec->index_type[i] == 'A')) {
             ++j;
+        }
+    }
     assert(j == dest->ndims);
 
     mem_state = get_memory_state();
@@ -362,17 +368,20 @@ void index_boolean_array(boolean_array_t* source,
     idx_vec2 = size_alloc(0,dest->ndims); /* indices in the destination array*/
     idx_size = size_alloc(0,source_spec->ndims);
 
-    for (i = 0; i < source->ndims; ++i) idx_vec1[i] = 0;
+    for (i = 0; i < source->ndims; ++i) {
+        idx_vec1[i] = 0;
+    }
     for (i = 0; i < source_spec->ndims; ++i) {
-        if (source_spec->index[i])
+        if (source_spec->index[i] != NULL) {
             idx_size[i] = imax(source_spec->dim_size[i],1);
-        else
+        } else {
             idx_size[i] = source->dim_size[i];
+        }
     }
 
-    quit = 0;
-    while (1) {
-        for (i = 0, j = 0; i < source->ndims; ++i) {
+    do {
+        j = 0;
+        for (i = 0; i < source->ndims; ++i) {
             if ((source_spec->index_type[i] == 'W')
                 ||
                 (source_spec->index_type[i] == 'A')) {
@@ -386,9 +395,7 @@ void index_boolean_array(boolean_array_t* source,
                                 calc_base_index_spec(source->ndims, idx_vec1,
                                                      source, source_spec)));
 
-        quit = next_index(source->ndims, idx_vec1, idx_size);
-        if (quit) break;
-    }
+    } while (0 == next_index(source->ndims, idx_vec1, idx_size));
 
     restore_memory_state(mem_state);
 }
@@ -404,7 +411,7 @@ void index_boolean_array(boolean_array_t* source,
  * a := b[1:3];
  */
 
-void index_alloc_boolean_array(boolean_array_t* source,
+void index_alloc_boolean_array(const boolean_array_t* source,
                                index_spec_t* source_spec,
                                boolean_array_t* dest)
 {
@@ -420,15 +427,19 @@ void index_alloc_boolean_array(boolean_array_t* source,
     for (i = 0; i < source_spec->ndims; ++i) {
         if ((source_spec->index_type[i] == 'W')
             ||
-            (source_spec->index_type[i] == 'A'))
+            (source_spec->index_type[i] == 'A')) {
             ndimsdiff--;
+        }
     }
 
     dest->ndims = source->ndims + ndimsdiff;
     dest->dim_size = size_alloc(0,dest->ndims);
 
-    for (i = 0,j = 0; i < dest->ndims; ++i) {
-        while (source_spec->index_type[i+j] == 'S') ++j; /* Skip scalars */
+    j = 0;
+    for (i = 0; i < dest->ndims; ++i) {
+        while (source_spec->index_type[i+j] == 'S') { /* Skip scalars */
+            ++j;
+        }
         if (source_spec->index_type[i+j] == 'W') { /*take whole dimension from source*/
             dest->dim_size[i]=source->dim_size[i+j];
         } else if (source_spec->index_type[i+j] == 'A') { /* Take dimension size from splice*/
@@ -441,28 +452,76 @@ void index_alloc_boolean_array(boolean_array_t* source,
 }
 
 /* Returns dest := source[i1,:,:...]*/
-void simple_index_alloc_boolean_array1(boolean_array_t* source, int i1,
+void simple_index_alloc_boolean_array1(const boolean_array_t* source, int i1,
                                        boolean_array_t* dest)
 {
-    assert(0 && "Not implemented yet");
+    int i;
+    assert(base_array_ok(source));
+
+    dest->ndims = source->ndims - 1;
+    dest->dim_size = size_alloc(0,dest->ndims);
+
+    for (i = 0; i < dest->ndims; ++i) {
+        dest->dim_size[i] = source->dim_size[i+1];
+    }
+    alloc_boolean_array_data(dest);
+
+    simple_index_boolean_array1(source, i1, dest);
 }
 
-void simple_index_boolean_array1(boolean_array_t* source, int i1,
+void simple_index_boolean_array1(const boolean_array_t* source, int i1,
                                  boolean_array_t* dest)
 {
-    assert(0 && "Not implemented yet");
+    size_t i;
+    size_t nr_of_elements = base_array_nr_of_elements(dest);
+    size_t off = nr_of_elements * i1;
+
+    assert(dest->ndims == (source->ndims - 1));
+
+    for (i = 0 ; i < nr_of_elements ; i++) {
+        boolean_set(dest, i, boolean_get(source, off + i));
+    }
 }
 
-void simple_index_boolean_array2(boolean_array_t* source,
+void simple_index_boolean_array2(const boolean_array_t* source,
                                  int i1, int i2,
                                  boolean_array_t* dest)
 {
-    assert(0 && "Not implemented yet");
+    size_t i;
+    size_t nr_of_elements = base_array_nr_of_elements(dest);
+    size_t off = nr_of_elements * ((source->dim_size[1] * i1) + i2);
+
+    for (i = 0 ; i < nr_of_elements ; i++) {
+        boolean_set(dest, i, boolean_get(source, off + i));
+    }
 }
 
 void array_boolean_array(boolean_array_t* dest,int n,boolean_array_t* first,...)
 {
-    assert(0 && "Not implemented yet");
+    int i,j,c,m;
+    va_list ap;
+
+    boolean_array_t **elts=(boolean_array_t**)malloc(sizeof(boolean_array_t *) * n);
+    assert(elts);
+    /* collect all array ptrs to simplify traversal.*/
+    va_start(ap,first);
+    elts[0] = first;
+    for (i = 1; i < n; ++i) {
+        elts[i] = va_arg(ap, boolean_array_t*);
+    }
+    va_end(ap);
+
+    check_base_array_dim_sizes((const base_array_t **)elts,n);
+
+    c = 0;
+    for (i = 0; i < n; ++i) {
+        m = base_array_nr_of_elements(elts[i]);
+        for(j = 0; j < m; ++j) {
+            boolean_set(dest, c, boolean_get(elts[i], j));
+            c++;
+        }
+    }
+    free(elts);
 }
 
 void array_alloc_boolean_array(boolean_array_t* dest, int n,
@@ -481,7 +540,7 @@ void array_alloc_boolean_array(boolean_array_t* dest, int n,
     }
     va_end(ap);
 
-    check_base_array_dim_sizes(elts,n);
+    check_base_array_dim_sizes((const base_array_t **)elts,n);
 
     if (first->ndims == 1) {
         alloc_boolean_array(dest,2,n,first->dim_size[0]);
@@ -500,7 +559,8 @@ void array_alloc_boolean_array(boolean_array_t* dest, int n,
     for (i = 0, c = 0; i < n; ++i) {
         m = base_array_nr_of_elements(elts[i]);
         for (j = 0; j < m; ++j) {
-            boolean_set(dest, c++, boolean_get(elts[i], j));
+            boolean_set(dest, c, boolean_get(elts[i], j));
+            c++;
         }
     }
     free(elts);
@@ -539,19 +599,19 @@ void array_alloc_scalar_boolean_array(boolean_array_t* dest, int n, ...)
     va_end(ap);
 }
 
-m_boolean* boolean_array_element_addr1(boolean_array_t* source,int ndims,
+m_boolean* boolean_array_element_addr1(const boolean_array_t* source,int ndims,
                                        int dim1)
 {
     return boolean_ptrget(source, dim1 - 1);
 }
 
-m_boolean* boolean_array_element_addr2(boolean_array_t* source,int ndims,
+m_boolean* boolean_array_element_addr2(const boolean_array_t* source,int ndims,
                                        int dim1,int dim2)
 {
-    return boolean_ptrget(source, (dim1 - 1) * source->dim_size[1] + dim2-1);
+    return boolean_ptrget(source, ((dim1 - 1) * source->dim_size[1]) + (dim2 - 1));
 }
 
-m_boolean* boolean_array_element_addr(boolean_array_t* source,int ndims,...)
+m_boolean* boolean_array_element_addr(const boolean_array_t* source,int ndims,...)
 {
     va_list ap;
     m_boolean* tmp;
@@ -564,24 +624,20 @@ m_boolean* boolean_array_element_addr(boolean_array_t* source,int ndims,...)
 }
 
 
-void cat_boolean_array(int k, boolean_array_t* dest, int n,
-                       boolean_array_t* first,...)
-{
-    assert(0 && "Not implemented yet");
-}
-
-/* function: cat_alloc_boolean_array
+/* function: cat_boolean_array
  *
  * Concatenates n boolean arrays along the k:th dimension.
- * Only works for 2 dimensional arrays.
+ * k is one based
  */
-void cat_alloc_boolean_array(int k, boolean_array_t* dest, int n,
-                             boolean_array_t* first,...)
+void cat_boolean_array(int k, boolean_array_t* dest, int n,
+                    boolean_array_t* first,...)
 {
     va_list ap;
-    int i;
-    int new_k_dim_size;
+    int i, j, r, c;
+    int n_sub = 1, n_super = 1;
+    int new_k_dim_size = 0;
     boolean_array_t **elts = (boolean_array_t**)malloc(sizeof(boolean_array_t *) * n);
+
     assert(elts);
     /* collect all array ptrs to simplify traversal.*/
     va_start(ap, first);
@@ -592,56 +648,109 @@ void cat_alloc_boolean_array(int k, boolean_array_t* dest, int n,
     }
     va_end(ap);
 
-    /* calculate new k:th dim size.*/
-    new_k_dim_size = 0;
-    for(i=0;i < n; i++) {
-        assert(elts[i]->ndims >= k);
+    /* check dim sizes of all inputs and dest */
+    assert(elts[0]->ndims >= k);
+    for (i = 0; i < n; i++) {
+        assert(dest->ndims == elts[i]->ndims);
+        for (j = 0; j < (k - 1); j++) {
+            assert(dest->dim_size[j] == elts[i]->dim_size[j]);
+        }
         new_k_dim_size += elts[i]->dim_size[k-1];
+        for (j = k; j < elts[0]->ndims; j++) {
+            assert(dest->dim_size[j] == elts[i]->dim_size[j]);
+        }
     }
-    check_base_array_dim_sizes_except(k,elts,n);
+    assert(dest->dim_size[k-1] == new_k_dim_size);
 
-    /* concatenation along first dimension */
-    /* cat(1,[1,2;3,4],[5,6;7,8]) => [1,2;3,4;5,6;7,8]*/
-    if (k == 1) {
-        int r,c,j;
-        int dim_size_2 = elts[0]->dim_size[1];
-        dest->data = boolean_alloc(0,dim_size_2 * new_k_dim_size);
-        dest->dim_size = size_alloc(0,2);
-        dest->dim_size[0] = new_k_dim_size;
-        dest->dim_size[1] = dim_size_2;
-        dest->ndims = 2;
-
-        for(i=0,j=0; i < n ; i++) {
-            for(r=0; r < elts[i]->dim_size[0];r++) {
-                for(c=0; c < elts[i]->dim_size[1];c++) {
-                    boolean_set(dest, j++,
-                                boolean_get(elts[i], c+r*elts[i]->dim_size[1]));
-                }
-            }
-        }
-    } /* concatenation along second dimension */
-    /* cat(2,[1,2;3,4],[5,6;7,8]) => [1,2,5,6;3,4,7,8]*/
-    else if (k == 2) {
-        int r,c,j;
-        int dim_size_1 = elts[0]->dim_size[0];
-        dest->data = boolean_alloc(0,dim_size_1 * new_k_dim_size);
-        dest->dim_size = size_alloc(0,2);
-        dest->dim_size[0] = dim_size_1;
-        dest->dim_size[1] = new_k_dim_size;
-        dest->ndims = 2;
-
-        for(r=0,j=0; r < elts[0]->dim_size[0];r++) {
-            for(i=0; i < n ; i++) {
-                for(c=0; c < elts[i]->dim_size[1];c++) {
-                    boolean_set(dest, j++,
-                                boolean_get(elts[i], c+r*elts[i]->dim_size[1]));
-                }
-            }
-        }
-    } else {
-        assert(0&&"Only concatenation dimension 1 and 2 supported");
+    /* calculate size of sub and super structure in 1-dim data representation */
+    for (i = 0; i < (k - 1); i++) {
+        n_super *= elts[0]->dim_size[i];
+    }
+    for (i = k; i < elts[0]->ndims; i++) {
+        n_sub *= elts[0]->dim_size[i];
     }
 
+    /* concatenation along k-th dimension */
+    j = 0;
+    for (i = 0; i < n_super; i++) {
+        for (c = 0; c < n; c++) {
+            int n_sub_k = n_sub * elts[c]->dim_size[k-1];
+            for (r = 0; r < n_sub_k; r++) {
+                boolean_set(dest, j,
+                            boolean_get(elts[c], r + (i * n_sub_k)));
+                j++;
+            }
+        }
+    }
+    free(elts);
+}
+
+/* function: cat_alloc_boolean_array
+ *
+ * Concatenates n boolean arrays along the k:th dimension.
+ * allocates space in dest array
+ * k is one based
+ */
+void cat_alloc_boolean_array(int k, boolean_array_t* dest, int n,
+                          boolean_array_t* first,...)
+{
+    va_list ap;
+    int i, j, r, c;
+    int n_sub = 1, n_super = 1;
+    int new_k_dim_size = 0;
+    boolean_array_t **elts = (boolean_array_t**)malloc(sizeof(boolean_array_t *) * n);
+
+    assert(elts);
+    /* collect all array ptrs to simplify traversal.*/
+    va_start(ap, first);
+    elts[0] = first;
+
+    for (i = 1; i < n; i++) {
+        elts[i] = va_arg(ap,boolean_array_t*);
+    }
+    va_end(ap);
+
+    /* check dim sizes of all inputs */
+    assert(elts[0]->ndims >= k);
+    new_k_dim_size = elts[0]->dim_size[k-1];
+    for (i = 1; i < n; i++) {
+        assert(elts[0]->ndims == elts[i]->ndims);
+        for (j = 0; j < (k - 1); j++) {
+            assert(elts[0]->dim_size[j] == elts[i]->dim_size[j]);
+        }
+        new_k_dim_size += elts[i]->dim_size[k-1];
+        for (j = k; j < elts[0]->ndims; j++) {
+            assert(elts[0]->dim_size[j] == elts[i]->dim_size[j]);
+        }
+    }
+
+    /* calculate size of sub and super structure in 1-dim data representation */
+    for (i = 0; i < (k - 1); i++) {
+        n_super *= elts[0]->dim_size[i];
+    }
+    for (i = k; i < elts[0]->ndims; i++) {
+        n_sub *= elts[0]->dim_size[i];
+    }
+    /* allocate dest structure */
+    dest->data = boolean_alloc(0, n_super * new_k_dim_size * n_sub);
+    dest->ndims = elts[0]->ndims;
+    dest->dim_size = size_alloc(0,dest->ndims);
+    for (j = 0; j < dest->ndims; j++) {
+        dest->dim_size[j] = elts[0]->dim_size[j];
+    }
+    dest->dim_size[k-1] = new_k_dim_size;
+    /* concatenation along k-th dimension */
+    j = 0;
+    for (i = 0; i < n_super; i++) {
+        for (c = 0; c < n; c++) {
+            int n_sub_k = n_sub * elts[c]->dim_size[k-1];
+            for (r = 0; r < n_sub_k; r++) {
+                boolean_set(dest, j,
+                            boolean_get(elts[c], r + (i * n_sub_k)));
+                j++;
+            }
+        }
+    }
     free(elts);
 }
 
@@ -650,7 +759,7 @@ void cat_alloc_boolean_array(int k, boolean_array_t* dest, int n,
  * Implementation of promote(A,n) same as promote_boolean_array except
  * that the destination array is allocated.
  */
-void promote_alloc_boolean_array(boolean_array_t* a, int n,
+void promote_alloc_boolean_array(const boolean_array_t* a, int n,
                                  boolean_array_t* dest)
 {
     clone_boolean_array_spec(a,dest);
@@ -666,7 +775,7 @@ void promote_alloc_boolean_array(boolean_array_t* a, int n,
  * promote_exp( {1,2},1) => {{1},{2}}
  * promote_exp( {1,2},2) => { {{1}},{{2}} }
 */
-void promote_boolean_array(boolean_array_t* a, int n,boolean_array_t* dest)
+void promote_boolean_array(const boolean_array_t* a, int n,boolean_array_t* dest)
 {
     int i;
 
@@ -676,7 +785,7 @@ void promote_boolean_array(boolean_array_t* a, int n,boolean_array_t* dest)
     for (i = 0; i < a->ndims; ++i) {
         dest->dim_size[i] = a->dim_size[i];
     }
-    for (i = a->ndims; i < n+a->ndims; ++i) {
+    for (i = a->ndims; i < (n+a->ndims); ++i) {
         dest->dim_size[i] = 1;
     }
 
@@ -709,16 +818,21 @@ void promote_scalar_boolean_array(modelica_boolean s,int n,
     }
 }
 
-void size_boolean_array(boolean_array_t* a, boolean_array_t* dest)
+void size_boolean_array(const boolean_array_t* a, integer_array_t* dest)
 {
-    /* This should be an integer data instead */
-    /*copy_integer_array_data(a->dim_size,dest); */
-    /* Code below can't possibly do what it was supposed to do - x08joekl */
-    /* dest = a; */
-    assert(0&&"Not implemented.");
+    /* This should be an integer array dest instead */
+    int i;
+
+    assert(dest->ndims == 1);
+    assert(dest->dim_size[0] == a->ndims);
+
+    for (i = 0 ; i < a->ndims ; i++) {
+        ((modelica_integer *) dest->data)[i] = a->dim_size[i];
+    }
+
 }
 
-m_boolean scalar_boolean_array(boolean_array_t* a)
+m_boolean scalar_boolean_array(const boolean_array_t* a)
 {
     assert(base_array_ok(a));
     assert(base_array_one_element_ok(a));
@@ -726,7 +840,7 @@ m_boolean scalar_boolean_array(boolean_array_t* a)
     return boolean_get(a, 0);
 }
 
-void vector_boolean_array(boolean_array_t* a, boolean_array_t* dest)
+void vector_boolean_array(const boolean_array_t* a, boolean_array_t* dest)
 {
     size_t i, nr_of_elements;
 
@@ -738,13 +852,13 @@ void vector_boolean_array(boolean_array_t* a, boolean_array_t* dest)
     }
 }
 
-void vector_boolean_scalar(m_boolean a,boolean_array_t* dest)
+void vector_boolean_scalar(modelica_boolean a,boolean_array_t* dest)
 {
     /* Assert that dest is a 1-vector */
     boolean_set(dest, 0, a);
 }
 
-void matrix_boolean_array(boolean_array_t* a, boolean_array_t* dest)
+void matrix_boolean_array(const boolean_array_t* a, boolean_array_t* dest)
 {
     size_t i, cnt;
     /* Assert that size(A,i)=1 for 2 <i<=ndims(A)*/
@@ -772,7 +886,7 @@ void matrix_boolean_scalar(modelica_boolean a, boolean_array_t* dest)
  * except that destionation array is allocated.
  */
 
-void transpose_alloc_boolean_array(boolean_array_t* a, boolean_array_t* dest)
+void transpose_alloc_boolean_array(const boolean_array_t* a, boolean_array_t* dest)
 {
     clone_boolean_array_spec(a,dest); /* allocation*/
 
@@ -791,7 +905,7 @@ void transpose_alloc_boolean_array(boolean_array_t* a, boolean_array_t* dest)
  *
  * Implementation of transpose(A) for matrix A.
  */
-void transpose_boolean_array(boolean_array_t* a, boolean_array_t* dest)
+void transpose_boolean_array(const boolean_array_t* a, boolean_array_t* dest)
 {
     size_t i;
     size_t j;
@@ -812,7 +926,7 @@ void transpose_boolean_array(boolean_array_t* a, boolean_array_t* dest)
 
     for (i = 0; i < n; ++i) {
         for (j = 0; j < m; ++j) {
-            boolean_set(dest, j*n+i, boolean_get(a, i*m+j));
+            boolean_set(dest, (j*n)+i, boolean_get(a, (i*m)+j));
         }
     }
 }
@@ -828,7 +942,7 @@ void fill_boolean_array(boolean_array_t* dest,modelica_boolean s)
     }
 }
 
-void convert_alloc_boolean_array_to_f77(boolean_array_t* a,
+void convert_alloc_boolean_array_to_f77(const boolean_array_t* a,
                                         boolean_array_t* dest)
 {
     int i;
@@ -840,7 +954,7 @@ void convert_alloc_boolean_array_to_f77(boolean_array_t* a,
     }
 }
 
-void convert_alloc_boolean_array_from_f77(boolean_array_t* a,
+void convert_alloc_boolean_array_from_f77(const boolean_array_t* a,
                                           boolean_array_t* dest)
 {
     int i;
@@ -864,9 +978,8 @@ void fill_alloc_boolean_array(boolean_array_t* dest, modelica_boolean value, int
     elements = alloc_base_array(dest, ndims, ap);
     va_end(ap);
     dest->data = boolean_alloc(0,elements);
-    
-    for(i = 0; i < elements; ++i)
-    {
+
+    for(i = 0; i < elements; ++i) {
         boolean_set(dest, i, value);
     }
 }

@@ -32,13 +32,14 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 #include <memory.h>
 
 void allocRingBuffer(RINGBUFFER* rb, int sz, int item_size)
 {
 	rb->first_element = 0;
 	rb->num_element = 0;
-	rb->buf_size = sz > 0 ? sz : 1;
+	rb->buf_size = (sz > 0) ? sz : 1;
 	rb->item_size = item_size;
 	rb->buffer = calloc(rb->buf_size, rb->item_size);
 	assert(rb->buffer);
@@ -56,14 +57,15 @@ void* getRingData(RINGBUFFER* rb, int nIndex)
 	return ((char*)rb->buffer)+(((rb->first_element+nIndex)%rb->buf_size)*rb->item_size);
 }
 
-void expandRingBuffer(RINGBUFFER* rb)
+static void expandRingBuffer(RINGBUFFER* rb)
 {
 	int i;
 	void* temp = calloc(2*rb->buf_size, rb->item_size);
 	assert(temp);
 
-	for(i=0; i<rb->num_element; i++)
+	for(i=0; i<rb->num_element; i++) {
 		memcpy(((char*)temp)+(i*rb->item_size), getRingData(rb, i), rb->item_size);
+	}
 
 	free(rb->buffer);
 	rb->buffer = temp;
@@ -73,9 +75,10 @@ void expandRingBuffer(RINGBUFFER* rb)
 
 void appendRingData(RINGBUFFER* rb, void* value)
 {
-	if(rb->buf_size < rb->num_element+1)
+	if(rb->buf_size < (rb->num_element+1)) {
 		expandRingBuffer(rb);
-	
+	}
+
 	memcpy(((char*)rb->buffer)+(((rb->first_element+rb->num_element)%rb->buf_size)*rb->item_size), value, rb->item_size);
 	++rb->num_element;
 }
@@ -88,7 +91,7 @@ void dequeueNFirstRingDatas(RINGBUFFER* rb, int n)
 	rb->num_element -= n;
 }
 
-int ringBufferLength(RINGBUFFER* rb)
+int ringBufferLength(const RINGBUFFER* rb)
 {
 	return rb->num_element;
 }

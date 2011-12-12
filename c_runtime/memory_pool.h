@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -47,24 +47,26 @@ struct state_s {
 
 typedef struct state_s state;
 
-state get_memory_state();
-void restore_memory_state(state restore_state);
-void clear_memory_state();
+extern state get_memory_state(void);
+extern void restore_memory_state(state restore_state);
+extern void clear_memory_state(void);
+extern void clear_current_state(void);
 
 /*Help functions*/
-void print_current_state();
+extern void print_current_state(void);
+extern void print_state(state s);
 
 /* Allocation functions */
-void* alloc_elements(int ix, int n, int sz);
-m_real* real_alloc(int ix, int n);
-m_integer* integer_alloc(int ix, int n);
-m_string* string_alloc(int ix, int n);
-m_boolean* boolean_alloc(int ix, int n);
-_index_t* size_alloc(int ix, int n);
-_index_t** index_alloc(int ix, int n);
-char* char_alloc(int ix, int n);
+extern void* alloc_elements(int ix, int n, int sz);
+extern m_real* real_alloc(int ix, int n);
+extern m_integer* integer_alloc(int ix, int n);
+extern m_string* string_alloc(int ix, int n);
+extern m_boolean* boolean_alloc(int ix, int n);
+extern _index_t* size_alloc(int ix, int n);
+extern _index_t** index_alloc(int ix, int n);
+extern char* char_alloc(int ix, int n);
 
-void* push_memory_states(int maxThreads);
-void pop_memory_states(void* new_states);
+extern void* push_memory_states(int maxThreads);
+extern void pop_memory_states(void* new_states);
 
 #endif
