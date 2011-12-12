@@ -4814,6 +4814,46 @@ algorithm
   end match;
 end opSymbol;
 
+public function opSymbolCompact
+"function: opSymbolCompact
+  same as opSymbol but without spaces included
+  used for operator overload resolving.
+  Some of them are not supported ?? but have them 
+  anyway"
+  input Absyn.Operator inOperator;
+  output String outString;
+algorithm
+  outString := match (inOperator)
+    /* arithmetic operators */
+    case (Absyn.ADD()) then "+";
+    case (Absyn.SUB()) then "-";
+    case (Absyn.MUL()) then "*";
+    case (Absyn.DIV()) then "/";
+    case (Absyn.POW()) then "^";
+    case (Absyn.UMINUS()) then "-";
+    case (Absyn.UPLUS()) then "+";
+    /* element-wise arithmetic operators */
+    case (Absyn.ADD_EW()) then ".+";
+    case (Absyn.SUB_EW()) then ".-";
+    case (Absyn.MUL_EW()) then ".*";
+    case (Absyn.DIV_EW()) then "./";
+    case (Absyn.POW_EW()) then ".^";
+    case (Absyn.UMINUS_EW()) then ".-";
+    case (Absyn.UPLUS_EW()) then ".+";
+    /* logical operators */
+    case (Absyn.AND()) then "and";
+    case (Absyn.OR()) then "or";
+    case (Absyn.NOT()) then "not";
+    /* relational operators */
+    case (Absyn.LESS()) then "<";
+    case (Absyn.LESSEQ()) then "<=";
+    case (Absyn.GREATER()) then ">";
+    case (Absyn.GREATEREQ()) then ">=";
+    case (Absyn.EQUAL()) then "==";
+    case (Absyn.NEQUAL()) then "<>";
+  end match;
+end opSymbolCompact;
+
 protected function dumpOpSymbol
 "function: dumpOpSymbol
   Make a string describing different operators."

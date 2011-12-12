@@ -391,6 +391,8 @@ algorithm
     case (SCode.R_PACKAGE(),p) then PACKAGE(p);
     case (SCode.R_FUNCTION(),p) then FUNCTION(p);
     case (SCode.R_EXT_FUNCTION(),p) then FUNCTION(p);
+    case (SCode.R_OPERATOR_FUNCTION(),p) then FUNCTION(p);
+    case (SCode.R_OPERATOR(),p) then RECORD(p);
     case (SCode.R_ENUMERATION(),p) then ENUMERATION(p);
     case (SCode.R_PREDEFINED_INTEGER(),p) then TYPE_INTEGER(p);
     case (SCode.R_PREDEFINED_REAL(),p) then TYPE_REAL(p);

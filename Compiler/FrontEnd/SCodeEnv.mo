@@ -1911,7 +1911,7 @@ algorithm
  
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeAdd failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeReplace failed"});
       then fail();
 
   end match;

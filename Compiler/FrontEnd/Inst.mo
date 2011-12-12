@@ -1238,7 +1238,7 @@ algorithm
         //str = SCodeDump.printClassStr(c); print("------------------- CLASS instClass-----------------\n");print(str);print("\n===============================================\n");
 
         // First check if the class is non-partial or a partial function
-        isFn = SCode.isFunctionOrExtFunction(r);
+        isFn = SCode.isFunctionOrExtFunctionOrOperatorFunction(r);
         notIsPartial = not SCode.partialBool(partialPrefix);
         isPartialFn = isFn and SCode.partialBool(partialPrefix);
         true = notIsPartial or isPartialFn;
@@ -3497,7 +3497,9 @@ algorithm
         false = valueEq(SCode.R_PACKAGE(), re);
         false = valueEq(SCode.R_FUNCTION(), re);
         false = valueEq(SCode.R_EXT_FUNCTION(), re);
+        false = valueEq(SCode.R_OPERATOR_FUNCTION(), re);
         false = valueEq(SCode.R_RECORD(), re);
+        false = valueEq(SCode.R_OPERATOR_RECORD(), re);
         // no components and at least one extends!
         (_, _, _::_, {}) = splitElts(els);
         (cache,env,ih,store,fdae,csets,ci_state,vars,bc,oDA,eqConstraint,graph) = 
@@ -11350,8 +11352,11 @@ algorithm
       SCode.Encapsulated encflag;
     
     /* normal functions */
-    case (cache,env,ih,mod,pre,(c as SCode.CLASS(classDef=cd,partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(),info = info)),inst_dims,instFunctionTypeOnly)
+    case (cache,env,ih,mod,pre,(c as SCode.CLASS(classDef=cd,partialPrefix = partialPrefix, name = n,restriction = r,info = info)),inst_dims,instFunctionTypeOnly)
       equation
+        
+        true = SCode.isFunctionOrOperatorFunction(r);
+        
         // if we're not MetaModelica set it to non-partial
         c = Util.if_(Config.acceptMetaModelicaGrammar(),
                      c,
@@ -12147,7 +12152,7 @@ algorithm
       equation
         // print("instOvl: " +& Absyn.pathString(fn) +& "\n");
         (cache,(c as SCode.CLASS(name=id,partialPrefix=partialPrefix,encapsulatedPrefix=encflag,restriction=rest,info=info)),cenv) = Lookup.lookupClass(cache, env, fn, true);
-        true = SCode.isFunctionOrExtFunction(rest);
+        true = SCode.isFunctionOrExtFunctionOrOperatorFunction(rest);
         (cache,_,ih,resfns1) = implicitFunctionInstantiation2(inCache, cenv, inIH, DAE.NOMOD(), pre, c, {}, false);
         (cache,ih,resfns2) = instOverloadedFunctions(cache,env,ih,pre,fns);
       then (cache,ih,listAppend(resfns1,resfns2));

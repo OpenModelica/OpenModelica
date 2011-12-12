@@ -145,6 +145,7 @@ algorithm
   outClass := translateClass2(inClass, Error.getNumMessages());
 end translateClass;
 
+
 protected function translateClass2
   "This functions converts an Absyn.Class to a SCode.Class."
   input Absyn.Class inClass;
@@ -165,6 +166,7 @@ algorithm
       SCode.Final sFin;
       SCode.Encapsulated sEnc;
       SCode.Partial sPar;
+
 
     case (c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = d,info = file_info), _)
       equation
@@ -202,6 +204,94 @@ algorithm
         fail();
   end matchcontinue;
 end translateClass2;
+
+
+//mahge: FIX HERE. Check for proper input and output 
+//declarations in operators according to the specifications.
+public function translateOpertaorDef
+  input Absyn.ClassDef inClassDef;
+  input Absyn.Ident operatorName;
+  input Absyn.Info info;
+  output SCode.ClassDef outOperDef;
+algorithm
+  outOperDef := match (inClassDef,operatorName,info)
+    local
+      Option<String> cmtString;
+      list<SCode.Element> els;
+      list<SCode.Annotation> anns;
+      list<Absyn.ClassPart> parts;
+      Option<SCode.Comment> scodeCmt;
+      SCode.Ident opName;
+      list<Absyn.Path> opFuncNames;
+      Absyn.Info info;
+      
+  case (Absyn.PARTS(classParts = parts,comment = cmtString),opName,info)
+      equation
+        els = translateClassdefElements(parts);    
+        anns = translateClassdefAnnotations(parts);
+        scodeCmt = translateComment(SOME(Absyn.COMMENT(NONE(), cmtString)));
+        SCodeCheck.checkDuplicateElements(els);
+      then
+        SCode.PARTS(els,{},{},{},{},NONE(),anns,scodeCmt);
+  end match;
+end translateOpertaorDef;
+
+public function getOperatorGivenName
+  input SCode.Element inOperatorFunction;
+  output Absyn.Path outName;
+algorithm
+  outName := match (inOperatorFunction)        
+    local
+      SCode.Ident name;
+    case (SCode.CLASS(name,_,_,_,SCode.R_FUNCTION(),_,_))        
+    then Absyn.IDENT(name);
+      
+  end match;  
+end getOperatorGivenName;
+
+public function getOperatorQualName
+  input SCode.Element inOperatorFunction;
+  input SCode.Ident operName;
+  output SCode.Path outName;
+algorithm
+  outName := match (inOperatorFunction,operName)        
+    local
+      SCode.Ident name,opname;
+    case (SCode.CLASS(name,_,_,_,SCode.R_FUNCTION(),_,_),opname)        
+    then Absyn.joinPaths(Absyn.IDENT(opname), Absyn.IDENT(name));
+      
+  end match;  
+end getOperatorQualName;
+
+
+public function getListofQualOperatorFuncsfromOperator
+  input SCode.Element inOperator;
+  output list<SCode.Path> outNames;
+algorithm
+  outNames := match (inOperator) 
+    local
+      list<SCode.Element> els;
+      SCode.Ident opername;
+      list<SCode.Path> names;
+      
+      //If operator get the list of functions in it.
+    case (SCode.CLASS(opername,_,_,_, SCode.R_OPERATOR() ,SCode.PARTS(elementLst = els),_))
+      equation
+        names = List.map1(els,getOperatorQualName,opername);
+      then
+        names;
+        
+      //If operator function return its name  
+    case (SCode.CLASS(opername,_,_,_, SCode.R_OPERATOR_FUNCTION(),_,_))
+      equation
+        names = {Absyn.IDENT(opername)};
+      then
+        names;
+  end match;    
+end getListofQualOperatorFuncsfromOperator;
+
+
+
 
 // Changed to public! krsta
 public function translateRestriction
@@ -1168,6 +1258,25 @@ algorithm
       SCode.Flow sFl;
       SCode.Stream sSt;
       Option<SCode.ConstrainClass> scc;
+
+
+    case (cc,finalPrefix,_,repl,vis, Absyn.CLASSDEF(replaceable_ = rp, class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,finalPrefix = fi,encapsulatedPrefix = e,restriction = Absyn.R_OPERATOR(),body = de,info = i))),_)
+      equation
+        de_1 = translateOpertaorDef(de,n,i);
+        (_, redecl) = translateRedeclarekeywords(repl);
+        sRed = SCode.boolRedeclare(redecl);
+        sFin = SCode.boolFinal(finalPrefix);
+        scc = translateConstrainClass(cc);
+        sRep = Util.if_(rp,SCode.REPLACEABLE(scc),SCode.NOT_REPLACEABLE());
+        sEnc = SCode.boolEncapsulated(e);
+        sPar = SCode.boolPartial(pa); 
+        cls = SCode.CLASS(
+          n, 
+          SCode.PREFIXES(vis,sRed,sFin,io,sRep), 
+          sEnc, sPar, SCode.R_OPERATOR(), de_1, i);
+      then
+        {cls};
+          
 
     case (cc,finalPrefix,_,repl,vis, Absyn.CLASSDEF(replaceable_ = rp, class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,finalPrefix = fi,encapsulatedPrefix = e,restriction = re,body = de,info = i))),_)
       equation

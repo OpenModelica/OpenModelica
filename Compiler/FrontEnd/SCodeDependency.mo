@@ -113,6 +113,7 @@ algorithm
   end matchcontinue;
 end analyseClass;
 
+
 protected function lookupClass
   "Lookup a class in the environment. The reason why SCodeLookup is not used
   directly is because we need to look up each part of the class path and mark
@@ -693,6 +694,8 @@ algorithm
       Env ty_env, env;
       SCode.Ident name;
       SCode.Prefixes prefixes;
+      SCode.Restriction res;
+      String errorMessage;
 
     // Fail on 'extends ExternalObject' so we can handle it as a special case in
     // analyseClassDef.
@@ -730,6 +733,53 @@ algorithm
       then
         ();
 
+    //operators in operator record might be used later. 
+    case (SCode.CLASS(name = name, restriction=SCode.R_OPERATOR(), info = info), _, SCode.R_OPERATOR_RECORD())
+      equation
+        analyseClass(Absyn.IDENT(name), inEnv, info);
+      then(); 
+        
+        
+    //operators in any other class type are error. 
+    case (SCode.CLASS(name = name, restriction=SCode.R_OPERATOR(), info = info), _, _)
+      equation
+        //mahge: FIX HERE.
+        errorMessage = "operators are allowed in OPERATOR RECORD only. Error on:" +& name;
+        Error.addSourceMessage(Error.LOOKUP_ERROR, {errorMessage, name}, info);
+      then
+        fail();      
+    
+    //operator functions in operator record might be used later. 
+    case (SCode.CLASS(name = name, restriction=SCode.R_OPERATOR_FUNCTION(), info = info), _, SCode.R_OPERATOR_RECORD())
+      equation
+        analyseClass(Absyn.IDENT(name), inEnv, info);
+      then();  
+        
+     //operators in any other class type are error. 
+    case (SCode.CLASS(name = name, restriction=SCode.R_OPERATOR(), info = info), _, _)
+      equation
+        //mahge: FIX HERE.
+        errorMessage = "Operator functions are allowed in OPERATOR RECORD only. Error on:" +& name;
+        Error.addSourceMessage(Error.LOOKUP_ERROR, {errorMessage, name}, info);
+      then
+        fail();     
+    
+    //functions in operator might be used later. 
+    case (SCode.CLASS(name = name, restriction=SCode.R_FUNCTION(), info = info), _, SCode.R_OPERATOR())
+      equation
+        analyseClass(Absyn.IDENT(name), inEnv, info);
+      then();  
+        
+    //operators should only contain function definitions    
+    case (SCode.CLASS(name = name, restriction = res, info = info), _, SCode.R_OPERATOR())
+      equation
+        false = SCode.restrictionEqual(res, SCode.R_FUNCTION());
+        //mahge: FIX HERE.
+        errorMessage = "Operators can only contain functions. Error on:" +& name;
+        Error.addSourceMessage(Error.LOOKUP_ERROR, {errorMessage, name}, info);
+      then
+        fail(); 
+      
     // equalityConstraints may not be explicitly used but might be needed anyway
     // (if the record is used in a connect for example), so always mark it as used.
     case (SCode.CLASS(name = name as "equalityConstraint", info = info), _, _)
@@ -1740,6 +1790,9 @@ algorithm
         enclosing_env = SCodeEnv.enterScope(inEnv, name);
         (cdef, class_env) =
           collectUsedClassDef(cdef, enclosing_env, class_frame, inClassName, inAccumPath);
+        
+        //Fix operator record restriction to record
+        res = fixRestrictionOfOperatorRecord(res);  
         cls = SCode.CLASS(name, prefixes, ep, pp, res, cdef, info);
         resolved_item = updateItemEnv(resolved_item, cls, class_env);
         basename = name +& SCodeEnv.BASE_CLASS_SUFFIX;
@@ -1760,6 +1813,8 @@ algorithm
         enclosing_env = SCodeEnv.enterScope(inEnv, name);
         (cdef, class_env) = 
           collectUsedClassDef(cdef, enclosing_env, class_frame, inClassName, inAccumPath);
+        //Fix operator record restriction to record
+        res = fixRestrictionOfOperatorRecord(res);
         // Add the class to the new environment.
         cls = SCode.CLASS(name, prefixes, ep, pp, res, cdef, info);
         item = updateItemEnv(item, cls, class_env);
@@ -1769,6 +1824,18 @@ algorithm
 
   end match;
 end collectUsedClass;
+
+protected function fixRestrictionOfOperatorRecord
+  input SCode.Restriction inRes;
+  output SCode.Restriction outRes;
+algorithm
+  outRes := match(inRes)
+  case (SCode.R_OPERATOR_RECORD()) 
+      then SCode.R_RECORD();
+
+  else inRes;
+  end match;
+end fixRestrictionOfOperatorRecord;
 
 protected function checkClassUsed
   "Given the environment item and definition for a class, returns whether the

@@ -891,6 +891,7 @@ algorithm
     local String n; ClassDef def;
     case CLASS(name = n,restriction = R_FUNCTION(),classDef = def) then true;
     case CLASS(name = n,restriction = R_EXT_FUNCTION(),classDef = def) then true;
+    case CLASS(name = n,restriction = R_OPERATOR_FUNCTION(),classDef = def) then true;
     case _ then false;
   end matchcontinue;
 end isFunction;
@@ -936,6 +937,23 @@ algorithm
   end match;
 end classSetPartial;
 
+public function isFunctionOrExtFunctionOrOperatorFunction
+"function isFunctionOrExtFunction
+  This function returns true if the class
+  restriction is function or external function or operator function.
+  Otherwise false is returned."
+  input Restriction r;
+  output Boolean res;
+algorithm
+  res := matchcontinue(r)
+    case (R_FUNCTION()) then true;
+    case (R_EXT_FUNCTION()) then true;
+    case (R_OPERATOR_FUNCTION()) then true;
+    //case (R_OPERATOR()) then true;
+    case(_) then false;
+  end matchcontinue;
+ end isFunctionOrExtFunctionOrOperatorFunction;
+
 public function isFunctionOrExtFunction
 "function isFunctionOrExtFunction
   This function returns true if the class
@@ -950,6 +968,37 @@ algorithm
     case(_) then false;
   end matchcontinue;
  end isFunctionOrExtFunction;
+ 
+ 
+public function isOperator
+"function isOperator
+  This function returns true if the class
+  restriction is operator or operator function.
+  Otherwise false is returned."
+  input Element el;
+  output Boolean res;
+algorithm
+  res := matchcontinue(el)
+    case (CLASS(_,_,_,_,R_OPERATOR(),_,_)) then true;
+    case (CLASS(_,_,_,_,R_OPERATOR_FUNCTION(),_,_)) then true;
+    case(_) then false;
+  end matchcontinue;
+ end isOperator;
+ 
+ public function isFunctionOrOperatorFunction
+"function isFunctionOrExtFunction
+  This function returns true if the class
+  restriction is function or external function.
+  Otherwise false is returned."
+  input Restriction r;
+  output Boolean res;
+algorithm
+  res := matchcontinue(r)
+    case(R_FUNCTION()) then true;
+    case (R_OPERATOR_FUNCTION()) then true;
+    case(_) then false;
+  end matchcontinue;
+ end isFunctionOrOperatorFunction;
 
 public function elementEqual
 "function elementEqual
